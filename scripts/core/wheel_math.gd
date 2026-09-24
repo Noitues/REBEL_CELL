@@ -9,9 +9,22 @@ const TICKS: int = RC.TICKS
 const FLIP_OFFSET: int = RC.TICKS / 2
 
 
-## Tick under a pointer: (rotation + pointer_tick + 15 if flipped) mod 30.
-static func tick_at(rotation: int, pointer_tick: int, flipped: bool) -> int:
-	return posmod(rotation + pointer_tick + (FLIP_OFFSET if flipped else 0), TICKS)
+## Tick under a pointer: (rotation + pointer_tick) mod 30.
+static func tick_at(rotation: int, pointer_tick: int) -> int:
+	return posmod(rotation + pointer_tick, TICKS)
+
+
+## Where tick `tick` lands when the wheel is mirrored across the horizontal axis through
+## pointer `axis_pointer` (GDD 2.3): 2p + 15 - t. The slice opposite the pointer arrives
+## at the pointer and slice order reverses. Applying it twice is the identity.
+static func mirror_tick(tick: int, axis_pointer: int = 0) -> int:
+	return posmod(2 * axis_pointer + FLIP_OFFSET - tick, TICKS)
+
+
+## Slot index that holds slot `index`'s content after a mirror: -index mod count.
+## Slot 0 stays, 1 <-> 5, 2 <-> 4, 3 stays on a 6-slice wheel.
+static func mirrored_slot(index: int, slice_count: int = RC.SLICES) -> int:
+	return posmod(-index, slice_count)
 
 
 ## Ticks per slice for a wheel with `slice_count` slices (30 / count).

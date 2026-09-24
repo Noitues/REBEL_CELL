@@ -42,9 +42,9 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	queue_redraw()
 
 
-func _tick_angle(tick: float, rotation_ticks: int, flipped: bool) -> float:
-	# Tick `rotation` sits under the top pointer; flipping adds 15 (GDD 2.3).
-	var shown := rotation_ticks + (RC.TICKS / 2 if flipped else 0)
+func _tick_angle(tick: float, rotation_ticks: int) -> float:
+	# Tick `rotation` sits under the top pointer (GDD 2.3).
+	var shown := rotation_ticks
 	return deg_to_rad((tick - shown) * (360.0 / RC.TICKS) - 90.0)
 
 
@@ -61,13 +61,13 @@ func _draw() -> void:
 	var tps := wheel.ticks_per_slice()
 	for i in wheel.slice_count:
 		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
-		var start := _tick_angle(i * tps - tps / 2.0, wheel.rotation, wheel.flipped)
-		var end := _tick_angle(i * tps + tps / 2.0, wheel.rotation, wheel.flipped)
+		var start := _tick_angle(i * tps - tps / 2.0, wheel.rotation)
+		var end := _tick_angle(i * tps + tps / 2.0, wheel.rotation)
 		var color: Color = SLICE_COLORS.get(slice.slice_type, Color.GRAY)
 		if not combatant.is_alive():
 			color = color.darkened(0.6)
 		draw_arc(center, radius, start, end, 12, color, 26)
-		var mid := _tick_angle(i * tps, wheel.rotation, wheel.flipped)
+		var mid := _tick_angle(i * tps, wheel.rotation)
 		var pos := center + Vector2(cos(mid), sin(mid)) * (radius + 26)
 		var label := "%s %d" % [GLYPHS.get(slice.slice_type, "?"), slice.base_output]
 		if slice.base_output == 0:
@@ -85,17 +85,17 @@ func _draw() -> void:
 				draw_string(font, sat_pos + Vector2(-16, 20), "drone %d HP" % sat.hp, HORIZONTAL_ALIGNMENT_LEFT, -1, 10)
 	# Tick marks so nudges are visible.
 	for t in RC.TICKS:
-		var a := _tick_angle(t, wheel.rotation, wheel.flipped)
+		var a := _tick_angle(t, wheel.rotation)
 		var inner_r := radius - 15 if t % tps == 0 else radius - 13
 		draw_line(center + Vector2(cos(a), sin(a)) * inner_r, center + Vector2(cos(a), sin(a)) * (radius - 10), Color(0, 0, 0, 0.6), 1)
 	if wheel.has_inner_ring():
 		var ring_r := radius - 32
 		for k in RC.RING_SEGMENTS:
 			var seg := lookup.get_content(wheel.ring_segment_ids[k]) as RingSegmentData
-			var start := _tick_angle(k * 10 - 5, wheel.inner_rotation, wheel.flipped)
-			var end := _tick_angle(k * 10 + 5, wheel.inner_rotation, wheel.flipped)
+			var start := _tick_angle(k * 10 - 5, wheel.inner_rotation)
+			var end := _tick_angle(k * 10 + 5, wheel.inner_rotation)
 			draw_arc(center, ring_r, start, end, 12, Color(0.6, 0.6, 0.9) if k % 2 == 0 else Color(0.45, 0.45, 0.75), 14)
-			var mid := _tick_angle(k * 10, wheel.inner_rotation, wheel.flipped)
+			var mid := _tick_angle(k * 10, wheel.inner_rotation)
 			var pos := center + Vector2(cos(mid), sin(mid)) * (ring_r)
 			draw_string(font, pos - Vector2(8, -4), seg.display_name if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 10)
 	for p in wheel.pointer_ticks:

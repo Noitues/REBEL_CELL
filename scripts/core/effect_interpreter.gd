@@ -124,7 +124,7 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 		RC.EffectType.FLIP:
 			var flipped_any := false
 			for t in targets:
-				flipped_any = flip(t, events) or flipped_any
+				flipped_any = flip(state, t, events) or flipped_any
 			return flipped_any
 		RC.EffectType.RESPIN:
 			var respun := false
@@ -218,8 +218,9 @@ func retrigger_multipliers(state: CombatState, trigger: int, ctx: Dictionary, li
 
 # --- Primitive mutations ---------------------------------------------------------
 
-## One hit of `amount` on `victim`. Evade cancels attacks; block (unless pierce) then
-## shield absorb; the rest is HP damage. HP never drops below 0.
+## One hit of `amount` on `victim`. Evade cancels attacks; block then shield absorb
+## unless `pierce` (designer ruling: Pierce ignores block and shield, not satellites);
+## the rest is HP damage. HP never drops below 0.
 func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantState, amount: int, pierce: bool, is_attack: bool, events: Array[Dictionary], source_id: StringName = &"") -> int:
 	if amount <= 0:
 		return 0
@@ -230,13 +231,14 @@ func deal_hit(state: CombatState, attacker: CombatantState, victim: CombatantSta
 		return 0
 	var remaining := amount
 	var blocked := 0
+	var shielded := 0
 	if not pierce:
 		blocked = mini(victim.block, remaining)
 		victim.block -= blocked
 		remaining -= blocked
-	var shielded := mini(victim.shield, remaining)
-	victim.shield -= shielded
-	remaining -= shielded
+		shielded = mini(victim.shield, remaining)
+		victim.shield -= shielded
+		remaining -= shielded
 	var hp_damage := mini(victim.hp, remaining)
 	victim.hp -= hp_damage
 	events.append({"type": "damage", "attacker": attacker.id, "target": victim.id, "amount": amount,
@@ -350,13 +352,18 @@ func spin(state: CombatState, owner: CombatantState, c: CombatantState, amount: 
 	return moved
 
 
-## Mirrors the wheel. Blocked entirely while the target has resistance.
-func flip(c: CombatantState, events: Array[Dictionary]) -> bool:
+## Mirrors the wheel (GDD 2.3): the opposite slice arrives at the pointer and slice
+## order reverses. Docked satellites ride along to their slice's new slot. Blocked
+## entirely while the target has resistance.
+func flip(state: CombatState, c: CombatantState, events: Array[Dictionary]) -> bool:
 	if c.resistance > 0:
 		events.append({"type": "flip_blocked", "target": c.id, "text": "%s resists the FLIP (resistance %d)." % [c.display_name, c.resistance]})
 		return false
-	c.wheel.flipped = not c.wheel.flipped
-	events.append({"type": "flip", "target": c.id, "text": "%s wheel FLIPPED." % c.display_name})
+	c.wheel.flip()
+	for sat in state.satellites_of(c.id):
+		sat.dock_slot = WheelMath.mirrored_slot(sat.dock_slot, c.wheel.slice_count)
+	events.append({"type": "flip", "target": c.id, "tick": c.wheel.tick_at(0),
+		"text": "%s wheel FLIPPED (mirrored; pointer now on tick %d)." % [c.display_name, c.wheel.tick_at(0)]})
 	return true
 
 
@@ -367,7 +374,6 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 		events.append({"type": "respin_blocked", "target": c.id, "text": "%s resists the RESPIN (resistance %d)." % [c.display_name, c.resistance]})
 		return false
 	var wheel := c.wheel
-	wheel.flipped = false
 	wheel.rotation += 2 * RC.TICKS + rng.randi_range(0, RC.TICKS - 1)
 	if wheel.has_inner_ring():
 		wheel.inner_rotation += 2 * RC.TICKS + rng.randi_range(0, RC.TICKS - 1)

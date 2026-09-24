@@ -69,12 +69,13 @@ func test_flip_is_blocked_entirely_while_resistance_remains() -> void:
 	var r := s.apply(CombatAction.play_card(_hand_index(s, &"t_flip"), &"enemy_0"))
 	assert_false(r.ok(), "flip refused")
 	assert_string_contains(r.error, "FLIP blocked")
-	assert_false(s.state.get_combatant(&"enemy_0").wheel.flipped)
+	var tick_before := s.state.get_combatant(&"enemy_0").wheel.tick_at(0)
 	s.apply(CombatAction.nudge(&"enemy_0", 1))
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 0)
+	assert_eq(s.state.get_combatant(&"enemy_0").wheel.tick_at(0), tick_before, "absorbed nudge left the tick alone")
 	r = s.apply(CombatAction.play_card(_hand_index(s, &"t_flip"), &"enemy_0"))
 	assert_true(r.ok(), r.error)
-	assert_true(s.state.get_combatant(&"enemy_0").wheel.flipped, "flip works once resistance is gone")
+	assert_eq(s.state.get_combatant(&"enemy_0").wheel.tick_at(0), WheelMath.mirror_tick(tick_before), "flip works once resistance is gone")
 
 
 func test_respin_is_blocked_while_resistance_remains() -> void:

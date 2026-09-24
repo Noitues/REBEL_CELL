@@ -15,20 +15,17 @@ func _expected_offset(tick: int) -> int:
 	return off
 
 
-func test_tick_under_pointer_for_every_rotation_pointer_and_flip() -> void:
+func test_tick_under_pointer_for_every_rotation_and_pointer() -> void:
 	for rotation in 30:
 		for pointer in [0, 10, 15, 20]:
-			for flipped in [false, true]:
-				var expected: int = (rotation + pointer + (15 if flipped else 0)) % 30
-				assert_eq(WheelMath.tick_at(rotation, pointer, flipped), expected,
-					"rotation %d pointer %d flipped %s" % [rotation, pointer, flipped])
+			var expected: int = (rotation + pointer) % 30
+			assert_eq(WheelMath.tick_at(rotation, pointer), expected, "rotation %d pointer %d" % [rotation, pointer])
 
 
 func test_tick_under_pointer_handles_negative_and_large_rotations() -> void:
-	assert_eq(WheelMath.tick_at(-1, 0, false), 29)
-	assert_eq(WheelMath.tick_at(-31, 0, false), 29)
-	assert_eq(WheelMath.tick_at(90, 0, false), 0)
-	assert_eq(WheelMath.tick_at(29, 0, true), 14)
+	assert_eq(WheelMath.tick_at(-1, 0), 29)
+	assert_eq(WheelMath.tick_at(-31, 0), 29)
+	assert_eq(WheelMath.tick_at(90, 0), 0)
 
 
 func test_slice_and_offset_table_for_all_30_ticks() -> void:
@@ -37,11 +34,45 @@ func test_slice_and_offset_table_for_all_30_ticks() -> void:
 		assert_eq(WheelMath.offset_at(tick), _expected_offset(tick), "offset at tick %d" % tick)
 
 
-func test_slice_and_offset_table_flipped_for_all_30_ticks() -> void:
+func test_mirror_tick_matches_gdd_2_3_for_all_30_ticks() -> void:
+	for pointer in [0, 10, 15]:
+		for tick in 30:
+			var expected: int = posmod(2 * pointer + 15 - tick, 30)
+			assert_eq(WheelMath.mirror_tick(tick, pointer), expected, "mirror of tick %d about pointer %d" % [tick, pointer])
+			assert_eq(WheelMath.mirror_tick(WheelMath.mirror_tick(tick, pointer), pointer), tick, "mirroring twice is the identity")
+	assert_eq(WheelMath.mirror_tick(0), 15, "the opposite slice arrives at the pointer")
+	assert_eq(WheelMath.mirror_tick(1), 14, "slice order reverses")
+
+
+func test_flipped_wheel_table_for_all_30_rotations() -> void:
+	# State-level table: after a flip, the tick under the pointer is 15 - t, the slice
+	# under the pointer is the one that sat opposite, and the offset is mirrored.
 	for rotation in 30:
-		var tick := WheelMath.tick_at(rotation, 0, true)
-		assert_eq(WheelMath.slice_at(tick), _expected_slice((rotation + 15) % 30), "flipped slice at rotation %d" % rotation)
-		assert_eq(WheelMath.offset_at(tick), _expected_offset((rotation + 15) % 30), "flipped offset at rotation %d" % rotation)
+		var w := WheelState.new()
+		for i in 6:
+			w.slot_slice_ids.append(StringName("s%d" % i))
+			w.slot_firmware_ids.append(&"")
+			w.slice_statuses.append(RC.Status.NONE)
+		w.rotation = rotation
+		var old_tick := w.tick_at(0)
+		var opposite_slice := w.slot_slice_ids[WheelMath.slice_at((old_tick + 15) % 30)]
+		w.flip()
+		assert_eq(w.tick_at(0), WheelMath.mirror_tick(old_tick), "rotation %d: tick under pointer" % rotation)
+		assert_eq(w.slot_slice_ids[w.slice_at(0)], opposite_slice, "rotation %d: opposite slice at the pointer" % rotation)
+		assert_eq(WheelMath.offset_at(w.tick_at(0)), -_expected_offset(old_tick), "rotation %d: offset mirrored" % rotation)
+		assert_eq(w.slot_slice_ids, [&"s0", &"s5", &"s4", &"s3", &"s2", &"s1"], "slice order reversed")
+		w.flip()
+		assert_eq(w.tick_at(0), old_tick, "rotation %d: flipping twice restores the tick" % rotation)
+		assert_eq(w.slot_slice_ids, [&"s0", &"s1", &"s2", &"s3", &"s4", &"s5"], "and the layout")
+
+
+func test_mirrored_slot_pairs() -> void:
+	assert_eq(WheelMath.mirrored_slot(0), 0)
+	assert_eq(WheelMath.mirrored_slot(1), 5)
+	assert_eq(WheelMath.mirrored_slot(2), 4)
+	assert_eq(WheelMath.mirrored_slot(3), 3)
+	assert_eq(WheelMath.mirrored_slot(1, 2), 1)
+	assert_eq(WheelMath.mirrored_slot(1, 3), 2)
 
 
 func test_slice_centres_and_edges() -> void:

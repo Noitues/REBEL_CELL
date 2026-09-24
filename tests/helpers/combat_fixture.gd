@@ -153,7 +153,6 @@ static func rng(seed: int) -> RandomNumberGenerator:
 
 ## Parks pointer `pointer_index` of `c` on slice `slot` at `offset` ticks from its centre.
 static func land(c: CombatantState, slot: int, offset: int = 0, pointer_index: int = 0) -> void:
-	c.wheel.flipped = false
 	c.wheel.rotation = WheelMath.slice_center(slot, c.wheel.slice_count) + offset - c.wheel.pointer_ticks[pointer_index]
 
 

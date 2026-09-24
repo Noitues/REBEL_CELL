@@ -131,17 +131,18 @@ _(Claude Code: add entries here as you make them.)_
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
 
-### From M1 (2026-09-24)
-- **Flip formula.** GDD §2.3 code block (`+15`) vs prose (mirror, `2p + 15 − t`, slice order
-  reverses). Implemented the code block. If mirroring is intended, nudges after a flip
-  should move the pointer the other way; say which.
-- **Breaker slice numbers.** GDD §5.2 gives only the slice types. Placeholders: Crit 12,
-  Atk 6, Def 5.
-- **Pierce vs shield.** "Pierce ignores satellites and block": does it also ignore shield?
-  Currently no.
-- **Corrupted self-damage** is applied straight to HP (not reduced by block/shield). Confirm.
-- **DOSE preview.** The engine can predict the random slice exactly (needed for
-  preview == actual); the HUD hides it. Keep hiding it?
+### From M1 (2026-09-24) — resolved by the designer on 2026-09-24
+- **Flip** is a true mirror, implemented as a rearrangement: slot i's slice (with its
+  status and Firmware) moves to slot −i mod n on both rings, docked satellites move with
+  their slice, and the rotation is remapped (`r' = −r − 15`) so the tick under the top
+  pointer becomes `15 − t` as GDD §2.3 states. Orientation stays clockwise, so nudges and
+  spins need no special case; flipping twice restores the wheel. The `flipped` flag is gone
+  from WheelState and the GDD code block no longer carries a `+15` term.
+- **Breaker slice numbers** Crit 12 / Atk 6 / Def 5 confirmed.
+- **Pierce ignores block and shield, not satellites** (GDD §2.7 and §6.4 updated). The
+  bodyguard rule applies to piercing hits; the drone takes them.
+- **Corrupted self-damage** straight to HP confirmed.
+- **DOSE preview** stays hidden from the player (the engine still predicts it exactly).
 
 ### From M0 (2026-09-24) — resolved by the designer on 2026-09-24
 - Godot version → 4.7 pin, GUT 9.7.1. "More elites" → 25% confirmed. ICE 9 → boss

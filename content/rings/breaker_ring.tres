@@ -16,7 +16,7 @@ output_multiplier = 2.0
 script = ExtResource("2")
 id = &"seg_pierce"
 display_name = "Pierce"
-description = "Ignore block and satellites."
+description = "Ignore block and shield."
 pierce = true
 
 [sub_resource type="Resource" id="seg_blank"]

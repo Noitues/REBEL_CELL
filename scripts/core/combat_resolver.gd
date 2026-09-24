@@ -415,13 +415,14 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 			events.append({"type": "attack", "attacker": owner.id, "target": target.id, "amount": output, "pierce": pierce,
 				"text": "%s %s for %d at %s." % [owner.display_name, _slice_name(slice), output, target.display_name]})
 			for q in target.wheel.pointer_ticks.size():
+				# Bodyguard applies even to Pierce (designer ruling: Pierce ignores block
+				# and shield only).
 				var victim := target
-				if not pierce:
-					var guard := s.satellite_at(target.id, target.wheel.slice_at(q))
-					if guard != null:
-						victim = guard
-						events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
-							"text": "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
+				var guard := s.satellite_at(target.id, target.wheel.slice_at(q))
+				if guard != null:
+					victim = guard
+					events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
+						"text": "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
 				fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
 		RC.SliceType.DEFEND:
 			fx.gain_block(owner, output, events)

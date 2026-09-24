@@ -60,7 +60,8 @@ addons/gut/             GUT 9.x (installed in M0)
 ### 5.1 Wheel math (`wheel_math.gd`, static functions)
 ```
 TICKS = 30
-tick_at(rotation, pointer_tick, flipped) = posmod(rotation + pointer_tick + (15 if flipped else 0), 30)
+tick_at(rotation, pointer_tick) = posmod(rotation + pointer_tick, 30)
+mirror_tick(t, p)             : posmod(2p + 15 − t, 30)   # Flip rearranges slots (i → −i mod n) and sets rotation = −rotation − 15
 slice_at(tick, slice_count)   : c = round(tick / (30/slice_count)); return posmod(c, slice_count)
 offset_at(tick, slice_count)  : tick − (30/slice_count) × round(tick / (30/slice_count))
 tier(offset)                  : 0 → PERFECT, ±1 → GOOD, ±2 → PARTIAL   (6-slice wheels)
@@ -76,7 +77,7 @@ flag, per-combat counters (consecutive Perfects, once-per-combat uses).
 `CombatantState`: HP, block, shield, statuses per slice, `WheelState`, satellites, hub
 breached flag, resistance remaining.
 `WheelState`: rotation (int, unbounded; visuals use it for spin direction), inner rotation,
-flipped, pointer ticks, frozen flag.
+pointer ticks, frozen flag (a Flip rearranges the slot arrays; there is no flipped flag).
 All state classes implement `duplicate_state()` (deep copy) and `to_dict()/from_dict()`.
 
 ### 5.3 Turn state machine

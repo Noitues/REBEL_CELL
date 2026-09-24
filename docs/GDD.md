@@ -82,7 +82,7 @@ PROFILE (permanent): unlocks, ICE records
 
 ### 2.3 Resolution Math (locked)
 ```
-tick_under_pointer = (rotation + pointer_tick + (flipped ? 15 : 0)) mod 30
+tick_under_pointer = (rotation + pointer_tick) mod 30      # a Flip rearranges the wheel, see below
 slice_index        = round(tick / 5) mod 6
 offset             = tick − 5 × round(tick / 5)        # −2 … +2
 ```
@@ -132,7 +132,8 @@ turn) or the **Hub** (active while the Hub is; disabled by Hub Breach).
   ways: enemy attacks hit whatever sits at your pointer.
 - **Satellites** dock onto a slice of their host wheel and rotate with it. A Pointer
   attack aimed at a pointer whose slice has a docked satellite hits the satellite
-  instead (bodyguard). **Pierce** ignores satellites and block.
+  instead (bodyguard). **Pierce** ignores block and shield, not satellites (ruling
+  2026-09-24, see DECISIONS.md).
 - Satellites have their own mini-wheel and intent, resolve after their host, and can be
   nudged individually. Spinning or flipping the host carries docked satellites along.
 - Other target rules: SELF, SWEEP (all enemies), CHOSEN (player picks; a few cards only).
@@ -343,7 +344,7 @@ operatives · Modems: everything, for Cycles · Server Racks: rare Daemons + Sch
 
 ### 6.4 Inner Ring Segments
 Each class starts its standard ring at Rank 1 (Breaker: ×2 / Pierce / —). At Rank 3 the
-player may swap segments from: ×2, Pierce (ignore block + satellites), Corrupt (apply
+player may swap segments from: ×2, Pierce (ignore block + shield), Corrupt (apply
 CORRUPTED to the target's resolved slice), Anchor (on Perfect, skip next respin),
 Accelerator (nudge cards next turn trigger twice), Echo (outer slice triggers again at
 0.5×). Precision tiers are measured on the outer ring only.
