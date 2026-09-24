@@ -20,7 +20,7 @@ func _boss(s: CombatSession) -> CombatantState:
 
 func test_stats_match_a3() -> void:
 	var b := _boss(_session())
-	assert_eq(b.max_hp, 300)
+	assert_eq(b.max_hp, 360, "A.3 lists 300; raised by the M7 balance pass (DECISIONS)")
 	assert_eq(b.wheel.slot_slice_ids, [&"atk_14", &"atk_14", &"def_12", &"dose", &"crit_24", &"miss"])
 	assert_eq(b.wheel.hub_id, &"auto_renew")
 	assert_eq(b.wheel.pointer_ticks, PackedInt32Array([0]))
@@ -44,12 +44,12 @@ func test_auto_renew_heals_10_per_turn_unless_breached() -> void:
 func test_phase_1_at_66_percent_multiplies_to_two_pointers() -> void:
 	var s := _session()
 	var b := _boss(s)
-	b.hp = 199  # 66% of 300 is 198: not yet
+	b.hp = 240  # 66% of 360 is 237.6: not yet
 	CombatFixture.land(b, 5)
 	s.apply(CombatAction.end_turn())
-	assert_eq(_boss(s).phase_index, 0, "still above the threshold (healed to 209)")
+	assert_eq(_boss(s).phase_index, 0, "still above the threshold (healed to 250)")
 	b = _boss(s)
-	b.hp = 190
+	b.hp = 225
 	CombatFixture.land(b, 5)
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 1)
@@ -60,7 +60,7 @@ func test_phase_1_at_66_percent_multiplies_to_two_pointers() -> void:
 func test_phase_2_at_33_percent_orbits_and_spawns_two_drones() -> void:
 	var s := _session()
 	var b := _boss(s)
-	b.hp = 90
+	b.hp = 100  # below 33% of 360
 	CombatFixture.land(b, 5)
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "boss_phase").size(), 2, "both phases entered at once")

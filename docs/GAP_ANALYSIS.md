@@ -90,9 +90,9 @@ P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = po
 ### P1
 5. ~~**Classes**: Ghost, Rigger, Botnet (wheels, Hub Cores + Mk2, rings, exclusive cards,
    station bonuses, barks), then four alternatives.~~ Done in M6.
-6. **Pools**: shared cards to ~60, Firmware to ~18, Daemons to ~24, assets to ~8, shop
-   slices to ~12.
-7. **Solace depth**: events to ~40.
+6. ~~**Pools**: shared cards to ~60, Firmware to ~18, Daemons to ~24, assets to ~8, shop
+   slices to ~12.~~ Done in M7.
+7. ~~**Solace depth**: events to ~40.~~ Done in M7.
 8. **Meridian Freight Systems**, **Halcyon Civic**, **Orbital Commons**: grid, enemy
    family, mini-boss, boss with phases, Exploits, threats, raids, story paths, events,
    voice sets, music context, corporation colour.

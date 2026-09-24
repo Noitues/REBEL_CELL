@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+; Shared card (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 8
+target = 2
+ring_scope = 2
+
+[resource]
+script = ExtResource("main_script")
+id = &"reroll"
+display_name = "Reroll"
+description = "Respin a wheel to a random tick."
+rarity = 0
+ram_cost = 2
+cycle_cost = 55
+wheel_target = 2
+effects = Array[ExtResource("e1")]([SubResource("fx0")])

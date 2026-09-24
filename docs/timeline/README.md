@@ -13,3 +13,4 @@ Movie Maker (`godot --path . --resolution 1280x720 --write-movie <file>.png --fi
 | 2026-09-24 | 04_menus | Title screen, options (Controls section) and the tutorial overlay after vertical batch 4. |
 | 2026-09-24 | 03_narrative | HQ with the pirate-radio DJ line and the Codex button after vertical batch 3 (subtitles, DISPATCH, barks, story paths). |
 | 2026-09-24 | 06_m6 | HQ roster with Ghost and Rigger operatives and the class unlocks; a Botnet fight with Deploy slices (M6 class roster). |
+| 2026-09-24 | 07_m7 | Modem stock drawn from the M7 pools (60 shared cards, 18 Firmware, 24 Daemons, 12 shop slices). |

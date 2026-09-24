@@ -16,6 +16,14 @@ extends RefCounted
 const MINUTES_PER_RUN := 15.0
 const MINUTES_PER_RAID := 5.0
 const MAX_TURNS_PER_FIGHT := 60
+## Card offers scoring at or below this are skipped (see _card_score).
+const CARD_SCORE_MIN := 1.5
+## The bot scrubs Heat at HQ while at or above this, if it keeps this many recruits' worth.
+const HEAT_SCRUB_FLOOR := 40
+const SCHEMATIC_RESERVE_ROOKIES := 2
+## Measured value of rule-breaking Daemons (custom handlers) for the bot's drafting.
+const DAEMON_SCORES := {&"kernel_sync": 4.5, &"zero_day": 3.8, &"clean_signal": 3.5, &"cold_exit": 3.5,
+	&"scrubber": 3.5, &"botnet_seed": 3.0, &"twin_pointer": 0.0, &"stolen_intent": 0.5, &"linked_bus": 0.5}
 const MAX_STEPS_PER_RUN := 400
 
 var resolver: CombatResolver
@@ -55,6 +63,7 @@ func run_campaign(campaign_seed: int, ice: int = 0, max_runs: int = 60) -> Dicti
 		var s := _start(c, op, site, seeds.randi())
 		if site.objective == RC.SiteObjective.BOSS:
 			stats["heat_at_breach"] = c.heat
+			stats["log"].append("  boss loadout: R%d HP %d deck %s | daemons %s | firmware %s" % [op.rank, op.max_hp, ",".join(op.deck), ",".join(op.daemon_ids), ",".join(op.slot_firmware_ids)])
 		_play_run(s, stats)
 		stats["runs"] = int(stats["runs"]) + 1
 		if s.run.outcome == RunState.Outcome.COMPLETED:
@@ -110,8 +119,14 @@ func _maintain(c: CampaignState) -> void:
 		CampaignRules.repair_home(c, config)
 	while c.living_operatives().size() < 2 and c.schematics >= config.rookie_cost:
 		CampaignRules.recruit(c, config, class_data)
-	if c.heat >= 70 and c.schematics >= CampaignRules.heat_purchase_price(c, config):
+	# Spend surplus Schematics on Heat like a player would, keeping a recruit reserve.
+	var guard := 0
+	while c.heat >= HEAT_SCRUB_FLOOR and c.schematics - CampaignRules.heat_purchase_price(c, config) >= SCHEMATIC_RESERVE_ROOKIES * config.rookie_cost and guard < 20:
+		guard += 1
+		var before := c.heat
 		CampaignRules.buy_heat_reduction(c, config)
+		if c.heat >= before:
+			break
 	var claimed := c.grid.claimed_ids().size() - 1
 	var relay := lookup.get_content(&"firewall_relay") as NetworkNodeData
 	if claimed < 1 and relay != null and c.schematics >= relay.install_cost + config.rookie_cost:
@@ -180,10 +195,18 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 			RunState.Phase.COMBAT:
 				stats["fights"] = int(stats["fights"]) + 1
 				var turns := 0
+				var foes_seen := ""
+				var hp_in := s.combat.state.player.hp
 				while s.in_combat() and turns < MAX_TURNS_PER_FIGHT:
 					turns += 1
+					var names := PackedStringArray()
+					for e in s.combat.state.living_enemies(false):
+						names.append(String(e.source_id))
+					foes_seen = ", ".join(names)
 					CombatBot.play_turn(s.combat, s.combat_action)
 				stats["turns"] = int(stats["turns"]) + turns
+				if s.run.outcome == RunState.Outcome.DIED:
+					stats["log"].append("  died vs %s on turn %d (T%d, entered at %d HP)" % [foes_seen, turns, s.run.tier, hp_in])
 				if s.in_combat():
 					stats["stuck"] = int(stats["stuck"]) + 1
 					var foes := PackedStringArray()
@@ -235,24 +258,125 @@ func _take_reward(s: NetrunSession) -> void:
 	var offer := s.current_reward()
 	match String(offer["kind"]):
 		"card":
+			# A player picks from the offer: the bot takes the first card it would actually
+			# play (it never plays random-outcome cards), else skips.
 			if s.run.operative.deck.size() < 16:
-				s.choose_reward(0)
-			else:
-				s.skip_reward()
-		"firmware":
-			var fw := lookup.get_content(StringName(String(offer["options"][0]))) as FirmwareData
-			if fw != null and _costs_heat(fw):
-				s.skip_reward()
-				return
-			for slot in range(1, s.run.operative.slot_slice_ids.size()):
-				if s.run.operative.slot_firmware_ids[slot] != &"":
-					continue
-				var ev := s.choose_reward(0, slot)
-				if ev.is_empty() or ev[ev.size() - 1].get("type", "") != "refused":
+				var options: Array = offer["options"]
+				var best := -1
+				var best_score := CARD_SCORE_MIN
+				for i in options.size():
+					var score := _card_score(lookup.get_content(StringName(String(options[i]))) as CardData)
+					if score > best_score:
+						best = i
+						best_score = score
+				if best >= 0:
+					s.choose_reward(best)
 					return
 			s.skip_reward()
+		"firmware":
+			# Rank the offer like a player: damage multipliers first, never Heat-costing.
+			var options: Array = offer["options"]
+			var order: Array = range(options.size())
+			order.sort_custom(func(a: int, b: int) -> bool:
+				var sa := _firmware_score(lookup.get_content(StringName(String(options[a]))) as FirmwareData)
+				var sb := _firmware_score(lookup.get_content(StringName(String(options[b]))) as FirmwareData)
+				return sa > sb or (sa == sb and a < b))
+			for i in order:
+				var fw := lookup.get_content(StringName(String(options[i]))) as FirmwareData
+				if fw == null or _costs_heat(fw):
+					continue
+				for slot in range(1, s.run.operative.slot_slice_ids.size()):
+					if s.run.operative.slot_firmware_ids[slot] != &"":
+						continue
+					var ev := s.choose_reward(i, slot)
+					if ev.is_empty() or ev[ev.size() - 1].get("type", "") != "refused":
+						return
+			s.skip_reward()
+		"daemon":
+			var options: Array = offer["options"]
+			var best := 0
+			var best_score := -INF
+			for i in options.size():
+				var score := _daemon_score(lookup.get_content(StringName(String(options[i]))) as DaemonData)
+				if score > best_score:
+					best = i
+					best_score = score
+			s.choose_reward(best)
 		_:
 			s.choose_reward(0)
+
+
+## Bot preference for a Daemon offer. Rule-breaking Daemons (custom handlers) cannot be
+## read from data, so their measured value against the Solace boss is listed in
+## DAEMON_SCORES; data Daemons score by effect: healing 4, Heat reduction 3.5, block or
+## RAM 2, campaign gains 1.5, damage 1.
+static func _daemon_score(d: DaemonData) -> float:
+	if d == null:
+		return -1.0
+	if DAEMON_SCORES.has(d.id):
+		return float(DAEMON_SCORES[d.id])
+	var score := 0.0
+	for te in d.triggered_effects:
+		if te == null:
+			continue
+		for e in te.effects:
+			if e == null:
+				continue
+			match e.type:
+				RC.EffectType.HEAL:
+					score = maxf(score, 4.0)
+				RC.EffectType.MODIFY_HEAT:
+					score = maxf(score, 3.5 if e.amount < 0 else -1.0)
+				RC.EffectType.GAIN_BLOCK, RC.EffectType.GAIN_SHIELD, RC.EffectType.GAIN_RAM:
+					score = maxf(score, 2.0)
+				RC.EffectType.GAIN_CYCLES, RC.EffectType.GAIN_SCHEMATICS:
+					score = maxf(score, 1.5)
+				_:
+					score = maxf(score, 1.0)
+	return score
+
+
+## Bot preference for a card offer, measured against the Solace boss (M7 ranking run,
+## DECISIONS 2026-09-24): anti-corruption (Cleanse, Encrypt, Overclock your own slice) 4,
+## big spins 3, other wheel moves and Hub Breach 2, defence 1; self-damage and random
+## cards never.
+static func _card_score(card: CardData) -> float:
+	if card == null or CombatBot._is_random(card):
+		return -1.0
+	var score := 0.0
+	for e in card.effects:
+		if e == null:
+			continue
+		if e.type == RC.EffectType.DEAL_DAMAGE and e.target == RC.EffectTarget.SELF:
+			return -1.0
+		match e.type:
+			RC.EffectType.CLEANSE:
+				score = maxf(score, 4.0)
+			RC.EffectType.APPLY_STATUS:
+				var own := e.target == RC.EffectTarget.SELF or e.target == RC.EffectTarget.OWN_WHEEL
+				if own and e.status in [RC.Status.ENCRYPTED, RC.Status.OVERCLOCKED]:
+					score = maxf(score, 4.0)
+				else:
+					score = maxf(score, 1.5)
+			RC.EffectType.SPIN:
+				score = maxf(score, 3.0 if absi(e.amount) >= 6 else 2.0)
+			RC.EffectType.NUDGE, RC.EffectType.SNAP_TO_CENTER, RC.EffectType.FLIP, RC.EffectType.HUB_BREACH:
+				score = maxf(score, 2.0)
+			_:
+				score = maxf(score, 1.0)
+	return score
+
+
+## Bot preference for a Firmware offer: an output multiplier on attacks is worth most,
+## then any output multiplier, then triggered extras.
+static func _firmware_score(fw: FirmwareData) -> float:
+	if fw == null:
+		return -1.0
+	var offensive := fw.allowed_slice_types.is_empty() or RC.SliceType.ATTACK in fw.allowed_slice_types or RC.SliceType.CRIT in fw.allowed_slice_types
+	var score := (fw.output_multiplier - 1.0) * (10.0 if offensive else 3.0)
+	if not fw.triggered_effects.is_empty():
+		score += 0.5
+	return score
 
 
 ## Firmware whose triggers add Heat (Burner): the bot weighs it as a player would and passes.

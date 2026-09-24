@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+; Shared card (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 1
+target = 0
+amount = 6
+
+[resource]
+script = ExtResource("main_script")
+id = &"firewall"
+display_name = "Firewall"
+description = "Gain 6 block."
+rarity = 0
+ram_cost = 1
+cycle_cost = 50
+wheel_target = 0
+effects = Array[ExtResource("e1")]([SubResource("fx0")])

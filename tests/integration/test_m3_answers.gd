@@ -85,7 +85,7 @@ func test_final_rack_is_a_mini_boss_scaled_by_tier() -> void:
 	assert_true(s.in_combat())
 	var enemy := s.combat.state.get_combatant(&"enemy_0")
 	assert_eq(enemy.source_id, &"account_manager")
-	assert_eq(enemy.max_hp, 120, "tier 1: unscaled")
+	assert_eq(enemy.max_hp, 150, "tier 1: unscaled (120 +25% in the M7 balance pass)")
 	assert_eq(enemy.resistance, 1)
 	# Tier 2 run: the mini-boss (and everything else) scales x1.6.
 	var c := RunManager.campaign
@@ -110,7 +110,7 @@ func test_the_final_boss_is_tier_scaled_too() -> void:
 	assert_eq(s.enemy_scale(), pow(1.6, 3))
 	s.enter_node(s.available_nodes()[0])
 	var boss := s.combat.state.get_combatant(&"enemy_0")
-	assert_eq(boss.max_hp, roundi(300 * pow(1.6, 3)), "1229 HP at T4")
+	assert_eq(boss.max_hp, roundi(360 * pow(1.6, 3)), "1475 HP at T4")
 	assert_almost_eq(boss.output_scale, pow(_cfg.enemy_damage_scale_per_tier, 3), 0.0001, "damage scales with its own factor")
 
 

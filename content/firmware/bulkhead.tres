@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="FirmwareData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/firmware_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+
+; Firmware (M7 pool, decision 2026-09-24).
+
+[resource]
+script = ExtResource("main_script")
+id = &"bulkhead"
+display_name = "Bulkhead"
+description = "DEF and SHIELD slices: output +50%."
+rarity = 0
+cycle_cost = 90
+allowed_slice_types = Array[int]([2, 4])
+output_multiplier = 1.5

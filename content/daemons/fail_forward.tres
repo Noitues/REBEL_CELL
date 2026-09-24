@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e2"]
+
+; Daemon (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 12
+target = 0
+amount = 2
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("e2")
+trigger = 7
+min_tier = 0
+effects = Array[ExtResource("e1")]([SubResource("fx0")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"fail_forward"
+display_name = "Fail Forward"
+description = "The Miss slice restores 2 RAM."
+rarity = 1
+cycle_cost = 170
+triggered_effects = Array[ExtResource("e2")]([SubResource("te")])

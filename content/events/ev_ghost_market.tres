@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/daemons/salvager.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/firmware/recycler.tres" id="e3"]
+
+; Terminal event (M7 Solace depth, decision 2026-09-24).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Buy a daemon (40 Cycles: Salvager)"
+result_text = "It pays for itself. Eventually."
+cycle_cost = 40
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Buy a blueprint (30 Cycles: Firmware Recycler)"
+result_text = "Your Miss slice is less of a waste now."
+cycle_cost = 30
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "Nothing ventured. Nothing flagged."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_ghost_market"
+title = "Ghost Market"
+speaker = 0
+text = "A pop-up market in a dead subnet. The prices are high and the vendors are anonymous."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])

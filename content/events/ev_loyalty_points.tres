@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/daemons/field_medic.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e3"]
+
+; Terminal event (M7 Solace depth, decision 2026-09-24).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Spend them (Daemon: Field Medic)"
+result_text = "The points buy a care routine nobody should have."
+cycle_cost = 20
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e3")
+type = 22
+target = 6
+amount = 20
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Cash them out (+20 Cycles)"
+result_text = "The exchange rate is terrible. The Cycles are real."
+effects = Array[ExtResource("e3")]([SubResource("fx1_0")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "Nothing ventured. Nothing flagged."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_loyalty_points"
+title = "Loyalty Points"
+speaker = 0
+text = "A glitched loyalty account shows ten million Solace Care Points. They expire at midnight."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"solace"

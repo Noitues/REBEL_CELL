@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+; Shared card (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 9
+target = 2
+ring_scope = 2
+
+[sub_resource type="Resource" id="fx1"]
+script = ExtResource("e1")
+type = 1
+target = 0
+amount = 3
+
+[resource]
+script = ExtResource("main_script")
+id = &"cold_snap"
+display_name = "Cold Snap"
+description = "The target skips its next respin and you gain 3 block."
+rarity = 1
+ram_cost = 3
+cycle_cost = 70
+wheel_target = 1
+effects = Array[ExtResource("e1")]([SubResource("fx0"), SubResource("fx1")])

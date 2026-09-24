@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Resource" path="res://content/daemons/warm_boot.tres" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e3"]
+
+; Terminal event (M7 Solace depth, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e3")
+label = "Tap it (Daemon: Warm Boot)"
+result_text = "A little more power every time you jack in."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+reward = ExtResource("e2")
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e3")
+label = "Smash it (-1 Heat)"
+result_text = "Telemetry for six blocks goes dark."
+effects = Array[ExtResource("e1")]([SubResource("fx1_0")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e3")
+label = "Walk on"
+result_text = "Nothing ventured. Nothing flagged."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_signal_booster"
+title = "Signal Booster"
+speaker = 0
+text = "A rooftop booster relays Solace telemetry. It could relay something else."
+choices = Array[ExtResource("e3")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"solace"

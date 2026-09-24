@@ -1,5 +1,10 @@
-[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=44 format=3]
+[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=49 format=3]
 
+[ext_resource type="Resource" path="res://content/slices/atk_10.tres" id="sl_atk_10"]
+[ext_resource type="Resource" path="res://content/slices/crit_16.tres" id="sl_crit_16"]
+[ext_resource type="Resource" path="res://content/slices/heal_6.tres" id="sl_heal_6"]
+[ext_resource type="Resource" path="res://content/slices/shield_8.tres" id="sl_shield_8"]
+[ext_resource type="Resource" path="res://content/slices/evade_2.tres" id="sl_evade_2"]
 [ext_resource type="Script" path="res://scripts/data/campaign_config_data.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
 [ext_resource type="Script" path="res://scripts/data/rule_modifier_data.gd" id="3_rm"]
@@ -380,7 +385,7 @@ rack_schematics_by_tier = PackedInt32Array(10, 17, 29, 50)
 raid_schematics_by_tier = PackedInt32Array(8, 12, 18, 25)
 node_repair_ratio = 0.5
 enemy_scale_per_tier = 1.6
-enemy_damage_scale_per_tier = 1.2
+enemy_damage_scale_per_tier = 1.3
 
 
 reward_scale_per_tier = 1.7
@@ -394,7 +399,7 @@ card_removal_price = 50
 card_removal_increment = 25
 slice_overwrite_price = 100
 miss_slice_overwrite_price = 150
-shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_atk_6"), ExtResource("sl_atk_8"), ExtResource("sl_crit_12"), ExtResource("sl_def_5"), ExtResource("sl_def_8"), ExtResource("sl_shield_5"), ExtResource("sl_evade_1")])
+shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_atk_6"), ExtResource("sl_atk_8"), ExtResource("sl_crit_12"), ExtResource("sl_def_5"), ExtResource("sl_def_8"), ExtResource("sl_shield_5"), ExtResource("sl_evade_1"), ExtResource("sl_atk_10"), ExtResource("sl_crit_16"), ExtResource("sl_heal_6"), ExtResource("sl_shield_8"), ExtResource("sl_evade_2")])
 shop_slice_choices = 3
 rookie_cost = 15
 node_base_cost = 20

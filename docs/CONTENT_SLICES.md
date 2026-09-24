@@ -49,8 +49,8 @@ the short list.
 
 | Content | Source | Notes |
 |---|---|---|
-| More shop slices (e.g. Evade 2, Shield 8, Crit 16, Heal for classes that can) | 11.2 | catalogue in `campaign_config.tres` `shop_slices`; add SliceData + list entry |
-| Cards beyond A.2 | 13 | shared pool + class exclusives |
+| More shop slices (e.g. Evade 2, Shield 8, Crit 16, Heal for classes that can) | 11.2 | done (M7): 12 in the catalogue |
+| Cards beyond A.2 | 13 | done (M7): 60 shared + class exclusives; Firmware 18, Daemons 24, assets 8, events 40 |
 | Ghost, Rigger, Botnet classes (+ class alternatives) | 5.2, 13 | done (M6): 3 classes + Wrecker, Phantom, Overclocker, Hivemind; placeholder numbers tuned by simulation |
 | More Terminal events, real writing, voices | 8.6 | 5 placeholders exist |
 | Full ICE 1–20 wording; levels 10/15/20 | 11.9 | open question |

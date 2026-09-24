@@ -30,6 +30,69 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M7 Pools and Solace depth (GAP_ANALYSIS P1 6–7)
+- **Only existing effect types.** Every new card, Firmware, Daemon, asset and event is data
+  on the M1–M6 effect set; no new mechanics. Numbers are placeholders.
+- **Shared cards 22 → 60** (38 new): rotation (Whirl, Backspin, Flick, Spin Cycle, Gear
+  Mesh, Inner Drift, Ratchet, Tailspin), precision (Tap Tap, Feather Touch, Inner Snap,
+  Lock On, Deep Calibrate, Nudge Driver), enemy control (Deep Strip, Short Circuit, Double
+  Jam, Cold Snap, Corrupt Packet, Malware Drop, Leech Worm, Flip Switch, Reroll), defence
+  (Firewall, Bulwark, Shield Wall, Duck, Patch Up, Sanitize, Armor Plate, Stim Patch) and
+  utility (Hot Patch, Power Tap, Data Surge, Scrap Code, Static Shock, Overload, Arc
+  Flash). Direct-damage cards stay small (the wheel is the damage engine, GDD pillar).
+- **Firmware 6 → 18**: Overvolt, Bulkhead, Siphon, Static Coat, Barbed Wire, Tracer,
+  Coolant Loop, Skimmer, Counterstrike, Nanite Mesh, Power Cell, Recycler. Heat and Cycle
+  Firmware have per-combat limits.
+- **Daemons 10 → 24**: Warm Boot, Shield Cache, Idle Armor, Adrenal Loop, Fail Forward,
+  Feedback Loop, Tuning Fork, Static Field, Cascade, Salvager, Field Medic, Bounty Code,
+  Rack Skimmer, Log Wiper.
+- **Run-level Daemon hooks apply their data effects.** `NetrunSession._apply_hook_effects`
+  applies Heat, Cycles, banked Schematics and healing for ON_COMBAT_END (now fired after a
+  won fight), ON_SERVER_RACK_CAPTURE and ON_NETRUN_COMPLETE hooks. Before, only custom
+  handlers and netrun-complete Heat worked.
+- **Defense assets 3 → 8**: Railgun, Flak Array, Sentry, Tar Pit, Honeypot, using the
+  existing targeting modes (highest damage, lowest integrity) and range 0 (own node).
+- **Shop slices 7 → 12**: Atk 10, Crit 16, Heal 6, and new Shield 8 and Evade 2 (GDD 11.2's
+  examples). Heal 6 gives the Nanite Mesh Firmware a slice to live on.
+- **Events 19 → 40**: 21 written events. Nineteen are Solace-only; two (Rival Crew, Ghost
+  Market) are corporation-neutral so later corporations share them. Every choice resolves
+  (test), rewards include the new cards, Firmware, Daemons and assets.
+- **Balance** after the pools (8 seeds, `tools/simulate_campaign.gd`):
+
+  | Class | ICE | Won | Mean runs | Deaths |
+  |---|---|---|---|---|
+  | Breaker | 0 | 8/8 | 14.8 | 1.8 |
+  | Breaker | 5 | 7/8 | 26.4 | 3.5 |
+  | Wrecker | 0 | 8/8 | 14.6 | 1.8 |
+  | Ghost | 0 | 8/8 | 22.6 | 1.6 |
+  | Phantom | 0 | 8/8 | 23.6 | 1.5 |
+  | Rigger | 0 | 8/8 | 20.3 | 1.9 |
+  | Overclocker | 0 | 8/8 | 20.3 | 1.9 |
+  | Botnet | 0 | 8/8 | 20.6 | 3.0 |
+  | Hivemind | 0 | 7/8 | 18.0 | 0.8 |
+
+- **Why the bot changed.** With 3x the pools the bot's "take option 0" policy stopped
+  finding what beats Solace, and its campaigns fell to 2-5 wins in 8. A ranking run
+  (every Daemon and card against the T4 boss, 12 seeds each) showed what matters:
+  anti-corruption cards (Sanitize 9/12, Hot Patch 8, Cleanse and Armor Plate 7; the boss's
+  Dose corrupts your wheel), Adrenal Loop 11/12, Kernel Sync 9, Zero Day 7, and the Heat
+  sinks (Clean Signal alone removed 116 Heat per M6 campaign). `CampaignSimulator` now
+  drafts cards, Firmware and Daemons by those measured values, skips self-damage and
+  random cards, and spends surplus Schematics on Heat scrubs (keeping two recruits in
+  reserve). It logs deaths and stalls with the enemy, and the boss loadout.
+- **Enemies strengthened** ("when in doubt, up elite and boss strength"): the smarter bot
+  finished campaigns in 12-16 runs. Elites +25% HP (Claims Adjuster 90 -> 112, Recall Unit
+  85 -> 106, Account Manager 120 -> 150), Renewal Engine 300 -> 360 HP, and enemy damage per
+  tier 1.2 -> 1.3. ICE 5 now matches GDD 11.8 pacing (26 runs vs 24); ICE 0 is the easier
+  entry. GDD A.3 is annotated.
+- **Ghost ring back to Pierce / x2 / Echo.** Against the boss Pierce did not help (the stall
+  is damage against the heal, not block): Pierce / Echo / blank won 4/12 boss fights,
+  Pierce / x2 / Echo 9/12.
+- **Hive Core keeps the half retrigger** (like the Swarm Core) with 4 drones (Mk2 5) that
+  do not persist; without it the Hivemind stalled against the boss.
+- **Feedback Loop fixed**: it hit "the target", which is you when the card targets your own
+  wheel; it now hits every enemy.
+
 ### 2026-09-24 — M6 Class roster: Ghost, Rigger, Botnet and four alternatives (GAP_ANALYSIS P0 1–2, P1 5)
 - **Recruitment by class** (P0 1): `CampaignRules.available_classes` / `class_available`
   read the Profile unlocks; the Breaker is always available. HQ shows one Recruit button
@@ -640,6 +703,16 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
+
+### From M7, pools and Solace depth (2026-09-24) — decided by the implementer, confirm in playtest
+- **Solace's key counter is anti-corruption** (Cleanse, Encrypt, Sanitize, Hot Patch). In a
+  60-card pool it is offered less often; consider a guaranteed Cleanse-type card in the
+  first Modem of a Solace campaign if human players struggle with the boss.
+- **Boss stalls**: lower-damage builds still reach the 60-turn cap against the Renewal
+  Engine now and then (the bot rarely times Hub Breach). A human can respin or breach; a
+  hard turn limit or an enrage is an option if playtests show stalls.
+- **Enemy numbers raised** (elites +25% HP, boss 360 HP, damage 1.3 per tier) because the
+  smarter bot won too quickly. GDD A.3 still shows the original values with an annotation.
 
 ### From M6, the class roster (2026-09-24) — decided by the implementer, confirm in playtest
 - **Perfect hooks now carry burst for every class** (Ghost resolves twice; Rigger and

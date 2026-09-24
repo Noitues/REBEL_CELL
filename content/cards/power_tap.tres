@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+; Shared card (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 12
+target = 0
+amount = 2
+
+[sub_resource type="Resource" id="fx1"]
+script = ExtResource("e1")
+type = 0
+target = 0
+amount = 3
+
+[resource]
+script = ExtResource("main_script")
+id = &"power_tap"
+display_name = "Power Tap"
+description = "Gain 2 RAM and take 3 damage."
+rarity = 0
+ram_cost = 0
+cycle_cost = 55
+wheel_target = 0
+effects = Array[ExtResource("e1")]([SubResource("fx0"), SubResource("fx1")])

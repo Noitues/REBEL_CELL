@@ -3,10 +3,10 @@
 [ext_resource type="Script" path="res://scripts/data/inner_ring_data.gd" id="main_script"]
 [ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="e1"]
 [ext_resource type="Resource" path="res://content/rings/segments/seg_pierce.tres" id="e2"]
-[ext_resource type="Resource" path="res://content/rings/segments/seg_echo.tres" id="e3"]
-[ext_resource type="Resource" path="res://content/rings/segments/seg_blank.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_x2.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_echo.tres" id="e4"]
 
-; Ghost Rank 1 Inner Ring: Pierce / Echo / blank (decision 2026-09-24).
+; Ghost Rank 1 Inner Ring: Pierce / x2 / Echo (decision 2026-09-24).
 
 [resource]
 script = ExtResource("main_script")

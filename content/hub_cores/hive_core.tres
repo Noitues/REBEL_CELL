@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="HubCoreData" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
 [ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
@@ -6,6 +6,12 @@
 [ext_resource type="Resource" path="res://content/enemies/botnet_drone.tres" id="e3"]
 
 ; Hive Core: Botnet alternative (decision 2026-09-24). Drones do not persist.
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("e2")
+type = 19
+target = 0
+multiplier = 0.5
 
 [sub_resource type="Resource" id="fx_drone"]
 script = ExtResource("e2")
@@ -17,13 +23,13 @@ amount = 1
 script = ExtResource("e1")
 trigger = 6
 min_tier = 2
-effects = Array[ExtResource("e2")]([SubResource("fx_drone")])
+effects = Array[ExtResource("e2")]([SubResource("fx_retrigger"), SubResource("fx_drone")])
 
 [resource]
 script = ExtResource("main_script")
 id = &"hive_core"
 display_name = "Hive Core"
-description = "Up to 4 drones for this fight only. Perfect: dock a drone."
+description = "Up to 4 drones for this fight only. Perfect: dock a drone and the slice resolves again at half."
 perfect_hook = SubResource("hook")
 max_drones = 4
 drone = ExtResource("e3")

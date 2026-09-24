@@ -143,3 +143,13 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [x] A seeded bot campaign wins at ICE 0 with every class (`tools/simulate_campaign.gd
       -- 8 0 class=<id>`).
 - [x] Tests, schema smoke test and content validation green.
+
+## M7 — Pools and Solace Depth (added 2026-09-24, horizontal loop)
+
+**Acceptance**
+- [x] Shared cards 60, Firmware 18, Daemons 24, defense assets 8, shop slices 12.
+- [x] Solace netruns can roll 40 Terminal events; every choice resolves.
+- [x] Every shared card plays with preview == result; new Firmware, Daemon hooks and
+      assets are tested.
+- [x] Seeded bot campaigns still win at ICE 0 and ICE 5.
+- [x] Tests, schema smoke test and content validation green.

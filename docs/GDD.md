@@ -633,6 +633,10 @@ Breaker Rank 1 ring: ×2 / Pierce / —.
 
 Dose = AFFLICT slice applying CORRUPTED to a random non-Miss player slice.
 
+*M7 balance ruling (2026-09-24, DECISIONS.md):* elites +25% HP (Claims Adjuster 112, Recall
+Unit 106, Account Manager 150) and the Renewal Engine 360 HP; enemy damage scales 1.3 per
+tier. The table keeps the original values for reference.
+
 ### A.4 Slice Firmware & Daemons
 Firmware: Patch+, Hardened, Burner, Leech, Mirror, Shunt.
 Daemons: Clean Signal, Cold Exit, Scrubber, Fault Tolerance, Kernel Sync, Zero Day.

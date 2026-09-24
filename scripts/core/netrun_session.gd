@@ -319,6 +319,8 @@ func _finish_combat() -> void:
 		return
 	run.operative.hp = cs.player.hp
 	run.miss_resolved = run.miss_resolved or cs.miss_resolved
+	# Daemons with ON_COMBAT_END effects (salvage, field repairs) after a won fight.
+	_apply_hook_effects(_run_daemon_hooks(RC.Trigger.ON_COMBAT_END))
 	# Botnet (GDD 5.2): surviving drones ride along to the next fight of the run.
 	run.drones.clear()
 	var hub := lookup.get_content(cs.player.wheel.hub_id) as HubCoreData if cs.player.wheel.hub_id != &"" else null
@@ -381,6 +383,7 @@ func _capture_rack() -> void:
 		if e.get("type", "") == "heat_override":
 			heat = int(e["amount"])
 	_add_heat(heat, "Server Rack")
+	_apply_hook_effects(hooks)
 
 
 func _offer(kind: StringName, pool: Array, count: int, rng: RandomNumberGenerator) -> void:
@@ -878,6 +881,24 @@ func _apply_campaign_effects(events: Array[Dictionary]) -> void:
 					run.cycles = maxi(0, run.cycles + int(e["amount"]))
 				RC.EffectType.GAIN_SCHEMATICS:
 					run.banked_schematics += int(e["amount"])
+
+
+## Applies data-driven Daemon hook results (from _run_daemon_hooks): Heat, Cycles,
+## banked Schematics and healing the operative.
+func _apply_hook_effects(hooks: Array[Dictionary]) -> void:
+	for e in hooks:
+		if e.get("type", "") != "campaign_effect":
+			continue
+		var amount := int(e.get("amount", 0))
+		match int(e.get("effect", -1)):
+			RC.EffectType.MODIFY_HEAT:
+				_add_heat(amount, String(e.get("source_id", "daemon")))
+			RC.EffectType.GAIN_CYCLES:
+				run.cycles = maxi(0, run.cycles + amount)
+			RC.EffectType.GAIN_SCHEMATICS:
+				run.banked_schematics += amount
+			RC.EffectType.HEAL:
+				run.operative.hp = mini(run.operative.max_hp, run.operative.hp + amount)
 
 
 ## Runs the operative's Daemons for a run-level trigger: data-driven effects with that

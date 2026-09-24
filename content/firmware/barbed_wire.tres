@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="FirmwareData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/firmware_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e2"]
+
+; Firmware (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e2")
+type = 0
+target = 3
+amount = 2
+
+[sub_resource type="Resource" id="te0"]
+script = ExtResource("e1")
+trigger = 5
+min_tier = 0
+effects = Array[ExtResource("e2")]([SubResource("fx0_0")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"barbed_wire"
+display_name = "Barbed Wire"
+description = "DEF slice also deals 2 damage to the pointer target."
+rarity = 0
+cycle_cost = 100
+allowed_slice_types = Array[int]([2])
+triggered_effects = Array[ExtResource("e1")]([SubResource("te0")])

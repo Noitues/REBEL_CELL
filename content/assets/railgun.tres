@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="DefenseAssetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="main_script"]
+
+; Defense asset (M7 pool, decision 2026-09-24).
+
+[resource]
+script = ExtResource("main_script")
+asset_type = 0
+id = &"railgun"
+display_name = "Railgun"
+description = "8 damage, range 2, targets the hardest-hitting threat."
+rarity = 2
+integrity = 8
+damage = 8
+range_hops = 2
+shots_per_step = 1
+targeting = 2
+delay_steps = 0
+decoy_pull = 0

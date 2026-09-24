@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/cards/lock_on.tres" id="e3"]
+
+; Terminal event (M7 Solace depth, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 14
+target = 0
+amount = 15
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Ask for help (+15 HP)"
+result_text = "She patches you up and tells you which cameras are fake."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Ask for her badge (Card: Lock On)"
+result_text = "She hands it over. 'Make it count.'"
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "Nothing ventured. Nothing flagged."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_night_shift_nurse"
+title = "Night Shift"
+speaker = 1
+text = "A Solace nurse on a smoke break recognises the Cell's tag and says nothing for a long time."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"solace"

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/calibrate_handler.gd" id="e2"]
+
+; Shared card (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 24
+target = 0
+amount = 3
+custom_handler = ExtResource("e2")
+
+[resource]
+script = ExtResource("main_script")
+id = &"deep_calibrate"
+display_name = "Deep Calibrate"
+description = "Your next 3 nudges this turn are free. Exhaust."
+rarity = 1
+ram_cost = 1
+cycle_cost = 60
+wheel_target = 0
+effects = Array[ExtResource("e1")]([SubResource("fx0")])
+exhaust = true

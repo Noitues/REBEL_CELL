@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="DefenseAssetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="main_script"]
+
+; Defense asset (M7 pool, decision 2026-09-24).
+
+[resource]
+script = ExtResource("main_script")
+asset_type = 0
+id = &"flak_array"
+display_name = "Flak Array"
+description = "2 damage three times a step, range 1, targets the weakest threat."
+rarity = 1
+integrity = 10
+damage = 2
+range_hops = 1
+shots_per_step = 3
+targeting = 1
+delay_steps = 0
+decoy_pull = 0

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="DefenseAssetData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="main_script"]
+
+; Defense asset (M7 pool, decision 2026-09-24).
+
+[resource]
+script = ExtResource("main_script")
+asset_type = 2
+id = &"honeypot_node"
+display_name = "Honeypot"
+description = "Pull 5: strongly attracts threat routing."
+rarity = 1
+integrity = 8
+damage = 0
+range_hops = 0
+shots_per_step = 1
+targeting = 0
+delay_steps = 0
+decoy_pull = 5

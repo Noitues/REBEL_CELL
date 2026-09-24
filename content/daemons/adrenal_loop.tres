@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e2"]
+
+; Daemon (M7 pool, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 14
+target = 0
+amount = 2
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("e2")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e1")]([SubResource("fx0")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"adrenal_loop"
+display_name = "Adrenal Loop"
+description = "Each Perfect heals 2."
+rarity = 1
+cycle_cost = 200
+triggered_effects = Array[ExtResource("e2")]([SubResource("te")])

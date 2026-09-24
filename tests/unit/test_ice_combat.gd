@@ -33,14 +33,14 @@ func test_enemy_resistance_adds_passive_resistance_that_refreshes_each_turn() ->
 
 func test_boss_strength_scales_bosses_and_mini_bosses_only() -> void:
 	var boss := _session(&"renewal_engine", {"boss_strength_pct": 25.0}).state.get_combatant(&"enemy_0")
-	assert_eq(boss.max_hp, 375)
+	assert_eq(boss.max_hp, roundi(360 * 1.25))
 	assert_almost_eq(boss.output_scale, 1.25, 0.001)
 	var mini := _session(&"account_manager", {"boss_strength_pct": 25.0}).state.get_combatant(&"enemy_0")
-	assert_eq(mini.max_hp, 150)
+	assert_eq(mini.max_hp, roundi(150 * 1.25))
 	var normal := _session(&"triage_unit", {"boss_strength_pct": 25.0}).state.get_combatant(&"enemy_0")
 	assert_eq(normal.max_hp, 45, "normal enemies are untouched")
 	var both := _session(&"renewal_engine", {"boss_strength_pct": 25.0, "enemy_scale": 2.0}).state.get_combatant(&"enemy_0")
-	assert_eq(both.max_hp, 750, "tier scale and boss strength multiply")
+	assert_eq(both.max_hp, roundi(360 * 2.0 * 1.25), "tier scale and boss strength multiply")
 	assert_almost_eq(both.output_scale, 2.5, 0.001)
 
 
@@ -123,7 +123,7 @@ func test_netrun_reads_the_ice_ladder_into_combat() -> void:
 	assert_true(boss.in_combat())
 	var b := boss.combat.state.get_combatant(&"enemy_0")
 	assert_eq(b.wheel.pointer_ticks.size(), 2, "ICE 18: +1 boss pointer")
-	assert_eq(b.max_hp, roundi(300 * pow(_cfg.enemy_scale_per_tier, 3) * 1.25), "tier 4 scale x ICE 9 strength")
+	assert_eq(b.max_hp, roundi(roundi(360 * pow(_cfg.enemy_scale_per_tier, 3)) * 1.25), "tier 4 scale x ICE 9 strength")
 
 
 func test_heat_50_threshold_adds_enemy_resistance_through_the_netrun() -> void:
