@@ -30,6 +30,61 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M3 Campaign & Raids
+- **Grid runtime state** (`GridState`) records per Site: status (corporate / cleared /
+  claimed / Seized), installed node id, integrity, condition (OK / Disabled), deployed
+  assets and the stationed operative; plus home integrity and Intel-opened links. Layout
+  stays in `CityGridData`. `NetworkNodeData` gained an `id` so nodes are content ids.
+- **Heat thresholds** (`HeatRules`): events fire on upward crossings not yet in
+  `thresholds_fired`; the MAJOR/PURGE raid goes to `pending_raids`, MINOR complications to
+  `pending_complications` (consumed by the next netrun: shop stock −1, elite +25%).
+  Modifiers are read live (`CampaignState.rule_modifier`), so they switch off by
+  themselves below the threshold. ICE levels ≤ `ice_level` stack with them.
+- **Raids resolve at HQ** (between runs). Threshold raids reached mid-run wait in the
+  queue until the operative returns; the "mid-run interlude" of GDD §4.4 is deferred
+  (open question). Setup projection and playout are the same pure `RaidResolver.resolve`
+  on copies, so projection always equals the result.
+- **Raid step rules** (TECH_SPEC §7 filled in): threats spawn wave *k* at step 1 + 5*k*
+  at the entry Sites (corporate or Seized Sites adjacent to the territory; the boss Site
+  as a last resort). Movement follows shortest paths (ties by Site id) toward the routing
+  target: home, the highest-value node (`raid_priority`, then install cost) or the weakest
+  node; a Decoy overrides the target. Entering a live claimed node (or home) ends the
+  step's advance; Disabled and unclaimed Sites are passed through. A threat camps on its
+  target node until it falls. ICE Locks hold each threat once per lock. Assets and
+  built-in defenses fire per node in Site-id order (FIRST_IN_PATH = nearest to home,
+  ties by content id then threat id). Node damage: 0 → Disabled, `floor(excess ×
+  cascade_ratio)` to each adjacent claimed node (no chaining); a threat ending a step on a
+  Disabled node Seizes it; a Seized Site loses its node, assets and station; damage at
+  home reduces integrity, 0 = campaign lost; a threat that reaches home is done. Step cap
+  30 then Seizes every node still occupied. Win = every threat destroyed → RaidData
+  reward; otherwise +5 Heat. RAID_STRENGTH_PCT scales threat integrity and damage.
+- **Claiming** needs a cleared Site adjacent to home or to a live Relay/Firewall Relay
+  ("Relay lets you claim Sites beyond it"), costs the node's install cost, and provokes a
+  TERRITORY_CLAIM raid when the Site touches a corporate or Seized Site (GDD §4.4).
+- **Node slots** (content): Relay 1 asset slot, Firewall Relay 2 (+ built-in 3-damage
+  turret), Safehouse 1 (+1 station slot), home 2. Station bonuses are recorded but not
+  yet applied in raids (open question on scaling).
+- **Special runs:** the final breach and Reclaim runs are one-node `NetrunSession`s
+  (`kind` boss / reclaim) so save/resume and the netrun scene work unchanged. Reclaim pays
+  the 10–20 "Combat" Cycles and offers nothing else.
+- **Boss phases** (`CombatResolver._check_boss_phases`) enter after deaths each turn;
+  MULTIPLY/MIGRATE set the pointer layout, ORBIT sets `pointer_orbit`, phase spawns dock,
+  hub overrides swap the Hub. Breach removes pointers in every layout but never below one;
+  Virus corrupts two random non-Miss boss slices at the start; Intel only flags
+  `reveal_phases` for the HUD.
+- **Story:** one path is picked at campaign start from the corporation's weighted list
+  using the `events` stream of the campaign seed; each Exploit reveals the next beat; the
+  finale is shown on the win. Solace ships five placeholder paths of 3 beats + finale.
+- **Profile** (`ProfileState`, `profile.json`): campaigns started/won/lost, runs completed,
+  operatives lost, raids won/lost, best ICE overall and per corporation.
+- **State dictionaries are JSON-normalised on `to_dict()`** (`RunState`, `CampaignState`)
+  so a saved-and-reloaded state hashes identically (ints become floats either way).
+- **Breaker Rank 2/3 rewards** exist only for tier gating (T3 / T4); the Rank 2 Hub
+  upgrade and Rank 3 segment options are content for later (CONTENT_SLICES.md).
+- **Scenes:** the HQ scene is the main scene (start → HQ → City Grid → launch → netrun
+  scene → back to HQ; raids from HQ). RunManager owns profile, campaign, corporation and
+  run; scene switching can be disabled for tests.
+
 ### 2026-09-24 — M2 Netrun Loop
 - **Run randomness** comes from the run's own `RngStreams` (pure core class; `RngService`
   now wraps it) seeded from a run seed drawn from the campaign `map` stream: `map` builds
@@ -201,6 +256,20 @@ _(Claude Code: add questions here instead of guessing on design.)_
   bodyguard rule applies to piercing hits; the drone takes them.
 - **Corrupted self-damage** straight to HP confirmed.
 - **DOSE preview** stays hidden from the player (the engine still predicts it exactly).
+
+### From M3 (2026-09-24)
+- **Boss scaling.** A.3 lists the Renewal Engine at 300 HP / Atk 14 / Crit 24 with "Tier 1
+  base values; scale per 11.6", but the boss Site is T4 (×4.1 → 1,229 HP, 98-damage Crit,
+  one-shots a 60 HP operative). M3 uses the authored values unscaled. Confirm, or give the
+  boss its own scaling.
+- **Mid-run raid interludes.** Threshold raids reached during a netrun wait until the
+  operative is back at HQ. GDD §4.4 allows an interlude between map nodes; do you want it
+  (it needs the raid setup inside the netrun scene)?
+- **Station bonuses** (Breaker: node assets +50% damage) are stored but not applied by the
+  raid resolver yet; rank scaling for them is unspecified.
+- **Raid movement details** filled in (see M3 decisions: waves every 5 steps, camping on
+  the target node, live nodes stop the advance). Any of these you want different?
+- **Rank 2 Hub Core upgrade** for the Breaker has no content (only tier gating exists).
 
 ### From M2 (2026-09-24) — resolved by the designer on 2026-09-24
 - **Shop slice catalogue:** `CampaignConfigData.shop_slices` (Atk 6/8, Crit 12, Def 5/8,

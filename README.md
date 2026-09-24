@@ -20,11 +20,11 @@ Godot 4.7 · GDScript · PC.
    - Content: `godot --headless --path . -s tools/validate_content.gd` → `CONTENT VALIDATION: PASS`
 4. Current milestone: see `docs/MILESTONES.md`.
 
-## Layout (M0–M2)
+## Layout (M0–M3)
 - `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
-- `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay), `MapGenerator`, `NetrunSession` (map, rewards, shop, events, banking), `handlers/` (rule-breaking cards and Daemons)
-- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat and netrun scenes
-- `scenes/netrun_map/netrun_scene.tscn` — the main scene: campaign start, map, embedded combat, rewards, Modem, Terminals, save/resume · `scenes/combat/combat_scene.tscn` — standalone fight picker
-- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, 25 cards, Firmware, Daemons, slices, Solace enemies, assets, threats, Terminal events)
+- `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay), `MapGenerator`, `NetrunSession` (map, rewards, shop, events, banking), `HeatRules`, `RaidResolver`, `CampaignRules` (Grid, claiming, raids, Exploits, story, win/loss), `handlers/`
+- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState`, `GridState`, `ProfileState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat, netrun and HQ scenes
+- `scenes/hq/hq_scene.tscn` — the main scene: start, HQ (roster, recruit, station, Heat, Armory, story), City Grid, raid setup/projection/playout, campaign end · `scenes/netrun_map/netrun_scene.tscn` — map, embedded combat, rewards, Modem, Terminals · `scenes/combat/combat_scene.tscn` — standalone fight picker
+- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, 25 cards, Firmware, Daemons, slices, Solace corporation with its City Grid, boss, Exploits, story paths, raids, nodes, assets, threats, Terminal events)
 - `tests/unit`, `tests/integration` — GUT 9.x tests · `tools/` — headless checks
 - `addons/gut/` — GUT 9.7.1

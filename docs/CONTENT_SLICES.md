@@ -18,17 +18,17 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 | Shared card pool (20) | A.2 | done (M2) |
 | Solace enemies: 6 normal, 2 elite | A.3 | done (M1–M2) |
 | Solace satellites (Collections drone, Care drone) | A.3 | done |
-| Renewal Engine boss with phases | A.3, 2.11 | M3 |
+| Renewal Engine boss with phases | A.3, 2.11 | done (M3) |
 | Firmware (6) | A.4, 6.1 | done (M2) |
 | Daemons (6) | A.4, 6.2 | done (M2) |
 | Defense assets (3) and threats (3) | A.5 | done (M2) |
 | Terminal events (5 placeholders) | 4.2, 8.6 | done (M2) — real writing later |
-| Solace City Grid (10 Sites) | A.6 | M3 |
-| Network node types: Relay, Firewall Relay, Safehouse | 3.2 | M3 |
-| Home server (standard variant) | 3.1 | M3 |
-| Exploits: Intel, Breach, Virus | 11.7 | M3 |
-| Story path with placeholder beats (Solace) | 8.4 | M3 |
-| Raid templates (Collections) for Heat thresholds | 4.3, 7 | M3 |
+| Solace City Grid (10 Sites) | A.6 | done (M3) |
+| Network node types: Relay, Firewall Relay, Safehouse | 3.2 | done (M3) |
+| Home server (standard variant) | 3.1 | done (M3) |
+| Exploits: Intel, Breach, Virus | 11.7 | done (M3) |
+| Story paths with placeholder beats (Solace, 5) | 8.4 | minimal (M3) — real writing later |
+| Raid templates (Collections) for Heat thresholds + claim | 4.3, 7 | done (M3) |
 | Heat thresholds + ICE ladder data | 4.3, 11.9 | done (M0) |
 | Shop slice catalogue (*minimal*: Atk 6/8, Crit 12, Def 5/8, Shield 5, Evade) | 11.2 | minimal (M2) |
 | Placeholder art / zine UI kit | STYLE_GUIDE | M4 |
