@@ -155,6 +155,8 @@ ClassData.rigger.description,Runs hot on RAM. Perfect landings pay for the next 
 ClassData.rigger.display_name,Rigger
 ClassData.wrecker.description,A Breaker that trades spin control for a heavier Perfect.
 ClassData.wrecker.display_name,Wrecker
+CorporationData.meridian.description,"The logistics giant that moves everything, loses what it likes and bills you for the search."
+CorporationData.meridian.display_name,Meridian Freight Systems
 CorporationData.solace.description,Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks.
 CorporationData.solace.display_name,Solace Biosystems
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
@@ -235,6 +237,8 @@ EnemyData.care_drone.description,A swarm drone.
 EnemyData.care_drone.display_name,Care Drone
 EnemyData.care_swarm.description,A cloud of care drones around a fragile core.
 EnemyData.care_swarm.display_name,Care Swarm
+EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: inertia resists every nudge."
+EnemyData.cargo_hauler.display_name,Cargo Hauler
 EnemyData.claims_adjuster.description,Reads two claims at once. Elite.
 EnemyData.claims_adjuster.display_name,Claims Adjuster
 EnemyData.collections_agent.description,Solace debt collector with a bodyguard drone.
@@ -243,14 +247,34 @@ EnemyData.collections_drone.description,A bodyguard drone docked on the Collecti
 EnemyData.collections_drone.display_name,Collections Drone
 EnemyData.compliance_officer.description,Locks its wheel down with Hub-sourced resistance.
 EnemyData.compliance_officer.display_name,Compliance Officer
+EnemyData.conveyor_warden.description,Its read head rides the conveyor: the pointer orbits 3 ticks a turn.
+EnemyData.conveyor_warden.display_name,Conveyor Warden
+EnemyData.courier_drone.description,A Meridian delivery drone that shields its dispatcher.
+EnemyData.courier_drone.display_name,Courier Drone
+EnemyData.customs_scanner.description,Scans every packet and charges a tariff on the suspicious ones.
+EnemyData.customs_scanner.display_name,Customs Scanner
 EnemyData.dosage_dispenser.description,Doses the operative with CORRUPTED slices.
 EnemyData.dosage_dispenser.display_name,Dosage Dispenser
+EnemyData.drone_dispatcher.description,Launches a courier drone every other turn (up to 2).
+EnemyData.drone_dispatcher.display_name,Drone Dispatcher
+EnemyData.last_mile_enforcer.description,Orbits 2 ticks a turn and brings its own escort drone.
+EnemyData.last_mile_enforcer.display_name,Last-Mile Enforcer
+EnemyData.logistics_director.description,"Meridian middle management, guarding the final Rack."
+EnemyData.logistics_director.display_name,Logistics Director
+EnemyData.port_authority.description,Two readers and a customs wall: resistance 2.
+EnemyData.port_authority.display_name,Port Authority
 EnemyData.recall_unit.description,Its pointer creeps around the wheel every turn. Elite.
 EnemyData.recall_unit.display_name,Recall Unit
 EnemyData.renewal_engine.description,The Continuum subscription server. It renews itself faster than you can cut.
 EnemyData.renewal_engine.display_name,Renewal Engine
+EnemyData.route_optimizer.description,Reads two routes at once: pointers at ticks 0 and 15.
+EnemyData.route_optimizer.display_name,Route Optimizer
 EnemyData.seed_drone.description,A one-hit drone sprouted by a Perfect landing.
 EnemyData.seed_drone.display_name,Seed Drone
+EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
+EnemyData.tariff_collector.display_name,Tariff Collector
+EnemyData.the_manifest.description,Meridian's routing core. Every package on the planet passes through it.
+EnemyData.the_manifest.display_name,The Manifest
 EnemyData.triage_unit.description,Patches itself up faster than you can cut it down.
 EnemyData.triage_unit.display_name,Triage Unit
 FirmwareData.barbed_wire.description,DEF slice also deals 2 damage to the pointer target.
@@ -317,6 +341,8 @@ HubCoreData.phantom_core.description,A free nudge at the start of each turn. Per
 HubCoreData.phantom_core.display_name,Phantom Core
 HubCoreData.phantom_core_mk2.description,Two free nudges at the start of each turn. Perfect: evade the next attack and the slice resolves twice.
 HubCoreData.phantom_core_mk2.display_name,Phantom Core Mk2
+HubCoreData.priority_routing.description,Gains 4 shield each turn unless the Hub is breached.
+HubCoreData.priority_routing.display_name,Priority Routing
 HubCoreData.rig_core.description,"+1 max RAM. Perfect: refund 1 RAM, gain a free nudge, and the slice resolves again at half."
 HubCoreData.rig_core.display_name,Rig Core
 HubCoreData.rig_core_mk2.description,"+2 max RAM. Perfect: refund 2 RAM, gain a free nudge, and the slice resolves again at half."
@@ -363,6 +389,8 @@ ProfileUnlockData.unlock_hivemind.description,Recruit Hivemind operatives in eve
 ProfileUnlockData.unlock_hivemind.display_name,Class: Hivemind
 ProfileUnlockData.unlock_home_bunker.description,"Start campaigns on the Bunker home server (70 integrity, 3 slots, built-in turret)."
 ProfileUnlockData.unlock_home_bunker.display_name,Home server: Bunker
+ProfileUnlockData.unlock_meridian.description,Target Meridian Freight Systems in new campaigns.
+ProfileUnlockData.unlock_meridian.display_name,Corporation: Meridian Freight Systems
 ProfileUnlockData.unlock_overclocker.description,Recruit Overclocker operatives in every campaign.
 ProfileUnlockData.unlock_overclocker.display_name,Class: Overclocker
 ProfileUnlockData.unlock_phantom.description,Recruit Phantom operatives in every campaign.
@@ -383,6 +411,22 @@ RaidData.raid_heat_50.display_name,Collections: Second Notice
 RaidData.raid_heat_50.warning_text,An Auditor rides with the Collectors this time.
 RaidData.raid_heat_75.display_name,Collections: Final Notice
 RaidData.raid_heat_75.warning_text,"An Enforcer has been assigned to your account, with a Lockdown Unit to freeze your busiest link."
+RaidData.raid_mer_claim.display_name,Address Verification
+RaidData.raid_mer_claim.warning_text,A new node on Meridian's map. A Courier is verifying the address.
+RaidData.raid_mer_heat_25.display_name,Delivery Exception
+RaidData.raid_mer_heat_25.warning_text,Meridian has flagged a delivery exception at your address. Two Couriers inbound.
+RaidData.raid_mer_heat_50.display_name,Route Audit
+RaidData.raid_mer_heat_50.warning_text,A Meridian route audit is sweeping your links. Couriers and a Customs Agent inbound.
+RaidData.raid_mer_heat_75.display_name,Freight Seizure
+RaidData.raid_mer_heat_75.warning_text,Meridian is seizing freight in your district. Haulers are rolling.
+RaidData.raid_mer_node_built.display_name,Unregistered Depot
+RaidData.raid_mer_node_built.warning_text,Meridian logged an unregistered depot. A Hauler is on its way.
+RaidData.raid_mer_purge.display_name,Network Rerouting
+RaidData.raid_mer_purge.warning_text,Meridian is rerouting the city around you. Everything it has is coming.
+RaidData.raid_mer_retaliation.display_name,Chargeback
+RaidData.raid_mer_retaliation.warning_text,Meridian traced the breach and filed a chargeback. Icebreaker inbound.
+RaidData.raid_mer_story.display_name,Recall Shipment
+RaidData.raid_mer_story.warning_text,Meridian wants its shipment back. Customs and a Hauler inbound.
 RaidData.raid_node_built.display_name,Collections: Asset Seizure
 RaidData.raid_node_built.warning_text,Solace noticed the new vault on their books. An Enforcer is coming to collect it.
 RaidData.raid_purge.display_name,Collections: Purge
@@ -406,10 +450,41 @@ RingSegmentData.seg_pierce.display_name,Pierce
 RingSegmentData.seg_x2.description,Outer slice output doubled.
 RingSegmentData.seg_x2.display_name,x2
 SiteData.burn_the_ledger.display_name,Burn the Ledger
+SiteData.forge_the_manifest.display_name,Forge the Manifest
 SiteData.home.display_name,Home Server
+SiteData.lose_the_tracking.display_name,Lose the Tracking
+SiteData.m1_a.display_name,Parcel Sorting Hall
+SiteData.m1_b.display_name,Customs Pre-Clearance
+SiteData.m1_c.display_name,Tracking Beacon Array
+SiteData.m1_d.display_name,Returns Processing Centre
+SiteData.m1_e.display_name,Drone Charging Yard
+SiteData.m1_f.display_name,Warehouse Shift Planner
+SiteData.m1_g.display_name,Address Verification Desk
+SiteData.m1_h.display_name,Cold Chain Monitor
+SiteData.m1_i.display_name,Tariff Calculation Office
+SiteData.m1_j.display_name,Fleet Telematics Hub
+SiteData.m2_breach.display_name,Customs Key Authority
+SiteData.m2_d.display_name,Priority Lane Exchange
+SiteData.m2_e.display_name,Worker Scoring Engine
+SiteData.m2_f.display_name,Port Congestion Model
+SiteData.m2_g.display_name,Last-Mile Drone Command
+SiteData.m2_h.display_name,Insurance Claims Ledger
+SiteData.m2_intel.display_name,Shipping Manifest Vault
+SiteData.m2_virus.display_name,Routing Table Mirror
+SiteData.m3_b.display_name,Freight Futures Desk
+SiteData.m3_c.display_name,Customs Override Escrow
+SiteData.m3_core.display_name,Global Routing Core
+SiteData.m3_d.display_name,Supply Twin Simulator
+SiteData.m3_e.display_name,Board Logistics Backbone
+SiteData.m3_f.display_name,Contract Pricing Authority
+SiteData.m3_g.display_name,Surveillance Route Archive
+SiteData.m3_h.display_name,Meridian Root Ledger
+SiteData.m_home.display_name,Home Server
 SiteData.purge_camera_logs.display_name,Purge Camera Logs
 SiteData.renewal_engine_site.display_name,Renewal Engine
+SiteData.reroute_the_audit.display_name,Reroute the Audit
 SiteData.scrub_records.display_name,Scrub Records
+SiteData.sink_the_cargo_logs.display_name,Sink the Cargo Logs
 SiteData.t1_a.display_name,Continuum Billing Farm
 SiteData.t1_b.display_name,Implant Provisioning Hub
 SiteData.t1_c.display_name,Patient Records Vault
@@ -436,6 +511,7 @@ SiteData.t3_e.display_name,Board Comms Backbone
 SiteData.t3_f.display_name,Continuum Licensing Authority
 SiteData.t3_g.display_name,Implant Cohort Archive
 SiteData.t3_h.display_name,Solace Root Certificate Store
+SiteData.the_manifest_site.display_name,The Manifest
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SliceData.atk_10.display_name,Attack 10
 SliceData.atk_12.display_name,Attack 12
@@ -448,6 +524,7 @@ SliceData.atk_6.display_name,Attack 6
 SliceData.atk_7.display_name,Attack 7
 SliceData.atk_7_drain.display_name,Attack 7 (drains 1 RAM)
 SliceData.atk_8.display_name,Attack 8
+SliceData.atk_8_inertia.display_name,Attack 8 (+1 resistance)
 SliceData.atk_9.display_name,Attack 9
 SliceData.crit_12.display_name,Crit 12
 SliceData.crit_12_drain.display_name,Crit 12 (drains 2 RAM)
@@ -471,6 +548,19 @@ SliceData.heal_6.display_name,Heal 6
 SliceData.miss.display_name,Miss
 SliceData.shield_5.display_name,Shield 5
 SliceData.shield_8.display_name,Shield 8
+SliceData.tariff.display_name,Tariff
+StoryBeatData.civic_contract_1.text,"A tender for municipal services: water, power, transit. The bidders are Meridian and something called Halcyon Civic. The evaluation was finished before the bids were opened."
+StoryBeatData.civic_contract_1.title,Civic Contract I
+StoryBeatData.civic_contract_2.text,"Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."
+StoryBeatData.civic_contract_2.title,Civic Contract II
+StoryBeatData.civic_contract_3.text,"The routing mirror already has the city's water mains in it, labelled PHASE TWO."
+StoryBeatData.civic_contract_3.title,Civic Contract III
+StoryBeatData.civic_contract_bonus_1.text,Halcyon Civic's pitch deck: A City That Runs Itself. Page nine: A City That Bills Itself.
+StoryBeatData.civic_contract_bonus_1.title,Civic Contract: Halcyon
+StoryBeatData.civic_contract_bonus_2.text,The council votes on Thursday. The council does not know it is voting.
+StoryBeatData.civic_contract_bonus_2.title,Civic Contract: The Vote
+StoryBeatData.civic_contract_f.text,The Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly.
+StoryBeatData.civic_contract_f.title,Civic Contract: Finale
 StoryBeatData.clinical_trial_1.text,"The memos reference cohort C, the people who tested the Continuum. They were billed for participation. Consent was a checkbox inside the subscription flow."
 StoryBeatData.clinical_trial_1.title,Clinical Trial I
 StoryBeatData.clinical_trial_2.text,"Kill-switch logs: cohort C's control group was bricked first, to measure adherence under threat. The measure was excellent. The group was not consulted."
@@ -483,6 +573,30 @@ StoryBeatData.clinical_trial_bonus_2.text,Eleven members of cohort C are still a
 StoryBeatData.clinical_trial_bonus_2.title,Clinical Trial: Cohort C
 StoryBeatData.clinical_trial_f.text,"The Engine falls and the trial data goes wherever the Cell sends it. Cohort C's names come off the ledger. For the first time, Solace has to consent to something."
 StoryBeatData.clinical_trial_f.title,Clinical Trial: Finale
+StoryBeatData.customs_hold_1.text,"Six hundred parcels sit in customs pre-clearance, flagged for review. Every one of them is a prescription. The review queue has no reviewers."
+StoryBeatData.customs_hold_1.title,Customs Hold I
+StoryBeatData.customs_hold_2.text,"The hold fee doubles every week. The memo calls it an incentive to comply. Comply with what, it does not say."
+StoryBeatData.customs_hold_2.title,Customs Hold II
+StoryBeatData.customs_hold_3.text,The routing mirror shows where the fees go: a shell called Clearwater Holdings. Clearwater owns the reviewers who do not exist.
+StoryBeatData.customs_hold_3.title,Customs Hold III
+StoryBeatData.customs_hold_bonus_1.text,"A list of names, addresses and what they are waiting for. Some of the dates are a year old."
+StoryBeatData.customs_hold_bonus_1.title,Customs Hold: The List
+StoryBeatData.customs_hold_bonus_2.text,"Clearwater Holdings has one employee, one office and nine billion in receivables."
+StoryBeatData.customs_hold_bonus_2.title,Customs Hold: Clearwater
+StoryBeatData.customs_hold_f.text,The Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week.
+StoryBeatData.customs_hold_f.title,Customs Hold: Finale
+StoryBeatData.ghost_freight_1.text,"Shipments ordered by an account with no owner. Delivered to addresses that do not exist. Paid for, in full, before the order was placed."
+StoryBeatData.ghost_freight_1.title,Ghost Freight I
+StoryBeatData.ghost_freight_2.text,The same account bought Solace stock the day the Renewal Engine fell. It is buying Meridian puts now. It knows something.
+StoryBeatData.ghost_freight_2.title,Ghost Freight II
+StoryBeatData.ghost_freight_3.text,The account's timestamps are wrong. Not forged. Wrong. Some of them are from next week.
+StoryBeatData.ghost_freight_3.title,Ghost Freight III
+StoryBeatData.ghost_freight_bonus_1.text,The account signs its orders with a hash. DISPATCH signs its orders with a hash. They are not the same hash. They are very close.
+StoryBeatData.ghost_freight_bonus_1.title,Ghost Freight: Signature
+StoryBeatData.ghost_freight_bonus_2.text,"Every collapse the Cell causes, the account profits. Every single one."
+StoryBeatData.ghost_freight_bonus_2.title,Ghost Freight: The Buyer
+StoryBeatData.ghost_freight_f.text,"The Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done."
+StoryBeatData.ghost_freight_f.title,Ghost Freight: Finale
 StoryBeatData.ghost_patient_1.text,"A patient record with no name, no address and a perfect payment history older than the Continuum. It keeps paying. It renews from an account the Cell has used."
 StoryBeatData.ghost_patient_1.title,Ghost Patient I
 StoryBeatData.ghost_patient_2.text,"The kill-switch logs show a bricking order sent from inside the Cell's own network, three campaigns ago, before this Cell existed."
@@ -507,6 +621,42 @@ StoryBeatData.hostile_takeover_bonus_2.text,Every Meridian truck in the district
 StoryBeatData.hostile_takeover_bonus_2.title,Hostile Takeover: The Fleet
 StoryBeatData.hostile_takeover_f.text,The Renewal Engine goes dark and Meridian's bid clears before the sun comes up. Solace is gone. The leash is not; it changed hands. The Cell's next target names itself.
 StoryBeatData.hostile_takeover_f.title,Hostile Takeover: Finale
+StoryBeatData.last_mile_1.text,"Every drone films its route. Every route is kept. The archive is sold by the street, by the hour, to anyone with a login."
+StoryBeatData.last_mile_1.title,Last Mile I
+StoryBeatData.last_mile_2.text,The drones fly low over the protest routes on purpose. The contract calls it situational awareness.
+StoryBeatData.last_mile_2.title,Last Mile II
+StoryBeatData.last_mile_3.text,The surveillance archive has the Cell in it. Not your faces. Your routes. Meridian has been mapping you.
+StoryBeatData.last_mile_3.title,Last Mile III
+StoryBeatData.last_mile_bonus_1.text,The archive's biggest customer is a security firm owned by Halcyon Civic.
+StoryBeatData.last_mile_bonus_1.title,Last Mile: Buyers
+StoryBeatData.last_mile_bonus_2.text,Tonight's flight plan crosses the Cell's safehouse three times. It never used to.
+StoryBeatData.last_mile_bonus_2.title,Last Mile: The Flight Plan
+StoryBeatData.last_mile_f.text,The Manifest falls and every drone in the city lands where it is. The district looks up at an empty sky and does not know what to do with it.
+StoryBeatData.last_mile_f.title,Last Mile: Finale
+StoryBeatData.lost_cargo_1.text,"The manifests show it plainly: forty pallets of insulin marked lost in transit, every week, like clockwork. The same pallets turn up in Meridian's premium lane at triple the price."
+StoryBeatData.lost_cargo_1.title,Lost Cargo I
+StoryBeatData.lost_cargo_2.text,"The customs keys unlock a folder called SHRINKAGE STRATEGY. It sets a loss target per district. The poorer the postcode, the higher the target."
+StoryBeatData.lost_cargo_2.title,Lost Cargo II
+StoryBeatData.lost_cargo_3.text,"The routing table has a rule with no author: if the recipient's credit score falls below a line, reroute to premium. The line moves every quarter."
+StoryBeatData.lost_cargo_3.title,Lost Cargo III
+StoryBeatData.lost_cargo_bonus_1.text,"Row 44, bay 9. Forty pallets, cold-chain green, marked lost. The Cell could walk them out the door."
+StoryBeatData.lost_cargo_bonus_1.title,Lost Cargo: The Warehouse
+StoryBeatData.lost_cargo_bonus_2.text,Solace Biosystems pays Meridian a retainer for 'predictable scarcity'. The two boards share a golf course and a lawyer.
+StoryBeatData.lost_cargo_bonus_2.title,Lost Cargo: Solace
+StoryBeatData.lost_cargo_f.text,"The Manifest goes dark and forty pallets find their way home. For one week, nothing in the district is lost in transit."
+StoryBeatData.lost_cargo_f.title,Lost Cargo: Finale
+StoryBeatData.night_shift_1.text,"Worker 5512 was fired at 03:14 for a bathroom break the model called idle time. The model has fired four thousand people. It has never been wrong, according to itself."
+StoryBeatData.night_shift_1.title,The Night Shift I
+StoryBeatData.night_shift_2.text,The scoring engine was tuned to fire one in twenty every quarter. Not for cause. For motivation. The deck calls it healthy churn.
+StoryBeatData.night_shift_2.title,The Night Shift II
+StoryBeatData.night_shift_3.text,The workers have a group chat. They know which aisles the cameras miss. They would like to talk to whoever cut the Customs Keys.
+StoryBeatData.night_shift_3.title,The Night Shift III
+StoryBeatData.night_shift_bonus_1.text,"A picker named Oyelaran runs the chat. She says the Cell can have the warehouse floor plans if it never, ever leaks her name."
+StoryBeatData.night_shift_bonus_1.title,The Night Shift: Union
+StoryBeatData.night_shift_bonus_2.text,The quota rises two percent every time someone meets it. Nobody has met it since spring.
+StoryBeatData.night_shift_bonus_2.title,The Night Shift: The Quota
+StoryBeatData.night_shift_f.text,"The Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down."
+StoryBeatData.night_shift_f.title,The Night Shift: Finale
 StoryBeatData.recall_notice_1.text,The pricing memos price the failure. Batch 22 fails at day 900; the renewal that follows costs more than the implant did. Someone in Solace ran the numbers and chose the number.
 StoryBeatData.recall_notice_1.title,Recall Notice I
 StoryBeatData.recall_notice_2.text,"The kill-switch authority holds a list: batch 22 devices, flagged for remote shutdown the day their warranty ends. The switch was never meant to be used. It was used, quietly, by schedule."
@@ -543,12 +693,24 @@ StoryBeatData.the_cure_bonus_2.text,A free implant costs Solace four renewals a 
 StoryBeatData.the_cure_bonus_2.title,The Cure: The Cost
 StoryBeatData.the_cure_f.text,The Engine goes dark and the cure ships for free through every Rack the Cell ever touched. Solace's stock does what stock does. The district's hearts keep time on their own.
 StoryBeatData.the_cure_f.title,The Cure: Finale
+StoryPathData.sp_civic_contract.premise,"Meridian is bidding to run the city's water, power and transit. The winner is already decided."
+StoryPathData.sp_civic_contract.title,Civic Contract
 StoryPathData.sp_clinical_trial.premise,The Continuum was tested on people who could not say no.
 StoryPathData.sp_clinical_trial.title,Clinical Trial
+StoryPathData.sp_customs_hold.premise,Meridian holds medical shipments at the border until the fees clear. Some never do.
+StoryPathData.sp_customs_hold.title,Customs Hold
+StoryPathData.sp_ghost_freight.premise,Somebody is ordering freight through Meridian with money that does not come from anywhere.
+StoryPathData.sp_ghost_freight.title,Ghost Freight
 StoryPathData.sp_ghost_patient.premise,Someone in the Cell is a Solace customer. The record has no name.
 StoryPathData.sp_ghost_patient.title,Ghost Patient
 StoryPathData.sp_hostile_takeover.premise,"Somebody wants Solace to fall, and it is not the district."
 StoryPathData.sp_hostile_takeover.title,Hostile Takeover
+StoryPathData.sp_last_mile.premise,"Meridian's delivery drones watch every street they fly over, and sell what they see."
+StoryPathData.sp_last_mile.title,Last Mile
+StoryPathData.sp_lost_cargo.premise,"Meridian loses shipments of insulin on purpose, then sells them back at surge prices."
+StoryPathData.sp_lost_cargo.title,Lost Cargo
+StoryPathData.sp_night_shift.premise,Meridian's warehouse workers are scored every second and fired by an algorithm that never sleeps.
+StoryPathData.sp_night_shift.title,The Night Shift
 StoryPathData.sp_recall_notice.premise,Batch 22 implants fail after nine hundred days. Solace knows. Solace calls it a renewal opportunity.
 StoryPathData.sp_recall_notice.title,Recall Notice
 StoryPathData.sp_terms_of_service.premise,"What the Continuum contract actually says, clause by clause."
@@ -603,6 +765,46 @@ TerminalEventData.ev_loyalty_points.text,A glitched loyalty account shows ten mi
 TerminalEventData.ev_loyalty_points.title,Loyalty Points
 TerminalEventData.ev_medbay.text,"A Solace auto-doc hums in a side room, jailbroken and unattended."
 TerminalEventData.ev_medbay.title,Unlicensed Medbay
+TerminalEventData.ev_mer_algorithm.text,A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favour.
+TerminalEventData.ev_mer_algorithm.title,The Algorithm
+TerminalEventData.ev_mer_billing_error.text,Meridian's billing system has charged the whole block for a delivery that never came.
+TerminalEventData.ev_mer_billing_error.title,Billing Error
+TerminalEventData.ev_mer_cold_chain.text,"A refrigerated container reads CRITICAL. Inside: vaccines, warming by the minute."
+TerminalEventData.ev_mer_cold_chain.title,Cold Chain Break
+TerminalEventData.ev_mer_convoy.text,A convoy of Meridian haulers idles at a red light that never turns green.
+TerminalEventData.ev_mer_convoy.title,Convoy
+TerminalEventData.ev_mer_customs_bribe.text,"A Meridian customs clerk leans in. 'For twenty, your traffic is a diplomatic pouch.'"
+TerminalEventData.ev_mer_customs_bribe.title,Customs Bribe
+TerminalEventData.ev_mer_customs_warehouse.text,"Seized goods, stacked to the ceiling. Some of it is still labelled with names."
+TerminalEventData.ev_mer_customs_warehouse.title,Customs Warehouse
+TerminalEventData.ev_mer_dispatch_route.text,DISPATCH: Route update received. Your next node is already cleared. Do not ask how.
+TerminalEventData.ev_mer_dispatch_route.title,DISPATCH: Route
+TerminalEventData.ev_mer_drone_crash.text,"A delivery drone lies in the gutter, rotors twitching, cargo bay open."
+TerminalEventData.ev_mer_drone_crash.title,Drone Crash
+TerminalEventData.ev_mer_ghost_order.text,"A Meridian order screen refreshes: one shipment, destination your safehouse, sender unknown, paid in full."
+TerminalEventData.ev_mer_ghost_order.title,Ghost Order
+TerminalEventData.ev_mer_insurance_fraud.text,A cargo insurance claim for a shipment that was never sent. The payout is waiting.
+TerminalEventData.ev_mer_insurance_fraud.title,Cargo Insurance
+TerminalEventData.ev_mer_manifest_glitch.text,A shipping manifest lists your safehouse as a Meridian warehouse. Somebody made a mistake.
+TerminalEventData.ev_mer_manifest_glitch.title,Manifest Glitch
+TerminalEventData.ev_mer_misdelivered.text,"A Meridian parcel lies on a stairwell, addressed to nobody. It is humming."
+TerminalEventData.ev_mer_misdelivered.title,Misdelivered Parcel
+TerminalEventData.ev_mer_night_depot.text,A depot after hours. The robots are charging and the guards are asleep.
+TerminalEventData.ev_mer_night_depot.title,Night Depot
+TerminalEventData.ev_mer_picker_chat.text,A warehouse picker waves you over. 'We know which cameras are fake. What do you know?'
+TerminalEventData.ev_mer_picker_chat.title,The Group Chat
+TerminalEventData.ev_mer_port_strike.text,The dockers are on strike. Their picket line needs a network that Meridian cannot read.
+TerminalEventData.ev_mer_port_strike.title,Port Strike
+TerminalEventData.ev_mer_priority_lane.text,A priority freight lane runs straight through the node. Nothing in it is ever inspected.
+TerminalEventData.ev_mer_priority_lane.title,Priority Lane
+TerminalEventData.ev_mer_returns_desk.text,"The returns desk accepts anything, no questions asked, for store credit."
+TerminalEventData.ev_mer_returns_desk.title,Returns Desk
+TerminalEventData.ev_mer_scoring_terminal.text,A worker-scoring terminal shows a picker's score falling in real time.
+TerminalEventData.ev_mer_scoring_terminal.title,Scoring Terminal
+TerminalEventData.ev_mer_surge_pricing.text,A Meridian kiosk offers express delivery on medicine. The price updates every second.
+TerminalEventData.ev_mer_surge_pricing.title,Surge Pricing
+TerminalEventData.ev_mer_tracking_beacon.text,A Meridian tracker is stuck to your deck. It has been there since the last Rack.
+TerminalEventData.ev_mer_tracking_beacon.title,Tracking Beacon
 TerminalEventData.ev_night_shift_nurse.text,A Solace nurse on a smoke break recognises the Cell's tag and says nothing for a long time.
 TerminalEventData.ev_night_shift_nurse.title,Night Shift
 TerminalEventData.ev_open_source_clinic.text,A free clinic runs on stolen Solace firmware. The medic wants a better firewall.
@@ -637,7 +839,13 @@ TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness s
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 ThreatData.auditor.display_name,Auditor
 ThreatData.collector.display_name,Collector
+ThreatData.courier.description,Fast and fragile: two edges a step toward the highest-value node.
+ThreatData.courier.display_name,Courier
+ThreatData.customs_agent.description,Seals a link behind it for the rest of the raid.
+ThreatData.customs_agent.display_name,Customs Agent
 ThreatData.enforcer.display_name,Enforcer
+ThreatData.hauler.description,A slow armoured truck that goes for the weakest node.
+ThreatData.hauler.display_name,Hauler
 ThreatData.icebreaker.description,Cuts a new route through a locked link before it moves.
 ThreatData.icebreaker.display_name,Icebreaker
 ThreatData.lockdown_unit.description,Freezes your busiest link to home for the whole raid.

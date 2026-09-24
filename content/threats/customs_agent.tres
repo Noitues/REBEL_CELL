@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ThreatData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="main_script"]
+
+; Meridian threat (M8).
+
+[resource]
+script = ExtResource("main_script")
+id = &"customs_agent"
+display_name = "Customs Agent"
+description = "Seals a link behind it for the rest of the raid."
+integrity = 16
+damage = 5
+edges_per_step = 1
+routing = 0
+freezes_edges = true

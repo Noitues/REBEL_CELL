@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/cards/bulwark.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/daemons/idle_armor.tres" id="e3"]
+
+; Meridian Terminal event (M8).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Take tools (Card: Bulwark)"
+result_text = "Heavy-duty and entirely boring."
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Take a robot's brain (Daemon: Idle Armor)"
+result_text = "It still wants to stand guard."
+hp_cost = 6
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep moving. The conveyor does too."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_night_depot"
+title = "Night Depot"
+speaker = 0
+text = "A depot after hours. The robots are charging and the guards are asleep."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"meridian"

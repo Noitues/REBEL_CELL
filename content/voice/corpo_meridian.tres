@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; Meridian voice set (M8).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "raid:any"
+text = "MERIDIAN LOGISTICS: Your address is under review. Please remain available for delivery."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "raid:raid_heat_25"
+text = "MERIDIAN LOGISTICS: A delivery exception has been raised at your location. Couriers are en route."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "raid:raid_heat_50"
+text = "MERIDIAN LOGISTICS: A route audit is in progress. Please do not obstruct our agents."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "raid:raid_heat_75"
+text = "MERIDIAN LOGISTICS: Freight seizure has been authorised for your district. Thank you for your patience."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "raid:raid_purge"
+text = "MERIDIAN LOGISTICS: Your district is being rerouted. Service will resume without you."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "raid:raid_mer_claim"
+text = "MERIDIAN LOGISTICS: An unverified address has appeared on our network. Verification is under way."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "raid:raid_mer_node_built"
+text = "MERIDIAN LOGISTICS: An unregistered depot has been detected. A Hauler has been scheduled."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "raid:raid_mer_story"
+text = "MERIDIAN LOGISTICS: A shipment was taken in error. We are coming to collect it."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "raid:raid_mer_retaliation"
+text = "MERIDIAN LOGISTICS: A chargeback has been filed against your account."
+
+[resource]
+script = ExtResource("main_script")
+id = &"corpo_meridian"
+speaker = 2
+corporation_id = &"meridian"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8")])

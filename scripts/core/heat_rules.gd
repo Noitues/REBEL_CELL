@@ -57,7 +57,8 @@ static func fire_threshold(campaign: CampaignState, t: HeatThresholdData) -> Arr
 	events.append({"type": "heat_threshold", "heat": t.heat, "kind": t.kind,
 		"text": "Heat threshold %d (%s): %s" % [t.heat, RC.ThresholdKind.keys()[t.kind], t.event_text]})
 	if t.event_raid != null:
-		campaign.pending_raids.append({"raid_id": String(t.event_raid.id), "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": t.heat})
+		campaign.pending_raids.append({"raid_id": String(t.event_raid.id), "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": t.heat,
+			"corporation": String(campaign.corporation_id)})
 		events.append({"type": "raid_pending", "raid_id": t.event_raid.id, "text": "Raid incoming: %s." % t.event_raid.display_name})
 	for m in t.event_complications:
 		if m != null:

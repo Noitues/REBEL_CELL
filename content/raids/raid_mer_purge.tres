@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="e1"]
+[ext_resource type="Resource" path="res://content/threats/courier.tres" id="e2"]
+[ext_resource type="Resource" path="res://content/threats/customs_agent.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/threats/hauler.tres" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="e5"]
+
+; Meridian raid (M8). replaces = the shared Heat-threshold raid it stands in for.
+
+[sub_resource type="Resource" id="wave0"]
+script = ExtResource("e5")
+threats = Array[ExtResource("e1")]([ExtResource("e2"), ExtResource("e2"), ExtResource("e3"), ExtResource("e4"), ExtResource("e3"), ExtResource("e4")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"raid_mer_purge"
+display_name = "Network Rerouting"
+trigger_source = 0
+waves = Array[ExtResource("e5")]([SubResource("wave0")])
+schematic_reward = 25
+warning_text = "Meridian is rerouting the city around you. Everything it has is coming."
+corporation_id = &"meridian"
+replaces = &"raid_purge"

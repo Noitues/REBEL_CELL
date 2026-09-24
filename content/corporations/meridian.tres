@@ -1,0 +1,701 @@
+[gd_resource type="Resource" script_class="CorporationData" load_steps=129 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/site_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/exploit_data.gd" id="e3"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e5"]
+[ext_resource type="Script" path="res://scripts/data/story_beat_data.gd" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/story_path_data.gd" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="e8"]
+[ext_resource type="Resource" path="res://content/enemies/customs_scanner.tres" id="e9"]
+[ext_resource type="Resource" path="res://content/enemies/cargo_hauler.tres" id="e10"]
+[ext_resource type="Resource" path="res://content/enemies/conveyor_warden.tres" id="e11"]
+[ext_resource type="Resource" path="res://content/enemies/route_optimizer.tres" id="e12"]
+[ext_resource type="Resource" path="res://content/enemies/drone_dispatcher.tres" id="e13"]
+[ext_resource type="Resource" path="res://content/enemies/tariff_collector.tres" id="e14"]
+[ext_resource type="Resource" path="res://content/enemies/port_authority.tres" id="e15"]
+[ext_resource type="Resource" path="res://content/enemies/last_mile_enforcer.tres" id="e16"]
+[ext_resource type="Resource" path="res://content/enemies/the_manifest.tres" id="e17"]
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="e18"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_heat_25.tres" id="e19"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_heat_50.tres" id="e20"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_heat_75.tres" id="e21"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_purge.tres" id="e22"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_claim.tres" id="e23"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_node_built.tres" id="e24"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_story.tres" id="e25"]
+[ext_resource type="Resource" path="res://content/raids/raid_mer_retaliation.tres" id="e26"]
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="e27"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_misdelivered.tres" id="e28"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_surge_pricing.tres" id="e29"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_drone_crash.tres" id="e30"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_scoring_terminal.tres" id="e31"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_customs_bribe.tres" id="e32"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_cold_chain.tres" id="e33"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_picker_chat.tres" id="e34"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_tracking_beacon.tres" id="e35"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_returns_desk.tres" id="e36"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_priority_lane.tres" id="e37"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_insurance_fraud.tres" id="e38"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_night_depot.tres" id="e39"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_manifest_glitch.tres" id="e40"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_convoy.tres" id="e41"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_dispatch_route.tres" id="e42"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_ghost_order.tres" id="e43"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_port_strike.tres" id="e44"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_algorithm.tres" id="e45"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_customs_warehouse.tres" id="e46"]
+[ext_resource type="Resource" path="res://content/events/ev_mer_billing_error.tres" id="e47"]
+
+; Meridian Freight Systems (M8, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid mirroring Solace's shape
+; (home -> ten T1 -> eight T2 with three Exploits -> eight T3 -> The Manifest), four Heat objectives,
+; six story paths (Ghost Freight foreshadows DISPATCH, Civic Contract foreshadows Halcyon Civic).
+
+[sub_resource type="Resource" id="site_m_home"]
+script = ExtResource("e1")
+id = &"m_home"
+display_name = "Home Server"
+tier = 1
+links = Array[StringName]([&"m1_a", &"m1_b", &"m1_c", &"m1_d", &"m1_e", &"m1_f", &"m1_g", &"m1_h", &"m1_i", &"m1_j"])
+claimable = false
+map_position = Vector2(0, 330)
+
+[sub_resource type="Resource" id="site_m1_a"]
+script = ExtResource("e1")
+id = &"m1_a"
+display_name = "Parcel Sorting Hall"
+tier = 1
+links = Array[StringName]([&"m2_intel", &"lose_the_tracking"])
+locked_links = Array[StringName]([&"m1_b"])
+map_position = Vector2(200, 30)
+
+[sub_resource type="Resource" id="site_m1_b"]
+script = ExtResource("e1")
+id = &"m1_b"
+display_name = "Customs Pre-Clearance"
+tier = 1
+links = Array[StringName]([&"m2_breach"])
+map_position = Vector2(200, 97)
+
+[sub_resource type="Resource" id="site_m1_c"]
+script = ExtResource("e1")
+id = &"m1_c"
+display_name = "Tracking Beacon Array"
+tier = 1
+links = Array[StringName]([&"m2_virus"])
+locked_links = Array[StringName]([&"m1_d"])
+map_position = Vector2(200, 163)
+
+[sub_resource type="Resource" id="site_m1_d"]
+script = ExtResource("e1")
+id = &"m1_d"
+display_name = "Returns Processing Centre"
+tier = 1
+links = Array[StringName]([&"m2_d"])
+map_position = Vector2(200, 230)
+
+[sub_resource type="Resource" id="site_m1_e"]
+script = ExtResource("e1")
+id = &"m1_e"
+display_name = "Drone Charging Yard"
+tier = 1
+links = Array[StringName]([&"m2_e"])
+locked_links = Array[StringName]([&"m1_f"])
+map_position = Vector2(200, 297)
+
+[sub_resource type="Resource" id="site_m1_f"]
+script = ExtResource("e1")
+id = &"m1_f"
+display_name = "Warehouse Shift Planner"
+tier = 1
+links = Array[StringName]([&"m2_f", &"forge_the_manifest"])
+map_position = Vector2(200, 363)
+
+[sub_resource type="Resource" id="site_m1_g"]
+script = ExtResource("e1")
+id = &"m1_g"
+display_name = "Address Verification Desk"
+tier = 1
+links = Array[StringName]([&"m2_g"])
+locked_links = Array[StringName]([&"m1_h"])
+map_position = Vector2(200, 430)
+
+[sub_resource type="Resource" id="site_m1_h"]
+script = ExtResource("e1")
+id = &"m1_h"
+display_name = "Cold Chain Monitor"
+tier = 1
+links = Array[StringName]([&"m2_h"])
+map_position = Vector2(200, 497)
+
+[sub_resource type="Resource" id="site_m1_i"]
+script = ExtResource("e1")
+id = &"m1_i"
+display_name = "Tariff Calculation Office"
+tier = 1
+links = Array[StringName]([&"m2_h"])
+locked_links = Array[StringName]([&"m1_j"])
+map_position = Vector2(200, 563)
+
+[sub_resource type="Resource" id="site_m1_j"]
+script = ExtResource("e1")
+id = &"m1_j"
+display_name = "Fleet Telematics Hub"
+tier = 1
+links = Array[StringName]([&"reroute_the_audit"])
+map_position = Vector2(200, 630)
+
+[sub_resource type="Resource" id="site_m2_intel"]
+script = ExtResource("e1")
+id = &"m2_intel"
+display_name = "Shipping Manifest Vault"
+tier = 2
+links = Array[StringName]([&"m3_core"])
+locked_links = Array[StringName]([&"m2_breach"])
+objective = 1
+exploit_type = 1
+map_position = Vector2(430, 60)
+
+[sub_resource type="Resource" id="site_m2_breach"]
+script = ExtResource("e1")
+id = &"m2_breach"
+display_name = "Customs Key Authority"
+tier = 2
+links = Array[StringName]([&"m3_b"])
+objective = 1
+exploit_type = 2
+map_position = Vector2(430, 137)
+
+[sub_resource type="Resource" id="site_m2_virus"]
+script = ExtResource("e1")
+id = &"m2_virus"
+display_name = "Routing Table Mirror"
+tier = 2
+links = Array[StringName]([&"m3_c"])
+locked_links = Array[StringName]([&"m2_d"])
+objective = 1
+exploit_type = 3
+map_position = Vector2(430, 214)
+
+[sub_resource type="Resource" id="site_m2_d"]
+script = ExtResource("e1")
+id = &"m2_d"
+display_name = "Priority Lane Exchange"
+tier = 2
+links = Array[StringName]([&"m3_d"])
+map_position = Vector2(430, 291)
+
+[sub_resource type="Resource" id="site_m2_e"]
+script = ExtResource("e1")
+id = &"m2_e"
+display_name = "Worker Scoring Engine"
+tier = 2
+links = Array[StringName]([&"m3_e", &"sink_the_cargo_logs"])
+locked_links = Array[StringName]([&"m2_f"])
+map_position = Vector2(430, 369)
+
+[sub_resource type="Resource" id="site_m2_f"]
+script = ExtResource("e1")
+id = &"m2_f"
+display_name = "Port Congestion Model"
+tier = 2
+links = Array[StringName]([&"m3_f"])
+map_position = Vector2(430, 446)
+
+[sub_resource type="Resource" id="site_m2_g"]
+script = ExtResource("e1")
+id = &"m2_g"
+display_name = "Last-Mile Drone Command"
+tier = 2
+links = Array[StringName]([&"m3_g"])
+locked_links = Array[StringName]([&"m2_h"])
+map_position = Vector2(430, 523)
+
+[sub_resource type="Resource" id="site_m2_h"]
+script = ExtResource("e1")
+id = &"m2_h"
+display_name = "Insurance Claims Ledger"
+tier = 2
+links = Array[StringName]([&"m3_h"])
+map_position = Vector2(430, 600)
+
+[sub_resource type="Resource" id="site_m3_core"]
+script = ExtResource("e1")
+id = &"m3_core"
+display_name = "Global Routing Core"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+locked_links = Array[StringName]([&"m3_b"])
+map_position = Vector2(660, 60)
+
+[sub_resource type="Resource" id="site_m3_b"]
+script = ExtResource("e1")
+id = &"m3_b"
+display_name = "Freight Futures Desk"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+map_position = Vector2(660, 137)
+
+[sub_resource type="Resource" id="site_m3_c"]
+script = ExtResource("e1")
+id = &"m3_c"
+display_name = "Customs Override Escrow"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+locked_links = Array[StringName]([&"m3_d"])
+map_position = Vector2(660, 214)
+
+[sub_resource type="Resource" id="site_m3_d"]
+script = ExtResource("e1")
+id = &"m3_d"
+display_name = "Supply Twin Simulator"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+map_position = Vector2(660, 291)
+
+[sub_resource type="Resource" id="site_m3_e"]
+script = ExtResource("e1")
+id = &"m3_e"
+display_name = "Board Logistics Backbone"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+locked_links = Array[StringName]([&"m3_f"])
+map_position = Vector2(660, 369)
+
+[sub_resource type="Resource" id="site_m3_f"]
+script = ExtResource("e1")
+id = &"m3_f"
+display_name = "Contract Pricing Authority"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+map_position = Vector2(660, 446)
+
+[sub_resource type="Resource" id="site_m3_g"]
+script = ExtResource("e1")
+id = &"m3_g"
+display_name = "Surveillance Route Archive"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+locked_links = Array[StringName]([&"m3_h"])
+map_position = Vector2(660, 523)
+
+[sub_resource type="Resource" id="site_m3_h"]
+script = ExtResource("e1")
+id = &"m3_h"
+display_name = "Meridian Root Ledger"
+tier = 3
+links = Array[StringName]([&"the_manifest_site"])
+map_position = Vector2(660, 600)
+
+[sub_resource type="Resource" id="site_lose_the_tracking"]
+script = ExtResource("e1")
+id = &"lose_the_tracking"
+display_name = "Lose the Tracking"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 20)
+
+[sub_resource type="Resource" id="site_forge_the_manifest"]
+script = ExtResource("e1")
+id = &"forge_the_manifest"
+display_name = "Forge the Manifest"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 380)
+
+[sub_resource type="Resource" id="site_reroute_the_audit"]
+script = ExtResource("e1")
+id = &"reroute_the_audit"
+display_name = "Reroute the Audit"
+tier = 2
+objective = 2
+heat_change = -8
+map_position = Vector2(340, 650)
+
+[sub_resource type="Resource" id="site_sink_the_cargo_logs"]
+script = ExtResource("e1")
+id = &"sink_the_cargo_logs"
+display_name = "Sink the Cargo Logs"
+tier = 3
+objective = 2
+heat_change = -8
+map_position = Vector2(560, 430)
+
+[sub_resource type="Resource" id="site_the_manifest_site"]
+script = ExtResource("e1")
+id = &"the_manifest_site"
+display_name = "The Manifest"
+tier = 4
+objective = 4
+claimable = false
+map_position = Vector2(900, 330)
+
+[sub_resource type="Resource" id="grid"]
+script = ExtResource("e2")
+sites = Array[ExtResource("e1")]([SubResource("site_m_home"), SubResource("site_m1_a"), SubResource("site_m1_b"), SubResource("site_m1_c"), SubResource("site_m1_d"), SubResource("site_m1_e"), SubResource("site_m1_f"), SubResource("site_m1_g"), SubResource("site_m1_h"), SubResource("site_m1_i"), SubResource("site_m1_j"), SubResource("site_m2_intel"), SubResource("site_m2_breach"), SubResource("site_m2_virus"), SubResource("site_m2_d"), SubResource("site_m2_e"), SubResource("site_m2_f"), SubResource("site_m2_g"), SubResource("site_m2_h"), SubResource("site_m3_core"), SubResource("site_m3_b"), SubResource("site_m3_c"), SubResource("site_m3_d"), SubResource("site_m3_e"), SubResource("site_m3_f"), SubResource("site_m3_g"), SubResource("site_m3_h"), SubResource("site_lose_the_tracking"), SubResource("site_forge_the_manifest"), SubResource("site_reroute_the_audit"), SubResource("site_sink_the_cargo_logs"), SubResource("site_the_manifest_site")])
+home_site_id = &"m_home"
+boss_site_id = &"the_manifest_site"
+
+[sub_resource type="Resource" id="ex_intel"]
+script = ExtResource("e3")
+exploit_type = 1
+display_name = "Intel: Shipping Manifests"
+description = "Reveals the boss phases and pointer moves; opens locked Grid links."
+heat_cost = 10
+reveals_boss_phases = true
+opens_locked_links = true
+
+[sub_resource type="Resource" id="ex_breach"]
+script = ExtResource("e3")
+exploit_type = 2
+display_name = "Breach: Customs Override Keys"
+description = "The boss starts with one fewer pointer."
+heat_cost = 10
+removes_boss_pointers = 1
+
+[sub_resource type="Resource" id="fx_virus"]
+script = ExtResource("e4")
+type = 4
+target = 2
+amount = 2
+status = 1
+slice_pick = 1
+
+[sub_resource type="Resource" id="te_virus"]
+script = ExtResource("e5")
+trigger = 1
+effects = Array[ExtResource("e4")]([SubResource("fx_virus")])
+
+[sub_resource type="Resource" id="ex_virus"]
+script = ExtResource("e3")
+exploit_type = 3
+display_name = "Virus: Rogue Routing Table"
+description = "The boss starts with CORRUPTED slices."
+heat_cost = 10
+breach_effects = Array[ExtResource("e5")]([SubResource("te_virus")])
+
+[sub_resource type="Resource" id="b_lost_cargo_1"]
+script = ExtResource("e6")
+id = &"lost_cargo_1"
+title = "Lost Cargo I"
+speaker = 3
+text = "The manifests show it plainly: forty pallets of insulin marked lost in transit, every week, like clockwork. The same pallets turn up in Meridian's premium lane at triple the price."
+
+[sub_resource type="Resource" id="b_lost_cargo_2"]
+script = ExtResource("e6")
+id = &"lost_cargo_2"
+title = "Lost Cargo II"
+speaker = 2
+text = "The customs keys unlock a folder called SHRINKAGE STRATEGY. It sets a loss target per district. The poorer the postcode, the higher the target."
+
+[sub_resource type="Resource" id="b_lost_cargo_3"]
+script = ExtResource("e6")
+id = &"lost_cargo_3"
+title = "Lost Cargo III"
+speaker = 3
+text = "The routing table has a rule with no author: if the recipient's credit score falls below a line, reroute to premium. The line moves every quarter."
+
+[sub_resource type="Resource" id="b_lost_cargo_bonus_1"]
+script = ExtResource("e6")
+id = &"lost_cargo_bonus_1"
+title = "Lost Cargo: The Warehouse"
+speaker = 0
+text = "Row 44, bay 9. Forty pallets, cold-chain green, marked lost. The Cell could walk them out the door."
+
+[sub_resource type="Resource" id="b_lost_cargo_bonus_2"]
+script = ExtResource("e6")
+id = &"lost_cargo_bonus_2"
+title = "Lost Cargo: Solace"
+speaker = 2
+text = "Solace Biosystems pays Meridian a retainer for 'predictable scarcity'. The two boards share a golf course and a lawyer."
+
+[sub_resource type="Resource" id="b_lost_cargo_f"]
+script = ExtResource("e6")
+id = &"lost_cargo_f"
+title = "Lost Cargo: Finale"
+text = "The Manifest goes dark and forty pallets find their way home. For one week, nothing in the district is lost in transit."
+
+[sub_resource type="Resource" id="sp_lost_cargo"]
+script = ExtResource("e7")
+id = &"sp_lost_cargo"
+title = "Lost Cargo"
+premise = "Meridian loses shipments of insulin on purpose, then sells them back at surge prices."
+beats = Array[ExtResource("e6")]([SubResource("b_lost_cargo_1"), SubResource("b_lost_cargo_2"), SubResource("b_lost_cargo_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_lost_cargo_bonus_1"), SubResource("b_lost_cargo_bonus_2")])
+finale = SubResource("b_lost_cargo_f")
+
+[sub_resource type="Resource" id="b_night_shift_1"]
+script = ExtResource("e6")
+id = &"night_shift_1"
+title = "The Night Shift I"
+speaker = 3
+text = "Worker 5512 was fired at 03:14 for a bathroom break the model called idle time. The model has fired four thousand people. It has never been wrong, according to itself."
+
+[sub_resource type="Resource" id="b_night_shift_2"]
+script = ExtResource("e6")
+id = &"night_shift_2"
+title = "The Night Shift II"
+speaker = 2
+text = "The scoring engine was tuned to fire one in twenty every quarter. Not for cause. For motivation. The deck calls it healthy churn."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_night_shift_3"]
+script = ExtResource("e6")
+id = &"night_shift_3"
+title = "The Night Shift III"
+speaker = 0
+text = "The workers have a group chat. They know which aisles the cameras miss. They would like to talk to whoever cut the Customs Keys."
+
+[sub_resource type="Resource" id="b_night_shift_bonus_1"]
+script = ExtResource("e6")
+id = &"night_shift_bonus_1"
+title = "The Night Shift: Union"
+speaker = 1
+text = "A picker named Oyelaran runs the chat. She says the Cell can have the warehouse floor plans if it never, ever leaks her name."
+
+[sub_resource type="Resource" id="b_night_shift_bonus_2"]
+script = ExtResource("e6")
+id = &"night_shift_bonus_2"
+title = "The Night Shift: The Quota"
+speaker = 2
+text = "The quota rises two percent every time someone meets it. Nobody has met it since spring."
+
+[sub_resource type="Resource" id="b_night_shift_f"]
+script = ExtResource("e6")
+id = &"night_shift_f"
+title = "The Night Shift: Finale"
+text = "The Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down."
+
+[sub_resource type="Resource" id="sp_night_shift"]
+script = ExtResource("e7")
+id = &"sp_night_shift"
+title = "The Night Shift"
+premise = "Meridian's warehouse workers are scored every second and fired by an algorithm that never sleeps."
+beats = Array[ExtResource("e6")]([SubResource("b_night_shift_1"), SubResource("b_night_shift_2"), SubResource("b_night_shift_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_night_shift_bonus_1"), SubResource("b_night_shift_bonus_2")])
+finale = SubResource("b_night_shift_f")
+
+[sub_resource type="Resource" id="b_customs_hold_1"]
+script = ExtResource("e6")
+id = &"customs_hold_1"
+title = "Customs Hold I"
+speaker = 3
+text = "Six hundred parcels sit in customs pre-clearance, flagged for review. Every one of them is a prescription. The review queue has no reviewers."
+
+[sub_resource type="Resource" id="b_customs_hold_2"]
+script = ExtResource("e6")
+id = &"customs_hold_2"
+title = "Customs Hold II"
+speaker = 2
+text = "The hold fee doubles every week. The memo calls it an incentive to comply. Comply with what, it does not say."
+
+[sub_resource type="Resource" id="b_customs_hold_3"]
+script = ExtResource("e6")
+id = &"customs_hold_3"
+title = "Customs Hold III"
+speaker = 3
+text = "The routing mirror shows where the fees go: a shell called Clearwater Holdings. Clearwater owns the reviewers who do not exist."
+
+[sub_resource type="Resource" id="b_customs_hold_bonus_1"]
+script = ExtResource("e6")
+id = &"customs_hold_bonus_1"
+title = "Customs Hold: The List"
+speaker = 0
+text = "A list of names, addresses and what they are waiting for. Some of the dates are a year old."
+
+[sub_resource type="Resource" id="b_customs_hold_bonus_2"]
+script = ExtResource("e6")
+id = &"customs_hold_bonus_2"
+title = "Customs Hold: Clearwater"
+speaker = 2
+text = "Clearwater Holdings has one employee, one office and nine billion in receivables."
+
+[sub_resource type="Resource" id="b_customs_hold_f"]
+script = ExtResource("e6")
+id = &"customs_hold_f"
+title = "Customs Hold: Finale"
+text = "The Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week."
+
+[sub_resource type="Resource" id="sp_customs_hold"]
+script = ExtResource("e7")
+id = &"sp_customs_hold"
+title = "Customs Hold"
+premise = "Meridian holds medical shipments at the border until the fees clear. Some never do."
+beats = Array[ExtResource("e6")]([SubResource("b_customs_hold_1"), SubResource("b_customs_hold_2"), SubResource("b_customs_hold_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_customs_hold_bonus_1"), SubResource("b_customs_hold_bonus_2")])
+finale = SubResource("b_customs_hold_f")
+
+[sub_resource type="Resource" id="b_ghost_freight_1"]
+script = ExtResource("e6")
+id = &"ghost_freight_1"
+title = "Ghost Freight I"
+speaker = 3
+text = "Shipments ordered by an account with no owner. Delivered to addresses that do not exist. Paid for, in full, before the order was placed."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_ghost_freight_2"]
+script = ExtResource("e6")
+id = &"ghost_freight_2"
+title = "Ghost Freight II"
+speaker = 3
+text = "The same account bought Solace stock the day the Renewal Engine fell. It is buying Meridian puts now. It knows something."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_ghost_freight_3"]
+script = ExtResource("e6")
+id = &"ghost_freight_3"
+title = "Ghost Freight III"
+speaker = 3
+text = "The account's timestamps are wrong. Not forged. Wrong. Some of them are from next week."
+dispatch_clue = true
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_ghost_freight_bonus_1"]
+script = ExtResource("e6")
+id = &"ghost_freight_bonus_1"
+title = "Ghost Freight: Signature"
+speaker = 3
+text = "The account signs its orders with a hash. DISPATCH signs its orders with a hash. They are not the same hash. They are very close."
+
+[sub_resource type="Resource" id="b_ghost_freight_bonus_2"]
+script = ExtResource("e6")
+id = &"ghost_freight_bonus_2"
+title = "Ghost Freight: The Buyer"
+speaker = 3
+text = "Every collapse the Cell causes, the account profits. Every single one."
+
+[sub_resource type="Resource" id="b_ghost_freight_f"]
+script = ExtResource("e6")
+id = &"ghost_freight_f"
+title = "Ghost Freight: Finale"
+text = "The Manifest dies and the ghost account closes itself one second later, fully paid. Nobody told it the job was done."
+
+[sub_resource type="Resource" id="sp_ghost_freight"]
+script = ExtResource("e7")
+id = &"sp_ghost_freight"
+title = "Ghost Freight"
+premise = "Somebody is ordering freight through Meridian with money that does not come from anywhere."
+beats = Array[ExtResource("e6")]([SubResource("b_ghost_freight_1"), SubResource("b_ghost_freight_2"), SubResource("b_ghost_freight_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_ghost_freight_bonus_1"), SubResource("b_ghost_freight_bonus_2")])
+finale = SubResource("b_ghost_freight_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_civic_contract_1"]
+script = ExtResource("e6")
+id = &"civic_contract_1"
+title = "Civic Contract I"
+speaker = 2
+text = "A tender for municipal services: water, power, transit. The bidders are Meridian and something called Halcyon Civic. The evaluation was finished before the bids were opened."
+
+[sub_resource type="Resource" id="b_civic_contract_2"]
+script = ExtResource("e6")
+id = &"civic_contract_2"
+title = "Civic Contract II"
+speaker = 3
+text = "Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."
+
+[sub_resource type="Resource" id="b_civic_contract_3"]
+script = ExtResource("e6")
+id = &"civic_contract_3"
+title = "Civic Contract III"
+speaker = 2
+text = "The routing mirror already has the city's water mains in it, labelled PHASE TWO."
+
+[sub_resource type="Resource" id="b_civic_contract_bonus_1"]
+script = ExtResource("e6")
+id = &"civic_contract_bonus_1"
+title = "Civic Contract: Halcyon"
+speaker = 2
+text = "Halcyon Civic's pitch deck: A City That Runs Itself. Page nine: A City That Bills Itself."
+
+[sub_resource type="Resource" id="b_civic_contract_bonus_2"]
+script = ExtResource("e6")
+id = &"civic_contract_bonus_2"
+title = "Civic Contract: The Vote"
+speaker = 0
+text = "The council votes on Thursday. The council does not know it is voting."
+
+[sub_resource type="Resource" id="b_civic_contract_f"]
+script = ExtResource("e6")
+id = &"civic_contract_f"
+title = "Civic Contract: Finale"
+text = "The Manifest falls and the tender collapses in the scandal. Halcyon Civic issues a statement welcoming the opportunity to serve the city directly."
+
+[sub_resource type="Resource" id="sp_civic_contract"]
+script = ExtResource("e7")
+id = &"sp_civic_contract"
+title = "Civic Contract"
+premise = "Meridian is bidding to run the city's water, power and transit. The winner is already decided."
+beats = Array[ExtResource("e6")]([SubResource("b_civic_contract_1"), SubResource("b_civic_contract_2"), SubResource("b_civic_contract_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_civic_contract_bonus_1"), SubResource("b_civic_contract_bonus_2")])
+finale = SubResource("b_civic_contract_f")
+foreshadows = &"halcyon"
+
+[sub_resource type="Resource" id="b_last_mile_1"]
+script = ExtResource("e6")
+id = &"last_mile_1"
+title = "Last Mile I"
+speaker = 3
+text = "Every drone films its route. Every route is kept. The archive is sold by the street, by the hour, to anyone with a login."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_last_mile_2"]
+script = ExtResource("e6")
+id = &"last_mile_2"
+title = "Last Mile II"
+speaker = 2
+text = "The drones fly low over the protest routes on purpose. The contract calls it situational awareness."
+
+[sub_resource type="Resource" id="b_last_mile_3"]
+script = ExtResource("e6")
+id = &"last_mile_3"
+title = "Last Mile III"
+speaker = 3
+text = "The surveillance archive has the Cell in it. Not your faces. Your routes. Meridian has been mapping you."
+
+[sub_resource type="Resource" id="b_last_mile_bonus_1"]
+script = ExtResource("e6")
+id = &"last_mile_bonus_1"
+title = "Last Mile: Buyers"
+speaker = 2
+text = "The archive's biggest customer is a security firm owned by Halcyon Civic."
+
+[sub_resource type="Resource" id="b_last_mile_bonus_2"]
+script = ExtResource("e6")
+id = &"last_mile_bonus_2"
+title = "Last Mile: The Flight Plan"
+speaker = 0
+text = "Tonight's flight plan crosses the Cell's safehouse three times. It never used to."
+
+[sub_resource type="Resource" id="b_last_mile_f"]
+script = ExtResource("e6")
+id = &"last_mile_f"
+title = "Last Mile: Finale"
+text = "The Manifest falls and every drone in the city lands where it is. The district looks up at an empty sky and does not know what to do with it."
+
+[sub_resource type="Resource" id="sp_last_mile"]
+script = ExtResource("e7")
+id = &"sp_last_mile"
+title = "Last Mile"
+premise = "Meridian's delivery drones watch every street they fly over, and sell what they see."
+beats = Array[ExtResource("e6")]([SubResource("b_last_mile_1"), SubResource("b_last_mile_2"), SubResource("b_last_mile_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_last_mile_bonus_1"), SubResource("b_last_mile_bonus_2")])
+finale = SubResource("b_last_mile_f")
+
+[resource]
+script = ExtResource("main_script")
+id = &"meridian"
+display_name = "Meridian Freight Systems"
+description = "The logistics giant that moves everything, loses what it likes and bills you for the search."
+city_grid = SubResource("grid")
+enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])
+elites = Array[ExtResource("e8")]([ExtResource("e15"), ExtResource("e16")])
+final_boss = ExtResource("e17")
+exploits = Array[ExtResource("e3")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
+story_paths = Array[ExtResource("e7")]([SubResource("sp_lost_cargo"), SubResource("sp_night_shift"), SubResource("sp_customs_hold"), SubResource("sp_ghost_freight"), SubResource("sp_civic_contract"), SubResource("sp_last_mile")])
+raids = Array[ExtResource("e18")]([ExtResource("e19"), ExtResource("e20"), ExtResource("e21"), ExtResource("e22"), ExtResource("e23"), ExtResource("e24"), ExtResource("e25"), ExtResource("e26")])
+events = Array[ExtResource("e27")]([ExtResource("e28"), ExtResource("e29"), ExtResource("e30"), ExtResource("e31"), ExtResource("e32"), ExtResource("e33"), ExtResource("e34"), ExtResource("e35"), ExtResource("e36"), ExtResource("e37"), ExtResource("e38"), ExtResource("e39"), ExtResource("e40"), ExtResource("e41"), ExtResource("e42"), ExtResource("e43"), ExtResource("e44"), ExtResource("e45"), ExtResource("e46"), ExtResource("e47")])

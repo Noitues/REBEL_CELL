@@ -30,6 +30,50 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M8 Corporation selection and Meridian Freight Systems (GAP_ANALYSIS P0 3, P1 8)
+- **Corporation selection** (P0 3): corporations with a `ProfileUnlockData` (kind
+  CORPORATION) need it; the rest (Solace) are always open. `CampaignRules.available_
+  corporations` / `corporation_available`; `RunManager.new_campaign` falls back to Solace
+  for a locked one. The HQ start panel has a Target picker; the ICE spin box follows the
+  chosen corporation's own ladder (GDD 3.4). The start button reads "New campaign".
+- **Meridian unlock**: 120 Schematics (implementer's call; classes are 80). Buying it at HQ
+  works like the other Profile unlocks.
+- **Per-corporation raids** (schema): `RaidData.corporation_id` and `replaces`. The
+  Heat-threshold raids live in the shared config; a corporation's raid with `replaces =
+  raid_heat_25` stands in for it in that corporation's campaigns. Pending raids now carry
+  the campaign's corporation id; old saves without it keep the shared raid. Claim, node,
+  story and retaliation raids already came from `CorporationData.raids`.
+- **Meridian Freight Systems** (GDD 8.4 names): logistics megacorp. 32-Site Grid mirroring
+  Solace's shape (ten T1, eight T2 with the three Exploits, eight T3, four Heat objectives,
+  The Manifest at T4). Site ids are global content ids, so Meridian's are prefixed (m_home,
+  m1_a..). Enemy family: Customs Scanner, Cargo Hauler (resistance 2), Conveyor Warden
+  (orbit 3), Route Optimizer (two pointers), Drone Dispatcher (courier drones), Tariff
+  Collector (RAM drain); elites Port Authority and Last-Mile Enforcer; mini-boss Logistics
+  Director; boss The Manifest (400 HP, Priority Routing hub: +4 shield a turn unless
+  breached; 66% two pointers; 33% orbit, a Crit wheel and courier drones). New slices
+  Tariff (AFFLICT: drains 3 RAM) and Attack 8 +1 resistance (Inertia). Threats Courier,
+  Hauler, Customs Agent; eight raids. Exploits: Shipping Manifests, Customs Override Keys,
+  Rogue Routing Table (same effects as Solace's three). Six story paths: Lost Cargo, The
+  Night Shift, Customs Hold, Ghost Freight (DISPATCH clues), Civic Contract (foreshadows
+  Halcyon Civic), Last Mile. Twenty Meridian events; DISPATCH briefings for every Site and
+  a Meridian corporate voice for raids. Corporation colour amber #FF8C1A.
+- **Tuning** (8 seeds, `tools/simulate_campaign.gd -- 8 <ice> class=<id> corp=meridian`):
+  first pass Meridian was easier than Solace (Rigger won in 9.6 runs) and the boss stalled
+  (95 fights at the turn cap: shield regen outpaced damage at low HP). Normal enemies +20%
+  HP and +2 attack, elites +15% HP and +2 attack, Tariff drains 3, boss 400 HP but 4
+  shield a turn (was 6). Final:
+
+  | Class | ICE | Won | Mean runs | Stalls |
+  |---|---|---|---|---|
+  | Breaker | 0 | 7/8 | 18.4 | 40 |
+  | Breaker | 5 | 7/8 | 16.8 | 49 |
+  | Ghost | 0 | 8/8 | 10.6 | 12 |
+  | Botnet | 0 | 8/8 | 13.3 | 3 |
+  | Rigger | 0 | 7/8 | 22.6 | 68 |
+
+- Dev shortcuts: `--demo-start` (the start panel) and `--demo-corp=<id>` with the HQ demo
+  flags (campaign-only, bypasses Profile unlocks).
+
 ### 2026-09-24 — M7 Pools and Solace depth (GAP_ANALYSIS P1 6–7)
 - **Only existing effect types.** Every new card, Firmware, Daemon, asset and event is data
   on the M1–M6 effect set; no new mechanics. Numbers are placeholders.
@@ -703,6 +747,15 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
+
+### From M8, corporations (2026-09-24) — decided by the implementer, confirm in playtest
+- **Meridian vs Solace difficulty**: the bot finds Meridian's ICE 0 about as hard as
+  Solace's; as the second corporation it could be harder. The ICE ladder already starts a
+  new corporation at (best - 5), which may be enough.
+- **Meridian unlock price** 120 Schematics, or should it unlock by beating Solace?
+- **Boss stalls**: the bot still reaches the turn cap against The Manifest (Hub Breach and
+  Pierce are the counters; the bot does not time them). A soft enrage is an option.
+- **Music**: Meridian has no raid music context of its own yet (Solace has solace_raid).
 
 ### From M7, pools and Solace depth (2026-09-24) — decided by the implementer, confirm in playtest
 - **Solace's key counter is anti-corruption** (Cleanse, Encrypt, Sanitize, Hot Patch). In a

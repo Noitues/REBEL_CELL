@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ThreatData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="main_script"]
+
+; Meridian threat (M8).
+
+[resource]
+script = ExtResource("main_script")
+id = &"courier"
+display_name = "Courier"
+description = "Fast and fragile: two edges a step toward the highest-value node."
+integrity = 8
+damage = 3
+edges_per_step = 2
+routing = 1

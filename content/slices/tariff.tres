@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SliceData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e2"]
+
+; Meridian slice (M8, decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("e1")
+type = 13
+target = 3
+amount = 3
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("e2")
+trigger = 5
+effects = Array[ExtResource("e1")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"tariff"
+display_name = "Tariff"
+slice_type = 7
+target_rule = 1
+base_output = 0
+extra_effects = Array[ExtResource("e2")]([SubResource("te")])

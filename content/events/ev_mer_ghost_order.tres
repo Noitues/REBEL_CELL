@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/daemons/cascade.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e3"]
+
+; Meridian Terminal event (M8).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Accept delivery (Daemon: Cascade)"
+result_text = "The box contains exactly what you needed. Nobody asked what you needed."
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e3")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Refuse it (-1 Heat)"
+result_text = "The order cancels itself before you finish refusing."
+effects = Array[ExtResource("e3")]([SubResource("fx1_0")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_ghost_order"
+title = "Ghost Order"
+speaker = 3
+text = "A Meridian order screen refreshes: one shipment, destination your safehouse, sender unknown, paid in full."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"meridian"
+dispatch_clue = true

@@ -1,0 +1,128 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=33 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/tariff.tres" id="e6"]
+[ext_resource type="Resource" path="res://content/slices/def_12.tres" id="e7"]
+[ext_resource type="Resource" path="res://content/slices/crit_24.tres" id="e8"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e9"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e10"]
+[ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="e11"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
+[ext_resource type="Resource" path="res://content/enemies/courier_drone.tres" id="e13"]
+
+; The Manifest, Meridian final boss (M8, decision 2026-09-24). 400 HP; hub Priority
+; Routing gains 4 shield per turn unless breached; 66%: Multiply (0, 15); 33%: Orbit 2, Crit wheel, 2 courier drones.
+
+[sub_resource type="Resource" id="fx_shield"]
+script = ExtResource("e1")
+type = 2
+target = 0
+amount = 4
+
+[sub_resource type="Resource" id="te_priority"]
+script = ExtResource("e2")
+trigger = 2
+effects = Array[ExtResource("e1")]([SubResource("fx_shield")])
+
+[sub_resource type="Resource" id="hub_priority"]
+script = ExtResource("e3")
+id = &"priority_routing"
+display_name = "Priority Routing"
+description = "Gains 4 shield each turn unless the Hub is breached."
+passive_effects = Array[ExtResource("e2")]([SubResource("te_priority")])
+
+[sub_resource type="Resource" id="wheel_slot_atk_14"]
+script = ExtResource("e5")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_tariff"]
+script = ExtResource("e5")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel_slot_def_12"]
+script = ExtResource("e5")
+slice = ExtResource("e7")
+
+[sub_resource type="Resource" id="wheel_slot_crit_24"]
+script = ExtResource("e5")
+slice = ExtResource("e8")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e5")
+slice = ExtResource("e9")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e10")
+slice_count = 6
+slots = Array[ExtResource("e5")]([SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_tariff"), SubResource("wheel_slot_def_12"), SubResource("wheel_slot_crit_24"), SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_miss")])
+hub = SubResource("hub_priority")
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="phase0"]
+script = ExtResource("e11")
+hp_threshold_pct = 0.66
+pointer_behavior = 1
+pointer_ticks = PackedInt32Array(0, 15)
+phase_line = "Load balancing: a second routing head comes online."
+
+[sub_resource type="Resource" id="wheel_phase1_slot_crit_24"]
+script = ExtResource("e5")
+slice = ExtResource("e8")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_tariff"]
+script = ExtResource("e5")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_def_12"]
+script = ExtResource("e5")
+slice = ExtResource("e7")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_atk_14"]
+script = ExtResource("e5")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_miss"]
+script = ExtResource("e5")
+slice = ExtResource("e9")
+
+[sub_resource type="Resource" id="wheel_phase1"]
+script = ExtResource("e10")
+slice_count = 6
+slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_tariff"), SubResource("wheel_phase1_slot_def_12"), SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_atk_14"), SubResource("wheel_phase1_slot_miss")])
+hub = SubResource("hub_priority")
+pointer_ticks = PackedInt32Array(0, 15)
+
+[sub_resource type="Resource" id="pspawn1_0"]
+script = ExtResource("e12")
+satellite = ExtResource("e13")
+trigger = 1
+every_n = 1
+dock_slot = -1
+max_active = 2
+
+[sub_resource type="Resource" id="phase1"]
+script = ExtResource("e11")
+hp_threshold_pct = 0.33
+pointer_behavior = 3
+pointer_ticks = PackedInt32Array(0, 15)
+orbit_ticks_per_turn = 2
+wheel_override = SubResource("wheel_phase1")
+spawns = Array[ExtResource("e12")]([SubResource("pspawn1_0")])
+phase_line = "Peak season: the heads drift, the couriers launch, the second lane goes critical."
+
+[resource]
+script = ExtResource("main_script")
+id = &"the_manifest"
+display_name = "The Manifest"
+description = "Meridian's routing core. Every package on the planet passes through it."
+corporation_id = &"meridian"
+hp = 400
+wheel = SubResource("wheel")
+is_boss = true
+cycle_reward = 0
+phases = Array[ExtResource("e11")]([SubResource("phase0"), SubResource("phase1")])

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/corporations/meridian.tres" id="e1"]
+
+; Corporation unlock (GDD 3.4; 120 Schematics, decision 2026-09-24). UnlockKind 2 = CORPORATION.
+
+[resource]
+script = ExtResource("main_script")
+id = &"unlock_meridian"
+kind = 2
+display_name = "Corporation: Meridian Freight Systems"
+description = "Target Meridian Freight Systems in new campaigns."
+schematic_cost = 120
+unlocks = ExtResource("e1")

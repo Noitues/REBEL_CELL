@@ -431,6 +431,13 @@ Service, The Cure, Ghost Patient (foreshadows DISPATCH), Hostile Takeover (fores
 next corporation, Meridian Freight Systems; corporation names per DECISIONS.md 2026-09-24:
 Meridian Freight Systems, Halcyon Civic, Orbital Commons). A beat may trigger a story raid.
 
+### 8.4b Meridian Freight Systems (M8, DECISIONS.md 2026-09-24)
+Logistics: automated freight, tariffs, tracking, last-mile drones. Enemies lean on
+Inertia (spin resistance), Tariffs (RAM drain), Conveyors (orbiting pointers) and courier
+drones. Exploits: Intel (shipping manifests), Breach (customs override keys), Virus (rogue
+routing table). Final server: **The Manifest**, which shields itself every turn unless its
+Hub is breached.
+
 ### 8.5 REBEL_CELL (final unlock corporation)
 Unlocked by clearing every other corporation at ICE 10; has its own ICE 0–20 ladder.
 Built from the player's profile: its Grid uses your most-used node types, its elites use

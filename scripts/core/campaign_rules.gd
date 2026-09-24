@@ -278,7 +278,7 @@ static func queue_raid(campaign: CampaignState, corp: CorporationData, source: i
 	var raid := _raid_for(corp, source)
 	if raid == null:
 		return events
-	campaign.pending_raids.append({"raid_id": String(raid.id), "source": source, "site_id": String(entry)})
+	campaign.pending_raids.append({"raid_id": String(raid.id), "source": source, "site_id": String(entry), "corporation": String(campaign.corporation_id)})
 	events.append({"type": "raid_pending", "raid_id": raid.id, "source": source,
 		"text": "%s provoked a raid: %s." % [why, raid.display_name]})
 	return events
@@ -574,6 +574,27 @@ static func class_available(profile: ProfileState, lookup: ContentLookup, cls: C
 	return u == null or profile.has_unlock(u.id)
 
 
+## Whether a campaign against `corp` may start under `profile` (GDD 3.4): corporations
+## with a Profile unlock need it; the rest (Solace) are always open. Null profile = open.
+static func corporation_available(profile: ProfileState, lookup: ContentLookup, corp: CorporationData) -> bool:
+	if corp == null:
+		return false
+	if profile == null:
+		return true
+	var u := unlock_for(lookup, corp)
+	return u == null or profile.has_unlock(u.id)
+
+
+## Corporations a new campaign may target, by id.
+static func available_corporations(profile: ProfileState, lookup: ContentLookup) -> Array[CorporationData]:
+	var out: Array[CorporationData] = []
+	for id in lookup.ids_of_class(&"CorporationData"):
+		var corp := lookup.get_content(id) as CorporationData
+		if corp != null and not corp.generated_from_profile and corporation_available(profile, lookup, corp):
+			out.append(corp)
+	return out
+
+
 ## Base classes (no alternative_of) and alternatives the profile may recruit, by id.
 static func available_classes(profile: ProfileState, lookup: ContentLookup) -> Array[ClassData]:
 	var out: Array[ClassData] = []
@@ -773,8 +794,17 @@ static func pending_raid(campaign: CampaignState) -> Dictionary:
 	return campaign.pending_raids[0] if not campaign.pending_raids.is_empty() else {}
 
 
+## The RaidData for a pending raid. A corporation's raid that `replaces` the queued id
+## (Heat-threshold raids are shared in the config) wins for that corporation's campaign.
 static func raid_data(pending: Dictionary, lookup: ContentLookup) -> RaidData:
-	return lookup.get_content(StringName(String(pending.get("raid_id", "")))) as RaidData
+	var raid_id := StringName(String(pending.get("raid_id", "")))
+	var corp_id := StringName(String(pending.get("corporation", "")))
+	if corp_id != &"":
+		for id in lookup.ids_of_class(&"RaidData"):
+			var r := lookup.get_content(id) as RaidData
+			if r != null and r.replaces == raid_id and r.corporation_id == corp_id:
+				return r
+	return lookup.get_content(raid_id) as RaidData
 
 
 static func raid_entries(campaign: CampaignState, corp: CorporationData, pending: Dictionary) -> Array[StringName]:

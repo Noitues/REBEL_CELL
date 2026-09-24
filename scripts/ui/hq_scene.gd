@@ -27,10 +27,25 @@ func _ready() -> void:
 	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
+	if args.has("--demo-start"):
+		RunManager.save_slot = "demo"
+		show_start()
+		return
 	if args.has("--demo-hq") or args.has("--demo-grid") or args.has("--demo-raid"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-grid (own save slot)
 		RunManager.save_slot = "demo"
 		new_campaign(1)
+		for a in args:
+			if a.begins_with("--demo-corp="):
+				# Screenshot campaign against another corporation (bypasses Profile unlocks,
+				# campaign-only).
+				var corp := RunManager.lookup().get_content(StringName(a.trim_prefix("--demo-corp="))) as CorporationData
+				if corp != null:
+					var home := RunManager.lookup().get_content(RunManager.DEFAULT_HOME) as HomeServerVariantData
+					RunManager.corporation = corp
+					RunManager.campaign = CampaignRules.new_campaign(corp, RunManager.config(), RunManager.lookup(), 1,
+						RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData, home.core, 0, home)
+					show_hq()
 		if args.has("--demo-classes"):
 			# Screenshot roster: one operative of every class (bypasses Profile unlocks,
 			# campaign-only, never saved to the profile).
@@ -41,14 +56,19 @@ func _ready() -> void:
 		if args.has("--demo-grid") or args.has("--demo-raid"):
 			var c := RunManager.campaign
 			c.schematics = 100
-			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), _demo_run(&"t1_a"))
-			CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), &"t1_a", &"firewall_relay")
+			var grid_data := RunManager.corporation.city_grid
+			var first: StringName = grid_data.get_site(grid_data.home_site_id).links[0]
+			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), _demo_run(first))
+			CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
 			c.armory = [&"turret", &"ice_lock", &"decoy"]
 			if args.has("--demo-raid"):
-				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, &"t1_a")
+				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
 				show_raid()
 			else:
-				selected_site = &"t2_intel"
+				for sd in grid_data.sites:
+					if sd.objective == RC.SiteObjective.EXPLOIT:
+						selected_site = sd.id
+						break
 				show_grid()
 		return
 	if RunManager.campaign == null and RunManager.has_save():
@@ -63,8 +83,8 @@ func _ready() -> void:
 
 # --- Public API (buttons and the integration tests) ---------------------------------------
 
-func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS) -> void:
-	RunManager.new_campaign(seed, RunManager.DEFAULT_CORPORATION, ice, home_variant_id, class_id)
+func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS, corporation_id: StringName = RunManager.DEFAULT_CORPORATION) -> void:
+	RunManager.new_campaign(seed, corporation_id, ice, home_variant_id, class_id)
 	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
 		RunManager.campaign.home_variant_id, RunManager.corporation.display_name, RunManager.campaign.story_path_id])
 	show_hq()
@@ -236,13 +256,26 @@ func show_start() -> void:
 	seed_spin.max_value = 999999
 	seed_spin.value = 1
 	row.add_child(seed_spin)
+	row.add_child(_label("Target:"))
+	var corp_pick := OptionButton.new()
+	corp_pick.name = "CorporationPicker"
+	var corps := RunManager.available_corporations()
+	for corp in corps:
+		corp_pick.add_item(corp.display_name)
+	row.add_child(corp_pick)
 	var cap := RunManager.ice_cap()
-	row.add_child(_label("ICE (0-%d):" % cap))
+	var ice_label := _label("ICE (0-%d):" % cap)
+	row.add_child(ice_label)
 	var ice_spin := SpinBox.new()
 	ice_spin.min_value = 0
 	ice_spin.max_value = cap
 	ice_spin.value = 0
 	row.add_child(ice_spin)
+	# Each corporation has its own ICE ladder (GDD 3.4).
+	corp_pick.item_selected.connect(func(i: int) -> void:
+		var corp_cap := RunManager.ice_cap(corps[i].id)
+		ice_spin.max_value = corp_cap
+		ice_label.text = "ICE (0-%d):" % corp_cap)
 	var ice_text := _label(_ice_description(0))
 	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
 	row.add_child(_label("Home server:"))
@@ -257,9 +290,10 @@ func show_start() -> void:
 	for cls in classes:
 		class_pick.add_item(cls.display_name)
 	row.add_child(class_pick)
-	row.add_child(_button("New campaign vs Solace", func() -> void:
+	row.add_child(_button("New campaign", func() -> void:
 		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
-			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS)))
+			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
+			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)))
 	box.add_child(ice_text)
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))

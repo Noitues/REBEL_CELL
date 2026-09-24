@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ThreatData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="main_script"]
+
+; Meridian threat (M8).
+
+[resource]
+script = ExtResource("main_script")
+id = &"hauler"
+display_name = "Hauler"
+description = "A slow armoured truck that goes for the weakest node."
+integrity = 28
+damage = 10
+edges_per_step = 1
+routing = 2

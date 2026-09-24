@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/firmware/tracer.tres" id="e3"]
+
+; Meridian Terminal event (M8).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 22
+target = 6
+amount = 30
+
+[sub_resource type="Resource" id="fx0_1"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = 3
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Ride the lane (+30 Cycles, +3 Heat)"
+result_text = "Fast, rich and very visible."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0"), SubResource("fx0_1")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Poison the lane (Firmware: Tracer)"
+result_text = "You slip a tracer into Meridian's own traffic."
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep moving. The conveyor does too."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_priority_lane"
+title = "Priority Lane"
+speaker = 2
+text = "A priority freight lane runs straight through the node. Nothing in it is ever inspected."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"meridian"

@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+
+; Meridian Terminal event (M8).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 23
+target = 6
+amount = 3
+
+[sub_resource type="Resource" id="fx0_1"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = 3
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Redirect the payout (+3 Schematics banked, +3 Heat)"
+result_text = "Meridian's insurers are very thorough, later."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0"), SubResource("fx0_1")])
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Void the claim (-1 Heat)"
+result_text = "One less lie on the ledger."
+effects = Array[ExtResource("e1")]([SubResource("fx1_0")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep moving. The conveyor does too."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_insurance_fraud"
+title = "Cargo Insurance"
+speaker = 2
+text = "A cargo insurance claim for a shipment that was never sent. The payout is waiting."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"meridian"

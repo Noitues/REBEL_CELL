@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/crit_16.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/shield_8.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e8"]
+[ext_resource type="Resource" path="res://content/enemies/courier_drone.tres" id="e9"]
+
+; Meridian Freight Systems enemy (M8, decision 2026-09-24).
+
+[sub_resource type="Resource" id="wheel_slot_atk_14"]
+script = ExtResource("e2")
+slice = ExtResource("e1")
+
+[sub_resource type="Resource" id="wheel_slot_def_8"]
+script = ExtResource("e2")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="wheel_slot_crit_16"]
+script = ExtResource("e2")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_shield_8"]
+script = ExtResource("e2")
+slice = ExtResource("e5")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e2")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e7")
+slice_count = 6
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_def_8"), SubResource("wheel_slot_crit_16"), SubResource("wheel_slot_shield_8"), SubResource("wheel_slot_miss")])
+pointer_ticks = PackedInt32Array(0)
+pointer_orbit_per_turn = 2
+
+[sub_resource type="Resource" id="spawn0"]
+script = ExtResource("e8")
+satellite = ExtResource("e9")
+trigger = 1
+every_n = 1
+dock_slot = 1
+max_active = 1
+
+[resource]
+script = ExtResource("main_script")
+id = &"last_mile_enforcer"
+display_name = "Last-Mile Enforcer"
+description = "Orbits 2 ticks a turn and brings its own escort drone."
+corporation_id = &"meridian"
+hp = 132
+wheel = SubResource("wheel")
+is_elite = true
+cycle_reward = 35
+spawns = Array[ExtResource("e8")]([SubResource("spawn0")])

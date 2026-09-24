@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/daemons/tuning_fork.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e3"]
+
+; Meridian Terminal event (M8).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Trade secrets (Daemon: Tuning Fork)"
+result_text = "She shows you a trick with the scanners."
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e3")
+type = 14
+target = 0
+amount = 15
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Give them the patch (+15 HP)"
+result_text = "They patch you up in the break room."
+effects = Array[ExtResource("e3")]([SubResource("fx1_0")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep moving. The conveyor does too."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_picker_chat"
+title = "The Group Chat"
+speaker = 1
+text = "A warehouse picker waves you over. 'We know which cameras are fake. What do you know?'"
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"meridian"

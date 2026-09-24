@@ -286,4 +286,19 @@ func _m6() -> int:
 	var wb := WheelState.from_dict(w.to_dict())
 	print("WheelState respin_skipped round trip: ", wb.respin_skipped)
 	if not wb.respin_skipped: fails += 1
+	return fails + _m8()
+
+
+## M8 corporations: RaidData.corporation_id / replaces (a corporation's raid standing in
+## for a shared Heat-threshold raid).
+func _m8() -> int:
+	var fails := 0
+	var raid := RaidData.new(); raid.id = &"raid_x"; raid.corporation_id = &"meridian"; raid.replaces = &"raid_heat_25"
+	var err := ResourceSaver.save(raid, "user://smoke_raid_m8.tres")
+	var loaded: RaidData = load("user://smoke_raid_m8.tres")
+	print("M8 raid save=", err, " corp=", loaded.corporation_id, " replaces=", loaded.replaces)
+	if err != OK or loaded.corporation_id != &"meridian" or loaded.replaces != &"raid_heat_25": fails += 1
+	var plain := RaidData.new()
+	print("Raid defaults: corp='", plain.corporation_id, "' replaces='", plain.replaces, "'")
+	if plain.corporation_id != &"" or plain.replaces != &"": fails += 1
 	return fails

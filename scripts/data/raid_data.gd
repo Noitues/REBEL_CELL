@@ -8,3 +8,7 @@ extends Resource
 @export var waves: Array[RaidWaveData] = []
 @export var schematic_reward: int = 10
 @export_multiline var warning_text: String
+## Corporation this raid belongs to (empty = shared). With `replaces`, a corporation's
+## raid stands in for a shared raid id (the Heat-threshold raids in the config).
+@export var corporation_id: StringName = &""
+@export var replaces: StringName = &""

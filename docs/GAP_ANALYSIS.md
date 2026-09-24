@@ -83,7 +83,7 @@ P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = po
 1. ~~**Recruitment by class** and the class unlock purchase (80 Schematics); the roster
    chooses among unlocked classes.~~ Done in M6.
 2. ~~**Botnet drones persisting between combats** in a run (Hub passive).~~ Done in M6.
-3. **Corporation selection** at campaign start (profile-unlocked corporations).
+3. ~~**Corporation selection** at campaign start (profile-unlocked corporations).~~ Done in M8.
 4. **Balance simulation** grows into a tuning tool (per ICE, per class). Per class done in M6
    (`class=<id>`); per corporation arrives with corporation selection.
 
@@ -93,7 +93,7 @@ P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = po
 6. ~~**Pools**: shared cards to ~60, Firmware to ~18, Daemons to ~24, assets to ~8, shop
    slices to ~12.~~ Done in M7.
 7. ~~**Solace depth**: events to ~40.~~ Done in M7.
-8. **Meridian Freight Systems**, **Halcyon Civic**, **Orbital Commons**: grid, enemy
+8. **Meridian Freight Systems** (done in M8), **Halcyon Civic**, **Orbital Commons**: grid, enemy
    family, mini-boss, boss with phases, Exploits, threats, raids, story paths, events,
    voice sets, music context, corporation colour.
 9. **REBEL_CELL**: generator from the profile, own ICE ladder, DISPATCH reveal, finale,

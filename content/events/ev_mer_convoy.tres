@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/cards/cold_snap.tres" id="e3"]
+
+; Meridian Terminal event (M8).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 22
+target = 6
+amount = 40
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Hijack a hauler (+40 Cycles, 8 damage)"
+result_text = "The hauler fights like it was built to."
+hp_cost = 8
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Swap the light (Card: Cold Snap)"
+result_text = "The convoy freezes for an hour. So will others."
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep moving. The conveyor does too."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_convoy"
+title = "Convoy"
+speaker = 1
+text = "A convoy of Meridian haulers idles at a red light that never turns green."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"meridian"

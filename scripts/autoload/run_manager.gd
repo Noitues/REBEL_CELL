@@ -104,6 +104,11 @@ func available_home_variants() -> Array[HomeServerVariantData]:
 ## Starts a fresh campaign against `corporation_id` (GDD 5.4 opening) at `ice_level`
 ## (clamped to the profile's cap) on `home_variant_id`.
 ## Classes the profile may recruit now (the Breaker plus unlocked classes).
+## Corporations the profile may start a campaign against (GDD 3.4).
+func available_corporations() -> Array[CorporationData]:
+	return CampaignRules.available_corporations(profile, lookup())
+
+
 func available_classes() -> Array[ClassData]:
 	return CampaignRules.available_classes(profile, lookup())
 
@@ -120,6 +125,9 @@ func recruit(class_id: StringName = DEFAULT_CLASS) -> Array[Dictionary]:
 func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION, ice_level: int = 0, home_variant_id: StringName = DEFAULT_HOME, class_id: StringName = DEFAULT_CLASS) -> CampaignState:
 	_ensure_resolver()
 	corporation = lookup().get_content(corporation_id) as CorporationData
+	if not CampaignRules.corporation_available(profile, lookup(), corporation):
+		corporation = lookup().get_content(DEFAULT_CORPORATION) as CorporationData
+		corporation_id = DEFAULT_CORPORATION
 	var home := lookup().get_content(home_variant_id) as HomeServerVariantData
 	if home == null or not available_home_variants().has(home):
 		home = lookup().get_content(DEFAULT_HOME) as HomeServerVariantData

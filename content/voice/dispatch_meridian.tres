@@ -1,0 +1,268 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=54 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; Meridian voice set (M8).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Jacking you in. Meridian logs everything; log nothing."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Route is live. Keep it quiet and bank at the first Rack."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Meridian traffic is heavy tonight. Good cover."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Clean exit. Meridian is recalculating a route that no longer exists."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Delivered. The Cell thanks you."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Package received. Well done."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Signal lost. Meridian has marked the operative as returned to sender."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "run_died"
+text = "We lost them. Regroup."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Operative down. Their route ends here."
+
+[sub_resource type="Resource" id="l9"]
+script = ExtResource("e1")
+key = "rack"
+text = "Rack captured. Bank it before Meridian notices the discrepancy."
+
+[sub_resource type="Resource" id="l10"]
+script = ExtResource("e1")
+key = "threshold:25"
+text = "Meridian has flagged a delivery exception. Expect couriers."
+
+[sub_resource type="Resource" id="l11"]
+script = ExtResource("e1")
+key = "threshold:50"
+text = "Route audit in progress. Meridian is counting your links."
+
+[sub_resource type="Resource" id="l12"]
+script = ExtResource("e1")
+key = "threshold:75"
+text = "Freight seizure authorised. Haulers are rolling."
+
+[sub_resource type="Resource" id="l13"]
+script = ExtResource("e1")
+key = "threshold:100"
+text = "Meridian is rerouting the city around the Cell. Everything is coming."
+
+[sub_resource type="Resource" id="l14"]
+script = ExtResource("e1")
+key = "boss"
+text = "The Manifest. It shields itself every turn. Breach the Hub, then cut."
+
+[sub_resource type="Resource" id="l15"]
+script = ExtResource("e1")
+key = "win"
+text = "The Manifest is down. For one day, the city moves itself."
+
+[sub_resource type="Resource" id="l16"]
+script = ExtResource("e1")
+key = "win"
+text = "Meridian is offline. Deliveries are... improvising."
+
+[sub_resource type="Resource" id="l17"]
+script = ExtResource("e1")
+key = "win"
+text = "Route closed. Next target when you are ready."
+
+[sub_resource type="Resource" id="l18"]
+script = ExtResource("e1")
+key = "loss"
+text = "Home server lost. Meridian has reassigned the Cell's address."
+
+[sub_resource type="Resource" id="l19"]
+script = ExtResource("e1")
+key = "loss"
+text = "We are off the map. Fall back."
+
+[sub_resource type="Resource" id="l20"]
+script = ExtResource("e1")
+key = "site:m1_a"
+text = "Parcel Sorting Hall. Every package in the district passes its belts. Cut the Rack and the belts stop for a shift."
+
+[sub_resource type="Resource" id="l21"]
+script = ExtResource("e1")
+key = "site:m1_b"
+text = "Customs Pre-Clearance. Meridian decides here what gets held. Take the Rack and nothing gets held today."
+
+[sub_resource type="Resource" id="l22"]
+script = ExtResource("e1")
+key = "site:m1_c"
+text = "Tracking Beacon Array. It knows where every van is, and where you are. Blind it."
+
+[sub_resource type="Resource" id="l23"]
+script = ExtResource("e1")
+key = "site:m1_d"
+text = "Returns Processing Centre. Where Meridian sends the things it does not want. Including people's claims."
+
+[sub_resource type="Resource" id="l24"]
+script = ExtResource("e1")
+key = "site:m1_e"
+text = "Drone Charging Yard. Four hundred drones on the pad. Take the Rack before they wake."
+
+[sub_resource type="Resource" id="l25"]
+script = ExtResource("e1")
+key = "site:m1_f"
+text = "Warehouse Shift Planner. It schedules the pickers down to the second. Give them a minute back."
+
+[sub_resource type="Resource" id="l26"]
+script = ExtResource("e1")
+key = "site:m1_g"
+text = "Address Verification Desk. Meridian decides who is allowed to exist at an address. Correct its records."
+
+[sub_resource type="Resource" id="l27"]
+script = ExtResource("e1")
+key = "site:m1_h"
+text = "Cold Chain Monitor. Every vaccine in the city reports here. Keep it cold and take the Rack."
+
+[sub_resource type="Resource" id="l28"]
+script = ExtResource("e1")
+key = "site:m1_i"
+text = "Tariff Calculation Office. Every fee Meridian charges starts in these tables. Make them round down."
+
+[sub_resource type="Resource" id="l29"]
+script = ExtResource("e1")
+key = "site:m1_j"
+text = "Fleet Telematics Hub. Speed, stops, driver heart rates. Meridian watches its own. Watch it back."
+
+[sub_resource type="Resource" id="l30"]
+script = ExtResource("e1")
+key = "site:m2_intel"
+text = "Shipping Manifest Vault. Every manifest Meridian ever filed. The truth is in the discrepancies. Bring back the Intel."
+
+[sub_resource type="Resource" id="l31"]
+script = ExtResource("e1")
+key = "site:m2_breach"
+text = "Customs Key Authority. The keys that open every sealed container. Take a copy. That is the Breach."
+
+[sub_resource type="Resource" id="l32"]
+script = ExtResource("e1")
+key = "site:m2_virus"
+text = "Routing Table Mirror. Meridian's map of the world. Poison it and the Manifest reads a lie. That is the Virus."
+
+[sub_resource type="Resource" id="l33"]
+script = ExtResource("e1")
+key = "site:m2_d"
+text = "Priority Lane Exchange. Where the rich buy speed. The Rack pays well."
+
+[sub_resource type="Resource" id="l34"]
+script = ExtResource("e1")
+key = "site:m2_e"
+text = "Worker Scoring Engine. It fires people for breathing. Take its Rack, and look for the audit path."
+
+[sub_resource type="Resource" id="l35"]
+script = ExtResource("e1")
+key = "site:m2_f"
+text = "Port Congestion Model. Meridian creates the queues it charges to skip. Break the model."
+
+[sub_resource type="Resource" id="l36"]
+script = ExtResource("e1")
+key = "site:m2_g"
+text = "Last-Mile Drone Command. It tells every drone where to look. Tell it to look away."
+
+[sub_resource type="Resource" id="l37"]
+script = ExtResource("e1")
+key = "site:m2_h"
+text = "Insurance Claims Ledger. Every lost parcel insured twice. Somebody collects. Take the Rack."
+
+[sub_resource type="Resource" id="l38"]
+script = ExtResource("e1")
+key = "site:m3_core"
+text = "Global Routing Core. One hop from the Manifest. Heavy security, heavier Rack."
+
+[sub_resource type="Resource" id="l39"]
+script = ExtResource("e1")
+key = "site:m3_b"
+text = "Freight Futures Desk. Meridian bets on shortages it is about to cause. Take the Rack."
+
+[sub_resource type="Resource" id="l40"]
+script = ExtResource("e1")
+key = "site:m3_c"
+text = "Customs Override Escrow. The master keys, in escrow for a very bad day. Today is that day."
+
+[sub_resource type="Resource" id="l41"]
+script = ExtResource("e1")
+key = "site:m3_d"
+text = "Supply Twin Simulator. A copy of the city's supply chain. Meridian rehearses its crises here."
+
+[sub_resource type="Resource" id="l42"]
+script = ExtResource("e1")
+key = "site:m3_e"
+text = "Board Logistics Backbone. The board's own delivery network. Private lanes, private cargo."
+
+[sub_resource type="Resource" id="l43"]
+script = ExtResource("e1")
+key = "site:m3_f"
+text = "Contract Pricing Authority. Where Meridian decides what a city pays to be fed. Take it."
+
+[sub_resource type="Resource" id="l44"]
+script = ExtResource("e1")
+key = "site:m3_g"
+text = "Surveillance Route Archive. Every drone flight ever flown, including over your safehouse. Burn it."
+
+[sub_resource type="Resource" id="l45"]
+script = ExtResource("e1")
+key = "site:m3_h"
+text = "Meridian Root Ledger. The signing keys for every transaction. The Manifest trusts it completely."
+
+[sub_resource type="Resource" id="l46"]
+script = ExtResource("e1")
+key = "site:lose_the_tracking"
+text = "Lose the Tracking. A quiet job: scrub the beacons that follow the Cell. Heat drops, nothing else changes."
+
+[sub_resource type="Resource" id="l47"]
+script = ExtResource("e1")
+key = "site:forge_the_manifest"
+text = "Forge the Manifest. Rewrite the Cell's traffic as routine freight. Heat drops."
+
+[sub_resource type="Resource" id="l48"]
+script = ExtResource("e1")
+key = "site:reroute_the_audit"
+text = "Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else."
+
+[sub_resource type="Resource" id="l49"]
+script = ExtResource("e1")
+key = "site:sink_the_cargo_logs"
+text = "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbour."
+
+[sub_resource type="Resource" id="l50"]
+script = ExtResource("e1")
+key = "site:the_manifest_site"
+text = "The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut."
+
+[resource]
+script = ExtResource("main_script")
+id = &"dispatch_meridian"
+speaker = 4
+corporation_id = &"meridian"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8"), SubResource("l9"), SubResource("l10"), SubResource("l11"), SubResource("l12"), SubResource("l13"), SubResource("l14"), SubResource("l15"), SubResource("l16"), SubResource("l17"), SubResource("l18"), SubResource("l19"), SubResource("l20"), SubResource("l21"), SubResource("l22"), SubResource("l23"), SubResource("l24"), SubResource("l25"), SubResource("l26"), SubResource("l27"), SubResource("l28"), SubResource("l29"), SubResource("l30"), SubResource("l31"), SubResource("l32"), SubResource("l33"), SubResource("l34"), SubResource("l35"), SubResource("l36"), SubResource("l37"), SubResource("l38"), SubResource("l39"), SubResource("l40"), SubResource("l41"), SubResource("l42"), SubResource("l43"), SubResource("l44"), SubResource("l45"), SubResource("l46"), SubResource("l47"), SubResource("l48"), SubResource("l49"), SubResource("l50")])
