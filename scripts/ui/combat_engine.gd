@@ -10,11 +10,23 @@ signal fight_ended(outcome: int)
 
 var resolver: CombatResolver = null
 var session: CombatSession = null
+## When set, actions go through the netrun (which settles rewards when a fight ends).
+var netrun: NetrunSession = null
 
 
 func _ready() -> void:
 	if resolver == null:
 		resolver = make_resolver()
+
+
+## Drives the netrun's live combat instead of a standalone fight.
+func adopt_netrun(p_netrun: NetrunSession) -> void:
+	netrun = p_netrun
+	resolver = p_netrun.resolver
+	session = p_netrun.combat
+	if session != null:
+		fight_started.emit(session.state)
+		state_changed.emit(session.state, session.last_events)
 
 
 ## Resolver over the whole ContentRegistry and the global config.
@@ -45,7 +57,7 @@ func submit(action: CombatAction) -> bool:
 	if session == null:
 		action_refused.emit("No fight in progress.")
 		return false
-	var result := session.apply(action)
+	var result := netrun.combat_action(action) if netrun != null else session.apply(action)
 	if not result.ok():
 		action_refused.emit(result.error)
 		return false
@@ -58,7 +70,7 @@ func submit(action: CombatAction) -> bool:
 func rewind() -> bool:
 	if session == null:
 		return false
-	var result := session.rewind()
+	var result := netrun.combat_rewind() if netrun != null else session.rewind()
 	if not result.ok():
 		action_refused.emit(result.error)
 		return false

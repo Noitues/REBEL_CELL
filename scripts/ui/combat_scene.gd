@@ -7,6 +7,10 @@ const ENEMY_CHOICES: Array[StringName] = [&"collections_agent", &"compliance_off
 const CLASS_ID := &"breaker"
 const RING_ID := &"rank:1"
 
+## Standalone mode starts a picker fight on ready; the netrun scene turns this off and
+## calls attach_netrun() instead.
+@export var auto_start: bool = true
+
 @onready var engine: CombatEngine = $CombatEngine
 
 var _status: Label
@@ -24,6 +28,7 @@ var _end_turn_button: Button
 var _rewind_button: Button
 var _log: RichTextLabel
 var _turn_readouts: RichTextLabel
+var _picker_controls: Array[Control] = []
 
 
 func _ready() -> void:
@@ -31,10 +36,19 @@ func _ready() -> void:
 	engine.state_changed.connect(_on_state_changed)
 	engine.action_refused.connect(_on_action_refused)
 	engine.fight_ended.connect(_on_fight_ended)
-	start_fight(ENEMY_CHOICES[0], int(_seed_spin.value))
+	if auto_start:
+		start_fight(ENEMY_CHOICES[0], int(_seed_spin.value))
 
 
 # --- Public (also used by the integration test) ----------------------------------
+
+## Shows and drives the netrun's live combat; hides the standalone fight picker.
+func attach_netrun(netrun: NetrunSession) -> void:
+	_log.clear()
+	for child in _picker_controls:
+		child.visible = false
+	engine.adopt_netrun(netrun)
+
 
 func start_fight(enemy_id: StringName, combat_seed: int) -> void:
 	_log.clear()
@@ -115,18 +129,24 @@ func _build_ui() -> void:
 
 	var top := HBoxContainer.new()
 	root.add_child(top)
-	top.add_child(_label("Fight:"))
+	var fight_label := _label("Fight:")
+	top.add_child(fight_label)
+	_picker_controls.append(fight_label)
 	for enemy_id in ENEMY_CHOICES:
 		var b := Button.new()
 		b.text = String(enemy_id)
 		b.pressed.connect(func() -> void: start_fight(enemy_id, int(_seed_spin.value)))
 		top.add_child(b)
-	top.add_child(_label("Seed:"))
+		_picker_controls.append(b)
+	var seed_label := _label("Seed:")
+	top.add_child(seed_label)
+	_picker_controls.append(seed_label)
 	_seed_spin = SpinBox.new()
 	_seed_spin.min_value = 0
 	_seed_spin.max_value = 999999
 	_seed_spin.value = 1
 	top.add_child(_seed_spin)
+	_picker_controls.append(_seed_spin)
 	_status = _label("")
 	top.add_child(_status)
 
