@@ -197,4 +197,31 @@ func _batch3() -> int:
 	var loaded: CampaignConfigData = load("user://smoke_config.tres")
 	print("Save=", err, " reload card_price_range=", loaded.card_price_range, " respin=", loaded.respin_ram_cost)
 	if loaded.card_price_range != Vector2i(75, 50) or loaded.respin_ram_cost != 4: fails += 1
+	return fails + _batch4()
+
+
+## Vertical-slice fixes (2026-09-24): CardData.offered (Bug card), HubCoreData.drone
+## (DEPLOY template), RankRewardData.ring_segment_options, WheelState migrations.
+func _batch4() -> int:
+	var fails := 0
+	var bug := CardData.new(); bug.id = &"bug"; bug.offered = false; bug.exhaust = true
+	bug.effects = [_mk_effect(RC.EffectType.DRAIN_RAM, RC.EffectTarget.SELF, 1)]
+	print("Bug card (expect 0 errors, offered=false): ", bug.validate(), " ", bug.offered)
+	if bug.validate().size() != 0 or bug.offered: fails += 1
+	var atk := _slice(&"atk", RC.SliceType.ATTACK, 3)
+	var def := _slice(&"def", RC.SliceType.DEFEND, 3, RC.TargetRule.SELF)
+	var drone := EnemyData.new(); drone.id = &"drone"; drone.hp = 5; drone.wheel = _wheel([atk, def])
+	var hub := HubCoreData.new(); hub.id = &"botnet_core"; hub.max_drones = 3; hub.drone = drone
+	var seg := RingSegmentData.new(); seg.id = &"seg_echo"
+	var r3 := RankRewardData.new(); r3.rank = 3; r3.ring_segment_options = [seg]
+	var err := ResourceSaver.save(hub, "user://smoke_hub.tres")
+	var loaded: HubCoreData = load("user://smoke_hub.tres")
+	print("Hub save=", err, " drone=", loaded.drone.id, " max=", loaded.max_drones, " rank3 options=", r3.ring_segment_options.size())
+	if err != OK or loaded.drone == null or loaded.max_drones != 3: fails += 1
+	var w := WheelState.from_wheel_data(drone.wheel)
+	w.pending_pointer_ticks = PackedInt32Array([5, 20])
+	var back := WheelState.from_dict(w.to_dict())
+	print("WheelState pending pointers round trip: ", back.pending_pointer_ticks)
+	if back.pending_pointer_ticks != PackedInt32Array([5, 20]): fails += 1
+	if not back.apply_pending_pointers() or back.pointer_ticks != PackedInt32Array([5, 20]): fails += 1
 	return fails

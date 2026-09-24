@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ClassData" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="ClassData" load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
@@ -21,6 +21,11 @@
 [ext_resource type="Resource" path="res://content/cards/fine_tune.tres" id="c_fine"]
 [ext_resource type="Resource" path="res://content/cards/mirror_flip.tres" id="c_flip"]
 [ext_resource type="Resource" path="res://content/cards/overdrive.tres" id="c_over"]
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="10"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_corrupt.tres" id="seg_corrupt"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_anchor.tres" id="seg_anchor"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_accelerator.tres" id="seg_accelerator"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_echo.tres" id="seg_echo"]
 
 ; Breaker (GDD 5.2 / A.1): 60 HP; wheel Crit, Atk, Atk, Atk, Def, Miss; deck of 10;
 ; Rank 1 installs the x2 / Pierce / - Inner Ring. Slice values are placeholders
@@ -63,10 +68,12 @@ max_netrun_tier = 3
 hub_upgrade = ExtResource("hub_mk2")
 station_bonus_multiplier = 1.5
 
+; Rank 3 (GDD 6.4): segment swap options Corrupt / Anchor / Accelerator / Echo.
 [sub_resource type="Resource" id="rank_3"]
 script = ExtResource("4")
 rank = 3
 max_netrun_tier = 4
+ring_segment_options = Array[ExtResource("10")]([ExtResource("seg_corrupt"), ExtResource("seg_anchor"), ExtResource("seg_accelerator"), ExtResource("seg_echo")])
 station_bonus_multiplier = 2.0
 
 ; Station bonus (GDD 5.2): the node's assets +50% damage. Convention: a DEAL_DAMAGE effect

@@ -10,5 +10,8 @@ extends Resource
 @export var perfect_hook: TriggeredEffectData
 ## Hub-sourced spin resistance. Switched off by HUB_BREACH.
 @export var hub_resistance: int = 0
-## Botnet and similar classes.
+## Botnet and similar classes: how many drones DEPLOY may keep docked on the wheel.
 @export var max_drones: int = 0
+## The drone DEPLOY slices and DEPLOY_DRONE effects create (an EnemyData whose wheel
+## has 2-3 slices). Null = the wheel cannot deploy.
+@export var drone: EnemyData

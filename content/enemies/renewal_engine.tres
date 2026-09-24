@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=22 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
@@ -18,7 +18,9 @@
 ; Renewal Engine, Solace final boss (GDD A.3, 2.11): 300 HP; Atk 14, Atk 14, Def 12,
 ; Dose, Crit 24, Miss. Hub Auto-Renew heals 10 per turn unless Hub-Breached
 ; (trigger 2 = ON_TURN_START, effect 14 = HEAL on SELF). 66%: Multiply to pointers
-; 0 and 15 (behavior 1). 33%: pointers Orbit 3 per turn (behavior 3) and 2 drones spawn.
+; 0 and 15 (behavior 1). 33%: pointers Orbit 3 per turn (behavior 3), 2 drones spawn and
+; the wheel reconfigures (wheel_override): the second Atk 14 becomes a Crit 24
+; (implementation decision 2026-09-24: "when in doubt, up the boss").
 
 [sub_resource type="Resource" id="fx_heal"]
 script = ExtResource("6")
@@ -65,6 +67,13 @@ slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"
 hub = SubResource("hub_auto_renew")
 pointer_ticks = PackedInt32Array(0)
 
+[sub_resource type="Resource" id="wheel_emergency"]
+script = ExtResource("2")
+slice_count = 6
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_crit"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_miss")])
+hub = SubResource("hub_auto_renew")
+pointer_ticks = PackedInt32Array(0)
+
 [sub_resource type="Resource" id="spawn_drones"]
 script = ExtResource("8")
 satellite = ExtResource("drone")
@@ -85,6 +94,7 @@ script = ExtResource("7")
 hp_threshold_pct = 0.33
 pointer_behavior = 3
 orbit_ticks_per_turn = 3
+wheel_override = SubResource("wheel_emergency")
 spawns = Array[ExtResource("8")]([SubResource("spawn_drones")])
 phase_line = "Emergency renewal: pointers drift and drones deploy."
 

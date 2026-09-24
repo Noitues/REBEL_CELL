@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RingSegmentData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Anchor (GDD 6.4): on Perfect, skip your next respin. Trigger 6 = ON_PERFECT with
+; min_tier 2; effect 9 = FREEZE on SELF (0).
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 9
+target = 0
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"seg_anchor"
+display_name = "Anchor"
+description = "On Perfect: your wheel skips its next respin."
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

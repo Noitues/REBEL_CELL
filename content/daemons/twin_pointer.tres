@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/twin_pointer_handler.gd" id="h"]
+
+[resource]
+script = ExtResource("1")
+id = &"twin_pointer"
+display_name = "Twin Pointer"
+description = "Your wheel is also read at the bottom; both trigger. Max RAM halved."
+rarity = 2
+cycle_cost = 250
+custom_handler = ExtResource("h")

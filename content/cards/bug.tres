@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+; Bug (GDD 11.9, ICE 11 STARTING_BUG_CARD): dead code in the deck. Playing it costs no RAM
+; but drains 1 RAM and exhausts; a Modem can remove it. Never offered as a reward.
+; EffectType 13 = DRAIN_RAM, target 0 = SELF.
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("2")
+type = 13
+target = 0
+amount = 1
+
+[resource]
+script = ExtResource("1")
+id = &"bug"
+display_name = "Bug"
+description = "Corrupted code. Drains 1 RAM when played. Exhaust."
+rarity = 0
+ram_cost = 0
+cycle_cost = 0
+wheel_target = 0
+effects = Array[ExtResource("2")]([SubResource("fx")])
+exhaust = true
+offered = false

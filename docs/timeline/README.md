@@ -1,0 +1,10 @@
+# Timeline
+
+Screen captures of each system over time, oldest first. Captured headless with Godot's
+Movie Maker (`godot --path . --resolution 1280x720 --write-movie <file>.png --fixed-fps 10
+--quit-after 12 -- --demo-<hq|grid|raid|run|combat>`); the last frame is kept.
+
+| Date | Tag | Screens |
+|---|---|---|
+| 2026-09-24 | 00_before | Baseline after M4, before the vertical-slice fix loop. |
+| 2026-09-24 | 01_combat_rules | Combat after vertical batch 1: pickers, respin, inspect/Daemons note, drones, odds. |

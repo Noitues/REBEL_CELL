@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="RingSegmentData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Corrupt (GDD 6.4, Rank 3 swap option): apply CORRUPTED to the target's resolved slice.
+; Trigger 5 = ON_SLICE_TRIGGER; effect 4 = APPLY_STATUS on POINTER_TARGET (3), status 1,
+; slice_pick 0 = UNDER_POINTER.
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 4
+target = 3
+status = 1
+slice_pick = 0
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 5
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"seg_corrupt"
+display_name = "Corrupt"
+description = "The target's resolved slice becomes CORRUPTED."
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

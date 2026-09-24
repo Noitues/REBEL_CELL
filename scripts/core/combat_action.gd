@@ -2,7 +2,8 @@ class_name CombatAction
 extends RefCounted
 ## One player input as plain data (TECH_SPEC 5.4). Recorded for rewind and replay.
 
-enum Type { PLAY_CARD, NUDGE, TARGET, END_TURN }
+## RESPIN: the RAM respin of the operative's own wheel (GDD 2.5, 11.3: 4 RAM).
+enum Type { PLAY_CARD, NUDGE, TARGET, END_TURN, RESPIN }
 
 var type: int = Type.END_TURN
 ## PLAY_CARD: index into CombatState.hand.
@@ -43,6 +44,12 @@ static func target(wheel: StringName) -> CombatAction:
 	return a
 
 
+static func respin() -> CombatAction:
+	var a := CombatAction.new()
+	a.type = Type.RESPIN
+	return a
+
+
 static func end_turn() -> CombatAction:
 	var a := CombatAction.new()
 	a.type = Type.END_TURN
@@ -79,5 +86,7 @@ func describe() -> String:
 			return "nudge %s %s %s" % [wheel_id, "+1" if direction > 0 else "-1", "inner" if ring == RC.RingScope.INNER else "outer"]
 		Type.TARGET:
 			return "target %s" % wheel_id
+		Type.RESPIN:
+			return "respin"
 		_:
 			return "end turn"

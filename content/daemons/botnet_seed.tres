@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/botnet_seed_handler.gd" id="h"]
+
+[resource]
+script = ExtResource("1")
+id = &"botnet_seed"
+display_name = "Botnet Seed"
+description = "Each Perfect deploys a 1-HP drone on the triggered slice (max 2)."
+rarity = 1
+cycle_cost = 200
+custom_handler = ExtResource("h")

@@ -14,6 +14,9 @@ var deck: Array[StringName] = []
 var slot_slice_ids: Array[StringName] = []
 var slot_firmware_ids: Array[StringName] = []
 var daemon_ids: Array[StringName] = []
+## Rank 3 Inner Ring segment swaps (GDD 6.4): one id per segment slot; &"" keeps the
+## class default. Empty until the operative swaps something.
+var ring_segment_ids: Array[StringName] = []
 var alive: bool = true
 ## Netruns survived with this operative (informational; Rank is the rule value).
 var runs_completed: int = 0
@@ -81,6 +84,7 @@ func to_dict() -> Dictionary:
 		"hp": hp, "max_hp": max_hp,
 		"deck": _strings(deck), "slot_slice_ids": _strings(slot_slice_ids),
 		"slot_firmware_ids": _strings(slot_firmware_ids), "daemon_ids": _strings(daemon_ids),
+		"ring_segment_ids": _strings(ring_segment_ids),
 		"alive": alive, "runs_completed": runs_completed,
 	}
 
@@ -97,6 +101,7 @@ static func from_dict(d: Dictionary) -> OperativeState:
 	o.slot_slice_ids = _names(d.get("slot_slice_ids", []))
 	o.slot_firmware_ids = _names(d.get("slot_firmware_ids", []))
 	o.daemon_ids = _names(d.get("daemon_ids", []))
+	o.ring_segment_ids = _names(d.get("ring_segment_ids", []))
 	o.alive = bool(d.get("alive", true))
 	o.runs_completed = int(d.get("runs_completed", 0))
 	return o

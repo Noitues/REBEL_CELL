@@ -30,6 +30,79 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Vertical-slice fixes, batch 1: combat rules (GAP_ANALYSIS §2.1)
+Designer instruction: "make calls on every decision". Every call below is logged here
+and annotated in the GDD where it changes a rule.
+- **ICE/Heat combat modifiers are applied through `NetrunSession.rule_overrides()`**:
+  `ENEMY_RESISTANCE` adds passive resistance to every non-satellite enemy (satellites are
+  nudged individually and stay at 0); `BOSS_STRENGTH_PCT` multiplies HP and output of the
+  final boss **and mini-bosses** (the designer's "up the boss numbers"); `BOSS_EXTRA_POINTER`
+  adds pointers to the final boss only, evenly spaced (offsets 15, 10, 20, 5, 25 from
+  pointer 0, first free wins) and survives phase changes via the trim/add rules;
+  `NO_FIRST_TURN_FREE_NUDGE` zeroes the free nudge on turn 1 only; `STARTING_BUG_CARD`
+  puts N **Bug** cards (0 RAM, drains 1 RAM, exhaust, `CardData.offered = false` so it is
+  never a reward or Modem stock) into the working deck at run start — a Modem removal
+  is the counterplay, and the roster copy only inherits them on completion.
+- **HeatGatedEffectData is live**: an enemy's `heat_effects` join its listeners while the
+  Heat at combat start (`CombatState.campaign_heat`) is at or above `min_heat`. Content:
+  Compliance Officer at Heat 50+ drains 1 RAM per attack ("Audit"); Account Manager at
+  Heat 75+ heals 5 per turn ("Retainer").
+- **Satellite spawns**: `ON_TURN_START` spawns count every start of turn (turn 1
+  included), fire every `every_n`, and only while fewer than `max_active` satellites of
+  that template are alive on the host.
+- **MIGRATE is telegraphed**: entering a MIGRATE phase stores the layout in
+  `WheelState.pending_pointer_ticks` (event `boss_migrate_telegraph`); the pointers move at
+  that wheel's next start of turn (event `boss_migrate`). The view draws the pending
+  pointers dashed in cell_acid with a "next" tag and flickers the current ones. Account
+  Manager gained a 25% MIGRATE phase (pointers 5 and 20).
+- **`BossPhaseData.wheel_override`** swaps slices, Firmware, statuses (reset) and passive
+  resistance; rotation, pointers and pending migrations are kept; the override's hub
+  applies unless `hub_override` is set. The Renewal Engine's ORBIT phase now swaps its
+  second Atk 14 for a Crit 24.
+- **Player drones (GDD 5.2)** live in `CombatState.drones` as satellites with
+  `is_player = true`, host `player`. A DEPLOY slice docks the Hub's `drone` template
+  (new `HubCoreData.drone`) on the Deploy slice itself or the next free slice clockwise,
+  up to `max_drones`; `DEPLOY_DRONE` effects may pick the slice (`slice_pick`). A drone
+  resolves only in a turn where the slice it docks on resolves (any player pointer), at
+  full output, against the player's target; enemy attacks aimed at a guarded slice hit
+  the drone (same bodyguard rule as enemy satellites). Drones respin with the wheel, do
+  not get Kernel Sync or Daemon listeners, and die like satellites (deaths of combatants
+  spawned mid-resolve are reported the same turn). Drones persisting between combats
+  (Botnet passive) is left to the Botnet class work.
+- **Rule-breaking Daemons**: Linked Bus echoes nudge *actions* (not nudge cards) on
+  enemy wheels to your wheel, free, ignoring resistance; Stolen Intent fires automatically
+  once per combat when your first pointer would resolve Miss and the target's first
+  pointer would not, swapping the two slices (own tiers kept) through the new
+  `ON_RESOLVE` trigger that hands handlers the collected resolutions; Twin Pointer adds a
+  pointer 15 ticks from yours at combat start (`ON_COMBAT_START` Daemon hooks now run in
+  `begin_combat`) and halves max RAM rounding up (`CombatState.max_ram`, 12 → 6); Botnet
+  Seed docks a 1-HP `seed_drone` on the Perfect slice, max 2 seed drones alive.
+- **Ring segments** Corrupt (ON_SLICE_TRIGGER → CORRUPTED on the target's slice under the
+  matching pointer, clamped to its last pointer), Anchor (ON_PERFECT → FREEZE own wheel),
+  Accelerator (ON_SLICE_TRIGGER → `DOUBLE_NUDGE_CARDS`: nudge cards resolve twice next
+  turn, `CombatState.double_nudge_cards[_next]`), Echo (RETRIGGER ×0.5) are data. **Rank 3
+  swap flow**: `RankRewardData.ring_segment_options` (Breaker: all four),
+  `OperativeState.ring_segment_ids`, `CampaignRules.swap_ring_segment()` (free, any time
+  between runs, empty id restores the default), passed to combat as the
+  `ring_segment_ids` override.
+- **RAM Respin action** (GDD 2.5 lists Respin as a card, 11.3 prices it at 4 RAM; the card
+  pool has none): `CombatAction.RESPIN` respins your own wheel for `respin_ram_cost`, is a
+  random event (checkpoint) and previews exactly. Key X.
+- **Combat UI**: chosen-slice picker (F cycles, auto = none) and card direction picker (D)
+  feed `CombatAction.slot_index` / `direction`; random effects (Respin, random slice picks)
+  show **odds** as the slice-type mix of the wheel instead of the roll; right-click
+  **inspect** describes the slice, Firmware, status and guard under the cursor (or the
+  hub/segments at the centre) via the new `Codex` helper, in the left-column note that
+  otherwise lists the installed Daemons; revealed boss phases (Intel) print on the enemy
+  wheel; the log strip plays the three passes with a 0.35 s beat between them (instant
+  under headless or reduce-effects; the wheels always show the final state at once).
+- **Schema changes** (rule 8): `CardData.offered`, `HubCoreData.drone`,
+  `RC.Trigger.ON_RESOLVE` (appended), `CombatAction.Type.RESPIN` (appended),
+  `WheelState.pending_pointer_ticks`, `CombatState.drones/max_ram/campaign_heat/
+  double_nudge_cards[_next]`, `OperativeState.ring_segment_ids`. Smoke test batch 4.
+- **Timeline captures** (`docs/timeline/`): the designer asked for screen captures per
+  system over time; each batch adds dated frames.
+
 ### 2026-09-24 — M4 Look, Feel & Accessibility
 - **No approved mockups are in the repo** (STYLE_GUIDE points at a private canvas), so the
   screens follow the style guide's component rules literally: three worlds per screen,

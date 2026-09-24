@@ -1,14 +1,18 @@
 extends Control
 ## Combat scene (M4 look): wireframe arena with zine HUD (STYLE_GUIDE 1, 4-5, GDD 9.2).
-## Layout (1280x720 design canvas): Polaroid, RAM tally and Heat on the left; the wheels
-## in the middle where nothing zine ever covers them; preview and log strips on the
-## right; card stickers along the bottom with the SEND IT stamp. Full keyboard play:
-## 1-9 play cards, Q/E nudge, W nudge wheel, R ring, T card target, Tab target, Space end
-## turn, Z rewind, Esc settings. Signal Up, Call Down: widgets call the engine only.
+## Layout (1280x720 design canvas): Polaroid, RAM tally, Heat, Daemons and the inspect
+## note on the left; the wheels in the middle where nothing zine ever covers them;
+## preview and log strips on the right; card stickers along the bottom with the SEND IT
+## stamp. Full keyboard play: 1-9 play cards, Q/E nudge, W nudge wheel, R ring, T card
+## target, D card direction, F chosen slice, X respin, Tab target, Space end turn,
+## Z rewind, right-click inspect, Esc settings. Random effects show odds, never the
+## exact roll (GDD 2.10). Signal Up, Call Down: widgets call the engine only.
 
 const ENEMY_CHOICES: Array[StringName] = [&"collections_agent", &"compliance_officer", &"dosage_dispenser"]
 const CLASS_ID := &"breaker"
 const RING_ID := &"rank:1"
+## Seconds between resolution passes in the log playback (0 under headless / reduce-effects).
+const PASS_DELAY := 0.35
 
 @export var auto_start: bool = true
 
@@ -18,6 +22,8 @@ var background: WireframeBackground
 var portrait: Polaroid
 var heat_poster: HeatPoster
 var ram_note: ZineNote
+var daemon_note: ZineNote
+var inspect_note: ZineNote
 var preview_note: ZineNote
 var log_note: ZineNote
 var _status: Label
@@ -29,14 +35,23 @@ var _target_option: OptionButton
 var _nudge_wheel_option: OptionButton
 var _nudge_ring_option: OptionButton
 var _card_target_option: OptionButton
+var _direction_option: OptionButton
+var _slot_option: OptionButton
+var _respin_button: Button
 var _hand_box: HBoxContainer
 var _end_turn_button: ZineStamp
 var _rewind_button: Button
 var _picker_controls: Array[Control] = []
+## The bottom controls row (layout tests check it fits the 1280-px canvas).
+var controls_row: HBoxContainer
 var _settings_panel: SettingsPanel = null
 var _arena: Control
 var _zine_elements: Array[Control] = []
 var _last_events: Array[Dictionary] = []
+var _log_generation: int = 0
+var _migrate_tween: Tween = null
+## Text of the last inspect (tests read it).
+var last_inspect: String = ""
 
 
 func _ready() -> void:
@@ -81,6 +96,11 @@ func nudge(direction: int) -> void:
 	engine.submit(CombatAction.nudge(wheel_id, direction, ring))
 
 
+## The RAM respin of your own wheel (GDD 2.5, 11.3).
+func respin() -> void:
+	engine.submit(CombatAction.respin())
+
+
 func play_card(hand_index: int) -> void:
 	if not engine.has_fight() or hand_index < 0 or hand_index >= engine.state().hand.size():
 		return
@@ -97,17 +117,44 @@ func cycle_target() -> void:
 
 func toggle_card_target() -> void:
 	_card_target_option.select((_card_target_option.selected + 1) % 2)
-	_refresh_toggle_labels()
+	_rebuild_slot_option()
 
 
 func toggle_ring() -> void:
 	_nudge_ring_option.select((_nudge_ring_option.selected + 1) % 2)
-	_refresh_toggle_labels()
 
 
 func toggle_nudge_wheel() -> void:
 	_nudge_wheel_option.select((_nudge_wheel_option.selected + 1) % 2)
-	_refresh_toggle_labels()
+
+
+## Card nudge direction for cards that nudge (Fine Tune, Micro-Adjust, Jam...).
+func toggle_direction() -> void:
+	_direction_option.select((_direction_option.selected + 1) % 2)
+
+
+func set_direction(direction: int) -> void:
+	_direction_option.select(0 if direction > 0 else 1)
+
+
+## Chosen slice for cards that pick one (Cleanse, Encrypt): -1 = none chosen.
+func cycle_slot() -> void:
+	if _slot_option.item_count == 0:
+		return
+	_slot_option.select((_slot_option.selected + 1) % _slot_option.item_count)
+
+
+func set_slot(slot: int) -> void:
+	if slot + 1 < _slot_option.item_count:
+		_slot_option.select(slot + 1)
+
+
+func selected_slot() -> int:
+	return _slot_option.selected - 1
+
+
+func selected_direction() -> int:
+	return 1 if _direction_option.selected == 0 else -1
 
 
 func open_settings() -> void:
@@ -119,6 +166,62 @@ func open_settings() -> void:
 	_settings_panel.position = Vector2(size.x / 2.0 - 180, 120)
 	_settings_panel.closed.connect(open_settings)
 	add_child(_settings_panel)
+
+
+## Right-click inspect (GDD 9.5): the slice under a global point on any wheel, with its
+## Firmware and status, or the wheel's hub/vitals when pointing at the centre.
+func inspect_at(global_point: Vector2) -> String:
+	var text := ""
+	if engine.has_fight():
+		var views: Array[WheelView] = [_player_view]
+		for v in _enemy_views.values():
+			views.append(v)
+		for v in views:
+			if v.combatant == null or not v.contains_global(global_point):
+				continue
+			var slot := v.slot_at_global(global_point)
+			text = _describe_slot(v.combatant, slot)
+			break
+	last_inspect = text
+	_refresh_inspect_note()
+	return text
+
+
+func _refresh_inspect_note() -> void:
+	inspect_note.clear()
+	if last_inspect != "":
+		inspect_note.append(last_inspect)
+		return
+	var state := engine.state()
+	if state == null:
+		return
+	var tips := PackedStringArray()
+	if state.daemon_ids.is_empty():
+		inspect_note.append("no Daemons. Right-click a slice to inspect.")
+	for id in state.daemon_ids:
+		var d := engine.content(id) as DaemonData
+		if d != null:
+			inspect_note.append("* " + d.display_name)
+			tips.append(Codex.describe(d))
+	inspect_note.tooltip_text = "\n\n".join(tips)
+
+
+## Odds a random effect shows instead of a result (GDD 2.10): the slice type mix of a
+## wheel, optionally leaving the Miss slice out (random non-Miss picks).
+func odds_text(c: CombatantState, non_miss_only: bool = false) -> String:
+	var counts := {}
+	var total := 0
+	for id in c.wheel.slot_slice_ids:
+		var slice := engine.content(id) as SliceData
+		if slice == null or (non_miss_only and slice.slice_type == RC.SliceType.MISS):
+			continue
+		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), Palette.SLICE_NAMES.get(slice.slice_type, "?")]
+		counts[key] = int(counts.get(key, 0)) + 1
+		total += 1
+	var parts := PackedStringArray()
+	for key in counts:
+		parts.append("%s %d%%" % [key, roundi(100.0 * counts[key] / maxf(1.0, total))])
+	return "odds: " + " / ".join(parts)
 
 
 ## Layout rule (STYLE_GUIDE 4): zine elements never cover the wheels. Returns the
@@ -163,6 +266,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not engine.has_fight():
 		return
+	if event.is_action_pressed("inspect") and event is InputEventMouseButton:
+		inspect_at((event as InputEventMouseButton).global_position)
+		get_viewport().set_input_as_handled()
+		return
 	for i in 9:
 		if event.is_action_pressed("card_%d" % (i + 1)):
 			play_card(i)
@@ -184,6 +291,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		toggle_ring()
 	elif event.is_action_pressed("toggle_nudge_wheel"):
 		toggle_nudge_wheel()
+	elif event.is_action_pressed("toggle_direction"):
+		toggle_direction()
+	elif event.is_action_pressed("cycle_slot"):
+		cycle_slot()
+	elif event.is_action_pressed("respin"):
+		respin()
 	else:
 		return
 	get_viewport().set_input_as_handled()
@@ -193,9 +306,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_last_events = events
-	for e in events:
-		if e.has("text"):
-			log_note.append(String(e["text"]))
+	_play_log(events)
 	_refresh(state)
 	_feedback(state, events)
 
@@ -212,16 +323,47 @@ func _on_fight_ended(outcome: int) -> void:
 		Fx.flash(Palette.CELL_ACID, 0.3)
 
 
+## Pass-by-pass playback (GDD 5.6 spirit): the log strip reveals each resolution pass
+## after a short beat so the three passes read as three moments. Instant when headless or
+## under reduce-effects; the wheels always show the final state at once.
+func _play_log(events: Array[Dictionary]) -> void:
+	_log_generation += 1
+	var generation := _log_generation
+	var delay := 0.0
+	var instant := _instant_playback()
+	for e in events:
+		if not e.has("text"):
+			continue
+		var text := String(e["text"])
+		if instant:
+			log_note.append(text)
+			continue
+		var t: String = e.get("type", "")
+		if t == "pass" or t == "turn_start" or t == "resolve_start":
+			delay += PASS_DELAY
+		if delay <= 0.0:
+			log_note.append(text)
+		else:
+			get_tree().create_timer(delay).timeout.connect(func() -> void:
+				if generation == _log_generation and is_instance_valid(log_note):
+					log_note.append(text))
+
+
+func _instant_playback() -> bool:
+	return DisplayServer.get_name() == "headless" or not Fx.effects_enabled()
+
+
 ## Precision and action feedback (STYLE_GUIDE 5, GDD 10): Perfect = latch + wheel-local
 ## inversion + 2-frame freeze (+ a limited flash); Good = click; Partial = stutter shake;
-## Miss slice = static burst. Nudges tick, spins run down, flips clack.
+## Miss slice = static burst. Nudges tick, spins run down, flips clack. Telegraphed
+## migrations flicker the boss pointers until they move.
 func _feedback(state: CombatState, events: Array[Dictionary]) -> void:
 	for e in events:
 		match String(e.get("type", "")):
 			"nudge":
 				AudioDirector.play_sfx("tick")
-			"spin":
-				AudioDirector.play_spin(int(e.get("moved", 0)))
+			"spin", "respin":
+				AudioDirector.play_spin(int(e.get("moved", 6)))
 			"flip":
 				AudioDirector.play_sfx("clack")
 			"pointer":
@@ -239,6 +381,11 @@ func _feedback(state: CombatState, events: Array[Dictionary]) -> void:
 			"boss_phase":
 				AudioDirector.play_sfx("alarm")
 				Fx.flash(Palette.CORP_SOLACE, 0.3)
+			"boss_migrate_telegraph":
+				if _enemy_views.has(e.get("target")):
+					_start_migrate_flicker(_enemy_views[e["target"]])
+			"deploy", "botnet_seed":
+				AudioDirector.play_sfx("click")
 
 
 func _slice_type_of(state: CombatState, e: Dictionary) -> int:
@@ -275,6 +422,30 @@ func _flicker_view(view: WheelView) -> void:
 	var tw := create_tween()
 	tw.tween_property(view, "modulate:a", 0.4, 0.04)
 	tw.tween_property(view, "modulate:a", 1.0, 0.08)
+
+
+## Migration flicker (GDD 9.2): the current pointers fade in and out while the dashed
+## "next" pointers show where they go; stops when the state no longer has a pending move.
+func _start_migrate_flicker(view: WheelView) -> void:
+	if _migrate_tween != null and _migrate_tween.is_valid():
+		_migrate_tween.kill()
+	if not Fx.effects_enabled():
+		view.pointer_alpha = 0.6
+		view.queue_redraw()
+		return
+	_migrate_tween = create_tween().set_loops()
+	_migrate_tween.tween_property(view, "pointer_alpha", 0.2, 0.25)
+	_migrate_tween.tween_callback(view.queue_redraw)
+	_migrate_tween.tween_property(view, "pointer_alpha", 1.0, 0.25)
+	_migrate_tween.tween_callback(view.queue_redraw)
+
+
+func _stop_migrate_flicker() -> void:
+	if _migrate_tween != null and _migrate_tween.is_valid():
+		_migrate_tween.kill()
+	_migrate_tween = null
+	for v in _enemy_views.values():
+		v.pointer_alpha = 1.0
 
 
 func _start_music() -> void:
@@ -337,13 +508,19 @@ func _build_ui() -> void:
 	portrait = Polaroid.new("Breaker", "[BREAKER PORTRAIT]", -3.0)
 	portrait.name = "Polaroid"
 	left.add_child(portrait)
-	ram_note = ZineNote.new("RAM", Vector2(170, 64))
+	ram_note = ZineNote.new("RAM", Vector2(170, 54))
 	ram_note.name = "RamTally"
 	left.add_child(ram_note)
 	heat_poster = HeatPoster.new(false)
 	heat_poster.name = "HeatPoster"
 	left.add_child(heat_poster)
-	_zine_elements.append_array([portrait, ram_note, heat_poster])
+	# One note serves both: the installed Daemons by default, the inspect text on right-click
+	# (the left column must stay within the 720-px canvas next to the netrun status bars).
+	inspect_note = ZineNote.new("DAEMONS / INSPECT", Vector2(170, 104))
+	inspect_note.name = "InspectNote"
+	daemon_note = inspect_note
+	left.add_child(inspect_note)
+	_zine_elements.append_array([portrait, ram_note, heat_poster, inspect_note])
 
 	_arena = HBoxContainer.new()
 	_arena.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -370,14 +547,14 @@ func _build_ui() -> void:
 	_zine_elements.append_array([preview_note, log_note])
 
 	var controls := HBoxContainer.new()
+	controls_row = controls
 	root.add_child(controls)
-	controls.add_child(_label("Target [Tab]"))
 	_target_option = OptionButton.new()
 	_target_option.item_selected.connect(func(i: int) -> void: engine.submit(CombatAction.target(_target_option.get_item_metadata(i))))
 	controls.add_child(_target_option)
 	_nudge_wheel_option = OptionButton.new()
 	_nudge_wheel_option.add_item("Nudge own [W]")
-	_nudge_wheel_option.add_item("Nudge target [W]")
+	_nudge_wheel_option.add_item("Nudge tgt [W]")
 	controls.add_child(_nudge_wheel_option)
 	_nudge_ring_option = OptionButton.new()
 	_nudge_ring_option.add_item("Outer [R]")
@@ -386,10 +563,22 @@ func _build_ui() -> void:
 	controls.add_child(_button("-1 [Q]", func() -> void: nudge(-1)))
 	controls.add_child(_button("+1 [E]", func() -> void: nudge(1)))
 	_card_target_option = OptionButton.new()
-	_card_target_option.add_item("Cards: target [T]")
-	_card_target_option.add_item("Cards: own [T]")
+	_card_target_option.add_item("Card>tgt [T]")
+	_card_target_option.add_item("Card>own [T]")
+	_card_target_option.item_selected.connect(func(_i: int) -> void: _rebuild_slot_option())
 	controls.add_child(_card_target_option)
-	_rewind_button = _button("Rewind [Z]", rewind)
+	_direction_option = OptionButton.new()
+	_direction_option.add_item("Dir + [D]")
+	_direction_option.add_item("Dir - [D]")
+	controls.add_child(_direction_option)
+	_slot_option = OptionButton.new()
+	_slot_option.add_item("Slice auto [F]")
+	controls.add_child(_slot_option)
+	_respin_button = _button("Respin [X]", respin)
+	_respin_button.mouse_entered.connect(_show_respin_odds)
+	_respin_button.mouse_exited.connect(_show_end_turn_preview)
+	controls.add_child(_respin_button)
+	_rewind_button = _button("Undo [Z]", rewind)
 	controls.add_child(_rewind_button)
 
 	var bottom := HBoxContainer.new()
@@ -419,14 +608,32 @@ func _button(text: String, on_pressed: Callable) -> Button:
 	return b
 
 
-func _refresh_toggle_labels() -> void:
-	pass  # OptionButtons show their own selection; nothing else to sync.
+## The wheel cards aim at under the current card-target toggle.
+func _card_target_wheel() -> CombatantState:
+	var state := engine.state()
+	if state == null:
+		return null
+	if _card_target_option.selected == 1:
+		return state.player
+	return state.get_combatant(state.target_id)
+
+
+func _rebuild_slot_option() -> void:
+	var keep := _slot_option.selected
+	_slot_option.clear()
+	_slot_option.add_item("Slice auto [F]")
+	var c := _card_target_wheel()
+	if c != null:
+		for i in c.wheel.slot_slice_ids.size():
+			var slice := engine.content(c.wheel.slot_slice_ids[i]) as SliceData
+			var status: int = c.wheel.slice_statuses[i]
+			_slot_option.add_item("%d %s%s" % [i, Palette.SLICE_NAMES.get(slice.slice_type, "?") if slice != null else "?", Palette.STATUS_GLYPHS.get(status, "")])
+	_slot_option.select(keep if keep >= 0 and keep < _slot_option.item_count else 0)
 
 
 func _refresh(state: CombatState) -> void:
 	var lookup := engine.resolver.lookup
-	var cls := lookup.get_content(state.player.source_id) as ClassData
-	_status.text = "  Turn %d | RAM %d/%d | free nudge %d | %s" % [state.turn, state.ram, cls.max_ram, state.free_nudges,
+	_status.text = "  Turn %d | RAM %d/%d | free nudge %d | %s" % [state.turn, state.ram, state.max_ram, state.free_nudges,
 		"VICTORY" if state.outcome == CombatState.Outcome.VICTORY else ("DEFEAT" if state.outcome == CombatState.Outcome.DEFEAT else "player phase")]
 	portrait.caption = "%s  HP %d/%d" % [state.player.display_name, state.player.hp, state.player.max_hp]
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
@@ -435,12 +642,15 @@ func _refresh(state: CombatState) -> void:
 	var tally := ""
 	for i in state.ram:
 		tally += "|" if (i + 1) % 5 != 0 else "/ "
-	ram_note.append("[b]%s[/b] %d/%d" % [tally, state.ram, cls.max_ram])
+	ram_note.append("[b]%s[/b] %d/%d" % [tally, state.ram, state.max_ram])
+	_refresh_inspect_note()
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
 	heat_poster.set_heat(heat, engine.resolver.config.heat_max)
 	background.corp_creep = clampf(float(heat) / 100.0, 0.0, 1.0)
-	_player_view.show_combatant(state.player, [], engine.readouts(state.player), lookup)
+	_player_view.show_combatant(state.player, state.satellites_of(state.player.id), engine.readouts(state.player), lookup)
+	var reveal := int(state.flags.get("reveal_phases", 0)) > 0
 	var wanted: Array[StringName] = []
+	var any_pending := false
 	for e in state.enemies:
 		if e.is_satellite:
 			continue
@@ -452,7 +662,17 @@ func _refresh(state: CombatState) -> void:
 			_enemy_views_box.add_child(v)
 		var view: WheelView = _enemy_views[e.id]
 		view.highlighted = e.id == state.target_id
+		var lines: Array[String] = []
+		if reveal:
+			for p in engine.resolver.upcoming_phases(state, e):
+				var where := str(Array(p.pointer_ticks)) if not p.pointer_ticks.is_empty() else ("%+d/turn" % p.orbit_ticks_per_turn if p.orbit_ticks_per_turn != 0 else "")
+				lines.append("@%d%%: %s %s" % [roundi(p.hp_threshold_pct * 100), RC.PointerBehavior.keys()[p.pointer_behavior], where])
+		view.extra_lines = lines
+		if not e.wheel.pending_pointer_ticks.is_empty():
+			any_pending = true
 		view.show_combatant(e, state.satellites_of(e.id), engine.readouts(e), lookup)
+	if not any_pending:
+		_stop_migrate_flicker()
 	for id in _enemy_views.keys():
 		if not wanted.has(id):
 			_enemy_views[id].queue_free()
@@ -465,12 +685,14 @@ func _refresh(state: CombatState) -> void:
 		if e.id == state.target_id:
 			_target_option.select(idx)
 		idx += 1
+	_rebuild_slot_option()
 	for child in _hand_box.get_children():
 		child.queue_free()
 	for i in state.hand.size():
 		var card := lookup.get_content(state.hand[i]) as CardData
 		var c := ZineCard.new(card.display_name, card.ram_cost, card.description, i)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
+		c.tooltip_text = Codex.describe(card)
 		var index := i
 		c.pressed.connect(func() -> void: play_card(index))
 		c.mouse_entered.connect(func() -> void: _show_card_preview(index))
@@ -480,6 +702,8 @@ func _refresh(state: CombatState) -> void:
 		_hand_box.add_child(c)
 	_end_turn_button.disabled = state.is_over()
 	_rewind_button.disabled = not engine.can_rewind()
+	_respin_button.text = "Respin %d [X]" % engine.resolver.config.respin_ram_cost
+	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
 	_show_end_turn_preview()
 
 
@@ -492,10 +716,33 @@ func _selected_nudge_wheel() -> StringName:
 func _card_action(hand_index: int) -> CombatAction:
 	var state := engine.state()
 	var wheel_id: StringName = &"player" if _card_target_option.selected == 1 else state.target_id
-	var a := CombatAction.play_card(hand_index, wheel_id)
+	var a := CombatAction.play_card(hand_index, wheel_id, selected_slot())
 	a.ring = RC.RingScope.INNER if _nudge_ring_option.selected == 1 else RC.RingScope.OUTER
-	a.direction = 1
+	a.direction = selected_direction()
 	return a
+
+
+func _describe_slot(c: CombatantState, slot: int) -> String:
+	var lookup := engine.resolver.lookup
+	if slot < 0:
+		var lines := PackedStringArray([Codex.describe(lookup.get_content(c.source_id))])
+		if c.wheel.hub_id != &"":
+			lines.append(Codex.describe(lookup.get_content(c.wheel.hub_id)))
+		if c.wheel.has_inner_ring():
+			for id in c.wheel.ring_segment_ids:
+				lines.append(Codex.describe(lookup.get_content(id)))
+		return "\n".join(lines)
+	var lines := PackedStringArray(["%s slot %d" % [c.display_name, slot]])
+	lines.append(Codex.describe(lookup.get_content(c.wheel.slot_slice_ids[slot])))
+	if c.wheel.slot_firmware_ids[slot] != &"":
+		lines.append(Codex.describe(lookup.get_content(c.wheel.slot_firmware_ids[slot])))
+	var status: int = c.wheel.slice_statuses[slot]
+	if status != RC.Status.NONE:
+		lines.append(Codex.status_text(status))
+	var guard := engine.state().satellite_at(c.id, slot)
+	if guard != null:
+		lines.append("Guarded by %s (%d HP): it takes hits aimed at this slice." % [guard.display_name, guard.hp])
+	return "\n".join(lines)
 
 
 func _clear_ghost() -> void:
@@ -504,20 +751,42 @@ func _clear_ghost() -> void:
 		v.set_ghost(null)
 
 
+## Whether a card has a random effect (Respin, random slice picks): show odds, not rolls.
+func _card_is_random(card: CardData) -> bool:
+	for e in card.effects:
+		if e != null and (e.type == RC.EffectType.RESPIN or e.slice_pick == RC.SlicePick.RANDOM_NON_MISS):
+			return true
+	return false
+
+
 ## Card hover: the card's result in the preview strip and a dashed ghost arc on the
-## wheel it moves (GDD 9.2, STYLE_GUIDE 4).
+## wheel it moves (GDD 9.2, STYLE_GUIDE 4). Random effects show odds instead.
 func _show_card_preview(hand_index: int) -> void:
 	if not engine.has_fight() or hand_index >= engine.state().hand.size():
 		return
 	var action := _card_action(hand_index)
+	var card := engine.content(engine.state().hand[hand_index]) as CardData
 	var result := engine.preview(action)
 	preview_note.clear()
 	if not result.ok():
 		preview_note.append("[color=#c05000]%s[/color]" % result.error)
 		return
+	var random := card != null and _card_is_random(card)
+	var target := engine.resolver.card_target(engine.state(), card, action) if card != null else null
 	for e in result.events:
-		if e.has("text"):
+		if not e.has("text"):
+			continue
+		var t: String = e.get("type", "")
+		if random and t == "respin" and target != null:
+			preview_note.append("%s respins: %s" % [target.display_name, odds_text(target)])
+		elif random and t == "status" and target != null:
+			preview_note.append("%s gets %s on a random non-Miss slice: %s" % [target.display_name, RC.Status.keys()[e["status"]], odds_text(target, true)])
+		else:
 			preview_note.append(String(e["text"]))
+	if random:
+		preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
+		_clear_ghost()
+		return
 	var after := result.state
 	for c in [after.player] + after.living_enemies(false):
 		for r in engine.resolver.pointer_readouts(after, c):
@@ -532,7 +801,17 @@ func _show_card_preview(hand_index: int) -> void:
 			_enemy_views[e.id].set_ghost(e.wheel.rotation)
 
 
+func _show_respin_odds() -> void:
+	if not engine.has_fight():
+		return
+	preview_note.clear()
+	preview_note.append("Respin your wheel for %d RAM (a random event: sets a checkpoint)." % engine.resolver.config.respin_ram_cost)
+	preview_note.append(odds_text(engine.state().player))
+
+
 func _show_end_turn_preview() -> void:
+	if not engine.has_fight():
+		return
 	var state := engine.state()
 	preview_note.clear()
 	if state.is_over():
@@ -541,12 +820,14 @@ func _show_end_turn_preview() -> void:
 	var result := engine.preview_end_turn()
 	for e in result.events:
 		var t: String = e.get("type", "")
-		if t in ["pointer", "damage", "block", "shield", "evaded", "bodyguard", "retrigger", "corrupted", "status_absorbed", "died", "combat_end", "heal", "miss", "boss_phase"]:
+		if t in ["pointer", "damage", "block", "shield", "evaded", "bodyguard", "retrigger", "corrupted", "status_absorbed", "died", "combat_end", "heal", "miss", "boss_phase", "deploy", "stolen_intent", "boss_migrate_telegraph"]:
 			preview_note.append(String(e["text"]))
 		elif t == "status":
-			preview_note.append("%s gets %s on a random non-Miss slice." % [state.get_combatant(e["target"]).display_name, RC.Status.keys()[e["status"]]])
+			var owner := state.get_combatant(e["target"])
+			preview_note.append("%s gets %s on a random non-Miss slice (%s)." % [owner.display_name, RC.Status.keys()[e["status"]], odds_text(owner, true)])
 	var after := result.state
 	var summary := PackedStringArray()
 	for e in after.enemies:
-		summary.append("%s %d HP" % [e.display_name, e.hp])
+		if not e.is_satellite or e.is_alive():
+			summary.append("%s %d HP" % [e.display_name, e.hp])
 	preview_note.append("[b]=> You %d HP | %s[/b]" % [after.player.hp, ", ".join(summary)])

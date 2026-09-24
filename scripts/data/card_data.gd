@@ -14,6 +14,8 @@ extends Resource
 @export var wheel_target: RC.WheelTarget = RC.WheelTarget.OWN
 @export var effects: Array[EffectData] = []
 @export var exhaust: bool = false
+## False = never offered as a reward or in a Modem (the ICE "Bug" card).
+@export var offered: bool = true
 @export var art: Texture2D
 
 

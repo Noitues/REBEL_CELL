@@ -1,7 +1,8 @@
 extends GutTest
 ## Input map covers the GDD §9.5 bindings.
 
-const ACTIONS: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_target", &"end_turn", &"rewind", &"inspect"]
+const ACTIONS: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_target", &"end_turn", &"rewind", &"inspect",
+	&"toggle_card_target", &"toggle_ring", &"toggle_nudge_wheel", &"toggle_direction", &"cycle_slot", &"respin", &"open_settings"]
 
 
 func _keys_for(action: StringName) -> Array[InputEventKey]:
@@ -47,3 +48,9 @@ func test_inspect_is_right_click() -> void:
 	assert_eq(events.size(), 1)
 	assert_true(events[0] is InputEventMouseButton)
 	assert_eq((events[0] as InputEventMouseButton).button_index, MOUSE_BUTTON_RIGHT)
+
+
+func test_card_picker_keys_are_d_f_and_x() -> void:
+	assert_eq(_keys_for(&"toggle_direction")[0].physical_keycode, KEY_D)
+	assert_eq(_keys_for(&"cycle_slot")[0].physical_keycode, KEY_F)
+	assert_eq(_keys_for(&"respin")[0].physical_keycode, KEY_X)

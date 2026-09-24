@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/slices/atk_3.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/def_3.tres" id="s_def"]
+
+; Botnet drone (GDD 5.2): 5 HP, mini-wheel Atk 3 / Def 3, created by DEPLOY slices and
+; docked on the operative's wheel. No corporation: never an enemy pool entry.
+
+[sub_resource type="Resource" id="slot_atk"]
+script = ExtResource("3")
+slice = ExtResource("s_atk")
+
+[sub_resource type="Resource" id="slot_def"]
+script = ExtResource("3")
+slice = ExtResource("s_def")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("2")
+slice_count = 2
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_def")])
+pointer_ticks = PackedInt32Array(0)
+
+[resource]
+script = ExtResource("1")
+id = &"botnet_drone"
+display_name = "Drone"
+description = "A Botnet drone: attacks with its slice and takes hits for you."
+hp = 5
+wheel = SubResource("wheel")
+cycle_reward = 0

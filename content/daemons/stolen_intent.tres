@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/stolen_intent_handler.gd" id="h"]
+
+[resource]
+script = ExtResource("1")
+id = &"stolen_intent"
+display_name = "Stolen Intent"
+description = "Once per combat, when you would resolve Miss, swap resolved slices with the target."
+rarity = 2
+cycle_cost = 220
+custom_handler = ExtResource("h")

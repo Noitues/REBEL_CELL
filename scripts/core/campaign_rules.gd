@@ -318,6 +318,48 @@ static func station(campaign: CampaignState, lookup: ContentLookup, op_id: Strin
 	return events
 
 
+## Rank 3 Inner Ring segment swap (GDD 6.4): `segment_index` (0-2) of the operative's
+## ring becomes `segment_id`, one of the class's rank_ring_segment_options; an empty id
+## restores the class default. The swap is free and can be redone between runs.
+static func swap_ring_segment(campaign: CampaignState, lookup: ContentLookup, op_id: StringName, segment_index: int, segment_id: StringName) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var op := campaign.get_operative(op_id)
+	if op == null or not op.alive:
+		events.append({"type": "refused", "text": "No such living operative."})
+		return events
+	var cls := lookup.get_content(op.class_id) as ClassData
+	var options := ring_segment_options(op, cls)
+	if options.is_empty():
+		events.append({"type": "refused", "text": "%s has no segment swaps yet (Rank 3 needed)." % op.name})
+		return events
+	if segment_index < 0 or segment_index >= RC.RING_SEGMENTS:
+		events.append({"type": "refused", "text": "No such ring segment."})
+		return events
+	if segment_id != &"" and not options.has(segment_id):
+		events.append({"type": "refused", "text": "%s is not a swap option for %s." % [segment_id, op.name]})
+		return events
+	while op.ring_segment_ids.size() < RC.RING_SEGMENTS:
+		op.ring_segment_ids.append(&"")
+	op.ring_segment_ids[segment_index] = segment_id
+	events.append({"type": "segment_swapped", "operative": op_id, "index": segment_index, "segment": segment_id,
+		"text": "%s ring segment %d is now %s." % [op.name, segment_index, segment_id if segment_id != &"" else "the class default"]})
+	return events
+
+
+## Segment ids the operative may swap in at its Rank (highest reward with options wins).
+static func ring_segment_options(op: OperativeState, cls: ClassData) -> Array[StringName]:
+	var out: Array[StringName] = []
+	var best := 0
+	for reward in cls.rank_rewards:
+		if reward != null and reward.rank <= op.rank and reward.rank >= best and not reward.ring_segment_options.is_empty():
+			best = reward.rank
+			out.clear()
+			for seg in reward.ring_segment_options:
+				if seg != null:
+					out.append(seg.id)
+	return out
+
+
 static func recall(campaign: CampaignState, op_id: StringName) -> void:
 	for id in campaign.grid.sites:
 		if campaign.grid.site(id).get("stationed", "") == String(op_id):

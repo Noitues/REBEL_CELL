@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EnemyData" load_steps=14 format=3]
+[gd_resource type="Resource" script_class="EnemyData" load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
@@ -8,9 +8,30 @@
 [ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/hub_cores/compliance_lock.tres" id="hub"]
+[ext_resource type="Script" path="res://scripts/data/heat_gated_effect_data.gd" id="hg"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="te"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
 
 ; Compliance Officer (GDD A.3): 50 HP; Atk 7, Atk 7, Def 6, Crit 12, Atk 7, Miss;
-; Hub Compliance Lock (resistance 3).
+; Hub Compliance Lock (resistance 3). Heat 50+: "Audit" - each of its attacks also
+; drains 1 RAM (HeatGatedEffectData; trigger 5 ON_SLICE_TRIGGER, effect 13 DRAIN_RAM on
+; POINTER_TARGET 3).
+
+[sub_resource type="Resource" id="fx_audit"]
+script = ExtResource("fx")
+type = 13
+target = 3
+amount = 1
+
+[sub_resource type="Resource" id="te_audit"]
+script = ExtResource("te")
+trigger = 5
+effects = Array[ExtResource("fx")]([SubResource("fx_audit")])
+
+[sub_resource type="Resource" id="heat_audit"]
+script = ExtResource("hg")
+min_heat = 50
+effects = Array[ExtResource("te")]([SubResource("te_audit")])
 
 [sub_resource type="Resource" id="slot_atk"]
 script = ExtResource("3")
@@ -44,3 +65,4 @@ corporation_id = &"solace"
 hp = 50
 wheel = SubResource("wheel")
 cycle_reward = 15
+heat_effects = Array[ExtResource("hg")]([SubResource("heat_audit")])

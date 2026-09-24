@@ -23,6 +23,9 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 | Breaker Core Mk2 (Rank 2 Hub upgrade) | 5.3 | done (M3) — placeholder numbers |
 | Firmware (6) | A.4, 6.1 | done (M2) |
 | Daemons (6) | A.4, 6.2 | done (M2) |
+| Daemons Linked Bus, Stolen Intent, Twin Pointer, Botnet Seed | 6.2 | done (vertical fixes 2026-09-24) |
+| Ring segments Corrupt, Anchor, Accelerator, Echo + Rank 3 swap | 6.4 | done (vertical fixes 2026-09-24) |
+| Player drones (DEPLOY, Botnet drone, seed drone), Bug card | 5.2, 11.9 | done (vertical fixes 2026-09-24) |
 | Defense assets (3) and threats (3) | A.5 | done (M2) |
 | Terminal events (5 placeholders) | 4.2, 8.6 | done (M2) — real writing later |
 | Solace City Grid (10 Sites) | A.6 | done (M3) |
@@ -45,7 +48,6 @@ the short list.
 | More shop slices (e.g. Evade 2, Shield 8, Crit 16, Heal for classes that can) | 11.2 | catalogue in `campaign_config.tres` `shop_slices`; add SliceData + list entry |
 | Cards beyond A.2 | 13 | shared pool + class exclusives |
 | Ghost, Rigger, Botnet classes (+ class alternatives) | 5.2, 13 | need EVADE/SHIELD/DEPLOY slices, drones (DEPLOY_DRONE) |
-| Extra Daemons: Linked Bus, Stolen Intent, Twin Pointer, Botnet Seed | 6.2 | rule-breakers → handlers |
 | More Terminal events, real writing, voices | 8.6 | 5 placeholders exist |
 | Remaining Solace story paths (5–6) and beats | 8.4 | M3 ships one placeholder path |
 | Full ICE 1–20 wording; levels 10/15/20 | 11.9 | open question |

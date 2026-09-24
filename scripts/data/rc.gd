@@ -37,6 +37,10 @@ enum Trigger {
 	ON_SERVER_RACK_CAPTURE,
 	ON_NETRUN_COMPLETE,
 	ON_RAID_START,
+	## Fired once per RESOLVE with the collected resolutions in the context
+	## ("resolutions": Array[Dictionary]) so rule-breaking Daemons can rewrite them
+	## before the passes run (Stolen Intent).
+	ON_RESOLVE,
 }
 
 enum EffectType {

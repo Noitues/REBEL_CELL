@@ -12,6 +12,8 @@ var outcome: int = Outcome.NONE
 var player: CombatantState = null
 ## Enemies in spawn order, satellites included (after their host).
 var enemies: Array[CombatantState] = []
+## The operative's drones (GDD 5.2): player-side satellites docked on the player wheel.
+var drones: Array[CombatantState] = []
 var draw_pile: Array[StringName] = []
 var hand: Array[StringName] = []
 var discard_pile: Array[StringName] = []
@@ -41,6 +43,13 @@ var ring_locked: bool = false
 var ram_bonus_next_turn: int = 0
 ## Cold Exit: whether the operative's Miss slice resolved in this combat.
 var miss_resolved: bool = false
+## RAM cap for this combat (class max_ram, halved by Twin Pointer).
+var max_ram: int = 12
+## Campaign Heat at combat start (HeatGatedEffectData gates on it).
+var campaign_heat: int = 0
+## Accelerator segment: nudge cards resolve twice this turn / are armed for next turn.
+var double_nudge_cards: bool = false
+var double_nudge_cards_next: bool = false
 
 
 func get_combatant(id: StringName) -> CombatantState:
@@ -49,6 +58,9 @@ func get_combatant(id: StringName) -> CombatantState:
 	for e in enemies:
 		if e.id == id:
 			return e
+	for d in drones:
+		if d.id == id:
+			return d
 	return null
 
 
@@ -61,12 +73,27 @@ func living_enemies(include_satellites: bool = true) -> Array[CombatantState]:
 	return out
 
 
-## Living satellites docked on `host_id`, in spawn order.
+## Living satellites docked on `host_id` (enemy satellites or the operative's drones),
+## in spawn order.
 func satellites_of(host_id: StringName) -> Array[CombatantState]:
 	var out: Array[CombatantState] = []
+	if player != null and host_id == player.id:
+		for d in drones:
+			if d.is_alive():
+				out.append(d)
+		return out
 	for e in enemies:
 		if e.is_alive() and e.is_satellite and e.host_id == host_id:
 			out.append(e)
+	return out
+
+
+## Living drones of the operative (satellites docked on the player wheel).
+func living_drones() -> Array[CombatantState]:
+	var out: Array[CombatantState] = []
+	for d in drones:
+		if d.is_alive():
+			out.append(d)
 	return out
 
 
@@ -78,12 +105,13 @@ func satellite_at(host_id: StringName, slot: int) -> CombatantState:
 	return null
 
 
-## Every living combatant in resolution order: player, then each enemy followed by
-## its satellites.
+## Every living combatant in resolution order: player and its drones, then each enemy
+## followed by its satellites.
 func combatants_in_order() -> Array[CombatantState]:
 	var out: Array[CombatantState] = []
 	if player != null and player.is_alive():
 		out.append(player)
+		out.append_array(living_drones())
 	for e in enemies:
 		if e.is_alive() and not e.is_satellite:
 			out.append(e)
@@ -103,6 +131,8 @@ func duplicate_state() -> CombatState:
 	s.player = player.duplicate_state() if player != null else null
 	for e in enemies:
 		s.enemies.append(e.duplicate_state())
+	for d in drones:
+		s.drones.append(d.duplicate_state())
 	s.draw_pile = draw_pile.duplicate()
 	s.hand = hand.duplicate()
 	s.discard_pile = discard_pile.duplicate()
@@ -121,6 +151,10 @@ func duplicate_state() -> CombatState:
 	s.ring_locked = ring_locked
 	s.ram_bonus_next_turn = ram_bonus_next_turn
 	s.miss_resolved = miss_resolved
+	s.max_ram = max_ram
+	s.campaign_heat = campaign_heat
+	s.double_nudge_cards = double_nudge_cards
+	s.double_nudge_cards_next = double_nudge_cards_next
 	return s
 
 
@@ -128,12 +162,16 @@ func to_dict() -> Dictionary:
 	var enemy_dicts := []
 	for e in enemies:
 		enemy_dicts.append(e.to_dict())
+	var drone_dicts := []
+	for d in drones:
+		drone_dicts.append(d.to_dict())
 	return {
 		"turn": turn,
 		"phase": phase,
 		"outcome": outcome,
 		"player": player.to_dict() if player != null else {},
 		"enemies": enemy_dicts,
+		"drones": drone_dicts,
 		"draw_pile": _names(draw_pile),
 		"hand": _names(hand),
 		"discard_pile": _names(discard_pile),
@@ -152,6 +190,10 @@ func to_dict() -> Dictionary:
 		"ring_locked": ring_locked,
 		"ram_bonus_next_turn": ram_bonus_next_turn,
 		"miss_resolved": miss_resolved,
+		"max_ram": max_ram,
+		"campaign_heat": campaign_heat,
+		"double_nudge_cards": double_nudge_cards,
+		"double_nudge_cards_next": double_nudge_cards_next,
 	}
 
 
@@ -164,6 +206,8 @@ static func from_dict(d: Dictionary) -> CombatState:
 	s.player = CombatantState.from_dict(pd) if not pd.is_empty() else null
 	for ed in d.get("enemies", []):
 		s.enemies.append(CombatantState.from_dict(ed))
+	for dd in d.get("drones", []):
+		s.drones.append(CombatantState.from_dict(dd))
 	s.draw_pile = _to_names(d.get("draw_pile", []))
 	s.hand = _to_names(d.get("hand", []))
 	s.discard_pile = _to_names(d.get("discard_pile", []))
@@ -184,6 +228,10 @@ static func from_dict(d: Dictionary) -> CombatState:
 	s.ring_locked = bool(d.get("ring_locked", false))
 	s.ram_bonus_next_turn = int(d.get("ram_bonus_next_turn", 0))
 	s.miss_resolved = bool(d.get("miss_resolved", false))
+	s.max_ram = int(d.get("max_ram", 12))
+	s.campaign_heat = int(d.get("campaign_heat", 0))
+	s.double_nudge_cards = bool(d.get("double_nudge_cards", false))
+	s.double_nudge_cards_next = bool(d.get("double_nudge_cards_next", false))
 	return s
 
 

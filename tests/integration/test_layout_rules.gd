@@ -48,6 +48,11 @@ func test_combat_zine_elements_never_cover_the_wheels() -> void:
 	for name in ["Polaroid", "RamTally", "HeatPoster", "PreviewNote", "LogStrip", "SendIt"]:
 		assert_not_null(scene.find_child(name, true, false), "%s present" % name)
 	assert_true(scene._hand_box.get_child_count() > 0 and scene._hand_box.get_child(0) is ZineCard, "cards are zine stickers")
+	# Everything fits the 1280x720 canvas: the controls row and the left column never push
+	# the preview/log strips or the cards off-screen.
+	assert_true(scene.controls_row.get_combined_minimum_size().x <= 1280, "controls row %.0f px" % scene.controls_row.get_combined_minimum_size().x)
+	assert_true(scene.get_combined_minimum_size().y <= 720 - 80, "scene min height %.0f px leaves room for the netrun bars" % scene.get_combined_minimum_size().y)
+	assert_true(scene.log_note.get_global_rect().end.x <= 1280, "log strip on screen")
 	# Fight a bigger board (satellites) and re-check.
 	scene.start_fight(&"collections_agent", 3)
 	await _layout(scene)

@@ -13,6 +13,8 @@ extends RefCounted
 ##   source_id (StringName) - content id of the card/slice/etc. for logs and limits
 ##   action (CombatAction) - the player input, for chosen slices/rings/directions
 ##   spin_bonus (int) - added to SPIN amounts (Breaker hub passive)
+##   is_card (bool) - the effect comes from a played card (Accelerator doubles nudges)
+##   drone_id (StringName) - drone template for DEPLOY_DRONE instead of the Hub's
 
 var config: CampaignConfigData
 var lookup: ContentLookup
@@ -112,8 +114,13 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 				if action.ring == RC.RingScope.INNER or action.ring == RC.RingScope.OUTER:
 					ring = action.ring
 			# Convention: a NUDGE effect with multiplier 0.0 ignores resistance (Jam).
+			# Accelerator segment (GDD 6.4): nudge cards resolve twice this turn.
+			var repeat := 1
+			if state.double_nudge_cards and bool(ctx.get("is_card", false)):
+				repeat = 2
+				events.append({"type": "accelerator", "text": "Accelerator: the nudge card resolves twice."})
 			for t in targets:
-				for i in maxi(1, e.amount):
+				for i in maxi(1, e.amount) * repeat:
 					nudge(state, owner, t, ring, direction, e.multiplier == 0.0, events)
 		RC.EffectType.SPIN:
 			var amount: int = e.amount
@@ -154,6 +161,33 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 			draw_cards(state, e.amount, rng, events)
 		RC.EffectType.RETRIGGER:
 			pass  # Counted by the resolver before the slice resolves.
+		RC.EffectType.DOUBLE_NUDGE_CARDS:
+			state.double_nudge_cards_next = true
+			events.append({"type": "double_nudge_armed", "text": "Accelerator: nudge cards trigger twice next turn."})
+		RC.EffectType.DEPLOY_DRONE:
+			var template: EnemyData = null
+			var drone_id := StringName(String(ctx.get("drone_id", "")))
+			if drone_id != &"":
+				template = lookup.get_content(drone_id) as EnemyData
+			else:
+				var hub := hub_of(owner.wheel)
+				template = hub.drone if hub != null else null
+			if template == null:
+				events.append({"type": "deploy_failed", "text": "%s has no drone template to deploy." % owner.display_name})
+				return false
+			var cap: int = int(ctx.get("drone_cap", -1))
+			if cap < 0:
+				var hub2 := hub_of(owner.wheel)
+				cap = hub2.max_drones if hub2 != null else 0
+			var deployed := 0
+			for i in maxi(1, e.amount):
+				if state.satellites_of(owner.id).size() >= cap:
+					events.append({"type": "drone_cap", "text": "%s cannot dock more than %d drone(s)." % [owner.display_name, cap]})
+					break
+				var slot := pick_slot(state, owner, e.slice_pick, ctx, rng)
+				if deploy_drone(state, owner, template, maxi(0, slot), events) != null:
+					deployed += 1
+			return deployed > 0
 		RC.EffectType.MODIFY_HEAT, RC.EffectType.GAIN_CYCLES, RC.EffectType.GAIN_SCHEMATICS:
 			events.append({"type": "campaign_effect", "effect": e.type, "amount": e.amount, "source_id": ctx.get("source_id", &""),
 				"text": "%s: %+d (campaign)" % [RC.EffectType.keys()[e.type], e.amount]})
@@ -316,7 +350,9 @@ func cleanse(c: CombatantState, slot: int, events: Array[Dictionary]) -> void:
 func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary, rng: RandomNumberGenerator) -> int:
 	match pick:
 		RC.SlicePick.UNDER_POINTER:
-			return c.wheel.slice_at(int(ctx.get("pointer_index", 0)))
+			# The target may have fewer pointers than the owner (Corrupt segment on a boss
+			# pointer 1 vs. a one-pointer operative): clamp to its last pointer.
+			return c.wheel.slice_at(clampi(int(ctx.get("pointer_index", 0)), 0, c.wheel.pointer_ticks.size() - 1))
 		RC.SlicePick.RANDOM_NON_MISS:
 			var candidates: Array[int] = []
 			for i in c.wheel.slot_slice_ids.size():
@@ -416,7 +452,7 @@ func hub_breach(c: CombatantState, turns: int, events: Array[Dictionary]) -> voi
 
 
 func gain_ram(state: CombatState, amount: int, events: Array[Dictionary]) -> void:
-	state.ram = mini(state.ram + amount, class_of(state).max_ram)
+	state.ram = mini(state.ram + amount, state.max_ram)
 	events.append({"type": "ram", "amount": amount, "text": "RAM %+d (%d)." % [amount, state.ram]})
 
 
@@ -452,6 +488,49 @@ func draw_cards(state: CombatState, count: int, rng: RandomNumberGenerator, even
 	if drawn > 0:
 		events.append({"type": "draw", "amount": drawn, "text": "Drew %d card(s)." % drawn})
 	return drawn
+
+
+## Builds a combatant from enemy content (enemies, satellites and the operative's drones).
+static func make_combatant(data: EnemyData, id: StringName, is_satellite: bool) -> CombatantState:
+	var c := CombatantState.new()
+	c.id = id
+	c.source_id = data.id
+	c.display_name = data.display_name if data.display_name != "" else String(data.id)
+	c.is_satellite = is_satellite
+	c.max_hp = data.hp
+	c.hp = data.hp
+	c.wheel = WheelState.from_wheel_data(data.wheel)
+	c.hub_resistance = data.wheel.hub.hub_resistance if data.wheel.hub != null else 0
+	c.resistance = c.full_resistance()
+	return c
+
+
+## Docks a drone of `template` on `owner`'s wheel (GDD 5.2): the first free slot from
+## `preferred_slot` clockwise. Returns the drone, or null when every slot is taken.
+func deploy_drone(state: CombatState, owner: CombatantState, template: EnemyData, preferred_slot: int, events: Array[Dictionary]) -> CombatantState:
+	var n := owner.wheel.slice_count
+	var slot := -1
+	for k in n:
+		var candidate := posmod(preferred_slot + k, n)
+		if state.satellite_at(owner.id, candidate) == null:
+			slot = candidate
+			break
+	if slot < 0:
+		events.append({"type": "deploy_failed", "text": "%s has no free slice for a drone." % owner.display_name})
+		return null
+	var drone := make_combatant(template, StringName("%s_drone_%d" % [owner.id, state.spawn_counter]), true)
+	state.spawn_counter += 1
+	drone.is_player = owner.is_player
+	drone.host_id = owner.id
+	drone.dock_slot = slot
+	drone.output_scale = owner.output_scale
+	if owner.is_player:
+		state.drones.append(drone)
+	else:
+		state.enemies.append(drone)
+	events.append({"type": "deploy", "owner": owner.id, "drone": drone.id, "slot": slot,
+		"text": "%s deploys %s on slot %d." % [owner.display_name, drone.display_name, slot]})
+	return drone
 
 
 ## Fisher-Yates with the given RNG (never Array.shuffle(), which uses global RNG).

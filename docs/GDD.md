@@ -106,7 +106,7 @@ Cold Exit, CORRUPTED) refer to the Miss slice.
 | Nudge ±1 | One ring | 1st per turn free, then 1 RAM | Each tick is absorbed by 1 resistance |
 | Spin N | Whole wheel (outer + inner) | Card | First R ticks absorbed; the rest move the wheel |
 | Flip | Whole wheel | Card | **Blocked entirely** while resistance > 0 |
-| Respin | Whole wheel, random | Card | Blocked while resistance > 0; sets a checkpoint |
+| Respin | Whole wheel, random | Card, or 4 RAM on your own wheel (11.3) | Blocked while resistance > 0; sets a checkpoint |
 | Freeze | Whole wheel | Card | Target skips its next start-of-turn respin |
 
 **Spin resistance (enemy ability).** Resistance R absorbs the first R ticks of player
@@ -285,9 +285,11 @@ Permadeath. HP carries between fights within a netrun; survivors heal fully at H
 RAM: start each combat with 6, +4 per turn, carry-over, max 12. All classes share a card
 pool; each class adds 1–2 exclusive cards.
 
-**Botnet drones:** Deploy creates a drone (5 HP, mini-wheel Atk 3 / Def 3) docked on a
-chosen slice of your wheel. When that slice triggers, the drone triggers too. Enemy
-Pointer attacks hit a drone on your resolved slice before you.
+**Botnet drones:** Deploy creates a drone (5 HP, mini-wheel Atk 3 / Def 3) docked on
+your wheel: on the Deploy slice itself, else the next free slice clockwise (ruling
+2026-09-24; DEPLOY_DRONE card effects may pick the slice). When that slice triggers, the
+drone triggers too. Enemy Pointer attacks hit a drone on your resolved slice before you.
+The Hub sets the drone template and cap (`max_drones`).
 
 ### 5.3 Rank
 Rank = netruns survived.
@@ -333,8 +335,8 @@ modify the outer slice. Daemons are run-wide rules. Rule-breaking Daemons are ex
 | Fault Tolerance | Miss slice deals 3 damage to the pointer target |
 | Kernel Sync | Each Perfect: +1 damage for the rest of the combat |
 | Zero Day | A Perfect on the Miss slice resolves as a 3× Crit |
-| Linked Bus | Nudging an enemy wheel also moves your wheel the same way, free |
-| Stolen Intent | Once per combat, swap your resolved slice with the enemy's |
+| Linked Bus | Nudging an enemy wheel (nudge actions, not cards) also moves your wheel the same way, free |
+| Stolen Intent | Once per combat, when you would resolve Miss and the target would not, swap resolved slices (automatic; ruling 2026-09-24) |
 | Twin Pointer | Your wheel is also read at the bottom; both trigger. Max RAM halved. |
 | Botnet Seed | Each Perfect deploys a 1-HP drone on the triggered slice (max 2) |
 
@@ -546,7 +548,7 @@ Netrun ≈ 15 min · raid ≈ 5 min · fast campaign 8 runs ≈ 2 h 15 m · aver
 |---|---|
 | 1–5 | Heat gain +10%, one fewer Heat objective Site, more elites, Cycle prices +10%, raid strength +15% |
 | 6–10 | Heat sinks −15%, enemies +1 resistance, deaths +5 Heat, bosses change pointers earlier |
-| 11–15 | Starting Bug card, no free nudge on turn 1, repairs cost more, Seized Sites spawn stronger raids |
+| 11–15 | Starting Bug card (0 RAM, drains 1 RAM, exhaust; a Modem can remove it), no free nudge on turn 1, repairs cost more, Seized Sites spawn stronger raids |
 | 16–20 | Exploits +5 Heat, Purge at 90, final boss +1 pointer, raids gain a second wave |
 
 ---

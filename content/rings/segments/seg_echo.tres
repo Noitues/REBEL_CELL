@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RingSegmentData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Echo (GDD 6.4): the outer slice triggers again at 0.5x. Trigger 5 = ON_SLICE_TRIGGER;
+; effect 19 = RETRIGGER with multiplier 0.5.
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 19
+target = 0
+multiplier = 0.5
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 5
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"seg_echo"
+display_name = "Echo"
+description = "The outer slice triggers again at half output."
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

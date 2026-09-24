@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/linked_bus_handler.gd" id="h"]
+
+[resource]
+script = ExtResource("1")
+id = &"linked_bus"
+display_name = "Linked Bus"
+description = "Nudging an enemy wheel also moves your wheel the same way, free."
+rarity = 1
+cycle_cost = 180
+custom_handler = ExtResource("h")

@@ -20,11 +20,14 @@ var slice_statuses: Array[int] = []
 var passive_resistance: int = 0
 ## Ticks every pointer moves at each start of turn (Recall Unit orbit).
 var pointer_orbit: int = 0
+## MIGRATE telegraph (GDD 2.11): the layout the pointers move to at the next start of
+## turn; empty when no migration is pending.
+var pending_pointer_ticks: PackedInt32Array = PackedInt32Array()
 
 
 ## Builds the starting state of `data`, optionally with an installed Inner Ring and an
 ## operative's own layout (slice ids and Firmware sockets) in place of the data's.
-static func from_wheel_data(data: WheelData, ring: InnerRingData = null, slice_ids: Array[StringName] = [], firmware_ids: Array[StringName] = []) -> WheelState:
+static func from_wheel_data(data: WheelData, ring: InnerRingData = null, slice_ids: Array[StringName] = [], firmware_ids: Array[StringName] = [], segment_ids: Array[StringName] = []) -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = data.slice_count
 	for i in data.slots.size():
@@ -36,8 +39,13 @@ static func from_wheel_data(data: WheelData, ring: InnerRingData = null, slice_i
 	w.hub_id = data.hub.id if data.hub != null else &""
 	var ring_data := ring if ring != null else data.inner_ring
 	if ring_data != null:
-		for seg in ring_data.segments:
-			w.ring_segment_ids.append(seg.id if seg != null else &"")
+		for k in ring_data.segments.size():
+			var seg := ring_data.segments[k]
+			# Rank 3 segment swaps (GDD 6.4): the operative's own choice replaces the class default.
+			if k < segment_ids.size() and segment_ids[k] != &"":
+				w.ring_segment_ids.append(segment_ids[k])
+			else:
+				w.ring_segment_ids.append(seg.id if seg != null else &"")
 	w.pointer_ticks = data.pointer_ticks.duplicate()
 	w.passive_resistance = data.passive_resistance
 	return w
@@ -108,6 +116,7 @@ func duplicate_state() -> WheelState:
 	w.slice_statuses = slice_statuses.duplicate()
 	w.passive_resistance = passive_resistance
 	w.pointer_orbit = pointer_orbit
+	w.pending_pointer_ticks = pending_pointer_ticks.duplicate()
 	return w
 
 
@@ -117,6 +126,15 @@ func orbit_pointers() -> void:
 		return
 	for i in pointer_ticks.size():
 		pointer_ticks[i] = posmod(pointer_ticks[i] + pointer_orbit, RC.TICKS)
+
+
+## Applies a telegraphed MIGRATE layout. Returns true when the pointers moved.
+func apply_pending_pointers() -> bool:
+	if pending_pointer_ticks.is_empty():
+		return false
+	pointer_ticks = pending_pointer_ticks.duplicate()
+	pending_pointer_ticks = PackedInt32Array()
+	return true
 
 
 func to_dict() -> Dictionary:
@@ -133,6 +151,7 @@ func to_dict() -> Dictionary:
 		"slice_statuses": slice_statuses.duplicate(),
 		"passive_resistance": passive_resistance,
 		"pointer_orbit": pointer_orbit,
+		"pending_pointer_ticks": Array(pending_pointer_ticks),
 	}
 
 
@@ -154,6 +173,9 @@ static func from_dict(d: Dictionary) -> WheelState:
 		w.slice_statuses.append(int(s))
 	w.passive_resistance = int(d.get("passive_resistance", 0))
 	w.pointer_orbit = int(d.get("pointer_orbit", 0))
+	w.pending_pointer_ticks = PackedInt32Array()
+	for t in d.get("pending_pointer_ticks", []):
+		w.pending_pointer_ticks.append(int(t))
 	return w
 
 

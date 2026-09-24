@@ -12,6 +12,7 @@ extends RefCounted
 ## Every public method appends to `last_events` (plain dictionaries with "text").
 
 const CYCLES_PER_SCHEMATIC_FALLBACK := 10
+const BUG_CARD_ID := &"bug"
 
 var config: CampaignConfigData
 var lookup: ContentLookup
@@ -57,6 +58,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
+	s._apply_bug_cards()
 	s._maybe_raid_interlude()
 	s._sync()
 	return s
@@ -86,6 +88,7 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	s.run.map = graph
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
+	s._apply_bug_cards()
 	s._sync()
 	return s
 
@@ -213,9 +216,12 @@ func _start_combat(elite: bool) -> void:
 	var cls := lookup.get_content(op.class_id) as ClassData
 	var overrides := {
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
+		"ring_segment_ids": _strings(op.ring_segment_ids),
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
 		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "hub_id": String(op.hub_id(cls)),
 	}
+	for k in rule_overrides():
+		overrides[k] = rule_overrides()[k]
 	for k in run.combat_overrides:
 		if k != "shop_stock_delta":
 			overrides[k] = run.combat_overrides[k]
@@ -230,6 +236,32 @@ func _start_combat(elite: bool) -> void:
 ## enemy including mini-bosses and the final boss (designer ruling 2026-09-24).
 func enemy_scale() -> float:
 	return pow(config.enemy_scale_per_tier, run.tier - 1)
+
+
+## Combat-side ICE and Heat rule modifiers (GDD 11.9, 4.3) as CombatResolver overrides:
+## enemy resistance (Heat 50 / ICE 7), boss strength (ICE 9), the extra boss pointer
+## (ICE 18), no free nudge on turn 1 (ICE 12) and the campaign Heat for gated behaviour.
+func rule_overrides() -> Dictionary:
+	return {
+		"enemy_resistance": int(campaign.rule_modifier(config, RC.RuleModifierType.ENEMY_RESISTANCE)),
+		"boss_strength_pct": campaign.rule_modifier(config, RC.RuleModifierType.BOSS_STRENGTH_PCT),
+		"boss_extra_pointer": int(campaign.rule_modifier(config, RC.RuleModifierType.BOSS_EXTRA_POINTER)),
+		"no_first_turn_free_nudge": campaign.rule_modifier(config, RC.RuleModifierType.NO_FIRST_TURN_FREE_NUDGE) > 0.0,
+		"heat": campaign.heat,
+	}
+
+
+## ICE 11 STARTING_BUG_CARD: the working deck carries at least N Bug cards (a Modem can
+## remove them; removal is the counterplay). Applied at run start.
+func _apply_bug_cards() -> void:
+	var wanted := int(campaign.rule_modifier(config, RC.RuleModifierType.STARTING_BUG_CARD))
+	if wanted <= 0 or not lookup.has(BUG_CARD_ID):
+		return
+	var have := run.operative.deck.count(BUG_CARD_ID)
+	for i in wanted - have:
+		run.operative.deck.append(BUG_CARD_ID)
+	if wanted > have:
+		last_events.append({"type": "bug_cards", "amount": wanted - have, "text": "ICE: %d Bug card(s) infest the deck." % (wanted - have)})
 
 
 func reward_scale() -> float:
@@ -828,6 +860,8 @@ func _build_pools() -> void:
 	var class_cards := {}
 	for id in lookup.ids_of_class(&"CardData"):
 		var c := lookup.get_content(id) as CardData
+		if not c.offered:
+			continue
 		if c.class_id == &"":
 			shared_cards.append(id)
 		else:
