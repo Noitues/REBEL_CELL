@@ -2,6 +2,7 @@ class_name NetworkNodeData
 extends Resource
 ## A node you install on your home server or a claimed Site.
 
+@export var id: StringName
 @export var node_type: RC.NetworkNodeType = RC.NetworkNodeType.RELAY
 @export var display_name: String
 @export_multiline var description: String
