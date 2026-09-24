@@ -293,12 +293,21 @@ func change_scene(scene_path: String) -> void:
 		get_tree().change_scene_to_file(scene_path)
 
 
+## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT.
 func go_to_hq() -> void:
-	change_scene(HQ_SCENE)
+	if scene_switching_enabled:
+		Fx.jack_out(func() -> void: change_scene(HQ_SCENE))
+	else:
+		change_scene(HQ_SCENE)
 
 
+## Jack in: the camera pushes into the deck CRT and dissolves to wireframe.
 func go_to_netrun() -> void:
-	change_scene(NETRUN_SCENE)
+	AudioDirector.play_sfx("jack_in")
+	if scene_switching_enabled:
+		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE))
+	else:
+		change_scene(NETRUN_SCENE)
 
 
 func _ensure_resolver() -> void:

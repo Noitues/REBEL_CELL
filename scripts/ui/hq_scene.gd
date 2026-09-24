@@ -13,9 +13,14 @@ var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
 var panel_name: String = ""
+var background: CyberdeckBackground
+var wireframe: WireframeBackground
+var grid_view: GridMapView = null
+var _settings_panel: SettingsPanel = null
 
 
 func _ready() -> void:
+	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
 	if args.has("--demo-hq") or args.has("--demo-grid") or args.has("--demo-raid"):
@@ -141,12 +146,43 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
+	var net := name in ["grid", "raid", "raid_summary"]
+	background.visible = not net
+	wireframe.visible = net
+	AudioDirector.play_music("raid" if name == "raid" else ("grid" if name == "grid" else "hq"))
+	if RunManager.campaign != null:
+		var band := 0
+		for t in [25, 50, 75]:
+			if RunManager.campaign.heat >= t:
+				band += 1
+		background.heat_band = band
+		wireframe.corp_creep = band / 3.0
+		wireframe.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	_refresh_status()
+
+
+func open_settings() -> void:
+	if _settings_panel != null:
+		_settings_panel.queue_free()
+		_settings_panel = null
+		return
+	_settings_panel = SettingsPanel.new()
+	_settings_panel.position = Vector2(size.x / 2.0 - 180, 120)
+	_settings_panel.closed.connect(open_settings)
+	add_child(_settings_panel)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("open_settings"):
+		open_settings()
+		get_viewport().set_input_as_handled()
 
 
 func show_start() -> void:
 	var box := VBoxContainer.new()
-	box.add_child(_label("REBEL_CELL - HQ (M3 placeholder)"))
+	box.add_child(GraffitiTag.new("REBEL_CELL"))
+	box.add_child(_label("[HQ] the deck is warm. Jack a campaign in."))
 	var row := HBoxContainer.new()
 	box.add_child(row)
 	row.add_child(_label("Campaign seed:"))
@@ -161,6 +197,7 @@ func show_start() -> void:
 	var p := RunManager.profile
 	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %d." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, p.best_ice]))
+	box.add_child(_button("Accessibility settings [Esc]", open_settings))
 	_set_panel(box, "start")
 
 
@@ -168,10 +205,23 @@ func show_hq() -> void:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var box := VBoxContainer.new()
-	box.add_child(_label("HQ - %s" % RunManager.corporation.display_name))
+	var header := HBoxContainer.new()
+	header.add_child(GraffitiTag.new("REBEL_CELL"))
+	var poster := HeatPoster.new(true)
+	poster.set_heat(c.heat, cfg.heat_max)
+	header.add_child(poster)
+	var radio := ZineNote.new("PIRATE RADIO", Vector2(220, 70))
+	radio.append("lo-fi loop: HQ [placeholder]")
+	radio.append("vs %s" % RunManager.corporation.display_name)
+	header.add_child(radio)
+	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
+	jack.pressed.connect(show_grid)
+	header.add_child(jack)
+	box.add_child(header)
 	var actions := HBoxContainer.new()
 	box.add_child(actions)
 	actions.add_child(_button("City Grid", show_grid))
+	actions.add_child(_button("Settings [Esc]", open_settings))
 	actions.add_child(_button("Recruit rookie (%d)" % cfg.rookie_cost, recruit))
 	actions.add_child(_button("Scrub Heat -%d (%d)" % [cfg.heat_purchase_amount, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
 	if not c.pending_raids.is_empty():
@@ -187,6 +237,9 @@ func show_hq() -> void:
 	for op in c.roster:
 		var row := HBoxContainer.new()
 		var where := CampaignRules.stationed_site(c, op.id)
+		var polaroid := Polaroid.new("%s R%d" % [op.name, op.rank], "[%s PORTRAIT]" % op.class_id.to_upper(), -2.0 if c.roster.find(op) % 2 == 0 else 2.0)
+		polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
+		row.add_child(polaroid)
 		row.add_child(_label("  %s (%s) Rank %d HP %d/%d deck %d daemons %d %s%s" % [op.name, op.class_id, op.rank, op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
 			"" if op.alive else "[DEAD]", (" stationed on %s" % where) if where != &"" else ""]))
 		if op.alive:
@@ -219,9 +272,33 @@ func show_grid() -> void:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var box := VBoxContainer.new()
-	box.add_child(_label("City Grid - pick a Site to netrun, claim or repair"))
-	box.add_child(_button("Back to HQ", show_hq))
+	var top := HBoxContainer.new()
+	box.add_child(top)
+	grid_view = GridMapView.new()
+	var paths: Array[Array] = []
+	for pending in c.pending_raids:
+		for entry in CampaignRules.raid_entries(c, corp, pending):
+			var path: Array = [entry]
+			var cur := entry
+			var guard := 0
+			while cur != c.grid.home_site_id and guard < 12:
+				guard += 1
+				cur = c.grid.next_hop(cur, c.grid.home_site_id, corp.city_grid)
+				path.append(cur)
+			paths.append(path)
+	grid_view.show_grid(c, corp, paths)
+	top.add_child(grid_view)
+	var plan := ZineNote.new("THE PLAN", Vector2(300, 380))
+	plan.append("Cleared Sites can be claimed.")
+	plan.append("Relays extend your reach.")
+	plan.append("%d/%d Exploits for the breach." % [c.exploits.size(), RunManager.config().min_exploits_for_breach])
+	if not c.pending_raids.is_empty():
+		plan.append("[b]Raid pending:[/b] threat paths drawn in %s." % corp.display_name)
 	var launchable := RunManager.launchable_sites()
+	for s in launchable:
+		plan.append("-> %s (T%d, %s)" % [s.display_name, s.tier, CampaignRules.run_kind_for(c, s)])
+	top.add_child(plan)
+	box.add_child(_button("Back to HQ", show_hq))
 	var living := c.living_operatives()
 	for site in corp.city_grid.sites:
 		if site == null:
@@ -370,6 +447,11 @@ func _report(events: Array[Dictionary]) -> void:
 
 
 func _build_ui() -> void:
+	background = CyberdeckBackground.new()
+	add_child(background)
+	wireframe = WireframeBackground.new()
+	wireframe.visible = false
+	add_child(wireframe)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)

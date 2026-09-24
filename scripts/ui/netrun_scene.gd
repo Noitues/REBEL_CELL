@@ -12,9 +12,12 @@ var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
 var combat_scene: Control = null
+var background: WireframeBackground
+var _settings_panel: SettingsPanel = null
 
 
 func _ready() -> void:
+	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
 	if args.has("--demo-run") or args.has("--demo-combat"):
@@ -173,6 +176,14 @@ func _set_panel(p: Control) -> void:
 	_panel = p
 	combat_scene = null
 	_panel_host.add_child(p)
+	var s := RunManager.netrun
+	if s != null and not s.run.is_over():
+		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun")
+		if s.run.phase != RunState.Phase.COMBAT:
+			background.visible = true
+	if RunManager.campaign != null:
+		background.corp_creep = clampf(RunManager.campaign.heat / 100.0, 0.0, 1.0)
+		background.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
 
@@ -244,6 +255,7 @@ func _show_combat() -> void:
 	scene.auto_start = false
 	scene.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_set_panel(scene)
+	background.visible = false  # the arena draws its own wireframe world
 	combat_scene = scene
 	scene.attach_netrun(s)
 	scene.engine.state_changed.connect(_on_combat_state_changed)
@@ -429,7 +441,26 @@ func _report(events: Array[Dictionary]) -> void:
 			_log.append_text(String(e["text"]) + "\n")
 
 
+func open_settings() -> void:
+	if _settings_panel != null:
+		_settings_panel.queue_free()
+		_settings_panel = null
+		return
+	_settings_panel = SettingsPanel.new()
+	_settings_panel.position = Vector2(size.x / 2.0 - 180, 120)
+	_settings_panel.closed.connect(open_settings)
+	add_child(_settings_panel)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("open_settings") and combat_scene == null:
+		open_settings()
+		get_viewport().set_input_as_handled()
+
+
 func _build_ui() -> void:
+	background = WireframeBackground.new()
+	add_child(background)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
