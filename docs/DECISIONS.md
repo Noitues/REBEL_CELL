@@ -30,6 +30,39 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M4 Look, Feel & Accessibility
+- **No approved mockups are in the repo** (STYLE_GUIDE points at a private canvas), so the
+  screens follow the style guide's component rules literally: three worlds per screen,
+  colour tokens in `Palette`, the three fonts, zine kit elements by name (Polaroid,
+  ransom-note Heat, marker RAM tally, torn-paper log strip, SEND IT stamp, card stickers,
+  graffiti tag, wanted poster, pirate radio, JACK IN, THE PLAN sidebar). Automated
+  layout rules: zine elements never intersect a wheel's disc; player wheel `cell_pink`,
+  enemy wheels `corp_*`; each screen shows its world background.
+- **Fonts** (Permanent Marker — Apache 2.0, Anton and Share Tech Mono — OFL 1.1) are
+  vendored from github.com/google/fonts with their licences in `assets/fonts/`.
+- **Effects architecture:** one `Fx` autoload (CanvasLayer) owns the scanline / flicker /
+  chromatic overlay (all three are shader uniforms), the Heat distortion pulse, screen
+  flashes and the jack-in / jack-out transition. `Settings.reduce_effects` hides the
+  overlay, zeroes the distortion, freezes background animation and skips freeze frames and
+  stutter shakes. The glow and paper shaders are static and stay on.
+- **Flash limiter** is a pure sliding-window class (`FlashLimiter`, 3 per rolling second)
+  used by `Fx.flash()` and by the automated event-stream check, which maps the flash-worthy
+  combat event types (Perfect retrigger, boss phase, Heat threshold, combat end, Zero Day)
+  onto a timeline and asserts no one-second window holds more than three.
+- **Without-colour readability:** a distinct glyph per slice type (▲ ✦ ■ ◇ ⬢ ⬡ ✚ ◈ ✕) and
+  per status (☠ ⚡ ⌗) plus text tags; the Miss slice has a dashed outline; resistance is
+  labelled, not only gold.
+- **Keyboard play:** 1–9 play cards, Q/E nudge, W nudge wheel toggle, R ring toggle, T card
+  target toggle, Tab target, Space end turn, Z / Ctrl+Z rewind, Esc settings; cards and the
+  stamp are focusable.
+- **Placeholder audio is generated in code** (`AudioDirector`): ratchet ticks, spins as
+  decelerating click runs, flip clack, latch/click/stutter/static precision feedback, and
+  4-second loops per music context with a Heat layer for combat. Real assets swap in behind
+  the same API.
+- **Performance:** fps at 1080p cannot be measured headless; the core budget is enforced
+  by test (< 1 ms per resolved turn including state duplication) and every effect is a
+  cheap 2D shader or `_draw` call that reduce-effects can disable.
+
 ### 2026-09-24 — M3 Campaign & Raids
 - **Grid runtime state** (`GridState`) records per Site: status (corporate / cleared /
   claimed / Seized), installed node id, integrity, condition (OK / Disabled), deployed

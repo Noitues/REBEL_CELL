@@ -20,11 +20,12 @@ Godot 4.7 · GDScript · PC.
    - Content: `godot --headless --path . -s tools/validate_content.gd` → `CONTENT VALIDATION: PASS`
 4. Current milestone: see `docs/MILESTONES.md`.
 
-## Layout (M0–M3)
+## Layout (M0–M4)
 - `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
 - `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay), `MapGenerator`, `NetrunSession` (map, rewards, shop, events, banking), `HeatRules`, `RaidResolver`, `CampaignRules` (Grid, claiming, raids, Exploits, story, win/loss), `handlers/`
-- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState`, `GridState`, `ProfileState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat, netrun and HQ scenes
+- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState`, `GridState`, `ProfileState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat, netrun and HQ scenes, `kit/` (zine kit, backgrounds, palette, theme), `fx/` (flash limiter)
 - `scenes/hq/hq_scene.tscn` — the main scene: start, HQ (roster, recruit, station, Heat, Armory, story), City Grid, raid setup/projection/playout, campaign end · `scenes/netrun_map/netrun_scene.tscn` — map, embedded combat, rewards, Modem, Terminals · `scenes/combat/combat_scene.tscn` — standalone fight picker
 - `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, 25 cards, Firmware, Daemons, slices, Solace corporation with its City Grid, boss, Exploits, story paths, raids, nodes, assets, threats, Terminal events)
 - `tests/unit`, `tests/integration` — GUT 9.x tests · `tools/` — headless checks
+- `assets/fonts/` — Permanent Marker, Anton, Share Tech Mono (licences alongside) · `shaders/` — scanline, distortion, glow, zine paper
 - `addons/gut/` — GUT 9.7.1

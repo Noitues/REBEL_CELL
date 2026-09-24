@@ -33,7 +33,7 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 | Raid templates (Collections) for Heat thresholds + claim | 4.3, 7 | done (M3) |
 | Heat thresholds + ICE ladder data | 4.3, 11.9 | done (M0) |
 | Shop slice catalogue (*minimal*: Atk 6/8, Crit 12, Def 5/8, Shield 5, Evade) | 11.2 | minimal (M2) |
-| Placeholder art / zine UI kit | STYLE_GUIDE | M4 |
+| Placeholder art / zine UI kit, three-worlds baseline, generated audio | STYLE_GUIDE, GDD 10 | done (M4) — shapes and code audio; final art and recorded audio pending |
 
 ## Horizontal backlog (breadth; after the vertical slice)
 
