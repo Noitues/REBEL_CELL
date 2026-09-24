@@ -23,6 +23,25 @@ func has(id: StringName) -> bool:
 	return _by_id.has(id)
 
 
+## Every known id, sorted (deterministic pools).
+func ids() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id in _by_id.keys():
+		out.append(id)
+	out.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return out
+
+
+## Sorted ids of every resource whose script class is `class_name_`.
+func ids_of_class(class_name_: StringName) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id in ids():
+		var script: Script = _by_id[id].get_script()
+		if script != null and script.get_global_name() == class_name_:
+			out.append(id)
+	return out
+
+
 ## Resource for `id`; pushes an error and returns null when unknown.
 func get_content(id: StringName) -> Resource:
 	if not _by_id.has(id):
