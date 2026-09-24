@@ -286,6 +286,12 @@ Permadeath. HP carries between fights within a netrun; survivors heal fully at H
 | Rigger | 55 | Atk, Atk, Def, Def, Shield, Miss | +1 max RAM | Refund 1 RAM + 1 free nudge | Node regains integrity after each wave |
 | Botnet | 45 | Atk, Atk, Def, Deploy, Deploy, Miss | Up to 3 drones; drones persist between combats in a run | Perfect Deploy docks a Parasite drone on an enemy slice (halves its output) | Node gains one free asset per raid |
 
+*M6 balance ruling (2026-09-24, DECISIONS.md):* every class needs burst to outpace the
+Renewal Engine's heal, so the Ghost hook also resolves the slice twice, and the Rigger and
+Botnet hooks also resolve it again at half (Botnet on any slice; Deploy Perfects still plant
+the Parasite). Wheels are interleaved so adjacent slices differ; exact slice values live in
+`content/classes/`.
+
 RAM: start each combat with 6, +4 per turn, carry-over, max 12. All classes share a card
 pool; each class adds 1–2 exclusive cards.
 

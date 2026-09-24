@@ -72,9 +72,11 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 				step -= 1
 				break
 			continue
+		if waves.has(step) and step > 1:
+			_station_regen(campaign, grid, grid_data, lookup, step, result)
 		_move_threats(threats, grid, grid_data, lookup, step, result)
-		_hold_threats(threats, grid, lookup, step, result)
-		_fire_assets(campaign, threats, grid, grid_data, lookup, step, result)
+		_hold_threats(threats, grid, lookup, step, result, campaign, grid_data)
+		_fire_assets(campaign, threats, grid, grid_data, lookup, step, result, config)
 		_damage_nodes(threats, grid, grid_data, lookup, config, step, result, seized_now, disabled_now)
 		if grid.home_integrity <= 0:
 			result.campaign_lost = true
@@ -83,6 +85,8 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		if _active(threats).is_empty() and step >= _last_wave_step(waves):
 			break
 	result.steps_run = step
+	if not result.campaign_lost:
+		_station_regen(campaign, grid, grid_data, lookup, step, result)
 	# Step cap: threats still standing on a node Seize it.
 	for t in _active(threats):
 		var site: StringName = t["site"]
@@ -323,11 +327,21 @@ static func _move_threats(threats: Array[Dictionary], grid: GridState, grid_data
 				"text": "Step %d: %s moves %s -> %s (toward %s)." % [step, t["name"], from, t["site"], target]})
 
 
-static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: ContentLookup, step: int, result: RaidResult) -> void:
+static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: ContentLookup, step: int, result: RaidResult, campaign: CampaignState = null, grid_data: CityGridData = null) -> void:
 	for t in _active(threats):
 		var site: StringName = t["site"]
 		if not grid.is_active_node(site) or t["hold"] > 0:
 			continue
+		# Ghost station bonus: a threat entering the node is held once.
+		if campaign != null:
+			var hold := int(station_bonuses(campaign, grid, grid_data, lookup, site)["hold"])
+			var key := "station#%s" % site
+			if hold > 0 and not t["held_by"].has(key):
+				t["held_by"].append(key)
+				t["hold"] = hold
+				result.events.append({"type": "station_hold", "step": step, "threat": t["id"], "site": site,
+					"text": "Step %d: the operative on %s ghosts %s for %d step(s)." % [step, site, t["name"], hold]})
+				continue
 		var assets := grid.assets_on(site)
 		for i in assets.size():
 			var asset := lookup.get_content(assets[i]) as DefenseAssetData
@@ -343,7 +357,7 @@ static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: C
 			break
 
 
-static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, step: int, result: RaidResult) -> void:
+static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, step: int, result: RaidResult, config: CampaignConfigData = null) -> void:
 	for site in grid.claimed_ids():
 		if not grid.is_active_node(site):
 			continue
@@ -361,7 +375,12 @@ static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], gr
 			var asset := lookup.get_content(a) as DefenseAssetData
 			if asset != null:
 				guns.append(asset)
-		var station_mult := station_damage_multiplier(campaign, grid, grid_data, lookup, site)
+		var bonus := station_bonuses(campaign, grid, grid_data, lookup, site)
+		# Botnet station bonus: free temporary turrets on the node for this raid.
+		if config != null and config.station_deploy_asset != null:
+			for k in int(bonus["turrets"]):
+				guns.append(config.station_deploy_asset)
+		var station_mult: float = bonus["damage"]
 		for gun in guns:
 			if gun.damage <= 0:
 				continue
@@ -377,10 +396,59 @@ static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], gr
 					result.events.append({"type": "threat_destroyed", "step": step, "threat": target["id"], "text": "Step %d: %s destroyed." % [step, target["name"]]})
 
 
-## Station bonus (GDD 5.2, 5.3; numbers per designer ruling 2026-09-24): a stationed
-## operative's class `station_bonus` DEAL_DAMAGE multiplier applies to the assets on its
-## node and on adjacent Firewall Relays; Rank scales the bonus part by the class's
-## RankRewardData.station_bonus_multiplier. The strongest applicable bonus wins.
+## Every station bonus on `site` (GDD 5.2): "damage" (asset multiplier, Breaker; also from
+## an adjacent node when `site` is a Firewall Relay), "hold" (steps a threat entering the
+## node is held once, Ghost), "regen" (integrity regained after each wave, Rigger),
+## "turrets" (free temporary turrets for the raid, Botnet). Rank scales each by the
+## class's RankRewardData.station_bonus_multiplier (counts round to nearest).
+static func station_bonuses(campaign: CampaignState, grid: GridState, grid_data: CityGridData, lookup: ContentLookup, site: StringName) -> Dictionary:
+	var out := {"damage": station_damage_multiplier(campaign, grid, grid_data, lookup, site), "hold": 0, "regen": 0, "turrets": 0}
+	if grid_data == null or not grid.is_active_node(site):
+		return out
+	var op_id := grid.stationed_on(site)
+	if op_id == &"":
+		return out
+	var op := campaign.get_operative(op_id)
+	if op == null or not op.alive:
+		return out
+	var cls := lookup.get_content(op.class_id) as ClassData
+	if cls == null:
+		return out
+	var mult := op.station_multiplier(cls)
+	for te in cls.station_bonus:
+		if te == null:
+			continue
+		for e in te.effects:
+			if e == null:
+				continue
+			match e.type:
+				RC.EffectType.FREEZE:
+					out["hold"] = maxi(int(out["hold"]), roundi(maxi(1, e.amount) * mult))
+				RC.EffectType.HEAL:
+					out["regen"] = maxi(int(out["regen"]), roundi(e.amount * mult))
+				RC.EffectType.DEPLOY_DRONE:
+					out["turrets"] = maxi(int(out["turrets"]), roundi(maxi(1, e.amount) * mult))
+	return out
+
+
+## Rigger station bonus: every stationed node with "regen" regains that much integrity
+## (capped) after a wave and when the raid ends.
+static func _station_regen(campaign: CampaignState, grid: GridState, grid_data: CityGridData, lookup: ContentLookup, step: int, result: RaidResult) -> void:
+	for site in grid.claimed_ids():
+		if site == grid.home_site_id or not grid.is_active_node(site):
+			continue
+		var regen := int(station_bonuses(campaign, grid, grid_data, lookup, site)["regen"])
+		if regen <= 0:
+			continue
+		var s := grid.site(site)
+		var before := int(s["integrity"])
+		s["integrity"] = mini(int(s["max_integrity"]), before + regen)
+		if int(s["integrity"]) > before:
+			result.events.append({"type": "station_regen", "step": step, "site": site, "amount": int(s["integrity"]) - before,
+				"text": "Step %d: the operative on %s patches it +%d (%d/%d)." % [step, site, int(s["integrity"]) - before, s["integrity"], s["max_integrity"]]})
+
+
+## Asset damage multiplier from stationed Breakers (see station_bonuses).
 static func station_damage_multiplier(campaign: CampaignState, grid: GridState, grid_data: CityGridData, lookup: ContentLookup, site: StringName) -> float:
 	var best := 1.0
 	var here_node := lookup.get_content(grid.node_type_of(site)) as NetworkNodeData

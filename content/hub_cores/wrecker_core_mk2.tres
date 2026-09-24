@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e2"]
+
+; Wrecker Core Mk2, Rank 2 upgrade (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx_spin"]
+script = ExtResource("e2")
+type = 6
+target = 1
+amount = 1
+ring_scope = 2
+
+[sub_resource type="Resource" id="te_spin"]
+script = ExtResource("e1")
+trigger = 0
+effects = Array[ExtResource("e2")]([SubResource("fx_spin")])
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("e2")
+type = 19
+target = 0
+multiplier = 1.5
+
+[sub_resource type="Resource" id="hook"]
+script = ExtResource("e1")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e2")]([SubResource("fx_retrigger")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"wrecker_core_mk2"
+display_name = "Wrecker Core Mk2"
+description = "+1 spin on all cards. Perfect: the slice resolves again at 1.5x."
+passive_effects = Array[ExtResource("e1")]([SubResource("te_spin")])
+perfect_hook = SubResource("hook")

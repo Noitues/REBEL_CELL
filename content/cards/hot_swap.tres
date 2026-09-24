@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+[sub_resource type="Resource" id="fx_snap"]
+script = ExtResource("e1")
+type = 16
+target = 1
+ring_scope = 0
+
+[sub_resource type="Resource" id="fx_ram"]
+script = ExtResource("e1")
+type = 12
+target = 0
+amount = 1
+
+[resource]
+script = ExtResource("main_script")
+id = &"hot_swap"
+display_name = "Hot Swap"
+description = "Snap your outer ring to the slice centre and gain 1 RAM."
+rarity = 1
+ram_cost = 2
+cycle_cost = 75
+class_id = &"rigger"
+wheel_target = 0
+effects = Array[ExtResource("e1")]([SubResource("fx_snap"), SubResource("fx_ram")])

@@ -30,6 +30,77 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M6 Class roster: Ghost, Rigger, Botnet and four alternatives (GAP_ANALYSIS P0 1–2, P1 5)
+- **Recruitment by class** (P0 1): `CampaignRules.available_classes` / `class_available`
+  read the Profile unlocks; the Breaker is always available. HQ shows one Recruit button
+  per available class and a "Crew:" picker on the new-campaign panel;
+  `RunManager.new_campaign` falls back to the Breaker for a locked class.
+- **Unlock costs**: base classes 80 Schematics (GDD 3.4), alternatives 60 (implementer's
+  call: a variation is worth less than a new class). Alternatives do not require their
+  base class to be unlocked first.
+- **Botnet drones persist** (P0 2): `HubCoreData.drones_persist`; living drones are saved
+  on `RunState.drones` after a victory and re-docked (with their HP) at the next fight of
+  the run through the "drones" combat override.
+- **New hub fields**: `max_ram_bonus` (Rigger) and `free_resistance_nudges` (Ghost: the
+  first N nudges on an enemy wheel each turn ignore resistance, event "ghost_nudge").
+- **PARASITE** is a new `RC.Status` (value 4): the slice resolves at
+  `config.parasite_multiplier` (0.5) until cleansed. The Swarm Core hook plants it on the
+  target's slice under the matching pointer after a Perfect on a DEPLOY slice.
+- **Station bonuses** (GDD 5.2) from the class's `station_bonus` effect type:
+  FREEZE = hold (Ghost: a threat entering the node is held once, 1 step), HEAL = regen
+  (Rigger: +5 integrity after each wave and at raid end), DEPLOY_DRONE = free turrets
+  (Botnet: `config.station_deploy_asset`, the Turret, for this raid). Rank scales each by
+  `station_bonus_multiplier`, counts rounded.
+- **Freeze cooldown** (found by the class simulation): a wheel that skipped its respin
+  because it was frozen cannot be frozen again until it has respun
+  (`WheelState.respin_skipped`, event "freeze_blocked"). Without it an Anchor segment
+  landing a Perfect on a non-damage slice locked the wheel forever: a stalemate.
+- **Every class needs burst** (found by the simulation): the Renewal Engine heals 10 a turn
+  and only the Breaker could outpace it (its Perfect resolves the slice twice). GDD 5.2 is
+  extended, not replaced: the Ghost Perfect also resolves the slice twice; the Rigger and
+  Botnet Perfects also resolve it again at half (Botnet on any slice). Hook effects fire
+  once per resolution (the existing Breaker Mk2 rule), so a retriggered Botnet Deploy
+  plants its Parasite twice and a Rigger Perfect refunds twice.
+- **Wheels are interleaved** so neighbouring slices differ and a one-tick miss does not
+  land on the same slice type. Values are placeholders tuned by simulation:
+  Ghost Atk 14, Def 6, Atk 14, Evade, Def 6, Miss; Rigger Atk 16, Def 6, Atk 14,
+  Shield 5, Def 6, Miss; Botnet Atk 16, Deploy, Atk 16, Deploy, Def 8, Miss.
+- **Rank 1 rings**: Ghost Pierce / Echo / blank; Rigger Accelerator / x2 / Echo; Botnet
+  Echo / Corrupt / x2. Rank 3 swap options are the remaining segments. The Anchor moved out
+  of the Ghost's default ring into its options.
+- **Exclusive cards** (two each): Ghost Step, Blind Spot; Torque Wrench, Hot Swap; Spawn
+  Drone, Parasite Pulse. **Mk2 cores** at Rank 2 for every class. Barks for every class.
+- **Alternatives** (GDD 3.4, "same deck + different core"): `ClassData.alternative_of`;
+  `pool_class_id()` makes an alternative draw its base class's exclusive cards and speak
+  its barks.
+  - *Wrecker* (Breaker): no spin bonus; Perfect resolves again at 1.5x.
+  - *Phantom* (Ghost): a free nudge at each turn start; Perfect evades and resolves twice.
+  - *Overclocker* (Rigger): +2 max RAM; Perfect gains 2 RAM and resolves again at half.
+  - *Hivemind* (Botnet): up to 5 drones that do not persist; Perfect docks a drone and
+    resolves again at half.
+- **Balance** (`tools/simulate_campaign.gd -- 8 0 class=<id>`, ICE 0, greedy bot):
+
+  | Class | Won | Mean runs | Deaths |
+  |---|---|---|---|
+  | Breaker | 8/8 | 25.9 | 4.9 |
+  | Wrecker | 8/8 | 25.8 | 5.3 |
+  | Ghost | 7/8 | 25.5 | 4.4 |
+  | Phantom | 7/8 | 23.5 | 2.9 |
+  | Rigger | 8/8 | 15.4 | 1.8 |
+  | Overclocker | same as Rigger (see below) | | |
+  | Botnet | 8/8 | 19.1 | 3.0 |
+  | Hivemind | 8/8 | 24.0 | 3.8 |
+
+  The bot never spends free nudges or RAM above what its hand costs, so the Rigger and
+  the Overclocker play identically in simulation (every seed matched). Their difference
+  (free nudges vs banked RAM) only shows with a human. Single slice values swing the
+  results a lot (Rigger Atk 14/14 took 36 runs, 16/16 takes 15), so 8 seeds is a coarse
+  tool.
+
+- Dev shortcuts: `--demo-classes` (HQ roster with every class) and `--demo-class=<id>`
+  (netrun) bypass Profile unlocks in the demo save slot only.
+- The simulator logs which enemy a stuck fight was against.
+
 ### 2026-09-24 — Vertical-slice fixes, batch 5: gap analysis pass 2 and the balance simulation
 - **Rank gating uses the operative's own class** (V1): `RunManager.launch_error` passes the
   operative's ClassData; `CampaignRules.launch_error` refuses a mismatched class instead of
@@ -569,6 +640,17 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
+
+### From M6, the class roster (2026-09-24) — decided by the implementer, confirm in playtest
+- **Perfect hooks now carry burst for every class** (Ghost resolves twice; Rigger and
+  Botnet again at half). GDD 5.2 listed only the utility part of those hooks. Without the
+  burst no class but the Breaker beat the Renewal Engine.
+- **Rigger is the fastest class in simulation** (15 runs vs about 25). Trim its Atk 16
+  slices if human play agrees.
+- **Hook effects repeat per resolution** (inherited from Breaker Mk2): a Rigger Perfect
+  refunds RAM twice, a Botnet Perfect Deploy plants two Parasites.
+- **Alternatives cost 60** and need no base-class unlock.
+- **Freeze cooldown**: a wheel cannot be frozen on consecutive turns.
 
 ### From the vertical-completion loop (2026-09-24) — decided by the implementer, confirm in playtest
 - **Enemy damage per tier 1.2 instead of 1.6** (HP stays 1.6). Chosen by simulation so a

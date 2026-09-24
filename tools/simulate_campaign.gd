@@ -14,10 +14,14 @@ func _run() -> void:
 	var seeds := int(args[0]) if args.size() > 0 else 5
 	var ice := int(args[1]) if args.size() > 1 else 0
 	var verbose := args.has("verbose")
+	var class_id := &"breaker"
+	for a in args:
+		if a.begins_with("class="):
+			class_id = StringName(a.trim_prefix("class="))
 	var registry: Node = root.get_node_or_null(^"ContentRegistry")
 	var lookup := ContentLookup.new().add_registry(registry)
 	var resolver := CombatResolver.new(registry.config, lookup)
-	var sim := CampaignSimulator.new(resolver)
+	var sim := CampaignSimulator.new(resolver, &"solace", class_id)
 	var wins := 0
 	var totals := {"runs": 0.0, "raids": 0.0, "heat_peak": 0.0, "deaths": 0.0, "est_hours": 0.0}
 	for i in seeds:
@@ -33,6 +37,6 @@ func _run() -> void:
 		if verbose:
 			for line in r["log"]:
 				print("    ", line)
-	print("SIMULATION: ICE %d, %d/%d won; mean runs %.1f, raids %.1f, Heat peak %.1f, deaths %.1f, ~%.1f h" % [ice, wins, seeds,
+	print("SIMULATION: %s ICE %d, %d/%d won; mean runs %.1f, raids %.1f, Heat peak %.1f, deaths %.1f, ~%.1f h" % [class_id, ice, wins, seeds,
 		totals["runs"] / seeds, totals["raids"] / seeds, totals["heat_peak"] / seeds, totals["deaths"] / seeds, totals["est_hours"] / seeds])
 	quit(0)

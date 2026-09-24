@@ -51,7 +51,7 @@ the short list.
 |---|---|---|
 | More shop slices (e.g. Evade 2, Shield 8, Crit 16, Heal for classes that can) | 11.2 | catalogue in `campaign_config.tres` `shop_slices`; add SliceData + list entry |
 | Cards beyond A.2 | 13 | shared pool + class exclusives |
-| Ghost, Rigger, Botnet classes (+ class alternatives) | 5.2, 13 | need EVADE/SHIELD/DEPLOY slices, drones (DEPLOY_DRONE) |
+| Ghost, Rigger, Botnet classes (+ class alternatives) | 5.2, 13 | done (M6): 3 classes + Wrecker, Phantom, Overclocker, Hivemind; placeholder numbers tuned by simulation |
 | More Terminal events, real writing, voices | 8.6 | 5 placeholders exist |
 | Full ICE 1–20 wording; levels 10/15/20 | 11.9 | open question |
 | Additional corporations, REBEL_CELL generator | 8.5, 13 | |

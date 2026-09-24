@@ -684,6 +684,8 @@ func _refresh(state: CombatState) -> void:
 	_status.text = "  Turn %d | RAM %d/%d | free nudge %d | %s" % [state.turn, state.ram, state.max_ram, state.free_nudges,
 		"VICTORY" if state.outcome == CombatState.Outcome.VICTORY else ("DEFEAT" if state.outcome == CombatState.Outcome.DEFEAT else "player phase")]
 	portrait.caption = "%s  HP %d/%d" % [state.player.display_name, state.player.hp, state.player.max_hp]
+	if state.player.source_id != &"":
+		portrait.placeholder_label = "[%s PORTRAIT]" % String(state.player.source_id).to_upper()
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
 	portrait.queue_redraw()
 	ram_note.clear()

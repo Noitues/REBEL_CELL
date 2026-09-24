@@ -257,6 +257,8 @@ func _start_combat(elite: bool) -> void:
 	}
 	for k in rule_overrides():
 		overrides[k] = rule_overrides()[k]
+	if not run.drones.is_empty():
+		overrides["drones"] = run.drones.duplicate(true)
 	for k in run.combat_overrides:
 		if k != "shop_stock_delta":
 			overrides[k] = run.combat_overrides[k]
@@ -317,6 +319,12 @@ func _finish_combat() -> void:
 		return
 	run.operative.hp = cs.player.hp
 	run.miss_resolved = run.miss_resolved or cs.miss_resolved
+	# Botnet (GDD 5.2): surviving drones ride along to the next fight of the run.
+	run.drones.clear()
+	var hub := lookup.get_content(cs.player.wheel.hub_id) as HubCoreData if cs.player.wheel.hub_id != &"" else null
+	if hub != null and hub.drones_persist:
+		for d in cs.living_drones():
+			run.drones.append({"source_id": String(d.source_id), "hp": d.hp, "dock_slot": d.dock_slot})
 	run.combats_won += 1
 	var elite: bool = node["elite"]
 	var is_rack: bool = node["type"] == RC.InfilNodeType.SERVER_RACK
@@ -947,7 +955,8 @@ func _build_pools() -> void:
 
 func _card_pool() -> Array:
 	var out: Array = _pools["shared_cards"].duplicate()
-	out.append_array(_pools["class_cards"].get(run.operative.class_id, []))
+	var cls := lookup.get_content(run.operative.class_id) as ClassData
+	out.append_array(_pools["class_cards"].get(cls.pool_class_id() if cls != null else run.operative.class_id, []))
 	return out
 
 

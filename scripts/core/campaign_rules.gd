@@ -563,6 +563,27 @@ static func repair_home(campaign: CampaignState, config: CampaignConfigData, poi
 	return events
 
 
+## Whether `cls` can be recruited under `profile` (GDD 3.4): classes with a Profile unlock
+## need it; the rest (the Breaker) are always available. A null profile gates nothing.
+static func class_available(profile: ProfileState, lookup: ContentLookup, cls: ClassData) -> bool:
+	if cls == null:
+		return false
+	if profile == null:
+		return true
+	var u := unlock_for(lookup, cls)
+	return u == null or profile.has_unlock(u.id)
+
+
+## Base classes (no alternative_of) and alternatives the profile may recruit, by id.
+static func available_classes(profile: ProfileState, lookup: ContentLookup) -> Array[ClassData]:
+	var out: Array[ClassData] = []
+	for id in lookup.ids_of_class(&"ClassData"):
+		var cls := lookup.get_content(id) as ClassData
+		if class_available(profile, lookup, cls):
+			out.append(cls)
+	return out
+
+
 static func recruit(campaign: CampaignState, config: CampaignConfigData, class_data: ClassData) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	if campaign.schematics < config.rookie_cost:

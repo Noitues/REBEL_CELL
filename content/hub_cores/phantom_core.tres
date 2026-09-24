@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/calibrate_handler.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e3"]
+
+; Phantom Core: Ghost alternative (decision 2026-09-24). The turn-start nudge reuses the Calibrate handler.
+
+[sub_resource type="Resource" id="fx_nudge"]
+script = ExtResource("e3")
+type = 24
+target = 0
+amount = 1
+custom_handler = ExtResource("e2")
+
+[sub_resource type="Resource" id="te_nudge"]
+script = ExtResource("e1")
+trigger = 2
+effects = Array[ExtResource("e3")]([SubResource("fx_nudge")])
+
+[sub_resource type="Resource" id="fx_evade"]
+script = ExtResource("e3")
+type = 3
+target = 0
+amount = 1
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("e3")
+type = 19
+target = 0
+multiplier = 1.0
+
+[sub_resource type="Resource" id="hook"]
+script = ExtResource("e1")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e3")]([SubResource("fx_evade"), SubResource("fx_retrigger")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"phantom_core"
+display_name = "Phantom Core"
+description = "A free nudge at the start of each turn. Perfect: evade the next attack and the slice resolves twice."
+passive_effects = Array[ExtResource("e1")]([SubResource("te_nudge")])
+perfect_hook = SubResource("hook")

@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/calibrate_handler.gd" id="e2"]
+
+[sub_resource type="Resource" id="fx_spin"]
+script = ExtResource("e1")
+type = 6
+target = 2
+amount = 5
+ring_scope = 2
+
+[sub_resource type="Resource" id="fx_nudge"]
+script = ExtResource("e1")
+type = 24
+target = 0
+amount = 1
+custom_handler = ExtResource("e2")
+
+[resource]
+script = ExtResource("main_script")
+id = &"torque_wrench"
+display_name = "Torque Wrench"
+description = "Spin a wheel 5 ticks and gain a free nudge."
+rarity = 1
+ram_cost = 1
+cycle_cost = 70
+class_id = &"rigger"
+wheel_target = 2
+effects = Array[ExtResource("e1")]([SubResource("fx_spin"), SubResource("fx_nudge")])

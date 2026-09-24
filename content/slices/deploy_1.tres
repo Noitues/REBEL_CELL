@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SliceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="main_script"]
+
+; DEPLOY (GDD 2.6): docks one drone of the Hub's template on this slice (or the next free one).
+
+[resource]
+script = ExtResource("main_script")
+id = &"deploy_1"
+display_name = "Deploy 1"
+slice_type = 5
+target_rule = 0
+base_output = 1

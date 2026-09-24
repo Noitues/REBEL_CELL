@@ -83,5 +83,6 @@ func test_briefing_and_bark_helpers_speak() -> void:
 	assert_eq(Dialogue.current_text(), text)
 	assert_eq(Dialogue.raid_warning(&"solace", &"raid_heat_25"), Dialogue.line("raid:raid_heat_25", -1, &"solace").text)
 	assert_ne(Dialogue.bark(&"breaker", "perfect", 3), "")
-	assert_eq(Dialogue.bark(&"ghost", "perfect", 3), "", "no barks for an unknown class")
+	assert_ne(Dialogue.bark(&"ghost", "perfect", 3), "", "M6 classes bark too")
+	assert_eq(Dialogue.bark(&"no_such_class", "perfect", 3), "", "no barks for an unknown class")
 	assert_eq(Dialogue.threshold_line(&"solace", 50), Dialogue.line("threshold:50", -1, &"solace").text)

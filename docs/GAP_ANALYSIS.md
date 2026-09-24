@@ -80,15 +80,16 @@ GDD 11.8: average campaign ≈ 6 h 35 m, fast ≈ 2 h 15 m.
 P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = polish.
 
 ### P0
-1. **Recruitment by class** and the class unlock purchase (80 Schematics); the roster
-   chooses among unlocked classes.
-2. **Botnet drones persisting between combats** in a run (Hub passive).
+1. ~~**Recruitment by class** and the class unlock purchase (80 Schematics); the roster
+   chooses among unlocked classes.~~ Done in M6.
+2. ~~**Botnet drones persisting between combats** in a run (Hub passive).~~ Done in M6.
 3. **Corporation selection** at campaign start (profile-unlocked corporations).
-4. **Balance simulation** grows into a tuning tool (per ICE, per class).
+4. **Balance simulation** grows into a tuning tool (per ICE, per class). Per class done in M6
+   (`class=<id>`); per corporation arrives with corporation selection.
 
 ### P1
-5. **Classes**: Ghost, Rigger, Botnet (wheels, Hub Cores + Mk2, rings, exclusive cards,
-   station bonuses, barks), then four alternatives.
+5. ~~**Classes**: Ghost, Rigger, Botnet (wheels, Hub Cores + Mk2, rings, exclusive cards,
+   station bonuses, barks), then four alternatives.~~ Done in M6.
 6. **Pools**: shared cards to ~60, Firmware to ~18, Daemons to ~24, assets to ~8, shop
    slices to ~12.
 7. **Solace depth**: events to ~40.

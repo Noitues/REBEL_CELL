@@ -186,6 +186,10 @@ func _play_run(s: NetrunSession, stats: Dictionary) -> void:
 				stats["turns"] = int(stats["turns"]) + turns
 				if s.in_combat():
 					stats["stuck"] = int(stats["stuck"]) + 1
+					var foes := PackedStringArray()
+					for e in s.combat.state.living_enemies():
+						foes.append("%s %d/%d" % [e.source_id, e.hp, e.max_hp])
+					stats["log"].append("  stuck vs %s (player %d HP)" % [", ".join(foes), s.combat.state.player.hp])
 					break
 			RunState.Phase.REWARD:
 				_take_reward(s)

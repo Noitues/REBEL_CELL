@@ -103,14 +103,31 @@ func available_home_variants() -> Array[HomeServerVariantData]:
 
 ## Starts a fresh campaign against `corporation_id` (GDD 5.4 opening) at `ice_level`
 ## (clamped to the profile's cap) on `home_variant_id`.
-func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION, ice_level: int = 0, home_variant_id: StringName = DEFAULT_HOME) -> CampaignState:
+## Classes the profile may recruit now (the Breaker plus unlocked classes).
+func available_classes() -> Array[ClassData]:
+	return CampaignRules.available_classes(profile, lookup())
+
+
+## Recruits a rookie of `class_id` (refused when the class is locked).
+func recruit(class_id: StringName = DEFAULT_CLASS) -> Array[Dictionary]:
+	var cls := lookup().get_content(class_id) as ClassData
+	if not CampaignRules.class_available(profile, lookup(), cls):
+		var refused: Array[Dictionary] = [{"type": "refused", "text": "%s is locked: buy the Profile unlock first." % class_id}]
+		return refused
+	return CampaignRules.recruit(campaign, config(), cls)
+
+
+func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION, ice_level: int = 0, home_variant_id: StringName = DEFAULT_HOME, class_id: StringName = DEFAULT_CLASS) -> CampaignState:
 	_ensure_resolver()
 	corporation = lookup().get_content(corporation_id) as CorporationData
 	var home := lookup().get_content(home_variant_id) as HomeServerVariantData
 	if home == null or not available_home_variants().has(home):
 		home = lookup().get_content(DEFAULT_HOME) as HomeServerVariantData
 	var ice := clampi(ice_level, 0, ice_cap(corporation_id))
-	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, class_data(), home.core if home != null else null, ice, home)
+	var start_class := lookup().get_content(class_id) as ClassData
+	if not CampaignRules.class_available(profile, lookup(), start_class):
+		start_class = class_data()
+	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, start_class, home.core if home != null else null, ice, home)
 	netrun = null
 	RngService.seed_campaign(campaign_seed)
 	_reset_profile_sync()

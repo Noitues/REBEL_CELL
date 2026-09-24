@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/classes/wrecker.tres" id="e1"]
+
+; Class unlock (GDD 3.4: 80 Schematics, alternatives 60, spent from the current campaign). UnlockKind 0 = CLASS.
+
+[resource]
+script = ExtResource("main_script")
+id = &"unlock_wrecker"
+kind = 0
+display_name = "Class: Wrecker"
+description = "Recruit Wrecker operatives in every campaign."
+schematic_cost = 60
+unlocks = ExtResource("e1")

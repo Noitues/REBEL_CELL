@@ -125,3 +125,21 @@ until clean (`GAP_ANALYSIS.md`, pass log). Decisions are the implementer's, logg
 - [x] A seeded bot campaign wins at ICE 0 and ICE 5 within ±20% of GDD 11.8 pacing
       (`tools/simulate_campaign.gd`).
 - [x] Tests, schema smoke test and content validation green.
+
+## M6 — Class Roster (added 2026-09-24, horizontal loop)
+
+Ghost, Rigger and Botnet from GDD 5.2 plus one alternative per class (GDD 3.4), with
+recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
+`DECISIONS.md`.
+
+**Acceptance**
+- [x] Ghost, Rigger and Botnet: wheel, Hub Core and Mk2, Rank 1 ring, Rank 3 options,
+      starting deck, two exclusive cards, station bonus and barks.
+- [x] Four alternatives (Wrecker, Phantom, Overclocker, Hivemind): same deck, new core.
+- [x] Recruitment by class; class unlocks (80 Schematics, alternatives 60); the new
+      campaign picks the starting crew's class.
+- [x] Botnet drones persist between the fights of a netrun and survive save/load.
+- [x] PARASITE status; station hold, regen and turrets in raids.
+- [x] A seeded bot campaign wins at ICE 0 with every class (`tools/simulate_campaign.gd
+      -- 8 0 class=<id>`).
+- [x] Tests, schema smoke test and content validation green.

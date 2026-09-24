@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("e1")
+type = 18
+target = 0
+amount = 1
+slice_pick = 2
+
+[resource]
+script = ExtResource("main_script")
+id = &"spawn_drone"
+display_name = "Spawn Drone"
+description = "Dock a drone on a chosen slice of your wheel."
+rarity = 1
+ram_cost = 2
+cycle_cost = 75
+class_id = &"botnet"
+wheel_target = 0
+effects = Array[ExtResource("e1")]([SubResource("fx")])

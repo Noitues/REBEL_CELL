@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "bark:perfect"
+text = "Perfect. The deck pays me back."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "bark:perfect"
+text = "Latched and refunded."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "bark:miss"
+text = "Miss. Rerouting power."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "bark:hurt"
+text = "Running hot. Still running."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "bark:victory"
+text = "Rig holds. Next node."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "bark:defeat"
+text = "Power's out. Tell the Cell the rig was good."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "bark:deploy"
+text = "Deploying? That's the Botnet's job."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "bark:jack_in"
+text = "RAM topped up. Let's overclock something."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "bark:boss"
+text = "That thing eats RAM for breakfast. So do I."
+
+[resource]
+script = ExtResource("main_script")
+id = &"barks_rigger"
+speaker = 1
+class_id = &"rigger"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8")])

@@ -1,0 +1,110 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=39 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e1"]
+[ext_resource type="Resource" path="res://content/slices/atk_16.tres" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/deploy_1.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/hub_cores/swarm_core.tres" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="e8"]
+[ext_resource type="Script" path="res://scripts/data/rank_reward_data.gd" id="e9"]
+[ext_resource type="Resource" path="res://content/rings/botnet_ring.tres" id="e10"]
+[ext_resource type="Resource" path="res://content/hub_cores/swarm_core_mk2.tres" id="e11"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_pierce.tres" id="e12"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_anchor.tres" id="e13"]
+[ext_resource type="Resource" path="res://content/rings/segments/seg_accelerator.tres" id="e14"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e15"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e16"]
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="e17"]
+[ext_resource type="Resource" path="res://content/cards/jolt.tres" id="e18"]
+[ext_resource type="Resource" path="res://content/cards/fine_tune.tres" id="e19"]
+[ext_resource type="Resource" path="res://content/cards/twist.tres" id="e20"]
+[ext_resource type="Resource" path="res://content/cards/counter_spin.tres" id="e21"]
+[ext_resource type="Resource" path="res://content/cards/pull.tres" id="e22"]
+[ext_resource type="Resource" path="res://content/cards/cache.tres" id="e23"]
+[ext_resource type="Resource" path="res://content/cards/spawn_drone.tres" id="e24"]
+[ext_resource type="Resource" path="res://content/cards/parasite_pulse.tres" id="e25"]
+
+; Botnet (GDD 5.2): 45 HP; Atk, Atk, Def, Deploy, Deploy, Miss. Station bonus: one free turret on
+; the node for each raid (DEPLOY_DRONE amount 1; config.station_deploy_asset; Rank scales it).
+
+[sub_resource type="Resource" id="slot_0"]
+script = ExtResource("e1")
+slice = ExtResource("e2")
+
+[sub_resource type="Resource" id="slot_1"]
+script = ExtResource("e1")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="slot_2"]
+script = ExtResource("e1")
+slice = ExtResource("e2")
+
+[sub_resource type="Resource" id="slot_3"]
+script = ExtResource("e1")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="slot_4"]
+script = ExtResource("e1")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="slot_5"]
+script = ExtResource("e1")
+slice = ExtResource("e5")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e7")
+slice_count = 6
+slots = Array[ExtResource("e1")]([SubResource("slot_0"), SubResource("slot_1"), SubResource("slot_2"), SubResource("slot_3"), SubResource("slot_4"), SubResource("slot_5")])
+hub = ExtResource("e6")
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="rank_1"]
+script = ExtResource("e9")
+rank = 1
+max_netrun_tier = 2
+inner_ring = ExtResource("e10")
+station_bonus_multiplier = 1.25
+
+[sub_resource type="Resource" id="rank_2"]
+script = ExtResource("e9")
+rank = 2
+max_netrun_tier = 3
+hub_upgrade = ExtResource("e11")
+station_bonus_multiplier = 1.5
+
+[sub_resource type="Resource" id="rank_3"]
+script = ExtResource("e9")
+rank = 3
+max_netrun_tier = 4
+ring_segment_options = Array[ExtResource("e8")]([ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])
+station_bonus_multiplier = 2.0
+
+[sub_resource type="Resource" id="fx_station"]
+script = ExtResource("e15")
+type = 18
+target = 0
+amount = 1
+
+[sub_resource type="Resource" id="te_station"]
+script = ExtResource("e16")
+trigger = 12
+effects = Array[ExtResource("e15")]([SubResource("fx_station")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"botnet"
+display_name = "Botnet"
+description = "Fights through drones that ride the whole netrun."
+starting_wheel = SubResource("wheel")
+starting_deck = Array[ExtResource("e17")]([ExtResource("e18"), ExtResource("e18"), ExtResource("e18"), ExtResource("e19"), ExtResource("e19"), ExtResource("e20"), ExtResource("e21"), ExtResource("e22"), ExtResource("e23"), ExtResource("e24")])
+exclusive_cards = Array[ExtResource("e17")]([ExtResource("e24"), ExtResource("e25")])
+base_hp = 45
+starting_ram = 6
+max_ram = 12
+ram_regen = 4
+free_nudges_per_turn = 1
+station_bonus = Array[ExtResource("e16")]([SubResource("te_station")])
+rank_rewards = Array[ExtResource("e9")]([SubResource("rank_1"), SubResource("rank_2"), SubResource("rank_3")])

@@ -23,6 +23,12 @@ extends Resource
 @export var alternative_of: StringName = &""
 
 
+## The class whose exclusive cards and barks this class uses (the base class for an
+## alternative, else itself).
+func pool_class_id() -> StringName:
+	return alternative_of if alternative_of != &"" else id
+
+
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	if starting_wheel == null:
@@ -34,8 +40,9 @@ func validate() -> PackedStringArray:
 	if starting_deck.is_empty():
 		errors.append("Class %s has an empty starting deck." % id)
 	for c in exclusive_cards:
-		if c and c.class_id != id:
-			errors.append("Exclusive card %s is not tagged with class_id %s." % [c.id, id])
+		# Alternatives share their base class's exclusives (GDD 3.4, same deck).
+		if c and c.class_id != pool_class_id():
+			errors.append("Exclusive card %s is not tagged with class_id %s." % [c.id, pool_class_id()])
 	var seen := {}
 	for r in rank_rewards:
 		if r == null:

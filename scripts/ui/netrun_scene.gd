@@ -35,6 +35,13 @@ func _ready() -> void:
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
 		new_campaign(1)
+		for a in args:
+			if a.begins_with("--demo-class="):
+				# Screenshot operative of another class (campaign-only, bypasses Profile unlocks).
+				var cls := RunManager.lookup().get_content(StringName(a.trim_prefix("--demo-class="))) as ClassData
+				if cls != null:
+					RunManager.campaign.roster.clear()
+					RunManager.campaign.recruit(cls)
 		start_run(1)
 		if args.has("--demo-combat") or args.has("--demo-tutorial"):
 			RunManager.pending_tutorial = args.has("--demo-tutorial")

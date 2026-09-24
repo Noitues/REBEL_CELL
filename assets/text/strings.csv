@@ -1,4 +1,6 @@
 keys,en
+CardData.blind_spot.description,The target skips its next respin and loses 1 resistance.
+CardData.blind_spot.display_name,Blind Spot
 CardData.brute_spin.description,Spin a wheel 6 ticks.
 CardData.brute_spin.display_name,Brute Spin
 CardData.bug.description,Corrupted code. Drains 1 RAM when played. Exhaust.
@@ -19,8 +21,12 @@ CardData.freeze.description,Target wheel skips its next respin. Exhaust.
 CardData.freeze.display_name,Freeze
 CardData.gear_shift.description,Move your inner ring 5 ticks.
 CardData.gear_shift.display_name,Gear Shift
+CardData.ghost_step.description,"Two nudges on an enemy wheel, ignoring resistance."
+CardData.ghost_step.display_name,Ghost Step
 CardData.heavy_spin.description,Spin a wheel 9 ticks.
 CardData.heavy_spin.display_name,Heavy Spin
+CardData.hot_swap.description,Snap your outer ring to the slice centre and gain 1 RAM.
+CardData.hot_swap.display_name,Hot Swap
 CardData.hub_breach.description,Disable the target Hub for 1 turn.
 CardData.hub_breach.display_name,Hub Breach
 CardData.jam.description,"Nudge an enemy wheel +-1, ignoring resistance."
@@ -35,6 +41,8 @@ CardData.momentum.description,Spin 2; spin 5 instead if you already spun this tu
 CardData.momentum.display_name,Momentum
 CardData.overdrive.description,"OVERCLOCK your slice under the pointer: 1.5x on its next trigger, then it becomes CORRUPTED."
 CardData.overdrive.display_name,Overdrive
+CardData.parasite_pulse.description,The target's slice under the pointer gets a PARASITE (half output). Exhaust.
+CardData.parasite_pulse.display_name,Parasite Pulse
 CardData.pull.description,Draw 2 cards.
 CardData.pull.display_name,Pull
 CardData.ring_lock.description,"This turn, spins do not move your inner ring."
@@ -43,16 +51,34 @@ CardData.ring_tap.description,Two +-1 nudges on your inner ring.
 CardData.ring_tap.display_name,Ring Tap
 CardData.snap.description,Move a ring to the nearest slice centre (Perfect).
 CardData.snap.display_name,Snap
+CardData.spawn_drone.description,Dock a drone on a chosen slice of your wheel.
+CardData.spawn_drone.display_name,Spawn Drone
 CardData.steady_hand.description,"If your slice is Perfect at end of turn, +2 RAM next turn."
 CardData.steady_hand.display_name,Steady Hand
 CardData.strip.description,Remove 2 resistance from the target.
 CardData.strip.display_name,Strip
+CardData.torque_wrench.description,Spin a wheel 5 ticks and gain a free nudge.
+CardData.torque_wrench.display_name,Torque Wrench
 CardData.twist.description,Spin a wheel 4 ticks.
 CardData.twist.display_name,Twist
 CardData.undock.description,Move a satellite to an adjacent slice.
 CardData.undock.display_name,Undock
+ClassData.botnet.description,Fights through drones that ride the whole netrun.
+ClassData.botnet.display_name,Botnet
 ClassData.breaker.description,Hits hard and spins harder. Perfect landings resolve the slice twice.
 ClassData.breaker.display_name,Breaker
+ClassData.ghost.description,Slips past resistance. Perfect landings strip the target's defences.
+ClassData.ghost.display_name,Ghost
+ClassData.hivemind.description,A Botnet whose swarm is bigger but never leaves the fight.
+ClassData.hivemind.display_name,Hivemind
+ClassData.overclocker.description,A Rigger that banks raw RAM instead of free nudges.
+ClassData.overclocker.display_name,Overclocker
+ClassData.phantom.description,A Ghost that dodges instead of slipping resistance.
+ClassData.phantom.display_name,Phantom
+ClassData.rigger.description,Runs hot on RAM. Perfect landings pay for the next move.
+ClassData.rigger.display_name,Rigger
+ClassData.wrecker.description,A Breaker that trades spin control for a heavier Perfect.
+ClassData.wrecker.display_name,Wrecker
 CorporationData.solace.description,Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks.
 CorporationData.solace.display_name,Solace Biosystems
 DaemonData.botnet_seed.description,Each Perfect deploys a 1-HP drone on the triggered slice (max 2).
@@ -137,6 +163,34 @@ HubCoreData.breaker_core_mk2.description,+2 spin on all cards. Perfect: the slic
 HubCoreData.breaker_core_mk2.display_name,Breaker Core Mk2
 HubCoreData.compliance_lock.description,Spin resistance 3 while the Hub is online.
 HubCoreData.compliance_lock.display_name,Compliance Lock
+HubCoreData.ghost_core.description,First nudge on an enemy wheel each turn ignores resistance. Perfect: strip 2 resistance and the slice resolves twice.
+HubCoreData.ghost_core.display_name,Ghost Core
+HubCoreData.ghost_core_mk2.description,"First two nudges on enemy wheels each turn ignore resistance. Perfect: strip 3 resistance, evade the next attack, and the slice resolves twice."
+HubCoreData.ghost_core_mk2.display_name,Ghost Core Mk2
+HubCoreData.hive_core.description,Up to 4 drones for this fight only. Perfect: dock a drone.
+HubCoreData.hive_core.display_name,Hive Core
+HubCoreData.hive_core_mk2.description,Up to 5 drones for this fight only. Perfect: dock a drone.
+HubCoreData.hive_core_mk2.display_name,Hive Core Mk2
+HubCoreData.overclock_core.description,+2 max RAM. Perfect: gain 2 RAM and the slice resolves again at half.
+HubCoreData.overclock_core.display_name,Overclock Core
+HubCoreData.overclock_core_mk2.description,+3 max RAM. Perfect: gain 3 RAM and the slice resolves again at half.
+HubCoreData.overclock_core_mk2.display_name,Overclock Core Mk2
+HubCoreData.phantom_core.description,A free nudge at the start of each turn. Perfect: evade the next attack and the slice resolves twice.
+HubCoreData.phantom_core.display_name,Phantom Core
+HubCoreData.phantom_core_mk2.description,Two free nudges at the start of each turn. Perfect: evade the next attack and the slice resolves twice.
+HubCoreData.phantom_core_mk2.display_name,Phantom Core Mk2
+HubCoreData.rig_core.description,"+1 max RAM. Perfect: refund 1 RAM, gain a free nudge, and the slice resolves again at half."
+HubCoreData.rig_core.display_name,Rig Core
+HubCoreData.rig_core_mk2.description,"+2 max RAM. Perfect: refund 2 RAM, gain a free nudge, and the slice resolves again at half."
+HubCoreData.rig_core_mk2.display_name,Rig Core Mk2
+HubCoreData.swarm_core.description,"Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
+HubCoreData.swarm_core.display_name,Swarm Core
+HubCoreData.swarm_core_mk2.description,"Up to 4 drones that persist between fights. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
+HubCoreData.swarm_core_mk2.display_name,Swarm Core Mk2
+HubCoreData.wrecker_core.description,No spin bonus. Perfect: the slice resolves again at 1.5x.
+HubCoreData.wrecker_core.display_name,Wrecker Core
+HubCoreData.wrecker_core_mk2.description,+1 spin on all cards. Perfect: the slice resolves again at 1.5x.
+HubCoreData.wrecker_core_mk2.display_name,Wrecker Core Mk2
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
 NetrunBoostData.boost_overclocked_deck.description,Two extra Jolt cards for the next netrun only.
@@ -161,14 +215,28 @@ NetworkNodeData.safehouse.description,Station an operative here between netruns.
 NetworkNodeData.safehouse.display_name,Safehouse
 NetworkNodeData.vault_terminal.description,+3 Schematics per completed netrun (+2 more next to a Firewall Relay). Raids go for it; building it provokes one.
 NetworkNodeData.vault_terminal.display_name,Vault Terminal
+ProfileUnlockData.unlock_botnet.description,Recruit Botnet operatives in every campaign.
+ProfileUnlockData.unlock_botnet.display_name,Class: Botnet
 ProfileUnlockData.unlock_compiler_rack.description,Unlocks the Compiler Rack node for every campaign.
 ProfileUnlockData.unlock_compiler_rack.display_name,Node: Compiler Rack
+ProfileUnlockData.unlock_ghost.description,Recruit Ghost operatives in every campaign.
+ProfileUnlockData.unlock_ghost.display_name,Class: Ghost
+ProfileUnlockData.unlock_hivemind.description,Recruit Hivemind operatives in every campaign.
+ProfileUnlockData.unlock_hivemind.display_name,Class: Hivemind
 ProfileUnlockData.unlock_home_bunker.description,"Start campaigns on the Bunker home server (70 integrity, 3 slots, built-in turret)."
 ProfileUnlockData.unlock_home_bunker.display_name,Home server: Bunker
+ProfileUnlockData.unlock_overclocker.description,Recruit Overclocker operatives in every campaign.
+ProfileUnlockData.unlock_overclocker.display_name,Class: Overclocker
+ProfileUnlockData.unlock_phantom.description,Recruit Phantom operatives in every campaign.
+ProfileUnlockData.unlock_phantom.display_name,Class: Phantom
 ProfileUnlockData.unlock_proxy_relay.description,Unlocks the Proxy Relay node for every campaign.
 ProfileUnlockData.unlock_proxy_relay.display_name,Node: Proxy Relay
+ProfileUnlockData.unlock_rigger.description,Recruit Rigger operatives in every campaign.
+ProfileUnlockData.unlock_rigger.display_name,Class: Rigger
 ProfileUnlockData.unlock_vault_terminal.description,Unlocks the Vault Terminal node for every campaign.
 ProfileUnlockData.unlock_vault_terminal.display_name,Node: Vault Terminal
+ProfileUnlockData.unlock_wrecker.description,Recruit Wrecker operatives in every campaign.
+ProfileUnlockData.unlock_wrecker.display_name,Class: Wrecker
 RaidData.raid_claim.display_name,Collections: Trespass
 RaidData.raid_claim.warning_text,You built next to Solace property. A Collector is on its way.
 RaidData.raid_heat_25.display_name,Collections: First Notice
@@ -232,7 +300,10 @@ SiteData.t3_g.display_name,Implant Cohort Archive
 SiteData.t3_h.display_name,Solace Root Certificate Store
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SliceData.atk_10.display_name,Attack 10
+SliceData.atk_12.display_name,Attack 12
 SliceData.atk_14.display_name,Attack 14
+SliceData.atk_16.display_name,Attack 16
+SliceData.atk_20.display_name,Attack 20
 SliceData.atk_3.display_name,Attack 3
 SliceData.atk_4.display_name,Attack 4
 SliceData.atk_6.display_name,Attack 6
@@ -253,6 +324,7 @@ SliceData.def_4.display_name,Defend 4
 SliceData.def_5.display_name,Defend 5
 SliceData.def_6.display_name,Defend 6
 SliceData.def_8.display_name,Defend 8
+SliceData.deploy_1.display_name,Deploy 1
 SliceData.dose.display_name,Dose
 SliceData.evade_1.display_name,Evade
 SliceData.heal_4.display_name,Heal 4

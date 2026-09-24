@@ -15,6 +15,9 @@ var rotation: int = 0
 var inner_rotation: int = 0
 var pointer_ticks: PackedInt32Array = PackedInt32Array([0])
 var frozen: bool = false
+## The wheel skipped its respin this turn (it was frozen). It cannot be frozen again until
+## it has respun (decision 2026-09-24: closes the Anchor / Freeze perpetual lock).
+var respin_skipped: bool = false
 ## One RC.Status per slot (temporary statuses; permanent ones come from Firmware).
 var slice_statuses: Array[int] = []
 var passive_resistance: int = 0
@@ -113,6 +116,7 @@ func duplicate_state() -> WheelState:
 	w.inner_rotation = inner_rotation
 	w.pointer_ticks = pointer_ticks.duplicate()
 	w.frozen = frozen
+	w.respin_skipped = respin_skipped
 	w.slice_statuses = slice_statuses.duplicate()
 	w.passive_resistance = passive_resistance
 	w.pointer_orbit = pointer_orbit
@@ -148,6 +152,7 @@ func to_dict() -> Dictionary:
 		"inner_rotation": inner_rotation,
 		"pointer_ticks": Array(pointer_ticks),
 		"frozen": frozen,
+		"respin_skipped": respin_skipped,
 		"slice_statuses": slice_statuses.duplicate(),
 		"passive_resistance": passive_resistance,
 		"pointer_orbit": pointer_orbit,
@@ -168,6 +173,7 @@ static func from_dict(d: Dictionary) -> WheelState:
 	for t in d.get("pointer_ticks", [0]):
 		w.pointer_ticks.append(int(t))
 	w.frozen = bool(d.get("frozen", false))
+	w.respin_skipped = bool(d.get("respin_skipped", false))
 	w.slice_statuses = []
 	for s in d.get("slice_statuses", []):
 		w.slice_statuses.append(int(s))

@@ -25,6 +25,9 @@ var _timer: SceneTreeTimer = null
 var _sets: Array[LineSetData] = []
 
 
+## Class alternative id -> base class id (barks are shared with the base class).
+var _class_base: Dictionary = {}
+
 func _ready() -> void:
 	layer = 90
 	bar = PanelContainer.new()
@@ -59,6 +62,7 @@ func _ready() -> void:
 
 func _collect_sets() -> void:
 	_sets.clear()
+	_class_base.clear()
 	var registry: Node = get_tree().root.get_node_or_null(^"ContentRegistry")
 	if registry == null:
 		return
@@ -66,6 +70,8 @@ func _collect_sets() -> void:
 		var res: Resource = registry.get_content(id)
 		if res is LineSetData:
 			_sets.append(res)
+		elif res is ClassData and (res as ClassData).alternative_of != &"":
+			_class_base[id] = (res as ClassData).alternative_of
 
 
 ## Registers extra line sets (tests).
@@ -231,7 +237,8 @@ func threshold_line(corporation_id: StringName, heat: int, salt: int = 0) -> Str
 
 
 func bark(class_id: StringName, trigger: String, salt: int = 0) -> String:
-	return speak("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", class_id, salt)
+	# Class alternatives speak with their base class's barks.
+	return speak("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", _class_base.get(class_id, class_id), salt)
 
 
 func dj(salt: int = 0) -> String:

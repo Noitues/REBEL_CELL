@@ -15,3 +15,9 @@ extends Resource
 ## The drone DEPLOY slices and DEPLOY_DRONE effects create (an EnemyData whose wheel
 ## has 2-3 slices). Null = the wheel cannot deploy.
 @export var drone: EnemyData
+## Botnet: the operative's drones survive between the combats of a netrun.
+@export var drones_persist: bool = false
+## Rigger: added to the class max RAM.
+@export var max_ram_bonus: int = 0
+## Ghost: this many nudges on enemy wheels each turn ignore resistance.
+@export var free_resistance_nudges: int = 0

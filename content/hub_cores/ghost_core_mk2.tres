@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e2"]
+
+; Ghost Core Mk2, Rank 2 upgrade (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx_strip"]
+script = ExtResource("e2")
+type = 10
+target = 3
+amount = -3
+
+[sub_resource type="Resource" id="fx_evade"]
+script = ExtResource("e2")
+type = 3
+target = 0
+amount = 1
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("e2")
+type = 19
+target = 0
+multiplier = 1.0
+
+[sub_resource type="Resource" id="hook"]
+script = ExtResource("e1")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e2")]([SubResource("fx_strip"), SubResource("fx_evade"), SubResource("fx_retrigger")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"ghost_core_mk2"
+display_name = "Ghost Core Mk2"
+description = "First two nudges on enemy wheels each turn ignore resistance. Perfect: strip 3 resistance, evade the next attack, and the slice resolves twice."
+perfect_hook = SubResource("hook")
+free_resistance_nudges = 2

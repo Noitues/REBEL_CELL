@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/core/handlers/parasite_handler.gd" id="e3"]
+[ext_resource type="Resource" path="res://content/enemies/botnet_drone.tres" id="e4"]
+
+; Swarm Core (GDD 5.2).
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("e2")
+type = 19
+target = 0
+multiplier = 0.5
+
+[sub_resource type="Resource" id="fx_parasite"]
+script = ExtResource("e2")
+type = 24
+target = 3
+custom_handler = ExtResource("e3")
+
+[sub_resource type="Resource" id="hook"]
+script = ExtResource("e1")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e2")]([SubResource("fx_retrigger"), SubResource("fx_parasite")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"swarm_core"
+display_name = "Swarm Core"
+description = "Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
+perfect_hook = SubResource("hook")
+max_drones = 3
+drone = ExtResource("e4")
+drones_persist = true

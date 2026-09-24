@@ -140,6 +140,9 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 			return respun
 		RC.EffectType.FREEZE:
 			for t in targets:
+				if t.wheel.respin_skipped:
+					events.append({"type": "freeze_blocked", "target": t.id, "text": "%s skipped its respin this turn: it cannot be frozen again yet." % t.display_name})
+					continue
 				t.wheel.frozen = true
 				events.append({"type": "freeze", "target": t.id, "text": "%s is FROZEN: it skips its next respin." % t.display_name})
 		RC.EffectType.MODIFY_RESISTANCE:

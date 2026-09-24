@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/enemies/botnet_drone.tres" id="e3"]
+
+; Hive Core Mk2, Rank 2 upgrade (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx_drone"]
+script = ExtResource("e2")
+type = 18
+target = 0
+amount = 1
+
+[sub_resource type="Resource" id="hook"]
+script = ExtResource("e1")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e2")]([SubResource("fx_drone")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"hive_core_mk2"
+display_name = "Hive Core Mk2"
+description = "Up to 5 drones for this fight only. Perfect: dock a drone."
+perfect_hook = SubResource("hook")
+max_drones = 5
+drone = ExtResource("e3")

@@ -61,7 +61,19 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 			p.wheel.hub_id = hub.id
 			p.hub_resistance = hub.hub_resistance
 	s.player = p
+	var active_hub := lookup.get_content(p.wheel.hub_id) as HubCoreData if p.wheel.hub_id != &"" else null
+	if active_hub != null:
+		s.max_ram += active_hub.max_ram_bonus
 	s.ram = class_data.starting_ram
+	# Botnet drones carried over from earlier fights of the run (HubCoreData.drones_persist).
+	for d in overrides.get("drones", []):
+		var template := lookup.get_content(StringName(String(d.get("source_id", "")))) as EnemyData
+		if template == null:
+			continue
+		var events: Array[Dictionary] = []
+		var drone := fx.deploy_drone(s, p, template, int(d.get("dock_slot", 0)), events)
+		if drone != null:
+			drone.hp = clampi(int(d.get("hp", drone.max_hp)), 1, drone.max_hp)
 	if overrides.has("deck"):
 		s.draw_pile = _to_names(overrides["deck"])
 	else:
@@ -289,13 +301,16 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	var cls := fx.class_of(s)
 	s.ring_locked = false
 	s.flags.erase("steady_hand")
+	s.flags.erase("resist_free_nudges_used")
 	s.double_nudge_cards = s.double_nudge_cards_next
 	s.double_nudge_cards_next = false
 	for c in s.combatants_in_order():
 		if c.wheel.frozen:
 			c.wheel.frozen = false
+			c.wheel.respin_skipped = true
 			events.append({"type": "frozen_skip", "target": c.id, "text": "%s is frozen and skips its respin." % c.display_name})
 		else:
+			c.wheel.respin_skipped = false
 			fx.respin(c, rng, events, true)
 		if c.wheel.pointer_orbit != 0 and s.turn > 1:
 			c.wheel.orbit_pointers()
@@ -446,7 +461,16 @@ func _apply_nudge(s: CombatState, action: CombatAction, rng: RandomNumberGenerat
 		s.ram -= config.extra_nudge_ram_cost
 		events.append({"type": "ram", "amount": -config.extra_nudge_ram_cost, "text": "Extra nudge costs %d RAM (%d)." % [config.extra_nudge_ram_cost, s.ram]})
 	var target := s.get_combatant(action.wheel_id)
-	fx.nudge(s, s.player, target, action.ring, action.direction, false, events)
+	# Ghost Core (GDD 5.2): the first N nudges on enemy wheels each turn ignore resistance.
+	var ignore := false
+	var hub := fx.hub_of(s.player.wheel)
+	if target != s.player and hub != null and not s.player.is_hub_breached() and hub.free_resistance_nudges > 0 \
+			and int(s.flags.get("resist_free_nudges_used", 0)) < hub.free_resistance_nudges:
+		s.flags["resist_free_nudges_used"] = int(s.flags.get("resist_free_nudges_used", 0)) + 1
+		ignore = target.resistance > 0
+		if ignore:
+			events.append({"type": "ghost_nudge", "text": "%s slips the nudge past %s's resistance." % [hub.display_name, target.display_name]})
+	fx.nudge(s, s.player, target, action.ring, action.direction, ignore, events)
 	var ctx := {"owner": s.player, "target": target, "action": action, "pointer_index": 0}
 	fx.run_triggers(s, RC.Trigger.ON_NUDGE, ctx, _player_listeners(s), rng, events)
 
@@ -601,6 +625,8 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var overclocked: bool = r["status"] == RC.Status.OVERCLOCKED or r["permanent_status"] == RC.Status.OVERCLOCKED
 	if overclocked:
 		mult *= config.overclock_multiplier
+	if r["status"] == RC.Status.PARASITE:
+		mult *= config.parasite_multiplier
 	var pierce := false
 	var seg: RingSegmentData = r["segment"]
 	if seg != null:

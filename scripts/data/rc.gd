@@ -15,7 +15,8 @@ enum TargetRule { SELF, POINTER, SWEEP, CHOSEN }
 ## Ordered low to high so tiers can be compared with >=. There is no Miss
 ## tier: every landing is within 2 ticks of some slice centre (GDD 2.4).
 enum PrecisionTier { PARTIAL, GOOD, PERFECT }
-enum Status { NONE, CORRUPTED, OVERCLOCKED, ENCRYPTED }
+## PARASITE (Botnet, 2026-09-24): a parasite drone halves the slice's output until cleansed.
+enum Status { NONE, CORRUPTED, OVERCLOCKED, ENCRYPTED, PARASITE }
 enum RingScope { OUTER, INNER, WHOLE_WHEEL }
 enum NeighborRule { NONE, MIRROR, SHUNT }
 enum ResistanceRefresh { NONE, EACH_PLAYER_TURN }

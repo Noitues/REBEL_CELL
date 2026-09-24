@@ -31,6 +31,13 @@ func _ready() -> void:
 		# Dev shortcut for screenshots: godot --path . -- --demo-grid (own save slot)
 		RunManager.save_slot = "demo"
 		new_campaign(1)
+		if args.has("--demo-classes"):
+			# Screenshot roster: one operative of every class (bypasses Profile unlocks,
+			# campaign-only, never saved to the profile).
+			RunManager.campaign.roster.clear()
+			for id in [&"ghost", &"rigger", &"botnet"]:
+				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
+			show_hq()
 		if args.has("--demo-grid") or args.has("--demo-raid"):
 			var c := RunManager.campaign
 			c.schematics = 100
@@ -56,8 +63,8 @@ func _ready() -> void:
 
 # --- Public API (buttons and the integration tests) ---------------------------------------
 
-func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME) -> void:
-	RunManager.new_campaign(seed, RunManager.DEFAULT_CORPORATION, ice, home_variant_id)
+func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS) -> void:
+	RunManager.new_campaign(seed, RunManager.DEFAULT_CORPORATION, ice, home_variant_id, class_id)
 	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
 		RunManager.campaign.home_variant_id, RunManager.corporation.display_name, RunManager.campaign.story_path_id])
 	show_hq()
@@ -112,8 +119,8 @@ func repair_home() -> void:
 	show_hq()
 
 
-func recruit() -> void:
-	_report(CampaignRules.recruit(RunManager.campaign, RunManager.config(), RunManager.class_data()))
+func recruit(class_id: StringName = RunManager.DEFAULT_CLASS) -> void:
+	_report(RunManager.recruit(class_id))
 	RunManager.autosave()
 	show_hq()
 
@@ -244,8 +251,15 @@ func show_start() -> void:
 	for v in variants:
 		home_pick.add_item(v.display_name)
 	row.add_child(home_pick)
+	row.add_child(_label("Crew:"))
+	var class_pick := OptionButton.new()
+	var classes := RunManager.available_classes()
+	for cls in classes:
+		class_pick.add_item(cls.display_name)
+	row.add_child(class_pick)
 	row.add_child(_button("New campaign vs Solace", func() -> void:
-		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME)))
+		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
+			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS)))
 	box.add_child(ice_text)
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))
@@ -295,7 +309,9 @@ func show_hq() -> void:
 	actions.add_child(_button("City Grid", show_grid))
 	actions.add_child(_button("Codex", show_codex))
 	actions.add_child(_button("Settings [Esc]", open_settings))
-	actions.add_child(_button("Recruit rookie (%d)" % cfg.rookie_cost, recruit))
+	for cls in RunManager.available_classes():
+		var cid := cls.id
+		actions.add_child(_button("Recruit %s (%d)" % [cls.display_name, cfg.rookie_cost], func() -> void: recruit(cid)))
 	actions.add_child(_button("Scrub Heat -%d (%d)" % [cfg.heat_purchase_amount, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		actions.add_child(_button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home))

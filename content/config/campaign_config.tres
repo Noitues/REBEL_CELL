@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=43 format=3]
+[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=44 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/campaign_config_data.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
@@ -16,6 +16,7 @@
 [ext_resource type="Resource" path="res://content/raids/raid_heat_50.tres" id="raid_50"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_75.tres" id="raid_75"]
 [ext_resource type="Resource" path="res://content/raids/raid_purge.tres" id="raid_purge"]
+[ext_resource type="Resource" path="res://content/assets/turret.tres" id="station_turret"]
 [ext_resource type="Script" path="res://scripts/data/netrun_boost_data.gd" id="6_boost"]
 [ext_resource type="Resource" path="res://content/config/netrun_boosts.tres" id="boost_cache"]
 [ext_resource type="Resource" path="res://content/config/boost_overclocked_deck.tres" id="boost_deck"]
@@ -412,6 +413,7 @@ draw_per_turn = 5
 respin_ram_cost = 4
 partial_multiplier = 0.5
 overclock_multiplier = 1.5
+parasite_multiplier = 0.5
 shield_cap = 15
 corrupted_self_damage = 3
 corrupted_damage_per_major = 1
@@ -433,6 +435,7 @@ elite_firmware_choices = 2
 rack_daemon_choices = 3
 asset_drop_chance = 0.4
 armory_capacity = 6
+station_deploy_asset = ExtResource("station_turret")
 raid_step_cap = 30
 cascade_ratio = 0.5
 starting_schematics = 20

@@ -75,6 +75,8 @@ extends Resource
 @export var respin_ram_cost: int = 4
 @export var partial_multiplier: float = 0.5
 @export var overclock_multiplier: float = 1.5
+## Output of a slice with a PARASITE docked on it (Botnet).
+@export var parasite_multiplier: float = 0.5
 @export var shield_cap: int = 15
 @export var corrupted_self_damage: int = 3
 ## Added to corrupted_self_damage per MAJOR Heat threshold crossed.
@@ -109,6 +111,9 @@ extends Resource
 
 @export_group("Defense")
 @export var armory_capacity: int = 6
+## The temporary asset a stationed Botnet adds to its node for each raid (DEPLOY_DRONE
+## station bonus).
+@export var station_deploy_asset: DefenseAssetData
 @export var raid_step_cap: int = 30
 @export var cascade_ratio: float = 0.5
 

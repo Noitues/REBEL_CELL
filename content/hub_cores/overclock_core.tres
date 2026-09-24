@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e2"]
+
+; Overclock Core: Rigger alternative (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("e2")
+type = 19
+target = 0
+multiplier = 0.5
+
+[sub_resource type="Resource" id="fx_ram"]
+script = ExtResource("e2")
+type = 12
+target = 0
+amount = 2
+
+[sub_resource type="Resource" id="hook"]
+script = ExtResource("e1")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("e2")]([SubResource("fx_retrigger"), SubResource("fx_ram")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"overclock_core"
+display_name = "Overclock Core"
+description = "+2 max RAM. Perfect: gain 2 RAM and the slice resolves again at half."
+perfect_hook = SubResource("hook")
+max_ram_bonus = 2

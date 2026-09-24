@@ -18,6 +18,7 @@ const STATUS_TEXT := {
 	RC.Status.CORRUPTED: "CORRUPTED: when the slice resolves, 3 self-damage (+1 per MAJOR Heat threshold) and -1 RAM. Lasts until cleansed.",
 	RC.Status.OVERCLOCKED: "OVERCLOCKED: 1.5x output on the slice's next trigger, then it becomes CORRUPTED.",
 	RC.Status.ENCRYPTED: "ENCRYPTED: absorbs the next status applied to that slice.",
+	RC.Status.PARASITE: "PARASITE: a Botnet parasite drone is feeding on the slice; it resolves at half output until cleansed.",
 }
 const TIER_TEXT := {
 	RC.PrecisionTier.PERFECT: "PERFECT (offset 0): full output and the class Perfect hook.",

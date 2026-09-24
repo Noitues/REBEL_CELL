@@ -260,4 +260,30 @@ func _batch5() -> int:
 	if cfg2.home_repair_cost_per_point != 1.0 or cfg2.retaliation_min_heat != 50: fails += 1
 	print("Config damage scale default: ", cfg2.enemy_damage_scale_per_tier)
 	if cfg2.enemy_damage_scale_per_tier != 1.6: fails += 1
+	return fails + _m6()
+
+
+## M6 class roster: HubCoreData drones_persist / max_ram_bonus / free_resistance_nudges,
+## Status.PARASITE, config parasite_multiplier / station_deploy_asset, RunState.drones and
+## WheelState.respin_skipped (freeze cooldown).
+func _m6() -> int:
+	var fails := 0
+	var hub := HubCoreData.new(); hub.id = &"rig"; hub.drones_persist = true; hub.max_ram_bonus = 1; hub.free_resistance_nudges = 2
+	var err := ResourceSaver.save(hub, "user://smoke_hub_m6.tres")
+	var loaded: HubCoreData = load("user://smoke_hub_m6.tres")
+	print("M6 hub save=", err, " persist=", loaded.drones_persist, " ram=", loaded.max_ram_bonus, " nudges=", loaded.free_resistance_nudges)
+	if err != OK or not loaded.drones_persist or loaded.max_ram_bonus != 1 or loaded.free_resistance_nudges != 2: fails += 1
+	print("Status.PARASITE = ", RC.Status.PARASITE)
+	if RC.Status.PARASITE != 4: fails += 1
+	var cfg := CampaignConfigData.new()
+	print("Config parasite multiplier default: ", cfg.parasite_multiplier, " station asset: ", cfg.station_deploy_asset)
+	if cfg.parasite_multiplier != 0.5 or cfg.station_deploy_asset != null: fails += 1
+	var r := RunState.new(); r.drones = [{"source_id": "botnet_drone", "hp": 4, "dock_slot": 1}]
+	var rb := RunState.from_dict(r.to_dict())
+	print("RunState drones round trip: ", rb.drones)
+	if rb.drones.size() != 1 or int(rb.drones[0]["hp"]) != 4: fails += 1
+	var w := WheelState.new(); w.respin_skipped = true
+	var wb := WheelState.from_dict(w.to_dict())
+	print("WheelState respin_skipped round trip: ", wb.respin_skipped)
+	if not wb.respin_skipped: fails += 1
 	return fails

@@ -33,6 +33,12 @@ func test_anchor_skips_the_next_respin_after_a_perfect() -> void:
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "frozen_skip").size(), 1)
 	assert_eq(s.state.player.wheel.rotation, rotation, "no respin: the Perfect holds")
+	# The anchored turn lands the same Perfect again, but a wheel that just skipped its
+	# respin cannot be frozen twice in a row: no perpetual lock.
+	rotation = s.state.player.wheel.rotation
+	r = s.apply(CombatAction.end_turn())
+	assert_true(CombatFixture.events_of(r, "freeze_blocked").size() >= 1)
+	assert_eq(CombatFixture.events_of(r, "frozen_skip").size(), 0, "it respins this time")
 	CombatFixture.land(s.state.player, 1, 1)
 	rotation = s.state.player.wheel.rotation
 	s.apply(CombatAction.end_turn())

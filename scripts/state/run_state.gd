@@ -45,6 +45,8 @@ var card_removals: int = 0
 var heat_gained: int = 0
 ## Run-only cards from boosts (removed from the deck on completion).
 var temp_cards: Array[StringName] = []
+## Botnet drones carried between fights: {"source_id", "hp", "dock_slot"}.
+var drones: Array[Dictionary] = []
 var streams: Dictionary = {}
 
 
@@ -79,6 +81,7 @@ func _raw_dict() -> Dictionary:
 		"miss_resolved": miss_resolved, "card_removals": card_removals,
 		"heat_gained": heat_gained, "streams": streams.duplicate(true),
 		"temp_cards": _strings(temp_cards),
+		"drones": drones.duplicate(true),
 	}
 
 
@@ -114,6 +117,8 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.heat_gained = int(d.get("heat_gained", 0))
 	r.streams = d.get("streams", {}).duplicate(true)
 	r.temp_cards = _names(d.get("temp_cards", []))
+	for dd in d.get("drones", []):
+		r.drones.append({"source_id": String(dd.get("source_id", "")), "hp": int(dd.get("hp", 1)), "dock_slot": int(dd.get("dock_slot", 0))})
 	return r
 
 

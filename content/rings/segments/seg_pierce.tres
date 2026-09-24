@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="RingSegmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="main_script"]
+
+[resource]
+script = ExtResource("main_script")
+id = &"seg_pierce"
+display_name = "Pierce"
+description = "Ignore block and shield."
+pierce = true
