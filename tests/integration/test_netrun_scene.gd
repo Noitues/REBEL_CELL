@@ -10,6 +10,7 @@ var _scene: Control
 
 func before_each() -> void:
 	RunManager.save_slot = "gut_test"
+	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()
 	RunManager.reset()
 	_scene = add_child_autofree(load(SCENE).instantiate())
@@ -19,6 +20,7 @@ func after_each() -> void:
 	RunManager.delete_save()
 	RunManager.reset()
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.scene_switching_enabled = true
 
 
 ## One UI-level step toward the end of the run.

@@ -39,10 +39,10 @@ func new_campaign(seed: int) -> void:
 	_show_start()
 
 
-func start_run(tier: int = 1) -> void:
-	var s := RunManager.start_run(&"", tier)
+func start_run(_tier: int = 1) -> void:
+	var s := RunManager.start_run()
 	if s == null:
-		_log.append_text("[color=orange]No living operative: recruit one at HQ (M3).[/color]\n")
+		_log.append_text("[color=orange]No living operative or open Site: go to HQ.[/color]\n")
 		return
 	_report(s.last_events)
 	_show_current()
@@ -107,12 +107,14 @@ func leave_shop() -> void:
 
 func finish_run() -> void:
 	RunManager.clear_run()
+	RunManager.go_to_hq()
 	_show_start()
 
 
 func save_and_quit() -> void:
 	RunManager.autosave()
 	_log.append_text("Saved.\n")
+	RunManager.go_to_hq()
 	_show_start()
 
 
@@ -173,7 +175,8 @@ func _show_start() -> void:
 		if RunManager.has_active_run():
 			box.add_child(_button("Continue the current run", _show_current))
 		elif not living.is_empty():
-			box.add_child(_button("Start a Tier 1 netrun", func() -> void: start_run(1)))
+			box.add_child(_button("Start a netrun at the first open Site", func() -> void: start_run(1)))
+		box.add_child(_button("Go to HQ (City Grid, raids, roster)", RunManager.go_to_hq))
 	_set_panel(box)
 
 
