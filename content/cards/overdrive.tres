@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+; Overdrive (GDD A.1, Breaker only): OVERCLOCK your slice under the pointer, RAM 1.
+; EffectType 4 = APPLY_STATUS, target 1 = OWN_WHEEL, status 2 = OVERCLOCKED,
+; slice_pick 0 = UNDER_POINTER. wheel_target 0 = OWN.
+
+[sub_resource type="Resource" id="fx_overclock"]
+script = ExtResource("2")
+type = 4
+target = 1
+status = 2
+slice_pick = 0
+
+[resource]
+script = ExtResource("1")
+id = &"overdrive"
+display_name = "Overdrive"
+description = "OVERCLOCK your slice under the pointer: 1.5x on its next trigger, then it becomes CORRUPTED."
+ram_cost = 1
+cycle_cost = 60
+class_id = &"breaker"
+wheel_target = 0
+effects = Array[ExtResource("2")]([SubResource("fx_overclock")])

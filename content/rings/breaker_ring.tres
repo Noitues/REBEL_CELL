@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="InnerRingData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/inner_ring_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="2"]
+
+; Breaker Rank 1 Inner Ring (GDD A.1 / 6.4): x2 / Pierce / blank.
+
+[sub_resource type="Resource" id="seg_x2"]
+script = ExtResource("2")
+id = &"seg_x2"
+display_name = "x2"
+description = "Outer slice output doubled."
+output_multiplier = 2.0
+
+[sub_resource type="Resource" id="seg_pierce"]
+script = ExtResource("2")
+id = &"seg_pierce"
+display_name = "Pierce"
+description = "Ignore block and satellites."
+pierce = true
+
+[sub_resource type="Resource" id="seg_blank"]
+script = ExtResource("2")
+id = &"seg_blank"
+display_name = "-"
+description = "No modifier."
+
+[resource]
+script = ExtResource("1")
+segments = Array[ExtResource("2")]([SubResource("seg_x2"), SubResource("seg_pierce"), SubResource("seg_blank")])

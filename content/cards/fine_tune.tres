@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+; Fine Tune (GDD A.1): two +-1 nudges on one ring, RAM 1. EffectType 5 = NUDGE;
+; amount = number of nudges; the action supplies direction and ring.
+
+[sub_resource type="Resource" id="fx_nudge"]
+script = ExtResource("2")
+type = 5
+target = 2
+ring_scope = 0
+amount = 2
+
+[resource]
+script = ExtResource("1")
+id = &"fine_tune"
+display_name = "Fine Tune"
+description = "Two +-1 nudges on one ring."
+ram_cost = 1
+cycle_cost = 50
+wheel_target = 2
+effects = Array[ExtResource("2")]([SubResource("fx_nudge")])

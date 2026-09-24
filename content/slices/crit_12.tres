@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="SliceData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"crit_12"
+display_name = "Crit 12"
+slice_type = 1
+target_rule = 1
+base_output = 12

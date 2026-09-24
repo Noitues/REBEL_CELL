@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+; Mirror Flip (GDD A.1): Flip target wheel, RAM 3. EffectType 7 = FLIP.
+
+[sub_resource type="Resource" id="fx_flip"]
+script = ExtResource("2")
+type = 7
+target = 2
+ring_scope = 2
+
+[resource]
+script = ExtResource("1")
+id = &"mirror_flip"
+display_name = "Mirror Flip"
+description = "Flip a wheel. Blocked while the target has resistance."
+ram_cost = 3
+cycle_cost = 75
+wheel_target = 2
+effects = Array[ExtResource("2")]([SubResource("fx_flip")])

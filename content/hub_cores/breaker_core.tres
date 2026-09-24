@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="HubCoreData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Breaker Core (GDD 5.2): passive +1 spin on all cards; Perfect hook: the slice
+; resolves twice. Passive = trigger 0 (PASSIVE) with a SPIN(6) effect of amount 1;
+; hook = trigger 6 (ON_PERFECT) with RETRIGGER(19) on SELF(0).
+
+[sub_resource type="Resource" id="fx_spin_bonus"]
+script = ExtResource("3")
+type = 6
+target = 1
+ring_scope = 2
+amount = 1
+
+[sub_resource type="Resource" id="te_spin_bonus"]
+script = ExtResource("2")
+trigger = 0
+effects = Array[ExtResource("3")]([SubResource("fx_spin_bonus")])
+
+[sub_resource type="Resource" id="fx_retrigger"]
+script = ExtResource("3")
+type = 19
+target = 0
+multiplier = 1.0
+
+[sub_resource type="Resource" id="te_perfect_hook"]
+script = ExtResource("2")
+trigger = 6
+min_tier = 2
+effects = Array[ExtResource("3")]([SubResource("fx_retrigger")])
+
+[resource]
+script = ExtResource("1")
+id = &"breaker_core"
+display_name = "Breaker Core"
+description = "+1 spin on all cards. Perfect: the slice resolves twice."
+passive_effects = Array[ExtResource("2")]([SubResource("te_spin_bonus")])
+perfect_hook = SubResource("te_perfect_hook")

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+; Jolt (GDD A.1): Spin 3 (+1 Breaker = 4), RAM 1. EffectType 6 = SPIN, target 2 =
+; TARGET_WHEEL, ring_scope 2 = WHOLE_WHEEL. wheel_target 2 = ANY.
+
+[sub_resource type="Resource" id="fx_spin"]
+script = ExtResource("2")
+type = 6
+target = 2
+ring_scope = 2
+amount = 3
+
+[resource]
+script = ExtResource("1")
+id = &"jolt"
+display_name = "Jolt"
+description = "Spin a wheel 3 ticks."
+ram_cost = 1
+cycle_cost = 50
+wheel_target = 2
+effects = Array[ExtResource("2")]([SubResource("fx_spin")])

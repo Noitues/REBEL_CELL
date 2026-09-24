@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="SliceData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; DOSE (GDD A.3): AFFLICT slice applying CORRUPTED to a random non-Miss player slice.
+; EffectType 4 = APPLY_STATUS, target 3 = POINTER_TARGET, status 1 = CORRUPTED,
+; slice_pick 1 = RANDOM_NON_MISS, trigger 5 = ON_SLICE_TRIGGER.
+
+[sub_resource type="Resource" id="fx_corrupt"]
+script = ExtResource("3")
+type = 4
+target = 3
+status = 1
+slice_pick = 1
+
+[sub_resource type="Resource" id="te_dose"]
+script = ExtResource("2")
+trigger = 5
+effects = Array[ExtResource("3")]([SubResource("fx_corrupt")])
+
+[resource]
+script = ExtResource("1")
+id = &"dose"
+display_name = "Dose"
+slice_type = 7
+target_rule = 1
+base_output = 0
+extra_effects = Array[ExtResource("2")]([SubResource("te_dose")])

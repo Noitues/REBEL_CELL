@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/slices/atk_7.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/def_6.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/hub_cores/compliance_lock.tres" id="hub"]
+
+; Compliance Officer (GDD A.3): 50 HP; Atk 7, Atk 7, Def 6, Crit 12, Atk 7, Miss;
+; Hub Compliance Lock (resistance 3).
+
+[sub_resource type="Resource" id="slot_atk"]
+script = ExtResource("3")
+slice = ExtResource("s_atk")
+
+[sub_resource type="Resource" id="slot_def"]
+script = ExtResource("3")
+slice = ExtResource("s_def")
+
+[sub_resource type="Resource" id="slot_crit"]
+script = ExtResource("3")
+slice = ExtResource("s_crit")
+
+[sub_resource type="Resource" id="slot_miss"]
+script = ExtResource("3")
+slice = ExtResource("s_miss")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("2")
+slice_count = 6
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_atk"), SubResource("slot_miss")])
+hub = ExtResource("hub")
+pointer_ticks = PackedInt32Array(0)
+
+[resource]
+script = ExtResource("1")
+id = &"compliance_officer"
+display_name = "Compliance Officer"
+description = "Locks its wheel down with Hub-sourced resistance."
+corporation_id = &"solace"
+hp = 50
+wheel = SubResource("wheel")
+cycle_reward = 15

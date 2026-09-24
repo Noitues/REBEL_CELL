@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="4"]
+[ext_resource type="Resource" path="res://content/slices/atk_8.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/def_6.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
+[ext_resource type="Resource" path="res://content/slices/crit_14.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/enemies/collections_drone.tres" id="drone"]
+
+; Collections Agent (GDD A.3): 40 HP; Atk 8, Atk 8, Def 6, Dose, Crit 14, Miss;
+; satellite drone docked on slice 1 at combat start (trigger 1 = ON_COMBAT_START).
+
+[sub_resource type="Resource" id="slot_atk"]
+script = ExtResource("3")
+slice = ExtResource("s_atk")
+
+[sub_resource type="Resource" id="slot_def"]
+script = ExtResource("3")
+slice = ExtResource("s_def")
+
+[sub_resource type="Resource" id="slot_dose"]
+script = ExtResource("3")
+slice = ExtResource("s_dose")
+
+[sub_resource type="Resource" id="slot_crit"]
+script = ExtResource("3")
+slice = ExtResource("s_crit")
+
+[sub_resource type="Resource" id="slot_miss"]
+script = ExtResource("3")
+slice = ExtResource("s_miss")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("2")
+slice_count = 6
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_miss")])
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="spawn_drone"]
+script = ExtResource("4")
+satellite = ExtResource("drone")
+trigger = 1
+every_n = 1
+dock_slot = 1
+max_active = 1
+
+[resource]
+script = ExtResource("1")
+id = &"collections_agent"
+display_name = "Collections Agent"
+description = "Solace debt collector with a bodyguard drone."
+corporation_id = &"solace"
+hp = 40
+wheel = SubResource("wheel")
+cycle_reward = 15
+spawns = Array[ExtResource("4")]([SubResource("spawn_drone")])

@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/rank_reward_data.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/data/inner_ring_data.gd" id="7"]
+[ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/atk_6.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/def_5.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/hub_cores/breaker_core.tres" id="hub"]
+[ext_resource type="Resource" path="res://content/rings/breaker_ring.tres" id="ring"]
+[ext_resource type="Resource" path="res://content/cards/jolt.tres" id="c_jolt"]
+[ext_resource type="Resource" path="res://content/cards/brute_spin.tres" id="c_brute"]
+[ext_resource type="Resource" path="res://content/cards/fine_tune.tres" id="c_fine"]
+[ext_resource type="Resource" path="res://content/cards/mirror_flip.tres" id="c_flip"]
+[ext_resource type="Resource" path="res://content/cards/overdrive.tres" id="c_over"]
+
+; Breaker (GDD 5.2 / A.1): 60 HP; wheel Crit, Atk, Atk, Atk, Def, Miss; deck of 10;
+; Rank 1 installs the x2 / Pierce / - Inner Ring. Slice values are placeholders
+; (docs/DECISIONS.md open questions).
+
+[sub_resource type="Resource" id="slot_0"]
+script = ExtResource("3")
+slice = ExtResource("s_crit")
+
+[sub_resource type="Resource" id="slot_1"]
+script = ExtResource("3")
+slice = ExtResource("s_atk")
+
+[sub_resource type="Resource" id="slot_4"]
+script = ExtResource("3")
+slice = ExtResource("s_def")
+
+[sub_resource type="Resource" id="slot_5"]
+script = ExtResource("3")
+slice = ExtResource("s_miss")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("2")
+slice_count = 6
+slots = Array[ExtResource("3")]([SubResource("slot_0"), SubResource("slot_1"), SubResource("slot_1"), SubResource("slot_1"), SubResource("slot_4"), SubResource("slot_5")])
+hub = ExtResource("hub")
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="rank_1"]
+script = ExtResource("4")
+rank = 1
+max_netrun_tier = 2
+inner_ring = ExtResource("ring")
+
+[resource]
+script = ExtResource("1")
+id = &"breaker"
+display_name = "Breaker"
+description = "Hits hard and spins harder. Perfect landings resolve the slice twice."
+starting_wheel = SubResource("wheel")
+starting_deck = Array[ExtResource("5")]([ExtResource("c_jolt"), ExtResource("c_jolt"), ExtResource("c_jolt"), ExtResource("c_jolt"), ExtResource("c_brute"), ExtResource("c_brute"), ExtResource("c_fine"), ExtResource("c_fine"), ExtResource("c_flip"), ExtResource("c_over")])
+exclusive_cards = Array[ExtResource("5")]([ExtResource("c_over")])
+base_hp = 60
+starting_ram = 6
+max_ram = 12
+ram_regen = 4
+free_nudges_per_turn = 1
+rank_rewards = Array[ExtResource("4")]([SubResource("rank_1")])
