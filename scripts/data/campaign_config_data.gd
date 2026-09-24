@@ -72,6 +72,13 @@ extends Resource
 @export var map_nodes_max: int = 4
 ## Layers (1-based) holding a Server Rack. The last one is the run's final node.
 @export var rack_layers: PackedInt32Array = PackedInt32Array([4, 7])
+## At least one Modem somewhere in these layers (inclusive band).
+@export var map_modem_layers: Vector2i = Vector2i(3, 5)
+## About this many Elite Routers per layer in this band (4.2 guarantees).
+@export var map_elite_layers: Vector2i = Vector2i(3, 6)
+@export var map_elites_per_layer: int = 1
+## Terminals as a fraction of the nodes left after the guarantees.
+@export var map_terminal_ratio: float = 0.25
 @export var elite_heat: int = 1
 @export var card_reward_choices: int = 3
 @export var elite_firmware_choices: int = 2
