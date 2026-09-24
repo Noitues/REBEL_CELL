@@ -27,9 +27,12 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 | Ring segments Corrupt, Anchor, Accelerator, Echo + Rank 3 swap | 6.4 | done (vertical fixes 2026-09-24) |
 | Player drones (DEPLOY, Botnet drone, seed drone), Bug card | 5.2, 11.9 | done (vertical fixes 2026-09-24) |
 | Defense assets (3) and threats (3) | A.5 | done (M2) |
-| Terminal events (5 placeholders) | 4.2, 8.6 | done (M2) — real writing later |
-| Solace City Grid (10 Sites) | A.6 | done (M3) |
+| Terminal events (5 placeholders) | 4.2, 8.6 | done (M2); 14 written events + rescue + DISPATCH chain (vertical fixes 2026-09-24) |
+| Solace City Grid (10 Sites) | A.6 | done (M3); expanded to 32 Sites (vertical fixes 2026-09-24) |
 | Network node types: Relay, Firewall Relay, Safehouse | 3.2 | done (M3) |
+| Node types: Compiler Rack, Vault Terminal, Proxy Relay (Profile unlocks), node upgrades | 3.2, 11.4 | done (vertical fixes 2026-09-24) |
+| Home-server variant: Bunker (Profile unlock); netrun boosts (3) | 3.1, 11.4 | done (vertical fixes 2026-09-24) |
+| Raids: retaliation, story, node-built; threats Icebreaker, Lockdown Unit | 4.4, 7.1 | done (vertical fixes 2026-09-24) |
 | Home server (standard variant) | 3.1 | done (M3) |
 | Exploits: Intel, Breach, Virus | 11.7 | done (M3) |
 | Story paths with placeholder beats (Solace, 5) | 8.4 | minimal (M3) — real writing later |
@@ -52,6 +55,6 @@ the short list.
 | Remaining Solace story paths (5–6) and beats | 8.4 | M3 ships one placeholder path |
 | Full ICE 1–20 wording; levels 10/15/20 | 11.9 | open question |
 | Additional corporations, REBEL_CELL generator | 8.5, 13 | |
-| Home-server variants, new node types (Compiler Rack, Vault, Proxy) | 3.2, 3.4 | M3 ships 3 of 7 node types |
+| More home-server variants | 3.4 | Bunker exists; each is a Profile unlock |
 | Profile unlocks, skins | 3.4 | |
 | Elite Terminals (extra elites as Terminal encounters) | ruling 2026-09-24 | today extra elites flip Routers |

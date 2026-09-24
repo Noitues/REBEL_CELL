@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_sch10"]
+script = ExtResource("3")
+type = 23
+target = 6
+amount = 10
+[sub_resource type="Resource" id="f_heat4"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 4
+[sub_resource type="Resource" id="f_none"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 0
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Leak the draft (+10 Schematics, +4 Heat)"
+result_text = "The draft hits three street channels before Solace notices. Then Solace notices."
+effects = Array[ExtResource("3")]([SubResource("f_sch10"), SubResource("f_heat4")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Keep it for the Cell"
+result_text = "Evidence is better spent than sold. You bank the file quietly."
+effects = Array[ExtResource("3")]([SubResource("f_none")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_silent_recall"
+title = "Silent Recall"
+speaker = 3
+text = "Recall notice, draft 7, never sent: batch 22 implants fail after 900 days. Observe the edit history: the failure was reclassified as a renewal opportunity."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"
+min_tier = 2

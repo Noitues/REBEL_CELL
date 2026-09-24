@@ -38,7 +38,8 @@ func _run(site_id: StringName, kind: String = "netrun") -> RunState:
 
 func test_solace_content_validates_and_has_the_a6_grid() -> void:
 	assert_eq(_corp.validate(_cfg.min_exploits_for_breach).size(), 0, str(_corp.validate()))
-	assert_eq(_corp.city_grid.sites.size(), 10)
+	assert_eq(_corp.city_grid.sites.size(), 32, "GDD 4.1: 30-40 Sites")
+	assert_eq(_corp.city_grid.size_warnings().size(), 0)
 	assert_eq(_corp.story_paths.size(), 5)
 	assert_eq(_corp.exploits.size(), 3)
 	assert_eq(_corp.raids.size(), 8, "threshold x4, claim, retaliation, story, node-built")
@@ -58,10 +59,16 @@ func test_new_campaign_opens_with_two_rookies_home_claimed_and_a_story_path() ->
 
 func test_launchable_sites_follow_the_tier_chains_and_the_breach_gate() -> void:
 	var c := _campaign()
-	assert_eq(_ids(CampaignRules.launchable_sites(c, _corp, _cfg)), [&"t1_a", &"t1_b", &"t1_c"])
+	var opening := _ids(CampaignRules.launchable_sites(c, _corp, _cfg))
+	assert_eq(opening.size(), 10, "every T1 Site touches home")
+	for id in [&"t1_a", &"t1_b", &"t1_c"]:
+		assert_true(opening.has(id))
+	assert_false(opening.has(&"t2_intel"))
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	assert_true(c.grid.is_cleared(&"t1_a"))
-	assert_eq(_ids(CampaignRules.launchable_sites(c, _corp, _cfg)), [&"scrub_records", &"t1_b", &"t1_c", &"t2_intel"])
+	var after := _ids(CampaignRules.launchable_sites(c, _corp, _cfg))
+	assert_true(after.has(&"scrub_records") and after.has(&"t2_intel"), "t1_a opened its chain and the Heat objective")
+	assert_false(after.has(&"t1_a"), "cleared Sites are used up")
 	for id in [&"t1_b", &"t1_c", &"t2_intel", &"t2_breach", &"t2_virus", &"t3_core"]:
 		CampaignRules.on_run_completed(c, _corp, _cfg, _run(id))
 	assert_eq(c.exploits.size(), 3)
@@ -110,7 +117,7 @@ func test_exploit_site_adds_heat_reveals_a_beat_and_intel_opens_links() -> void:
 		if e.get("type", "") == "link_opened":
 			links += 1
 	assert_eq(beat_events, 1)
-	assert_eq(links, 2, "Intel opened both locked links")
+	assert_true(links >= 2, "Intel opened every locked link (%d)" % links)
 	assert_true(c.grid.is_link_open(&"t1_a", &"t1_b"))
 	assert_true(c.grid.neighbors(&"t1_a", _corp.city_grid).has(&"t1_b"))
 

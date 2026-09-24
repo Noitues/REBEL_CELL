@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/firmware/burner.tres" id="fw_burner"]
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Buy a Burner (45 Cycles)"
+result_text = "It runs hot and it will run hotter."
+cycle_cost = 45
+reward = ExtResource("fw_burner")
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Not today"
+result_text = "The drawer closes."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_burner_vendor"
+title = "Burner Chips"
+speaker = 1
+text = "Somebody is selling Burner Firmware out of a Terminal drawer. Hot chips, literally."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"

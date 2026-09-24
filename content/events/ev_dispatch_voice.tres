@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_none"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 0
+[sub_resource type="Resource" id="f_heat_m1"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -1
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Keep it"
+result_text = "You save the note. Later you will want the evidence."
+effects = Array[ExtResource("3")]([SubResource("f_none")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Delete it (-1 Heat)"
+result_text = "Nothing to find, nothing to trace. DISPATCH: Thank you for keeping the channel clean."
+effects = Array[ExtResource("3")]([SubResource("f_heat_m1")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_dispatch_voice"
+title = "DISPATCH: Voice Note"
+speaker = 4
+text = "DISPATCH sends a voice note for the first time. The cadence is human. On the third listen the breaths are evenly spaced, to the millisecond."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"
+min_tier = 3
+dispatch_clue = true
+foreshadows = &"dispatch"

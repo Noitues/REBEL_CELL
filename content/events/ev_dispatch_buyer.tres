@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_heat1"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 1
+[sub_resource type="Resource" id="f_cyc10"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 10
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Pull the buyer's routing number (+1 Heat)"
+result_text = "A routing number that resolves to nothing. The escrow was signed by a key you have seen before, on your own handler's traffic."
+effects = Array[ExtResource("3")]([SubResource("f_heat1")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Leave it (+10 Cycles)"
+result_text = "You take the loose change from the escrow fee and forget the rest. Almost."
+effects = Array[ExtResource("3")]([SubResource("f_cyc10")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_dispatch_buyer"
+title = "Escrow Receipt"
+speaker = 2
+text = "An escrow record: Solace patient data, bulk, sold at a discount after \"the Q3 breach\". The buyer is an unnamed holding company. The breach date is next month."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"
+min_tier = 2
+dispatch_clue = true
+foreshadows = &"dispatch"

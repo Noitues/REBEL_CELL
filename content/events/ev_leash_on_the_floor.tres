@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_heat_m2"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -2
+[sub_resource type="Resource" id="f_cyc25"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 25
+[sub_resource type="Resource" id="f_heat2"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 2
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Sign it with your handle (-2 Heat)"
+result_text = "You forge a Solace technician's sign-off. The log closes. One less trace pointing at the Cell."
+effects = Array[ExtResource("3")]([SubResource("f_heat_m2")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Strip it for parts (+25 Cycles, +2 Heat)"
+result_text = "Salvage pays. The log stays open with your fingerprints in it."
+effects = Array[ExtResource("3")]([SubResource("f_cyc25"), SubResource("f_heat2")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_leash_on_the_floor"
+title = "A Leash on the Floor"
+speaker = 1
+text = "A bricked implant lies in the maintenance corridor, still warm, still logging. A subbie ran out of renewals here. The log wants a signature before it will let go."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"

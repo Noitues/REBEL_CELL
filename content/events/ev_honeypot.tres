@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_cyc80"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 80
+[sub_resource type="Resource" id="f_heat5"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 5
+[sub_resource type="Resource" id="f_heat_m2"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -2
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Take the Cycles (+80 Cycles, +5 Heat)"
+result_text = "The vault was watching. The Cycles are real; so is the alert."
+effects = Array[ExtResource("3")]([SubResource("f_cyc80"), SubResource("f_heat5")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Trip it deliberately (-2 Heat, 8 HP)"
+result_text = "You feed the honeypot a ghost and take a shock for the trouble. Solace chases the ghost."
+hp_cost = 8
+effects = Array[ExtResource("3")]([SubResource("f_heat_m2")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("2")
+label = "Walk past"
+result_text = "Free things in Solace buildings are not free."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_honeypot"
+title = "Open Vault"
+speaker = 0
+text = "A Solace vault sits open on the Terminal, credentials in the clear, 80 Cycles on the table. It is exactly as easy as it looks."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"solace"

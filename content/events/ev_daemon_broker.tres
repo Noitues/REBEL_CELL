@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/daemons/kernel_sync.tres" id="daemon_ks"]
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Buy it (120 Cycles)"
+result_text = "The broker wipes the previous owner's fingerprints and hands it over."
+cycle_cost = 120
+reward = ExtResource("daemon_ks")
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Walk"
+result_text = "The broker wishes you a profitable run."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_daemon_broker"
+title = "Daemon Broker"
+speaker = 1
+text = "A broker has a Daemon in a jar, so to speak. Kernel Sync, second-hand, still hot from someone else's deck."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"

@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_heat1"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 1
+[sub_resource type="Resource" id="f_cyc20"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 20
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Copy the memo (+1 Heat, +20 Cycles)"
+result_text = "Someone will pay for this. Someone always does."
+effects = Array[ExtResource("3")]([SubResource("f_heat1"), SubResource("f_cyc20")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Leave it"
+result_text = "You close the file. The number 3.1% stays with you."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_continuum_memo"
+title = "Internal Memo: Continuum Pricing"
+speaker = 2
+text = "SOLACE INTERNAL. Renewal price uplift approved: +18% on all cardiac tiers. Churn model predicts 3.1% voluntary lapse. Involuntary lapse (bricking) to be reported as \"service interruption\". Do not forward."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"

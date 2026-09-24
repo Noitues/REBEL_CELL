@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_cyc35"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 35
+[sub_resource type="Resource" id="f_heat_m3"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -3
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Borrow the credentials (+35 Cycles)"
+result_text = "Four minutes of Solace-grade access. You bill it to the audit."
+effects = Array[ExtResource("3")]([SubResource("f_cyc35")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Clean your own logs instead (-3 Heat)"
+result_text = "You use the window to erase yourself from three systems."
+effects = Array[ExtResource("3")]([SubResource("f_heat_m3")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_auditor_lunch"
+title = "Auditor on Break"
+speaker = 2
+text = "An audit process has paused itself for a scheduled break. Its credentials are cached on the Terminal for exactly four minutes."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"

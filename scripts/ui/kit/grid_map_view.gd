@@ -3,14 +3,17 @@ extends Control
 ## City Grid as wireframe (STYLE_GUIDE 4): isometric wireframe buildings per Site,
 ## claimed Sites in cell_pink with spray circles, corporate Sites in the corporation
 ## colour, cleared Sites dim cyan, Seized Sites crossed out, links as net_cyan lines,
-## threat paths as glowing corporate arrows (pending raid entry -> home). Emits
-## site_clicked so the sidebar can act; the view never changes state.
+## frozen links in resist_gold, threat paths as glowing corporate arrows (pending raid
+## entry -> home) and, during a playout, threat markers on the Sites they stand on.
+## Emits site_clicked so the sidebar can act; the view never changes state.
 
 signal site_clicked(site_id: StringName)
 
 var campaign: CampaignState = null
 var corp: CorporationData = null
 var threat_paths: Array[Array] = []  # each: Array[StringName] of site ids
+## Raid playout: site id -> Array[String] of threat names standing there.
+var threat_markers: Dictionary = {}
 var _positions: Dictionary = {}
 
 
@@ -46,14 +49,18 @@ func _layout_positions() -> void:
 			continue
 		var t := (s.map_position - min_p) / span
 		# Isometric-ish projection: x spreads, y compresses and shifts with x.
-		_positions[s.id] = Vector2(60 + t.x * (size.x - 140), 70 + t.y * (size.y - 150) + t.x * 20)
+		_positions[s.id] = Vector2(60 + t.x * (size.x - 140), 50 + t.y * (size.y - 110) + t.x * 12)
 
 
 func site_at(point: Vector2) -> StringName:
 	for id in _positions:
-		if point.distance_to(_positions[id]) < 34:
+		if point.distance_to(_positions[id]) < 24:
 			return id
 	return &""
+
+
+func position_of(site_id: StringName) -> Vector2:
+	return _positions.get(site_id, Vector2.ZERO)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -68,17 +75,25 @@ func _draw() -> void:
 		return
 	_layout_positions()  # the control's size is only final at draw time
 	var corp_col := Palette.corp_color(corp.id)
-	# Links (open, opened-locked, locked).
+	var dense := corp.city_grid.sites.size() > 16
+	# Links (open, opened-locked, locked, frozen).
 	for s in corp.city_grid.sites:
 		if s == null:
 			continue
 		for l in s.links:
 			if _positions.has(l):
-				draw_line(_positions[s.id], _positions[l], Color(Palette.NET_CYAN, 0.45), 1.5)
+				var frozen := campaign.grid.is_link_frozen(s.id, l)
+				if frozen:
+					_dashed_line(_positions[s.id], _positions[l], Palette.RESIST_GOLD)
+				else:
+					draw_line(_positions[s.id], _positions[l], Color(Palette.NET_CYAN, 0.45), 1.5)
 		for l in s.locked_links:
 			if _positions.has(l):
 				var open := campaign.grid.is_link_open(s.id, l)
-				_dashed_line(_positions[s.id], _positions[l], Color(Palette.NET_CYAN, 0.6) if open else Color(Palette.NET_CYAN, 0.2))
+				var col := Color(Palette.NET_CYAN, 0.6) if open else Color(Palette.NET_CYAN, 0.2)
+				if campaign.grid.is_link_frozen(s.id, l):
+					col = Palette.RESIST_GOLD
+				_dashed_line(_positions[s.id], _positions[l], col)
 	# Threat paths: glowing corporate arrows.
 	for path in threat_paths:
 		for i in path.size() - 1:
@@ -96,7 +111,9 @@ func _draw() -> void:
 		if s == null:
 			continue
 		var p: Vector2 = _positions[s.id]
-		var h := 18.0 + s.tier * 9.0
+		var h := (12.0 + s.tier * 6.0) if dense else (18.0 + s.tier * 9.0)
+		var w := 16.0 if dense else 26.0
+		var d := 9.0 if dense else 14.0
 		var col := corp_col
 		var status := campaign.grid.status_of(s.id)
 		match status:
@@ -106,28 +123,37 @@ func _draw() -> void:
 				col = Color(Palette.NET_CYAN, 0.7)
 			GridState.SiteStatus.SEIZED:
 				col = Palette.RESIST_GOLD
-		_iso_block(p, 26, 14, h, col)
+		_iso_block(p, w, d, h, col)
 		if status == GridState.SiteStatus.CLAIMED:
-			draw_arc(p + Vector2(0, 6), 30, 0, TAU * 0.92, 24, Color(Palette.CELL_PINK, 0.5), 5.0)
-			draw_arc(p + Vector2(3, 4), 24, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_PINK, 0.3), 3.0)
+			draw_arc(p + Vector2(0, 6), w + 4, 0, TAU * 0.92, 24, Color(Palette.CELL_PINK, 0.5), 4.0)
+			draw_arc(p + Vector2(3, 4), w - 2, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_PINK, 0.3), 2.0)
 		if status == GridState.SiteStatus.SEIZED:
-			draw_line(p + Vector2(-16, -16), p + Vector2(16, 16), Palette.RESIST_GOLD, 2.0)
-			draw_line(p + Vector2(-16, 16), p + Vector2(16, -16), Palette.RESIST_GOLD, 2.0)
+			draw_line(p + Vector2(-w * 0.6, -w * 0.6), p + Vector2(w * 0.6, w * 0.6), Palette.RESIST_GOLD, 2.0)
+			draw_line(p + Vector2(-w * 0.6, w * 0.6), p + Vector2(w * 0.6, -w * 0.6), Palette.RESIST_GOLD, 2.0)
 		var glyph := ""
-		match s.objective:
+		match CampaignRules.site_objective(campaign, s):
 			RC.SiteObjective.EXPLOIT:
 				glyph = "◈"
 			RC.SiteObjective.HEAT_REDUCTION:
 				glyph = "❄"
 			RC.SiteObjective.BOSS:
 				glyph = "✦"
-		var label := "T%d %s %s" % [s.tier, s.display_name, glyph]
-		draw_string(Palette.mono(), p + Vector2(-40, h + 22), label, HORIZONTAL_ALIGNMENT_LEFT, 120, 10, Palette.PAPER)
+		var label := ("T%d %s" % [s.tier, glyph]) if dense else ("T%d %s %s" % [s.tier, s.display_name, glyph])
+		draw_string(Palette.mono(), p + Vector2(-40, h + 20), label, HORIZONTAL_ALIGNMENT_LEFT, 120, 9 if dense else 10, Palette.PAPER)
 		if status == GridState.SiteStatus.CLAIMED and s.id != campaign.grid.home_site_id:
 			var site := campaign.grid.site(s.id)
-			draw_string(Palette.mono(), p + Vector2(-40, h + 34), "%s %d/%d" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"]], HORIZONTAL_ALIGNMENT_LEFT, 120, 9, Palette.CELL_ACID)
+			var level := campaign.grid.upgrade_level_of(s.id)
+			draw_string(Palette.mono(), p + Vector2(-40, h + 31), "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""], HORIZONTAL_ALIGNMENT_LEFT, 120, 9, Palette.CELL_ACID)
 		elif s.id == campaign.grid.home_site_id:
-			draw_string(Palette.mono(), p + Vector2(-40, h + 34), "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], HORIZONTAL_ALIGNMENT_LEFT, 120, 9, Palette.CELL_ACID)
+			draw_string(Palette.mono(), p + Vector2(-40, h + 31), "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], HORIZONTAL_ALIGNMENT_LEFT, 120, 9, Palette.CELL_ACID)
+		# Raid playout: threats standing on this Site as corporate markers.
+		if threat_markers.has(s.id):
+			var names: Array = threat_markers[s.id]
+			for k in names.size():
+				var mp := p + Vector2(-20 + k * 14, -h - 22)
+				draw_circle(mp, 6, corp_col)
+				draw_circle(mp, 9, Color(corp_col, 0.35))
+			draw_string(Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140, 9, corp_col)
 
 
 func _iso_block(p: Vector2, w: float, d: float, h: float, col: Color) -> void:

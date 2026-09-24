@@ -13,6 +13,8 @@ var _log: RichTextLabel
 var _panel: Control = null
 var combat_scene: Control = null
 var background: WireframeBackground
+var map_view: NetrunMapView = null
+var playout: RaidPlayoutPanel = null
 var _settings_panel: SettingsPanel = null
 
 
@@ -127,9 +129,10 @@ func raid_move(from_site: StringName, index: int, to_site: StringName) -> void:
 
 
 func raid_fight() -> void:
-	_report(RunManager.netrun.raid_fight())
+	var events := RunManager.netrun.raid_fight()
+	_report(events)
 	RunManager.after_step()
-	_show_current()
+	_show_raid_playout(events)
 
 
 func finish_run() -> void:
@@ -217,36 +220,55 @@ func _show_start() -> void:
 	_set_panel(box)
 
 
+## The netrun map as a wireframe graph (GDD 9.1): click a reachable node to enter it.
+## Keyboard: 1-9 pick the reachable nodes in order.
 func _show_map() -> void:
 	var s := RunManager.netrun
 	var box := VBoxContainer.new()
-	box.add_child(_label("Pick the next node (Heat cost shown; you must follow the links)."))
-	var columns := HBoxContainer.new()
-	box.add_child(columns)
+	box.add_child(_label("Pick the next node (Heat cost shown; follow the links). Click a glowing node or press 1-9."))
+	map_view = NetrunMapView.new()
+	map_view.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
+	map_view.show_map(s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes())
+	map_view.node_clicked.connect(func(id: StringName) -> void:
+		if RunManager.netrun != null and RunManager.netrun.available_nodes().has(id):
+			enter_node(id))
+	box.add_child(map_view)
+	var row := HBoxContainer.new()
+	box.add_child(row)
 	var available := s.available_nodes()
-	for layer in s.run.map.layers:
-		var col := VBoxContainer.new()
-		col.custom_minimum_size = Vector2(150, 0)
-		col.add_child(_label("Layer %d" % layer[0]["layer"]))
-		for node in layer:
-			var b := Button.new()
-			var heat: int = node["heat"]
-			var text: String = "%s%s" % [NODE_LABELS.get(node["type"], "?"), " (elite)" if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER else ""]
-			if heat != 0:
-				text += " +%d Heat" % heat
-			if node["id"] == s.run.current_node_id:
-				text = "> " + text
-			elif s.run.visited.has(node["id"]):
-				text = "[done] " + text
-			b.text = text
-			b.tooltip_text = "%s -> %s" % [node["id"], ", ".join(node["next"])]
-			b.disabled = not available.has(node["id"])
-			var id: StringName = node["id"]
-			b.pressed.connect(func() -> void: enter_node(id))
-			col.add_child(b)
-		columns.add_child(col)
-	box.add_child(_button("Save & quit to start screen", save_and_quit))
+	for i in available.size():
+		var node := s.run.map.get_node(available[i])
+		var text: String = "%d: %s%s" % [i + 1, NODE_LABELS.get(node["type"], "?"), " (elite)" if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER else ""]
+		if int(node["heat"]) != 0:
+			text += " +%d Heat" % int(node["heat"])
+		var id: StringName = available[i]
+		row.add_child(_button(text, func() -> void: enter_node(id)))
+	row.add_child(_button("Save & quit to start screen", save_and_quit))
 	_set_panel(box)
+
+
+## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip.
+func _show_raid_playout(events: Array[Dictionary]) -> void:
+	var c := RunManager.campaign
+	var box := VBoxContainer.new()
+	var view := GridMapView.new()
+	view.custom_minimum_size = Vector2(760, 300)
+	view.show_grid(c, RunManager.corporation)
+	box.add_child(view)
+	playout = RaidPlayoutPanel.new(view)
+	box.add_child(playout)
+	var cont := _button("Continue", _show_current)
+	cont.disabled = true
+	playout.finished.connect(func() -> void: cont.disabled = false)
+	box.add_child(cont)
+	_set_panel(box)
+	playout.play(events, _instant_playout())
+	if playout.is_done() and _instant_playout():
+		_show_current()
+
+
+func _instant_playout() -> bool:
+	return DisplayServer.get_name() == "headless" or not Fx.effects_enabled()
 
 
 func _show_combat() -> void:
@@ -456,6 +478,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_settings") and combat_scene == null:
 		open_settings()
 		get_viewport().set_input_as_handled()
+		return
+	if map_view != null and is_instance_valid(map_view) and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.MAP:
+		var available := RunManager.netrun.available_nodes()
+		for i in mini(9, available.size()):
+			if event.is_action_pressed("card_%d" % (i + 1)):
+				enter_node(available[i])
+				get_viewport().set_input_as_handled()
+				return
 
 
 func _build_ui() -> void:

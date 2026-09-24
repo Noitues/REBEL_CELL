@@ -463,7 +463,10 @@ func current_event() -> TerminalEventData:
 
 
 func _open_event() -> void:
-	var pool: Array = _pools["events"]
+	var pool: Array = []
+	for id in _pools["events"]:
+		if (lookup.get_content(id) as TerminalEventData).min_tier <= run.tier:
+			pool.append(id)
 	if pool.is_empty():
 		last_events.append({"type": "event_none", "text": "The Terminal is silent."})
 		run.phase = RunState.Phase.MAP

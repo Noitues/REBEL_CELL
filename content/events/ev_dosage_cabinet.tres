@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_heal25"]
+script = ExtResource("3")
+type = 14
+target = 0
+amount = 25
+[sub_resource type="Resource" id="f_heat2"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 2
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Take a dose (+25 HP, +2 Heat)"
+result_text = "The auto-dose stitches you together and files a claim in your name."
+effects = Array[ExtResource("3")]([SubResource("f_heal25"), SubResource("f_heat2")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Take a dose and burn the log (+25 HP, 40 Cycles)"
+result_text = "Healed and unrecorded. It cost you the Cycles the claim would have."
+cycle_cost = 40
+effects = Array[ExtResource("3")]([SubResource("f_heal25")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("2")
+label = "Leave it"
+result_text = "Scars are free."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_dosage_cabinet"
+title = "Dosage Cabinet"
+speaker = 0
+text = "A locked dispensary cabinet with a Solace auto-dose port. It will treat you. It will also log you as a patient."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"solace"

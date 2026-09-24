@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_none"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 0
+[sub_resource type="Resource" id="f_cyc15"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 15
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Ask about the timestamp"
+result_text = "DISPATCH: Clock drift. Ignore it. // The next message arrives with a timestamp that is exactly correct."
+effects = Array[ExtResource("3")]([SubResource("f_none")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Take the left route (+15 Cycles)"
+result_text = "The left route is quiet and profitable, as promised."
+effects = Array[ExtResource("3")]([SubResource("f_cyc15")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_dispatch_early_reply"
+title = "DISPATCH: Early Reply"
+speaker = 4
+text = "DISPATCH: Good work at the Rack. Take the left route. // You have not told DISPATCH about the Rack yet. The message timestamp is eleven seconds before you jacked in."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"
+dispatch_clue = true
+foreshadows = &"dispatch"

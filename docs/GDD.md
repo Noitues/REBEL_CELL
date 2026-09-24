@@ -637,7 +637,7 @@ Daemons: Clean Signal, Cold Exit, Scrubber, Fault Tolerance, Kernel Sync, Zero D
 | Auditor | 8 | 3 | 2 | Highest-value node |
 | Enforcer | 25 | 9 | 1 | Weakest node |
 
-### A.6 Slice City Grid (10 Sites)
-Home → three T1 Sites → their three T2 Sites (Intel, Breach, Virus Exploits) → one T3 →
-Renewal Engine (T4 boss). Plus one Heat objective Site (Scrub Records, −5) off a T1. For
-the slice, the breach requires 3 Exploits as in the full game.
+### A.6 Slice City Grid (10 Sites) — superseded 2026-09-24
+The M3 slice used 10 Sites. Solace now ships its full 32-Site Grid (see DECISIONS.md,
+batch 2b): ten T1, eight T2 (three Exploits), eight T3, four Heat objectives, the boss.
+The breach still requires 3 Exploits.

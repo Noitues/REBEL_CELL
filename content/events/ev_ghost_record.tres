@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="f_sch8"]
+script = ExtResource("3")
+type = 23
+target = 6
+amount = 8
+[sub_resource type="Resource" id="f_heat3"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 3
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Bank the account (+8 Schematics, +3 Heat)"
+result_text = "You drain the ghost's balance. Somewhere, a very old subscription lapses."
+effects = Array[ExtResource("3")]([SubResource("f_sch8"), SubResource("f_heat3")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Do not touch it"
+result_text = "You leave the ghost paying. It seems to prefer that."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_ghost_record"
+title = "Patient 0000-0000"
+speaker = 3
+text = "A patient record with no name, no address and a perfect payment history stretching back before the Continuum launched. It renews itself. Observe: nothing in this building is as alive as this file."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"solace"
+min_tier = 2
+weight = 0.8

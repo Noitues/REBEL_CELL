@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/classes/breaker.tres" id="cls_breaker"]
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("2")
+label = "Cut them loose (12 HP: the door bites)"
+result_text = "They walk out shaking and swearing. A fresh Breaker for the Cell."
+hp_cost = 12
+reward = ExtResource("cls_breaker")
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("2")
+label = "Pay the bill instead (60 Cycles)"
+result_text = "Solace releases the patient the moment the account clears. They join the Cell."
+cycle_cost = 60
+reward = ExtResource("cls_breaker")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("2")
+label = "Ghost past"
+result_text = "You do not have the RAM for a rescue today."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_rescue_operative"
+title = "Locked Ward"
+speaker = 0
+text = "Behind the Terminal a maintenance ward is running on battery. Someone is in there: a runner Solace picked up two weeks ago and forgot to bill. They can still deck."
+choices = Array[ExtResource("2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"solace"
+weight = 0.6

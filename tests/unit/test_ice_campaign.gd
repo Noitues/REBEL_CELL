@@ -57,17 +57,20 @@ func test_ice_17_pulls_the_purge_down_to_90() -> void:
 
 func test_ice_2_switches_off_a_heat_objective_site() -> void:
 	var c := _campaign(2)
-	assert_eq(c.disabled_objectives, [&"scrub_records"])
-	var scrub := CampaignRules.site_data(_corp, &"scrub_records")
-	assert_eq(CampaignRules.site_objective(c, scrub), RC.SiteObjective.NONE)
+	assert_eq(c.disabled_objectives, [&"wipe_biometrics"], "the last Heat objective by id")
+	var wipe := CampaignRules.site_data(_corp, &"wipe_biometrics")
+	assert_eq(CampaignRules.site_objective(c, wipe), RC.SiteObjective.NONE)
 	c.heat = 30
 	c.thresholds_fired = [10, 20, 25, 30]
+	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_j"))
+	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"wipe_biometrics"))
+	assert_eq(c.heat, 30, "no Heat reduction: the objective is off")
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"scrub_records"))
-	assert_eq(c.heat, 30, "no Heat reduction: the objective is off")
+	assert_eq(c.heat, 25, "the other objectives still work")
 	assert_eq(_campaign(0).disabled_objectives.size(), 0)
 	var again := CampaignState.from_dict(c.to_dict())
-	assert_eq(again.disabled_objectives, [&"scrub_records"], "survives save/load")
+	assert_eq(again.disabled_objectives, [&"wipe_biometrics"], "survives save/load")
 
 
 func test_ice_8_adds_5_heat_to_deaths_and_ice_16_adds_5_to_exploits() -> void:

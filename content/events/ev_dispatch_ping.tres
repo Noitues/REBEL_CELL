@@ -44,3 +44,4 @@ speaker = 4
 text = "DISPATCH cuts in: this Terminal touches a Solace payroll account. Loud or quiet?"
 choices = Array[ExtResource("2")]([SubResource("c_loud"), SubResource("c_quiet")])
 dispatch_clue = true
+foreshadows = &"dispatch"

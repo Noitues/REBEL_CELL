@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CorporationData" load_steps=69 format=3]
+[gd_resource type="Resource" script_class="CorporationData" load_steps=105 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="2"]
@@ -33,21 +33,35 @@
 [ext_resource type="Resource" path="res://content/events/ev_firmware_vendor.tres" id="ev_3"]
 [ext_resource type="Resource" path="res://content/events/ev_dispatch_ping.tres" id="ev_4"]
 [ext_resource type="Resource" path="res://content/events/ev_stray_daemon.tres" id="ev_5"]
+[ext_resource type="Resource" path="res://content/events/ev_continuum_memo.tres" id="ev_continuum_memo"]
+[ext_resource type="Resource" path="res://content/events/ev_leash_on_the_floor.tres" id="ev_leash_on_the_floor"]
+[ext_resource type="Resource" path="res://content/events/ev_rescue_operative.tres" id="ev_rescue_operative"]
+[ext_resource type="Resource" path="res://content/events/ev_dispatch_early_reply.tres" id="ev_dispatch_early_reply"]
+[ext_resource type="Resource" path="res://content/events/ev_dispatch_buyer.tres" id="ev_dispatch_buyer"]
+[ext_resource type="Resource" path="res://content/events/ev_dispatch_voice.tres" id="ev_dispatch_voice"]
+[ext_resource type="Resource" path="res://content/events/ev_ghost_record.tres" id="ev_ghost_record"]
+[ext_resource type="Resource" path="res://content/events/ev_auditor_lunch.tres" id="ev_auditor_lunch"]
+[ext_resource type="Resource" path="res://content/events/ev_dosage_cabinet.tres" id="ev_dosage_cabinet"]
+[ext_resource type="Resource" path="res://content/events/ev_daemon_broker.tres" id="ev_daemon_broker"]
+[ext_resource type="Resource" path="res://content/events/ev_burner_vendor.tres" id="ev_burner_vendor"]
+[ext_resource type="Resource" path="res://content/events/ev_clause_44.tres" id="ev_clause_44"]
+[ext_resource type="Resource" path="res://content/events/ev_silent_recall.tres" id="ev_silent_recall"]
+[ext_resource type="Resource" path="res://content/events/ev_honeypot.tres" id="ev_honeypot"]
 
-; Solace Biosystems (GDD 8.3, A.6). City Grid: home -> three T1 -> their T2 Exploit
-; Sites (Intel, Breach, Virus) -> one T3 -> the Renewal Engine (T4 boss), plus the
-; Scrub Records Heat objective off t1_a. Locked cross-links between the T1 Sites open
-; with the Intel Exploit. SiteObjective: 0 NONE, 1 EXPLOIT, 2 HEAT_REDUCTION, 4 BOSS.
-; ExploitType: 1 INTEL, 2 BREACH, 3 VIRUS.
+; Solace Biosystems (GDD 8.3, 4.1): 32-Site City Grid. Home -> ten T1 Sites; eight of them
+; open a T2 (Intel, Breach and Virus Exploits among them); every T2 opens a T3; every T3
+; reaches the Renewal Engine (T4 boss). Four Heat objectives (two T1 -5, a T2 -8 off t1_j,
+; a T3 -8 off t2_e). Locked cross-links open with the Intel Exploit (or Icebreakers).
+; SiteObjective: 0 NONE, 1 EXPLOIT, 2 HEAT_REDUCTION, 4 BOSS. ExploitType: 1 INTEL, 2 BREACH, 3 VIRUS.
 
 [sub_resource type="Resource" id="site_home"]
 script = ExtResource("3")
 id = &"home"
 display_name = "Home Server"
 tier = 1
-links = Array[StringName]([&"t1_a", &"t1_b", &"t1_c"])
+links = Array[StringName]([&"t1_a", &"t1_b", &"t1_c", &"t1_d", &"t1_e", &"t1_f", &"t1_g", &"t1_h", &"t1_i", &"t1_j"])
 claimable = false
-map_position = Vector2(0, 200)
+map_position = Vector2(0, 330)
 
 [sub_resource type="Resource" id="site_t1_a"]
 script = ExtResource("3")
@@ -56,7 +70,7 @@ display_name = "Continuum Billing Farm"
 tier = 1
 links = Array[StringName]([&"t2_intel", &"scrub_records"])
 locked_links = Array[StringName]([&"t1_b"])
-map_position = Vector2(200, 80)
+map_position = Vector2(200, 30)
 
 [sub_resource type="Resource" id="site_t1_b"]
 script = ExtResource("3")
@@ -65,7 +79,7 @@ display_name = "Implant Provisioning Hub"
 tier = 1
 links = Array[StringName]([&"t2_breach"])
 locked_links = Array[StringName]([&"t1_c"])
-map_position = Vector2(200, 200)
+map_position = Vector2(200, 96)
 
 [sub_resource type="Resource" id="site_t1_c"]
 script = ExtResource("3")
@@ -73,16 +87,66 @@ id = &"t1_c"
 display_name = "Patient Records Vault"
 tier = 1
 links = Array[StringName]([&"t2_virus"])
-map_position = Vector2(200, 320)
+map_position = Vector2(200, 162)
 
-[sub_resource type="Resource" id="site_scrub"]
+[sub_resource type="Resource" id="site_t1_d"]
 script = ExtResource("3")
-id = &"scrub_records"
-display_name = "Scrub Records"
+id = &"t1_d"
+display_name = "Renewal Call Centre"
 tier = 1
-objective = 2
-heat_change = -5
-map_position = Vector2(320, 0)
+links = Array[StringName]([&"t2_d"])
+locked_links = Array[StringName]([&"t1_e"])
+map_position = Vector2(200, 228)
+
+[sub_resource type="Resource" id="site_t1_e"]
+script = ExtResource("3")
+id = &"t1_e"
+display_name = "Adherence Monitoring Node"
+tier = 1
+links = Array[StringName]([&"t2_e"])
+map_position = Vector2(200, 294)
+
+[sub_resource type="Resource" id="site_t1_f"]
+script = ExtResource("3")
+id = &"t1_f"
+display_name = "Wearable Telemetry Farm"
+tier = 1
+links = Array[StringName]([&"t2_f"])
+locked_links = Array[StringName]([&"t1_g"])
+map_position = Vector2(200, 360)
+
+[sub_resource type="Resource" id="site_t1_g"]
+script = ExtResource("3")
+id = &"t1_g"
+display_name = "Subscription Recovery Desk"
+tier = 1
+links = Array[StringName]([&"t2_g"])
+map_position = Vector2(200, 426)
+
+[sub_resource type="Resource" id="site_t1_h"]
+script = ExtResource("3")
+id = &"t1_h"
+display_name = "Dosage Scheduling Grid"
+tier = 1
+links = Array[StringName]([&"t2_h"])
+locked_links = Array[StringName]([&"t1_i"])
+map_position = Vector2(200, 492)
+
+[sub_resource type="Resource" id="site_t1_i"]
+script = ExtResource("3")
+id = &"t1_i"
+display_name = "Insurance Reconciliation Hub"
+tier = 1
+links = Array[StringName]([&"purge_camera_logs"])
+map_position = Vector2(200, 558)
+
+[sub_resource type="Resource" id="site_t1_j"]
+script = ExtResource("3")
+id = &"t1_j"
+display_name = "Firmware Signing Office"
+tier = 1
+links = Array[StringName]([&"wipe_biometrics"])
+map_position = Vector2(200, 624)
 
 [sub_resource type="Resource" id="site_t2_intel"]
 script = ExtResource("3")
@@ -90,50 +154,188 @@ id = &"t2_intel"
 display_name = "Pricing Memo Archive"
 tier = 2
 links = Array[StringName]([&"t3_core"])
+locked_links = Array[StringName]([&"t2_breach"])
 objective = 1
 exploit_type = 1
-map_position = Vector2(420, 80)
+map_position = Vector2(430, 60)
 
 [sub_resource type="Resource" id="site_t2_breach"]
 script = ExtResource("3")
 id = &"t2_breach"
 display_name = "Kill-Switch Authority"
 tier = 2
-links = Array[StringName]([&"t3_core"])
+links = Array[StringName]([&"t3_b"])
 objective = 1
 exploit_type = 2
-map_position = Vector2(420, 200)
+map_position = Vector2(430, 140)
 
 [sub_resource type="Resource" id="site_t2_virus"]
 script = ExtResource("3")
 id = &"t2_virus"
 display_name = "Patch Distribution Node"
 tier = 2
-links = Array[StringName]([&"t3_core"])
+links = Array[StringName]([&"t3_c"])
+locked_links = Array[StringName]([&"t2_d"])
 objective = 1
 exploit_type = 3
-map_position = Vector2(420, 320)
+map_position = Vector2(430, 220)
 
-[sub_resource type="Resource" id="site_t3"]
+[sub_resource type="Resource" id="site_t2_d"]
+script = ExtResource("3")
+id = &"t2_d"
+display_name = "Clinical Trial Ledger"
+tier = 2
+links = Array[StringName]([&"t3_d"])
+map_position = Vector2(430, 300)
+
+[sub_resource type="Resource" id="site_t2_e"]
+script = ExtResource("3")
+id = &"t2_e"
+display_name = "Compliance Audit Bureau"
+tier = 2
+links = Array[StringName]([&"t3_e", &"burn_the_ledger"])
+map_position = Vector2(430, 380)
+
+[sub_resource type="Resource" id="site_t2_f"]
+script = ExtResource("3")
+id = &"t2_f"
+display_name = "Continuum Update Mirror"
+tier = 2
+links = Array[StringName]([&"t3_f"])
+locked_links = Array[StringName]([&"t2_g"])
+map_position = Vector2(430, 460)
+
+[sub_resource type="Resource" id="site_t2_g"]
+script = ExtResource("3")
+id = &"t2_g"
+display_name = "Executive Wellness Suite"
+tier = 2
+links = Array[StringName]([&"t3_g"])
+map_position = Vector2(430, 540)
+
+[sub_resource type="Resource" id="site_t2_h"]
+script = ExtResource("3")
+id = &"t2_h"
+display_name = "Recall Logistics Hub"
+tier = 2
+links = Array[StringName]([&"t3_h"])
+map_position = Vector2(430, 620)
+
+[sub_resource type="Resource" id="site_t3_core"]
 script = ExtResource("3")
 id = &"t3_core"
 display_name = "Continuum Core Cluster"
 tier = 3
 links = Array[StringName]([&"renewal_engine_site"])
-map_position = Vector2(640, 200)
+locked_links = Array[StringName]([&"t3_b"])
+map_position = Vector2(660, 60)
 
-[sub_resource type="Resource" id="site_boss"]
+[sub_resource type="Resource" id="site_t3_b"]
+script = ExtResource("3")
+id = &"t3_b"
+display_name = "Renewal Forecasting Engine"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+map_position = Vector2(660, 140)
+
+[sub_resource type="Resource" id="site_t3_c"]
+script = ExtResource("3")
+id = &"t3_c"
+display_name = "Kill-Switch Escrow"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+map_position = Vector2(660, 220)
+
+[sub_resource type="Resource" id="site_t3_d"]
+script = ExtResource("3")
+id = &"t3_d"
+display_name = "Patient Twin Simulator"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+locked_links = Array[StringName]([&"t3_e"])
+map_position = Vector2(660, 300)
+
+[sub_resource type="Resource" id="site_t3_e"]
+script = ExtResource("3")
+id = &"t3_e"
+display_name = "Board Comms Backbone"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+map_position = Vector2(660, 380)
+
+[sub_resource type="Resource" id="site_t3_f"]
+script = ExtResource("3")
+id = &"t3_f"
+display_name = "Continuum Licensing Authority"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+map_position = Vector2(660, 460)
+
+[sub_resource type="Resource" id="site_t3_g"]
+script = ExtResource("3")
+id = &"t3_g"
+display_name = "Implant Cohort Archive"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+locked_links = Array[StringName]([&"t3_h"])
+map_position = Vector2(660, 540)
+
+[sub_resource type="Resource" id="site_t3_h"]
+script = ExtResource("3")
+id = &"t3_h"
+display_name = "Solace Root Certificate Store"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+map_position = Vector2(660, 620)
+
+[sub_resource type="Resource" id="site_scrub_records"]
+script = ExtResource("3")
+id = &"scrub_records"
+display_name = "Scrub Records"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 20)
+
+[sub_resource type="Resource" id="site_purge_camera_logs"]
+script = ExtResource("3")
+id = &"purge_camera_logs"
+display_name = "Purge Camera Logs"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 540)
+
+[sub_resource type="Resource" id="site_wipe_biometrics"]
+script = ExtResource("3")
+id = &"wipe_biometrics"
+display_name = "Wipe Biometrics"
+tier = 2
+objective = 2
+heat_change = -8
+map_position = Vector2(340, 650)
+
+[sub_resource type="Resource" id="site_burn_the_ledger"]
+script = ExtResource("3")
+id = &"burn_the_ledger"
+display_name = "Burn the Ledger"
+tier = 3
+objective = 2
+heat_change = -8
+map_position = Vector2(560, 430)
+
+[sub_resource type="Resource" id="site_renewal_engine_site"]
 script = ExtResource("3")
 id = &"renewal_engine_site"
 display_name = "Renewal Engine"
 tier = 4
 objective = 4
 claimable = false
-map_position = Vector2(860, 200)
+map_position = Vector2(900, 330)
 
 [sub_resource type="Resource" id="grid"]
 script = ExtResource("2")
-sites = Array[ExtResource("3")]([SubResource("site_home"), SubResource("site_t1_a"), SubResource("site_t1_b"), SubResource("site_t1_c"), SubResource("site_scrub"), SubResource("site_t2_intel"), SubResource("site_t2_breach"), SubResource("site_t2_virus"), SubResource("site_t3"), SubResource("site_boss")])
+sites = Array[ExtResource("3")]([SubResource("site_home"), SubResource("site_t1_a"), SubResource("site_t1_b"), SubResource("site_t1_c"), SubResource("site_t1_d"), SubResource("site_t1_e"), SubResource("site_t1_f"), SubResource("site_t1_g"), SubResource("site_t1_h"), SubResource("site_t1_i"), SubResource("site_t1_j"), SubResource("site_t2_intel"), SubResource("site_t2_breach"), SubResource("site_t2_virus"), SubResource("site_t2_d"), SubResource("site_t2_e"), SubResource("site_t2_f"), SubResource("site_t2_g"), SubResource("site_t2_h"), SubResource("site_t3_core"), SubResource("site_t3_b"), SubResource("site_t3_c"), SubResource("site_t3_d"), SubResource("site_t3_e"), SubResource("site_t3_f"), SubResource("site_t3_g"), SubResource("site_t3_h"), SubResource("site_scrub_records"), SubResource("site_purge_camera_logs"), SubResource("site_wipe_biometrics"), SubResource("site_burn_the_ledger"), SubResource("site_renewal_engine_site")])
 home_site_id = &"home"
 boss_site_id = &"renewal_engine_site"
 
@@ -357,4 +559,4 @@ final_boss = ExtResource("e_boss")
 exploits = Array[ExtResource("4")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
 story_paths = Array[ExtResource("5")]([SubResource("sp_recall"), SubResource("sp_trial"), SubResource("sp_tos"), SubResource("sp_cure"), SubResource("sp_ghost")])
 raids = Array[ExtResource("10")]([ExtResource("r_25"), ExtResource("r_50"), ExtResource("r_75"), ExtResource("r_purge"), ExtResource("r_claim"), ExtResource("r_retaliation"), ExtResource("r_story"), ExtResource("r_node_built")])
-events = Array[ExtResource("11")]([ExtResource("ev_1"), ExtResource("ev_2"), ExtResource("ev_3"), ExtResource("ev_4"), ExtResource("ev_5")])
+events = Array[ExtResource("11")]([ExtResource("ev_1"), ExtResource("ev_2"), ExtResource("ev_3"), ExtResource("ev_4"), ExtResource("ev_5"), ExtResource("ev_continuum_memo"), ExtResource("ev_leash_on_the_floor"), ExtResource("ev_rescue_operative"), ExtResource("ev_dispatch_early_reply"), ExtResource("ev_dispatch_buyer"), ExtResource("ev_dispatch_voice"), ExtResource("ev_ghost_record"), ExtResource("ev_auditor_lunch"), ExtResource("ev_dosage_cabinet"), ExtResource("ev_daemon_broker"), ExtResource("ev_burner_vendor"), ExtResource("ev_clause_44"), ExtResource("ev_silent_recall"), ExtResource("ev_honeypot")])

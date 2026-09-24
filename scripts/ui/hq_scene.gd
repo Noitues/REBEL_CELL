@@ -1,12 +1,12 @@
 extends Control
-## Functional M3 HQ scene (placeholder look): start screen, HQ (roster, recruit, station,
-## spend, Armory, story, pending raids), City Grid (Site status and actions), raid setup
-## with exact projection and playout, campaign end. Every action goes through RunManager
-## and CampaignRules; the scene only displays state.
+## HQ scene: start screen (seed, ICE, home server, profile), HQ (roster, recruit, station,
+## boosts, unlocks, Rank 3 segment swaps, Armory, story, pending raids), City Grid (Site
+## status and actions, node install with unlock gating, upgrades), raid setup with exact
+## projection, the raid playout with speed controls, the summary, campaign end. Every
+## action goes through RunManager and CampaignRules; the scene only displays state.
 
 const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.SiteStatus.CLEARED: "cleared",
 	GridState.SiteStatus.CLAIMED: "claimed", GridState.SiteStatus.SEIZED: "SEIZED"}
-const NODE_CHOICES: Array[StringName] = [&"relay", &"firewall_relay", &"safehouse"]
 
 var _status: Label
 var _panel_host: PanelContainer
@@ -16,6 +16,7 @@ var panel_name: String = ""
 var background: CyberdeckBackground
 var wireframe: WireframeBackground
 var grid_view: GridMapView = null
+var playout: RaidPlayoutPanel = null
 var _settings_panel: SettingsPanel = null
 
 
@@ -49,11 +50,12 @@ func _ready() -> void:
 		show_hq()
 
 
-# --- Public API (buttons and the integration test) ---------------------------------------
+# --- Public API (buttons and the integration tests) ---------------------------------------
 
-func new_campaign(seed: int) -> void:
-	RunManager.new_campaign(seed)
-	_log.append_text("[b]New campaign[/b] (seed %d) against %s. Story path: %s.\n" % [seed, RunManager.corporation.display_name, RunManager.campaign.story_path_id])
+func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME) -> void:
+	RunManager.new_campaign(seed, RunManager.DEFAULT_CORPORATION, ice, home_variant_id)
+	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
+		RunManager.campaign.home_variant_id, RunManager.corporation.display_name, RunManager.campaign.story_path_id])
 	show_hq()
 
 
@@ -82,13 +84,19 @@ func launch(site_id: StringName, operative_id: StringName) -> bool:
 
 
 func claim(site_id: StringName, node_type_id: StringName) -> void:
-	_report(CampaignRules.claim(RunManager.campaign, RunManager.corporation, RunManager.config(), RunManager.lookup(), site_id, node_type_id))
+	_report(CampaignRules.claim(RunManager.campaign, RunManager.corporation, RunManager.config(), RunManager.lookup(), site_id, node_type_id, RunManager.profile))
 	RunManager.autosave()
 	show_grid()
 
 
 func repair(site_id: StringName) -> void:
 	_report(CampaignRules.repair(RunManager.campaign, RunManager.config(), RunManager.lookup(), site_id))
+	RunManager.autosave()
+	show_grid()
+
+
+func upgrade(site_id: StringName) -> void:
+	_report(CampaignRules.upgrade_node(RunManager.campaign, RunManager.config(), RunManager.lookup(), site_id))
 	RunManager.autosave()
 	show_grid()
 
@@ -117,6 +125,25 @@ func buy_heat_reduction() -> void:
 	show_hq()
 
 
+func buy_boost(boost_id: StringName) -> void:
+	_report(CampaignRules.buy_boost(RunManager.campaign, RunManager.config(), boost_id))
+	RunManager.autosave()
+	show_hq()
+
+
+func purchase_unlock(unlock_id: StringName) -> void:
+	_report(CampaignRules.purchase_unlock(RunManager.campaign, RunManager.profile, RunManager.lookup(), unlock_id))
+	RunManager.save_profile()
+	RunManager.autosave()
+	show_hq()
+
+
+func swap_segment(operative_id: StringName, index: int, segment_id: StringName) -> void:
+	_report(CampaignRules.swap_ring_segment(RunManager.campaign, RunManager.lookup(), operative_id, index, segment_id))
+	RunManager.autosave()
+	show_hq()
+
+
 func deploy_asset(armory_index: int, site_id: StringName) -> void:
 	_report(CampaignRules.deploy_asset(RunManager.campaign, RunManager.config(), RunManager.lookup(), armory_index, site_id))
 	RunManager.autosave()
@@ -132,10 +159,7 @@ func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
 func fight_raid() -> void:
 	var events := RunManager.fight_raid()
 	_report(events)
-	if RunManager.campaign.is_over():
-		show_end()
-	else:
-		show_raid_summary()
+	show_raid_playout(events)
 
 
 # --- Panels ---------------------------------------------------------------------------------
@@ -147,10 +171,10 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	_panel_host.add_child(p)
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
-	var net := name in ["grid", "raid", "raid_summary"]
+	var net := name in ["grid", "raid", "raid_playout", "raid_summary"]
 	background.visible = not net
 	wireframe.visible = net
-	AudioDirector.play_music("raid" if name == "raid" else ("grid" if name == "grid" else "hq"))
+	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"))
 	if RunManager.campaign != null:
 		var band := 0
 		for t in [25, 50, 75]:
@@ -180,6 +204,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func show_start() -> void:
+	var cfg := RunManager.config()
 	var box := VBoxContainer.new()
 	box.add_child(GraffitiTag.new("REBEL_CELL"))
 	box.add_child(_label("[HQ] the deck is warm. Jack a campaign in."))
@@ -191,19 +216,49 @@ func show_start() -> void:
 	seed_spin.max_value = 999999
 	seed_spin.value = 1
 	row.add_child(seed_spin)
-	row.add_child(_button("New campaign vs Solace", func() -> void: new_campaign(int(seed_spin.value))))
+	var cap := RunManager.ice_cap()
+	row.add_child(_label("ICE (0-%d):" % cap))
+	var ice_spin := SpinBox.new()
+	ice_spin.min_value = 0
+	ice_spin.max_value = cap
+	ice_spin.value = 0
+	row.add_child(ice_spin)
+	var ice_text := _label(_ice_description(0))
+	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
+	row.add_child(_label("Home server:"))
+	var home_pick := OptionButton.new()
+	var variants := RunManager.available_home_variants()
+	for v in variants:
+		home_pick.add_item(v.display_name)
+	row.add_child(home_pick)
+	row.add_child(_button("New campaign vs Solace", func() -> void:
+		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME)))
+	box.add_child(ice_text)
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %d." % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, p.best_ice]))
+	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %d (Solace %d)." % [
+		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, p.best_ice, p.best_ice_for(RunManager.DEFAULT_CORPORATION)]))
+	box.add_child(_label("Unlocks: %s" % (", ".join(p.unlocks) if not p.unlocks.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
 	box.add_child(_button("Accessibility settings [Esc]", open_settings))
 	_set_panel(box, "start")
+
+
+## The cumulative ICE ladder up to `level`, one line.
+func _ice_description(level: int) -> String:
+	if level <= 0:
+		return "ICE 0: the baseline rules."
+	var parts := PackedStringArray()
+	for l in RunManager.config().ice_ladder:
+		if l != null and l.level <= level and l.description != "":
+			parts.append("%d %s" % [l.level, l.description])
+	return "ICE %d: %s" % [level, " | ".join(parts)]
 
 
 func show_hq() -> void:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
 	var box := VBoxContainer.new()
 	var header := HBoxContainer.new()
 	header.add_child(GraffitiTag.new("REBEL_CELL"))
@@ -212,7 +267,7 @@ func show_hq() -> void:
 	header.add_child(poster)
 	var radio := ZineNote.new("PIRATE RADIO", Vector2(220, 70))
 	radio.append("lo-fi loop: HQ [placeholder]")
-	radio.append("vs %s" % RunManager.corporation.display_name)
+	radio.append("vs %s | ICE %d" % [RunManager.corporation.display_name, c.ice_level])
 	header.add_child(radio)
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
 	jack.pressed.connect(show_grid)
@@ -225,14 +280,45 @@ func show_hq() -> void:
 	actions.add_child(_button("Recruit rookie (%d)" % cfg.rookie_cost, recruit))
 	actions.add_child(_button("Scrub Heat -%d (%d)" % [cfg.heat_purchase_amount, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
 	if not c.pending_raids.is_empty():
-		var raid := CampaignRules.raid_data(c.pending_raids[0], RunManager.lookup())
+		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
 		actions.add_child(_button("RAID PENDING: %s (%d)" % [raid.display_name, c.pending_raids.size()], show_raid))
 	actions.add_child(_button("Save", func() -> void: RunManager.autosave(); _log.append_text("Saved.\n")))
 	var mods := HeatRules.active_modifiers(c, cfg)
 	var mod_text := ""
 	for m in mods:
 		mod_text += " %s %+.0f" % [RC.RuleModifierType.keys()[m.type], m.value]
-	box.add_child(_label("Active Heat modifiers:%s" % (mod_text if mod_text != "" else " none")))
+	box.add_child(_label("Active Heat modifiers:%s | ICE %d" % [mod_text if mod_text != "" else " none", c.ice_level]))
+	# Boosts for the next run (GDD 11.4).
+	var boosts := HBoxContainer.new()
+	boosts.add_child(_label("Next-run boosts:"))
+	for b in cfg.netrun_boosts:
+		if b == null:
+			continue
+		var bid := b.id
+		var btn := _button("%s (%d)" % [b.display_name, b.cost], func() -> void: buy_boost(bid))
+		btn.tooltip_text = b.description
+		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
+		boosts.add_child(btn)
+	if not c.pending_boosts.is_empty():
+		boosts.add_child(_label("queued: %s" % ", ".join(c.pending_boosts)))
+	box.add_child(boosts)
+	# Profile unlocks (GDD 3.4).
+	var unlocks := HBoxContainer.new()
+	unlocks.add_child(_label("Profile unlocks:"))
+	var any_unlock := false
+	for id in lookup.ids_of_class(&"ProfileUnlockData"):
+		var u := lookup.get_content(id) as ProfileUnlockData
+		if u == null or RunManager.profile.has_unlock(u.id):
+			continue
+		any_unlock = true
+		var uid := u.id
+		var btn := _button("%s (%d)" % [u.display_name, u.schematic_cost], func() -> void: purchase_unlock(uid))
+		btn.tooltip_text = u.description
+		btn.disabled = c.schematics < u.schematic_cost
+		unlocks.add_child(btn)
+	if not any_unlock:
+		unlocks.add_child(_label("everything unlocked"))
+	box.add_child(unlocks)
 	box.add_child(_label("Roster:"))
 	for op in c.roster:
 		var row := HBoxContainer.new()
@@ -248,11 +334,30 @@ func show_hq() -> void:
 				row.add_child(_button("Recall", func() -> void: recall(id)))
 			else:
 				for site_id in c.grid.claimed_ids():
-					var node := RunManager.lookup().get_content(c.grid.node_type_of(site_id)) as NetworkNodeData
+					var node := lookup.get_content(c.grid.node_type_of(site_id)) as NetworkNodeData
 					if node != null and node.station_slots > 0 and c.grid.stationed_on(site_id) == &"" and c.grid.is_active_node(site_id):
 						var oid := op.id
 						var sid := site_id
 						row.add_child(_button("Station on %s" % site_id, func() -> void: station(oid, sid)))
+			# Rank 3 Inner Ring segment swaps (GDD 6.4).
+			var cls := lookup.get_content(op.class_id) as ClassData
+			var options := CampaignRules.ring_segment_options(op, cls)
+			if not options.is_empty():
+				for k in RC.RING_SEGMENTS:
+					var pick := OptionButton.new()
+					pick.add_item("seg %d: default" % k)
+					pick.set_item_metadata(0, &"")
+					var current: StringName = op.ring_segment_ids[k] if k < op.ring_segment_ids.size() else &""
+					for i in options.size():
+						var seg := lookup.get_content(options[i]) as RingSegmentData
+						pick.add_item("seg %d: %s" % [k, seg.display_name if seg != null else String(options[i])])
+						pick.set_item_metadata(i + 1, options[i])
+						if options[i] == current:
+							pick.select(i + 1)
+					var oid2 := op.id
+					var index := k
+					pick.item_selected.connect(func(i: int) -> void: swap_segment(oid2, index, pick.get_item_metadata(i)))
+					row.add_child(pick)
 		box.add_child(row)
 	box.add_child(_label("Armory (%d/%d): %s" % [c.armory.size(), cfg.armory_capacity, ", ".join(c.armory) if not c.armory.is_empty() else "empty"]))
 	box.add_child(_label("Exploits: %s" % _exploit_names(c)))
@@ -268,9 +373,22 @@ func show_hq() -> void:
 	_set_panel(box, "hq")
 
 
+## Node types the player can install, in id order (home cores excluded); locked ones
+## are listed but disabled.
+func _node_choices() -> Array[NetworkNodeData]:
+	var out: Array[NetworkNodeData] = []
+	for id in RunManager.lookup().ids_of_class(&"NetworkNodeData"):
+		var node := RunManager.lookup().get_content(id) as NetworkNodeData
+		if node != null and node.node_type != RC.NetworkNodeType.HOME_SERVER and node.install_cost > 0:
+			out.append(node)
+	return out
+
+
 func show_grid() -> void:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
 	var box := VBoxContainer.new()
 	var top := HBoxContainer.new()
 	box.add_child(top)
@@ -291,7 +409,10 @@ func show_grid() -> void:
 	var plan := ZineNote.new("THE PLAN", Vector2(300, 380))
 	plan.append("Cleared Sites can be claimed.")
 	plan.append("Relays extend your reach.")
-	plan.append("%d/%d Exploits for the breach." % [c.exploits.size(), RunManager.config().min_exploits_for_breach])
+	plan.append("%d/%d Exploits for the breach." % [c.exploits.size(), cfg.min_exploits_for_breach])
+	plan.append("ICE %d | Heat %d" % [c.ice_level, c.heat])
+	if not c.disabled_objectives.is_empty():
+		plan.append("ICE switched off: %s" % ", ".join(c.disabled_objectives))
 	if not c.pending_raids.is_empty():
 		plan.append("[b]Raid pending:[/b] threat paths drawn in %s." % corp.display_name)
 	var launchable := RunManager.launchable_sites()
@@ -300,6 +421,7 @@ func show_grid() -> void:
 	top.add_child(plan)
 	box.add_child(_button("Back to HQ", show_hq))
 	var living := c.living_operatives()
+	var choices := _node_choices()
 	for site in corp.city_grid.sites:
 		if site == null:
 			continue
@@ -307,14 +429,18 @@ func show_grid() -> void:
 		var row := HBoxContainer.new()
 		var text := "T%d %s [%s]" % [site.tier, site.display_name, STATUS_NAMES.get(int(s["status"]), "?")]
 		if c.grid.is_claimed(site.id):
-			text += " %s %d/%d%s assets:%s" % [c.grid.node_type_of(site.id), s["integrity"], s["max_integrity"],
-				" DISABLED" if int(s["condition"]) == GridState.Condition.DISABLED else "", ", ".join(c.grid.assets_on(site.id))]
-		if site.objective == RC.SiteObjective.EXPLOIT:
+			text += " %s %d/%d%s%s assets:%s" % [c.grid.node_type_of(site.id), s["integrity"], s["max_integrity"],
+				" DISABLED" if int(s["condition"]) == GridState.Condition.DISABLED else "",
+				(" +%d" % c.grid.upgrade_level_of(site.id)) if c.grid.upgrade_level_of(site.id) > 0 else "", ", ".join(c.grid.assets_on(site.id))]
+		var objective := CampaignRules.site_objective(c, site)
+		if objective == RC.SiteObjective.EXPLOIT:
 			text += " (Exploit: %s)" % RC.ExploitType.keys()[site.exploit_type]
-		elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
+		elif objective == RC.SiteObjective.HEAT_REDUCTION:
 			text += " (Heat %d)" % site.heat_change
-		elif site.objective == RC.SiteObjective.BOSS:
+		elif objective == RC.SiteObjective.BOSS:
 			text += " (BOSS)"
+		elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
+			text += " (objective off: ICE)"
 		text += " links: %s" % ", ".join(c.grid.neighbors(site.id, corp.city_grid))
 		row.add_child(_label(text))
 		var launchable_here := false
@@ -331,15 +457,22 @@ func show_grid() -> void:
 			row.add_child(_button("Launch %s" % kind, func() -> void: launch(sid, living[op_pick.selected].id)))
 		if c.grid.is_cleared(site.id) and site.claimable:
 			var node_pick := OptionButton.new()
-			for n in NODE_CHOICES:
-				var node := RunManager.lookup().get_content(n) as NetworkNodeData
-				node_pick.add_item("%s (%d)" % [node.display_name, node.install_cost])
+			for i in choices.size():
+				var node := choices[i]
+				var available := CampaignRules.node_available(RunManager.profile, lookup, node)
+				node_pick.add_item("%s (%d)%s" % [node.display_name, node.install_cost, "" if available else " [locked]"])
+				node_pick.set_item_disabled(i, not available)
 			row.add_child(node_pick)
 			var sid2 := site.id
-			row.add_child(_button("Claim", func() -> void: claim(sid2, NODE_CHOICES[node_pick.selected])))
+			row.add_child(_button("Claim", func() -> void: claim(sid2, choices[node_pick.selected].id)))
 		if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DISABLED:
 			var sid3 := site.id
 			row.add_child(_button("Repair", func() -> void: repair(sid3)))
+		if c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
+			var cost := CampaignRules.upgrade_cost(c, cfg, site.id)
+			if cost >= 0:
+				var sid4 := site.id
+				row.add_child(_button("Upgrade (%d)" % cost, func() -> void: upgrade(sid4)))
 		box.add_child(row)
 	_set_panel(box, "grid")
 
@@ -350,14 +483,19 @@ func show_raid() -> void:
 	if pending.is_empty():
 		show_hq()
 		return
-	var raid := CampaignRules.raid_data(pending, RunManager.lookup())
+	var lookup := RunManager.lookup()
+	var cfg := RunManager.config()
+	var raid := CampaignRules.raid_data(pending, lookup)
 	var projection := RunManager.project_raid()
 	var box := VBoxContainer.new()
 	box.add_child(_label("RAID SETUP - %s: %s" % [raid.display_name, raid.warning_text]))
 	box.add_child(_label("Entry: %s | Threat strength %+.0f%% | Projection: %s, home %d -> %d, %d/%d threats destroyed, %d steps" % [
-		", ".join(CampaignRules.raid_entries(c, RunManager.corporation, pending)), CampaignRules.raid_strength_pct(c, RunManager.config()),
+		", ".join(CampaignRules.raid_entries(c, RunManager.corporation, pending)), CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation),
 		"HOLDS" if projection.won else ("CAMPAIGN LOST" if projection.campaign_lost else "breached"),
 		projection.home_before, projection.home_after, projection.threats_destroyed, projection.threats_destroyed + projection.threats_reached_home + _still_active(projection), projection.steps_run]))
+	for e in projection.events:
+		if e.get("type", "") in ["link_frozen", "link_altered"]:
+			box.add_child(_label("  " + String(e["text"])))
 	for site_id in c.grid.claimed_ids():
 		var row := HBoxContainer.new()
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
@@ -384,6 +522,35 @@ func show_raid() -> void:
 	_set_panel(box, "raid")
 
 
+## Raid playout (GDD 7.2, 9.3): threat markers animate over the Grid; 1x/2x/4x and skip.
+## Instant (straight to the summary) when headless or under reduce-effects.
+func show_raid_playout(events: Array[Dictionary]) -> void:
+	var c := RunManager.campaign
+	var box := VBoxContainer.new()
+	var view := GridMapView.new()
+	view.custom_minimum_size = Vector2(760, 330)
+	view.show_grid(c, RunManager.corporation)
+	box.add_child(view)
+	playout = RaidPlayoutPanel.new(view)
+	box.add_child(playout)
+	var cont := _button("Continue", _after_playout)
+	cont.disabled = true
+	playout.finished.connect(func() -> void: cont.disabled = false)
+	box.add_child(cont)
+	_set_panel(box, "raid_playout")
+	var instant := DisplayServer.get_name() == "headless" or not Fx.effects_enabled()
+	playout.play(events, instant)
+	if instant:
+		_after_playout()
+
+
+func _after_playout() -> void:
+	if RunManager.campaign.is_over():
+		show_end()
+	else:
+		show_raid_summary()
+
+
 func show_raid_summary() -> void:
 	var c := RunManager.campaign
 	var r := c.last_raid
@@ -406,7 +573,7 @@ func show_end() -> void:
 	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
 		box.add_child(_label("  [%s] %s" % [b.title, b.text]))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d won / %d lost, best ICE %d." % [p.campaigns_won, p.campaigns_lost, p.best_ice]))
+	box.add_child(_label("Profile: %d won / %d lost, best ICE %d; next campaigns may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, p.best_ice, RunManager.ice_cap()]))
 	box.add_child(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()))
 	_set_panel(box, "end")
 
@@ -435,9 +602,9 @@ func _refresh_status() -> void:
 	if c == null:
 		_status.text = "No campaign."
 		return
-	_status.text = "Heat %d/%d | Schematics %d | Home %d/%d | Exploits %d | Raids pending %d | %s" % [
+	_status.text = "Heat %d/%d | Schematics %d | Home %d/%d | Exploits %d | Raids pending %d | ICE %d | %s" % [
 		c.heat, RunManager.config().heat_max, c.schematics, c.grid.home_integrity, c.grid.home_max_integrity,
-		c.exploits.size(), c.pending_raids.size(), "campaign over" if c.is_over() else "active"]
+		c.exploits.size(), c.pending_raids.size(), c.ice_level, "campaign over" if c.is_over() else "active"]
 
 
 func _report(events: Array[Dictionary]) -> void:
