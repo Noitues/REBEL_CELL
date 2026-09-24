@@ -8,6 +8,7 @@ Godot 4.7 · GDScript · PC.
 - Build plan: `docs/MILESTONES.md` (vertical slice, M0–M4)
 - Visual baseline: `docs/STYLE_GUIDE.md`
 - Decisions: `docs/DECISIONS.md`
+- Gap analysis and horizontal plan: `docs/GAP_ANALYSIS.md`
 - Instructions for Claude Code: `CLAUDE.md`
 
 ## Quick start

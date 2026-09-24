@@ -37,6 +37,9 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 
 ## Horizontal backlog (breadth; after the vertical slice)
 
+The prioritised, sized plan lives in `docs/GAP_ANALYSIS.md` (2026-09-24). This table is
+the short list.
+
 | Content | Source | Notes |
 |---|---|---|
 | More shop slices (e.g. Evade 2, Shield 8, Crit 16, Heal for classes that can) | 11.2 | catalogue in `campaign_config.tres` `shop_slices`; add SliceData + list entry |
