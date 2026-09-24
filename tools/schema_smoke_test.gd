@@ -4,7 +4,7 @@ extends SceneTree
 ## Exits with code 0 when every check passes.
 
 func _init() -> void:
-	var fails := _batch1() + _batch2()
+	var fails := _batch1() + _batch2() + _batch3()
 	print("SCHEMA SMOKE TEST: ", "PASS" if fails == 0 else "FAIL (%d)" % fails)
 	quit(0 if fails == 0 else 1)
 
@@ -180,4 +180,21 @@ func _batch2() -> int:
 	print("Save=", err, " boss phases=", loaded.final_boss.phases.size(), " sat=", loaded.final_boss.spawns[0].satellite.id, " sites=", loaded.city_grid.sites.size())
 	for c in [ExploitData, TerminalEventData, EventChoiceData, RaidData, RaidWaveData, RuleModifierData, IceLevelData, ProfileUnlockData, HeatGatedEffectData]:
 		c.new()
+	return fails
+
+
+## M0: CampaignConfigData carries the whole of GDD Section 11 (shop, costs, RAM ranges).
+func _batch3() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	var ce := cfg.validate(); print("Config defaults (expect 0): ", ce)
+	if ce.size() != 0: fails += 1
+	cfg.card_price_range = Vector2i(75, 50)
+	cfg.node_upgrade_costs = PackedInt32Array()
+	ce = cfg.validate(); print("Config bad range + empty upgrades (expect 2): ", ce)
+	if ce.size() != 2: fails += 1
+	var err := ResourceSaver.save(cfg, "user://smoke_config.tres")
+	var loaded: CampaignConfigData = load("user://smoke_config.tres")
+	print("Save=", err, " reload card_price_range=", loaded.card_price_range, " respin=", loaded.respin_ram_cost)
+	if loaded.card_price_range != Vector2i(75, 50) or loaded.respin_ram_cost != 4: fails += 1
 	return fails

@@ -7,6 +7,8 @@ extends Resource
 @export var heat_thresholds: Array[HeatThresholdData] = []
 @export var death_heat_base: int = 10
 @export var lost_raid_heat: int = 5
+## Heat per Exploit extracted (11.5).
+@export var exploit_heat: int = 10
 ## Heat per Server Rack capture, indexed by tier - 1.
 @export var rack_heat_by_tier: PackedInt32Array = PackedInt32Array([2, 3, 5, 8])
 
@@ -18,10 +20,43 @@ extends Resource
 @export var node_repair_ratio: float = 0.5
 @export var enemy_scale_per_tier: float = 1.6
 @export var reward_scale_per_tier: float = 1.7
+## Cycles earned (11.1) as inclusive [min, max] ranges.
+@export var cycles_combat_range: Vector2i = Vector2i(10, 20)
+@export var cycles_elite_range: Vector2i = Vector2i(30, 40)
+@export var cycles_router_range: Vector2i = Vector2i(15, 25)
+
+@export_group("Shop")
+## Modem shop prices in Cycles (11.2), inclusive [min, max] ranges.
+@export var card_price_range: Vector2i = Vector2i(50, 75)
+@export var firmware_price_range: Vector2i = Vector2i(75, 150)
+@export var daemon_price_range: Vector2i = Vector2i(150, 250)
+@export var card_removal_price: int = 50
+## Added to card_removal_price after each removal.
+@export var card_removal_increment: int = 25
+@export var slice_overwrite_price: int = 100
+@export var miss_slice_overwrite_price: int = 150
+
+@export_group("Schematic costs")
+## Campaign purchases in Core Schematics (11.4).
+@export var rookie_cost: int = 15
+@export var node_base_cost: int = 20
+## Successive node upgrade costs.
+@export var node_upgrade_costs: PackedInt32Array = PackedInt32Array([30, 60])
+@export var netrun_boost_cost_range: Vector2i = Vector2i(10, 20)
+## Buying Heat reduction: removes heat_purchase_amount for heat_purchase_cost,
+## which rises by heat_purchase_increment after each purchase.
+@export var heat_purchase_amount: int = 5
+@export var heat_purchase_cost: int = 25
+@export var heat_purchase_increment: int = 10
+@export var class_unlock_cost: int = 80
 
 @export_group("Combat")
 @export var hand_size: int = 5
 @export var draw_per_turn: int = 5
+## RAM gained at the start of each player turn (11.1).
+@export var ram_regen_per_turn: int = 4
+## RAM cost of a Respin (11.3). Cards cost 0-3 RAM each (content); first nudge is free.
+@export var respin_ram_cost: int = 4
 @export var partial_multiplier: float = 0.5
 @export var overclock_multiplier: float = 1.5
 @export var shield_cap: int = 15
@@ -64,6 +99,12 @@ func validate() -> PackedStringArray:
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")
+	for r in [cycles_combat_range, cycles_elite_range, cycles_router_range, card_price_range,
+			firmware_price_range, daemon_price_range, netrun_boost_cost_range]:
+		if r.x > r.y:
+			errors.append("Range %s has min above max." % r)
+	if node_upgrade_costs.is_empty():
+		errors.append("node_upgrade_costs needs at least one entry.")
 	var last := 0
 	for t in heat_thresholds:
 		if t == null:

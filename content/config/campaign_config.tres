@@ -1,0 +1,409 @@
+[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=39 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/campaign_config_data.gd" id="1_cfg"]
+[ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
+[ext_resource type="Script" path="res://scripts/data/rule_modifier_data.gd" id="3_rm"]
+[ext_resource type="Script" path="res://scripts/data/ice_level_data.gd" id="4_ice"]
+
+; ---- Heat threshold modifiers (GDD 4.3) ----
+; RC.RuleModifierType: 0 HEAT_GAIN_PCT, 1 HEAT_SINK_PCT, 2 HEAT_OBJECTIVE_SITES,
+; 3 ELITE_FREQUENCY_PCT, 4 CYCLE_PRICE_PCT, 5 SHOP_STOCK, 6 RAID_STRENGTH_PCT,
+; 7 RAID_EXTRA_WAVE, 8 ENEMY_RESISTANCE, 9 DEATH_HEAT, 10 EXPLOIT_HEAT,
+; 11 BOSS_PHASE_EARLY, 12 BOSS_EXTRA_POINTER, 13 STARTING_BUG_CARD,
+; 14 NO_FIRST_TURN_FREE_NUDGE, 15 REPAIR_COST_PCT, 16 SEIZED_RAID_STRENGTH_PCT,
+; 17 PURGE_THRESHOLD
+
+[sub_resource type="Resource" id="rm_minor_shop_stock"]
+script = ExtResource("3_rm")
+type = 5
+value = -1.0
+
+[sub_resource type="Resource" id="rm_minor_extra_elite"]
+script = ExtResource("3_rm")
+type = 3
+value = 25.0
+
+[sub_resource type="Resource" id="rm_major_elites"]
+script = ExtResource("3_rm")
+type = 3
+value = 25.0
+
+[sub_resource type="Resource" id="rm_major_resistance"]
+script = ExtResource("3_rm")
+type = 8
+value = 1.0
+
+[sub_resource type="Resource" id="rm_major_raid_strength"]
+script = ExtResource("3_rm")
+type = 6
+value = 25.0
+
+; ---- Heat thresholds: MINOR every 10, MAJOR at 25/50/75, PURGE at 100 ----
+; RC.ThresholdKind: 0 MINOR, 1 MAJOR, 2 PURGE. event_raid is filled in M3.
+
+[sub_resource type="Resource" id="ht_10"]
+script = ExtResource("2_ht")
+heat = 10
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: the next Modem carries one less item."
+
+[sub_resource type="Resource" id="ht_20"]
+script = ExtResource("2_ht")
+heat = 20
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: an extra elite patrols the next netrun."
+
+[sub_resource type="Resource" id="ht_25"]
+script = ExtResource("2_ht")
+heat = 25
+kind = 1
+event_complications = Array[ExtResource("3_rm")]([])
+ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_elites")])
+event_text = "Raid. While Heat stays at 25 or above, elites are more frequent."
+
+[sub_resource type="Resource" id="ht_30"]
+script = ExtResource("2_ht")
+heat = 30
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: the next Modem carries one less item."
+
+[sub_resource type="Resource" id="ht_40"]
+script = ExtResource("2_ht")
+heat = 40
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: an extra elite patrols the next netrun."
+
+[sub_resource type="Resource" id="ht_50"]
+script = ExtResource("2_ht")
+heat = 50
+kind = 1
+event_complications = Array[ExtResource("3_rm")]([])
+ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_resistance")])
+event_text = "Raid. While Heat stays at 50 or above, all enemies gain +1 resistance."
+
+[sub_resource type="Resource" id="ht_60"]
+script = ExtResource("2_ht")
+heat = 60
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: the next Modem carries one less item."
+
+[sub_resource type="Resource" id="ht_70"]
+script = ExtResource("2_ht")
+heat = 70
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: an extra elite patrols the next netrun."
+
+[sub_resource type="Resource" id="ht_75"]
+script = ExtResource("2_ht")
+heat = 75
+kind = 1
+event_complications = Array[ExtResource("3_rm")]([])
+ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_raid_strength")])
+event_text = "Raid. While Heat stays at 75 or above, raids are 25% stronger."
+
+[sub_resource type="Resource" id="ht_80"]
+script = ExtResource("2_ht")
+heat = 80
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: the next Modem carries one less item."
+
+[sub_resource type="Resource" id="ht_90"]
+script = ExtResource("2_ht")
+heat = 90
+kind = 0
+event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "Netrun complication: an extra elite patrols the next netrun."
+
+[sub_resource type="Resource" id="ht_100"]
+script = ExtResource("2_ht")
+heat = 100
+kind = 2
+event_complications = Array[ExtResource("3_rm")]([])
+ongoing_modifiers = Array[ExtResource("3_rm")]([])
+event_text = "PURGE. The largest raid of the campaign."
+
+; ---- ICE ladder (GDD 11.9): 20 cumulative levels, one change per level ----
+
+[sub_resource type="Resource" id="rm_ice_1"]
+script = ExtResource("3_rm")
+type = 0
+value = 10.0
+
+[sub_resource type="Resource" id="rm_ice_2"]
+script = ExtResource("3_rm")
+type = 2
+value = -1.0
+
+[sub_resource type="Resource" id="rm_ice_3"]
+script = ExtResource("3_rm")
+type = 3
+value = 25.0
+
+[sub_resource type="Resource" id="rm_ice_4"]
+script = ExtResource("3_rm")
+type = 4
+value = 10.0
+
+[sub_resource type="Resource" id="rm_ice_5"]
+script = ExtResource("3_rm")
+type = 6
+value = 15.0
+
+[sub_resource type="Resource" id="rm_ice_6"]
+script = ExtResource("3_rm")
+type = 1
+value = -15.0
+
+[sub_resource type="Resource" id="rm_ice_7"]
+script = ExtResource("3_rm")
+type = 8
+value = 1.0
+
+[sub_resource type="Resource" id="rm_ice_8"]
+script = ExtResource("3_rm")
+type = 9
+value = 5.0
+
+[sub_resource type="Resource" id="rm_ice_9"]
+script = ExtResource("3_rm")
+type = 11
+value = 10.0
+
+[sub_resource type="Resource" id="rm_ice_11"]
+script = ExtResource("3_rm")
+type = 13
+value = 1.0
+
+[sub_resource type="Resource" id="rm_ice_12"]
+script = ExtResource("3_rm")
+type = 14
+value = 1.0
+
+[sub_resource type="Resource" id="rm_ice_13"]
+script = ExtResource("3_rm")
+type = 15
+value = 25.0
+
+[sub_resource type="Resource" id="rm_ice_14"]
+script = ExtResource("3_rm")
+type = 16
+value = 25.0
+
+[sub_resource type="Resource" id="rm_ice_16"]
+script = ExtResource("3_rm")
+type = 10
+value = 5.0
+
+[sub_resource type="Resource" id="rm_ice_17"]
+script = ExtResource("3_rm")
+type = 17
+value = 90.0
+
+[sub_resource type="Resource" id="rm_ice_18"]
+script = ExtResource("3_rm")
+type = 12
+value = 1.0
+
+[sub_resource type="Resource" id="rm_ice_19"]
+script = ExtResource("3_rm")
+type = 7
+value = 1.0
+
+[sub_resource type="Resource" id="ice_1"]
+script = ExtResource("4_ice")
+level = 1
+description = "Heat gain +10%."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_1")])
+
+[sub_resource type="Resource" id="ice_2"]
+script = ExtResource("4_ice")
+level = 2
+description = "One fewer Heat objective Site."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_2")])
+
+[sub_resource type="Resource" id="ice_3"]
+script = ExtResource("4_ice")
+level = 3
+description = "More elites."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_3")])
+
+[sub_resource type="Resource" id="ice_4"]
+script = ExtResource("4_ice")
+level = 4
+description = "Cycle prices +10%."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_4")])
+
+[sub_resource type="Resource" id="ice_5"]
+script = ExtResource("4_ice")
+level = 5
+description = "Raid strength +15%."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_5")])
+
+[sub_resource type="Resource" id="ice_6"]
+script = ExtResource("4_ice")
+level = 6
+description = "Heat sinks -15%."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_6")])
+
+[sub_resource type="Resource" id="ice_7"]
+script = ExtResource("4_ice")
+level = 7
+description = "Enemies +1 resistance."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_7")])
+
+[sub_resource type="Resource" id="ice_8"]
+script = ExtResource("4_ice")
+level = 8
+description = "Operative deaths +5 Heat."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_8")])
+
+[sub_resource type="Resource" id="ice_9"]
+script = ExtResource("4_ice")
+level = 9
+description = "Bosses change pointers earlier."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_9")])
+
+[sub_resource type="Resource" id="ice_10"]
+script = ExtResource("4_ice")
+level = 10
+description = "Reserved (GDD 11.9 lists four changes for ICE 6-10)."
+modifiers = Array[ExtResource("3_rm")]([])
+
+[sub_resource type="Resource" id="ice_11"]
+script = ExtResource("4_ice")
+level = 11
+description = "Starting Bug card."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_11")])
+
+[sub_resource type="Resource" id="ice_12"]
+script = ExtResource("4_ice")
+level = 12
+description = "No free nudge on turn 1."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_12")])
+
+[sub_resource type="Resource" id="ice_13"]
+script = ExtResource("4_ice")
+level = 13
+description = "Repairs cost more."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_13")])
+
+[sub_resource type="Resource" id="ice_14"]
+script = ExtResource("4_ice")
+level = 14
+description = "Seized Sites spawn stronger raids."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_14")])
+
+[sub_resource type="Resource" id="ice_15"]
+script = ExtResource("4_ice")
+level = 15
+description = "Reserved (GDD 11.9 lists four changes for ICE 11-15)."
+modifiers = Array[ExtResource("3_rm")]([])
+
+[sub_resource type="Resource" id="ice_16"]
+script = ExtResource("4_ice")
+level = 16
+description = "Exploits +5 Heat."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_16")])
+
+[sub_resource type="Resource" id="ice_17"]
+script = ExtResource("4_ice")
+level = 17
+description = "Purge at 90 Heat."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_17")])
+
+[sub_resource type="Resource" id="ice_18"]
+script = ExtResource("4_ice")
+level = 18
+description = "Final boss +1 pointer."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_18")])
+
+[sub_resource type="Resource" id="ice_19"]
+script = ExtResource("4_ice")
+level = 19
+description = "Raids gain a second wave."
+modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_19")])
+
+[sub_resource type="Resource" id="ice_20"]
+script = ExtResource("4_ice")
+level = 20
+description = "Reserved (GDD 11.9 lists four changes for ICE 16-20)."
+modifiers = Array[ExtResource("3_rm")]([])
+
+; ---- Global tuning (GDD 11) ----
+
+[resource]
+script = ExtResource("1_cfg")
+heat_max = 100
+heat_thresholds = Array[ExtResource("2_ht")]([SubResource("ht_10"), SubResource("ht_20"), SubResource("ht_25"), SubResource("ht_30"), SubResource("ht_40"), SubResource("ht_50"), SubResource("ht_60"), SubResource("ht_70"), SubResource("ht_75"), SubResource("ht_80"), SubResource("ht_90"), SubResource("ht_100")])
+death_heat_base = 10
+lost_raid_heat = 5
+exploit_heat = 10
+rack_heat_by_tier = PackedInt32Array(2, 3, 5, 8)
+cycles_per_schematic = 10
+rack_schematics_by_tier = PackedInt32Array(10, 17, 29, 50)
+raid_schematics_by_tier = PackedInt32Array(8, 12, 18, 25)
+node_repair_ratio = 0.5
+enemy_scale_per_tier = 1.6
+reward_scale_per_tier = 1.7
+cycles_combat_range = Vector2i(10, 20)
+cycles_elite_range = Vector2i(30, 40)
+cycles_router_range = Vector2i(15, 25)
+card_price_range = Vector2i(50, 75)
+firmware_price_range = Vector2i(75, 150)
+daemon_price_range = Vector2i(150, 250)
+card_removal_price = 50
+card_removal_increment = 25
+slice_overwrite_price = 100
+miss_slice_overwrite_price = 150
+rookie_cost = 15
+node_base_cost = 20
+node_upgrade_costs = PackedInt32Array(30, 60)
+netrun_boost_cost_range = Vector2i(10, 20)
+heat_purchase_amount = 5
+heat_purchase_cost = 25
+heat_purchase_increment = 10
+class_unlock_cost = 80
+hand_size = 5
+draw_per_turn = 5
+ram_regen_per_turn = 4
+respin_ram_cost = 4
+partial_multiplier = 0.5
+overclock_multiplier = 1.5
+shield_cap = 15
+corrupted_self_damage = 3
+corrupted_damage_per_major = 1
+corrupted_ram_drain = 1
+extra_nudge_ram_cost = 1
+map_layers = 7
+map_nodes_min = 2
+map_nodes_max = 4
+rack_layers = PackedInt32Array(4, 7)
+elite_heat = 1
+card_reward_choices = 3
+elite_firmware_choices = 2
+rack_daemon_choices = 3
+asset_drop_chance = 0.4
+armory_capacity = 6
+raid_step_cap = 30
+cascade_ratio = 0.5
+starting_schematics = 20
+starting_rookies = 2
+min_exploits_for_breach = 3
+ice_ladder = Array[ExtResource("4_ice")]([SubResource("ice_1"), SubResource("ice_2"), SubResource("ice_3"), SubResource("ice_4"), SubResource("ice_5"), SubResource("ice_6"), SubResource("ice_7"), SubResource("ice_8"), SubResource("ice_9"), SubResource("ice_10"), SubResource("ice_11"), SubResource("ice_12"), SubResource("ice_13"), SubResource("ice_14"), SubResource("ice_15"), SubResource("ice_16"), SubResource("ice_17"), SubResource("ice_18"), SubResource("ice_19"), SubResource("ice_20")])
+rebel_cell_unlock_ice = 10
+new_corp_ice_offset = 5
