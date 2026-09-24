@@ -1,6 +1,7 @@
 # Godot
 .godot/
 *.import
+assets/text/*.translation
 export_presets.cfg
 
 # OS / editor

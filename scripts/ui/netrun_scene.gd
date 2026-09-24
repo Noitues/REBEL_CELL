@@ -15,6 +15,7 @@ var combat_scene: Control = null
 var background: WireframeBackground
 var map_view: NetrunMapView = null
 var playout: RaidPlayoutPanel = null
+var _spoken_events: Dictionary = {}
 var _settings_panel: SettingsPanel = null
 
 
@@ -328,8 +329,11 @@ func _show_event() -> void:
 	var text := RichTextLabel.new()
 	text.fit_content = true
 	text.custom_minimum_size = Vector2(600, 60)
-	text.text = ev.text
+	text.text = TextDb.t(ev, "text")
 	box.add_child(text)
+	if not _spoken_events.has(ev.id):
+		_spoken_events[ev.id] = true
+		Dialogue.say(ev.speaker, TextDb.t(ev, "text"))
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
@@ -458,9 +462,27 @@ func _refresh_status() -> void:
 
 
 func _report(events: Array[Dictionary]) -> void:
+	var c := RunManager.campaign
 	for e in events:
 		if e.has("text"):
 			_log.append_text(String(e["text"]) + "\n")
+		if c == null:
+			continue
+		match String(e.get("type", "")):
+			"run_start":
+				Dialogue.speak("run_start", RC.Voice.DISPATCH, c.corporation_id, &"", c.runs_started)
+				if RunManager.netrun != null:
+					Dialogue.bark(RunManager.netrun.run.operative.class_id, "jack_in", c.runs_started)
+			"run_complete":
+				Dialogue.speak("run_complete", RC.Voice.DISPATCH, c.corporation_id, &"", c.runs_completed)
+			"run_died":
+				Dialogue.speak("run_died", RC.Voice.DISPATCH, c.corporation_id, &"", c.deaths)
+			"rack_captured":
+				Dialogue.speak("rack", RC.Voice.DISPATCH, c.corporation_id, &"", c.runs_started)
+			"heat_threshold":
+				Dialogue.threshold_line(c.corporation_id, int(e.get("heat", 0)), c.campaign_seed)
+			"raid_interlude":
+				Dialogue.raid_warning(c.corporation_id, StringName(String(e.get("raid_id", ""))), c.raids_won + c.raids_lost)
 
 
 func open_settings() -> void:

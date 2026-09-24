@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="2"]
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("2")
+key = "dj"
+text = "You are listening to nobody, on no frequency, from nowhere. Stay unlicensed."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("2")
+key = "dj"
+text = "Word from the district: three leashes went quiet last night and the owners are still walking. Somebody is doing good work."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("2")
+key = "dj"
+text = "Solace raised the cardiac tier again. If your chest ticks, it ticks on credit. This next track is free."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("2")
+key = "dj"
+text = "Reminder to all subbies: a bricked implant is a recall they did not announce. Say it back to me."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("2")
+key = "dj"
+text = "Collections is on the move. If your links light up gold, that is a lockdown. Walk around it."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("2")
+key = "dj"
+text = "Whoever is running the Cell tonight: your handler is fast. Faster than a person. Just saying."
+drift_stage = 1
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("2")
+key = "dj"
+text = "Somebody sold Solace patient data before Solace lost it. Think about that order of operations."
+drift_stage = 1
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("2")
+key = "dj"
+text = "The voice giving the orders in the district does not breathe between sentences. I have the tapes."
+drift_stage = 2
+dispatch_clue = true
+
+[resource]
+script = ExtResource("1")
+id = &"dj_hq"
+speaker = 0
+lines = Array[ExtResource("2")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7")])

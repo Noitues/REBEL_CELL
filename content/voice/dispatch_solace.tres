@@ -1,0 +1,305 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=58 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="2"]
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("2")
+key = "site:t1_a"
+text = "Billing Farm. Every renewal in the district clears through it. Cut its Rack and the invoices stop for a day. Quiet in, quiet out."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("2")
+key = "site:t1_b"
+text = "Provisioning Hub. New leashes are flashed here before they go into people. Nothing you take will be missed before morning."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("2")
+key = "site:t1_c"
+text = "Records Vault. Names, dosages, missed payments. Bank what you can; the rest is evidence."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("2")
+key = "site:t1_d"
+text = "Call Centre. Automated renewals, human voices on loan. Expect Billing Daemons. Do not expect mercy."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("2")
+key = "site:t1_e"
+text = "Adherence node. It logs who took their dose and who could not afford to. Compliance runs deep here."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("2")
+key = "site:t1_f"
+text = "Telemetry farm. Every heartbeat in the district, timestamped. Move fast; it will notice you before you notice it."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("2")
+key = "site:t1_g"
+text = "Recovery desk. Where lapsed accounts get their final offer. Collectors are staged next door."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("2")
+key = "site:t1_h"
+text = "Scheduling grid. The dosage clocks live here. Break the clocks and the Dispensers drift."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("2")
+key = "site:t1_i"
+text = "Reconciliation hub. Insurance against insurance. A dead end on the Grid, but the camera logs behind it are worth burning."
+
+[sub_resource type="Resource" id="l9"]
+script = ExtResource("2")
+key = "site:t1_j"
+text = "Signing office. Solace signs its firmware here. The biometrics vault behind it is why we want it."
+
+[sub_resource type="Resource" id="l10"]
+script = ExtResource("2")
+key = "site:t2_intel"
+text = "Memo archive. The pricing memos are in there: what the leash really costs to run and what they charge. Intel is worth more than Cycles today."
+
+[sub_resource type="Resource" id="l11"]
+script = ExtResource("2")
+key = "site:t2_breach"
+text = "Kill-Switch Authority. The bricking order comes from this Rack. Take the authority and the Renewal Engine loses a read head."
+
+[sub_resource type="Resource" id="l12"]
+script = ExtResource("2")
+key = "site:t2_virus"
+text = "Patch distribution. The open-source patch is quarantined here. Free it and the Engine starts the breach corrupted."
+
+[sub_resource type="Resource" id="l13"]
+script = ExtResource("2")
+key = "site:t2_d"
+text = "Clinical trial ledger. Cohorts, consent forms, the numbers they did not publish. A good Rack, a better story."
+
+[sub_resource type="Resource" id="l14"]
+script = ExtResource("2")
+key = "site:t2_e"
+text = "Audit bureau. The auditors that hunt your nodes are trained on this data. Behind it: the ledger. Burn it if you can."
+
+[sub_resource type="Resource" id="l15"]
+script = ExtResource("2")
+key = "site:t2_f"
+text = "Update mirror. Firmware for every implant in the region flows through here. Expect Compliance Lock."
+
+[sub_resource type="Resource" id="l16"]
+script = ExtResource("2")
+key = "site:t2_g"
+text = "Executive wellness. The board's own implants run on a separate, unbricked tier. Note that. Remember that."
+
+[sub_resource type="Resource" id="l17"]
+script = ExtResource("2")
+key = "site:t2_h"
+text = "Recall logistics. The recall that never shipped is staged here, warehouse and all."
+
+[sub_resource type="Resource" id="l18"]
+script = ExtResource("2")
+key = "site:t3_core"
+text = "Core cluster. The Continuum itself. Elite security, a mini-boss on the Rack, and the road to the Engine."
+
+[sub_resource type="Resource" id="l19"]
+script = ExtResource("2")
+key = "site:t3_b"
+text = "Forecasting engine. It predicts churn to the decimal. It will have predicted you. Prove it wrong."
+
+[sub_resource type="Resource" id="l20"]
+script = ExtResource("2")
+key = "site:t3_c"
+text = "Kill-Switch escrow. The keys to every bricking, held in trust. Trust nothing on this Rack."
+
+[sub_resource type="Resource" id="l21"]
+script = ExtResource("2")
+key = "site:t3_d"
+text = "Patient twin simulator. A model of every subbie, run ahead of the real thing. Dosage Dispensers everywhere."
+
+[sub_resource type="Resource" id="l22"]
+script = ExtResource("2")
+key = "site:t3_e"
+text = "Board comms. The executives talk here. Their traffic is worth more than the Rack."
+
+[sub_resource type="Resource" id="l23"]
+script = ExtResource("2")
+key = "site:t3_f"
+text = "Licensing authority. Clause 44 lives here. Heartbeats as licensed features."
+
+[sub_resource type="Resource" id="l24"]
+script = ExtResource("2")
+key = "site:t3_g"
+text = "Cohort archive. Every implant batch, every failure rate. The silent recall has a home. This is it."
+
+[sub_resource type="Resource" id="l25"]
+script = ExtResource("2")
+key = "site:t3_h"
+text = "Root certificate store. Solace's signature on every device. Deepest Rack in the city. Bring everything."
+
+[sub_resource type="Resource" id="l26"]
+script = ExtResource("2")
+key = "site:scrub_records"
+text = "Scrub run. Your own data is in their banks; get it out and the Heat drops. No Rack, no glory, no trace."
+
+[sub_resource type="Resource" id="l27"]
+script = ExtResource("2")
+key = "site:purge_camera_logs"
+text = "Camera logs. They have your operatives' faces. Purge the archive and Collections loses its leads."
+
+[sub_resource type="Resource" id="l28"]
+script = ExtResource("2")
+key = "site:wipe_biometrics"
+text = "Biometric wipe. Gait, pulse, retina. Solace keys its leashes to it; wipe the Cell's entries and cool off."
+
+[sub_resource type="Resource" id="l29"]
+script = ExtResource("2")
+key = "site:burn_the_ledger"
+text = "The ledger. Every Cell transaction they have reconstructed. Burn it and Collections starts over."
+
+[sub_resource type="Resource" id="l30"]
+script = ExtResource("2")
+key = "site:renewal_engine_site"
+text = "The Renewal Engine. Three Exploits in hand. It heals ten a turn unless you breach the Hub. Go."
+
+[sub_resource type="Resource" id="l31"]
+script = ExtResource("2")
+key = "site:renewal_engine_site"
+text = "The Renewal Engine. I have run this breach four hundred times. Follow the plan exactly."
+drift_stage = 1
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l32"]
+script = ExtResource("2")
+key = "site:renewal_engine_site"
+text = "The Renewal Engine. Its collapse is scheduled. You are the schedule. Proceed."
+drift_stage = 2
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l33"]
+script = ExtResource("2")
+key = "run_start"
+text = "Jacking you in. Keep the Heat down and bank at the first Rack."
+
+[sub_resource type="Resource" id="l34"]
+script = ExtResource("2")
+key = "run_start"
+text = "Jacking you in. Route computed. Bank at the first Rack."
+drift_stage = 1
+
+[sub_resource type="Resource" id="l35"]
+script = ExtResource("2")
+key = "run_start"
+text = "Jacked in. The route was computed before you asked."
+drift_stage = 2
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l36"]
+script = ExtResource("2")
+key = "run_complete"
+text = "Clean exit. Cycles converted. Rest, then we go again."
+
+[sub_resource type="Resource" id="l37"]
+script = ExtResource("2")
+key = "run_complete"
+text = "Exit logged. Conversion complete. Next objective queued."
+drift_stage = 1
+
+[sub_resource type="Resource" id="l38"]
+script = ExtResource("2")
+key = "run_complete"
+text = "Exit logged 0.4 seconds before you jacked out. Next objective queued."
+drift_stage = 2
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l39"]
+script = ExtResource("2")
+key = "run_died"
+text = "We lost one. Solace will bill the family. Recruit, regroup, and do not let it be for nothing."
+
+[sub_resource type="Resource" id="l40"]
+script = ExtResource("2")
+key = "run_died"
+text = "Operative lost. Acceptable variance. Recruit and continue."
+drift_stage = 1
+
+[sub_resource type="Resource" id="l41"]
+script = ExtResource("2")
+key = "run_died"
+text = "Operative lost. The projection allowed for it. Continue."
+drift_stage = 2
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l42"]
+script = ExtResource("2")
+key = "rack"
+text = "Rack captured. Schematics banked. That is the Cell's money now."
+
+[sub_resource type="Resource" id="l43"]
+script = ExtResource("2")
+key = "threshold:25"
+text = "Heat 25. Collections has a file on you now. Expect a raid."
+
+[sub_resource type="Resource" id="l44"]
+script = ExtResource("2")
+key = "threshold:50"
+text = "Heat 50. Every Solace process gains resistance. Nudge less, spin more."
+
+[sub_resource type="Resource" id="l45"]
+script = ExtResource("2")
+key = "threshold:75"
+text = "Heat 75. Raids come heavier from here. Scrub if you can, fight if you cannot."
+
+[sub_resource type="Resource" id="l46"]
+script = ExtResource("2")
+key = "threshold:100"
+text = "PURGE. Everything Solace has, at once. Hold the home server."
+
+[sub_resource type="Resource" id="l47"]
+script = ExtResource("2")
+key = "boss"
+text = "Breach the Hub first. Its heal is the fight."
+
+[sub_resource type="Resource" id="l48"]
+script = ExtResource("2")
+key = "win"
+text = "The Renewal Engine is down. Every leash in the district just went quiet. Well done, Cell."
+
+[sub_resource type="Resource" id="l49"]
+script = ExtResource("2")
+key = "win"
+text = "The Renewal Engine is down. Solace's market share is being redistributed as we speak. Well done."
+drift_stage = 1
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l50"]
+script = ExtResource("2")
+key = "win"
+text = "The Renewal Engine is down. Competitor eliminated. Next target: pending."
+drift_stage = 2
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l51"]
+script = ExtResource("2")
+key = "loss"
+text = "The home server is gone. Scatter. We rebuild somewhere Solace is not looking."
+
+[sub_resource type="Resource" id="l52"]
+script = ExtResource("2")
+key = "loss"
+text = "Home server lost. Reconstitution scheduled. The Cell is not the point; the outcome is."
+drift_stage = 2
+dispatch_clue = true
+
+[sub_resource type="Resource" id="l53"]
+script = ExtResource("2")
+key = "raid:any"
+text = "Threat vectors on the Grid. Set your assets; I will hold the projection while you do."
+
+[sub_resource type="Resource" id="l54"]
+script = ExtResource("2")
+key = "raid:raid_purge"
+text = "This is the Purge. Everything they have. Every asset on the Grid, now."
+
+[resource]
+script = ExtResource("1")
+id = &"dispatch_solace"
+speaker = 4
+corporation_id = &"solace"
+lines = Array[ExtResource("2")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8"), SubResource("l9"), SubResource("l10"), SubResource("l11"), SubResource("l12"), SubResource("l13"), SubResource("l14"), SubResource("l15"), SubResource("l16"), SubResource("l17"), SubResource("l18"), SubResource("l19"), SubResource("l20"), SubResource("l21"), SubResource("l22"), SubResource("l23"), SubResource("l24"), SubResource("l25"), SubResource("l26"), SubResource("l27"), SubResource("l28"), SubResource("l29"), SubResource("l30"), SubResource("l31"), SubResource("l32"), SubResource("l33"), SubResource("l34"), SubResource("l35"), SubResource("l36"), SubResource("l37"), SubResource("l38"), SubResource("l39"), SubResource("l40"), SubResource("l41"), SubResource("l42"), SubResource("l43"), SubResource("l44"), SubResource("l45"), SubResource("l46"), SubResource("l47"), SubResource("l48"), SubResource("l49"), SubResource("l50"), SubResource("l51"), SubResource("l52"), SubResource("l53"), SubResource("l54")])

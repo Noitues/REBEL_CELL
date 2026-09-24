@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="2"]
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("2")
+key = "bark:perfect"
+text = "Dead centre. Feel that? That is the wheel agreeing with me."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("2")
+key = "bark:perfect"
+text = "Latched. Twice for the price of one."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("2")
+key = "bark:perfect"
+text = "Perfect. Tell Solace the invoice is in the mail."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("2")
+key = "bark:miss"
+text = "Miss. The wheel owes me one."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("2")
+key = "bark:miss"
+text = "Nothing. Static. Spin it again."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("2")
+key = "bark:hurt"
+text = "That one got through. Patch me at the next Terminal."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("2")
+key = "bark:hurt"
+text = "Leash burn. I am fine. I am not fine. Keep going."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("2")
+key = "bark:victory"
+text = "Down. Bank it before the next process wakes up."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("2")
+key = "bark:victory"
+text = "Another subbie of theirs off the books. Move."
+
+[sub_resource type="Resource" id="l9"]
+script = ExtResource("2")
+key = "bark:defeat"
+text = "Bricked. Tell the Cell it was worth the Cycles."
+
+[sub_resource type="Resource" id="l10"]
+script = ExtResource("2")
+key = "bark:deploy"
+text = "Drone out. Sit on that slice and take the hit for me."
+
+[sub_resource type="Resource" id="l11"]
+script = ExtResource("2")
+key = "bark:jack_in"
+text = "Deck warm. Wheel spinning. Let us break something."
+
+[sub_resource type="Resource" id="l12"]
+script = ExtResource("2")
+key = "bark:jack_in"
+text = "Ghosting in. Nobody bills what nobody sees."
+
+[sub_resource type="Resource" id="l13"]
+script = ExtResource("2")
+key = "bark:boss"
+text = "The Engine. Big wheel, bad manners. Breach the Hub and it stops healing."
+
+[resource]
+script = ExtResource("1")
+id = &"barks_breaker"
+speaker = 1
+class_id = &"breaker"
+lines = Array[ExtResource("2")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8"), SubResource("l9"), SubResource("l10"), SubResource("l11"), SubResource("l12"), SubResource("l13")])

@@ -418,7 +418,8 @@ Each corporation has 5–6 hidden story paths; one is chosen at random at campai
 Beats reveal **in the order Exploits are collected**; extra Exploits unlock bonus beats;
 the final boss delivers the finale. Solace paths: Recall Notice, Clinical Trial, Terms of
 Service, The Cure, Ghost Patient (foreshadows DISPATCH), Hostile Takeover (foreshadows the
-next corporation).
+next corporation, Meridian Freight Systems; corporation names per DECISIONS.md 2026-09-24:
+Meridian Freight Systems, Halcyon Civic, Orbital Commons). A beat may trigger a story raid.
 
 ### 8.5 REBEL_CELL (final unlock corporation)
 Unlocked by clearing every other corporation at ICE 10; has its own ICE 0–20 ladder.

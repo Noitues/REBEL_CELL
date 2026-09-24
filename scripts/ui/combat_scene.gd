@@ -374,18 +374,40 @@ func _feedback(state: CombatState, events: Array[Dictionary]) -> void:
 				AudioDirector.play_precision(tier, is_miss)
 				if is_miss:
 					_flicker_view(_player_view)
+					_bark("miss", state)
 				elif tier == RC.PrecisionTier.PERFECT:
 					_perfect_feedback(_player_view)
+					_bark("perfect", state)
 				elif tier == RC.PrecisionTier.PARTIAL:
 					_stutter_view(_player_view)
 			"boss_phase":
 				AudioDirector.play_sfx("alarm")
 				Fx.flash(Palette.CORP_SOLACE, 0.3)
+				_bark("boss", state)
+			"damage":
+				if e.get("target") == state.player.id and int(e.get("hp_damage", 0)) > 0 and state.player.hp * 2 <= state.player.max_hp:
+					_bark("hurt", state)
+			"deploy":
+				_bark("deploy", state)
+			"combat_end":
+				_bark("victory" if int(e.get("outcome", 0)) == CombatState.Outcome.VICTORY else "defeat", state)
 			"boss_migrate_telegraph":
 				if _enemy_views.has(e.get("target")):
 					_start_migrate_flicker(_enemy_views[e["target"]])
 			"deploy", "botnet_seed":
 				AudioDirector.play_sfx("click")
+
+
+## Operative barks (GDD 8.6): at most one per turn per trigger, chosen by class and turn.
+var _barked_turn: Dictionary = {}
+
+
+func _bark(trigger: String, state: CombatState) -> void:
+	var key := "%s:%d" % [trigger, state.turn]
+	if _barked_turn.has(key) or _instant_playback():
+		return
+	_barked_turn[key] = true
+	Dialogue.bark(state.player.source_id, trigger, state.turn + hash(engine.session.combat_seed))
 
 
 func _slice_type_of(state: CombatState, e: Dictionary) -> int:

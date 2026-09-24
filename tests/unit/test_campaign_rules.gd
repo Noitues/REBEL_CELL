@@ -40,7 +40,7 @@ func test_solace_content_validates_and_has_the_a6_grid() -> void:
 	assert_eq(_corp.validate(_cfg.min_exploits_for_breach).size(), 0, str(_corp.validate()))
 	assert_eq(_corp.city_grid.sites.size(), 32, "GDD 4.1: 30-40 Sites")
 	assert_eq(_corp.city_grid.size_warnings().size(), 0)
-	assert_eq(_corp.story_paths.size(), 5)
+	assert_eq(_corp.story_paths.size(), 6, "GDD 8.4: six Solace paths")
 	assert_eq(_corp.exploits.size(), 3)
 	assert_eq(_corp.raids.size(), 8, "threshold x4, claim, retaliation, story, node-built")
 	assert_true(_corp.final_boss.is_boss)

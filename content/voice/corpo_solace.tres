@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="2"]
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("2")
+key = "raid:raid_heat_25"
+text = "SOLACE COLLECTIONS: This is a first notice. Your account has been flagged for irregular traffic. Collectors have been dispatched."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("2")
+key = "raid:raid_heat_50"
+text = "SOLACE COLLECTIONS: Second notice. An Auditor has been assigned to your network. Cooperation is appreciated and irrelevant."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("2")
+key = "raid:raid_heat_75"
+text = "SOLACE COLLECTIONS: Final notice. An Enforcer and a Lockdown Unit are en route. Your links will be frozen for your protection."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("2")
+key = "raid:raid_claim"
+text = "SOLACE PROPERTY SERVICES: You have built on Solace-adjacent property. A Collector will assess the damage."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("2")
+key = "raid:raid_retaliation"
+text = "SOLACE SECURITY: We have traced the breach to its origin. An Icebreaker will open a route. There is nothing personal about this."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("2")
+key = "raid:raid_story"
+text = "SOLACE LEGAL: Certain documents in your possession are privileged. They will be collected quietly."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("2")
+key = "raid:raid_node_built"
+text = "SOLACE ASSET RECOVERY: A vault has appeared on our ledger under your name. We are coming to reconcile it."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("2")
+key = "raid:raid_purge"
+text = "SOLACE BOARD: The Continuum is a public good. Threats to a public good are purged. Nothing you own will remain."
+
+[resource]
+script = ExtResource("1")
+id = &"corpo_solace"
+speaker = 2
+corporation_id = &"solace"
+lines = Array[ExtResource("2")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7")])

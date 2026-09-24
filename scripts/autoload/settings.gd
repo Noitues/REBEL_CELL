@@ -18,6 +18,8 @@ var text_scale: float = 1.0
 var subtitles: bool = true
 var music_volume: float = 0.6
 var sfx_volume: float = 0.8
+## Locale code ("en"); applied to the TranslationServer (GDD 10 localisation pipeline).
+var language: String = "en"
 
 
 func _ready() -> void:
@@ -54,9 +56,24 @@ func set_sfx_volume(value: float) -> void:
 	_apply()
 
 
+func set_language(code: String) -> void:
+	language = code if code != "" else "en"
+	TranslationServer.set_locale(language)
+	_apply()
+
+
+## Locales with a translation loaded, "en" first.
+func available_languages() -> PackedStringArray:
+	var out := PackedStringArray(["en"])
+	for l in TranslationServer.get_loaded_locales():
+		if not out.has(l):
+			out.append(l)
+	return out
+
+
 func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
-		"subtitles": subtitles, "music_volume": music_volume, "sfx_volume": sfx_volume}
+		"subtitles": subtitles, "music_volume": music_volume, "sfx_volume": sfx_volume, "language": language}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -66,6 +83,8 @@ func from_dict(d: Dictionary) -> void:
 	subtitles = bool(d.get("subtitles", true))
 	music_volume = clampf(float(d.get("music_volume", 0.6)), 0.0, 1.0)
 	sfx_volume = clampf(float(d.get("sfx_volume", 0.8)), 0.0, 1.0)
+	language = String(d.get("language", "en"))
+	TranslationServer.set_locale(language)
 
 
 func save_settings() -> Error:

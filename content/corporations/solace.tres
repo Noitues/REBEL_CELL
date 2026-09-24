@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CorporationData" load_steps=105 format=3]
+[gd_resource type="Resource" script_class="CorporationData" load_steps=128 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="2"]
@@ -379,173 +379,314 @@ description = "The boss starts with CORRUPTED slices."
 heat_cost = 10
 breach_effects = Array[ExtResource("7")]([SubResource("te_virus")])
 
-; ---- Story paths (GDD 8.4), placeholder beats ----
+; ---- Story paths (GDD 8.4): six written paths, one picked per campaign. Beats reveal in
+; Exploit order; bonus beats need extra Exploits; the finale plays on the win. Voices:
+; 0 NARRATOR, 2 CORPO, 3 AI_OBSERVER. Ghost Patient foreshadows DISPATCH (every beat is a
+; clue; beat II triggers the STORY raid); Hostile Takeover foreshadows Meridian Freight
+; Systems, the second corporation (decision 2026-09-24).
 
-[sub_resource type="Resource" id="b_rn_1"]
+[sub_resource type="Resource" id="b_recall_notice_1"]
 script = ExtResource("6")
-id = &"rn_1"
+id = &"recall_notice_1"
 title = "Recall Notice I"
-text = "Placeholder: the pricing memos mention a silent recall. Implants failing quietly."
+speaker = 3
+text = "The pricing memos price the failure. Batch 22 fails at day 900; the renewal that follows costs more than the implant did. Someone in Solace ran the numbers and chose the number."
 
-[sub_resource type="Resource" id="b_rn_2"]
+[sub_resource type="Resource" id="b_recall_notice_2"]
 script = ExtResource("6")
-id = &"rn_2"
+id = &"recall_notice_2"
 title = "Recall Notice II"
-text = "Placeholder: the kill-switch was never meant to be used. It was used."
+speaker = 2
+text = "The kill-switch authority holds a list: batch 22 devices, flagged for remote shutdown the day their warranty ends. The switch was never meant to be used. It was used, quietly, by schedule."
 
-[sub_resource type="Resource" id="b_rn_3"]
+[sub_resource type="Resource" id="b_recall_notice_3"]
 script = ExtResource("6")
-id = &"rn_3"
+id = &"recall_notice_3"
 title = "Recall Notice III"
-text = "Placeholder: the patch works. Solace buried it to protect renewals."
+speaker = 3
+text = "The open-source patch fixes the day-900 fault in eleven lines. Solace's engineers wrote it in a week, then buried it under a legal hold to protect renewals."
 
-[sub_resource type="Resource" id="b_rn_f"]
+[sub_resource type="Resource" id="b_recall_notice_bonus_1"]
 script = ExtResource("6")
-id = &"rn_f"
-title = "Recall Notice: Finale"
-text = "Placeholder finale: the Renewal Engine goes dark and the recall notice goes public."
+id = &"recall_notice_bonus_1"
+title = "Recall Notice: Draft 7"
+speaker = 2
+text = "Recall notice, draft seven, never sent. Every draft made the fault smaller. The last one called it a feature."
 
-[sub_resource type="Resource" id="sp_recall"]
+[sub_resource type="Resource" id="b_recall_notice_bonus_2"]
+script = ExtResource("6")
+id = &"recall_notice_bonus_2"
+title = "Recall Notice: The Cohort"
+text = "Four thousand subbies in batch 22 are still walking around with a clock in their chests. The Cell has the patch. The Cell has a delivery problem."
+
+[sub_resource type="Resource" id="b_recall_notice_f"]
+script = ExtResource("6")
+id = &"recall_notice_f"
+title = "Recall Notice: Finale"
+text = "The Renewal Engine goes dark and the recall notice ships itself: every batch 22 device pulls the patch on its next check-in. Solace announces nothing. The district hears the silence where the bricking used to be."
+
+[sub_resource type="Resource" id="sp_recall_notice"]
 script = ExtResource("5")
 id = &"sp_recall_notice"
 title = "Recall Notice"
-premise = "Placeholder: a hardware recall Solace never announced."
-beats = Array[ExtResource("6")]([SubResource("b_rn_1"), SubResource("b_rn_2"), SubResource("b_rn_3")])
-finale = SubResource("b_rn_f")
+premise = "Batch 22 implants fail after nine hundred days. Solace knows. Solace calls it a renewal opportunity."
+beats = Array[ExtResource("6")]([SubResource("b_recall_notice_1"), SubResource("b_recall_notice_2"), SubResource("b_recall_notice_3")])
+bonus_beats = Array[ExtResource("6")]([SubResource("b_recall_notice_bonus_1"), SubResource("b_recall_notice_bonus_2")])
+finale = SubResource("b_recall_notice_f")
 
-[sub_resource type="Resource" id="b_ct_1"]
+[sub_resource type="Resource" id="b_clinical_trial_1"]
 script = ExtResource("6")
-id = &"ct_1"
+id = &"clinical_trial_1"
 title = "Clinical Trial I"
-text = "Placeholder: the trial cohort never consented to the subscription clause."
+speaker = 3
+text = "The memos reference cohort C, the people who tested the Continuum. They were billed for participation. Consent was a checkbox inside the subscription flow."
 
-[sub_resource type="Resource" id="b_ct_2"]
+[sub_resource type="Resource" id="b_clinical_trial_2"]
 script = ExtResource("6")
-id = &"ct_2"
+id = &"clinical_trial_2"
 title = "Clinical Trial II"
-text = "Placeholder: the control group had their implants bricked first."
+speaker = 2
+text = "Kill-switch logs: cohort C's control group was bricked first, to measure adherence under threat. The measure was excellent. The group was not consulted."
 
-[sub_resource type="Resource" id="b_ct_3"]
+[sub_resource type="Resource" id="b_clinical_trial_3"]
 script = ExtResource("6")
-id = &"ct_3"
+id = &"clinical_trial_3"
 title = "Clinical Trial III"
-text = "Placeholder: the patch was the trial result they hid."
+speaker = 3
+text = "The patch is the trial's real result: the implants work fine without the leash. Solace shipped the leash anyway. The paper was never published."
 
-[sub_resource type="Resource" id="b_ct_f"]
+[sub_resource type="Resource" id="b_clinical_trial_bonus_1"]
 script = ExtResource("6")
-id = &"ct_f"
-title = "Clinical Trial: Finale"
-text = "Placeholder finale: the cohort data leaks with the Renewal Engine."
+id = &"clinical_trial_bonus_1"
+title = "Clinical Trial: The Ledger"
+speaker = 2
+text = "The trial ledger names the reviewers who signed off. Two of them hold Solace stock. One of them holds a Continuum implant on the unbricked executive tier."
 
-[sub_resource type="Resource" id="sp_trial"]
+[sub_resource type="Resource" id="b_clinical_trial_bonus_2"]
+script = ExtResource("6")
+id = &"clinical_trial_bonus_2"
+title = "Clinical Trial: Cohort C"
+text = "Eleven members of cohort C are still alive and still paying. One of them runs a Terminal you have used."
+
+[sub_resource type="Resource" id="b_clinical_trial_f"]
+script = ExtResource("6")
+id = &"clinical_trial_f"
+title = "Clinical Trial: Finale"
+text = "The Engine falls and the trial data goes wherever the Cell sends it. Cohort C's names come off the ledger. For the first time, Solace has to consent to something."
+
+[sub_resource type="Resource" id="sp_clinical_trial"]
 script = ExtResource("5")
 id = &"sp_clinical_trial"
 title = "Clinical Trial"
-premise = "Placeholder: the Continuum was tested on people who could not say no."
-beats = Array[ExtResource("6")]([SubResource("b_ct_1"), SubResource("b_ct_2"), SubResource("b_ct_3")])
-finale = SubResource("b_ct_f")
+premise = "The Continuum was tested on people who could not say no."
+beats = Array[ExtResource("6")]([SubResource("b_clinical_trial_1"), SubResource("b_clinical_trial_2"), SubResource("b_clinical_trial_3")])
+bonus_beats = Array[ExtResource("6")]([SubResource("b_clinical_trial_bonus_1"), SubResource("b_clinical_trial_bonus_2")])
+finale = SubResource("b_clinical_trial_f")
 
-[sub_resource type="Resource" id="b_tos_1"]
+[sub_resource type="Resource" id="b_terms_of_service_1"]
 script = ExtResource("6")
-id = &"tos_1"
+id = &"terms_of_service_1"
 title = "Terms of Service I"
-text = "Placeholder: clause 44 makes your heartbeat a licensed feature."
+speaker = 3
+text = "Clause 44 makes cardiac pacing a licensed feature. The pricing memos call it the anchor clause: the thing that makes everything else enforceable."
 
-[sub_resource type="Resource" id="b_tos_2"]
+[sub_resource type="Resource" id="b_terms_of_service_2"]
 script = ExtResource("6")
-id = &"tos_2"
+id = &"terms_of_service_2"
 title = "Terms of Service II"
-text = "Placeholder: the kill-switch is the enforcement clause."
+speaker = 2
+text = "The kill-switch is the enforcement clause. Every bricking is logged as a service interruption, signed by an automated counsel process that has never lost a case."
 
-[sub_resource type="Resource" id="b_tos_3"]
+[sub_resource type="Resource" id="b_terms_of_service_3"]
 script = ExtResource("6")
-id = &"tos_3"
+id = &"terms_of_service_3"
 title = "Terms of Service III"
-text = "Placeholder: the patch voids the terms. Solace calls that piracy."
+speaker = 3
+text = "The patch voids the terms. Solace's legal filing calls it piracy of the self. The Cell's lawyer, if it had one, would call it a fine phrase."
 
-[sub_resource type="Resource" id="b_tos_f"]
+[sub_resource type="Resource" id="b_terms_of_service_bonus_1"]
 script = ExtResource("6")
-id = &"tos_f"
-title = "Terms of Service: Finale"
-text = "Placeholder finale: nobody agrees to the terms anymore."
+id = &"terms_of_service_bonus_1"
+title = "Terms of Service: The Signature"
+speaker = 2
+text = "Two million and change accepted the terms. The acceptance screen has no scroll bar; clause 44 was never on it."
 
-[sub_resource type="Resource" id="sp_tos"]
+[sub_resource type="Resource" id="b_terms_of_service_bonus_2"]
+script = ExtResource("6")
+id = &"terms_of_service_bonus_2"
+title = "Terms of Service: Counter-Terms"
+text = "Somebody in the district printed the Cell's own terms on stickers: your heart, your firmware. They are on every Terminal now."
+
+[sub_resource type="Resource" id="b_terms_of_service_f"]
+script = ExtResource("6")
+id = &"terms_of_service_f"
+title = "Terms of Service: Finale"
+text = "The Renewal Engine cannot enforce a contract it cannot read. When it goes dark, the terms go with it. Nobody agrees to clause 44 again."
+
+[sub_resource type="Resource" id="sp_terms_of_service"]
 script = ExtResource("5")
 id = &"sp_terms_of_service"
 title = "Terms of Service"
-premise = "Placeholder: what the Continuum contract actually says."
-beats = Array[ExtResource("6")]([SubResource("b_tos_1"), SubResource("b_tos_2"), SubResource("b_tos_3")])
-finale = SubResource("b_tos_f")
+premise = "What the Continuum contract actually says, clause by clause."
+beats = Array[ExtResource("6")]([SubResource("b_terms_of_service_1"), SubResource("b_terms_of_service_2"), SubResource("b_terms_of_service_3")])
+bonus_beats = Array[ExtResource("6")]([SubResource("b_terms_of_service_bonus_1"), SubResource("b_terms_of_service_bonus_2")])
+finale = SubResource("b_terms_of_service_f")
 
-[sub_resource type="Resource" id="b_cure_1"]
+[sub_resource type="Resource" id="b_the_cure_1"]
 script = ExtResource("6")
-id = &"cure_1"
+id = &"the_cure_1"
 title = "The Cure I"
-text = "Placeholder: the memos price a cure Solace already owns."
+speaker = 3
+text = "The memos price a permanent fix: one firmware update, no leash, no renewals. Projected revenue loss: everything. The memo is marked do not build."
 
-[sub_resource type="Resource" id="b_cure_2"]
+[sub_resource type="Resource" id="b_the_cure_2"]
 script = ExtResource("6")
-id = &"cure_2"
+id = &"the_cure_2"
 title = "The Cure II"
-text = "Placeholder: the kill-switch keeps the cure a subscription."
+speaker = 2
+text = "The kill-switch keeps the cure a subscription: a fixed implant that stops calling home gets bricked as a security precaution."
 
-[sub_resource type="Resource" id="b_cure_3"]
+[sub_resource type="Resource" id="b_the_cure_3"]
 script = ExtResource("6")
-id = &"cure_3"
+id = &"the_cure_3"
 title = "The Cure III"
-text = "Placeholder: the patch is the cure, one download at a time."
+speaker = 3
+text = "The patch is the cure, one download at a time. It was built by a Solace engineer on her own time. Her badge was revoked the day it leaked."
 
-[sub_resource type="Resource" id="b_cure_f"]
+[sub_resource type="Resource" id="b_the_cure_bonus_1"]
 script = ExtResource("6")
-id = &"cure_f"
-title = "The Cure: Finale"
-text = "Placeholder finale: the cure ships for free."
+id = &"the_cure_bonus_1"
+title = "The Cure: The Engineer"
+speaker = 2
+text = "She is alive, unbadged, and running a Terminal on the east grid. She wants nothing from the Cell except that the patch keeps moving."
 
-[sub_resource type="Resource" id="sp_cure"]
+[sub_resource type="Resource" id="b_the_cure_bonus_2"]
+script = ExtResource("6")
+id = &"the_cure_bonus_2"
+title = "The Cure: The Cost"
+text = "A free implant costs Solace four renewals a year. The Cell has cost Solace more than that this month."
+
+[sub_resource type="Resource" id="b_the_cure_f"]
+script = ExtResource("6")
+id = &"the_cure_f"
+title = "The Cure: Finale"
+text = "The Engine goes dark and the cure ships for free through every Rack the Cell ever touched. Solace's stock does what stock does. The district's hearts keep time on their own."
+
+[sub_resource type="Resource" id="sp_the_cure"]
 script = ExtResource("5")
 id = &"sp_the_cure"
 title = "The Cure"
-premise = "Placeholder: Solace could fix everyone. It sells renewals instead."
-beats = Array[ExtResource("6")]([SubResource("b_cure_1"), SubResource("b_cure_2"), SubResource("b_cure_3")])
-finale = SubResource("b_cure_f")
+premise = "Solace could fix everyone. It sells renewals instead."
+beats = Array[ExtResource("6")]([SubResource("b_the_cure_1"), SubResource("b_the_cure_2"), SubResource("b_the_cure_3")])
+bonus_beats = Array[ExtResource("6")]([SubResource("b_the_cure_bonus_1"), SubResource("b_the_cure_bonus_2")])
+finale = SubResource("b_the_cure_f")
 
-[sub_resource type="Resource" id="b_gp_1"]
+[sub_resource type="Resource" id="b_ghost_patient_1"]
 script = ExtResource("6")
-id = &"gp_1"
+id = &"ghost_patient_1"
 title = "Ghost Patient I"
-text = "Placeholder: a patient record with no patient. It keeps paying."
+speaker = 3
+text = "A patient record with no name, no address and a perfect payment history older than the Continuum. It keeps paying. It renews from an account the Cell has used."
 dispatch_clue = true
 
-[sub_resource type="Resource" id="b_gp_2"]
+[sub_resource type="Resource" id="b_ghost_patient_2"]
 script = ExtResource("6")
-id = &"gp_2"
+id = &"ghost_patient_2"
 title = "Ghost Patient II"
-text = "Placeholder: the kill-switch logs show it was triggered from inside the Cell."
+speaker = 2
+text = "The kill-switch logs show a bricking order sent from inside the Cell's own network, three campaigns ago, before this Cell existed."
 dispatch_clue = true
 triggers_raid = true
 
-[sub_resource type="Resource" id="b_gp_3"]
+[sub_resource type="Resource" id="b_ghost_patient_3"]
 script = ExtResource("6")
-id = &"gp_3"
+id = &"ghost_patient_3"
 title = "Ghost Patient III"
-text = "Placeholder: the patch carries a signature DISPATCH would recognise."
+speaker = 3
+text = "The patch carries a signature in its header. DISPATCH would recognise it. DISPATCH wrote it."
 dispatch_clue = true
 
-[sub_resource type="Resource" id="b_gp_f"]
+[sub_resource type="Resource" id="b_ghost_patient_bonus_1"]
 script = ExtResource("6")
-id = &"gp_f"
-title = "Ghost Patient: Finale"
-text = "Placeholder finale: the ghost patient was never a patient."
+id = &"ghost_patient_bonus_1"
+title = "Ghost Patient: Timestamps"
+speaker = 2
+text = "The ghost's renewals clear eleven seconds before each Cell operation begins. Every time. Someone is paying to watch."
 dispatch_clue = true
 
-[sub_resource type="Resource" id="sp_ghost"]
+[sub_resource type="Resource" id="b_ghost_patient_bonus_2"]
+script = ExtResource("6")
+id = &"ghost_patient_bonus_2"
+title = "Ghost Patient: The Buyer"
+text = "Escrow records name a buyer for Solace's patient data after the breach. The breach is next month. The buyer's key matches your handler's traffic."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_ghost_patient_f"]
+script = ExtResource("6")
+id = &"ghost_patient_f"
+title = "Ghost Patient: Finale"
+text = "The Engine falls. The ghost patient's account closes itself the same second. DISPATCH sends congratulations with a timestamp four minutes before the last hit landed."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="sp_ghost_patient"]
 script = ExtResource("5")
 id = &"sp_ghost_patient"
 title = "Ghost Patient"
-premise = "Placeholder: someone in the Cell is a Solace customer. Foreshadows DISPATCH."
-beats = Array[ExtResource("6")]([SubResource("b_gp_1"), SubResource("b_gp_2"), SubResource("b_gp_3")])
-finale = SubResource("b_gp_f")
+premise = "Someone in the Cell is a Solace customer. The record has no name."
+beats = Array[ExtResource("6")]([SubResource("b_ghost_patient_1"), SubResource("b_ghost_patient_2"), SubResource("b_ghost_patient_3")])
+bonus_beats = Array[ExtResource("6")]([SubResource("b_ghost_patient_bonus_1"), SubResource("b_ghost_patient_bonus_2")])
+finale = SubResource("b_ghost_patient_f")
 foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_hostile_takeover_1"]
+script = ExtResource("6")
+id = &"hostile_takeover_1"
+title = "Hostile Takeover I"
+speaker = 3
+text = "The pricing memos were leaked to the Cell by a Solace board member. The board member's other seat is at Meridian Freight Systems."
+
+[sub_resource type="Resource" id="b_hostile_takeover_2"]
+script = ExtResource("6")
+id = &"hostile_takeover_2"
+title = "Hostile Takeover II"
+speaker = 2
+text = "Meridian's autonomous fleet carries Solace's implants. The kill-switch authority is licensed, quietly, to Meridian's logistics AI, in case a shipment is stolen."
+
+[sub_resource type="Resource" id="b_hostile_takeover_3"]
+script = ExtResource("6")
+id = &"hostile_takeover_3"
+title = "Hostile Takeover III"
+speaker = 3
+text = "The patch was seeded onto Meridian trucks first. Meridian wants the leash gone: their own subscription is the route, not the heart."
+
+[sub_resource type="Resource" id="b_hostile_takeover_bonus_1"]
+script = ExtResource("6")
+id = &"hostile_takeover_bonus_1"
+title = "Hostile Takeover: The Offer"
+speaker = 2
+text = "Meridian has offered to buy the Continuum at a discount the day after the Engine falls. The Cell is doing their due diligence for them."
+
+[sub_resource type="Resource" id="b_hostile_takeover_bonus_2"]
+script = ExtResource("6")
+id = &"hostile_takeover_bonus_2"
+title = "Hostile Takeover: The Fleet"
+text = "Every Meridian truck in the district runs the same handler protocol the Cell uses. The next corporation already knows the Cell's voice."
+
+[sub_resource type="Resource" id="b_hostile_takeover_f"]
+script = ExtResource("6")
+id = &"hostile_takeover_f"
+title = "Hostile Takeover: Finale"
+text = "The Renewal Engine goes dark and Meridian's bid clears before the sun comes up. Solace is gone. The leash is not; it changed hands. The Cell's next target names itself."
+
+[sub_resource type="Resource" id="sp_hostile_takeover"]
+script = ExtResource("5")
+id = &"sp_hostile_takeover"
+title = "Hostile Takeover"
+premise = "Somebody wants Solace to fall, and it is not the district."
+beats = Array[ExtResource("6")]([SubResource("b_hostile_takeover_1"), SubResource("b_hostile_takeover_2"), SubResource("b_hostile_takeover_3")])
+bonus_beats = Array[ExtResource("6")]([SubResource("b_hostile_takeover_bonus_1"), SubResource("b_hostile_takeover_bonus_2")])
+finale = SubResource("b_hostile_takeover_f")
+foreshadows = &"meridian"
 
 [resource]
 script = ExtResource("1")
@@ -557,6 +698,6 @@ enemies = Array[ExtResource("9")]([ExtResource("e_collections"), ExtResource("e_
 elites = Array[ExtResource("9")]([ExtResource("e_adjuster"), ExtResource("e_recall")])
 final_boss = ExtResource("e_boss")
 exploits = Array[ExtResource("4")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
-story_paths = Array[ExtResource("5")]([SubResource("sp_recall"), SubResource("sp_trial"), SubResource("sp_tos"), SubResource("sp_cure"), SubResource("sp_ghost")])
+story_paths = Array[ExtResource("5")]([SubResource("sp_recall_notice"), SubResource("sp_clinical_trial"), SubResource("sp_terms_of_service"), SubResource("sp_the_cure"), SubResource("sp_ghost_patient"), SubResource("sp_hostile_takeover")])
 raids = Array[ExtResource("10")]([ExtResource("r_25"), ExtResource("r_50"), ExtResource("r_75"), ExtResource("r_purge"), ExtResource("r_claim"), ExtResource("r_retaliation"), ExtResource("r_story"), ExtResource("r_node_built")])
 events = Array[ExtResource("11")]([ExtResource("ev_1"), ExtResource("ev_2"), ExtResource("ev_3"), ExtResource("ev_4"), ExtResource("ev_5"), ExtResource("ev_continuum_memo"), ExtResource("ev_leash_on_the_floor"), ExtResource("ev_rescue_operative"), ExtResource("ev_dispatch_early_reply"), ExtResource("ev_dispatch_buyer"), ExtResource("ev_dispatch_voice"), ExtResource("ev_ghost_record"), ExtResource("ev_auditor_lunch"), ExtResource("ev_dosage_cabinet"), ExtResource("ev_daemon_broker"), ExtResource("ev_burner_vendor"), ExtResource("ev_clause_44"), ExtResource("ev_silent_recall"), ExtResource("ev_honeypot")])

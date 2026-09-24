@@ -24,6 +24,7 @@ RunManager="*res://scripts/autoload/run_manager.gd"
 Settings="*res://scripts/autoload/settings.gd"
 AudioDirector="*res://scripts/autoload/audio_director.gd"
 Fx="*res://scripts/autoload/fx.gd"
+Dialogue="*res://scripts/autoload/dialogue.gd"
 
 [display]
 
@@ -31,6 +32,10 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://assets/text/strings.en.translation")
 
 [editor_plugins]
 

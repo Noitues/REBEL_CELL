@@ -18,6 +18,7 @@ var wireframe: WireframeBackground
 var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
 var _settings_panel: SettingsPanel = null
+var _last_warned_raid: String = ""
 
 
 func _ready() -> void:
@@ -79,6 +80,7 @@ func launch(site_id: StringName, operative_id: StringName) -> bool:
 	if s == null:
 		return false
 	_report(s.last_events)
+	Dialogue.briefing(RunManager.campaign.corporation_id, site_id, RunManager.campaign.campaign_seed)
 	RunManager.go_to_netrun()
 	return true
 
@@ -241,6 +243,7 @@ func show_start() -> void:
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, p.best_ice, p.best_ice_for(RunManager.DEFAULT_CORPORATION)]))
 	box.add_child(_label("Unlocks: %s" % (", ".join(p.unlocks) if not p.unlocks.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
 	box.add_child(_button("Accessibility settings [Esc]", open_settings))
+	box.add_child(_button("Codex", show_codex))
 	_set_panel(box, "start")
 
 
@@ -265,9 +268,11 @@ func show_hq() -> void:
 	var poster := HeatPoster.new(true)
 	poster.set_heat(c.heat, cfg.heat_max)
 	header.add_child(poster)
-	var radio := ZineNote.new("PIRATE RADIO", Vector2(220, 70))
-	radio.append("lo-fi loop: HQ [placeholder]")
+	var radio := ZineNote.new("PIRATE RADIO", Vector2(260, 70))
+	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, &"", &"", c.runs_started + c.runs_completed * 7)
+	radio.append(dj_line.text if dj_line != null else "lo-fi loop: HQ")
 	radio.append("vs %s | ICE %d" % [RunManager.corporation.display_name, c.ice_level])
+	radio.tooltip_text = dj_line.text if dj_line != null else ""
 	header.add_child(radio)
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
 	jack.pressed.connect(show_grid)
@@ -276,6 +281,7 @@ func show_hq() -> void:
 	var actions := HBoxContainer.new()
 	box.add_child(actions)
 	actions.add_child(_button("City Grid", show_grid))
+	actions.add_child(_button("Codex", show_codex))
 	actions.add_child(_button("Settings [Esc]", open_settings))
 	actions.add_child(_button("Recruit rookie (%d)" % cfg.rookie_cost, recruit))
 	actions.add_child(_button("Scrub Heat -%d (%d)" % [cfg.heat_purchase_amount, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
@@ -520,6 +526,39 @@ func show_raid() -> void:
 	box.add_child(_button("RUN THE RAID", fight_raid))
 	box.add_child(_button("Back to HQ (raid stays pending)", show_hq))
 	_set_panel(box, "raid")
+	if _last_warned_raid != String(pending.get("raid_id", "")):
+		_last_warned_raid = String(pending.get("raid_id", ""))
+		Dialogue.raid_warning(c.corporation_id, raid.id, c.raids_won + c.raids_lost)
+
+
+## Codex (GDD 8.1): everything the Cell knows, zine-styled, plus the lexicon.
+func show_codex() -> void:
+	var box := VBoxContainer.new()
+	box.add_child(GraffitiTag.new("CODEX"))
+	var entries := Codex.entries(RunManager.lookup())
+	var tabs := HBoxContainer.new()
+	box.add_child(tabs)
+	var body := ZineNote.new("", Vector2(900, 380))
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for section in entries:
+		var name: String = section
+		tabs.add_child(_button(name, func() -> void: _fill_codex(body, name, entries[name])))
+	box.add_child(body)
+	_fill_codex(body, "Slices", entries["Slices"])
+	if not Dialogue.history.is_empty():
+		var lines := ZineNote.new("LINES HEARD", Vector2(900, 100))
+		for h in Dialogue.history.slice(maxi(0, Dialogue.history.size() - 6)):
+			lines.append("[%s] %s" % [Dialogue.SPEAKER_NAMES.get(int(h["speaker"]), ""), h["text"]])
+		box.add_child(lines)
+	box.add_child(_button("Back to HQ", show_hq if RunManager.campaign != null else show_start))
+	_set_panel(box, "codex")
+
+
+func _fill_codex(body: ZineNote, section: String, items: Array) -> void:
+	body.clear()
+	body.append("[b]%s[/b]" % section.to_upper())
+	for item in items:
+		body.append("[b]%s[/b] - %s" % [item["title"], String(item["text"]).replace("\n", " / ")])
 
 
 ## Raid playout (GDD 7.2, 9.3): threat markers animate over the Grid; 1x/2x/4x and skip.
@@ -568,6 +607,7 @@ func show_raid_summary() -> void:
 
 func show_end() -> void:
 	var c := RunManager.campaign
+	Dialogue.speak("win" if c.outcome == CampaignState.Outcome.WON else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
 	var box := VBoxContainer.new()
 	box.add_child(_label("CAMPAIGN %s" % ("WON - the Renewal Engine is down" if c.outcome == CampaignState.Outcome.WON else "LOST - home server destroyed")))
 	for b in CampaignRules.revealed_beats(c, RunManager.corporation):

@@ -35,7 +35,8 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 | Raids: retaliation, story, node-built; threats Icebreaker, Lockdown Unit | 4.4, 7.1 | done (vertical fixes 2026-09-24) |
 | Home server (standard variant) | 3.1 | done (M3) |
 | Exploits: Intel, Breach, Virus | 11.7 | done (M3) |
-| Story paths with placeholder beats (Solace, 5) | 8.4 | minimal (M3) — real writing later |
+| Story paths with placeholder beats (Solace, 5) | 8.4 | minimal (M3); six written paths with bonus beats and finales (vertical fixes 2026-09-24) |
+| Voice lines: DISPATCH briefings (32 Sites), raid warnings, thresholds, Breaker barks, DJ | 8.2, 8.6 | done as text (vertical fixes 2026-09-24); recording pending |
 | Raid templates (Collections) for Heat thresholds + claim | 4.3, 7 | done (M3) |
 | Heat thresholds + ICE ladder data | 4.3, 11.9 | done (M0) |
 | Shop slice catalogue (*minimal*: Atk 6/8, Crit 12, Def 5/8, Shield 5, Evade) | 11.2 | minimal (M2) |
@@ -52,7 +53,6 @@ the short list.
 | Cards beyond A.2 | 13 | shared pool + class exclusives |
 | Ghost, Rigger, Botnet classes (+ class alternatives) | 5.2, 13 | need EVADE/SHIELD/DEPLOY slices, drones (DEPLOY_DRONE) |
 | More Terminal events, real writing, voices | 8.6 | 5 placeholders exist |
-| Remaining Solace story paths (5–6) and beats | 8.4 | M3 ships one placeholder path |
 | Full ICE 1–20 wording; levels 10/15/20 | 11.9 | open question |
 | Additional corporations, REBEL_CELL generator | 8.5, 13 | |
 | More home-server variants | 3.4 | Bunker exists; each is a Profile unlock |
