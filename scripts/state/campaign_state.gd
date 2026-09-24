@@ -3,6 +3,8 @@ extends RefCounted
 ## Campaign-level state a netrun touches (GDD 3, 4.3, 11): Heat, Schematics, the
 ## roster and the Armory. M3 adds the City Grid, territory, thresholds and raids.
 
+enum Outcome { NONE, WON, LOST }
+
 var corporation_id: StringName = &"solace"
 var campaign_seed: int = 0
 var heat: int = 0
@@ -20,6 +22,30 @@ var next_operative_number: int = 1
 var thresholds_fired: Array[int] = []
 ## ICE difficulty level for this campaign (0 = none; ladder arrives with the profile).
 var ice_level: int = 0
+## City Grid runtime state (null until CampaignRules.new_campaign builds it).
+var grid: GridState = null
+## Story path chosen at campaign start and how many beats have been revealed.
+var story_path_id: StringName = &""
+var story_beats_revealed: int = 0
+## Raids waiting to be fought at HQ: {"raid_id", "source", "heat"|"site_id"}.
+var pending_raids: Array[Dictionary] = []
+## Netrun complications from MINOR thresholds, consumed by the next run:
+## {"type": RC.RuleModifierType, "value": float}.
+var pending_complications: Array[Dictionary] = []
+var heat_purchases: int = 0
+var raids_won: int = 0
+var raids_lost: int = 0
+## Result of the last raid (RaidResult.to_dict()) for the summary screen.
+var last_raid: Dictionary = {}
+var outcome: int = Outcome.NONE
+
+
+func is_over() -> bool:
+	return outcome != Outcome.NONE
+
+
+func has_exploit(exploit_type: int) -> bool:
+	return exploits.has(exploit_type)
 
 
 func get_operative(id: StringName) -> OperativeState:
@@ -90,7 +116,12 @@ func duplicate_state() -> CampaignState:
 	return from_dict(to_dict())
 
 
+## JSON-normalised (numbers as floats) so a saved-and-reloaded campaign hashes identically.
 func to_dict() -> Dictionary:
+	return JSON.parse_string(JSON.stringify(_raw_dict()))
+
+
+func _raw_dict() -> Dictionary:
 	var ops := []
 	for o in roster:
 		ops.append(o.to_dict())
@@ -104,6 +135,11 @@ func to_dict() -> Dictionary:
 		"deaths": deaths, "next_operative_number": next_operative_number,
 		"thresholds_fired": thresholds_fired.duplicate(),
 		"ice_level": ice_level,
+		"grid": grid.to_dict() if grid != null else {},
+		"story_path_id": String(story_path_id), "story_beats_revealed": story_beats_revealed,
+		"pending_raids": pending_raids.duplicate(true), "pending_complications": pending_complications.duplicate(true),
+		"heat_purchases": heat_purchases, "raids_won": raids_won, "raids_lost": raids_lost,
+		"last_raid": last_raid.duplicate(true), "outcome": outcome,
 	}
 
 
@@ -126,7 +162,29 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	for t in d.get("thresholds_fired", []):
 		c.thresholds_fired.append(int(t))
 	c.ice_level = int(d.get("ice_level", 0))
+	var gd: Dictionary = d.get("grid", {})
+	c.grid = GridState.from_dict(gd) if not gd.is_empty() else null
+	c.story_path_id = StringName(String(d.get("story_path_id", "")))
+	c.story_beats_revealed = int(d.get("story_beats_revealed", 0))
+	for r in d.get("pending_raids", []):
+		c.pending_raids.append(_norm(r))
+	for m in d.get("pending_complications", []):
+		c.pending_complications.append({"type": int(m.get("type", 0)), "value": float(m.get("value", 0.0))})
+	c.heat_purchases = int(d.get("heat_purchases", 0))
+	c.raids_won = int(d.get("raids_won", 0))
+	c.raids_lost = int(d.get("raids_lost", 0))
+	c.last_raid = d.get("last_raid", {}).duplicate(true)
+	c.outcome = int(d.get("outcome", Outcome.NONE))
 	return c
+
+
+## Normalises a pending-raid entry read from JSON (ints back from floats, strings kept).
+static func _norm(r: Dictionary) -> Dictionary:
+	var out := {}
+	for k in r:
+		var v: Variant = r[k]
+		out[String(k)] = int(v) if v is float else v
+	return out
 
 
 func state_hash() -> int:

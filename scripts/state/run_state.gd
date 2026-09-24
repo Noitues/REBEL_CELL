@@ -9,6 +9,12 @@ enum Outcome { NONE, COMPLETED, DIED }
 var run_seed: int = 0
 var tier: int = 1
 var site_id: StringName = &""
+## "netrun" (full map), "boss" (single breach combat) or "reclaim" (single combat).
+var kind: String = "netrun"
+## Special runs fight this enemy instead of a pooled one.
+var forced_enemy_id: StringName = &""
+## Extra CombatSession overrides for special runs (Exploit effects on the boss).
+var combat_overrides: Dictionary = {}
 var operative: OperativeState = null
 var cycles: int = 0
 var map: MapGraph = null
@@ -46,12 +52,18 @@ func is_over() -> bool:
 	return outcome != Outcome.NONE
 
 
+## JSON-normalised (numbers as floats) so a saved-and-reloaded run hashes identically.
 func to_dict() -> Dictionary:
+	return JSON.parse_string(JSON.stringify(_raw_dict()))
+
+
+func _raw_dict() -> Dictionary:
 	var rewards := []
 	for r in pending_rewards:
 		rewards.append(r.duplicate(true))
 	return {
 		"run_seed": str(run_seed), "tier": tier, "site_id": String(site_id),
+		"kind": kind, "forced_enemy_id": String(forced_enemy_id), "combat_overrides": combat_overrides.duplicate(true),
 		"operative": operative.to_dict() if operative != null else {},
 		"cycles": cycles, "map": map.to_dict() if map != null else {},
 		"current_node_id": String(current_node_id), "visited": _strings(visited),
@@ -70,6 +82,9 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.run_seed = int(String(d.get("run_seed", "0")))
 	r.tier = int(d.get("tier", 1))
 	r.site_id = StringName(String(d.get("site_id", "")))
+	r.kind = String(d.get("kind", "netrun"))
+	r.forced_enemy_id = StringName(String(d.get("forced_enemy_id", "")))
+	r.combat_overrides = d.get("combat_overrides", {}).duplicate(true)
 	var od: Dictionary = d.get("operative", {})
 	r.operative = OperativeState.from_dict(od) if not od.is_empty() else null
 	r.cycles = int(d.get("cycles", 0))
