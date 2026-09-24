@@ -30,15 +30,66 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M1 Combat Core
+- **Designer rulings applied (from the M0 review):** Godot pin moved to **4.7** (GUT
+  9.7.1); elite frequency placeholder 25% confirmed; `BOSS_PHASE_EARLY` dropped in favour
+  of a new `RuleModifierType.BOSS_STRENGTH_PCT` (boss HP and damage +25% at ICE 9; the
+  old enum value stays so stored numbers keep meaning; GDD §11.9 "bosses change pointers
+  earlier" is superseded); minor Heat complications alternate shop stock −1 (10/30/60/80)
+  and elite frequency +25% (20/40/70/90); RAM cap is **12** as GDD §2.2/§5.2 already state,
+  carried by `ClassData.max_ram` (`ram_regen_per_turn` removed from the config so RAM has
+  one source of truth).
+- **Flip math.** GDD §2.3's code block and TECH_SPEC §5.1 both say
+  `tick = (rotation + pointer + 15 if flipped) mod 30`; the prose ("mirrors… slice order
+  reverses") would be `pointer + 15 − rotation`. The code block is implemented; the
+  discrepancy is logged as an open question.
+- **State references content by id.** `WheelState` stores slice / Firmware / Hub / ring
+  segment ids and resolves them through a `ContentLookup` handed to the resolver, so the
+  core never touches the ContentRegistry autoload and tests can inject in-memory content.
+- **One status per slice.** ENCRYPTED absorbs the next status and clears; OVERCLOCKED
+  becomes CORRUPTED after its trigger; permanent Firmware statuses (Hardened, Burner) come
+  from the Firmware, not the status slot. CORRUPTED self-damage ignores block/shield and is
+  applied in the status pass for every corrupted slice that resolved this turn.
+- **Simultaneity.** All pointers are collected before any pass; a combatant reduced to 0 HP
+  still resolves the rest of the turn; deaths and the outcome apply after the status pass.
+  A dead host takes its satellites with it.
+- **Pointer rule.** Every attack instance hits once per pointer of the target wheel; the
+  bodyguard check uses the target's slice under *that* pointer. Pierce ignores satellites
+  and block but not shield (shield is a separate resource; open question).
+- **Retrigger.** RETRIGGER effects (Breaker Perfect hook, Echo) are counted before the
+  slice resolves; each extra instance repeats the base action and the slice's listeners.
+- **Output rounding:** `roundi(base × multipliers)` (Partial 0.5, Overclock 1.5, ring ×2).
+- **Breaker "+1 spin on all cards"** is data: a PASSIVE-trigger SPIN effect on the Hub
+  Core; the interpreter adds its amount to every SPIN a card performs.
+- **Slice selection for slice-level effects** is a new `EffectData.slice_pick`
+  (UNDER_POINTER / RANDOM_NON_MISS / CHOSEN). DOSE = RANDOM_NON_MISS, never an
+  already-corrupted slice. Convention: a NUDGE effect with `multiplier 0.0` ignores
+  resistance (Jam). Fine Tune's ring and direction come from the action.
+- **Enemy targeting:** enemies and satellites always attack the operative; the operative's
+  pointer attacks and cards aim at `CombatState.target_id` (Tab / target list), which may
+  be a satellite.
+- **Checkpoints are detected, not declared:** `CombatSession.apply()` compares the RNG
+  state before and after; any action that consumed RNG (End Turn respins, DOSE's random
+  slice, Respin, a reshuffle on draw) becomes the new checkpoint. Rewind restores the
+  checkpoint and replays the rest. Preview clones the RNG, so the preview of a random
+  effect is exact in the engine; the scene deliberately shows DOSE as "random non-Miss
+  slice" rather than the exact slot (GDD §2.10 says random effects show odds).
+- **Respin** adds `2×30 + rand(0..29)` ticks so views can animate direction and distance;
+  the inner ring respins independently; a Respin clears `flipped`.
+- **Hub Breach** removes the hub's resistance from the pool at once and disables hub
+  passives; the breach counter decrements at the next start of turn (one full turn).
+- **Combat scene starts the Breaker at Rank 1** (ring installed) so every M1 mechanic is
+  visible; the rank-0 path is covered by tests.
+- **Breaker slice values** are placeholders (Crit 12 / Atk 6 / Def 5, matching the schema
+  smoke test) because GDD §5.2 lists types only.
+
 ### 2026-09-24 — M0 Foundation
 - **Engine used for verification: Godot 4.7.2** (only 4.6.2 / 4.7.x are installed on the
-  dev machine). The project keeps its `config/features` pin at 4.3 per TECH_SPEC; nothing
-  4.4+-only is used. Godot 4.4+ writes `*.uid` sidecars next to every script; they are
-  git-ignored so a 4.3 checkout stays clean.
-- **GUT 9.4.0** is vendored in `addons/gut/` (the tag for Godot 4.3–4.4). On 4.7.2 it logs
-  one harmless static-init error (`gut_loader.gd:35` reads a project setting 4.7 no longer
-  defines) and then runs every test. `.gutconfig.json` enables `include_subdirs` so
-  `-gdir=res://tests` picks up `unit/` and `integration/`.
+  dev machine). M0 kept the 4.3 pin; _superseded in M1_: the designer moved the pin to 4.7,
+  so `*.uid` sidecars are now committed.
+- **GUT 9.4.0** was vendored in M0; _superseded in M1_ by GUT 9.7.1 (the Godot 4.7 tag).
+  `.gutconfig.json` enables `include_subdirs` so `-gdir=res://tests` picks up `unit/`,
+  `integration/` and the non-test `helpers/`.
 - **Fresh clone needs one import** before the `-s` tools work:
   `godot --headless --path . --import` builds the global script-class cache.
 - **`-s` tool scripts compile before autoloads exist.** `tools/validate_content.gd`
@@ -80,18 +131,22 @@ _(Claude Code: add entries here as you make them.)_
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
 
-### From M0 (2026-09-24)
-- **Godot version.** The spec pins 4.3 but the dev machine has 4.6.2 and 4.7.x. Keep the
-  4.3 pin (and install 4.3), or move the pin to 4.7 and GUT to 9.7.1?
-- **"More elites" magnitude.** GDD gives no number for ICE 3, the Heat 25 ongoing modifier
-  or the minor "extra elite" complication. Placeholder: `ELITE_FREQUENCY_PCT = 25`.
-- **Other unspecified magnitudes**, all placeholders in `campaign_config.tres`:
-  `BOSS_PHASE_EARLY = 10` (ICE 9), `REPAIR_COST_PCT = 25` (ICE 13),
-  `SEIZED_RAID_STRENGTH_PCT = 25` (ICE 14).
-- **ICE levels 10, 15 and 20** have no listed change (§11.9 lists 17 changes for 20
-  levels). What should they add, or should bands repeat a change?
-- **Minor Heat complications.** Which complication fires at which minor threshold? M0
-  alternates shop stock −1 and extra elite; the raid at each MAJOR threshold needs RaidData
-  in M3.
-- **RAM cap.** TECH_SPEC §5.3 says RAM regenerates "+regen (cap)" but no cap appears in
-  GDD §11. Needed for M1.
+### From M1 (2026-09-24)
+- **Flip formula.** GDD §2.3 code block (`+15`) vs prose (mirror, `2p + 15 − t`, slice order
+  reverses). Implemented the code block. If mirroring is intended, nudges after a flip
+  should move the pointer the other way; say which.
+- **Breaker slice numbers.** GDD §5.2 gives only the slice types. Placeholders: Crit 12,
+  Atk 6, Def 5.
+- **Pierce vs shield.** "Pierce ignores satellites and block": does it also ignore shield?
+  Currently no.
+- **Corrupted self-damage** is applied straight to HP (not reduced by block/shield). Confirm.
+- **DOSE preview.** The engine can predict the random slice exactly (needed for
+  preview == actual); the HUD hides it. Keep hiding it?
+
+### From M0 (2026-09-24) — resolved by the designer on 2026-09-24
+- Godot version → 4.7 pin, GUT 9.7.1. "More elites" → 25% confirmed. ICE 9 → boss
+  strength (+25% HP/damage) instead of BOSS_PHASE_EARLY. Minor Heat complications →
+  alternate shop stock −1 / elite +25% (implementer's call). RAM cap → 12 (GDD §2.2).
+- Still open: **ICE levels 10, 15 and 20** have no listed change; `REPAIR_COST_PCT = 25`
+  (ICE 13) and `SEIZED_RAID_STRENGTH_PCT = 25` (ICE 14) are placeholders ("when in doubt,
+  up elite and boss numbers" applied); MAJOR-threshold RaidData arrives in M3.

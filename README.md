@@ -1,7 +1,7 @@
 # REBEL_CELL
 
 Cyberpunk tactical dual-spinner deckbuilder with a network-defense campaign.
-Godot 4.3 · GDScript · PC.
+Godot 4.7 · GDScript · PC.
 
 - Design: `docs/GDD.md`
 - Architecture: `docs/TECH_SPEC.md`
@@ -11,7 +11,7 @@ Godot 4.3 · GDScript · PC.
 - Instructions for Claude Code: `CLAUDE.md`
 
 ## Quick start
-1. Install Godot 4.3 (the project is verified on 4.7.2 as well; see `docs/DECISIONS.md`).
+1. Install Godot 4.7 (verified on 4.7.2).
 2. On a fresh clone, build the script class cache once:
    `godot --headless --path . --import`
 3. Run the three checks; all must exit 0:
@@ -20,8 +20,11 @@ Godot 4.3 · GDScript · PC.
    - Content: `godot --headless --path . -s tools/validate_content.gd` → `CONTENT VALIDATION: PASS`
 4. Current milestone: see `docs/MILESTONES.md`.
 
-## Layout (M0)
+## Layout (M0–M1)
 - `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
-- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config only so far)
+- `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay)
+- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat scene
+- `scenes/combat/combat_scene.tscn` — the main scene: Breaker vs the three Solace enemies
+- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, cards, slices, Solace enemies)
 - `tests/unit`, `tests/integration` — GUT 9.x tests · `tools/` — headless checks
-- `addons/gut/` — GUT 9.4.0
+- `addons/gut/` — GUT 9.7.1
