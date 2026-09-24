@@ -68,6 +68,10 @@ enum EffectType {
 }
 
 enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, CHOSEN, CAMPAIGN }
+## Which slice of the target wheel a slice-level effect (APPLY_STATUS, CLEANSE) hits:
+## the slice under the pointer (Overdrive, Corrupt segment), a random non-Miss slice
+## (Solace DOSE), or one the player picks (Cleanse, Encrypt).
+enum SlicePick { UNDER_POINTER, RANDOM_NON_MISS, CHOSEN }
 
 # --- Netrun map ---
 enum InfilNodeType { ROUTER, TERMINAL, MODEM, SERVER_RACK }
@@ -101,6 +105,8 @@ enum RuleModifierType {
 	ENEMY_RESISTANCE,
 	DEATH_HEAT,
 	EXPLOIT_HEAT,
+	## Unused since M1 (designer swapped it for BOSS_STRENGTH_PCT). Kept so stored
+	## enum values keep their numbers.
 	BOSS_PHASE_EARLY,
 	BOSS_EXTRA_POINTER,
 	STARTING_BUG_CARD,
@@ -108,6 +114,8 @@ enum RuleModifierType {
 	REPAIR_COST_PCT,
 	SEIZED_RAID_STRENGTH_PCT,
 	PURGE_THRESHOLD,
+	## Boss HP and damage +N% (ICE ladder).
+	BOSS_STRENGTH_PCT,
 }
 
 # --- Narrative ---

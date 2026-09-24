@@ -85,7 +85,6 @@ func test_shop_and_ram_match_gdd_11_2_and_11_3() -> void:
 	assert_eq(_cfg.card_removal_increment, 25)
 	assert_eq(_cfg.slice_overwrite_price, 100)
 	assert_eq(_cfg.miss_slice_overwrite_price, 150)
-	assert_eq(_cfg.ram_regen_per_turn, 4)
 	assert_eq(_cfg.extra_nudge_ram_cost, 1)
 	assert_eq(_cfg.respin_ram_cost, 4)
 
@@ -111,6 +110,7 @@ func test_ice_ladder_matches_gdd_11_9() -> void:
 		6: [RC.RuleModifierType.HEAT_SINK_PCT, -15.0],
 		7: [RC.RuleModifierType.ENEMY_RESISTANCE, 1.0],
 		8: [RC.RuleModifierType.DEATH_HEAT, 5.0],
+		9: [RC.RuleModifierType.BOSS_STRENGTH_PCT, 25.0],
 		11: [RC.RuleModifierType.STARTING_BUG_CARD, 1.0],
 		12: [RC.RuleModifierType.NO_FIRST_TURN_FREE_NUDGE, 1.0],
 		16: [RC.RuleModifierType.EXPLOIT_HEAT, 5.0],

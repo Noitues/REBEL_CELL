@@ -53,8 +53,8 @@ extends Resource
 @export_group("Combat")
 @export var hand_size: int = 5
 @export var draw_per_turn: int = 5
-## RAM gained at the start of each player turn (11.1).
-@export var ram_regen_per_turn: int = 4
+## RAM per turn, starting RAM and the RAM cap (6 / +4 / 12, GDD 2.2 and 5.2) live on
+## ClassData (starting_ram, ram_regen, max_ram) because classes vary them.
 ## RAM cost of a Respin (11.3). Cards cost 0-3 RAM each (content); first nudge is free.
 @export var respin_ram_cost: int = 4
 @export var partial_multiplier: float = 0.5

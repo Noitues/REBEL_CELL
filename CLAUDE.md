@@ -1,6 +1,6 @@
 # REBEL_CELL — Instructions for Claude Code
 
-Cyberpunk roguelite deckbuilder in **Godot 4.3 / GDScript**. Combat resolves through
+Cyberpunk roguelite deckbuilder in **Godot 4.7 / GDScript**. Combat resolves through
 spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid defense.
 
 ## Read before working

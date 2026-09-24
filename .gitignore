@@ -12,5 +12,4 @@ Thumbs.db
 # Mono / .NET (not used, but keep clean)
 .mono/
 
-# Godot 4.4+ script uid sidecars (project pins 4.3; local runtime is newer)
-*.uid
+

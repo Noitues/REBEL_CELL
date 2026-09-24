@@ -10,6 +10,8 @@ extends Resource
 @export var amount: int = 0
 @export var multiplier: float = 1.0
 @export var status: RC.Status = RC.Status.NONE
+## Slice-level effects only (APPLY_STATUS, CLEANSE): which slice of the target wheel.
+@export var slice_pick: RC.SlicePick = RC.SlicePick.UNDER_POINTER
 ## 0 = instant or permanent.
 @export var duration_turns: int = 0
 ## Only used when type is CUSTOM (rule-breaking behaviour lives in code).

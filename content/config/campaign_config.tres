@@ -181,8 +181,8 @@ value = 5.0
 
 [sub_resource type="Resource" id="rm_ice_9"]
 script = ExtResource("3_rm")
-type = 11
-value = 10.0
+type = 18
+value = 25.0
 
 [sub_resource type="Resource" id="rm_ice_11"]
 script = ExtResource("3_rm")
@@ -275,7 +275,7 @@ modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_8")])
 [sub_resource type="Resource" id="ice_9"]
 script = ExtResource("4_ice")
 level = 9
-description = "Bosses change pointers earlier."
+description = "Bosses +25% HP and damage."
 modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_9")])
 
 [sub_resource type="Resource" id="ice_10"]
@@ -380,7 +380,6 @@ heat_purchase_increment = 10
 class_unlock_cost = 80
 hand_size = 5
 draw_per_turn = 5
-ram_regen_per_turn = 4
 respin_ram_cost = 4
 partial_multiplier = 0.5
 overclock_multiplier = 1.5

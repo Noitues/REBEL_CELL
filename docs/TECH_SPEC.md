@@ -1,6 +1,6 @@
 # REBEL_CELL — Technical Specification
 
-Godot **4.3** (pinned; schemas are verified on 4.3). GDScript only. PC, mouse + keyboard.
+Godot **4.7** (pinned since M1, was 4.3; schemas verified on 4.3 and 4.7.2). GDScript only. PC, mouse + keyboard.
 
 ## 1. Principles
 1. **Deterministic core.** All game rules live in pure-logic `RefCounted` classes with no
