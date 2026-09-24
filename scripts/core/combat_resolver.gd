@@ -23,8 +23,11 @@ func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 
 ## Builds turn-0 state for an operative of `class_data` (with an optional installed
 ## Inner Ring) against `enemy_datas`. Satellites with ON_COMBAT_START spawns dock now.
+## `overrides` (all optional, from the operative's run state): "slot_slice_ids",
+## "slot_firmware_ids", "deck" (Array of ids as Strings or StringNames), "daemon_ids",
+## "hp", "max_hp", "enemy_scale" (GDD 11.6 tier multiplier for enemy HP and outputs).
 ## Call begin_combat() next to run the first START_TURN.
-func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: RandomNumberGenerator, ring: InnerRingData = null, heat_majors_crossed: int = 0) -> CombatState:
+func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: RandomNumberGenerator, ring: InnerRingData = null, heat_majors_crossed: int = 0, overrides: Dictionary = {}) -> CombatState:
 	var s := CombatState.new()
 	s.heat_majors_crossed = heat_majors_crossed
 	var p := CombatantState.new()
@@ -32,26 +35,48 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	p.source_id = class_data.id
 	p.display_name = class_data.display_name if class_data.display_name != "" else String(class_data.id)
 	p.is_player = true
-	p.max_hp = class_data.base_hp
-	p.hp = class_data.base_hp
-	p.wheel = WheelState.from_wheel_data(class_data.starting_wheel, ring)
+	p.max_hp = int(overrides.get("max_hp", class_data.base_hp))
+	p.hp = int(overrides.get("hp", p.max_hp))
+	p.wheel = WheelState.from_wheel_data(class_data.starting_wheel, ring,
+		_to_names(overrides.get("slot_slice_ids", [])), _to_names(overrides.get("slot_firmware_ids", [])))
 	p.hub_resistance = class_data.starting_wheel.hub.hub_resistance if class_data.starting_wheel.hub != null else 0
 	s.player = p
 	s.ram = class_data.starting_ram
-	for card in class_data.starting_deck:
-		if card != null:
-			s.draw_pile.append(card.id)
+	if overrides.has("deck"):
+		s.draw_pile = _to_names(overrides["deck"])
+	else:
+		for card in class_data.starting_deck:
+			if card != null:
+				s.draw_pile.append(card.id)
+	s.daemon_ids = _to_names(overrides.get("daemon_ids", []))
+	var enemy_scale := float(overrides.get("enemy_scale", 1.0))
 	for i in enemy_datas.size():
 		var e := _make_combatant(enemy_datas[i], StringName("enemy_%d" % i), false)
+		_scale_enemy(e, enemy_scale)
 		s.enemies.append(e)
 		for spawn in enemy_datas[i].spawns:
 			if spawn == null or spawn.satellite == null or spawn.trigger != RC.Trigger.ON_COMBAT_START:
 				continue
 			for k in spawn.max_active:
-				_spawn_satellite(s, e, spawn, rng)
+				_scale_enemy(_spawn_satellite(s, e, spawn, rng), enemy_scale)
 	if not s.enemies.is_empty():
 		s.target_id = s.enemies[0].id
 	return s
+
+
+static func _scale_enemy(e: CombatantState, scale: float) -> void:
+	if is_equal_approx(scale, 1.0):
+		return
+	e.max_hp = roundi(e.max_hp * scale)
+	e.hp = e.max_hp
+	e.output_scale = scale
+
+
+static func _to_names(values: Array) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for v in values:
+		out.append(StringName(String(v)))
+	return out
 
 
 ## Runs the first START_TURN (respins, shuffle, draw). Returns a new state.
@@ -184,12 +209,17 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	s.phase = CombatState.Phase.START_TURN
 	events.append({"type": "turn_start", "turn": s.turn, "text": "--- Turn %d ---" % s.turn})
 	var cls := fx.class_of(s)
+	s.ring_locked = false
+	s.flags.erase("steady_hand")
 	for c in s.combatants_in_order():
 		if c.wheel.frozen:
 			c.wheel.frozen = false
 			events.append({"type": "frozen_skip", "target": c.id, "text": "%s is frozen and skips its respin." % c.display_name})
 		else:
 			fx.respin(c, rng, events, true)
+		if c.wheel.pointer_orbit != 0 and s.turn > 1:
+			c.wheel.orbit_pointers()
+			events.append({"type": "orbit", "target": c.id, "text": "%s's pointer orbits to tick %d." % [c.display_name, c.wheel.pointer_ticks[0]]})
 		c.block = 0
 		c.evade_charges = 0
 		if c.hub_breached_turns > 0:
@@ -202,10 +232,15 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	if s.turn > 1:
 		s.ram = mini(s.ram + cls.ram_regen, cls.max_ram)
 		events.append({"type": "ram", "amount": cls.ram_regen, "text": "RAM +%d (%d/%d)." % [cls.ram_regen, s.ram, cls.max_ram]})
+	if s.ram_bonus_next_turn > 0:
+		fx.gain_ram(s, s.ram_bonus_next_turn, events)
+		s.ram_bonus_next_turn = 0
 	s.free_nudges = cls.free_nudges_per_turn
 	s.spins_this_turn = 0
 	_retarget_if_needed(s)
 	fx.draw_cards(s, maxi(0, config.hand_size - s.hand.size()), rng, events)
+	var ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
+	fx.run_triggers(s, RC.Trigger.ON_TURN_START, ctx, _player_listeners(s), rng, events)
 	s.phase = CombatState.Phase.PLAYER_PHASE
 
 
@@ -217,8 +252,13 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	var resolutions := _collect_resolutions(s)
 	# Consecutive Perfects are counted on the player's first pointer, before hooks run.
 	for r in resolutions:
-		if r["owner"] == s.player and r["pointer_index"] == 0:
+		if r["owner"] == s.player and r["pointer_index"] == 0 and not r.get("derived", false):
 			s.consecutive_perfects = s.consecutive_perfects + 1 if r["tier"] == RC.PrecisionTier.PERFECT else 0
+			if r["tier"] == RC.PrecisionTier.PERFECT and int(s.flags.get("steady_hand", 0)) > 0:
+				s.ram_bonus_next_turn += 2 * int(s.flags["steady_hand"])
+				events.append({"type": "steady_hand", "amount": s.ram_bonus_next_turn, "text": "Steady Hand: Perfect at end of turn, +%d RAM next turn." % s.ram_bonus_next_turn})
+			if r["slice"].slice_type == RC.SliceType.MISS:
+				s.miss_resolved = true
 	for r in resolutions:
 		events.append({"type": "pointer", "owner": r["owner"].id, "pointer_index": r["pointer_index"], "tick": r["tick"],
 			"slice_index": r["slice_index"], "offset": r["offset"], "tier": r["tier"], "segment_index": r["segment_index"],
@@ -239,8 +279,10 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.MISS:
 			_resolve_pointer(s, r, rng, events)
 	for r in resolutions:
-		if r["status"] == RC.Status.CORRUPTED:
+		if r["status"] == RC.Status.CORRUPTED and not r.get("derived", false):
 			_corrupted_trigger(s, r, events)
+	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
+	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
 	var alive_before: Array[StringName] = []
 	for r in resolutions:
 		if not alive_before.has(r["owner"].id):
@@ -322,16 +364,48 @@ func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerato
 
 # --- Internals: resolution -------------------------------------------------------
 
+## Every pointer's readout plus the extra resolutions Firmware neighbour rules add
+## (GDD 6.1). Mirror: copy the neighbour on the side you landed (both on Perfect).
+## Shunt: resolve that neighbour instead at neighbor_multiplier; nothing special on
+## Perfect. Derived entries keep the landing's tier and carry "derived": true.
 func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for c in s.combatants_in_order():
 		for i in c.wheel.pointer_ticks.size():
-			out.append(_readout(s, c, i))
+			var r := _readout(s, c, i)
+			var fw: FirmwareData = r["firmware"]
+			if fw == null or fw.neighbor_rule == RC.NeighborRule.NONE:
+				out.append(r)
+				continue
+			var offset: int = r["offset"]
+			var sides: Array[int] = []
+			if offset != 0:
+				sides.append(signi(offset))
+			elif fw.neighbor_rule == RC.NeighborRule.MIRROR:
+				sides = [1, -1]
+			if fw.neighbor_rule == RC.NeighborRule.MIRROR or sides.is_empty():
+				out.append(r)
+			for side in sides:
+				out.append(_neighbor_resolution(s, r, side, fw.neighbor_multiplier))
 	return out
 
 
+func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: float) -> Dictionary:
+	var c: CombatantState = r["owner"]
+	var slot := posmod(int(r["slice_index"]) + side, c.wheel.slice_count)
+	var d := r.duplicate()
+	d["slice_index"] = slot
+	d["slice"] = fx.slice_of(c.wheel, slot)
+	d["firmware"] = null
+	d["status"] = c.wheel.slice_statuses[slot]
+	d["permanent_status"] = fx.permanent_status(c.wheel, slot)
+	d["derived"] = true
+	d["extra_multiplier"] = multiplier
+	return d
+
+
 ## Listeners for the slice at `r`, in TECH_SPEC order: slice, Firmware, ring segment,
-## Hub (Daemons arrive in M2).
+## Hub, Daemons.
 func _slice_listeners(s: CombatState, r: Dictionary) -> Array:
 	var owner: CombatantState = r["owner"]
 	var slice: SliceData = r["slice"]
@@ -348,14 +422,28 @@ func _slice_listeners(s: CombatState, r: Dictionary) -> Array:
 		if owner.is_player and hub.perfect_hook != null:
 			hub_effects.append(hub.perfect_hook)
 		out.append({"source_id": hub.id, "effects": hub_effects})
+	if owner.is_player:
+		out.append_array(_daemon_listeners(s))
 	return out
 
 
 func _player_listeners(s: CombatState) -> Array:
+	var out := []
 	var hub := fx.hub_of(s.player.wheel)
-	if hub == null or s.player.is_hub_breached():
-		return []
-	return [{"source_id": hub.id, "effects": hub.passive_effects}]
+	if hub != null and not s.player.is_hub_breached():
+		out.append({"source_id": hub.id, "effects": hub.passive_effects})
+	out.append_array(_daemon_listeners(s))
+	return out
+
+
+## The operative's Daemons as listeners, in id order (deterministic).
+func _daemon_listeners(s: CombatState) -> Array:
+	var out := []
+	for id in s.daemon_ids:
+		var d := lookup.get_content(id) as DaemonData
+		if d != null:
+			out.append({"source_id": d.id, "effects": d.triggered_effects, "handler": d.custom_handler})
+	return out
 
 
 ## Resolves one pointer: computes multipliers and extra resolutions, runs the base
@@ -370,7 +458,7 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var ctx := {"owner": owner, "target": _pointer_target(s, owner), "pointer_index": r["pointer_index"],
 		"tier": r["tier"], "slice_index": slot, "source_id": slice.id}
 	var listeners := _slice_listeners(s, r)
-	var mult := 1.0
+	var mult: float = owner.output_scale * float(r.get("extra_multiplier", 1.0))
 	if r["tier"] == RC.PrecisionTier.PARTIAL:
 		mult *= config.partial_multiplier
 	var fw: FirmwareData = r["firmware"]
@@ -394,13 +482,16 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		events.append({"type": "retrigger", "owner": owner.id, "count": instances.size(),
 			"text": "%s's %s resolves %d times." % [owner.display_name, _slice_name(slice), instances.size()]})
 	for m in instances:
-		_slice_action(s, owner, slice, roundi(slice.base_output * m), pierce, ctx, events)
+		var output := roundi(slice.base_output * m)
+		if owner.is_player and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT] and s.damage_bonus > 0:
+			output += s.damage_bonus
+		_slice_action(s, owner, slice, output, pierce, ctx, events)
 		fx.run_triggers(s, RC.Trigger.ON_SLICE_TRIGGER, ctx, listeners, rng, events)
 		if r["tier"] == RC.PrecisionTier.PERFECT:
 			fx.run_triggers(s, RC.Trigger.ON_PERFECT, ctx, listeners, rng, events)
 		if slice.slice_type == RC.SliceType.MISS:
 			fx.run_triggers(s, RC.Trigger.ON_MISS_SLICE, ctx, listeners, rng, events)
-	if r["status"] == RC.Status.OVERCLOCKED:
+	if r["status"] == RC.Status.OVERCLOCKED and not r.get("derived", false):
 		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})

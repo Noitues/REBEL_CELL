@@ -18,16 +18,21 @@ var frozen: bool = false
 ## One RC.Status per slot (temporary statuses; permanent ones come from Firmware).
 var slice_statuses: Array[int] = []
 var passive_resistance: int = 0
+## Ticks every pointer moves at each start of turn (Recall Unit orbit).
+var pointer_orbit: int = 0
 
 
-## Builds the starting state of `data`, optionally with an installed Inner Ring.
-static func from_wheel_data(data: WheelData, ring: InnerRingData = null) -> WheelState:
+## Builds the starting state of `data`, optionally with an installed Inner Ring and an
+## operative's own layout (slice ids and Firmware sockets) in place of the data's.
+static func from_wheel_data(data: WheelData, ring: InnerRingData = null, slice_ids: Array[StringName] = [], firmware_ids: Array[StringName] = []) -> WheelState:
 	var w := WheelState.new()
 	w.slice_count = data.slice_count
-	for slot in data.slots:
-		w.slot_slice_ids.append(slot.slice.id if slot.slice != null else &"")
-		w.slot_firmware_ids.append(slot.firmware.id if slot.firmware != null else &"")
+	for i in data.slots.size():
+		var slot := data.slots[i]
+		w.slot_slice_ids.append(slice_ids[i] if i < slice_ids.size() else (slot.slice.id if slot.slice != null else &""))
+		w.slot_firmware_ids.append(firmware_ids[i] if i < firmware_ids.size() else (slot.firmware.id if slot.firmware != null else &""))
 		w.slice_statuses.append(RC.Status.NONE)
+	w.pointer_orbit = data.pointer_orbit_per_turn
 	w.hub_id = data.hub.id if data.hub != null else &""
 	var ring_data := ring if ring != null else data.inner_ring
 	if ring_data != null:
@@ -102,7 +107,16 @@ func duplicate_state() -> WheelState:
 	w.frozen = frozen
 	w.slice_statuses = slice_statuses.duplicate()
 	w.passive_resistance = passive_resistance
+	w.pointer_orbit = pointer_orbit
 	return w
+
+
+## Moves every pointer by the orbit amount (start of turn).
+func orbit_pointers() -> void:
+	if pointer_orbit == 0:
+		return
+	for i in pointer_ticks.size():
+		pointer_ticks[i] = posmod(pointer_ticks[i] + pointer_orbit, RC.TICKS)
 
 
 func to_dict() -> Dictionary:
@@ -118,6 +132,7 @@ func to_dict() -> Dictionary:
 		"frozen": frozen,
 		"slice_statuses": slice_statuses.duplicate(),
 		"passive_resistance": passive_resistance,
+		"pointer_orbit": pointer_orbit,
 	}
 
 
@@ -138,6 +153,7 @@ static func from_dict(d: Dictionary) -> WheelState:
 	for s in d.get("slice_statuses", []):
 		w.slice_statuses.append(int(s))
 	w.passive_resistance = int(d.get("passive_resistance", 0))
+	w.pointer_orbit = int(d.get("pointer_orbit", 0))
 	return w
 
 

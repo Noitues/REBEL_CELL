@@ -155,8 +155,17 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 		RC.EffectType.RETRIGGER:
 			pass  # Counted by the resolver before the slice resolves.
 		RC.EffectType.MODIFY_HEAT, RC.EffectType.GAIN_CYCLES, RC.EffectType.GAIN_SCHEMATICS:
-			events.append({"type": "campaign_effect", "effect": e.type, "amount": e.amount,
+			events.append({"type": "campaign_effect", "effect": e.type, "amount": e.amount, "source_id": ctx.get("source_id", &""),
 				"text": "%s: %+d (campaign)" % [RC.EffectType.keys()[e.type], e.amount]})
+		RC.EffectType.CUSTOM:
+			if e.custom_handler == null:
+				events.append({"type": "unsupported_effect", "effect": e.type, "text": "CUSTOM effect without a handler."})
+				return false
+			var handler: Object = e.custom_handler.new()
+			var sub := ctx.duplicate()
+			sub["effect"] = e
+			sub["fx"] = self
+			events.append_array(handler.handle(sub, state, rng))
 		_:
 			events.append({"type": "unsupported_effect", "effect": e.type,
 				"text": "Effect %s is not implemented yet." % RC.EffectType.keys()[e.type]})
@@ -165,9 +174,18 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 
 
 ## Runs every TriggeredEffectData in `listeners` whose trigger and conditions match.
-## `listeners` is an ordered list of {source_id, effects: Array[TriggeredEffectData]}.
+## `listeners` is an ordered list of {source_id, effects: Array[TriggeredEffectData],
+## handler: Script (optional)}. A handler (rule-breaking Daemon) is called for every
+## trigger with the trigger in the context and decides for itself.
 func run_triggers(state: CombatState, trigger: int, ctx: Dictionary, listeners: Array, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
 	for listener in listeners:
+		var handler_script: Script = listener.get("handler")
+		if handler_script != null:
+			var sub_h := ctx.duplicate()
+			sub_h["trigger"] = trigger
+			sub_h["source_id"] = listener["source_id"]
+			sub_h["fx"] = self
+			events.append_array(handler_script.new().handle(sub_h, state, rng))
 		var effects: Array = listener["effects"]
 		for i in effects.size():
 			var te: TriggeredEffectData = effects[i]
@@ -180,6 +198,8 @@ func run_triggers(state: CombatState, trigger: int, ctx: Dictionary, listeners: 
 				state.per_combat_uses[key] = int(state.per_combat_uses.get(key, 0)) + 1
 			var sub := ctx.duplicate()
 			sub["source_id"] = listener["source_id"]
+			events.append({"type": "trigger", "source_id": listener["source_id"], "trigger": trigger,
+				"text": "%s triggers (%s)." % [listener["source_id"], RC.Trigger.keys()[trigger]]})
 			for e in te.effects:
 				if e != null and e.type != RC.EffectType.RETRIGGER:
 					apply_effect(state, e, sub, rng, events)
@@ -345,7 +365,7 @@ func spin(state: CombatState, owner: CombatantState, c: CombatantState, amount: 
 		c.resistance -= absorbed
 	var moved := ticks - absorbed
 	c.wheel.rotation += step * moved
-	if c.wheel.has_inner_ring():
+	if c.wheel.has_inner_ring() and not (c.is_player and state.ring_locked):
 		c.wheel.inner_rotation += step * moved
 	events.append({"type": "spin", "target": c.id, "amount": amount, "moved": step * moved, "absorbed": absorbed,
 		"text": "%s spins %+d%s." % [c.display_name, step * moved, " (%d absorbed by resistance)" % absorbed if absorbed > 0 else ""]})

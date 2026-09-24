@@ -23,14 +23,19 @@ var last_events: Array[Dictionary] = []
 
 
 ## Starts a combat: builds the state from content ids, seeds the RNG, runs turn 1.
-static func start(p_resolver: CombatResolver, class_id: StringName, enemy_ids: Array[StringName], p_seed: int, ring_id: StringName = &"", heat_majors_crossed: int = 0) -> CombatSession:
+## `overrides` carries an operative's own layout/deck/HP and enemy scaling (see
+## CombatResolver.create_combat); it is recorded in `setup` so replay rebuilds it.
+static func start(p_resolver: CombatResolver, class_id: StringName, enemy_ids: Array[StringName], p_seed: int, ring_id: StringName = &"", heat_majors_crossed: int = 0, overrides: Dictionary = {}) -> CombatSession:
 	var session := CombatSession.new()
 	session.resolver = p_resolver
 	session.combat_seed = p_seed
 	session.rng.seed = p_seed
-	session.setup = {"class_id": String(class_id), "enemy_ids": [], "ring_id": String(ring_id), "heat_majors_crossed": heat_majors_crossed}
+	session.setup = {"class_id": String(class_id), "enemy_ids": [], "ring_id": String(ring_id),
+		"heat_majors_crossed": heat_majors_crossed, "overrides": overrides.duplicate(true)}
 	for id in enemy_ids:
 		session.setup["enemy_ids"].append(String(id))
+	# JSON-normalise (ints become floats) so a saved-and-reloaded session hashes the same.
+	session.setup = JSON.parse_string(JSON.stringify(session.setup))
 	var lookup := p_resolver.lookup
 	var class_data := lookup.get_content(class_id) as ClassData
 	var enemies: Array[EnemyData] = []
@@ -39,7 +44,7 @@ static func start(p_resolver: CombatResolver, class_id: StringName, enemy_ids: A
 	var ring: InnerRingData = null
 	if ring_id != &"":
 		ring = _ring_from_class(class_data, ring_id)
-	var initial := p_resolver.create_combat(class_data, enemies, session.rng, ring, heat_majors_crossed)
+	var initial := p_resolver.create_combat(class_data, enemies, session.rng, ring, heat_majors_crossed, overrides)
 	var result := p_resolver.begin_combat(initial, session.rng)
 	session.state = result.state
 	session.last_events = result.events
@@ -54,7 +59,8 @@ static func replay(p_resolver: CombatResolver, p_setup: Dictionary, p_seed: int,
 	for id in p_setup.get("enemy_ids", []):
 		enemy_ids.append(StringName(String(id)))
 	var session := start(p_resolver, StringName(String(p_setup.get("class_id", ""))), enemy_ids, p_seed,
-		StringName(String(p_setup.get("ring_id", ""))), int(p_setup.get("heat_majors_crossed", 0)))
+		StringName(String(p_setup.get("ring_id", ""))), int(p_setup.get("heat_majors_crossed", 0)),
+		p_setup.get("overrides", {}))
 	for a in actions:
 		session.apply(a)
 	return session
@@ -143,7 +149,7 @@ func to_dict() -> Dictionary:
 static func from_dict(p_resolver: CombatResolver, d: Dictionary) -> CombatSession:
 	var session := CombatSession.new()
 	session.resolver = p_resolver
-	session.setup = d.get("setup", {}).duplicate(true)
+	session.setup = JSON.parse_string(JSON.stringify(d.get("setup", {})))
 	session.combat_seed = int(String(d.get("seed", "0")))
 	session.rng.seed = session.combat_seed
 	session.rng.state = int(String(d.get("rng_state", "0")))

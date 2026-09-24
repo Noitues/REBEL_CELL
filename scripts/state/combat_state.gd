@@ -29,6 +29,18 @@ var spins_this_turn: int = 0
 var heat_majors_crossed: int = 0
 ## Grows by one per satellite spawned, to keep ids unique.
 var spawn_counter: int = 0
+## The operative's Daemons (run-wide rules that hook combat triggers).
+var daemon_ids: Array[StringName] = []
+## Per-combat markers set by cards/Daemons (String -> int), e.g. "steady_hand".
+var flags: Dictionary = {}
+## Kernel Sync: +N to every player attack for the rest of the combat.
+var damage_bonus: int = 0
+## Ring Lock: spins on the operative's wheel leave the inner ring alone this turn.
+var ring_locked: bool = false
+## Steady Hand: RAM granted at the next start of turn.
+var ram_bonus_next_turn: int = 0
+## Cold Exit: whether the operative's Miss slice resolved in this combat.
+var miss_resolved: bool = false
 
 
 func get_combatant(id: StringName) -> CombatantState:
@@ -103,6 +115,12 @@ func duplicate_state() -> CombatState:
 	s.spins_this_turn = spins_this_turn
 	s.heat_majors_crossed = heat_majors_crossed
 	s.spawn_counter = spawn_counter
+	s.daemon_ids = daemon_ids.duplicate()
+	s.flags = flags.duplicate()
+	s.damage_bonus = damage_bonus
+	s.ring_locked = ring_locked
+	s.ram_bonus_next_turn = ram_bonus_next_turn
+	s.miss_resolved = miss_resolved
 	return s
 
 
@@ -128,6 +146,12 @@ func to_dict() -> Dictionary:
 		"spins_this_turn": spins_this_turn,
 		"heat_majors_crossed": heat_majors_crossed,
 		"spawn_counter": spawn_counter,
+		"daemon_ids": _names(daemon_ids),
+		"flags": flags.duplicate(),
+		"damage_bonus": damage_bonus,
+		"ring_locked": ring_locked,
+		"ram_bonus_next_turn": ram_bonus_next_turn,
+		"miss_resolved": miss_resolved,
 	}
 
 
@@ -153,6 +177,13 @@ static func from_dict(d: Dictionary) -> CombatState:
 	s.spins_this_turn = int(d.get("spins_this_turn", 0))
 	s.heat_majors_crossed = int(d.get("heat_majors_crossed", 0))
 	s.spawn_counter = int(d.get("spawn_counter", 0))
+	s.daemon_ids = _to_names(d.get("daemon_ids", []))
+	for k in d.get("flags", {}):
+		s.flags[String(k)] = int(d["flags"][k])
+	s.damage_bonus = int(d.get("damage_bonus", 0))
+	s.ring_locked = bool(d.get("ring_locked", false))
+	s.ram_bonus_next_turn = int(d.get("ram_bonus_next_turn", 0))
+	s.miss_resolved = bool(d.get("miss_resolved", false))
 	return s
 
 
