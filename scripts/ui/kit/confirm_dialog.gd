@@ -1,0 +1,42 @@
+class_name ConfirmDialog
+extends Control
+## A zine confirm strip: a question, YES / NO. Emits confirmed or cancelled and frees
+## itself. Used for quitting, deleting saves and abandoning campaigns.
+
+signal confirmed
+signal cancelled
+
+var yes_button: Button
+var no_button: Button
+
+
+func _init(question: String, yes_text: String = "Yes", no_text: String = "No") -> void:
+	custom_minimum_size = Vector2(420, 120)
+	var panel := ZinePanel.new("ARE YOU SURE?", -1.0)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(panel)
+	var box := VBoxContainer.new()
+	panel.content.add_child(box)
+	var l := Label.new()
+	l.text = question
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(380, 0)
+	l.add_theme_color_override("font_color", Palette.INK)
+	box.add_child(l)
+	var row := HBoxContainer.new()
+	box.add_child(row)
+	yes_button = Button.new()
+	yes_button.text = yes_text
+	yes_button.pressed.connect(func() -> void: confirmed.emit(); queue_free())
+	row.add_child(yes_button)
+	no_button = Button.new()
+	no_button.text = no_text
+	no_button.pressed.connect(func() -> void: cancelled.emit(); queue_free())
+	row.add_child(no_button)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		cancelled.emit()
+		get_viewport().set_input_as_handled()
+		queue_free()

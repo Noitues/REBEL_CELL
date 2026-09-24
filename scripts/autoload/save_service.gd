@@ -84,6 +84,23 @@ func migrate(data: Dictionary) -> Dictionary:
 	return current
 
 
+## Campaign slot names with a save file, sorted.
+func list_campaign_slots() -> PackedStringArray:
+	var out := PackedStringArray()
+	var dir := DirAccess.open(SAVE_DIR)
+	if dir == null:
+		return out
+	dir.list_dir_begin()
+	var name := dir.get_next()
+	while name != "":
+		if not dir.current_is_dir() and name.begins_with("campaign_") and name.ends_with(".json"):
+			out.append(name.trim_prefix("campaign_").trim_suffix(".json"))
+		name = dir.get_next()
+	dir.list_dir_end()
+	out.sort()
+	return out
+
+
 ## True when a save exists at `path`.
 func has_save(path: String) -> bool:
 	return FileAccess.file_exists(path)

@@ -17,7 +17,7 @@ var background: CyberdeckBackground
 var wireframe: WireframeBackground
 var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
-var _settings_panel: SettingsPanel = null
+var _settings_panel: PauseMenu = null
 var _last_warned_raid: String = ""
 
 
@@ -193,10 +193,12 @@ func open_settings() -> void:
 		_settings_panel.queue_free()
 		_settings_panel = null
 		return
-	_settings_panel = SettingsPanel.new()
-	_settings_panel.position = Vector2(size.x / 2.0 - 180, 120)
-	_settings_panel.closed.connect(open_settings)
+	_settings_panel = PauseMenu.new()
+	_settings_panel.position = Vector2(size.x / 2.0 - 280, 100)
+	_settings_panel.resumed.connect(open_settings)
+	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
+	get_tree().paused = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -242,8 +244,9 @@ func show_start() -> void:
 	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %d (Solace %d)." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, p.best_ice, p.best_ice_for(RunManager.DEFAULT_CORPORATION)]))
 	box.add_child(_label("Unlocks: %s" % (", ".join(p.unlocks) if not p.unlocks.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
-	box.add_child(_button("Accessibility settings [Esc]", open_settings))
+	box.add_child(_button("Options [Esc]", open_settings))
 	box.add_child(_button("Codex", show_codex))
+	box.add_child(_button("Back to title", RunManager.go_to_title))
 	_set_panel(box, "start")
 
 
@@ -615,6 +618,7 @@ func show_end() -> void:
 	var p := RunManager.profile
 	box.add_child(_label("Profile: %d won / %d lost, best ICE %d; next campaigns may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, p.best_ice, RunManager.ice_cap()]))
 	box.add_child(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()))
+	box.add_child(_button("Back to title", RunManager.go_to_title))
 	_set_panel(box, "end")
 
 

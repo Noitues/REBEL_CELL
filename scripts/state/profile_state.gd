@@ -13,6 +13,13 @@ var runs_completed: int = 0
 var operatives_lost: int = 0
 var raids_won: int = 0
 var raids_lost: int = 0
+## Achievement ids earned (Achievements.DEFS).
+var achievements: Array[StringName] = []
+## Counters for stats and achievements: perfects, racks, cycles, runs_by_tier...
+var stats: Dictionary = {}
+## The last RUN_HISTORY_CAP runs: {corporation, tier, site, outcome, cycles, banked}.
+var run_history: Array[Dictionary] = []
+const RUN_HISTORY_CAP := 20
 
 
 func record_win(corporation_id: StringName, ice_level: int) -> void:
@@ -31,6 +38,21 @@ func best_ice_for(corporation_id: StringName) -> int:
 
 func has_unlock(id: StringName) -> bool:
 	return unlocks.has(id)
+
+
+func add_stat(key: String, amount: int = 1) -> void:
+	stats[key] = int(stats.get(key, 0)) + amount
+
+
+func add_achievement(id: StringName) -> void:
+	if not achievements.has(id):
+		achievements.append(id)
+
+
+func record_run(entry: Dictionary) -> void:
+	run_history.push_front(entry.duplicate())
+	while run_history.size() > RUN_HISTORY_CAP:
+		run_history.pop_back()
 
 
 func add_unlock(id: StringName) -> void:
@@ -52,9 +74,13 @@ func to_dict() -> Dictionary:
 	var u := []
 	for x in unlocks:
 		u.append(String(x))
+	var a := []
+	for x in achievements:
+		a.append(String(x))
 	return {"unlocks": u, "best_ice": best_ice, "best_ice_by_corp": best_ice_by_corp.duplicate(),
 		"campaigns_started": campaigns_started, "campaigns_won": campaigns_won, "campaigns_lost": campaigns_lost,
-		"runs_completed": runs_completed, "operatives_lost": operatives_lost, "raids_won": raids_won, "raids_lost": raids_lost}
+		"runs_completed": runs_completed, "operatives_lost": operatives_lost, "raids_won": raids_won, "raids_lost": raids_lost,
+		"achievements": a, "stats": stats.duplicate(), "run_history": run_history.duplicate(true)}
 
 
 static func from_dict(d: Dictionary) -> ProfileState:
@@ -71,6 +97,15 @@ static func from_dict(d: Dictionary) -> ProfileState:
 	p.operatives_lost = int(d.get("operatives_lost", 0))
 	p.raids_won = int(d.get("raids_won", 0))
 	p.raids_lost = int(d.get("raids_lost", 0))
+	for x in d.get("achievements", []):
+		p.achievements.append(StringName(String(x)))
+	for k in d.get("stats", {}):
+		p.stats[String(k)] = int(d["stats"][k])
+	for r in d.get("run_history", []):
+		var entry := {}
+		for k in r:
+			entry[String(k)] = int(r[k]) if r[k] is float else r[k]
+		p.run_history.append(entry)
 	return p
 
 

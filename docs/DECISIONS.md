@@ -30,6 +30,47 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Vertical-slice fixes, batch 4: menus, platform and onboarding (GAP_ANALYSIS §2.5)
+- **Title scene** (`scenes/menu/title_scene.tscn`) is the main scene: Continue (the most
+  recently saved numbered slot), Campaigns (three slots with corporation / Heat / ICE /
+  runs / state, New / Load / Delete with a confirm), Tutorial, Codex, Stats &
+  achievements (profile numbers, achievement list, the last 20 runs), Options, Quit
+  (confirm). Saves carry `saved_at`; `SaveService.list_campaign_slots()` scans the save
+  directory; test and demo slots are never offered.
+- **Pause menu** (`PauseMenu`) replaces the bare accessibility popup on Esc in every
+  scene: Resume, Options (the full `SettingsPanel` inline), Codex, Save & quit to title,
+  Quit to desktop (confirm). The scene variable keeps its `_settings_panel` name so the
+  keyboard test still checks it toggles.
+- **Options** in five sections: Accessibility (unchanged), Display (windowed /
+  fullscreen / borderless, resolution presets, v-sync, fps counter), Audio (master, music,
+  SFX), Controls (rebind the twelve combat/menu actions by pressing a key; card keys stay
+  1-9; Escape cancels; Reset restores the project defaults; bindings persist in
+  `Settings.keybinds` and are applied to the InputMap at start-up), Language (locales
+  with a loaded translation). Display changes are no-ops headless.
+- **Autosave indicator**: Fx shows a marker "SAVED" that fades whenever SignalBus reports
+  a completed save; **fps counter** in cell_acid top-right when enabled.
+- **Tutorial** (`TutorialOverlay`): seven zine steps over the first fight (wheel, precision,
+  resistance, cards & preview, rewind, End Turn, Heat & banking); steps with a trigger
+  advance on the matching engine event (nudge, card, rewind, turn_start), the rest on
+  Next; Skip or Finish sets `Settings.tutorial_done`. Starts automatically on a new
+  profile's first fight (never headless) and from the title's Tutorial button
+  (`RunManager.pending_tutorial` → the combat scene).
+- **Achievements** (`Achievements.DEFS`, evaluated in `sync_profile_with_campaign`): First
+  Blood, Banked (10 Racks), Breach, Clean Hands, Average Is a Lie (ICE 5), Cold Storage
+  (ICE 10), Purge Survivor, The Wall (20 raids), Perfectionist (500 Perfects), Final Final
+  (defined, unreachable until REBEL_CELL). The narrator announces new ones through
+  Dialogue. `ProfileState.stats` (perfects, racks, cycles, runs per tier) and
+  `run_history` (20 entries) feed the stats screen.
+- **CI and export**: `.github/workflows/ci.yml` runs import, GUT, the schema smoke test,
+  content validation and checks that `assets/text/strings.csv` is current, then exports
+  Windows and Linux builds as artifacts (Godot 4.7.2 via setup-godot). `export_presets.cfg`
+  (Windows, Linux, macOS; no credentials) is committed, so it left `.gitignore`.
+  `application/config/version` is 0.9.0 and the title shows it.
+- **Controller support** stays out of the vertical slice (GDD 9.5: PC mouse + keyboard);
+  it remains a P2 horizontal item.
+- **Performance**: TECH_SPEC's 1080p target still needs a human run; the fps counter is
+  the tool for it. The core stays under 1 ms per turn in the automated check.
+
 ### 2026-09-24 — Vertical-slice fixes, batch 3: narrative, dialogue, subtitles, codex, text export (GAP_ANALYSIS §2.4)
 - **Line database** (`LineSetData` of `VoiceLineData`): lines are keyed by moment
   (`site:<id>`, `raid:<id>`, `threshold:<heat>`, `boss/win/loss`, `run_start/complete/died`,

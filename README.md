@@ -19,6 +19,9 @@ Godot 4.7 · GDScript · PC.
    - Tests: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`
    - Schema: `godot --headless --path . -s tools/schema_smoke_test.gd` → `SCHEMA SMOKE TEST: PASS`
    - Content: `godot --headless --path . -s tools/validate_content.gd` → `CONTENT VALIDATION: PASS`
+   - Text export (localisation): `godot --headless --path . -s tools/export_text.gd` → `assets/text/strings.csv`
+   - Screenshots: `godot --path . --resolution 1280x720 --write-movie out.png --fixed-fps 10 --quit-after 12 [scene] -- --demo-<hq|grid|raid|run|combat|tutorial|options|slots>`
+   - Exports: `godot --headless --path . --export-release "Windows Desktop" build/windows/rebel_cell.exe` (presets in `export_presets.cfg`; CI does this on every push)
 4. Current milestone: see `docs/MILESTONES.md`.
 
 ## Layout (M0–M4)

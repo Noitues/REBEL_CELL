@@ -16,19 +16,20 @@ var background: WireframeBackground
 var map_view: NetrunMapView = null
 var playout: RaidPlayoutPanel = null
 var _spoken_events: Dictionary = {}
-var _settings_panel: SettingsPanel = null
+var _settings_panel: PauseMenu = null
 
 
 func _ready() -> void:
 	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
-	if args.has("--demo-run") or args.has("--demo-combat"):
+	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
 		new_campaign(1)
 		start_run(1)
-		if args.has("--demo-combat"):
+		if args.has("--demo-combat") or args.has("--demo-tutorial"):
+			RunManager.pending_tutorial = args.has("--demo-tutorial")
 			enter_node(RunManager.netrun.available_nodes()[0])
 		return
 	if RunManager.has_active_run():
@@ -490,10 +491,12 @@ func open_settings() -> void:
 		_settings_panel.queue_free()
 		_settings_panel = null
 		return
-	_settings_panel = SettingsPanel.new()
-	_settings_panel.position = Vector2(size.x / 2.0 - 180, 120)
-	_settings_panel.closed.connect(open_settings)
+	_settings_panel = PauseMenu.new()
+	_settings_panel.position = Vector2(size.x / 2.0 - 280, 100)
+	_settings_panel.resumed.connect(open_settings)
+	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
+	get_tree().paused = false
 
 
 func _unhandled_input(event: InputEvent) -> void:

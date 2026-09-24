@@ -1,13 +1,18 @@
 extends Node
-## Settings autoload: accessibility options (GDD 9.6, STYLE_GUIDE 6) persisted to
-## user://settings.json. Views read these and listen to `changed`; nothing here touches
-## game state.
+## Settings autoload: accessibility (GDD 9.6, STYLE_GUIDE 6), display, audio, key
+## bindings, language and onboarding flags, persisted to user://settings.json. Views
+## read these and listen to `changed`; nothing here touches game state.
 
 signal changed
 
 const PATH := "user://settings.json"
 const TEXT_SCALE_MIN := 0.8
 const TEXT_SCALE_MAX := 1.6
+enum WindowMode { WINDOWED, FULLSCREEN, BORDERLESS }
+const RESOLUTIONS: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440)]
+## Actions the player may rebind (GDD 9.5); the card keys stay 1-9.
+const REBINDABLE: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_target", &"end_turn", &"rewind",
+	&"toggle_card_target", &"toggle_ring", &"toggle_nudge_wheel", &"toggle_direction", &"cycle_slot", &"respin", &"open_settings"]
 
 ## Disables scanlines, flicker, chromatic aberration and the distortion pulse everywhere.
 var reduce_effects: bool = false
@@ -16,14 +21,25 @@ var flash_limiter: bool = true
 var text_scale: float = 1.0
 ## Subtitles with speaker names for voiced lines (story beats, events, DISPATCH).
 var subtitles: bool = true
+var master_volume: float = 1.0
 var music_volume: float = 0.6
 var sfx_volume: float = 0.8
 ## Locale code ("en"); applied to the TranslationServer (GDD 10 localisation pipeline).
 var language: String = "en"
+var window_mode: int = WindowMode.WINDOWED
+var resolution: Vector2i = Vector2i(1280, 720)
+var vsync: bool = true
+var show_fps: bool = false
+## action name (String) -> physical keycode (int) for rebound actions.
+var keybinds: Dictionary = {}
+## The guided first netrun has been completed or skipped.
+var tutorial_done: bool = false
 
 
 func _ready() -> void:
 	load_settings()
+	apply_keybinds()
+	apply_display()
 
 
 func set_reduce_effects(value: bool) -> void:
@@ -43,6 +59,11 @@ func set_text_scale(value: float) -> void:
 
 func set_subtitles(value: bool) -> void:
 	subtitles = value
+	_apply()
+
+
+func set_master_volume(value: float) -> void:
+	master_volume = clampf(value, 0.0, 1.0)
 	_apply()
 
 
@@ -71,9 +92,103 @@ func available_languages() -> PackedStringArray:
 	return out
 
 
+func set_window_mode(mode: int) -> void:
+	window_mode = clampi(mode, 0, 2)
+	apply_display()
+	_apply()
+
+
+func set_resolution(value: Vector2i) -> void:
+	resolution = value
+	apply_display()
+	_apply()
+
+
+func set_vsync(value: bool) -> void:
+	vsync = value
+	apply_display()
+	_apply()
+
+
+func set_show_fps(value: bool) -> void:
+	show_fps = value
+	_apply()
+
+
+func set_tutorial_done(value: bool) -> void:
+	tutorial_done = value
+	_apply()
+
+
+## Rebinds `action` to a physical keycode (replacing its first key event) and remembers it.
+func rebind(action: StringName, physical_keycode: int) -> void:
+	if not REBINDABLE.has(action) or physical_keycode <= 0:
+		return
+	keybinds[String(action)] = physical_keycode
+	_apply_bind(action, physical_keycode)
+	_apply()
+
+
+## Restores the project's default bindings.
+func reset_keybinds() -> void:
+	keybinds.clear()
+	for action in REBINDABLE:
+		InputMap.action_erase_events(action)
+		for ev in ProjectSettings.get_setting("input/%s" % action, {}).get("events", []):
+			InputMap.action_add_event(action, ev)
+	_apply()
+
+
+## The physical keycode bound to `action` (0 when none).
+func key_for(action: StringName) -> int:
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			return (ev as InputEventKey).physical_keycode
+	return 0
+
+
+func apply_keybinds() -> void:
+	for action in keybinds:
+		_apply_bind(StringName(action), int(keybinds[action]))
+
+
+func _apply_bind(action: StringName, physical_keycode: int) -> void:
+	var kept: Array[InputEvent] = []
+	for ev in InputMap.action_get_events(action):
+		if not (ev is InputEventKey):
+			kept.append(ev)
+	InputMap.action_erase_events(action)
+	var key := InputEventKey.new()
+	key.physical_keycode = physical_keycode
+	InputMap.action_add_event(action, key)
+	for ev in kept:
+		InputMap.action_add_event(action, ev)
+
+
+## Applies window mode, size and vsync (no-op headless).
+func apply_display() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	match window_mode:
+		WindowMode.FULLSCREEN:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		WindowMode.BORDERLESS:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+			DisplayServer.window_set_size(DisplayServer.screen_get_size())
+			DisplayServer.window_set_position(Vector2i.ZERO)
+		_:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
+			DisplayServer.window_set_size(resolution)
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
+
+
 func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
-		"subtitles": subtitles, "music_volume": music_volume, "sfx_volume": sfx_volume, "language": language}
+		"subtitles": subtitles, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
+		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
+		"show_fps": show_fps, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -81,10 +196,20 @@ func from_dict(d: Dictionary) -> void:
 	flash_limiter = bool(d.get("flash_limiter", true))
 	text_scale = clampf(float(d.get("text_scale", 1.0)), TEXT_SCALE_MIN, TEXT_SCALE_MAX)
 	subtitles = bool(d.get("subtitles", true))
+	master_volume = clampf(float(d.get("master_volume", 1.0)), 0.0, 1.0)
 	music_volume = clampf(float(d.get("music_volume", 0.6)), 0.0, 1.0)
 	sfx_volume = clampf(float(d.get("sfx_volume", 0.8)), 0.0, 1.0)
 	language = String(d.get("language", "en"))
 	TranslationServer.set_locale(language)
+	window_mode = clampi(int(d.get("window_mode", 0)), 0, 2)
+	var r: Array = d.get("resolution", [1280, 720])
+	resolution = Vector2i(int(r[0]), int(r[1])) if r.size() == 2 else Vector2i(1280, 720)
+	vsync = bool(d.get("vsync", true))
+	show_fps = bool(d.get("show_fps", false))
+	keybinds = {}
+	for k in d.get("keybinds", {}):
+		keybinds[String(k)] = int(d["keybinds"][k])
+	tutorial_done = bool(d.get("tutorial_done", false))
 
 
 func save_settings() -> Error:

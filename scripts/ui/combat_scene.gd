@@ -44,11 +44,13 @@ var _rewind_button: Button
 var _picker_controls: Array[Control] = []
 ## The bottom controls row (layout tests check it fits the 1280-px canvas).
 var controls_row: HBoxContainer
-var _settings_panel: SettingsPanel = null
+var _settings_panel: PauseMenu = null
 var _arena: Control
 var _zine_elements: Array[Control] = []
 var _last_events: Array[Dictionary] = []
 var _log_generation: int = 0
+var tutorial: TutorialOverlay = null
+var _rewound: bool = false
 var _migrate_tween: Tween = null
 ## Text of the last inspect (tests read it).
 var last_inspect: String = ""
@@ -62,6 +64,9 @@ func _ready() -> void:
 	engine.fight_ended.connect(_on_fight_ended)
 	if auto_start:
 		start_fight(ENEMY_CHOICES[0], int(_seed_spin.value))
+	if RunManager.pending_tutorial or (not Settings.tutorial_done and RunManager.profile.runs_completed == 0 and not _instant_playback()):
+		RunManager.pending_tutorial = false
+		start_tutorial()
 
 
 # --- Public (also used by the integration tests) ----------------------------------
@@ -87,7 +92,9 @@ func end_turn() -> void:
 
 
 func rewind() -> void:
-	engine.rewind()
+	if engine.rewind() and tutorial != null and is_instance_valid(tutorial):
+		var ev: Array[Dictionary] = [{"type": "rewind"}]
+		tutorial.on_events(ev)
 
 
 func nudge(direction: int) -> void:
@@ -157,15 +164,27 @@ func selected_direction() -> int:
 	return 1 if _direction_option.selected == 0 else -1
 
 
+## The guided first fight (onboarding). Steps follow the engine's events.
+func start_tutorial() -> void:
+	if tutorial != null and is_instance_valid(tutorial):
+		return
+	tutorial = TutorialOverlay.new()
+	tutorial.position = Vector2(190, 60)
+	add_child(tutorial)
+	tutorial.finished.connect(func() -> void: tutorial = null)
+
+
 func open_settings() -> void:
 	if _settings_panel != null:
 		_settings_panel.queue_free()
 		_settings_panel = null
 		return
-	_settings_panel = SettingsPanel.new()
-	_settings_panel.position = Vector2(size.x / 2.0 - 180, 120)
-	_settings_panel.closed.connect(open_settings)
+	_settings_panel = PauseMenu.new()
+	_settings_panel.position = Vector2(size.x / 2.0 - 280, 100)
+	_settings_panel.resumed.connect(open_settings)
+	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
+	get_tree().paused = false
 
 
 ## Right-click inspect (GDD 9.5): the slice under a global point on any wheel, with its
@@ -309,6 +328,13 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_play_log(events)
 	_refresh(state)
 	_feedback(state, events)
+	if tutorial != null and is_instance_valid(tutorial):
+		tutorial.on_events(events)
+	if engine.can_rewind() == false and _rewound:
+		_rewound = false
+	for e in events:
+		if e.get("type", "") == "pointer" and e.get("owner") == state.player.id and int(e.get("tier", -1)) == RC.PrecisionTier.PERFECT:
+			RunManager.record_perfect()
 
 
 func _on_action_refused(reason: String) -> void:

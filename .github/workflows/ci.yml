@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Import, tests, schema, content, text
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Godot 4.7.2
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+      - name: Import
+        run: godot --headless --path . --import
+      - name: Tests (GUT)
+        run: godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+      - name: Schema smoke test
+        run: godot --headless --path . -s tools/schema_smoke_test.gd
+      - name: Content validation
+        run: godot --headless --path . -s tools/validate_content.gd
+      - name: Text export is current
+        run: |
+          godot --headless --path . -s tools/export_text.gd
+          git diff --exit-code -- assets/text/strings.csv
+
+  export:
+    name: Export builds
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Godot 4.7.2
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+      - name: Import
+        run: godot --headless --path . --import
+      - name: Export Windows
+        run: mkdir -p build/windows && godot --headless --path . --export-release "Windows Desktop" build/windows/rebel_cell.exe
+      - name: Export Linux
+        run: mkdir -p build/linux && godot --headless --path . --export-release "Linux" build/linux/rebel_cell.x86_64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: build/

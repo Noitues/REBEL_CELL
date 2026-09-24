@@ -11,6 +11,8 @@ signal campaign_ended(campaign: CampaignState)
 const DEFAULT_SLOT := "current"
 const HQ_SCENE := "res://scenes/hq/hq_scene.tscn"
 const NETRUN_SCENE := "res://scenes/netrun_map/netrun_scene.tscn"
+const TITLE_SCENE := "res://scenes/menu/title_scene.tscn"
+const COMBAT_SCENE := "res://scenes/combat/combat_scene.tscn"
 const DEFAULT_CORPORATION := &"solace"
 const DEFAULT_CLASS := &"breaker"
 const DEFAULT_HOME := &"home_standard"
@@ -24,6 +26,10 @@ var resolver: CombatResolver = null
 var save_slot: String = DEFAULT_SLOT
 ## Tests switch this off so scene changes never replace the test runner.
 var scene_switching_enabled: bool = true
+## The next combat scene opened runs the guided tutorial (title "Tutorial" button).
+var pending_tutorial: bool = false
+## Achievement ids earned since the last check (the HUD announces them).
+var new_achievements: Array[StringName] = []
 
 var profile_state: RefCounted:
 	get:
@@ -169,6 +175,7 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 			netrun = NetrunSession.start_special(resolver, campaign, operative_id, "reclaim", site_id, site.tier, run_seed, enemy, {}, corporation)
 		_:
 			netrun = NetrunSession.start(resolver, campaign, operative_id, site.tier, site_id, run_seed, corporation)
+	_history_recorded = false
 	run_changed.emit(netrun)
 	autosave()
 	return netrun
@@ -189,11 +196,27 @@ func after_step() -> void:
 
 
 func _record_run_outcome() -> void:
-	if netrun.run.outcome == RunState.Outcome.COMPLETED:
+	var r := netrun.run
+	if r.outcome == RunState.Outcome.COMPLETED:
 		profile.runs_completed += 1
-	elif netrun.run.outcome == RunState.Outcome.DIED:
+	elif r.outcome == RunState.Outcome.DIED:
 		profile.operatives_lost += 1
+	if not _history_recorded:
+		_history_recorded = true
+		profile.add_stat("cycles", r.cycles)
+		profile.add_stat("racks", r.banked_schematics / maxi(1, config().rack_schematics_by_tier[clampi(r.tier - 1, 0, 3)]) if r.kind == "netrun" else 0)
+		profile.add_stat("runs_t%d" % r.tier, 1)
+		profile.record_run({"corporation": String(campaign.corporation_id), "tier": r.tier, "site": String(r.site_id),
+			"outcome": RunState.Outcome.keys()[r.outcome].to_lower(), "cycles": r.cycles, "banked": r.banked_schematics})
 	sync_profile_with_campaign()
+
+
+var _history_recorded: bool = false
+
+
+## Counts a Perfect landing for the stats (combat scenes report them).
+func record_perfect() -> void:
+	profile.add_stat("perfects", 1)
 
 
 ## Mirrors campaign raid counters and the campaign outcome into the profile exactly once
@@ -216,6 +239,12 @@ func sync_profile_with_campaign() -> void:
 			profile.record_win(campaign.corporation_id, campaign.ice_level)
 		elif campaign.outcome == CampaignState.Outcome.LOST:
 			profile.record_loss()
+	for id in Achievements.check(profile, campaign):
+		profile.add_achievement(id)
+		new_achievements.append(id)
+		var d := Achievements.definition(id)
+		if has_node("/root/Dialogue"):
+			get_node("/root/Dialogue").say(RC.Voice.NARRATOR, "Achievement: %s. %s" % [d.get("title", id), d.get("text", "")])
 	save_profile()
 
 
@@ -260,8 +289,54 @@ func autosave() -> Error:
 		"campaign": campaign.to_dict(),
 		"run": netrun.to_dict() if netrun != null and not netrun.run.is_over() else {},
 		"rng": RngService.to_dict(),
+		"saved_at": Time.get_unix_time_from_system(),
 	}
 	return SaveService.save_dict(save_path(), data)
+
+
+## Summary of a campaign slot for the title screen ({} when empty): corporation, heat,
+## ice, runs, state, in_run, saved_at.
+func slot_summary(slot: String) -> Dictionary:
+	var path := SaveService.campaign_path(slot)
+	if not SaveService.has_save(path):
+		return {}
+	var data := SaveService.load_dict(path)
+	var c: Dictionary = data.get("campaign", {})
+	if c.is_empty():
+		return {}
+	var outcome := int(c.get("outcome", 0))
+	return {"corporation": String(data.get("corporation_id", "")), "heat": int(c.get("heat", 0)), "ice": int(c.get("ice_level", 0)),
+		"runs": int(c.get("runs_completed", 0)), "state": "won" if outcome == CampaignState.Outcome.WON else ("lost" if outcome == CampaignState.Outcome.LOST else "active"),
+		"in_run": not data.get("run", {}).is_empty(), "saved_at": float(data.get("saved_at", 0.0))}
+
+
+## The slot saved most recently ("" when none), among the numbered slots.
+func latest_slot() -> String:
+	var best := ""
+	var best_time := -1.0
+	for slot in SaveService.list_campaign_slots():
+		if slot == "gut_test" or slot == "demo":
+			continue
+		var s := slot_summary(slot)
+		if not s.is_empty() and float(s["saved_at"]) > best_time:
+			best_time = float(s["saved_at"])
+			best = slot
+	return best
+
+
+func delete_slot(slot: String) -> void:
+	SaveService.delete_save(SaveService.campaign_path(slot))
+	if slot == save_slot:
+		campaign = null
+		netrun = null
+
+
+func quit_game() -> void:
+	if campaign != null and not campaign.is_over():
+		autosave()
+	save_profile()
+	if scene_switching_enabled:
+		get_tree().quit()
 
 
 func resume() -> bool:
@@ -311,6 +386,12 @@ func change_scene(scene_path: String) -> void:
 	SignalBus.scene_change_requested.emit(scene_path)
 	if scene_switching_enabled:
 		get_tree().change_scene_to_file(scene_path)
+
+
+func go_to_title() -> void:
+	if has_node("/root/Dialogue"):
+		get_node("/root/Dialogue").clear()
+	change_scene(TITLE_SCENE)
 
 
 ## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT.

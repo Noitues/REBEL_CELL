@@ -14,6 +14,8 @@ var flash_rect: ColorRect
 var transition_rect: ColorRect
 var crt_rect: ColorRect
 var limiter := FlashLimiter.new(3)
+var fps_label: Label
+var saved_label: Label
 ## Timestamps of flashes actually shown (tests read this).
 var flashes_shown: Array[float] = []
 var _pulse_tween: Tween
@@ -37,8 +39,39 @@ func _ready() -> void:
 	crt_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	crt_rect.visible = false
 	add_child(crt_rect)
+	fps_label = Label.new()
+	fps_label.add_theme_font_override("font", Palette.mono())
+	fps_label.add_theme_font_size_override("font_size", 12)
+	fps_label.add_theme_color_override("font_color", Palette.CELL_ACID)
+	fps_label.position = Vector2(1180, 4)
+	fps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fps_label.visible = false
+	add_child(fps_label)
+	saved_label = Label.new()
+	saved_label.add_theme_font_override("font", Palette.marker())
+	saved_label.add_theme_font_size_override("font_size", 14)
+	saved_label.add_theme_color_override("font_color", Palette.CELL_PINK)
+	saved_label.text = "SAVED"
+	saved_label.position = Vector2(1200, 690)
+	saved_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	saved_label.modulate.a = 0.0
+	add_child(saved_label)
+	if has_node("/root/SignalBus"):
+		get_node("/root/SignalBus").save_completed.connect(func(_path: String) -> void: show_saved())
 	Settings.changed.connect(apply_settings)
 	apply_settings()
+
+
+func _process(_delta: float) -> void:
+	if fps_label.visible:
+		fps_label.text = "%d fps" % Engine.get_frames_per_second()
+
+
+## Autosave indicator (gap analysis 2.5): a marker "SAVED" that fades out.
+func show_saved() -> void:
+	saved_label.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_property(saved_label, "modulate:a", 0.0, 1.2).set_delay(0.6)
 
 
 func _full_rect(color: Color) -> ColorRect:
@@ -60,6 +93,7 @@ func apply_settings() -> void:
 		if _pulse_tween != null and _pulse_tween.is_valid():
 			_pulse_tween.kill()
 	limiter.enabled = Settings.flash_limiter
+	fps_label.visible = Settings.show_fps
 
 
 func effects_enabled() -> bool:
