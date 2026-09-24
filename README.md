@@ -11,7 +11,17 @@ Godot 4.3 · GDScript · PC.
 - Instructions for Claude Code: `CLAUDE.md`
 
 ## Quick start
-1. Install Godot 4.3.
-2. `godot --headless --path . -s tools/schema_smoke_test.gd` should print
-   `SCHEMA SMOKE TEST: PASS`.
-3. Start with milestone M0 in `docs/MILESTONES.md`.
+1. Install Godot 4.3 (the project is verified on 4.7.2 as well; see `docs/DECISIONS.md`).
+2. On a fresh clone, build the script class cache once:
+   `godot --headless --path . --import`
+3. Run the three checks; all must exit 0:
+   - Tests: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`
+   - Schema: `godot --headless --path . -s tools/schema_smoke_test.gd` → `SCHEMA SMOKE TEST: PASS`
+   - Content: `godot --headless --path . -s tools/validate_content.gd` → `CONTENT VALIDATION: PASS`
+4. Current milestone: see `docs/MILESTONES.md`.
+
+## Layout (M0)
+- `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
+- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config only so far)
+- `tests/unit`, `tests/integration` — GUT 9.x tests · `tools/` — headless checks
+- `addons/gut/` — GUT 9.4.0
