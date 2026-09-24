@@ -1,0 +1,6 @@
+; Minimal project file. Milestone M0 expands this (autoloads, input map, display).
+config_version=5
+
+[application]
+config/name="REBEL_CELL"
+config/features=PackedStringArray("4.3")
