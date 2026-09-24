@@ -202,16 +202,19 @@ _(Claude Code: add questions here instead of guessing on design.)_
 - **Corrupted self-damage** straight to HP confirmed.
 - **DOSE preview** stays hidden from the player (the engine still predicts it exactly).
 
-### From M2 (2026-09-24)
-- **Slice overwrite catalogue.** GDD §11.2 prices "slice overwrite" but never says which
-  slices are for sale. M2 offers copies of the slices already on the wheel. Should there be a
-  shop slice list (e.g. Atk 6 / Def 5 / Crit 12 / Evade / Shield)?
-- **"Combat 10–20" vs "Router 15–25"** in §11.1: M2 reads Router as the node's fight and
-  reserves 10–20 for non-node fights. Confirm.
-- **Elite frequency modifier** (Heat 25 / ICE 3) is stored but the generator does not read
-  it yet; where should extra elites go (more per layer, or elite Terminals)?
-- **Rescued operatives** at Terminals recruit a fresh rookie into the roster (no event uses
-  it yet).
+### From M2 (2026-09-24) — resolved by the designer on 2026-09-24
+- **Shop slice catalogue:** `CampaignConfigData.shop_slices` (Atk 6/8, Crit 12, Def 5/8,
+  Shield 5, Evade) with `shop_slice_choices = 3` per Modem; new slices go in the catalogue
+  rather than repeating the wheel. Tracked as a horizontal slice in
+  `docs/CONTENT_SLICES.md` (new running list: vertical first, horizontal later).
+- **Cycles ranges:** implementer's call stands (Router nodes 15–25, elites/Racks 30–40,
+  10–20 reserved for non-node fights). Revisit in human playtest.
+- **Elite frequency:** node combat type is always known before entering. ELITE_FREQUENCY_PCT
+  adds a fraction of an elite per band layer at map generation; when the fraction reaches a
+  whole node, one more Router in that layer is flipped to elite (never in place, never after
+  the map is shown; each layer keeps a non-elite route). Elite Terminals are a horizontal
+  backlog item.
+- **Rescued operatives** become a free fresh rookie in the roster (as implemented).
 
 ### From M0 (2026-09-24) — resolved by the designer on 2026-09-24
 - Godot version → 4.7 pin, GUT 9.7.1. "More elites" → 25% confirmed. ICE 9 → boss

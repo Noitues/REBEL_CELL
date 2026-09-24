@@ -202,6 +202,10 @@ func test_elite_nodes_add_heat_on_entry_and_offer_firmware() -> void:
 	s.enter_node(path[path.size() - 1])
 	assert_eq(s.campaign.heat, heat_before + _cfg.elite_heat, "elite Heat on entry")
 	assert_true(s.pools()["elites"].has(s.combat.state.get_combatant(&"enemy_0").source_id), "elite enemy")
+	assert_eq(_campaign().elite_frequency_pct(_cfg), 0.0, "no elite modifier below Heat 25")
+	var hot := _campaign()
+	hot.heat = 25
+	assert_eq(hot.elite_frequency_pct(_cfg), 25.0, "Heat 25 ongoing modifier")
 	_auto_fight(s)
 	var kinds := []
 	for offer in s.run.pending_rewards:
@@ -324,7 +328,13 @@ func test_modem_shop_sells_cards_firmware_daemons_removal_and_overwrites() -> vo
 	assert_eq(shop["cards"].size(), 3)
 	assert_eq(shop["firmware"].size(), 2)
 	assert_eq(shop["daemons"].size(), 1)
-	assert_true(shop["slices"].size() >= 2)
+	assert_eq(shop["slices"].size(), _cfg.shop_slice_choices, "overwrite offers from the catalogue")
+	for sid in shop["slices"]:
+		var in_catalogue := false
+		for slice in _cfg.shop_slices:
+			if slice.id == StringName(String(sid)):
+				in_catalogue = true
+		assert_true(in_catalogue, "%s is in the shop slice catalogue" % sid)
 	for p in shop["card_prices"]:
 		assert_true(p >= _cfg.card_price_range.x and p <= _cfg.card_price_range.y, "card price %d" % p)
 	s.run.cycles = 1000

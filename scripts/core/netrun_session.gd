@@ -40,7 +40,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.site_id = site_id
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
-	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"))
+	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), p_campaign.elite_frequency_pct(s.config))
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s._sync()
@@ -430,10 +430,16 @@ func _open_shop() -> void:
 		if not run.operative.daemon_ids.has(d):
 			daemons.append(d)
 	_stock(stock, "daemons", "daemon_prices", daemons, 1, config.daemon_price_range, rng)
-	for id in run.operative.slot_slice_ids:
-		var slice := lookup.get_content(id) as SliceData
-		if slice.slice_type != RC.SliceType.MISS and not stock["slices"].has(String(id)):
-			stock["slices"].append(String(id))
+	# Slice overwrites come from the config catalogue (designer ruling 2026-09-24).
+	var catalogue: Array = []
+	for slice in config.shop_slices:
+		if slice != null:
+			catalogue.append(slice.id)
+	var remaining: Array = catalogue.duplicate()
+	for i in mini(config.shop_slice_choices, remaining.size()):
+		var idx := rng.randi_range(0, remaining.size() - 1)
+		stock["slices"].append(String(remaining[idx]))
+		remaining.remove_at(idx)
 	run.shop = stock
 	run.phase = RunState.Phase.SHOP
 	last_events.append({"type": "shop", "text": "Modem: %d cards, %d Firmware, %d Daemon(s) for sale." % [stock["cards"].size(), stock["firmware"].size(), stock["daemons"].size()]})

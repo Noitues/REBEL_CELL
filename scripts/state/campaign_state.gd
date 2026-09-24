@@ -18,6 +18,8 @@ var deaths: int = 0
 var next_operative_number: int = 1
 ## Heat thresholds already crossed (their one-time events fired), by heat value.
 var thresholds_fired: Array[int] = []
+## ICE difficulty level for this campaign (0 = none; ladder arrives with the profile).
+var ice_level: int = 0
 
 
 func get_operative(id: StringName) -> OperativeState:
@@ -51,6 +53,30 @@ func heat_majors_crossed(config: CampaignConfigData) -> int:
 	return n
 
 
+## Sum of a RuleModifierType over every ongoing Heat-threshold modifier active now
+## (thresholds at or below the current Heat) and every ICE level up to `ice_level`.
+func rule_modifier(config: CampaignConfigData, type: int) -> float:
+	var total := 0.0
+	for t in config.heat_thresholds:
+		if t == null or heat < t.heat:
+			continue
+		for m in t.ongoing_modifiers:
+			if m != null and m.type == type:
+				total += m.value
+	for level in config.ice_ladder:
+		if level == null or level.level > ice_level:
+			continue
+		for m in level.modifiers:
+			if m != null and m.type == type:
+				total += m.value
+	return total
+
+
+## Elite Router frequency bonus in percent (Heat 25+, ICE 3+).
+func elite_frequency_pct(config: CampaignConfigData) -> float:
+	return rule_modifier(config, RC.RuleModifierType.ELITE_FREQUENCY_PCT)
+
+
 ## Recruits a fresh operative of `class_data` (GDD 5.4).
 func recruit(class_data: ClassData, p_name: String = "") -> OperativeState:
 	var id := StringName("op_%d" % next_operative_number)
@@ -77,6 +103,7 @@ func to_dict() -> Dictionary:
 		"exploits": exploits.duplicate(), "runs_started": runs_started, "runs_completed": runs_completed,
 		"deaths": deaths, "next_operative_number": next_operative_number,
 		"thresholds_fired": thresholds_fired.duplicate(),
+		"ice_level": ice_level,
 	}
 
 
@@ -98,6 +125,7 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	c.next_operative_number = int(d.get("next_operative_number", 1))
 	for t in d.get("thresholds_fired", []):
 		c.thresholds_fired.append(int(t))
+	c.ice_level = int(d.get("ice_level", 0))
 	return c
 
 

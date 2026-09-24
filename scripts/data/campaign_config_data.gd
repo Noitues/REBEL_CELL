@@ -35,6 +35,9 @@ extends Resource
 @export var card_removal_increment: int = 25
 @export var slice_overwrite_price: int = 100
 @export var miss_slice_overwrite_price: int = 150
+## Slice catalogue a Modem draws its overwrite offers from (designer ruling 2026-09-24).
+@export var shop_slices: Array[SliceData] = []
+@export var shop_slice_choices: int = 3
 
 @export_group("Schematic costs")
 ## Campaign purchases in Core Schematics (11.4).
@@ -77,7 +80,10 @@ extends Resource
 ## About this many Elite Routers per layer in this band (4.2 guarantees).
 @export var map_elite_layers: Vector2i = Vector2i(3, 6)
 @export var map_elites_per_layer: int = 1
-## Terminals as a fraction of the nodes left after the guarantees.
+## Terminals as a fraction of the nodes left after the guarantees. ELITE_FREQUENCY_PCT
+## modifiers (Heat 25+, ICE 3+) add that fraction of an elite per band layer at
+## generation time; a normal Router flips to elite once a whole node accumulates
+## (designer ruling 2026-09-24: node types are fixed before the player sees the map).
 @export var map_terminal_ratio: float = 0.25
 @export var elite_heat: int = 1
 @export var card_reward_choices: int = 3

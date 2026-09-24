@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SliceData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="1"]
+
+; Shop-only slice (horizontal content, designer ruling 2026-09-24): EVADE cancels the
+; next incoming ATK/CRIT this turn (GDD 2.6). SliceType 3 = EVADE, TargetRule 0 = SELF.
+
+[resource]
+script = ExtResource("1")
+id = &"evade_1"
+display_name = "Evade"
+slice_type = 3
+target_rule = 0
+base_output = 1

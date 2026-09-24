@@ -119,6 +119,45 @@ func test_a_random_path_has_about_five_combats() -> void:
 	assert_true(mean >= 4.0 and mean <= 6.5, "mean combats per path %.2f (GDD: about 5)" % mean)
 
 
+func _elite_routers(g: MapGraph) -> int:
+	var n := 0
+	for node in g.all_nodes():
+		if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER:
+			n += 1
+	return n
+
+
+func test_elite_frequency_flips_extra_routers_to_elite_once_a_whole_node_accumulates() -> void:
+	# +100%: every band layer gets a second elite when it has room. +25%: one extra elite
+	# per four band layers. Types are fixed at generation, so the player sees them first.
+	var base := 0
+	var doubled := 0
+	var quarter := 0
+	for seed in 100:
+		base += _elite_routers(MapGenerator.generate(1, _cfg, RngStreams.make_stream(seed, &"map"), 0.0))
+		doubled += _elite_routers(MapGenerator.generate(1, _cfg, RngStreams.make_stream(seed, &"map"), 100.0))
+		quarter += _elite_routers(MapGenerator.generate(1, _cfg, RngStreams.make_stream(seed, &"map"), 25.0))
+	assert_true(doubled > base * 1.4, "+100%%: %d elites vs %d" % [doubled, base])
+	assert_true(quarter > base and quarter < doubled, "+25%%: %d elites between %d and %d" % [quarter, base, doubled])
+	for seed in 100:
+		var g := MapGenerator.generate(1, _cfg, RngStreams.make_stream(seed, &"map"), 100.0)
+		assert_eq(g.validate(_cfg).size(), 0, "still valid with extra elites")
+		for layer in g.layers:
+			if layer.size() < 3:
+				continue  # two-node layers may be Rack + base elite by the GDD guarantees alone
+			var normal := 0
+			for node in layer:
+				if not node["elite"]:
+					normal += 1
+			assert_true(normal >= 1, "extra elites leave a non-elite route (seed %d, layer %d)" % [seed, layer[0]["layer"]])
+
+
+func test_elite_frequency_is_deterministic() -> void:
+	var a := MapGenerator.generate(1, _cfg, RngStreams.make_stream(3, &"map"), 50.0)
+	var b := MapGenerator.generate(1, _cfg, RngStreams.make_stream(3, &"map"), 50.0)
+	assert_eq(a.graph_hash(), b.graph_hash())
+
+
 func test_tier_changes_rack_heat_only() -> void:
 	var g := _generate(3, 3)
 	assert_eq(g.validate(_cfg).size(), 0)

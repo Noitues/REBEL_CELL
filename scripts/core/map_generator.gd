@@ -6,17 +6,21 @@ extends RefCounted
 const MAX_ATTEMPTS := 50
 
 
-## Generates a valid MapGraph for `tier` using the `map` stream.
-static func generate(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator) -> MapGraph:
+## Generates a valid MapGraph for `tier` using the `map` stream. `elite_frequency_pct`
+## (Heat/ICE ELITE_FREQUENCY_PCT modifiers, summed) adds that fraction of an elite per
+## layer of the elite band; whenever the fraction accumulates to a whole node, one more
+## normal Router in that layer becomes elite. Node types are fixed before the player
+## sees the map (designer ruling 2026-09-24: never surprise-elites).
+static func generate(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator, elite_frequency_pct: float = 0.0) -> MapGraph:
 	for attempt in MAX_ATTEMPTS:
-		var graph := _build(tier, config, rng)
+		var graph := _build(tier, config, rng, elite_frequency_pct)
 		if graph.validate(config).is_empty():
 			return graph
 	push_error("MapGenerator: no valid map after %d attempts." % MAX_ATTEMPTS)
-	return _build(tier, config, rng)
+	return _build(tier, config, rng, elite_frequency_pct)
 
 
-static func _build(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator) -> MapGraph:
+static func _build(tier: int, config: CampaignConfigData, rng: RandomNumberGenerator, elite_frequency_pct: float = 0.0) -> MapGraph:
 	var graph := MapGraph.new()
 	var layer_count := config.map_layers
 	# 1. Layer sizes (the last layer is the single final Server Rack).
@@ -42,10 +46,19 @@ static func _build(tier: int, config: CampaignConfigData, rng: RandomNumberGener
 		var modem: Dictionary = modem_candidates[rng.randi_range(0, modem_candidates.size() - 1)]
 		modem["type"] = RC.InfilNodeType.MODEM
 		taken[modem["id"]] = true
+	var extra_accumulator := 0.0
 	for layer_number in range(config.map_elite_layers.x, config.map_elite_layers.y + 1):
-		for k in config.map_elites_per_layer:
+		var elites_here := config.map_elites_per_layer
+		extra_accumulator += config.map_elites_per_layer * maxf(0.0, elite_frequency_pct) / 100.0
+		while extra_accumulator >= 1.0 - 0.0001:
+			elites_here += 1
+			extra_accumulator -= 1.0
+		for k in elites_here:
 			var free := _free_nodes(graph, layer_number, layer_number, taken)
 			if free.is_empty():
+				break
+			# Extra (modifier) elites never take the layer's last non-elite node.
+			if k >= config.map_elites_per_layer and _non_elite_count(graph, layer_number) <= 1:
 				break
 			var elite: Dictionary = free[rng.randi_range(0, free.size() - 1)]
 			elite["elite"] = true
@@ -91,6 +104,14 @@ static func _connect_layers(sources: Array, targets: Array, rng: RandomNumberGen
 				j = k + 1
 			else:
 				j = k
+
+
+static func _non_elite_count(graph: MapGraph, layer_number: int) -> int:
+	var n := 0
+	for node in graph.nodes_in_layer(layer_number):
+		if not node["elite"]:
+			n += 1
+	return n
 
 
 static func _free_nodes(graph: MapGraph, from_layer: int, to_layer: int, taken: Dictionary) -> Array[Dictionary]:

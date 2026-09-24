@@ -4,6 +4,14 @@
 [ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
 [ext_resource type="Script" path="res://scripts/data/rule_modifier_data.gd" id="3_rm"]
 [ext_resource type="Script" path="res://scripts/data/ice_level_data.gd" id="4_ice"]
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="5_slice"]
+[ext_resource type="Resource" path="res://content/slices/atk_6.tres" id="sl_atk_6"]
+[ext_resource type="Resource" path="res://content/slices/atk_8.tres" id="sl_atk_8"]
+[ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="sl_crit_12"]
+[ext_resource type="Resource" path="res://content/slices/def_5.tres" id="sl_def_5"]
+[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="sl_def_8"]
+[ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="sl_shield_5"]
+[ext_resource type="Resource" path="res://content/slices/evade_1.tres" id="sl_evade_1"]
 
 ; ---- Heat threshold modifiers (GDD 4.3) ----
 ; RC.RuleModifierType: 0 HEAT_GAIN_PCT, 1 HEAT_SINK_PCT, 2 HEAT_OBJECTIVE_SITES,
@@ -370,6 +378,8 @@ card_removal_price = 50
 card_removal_increment = 25
 slice_overwrite_price = 100
 miss_slice_overwrite_price = 150
+shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_atk_6"), ExtResource("sl_atk_8"), ExtResource("sl_crit_12"), ExtResource("sl_def_5"), ExtResource("sl_def_8"), ExtResource("sl_shield_5"), ExtResource("sl_evade_1")])
+shop_slice_choices = 3
 rookie_cost = 15
 node_base_cost = 20
 node_upgrade_costs = PackedInt32Array(30, 60)
