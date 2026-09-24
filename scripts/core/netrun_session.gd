@@ -59,9 +59,44 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s._apply_bug_cards()
+	s._apply_boosts()
+	s._compiler_rack_bonus()
 	s._maybe_raid_interlude()
 	s._sync()
 	return s
+
+
+## Netrun boosts bought at HQ (GDD 11.4): starting Cycles, run-only cards, extra max RAM.
+func _apply_boosts() -> void:
+	for id in campaign.pending_boosts:
+		var boost: NetrunBoostData = null
+		for b in config.netrun_boosts:
+			if b != null and b.id == id:
+				boost = b
+		if boost == null:
+			continue
+		run.cycles += boost.cycles
+		for card in boost.temp_cards:
+			if card != null:
+				run.operative.deck.append(card.id)
+				run.temp_cards.append(card.id)
+		if boost.max_ram_bonus != 0:
+			run.combat_overrides["max_ram"] = int(run.combat_overrides.get("max_ram", (lookup.get_content(run.operative.class_id) as ClassData).max_ram)) + boost.max_ram_bonus
+		last_events.append({"type": "boost", "boost": boost.id, "text": "Boost: %s." % boost.display_name})
+	campaign.pending_boosts.clear()
+
+
+## Compiler Rack (GDD 3.2): a run launched next to an active one starts with a bonus card
+## offer (one per adjacent Rack).
+func _compiler_rack_bonus() -> void:
+	if corporation == null:
+		return
+	var racks := CampaignRules.compiler_racks_next_to(campaign, corporation, lookup, run.site_id)
+	for i in racks:
+		_offer(&"card", _card_pool(), config.card_reward_choices, streams.get_stream(&"rewards"))
+	if racks > 0:
+		run.phase = RunState.Phase.REWARD
+		last_events.append({"type": "compiler_rack", "count": racks, "text": "Compiler Rack: %d bonus card offer(s) before jacking in." % racks})
 
 
 ## A single-combat run (GDD 3.3 Reclaim, 11.7 final breach): one node, one fight.
@@ -300,6 +335,8 @@ func _finish_combat() -> void:
 	_offer(&"card", _card_pool(), config.card_reward_choices, rewards)
 	if elite and not is_rack:
 		_offer(&"firmware", _pools["firmware"], config.elite_firmware_choices, rewards)
+	elif not elite and rewards.randf() < config.router_firmware_chance:
+		_offer(&"firmware", _pools["common_firmware"], config.router_firmware_choices, rewards)
 	if is_rack:
 		_capture_rack()
 		var daemons: Array = []
@@ -551,17 +588,19 @@ func _stock(stock: Dictionary, key: String, price_key: String, pool: Array, coun
 		remaining.remove_at(idx)
 
 
+## CYCLE_PRICE_PCT (ICE 4): every Modem price scales with it.
 func _price_scale() -> float:
-	return 1.0
+	return 1.0 + campaign.rule_modifier(config, RC.RuleModifierType.CYCLE_PRICE_PCT) / 100.0
 
 
 func card_removal_price() -> int:
-	return config.card_removal_price + config.card_removal_increment * run.card_removals
+	return roundi((config.card_removal_price + config.card_removal_increment * run.card_removals) * _price_scale())
 
 
 func slice_overwrite_price(slot: int) -> int:
 	var slice := lookup.get_content(run.operative.slot_slice_ids[slot]) as SliceData
-	return config.miss_slice_overwrite_price if slice.slice_type == RC.SliceType.MISS else config.slice_overwrite_price
+	var base := config.miss_slice_overwrite_price if slice.slice_type == RC.SliceType.MISS else config.slice_overwrite_price
+	return roundi(base * _price_scale())
 
 
 ## Buys stock item `index` of `kind` ("cards", "firmware", "daemons"); Firmware needs `slot`.
@@ -747,8 +786,13 @@ func _complete_run() -> void:
 	campaign.schematics += run.banked_schematics + converted
 	var op := run.operative.duplicate_state()
 	op.hp = op.max_hp
-	op.rank += 1
+	# Rank = full netruns survived (decision 2026-09-24): Reclaim runs are one fight and do
+	# not count; the final breach ends the campaign.
+	if run.kind == "netrun":
+		op.rank += 1
 	op.runs_completed += 1
+	for card in run.temp_cards:
+		op.deck.erase(card)
 	_replace_in_roster(op)
 	_bank_assets_to_armory()
 	campaign.runs_completed += 1
@@ -758,7 +802,7 @@ func _complete_run() -> void:
 		if e.get("type", "") == "campaign_effect" and int(e.get("effect", -1)) == RC.EffectType.MODIFY_HEAT:
 			_add_heat(int(e["amount"]), String(e.get("source_id", "daemon")))
 	if corporation != null:
-		last_events.append_array(CampaignRules.on_run_completed(campaign, corporation, config, run))
+		last_events.append_array(CampaignRules.on_run_completed(campaign, corporation, config, run, lookup))
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -775,7 +819,8 @@ func _die() -> void:
 	var lost := run.unbanked_assets.size()
 	run.unbanked_assets.clear()
 	last_events.append({"type": "run_died", "text": "%s is flatlined. Unbanked loot lost (%d Cycles, %d asset(s)); %d banked Schematics kept." % [run.operative.name, run.cycles, lost, run.banked_schematics]})
-	_add_heat(config.death_heat_base + run.tier, "operative death")
+	var extra := int(campaign.rule_modifier(config, RC.RuleModifierType.DEATH_HEAT))
+	_add_heat(config.death_heat_base + run.tier + extra, "operative death")
 
 
 func _replace_in_roster(op: OperativeState) -> void:
@@ -881,10 +926,14 @@ func _build_pools() -> void:
 	for id in lookup.ids_of_class(&"DefenseAssetData"):
 		if not built_in.has(id):
 			assets.append(id)
+	var common_firmware: Array = []
+	for id in lookup.ids_of_class(&"FirmwareData"):
+		if (lookup.get_content(id) as FirmwareData).rarity == RC.Rarity.COMMON:
+			common_firmware.append(id)
 	_pools = {
 		"enemies": enemies, "elites": elites, "mini_bosses": mini_bosses, "shared_cards": shared_cards, "class_cards": class_cards,
-		"firmware": lookup.ids_of_class(&"FirmwareData"), "daemons": lookup.ids_of_class(&"DaemonData"),
-		"assets": assets, "events": events,
+		"firmware": lookup.ids_of_class(&"FirmwareData"), "common_firmware": common_firmware,
+		"daemons": lookup.ids_of_class(&"DaemonData"), "assets": assets, "events": events,
 	}
 
 

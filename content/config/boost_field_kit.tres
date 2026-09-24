@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NetrunBoostData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/netrun_boost_data.gd" id="1"]
+
+; Field Kit (20 Schematics): +2 max RAM in every combat of the next run.
+
+[resource]
+script = ExtResource("1")
+id = &"boost_field_kit"
+display_name = "Field Kit"
+description = "+2 max RAM in every combat of the next netrun."
+cost = 20
+max_ram_bonus = 2

@@ -41,7 +41,7 @@ func test_solace_content_validates_and_has_the_a6_grid() -> void:
 	assert_eq(_corp.city_grid.sites.size(), 10)
 	assert_eq(_corp.story_paths.size(), 5)
 	assert_eq(_corp.exploits.size(), 3)
-	assert_eq(_corp.raids.size(), 5)
+	assert_eq(_corp.raids.size(), 8, "threshold x4, claim, retaliation, story, node-built")
 	assert_true(_corp.final_boss.is_boss)
 
 
@@ -142,7 +142,7 @@ func test_claiming_needs_a_cleared_site_a_relay_path_and_schematics() -> void:
 		if e.get("type", "") == "raid_pending":
 			provoked = true
 	assert_true(provoked, "t1_a touches corporate Sites: a claim raid is queued")
-	assert_eq(c.pending_raids[0]["source"], RC.RaidTriggerSource.TERRITORY_CLAIM)
+	assert_eq(c.pending_raids[c.pending_raids.size() - 1]["source"], RC.RaidTriggerSource.TERRITORY_CLAIM)
 	c.grid.site(&"t1_a")["node_type"] = "relay"
 	assert_eq(CampaignRules.claim_error(c, _corp, _cfg, _lookup, &"t2_intel", &"relay"), "", "a Relay extends reach")
 	c.schematics = 5

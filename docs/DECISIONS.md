@@ -30,6 +30,64 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Vertical-slice fixes, batch 2a: netrun and campaign rules (GAP_ANALYSIS §2.2-2.3)
+- **Every remaining `RuleModifierType` is applied**: `HEAT_GAIN_PCT` scales positive Heat
+  deltas and `HEAT_SINK_PCT` negative ones inside `HeatRules.add_heat` (a non-zero delta
+  never rounds to zero); `PURGE_THRESHOLD` (ICE 17, value 90) makes the PURGE threshold
+  fire at 90 (recorded as 100 in `thresholds_fired`); `HEAT_OBJECTIVE_SITES` (ICE 2, −1)
+  switches off that many Heat-objective Sites at campaign start, the last by id
+  (`CampaignState.disabled_objectives`, read through `CampaignRules.site_objective`);
+  `DEATH_HEAT` and `EXPLOIT_HEAT` add to the base amounts before gain scaling;
+  `CYCLE_PRICE_PCT` scales every Modem price including removals and overwrites;
+  `REPAIR_COST_PCT` scales repairs; `SEIZED_RAID_STRENGTH_PCT` adds to raid strength when
+  any entry Site is Seized; `RAID_EXTRA_WAVE` repeats the raid's last wave 5 steps later.
+  Modifiers stack multiplicatively with ICE 1's gain (a death at ICE 8 is (10 + tier + 5)
+  × 1.1), which is how a cumulative ladder should feel.
+- **Node types complete** (GDD 3.2): Compiler Rack (a run launched next to an active one
+  starts in the REWARD phase with one 1-of-3 card offer per adjacent Rack), Vault Terminal
+  (+3 Schematics per completed run via `passive_effects`, +2 more next to a Firewall Relay
+  via `adjacency_bonuses`, raid_priority 2, building it queues the NODE_BUILT raid) and
+  Proxy Relay (−1 Heat per completed run; counts as a Relay for reach). Passives and
+  adjacency bonuses with trigger ON_NETRUN_COMPLETE are evaluated in
+  `CampaignRules.on_run_completed` for active nodes in id order; Disabled nodes give
+  nothing. The three new nodes are **Profile unlocks** (30 Schematics each,
+  `content/unlocks/`); `claim_error` refuses a locked node when a profile is passed.
+- **Node upgrades** (GDD 11.4): `upgrade_node` costs `node_upgrade_costs[level]` (30, 60);
+  each level adds `node_upgrade_integrity_pct` (50%) of the base integrity and
+  `node_upgrade_asset_slots` (1) slots (`GridState` site `upgrade_level`). Home is not
+  upgradable this way (variants cover it).
+- **Home-server variants** (GDD 3.1): internal nodes fold into the home server's capacity
+  (integrity, asset slots, built-in defenses in `GridState.home_asset_slots /
+  home_built_in`) rather than becoming Grid sites; the Bunker variant (40 + 30 integrity,
+  1 + 2 slots, built-in turret) is a 40-Schematic Profile unlock. `RunManager.new_campaign`
+  takes the ICE level and the variant.
+- **Netrun boosts** (GDD 11.4): `NetrunBoostData` (cycles, run-only cards, max RAM bonus)
+  listed in `config.netrun_boosts`; bought at HQ into `CampaignState.pending_boosts`, all
+  consumed by the next run (`RunState.temp_cards` leave the deck on completion). Warm
+  Cache 10 (+40 Cycles), Overclocked Deck 15 (two Jolts), Field Kit 20 (+2 max RAM).
+- **Routers drop common Firmware** with `router_firmware_chance` (0.35), 1-of-2 from
+  Firmware of rarity COMMON; elites keep 1-of-2 of any rarity.
+- **Raid triggers** (GDD 4.4): RETALIATION raids follow every Exploit and Heat-objective
+  run and enter from the Site just cleared; STORY raids fire from beats marked
+  `StoryBeatData.triggers_raid` (Ghost Patient II); NODE_BUILT raids from nodes with
+  `triggers_raid` (Vault Terminal), falling back to the claim raid when a corporation has
+  no such template. Solace gained three raid templates and two threats: **Icebreaker**
+  (`alters_edges`: opens the first locked link, by id, touching its entry; the route
+  stays open) and **Lockdown Unit** (`freezes_edges`: freezes the link between home and
+  the neighbour holding the most deployed assets for that raid only; nothing routes or
+  shoots across a frozen link). Both resolve in setup so the projection shows them.
+- **Stationed operatives** return unharmed from Disabled nodes too (cascade included).
+- **Rank counts full netruns only**: Reclaim runs (one fight) no longer raise Rank; the
+  breach ends the campaign. `runs_completed` still counts them.
+- **ICE progression** (GDD 3.4): `ProfileState.ice_cap_for` = max(3, best on that
+  corporation + 3, global best − `new_corp_ice_offset`), capped at 20. A fresh profile
+  chooses ICE 0–3.
+- **Schema changes**: `NetrunBoostData` (new), `CampaignConfigData.netrun_boosts /
+  node_upgrade_integrity_pct / node_upgrade_asset_slots / router_firmware_chance /
+  router_firmware_choices`, `StoryBeatData.triggers_raid`, `GridState.home_asset_slots /
+  home_built_in / frozen_links / upgrade_level`, `CampaignState.pending_boosts /
+  disabled_objectives / home_variant_id`, `RunState.temp_cards`. Smoke test batch 5.
+
 ### 2026-09-24 — Vertical-slice fixes, batch 1: combat rules (GAP_ANALYSIS §2.1)
 Designer instruction: "make calls on every decision". Every call below is logged here
 and annotated in the GDD where it changes a rule.

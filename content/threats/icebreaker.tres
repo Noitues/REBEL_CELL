@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ThreatData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="1"]
+
+; Icebreaker (GDD 7.1): opens a locked link next to its entry before the raid starts
+; (alters_edges); the route stays open afterwards. Routing 0 = shortest to home.
+
+[resource]
+script = ExtResource("1")
+id = &"icebreaker"
+display_name = "Icebreaker"
+description = "Cuts a new route through a locked link before it moves."
+integrity = 10
+damage = 4
+edges_per_step = 1
+routing = 0
+alters_edges = true

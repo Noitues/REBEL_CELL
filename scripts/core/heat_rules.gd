@@ -6,10 +6,33 @@ extends RefCounted
 ## off by themselves when Heat drops).
 
 
-## Adds `delta` Heat and fires newly crossed thresholds. Returns events.
+## Heat gain scaled by HEAT_GAIN_PCT, sinks by HEAT_SINK_PCT (ICE 1 / ICE 6). A non-zero
+## delta never rounds to zero.
+static func scaled_delta(campaign: CampaignState, delta: int, config: CampaignConfigData) -> int:
+	if delta == 0:
+		return 0
+	var pct := campaign.rule_modifier(config, RC.RuleModifierType.HEAT_GAIN_PCT if delta > 0 else RC.RuleModifierType.HEAT_SINK_PCT)
+	var scaled := roundi(delta * (1.0 + pct / 100.0))
+	if scaled == 0:
+		scaled = signi(delta)
+	return scaled
+
+
+## The Heat a threshold fires at: PURGE_THRESHOLD (ICE 17) pulls the Purge down.
+static func effective_heat(t: HeatThresholdData, campaign: CampaignState, config: CampaignConfigData) -> int:
+	if t.kind == RC.ThresholdKind.PURGE:
+		var purge := int(campaign.rule_modifier(config, RC.RuleModifierType.PURGE_THRESHOLD))
+		if purge > 0:
+			return mini(t.heat, purge)
+	return t.heat
+
+
+## Adds `delta` Heat (scaled by the gain/sink modifiers) and fires newly crossed
+## thresholds. Returns events.
 static func add_heat(campaign: CampaignState, delta: int, config: CampaignConfigData, reason: String = "") -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	var before := campaign.heat
+	delta = scaled_delta(campaign, delta, config)
 	var applied := campaign.add_heat(delta, config)
 	if applied == 0 and delta != 0:
 		events.append({"type": "heat", "amount": 0, "reason": reason, "text": "Heat unchanged (%s) at %d." % [reason, campaign.heat]})
@@ -18,7 +41,10 @@ static func add_heat(campaign: CampaignState, delta: int, config: CampaignConfig
 	if applied <= 0:
 		return events
 	for t in config.heat_thresholds:
-		if t == null or t.heat <= before or t.heat > campaign.heat or campaign.thresholds_fired.has(t.heat):
+		if t == null:
+			continue
+		var at := effective_heat(t, campaign, config)
+		if at <= before or at > campaign.heat or campaign.thresholds_fired.has(t.heat):
 			continue
 		campaign.thresholds_fired.append(t.heat)
 		events.append_array(fire_threshold(campaign, t))

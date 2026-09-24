@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="NetworkNodeData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Proxy Relay (GDD 3.2): -1 Heat per completed netrun; extends reach like a Relay.
+; NetworkNodeType 5 = PROXY_RELAY. Trigger 11 = ON_NETRUN_COMPLETE, effect 21 =
+; MODIFY_HEAT, target 6 = CAMPAIGN. Profile unlock.
+
+[sub_resource type="Resource" id="fx_scrub"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -1
+
+[sub_resource type="Resource" id="te_scrub"]
+script = ExtResource("2")
+trigger = 11
+effects = Array[ExtResource("3")]([SubResource("fx_scrub")])
+
+[resource]
+script = ExtResource("1")
+id = &"proxy_relay"
+node_type = 5
+display_name = "Proxy Relay"
+description = "A Relay that scrubs 1 Heat after every completed netrun."
+install_cost = 25
+repair_cost_ratio = 0.5
+integrity = 15
+asset_slots = 1
+passive_effects = Array[ExtResource("2")]([SubResource("te_scrub")])
+profile_unlock_required = true

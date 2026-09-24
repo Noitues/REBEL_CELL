@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="1"]
+[ext_resource type="Resource" path="res://content/nodes/compiler_rack.tres" id="node"]
+
+; Profile unlock (GDD 3.4): the Compiler Rack node type. UnlockKind 4 = NODE_TYPE.
+
+[resource]
+script = ExtResource("1")
+id = &"unlock_compiler_rack"
+kind = 4
+display_name = "Node: Compiler Rack"
+description = "Unlocks the Compiler Rack node for every campaign."
+schematic_cost = 30
+unlocks = ExtResource("node")

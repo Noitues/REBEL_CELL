@@ -33,6 +33,21 @@ func has_unlock(id: StringName) -> bool:
 	return unlocks.has(id)
 
 
+func add_unlock(id: StringName) -> void:
+	if not unlocks.has(id):
+		unlocks.append(id)
+
+
+## Highest ICE selectable for `corporation_id` (GDD 3.4, decision 2026-09-24): a win at
+## ICE n unlocks up to n + 3 on that corporation; any corporation may start at the global
+## best minus new_corp_ice_offset; never below `base_cap` (3) nor above `max_level` (20).
+func ice_cap_for(corporation_id: StringName, new_corp_ice_offset: int, base_cap: int = 3, max_level: int = 20) -> int:
+	var cap := base_cap
+	cap = maxi(cap, best_ice_for(corporation_id) + 3)
+	cap = maxi(cap, best_ice - new_corp_ice_offset)
+	return clampi(cap, 0, max_level)
+
+
 func to_dict() -> Dictionary:
 	var u := []
 	for x in unlocks:

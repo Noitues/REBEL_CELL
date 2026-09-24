@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="RaidData" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="RaidData" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
 [ext_resource type="Resource" path="res://content/threats/collector.tres" id="th_collector"][ext_resource type="Resource" path="res://content/threats/auditor.tres" id="th_auditor"][ext_resource type="Resource" path="res://content/threats/enforcer.tres" id="th_enforcer"]
+[ext_resource type="Resource" path="res://content/threats/lockdown_unit.tres" id="th_lockdown"]
 [sub_resource type="Resource" id="wave1"]
 script = ExtResource("2")
-threats = Array[ExtResource("3")]([ExtResource("th_collector"), ExtResource("th_auditor"), ExtResource("th_enforcer")])
+threats = Array[ExtResource("3")]([ExtResource("th_collector"), ExtResource("th_auditor"), ExtResource("th_enforcer"), ExtResource("th_lockdown")])
 
 [resource]
 script = ExtResource("1")
@@ -15,4 +16,4 @@ display_name = "Collections: Final Notice"
 trigger_source = 0
 waves = Array[ExtResource("2")]([SubResource("wave1")])
 schematic_reward = 18
-warning_text = "An Enforcer has been assigned to your account."
+warning_text = "An Enforcer has been assigned to your account, with a Lockdown Unit to freeze your busiest link."

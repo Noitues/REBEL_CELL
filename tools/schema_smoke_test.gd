@@ -224,4 +224,35 @@ func _batch4() -> int:
 	print("WheelState pending pointers round trip: ", back.pending_pointer_ticks)
 	if back.pending_pointer_ticks != PackedInt32Array([5, 20]): fails += 1
 	if not back.apply_pending_pointers() or back.pointer_ticks != PackedInt32Array([5, 20]): fails += 1
+	return fails + _batch5()
+
+
+## Vertical-slice fixes batch 2: NetrunBoostData, StoryBeatData.triggers_raid, GridState
+## home-variant capacity and frozen links, CampaignState boosts/objectives/home variant.
+func _batch5() -> int:
+	var fails := 0
+	var empty := NetrunBoostData.new(); empty.id = &"nothing"
+	print("Empty boost (expect 1): ", empty.validate())
+	if empty.validate().size() != 1: fails += 1
+	var boost := NetrunBoostData.new(); boost.id = &"cache"; boost.cost = 10; boost.cycles = 40
+	var cfg := CampaignConfigData.new(); cfg.netrun_boosts = [boost]
+	print("Config with a 10-Schematic boost (expect 0): ", cfg.validate())
+	if cfg.validate().size() != 0: fails += 1
+	boost.cost = 99
+	print("Config with a 99-Schematic boost (expect 1): ", cfg.validate())
+	if cfg.validate().size() != 1: fails += 1
+	var beat := StoryBeatData.new(); beat.id = &"b"; beat.triggers_raid = true
+	var err := ResourceSaver.save(beat, "user://smoke_beat.tres")
+	var loaded: StoryBeatData = load("user://smoke_beat.tres")
+	print("Beat save=", err, " triggers_raid=", loaded.triggers_raid)
+	if err != OK or not loaded.triggers_raid: fails += 1
+	var g := GridState.new(); g.home_site_id = &"home"; g.home_asset_slots = 3; g.home_built_in = ["turret"]
+	g.freeze_link(&"home", &"c1")
+	var back := GridState.from_dict(g.to_dict())
+	print("GridState round trip: slots=", back.home_asset_slots, " built_in=", back.home_built_in, " frozen=", back.is_link_frozen(&"c1", &"home"))
+	if back.home_asset_slots != 3 or back.home_built_in != ["turret"] or not back.is_link_frozen(&"c1", &"home"): fails += 1
+	var c := CampaignState.new(); c.pending_boosts = [&"cache"]; c.disabled_objectives = [&"scrub"]; c.home_variant_id = &"home_bunker"
+	var cb := CampaignState.from_dict(c.to_dict())
+	print("CampaignState round trip: ", cb.pending_boosts, cb.disabled_objectives, cb.home_variant_id)
+	if cb.pending_boosts != [&"cache"] or cb.disabled_objectives != [&"scrub"] or cb.home_variant_id != &"home_bunker": fails += 1
 	return fails

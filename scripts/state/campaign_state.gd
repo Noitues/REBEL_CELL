@@ -33,6 +33,12 @@ var pending_raids: Array[Dictionary] = []
 ## {"type": RC.RuleModifierType, "value": float}.
 var pending_complications: Array[Dictionary] = []
 var heat_purchases: int = 0
+## Netrun boosts bought at HQ, consumed by the next run launched (NetrunBoostData ids).
+var pending_boosts: Array[StringName] = []
+## Heat-objective Sites switched off by HEAT_OBJECTIVE_SITES (ICE 2) at campaign start.
+var disabled_objectives: Array[StringName] = []
+## Home-server variant this campaign runs on (HomeServerVariantData id).
+var home_variant_id: StringName = &"home_standard"
 var raids_won: int = 0
 var raids_lost: int = 0
 ## Result of the last raid (RaidResult.to_dict()) for the summary screen.
@@ -138,7 +144,9 @@ func _raw_dict() -> Dictionary:
 		"grid": grid.to_dict() if grid != null else {},
 		"story_path_id": String(story_path_id), "story_beats_revealed": story_beats_revealed,
 		"pending_raids": pending_raids.duplicate(true), "pending_complications": pending_complications.duplicate(true),
-		"heat_purchases": heat_purchases, "raids_won": raids_won, "raids_lost": raids_lost,
+		"heat_purchases": heat_purchases, "pending_boosts": _names(pending_boosts),
+		"disabled_objectives": _names(disabled_objectives), "home_variant_id": String(home_variant_id),
+		"raids_won": raids_won, "raids_lost": raids_lost,
 		"last_raid": last_raid.duplicate(true), "outcome": outcome,
 	}
 
@@ -171,11 +179,23 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	for m in d.get("pending_complications", []):
 		c.pending_complications.append({"type": int(m.get("type", 0)), "value": float(m.get("value", 0.0))})
 	c.heat_purchases = int(d.get("heat_purchases", 0))
+	for b in d.get("pending_boosts", []):
+		c.pending_boosts.append(StringName(String(b)))
+	for o in d.get("disabled_objectives", []):
+		c.disabled_objectives.append(StringName(String(o)))
+	c.home_variant_id = StringName(String(d.get("home_variant_id", "home_standard")))
 	c.raids_won = int(d.get("raids_won", 0))
 	c.raids_lost = int(d.get("raids_lost", 0))
 	c.last_raid = d.get("last_raid", {}).duplicate(true)
 	c.outcome = int(d.get("outcome", Outcome.NONE))
 	return c
+
+
+static func _names(names: Array[StringName]) -> Array:
+	var out := []
+	for n in names:
+		out.append(String(n))
+	return out
 
 
 ## Normalises a pending-raid entry read from JSON (ints back from floats, strings kept).

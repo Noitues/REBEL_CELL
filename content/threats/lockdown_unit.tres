@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ThreatData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="1"]
+
+; Lockdown Unit (GDD 7.1): freezes the link between home and its best-defended
+; neighbour for the raid (freezes_edges): nothing routes or shoots across it.
+; Routing 2 = weakest node.
+
+[resource]
+script = ExtResource("1")
+id = &"lockdown_unit"
+display_name = "Lockdown Unit"
+description = "Freezes your busiest link to home for the whole raid."
+integrity = 18
+damage = 6
+edges_per_step = 1
+routing = 2
+freezes_edges = true

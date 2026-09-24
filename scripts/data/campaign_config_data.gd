@@ -45,7 +45,12 @@ extends Resource
 @export var node_base_cost: int = 20
 ## Successive node upgrade costs.
 @export var node_upgrade_costs: PackedInt32Array = PackedInt32Array([30, 60])
+## Each upgrade level adds this much of the node's base integrity and this many asset slots.
+@export var node_upgrade_integrity_pct: float = 50.0
+@export var node_upgrade_asset_slots: int = 1
 @export var netrun_boost_cost_range: Vector2i = Vector2i(10, 20)
+## The one-time boosts HQ sells (GDD 11.4).
+@export var netrun_boosts: Array[NetrunBoostData] = []
 ## Buying Heat reduction: removes heat_purchase_amount for heat_purchase_cost,
 ## which rises by heat_purchase_increment after each purchase.
 @export var heat_purchase_amount: int = 5
@@ -88,6 +93,9 @@ extends Resource
 @export var elite_heat: int = 1
 @export var card_reward_choices: int = 3
 @export var elite_firmware_choices: int = 2
+## Routers drop common Firmware this often (GDD 6.3); elites always offer Firmware.
+@export var router_firmware_chance: float = 0.35
+@export var router_firmware_choices: int = 2
 @export var rack_daemon_choices: int = 3
 @export var asset_drop_chance: float = 0.4
 
@@ -118,6 +126,9 @@ func validate() -> PackedStringArray:
 			errors.append("Range %s has min above max." % r)
 	if node_upgrade_costs.is_empty():
 		errors.append("node_upgrade_costs needs at least one entry.")
+	for b in netrun_boosts:
+		if b != null and (b.cost < netrun_boost_cost_range.x or b.cost > netrun_boost_cost_range.y):
+			errors.append("Boost %s costs %d, outside %s." % [b.id, b.cost, netrun_boost_cost_range])
 	var last := 0
 	for t in heat_thresholds:
 		if t == null:

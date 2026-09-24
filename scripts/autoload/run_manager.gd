@@ -79,12 +79,32 @@ func class_data() -> ClassData:
 
 # --- Campaign ----------------------------------------------------------------------------
 
-## Starts a fresh campaign against `corporation_id` (GDD 5.4 opening).
-func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION) -> CampaignState:
+## Highest ICE the profile allows for `corporation_id` (GDD 3.4).
+func ice_cap(corporation_id: StringName = DEFAULT_CORPORATION) -> int:
+	return profile.ice_cap_for(corporation_id, config().new_corp_ice_offset)
+
+
+## Home-server variants the profile may start on (the standard one always).
+func available_home_variants() -> Array[HomeServerVariantData]:
+	var out: Array[HomeServerVariantData] = []
+	for id in lookup().ids_of_class(&"HomeServerVariantData"):
+		var v := lookup().get_content(id) as HomeServerVariantData
+		var u := CampaignRules.unlock_for(lookup(), v)
+		if v != null and (u == null or profile.has_unlock(u.id)):
+			out.append(v)
+	return out
+
+
+## Starts a fresh campaign against `corporation_id` (GDD 5.4 opening) at `ice_level`
+## (clamped to the profile's cap) on `home_variant_id`.
+func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION, ice_level: int = 0, home_variant_id: StringName = DEFAULT_HOME) -> CampaignState:
 	_ensure_resolver()
 	corporation = lookup().get_content(corporation_id) as CorporationData
-	var home := lookup().get_content(DEFAULT_HOME) as HomeServerVariantData
-	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, class_data(), home.core if home != null else null)
+	var home := lookup().get_content(home_variant_id) as HomeServerVariantData
+	if home == null or not available_home_variants().has(home):
+		home = lookup().get_content(DEFAULT_HOME) as HomeServerVariantData
+	var ice := clampi(ice_level, 0, ice_cap(corporation_id))
+	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, class_data(), home.core if home != null else null, ice, home)
 	netrun = null
 	RngService.seed_campaign(campaign_seed)
 	_reset_profile_sync()

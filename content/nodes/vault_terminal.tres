@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="NetworkNodeData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/adjacency_bonus_data.gd" id="4"]
+
+; Vault Terminal (GDD 3.2): +3 Schematics per completed netrun; raids prioritise it
+; (raid_priority 2); building it provokes a raid (GDD 4.4). Next to a Firewall Relay
+; (adjacency) it banks +2 more. NetworkNodeType 4 = VAULT_TERMINAL. Trigger 11 =
+; ON_NETRUN_COMPLETE, effect 23 = GAIN_SCHEMATICS, target 6 = CAMPAIGN. Profile unlock.
+
+[sub_resource type="Resource" id="fx_bank"]
+script = ExtResource("3")
+type = 23
+target = 6
+amount = 3
+
+[sub_resource type="Resource" id="te_bank"]
+script = ExtResource("2")
+trigger = 11
+effects = Array[ExtResource("3")]([SubResource("fx_bank")])
+
+[sub_resource type="Resource" id="fx_hardened"]
+script = ExtResource("3")
+type = 23
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="te_hardened"]
+script = ExtResource("2")
+trigger = 11
+effects = Array[ExtResource("3")]([SubResource("fx_hardened")])
+
+[sub_resource type="Resource" id="adj_firewall"]
+script = ExtResource("4")
+partner_type = 2
+effects = Array[ExtResource("2")]([SubResource("te_hardened")])
+
+[resource]
+script = ExtResource("1")
+id = &"vault_terminal"
+node_type = 4
+display_name = "Vault Terminal"
+description = "+3 Schematics per completed netrun (+2 more next to a Firewall Relay). Raids go for it; building it provokes one."
+install_cost = 25
+repair_cost_ratio = 0.5
+integrity = 20
+asset_slots = 1
+raid_priority = 2
+passive_effects = Array[ExtResource("2")]([SubResource("te_bank")])
+adjacency_bonuses = Array[ExtResource("4")]([SubResource("adj_firewall")])
+triggers_raid = true
+profile_unlock_required = true

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="1"]
+[ext_resource type="Resource" path="res://content/nodes/vault_terminal.tres" id="node"]
+
+[resource]
+script = ExtResource("1")
+id = &"unlock_vault_terminal"
+kind = 4
+display_name = "Node: Vault Terminal"
+description = "Unlocks the Vault Terminal node for every campaign."
+schematic_cost = 30
+unlocks = ExtResource("node")

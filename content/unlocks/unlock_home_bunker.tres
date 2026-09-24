@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="1"]
+[ext_resource type="Resource" path="res://content/nodes/home_bunker.tres" id="variant"]
+
+; Profile unlock (GDD 3.4): the Bunker home-server variant. UnlockKind 3 = HOME_SERVER.
+
+[resource]
+script = ExtResource("1")
+id = &"unlock_home_bunker"
+kind = 3
+display_name = "Home server: Bunker"
+description = "Start campaigns on the Bunker home server (70 integrity, 3 slots, built-in turret)."
+schematic_cost = 40
+unlocks = ExtResource("variant")

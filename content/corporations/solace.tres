@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CorporationData" load_steps=66 format=3]
+[gd_resource type="Resource" script_class="CorporationData" load_steps=69 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="2"]
@@ -25,6 +25,9 @@
 [ext_resource type="Resource" path="res://content/raids/raid_heat_75.tres" id="r_75"]
 [ext_resource type="Resource" path="res://content/raids/raid_purge.tres" id="r_purge"]
 [ext_resource type="Resource" path="res://content/raids/raid_claim.tres" id="r_claim"]
+[ext_resource type="Resource" path="res://content/raids/raid_retaliation.tres" id="r_retaliation"]
+[ext_resource type="Resource" path="res://content/raids/raid_story.tres" id="r_story"]
+[ext_resource type="Resource" path="res://content/raids/raid_node_built.tres" id="r_node_built"]
 [ext_resource type="Resource" path="res://content/events/ev_abandoned_cache.tres" id="ev_1"]
 [ext_resource type="Resource" path="res://content/events/ev_medbay.tres" id="ev_2"]
 [ext_resource type="Resource" path="res://content/events/ev_firmware_vendor.tres" id="ev_3"]
@@ -317,6 +320,7 @@ id = &"gp_2"
 title = "Ghost Patient II"
 text = "Placeholder: the kill-switch logs show it was triggered from inside the Cell."
 dispatch_clue = true
+triggers_raid = true
 
 [sub_resource type="Resource" id="b_gp_3"]
 script = ExtResource("6")
@@ -352,5 +356,5 @@ elites = Array[ExtResource("9")]([ExtResource("e_adjuster"), ExtResource("e_reca
 final_boss = ExtResource("e_boss")
 exploits = Array[ExtResource("4")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
 story_paths = Array[ExtResource("5")]([SubResource("sp_recall"), SubResource("sp_trial"), SubResource("sp_tos"), SubResource("sp_cure"), SubResource("sp_ghost")])
-raids = Array[ExtResource("10")]([ExtResource("r_25"), ExtResource("r_50"), ExtResource("r_75"), ExtResource("r_purge"), ExtResource("r_claim")])
+raids = Array[ExtResource("10")]([ExtResource("r_25"), ExtResource("r_50"), ExtResource("r_75"), ExtResource("r_purge"), ExtResource("r_claim"), ExtResource("r_retaliation"), ExtResource("r_story"), ExtResource("r_node_built")])
 events = Array[ExtResource("11")]([ExtResource("ev_1"), ExtResource("ev_2"), ExtResource("ev_3"), ExtResource("ev_4"), ExtResource("ev_5")])

@@ -6,24 +6,58 @@ extends RefCounted
 ## stationing, Heat purchases, Armory deployment and raid setup/projection/playout.
 ## Pure functions over CampaignState + content; every mutating call returns events.
 
-const RELAY_TYPES := [RC.NetworkNodeType.RELAY, RC.NetworkNodeType.FIREWALL_RELAY]
+const RELAY_TYPES := [RC.NetworkNodeType.RELAY, RC.NetworkNodeType.FIREWALL_RELAY, RC.NetworkNodeType.PROXY_RELAY]
 
 
 # --- Campaign start ------------------------------------------------------------------
 
 ## GDD 5.4 opening: rookies, Schematics, the Grid with home claimed, a random story path.
-static func new_campaign(corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, campaign_seed: int, class_data: ClassData, home_node: NetworkNodeData) -> CampaignState:
+## `ice_level` applies the ICE ladder from the start (HEAT_OBJECTIVE_SITES switches off
+## that many Heat-objective Sites, the last by id); `home_variant` (GDD 3.1) adds its
+## internal nodes' integrity, asset slots and built-in defenses to the home server.
+static func new_campaign(corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, campaign_seed: int, class_data: ClassData, home_node: NetworkNodeData, ice_level: int = 0, home_variant: HomeServerVariantData = null) -> CampaignState:
 	var c := CampaignState.new()
 	c.corporation_id = corp.id
 	c.campaign_seed = campaign_seed
+	c.ice_level = ice_level
 	c.schematics = config.starting_schematics
 	for i in config.starting_rookies:
 		c.recruit(class_data)
 	c.grid = GridState.from_grid(corp.city_grid, home_node)
 	if home_node != null:
 		c.grid.sites[c.grid.home_site_id]["node_type"] = String(home_node.id)
+	if home_variant != null:
+		c.home_variant_id = home_variant.id
+		for n in home_variant.internal_nodes:
+			if n == null:
+				continue
+			c.grid.home_max_integrity += n.integrity
+			c.grid.home_asset_slots += n.asset_slots
+			if n.built_in_asset != null:
+				c.grid.home_built_in.append(String(n.built_in_asset.id))
+		c.grid.home_integrity = c.grid.home_max_integrity
+		c.grid.sites[c.grid.home_site_id]["integrity"] = c.grid.home_max_integrity
+		c.grid.sites[c.grid.home_site_id]["max_integrity"] = c.grid.home_max_integrity
 	c.story_path_id = pick_story_path(corp, campaign_seed)
+	var fewer := -int(c.rule_modifier(config, RC.RuleModifierType.HEAT_OBJECTIVE_SITES))
+	if fewer > 0:
+		var objectives: Array[StringName] = []
+		for s in corp.city_grid.sites:
+			if s != null and s.objective == RC.SiteObjective.HEAT_REDUCTION:
+				objectives.append(s.id)
+		objectives.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+		for i in mini(fewer, objectives.size()):
+			c.disabled_objectives.append(objectives[objectives.size() - 1 - i])
 	return c
+
+
+## The Site's objective for this campaign (NONE when ICE switched it off).
+static func site_objective(campaign: CampaignState, site: SiteData) -> int:
+	if site == null:
+		return RC.SiteObjective.NONE
+	if campaign.disabled_objectives.has(site.id):
+		return RC.SiteObjective.NONE
+	return site.objective
 
 
 static func pick_story_path(corp: CorporationData, campaign_seed: int) -> StringName:
@@ -159,7 +193,7 @@ static func boss_overrides(campaign: CampaignState, corp: CorporationData) -> Di
 
 ## What a completed run does to the campaign: clears the Site, extracts its Exploit
 ## (+Heat, story beat, Intel links), applies Heat objectives, or wins the breach.
-static func on_run_completed(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, run: RunState) -> Array[Dictionary]:
+static func on_run_completed(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, run: RunState, lookup: ContentLookup = null) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	var site := site_data(corp, run.site_id)
 	if site == null:
@@ -175,11 +209,12 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 	events.append({"type": "site_cleared", "site": site.id, "text": "%s cleared: it can be claimed now." % site.id})
 	if run.kind == "reclaim":
 		return events
-	match site.objective:
+	match site_objective(campaign, site):
 		RC.SiteObjective.EXPLOIT:
 			campaign.exploits.append(site.exploit_type)
 			events.append({"type": "exploit", "exploit": site.exploit_type, "text": "Exploit extracted: %s (%d held)." % [RC.ExploitType.keys()[site.exploit_type], campaign.exploits.size()]})
-			events.append_array(HeatRules.add_heat(campaign, config.exploit_heat, config, "Exploit extracted"))
+			var exploit_heat := config.exploit_heat + int(campaign.rule_modifier(config, RC.RuleModifierType.EXPLOIT_HEAT))
+			events.append_array(HeatRules.add_heat(campaign, exploit_heat, config, "Exploit extracted"))
 			for ex in corp.exploits:
 				if ex != null and ex.exploit_type == site.exploit_type and ex.opens_locked_links:
 					for s in corp.city_grid.sites:
@@ -194,15 +229,110 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 			if p != null and not beats.is_empty():
 				var beat := beats[beats.size() - 1]
 				events.append({"type": "story_beat", "beat_id": beat.id, "text": "[%s] %s" % [beat.title, beat.text]})
+				if beat.triggers_raid:
+					events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.STORY, &"", "The story beat %s" % beat.title))
+			events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "Extracting the Exploit at %s" % site.id))
 		RC.SiteObjective.HEAT_REDUCTION:
 			events.append_array(HeatRules.add_heat(campaign, site.heat_change, config, "Heat objective %s" % site.id))
+			events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "The Heat objective at %s" % site.id))
+	if lookup != null:
+		events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
 	return events
+
+
+## Queues the corporation's raid for `source` (GDD 4.4: story, retaliation, node-built).
+## `entry` names the Site the threats enter from (empty = default entries). No raid of
+## that source in the content = nothing happens.
+static func queue_raid(campaign: CampaignState, corp: CorporationData, source: int, entry: StringName, why: String) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var raid := _raid_for(corp, source)
+	if raid == null:
+		return events
+	campaign.pending_raids.append({"raid_id": String(raid.id), "source": source, "site_id": String(entry)})
+	events.append({"type": "raid_pending", "raid_id": raid.id, "source": source,
+		"text": "%s provoked a raid: %s." % [why, raid.display_name]})
+	return events
+
+
+## Node passives on netrun completion (GDD 3.2): Vault Terminal +3 Schematics, Proxy Relay
+## -1 Heat (`NetworkNodeData.passive_effects`, trigger ON_NETRUN_COMPLETE, target CAMPAIGN),
+## plus adjacency bonuses whose partner node type is an active neighbour. Nodes in id order.
+static func _node_passives_on_completion(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	for site_id in campaign.grid.claimed_ids():
+		if not campaign.grid.is_active_node(site_id) or site_id == campaign.grid.home_site_id:
+			continue
+		var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
+		if node == null:
+			continue
+		var effects: Array[TriggeredEffectData] = []
+		for te in node.passive_effects:
+			if te != null and te.trigger == RC.Trigger.ON_NETRUN_COMPLETE:
+				effects.append(te)
+		for bonus in node.adjacency_bonuses:
+			if bonus == null:
+				continue
+			var partner := false
+			for n in campaign.grid.neighbors(site_id, corp.city_grid):
+				if campaign.grid.is_active_node(n):
+					var nt := lookup.get_content(campaign.grid.node_type_of(n)) as NetworkNodeData
+					if nt != null and nt.node_type == bonus.partner_type:
+						partner = true
+			if partner:
+				for te in bonus.effects:
+					if te != null and te.trigger == RC.Trigger.ON_NETRUN_COMPLETE:
+						effects.append(te)
+		for te in effects:
+			for e in te.effects:
+				if e == null:
+					continue
+				match e.type:
+					RC.EffectType.GAIN_SCHEMATICS:
+						campaign.schematics += e.amount
+						events.append({"type": "node_passive", "site": site_id, "effect": e.type, "amount": e.amount,
+							"text": "%s (%s): %+d Schematics." % [node.display_name, site_id, e.amount]})
+					RC.EffectType.MODIFY_HEAT:
+						events.append({"type": "node_passive", "site": site_id, "effect": e.type, "amount": e.amount,
+							"text": "%s (%s): Heat %+d." % [node.display_name, site_id, e.amount]})
+						events.append_array(HeatRules.add_heat(campaign, e.amount, config, node.display_name))
+	return events
+
+
+## Active Compiler Racks next to `site_id` (GDD 3.2): netruns launched there start with a
+## bonus card offer.
+static func compiler_racks_next_to(campaign: CampaignState, corp: CorporationData, lookup: ContentLookup, site_id: StringName) -> int:
+	var n := 0
+	for neighbour in campaign.grid.neighbors(site_id, corp.city_grid):
+		if campaign.grid.is_active_node(neighbour):
+			var node := lookup.get_content(campaign.grid.node_type_of(neighbour)) as NetworkNodeData
+			if node != null and node.node_type == RC.NetworkNodeType.COMPILER_RACK:
+				n += 1
+	return n
 
 
 # --- Claiming and nodes -----------------------------------------------------------------------
 
+## The Profile unlock that gates `node`, or null when the node needs none.
+static func unlock_for(lookup: ContentLookup, res: Resource) -> ProfileUnlockData:
+	for id in lookup.ids_of_class(&"ProfileUnlockData"):
+		var u := lookup.get_content(id) as ProfileUnlockData
+		if u != null and u.unlocks == res:
+			return u
+	return null
+
+
+## Whether the node type may be installed under `profile` (null profile = no gating).
+static func node_available(profile: ProfileState, lookup: ContentLookup, node: NetworkNodeData) -> bool:
+	if node == null:
+		return false
+	if not node.profile_unlock_required or profile == null:
+		return true
+	var u := unlock_for(lookup, node)
+	return u == null or profile.has_unlock(u.id)
+
+
 ## Empty when the Site can be claimed with `node_type_id`; otherwise why not.
-static func claim_error(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName, node_type_id: StringName) -> String:
+static func claim_error(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName, node_type_id: StringName, profile: ProfileState = null) -> String:
 	if campaign.is_over():
 		return "The campaign is over."
 	if not campaign.grid.is_cleared(site_id):
@@ -210,6 +340,8 @@ static func claim_error(campaign: CampaignState, corp: CorporationData, config: 
 	var node := lookup.get_content(node_type_id) as NetworkNodeData
 	if node == null or node.node_type == RC.NetworkNodeType.HOME_SERVER:
 		return "Choose a node type to install."
+	if not node_available(profile, lookup, node):
+		return "%s is locked: buy the Profile unlock first." % node.display_name
 	if campaign.schematics < node.install_cost:
 		return "Not enough Schematics (%d needed, %d held)." % [node.install_cost, campaign.schematics]
 	var reachable := false
@@ -227,9 +359,9 @@ static func claim_error(campaign: CampaignState, corp: CorporationData, config: 
 
 ## Claims the Site and installs the node (GDD 3.1). Claiming next to a corporate Site or
 ## a node that provokes raids queues a TERRITORY_CLAIM raid (GDD 4.4).
-static func claim(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName, node_type_id: StringName) -> Array[Dictionary]:
+static func claim(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName, node_type_id: StringName, profile: ProfileState = null) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
-	var err := claim_error(campaign, corp, config, lookup, site_id, node_type_id)
+	var err := claim_error(campaign, corp, config, lookup, site_id, node_type_id, profile)
 	if err != "":
 		events.append({"type": "refused", "text": err})
 		return events
@@ -243,18 +375,103 @@ static func claim(campaign: CampaignState, corp: CorporationData, config: Campai
 	s["condition"] = GridState.Condition.OK
 	s["assets"] = []
 	events.append({"type": "claimed", "site": site_id, "node": node_type_id, "text": "Claimed %s with a %s (-%d Schematics)." % [site_id, node.display_name, node.install_cost]})
-	var provoked := node.triggers_raid
 	var entry: StringName = &""
 	for n in campaign.grid.neighbors(site_id, corp.city_grid):
 		if campaign.grid.is_corporate(n) or campaign.grid.is_seized(n):
-			provoked = true
 			entry = n
 			break
-	if provoked:
-		var raid := _raid_for(corp, RC.RaidTriggerSource.TERRITORY_CLAIM)
-		if raid != null:
-			campaign.pending_raids.append({"raid_id": String(raid.id), "source": RC.RaidTriggerSource.TERRITORY_CLAIM, "site_id": String(entry) if entry != &"" else ""})
-			events.append({"type": "raid_pending", "raid_id": raid.id, "text": "Claiming %s provoked a raid: %s." % [site_id, raid.display_name]})
+	if node.triggers_raid:
+		# Node-built raids (GDD 4.4): the corporation's NODE_BUILT raid, else the claim raid.
+		if _raid_for(corp, RC.RaidTriggerSource.NODE_BUILT) != null:
+			events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.NODE_BUILT, entry, "Building a %s at %s" % [node.display_name, site_id]))
+		else:
+			events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.TERRITORY_CLAIM, entry, "Building a %s at %s" % [node.display_name, site_id]))
+	elif entry != &"":
+		events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.TERRITORY_CLAIM, entry, "Claiming %s" % site_id))
+	return events
+
+
+## Node upgrade (GDD 11.4: 30 then 60 Schematics): each level adds
+## node_upgrade_integrity_pct of the base integrity and node_upgrade_asset_slots slots.
+static func upgrade_cost(campaign: CampaignState, config: CampaignConfigData, site_id: StringName) -> int:
+	var level := campaign.grid.upgrade_level_of(site_id)
+	return config.node_upgrade_costs[level] if level < config.node_upgrade_costs.size() else -1
+
+
+static func upgrade_node(campaign: CampaignState, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	if not campaign.grid.is_active_node(site_id) or site_id == campaign.grid.home_site_id:
+		events.append({"type": "refused", "text": "%s has no working node to upgrade." % site_id})
+		return events
+	var cost := upgrade_cost(campaign, config, site_id)
+	if cost < 0:
+		events.append({"type": "refused", "text": "%s is fully upgraded." % site_id})
+		return events
+	if campaign.schematics < cost:
+		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % cost})
+		return events
+	var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
+	var s := campaign.grid.site(site_id)
+	campaign.schematics -= cost
+	s["upgrade_level"] = int(s["upgrade_level"]) + 1
+	var gain := roundi(node.integrity * config.node_upgrade_integrity_pct / 100.0)
+	s["max_integrity"] = int(s["max_integrity"]) + gain
+	s["integrity"] = int(s["integrity"]) + gain
+	events.append({"type": "upgraded", "site": site_id, "level": s["upgrade_level"], "cost": cost,
+		"text": "Upgraded %s to level %d (-%d Schematics): integrity +%d, +%d asset slot(s)." % [site_id, s["upgrade_level"], cost, gain, config.node_upgrade_asset_slots]})
+	return events
+
+
+## Buys a Profile unlock with the campaign's Schematics (GDD 3.4). The unlock is permanent.
+static func purchase_unlock(campaign: CampaignState, profile: ProfileState, lookup: ContentLookup, unlock_id: StringName) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var u := lookup.get_content(unlock_id) as ProfileUnlockData
+	if u == null:
+		events.append({"type": "refused", "text": "No such unlock."})
+		return events
+	if profile.has_unlock(u.id):
+		events.append({"type": "refused", "text": "%s is already unlocked." % u.display_name})
+		return events
+	for req in u.requires_unlock_ids:
+		if not profile.has_unlock(req):
+			events.append({"type": "refused", "text": "%s needs %s first." % [u.display_name, req]})
+			return events
+	if u.requires_all_corporations_at_ice >= 0:
+		for id in lookup.ids_of_class(&"CorporationData"):
+			var corp := lookup.get_content(id) as CorporationData
+			if corp == null or corp.generated_from_profile:
+				continue
+			if profile.best_ice_for(corp.id) < u.requires_all_corporations_at_ice:
+				events.append({"type": "refused", "text": "%s needs every corporation cleared at ICE %d." % [u.display_name, u.requires_all_corporations_at_ice]})
+				return events
+	if campaign.schematics < u.schematic_cost:
+		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % u.schematic_cost})
+		return events
+	campaign.schematics -= u.schematic_cost
+	profile.add_unlock(u.id)
+	events.append({"type": "unlocked", "unlock": u.id, "cost": u.schematic_cost, "text": "Unlocked %s (-%d Schematics)." % [u.display_name, u.schematic_cost]})
+	return events
+
+
+## Buys a one-time netrun boost (GDD 11.4) for the next run launched.
+static func buy_boost(campaign: CampaignState, config: CampaignConfigData, boost_id: StringName) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var boost: NetrunBoostData = null
+	for b in config.netrun_boosts:
+		if b != null and b.id == boost_id:
+			boost = b
+	if boost == null:
+		events.append({"type": "refused", "text": "No such boost."})
+		return events
+	if campaign.pending_boosts.has(boost.id):
+		events.append({"type": "refused", "text": "%s is already queued for the next run." % boost.display_name})
+		return events
+	if campaign.schematics < boost.cost:
+		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % boost.cost})
+		return events
+	campaign.schematics -= boost.cost
+	campaign.pending_boosts.append(boost.id)
+	events.append({"type": "boost_bought", "boost": boost.id, "cost": boost.cost, "text": "Bought %s for the next run (-%d Schematics)." % [boost.display_name, boost.cost]})
 	return events
 
 
@@ -273,7 +490,8 @@ static func repair(campaign: CampaignState, config: CampaignConfigData, lookup: 
 		events.append({"type": "refused", "text": "%s is not a Disabled node." % site_id})
 		return events
 	var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
-	var cost := roundi(node.install_cost * node.repair_cost_ratio) if node != null else 0
+	var pct := campaign.rule_modifier(config, RC.RuleModifierType.REPAIR_COST_PCT)
+	var cost := roundi(node.install_cost * node.repair_cost_ratio * (1.0 + pct / 100.0)) if node != null else 0
 	if campaign.schematics < cost:
 		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % cost})
 		return events
@@ -393,9 +611,14 @@ static func buy_heat_reduction(campaign: CampaignState, config: CampaignConfigDa
 
 # --- Armory and assets -------------------------------------------------------------------------
 
-static func asset_slots(campaign: CampaignState, lookup: ContentLookup, site_id: StringName) -> int:
+static func asset_slots(campaign: CampaignState, lookup: ContentLookup, site_id: StringName, config: CampaignConfigData = null) -> int:
+	if site_id == campaign.grid.home_site_id:
+		return campaign.grid.home_asset_slots
 	var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
-	return node.asset_slots if node != null else 0
+	var slots := node.asset_slots if node != null else 0
+	if config != null:
+		slots += campaign.grid.upgrade_level_of(site_id) * config.node_upgrade_asset_slots
+	return slots
 
 
 ## Moves an Armory asset onto a claimed node (GDD 7.3).
@@ -408,7 +631,7 @@ static func deploy_asset(campaign: CampaignState, config: CampaignConfigData, lo
 		events.append({"type": "refused", "text": "%s has no working node." % site_id})
 		return events
 	var s := campaign.grid.site(site_id)
-	if s["assets"].size() >= asset_slots(campaign, lookup, site_id):
+	if s["assets"].size() >= asset_slots(campaign, lookup, site_id, config):
 		events.append({"type": "refused", "text": "%s has no free asset slot." % site_id})
 		return events
 	var asset := campaign.armory[armory_index]
@@ -438,7 +661,7 @@ static func move_asset(campaign: CampaignState, config: CampaignConfigData, look
 		events.append({"type": "refused", "text": "%s has no working node." % to_site})
 		return events
 	var to := campaign.grid.site(to_site)
-	if to["assets"].size() >= asset_slots(campaign, lookup, to_site):
+	if to["assets"].size() >= asset_slots(campaign, lookup, to_site, config):
 		events.append({"type": "refused", "text": "%s has no free asset slot." % to_site})
 		return events
 	from["assets"].remove_at(index)
@@ -449,8 +672,19 @@ static func move_asset(campaign: CampaignState, config: CampaignConfigData, look
 
 # --- Raids ---------------------------------------------------------------------------------------
 
-static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigData) -> float:
-	return campaign.rule_modifier(config, RC.RuleModifierType.RAID_STRENGTH_PCT)
+static func raid_strength_pct(campaign: CampaignState, config: CampaignConfigData, pending: Dictionary = {}, corp: CorporationData = null) -> float:
+	var pct := campaign.rule_modifier(config, RC.RuleModifierType.RAID_STRENGTH_PCT)
+	# SEIZED_RAID_STRENGTH_PCT (ICE 14): raids entering from a Seized Site hit harder.
+	if corp != null and not pending.is_empty():
+		for entry in raid_entries(campaign, corp, pending):
+			if campaign.grid.is_seized(entry):
+				pct += campaign.rule_modifier(config, RC.RuleModifierType.SEIZED_RAID_STRENGTH_PCT)
+				break
+	return pct
+
+
+static func raid_extra_waves(campaign: CampaignState, config: CampaignConfigData) -> int:
+	return int(campaign.rule_modifier(config, RC.RuleModifierType.RAID_EXTRA_WAVE))
 
 
 static func pending_raid(campaign: CampaignState) -> Dictionary:
@@ -471,7 +705,8 @@ static func raid_entries(campaign: CampaignState, corp: CorporationData, pending
 ## Exact outcome if the raid ran now (setup phase, GDD 7.1).
 static func project_raid(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, pending: Dictionary) -> RaidResolver.RaidResult:
 	var raid := raid_data(pending, lookup)
-	return RaidResolver.resolve(campaign, corp.city_grid, raid, lookup, config, raid_entries(campaign, corp, pending), raid_strength_pct(campaign, config))
+	return RaidResolver.resolve(campaign, corp.city_grid, raid, lookup, config, raid_entries(campaign, corp, pending),
+		raid_strength_pct(campaign, config, pending, corp), raid_extra_waves(campaign, config))
 
 
 ## Plays the raid out and applies it; the pending entry is consumed.

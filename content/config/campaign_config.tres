@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=39 format=3]
+[gd_resource type="Resource" script_class="CampaignConfigData" load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/campaign_config_data.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
@@ -16,6 +16,10 @@
 [ext_resource type="Resource" path="res://content/raids/raid_heat_50.tres" id="raid_50"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_75.tres" id="raid_75"]
 [ext_resource type="Resource" path="res://content/raids/raid_purge.tres" id="raid_purge"]
+[ext_resource type="Script" path="res://scripts/data/netrun_boost_data.gd" id="6_boost"]
+[ext_resource type="Resource" path="res://content/config/netrun_boosts.tres" id="boost_cache"]
+[ext_resource type="Resource" path="res://content/config/boost_overclocked_deck.tres" id="boost_deck"]
+[ext_resource type="Resource" path="res://content/config/boost_field_kit.tres" id="boost_kit"]
 
 ; ---- Heat threshold modifiers (GDD 4.3) ----
 ; RC.RuleModifierType: 0 HEAT_GAIN_PCT, 1 HEAT_SINK_PCT, 2 HEAT_OBJECTIVE_SITES,
@@ -391,7 +395,10 @@ shop_slice_choices = 3
 rookie_cost = 15
 node_base_cost = 20
 node_upgrade_costs = PackedInt32Array(30, 60)
+node_upgrade_integrity_pct = 50.0
+node_upgrade_asset_slots = 1
 netrun_boost_cost_range = Vector2i(10, 20)
+netrun_boosts = Array[ExtResource("6_boost")]([ExtResource("boost_cache"), ExtResource("boost_deck"), ExtResource("boost_kit")])
 heat_purchase_amount = 5
 heat_purchase_cost = 25
 heat_purchase_increment = 10
@@ -415,6 +422,8 @@ map_elite_layers = Vector2i(3, 6)
 map_elites_per_layer = 1
 map_terminal_ratio = 0.25
 elite_heat = 1
+router_firmware_chance = 0.35
+router_firmware_choices = 2
 card_reward_choices = 3
 elite_firmware_choices = 2
 rack_daemon_choices = 3

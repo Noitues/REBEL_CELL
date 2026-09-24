@@ -11,8 +11,15 @@ enum Condition { OK, DISABLED }
 var home_site_id: StringName = &""
 var home_integrity: int = 50
 var home_max_integrity: int = 50
+## Home-server variant capacity (core + internal nodes, GDD 3.1): asset slots and the
+## built-in defense asset ids that fire from home.
+var home_asset_slots: int = 2
+var home_built_in: Array[String] = []
+## Links frozen by threats for the duration of a raid (GDD 7.1), as link keys.
+var frozen_links: Array[String] = []
 ## site_id -> {"status": int, "node_type": String, "integrity": int, "max_integrity": int,
-##             "condition": int, "assets": Array[String], "stationed": String}
+##             "condition": int, "assets": Array[String], "stationed": String,
+##             "upgrade_level": int}
 var sites: Dictionary = {}
 ## Locked links opened by Intel, as "a|b" with a < b.
 var opened_links: Array[String] = []
@@ -25,6 +32,9 @@ static func from_grid(grid: CityGridData, home_node: NetworkNodeData) -> GridSta
 	g.home_site_id = grid.home_site_id
 	g.home_max_integrity = home_node.integrity if home_node != null else 50
 	g.home_integrity = g.home_max_integrity
+	g.home_asset_slots = home_node.asset_slots if home_node != null else 2
+	if home_node != null and home_node.built_in_asset != null:
+		g.home_built_in.append(String(home_node.built_in_asset.id))
 	for site in grid.sites:
 		if site == null:
 			continue
@@ -38,7 +48,7 @@ static func from_grid(grid: CityGridData, home_node: NetworkNodeData) -> GridSta
 
 static func _blank() -> Dictionary:
 	return {"status": SiteStatus.CORPORATE, "node_type": "", "integrity": 0, "max_integrity": 0,
-		"condition": Condition.OK, "assets": [], "stationed": ""}
+		"condition": Condition.OK, "assets": [], "stationed": "", "upgrade_level": 0}
 
 
 func site(site_id: StringName) -> Dictionary:
@@ -99,7 +109,22 @@ func stationed_on(site_id: StringName) -> StringName:
 	return StringName(String(site(site_id).get("stationed", "")))
 
 
-## Neighbouring Site ids over open links plus opened locked links, sorted.
+func upgrade_level_of(site_id: StringName) -> int:
+	return int(site(site_id).get("upgrade_level", 0))
+
+
+func is_link_frozen(a: StringName, b: StringName) -> bool:
+	return frozen_links.has(link_key(a, b))
+
+
+func freeze_link(a: StringName, b: StringName) -> void:
+	var key := link_key(a, b)
+	if not frozen_links.has(key):
+		frozen_links.append(key)
+
+
+## Neighbouring Site ids over open links plus opened locked links, minus links frozen
+## for the current raid, sorted.
 func neighbors(site_id: StringName, grid: CityGridData) -> Array[StringName]:
 	var out := {}
 	for s in grid.sites:
@@ -115,7 +140,8 @@ func neighbors(site_id: StringName, grid: CityGridData) -> Array[StringName]:
 			out[s.id] = true
 	var ids: Array[StringName] = []
 	for k in out.keys():
-		ids.append(k)
+		if not is_link_frozen(site_id, k):
+			ids.append(k)
 	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	return ids
 
@@ -185,7 +211,9 @@ func to_dict() -> Dictionary:
 	for id in _sorted_ids():
 		out[String(id)] = sites[id].duplicate(true)
 	return {"home_site_id": String(home_site_id), "home_integrity": home_integrity,
-		"home_max_integrity": home_max_integrity, "sites": out, "opened_links": opened_links.duplicate()}
+		"home_max_integrity": home_max_integrity, "home_asset_slots": home_asset_slots,
+		"home_built_in": home_built_in.duplicate(), "frozen_links": frozen_links.duplicate(),
+		"sites": out, "opened_links": opened_links.duplicate()}
 
 
 static func from_dict(d: Dictionary) -> GridState:
@@ -193,6 +221,11 @@ static func from_dict(d: Dictionary) -> GridState:
 	g.home_site_id = StringName(String(d.get("home_site_id", "")))
 	g.home_integrity = int(d.get("home_integrity", 50))
 	g.home_max_integrity = int(d.get("home_max_integrity", 50))
+	g.home_asset_slots = int(d.get("home_asset_slots", 2))
+	for b in d.get("home_built_in", []):
+		g.home_built_in.append(String(b))
+	for f in d.get("frozen_links", []):
+		g.frozen_links.append(String(f))
 	for k in d.get("sites", {}):
 		var s: Dictionary = d["sites"][k]
 		var assets := []
@@ -200,7 +233,8 @@ static func from_dict(d: Dictionary) -> GridState:
 			assets.append(String(a))
 		g.sites[StringName(String(k))] = {"status": int(s.get("status", 0)), "node_type": String(s.get("node_type", "")),
 			"integrity": int(s.get("integrity", 0)), "max_integrity": int(s.get("max_integrity", 0)),
-			"condition": int(s.get("condition", 0)), "assets": assets, "stationed": String(s.get("stationed", ""))}
+			"condition": int(s.get("condition", 0)), "assets": assets, "stationed": String(s.get("stationed", "")),
+			"upgrade_level": int(s.get("upgrade_level", 0))}
 	for l in d.get("opened_links", []):
 		g.opened_links.append(String(l))
 	return g

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="1"]
+[ext_resource type="Resource" path="res://content/nodes/proxy_relay.tres" id="node"]
+
+[resource]
+script = ExtResource("1")
+id = &"unlock_proxy_relay"
+kind = 4
+display_name = "Node: Proxy Relay"
+description = "Unlocks the Proxy Relay node for every campaign."
+schematic_cost = 30
+unlocks = ExtResource("node")

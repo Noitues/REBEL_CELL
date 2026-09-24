@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/threats/enforcer.tres" id="th_enforcer"]
+[ext_resource type="Resource" path="res://content/threats/lockdown_unit.tres" id="th_lockdown"]
+
+; Story raid (GDD 4.4): queued by a story beat marked triggers_raid. Source 3 = STORY.
+
+[sub_resource type="Resource" id="wave1"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_lockdown"), ExtResource("th_enforcer")])
+
+[resource]
+script = ExtResource("1")
+id = &"raid_story"
+display_name = "Collections: Quiet Word"
+trigger_source = 3
+waves = Array[ExtResource("2")]([SubResource("wave1")])
+schematic_reward = 12
+warning_text = "Somebody read what you read. A Lockdown Unit and an Enforcer are on their way, no notice filed."

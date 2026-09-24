@@ -41,16 +41,19 @@ class RaidResult:
 
 ## Resolves `raid` against the campaign's Grid. `entry_site_ids` overrides the wave's
 ## entries when non-empty. `strength_pct` scales threat integrity and damage
-## (RAID_STRENGTH_PCT modifiers). Nothing passed in is modified.
-static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: RaidData, lookup: ContentLookup, config: CampaignConfigData, entry_site_ids: Array[StringName] = [], strength_pct: float = 0.0) -> RaidResult:
+## (RAID_STRENGTH_PCT modifiers); `extra_waves` repeats the last wave (RAID_EXTRA_WAVE).
+## Nothing passed in is modified.
+static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: RaidData, lookup: ContentLookup, config: CampaignConfigData, entry_site_ids: Array[StringName] = [], strength_pct: float = 0.0, extra_waves: int = 0) -> RaidResult:
 	var result := RaidResult.new()
 	result.raid_id = raid.id
 	var grid := campaign.grid.duplicate_state()
+	grid.frozen_links.clear()
 	result.grid_after = grid
 	result.home_before = grid.home_integrity
 	var entries := entry_site_ids if not entry_site_ids.is_empty() else default_entry_sites(campaign, grid_data)
 	var threats: Array[Dictionary] = []
-	var waves := _waves(raid, entries, campaign, strength_pct)
+	var waves := _waves(raid, entries, campaign, strength_pct, extra_waves)
+	_prepare_links(waves, grid, grid_data, result)
 	var before := {}
 	for id in grid.claimed_ids():
 		before[String(id)] = int(grid.site(id)["integrity"]) if id != grid.home_site_id else grid.home_integrity
@@ -115,6 +118,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, config: CampaignConfigData) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	campaign.grid = result.grid_after.duplicate_state()
+	campaign.grid.frozen_links.clear()  # freezes last one raid; opened links stay open
 	campaign.last_raid = result.to_dict()
 	for sid in result.seized:
 		var s := campaign.grid.site(StringName(sid))
@@ -155,14 +159,20 @@ static func default_entry_sites(campaign: CampaignState, grid_data: CityGridData
 
 # --- Internals -----------------------------------------------------------------------------
 
-static func _waves(raid: RaidData, entries: Array[StringName], campaign: CampaignState, strength_pct: float) -> Dictionary:
+static func _waves(raid: RaidData, entries: Array[StringName], campaign: CampaignState, strength_pct: float, extra_waves: int = 0) -> Dictionary:
 	var waves := {}
 	var counter := 0
 	var scale := 1.0 + maxf(0.0, strength_pct) / 100.0
-	for wi in raid.waves.size():
-		var wave := raid.waves[wi]
-		if wave == null:
-			continue
+	var wave_list: Array[RaidWaveData] = []
+	for w in raid.waves:
+		if w != null:
+			wave_list.append(w)
+	# RAID_EXTRA_WAVE (ICE 19): the last wave comes again.
+	for i in maxi(0, extra_waves):
+		if not wave_list.is_empty():
+			wave_list.append(wave_list[wave_list.size() - 1])
+	for wi in wave_list.size():
+		var wave := wave_list[wi]
 		var step := 1 + wi * 5
 		var wave_entries: Array[StringName] = entries
 		if not wave.entry_site_ids.is_empty():
@@ -177,11 +187,56 @@ static func _waves(raid: RaidData, entries: Array[StringName], campaign: Campaig
 				"id": "t%d" % counter, "content_id": td.id, "name": td.display_name if td.display_name != "" else String(td.id),
 				"integrity": roundi(td.integrity * scale * heat_scale), "damage": roundi(td.damage * scale),
 				"edges_per_step": td.edges_per_step, "routing": td.routing,
+				"freezes_edges": td.freezes_edges, "alters_edges": td.alters_edges,
 				"site": wave_entries[counter % wave_entries.size()], "hold": 0, "held_by": [], "reached_home": false,
 			})
 			counter += 1
 		waves[step] = list
 	return waves
+
+
+## Threats that freeze or alter links before the raid starts (GDD 7.1), in step order and
+## threat order so the projection matches the playout. An altering threat opens the first
+## locked link (by site id) touching its entry Site; it stays open afterwards. A freezing
+## threat freezes the link between the home server and its neighbour holding the most
+## deployed assets (ties by id): nothing routes or shoots across it during this raid.
+static func _prepare_links(waves: Dictionary, grid: GridState, grid_data: CityGridData, result: RaidResult) -> void:
+	var steps: Array = waves.keys()
+	steps.sort()
+	for step in steps:
+		for t in waves[step]:
+			if bool(t.get("alters_edges", false)):
+				var entry: StringName = t["site"]
+				var site := grid_data.get_site(entry)
+				var opened := false
+				if site != null:
+					var candidates: Array[StringName] = site.locked_links.duplicate()
+					for s in grid_data.sites:
+						if s != null and s.locked_links.has(entry):
+							candidates.append(s.id)
+					candidates.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+					for other in candidates:
+						if not grid.is_link_open(entry, other):
+							grid.open_link(entry, other)
+							opened = true
+							result.events.append({"type": "link_altered", "step": 0, "threat": t["id"], "a": entry, "b": other,
+								"text": "Setup: %s cuts a new route %s - %s." % [t["name"], entry, other]})
+							break
+				if not opened:
+					result.events.append({"type": "link_altered", "step": 0, "threat": t["id"], "a": entry, "b": &"",
+						"text": "Setup: %s finds no locked route to open near %s." % [t["name"], entry]})
+			if bool(t.get("freezes_edges", false)):
+				var best: StringName = &""
+				var best_assets := -1
+				for n in grid.neighbors(grid.home_site_id, grid_data):
+					var count := grid.assets_on(n).size() if grid.is_claimed(n) else 0
+					if count > best_assets:
+						best_assets = count
+						best = n
+				if best != &"":
+					grid.freeze_link(grid.home_site_id, best)
+					result.events.append({"type": "link_frozen", "step": 0, "threat": t["id"], "a": grid.home_site_id, "b": best,
+						"text": "Setup: %s freezes the link %s - %s for this raid." % [t["name"], grid.home_site_id, best]})
 
 
 static func _last_wave_step(waves: Dictionary) -> int:
@@ -293,9 +348,15 @@ static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], gr
 		if not grid.is_active_node(site):
 			continue
 		var guns: Array[DefenseAssetData] = []
-		var node := lookup.get_content(grid.node_type_of(site)) as NetworkNodeData
-		if node != null and node.built_in_asset != null:
-			guns.append(node.built_in_asset)
+		if site == grid.home_site_id:
+			for id in grid.home_built_in:
+				var built := lookup.get_content(StringName(id)) as DefenseAssetData
+				if built != null:
+					guns.append(built)
+		else:
+			var node := lookup.get_content(grid.node_type_of(site)) as NetworkNodeData
+			if node != null and node.built_in_asset != null:
+				guns.append(node.built_in_asset)
 		for a in grid.assets_on(site):
 			var asset := lookup.get_content(a) as DefenseAssetData
 			if asset != null:
@@ -406,6 +467,7 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 		if not disabled_now.has(String(site)):
 			disabled_now.append(String(site))
 		result.events.append({"type": "disabled", "step": step, "site": site, "text": "Step %d: %s DISABLED by %s." % [step, site, t["name"]]})
+		_recall_from(s, site, step, result)
 		var cascade := int(floor(excess * config.cascade_ratio))
 		if cascade <= 0:
 			continue
@@ -421,6 +483,17 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 					ns["condition"] = GridState.Condition.DISABLED
 					if not disabled_now.has(String(n)):
 						disabled_now.append(String(n))
+					_recall_from(ns, n, step, result)
+
+
+## A stationed operative on a node that goes Disabled returns to the reserves unharmed
+## (GDD 3.3); Seized nodes do the same through _seize + apply().
+static func _recall_from(s: Dictionary, site: StringName, step: int, result: RaidResult) -> void:
+	if String(s.get("stationed", "")) == "":
+		return
+	result.events.append({"type": "recalled", "step": step, "operative": s["stationed"], "site": site,
+		"text": "Step %d: %s returns to the reserves from Disabled %s." % [step, s["stationed"], site]})
+	s["stationed"] = ""
 
 
 static func _seize(grid: GridState, site: StringName, seized_now: Array[String]) -> void:

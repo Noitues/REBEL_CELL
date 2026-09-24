@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/threats/auditor.tres" id="th_auditor"]
+[ext_resource type="Resource" path="res://content/threats/icebreaker.tres" id="th_icebreaker"]
+
+; Retaliation (GDD 4.4): after an Exploit or Heat-objective netrun, Solace hits back from
+; the Site you just cleared. RaidTriggerSource 4 = RETALIATION.
+
+[sub_resource type="Resource" id="wave1"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_icebreaker"), ExtResource("th_auditor")])
+
+[resource]
+script = ExtResource("1")
+id = &"raid_retaliation"
+display_name = "Collections: Retaliation"
+trigger_source = 4
+waves = Array[ExtResource("2")]([SubResource("wave1")])
+schematic_reward = 10
+warning_text = "Solace traces the breach back along your route. An Icebreaker and an Auditor are inbound."

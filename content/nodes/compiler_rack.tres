@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NetworkNodeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="1"]
+
+; Compiler Rack (GDD 3.2): netruns launched next to it start with a bonus card offer.
+; NetworkNodeType 3 = COMPILER_RACK. Profile unlock (GDD 3.4).
+
+[resource]
+script = ExtResource("1")
+id = &"compiler_rack"
+node_type = 3
+display_name = "Compiler Rack"
+description = "Netruns launched next to it start with a bonus card offer."
+install_cost = 25
+repair_cost_ratio = 0.5
+integrity = 15
+asset_slots = 1
+profile_unlock_required = true

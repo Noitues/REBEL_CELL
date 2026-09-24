@@ -54,6 +54,9 @@ func _clear(site_id: StringName) -> void:
 	op.rank = 3  # rank gating is tested in test_campaign_rules; here we want the flow
 	assert_true(_hq.launch(site_id, op.id), "launched %s" % site_id)
 	_finish_run()
+	# Retaliation and story raids now follow every objective run (GDD 4.4); this flow test
+	# is about the breach gate, not defense, so the undefended home is patched up.
+	RunManager.campaign.grid.home_integrity = RunManager.campaign.grid.home_max_integrity
 	assert_true(RunManager.campaign.grid.is_cleared(site_id) or RunManager.campaign.is_over(), "%s cleared" % site_id)
 
 

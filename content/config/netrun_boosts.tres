@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NetrunBoostData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/netrun_boost_data.gd" id="1"]
+
+; Warm Cache (GDD 11.4 one-time boost, 10 Schematics): the next run starts with 40 Cycles.
+
+[resource]
+script = ExtResource("1")
+id = &"boost_warm_cache"
+display_name = "Warm Cache"
+description = "The next netrun starts with 40 Cycles."
+cost = 10
+cycles = 40

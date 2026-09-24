@@ -43,6 +43,8 @@ var elites_defeated: int = 0
 var miss_resolved: bool = false
 var card_removals: int = 0
 var heat_gained: int = 0
+## Run-only cards from boosts (removed from the deck on completion).
+var temp_cards: Array[StringName] = []
 var streams: Dictionary = {}
 
 
@@ -76,6 +78,7 @@ func _raw_dict() -> Dictionary:
 		"combats_won": combats_won, "elites_defeated": elites_defeated,
 		"miss_resolved": miss_resolved, "card_removals": card_removals,
 		"heat_gained": heat_gained, "streams": streams.duplicate(true),
+		"temp_cards": _strings(temp_cards),
 	}
 
 
@@ -110,6 +113,7 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.card_removals = int(d.get("card_removals", 0))
 	r.heat_gained = int(d.get("heat_gained", 0))
 	r.streams = d.get("streams", {}).duplicate(true)
+	r.temp_cards = _names(d.get("temp_cards", []))
 	return r
 
 

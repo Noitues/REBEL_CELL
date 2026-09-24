@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NetrunBoostData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/netrun_boost_data.gd" id="1"]
+[ext_resource type="Resource" path="res://content/cards/jolt.tres" id="jolt"]
+
+; Overclocked Deck (15 Schematics): two Jolt cards for the next run only.
+
+[resource]
+script = ExtResource("1")
+id = &"boost_overclocked_deck"
+display_name = "Overclocked Deck"
+description = "Two extra Jolt cards for the next netrun only."
+cost = 15
+temp_cards = Array[Resource]([ExtResource("jolt"), ExtResource("jolt")])

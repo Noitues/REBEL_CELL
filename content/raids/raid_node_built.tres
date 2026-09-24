@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/threats/enforcer.tres" id="th_enforcer"]
+
+; Node-built raid (GDD 4.4): building a Vault Terminal is noticed. Source 2 = NODE_BUILT.
+
+[sub_resource type="Resource" id="wave1"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_enforcer")])
+
+[resource]
+script = ExtResource("1")
+id = &"raid_node_built"
+display_name = "Collections: Asset Seizure"
+trigger_source = 2
+waves = Array[ExtResource("2")]([SubResource("wave1")])
+schematic_reward = 10
+warning_text = "Solace noticed the new vault on their books. An Enforcer is coming to collect it."

@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="HomeServerVariantData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/home_server_variant_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="3"]
+
+; Bunker home server (GDD 3.1, Profile unlock): a 40-integrity core with one internal
+; firewall node (30 integrity, 2 asset slots, built-in turret). Internal nodes fold into
+; the home server's capacity (decision 2026-09-24): home = 70 integrity, 3 asset slots,
+; one built-in turret. NetworkNodeType 0 = HOME_SERVER, 2 = FIREWALL_RELAY.
+
+[sub_resource type="Resource" id="core"]
+script = ExtResource("2")
+id = &"home_bunker_core"
+node_type = 0
+display_name = "Bunker Core"
+description = "A hardened core behind an internal firewall."
+install_cost = 0
+integrity = 40
+asset_slots = 1
+
+[sub_resource type="Resource" id="bunker_turret"]
+script = ExtResource("3")
+asset_type = 0
+id = &"bunker_turret"
+display_name = "Bunker turret"
+description = "Built in: 3 damage to threats on the home server."
+integrity = 30
+damage = 3
+range_hops = 0
+shots_per_step = 1
+targeting = 0
+
+[sub_resource type="Resource" id="firewall"]
+script = ExtResource("2")
+id = &"bunker_firewall"
+node_type = 2
+display_name = "Internal Firewall"
+description = "The bunker's internal firewall layer."
+install_cost = 0
+integrity = 30
+asset_slots = 2
+built_in_asset = SubResource("bunker_turret")
+
+[resource]
+script = ExtResource("1")
+id = &"home_bunker"
+display_name = "Bunker home server"
+description = "70 integrity, 3 asset slots and a built-in turret: the home server fights back."
+core = SubResource("core")
+internal_nodes = Array[ExtResource("2")]([SubResource("firewall")])
+internal_links = Array[Vector2i]([Vector2i(0, 1)])
