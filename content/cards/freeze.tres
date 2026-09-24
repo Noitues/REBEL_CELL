@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("2")
+type = 9
+target = 2
+ring_scope = 2
+
+[resource]
+script = ExtResource("1")
+id = &"freeze"
+display_name = "Freeze"
+description = "Target wheel skips its next respin. Exhaust."
+ram_cost = 3
+cycle_cost = 75
+wheel_target = 1
+effects = Array[ExtResource("2")]([SubResource("fx")])
+exhaust = true

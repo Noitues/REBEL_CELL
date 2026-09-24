@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("2")
+type = 17
+target = 0
+amount = 2
+
+[resource]
+script = ExtResource("1")
+id = &"pull"
+display_name = "Pull"
+description = "Draw 2 cards."
+ram_cost = 1
+cycle_cost = 55
+wheel_target = 0
+effects = Array[ExtResource("2")]([SubResource("fx")])
+exhaust = false

@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Placeholder Terminal event (M2). EffectType 14 = HEAL, target 0 = SELF.
+
+[sub_resource type="Resource" id="fx_heal"]
+script = ExtResource("3")
+type = 14
+target = 0
+amount = 20
+
+[sub_resource type="Resource" id="c_heal"]
+script = ExtResource("2")
+label = "Pay 20 Cycles for a patch-up (+20 HP)"
+result_text = "The auto-doc stitches you up without asking for a policy number."
+cycle_cost = 20
+effects = Array[ExtResource("3")]([SubResource("fx_heal")])
+
+[sub_resource type="Resource" id="c_leave"]
+script = ExtResource("2")
+label = "Walk on"
+result_text = "You keep your Cycles and your scars."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_medbay"
+title = "Unlicensed Medbay"
+speaker = 0
+text = "A Solace auto-doc hums in a side room, jailbroken and unattended."
+choices = Array[ExtResource("2")]([SubResource("c_heal"), SubResource("c_leave")])

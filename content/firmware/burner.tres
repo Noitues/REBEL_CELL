@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="FirmwareData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/firmware_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 1
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 5
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"burner"
+display_name = "Burner"
+description = "Permanently OVERCLOCKED (1.5x); each trigger adds 1 Heat."
+cycle_cost = 120
+permanent_status = 2
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

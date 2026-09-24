@@ -12,6 +12,9 @@ extends Resource
 @export var pointer_ticks: PackedInt32Array = PackedInt32Array([0])
 ## Passive-trait resistance (enemies).
 @export var passive_resistance: int = 0
+## Non-boss orbit: every pointer moves this many ticks at each start of turn
+## (Recall Unit: +2). Bosses use BossPhaseData instead.
+@export var pointer_orbit_per_turn: int = 0
 @export var resistance_refresh: RC.ResistanceRefresh = RC.ResistanceRefresh.EACH_PLAYER_TURN
 
 

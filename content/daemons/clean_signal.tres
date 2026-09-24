@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 6
+min_tier = 2
+consecutive_required = 3
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"clean_signal"
+display_name = "Clean Signal"
+description = "3 consecutive Perfects: -2 Heat."
+cycle_cost = 200
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

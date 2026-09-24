@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Resource" path="res://content/daemons/fault_tolerance.tres" id="daemon"]
+
+; Placeholder Terminal event (M2): offers a Daemon at an HP cost.
+
+[sub_resource type="Resource" id="c_take"]
+script = ExtResource("2")
+label = "Let it in (8 HP)"
+result_text = "It burrows into your deck. Fault Tolerance installed."
+hp_cost = 8
+reward = ExtResource("daemon")
+
+[sub_resource type="Resource" id="c_purge"]
+script = ExtResource("2")
+label = "Purge it"
+result_text = "The Terminal goes dark. Whatever it was, it is gone."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_stray_daemon"
+title = "Stray Daemon"
+speaker = 3
+text = "Something in the Terminal is asking, politely, to ride along in your deck."
+choices = Array[ExtResource("2")]([SubResource("c_take"), SubResource("c_purge")])

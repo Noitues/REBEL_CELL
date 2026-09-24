@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 0
+target = 3
+amount = 3
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 7
+min_tier = 0
+consecutive_required = 1
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"fault_tolerance"
+display_name = "Fault Tolerance"
+description = "The Miss slice deals 3 damage to the pointer target."
+cycle_cost = 200
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

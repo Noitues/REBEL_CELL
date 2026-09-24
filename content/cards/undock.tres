@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/core/handlers/undock_handler.gd" id="h"]
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("2")
+type = 24
+target = 2
+custom_handler = ExtResource("h")
+
+[resource]
+script = ExtResource("1")
+id = &"undock"
+display_name = "Undock"
+description = "Move a satellite to an adjacent slice."
+ram_cost = 1
+cycle_cost = 55
+wheel_target = 3
+effects = Array[ExtResource("2")]([SubResource("fx")])
+exhaust = false

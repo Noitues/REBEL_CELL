@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Placeholder Terminal event (M2). EffectType 22 = GAIN_CYCLES, 21 = MODIFY_HEAT, target 6 = CAMPAIGN.
+
+[sub_resource type="Resource" id="fx_cycles"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 25
+
+[sub_resource type="Resource" id="c_take"]
+script = ExtResource("2")
+label = "Crack the cache (+25 Cycles)"
+result_text = "Old credits, still good. Someone will notice the missing balance eventually."
+effects = Array[ExtResource("3")]([SubResource("fx_cycles")])
+
+[sub_resource type="Resource" id="c_leave"]
+script = ExtResource("2")
+label = "Leave it"
+result_text = "You back away from the blinking drive."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_abandoned_cache"
+title = "Abandoned Cache"
+speaker = 1
+text = "A dead courier left a cache drive wedged in the Terminal. It still has a balance."
+choices = Array[ExtResource("2")]([SubResource("c_take"), SubResource("c_leave")])

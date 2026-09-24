@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SliceData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="fx_drain"]
+script = ExtResource("3")
+type = 13
+target = 3
+amount = 2
+
+[sub_resource type="Resource" id="te_drain"]
+script = ExtResource("2")
+trigger = 5
+effects = Array[ExtResource("3")]([SubResource("fx_drain")])
+
+[resource]
+script = ExtResource("1")
+id = &"crit_12_drain"
+display_name = "Crit 12 (drains 2 RAM)"
+slice_type = 1
+target_rule = 1
+base_output = 12
+extra_effects = Array[ExtResource("2")]([SubResource("te_drain")])

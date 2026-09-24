@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="FirmwareData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/firmware_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"shunt"
+display_name = "Shunt"
+description = "Resolves the neighbour on the side you landed toward at 1.5x; nothing special on Perfect."
+cycle_cost = 100
+neighbor_rule = 2
+neighbor_multiplier = 1.5

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Resource" path="res://content/firmware/patch_plus.tres" id="fw"]
+
+; Placeholder Terminal event (M2): offers Firmware (GDD 6.3).
+
+[sub_resource type="Resource" id="c_buy"]
+script = ExtResource("2")
+label = "Buy the Patch+ chip (30 Cycles)"
+result_text = "A grey-market Patch+ chip, still in its anti-static bag."
+cycle_cost = 30
+reward = ExtResource("fw")
+
+[sub_resource type="Resource" id="c_leave"]
+script = ExtResource("2")
+label = "Not today"
+result_text = "The vendor shrugs and dims the Terminal."
+
+[resource]
+script = ExtResource("1")
+id = &"ev_firmware_vendor"
+title = "Grey-Market Vendor"
+speaker = 1
+text = "Someone has turned this Terminal into a storefront. Firmware, no questions."
+choices = Array[ExtResource("2")]([SubResource("c_buy"), SubResource("c_leave")])

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/zero_day_handler.gd" id="h"]
+
+[resource]
+script = ExtResource("1")
+id = &"zero_day"
+display_name = "Zero Day"
+description = "A Perfect on the Miss slice resolves as a 3x Crit."
+cycle_cost = 200
+custom_handler = ExtResource("h")

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DaemonData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/daemon_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/core/handlers/scrubber_handler.gd" id="h"]
+
+[resource]
+script = ExtResource("1")
+id = &"scrubber"
+display_name = "Scrubber"
+description = "Capturing a Server Rack removes 1 Heat instead of adding it."
+cycle_cost = 200
+custom_handler = ExtResource("h")

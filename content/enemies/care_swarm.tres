@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="4"]
+[ext_resource type="Resource" path="res://content/slices/def_4.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/heal_4.tres" id="s_heal"]
+[ext_resource type="Resource" path="res://content/slices/atk_4.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/enemies/care_drone.tres" id="drone"]
+
+; Care Swarm (GDD A.3): 25 HP; Def 4, Heal 4, Def 4, Heal 4, Atk 4, Miss; 3 satellites
+; (4 HP; Atk 3, Atk 3, Def 2) docked on random free slots at combat start.
+
+[sub_resource type="Resource" id="slot_def"]
+script = ExtResource("3")
+slice = ExtResource("s_def")
+
+[sub_resource type="Resource" id="slot_heal"]
+script = ExtResource("3")
+slice = ExtResource("s_heal")
+
+[sub_resource type="Resource" id="slot_atk"]
+script = ExtResource("3")
+slice = ExtResource("s_atk")
+
+[sub_resource type="Resource" id="slot_miss"]
+script = ExtResource("3")
+slice = ExtResource("s_miss")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("2")
+slice_count = 6
+slots = Array[ExtResource("3")]([SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_atk"), SubResource("slot_miss")])
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="spawn"]
+script = ExtResource("4")
+satellite = ExtResource("drone")
+trigger = 1
+every_n = 1
+dock_slot = -1
+max_active = 3
+
+[resource]
+script = ExtResource("1")
+id = &"care_swarm"
+display_name = "Care Swarm"
+description = "A cloud of care drones around a fragile core."
+corporation_id = &"solace"
+hp = 25
+wheel = SubResource("wheel")
+cycle_reward = 15
+spawns = Array[ExtResource("4")]([SubResource("spawn")])

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="FirmwareData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/firmware_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"patch_plus"
+display_name = "Patch+"
+description = "Slice output +50%."
+cycle_cost = 100
+output_multiplier = 1.5

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="FirmwareData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/firmware_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("3")
+type = 12
+target = 0
+amount = 1
+
+[sub_resource type="Resource" id="te"]
+script = ExtResource("2")
+trigger = 5
+min_tier = 1
+effects = Array[ExtResource("3")]([SubResource("fx")])
+
+[resource]
+script = ExtResource("1")
+id = &"leech"
+display_name = "Leech"
+description = "ATK slice restores 1 RAM on Good or better."
+cycle_cost = 100
+allowed_slice_types = Array[int]([0])
+triggered_effects = Array[ExtResource("2")]([SubResource("te")])

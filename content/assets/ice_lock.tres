@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="DefenseAssetData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+asset_type = 1
+id = &"ice_lock"
+display_name = "ICE Lock"
+description = "Holds a threat for 2 steps."
+integrity = 8
+damage = 0
+range_hops = 0
+shots_per_step = 1
+targeting = 0
+delay_steps = 2
+decoy_pull = 0

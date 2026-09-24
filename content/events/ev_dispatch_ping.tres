@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
+
+; Placeholder Terminal event (M2): a DISPATCH clue. Trade Heat for Cycles or scrub Heat.
+
+[sub_resource type="Resource" id="fx_heat_up"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="fx_cycles"]
+script = ExtResource("3")
+type = 22
+target = 6
+amount = 30
+
+[sub_resource type="Resource" id="fx_heat_down"]
+script = ExtResource("3")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c_loud"]
+script = ExtResource("2")
+label = "Siphon the account (+30 Cycles, +2 Heat)"
+result_text = "DISPATCH: That will be noticed. Worth it?"
+effects = Array[ExtResource("3")]([SubResource("fx_cycles"), SubResource("fx_heat_up")])
+
+[sub_resource type="Resource" id="c_quiet"]
+script = ExtResource("2")
+label = "Scrub your traces (-2 Heat)"
+result_text = "DISPATCH: Clean. I like clean."
+effects = Array[ExtResource("3")]([SubResource("fx_heat_down")])
+
+[resource]
+script = ExtResource("1")
+id = &"ev_dispatch_ping"
+title = "DISPATCH Ping"
+speaker = 4
+text = "DISPATCH cuts in: this Terminal touches a Solace payroll account. Loud or quiet?"
+choices = Array[ExtResource("2")]([SubResource("c_loud"), SubResource("c_quiet")])
+dispatch_clue = true

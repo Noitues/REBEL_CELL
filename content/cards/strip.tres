@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
+
+[sub_resource type="Resource" id="fx"]
+script = ExtResource("2")
+type = 10
+target = 2
+amount = -2
+
+[resource]
+script = ExtResource("1")
+id = &"strip"
+display_name = "Strip"
+description = "Remove 2 resistance from the target."
+ram_cost = 1
+cycle_cost = 55
+wheel_target = 1
+effects = Array[ExtResource("2")]([SubResource("fx")])
+exhaust = false
