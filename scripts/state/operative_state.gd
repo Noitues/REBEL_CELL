@@ -44,6 +44,29 @@ func ring_id(class_data: ClassData) -> StringName:
 	return StringName("rank:%d" % best) if best > 0 else &""
 
 
+## Hub Core id from the highest rank reward this rank has earned with a hub upgrade
+## (GDD 5.3 Rank 2), or empty to use the wheel's own Hub.
+func hub_id(class_data: ClassData) -> StringName:
+	var best := 0
+	var hub: StringName = &""
+	for reward in class_data.rank_rewards:
+		if reward != null and reward.hub_upgrade != null and reward.rank <= rank and reward.rank > best:
+			best = reward.rank
+			hub = reward.hub_upgrade.id
+	return hub
+
+
+## Station bonus strength multiplier for this rank (RankRewardData.station_bonus_multiplier).
+func station_multiplier(class_data: ClassData) -> float:
+	var best := 0
+	var mult := 1.0
+	for reward in class_data.rank_rewards:
+		if reward != null and reward.rank <= rank and reward.rank > best:
+			best = reward.rank
+			mult = reward.station_bonus_multiplier
+	return mult
+
+
 func has_daemon(daemon_id: StringName) -> bool:
 	return daemon_ids.has(daemon_id)
 

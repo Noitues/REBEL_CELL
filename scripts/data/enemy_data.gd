@@ -10,6 +10,8 @@ extends Resource
 @export var wheel: WheelData
 @export var is_elite: bool = false
 @export var is_boss: bool = false
+## Guards the final Server Rack of a netrun (designer ruling 2026-09-24); may have phases.
+@export var is_mini_boss: bool = false
 @export var cycle_reward: int = 15
 @export var spawns: Array[SatelliteSpawnData] = []
 ## Bosses only. Order by descending hp_threshold_pct.
@@ -24,8 +26,8 @@ func validate() -> PackedStringArray:
 		errors.append("Enemy %s has no wheel." % id)
 	else:
 		errors.append_array(wheel.validate())
-	if not phases.is_empty() and not is_boss:
-		errors.append("Enemy %s has phases but is not a boss." % id)
+	if not phases.is_empty() and not (is_boss or is_mini_boss):
+		errors.append("Enemy %s has phases but is not a boss or mini-boss." % id)
 	var last := 1.01
 	for p in phases:
 		if p == null:

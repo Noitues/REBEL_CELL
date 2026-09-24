@@ -40,6 +40,12 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	p.wheel = WheelState.from_wheel_data(class_data.starting_wheel, ring,
 		_to_names(overrides.get("slot_slice_ids", [])), _to_names(overrides.get("slot_firmware_ids", [])))
 	p.hub_resistance = class_data.starting_wheel.hub.hub_resistance if class_data.starting_wheel.hub != null else 0
+	var hub_override := StringName(String(overrides.get("hub_id", "")))
+	if hub_override != &"":
+		var hub := lookup.get_content(hub_override) as HubCoreData
+		if hub != null:
+			p.wheel.hub_id = hub.id
+			p.hub_resistance = hub.hub_resistance
 	s.player = p
 	s.ram = class_data.starting_ram
 	if overrides.has("deck"):

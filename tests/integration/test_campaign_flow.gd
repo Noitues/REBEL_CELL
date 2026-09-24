@@ -32,7 +32,9 @@ func _finish_run() -> void:
 			RunState.Phase.MAP:
 				s.enter_node(s.available_nodes()[0])
 			RunState.Phase.COMBAT:
-				s.combat.state.player.hp = s.combat.state.player.max_hp
+				# Invincible test operative: tier-scaled bosses hit far harder than 60 HP.
+				s.combat.state.player.max_hp = 9999
+				s.combat.state.player.hp = 9999
 				CombatFixture.land(s.combat.state.player, 0)
 				s.combat_action(CombatAction.end_turn())
 			RunState.Phase.REWARD:
@@ -41,6 +43,8 @@ func _finish_run() -> void:
 				s.choose_event_option(s.current_event().choices.size() - 1)
 			RunState.Phase.SHOP:
 				s.leave_shop()
+			RunState.Phase.RAID:
+				s.raid_fight()
 	RunManager.after_step()
 	RunManager.clear_run()
 

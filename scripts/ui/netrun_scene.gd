@@ -105,6 +105,30 @@ func leave_shop() -> void:
 	_show_current()
 
 
+func raid_deploy_run_asset(index: int, site_id: StringName) -> void:
+	_report(RunManager.netrun.raid_deploy_run_asset(index, site_id))
+	RunManager.after_step()
+	_show_current()
+
+
+func raid_deploy_armory(index: int, site_id: StringName) -> void:
+	_report(RunManager.netrun.raid_deploy_armory(index, site_id))
+	RunManager.after_step()
+	_show_current()
+
+
+func raid_move(from_site: StringName, index: int, to_site: StringName) -> void:
+	_report(RunManager.netrun.raid_move(from_site, index, to_site))
+	RunManager.after_step()
+	_show_current()
+
+
+func raid_fight() -> void:
+	_report(RunManager.netrun.raid_fight())
+	RunManager.after_step()
+	_show_current()
+
+
 func finish_run() -> void:
 	RunManager.clear_run()
 	RunManager.go_to_hq()
@@ -137,6 +161,8 @@ func _show_current() -> void:
 			_show_event()
 		RunState.Phase.SHOP:
 			_show_shop()
+		RunState.Phase.RAID:
+			_show_raid()
 		_:
 			_show_end()
 
@@ -327,11 +353,55 @@ func _show_shop() -> void:
 	_set_panel(box)
 
 
+## Mid-run raid interlude (GDD 4.4, 7.3): setup with exact projection, run assets and
+## the Armory both deployable, then the playout.
+func _show_raid() -> void:
+	var s := RunManager.netrun
+	var c := s.campaign
+	var pending := s.raid_pending()
+	var raid := CampaignRules.raid_data(pending, s.lookup)
+	var projection := s.raid_projection()
+	var box := VBoxContainer.new()
+	box.add_child(_label("RAID INTERLUDE - %s: %s" % [raid.display_name, raid.warning_text]))
+	box.add_child(_label("Projection: %s, home %d -> %d, %d threats destroyed, %d steps" % [
+		"HOLDS" if projection.won else ("CAMPAIGN LOST" if projection.campaign_lost else "breached"),
+		projection.home_before, projection.home_after, projection.threats_destroyed, projection.steps_run]))
+	var run_assets := s.run_assets()
+	for site_id in c.grid.claimed_ids():
+		var row := HBoxContainer.new()
+		var n: Dictionary = projection.nodes.get(String(site_id), {})
+		row.add_child(_label("%s (%s) %s -> %s [%s] assets: %s" % [site_id, c.grid.node_type_of(site_id), n.get("before", "?"), n.get("after", "?"),
+			String(n.get("outcome", "?")).to_upper(), ", ".join(c.grid.assets_on(site_id))]))
+		var deployed := c.grid.assets_on(site_id)
+		for i in deployed.size():
+			var idx := i
+			var sid := site_id
+			row.add_child(_button("Withdraw %s" % deployed[i], func() -> void: raid_move(sid, idx, &"")))
+		if c.grid.is_active_node(site_id):
+			if not run_assets.is_empty():
+				var pick := OptionButton.new()
+				for a in run_assets:
+					pick.add_item("run: %s" % a)
+				row.add_child(pick)
+				var sid2 := site_id
+				row.add_child(_button("Deploy run asset", func() -> void: raid_deploy_run_asset(pick.selected, sid2)))
+			if not c.armory.is_empty():
+				var pick2 := OptionButton.new()
+				for a in c.armory:
+					pick2.add_item("armory: %s" % a)
+				row.add_child(pick2)
+				var sid3 := site_id
+				row.add_child(_button("Deploy armory asset", func() -> void: raid_deploy_armory(pick2.selected, sid3)))
+		box.add_child(row)
+	box.add_child(_button("RUN THE RAID", raid_fight))
+	_set_panel(box)
+
+
 func _show_end() -> void:
 	var s := RunManager.netrun
 	var box := VBoxContainer.new()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
-	box.add_child(_label("NETRUN %s" % ("COMPLETE" if won else "FAILED - operative lost")))
+	box.add_child(_label("NETRUN %s" % ("COMPLETE" if won else ("ABORTED - the home server fell" if s.run.outcome == RunState.Outcome.ABORTED else "FAILED - operative lost"))))
 	box.add_child(_label("Combats won %d, elites %d, Cycles %d, banked Schematics %d, Heat gained %d." % [s.run.combats_won, s.run.elites_defeated, s.run.cycles, s.run.banked_schematics, s.run.heat_gained]))
 	box.add_child(_label("Campaign: Heat %d, Schematics %d, Armory %d." % [s.campaign.heat, s.campaign.schematics, s.campaign.armory.size()]))
 	box.add_child(_button("Back to HQ", finish_run))

@@ -257,19 +257,25 @@ _(Claude Code: add questions here instead of guessing on design.)_
 - **Corrupted self-damage** straight to HP confirmed.
 - **DOSE preview** stays hidden from the player (the engine still predicts it exactly).
 
-### From M3 (2026-09-24)
-- **Boss scaling.** A.3 lists the Renewal Engine at 300 HP / Atk 14 / Crit 24 with "Tier 1
-  base values; scale per 11.6", but the boss Site is T4 (×4.1 → 1,229 HP, 98-damage Crit,
-  one-shots a 60 HP operative). M3 uses the authored values unscaled. Confirm, or give the
-  boss its own scaling.
-- **Mid-run raid interludes.** Threshold raids reached during a netrun wait until the
-  operative is back at HQ. GDD §4.4 allows an interlude between map nodes; do you want it
-  (it needs the raid setup inside the netrun scene)?
-- **Station bonuses** (Breaker: node assets +50% damage) are stored but not applied by the
-  raid resolver yet; rank scaling for them is unspecified.
-- **Raid movement details** filled in (see M3 decisions: waves every 5 steps, camping on
-  the target node, live nodes stop the advance). Any of these you want different?
-- **Rank 2 Hub Core upgrade** for the Breaker has no content (only tier gating exists).
+### From M3 (2026-09-24) — resolved by the designer on 2026-09-24
+- **Tier scaling hits everything**, including the final boss (T4 ×4.1) and the new
+  **mini-bosses**: every netrun's final Server Rack is guarded by a corporation mini-boss
+  (`EnemyData.is_mini_boss`, may have phases). Solace: *Account Manager* (120 HP, Atk 10,
+  Def 8, Crit 16, Dose, Shield 5, Miss; resistance 1; at 50% multiplies to two pointers).
+  Playtest risk noted: a T4 Renewal Engine Crit is 98 damage against 60 HP operatives.
+- **Mid-run raid interludes** are in: whenever a run would return to the map with a raid
+  queued, `RunState.Phase.RAID` opens the setup inside the netrun scene (projection, the
+  run's own assets and the Armory both deployable, playout). Losing the home server there
+  ends the run as ABORTED. Runs that launch with a raid already queued fight it first.
+- **Station bonus scaling** (made up): the class `station_bonus` is a DEAL_DAMAGE effect
+  whose `multiplier` is the asset damage factor (Breaker 1.5); Rank scales the bonus part
+  by `RankRewardData.station_bonus_multiplier` = 1.25 / 1.5 / 2.0 at Ranks 1 / 2 / 3, so a
+  Rank 3 Breaker doubles asset damage. It applies to the stationed node and to adjacent
+  Firewall Relays.
+- **Raid movement details** confirmed as a starting point.
+- **Breaker Core Mk2** (Rank 2 Hub upgrade, made up): +2 spin on all cards; Perfect
+  resolves the slice twice and refunds 1 RAM per resolution. Operatives fight with the
+  highest hub upgrade their Rank has earned (`OperativeState.hub_id`).
 
 ### From M2 (2026-09-24) — resolved by the designer on 2026-09-24
 - **Shop slice catalogue:** `CampaignConfigData.shop_slices` (Atk 6/8, Crit 12, Def 5/8,

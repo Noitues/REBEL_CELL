@@ -71,7 +71,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 			continue
 		_move_threats(threats, grid, grid_data, lookup, step, result)
 		_hold_threats(threats, grid, lookup, step, result)
-		_fire_assets(threats, grid, grid_data, lookup, step, result)
+		_fire_assets(campaign, threats, grid, grid_data, lookup, step, result)
 		_damage_nodes(threats, grid, grid_data, lookup, config, step, result, seized_now, disabled_now)
 		if grid.home_integrity <= 0:
 			result.campaign_lost = true
@@ -288,7 +288,7 @@ static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: C
 			break
 
 
-static func _fire_assets(threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, step: int, result: RaidResult) -> void:
+static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, step: int, result: RaidResult) -> void:
 	for site in grid.claimed_ids():
 		if not grid.is_active_node(site):
 			continue
@@ -300,18 +300,51 @@ static func _fire_assets(threats: Array[Dictionary], grid: GridState, grid_data:
 			var asset := lookup.get_content(a) as DefenseAssetData
 			if asset != null:
 				guns.append(asset)
+		var station_mult := station_damage_multiplier(campaign, grid, grid_data, lookup, site)
 		for gun in guns:
 			if gun.damage <= 0:
 				continue
+			var damage := roundi(gun.damage * station_mult)
 			for shot in gun.shots_per_step:
 				var target := _pick_target(gun, site, threats, grid, grid_data)
 				if target.is_empty():
 					break
-				target["integrity"] -= gun.damage
-				result.events.append({"type": "shot", "step": step, "site": site, "asset": gun.id, "threat": target["id"], "damage": gun.damage,
-					"text": "Step %d: %s at %s hits %s for %d (%d left)." % [step, gun.display_name if gun.display_name != "" else String(gun.id), site, target["name"], gun.damage, maxi(0, target["integrity"])]})
+				target["integrity"] -= damage
+				result.events.append({"type": "shot", "step": step, "site": site, "asset": gun.id, "threat": target["id"], "damage": damage,
+					"text": "Step %d: %s at %s hits %s for %d (%d left)." % [step, gun.display_name if gun.display_name != "" else String(gun.id), site, target["name"], damage, maxi(0, target["integrity"])]})
 				if target["integrity"] <= 0:
 					result.events.append({"type": "threat_destroyed", "step": step, "threat": target["id"], "text": "Step %d: %s destroyed." % [step, target["name"]]})
+
+
+## Station bonus (GDD 5.2, 5.3; numbers per designer ruling 2026-09-24): a stationed
+## operative's class `station_bonus` DEAL_DAMAGE multiplier applies to the assets on its
+## node and on adjacent Firewall Relays; Rank scales the bonus part by the class's
+## RankRewardData.station_bonus_multiplier. The strongest applicable bonus wins.
+static func station_damage_multiplier(campaign: CampaignState, grid: GridState, grid_data: CityGridData, lookup: ContentLookup, site: StringName) -> float:
+	var best := 1.0
+	var here_node := lookup.get_content(grid.node_type_of(site)) as NetworkNodeData
+	var candidates: Array[StringName] = [site]
+	if here_node != null and here_node.node_type == RC.NetworkNodeType.FIREWALL_RELAY:
+		candidates.append_array(grid.neighbors(site, grid_data))
+	for s in candidates:
+		if not grid.is_active_node(s):
+			continue
+		var op_id := grid.stationed_on(s)
+		if op_id == &"":
+			continue
+		var op := campaign.get_operative(op_id)
+		if op == null or not op.alive:
+			continue
+		var cls := lookup.get_content(op.class_id) as ClassData
+		if cls == null:
+			continue
+		for te in cls.station_bonus:
+			if te == null:
+				continue
+			for e in te.effects:
+				if e != null and e.type == RC.EffectType.DEAL_DAMAGE and e.multiplier > 1.0:
+					best = maxf(best, 1.0 + (e.multiplier - 1.0) * op.station_multiplier(cls))
+	return best
 
 
 static func _pick_target(gun: DefenseAssetData, site: StringName, threats: Array[Dictionary], grid: GridState, grid_data: CityGridData) -> Dictionary:

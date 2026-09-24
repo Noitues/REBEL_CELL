@@ -19,6 +19,8 @@ Status: `done` / `minimal` / `todo` / `M<n>` (planned for that milestone).
 | Solace enemies: 6 normal, 2 elite | A.3 | done (M1–M2) |
 | Solace satellites (Collections drone, Care drone) | A.3 | done |
 | Renewal Engine boss with phases | A.3, 2.11 | done (M3) |
+| Solace mini-boss for the final Rack (Account Manager) | ruling 2026-09-24 | done (M3) — placeholder numbers |
+| Breaker Core Mk2 (Rank 2 Hub upgrade) | 5.3 | done (M3) — placeholder numbers |
 | Firmware (6) | A.4, 6.1 | done (M2) |
 | Daemons (6) | A.4, 6.2 | done (M2) |
 | Defense assets (3) and threats (3) | A.5 | done (M2) |

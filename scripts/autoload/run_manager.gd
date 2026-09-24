@@ -87,6 +87,7 @@ func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPO
 	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, class_data(), home.core if home != null else null)
 	netrun = null
 	RngService.seed_campaign(campaign_seed)
+	_reset_profile_sync()
 	profile.campaigns_started += 1
 	save_profile()
 	SignalBus.run_started.emit(campaign_seed)
@@ -157,6 +158,8 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 func after_step() -> void:
 	if netrun != null and netrun.run.is_over():
 		_record_run_outcome()
+	else:
+		sync_profile_with_campaign()
 	autosave()
 	if netrun != null and netrun.run.is_over():
 		run_ended.emit(netrun)
@@ -170,9 +173,36 @@ func _record_run_outcome() -> void:
 		profile.runs_completed += 1
 	elif netrun.run.outcome == RunState.Outcome.DIED:
 		profile.operatives_lost += 1
-	if campaign.outcome == CampaignState.Outcome.WON:
-		profile.record_win(campaign.corporation_id, campaign.ice_level)
+	sync_profile_with_campaign()
+
+
+## Mirrors campaign raid counters and the campaign outcome into the profile exactly once
+## (mid-run raid interludes and HQ raids both end up here).
+var _profile_raids_won_seen: int = 0
+var _profile_raids_lost_seen: int = 0
+var _profile_outcome_seen: int = CampaignState.Outcome.NONE
+
+
+func sync_profile_with_campaign() -> void:
+	if campaign == null:
+		return
+	profile.raids_won += maxi(0, campaign.raids_won - _profile_raids_won_seen)
+	profile.raids_lost += maxi(0, campaign.raids_lost - _profile_raids_lost_seen)
+	_profile_raids_won_seen = campaign.raids_won
+	_profile_raids_lost_seen = campaign.raids_lost
+	if campaign.outcome != _profile_outcome_seen:
+		_profile_outcome_seen = campaign.outcome
+		if campaign.outcome == CampaignState.Outcome.WON:
+			profile.record_win(campaign.corporation_id, campaign.ice_level)
+		elif campaign.outcome == CampaignState.Outcome.LOST:
+			profile.record_loss()
 	save_profile()
+
+
+func _reset_profile_sync() -> void:
+	_profile_raids_won_seen = campaign.raids_won if campaign != null else 0
+	_profile_raids_lost_seen = campaign.raids_lost if campaign != null else 0
+	_profile_outcome_seen = campaign.outcome if campaign != null else CampaignState.Outcome.NONE
 
 
 # --- Raids ---------------------------------------------------------------------------------
@@ -192,14 +222,9 @@ func fight_raid() -> Array[Dictionary]:
 	if pending.is_empty():
 		return []
 	var events := CampaignRules.fight_raid(campaign, corporation, config(), lookup(), pending)
-	if campaign.last_raid.get("won", false):
-		profile.raids_won += 1
-	else:
-		profile.raids_lost += 1
+	sync_profile_with_campaign()
 	if campaign.outcome == CampaignState.Outcome.LOST:
-		profile.record_loss()
 		campaign_ended.emit(campaign)
-	save_profile()
 	autosave()
 	campaign_changed.emit(campaign)
 	return events
@@ -232,6 +257,7 @@ func resume() -> bool:
 		RngService.from_dict(data["rng"])
 	var run_data: Dictionary = data.get("run", {})
 	netrun = NetrunSession.from_dict(resolver, campaign, run_data, corporation) if not run_data.is_empty() else null
+	_reset_profile_sync()
 	campaign_changed.emit(campaign)
 	run_changed.emit(netrun)
 	return true

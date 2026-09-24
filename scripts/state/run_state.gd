@@ -3,8 +3,10 @@ extends RefCounted
 ## One netrun (GDD 4.2): the map, the operative's working copy, Cycles, banking, the
 ## current node and whatever sub-screen is open (combat, reward, event, shop).
 
-enum Phase { MAP, COMBAT, REWARD, EVENT, SHOP, ENDED }
-enum Outcome { NONE, COMPLETED, DIED }
+## RAID = a mid-run raid interlude between map nodes (GDD 4.4, designer ruling 2026-09-24).
+enum Phase { MAP, COMBAT, REWARD, EVENT, SHOP, ENDED, RAID }
+## ABORTED = the campaign ended (home server lost) during the run.
+enum Outcome { NONE, COMPLETED, DIED, ABORTED }
 
 var run_seed: int = 0
 var tier: int = 1

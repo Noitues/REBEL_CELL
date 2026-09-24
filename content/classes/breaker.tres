@@ -12,6 +12,9 @@
 [ext_resource type="Resource" path="res://content/slices/def_5.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/hub_cores/breaker_core.tres" id="hub"]
+[ext_resource type="Resource" path="res://content/hub_cores/breaker_core_mk2.tres" id="hub_mk2"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="9"]
 [ext_resource type="Resource" path="res://content/rings/breaker_ring.tres" id="ring"]
 [ext_resource type="Resource" path="res://content/cards/jolt.tres" id="c_jolt"]
 [ext_resource type="Resource" path="res://content/cards/brute_spin.tres" id="c_brute"]
@@ -51,16 +54,33 @@ script = ExtResource("4")
 rank = 1
 max_netrun_tier = 2
 inner_ring = ExtResource("ring")
+station_bonus_multiplier = 1.25
 
 [sub_resource type="Resource" id="rank_2"]
 script = ExtResource("4")
 rank = 2
 max_netrun_tier = 3
+hub_upgrade = ExtResource("hub_mk2")
+station_bonus_multiplier = 1.5
 
 [sub_resource type="Resource" id="rank_3"]
 script = ExtResource("4")
 rank = 3
 max_netrun_tier = 4
+station_bonus_multiplier = 2.0
+
+; Station bonus (GDD 5.2): the node's assets +50% damage. Convention: a DEAL_DAMAGE effect
+; whose multiplier is the asset damage factor; rank scales the bonus part (1.25 / 1.5 / 2.0).
+[sub_resource type="Resource" id="fx_station"]
+script = ExtResource("9")
+type = 0
+target = 0
+multiplier = 1.5
+
+[sub_resource type="Resource" id="te_station"]
+script = ExtResource("8")
+trigger = 12
+effects = Array[ExtResource("9")]([SubResource("fx_station")])
 
 [resource]
 script = ExtResource("1")
@@ -75,4 +95,5 @@ starting_ram = 6
 max_ram = 12
 ram_regen = 4
 free_nudges_per_turn = 1
+station_bonus = Array[ExtResource("8")]([SubResource("te_station")])
 rank_rewards = Array[ExtResource("4")]([SubResource("rank_1"), SubResource("rank_2"), SubResource("rank_3")])

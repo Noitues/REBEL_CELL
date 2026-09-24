@@ -57,6 +57,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
+	s._maybe_raid_interlude()
 	s._sync()
 	return s
 
@@ -125,7 +126,7 @@ func _sync() -> void:
 
 # --- Map -------------------------------------------------------------------------
 
-## Node ids the operative may enter now.
+## Node ids the operative may enter now (none during a raid interlude).
 func available_nodes() -> Array[StringName]:
 	if run.phase != RunState.Phase.MAP or run.is_over():
 		return []
@@ -194,8 +195,13 @@ func combat_rewind() -> CombatResult:
 	return result
 
 
+## Picks the enemy: the final Rack gets a mini-boss (designer ruling 2026-09-24), other
+## elite nodes an elite, Routers a normal enemy; special runs force theirs.
 func _start_combat(elite: bool) -> void:
+	var final_rack := run.kind == "netrun" and run.current_node_id == run.map.final_node_id()
 	var pool: Array = _pools["elites"] if elite else _pools["enemies"]
+	if final_rack and not _pools["mini_bosses"].is_empty():
+		pool = _pools["mini_bosses"]
 	if pool.is_empty():
 		pool = _pools["enemies"] if elite else _pools["elites"]
 	var combat_rng := streams.get_stream(&"combat")
@@ -208,23 +214,21 @@ func _start_combat(elite: bool) -> void:
 	var overrides := {
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
-		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(),
+		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "hub_id": String(op.hub_id(cls)),
 	}
 	for k in run.combat_overrides:
 		if k != "shop_stock_delta":
 			overrides[k] = run.combat_overrides[k]
 	combat = CombatSession.start(resolver, op.class_id, [enemy_id], seed, op.ring_id(cls), campaign.heat_majors_crossed(config), overrides)
 	run.phase = RunState.Phase.COMBAT
-	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite,
-		"text": "Combat: %s%s." % [enemy_id, " (elite)" if elite else ""]})
+	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite, "mini_boss": final_rack,
+		"text": "Combat: %s%s." % [enemy_id, " (mini-boss)" if final_rack else (" (elite)" if elite else "")]})
 	_apply_campaign_effects(combat.last_events)
 
 
-## GDD 11.6: enemy HP and damage scale by enemy_scale_per_tier^(tier - 1). The final
-## boss uses its authored values unscaled (A.3 lists them at full strength; open question).
+## GDD 11.6: enemy HP and damage scale by enemy_scale_per_tier^(tier - 1), for every
+## enemy including mini-bosses and the final boss (designer ruling 2026-09-24).
 func enemy_scale() -> float:
-	if run.kind == "boss":
-		return 1.0
 	return pow(config.enemy_scale_per_tier, run.tier - 1)
 
 
@@ -276,6 +280,7 @@ func _finish_combat() -> void:
 		_complete_run()
 		return
 	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
+	_maybe_raid_interlude()
 
 
 ## Server Rack capture (GDD 4.2, 11.5): bank Schematics and assets, add Heat (or what a
@@ -349,6 +354,7 @@ func skip_reward() -> Array[Dictionary]:
 func _after_reward() -> void:
 	if run.pending_rewards.is_empty():
 		run.phase = RunState.Phase.MAP
+		_maybe_raid_interlude()
 
 
 ## Gives `id` of `kind` to the operative. Returns an error string when it cannot.
@@ -436,6 +442,7 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 		_sync()
 		return last_events
 	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
+	_maybe_raid_interlude()
 	_sync()
 	return last_events
 
@@ -600,6 +607,99 @@ func leave_shop() -> Array[Dictionary]:
 	run.shop = {}
 	run.phase = RunState.Phase.MAP
 	last_events.append({"type": "shop_left", "text": "Left the Modem."})
+	_maybe_raid_interlude()
+	_sync()
+	return last_events
+
+
+# --- Mid-run raid interlude (GDD 4.4, 7.3) ---------------------------------------------------
+
+## Whenever the run would return to the map with a raid queued on the campaign, the raid
+## is fought first. Needs the corporation (bare rule tests have none: no interludes).
+func _maybe_raid_interlude() -> void:
+	if corporation == null or run.phase != RunState.Phase.MAP or campaign.pending_raids.is_empty() or run.is_over():
+		return
+	run.phase = RunState.Phase.RAID
+	var raid := CampaignRules.raid_data(campaign.pending_raids[0], lookup)
+	last_events.append({"type": "raid_interlude", "raid_id": raid.id if raid != null else &"",
+		"text": "RAID INTERLUDE: %s. %s" % [raid.display_name if raid != null else "?", raid.warning_text if raid != null else ""]})
+
+
+func in_raid() -> bool:
+	return run.phase == RunState.Phase.RAID
+
+
+func raid_pending() -> Dictionary:
+	return CampaignRules.pending_raid(campaign)
+
+
+func raid_projection() -> RaidResolver.RaidResult:
+	return CampaignRules.project_raid(campaign, corporation, config, lookup, raid_pending()) if in_raid() else null
+
+
+## Assets the run carries (banked first, then unbanked), usable in a mid-run raid (7.3).
+func run_assets() -> Array[StringName]:
+	var out: Array[StringName] = run.banked_assets.duplicate()
+	out.append_array(run.unbanked_assets)
+	return out
+
+
+## Deploys one of the run's own assets onto a node; it stays there afterwards.
+func raid_deploy_run_asset(index: int, site_id: StringName) -> Array[Dictionary]:
+	last_events = []
+	if not in_raid():
+		return _refuse("No raid in progress.")
+	var assets := run_assets()
+	if index < 0 or index >= assets.size():
+		return _refuse("No such run asset.")
+	var asset := assets[index]
+	# Route through the Armory rules so slots and node state are checked the same way.
+	campaign.armory.append(asset)
+	var events := CampaignRules.deploy_asset(campaign, config, lookup, campaign.armory.size() - 1, site_id)
+	if events[0]["type"] == "refused":
+		campaign.armory.pop_back()
+		last_events.append_array(events)
+		return last_events
+	if index < run.banked_assets.size():
+		run.banked_assets.remove_at(index)
+	else:
+		run.unbanked_assets.remove_at(index - run.banked_assets.size())
+	last_events.append_array(events)
+	_sync()
+	return last_events
+
+
+func raid_deploy_armory(index: int, site_id: StringName) -> Array[Dictionary]:
+	last_events = []
+	if not in_raid():
+		return _refuse("No raid in progress.")
+	last_events.append_array(CampaignRules.deploy_asset(campaign, config, lookup, index, site_id))
+	_sync()
+	return last_events
+
+
+func raid_move(from_site: StringName, index: int, to_site: StringName) -> Array[Dictionary]:
+	last_events = []
+	if not in_raid():
+		return _refuse("No raid in progress.")
+	last_events.append_array(CampaignRules.move_asset(campaign, config, lookup, from_site, index, to_site))
+	_sync()
+	return last_events
+
+
+## Plays the raid out; the run continues on the map unless the home server fell.
+func raid_fight() -> Array[Dictionary]:
+	last_events = []
+	if not in_raid():
+		return _refuse("No raid in progress.")
+	last_events.append_array(CampaignRules.fight_raid(campaign, corporation, config, lookup, raid_pending()))
+	if campaign.is_over():
+		run.outcome = RunState.Outcome.ABORTED
+		run.phase = RunState.Phase.ENDED
+		last_events.append({"type": "run_aborted", "text": "The run is over: the home server is gone."})
+	else:
+		run.phase = RunState.Phase.MAP
+		_maybe_raid_interlude()
 	_sync()
 	return last_events
 
@@ -713,11 +813,14 @@ func _run_daemon_hooks(trigger: int) -> Array[Dictionary]:
 func _build_pools() -> void:
 	var enemies: Array = []
 	var elites: Array = []
+	var mini_bosses: Array = []
 	for id in lookup.ids_of_class(&"EnemyData"):
 		var e := lookup.get_content(id) as EnemyData
 		if e.corporation_id != campaign.corporation_id or e.is_boss or e.wheel == null or e.wheel.slice_count != RC.SLICES:
 			continue
-		if e.is_elite:
+		if e.is_mini_boss:
+			mini_bosses.append(id)
+		elif e.is_elite:
 			elites.append(id)
 		else:
 			enemies.append(id)
@@ -745,7 +848,7 @@ func _build_pools() -> void:
 		if not built_in.has(id):
 			assets.append(id)
 	_pools = {
-		"enemies": enemies, "elites": elites, "shared_cards": shared_cards, "class_cards": class_cards,
+		"enemies": enemies, "elites": elites, "mini_bosses": mini_bosses, "shared_cards": shared_cards, "class_cards": class_cards,
 		"firmware": lookup.ids_of_class(&"FirmwareData"), "daemons": lookup.ids_of_class(&"DaemonData"),
 		"assets": assets, "events": events,
 	}
