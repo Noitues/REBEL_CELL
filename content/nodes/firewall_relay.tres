@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="NetworkNodeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="2"]
+
+; Firewall Relay (GDD 3.2): built-in turret (3 damage, own node) and asset slots.
+; NetworkNodeType 2 = FIREWALL_RELAY. Costs a node upgrade step (11.4: 30).
+
+[sub_resource type="Resource" id="firewall_turret"]
+script = ExtResource("2")
+asset_type = 0
+id = &"firewall_turret"
+display_name = "Firewall turret"
+description = "Built in: 3 damage to threats on this node."
+integrity = 30
+damage = 3
+range_hops = 0
+shots_per_step = 1
+targeting = 0
+
+[resource]
+script = ExtResource("1")
+id = &"firewall_relay"
+node_type = 2
+display_name = "Firewall Relay"
+description = "A Relay with a built-in turret and two asset slots."
+install_cost = 30
+repair_cost_ratio = 0.5
+integrity = 30
+asset_slots = 2
+built_in_asset = SubResource("firewall_turret")

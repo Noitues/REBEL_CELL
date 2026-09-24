@@ -12,6 +12,10 @@
 [ext_resource type="Resource" path="res://content/slices/def_8.tres" id="sl_def_8"]
 [ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="sl_shield_5"]
 [ext_resource type="Resource" path="res://content/slices/evade_1.tres" id="sl_evade_1"]
+[ext_resource type="Resource" path="res://content/raids/raid_heat_25.tres" id="raid_25"]
+[ext_resource type="Resource" path="res://content/raids/raid_heat_50.tres" id="raid_50"]
+[ext_resource type="Resource" path="res://content/raids/raid_heat_75.tres" id="raid_75"]
+[ext_resource type="Resource" path="res://content/raids/raid_purge.tres" id="raid_purge"]
 
 ; ---- Heat threshold modifiers (GDD 4.3) ----
 ; RC.RuleModifierType: 0 HEAT_GAIN_PCT, 1 HEAT_SINK_PCT, 2 HEAT_OBJECTIVE_SITES,
@@ -69,6 +73,7 @@ event_text = "Netrun complication: an extra elite patrols the next netrun."
 script = ExtResource("2_ht")
 heat = 25
 kind = 1
+event_raid = ExtResource("raid_25")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_elites")])
 event_text = "Raid. While Heat stays at 25 or above, elites are more frequent."
@@ -93,6 +98,7 @@ event_text = "Netrun complication: an extra elite patrols the next netrun."
 script = ExtResource("2_ht")
 heat = 50
 kind = 1
+event_raid = ExtResource("raid_50")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_resistance")])
 event_text = "Raid. While Heat stays at 50 or above, all enemies gain +1 resistance."
@@ -117,6 +123,7 @@ event_text = "Netrun complication: an extra elite patrols the next netrun."
 script = ExtResource("2_ht")
 heat = 75
 kind = 1
+event_raid = ExtResource("raid_75")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_raid_strength")])
 event_text = "Raid. While Heat stays at 75 or above, raids are 25% stronger."
@@ -141,6 +148,7 @@ event_text = "Netrun complication: an extra elite patrols the next netrun."
 script = ExtResource("2_ht")
 heat = 100
 kind = 2
+event_raid = ExtResource("raid_purge")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
 event_text = "PURGE. The largest raid of the campaign."

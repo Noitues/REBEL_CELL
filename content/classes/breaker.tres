@@ -52,6 +52,16 @@ rank = 1
 max_netrun_tier = 2
 inner_ring = ExtResource("ring")
 
+[sub_resource type="Resource" id="rank_2"]
+script = ExtResource("4")
+rank = 2
+max_netrun_tier = 3
+
+[sub_resource type="Resource" id="rank_3"]
+script = ExtResource("4")
+rank = 3
+max_netrun_tier = 4
+
 [resource]
 script = ExtResource("1")
 id = &"breaker"
@@ -65,4 +75,4 @@ starting_ram = 6
 max_ram = 12
 ram_regen = 4
 free_nudges_per_turn = 1
-rank_rewards = Array[ExtResource("4")]([SubResource("rank_1")])
+rank_rewards = Array[ExtResource("4")]([SubResource("rank_1"), SubResource("rank_2"), SubResource("rank_3")])

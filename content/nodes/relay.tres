@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="NetworkNodeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="1"]
+
+; Relay (GDD 3.2): lets you claim Sites beyond it. NetworkNodeType 1 = RELAY.
+
+[resource]
+script = ExtResource("1")
+id = &"relay"
+node_type = 1
+display_name = "Relay"
+description = "Extends your reach: Sites beyond it can be claimed."
+install_cost = 20
+repair_cost_ratio = 0.5
+integrity = 15
+asset_slots = 1

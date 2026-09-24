@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="NetworkNodeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="1"]
+
+; Safehouse (GDD 3.2): station slot for an operative. NetworkNodeType 6 = SAFEHOUSE.
+
+[resource]
+script = ExtResource("1")
+id = &"safehouse"
+node_type = 6
+display_name = "Safehouse"
+description = "Station an operative here between netruns."
+install_cost = 20
+repair_cost_ratio = 0.5
+integrity = 20
+asset_slots = 1
+station_slots = 1

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/threats/collector.tres" id="th_collector"][ext_resource type="Resource" path="res://content/threats/auditor.tres" id="th_auditor"]
+[sub_resource type="Resource" id="wave1"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_collector"), ExtResource("th_collector"), ExtResource("th_auditor")])
+
+[resource]
+script = ExtResource("1")
+id = &"raid_heat_50"
+display_name = "Collections: Second Notice"
+trigger_source = 0
+waves = Array[ExtResource("2")]([SubResource("wave1")])
+schematic_reward = 12
+warning_text = "An Auditor rides with the Collectors this time."

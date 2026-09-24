@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/threats/collector.tres" id="th_collector"][ext_resource type="Resource" path="res://content/threats/auditor.tres" id="th_auditor"][ext_resource type="Resource" path="res://content/threats/enforcer.tres" id="th_enforcer"]
+[sub_resource type="Resource" id="wave1"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_collector"), ExtResource("th_collector"), ExtResource("th_auditor"), ExtResource("th_enforcer")])
+
+[sub_resource type="Resource" id="wave2"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_auditor"), ExtResource("th_enforcer")])
+
+[resource]
+script = ExtResource("1")
+id = &"raid_purge"
+display_name = "Collections: Purge"
+trigger_source = 0
+waves = Array[ExtResource("2")]([SubResource("wave1"), SubResource("wave2")])
+schematic_reward = 25
+warning_text = "Every Collections asset Solace has, in two waves."

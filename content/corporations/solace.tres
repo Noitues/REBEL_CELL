@@ -1,0 +1,356 @@
+[gd_resource type="Resource" script_class="CorporationData" load_steps=66 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/site_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/exploit_data.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/data/story_path_data.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/data/story_beat_data.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="9"]
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="10"]
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="11"]
+[ext_resource type="Resource" path="res://content/enemies/collections_agent.tres" id="e_collections"]
+[ext_resource type="Resource" path="res://content/enemies/triage_unit.tres" id="e_triage"]
+[ext_resource type="Resource" path="res://content/enemies/compliance_officer.tres" id="e_compliance"]
+[ext_resource type="Resource" path="res://content/enemies/dosage_dispenser.tres" id="e_dosage"]
+[ext_resource type="Resource" path="res://content/enemies/billing_daemon.tres" id="e_billing"]
+[ext_resource type="Resource" path="res://content/enemies/care_swarm.tres" id="e_swarm"]
+[ext_resource type="Resource" path="res://content/enemies/claims_adjuster.tres" id="e_adjuster"]
+[ext_resource type="Resource" path="res://content/enemies/recall_unit.tres" id="e_recall"]
+[ext_resource type="Resource" path="res://content/enemies/renewal_engine.tres" id="e_boss"]
+[ext_resource type="Resource" path="res://content/raids/raid_heat_25.tres" id="r_25"]
+[ext_resource type="Resource" path="res://content/raids/raid_heat_50.tres" id="r_50"]
+[ext_resource type="Resource" path="res://content/raids/raid_heat_75.tres" id="r_75"]
+[ext_resource type="Resource" path="res://content/raids/raid_purge.tres" id="r_purge"]
+[ext_resource type="Resource" path="res://content/raids/raid_claim.tres" id="r_claim"]
+[ext_resource type="Resource" path="res://content/events/ev_abandoned_cache.tres" id="ev_1"]
+[ext_resource type="Resource" path="res://content/events/ev_medbay.tres" id="ev_2"]
+[ext_resource type="Resource" path="res://content/events/ev_firmware_vendor.tres" id="ev_3"]
+[ext_resource type="Resource" path="res://content/events/ev_dispatch_ping.tres" id="ev_4"]
+[ext_resource type="Resource" path="res://content/events/ev_stray_daemon.tres" id="ev_5"]
+
+; Solace Biosystems (GDD 8.3, A.6). City Grid: home -> three T1 -> their T2 Exploit
+; Sites (Intel, Breach, Virus) -> one T3 -> the Renewal Engine (T4 boss), plus the
+; Scrub Records Heat objective off t1_a. Locked cross-links between the T1 Sites open
+; with the Intel Exploit. SiteObjective: 0 NONE, 1 EXPLOIT, 2 HEAT_REDUCTION, 4 BOSS.
+; ExploitType: 1 INTEL, 2 BREACH, 3 VIRUS.
+
+[sub_resource type="Resource" id="site_home"]
+script = ExtResource("3")
+id = &"home"
+display_name = "Home Server"
+tier = 1
+links = Array[StringName]([&"t1_a", &"t1_b", &"t1_c"])
+claimable = false
+map_position = Vector2(0, 200)
+
+[sub_resource type="Resource" id="site_t1_a"]
+script = ExtResource("3")
+id = &"t1_a"
+display_name = "Continuum Billing Farm"
+tier = 1
+links = Array[StringName]([&"t2_intel", &"scrub_records"])
+locked_links = Array[StringName]([&"t1_b"])
+map_position = Vector2(200, 80)
+
+[sub_resource type="Resource" id="site_t1_b"]
+script = ExtResource("3")
+id = &"t1_b"
+display_name = "Implant Provisioning Hub"
+tier = 1
+links = Array[StringName]([&"t2_breach"])
+locked_links = Array[StringName]([&"t1_c"])
+map_position = Vector2(200, 200)
+
+[sub_resource type="Resource" id="site_t1_c"]
+script = ExtResource("3")
+id = &"t1_c"
+display_name = "Patient Records Vault"
+tier = 1
+links = Array[StringName]([&"t2_virus"])
+map_position = Vector2(200, 320)
+
+[sub_resource type="Resource" id="site_scrub"]
+script = ExtResource("3")
+id = &"scrub_records"
+display_name = "Scrub Records"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(320, 0)
+
+[sub_resource type="Resource" id="site_t2_intel"]
+script = ExtResource("3")
+id = &"t2_intel"
+display_name = "Pricing Memo Archive"
+tier = 2
+links = Array[StringName]([&"t3_core"])
+objective = 1
+exploit_type = 1
+map_position = Vector2(420, 80)
+
+[sub_resource type="Resource" id="site_t2_breach"]
+script = ExtResource("3")
+id = &"t2_breach"
+display_name = "Kill-Switch Authority"
+tier = 2
+links = Array[StringName]([&"t3_core"])
+objective = 1
+exploit_type = 2
+map_position = Vector2(420, 200)
+
+[sub_resource type="Resource" id="site_t2_virus"]
+script = ExtResource("3")
+id = &"t2_virus"
+display_name = "Patch Distribution Node"
+tier = 2
+links = Array[StringName]([&"t3_core"])
+objective = 1
+exploit_type = 3
+map_position = Vector2(420, 320)
+
+[sub_resource type="Resource" id="site_t3"]
+script = ExtResource("3")
+id = &"t3_core"
+display_name = "Continuum Core Cluster"
+tier = 3
+links = Array[StringName]([&"renewal_engine_site"])
+map_position = Vector2(640, 200)
+
+[sub_resource type="Resource" id="site_boss"]
+script = ExtResource("3")
+id = &"renewal_engine_site"
+display_name = "Renewal Engine"
+tier = 4
+objective = 4
+claimable = false
+map_position = Vector2(860, 200)
+
+[sub_resource type="Resource" id="grid"]
+script = ExtResource("2")
+sites = Array[ExtResource("3")]([SubResource("site_home"), SubResource("site_t1_a"), SubResource("site_t1_b"), SubResource("site_t1_c"), SubResource("site_scrub"), SubResource("site_t2_intel"), SubResource("site_t2_breach"), SubResource("site_t2_virus"), SubResource("site_t3"), SubResource("site_boss")])
+home_site_id = &"home"
+boss_site_id = &"renewal_engine_site"
+
+; ---- Exploits (GDD 11.7) ----
+
+[sub_resource type="Resource" id="ex_intel"]
+script = ExtResource("4")
+exploit_type = 1
+display_name = "Intel: Pricing Memos"
+description = "Reveals the boss phases and pointer moves; opens locked Grid links."
+heat_cost = 10
+reveals_boss_phases = true
+opens_locked_links = true
+
+[sub_resource type="Resource" id="ex_breach"]
+script = ExtResource("4")
+exploit_type = 2
+display_name = "Breach: Kill-Switch"
+description = "The boss starts with one fewer pointer."
+heat_cost = 10
+removes_boss_pointers = 1
+
+[sub_resource type="Resource" id="fx_virus"]
+script = ExtResource("8")
+type = 4
+target = 2
+status = 1
+slice_pick = 1
+amount = 2
+
+[sub_resource type="Resource" id="te_virus"]
+script = ExtResource("7")
+trigger = 1
+effects = Array[ExtResource("8")]([SubResource("fx_virus")])
+
+[sub_resource type="Resource" id="ex_virus"]
+script = ExtResource("4")
+exploit_type = 3
+display_name = "Virus: Open-Source Patch"
+description = "The boss starts with CORRUPTED slices."
+heat_cost = 10
+breach_effects = Array[ExtResource("7")]([SubResource("te_virus")])
+
+; ---- Story paths (GDD 8.4), placeholder beats ----
+
+[sub_resource type="Resource" id="b_rn_1"]
+script = ExtResource("6")
+id = &"rn_1"
+title = "Recall Notice I"
+text = "Placeholder: the pricing memos mention a silent recall. Implants failing quietly."
+
+[sub_resource type="Resource" id="b_rn_2"]
+script = ExtResource("6")
+id = &"rn_2"
+title = "Recall Notice II"
+text = "Placeholder: the kill-switch was never meant to be used. It was used."
+
+[sub_resource type="Resource" id="b_rn_3"]
+script = ExtResource("6")
+id = &"rn_3"
+title = "Recall Notice III"
+text = "Placeholder: the patch works. Solace buried it to protect renewals."
+
+[sub_resource type="Resource" id="b_rn_f"]
+script = ExtResource("6")
+id = &"rn_f"
+title = "Recall Notice: Finale"
+text = "Placeholder finale: the Renewal Engine goes dark and the recall notice goes public."
+
+[sub_resource type="Resource" id="sp_recall"]
+script = ExtResource("5")
+id = &"sp_recall_notice"
+title = "Recall Notice"
+premise = "Placeholder: a hardware recall Solace never announced."
+beats = Array[ExtResource("6")]([SubResource("b_rn_1"), SubResource("b_rn_2"), SubResource("b_rn_3")])
+finale = SubResource("b_rn_f")
+
+[sub_resource type="Resource" id="b_ct_1"]
+script = ExtResource("6")
+id = &"ct_1"
+title = "Clinical Trial I"
+text = "Placeholder: the trial cohort never consented to the subscription clause."
+
+[sub_resource type="Resource" id="b_ct_2"]
+script = ExtResource("6")
+id = &"ct_2"
+title = "Clinical Trial II"
+text = "Placeholder: the control group had their implants bricked first."
+
+[sub_resource type="Resource" id="b_ct_3"]
+script = ExtResource("6")
+id = &"ct_3"
+title = "Clinical Trial III"
+text = "Placeholder: the patch was the trial result they hid."
+
+[sub_resource type="Resource" id="b_ct_f"]
+script = ExtResource("6")
+id = &"ct_f"
+title = "Clinical Trial: Finale"
+text = "Placeholder finale: the cohort data leaks with the Renewal Engine."
+
+[sub_resource type="Resource" id="sp_trial"]
+script = ExtResource("5")
+id = &"sp_clinical_trial"
+title = "Clinical Trial"
+premise = "Placeholder: the Continuum was tested on people who could not say no."
+beats = Array[ExtResource("6")]([SubResource("b_ct_1"), SubResource("b_ct_2"), SubResource("b_ct_3")])
+finale = SubResource("b_ct_f")
+
+[sub_resource type="Resource" id="b_tos_1"]
+script = ExtResource("6")
+id = &"tos_1"
+title = "Terms of Service I"
+text = "Placeholder: clause 44 makes your heartbeat a licensed feature."
+
+[sub_resource type="Resource" id="b_tos_2"]
+script = ExtResource("6")
+id = &"tos_2"
+title = "Terms of Service II"
+text = "Placeholder: the kill-switch is the enforcement clause."
+
+[sub_resource type="Resource" id="b_tos_3"]
+script = ExtResource("6")
+id = &"tos_3"
+title = "Terms of Service III"
+text = "Placeholder: the patch voids the terms. Solace calls that piracy."
+
+[sub_resource type="Resource" id="b_tos_f"]
+script = ExtResource("6")
+id = &"tos_f"
+title = "Terms of Service: Finale"
+text = "Placeholder finale: nobody agrees to the terms anymore."
+
+[sub_resource type="Resource" id="sp_tos"]
+script = ExtResource("5")
+id = &"sp_terms_of_service"
+title = "Terms of Service"
+premise = "Placeholder: what the Continuum contract actually says."
+beats = Array[ExtResource("6")]([SubResource("b_tos_1"), SubResource("b_tos_2"), SubResource("b_tos_3")])
+finale = SubResource("b_tos_f")
+
+[sub_resource type="Resource" id="b_cure_1"]
+script = ExtResource("6")
+id = &"cure_1"
+title = "The Cure I"
+text = "Placeholder: the memos price a cure Solace already owns."
+
+[sub_resource type="Resource" id="b_cure_2"]
+script = ExtResource("6")
+id = &"cure_2"
+title = "The Cure II"
+text = "Placeholder: the kill-switch keeps the cure a subscription."
+
+[sub_resource type="Resource" id="b_cure_3"]
+script = ExtResource("6")
+id = &"cure_3"
+title = "The Cure III"
+text = "Placeholder: the patch is the cure, one download at a time."
+
+[sub_resource type="Resource" id="b_cure_f"]
+script = ExtResource("6")
+id = &"cure_f"
+title = "The Cure: Finale"
+text = "Placeholder finale: the cure ships for free."
+
+[sub_resource type="Resource" id="sp_cure"]
+script = ExtResource("5")
+id = &"sp_the_cure"
+title = "The Cure"
+premise = "Placeholder: Solace could fix everyone. It sells renewals instead."
+beats = Array[ExtResource("6")]([SubResource("b_cure_1"), SubResource("b_cure_2"), SubResource("b_cure_3")])
+finale = SubResource("b_cure_f")
+
+[sub_resource type="Resource" id="b_gp_1"]
+script = ExtResource("6")
+id = &"gp_1"
+title = "Ghost Patient I"
+text = "Placeholder: a patient record with no patient. It keeps paying."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_gp_2"]
+script = ExtResource("6")
+id = &"gp_2"
+title = "Ghost Patient II"
+text = "Placeholder: the kill-switch logs show it was triggered from inside the Cell."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_gp_3"]
+script = ExtResource("6")
+id = &"gp_3"
+title = "Ghost Patient III"
+text = "Placeholder: the patch carries a signature DISPATCH would recognise."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_gp_f"]
+script = ExtResource("6")
+id = &"gp_f"
+title = "Ghost Patient: Finale"
+text = "Placeholder finale: the ghost patient was never a patient."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="sp_ghost"]
+script = ExtResource("5")
+id = &"sp_ghost_patient"
+title = "Ghost Patient"
+premise = "Placeholder: someone in the Cell is a Solace customer. Foreshadows DISPATCH."
+beats = Array[ExtResource("6")]([SubResource("b_gp_1"), SubResource("b_gp_2"), SubResource("b_gp_3")])
+finale = SubResource("b_gp_f")
+foreshadows = &"dispatch"
+
+[resource]
+script = ExtResource("1")
+id = &"solace"
+display_name = "Solace Biosystems"
+description = "Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks."
+city_grid = SubResource("grid")
+enemies = Array[ExtResource("9")]([ExtResource("e_collections"), ExtResource("e_triage"), ExtResource("e_compliance"), ExtResource("e_dosage"), ExtResource("e_billing"), ExtResource("e_swarm")])
+elites = Array[ExtResource("9")]([ExtResource("e_adjuster"), ExtResource("e_recall")])
+final_boss = ExtResource("e_boss")
+exploits = Array[ExtResource("4")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
+story_paths = Array[ExtResource("5")]([SubResource("sp_recall"), SubResource("sp_trial"), SubResource("sp_tos"), SubResource("sp_cure"), SubResource("sp_ghost")])
+raids = Array[ExtResource("10")]([ExtResource("r_25"), ExtResource("r_50"), ExtResource("r_75"), ExtResource("r_purge"), ExtResource("r_claim")])
+events = Array[ExtResource("11")]([ExtResource("ev_1"), ExtResource("ev_2"), ExtResource("ev_3"), ExtResource("ev_4"), ExtResource("ev_5")])

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="3"]
+[ext_resource type="Resource" path="res://content/threats/collector.tres" id="th_collector"]
+[sub_resource type="Resource" id="wave1"]
+script = ExtResource("2")
+threats = Array[ExtResource("3")]([ExtResource("th_collector")])
+
+[resource]
+script = ExtResource("1")
+id = &"raid_claim"
+display_name = "Collections: Trespass"
+trigger_source = 1
+waves = Array[ExtResource("2")]([SubResource("wave1")])
+schematic_reward = 8
+warning_text = "You built next to Solace property. A Collector is on its way."

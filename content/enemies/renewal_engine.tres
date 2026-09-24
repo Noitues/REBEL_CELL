@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=22 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="8"]
+[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/def_12.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
+[ext_resource type="Resource" path="res://content/slices/crit_24.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/enemies/collections_drone.tres" id="drone"]
+
+; Renewal Engine, Solace final boss (GDD A.3, 2.11): 300 HP; Atk 14, Atk 14, Def 12,
+; Dose, Crit 24, Miss. Hub Auto-Renew heals 10 per turn unless Hub-Breached
+; (trigger 2 = ON_TURN_START, effect 14 = HEAL on SELF). 66%: Multiply to pointers
+; 0 and 15 (behavior 1). 33%: pointers Orbit 3 per turn (behavior 3) and 2 drones spawn.
+
+[sub_resource type="Resource" id="fx_heal"]
+script = ExtResource("6")
+type = 14
+target = 0
+amount = 10
+
+[sub_resource type="Resource" id="te_auto_renew"]
+script = ExtResource("5")
+trigger = 2
+effects = Array[ExtResource("6")]([SubResource("fx_heal")])
+
+[sub_resource type="Resource" id="hub_auto_renew"]
+script = ExtResource("4")
+id = &"auto_renew"
+display_name = "Auto-Renew"
+description = "Heals 10 each turn unless the Hub is breached."
+passive_effects = Array[ExtResource("5")]([SubResource("te_auto_renew")])
+
+[sub_resource type="Resource" id="slot_atk"]
+script = ExtResource("3")
+slice = ExtResource("s_atk")
+
+[sub_resource type="Resource" id="slot_def"]
+script = ExtResource("3")
+slice = ExtResource("s_def")
+
+[sub_resource type="Resource" id="slot_dose"]
+script = ExtResource("3")
+slice = ExtResource("s_dose")
+
+[sub_resource type="Resource" id="slot_crit"]
+script = ExtResource("3")
+slice = ExtResource("s_crit")
+
+[sub_resource type="Resource" id="slot_miss"]
+script = ExtResource("3")
+slice = ExtResource("s_miss")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("2")
+slice_count = 6
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_miss")])
+hub = SubResource("hub_auto_renew")
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="spawn_drones"]
+script = ExtResource("8")
+satellite = ExtResource("drone")
+trigger = 1
+every_n = 1
+dock_slot = -1
+max_active = 2
+
+[sub_resource type="Resource" id="phase_multiply"]
+script = ExtResource("7")
+hp_threshold_pct = 0.66
+pointer_behavior = 1
+pointer_ticks = PackedInt32Array(0, 15)
+phase_line = "Renewal cycle escalates: a second read head spins up."
+
+[sub_resource type="Resource" id="phase_orbit"]
+script = ExtResource("7")
+hp_threshold_pct = 0.33
+pointer_behavior = 3
+orbit_ticks_per_turn = 3
+spawns = Array[ExtResource("8")]([SubResource("spawn_drones")])
+phase_line = "Emergency renewal: pointers drift and drones deploy."
+
+[resource]
+script = ExtResource("1")
+id = &"renewal_engine"
+display_name = "Renewal Engine"
+description = "The Continuum subscription server. It renews itself faster than you can cut."
+corporation_id = &"solace"
+hp = 300
+wheel = SubResource("wheel")
+is_boss = true
+cycle_reward = 100
+phases = Array[ExtResource("7")]([SubResource("phase_multiply"), SubResource("phase_orbit")])
