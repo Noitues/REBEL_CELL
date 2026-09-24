@@ -30,6 +30,64 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M2 Netrun Loop
+- **Run randomness** comes from the run's own `RngStreams` (pure core class; `RngService`
+  now wraps it) seeded from a run seed drawn from the campaign `map` stream: `map` builds
+  the map, `combat` picks enemies and seeds each fight, `rewards` rolls Cycles, asset drops,
+  offers and shop stock, `events` picks Terminal events. Stream states are saved with the
+  run, so a resumed run continues identically.
+- **Map generator** follows TECH_SPEC §6 with non-crossing edges built as monotone chains
+  (each node 1–2 forward edges; every next-layer node covered; provably reachable both
+  ways). New config: `map_modem_layers` (3–5), `map_elite_layers` (3–6),
+  `map_elites_per_layer` (1), `map_terminal_ratio` (0.25). Elite Heat (+1) is charged on
+  entering the node; Server Rack Heat is charged on *capture* (11.5 says "capture", and
+  Scrubber needs to replace it).
+- **Cycles per node:** Router 15–25 (`cycles_router_range`), Elite Router and Server Rack
+  30–40 (`cycles_elite_range`); "Combat 10–20" is reserved for non-node fights (Reclaim,
+  events). Rewards scale ×1.7^(tier−1); enemy HP and slice outputs ×1.6^(tier−1) via
+  `CombatantState.output_scale`.
+- **Rewards:** every won fight offers 1-of-3 cards from the shared pool plus the class's
+  exclusives (no duplicate within an offer; skip allowed); elite Routers add 1-of-2
+  Firmware (the player picks the socket; must fit the slice type); Server Racks add 1-of-3
+  Daemons not yet owned, bank `rack_schematics_by_tier` and any unbanked assets. Asset drop
+  chance 0.4 per fight from the A.5 assets; assets are unbanked until a Rack.
+- **Modem stock:** 3 cards, 2 Firmware, 1 Daemon (prices rolled in the §11.2 ranges), card
+  removal at 50 (+25 per removal), slice overwrite 100 (150 for the Miss slot). The
+  overwrite options are the distinct non-Miss slices already on the operative's wheel
+  (open question: a real slice catalogue).
+- **Enemy pools** are derived from content, not a CorporationData (arrives with the City
+  Grid in M3): EnemyData with `corporation_id == "solace"`, 6-slice wheel, not boss;
+  `is_elite` splits normal/elite. Terminal events: `TerminalEventData` with matching or
+  empty corporation, weighted pick.
+- **Operative state** (`OperativeState`) carries the current wheel layout (slice ids +
+  Firmware sockets), deck, Daemons, HP and Rank; a run works on a copy written back to the
+  roster only on completion (death: permadeath, the roster entry is marked dead).
+- **Daemon hooks.** Data-driven Daemons are plain listeners in TECH_SPEC order after the
+  Hub. Rule-breakers use `custom_handler` scripts with
+  `handle(context, state, rng) -> Array[Dictionary]`; combat handlers get every trigger with
+  `context.trigger`, run-level handlers get ON_SERVER_RACK_CAPTURE / ON_NETRUN_COMPLETE with
+  the RunState. Kernel Sync's +1 applies from the *next* attack after the Perfect.
+  Zero Day = 3 × the wheel's best Crit output (else best Attack) at the pointer target.
+- **Custom card effects** (`EffectType.CUSTOM` + handler): Ring Lock, Momentum, Calibrate,
+  Steady Hand, Undock. Per-combat markers live in `CombatState.flags` / `ring_locked` /
+  `ram_bonus_next_turn` / `damage_bonus` so they save, preview and replay like everything
+  else.
+- **Firmware neighbour rules** add derived resolutions before the passes: Mirror copies the
+  neighbour on the landed side (both on Perfect) at the landing's tier; Shunt resolves that
+  neighbour instead at ×1.5 and does nothing special on Perfect. Positive offset = landed
+  clockwise = neighbour slot +1.
+- **Billing Daemon** drains RAM through DRAIN_RAM slice effects (`atk_7_drain`,
+  `crit_12_drain`); **Recall Unit** orbit is a new `WheelData.pointer_orbit_per_turn` (+2,
+  applied from turn 2 on); **Care Swarm** drones dock on random free slots.
+- **Save file:** one JSON per campaign slot (`user://saves/campaign_<slot>.json`) holding
+  the campaign, the run (with its live combat session, checkpoint and streams) and the
+  campaign RNG. Autosave on entering a node, after each combat, after every reward/event/
+  shop step and on quit. A combat's `setup` is JSON-normalised on creation so a resumed
+  session hashes identically.
+- **Scenes:** the netrun scene is the main scene (start screen → map → embedded combat →
+  reward/event/shop → summary). The combat scene keeps its standalone picker for M1-style
+  testing (`auto_start`).
+
 ### 2026-09-24 — M1 Combat Core
 - **Designer rulings applied (from the M0 review):** Godot pin moved to **4.7** (GUT
   9.7.1); elite frequency placeholder 25% confirmed; `BOSS_PHASE_EARLY` dropped in favour
@@ -143,6 +201,17 @@ _(Claude Code: add questions here instead of guessing on design.)_
   bodyguard rule applies to piercing hits; the drone takes them.
 - **Corrupted self-damage** straight to HP confirmed.
 - **DOSE preview** stays hidden from the player (the engine still predicts it exactly).
+
+### From M2 (2026-09-24)
+- **Slice overwrite catalogue.** GDD §11.2 prices "slice overwrite" but never says which
+  slices are for sale. M2 offers copies of the slices already on the wheel. Should there be a
+  shop slice list (e.g. Atk 6 / Def 5 / Crit 12 / Evade / Shield)?
+- **"Combat 10–20" vs "Router 15–25"** in §11.1: M2 reads Router as the node's fight and
+  reserves 10–20 for non-node fights. Confirm.
+- **Elite frequency modifier** (Heat 25 / ICE 3) is stored but the generator does not read
+  it yet; where should extra elites go (more per layer, or elite Terminals)?
+- **Rescued operatives** at Terminals recruit a fresh rookie into the roster (no event uses
+  it yet).
 
 ### From M0 (2026-09-24) — resolved by the designer on 2026-09-24
 - Godot version → 4.7 pin, GUT 9.7.1. "More elites" → 25% confirmed. ICE 9 → boss

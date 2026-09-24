@@ -20,11 +20,11 @@ Godot 4.7 · GDScript · PC.
    - Content: `godot --headless --path . -s tools/validate_content.gd` → `CONTENT VALIDATION: PASS`
 4. Current milestone: see `docs/MILESTONES.md`.
 
-## Layout (M0–M1)
+## Layout (M0–M2)
 - `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
-- `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay)
-- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat scene
-- `scenes/combat/combat_scene.tscn` — the main scene: Breaker vs the three Solace enemies
-- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, cards, slices, Solace enemies)
+- `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay), `MapGenerator`, `NetrunSession` (map, rewards, shop, events, banking), `handlers/` (rule-breaking cards and Daemons)
+- `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat and netrun scenes
+- `scenes/netrun_map/netrun_scene.tscn` — the main scene: campaign start, map, embedded combat, rewards, Modem, Terminals, save/resume · `scenes/combat/combat_scene.tscn` — standalone fight picker
+- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, 25 cards, Firmware, Daemons, slices, Solace enemies, assets, threats, Terminal events)
 - `tests/unit`, `tests/integration` — GUT 9.x tests · `tools/` — headless checks
 - `addons/gut/` — GUT 9.7.1
