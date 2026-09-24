@@ -14,6 +14,8 @@ var corp: CorporationData = null
 var threat_paths: Array[Array] = []  # each: Array[StringName] of site ids
 ## Raid playout: site id -> Array[String] of threat names standing there.
 var threat_markers: Dictionary = {}
+## Site picked by the player (drawn with an acid ring).
+var selected_id: StringName = &""
 var _positions: Dictionary = {}
 
 
@@ -124,6 +126,8 @@ func _draw() -> void:
 			GridState.SiteStatus.SEIZED:
 				col = Palette.RESIST_GOLD
 		_iso_block(p, w, d, h, col)
+		if s.id == selected_id:
+			draw_arc(p + Vector2(0, -h * 0.5), w + 10, 0, TAU, 32, Palette.CELL_ACID, 2.0)
 		if status == GridState.SiteStatus.CLAIMED:
 			draw_arc(p + Vector2(0, 6), w + 4, 0, TAU * 0.92, 24, Color(Palette.CELL_PINK, 0.5), 4.0)
 			draw_arc(p + Vector2(3, 4), w - 2, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_PINK, 0.3), 2.0)

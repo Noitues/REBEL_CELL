@@ -32,6 +32,11 @@ func record_loss() -> void:
 	campaigns_lost += 1
 
 
+## "none" until a campaign is won, else the ICE level (UI text).
+static func ice_text(level: int) -> String:
+	return "none" if level < 0 else str(level)
+
+
 func best_ice_for(corporation_id: StringName) -> int:
 	return int(best_ice_by_corp.get(String(corporation_id), -1))
 

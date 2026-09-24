@@ -30,6 +30,51 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Vertical-slice fixes, batch 5: gap analysis pass 2 and the balance simulation
+- **Rank gating uses the operative's own class** (V1): `RunManager.launch_error` passes the
+  operative's ClassData; `CampaignRules.launch_error` refuses a mismatched class instead of
+  silently gating with the wrong Rank table.
+- **Grid map clicks select a Site** (V2): the Site's row (status and every action) is
+  listed first under "SELECTED >" and the Site gets a cell_acid ring on the map.
+- **Netrun panels are zined** (V3): rewards and Modem stock are zine stickers (cards show
+  RAM cost, stock shows the Cycle price in the cost circle, Firmware/Daemon offers show
+  none), street/corporate events sit on a ZinePanel, DISPATCH events on a clean dark strip
+  (never zined), the run end is a stamp plus a torn note.
+- **Balance simulation** (V4): `CombatBot` plays greedily from the End Turn preview (the
+  information a player has) and never plays random-outcome cards; `CampaignSimulator`
+  plays whole campaigns with fixed policies; `tools/simulate_campaign.gd -- <seeds> <ice>
+  [verbose]` prints pacing. A campaign takes 3-25 s. The first runs found four real
+  problems, fixed as below; the numbers after the fixes (8 seeds each):
+
+  | | GDD 11.8 | ICE 0 | ICE 5 |
+  |---|---|---|---|
+  | bot wins | — | 8/8 | 6/8 |
+  | runs | ≈ 24 (fast 8) | 25.9 (fastest 9) | 21.0 |
+  | raids | ≈ 7 (fast 3) | 5.3 | 6.1 |
+  | Heat peak | 85-90 at ICE 5 | 78 | 84 |
+  | hours | 6 h 35 m | 6.9 | 5.8 |
+
+- **Home server patch** (found by the sim: home damage was permanent while Schematics
+  piled up): HQ "Patch home" restores integrity at `home_repair_cost_per_point` (1)
+  Schematics per point; partial patches buy what the Schematics allow. GDD 3.3 annotated.
+- **Retaliation raids narrowed** (found by the sim: 8 raids in 8 runs): only Exploit
+  extraction at Heat ≥ `retaliation_min_heat` (50) provokes one; Heat objectives never do
+  (they are sinks). Supersedes the batch 2a rule. GDD 4.4 annotated.
+- **Patrol runs** (found by the sim: a soft-lock when every Site is used up and no
+  operative has Rank 3): any cleared or claimed Site except home and the boss can be run
+  again as a full netrun with normal loot, Heat and Rank but no objective; completion leaves
+  the Grid unchanged (node passives still apply). Launch kind "patrol"; the Grid lists them.
+- **Enemy damage scales separately from HP** (found by the sim: every Rank 3 Breaker died to
+  the T4 Renewal Engine, whose Crit at 1.6^3 hit for 98 against 60 HP): HP keeps
+  `enemy_scale_per_tier` 1.6; slice outputs use `enemy_damage_scale_per_tier`, tuned to
+  **1.2** by simulation (1.6: 2/8 wins and 41 runs; 1.35: 3/8; 1.2: 8/8 at 26 runs). The
+  designer's ruling stands: both scales hit normal enemies, mini-bosses and the boss.
+  `CombatantState.hp_scale` lets satellites inherit the host's HP scale. GDD 11.6 annotated.
+- **The bot skips Burner Firmware** (Heat per trigger); a player weighs that cost too.
+- **M5 "Vertical completion"** is recorded in MILESTONES.md with its acceptance list.
+- **Schema changes**: `CampaignConfigData.home_repair_cost_per_point / retaliation_min_heat /
+  enemy_damage_scale_per_tier`, `CombatantState.hp_scale`. Smoke test batch 5 extended.
+
 ### 2026-09-24 — Vertical-slice fixes, batch 4: menus, platform and onboarding (GAP_ANALYSIS §2.5)
 - **Title scene** (`scenes/menu/title_scene.tscn`) is the main scene: Continue (the most
   recently saved numbered slot), Campaigns (three slots with corporation / Heat / ICE /
@@ -524,6 +569,15 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
+
+### From the vertical-completion loop (2026-09-24) — decided by the implementer, confirm in playtest
+- **Enemy damage per tier 1.2 instead of 1.6** (HP stays 1.6). Chosen by simulation so a
+  greedy bot wins every ICE 0 campaign in about 26 runs; a human with rewind should do
+  better. Raise it if playtests find T3/T4 too soft.
+- **Patrol runs** exist to prevent a soft-lock; they also let cautious players farm Rank at
+  a Heat cost. Cap patrols per campaign if that feels cheap.
+- **Late-campaign Schematics surplus**: the bot ends campaigns with 300-700 unspent. Class
+  unlocks and more node/boost content (horizontal) are the planned sinks.
 
 ### From M1 (2026-09-24) — resolved by the designer on 2026-09-24
 - **Flip** is a true mirror, implemented as a rearrangement: slot i's slice (with its

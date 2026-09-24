@@ -255,4 +255,9 @@ func _batch5() -> int:
 	var cb := CampaignState.from_dict(c.to_dict())
 	print("CampaignState round trip: ", cb.pending_boosts, cb.disabled_objectives, cb.home_variant_id)
 	if cb.pending_boosts != [&"cache"] or cb.disabled_objectives != [&"scrub"] or cb.home_variant_id != &"home_bunker": fails += 1
+	var cfg2 := CampaignConfigData.new()
+	print("Config home repair / retaliation defaults: ", cfg2.home_repair_cost_per_point, " ", cfg2.retaliation_min_heat)
+	if cfg2.home_repair_cost_per_point != 1.0 or cfg2.retaliation_min_heat != 50: fails += 1
+	print("Config damage scale default: ", cfg2.enemy_damage_scale_per_tier)
+	if cfg2.enemy_damage_scale_per_tier != 1.6: fails += 1
 	return fails

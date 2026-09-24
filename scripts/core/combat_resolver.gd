@@ -71,6 +71,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	s.draw_pile.append_array(_to_names(overrides.get("extra_cards", [])))
 	s.daemon_ids = _to_names(overrides.get("daemon_ids", []))
 	var enemy_scale := float(overrides.get("enemy_scale", 1.0))
+	var enemy_output_scale := float(overrides.get("enemy_output_scale", enemy_scale))
 	var boss_scale := 1.0 + maxf(0.0, float(overrides.get("boss_strength_pct", 0.0))) / 100.0
 	var extra_resistance := int(overrides.get("enemy_resistance", 0))
 	s.flags["boss_pointer_removal"] = int(overrides.get("remove_boss_pointers", 0))
@@ -80,7 +81,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 		s.flags["no_first_turn_free_nudge"] = 1
 	for i in enemy_datas.size():
 		var e := EffectInterpreter.make_combatant(enemy_datas[i], StringName("enemy_%d" % i), false)
-		_scale_enemy(e, enemy_scale)
+		_scale_enemy(e, enemy_scale, enemy_output_scale)
 		if enemy_datas[i].is_boss or enemy_datas[i].is_mini_boss:
 			_scale_enemy(e, boss_scale)
 		if extra_resistance > 0:
@@ -98,7 +99,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 			if spawn == null or spawn.satellite == null or spawn.trigger != RC.Trigger.ON_COMBAT_START:
 				continue
 			for k in spawn.max_active:
-				_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.output_scale)
+				_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.hp_scale, e.output_scale)
 	if not s.enemies.is_empty():
 		s.target_id = s.enemies[0].id
 	return s
@@ -125,12 +126,16 @@ static func _add_pointers(e: CombatantState, count: int) -> void:
 				break
 
 
-static func _scale_enemy(e: CombatantState, scale: float) -> void:
-	if is_equal_approx(scale, 1.0):
-		return
-	e.max_hp = roundi(e.max_hp * scale)
-	e.hp = e.max_hp
-	e.output_scale *= scale
+## Scales an enemy's HP by `hp_scale` and its slice outputs by `out_scale` (defaults to
+## the HP scale).
+static func _scale_enemy(e: CombatantState, hp_scale: float, out_scale: float = -1.0) -> void:
+	if out_scale < 0.0:
+		out_scale = hp_scale
+	if not is_equal_approx(hp_scale, 1.0):
+		e.max_hp = roundi(e.max_hp * hp_scale)
+		e.hp = e.max_hp
+		e.hp_scale *= hp_scale
+	e.output_scale *= out_scale
 
 
 static func _to_names(values: Array) -> Array[StringName]:
@@ -735,7 +740,7 @@ func _spawn_turn_start(s: CombatState, host: CombatantState, rng: RandomNumberGe
 		if active >= spawn.max_active:
 			continue
 		var sat := _spawn_satellite(s, host, spawn, rng)
-		_scale_enemy(sat, host.output_scale)
+		_scale_enemy(sat, host.hp_scale, host.output_scale)
 		events.append({"type": "satellite_spawn", "target": host.id, "satellite": sat.id, "slot": sat.dock_slot,
 			"text": "%s launches %s on slot %d." % [host.display_name, sat.display_name, sat.dock_slot]})
 
@@ -790,7 +795,7 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 			for spawn in phase.spawns:
 				if spawn != null and spawn.satellite != null:
 					for k in spawn.max_active:
-						_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.output_scale)
+						_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.hp_scale, e.output_scale)
 			events.append({"type": "boss_phase", "target": e.id, "phase": e.phase_index, "behavior": phase.pointer_behavior,
 				"text": "%s enters phase %d (%s)%s" % [e.display_name, e.phase_index, RC.PointerBehavior.keys()[phase.pointer_behavior],
 					(": " + phase.phase_line) if phase.phase_line != "" else "."]})

@@ -18,7 +18,12 @@ extends Resource
 @export var rack_schematics_by_tier: PackedInt32Array = PackedInt32Array([10, 17, 29, 50])
 @export var raid_schematics_by_tier: PackedInt32Array = PackedInt32Array([8, 12, 18, 25])
 @export var node_repair_ratio: float = 0.5
+## Enemy HP per tier: base x this^(tier - 1) (GDD 11.6).
 @export var enemy_scale_per_tier: float = 1.6
+## Enemy slice output (damage, block, heal) per tier (decision 2026-09-24: split from HP
+## scaling after the balance simulation; operatives do not gain HP, so 1.6^3 damage at T4
+## one-shot them). Applies to bosses and mini-bosses like everything else.
+@export var enemy_damage_scale_per_tier: float = 1.6
 @export var reward_scale_per_tier: float = 1.7
 ## Cycles earned (11.1) as inclusive [min, max] ranges.
 @export var cycles_combat_range: Vector2i = Vector2i(10, 20)
@@ -56,6 +61,9 @@ extends Resource
 @export var heat_purchase_amount: int = 5
 @export var heat_purchase_cost: int = 25
 @export var heat_purchase_increment: int = 10
+## Patching the home server at HQ: Schematics per integrity point restored (decision
+## 2026-09-24, found by the balance simulation: home damage was otherwise permanent).
+@export var home_repair_cost_per_point: float = 1.0
 @export var class_unlock_cost: int = 80
 
 @export_group("Combat")
@@ -108,6 +116,9 @@ extends Resource
 @export var starting_schematics: int = 20
 @export var starting_rookies: int = 2
 @export var min_exploits_for_breach: int = 3
+## Extracting an Exploit at or above this Heat provokes a RETALIATION raid (GDD 4.4;
+## Heat objectives never do: they are sinks).
+@export var retaliation_min_heat: int = 50
 @export var ice_ladder: Array[IceLevelData] = []
 ## Unlock REBEL_CELL at this ICE on every other corporation.
 @export var rebel_cell_unlock_ice: int = 10

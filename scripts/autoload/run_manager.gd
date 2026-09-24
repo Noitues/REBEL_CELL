@@ -127,13 +127,20 @@ func launchable_sites() -> Array[SiteData]:
 	return CampaignRules.launchable_sites(campaign, corporation, config()) if campaign != null else []
 
 
+## Cleared or claimed Sites that can be patrolled again (Rank without objectives).
+func patrol_sites() -> Array[SiteData]:
+	return CampaignRules.patrol_sites(campaign, corporation) if campaign != null else []
+
+
 func launch_error(operative_id: StringName, site_id: StringName) -> String:
 	if campaign == null:
 		return "No campaign."
 	var site := CampaignRules.site_data(corporation, site_id)
 	if site == null:
 		return "No such Site."
-	return CampaignRules.launch_error(campaign, corporation, config(), campaign.get_operative(operative_id), class_data(), site)
+	var op := campaign.get_operative(operative_id)
+	var cls := lookup().get_content(op.class_id) as ClassData if op != null else class_data()
+	return CampaignRules.launch_error(campaign, corporation, config(), op, cls, site)
 
 
 ## Launches a run at `site_id` with `operative_id` (default: the first living operative).

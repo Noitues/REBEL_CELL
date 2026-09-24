@@ -199,6 +199,9 @@ bonus.
 | Seized | A threat is on the node when the raid ends, or a Disabled node is hit again | Site returns to the corporation. A Reclaim netrun (single combat, tiny rewards) makes it claimable again; the node must be reinstalled. A Seized Site next to your territory becomes a raid entry point. |
 
 A stationed operative on a Seized or Disabled node returns to the reserves unharmed.
+The home server can be patched at HQ for 1 Schematic per integrity point (2026-09-24).
+Cleared and claimed Sites can be **patrolled**: a full netrun for loot, Heat and Rank with no
+objective (2026-09-24, prevents a soft-lock when every Site is used up).
 
 ### 3.4 Profile Layer
 Permanent unlocks: classes (80 Schematics, spent from the current campaign), class
@@ -262,7 +265,8 @@ ladder unlocks separately; a new corporation may start at (global best − 5).
 
 ### 4.4 Raid Triggers & Timing
 Raids trigger from Heat thresholds, claiming Sites next to corporate ones, building
-certain nodes, story events, and retaliation for netrun objectives. They can happen
+certain nodes, story events, and retaliation for netrun objectives (an Exploit extracted at
+Heat 50 or more; Heat objectives never provoke one, 2026-09-24). They can happen
 mid-netrun (an interlude between map nodes) or between netruns. **Raid rewards are set by
 the trigger; raid strength scales with current Heat**, so low-Heat raids are profitable.
 
@@ -530,7 +534,9 @@ Targets: solo 5-run speed path crosses 50 before the boss; average ICE 5 campaig
 around 85–90 (current numbers need ≈ 40–45 Heat trimmed at ICE 5 — tune in playtest).
 
 ### 11.6 Scaling
-Enemy HP/damage per tier: base × 1.6^(tier−1). Rewards: base × 1.7^(tier−1).
+Enemy HP per tier: base × 1.6^(tier−1); enemy damage (slice output) per tier: base ×
+1.2^(tier−1) (split 2026-09-24 after simulation, see DECISIONS.md). Rewards: base ×
+1.7^(tier−1).
 
 ### 11.7 Mainframe Gate: Exploits
 Minimum **3 Exploits** to attempt the breach. Each extra Exploit weakens the boss further.

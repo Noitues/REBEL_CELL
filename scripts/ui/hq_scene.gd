@@ -19,6 +19,8 @@ var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
 var _settings_panel: PauseMenu = null
 var _last_warned_raid: String = ""
+## Site picked on the Grid map (its actions are listed first).
+var selected_site: StringName = &""
 
 
 func _ready() -> void:
@@ -39,6 +41,7 @@ func _ready() -> void:
 				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, &"t1_a")
 				show_raid()
 			else:
+				selected_site = &"t2_intel"
 				show_grid()
 		return
 	if RunManager.campaign == null and RunManager.has_save():
@@ -101,6 +104,12 @@ func upgrade(site_id: StringName) -> void:
 	_report(CampaignRules.upgrade_node(RunManager.campaign, RunManager.config(), RunManager.lookup(), site_id))
 	RunManager.autosave()
 	show_grid()
+
+
+func repair_home() -> void:
+	_report(CampaignRules.repair_home(RunManager.campaign, RunManager.config()))
+	RunManager.autosave()
+	show_hq()
 
 
 func recruit() -> void:
@@ -241,8 +250,8 @@ func show_start() -> void:
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %d (Solace %d)." % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, p.best_ice, p.best_ice_for(RunManager.DEFAULT_CORPORATION)]))
+	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s (Solace %s)." % [
+		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, ProfileState.ice_text(p.best_ice), ProfileState.ice_text(p.best_ice_for(RunManager.DEFAULT_CORPORATION))]))
 	box.add_child(_label("Unlocks: %s" % (", ".join(p.unlocks) if not p.unlocks.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
 	box.add_child(_button("Options [Esc]", open_settings))
 	box.add_child(_button("Codex", show_codex))
@@ -288,6 +297,8 @@ func show_hq() -> void:
 	actions.add_child(_button("Settings [Esc]", open_settings))
 	actions.add_child(_button("Recruit rookie (%d)" % cfg.rookie_cost, recruit))
 	actions.add_child(_button("Scrub Heat -%d (%d)" % [cfg.heat_purchase_amount, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
+	if c.grid.home_integrity < c.grid.home_max_integrity:
+		actions.add_child(_button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home))
 	if not c.pending_raids.is_empty():
 		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
 		actions.add_child(_button("RAID PENDING: %s (%d)" % [raid.display_name, c.pending_raids.size()], show_raid))
@@ -427,63 +438,92 @@ func show_grid() -> void:
 	var launchable := RunManager.launchable_sites()
 	for s in launchable:
 		plan.append("-> %s (T%d, %s)" % [s.display_name, s.tier, CampaignRules.run_kind_for(c, s)])
+	if not RunManager.patrol_sites().is_empty():
+		plan.append("Patrols: re-run a cleared or claimed Site for Rank (no objective).")
+	launchable.append_array(RunManager.patrol_sites())
 	top.add_child(plan)
+	grid_view.selected_id = selected_site
+	grid_view.site_clicked.connect(select_site)
 	box.add_child(_button("Back to HQ", show_hq))
 	var living := c.living_operatives()
 	var choices := _node_choices()
+	# The Site picked on the map (GDD 9.3): its actions first, highlighted on the map.
+	if selected_site != &"" and CampaignRules.site_data(corp, selected_site) != null:
+		var picked := _site_row(CampaignRules.site_data(corp, selected_site), launchable, living, choices)
+		picked.name = "SelectedSite"
+		var head := _label("SELECTED >")
+		head.add_theme_color_override("font_color", Palette.CELL_ACID)
+		picked.add_child(head)
+		picked.move_child(head, 0)
+		box.add_child(picked)
 	for site in corp.city_grid.sites:
 		if site == null:
 			continue
-		var s := c.grid.site(site.id)
-		var row := HBoxContainer.new()
-		var text := "T%d %s [%s]" % [site.tier, site.display_name, STATUS_NAMES.get(int(s["status"]), "?")]
-		if c.grid.is_claimed(site.id):
-			text += " %s %d/%d%s%s assets:%s" % [c.grid.node_type_of(site.id), s["integrity"], s["max_integrity"],
-				" DISABLED" if int(s["condition"]) == GridState.Condition.DISABLED else "",
-				(" +%d" % c.grid.upgrade_level_of(site.id)) if c.grid.upgrade_level_of(site.id) > 0 else "", ", ".join(c.grid.assets_on(site.id))]
-		var objective := CampaignRules.site_objective(c, site)
-		if objective == RC.SiteObjective.EXPLOIT:
-			text += " (Exploit: %s)" % RC.ExploitType.keys()[site.exploit_type]
-		elif objective == RC.SiteObjective.HEAT_REDUCTION:
-			text += " (Heat %d)" % site.heat_change
-		elif objective == RC.SiteObjective.BOSS:
-			text += " (BOSS)"
-		elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
-			text += " (objective off: ICE)"
-		text += " links: %s" % ", ".join(c.grid.neighbors(site.id, corp.city_grid))
-		row.add_child(_label(text))
-		var launchable_here := false
-		for l in launchable:
-			if l.id == site.id:
-				launchable_here = true
-		if launchable_here and not living.is_empty():
-			var op_pick := OptionButton.new()
-			for op in living:
-				op_pick.add_item("%s R%d" % [op.name, op.rank])
-			row.add_child(op_pick)
-			var sid := site.id
-			var kind := CampaignRules.run_kind_for(c, site)
-			row.add_child(_button("Launch %s" % kind, func() -> void: launch(sid, living[op_pick.selected].id)))
-		if c.grid.is_cleared(site.id) and site.claimable:
-			var node_pick := OptionButton.new()
-			for i in choices.size():
-				var node := choices[i]
-				var available := CampaignRules.node_available(RunManager.profile, lookup, node)
-				node_pick.add_item("%s (%d)%s" % [node.display_name, node.install_cost, "" if available else " [locked]"])
-				node_pick.set_item_disabled(i, not available)
-			row.add_child(node_pick)
-			var sid2 := site.id
-			row.add_child(_button("Claim", func() -> void: claim(sid2, choices[node_pick.selected].id)))
-		if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DISABLED:
-			var sid3 := site.id
-			row.add_child(_button("Repair", func() -> void: repair(sid3)))
-		if c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
-			var cost := CampaignRules.upgrade_cost(c, cfg, site.id)
-			if cost >= 0:
-				var sid4 := site.id
-				row.add_child(_button("Upgrade (%d)" % cost, func() -> void: upgrade(sid4)))
-		box.add_child(row)
+		box.add_child(_site_row(site, launchable, living, choices))
 	_set_panel(box, "grid")
+
+
+## Selects a Site clicked on the Grid map and redraws the Grid with its actions first.
+func select_site(site_id: StringName) -> void:
+	selected_site = site_id
+	show_grid()
+
+
+## One Site's status line and the actions it allows now (launch, claim, repair, upgrade).
+func _site_row(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState], choices: Array[NetworkNodeData]) -> HBoxContainer:
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var s := c.grid.site(site.id)
+	var row := HBoxContainer.new()
+	var text := "T%d %s [%s]" % [site.tier, site.display_name, STATUS_NAMES.get(int(s["status"]), "?")]
+	if c.grid.is_claimed(site.id):
+		text += " %s %d/%d%s%s assets:%s" % [c.grid.node_type_of(site.id), s["integrity"], s["max_integrity"],
+			" DISABLED" if int(s["condition"]) == GridState.Condition.DISABLED else "",
+			(" +%d" % c.grid.upgrade_level_of(site.id)) if c.grid.upgrade_level_of(site.id) > 0 else "", ", ".join(c.grid.assets_on(site.id))]
+	var objective := CampaignRules.site_objective(c, site)
+	if objective == RC.SiteObjective.EXPLOIT:
+		text += " (Exploit: %s)" % RC.ExploitType.keys()[site.exploit_type]
+	elif objective == RC.SiteObjective.HEAT_REDUCTION:
+		text += " (Heat %d)" % site.heat_change
+	elif objective == RC.SiteObjective.BOSS:
+		text += " (BOSS)"
+	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
+		text += " (objective off: ICE)"
+	text += " links: %s" % ", ".join(c.grid.neighbors(site.id, corp.city_grid))
+	row.add_child(_label(text))
+	var launchable_here := false
+	for l in launchable:
+		if l.id == site.id:
+			launchable_here = true
+	if launchable_here and not living.is_empty():
+		var op_pick := OptionButton.new()
+		for op in living:
+			op_pick.add_item("%s R%d" % [op.name, op.rank])
+		row.add_child(op_pick)
+		var sid := site.id
+		var kind := CampaignRules.run_kind_for(c, site)
+		row.add_child(_button("Launch %s" % kind, func() -> void: launch(sid, living[op_pick.selected].id)))
+	if c.grid.is_cleared(site.id) and site.claimable:
+		var node_pick := OptionButton.new()
+		for i in choices.size():
+			var node := choices[i]
+			var available := CampaignRules.node_available(RunManager.profile, lookup, node)
+			node_pick.add_item("%s (%d)%s" % [node.display_name, node.install_cost, "" if available else " [locked]"])
+			node_pick.set_item_disabled(i, not available)
+		row.add_child(node_pick)
+		var sid2 := site.id
+		row.add_child(_button("Claim", func() -> void: claim(sid2, choices[node_pick.selected].id)))
+	if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DISABLED:
+		var sid3 := site.id
+		row.add_child(_button("Repair", func() -> void: repair(sid3)))
+	if c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
+		var cost := CampaignRules.upgrade_cost(c, cfg, site.id)
+		if cost >= 0:
+			var sid4 := site.id
+			row.add_child(_button("Upgrade (%d)" % cost, func() -> void: upgrade(sid4)))
+	return row
 
 
 func show_raid() -> void:
@@ -616,7 +656,7 @@ func show_end() -> void:
 	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
 		box.add_child(_label("  [%s] %s" % [b.title, b.text]))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d won / %d lost, best ICE %d; next campaigns may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, p.best_ice, RunManager.ice_cap()]))
+	box.add_child(_label("Profile: %d won / %d lost, best ICE %s; next campaigns may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), RunManager.ice_cap()]))
 	box.add_child(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()))
 	box.add_child(_button("Back to title", RunManager.go_to_title))
 	_set_panel(box, "end")

@@ -57,8 +57,11 @@ func _draw() -> void:
 	draw_rect(rect, Palette.INK if variant != Variant.BLACK else Palette.PAPER, false, 2.0)
 	draw_rect(Rect2(size.x * 0.3, -5, 44, 12), Palette.TAPE)
 	draw_string(Palette.display(), Vector2(8, 34), card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, 17, fg)
-	draw_circle(Vector2(size.x - 18, 18), 13, Palette.CELL_ACID if variant != Variant.PINK else Palette.PAPER)
-	draw_string(Palette.marker(), Vector2(size.x - 24, 24), str(cost), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.INK)
+	# cost < 0 = no cost circle (Firmware and Daemon offers).
+	if cost >= 0:
+		var r := 13.0 if cost < 100 else 17.0
+		draw_circle(Vector2(size.x - r - 5, r + 5), r, Palette.CELL_ACID if variant != Variant.PINK else Palette.PAPER)
+		draw_string(Palette.marker(), Vector2(size.x - r * 2 - 1, r + 11), str(cost), HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if cost >= 100 else 16, Palette.INK)
 	var lines := _wrap(description, 16)
 	for i in mini(lines.size(), 5):
 		draw_string(Palette.mono(), Vector2(8, 58 + i * 15), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, 11, fg)

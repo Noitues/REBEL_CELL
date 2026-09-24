@@ -111,7 +111,7 @@ func test_the_final_boss_is_tier_scaled_too() -> void:
 	s.enter_node(s.available_nodes()[0])
 	var boss := s.combat.state.get_combatant(&"enemy_0")
 	assert_eq(boss.max_hp, roundi(300 * pow(1.6, 3)), "1229 HP at T4")
-	assert_eq(boss.output_scale, pow(1.6, 3))
+	assert_almost_eq(boss.output_scale, pow(_cfg.enemy_damage_scale_per_tier, 3), 0.0001, "damage scales with its own factor")
 
 
 func test_a_threshold_raid_during_a_run_is_fought_as_an_interlude() -> void:

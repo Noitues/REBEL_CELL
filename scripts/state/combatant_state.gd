@@ -30,6 +30,8 @@ var hub_resistance: int = 0
 var hub_breached_turns: int = 0
 ## Tier scaling for enemy slice outputs (GDD 11.6); 1.0 for the operative.
 var output_scale: float = 1.0
+## Tier/boss HP multiplier applied to this enemy (satellites it launches inherit it).
+var hp_scale: float = 1.0
 ## Bosses: how many BossPhaseData entries have been entered (GDD 2.11).
 var phase_index: int = 0
 
@@ -69,6 +71,7 @@ func duplicate_state() -> CombatantState:
 	c.hub_resistance = hub_resistance
 	c.hub_breached_turns = hub_breached_turns
 	c.output_scale = output_scale
+	c.hp_scale = hp_scale
 	c.phase_index = phase_index
 	return c
 
@@ -92,6 +95,7 @@ func to_dict() -> Dictionary:
 		"hub_resistance": hub_resistance,
 		"hub_breached_turns": hub_breached_turns,
 		"output_scale": output_scale,
+		"hp_scale": hp_scale,
 		"phase_index": phase_index,
 	}
 
@@ -116,5 +120,6 @@ static func from_dict(d: Dictionary) -> CombatantState:
 	c.hub_resistance = int(d.get("hub_resistance", 0))
 	c.hub_breached_turns = int(d.get("hub_breached_turns", 0))
 	c.output_scale = float(d.get("output_scale", 1.0))
+	c.hp_scale = float(d.get("hp_scale", 1.0))
 	c.phase_index = int(d.get("phase_index", 0))
 	return c

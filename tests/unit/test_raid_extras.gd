@@ -35,19 +35,41 @@ func _raids(c: CampaignState) -> Array:
 	return out
 
 
-func test_exploits_and_heat_objectives_trigger_retaliation_from_the_cleared_site() -> void:
+func test_exploits_under_high_heat_trigger_retaliation_from_the_cleared_site() -> void:
 	var c := _campaign()
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	assert_eq(c.pending_raids.size(), 0, "a plain Site provokes nothing")
-	var events := CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t2_intel"))
+	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t2_intel"))
+	assert_false(_raids(c).has("raid_retaliation"), "a cool Cell is not traced")
+	c.pending_raids.clear()
+	c.heat = _cfg.retaliation_min_heat
+	c.thresholds_fired = [10, 20, 25, 30, 40, 50]
+	var events := CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_b"))
+	events = CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t2_breach"))
 	assert_true(_raids(c).has("raid_retaliation"))
 	var raid: Dictionary = c.pending_raids[c.pending_raids.size() - 1]
 	assert_eq(int(raid["source"]), RC.RaidTriggerSource.RETALIATION)
-	assert_eq(raid["site_id"], "t2_intel", "threats enter where you struck")
-	assert_eq(CampaignRules.raid_entries(c, _corp, raid), [&"t2_intel"])
+	assert_eq(raid["site_id"], "t2_breach", "threats enter where you struck")
+	assert_eq(CampaignRules.raid_entries(c, _corp, raid), [&"t2_breach"])
 	c.pending_raids.clear()
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"scrub_records"))
-	assert_eq(_raids(c), ["raid_retaliation"])
+	assert_false(_raids(c).has("raid_retaliation"), "Heat objectives are sinks: no retaliation")
+
+
+func test_home_server_can_be_patched_for_schematics() -> void:
+	var c := _campaign()
+	assert_eq(CampaignRules.repair_home(c, _cfg)[0]["type"], "refused", "already full")
+	c.grid.home_integrity = 30
+	c.schematics = 12
+	assert_eq(CampaignRules.home_repair_price(c, _cfg), 20)
+	var events := CampaignRules.repair_home(c, _cfg)
+	assert_eq(events[0]["type"], "home_repaired")
+	assert_eq(c.grid.home_integrity, 42, "partial patch with what 12 Schematics buy")
+	assert_eq(c.schematics, 0)
+	c.schematics = 100
+	CampaignRules.repair_home(c, _cfg)
+	assert_eq(c.grid.home_integrity, c.grid.home_max_integrity)
+	assert_eq(c.schematics, 92)
 
 
 func test_a_story_beat_can_trigger_a_story_raid() -> void:

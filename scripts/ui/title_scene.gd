@@ -64,7 +64,7 @@ func show_main() -> void:
 	box.add_child(_button("Options", show_options))
 	box.add_child(_button("Quit", confirm_quit))
 	var p := RunManager.profile
-	box.add_child(_label("%d campaigns, %d won, %d lost | best ICE %d | %d achievements" % [p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.best_ice, p.achievements.size()]))
+	box.add_child(_label("%d campaigns, %d won, %d lost | best ICE %s | %d achievements" % [p.campaigns_started, p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), p.achievements.size()]))
 	_set_panel(box, "main")
 
 
@@ -105,7 +105,7 @@ func show_stats() -> void:
 	var note := ZineNote.new("STATS", Vector2(900, 200))
 	note.append("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
-	note.append("Best ICE: %d. Perfects: %d. Racks captured: %d. Cycles earned: %d." % [p.best_ice, int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0))])
+	note.append("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d." % [ProfileState.ice_text(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0))])
 	note.append("[b]Achievements[/b]")
 	for d in Achievements.DEFS:
 		var have := p.achievements.has(d["id"])

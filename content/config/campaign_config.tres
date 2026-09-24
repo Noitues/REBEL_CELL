@@ -379,6 +379,9 @@ rack_schematics_by_tier = PackedInt32Array(10, 17, 29, 50)
 raid_schematics_by_tier = PackedInt32Array(8, 12, 18, 25)
 node_repair_ratio = 0.5
 enemy_scale_per_tier = 1.6
+enemy_damage_scale_per_tier = 1.2
+
+
 reward_scale_per_tier = 1.7
 cycles_combat_range = Vector2i(10, 20)
 cycles_elite_range = Vector2i(30, 40)
@@ -402,6 +405,7 @@ netrun_boosts = Array[ExtResource("6_boost")]([ExtResource("boost_cache"), ExtRe
 heat_purchase_amount = 5
 heat_purchase_cost = 25
 heat_purchase_increment = 10
+home_repair_cost_per_point = 1.0
 class_unlock_cost = 80
 hand_size = 5
 draw_per_turn = 5
@@ -434,6 +438,7 @@ cascade_ratio = 0.5
 starting_schematics = 20
 starting_rookies = 2
 min_exploits_for_breach = 3
+retaliation_min_heat = 50
 ice_ladder = Array[ExtResource("4_ice")]([SubResource("ice_1"), SubResource("ice_2"), SubResource("ice_3"), SubResource("ice_4"), SubResource("ice_5"), SubResource("ice_6"), SubResource("ice_7"), SubResource("ice_8"), SubResource("ice_9"), SubResource("ice_10"), SubResource("ice_11"), SubResource("ice_12"), SubResource("ice_13"), SubResource("ice_14"), SubResource("ice_15"), SubResource("ice_16"), SubResource("ice_17"), SubResource("ice_18"), SubResource("ice_19"), SubResource("ice_20")])
 rebel_cell_unlock_ice = 10
 new_corp_ice_offset = 5

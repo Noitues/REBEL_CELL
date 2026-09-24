@@ -101,3 +101,27 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
 - [ ] Every slice type and status is distinguishable without colour.
 - [ ] Full keyboard play is possible for combat.
 - [ ] 60 fps at 1080p on a mid-range PC.
+
+---
+
+## M5 — Vertical Completion (added 2026-09-24)
+
+The designer asked for every vertical-slice gap to be fixed and the project analysis rerun
+until clean (`GAP_ANALYSIS.md`, pass log). Decisions are the implementer's, logged in
+`DECISIONS.md`.
+
+**Acceptance**
+- [x] Every `RuleModifierType` in the ICE ladder and the Heat thresholds changes play, each
+      with a test (combat, netrun, campaign, raids).
+- [x] Every effect type and slice type resolves (no "not implemented" path is reachable).
+- [x] All seven node types, node upgrades, Profile unlocks, a second home-server variant,
+      netrun boosts, and every raid trigger source exist and are tested.
+- [x] The combat UI plays every card in the pool from the keyboard (slice and direction
+      pickers, respin, inspect, odds for random effects).
+- [x] Solace has 30-40 Sites, six written story paths, DISPATCH briefings for every Site,
+      subtitles, a codex and a text export for translation.
+- [x] Title, save slots, pause, options (display, audio, key rebinding, language),
+      tutorial, achievements, CI and export presets.
+- [x] A seeded bot campaign wins at ICE 0 and ICE 5 within ±20% of GDD 11.8 pacing
+      (`tools/simulate_campaign.gd`).
+- [x] Tests, schema smoke test and content validation green.

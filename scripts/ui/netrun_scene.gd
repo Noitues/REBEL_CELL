@@ -23,6 +23,14 @@ func _ready() -> void:
 	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
+	if args.has("--demo-shop"):
+		RunManager.save_slot = "demo"
+		new_campaign(1)
+		start_run(1)
+		RunManager.netrun.run.cycles = 120
+		RunManager.netrun._open_shop()
+		_show_current()
+		return
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
@@ -196,7 +204,7 @@ func _set_panel(p: Control) -> void:
 func _show_start() -> void:
 	_refresh_status()
 	var box := VBoxContainer.new()
-	box.add_child(_label("REBEL_CELL - netrun (M2 placeholder)"))
+	box.add_child(GraffitiTag.new("NETRUN"))
 	var row := HBoxContainer.new()
 	box.add_child(row)
 	row.add_child(_label("Campaign seed:"))
@@ -299,7 +307,7 @@ func _show_reward() -> void:
 	var s := RunManager.netrun
 	var offer := s.current_reward()
 	var box := VBoxContainer.new()
-	box.add_child(_label("Reward: choose a %s" % offer["kind"]))
+	box.add_child(GraffitiTag.new("LOOT: pick a %s" % offer["kind"]))
 	var slot_option: OptionButton = null
 	if offer["kind"] == "firmware":
 		var row := HBoxContainer.new()
@@ -310,35 +318,68 @@ func _show_reward() -> void:
 			slot_option.add_item("%d: %s%s" % [i, s.run.operative.slot_slice_ids[i], (" {%s}" % fw) if fw != &"" else ""])
 		row.add_child(slot_option)
 		box.add_child(row)
+	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost, others none.
+	var stickers := HBoxContainer.new()
+	stickers.name = "Stickers"
+	stickers.add_theme_constant_override("separation", 14)
+	box.add_child(stickers)
 	for i in offer["options"].size():
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
-		var b := Button.new()
-		b.text = "%s - %s" % [res.get("display_name"), res.get("description")]
+		var cost := int(res.get("ram_cost")) if res is CardData else -1
+		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i)
+		sticker.custom_minimum_size = Vector2(150, 170)
+		sticker.tooltip_text = Codex.describe(res)
 		var index: int = i
-		b.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
-		box.add_child(b)
+		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
+		stickers.add_child(sticker)
 	box.add_child(_button("Skip", skip_reward))
 	_set_panel(box)
 
 
+## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
+## clean system text on a dark strip (STYLE_GUIDE 3), never zined.
 func _show_event() -> void:
 	var s := RunManager.netrun
 	var ev := s.current_event()
 	var box := VBoxContainer.new()
-	box.add_child(_label("[%s] %s" % [RC.Voice.keys()[ev.speaker], ev.title]))
+	var body := VBoxContainer.new()
+	var dispatch := ev.speaker == RC.Voice.DISPATCH
+	var holder: Control
+	if dispatch:
+		var strip := PanelContainer.new()
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(Palette.DESK_DARK, 0.95)
+		style.border_color = Palette.CRT_AMBER
+		style.set_border_width_all(1)
+		style.set_content_margin_all(12)
+		strip.add_theme_stylebox_override("panel", style)
+		strip.add_child(body)
+		holder = strip
+	else:
+		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0)
+		panel.custom_minimum_size = Vector2(760, 200)
+		panel.content.add_child(body)
+		holder = panel
+	holder.name = "EventPanel"
+	box.add_child(holder)
+	var who: String = Dialogue.SPEAKER_NAMES.get(ev.speaker, "")
+	var speaker := _label(who + ((" - " + TextDb.t(ev, "title")) if dispatch else ""))
+	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
+	body.add_child(speaker)
 	var text := RichTextLabel.new()
 	text.fit_content = true
-	text.custom_minimum_size = Vector2(600, 60)
+	text.custom_minimum_size = Vector2(720, 60)
 	text.text = TextDb.t(ev, "text")
-	box.add_child(text)
+	text.add_theme_color_override("default_color", Palette.CRT_AMBER if dispatch else Palette.INK)
+	body.add_child(text)
 	if not _spoken_events.has(ev.id):
 		_spoken_events[ev.id] = true
 		Dialogue.say(ev.speaker, TextDb.t(ev, "text"))
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
-		b.text = c.label
+		b.text = TextDb.t(c, "label")
 		b.disabled = c.cycle_cost > s.run.cycles
 		var index := i
 		b.pressed.connect(func() -> void: choose_event(index))
@@ -346,28 +387,37 @@ func _show_event() -> void:
 	_set_panel(box)
 
 
+## Modem (GDD 11.2): stock as zine stickers with the Cycle price in the cost circle.
 func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
 	var box := VBoxContainer.new()
-	box.add_child(_label("Modem - %d Cycles" % s.run.cycles))
+	box.add_child(GraffitiTag.new("MODEM - %d CYCLES" % s.run.cycles))
+	var stickers := HBoxContainer.new()
+	stickers.name = "Stickers"
+	stickers.add_theme_constant_override("separation", 10)
+	box.add_child(stickers)
+	var fw_slot := OptionButton.new()
+	for k in s.run.operative.slot_slice_ids.size():
+		fw_slot.add_item("Firmware into slot %d: %s" % [k, s.run.operative.slot_slice_ids[k]])
+	var n := 0
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
 		for i in shop.get(kind, []).size():
 			var id := StringName(String(shop[kind][i]))
 			var res := s.lookup.get_content(id)
-			var row := HBoxContainer.new()
-			row.add_child(_label("%s: %s (%d Cycles) - %s" % [kind, res.get("display_name"), prices[i], res.get("description")]))
-			var slot_option: OptionButton = null
-			if kind == "firmware":
-				slot_option = OptionButton.new()
-				for k in s.run.operative.slot_slice_ids.size():
-					slot_option.add_item("slot %d: %s" % [k, s.run.operative.slot_slice_ids[k]])
-				row.add_child(slot_option)
+			var sticker := ZineCard.new(TextDb.t(res, "display_name"), int(prices[i]), "%s: %s" % [kind.trim_suffix("s"), TextDb.t(res, "description")], n)
+			sticker.hotkey = ""
+			sticker.custom_minimum_size = Vector2(128, 160)
+			sticker.tooltip_text = "%d Cycles\n%s" % [int(prices[i]), Codex.describe(res)]
+			sticker.disabled = int(prices[i]) > s.run.cycles
 			var index: int = i
 			var k: String = kind
-			row.add_child(_button("Buy", func() -> void: buy(k, index, slot_option.selected if slot_option != null else -1)))
-			box.add_child(row)
+			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
+			stickers.add_child(sticker)
+			n += 1
+	if not shop.get("firmware", []).is_empty():
+		box.add_child(fw_slot)
 	var removal := HBoxContainer.new()
 	removal.add_child(_label("Remove a card (%d Cycles):" % s.card_removal_price()))
 	var deck_option := OptionButton.new()
@@ -377,10 +427,10 @@ func _show_shop() -> void:
 	removal.add_child(_button("Remove", func() -> void: remove_card(deck_option.selected)))
 	box.add_child(removal)
 	var overwrite := HBoxContainer.new()
-	overwrite.add_child(_label("Overwrite a slice (100; Miss slot 150):"))
+	overwrite.add_child(_label("Overwrite a slice:"))
 	var slot_pick := OptionButton.new()
 	for i in s.run.operative.slot_slice_ids.size():
-		slot_pick.add_item("slot %d: %s" % [i, s.run.operative.slot_slice_ids[i]])
+		slot_pick.add_item("slot %d: %s (%d Cycles)" % [i, s.run.operative.slot_slice_ids[i], s.slice_overwrite_price(i)])
 	overwrite.add_child(slot_pick)
 	var slice_pick := OptionButton.new()
 	for sid in shop.get("slices", []):
@@ -440,9 +490,15 @@ func _show_end() -> void:
 	var s := RunManager.netrun
 	var box := VBoxContainer.new()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
-	box.add_child(_label("NETRUN %s" % ("COMPLETE" if won else ("ABORTED - the home server fell" if s.run.outcome == RunState.Outcome.ABORTED else "FAILED - operative lost"))))
-	box.add_child(_label("Combats won %d, elites %d, Cycles %d, banked Schematics %d, Heat gained %d." % [s.run.combats_won, s.run.elites_defeated, s.run.cycles, s.run.banked_schematics, s.run.heat_gained]))
-	box.add_child(_label("Campaign: Heat %d, Schematics %d, Armory %d." % [s.campaign.heat, s.campaign.schematics, s.campaign.armory.size()]))
+	var aborted := s.run.outcome == RunState.Outcome.ABORTED
+	var head := HBoxContainer.new()
+	head.add_child(ZineStamp.new("CLEAN EXIT" if won else ("ABORTED" if aborted else "FLATLINED"), Palette.CELL_ACID if won else Palette.CELL_PINK))
+	var title := "NETRUN COMPLETE" if won else ("NETRUN ABORTED - the home server fell" if aborted else "NETRUN FAILED - operative lost")
+	var note := ZineNote.new(title, Vector2(620, 130))
+	note.append("Combats won %d, elites %d, Cycles %d, banked Schematics %d, Heat gained %d." % [s.run.combats_won, s.run.elites_defeated, s.run.cycles, s.run.banked_schematics, s.run.heat_gained])
+	note.append("Campaign: Heat %d, Schematics %d, Armory %d." % [s.campaign.heat, s.campaign.schematics, s.campaign.armory.size()])
+	head.add_child(note)
+	box.add_child(head)
 	box.add_child(_button("Back to HQ", finish_run))
 	_set_panel(box)
 

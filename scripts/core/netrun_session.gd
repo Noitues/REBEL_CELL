@@ -253,7 +253,7 @@ func _start_combat(elite: bool) -> void:
 		"slot_slice_ids": _strings(op.slot_slice_ids), "slot_firmware_ids": _strings(op.slot_firmware_ids),
 		"ring_segment_ids": _strings(op.ring_segment_ids),
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
-		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "hub_id": String(op.hub_id(cls)),
+		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(), "enemy_output_scale": enemy_output_scale(), "hub_id": String(op.hub_id(cls)),
 	}
 	for k in rule_overrides():
 		overrides[k] = rule_overrides()[k]
@@ -271,6 +271,11 @@ func _start_combat(elite: bool) -> void:
 ## enemy including mini-bosses and the final boss (designer ruling 2026-09-24).
 func enemy_scale() -> float:
 	return pow(config.enemy_scale_per_tier, run.tier - 1)
+
+
+## Enemy slice outputs per tier (enemy_damage_scale_per_tier^(tier - 1)).
+func enemy_output_scale() -> float:
+	return pow(config.enemy_damage_scale_per_tier, run.tier - 1)
 
 
 ## Combat-side ICE and Heat rule modifiers (GDD 11.9, 4.3) as CombatResolver overrides:

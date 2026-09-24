@@ -133,6 +133,26 @@ static func launchable_sites(campaign: CampaignState, corp: CorporationData, con
 	return out
 
 
+## Patrol targets (decision 2026-09-24, fixes a soft-lock found by the balance
+## simulation): cleared or claimed Sites other than home and the boss can be run again
+## as a full netrun with normal loot, Heat and Rank but no objective, so rookies
+## recruited late can always rank up. Sorted by id.
+static func patrol_sites(campaign: CampaignState, corp: CorporationData) -> Array[SiteData]:
+	var out: Array[SiteData] = []
+	for s in corp.city_grid.sites:
+		if s == null or s.id == corp.city_grid.home_site_id or s.objective == RC.SiteObjective.BOSS:
+			continue
+		if campaign.grid.is_cleared(s.id) or campaign.grid.is_claimed(s.id):
+			out.append(s)
+	out.sort_custom(func(a: SiteData, b: SiteData) -> bool: return String(a.id) < String(b.id))
+	return out
+
+
+static func is_patrol(campaign: CampaignState, site: SiteData) -> bool:
+	return site != null and site.objective != RC.SiteObjective.BOSS and site.id != campaign.grid.home_site_id \
+		and (campaign.grid.is_cleared(site.id) or campaign.grid.is_claimed(site.id))
+
+
 ## Highest netrun tier the operative's Rank allows (GDD 5.3).
 static func max_tier_for(op: OperativeState, class_data: ClassData) -> int:
 	var tier := 1
@@ -148,7 +168,7 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 		return "The campaign is over."
 	if op == null or not op.alive:
 		return "That operative is not available."
-	var allowed := false
+	var allowed := is_patrol(campaign, site)
 	for s in launchable_sites(campaign, corp, config):
 		if s.id == site.id:
 			allowed = true
@@ -158,17 +178,22 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 		return "%s is not reachable from your territory." % site.id
 	if campaign.grid.is_seized(site.id):
 		return ""
+	if class_data == null or class_data.id != op.class_id:
+		return "Class data for %s does not match its class %s." % [op.name, op.class_id]
 	if site.tier > max_tier_for(op, class_data):
 		return "%s is Rank %d: Tier %d needs a higher Rank." % [op.name, op.rank, site.tier]
 	return ""
 
 
-## "netrun", "boss" or "reclaim" for a launch at `site`.
+## "netrun", "patrol", "boss" or "reclaim" for a launch at `site`. A patrol plays as a
+## full netrun (NetrunSession kind "netrun"); only its completion differs.
 static func run_kind_for(campaign: CampaignState, site: SiteData) -> String:
 	if campaign.grid.is_seized(site.id):
 		return "reclaim"
 	if site.objective == RC.SiteObjective.BOSS:
 		return "boss"
+	if is_patrol(campaign, site):
+		return "patrol"
 	return "netrun"
 
 
@@ -205,6 +230,11 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 		if p != null and p.finale != null:
 			events.append({"type": "story_beat", "beat_id": p.finale.id, "text": "[%s] %s" % [p.finale.title, p.finale.text]})
 		return events
+	if run.kind == "netrun" and is_patrol(campaign, site):
+		events.append({"type": "patrol_complete", "site": site.id, "text": "Patrol of %s complete: no objective, the Grid is unchanged." % site.id})
+		if lookup != null:
+			events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
+		return events
 	campaign.grid.sites[site.id]["status"] = GridState.SiteStatus.CLEARED
 	events.append({"type": "site_cleared", "site": site.id, "text": "%s cleared: it can be claimed now." % site.id})
 	if run.kind == "reclaim":
@@ -231,10 +261,10 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 				events.append({"type": "story_beat", "beat_id": beat.id, "text": "[%s] %s" % [beat.title, beat.text]})
 				if beat.triggers_raid:
 					events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.STORY, &"", "The story beat %s" % beat.title))
-			events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "Extracting the Exploit at %s" % site.id))
+			if campaign.heat >= config.retaliation_min_heat:
+				events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "Extracting the Exploit at %s under Heat %d" % [site.id, campaign.heat]))
 		RC.SiteObjective.HEAT_REDUCTION:
 			events.append_array(HeatRules.add_heat(campaign, site.heat_change, config, "Heat objective %s" % site.id))
-			events.append_array(queue_raid(campaign, corp, RC.RaidTriggerSource.RETALIATION, site.id, "The Heat objective at %s" % site.id))
 	if lookup != null:
 		events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
 	return events
@@ -499,6 +529,37 @@ static func repair(campaign: CampaignState, config: CampaignConfigData, lookup: 
 	s["condition"] = GridState.Condition.OK
 	s["integrity"] = s["max_integrity"]
 	events.append({"type": "repaired", "site": site_id, "cost": cost, "text": "Repaired %s (-%d Schematics)." % [site_id, cost]})
+	return events
+
+
+## Home-server patch price for `points` of integrity (all missing points when < 0).
+static func home_repair_price(campaign: CampaignState, config: CampaignConfigData, points: int = -1) -> int:
+	var missing := campaign.grid.home_max_integrity - campaign.grid.home_integrity
+	var n := missing if points < 0 else mini(points, missing)
+	return ceili(maxi(0, n) * config.home_repair_cost_per_point)
+
+
+## Patches the home server at HQ (decision 2026-09-24): restores up to `points` integrity
+## (all missing points when < 0) for home_repair_cost_per_point Schematics each; with too
+## few Schematics it restores what they buy.
+static func repair_home(campaign: CampaignState, config: CampaignConfigData, points: int = -1) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var missing := campaign.grid.home_max_integrity - campaign.grid.home_integrity
+	if missing <= 0:
+		events.append({"type": "refused", "text": "The home server is at full integrity."})
+		return events
+	var wanted := missing if points < 0 else mini(points, missing)
+	var affordable := int(floor(campaign.schematics / maxf(0.0001, config.home_repair_cost_per_point)))
+	var n := mini(wanted, affordable)
+	if n <= 0:
+		events.append({"type": "refused", "text": "Not enough Schematics to patch the home server."})
+		return events
+	var cost := ceili(n * config.home_repair_cost_per_point)
+	campaign.schematics -= cost
+	campaign.grid.home_integrity += n
+	campaign.grid.site(campaign.grid.home_site_id)["integrity"] = campaign.grid.home_integrity
+	events.append({"type": "home_repaired", "amount": n, "cost": cost,
+		"text": "Patched the home server +%d (%d/%d, -%d Schematics)." % [n, campaign.grid.home_integrity, campaign.grid.home_max_integrity, cost]})
 	return events
 
 
