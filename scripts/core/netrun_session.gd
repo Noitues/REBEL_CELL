@@ -17,6 +17,8 @@ var config: CampaignConfigData
 var lookup: ContentLookup
 var resolver: CombatResolver
 var campaign: CampaignState
+## The corporation being run against (null in bare rule tests: no Grid effects then).
+var corporation: CorporationData = null
 var run: RunState
 var streams: RngStreams
 var combat: CombatSession = null
@@ -26,10 +28,12 @@ var _pools: Dictionary = {}
 
 # --- Lifecycle -------------------------------------------------------------------
 
-## Launches a netrun for the roster operative `operative_id` at `tier`.
-static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, tier: int, site_id: StringName, run_seed: int) -> NetrunSession:
+## Launches a netrun for the roster operative `operative_id` at `tier`. MINOR Heat
+## complications queued on the campaign are consumed here (shop stock, elite frequency).
+static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, tier: int, site_id: StringName, run_seed: int, corp: CorporationData = null) -> NetrunSession:
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
+	s.corporation = corp
 	var op := p_campaign.get_operative(operative_id)
 	if op == null or not op.alive:
 		push_error("NetrunSession: no living operative '%s'." % operative_id)
@@ -40,16 +44,55 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.site_id = site_id
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
-	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), p_campaign.elite_frequency_pct(s.config))
+	var elite_pct := p_campaign.elite_frequency_pct(s.config)
+	var shop_delta := 0
+	for m in p_campaign.pending_complications:
+		match int(m["type"]):
+			RC.RuleModifierType.ELITE_FREQUENCY_PCT:
+				elite_pct += float(m["value"])
+			RC.RuleModifierType.SHOP_STOCK:
+				shop_delta += int(m["value"])
+	s.run.combat_overrides["shop_stock_delta"] = shop_delta
+	p_campaign.pending_complications.clear()
+	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
 	s._sync()
 	return s
 
 
-static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: Dictionary) -> NetrunSession:
+## A single-combat run (GDD 3.3 Reclaim, 11.7 final breach): one node, one fight.
+static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState, operative_id: StringName, kind: String, site_id: StringName, tier: int, run_seed: int, enemy_id: StringName, overrides: Dictionary, corp: CorporationData = null) -> NetrunSession:
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
+	s.corporation = corp
+	var op := p_campaign.get_operative(operative_id)
+	if op == null or not op.alive:
+		push_error("NetrunSession: no living operative '%s'." % operative_id)
+		return null
+	s.run = RunState.new()
+	s.run.run_seed = run_seed
+	s.run.tier = tier
+	s.run.site_id = site_id
+	s.run.kind = kind
+	s.run.forced_enemy_id = enemy_id
+	s.run.combat_overrides = overrides.duplicate(true)
+	s.run.operative = op.duplicate_state()
+	s.streams = RngStreams.seeded(run_seed)
+	var graph := MapGraph.new()
+	graph.layers.append([{"id": MapGraph.make_id(1, 0), "layer": 1, "index": 0, "type": RC.InfilNodeType.SERVER_RACK,
+		"elite": true, "next": [] as Array[StringName], "heat": 0}])
+	s.run.map = graph
+	p_campaign.runs_started += 1
+	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
+	s._sync()
+	return s
+
+
+static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: Dictionary, corp: CorporationData = null) -> NetrunSession:
+	var s := NetrunSession.new()
+	s._bind(p_resolver, p_campaign)
+	s.corporation = corp
 	s.run = RunState.from_dict(d.get("run", {}))
 	s.streams = RngStreams.from_dict(s.run.streams)
 	if not s.run.combat.is_empty():
@@ -157,6 +200,8 @@ func _start_combat(elite: bool) -> void:
 		pool = _pools["enemies"] if elite else _pools["elites"]
 	var combat_rng := streams.get_stream(&"combat")
 	var enemy_id: StringName = pool[combat_rng.randi_range(0, pool.size() - 1)]
+	if run.forced_enemy_id != &"":
+		enemy_id = run.forced_enemy_id
 	var seed := combat_rng.randi()
 	var op := run.operative
 	var cls := lookup.get_content(op.class_id) as ClassData
@@ -165,6 +210,9 @@ func _start_combat(elite: bool) -> void:
 		"deck": _strings(op.deck), "daemon_ids": _strings(op.daemon_ids),
 		"hp": op.hp, "max_hp": op.max_hp, "enemy_scale": enemy_scale(),
 	}
+	for k in run.combat_overrides:
+		if k != "shop_stock_delta":
+			overrides[k] = run.combat_overrides[k]
 	combat = CombatSession.start(resolver, op.class_id, [enemy_id], seed, op.ring_id(cls), campaign.heat_majors_crossed(config), overrides)
 	run.phase = RunState.Phase.COMBAT
 	last_events.append({"type": "combat_start", "enemy_id": enemy_id, "elite": elite,
@@ -172,8 +220,11 @@ func _start_combat(elite: bool) -> void:
 	_apply_campaign_effects(combat.last_events)
 
 
-## GDD 11.6: enemy HP and damage scale by enemy_scale_per_tier^(tier - 1).
+## GDD 11.6: enemy HP and damage scale by enemy_scale_per_tier^(tier - 1). The final
+## boss uses its authored values unscaled (A.3 lists them at full strength; open question).
 func enemy_scale() -> float:
+	if run.kind == "boss":
+		return 1.0
 	return pow(config.enemy_scale_per_tier, run.tier - 1)
 
 
@@ -197,6 +248,8 @@ func _finish_combat() -> void:
 		run.elites_defeated += 1
 	var rewards := streams.get_stream(&"rewards")
 	var range_: Vector2i = config.cycles_elite_range if elite else config.cycles_router_range
+	if run.kind == "reclaim":
+		range_ = config.cycles_combat_range  # tiny rewards (GDD 3.3)
 	var cycles := roundi(rewards.randi_range(range_.x, range_.y) * reward_scale())
 	run.cycles += cycles
 	last_events.append({"type": "cycles", "amount": cycles, "text": "Won the fight: +%d Cycles (%d)." % [cycles, run.cycles]})
@@ -204,6 +257,10 @@ func _finish_combat() -> void:
 		var asset: StringName = _pools["assets"][rewards.randi_range(0, _pools["assets"].size() - 1)]
 		run.unbanked_assets.append(asset)
 		last_events.append({"type": "asset_drop", "asset": asset, "text": "Found a defense asset: %s (unbanked until a Server Rack)." % asset})
+	if run.kind != "netrun":
+		combat = null
+		_complete_run()
+		return
 	_offer(&"card", _card_pool(), config.card_reward_choices, rewards)
 	if elite and not is_rack:
 		_offer(&"firmware", _pools["firmware"], config.elite_firmware_choices, rewards)
@@ -423,7 +480,8 @@ func _grant_resource(res: Resource) -> void:
 func _open_shop() -> void:
 	var rng := streams.get_stream(&"rewards")
 	var stock := {"cards": [], "card_prices": [], "firmware": [], "firmware_prices": [], "daemons": [], "daemon_prices": [], "slices": []}
-	_stock(stock, "cards", "card_prices", _card_pool(), 3, config.card_price_range, rng)
+	var card_count := maxi(1, 3 + int(run.combat_overrides.get("shop_stock_delta", 0)))
+	_stock(stock, "cards", "card_prices", _card_pool(), card_count, config.card_price_range, rng)
 	_stock(stock, "firmware", "firmware_prices", _pools["firmware"], 2, config.firmware_price_range, rng)
 	var daemons: Array = []
 	for d in _pools["daemons"]:
@@ -567,6 +625,8 @@ func _complete_run() -> void:
 	for e in _run_daemon_hooks(RC.Trigger.ON_NETRUN_COMPLETE):
 		if e.get("type", "") == "campaign_effect" and int(e.get("effect", -1)) == RC.EffectType.MODIFY_HEAT:
 			_add_heat(int(e["amount"]), String(e.get("source_id", "daemon")))
+	if corporation != null:
+		last_events.append_array(CampaignRules.on_run_completed(campaign, corporation, config, run))
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -608,9 +668,10 @@ func _bank_assets_to_armory() -> void:
 func _add_heat(delta: int, reason: String) -> void:
 	if delta == 0:
 		return
-	var applied := campaign.add_heat(delta, config)
-	run.heat_gained += applied
-	last_events.append({"type": "heat", "amount": applied, "reason": reason, "text": "Heat %+d (%s) -> %d." % [applied, reason, campaign.heat]})
+	var before := campaign.heat
+	var events := HeatRules.add_heat(campaign, delta, config, reason)
+	run.heat_gained += campaign.heat - before
+	last_events.append_array(events)
 
 
 ## Campaign-level effects reported by combat (Burner, Clean Signal).
@@ -673,10 +734,20 @@ func _build_pools() -> void:
 		var ev := lookup.get_content(id) as TerminalEventData
 		if (ev.corporation_id == &"" or ev.corporation_id == campaign.corporation_id):
 			events.append(id)
+	# Built-in node defenses (Firewall turret) are not loot.
+	var built_in := {}
+	for id in lookup.ids_of_class(&"NetworkNodeData"):
+		var node := lookup.get_content(id) as NetworkNodeData
+		if node != null and node.built_in_asset != null:
+			built_in[node.built_in_asset.id] = true
+	var assets: Array = []
+	for id in lookup.ids_of_class(&"DefenseAssetData"):
+		if not built_in.has(id):
+			assets.append(id)
 	_pools = {
 		"enemies": enemies, "elites": elites, "shared_cards": shared_cards, "class_cards": class_cards,
 		"firmware": lookup.ids_of_class(&"FirmwareData"), "daemons": lookup.ids_of_class(&"DaemonData"),
-		"assets": lookup.ids_of_class(&"DefenseAssetData"), "events": events,
+		"assets": assets, "events": events,
 	}
 
 

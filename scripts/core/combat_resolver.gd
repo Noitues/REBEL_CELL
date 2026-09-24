@@ -50,9 +50,16 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 				s.draw_pile.append(card.id)
 	s.daemon_ids = _to_names(overrides.get("daemon_ids", []))
 	var enemy_scale := float(overrides.get("enemy_scale", 1.0))
+	s.flags["boss_pointer_removal"] = int(overrides.get("remove_boss_pointers", 0))
 	for i in enemy_datas.size():
 		var e := _make_combatant(enemy_datas[i], StringName("enemy_%d" % i), false)
 		_scale_enemy(e, enemy_scale)
+		if enemy_datas[i].is_boss:
+			_trim_pointers(e, int(s.flags["boss_pointer_removal"]))
+			for k in int(overrides.get("boss_corrupt_slices", 0)):
+				var slot := fx.pick_slot(s, e, RC.SlicePick.RANDOM_NON_MISS, {}, rng)
+				if slot >= 0:
+					e.wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		s.enemies.append(e)
 		for spawn in enemy_datas[i].spawns:
 			if spawn == null or spawn.satellite == null or spawn.trigger != RC.Trigger.ON_COMBAT_START:
@@ -62,6 +69,14 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	if not s.enemies.is_empty():
 		s.target_id = s.enemies[0].id
 	return s
+
+
+## Breach Exploit: the boss keeps `removal` fewer pointers (never below one).
+static func _trim_pointers(e: CombatantState, removal: int) -> void:
+	if removal <= 0:
+		return
+	var keep := maxi(1, e.wheel.pointer_ticks.size() - removal)
+	e.wheel.pointer_ticks = e.wheel.pointer_ticks.slice(0, keep)
 
 
 static func _scale_enemy(e: CombatantState, scale: float) -> void:
@@ -222,13 +237,16 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 			events.append({"type": "orbit", "target": c.id, "text": "%s's pointer orbits to tick %d." % [c.display_name, c.wheel.pointer_ticks[0]]})
 		c.block = 0
 		c.evade_charges = 0
+		# Hub start-of-turn passives (Auto-Renew) run while the breach still holds, so a
+		# Hub Breach played last turn stops this turn's heal; then the breach expires.
+		if not c.is_player:
+			_run_hub_turn_start(s, c, rng, events)
 		if c.hub_breached_turns > 0:
 			c.hub_breached_turns -= 1
 			if c.hub_breached_turns == 0:
 				events.append({"type": "hub_restored", "target": c.id, "text": "%s Hub is back online." % c.display_name})
 		if not c.is_player:
 			c.resistance = c.full_resistance()
-			_run_hub_turn_start(s, c, rng, events)
 	if s.turn > 1:
 		s.ram = mini(s.ram + cls.ram_regen, cls.max_ram)
 		events.append({"type": "ram", "amount": cls.ram_regen, "text": "RAM +%d (%d/%d)." % [cls.ram_regen, s.ram, cls.max_ram]})
@@ -288,6 +306,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 		if not alive_before.has(r["owner"].id):
 			alive_before.append(r["owner"].id)
 	_apply_deaths(s, alive_before, events)
+	_check_boss_phases(s, rng, events)
 	_check_outcome(s, events)
 	s.discard_pile.append_array(s.hand)
 	s.hand.clear()
@@ -573,6 +592,39 @@ func _apply_deaths(s: CombatState, alive_before: Array[StringName], events: Arra
 		var c := s.get_combatant(id)
 		if c != null and not c.is_alive() and not c.is_player:
 			events.append({"type": "died", "target": c.id, "text": "%s is destroyed." % c.display_name})
+
+
+## Boss pointer phases (GDD 2.11): entered when HP falls to the threshold. MULTIPLY /
+## MIGRATE set the pointer layout (minus any Breach removal), ORBIT sets the per-turn
+## drift, spawns dock satellites, a hub override swaps the Hub.
+func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	for e in s.enemies:
+		if e.is_satellite or not e.is_alive():
+			continue
+		var data := lookup.get_content(e.source_id) as EnemyData
+		if data == null or data.phases.is_empty():
+			continue
+		while e.phase_index < data.phases.size():
+			var phase := data.phases[e.phase_index]
+			if phase == null or float(e.hp) > e.max_hp * phase.hp_threshold_pct:
+				break
+			e.phase_index += 1
+			match phase.pointer_behavior:
+				RC.PointerBehavior.MULTIPLY, RC.PointerBehavior.MIGRATE:
+					e.wheel.pointer_ticks = phase.pointer_ticks.duplicate()
+					_trim_pointers(e, int(s.flags.get("boss_pointer_removal", 0)))
+				RC.PointerBehavior.ORBIT:
+					e.wheel.pointer_orbit = phase.orbit_ticks_per_turn
+			if phase.hub_override != null:
+				e.wheel.hub_id = phase.hub_override.id
+				e.hub_resistance = phase.hub_override.hub_resistance
+			for spawn in phase.spawns:
+				if spawn != null and spawn.satellite != null:
+					for k in spawn.max_active:
+						_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.output_scale)
+			events.append({"type": "boss_phase", "target": e.id, "phase": e.phase_index, "behavior": phase.pointer_behavior,
+				"text": "%s enters phase %d (%s)%s" % [e.display_name, e.phase_index, RC.PointerBehavior.keys()[phase.pointer_behavior],
+					(": " + phase.phase_line) if phase.phase_line != "" else "."]})
 
 
 func _check_outcome(s: CombatState, events: Array[Dictionary]) -> void:

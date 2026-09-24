@@ -115,10 +115,12 @@ func validate() -> PackedStringArray:
 	errors.append_array(_errors)
 	if config == null:
 		errors.append("No CampaignConfigData found (expected %s)." % CONFIG_PATH)
+	var min_exploits: int = config.min_exploits_for_breach if config != null else 3
 	for res in _resources:
 		if not res.has_method("validate"):
 			continue
-		var problems: Variant = res.validate()
+		# StoryPathData.validate() needs the breach minimum; the others default it.
+		var problems: Variant = res.validate(min_exploits) if res is StoryPathData else res.validate()
 		for p in problems:
 			errors.append("%s: %s" % [_describe(res), String(p)])
 	return errors
