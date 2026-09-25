@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; Pirate-radio DJ lines (HQ). Horizontal pass 1: split per corporation.
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "dj"
+text = "Storm tonight over the eastern districts. Orbital knew yesterday. Now you know too."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "dj"
+text = "Positioning is a subscription now. This radio is not. You are exactly here."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "dj"
+text = "The founder is on the free band again. Look her up. Look up in general."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "dj"
+text = "Solar flare warning: if your deck runs hot, enjoy it, then cool it down."
+
+[resource]
+script = ExtResource("main_script")
+id = &"dj_orbital"
+speaker = 0
+corporation_id = &"orbital"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3")])

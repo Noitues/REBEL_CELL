@@ -86,7 +86,8 @@ func test_assisted_wins_set_no_ice_record() -> void:
 	RunManager.campaign.outcome = CampaignState.Outcome.WON
 	RunManager.campaign.ice_level = 7
 	RunManager.sync_profile_with_campaign()
-	assert_eq(RunManager.profile.campaigns_won, won + 1)
+	assert_eq(RunManager.profile.campaigns_won, won, "assisted wins are counted apart (no Breach achievement)")
+	assert_eq(int(RunManager.profile.stats.get("assisted_wins", 0)), 1)
 	assert_eq(RunManager.profile.best_ice_for(&"solace"), best, "no ICE record from an assisted win")
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())

@@ -4,6 +4,8 @@ extends Control
 ## the value in Anton. As a wanted poster in HQ (`poster = true`) it gains a border and a
 ## "WANTED" header. Heat bands follow the thresholds 25/50/75 (GDD 9.4).
 
+## Colour of the number at high Heat: the campaign's corporation (set by the HQ).
+var hot_color: Color = Palette.CORP_SOLACE
 var heat: int = 0
 var heat_max: int = 100
 var poster: bool = false
@@ -44,7 +46,7 @@ func _draw() -> void:
 		draw_rect(strip, Palette.INK, false, 1.0)
 		draw_string(fonts[i], strip.position + Vector2(5, 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.INK)
 		x += 28
-	draw_string(Palette.display(), Vector2(x + 6, y + 30), "%d" % heat, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.CELL_PINK if band < 2 else Palette.CORP_SOLACE)
+	draw_string(Palette.display(), Vector2(x + 6, y + 30), "%d" % heat, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.CELL_PINK if band < 2 else hot_color)
 	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))

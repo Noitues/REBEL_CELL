@@ -214,6 +214,8 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 		"boss":
 			netrun = NetrunSession.start_special(resolver, campaign, operative_id, "boss", site_id, site.tier, run_seed,
 				corporation.final_boss.id, CampaignRules.boss_overrides(campaign, corporation), corporation)
+			if has_node("/root/Dialogue"):
+				get_node("/root/Dialogue").speak("boss", RC.Voice.DISPATCH, corporation.id, &"", campaign.campaign_seed)
 		"reclaim":
 			var pool: Array = []
 			for e in corporation.enemies:
@@ -276,6 +278,12 @@ func _record_usage(r: RunState) -> void:
 			profile.record_usage("asset", a)
 
 
+## Marks an enemy as met, for the codex (GDD 8.1: the codex shows what the Cell knows).
+func record_seen(enemy_id: StringName) -> void:
+	if enemy_id != &"" and not profile.stats.has("use_seen:%s" % enemy_id):
+		profile.record_usage("seen", enemy_id)
+
+
 ## Counts a Perfect landing for the stats (combat scenes report them).
 func record_perfect() -> void:
 	profile.add_stat("perfects", 1)
@@ -299,7 +307,7 @@ func sync_profile_with_campaign() -> void:
 		_profile_outcome_seen = campaign.outcome
 		if campaign.outcome == CampaignState.Outcome.WON:
 			if campaign.is_assisted():
-				profile.campaigns_won += 1  # assisted wins set no ICE records
+				profile.add_stat("assisted_wins", 1)  # no ICE records, no win-based achievements
 			else:
 				profile.record_win(campaign.corporation_id, campaign.ice_level)
 		elif campaign.outcome == CampaignState.Outcome.LOST:

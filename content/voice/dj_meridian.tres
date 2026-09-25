@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; Pirate-radio DJ lines (HQ). Horizontal pass 1: split per corporation.
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "dj"
+text = "Meridian lost another pallet of insulin today. Lost, like a magician loses a coin."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "dj"
+text = "Tariff season in the district: if your deck feels light, somebody billed it."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "dj"
+text = "Night shift, this one is for you. Sit down for three minutes. The scoring engine cannot hear music."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "dj"
+text = "Couriers overhead. If one follows you home, it already knew the way."
+
+[resource]
+script = ExtResource("main_script")
+id = &"dj_meridian"
+speaker = 0
+corporation_id = &"meridian"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3")])

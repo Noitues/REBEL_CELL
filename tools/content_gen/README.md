@@ -20,3 +20,4 @@ the script instead.
 `gen_orbital.py` writes Orbital Commons (M10).
 `gen_rebel_cell.py` writes the REBEL_CELL template (M11); `scripts/core/rebel_cell_builder.gd` fills it from the profile at runtime.
 `gen_home.py` writes the M12 home-server variants and their unlocks.
+`gen_h1.py` writes the horizontal pass 1 content (DJ sets, rescue events, Shatter).

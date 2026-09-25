@@ -15,6 +15,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | 1 | 2026-09-24 | 48 across combat, netrun, campaign, narrative, menus, art | Fixed in vertical batches 1–4 (commits 3295d43 … 102f1e0) |
 | 2 | 2026-09-24 | 5 (V1–V5) plus 4 found by the balance simulation (home repair, raid frequency, patrol soft-lock, one-shot tier damage) and 1 display bug | Fixed in vertical batch 5 |
 | 3 | 2026-09-24 | **0** | Vertical slice clean. Horizontal loop starts (§4). |
+| H1 | 2026-09-24 | 16 after M6-M12 (Solace-only win text, speaker, music, DJ, ICE picker and records; codex spoilers; rescue; untested cores and home servers; built-in ICE Locks ignored in raids; stale docs) | Fixed in horizontal batch H1 |
 
 ### Pass 3 (vertical) — clean
 
@@ -27,18 +28,18 @@ translation, a human performance run and playtests).
 
 ---
 
-## 1. Where the project stands (pass 2)
+## 1. Where the project stands (horizontal pass 1, after M12)
 
 | Layer | Built |
 |---|---|
-| Combat | Wheel math, resolver, full effect language (no unsupported effect or slice type left), preview, rewind, replay, statuses, Firmware, 10 Daemons, 7 ring segments + Rank 3 swap, player drones, boss phases incl. telegraphed MIGRATE and wheel overrides, every ICE/Heat combat modifier, RAM respin |
-| Netrun | Map generator, wireframe map view, rewards incl. Router Firmware, Modem with ICE prices, 19 Terminal events with tier gating, rescue and DISPATCH chain, boosts, Compiler Rack bonus, raid interludes |
-| Campaign | 32-Site Solace Grid, 7 node types + upgrades, Profile unlocks, Bunker home variant, ICE picker and progression, every raid trigger source, freezing/altering threats, raid playout with speed/skip, recall from Disabled/Seized |
-| Narrative | Six written story paths, 55 DISPATCH lines with voice drift, raid warnings, barks, DJ, subtitle bar, codex, text export pipeline |
-| Menus/platform | Title, three save slots, pause menu, five-section options with rebinding, tutorial, achievements, stats, fps counter, autosave marker, CI + export presets |
-| Content | 1 class, 1 corporation (32 Sites), 12 enemies + 3 satellites + 2 drones, 26 cards, 6 Firmware, 10 Daemons, 3 assets, 5 threats, 8 raids, 19 events, 4 line sets |
+| Combat | Full effect language, preview, rewind, replay, statuses incl. PARASITE, Firmware, Daemons, ring segments, drones, boss phases, ICE/Heat modifiers, freeze cooldown, assist free nudges |
+| Classes | Breaker, Ghost, Rigger, Botnet + Wrecker, Phantom, Overclocker, Hivemind; cores and Mk2 cores, rings, two exclusives each, station bonuses, barks, unlocks |
+| Corporations | Solace, Meridian, Halcyon, Orbital (32 Sites, 6 enemies, 2 elites, mini-boss, phased boss, 3 Exploits, 6 story paths, own raids, voice, colour, raid music) and REBEL_CELL built from the profile |
+| Campaign | Corporation and class selection, per-corporation ICE ladders and records, 7 node types, 5 home servers, raids with station bonuses and built-in holds, assist mode, share codes, daily run |
+| Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
+| Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 346 passing; schema smoke test and content validation green.
+Tests: 426 passing; schema smoke test and content validation green.
 
 ---
 
@@ -68,7 +69,7 @@ GDD 11.8: average campaign ≈ 6 h 35 m, fast ≈ 2 h 15 m.
 | Corporations | 4 + REBEL_CELL: Solace Biosystems, Meridian Freight Systems, Halcyon Civic, Orbital Commons |
 | ICE progression | A win at ICE *n* unlocks up to *n + 3* on that corporation; any corporation starts at global best − 5; fresh profiles pick 0–3 |
 | Classes | Breaker, Ghost, Rigger, Botnet + one alternative each |
-| Content per corporation | 30–40 Sites, 6 normal + 2 elite + 1 mini-boss + 1 boss, 3 Exploits, 6 story paths, ~40 events, 8 raid templates, own voice sets |
+| Content per corporation | 30–40 Sites, 6 normal + 2 elite + 1 mini-boss + 1 boss, 3 Exploits, 6 story paths, ~30 rollable events (own + shared; Solace has 40), 8 raid templates, own voice sets |
 | Pools | ~60 shared cards + 2 exclusives per class, ~18 Firmware, ~24 Daemons, ~8 assets |
 
 ≈ 19 campaigns to full content ≈ 120 h average / 45 h fast.

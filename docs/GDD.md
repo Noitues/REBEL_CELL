@@ -594,8 +594,8 @@ classes in `scripts/data/`); runtime state in separate state objects; seeded RNG
 JSON saves. Full detail: `TECH_SPEC.md`.
 
 ## 13. Open Items / Deferred
-- Full card pool beyond the slice set; Ghost, Rigger, Botnet content (post-slice).
-- Additional corporations and their story paths; REBEL_CELL generator.
+- ~~Full card pool beyond the slice set; Ghost, Rigger, Botnet content~~ (M6-M7, 2026-09-24).
+- ~~Additional corporations and their story paths; REBEL_CELL generator~~ (M8-M11).
 - Complete ICE 1–20 level list (bands defined above).
 - Final Heat tuning (11.5) and HP/damage tuning — playtest.
 - Story path scripts, voice casting, localisation plan.

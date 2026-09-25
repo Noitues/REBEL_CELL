@@ -5,7 +5,12 @@ extends Node
 ## with Heat layers. Views call play_sfx()/play_music(); nothing here touches game state.
 
 const MIX_RATE := 22050
-const CONTEXTS := ["hq", "grid", "netrun", "combat", "raid", "boss", "solace_raid", "rebel_cell"]
+const CONTEXTS := ["hq", "grid", "netrun", "combat", "raid", "boss", "solace_raid", "meridian_raid", "halcyon_raid", "orbital_raid", "rebel_cell"]
+## Corporation-specific music (GDD 10): which context replaces a generic one.
+const CORP_CONTEXTS := {
+	&"solace": {"raid": "solace_raid"}, &"meridian": {"raid": "meridian_raid"}, &"halcyon": {"raid": "halcyon_raid"},
+	&"orbital": {"raid": "orbital_raid"}, &"rebel_cell": {"hq": "rebel_cell", "grid": "rebel_cell"},
+}
 
 var _sfx: Dictionary = {}
 var _music: Dictionary = {}
@@ -75,7 +80,8 @@ func play_precision(tier: int, is_miss_slice: bool) -> void:
 
 
 ## Switches the looping context music (GDD 10 table). Same context = no restart.
-func play_music(context: String) -> void:
+func play_music(context: String, corporation_id: StringName = &"") -> void:
+	context = context_for(context, corporation_id)
 	if context == current_context:
 		return
 	current_context = context
@@ -87,6 +93,11 @@ func play_music(context: String) -> void:
 	_music_player.stream = _music[context]
 	_music_player.play()
 	_update_layer()
+
+
+## The context actually played for `context` in a campaign against `corporation_id`.
+static func context_for(context: String, corporation_id: StringName) -> String:
+	return String(CORP_CONTEXTS.get(corporation_id, {}).get(context, context))
 
 
 ## Combat music gains a layer per Heat threshold band crossed (0-3).
@@ -205,6 +216,13 @@ func _make_music(context: String) -> AudioStreamWAV:
 				v = 0.25 * sign(sin(TAU * f2 * t)) * exp(-fmod(t * 6.0, 1.0) * 3.0) + 0.1 * (_rand(i) * 2.0 - 1.0) * exp(-fmod(t * 3.0, 1.0) * 10.0)
 			"solace_raid":
 				v = 0.2 * (sin(TAU * 330.0 * t) + 0.5 * sin(TAU * 415.0 * t) + 0.5 * sin(TAU * 494.0 * t)) * (0.6 + 0.4 * sin(TAU * 0.25 * t))
+			"meridian_raid":
+				var pulse := fmod(t * 3.0, 1.0)
+				v = 0.22 * sign(sin(TAU * 82.4 * t)) * exp(-pulse * 6.0) + 0.1 * sin(TAU * 164.8 * t) * (1.0 - pulse)
+			"halcyon_raid":
+				v = 0.18 * (sin(TAU * 440.0 * t) * float(int(t * 2.0) % 2 == 0) + 0.6 * sin(TAU * 220.0 * t)) * (0.5 + 0.5 * sin(TAU * 0.5 * t))
+			"orbital_raid":
+				v = 0.2 * sin(TAU * (root * 2.0 + 40.0 * sin(TAU * 0.25 * t)) * t) + 0.08 * (_rand(i) * 2.0 - 1.0) * exp(-fmod(t * 4.0, 1.0) * 8.0)
 			"rebel_cell":
 				v = 0.25 * (sin(TAU * root * 0.98 * t) + 0.5 * sin(TAU * root * 1.48 * t)) * (0.6 + 0.4 * sin(TAU * 0.3 * t + sin(t * 2.0)))
 			_:

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/classes/breaker.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+
+; Rescue event (GDD 5.4). The reward class is a placeholder: the rescued operative is one of
+; the classes already on the roster (NetrunSession._rescue_class).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Break them out (6 damage): a rescued operative joins the roster"
+result_text = "They are shaky, but they are yours."
+hp_cost = 6
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Leave them"
+result_text = "You tell yourself someone else will come."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_mer_rescue"
+title = "Returned to Sender"
+speaker = 0
+text = "An operative sealed in a Meridian returns crate, still breathing, labelled DAMAGED IN TRANSIT."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"meridian"
+min_tier = 2

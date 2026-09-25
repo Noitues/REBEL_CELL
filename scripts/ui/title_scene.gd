@@ -89,7 +89,7 @@ func show_slots() -> void:
 func show_codex() -> void:
 	var box := VBoxContainer.new()
 	var note := ZineNote.new("CODEX", Vector2(900, 420))
-	var entries := Codex.entries(RunManager.lookup())
+	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	for section in entries:
 		note.append("[b]%s[/b]" % section)
 		for item in entries[section]:

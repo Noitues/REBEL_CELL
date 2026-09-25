@@ -254,7 +254,7 @@ klass("botnet", "Botnet", "Fights through drones that ride the whole netrun.", 4
 BREAKER_DECK = ["jolt", "jolt", "jolt", "jolt", "brute_spin", "brute_spin", "fine_tune", "fine_tune", "mirror_flip", "overdrive"]
 klass("wrecker", "Wrecker", "A Breaker that trades spin control for a heavier Perfect.", 60,
       ["crit_12", "atk_6", "atk_6", "atk_6", "def_5", "miss"], "wrecker_core", "wrecker_core_mk2", "breaker_ring",
-      ["seg_corrupt", "seg_anchor", "seg_accelerator", "seg_echo"], BREAKER_DECK, ["overdrive"], (0, None),
+      ["seg_corrupt", "seg_anchor", "seg_accelerator", "seg_echo"], BREAKER_DECK, ["overdrive", "shatter"], (0, None),
       "Wrecker: Breaker alternative (GDD 3.4, same deck + different core; decision 2026-09-24).", alternative_of="breaker", station_mult="1.5")
 klass("phantom", "Phantom", "A Ghost that dodges instead of slipping resistance.", 50,
       ["atk_14", "def_6", "atk_14", "evade_1", "def_6", "miss"], "phantom_core", "phantom_core_mk2", "ghost_ring",

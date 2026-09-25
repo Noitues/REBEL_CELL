@@ -11,14 +11,14 @@ const SLICE_TYPE_TEXT := {
 	RC.SliceType.EVADE: "EVADE: cancels the next incoming ATTACK or CRIT this turn.",
 	RC.SliceType.DEPLOY: "DEPLOY: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
 	RC.SliceType.HEAL: "HEAL: restores HP.",
-	RC.SliceType.AFFLICT: "AFFLICT: applies a status (Solace DOSE corrupts a random non-Miss slice).",
+	RC.SliceType.AFFLICT: "AFFLICT: applies a status or a drain to your wheel (Dose corrupts, Tariff drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
 	RC.SliceType.MISS: "MISS: nothing happens, unless a Daemon says otherwise.",
 }
 const STATUS_TEXT := {
 	RC.Status.CORRUPTED: "CORRUPTED: when the slice resolves, 3 self-damage (+1 per MAJOR Heat threshold) and -1 RAM. Lasts until cleansed.",
 	RC.Status.OVERCLOCKED: "OVERCLOCKED: 1.5x output on the slice's next trigger, then it becomes CORRUPTED.",
 	RC.Status.ENCRYPTED: "ENCRYPTED: absorbs the next status applied to that slice.",
-	RC.Status.PARASITE: "PARASITE: a Botnet parasite drone is feeding on the slice; it resolves at half output until cleansed.",
+	RC.Status.PARASITE: "PARASITE: something is feeding on the slice (a Botnet parasite, a Halcyon Citation); it resolves at half output until cleansed.",
 }
 const TIER_TEXT := {
 	RC.PrecisionTier.PERFECT: "PERFECT (offset 0): full output and the class Perfect hook.",
@@ -36,6 +36,11 @@ const LEXICON := {
 	"Heat": "How hard the corporation is looking for you. Thresholds fire raids and complications.",
 	"ICE": "Difficulty ladder, 20 cumulative levels.",
 	"DISPATCH": "The Cell's handler. Clean system text, always.",
+	"Tariff": "Meridian's fee on every packet: an enemy slice that drains your RAM.",
+	"Citation": "Halcyon's fine: a Parasite on one of your slices until you cleanse it.",
+	"Solar Flare": "Orbital's gift: your slice runs hot once (1.5x), then corrupts.",
+	"Inertia": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",
+	"Mirror": "A copy of one of your own operatives. You will know it when you meet it.",
 }
 
 
@@ -131,9 +136,26 @@ static func tier_text(tier: int) -> String:
 
 
 ## Every codex entry, grouped by section, for the codex screen: {section: [{title, text}]}.
-static func entries(lookup: ContentLookup) -> Dictionary:
-	var out := {"Slices": [], "Statuses & precision": [], "Cards": [], "Firmware": [], "Daemons": [], "Ring segments": [],
-		"Enemies": [], "Nodes": [], "Defense assets": [], "Threats": [], "Lexicon": []}
+## Every codex entry, grouped by section. With a `profile`, enemies appear only once met
+## (no spoilers for bosses and REBEL_CELL); without one (tests, tools) everything shows.
+static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dictionary:
+	var out := {"Slices": [], "Statuses & precision": [], "Classes": [], "Corporations": [], "Cards": [], "Firmware": [], "Daemons": [],
+		"Ring segments": [], "Enemies": [], "Nodes": [], "Home servers": [], "Defense assets": [], "Threats": [], "Lexicon": []}
+	for id in lookup.ids_of_class(&"ClassData"):
+		var cls := lookup.get_content(id) as ClassData
+		var hub := cls.starting_wheel.hub if cls.starting_wheel != null else null
+		out["Classes"].append({"title": cls.display_name, "text": "%s\n%d HP. Hub %s: %s%s" % [cls.description, cls.base_hp,
+			hub.display_name if hub != null else "-", hub.description if hub != null else "",
+			("\nAlternative of %s." % cls.alternative_of) if cls.alternative_of != &"" else ""]})
+	for id in lookup.ids_of_class(&"CorporationData"):
+		var corp := lookup.get_content(id) as CorporationData
+		if corp.generated_from_profile and profile != null and profile.best_ice_for(corp.id) < 0 and not profile.stats.has("use_seen:%s" % corp.final_boss.id):
+			out["Corporations"].append({"title": "???", "text": "Something is waiting behind the other four."})
+			continue
+		out["Corporations"].append({"title": corp.display_name, "text": corp.description})
+	for id in lookup.ids_of_class(&"HomeServerVariantData"):
+		var v := lookup.get_content(id) as HomeServerVariantData
+		out["Home servers"].append({"title": v.display_name, "text": v.description})
 	for t in SLICE_TYPE_TEXT:
 		out["Slices"].append({"title": "%s %s" % [Palette.SLICE_GLYPHS.get(t, ""), Palette.SLICE_NAMES.get(t, "")], "text": SLICE_TYPE_TEXT[t]})
 	for st in STATUS_TEXT:
@@ -147,6 +169,10 @@ static func entries(lookup: ContentLookup) -> Dictionary:
 			var res := lookup.get_content(id)
 			if res is CardData and not (res as CardData).offered:
 				continue
+			if res is EnemyData and profile != null and not profile.stats.has("use_seen:%s" % id):
+				continue
+			if res is EnemyData and (res as EnemyData).corporation_id == &"":
+				continue  # templates and class drones
 			out[section].append({"title": String(res.get("display_name")) if res.get("display_name") != "" else String(id), "text": describe(res)})
 	for word in LEXICON:
 		out["Lexicon"].append({"title": word, "text": LEXICON[word]})

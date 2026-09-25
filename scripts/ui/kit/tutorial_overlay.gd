@@ -8,7 +8,7 @@ extends Control
 signal finished
 
 const STEPS: Array[Dictionary] = [
-	{"title": "THE WHEEL", "text": "30 ticks, 6 slices. The white pointer reads the tick under it; the slice it lands on is what you do this turn. Glyphs: ▲ attack, ✦ crit, ■ defend, ✕ miss.", "until": ""},
+	{"title": "THE WHEEL", "text": "30 ticks, 6 slices. The white pointer reads the tick under it; the slice it lands on is what you do this turn. Glyphs: ▲ attack, ✦ crit, ■ defend, ⬢ shield, ◇ evade, ⬡ deploy, ✚ heal, ◈ afflict, ✕ miss. Right-click any slice to inspect it.", "until": ""},
 	{"title": "PRECISION", "text": "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD (full), 2 off for PARTIAL (half). Press Q or E to nudge your wheel one tick.", "until": "nudge"},
 	{"title": "RESISTANCE", "text": "Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked entirely while resistance is up. Strip it, breach the Hub, or spin past it.", "until": ""},
 	{"title": "CARDS & PREVIEW", "text": "Cards spin, nudge and flip wheels; they cost RAM. Hover a card to see exactly what will resolve (dashed acid arc = where your pointer ends up). Play a card with 1-9 or a click.", "until": "card"},

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/card_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+
+; Breaker exclusive #2 (horizontal pass 1): every class has two exclusives.
+
+[sub_resource type="Resource" id="fx0"]
+script = ExtResource("e1")
+type = 11
+target = 2
+amount = 1
+
+[sub_resource type="Resource" id="fx1"]
+script = ExtResource("e1")
+type = 10
+target = 2
+amount = -1
+
+[resource]
+script = ExtResource("main_script")
+id = &"shatter"
+display_name = "Shatter"
+description = "Breach the target Hub for 1 turn and strip 1 resistance."
+rarity = 1
+ram_cost = 2
+cycle_cost = 70
+class_id = &"breaker"
+wheel_target = 1
+effects = Array[ExtResource("e1")]([SubResource("fx0"), SubResource("fx1")])

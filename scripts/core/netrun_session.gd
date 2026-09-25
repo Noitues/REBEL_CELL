@@ -568,9 +568,24 @@ func _grant_resource(res: Resource) -> void:
 	elif res is DefenseAssetData:
 		_grant("asset", res.id, -1)
 	elif res is ClassData:
-		var rescued := campaign.recruit(res)
+		var rescued := campaign.recruit(_rescue_class(res as ClassData))
 		last_events.append({"type": "rescued", "operative": rescued.id, "text": "Rescued operative %s joins the roster." % rescued.name})
 
+
+
+## A rescued operative (GDD 5.4) is one of the classes already on the roster (ids sorted,
+## seeded "events" draw): rescues never bypass the Profile class unlocks. `fallback` when
+## the roster is empty.
+func _rescue_class(fallback: ClassData) -> ClassData:
+	var ids: Array[String] = []
+	for op in campaign.roster:
+		if not ids.has(String(op.class_id)):
+			ids.append(String(op.class_id))
+	if ids.is_empty():
+		return fallback
+	ids.sort()
+	var pick := lookup.get_content(StringName(ids[streams.get_stream(&"events").randi_range(0, ids.size() - 1)])) as ClassData
+	return pick if pick != null else fallback
 
 # --- Modem shop ----------------------------------------------------------------------
 

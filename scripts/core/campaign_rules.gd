@@ -226,7 +226,8 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 	if run.kind == "boss":
 		campaign.outcome = CampaignState.Outcome.WON
 		var p := story_path(campaign, corp)
-		events.append({"type": "campaign_won", "text": "The Renewal Engine is down. Campaign WON."})
+		var boss_name := corp.final_boss.display_name if corp != null and corp.final_boss != null else "The final server"
+		events.append({"type": "campaign_won", "text": "%s is down. Campaign WON." % boss_name})
 		if p != null and p.finale != null:
 			events.append({"type": "story_beat", "beat_id": p.finale.id, "text": "[%s] %s" % [p.finale.title, p.finale.text]})
 		return events
@@ -611,7 +612,20 @@ static func available_corporations(profile: ProfileState, lookup: ContentLookup)
 		var corp := lookup.get_content(id) as CorporationData
 		if corp != null and corporation_available(profile, lookup, corp):
 			out.append(corp)
+	out.sort_custom(func(a: CorporationData, b: CorporationData) -> bool:
+		var ka := _corp_order(lookup, a)
+		var kb := _corp_order(lookup, b)
+		return ka < kb or (ka == kb and String(a.id) < String(b.id)))
 	return out
+
+
+static func _corp_order(lookup: ContentLookup, corp: CorporationData) -> int:
+	var u := unlock_for(lookup, corp)
+	if u == null:
+		return -1
+	if u.requires_all_corporations_at_ice >= 0:
+		return 1 << 20
+	return u.schematic_cost
 
 
 ## Base classes (no alternative_of) and alternatives the profile may recruit, by id.

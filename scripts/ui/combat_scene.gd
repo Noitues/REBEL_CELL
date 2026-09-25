@@ -325,6 +325,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_last_events = events
+	for e in state.enemies:
+		RunManager.record_seen(e.source_id)
 	_play_log(events)
 	_refresh(state)
 	_feedback(state, events)
@@ -408,7 +410,7 @@ func _feedback(state: CombatState, events: Array[Dictionary]) -> void:
 					_stutter_view(_player_view)
 			"boss_phase":
 				AudioDirector.play_sfx("alarm")
-				Fx.flash(Palette.CORP_SOLACE, 0.3)
+				Fx.flash(Palette.corp_color(RunManager.campaign.corporation_id) if RunManager.campaign != null else Palette.CORP_SOLACE, 0.3)
 				_bark("boss", state)
 			"damage":
 				if e.get("target") == state.player.id and int(e.get("hp_damage", 0)) > 0 and state.player.hp * 2 <= state.player.max_hp:

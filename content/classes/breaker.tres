@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ClassData" load_steps=27 format=3]
+[gd_resource type="Resource" script_class="ClassData" load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
@@ -21,6 +21,7 @@
 [ext_resource type="Resource" path="res://content/cards/fine_tune.tres" id="c_fine"]
 [ext_resource type="Resource" path="res://content/cards/mirror_flip.tres" id="c_flip"]
 [ext_resource type="Resource" path="res://content/cards/overdrive.tres" id="c_over"]
+[ext_resource type="Resource" path="res://content/cards/shatter.tres" id="c_shatter"]
 [ext_resource type="Script" path="res://scripts/data/ring_segment_data.gd" id="10"]
 [ext_resource type="Resource" path="res://content/rings/segments/seg_corrupt.tres" id="seg_corrupt"]
 [ext_resource type="Resource" path="res://content/rings/segments/seg_anchor.tres" id="seg_anchor"]
@@ -96,7 +97,7 @@ display_name = "Breaker"
 description = "Hits hard and spins harder. Perfect landings resolve the slice twice."
 starting_wheel = SubResource("wheel")
 starting_deck = Array[ExtResource("5")]([ExtResource("c_jolt"), ExtResource("c_jolt"), ExtResource("c_jolt"), ExtResource("c_jolt"), ExtResource("c_brute"), ExtResource("c_brute"), ExtResource("c_fine"), ExtResource("c_fine"), ExtResource("c_flip"), ExtResource("c_over")])
-exclusive_cards = Array[ExtResource("5")]([ExtResource("c_over")])
+exclusive_cards = Array[ExtResource("5")]([ExtResource("c_over"), ExtResource("c_shatter")])
 base_hp = 60
 starting_ram = 6
 max_ram = 12

@@ -9,7 +9,7 @@ extends CanvasLayer
 
 signal line_spoken(speaker: int, text: String)
 
-const SPEAKER_NAMES := {RC.Voice.NARRATOR: "", RC.Voice.STREET_MERC: "OPERATIVE", RC.Voice.CORPO: "SOLACE",
+const SPEAKER_NAMES := {RC.Voice.NARRATOR: "", RC.Voice.STREET_MERC: "OPERATIVE", RC.Voice.CORPO: "CORPORATE",
 	RC.Voice.AI_OBSERVER: "OBSERVER", RC.Voice.DISPATCH: "DISPATCH"}
 const SECONDS_PER_CHAR := 0.045
 const MIN_SECONDS := 1.6
@@ -84,14 +84,15 @@ func add_set(set: LineSetData) -> void:
 
 ## Shows a subtitle (queued behind any line still on screen). Emits line_spoken at once
 ## so voice-over and logs can follow even with subtitles switched off.
-func say(speaker: int, text: String, seconds: float = 0.0) -> void:
+func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"") -> void:
 	if text == "":
 		return
-	history.append({"speaker": speaker, "text": text})
+	history.append({"speaker": speaker, "text": text, "corporation": corporation_id})
 	line_spoken.emit(speaker, text)
 	if _queue.size() >= MAX_QUEUE:
 		_queue.pop_front()
-	_queue.append({"speaker": speaker, "text": text, "seconds": seconds if seconds > 0.0 else maxf(MIN_SECONDS, text.length() * SECONDS_PER_CHAR)})
+	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id,
+		"seconds": seconds if seconds > 0.0 else maxf(MIN_SECONDS, text.length() * SECONDS_PER_CHAR)})
 	if _timer == null:
 		_next()
 
@@ -117,8 +118,9 @@ func _next() -> void:
 		bar.visible = false
 		return
 	var line: Dictionary = _queue.pop_front()
-	_style(int(line["speaker"]))
-	var name: String = SPEAKER_NAMES.get(int(line["speaker"]), "")
+	var corp_id := StringName(String(line.get("corporation", "")))
+	_style(int(line["speaker"]), corp_id)
+	var name := speaker_name(int(line["speaker"]), corp_id)
 	speaker_label.text = name
 	speaker_label.visible = name != ""
 	text_label.text = String(line["text"])
@@ -140,8 +142,18 @@ func _on_settings_changed() -> void:
 		bar.visible = false
 
 
+## The subtitle label: corporate lines carry their corporation's short name.
+func speaker_name(speaker: int, corporation_id: StringName = &"") -> String:
+	if speaker == RC.Voice.CORPO and corporation_id != &"":
+		var registry: Node = get_tree().root.get_node_or_null(^"ContentRegistry") if is_inside_tree() else null
+		var corp := registry.get_content(corporation_id) as CorporationData if registry != null else null
+		if corp != null:
+			return corp.display_name.split(" ")[0].to_upper()
+	return SPEAKER_NAMES.get(speaker, "")
+
+
 ## DISPATCH: clean dark strip with amber system text; everyone else: paper strip, ink.
-func _style(speaker: int) -> void:
+func _style(speaker: int, corporation_id: StringName = &"") -> void:
 	var style := StyleBoxFlat.new()
 	style.content_margin_left = 14
 	style.content_margin_right = 14
@@ -149,7 +161,8 @@ func _style(speaker: int) -> void:
 	style.content_margin_bottom = 6
 	if speaker == RC.Voice.DISPATCH or speaker == RC.Voice.CORPO:
 		style.bg_color = Color(Palette.DESK_DARK, 0.92)
-		style.border_color = Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else Palette.CORP_SOLACE
+		var corp_color := Palette.corp_color(corporation_id) if corporation_id != &"" else Palette.CORP_SOLACE
+		style.border_color = Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else corp_color
 		style.set_border_width_all(1)
 		speaker_label.add_theme_color_override("font_color", style.border_color)
 		text_label.add_theme_color_override("default_color", Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else Palette.PAPER)
@@ -217,7 +230,7 @@ func speak(key: String, speaker: int = -1, corporation_id: StringName = &"", cla
 		for set in _sets:
 			if set.lines.has(l):
 				voice = set.speaker
-	say(voice, l.text)
+	say(voice, l.text, 0.0, corporation_id)
 	return l.text
 
 
@@ -241,5 +254,5 @@ func bark(class_id: StringName, trigger: String, salt: int = 0) -> String:
 	return speak("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", _class_base.get(class_id, class_id), salt)
 
 
-func dj(salt: int = 0) -> String:
-	return speak("dj", RC.Voice.NARRATOR, &"", &"", salt)
+func dj(salt: int = 0, corporation_id: StringName = &"") -> String:
+	return speak("dj", RC.Voice.NARRATOR, corporation_id, &"", salt)

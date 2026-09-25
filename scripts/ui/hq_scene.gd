@@ -50,7 +50,7 @@ func _ready() -> void:
 			# Screenshot roster: one operative of every class (bypasses Profile unlocks,
 			# campaign-only, never saved to the profile).
 			RunManager.campaign.roster.clear()
-			for id in [&"ghost", &"rigger", &"botnet"]:
+			for id in [&"ghost", &"rigger", &"botnet", &"wrecker", &"phantom", &"overclocker", &"hivemind"]:
 				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
 			show_hq()
 		if args.has("--demo-grid") or args.has("--demo-raid"):
@@ -82,6 +82,27 @@ func _ready() -> void:
 
 
 # --- Public API (buttons and the integration tests) ---------------------------------------
+
+## Best ICE per corporation (GDD 3.4) and the road to REBEL_CELL.
+func ice_records_text() -> String:
+	var p := RunManager.profile
+	var lookup := RunManager.lookup()
+	var parts := PackedStringArray()
+	var cleared := 0
+	var total := 0
+	var need := RunManager.config().rebel_cell_unlock_ice
+	var corp_ids := lookup.ids_of_class(&"CorporationData")
+	for id in corp_ids:
+		var corp := lookup.get_content(id) as CorporationData
+		if corp == null:
+			continue
+		parts.append("%s %s" % [corp.display_name, ProfileState.ice_text(p.best_ice_for(corp.id))])
+		if not corp.generated_from_profile:
+			total += 1
+			if p.best_ice_for(corp.id) >= need:
+				cleared += 1
+	return "Best ICE: %s. REBEL_CELL opens at ICE %d everywhere (%d/%d)." % [", ".join(parts), need, cleared, total]
+
 
 ## Starts the campaign a share code describes (GAP_ANALYSIS P2 12). Locked choices fall
 ## back like the start panel (RunManager.new_campaign). Returns false for a bad code.
@@ -224,7 +245,8 @@ func _set_panel(p: Control, name: String) -> void:
 	var net := name in ["grid", "raid", "raid_playout", "raid_summary"]
 	background.visible = not net
 	wireframe.visible = net
-	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"))
+	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
+		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	if RunManager.campaign != null:
 		var band := 0
 		for t in [25, 50, 75]:
@@ -275,7 +297,7 @@ func show_start() -> void:
 	for corp in corps:
 		corp_pick.add_item(corp.display_name)
 	row.add_child(corp_pick)
-	var cap := RunManager.ice_cap()
+	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
 	var ice_label := _label("ICE (0-%d):" % cap)
 	row.add_child(ice_label)
 	var ice_spin := SpinBox.new()
@@ -321,9 +343,14 @@ func show_start() -> void:
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s (Solace %s)." % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, ProfileState.ice_text(p.best_ice), ProfileState.ice_text(p.best_ice_for(RunManager.DEFAULT_CORPORATION))]))
-	box.add_child(_label("Unlocks: %s" % (", ".join(p.unlocks) if not p.unlocks.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
+	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s." % [
+		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, ProfileState.ice_text(p.best_ice)]))
+	box.add_child(_label(ice_records_text()))
+	var unlock_names := PackedStringArray()
+	for uid in p.unlocks:
+		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
+		unlock_names.append(ud.display_name if ud != null else String(uid))
+	box.add_child(_label("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
 	box.add_child(_button("Options [Esc]", open_settings))
 	box.add_child(_button("Codex", show_codex))
 	box.add_child(_button("Back to title", RunManager.go_to_title))
@@ -349,13 +376,15 @@ func show_hq() -> void:
 	var header := HBoxContainer.new()
 	header.add_child(GraffitiTag.new("REBEL_CELL"))
 	var poster := HeatPoster.new(true)
+	poster.hot_color = Palette.corp_color(c.corporation_id)
 	poster.set_heat(c.heat, cfg.heat_max)
 	header.add_child(poster)
 	var radio := ZineNote.new("PIRATE RADIO", Vector2(260, 70))
-	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, &"", &"", c.runs_started + c.runs_completed * 7)
+	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	radio.append(dj_line.text if dj_line != null else "lo-fi loop: HQ")
 	radio.append("vs %s | ICE %d%s" % [RunManager.corporation.display_name, c.ice_level, " | ASSIST" if c.is_assisted() else ""])
-	radio.append("Code: %s" % CampaignCode.of(c, c.roster[0].class_id if not c.roster.is_empty() else RunManager.DEFAULT_CLASS))
+	var code := CampaignCode.of(c, c.roster[0].class_id if not c.roster.is_empty() else RunManager.DEFAULT_CLASS)
+	radio.append("Code: %s%s" % [code, " (local: REBEL_CELL is built from your profile)" if RunManager.corporation.generated_from_profile else ""])
 	radio.tooltip_text = dj_line.text if dj_line != null else ""
 	header.add_child(radio)
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
@@ -648,14 +677,14 @@ func show_raid() -> void:
 	_set_panel(box, "raid")
 	if _last_warned_raid != String(pending.get("raid_id", "")):
 		_last_warned_raid = String(pending.get("raid_id", ""))
-		Dialogue.raid_warning(c.corporation_id, raid.id, c.raids_won + c.raids_lost)
+		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", raid.id))), c.raids_won + c.raids_lost)
 
 
 ## Codex (GDD 8.1): everything the Cell knows, zine-styled, plus the lexicon.
 func show_codex() -> void:
 	var box := VBoxContainer.new()
 	box.add_child(GraffitiTag.new("CODEX"))
-	var entries := Codex.entries(RunManager.lookup())
+	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	var tabs := HBoxContainer.new()
 	box.add_child(tabs)
 	var body := ZineNote.new("", Vector2(900, 380))
@@ -729,11 +758,12 @@ func show_end() -> void:
 	var c := RunManager.campaign
 	Dialogue.speak("win" if c.outcome == CampaignState.Outcome.WON else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
 	var box := VBoxContainer.new()
-	box.add_child(_label("CAMPAIGN %s" % ("WON - the Renewal Engine is down" if c.outcome == CampaignState.Outcome.WON else "LOST - home server destroyed")))
+	box.add_child(_label("CAMPAIGN %s" % (("WON - %s is down" % RunManager.corporation.final_boss.display_name) if c.outcome == CampaignState.Outcome.WON else "LOST - home server destroyed")))
 	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
 		box.add_child(_label("  [%s] %s" % [b.title, b.text]))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d won / %d lost, best ICE %s; next campaigns may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), RunManager.ice_cap()]))
+	box.add_child(_label("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), RunManager.corporation.display_name, RunManager.ice_cap(c.corporation_id)]))
+	box.add_child(_label(ice_records_text()))
 	box.add_child(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()))
 	box.add_child(_button("Back to title", RunManager.go_to_title))
 	_set_panel(box, "end")

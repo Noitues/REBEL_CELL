@@ -30,6 +30,38 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 1 fixes (GAP_ANALYSIS H1)
+- **Corporation-aware everywhere**: the win text and end screen name the corporation's own
+  boss; corporate subtitle lines carry the corporation's short name ("MERIDIAN") and colour
+  (`Dialogue.speaker_name`); the boss-phase flash and the Heat poster use the corporation
+  colour; the HQ pirate radio has DJ sets per corporation (generic lines kept apart).
+- **Music per corporation**: `AudioDirector.CORP_CONTEXTS` maps generic contexts to a
+  corporation's (Solace/Meridian/Halcyon/Orbital raids get their own loop; REBEL_CELL plays
+  its slowed lo-fi at HQ and on the Grid). New code-generated loops for the three raids.
+- **ICE records**: HQ and end screen list the best ICE for every corporation and the
+  road to REBEL_CELL (n/4 cleared at ICE 10). The Target list is ordered open first, then
+  by unlock price, REBEL_CELL last, and the ICE box starts from the first entry's cap.
+- **Codex**: enemies appear once met (`RunManager.record_seen`, profile stat
+  `use_seen:<id>`); REBEL_CELL shows as "???" until reached; new Classes, Corporations and
+  Home servers sections; AFFLICT and PARASITE text generic; lexicon adds Tariff, Citation,
+  Solar Flare, Inertia, Mirror.
+- **Rescue**: every corporation has a rescue event; a rescued operative is one of the
+  classes already on the roster (seeded draw, never bypasses class unlocks).
+- **Built-in ICE Locks hold threats** (bug): raid holds only looked at deployed assets;
+  built-in node and home assets now hold too, and a threat held at the home server does
+  not damage it while held (the home defences keep firing). This makes the Ghost home work.
+- **Raid warnings** use the queued (shared) raid id on both screens, so corporation lines
+  play. **DISPATCH speaks its boss line** when a boss run starts.
+- **Assisted wins** count in `stats.assisted_wins`, not `campaigns_won` (no "Breach").
+- **Share codes for REBEL_CELL** are marked local on the HQ radio (it is built from your
+  own profile; another player's code builds from theirs).
+- **Breaker's second exclusive**: Shatter (breach the Hub 1 turn, strip 1 resistance),
+  shared with the Wrecker; every class now has two exclusives.
+- **Events per corporation**: target lowered to about 30 rollable (own + shared): the new
+  corporations have 21 of their own plus 7 shared; Solace keeps 40. Writers can add more.
+- Tests for Overclocker and Mk2 cores, home servers in raids, Mirror threat routing,
+  REBEL_CELL resume mid-netrun, and every corporation's events in its own campaign.
+
 ### 2026-09-24 — M12 Polish and reach (GAP_ANALYSIS P1 10, P2 11-13)
 - **Home-server variants 2 -> 5** (Profile unlocks, `tools/content_gen/gen_home.py`): Relay
   Nest (50 integrity spread over two nodes, 5 asset slots; 50 Schematics), Ghost (50
@@ -851,7 +883,7 @@ _(Claude Code: add questions here instead of guessing on design.)_
   (`RebelCellBuilder.MIRROR_OUTPUT_FACTOR`) after playtests.
 - **Custom-handler Daemons** (Kernel Sync, Zero Day...) are not mirrored: their code runs
   on the player's side only.
-- **Music**: REBEL_CELL uses the existing rebel_cell context.
+- **Music** (resolved in H1): each corporation now selects its own contexts.
 
 ### From M9, Halcyon Civic (2026-09-24) — decided by the implementer, confirm in playtest
 - **Ghost is strongest against the new corporations** (about 10 runs vs 20 for the others);

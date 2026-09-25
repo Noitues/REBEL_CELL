@@ -198,7 +198,7 @@ func _set_panel(p: Control) -> void:
 	_panel_host.add_child(p)
 	var s := RunManager.netrun
 	if s != null and not s.run.is_over():
-		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun")
+		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun", s.campaign.corporation_id)
 		if s.run.phase != RunState.Phase.COMBAT:
 			background.visible = true
 	if RunManager.campaign != null:

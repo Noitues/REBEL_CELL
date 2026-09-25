@@ -109,6 +109,8 @@ CardData.sanitize.description,Remove CORRUPTED from a chosen slice and gain 3 bl
 CardData.sanitize.display_name,Sanitize
 CardData.scrap_code.description,Gain 1 RAM and draw 1 card. Exhaust.
 CardData.scrap_code.display_name,Scrap Code
+CardData.shatter.description,Breach the target Hub for 1 turn and strip 1 resistance.
+CardData.shatter.display_name,Shatter
 CardData.shield_wall.description,Gain 4 shield.
 CardData.shield_wall.display_name,Shield Wall
 CardData.short_circuit.description,Disable the target Hub for 2 turns. Exhaust.
@@ -1289,6 +1291,8 @@ TerminalEventData.ev_hal_patrol_stop.text,A Halcyon patrol unit has stopped a ki
 TerminalEventData.ev_hal_patrol_stop.title,Patrol Stop
 TerminalEventData.ev_hal_permit_queue.text,The permit queue has four thousand applications. Every one of them is marked PENDING REVIEW.
 TerminalEventData.ev_hal_permit_queue.title,Permit Queue
+TerminalEventData.ev_hal_rescue.text,A Halcyon holding cell. The operative inside was booked for loitering near a Rack.
+TerminalEventData.ev_hal_rescue.title,Holding Cell
 TerminalEventData.ev_hal_resident_desk.text,A Halcyon kiosk offers resident services. A queue of fifty people waits for one working screen.
 TerminalEventData.ev_hal_resident_desk.title,Resident Services
 TerminalEventData.ev_hal_signal_control.text,Transit signal control. One command could turn every light green.
@@ -1345,6 +1349,8 @@ TerminalEventData.ev_mer_port_strike.text,The dockers are on strike. Their picke
 TerminalEventData.ev_mer_port_strike.title,Port Strike
 TerminalEventData.ev_mer_priority_lane.text,A priority freight lane runs straight through the node. Nothing in it is ever inspected.
 TerminalEventData.ev_mer_priority_lane.title,Priority Lane
+TerminalEventData.ev_mer_rescue.text,"An operative sealed in a Meridian returns crate, still breathing, labelled DAMAGED IN TRANSIT."
+TerminalEventData.ev_mer_rescue.title,Returned to Sender
 TerminalEventData.ev_mer_returns_desk.text,"The returns desk accepts anything, no questions asked, for store credit."
 TerminalEventData.ev_mer_returns_desk.title,Returns Desk
 TerminalEventData.ev_mer_scoring_terminal.text,A worker-scoring terminal shows a picker's score falling in real time.
@@ -1389,6 +1395,8 @@ TerminalEventData.ev_orb_positioning.text,"A delivery drone circles, lost: its o
 TerminalEventData.ev_orb_positioning.title,Positioning Error
 TerminalEventData.ev_orb_radar.text,A debris radar tracks everything in the sky. It has a blind spot the size of a satellite.
 TerminalEventData.ev_orb_radar.title,Debris Radar
+TerminalEventData.ev_orb_rescue.text,"An operative trapped in a ground-station cage, charged with unlicensed transmission."
+TerminalEventData.ev_orb_rescue.title,Grounded
 TerminalEventData.ev_orb_signal_price.text,The signal pricing engine raises prices whenever it detects an emergency.
 TerminalEventData.ev_orb_signal_price.title,Signal Pricing
 TerminalEventData.ev_orb_solar_panel.text,A private solar array feeds a single tower. The block below it is dark.
@@ -1439,6 +1447,8 @@ TerminalEventData.ev_rc_payment.text,"A trail of payments from every corporation
 TerminalEventData.ev_rc_payment.title,Payment Trail
 TerminalEventData.ev_rc_recruit.text,"The board where the Cell found its operatives. Someone has been recruiting again, in your name."
 TerminalEventData.ev_rc_recruit.title,Recruitment Board
+TerminalEventData.ev_rc_rescue.text,"One of your own, held by DISPATCH's Handler, halfway through a loyalty rewrite."
+TerminalEventData.ev_rc_rescue.title,Deprogramming
 TerminalEventData.ev_rc_rooftop.text,"The first relay the Cell ever built. It is still running, for someone else."
 TerminalEventData.ev_rc_rooftop.title,Relay Rooftop
 TerminalEventData.ev_rc_twin.text,"A simulation of the Cell, running a thousand campaigns a second. It loses most of them."

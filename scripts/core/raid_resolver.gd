@@ -342,7 +342,10 @@ static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: C
 				result.events.append({"type": "station_hold", "step": step, "threat": t["id"], "site": site,
 					"text": "Step %d: the operative on %s ghosts %s for %d step(s)." % [step, site, t["name"], hold]})
 				continue
-		var assets := grid.assets_on(site)
+		# Built-in assets (a home variant's lock, a node's own defence) hold too, then
+		# the deployed ones (horizontal pass 1: built-in ICE Locks were ignored).
+		var assets: Array[StringName] = _built_in_ids(site, grid, lookup)
+		assets.append_array(grid.assets_on(site))
 		for i in assets.size():
 			var asset := lookup.get_content(assets[i]) as DefenseAssetData
 			if asset == null or asset.delay_steps <= 0:
@@ -355,6 +358,20 @@ static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: C
 			result.events.append({"type": "ice_lock", "step": step, "threat": t["id"], "site": site,
 				"text": "Step %d: ICE Lock on %s holds %s for %d step(s)." % [step, site, t["name"], asset.delay_steps]})
 			break
+
+
+## Ids of the built-in assets on `site`: the home server's (home variant internals) or the
+## installed node type's own defence.
+static func _built_in_ids(site: StringName, grid: GridState, lookup: ContentLookup) -> Array[StringName]:
+	var out: Array[StringName] = []
+	if site == grid.home_site_id:
+		for id in grid.home_built_in:
+			out.append(StringName(id))
+	else:
+		var node := lookup.get_content(grid.node_type_of(site)) as NetworkNodeData
+		if node != null and node.built_in_asset != null:
+			out.append(node.built_in_asset.id)
+	return out
 
 
 static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, step: int, result: RaidResult, config: CampaignConfigData = null) -> void:
@@ -510,6 +527,8 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 	for t in _active(threats):
 		var site: StringName = t["site"]
 		var damage := int(t["damage"])
+		if site == grid.home_site_id and int(t["hold"]) > 0:
+			continue  # held at the door (a home ICE Lock): the home defences keep shooting
 		if site == grid.home_site_id:
 			grid.home_integrity = maxi(0, grid.home_integrity - damage)
 			t["reached_home"] = true

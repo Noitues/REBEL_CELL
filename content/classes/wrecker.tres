@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ClassData" load_steps=37 format=3]
+[gd_resource type="Resource" script_class="ClassData" load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/class_data.gd" id="main_script"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e1"]
@@ -24,6 +24,7 @@
 [ext_resource type="Resource" path="res://content/cards/fine_tune.tres" id="e21"]
 [ext_resource type="Resource" path="res://content/cards/mirror_flip.tres" id="e22"]
 [ext_resource type="Resource" path="res://content/cards/overdrive.tres" id="e23"]
+[ext_resource type="Resource" path="res://content/cards/shatter.tres" id="e24"]
 
 ; Wrecker: Breaker alternative (GDD 3.4, same deck + different core; decision 2026-09-24).
 
@@ -97,7 +98,7 @@ display_name = "Wrecker"
 description = "A Breaker that trades spin control for a heavier Perfect."
 starting_wheel = SubResource("wheel")
 starting_deck = Array[ExtResource("e18")]([ExtResource("e19"), ExtResource("e19"), ExtResource("e19"), ExtResource("e19"), ExtResource("e20"), ExtResource("e20"), ExtResource("e21"), ExtResource("e21"), ExtResource("e22"), ExtResource("e23")])
-exclusive_cards = Array[ExtResource("e18")]([ExtResource("e23")])
+exclusive_cards = Array[ExtResource("e18")]([ExtResource("e23"), ExtResource("e24")])
 base_hp = 60
 starting_ram = 6
 max_ram = 12

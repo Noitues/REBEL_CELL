@@ -53,7 +53,7 @@ func show_options() -> void:
 func show_codex() -> void:
 	_close_sub()
 	codex_note = ZineNote.new("CODEX", Vector2(520, 220))
-	var entries := Codex.entries(RunManager.lookup())
+	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	for section in entries:
 		codex_note.append("[b]%s[/b]" % section)
 		for item in entries[section]:
