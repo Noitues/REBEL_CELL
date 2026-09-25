@@ -57,3 +57,75 @@ static func owner_of(node: Node) -> Control:
 	if node == null or not node.is_inside_tree():
 		return null
 	return node.get_viewport().gui_get_focus_owner()
+
+
+## D-pad neighbours for a whole panel: controls in a horizontal container form one row,
+## a lone control is a row of its own; left/right walk a row, up/down move to the same
+## column (clamped) of the row above/below. Tilted stickers, SpinBoxes and long lists
+## defeat Godot's geometric search, so panels link explicitly (horizontal pass 6).
+static func link_layout(root: Node) -> void:
+	var rows: Array = []
+	_collect_rows(root, rows)
+	for r in rows.size():
+		var row: Array = rows[r]
+		for i in row.size():
+			var c: Control = row[i]
+			if i > 0:
+				c.focus_neighbor_left = c.get_path_to(row[i - 1])
+			if i + 1 < row.size():
+				c.focus_neighbor_right = c.get_path_to(row[i + 1])
+			if r > 0:
+				var up: Array = rows[r - 1]
+				c.focus_neighbor_top = c.get_path_to(up[mini(i, up.size() - 1)])
+			if r + 1 < rows.size():
+				var down: Array = rows[r + 1]
+				c.focus_neighbor_bottom = c.get_path_to(down[mini(i, down.size() - 1)])
+
+
+static func _usable(c: Node) -> bool:
+	if not (c is Control):
+		return false
+	var ctl := c as Control
+	if not ctl.is_visible_in_tree() or ctl.is_queued_for_deletion() or ctl.focus_mode == Control.FOCUS_NONE:
+		return false
+	if ctl is BaseButton:
+		return not (ctl as BaseButton).disabled
+	return ctl is LineEdit and not (ctl.get_parent() is SpinBox)
+
+
+static func _collect_rows(node: Node, rows: Array) -> void:
+	for child in node.get_children():
+		if not (child is Control) or child.is_queued_for_deletion() or not (child as Control).is_visible_in_tree():
+			continue
+		if child is SpinBox:
+			continue  # use the -/+ buttons beside it
+		if _usable(child):
+			rows.append([child])
+			continue
+		if child is HBoxContainer or child is HFlowContainer:
+			var row: Array = []
+			for g in child.get_children():
+				if g is SpinBox:
+					continue
+				if _usable(g):
+					row.append(g)
+				else:
+					var inner := _first_usable(g)
+					if inner != null:
+						row.append(inner)
+			if not row.is_empty():
+				rows.append(row)
+			continue
+		_collect_rows(child, rows)
+
+
+static func _first_usable(node: Node) -> Control:
+	for child in node.get_children():
+		if child is SpinBox:
+			continue
+		if _usable(child):
+			return child
+		var deeper := _first_usable(child)
+		if deeper != null:
+			return deeper
+	return null

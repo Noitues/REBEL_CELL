@@ -30,6 +30,18 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 6 fixes (GAP_ANALYSIS H6)
+- **Every panel is D-pad complete**: `UiFocus.link_layout` groups a panel's focusable
+  controls into rows (a horizontal container is a row, a lone control is its own row),
+  chains left/right within rows and up/down to the same column of the next row; SpinBox
+  text fields are skipped (their -/+ buttons are used). HQ, title and netrun panels link on
+  open, so reward and Modem stickers, the corporation picker and every Grid row are
+  reachable; the Grid list scrolls to follow focus. Left from SEND IT returns to the hand.
+- **Reward stickers** no longer show number-key hints that do nothing.
+- **Assist label** reads its numbers from the config.
+- `tests/unit/test_pad_reachability.gd` walks focus neighbours from the starting focus and
+  asserts every usable control is reached (start panel, Grid, rewards, Modem, combat).
+
 ### 2026-09-24 — Horizontal pass 5 fixes (GAP_ANALYSIS H5)
 - **Card previews follow navigation only**: a card shows its preview when the player moves
   focus onto it (D-pad, arrows, Shift+Tab); nudges, card keys and the automatic refocus

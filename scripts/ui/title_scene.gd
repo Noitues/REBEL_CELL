@@ -48,6 +48,7 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
 
 

@@ -313,6 +313,7 @@ func _link_hand_focus() -> void:
 		else:
 			c.focus_neighbor_right = c.get_path_to(_end_turn_button)
 			c.focus_next = c.focus_neighbor_right
+			_end_turn_button.focus_neighbor_left = _end_turn_button.get_path_to(c)
 
 
 func _unhandled_input(event: InputEvent) -> void:

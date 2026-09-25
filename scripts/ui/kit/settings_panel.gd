@@ -57,7 +57,8 @@ func _init() -> void:
 	reduce_check = _check("Reduce effects (no scanlines, flicker, chromatic, distortion)", Settings.reduce_effects, Settings.set_reduce_effects)
 	flash_check = _check("Flash limiter (max 3 flashes per second)", Settings.flash_limiter, Settings.set_flash_limiter)
 	subtitles_check = _check("Subtitles with speaker names", Settings.subtitles, Settings.set_subtitles)
-	assist_check = _check("Assist mode for new campaigns (+1 free nudge a turn, +25% HP; no ICE records or achievements)", Settings.assist_mode, Settings.set_assist_mode)
+	var cfg := RunManager.config()
+	assist_check = _check("Assist mode for new campaigns (+%d free nudge a turn, +%d%% HP; no ICE records or achievements)" % [cfg.assist_free_nudges, roundi((cfg.assist_hp_multiplier - 1.0) * 100.0)], Settings.assist_mode, Settings.set_assist_mode)
 	assist_check.name = "AssistCheck"
 	scale_slider = _slider("Text scale", Settings.TEXT_SCALE_MIN, Settings.TEXT_SCALE_MAX, 0.1, Settings.text_scale, Settings.set_text_scale)
 	master_slider = _slider("Master volume", 0.0, 1.0, 0.05, Settings.master_volume, Settings.set_master_volume)

@@ -244,6 +244,7 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
 	var net := name in ["grid", "raid", "raid_playout", "raid_summary"]
@@ -837,6 +838,7 @@ func _build_ui() -> void:
 	_status = Label.new()
 	root.add_child(_status)
 	var scroll := ScrollContainer.new()
+	scroll.follow_focus = true  # pad focus scrolls long lists (Grid Sites)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()

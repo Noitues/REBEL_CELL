@@ -196,6 +196,7 @@ func _set_panel(p: Control) -> void:
 	_panel = p
 	combat_scene = null
 	_panel_host.add_child(p)
+	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
 	var s := RunManager.netrun
 	if s != null and not s.run.is_over():
@@ -337,6 +338,7 @@ func _show_reward() -> void:
 		var cost := int(res.get("ram_cost")) if res is CardData else -1
 		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i)
 		sticker.custom_minimum_size = Vector2(150, 170)
+		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		sticker.tooltip_text = Codex.describe(res)
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
