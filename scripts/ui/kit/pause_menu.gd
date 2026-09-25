@@ -18,10 +18,22 @@ var _return_focus: Control = null
 ## Menu size: wide enough for the Controls grid and Accessibility switches at text scale
 ## 1.6 (the content scrolls vertically inside it).
 const MENU_SIZE := Vector2(760, 520)
+## Dim over the game while paused.
+const BACKDROP_COLOR := Color(0, 0, 0, 0.35)
+
+
+## Full-screen, click-eating backdrop behind the menu: no click reaches the game (H17).
+var _backdrop: ColorRect
 
 
 func _init() -> void:
 	custom_minimum_size = MENU_SIZE
+	_backdrop = ColorRect.new()
+	_backdrop.name = "Backdrop"
+	_backdrop.color = BACKDROP_COLOR
+	_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	_backdrop.focus_mode = Control.FOCUS_NONE
+	add_child(_backdrop)
 	var panel := ZinePanel.new("PAUSED", 0.0)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
@@ -52,6 +64,7 @@ func _init() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED or what == NOTIFICATION_READY:
 		if is_visible_in_tree():
+			_cover_screen.call_deferred()
 			var owner := UiFocus.owner_of(self)
 			if owner != null and not is_ancestor_of(owner):
 				_return_focus = owner
@@ -62,6 +75,14 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_PREDELETE or what == NOTIFICATION_EXIT_TREE:
 		if _return_focus != null and is_instance_valid(_return_focus) and _return_focus.is_inside_tree():
 			_return_focus.grab_focus.call_deferred()
+
+
+## Stretches the backdrop over the whole viewport, wherever the menu sits.
+func _cover_screen() -> void:
+	if _backdrop == null or not is_inside_tree():
+		return
+	_backdrop.size = get_viewport_rect().size
+	_backdrop.global_position = Vector2.ZERO
 
 
 func _add(text: String, on_pressed: Callable) -> void:

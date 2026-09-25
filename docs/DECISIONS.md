@@ -30,12 +30,26 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-25 — Horizontal pass 17 fixes (GAP_ANALYSIS H17)
+- **The pause menu blocks the mouse**: a full-screen backdrop (`MOUSE_FILTER_STOP`, dim)
+  sits behind it, so clicking SEND IT, a map node or an HQ button behind the menu does
+  nothing (H15 blocked keys and pad only).
+- **A Shunt resolution is the landing everywhere**: its slice's CORRUPTED bite and
+  OVERCLOCKED burn-out apply, Stolen Intent fires on a shunted Miss, and the operative's
+  drones follow the slot that actually resolves (GDD 5.2).
+- **A copy resolves the neighbour's slice and temporary status only**: not its Firmware
+  and not the permanent status that Firmware grants (Burner's Overclock without its Heat).
+- **Rebinding refuses 1-9, Enter and Esc and any key another action holds**
+  (`Settings.bind_error`); the button says why and keeps waiting for another key.
+- Balance after H17: Breaker ICE 5 3/8 in 48.1 runs (was 4/8 in 42.8).
+
 ### 2026-09-25 — Horizontal pass 16 fixes (GAP_ANALYSIS H16)
 - **A landing is the pointer's slice, or what a Shunt resolves instead**
   (`CombatResolver.is_landing`). A Mirror copy of a neighbour is not a landing: Daemons
   don't fire on it (a Mirror Perfect used to fire Kernel Sync, Clean Signal, Botnet Seed
   three times), and a copied Miss doesn't resolve the Miss for Cold Exit, Zero Day or the
-  consecutive-Perfect count. The copies still resolve the slice, its Firmware and Hub.
+  consecutive-Perfect count. The copies still resolve the slice and the Hub (H17: not the
+  neighbour's Firmware or the permanent status it grants).
 - **A MULTIPLY or MIGRATE phase stops an earlier orbit**: Commons Array's 33% readers
   "lock on" as its phase line says.
 - **Rebinding captures every key** in `_input` (arrow keys, Tab), before focus navigation.
@@ -1126,7 +1140,7 @@ and annotated in the GDD where it changes a rule.
 ## Open questions for the designer
 
 - **Pacing after H15/H16.** With Daemons firing once per landing the bot's Breaker needs
-  about 43 runs at ICE 5 (4/8 won) against the GDD 11.8 average of 24. Should enemies
+  about 43 runs at ICE 5 (4/8 won), 48 after H17 (3/8), against the GDD 11.8 average of 24. Should enemies
   come down, or Daemons / rewards go up, now that the multi-fire bugs are gone?
 - **Rigger at ICE 0 (H15).** With Daemons firing once per Perfect the bot's Rigger wins
   5/8 at ICE 0 in about 36 runs (other classes 6-8/8). Should the Rigger's hub or deck

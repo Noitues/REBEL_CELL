@@ -162,6 +162,22 @@ func rebind(action: StringName, physical_keycode: int) -> void:
 	_apply()
 
 
+## Keys a rebind may not take: the card keys (GDD 9.5), Enter (confirm) and Esc.
+const RESERVED_KEYS: Array[int] = [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9,
+	KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]
+
+
+## Why `physical_keycode` can't be bound to `action` ("" when it can): reserved, or
+## already held by another rebindable action.
+func bind_error(action: StringName, physical_keycode: int) -> String:
+	if RESERVED_KEYS.has(physical_keycode):
+		return "%s is reserved" % OS.get_keycode_string(physical_keycode)
+	for other in REBINDABLE:
+		if other != action and key_for(other) == physical_keycode:
+			return "%s is used by %s" % [OS.get_keycode_string(physical_keycode), String(other)]
+	return ""
+
+
 ## Restores the project's default bindings.
 func reset_keybinds() -> void:
 	keybinds.clear()

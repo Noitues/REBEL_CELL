@@ -79,17 +79,18 @@ func test_settings_panel_sections_and_rebind_capture() -> void:
 	panel.begin_rebind(&"end_turn")
 	assert_eq(panel.rebinding, &"end_turn")
 	var ev := InputEventKey.new()
-	ev.physical_keycode = KEY_ENTER
+	ev.physical_keycode = KEY_G  # a free key (H17: Enter and 1-9 are reserved)
 	ev.pressed = true
+	assert_eq(Settings.bind_error(&"end_turn", KEY_G), "")
 	assert_true(panel.handle_key(ev))
-	assert_eq(Settings.key_for(&"end_turn"), KEY_ENTER)
+	assert_eq(Settings.key_for(&"end_turn"), KEY_G)
 	assert_eq(panel.rebinding, &"")
 	panel.begin_rebind(&"end_turn")
 	var esc := InputEventKey.new()
 	esc.physical_keycode = KEY_ESCAPE
 	esc.pressed = true
 	assert_true(panel.handle_key(esc))
-	assert_eq(Settings.key_for(&"end_turn"), KEY_ENTER, "Escape cancels without rebinding")
+	assert_eq(Settings.key_for(&"end_turn"), KEY_G, "Escape cancels without rebinding")
 
 
 func test_achievements_are_earned_once_and_profile_extras_round_trip() -> void:

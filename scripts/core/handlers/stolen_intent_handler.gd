@@ -18,7 +18,7 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	var mine: Dictionary = {}
 	var theirs: Dictionary = {}
 	for r in resolutions:
-		if r.get("derived", false) or int(r["pointer_index"]) != 0:
+		if not CombatResolver.is_landing(r) or int(r["pointer_index"]) != 0:
 			continue
 		if r["owner"] == state.player:
 			mine = r

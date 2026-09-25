@@ -159,6 +159,12 @@ func handle_key(event: InputEventKey) -> bool:
 		rebinding = &""
 		show_section("Controls")
 		return true
+	var err := Settings.bind_error(rebinding, event.physical_keycode)
+	if err != "":
+		# Keep waiting for another key, and say why this one was refused.
+		if _key_buttons.has(rebinding):
+			(_key_buttons[rebinding] as Button).text = "%s - press another" % err
+		return true
 	Settings.rebind(rebinding, event.physical_keycode)
 	rebinding = &""
 	show_section("Controls")

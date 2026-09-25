@@ -429,7 +429,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 		if r["slice"].slice_type in STATUS_TYPES or r["slice"].slice_type == RC.SliceType.MISS:
 			_resolve_pointer(s, r, rng, events)
 	for r in resolutions:
-		if r["status"] == RC.Status.CORRUPTED and not r.get("derived", false):
+		if r["status"] == RC.Status.CORRUPTED and is_landing(r):
 			_corrupted_trigger(s, r, events)
 	var end_ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_END, end_ctx, _player_listeners(s), rng, events)
@@ -548,10 +548,9 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 				continue
 			out.append(_readout(s, c, 0))
 			continue
+		var first := out.size()
 		for i in c.wheel.pointer_ticks.size():
 			var r := _readout(s, c, i)
-			if c == s.player:
-				player_slots.append(int(r["slice_index"]))
 			var fw: FirmwareData = r["firmware"]
 			if fw == null or fw.neighbor_rule == RC.NeighborRule.NONE:
 				out.append(r)
@@ -569,6 +568,11 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 				if fw.neighbor_rule == RC.NeighborRule.SHUNT:
 					n["landing"] = true  # the shunted slice resolves instead of the landing
 				out.append(n)
+		# GDD 5.2: a drone triggers when its slice does, so after the neighbour rules.
+		if c == s.player:
+			for k in range(first, out.size()):
+				if is_landing(out[k]):
+					player_slots.append(int(out[k]["slice_index"]))
 	return out
 
 
@@ -578,9 +582,12 @@ func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: 
 	var d := r.duplicate()
 	d["slice_index"] = slot
 	d["slice"] = fx.slice_of(c.wheel, slot)
+	# The neighbour's Firmware (and the permanent status it grants, Burner's Overclock)
+	# belongs to that socket's own landing: a copy resolves only the slice and its
+	# temporary status (H17).
 	d["firmware"] = null
 	d["status"] = c.wheel.slice_statuses[slot]
-	d["permanent_status"] = fx.permanent_status(c.wheel, slot)
+	d["permanent_status"] = RC.Status.NONE
 	d["derived"] = true
 	d["extra_multiplier"] = multiplier
 	return d
@@ -697,7 +704,7 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
 		_landing_triggers(s, r, slice, ctx, per_instance, rng, events)
 	_landing_triggers(s, r, slice, ctx, once, rng, events)
-	if r["status"] == RC.Status.OVERCLOCKED and not r.get("derived", false):
+	if r["status"] == RC.Status.OVERCLOCKED and is_landing(r):
 		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})
