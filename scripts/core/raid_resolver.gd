@@ -52,7 +52,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 	result.home_before = grid.home_integrity
 	var entries := entry_site_ids if not entry_site_ids.is_empty() else default_entry_sites(campaign, grid_data)
 	var threats: Array[Dictionary] = []
-	var waves := _waves(raid, entries, campaign, strength_pct, extra_waves)
+	var waves := _waves(raid, entries, campaign, config, strength_pct, extra_waves)
 	_prepare_links(waves, grid, grid_data, result)
 	var before := {}
 	for id in grid.claimed_ids():
@@ -163,7 +163,7 @@ static func default_entry_sites(campaign: CampaignState, grid_data: CityGridData
 
 # --- Internals -----------------------------------------------------------------------------
 
-static func _waves(raid: RaidData, entries: Array[StringName], campaign: CampaignState, strength_pct: float, extra_waves: int = 0) -> Dictionary:
+static func _waves(raid: RaidData, entries: Array[StringName], campaign: CampaignState, config: CampaignConfigData, strength_pct: float, extra_waves: int = 0) -> Dictionary:
 	var waves := {}
 	var counter := 0
 	var scale := 1.0 + maxf(0.0, strength_pct) / 100.0
@@ -177,7 +177,7 @@ static func _waves(raid: RaidData, entries: Array[StringName], campaign: Campaig
 			wave_list.append(wave_list[wave_list.size() - 1])
 	for wi in wave_list.size():
 		var wave := wave_list[wi]
-		var step := 1 + wi * 5
+		var step := 1 + wi * config.raid_wave_interval
 		var wave_entries: Array[StringName] = entries
 		if not wave.entry_site_ids.is_empty():
 			wave_entries = wave.entry_site_ids
@@ -186,7 +186,7 @@ static func _waves(raid: RaidData, entries: Array[StringName], campaign: Campaig
 			var td := wave.threats[ti]
 			if td == null:
 				continue
-			var heat_scale := 1.0 + td.heat_integrity_scaling * (campaign.heat / 10)
+			var heat_scale := 1.0 + td.heat_integrity_scaling * (campaign.heat / maxi(1, config.raid_heat_scaling_step))
 			list.append({
 				"id": "t%d" % counter, "content_id": td.id, "name": td.display_name if td.display_name != "" else String(td.id),
 				"integrity": roundi(td.integrity * scale * heat_scale), "damage": roundi(td.damage * scale),

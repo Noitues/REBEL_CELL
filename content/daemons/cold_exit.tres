@@ -10,3 +10,4 @@ display_name = "Cold Exit"
 description = "Finish a netrun without the Miss slice resolving: -3 Heat."
 cycle_cost = 200
 custom_handler = ExtResource("h")
+amount = 3

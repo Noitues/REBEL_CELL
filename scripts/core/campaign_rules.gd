@@ -234,7 +234,7 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 		if p != null and p.finale != null:
 			events.append({"type": "story_beat", "beat_id": p.finale.id, "text": "[%s] %s" % [p.finale.title, p.finale.text]})
 		return events
-	if run.kind == "netrun" and is_patrol(campaign, site):
+	if run.kind == "netrun" and (run.patrol or is_patrol(campaign, site)):
 		events.append({"type": "patrol_complete", "site": site.id, "text": "Patrol of %s complete: no objective, the Grid is unchanged." % site.id})
 		if lookup != null:
 			events.append_array(_node_passives_on_completion(campaign, corp, config, lookup))
@@ -245,6 +245,8 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 		return events
 	match site_objective(campaign, site):
 		RC.SiteObjective.EXPLOIT:
+			if campaign.has_exploit(site.exploit_type):
+				return events  # already held: no second copy, Heat or story beat
 			campaign.exploits.append(site.exploit_type)
 			events.append({"type": "exploit", "exploit": site.exploit_type, "text": "Exploit extracted: %s (%d held)." % [RC.ExploitType.keys()[site.exploit_type], campaign.exploits.size()]})
 			var exploit_heat := config.exploit_heat + int(campaign.rule_modifier(config, RC.RuleModifierType.EXPLOIT_HEAT))

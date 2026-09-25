@@ -1,6 +1,6 @@
 extends RefCounted
-## Zero Day (GDD 6.2): a Perfect on the Miss slice resolves as a 3x Crit against the
-## pointer target (three times the wheel's best CRIT output, else its best ATTACK).
+## Zero Day (GDD 6.2): a Perfect on the Miss slice resolves as an `amount`x Crit against
+## the pointer target (that multiple of the wheel's best CRIT output, else its best ATTACK).
 
 
 func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Dictionary]:
@@ -19,8 +19,10 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 			best_crit = maxi(best_crit, s.base_output)
 		elif s.slice_type == RC.SliceType.ATTACK:
 			best_atk = maxi(best_atk, s.base_output)
-	var amount := 3 * (best_crit if best_crit > 0 else best_atk)
-	var events: Array[Dictionary] = [{"type": "zero_day", "amount": amount, "text": "Zero Day: the Perfect Miss becomes a 3x Crit for %d." % amount}]
+	var d: DaemonData = context.get("daemon")
+	var mult := d.amount if d != null else 0
+	var amount := mult * (best_crit if best_crit > 0 else best_atk)
+	var events: Array[Dictionary] = [{"type": "zero_day", "amount": amount, "text": "Zero Day: the Perfect Miss becomes a %dx Crit for %d." % [mult, amount]}]
 	for q in target.wheel.pointer_ticks.size():
 		var victim: CombatantState = target
 		var guard: CombatantState = state.satellite_at(target.id, target.wheel.slice_at(q))

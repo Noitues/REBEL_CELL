@@ -184,9 +184,10 @@ func drift_stage() -> int:
 	if rm == null or rm.profile == null:
 		return 0
 	var played: int = rm.profile.campaigns_started
-	if played >= 6:
+	var cfg: CampaignConfigData = rm.config()
+	if played >= cfg.dispatch_drift_late:
 		return 2
-	if played >= 3:
+	if played >= cfg.dispatch_drift_mid:
 		return 1
 	return 0
 

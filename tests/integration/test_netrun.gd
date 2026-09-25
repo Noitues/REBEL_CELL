@@ -293,10 +293,15 @@ func test_cold_exit_and_scrubber_run_level_daemons() -> void:
 	s.run.operative.daemon_ids.append(&"scrubber")
 	s.run.operative.daemon_ids.append(&"cold_exit")
 	var path := _path_to(s, _is_final)
+	var last: StringName = path.pop_back()
 	_walk(s, path)
+	s.enter_node(last)
+	_auto_fight(s)
+	var fight_events := s.last_events.duplicate()  # the Rack capture (rewards come next)
+	_settle(s)
 	assert_eq(s.run.outcome, RunState.Outcome.COMPLETED)
 	var heat_events := []
-	for e in s.last_events:
+	for e in fight_events:
 		if e.get("type", "") == "heat":
 			heat_events.append(e)
 	var scrubbed := false
@@ -459,3 +464,35 @@ func test_tier_2_scales_enemies_and_rewards() -> void:
 	assert_eq(enemy.max_hp, roundi(base * 1.6))
 	_auto_fight(s)
 	assert_true(s.run.cycles >= roundi(_cfg.cycles_router_range.x * 1.7), "rewards x1.7 (%d)" % s.run.cycles)
+
+
+## Horizontal pass 12: the final Rack's card offer is chosen before the run completes
+## (it used to be dropped), and the final Rack offers no Daemon (the layer-4 Rack does).
+func test_the_final_rack_rewards_can_be_claimed() -> void:
+	var s := _start()
+	var path := _path_to(s, _is_final)
+	for id in path:
+		s.enter_node(id)
+		if s.in_combat():
+			_auto_fight(s)
+		if id == path[path.size() - 1]:
+			break
+		_settle(s)
+	assert_eq(s.run.phase, RunState.Phase.REWARD, "the final Rack waits for its offers")
+	assert_false(s.run.is_over())
+	var card := &""
+	while s.run.phase == RunState.Phase.REWARD:
+		var offer := s.current_reward()
+		assert_ne(offer["kind"], "daemon", "no Daemon at the final Rack")
+		if offer["kind"] == "card":
+			card = StringName(String(offer["options"][0]))
+		if offer["kind"] == "firmware":
+			s.skip_reward()
+		else:
+			s.choose_reward(0)
+	assert_ne(card, &"", "a card was offered")
+	assert_true(s.run.is_over())
+	assert_eq(s.run.outcome, RunState.Outcome.COMPLETED)
+	assert_true(s.campaign.get_operative(&"op_1").deck.has(card), "the card goes home")
+	var racks := s.run.visited.filter(func(n: StringName) -> bool: return s.run.map.get_node(n)["type"] == RC.InfilNodeType.SERVER_RACK)
+	assert_eq(s.run.racks_captured, racks.size(), "every Rack on the path is counted")

@@ -10,4 +10,6 @@ extends Resource
 @export var cycle_cost: int = 200
 @export var triggered_effects: Array[TriggeredEffectData] = []
 @export var custom_handler: Script
+## Tuning number a custom handler reads (Heat removed, damage per Perfect, multiplier, cap).
+@export var amount: int = 0
 @export var icon: Texture2D

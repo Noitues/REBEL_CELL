@@ -221,6 +221,7 @@ func run_triggers(state: CombatState, trigger: int, ctx: Dictionary, listeners: 
 			var sub_h := ctx.duplicate()
 			sub_h["trigger"] = trigger
 			sub_h["source_id"] = listener["source_id"]
+			sub_h["daemon"] = listener.get("daemon")
 			sub_h["fx"] = self
 			events.append_array(handler_script.new().handle(sub_h, state, rng))
 		var effects: Array = listener["effects"]

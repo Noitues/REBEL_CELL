@@ -152,6 +152,12 @@ extends Resource
 @export var shop_card_stock: int = 3
 @export var shop_firmware_stock: int = 2
 @export var shop_daemon_stock: int = 1
+## Raid pacing: steps between waves, and the Heat per step of threat integrity scaling.
+@export var raid_wave_interval: int = 5
+@export var raid_heat_scaling_step: int = 10
+## DISPATCH voice drift (GDD 8.2): campaigns started before stage 1 and stage 2 lines.
+@export var dispatch_drift_mid: int = 3
+@export var dispatch_drift_late: int = 6
 ## Rookie price when no operative is alive (decision 2026-09-24): the cell can always rebuild.
 @export var emergency_rookie_cost: int = 0
 

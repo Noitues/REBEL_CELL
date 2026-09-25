@@ -10,3 +10,4 @@ display_name = "Kernel Sync"
 description = "Each Perfect: +1 damage for the rest of the combat."
 cycle_cost = 200
 custom_handler = ExtResource("h")
+amount = 1

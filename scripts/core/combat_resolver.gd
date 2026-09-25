@@ -369,13 +369,14 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	fx.run_triggers(s, RC.Trigger.ON_RESOLVE, resolve_ctx, _player_listeners(s), rng, events)
 	# Consecutive Perfects are counted on the player's first pointer, before hooks run.
 	for r in resolutions:
+		if r["owner"] == s.player and not r.get("derived", false) and r["slice"].slice_type == RC.SliceType.MISS:
+			s.miss_resolved = true  # any read head, Twin Pointer's included (GDD 6.2 Cold Exit)
 		if r["owner"] == s.player and r["pointer_index"] == 0 and not r.get("derived", false):
 			s.consecutive_perfects = s.consecutive_perfects + 1 if r["tier"] == RC.PrecisionTier.PERFECT else 0
 			if r["tier"] == RC.PrecisionTier.PERFECT and int(s.flags.get("steady_hand", 0)) > 0:
 				s.ram_bonus_next_turn += int(s.flags["steady_hand"])
 				events.append({"type": "steady_hand", "amount": s.ram_bonus_next_turn, "text": "Steady Hand: Perfect at end of turn, +%d RAM next turn." % s.ram_bonus_next_turn})
-			if r["slice"].slice_type == RC.SliceType.MISS:
-				s.miss_resolved = true
+
 	for r in resolutions:
 		events.append({"type": "pointer", "owner": r["owner"].id, "pointer_index": r["pointer_index"], "tick": r["tick"],
 			"slice_index": r["slice_index"], "offset": r["offset"], "tier": r["tier"], "segment_index": r["segment_index"],
@@ -588,7 +589,7 @@ func _daemon_listeners(s: CombatState) -> Array:
 	for id in s.daemon_ids:
 		var d := lookup.get_content(id) as DaemonData
 		if d != null:
-			out.append({"source_id": d.id, "effects": d.triggered_effects, "handler": d.custom_handler})
+			out.append({"source_id": d.id, "effects": d.triggered_effects, "handler": d.custom_handler, "daemon": d})
 	return out
 
 

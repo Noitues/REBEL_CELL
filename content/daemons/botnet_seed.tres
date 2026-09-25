@@ -11,3 +11,4 @@ description = "Each Perfect deploys a 1-HP drone on the triggered slice (max 2).
 rarity = 1
 cycle_cost = 200
 custom_handler = ExtResource("h")
+amount = 2

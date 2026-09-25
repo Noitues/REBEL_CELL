@@ -47,6 +47,9 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
 	var left_post := s._leave_post(operative_id)
+	if corp != null and corp.city_grid != null and p_campaign.grid != null:
+		var site := CampaignRules.site_data(corp, site_id)
+		s.run.patrol = site != null and CampaignRules.is_patrol(p_campaign, site)
 	var elite_pct := p_campaign.elite_frequency_pct(s.config)
 	var shop_delta := 0
 	for m in p_campaign.pending_complications:
@@ -388,17 +391,28 @@ func _finish_combat() -> void:
 		_offer(&"firmware", _pools["common_firmware"], config.router_firmware_choices, rewards)
 	if is_rack:
 		_capture_rack()
-		var daemons: Array = []
-		for d in _pools["daemons"]:
-			if not run.operative.daemon_ids.has(d):
-				daemons.append(d)
-		_offer(&"daemon", daemons, config.rack_daemon_choices, rewards)
+		# The layer-4 Rack offers a Daemon; the final Rack's prize is the Site's objective
+		# (GDD 4.2) plus the fight's card offer (decision 2026-09-24, H12).
+		if not _at_final_rack():
+			var daemons: Array = []
+			for d in _pools["daemons"]:
+				if not run.operative.daemon_ids.has(d):
+					daemons.append(d)
+			_offer(&"daemon", daemons, config.rack_daemon_choices, rewards)
 	combat = null
-	if is_rack and run.current_node_id == run.map.final_node_id():
-		_complete_run()
+	if is_rack and _at_final_rack():
+		if run.pending_rewards.is_empty():
+			_complete_run()
+		else:
+			run.phase = RunState.Phase.REWARD  # the run completes once the Rack's offers are resolved
 		return
 	run.phase = RunState.Phase.REWARD if not run.pending_rewards.is_empty() else RunState.Phase.MAP
 	_maybe_raid_interlude()
+
+
+## Whether the operative stands on the captured final Server Rack of a netrun.
+func _at_final_rack() -> bool:
+	return run.kind == "netrun" and run.map != null and run.current_node_id == run.map.final_node_id() and run.racks_captured > 0
 
 
 ## Server Rack capture (GDD 4.2, 11.5): bank Schematics and assets, add Heat (or what a
@@ -407,6 +421,7 @@ func _capture_rack() -> void:
 	var tier_index := clampi(run.tier - 1, 0, 3)
 	var schematics := config.rack_schematics_by_tier[tier_index]
 	run.banked_schematics += schematics
+	run.racks_captured += 1
 	run.banked_assets.append_array(run.unbanked_assets)
 	run.unbanked_assets.clear()
 	last_events.append({"type": "rack_captured", "schematics": schematics,
@@ -472,6 +487,9 @@ func skip_reward() -> Array[Dictionary]:
 
 func _after_reward() -> void:
 	if run.pending_rewards.is_empty():
+		if _at_final_rack():
+			_complete_run()
+			return
 		run.phase = RunState.Phase.MAP
 		_maybe_raid_interlude()
 
@@ -970,7 +988,7 @@ func _run_daemon_hooks(trigger: int) -> Array[Dictionary]:
 						out.append({"type": "campaign_effect", "effect": e.type, "amount": e.amount, "source_id": d.id,
 							"text": "%s: %s %+d." % [d.id, RC.EffectType.keys()[e.type], e.amount]})
 		if d.custom_handler != null:
-			out.append_array(d.custom_handler.new().handle({"trigger": trigger, "source_id": d.id, "run": run}, run, streams.get_stream(&"events")))
+			out.append_array(d.custom_handler.new().handle({"trigger": trigger, "source_id": d.id, "daemon": d, "run": run}, run, streams.get_stream(&"events")))
 	for e in out:
 		last_events.append(e)
 	return out

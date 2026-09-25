@@ -30,6 +30,33 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 12 fixes (GAP_ANALYSIS H12)
+- **One profile for every campaign slot** (GDD 3.4, TECH_SPEC 8): slots 1-3 and the default
+  slot share `profile.json`; deleting a slot's campaign keeps it. Test slots (`gut_` prefix)
+  keep a private profile. A per-slot profile from before H12 is read when the shared one
+  is missing.
+- **The final Rack's rewards are claimable**: its card (and any Firmware) offer now waits
+  in the REWARD phase and the run completes once it is resolved. **The final Rack offers
+  no Daemon**; the layer-4 Rack is the Rack Daemon source. With a Daemon at both Racks the
+  bot carried 12-13 Daemons into the boss and won ICE 5 in 8.8 runs (GDD 11.8: about 24).
+  Raising elite and boss HP x1.3 and output x1.25 barely changed that (9.5 runs). Without
+  the final Daemon: ICE 0 7/8 won in 31 runs, ICE 5 5/8 in 32.9 (H11: 4/8 in 30.1), on the
+  harder side of the target (the "when in doubt, stronger" rule).
+- **A patrol stays a patrol**: `RunState.patrol` is set at launch, so a raid Seizing the
+  Site mid-run doesn't turn the completion into a clear. An Exploit already held is never
+  extracted again (no second copy, Heat or story beat).
+- **Long labels wrap on every HQ and title panel** (`UiWrap.fit`): labels stacked in a
+  column wrap, and any row label or button wider than 560 px wraps at 560. Title slot rows
+  are flow rows. Tested at text scale 1.0 and 1.6.
+- **Tuning moved to content and config**: `DaemonData.amount` (schema change) holds Cold
+  Exit 3, Scrubber 1, Kernel Sync 1, Zero Day 3 and Botnet Seed 2. Config gains
+  `raid_wave_interval` 5, `raid_heat_scaling_step` 10, `dispatch_drift_mid` 3 and
+  `dispatch_drift_late` 6.
+- **Any player read head resolving the Miss spoils Cold Exit**, Twin Pointer's second
+  one included. The consecutive-Perfect count stays on the first pointer.
+- **Racks captured are counted** (`RunState.racks_captured`), no longer estimated from
+  banked Schematics.
+
 ### 2026-09-24 — Horizontal pass 11 fixes (GAP_ANALYSIS H11)
 - **Stationed operatives leave their post to run** (GDD 5.4, "instead of running"):
   launching a stationed operative recalls it (the launch picker says "leaves <site>"), and
@@ -999,6 +1026,11 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **Final Rack Daemon (H12).** The final Rack offers a card, not a Daemon (a Daemon at
+  both Racks made campaigns about three times faster). Should the final Rack get something
+  else, such as a rare Daemon on T4 only or an extra Schematics payout? ICE 0 now runs about
+  31 runs: is that too long for the entry level?
 _(Claude Code: add questions here instead of guessing on design.)_
 
 ### From M11, REBEL_CELL (2026-09-24) — decided by the implementer, confirm in playtest

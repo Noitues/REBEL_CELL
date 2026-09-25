@@ -9,6 +9,8 @@ signal run_ended(netrun: NetrunSession)
 signal campaign_ended(campaign: CampaignState)
 
 const DEFAULT_SLOT := "current"
+## Save slots whose name starts with this keep a private profile (the GUT tests use it).
+const TEST_SLOT_PREFIX := "gut_"
 const HQ_SCENE := "res://scenes/hq/hq_scene.tscn"
 const NETRUN_SCENE := "res://scenes/netrun_map/netrun_scene.tscn"
 const TITLE_SCENE := "res://scenes/menu/title_scene.tscn"
@@ -54,8 +56,15 @@ func save_path() -> String:
 	return SaveService.campaign_path(save_slot)
 
 
+## The profile file: one for every campaign slot (GDD 3.4: unlocks carry across
+## campaigns). Test slots (TEST_SLOT_PREFIX) keep a private profile so tests never touch
+## the player's.
 func profile_path() -> String:
-	return SaveService.profile_path() if save_slot == DEFAULT_SLOT else SaveService.SAVE_DIR.path_join("profile_%s.json" % save_slot)
+	return _slot_profile_path(save_slot) if save_slot.begins_with(TEST_SLOT_PREFIX) else SaveService.profile_path()
+
+
+func _slot_profile_path(slot: String) -> String:
+	return SaveService.SAVE_DIR.path_join("profile_%s.json" % slot)
 
 
 func has_save() -> bool:
@@ -255,7 +264,7 @@ func _record_run_outcome() -> void:
 	if not _history_recorded:
 		_history_recorded = true
 		profile.add_stat("cycles", r.cycles)
-		profile.add_stat("racks", r.banked_schematics / maxi(1, config().rack_schematics_by_tier[clampi(r.tier - 1, 0, 3)]) if r.kind == "netrun" else 0)
+		profile.add_stat("racks", r.racks_captured)
 		profile.add_stat("runs_t%d" % r.tier, 1)
 		_record_usage(r)
 		profile.record_run({"corporation": String(campaign.corporation_id), "tier": r.tier, "site": String(r.site_id),
@@ -444,8 +453,11 @@ func save_profile() -> Error:
 
 
 func load_profile() -> void:
-	if SaveService.has_save(profile_path()):
-		var data := SaveService.load_dict(profile_path())
+	var path := profile_path()
+	if not SaveService.has_save(path) and SaveService.has_save(_slot_profile_path(save_slot)):
+		path = _slot_profile_path(save_slot)  # a per-slot profile from before H12
+	if SaveService.has_save(path):
+		var data := SaveService.load_dict(path)
 		profile = ProfileState.from_dict(data.get("profile", {}))
 	else:
 		profile = ProfileState.new()
@@ -456,9 +468,11 @@ func clear_run() -> void:
 	autosave()
 
 
+## Deletes the slot's campaign (and a test slot's private profile; the shared profile stays).
 func delete_save() -> void:
 	SaveService.delete_save(save_path())
-	SaveService.delete_save(profile_path())
+	if save_slot.begins_with(TEST_SLOT_PREFIX):
+		SaveService.delete_save(profile_path())
 
 
 # --- Scenes ----------------------------------------------------------------------------------

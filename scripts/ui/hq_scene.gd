@@ -9,7 +9,7 @@ const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.Si
 	GridState.SiteStatus.CLAIMED: "claimed", GridState.SiteStatus.SEIZED: "SEIZED"}
 
 ## Site-row label width on the Grid list: the text wraps inside it (large text scales).
-const SITE_LABEL_WIDTH := 560.0
+const SITE_LABEL_WIDTH := UiWrap.MAX_ITEM_WIDTH
 
 var _status: Label
 var _panel_host: PanelContainer
@@ -247,6 +247,7 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.

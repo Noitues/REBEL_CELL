@@ -10,3 +10,4 @@ display_name = "Zero Day"
 description = "A Perfect on the Miss slice resolves as a 3x Crit."
 cycle_cost = 200
 custom_handler = ExtResource("h")
+amount = 3

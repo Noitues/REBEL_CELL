@@ -48,6 +48,7 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
 
@@ -74,7 +75,7 @@ func show_slots() -> void:
 	var box := VBoxContainer.new()
 	box.add_child(_label("Campaign slots"))
 	for slot in SLOTS:
-		var row := HBoxContainer.new()
+		var row := HFlowContainer.new()
 		var summary := RunManager.slot_summary(slot)
 		row.add_child(_label("Slot %s: %s" % [slot, _describe(summary)]))
 		var s := slot

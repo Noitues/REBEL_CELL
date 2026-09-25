@@ -10,3 +10,4 @@ display_name = "Scrubber"
 description = "Capturing a Server Rack removes 1 Heat instead of adding it."
 cycle_cost = 200
 custom_handler = ExtResource("h")
+amount = 1

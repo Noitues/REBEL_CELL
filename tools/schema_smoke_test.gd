@@ -357,4 +357,22 @@ func _h11() -> int:
 	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	print("Top ICE level: ", loaded.max_ice_level())
 	if loaded.max_ice_level() != 20: fails += 1
+	return fails + _h12()
+
+
+## Horizontal pass 12: DaemonData.amount, config raid pacing and drift stages,
+## RunState.racks_captured / patrol.
+func _h12() -> int:
+	var fails := 0
+	var d := DaemonData.new()
+	var cfg := CampaignConfigData.new()
+	print("H12: daemon amount ", d.amount, " raid ", cfg.raid_wave_interval, "/", cfg.raid_heat_scaling_step, " drift ", cfg.dispatch_drift_mid, "/", cfg.dispatch_drift_late)
+	if d.amount != 0 or cfg.raid_wave_interval != 5 or cfg.raid_heat_scaling_step != 10 or cfg.dispatch_drift_mid != 3 or cfg.dispatch_drift_late != 6: fails += 1
+	var cold: DaemonData = load("res://content/daemons/cold_exit.tres")
+	if cold.amount != 3: fails += 1
+	var r := RunState.new()
+	r.racks_captured = 2
+	r.patrol = true
+	var back := RunState.from_dict(r.to_dict())
+	if back.racks_captured != 2 or not back.patrol: fails += 1
 	return fails

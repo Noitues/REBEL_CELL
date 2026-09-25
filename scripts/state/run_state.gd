@@ -38,6 +38,11 @@ var event_id: StringName = &""
 ## "removal_price": int}.
 var shop: Dictionary = {}
 var combats_won: int = 0
+## Server Racks captured this run (the "racks" stat).
+var racks_captured: int = 0
+## Launched as a patrol of an already cleared or claimed Site: completion changes nothing,
+## even if a raid Seizes the Site mid-run.
+var patrol: bool = false
 var elites_defeated: int = 0
 ## Cold Exit: did the operative's Miss slice resolve at any point this run?
 var miss_resolved: bool = false
@@ -77,7 +82,7 @@ func _raw_dict() -> Dictionary:
 		"banked_schematics": banked_schematics, "banked_assets": _strings(banked_assets),
 		"unbanked_assets": _strings(unbanked_assets), "combat": combat.duplicate(true),
 		"pending_rewards": rewards, "event_id": String(event_id), "shop": shop.duplicate(true),
-		"combats_won": combats_won, "elites_defeated": elites_defeated,
+		"combats_won": combats_won, "elites_defeated": elites_defeated, "racks_captured": racks_captured, "patrol": patrol,
 		"miss_resolved": miss_resolved, "card_removals": card_removals,
 		"heat_gained": heat_gained, "streams": streams.duplicate(true),
 		"temp_cards": _strings(temp_cards),
@@ -111,6 +116,8 @@ static func from_dict(d: Dictionary) -> RunState:
 	r.event_id = StringName(String(d.get("event_id", "")))
 	r.shop = d.get("shop", {}).duplicate(true)
 	r.combats_won = int(d.get("combats_won", 0))
+	r.racks_captured = int(d.get("racks_captured", 0))
+	r.patrol = bool(d.get("patrol", false))
 	r.elites_defeated = int(d.get("elites_defeated", 0))
 	r.miss_resolved = bool(d.get("miss_resolved", false))
 	r.card_removals = int(d.get("card_removals", 0))

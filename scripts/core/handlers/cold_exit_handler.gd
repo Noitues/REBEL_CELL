@@ -1,5 +1,5 @@
 extends RefCounted
-## Cold Exit (GDD 6.2): finish a netrun without the Miss slice resolving: -3 Heat.
+## Cold Exit (GDD 6.2): finish a netrun without the Miss slice resolving: -amount Heat.
 ## Run-level hook: `state` is the RunState and the context carries "trigger".
 
 
@@ -8,5 +8,7 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 		return []
 	if state.miss_resolved:
 		return [{"type": "cold_exit_missed", "text": "Cold Exit: the Miss slice resolved this run, no bonus."}]
-	return [{"type": "campaign_effect", "effect": RC.EffectType.MODIFY_HEAT, "amount": -3, "source_id": &"cold_exit",
-		"text": "Cold Exit: clean run, -3 Heat."}]
+	var d: DaemonData = context.get("daemon")
+	var amount := d.amount if d != null else 0
+	return [{"type": "campaign_effect", "effect": RC.EffectType.MODIFY_HEAT, "amount": -amount, "source_id": &"cold_exit",
+		"text": "Cold Exit: clean run, -%d Heat." % amount}]
