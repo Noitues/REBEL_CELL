@@ -1147,6 +1147,17 @@ View code only; no rules, content or schema changed.
 
 ## Open questions for the designer
 
+- **Deck / spinner viewers (2026-09-25):** added as look-and-pick views (DeckView,
+  SpinnerView), used by the Modem and the HQ crew cards. The GDD has no card upgrades and
+  no player rearranging of a wheel, so the viewers show card details and, for slices, the
+  stronger same-type slices in the Modem catalogue. Needed from design: do cards upgrade
+  (how, where, what changes)? When may a player rearrange slices (HQ only? cost?)?
+
+- **Daily run modifiers (2026-09-25):** the start screen now has a TODAY'S RUN panel with
+  room for the day's modifiers (`hq_scene.daily_modifiers`). Today the daily run fixes
+  only the seed, so the list reads "none today". What should a day change: a forced
+  corporation, ICE rules, a starting-deck or wheel twist, a boost? Needs a config table.
+
 - **Pacing after H15/H16.** With Daemons firing once per landing the bot's Breaker needs
   about 43 runs at ICE 5 (4/8 won) against the GDD 11.8 average of 24. Should enemies
   come down, or Daemons / rewards go up, now that the multi-fire bugs are gone?

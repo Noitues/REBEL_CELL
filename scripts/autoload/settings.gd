@@ -30,6 +30,8 @@ var window_mode: int = WindowMode.WINDOWED
 var resolution: Vector2i = Vector2i(1280, 720)
 var vsync: bool = true
 var show_fps: bool = false
+## Map views on the city show a legend (claimed / cleared / corporate, glyphs).
+var map_legend: bool = true
 ## action name (String) -> physical keycode (int) for rebound actions.
 var keybinds: Dictionary = {}
 ## The guided first netrun has been completed or skipped.
@@ -148,6 +150,11 @@ func set_show_fps(value: bool) -> void:
 	_apply()
 
 
+func set_map_legend(value: bool) -> void:
+	map_legend = value
+	_apply()
+
+
 func set_tutorial_done(value: bool) -> void:
 	tutorial_done = value
 	_apply()
@@ -252,7 +259,7 @@ func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
 		"subtitles": subtitles, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
-		"show_fps": show_fps, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
+		"show_fps": show_fps, "map_legend": map_legend, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -270,6 +277,7 @@ func from_dict(d: Dictionary) -> void:
 	resolution = Vector2i(int(r[0]), int(r[1])) if r.size() == 2 else Vector2i(1280, 720)
 	vsync = bool(d.get("vsync", true))
 	show_fps = bool(d.get("show_fps", false))
+	map_legend = bool(d.get("map_legend", true))
 	keybinds = {}
 	for k in d.get("keybinds", {}):
 		keybinds[String(k)] = int(d["keybinds"][k])

@@ -7,7 +7,7 @@ extends Button
 enum Variant { PAPER, BLACK, PINK }
 ## STICKER: the zine card (hand, loot). CHIP / CARD_TILE: shop tiles (reference: the
 ## Modem's microchips and card builder) with an icon, a name and a Cycle price.
-enum Look { STICKER, CHIP, CARD_TILE }
+enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
 
 var card_title: String = ""
 var cost: int = 0
@@ -17,6 +17,11 @@ var hotkey: String = ""
 var look: int = Look.STICKER
 ## Icon colour for shop tiles.
 var accent: Color = Palette.NET_CYAN
+## SLICE_TILE: the slice type and output drawn as the wheel draws them.
+var slice_type: int = RC.SliceType.ATTACK
+var slice_output: int = 0
+## CARD_TILE icon: "" (mini card), "shred" (card through a shredder), "deck" (a fanned stack).
+var icon_kind: String = ""
 var _lifted: bool = false
 
 
@@ -104,6 +109,34 @@ func _draw_tile() -> void:
 	draw_circle(icon_c, 24, Color(accent, 0.1))
 	if look == Look.CHIP:
 		_big_chip(icon_c, accent)
+	elif look == Look.SLICE_TILE:
+		# A wedge of wheel with the slice icon and value, as on the spinner.
+		var pts := PackedVector2Array()
+		for k in 9:
+			var a := lerpf(-PI * 0.5 - 0.5, -PI * 0.5 + 0.5, k / 8.0)
+			pts.append(icon_c + Vector2(0, 50) + Vector2(cos(a), sin(a)) * 76)
+		for k in 9:
+			var a := lerpf(-PI * 0.5 + 0.5, -PI * 0.5 - 0.5, k / 8.0)
+			pts.append(icon_c + Vector2(0, 50) + Vector2(cos(a), sin(a)) * 30)
+		var sc := Palette.slice_color(slice_type)
+		draw_colored_polygon(pts, Color(sc, 0.35))
+		pts.append(pts[0])
+		draw_polyline(pts, sc, 1.5)
+		SliceIcon.draw_icon(self, icon_c + Vector2(0, -8), 12, slice_type, Palette.PAPER)
+		if slice_output > 0:
+			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
+	elif icon_kind == "shred":
+		_mini_card(icon_c + Vector2(0, -8), accent)
+		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
+		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), accent, false, 1.5)
+		for k in 6:
+			draw_line(icon_c + Vector2(-18 + k * 7, 22), icon_c + Vector2(-20 + k * 7, 36), Palette.NOTE_PAPER, 2.0)
+	elif icon_kind == "deck":
+		for k in 3:
+			draw_set_transform(icon_c + Vector2(-10 + k * 10, 4), -0.25 + k * 0.25, Vector2.ONE)
+			draw_rect(Rect2(Vector2(-16, -24), Vector2(32, 44)), [Palette.NOTE_PAPER, Palette.STICKER_PINK, Palette.NOTE_YELLOW][k])
+			draw_rect(Rect2(Vector2(-16, -24), Vector2(32, 44)), Palette.INK, false, 1.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	else:
 		_mini_card(icon_c, accent)
 	var name_lines := _wrap(card_title.to_upper(), 13)

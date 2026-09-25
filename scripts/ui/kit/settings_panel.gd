@@ -28,6 +28,7 @@ var mode_option: OptionButton
 var resolution_option: OptionButton
 var vsync_check: CheckButton
 var fps_check: CheckButton
+var legend_check: CheckButton
 var language_option: OptionButton
 var section: String = "Accessibility"
 ## Action waiting for a key press (Controls section), or empty.
@@ -84,6 +85,8 @@ func _init() -> void:
 	resolution_option.item_selected.connect(func(i: int) -> void: Settings.set_resolution(Settings.RESOLUTIONS[i]))
 	vsync_check = _check("V-sync", Settings.vsync, Settings.set_vsync)
 	fps_check = _check("Show frame rate", Settings.show_fps, Settings.set_show_fps)
+	legend_check = _check("Map legend on the city views", Settings.map_legend, Settings.set_map_legend)
+	legend_check.name = "LegendCheck"
 	language_option = OptionButton.new()
 	var langs := Settings.available_languages()
 	for i in langs.size():
@@ -111,7 +114,7 @@ func show_section(name: String) -> void:
 			for w in [reduce_check, flash_check, subtitles_check, assist_check, _labelled("Text scale"), scale_slider]:
 				_body.add_child(w)
 		"Display":
-			for w in [_labelled("Window mode"), mode_option, _labelled("Resolution (windowed)"), resolution_option, vsync_check, fps_check]:
+			for w in [_labelled("Window mode"), mode_option, _labelled("Resolution (windowed)"), resolution_option, vsync_check, fps_check, legend_check]:
 				_body.add_child(w)
 		"Audio":
 			for w in [_labelled("Master volume"), master_slider, _labelled("Music volume"), music_slider, _labelled("SFX volume"), sfx_slider]:

@@ -144,6 +144,9 @@ func show_main() -> void:
 
 func show_slots() -> void:
 	var win := TerminalWindow.new("Campaign slots")
+	# A compact window, not the full width.
+	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	win.custom_minimum_size.x = 560
 	var box := win.body
 	for slot in SLOTS:
 		var row := HFlowContainer.new()

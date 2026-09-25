@@ -398,12 +398,25 @@ func show_start() -> void:
 	start_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	setup.body.add_child(ice_text)
 	setup.body.add_child(start_btn)
-	var codes := TerminalWindow.new("DAILY RUN // SHARE CODES", Palette.CELL_ACID)
-	box.add_child(codes)
+	# Daily run and share codes side by side; the daily panel lists today's setup and
+	# has room for the day's modifiers.
+	var code_split := HBoxContainer.new()
+	code_split.add_theme_constant_override("separation", 14)
+	box.add_child(code_split)
+	var daily := TerminalWindow.new("TODAY'S RUN", Palette.CELL_ACID)
+	daily.name = "DailyRun"
+	daily.custom_minimum_size.x = 420
+	code_split.add_child(daily)
+	var today := Time.get_date_dict_from_system()
+	var daily_seed := CampaignCode.daily_seed(today["year"], today["month"], today["day"])
+	daily.tag_label.text = "%04d-%02d-%02d" % [today["year"], today["month"], today["day"]]
+	for line in daily_lines(daily_seed):
+		daily.body.add_child(_label(line))
+	daily.body.add_child(_button("Daily run", func() -> void: new_campaign(daily_seed)))
+	var codes := TerminalWindow.new("SHARE CODES", Palette.CELL_ACID)
+	codes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	code_split.add_child(codes)
 	var code_row := HFlowContainer.new()
-	code_row.add_child(_button("Daily run", func() -> void:
-		var d := Time.get_date_dict_from_system()
-		new_campaign(CampaignCode.daily_seed(d["year"], d["month"], d["day"]))))
 	var code_edit := LineEdit.new()
 	code_edit.name = "CodeEdit"
 	code_edit.placeholder_text = "RC1-corporation-ice-seed-home-class"
@@ -443,6 +456,29 @@ func show_start() -> void:
 	menu.body.add_child(_button("Back to title", RunManager.go_to_title))
 	_as_menu(menu.body)
 	_set_panel(box, "start")
+
+
+## Today's daily run as display lines: the fixed setup, then the day's modifiers (the
+## list is empty until daily modifiers are designed; DECISIONS.md open question).
+func daily_lines(seed: int) -> PackedStringArray:
+	var lines := PackedStringArray()
+	lines.append("> SEED     %d" % seed)
+	lines.append("> TARGET   %s" % RunManager.lookup().get_content(RunManager.DEFAULT_CORPORATION).display_name)
+	lines.append("> ICE      0")
+	lines.append("> HOME     standard")
+	lines.append("> CREW     Breaker")
+	var mods := daily_modifiers(seed)
+	lines.append("> MODIFIERS")
+	if mods.is_empty():
+		lines.append("    none today")
+	for m in mods:
+		lines.append("    + %s" % m)
+	return lines
+
+
+## The day's modifier descriptions (none yet: the daily run fixes only the seed).
+func daily_modifiers(_seed: int) -> PackedStringArray:
+	return PackedStringArray()
 
 
 ## The cumulative ICE ladder up to `level`, one line.
@@ -556,6 +592,11 @@ func show_hq() -> void:
 			row.stamp_text = "ON %s" % String(where).to_upper()
 		var orders := row.orders
 		if op.alive:
+			var view_row := HBoxContainer.new()
+			var op_ref := op
+			view_row.add_child(_button("Deck", func() -> void: add_child(DeckView.new(op_ref.deck, lookup, "%s // DECK" % op_ref.name))))
+			view_row.add_child(_button("Spinner", func() -> void: add_child(SpinnerView.new(op_ref.slot_slice_ids, op_ref.slot_firmware_ids, lookup, "%s // SPINNER" % op_ref.name, "", cfg.shop_slices))))
+			orders.add_child(view_row)
 			if where != &"":
 				var id := op.id
 				orders.add_child(_button("Recall", func() -> void: recall(id)))
@@ -771,17 +812,7 @@ func show_city_map(look: int) -> void:
 	box.add_child(spacer)
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 10)
-	var names := ["TRACE", "PILLARS", "ISOLATE", "XRAY", "BLUEPRINT", "SPOTLIGHT"]
-	var legend := TerminalWindow.new("CITY GRID // LOOK: %s" % names[look])
-	legend.custom_minimum_size.x = 280
-	for line in ["[color=#FF3DA8]■[/color] claimed", "[color=#5CE1FF]■[/color] cleared", "[color=#3DFF8B]■[/color] corporate", "- - threat route", "◈ exploit  ❄ heat  ✦ boss"]:
-		var l := RichTextLabel.new()
-		l.bbcode_enabled = true
-		l.fit_content = true
-		l.custom_minimum_size.x = 250
-		l.text = line
-		legend.body.add_child(l)
-	side.add_child(legend)
+	side.add_child(MapLegend.new(RunManager.campaign.corporation_id))
 	side.add_child(_button("Back to HQ", show_hq))
 	box.add_child(side)
 	_set_panel(box, "city_grid")
@@ -850,6 +881,7 @@ func show_city_raid(variant: int) -> void:
 	info.append("Projection: %s, home %d -> %d" % ["HOLDS" if projection.won else "breached", projection.home_before, projection.home_after])
 	info.append("Assets ride their buildings; threats run the streets.")
 	side.add_child(info)
+	side.add_child(MapLegend.new(c.corporation_id))
 	side.add_child(_button("Back to HQ", show_hq))
 	box.add_child(side)
 	_set_panel(box, "city_raid")

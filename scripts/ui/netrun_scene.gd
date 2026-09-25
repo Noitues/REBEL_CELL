@@ -32,6 +32,18 @@ func _ready() -> void:
 		RunManager.netrun.run.cycles = 120
 		RunManager.netrun._open_shop()
 		_show_current()
+		if args.has("--demo-deckview"):
+			open_remove()
+			var view := get_node("DeckView") as DeckView
+			view.open_card.call_deferred(2)
+		elif args.has("--demo-spinnerview"):
+			open_overwrite(1)
+			var sv := get_node("SpinnerView") as SpinnerView
+			sv.open_slot.call_deferred(0)
+		elif args.has("--demo-spinnergrid"):
+			open_overwrite(1)
+		elif args.has("--demo-deckgrid"):
+			open_remove()
 		return
 	if args.has("--demo-event") or args.has("--demo-dispatch") or args.has("--demo-loot"):
 		# Screenshot shortcuts for the Terminal event (street / DISPATCH voice) and loot.
@@ -457,6 +469,7 @@ func _show_reward() -> void:
 	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost, others none.
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
+	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	stickers.add_theme_constant_override("separation", 14)
 	box.add_child(stickers)
 	for i in offer["options"].size():
@@ -551,106 +564,168 @@ static func _choice_text(label: String, costs: String) -> String:
 	return base if costs == "" else "%s (%s)" % [base, costs]
 
 
-## Modem (GDD 11.2), laid out like the reference cyber shop: the neon MODEM sign with
-## BUY / SELL / TRADE, MICROCHIPS (Firmware and Daemons as glowing chips), the CARD
-## BUILDER (cards, removal, slice overwrite), shop notes and the operative's inventory.
+## Modem (GDD 11.2) in four quadrants over the storefront: MICROCHIPS (Firmware, top
+## left), CARDS (as their own stickers, top right), SLICES + DAEMONS (bottom left, split)
+## and REMOVE A CARD (bottom right, opens the deck viewer). Overwriting a slice opens the
+## spinner viewer to pick the slot. "Leave the Modem" is a dripping tag in the corner.
 func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
 	var op := s.run.operative
-	var outer := HBoxContainer.new()
-	outer.add_theme_constant_override("separation", 16)
-	var signs := VBoxContainer.new()
-	signs.add_theme_constant_override("separation", 10)
-	signs.add_child(NeonSign.new("MODEM", "CYBER SHOP"))
-	signs.add_child(NeonTag.new("BUY", Palette.NET_CYAN))
-	signs.add_child(NeonTag.new("SELL", Palette.CELL_PINK))
-	signs.add_child(NeonTag.new("TRADE", Palette.CRT_AMBER))
-	outer.add_child(signs)
-	var mid := VBoxContainer.new()
-	mid.add_theme_constant_override("separation", 12)
-	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	outer.add_child(mid)
+	var root := Control.new()
+	root.name = "ModemRoot"
+	root.custom_minimum_size = Vector2(1240, 540)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	grid.position = Vector2(0, 0)
+	root.add_child(grid)
+	var q_size := Vector2(560, 250)
+	# Top left: microchips (Firmware).
 	var fw_slot := OptionButton.new()
 	for k in op.slot_slice_ids.size():
-		fw_slot.add_item("Firmware into slot %d: %s" % [k, op.slot_slice_ids[k]])
+		fw_slot.add_item("Socket into slot %d: %s" % [k, op.slot_slice_ids[k]])
 	var chips_win := TerminalWindow.new("MICROCHIPS")
-	chips_win.tag_label.text = "CYCLE"
+	chips_win.tag_label.text = "CYCLES %d" % s.run.cycles
+	chips_win.custom_minimum_size = q_size
+	grid.add_child(chips_win)
 	var chips := HBoxContainer.new()
 	chips.name = "Chips"
+	chips.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	chips.add_theme_constant_override("separation", 10)
 	chips_win.body.add_child(chips)
-	var cards_win := TerminalWindow.new("CARD BUILDER", Palette.CELL_PINK)
-	cards_win.tag_label.text = "CYCLE"
-	# Cards first: the "Stickers" row holds the shop's cards in stock order.
+	# Top right: cards as their stickers ("Stickers" holds them in stock order).
+	var cards_win := TerminalWindow.new("CARDS", Palette.CELL_PINK)
+	cards_win.custom_minimum_size = q_size
+	grid.add_child(cards_win)
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
-	stickers.add_theme_constant_override("separation", 10)
+	stickers.add_theme_constant_override("separation", 12)
 	cards_win.body.add_child(stickers)
+	# Bottom left: slices (overwrite) and daemons side by side.
+	# A 2-column grid (not an HBox) so pad focus walks every tile in both windows.
+	var lower_left := GridContainer.new()
+	lower_left.columns = 2
+	lower_left.add_theme_constant_override("h_separation", 12)
+	lower_left.custom_minimum_size = q_size
+	grid.add_child(lower_left)
+	var slices_win := TerminalWindow.new("SLICES", Palette.CRT_AMBER)
+	slices_win.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lower_left.add_child(slices_win)
+	var daemons_win := TerminalWindow.new("DAEMONS", Palette.NEON_VIOLET)
+	lower_left.add_child(daemons_win)
+	var daemon_row := HBoxContainer.new()
+	daemon_row.name = "Daemons"
+	daemons_win.body.add_child(daemon_row)
 	var n := 0
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
 		for i in shop.get(kind, []).size():
 			var id := StringName(String(shop[kind][i]))
 			var res := s.lookup.get_content(id)
-			var sticker := ZineCard.new(TextDb.t(res, "display_name"), int(prices[i]), "%s: %s" % [kind.trim_suffix("s"), TextDb.t(res, "description")], n)
+			var sticker := ZineCard.new(TextDb.t(res, "display_name"), int(prices[i]), TextDb.t(res, "description") if kind == "cards" else "%s: %s" % [kind.trim_suffix("s"), TextDb.t(res, "description")], n)
 			sticker.hotkey = ""
-			if kind == "cards":
-				sticker.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_PINK)
-			else:
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN if kind == "firmware" else Palette.NEON_VIOLET)
+			if kind == "firmware":
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN)
+			elif kind == "daemons":
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET)
 			sticker.tooltip_text = "%d Cycles\n%s" % [int(prices[i]), Codex.describe(res)]
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			var index: int = i
 			var k: String = kind
 			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
-			(stickers if kind == "cards" else chips).add_child(sticker)
+			match kind:
+				"cards":
+					stickers.add_child(sticker)
+				"firmware":
+					chips.add_child(sticker)
+				_:
+					daemon_row.add_child(sticker)
 			n += 1
-	if chips.get_child_count() > 0:
-		mid.add_child(chips_win)
-		if not shop.get("firmware", []).is_empty():
-			chips_win.body.add_child(fw_slot)
-	mid.add_child(cards_win)
-	var removal := HBoxContainer.new()
-	removal.add_child(_label("Remove a card (%d Cycles):" % s.card_removal_price()))
-	var deck_option := OptionButton.new()
-	for i in op.deck.size():
-		deck_option.add_item("%d: %s" % [i, op.deck[i]])
-	removal.add_child(deck_option)
-	removal.add_child(_button("Remove", func() -> void: remove_card(deck_option.selected)))
-	cards_win.body.add_child(removal)
-	var overwrite := HBoxContainer.new()
-	overwrite.add_child(_label("Overwrite a slice:"))
-	var slot_pick := OptionButton.new()
-	for i in op.slot_slice_ids.size():
-		slot_pick.add_item("slot %d: %s (%d Cycles)" % [i, op.slot_slice_ids[i], s.slice_overwrite_price(i)])
-	overwrite.add_child(slot_pick)
-	var slice_pick := OptionButton.new()
-	for sid in shop.get("slices", []):
-		slice_pick.add_item(String(sid))
-	overwrite.add_child(slice_pick)
-	overwrite.add_child(_button("Overwrite", func() -> void: overwrite_slice(slot_pick.selected, slice_pick.selected)))
-	cards_win.body.add_child(overwrite)
-	mid.add_child(_button("Leave the Modem", leave_shop))
-	var side := VBoxContainer.new()
-	side.add_theme_constant_override("separation", 14)
-	side.custom_minimum_size.x = 200
-	outer.add_child(side)
-	var notes := TerminalWindow.new("SHOP NOTES")
-	for line in ["> Limited stock", "> No refunds", "> Better chips", "> Better runs"]:
-		notes.body.add_child(_label(line))
-	side.add_child(notes)
-	side.add_child(GraffitiScrawl.new("UPGRADE\nOR DIE!", -8.0, 30))
-	var inv := TerminalWindow.new("INVENTORY", Palette.CELL_ACID)
-	var installed := 0
-	for fw in op.slot_firmware_ids:
-		if fw != &"":
-			installed += 1
-	inv.body.add_child(_label("CHIPS    %d" % (installed + op.daemon_ids.size())))
-	inv.body.add_child(_label("CARDS    %d" % op.deck.size()))
-	inv.body.add_child(_label("CYCLES   %d" % s.run.cycles))
-	side.add_child(inv)
-	_set_panel(outer, false)
+	if not shop.get("firmware", []).is_empty():
+		chips_win.body.add_child(fw_slot)
+	if daemon_row.get_child_count() == 0:
+		daemons_win.body.add_child(_label("sold out"))
+	var slice_row := HBoxContainer.new()
+	slice_row.name = "Slices"
+	slice_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	slice_row.add_theme_constant_override("separation", 8)
+	slices_win.body.add_child(slice_row)
+	var stock: Array = shop.get("slices", [])
+	for i in stock.size():
+		var sd := s.lookup.get_content(StringName(String(stock[i]))) as SliceData
+		if sd == null:
+			continue
+		var tile := ZineCard.new("%s %d" % [Palette.SLICE_NAMES.get(sd.slice_type, "?"), sd.base_output] if sd.base_output > 0 else String(Palette.SLICE_NAMES.get(sd.slice_type, "?")), -1, Codex.describe(sd), i)
+		tile.as_tile(ZineCard.Look.SLICE_TILE, Palette.slice_color(sd.slice_type))
+		tile.slice_type = sd.slice_type
+		tile.slice_output = sd.base_output
+		tile.custom_minimum_size = Vector2(96, 130)
+		tile.hotkey = ""
+		tile.tooltip_text = "Overwrite a slot of your spinner with this slice.\n" + Codex.describe(sd)
+		var si := i
+		tile.pressed.connect(func() -> void: open_overwrite(si))
+		slice_row.add_child(tile)
+	# Bottom right: remove a card, an icon action that opens the deck viewer.
+	var remove_win := TerminalWindow.new("REMOVE A CARD", Palette.CELL_ACID)
+	remove_win.custom_minimum_size = q_size
+	grid.add_child(remove_win)
+	var remove_row := HBoxContainer.new()
+	remove_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	remove_row.add_theme_constant_override("separation", 16)
+	remove_win.body.add_child(remove_row)
+	var shred := ZineCard.new("SHRED A CARD", s.card_removal_price(), "Pick a card from your deck to remove.", 0)
+	shred.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_ACID)
+	shred.name = "RemoveCard"
+	shred.hotkey = ""
+	shred.disabled = s.run.cycles < s.card_removal_price() or op.deck.is_empty()
+	shred.icon_kind = "shred"
+	shred.pressed.connect(open_remove)
+	remove_row.add_child(shred)
+	var deck_btn := ZineCard.new("VIEW DECK", -1, "Look through your deck.", 1)
+	deck_btn.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_PINK)
+	deck_btn.hotkey = ""
+	deck_btn.icon_kind = "deck"
+	deck_btn.pressed.connect(func() -> void: _open_modal(DeckView.new(op.deck, s.lookup, "DECK")))
+	remove_row.add_child(deck_btn)
+	var inv := VBoxContainer.new()
+	inv.custom_minimum_size.x = 150
+	inv.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	inv.add_child(_label("CYCLES   %d" % s.run.cycles))
+	inv.add_child(_label("CARDS    %d" % op.deck.size()))
+	inv.add_child(_label("DAEMONS  %d" % op.daemon_ids.size()))
+	remove_row.add_child(inv)
+	var leave := DripButton.new("LEAVE THE MODEM", "", Palette.CELL_PINK, 34)
+	leave.name = "LeaveModem"
+	leave.position = Vector2(900, 522)
+	leave.pressed.connect(leave_shop)
+	root.add_child(leave)
+	_set_panel(root, false)
+
+
+## Opens a modal viewer over the netrun screen.
+func _open_modal(view: Control) -> void:
+	add_child(view)
+
+
+## Deck viewer in pick mode: the chosen card is removed for the shop's price.
+func open_remove() -> void:
+	var s := RunManager.netrun
+	var view := DeckView.new(s.run.operative.deck, s.lookup, "REMOVE A CARD", "REMOVE FOR %d" % s.card_removal_price())
+	view.card_picked.connect(remove_card)
+	_open_modal(view)
+
+
+## Spinner viewer in pick mode: the chosen slot is overwritten with stock slice `stock_index`.
+func open_overwrite(stock_index: int) -> void:
+	var s := RunManager.netrun
+	var sd := s.lookup.get_content(StringName(String(s.run.shop["slices"][stock_index]))) as SliceData
+	var name_text := "%s %d" % [Palette.SLICE_NAMES.get(sd.slice_type, "?"), sd.base_output] if sd != null else "?"
+	var view := SpinnerView.new(s.run.operative.slot_slice_ids, s.run.operative.slot_firmware_ids, s.lookup, "OVERWRITE A SLICE // %s" % name_text,
+		"OVERWRITE WITH %s" % name_text, RunManager.config().shop_slices)
+	view.slot_picked.connect(func(slot: int) -> void: overwrite_slice(slot, stock_index))
+	_open_modal(view)
 
 
 ## Mid-run raid interlude (GDD 4.4, 7.3): setup with exact projection, run assets and
