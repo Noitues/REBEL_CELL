@@ -45,6 +45,9 @@ var _picker_controls: Array[Control] = []
 ## The bottom controls row (layout tests check it fits the 1280-px canvas).
 var controls_row: HFlowContainer
 var _settings_panel: PauseMenu = null
+var _menu_layer: CanvasLayer = null
+## Canvas layer of the pause menu: above the combat scene and the netrun around it.
+const MENU_LAYER := 10
 var _arena: Control
 var _zine_elements: Array[Control] = []
 var _last_events: Array[Dictionary] = []
@@ -185,10 +188,17 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
+	# On a CanvasLayer of its own: inside a netrun the combat scene sits in a scroll area
+	# that would clip the menu's bottom (H16). Centred on the viewport.
+	if _menu_layer == null:
+		_menu_layer = CanvasLayer.new()
+		_menu_layer.layer = MENU_LAYER
+		add_child(_menu_layer)
+	var view := get_viewport_rect().size
+	_settings_panel.position = ((view - PauseMenu.MENU_SIZE) / 2.0).floor()
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
-	add_child(_settings_panel)
+	_menu_layer.add_child(_settings_panel)
 	get_tree().paused = false
 
 

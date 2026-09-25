@@ -165,12 +165,18 @@ func handle_key(event: InputEventKey) -> bool:
 	return true
 
 
+## While rebinding, the next key is the new bind, even an arrow key or Tab that GUI focus
+## navigation would otherwise take first (H16).
+func _input(event: InputEvent) -> void:
+	if visible and event is InputEventKey and rebinding != &"":
+		if handle_key(event):
+			get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event is InputEventKey and rebinding != &"":
-		if handle_key(event):
-			get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel"):
 		closed.emit()

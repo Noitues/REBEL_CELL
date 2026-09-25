@@ -401,9 +401,9 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 	fx.run_triggers(s, RC.Trigger.ON_RESOLVE, resolve_ctx, _player_listeners(s), rng, events)
 	# Consecutive Perfects are counted on the player's first pointer, before hooks run.
 	for r in resolutions:
-		if r["owner"] == s.player and not r.get("derived", false) and r["slice"].slice_type == RC.SliceType.MISS:
+		if r["owner"] == s.player and is_landing(r) and r["slice"].slice_type == RC.SliceType.MISS:
 			s.miss_resolved = true  # any read head, Twin Pointer's included (GDD 6.2 Cold Exit)
-		if r["owner"] == s.player and r["pointer_index"] == 0 and not r.get("derived", false):
+		if r["owner"] == s.player and r["pointer_index"] == 0 and is_landing(r):
 			s.consecutive_perfects = s.consecutive_perfects + 1 if r["tier"] == RC.PrecisionTier.PERFECT else 0
 			if r["tier"] == RC.PrecisionTier.PERFECT and int(s.flags.get("steady_hand", 0)) > 0:
 				s.ram_bonus_next_turn += int(s.flags["steady_hand"])
@@ -565,7 +565,10 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 			if fw.neighbor_rule == RC.NeighborRule.MIRROR or sides.is_empty():
 				out.append(r)
 			for side in sides:
-				out.append(_neighbor_resolution(s, r, side, fw.neighbor_multiplier))
+				var n := _neighbor_resolution(s, r, side, fw.neighbor_multiplier)
+				if fw.neighbor_rule == RC.NeighborRule.SHUNT:
+					n["landing"] = true  # the shunted slice resolves instead of the landing
+				out.append(n)
 	return out
 
 
@@ -685,7 +688,8 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	# The slice, its Firmware, segment and Hub repeat with every resolution (M1/M6 rulings);
 	# Daemons fire once per landing, so their text ("each Perfect: +1 damage") holds.
 	var per_instance := listeners.filter(func(l: Dictionary) -> bool: return not l.get("once", false))
-	var once := listeners.filter(func(l: Dictionary) -> bool: return l.get("once", false))
+	# Daemons fire once per landing: never on a Mirror copy of a neighbour (H16).
+	var once := listeners.filter(func(l: Dictionary) -> bool: return l.get("once", false)) if is_landing(r) else []
 	for m in instances:
 		var output := roundi(slice.base_output * m)
 		if owner == s.player and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT] and s.damage_bonus > 0:
@@ -697,6 +701,13 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})
+
+
+## Whether resolution `r` stands for its pointer's landing: the landing itself, or the
+## slice a Shunt resolves instead. A Mirror copy of a neighbour is not (Daemons skip it and
+## it doesn't resolve the Miss for Cold Exit).
+static func is_landing(r: Dictionary) -> bool:
+	return not r.get("derived", false) or r.get("landing", false)
 
 
 ## ON_SLICE_TRIGGER, then ON_PERFECT on a Perfect and ON_MISS_SLICE on the Miss, for `listeners`.
@@ -860,8 +871,10 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 			match phase.pointer_behavior:
 				RC.PointerBehavior.MULTIPLY:
 					e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+					e.wheel.pointer_orbit = 0  # a new fixed layout locks on (H16)
 				RC.PointerBehavior.MIGRATE:
 					e.wheel.pending_pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
+					e.wheel.pointer_orbit = 0
 					events.append({"type": "boss_migrate_telegraph", "target": e.id, "ticks": Array(e.wheel.pending_pointer_ticks),
 						"text": "%s's pointers flicker: next turn they migrate to %s." % [e.display_name, str(Array(e.wheel.pending_pointer_ticks))]})
 				RC.PointerBehavior.ORBIT:

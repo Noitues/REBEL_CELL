@@ -117,6 +117,10 @@ func _close_sub() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
+	if codex_note != null and event.is_action_pressed("ui_cancel"):
+		_close_sub()  # Esc in the Codex returns to the menu, like Esc in Options
+		get_viewport().set_input_as_handled()
+		return
 	if settings_panel == null and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("open_settings")):
 		resumed.emit()
 		get_viewport().set_input_as_handled()

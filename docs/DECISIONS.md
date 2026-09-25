@@ -30,6 +30,21 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-25 — Horizontal pass 16 fixes (GAP_ANALYSIS H16)
+- **A landing is the pointer's slice, or what a Shunt resolves instead**
+  (`CombatResolver.is_landing`). A Mirror copy of a neighbour is not a landing: Daemons
+  don't fire on it (a Mirror Perfect used to fire Kernel Sync, Clean Signal, Botnet Seed
+  three times), and a copied Miss doesn't resolve the Miss for Cold Exit, Zero Day or the
+  consecutive-Perfect count. The copies still resolve the slice, its Firmware and Hub.
+- **A MULTIPLY or MIGRATE phase stops an earlier orbit**: Commons Array's 33% readers
+  "lock on" as its phase line says.
+- **Rebinding captures every key** in `_input` (arrow keys, Tab), before focus navigation.
+- **The combat pause menu is on its own CanvasLayer**, centred on the viewport, so the
+  netrun scroll can't clip it.
+- **Esc in the pause-menu Codex returns to the menu** (as Esc in Options does).
+- Balance after H16: Breaker ICE 5 4/8 in 42.8 runs (was 5/8 in 36.4; the bot's Mirror
+  Firmware had been tripling its Daemons). See the pacing open question.
+
 ### 2026-09-25 — Horizontal pass 15 fixes (GAP_ANALYSIS H15)
 - **Daemons fire once per landing.** A Perfect resolves two or three times (every Hub
   Core retriggers, Echo adds one), and each extra resolution used to fire the Daemons
@@ -1110,6 +1125,9 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **Pacing after H15/H16.** With Daemons firing once per landing the bot's Breaker needs
+  about 43 runs at ICE 5 (4/8 won) against the GDD 11.8 average of 24. Should enemies
+  come down, or Daemons / rewards go up, now that the multi-fire bugs are gone?
 - **Rigger at ICE 0 (H15).** With Daemons firing once per Perfect the bot's Rigger wins
   5/8 at ICE 0 in about 36 runs (other classes 6-8/8). Should the Rigger's hub or deck
   get a buff, or is ICE 0 meant to be this hard for it?
