@@ -476,27 +476,42 @@ static func _choice_text(label: String, costs: String) -> String:
 	return base if costs == "" else "%s (%s)" % [base, costs]
 
 
-## Modem (GDD 11.2): stock as zine stickers with the Cycle price in the cost circle.
+## Modem (GDD 11.2), laid out like the reference cyber shop: the neon MODEM sign with
+## BUY / SELL / TRADE, MICROCHIPS (Firmware and Daemons as glowing chips), the CARD
+## BUILDER (cards, removal, slice overwrite), shop notes and the operative's inventory.
 func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
+	var op := s.run.operative
 	var outer := HBoxContainer.new()
 	outer.add_theme_constant_override("separation", 16)
-	outer.add_child(NeonSign.new("MODEM", "CYBER SHOP"))
+	var signs := VBoxContainer.new()
+	signs.add_theme_constant_override("separation", 10)
+	signs.add_child(NeonSign.new("MODEM", "CYBER SHOP"))
+	signs.add_child(NeonTag.new("BUY", Palette.NET_CYAN))
+	signs.add_child(NeonTag.new("SELL", Palette.CELL_PINK))
+	signs.add_child(NeonTag.new("TRADE", Palette.CRT_AMBER))
+	outer.add_child(signs)
 	var mid := VBoxContainer.new()
 	mid.add_theme_constant_override("separation", 12)
 	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	outer.add_child(mid)
-	var stock := TerminalWindow.new("STOCK // %d CYCLES" % s.run.cycles)
-	mid.add_child(stock)
-	var box := stock.body
+	var fw_slot := OptionButton.new()
+	for k in op.slot_slice_ids.size():
+		fw_slot.add_item("Firmware into slot %d: %s" % [k, op.slot_slice_ids[k]])
+	var chips_win := TerminalWindow.new("MICROCHIPS")
+	chips_win.tag_label.text = "CYCLE"
+	var chips := HBoxContainer.new()
+	chips.name = "Chips"
+	chips.add_theme_constant_override("separation", 10)
+	chips_win.body.add_child(chips)
+	var cards_win := TerminalWindow.new("CARD BUILDER", Palette.CELL_PINK)
+	cards_win.tag_label.text = "CYCLE"
+	# Cards first: the "Stickers" row holds the shop's cards in stock order.
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
 	stickers.add_theme_constant_override("separation", 10)
-	box.add_child(stickers)
-	var fw_slot := OptionButton.new()
-	for k in s.run.operative.slot_slice_ids.size():
-		fw_slot.add_item("Firmware into slot %d: %s" % [k, s.run.operative.slot_slice_ids[k]])
+	cards_win.body.add_child(stickers)
 	var n := 0
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
@@ -505,48 +520,61 @@ func _show_shop() -> void:
 			var res := s.lookup.get_content(id)
 			var sticker := ZineCard.new(TextDb.t(res, "display_name"), int(prices[i]), "%s: %s" % [kind.trim_suffix("s"), TextDb.t(res, "description")], n)
 			sticker.hotkey = ""
-			sticker.custom_minimum_size = Vector2(128, 160)
+			if kind == "cards":
+				sticker.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_PINK)
+			else:
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN if kind == "firmware" else Palette.NEON_VIOLET)
 			sticker.tooltip_text = "%d Cycles\n%s" % [int(prices[i]), Codex.describe(res)]
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			var index: int = i
 			var k: String = kind
 			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
-			stickers.add_child(sticker)
+			(stickers if kind == "cards" else chips).add_child(sticker)
 			n += 1
-	if not shop.get("firmware", []).is_empty():
-		box.add_child(fw_slot)
-	var builder := TerminalWindow.new("CARD BUILDER", Palette.CELL_PINK)
-	mid.add_child(builder)
-	box = builder.body
+	if chips.get_child_count() > 0:
+		mid.add_child(chips_win)
+		if not shop.get("firmware", []).is_empty():
+			chips_win.body.add_child(fw_slot)
+	mid.add_child(cards_win)
 	var removal := HBoxContainer.new()
 	removal.add_child(_label("Remove a card (%d Cycles):" % s.card_removal_price()))
 	var deck_option := OptionButton.new()
-	for i in s.run.operative.deck.size():
-		deck_option.add_item("%d: %s" % [i, s.run.operative.deck[i]])
+	for i in op.deck.size():
+		deck_option.add_item("%d: %s" % [i, op.deck[i]])
 	removal.add_child(deck_option)
 	removal.add_child(_button("Remove", func() -> void: remove_card(deck_option.selected)))
-	box.add_child(removal)
+	cards_win.body.add_child(removal)
 	var overwrite := HBoxContainer.new()
 	overwrite.add_child(_label("Overwrite a slice:"))
 	var slot_pick := OptionButton.new()
-	for i in s.run.operative.slot_slice_ids.size():
-		slot_pick.add_item("slot %d: %s (%d Cycles)" % [i, s.run.operative.slot_slice_ids[i], s.slice_overwrite_price(i)])
+	for i in op.slot_slice_ids.size():
+		slot_pick.add_item("slot %d: %s (%d Cycles)" % [i, op.slot_slice_ids[i], s.slice_overwrite_price(i)])
 	overwrite.add_child(slot_pick)
 	var slice_pick := OptionButton.new()
 	for sid in shop.get("slices", []):
 		slice_pick.add_item(String(sid))
 	overwrite.add_child(slice_pick)
 	overwrite.add_child(_button("Overwrite", func() -> void: overwrite_slice(slot_pick.selected, slice_pick.selected)))
-	box.add_child(overwrite)
+	cards_win.body.add_child(overwrite)
 	mid.add_child(_button("Leave the Modem", leave_shop))
 	var side := VBoxContainer.new()
-	side.add_theme_constant_override("separation", 18)
+	side.add_theme_constant_override("separation", 14)
+	side.custom_minimum_size.x = 200
 	outer.add_child(side)
-	var notes := ZineNote.new("SHOP NOTES", Vector2(190, 118))
-	notes.rotation_degrees = 2.0
-	notes.append("> Limited stock\n> No refunds\n> Better chips,\n  better runs")
+	var notes := TerminalWindow.new("SHOP NOTES")
+	for line in ["> Limited stock", "> No refunds", "> Better chips", "> Better runs"]:
+		notes.body.add_child(_label(line))
 	side.add_child(notes)
-	side.add_child(GraffitiScrawl.new("UPGRADE\nOR DIE!", -8.0, 28))
+	side.add_child(GraffitiScrawl.new("UPGRADE\nOR DIE!", -8.0, 30))
+	var inv := TerminalWindow.new("INVENTORY", Palette.CELL_ACID)
+	var installed := 0
+	for fw in op.slot_firmware_ids:
+		if fw != &"":
+			installed += 1
+	inv.body.add_child(_label("CHIPS    %d" % (installed + op.daemon_ids.size())))
+	inv.body.add_child(_label("CARDS    %d" % op.deck.size()))
+	inv.body.add_child(_label("CYCLES   %d" % s.run.cycles))
+	side.add_child(inv)
 	_set_panel(outer, false)
 
 

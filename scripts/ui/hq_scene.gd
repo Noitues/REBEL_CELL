@@ -257,7 +257,7 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	_panel_host.add_child(p)
 	# Screens built from terminal windows let the city show between them.
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid"] else &"GlassPanel"
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary"] else &"GlassPanel"
 	var t: Array = SCREEN_TITLES.get(name, ["", ""])
 	hud.set_screen(t[0], t[1])
 	UiWrap.fit(p)
@@ -775,26 +775,34 @@ func show_raid() -> void:
 	var cfg := RunManager.config()
 	var raid := CampaignRules.raid_data(pending, lookup)
 	var projection := RunManager.project_raid()
+	var claimed := c.grid.claimed_ids()
+	if not claimed.has(selected_site):
+		selected_site = claimed[claimed.size() - 1] if not claimed.is_empty() else &""
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 12)
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 16)
-	outer.add_child(top)
-	var route := TerminalWindow.new("THREAT ROUTE // %s" % raid.display_name, Palette.corp_color(c.corporation_id))
-	route.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(route)
-	var route_map := GridMapView.new()
-	route_map.custom_minimum_size = Vector2(700, 300)
-	route_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	route_map.show_grid(c, RunManager.corporation, _threat_paths())
-	route.body.add_child(route_map)
-	var intel := VBoxContainer.new()
-	intel.add_theme_constant_override("separation", 10)
-	top.add_child(intel)
-	var box := ZineNote.new("RAID INTEL", Vector2(300, 250))
+	# The war table: the network board with paper notes pinned to its corners.
+	var table := _war_table(projection.nodes)
+	outer.add_child(table)
+	var holds := 0
+	var lost := 0
+	for id in projection.nodes:
+		var outcome := String(projection.nodes[id].get("outcome", ""))
+		if outcome == "holds":
+			holds += 1
+		elif outcome in ["disabled", "seized"]:
+			lost += 1
+	var status := ZineNote.new("NODE STATUS", Vector2(236, 118))
+	status.position = Vector2(10, 12)
+	status.rotation_degrees = -1.5
+	status.append("[color=#2a8f3c]●[/color] HOLDS (%d)" % holds)
+	status.append("[color=#c21f6b]●[/color] DISABLED (%d)" % lost)
+	status.append("[color=#c21f6b]→[/color] THREAT PATH")
+	status.append("Home %d → %d" % [projection.home_before, projection.home_after])
+	table.add_child(status)
+	var box := ZineNote.new("THREAT ROUTE", Vector2(290, 150))
+	box.paper_color = Palette.NOTE_PINK
 	box.rotation_degrees = 1.5
-	intel.add_child(box)
-	intel.add_child(GraffitiScrawl.new("HOLD!!", -9.0, 30))
+	box.position = Vector2(table.custom_minimum_size.x - 304, 10)
 	box.append("RAID SETUP - %s: %s" % [raid.display_name, raid.warning_text])
 	box.append("Entry: %s | Threat strength %+.0f%% | Projection: %s, home %d -> %d, %d/%d threats destroyed, %d steps" % [
 		", ".join(CampaignRules.raid_entries(c, RunManager.corporation, pending)), CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation),
@@ -803,26 +811,66 @@ func show_raid() -> void:
 	for e in projection.events:
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
 			box.append("  " + String(e["text"]))
-	var loadout := TerminalWindow.new("DEFENSE LOADOUT // ARMORY %d/%d" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK)
+	box.label.scroll_following = false
+	table.add_child(box)
+	var verdict := GraffitiScrawl.new("HOLD!!", -9.0, 38)
+	verdict.position = Vector2(table.custom_minimum_size.x - 220, table.custom_minimum_size.y - 70)
+	table.add_child(verdict)
+	# Loadout: the Armory as paper cards; a card deploys to the pad picked on the board.
+	var loadout := TerminalWindow.new("DEFENSE LOADOUT // ARMORY %d/%d // pick a pad on the board, then a card" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK)
+	loadout.tag_label.text = "TARGET: %s" % (String(selected_site) if selected_site != &"" else "-")
 	outer.add_child(loadout)
-	var orders := HBoxContainer.new()
-	orders.add_theme_constant_override("separation", 12)
-	loadout.body.add_child(orders)
+	var load_row := HBoxContainer.new()
+	load_row.add_theme_constant_override("separation", 18)
+	loadout.body.add_child(load_row)
+	var cards := HFlowContainer.new()
+	cards.name = "AssetCards"
+	cards.add_theme_constant_override("h_separation", 14)
+	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	load_row.add_child(cards)
+	var seen := {}
+	for i in c.armory.size():
+		var aid: StringName = c.armory[i]
+		if seen.has(aid):
+			continue
+		seen[aid] = true
+		var data := lookup.get_content(aid) as DefenseAssetData
+		var card := AssetCard.new(aid, data.display_name if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
+		card.tooltip_text = data.description if data != null else ""
+		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
+		var index := i
+		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
+		cards.add_child(card)
+	if c.armory.is_empty():
+		cards.add_child(_label("Armory empty: runs bank assets from their drops."))
+	var go := VBoxContainer.new()
+	go.add_theme_constant_override("separation", 10)
+	load_row.add_child(go)
 	var run_btn := _button("RUN THE RAID", fight_raid)
 	run_btn.theme_type_variation = &"HotButton"
-	orders.add_child(run_btn)
-	orders.add_child(_button("Back to HQ (raid stays pending)", show_hq))
-	box = null
-	for site_id in c.grid.claimed_ids():
-		var row := HFlowContainer.new()
+	go.add_child(run_btn)
+	go.add_child(_button("Back to HQ (raid stays pending)", show_hq))
+	# Node orders: one card per claimed node (withdraw, move, deploy).
+	var orders_win := TerminalWindow.new("NODE ORDERS")
+	outer.add_child(orders_win)
+	var orders := HFlowContainer.new()
+	orders.add_theme_constant_override("h_separation", 12)
+	orders.add_theme_constant_override("v_separation", 12)
+	orders_win.body.add_child(orders)
+	for site_id in claimed:
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
+		var card := TerminalWindow.new("%s // %s" % [site_id, c.grid.node_type_of(site_id)], Palette.CELL_ACID if String(n.get("outcome", "")) == "holds" else Palette.CELL_PINK)
+		card.custom_minimum_size.x = 280
+		card.tag_label.text = String(n.get("outcome", "?")).to_upper()
+		var row := HFlowContainer.new()
+		card.body.add_child(row)
 		row.add_child(_label("%s (%s) %s -> %s [%s] assets: %s" % [site_id, c.grid.node_type_of(site_id), n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper(), ", ".join(c.grid.assets_on(site_id))]))
 		var assets := c.grid.assets_on(site_id)
 		for i in assets.size():
 			var idx := i
 			var sid := site_id
 			row.add_child(_button("Withdraw %s" % assets[i], func() -> void: move_asset(sid, idx, &"")))
-			for other in c.grid.claimed_ids():
+			for other in claimed:
 				if other != site_id and c.grid.is_active_node(other):
 					var oid := other
 					row.add_child(_button("-> %s" % other, func() -> void: move_asset(sid, idx, oid)))
@@ -833,11 +881,29 @@ func show_raid() -> void:
 			row.add_child(pick)
 			var sid2 := site_id
 			row.add_child(_button("Deploy", func() -> void: deploy_asset(pick.selected, sid2)))
-		loadout.body.add_child(row)
+		orders.add_child(card)
 	_set_panel(outer, "raid")
 	if _last_warned_raid != String(pending.get("raid_id", "")):
 		_last_warned_raid = String(pending.get("raid_id", ""))
 		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", raid.id))), c.raids_won + c.raids_lost)
+
+
+## The raid board in a fixed-size table (notes are pinned over its corners).
+func _war_table(results: Dictionary) -> Control:
+	var table := Control.new()
+	table.name = "WarTable"
+	table.custom_minimum_size = Vector2(1236, 430)
+	var board := RaidBoardView.new()
+	board.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	board.show_grid(RunManager.campaign, RunManager.corporation, _threat_paths())
+	board.node_results = results
+	board.selected_id = selected_site
+	board.site_clicked.connect(func(id: StringName) -> void:
+		if RunManager.campaign.grid.is_claimed(id):
+			selected_site = id
+			show_raid())
+	table.add_child(board)
+	return table
 
 
 ## Codex (GDD 8.1): everything the Cell knows, zine-styled, plus the lexicon.
@@ -874,17 +940,38 @@ func _fill_codex(body: ZineNote, section: String, items: Array) -> void:
 ## Instant (straight to the summary) when headless or under reduce-effects.
 func show_raid_playout(events: Array[Dictionary]) -> void:
 	var c := RunManager.campaign
-	var box := VBoxContainer.new()
-	var view := GridMapView.new()
-	view.custom_minimum_size = Vector2(760, 330)
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 14)
+	# The war table, live: threats advance on the board while the feed scrolls.
+	var table := Control.new()
+	table.name = "WarTable"
+	table.custom_minimum_size = Vector2(860, 470)
+	table.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var view := RaidBoardView.new()
+	view.custom_minimum_size = Vector2(860, 470)
+	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	view.show_grid(c, RunManager.corporation)
-	box.add_child(view)
-	playout = RaidPlayoutPanel.new(view)
-	box.add_child(playout)
+	table.add_child(view)
+	var tag := GraffitiScrawl.new("INCOMING!", -7.0, 30)
+	tag.position = Vector2(16, 12)
+	table.add_child(tag)
+	box.add_child(table)
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 12)
+	box.add_child(side)
+	var feed := TerminalWindow.new("RAID FEED // LIVE", Palette.corp_color(c.corporation_id))
+	side.add_child(feed)
+	playout = RaidPlayoutPanel.new(view, Vector2(330, 330))
+	feed.body.add_child(playout)
 	var cont := _button("Continue", _after_playout)
+	cont.theme_type_variation = &"HotButton"
 	cont.disabled = true
-	playout.finished.connect(func() -> void: cont.disabled = false)
-	box.add_child(cont)
+	playout.finished.connect(func() -> void:
+		cont.disabled = false
+		view.node_results = RunManager.campaign.last_raid.get("nodes", {})
+		view.queue_redraw())
+	side.add_child(cont)
 	_set_panel(box, "raid_playout")
 	var instant := DisplayServer.get_name() == "headless" or not Fx.effects_enabled()
 	playout.play(events, instant)
@@ -902,16 +989,41 @@ func _after_playout() -> void:
 func show_raid_summary() -> void:
 	var c := RunManager.campaign
 	var r := c.last_raid
-	var box := VBoxContainer.new()
+	var won: bool = r.get("won", false)
+	var outer := HBoxContainer.new()
+	outer.add_theme_constant_override("separation", 14)
+	var table := Control.new()
+	table.name = "WarTable"
+	table.custom_minimum_size = Vector2(860, 470)
+	table.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var view := RaidBoardView.new()
+	view.custom_minimum_size = Vector2(860, 470)
+	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view.show_grid(c, RunManager.corporation)
+	view.node_results = r.get("nodes", {})
+	table.add_child(view)
+	var stamp := ZineStamp.new("REPELLED" if won else "BREACHED", Palette.CELL_ACID if won else Palette.CELL_PINK)
+	stamp.custom_minimum_size = Vector2(150, 150)
+	stamp.focus_mode = Control.FOCUS_NONE
+	stamp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stamp.position = Vector2(20, 16)
+	stamp.rotation_degrees = -8.0
+	table.add_child(stamp)
+	outer.add_child(table)
+	var report := TerminalWindow.new("RAID REPORT", Palette.CELL_ACID if won else Palette.CELL_PINK)
+	report.custom_minimum_size.x = 340
+	outer.add_child(report)
+	var box := report.body
 	box.add_child(_label("RAID %s - %d steps, %d destroyed, %d reached home, home %d -> %d" % [
-		"REPELLED" if r.get("won", false) else "LOST", int(r.get("steps_run", 0)), int(r.get("threats_destroyed", 0)),
+		"REPELLED" if won else "LOST", int(r.get("steps_run", 0)), int(r.get("threats_destroyed", 0)),
 		int(r.get("threats_reached_home", 0)), int(r.get("home_before", 0)), int(r.get("home_after", 0))]))
 	for id in r.get("nodes", {}):
 		var n: Dictionary = r["nodes"][id]
 		box.add_child(_label("  %s: %d -> %d %s" % [id, int(n["before"]), int(n["after"]), String(n["outcome"]).to_upper()]))
 	box.add_child(_label("Seized: %s | Disabled: %s" % [", ".join(r.get("seized", [])), ", ".join(r.get("disabled", []))]))
 	box.add_child(_button("Back to HQ", show_hq))
-	_set_panel(box, "raid_summary")
+	_set_panel(outer, "raid_summary")
 
 
 func show_end() -> void:

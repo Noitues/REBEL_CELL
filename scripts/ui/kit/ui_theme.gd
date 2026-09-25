@@ -96,6 +96,8 @@ static func _buttons(t: Theme) -> void:
 	t.set_stylebox("normal", hv, hot_n)
 	t.set_stylebox("hover", hv, hot_h)
 	t.set_stylebox("pressed", hv, box(Palette.CELL_PINK.darkened(0.2), Palette.PAPER, 2, 18, 8))
+	t.set_stylebox("disabled", hv, box(Color(Palette.CELL_PINK, 0.18), Color(Palette.CELL_PINK, 0.4), 1, 18, 8))
+	t.set_color("font_disabled_color", hv, Color(Palette.CELL_PINK, 0.5))
 	t.set_color("font_color", hv, Palette.INK)
 	t.set_color("font_hover_color", hv, Palette.INK)
 	t.set_color("font_focus_color", hv, Palette.INK)

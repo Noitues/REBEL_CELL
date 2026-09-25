@@ -7,6 +7,8 @@ extends PanelContainer
 var title: String = ""
 var accent: Color = Palette.NET_CYAN
 var body: VBoxContainer
+## Right-aligned tag in the title bar ("CYCLE", "120 CYCLES").
+var tag_label: Label
 
 
 func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
@@ -24,7 +26,14 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 		head.add_theme_color_override("font_color", accent.lerp(Palette.PAPER, 0.35))
 		head.add_theme_font_size_override("font_size", 15)
 		head.name = "TerminalTitle"
-		outer.add_child(head)
+		head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var bar := HBoxContainer.new()
+		bar.add_child(head)
+		tag_label = Label.new()
+		tag_label.add_theme_color_override("font_color", Palette.CELL_ACID)
+		tag_label.add_theme_font_size_override("font_size", 14)
+		bar.add_child(tag_label)
+		outer.add_child(bar)
 		var rule := ColorRect.new()
 		rule.color = Color(Palette.CELL_PINK, 0.8)
 		rule.custom_minimum_size = Vector2(0, 2)
