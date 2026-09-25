@@ -19,6 +19,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H2 | 2026-09-24 | 11 (5 P1: raid names and warning keys per corporation, event speakers, shared text naming Solace, untested H1 rules; 6 P2) | Fixed in horizontal batch H2 |
 | H3 | 2026-09-24 | 6 (lost-raid names, REBEL_CELL elite pool leak, pad-only focus, untested config numbers, stale doc, Mirror numbers in code) | Fixed in horizontal batch H3 |
 | H4 | 2026-09-24 | 6 (focus lost after a card play, Tab swallowed by focus, modals without focus, ICE unreachable by pad, auto-focus preview, docs/tests) | Fixed in horizontal batch H4 |
+| H5 | 2026-09-24 | 4 (keyboard actions replaced the End Turn preview, dialogs dropped focus, Esc in the code field, input-level tests) | Fixed in horizontal batch H5 |
 
 ### Pass 3 (vertical) — clean
 

@@ -42,7 +42,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		queue_free()
 
 
+## Who had focus before the dialog opened; it gets focus back when the dialog closes.
+var _return_focus: Control = null
+
+
 func _ready() -> void:
+	_return_focus = UiFocus.owner_of(self)
 	# Pad / keyboard: the safe answer takes focus.
 	if no_button != null:
 		no_button.grab_focus.call_deferred()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE and _return_focus != null and is_instance_valid(_return_focus) 			and _return_focus.is_inside_tree() and not _return_focus.is_queued_for_deletion():
+		_return_focus.grab_focus.call_deferred()

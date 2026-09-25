@@ -30,6 +30,16 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 5 fixes (GAP_ANALYSIS H5)
+- **Card previews follow navigation only**: a card shows its preview when the player moves
+  focus onto it (D-pad, arrows, Shift+Tab); nudges, card keys and the automatic refocus
+  after a refresh keep the End Turn preview the tutorial points at.
+- **D-pad walks the hand**: explicit left/right neighbours between cards (tilted stickers
+  confused Godot's geometric search), the last card leads to SEND IT.
+- **Confirm dialogs give focus back** to whatever opened them.
+- **Esc leaves the share-code field** instead of being swallowed.
+- Tests drive real key events through the viewport (E, Right, Esc).
+
 ### 2026-09-24 — Horizontal pass 4 fixes (GAP_ANALYSIS H4)
 - **Focus survives card plays**: a control queued for deletion no longer counts as focused,
   so the rebuilt hand takes focus; with no playable card, focus falls back to the controls

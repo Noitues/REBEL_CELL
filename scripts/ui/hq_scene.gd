@@ -350,6 +350,12 @@ func show_start() -> void:
 	code_edit.name = "CodeEdit"
 	code_edit.placeholder_text = "RC1-corporation-ice-seed-home-class"
 	code_edit.custom_minimum_size.x = 360
+	# Esc leaves the field (a focused LineEdit would otherwise swallow it).
+	code_edit.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev.is_action_pressed("ui_cancel") or ev.is_action_pressed("open_settings"):
+			code_edit.release_focus()
+			code_edit.accept_event()
+			UiFocus.focus_first(_panel))
 	code_row.add_child(code_edit)
 	code_row.add_child(_button("Start from code", func() -> void: start_from_code(code_edit.text)))
 	box.add_child(code_row)

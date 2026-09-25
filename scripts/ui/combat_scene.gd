@@ -281,14 +281,38 @@ func enemy_wheel_colors() -> Array[Color]:
 ## Whether the last input came from the mouse: card previews follow the mouse (hover), and
 ## follow focus only when the player moves focus with the keyboard or a pad. Auto-focus at
 ## fight start must not replace the End Turn preview.
-var _pointer_input: bool = true
+## True only right after a focus-navigation press (D-pad / arrows / Shift+Tab): then the
+## newly focused card shows its preview. Any other input (a nudge, a card key, the mouse,
+## the automatic refocus after a refresh) leaves the End Turn preview in place.
+var _nav_focus: bool = false
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
-		_pointer_input = true
-	elif event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
-		_pointer_input = false
+		_nav_focus = false
+	elif event.is_pressed() and not event.is_echo():
+		_nav_focus = event.is_action("ui_left") or event.is_action("ui_right") or event.is_action("ui_up") 			or event.is_action("ui_down") or event.is_action("ui_focus_prev") or event.is_action("ui_focus_next")
+
+
+## Explicit D-pad neighbours in the hand: the cards are tilted stickers, so Godot's
+## geometric search would jump to the pickers. Left/right walk the hand, the last card
+## leads to SEND IT.
+func _link_hand_focus() -> void:
+	var cards: Array[Control] = []
+	for c in _hand_box.get_children():
+		if c is Control and not c.is_queued_for_deletion():
+			cards.append(c)
+	for i in cards.size():
+		var c := cards[i]
+		if i > 0:
+			c.focus_neighbor_left = c.get_path_to(cards[i - 1])
+			c.focus_previous = c.focus_neighbor_left
+		if i + 1 < cards.size():
+			c.focus_neighbor_right = c.get_path_to(cards[i + 1])
+			c.focus_next = c.focus_neighbor_right
+		else:
+			c.focus_neighbor_right = c.get_path_to(_end_turn_button)
+			c.focus_next = c.focus_neighbor_right
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -767,13 +791,15 @@ func _refresh(state: CombatState) -> void:
 		c.pressed.connect(func() -> void: play_card(index))
 		c.mouse_entered.connect(func() -> void: _show_card_preview(index))
 		c.focus_entered.connect(func() -> void:
-			if not _pointer_input:
+			if _nav_focus:
 				_show_card_preview(index))
 		c.mouse_exited.connect(_clear_ghost)
 		c.focus_exited.connect(_clear_ghost)
 		_hand_box.add_child(c)
 	_end_turn_button.disabled = state.is_over()
 	_rewind_button.disabled = not engine.can_rewind()
+	_link_hand_focus()
+	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
 	_respin_button.text = "Respin %d [X]" % engine.resolver.config.respin_ram_cost
 	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
