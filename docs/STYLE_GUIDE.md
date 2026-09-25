@@ -18,6 +18,16 @@ Punk energy reference: neon graffiti chaos (spray, drips, scrawled notes, hot pi
 Use original motifs only. Do not copy existing characters, doodles or logos from any IP.
 The Cell mascot is an original grinning hexagon "cell".
 
+### 1.1 Neon city pass (2026-09-25)
+Reference: `docs/reference/ChatGPT Image Sep 24, 2026, 08_08_40 PM.png`. Every screen stands
+over the isometric neon city: in the physical world it is seen through the Cell's window; in
+the net it is re-inked with circuit lanes. Each corporation's district has its own building
+mix, colour weighting and landmark HQ (Solace helix spire, Meridian freight ziggurat and
+crane, Halcyon civic pyramid, Orbital tether, REBEL_CELL hex hive). Buildings are dark
+masses inked by hand in amber, purple, pink, cyan and green. System UI is terminal glass,
+with a mono title and a pink rule. The Cell's voice stays paper (taped notes, Polaroids,
+stamps, marker scrawls). CRT scanlines appear only on the city and terminal glass.
+
 ## 2. Colour Tokens
 | Token | Hex | Use |
 |---|---|---|
@@ -36,6 +46,10 @@ The Cell mascot is an original grinning hexagon "cell".
 | `crt_amber` | #FFB000 | CRT readouts on the physical deck only |
 | `resist_gold` | #FFD24D | Spin resistance, locks |
 | `desk_dark` | #1B1D21 / #34383E | Deck metal |
+| `night_*` | #060816 sky, #101832 / #1C2A55 blocks | City backdrop masses |
+| `neon_violet` | #B04DFF | Fifth ink colour (with amber, pink, cyan, green) |
+| `terminal_*` | navy glass rgba(5,13,28,.9), edge #5CE1FF @75% | Terminal panels |
+| `note_*` | #E9DFC6 paper, #F4C3CF pink, #F2DC7A yellow | Taped notes |
 
 Each corporation gets its own `corp_*` glow colour. Never use colour as the only signal.
 

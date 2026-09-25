@@ -1123,6 +1123,28 @@ and annotated in the GDD where it changes a rule.
   keycodes, so layouts other than QWERTY keep the key positions.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
+### Visual pass: neon city (2026-09-25)
+Directed by the project owner from `docs/reference/ChatGPT Image Sep 24, 2026, 08_08_40 PM.png`.
+View code only; no rules, content or schema changed.
+- **Backdrop:** `NeonCity` (scripts/ui/kit) replaces the flat window and wireframe skyline in
+  both worlds. It draws an isometric city with dark masses (black, dark grey-blue, dark grey)
+  inked in amber, purple, pink, cyan and green, over an irregular street grid. The
+  `city_sketch` shader adds vertex wobble, grain, a saturation boost and faint scanlines.
+  Each corporation has a district profile (building mix, height, colour share) and a
+  unique landmark HQ; the backgrounds follow `campaign.corporation_id`.
+- **CRT:** the screen-wide overlay keeps only a faint vignette and flicker (its uniforms
+  remain for reduce-effects). Scanlines are applied locally, only to the city and terminal
+  glass (`crt_panel` shader via `UiTheme.crt_material()`), never to paper, Polaroids or stamps.
+- **Theme:** controls are terminal glass (navy, thin cyan edge, pink hover, acid focus).
+  Type variations: MenuItem, TerminalPanel, GlassPanel, HudLabel, LogText, HotButton,
+  NoteButton. New kit: TerminalWindow, ScreenHeader, HudBar, GraffitiScrawl, NeonSign,
+  NeonTag, CrewCard, AssetCard, AssetIcon, RaidBoardView.
+- **Screens:** HQ (menu, City Grid monitor, crew dossiers, wanted, radio), Modem (reference
+  cyber shop), raid war table for setup, playout and summary, Terminal events with
+  taped-note choices, and system dialogs as terminal glass.
+- Screenshot shortcuts added: `--demo-event`, `--demo-dispatch`, `--demo-loot`,
+  `--demo-playout`, `--demo-codex`, `--demo-stats`, `--demo-district=<corp>`.
+
 ## Open questions for the designer
 
 - **Pacing after H15/H16.** With Daemons firing once per landing the bot's Breaker needs
