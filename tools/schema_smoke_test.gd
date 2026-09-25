@@ -328,4 +328,19 @@ func _m12() -> int:
 	var back := CampaignState.from_dict(c.to_dict())
 	print("CampaignState.assist round trip: ", back.assist)
 	if not back.is_assisted(): fails += 1
+	return fails + _h2()
+
+
+## Horizontal pass 2: config mirror_* / final_final_ice / major_heat_levels(),
+## CampaignState.start_class_id.
+func _h2() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	print("Config mirror defaults: ", cfg.mirror_output_factor, " ", cfg.mirror_threat_integrity, " ", cfg.mirror_threat_damage_bonus, " final ", cfg.final_final_ice)
+	if cfg.mirror_output_factor != 1.5 or cfg.mirror_threat_integrity != 1.5 or cfg.mirror_threat_damage_bonus != 2 or cfg.final_final_ice != 20: fails += 1
+	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("Major Heat levels: ", loaded.major_heat_levels())
+	if loaded.major_heat_levels().is_empty(): fails += 1
+	var c := CampaignState.new(); c.start_class_id = &"rigger"
+	if CampaignState.from_dict(c.to_dict()).start_class_id != &"rigger": fails += 1
 	return fails

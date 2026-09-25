@@ -29,5 +29,5 @@ script = ExtResource("1")
 id = &"ev_medbay"
 title = "Unlicensed Medbay"
 speaker = 0
-text = "A Solace auto-doc hums in a side room, jailbroken and unattended."
+text = "A corporate auto-doc hums in a side room, jailbroken and unattended."
 choices = Array[ExtResource("2")]([SubResource("c_heal"), SubResource("c_leave")])

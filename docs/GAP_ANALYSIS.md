@@ -16,6 +16,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | 2 | 2026-09-24 | 5 (V1–V5) plus 4 found by the balance simulation (home repair, raid frequency, patrol soft-lock, one-shot tier damage) and 1 display bug | Fixed in vertical batch 5 |
 | 3 | 2026-09-24 | **0** | Vertical slice clean. Horizontal loop starts (§4). |
 | H1 | 2026-09-24 | 16 after M6-M12 (Solace-only win text, speaker, music, DJ, ICE picker and records; codex spoilers; rescue; untested cores and home servers; built-in ICE Locks ignored in raids; stale docs) | Fixed in horizontal batch H1 |
+| H2 | 2026-09-24 | 11 (5 P1: raid names and warning keys per corporation, event speakers, shared text naming Solace, untested H1 rules; 6 P2) | Fixed in horizontal batch H2 |
 
 ### Pass 3 (vertical) — clean
 
@@ -85,8 +86,8 @@ P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = po
    chooses among unlocked classes.~~ Done in M6.
 2. ~~**Botnet drones persisting between combats** in a run (Hub passive).~~ Done in M6.
 3. ~~**Corporation selection** at campaign start (profile-unlocked corporations).~~ Done in M8.
-4. **Balance simulation** grows into a tuning tool (per ICE, per class). Per class done in M6
-   (`class=<id>`); per corporation arrives with corporation selection.
+4. ~~**Balance simulation** grows into a tuning tool (per ICE, per class, per corporation).~~
+   Done: `class=<id>` (M6), `corp=<id>` (M8), measured drafting (M7).
 
 ### P1
 5. ~~**Classes**: Ghost, Rigger, Botnet (wheels, Hub Cores + Mk2, rings, exclusive cards,

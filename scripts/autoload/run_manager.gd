@@ -108,7 +108,7 @@ func available_home_variants() -> Array[HomeServerVariantData]:
 ## and registers it (and its generated elites, threats and raids) in the lookup.
 func build_generated(corporation_id: StringName, snap: Dictionary) -> CorporationData:
 	var template := ContentRegistry.get_content(corporation_id) as CorporationData
-	var built := RebelCellBuilder.build(template, snap, lookup())
+	var built := RebelCellBuilder.build(template, snap, lookup(), config())
 	lookup().add(built)
 	return built
 
@@ -317,7 +317,7 @@ func sync_profile_with_campaign() -> void:
 		var c := lookup().get_content(id) as CorporationData
 		if c != null and not c.generated_from_profile:
 			corp_ids.append(id)
-	for id in Achievements.check(profile, null if campaign.is_assisted() else campaign, corp_ids):
+	for id in Achievements.check(profile, null if campaign.is_assisted() else campaign, corp_ids, config().final_final_ice):
 		profile.add_achievement(id)
 		new_achievements.append(id)
 		var d := Achievements.definition(id)

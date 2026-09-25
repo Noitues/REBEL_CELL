@@ -1251,7 +1251,7 @@ TerminalEventData.ev_dispatch_buyer.text,"An escrow record: Solace patient data,
 TerminalEventData.ev_dispatch_buyer.title,Escrow Receipt
 TerminalEventData.ev_dispatch_early_reply.text,DISPATCH: Good work at the Rack. Take the left route. // You have not told DISPATCH about the Rack yet. The message timestamp is eleven seconds before you jacked in.
 TerminalEventData.ev_dispatch_early_reply.title,DISPATCH: Early Reply
-TerminalEventData.ev_dispatch_ping.text,DISPATCH cuts in: this Terminal touches a Solace payroll account. Loud or quiet?
+TerminalEventData.ev_dispatch_ping.text,DISPATCH cuts in: this Terminal touches a corporate payroll account. Loud or quiet?
 TerminalEventData.ev_dispatch_ping.title,DISPATCH Ping
 TerminalEventData.ev_dispatch_voice.text,"DISPATCH sends a voice note for the first time. The cadence is human. On the third listen the breaths are evenly spaced, to the millisecond."
 TerminalEventData.ev_dispatch_voice.title,DISPATCH: Voice Note
@@ -1315,7 +1315,7 @@ TerminalEventData.ev_leash_on_the_floor.text,"A bricked implant lies in the main
 TerminalEventData.ev_leash_on_the_floor.title,A Leash on the Floor
 TerminalEventData.ev_loyalty_points.text,A glitched loyalty account shows ten million Solace Care Points. They expire at midnight.
 TerminalEventData.ev_loyalty_points.title,Loyalty Points
-TerminalEventData.ev_medbay.text,"A Solace auto-doc hums in a side room, jailbroken and unattended."
+TerminalEventData.ev_medbay.text,"A corporate auto-doc hums in a side room, jailbroken and unattended."
 TerminalEventData.ev_medbay.title,Unlicensed Medbay
 TerminalEventData.ev_mer_algorithm.text,A routing algorithm wants to renegotiate. It offers you a better route in exchange for a small favour.
 TerminalEventData.ev_mer_algorithm.title,The Algorithm

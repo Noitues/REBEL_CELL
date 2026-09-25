@@ -370,7 +370,7 @@ func _show_event() -> void:
 		holder = panel
 	holder.name = "EventPanel"
 	box.add_child(holder)
-	var who: String = Dialogue.SPEAKER_NAMES.get(ev.speaker, "")
+	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
 	var speaker := _label(who + ((" - " + TextDb.t(ev, "title")) if dispatch else ""))
 	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
 	body.add_child(speaker)
@@ -382,7 +382,7 @@ func _show_event() -> void:
 	body.add_child(text)
 	if not _spoken_events.has(ev.id):
 		_spoken_events[ev.id] = true
-		Dialogue.say(ev.speaker, TextDb.t(ev, "text"))
+		Dialogue.say(ev.speaker, TextDb.t(ev, "text"), 0.0, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
@@ -546,7 +546,7 @@ func _report(events: Array[Dictionary]) -> void:
 			"heat_threshold":
 				Dialogue.threshold_line(c.corporation_id, int(e.get("heat", 0)), c.campaign_seed)
 			"raid_interlude":
-				Dialogue.raid_warning(c.corporation_id, StringName(String(e.get("raid_id", ""))), c.raids_won + c.raids_lost)
+				Dialogue.raid_warning(c.corporation_id, StringName(String(e.get("queued_raid_id", e.get("raid_id", "")))), c.raids_won + c.raids_lost)
 
 
 func open_settings() -> void:

@@ -18,6 +18,7 @@ const RELAY_TYPES := [RC.NetworkNodeType.RELAY, RC.NetworkNodeType.FIREWALL_RELA
 static func new_campaign(corp: CorporationData, config: CampaignConfigData, lookup: ContentLookup, campaign_seed: int, class_data: ClassData, home_node: NetworkNodeData, ice_level: int = 0, home_variant: HomeServerVariantData = null) -> CampaignState:
 	var c := CampaignState.new()
 	c.corporation_id = corp.id
+	c.start_class_id = class_data.id
 	c.campaign_seed = campaign_seed
 	c.ice_level = ice_level
 	c.schematics = config.starting_schematics
@@ -174,7 +175,9 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 			allowed = true
 	if not allowed:
 		if site.objective == RC.SiteObjective.BOSS:
-			return "The breach needs %d Exploits (%d held)." % [config.min_exploits_for_breach, campaign.exploits.size()]
+			if campaign.exploits.size() < config.min_exploits_for_breach:
+				return "The breach needs %d Exploits (%d held)." % [config.min_exploits_for_breach, campaign.exploits.size()]
+			return "The breach needs a cleared or claimed Site next to it."
 		return "%s is not reachable from your territory." % site.id
 	if campaign.grid.is_seized(site.id):
 		return ""
@@ -347,7 +350,10 @@ static func compiler_racks_next_to(campaign: CampaignState, corp: CorporationDat
 static func unlock_for(lookup: ContentLookup, res: Resource) -> ProfileUnlockData:
 	for id in lookup.ids_of_class(&"ProfileUnlockData"):
 		var u := lookup.get_content(id) as ProfileUnlockData
-		if u != null and u.unlocks == res:
+		if u == null or u.unlocks == null or res == null:
+			continue
+		# By id too: a built REBEL_CELL is a new resource with the template's id.
+		if u.unlocks == res or ("id" in res and "id" in u.unlocks and u.unlocks.get("id") == res.get("id")):
 			return u
 	return null
 
@@ -825,6 +831,16 @@ static func raid_extra_waves(campaign: CampaignState, config: CampaignConfigData
 
 static func pending_raid(campaign: CampaignState) -> Dictionary:
 	return campaign.pending_raids[0] if not campaign.pending_raids.is_empty() else {}
+
+
+## Rewrites "Raid incoming" events from HeatRules with the corporation's own raid name.
+static func name_pending_raids(campaign: CampaignState, lookup: ContentLookup, events: Array[Dictionary]) -> void:
+	for e in events:
+		if e.get("type", "") != "raid_pending" or not e.has("shared_name"):
+			continue
+		var raid := raid_data({"raid_id": String(e["raid_id"]), "corporation": String(campaign.corporation_id)}, lookup)
+		if raid != null:
+			e["text"] = "Raid incoming: %s." % raid.display_name
 
 
 ## The RaidData for a pending raid. A corporation's raid that `replaces` the queued id

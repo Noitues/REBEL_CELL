@@ -130,8 +130,24 @@ extends Resource
 ## Assist mode (Settings.assist_mode): extra free nudges a turn and operative HP multiple.
 @export var assist_free_nudges: int = 1
 @export var assist_hp_multiplier: float = 1.25
+## REBEL_CELL Mirrors (RebelCellBuilder): slice output multiple, threat integrity multiple
+## and damage bonus. "Final final" needs every corporation at this ICE (GDD 8.5).
+@export var mirror_output_factor: float = 1.5
+@export var mirror_threat_integrity: float = 1.5
+@export var mirror_threat_damage_bonus: int = 2
+@export var final_final_ice: int = 20
 ## New corporations may start at (global best ICE - this).
 @export var new_corp_ice_offset: int = 5
+
+
+## The MAJOR Heat threshold levels, ascending (UI bands and poster marks).
+func major_heat_levels() -> Array[int]:
+	var out: Array[int] = []
+	for t in heat_thresholds:
+		if t != null and t.kind == RC.ThresholdKind.MAJOR:
+			out.append(t.heat)
+	out.sort()
+	return out
 
 
 func validate() -> PackedStringArray:

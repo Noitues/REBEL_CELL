@@ -96,12 +96,15 @@ func ice_records_text() -> String:
 		var corp := lookup.get_content(id) as CorporationData
 		if corp == null:
 			continue
+		if corp.generated_from_profile and not CampaignRules.corporation_available(p, lookup, corp):
+			continue
 		parts.append("%s %s" % [corp.display_name, ProfileState.ice_text(p.best_ice_for(corp.id))])
 		if not corp.generated_from_profile:
 			total += 1
 			if p.best_ice_for(corp.id) >= need:
 				cleared += 1
-	return "Best ICE: %s. REBEL_CELL opens at ICE %d everywhere (%d/%d)." % [", ".join(parts), need, cleared, total]
+	var tail := ("Something opens at ICE %d everywhere (%d/%d)." % [need, cleared, total]) if cleared < total else ""
+	return "Best ICE: %s. %s" % [", ".join(parts), tail]
 
 
 ## Starts the campaign a share code describes (GAP_ANALYSIS P2 12). Locked choices fall
@@ -248,10 +251,7 @@ func _set_panel(p: Control, name: String) -> void:
 	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	if RunManager.campaign != null:
-		var band := 0
-		for t in [25, 50, 75]:
-			if RunManager.campaign.heat >= t:
-				band += 1
+		var band := RunManager.campaign.heat_majors_crossed(RunManager.config())
 		background.heat_band = band
 		wireframe.corp_creep = band / 3.0
 		wireframe.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
@@ -301,6 +301,7 @@ func show_start() -> void:
 	var ice_label := _label("ICE (0-%d):" % cap)
 	row.add_child(ice_label)
 	var ice_spin := SpinBox.new()
+	ice_spin.name = "IceSpin"
 	ice_spin.min_value = 0
 	ice_spin.max_value = cap
 	ice_spin.value = 0
@@ -377,13 +378,13 @@ func show_hq() -> void:
 	header.add_child(GraffitiTag.new("REBEL_CELL"))
 	var poster := HeatPoster.new(true)
 	poster.hot_color = Palette.corp_color(c.corporation_id)
-	poster.set_heat(c.heat, cfg.heat_max)
+	poster.set_heat(c.heat, cfg.heat_max, cfg.major_heat_levels())
 	header.add_child(poster)
 	var radio := ZineNote.new("PIRATE RADIO", Vector2(260, 70))
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	radio.append(dj_line.text if dj_line != null else "lo-fi loop: HQ")
 	radio.append("vs %s | ICE %d%s" % [RunManager.corporation.display_name, c.ice_level, " | ASSIST" if c.is_assisted() else ""])
-	var code := CampaignCode.of(c, c.roster[0].class_id if not c.roster.is_empty() else RunManager.DEFAULT_CLASS)
+	var code := CampaignCode.of(c, c.start_class_id)
 	radio.append("Code: %s%s" % [code, " (local: REBEL_CELL is built from your profile)" if RunManager.corporation.generated_from_profile else ""])
 	radio.tooltip_text = dj_line.text if dj_line != null else ""
 	header.add_child(radio)
@@ -697,7 +698,7 @@ func show_codex() -> void:
 	if not Dialogue.history.is_empty():
 		var lines := ZineNote.new("LINES HEARD", Vector2(900, 100))
 		for h in Dialogue.history.slice(maxi(0, Dialogue.history.size() - 6)):
-			lines.append("[%s] %s" % [Dialogue.SPEAKER_NAMES.get(int(h["speaker"]), ""), h["text"]])
+			lines.append("[%s] %s" % [Dialogue.speaker_name(int(h["speaker"]), StringName(String(h.get("corporation", "")))), h["text"]])
 		box.add_child(lines)
 	box.add_child(_button("Back to HQ", show_hq if RunManager.campaign != null else show_start))
 	_set_panel(box, "codex")
@@ -799,6 +800,8 @@ func _refresh_status() -> void:
 
 
 func _report(events: Array[Dictionary]) -> void:
+	if RunManager.campaign != null:
+		CampaignRules.name_pending_raids(RunManager.campaign, RunManager.lookup(), events)
 	for e in events:
 		if e.has("text"):
 			_log.append_text(String(e["text"]) + "\n")

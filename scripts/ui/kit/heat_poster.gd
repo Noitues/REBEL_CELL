@@ -10,6 +10,8 @@ var heat: int = 0
 var heat_max: int = 100
 var poster: bool = false
 var band: int = 0
+## Threshold marks on the bar (the config's MAJOR Heat levels, passed by the scenes).
+var marks: Array[int] = [25, 50, 75]
 
 
 func _init(p_poster: bool = false) -> void:
@@ -18,9 +20,11 @@ func _init(p_poster: bool = false) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
-func set_heat(value: int, maximum: int, thresholds: Array[int] = [25, 50, 75]) -> void:
+func set_heat(value: int, maximum: int, thresholds: Array[int] = [] as Array[int]) -> void:
 	heat = value
 	heat_max = maximum
+	if not thresholds.is_empty():
+		marks = thresholds
 	band = 0
 	for t in thresholds:
 		if heat >= t:
@@ -51,7 +55,7 @@ func _draw() -> void:
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0), bar.size.y)), Palette.CELL_PINK)
-	for t in [25, 50, 75]:
+	for t in marks:
 		var tx: float = bar.position.x + bar.size.x * int(t) / float(heat_max)
 		draw_line(Vector2(tx, bar.position.y - 3), Vector2(tx, bar.end.y + 3), Palette.INK if poster else Palette.PAPER, 1.0)
 	draw_string(Palette.marker(), Vector2(8, y + 68), ["cool", "noticed", "flagged", "hunted"][mini(band, 3)], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.INK if poster else Palette.CELL_ACID)

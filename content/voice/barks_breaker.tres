@@ -16,7 +16,7 @@ text = "Latched. Twice for the price of one."
 [sub_resource type="Resource" id="l2"]
 script = ExtResource("2")
 key = "bark:perfect"
-text = "Perfect. Tell Solace the invoice is in the mail."
+text = "Perfect. Tell the board the invoice is in the mail."
 
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("2")
@@ -71,7 +71,7 @@ text = "Ghosting in. Nobody bills what nobody sees."
 [sub_resource type="Resource" id="l13"]
 script = ExtResource("2")
 key = "bark:boss"
-text = "The Engine. Big wheel, bad manners. Breach the Hub and it stops healing."
+text = "Big wheel, bad manners. Breach the Hub and it stops helping itself."
 
 [resource]
 script = ExtResource("1")

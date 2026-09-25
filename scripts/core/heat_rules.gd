@@ -59,7 +59,10 @@ static func fire_threshold(campaign: CampaignState, t: HeatThresholdData) -> Arr
 	if t.event_raid != null:
 		campaign.pending_raids.append({"raid_id": String(t.event_raid.id), "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": t.heat,
 			"corporation": String(campaign.corporation_id)})
-		events.append({"type": "raid_pending", "raid_id": t.event_raid.id, "text": "Raid incoming: %s." % t.event_raid.display_name})
+		# The name comes from the corporation's own raid when one replaces the shared one
+		# (CampaignRules.raid_data); HeatRules has no lookup, so callers rename it.
+		events.append({"type": "raid_pending", "raid_id": t.event_raid.id, "shared_name": t.event_raid.display_name,
+			"text": "Raid incoming: %s." % t.event_raid.display_name})
 	for m in t.event_complications:
 		if m != null:
 			campaign.pending_complications.append({"type": m.type, "value": m.value})

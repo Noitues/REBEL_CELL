@@ -729,6 +729,7 @@ func _maybe_raid_interlude() -> void:
 	run.phase = RunState.Phase.RAID
 	var raid := CampaignRules.raid_data(campaign.pending_raids[0], lookup)
 	last_events.append({"type": "raid_interlude", "raid_id": raid.id if raid != null else &"",
+		"queued_raid_id": String(campaign.pending_raids[0].get("raid_id", "")),
 		"text": "RAID INTERLUDE: %s. %s" % [raid.display_name if raid != null else "?", raid.warning_text if raid != null else ""]})
 
 
@@ -838,7 +839,9 @@ func _complete_run() -> void:
 		if e.get("type", "") == "campaign_effect" and int(e.get("effect", -1)) == RC.EffectType.MODIFY_HEAT:
 			_add_heat(int(e["amount"]), String(e.get("source_id", "daemon")))
 	if corporation != null:
-		last_events.append_array(CampaignRules.on_run_completed(campaign, corporation, config, run, lookup))
+		var done := CampaignRules.on_run_completed(campaign, corporation, config, run, lookup)
+		CampaignRules.name_pending_raids(campaign, lookup, done)
+		last_events.append_array(done)
 
 
 ## Death (GDD 4.2): permadeath, unbanked loot lost, banked loot kept, Heat +10 + tier.
@@ -883,6 +886,7 @@ func _add_heat(delta: int, reason: String) -> void:
 		return
 	var before := campaign.heat
 	var events := HeatRules.add_heat(campaign, delta, config, reason)
+	CampaignRules.name_pending_raids(campaign, lookup, events)
 	run.heat_gained += campaign.heat - before
 	last_events.append_array(events)
 

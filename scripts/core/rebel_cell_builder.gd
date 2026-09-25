@@ -16,12 +16,15 @@ const TOP_CLASSES := 2
 const TOP_DAEMONS := 3
 const TOP_NODES := 3
 const TOP_ASSETS := 3
-## Mirror slices are the nearest plain slice at this multiple of yours (1.5x keeps a
-## Tier 1 Mirror in line with the other corporations' elites; 2x killed rookies in two turns).
+## Defaults for config.mirror_* when no config is passed (tools, tests). 1.5x keeps a Tier 1
+## Mirror in line with the other corporations' elites; 2x killed rookies in two turns.
 const MIRROR_OUTPUT_FACTOR := 1.5
 ## Mirrored assets march as threats with this integrity multiple and damage bonus.
 const MIRROR_THREAT_INTEGRITY := 1.5
 const MIRROR_THREAT_DAMAGE_BONUS := 2
+static var _factor := MIRROR_OUTPUT_FACTOR
+static var _threat_integrity := MIRROR_THREAT_INTEGRITY
+static var _threat_damage := MIRROR_THREAT_DAMAGE_BONUS
 const FALLBACK_NODES: Array[StringName] = [&"relay", &"firewall_relay", &"safehouse"]
 const FALLBACK_ASSETS: Array[StringName] = [&"turret", &"ice_lock", &"decoy"]
 
@@ -49,7 +52,10 @@ static func _top(profile: ProfileState, kind: String, n: int) -> Array[StringNam
 
 ## Builds the campaign's REBEL_CELL from `template` and `snap`. Register the result in the
 ## lookup (ContentLookup.add walks it) so netruns and raids can resolve the new ids.
-static func build(template: CorporationData, snap: Dictionary, lookup: ContentLookup) -> CorporationData:
+static func build(template: CorporationData, snap: Dictionary, lookup: ContentLookup, config: CampaignConfigData = null) -> CorporationData:
+	_factor = config.mirror_output_factor if config != null else MIRROR_OUTPUT_FACTOR
+	_threat_integrity = config.mirror_threat_integrity if config != null else MIRROR_THREAT_INTEGRITY
+	_threat_damage = config.mirror_threat_damage_bonus if config != null else MIRROR_THREAT_DAMAGE_BONUS
 	var corp := template.duplicate(true) as CorporationData
 	corp.generated_from_profile = true
 	var elite_base: EnemyData = template.elites[0] if not template.elites.is_empty() else null
@@ -106,7 +112,7 @@ static func _stronger(slice: SliceData, lookup: ContentLookup) -> SliceData:
 		return slice
 	var want_type := RC.SliceType.ATTACK if slice.slice_type == RC.SliceType.DEPLOY else slice.slice_type
 	var base := maxi(1, slice.base_output) if slice.slice_type != RC.SliceType.DEPLOY else 6
-	var want := base * MIRROR_OUTPUT_FACTOR
+	var want := base * _factor
 	var best: SliceData = null
 	for id in lookup.ids_of_class(&"SliceData"):
 		var c := lookup.get_content(id) as SliceData
@@ -172,8 +178,8 @@ static func _mirror_threat(asset: DefenseAssetData) -> ThreatData:
 	t.id = StringName("rc_threat_%s" % asset.id)
 	t.display_name = "Mirror %s" % asset.display_name
 	t.description = "Your own %s, marching on your home." % asset.display_name
-	t.integrity = maxi(10, roundi(asset.integrity * MIRROR_THREAT_INTEGRITY))
-	t.damage = maxi(4, asset.damage + MIRROR_THREAT_DAMAGE_BONUS)
+	t.integrity = maxi(10, roundi(asset.integrity * _threat_integrity))
+	t.damage = maxi(4, asset.damage + _threat_damage)
 	match asset.asset_type:
 		RC.AssetType.TURRET:
 			t.routing = RC.ThreatRouting.WEAKEST_NODE

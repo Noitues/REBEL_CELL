@@ -105,7 +105,13 @@ func show_stats() -> void:
 	var note := ZineNote.new("STATS", Vector2(900, 200))
 	note.append("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
-	note.append("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d." % [ProfileState.ice_text(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0))])
+	note.append("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d." % [ProfileState.ice_text(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
+	var per_corp := PackedStringArray()
+	for cid in RunManager.lookup().ids_of_class(&"CorporationData"):
+		var corp := RunManager.lookup().get_content(cid) as CorporationData
+		if corp != null and (not corp.generated_from_profile or CampaignRules.corporation_available(p, RunManager.lookup(), corp)):
+			per_corp.append("%s %s" % [corp.display_name, ProfileState.ice_text(p.best_ice_for(corp.id))])
+	note.append("Best ICE by corporation: %s." % ", ".join(per_corp))
 	note.append("[b]Achievements[/b]")
 	for d in Achievements.DEFS:
 		var have := p.achievements.has(d["id"])
@@ -115,7 +121,8 @@ func show_stats() -> void:
 	if p.run_history.is_empty():
 		history.append("no runs yet")
 	for r in p.run_history:
-		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
+		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
+		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [corp.display_name if corp != null else r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
 	box.add_child(history)
 	box.add_child(_button("Back", show_main))
 	_set_panel(box, "stats")

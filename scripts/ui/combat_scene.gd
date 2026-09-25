@@ -506,11 +506,7 @@ func _start_music() -> void:
 			if data != null and (data.is_boss or data.is_mini_boss):
 				boss = true
 	AudioDirector.play_music("boss" if boss else "combat")
-	var band := 0
-	if RunManager.campaign != null:
-		for t in [25, 50, 75]:
-			if RunManager.campaign.heat >= t:
-				band += 1
+	var band := RunManager.campaign.heat_majors_crossed(RunManager.config()) if RunManager.campaign != null else 0
 	AudioDirector.set_heat_layers(band)
 
 
@@ -563,6 +559,8 @@ func _build_ui() -> void:
 	left.add_child(ram_note)
 	heat_poster = HeatPoster.new(false)
 	heat_poster.name = "HeatPoster"
+	if RunManager.campaign != null:
+		heat_poster.hot_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	left.add_child(heat_poster)
 	# One note serves both: the installed Daemons by default, the inspect text on right-click
 	# (the left column must stay within the 720-px canvas next to the netrun status bars).
@@ -697,7 +695,7 @@ func _refresh(state: CombatState) -> void:
 	ram_note.append("[b]%s[/b] %d/%d" % [tally, state.ram, state.max_ram])
 	_refresh_inspect_note()
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
-	heat_poster.set_heat(heat, engine.resolver.config.heat_max)
+	heat_poster.set_heat(heat, engine.resolver.config.heat_max, engine.resolver.config.major_heat_levels())
 	background.corp_creep = clampf(float(heat) / 100.0, 0.0, 1.0)
 	_player_view.show_combatant(state.player, state.satellites_of(state.player.id), engine.readouts(state.player), lookup)
 	var reveal := int(state.flags.get("reveal_phases", 0)) > 0

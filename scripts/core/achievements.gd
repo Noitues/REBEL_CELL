@@ -18,6 +18,7 @@ const DEFS: Array[Dictionary] = [
 ]
 
 
+## Default for config.final_final_ice when no config is passed.
 const FINAL_FINAL_ICE := 20
 
 
@@ -30,7 +31,7 @@ static func definition(id: StringName) -> Dictionary:
 
 ## Ids earned by the profile (and the campaign just concluded, if any) that it does not
 ## have yet, in definition order.
-static func check(profile: ProfileState, campaign: CampaignState = null, corporation_ids: Array = []) -> Array[StringName]:
+static func check(profile: ProfileState, campaign: CampaignState = null, corporation_ids: Array = [], final_final_ice: int = FINAL_FINAL_ICE) -> Array[StringName]:
 	var out: Array[StringName] = []
 	var won := campaign != null and campaign.outcome == CampaignState.Outcome.WON
 	var earned := {
@@ -43,7 +44,7 @@ static func check(profile: ProfileState, campaign: CampaignState = null, corpora
 		&"purge_survivor": won and campaign.thresholds_fired.has(100),
 		&"wall": profile.raids_won >= 20,
 		&"perfectionist": int(profile.stats.get("perfects", 0)) >= 500,
-		&"final_final": _final_final(profile, corporation_ids),
+		&"final_final": _final_final(profile, corporation_ids, final_final_ice),
 	}
 	for d in DEFS:
 		var id: StringName = d["id"]
@@ -54,10 +55,10 @@ static func check(profile: ProfileState, campaign: CampaignState = null, corpora
 
 ## GDD 8.5 "final final": REBEL_CELL cleared at ICE 20 and every other corporation in
 ## `corporation_ids` (the non-generated ones) cleared at ICE 20.
-static func _final_final(profile: ProfileState, corporation_ids: Array) -> bool:
-	if corporation_ids.is_empty() or profile.best_ice_for(RebelCellBuilder.ID) < FINAL_FINAL_ICE:
+static func _final_final(profile: ProfileState, corporation_ids: Array, ice: int) -> bool:
+	if corporation_ids.is_empty() or profile.best_ice_for(RebelCellBuilder.ID) < ice:
 		return false
 	for id in corporation_ids:
-		if profile.best_ice_for(StringName(String(id))) < FINAL_FINAL_ICE:
+		if profile.best_ice_for(StringName(String(id))) < ice:
 			return false
 	return true

@@ -45,6 +45,8 @@ var generated: Dictionary = {}
 ## Assist mode (GAP_ANALYSIS P2 13): {"free_nudges": int, "hp_multiplier": float}; empty =
 ## a normal campaign. Set at campaign start, never changed later.
 var assist: Dictionary = {}
+## The class the campaign started with (share codes stay valid after that operative dies).
+var start_class_id: StringName = &"breaker"
 var raids_won: int = 0
 var raids_lost: int = 0
 ## Result of the last raid (RaidResult.to_dict()) for the summary screen.
@@ -169,7 +171,7 @@ func _raw_dict() -> Dictionary:
 		"story_path_id": String(story_path_id), "story_beats_revealed": story_beats_revealed,
 		"pending_raids": pending_raids.duplicate(true), "pending_complications": pending_complications.duplicate(true),
 		"heat_purchases": heat_purchases, "pending_boosts": _names(pending_boosts),
-		"disabled_objectives": _names(disabled_objectives), "home_variant_id": String(home_variant_id), "generated": generated.duplicate(true), "assist": assist.duplicate(),
+		"disabled_objectives": _names(disabled_objectives), "home_variant_id": String(home_variant_id), "generated": generated.duplicate(true), "assist": assist.duplicate(), "start_class_id": String(start_class_id),
 		"raids_won": raids_won, "raids_lost": raids_lost,
 		"last_raid": last_raid.duplicate(true), "outcome": outcome,
 	}
@@ -210,6 +212,7 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	c.home_variant_id = StringName(String(d.get("home_variant_id", "home_standard")))
 	c.generated = (d.get("generated", {}) as Dictionary).duplicate(true)
 	c.assist = (d.get("assist", {}) as Dictionary).duplicate()
+	c.start_class_id = StringName(String(d.get("start_class_id", "breaker")))
 	c.raids_won = int(d.get("raids_won", 0))
 	c.raids_lost = int(d.get("raids_lost", 0))
 	c.last_raid = d.get("last_raid", {}).duplicate(true)

@@ -30,6 +30,33 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 2 fixes (GAP_ANALYSIS H2)
+- **Raid names per corporation**: `CampaignRules.name_pending_raids` rewrites HeatRules'
+  "Raid incoming" text with the corporation's own raid (HQ report, netrun Heat, run end).
+- **Raid warning keys**: mid-run interludes carry the queued (shared) raid id, so the
+  corporation's specific warning plays on both screens.
+- **Event speakers** carry their corporation (label and colour); "lines heard" too.
+- **Held at home = no damage while held**; the damage lands on the step the hold ends.
+- **Boss launch message**: with enough Exploits it now says the boss needs a cleared or
+  claimed Site next to it (it used to repeat "needs 3 Exploits (3 held)").
+- **Share codes** encode the campaign's starting class (`CampaignState.start_class_id`), so
+  the code stays valid after that operative dies.
+- **ICE records** skip a locked REBEL_CELL (no spoiler) and hint "something opens at ICE
+  10 everywhere"; the stats screen shows records per corporation and assisted wins; run
+  history names corporations.
+- **No magic numbers**: Heat bands come from the config's MAJOR thresholds
+  (`major_heat_levels()`); Mirror factors and the "final final" ICE moved to the config
+  (`mirror_output_factor`, `mirror_threat_integrity`, `mirror_threat_damage_bonus`,
+  `final_final_ice`; code keeps the same defaults for tools).
+- **Colours**: Halcyon #8C7BFF (was too close to Solace), Orbital #DDE3FF (was too close to
+  resist_gold); every corporation colour is in STYLE_GUIDE. Dead `CLASS_COLORS` removed.
+- **Shared text**: the Medbay and DISPATCH ping events and two Breaker barks no longer name
+  Solace.
+- **Unlock matching by id** (bug found by the full suite): after a REBEL_CELL campaign the
+  built corporation replaces the template in the lookup, and `unlock_for` compared objects,
+  so REBEL_CELL looked open to everyone for the rest of the session. Unlocks now also match
+  by content id.
+
 ### 2026-09-24 — Horizontal pass 1 fixes (GAP_ANALYSIS H1)
 - **Corporation-aware everywhere**: the win text and end screen name the corporation's own
   boss; corporate subtitle lines carry the corporation's short name ("MERIDIAN") and colour

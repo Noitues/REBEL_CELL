@@ -35,11 +35,9 @@ const SLICE_NAMES := {
 ## A glyph and tag for every status, also readable without colour.
 const STATUS_GLYPHS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "☠", RC.Status.OVERCLOCKED: "⚡", RC.Status.ENCRYPTED: "⌗", RC.Status.PARASITE: "✺"}
 const STATUS_TAGS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CRPT", RC.Status.OVERCLOCKED: "OVCL", RC.Status.ENCRYPTED: "ENC", RC.Status.PARASITE: "PRST"}
-const CLASS_COLORS := {&"breaker": Color("#FF3DA8"), &"ghost": Color("#9FE8FF"), &"rigger": Color("#FFB347"), &"botnet": Color("#B08CFF"),
-	&"wrecker": Color("#FF3DA8"), &"phantom": Color("#9FE8FF"), &"overclocker": Color("#FFB347"), &"hivemind": Color("#B08CFF")}
 const TIER_NAMES := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.PARTIAL: "PARTIAL"}
 
-## Corporation glow colour (each corporation gets its own; Solace for now).
+## Corporation glow colour (each corporation has its own; see STYLE_GUIDE).
 static func corp_color(corporation_id: StringName) -> Color:
 	match corporation_id:
 		&"solace":
@@ -47,9 +45,9 @@ static func corp_color(corporation_id: StringName) -> Color:
 		&"meridian":
 			return Color("#FF8C1A")
 		&"halcyon":
-			return Color("#4FFFB0")
+			return Color("#8C7BFF")
 		&"orbital":
-			return Color("#FFE14F")
+			return Color("#DDE3FF")
 		&"rebel_cell":
 			return Color("#FF2A6D")
 		_:

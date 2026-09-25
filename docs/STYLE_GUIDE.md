@@ -29,6 +29,10 @@ The Cell mascot is an original grinning hexagon "cell".
 | `net_cyan` | #5CE1FF | Neutral net geometry, grid, links |
 | `net_bg` | #02030A → #0D1440 | Cyberspace background (radial) |
 | `corp_solace` | #3DFF8B | Solace wheels, Sites, threats, holograms |
+| `corp_meridian` | #FF8C1A | Meridian Freight Systems (M8) |
+| `corp_halcyon` | #8C7BFF | Halcyon Civic (M9; moved off #4FFFB0, too close to Solace) |
+| `corp_orbital` | #DDE3FF | Orbital Commons (M10; starlight, kept clear of resist_gold) |
+| `corp_rebel_cell` | #FF2A6D | REBEL_CELL (M11) |
 | `crt_amber` | #FFB000 | CRT readouts on the physical deck only |
 | `resist_gold` | #FFD24D | Spin resistance, locks |
 | `desk_dark` | #1B1D21 / #34383E | Deck metal |
