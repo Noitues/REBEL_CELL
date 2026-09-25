@@ -36,11 +36,11 @@ func _ready() -> void:
 	for i in cards.size():
 		var c := ZineCard.new(cards[i][0], cards[i][1], cards[i][2], i)
 		hand.add_child(c)
-	var send := DripButton.new("SEND IT", "[SPACE]", [Palette.CELL_PINK, Palette.CELL_ACID, Palette.PAPER][["A", "B", "C"].find(concept)], 54)
-	send.position = Vector2(1010, 590)
+	var send := DripButton.new("SEND IT", "[SPACE]", DripButton.DRIP_PINK, 54, DripButton.SEND_IT_DRIPS)
+	send.position = Vector2(1000, 560)
 	add_child(send)
 	var tag := Label.new()
-	tag.text = "COMBAT CONCEPT %s  //  %s" % [concept, {"A": "DECK & TONEARM", "B": "NEON GAUGE", "C": "ZINE DIAL"}[concept]]
+	tag.text = "COMBAT CONCEPT %s  //  %s" % [concept, {"A": "DECK & TONEARM", "B": "NEON GAUGE", "C": "ZINE DIAL", "D1": "BLEND - flat paper tag", "D2": "BLEND - rounded speech bubble"}[concept]]
 	tag.theme_type_variation = &"HudLabel"
 	tag.position = Vector2(0, 0)
 	tag.size = Vector2(1280, 30)
@@ -48,8 +48,8 @@ func _ready() -> void:
 
 
 func _draw_art() -> void:
-	var p := Vector2(400, 310)
-	var e := Vector2(880, 310)
+	var p := Vector2(380, 300)
+	var e := Vector2(900, 300)
 	match concept:
 		"A":
 			_wheel_deck(p, PLAYER, 0.9, Palette.CELL_PINK, 42, 60, true)
@@ -71,6 +71,16 @@ func _draw_art() -> void:
 			_callout(Vector2(20, 120), 3, "arc arrows + icon buttons")
 			_callout(Vector2(20, 150), 6, "ghost pointer + outcome badge")
 			_callout(Vector2(20, 180), 5, "SEND IT: acid drip tag")
+		"D1", "D2":
+			_wheel_blend(p, PLAYER, 0.0, Palette.CELL_PINK, 42, 60, true)
+			_wheel_blend(e, ENEMY, 0.0, Palette.CORP_SOLACE, 30, 42, false)
+			_actions_stickers(p)
+			if concept == "D1":
+				_tag_bubble(p + Vector2(-80, -262), RC.SliceType.DEFEND, "+5 ×2 block!")
+				_tag_bubble(e + Vector2(-60, -262), RC.SliceType.DEFEND, "+6 block")
+			else:
+				_round_bubble(p + Vector2(-80, -272), RC.SliceType.DEFEND, "+5 ×2 block!")
+				_round_bubble(e + Vector2(-60, -272), RC.SliceType.DEFEND, "+6 block")
 		_:
 			_wheel_zine(p, PLAYER, 0.9, Palette.CELL_PINK, 42, 60, true)
 			_wheel_zine(e, ENEMY, 2.1, Palette.CORP_SOLACE, 30, 42, false)
@@ -306,10 +316,10 @@ func _sticker(at: Vector2, text: String, col: Color, tilt: float) -> void:
 
 
 func _actions_stickers(c: Vector2) -> void:
-	_sticker(c + Vector2(-170, -30), "◀ NUDGE", Palette.NOTE_YELLOW, -0.1)
-	_sticker(c + Vector2(170, -30), "NUDGE ▶", Palette.NOTE_YELLOW, 0.08)
-	_sticker(c + Vector2(-160, 60), "RESPIN", Palette.STICKER_PINK, 0.06)
-	_sticker(c + Vector2(160, 60), "FLIP", Palette.NOTE_PAPER, -0.07)
+	_sticker(c + Vector2(-205, -20), "◀ NUDGE", Palette.NOTE_YELLOW, -0.1)
+	_sticker(c + Vector2(205, -20), "NUDGE ▶", Palette.NOTE_YELLOW, 0.08)
+	_sticker(c + Vector2(-200, 70), "RESPIN", Palette.STICKER_PINK, 0.06)
+	_sticker(c + Vector2(200, 70), "FLIP", Palette.NOTE_PAPER, -0.07)
 
 
 func _bubble(at: Vector2, type: int, text: String) -> void:
@@ -325,3 +335,101 @@ func _bubble(at: Vector2, type: int, text: String) -> void:
 func _resolve_bubbles(p: Vector2, e: Vector2) -> void:
 	_bubble(p + Vector2(-40, -262), RC.SliceType.DEFEND, "+5 ×2 block!")
 	_bubble(e + Vector2(-40, -262), RC.SliceType.DEFEND, "+6 block")
+
+
+# --- Concept D: the blend --------------------------------------------------------------------
+# Neon gauge bars with icons in the wedge and values outside (no circles), a perfect-spot
+# arrow on each slice's outer edge, zine dial arrow / stickers / bubble, tonearm HP + RAM.
+
+func _wheel_blend(c: Vector2, slices: Array, rot: float, col: Color, hp: int, max_hp: int, player: bool) -> void:
+	var r := 118.0
+	var band := 40.0
+	var n := slices.size()
+	art.draw_circle(c, r + 36, Color(0, 0, 0, 0.55))
+	art.draw_circle(c, r - band - 4, Color("#07080F"))
+	for i in n:
+		var a0 := _angle(i, n, rot) - PI / n
+		var a1 := a0 + TAU / n
+		var am := (a0 + a1) * 0.5
+		var t: int = slices[i][0]
+		var sc := _slice_col(t)
+		var wedge := _wedge(c, r - band, r, a0 + 0.035, a1 - 0.035)
+		art.draw_colored_polygon(wedge, Color(sc, 0.85 if t != RC.SliceType.MISS else 0.18))
+		var closed := wedge.duplicate()
+		closed.append(wedge[0])
+		art.draw_polyline(closed, Color(sc.lightened(0.3), 0.9), 1.2)
+		# Icon inside the bar.
+		SliceIcon.draw_icon(art, c + Vector2(cos(am), sin(am)) * (r - band * 0.5), 12, t, Palette.PAPER)
+		# Value outside the slice, no circle.
+		if int(slices[i][1]) > 0:
+			var vp := c + Vector2(cos(am), sin(am)) * (r + 30)
+			art.draw_string(Palette.display(), vp + Vector2(-20, 9), str(slices[i][1]), HORIZONTAL_ALIGNMENT_CENTER, 40, 24, sc.lightened(0.35))
+		# Perfect spot: a small arrow on the outer edge at the slice's middle, pointing out.
+		var tip := c + Vector2(cos(am), sin(am)) * (r + 11)
+		var base := c + Vector2(cos(am), sin(am)) * (r + 2)
+		var side := Vector2(-sin(am), cos(am)) * 5.0
+		art.draw_colored_polygon(PackedVector2Array([tip, base + side, base - side]), Palette.CELL_ACID)
+	# Zine dial arrow at the top (the pointer).
+	var ptip := c + Vector2(0, -r + 6)
+	var arrow := PackedVector2Array([ptip, ptip + Vector2(-16, -30), ptip + Vector2(-6, -30), ptip + Vector2(-6, -62), ptip + Vector2(6, -62), ptip + Vector2(6, -30), ptip + Vector2(16, -30)])
+	art.draw_colored_polygon(arrow, Palette.CELL_ACID)
+	art.draw_polyline(arrow + PackedVector2Array([arrow[0]]), Palette.INK, 2.0)
+	art.draw_rect(Rect2(ptip + Vector2(-14, -60), Vector2(28, 10)), Palette.NOTE_TAPE)
+	art.draw_string(Palette.marker(), c + Vector2(-90, -r - 76), "BREAKER" if player else "BILLING DAEMON", HORIZONTAL_ALIGNMENT_CENTER, 180, 16, col)
+	# Tonearm HP: segmented arc under the wheel with the number.
+	var segs := 20
+	for k in segs:
+		# Split around the bottom slice's value.
+		var a0 := PI * 0.12 + PI * 0.76 * k / segs
+		var a1 := a0 + PI * 0.76 / segs * 0.8
+		if absf((a0 + a1) * 0.5 - PI * 0.5) < 0.2:
+			continue
+		var lit := float(k) / segs < float(hp) / max_hp
+		art.draw_colored_polygon(_wedge(c, r + 50, r + 60, a0, a1), Color("#3DFF8B") if lit else Color(1, 1, 1, 0.1))
+	art.draw_string(Palette.display(), c + Vector2(-60, r + 90), "%d/%d HP" % [hp, max_hp], HORIZONTAL_ALIGNMENT_CENTER, 120, 22, Palette.PAPER)
+	art.draw_string(Palette.display(), c + Vector2(-40, 10), "%d" % hp, HORIZONTAL_ALIGNMENT_CENTER, 80, 30, Color(Palette.PAPER, 0.85))
+	if player:
+		for k in 12:
+			var rc := Rect2(c + Vector2(-96 + k * 16, r + 100), Vector2(12, 12))
+			art.draw_rect(rc, Palette.NET_CYAN if k < 6 else Color(1, 1, 1, 0.1))
+			art.draw_rect(rc, Color(Palette.NET_CYAN, 0.6), false, 1.0)
+		art.draw_string(Palette.mono(), c + Vector2(104, r + 111), "RAM 6/12", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.NET_CYAN)
+
+
+## D1: a flat taped paper tag, no tail.
+func _tag_bubble(at: Vector2, type: int, text: String) -> void:
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 52
+	art.draw_rect(Rect2(at + Vector2(4, 5), Vector2(w, 40)), Palette.SHADOW)
+	art.draw_rect(Rect2(at, Vector2(w, 40)), Palette.NOTE_PAPER)
+	art.draw_rect(Rect2(at, Vector2(w, 40)), Color(Palette.INK, 0.5), false, 1.0)
+	art.draw_rect(Rect2(at + Vector2(w * 0.5 - 16, -6), Vector2(32, 11)), Palette.NOTE_TAPE)
+	SliceIcon.draw_icon(art, at + Vector2(20, 20), 11, type, Palette.slice_color(type))
+	art.draw_string(Palette.marker(), at + Vector2(38, 28), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.INK)
+
+
+## D2: a rounded paper speech bubble with a curved tail.
+func _round_bubble(at: Vector2, type: int, text: String) -> void:
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 56
+	var h := 44.0
+	var pts := PackedVector2Array()
+	var rad := 20.0
+	var corners := [[Vector2(w - rad, rad), -PI * 0.5], [Vector2(w - rad, h - rad), 0.0], [Vector2(rad, h - rad), PI * 0.5], [Vector2(rad, rad), PI]]
+	for cr in corners:
+		for k in 7:
+			var a: float = cr[1] + PI * 0.5 * k / 6.0
+			pts.append(at + cr[0] + Vector2(cos(a), sin(a)) * rad)
+	# Tail from the bottom edge, curving down-left.
+	var tail := PackedVector2Array([at + Vector2(w * 0.45, h - 2), at + Vector2(w * 0.36, h + 22), at + Vector2(w * 0.32, h + 26), at + Vector2(w * 0.34, h + 18), at + Vector2(w * 0.3, h - 2)])
+	var shadow := PackedVector2Array()
+	for q in pts:
+		shadow.append(q + Vector2(4, 5))
+	art.draw_colored_polygon(shadow, Palette.SHADOW)
+	art.draw_colored_polygon(pts, Palette.NOTE_PAPER)
+	art.draw_colored_polygon(tail, Palette.NOTE_PAPER)
+	var closed := pts.duplicate()
+	closed.append(pts[0])
+	art.draw_polyline(closed, Palette.INK, 2.0)
+	art.draw_polyline(PackedVector2Array([tail[4], tail[3], tail[2], tail[1], tail[0]]), Palette.INK, 2.0)
+	art.draw_line(tail[4] + Vector2(1, -1), tail[0] + Vector2(-1, -1), Palette.NOTE_PAPER, 3.0)
+	SliceIcon.draw_icon(art, at + Vector2(24, h * 0.5), 11, type, Palette.slice_color(type))
+	art.draw_string(Palette.marker(), at + Vector2(42, 30), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.INK)

@@ -4,8 +4,8 @@
 // `flicker` go to 0 under reduce-effects.
 shader_type canvas_item;
 
-uniform float wobble = 1.6;
-uniform float jitter = 0.5;
+uniform float wobble = 0.0;
+uniform float jitter = 0.0;
 uniform float saturation = 1.6;
 uniform float grain : hint_range(0.0, 1.0) = 0.12;
 uniform float scan_strength : hint_range(0.0, 1.0) = 0.07;

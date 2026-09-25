@@ -90,7 +90,7 @@ var focus_grid: Vector2 = Vector2.INF
 var focus_anchor: Vector2 = Vector2(0.5, 0.5)
 ## Design review: big territory names over each HQ (the zoomed-out overview).
 var territory_labels: bool = false
-var ink_set: int = 0:
+var ink_set: int = 3:
 	set(v):
 		ink_set = v
 		refresh()
@@ -603,13 +603,19 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	var b := _iso(i + 0.5, j + 1) if along_i else _iso(i + 1, j + 0.5)
 	var nn := (b - a).orthogonal().normalized()
 	if traffic > 0.4:
-		# Busy streets read as broad painted bands (12-24 px) with a bright centre line.
+		# Busy streets: a broad painted band, then the band re-stroked two or three times
+		# with slight offsets (hand-inked, gone over again), and a bright centre line.
 		var k := (traffic - 0.4) / 0.6
-		var band := lerpf(12.0, 24.0, k)
+		var band := lerpf(14.0, 28.0, k)
 		var g := Color(col, 0.1 + k * 0.08)
 		_quad(a - nn * band, b - nn * band, b + nn * band, a + nn * band, g, g, g, g)
-		_ink_line(a, b, Color(col, 0.5 + k * 0.2), band * 0.9, false)
-		_ink_line(a, b, Color(col.lightened(0.4), 0.9), 1.6 + k * 1.4, false)
+		var passes := 2 + int(k * 1.99)
+		for pss in passes:
+			var off := (_h(i, j, 80 + pss) - 0.5) * band * 0.35
+			var along := (b - a).normalized() * (_h(j, i, 90 + pss) - 0.5) * 6.0
+			_ink_line(a + nn * off + along, b + nn * off - along, Color(col, 0.42 + k * 0.18), band * lerpf(0.85, 0.55, float(pss) / passes), false)
+		_ink_line(a, b, Color(col.lightened(0.4), 0.9), 2.2 + k * 2.0, false)
+		_ink_line(a + nn * 1.5, b + nn * 1.5, Color(col.lightened(0.4), 0.4), 1.4 + k, false)
 	else:
 		var gw := 4.0 + traffic * 9.0
 		var g := Color(col, 0.07 + traffic * 0.12)
