@@ -30,6 +30,8 @@ const TERMINAL_TEXT := Color("#CFF6FF")
 const NOTE_PAPER := Color("#E9DFC6")
 const NOTE_PINK := Color("#F4C3CF")
 const NOTE_YELLOW := Color("#F2DC7A")
+## Softened hot pink for pink card stickers: black text stays readable on it.
+const STICKER_PINK := Color("#F5AFCB")
 const NOTE_TAPE := Color(0.93, 0.89, 0.78, 0.7)
 const SHADOW := Color(0, 0, 0, 0.45)
 

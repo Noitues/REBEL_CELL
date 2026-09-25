@@ -67,7 +67,7 @@ func _draw() -> void:
 			bg = Palette.INK
 			fg = Palette.PAPER
 		Variant.PINK:
-			bg = Palette.CELL_PINK
+			bg = Palette.STICKER_PINK
 			fg = Palette.INK
 	var rect := Rect2(Vector2.ZERO, size)
 	if _lifted:
