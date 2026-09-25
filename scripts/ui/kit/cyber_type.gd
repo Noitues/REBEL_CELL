@@ -58,6 +58,8 @@ static func draw_text(ci: CanvasItem, at: Vector2, text: String, u: float, col: 
 				var pts := PackedVector2Array()
 				for p in line:
 					pts.append(o + p * u)
+				# Dark backing so the letter reads over busy circuitry.
+				ci.draw_polyline(pts, Color(Palette.NIGHT_SKY, 0.9), stroke * 4.0, true)
 				ci.draw_polyline(pts, Color(col, 0.14), stroke * 5.0, true)
 				ci.draw_polyline(pts, Color(col, 0.35), stroke * 2.4, true)
 				ci.draw_polyline(pts, col.lightened(0.35), stroke, true)

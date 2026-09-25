@@ -610,13 +610,18 @@ func _show_shop() -> void:
 	var root := Control.new()
 	root.name = "ModemRoot"
 	root.custom_minimum_size = Vector2(1240, 540)
+	var sign := ModemSign.new()
+	sign.name = "ModemSign"
+	sign.position = Vector2(0, -6)
+	sign.size = Vector2(230, 560)
+	root.add_child(sign)
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
-	grid.position = Vector2(0, 0)
+	grid.position = Vector2(236, 0)
 	root.add_child(grid)
-	var q_size := Vector2(560, 250)
+	var q_size := Vector2(490, 250)
 	# Top left: microchips (Firmware).
 	var fw_slot := OptionButton.new()
 	for k in op.slot_slice_ids.size():
@@ -717,7 +722,7 @@ func _show_shop() -> void:
 	shred.icon_kind = "shred"
 	shred.pressed.connect(open_remove)
 	remove_row.add_child(shred)
-	var leave := DripButton.new("LEAVE THE MODEM", "", DripButton.DRIP_PINK, 34, DripButton.LEAVE_MODEM_DRIPS)
+	var leave := DripButton.new("LEAVE THE MODEM", "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
 	leave.name = "LeaveModem"
 	leave.position = Vector2(900, 522)
 	leave.pressed.connect(leave_shop)

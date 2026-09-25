@@ -1156,6 +1156,19 @@ View code only; no rules, content or schema changed.
 - Deck / spinner views: left click selects (hand-drawn X to remove, drippy circle to
   upgrade), right click shows details; drip-lettered action beside Close.
 
+### Visual pass: combat and Modem built (2026-09-25)
+- Combat (owner's picks): spinners as neon gauge bars with drawn slice icons in the
+  wedge, values outside (full slice text on hover), white in-slice "perfect" arrows, white
+  gauge-needle pointers, HP as a segmented arc with the numbers in its gap, a bare RAM
+  chip bar. What will resolve is a taped tag over each spinner (from the same end-turn
+  preview as before, so tag = real result). The log strip and the preview wall are no
+  longer shown (kept hidden as the text record the tutorial and tests read). Nudge,
+  respin, undo and the old dropdown toggles are stickers around the player spinner (keys
+  unchanged). Click an enemy spinner to target it. SEND IT is drip lettering.
+  `test_layout_rules` updated to these rules.
+- Modem: the vertical circuit-board MODEM CYBER SHOP sign on the left of the quadrants.
+- City: HQs doubled (10x10 plazas) with added detail; streets without traffic dashes.
+
 ## Open questions for the designer
 
 - **Deck / spinner viewers (2026-09-25):** added as look-and-pick views (DeckView,

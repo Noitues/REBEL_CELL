@@ -45,14 +45,25 @@ func test_combat_zine_elements_never_cover_the_wheels() -> void:
 	for c in scene.enemy_wheel_colors():
 		assert_eq(c, Palette.CORP_SOLACE, "enemy wheels use the corporation colour")
 	assert_true(scene.background is WireframeBackground, "combat arena is wireframe")
-	for name in ["Polaroid", "RamTally", "HeatPoster", "PreviewNote", "LogStrip", "SendIt"]:
+	for name in ["Polaroid", "RamTally", "HeatPoster", "SendIt"]:
 		assert_not_null(scene.find_child(name, true, false), "%s present" % name)
+	# Combat pass (owner's direction): no log strip or preview wall on screen; what will
+	# resolve is a tag over each spinner; actions are stickers around the player spinner;
+	# SEND IT is drip lettering, not a stamp.
+	assert_false(scene.log_note.is_visible_in_tree(), "no log strip")
+	assert_false(scene.preview_note.is_visible_in_tree(), "no preview wall")
+	assert_ne(String(scene._player_view.intent.get("text", "")), "", "player spinner shows what resolves")
+	for v in scene._enemy_views.values():
+		assert_ne(String(v.intent.get("text", "")), "", "enemy spinner shows what resolves")
+	for key in ["nudge_l", "nudge_r", "respin", "undo"]:
+		assert_true(scene._stickers[key] is StickerButton and scene._stickers[key].is_visible_in_tree(), "%s sticker" % key)
+	assert_false(scene.controls_row.is_visible_in_tree(), "no dropdown row")
+	assert_true(scene._end_turn_button is DripButton, "SEND IT in drip lettering")
 	assert_true(scene._hand_box.get_child_count() > 0 and scene._hand_box.get_child(0) is ZineCard, "cards are zine stickers")
 	# Everything fits the 1280x720 canvas: the controls row and the left column never push
 	# the preview/log strips or the cards off-screen.
 	assert_true(scene.controls_row.get_combined_minimum_size().x <= 1280, "controls row %.0f px" % scene.controls_row.get_combined_minimum_size().x)
 	assert_true(scene.get_combined_minimum_size().y <= 720 - 80, "scene min height %.0f px leaves room for the netrun bars" % scene.get_combined_minimum_size().y)
-	assert_true(scene.log_note.get_global_rect().end.x <= 1280, "log strip on screen")
 	# Fight a bigger board (satellites) and re-check.
 	scene.start_fight(&"collections_agent", 3)
 	await _layout(scene)
