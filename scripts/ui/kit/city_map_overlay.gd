@@ -12,6 +12,8 @@ extends Control
 ## and optional `markers` (node id -> Array[String]) for threats standing on nodes.
 
 signal node_clicked(id: StringName)
+## Threat markers moved (raid playout): the scene can follow them with the camera.
+signal markers_changed
 
 ## TRACE: roof outlines and solid street paths. PILLARS: light pillars and floating
 ## badges, flowing dashed paths. ISOLATE: the rest of the city greyed out.
@@ -23,6 +25,14 @@ var look: int = Look.TRACE
 var nodes: Array[Dictionary] = []
 var edges: Array[Dictionary] = []
 var markers: Dictionary = {}
+## Raid playout alias (RaidPlayoutPanel writes site id -> threat names here).
+var threat_markers: Dictionary:
+	get:
+		return markers
+	set(v):
+		markers = v
+		queue_redraw()
+		markers_changed.emit()
 var selected_id: StringName = &""
 ## Spotlight target (node id) for the SPOTLIGHT look.
 var focus_id: StringName = &""

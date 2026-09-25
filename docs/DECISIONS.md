@@ -1145,6 +1145,17 @@ View code only; no rules, content or schema changed.
 - Screenshot shortcuts added: `--demo-event`, `--demo-dispatch`, `--demo-loot`,
   `--demo-playout`, `--demo-codex`, `--demo-stats`, `--demo-district=<corp>`.
 
+### Visual pass: owner picks (2026-09-25)
+- City: sketch jitter 0; Cool Haze palette default; busy streets drawn as re-stroked bands.
+- The Grid, raid setup, raid playout, raid summary and netrun route are drawn ON the city
+  (CityMapOverlay): Grid = rest of the city greyed; raid setup greyed; raid live zoomed on
+  the fight with the camera following the threats (no inset); route = blueprint look with
+  a GRID VIEW toggle zooming out to the Grid. The floating summary maps remain for the
+  HQ monitor only.
+- Top bar: neon title + ransom-note stat tags + VIEW LOADOUT (deck and spinner).
+- Deck / spinner views: left click selects (hand-drawn X to remove, drippy circle to
+  upgrade), right click shows details; drip-lettered action beside Close.
+
 ## Open questions for the designer
 
 - **Deck / spinner viewers (2026-09-25):** added as look-and-pick views (DeckView,

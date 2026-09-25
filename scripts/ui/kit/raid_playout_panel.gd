@@ -9,7 +9,9 @@ signal finished
 
 const STEP_SECONDS := 0.9
 
-var grid_view: GridMapView = null
+## The map the threats are shown on: a GridMapView or a CityMapOverlay (both expose
+## `threat_markers`).
+var grid_view: Control = null
 var log_note: ZineNote
 var step_label: Label
 var speed: float = 1.0
@@ -23,7 +25,7 @@ var _done: bool = false
 var _instant: bool = false
 
 
-func _init(p_grid_view: GridMapView = null, log_size: Vector2 = Vector2(600, 120)) -> void:
+func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
 	grid_view = p_grid_view
 	var controls := HBoxContainer.new()
 	add_child(controls)
@@ -146,7 +148,7 @@ func _apply_step(events: Array) -> void:
 			if _dead.has(id):
 				continue
 			markers.get_or_add(_threat_sites[id], []).append(_threat_names.get(id, String(id)))
-		grid_view.threat_markers = markers
+		grid_view.set("threat_markers", markers)
 		grid_view.queue_redraw()
 
 

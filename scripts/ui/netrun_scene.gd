@@ -10,6 +10,9 @@ const NODE_LABELS := {RC.InfilNodeType.ROUTER: "Router", RC.InfilNodeType.TERMIN
 var _status: Label
 ## Top strip: screen title and the status line (`_status`).
 var hud: HudBar
+## The route drawn on the city (map phase) and whether it is zoomed out to the Grid.
+var city_overlay: CityMapOverlay = null
+var _grid_zoomed: bool = false
 var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
@@ -62,14 +65,8 @@ func _ready() -> void:
 			run.phase = RunState.Phase.EVENT
 		_show_current()
 		return
-	for a in args:
-		if a.begins_with("--demo-cityrun="):
-			RunManager.save_slot = "demo"
-			new_campaign(1)
-			start_run(1)
-			_show_current()
-			show_city_route(int(a.trim_prefix("--demo-cityrun=")))
-			return
+	if args.has("--demo-gridzoom"):
+		_grid_zoomed = true
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
@@ -237,6 +234,8 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 	_panel = p
 	combat_scene = null
 	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
+	_clear_route()
+	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
 	if p.has_method("focus_hand"):
 		p.focus_hand()  # the combat scene links and focuses its own hand
@@ -256,73 +255,6 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
-
-
-## Design review (#13): the netrun route on the city. The run's nodes are buildings in
-## the target Site's neighbourhood, layers stepping in from the street towards the Site;
-## looks: 0 = x-ray (city washed dark, cyan), 1 = blueprint, 2 = scanner spotlight.
-func show_city_route(variant: int) -> void:
-	var s := RunManager.netrun
-	var map := s.run.map
-	var target: Vector2 = CityLayout.site_points(RunManager.corporation).get(s.run.site_id, NeonCity.hq_of(RunManager.corporation.id))
-	var layers := map.layer_count()
-	var available := s.available_nodes()
-	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
-	var nodes: Array[Dictionary] = []
-	var rows := {}
-	for n in map.all_nodes():
-		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
-	for n in map.all_nodes():
-		var li := int(n["layer"])
-		var count := int(rows[li])
-		var at := target - CityLayout.RIGHT * (layers - li) * 1.7 + CityLayout.DOWN * (int(n["index"]) - (count - 1) * 0.5) * 2.2
-		var col := Palette.NET_CYAN
-		if n["id"] == s.run.current_node_id:
-			col = Palette.CELL_PINK
-		elif available.has(n["id"]):
-			col = Palette.CELL_ACID
-		elif s.run.visited.has(n["id"]):
-			col = Color(Palette.NET_CYAN, 0.5)
-		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
-			col = Palette.corp_color(RunManager.campaign.corporation_id)
-		var label: String = NODE_LABELS.get(n["type"], "?")
-		var idx := available.find(n["id"])
-		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
-			"label": ("%d: %s" % [idx + 1, label]) if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK})
-	var edges: Array[Dictionary] = []
-	for n in map.all_nodes():
-		for nxt in n["next"]:
-			var live: bool = n["id"] == s.run.current_node_id and available.has(nxt)
-			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live})
-	var panel := HBoxContainer.new()
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(spacer)
-	var side := VBoxContainer.new()
-	side.custom_minimum_size.x = 280
-	var names := ["X-RAY", "BLUEPRINT", "SCANNER SPOTLIGHT"]
-	var win := TerminalWindow.new("NETRUN ROUTE // %s" % names[variant], Palette.CELL_ACID)
-	for i in available.size():
-		var node := map.get_node(available[i])
-		var id: StringName = available[i]
-		win.body.add_child(_button("%d: %s" % [i + 1, NODE_LABELS.get(node["type"], "?")], func() -> void: enter_node(id)))
-	side.add_child(win)
-	panel.add_child(side)
-	_set_panel(panel, false)
-	var city := background.city
-	var overlay := CityMapOverlay.new(city)
-	city.add_child(overlay)
-	overlay.set_look([CityMapOverlay.Look.XRAY, CityMapOverlay.Look.BLUEPRINT, CityMapOverlay.Look.SPOTLIGHT][variant])
-	overlay.focus_id = s.run.current_node_id if s.run.current_node_id != &"" else (available[0] if not available.is_empty() else &"")
-	overlay.set_graph(nodes, edges)
-	var z := 1.45
-	city.scale = Vector2(z, z)
-	city.offset_right = -(size.x - size.x / z)
-	city.offset_bottom = -(size.y - size.y / z)
-	city.focus_grid = overlay.centre()
-	city.focus_anchor = Vector2(0.46, 0.55)
-	city.refresh()
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
@@ -380,18 +312,32 @@ func _show_start() -> void:
 ## Keyboard: 1-9 pick the reachable nodes in order.
 func _show_map() -> void:
 	var s := RunManager.netrun
-	var win := TerminalWindow.new("ROUTE // Pick the next node (Heat cost shown; follow the links). Click a glowing node or press 1-9.")
-	var box := win.body
+	# The route on the city in blueprint, zoomed into the target Site's neighbourhood;
+	# GRID VIEW zooms out to the whole campaign Grid (greyed city). `map_view` stays as the
+	# route model (hidden): pad keys and clicks go through it as before.
+	var panel := VBoxContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var top := HBoxContainer.new()
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(top)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_child(spacer)
 	map_view = NetrunMapView.new()
+	map_view.visible = false
 	map_view.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	map_view.show_map(s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes(), s.map_heat())
 	map_view.node_clicked.connect(func(id: StringName) -> void:
 		if RunManager.netrun != null and RunManager.netrun.available_nodes().has(id):
 			enter_node(id))
-	box.add_child(map_view)
-	var row := HBoxContainer.new()
-	box.add_child(row)
+	top.add_child(map_view)
+	var win := TerminalWindow.new("ROUTE // pick the next node (1-9)", Palette.CELL_ACID)
+	win.custom_minimum_size.x = 300
+	top.add_child(win)
 	var available := s.available_nodes()
+	var row := VBoxContainer.new()
+	win.body.add_child(row)
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
 		var text: String = "%d: %s%s" % [i + 1, NODE_LABELS.get(node["type"], "?"), " (elite)" if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER else ""]
@@ -400,10 +346,91 @@ func _show_map() -> void:
 			text += " %+d Heat" % heat
 		var id: StringName = available[i]
 		row.add_child(_button(text, func() -> void: enter_node(id)))
-	row.add_child(_button("Save & quit to start screen", save_and_quit))
-	var panel := VBoxContainer.new()
-	panel.add_child(win)
+	var zoom_btn := _button("GRID VIEW" if not _grid_zoomed else "ROUTE VIEW", func() -> void:
+		_grid_zoomed = not _grid_zoomed
+		_show_map())
+	zoom_btn.name = "GridZoom"
+	win.body.add_child(zoom_btn)
+	win.body.add_child(_button("Save & quit to start screen", save_and_quit))
+	if _grid_zoomed:
+		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
 	_set_panel(panel, false)
+	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if _grid_zoomed:
+		var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, CityLayout.threat_paths(RunManager.campaign, RunManager.corporation), s.run.site_id)
+		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+	else:
+		var r := route_graph()
+		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.BLUEPRINT, 1.45, Vector2(0.46, 0.58), Vector2.INF)
+		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
+
+
+## The run's map as buildings in the target Site's neighbourhood (layers step in from
+## the street towards the Site).
+func route_graph() -> Dictionary:
+	var s := RunManager.netrun
+	var map := s.run.map
+	var target: Vector2 = CityLayout.site_points(RunManager.corporation).get(s.run.site_id, NeonCity.hq_of(RunManager.corporation.id))
+	var layers := map.layer_count()
+	var available := s.available_nodes()
+	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
+	var rows := {}
+	for n in map.all_nodes():
+		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
+	var nodes: Array[Dictionary] = []
+	for n in map.all_nodes():
+		var li := int(n["layer"])
+		var count := int(rows[li])
+		var at := target - CityLayout.RIGHT * (layers - li) * 1.7 + CityLayout.DOWN * (int(n["index"]) - (count - 1) * 0.5) * 2.2
+		var col := Palette.NET_CYAN
+		if n["id"] == s.run.current_node_id:
+			col = Palette.CELL_PINK
+		elif available.has(n["id"]):
+			col = Palette.CELL_ACID
+		elif s.run.visited.has(n["id"]):
+			col = Color(Palette.NET_CYAN, 0.5)
+		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
+			col = Palette.corp_color(RunManager.campaign.corporation_id)
+		var idx := available.find(n["id"])
+		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
+			"label": ("%d: %s" % [idx + 1, NODE_LABELS.get(n["type"], "?")]) if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK})
+	var edges: Array[Dictionary] = []
+	for n in map.all_nodes():
+		for nxt in n["next"]:
+			var live: bool = n["id"] == s.run.current_node_id and available.has(nxt)
+			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live})
+	return {"nodes": nodes, "edges": edges}
+
+
+func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2) -> void:
+	_clear_route()
+	var city := background.city
+	city_overlay = CityMapOverlay.new(city)
+	city.add_child(city_overlay)
+	city_overlay.set_look(look)
+	city_overlay.set_graph(nodes, edges)
+	city.scale = Vector2(zoom, zoom)
+	city.offset_left = 0
+	city.offset_top = 0
+	city.offset_right = size.x / zoom - size.x
+	city.offset_bottom = size.y / zoom - size.y
+	city.focus_grid = city_overlay.centre() if focus == Vector2.INF else focus
+	city.focus_anchor = anchor
+	city.refresh()
+
+
+func _clear_route() -> void:
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.queue_free()
+	city_overlay = null
+	var city := background.city
+	if city.focus_grid != Vector2.INF or city.scale != Vector2.ONE:
+		city.focus_grid = Vector2.INF
+		city.scale = Vector2.ONE
+		city.offset_right = 0
+		city.offset_bottom = 0
+		city.refresh()
 
 
 ## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip.
@@ -864,6 +891,7 @@ func _build_ui() -> void:
 	add_child(background)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 	hud = HudBar.new()
 	hud.loadout_pressed.connect(open_loadout)
