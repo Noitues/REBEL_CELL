@@ -40,3 +40,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		cancelled.emit()
 		get_viewport().set_input_as_handled()
 		queue_free()
+
+
+func _ready() -> void:
+	# Pad / keyboard: the safe answer takes focus.
+	if no_button != null:
+		no_button.grab_focus.call_deferred()

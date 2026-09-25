@@ -174,6 +174,10 @@ func apply_controller_bindings() -> void:
 	for ev in InputMap.action_get_events(&"ui_accept"):
 		if ev is InputEventKey and ((ev as InputEventKey).keycode == KEY_SPACE or (ev as InputEventKey).physical_keycode == KEY_SPACE):
 			InputMap.action_erase_event(&"ui_accept", ev)
+	# Tab is Cycle target (GDD 9.5): it must not move focus off the hand either.
+	for ev in InputMap.action_get_events(&"ui_focus_next"):
+		if ev is InputEventKey and ((ev as InputEventKey).keycode == KEY_TAB or (ev as InputEventKey).physical_keycode == KEY_TAB) and not (ev as InputEventKey).shift_pressed:
+			InputMap.action_erase_event(&"ui_focus_next", ev)
 	for binds in [CONTROLLER_BINDS, UI_PAD_BINDS]:
 		for action in binds:
 			if not InputMap.has_action(action):

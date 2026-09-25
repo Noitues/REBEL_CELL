@@ -278,6 +278,19 @@ func enemy_wheel_colors() -> Array[Color]:
 
 # --- Input -----------------------------------------------------------------------
 
+## Whether the last input came from the mouse: card previews follow the mouse (hover), and
+## follow focus only when the player moves focus with the keyboard or a pad. Auto-focus at
+## fight start must not replace the End Turn preview.
+var _pointer_input: bool = true
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion or event is InputEventMouseButton:
+		_pointer_input = true
+	elif event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		_pointer_input = false
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_settings"):
 		open_settings()
@@ -753,13 +766,15 @@ func _refresh(state: CombatState) -> void:
 		var index := i
 		c.pressed.connect(func() -> void: play_card(index))
 		c.mouse_entered.connect(func() -> void: _show_card_preview(index))
-		c.focus_entered.connect(func() -> void: _show_card_preview(index))
+		c.focus_entered.connect(func() -> void:
+			if not _pointer_input:
+				_show_card_preview(index))
 		c.mouse_exited.connect(_clear_ghost)
 		c.focus_exited.connect(_clear_ghost)
 		_hand_box.add_child(c)
 	_end_turn_button.disabled = state.is_over()
 	_rewind_button.disabled = not engine.can_rewind()
-	UiFocus.focus_first(_hand_box if _hand_box.get_child_count() > 0 else _end_turn_button.get_parent(), true)
+	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
 	_respin_button.text = "Respin %d [X]" % engine.resolver.config.respin_ram_cost
 	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
 	_show_end_turn_preview()

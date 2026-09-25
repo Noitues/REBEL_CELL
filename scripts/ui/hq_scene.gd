@@ -290,7 +290,11 @@ func show_start() -> void:
 	seed_spin.min_value = 0
 	seed_spin.max_value = 999999
 	seed_spin.value = 1
+	seed_spin.name = "SeedSpin"
 	row.add_child(seed_spin)
+	var next_seed := _button("+1", func() -> void: seed_spin.value = int(seed_spin.value) + 1)
+	next_seed.name = "SeedNext"
+	row.add_child(next_seed)
 	row.add_child(_label("Target:"))
 	var corp_pick := OptionButton.new()
 	corp_pick.name = "CorporationPicker"
@@ -307,6 +311,13 @@ func show_start() -> void:
 	ice_spin.max_value = cap
 	ice_spin.value = 0
 	row.add_child(ice_spin)
+	# SpinBoxes ignore the D-pad: explicit buttons make ICE and seed pad-reachable.
+	var ice_down := _button("-", func() -> void: ice_spin.value = maxf(ice_spin.min_value, ice_spin.value - 1))
+	ice_down.name = "IceDown"
+	row.add_child(ice_down)
+	var ice_up := _button("+", func() -> void: ice_spin.value = minf(ice_spin.max_value, ice_spin.value + 1))
+	ice_up.name = "IceUp"
+	row.add_child(ice_up)
 	# Each corporation has its own ICE ladder (GDD 3.4).
 	corp_pick.item_selected.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)

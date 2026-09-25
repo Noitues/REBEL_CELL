@@ -30,6 +30,17 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 4 fixes (GAP_ANALYSIS H4)
+- **Focus survives card plays**: a control queued for deletion no longer counts as focused,
+  so the rebuilt hand takes focus; with no playable card, focus falls back to the controls
+  row (SEND IT). Card previews follow focus only after keyboard or pad input (auto-focus at
+  fight start keeps the End Turn preview).
+- **Tab is Cycle target again**: Tab is removed from `ui_focus_next` (like Space from
+  `ui_accept`); Shift+Tab still moves focus back.
+- **Modals take focus**: the pause menu focuses its first button and gives focus back on
+  close, the settings panel focuses itself, confirm dialogs focus "No".
+- **Start panel for pads**: ICE -/+ and seed +1 buttons (SpinBoxes ignore the D-pad).
+
 ### 2026-09-24 — Horizontal pass 3 fixes (GAP_ANALYSIS H3)
 - **Lost-raid Heat** names the next raid for the corporation: `CampaignRules.fight_raid`
   renames its own events (HQ, netrun interlude and simulator paths all go through it).
@@ -37,7 +48,8 @@ _(Claude Code: add entries here as you make them.)_
   netrun pools are rebuilt once the corporation is set. Before, Mirrors from earlier builds
   in the session leaked in and a resume in a fresh session could play differently.
 - **Pad-only play**: every panel focuses its first usable button (`UiFocus`), the combat
-  hand refocuses only when focus is lost, pad inspect inspects the focused control. Pad
+  hand refocuses when focus is lost (H4: also after a card play frees the old hand), pad
+  inspect inspects the focused control. Pad
   layout reworked: LB/RB nudge, Y target, X end turn, Back rewind, L3 inspect, R3 respin,
   Start options; the D-pad, A and B drive focus (`UI_PAD_BINDS`), so the combat pickers and
   cards are reached as on-screen buttons. Space no longer presses the focused button (it is

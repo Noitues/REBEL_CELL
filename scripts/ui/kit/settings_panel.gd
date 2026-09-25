@@ -200,3 +200,7 @@ func _labelled(text: String) -> Label:
 	l.text = text
 	l.add_theme_color_override("font_color", Palette.INK)
 	return l
+
+
+func _ready() -> void:
+	UiFocus.focus_first(self)

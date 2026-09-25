@@ -11,6 +11,8 @@ var settings_panel: SettingsPanel = null
 var codex_note: ZineNote = null
 var _menu: VBoxContainer
 var _host: VBoxContainer
+## Who had focus before the menu opened (the combat hand); it gets it back on close.
+var _return_focus: Control = null
 
 
 func _init() -> void:
@@ -36,6 +38,20 @@ func _init() -> void:
 		confirm.confirmed.connect(func() -> void: RunManager.quit_game()))
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED or what == NOTIFICATION_READY:
+		if is_visible_in_tree():
+			var owner := UiFocus.owner_of(self)
+			if owner != null and not is_ancestor_of(owner):
+				_return_focus = owner
+			UiFocus.focus_first(_menu)
+		elif _return_focus != null and is_instance_valid(_return_focus) and _return_focus.is_visible_in_tree():
+			_return_focus.grab_focus.call_deferred()
+	elif what == NOTIFICATION_PREDELETE or what == NOTIFICATION_EXIT_TREE:
+		if _return_focus != null and is_instance_valid(_return_focus) and _return_focus.is_inside_tree():
+			_return_focus.grab_focus.call_deferred()
+
+
 func _add(text: String, on_pressed: Callable) -> void:
 	var b := Button.new()
 	b.text = text
@@ -48,6 +64,7 @@ func show_options() -> void:
 	settings_panel = SettingsPanel.new()
 	settings_panel.closed.connect(_close_sub)
 	_host.add_child(settings_panel)
+	UiFocus.focus_first(settings_panel)
 
 
 func show_codex() -> void:
@@ -64,6 +81,7 @@ func show_codex() -> void:
 	back.name = "CodexBack"
 	back.pressed.connect(_close_sub)
 	_host.add_child(back)
+	back.grab_focus.call_deferred()
 
 
 func _close_sub() -> void:
@@ -76,6 +94,7 @@ func _close_sub() -> void:
 		if back != null:
 			back.queue_free()
 	codex_note = null
+	UiFocus.focus_first(_menu)
 
 
 func _unhandled_input(event: InputEvent) -> void:
