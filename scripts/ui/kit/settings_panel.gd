@@ -162,6 +162,8 @@ func handle_key(event: InputEventKey) -> bool:
 	var err := Settings.bind_error(rebinding, event.physical_keycode)
 	if err != "":
 		# Keep waiting for another key, and say why this one was refused.
+		for action in ACTION_LABELS:
+			err = err.replace("used by %s" % String(action), "used by %s" % ACTION_LABELS[action])
 		if _key_buttons.has(rebinding):
 			(_key_buttons[rebinding] as Button).text = "%s - press another" % err
 		return true

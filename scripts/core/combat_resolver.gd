@@ -567,6 +567,8 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 				var n := _neighbor_resolution(s, r, side, fw.neighbor_multiplier)
 				if fw.neighbor_rule == RC.NeighborRule.SHUNT:
 					n["landing"] = true  # the shunted slice resolves instead of the landing
+				else:
+					n["status"] = RC.Status.NONE  # H18: a Mirror copy takes no Overclock boost or bite
 				out.append(n)
 		# GDD 5.2: a drone triggers when its slice does, so after the neighbour rules.
 		if c == s.player:
@@ -582,9 +584,9 @@ func _neighbor_resolution(s: CombatState, r: Dictionary, side: int, multiplier: 
 	var d := r.duplicate()
 	d["slice_index"] = slot
 	d["slice"] = fx.slice_of(c.wheel, slot)
-	# The neighbour's Firmware (and the permanent status it grants, Burner's Overclock)
-	# belongs to that socket's own landing: a copy resolves only the slice and its
-	# temporary status (H17).
+	# The neighbour's Firmware and the permanent status it grants (Burner) belong to that
+	# socket's own landing (H17). A Mirror copy also drops the slot's statuses (H18); a
+	# Shunt, which is the landing, keeps them.
 	d["firmware"] = null
 	d["status"] = c.wheel.slice_statuses[slot]
 	d["permanent_status"] = RC.Status.NONE

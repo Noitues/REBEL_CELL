@@ -32,6 +32,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H15 | 2026-09-25 | 8 (Daemons fired per extra resolution, hotkeys behind the pause menu, pause Options clipped, Intel showed raw phase layouts, a Flip refreshed Firmware limits, Repair hid its price, fixed statuses previewed as random, config and doc leftovers) | Fixed in horizontal batch H15 |
 | H16 | 2026-09-25 | 5 (Mirror copies fired Daemons and resolved the Miss, Commons Array kept orbiting, arrow keys unbindable, netrun pause menu clipped at 1.6, Esc in the pause Codex) | Fixed in horizontal batch H16 |
 | H17 | 2026-09-25 | 6 (pause menu let clicks through, Shunt landings skipped statuses / Stolen Intent / drones, copies took Burner's Overclock free, rebinds took reserved and duplicate keys) | Fixed in horizontal batch H17 |
+| H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 
 ### Pass 3 (vertical) — clean
 
@@ -55,7 +56,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 525 passing at H17; schema smoke test and content validation green.
+Tests: 530 passing at H18; schema smoke test and content validation green.
 
 ---
 

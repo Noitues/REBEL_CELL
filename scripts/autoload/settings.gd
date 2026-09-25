@@ -185,6 +185,7 @@ func reset_keybinds() -> void:
 		InputMap.action_erase_events(action)
 		for ev in ProjectSettings.get_setting("input/%s" % action, {}).get("events", []):
 			InputMap.action_add_event(action, ev)
+	apply_controller_bindings()  # the reset erased the pad buttons too (H18)
 	_apply()
 
 

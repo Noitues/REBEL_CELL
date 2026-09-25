@@ -28,6 +28,11 @@ var _sets: Array[LineSetData] = []
 ## Class alternative id -> base class id (barks are shared with the base class).
 var _class_base: Dictionary = {}
 
+## Subtitle font sizes at text scale 1.0.
+const SPEAKER_FONT_SIZE := 12
+const TEXT_FONT_SIZE := 15
+
+
 func _ready() -> void:
 	layer = 90
 	bar = PanelContainer.new()
@@ -36,6 +41,7 @@ func _ready() -> void:
 	bar.offset_right = 440
 	bar.offset_top = -92
 	bar.offset_bottom = -20
+	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN  # larger text grows the bar upwards
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.visible = false
 	add_child(bar)
@@ -44,20 +50,21 @@ func _ready() -> void:
 	bar.add_child(box)
 	speaker_label = Label.new()
 	speaker_label.add_theme_font_override("font", Palette.mono())
-	speaker_label.add_theme_font_size_override("font_size", 12)
+	speaker_label.add_theme_font_size_override("font_size", SPEAKER_FONT_SIZE)
 	box.add_child(speaker_label)
 	text_label = RichTextLabel.new()
 	text_label.bbcode_enabled = true
 	text_label.fit_content = true
 	text_label.custom_minimum_size = Vector2(860, 40)
 	text_label.add_theme_font_override("normal_font", Palette.mono())
-	text_label.add_theme_font_size_override("normal_font_size", 15)
+	text_label.add_theme_font_size_override("normal_font_size", TEXT_FONT_SIZE)
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(text_label)
 	_style(RC.Voice.DISPATCH)
 	_collect_sets()
 	if has_node("/root/Settings"):
 		get_node("/root/Settings").changed.connect(_on_settings_changed)
+	_apply_text_scale()
 
 
 func _collect_sets() -> void:
@@ -140,6 +147,16 @@ func _subtitles_on() -> bool:
 func _on_settings_changed() -> void:
 	if not _subtitles_on():
 		bar.visible = false
+	_apply_text_scale()
+
+
+## Subtitle font sizes follow Settings.text_scale (GDD 9.6).
+func _apply_text_scale() -> void:
+	var scale := 1.0
+	if has_node("/root/Settings"):
+		scale = float(get_node("/root/Settings").text_scale)
+	speaker_label.add_theme_font_size_override("font_size", roundi(SPEAKER_FONT_SIZE * scale))
+	text_label.add_theme_font_size_override("normal_font_size", roundi(TEXT_FONT_SIZE * scale))
 
 
 ## The subtitle label: corporate lines carry their corporation's short name.

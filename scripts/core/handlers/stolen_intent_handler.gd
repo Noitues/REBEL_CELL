@@ -34,6 +34,10 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	theirs["slice"] = my_slice
 	mine["firmware"] = null
 	theirs["firmware"] = null
+	# Firmware stays in its socket, with the permanent status it grants (H18: no Burner
+	# Overclock without its Heat).
+	mine["permanent_status"] = RC.Status.NONE
+	theirs["permanent_status"] = RC.Status.NONE
 	mine["stolen"] = true
 	theirs["stolen"] = true
 	state.per_combat_uses["stolen_intent"] = 1

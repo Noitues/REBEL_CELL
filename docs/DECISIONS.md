@@ -30,6 +30,17 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-25 — Horizontal pass 18 fixes (GAP_ANALYSIS H18)
+- **Reset to defaults keeps the pad buttons** (it re-applies the controller binds).
+  Rebind refusals name the action as the Controls list does.
+- **The combat pause menu uses the game theme** (a CanvasLayer cuts theme inheritance, so
+  it gets `UiTheme.apply`): the game font and the text scale reach it again.
+- **Subtitles follow the text scale** (speaker 12, text 15 at 1.0), and the bar grows
+  upwards.
+- **A Mirror copy drops the slot's temporary statuses** (see the H17 entry); **Stolen
+  Intent swaps slices without permanent statuses** (no Burner Overclock without its Heat).
+- Balance after H18: Breaker ICE 5 2/8 in 48.8 runs.
+
 ### 2026-09-25 — Horizontal pass 17 fixes (GAP_ANALYSIS H17)
 - **The pause menu blocks the mouse**: a full-screen backdrop (`MOUSE_FILTER_STOP`, dim)
   sits behind it, so clicking SEND IT, a map node or an HQ button behind the menu does
@@ -37,8 +48,10 @@ _(Claude Code: add entries here as you make them.)_
 - **A Shunt resolution is the landing everywhere**: its slice's CORRUPTED bite and
   OVERCLOCKED burn-out apply, Stolen Intent fires on a shunted Miss, and the operative's
   drones follow the slot that actually resolves (GDD 5.2).
-- **A copy resolves the neighbour's slice and temporary status only**: not its Firmware
-  and not the permanent status that Firmware grants (Burner's Overclock without its Heat).
+- **A copy resolves the neighbour's slice, not its Firmware** or the permanent status
+  that Firmware grants (Burner's Overclock without its Heat). H18: a Mirror copy also
+  drops the slot's temporary statuses (no Overclock boost without the burn-out, no bite);
+  a Shunt resolution is the landing and keeps them.
 - **Rebinding refuses 1-9, Enter and Esc and any key another action holds**
   (`Settings.bind_error`); the button says why and keeps waiting for another key.
 - Balance after H17: Breaker ICE 5 3/8 in 48.1 runs (was 4/8 in 42.8).
@@ -1140,7 +1153,7 @@ and annotated in the GDD where it changes a rule.
 ## Open questions for the designer
 
 - **Pacing after H15/H16.** With Daemons firing once per landing the bot's Breaker needs
-  about 43 runs at ICE 5 (4/8 won), 48 after H17 (3/8), against the GDD 11.8 average of 24. Should enemies
+  about 43 runs at ICE 5 (4/8 won), 48 after H17 (3/8), 49 after H18 (2/8), against the GDD 11.8 average of 24. Should enemies
   come down, or Daemons / rewards go up, now that the multi-fire bugs are gone?
 - **Rigger at ICE 0 (H15).** With Daemons firing once per Perfect the bot's Rigger wins
   5/8 at ICE 0 in about 36 runs (other classes 6-8/8). Should the Rigger's hub or deck

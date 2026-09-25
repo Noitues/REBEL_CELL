@@ -199,6 +199,7 @@ func open_settings() -> void:
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	_menu_layer.add_child(_settings_panel)
+	UiTheme.apply(_settings_panel)  # the CanvasLayer cuts theme inheritance: font and text scale (H18)
 	get_tree().paused = false
 
 
