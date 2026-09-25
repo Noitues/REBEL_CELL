@@ -219,6 +219,14 @@ func _ink(a: int, b: int) -> Color:
 	return _inks[int(_h(a, b, 11) * _inks.size()) % _inks.size()]
 
 
+## A street's ink: like `_ink` but at full neon strength (no palette paleness).
+func _street_ink(a: int, b: int) -> Color:
+	var share: float = float(_profile.get("corp_ink", 0.0))
+	if _terr != &"" and _h(a, b, 12) < share:
+		return Palette.corp_color(_terr)
+	return INKS[int(_h(a, b, 11) * INKS.size()) % INKS.size()]
+
+
 ## Applies the ink palette's paleness to a colour.
 func _pale(c: Color) -> Color:
 	var set_def: Dictionary = INK_SETS[clampi(ink_set, 0, INK_SETS.size() - 1)]
@@ -634,7 +642,9 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	if along_i and along_j:
 		return  # crossings stay dark; the strokes overshoot into them
 	var traffic := _traffic(i, j, along_i)
-	var col := _pale(Palette.NET_CYAN) if net_mode and _h(i, j, 62) < 0.5 else _ink(i if along_i else 0, j if along_j else 0)
+	# Streets keep the original full-strength neon (only the buildings take the paler
+	# palette), so the street grid reads over the city.
+	var col := Palette.NET_CYAN if net_mode and _h(i, j, 62) < 0.5 else _street_ink(i if along_i else 0, j if along_j else 0)
 	var a := _iso(i + 0.5, j) if along_i else _iso(i, j + 0.5)
 	var b := _iso(i + 0.5, j + 1) if along_i else _iso(i + 1, j + 0.5)
 	var nn := (b - a).orthogonal().normalized()
@@ -642,8 +652,8 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	# Fine-tip marker: the street's width is built from many skinny strokes laid side by
 	# side, each a little crooked and overlapping its neighbours. Busy streets get more
 	# strokes (up to ~12) and so read wider; quiet ones 2-3.
-	var strokes := 4 + int(traffic * 16.0)
-	var half := 2.0 + strokes * 0.8
+	var strokes := 7 + int(traffic * 23.0)
+	var half := 1.5 + strokes * 0.42
 	var g := Color(col, 0.05 + traffic * 0.08)
 	_quad(a - nn * (half + 3.0), b - nn * (half + 3.0), b + nn * (half + 3.0), a + nn * (half + 3.0), g, g, g, g)
 	# Each stroke keeps its lane along the whole street (keyed by the street, not the
@@ -920,6 +930,19 @@ func _hq(corp: StringName, rect: Rect2i) -> void:
 			var lamp := _iso(cx + cos(a + 0.4) * 2.45 * k, cy + sin(a + 0.4) * 2.45 * k)
 			_ink_line(lamp, lamp + Vector2(0, -18), Color(col, 0.8), 1.0, false)
 			_beacons.append({"pos": lamp + Vector2(0, -20), "color": col, "phase": m * 0.13})
+	match String(cultures.get(corp, "")):
+		"chinese":
+			_hq_pagoda(cx, cy, k, col, base)
+			_sign(base + Vector2(-50, -330.0 * k), String(corp).to_upper(), col)
+			return
+		"egyptian":
+			_hq_pyramid(cx, cy, k, col, base)
+			_sign(base + Vector2(-46, -250.0 * k), String(corp).to_upper(), col)
+			return
+		"english":
+			_hq_big_ben(cx, cy, k, col, base)
+			_sign(base + Vector2(40.0 * k, -200.0 * k), String(corp).to_upper(), col)
+			return
 	match corp:
 		&"solace":
 			# Helix Spire: podium, pods, a round tower wrapped in care-rings, light strips,
@@ -1080,6 +1103,134 @@ func _hq(corp: StringName, rect: Rect2i) -> void:
 			for q in 6:
 				_ink_line(hexa[q], hexa[(q + 1) % 6], _inks[2], 1.6)
 			_sign(base + Vector2(-58, -280.0 * k), "REBEL_CELL", _inks[2])
+
+
+## Chinese HQ: a seven-tier pagoda tower, every tier under a sweeping roof whose four
+## corners turn up, a spire of rings on top.
+func _hq_pagoda(cx: float, cy: float, k: float, col: Color, base: Vector2) -> void:
+	_extrude(_rect_pts(cx - 1.9 * k, cy - 1.9 * k, cx + 1.9 * k, cy + 1.9 * k), 0.0, 14.0 * k, 1.0, FILLS[2], col, 0.2, 960)
+	var z := 14.0 * k
+	for t in 7:
+		var r := (1.25 - t * 0.12) * k
+		var body := (32.0 - t * 2.0) * k
+		_extrude(_rect_pts(cx - r, cy - r, cx + r, cy + r), z, body, 1.0, FILLS[1] if t % 2 == 0 else FILLS[0], col, 0.35, 961 + t * 2)
+		z += body
+		z = _pagoda_roof(cx, cy, r * 1.45, r * 0.55, z, (12.0 - t * 0.8) * k, col)
+	var tip := base + Vector2(0, -z)
+	for q in 5:
+		var rr := (7.0 - q) * k * 0.9
+		_ink_line(tip + Vector2(-rr, -q * 7.0 * k), tip + Vector2(rr, -q * 7.0 * k), col, 1.4)
+	_ink_line(tip, tip + Vector2(0, -48.0 * k), col, 1.8)
+	_beacons.append({"pos": tip + Vector2(0, -50.0 * k), "color": col, "phase": 0.3})
+
+
+## One pagoda roof from half-width `r0` (eaves) up to `r1` at the ridge; its four eave
+## corners flick outward and up. Returns the height reached.
+func _pagoda_roof(cx: float, cy: float, r0: float, r1: float, z: float, h: float, col: Color) -> float:
+	_extrude(_rect_pts(cx - r0, cy - r0, cx + r0, cy + r0), z, h, r1 / r0, FILLS[0].lerp(col, 0.12), col, 0.0, 990)
+	for q in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+		var c := _iso(cx + q.x * r0, cy + q.y * r0) + Vector2(0, -z)
+		var out := (c - _iso(cx, cy) - Vector2(0, -z)).normalized()
+		var tip := c + out * h * 0.9 + Vector2(0, -h * 0.9)
+		var mid := c + out * h * 0.6 + Vector2(0, -h * 0.1)
+		_ink_line(c, mid, col, 1.6, false)
+		_ink_line(mid, tip, col, 1.6, false)
+		_beacons.append({"pos": tip, "color": col, "phase": 0.05 * q.x + 0.1})
+	return z + h
+
+
+## Egyptian HQ: a large sloped (truncated pyramid) base, a ramp up its front flanked by
+## obelisks, and a great pyramid standing on the base.
+func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> void:
+	var half := 1.75 * k
+	var bh := 52.0 * k
+	var ts := 0.7
+	_extrude(_rect_pts(cx - half, cy - half, cx + half, cy + half), 0.0, bh, ts, FILLS[1], col, 0.25, 970)
+	# Coursed stone lines on the two visible slopes.
+	for q in 5:
+		var f := float(q + 1) / 6.0
+		var hh := bh * f
+		var rr := half * lerpf(1.0, ts, f)
+		_ink_line(_iso(cx - rr, cy + rr) + Vector2(0, -hh), _iso(cx + rr, cy + rr) + Vector2(0, -hh), Color(col, 0.35), 1.0, false)
+		_ink_line(_iso(cx + rr, cy - rr) + Vector2(0, -hh), _iso(cx + rr, cy + rr) + Vector2(0, -hh), Color(col, 0.25), 1.0, false)
+	# The ramp: from the plaza in front up to the top edge of the base.
+	var rw := 0.42 * k
+	var g0 := _iso(cx - rw, cy + half + 0.9 * k)
+	var g1 := _iso(cx + rw, cy + half + 0.9 * k)
+	var t0 := _iso(cx - rw, cy + half * ts) + Vector2(0, -bh)
+	var t1 := _iso(cx + rw, cy + half * ts) + Vector2(0, -bh)
+	var ramp := FILLS[2].lerp(col, 0.15)
+	_quad(g0, g1, t1, t0, ramp, ramp, ramp.lightened(0.1), ramp.lightened(0.1))
+	_ink_line(g0, t0, col, 1.6)
+	_ink_line(g1, t1, col, 1.6)
+	for q in 9:
+		var f := float(q + 1) / 10.0
+		_ink_line(g0.lerp(t0, f), g1.lerp(t1, f), Color(col, 0.4), 1.0, false)
+	for sx in [-1.0, 1.0]:
+		var ox: float = cx + sx * (rw + 0.35 * k)
+		var oy: float = cy + half + 0.75 * k
+		_extrude(_rect_pts(ox - 0.14 * k, oy - 0.14 * k, ox + 0.14 * k, oy + 0.14 * k), 0.0, 80.0 * k, 0.65, FILLS[0], col, 0.0, 975)
+		_extrude(_rect_pts(ox - 0.09 * k, oy - 0.09 * k, ox + 0.09 * k, oy + 0.09 * k), 80.0 * k, 9.0 * k, 0.03, FILLS[0], col, 0.0, 976)
+		_beacons.append({"pos": _iso(ox, oy) + Vector2(0, -92.0 * k), "color": col, "phase": 0.4 + sx * 0.1})
+	# The great pyramid on the base, with a gilded cap.
+	var pr := half * ts * 0.92
+	_extrude(_rect_pts(cx - pr, cy - pr, cx + pr, cy + pr), bh, 130.0 * k, 0.12, FILLS[1].lerp(col, 0.06), col, 0.2, 977)
+	_extrude(_rect_pts(cx - pr * 0.12, cy - pr * 0.12, cx + pr * 0.12, cy + pr * 0.12), bh + 130.0 * k, 16.0 * k, 0.03, Palette.RESIST_GOLD.darkened(0.4), Palette.RESIST_GOLD, 0.0, 978)
+	_beacons.append({"pos": base + Vector2(0, -(bh + 150.0 * k)), "color": col, "phase": 0.7})
+
+
+## English HQ: a great clock tower (Big Ben style) with glowing clock faces, a belfry and a
+## pinnacled spire, beside a long gabled hall.
+func _hq_big_ben(cx: float, cy: float, k: float, col: Color, base: Vector2) -> void:
+	# The hall behind and to the side.
+	_extrude(_rect_pts(cx - 2.2 * k, cy - 1.9 * k, cx + 2.2 * k, cy - 0.9 * k), 0.0, 34.0 * k, 1.0, FILLS[1], col, 0.3, 980)
+	_gable(cx - 2.2 * k, cy - 1.9 * k, cx + 2.2 * k, cy - 0.9 * k, 34.0 * k, 22.0 * k, FILLS[0], col)
+	var r := 0.55 * k
+	var th := 230.0 * k
+	_extrude(_rect_pts(cx - r, cy - r, cx + r, cy + r), 0.0, th, 1.0, FILLS[1], col, 0.35, 981)
+	# Vertical tracery up the two visible faces.
+	for q in 3:
+		var f := float(q + 1) / 4.0
+		var pa := _iso(cx - r + 2.0 * r * f, cy + r)
+		var pb := _iso(cx + r, cy - r + 2.0 * r * f)
+		_ink_line(pa + Vector2(0, -6), pa + Vector2(0, -th + 6), Color(col, 0.35), 1.0, false)
+		_ink_line(pb + Vector2(0, -6), pb + Vector2(0, -th + 6), Color(col, 0.25), 1.0, false)
+	# Clock stage, a little wider, with a face on each visible side.
+	var cr := 0.68 * k
+	var ch := 58.0 * k
+	_extrude(_rect_pts(cx - cr, cy - cr, cx + cr, cy + cr), th, ch, 1.0, FILLS[0], col, 0.0, 982)
+	var face_col := Color(Palette.CRT_AMBER, 0.95)
+	for side in 2:
+		var fc: Vector2
+		var u: Vector2
+		if side == 0:
+			fc = _iso(cx, cy + cr) + Vector2(0, -th - ch * 0.5)
+			u = (_iso(1, 0) - _iso(0, 0)).normalized()
+		else:
+			fc = _iso(cx + cr, cy) + Vector2(0, -th - ch * 0.5)
+			u = (_iso(0, 1) - _iso(0, 0)).normalized()
+		var rad := cr * TILE_A * 0.72
+		var ring := PackedVector2Array()
+		for q in 33:
+			var a := TAU * q / 32.0
+			ring.append(fc + u * cos(a) * rad + Vector2(0, -1) * sin(a) * rad * 0.95)
+		_poly(ring, Color(Palette.CRT_AMBER, 0.25))
+		for q in 32:
+			_ink_line(ring[q], ring[q + 1], face_col, 1.4, false)
+		for q in 12:
+			var a := TAU * q / 12.0
+			var p0 := fc + u * cos(a) * rad * 0.8 + Vector2(0, -1) * sin(a) * rad * 0.8
+			_ink_line(p0, fc + u * cos(a) * rad * 0.92 + Vector2(0, -1) * sin(a) * rad * 0.92, face_col, 1.0, false)
+		_ink_line(fc, fc + Vector2(0, -rad * 0.62), face_col, 1.8, false)
+		_ink_line(fc, fc + u * rad * 0.45, face_col, 1.8, false)
+	# Belfry, then the spire with corner pinnacles.
+	var br := 0.5 * k
+	_extrude(_rect_pts(cx - br, cy - br, cx + br, cy + br), th + ch, 30.0 * k, 1.0, FILLS[1], col, 0.4, 983)
+	_extrude(_rect_pts(cx - br, cy - br, cx + br, cy + br), th + ch + 30.0 * k, 80.0 * k, 0.05, FILLS[0], col, 0.0, 984)
+	for q in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+		var p0 := _iso(cx + q.x * br, cy + q.y * br) + Vector2(0, -(th + ch + 30.0 * k))
+		_ink_line(p0, p0 + Vector2(0, -22.0 * k), col, 1.3, false)
+	_beacons.append({"pos": base + Vector2(0, -(th + ch + 118.0 * k)), "color": col, "phase": 0.2})
 
 
 ## A neon name plate floating over an HQ (drawn by the overlay).

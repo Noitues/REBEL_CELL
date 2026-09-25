@@ -213,7 +213,6 @@ func _draw() -> void:
 		var dir := Vector2(cos(a), sin(a))
 		var hub := center + dir * (radius + band * 0.95)
 		var ntip := center + dir * (inner + 3)
-		draw_line(hub, ntip, Color(pcol, 0.3 * pointer_alpha), 8.0)
 		draw_colored_polygon(PackedVector2Array([ntip, hub + dir.orthogonal() * 4.0, hub - dir.orthogonal() * 4.0]), pcol)
 		draw_circle(hub, 9, Palette.NIGHT_SKY)
 		draw_arc(hub, 9, 0, TAU, 20, pcol, 2.5)
