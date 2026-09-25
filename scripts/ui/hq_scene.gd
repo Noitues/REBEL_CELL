@@ -8,10 +8,17 @@ extends Control
 const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.SiteStatus.CLEARED: "cleared",
 	GridState.SiteStatus.CLAIMED: "claimed", GridState.SiteStatus.SEIZED: "SEIZED"}
 
+## Screen titles on the HUD strip, by panel name (STYLE_GUIDE 4, "Neon city").
+const SCREEN_TITLES := {"start": ["00", "JACK A CAMPAIGN IN"], "hq": ["01", "CYBERDECK HQ"], "grid": ["02", "CITY GRID"],
+	"raid": ["03", "CELL DEFENSE RAID SETUP"], "raid_playout": ["03", "RAID IN PROGRESS"], "raid_summary": ["03", "RAID REPORT"],
+	"codex": ["", "CODEX"], "end": ["", "CAMPAIGN END"]}
+
 ## Site-row label width on the Grid list: the text wraps inside it (large text scales).
 const SITE_LABEL_WIDTH := UiWrap.MAX_ITEM_WIDTH
 
 var _status: Label
+## Top strip: screen title and the status line (`_status`).
+var hud: HudBar
 var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
@@ -247,9 +254,14 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	# Screens built from terminal windows let the city show between them.
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start"] else &"GlassPanel"
+	var t: Array = SCREEN_TITLES.get(name, ["", ""])
+	hud.set_screen(t[0], t[1])
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
+	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
 	var net := name in ["grid", "raid", "raid_playout", "raid_summary"]
 	background.visible = not net
@@ -262,6 +274,17 @@ func _set_panel(p: Control, name: String) -> void:
 		wireframe.corp_creep = band / 3.0
 		wireframe.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	_refresh_status()
+
+
+## A new panel opens at its top (the first focus lands before layout and can
+## otherwise leave the scroll part-way down, hiding the header row).
+func _scroll_to_top() -> void:
+	var scroll := _panel_host.get_parent() as ScrollContainer
+	if scroll != null:
+		scroll.scroll_vertical = 0
+		await get_tree().process_frame
+		if is_instance_valid(scroll):
+			scroll.scroll_vertical = 0
 
 
 func open_settings() -> void:
@@ -397,7 +420,9 @@ func show_hq() -> void:
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
 	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
 	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 22)
 	header.add_child(GraffitiTag.new("REBEL_CELL"))
 	var poster := HeatPoster.new(true)
 	poster.hot_color = Palette.corp_color(c.corporation_id)
@@ -412,83 +437,81 @@ func show_hq() -> void:
 	radio.tooltip_text = dj_line.text if dj_line != null else ""
 	header.add_child(radio)
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
+	jack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	jack.pressed.connect(show_grid)
 	header.add_child(jack)
 	box.add_child(header)
-	var actions := HFlowContainer.new()
-	box.add_child(actions)
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 14)
+	box.add_child(cols)
+	var left := VBoxContainer.new()
+	left.add_theme_constant_override("separation", 12)
+	left.custom_minimum_size.x = 300
+	cols.add_child(left)
+	# The deck menu (reference: "> OPERATIVES / NETWORK / LOADOUT").
+	var deck := TerminalWindow.new("CYBERDECK")
+	left.add_child(deck)
+	var actions := deck.body
 	actions.add_child(_button("City Grid", show_grid))
-	actions.add_child(_button("Codex", show_codex))
-	actions.add_child(_button("Settings [Esc]", open_settings))
-	for cls in RunManager.available_classes():
-		var cid := cls.id
-		actions.add_child(_button("Recruit %s (%d)" % [cls.display_name, CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)))
+	if not c.pending_raids.is_empty():
+		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
+		var raid_btn := _button("RAID PENDING: %s (%d)" % [raid.display_name, c.pending_raids.size()], show_raid)
+		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
+		actions.add_child(raid_btn)
 	actions.add_child(_button("Scrub Heat %d (%d)" % [HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg), CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		actions.add_child(_button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home))
-	if not c.pending_raids.is_empty():
-		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
-		actions.add_child(_button("RAID PENDING: %s (%d)" % [raid.display_name, c.pending_raids.size()], show_raid))
+	actions.add_child(_button("Codex", show_codex))
+	actions.add_child(_button("Settings [Esc]", open_settings))
 	actions.add_child(_button("Save", func() -> void: RunManager.autosave(); _log.append_text("Saved.\n")))
+	_as_menu(actions)
+	# System readout: modifiers, Armory, Exploits.
+	var sys := TerminalWindow.new("SYSTEM ONLINE")
+	left.add_child(sys)
 	var mods := HeatRules.active_modifiers(c, cfg)
 	var mod_text := ""
 	for m in mods:
 		mod_text += " %s %+.0f" % [RC.RuleModifierType.keys()[m.type], m.value]
-	box.add_child(_label("Active Heat modifiers:%s | ICE %d" % [mod_text if mod_text != "" else " none", c.ice_level]))
-	# Boosts for the next run (GDD 11.4).
-	var boosts := HFlowContainer.new()
-	boosts.add_child(_label("Next-run boosts:"))
-	for b in cfg.netrun_boosts:
-		if b == null:
-			continue
-		var bid := b.id
-		var btn := _button("%s (%d)" % [b.display_name, b.cost], func() -> void: buy_boost(bid))
-		btn.tooltip_text = b.description
-		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
-		boosts.add_child(btn)
-	if not c.pending_boosts.is_empty():
-		boosts.add_child(_label("queued: %s" % ", ".join(c.pending_boosts)))
-	box.add_child(boosts)
-	# Profile unlocks (GDD 3.4).
-	var unlocks := HFlowContainer.new()
-	unlocks.add_child(_label("Profile unlocks:"))
-	var any_unlock := false
-	for id in lookup.ids_of_class(&"ProfileUnlockData"):
-		var u := lookup.get_content(id) as ProfileUnlockData
-		if u == null or RunManager.profile.has_unlock(u.id):
-			continue
-		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
-		if u.schematic_cost == 0:
-			continue
-		any_unlock = true
-		var uid := u.id
-		var btn := _button("%s (%d)" % [u.display_name, u.schematic_cost], func() -> void: purchase_unlock(uid))
-		btn.tooltip_text = u.description
-		btn.disabled = c.schematics < u.schematic_cost
-		unlocks.add_child(btn)
-	if not any_unlock:
-		unlocks.add_child(_label("everything unlocked"))
-	box.add_child(unlocks)
-	box.add_child(_label("Roster:"))
+	sys.body.add_child(_label("Active Heat modifiers:%s | ICE %d" % [mod_text if mod_text != "" else " none", c.ice_level]))
+	sys.body.add_child(_label("Armory (%d/%d): %s" % [c.armory.size(), cfg.armory_capacity, ", ".join(c.armory) if not c.armory.is_empty() else "empty"]))
+	sys.body.add_child(_label("Exploits: %s" % _exploit_names(c)))
+	sys.body.add_child(_label("Home %d/%d | Schematics %d" % [c.grid.home_integrity, c.grid.home_max_integrity, c.schematics]))
+	# The crew: Polaroids with their stats and orders.
+	var crew := TerminalWindow.new("CREW // ROSTER", Palette.CELL_PINK)
+	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(crew)
+	var roster_box := HFlowContainer.new()
+	roster_box.add_theme_constant_override("h_separation", 18)
+	roster_box.add_theme_constant_override("v_separation", 14)
+	crew.body.add_child(roster_box)
 	for op in c.roster:
-		var row := HFlowContainer.new()
+		# A crew card: Polaroid on top, stats and orders underneath.
+		var row := VBoxContainer.new()
+		row.custom_minimum_size.x = 200
+		row.add_theme_constant_override("separation", 6)
 		var where := CampaignRules.stationed_site(c, op.id)
 		var polaroid := Polaroid.new("%s R%d" % [op.name, op.rank], "[%s PORTRAIT]" % op.class_id.to_upper(), -2.0 if c.roster.find(op) % 2 == 0 else 2.0)
 		polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
+		polaroid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		row.add_child(polaroid)
-		row.add_child(_label("  %s (%s) Rank %d HP %d/%d deck %d daemons %d %s%s" % [op.name, op.class_id, op.rank, op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
+		var info := VBoxContainer.new()
+		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(info)
+		info.add_child(_label("  %s (%s) Rank %d HP %d/%d deck %d daemons %d %s%s" % [op.name, op.class_id, op.rank, op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
 			"" if op.alive else "[DEAD]", (" stationed on %s" % where) if where != &"" else ""]))
+		var orders := VBoxContainer.new()
+		info.add_child(orders)
 		if op.alive:
 			if where != &"":
 				var id := op.id
-				row.add_child(_button("Recall", func() -> void: recall(id)))
+				orders.add_child(_button("Recall", func() -> void: recall(id)))
 			else:
 				for site_id in c.grid.claimed_ids():
 					var node := lookup.get_content(c.grid.node_type_of(site_id)) as NetworkNodeData
 					if node != null and node.station_slots > 0 and c.grid.stationed_on(site_id) == &"" and c.grid.is_active_node(site_id):
 						var oid := op.id
 						var sid := site_id
-						row.add_child(_button("Station on %s" % site_id, func() -> void: station(oid, sid)))
+						orders.add_child(_button("Station on %s" % site_id, func() -> void: station(oid, sid)))
 			# Rank 3 Inner Ring segment swaps (GDD 6.4).
 			var cls := lookup.get_content(op.class_id) as ClassData
 			var options := CampaignRules.ring_segment_options(op, cls)
@@ -507,19 +530,59 @@ func show_hq() -> void:
 					var oid2 := op.id
 					var index := k
 					pick.item_selected.connect(func(i: int) -> void: swap_segment(oid2, index, pick.get_item_metadata(i)))
-					row.add_child(pick)
-		box.add_child(row)
-	box.add_child(_label("Armory (%d/%d): %s" % [c.armory.size(), cfg.armory_capacity, ", ".join(c.armory) if not c.armory.is_empty() else "empty"]))
-	box.add_child(_label("Exploits: %s" % _exploit_names(c)))
+					orders.add_child(pick)
+		roster_box.add_child(row)
+	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
+	var market := TerminalWindow.new("BLACK MARKET // SCHEMATICS %d" % c.schematics, Palette.CELL_ACID)
+	box.add_child(market)
+	var recruits := HFlowContainer.new()
+	recruits.add_child(_label("Recruit:"))
+	for cls in RunManager.available_classes():
+		var cid := cls.id
+		recruits.add_child(_button("Recruit %s (%d)" % [cls.display_name, CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)))
+	market.body.add_child(recruits)
+	var boosts := HFlowContainer.new()
+	boosts.add_child(_label("Next-run boosts:"))
+	for b in cfg.netrun_boosts:
+		if b == null:
+			continue
+		var bid := b.id
+		var btn := _button("%s (%d)" % [b.display_name, b.cost], func() -> void: buy_boost(bid))
+		btn.tooltip_text = b.description
+		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
+		boosts.add_child(btn)
+	if not c.pending_boosts.is_empty():
+		boosts.add_child(_label("queued: %s" % ", ".join(c.pending_boosts)))
+	market.body.add_child(boosts)
+	var unlocks := HFlowContainer.new()
+	unlocks.add_child(_label("Profile unlocks:"))
+	var any_unlock := false
+	for id in lookup.ids_of_class(&"ProfileUnlockData"):
+		var u := lookup.get_content(id) as ProfileUnlockData
+		if u == null or RunManager.profile.has_unlock(u.id):
+			continue
+		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
+		if u.schematic_cost == 0:
+			continue
+		any_unlock = true
+		var uid := u.id
+		var btn := _button("%s (%d)" % [u.display_name, u.schematic_cost], func() -> void: purchase_unlock(uid))
+		btn.tooltip_text = u.description
+		btn.disabled = c.schematics < u.schematic_cost
+		unlocks.add_child(btn)
+	if not any_unlock:
+		unlocks.add_child(_label("everything unlocked"))
+	market.body.add_child(unlocks)
 	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
 	if not beats.is_empty():
-		box.add_child(_label("Story so far:"))
+		var story := TerminalWindow.new("Story so far:", Palette.CRT_AMBER)
+		box.add_child(story)
 		for b in beats:
 			var t := RichTextLabel.new()
 			t.fit_content = true
 			t.custom_minimum_size = Vector2(700, 0)
 			t.text = "  [%s] %s" % [b.title, b.text]
-			box.add_child(t)
+			story.body.add_child(t)
 	_set_panel(box, "hq")
 
 
@@ -842,9 +905,9 @@ func _build_ui() -> void:
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
-	_status = Label.new()
-	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # large text scales (H14)
-	root.add_child(_status)
+	hud = HudBar.new()
+	root.add_child(hud)
+	_status = hud.label
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true  # pad focus scrolls long lists (Grid Sites)
 	# Never sideways: rows wrap (HFlowContainer) to the 1280-wide screen instead.
@@ -852,14 +915,24 @@ func _build_ui() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
+	_panel_host.theme_type_variation = &"GlassPanel"
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
 	_log = RichTextLabel.new()
+	_log.theme_type_variation = &"LogText"
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
-	_log.custom_minimum_size = Vector2(0, 140)
+	_log.custom_minimum_size = Vector2(0, 96)
 	root.add_child(_log)
+
+
+## Turns the buttons in `box` into "> ITEM" terminal menu lines.
+func _as_menu(box: Control) -> void:
+	for b in box.get_children():
+		if b is Button:
+			b.theme_type_variation = &"MenuItem"
+			(b as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
 
 
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).

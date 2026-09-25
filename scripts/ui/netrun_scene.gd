@@ -8,6 +8,8 @@ const NODE_LABELS := {RC.InfilNodeType.ROUTER: "Router", RC.InfilNodeType.TERMIN
 	RC.InfilNodeType.MODEM: "Modem", RC.InfilNodeType.SERVER_RACK: "Server Rack"}
 
 var _status: Label
+## Top strip: screen title and the status line (`_status`).
+var hud: HudBar
 var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
@@ -203,6 +205,7 @@ func _set_panel(p: Control) -> void:
 		UiFocus.link_layout(p)
 		UiFocus.focus_first(p)
 	var s := RunManager.netrun
+	_title_screen(s)
 	if s != null and not s.run.is_over():
 		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun", s.campaign.corporation_id)
 		if s.run.phase != RunState.Phase.COMBAT:
@@ -212,6 +215,28 @@ func _set_panel(p: Control) -> void:
 		background.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
+func _title_screen(s: NetrunSession) -> void:
+	if s == null:
+		hud.set_screen("", "NETRUN")
+		return
+	match s.run.phase:
+		RunState.Phase.MAP:
+			hud.set_screen("", "NETRUN // ROUTE")
+		RunState.Phase.COMBAT:
+			hud.set_screen("", "")
+		RunState.Phase.REWARD:
+			hud.set_screen("", "BREACH PAYOUT")
+		RunState.Phase.EVENT:
+			hud.set_screen("04", "TERMINAL EVENT & DISPATCH")
+		RunState.Phase.SHOP:
+			hud.set_screen("05", "MODEM CYBER SHOP")
+		RunState.Phase.RAID:
+			hud.set_screen("", "NETRUN // RAID")
+		_:
+			hud.set_screen("", "NETRUN // JACK OUT")
 
 
 func _show_start() -> void:
@@ -602,9 +627,9 @@ func _build_ui() -> void:
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
-	_status = Label.new()
-	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # large text scales (H14)
-	root.add_child(_status)
+	hud = HudBar.new()
+	root.add_child(hud)
+	_status = hud.label
 	# Tall panels (a raid with many claimed Sites) scroll vertically; never sideways.
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true
@@ -612,10 +637,12 @@ func _build_ui() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
+	_panel_host.theme_type_variation = &"GlassPanel"
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
 	_log = RichTextLabel.new()
+	_log.theme_type_variation = &"LogText"
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 110)

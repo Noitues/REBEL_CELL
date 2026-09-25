@@ -13,6 +13,8 @@ func _init(p_text: String = "SEND IT", p_color: Color = Palette.CELL_PINK) -> vo
 	custom_minimum_size = Vector2(112, 112)
 	flat = true
 	focus_mode = Control.FOCUS_ALL
+	# Draws its own hover/focus glow; no theme box around the sticker.
+	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	mouse_entered.connect(func() -> void: _hot = true; queue_redraw())
 	mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
 	focus_entered.connect(func() -> void: _hot = true; queue_redraw())

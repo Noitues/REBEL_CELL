@@ -23,6 +23,8 @@ func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", in
 	custom_minimum_size = Vector2(112, 148)
 	flat = true
 	focus_mode = Control.FOCUS_ALL
+	# Draws its own hover/focus glow; no theme box around the sticker.
+	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	tooltip_text = p_description
 	mouse_entered.connect(_set_lift.bind(true))
 	mouse_exited.connect(_set_lift.bind(false))

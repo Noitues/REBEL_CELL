@@ -5,7 +5,9 @@ extends RefCounted
 ## Controls look like neon terminal panels laid over the night city: deep navy glass,
 ## thin cyan edges, hot-pink hover glow, acid focus ring (always visible for pads).
 ## Type variations: "MenuItem" (a "> ITEM" line in a terminal menu), "TerminalPanel"
-## (a PanelContainer framed like a terminal window), "HeaderLabel" (a screen title).
+## (a PanelContainer framed like a terminal window), "GlassPanel" (the screen's content
+## area: lighter glass so the city shows through), "HudLabel" (the status strip),
+## "LogText" (the system log strip), "HeaderLabel" (a screen title).
 
 const BASE_SIZE := 15
 
@@ -145,6 +147,24 @@ static func _panels(t: Theme) -> void:
 	p.shadow_size = 8
 	p.shadow_offset = Vector2(3, 4)
 	t.set_stylebox("panel", v, p)
+	var g := "GlassPanel"
+	t.set_type_variation(g, "PanelContainer")
+	var glass := box(Color(0.02, 0.04, 0.1, 0.8), Color(Palette.TERMINAL_EDGE, 0.35), 1, 12, 8)
+	t.set_stylebox("panel", g, glass)
+	var hud := "HudLabel"
+	t.set_type_variation(hud, "Label")
+	var strip := box(Color(0, 0, 0, 0.82), Palette.CELL_PINK, 0, 10, 5)
+	strip.border_width_bottom = 2
+	t.set_stylebox("normal", hud, strip)
+	t.set_color("font_color", hud, Palette.PAPER)
+	var lg := "LogText"
+	t.set_type_variation(lg, "RichTextLabel")
+	var log_box := box(Color(0.01, 0.03, 0.07, 0.9), Color(Palette.TERMINAL_EDGE, 0.4), 1, 12, 6)
+	log_box.border_width_left = 3
+	log_box.border_color = Color(Palette.NET_CYAN, 0.6)
+	t.set_stylebox("normal", lg, log_box)
+	t.set_stylebox("focus", lg, box(Color(0, 0, 0, 0), Palette.CELL_ACID, 2))
+	t.set_color("default_color", lg, Color(Palette.TERMINAL_TEXT, 0.9))
 	# Tabs (options, codex): terminal tabs with a pink active underline.
 	var tab := box(Palette.TERMINAL_BG, Color(Palette.TERMINAL_EDGE, 0.4), 1, 10, 4)
 	var tab_on := box(Palette.TERMINAL_BG_HOT, Palette.CELL_PINK, 0, 10, 4)
