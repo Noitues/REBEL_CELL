@@ -84,6 +84,24 @@ static func _buttons(t: Theme) -> void:
 		t.set_color("icon_normal_color", kind, Palette.NET_CYAN)
 		t.set_color("icon_hover_color", kind, Palette.CELL_PINK)
 		t.set_color("icon_focus_color", kind, Palette.CELL_ACID)
+	# "HotButton": the one big action on a screen (RUN THE RAID, INITIATE BREACH).
+	var hv := "HotButton"
+	t.set_type_variation(hv, "Button")
+	var hot_n := box(Palette.CELL_PINK, Palette.PAPER, 2, 18, 8)
+	hot_n.shadow_color = Color(Palette.CELL_PINK, 0.35)
+	hot_n.shadow_size = 8
+	var hot_h := box(Palette.CELL_PINK.lightened(0.15), Palette.CELL_ACID, 2, 18, 8)
+	hot_h.shadow_color = Color(Palette.CELL_PINK, 0.6)
+	hot_h.shadow_size = 12
+	t.set_stylebox("normal", hv, hot_n)
+	t.set_stylebox("hover", hv, hot_h)
+	t.set_stylebox("pressed", hv, box(Palette.CELL_PINK.darkened(0.2), Palette.PAPER, 2, 18, 8))
+	t.set_color("font_color", hv, Palette.INK)
+	t.set_color("font_hover_color", hv, Palette.INK)
+	t.set_color("font_focus_color", hv, Palette.INK)
+	t.set_color("font_pressed_color", hv, Palette.INK)
+	t.set_font("font", hv, Palette.display())
+	t.set_font_size("font_size", hv, 22)
 	# Toggles sit flat in lists (no box of their own).
 	var flat := box(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 4, 2)
 	for kind in ["CheckButton", "CheckBox"]:

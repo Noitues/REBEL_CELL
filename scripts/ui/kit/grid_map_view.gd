@@ -88,7 +88,8 @@ func _draw() -> void:
 				if frozen:
 					_dashed_line(_positions[s.id], _positions[l], Palette.RESIST_GOLD)
 				else:
-					draw_line(_positions[s.id], _positions[l], Color(Palette.NET_CYAN, 0.45), 1.5)
+					draw_line(_positions[s.id], _positions[l], Color(Palette.NET_CYAN, 0.12), 6.0)
+					draw_line(_positions[s.id], _positions[l], Color(Palette.NET_CYAN, 0.6), 1.5)
 		for l in s.locked_links:
 			if _positions.has(l):
 				var open := campaign.grid.is_link_open(s.id, l)
@@ -102,8 +103,9 @@ func _draw() -> void:
 			if _positions.has(path[i]) and _positions.has(path[i + 1]):
 				var a: Vector2 = _positions[path[i]]
 				var b: Vector2 = _positions[path[i + 1]]
-				draw_line(a, b, Color(corp_col, 0.25), 8.0)
-				draw_line(a, b, corp_col, 2.0)
+				draw_line(a, b, Color(corp_col, 0.12), 14.0)
+				draw_line(a, b, Color(corp_col, 0.3), 7.0)
+				draw_line(a, b, corp_col, 2.5)
 				var dir := (b - a).normalized()
 				var tip := b - dir * 30
 				draw_line(tip, tip - dir.rotated(0.5) * 10, corp_col, 2.0)
@@ -125,6 +127,9 @@ func _draw() -> void:
 				col = Color(Palette.NET_CYAN, 0.7)
 			GridState.SiteStatus.SEIZED:
 				col = Palette.RESIST_GOLD
+		if s.id == campaign.grid.home_site_id:
+			for k in 3:
+				draw_arc(p, w + 10 + k * 9, 0, TAU, 40, Color(Palette.CELL_PINK, 0.55 - k * 0.15), 2.0 - k * 0.4)
 		_iso_block(p, w, d, h, col)
 		if s.id == selected_id:
 			draw_arc(p + Vector2(0, -h * 0.5), w + 10, 0, TAU, 32, Palette.CELL_ACID, 2.0)
@@ -142,14 +147,18 @@ func _draw() -> void:
 				glyph = "❄"
 			RC.SiteObjective.BOSS:
 				glyph = "✦"
+		if glyph != "" or s.id == campaign.grid.home_site_id:
+			_badge(p + Vector2(0, -h - d - 12), 9.0 if dense else 11.0, col, glyph if glyph != "" else "⌂")
 		var label := ("T%d %s" % [s.tier, glyph]) if dense else ("T%d %s %s" % [s.tier, s.display_name, glyph])
-		draw_string(Palette.mono(), p + Vector2(-40, h + 20), label, HORIZONTAL_ALIGNMENT_LEFT, 120, 9 if dense else 10, Palette.PAPER)
+		if s.id == campaign.grid.home_site_id:
+			label = "CORE"
+		_tag(p + Vector2(-40, d + 16), label, 9 if dense else 10, Palette.PAPER)
 		if status == GridState.SiteStatus.CLAIMED and s.id != campaign.grid.home_site_id:
 			var site := campaign.grid.site(s.id)
 			var level := campaign.grid.upgrade_level_of(s.id)
-			draw_string(Palette.mono(), p + Vector2(-40, h + 31), "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""], HORIZONTAL_ALIGNMENT_LEFT, 120, 9, Palette.CELL_ACID)
+			_tag(p + Vector2(-40, d + 29), "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""], 9, Palette.CELL_ACID)
 		elif s.id == campaign.grid.home_site_id:
-			draw_string(Palette.mono(), p + Vector2(-40, h + 31), "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], HORIZONTAL_ALIGNMENT_LEFT, 120, 9, Palette.CELL_ACID)
+			_tag(p + Vector2(-40, d + 29), "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], 9, Palette.CELL_ACID)
 		# Raid playout: threats standing on this Site as corporate markers.
 		if threat_markers.has(s.id):
 			var names: Array = threat_markers[s.id]
@@ -161,13 +170,45 @@ func _draw() -> void:
 
 
 func _iso_block(p: Vector2, w: float, d: float, h: float, col: Color) -> void:
+	# A solid lit block (reference: the neon city) with a glowing roof edge.
 	var top := PackedVector2Array([p + Vector2(0, -d), p + Vector2(w, 0), p + Vector2(0, d), p + Vector2(-w, 0)])
 	var up := Vector2(0, -h)
-	draw_polyline(PackedVector2Array([top[0] + up, top[1] + up, top[2] + up, top[3] + up, top[0] + up]), col, 1.5)
-	for i in 4:
-		draw_line(top[i], top[i] + up, Color(col, 0.7), 1.0)
-	draw_polyline(PackedVector2Array([top[1], top[2], top[3]]), Color(col, 0.7), 1.0)
-	draw_colored_polygon(PackedVector2Array([top[0] + up, top[1] + up, top[2] + up, top[3] + up]), Color(col, 0.12))
+	draw_colored_polygon(PackedVector2Array([p + Vector2(0, d * 1.6), p + Vector2(w * 1.5, 0), p + Vector2(0, -d * 1.6), p + Vector2(-w * 1.5, 0)]), Color(col, 0.1))
+	var left := Palette.NIGHT_BLOCK_LIT.lerp(col, 0.18)
+	var right := Palette.NIGHT_BLOCK.lerp(col, 0.08)
+	draw_colored_polygon(PackedVector2Array([top[3], top[2], top[2] + up, top[3] + up]), left)
+	draw_colored_polygon(PackedVector2Array([top[2], top[1], top[1] + up, top[2] + up]), right)
+	draw_colored_polygon(PackedVector2Array([top[0] + up, top[1] + up, top[2] + up, top[3] + up]), col.darkened(0.45))
+	# Window rows.
+	var rows := int(h / 7.0)
+	for r in rows:
+		var y := -4.0 - r * 7.0
+		draw_line(top[3].lerp(top[2], 0.2) + Vector2(0, y), top[3].lerp(top[2], 0.8) + Vector2(0, y), Color(col, 0.35), 1.5)
+		draw_line(top[2].lerp(top[1], 0.2) + Vector2(0, y), top[2].lerp(top[1], 0.8) + Vector2(0, y), Color(col, 0.2), 1.5)
+	var roof := PackedVector2Array([top[0] + up, top[1] + up, top[2] + up, top[3] + up, top[0] + up])
+	draw_polyline(roof, Color(col, 0.25), 4.0)
+	draw_polyline(roof, col, 1.5)
+	draw_line(top[2], top[2] + up, Color(col, 0.6), 1.0)
+
+
+## A hexagon badge floating over a Site: status colour, objective glyph inside.
+func _badge(p: Vector2, r: float, col: Color, glyph: String) -> void:
+	var pts := PackedVector2Array()
+	for k in 7:
+		pts.append(p + Vector2(cos(k * TAU / 6.0 + PI / 6.0), sin(k * TAU / 6.0 + PI / 6.0)) * r)
+	draw_colored_polygon(pts, Color(Palette.NIGHT_SKY, 0.9))
+	draw_polyline(pts, Color(col, 0.3), 4.0)
+	draw_polyline(pts, col, 1.5)
+	if glyph != "":
+		draw_string(Palette.mono(), p + Vector2(-r, r * 0.45), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), col)
+
+
+## Text on a dark pill so it reads over links and blocks.
+func _tag(at: Vector2, text: String, font_size: int, col: Color, width: float = 120.0) -> void:
+	var f := Palette.mono()
+	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x, width)
+	draw_rect(Rect2(at.x - 3, at.y - font_size, tw + 6, font_size + 4), Color(Palette.NIGHT_SKY, 0.75))
+	draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, width, font_size, col)
 
 
 func _dashed_line(a: Vector2, b: Vector2, col: Color) -> void:

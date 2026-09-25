@@ -255,7 +255,7 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	_panel_host.add_child(p)
 	# Screens built from terminal windows let the city show between them.
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start"] else &"GlassPanel"
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid"] else &"GlassPanel"
 	var t: Array = SCREEN_TITLES.get(name, ["", ""])
 	hud.set_screen(t[0], t[1])
 	UiWrap.fit(p)
@@ -603,23 +603,18 @@ func show_grid() -> void:
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
 	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
 	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 16)
 	box.add_child(top)
+	var map_win := TerminalWindow.new("CITY GRID // %s" % corp.display_name)
+	map_win.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(map_win)
 	grid_view = GridMapView.new()
-	var paths: Array[Array] = []
-	for pending in c.pending_raids:
-		for entry in CampaignRules.raid_entries(c, corp, pending):
-			var path: Array = [entry]
-			var cur := entry
-			var guard := 0
-			while cur != c.grid.home_site_id and guard < 12:
-				guard += 1
-				cur = c.grid.next_hop(cur, c.grid.home_site_id, corp.city_grid)
-				path.append(cur)
-			paths.append(path)
-	grid_view.show_grid(c, corp, paths)
-	top.add_child(grid_view)
+	grid_view.show_grid(c, corp, _threat_paths())
+	map_win.body.add_child(grid_view)
 	var plan := ZineNote.new("THE PLAN", Vector2(300, 380))
+	plan.rotation_degrees = 1.5
 	plan.append("Cleared Sites can be claimed.")
 	plan.append("Relays extend your reach.")
 	plan.append("%d/%d Exploits for the breach." % [c.exploits.size(), cfg.min_exploits_for_breach])
@@ -637,6 +632,10 @@ func show_grid() -> void:
 	top.add_child(plan)
 	grid_view.selected_id = selected_site
 	grid_view.site_clicked.connect(select_site)
+	var sites_win := TerminalWindow.new("SITES // NODE STATUS", Palette.CELL_PINK)
+	box.add_child(sites_win)
+	var outer := box
+	box = sites_win.body
 	box.add_child(_button("Back to HQ", show_hq))
 	var living := c.living_operatives()
 	var choices := _node_choices()
@@ -653,7 +652,25 @@ func show_grid() -> void:
 		if site == null:
 			continue
 		box.add_child(_site_row(site, launchable, living, choices))
-	_set_panel(box, "grid")
+	_set_panel(outer, "grid")
+
+
+## Pending raids' routes, entry -> home, for the map's corporate arrows.
+func _threat_paths() -> Array[Array]:
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var paths: Array[Array] = []
+	for pending in c.pending_raids:
+		for entry in CampaignRules.raid_entries(c, corp, pending):
+			var path: Array = [entry]
+			var cur := entry
+			var guard := 0
+			while cur != c.grid.home_site_id and guard < 12:
+				guard += 1
+				cur = c.grid.next_hop(cur, c.grid.home_site_id, corp.city_grid)
+				path.append(cur)
+			paths.append(path)
+	return paths
 
 
 ## Selects a Site clicked on the Grid map and redraws the Grid with its actions first.
@@ -732,15 +749,44 @@ func show_raid() -> void:
 	var cfg := RunManager.config()
 	var raid := CampaignRules.raid_data(pending, lookup)
 	var projection := RunManager.project_raid()
-	var box := VBoxContainer.new()
-	box.add_child(_label("RAID SETUP - %s: %s" % [raid.display_name, raid.warning_text]))
-	box.add_child(_label("Entry: %s | Threat strength %+.0f%% | Projection: %s, home %d -> %d, %d/%d threats destroyed, %d steps" % [
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 12)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 16)
+	outer.add_child(top)
+	var route := TerminalWindow.new("THREAT ROUTE // %s" % raid.display_name, Palette.corp_color(c.corporation_id))
+	route.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(route)
+	var route_map := GridMapView.new()
+	route_map.custom_minimum_size = Vector2(700, 300)
+	route_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	route_map.show_grid(c, RunManager.corporation, _threat_paths())
+	route.body.add_child(route_map)
+	var intel := VBoxContainer.new()
+	intel.add_theme_constant_override("separation", 10)
+	top.add_child(intel)
+	var box := ZineNote.new("RAID INTEL", Vector2(300, 250))
+	box.rotation_degrees = 1.5
+	intel.add_child(box)
+	intel.add_child(GraffitiScrawl.new("HOLD!!", -9.0, 30))
+	box.append("RAID SETUP - %s: %s" % [raid.display_name, raid.warning_text])
+	box.append("Entry: %s | Threat strength %+.0f%% | Projection: %s, home %d -> %d, %d/%d threats destroyed, %d steps" % [
 		", ".join(CampaignRules.raid_entries(c, RunManager.corporation, pending)), CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation),
 		"HOLDS" if projection.won else ("CAMPAIGN LOST" if projection.campaign_lost else "breached"),
-		projection.home_before, projection.home_after, projection.threats_destroyed, projection.threats_destroyed + projection.threats_reached_home + _still_active(projection), projection.steps_run]))
+		projection.home_before, projection.home_after, projection.threats_destroyed, projection.threats_destroyed + projection.threats_reached_home + _still_active(projection), projection.steps_run])
 	for e in projection.events:
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
-			box.add_child(_label("  " + String(e["text"])))
+			box.append("  " + String(e["text"]))
+	var loadout := TerminalWindow.new("DEFENSE LOADOUT // ARMORY %d/%d" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK)
+	outer.add_child(loadout)
+	var orders := HBoxContainer.new()
+	orders.add_theme_constant_override("separation", 12)
+	loadout.body.add_child(orders)
+	var run_btn := _button("RUN THE RAID", fight_raid)
+	run_btn.theme_type_variation = &"HotButton"
+	orders.add_child(run_btn)
+	orders.add_child(_button("Back to HQ (raid stays pending)", show_hq))
+	box = null
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
@@ -761,10 +807,8 @@ func show_raid() -> void:
 			row.add_child(pick)
 			var sid2 := site_id
 			row.add_child(_button("Deploy", func() -> void: deploy_asset(pick.selected, sid2)))
-		box.add_child(row)
-	box.add_child(_button("RUN THE RAID", fight_raid))
-	box.add_child(_button("Back to HQ (raid stays pending)", show_hq))
-	_set_panel(box, "raid")
+		loadout.body.add_child(row)
+	_set_panel(outer, "raid")
 	if _last_warned_raid != String(pending.get("raid_id", "")):
 		_last_warned_raid = String(pending.get("raid_id", ""))
 		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", raid.id))), c.raids_won + c.raids_lost)
