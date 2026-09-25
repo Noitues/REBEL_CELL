@@ -965,6 +965,9 @@ func _hq(corp: StringName, rect: Rect2i) -> void:
 				for q in rr.size():
 					if rr[q].y > base.y - 2.0 or q % 2 == 0:
 						_ink_line(rr[q] + Vector2(0, -hh), rr[(q + 1) % rr.size()] + Vector2(0, -hh), col, 1.5)
+			# The medical mark on the tower's front: the rod of Asclepius on a dark banner.
+			var front := _iso(cx + 0.78 * k, cy + 0.78 * k)
+			_asclepius(front + Vector2(0, -175.0 * k), 120.0 * k, col)
 			_extrude(_ngon(cx, cy, 0.7 * k, 16), 280.0 * k, 40.0 * k, 0.35, dark, col, 0.0, 902)
 			var halo := _ngon(cx, cy, 1.0 * k, 32)
 			for q in halo.size():
@@ -1144,7 +1147,7 @@ func _pagoda_roof(cx: float, cy: float, r0: float, r1: float, z: float, h: float
 func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> void:
 	var half := 1.75 * k
 	var bh := 52.0 * k
-	var ts := 0.7
+	var ts := 0.8
 	_extrude(_rect_pts(cx - half, cy - half, cx + half, cy + half), 0.0, bh, ts, FILLS[1], col, 0.25, 970)
 	# Coursed stone lines on the two visible slopes.
 	for q in 5:
@@ -1172,11 +1175,55 @@ func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> v
 		_extrude(_rect_pts(ox - 0.14 * k, oy - 0.14 * k, ox + 0.14 * k, oy + 0.14 * k), 0.0, 80.0 * k, 0.65, FILLS[0], col, 0.0, 975)
 		_extrude(_rect_pts(ox - 0.09 * k, oy - 0.09 * k, ox + 0.09 * k, oy + 0.09 * k), 80.0 * k, 9.0 * k, 0.03, FILLS[0], col, 0.0, 976)
 		_beacons.append({"pos": _iso(ox, oy) + Vector2(0, -92.0 * k), "color": col, "phase": 0.4 + sx * 0.1})
-	# The great pyramid on the base, with a gilded cap.
-	var pr := half * ts * 0.92
-	_extrude(_rect_pts(cx - pr, cy - pr, cx + pr, cy + pr), bh, 130.0 * k, 0.12, FILLS[1].lerp(col, 0.06), col, 0.2, 977)
-	_extrude(_rect_pts(cx - pr * 0.12, cy - pr * 0.12, cx + pr * 0.12, cy + pr * 0.12), bh + 130.0 * k, 16.0 * k, 0.03, Palette.RESIST_GOLD.darkened(0.4), Palette.RESIST_GOLD, 0.0, 978)
-	_beacons.append({"pos": base + Vector2(0, -(bh + 150.0 * k)), "color": col, "phase": 0.7})
+	# The flat terrace on top of the base: a parapet rim and paving lines, so the pyramid
+	# stands on level ground (slope, flat, slope).
+	var tr := half * ts
+	var rim := [_iso(cx - tr, cy - tr), _iso(cx + tr, cy - tr), _iso(cx + tr, cy + tr), _iso(cx - tr, cy + tr)]
+	for q in 4:
+		_ink_line(rim[q] + Vector2(0, -bh - 4.0 * k), rim[(q + 1) % 4] + Vector2(0, -bh - 4.0 * k), Color(col, 0.7), 1.2, false)
+	var pr := tr * 0.66
+	for q in 3:
+		var f := lerpf(pr, tr, float(q + 1) / 4.0)
+		_ink_line(_iso(cx - f, cy + f) + Vector2(0, -bh), _iso(cx + f, cy + f) + Vector2(0, -bh), Color(col, 0.3), 1.0, false)
+		_ink_line(_iso(cx + f, cy - f) + Vector2(0, -bh), _iso(cx + f, cy + f) + Vector2(0, -bh), Color(col, 0.22), 1.0, false)
+	# The great pyramid on the terrace, with a gilded cap.
+	var ph := 118.0 * k
+	_extrude(_rect_pts(cx - pr, cy - pr, cx + pr, cy + pr), bh, ph, 0.12, FILLS[1].lerp(col, 0.06), col, 0.2, 977)
+	_extrude(_rect_pts(cx - pr * 0.12, cy - pr * 0.12, cx + pr * 0.12, cy + pr * 0.12), bh + ph, 16.0 * k, 0.03, Palette.RESIST_GOLD.darkened(0.4), Palette.RESIST_GOLD, 0.0, 978)
+	_beacons.append({"pos": base + Vector2(0, -(bh + ph + 20.0 * k)), "color": col, "phase": 0.7})
+
+
+## The rod of Asclepius (one snake wound round a staff) centred on `at`, `h` tall, on a
+## dark banner so it reads over the tower's rings.
+func _asclepius(at: Vector2, h: float, col: Color) -> void:
+	var bw := h * 0.3
+	var top := at + Vector2(0, -h * 0.5)
+	var bot := at + Vector2(0, h * 0.5)
+	var panel := Color(Palette.NIGHT_SKY, 0.92)
+	_quad(top + Vector2(-bw, -h * 0.06), top + Vector2(bw, -h * 0.06), bot + Vector2(bw, h * 0.06), bot + Vector2(-bw, h * 0.06), panel, panel, panel, panel)
+	_ink_line(top + Vector2(-bw, -h * 0.06), bot + Vector2(-bw, h * 0.06), Color(col, 0.6), 1.2, false)
+	_ink_line(top + Vector2(bw, -h * 0.06), bot + Vector2(bw, h * 0.06), Color(col, 0.6), 1.2, false)
+	var ink := col.lightened(0.45)
+	# The staff, with a knob at the top.
+	_ink_line(top + Vector2(0, h * 0.02), bot, ink, 3.0)
+	_quad(top + Vector2(-h * 0.035, h * 0.02), top + Vector2(0, -h * 0.02), top + Vector2(h * 0.035, h * 0.02), top + Vector2(0, h * 0.06), ink, ink, ink, ink)
+	# The snake: a tapering sine round the staff, tail at the foot, head near the top.
+	var turns := 2.08
+	var steps := 40
+	var prev := Vector2.ZERO
+	for q in steps + 1:
+		var t := float(q) / steps
+		var y := lerpf(0.88, 0.2, t)
+		var amp := bw * lerpf(0.35, 0.7, sin(t * PI) * 0.6 + t * 0.4)
+		var p := top + Vector2(sin(t * turns * TAU) * amp, h * y)
+		if q > 0:
+			_ink_line(prev, p, ink, lerpf(1.8, 4.2, t))
+		prev = p
+	# The head: a small diamond turned toward the staff, with a forked tongue.
+	var head := prev
+	_quad(head + Vector2(-h * 0.045, 0), head + Vector2(0, -h * 0.03), head + Vector2(h * 0.05, 0), head + Vector2(0, h * 0.03), ink, ink, ink, ink)
+	_ink_line(head + Vector2(h * 0.05, 0), head + Vector2(h * 0.09, -h * 0.015), ink, 1.0, false)
+	_ink_line(head + Vector2(h * 0.05, 0), head + Vector2(h * 0.09, h * 0.015), ink, 1.0, false)
 
 
 ## English HQ: a great clock tower (Big Ben style) with glowing clock faces, a belfry and a

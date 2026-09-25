@@ -153,8 +153,6 @@ func _draw() -> void:
 	draw_circle(center, radius + 40, Color(Palette.NIGHT_SKY, 0.55))
 	if inverted:
 		draw_circle(center, radius + 24, Color(Palette.PAPER, 0.9))
-	if highlighted:
-		draw_arc(center, radius + 40, 0, TAU, 64, _col(Color(Palette.CELL_ACID, 0.7)), 2.0)
 	draw_circle(center, inner - 3, Color("#07080F"))
 	# Slices: neon bars, icon inside, value outside, the perfect arrow at the outer edge.
 	for i in wheel.slice_count:
@@ -206,13 +204,13 @@ func _draw() -> void:
 			draw_arc(center, ring_r, s0, e0, 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
 			var m := _tick_angle(k * 10, wheel.inner_rotation)
 			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), seg.display_name if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, _col(Palette.PAPER))
-	# Pointers: white gauge needles from a hub outside the rim down into the band.
+	# Pointers: short white gauge needles, hub just outside the rim, tip just past its edge.
 	var pcol := Color(_col(Palette.PAPER), pointer_alpha)
 	for p in wheel.pointer_ticks:
 		var a := deg_to_rad(p * (360.0 / RC.TICKS) - 90.0)
 		var dir := Vector2(cos(a), sin(a))
-		var hub := center + dir * (radius + band * 0.95)
-		var ntip := center + dir * (inner + 3)
+		var hub := center + dir * (radius + band * 0.55)
+		var ntip := center + dir * (radius - band * 0.2)
 		draw_colored_polygon(PackedVector2Array([ntip, hub + dir.orthogonal() * 4.0, hub - dir.orthogonal() * 4.0]), pcol)
 		draw_circle(hub, 9, Palette.NIGHT_SKY)
 		draw_arc(hub, 9, 0, TAU, 20, pcol, 2.5)
@@ -220,12 +218,12 @@ func _draw() -> void:
 		if wheel.pointer_orbit != 0:
 			for k in range(1, 4):
 				var oa := deg_to_rad(posmod(p + wheel.pointer_orbit * k, RC.TICKS) * (360.0 / RC.TICKS) - 90.0)
-				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.95), 3, Color(Palette.PAPER, 0.5 - k * 0.12))
+				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - k * 0.12))
 	# Telegraphed migration (GDD 2.11, 9.2): next turn's needles, dashed and flickering.
 	for p in wheel.pending_pointer_ticks:
 		var a := deg_to_rad(p * (360.0 / RC.TICKS) - 90.0)
-		var ntip := center + Vector2(cos(a), sin(a)) * (inner + 3)
-		var hub := center + Vector2(cos(a), sin(a)) * (radius + band * 0.95)
+		var ntip := center + Vector2(cos(a), sin(a)) * (radius - band * 0.2)
+		var hub := center + Vector2(cos(a), sin(a)) * (radius + band * 0.55)
 		var mcol := Color(_col(Palette.CELL_ACID), 1.2 - pointer_alpha)
 		var n := 6
 		for k in n:
@@ -272,8 +270,6 @@ func _draw() -> void:
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if hub_lines[i].begins_with("RESIST") else _col(Palette.PAPER)
 		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, 10 - hub_lines.size() * 6 + i * 12), hub_lines[i], HORIZONTAL_ALIGNMENT_CENTER, hw, 10, col)
-	if highlighted:
-		draw_string(Palette.marker(), center + Vector2(-40, radius + 78), "TARGET", HORIZONTAL_ALIGNMENT_CENTER, 80, 13, _col(Palette.CELL_ACID))
 	# Intent: a flat taped paper tag above the needle (what resolves next).
 	if not intent.is_empty() and String(intent.get("text", "")) != "":
 		_intent_tag(Vector2(center.x, center.y - radius - band - 30), int(intent.get("type", -1)), String(intent["text"]))
