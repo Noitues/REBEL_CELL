@@ -48,6 +48,7 @@ var _return_focus: Control = null
 
 func _ready() -> void:
 	_return_focus = UiFocus.owner_of(self)
+	UiFocus.trap.call_deferred(self)  # Yes <-> No, and never out to the screen behind
 	# Pad / keyboard: the safe answer takes focus.
 	if no_button != null:
 		no_button.grab_focus.call_deferred()

@@ -29,7 +29,7 @@ var skip_button: Button
 func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	custom_minimum_size = p_size
 	size = p_size
-	note = ZineNote.new("TUTORIAL", Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT))
+	note = ZineNote.new("TUTORIAL", Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)).make_reference()
 	add_child(note)
 	var row := HBoxContainer.new()
 	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
@@ -50,6 +50,7 @@ func _show() -> void:
 	var s: Dictionary = STEPS[step]
 	note.append("[b]%d/%d %s[/b]" % [step + 1, STEPS.size(), s["title"]])
 	note.append(step_text(step))
+	note.label.scroll_to_line.call_deferred(0)  # the step title first, at any text scale
 	next_button.text = "Finish" if step == STEPS.size() - 1 else "Next"
 
 

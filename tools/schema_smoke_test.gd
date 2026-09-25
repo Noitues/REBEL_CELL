@@ -375,4 +375,16 @@ func _h12() -> int:
 	r.patrol = true
 	var back := RunState.from_dict(r.to_dict())
 	if back.racks_captured != 2 or not back.patrol: fails += 1
+	return fails + _h14()
+
+
+## Horizontal pass 14: HeatGatedEffectData.offensive_slices_only, achievement thresholds.
+func _h14() -> int:
+	var fails := 0
+	var hg := HeatGatedEffectData.new()
+	var cfg := CampaignConfigData.new()
+	print("H14: offensive_slices_only ", hg.offensive_slices_only, " achievements ", cfg.achievement_racks, "/", cfg.achievement_raids, "/", cfg.achievement_perfects)
+	if hg.offensive_slices_only or cfg.achievement_racks != 10 or cfg.achievement_raids != 20 or cfg.achievement_perfects != 500: fails += 1
+	var officer: EnemyData = load("res://content/enemies/compliance_officer.tres")
+	if not officer.heat_effects[0].offensive_slices_only: fails += 1
 	return fails

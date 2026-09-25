@@ -67,6 +67,9 @@ func _ready() -> void:
 	if auto_start:
 		start_fight(ENEMY_CHOICES[0], int(_seed_spin.value))
 	if RunManager.pending_tutorial or (not Settings.tutorial_done and RunManager.profile.runs_completed == 0 and not _instant_playback()):
+		if RunManager.pending_tutorial:
+			for child in _picker_controls:
+				child.visible = false  # the fight picker is a dev tool, not the tutorial
 		RunManager.pending_tutorial = false
 		start_tutorial()
 
@@ -577,7 +580,7 @@ func _build_ui() -> void:
 	root.add_theme_constant_override("separation", 4)
 	add_child(root)
 
-	var top := HBoxContainer.new()
+	var top := HFlowContainer.new()  # wraps at large text scales
 	root.add_child(top)
 	var fight_label := _label("Fight:")
 	top.add_child(fight_label)
@@ -598,6 +601,8 @@ func _build_ui() -> void:
 	top.add_child(_seed_spin)
 	_picker_controls.append(_seed_spin)
 	_status = _label("")
+	_status.clip_text = true
+	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(_status)
 	top.add_child(_button("Settings [Esc]", open_settings))
 

@@ -119,7 +119,10 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 			for t in targets:
 				var ring := nudge_ring(e, action, t)
 				for i in maxi(1, e.amount) * repeat:
-					nudge(state, owner, t, ring, direction, e.multiplier == 0.0, events)
+					var ignore := e.multiplier == 0.0
+					if owner == state.player and bool(ctx.get("is_card", false)):
+						ignore = ghost_bypass(state, t, events) or ignore
+					nudge(state, owner, t, ring, direction, ignore, events)
 		RC.EffectType.SPIN:
 			var amount: int = e.amount
 			if amount != 0:
@@ -227,7 +230,7 @@ func run_triggers(state: CombatState, trigger: int, ctx: Dictionary, listeners: 
 			var te: TriggeredEffectData = effects[i]
 			if te == null or not trigger_matches(state, te, trigger, ctx):
 				continue
-			var key := "%s:%d" % [listener["source_id"], i]
+			var key := "%s:%d" % [listener.get("limit_key", listener["source_id"]), i]
 			if te.limit_per_combat > 0:
 				if int(state.per_combat_uses.get(key, 0)) >= te.limit_per_combat:
 					continue
@@ -248,8 +251,12 @@ func trigger_matches(state: CombatState, te: TriggeredEffectData, trigger: int, 
 	var tier: int = ctx.get("tier", RC.PrecisionTier.PERFECT)
 	if tier < te.min_tier:
 		return false
-	if te.trigger == RC.Trigger.ON_PERFECT and state.consecutive_perfects < te.consecutive_required:
-		return false
+	if te.trigger == RC.Trigger.ON_PERFECT:
+		var owner = ctx.get("owner")
+		if owner != null and owner != state.player:
+			return te.consecutive_required <= 1  # enemies (Mirrors) keep no Perfect streak
+		if state.consecutive_perfects < te.consecutive_required:
+			return false
 	return true
 
 
@@ -263,7 +270,7 @@ func retrigger_multipliers(state: CombatState, trigger: int, ctx: Dictionary, li
 			var te: TriggeredEffectData = effects[i]
 			if te == null or not trigger_matches(state, te, trigger, ctx):
 				continue
-			var key := "%s:%d" % [listener["source_id"], i]
+			var key := "%s:%d" % [listener.get("limit_key", listener["source_id"]), i]
 			if te.limit_per_combat > 0 and int(state.per_combat_uses.get(key, 0)) >= te.limit_per_combat:
 				continue
 			for e in te.effects:
@@ -375,6 +382,22 @@ func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary
 ## The ring a card's NUDGE effect moves on `target`: INNER when the card names the inner
 ## ring; otherwise the ring the player picked (the action's ring), falling back to OUTER
 ## when the target has no inner ring.
+## Ghost Core (GDD 5.2): the first N nudges on enemy wheels each turn, from actions or
+## cards, ignore resistance. Uses one of them when `target` is an enemy; true when it
+## actually slipped past resistance.
+func ghost_bypass(state: CombatState, target: CombatantState, events: Array[Dictionary]) -> bool:
+	var hub := hub_of(state.player.wheel)
+	if target == null or target == state.player or hub == null or state.player.is_hub_breached() or hub.free_resistance_nudges <= 0:
+		return false
+	if int(state.flags.get("resist_free_nudges_used", 0)) >= hub.free_resistance_nudges:
+		return false
+	state.flags["resist_free_nudges_used"] = int(state.flags.get("resist_free_nudges_used", 0)) + 1
+	if target.resistance <= 0:
+		return false
+	events.append({"type": "ghost_nudge", "text": "%s slips the nudge past %s's resistance." % [hub.display_name, target.display_name]})
+	return true
+
+
 static func nudge_ring(e: EffectData, action: CombatAction, target: CombatantState) -> int:
 	if e.ring_scope == RC.RingScope.INNER:
 		return RC.RingScope.INNER

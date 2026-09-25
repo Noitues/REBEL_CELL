@@ -30,6 +30,38 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 14 fixes (GAP_ANALYSIS H14)
+- **Boss phases keep their layout and ICE extras**: an ORBIT phase that lists pointers
+  sets them before orbiting (Commons Array 66%: two readers; Civic Core 33%: two). The ICE
+  16-20 extra pointer and the ICE / Heat bonus resistance are stored at setup and re-added
+  after every MULTIPLY / MIGRATE layout and wheel swap.
+- **Heat-gated effects can ride attacks only** (`HeatGatedEffectData.offensive_slices_only`,
+  schema change): Compliance Officer's Audit drains RAM on its Attack and Crit slices only.
+- **Mirror elites run their own Daemons**: enemy hubs fire ON_COMBAT_START effects (Shield
+  Cache), and enemy Perfect hooks need no streak (the consecutive-Perfect counter is the
+  operative's; an enemy hook with consecutive_required > 1 never fires).
+- **Rig Core's free nudge arrives**: free nudges earned while resolving are banked in
+  `CombatState.free_nudges_next_turn` and added at the next start of turn.
+- **Ghost Core covers card nudges**: the first N nudges on enemy wheels each turn, from an
+  action or a card, ignore resistance (one shared counter).
+- **Firmware per-combat limits count per slot**: two Coolant Loops have two charges.
+- **Text fixed to match the rules**: Nanite Mesh "cleanses itself after resolving"; Snap
+  "your outer ring"; Locked Ward rescues "another runner"; The Old Crew "Open the cells"
+  (no rescue); the Armory sabotage no longer claims weaker raids; Returns Desk result.
+- **Terminal Firmware that fits no slice is refused** (button disabled, reason shown);
+  zero-Cycle filler effects no longer print "+0 Cycles".
+- **Modals trap focus** (`UiFocus.trap`): confirm dialogs (Yes and No reach each other)
+  and the pause menu, its Options and Codex. The pause menu scrolls vertically and wraps.
+- **Text scale 1.6 fits**: the netrun and HQ status bars wrap, the standalone combat top
+  row flows and hides the dev fight picker in the Tutorial, and the tutorial note starts
+  at the top and scrolls by pad.
+- **Achievement thresholds from config** (`achievement_racks` 10, `achievement_raids` 20,
+  `achievement_perfects` 500); Purge Survivor tracks the top Heat threshold.
+- **Closing the window saves** (`NOTIFICATION_WM_CLOSE_REQUEST`), so a fight resumes where
+  it was; a resumed run's outcome is recorded in history and stats.
+- Balance after H14: Breaker ICE 5 5/8 in 31.6 runs, Ghost ICE 0 7/8 in 24.0, Rigger ICE 0
+  7/8 in 19.8.
+
 ### 2026-09-24 — Horizontal pass 13 fixes (GAP_ANALYSIS H13)
 - **Cards move the ring they name**: a NUDGE effect with ring_scope INNER (Ring Tap,
   Ratchet, Inner Drift, Gear Shift) always moves the inner ring. An outer-ring nudge card
@@ -657,7 +689,7 @@ _(Claude Code: add entries here as you make them.)_
 - **Terminal events: 19** (5 placeholders kept + 14 written): corporate memos (Continuum
   pricing, clause 44, the silent recall), street-merc trades, an auditor on break, the
   dosage cabinet, a honeypot, a Daemon broker and a Burner vendor, the Patient 0000-0000
-  ghost record, **a rescue** (Locked Ward: 12 HP or 60 Cycles for a fresh Breaker) and the
+  ghost record, **a rescue** (Locked Ward: 12 HP or 60 Cycles for a runner of a roster class) and the
   **DISPATCH clue chain** (Early Reply at T1, Escrow Receipt at T2, Voice Note at T3, all
   `dispatch_clue` + `foreshadows = dispatch`). Events honour `min_tier` (the pool filters
   on the run's tier). Original slang only (leash, subbie, bricked, ghosting).

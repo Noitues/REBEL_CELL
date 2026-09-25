@@ -614,7 +614,20 @@ func choice_error(choice: EventChoiceData) -> String:
 		return "That would flatline %s (%d HP left)." % [run.operative.name, run.operative.hp]
 	if choice.reward is DaemonData and run.operative.daemon_ids.has((choice.reward as DaemonData).id):
 		return "%s is already installed." % (choice.reward as DaemonData).display_name
+	if choice.reward is FirmwareData and not _firmware_fits(choice.reward as FirmwareData):
+		return "%s fits no slice on %s's wheel." % [(choice.reward as FirmwareData).display_name, run.operative.name]
 	return ""
+
+
+## Whether `fw` can be socketed into at least one slot of the operative's wheel.
+func _firmware_fits(fw: FirmwareData) -> bool:
+	if fw.allowed_slice_types.is_empty():
+		return true
+	for id in run.operative.slot_slice_ids:
+		var slice := lookup.get_content(id) as SliceData
+		if slice != null and slice.slice_type in fw.allowed_slice_types:
+			return true
+	return false
 
 
 ## HP a choice costs (its HP cost plus damage effects).
@@ -639,7 +652,8 @@ func choice_costs(choice: EventChoiceData) -> String:
 			continue
 		match e.type:
 			RC.EffectType.GAIN_CYCLES:
-				parts.append("%+d Cycles" % e.amount)
+				if e.amount != 0:
+					parts.append("%+d Cycles" % e.amount)
 			RC.EffectType.MODIFY_HEAT:
 				parts.append("%+d Heat" % HeatRules.scaled_delta(campaign, e.amount, config))
 			RC.EffectType.HEAL:
@@ -658,6 +672,8 @@ func choice_costs(choice: EventChoiceData) -> String:
 func _apply_run_effect(e: EffectData) -> void:
 	match e.type:
 		RC.EffectType.GAIN_CYCLES:
+			if e.amount == 0:
+				return  # flavour-only choice
 			run.cycles = maxi(0, run.cycles + e.amount)
 			last_events.append({"type": "cycles", "amount": e.amount, "text": "Cycles %+d (%d)." % [e.amount, run.cycles]})
 		RC.EffectType.MODIFY_HEAT:

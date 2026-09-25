@@ -5,7 +5,7 @@ Godot 4.7 · GDScript · PC.
 
 - Design: `docs/GDD.md`
 - Architecture: `docs/TECH_SPEC.md`
-- Build plan: `docs/MILESTONES.md` (vertical slice, M0–M4)
+- Build plan: `docs/MILESTONES.md` (M0–M12 and the horizontal passes in `docs/GAP_ANALYSIS.md`)
 - Visual baseline: `docs/STYLE_GUIDE.md`
 - Decisions: `docs/DECISIONS.md`
 - Gap analysis and horizontal plan: `docs/GAP_ANALYSIS.md`
@@ -24,12 +24,12 @@ Godot 4.7 · GDScript · PC.
    - Exports: `godot --headless --path . --export-release "Windows Desktop" build/windows/rebel_cell.exe` (presets in `export_presets.cfg`; CI does this on every push)
 4. Current milestone: see `docs/MILESTONES.md`.
 
-## Layout (M0–M4)
+## Layout
 - `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
 - `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay), `MapGenerator`, `NetrunSession` (map, rewards, shop, events, banking), `HeatRules`, `RaidResolver`, `CampaignRules` (Grid, claiming, raids, Exploits, story, win/loss), `handlers/`
 - `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState`, `GridState`, `ProfileState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat, netrun and HQ scenes, `kit/` (zine kit, backgrounds, palette, theme), `fx/` (flash limiter)
-- `scenes/hq/hq_scene.tscn` — the main scene: start, HQ (roster, recruit, station, Heat, Armory, story), City Grid, raid setup/projection/playout, campaign end · `scenes/netrun_map/netrun_scene.tscn` — map, embedded combat, rewards, Modem, Terminals · `scenes/combat/combat_scene.tscn` — standalone fight picker
-- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, Breaker, 25 cards, Firmware, Daemons, slices, Solace corporation with its City Grid, boss, Exploits, story paths, raids, nodes, assets, threats, Terminal events)
+- `scenes/menu/title_scene.tscn` — the main scene: title, save slots, options, codex, stats · `scenes/hq/hq_scene.tscn` — start, HQ (roster, recruit, station, Heat, Armory, story), City Grid, raid setup/projection/playout, campaign end · `scenes/netrun_map/netrun_scene.tscn` — map, embedded combat, rewards, Modem, Terminals · `scenes/combat/combat_scene.tscn` — standalone fight picker
+- `scripts/data/` — Resource schemas · `content/` — authored `.tres` (config, 8 classes, 71 cards, 18 Firmware, 24 Daemons, slices, five corporations with their City Grids, boss, Exploits, story paths, raids, nodes, assets, threats, Terminal events)
 - `tests/unit`, `tests/integration` — GUT 9.x tests · `tools/` — headless checks
 - `assets/fonts/` — Permanent Marker, Anton, Share Tech Mono (licences alongside) · `shaders/` — scanline, distortion, glow, zine paper
 - `addons/gut/` — GUT 9.7.1

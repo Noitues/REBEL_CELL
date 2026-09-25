@@ -20,8 +20,14 @@ func _init() -> void:
 	var panel := ZinePanel.new("PAUSED", 0.0)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.content.add_child(scroll)
 	_host = VBoxContainer.new()
-	panel.content.add_child(_host)
+	_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_host)
 	_menu = VBoxContainer.new()
 	_host.add_child(_menu)
 	_add("Resume [Esc]", func() -> void: resumed.emit())
@@ -44,6 +50,7 @@ func _notification(what: int) -> void:
 			var owner := UiFocus.owner_of(self)
 			if owner != null and not is_ancestor_of(owner):
 				_return_focus = owner
+			UiFocus.trap.call_deferred(self)
 			UiFocus.focus_first(_menu)
 		elif _return_focus != null and is_instance_valid(_return_focus) and _return_focus.is_visible_in_tree():
 			_return_focus.grab_focus.call_deferred()
@@ -63,7 +70,10 @@ func show_options() -> void:
 	_close_sub()
 	settings_panel = SettingsPanel.new()
 	settings_panel.closed.connect(_close_sub)
+	settings_panel.trap_focus = true
 	_host.add_child(settings_panel)
+	UiWrap.fit(settings_panel)
+	UiFocus.trap.call_deferred(settings_panel)
 	UiFocus.focus_first(settings_panel)
 
 
@@ -81,6 +91,7 @@ func show_codex() -> void:
 	back.name = "CodexBack"
 	back.pressed.connect(_close_sub)
 	_host.add_child(back)
+	UiFocus.trap.call_deferred(_host)
 	back.grab_focus.call_deferred()
 
 
@@ -94,6 +105,7 @@ func _close_sub() -> void:
 		if back != null:
 			back.queue_free()
 	codex_note = null
+	UiFocus.trap.call_deferred(self)
 	UiFocus.focus_first(_menu)
 
 

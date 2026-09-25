@@ -31,6 +31,7 @@ effects = Array[ExtResource("fx")]([SubResource("fx_audit")])
 [sub_resource type="Resource" id="heat_audit"]
 script = ExtResource("hg")
 min_heat = 50
+offensive_slices_only = true
 effects = Array[ExtResource("te")]([SubResource("te_audit")])
 
 [sub_resource type="Resource" id="slot_atk"]

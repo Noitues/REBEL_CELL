@@ -93,6 +93,9 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 	if bool(overrides.get("no_first_turn_free_nudge", false)):
 		s.flags["no_first_turn_free_nudge"] = 1
 	s.flags["extra_free_nudges"] = int(overrides.get("extra_free_nudges", 0))
+	# ICE extras that boss phases must keep (H14): the extra pointer and bonus resistance.
+	s.flags["boss_extra_pointer"] = int(overrides.get("boss_extra_pointer", 0))
+	s.flags["enemy_resistance"] = int(overrides.get("enemy_resistance", 0))
 	for i in enemy_datas.size():
 		var e := EffectInterpreter.make_combatant(enemy_datas[i], StringName("enemy_%d" % i), false)
 		_scale_enemy(e, enemy_scale, enemy_output_scale)
@@ -132,12 +135,27 @@ static func _trimmed(ticks: PackedInt32Array, removal: int) -> PackedInt32Array:
 
 ## ICE BOSS_EXTRA_POINTER: `count` more pointers, evenly spaced from pointer 0.
 static func _add_pointers(e: CombatantState, count: int) -> void:
+	e.wheel.pointer_ticks = _with_extra(e.wheel.pointer_ticks, count)
+
+
+## `ticks` plus `count` more pointers, evenly spaced from pointer 0.
+static func _with_extra(ticks: PackedInt32Array, count: int) -> PackedInt32Array:
+	var out := ticks.duplicate()
+	if out.is_empty():
+		return out
 	for i in count:
 		for offset in EXTRA_POINTER_OFFSETS:
-			var tick := posmod(e.wheel.pointer_ticks[0] + int(offset), RC.TICKS)
-			if not e.wheel.pointer_ticks.has(tick):
-				e.wheel.pointer_ticks.append(tick)
+			var tick := posmod(out[0] + int(offset), RC.TICKS)
+			if not out.has(tick):
+				out.append(tick)
 				break
+	return out
+
+
+## A phase's pointer layout with the ICE extra pointer (bosses) and the Breach removal.
+static func _phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
+	var extra := int(s.flags.get("boss_extra_pointer", 0)) if data.is_boss else 0
+	return _trimmed(_with_extra(ticks, extra), int(s.flags.get("boss_pointer_removal", 0)))
 
 
 ## Scales an enemy's HP by `hp_scale` and its slice outputs by `out_scale` (defaults to
@@ -168,6 +186,11 @@ func begin_combat(state: CombatState, rng: RandomNumberGenerator) -> CombatResul
 	result.events.append({"type": "combat_start", "text": "Combat begins."})
 	var ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"combat_start"}
 	fx.run_triggers(s, RC.Trigger.ON_COMBAT_START, ctx, _player_listeners(s), rng, result.events)
+	for e in s.enemies:
+		var hub := fx.hub_of(e.wheel)
+		if hub != null and e.is_alive():
+			var ectx := {"owner": e, "target": s.player, "pointer_index": 0, "source_id": &"combat_start"}
+			fx.run_triggers(s, RC.Trigger.ON_COMBAT_START, ectx, [{"source_id": hub.id, "effects": hub.passive_effects}], rng, result.events)
 	start_turn(s, rng, result.events)
 	result.state = s
 	return result
@@ -342,7 +365,8 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	if s.ram_bonus_next_turn > 0:
 		fx.gain_ram(s, s.ram_bonus_next_turn, events)
 		s.ram_bonus_next_turn = 0
-	s.free_nudges = cls.free_nudges_per_turn + int(s.flags.get("extra_free_nudges", 0))
+	s.free_nudges = cls.free_nudges_per_turn + int(s.flags.get("extra_free_nudges", 0)) + s.free_nudges_next_turn
+	s.free_nudges_next_turn = 0
 	if s.turn == 1 and int(s.flags.get("no_first_turn_free_nudge", 0)) > 0:
 		s.free_nudges = 0
 		events.append({"type": "no_free_nudge", "text": "ICE: no free nudge on the first turn."})
@@ -467,15 +491,7 @@ func _apply_nudge(s: CombatState, action: CombatAction, rng: RandomNumberGenerat
 		s.ram -= config.extra_nudge_ram_cost
 		events.append({"type": "ram", "amount": -config.extra_nudge_ram_cost, "text": "Extra nudge costs %d RAM (%d)." % [config.extra_nudge_ram_cost, s.ram]})
 	var target := s.get_combatant(action.wheel_id)
-	# Ghost Core (GDD 5.2): the first N nudges on enemy wheels each turn ignore resistance.
-	var ignore := false
-	var hub := fx.hub_of(s.player.wheel)
-	if target != s.player and hub != null and not s.player.is_hub_breached() and hub.free_resistance_nudges > 0 \
-			and int(s.flags.get("resist_free_nudges_used", 0)) < hub.free_resistance_nudges:
-		s.flags["resist_free_nudges_used"] = int(s.flags.get("resist_free_nudges_used", 0)) + 1
-		ignore = target.resistance > 0
-		if ignore:
-			events.append({"type": "ghost_nudge", "text": "%s slips the nudge past %s's resistance." % [hub.display_name, target.display_name]})
+	var ignore := fx.ghost_bypass(s, target, events)
 	fx.nudge(s, s.player, target, action.ring, action.direction, ignore, events)
 	var ctx := {"owner": s.player, "target": target, "action": action, "pointer_index": 0}
 	fx.run_triggers(s, RC.Trigger.ON_NUDGE, ctx, _player_listeners(s), rng, events)
@@ -570,7 +586,7 @@ func _slice_listeners(s: CombatState, r: Dictionary) -> Array:
 	var out := [{"source_id": slice.id, "effects": slice.extra_effects}]
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
-		out.append({"source_id": fw.id, "effects": fw.triggered_effects})
+		out.append({"source_id": fw.id, "effects": fw.triggered_effects, "limit_key": "%s@%d" % [fw.id, int(r["slice_index"])]})
 	var seg: RingSegmentData = r["segment"]
 	if seg != null:
 		out.append({"source_id": seg.id, "effects": seg.triggered_effects})
@@ -581,7 +597,7 @@ func _slice_listeners(s: CombatState, r: Dictionary) -> Array:
 			hub_effects.append(hub.perfect_hook)
 		out.append({"source_id": hub.id, "effects": hub_effects})
 	if not owner.is_player:
-		out.append_array(_heat_listeners(s, owner))
+		out.append_array(_heat_listeners(s, owner, slice))
 	if owner == s.player:
 		out.append_array(_daemon_listeners(s))
 	return out
@@ -608,7 +624,7 @@ func _daemon_listeners(s: CombatState) -> Array:
 
 ## Enemy behaviour gated on campaign Heat (HeatGatedEffectData, GDD 4.3): active while
 ## the Heat at combat start is at or above min_heat.
-func _heat_listeners(s: CombatState, owner: CombatantState) -> Array:
+func _heat_listeners(s: CombatState, owner: CombatantState, slice: SliceData = null) -> Array:
 	var out := []
 	var data := lookup.get_content(owner.source_id) as EnemyData
 	if data == null:
@@ -616,6 +632,8 @@ func _heat_listeners(s: CombatState, owner: CombatantState) -> Array:
 	for i in data.heat_effects.size():
 		var he := data.heat_effects[i]
 		if he != null and s.campaign_heat >= he.min_heat:
+			if he.offensive_slices_only and (slice == null or not (slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT])):
+				continue
 			out.append({"source_id": StringName("%s:heat%d" % [data.id, he.min_heat]), "effects": he.effects})
 	return out
 
@@ -822,15 +840,18 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 			e.phase_index += 1
 			match phase.pointer_behavior:
 				RC.PointerBehavior.MULTIPLY:
-					e.wheel.pointer_ticks = _trimmed(phase.pointer_ticks, int(s.flags.get("boss_pointer_removal", 0)))
+					e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
 				RC.PointerBehavior.MIGRATE:
-					e.wheel.pending_pointer_ticks = _trimmed(phase.pointer_ticks, int(s.flags.get("boss_pointer_removal", 0)))
+					e.wheel.pending_pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
 					events.append({"type": "boss_migrate_telegraph", "target": e.id, "ticks": Array(e.wheel.pending_pointer_ticks),
 						"text": "%s's pointers flicker: next turn they migrate to %s." % [e.display_name, str(Array(e.wheel.pending_pointer_ticks))]})
 				RC.PointerBehavior.ORBIT:
+					# A phase that lists pointers sets them before they start orbiting.
+					if not phase.pointer_ticks.is_empty():
+						e.wheel.pointer_ticks = _phase_layout(s, data, phase.pointer_ticks)
 					e.wheel.pointer_orbit = phase.orbit_ticks_per_turn
 			if phase.wheel_override != null:
-				_apply_wheel_override(e, phase.wheel_override, events)
+				_apply_wheel_override(e, phase.wheel_override, events, int(s.flags.get("enemy_resistance", 0)))
 			if phase.hub_override != null:
 				e.wheel.hub_id = phase.hub_override.id
 				e.hub_resistance = phase.hub_override.hub_resistance
@@ -845,14 +866,14 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 
 ## Swaps the boss's slices, Firmware and passive resistance for the phase layout. The
 ## rotation, pointers and any pending migration are kept; temporary statuses reset.
-func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary]) -> void:
+func _apply_wheel_override(e: CombatantState, data: WheelData, events: Array[Dictionary], bonus_resistance: int = 0) -> void:
 	var fresh := WheelState.from_wheel_data(data)
 	var w := e.wheel
 	w.slice_count = fresh.slice_count
 	w.slot_slice_ids = fresh.slot_slice_ids
 	w.slot_firmware_ids = fresh.slot_firmware_ids
 	w.slice_statuses = fresh.slice_statuses
-	w.passive_resistance = fresh.passive_resistance
+	w.passive_resistance = fresh.passive_resistance + bonus_resistance  # ICE / Heat resistance stays
 	if data.hub != null:
 		w.hub_id = data.hub.id
 		e.hub_resistance = data.hub.hub_resistance

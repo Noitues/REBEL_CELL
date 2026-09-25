@@ -182,4 +182,5 @@ func test_every_event_choice_resolves() -> void:
 			var events := s.choose_event_option(i)
 			for e in events:
 				assert_ne(e.get("type", ""), "unsupported_effect", "%s choice %d" % [id, i])
-				assert_ne(e.get("type", ""), "refused", "%s choice %d is affordable with 500 Cycles" % [id, i])
+				if not String(e.get("text", "")).contains("fits no slice"):  # H14: a Firmware that fits no slot is refused on purpose
+					assert_ne(e.get("type", ""), "refused", "%s choice %d is affordable with 500 Cycles" % [id, i])

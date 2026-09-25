@@ -22,7 +22,7 @@ amount = -2
 [sub_resource type="Resource" id="c1"]
 script = ExtResource("e2")
 label = "Sabotage the stock (-2 Heat, 4 damage)"
-result_text = "DISPATCH's raids will be a little weaker."
+result_text = "DISPATCH loses track of its own stock."
 hp_cost = 4
 effects = Array[ExtResource("e3")]([SubResource("fx1_0")])
 

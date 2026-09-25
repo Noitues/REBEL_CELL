@@ -111,7 +111,7 @@ FIRMWARE = [
     ("coolant_loop", "Coolant Loop", "Once per combat, a Perfect on this slice lowers Heat by 1.", 2, 150, [], 1.0, [(5, 2, 1, [(21, 6, -1)])]),
     ("skimmer", "Skimmer", "ATK slice: +3 Cycles on a Perfect (twice per combat).", 1, 120, [0], 1.0, [(5, 2, 2, [(22, 6, 3)])]),
     ("counterstrike", "Counterstrike", "EVADE slice also deals 4 damage to the pointer target.", 1, 110, [3], 1.0, [(5, 0, 0, [(0, 3, 4)])]),
-    ("nanite_mesh", "Nanite Mesh", "HEAL slice: output +50% and it cleanses itself.", 1, 110, [6], 1.5, [(5, 0, 0, [(15, 1, None, {"slice_pick": 0})])]),
+    ("nanite_mesh", "Nanite Mesh", "HEAL slice: output +50%, and it cleanses itself after resolving.", 1, 110, [6], 1.5, [(5, 0, 0, [(15, 1, None, {"slice_pick": 0})])]),
     ("power_cell", "Power Cell", "SHIELD slice also restores 1 RAM.", 1, 110, [4], 1.0, [(5, 0, 0, [(12, 0, 1)])]),
     ("recycler", "Recycler", "The Miss slice restores 2 RAM when it resolves.", 0, 90, [8], 1.0, [(5, 0, 0, [(12, 0, 2)])]),
 ]

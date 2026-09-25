@@ -13,6 +13,8 @@ const ACTION_LABELS := {&"nudge_left": "Nudge -1", &"nudge_right": "Nudge +1", &
 	&"toggle_nudge_wheel": "Nudge wheel", &"toggle_direction": "Card direction", &"cycle_slot": "Chosen slice",
 	&"respin": "Respin", &"open_settings": "Pause / options"}
 
+## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
+var trap_focus: bool = false
 var reduce_check: CheckButton
 var flash_check: CheckButton
 var subtitles_check: CheckButton
@@ -131,7 +133,11 @@ func show_section(name: String) -> void:
 		"Language":
 			for w in [_labelled("Language (translations from assets/text/strings.csv)"), language_option]:
 				_body.add_child(w)
-	UiFocus.link_layout(self)  # the section swapped its controls
+	UiWrap.fit(self)
+	if trap_focus:
+		UiFocus.trap(self)  # inside the pause menu: focus stays in the panel
+	else:
+		UiFocus.link_layout(self)  # the section swapped its controls
 	UiFocus.focus_first(_body)
 
 

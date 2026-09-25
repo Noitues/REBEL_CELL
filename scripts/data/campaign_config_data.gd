@@ -152,6 +152,11 @@ extends Resource
 @export var shop_card_stock: int = 3
 @export var shop_firmware_stock: int = 2
 @export var shop_daemon_stock: int = 1
+## Achievement thresholds: Racks for Banked, raids won for Wall, Perfects for
+## Perfectionist (Purge Survivor uses the top Heat threshold).
+@export var achievement_racks: int = 10
+@export var achievement_raids: int = 20
+@export var achievement_perfects: int = 500
 ## Raid pacing: steps between waves, and the Heat per step of threat integrity scaling.
 @export var raid_wave_interval: int = 5
 @export var raid_heat_scaling_step: int = 10

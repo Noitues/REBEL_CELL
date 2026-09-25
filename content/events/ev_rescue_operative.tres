@@ -8,7 +8,7 @@
 [sub_resource type="Resource" id="c0"]
 script = ExtResource("2")
 label = "Cut them loose (12 HP: the door bites)"
-result_text = "They walk out shaking and swearing. A fresh Breaker for the Cell."
+result_text = "They walk out shaking and swearing. Another runner for the Cell."
 hp_cost = 12
 reward = ExtResource("cls_breaker")
 

@@ -31,19 +31,21 @@ static func definition(id: StringName) -> Dictionary:
 
 ## Ids earned by the profile (and the campaign just concluded, if any) that it does not
 ## have yet, in definition order.
-static func check(profile: ProfileState, campaign: CampaignState = null, corporation_ids: Array = [], final_final_ice: int = FINAL_FINAL_ICE) -> Array[StringName]:
+static func check(profile: ProfileState, campaign: CampaignState = null, corporation_ids: Array = [], final_final_ice: int = FINAL_FINAL_ICE, config: CampaignConfigData = null) -> Array[StringName]:
 	var out: Array[StringName] = []
+	if config == null:
+		config = CampaignConfigData.new()  # schema defaults
 	var won := campaign != null and campaign.outcome == CampaignState.Outcome.WON
 	var earned := {
 		&"first_blood": profile.runs_completed >= 1,
-		&"banked": int(profile.stats.get("racks", 0)) >= 10,
+		&"banked": int(profile.stats.get("racks", 0)) >= config.achievement_racks,
 		&"breach": profile.campaigns_won >= 1,
 		&"clean_hands": won and campaign.deaths == 0,
 		&"ice_5": won and campaign.ice_level >= 5,
 		&"ice_10": won and campaign.ice_level >= 10,
-		&"purge_survivor": won and campaign.thresholds_fired.has(100),
-		&"wall": profile.raids_won >= 20,
-		&"perfectionist": int(profile.stats.get("perfects", 0)) >= 500,
+		&"purge_survivor": won and campaign.thresholds_fired.has(_top_threshold(config)),
+		&"wall": profile.raids_won >= config.achievement_raids,
+		&"perfectionist": int(profile.stats.get("perfects", 0)) >= config.achievement_perfects,
 		&"final_final": _final_final(profile, corporation_ids, final_final_ice),
 	}
 	for d in DEFS:
@@ -62,3 +64,12 @@ static func _final_final(profile: ProfileState, corporation_ids: Array, ice: int
 		if profile.best_ice_for(StringName(String(id))) < ice:
 			return false
 	return true
+
+
+## The highest Heat threshold (the Purge); heat_max when the config lists none.
+static func _top_threshold(config: CampaignConfigData) -> int:
+	var top := -1
+	for t in config.heat_thresholds:
+		if t != null:
+			top = maxi(top, t.heat)
+	return top if top >= 0 else config.heat_max

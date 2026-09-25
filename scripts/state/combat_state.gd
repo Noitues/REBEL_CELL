@@ -41,6 +41,8 @@ var damage_bonus: int = 0
 var ring_locked: bool = false
 ## Steady Hand: RAM granted at the next start of turn.
 var ram_bonus_next_turn: int = 0
+## Free nudges earned while the turn resolved (Rig Core); added at the next start of turn.
+var free_nudges_next_turn: int = 0
 ## Cold Exit: whether the operative's Miss slice resolved in this combat.
 var miss_resolved: bool = false
 ## RAM cap for this combat (class max_ram, halved by Twin Pointer).
@@ -150,6 +152,7 @@ func duplicate_state() -> CombatState:
 	s.damage_bonus = damage_bonus
 	s.ring_locked = ring_locked
 	s.ram_bonus_next_turn = ram_bonus_next_turn
+	s.free_nudges_next_turn = free_nudges_next_turn
 	s.miss_resolved = miss_resolved
 	s.max_ram = max_ram
 	s.campaign_heat = campaign_heat
@@ -188,7 +191,7 @@ func to_dict() -> Dictionary:
 		"flags": flags.duplicate(),
 		"damage_bonus": damage_bonus,
 		"ring_locked": ring_locked,
-		"ram_bonus_next_turn": ram_bonus_next_turn,
+		"ram_bonus_next_turn": ram_bonus_next_turn, "free_nudges_next_turn": free_nudges_next_turn,
 		"miss_resolved": miss_resolved,
 		"max_ram": max_ram,
 		"campaign_heat": campaign_heat,
@@ -227,6 +230,7 @@ static func from_dict(d: Dictionary) -> CombatState:
 	s.damage_bonus = int(d.get("damage_bonus", 0))
 	s.ring_locked = bool(d.get("ring_locked", false))
 	s.ram_bonus_next_turn = int(d.get("ram_bonus_next_turn", 0))
+	s.free_nudges_next_turn = int(d.get("free_nudges_next_turn", 0))
 	s.miss_resolved = bool(d.get("miss_resolved", false))
 	s.max_ram = int(d.get("max_ram", 12))
 	s.campaign_heat = int(d.get("campaign_heat", 0))

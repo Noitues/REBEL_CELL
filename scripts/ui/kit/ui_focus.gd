@@ -141,3 +141,19 @@ static func _first_usable(node: Node) -> Control:
 		if deeper != null:
 			return deeper
 	return null
+
+
+## Links `root` like link_layout, then points every open edge back at the control itself,
+## so the D-pad can't leave a modal (pause menu, confirm dialog) for the screen behind it.
+static func trap(root) -> void:
+	if root == null or not is_instance_valid(root) or not (root is Node) or (root as Node).is_queued_for_deletion():
+		return  # deferred call after the modal closed
+	link_layout(root)
+	var rows: Array = []
+	_collect_rows(root, rows)
+	for row in rows:
+		for c in row:
+			var ctl: Control = c
+			for side in ["focus_neighbor_left", "focus_neighbor_right", "focus_neighbor_top", "focus_neighbor_bottom"]:
+				if (ctl.get(side) as NodePath).is_empty():
+					ctl.set(side, NodePath("."))

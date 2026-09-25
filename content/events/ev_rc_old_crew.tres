@@ -15,8 +15,8 @@ amount = -3
 
 [sub_resource type="Resource" id="c0"]
 script = ExtResource("e2")
-label = "Break them out (8 damage, -3 Heat)"
-result_text = "They come out swinging."
+label = "Open the cells (8 damage, -3 Heat)"
+result_text = "They scatter into the city, and DISPATCH loses the trail."
 hp_cost = 8
 effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
 

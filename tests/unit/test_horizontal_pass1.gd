@@ -228,4 +228,5 @@ func test_every_corporations_events_resolve_in_its_own_campaign() -> void:
 				s.run.event_id = id
 				for e in s.choose_event_option(i):
 					assert_ne(e.get("type", ""), "unsupported_effect", "%s choice %d" % [id, i])
-					assert_ne(e.get("type", ""), "refused", "%s choice %d" % [id, i])
+					if not String(e.get("text", "")).contains("fits no slice"):  # H14: a Firmware that fits no slot is refused on purpose
+						assert_ne(e.get("type", ""), "refused", "%s choice %d" % [id, i])

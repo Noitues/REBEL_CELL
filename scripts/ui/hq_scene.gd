@@ -843,6 +843,7 @@ func _build_ui() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	_status = Label.new()
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # large text scales (H14)
 	root.add_child(_status)
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true  # pad focus scrolls long lists (Grid Sites)

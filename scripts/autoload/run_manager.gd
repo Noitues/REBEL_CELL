@@ -327,7 +327,7 @@ func sync_profile_with_campaign() -> void:
 		var c := lookup().get_content(id) as CorporationData
 		if c != null and not c.generated_from_profile:
 			corp_ids.append(id)
-	for id in Achievements.check(profile, null if campaign.is_assisted() else campaign, corp_ids, config().final_final_ice):
+	for id in Achievements.check(profile, null if campaign.is_assisted() else campaign, corp_ids, config().final_final_ice, config()):
 		profile.add_achievement(id)
 		new_achievements.append(id)
 		var d := Achievements.definition(id)
@@ -419,6 +419,19 @@ func delete_slot(slot: String) -> void:
 		netrun = null
 
 
+## Closing the window (or Alt+F4) saves like the Quit button, so a fight in progress
+## resumes where it was instead of at its first turn.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		save_on_close()
+
+
+func save_on_close() -> void:
+	if campaign != null and not campaign.is_over():
+		autosave()
+	save_profile()
+
+
 func quit_game() -> void:
 	if campaign != null and not campaign.is_over():
 		autosave()
@@ -442,6 +455,7 @@ func resume() -> bool:
 		RngService.from_dict(data["rng"])
 	var run_data: Dictionary = data.get("run", {})
 	netrun = NetrunSession.from_dict(resolver, campaign, run_data, corporation) if not run_data.is_empty() else null
+	_history_recorded = false  # the resumed run's outcome is still to be recorded
 	_reset_profile_sync()
 	campaign_changed.emit(campaign)
 	run_changed.emit(netrun)
@@ -453,9 +467,14 @@ func save_profile() -> Error:
 
 
 func load_profile() -> void:
-	var path := profile_path()
-	if not SaveService.has_save(path) and SaveService.has_save(_slot_profile_path(save_slot)):
-		path = _slot_profile_path(save_slot)  # a per-slot profile from before H12
+	load_profile_from(profile_path(), _slot_profile_path(save_slot))
+
+
+## Loads the profile at `path`, or `legacy` (a per-slot profile from before H12) when
+## `path` is missing, or a fresh profile.
+func load_profile_from(path: String, legacy: String) -> void:
+	if not SaveService.has_save(path) and SaveService.has_save(legacy):
+		path = legacy
 	if SaveService.has_save(path):
 		var data := SaveService.load_dict(path)
 		profile = ProfileState.from_dict(data.get("profile", {}))

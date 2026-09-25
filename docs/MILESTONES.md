@@ -205,7 +205,7 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
       every panel, modal and the combat hand (also after a card play) holds focus, and the
       start panel's ICE and seed have buttons, so pad-only play works; Tab and Space keep
       their keyboard meanings; rebinding keys keeps the pad button. (Checked headless;
-      confirm on real hardware.)
+      confirm on real hardware; modal focus traps and 1.6 text-scale fit fixed in H14.)
 - [x] Share codes replay the same campaign; a daily run seeds from the date.
 - [x] Assist mode: extra free nudge and HP, no ICE records or achievements.
 - [ ] Skins: deferred to art integration (M13).
