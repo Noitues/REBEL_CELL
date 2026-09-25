@@ -85,35 +85,69 @@ func _sign_vertical(at: Vector2) -> void:
 	var u := 12.0
 	var r := Rect2(at, Vector2(170, 560))
 	_rounded_border(r, 30, Palette.CELL_PINK)
+	_board_traces(r.grow(-14), Palette.CELL_PINK, 90)
 	_border_traces(r, Palette.CELL_PINK)
 	for i in 5:
 		var ch := "MODEM"[i]
-		CyberType.draw_text(art, at + Vector2((r.size.x - 4.0 * u) * 0.5, 28 + i * 84), ch, u, Palette.CELL_PINK, 3.5, i == 0 or i == 4, 0.75)
+		CyberType.draw_text(art, at + Vector2((r.size.x - 4.0 * u) * 0.5, 28 + i * 84), ch, u, Palette.CELL_PINK, 3.5, i == 0 or i == 4, 1.0)
 	var cu := 4.8
 	for k in 2:
 		var word: String = ["CYBER", "SHOP"][k]
-		CyberType.draw_text(art, at + Vector2((r.size.x - CyberType.width(word, cu)) * 0.5, 452 + k * 46), word, cu, Palette.NET_CYAN, 2.0, false, 0.35)
+		CyberType.draw_text(art, at + Vector2((r.size.x - CyberType.width(word, cu)) * 0.5, 452 + k * 46), word, cu, Palette.NET_CYAN, 2.0, false, 0.8)
 	_sticky(at + Vector2(168, 548), "BUY", Palette.NOTE_YELLOW, 0.1)
 	_sticky(at + Vector2(206, 606), "SELL", Palette.STICKER_PINK, -0.07)
 
 
-## Circuit traces running off the sign's border: out from the edge, a 45-degree jog, a pad.
+## A printed-circuit background inside `r`: `count` short traces on a 45-degree router
+## grid (two or three runs each), ending in pads or vias, drawn faint under the words.
+func _board_traces(r: Rect2, col: Color, count: int) -> void:
+	var dirs := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1), Vector2(1, 1).normalized(), Vector2(-1, 1).normalized(), Vector2(1, -1).normalized(), Vector2(-1, -1).normalized()]
+	for n in count:
+		var h := absi(hash([n, 17]))
+		var p := r.position + Vector2(float(h % 1000) / 1000.0 * r.size.x, float((h / 1000) % 1000) / 1000.0 * r.size.y)
+		var pts := PackedVector2Array([p])
+		var d: Vector2 = dirs[(h / 7) % 4]
+		for seg in 2 + (h / 13) % 2:
+			var length := 8.0 + float((h / (17 + seg)) % 22)
+			var q := (p + d * length).clamp(r.position, r.end)
+			pts.append(q)
+			p = q
+			d = dirs[4 + (h / (29 + seg)) % 4] if seg % 2 == 0 else dirs[(h / (31 + seg)) % 4]
+		art.draw_polyline(pts, Color(col, 0.28), 1.4, true)
+		if (h / 3) % 3 == 0:
+			art.draw_circle(pts[0], 2.2, Color(col, 0.35))
+		var end := pts[pts.size() - 1]
+		if (h / 5) % 2 == 0:
+			art.draw_circle(end, 3.2, Color(col, 0.55))
+			art.draw_circle(end, 1.3, Palette.NIGHT_SKY)
+		else:
+			art.draw_rect(Rect2(end - Vector2(2.5, 2.5), Vector2(5, 5)), Color(col, 0.45))
+
+
+## Circuit traces running in from the sign's border: in from the edge, a 45-degree jog,
+## a pad; plus pin rows along the long edges.
 func _border_traces(r: Rect2, col: Color) -> void:
-	var specs := [[Vector2(r.position.x, r.position.y + 90), Vector2(-1, 0), Vector2(-1, -1)], [Vector2(r.position.x, r.position.y + 260), Vector2(-1, 0), Vector2(-1, 1)],
-		[Vector2(r.position.x, r.position.y + 400), Vector2(-1, 0), Vector2(-1, 0)], [Vector2(r.end.x, r.position.y + 70), Vector2(1, 0), Vector2(1, -1)],
-		[Vector2(r.end.x, r.position.y + 200), Vector2(1, 0), Vector2(1, 1)], [Vector2(r.end.x, r.position.y + 330), Vector2(1, 0), Vector2(1, -1)],
-		[Vector2(r.position.x + 50, r.position.y), Vector2(0, -1), Vector2(-1, -1)], [Vector2(r.position.x + 120, r.position.y), Vector2(0, -1), Vector2(1, -1)],
-		[Vector2(r.position.x + 40, r.end.y), Vector2(0, 1), Vector2(-1, 1)], [Vector2(r.end.x, r.position.y + 440), Vector2(1, 0), Vector2(1, 1)]]
-	for k in specs.size():
-		var sp: Array = specs[k]
-		var a: Vector2 = sp[0]
-		var b: Vector2 = a + sp[1] * (18.0 + (k % 3) * 10.0)
-		var c: Vector2 = b + (sp[2] as Vector2).normalized() * (14.0 + (k % 2) * 12.0)
-		var pts := PackedVector2Array([a, b, c])
-		art.draw_polyline(pts, Color(col, 0.2), 7.0, true)
-		art.draw_polyline(pts, Color(col, 0.85), 2.0, true)
-		art.draw_circle(c, 5.0, Color(col, 0.9))
-		art.draw_circle(c, 2.2, Palette.NIGHT_SKY)
+	for side in [-1.0, 1.0]:
+		for q in 14:
+			var y := r.position.y + 50.0 + q * 34.0
+			var x0 := r.position.x if side < 0 else r.end.x
+			var a := Vector2(x0, y)
+			var b := a + Vector2(-side * (10.0 + (q % 3) * 7.0), 0)
+			var c := b + Vector2(-side, (1.0 if q % 2 == 0 else -1.0)).normalized() * (8.0 + (q % 4) * 4.0)
+			var pts := PackedVector2Array([a, b, c])
+			art.draw_polyline(pts, Color(col, 0.2), 6.0, true)
+			art.draw_polyline(pts, Color(col, 0.85), 1.8, true)
+			art.draw_circle(c, 4.0, Color(col, 0.9))
+			art.draw_circle(c, 1.6, Palette.NIGHT_SKY)
+	for q in 4:
+		for edge in [r.position.y, r.end.y]:
+			var x := r.position.x + 40.0 + q * 30.0
+			var inward := 1.0 if edge == r.position.y else -1.0
+			var a := Vector2(x, edge)
+			var b := a + Vector2(0, inward * (10.0 + q * 4.0))
+			art.draw_line(a, b, Color(col, 0.85), 1.8)
+			art.draw_circle(b, 3.5, Color(col, 0.9))
+			art.draw_circle(b, 1.4, Palette.NIGHT_SKY)
 
 
 ## SIGN 3: a stacked badge, MODEM in a rounded box, CYBER SHOP on its own rounded strip

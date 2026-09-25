@@ -100,9 +100,16 @@ func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	var b := Button.new()
 	b.text = text
 	b.name = "Tab" + text
-	# The active tab shows as pressed (pink); only the other tab switches.
-	b.toggle_mode = true
-	b.button_pressed = active
+	# Same colours for both tabs: the active one is dark with a border, the other in
+	# reverse video (light block, dark text) without one.
+	var fg := Palette.TERMINAL_TEXT
+	var bg := Palette.TERMINAL_BG
+	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
+	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+		b.add_theme_stylebox_override(st, style)
+	var ink := fg if active else bg
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color"]:
+		b.add_theme_color_override(key, ink)
 	if active:
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_filter = Control.MOUSE_FILTER_IGNORE

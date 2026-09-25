@@ -67,6 +67,9 @@ const TERRITORIES: Array[Dictionary] = [
 	{"id": &"", "at": Vector2(-36, -40), "pull": 0.9},
 	{"id": &"", "at": Vector2(40, -38), "pull": 0.8},
 ]
+## HQ plaza size (lots); the landmarks are drawn at HQ_SCALE of their base design.
+const HQ_LOTS := 10
+const HQ_SCALE := 2.0
 ## How far territory borders wander (lots), and how wide the mixed band along them is.
 const BORDER_WARP := 11.0
 const BORDER_BLEND := 7.0
@@ -118,7 +121,7 @@ var net_mode: bool = false
 ## Animation clock, advanced unless reduce-effects.
 var anim_t: float = 0.0
 ## Where the corporation HQ stands, as a fraction of the screen (ground point).
-var hq_anchor: Vector2 = Vector2(0.8, 0.62)
+var hq_anchor: Vector2 = Vector2(0.8, 0.8)
 
 var _fx: Control
 var _built_for: Vector2 = Vector2.ZERO
@@ -348,7 +351,7 @@ func _draw() -> void:
 	_verts = PackedVector2Array()
 	_cols = PackedColorArray()
 	# Camera: the focused HQ lands on hq_anchor; the whole city centres the Sprawl.
-	var focus := hq_of(district) + Vector2(2.5, 2.5) if district != &"" else Vector2(0, 0)
+	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2(0, 0)
 	var anchor := Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y) if district != &"" else size * 0.5
 	if pan:
 		anchor = size * 0.5
@@ -361,7 +364,7 @@ func _draw() -> void:
 	for t in TERRITORIES:
 		if t["id"] != &"":
 			var at: Vector2 = t["at"]
-			_hq_rects[t["id"]] = Rect2i(int(at.x), int(at.y), 5, 5)
+			_hq_rects[t["id"]] = Rect2i(int(at.x), int(at.y), HQ_LOTS, HQ_LOTS)
 	_hq_rect = _hq_rects.get(district, Rect2i())
 	_build_streets()
 	var s_min := int(floor((-40.0 - _oy) / TILE_B)) - 2
@@ -441,7 +444,7 @@ func _traffic(i: int, j: int, along_i: bool) -> float:
 	var t := _h(i if along_i else 0, 0 if along_i else j, 61)
 	t = t * t
 	var d := _hq_distance(i, j)
-	t = maxf(t, clampf(1.0 - d / 12.0, 0.0, 1.0))
+	t = maxf(t, clampf(1.0 - d / 16.0, 0.0, 1.0))
 	return t
 
 
@@ -639,8 +642,8 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	# Fine-tip marker: the street's width is built from many skinny strokes laid side by
 	# side, each a little crooked and overlapping its neighbours. Busy streets get more
 	# strokes (up to ~12) and so read wider; quiet ones 2-3.
-	var strokes := 2 + int(traffic * 10.0)
-	var half := 1.5 + strokes * 1.15
+	var strokes := 4 + int(traffic * 16.0)
+	var half := 2.0 + strokes * 0.8
 	var g := Color(col, 0.05 + traffic * 0.08)
 	_quad(a - nn * (half + 3.0), b - nn * (half + 3.0), b + nn * (half + 3.0), a + nn * (half + 3.0), g, g, g, g)
 	# Each stroke keeps its lane along the whole street (keyed by the street, not the
@@ -651,11 +654,8 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 		var lane := t * half + (_h(street_key, k, 81) - 0.5) * 1.8
 		var w0 := (_h(i, j * 7 + k, 82) - 0.5) * 0.9
 		var w1 := (_h(i, j * 7 + k + 1, 82) - 0.5) * 0.9
-		var alpha := 0.3 + 0.45 * _h(street_key + k, 3, 85) + traffic * 0.15
+		var alpha := 0.45 + 0.4 * _h(street_key + k, 3, 85) + traffic * 0.15
 		_ink_line(a + nn * (lane + w0) - dir * 2.0, b + nn * (lane + w1) + dir * 2.0, Color(col, alpha), 0.8 + _h(k, street_key, 86) * 0.6, false)
-	_trails.append({"a": a, "b": b, "color": col, "phase": _h(i, j, 3), "width": 1.5 + traffic * 2.5})
-	if traffic > 0.6:
-		_trails.append({"a": a, "b": b, "color": _inks[0], "phase": _h(i, j, 4), "width": 1.5 + traffic * 2.0})
 
 
 func _plaza(i: int, j: int) -> void:
@@ -724,7 +724,7 @@ func _building(cell: Rect2i) -> void:
 	if r > 0.965:
 		h += 90.0 * hs
 	# Low-rise around each HQ: its busy streets and the landmark read clearly.
-	h *= lerpf(0.3, 1.0, clampf((_hq_distance(ci, cj) - 3.0) / 6.0, 0.0, 1.0))
+	h *= lerpf(0.3, 1.0, clampf((_hq_distance(ci, cj) - 6.0) / 7.0, 0.0, 1.0))
 	var fill := FILLS[int(_h(ci, cj, 5) * FILLS.size()) % FILLS.size()]
 	var ink := _ink(ci, cj)
 	var lit := 0.12 + district_h * 0.22
@@ -900,91 +900,186 @@ func _dome(c: Vector2, rad: float, fill: Color, ink: Color) -> void:
 
 ## The district's landmark, one per corporation, standing on its plaza.
 func _hq(corp: StringName, rect: Rect2i) -> void:
-	var cx := rect.position.x + 2.5
-	var cy := rect.position.y + 2.5
+	var k := HQ_SCALE
+	var cx := rect.position.x + HQ_LOTS * 0.5
+	var cy := rect.position.y + HQ_LOTS * 0.5
 	var col := _pale(Palette.corp_color(corp))
 	var dark := FILLS[0]
 	var mid := FILLS[1]
+	var grey := FILLS[2]
 	var base := _iso(cx, cy)
-	var ring := _ngon(cx, cy, 2.3, 24)
-	for k in ring.size():
-		_ink_line(ring[k], ring[(k + 1) % ring.size()], Color(col, 0.5), 1.0, false)
+	# Plaza: two rings, spokes and corner lamps.
+	for rr in [2.3 * k, 2.0 * k]:
+		var ring := _ngon(cx, cy, rr, 32)
+		for m in ring.size():
+			_ink_line(ring[m], ring[(m + 1) % ring.size()], Color(col, 0.45), 1.0, false)
+	for m in 8:
+		var a := TAU * m / 8.0
+		_ink_line(_iso(cx + cos(a) * 2.0 * k, cy + sin(a) * 2.0 * k), _iso(cx + cos(a) * 2.3 * k, cy + sin(a) * 2.3 * k), Color(col, 0.6), 1.0, false)
+		if m % 2 == 0:
+			var lamp := _iso(cx + cos(a + 0.4) * 2.45 * k, cy + sin(a + 0.4) * 2.45 * k)
+			_ink_line(lamp, lamp + Vector2(0, -18), Color(col, 0.8), 1.0, false)
+			_beacons.append({"pos": lamp + Vector2(0, -20), "color": col, "phase": m * 0.13})
 	match corp:
 		&"solace":
-			# Helix Spire: a round tower wrapped in floating care-rings under a halo cap.
-			_extrude(_ngon(cx, cy, 1.1, 12), 0.0, 250.0, 1.0, mid, col, 0.3, 900)
-			_extrude(_ngon(cx, cy, 0.7, 12), 250.0, 40.0, 0.35, dark, col, 0.0, 901)
-			for k in 5:
-				var hh := 40.0 + k * 46.0
-				var rr := _ngon(cx, cy, 1.55 + 0.15 * sin(k * 1.7), 24, k * 0.4)
-				for m in rr.size():
-					if rr[m].y > base.y - 2.0 or m % 2 == 0:
-						_ink_line(rr[m] + Vector2(0, -hh), rr[(m + 1) % rr.size()] + Vector2(0, -hh), col, 1.4)
-			_beacons.append({"pos": base + Vector2(0, -292), "color": col, "phase": 0.2})
-			_sign(base + Vector2(-40, -330), "SOLACE", col)
+			# Helix Spire: podium, pods, a round tower wrapped in care-rings, light strips,
+			# a halo cap and an antenna crown.
+			_extrude(_ngon(cx, cy, 1.75 * k, 8, PI / 8.0), 0.0, 30.0 * k, 1.0, grey, col, 0.35, 900)
+			for m in 4:
+				var a := PI / 4.0 + TAU * m / 4.0
+				if sin(a) < -0.2:
+					continue
+				_extrude(_ngon(cx + cos(a) * 1.55 * k, cy + sin(a) * 1.55 * k, 0.35 * k, 8), 30.0 * k, 18.0 * k, 0.6, mid, col, 0.3, 905 + m)
+			_extrude(_ngon(cx, cy, 1.1 * k, 16), 30.0 * k, 250.0 * k, 1.0, mid, col, 0.3, 901)
+			var top := base + Vector2(0, -280.0 * k)
+			for m in 6:
+				var a := PI * 0.1 + PI * 0.8 * m / 5.0
+				var p0 := _iso(cx + cos(a) * 1.1 * k, cy + sin(a) * 1.1 * k)
+				_ink_line(p0 + Vector2(0, -34.0 * k), p0 + Vector2(0, -276.0 * k), Color(col, 0.35), 1.0, false)
+			for m in 7:
+				var hh := (50.0 + m * 34.0) * k
+				var rr := _ngon(cx, cy, (1.55 + 0.15 * sin(m * 1.7)) * k, 32, m * 0.4)
+				for q in rr.size():
+					if rr[q].y > base.y - 2.0 or q % 2 == 0:
+						_ink_line(rr[q] + Vector2(0, -hh), rr[(q + 1) % rr.size()] + Vector2(0, -hh), col, 1.5)
+			_extrude(_ngon(cx, cy, 0.7 * k, 16), 280.0 * k, 40.0 * k, 0.35, dark, col, 0.0, 902)
+			var halo := _ngon(cx, cy, 1.0 * k, 32)
+			for q in halo.size():
+				_ink_line(halo[q] + Vector2(0, -330.0 * k), halo[(q + 1) % halo.size()] + Vector2(0, -330.0 * k), col, 1.6)
+			for m in 3:
+				var mast := top + Vector2((m - 1) * 10.0 * k, -40.0 * k)
+				_ink_line(mast, mast + Vector2(0, -(26.0 + m % 2 * 20.0) * k), Color(col, 0.9), 1.2, false)
+			_beacons.append({"pos": top + Vector2(0, -90.0 * k), "color": col, "phase": 0.2})
+			_sign(base + Vector2(-40, -350.0 * k), "SOLACE", col)
 		&"meridian":
-			# Freight Ziggurat: stacked terraces, container stacks and a crane arm.
-			_extrude(_rect_pts(cx - 2.0, cy - 2.0, cx + 2.0, cy + 2.0), 0.0, 44.0, 1.0, mid, col, 0.25, 910)
-			_extrude(_rect_pts(cx - 1.4, cy - 1.4, cx + 1.4, cy + 1.4), 44.0, 44.0, 1.0, dark, col, 0.25, 911)
-			for k in 4:
-				var bx := cx - 1.35 + k * 0.4
-				var cc: Color = [_inks[0], _inks[3], _inks[2], col][k]
-				_extrude(_rect_pts(bx, cy + 1.45, bx + 0.34, cy + 1.95), 44.0, 10.0 + (k % 2) * 10.0, 1.0, dark, cc, 0.0, 913 + k)
-			_extrude(_rect_pts(cx - 0.7, cy - 0.7, cx + 0.7, cy + 0.7), 88.0, 110.0, 1.0, mid, col, 0.35, 912)
-			var mast := _iso(cx + 0.7, cy - 0.7) + Vector2(0, -198)
-			_ink_line(mast, mast + Vector2(0, -40), col, 1.6)
-			var jib := mast + Vector2(-150, -30)
-			_ink_line(mast + Vector2(0, -40), jib, col, 1.6)
-			_ink_line(mast + Vector2(0, -40), mast + Vector2(40, -20), col, 1.2)
-			_ink_line(jib, jib + Vector2(0, 50), Color(col, 0.8), 1.0, false)
-			var box := jib + Vector2(0, 50)
-			_quad(box + Vector2(-12, 0), box + Vector2(12, 0), box + Vector2(12, 14), box + Vector2(-12, 14), dark, dark, dark, dark)
-			for e in [[Vector2(-12, 0), Vector2(12, 0)], [Vector2(12, 0), Vector2(12, 14)], [Vector2(12, 14), Vector2(-12, 14)], [Vector2(-12, 14), Vector2(-12, 0)]]:
-				_ink_line(box + e[0], box + e[1], _inks[0], 1.2, false)
-			_beacons.append({"pos": mast + Vector2(0, -42), "color": col, "phase": 0.5})
-			_sign(base + Vector2(-50, -262), "MERIDIAN", col)
+			# Freight Ziggurat: terraces with loading bays, container yards, a tower with a
+			# helipad and a big crane swinging a container.
+			_extrude(_rect_pts(cx - 2.0 * k, cy - 2.0 * k, cx + 2.0 * k, cy + 2.0 * k), 0.0, 44.0 * k, 1.0, mid, col, 0.25, 910)
+			for m in 5:
+				var bay := _iso(cx - 2.0 * k + (m + 0.6) * 0.75 * k, cy + 2.0 * k)
+				_quad(bay, bay + Vector2(20, -10), bay + Vector2(20, -38), bay + Vector2(0, -28), Color(_inks[0], 0.25), Color(_inks[0], 0.25), Color(_inks[0], 0.25), Color(_inks[0], 0.25))
+				_ink_line(bay + Vector2(0, -28), bay + Vector2(20, -38), _inks[0], 1.2, false)
+			_extrude(_rect_pts(cx - 1.4 * k, cy - 1.4 * k, cx + 1.4 * k, cy + 1.4 * k), 44.0 * k, 44.0 * k, 1.0, dark, col, 0.25, 911)
+			for row in 2:
+				for m in 6:
+					var bx := cx - 1.3 * k + m * 0.43 * k
+					var cc: Color = [_inks[0], _inks[3], _inks[2], col, _inks[1], _inks[4]][(m + row) % 6]
+					_extrude(_rect_pts(bx, cy + 1.45 * k + row * 0.25 * k, bx + 0.36 * k, cy + 1.66 * k + row * 0.25 * k), 44.0 * k, (10.0 + ((m + row) % 3) * 8.0) * k, 1.0, dark, cc, 0.0, 913 + m + row * 6)
+			_extrude(_rect_pts(cx - 0.7 * k, cy - 0.7 * k, cx + 0.7 * k, cy + 0.7 * k), 88.0 * k, 110.0 * k, 1.0, mid, col, 0.35, 912)
+			var pad := _ngon(cx, cy, 0.5 * k, 24)
+			for q in pad.size():
+				_ink_line(pad[q] + Vector2(0, -198.0 * k), pad[(q + 1) % pad.size()] + Vector2(0, -198.0 * k), _inks[0], 1.2, false)
+			var hc := base + Vector2(0, -198.0 * k)
+			_ink_line(hc + Vector2(-8, -6), hc + Vector2(-8, 6), _inks[0], 1.6, false)
+			_ink_line(hc + Vector2(8, -6), hc + Vector2(8, 6), _inks[0], 1.6, false)
+			_ink_line(hc + Vector2(-8, 0), hc + Vector2(8, 0), _inks[0], 1.6, false)
+			var mast := _iso(cx + 0.7 * k, cy - 0.7 * k) + Vector2(0, -198.0 * k)
+			_ink_line(mast, mast + Vector2(0, -40.0 * k), col, 2.0)
+			for q in 4:
+				_ink_line(mast + Vector2(-4, -q * 10.0 * k), mast + Vector2(4, -(q + 1) * 10.0 * k), Color(col, 0.6), 1.0, false)
+			var jib := mast + Vector2(-150.0 * k, -30.0 * k)
+			_ink_line(mast + Vector2(0, -40.0 * k), jib, col, 2.0)
+			_ink_line(mast + Vector2(0, -40.0 * k), mast + Vector2(40.0 * k, -20.0 * k), col, 1.6)
+			for q in 6:
+				var t := (q + 1) / 7.0
+				_ink_line((mast + Vector2(0, -40.0 * k)).lerp(jib, t), (mast + Vector2(0, -34.0 * k)).lerp(jib + Vector2(0, 6), t + 0.07), Color(col, 0.5), 1.0, false)
+			_ink_line(jib, jib + Vector2(0, 50.0 * k), Color(col, 0.8), 1.0, false)
+			var box := jib + Vector2(0, 50.0 * k)
+			var bw := 12.0 * k
+			_quad(box + Vector2(-bw, 0), box + Vector2(bw, 0), box + Vector2(bw, 14.0 * k), box + Vector2(-bw, 14.0 * k), dark, dark, dark, dark)
+			for e in [[Vector2(-bw, 0), Vector2(bw, 0)], [Vector2(bw, 0), Vector2(bw, 14.0 * k)], [Vector2(bw, 14.0 * k), Vector2(-bw, 14.0 * k)], [Vector2(-bw, 14.0 * k), Vector2(-bw, 0)]]:
+				_ink_line(box + e[0], box + e[1], _inks[0], 1.4, false)
+			for q in 4:
+				_ink_line(box + Vector2(-bw + (q + 1) * bw * 0.4, 2), box + Vector2(-bw + (q + 1) * bw * 0.4, 14.0 * k - 2), Color(_inks[0], 0.5), 1.0, false)
+			_beacons.append({"pos": mast + Vector2(0, -42.0 * k), "color": col, "phase": 0.5})
+			_sign(base + Vector2(-50, -262.0 * k), "MERIDIAN", col)
 		&"halcyon":
-			# Civic Pyramid: a stepped civic pyramid under a floating ring of light.
-			for k in 4:
-				var r := 2.0 - k * 0.45
-				_extrude(_rect_pts(cx - r, cy - r, cx + r, cy + r), k * 38.0, 38.0, 1.0 if k < 3 else 0.2, mid if k % 2 == 0 else dark, col, 0.2, 920 + k)
-			var apex := base + Vector2(0, -190)
+			# Civic Pyramid: four tiers with colonnades and a grand stair, flanking obelisks,
+			# banners and a floating halo.
+			for m in [Vector2(-2.1, 2.1), Vector2(2.1, -2.1)]:
+				var ox: float = cx + m.x * k
+				var oy: float = cy + m.y * k
+				_extrude(_rect_pts(ox - 0.18 * k, oy - 0.18 * k, ox + 0.18 * k, oy + 0.18 * k), 0.0, 90.0 * k, 0.7, dark, col, 0.0, 925)
+				_extrude(_rect_pts(ox - 0.13 * k, oy - 0.13 * k, ox + 0.13 * k, oy + 0.13 * k), 90.0 * k, 10.0 * k, 0.03, dark, col, 0.0, 926)
+			for t in 4:
+				var r := (2.0 - t * 0.45) * k
+				_extrude(_rect_pts(cx - r, cy - r, cx + r, cy + r), t * 38.0 * k, 38.0 * k, 1.0 if t < 3 else 0.2, mid if t % 2 == 0 else dark, col, 0.2, 920 + t)
+				# Colonnade on the front faces.
+				if t < 3:
+					for q in 7:
+						var f := float(q + 1) / 8.0
+						var p0 := _iso(cx - r + 2.0 * r * f, cy + r) + Vector2(0, -t * 38.0 * k)
+						_ink_line(p0 + Vector2(0, -4), p0 + Vector2(0, -34.0 * k), Color(col, 0.35), 1.0, false)
+			# The grand stair up the front.
+			var st0 := _iso(cx, cy + 2.0 * k)
+			for q in 12:
+				var y := -q * 12.0 * k
+				var w := (18.0 - q * 0.9) * k
+				_ink_line(st0 + Vector2(-w * 0.5, y), st0 + Vector2(w * 0.5, y - w * 0.25), Color(col, 0.7), 1.0, false)
+			var apex := base + Vector2(0, -190.0 * k)
 			var halo := PackedVector2Array()
-			for k in 25:
-				halo.append(apex + Vector2(cos(TAU * k / 24.0) * 46.0, sin(TAU * k / 24.0) * 14.0 - 20.0))
-			for k in 24:
-				_ink_line(halo[k], halo[k + 1], col, 1.5)
-			_ink_line(apex, apex + Vector2(0, -44), Color(col, 0.8), 1.2, false)
-			_beacons.append({"pos": apex + Vector2(0, -46), "color": col, "phase": 0.7})
-			_sign(base + Vector2(-46, -268), "HALCYON", col)
+			for q in 33:
+				halo.append(apex + Vector2(cos(TAU * q / 32.0) * 46.0 * k, sin(TAU * q / 32.0) * 14.0 * k - 20.0 * k))
+			for q in 32:
+				_ink_line(halo[q], halo[q + 1], col, 1.8)
+			for sx in [-1.0, 1.0]:
+				var pole := base + Vector2(sx * 120.0 * k, -80.0 * k)
+				_ink_line(pole, pole + Vector2(0, -60.0 * k), Color(col, 0.8), 1.2, false)
+				var ban := PackedVector2Array([pole + Vector2(0, -60.0 * k), pole + Vector2(sx * 22.0 * k, -56.0 * k), pole + Vector2(sx * 20.0 * k, -30.0 * k), pole + Vector2(0, -34.0 * k)])
+				_poly(ban, Color(col, 0.45))
+			_ink_line(apex, apex + Vector2(0, -44.0 * k), Color(col, 0.8), 1.2, false)
+			_beacons.append({"pos": apex + Vector2(0, -46.0 * k), "color": col, "phase": 0.7})
+			_sign(base + Vector2(-46, -268.0 * k), "HALCYON", col)
 		&"orbital":
-			# Orbital Tether: a hex needle on a ring platform, its tether beam into the sky.
-			_extrude(_ngon(cx, cy, 2.0, 8, PI / 8.0), 0.0, 22.0, 1.0, mid, col, 0.2, 930)
-			_extrude(_ngon(cx, cy, 0.6, 6), 22.0, 300.0, 0.7, dark, col, 0.35, 931)
-			var tip := base + Vector2(0, -322)
+			# Orbital Tether: a ring platform with docking arms, a needle with collars every
+			# storey band, a counterweight and its tether beam into the sky.
+			_extrude(_ngon(cx, cy, 2.0 * k, 12, PI / 12.0), 0.0, 22.0 * k, 1.0, mid, col, 0.2, 930)
+			for m in 6:
+				var a := TAU * m / 6.0
+				var p0 := _iso(cx + cos(a) * 2.0 * k, cy + sin(a) * 2.0 * k) + Vector2(0, -22.0 * k)
+				var p1 := _iso(cx + cos(a) * 2.6 * k, cy + sin(a) * 2.6 * k) + Vector2(0, -30.0 * k)
+				_ink_line(p0, p1, col, 1.4)
+				_beacons.append({"pos": p1, "color": col, "phase": m * 0.2})
+			_extrude(_ngon(cx, cy, 0.6 * k, 6), 22.0 * k, 300.0 * k, 0.7, dark, col, 0.35, 931)
+			for q in 5:
+				var hh := (60.0 + q * 52.0) * k
+				var rr := _ngon(cx, cy, (0.75 - q * 0.05) * k, 6)
+				for m in rr.size():
+					_ink_line(rr[m] + Vector2(0, -hh), rr[(m + 1) % rr.size()] + Vector2(0, -hh), col, 1.4)
+			var tip := base + Vector2(0, -322.0 * k)
+			_extrude(_ngon(cx, cy, 0.35 * k, 8), 322.0 * k, 14.0 * k, 1.0, grey, col, 0.0, 932)
 			var beam := Color(col, 0.12)
-			_quad(tip + Vector2(-9, 0), tip + Vector2(9, 0), Vector2(tip.x + 5, 0), Vector2(tip.x - 5, 0), beam, beam, Color(col, 0.03), Color(col, 0.03))
-			_ink_line(tip, Vector2(tip.x, 0), Color(col, 0.7), 1.2, false)
-			for k in 3:
-				var y := tip.y * (0.25 + k * 0.25)
-				_ink_line(Vector2(tip.x - 16, y), Vector2(tip.x + 16, y), Color(col, 0.6), 1.0, false)
-			_beacons.append({"pos": tip, "color": col, "phase": 0.1})
-			_sign(base + Vector2(30, -160), "ORBITAL", col)
+			_quad(tip + Vector2(-9.0 * k, 0), tip + Vector2(9.0 * k, 0), Vector2(tip.x + 5.0 * k, -2000), Vector2(tip.x - 5.0 * k, -2000), beam, beam, Color(col, 0.0), Color(col, 0.0))
+			_ink_line(tip, Vector2(tip.x, -2000), Color(col, 0.7), 1.4, false)
+			_beacons.append({"pos": tip + Vector2(0, -16.0 * k), "color": col, "phase": 0.1})
+			_sign(base + Vector2(30.0 * k, -160.0 * k), "ORBITAL", col)
 		&"rebel_cell":
-			# The Hive: a honeycomb cluster of hex towers, the tallest crowned with the Cell.
+			# The Hive: a honeycomb of hex towers joined by sky-bridges, painted banners and
+			# the Cell crowning the tallest.
 			var offs := [Vector2(-1.1, 0.0), Vector2(0.0, -1.1), Vector2(1.1, 0.0), Vector2(0.0, 1.1), Vector2(0.0, 0.0)]
 			var hs := [90.0, 130.0, 70.0, 50.0, 220.0]
 			for idx in [1, 0, 2, 4, 3]:
-				var o: Vector2 = offs[idx]
-				_extrude(_ngon(cx + o.x, cy + o.y, 0.62, 6, PI / 6.0), 0.0, hs[idx], 1.0, mid if idx % 2 == 0 else dark, col if idx != 4 else _inks[2], 0.3, 940 + idx)
-			var crown := base + Vector2(0, -238)
+				var o: Vector2 = offs[idx] * k
+				_extrude(_ngon(cx + o.x, cy + o.y, 0.62 * k, 6, PI / 6.0), 0.0, hs[idx] * k, 1.0, mid if idx % 2 == 0 else dark, col if idx != 4 else _inks[2], 0.3, 940 + idx)
+			for pair in [[0, 4, 60.0], [2, 4, 50.0], [1, 4, 100.0], [0, 1, 70.0]]:
+				var oa: Vector2 = offs[pair[0]] * k
+				var ob: Vector2 = offs[pair[1]] * k
+				var hh: float = pair[2] * k
+				var pa := _iso(cx + oa.x, cy + oa.y) + Vector2(0, -hh)
+				var pb := _iso(cx + ob.x, cy + ob.y) + Vector2(0, -hh)
+				_ink_line(pa, pb, _inks[4], 1.6)
+				_ink_line(pa + Vector2(0, 8), pb + Vector2(0, 8), Color(_inks[4], 0.6), 1.2, false)
+			for m in 3:
+				var bp := _iso(cx + offs[m].x * k, cy + offs[m].y * k) + Vector2(-10, -(30.0 + m * 12.0) * k)
+				_poly(PackedVector2Array([bp, bp + Vector2(20, -4), bp + Vector2(20, 26), bp + Vector2(0, 30)]), Color(_inks[(m + 1) % 5], 0.5))
+			var crown := base + Vector2(0, -238.0 * k)
 			var hexa := PackedVector2Array()
-			for k in 6:
-				hexa.append(crown + Vector2(cos(TAU * k / 6.0), sin(TAU * k / 6.0)) * 16.0)
+			for q in 6:
+				hexa.append(crown + Vector2(cos(TAU * q / 6.0), sin(TAU * q / 6.0)) * 16.0 * k)
 			_poly(hexa, Color(Palette.CELL_ACID, 0.9))
-			for k in 6:
-				_ink_line(hexa[k], hexa[(k + 1) % 6], _inks[2], 1.4)
-			_sign(base + Vector2(-58, -280), "REBEL_CELL", _inks[2])
+			for q in 6:
+				_ink_line(hexa[q], hexa[(q + 1) % 6], _inks[2], 1.6)
+			_sign(base + Vector2(-58, -280.0 * k), "REBEL_CELL", _inks[2])
 
 
 ## A neon name plate floating over an HQ (drawn by the overlay).
@@ -1001,7 +1096,7 @@ func _draw_fx() -> void:
 			var name := "THE SPRAWL" if t["id"] == &"" else String(t["id"]).to_upper()
 			var at: Vector2 = t["at"]
 			var k := territory_label_px / 30.0 * inv
-			var p := _iso(at.x + 2.5, at.y + 2.5) + Vector2(-120, -40) * k
+			var p := _iso(at.x + HQ_LOTS * 0.5, at.y + HQ_LOTS * 0.5) + Vector2(-120, -40) * k
 			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
 			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(0, 0, 0, 0.75))
 			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)

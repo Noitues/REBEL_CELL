@@ -68,7 +68,7 @@ static func draw_drip_text(ci: CanvasItem, base: Vector2, text: String, size: in
 static func _drip(ci: CanvasItem, top: Vector2, length: float, w: float, col: Color) -> void:
 	var drop_w := w * 0.85
 	var drop_h := w * 2.1
-	if length < drop_h * 1.7:
+	if length < drop_h * 1.15:
 		# Short: flare, then the teardrop just below the letter.
 		ci.draw_colored_polygon(PackedVector2Array([top + Vector2(-w * 0.7, -w * 0.2), top + Vector2(w * 0.7, -w * 0.2), top + Vector2(w * 0.25, w * 0.5), top + Vector2(-w * 0.25, w * 0.5)]), col)
 		_teardrop(ci, top + Vector2(0, w * 0.3), drop_w, drop_h, col)

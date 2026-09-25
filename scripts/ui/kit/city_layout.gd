@@ -18,7 +18,7 @@ static func site_points(corp: CorporationData) -> Dictionary:
 			min_p = min_p.min(sd.map_position)
 			max_p = max_p.max(sd.map_position)
 	var span := (max_p - min_p).max(Vector2(1, 1))
-	var origin := NeonCity.hq_of(corp.id) + Vector2(2.5, 2.5) - RIGHT * 8.0 + DOWN * 1.5
+	var origin := NeonCity.hq_of(corp.id) + Vector2(NeonCity.HQ_LOTS * 0.5, NeonCity.HQ_LOTS * 0.5) - RIGHT * 11.0 + DOWN * 2.5
 	for sd in corp.city_grid.sites:
 		if sd == null:
 			continue
