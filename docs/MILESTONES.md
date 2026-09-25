@@ -165,3 +165,12 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [x] Heat-threshold raids resolve to the corporation's own raid.
 - [x] Seeded bot campaigns against Meridian win at ICE 0 (every base class) and ICE 5.
 - [x] Tests, schema smoke test and content validation green.
+
+## M9 — Halcyon Civic (added 2026-09-24, horizontal loop)
+
+**Acceptance**
+- [x] Halcyon Civic: 32-Site Grid, 6 enemies, 2 elites, mini-boss, phased boss, Exploits,
+      threats and 8 raids, 6 story paths, 20 events, briefings, corporate voice, colour.
+- [x] Citations (PARASITE on your wheel) and the Civic Core hub are tested.
+- [x] Seeded bot campaigns against Halcyon win at ICE 0 and ICE 5.
+- [x] Tests, schema smoke test and content validation green.

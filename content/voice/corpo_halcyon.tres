@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; halcyon voice set (decision 2026-09-24).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "raid:any"
+text = "HALCYON CIVIC: A service request has been opened at your address. Please remain at home."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "raid:raid_heat_25"
+text = "HALCYON CIVIC: A code violation has been recorded at your premises. Inspectors have been scheduled."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "raid:raid_heat_50"
+text = "HALCYON CIVIC: A compliance sweep is under way. Thank you for your cooperation."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "raid:raid_heat_75"
+text = "HALCYON CIVIC: An eviction order has been approved. Please vacate the premises."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "raid:raid_purge"
+text = "HALCYON CIVIC: Your district has been scheduled for urban renewal. We appreciate your understanding."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "raid:raid_hal_claim"
+text = "HALCYON CIVIC: Unlicensed premises detected. An Inspector will verify your licence."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "raid:raid_hal_node_built"
+text = "HALCYON CIVIC: Your building permit has been denied. Enforcement is on its way."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "raid:raid_hal_story"
+text = "HALCYON CIVIC: You have been designated a matter of public interest."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "raid:raid_hal_retaliation"
+text = "HALCYON CIVIC: A civil penalty has been issued against your account."
+
+[resource]
+script = ExtResource("main_script")
+id = &"corpo_halcyon"
+speaker = 2
+corporation_id = &"halcyon"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8")])

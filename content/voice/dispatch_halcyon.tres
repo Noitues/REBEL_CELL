@@ -1,0 +1,268 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=54 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; halcyon voice set (decision 2026-09-24).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Jacking you in. Halcyon watches the streets; stay off them."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Route is live. Mind the cameras."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "run_start"
+text = "City traffic is light tonight. Move quickly."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Clean exit. Halcyon is filing a report nobody will read."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Out and clear. Well done."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "The city sleeps a little easier."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Signal lost. Halcyon has marked the operative as relocated."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "run_died"
+text = "We lost them. Regroup."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Operative down. The city will not notice. We will."
+
+[sub_resource type="Resource" id="l9"]
+script = ExtResource("e1")
+key = "rack"
+text = "Rack captured. Bank it before Halcyon audits the discrepancy."
+
+[sub_resource type="Resource" id="l10"]
+script = ExtResource("e1")
+key = "threshold:25"
+text = "Halcyon has logged a code violation. Expect inspectors."
+
+[sub_resource type="Resource" id="l11"]
+script = ExtResource("e1")
+key = "threshold:50"
+text = "Compliance sweep in progress. Halcyon is counting your nodes."
+
+[sub_resource type="Resource" id="l12"]
+script = ExtResource("e1")
+key = "threshold:75"
+text = "Eviction order signed. Bailiffs are coming."
+
+[sub_resource type="Resource" id="l13"]
+script = ExtResource("e1")
+key = "threshold:100"
+text = "Urban renewal scheduled. Halcyon means to erase the Cell."
+
+[sub_resource type="Resource" id="l14"]
+script = ExtResource("e1")
+key = "boss"
+text = "The Civic Core. It heals and walls up every turn. Breach the Hub, then cut."
+
+[sub_resource type="Resource" id="l15"]
+script = ExtResource("e1")
+key = "win"
+text = "The Civic Core is down. The city runs itself for a day."
+
+[sub_resource type="Resource" id="l16"]
+script = ExtResource("e1")
+key = "win"
+text = "Halcyon is offline. The lights are still on, somehow."
+
+[sub_resource type="Resource" id="l17"]
+script = ExtResource("e1")
+key = "win"
+text = "Contract terminated. Next target when you are ready."
+
+[sub_resource type="Resource" id="l18"]
+script = ExtResource("e1")
+key = "loss"
+text = "Home server lost. Halcyon has rezoned the Cell out of existence."
+
+[sub_resource type="Resource" id="l19"]
+script = ExtResource("e1")
+key = "loss"
+text = "We are off the grid. Fall back."
+
+[sub_resource type="Resource" id="l20"]
+script = ExtResource("e1")
+key = "site:h1_a"
+text = "Parking Enforcement Office. Every ticket in the city is written here. Take the Rack and the drones stop writing."
+
+[sub_resource type="Resource" id="l21"]
+script = ExtResource("e1")
+key = "site:h1_b"
+text = "Water Meter Grid. Halcyon counts every litre. Cut the Rack and the meters read zero for a day."
+
+[sub_resource type="Resource" id="l22"]
+script = ExtResource("e1")
+key = "site:h1_c"
+text = "Streetlight Mesh. The lights are cameras. The cameras are Halcyon. Dim them."
+
+[sub_resource type="Resource" id="l23"]
+script = ExtResource("e1")
+key = "site:h1_d"
+text = "Resident Services Desk. Where complaints go to die. Take the Rack."
+
+[sub_resource type="Resource" id="l24"]
+script = ExtResource("e1")
+key = "site:h1_e"
+text = "Transit Fare Gates. Every commute is a fee. Open the gates."
+
+[sub_resource type="Resource" id="l25"]
+script = ExtResource("e1")
+key = "site:h1_f"
+text = "Waste Routing Depot. Halcyon sorts the city's trash, and its secrets. Look for both."
+
+[sub_resource type="Resource" id="l26"]
+script = ExtResource("e1")
+key = "site:h1_g"
+text = "Noise Complaint Registry. Halcyon's excuse to send patrols anywhere. Quiet it."
+
+[sub_resource type="Resource" id="l27"]
+script = ExtResource("e1")
+key = "site:h1_h"
+text = "Permit Queue Server. Four thousand applications, all pending. Take the Rack."
+
+[sub_resource type="Resource" id="l28"]
+script = ExtResource("e1")
+key = "site:h1_i"
+text = "Utility Shutoff Scheduler. It decides whose lights go out tonight. Reschedule it."
+
+[sub_resource type="Resource" id="l29"]
+script = ExtResource("e1")
+key = "site:h1_j"
+text = "Camera Maintenance Yard. Replacement eyes for the city. Look for the audit path."
+
+[sub_resource type="Resource" id="l30"]
+script = ExtResource("e1")
+key = "site:h2_intel"
+text = "Council Minutes Archive. Every vote, decided before it was cast. Bring back the Intel."
+
+[sub_resource type="Resource" id="l31"]
+script = ExtResource("e1")
+key = "site:h2_breach"
+text = "Emergency Override Authority. The keys to every valve and signal. Copy them. That is the Breach."
+
+[sub_resource type="Resource" id="l32"]
+script = ExtResource("e1")
+key = "site:h2_virus"
+text = "Open Data Portal. Halcyon publishes what it wants you to see. Publish the rest. That is the Virus."
+
+[sub_resource type="Resource" id="l33"]
+script = ExtResource("e1")
+key = "site:h2_d"
+text = "Predictive Patrol Model. It sends police where it expects crime. Take its Rack."
+
+[sub_resource type="Resource" id="l34"]
+script = ExtResource("e1")
+key = "site:h2_e"
+text = "Resident Credit Bureau. Everyone has a score. Take the Rack, and look for the pardon path."
+
+[sub_resource type="Resource" id="l35"]
+script = ExtResource("e1")
+key = "site:h2_f"
+text = "Water Rights Exchange. The city's water, traded like stock. Take the Rack."
+
+[sub_resource type="Resource" id="l36"]
+script = ExtResource("e1")
+key = "site:h2_g"
+text = "Transit Signal Control. Every light, every train, one console. Take it."
+
+[sub_resource type="Resource" id="l37"]
+script = ExtResource("e1")
+key = "site:h2_h"
+text = "Contract Billing Ledger. Halcyon bills the city for everything, twice. Take the Rack."
+
+[sub_resource type="Resource" id="l38"]
+script = ExtResource("e1")
+key = "site:h3_core"
+text = "Civic Operations Centre. One hop from the Civic Core. Heavy security, heavier Rack."
+
+[sub_resource type="Resource" id="l39"]
+script = ExtResource("e1")
+key = "site:h3_b"
+text = "Zoning Futures Desk. Halcyon bets on the blocks it is about to rezone. Take the Rack."
+
+[sub_resource type="Resource" id="l40"]
+script = ExtResource("e1")
+key = "site:h3_c"
+text = "Override Key Escrow. The master keys to the city. Take them."
+
+[sub_resource type="Resource" id="l41"]
+script = ExtResource("e1")
+key = "site:h3_d"
+text = "City Twin Simulator. A copy of the city, where Halcyon rehearses emergencies. Break it."
+
+[sub_resource type="Resource" id="l42"]
+script = ExtResource("e1")
+key = "site:h3_e"
+text = "Council Backchannel. Where the real votes happen. Listen in, then take the Rack."
+
+[sub_resource type="Resource" id="l43"]
+script = ExtResource("e1")
+key = "site:h3_f"
+text = "Municipal Pricing Authority. What the city pays to exist. Take it."
+
+[sub_resource type="Resource" id="l44"]
+script = ExtResource("e1")
+key = "site:h3_g"
+text = "Citizen Profile Archive. A file on every home, including yours. Burn it."
+
+[sub_resource type="Resource" id="l45"]
+script = ExtResource("e1")
+key = "site:h3_h"
+text = "Halcyon Root Registry. The keys the Civic Core trusts. Take them."
+
+[sub_resource type="Resource" id="l46"]
+script = ExtResource("e1")
+key = "site:wipe_the_citations"
+text = "Wipe the Citations. A quiet job: clear the fines that follow the Cell. Heat drops."
+
+[sub_resource type="Resource" id="l47"]
+script = ExtResource("e1")
+key = "site:blind_the_cameras"
+text = "Blind the Cameras. Put the block's cameras to sleep. Heat drops."
+
+[sub_resource type="Resource" id="l48"]
+script = ExtResource("e1")
+key = "site:lose_the_case_file"
+text = "Lose the Case File. Halcyon has a file on the Cell. Misplace it."
+
+[sub_resource type="Resource" id="l49"]
+script = ExtResource("e1")
+key = "site:pardon_the_district"
+text = "Pardon the District. Clear the records of a whole district, the Cell's included."
+
+[sub_resource type="Resource" id="l50"]
+script = ExtResource("e1")
+key = "site:civic_core_site"
+text = "The Civic Core. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut."
+
+[resource]
+script = ExtResource("main_script")
+id = &"dispatch_halcyon"
+speaker = 4
+corporation_id = &"halcyon"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8"), SubResource("l9"), SubResource("l10"), SubResource("l11"), SubResource("l12"), SubResource("l13"), SubResource("l14"), SubResource("l15"), SubResource("l16"), SubResource("l17"), SubResource("l18"), SubResource("l19"), SubResource("l20"), SubResource("l21"), SubResource("l22"), SubResource("l23"), SubResource("l24"), SubResource("l25"), SubResource("l26"), SubResource("l27"), SubResource("l28"), SubResource("l29"), SubResource("l30"), SubResource("l31"), SubResource("l32"), SubResource("l33"), SubResource("l34"), SubResource("l35"), SubResource("l36"), SubResource("l37"), SubResource("l38"), SubResource("l39"), SubResource("l40"), SubResource("l41"), SubResource("l42"), SubResource("l43"), SubResource("l44"), SubResource("l45"), SubResource("l46"), SubResource("l47"), SubResource("l48"), SubResource("l49"), SubResource("l50")])

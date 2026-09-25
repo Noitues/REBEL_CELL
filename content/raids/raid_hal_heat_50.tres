@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="e1"]
+[ext_resource type="Resource" path="res://content/threats/inspector.tres" id="e2"]
+[ext_resource type="Resource" path="res://content/threats/tow_truck.tres" id="e3"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="e4"]
+
+; halcyon raid (decision 2026-09-24).
+
+[sub_resource type="Resource" id="wave0"]
+script = ExtResource("e4")
+threats = Array[ExtResource("e1")]([ExtResource("e2"), ExtResource("e2"), ExtResource("e3")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"raid_hal_heat_50"
+display_name = "Compliance Sweep"
+trigger_source = 0
+waves = Array[ExtResource("e4")]([SubResource("wave0")])
+schematic_reward = 12
+warning_text = "A Halcyon compliance sweep is working your block. Inspectors and a Tow Truck inbound."
+corporation_id = &"halcyon"
+replaces = &"raid_heat_50"

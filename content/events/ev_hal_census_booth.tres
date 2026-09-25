@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/daemons/log_wiper.tres" id="e3"]
+
+; halcyon Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Erase the entry (-2 Heat)"
+result_text = "The screen accepts the change before you touch it."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Read the rest (Daemon: Log Wiper)"
+result_text = "Every entry is yours. A process comes with it."
+reward = ExtResource("e3")
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_hal_census_booth"
+title = "Census Booth"
+speaker = 3
+text = "An empty census booth. The screen is already filled in, with your name."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"halcyon"
+dispatch_clue = true

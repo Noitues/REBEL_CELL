@@ -144,3 +144,52 @@ func test_hq_start_panel_offers_a_corporation_picker() -> void:
 	assert_true(picker.item_count >= 1)
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.scene_switching_enabled = true
+
+
+## Every generated corporation (M8+) has the full shape, its own raids and briefings.
+const GENERATED := [&"meridian", &"halcyon"]
+
+
+func test_every_generated_corporation_is_complete() -> void:
+	for id in GENERATED:
+		var corp := ContentRegistry.get_content(id) as CorporationData
+		assert_not_null(corp, String(id))
+		assert_eq(corp.city_grid.sites.size(), 32, String(id))
+		assert_eq(corp.exploits.size(), 3, String(id))
+		assert_eq(corp.story_paths.size(), 6, String(id))
+		assert_eq(corp.enemies.size(), 6, String(id))
+		assert_eq(corp.elites.size(), 2, String(id))
+		assert_true(corp.final_boss.is_boss and corp.final_boss.phases.size() >= 2, String(id))
+		assert_not_null(CampaignRules.unlock_for(_lookup, corp), "%s is a Profile unlock" % id)
+		var c := _campaign(corp)
+		HeatRules.add_heat(c, 26, _cfg, "test")
+		var raid := CampaignRules.raid_data(c.pending_raids[0], _lookup)
+		assert_eq(raid.corporation_id, id, "%s threshold raid is its own" % id)
+		for s in corp.city_grid.sites:
+			if s.id != corp.city_grid.home_site_id:
+				assert_ne(Dialogue.briefing(id, s.id), "", "%s briefing for %s" % [id, s.id])
+		var s := NetrunSession.start(_resolver, c, c.roster[0].id, 1, corp.city_grid.get_site(corp.city_grid.home_site_id).links[0], 5, corp)
+		assert_eq(s.pools()["mini_bosses"].size(), 1, "%s mini-boss" % id)
+
+
+func test_citations_plant_a_parasite_on_your_wheel() -> void:
+	var s := CombatSession.start(_resolver, &"breaker", [&"parking_warden"], 4)
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Citation
+	CombatFixture.land(s.state.player, 5)
+	s.apply(CombatAction.end_turn())
+	assert_true(s.state.player.wheel.slice_statuses.has(RC.Status.PARASITE), "a Citation halves one of your slices")
+
+
+func test_the_civic_core_heals_and_blocks_unless_breached() -> void:
+	var s := CombatSession.start(_resolver, &"breaker", [&"civic_core"], 4)
+	s.state.get_combatant(&"enemy_0").hp -= 50
+	CombatFixture.land(s.state.player, 5)
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 5)
+	var r := s.apply(CombatAction.end_turn())
+	var healed := false
+	var blocked := false
+	for e in CombatFixture.events_of(r, "heal"):
+		healed = healed or e["target"] == &"enemy_0"
+	for e in CombatFixture.events_of(r, "block"):
+		blocked = blocked or e["target"] == &"enemy_0"
+	assert_true(healed and blocked, "Emergency Powers: heal and block at turn start")

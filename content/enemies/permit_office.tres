@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/atk_8.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/citation.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e7"]
+[ext_resource type="Resource" path="res://content/enemies/civic_drone.tres" id="e8"]
+
+; halcyon enemy (decision 2026-09-24).
+
+[sub_resource type="Resource" id="wheel_slot_shield_5"]
+script = ExtResource("e2")
+slice = ExtResource("e1")
+
+[sub_resource type="Resource" id="wheel_slot_atk_8"]
+script = ExtResource("e2")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="wheel_slot_citation"]
+script = ExtResource("e2")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e2")
+slice = ExtResource("e5")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e6")
+slice_count = 6
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_shield_5"), SubResource("wheel_slot_atk_8"), SubResource("wheel_slot_shield_5"), SubResource("wheel_slot_citation"), SubResource("wheel_slot_atk_8"), SubResource("wheel_slot_miss")])
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="spawn0"]
+script = ExtResource("e7")
+satellite = ExtResource("e8")
+trigger = 2
+every_n = 2
+dock_slot = -1
+max_active = 2
+
+[resource]
+script = ExtResource("main_script")
+id = &"permit_office"
+display_name = "Permit Office"
+description = "Shields, Citations and a civic drone every other turn."
+corporation_id = &"halcyon"
+hp = 46
+wheel = SubResource("wheel")
+cycle_reward = 15
+spawns = Array[ExtResource("e7")]([SubResource("spawn0")])

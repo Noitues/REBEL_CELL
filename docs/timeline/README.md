@@ -15,3 +15,4 @@ Movie Maker (`godot --path . --resolution 1280x720 --write-movie <file>.png --fi
 | 2026-09-24 | 06_m6 | HQ roster with Ghost and Rigger operatives and the class unlocks; a Botnet fight with Deploy slices (M6 class roster). |
 | 2026-09-24 | 07_m7 | Modem stock drawn from the M7 pools (60 shared cards, 18 Firmware, 24 Daemons, 12 shop slices). |
 | 2026-09-24 | 08_m8 | New-campaign Target picker; Meridian Freight Systems' 32-Site Grid in amber (M8). |
+| 2026-09-24 | 09_m9 | Halcyon Civic's 32-Site Grid in mint (M9). |

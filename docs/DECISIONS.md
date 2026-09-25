@@ -30,6 +30,26 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M9 Halcyon Civic (GAP_ANALYSIS P1 8)
+- **Halcyon Civic** (GDD 8.4 names): smart-city services contractor. Mechanical identity:
+  **Citations** (new AFFLICT slice: PARASITE on a random non-Miss player slice, half output
+  until cleansed), healing and shielding enemies, evasive surveillance masts. Enemies
+  Parking Warden, Utility Meter, Transit Controller, Surveillance Mast, Patrol Unit, Permit
+  Office; elites Riot Control and Zoning Board; mini-boss City Manager; boss **The Civic
+  Core** (360 HP; Emergency Powers hub heals 4 and blocks 4 a turn unless breached; 66%
+  three pointers; 33% orbit, Crit wheel, civic drones). Threats Inspector, Bailiff, Tow
+  Truck; eight raids replacing the shared threshold raids. Exploits: Council Minutes,
+  Emergency Override, Open Data Leak. Six story paths: Water Rights, Predictive Policing,
+  Transit Blackout, The Census (DISPATCH clues), Orbital Uplink (foreshadows Orbital
+  Commons), Smart Meters. Twenty events, briefings for every Site, corporate voice, colour
+  mint #4FFFB0. Unlock 140 Schematics.
+- **Shared generator**: `tools/content_gen/gen_corp_lib.py` builds a whole corporation from
+  a spec dict; the M6-M9 generators now live in `tools/content_gen/` (README there).
+- **Balance** (8 seeds): first pass the Civic Core killed Breakers (25 boss deaths at ICE 5,
+  4/8 won); HP 400 -> 360 and heal 5 -> 4. Final: Breaker ICE 0 7/8 (19.0 runs), ICE 5
+  6/8 (15.8), Rigger 7/8 (17.9), Ghost ICE 5 8/8 (10.3), Botnet 8/8 (11.9 before the boss
+  change).
+
 ### 2026-09-24 — M8 Corporation selection and Meridian Freight Systems (GAP_ANALYSIS P0 3, P1 8)
 - **Corporation selection** (P0 3): corporations with a `ProfileUnlockData` (kind
   CORPORATION) need it; the rest (Solace) are always open. `CampaignRules.available_
@@ -747,6 +767,11 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
+
+### From M9, Halcyon Civic (2026-09-24) — decided by the implementer, confirm in playtest
+- **Ghost is strongest against the new corporations** (about 10 runs vs 20 for the others);
+  Pierce / x2 / Echo plus a full retrigger. Revisit in the horizontal analysis.
+- **Halcyon unlock** 140 Schematics (Meridian 120).
 
 ### From M8, corporations (2026-09-24) — decided by the implementer, confirm in playtest
 - **Meridian vs Solace difficulty**: the bot finds Meridian's ICE 0 about as hard as

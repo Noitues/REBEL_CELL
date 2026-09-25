@@ -438,6 +438,12 @@ drones. Exploits: Intel (shipping manifests), Breach (customs override keys), Vi
 routing table). Final server: **The Manifest**, which shields itself every turn unless its
 Hub is breached.
 
+### 8.4c Halcyon Civic (M9, DECISIONS.md 2026-09-24)
+Smart-city services: water, power, transit, policing-as-a-service. Enemies issue
+**Citations** (PARASITE on your slice), heal and shield each other. Exploits: Intel
+(council minutes), Breach (emergency override), Virus (open data leak). Final server:
+**The Civic Core**, which heals and blocks every turn unless its Hub is breached.
+
 ### 8.5 REBEL_CELL (final unlock corporation)
 Unlocked by clearing every other corporation at ICE 10; has its own ICE 0–20 ladder.
 Built from the player's profile: its Grid uses your most-used node types, its elites use

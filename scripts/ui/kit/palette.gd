@@ -45,6 +45,8 @@ static func corp_color(corporation_id: StringName) -> Color:
 			return CORP_SOLACE
 		&"meridian":
 			return Color("#FF8C1A")
+		&"halcyon":
+			return Color("#4FFFB0")
 		_:
 			return NET_CYAN
 

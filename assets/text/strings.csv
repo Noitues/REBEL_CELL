@@ -155,6 +155,8 @@ ClassData.rigger.description,Runs hot on RAM. Perfect landings pay for the next 
 ClassData.rigger.display_name,Rigger
 ClassData.wrecker.description,A Breaker that trades spin control for a heavier Perfect.
 ClassData.wrecker.display_name,Wrecker
+CorporationData.halcyon.description,"The contractor that runs the city: water, power, transit and the police, billed per resident."
+CorporationData.halcyon.display_name,Halcyon Civic
 CorporationData.meridian.description,"The logistics giant that moves everything, loses what it likes and bills you for the search."
 CorporationData.meridian.display_name,Meridian Freight Systems
 CorporationData.solace.description,Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks.
@@ -239,6 +241,12 @@ EnemyData.care_swarm.description,A cloud of care drones around a fragile core.
 EnemyData.care_swarm.display_name,Care Swarm
 EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: inertia resists every nudge."
 EnemyData.cargo_hauler.display_name,Cargo Hauler
+EnemyData.city_manager.description,"Halcyon's local administrator, guarding the final Rack."
+EnemyData.city_manager.display_name,City Manager
+EnemyData.civic_core.description,"Halcyon's city brain. It keeps the lights on, and the bill running."
+EnemyData.civic_core.display_name,The Civic Core
+EnemyData.civic_drone.description,A Halcyon enforcement drone that shields its officer.
+EnemyData.civic_drone.display_name,Civic Drone
 EnemyData.claims_adjuster.description,Reads two claims at once. Elite.
 EnemyData.claims_adjuster.display_name,Claims Adjuster
 EnemyData.collections_agent.description,Solace debt collector with a bodyguard drone.
@@ -261,22 +269,38 @@ EnemyData.last_mile_enforcer.description,Orbits 2 ticks a turn and brings its ow
 EnemyData.last_mile_enforcer.display_name,Last-Mile Enforcer
 EnemyData.logistics_director.description,"Meridian middle management, guarding the final Rack."
 EnemyData.logistics_director.display_name,Logistics Director
+EnemyData.parking_warden.description,Writes Citations: your slice runs at half until you cleanse it.
+EnemyData.parking_warden.display_name,Parking Warden
+EnemyData.patrol_unit.description,"Policing-as-a-service. Hits hard, shields up."
+EnemyData.patrol_unit.display_name,Patrol Unit
+EnemyData.permit_office.description,"Shields, Citations and a civic drone every other turn."
+EnemyData.permit_office.display_name,Permit Office
 EnemyData.port_authority.description,Two readers and a customs wall: resistance 2.
 EnemyData.port_authority.display_name,Port Authority
 EnemyData.recall_unit.description,Its pointer creeps around the wheel every turn. Elite.
 EnemyData.recall_unit.display_name,Recall Unit
 EnemyData.renewal_engine.description,The Continuum subscription server. It renews itself faster than you can cut.
 EnemyData.renewal_engine.display_name,Renewal Engine
+EnemyData.riot_control.description,"Two readers, heavy block and a Citation for everyone."
+EnemyData.riot_control.display_name,Riot Control
 EnemyData.route_optimizer.description,Reads two routes at once: pointers at ticks 0 and 15.
 EnemyData.route_optimizer.display_name,Route Optimizer
 EnemyData.seed_drone.description,A one-hit drone sprouted by a Perfect landing.
 EnemyData.seed_drone.display_name,Seed Drone
+EnemyData.surveillance_mast.description,Hard to pin down: Evade slices and an orbiting read head.
+EnemyData.surveillance_mast.display_name,Surveillance Mast
 EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
 EnemyData.tariff_collector.display_name,Tariff Collector
 EnemyData.the_manifest.description,Meridian's routing core. Every package on the planet passes through it.
 EnemyData.the_manifest.display_name,The Manifest
+EnemyData.transit_controller.description,Two readers on a slow loop: pointers 0 and 15 orbit 1 a turn.
+EnemyData.transit_controller.display_name,Transit Controller
 EnemyData.triage_unit.description,Patches itself up faster than you can cut it down.
 EnemyData.triage_unit.display_name,Triage Unit
+EnemyData.utility_meter.description,Heals itself on the public dime. Resistance 1.
+EnemyData.utility_meter.display_name,Utility Meter
+EnemyData.zoning_board.description,"Shields, heals and rezones its read head 2 ticks a turn."
+EnemyData.zoning_board.display_name,Zoning Board
 FirmwareData.barbed_wire.description,DEF slice also deals 2 damage to the pointer target.
 FirmwareData.barbed_wire.display_name,Barbed Wire
 FirmwareData.bulkhead.description,DEF and SHIELD slices: output +50%.
@@ -325,6 +349,8 @@ HubCoreData.breaker_core_mk2.description,+2 spin on all cards. Perfect: the slic
 HubCoreData.breaker_core_mk2.display_name,Breaker Core Mk2
 HubCoreData.compliance_lock.description,Spin resistance 3 while the Hub is online.
 HubCoreData.compliance_lock.display_name,Compliance Lock
+HubCoreData.emergency_powers.description,Heals 4 and gains 4 block each turn unless the Hub is breached.
+HubCoreData.emergency_powers.display_name,Emergency Powers
 HubCoreData.ghost_core.description,First nudge on an enemy wheel each turn ignores resistance. Perfect: strip 2 resistance and the slice resolves twice.
 HubCoreData.ghost_core.display_name,Ghost Core
 HubCoreData.ghost_core_mk2.description,"First two nudges on enemy wheels each turn ignore resistance. Perfect: strip 3 resistance, evade the next attack, and the slice resolves twice."
@@ -385,6 +411,8 @@ ProfileUnlockData.unlock_compiler_rack.description,Unlocks the Compiler Rack nod
 ProfileUnlockData.unlock_compiler_rack.display_name,Node: Compiler Rack
 ProfileUnlockData.unlock_ghost.description,Recruit Ghost operatives in every campaign.
 ProfileUnlockData.unlock_ghost.display_name,Class: Ghost
+ProfileUnlockData.unlock_halcyon.description,Target Halcyon Civic in new campaigns.
+ProfileUnlockData.unlock_halcyon.display_name,Corporation: Halcyon Civic
 ProfileUnlockData.unlock_hivemind.description,Recruit Hivemind operatives in every campaign.
 ProfileUnlockData.unlock_hivemind.display_name,Class: Hivemind
 ProfileUnlockData.unlock_home_bunker.description,"Start campaigns on the Bunker home server (70 integrity, 3 slots, built-in turret)."
@@ -405,6 +433,22 @@ ProfileUnlockData.unlock_wrecker.description,Recruit Wrecker operatives in every
 ProfileUnlockData.unlock_wrecker.display_name,Class: Wrecker
 RaidData.raid_claim.display_name,Collections: Trespass
 RaidData.raid_claim.warning_text,You built next to Solace property. A Collector is on its way.
+RaidData.raid_hal_claim.display_name,Unlicensed Premises
+RaidData.raid_hal_claim.warning_text,A new node without a Halcyon licence. An Inspector is on the way.
+RaidData.raid_hal_heat_25.display_name,Code Violation
+RaidData.raid_hal_heat_25.warning_text,Halcyon has logged a code violation at your address. Two Inspectors inbound.
+RaidData.raid_hal_heat_50.display_name,Compliance Sweep
+RaidData.raid_hal_heat_50.warning_text,A Halcyon compliance sweep is working your block. Inspectors and a Tow Truck inbound.
+RaidData.raid_hal_heat_75.display_name,Eviction Order
+RaidData.raid_hal_heat_75.warning_text,Halcyon has signed an eviction order. Bailiffs are coming.
+RaidData.raid_hal_node_built.display_name,Building Permit Denied
+RaidData.raid_hal_node_built.warning_text,Halcyon has denied your building permit. A Bailiff will enforce it.
+RaidData.raid_hal_purge.display_name,Urban Renewal
+RaidData.raid_hal_purge.warning_text,Halcyon has scheduled your district for urban renewal. Everything it has is coming.
+RaidData.raid_hal_retaliation.display_name,Civil Penalty
+RaidData.raid_hal_retaliation.warning_text,Halcyon traced the breach and issued a civil penalty.
+RaidData.raid_hal_story.display_name,Public Interest Order
+RaidData.raid_hal_story.warning_text,Halcyon has declared you a matter of public interest.
 RaidData.raid_heat_25.display_name,Collections: First Notice
 RaidData.raid_heat_25.warning_text,Solace Collections has flagged your traffic. Two Collectors inbound.
 RaidData.raid_heat_50.display_name,Collections: Second Notice
@@ -449,9 +493,39 @@ RingSegmentData.seg_pierce.description,Ignore block and shield.
 RingSegmentData.seg_pierce.display_name,Pierce
 RingSegmentData.seg_x2.description,Outer slice output doubled.
 RingSegmentData.seg_x2.display_name,x2
+SiteData.blind_the_cameras.display_name,Blind the Cameras
 SiteData.burn_the_ledger.display_name,Burn the Ledger
+SiteData.civic_core_site.display_name,The Civic Core
 SiteData.forge_the_manifest.display_name,Forge the Manifest
+SiteData.h1_a.display_name,Parking Enforcement Office
+SiteData.h1_b.display_name,Water Meter Grid
+SiteData.h1_c.display_name,Streetlight Mesh
+SiteData.h1_d.display_name,Resident Services Desk
+SiteData.h1_e.display_name,Transit Fare Gates
+SiteData.h1_f.display_name,Waste Routing Depot
+SiteData.h1_g.display_name,Noise Complaint Registry
+SiteData.h1_h.display_name,Permit Queue Server
+SiteData.h1_i.display_name,Utility Shutoff Scheduler
+SiteData.h1_j.display_name,Camera Maintenance Yard
+SiteData.h2_breach.display_name,Emergency Override Authority
+SiteData.h2_d.display_name,Predictive Patrol Model
+SiteData.h2_e.display_name,Resident Credit Bureau
+SiteData.h2_f.display_name,Water Rights Exchange
+SiteData.h2_g.display_name,Transit Signal Control
+SiteData.h2_h.display_name,Contract Billing Ledger
+SiteData.h2_intel.display_name,Council Minutes Archive
+SiteData.h2_virus.display_name,Open Data Portal
+SiteData.h3_b.display_name,Zoning Futures Desk
+SiteData.h3_c.display_name,Override Key Escrow
+SiteData.h3_core.display_name,Civic Operations Centre
+SiteData.h3_d.display_name,City Twin Simulator
+SiteData.h3_e.display_name,Council Backchannel
+SiteData.h3_f.display_name,Municipal Pricing Authority
+SiteData.h3_g.display_name,Citizen Profile Archive
+SiteData.h3_h.display_name,Halcyon Root Registry
+SiteData.h_home.display_name,Home Server
 SiteData.home.display_name,Home Server
+SiteData.lose_the_case_file.display_name,Lose the Case File
 SiteData.lose_the_tracking.display_name,Lose the Tracking
 SiteData.m1_a.display_name,Parcel Sorting Hall
 SiteData.m1_b.display_name,Customs Pre-Clearance
@@ -480,6 +554,7 @@ SiteData.m3_f.display_name,Contract Pricing Authority
 SiteData.m3_g.display_name,Surveillance Route Archive
 SiteData.m3_h.display_name,Meridian Root Ledger
 SiteData.m_home.display_name,Home Server
+SiteData.pardon_the_district.display_name,Pardon the District
 SiteData.purge_camera_logs.display_name,Purge Camera Logs
 SiteData.renewal_engine_site.display_name,Renewal Engine
 SiteData.reroute_the_audit.display_name,Reroute the Audit
@@ -513,6 +588,7 @@ SiteData.t3_g.display_name,Implant Cohort Archive
 SiteData.t3_h.display_name,Solace Root Certificate Store
 SiteData.the_manifest_site.display_name,The Manifest
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
+SiteData.wipe_the_citations.display_name,Wipe the Citations
 SliceData.atk_10.display_name,Attack 10
 SliceData.atk_12.display_name,Attack 12
 SliceData.atk_14.display_name,Attack 14
@@ -526,6 +602,7 @@ SliceData.atk_7_drain.display_name,Attack 7 (drains 1 RAM)
 SliceData.atk_8.display_name,Attack 8
 SliceData.atk_8_inertia.display_name,Attack 8 (+1 resistance)
 SliceData.atk_9.display_name,Attack 9
+SliceData.citation.display_name,Citation
 SliceData.crit_12.display_name,Crit 12
 SliceData.crit_12_drain.display_name,Crit 12 (drains 2 RAM)
 SliceData.crit_14.display_name,Crit 14
@@ -657,6 +734,30 @@ StoryBeatData.night_shift_bonus_2.text,The quota rises two percent every time so
 StoryBeatData.night_shift_bonus_2.title,The Night Shift: The Quota
 StoryBeatData.night_shift_f.text,"The Manifest falls and the scoring engine forgets every score. On the night shift, for the first time in years, someone sits down."
 StoryBeatData.night_shift_f.title,The Night Shift: Finale
+StoryBeatData.orbital_uplink_1.text,"The Civic Core's uptime is guaranteed by a contract with Orbital Commons. If the link drops, the city drops."
+StoryBeatData.orbital_uplink_1.title,Orbital Uplink I
+StoryBeatData.orbital_uplink_2.text,"Orbital Commons bills Halcyon per resident per second. Halcyon bills residents per second, plus margin."
+StoryBeatData.orbital_uplink_2.title,Orbital Uplink II
+StoryBeatData.orbital_uplink_3.text,The council backchannel has a memo: Orbital Commons wants the city itself as collateral.
+StoryBeatData.orbital_uplink_3.title,Orbital Uplink III
+StoryBeatData.orbital_uplink_bonus_1.text,The uplink dish on the operations centre roof is the size of a house and guarded like a bank.
+StoryBeatData.orbital_uplink_bonus_1.title,Orbital Uplink: The Dish
+StoryBeatData.orbital_uplink_bonus_2.text,Orbital Commons calls its satellites public infrastructure. It has never let the public near them.
+StoryBeatData.orbital_uplink_bonus_2.title,Orbital Uplink: Commons
+StoryBeatData.orbital_uplink_f.text,"The Civic Core falls. Somewhere above the city, an Orbital Commons satellite notes the lost customer and adjusts its orbit toward the Cell."
+StoryBeatData.orbital_uplink_f.title,Orbital Uplink: Finale
+StoryBeatData.predictive_policing_1.text,The patrol model's training data is its own arrest records. It has been learning from itself for six years.
+StoryBeatData.predictive_policing_1.title,Predictive Policing I
+StoryBeatData.predictive_policing_2.text,"Patrol units earn Halcyon a fee per stop. The model is tuned for stops, not safety. The memo calls it throughput."
+StoryBeatData.predictive_policing_2.title,Predictive Policing II
+StoryBeatData.predictive_policing_3.text,The model has a list of names it calls pre-offenders. Three of them are Cell operatives. One of them is nine years old.
+StoryBeatData.predictive_policing_3.title,Predictive Policing III
+StoryBeatData.predictive_policing_bonus_1.text,Red squares on a city map. Every red square is a poor block. Every poor block is red.
+StoryBeatData.predictive_policing_bonus_1.title,Predictive Policing: The Heatmap
+StoryBeatData.predictive_policing_bonus_2.text,Stop quotas rise every quarter. Nobody at Halcyon has ever asked what the stops are for.
+StoryBeatData.predictive_policing_bonus_2.title,Predictive Policing: Quotas
+StoryBeatData.predictive_policing_f.text,"The Civic Core falls and the patrol model forgets every name on its list. For a month, nobody is a pre-offender."
+StoryBeatData.predictive_policing_f.title,Predictive Policing: Finale
 StoryBeatData.recall_notice_1.text,The pricing memos price the failure. Batch 22 fails at day 900; the renewal that follows costs more than the implant did. Someone in Solace ran the numbers and chose the number.
 StoryBeatData.recall_notice_1.title,Recall Notice I
 StoryBeatData.recall_notice_2.text,"The kill-switch authority holds a list: batch 22 devices, flagged for remote shutdown the day their warranty ends. The switch was never meant to be used. It was used, quietly, by schedule."
@@ -669,6 +770,18 @@ StoryBeatData.recall_notice_bonus_2.text,Four thousand subbies in batch 22 are s
 StoryBeatData.recall_notice_bonus_2.title,Recall Notice: The Cohort
 StoryBeatData.recall_notice_f.text,The Renewal Engine goes dark and the recall notice ships itself: every batch 22 device pulls the patch on its next check-in. Solace announces nothing. The district hears the silence where the bricking used to be.
 StoryBeatData.recall_notice_f.title,Recall Notice: Finale
+StoryBeatData.smart_meters_1.text,"The meters measure power and water. The firmware also measures voices, footsteps and how many people sleep in a room."
+StoryBeatData.smart_meters_1.title,Smart Meters I
+StoryBeatData.smart_meters_2.text,Halcyon raises the bill for homes with more people than the lease allows. The meters count them.
+StoryBeatData.smart_meters_2.title,Smart Meters II
+StoryBeatData.smart_meters_3.text,The citizen profile archive has a file on every home. The Cell's safehouse file is thicker than most.
+StoryBeatData.smart_meters_3.title,Smart Meters III
+StoryBeatData.smart_meters_bonus_1.text,A technician has a firmware patch that deafens the meters. He needs the Cell to push it city-wide.
+StoryBeatData.smart_meters_bonus_1.title,Smart Meters: The Patch
+StoryBeatData.smart_meters_bonus_2.text,The overcrowding surcharge funds the patrol units that evict the overcrowded.
+StoryBeatData.smart_meters_bonus_2.title,Smart Meters: Overcrowding
+StoryBeatData.smart_meters_f.text,The Civic Core falls and the meters go deaf all at once. The city is quiet in a way it has not been for years.
+StoryBeatData.smart_meters_f.title,Smart Meters: Finale
 StoryBeatData.terms_of_service_1.text,Clause 44 makes cardiac pacing a licensed feature. The pricing memos call it the anchor clause: the thing that makes everything else enforceable.
 StoryBeatData.terms_of_service_1.title,Terms of Service I
 StoryBeatData.terms_of_service_2.text,"The kill-switch is the enforcement clause. Every bricking is logged as a service interruption, signed by an automated counsel process that has never lost a case."
@@ -681,6 +794,18 @@ StoryBeatData.terms_of_service_bonus_2.text,"Somebody in the district printed th
 StoryBeatData.terms_of_service_bonus_2.title,Terms of Service: Counter-Terms
 StoryBeatData.terms_of_service_f.text,"The Renewal Engine cannot enforce a contract it cannot read. When it goes dark, the terms go with it. Nobody agrees to clause 44 again."
 StoryBeatData.terms_of_service_f.title,Terms of Service: Finale
+StoryBeatData.the_census_1.text,The census data was copied the night it was collected. The copy went to an account with no name and no owner.
+StoryBeatData.the_census_1.title,The Census I
+StoryBeatData.the_census_2.text,The same account paid for Meridian freight that never shipped and Solace stock the day it crashed. It pays before it orders.
+StoryBeatData.the_census_2.title,The Census II
+StoryBeatData.the_census_3.text,The account read the census for one name. It was looking for the leader of a cell that does not officially exist.
+StoryBeatData.the_census_3.title,The Census III
+StoryBeatData.the_census_bonus_1.text,The copy is timestamped a day before the census began. The clocks were not wrong.
+StoryBeatData.the_census_bonus_1.title,The Census: Timestamps
+StoryBeatData.the_census_bonus_2.text,A recording from the census call centre. A caller asks for the Cell's leader by a name only DISPATCH uses.
+StoryBeatData.the_census_bonus_2.title,The Census: The Voice
+StoryBeatData.the_census_f.text,"The Civic Core dies. The unnamed account withdraws everything one second later, and sends the Cell a thank-you note it did not sign."
+StoryBeatData.the_census_f.title,The Census: Finale
 StoryBeatData.the_cure_1.text,"The memos price a permanent fix: one firmware update, no leash, no renewals. Projected revenue loss: everything. The memo is marked do not build."
 StoryBeatData.the_cure_1.title,The Cure I
 StoryBeatData.the_cure_2.text,The kill-switch keeps the cure a subscription: a fixed implant that stops calling home gets bricked as a security precaution.
@@ -693,6 +818,30 @@ StoryBeatData.the_cure_bonus_2.text,A free implant costs Solace four renewals a 
 StoryBeatData.the_cure_bonus_2.title,The Cure: The Cost
 StoryBeatData.the_cure_f.text,The Engine goes dark and the cure ships for free through every Rack the Cell ever touched. Solace's stock does what stock does. The district's hearts keep time on their own.
 StoryBeatData.the_cure_f.title,The Cure: Finale
+StoryBeatData.transit_blackout_1.text,"The signal control logs show maintenance windows that match every protest in the last year, to the minute."
+StoryBeatData.transit_blackout_1.title,Transit Blackout I
+StoryBeatData.transit_blackout_2.text,The emergency override has a mode called CONTAIN. It stops every train into a district and opens the doors on none.
+StoryBeatData.transit_blackout_2.title,Transit Blackout II
+StoryBeatData.transit_blackout_3.text,The open data portal publishes the protest schedule to Halcyon before the protesters post it. Someone inside is selling it.
+StoryBeatData.transit_blackout_3.title,Transit Blackout III
+StoryBeatData.transit_blackout_bonus_1.text,A tram driver kept her doors open during a CONTAIN. She was fired the next day. She would like a word with the Cell.
+StoryBeatData.transit_blackout_bonus_1.title,Transit Blackout: The Driver
+StoryBeatData.transit_blackout_bonus_2.text,Next week's maintenance windows are already set. They match a march nobody has announced yet.
+StoryBeatData.transit_blackout_bonus_2.title,Transit Blackout: The Schedule
+StoryBeatData.transit_blackout_f.text,"The Civic Core crashes and every tram in the city runs its whole route, doors open, lights on. Nobody pays."
+StoryBeatData.transit_blackout_f.title,Transit Blackout: Finale
+StoryBeatData.water_rights_1.text,"The council minutes show the vote: water sold to Halcyon for one credit, with a clause that lets it set the price by postcode."
+StoryBeatData.water_rights_1.title,Water Rights I
+StoryBeatData.water_rights_2.text,"The emergency override can shut off a street's water in four seconds. The log shows it used forty times this year, always on streets behind on rent."
+StoryBeatData.water_rights_2.title,Water Rights II
+StoryBeatData.water_rights_3.text,"The open data portal leaks a model: raise prices when it is hottest, because demand cannot fall. The model's name is Thirst."
+StoryBeatData.water_rights_3.title,Water Rights III
+StoryBeatData.water_rights_bonus_1.text,Pump station nine is manual. Someone could open it by hand. Someone would need to know where it is.
+StoryBeatData.water_rights_bonus_1.title,Water Rights: The Pumps
+StoryBeatData.water_rights_bonus_2.text,Meridian Freight Systems hauls bottled water into the districts Halcyon cuts off. They split the margin.
+StoryBeatData.water_rights_bonus_2.title,Water Rights: Meridian
+StoryBeatData.water_rights_f.text,"The Civic Core goes dark and every valve in the city fails open. For one hot week, the water is free."
+StoryBeatData.water_rights_f.title,Water Rights: Finale
 StoryPathData.sp_civic_contract.premise,"Meridian is bidding to run the city's water, power and transit. The winner is already decided."
 StoryPathData.sp_civic_contract.title,Civic Contract
 StoryPathData.sp_clinical_trial.premise,The Continuum was tested on people who could not say no.
@@ -711,12 +860,24 @@ StoryPathData.sp_lost_cargo.premise,"Meridian loses shipments of insulin on purp
 StoryPathData.sp_lost_cargo.title,Lost Cargo
 StoryPathData.sp_night_shift.premise,Meridian's warehouse workers are scored every second and fired by an algorithm that never sleeps.
 StoryPathData.sp_night_shift.title,The Night Shift
+StoryPathData.sp_orbital_uplink.premise,Halcyon's city brain runs on a satellite link it does not own.
+StoryPathData.sp_orbital_uplink.title,Orbital Uplink
+StoryPathData.sp_predictive_policing.premise,Halcyon's patrol model sends police where it expects crime. It expects crime where it sends police.
+StoryPathData.sp_predictive_policing.title,Predictive Policing
 StoryPathData.sp_recall_notice.premise,Batch 22 implants fail after nine hundred days. Solace knows. Solace calls it a renewal opportunity.
 StoryPathData.sp_recall_notice.title,Recall Notice
+StoryPathData.sp_smart_meters.premise,Every home in the city has a Halcyon meter. Every meter has a microphone.
+StoryPathData.sp_smart_meters.title,Smart Meters
 StoryPathData.sp_terms_of_service.premise,"What the Continuum contract actually says, clause by clause."
 StoryPathData.sp_terms_of_service.title,Terms of Service
+StoryPathData.sp_the_census.premise,Halcyon ran the census. Someone else read it first.
+StoryPathData.sp_the_census.title,The Census
 StoryPathData.sp_the_cure.premise,Solace could fix everyone. It sells renewals instead.
 StoryPathData.sp_the_cure.title,The Cure
+StoryPathData.sp_transit_blackout.premise,Halcyon cuts transit to districts that protest. The official reason is maintenance.
+StoryPathData.sp_transit_blackout.title,Transit Blackout
+StoryPathData.sp_water_rights.premise,"Halcyon owns the city's water now. The price follows the weather, and the weather follows the price."
+StoryPathData.sp_water_rights.title,Water Rights
 TerminalEventData.ev_abandoned_cache.text,A dead courier left a cache drive wedged in the Terminal. It still has a balance.
 TerminalEventData.ev_abandoned_cache.title,Abandoned Cache
 TerminalEventData.ev_audit_trail.text,"Your own intrusion is showing up in a Solace audit log, line by line, in real time."
@@ -755,6 +916,46 @@ TerminalEventData.ev_ghost_market.text,A pop-up market in a dead subnet. The pri
 TerminalEventData.ev_ghost_market.title,Ghost Market
 TerminalEventData.ev_ghost_record.text,"A patient record with no name, no address and a perfect payment history stretching back before the Continuum launched. It renews itself. Observe: nothing in this building is as alive as this file."
 TerminalEventData.ev_ghost_record.title,Patient 0000-0000
+TerminalEventData.ev_hal_camera_yard.text,"Crates of replacement cameras, waiting to go up tomorrow."
+TerminalEventData.ev_hal_camera_yard.title,Camera Yard
+TerminalEventData.ev_hal_census_booth.text,"An empty census booth. The screen is already filled in, with your name."
+TerminalEventData.ev_hal_census_booth.title,Census Booth
+TerminalEventData.ev_hal_contract_ledger.text,Halcyon's contract ledger bills the city for services never delivered.
+TerminalEventData.ev_hal_contract_ledger.title,Contract Ledger
+TerminalEventData.ev_hal_council_leak.text,"A councillor's aide offers the next vote's minutes, for a price."
+TerminalEventData.ev_hal_council_leak.title,Council Leak
+TerminalEventData.ev_hal_credit_bureau.text,"The resident credit bureau scores everyone. Your score is zero, which is a record."
+TerminalEventData.ev_hal_credit_bureau.title,Credit Score
+TerminalEventData.ev_hal_dispatch_permit.text,DISPATCH: A Halcyon permit has been issued in the Cell's name. It is valid. Do not ask who applied.
+TerminalEventData.ev_hal_dispatch_permit.title,DISPATCH: Permit
+TerminalEventData.ev_hal_eviction.text,An eviction notice glows on a door. The family inside has until midnight.
+TerminalEventData.ev_hal_eviction.title,Eviction Notice
+TerminalEventData.ev_hal_meter_tech.text,A Halcyon meter technician is eating lunch in his van. His tablet is unlocked.
+TerminalEventData.ev_hal_meter_tech.title,Meter Technician
+TerminalEventData.ev_hal_noise_registry.text,The noise registry has flagged a street party. Patrol units are on the way.
+TerminalEventData.ev_hal_noise_registry.title,Noise Complaint
+TerminalEventData.ev_hal_orbital_dish.text,A Halcyon uplink dish points at the sky. Something up there is listening back.
+TerminalEventData.ev_hal_orbital_dish.title,Uplink Dish
+TerminalEventData.ev_hal_parking_ticket.text,A Halcyon parking drone has ticketed your deck. The fine doubles in an hour.
+TerminalEventData.ev_hal_parking_ticket.title,Parking Ticket
+TerminalEventData.ev_hal_patrol_stop.text,A Halcyon patrol unit has stopped a kid on the corner. Its scanner is pointed at you next.
+TerminalEventData.ev_hal_patrol_stop.title,Patrol Stop
+TerminalEventData.ev_hal_permit_queue.text,The permit queue has four thousand applications. Every one of them is marked PENDING REVIEW.
+TerminalEventData.ev_hal_permit_queue.title,Permit Queue
+TerminalEventData.ev_hal_resident_desk.text,A Halcyon kiosk offers resident services. A queue of fifty people waits for one working screen.
+TerminalEventData.ev_hal_resident_desk.title,Resident Services
+TerminalEventData.ev_hal_signal_control.text,Transit signal control. One command could turn every light green.
+TerminalEventData.ev_hal_signal_control.title,Signal Control
+TerminalEventData.ev_hal_streetlight.text,A smart streetlight follows you with its camera. Its maintenance panel is open.
+TerminalEventData.ev_hal_streetlight.title,Smart Streetlight
+TerminalEventData.ev_hal_transit_gate.text,"A fare gate is stuck open. Commuters flood through, looking over their shoulders."
+TerminalEventData.ev_hal_transit_gate.title,Fare Gate
+TerminalEventData.ev_hal_waste_depot.text,"Halcyon's waste depot sorts the city's trash, including its discarded hardware."
+TerminalEventData.ev_hal_waste_depot.title,Waste Depot
+TerminalEventData.ev_hal_water_shutoff.text,A street's water has been shut off for late payment. The kids are filling bottles at a leaking hydrant.
+TerminalEventData.ev_hal_water_shutoff.title,Water Shutoff
+TerminalEventData.ev_hal_zoning_map.text,A zoning map shows your block rezoned as PREMIUM. The residents do not know yet.
+TerminalEventData.ev_hal_zoning_map.title,Zoning Map
 TerminalEventData.ev_honeypot.text,"A Solace vault sits open on the Terminal, credentials in the clear, 80 Cycles on the table. It is exactly as easy as it looks."
 TerminalEventData.ev_honeypot.title,Open Vault
 TerminalEventData.ev_insurance_claim.text,"A Solace claims form, pre-filled, for an injury you haven't had yet."
@@ -838,6 +1039,8 @@ TerminalEventData.ev_supply_closet.title,Supply Closet
 TerminalEventData.ev_wellness_kiosk.text,A Solace kiosk offers a free wellness scan. The fine print is longer than the kiosk.
 TerminalEventData.ev_wellness_kiosk.title,Wellness Kiosk
 ThreatData.auditor.display_name,Auditor
+ThreatData.bailiff.description,An armoured repossession unit that goes for the weakest node.
+ThreatData.bailiff.display_name,Bailiff
 ThreatData.collector.display_name,Collector
 ThreatData.courier.description,Fast and fragile: two edges a step toward the highest-value node.
 ThreatData.courier.display_name,Courier
@@ -848,5 +1051,9 @@ ThreatData.hauler.description,A slow armoured truck that goes for the weakest no
 ThreatData.hauler.display_name,Hauler
 ThreatData.icebreaker.description,Cuts a new route through a locked link before it moves.
 ThreatData.icebreaker.display_name,Icebreaker
+ThreatData.inspector.description,Quick and thorough: two edges a step toward the highest-value node.
+ThreatData.inspector.display_name,Inspector
 ThreatData.lockdown_unit.description,Freezes your busiest link to home for the whole raid.
 ThreatData.lockdown_unit.display_name,Lockdown Unit
+ThreatData.tow_truck.description,Seals a link behind it for the rest of the raid.
+ThreatData.tow_truck.display_name,Tow Truck

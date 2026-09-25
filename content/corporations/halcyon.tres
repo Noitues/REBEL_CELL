@@ -1,0 +1,700 @@
+[gd_resource type="Resource" script_class="CorporationData" load_steps=129 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/site_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/exploit_data.gd" id="e3"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e5"]
+[ext_resource type="Script" path="res://scripts/data/story_beat_data.gd" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/story_path_data.gd" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="e8"]
+[ext_resource type="Resource" path="res://content/enemies/parking_warden.tres" id="e9"]
+[ext_resource type="Resource" path="res://content/enemies/utility_meter.tres" id="e10"]
+[ext_resource type="Resource" path="res://content/enemies/transit_controller.tres" id="e11"]
+[ext_resource type="Resource" path="res://content/enemies/surveillance_mast.tres" id="e12"]
+[ext_resource type="Resource" path="res://content/enemies/patrol_unit.tres" id="e13"]
+[ext_resource type="Resource" path="res://content/enemies/permit_office.tres" id="e14"]
+[ext_resource type="Resource" path="res://content/enemies/riot_control.tres" id="e15"]
+[ext_resource type="Resource" path="res://content/enemies/zoning_board.tres" id="e16"]
+[ext_resource type="Resource" path="res://content/enemies/civic_core.tres" id="e17"]
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="e18"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_heat_25.tres" id="e19"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_heat_50.tres" id="e20"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_heat_75.tres" id="e21"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_purge.tres" id="e22"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_claim.tres" id="e23"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_node_built.tres" id="e24"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_story.tres" id="e25"]
+[ext_resource type="Resource" path="res://content/raids/raid_hal_retaliation.tres" id="e26"]
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="e27"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_parking_ticket.tres" id="e28"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_water_shutoff.tres" id="e29"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_streetlight.tres" id="e30"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_resident_desk.tres" id="e31"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_eviction.tres" id="e32"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_council_leak.tres" id="e33"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_patrol_stop.tres" id="e34"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_permit_queue.tres" id="e35"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_transit_gate.tres" id="e36"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_census_booth.tres" id="e37"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_dispatch_permit.tres" id="e38"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_meter_tech.tres" id="e39"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_zoning_map.tres" id="e40"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_waste_depot.tres" id="e41"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_camera_yard.tres" id="e42"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_noise_registry.tres" id="e43"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_credit_bureau.tres" id="e44"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_signal_control.tres" id="e45"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_contract_ledger.tres" id="e46"]
+[ext_resource type="Resource" path="res://content/events/ev_hal_orbital_dish.tres" id="e47"]
+
+; Halcyon Civic (M9, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid in the Solace/Meridian shape; Citations
+; plant PARASITE on the player's slices; the Civic Core heals and blocks each turn unless breached.
+
+[sub_resource type="Resource" id="site_h_home"]
+script = ExtResource("e1")
+id = &"h_home"
+display_name = "Home Server"
+tier = 1
+links = Array[StringName]([&"h1_a", &"h1_b", &"h1_c", &"h1_d", &"h1_e", &"h1_f", &"h1_g", &"h1_h", &"h1_i", &"h1_j"])
+claimable = false
+map_position = Vector2(0, 330)
+
+[sub_resource type="Resource" id="site_h1_a"]
+script = ExtResource("e1")
+id = &"h1_a"
+display_name = "Parking Enforcement Office"
+tier = 1
+links = Array[StringName]([&"h2_intel", &"wipe_the_citations"])
+locked_links = Array[StringName]([&"h1_b"])
+map_position = Vector2(200, 30)
+
+[sub_resource type="Resource" id="site_h1_b"]
+script = ExtResource("e1")
+id = &"h1_b"
+display_name = "Water Meter Grid"
+tier = 1
+links = Array[StringName]([&"h2_breach"])
+map_position = Vector2(200, 97)
+
+[sub_resource type="Resource" id="site_h1_c"]
+script = ExtResource("e1")
+id = &"h1_c"
+display_name = "Streetlight Mesh"
+tier = 1
+links = Array[StringName]([&"h2_virus"])
+locked_links = Array[StringName]([&"h1_d"])
+map_position = Vector2(200, 163)
+
+[sub_resource type="Resource" id="site_h1_d"]
+script = ExtResource("e1")
+id = &"h1_d"
+display_name = "Resident Services Desk"
+tier = 1
+links = Array[StringName]([&"h2_d"])
+map_position = Vector2(200, 230)
+
+[sub_resource type="Resource" id="site_h1_e"]
+script = ExtResource("e1")
+id = &"h1_e"
+display_name = "Transit Fare Gates"
+tier = 1
+links = Array[StringName]([&"h2_e"])
+locked_links = Array[StringName]([&"h1_f"])
+map_position = Vector2(200, 297)
+
+[sub_resource type="Resource" id="site_h1_f"]
+script = ExtResource("e1")
+id = &"h1_f"
+display_name = "Waste Routing Depot"
+tier = 1
+links = Array[StringName]([&"h2_f", &"blind_the_cameras"])
+map_position = Vector2(200, 363)
+
+[sub_resource type="Resource" id="site_h1_g"]
+script = ExtResource("e1")
+id = &"h1_g"
+display_name = "Noise Complaint Registry"
+tier = 1
+links = Array[StringName]([&"h2_g"])
+locked_links = Array[StringName]([&"h1_h"])
+map_position = Vector2(200, 430)
+
+[sub_resource type="Resource" id="site_h1_h"]
+script = ExtResource("e1")
+id = &"h1_h"
+display_name = "Permit Queue Server"
+tier = 1
+links = Array[StringName]([&"h2_h"])
+map_position = Vector2(200, 497)
+
+[sub_resource type="Resource" id="site_h1_i"]
+script = ExtResource("e1")
+id = &"h1_i"
+display_name = "Utility Shutoff Scheduler"
+tier = 1
+links = Array[StringName]([&"h2_h"])
+locked_links = Array[StringName]([&"h1_j"])
+map_position = Vector2(200, 563)
+
+[sub_resource type="Resource" id="site_h1_j"]
+script = ExtResource("e1")
+id = &"h1_j"
+display_name = "Camera Maintenance Yard"
+tier = 1
+links = Array[StringName]([&"lose_the_case_file"])
+map_position = Vector2(200, 630)
+
+[sub_resource type="Resource" id="site_h2_intel"]
+script = ExtResource("e1")
+id = &"h2_intel"
+display_name = "Council Minutes Archive"
+tier = 2
+links = Array[StringName]([&"h3_core"])
+locked_links = Array[StringName]([&"h2_breach"])
+objective = 1
+exploit_type = 1
+map_position = Vector2(430, 60)
+
+[sub_resource type="Resource" id="site_h2_breach"]
+script = ExtResource("e1")
+id = &"h2_breach"
+display_name = "Emergency Override Authority"
+tier = 2
+links = Array[StringName]([&"h3_b"])
+objective = 1
+exploit_type = 2
+map_position = Vector2(430, 137)
+
+[sub_resource type="Resource" id="site_h2_virus"]
+script = ExtResource("e1")
+id = &"h2_virus"
+display_name = "Open Data Portal"
+tier = 2
+links = Array[StringName]([&"h3_c"])
+locked_links = Array[StringName]([&"h2_d"])
+objective = 1
+exploit_type = 3
+map_position = Vector2(430, 214)
+
+[sub_resource type="Resource" id="site_h2_d"]
+script = ExtResource("e1")
+id = &"h2_d"
+display_name = "Predictive Patrol Model"
+tier = 2
+links = Array[StringName]([&"h3_d"])
+map_position = Vector2(430, 291)
+
+[sub_resource type="Resource" id="site_h2_e"]
+script = ExtResource("e1")
+id = &"h2_e"
+display_name = "Resident Credit Bureau"
+tier = 2
+links = Array[StringName]([&"h3_e", &"pardon_the_district"])
+locked_links = Array[StringName]([&"h2_f"])
+map_position = Vector2(430, 369)
+
+[sub_resource type="Resource" id="site_h2_f"]
+script = ExtResource("e1")
+id = &"h2_f"
+display_name = "Water Rights Exchange"
+tier = 2
+links = Array[StringName]([&"h3_f"])
+map_position = Vector2(430, 446)
+
+[sub_resource type="Resource" id="site_h2_g"]
+script = ExtResource("e1")
+id = &"h2_g"
+display_name = "Transit Signal Control"
+tier = 2
+links = Array[StringName]([&"h3_g"])
+locked_links = Array[StringName]([&"h2_h"])
+map_position = Vector2(430, 523)
+
+[sub_resource type="Resource" id="site_h2_h"]
+script = ExtResource("e1")
+id = &"h2_h"
+display_name = "Contract Billing Ledger"
+tier = 2
+links = Array[StringName]([&"h3_h"])
+map_position = Vector2(430, 600)
+
+[sub_resource type="Resource" id="site_h3_core"]
+script = ExtResource("e1")
+id = &"h3_core"
+display_name = "Civic Operations Centre"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+locked_links = Array[StringName]([&"h3_b"])
+map_position = Vector2(660, 60)
+
+[sub_resource type="Resource" id="site_h3_b"]
+script = ExtResource("e1")
+id = &"h3_b"
+display_name = "Zoning Futures Desk"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+map_position = Vector2(660, 137)
+
+[sub_resource type="Resource" id="site_h3_c"]
+script = ExtResource("e1")
+id = &"h3_c"
+display_name = "Override Key Escrow"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+locked_links = Array[StringName]([&"h3_d"])
+map_position = Vector2(660, 214)
+
+[sub_resource type="Resource" id="site_h3_d"]
+script = ExtResource("e1")
+id = &"h3_d"
+display_name = "City Twin Simulator"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+map_position = Vector2(660, 291)
+
+[sub_resource type="Resource" id="site_h3_e"]
+script = ExtResource("e1")
+id = &"h3_e"
+display_name = "Council Backchannel"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+locked_links = Array[StringName]([&"h3_f"])
+map_position = Vector2(660, 369)
+
+[sub_resource type="Resource" id="site_h3_f"]
+script = ExtResource("e1")
+id = &"h3_f"
+display_name = "Municipal Pricing Authority"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+map_position = Vector2(660, 446)
+
+[sub_resource type="Resource" id="site_h3_g"]
+script = ExtResource("e1")
+id = &"h3_g"
+display_name = "Citizen Profile Archive"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+locked_links = Array[StringName]([&"h3_h"])
+map_position = Vector2(660, 523)
+
+[sub_resource type="Resource" id="site_h3_h"]
+script = ExtResource("e1")
+id = &"h3_h"
+display_name = "Halcyon Root Registry"
+tier = 3
+links = Array[StringName]([&"civic_core_site"])
+map_position = Vector2(660, 600)
+
+[sub_resource type="Resource" id="site_wipe_the_citations"]
+script = ExtResource("e1")
+id = &"wipe_the_citations"
+display_name = "Wipe the Citations"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 20)
+
+[sub_resource type="Resource" id="site_blind_the_cameras"]
+script = ExtResource("e1")
+id = &"blind_the_cameras"
+display_name = "Blind the Cameras"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 380)
+
+[sub_resource type="Resource" id="site_lose_the_case_file"]
+script = ExtResource("e1")
+id = &"lose_the_case_file"
+display_name = "Lose the Case File"
+tier = 2
+objective = 2
+heat_change = -8
+map_position = Vector2(340, 650)
+
+[sub_resource type="Resource" id="site_pardon_the_district"]
+script = ExtResource("e1")
+id = &"pardon_the_district"
+display_name = "Pardon the District"
+tier = 3
+objective = 2
+heat_change = -8
+map_position = Vector2(560, 430)
+
+[sub_resource type="Resource" id="site_civic_core_site"]
+script = ExtResource("e1")
+id = &"civic_core_site"
+display_name = "The Civic Core"
+tier = 4
+objective = 4
+claimable = false
+map_position = Vector2(900, 330)
+
+[sub_resource type="Resource" id="grid"]
+script = ExtResource("e2")
+sites = Array[ExtResource("e1")]([SubResource("site_h_home"), SubResource("site_h1_a"), SubResource("site_h1_b"), SubResource("site_h1_c"), SubResource("site_h1_d"), SubResource("site_h1_e"), SubResource("site_h1_f"), SubResource("site_h1_g"), SubResource("site_h1_h"), SubResource("site_h1_i"), SubResource("site_h1_j"), SubResource("site_h2_intel"), SubResource("site_h2_breach"), SubResource("site_h2_virus"), SubResource("site_h2_d"), SubResource("site_h2_e"), SubResource("site_h2_f"), SubResource("site_h2_g"), SubResource("site_h2_h"), SubResource("site_h3_core"), SubResource("site_h3_b"), SubResource("site_h3_c"), SubResource("site_h3_d"), SubResource("site_h3_e"), SubResource("site_h3_f"), SubResource("site_h3_g"), SubResource("site_h3_h"), SubResource("site_wipe_the_citations"), SubResource("site_blind_the_cameras"), SubResource("site_lose_the_case_file"), SubResource("site_pardon_the_district"), SubResource("site_civic_core_site")])
+home_site_id = &"h_home"
+boss_site_id = &"civic_core_site"
+
+[sub_resource type="Resource" id="ex_intel"]
+script = ExtResource("e3")
+exploit_type = 1
+display_name = "Intel: Council Minutes"
+description = "Reveals the boss phases and pointer moves; opens locked Grid links."
+heat_cost = 10
+reveals_boss_phases = true
+opens_locked_links = true
+
+[sub_resource type="Resource" id="ex_breach"]
+script = ExtResource("e3")
+exploit_type = 2
+display_name = "Breach: Emergency Override"
+description = "The boss starts with one fewer pointer."
+heat_cost = 10
+removes_boss_pointers = 1
+
+[sub_resource type="Resource" id="fx_virus"]
+script = ExtResource("e4")
+type = 4
+target = 2
+amount = 2
+status = 1
+slice_pick = 1
+
+[sub_resource type="Resource" id="te_virus"]
+script = ExtResource("e5")
+trigger = 1
+effects = Array[ExtResource("e4")]([SubResource("fx_virus")])
+
+[sub_resource type="Resource" id="ex_virus"]
+script = ExtResource("e3")
+exploit_type = 3
+display_name = "Virus: Open Data Leak"
+description = "The boss starts with CORRUPTED slices."
+heat_cost = 10
+breach_effects = Array[ExtResource("e5")]([SubResource("te_virus")])
+
+[sub_resource type="Resource" id="b_water_rights_1"]
+script = ExtResource("e6")
+id = &"water_rights_1"
+title = "Water Rights I"
+speaker = 3
+text = "The council minutes show the vote: water sold to Halcyon for one credit, with a clause that lets it set the price by postcode."
+
+[sub_resource type="Resource" id="b_water_rights_2"]
+script = ExtResource("e6")
+id = &"water_rights_2"
+title = "Water Rights II"
+speaker = 2
+text = "The emergency override can shut off a street's water in four seconds. The log shows it used forty times this year, always on streets behind on rent."
+
+[sub_resource type="Resource" id="b_water_rights_3"]
+script = ExtResource("e6")
+id = &"water_rights_3"
+title = "Water Rights III"
+speaker = 3
+text = "The open data portal leaks a model: raise prices when it is hottest, because demand cannot fall. The model's name is Thirst."
+
+[sub_resource type="Resource" id="b_water_rights_bonus_1"]
+script = ExtResource("e6")
+id = &"water_rights_bonus_1"
+title = "Water Rights: The Pumps"
+speaker = 0
+text = "Pump station nine is manual. Someone could open it by hand. Someone would need to know where it is."
+
+[sub_resource type="Resource" id="b_water_rights_bonus_2"]
+script = ExtResource("e6")
+id = &"water_rights_bonus_2"
+title = "Water Rights: Meridian"
+speaker = 2
+text = "Meridian Freight Systems hauls bottled water into the districts Halcyon cuts off. They split the margin."
+
+[sub_resource type="Resource" id="b_water_rights_f"]
+script = ExtResource("e6")
+id = &"water_rights_f"
+title = "Water Rights: Finale"
+text = "The Civic Core goes dark and every valve in the city fails open. For one hot week, the water is free."
+
+[sub_resource type="Resource" id="sp_water_rights"]
+script = ExtResource("e7")
+id = &"sp_water_rights"
+title = "Water Rights"
+premise = "Halcyon owns the city's water now. The price follows the weather, and the weather follows the price."
+beats = Array[ExtResource("e6")]([SubResource("b_water_rights_1"), SubResource("b_water_rights_2"), SubResource("b_water_rights_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_water_rights_bonus_1"), SubResource("b_water_rights_bonus_2")])
+finale = SubResource("b_water_rights_f")
+
+[sub_resource type="Resource" id="b_predictive_policing_1"]
+script = ExtResource("e6")
+id = &"predictive_policing_1"
+title = "Predictive Policing I"
+speaker = 3
+text = "The patrol model's training data is its own arrest records. It has been learning from itself for six years."
+
+[sub_resource type="Resource" id="b_predictive_policing_2"]
+script = ExtResource("e6")
+id = &"predictive_policing_2"
+title = "Predictive Policing II"
+speaker = 2
+text = "Patrol units earn Halcyon a fee per stop. The model is tuned for stops, not safety. The memo calls it throughput."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_predictive_policing_3"]
+script = ExtResource("e6")
+id = &"predictive_policing_3"
+title = "Predictive Policing III"
+speaker = 0
+text = "The model has a list of names it calls pre-offenders. Three of them are Cell operatives. One of them is nine years old."
+
+[sub_resource type="Resource" id="b_predictive_policing_bonus_1"]
+script = ExtResource("e6")
+id = &"predictive_policing_bonus_1"
+title = "Predictive Policing: The Heatmap"
+speaker = 3
+text = "Red squares on a city map. Every red square is a poor block. Every poor block is red."
+
+[sub_resource type="Resource" id="b_predictive_policing_bonus_2"]
+script = ExtResource("e6")
+id = &"predictive_policing_bonus_2"
+title = "Predictive Policing: Quotas"
+speaker = 2
+text = "Stop quotas rise every quarter. Nobody at Halcyon has ever asked what the stops are for."
+
+[sub_resource type="Resource" id="b_predictive_policing_f"]
+script = ExtResource("e6")
+id = &"predictive_policing_f"
+title = "Predictive Policing: Finale"
+text = "The Civic Core falls and the patrol model forgets every name on its list. For a month, nobody is a pre-offender."
+
+[sub_resource type="Resource" id="sp_predictive_policing"]
+script = ExtResource("e7")
+id = &"sp_predictive_policing"
+title = "Predictive Policing"
+premise = "Halcyon's patrol model sends police where it expects crime. It expects crime where it sends police."
+beats = Array[ExtResource("e6")]([SubResource("b_predictive_policing_1"), SubResource("b_predictive_policing_2"), SubResource("b_predictive_policing_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_predictive_policing_bonus_1"), SubResource("b_predictive_policing_bonus_2")])
+finale = SubResource("b_predictive_policing_f")
+
+[sub_resource type="Resource" id="b_transit_blackout_1"]
+script = ExtResource("e6")
+id = &"transit_blackout_1"
+title = "Transit Blackout I"
+speaker = 3
+text = "The signal control logs show maintenance windows that match every protest in the last year, to the minute."
+
+[sub_resource type="Resource" id="b_transit_blackout_2"]
+script = ExtResource("e6")
+id = &"transit_blackout_2"
+title = "Transit Blackout II"
+speaker = 2
+text = "The emergency override has a mode called CONTAIN. It stops every train into a district and opens the doors on none."
+
+[sub_resource type="Resource" id="b_transit_blackout_3"]
+script = ExtResource("e6")
+id = &"transit_blackout_3"
+title = "Transit Blackout III"
+speaker = 3
+text = "The open data portal publishes the protest schedule to Halcyon before the protesters post it. Someone inside is selling it."
+
+[sub_resource type="Resource" id="b_transit_blackout_bonus_1"]
+script = ExtResource("e6")
+id = &"transit_blackout_bonus_1"
+title = "Transit Blackout: The Driver"
+speaker = 1
+text = "A tram driver kept her doors open during a CONTAIN. She was fired the next day. She would like a word with the Cell."
+
+[sub_resource type="Resource" id="b_transit_blackout_bonus_2"]
+script = ExtResource("e6")
+id = &"transit_blackout_bonus_2"
+title = "Transit Blackout: The Schedule"
+speaker = 0
+text = "Next week's maintenance windows are already set. They match a march nobody has announced yet."
+
+[sub_resource type="Resource" id="b_transit_blackout_f"]
+script = ExtResource("e6")
+id = &"transit_blackout_f"
+title = "Transit Blackout: Finale"
+text = "The Civic Core crashes and every tram in the city runs its whole route, doors open, lights on. Nobody pays."
+
+[sub_resource type="Resource" id="sp_transit_blackout"]
+script = ExtResource("e7")
+id = &"sp_transit_blackout"
+title = "Transit Blackout"
+premise = "Halcyon cuts transit to districts that protest. The official reason is maintenance."
+beats = Array[ExtResource("e6")]([SubResource("b_transit_blackout_1"), SubResource("b_transit_blackout_2"), SubResource("b_transit_blackout_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_transit_blackout_bonus_1"), SubResource("b_transit_blackout_bonus_2")])
+finale = SubResource("b_transit_blackout_f")
+
+[sub_resource type="Resource" id="b_the_census_1"]
+script = ExtResource("e6")
+id = &"the_census_1"
+title = "The Census I"
+speaker = 3
+text = "The census data was copied the night it was collected. The copy went to an account with no name and no owner."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_census_2"]
+script = ExtResource("e6")
+id = &"the_census_2"
+title = "The Census II"
+speaker = 3
+text = "The same account paid for Meridian freight that never shipped and Solace stock the day it crashed. It pays before it orders."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_census_3"]
+script = ExtResource("e6")
+id = &"the_census_3"
+title = "The Census III"
+speaker = 3
+text = "The account read the census for one name. It was looking for the leader of a cell that does not officially exist."
+dispatch_clue = true
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_the_census_bonus_1"]
+script = ExtResource("e6")
+id = &"the_census_bonus_1"
+title = "The Census: Timestamps"
+speaker = 3
+text = "The copy is timestamped a day before the census began. The clocks were not wrong."
+
+[sub_resource type="Resource" id="b_the_census_bonus_2"]
+script = ExtResource("e6")
+id = &"the_census_bonus_2"
+title = "The Census: The Voice"
+speaker = 3
+text = "A recording from the census call centre. A caller asks for the Cell's leader by a name only DISPATCH uses."
+
+[sub_resource type="Resource" id="b_the_census_f"]
+script = ExtResource("e6")
+id = &"the_census_f"
+title = "The Census: Finale"
+text = "The Civic Core dies. The unnamed account withdraws everything one second later, and sends the Cell a thank-you note it did not sign."
+
+[sub_resource type="Resource" id="sp_the_census"]
+script = ExtResource("e7")
+id = &"sp_the_census"
+title = "The Census"
+premise = "Halcyon ran the census. Someone else read it first."
+beats = Array[ExtResource("e6")]([SubResource("b_the_census_1"), SubResource("b_the_census_2"), SubResource("b_the_census_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_the_census_bonus_1"), SubResource("b_the_census_bonus_2")])
+finale = SubResource("b_the_census_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_orbital_uplink_1"]
+script = ExtResource("e6")
+id = &"orbital_uplink_1"
+title = "Orbital Uplink I"
+speaker = 2
+text = "The Civic Core's uptime is guaranteed by a contract with Orbital Commons. If the link drops, the city drops."
+
+[sub_resource type="Resource" id="b_orbital_uplink_2"]
+script = ExtResource("e6")
+id = &"orbital_uplink_2"
+title = "Orbital Uplink II"
+speaker = 3
+text = "Orbital Commons bills Halcyon per resident per second. Halcyon bills residents per second, plus margin."
+
+[sub_resource type="Resource" id="b_orbital_uplink_3"]
+script = ExtResource("e6")
+id = &"orbital_uplink_3"
+title = "Orbital Uplink III"
+speaker = 2
+text = "The council backchannel has a memo: Orbital Commons wants the city itself as collateral."
+
+[sub_resource type="Resource" id="b_orbital_uplink_bonus_1"]
+script = ExtResource("e6")
+id = &"orbital_uplink_bonus_1"
+title = "Orbital Uplink: The Dish"
+speaker = 0
+text = "The uplink dish on the operations centre roof is the size of a house and guarded like a bank."
+
+[sub_resource type="Resource" id="b_orbital_uplink_bonus_2"]
+script = ExtResource("e6")
+id = &"orbital_uplink_bonus_2"
+title = "Orbital Uplink: Commons"
+speaker = 2
+text = "Orbital Commons calls its satellites public infrastructure. It has never let the public near them."
+
+[sub_resource type="Resource" id="b_orbital_uplink_f"]
+script = ExtResource("e6")
+id = &"orbital_uplink_f"
+title = "Orbital Uplink: Finale"
+text = "The Civic Core falls. Somewhere above the city, an Orbital Commons satellite notes the lost customer and adjusts its orbit toward the Cell."
+
+[sub_resource type="Resource" id="sp_orbital_uplink"]
+script = ExtResource("e7")
+id = &"sp_orbital_uplink"
+title = "Orbital Uplink"
+premise = "Halcyon's city brain runs on a satellite link it does not own."
+beats = Array[ExtResource("e6")]([SubResource("b_orbital_uplink_1"), SubResource("b_orbital_uplink_2"), SubResource("b_orbital_uplink_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_orbital_uplink_bonus_1"), SubResource("b_orbital_uplink_bonus_2")])
+finale = SubResource("b_orbital_uplink_f")
+foreshadows = &"orbital"
+
+[sub_resource type="Resource" id="b_smart_meters_1"]
+script = ExtResource("e6")
+id = &"smart_meters_1"
+title = "Smart Meters I"
+speaker = 3
+text = "The meters measure power and water. The firmware also measures voices, footsteps and how many people sleep in a room."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_smart_meters_2"]
+script = ExtResource("e6")
+id = &"smart_meters_2"
+title = "Smart Meters II"
+speaker = 2
+text = "Halcyon raises the bill for homes with more people than the lease allows. The meters count them."
+
+[sub_resource type="Resource" id="b_smart_meters_3"]
+script = ExtResource("e6")
+id = &"smart_meters_3"
+title = "Smart Meters III"
+speaker = 3
+text = "The citizen profile archive has a file on every home. The Cell's safehouse file is thicker than most."
+
+[sub_resource type="Resource" id="b_smart_meters_bonus_1"]
+script = ExtResource("e6")
+id = &"smart_meters_bonus_1"
+title = "Smart Meters: The Patch"
+speaker = 1
+text = "A technician has a firmware patch that deafens the meters. He needs the Cell to push it city-wide."
+
+[sub_resource type="Resource" id="b_smart_meters_bonus_2"]
+script = ExtResource("e6")
+id = &"smart_meters_bonus_2"
+title = "Smart Meters: Overcrowding"
+speaker = 2
+text = "The overcrowding surcharge funds the patrol units that evict the overcrowded."
+
+[sub_resource type="Resource" id="b_smart_meters_f"]
+script = ExtResource("e6")
+id = &"smart_meters_f"
+title = "Smart Meters: Finale"
+text = "The Civic Core falls and the meters go deaf all at once. The city is quiet in a way it has not been for years."
+
+[sub_resource type="Resource" id="sp_smart_meters"]
+script = ExtResource("e7")
+id = &"sp_smart_meters"
+title = "Smart Meters"
+premise = "Every home in the city has a Halcyon meter. Every meter has a microphone."
+beats = Array[ExtResource("e6")]([SubResource("b_smart_meters_1"), SubResource("b_smart_meters_2"), SubResource("b_smart_meters_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_smart_meters_bonus_1"), SubResource("b_smart_meters_bonus_2")])
+finale = SubResource("b_smart_meters_f")
+
+[resource]
+script = ExtResource("main_script")
+id = &"halcyon"
+display_name = "Halcyon Civic"
+description = "The contractor that runs the city: water, power, transit and the police, billed per resident."
+city_grid = SubResource("grid")
+enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])
+elites = Array[ExtResource("e8")]([ExtResource("e15"), ExtResource("e16")])
+final_boss = ExtResource("e17")
+exploits = Array[ExtResource("e3")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
+story_paths = Array[ExtResource("e7")]([SubResource("sp_water_rights"), SubResource("sp_predictive_policing"), SubResource("sp_transit_blackout"), SubResource("sp_the_census"), SubResource("sp_orbital_uplink"), SubResource("sp_smart_meters")])
+raids = Array[ExtResource("e18")]([ExtResource("e19"), ExtResource("e20"), ExtResource("e21"), ExtResource("e22"), ExtResource("e23"), ExtResource("e24"), ExtResource("e25"), ExtResource("e26")])
+events = Array[ExtResource("e27")]([ExtResource("e28"), ExtResource("e29"), ExtResource("e30"), ExtResource("e31"), ExtResource("e32"), ExtResource("e33"), ExtResource("e34"), ExtResource("e35"), ExtResource("e36"), ExtResource("e37"), ExtResource("e38"), ExtResource("e39"), ExtResource("e40"), ExtResource("e41"), ExtResource("e42"), ExtResource("e43"), ExtResource("e44"), ExtResource("e45"), ExtResource("e46"), ExtResource("e47")])
