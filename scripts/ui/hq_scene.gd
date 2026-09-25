@@ -309,10 +309,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func show_start() -> void:
 	var cfg := RunManager.config()
 	var box := VBoxContainer.new()
-	box.add_child(GraffitiTag.new("REBEL_CELL"))
-	box.add_child(_label("[HQ] the deck is warm. Jack a campaign in."))
+	box.add_theme_constant_override("separation", 12)
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 24)
+	head.add_child(GraffitiTag.new("REBEL_CELL"))
+	head.add_child(GraffitiScrawl.new("TRUST\nNO ONE", -7.0, 26))
+	box.add_child(head)
+	var setup := TerminalWindow.new("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.")
+	box.add_child(setup)
 	var row := HFlowContainer.new()
-	box.add_child(row)
+	setup.body.add_child(row)
 	row.add_child(_label("Campaign seed:"))
 	var seed_spin := SpinBox.new()
 	seed_spin.min_value = 0
@@ -365,11 +371,16 @@ func show_start() -> void:
 	for cls in classes:
 		class_pick.add_item(cls.display_name)
 	row.add_child(class_pick)
-	row.add_child(_button("New campaign", func() -> void:
+	var start_btn := _button("New campaign", func() -> void:
 		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
 			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
-			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)))
-	box.add_child(ice_text)
+			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION))
+	start_btn.theme_type_variation = &"HotButton"
+	start_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	setup.body.add_child(ice_text)
+	setup.body.add_child(start_btn)
+	var codes := TerminalWindow.new("DAILY RUN // SHARE CODES", Palette.CELL_ACID)
+	box.add_child(codes)
 	var code_row := HFlowContainer.new()
 	code_row.add_child(_button("Daily run", func() -> void:
 		var d := Time.get_date_dict_from_system()
@@ -386,21 +397,32 @@ func show_start() -> void:
 			UiFocus.focus_first(_panel))
 	code_row.add_child(code_edit)
 	code_row.add_child(_button("Start from code", func() -> void: start_from_code(code_edit.text)))
-	box.add_child(code_row)
+	codes.body.add_child(code_row)
+	var lower := HBoxContainer.new()
+	lower.add_theme_constant_override("separation", 14)
+	box.add_child(lower)
+	var menu := TerminalWindow.new("CYBERDECK")
+	menu.custom_minimum_size.x = 300
+	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	lower.add_child(menu)
+	var profile := TerminalWindow.new("PROFILE // RECORDS", Palette.CELL_PINK)
+	profile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lower.add_child(profile)
 	if RunManager.has_save():
-		box.add_child(_button("Resume saved campaign", resume))
+		menu.body.add_child(_button("Resume saved campaign", resume))
 	var p := RunManager.profile
-	box.add_child(_para("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s." % [
+	profile.body.add_child(_para("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, ProfileState.ice_text(p.best_ice)]))
-	box.add_child(_para(ice_records_text()))
+	profile.body.add_child(_para(ice_records_text()))
 	var unlock_names := PackedStringArray()
 	for uid in p.unlocks:
 		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
 		unlock_names.append(ud.display_name if ud != null else String(uid))
-	box.add_child(_para("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
-	box.add_child(_button("Options [Esc]", open_settings))
-	box.add_child(_button("Codex", show_codex))
-	box.add_child(_button("Back to title", RunManager.go_to_title))
+	profile.body.add_child(_para("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
+	menu.body.add_child(_button("Options [Esc]", open_settings))
+	menu.body.add_child(_button("Codex", show_codex))
+	menu.body.add_child(_button("Back to title", RunManager.go_to_title))
+	_as_menu(menu.body)
 	_set_panel(box, "start")
 
 

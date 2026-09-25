@@ -12,7 +12,7 @@ var no_button: Button
 
 func _init(question: String, yes_text: String = "Yes", no_text: String = "No") -> void:
 	custom_minimum_size = Vector2(420, 120)
-	var panel := ZinePanel.new("ARE YOU SURE?", -1.0)
+	var panel := ZinePanel.new("ARE YOU SURE?", 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
 	var box := VBoxContainer.new()
@@ -21,7 +21,7 @@ func _init(question: String, yes_text: String = "Yes", no_text: String = "No") -
 	l.text = question
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size = Vector2(380, 0)
-	l.add_theme_color_override("font_color", Palette.INK)
+	l.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	box.add_child(l)
 	var row := HBoxContainer.new()
 	box.add_child(row)

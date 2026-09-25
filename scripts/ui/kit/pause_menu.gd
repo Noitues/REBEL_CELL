@@ -22,7 +22,7 @@ const MENU_SIZE := Vector2(760, 520)
 
 func _init() -> void:
 	custom_minimum_size = MENU_SIZE
-	var panel := ZinePanel.new("PAUSED", 0.0)
+	var panel := ZinePanel.new("PAUSED", 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
 	var scroll := ScrollContainer.new()

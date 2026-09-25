@@ -40,7 +40,7 @@ var _label_counter: int = 0
 
 func _init() -> void:
 	custom_minimum_size = Vector2(520, 360)
-	var panel := ZinePanel.new("OPTIONS", 0.0)
+	var panel := ZinePanel.new("OPTIONS", 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
 	_paper_panel = panel
@@ -195,7 +195,7 @@ func _check(text: String, value: bool, setter: Callable) -> CheckButton:
 	var c := CheckButton.new()
 	c.text = text
 	c.button_pressed = value
-	c.add_theme_color_override("font_color", Palette.INK)
+	c.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	c.toggled.connect(func(on: bool) -> void: setter.call(on))
 	return c
 
@@ -217,7 +217,7 @@ func _labelled(text: String) -> Label:
 	_label_counter += 1
 	l.name = "_tmp_%d" % _label_counter
 	l.text = text
-	l.add_theme_color_override("font_color", Palette.INK)
+	l.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	return l
 
 

@@ -33,6 +33,20 @@ func _ready() -> void:
 		RunManager.netrun._open_shop()
 		_show_current()
 		return
+	if args.has("--demo-event") or args.has("--demo-dispatch") or args.has("--demo-loot"):
+		# Screenshot shortcuts for the Terminal event (street / DISPATCH voice) and loot.
+		RunManager.save_slot = "demo"
+		new_campaign(1)
+		start_run(1)
+		var run := RunManager.netrun.run
+		if args.has("--demo-loot"):
+			run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
+			run.phase = RunState.Phase.REWARD
+		else:
+			run.event_id = &"ev_dispatch_early_reply" if args.has("--demo-dispatch") else &"ev_leash_on_the_floor"
+			run.phase = RunState.Phase.EVENT
+		_show_current()
+		return
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
@@ -397,12 +411,12 @@ func _show_event() -> void:
 	var holder: Control
 	if dispatch:
 		var strip := PanelContainer.new()
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(Palette.DESK_DARK, 0.95)
-		style.border_color = Palette.CRT_AMBER
-		style.set_border_width_all(1)
-		style.set_content_margin_all(12)
+		var style := UiTheme.box(Color(0.02, 0.03, 0.07, 0.96), Palette.CRT_AMBER, 1, 16, 14)
+		style.border_width_left = 4
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 8
 		strip.add_theme_stylebox_override("panel", style)
+		strip.custom_minimum_size = Vector2(700, 220)
 		strip.add_child(body)
 		holder = strip
 	else:
@@ -411,7 +425,15 @@ func _show_event() -> void:
 		panel.content.add_child(body)
 		holder = panel
 	holder.name = "EventPanel"
-	box.add_child(holder)
+	var split := HBoxContainer.new()
+	split.add_theme_constant_override("separation", 22)
+	box.add_child(split)
+	split.add_child(holder)
+	holder.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var options := VBoxContainer.new()
+	options.add_theme_constant_override("separation", 14)
+	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	split.add_child(options)
 	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
 	var speaker := _label(who + ((" - " + TextDb.t(ev, "title")) if dispatch else ""))
 	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
@@ -434,8 +456,12 @@ func _show_event() -> void:
 		b.tooltip_text = err
 		var index := i
 		b.pressed.connect(func() -> void: choose_event(index))
-		box.add_child(b)
-	_set_panel(box)
+		b.theme_type_variation = &"NoteButton"
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		options.add_child(b)
+	options.add_child(GraffitiScrawl.new("PLAY IT\nSAFE??", -6.0, 24))
+	_set_panel(box, false)
 
 
 ## A Terminal choice's label with its costs from the data, replacing the hand-written

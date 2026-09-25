@@ -102,6 +102,24 @@ static func _buttons(t: Theme) -> void:
 	t.set_color("font_pressed_color", hv, Palette.INK)
 	t.set_font("font", hv, Palette.display())
 	t.set_font_size("font_size", hv, 22)
+	# "NoteButton": a choice on a taped paper note (Terminal event options).
+	var nv := "NoteButton"
+	t.set_type_variation(nv, "Button")
+	var note_n := box(Palette.NOTE_PAPER, Color(Palette.INK, 0.4), 1, 16, 12)
+	note_n.shadow_color = Palette.SHADOW
+	note_n.shadow_size = 6
+	note_n.shadow_offset = Vector2(3, 4)
+	var note_h := box(Palette.NOTE_PINK, Palette.CELL_PINK, 2, 16, 12)
+	note_h.shadow_color = Color(Palette.CELL_PINK, 0.4)
+	note_h.shadow_size = 10
+	var note_d := box(Color(Palette.NOTE_PAPER, 0.45), Color(Palette.INK, 0.3), 1, 16, 12)
+	t.set_stylebox("normal", nv, note_n)
+	t.set_stylebox("hover", nv, note_h)
+	t.set_stylebox("pressed", nv, note_h)
+	t.set_stylebox("disabled", nv, note_d)
+	for key in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
+		t.set_color(key, nv, Palette.INK)
+	t.set_color("font_disabled_color", nv, Color(Palette.INK, 0.45))
 	# Toggles sit flat in lists (no box of their own).
 	var flat := box(Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 4, 2)
 	for kind in ["CheckButton", "CheckBox"]:
