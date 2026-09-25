@@ -18,3 +18,4 @@ Movie Maker (`godot --path . --resolution 1280x720 --write-movie <file>.png --fi
 | 2026-09-24 | 09_m9 | Halcyon Civic's 32-Site Grid in mint (M9). |
 | 2026-09-24 | 10_m10 | Orbital Commons' 32-Site Grid in gold (M10). |
 | 2026-09-24 | 11_m11 | REBEL_CELL's Grid (template) in red: the Cell's own history as the map (M11). |
+| 2026-09-24 | 12_h9 | HQ with every Profile unlock listed: button rows now wrap inside the 1280 screen (horizontal pass 9). |

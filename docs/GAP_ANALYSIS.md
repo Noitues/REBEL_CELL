@@ -23,6 +23,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H6 | 2026-09-24 | 6 (reward, Modem, corporation picker and lower Grid rows unreachable by D-pad; dead reward hotkeys; SEND IT left; assist label numbers) | Fixed in horizontal batch H6 |
 | H7 | 2026-09-24 | 3 + tests (title Options sections, reference notes unscrollable by pad, netrun combat linked too early) | Fixed in horizontal batch H7 |
 | H8 | 2026-09-24 | 1 + docs/test (reference notes still not pad-scrollable; H7 claim corrected) | Fixed in horizontal batch H8 |
+| H9 | 2026-09-24 | 1 + doc (HQ panels ran off the 1280 screen once many unlocks and classes existed; stale test count) | Fixed in horizontal batch H9 |
 
 ### Pass 3 (vertical) — clean
 
@@ -46,7 +47,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 426 passing; schema smoke test and content validation green.
+Tests: 463 passing at H9; schema smoke test and content validation green.
 
 ---
 

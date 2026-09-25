@@ -30,6 +30,13 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 9 fix (GAP_ANALYSIS H9)
+- **HQ panels fit the 1280 screen**: button rows (start panel, actions, boosts, unlocks,
+  roster, Site rows, raid rows, codex tabs) are HFlowContainers that wrap; the HQ scroll
+  area never scrolls sideways; long profile/unlock/record lines word-wrap. A test opens the
+  start panel, HQ, codex and Grid with everything unlocked and all eight classes recruited
+  and checks every panel is at most 1280 px wide.
+
 ### 2026-09-24 — Horizontal pass 7 fixes (GAP_ANALYSIS H7)
 - **Settings sections relink**: `show_section` relinks the panel after swapping controls,
   `link_layout` clears old neighbour paths first, and sliders count as linkable, so every

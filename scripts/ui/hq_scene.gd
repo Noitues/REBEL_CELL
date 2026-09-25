@@ -284,7 +284,7 @@ func show_start() -> void:
 	var box := VBoxContainer.new()
 	box.add_child(GraffitiTag.new("REBEL_CELL"))
 	box.add_child(_label("[HQ] the deck is warm. Jack a campaign in."))
-	var row := HBoxContainer.new()
+	var row := HFlowContainer.new()
 	box.add_child(row)
 	row.add_child(_label("Campaign seed:"))
 	var seed_spin := SpinBox.new()
@@ -343,7 +343,7 @@ func show_start() -> void:
 			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
 			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)))
 	box.add_child(ice_text)
-	var code_row := HBoxContainer.new()
+	var code_row := HFlowContainer.new()
 	code_row.add_child(_button("Daily run", func() -> void:
 		var d := Time.get_date_dict_from_system()
 		new_campaign(CampaignCode.daily_seed(d["year"], d["month"], d["day"]))))
@@ -363,14 +363,14 @@ func show_start() -> void:
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s." % [
+	box.add_child(_para("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, ProfileState.ice_text(p.best_ice)]))
-	box.add_child(_label(ice_records_text()))
+	box.add_child(_para(ice_records_text()))
 	var unlock_names := PackedStringArray()
 	for uid in p.unlocks:
 		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
 		unlock_names.append(ud.display_name if ud != null else String(uid))
-	box.add_child(_label("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
+	box.add_child(_para("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
 	box.add_child(_button("Options [Esc]", open_settings))
 	box.add_child(_button("Codex", show_codex))
 	box.add_child(_button("Back to title", RunManager.go_to_title))
@@ -411,7 +411,7 @@ func show_hq() -> void:
 	jack.pressed.connect(show_grid)
 	header.add_child(jack)
 	box.add_child(header)
-	var actions := HBoxContainer.new()
+	var actions := HFlowContainer.new()
 	box.add_child(actions)
 	actions.add_child(_button("City Grid", show_grid))
 	actions.add_child(_button("Codex", show_codex))
@@ -432,7 +432,7 @@ func show_hq() -> void:
 		mod_text += " %s %+.0f" % [RC.RuleModifierType.keys()[m.type], m.value]
 	box.add_child(_label("Active Heat modifiers:%s | ICE %d" % [mod_text if mod_text != "" else " none", c.ice_level]))
 	# Boosts for the next run (GDD 11.4).
-	var boosts := HBoxContainer.new()
+	var boosts := HFlowContainer.new()
 	boosts.add_child(_label("Next-run boosts:"))
 	for b in cfg.netrun_boosts:
 		if b == null:
@@ -446,7 +446,7 @@ func show_hq() -> void:
 		boosts.add_child(_label("queued: %s" % ", ".join(c.pending_boosts)))
 	box.add_child(boosts)
 	# Profile unlocks (GDD 3.4).
-	var unlocks := HBoxContainer.new()
+	var unlocks := HFlowContainer.new()
 	unlocks.add_child(_label("Profile unlocks:"))
 	var any_unlock := false
 	for id in lookup.ids_of_class(&"ProfileUnlockData"):
@@ -467,7 +467,7 @@ func show_hq() -> void:
 	box.add_child(unlocks)
 	box.add_child(_label("Roster:"))
 	for op in c.roster:
-		var row := HBoxContainer.new()
+		var row := HFlowContainer.new()
 		var where := CampaignRules.stationed_site(c, op.id)
 		var polaroid := Polaroid.new("%s R%d" % [op.name, op.rank], "[%s PORTRAIT]" % op.class_id.to_upper(), -2.0 if c.roster.find(op) % 2 == 0 else 2.0)
 		polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
@@ -596,13 +596,13 @@ func select_site(site_id: StringName) -> void:
 
 
 ## One Site's status line and the actions it allows now (launch, claim, repair, upgrade).
-func _site_row(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState], choices: Array[NetworkNodeData]) -> HBoxContainer:
+func _site_row(site: SiteData, launchable: Array[SiteData], living: Array[OperativeState], choices: Array[NetworkNodeData]) -> HFlowContainer:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
 	var s := c.grid.site(site.id)
-	var row := HBoxContainer.new()
+	var row := HFlowContainer.new()
 	var text := "T%d %s [%s]" % [site.tier, site.display_name, STATUS_NAMES.get(int(s["status"]), "?")]
 	if c.grid.is_claimed(site.id):
 		text += " %s %d/%d%s%s assets:%s" % [c.grid.node_type_of(site.id), s["integrity"], s["max_integrity"],
@@ -672,7 +672,7 @@ func show_raid() -> void:
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
 			box.add_child(_label("  " + String(e["text"])))
 	for site_id in c.grid.claimed_ids():
-		var row := HBoxContainer.new()
+		var row := HFlowContainer.new()
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
 		row.add_child(_label("%s (%s) %s -> %s [%s] assets: %s" % [site_id, c.grid.node_type_of(site_id), n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper(), ", ".join(c.grid.assets_on(site_id))]))
 		var assets := c.grid.assets_on(site_id)
@@ -705,7 +705,7 @@ func show_codex() -> void:
 	var box := VBoxContainer.new()
 	box.add_child(GraffitiTag.new("CODEX"))
 	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
-	var tabs := HBoxContainer.new()
+	var tabs := HFlowContainer.new()
 	box.add_child(tabs)
 	var body := ZineNote.new("", Vector2(900, 380)).make_reference()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -782,8 +782,8 @@ func show_end() -> void:
 	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
 		box.add_child(_label("  [%s] %s" % [b.title, b.text]))
 	var p := RunManager.profile
-	box.add_child(_label("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), RunManager.corporation.display_name, RunManager.ice_cap(c.corporation_id)]))
-	box.add_child(_label(ice_records_text()))
+	box.add_child(_para("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), RunManager.corporation.display_name, RunManager.ice_cap(c.corporation_id)]))
+	box.add_child(_para(ice_records_text()))
 	box.add_child(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()))
 	box.add_child(_button("Back to title", RunManager.go_to_title))
 	_set_panel(box, "end")
@@ -839,6 +839,8 @@ func _build_ui() -> void:
 	root.add_child(_status)
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true  # pad focus scrolls long lists (Grid Sites)
+	# Never sideways: rows wrap (HFlowContainer) to the 1280-wide screen instead.
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
@@ -850,6 +852,14 @@ func _build_ui() -> void:
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 140)
 	root.add_child(_log)
+
+
+## A long line of prose that wraps to the panel width (profile, unlocks, records).
+func _para(text: String) -> Label:
+	var l := _label(text)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return l
 
 
 func _label(text: String) -> Label:
