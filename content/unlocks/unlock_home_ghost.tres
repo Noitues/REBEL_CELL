@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/nodes/home_ghost.tres" id="e1"]
+
+; Home-server unlock (GDD 3.4; M12). UnlockKind 3 = HOME_SERVER.
+
+[resource]
+script = ExtResource("main_script")
+id = &"unlock_home_ghost"
+kind = 3
+display_name = "Home server: Ghost"
+description = "Start campaigns on the Ghost home server (50 integrity, 2 slots and a built-in ICE Lock that holds the first threat to reach home)."
+schematic_cost = 60
+unlocks = ExtResource("e1")

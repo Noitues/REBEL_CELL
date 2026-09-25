@@ -34,11 +34,27 @@ var show_fps: bool = false
 var keybinds: Dictionary = {}
 ## The guided first netrun has been completed or skipped.
 var tutorial_done: bool = false
+## Assist mode (GAP_ANALYSIS P2 13): new campaigns get config.assist_free_nudges extra free
+## nudges a turn and config.assist_hp_multiplier operative HP; they set no ICE records and
+## earn no campaign achievements.
+var assist_mode: bool = false
+## Controller defaults (GAP_ANALYSIS P2 11), added to every action at startup next to the
+## keyboard keys (Xbox layout; Godot maps other pads onto it). ui_* navigation keeps
+## Godot's own pad bindings.
+const CONTROLLER_BINDS := {
+	&"nudge_left": JOY_BUTTON_LEFT_SHOULDER, &"nudge_right": JOY_BUTTON_RIGHT_SHOULDER,
+	&"cycle_target": JOY_BUTTON_Y, &"end_turn": JOY_BUTTON_X, &"rewind": JOY_BUTTON_BACK,
+	&"inspect": JOY_BUTTON_LEFT_STICK, &"respin": JOY_BUTTON_RIGHT_STICK, &"open_settings": JOY_BUTTON_START,
+	&"toggle_ring": JOY_BUTTON_DPAD_UP, &"toggle_direction": JOY_BUTTON_DPAD_DOWN,
+	&"cycle_slot": JOY_BUTTON_DPAD_LEFT, &"toggle_card_target": JOY_BUTTON_DPAD_RIGHT,
+	&"toggle_nudge_wheel": JOY_BUTTON_B,
+}
 
 
 func _ready() -> void:
 	load_settings()
 	apply_keybinds()
+	apply_controller_bindings()
 	apply_display()
 
 
@@ -147,6 +163,28 @@ func key_for(action: StringName) -> int:
 	return 0
 
 
+## Adds CONTROLLER_BINDS to the input map (once per action; keyboard binds untouched).
+func apply_controller_bindings() -> void:
+	for action in CONTROLLER_BINDS:
+		if not InputMap.has_action(action):
+			continue
+		var has_pad := false
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventJoypadButton and ev.button_index == CONTROLLER_BINDS[action]:
+				has_pad = true
+		if not has_pad:
+			var pad := InputEventJoypadButton.new()
+			pad.button_index = CONTROLLER_BINDS[action]
+			pad.device = -1
+			InputMap.action_add_event(action, pad)
+
+
+func set_assist_mode(value: bool) -> void:
+	assist_mode = value
+	save_settings()
+	changed.emit()
+
+
 func apply_keybinds() -> void:
 	for action in keybinds:
 		_apply_bind(StringName(action), int(keybinds[action]))
@@ -188,7 +226,7 @@ func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
 		"subtitles": subtitles, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
-		"show_fps": show_fps, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done}
+		"show_fps": show_fps, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -210,6 +248,7 @@ func from_dict(d: Dictionary) -> void:
 	for k in d.get("keybinds", {}):
 		keybinds[String(k)] = int(d["keybinds"][k])
 	tutorial_done = bool(d.get("tutorial_done", false))
+	assist_mode = bool(d.get("assist_mode", false))
 
 
 func save_settings() -> Error:

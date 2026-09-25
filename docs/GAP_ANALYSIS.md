@@ -98,11 +98,11 @@ P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = po
    voice sets, music context, corporation colour.
 9. ~~**REBEL_CELL**: generator from the profile, own ICE ladder, DISPATCH reveal, finale,
    "final final".~~ Done in M11.
-10. **More home-server variants** and skins.
+10. ~~**More home-server variants**~~ (done in M12) and skins (deferred to art, M13).
 
 ### P2
-11. Controller support. 12. Daily seed / challenge runs and replay sharing. 13. Assist
-options (extra rewind, preview-only). 14. Art, audio, voice and translation integration
+11. ~~Controller support.~~ 12. ~~Daily seed / challenge runs and replay sharing.~~
+13. ~~Assist options~~ (done in M12: extra free nudge and HP; previews are always on). 14. Art, audio, voice and translation integration
 as assets arrive.
 
 ---

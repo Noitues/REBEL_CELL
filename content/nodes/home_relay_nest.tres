@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="HomeServerVariantData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/home_server_variant_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="e1"]
+
+; Relay Nest home server (M12, decision 2026-09-24): 50 integrity, 5 asset slots in total.
+
+[sub_resource type="Resource" id="core"]
+script = ExtResource("e1")
+id = &"home_relay_nest_core"
+node_type = 0
+display_name = "Home Server"
+description = "Lose the campaign if it reaches 0."
+install_cost = 0
+integrity = 35
+asset_slots = 3
+
+[sub_resource type="Resource" id="node0"]
+script = ExtResource("e1")
+id = &"nest_relay"
+node_type = 1
+display_name = "Nest Relay"
+description = "Part of the Relay Nest home server."
+install_cost = 0
+integrity = 15
+asset_slots = 2
+
+[resource]
+script = ExtResource("main_script")
+id = &"home_relay_nest"
+display_name = "Relay Nest home server"
+description = "50 integrity spread thin, 5 asset slots: room for a whole armory."
+core = SubResource("core")
+internal_nodes = Array[ExtResource("e1")]([SubResource("node0")])
+internal_links = Array[Vector2i]([Vector2i(0, 1)])

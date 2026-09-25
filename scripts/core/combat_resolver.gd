@@ -36,6 +36,7 @@ func _init(p_config: CampaignConfigData, p_lookup: ContentLookup) -> void:
 ##   every non-satellite enemy), "boss_strength_pct" (+N% HP and output on bosses and
 ##   mini-bosses), "boss_extra_pointer" (+N pointers on the final boss),
 ##   "no_first_turn_free_nudge" (bool),
+##   "extra_free_nudges" (int, assist mode),
 ##   Exploit effects: "remove_boss_pointers", "boss_corrupt_slices", "reveal_phases".
 ## Call begin_combat() next to run the first START_TURN.
 func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: RandomNumberGenerator, ring: InnerRingData = null, heat_majors_crossed: int = 0, overrides: Dictionary = {}) -> CombatState:
@@ -91,6 +92,7 @@ func create_combat(class_data: ClassData, enemy_datas: Array[EnemyData], rng: Ra
 		s.flags["reveal_phases"] = 1
 	if bool(overrides.get("no_first_turn_free_nudge", false)):
 		s.flags["no_first_turn_free_nudge"] = 1
+	s.flags["extra_free_nudges"] = int(overrides.get("extra_free_nudges", 0))
 	for i in enemy_datas.size():
 		var e := EffectInterpreter.make_combatant(enemy_datas[i], StringName("enemy_%d" % i), false)
 		_scale_enemy(e, enemy_scale, enemy_output_scale)
@@ -339,7 +341,7 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	if s.ram_bonus_next_turn > 0:
 		fx.gain_ram(s, s.ram_bonus_next_turn, events)
 		s.ram_bonus_next_turn = 0
-	s.free_nudges = cls.free_nudges_per_turn
+	s.free_nudges = cls.free_nudges_per_turn + int(s.flags.get("extra_free_nudges", 0))
 	if s.turn == 1 and int(s.flags.get("no_first_turn_free_nudge", 0)) > 0:
 		s.free_nudges = 0
 		events.append({"type": "no_free_nudge", "text": "ICE: no free nudge on the first turn."})

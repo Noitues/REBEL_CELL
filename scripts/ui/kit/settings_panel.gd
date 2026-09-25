@@ -16,6 +16,7 @@ const ACTION_LABELS := {&"nudge_left": "Nudge -1", &"nudge_right": "Nudge +1", &
 var reduce_check: CheckButton
 var flash_check: CheckButton
 var subtitles_check: CheckButton
+var assist_check: CheckButton
 var scale_slider: HSlider
 var master_slider: HSlider
 var music_slider: HSlider
@@ -56,6 +57,8 @@ func _init() -> void:
 	reduce_check = _check("Reduce effects (no scanlines, flicker, chromatic, distortion)", Settings.reduce_effects, Settings.set_reduce_effects)
 	flash_check = _check("Flash limiter (max 3 flashes per second)", Settings.flash_limiter, Settings.set_flash_limiter)
 	subtitles_check = _check("Subtitles with speaker names", Settings.subtitles, Settings.set_subtitles)
+	assist_check = _check("Assist mode for new campaigns (+1 free nudge a turn, +25% HP; no ICE records or achievements)", Settings.assist_mode, Settings.set_assist_mode)
+	assist_check.name = "AssistCheck"
 	scale_slider = _slider("Text scale", Settings.TEXT_SCALE_MIN, Settings.TEXT_SCALE_MAX, 0.1, Settings.text_scale, Settings.set_text_scale)
 	master_slider = _slider("Master volume", 0.0, 1.0, 0.05, Settings.master_volume, Settings.set_master_volume)
 	music_slider = _slider("Music volume", 0.0, 1.0, 0.05, Settings.music_volume, Settings.set_music_volume)
@@ -98,7 +101,7 @@ func show_section(name: String) -> void:
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, flash_check, subtitles_check, _labelled("Text scale"), scale_slider]:
+			for w in [reduce_check, flash_check, subtitles_check, assist_check, _labelled("Text scale"), scale_slider]:
 				_body.add_child(w)
 		"Display":
 			for w in [_labelled("Window mode"), mode_option, _labelled("Resolution (windowed)"), resolution_option, vsync_check, fps_check]:

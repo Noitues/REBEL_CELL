@@ -83,6 +83,18 @@ func _ready() -> void:
 
 # --- Public API (buttons and the integration tests) ---------------------------------------
 
+## Starts the campaign a share code describes (GAP_ANALYSIS P2 12). Locked choices fall
+## back like the start panel (RunManager.new_campaign). Returns false for a bad code.
+func start_from_code(code: String) -> bool:
+	var d := CampaignCode.decode(code)
+	if d.is_empty():
+		var refused: Array[Dictionary] = [{"type": "refused", "text": "That is not a campaign code."}]
+		_report(refused)
+		return false
+	new_campaign(int(d["seed"]), int(d["ice"]), d["home"], d["class"], d["corporation"])
+	return true
+
+
 func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS, corporation_id: StringName = RunManager.DEFAULT_CORPORATION) -> void:
 	RunManager.new_campaign(seed, corporation_id, ice, home_variant_id, class_id)
 	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
@@ -295,6 +307,17 @@ func show_start() -> void:
 			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
 			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)))
 	box.add_child(ice_text)
+	var code_row := HBoxContainer.new()
+	code_row.add_child(_button("Daily run", func() -> void:
+		var d := Time.get_date_dict_from_system()
+		new_campaign(CampaignCode.daily_seed(d["year"], d["month"], d["day"]))))
+	var code_edit := LineEdit.new()
+	code_edit.name = "CodeEdit"
+	code_edit.placeholder_text = "RC1-corporation-ice-seed-home-class"
+	code_edit.custom_minimum_size.x = 360
+	code_row.add_child(code_edit)
+	code_row.add_child(_button("Start from code", func() -> void: start_from_code(code_edit.text)))
+	box.add_child(code_row)
 	if RunManager.has_save():
 		box.add_child(_button("Resume saved campaign", resume))
 	var p := RunManager.profile
@@ -331,7 +354,8 @@ func show_hq() -> void:
 	var radio := ZineNote.new("PIRATE RADIO", Vector2(260, 70))
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, &"", &"", c.runs_started + c.runs_completed * 7)
 	radio.append(dj_line.text if dj_line != null else "lo-fi loop: HQ")
-	radio.append("vs %s | ICE %d" % [RunManager.corporation.display_name, c.ice_level])
+	radio.append("vs %s | ICE %d%s" % [RunManager.corporation.display_name, c.ice_level, " | ASSIST" if c.is_assisted() else ""])
+	radio.append("Code: %s" % CampaignCode.of(c, c.roster[0].class_id if not c.roster.is_empty() else RunManager.DEFAULT_CLASS))
 	radio.tooltip_text = dj_line.text if dj_line != null else ""
 	header.add_child(radio)
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)

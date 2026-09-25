@@ -221,6 +221,8 @@ DefenseAssetData.firewall_turret.description,Built in: 3 damage to threats on th
 DefenseAssetData.firewall_turret.display_name,Firewall turret
 DefenseAssetData.flak_array.description,"2 damage three times a step, range 1, targets the weakest threat."
 DefenseAssetData.flak_array.display_name,Flak Array
+DefenseAssetData.ghost_lock.description,Built in: holds a threat on the home server for 2 steps.
+DefenseAssetData.ghost_lock.display_name,Ghost Lock
 DefenseAssetData.honeypot_node.description,Pull 5: strongly attracts threat routing.
 DefenseAssetData.honeypot_node.display_name,Honeypot
 DefenseAssetData.ice_lock.description,Holds a threat for 2 steps.
@@ -387,6 +389,12 @@ FirmwareData.tracer.description,ATK or CRIT slice strips 1 resistance from the t
 FirmwareData.tracer.display_name,Tracer
 HomeServerVariantData.home_bunker.description,"70 integrity, 3 asset slots and a built-in turret: the home server fights back."
 HomeServerVariantData.home_bunker.display_name,Bunker home server
+HomeServerVariantData.home_fortress.description,"100 integrity but only 2 asset slots: it survives, it does not shoot."
+HomeServerVariantData.home_fortress.display_name,Fortress home server
+HomeServerVariantData.home_ghost.description,"50 integrity, 2 slots and a built-in ICE Lock that holds the first threat to reach home."
+HomeServerVariantData.home_ghost.display_name,Ghost home server
+HomeServerVariantData.home_relay_nest.description,"50 integrity spread thin, 5 asset slots: room for a whole armory."
+HomeServerVariantData.home_relay_nest.display_name,Relay Nest home server
 HomeServerVariantData.home_standard.description,The default home server layout.
 HomeServerVariantData.home_standard.display_name,Standard home server
 HubCoreData.auto_renew.description,Heals 10 each turn unless the Hub is breached.
@@ -445,10 +453,22 @@ NetworkNodeData.compiler_rack.description,Netruns launched next to it start with
 NetworkNodeData.compiler_rack.display_name,Compiler Rack
 NetworkNodeData.firewall_relay.description,A Relay with a built-in turret and two asset slots.
 NetworkNodeData.firewall_relay.display_name,Firewall Relay
+NetworkNodeData.fortress_wall.description,Part of the Fortress home server.
+NetworkNodeData.fortress_wall.display_name,Fortress Wall
+NetworkNodeData.ghost_lock_node.description,Part of the Ghost home server.
+NetworkNodeData.ghost_lock_node.display_name,Lock Chamber
 NetworkNodeData.home_bunker_core.description,A hardened core behind an internal firewall.
 NetworkNodeData.home_bunker_core.display_name,Bunker Core
+NetworkNodeData.home_fortress_core.description,Lose the campaign if it reaches 0.
+NetworkNodeData.home_fortress_core.display_name,Home Server
+NetworkNodeData.home_ghost_core.description,Lose the campaign if it reaches 0.
+NetworkNodeData.home_ghost_core.display_name,Home Server
+NetworkNodeData.home_relay_nest_core.description,Lose the campaign if it reaches 0.
+NetworkNodeData.home_relay_nest_core.display_name,Home Server
 NetworkNodeData.home_server.description,Lose the campaign if it reaches 0.
 NetworkNodeData.home_server.display_name,Home Server
+NetworkNodeData.nest_relay.description,Part of the Relay Nest home server.
+NetworkNodeData.nest_relay.display_name,Nest Relay
 NetworkNodeData.proxy_relay.description,A Relay that scrubs 1 Heat after every completed netrun.
 NetworkNodeData.proxy_relay.display_name,Proxy Relay
 NetworkNodeData.relay.description,Extends your reach: Sites beyond it can be claimed.
@@ -469,6 +489,12 @@ ProfileUnlockData.unlock_hivemind.description,Recruit Hivemind operatives in eve
 ProfileUnlockData.unlock_hivemind.display_name,Class: Hivemind
 ProfileUnlockData.unlock_home_bunker.description,"Start campaigns on the Bunker home server (70 integrity, 3 slots, built-in turret)."
 ProfileUnlockData.unlock_home_bunker.display_name,Home server: Bunker
+ProfileUnlockData.unlock_home_fortress.description,Start campaigns on the Fortress home server (100 integrity but only 2 asset slots).
+ProfileUnlockData.unlock_home_fortress.display_name,Home server: Fortress
+ProfileUnlockData.unlock_home_ghost.description,"Start campaigns on the Ghost home server (50 integrity, 2 slots and a built-in ICE Lock that holds the first threat to reach home)."
+ProfileUnlockData.unlock_home_ghost.display_name,Home server: Ghost
+ProfileUnlockData.unlock_home_relay_nest.description,"Start campaigns on the Relay Nest home server (50 integrity spread thin, 5 asset slots)."
+ProfileUnlockData.unlock_home_relay_nest.display_name,Home server: Relay Nest
 ProfileUnlockData.unlock_meridian.description,Target Meridian Freight Systems in new campaigns.
 ProfileUnlockData.unlock_meridian.display_name,Corporation: Meridian Freight Systems
 ProfileUnlockData.unlock_orbital.description,Target Orbital Commons in new campaigns.

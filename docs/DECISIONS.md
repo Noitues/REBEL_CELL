@@ -30,6 +30,28 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M12 Polish and reach (GAP_ANALYSIS P1 10, P2 11-13)
+- **Home-server variants 2 -> 5** (Profile unlocks, `tools/content_gen/gen_home.py`): Relay
+  Nest (50 integrity spread over two nodes, 5 asset slots; 50 Schematics), Ghost (50
+  integrity, 2 slots, built-in ICE Lock holding a threat 2 steps; 60), Fortress (100
+  integrity, 2 slots, no gun; 80).
+- **Skins deferred to art integration (M13)**: with placeholder art a skin would only be a
+  palette swap; UnlockKind.SKIN stays for when portraits and card art arrive.
+- **Controller support** (P2 11): `Settings.CONTROLLER_BINDS` adds a pad button to every
+  combat action at startup (shoulders nudge, Y target, X end turn, Back rewind, B nudge
+  wheel, D-pad toggles, stick clicks inspect/respin, Start options). Menus use Godot's pad
+  ui_* bindings. Rebinding a key keeps the pad button. No pad rebinding UI yet.
+- **Share codes and the daily run** (P2 12): `CampaignCode` encodes seed, corporation, ICE,
+  home and class as RC1-<corp>-<ice>-<seed>-<home>-<class>; the core is deterministic, so a
+  code replays the same campaign. HQ start panel: Daily run (seed YYYYMMDD from the system
+  date, read in the UI only) and Start from code; the HQ radio shows the running code.
+  Locked parts of a code fall back like the start panel.
+- **Assist mode** (P2 13): an Accessibility option; campaigns started with it get
+  `config.assist_free_nudges` (1) extra free nudges a turn and `config.assist_hp_multiplier`
+  (1.25) operative HP, saved on the campaign. Assisted wins count as wins but set no ICE
+  records and earn no campaign achievements; the HQ shows ASSIST. "Preview-only" from the
+  GDD list is already how the game plays (every action previews before it commits).
+
 ### 2026-09-24 — M11 REBEL_CELL (GAP_ANALYSIS P1 9, GDD 8.5)
 - **Built from the profile.** `ProfileState` now counts usage (stats `use_class:`,
   `use_daemon:`, `use_node:`, `use_asset:`) at the end of every run: the operative's class

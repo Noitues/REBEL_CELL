@@ -315,4 +315,17 @@ func _m11() -> int:
 	var pb := ProfileState.from_dict(p.to_dict())
 	print("Profile usage round trip: ", pb.top_used("class", 1))
 	if pb.top_used("class", 1) != [&"rigger"]: fails += 1
+	return fails + _m12()
+
+
+## M12: config assist_free_nudges / assist_hp_multiplier, CampaignState.assist.
+func _m12() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	print("Config assist defaults: ", cfg.assist_free_nudges, " ", cfg.assist_hp_multiplier)
+	if cfg.assist_free_nudges != 1 or cfg.assist_hp_multiplier != 1.25: fails += 1
+	var c := CampaignState.new(); c.enable_assist(1, 1.25)
+	var back := CampaignState.from_dict(c.to_dict())
+	print("CampaignState.assist round trip: ", back.assist)
+	if not back.is_assisted(): fails += 1
 	return fails

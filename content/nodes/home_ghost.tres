@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="HomeServerVariantData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/home_server_variant_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/network_node_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/defense_asset_data.gd" id="e2"]
+
+; Ghost home server (M12, decision 2026-09-24): 50 integrity, 2 asset slots in total.
+
+[sub_resource type="Resource" id="core"]
+script = ExtResource("e1")
+id = &"home_ghost_core"
+node_type = 0
+display_name = "Home Server"
+description = "Lose the campaign if it reaches 0."
+install_cost = 0
+integrity = 40
+asset_slots = 2
+
+[sub_resource type="Resource" id="asset0"]
+script = ExtResource("e2")
+asset_type = 1
+id = &"ghost_lock"
+display_name = "Ghost Lock"
+description = "Built in: holds a threat on the home server for 2 steps."
+integrity = 12
+damage = 0
+range_hops = 0
+shots_per_step = 1
+targeting = 0
+delay_steps = 2
+decoy_pull = 0
+
+[sub_resource type="Resource" id="node0"]
+script = ExtResource("e1")
+id = &"ghost_lock_node"
+node_type = 1
+display_name = "Lock Chamber"
+description = "Part of the Ghost home server."
+install_cost = 0
+integrity = 10
+asset_slots = 0
+built_in_asset = SubResource("asset0")
+
+[resource]
+script = ExtResource("main_script")
+id = &"home_ghost"
+display_name = "Ghost home server"
+description = "50 integrity, 2 slots and a built-in ICE Lock that holds the first threat to reach home."
+core = SubResource("core")
+internal_nodes = Array[ExtResource("e1")]([SubResource("node0")])
+internal_links = Array[Vector2i]([Vector2i(0, 1)])

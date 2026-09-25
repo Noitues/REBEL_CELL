@@ -127,6 +127,9 @@ extends Resource
 @export var ice_ladder: Array[IceLevelData] = []
 ## Unlock REBEL_CELL at this ICE on every other corporation.
 @export var rebel_cell_unlock_ice: int = 10
+## Assist mode (Settings.assist_mode): extra free nudges a turn and operative HP multiple.
+@export var assist_free_nudges: int = 1
+@export var assist_hp_multiplier: float = 1.25
 ## New corporations may start at (global best ICE - this).
 @export var new_corp_ice_offset: int = 5
 

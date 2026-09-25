@@ -257,6 +257,8 @@ func _start_combat(elite: bool) -> void:
 	}
 	for k in rule_overrides():
 		overrides[k] = rule_overrides()[k]
+	if campaign.is_assisted():
+		overrides["extra_free_nudges"] = int(campaign.assist.get("free_nudges", 0))
 	if not run.drones.is_empty():
 		overrides["drones"] = run.drones.duplicate(true)
 	for k in run.combat_overrides:

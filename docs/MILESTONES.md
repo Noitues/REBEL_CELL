@@ -196,3 +196,13 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [x] "Final final" achievement.
 - [x] Seeded bot campaigns can win REBEL_CELL at ICE 0 and ICE 5.
 - [x] Tests, schema smoke test and content validation green.
+
+## M12 — Polish and Reach (added 2026-09-24, horizontal loop)
+
+**Acceptance**
+- [x] Five home-server variants, each a Profile unlock after the standard one.
+- [x] Every combat action has a controller button; rebinding keys keeps it.
+- [x] Share codes replay the same campaign; a daily run seeds from the date.
+- [x] Assist mode: extra free nudge and HP, no ICE records or achievements.
+- [ ] Skins: deferred to art integration (M13).
+- [x] Tests, schema smoke test and content validation green.

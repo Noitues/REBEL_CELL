@@ -150,6 +150,8 @@ func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPO
 		start_class = class_data()
 	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, start_class, home.core if home != null else null, ice, home)
 	campaign.generated = snap
+	if has_node("/root/Settings") and get_node("/root/Settings").assist_mode:
+		campaign.enable_assist(config().assist_free_nudges, config().assist_hp_multiplier)
 	netrun = null
 	RngService.seed_campaign(campaign_seed)
 	_reset_profile_sync()
@@ -296,7 +298,10 @@ func sync_profile_with_campaign() -> void:
 	if campaign.outcome != _profile_outcome_seen:
 		_profile_outcome_seen = campaign.outcome
 		if campaign.outcome == CampaignState.Outcome.WON:
-			profile.record_win(campaign.corporation_id, campaign.ice_level)
+			if campaign.is_assisted():
+				profile.campaigns_won += 1  # assisted wins set no ICE records
+			else:
+				profile.record_win(campaign.corporation_id, campaign.ice_level)
 		elif campaign.outcome == CampaignState.Outcome.LOST:
 			profile.record_loss()
 	var corp_ids := []
@@ -304,7 +309,7 @@ func sync_profile_with_campaign() -> void:
 		var c := lookup().get_content(id) as CorporationData
 		if c != null and not c.generated_from_profile:
 			corp_ids.append(id)
-	for id in Achievements.check(profile, campaign, corp_ids):
+	for id in Achievements.check(profile, null if campaign.is_assisted() else campaign, corp_ids):
 		profile.add_achievement(id)
 		new_achievements.append(id)
 		var d := Achievements.definition(id)

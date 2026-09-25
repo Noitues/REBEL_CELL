@@ -44,10 +44,12 @@ func test_rewind_is_z_and_ctrl_z() -> void:
 
 
 func test_inspect_is_right_click() -> void:
-	var events := InputMap.action_get_events(&"inspect")
-	assert_eq(events.size(), 1)
-	assert_true(events[0] is InputEventMouseButton)
-	assert_eq((events[0] as InputEventMouseButton).button_index, MOUSE_BUTTON_RIGHT)
+	var mice := []
+	for ev in InputMap.action_get_events(&"inspect"):
+		if ev is InputEventMouseButton:
+			mice.append(ev)
+	assert_eq(mice.size(), 1, "one mouse binding (plus the M12 pad button)")
+	assert_eq((mice[0] as InputEventMouseButton).button_index, MOUSE_BUTTON_RIGHT)
 
 
 func test_card_picker_keys_are_d_f_and_x() -> void:
