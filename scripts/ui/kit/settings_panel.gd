@@ -14,6 +14,10 @@ const ACTION_LABELS := {&"nudge_left": "Nudge -1", &"nudge_right": "Nudge +1", &
 	&"respin": "Respin", &"open_settings": "Pause / options"}
 
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
+## Why the last key pressed while rebinding was refused (Controls section).
+var _bind_note: Label = null
+## Width the refusal note wraps at.
+const BIND_NOTE_WIDTH := 480.0
 var _paper_panel: ZinePanel = null
 var trap_focus: bool = false
 var reduce_check: CheckButton
@@ -130,6 +134,11 @@ func show_section(name: String) -> void:
 				b.pressed.connect(func() -> void: begin_rebind(a))
 				grid.add_child(b)
 				_key_buttons[action] = b
+			_bind_note = _labelled("")
+			_bind_note.name = "BindNote"
+			_bind_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_bind_note.custom_minimum_size.x = BIND_NOTE_WIDTH
+			_body.add_child(_bind_note)
 			var reset := Button.new()
 			reset.text = "Reset to defaults"
 			reset.pressed.connect(func() -> void: Settings.reset_keybinds(); show_section("Controls"))
@@ -164,8 +173,8 @@ func handle_key(event: InputEventKey) -> bool:
 		# Keep waiting for another key, and say why this one was refused.
 		for action in ACTION_LABELS:
 			err = err.replace("used by %s" % String(action), "used by %s" % ACTION_LABELS[action])
-		if _key_buttons.has(rebinding):
-			(_key_buttons[rebinding] as Button).text = "%s - press another" % err
+		if _bind_note != null and is_instance_valid(_bind_note):
+			_bind_note.text = "%s - press another key." % err  # wraps: the grid never widens
 		return true
 	Settings.rebind(rebinding, event.physical_keycode)
 	rebinding = &""

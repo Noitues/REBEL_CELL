@@ -375,7 +375,7 @@ func show_start() -> void:
 		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
 		unlock_names.append(ud.display_name if ud != null else String(uid))
 	box.add_child(_para("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
-	box.add_child(_button("Options [Esc]", open_settings))
+	box.add_child(_button("Options [%s]" % Settings.key_text(&"open_settings"), open_settings))
 	box.add_child(_button("Codex", show_codex))
 	box.add_child(_button("Back to title", RunManager.go_to_title))
 	_set_panel(box, "start")
@@ -419,7 +419,7 @@ func show_hq() -> void:
 	box.add_child(actions)
 	actions.add_child(_button("City Grid", show_grid))
 	actions.add_child(_button("Codex", show_codex))
-	actions.add_child(_button("Settings [Esc]", open_settings))
+	actions.add_child(_button("Settings [%s]" % Settings.key_text(&"open_settings"), open_settings))
 	for cls in RunManager.available_classes():
 		var cid := cls.id
 		actions.add_child(_button("Recruit %s (%d)" % [cls.display_name, CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)))

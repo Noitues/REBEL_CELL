@@ -25,7 +25,7 @@ Godot 4.7 · GDScript · PC.
 4. Current milestone: see `docs/MILESTONES.md`.
 
 ## Layout
-- `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`
+- `scripts/autoload/` — `SignalBus`, `ContentRegistry`, `RngService`, `SaveService`, `RunManager`, `Settings`, `AudioDirector`, `Fx`, `Dialogue`
 - `scripts/core/` — `WheelMath`, `CombatResolver`, `EffectInterpreter`, `CombatSession` (checkpoints, rewind, replay), `MapGenerator`, `NetrunSession` (map, rewards, shop, events, banking), `HeatRules`, `RaidResolver`, `CampaignRules` (Grid, claiming, raids, Exploits, story, win/loss), `handlers/`
 - `scripts/state/` — `WheelState`, `CombatantState`, `CombatState`, `OperativeState`, `RunState`, `CampaignState`, `GridState`, `ProfileState` · `scripts/ui/` — `CombatEngine`, `WheelView`, combat, netrun and HQ scenes, `kit/` (zine kit, backgrounds, palette, theme), `fx/` (flash limiter)
 - `scenes/menu/title_scene.tscn` — the main scene: title, save slots, options, codex, stats · `scenes/hq/hq_scene.tscn` — start, HQ (roster, recruit, station, Heat, Armory, story), City Grid, raid setup/projection/playout, campaign end · `scenes/netrun_map/netrun_scene.tscn` — map, embedded combat, rewards, Modem, Terminals · `scenes/combat/combat_scene.tscn` — standalone fight picker

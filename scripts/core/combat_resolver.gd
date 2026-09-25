@@ -567,8 +567,8 @@ func _collect_resolutions(s: CombatState) -> Array[Dictionary]:
 				var n := _neighbor_resolution(s, r, side, fw.neighbor_multiplier)
 				if fw.neighbor_rule == RC.NeighborRule.SHUNT:
 					n["landing"] = true  # the shunted slice resolves instead of the landing
-				else:
-					n["status"] = RC.Status.NONE  # H18: a Mirror copy takes no Overclock boost or bite
+				elif n["status"] == RC.Status.OVERCLOCKED:
+					n["status"] = RC.Status.NONE  # H18/H19: no Overclock boost without its burn-out
 				out.append(n)
 		# GDD 5.2: a drone triggers when its slice does, so after the neighbour rules.
 		if c == s.player:

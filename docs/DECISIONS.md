@@ -30,6 +30,15 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-25 — Horizontal pass 19 fixes (GAP_ANALYSIS H19)
+- **A refused rebind is explained in a wrapped note under the Controls grid** (the key
+  button keeps its width), so Options never runs off the screen at text scale 1.6.
+- **Every combat key hint follows the binds** (nudge wheel, ring, card target, direction,
+  slot, nudges, Undo, Respin, Settings) and refreshes on `Settings.changed`; the HQ
+  Options / Settings buttons show the bound Pause key.
+- **A Mirror copy keeps a Parasite** (halved): H18 only meant to drop the Overclock boost.
+- README lists all nine autoloads.
+
 ### 2026-09-25 — Horizontal pass 18 fixes (GAP_ANALYSIS H18)
 - **Reset to defaults keeps the pad buttons** (it re-applies the controller binds).
   Rebind refusals name the action as the Controls list does.
@@ -49,9 +58,10 @@ _(Claude Code: add entries here as you make them.)_
   OVERCLOCKED burn-out apply, Stolen Intent fires on a shunted Miss, and the operative's
   drones follow the slot that actually resolves (GDD 5.2).
 - **A copy resolves the neighbour's slice, not its Firmware** or the permanent status
-  that Firmware grants (Burner's Overclock without its Heat). H18: a Mirror copy also
-  drops the slot's temporary statuses (no Overclock boost without the burn-out, no bite);
-  a Shunt resolution is the landing and keeps them.
+  that Firmware grants (Burner's Overclock without its Heat). H18/H19: a Mirror copy of an
+  Overclocked slot is not boosted (the boost belongs to the landing that burns it out);
+  other statuses still apply to the copy (a Parasite halves it; a copy never bites). A
+  Shunt resolution is the landing and keeps them all.
 - **Rebinding refuses 1-9, Enter and Esc and any key another action holds**
   (`Settings.bind_error`); the button says why and keeps waiting for another key.
 - Balance after H17: Breaker ICE 5 3/8 in 48.1 runs (was 4/8 in 42.8).

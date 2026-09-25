@@ -45,6 +45,9 @@ var _picker_controls: Array[Control] = []
 ## The bottom controls row (layout tests check it fits the 1280-px canvas).
 var controls_row: HFlowContainer
 var _settings_panel: PauseMenu = null
+var _settings_button: Button
+var _nudge_minus_button: Button
+var _nudge_plus_button: Button
 var _menu_layer: CanvasLayer = null
 ## Canvas layer of the pause menu: above the combat scene and the netrun around it.
 const MENU_LAYER := 10
@@ -615,7 +618,8 @@ func _build_ui() -> void:
 	_status.clip_text = true
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(_status)
-	top.add_child(_button("Settings [Esc]", open_settings))
+	_settings_button = _button("Settings", open_settings)
+	top.add_child(_settings_button)
 
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -674,33 +678,38 @@ func _build_ui() -> void:
 	_target_option.item_selected.connect(func(i: int) -> void: engine.submit(CombatAction.target(_target_option.get_item_metadata(i))))
 	controls.add_child(_target_option)
 	_nudge_wheel_option = OptionButton.new()
-	_nudge_wheel_option.add_item("Nudge own [W]")
-	_nudge_wheel_option.add_item("Nudge tgt [W]")
+	_nudge_wheel_option.add_item("Nudge own")
+	_nudge_wheel_option.add_item("Nudge tgt")
 	controls.add_child(_nudge_wheel_option)
 	_nudge_ring_option = OptionButton.new()
-	_nudge_ring_option.add_item("Outer [R]")
-	_nudge_ring_option.add_item("Inner [R]")
+	_nudge_ring_option.add_item("Outer")
+	_nudge_ring_option.add_item("Inner")
 	controls.add_child(_nudge_ring_option)
-	controls.add_child(_button("-1 [%s]" % Settings.key_text(&"nudge_left"), func() -> void: nudge(-1)))
-	controls.add_child(_button("+1 [%s]" % Settings.key_text(&"nudge_right"), func() -> void: nudge(1)))
+	_nudge_minus_button = _button("-1", func() -> void: nudge(-1))
+	controls.add_child(_nudge_minus_button)
+	_nudge_plus_button = _button("+1", func() -> void: nudge(1))
+	controls.add_child(_nudge_plus_button)
 	_card_target_option = OptionButton.new()
-	_card_target_option.add_item("Card>tgt [T]")
-	_card_target_option.add_item("Card>own [T]")
+	_card_target_option.add_item("Card>tgt")
+	_card_target_option.add_item("Card>own")
 	_card_target_option.item_selected.connect(func(_i: int) -> void: _rebuild_slot_option())
 	controls.add_child(_card_target_option)
 	_direction_option = OptionButton.new()
-	_direction_option.add_item("Dir + [D]")
-	_direction_option.add_item("Dir - [D]")
+	_direction_option.add_item("Dir +")
+	_direction_option.add_item("Dir -")
 	controls.add_child(_direction_option)
 	_slot_option = OptionButton.new()
-	_slot_option.add_item("Slice auto [F]")
+	_slot_option.add_item(_slot_auto_text())
 	controls.add_child(_slot_option)
 	_respin_button = _button("Respin [%s]" % Settings.key_text(&"respin"), respin)
 	_respin_button.mouse_entered.connect(_show_respin_odds)
 	_respin_button.mouse_exited.connect(_show_end_turn_preview)
 	controls.add_child(_respin_button)
-	_rewind_button = _button("Undo [%s]" % Settings.key_text(&"rewind"), rewind)
+	_rewind_button = _button("Undo", rewind)
 	controls.add_child(_rewind_button)
+	_refresh_key_hints()
+	if not Settings.changed.is_connected(_refresh_key_hints):
+		Settings.changed.connect(_refresh_key_hints)  # a rebind in the pause menu shows at once
 
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 10)
@@ -739,10 +748,37 @@ func _card_target_wheel() -> CombatantState:
 	return state.get_combatant(state.target_id)
 
 
+## "Slice auto [key]" for the slot picker's first item.
+static func _slot_auto_text() -> String:
+	return "Slice auto [%s]" % Settings.key_text(&"cycle_slot")
+
+
+## Rewrites every key hint from the current binds (GDD 9.5 rebinding).
+func _refresh_key_hints() -> void:
+	if not is_instance_valid(_nudge_wheel_option):
+		return
+	var pairs := [[_nudge_wheel_option, &"toggle_nudge_wheel", ["Nudge own", "Nudge tgt"]],
+		[_nudge_ring_option, &"toggle_ring", ["Outer", "Inner"]],
+		[_card_target_option, &"toggle_card_target", ["Card>tgt", "Card>own"]],
+		[_direction_option, &"toggle_direction", ["Dir +", "Dir -"]]]
+	for p in pairs:
+		var option: OptionButton = p[0]
+		for i in (p[2] as Array).size():
+			option.set_item_text(i, "%s [%s]" % [p[2][i], Settings.key_text(p[1])])
+	if _slot_option.item_count > 0:
+		_slot_option.set_item_text(0, _slot_auto_text())
+	_nudge_minus_button.text = "-1 [%s]" % Settings.key_text(&"nudge_left")
+	_nudge_plus_button.text = "+1 [%s]" % Settings.key_text(&"nudge_right")
+	_rewind_button.text = "Undo [%s]" % Settings.key_text(&"rewind")
+	_settings_button.text = "Settings [%s]" % Settings.key_text(&"open_settings")
+	if engine != null and engine.has_fight():
+		_respin_button.text = "Respin %d [%s]" % [engine.resolver.config.respin_ram_cost, Settings.key_text(&"respin")]
+
+
 func _rebuild_slot_option() -> void:
 	var keep := _slot_option.selected
 	_slot_option.clear()
-	_slot_option.add_item("Slice auto [F]")
+	_slot_option.add_item(_slot_auto_text())
 	var c := _card_target_wheel()
 	if c != null:
 		for i in c.wheel.slot_slice_ids.size():
