@@ -1,8 +1,7 @@
 class_name CyberdeckBackground
 extends Control
-## The physical world (STYLE_GUIDE 1): the Cell's room at night. A big rain-streaked
-## window looks down on the isometric neon city (NeonCity); dark mullions frame it and a
-## worn metal deck edge sits at the bottom. Rain animates unless reduce-effects.
+## The physical world (STYLE_GUIDE 1): the Cell's room at night, looking down through
+## rain on the isometric neon city (NeonCity); a worn metal deck edge sits at the bottom. Rain animates unless reduce-effects.
 ## Searchlights sweep past the window as Heat rises (GDD 9.4).
 
 var heat_band: int = 0:
@@ -48,18 +47,10 @@ func _process(delta: float) -> void:
 
 func _draw_frame() -> void:
 	var s := size
-	var bar := Color("#05060C")
-	var edge := Color(Palette.NET_CYAN, 0.12)
 	# Heat searchlights sweep across the glass.
 	if heat_band > 0:
 		var sx := fmod(_search_t * 120.0 * heat_band, s.x + 400.0) - 200.0
 		_frame.draw_colored_polygon(PackedVector2Array([Vector2(sx, s.y), Vector2(sx + 90, s.y), Vector2(sx + 320, 0), Vector2(sx + 160, 0)]), Color(Palette.PAPER, 0.05 * heat_band))
-	# Window mullions: two verticals and a transom, each with a faint neon catch-light.
-	for fx in [s.x * 0.34, s.x * 0.67]:
-		_frame.draw_rect(Rect2(fx - 7, 0, 14, s.y), bar)
-		_frame.draw_line(Vector2(fx + 7, 0), Vector2(fx + 7, s.y), edge, 1.0)
-	_frame.draw_rect(Rect2(0, s.y * 0.07 - 5, s.x, 10), bar)
-	_frame.draw_line(Vector2(0, s.y * 0.07 + 5), Vector2(s.x, s.y * 0.07 + 5), edge, 1.0)
 	# The deck edge: worn metal lip with screws and a pink under-glow.
 	var deck_y := s.y - 18.0
 	_frame.draw_rect(Rect2(0, deck_y, s.x, 18), Palette.DESK_DARK)

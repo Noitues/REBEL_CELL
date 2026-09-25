@@ -25,8 +25,10 @@ func _draw() -> void:
 	var c := size / 2.0
 	var r := minf(size.x, size.y) / 2.0 - 4
 	var col := stamp_color if not disabled else Color(stamp_color, 0.35)
+	draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
 	if _hot and not disabled:
 		draw_circle(c, r + 4, Color(Palette.CELL_ACID, 0.45))
+		draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
 	draw_arc(c, r, 0, TAU, 48, col, 4.0)
 	draw_arc(c, r - 9, 0, TAU, 48, col, 1.5)
 	draw_string(Palette.display(), c + Vector2(-r + 12, 8), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, 20, col)

@@ -14,9 +14,12 @@ const SKETCH_SHADER := preload("res://shaders/city_sketch.gdshader")
 ## Tile half-width / half-height of the isometric grid (2:1).
 const TILE_A := 34.0
 const TILE_B := 17.0
-## Every Nth row and column of lots starts an avenue STREET_WIDTH lots wide.
+## Streets are one lot wide; blocks between them run BLOCK_MIN..BLOCK_MAX lots, so the
+## grid is irregular. (STREET_EVERY is the typical spacing, for overlays.)
 const STREET_EVERY := 6
-const STREET_WIDTH := 2
+const BLOCK_MIN := 3
+const BLOCK_MAX := 6
+const GRID_RANGE := 260
 ## Neon ink colours (every district uses all five, weighted to its corporation).
 const INKS: Array[Color] = [Color("#FFB000"), Color("#B04DFF"), Color("#FF3DA8"), Color("#5CE1FF"), Color("#3DFF8B")]
 ## Building masses: black, dark grey-blue, dark grey.
@@ -70,6 +73,11 @@ var _ox: float = 0.0
 var _oy: float = 0.0
 var _hq_rect: Rect2i = Rect2i()
 var _profile: Dictionary = {}
+## Street rows/columns and each lot's index inside its block (built per draw).
+var _street_i: Dictionary = {}
+var _street_j: Dictionary = {}
+var _local_i: Dictionary = {}
+var _local_j: Dictionary = {}
 
 
 func _init() -> void:
@@ -158,6 +166,7 @@ func _draw() -> void:
 	if district != &"":
 		var g := _grid_of(Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y))
 		_hq_rect = Rect2i(int(floor(g.x)) - 2, int(floor(g.y)) - 2, 5, 5)
+	_build_streets()
 	var s_max := int((size.y - _oy + 420.0) / TILE_B) + 2
 	var d_max := int(size.x / (2.0 * TILE_A)) + 3
 	for s in range(0, s_max):
@@ -173,8 +182,8 @@ func _draw() -> void:
 				if i == _hq_rect.end.x - 1 and j == _hq_rect.end.y - 1:
 					_hq()
 				continue
-			var street_i := posmod(i, STREET_EVERY) < STREET_WIDTH
-			var street_j := posmod(j, STREET_EVERY) < STREET_WIDTH
+			var street_i := _street_i.has(i)
+			var street_j := _street_j.has(j)
 			if street_i or street_j:
 				_street(i, j, street_i, street_j)
 				continue
@@ -199,6 +208,37 @@ func _draw() -> void:
 	_fx.queue_redraw()
 
 
+## Irregular street spacing along both axes (deterministic per district).
+func _build_streets() -> void:
+	for axis in 2:
+		var streets := {}
+		var local := {}
+		var pos := -GRID_RANGE
+		while pos < GRID_RANGE:
+			streets[pos] = true
+			var block := BLOCK_MIN + int(_h(pos, axis, 60) * (BLOCK_MAX - BLOCK_MIN + 1))
+			for k in block:
+				local[pos + 1 + k] = k
+			pos += block + 1
+		if axis == 0:
+			_street_i = streets
+			_local_i = local
+		else:
+			_street_j = streets
+			_local_j = local
+
+
+## Traffic 0-1 of a street lot: some avenues are busy, and everything near the HQ is.
+func _traffic(i: int, j: int, along_i: bool) -> float:
+	var t := _h(i if along_i else 0, 0 if along_i else j, 61)
+	t = t * t
+	if _hq_rect.size.x > 0:
+		var hc := Vector2(_hq_rect.get_center())
+		var d := Vector2(i, j).distance_to(hc)
+		t = maxf(t, clampf(1.0 - d / 12.0, 0.0, 1.0))
+	return t
+
+
 # --- Primitives ---------------------------------------------------------------------------
 
 func _tri(a: Vector2, b: Vector2, c: Vector2, ca: Color, cb: Color, cc: Color) -> void:
@@ -220,31 +260,65 @@ func _poly(pts: PackedVector2Array, col: Color) -> void:
 		_tri(c, pts[k], pts[(k + 1) % pts.size()], col, col, col)
 
 
-## An inked line: a soft glow, then a core split into short segments so the sketch
-## shader's vertex wobble bends it; ends overshoot a touch like a pen stroke.
+## An inked line, drawn like a pen stroke: a soft glow, then a slightly bowed core in
+## short segments (the sketch shader's wobble bends them further) whose thickness wanders
+## and tapers, overshooting the corners by a varying amount, then a faint second pass a
+## hair off the first, as if the line was gone over again.
 func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: bool = true) -> void:
 	var length := a.distance_to(b)
 	if length < 0.5:
 		return
+	var seed_a := int(a.x * 7.0 + b.y * 3.0)
+	var seed_b := int(a.y * 5.0 + b.x * 11.0)
 	var dir := (b - a) / length
-	a -= dir * 1.5
-	b += dir * 1.5
 	var n := dir.orthogonal()
+	var over0 := 0.5 + _h(seed_a, seed_b, 22) * 3.5
+	var over1 := 0.5 + _h(seed_b, seed_a, 23) * 3.5
+	var a0 := a - dir * over0
+	var b0 := b + dir * over1
 	if glow:
-		var g := Color(col, 0.16)
-		_quad(a - n * 3.5, b - n * 3.5, b + n * 3.5, a + n * 3.5, g, g, g, g)
-	var steps := maxi(1, int(length / 9.0))
-	var core := Color(col, col.a * 0.95)
-	for k in steps:
-		var p0 := a.lerp(b, float(k) / steps)
-		var p1 := a.lerp(b, float(k + 1) / steps)
-		var w := width * (0.8 + 0.4 * _h(int(p0.x), int(p0.y), 21))
-		_quad(p0 - n * w * 0.5, p1 - n * w * 0.5, p1 + n * w * 0.5, p0 + n * w * 0.5, core, core, core, core)
+		var g := Color(col, 0.15)
+		_quad(a0 - n * 3.5, b0 - n * 3.5, b0 + n * 3.5, a0 + n * 3.5, g, g, g, g)
+	var bow := (_h(seed_a, seed_b, 24) - 0.5) * minf(4.0, length * 0.05)
+	_stroke(a0, b0, n, bow, width, Color(col, col.a * 0.95), seed_a)
+	# The second pass: offset, shorter at one end, fainter and thinner.
+	var shift := n * (0.8 + _h(seed_a, seed_b, 25) * 1.2) * (1.0 if _h(seed_b, seed_a, 26) < 0.5 else -1.0)
+	var trim := dir * (_h(seed_a, seed_b, 27) * 4.0)
+	_stroke(a0 + shift + trim, b0 + shift - trim * 0.5, n, -bow * 0.6, width * 0.65, Color(col, col.a * 0.45), seed_b)
+
+
+func _stroke(a: Vector2, b: Vector2, n: Vector2, bow: float, width: float, col: Color, key: int) -> void:
+	var steps := maxi(2, int(a.distance_to(b) / 8.0))
+	var prev_l := Vector2.ZERO
+	var prev_r := Vector2.ZERO
+	for k in steps + 1:
+		var t := float(k) / steps
+		var p := a.lerp(b, t) + n * sin(t * PI) * bow
+		var taper := clampf(minf(t, 1.0 - t) * 6.0, 0.35, 1.0)
+		var w := width * taper * (0.6 + 0.9 * _h(key, k, 21))
+		var l := p - n * w * 0.5
+		var r := p + n * w * 0.5
+		if k > 0:
+			_quad(prev_l, l, r, prev_r, col, col, col, col)
+		prev_l = l
+		prev_r = r
 
 
 ## Grid rectangle footprint (lots) as screen points: back, right, front, left.
 func _rect_pts(x0: float, y0: float, x1: float, y1: float) -> PackedVector2Array:
 	return PackedVector2Array([_iso(x0, y0), _iso(x1, y0), _iso(x1, y1), _iso(x0, y1)])
+
+
+## A grid rectangle turned by `angle` (radians) about its centre, as screen points.
+func _turned(angle: float, x0: float, y0: float, x1: float, y1: float) -> PackedVector2Array:
+	if absf(angle) < 0.001:
+		return _rect_pts(x0, y0, x1, y1)
+	var c := Vector2((x0 + x1) * 0.5, (y0 + y1) * 0.5)
+	var pts := PackedVector2Array()
+	for q in [Vector2(x0, y0), Vector2(x1, y0), Vector2(x1, y1), Vector2(x0, y1)]:
+		var v: Vector2 = (q - c).rotated(angle) + c
+		pts.append(_iso(v.x, v.y))
+	return pts
 
 
 ## Regular n-gon footprint of grid radius r around (cx, cy).
@@ -340,19 +414,23 @@ func _windows(a: Vector2, b: Vector2, h: float, lit: float, key: int, bright: bo
 func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	var p := _rect_pts(i, j, i + 1, j + 1)
 	_quad(p[0], p[1], p[2], p[3], STREET, STREET, STREET, STREET)
-	# Lane markings on the avenue's far row only.
-	var li := along_i and posmod(i, STREET_EVERY) == 1
-	var lj := along_j and posmod(j, STREET_EVERY) == 1
-	if li == lj:
-		return
-	var col := Palette.NET_CYAN if net_mode else _ink(i if li else 0, j if lj else 0)
-	var a := _iso(i + 0.5, j) if li else _iso(i, j + 0.5)
-	var b := _iso(i + 0.5, j + 1) if li else _iso(i + 1, j + 0.5)
-	var g := Color(col, 0.1)
+	if along_i and along_j:
+		return  # crossings stay dark; the strokes overshoot into them
+	var traffic := _traffic(i, j, along_i)
+	var col := Palette.NET_CYAN if net_mode and _h(i, j, 62) < 0.5 else _ink(i if along_i else 0, j if along_j else 0)
+	var a := _iso(i + 0.5, j) if along_i else _iso(i, j + 0.5)
+	var b := _iso(i + 0.5, j + 1) if along_i else _iso(i + 1, j + 0.5)
 	var nn := (b - a).orthogonal().normalized()
-	_quad(a - nn * 6.0, b - nn * 6.0, b + nn * 6.0, a + nn * 6.0, g, g, g, g)
-	_ink_line(a, b, Color(col, 0.6), 1.0, false)
-	_trails.append({"a": a, "b": b, "color": col, "phase": _h(i, j, 3)})
+	var gw := 4.0 + traffic * 9.0
+	var g := Color(col, 0.07 + traffic * 0.12)
+	_quad(a - nn * gw, b - nn * gw, b + nn * gw, a + nn * gw, g, g, g, g)
+	_ink_line(a, b, Color(col, 0.45 + traffic * 0.45), 0.8 + traffic * 3.2, false)
+	if traffic > 0.55:
+		# Busy streets get a second lane.
+		_ink_line(a + nn * 4.0, b + nn * 4.0, Color(col, 0.35 + traffic * 0.3), 0.7 + traffic * 1.2, false)
+	_trails.append({"a": a, "b": b, "color": col, "phase": _h(i, j, 3), "width": 1.5 + traffic * 2.5})
+	if traffic > 0.6:
+		_trails.append({"a": a, "b": b, "color": INKS[0], "phase": _h(i, j, 4), "width": 1.5 + traffic * 2.0})
 
 
 func _plaza(i: int, j: int) -> void:
@@ -361,23 +439,23 @@ func _plaza(i: int, j: int) -> void:
 	_quad(p[0], p[1], p[2], p[3], col, col, col, col)
 
 
-## Merged cells inside a 4x4 block: each 2x2 quadrant is one 2x2, two slabs (along i
-## or j) or four singles. Returns the grid rect of the cell holding lot (i, j).
+## Merged cells inside a block: lots pair up in 2x2 quadrants (when the quadrant fits
+## inside the block) as one 2x2, two slabs, or singles. Returns the cell of lot (i, j).
 func _cell_of(i: int, j: int) -> Rect2i:
-	var li := posmod(i, STREET_EVERY) - STREET_WIDTH
-	var lj := posmod(j, STREET_EVERY) - STREET_WIDTH
+	var li: int = _local_i.get(i, 0)
+	var lj: int = _local_j.get(j, 0)
 	var qi := i - li % 2
 	var qj := j - lj % 2
-	var mode := int(_h(floori(qi / 2.0), floori(qj / 2.0), 30) * 6.0)
-	match mode:
-		0:
-			return Rect2i(qi, qj, 2, 2)
-		1:
-			return Rect2i(qi, j, 2, 1)
-		2:
-			return Rect2i(i, qj, 1, 2)
-		_:
-			return Rect2i(i, j, 1, 1)
+	var wide := not _street_i.has(qi + 1) and not _street_i.has(qi)
+	var deep := not _street_j.has(qj + 1) and not _street_j.has(qj)
+	var mode := int(_h(qi, qj, 30) * 6.0)
+	if mode == 0 and wide and deep:
+		return Rect2i(qi, qj, 2, 2)
+	if mode == 1 and wide:
+		return Rect2i(qi, j, 2, 1)
+	if mode == 2 and deep:
+		return Rect2i(i, qj, 1, 2)
+	return Rect2i(i, j, 1, 1)
 
 
 func _lot(i: int, j: int) -> void:
@@ -413,6 +491,10 @@ func _building(cell: Rect2i) -> void:
 	var h := (8.0 + pow(r, 2.7) * 100.0 + district_h * 28.0) * hs * (1.0 + 0.12 * (big - 1))
 	if r > 0.965:
 		h += 90.0 * hs
+	# Low-rise around the HQ: its busy streets and the landmark read clearly.
+	if _hq_rect.size.x > 0:
+		var d := Vector2(ci, cj).distance_to(Vector2(_hq_rect.get_center()))
+		h *= lerpf(0.3, 1.0, clampf((d - 3.0) / 6.0, 0.0, 1.0))
 	var fill := FILLS[int(_h(ci, cj, 5) * FILLS.size()) % FILLS.size()]
 	var ink := _ink(ci, cj)
 	var lit := 0.12 + district_h * 0.22
@@ -421,28 +503,36 @@ func _building(cell: Rect2i) -> void:
 	var y0 := cj + inset
 	var x1 := cell.end.x - inset
 	var y1 := cell.end.y - inset
+	# Off the grid: nudge the footprint and turn some buildings a little.
+	var jx := (_h(ci, cj, 15) - 0.5) * inset * 1.4
+	var jy := (_h(ci, cj, 16) - 0.5) * inset * 1.4
+	x0 += jx
+	x1 += jx
+	y0 += jy
+	y1 += jy
 	var cx := (x0 + x1) * 0.5
 	var cy := (y0 + y1) * 0.5
 	var half := minf(x1 - x0, y1 - y0) * 0.5
+	var turn := (_h(ci, cj, 17) - 0.5) * 0.7 if _h(ci, cj, 18) < 0.45 else 0.0
 	var shape := _pick_shape(ci, cj)
 	var key := ci * 97 + cj
 	var roof: PackedVector2Array
 	match shape:
 		Shape.STEPPED:
 			var h1 := h * 0.5
-			_extrude(_rect_pts(x0, y0, x1, y1), 0.0, h1, 1.0, fill, ink, lit, key)
+			_extrude(_turned(turn, x0, y0, x1, y1), 0.0, h1, 1.0, fill, ink, lit, key)
 			var k := 0.14 + _h(ci, cj, 6) * 0.08
-			roof = _extrude(_rect_pts(x0 + k, y0 + k, x1 - k, y1 - k), h1, h * 0.35, 1.0, fill, ink, lit, key + 1)
+			roof = _extrude(_turned(turn, x0 + k, y0 + k, x1 - k, y1 - k), h1, h * 0.35, 1.0, fill, ink, lit, key + 1)
 			if big > 1 or h > 60.0:
-				roof = _extrude(_rect_pts(x0 + k * 2.0, y0 + k * 2.0, x1 - k * 2.0, y1 - k * 2.0), h1 + h * 0.35, h * 0.3 + 10.0, 1.0, fill, ink, lit, key + 2)
+				roof = _extrude(_turned(turn, x0 + k * 2.0, y0 + k * 2.0, x1 - k * 2.0, y1 - k * 2.0), h1 + h * 0.35, h * 0.3 + 10.0, 1.0, fill, ink, lit, key + 2)
 		Shape.CYLINDER:
 			roof = _extrude(_ngon(cx, cy, half, 8, PI / 8.0), 0.0, h + 10.0, 1.0, fill, ink, lit, key)
 			if _h(ci, cj, 7) < 0.5:
 				_extrude(_ngon(cx, cy, half * 0.6, 8, PI / 8.0), h + 10.0, 8.0, 0.55, fill, ink, 0.0, key + 1)
 		Shape.HEX:
-			roof = _extrude(_ngon(cx, cy, half, 6, _h(ci, cj, 8) * PI), 0.0, h, 1.0, fill, ink, lit, key)
+			roof = _extrude(_ngon(cx, cy, half, 6, _h(ci, cj, 8) * PI + turn), 0.0, h, 1.0, fill, ink, lit, key)
 		Shape.TAPER:
-			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, h * 1.1 + 20.0, 0.5, fill, ink, lit, key)
+			roof = _extrude(_turned(turn, x0, y0, x1, y1), 0.0, h * 1.1 + 20.0, 0.5, fill, ink, lit, key)
 		Shape.NEEDLE:
 			var nh := h * 1.3 + 40.0
 			roof = _extrude(_ngon(cx, cy, half * 0.55, 6, 0.3), 0.0, nh, 1.0, fill, ink, lit, key)
@@ -451,12 +541,12 @@ func _building(cell: Rect2i) -> void:
 			_beacons.append({"pos": tip + Vector2(0, -27), "color": ink, "phase": _h(ci, cj, 8)})
 		Shape.WAREHOUSE:
 			var wh := 9.0 + r * 16.0
-			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, wh, 1.0, fill, ink, lit * 0.5, key)
+			roof = _extrude(_turned(turn, x0, y0, x1, y1), 0.0, wh, 1.0, fill, ink, lit * 0.5, key)
 			for k in 3:
 				var t := (k + 1) / 4.0
 				_ink_line(_iso(lerpf(x0, x1, t), y0) + Vector2(0, -wh), _iso(lerpf(x0, x1, t), y1) + Vector2(0, -wh), Color(ink, 0.35), 1.0, false)
 		_:
-			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, h, 1.0, fill, ink, lit, key)
+			roof = _extrude(_turned(turn, x0, y0, x1, y1), 0.0, h, 1.0, fill, ink, lit, key)
 	# Roof clutter: antennae, a lit sign, a beacon on the tall ones.
 	var rc := Vector2.ZERO
 	for q in roof:
@@ -586,7 +676,7 @@ func _draw_fx() -> void:
 		var k := fmod(float(t["phase"]) + anim_t * 0.35, 1.0)
 		var p := a.lerp(b, k)
 		var col: Color = t["color"]
-		_fx.draw_line(p, p + (b - a) * 0.35, Color(col, 0.6), 2.0)
+		_fx.draw_line(p, p + (b - a) * 0.35, Color(col, 0.6), float(t.get("width", 2.0)))
 	for bcn in _beacons:
 		var on := fmod(float(bcn["phase"]) * 3.0 + anim_t, 1.6) < 0.8
 		var col: Color = bcn["color"]

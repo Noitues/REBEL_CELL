@@ -447,29 +447,33 @@ func show_hq() -> void:
 	var lookup := RunManager.lookup()
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
-	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 22)
-	header.add_child(GraffitiTag.new("REBEL_CELL"))
+	var cols := HBoxContainer.new()
+	cols.add_theme_constant_override("separation", 14)
+	box.add_child(cols)
+	# Right column (built now, added last): wanted poster, pirate radio, JACK IN.
+	var right := VBoxContainer.new()
+	right.add_theme_constant_override("separation", 10)
 	var poster := HeatPoster.new(true)
 	poster.hot_color = Palette.corp_color(c.corporation_id)
 	poster.set_heat(c.heat, cfg.heat_max, cfg.major_heat_levels())
-	header.add_child(poster)
-	var radio := ZineNote.new("PIRATE RADIO", Vector2(260, 70))
+	poster.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var radio := ZineNote.new("PIRATE RADIO", Vector2(230, 96))
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	radio.append(dj_line.text if dj_line != null else "lo-fi loop: HQ")
 	radio.append("vs %s | ICE %d%s" % [RunManager.corporation.display_name, c.ice_level, " | ASSIST" if c.is_assisted() else ""])
 	var code := CampaignCode.of(c, c.start_class_id)
 	radio.append("Code: %s%s" % [code, " (local: REBEL_CELL is built from your profile)" if RunManager.corporation.generated_from_profile else ""])
 	radio.tooltip_text = dj_line.text if dj_line != null else ""
-	header.add_child(radio)
+	radio.label.scroll_following = false
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
-	jack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	jack.pressed.connect(show_grid)
-	header.add_child(jack)
-	box.add_child(header)
-	var cols := HBoxContainer.new()
-	cols.add_theme_constant_override("separation", 14)
-	box.add_child(cols)
+	var top_right := HBoxContainer.new()
+	top_right.add_theme_constant_override("separation", 10)
+	top_right.add_child(poster)
+	top_right.add_child(jack)
+	right.add_child(top_right)
+	right.add_child(radio)
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 12)
 	left.custom_minimum_size.x = 300
@@ -503,30 +507,39 @@ func show_hq() -> void:
 	sys.body.add_child(_label("Exploits: %s" % _exploit_names(c)))
 	sys.body.add_child(_label("Home %d/%d | Schematics %d" % [c.grid.home_integrity, c.grid.home_max_integrity, c.schematics]))
 	# The crew: Polaroids with their stats and orders.
+	# The deck monitor: the City Grid at a glance (click or JACK IN to open it).
+	var monitor := TerminalWindow.new("CITY GRID // %s" % RunManager.corporation.display_name)
+	monitor.tag_label.text = "STATUS: %s" % ("RAID INBOUND" if not c.pending_raids.is_empty() else "STABLE")
+	monitor.tag_label.add_theme_color_override("font_color", Palette.CELL_PINK if not c.pending_raids.is_empty() else Palette.CELL_ACID)
+	monitor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var center := VBoxContainer.new()
+	center.add_theme_constant_override("separation", 12)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cols.add_child(center)
+	center.add_child(monitor)
+	var mini := GridMapView.new()
+	mini.custom_minimum_size = Vector2(420, 170)
+	mini.show_grid(c, RunManager.corporation, _threat_paths())
+	mini.site_clicked.connect(func(id: StringName) -> void: selected_site = id; show_grid())
+	monitor.body.add_child(mini)
+	cols.add_child(right)
 	var crew := TerminalWindow.new("CREW // ROSTER", Palette.CELL_PINK)
 	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(crew)
 	var roster_box := HFlowContainer.new()
 	roster_box.add_theme_constant_override("h_separation", 18)
 	roster_box.add_theme_constant_override("v_separation", 14)
 	crew.body.add_child(roster_box)
 	for op in c.roster:
-		# A crew card: Polaroid on top, stats and orders underneath.
-		var row := VBoxContainer.new()
-		row.custom_minimum_size.x = 200
-		row.add_theme_constant_override("separation", 6)
+		# A crew dossier: Polaroid, name, tags, HP, kit, then orders.
 		var where := CampaignRules.stationed_site(c, op.id)
-		var polaroid := Polaroid.new("%s R%d" % [op.name, op.rank], "[%s PORTRAIT]" % op.class_id.to_upper(), -2.0 if c.roster.find(op) % 2 == 0 else 2.0)
-		polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
-		polaroid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		row.add_child(polaroid)
-		var info := VBoxContainer.new()
-		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(info)
-		info.add_child(_label("  %s (%s) Rank %d HP %d/%d deck %d daemons %d %s%s" % [op.name, op.class_id, op.rank, op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
-			"" if op.alive else "[DEAD]", (" stationed on %s" % where) if where != &"" else ""]))
-		var orders := VBoxContainer.new()
-		info.add_child(orders)
+		var row := CrewCard.new(op.name, String(op.class_id), op.rank, op.hp, op.max_hp,
+			"HP %d/%d · DECK %d · DAEMONS %d%s%s" % [op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
+			"" if op.alive else " · [DEAD]", (" · stationed on %s" % where) if where != &"" else ""], -1.5 if c.roster.find(op) % 2 == 0 else 1.5)
+		row.polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
+		row.dead = not op.alive
+		if where != &"" and op.alive:
+			row.stamp_text = "ON %s" % String(where).to_upper()
+		var orders := row.orders
 		if op.alive:
 			if where != &"":
 				var id := op.id
@@ -558,6 +571,7 @@ func show_hq() -> void:
 					pick.item_selected.connect(func(i: int) -> void: swap_segment(oid2, index, pick.get_item_metadata(i)))
 					orders.add_child(pick)
 		roster_box.add_child(row)
+	center.add_child(crew)
 	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
 	var market := TerminalWindow.new("BLACK MARKET // SCHEMATICS %d" % c.schematics, Palette.CELL_ACID)
 	box.add_child(market)
