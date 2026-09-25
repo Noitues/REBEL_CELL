@@ -41,7 +41,7 @@ func _ready() -> void:
 		RunManager.save_slot = "demo"
 		show_start()
 		return
-	if args.has("--demo-hq") or args.has("--demo-grid") or args.has("--demo-raid"):
+	if args.has("--demo-hq") or args.has("--demo-grid") or args.has("--demo-raid") or args.has("--demo-playout"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-grid (own save slot)
 		RunManager.save_slot = "demo"
 		new_campaign(1)
@@ -63,7 +63,7 @@ func _ready() -> void:
 			for id in [&"ghost", &"rigger", &"botnet", &"wrecker", &"phantom", &"overclocker", &"hivemind"]:
 				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
 			show_hq()
-		if args.has("--demo-grid") or args.has("--demo-raid"):
+		if args.has("--demo-grid") or args.has("--demo-raid") or args.has("--demo-playout"):
 			var c := RunManager.campaign
 			c.schematics = 100
 			var grid_data := RunManager.corporation.city_grid
@@ -71,9 +71,11 @@ func _ready() -> void:
 			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), _demo_run(first))
 			CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
 			c.armory = [&"turret", &"ice_lock", &"decoy"]
-			if args.has("--demo-raid"):
+			if args.has("--demo-raid") or args.has("--demo-playout"):
 				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
 				show_raid()
+				if args.has("--demo-playout"):
+					fight_raid()
 			else:
 				for sd in grid_data.sites:
 					if sd.objective == RC.SiteObjective.EXPLOIT:
@@ -273,6 +275,8 @@ func _set_panel(p: Control, name: String) -> void:
 		background.heat_band = band
 		wireframe.corp_creep = band / 3.0
 		wireframe.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
+		background.set_district(RunManager.campaign.corporation_id)
+		wireframe.set_district(RunManager.campaign.corporation_id)
 	_refresh_status()
 
 
@@ -982,11 +986,13 @@ func _build_ui() -> void:
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
 	_panel_host.theme_type_variation = &"GlassPanel"
+	_panel_host.material = UiTheme.crt_material()
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
 	_log = RichTextLabel.new()
 	_log.theme_type_variation = &"LogText"
+	_log.material = UiTheme.crt_material()
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 96)

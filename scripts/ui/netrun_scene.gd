@@ -230,6 +230,7 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 	if RunManager.campaign != null:
 		background.corp_creep = clampf(RunManager.campaign.heat / 100.0, 0.0, 1.0)
 		background.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
+		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
 
@@ -416,6 +417,7 @@ func _show_event() -> void:
 		style.shadow_color = Color(0, 0, 0, 0.5)
 		style.shadow_size = 8
 		strip.add_theme_stylebox_override("panel", style)
+		strip.material = UiTheme.crt_material()
 		strip.custom_minimum_size = Vector2(700, 220)
 		strip.add_child(body)
 		holder = strip
@@ -692,11 +694,13 @@ func _build_ui() -> void:
 	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
 	_panel_host.theme_type_variation = &"GlassPanel"
+	_panel_host.material = UiTheme.crt_material()
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
 	_log = RichTextLabel.new()
 	_log.theme_type_variation = &"LogText"
+	_log.material = UiTheme.crt_material()
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 110)

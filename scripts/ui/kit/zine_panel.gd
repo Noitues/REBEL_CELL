@@ -25,6 +25,7 @@ func _init(p_title: String = "", p_tilt: float = 0.0, p_terminal: bool = false) 
 	if terminal:
 		_paper.color = Palette.TERMINAL_BG
 		_paper.color.a = 0.97
+		_paper.material = UiTheme.crt_material()
 	else:
 		_paper.material = ShaderMaterial.new()
 		_paper.material.shader = PAPER_SHADER

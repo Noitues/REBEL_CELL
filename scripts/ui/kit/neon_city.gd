@@ -1,10 +1,15 @@
 class_name NeonCity
 extends Control
 ## The neon-night backdrop (STYLE_GUIDE 1, "Neon city"): an isometric city seen from
-## above, dark blocks with lit windows, neon roof edges and glowing streets. The city
-## geometry is built once per size into a single triangle array (cheap to draw); a
-## lightweight overlay animates traffic trails, roof beacons and rain unless
-## reduce-effects. Pure view: deterministic from `city_seed`, never touches game state.
+## above. Buildings are near-black, dark blue-grey and dark grey masses inked with neon
+## outlines (roof edges and verticals) in amber, purple, pink, cyan and green; a sketch
+## shader wobbles the lines so they read hand-drawn. Each corporation has its own
+## district (`district`): its own layout, building mix and colour weighting, and a
+## unique landmark HQ. Geometry is built once per size into one triangle array; a light
+## overlay animates traffic, beacons and rain unless reduce-effects. Pure view:
+## deterministic from the district and `city_seed`, never touches game state.
+
+const SKETCH_SHADER := preload("res://shaders/city_sketch.gdshader")
 
 ## Tile half-width / half-height of the isometric grid (2:1).
 const TILE_A := 34.0
@@ -12,41 +17,87 @@ const TILE_B := 17.0
 ## Every Nth row and column of lots starts an avenue STREET_WIDTH lots wide.
 const STREET_EVERY := 6
 const STREET_WIDTH := 2
+## Neon ink colours (every district uses all five, weighted to its corporation).
+const INKS: Array[Color] = [Color("#FFB000"), Color("#B04DFF"), Color("#FF3DA8"), Color("#5CE1FF"), Color("#3DFF8B")]
+## Building masses: black, dark grey-blue, dark grey.
+const FILLS: Array[Color] = [Color("#06070B"), Color("#141B2C"), Color("#1D2027")]
+const GROUND := Color("#0A0C14")
+const STREET := Color("#050609")
+const FACE_LIGHT := Color("#2A3350")
+
+## District profiles: building mix weights [box, stepped, cylinder, hex, taper, needle,
+## warehouse], height scale, share of lines in the corporation colour, layout seed.
+const DISTRICTS := {
+	&"solace": {"mix": [3, 2, 4, 1, 1, 1, 1], "height": 1.0, "corp_ink": 0.45, "seed": 11},
+	&"meridian": {"mix": [3, 2, 0, 0, 0, 0, 6], "height": 0.7, "corp_ink": 0.45, "seed": 23},
+	&"halcyon": {"mix": [3, 4, 1, 0, 4, 0, 1], "height": 1.0, "corp_ink": 0.45, "seed": 37},
+	&"orbital": {"mix": [2, 1, 2, 1, 1, 5, 0], "height": 1.35, "corp_ink": 0.4, "seed": 41},
+	&"rebel_cell": {"mix": [2, 2, 1, 5, 1, 1, 1], "height": 0.95, "corp_ink": 0.45, "seed": 53},
+	&"": {"mix": [4, 3, 2, 1, 1, 1, 2], "height": 1.0, "corp_ink": 0.0, "seed": 7},
+}
+enum Shape { BOX, STEPPED, CYLINDER, HEX, TAPER, NEEDLE, WAREHOUSE }
 
 ## Decoration seed (a view hash, not game randomness).
 var city_seed: int = 7
 ## 0 = full brightness, 1 = black. Keeps panels readable over the city.
 var dim: float = 0.25
-## Neon accent colours (roof edges, signs, street trails).
-var accents: Array[Color] = [Palette.CELL_PINK, Palette.NET_CYAN, Palette.NEON_VIOLET]
-## Corporate wireframe creeping over the city as Heat rises (0-1, GDD 9.4).
+## The corporation whose district this is (&"" = the Cell's mixed streets, no HQ).
+var district: StringName = &"":
+	set(v):
+		if v != district:
+			district = v
+			refresh()
+## Corporation colour (follows the district) and Heat creep (0-1, GDD 9.4).
 var corp_color: Color = Palette.CORP_SOLACE
 var corp_creep: float = 0.0
 ## Diagonal rain streaks (the physical world, seen through the HQ window).
 var rain: bool = false
-## Net mode: streets read as circuit traces (cyan), fewer warm windows.
+## Net mode: lanes read as circuit traces, a touch more cyan.
 var net_mode: bool = false
 ## Animation clock, advanced unless reduce-effects.
 var anim_t: float = 0.0
+## Where the corporation HQ stands, as a fraction of the screen (ground point).
+var hq_anchor: Vector2 = Vector2(0.8, 0.62)
 
 var _fx: Control
 var _built_for: Vector2 = Vector2.ZERO
 var _trails: Array[Dictionary] = []
 var _beacons: Array[Dictionary] = []
+var _signs: Array[Dictionary] = []
+var _verts := PackedVector2Array()
+var _cols := PackedColorArray()
+var _ox: float = 0.0
+var _oy: float = 0.0
+var _hq_rect: Rect2i = Rect2i()
+var _profile: Dictionary = {}
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	material = ShaderMaterial.new()
+	material.shader = SKETCH_SHADER
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fx.use_parent_material = true
 	_fx.draw.connect(_draw_fx)
 	add_child(_fx)
 	resized.connect(queue_redraw)
 
 
-## Rebuilds the static city (after a colour or creep change).
+func _ready() -> void:
+	Settings.changed.connect(_apply_effects)
+	_apply_effects()
+
+
+func _apply_effects() -> void:
+	var sm := material as ShaderMaterial
+	sm.set_shader_parameter("scan_strength", 0.0 if Settings.reduce_effects else 0.07)
+	sm.set_shader_parameter("flicker", 0.0 if Settings.reduce_effects else 0.012)
+
+
+## Rebuilds the static city (after a district, colour or creep change).
 func refresh() -> void:
 	_built_for = Vector2.ZERO
 	queue_redraw()
@@ -61,186 +112,481 @@ func _process(delta: float) -> void:
 
 ## Deterministic 0-1 hash of three integers (view decoration only).
 func _h(a: int, b: int, c: int = 0) -> float:
-	var n := (a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ (city_seed * 2654435761)
+	var n := (a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ ((city_seed + int(_profile.get("seed", 0))) * 2654435761)
 	n = (n ^ (n >> 13)) * 1274126177
 	n = n ^ (n >> 16)
 	return float(n & 0xFFFF) / 65535.0
 
 
-func _accent(a: int, b: int) -> Color:
-	var col := accents[int(_h(a, b, 11) * accents.size()) % accents.size()]
-	if corp_creep > 0.0 and _h(a, b, 12) < corp_creep * 0.7:
-		col = corp_color
-	return col
+## Line colour: the corporation's ink for its share of buildings, else any of the five.
+func _ink(a: int, b: int) -> Color:
+	var share: float = float(_profile.get("corp_ink", 0.0)) + corp_creep * 0.35
+	if district != &"" and _h(a, b, 12) < share:
+		return corp_color
+	if net_mode and _h(a, b, 13) < 0.25:
+		return Palette.NET_CYAN
+	return INKS[int(_h(a, b, 11) * INKS.size()) % INKS.size()]
+
+
+## Grid space (lots) to screen.
+func _iso(x: float, y: float) -> Vector2:
+	return Vector2(_ox + (x - y) * TILE_A, _oy + (x + y) * TILE_B)
+
+
+func _grid_of(p: Vector2) -> Vector2:
+	var d := (p.x - _ox) / TILE_A
+	var s := (p.y - _oy) / TILE_B
+	return Vector2((s + d) * 0.5, (s - d) * 0.5)
 
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
 	if size.x < 2.0 or size.y < 2.0:
 		return
+	_profile = DISTRICTS.get(district, DISTRICTS[&""])
+	if district != &"":
+		corp_color = Palette.corp_color(district)
 	_trails.clear()
 	_beacons.clear()
-	var verts := PackedVector2Array()
-	var cols := PackedColorArray()
-	var ox := size.x * 0.5
-	var oy := -size.y * 0.35
-	var s_max := int((size.y - oy + 300.0) / TILE_B) + 2
+	_signs.clear()
+	_verts = PackedVector2Array()
+	_cols = PackedColorArray()
+	_ox = size.x * 0.5
+	_oy = -size.y * 0.35
+	# The HQ plaza: 5x5 lots around the anchor (no HQ in the Cell's own streets).
+	_hq_rect = Rect2i()
+	if district != &"":
+		var g := _grid_of(Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y))
+		_hq_rect = Rect2i(int(floor(g.x)) - 2, int(floor(g.y)) - 2, 5, 5)
+	var s_max := int((size.y - _oy + 420.0) / TILE_B) + 2
 	var d_max := int(size.x / (2.0 * TILE_A)) + 3
-	var haze_a := accents[0]
-	var haze_b := accents[1 % accents.size()]
 	for s in range(0, s_max):
 		for d in range(-d_max, d_max + 1):
 			if (s + d) % 2 != 0:
 				continue
 			var i := (s + d) / 2
 			var j := (s - d) / 2
-			var c := Vector2(ox + d * TILE_A, oy + s * TILE_B)
-			if c.y < -TILE_B * 2.0:
+			if _iso(i + 0.5, j + 0.5).y < -TILE_B * 2.0:
+				continue
+			if _hq_rect.has_point(Vector2i(i, j)):
+				_plaza(i, j)
+				if i == _hq_rect.end.x - 1 and j == _hq_rect.end.y - 1:
+					_hq()
 				continue
 			var street_i := posmod(i, STREET_EVERY) < STREET_WIDTH
 			var street_j := posmod(j, STREET_EVERY) < STREET_WIDTH
 			if street_i or street_j:
-				_street(verts, cols, c, street_i, street_j, i, j)
+				_street(i, j, street_i, street_j)
 				continue
-			_building(verts, cols, c, i, j, haze_a, haze_b)
+			_lot(i, j)
 	var idx := PackedInt32Array()
-	idx.resize(verts.size())
-	for k in verts.size():
+	idx.resize(_verts.size())
+	for k in _verts.size():
 		idx[k] = k
-	if not verts.is_empty():
-		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, verts, cols)
-	# Haze: a soft glow band near the bottom and darkening towards the top for text.
-	var haze := PackedColorArray([Color(Palette.NIGHT_SKY, 0.75), Color(Palette.NIGHT_SKY, 0.75), Color(Palette.NIGHT_SKY, 0.0), Color(Palette.NIGHT_SKY, 0.0)])
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.3), Vector2(0, size.y * 0.3)]), haze)
+	if not _verts.is_empty():
+		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, _verts, _cols)
+	# Haze: darker towards the top for text; dim; vignette.
+	var top := Color(Palette.NIGHT_SKY, 0.7)
+	var clear := Color(Palette.NIGHT_SKY, 0.0)
+	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.28), Vector2(0, size.y * 0.28)]), PackedColorArray([top, top, clear, clear]))
 	if dim > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
-	# Vignette.
-	var v := Color(0, 0, 0, 0.55)
-	var clear := Color(0, 0, 0, 0)
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.18, 0), Vector2(size.x * 0.18, size.y), Vector2(0, size.y)]), PackedColorArray([v, clear, clear, v]))
-	draw_polygon(PackedVector2Array([Vector2(size.x * 0.82, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.82, size.y)]), PackedColorArray([clear, v, v, clear]))
+	var v := Color(0, 0, 0, 0.5)
+	var c0 := Color(0, 0, 0, 0)
+	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
+	draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
 	_built_for = size
 	_fx.queue_redraw()
 
 
-func _quad(verts: PackedVector2Array, cols: PackedColorArray, a: Vector2, b: Vector2, c: Vector2, d: Vector2, ca: Color, cb: Color, cc: Color, cd: Color) -> void:
-	verts.append_array([a, b, c, a, c, d])
-	cols.append_array([ca, cb, cc, ca, cc, cd])
+# --- Primitives ---------------------------------------------------------------------------
+
+func _tri(a: Vector2, b: Vector2, c: Vector2, ca: Color, cb: Color, cc: Color) -> void:
+	_verts.append_array([a, b, c])
+	_cols.append_array([ca, cb, cc])
 
 
-func _diamond(c: Vector2, scale: float) -> Array[Vector2]:
-	return [c + Vector2(0, -TILE_B * scale), c + Vector2(TILE_A * scale, 0), c + Vector2(0, TILE_B * scale), c + Vector2(-TILE_A * scale, 0)]
+func _quad(a: Vector2, b: Vector2, c: Vector2, d: Vector2, ca: Color, cb: Color, cc: Color, cd: Color) -> void:
+	_tri(a, b, c, ca, cb, cc)
+	_tri(a, c, d, ca, cc, cd)
 
 
-func _street(verts: PackedVector2Array, cols: PackedColorArray, c: Vector2, along_i: bool, along_j: bool, i: int, j: int) -> void:
-	var p := _diamond(c, 1.0)
-	var col := Palette.NIGHT_STREET
-	_quad(verts, cols, p[0], p[1], p[2], p[3], col, col, col, col)
-	# Street trail segments (the overlay animates light along them).
-	var trail_col := Palette.NET_CYAN if net_mode else _accent(i if along_i else 0, j if along_j else 0)
-	# Lane markings only on the avenue's far row; the near row stays dark asphalt.
-	if (along_i and posmod(i, STREET_EVERY) != 1) or (along_j and posmod(j, STREET_EVERY) != 1):
-		along_i = along_i and posmod(i, STREET_EVERY) == 1
-		along_j = along_j and posmod(j, STREET_EVERY) == 1
-		if not (along_i or along_j):
-			return
-	if along_i and not along_j:
-		_trails.append({"a": (p[0] + p[1]) * 0.5, "b": (p[3] + p[2]) * 0.5, "color": trail_col, "phase": _h(i, j, 3)})
-	elif along_j and not along_i:
-		_trails.append({"a": (p[0] + p[3]) * 0.5, "b": (p[1] + p[2]) * 0.5, "color": trail_col, "phase": _h(i, j, 4)})
-	var glow := Color(trail_col, 0.3 if net_mode else 0.22)
-	# A street at fixed i runs along j (screen -A,+B); at fixed j it runs along i.
-	var mid_a := (p[0] + p[1]) * 0.5 if along_i else (p[0] + p[3]) * 0.5
-	var mid_b := (p[3] + p[2]) * 0.5 if along_i else (p[1] + p[2]) * 0.5
-	if along_i != along_j:
-		var n := (mid_b - mid_a).orthogonal().normalized()
-		_quad(verts, cols, mid_a - n * 5.0, mid_b - n * 5.0, mid_b + n * 5.0, mid_a + n * 5.0, Color(glow, glow.a * 0.4), Color(glow, glow.a * 0.4), Color(glow, glow.a * 0.4), Color(glow, glow.a * 0.4))
-		var core := Color(trail_col, 0.75 if net_mode else 0.55)
-		_quad(verts, cols, mid_a - n, mid_b - n, mid_b + n, mid_a + n, core, core, core, core)
+func _poly(pts: PackedVector2Array, col: Color) -> void:
+	var c := Vector2.ZERO
+	for p in pts:
+		c += p
+	c /= pts.size()
+	for k in pts.size():
+		_tri(c, pts[k], pts[(k + 1) % pts.size()], col, col, col)
 
 
-func _building(verts: PackedVector2Array, cols: PackedColorArray, c: Vector2, i: int, j: int, haze_a: Color, haze_b: Color) -> void:
-	var inset := 0.78 + _h(i, j, 1) * 0.12
-	var p := _diamond(c, inset)
-	var district := _h(i / STREET_EVERY, j / STREET_EVERY, 9)
-	var tall := _h(i, j, 2)
-	var h := 8.0 + tall * tall * 60.0 + district * 34.0
-	if tall > 0.94:
-		h += 110.0 + district * 80.0
-	var up := Vector2(0, -h)
-	var base_tint := haze_a.lerp(haze_b, _h(i, j, 5))
-	var left_top := Palette.NIGHT_BLOCK_LIT
-	var left_bot := Palette.NIGHT_BLOCK.lerp(base_tint, 0.06)
-	var right_top := Palette.NIGHT_BLOCK
-	var right_bot := Palette.NIGHT_STREET.lerp(base_tint, 0.04)
-	# Left face L-B, right face B-R, roof.
-	_quad(verts, cols, p[3], p[2], p[2] + up, p[3] + up, left_bot, left_bot, left_top, left_top)
-	_quad(verts, cols, p[2], p[1], p[1] + up, p[2] + up, right_bot, right_bot, right_top, right_top)
-	var roof := Palette.NIGHT_BLOCK_LIT.lightened(0.08)
-	_quad(verts, cols, p[0] + up, p[1] + up, p[2] + up, p[3] + up, roof, roof, roof.darkened(0.2), roof)
-	# Windows: parallelograms on both faces, a share lit.
-	var rows := int(h / 8.0)
-	var lit_share := 0.18 + district * 0.25
-	for face in 2:
-		var a := p[3] if face == 0 else p[2]
-		var b := p[2] if face == 0 else p[1]
-		var step := (b - a) / 3.0
-		for col_i in 3:
-			for r in rows:
-				var roll := _h(i * 7 + face, j * 13 + col_i, r)
-				if roll > lit_share:
-					continue
-				var o := a + step * (col_i + 0.28) + Vector2(0, -6.0 - r * 8.0)
-				var w := step * 0.44
-				var wc := _window_color(roll / maxf(lit_share, 0.001), i, j)
-				if face == 1:
-					wc = wc.darkened(0.3)
-				_quad(verts, cols, o, o + w, o + w + Vector2(0, -3.5), o + Vector2(0, -3.5), wc, wc, wc, wc)
-	# Neon: roof outline on some buildings, a vertical sign on others.
-	var n_roll := _h(i, j, 6)
-	if n_roll < 0.16 or tall > 0.93:
-		var nc := _accent(i, j)
-		for e in 4:
-			_neon(verts, cols, p[e] + up, p[(e + 1) % 4] + up, nc)
-	elif n_roll < 0.26 and h > 50.0:
-		var s0 := p[3].lerp(p[2], 0.5) + Vector2(0, -h * 0.25)
-		_neon(verts, cols, s0, s0 + Vector2(0, -h * 0.5), _accent(i + 3, j))
-	if tall > 0.9:
-		_beacons.append({"pos": p[0] + up + Vector2(0, -2), "color": _accent(i, j + 1), "phase": _h(i, j, 8)})
+## An inked line: a soft glow, then a core split into short segments so the sketch
+## shader's vertex wobble bends it; ends overshoot a touch like a pen stroke.
+func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: bool = true) -> void:
+	var length := a.distance_to(b)
+	if length < 0.5:
+		return
+	var dir := (b - a) / length
+	a -= dir * 1.5
+	b += dir * 1.5
+	var n := dir.orthogonal()
+	if glow:
+		var g := Color(col, 0.16)
+		_quad(a - n * 3.5, b - n * 3.5, b + n * 3.5, a + n * 3.5, g, g, g, g)
+	var steps := maxi(1, int(length / 9.0))
+	var core := Color(col, col.a * 0.95)
+	for k in steps:
+		var p0 := a.lerp(b, float(k) / steps)
+		var p1 := a.lerp(b, float(k + 1) / steps)
+		var w := width * (0.8 + 0.4 * _h(int(p0.x), int(p0.y), 21))
+		_quad(p0 - n * w * 0.5, p1 - n * w * 0.5, p1 + n * w * 0.5, p0 + n * w * 0.5, core, core, core, core)
 
 
-## A neon tube: a soft wide glow and a crisp core, as quads in the city's draw order.
-func _neon(verts: PackedVector2Array, cols: PackedColorArray, a: Vector2, b: Vector2, col: Color) -> void:
-	var n := (b - a).orthogonal().normalized()
-	var glow := Color(col, 0.16)
-	var core := Color(col, 0.95)
-	_quad(verts, cols, a - n * 3.0, b - n * 3.0, b + n * 3.0, a + n * 3.0, glow, glow, glow, glow)
-	_quad(verts, cols, a - n * 0.7, b - n * 0.7, b + n * 0.7, a + n * 0.7, core, core, core, core)
+## Grid rectangle footprint (lots) as screen points: back, right, front, left.
+func _rect_pts(x0: float, y0: float, x1: float, y1: float) -> PackedVector2Array:
+	return PackedVector2Array([_iso(x0, y0), _iso(x1, y0), _iso(x1, y1), _iso(x0, y1)])
 
 
-func _window_color(t: float, i: int, j: int) -> Color:
-	if net_mode:
-		return Color(Palette.NET_CYAN, 0.55) if t < 0.7 else Color(_accent(i, j), 0.7)
-	if t < 0.45:
-		return Color(Palette.CRT_AMBER, 0.7)
-	if t < 0.7:
-		return Color(Palette.NET_CYAN, 0.65)
-	if t < 0.88:
-		return Color(Palette.CELL_PINK, 0.65)
-	return Color(Palette.NEON_VIOLET, 0.7)
+## Regular n-gon footprint of grid radius r around (cx, cy).
+func _ngon(cx: float, cy: float, r: float, n: int, rot: float = 0.0) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for k in n:
+		var t := rot + TAU * k / n
+		pts.append(_iso(cx + cos(t) * r, cy + sin(t) * r))
+	return pts
+
+
+## Extrudes a convex ground footprint: faces shaded by facing (left faces catch the
+## city glow), a roof, window rows on vertical faces, and neon ink on the roof edge and
+## the visible verticals. `z0` lifts the base (tiers); `top_scale` < 1 tapers it.
+## Returns the roof points.
+func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, fill: Color, ink: Color, lit: float = 0.2, key: int = 0) -> PackedVector2Array:
+	var n := base.size()
+	var c := Vector2.ZERO
+	for p in base:
+		c += p
+	c /= n
+	var bot := PackedVector2Array()
+	var top := PackedVector2Array()
+	for p in base:
+		bot.append(p + Vector2(0, -z0))
+		top.append(c + (p - c) * top_scale + Vector2(0, -z0 - h))
+	var faces: Array[Dictionary] = []
+	for k in n:
+		var a := bot[k]
+		var b := bot[(k + 1) % n]
+		var e := b - a
+		var nrm := Vector2(e.y, -e.x).normalized()
+		if nrm.dot((a + b) * 0.5 - (c + Vector2(0, -z0))) < 0.0:
+			nrm = -nrm
+		if top_scale >= 0.99 and nrm.y <= 0.02:
+			continue
+		faces.append({"k": k, "n": nrm, "y": (a.y + b.y) * 0.5})
+	faces.sort_custom(func(f1: Dictionary, f2: Dictionary) -> bool: return f1["y"] < f2["y"])
+	var visible_v := {}
+	for f in faces:
+		var k: int = f["k"]
+		var k2 := (k + 1) % n
+		var nrm: Vector2 = f["n"]
+		var light := clampf(0.5 - nrm.x * 0.5, 0.0, 1.0)
+		var up_col := fill.lerp(FACE_LIGHT, 0.12 + light * 0.35)
+		var low_col := fill.darkened(0.35)
+		_quad(bot[k], bot[k2], top[k2], top[k], low_col, low_col, up_col, up_col)
+		if nrm.y > 0.02:
+			visible_v[k] = true
+			visible_v[k2] = true
+		if top_scale >= 0.99 and h > 14.0:
+			_windows(bot[k], bot[k2], h, lit, key * 31 + k, nrm.x < 0.0)
+	if top_scale > 0.05:
+		_poly(top, fill.lerp(FACE_LIGHT, 0.25))
+		for k in n:
+			_ink_line(top[k], top[(k + 1) % n], ink)
+	for k in visible_v:
+		# Verticals at the silhouette and the front corners.
+		_ink_line(bot[k], top[k], Color(ink, 0.85), 1.1, false)
+	return top
+
+
+func _windows(a: Vector2, b: Vector2, h: float, lit: float, key: int, bright: bool) -> void:
+	var cols_n := maxi(1, int(a.distance_to(b) / 11.0))
+	var rows := int((h - 6.0) / 8.0)
+	var step := (b - a) / cols_n
+	for ci in cols_n:
+		for r in rows:
+			var roll := _h(key, ci, r)
+			if roll > lit:
+				continue
+			var o := a + step * (ci + 0.3) + Vector2(0, -5.0 - r * 8.0)
+			var w := step * 0.4
+			var wc: Color
+			var t := roll / maxf(lit, 0.001)
+			if t < 0.4:
+				wc = Color(INKS[0], 0.75)
+			elif t < 0.62:
+				wc = Color(INKS[3], 0.7)
+			elif t < 0.78:
+				wc = Color(corp_color if district != &"" else INKS[4], 0.75)
+			elif t < 0.9:
+				wc = Color(INKS[2], 0.7)
+			else:
+				wc = Color(INKS[1], 0.75)
+			if not bright:
+				wc = wc.darkened(0.3)
+			_quad(o, o + w, o + w + Vector2(0, -3.2), o + Vector2(0, -3.2), wc, wc, wc, wc)
+
+
+# --- Lots ---------------------------------------------------------------------------------
+
+func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
+	var p := _rect_pts(i, j, i + 1, j + 1)
+	_quad(p[0], p[1], p[2], p[3], STREET, STREET, STREET, STREET)
+	# Lane markings on the avenue's far row only.
+	var li := along_i and posmod(i, STREET_EVERY) == 1
+	var lj := along_j and posmod(j, STREET_EVERY) == 1
+	if li == lj:
+		return
+	var col := Palette.NET_CYAN if net_mode else _ink(i if li else 0, j if lj else 0)
+	var a := _iso(i + 0.5, j) if li else _iso(i, j + 0.5)
+	var b := _iso(i + 0.5, j + 1) if li else _iso(i + 1, j + 0.5)
+	var g := Color(col, 0.1)
+	var nn := (b - a).orthogonal().normalized()
+	_quad(a - nn * 6.0, b - nn * 6.0, b + nn * 6.0, a + nn * 6.0, g, g, g, g)
+	_ink_line(a, b, Color(col, 0.6), 1.0, false)
+	_trails.append({"a": a, "b": b, "color": col, "phase": _h(i, j, 3)})
+
+
+func _plaza(i: int, j: int) -> void:
+	var p := _rect_pts(i, j, i + 1, j + 1)
+	var col := GROUND.lerp(corp_color, 0.06)
+	_quad(p[0], p[1], p[2], p[3], col, col, col, col)
+
+
+## Merged cells inside a 4x4 block: each 2x2 quadrant is one 2x2, two slabs (along i
+## or j) or four singles. Returns the grid rect of the cell holding lot (i, j).
+func _cell_of(i: int, j: int) -> Rect2i:
+	var li := posmod(i, STREET_EVERY) - STREET_WIDTH
+	var lj := posmod(j, STREET_EVERY) - STREET_WIDTH
+	var qi := i - li % 2
+	var qj := j - lj % 2
+	var mode := int(_h(floori(qi / 2.0), floori(qj / 2.0), 30) * 6.0)
+	match mode:
+		0:
+			return Rect2i(qi, qj, 2, 2)
+		1:
+			return Rect2i(qi, j, 2, 1)
+		2:
+			return Rect2i(i, qj, 1, 2)
+		_:
+			return Rect2i(i, j, 1, 1)
+
+
+func _lot(i: int, j: int) -> void:
+	var p := _rect_pts(i, j, i + 1, j + 1)
+	_quad(p[0], p[1], p[2], p[3], GROUND, GROUND, GROUND, GROUND)
+	var cell := _cell_of(i, j)
+	# A merged building is drawn once, from its front lot (correct depth order).
+	if i != cell.end.x - 1 or j != cell.end.y - 1:
+		return
+	_building(cell)
+
+
+func _pick_shape(ci: int, cj: int) -> int:
+	var mix: Array = _profile["mix"]
+	var total := 0
+	for w in mix:
+		total += int(w)
+	var roll := _h(ci, cj, 40) * total
+	for k in mix.size():
+		roll -= int(mix[k])
+		if roll < 0.0:
+			return k
+	return Shape.BOX
+
+
+func _building(cell: Rect2i) -> void:
+	var ci := cell.position.x
+	var cj := cell.position.y
+	var big := cell.size.x * cell.size.y
+	var district_h := _h(floori(ci / float(STREET_EVERY)), floori(cj / float(STREET_EVERY)), 9)
+	var r := _h(ci, cj, 2)
+	var hs: float = _profile["height"]
+	var h := (8.0 + pow(r, 2.7) * 100.0 + district_h * 28.0) * hs * (1.0 + 0.12 * (big - 1))
+	if r > 0.965:
+		h += 90.0 * hs
+	var fill := FILLS[int(_h(ci, cj, 5) * FILLS.size()) % FILLS.size()]
+	var ink := _ink(ci, cj)
+	var lit := 0.12 + district_h * 0.22
+	var inset := 0.1 + _h(ci, cj, 1) * 0.14
+	var x0 := ci + inset
+	var y0 := cj + inset
+	var x1 := cell.end.x - inset
+	var y1 := cell.end.y - inset
+	var cx := (x0 + x1) * 0.5
+	var cy := (y0 + y1) * 0.5
+	var half := minf(x1 - x0, y1 - y0) * 0.5
+	var shape := _pick_shape(ci, cj)
+	var key := ci * 97 + cj
+	var roof: PackedVector2Array
+	match shape:
+		Shape.STEPPED:
+			var h1 := h * 0.5
+			_extrude(_rect_pts(x0, y0, x1, y1), 0.0, h1, 1.0, fill, ink, lit, key)
+			var k := 0.14 + _h(ci, cj, 6) * 0.08
+			roof = _extrude(_rect_pts(x0 + k, y0 + k, x1 - k, y1 - k), h1, h * 0.35, 1.0, fill, ink, lit, key + 1)
+			if big > 1 or h > 60.0:
+				roof = _extrude(_rect_pts(x0 + k * 2.0, y0 + k * 2.0, x1 - k * 2.0, y1 - k * 2.0), h1 + h * 0.35, h * 0.3 + 10.0, 1.0, fill, ink, lit, key + 2)
+		Shape.CYLINDER:
+			roof = _extrude(_ngon(cx, cy, half, 8, PI / 8.0), 0.0, h + 10.0, 1.0, fill, ink, lit, key)
+			if _h(ci, cj, 7) < 0.5:
+				_extrude(_ngon(cx, cy, half * 0.6, 8, PI / 8.0), h + 10.0, 8.0, 0.55, fill, ink, 0.0, key + 1)
+		Shape.HEX:
+			roof = _extrude(_ngon(cx, cy, half, 6, _h(ci, cj, 8) * PI), 0.0, h, 1.0, fill, ink, lit, key)
+		Shape.TAPER:
+			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, h * 1.1 + 20.0, 0.5, fill, ink, lit, key)
+		Shape.NEEDLE:
+			var nh := h * 1.3 + 40.0
+			roof = _extrude(_ngon(cx, cy, half * 0.55, 6, 0.3), 0.0, nh, 1.0, fill, ink, lit, key)
+			var tip := _iso(cx, cy) + Vector2(0, -nh)
+			_ink_line(tip, tip + Vector2(0, -26), ink, 1.0, false)
+			_beacons.append({"pos": tip + Vector2(0, -27), "color": ink, "phase": _h(ci, cj, 8)})
+		Shape.WAREHOUSE:
+			var wh := 9.0 + r * 16.0
+			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, wh, 1.0, fill, ink, lit * 0.5, key)
+			for k in 3:
+				var t := (k + 1) / 4.0
+				_ink_line(_iso(lerpf(x0, x1, t), y0) + Vector2(0, -wh), _iso(lerpf(x0, x1, t), y1) + Vector2(0, -wh), Color(ink, 0.35), 1.0, false)
+		_:
+			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, h, 1.0, fill, ink, lit, key)
+	# Roof clutter: antennae, a lit sign, a beacon on the tall ones.
+	var rc := Vector2.ZERO
+	for q in roof:
+		rc += q
+	rc /= maxf(1.0, roof.size())
+	var clutter := _h(ci, cj, 14)
+	if clutter < 0.18 and h > 30.0:
+		_ink_line(rc, rc + Vector2(0, -12.0 - clutter * 60.0), Color(ink, 0.8), 1.0, false)
+	elif clutter > 0.86 and roof.size() >= 4:
+		var sc := Color(_ink(ci + 5, cj), 0.85)
+		_quad(rc + Vector2(-6, -2), rc + Vector2(6, -2), rc + Vector2(6, -9), rc + Vector2(-6, -9), sc, sc, sc, sc)
+	if r > 0.92:
+		_beacons.append({"pos": rc + Vector2(0, -3), "color": ink, "phase": _h(ci, cj, 8)})
+
+
+# --- Corporation HQs ----------------------------------------------------------------------
+
+## The district's landmark, one per corporation, standing on its plaza.
+func _hq() -> void:
+	var cx := _hq_rect.position.x + 2.5
+	var cy := _hq_rect.position.y + 2.5
+	var col := corp_color
+	var dark := FILLS[0]
+	var mid := FILLS[1]
+	var base := _iso(cx, cy)
+	var ring := _ngon(cx, cy, 2.3, 24)
+	for k in ring.size():
+		_ink_line(ring[k], ring[(k + 1) % ring.size()], Color(col, 0.5), 1.0, false)
+	match district:
+		&"solace":
+			# Helix Spire: a round tower wrapped in floating care-rings under a halo cap.
+			_extrude(_ngon(cx, cy, 1.1, 12), 0.0, 250.0, 1.0, mid, col, 0.3, 900)
+			_extrude(_ngon(cx, cy, 0.7, 12), 250.0, 40.0, 0.35, dark, col, 0.0, 901)
+			for k in 5:
+				var hh := 40.0 + k * 46.0
+				var rr := _ngon(cx, cy, 1.55 + 0.15 * sin(k * 1.7), 24, k * 0.4)
+				for m in rr.size():
+					if rr[m].y > base.y - 2.0 or m % 2 == 0:
+						_ink_line(rr[m] + Vector2(0, -hh), rr[(m + 1) % rr.size()] + Vector2(0, -hh), col, 1.4)
+			_beacons.append({"pos": base + Vector2(0, -292), "color": col, "phase": 0.2})
+			_sign(base + Vector2(-40, -330), "SOLACE", col)
+		&"meridian":
+			# Freight Ziggurat: stacked terraces, container stacks and a crane arm.
+			_extrude(_rect_pts(cx - 2.0, cy - 2.0, cx + 2.0, cy + 2.0), 0.0, 44.0, 1.0, mid, col, 0.25, 910)
+			_extrude(_rect_pts(cx - 1.4, cy - 1.4, cx + 1.4, cy + 1.4), 44.0, 44.0, 1.0, dark, col, 0.25, 911)
+			for k in 4:
+				var bx := cx - 1.35 + k * 0.4
+				var cc: Color = [INKS[0], INKS[3], INKS[2], col][k]
+				_extrude(_rect_pts(bx, cy + 1.45, bx + 0.34, cy + 1.95), 44.0, 10.0 + (k % 2) * 10.0, 1.0, dark, cc, 0.0, 913 + k)
+			_extrude(_rect_pts(cx - 0.7, cy - 0.7, cx + 0.7, cy + 0.7), 88.0, 110.0, 1.0, mid, col, 0.35, 912)
+			var mast := _iso(cx + 0.7, cy - 0.7) + Vector2(0, -198)
+			_ink_line(mast, mast + Vector2(0, -40), col, 1.6)
+			var jib := mast + Vector2(-150, -30)
+			_ink_line(mast + Vector2(0, -40), jib, col, 1.6)
+			_ink_line(mast + Vector2(0, -40), mast + Vector2(40, -20), col, 1.2)
+			_ink_line(jib, jib + Vector2(0, 50), Color(col, 0.8), 1.0, false)
+			var box := jib + Vector2(0, 50)
+			_quad(box + Vector2(-12, 0), box + Vector2(12, 0), box + Vector2(12, 14), box + Vector2(-12, 14), dark, dark, dark, dark)
+			for e in [[Vector2(-12, 0), Vector2(12, 0)], [Vector2(12, 0), Vector2(12, 14)], [Vector2(12, 14), Vector2(-12, 14)], [Vector2(-12, 14), Vector2(-12, 0)]]:
+				_ink_line(box + e[0], box + e[1], INKS[0], 1.2, false)
+			_beacons.append({"pos": mast + Vector2(0, -42), "color": col, "phase": 0.5})
+			_sign(base + Vector2(-50, -262), "MERIDIAN", col)
+		&"halcyon":
+			# Civic Pyramid: a stepped civic pyramid under a floating ring of light.
+			for k in 4:
+				var r := 2.0 - k * 0.45
+				_extrude(_rect_pts(cx - r, cy - r, cx + r, cy + r), k * 38.0, 38.0, 1.0 if k < 3 else 0.2, mid if k % 2 == 0 else dark, col, 0.2, 920 + k)
+			var apex := base + Vector2(0, -190)
+			var halo := PackedVector2Array()
+			for k in 25:
+				halo.append(apex + Vector2(cos(TAU * k / 24.0) * 46.0, sin(TAU * k / 24.0) * 14.0 - 20.0))
+			for k in 24:
+				_ink_line(halo[k], halo[k + 1], col, 1.5)
+			_ink_line(apex, apex + Vector2(0, -44), Color(col, 0.8), 1.2, false)
+			_beacons.append({"pos": apex + Vector2(0, -46), "color": col, "phase": 0.7})
+			_sign(base + Vector2(-46, -268), "HALCYON", col)
+		&"orbital":
+			# Orbital Tether: a hex needle on a ring platform, its tether beam into the sky.
+			_extrude(_ngon(cx, cy, 2.0, 8, PI / 8.0), 0.0, 22.0, 1.0, mid, col, 0.2, 930)
+			_extrude(_ngon(cx, cy, 0.6, 6), 22.0, 300.0, 0.7, dark, col, 0.35, 931)
+			var tip := base + Vector2(0, -322)
+			var beam := Color(col, 0.12)
+			_quad(tip + Vector2(-9, 0), tip + Vector2(9, 0), Vector2(tip.x + 5, 0), Vector2(tip.x - 5, 0), beam, beam, Color(col, 0.03), Color(col, 0.03))
+			_ink_line(tip, Vector2(tip.x, 0), Color(col, 0.7), 1.2, false)
+			for k in 3:
+				var y := tip.y * (0.25 + k * 0.25)
+				_ink_line(Vector2(tip.x - 16, y), Vector2(tip.x + 16, y), Color(col, 0.6), 1.0, false)
+			_beacons.append({"pos": tip, "color": col, "phase": 0.1})
+			_sign(base + Vector2(30, -160), "ORBITAL", col)
+		&"rebel_cell":
+			# The Hive: a honeycomb cluster of hex towers, the tallest crowned with the Cell.
+			var offs := [Vector2(-1.1, 0.0), Vector2(0.0, -1.1), Vector2(1.1, 0.0), Vector2(0.0, 1.1), Vector2(0.0, 0.0)]
+			var hs := [90.0, 130.0, 70.0, 50.0, 220.0]
+			for idx in [1, 0, 2, 4, 3]:
+				var o: Vector2 = offs[idx]
+				_extrude(_ngon(cx + o.x, cy + o.y, 0.62, 6, PI / 6.0), 0.0, hs[idx], 1.0, mid if idx % 2 == 0 else dark, col if idx != 4 else INKS[2], 0.3, 940 + idx)
+			var crown := base + Vector2(0, -238)
+			var hexa := PackedVector2Array()
+			for k in 6:
+				hexa.append(crown + Vector2(cos(TAU * k / 6.0), sin(TAU * k / 6.0)) * 16.0)
+			_poly(hexa, Color(Palette.CELL_ACID, 0.9))
+			for k in 6:
+				_ink_line(hexa[k], hexa[(k + 1) % 6], INKS[2], 1.4)
+			_sign(base + Vector2(-58, -280), "REBEL_CELL", INKS[2])
+
+
+## A neon name plate floating over an HQ (drawn by the overlay).
+func _sign(at: Vector2, text: String, col: Color) -> void:
+	_signs.append({"pos": at, "text": text, "color": col})
 
 
 func _draw_fx() -> void:
 	if _built_for != size:
 		return
-	# Traffic: bright dashes sliding along the streets.
+	for sg in _signs:
+		var p: Vector2 = sg["pos"]
+		var col: Color = sg["color"]
+		var w := Palette.mono().get_string_size(sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 14
+		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(Palette.NIGHT_SKY, 0.85))
+		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(col, 0.2), false, 5.0)
+		_fx.draw_rect(Rect2(p, Vector2(w, 22)), col, false, 1.2)
+		_fx.draw_string(Palette.mono(), p + Vector2(7, 16), sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, col.lightened(0.3))
+	# Traffic: bright dashes sliding along the lanes.
 	for t in _trails:
 		var a: Vector2 = t["a"]
 		var b: Vector2 = t["b"]
 		var k := fmod(float(t["phase"]) + anim_t * 0.35, 1.0)
 		var p := a.lerp(b, k)
 		var col: Color = t["color"]
-		_fx.draw_line(p, p + (b - a) * 0.35, Color(col, 0.55), 2.0)
+		_fx.draw_line(p, p + (b - a) * 0.35, Color(col, 0.6), 2.0)
 	for bcn in _beacons:
 		var on := fmod(float(bcn["phase"]) * 3.0 + anim_t, 1.6) < 0.8
 		var col: Color = bcn["color"]

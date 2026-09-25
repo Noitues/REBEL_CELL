@@ -13,6 +13,7 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 	title = p_title
 	accent = p_accent
 	theme_type_variation = &"TerminalPanel"
+	material = UiTheme.crt_material()
 	var outer := VBoxContainer.new()
 	outer.add_theme_constant_override("separation", 6)
 	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE

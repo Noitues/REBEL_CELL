@@ -40,10 +40,17 @@ func _ready() -> void:
 	root.add_child(_panel_host)
 	AudioDirector.play_music("hq")
 	var args := OS.get_cmdline_user_args()
+	for a in args:
+		if a.begins_with("--demo-district="):
+			background.set_district(StringName(a.trim_prefix("--demo-district=")))
 	if args.has("--demo-options"):
 		show_options()
 	elif args.has("--demo-slots"):
 		show_slots()
+	elif args.has("--demo-codex"):
+		show_codex()
+	elif args.has("--demo-stats"):
+		show_stats()
 	else:
 		show_main()
 

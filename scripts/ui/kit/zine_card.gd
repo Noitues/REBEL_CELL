@@ -67,10 +67,25 @@ func _draw() -> void:
 	var lines := _wrap(description, 16)
 	for i in mini(lines.size(), 5):
 		draw_string(Palette.mono(), Vector2(8, 58 + i * 15), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, 11, fg)
+	_chip(Vector2(size.x - 24, size.y - 22), fg)
 	if hotkey != "":
 		draw_string(Palette.marker(), Vector2(8, size.y - 8), "[%s]" % hotkey, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, fg)
 	if disabled:
 		draw_rect(rect, Color(0, 0, 0, 0.5))
+
+
+## A small microchip mark in the corner (the reference's chip stickers).
+func _chip(c: Vector2, col: Color) -> void:
+	var r := Rect2(c - Vector2(8, 8), Vector2(16, 16))
+	draw_rect(r, Color(col, 0.15))
+	draw_rect(r, Color(col, 0.7), false, 1.5)
+	draw_rect(r.grow(-5), Color(col, 0.7))
+	for k in 3:
+		var o := -5.0 + k * 5.0
+		draw_line(c + Vector2(o, -8), c + Vector2(o, -11), Color(col, 0.7), 1.0)
+		draw_line(c + Vector2(o, 8), c + Vector2(o, 11), Color(col, 0.7), 1.0)
+		draw_line(c + Vector2(-8, o), c + Vector2(-11, o), Color(col, 0.7), 1.0)
+		draw_line(c + Vector2(8, o), c + Vector2(11, o), Color(col, 0.7), 1.0)
 
 
 static func _wrap(text: String, width: int) -> PackedStringArray:

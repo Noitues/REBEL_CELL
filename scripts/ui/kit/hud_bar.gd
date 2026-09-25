@@ -14,6 +14,7 @@ func _init() -> void:
 	add_child(header)
 	label = Label.new()
 	label.theme_type_variation = &"HudLabel"
+	label.material = UiTheme.crt_material()
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # large text scales (H14)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN

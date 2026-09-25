@@ -230,6 +230,26 @@ static func _bars(t: Theme) -> void:
 	t.set_stylebox("grabber_area_highlight", "HSlider", fill)
 
 
+static var _crt: ShaderMaterial = null
+
+
+## The shared terminal-glass material (scanlines + flicker) for terminal panels, the HUD
+## and log strips; zeroed under reduce-effects.
+static func crt_material() -> ShaderMaterial:
+	if _crt == null:
+		_crt = ShaderMaterial.new()
+		_crt.shader = load("res://shaders/crt_panel.gdshader")
+		_sync_crt()
+	return _crt
+
+
+static func _sync_crt() -> void:
+	if _crt == null:
+		return
+	_crt.set_shader_parameter("scan_strength", 0.0 if Settings.reduce_effects else 0.12)
+	_crt.set_shader_parameter("flicker", 0.0 if Settings.reduce_effects else 0.01)
+
+
 static var _chevron: ImageTexture = null
 
 
@@ -257,6 +277,7 @@ static var _listening: bool = false
 ## One static listener serves every root (bound callables are not distinct connections).
 static func apply(root: Control) -> void:
 	root.theme = build(Settings.text_scale)
+	crt_material()
 	_roots.append(weakref(root))
 	if not _listening:
 		_listening = true
@@ -264,6 +285,7 @@ static func apply(root: Control) -> void:
 
 
 static func _reapply_all() -> void:
+	_sync_crt()
 	var alive: Array[WeakRef] = []
 	var theme := build(Settings.text_scale)
 	for ref in _roots:

@@ -28,13 +28,22 @@ func _init() -> void:
 	city.net_mode = true
 	city.dim = 0.35
 	city.city_seed = skyline_seed
-	city.accents = [Palette.NET_CYAN, Palette.CELL_PINK, Palette.NEON_VIOLET, Palette.NET_CYAN]
 	add_child(city)
 	_grid = Control.new()
 	_grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_grid.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_grid.draw.connect(_draw_grid)
 	add_child(_grid)
+
+
+func _ready() -> void:
+	if RunManager.campaign != null:
+		set_district(RunManager.campaign.corporation_id)
+
+
+## Shows the district of the corporation being fought (its streets and its HQ).
+func set_district(corporation_id: StringName) -> void:
+	city.district = corporation_id
 
 
 func _sync_city() -> void:

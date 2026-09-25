@@ -31,7 +31,7 @@ func _draw() -> void:
 	if portrait != null:
 		draw_texture_rect(portrait, image, false)
 	else:
-		_silhouette(image)
+		Polaroid.draw_silhouette(self, image, placeholder_label)
 		draw_string(Palette.mono(), image.position + Vector2(4, image.size.y - 5), placeholder_label, HORIZONTAL_ALIGNMENT_LEFT, image.size.x - 8, 8, Color(Palette.PAPER, 0.6))
 	if glitch:
 		for i in 4:
@@ -41,26 +41,26 @@ func _draw() -> void:
 
 ## Placeholder portrait until final art lands: a neon duotone head-and-shoulders
 ## silhouette with a visor glint, tinted per operative (hash of the label).
-func _silhouette(image: Rect2) -> void:
+static func draw_silhouette(ci: CanvasItem, image: Rect2, key: String) -> void:
 	var tints := [Palette.CELL_PINK, Palette.NET_CYAN, Palette.NEON_VIOLET, Palette.CRT_AMBER, Palette.CORP_SOLACE]
-	var tint: Color = tints[absi(hash(placeholder_label)) % tints.size()]
+	var tint: Color = tints[absi(hash(key)) % tints.size()]
 	var top := Palette.NIGHT_SKY
 	var bottom := tint.darkened(0.55)
-	draw_polygon(PackedVector2Array([image.position, Vector2(image.end.x, image.position.y), image.end, Vector2(image.position.x, image.end.y)]),
+	ci.draw_polygon(PackedVector2Array([image.position, Vector2(image.end.x, image.position.y), image.end, Vector2(image.position.x, image.end.y)]),
 		PackedColorArray([top, top, bottom, bottom]))
 	for k in 5:
 		var y := image.position.y + image.size.y * (0.15 + k * 0.18)
-		draw_line(Vector2(image.position.x, y), Vector2(image.end.x, y), Color(tint, 0.08), 1.0)
+		ci.draw_line(Vector2(image.position.x, y), Vector2(image.end.x, y), Color(tint, 0.08), 1.0)
 	var c := image.position + Vector2(image.size.x * 0.5, image.size.y * 0.42)
 	var r := image.size.x * 0.2
 	var body := Color("#07080F")
 	# Shoulders, neck, head; a rim light on the tint side.
-	draw_colored_polygon(PackedVector2Array([Vector2(image.position.x + image.size.x * 0.08, image.end.y), Vector2(c.x - r * 1.6, c.y + r * 1.5),
+	ci.draw_colored_polygon(PackedVector2Array([Vector2(image.position.x + image.size.x * 0.08, image.end.y), Vector2(c.x - r * 1.6, c.y + r * 1.5),
 		Vector2(c.x + r * 1.6, c.y + r * 1.5), Vector2(image.end.x - image.size.x * 0.08, image.end.y)]), body)
-	draw_rect(Rect2(c.x - r * 0.45, c.y + r * 0.6, r * 0.9, r), body)
-	draw_circle(c, r, body)
-	draw_arc(c, r, -PI * 0.45, PI * 0.35, 16, Color(tint, 0.9), 1.5)
-	draw_line(Vector2(c.x + r * 1.6, c.y + r * 1.5), Vector2(image.end.x - image.size.x * 0.08, image.end.y), Color(tint, 0.7), 1.5)
+	ci.draw_rect(Rect2(c.x - r * 0.45, c.y + r * 0.6, r * 0.9, r), body)
+	ci.draw_circle(c, r, body)
+	ci.draw_arc(c, r, -PI * 0.45, PI * 0.35, 16, Color(tint, 0.9), 1.5)
+	ci.draw_line(Vector2(c.x + r * 1.6, c.y + r * 1.5), Vector2(image.end.x - image.size.x * 0.08, image.end.y), Color(tint, 0.7), 1.5)
 	# Visor.
-	draw_rect(Rect2(c.x - r * 0.75, c.y - r * 0.2, r * 1.5, r * 0.32), Color(tint, 0.95))
-	draw_rect(Rect2(c.x - r * 0.75, c.y - r * 0.2, r * 1.5, r * 0.32).grow(2), Color(tint, 0.25))
+	ci.draw_rect(Rect2(c.x - r * 0.75, c.y - r * 0.2, r * 1.5, r * 0.32), Color(tint, 0.95))
+	ci.draw_rect(Rect2(c.x - r * 0.75, c.y - r * 0.2, r * 1.5, r * 0.32).grow(2), Color(tint, 0.25))

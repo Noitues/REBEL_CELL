@@ -38,8 +38,7 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER_ALT)
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
 		draw_string(Palette.display(), Vector2(10, 30), "WANTED", HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
-		draw_rect(Rect2(size.x * 0.3, 40, size.x * 0.4, 40), Color(0.5, 0.5, 0.5))
-		draw_string(Palette.mono(), Vector2(size.x * 0.3 + 4, 64), "[OPERATIVE]", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Palette.PAPER)
+		Polaroid.draw_silhouette(self, Rect2(size.x * 0.3, 38, size.x * 0.4, 44), "[OPERATIVE]")
 		y = 84
 	var letters := ["H", "E", "A", "T"]
 	var fonts := [Palette.display(), Palette.marker(), Palette.mono(), Palette.display()]

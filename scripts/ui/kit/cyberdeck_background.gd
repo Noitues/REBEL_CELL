@@ -29,6 +29,16 @@ func _init() -> void:
 	add_child(_frame)
 
 
+func _ready() -> void:
+	if RunManager.campaign != null:
+		set_district(RunManager.campaign.corporation_id)
+
+
+## The window looks out on the district of the corporation being fought.
+func set_district(corporation_id: StringName) -> void:
+	city.district = corporation_id
+
+
 func _process(delta: float) -> void:
 	if Settings.reduce_effects or heat_band <= 0:
 		return
