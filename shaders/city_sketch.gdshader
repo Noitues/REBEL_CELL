@@ -4,8 +4,9 @@
 // `flicker` go to 0 under reduce-effects.
 shader_type canvas_item;
 
-uniform float wobble = 1.5;
-uniform float saturation = 1.3;
+uniform float wobble = 1.6;
+uniform float jitter = 0.5;
+uniform float saturation = 1.6;
 uniform float grain : hint_range(0.0, 1.0) = 0.12;
 uniform float scan_strength : hint_range(0.0, 1.0) = 0.07;
 uniform float flicker : hint_range(0.0, 0.1) = 0.0;
@@ -22,8 +23,11 @@ float noise(vec2 p) {
 }
 
 void vertex() {
+	// Two octaves: a slow drift of the whole stroke and a fine hand tremor.
 	vec2 q = VERTEX * 0.06;
+	vec2 f = VERTEX * 0.23;
 	VERTEX += (vec2(noise(q), noise(q + vec2(17.3, 5.1))) - 0.5) * 2.0 * wobble;
+	VERTEX += (vec2(noise(f + vec2(3.7, 9.2)), noise(f + vec2(11.1, 2.3))) - 0.5) * 2.0 * jitter;
 }
 
 void fragment() {

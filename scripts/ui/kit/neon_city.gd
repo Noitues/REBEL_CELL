@@ -288,14 +288,14 @@ func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: boo
 
 
 func _stroke(a: Vector2, b: Vector2, n: Vector2, bow: float, width: float, col: Color, key: int) -> void:
-	var steps := maxi(2, int(a.distance_to(b) / 8.0))
+	var steps := maxi(2, int(a.distance_to(b) / 5.0))
 	var prev_l := Vector2.ZERO
 	var prev_r := Vector2.ZERO
 	for k in steps + 1:
 		var t := float(k) / steps
 		var p := a.lerp(b, t) + n * sin(t * PI) * bow
-		var taper := clampf(minf(t, 1.0 - t) * 6.0, 0.35, 1.0)
-		var w := width * taper * (0.6 + 0.9 * _h(key, k, 21))
+		var taper := clampf(minf(t, 1.0 - t) * 6.0, 0.65, 1.0)
+		var w := width * taper * (0.75 + 0.5 * _h(key, k, 21))
 		var l := p - n * w * 0.5
 		var r := p + n * w * 0.5
 		if k > 0:
@@ -377,7 +377,7 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 			_ink_line(top[k], top[(k + 1) % n], ink)
 	for k in visible_v:
 		# Verticals at the silhouette and the front corners.
-		_ink_line(bot[k], top[k], Color(ink, 0.85), 1.1, false)
+		_ink_line(bot[k], top[k], ink, 1.7, true)
 	return top
 
 
