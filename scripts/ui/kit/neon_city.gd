@@ -1,13 +1,15 @@
 class_name NeonCity
 extends Control
-## The neon-night backdrop (STYLE_GUIDE 1, "Neon city"): an isometric city seen from
+## The neon-night backdrop (STYLE_GUIDE 1, "Neon city"): one isometric city seen from
 ## above. Buildings are near-black, dark blue-grey and dark grey masses inked with neon
 ## outlines (roof edges and verticals) in amber, purple, pink, cyan and green; a sketch
-## shader wobbles the lines so they read hand-drawn. Each corporation has its own
-## district (`district`): its own layout, building mix and colour weighting, and a
-## unique landmark HQ. Geometry is built once per size into one triangle array; a light
-## overlay animates traffic, beacons and rain unless reduce-effects. Pure view:
-## deterministic from the district and `city_seed`, never touches game state.
+## shader wobbles the lines so they read hand-drawn. The city is split into organic
+## territories: each corporation owns one (its own building mix, more ink in its colour,
+## a unique landmark HQ), with the neutral Sprawl between them. The camera looks at the
+## territory named by `district` (or pans the whole city, `pan`). Geometry is built once
+## per size into one triangle array; a light overlay animates traffic, beacons and rain
+## unless reduce-effects. Every building's roof outline is kept (`roof_of`) so map
+## overlays can mark real buildings. Pure view: deterministic, never touches game state.
 
 const SKETCH_SHADER := preload("res://shaders/city_sketch.gdshader")
 
@@ -31,25 +33,61 @@ const FACE_LIGHT := Color("#2A3350")
 ## District profiles: building mix weights [box, stepped, cylinder, hex, taper, needle,
 ## warehouse], height scale, share of lines in the corporation colour, layout seed.
 const DISTRICTS := {
-	&"solace": {"mix": [3, 2, 4, 1, 1, 1, 1], "height": 1.0, "corp_ink": 0.45, "seed": 11},
-	&"meridian": {"mix": [3, 2, 0, 0, 0, 0, 6], "height": 0.7, "corp_ink": 0.45, "seed": 23},
-	&"halcyon": {"mix": [3, 4, 1, 0, 4, 0, 1], "height": 1.0, "corp_ink": 0.45, "seed": 37},
-	&"orbital": {"mix": [2, 1, 2, 1, 1, 5, 0], "height": 1.35, "corp_ink": 0.4, "seed": 41},
-	&"rebel_cell": {"mix": [2, 2, 1, 5, 1, 1, 1], "height": 0.95, "corp_ink": 0.45, "seed": 53},
+	&"solace": {"mix": [3, 2, 4, 1, 1, 1, 1], "height": 1.0, "corp_ink": 0.58, "seed": 11},
+	&"meridian": {"mix": [3, 2, 0, 0, 0, 0, 6], "height": 0.7, "corp_ink": 0.58, "seed": 23},
+	&"halcyon": {"mix": [3, 4, 1, 0, 4, 0, 1], "height": 1.0, "corp_ink": 0.58, "seed": 37},
+	&"orbital": {"mix": [2, 1, 2, 1, 1, 5, 0], "height": 1.35, "corp_ink": 0.58, "seed": 41},
+	&"rebel_cell": {"mix": [2, 2, 1, 5, 1, 1, 1], "height": 0.95, "corp_ink": 0.58, "seed": 53},
 	&"": {"mix": [4, 3, 2, 1, 1, 1, 2], "height": 1.0, "corp_ink": 0.0, "seed": 7},
 }
 enum Shape { BOX, STEPPED, CYLINDER, HEX, TAPER, NEEDLE, WAREHOUSE }
+
+## Territory centres (grid lots) and their pull (bigger = larger territory). The
+## corporations' HQs stand on their centres; &"" entries are the neutral Sprawl.
+const TERRITORIES: Array[Dictionary] = [
+	{"id": &"", "at": Vector2(0, 0), "pull": 1.0},
+	{"id": &"solace", "at": Vector2(-34, -4), "pull": 1.15},
+	{"id": &"meridian", "at": Vector2(4, -36), "pull": 1.25},
+	{"id": &"halcyon", "at": Vector2(36, 2), "pull": 1.0},
+	{"id": &"orbital", "at": Vector2(-6, 34), "pull": 0.9},
+	{"id": &"rebel_cell", "at": Vector2(30, 32), "pull": 0.8},
+	{"id": &"", "at": Vector2(-36, -40), "pull": 0.9},
+	{"id": &"", "at": Vector2(40, -38), "pull": 0.8},
+]
+## How far territory borders wander (lots).
+const BORDER_WARP := 11.0
+## Ink palettes: 0 = full neon; 1-3 paler options (lerped toward a tint).
+const INK_SETS: Array[Dictionary] = [
+	{"name": "NEON", "tint": Color.WHITE, "amount": 0.0},
+	{"name": "PASTEL NEON", "tint": Color.WHITE, "amount": 0.3},
+	{"name": "FADED PRINT", "tint": Color("#C9BFD9"), "amount": 0.38},
+	{"name": "COOL HAZE", "tint": Color("#D6F2FF"), "amount": 0.32},
+]
+## Pan margin (px beyond the screen on every side) and speed.
+const PAN_MARGIN := 360.0
 
 ## Decoration seed (a view hash, not game randomness).
 var city_seed: int = 7
 ## 0 = full brightness, 1 = black. Keeps panels readable over the city.
 var dim: float = 0.25
-## The corporation whose district this is (&"" = the Cell's mixed streets, no HQ).
+## The territory the camera looks at (&"" = the whole city from the Sprawl).
 var district: StringName = &"":
 	set(v):
 		if v != district:
 			district = v
 			refresh()
+## Slowly pan around the city (main menu). Frozen under reduce-effects.
+var pan: bool = false:
+	set(v):
+		pan = v
+		_apply_pan_margin()
+## Ink palette (INK_SETS index).
+## Design review: big territory names over each HQ (the zoomed-out overview).
+var territory_labels: bool = false
+var ink_set: int = 0:
+	set(v):
+		ink_set = v
+		refresh()
 ## Corporation colour (follows the district) and Heat creep (0-1, GDD 9.4).
 var corp_color: Color = Palette.CORP_SOLACE
 var corp_creep: float = 0.0
@@ -73,6 +111,15 @@ var _ox: float = 0.0
 var _oy: float = 0.0
 var _hq_rect: Rect2i = Rect2i()
 var _profile: Dictionary = {}
+## Territory of the lot being drawn and its corporation colour.
+var _terr: StringName = &""
+var _terr_col: Color = Color.WHITE
+var _hq_rects: Dictionary = {}  # corp id -> Rect2i
+var _pan_t: float = 0.0
+var _inks: Array[Color] = []
+## Roof outline (screen points, local) of the building on each lot: Vector2i -> Dictionary
+## {"roof": PackedVector2Array, "base": Vector2, "shape": int, "height": float}.
+var _roofs: Dictionary = {}
 ## Street rows/columns and each lot's index inside its block (built per draw).
 var _street_i: Dictionary = {}
 var _street_j: Dictionary = {}
@@ -115,12 +162,21 @@ func _process(delta: float) -> void:
 	if Settings.reduce_effects or not is_visible_in_tree():
 		return
 	anim_t += delta
+	if pan:
+		# A slow Lissajous drift across the city (about 6 px/s at its fastest).
+		_pan_t += delta
+		var dx := sin(_pan_t * 0.019) * PAN_MARGIN * 0.9
+		var dy := sin(_pan_t * 0.013 + 1.0) * PAN_MARGIN * 0.7
+		offset_left = -PAN_MARGIN + dx
+		offset_right = PAN_MARGIN + dx
+		offset_top = -PAN_MARGIN + dy
+		offset_bottom = PAN_MARGIN + dy
 	_fx.queue_redraw()
 
 
 ## Deterministic 0-1 hash of three integers (view decoration only).
 func _h(a: int, b: int, c: int = 0) -> float:
-	var n := (a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ ((city_seed + int(_profile.get("seed", 0))) * 2654435761)
+	var n := (a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ (city_seed * 2654435761)
 	n = (n ^ (n >> 13)) * 1274126177
 	n = n ^ (n >> 16)
 	return float(n & 0xFFFF) / 65535.0
@@ -128,12 +184,86 @@ func _h(a: int, b: int, c: int = 0) -> float:
 
 ## Line colour: the corporation's ink for its share of buildings, else any of the five.
 func _ink(a: int, b: int) -> Color:
-	var share: float = float(_profile.get("corp_ink", 0.0)) + corp_creep * 0.35
-	if district != &"" and _h(a, b, 12) < share:
-		return corp_color
+	var share: float = float(_profile.get("corp_ink", 0.0))
+	if _terr == district and district != &"":
+		share += corp_creep * 0.35
+	if _terr != &"" and _h(a, b, 12) < share:
+		return _terr_col
 	if net_mode and _h(a, b, 13) < 0.25:
-		return Palette.NET_CYAN
-	return INKS[int(_h(a, b, 11) * INKS.size()) % INKS.size()]
+		return _pale(Palette.NET_CYAN)
+	return _inks[int(_h(a, b, 11) * _inks.size()) % _inks.size()]
+
+
+## Applies the ink palette's paleness to a colour.
+func _pale(c: Color) -> Color:
+	var set_def: Dictionary = INK_SETS[clampi(ink_set, 0, INK_SETS.size() - 1)]
+	return c.lerp(set_def["tint"], float(set_def["amount"]))
+
+
+## Smooth value noise in 0-1 (for territory borders).
+func _vnoise(x: float, y: float, salt: int) -> float:
+	var xi := floori(x)
+	var yi := floori(y)
+	var fx := x - xi
+	var fy := y - yi
+	var u := fx * fx * (3.0 - 2.0 * fx)
+	var v := fy * fy * (3.0 - 2.0 * fy)
+	var a := lerpf(_h(xi, yi, salt), _h(xi + 1, yi, salt), u)
+	var b := lerpf(_h(xi, yi + 1, salt), _h(xi + 1, yi + 1, salt), u)
+	return lerpf(a, b, v)
+
+
+## The territory owning lot (i, j): nearest centre (weighted by pull) after warping the
+## lot by two octaves of noise, so borders are organic rather than straight.
+func territory_at(i: int, j: int) -> StringName:
+	var w := Vector2(_vnoise(i * 0.07, j * 0.07, 70) - 0.5, _vnoise(i * 0.07, j * 0.07, 71) - 0.5) * BORDER_WARP * 2.0
+	w += Vector2(_vnoise(i * 0.2, j * 0.2, 72) - 0.5, _vnoise(i * 0.2, j * 0.2, 73) - 0.5) * BORDER_WARP * 0.6
+	var p := Vector2(i, j) + w
+	var best: StringName = &""
+	var best_d := INF
+	for t in TERRITORIES:
+		var d: float = p.distance_to(t["at"]) / float(t["pull"])
+		if d < best_d:
+			best_d = d
+			best = t["id"]
+	return best
+
+
+## Where a corporation's HQ stands (grid), or the city centre.
+static func hq_of(corporation_id: StringName) -> Vector2:
+	for t in TERRITORIES:
+		if t["id"] == corporation_id:
+			return t["at"]
+	return Vector2.ZERO
+
+
+func _set_lot_context(i: int, j: int) -> void:
+	_terr = territory_at(i, j)
+	_profile = DISTRICTS.get(_terr, DISTRICTS[&""])
+	_terr_col = _pale(Palette.corp_color(_terr)) if _terr != &"" else Color.WHITE
+
+
+## Screen position (local to this control) of grid point (x, y) with the current camera.
+func grid_to_local(x: float, y: float) -> Vector2:
+	return _iso(x, y)
+
+
+## The building on lot (i, j): {"roof", "base", "shape", "height"} or {}.
+func roof_of(i: int, j: int) -> Dictionary:
+	return _roofs.get(Vector2i(i, j), {})
+
+
+## True when lot (i, j) is a street (for overlays that route along streets).
+func is_street(i: int, j: int) -> bool:
+	return _street_i.has(i) or _street_j.has(j)
+
+
+func _apply_pan_margin() -> void:
+	var m := PAN_MARGIN if pan else 0.0
+	offset_left = -m
+	offset_top = -m
+	offset_right = m
+	offset_bottom = m
 
 
 ## Grid space (lots) to screen.
@@ -151,36 +281,52 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
 	if size.x < 2.0 or size.y < 2.0:
 		return
-	_profile = DISTRICTS.get(district, DISTRICTS[&""])
+	_inks.clear()
+	for c in INKS:
+		_inks.append(_pale(c))
 	if district != &"":
-		corp_color = Palette.corp_color(district)
+		corp_color = _pale(Palette.corp_color(district))
 	_trails.clear()
 	_beacons.clear()
 	_signs.clear()
+	_roofs.clear()
 	_verts = PackedVector2Array()
 	_cols = PackedColorArray()
-	_ox = size.x * 0.5
-	_oy = -size.y * 0.35
-	# The HQ plaza: 5x5 lots around the anchor (no HQ in the Cell's own streets).
-	_hq_rect = Rect2i()
-	if district != &"":
-		var g := _grid_of(Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y))
-		_hq_rect = Rect2i(int(floor(g.x)) - 2, int(floor(g.y)) - 2, 5, 5)
+	# Camera: the focused HQ lands on hq_anchor; the whole city centres the Sprawl.
+	var focus := hq_of(district) + Vector2(2.5, 2.5) if district != &"" else Vector2(0, 0)
+	var anchor := Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y) if district != &"" else size * 0.5
+	if pan:
+		anchor = size * 0.5
+	_ox = anchor.x - (focus.x - focus.y) * TILE_A
+	_oy = anchor.y - (focus.x + focus.y) * TILE_B
+	_hq_rects.clear()
+	for t in TERRITORIES:
+		if t["id"] != &"":
+			var at: Vector2 = t["at"]
+			_hq_rects[t["id"]] = Rect2i(int(at.x), int(at.y), 5, 5)
+	_hq_rect = _hq_rects.get(district, Rect2i())
 	_build_streets()
-	var s_max := int((size.y - _oy + 420.0) / TILE_B) + 2
-	var d_max := int(size.x / (2.0 * TILE_A)) + 3
-	for s in range(0, s_max):
-		for d in range(-d_max, d_max + 1):
-			if (s + d) % 2 != 0:
+	var s_min := int(floor((-40.0 - _oy) / TILE_B)) - 2
+	var s_max := int((size.y + 420.0 - _oy) / TILE_B) + 2
+	var d_min := int(floor((-80.0 - _ox) / TILE_A)) - 1
+	var d_max := int((size.x + 80.0 - _ox) / TILE_A) + 1
+	for s in range(s_min, s_max):
+		for d in range(d_min, d_max + 1):
+			if posmod(s + d, 2) != 0:
 				continue
 			var i := (s + d) / 2
 			var j := (s - d) / 2
-			if _iso(i + 0.5, j + 0.5).y < -TILE_B * 2.0:
-				continue
-			if _hq_rect.has_point(Vector2i(i, j)):
+			_set_lot_context(i, j)
+			var in_hq := &""
+			for cid in _hq_rects:
+				if (_hq_rects[cid] as Rect2i).has_point(Vector2i(i, j)):
+					in_hq = cid
+					break
+			if in_hq != &"":
 				_plaza(i, j)
-				if i == _hq_rect.end.x - 1 and j == _hq_rect.end.y - 1:
-					_hq()
+				var hr: Rect2i = _hq_rects[in_hq]
+				if i == hr.end.x - 1 and j == hr.end.y - 1:
+					_hq(in_hq, hr)
 				continue
 			var street_i := _street_i.has(i)
 			var street_j := _street_j.has(j)
@@ -194,16 +340,19 @@ func _draw() -> void:
 		idx[k] = k
 	if not _verts.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, _verts, _cols)
-	# Haze: darker towards the top for text; dim; vignette.
-	var top := Color(Palette.NIGHT_SKY, 0.7)
-	var clear := Color(Palette.NIGHT_SKY, 0.0)
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.28), Vector2(0, size.y * 0.28)]), PackedColorArray([top, top, clear, clear]))
+	_verts = PackedVector2Array()
+	_cols = PackedColorArray()
+	if not pan:
+		# Haze: darker towards the top for text; vignette at the sides.
+		var top := Color(Palette.NIGHT_SKY, 0.7)
+		var clear := Color(Palette.NIGHT_SKY, 0.0)
+		draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.28), Vector2(0, size.y * 0.28)]), PackedColorArray([top, top, clear, clear]))
+		var v := Color(0, 0, 0, 0.5)
+		var c0 := Color(0, 0, 0, 0)
+		draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
+		draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
 	if dim > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
-	var v := Color(0, 0, 0, 0.5)
-	var c0 := Color(0, 0, 0, 0)
-	draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
-	draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
 	_built_for = size
 	_fx.queue_redraw()
 
@@ -232,11 +381,17 @@ func _build_streets() -> void:
 func _traffic(i: int, j: int, along_i: bool) -> float:
 	var t := _h(i if along_i else 0, 0 if along_i else j, 61)
 	t = t * t
-	if _hq_rect.size.x > 0:
-		var hc := Vector2(_hq_rect.get_center())
-		var d := Vector2(i, j).distance_to(hc)
-		t = maxf(t, clampf(1.0 - d / 12.0, 0.0, 1.0))
+	var d := _hq_distance(i, j)
+	t = maxf(t, clampf(1.0 - d / 12.0, 0.0, 1.0))
 	return t
+
+
+## Distance (lots) to the nearest corporation HQ centre.
+func _hq_distance(i: int, j: int) -> float:
+	var best := INF
+	for cid in _hq_rects:
+		best = minf(best, Vector2(i, j).distance_to(Vector2((_hq_rects[cid] as Rect2i).get_center())))
+	return best
 
 
 # --- Primitives ---------------------------------------------------------------------------
@@ -395,15 +550,15 @@ func _windows(a: Vector2, b: Vector2, h: float, lit: float, key: int, bright: bo
 			var wc: Color
 			var t := roll / maxf(lit, 0.001)
 			if t < 0.4:
-				wc = Color(INKS[0], 0.75)
+				wc = Color(_inks[0], 0.75)
 			elif t < 0.62:
-				wc = Color(INKS[3], 0.7)
+				wc = Color(_inks[3], 0.7)
 			elif t < 0.78:
-				wc = Color(corp_color if district != &"" else INKS[4], 0.75)
+				wc = Color(_terr_col if _terr != &"" else _inks[4], 0.75)
 			elif t < 0.9:
-				wc = Color(INKS[2], 0.7)
+				wc = Color(_inks[2], 0.7)
 			else:
-				wc = Color(INKS[1], 0.75)
+				wc = Color(_inks[1], 0.75)
 			if not bright:
 				wc = wc.darkened(0.3)
 			_quad(o, o + w, o + w + Vector2(0, -3.2), o + Vector2(0, -3.2), wc, wc, wc, wc)
@@ -417,25 +572,31 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	if along_i and along_j:
 		return  # crossings stay dark; the strokes overshoot into them
 	var traffic := _traffic(i, j, along_i)
-	var col := Palette.NET_CYAN if net_mode and _h(i, j, 62) < 0.5 else _ink(i if along_i else 0, j if along_j else 0)
+	var col := _pale(Palette.NET_CYAN) if net_mode and _h(i, j, 62) < 0.5 else _ink(i if along_i else 0, j if along_j else 0)
 	var a := _iso(i + 0.5, j) if along_i else _iso(i, j + 0.5)
 	var b := _iso(i + 0.5, j + 1) if along_i else _iso(i + 1, j + 0.5)
 	var nn := (b - a).orthogonal().normalized()
-	var gw := 4.0 + traffic * 9.0
-	var g := Color(col, 0.07 + traffic * 0.12)
-	_quad(a - nn * gw, b - nn * gw, b + nn * gw, a + nn * gw, g, g, g, g)
-	_ink_line(a, b, Color(col, 0.45 + traffic * 0.45), 0.8 + traffic * 3.2, false)
-	if traffic > 0.55:
-		# Busy streets get a second lane.
-		_ink_line(a + nn * 4.0, b + nn * 4.0, Color(col, 0.35 + traffic * 0.3), 0.7 + traffic * 1.2, false)
+	if traffic > 0.4:
+		# Busy streets read as broad painted bands (12-24 px) with a bright centre line.
+		var k := (traffic - 0.4) / 0.6
+		var band := lerpf(12.0, 24.0, k)
+		var g := Color(col, 0.1 + k * 0.08)
+		_quad(a - nn * band, b - nn * band, b + nn * band, a + nn * band, g, g, g, g)
+		_ink_line(a, b, Color(col, 0.5 + k * 0.2), band * 0.9, false)
+		_ink_line(a, b, Color(col.lightened(0.4), 0.9), 1.6 + k * 1.4, false)
+	else:
+		var gw := 4.0 + traffic * 9.0
+		var g := Color(col, 0.07 + traffic * 0.12)
+		_quad(a - nn * gw, b - nn * gw, b + nn * gw, a + nn * gw, g, g, g, g)
+		_ink_line(a, b, Color(col, 0.45 + traffic * 0.45), 0.8 + traffic * 3.2, false)
 	_trails.append({"a": a, "b": b, "color": col, "phase": _h(i, j, 3), "width": 1.5 + traffic * 2.5})
 	if traffic > 0.6:
-		_trails.append({"a": a, "b": b, "color": INKS[0], "phase": _h(i, j, 4), "width": 1.5 + traffic * 2.0})
+		_trails.append({"a": a, "b": b, "color": _inks[0], "phase": _h(i, j, 4), "width": 1.5 + traffic * 2.0})
 
 
 func _plaza(i: int, j: int) -> void:
 	var p := _rect_pts(i, j, i + 1, j + 1)
-	var col := GROUND.lerp(corp_color, 0.06)
+	var col := GROUND.lerp(_terr_col, 0.06)
 	_quad(p[0], p[1], p[2], p[3], col, col, col, col)
 
 
@@ -473,7 +634,7 @@ func _pick_shape(ci: int, cj: int) -> int:
 	var total := 0
 	for w in mix:
 		total += int(w)
-	var roll := _h(ci, cj, 40) * total
+	var roll := _h(ci, cj, 40 + int(_profile.get("seed", 0))) * total
 	for k in mix.size():
 		roll -= int(mix[k])
 		if roll < 0.0:
@@ -491,10 +652,8 @@ func _building(cell: Rect2i) -> void:
 	var h := (8.0 + pow(r, 2.7) * 100.0 + district_h * 28.0) * hs * (1.0 + 0.12 * (big - 1))
 	if r > 0.965:
 		h += 90.0 * hs
-	# Low-rise around the HQ: its busy streets and the landmark read clearly.
-	if _hq_rect.size.x > 0:
-		var d := Vector2(ci, cj).distance_to(Vector2(_hq_rect.get_center()))
-		h *= lerpf(0.3, 1.0, clampf((d - 3.0) / 6.0, 0.0, 1.0))
+	# Low-rise around each HQ: its busy streets and the landmark read clearly.
+	h *= lerpf(0.3, 1.0, clampf((_hq_distance(ci, cj) - 3.0) / 6.0, 0.0, 1.0))
 	var fill := FILLS[int(_h(ci, cj, 5) * FILLS.size()) % FILLS.size()]
 	var ink := _ink(ci, cj)
 	var lit := 0.12 + district_h * 0.22
@@ -552,6 +711,10 @@ func _building(cell: Rect2i) -> void:
 	for q in roof:
 		rc += q
 	rc /= maxf(1.0, roof.size())
+	var rec := {"roof": roof, "base": _iso(cx, cy), "shape": shape, "height": h, "cell": cell}
+	for li in range(cell.position.x, cell.end.x):
+		for lj in range(cell.position.y, cell.end.y):
+			_roofs[Vector2i(li, lj)] = rec
 	var clutter := _h(ci, cj, 14)
 	if clutter < 0.18 and h > 30.0:
 		_ink_line(rc, rc + Vector2(0, -12.0 - clutter * 60.0), Color(ink, 0.8), 1.0, false)
@@ -565,17 +728,17 @@ func _building(cell: Rect2i) -> void:
 # --- Corporation HQs ----------------------------------------------------------------------
 
 ## The district's landmark, one per corporation, standing on its plaza.
-func _hq() -> void:
-	var cx := _hq_rect.position.x + 2.5
-	var cy := _hq_rect.position.y + 2.5
-	var col := corp_color
+func _hq(corp: StringName, rect: Rect2i) -> void:
+	var cx := rect.position.x + 2.5
+	var cy := rect.position.y + 2.5
+	var col := _pale(Palette.corp_color(corp))
 	var dark := FILLS[0]
 	var mid := FILLS[1]
 	var base := _iso(cx, cy)
 	var ring := _ngon(cx, cy, 2.3, 24)
 	for k in ring.size():
 		_ink_line(ring[k], ring[(k + 1) % ring.size()], Color(col, 0.5), 1.0, false)
-	match district:
+	match corp:
 		&"solace":
 			# Helix Spire: a round tower wrapped in floating care-rings under a halo cap.
 			_extrude(_ngon(cx, cy, 1.1, 12), 0.0, 250.0, 1.0, mid, col, 0.3, 900)
@@ -594,7 +757,7 @@ func _hq() -> void:
 			_extrude(_rect_pts(cx - 1.4, cy - 1.4, cx + 1.4, cy + 1.4), 44.0, 44.0, 1.0, dark, col, 0.25, 911)
 			for k in 4:
 				var bx := cx - 1.35 + k * 0.4
-				var cc: Color = [INKS[0], INKS[3], INKS[2], col][k]
+				var cc: Color = [_inks[0], _inks[3], _inks[2], col][k]
 				_extrude(_rect_pts(bx, cy + 1.45, bx + 0.34, cy + 1.95), 44.0, 10.0 + (k % 2) * 10.0, 1.0, dark, cc, 0.0, 913 + k)
 			_extrude(_rect_pts(cx - 0.7, cy - 0.7, cx + 0.7, cy + 0.7), 88.0, 110.0, 1.0, mid, col, 0.35, 912)
 			var mast := _iso(cx + 0.7, cy - 0.7) + Vector2(0, -198)
@@ -606,7 +769,7 @@ func _hq() -> void:
 			var box := jib + Vector2(0, 50)
 			_quad(box + Vector2(-12, 0), box + Vector2(12, 0), box + Vector2(12, 14), box + Vector2(-12, 14), dark, dark, dark, dark)
 			for e in [[Vector2(-12, 0), Vector2(12, 0)], [Vector2(12, 0), Vector2(12, 14)], [Vector2(12, 14), Vector2(-12, 14)], [Vector2(-12, 14), Vector2(-12, 0)]]:
-				_ink_line(box + e[0], box + e[1], INKS[0], 1.2, false)
+				_ink_line(box + e[0], box + e[1], _inks[0], 1.2, false)
 			_beacons.append({"pos": mast + Vector2(0, -42), "color": col, "phase": 0.5})
 			_sign(base + Vector2(-50, -262), "MERIDIAN", col)
 		&"halcyon":
@@ -642,15 +805,15 @@ func _hq() -> void:
 			var hs := [90.0, 130.0, 70.0, 50.0, 220.0]
 			for idx in [1, 0, 2, 4, 3]:
 				var o: Vector2 = offs[idx]
-				_extrude(_ngon(cx + o.x, cy + o.y, 0.62, 6, PI / 6.0), 0.0, hs[idx], 1.0, mid if idx % 2 == 0 else dark, col if idx != 4 else INKS[2], 0.3, 940 + idx)
+				_extrude(_ngon(cx + o.x, cy + o.y, 0.62, 6, PI / 6.0), 0.0, hs[idx], 1.0, mid if idx % 2 == 0 else dark, col if idx != 4 else _inks[2], 0.3, 940 + idx)
 			var crown := base + Vector2(0, -238)
 			var hexa := PackedVector2Array()
 			for k in 6:
 				hexa.append(crown + Vector2(cos(TAU * k / 6.0), sin(TAU * k / 6.0)) * 16.0)
 			_poly(hexa, Color(Palette.CELL_ACID, 0.9))
 			for k in 6:
-				_ink_line(hexa[k], hexa[(k + 1) % 6], INKS[2], 1.4)
-			_sign(base + Vector2(-58, -280), "REBEL_CELL", INKS[2])
+				_ink_line(hexa[k], hexa[(k + 1) % 6], _inks[2], 1.4)
+			_sign(base + Vector2(-58, -280), "REBEL_CELL", _inks[2])
 
 
 ## A neon name plate floating over an HQ (drawn by the overlay).
@@ -661,6 +824,15 @@ func _sign(at: Vector2, text: String, col: Color) -> void:
 func _draw_fx() -> void:
 	if _built_for != size:
 		return
+	if territory_labels:
+		var inv := 1.0 / maxf(0.01, scale.x)
+		for t in TERRITORIES:
+			var name := "THE SPRAWL" if t["id"] == &"" else String(t["id"]).to_upper()
+			var at: Vector2 = t["at"]
+			var p := _iso(at.x + 2.5, at.y + 2.5) + Vector2(-120, -40) * inv
+			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
+			_fx.draw_rect(Rect2(p - Vector2(8, 30) * inv, Vector2(260, 40) * inv), Color(0, 0, 0, 0.75))
+			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * inv), col)
 	for sg in _signs:
 		var p: Vector2 = sg["pos"]
 		var col: Color = sg["color"]

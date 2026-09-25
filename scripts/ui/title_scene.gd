@@ -7,6 +7,7 @@ extends Control
 const SLOTS: Array[String] = ["1", "2", "3"]
 
 var background: CyberdeckBackground
+var margin: MarginContainer
 var _panel_host: VBoxContainer
 var _panel: Control = null
 var panel_name: String = ""
@@ -17,7 +18,7 @@ func _ready() -> void:
 	UiTheme.apply(self)
 	background = CyberdeckBackground.new()
 	add_child(background)
-	var margin := MarginContainer.new()
+	margin = MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["margin_left", "margin_right"]:
 		margin.add_theme_constant_override(side, 36)
@@ -40,9 +41,30 @@ func _ready() -> void:
 	root.add_child(_panel_host)
 	AudioDirector.play_music("hq")
 	var args := OS.get_cmdline_user_args()
+	# The main menu drifts slowly over the whole city.
+	background.city.pan = true
 	for a in args:
 		if a.begins_with("--demo-district="):
+			background.city.pan = false
 			background.set_district(StringName(a.trim_prefix("--demo-district=")))
+		elif a.begins_with("--demo-ink="):
+			background.city.ink_set = int(a.trim_prefix("--demo-ink="))
+		elif a.begins_with("--demo-jitter="):
+			var parts := a.trim_prefix("--demo-jitter=").split(",")
+			(background.city.material as ShaderMaterial).set_shader_parameter("wobble", float(parts[0]))
+			(background.city.material as ShaderMaterial).set_shader_parameter("jitter", float(parts[1]))
+		elif a == "--demo-nopan":
+			background.city.pan = false
+		elif a == "--demo-overview":
+			# Design review: the whole city zoomed out, menus hidden.
+			var city := background.city
+			city.pan = false
+			var z := 0.26
+			city.territory_labels = true
+			city.scale = Vector2(z, z)
+			city.offset_right = 1280.0 * (1.0 / z - 1.0)
+			city.offset_bottom = 720.0 * (1.0 / z - 1.0)
+			margin.visible = false
 	if args.has("--demo-options"):
 		show_options()
 	elif args.has("--demo-slots"):
