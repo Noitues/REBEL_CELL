@@ -1208,6 +1208,8 @@ func _refresh_status() -> void:
 		["HOME", str(c.grid.home_integrity), "/%d" % c.grid.home_max_integrity], ["EXPLOITS", str(c.exploits.size()), "/%d" % RunManager.config().min_exploits_for_breach],
 		["RAIDS", str(c.pending_raids.size()), ""], ["ICE", str(c.ice_level), ""], ["CREW", str(c.living_operatives().size()), ""]])
 	hud.loadout_button.visible = not c.living_operatives().is_empty()
+	if not c.living_operatives().is_empty():
+		hud.set_daemons(c.living_operatives()[0].daemon_ids)
 
 
 func _report(events: Array[Dictionary]) -> void:
@@ -1230,6 +1232,11 @@ func _build_ui() -> void:
 	add_child(root)
 	hud = HudBar.new()
 	hud.loadout_pressed.connect(open_loadout)
+	hud.daemons_pressed.connect(func() -> void:
+		var c := RunManager.campaign
+		if c == null or c.living_operatives().is_empty() or has_node("DaemonTray"):
+			return
+		add_child(DaemonTray.new(c.living_operatives()[0].daemon_ids, RunManager.lookup(), hud.daemon_button.get_global_rect().end.x)))
 	root.add_child(hud)
 	_status = hud.label
 	var scroll := ScrollContainer.new()

@@ -62,30 +62,75 @@ static func draw_drip_text(ci: CanvasItem, base: Vector2, text: String, size: in
 		_drip(ci, Vector2(x, top), float(d[1]) * scale + size * 0.12, maxf(3.5, 9.5 * scale), col)
 
 
-## One drip: thick at the top, a thin neck, a round raindrop at the end.
+## One drip: thick where it leaves the letter, a thin neck, a teardrop at the end (point
+## up into the neck, round at the bottom). A drip shorter than the teardrop alone is just
+## the teardrop, hanging a little below the letter with its point touching it.
 static func _drip(ci: CanvasItem, top: Vector2, length: float, w: float, col: Color) -> void:
-	var neck := w * 0.42
-	var bulb := w * 0.78
-	var end := top + Vector2(0, length)
+	var drop_w := w * 0.85
+	var drop_h := w * 2.1
+	if length < drop_h * 1.7:
+		# Short: flare, then the teardrop just below the letter.
+		ci.draw_colored_polygon(PackedVector2Array([top + Vector2(-w * 0.7, -w * 0.2), top + Vector2(w * 0.7, -w * 0.2), top + Vector2(w * 0.25, w * 0.5), top + Vector2(-w * 0.25, w * 0.5)]), col)
+		_teardrop(ci, top + Vector2(0, w * 0.3), drop_w, drop_h, col)
+		return
+	var neck := w * 0.36
+	var neck_len := length - drop_h * 0.8
 	var pts := PackedVector2Array()
 	var steps := 10
 	for k in steps + 1:
 		var t := float(k) / steps
-		# Width: wide at the top, pinching to the neck by 40%, holding thin to the bulb.
+		# Wide at the top, pinching to the neck by 40%, holding thin to the drop.
 		var hw := lerpf(w * 0.5, neck * 0.5, smoothstep(0.0, 0.4, t))
-		pts.append(top + Vector2(hw, t * (length - bulb)))
+		pts.append(top + Vector2(hw, t * neck_len))
 	for k in range(steps, -1, -1):
 		var t := float(k) / steps
 		var hw := lerpf(w * 0.5, neck * 0.5, smoothstep(0.0, 0.4, t))
-		pts.append(top + Vector2(-hw, t * (length - bulb)))
+		pts.append(top + Vector2(-hw, t * neck_len))
 	# Flare into the letter at the top so the join reads as paint, not a stick.
 	ci.draw_colored_polygon(PackedVector2Array([top + Vector2(-w * 0.9, -w * 0.2), top + Vector2(w * 0.9, -w * 0.2), top + Vector2(w * 0.5, w * 0.6), top + Vector2(-w * 0.5, w * 0.6)]), col)
 	ci.draw_colored_polygon(pts, col)
-	# Raindrop: a circle with a soft point up into the neck.
-	var c := end - Vector2(0, bulb)
-	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-bulb * 0.55, -bulb * 0.2), c + Vector2(0, -bulb * 1.6), c + Vector2(bulb * 0.55, -bulb * 0.2)]), col)
-	ci.draw_circle(c, bulb, col)
-	ci.draw_circle(c + Vector2(-bulb * 0.3, -bulb * 0.3), bulb * 0.22, Color(1, 1, 1, 0.35))
+	_teardrop(ci, top + Vector2(0, neck_len - drop_h * 0.2), drop_w, drop_h, col)
+
+
+## A teardrop with its point at `tip`, `w` wide and `h` tall, with a small highlight.
+static func _teardrop(ci: CanvasItem, tip: Vector2, w: float, h: float, col: Color) -> void:
+	var pts := PackedVector2Array()
+	for k in 25:
+		var t := TAU * k / 24.0
+		# Point at t = 0 (top), round belly at the bottom.
+		var x := sin(t) * pow(sin(t * 0.5), 1.4) * w * 0.62
+		var y := (1.0 - cos(t)) * 0.5 * h
+		pts.append(tip + Vector2(x, y))
+	ci.draw_colored_polygon(pts, col)
+	ci.draw_circle(tip + Vector2(-w * 0.18, h * 0.62), w * 0.12, Color(1, 1, 1, 0.35))
+
+
+## Automatic drips for any text: up to `count` letters with a stroke at the baseline,
+## spread across the word, long -> short left to right (deterministic from the text).
+static func auto_drips(text: String, count: int = 3) -> Array:
+	var candidates: Array[int] = []
+	for i in text.length():
+		if text[i] in "ABDEHIKLMNRSTUXZ_":
+			candidates.append(i)
+	if candidates.is_empty():
+		return []
+	var picks: Array[int] = []
+	var n := mini(count, candidates.size())
+	for k in n:
+		var at := candidates[int(round(float(k) * (candidates.size() - 1) / maxf(1.0, n - 1)))] if n > 1 else candidates[0]
+		if not picks.has(at):
+			picks.append(at)
+	var lengths := [44, 28, 12, 20, 34]
+	var out := []
+	for k in picks.size():
+		var ch := text[picks[k]]
+		var anchor := 0.3
+		if ch in "NMH":
+			anchor = 0.88
+		elif ch in "TI":
+			anchor = 0.5
+		out.append([picks[k], lengths[k % lengths.size()], anchor])
+	return out
 
 
 func _draw() -> void:

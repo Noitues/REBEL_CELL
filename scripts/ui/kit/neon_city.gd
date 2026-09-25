@@ -67,8 +67,9 @@ const TERRITORIES: Array[Dictionary] = [
 	{"id": &"", "at": Vector2(-36, -40), "pull": 0.9},
 	{"id": &"", "at": Vector2(40, -38), "pull": 0.8},
 ]
-## How far territory borders wander (lots).
+## How far territory borders wander (lots), and how wide the mixed band along them is.
 const BORDER_WARP := 11.0
+const BORDER_BLEND := 7.0
 ## Ink palettes: 0 = full neon; 1-3 paler options (lerped toward a tint).
 const INK_SETS: Array[Dictionary] = [
 	{"name": "NEON", "tint": Color.WHITE, "amount": 0.0},
@@ -102,6 +103,7 @@ var focus_anchor: Vector2 = Vector2(0.5, 0.5)
 var cultures: Dictionary = {}
 ## Design review: big territory names over each HQ (the zoomed-out overview).
 var territory_labels: bool = false
+var territory_label_px: float = 30.0
 var ink_set: int = 3:
 	set(v):
 		ink_set = v
@@ -132,6 +134,8 @@ var _profile: Dictionary = {}
 ## Territory of the lot being drawn and its corporation colour.
 var _terr: StringName = &""
 var _terr_col: Color = Color.WHITE
+var _terr_next: StringName = &""
+var _border: float = 0.0
 var _hq_rects: Dictionary = {}  # corp id -> Rect2i
 var _pan_t: float = 0.0
 var _inks: Array[Color] = []
@@ -234,17 +238,31 @@ func _vnoise(x: float, y: float, salt: int) -> float:
 ## The territory owning lot (i, j): nearest centre (weighted by pull) after warping the
 ## lot by two octaves of noise, so borders are organic rather than straight.
 func territory_at(i: int, j: int) -> StringName:
+	return _territory_pair(i, j)[0]
+
+
+## [owner, runner-up, border 0-1]: border is 1 on the dividing line, 0 deep inside.
+func _territory_pair(i: int, j: int) -> Array:
 	var w := Vector2(_vnoise(i * 0.07, j * 0.07, 70) - 0.5, _vnoise(i * 0.07, j * 0.07, 71) - 0.5) * BORDER_WARP * 2.0
 	w += Vector2(_vnoise(i * 0.2, j * 0.2, 72) - 0.5, _vnoise(i * 0.2, j * 0.2, 73) - 0.5) * BORDER_WARP * 0.6
 	var p := Vector2(i, j) + w
 	var best: StringName = &""
 	var best_d := INF
+	var second: StringName = &""
+	var second_d := INF
 	for t in TERRITORIES:
 		var d: float = p.distance_to(t["at"]) / float(t["pull"])
 		if d < best_d:
+			second = best
+			second_d = best_d
 			best_d = d
 			best = t["id"]
-	return best
+		elif d < second_d:
+			second_d = d
+			second = t["id"]
+	# Within ~BORDER_BLEND lots of the dividing line the two territories mix.
+	var border := clampf(1.0 - (second_d - best_d) / BORDER_BLEND, 0.0, 1.0)
+	return [best, second, border]
 
 
 ## Where a corporation's HQ stands (grid), or the city centre.
@@ -256,7 +274,10 @@ static func hq_of(corporation_id: StringName) -> Vector2:
 
 
 func _set_lot_context(i: int, j: int) -> void:
-	_terr = territory_at(i, j)
+	var pair := _territory_pair(i, j)
+	_terr = pair[0]
+	_terr_next = pair[1]
+	_border = pair[2]
 	_profile = DISTRICTS.get(_terr, DISTRICTS[&""])
 	_terr_col = _pale(Palette.corp_color(_terr)) if _terr != &"" else Color.WHITE
 
@@ -614,25 +635,24 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	var a := _iso(i + 0.5, j) if along_i else _iso(i, j + 0.5)
 	var b := _iso(i + 0.5, j + 1) if along_i else _iso(i + 1, j + 0.5)
 	var nn := (b - a).orthogonal().normalized()
-	if traffic > 0.4:
-		# Busy streets: a broad painted band, then the band re-stroked two or three times
-		# with slight offsets (hand-inked, gone over again), and a bright centre line.
-		var k := (traffic - 0.4) / 0.6
-		var band := lerpf(14.0, 28.0, k)
-		var g := Color(col, 0.1 + k * 0.08)
-		_quad(a - nn * band, b - nn * band, b + nn * band, a + nn * band, g, g, g, g)
-		var passes := 2 + int(k * 1.99)
-		for pss in passes:
-			var off := (_h(i, j, 80 + pss) - 0.5) * band * 0.35
-			var along := (b - a).normalized() * (_h(j, i, 90 + pss) - 0.5) * 6.0
-			_ink_line(a + nn * off + along, b + nn * off - along, Color(col, 0.42 + k * 0.18), band * lerpf(0.85, 0.55, float(pss) / passes), false)
-		_ink_line(a, b, Color(col.lightened(0.4), 0.9), 2.2 + k * 2.0, false)
-		_ink_line(a + nn * 1.5, b + nn * 1.5, Color(col.lightened(0.4), 0.4), 1.4 + k, false)
-	else:
-		var gw := 4.0 + traffic * 9.0
-		var g := Color(col, 0.07 + traffic * 0.12)
-		_quad(a - nn * gw, b - nn * gw, b + nn * gw, a + nn * gw, g, g, g, g)
-		_ink_line(a, b, Color(col, 0.45 + traffic * 0.45), 0.8 + traffic * 3.2, false)
+	var dir := (b - a).normalized()
+	# Fine-tip marker: the street's width is built from many skinny strokes laid side by
+	# side, each a little crooked and overlapping its neighbours. Busy streets get more
+	# strokes (up to ~12) and so read wider; quiet ones 2-3.
+	var strokes := 2 + int(traffic * 10.0)
+	var half := 1.5 + strokes * 1.15
+	var g := Color(col, 0.05 + traffic * 0.08)
+	_quad(a - nn * (half + 3.0), b - nn * (half + 3.0), b + nn * (half + 3.0), a + nn * (half + 3.0), g, g, g, g)
+	# Each stroke keeps its lane along the whole street (keyed by the street, not the
+	# lot) so it reads as one long pen line; per-lot it only wanders a little.
+	var street_key := i if along_i else j
+	for k in strokes:
+		var t := (float(k) + 0.5) / strokes * 2.0 - 1.0
+		var lane := t * half + (_h(street_key, k, 81) - 0.5) * 1.8
+		var w0 := (_h(i, j * 7 + k, 82) - 0.5) * 0.9
+		var w1 := (_h(i, j * 7 + k + 1, 82) - 0.5) * 0.9
+		var alpha := 0.3 + 0.45 * _h(street_key + k, 3, 85) + traffic * 0.15
+		_ink_line(a + nn * (lane + w0) - dir * 2.0, b + nn * (lane + w1) + dir * 2.0, Color(col, alpha), 0.8 + _h(k, street_key, 86) * 0.6, false)
 	_trails.append({"a": a, "b": b, "color": col, "phase": _h(i, j, 3), "width": 1.5 + traffic * 2.5})
 	if traffic > 0.6:
 		_trails.append({"a": a, "b": b, "color": _inks[0], "phase": _h(i, j, 4), "width": 1.5 + traffic * 2.0})
@@ -675,8 +695,13 @@ func _lot(i: int, j: int) -> void:
 
 func _pick_shape(ci: int, cj: int) -> int:
 	var mix: Array = _profile["mix"]
-	if cultures.has(_terr):
-		mix = CULTURES.get(cultures[_terr], mix)
+	var owner := _terr
+	# Border blend: near the dividing line some buildings take the neighbour's style.
+	if _border > 0.0 and _h(ci, cj, 41) < _border * 0.5:
+		owner = _terr_next
+		mix = DISTRICTS.get(owner, DISTRICTS[&""])["mix"]
+	if cultures.has(owner):
+		mix = CULTURES.get(cultures[owner], mix)
 	var total := 0
 	for w in mix:
 		total += int(w)
@@ -975,10 +1000,11 @@ func _draw_fx() -> void:
 		for t in TERRITORIES:
 			var name := "THE SPRAWL" if t["id"] == &"" else String(t["id"]).to_upper()
 			var at: Vector2 = t["at"]
-			var p := _iso(at.x + 2.5, at.y + 2.5) + Vector2(-120, -40) * inv
+			var k := territory_label_px / 30.0 * inv
+			var p := _iso(at.x + 2.5, at.y + 2.5) + Vector2(-120, -40) * k
 			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
-			_fx.draw_rect(Rect2(p - Vector2(8, 30) * inv, Vector2(260, 40) * inv), Color(0, 0, 0, 0.75))
-			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * inv), col)
+			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(0, 0, 0, 0.75))
+			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)
 	for sg in _signs:
 		var p: Vector2 = sg["pos"]
 		var col: Color = sg["color"]

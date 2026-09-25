@@ -48,7 +48,7 @@ static func width(text: String, u: float) -> float:
 
 ## Draws `text` with its top-left at `at`, `u` px per grid unit, glowing in `col`.
 ## `traces` adds the circuit branches; `traces_last_m` uses the M2 set for a final M.
-static func draw_text(ci: CanvasItem, at: Vector2, text: String, u: float, col: Color, stroke: float = 3.0, traces: bool = true) -> void:
+static func draw_text(ci: CanvasItem, at: Vector2, text: String, u: float, col: Color, stroke: float = 3.0, traces: bool = true, density: float = 0.0) -> void:
 	var x := at.x
 	for i in text.length():
 		var ch := text[i]
@@ -75,4 +75,35 @@ static func draw_text(ci: CanvasItem, at: Vector2, text: String, u: float, col: 
 					ci.draw_polyline(pts, Color(col, 0.85), maxf(1.0, stroke * 0.5), true)
 					ci.draw_circle(p, stroke * 1.3, Color(col, 0.9))
 					ci.draw_circle(p, stroke * 0.55, Palette.NIGHT_SKY)
+			if density > 0.0:
+				_auto_traces(ci, o, ch, i, u, col, stroke, density)
 		x += (W + 1.6) * u
+
+
+## Extra circuit branches: from stroke ends and corners, out and away from the letter's
+## centre (one straight run, one 45-degree jog), each ending in a solder pad.
+static func _auto_traces(ci: CanvasItem, o: Vector2, ch: String, index: int, u: float, col: Color, stroke: float, density: float) -> void:
+	var centre := Vector2(W, H) * 0.5
+	var k := 0
+	for line in GLYPHS[ch]:
+		for p in [line[0], line[line.size() - 1], line[line.size() / 2]]:
+			k += 1
+			var roll := float(absi(hash([ch, index, k])) % 1000) / 1000.0
+			if roll > density:
+				continue
+			var away: Vector2 = p - centre
+			var d := Vector2(signf(away.x), signf(away.y))
+			if d == Vector2.ZERO:
+				d = Vector2(0, 1)
+			var first := Vector2(d.x, 0) if absf(away.x) > absf(away.y) else Vector2(0, d.y)
+			if first == Vector2.ZERO:
+				first = d
+			var run := 0.6 + roll * 1.2
+			var a: Vector2 = o + p * u
+			var b := a + first * u * run
+			var c := b + d.normalized() * u * (0.5 + roll)
+			var pts := PackedVector2Array([a, b, c])
+			ci.draw_polyline(pts, Color(col, 0.22), stroke * 1.8, true)
+			ci.draw_polyline(pts, Color(col, 0.8), maxf(1.0, stroke * 0.45), true)
+			ci.draw_circle(c, stroke * 1.15, Color(col, 0.9))
+			ci.draw_circle(c, stroke * 0.5, Palette.NIGHT_SKY)

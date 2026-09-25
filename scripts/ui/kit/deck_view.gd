@@ -80,15 +80,26 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 
 
 func _ready() -> void:
-	UiFocus.focus_first.call_deferred(self)
+	# Start on the first card (not the header tabs).
+	if not _cards.is_empty():
+		_cards[0].grab_focus.call_deferred()
+	else:
+		UiFocus.focus_first.call_deferred(self)
 
 
 ## A header tab (the loadout view's DECK / SPINNER switch).
 func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	var b := Button.new()
 	b.text = text
-	b.disabled = active
-	b.pressed.connect(on_pressed)
+	b.name = "Tab" + text
+	# The active tab shows as pressed (pink); only the other tab switches.
+	b.toggle_mode = true
+	b.button_pressed = active
+	if active:
+		b.focus_mode = Control.FOCUS_NONE
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		b.pressed.connect(on_pressed)
 	tab_row.add_child(b)
 
 

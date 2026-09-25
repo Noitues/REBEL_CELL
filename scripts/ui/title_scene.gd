@@ -56,6 +56,16 @@ func _ready() -> void:
 		elif a == "--demo-cultures":
 			background.city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english", &"rebel_cell": "mayan"}
 			background.city.refresh()
+		elif a.begins_with("--demo-bigoverview="):
+			# Design review: the whole city at a given zoom in a big window.
+			var city := background.city
+			city.pan = false
+			var z := float(a.trim_prefix("--demo-bigoverview="))
+			city.territory_labels = true
+			city.scale = Vector2(z, z)
+			city.offset_right = get_viewport_rect().size.x * (1.0 / z - 1.0)
+			city.offset_bottom = get_viewport_rect().size.y * (1.0 / z - 1.0)
+			margin.visible = false
 		elif a == "--demo-nopan":
 			background.city.pan = false
 		elif a == "--demo-overview":

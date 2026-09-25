@@ -18,7 +18,7 @@ func _init(p_text: String = "NEVER SLEEP", p_tilt: float = -8.0, p_size: int = 2
 	var w := 0.0
 	for l in lines:
 		w = maxf(w, Palette.marker().get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
-	custom_minimum_size = Vector2(w + 30, lines.size() * font_size * 1.1 + 22)
+	custom_minimum_size = Vector2(w + 30, lines.size() * font_size * 1.1 + 22 + font_size * 0.8)
 
 
 func _ready() -> void:
@@ -31,7 +31,7 @@ func _draw() -> void:
 	for i in lines.size():
 		var p := Vector2(6, font_size + i * font_size * 1.1)
 		draw_string(Palette.marker(), p + Vector2(0, 0), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_PINK, 0.25))
-		draw_string(Palette.marker(), p + Vector2(-1, -1), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Palette.CELL_PINK)
+		DripButton.draw_drip_text(self, p + Vector2(-1, -1), lines[i], font_size, Palette.CELL_PINK, DripButton.auto_drips(lines[i], 2) if i == lines.size() - 1 else [], false)
 	# The crown doodle under the last line.
 	var base := Vector2(size.x - 34, size.y - 8)
 	var crown := PackedVector2Array([base, base + Vector2(2, -12), base + Vector2(8, -5), base + Vector2(13, -14), base + Vector2(18, -5), base + Vector2(24, -12), base + Vector2(26, 0), base])

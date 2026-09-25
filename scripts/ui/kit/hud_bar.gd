@@ -7,6 +7,7 @@ extends PanelContainer
 ## and tests); the tags are what the player sees.
 
 signal loadout_pressed
+signal daemons_pressed
 
 const BAND_HEIGHT := 56.0
 
@@ -14,6 +15,9 @@ var label: Label
 var title_box: Control
 var stats: HudStats
 var loadout_button: Button
+## One DAEMONS icon (stacked sigils + count) that opens the Daemon tray.
+var daemon_button: Button
+var daemon_ids: Array[StringName] = []
 var _number: String = ""
 var _title: String = ""
 
@@ -47,6 +51,18 @@ func _init() -> void:
 	loadout_button.pressed.connect(func() -> void: loadout_pressed.emit())
 	loadout_button.visible = false
 	row.add_child(loadout_button)
+	daemon_button = Button.new()
+	daemon_button.name = "Daemons"
+	daemon_button.flat = true
+	daemon_button.tooltip_text = "Daemons"
+	daemon_button.custom_minimum_size = Vector2(52, 44)
+	daemon_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	daemon_button.draw.connect(_draw_daemon_icon)
+	daemon_button.pressed.connect(func() -> void: daemons_pressed.emit())
+	daemon_button.mouse_entered.connect(daemon_button.queue_redraw)
+	daemon_button.mouse_exited.connect(daemon_button.queue_redraw)
+	daemon_button.visible = false
+	row.add_child(daemon_button)
 	label = Label.new()
 	label.visible = false
 	row.add_child(label)
@@ -64,6 +80,28 @@ func set_stats(items: Array) -> void:
 	stats.items = items
 	stats.queue_redraw()
 	label.tooltip_text = label.text
+
+
+## The Daemons installed on the current operative (the icon shows the first and a count).
+func set_daemons(ids: Array[StringName]) -> void:
+	daemon_ids = ids
+	daemon_button.visible = true
+	daemon_button.queue_redraw()
+
+
+func _draw_daemon_icon() -> void:
+	var c := daemon_button.size * 0.5 + Vector2(-4, 0)
+	var hot := daemon_button.is_hovered() or daemon_button.has_focus()
+	if daemon_ids.size() > 1:
+		DaemonSigil.draw_sigil(daemon_button, c + Vector2(6, -3), 14, daemon_ids[1])
+	if daemon_ids.is_empty():
+		daemon_button.draw_arc(c, 15, 0, TAU, 24, Color(Palette.NEON_VIOLET, 0.6), 1.5)
+		daemon_button.draw_string(Palette.mono(), c + Vector2(-12, 5), "D", HORIZONTAL_ALIGNMENT_CENTER, 24, 14, Color(Palette.NEON_VIOLET, 0.8))
+	else:
+		DaemonSigil.draw_sigil(daemon_button, c, 16, daemon_ids[0])
+	var badge := c + Vector2(17, 12)
+	daemon_button.draw_circle(badge, 9, Palette.CELL_ACID if hot else Palette.NEON_VIOLET)
+	daemon_button.draw_string(Palette.display(), badge + Vector2(-9, 5), str(daemon_ids.size()), HORIZONTAL_ALIGNMENT_CENTER, 18, 13, Palette.INK)
 
 
 func _draw_title() -> void:

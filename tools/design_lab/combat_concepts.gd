@@ -10,6 +10,8 @@ const PLAYER := [[RC.SliceType.ATTACK, 6], [RC.SliceType.DEFEND, 5], [RC.SliceTy
 const ENEMY := [[RC.SliceType.DEFEND, 5], [RC.SliceType.ATTACK, 7], [RC.SliceType.CRIT, 12], [RC.SliceType.ATTACK, 7], [RC.SliceType.MISS, 0], [RC.SliceType.SHIELD, 4]]
 
 var concept: String = "A"
+## Pointer design for the E concepts (0 = the zine arrow of D).
+var pointer: int = 0
 var art: Control
 
 
@@ -40,7 +42,8 @@ func _ready() -> void:
 	send.position = Vector2(1000, 560)
 	add_child(send)
 	var tag := Label.new()
-	tag.text = "COMBAT CONCEPT %s  //  %s" % [concept, {"A": "DECK & TONEARM", "B": "NEON GAUGE", "C": "ZINE DIAL", "D1": "BLEND - flat paper tag", "D2": "BLEND - rounded speech bubble"}[concept]]
+	tag.text = "COMBAT CONCEPT %s  //  %s" % [concept, {"A": "DECK & TONEARM", "B": "NEON GAUGE", "C": "ZINE DIAL", "D1": "BLEND - flat paper tag", "D2": "BLEND - rounded speech bubble",
+		"E1": "POINTER 1 - neon gauge blade", "E2": "POINTER 2 - gauge needle", "E3": "POINTER 3 - rim clamp", "E4": "POINTER 4 - blade in a notch"}[concept]]
 	tag.theme_type_variation = &"HudLabel"
 	tag.position = Vector2(0, 0)
 	tag.size = Vector2(1280, 30)
@@ -71,11 +74,12 @@ func _draw_art() -> void:
 			_callout(Vector2(20, 120), 3, "arc arrows + icon buttons")
 			_callout(Vector2(20, 150), 6, "ghost pointer + outcome badge")
 			_callout(Vector2(20, 180), 5, "SEND IT: acid drip tag")
-		"D1", "D2":
+		"D1", "D2", "E1", "E2", "E3", "E4":
+			pointer = 0 if concept.begins_with("D") else int(concept.substr(1))
 			_wheel_blend(p, PLAYER, 0.0, Palette.CELL_PINK, 42, 60, true)
 			_wheel_blend(e, ENEMY, 0.0, Palette.CORP_SOLACE, 30, 42, false)
 			_actions_stickers(p)
-			if concept == "D1":
+			if concept != "D2":
 				_tag_bubble(p + Vector2(-80, -262), RC.SliceType.DEFEND, "+5 ×2 block!")
 				_tag_bubble(e + Vector2(-60, -262), RC.SliceType.DEFEND, "+6 block")
 			else:
@@ -364,36 +368,76 @@ func _wheel_blend(c: Vector2, slices: Array, rot: float, col: Color, hp: int, ma
 		if int(slices[i][1]) > 0:
 			var vp := c + Vector2(cos(am), sin(am)) * (r + 30)
 			art.draw_string(Palette.display(), vp + Vector2(-20, 9), str(slices[i][1]), HORIZONTAL_ALIGNMENT_CENTER, 40, 24, sc.lightened(0.35))
-		# Perfect spot: a small arrow on the outer edge at the slice's middle, pointing out.
-		var tip := c + Vector2(cos(am), sin(am)) * (r + 11)
-		var base := c + Vector2(cos(am), sin(am)) * (r + 2)
+		# Perfect spot: a small white arrow inside the slice at its outer edge, pointing out.
+		var tip := c + Vector2(cos(am), sin(am)) * (r - 3)
+		var base := c + Vector2(cos(am), sin(am)) * (r - 11)
 		var side := Vector2(-sin(am), cos(am)) * 5.0
-		art.draw_colored_polygon(PackedVector2Array([tip, base + side, base - side]), Palette.CELL_ACID)
-	# Zine dial arrow at the top (the pointer).
-	var ptip := c + Vector2(0, -r + 6)
-	var arrow := PackedVector2Array([ptip, ptip + Vector2(-16, -30), ptip + Vector2(-6, -30), ptip + Vector2(-6, -62), ptip + Vector2(6, -62), ptip + Vector2(6, -30), ptip + Vector2(16, -30)])
-	art.draw_colored_polygon(arrow, Palette.CELL_ACID)
-	art.draw_polyline(arrow + PackedVector2Array([arrow[0]]), Palette.INK, 2.0)
-	art.draw_rect(Rect2(ptip + Vector2(-14, -60), Vector2(28, 10)), Palette.NOTE_TAPE)
+		art.draw_colored_polygon(PackedVector2Array([tip, base + side, base - side]), Palette.PAPER)
+	_pointer(c, r, band, col)
 	art.draw_string(Palette.marker(), c + Vector2(-90, -r - 76), "BREAKER" if player else "BILLING DAEMON", HORIZONTAL_ALIGNMENT_CENTER, 180, 16, col)
 	# Tonearm HP: segmented arc under the wheel with the number.
 	var segs := 20
+	var hp_col := Color("#3DFF8B")
 	for k in segs:
-		# Split around the bottom slice's value.
-		var a0 := PI * 0.12 + PI * 0.76 * k / segs
-		var a1 := a0 + PI * 0.76 / segs * 0.8
-		if absf((a0 + a1) * 0.5 - PI * 0.5) < 0.2:
+		# Split around the bottom: the numbers sit in the gap.
+		var a0 := PI * 0.1 + PI * 0.8 * k / segs
+		var a1 := a0 + PI * 0.8 / segs * 0.8
+		if absf((a0 + a1) * 0.5 - PI * 0.5) < 0.34:
 			continue
 		var lit := float(k) / segs < float(hp) / max_hp
-		art.draw_colored_polygon(_wedge(c, r + 50, r + 60, a0, a1), Color("#3DFF8B") if lit else Color(1, 1, 1, 0.1))
-	art.draw_string(Palette.display(), c + Vector2(-60, r + 90), "%d/%d HP" % [hp, max_hp], HORIZONTAL_ALIGNMENT_CENTER, 120, 22, Palette.PAPER)
-	art.draw_string(Palette.display(), c + Vector2(-40, 10), "%d" % hp, HORIZONTAL_ALIGNMENT_CENTER, 80, 30, Color(Palette.PAPER, 0.85))
+		art.draw_colored_polygon(_wedge(c, r + 50, r + 60, a0, a1), hp_col if lit else Color(1, 1, 1, 0.1))
+	art.draw_string(Palette.display(), c + Vector2(-50, r + 64), "%d/%d" % [hp, max_hp], HORIZONTAL_ALIGNMENT_CENTER, 100, 22, hp_col)
 	if player:
 		for k in 12:
-			var rc := Rect2(c + Vector2(-96 + k * 16, r + 100), Vector2(12, 12))
+			var rc := Rect2(c + Vector2(-96 + k * 16, r + 84), Vector2(12, 12))
 			art.draw_rect(rc, Palette.NET_CYAN if k < 6 else Color(1, 1, 1, 0.1))
 			art.draw_rect(rc, Color(Palette.NET_CYAN, 0.6), false, 1.0)
-		art.draw_string(Palette.mono(), c + Vector2(104, r + 111), "RAM 6/12", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.NET_CYAN)
+
+
+## The pointer at the top of the wheel (E concepts iterate from the neon gauge blade).
+func _pointer(c: Vector2, r: float, band: float, col: Color) -> void:
+	var top := c + Vector2(0, -r)
+	match pointer:
+		0:
+			var ptip := c + Vector2(0, -r + 6)
+			var arrow := PackedVector2Array([ptip, ptip + Vector2(-16, -30), ptip + Vector2(-6, -30), ptip + Vector2(-6, -62), ptip + Vector2(6, -62), ptip + Vector2(6, -30), ptip + Vector2(16, -30)])
+			art.draw_colored_polygon(arrow, Palette.CELL_ACID)
+			art.draw_polyline(arrow + PackedVector2Array([arrow[0]]), Palette.INK, 2.0)
+			art.draw_rect(Rect2(ptip + Vector2(-14, -60), Vector2(28, 10)), Palette.NOTE_TAPE)
+		1:
+			# Neon gauge blade: a white blade from above the rim, its tip in the band, glowing.
+			var tip := top + Vector2(0, band * 0.55)
+			var blade := PackedVector2Array([tip, top + Vector2(-13, -30), top + Vector2(13, -30)])
+			art.draw_colored_polygon(PackedVector2Array([tip + Vector2(0, 6), top + Vector2(-19, -36), top + Vector2(19, -36)]), Color(col, 0.25))
+			art.draw_colored_polygon(blade, Palette.PAPER)
+			art.draw_polyline(blade + PackedVector2Array([blade[0]]), col, 2.0)
+		2:
+			# Gauge needle: a thin needle from a hub above the wheel down through the band.
+			var hub := top + Vector2(0, -34)
+			var tip := top + Vector2(0, band + 2)
+			art.draw_line(hub, tip, Color(Palette.CELL_ACID, 0.3), 9.0)
+			art.draw_colored_polygon(PackedVector2Array([tip, hub + Vector2(-4, 0), hub + Vector2(4, 0)]), Palette.CELL_ACID)
+			art.draw_circle(hub, 10, Palette.NIGHT_SKY)
+			art.draw_arc(hub, 10, 0, TAU, 24, Palette.CELL_ACID, 2.5)
+			art.draw_circle(hub, 3.5, Palette.CELL_ACID)
+		3:
+			# Rim clamp: two prongs straddle the band at the top with a centre hairline.
+			var w := 22.0
+			var clamp := PackedVector2Array([top + Vector2(-w, -26), top + Vector2(w, -26), top + Vector2(w, -8), top + Vector2(8, 4), top + Vector2(-8, 4), top + Vector2(-w, -8)])
+			art.draw_colored_polygon(clamp, Palette.PAPER)
+			art.draw_polyline(clamp + PackedVector2Array([clamp[0]]), col, 2.0)
+			art.draw_line(top + Vector2(0, -20), top + Vector2(0, band + 4), Palette.CELL_ACID, 2.0)
+			for sx in [-1.0, 1.0]:
+				art.draw_line(top + Vector2(sx * 12, 4), top + Vector2(sx * 6, band * 0.6), Color(Palette.PAPER, 0.9), 3.0)
+		_:
+			# Blade in a notch: the rim ring is cut at the top and the blade sits in the cut,
+			# a short acid tick marking the exact tick under it.
+			art.draw_arc(c, r + 12, -PI * 0.5 + 0.18, -PI * 0.5 + TAU - 0.18, 64, Color(col, 0.7), 3.0)
+			var tip := top + Vector2(0, band * 0.4)
+			var blade := PackedVector2Array([tip, top + Vector2(-11, -20), top + Vector2(-11, -34), top + Vector2(11, -34), top + Vector2(11, -20)])
+			art.draw_colored_polygon(blade, Palette.PAPER)
+			art.draw_polyline(blade + PackedVector2Array([blade[0]]), Palette.INK, 2.0)
+			art.draw_line(tip, tip + Vector2(0, band * 0.55), Palette.CELL_ACID, 2.0)
 
 
 ## D1: a flat taped paper tag, no tail.

@@ -46,6 +46,11 @@ func _ready() -> void:
 			(get_node("SpinnerView") as SpinnerView).select(2)
 		elif args.has("--demo-loadout"):
 			open_loadout()
+		elif args.has("--demo-daemons"):
+			RunManager.netrun.run.operative.daemon_ids.append_array([&"twin_pointer", &"shield_cache", &"zero_day", &"feedback_loop"])
+			_refresh_status()
+			open_daemons()
+			(get_node("DaemonTray") as DaemonTray).show_card(&"shield_cache", false)
 		elif args.has("--demo-spinnergrid"):
 			open_overwrite(1)
 		elif args.has("--demo-deckgrid"):
@@ -362,7 +367,7 @@ func _show_map() -> void:
 		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
 	else:
 		var r := route_graph()
-		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.BLUEPRINT, 1.45, Vector2(0.46, 0.58), Vector2.INF)
+		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, 1.45, Vector2(0.46, 0.58), Vector2.INF)
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
 
 
@@ -825,6 +830,17 @@ func _refresh_status() -> void:
 			["RANK", str(op.rank), ""], ["BANKED", str(s.run.banked_schematics), ""]])
 	hud.set_stats(stats)
 	hud.loadout_button.visible = s != null and not s.run.is_over()
+	if s != null and not s.run.is_over():
+		hud.set_daemons(s.run.operative.daemon_ids)
+
+
+## The top bar's DAEMONS icon: the running operative's Daemons as a tray of sigils.
+func open_daemons() -> void:
+	var s := RunManager.netrun
+	if s == null or has_node("DaemonTray"):
+		return
+	var at := hud.daemon_button.get_global_rect().end.x
+	add_child(DaemonTray.new(s.run.operative.daemon_ids, s.lookup, at))
 
 
 ## VIEW LOADOUT: the running operative's deck and spinner.
@@ -895,6 +911,7 @@ func _build_ui() -> void:
 	add_child(root)
 	hud = HudBar.new()
 	hud.loadout_pressed.connect(open_loadout)
+	hud.daemons_pressed.connect(open_daemons)
 	root.add_child(hud)
 	_status = hud.label
 	# Tall panels (a raid with many claimed Sites) scroll vertically; never sideways.
