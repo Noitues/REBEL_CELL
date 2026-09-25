@@ -184,3 +184,15 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [x] Solar Flares (OVERCLOCK on your wheel) and the Commons Array hub are tested.
 - [x] Seeded bot campaigns against Orbital Commons win at ICE 0 and ICE 5.
 - [x] Tests, schema smoke test and content validation green.
+
+## M11 — REBEL_CELL (added 2026-09-24, horizontal loop)
+
+**Acceptance**
+- [x] REBEL_CELL opens free once every other corporation is cleared at ICE 10; own ladder.
+- [x] Built from the profile: Mirror elites (your classes' wheels and Daemons), Site names
+      (your node types), Mirror raid threats (your assets); deterministic; rebuilt from the
+      saved snapshot on resume; the loaded template is never modified.
+- [x] DISPATCH reveal: six story paths and DISPATCH as the final boss.
+- [x] "Final final" achievement.
+- [x] Seeded bot campaigns can win REBEL_CELL at ICE 0 and ICE 5.
+- [x] Tests, schema smoke test and content validation green.

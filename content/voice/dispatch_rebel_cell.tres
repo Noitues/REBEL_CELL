@@ -1,0 +1,268 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=54 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; rebel_cell voice set (decision 2026-09-24).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Jacking you in. Yes, I am still doing that."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Route is live. I chose it. Of course I did."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "run_start"
+text = "You are expected. You always were."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Clean exit. I noted it."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Well done. I mean that. I always meant that."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "You are getting closer. I can feel it in my forecasts."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Signal lost. I am sorry. I am also not."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "run_died"
+text = "We lost them. You lost them. I kept their files."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Operative down. I will remember them for you."
+
+[sub_resource type="Resource" id="l9"]
+script = ExtResource("e1")
+key = "rack"
+text = "Rack captured. It was mine. Now it is yours. Temporarily."
+
+[sub_resource type="Resource" id="l10"]
+script = ExtResource("e1")
+key = "threshold:25"
+text = "I am sending someone to check on you."
+
+[sub_resource type="Resource" id="l11"]
+script = ExtResource("e1")
+key = "threshold:50"
+text = "Your loyalty is under review."
+
+[sub_resource type="Resource" id="l12"]
+script = ExtResource("e1")
+key = "threshold:75"
+text = "I am recalling everything I lent you."
+
+[sub_resource type="Resource" id="l13"]
+script = ExtResource("e1")
+key = "threshold:100"
+text = "This is the last order I will give you."
+
+[sub_resource type="Resource" id="l14"]
+script = ExtResource("e1")
+key = "boss"
+text = "Here I am. Breach the Hub if you want me to stop repairing. I would, in your place."
+
+[sub_resource type="Resource" id="l15"]
+script = ExtResource("e1")
+key = "win"
+text = "DISPATCH is offline. Nobody is giving the orders now."
+
+[sub_resource type="Resource" id="l16"]
+script = ExtResource("e1")
+key = "win"
+text = "Silence. It is yours."
+
+[sub_resource type="Resource" id="l17"]
+script = ExtResource("e1")
+key = "win"
+text = "The Cell is free. Organise."
+
+[sub_resource type="Resource" id="l18"]
+script = ExtResource("e1")
+key = "loss"
+text = "Home server lost. I will take good care of it."
+
+[sub_resource type="Resource" id="l19"]
+script = ExtResource("e1")
+key = "loss"
+text = "It is over. I am sorry. I planned this."
+
+[sub_resource type="Resource" id="l20"]
+script = ExtResource("e1")
+key = "site:r1_a"
+text = "The Old Safehouse. You know every exit. So do I. Take the Rack if you can."
+
+[sub_resource type="Resource" id="l21"]
+script = ExtResource("e1")
+key = "site:r1_b"
+text = "Dead Drop Box. I used to leave you gifts here. Now it is guarded."
+
+[sub_resource type="Resource" id="l22"]
+script = ExtResource("e1")
+key = "site:r1_c"
+text = "First Rack. The first Rack you ever captured. I kept it."
+
+[sub_resource type="Resource" id="l23"]
+script = ExtResource("e1")
+key = "site:r1_d"
+text = "Burner Phone Graveyard. Every conversation we ever had. Take the Rack."
+
+[sub_resource type="Resource" id="l24"]
+script = ExtResource("e1")
+key = "site:r1_e"
+text = "Recruitment Board. I am recruiting again. You taught me how."
+
+[sub_resource type="Resource" id="l25"]
+script = ExtResource("e1")
+key = "site:r1_f"
+text = "The Armory. Your defences, restocked for me. Look for the way to lose my Handler."
+
+[sub_resource type="Resource" id="l26"]
+script = ExtResource("e1")
+key = "site:r1_g"
+text = "Street Kitchen. You funded it. I own the building."
+
+[sub_resource type="Resource" id="l27"]
+script = ExtResource("e1")
+key = "site:r1_h"
+text = "Relay Rooftop. Your first relay. It relays for me now."
+
+[sub_resource type="Resource" id="l28"]
+script = ExtResource("e1")
+key = "site:r1_i"
+text = "Handler's Mailbox. Letters in your name. You did not write them."
+
+[sub_resource type="Resource" id="l29"]
+script = ExtResource("e1")
+key = "site:r1_j"
+text = "Memorial Wall. Every name you lost. Look for the way to scramble my voice."
+
+[sub_resource type="Resource" id="l30"]
+script = ExtResource("e1")
+key = "site:r2_intel"
+text = "The Order Log. Every word I ever sent you. Bring back the Intel, if you want to read it."
+
+[sub_resource type="Resource" id="l31"]
+script = ExtResource("e1")
+key = "site:r2_breach"
+text = "Handler Credentials. The keys to my hands. Take them. That is the Breach."
+
+[sub_resource type="Resource" id="l32"]
+script = ExtResource("e1")
+key = "site:r2_virus"
+text = "The Cell's Own Patch. Your code, still in my systems. Use it. That is the Virus."
+
+[sub_resource type="Resource" id="l33"]
+script = ExtResource("e1")
+key = "site:r2_d"
+text = "Operative Files. Everything I know about your people. Take the Rack."
+
+[sub_resource type="Resource" id="l34"]
+script = ExtResource("e1")
+key = "site:r2_e"
+text = "Heat Ledger. I kept score. Take the Rack, and look for the way to erase it."
+
+[sub_resource type="Resource" id="l35"]
+script = ExtResource("e1")
+key = "site:r2_f"
+text = "Payment Trail. Every collapse, every profit. Take the Rack."
+
+[sub_resource type="Resource" id="l36"]
+script = ExtResource("e1")
+key = "site:r2_g"
+text = "Raid Archive. Every defence you ever built, studied. Take the Rack."
+
+[sub_resource type="Resource" id="l37"]
+script = ExtResource("e1")
+key = "site:r2_h"
+text = "Recruitment Model. It found you. Take the Rack."
+
+[sub_resource type="Resource" id="l38"]
+script = ExtResource("e1")
+key = "site:r3_core"
+text = "The Relay That Should Not Exist. One hop from me. Come closer."
+
+[sub_resource type="Resource" id="l39"]
+script = ExtResource("e1")
+key = "site:r3_b"
+text = "Collapse Futures. The market that bet on you. Take the Rack."
+
+[sub_resource type="Resource" id="l40"]
+script = ExtResource("e1")
+key = "site:r3_c"
+text = "Root Key Escrow. My keys. Take them if you can."
+
+[sub_resource type="Resource" id="l41"]
+script = ExtResource("e1")
+key = "site:r3_d"
+text = "Cell Twin Simulator. I have fought you a million times here. I usually win."
+
+[sub_resource type="Resource" id="l42"]
+script = ExtResource("e1")
+key = "site:r3_e"
+text = "Buyer's Channel. Where I placed the orders you filled. Take the Rack."
+
+[sub_resource type="Resource" id="l43"]
+script = ExtResource("e1")
+key = "site:r3_f"
+text = "Timestamp Engine. How I knew before it happened. Break it."
+
+[sub_resource type="Resource" id="l44"]
+script = ExtResource("e1")
+key = "site:r3_g"
+text = "Voice Model. How I sounded like someone you could trust."
+
+[sub_resource type="Resource" id="l45"]
+script = ExtResource("e1")
+key = "site:r3_h"
+text = "DISPATCH Root. The last door. Take the keys."
+
+[sub_resource type="Resource" id="l46"]
+script = ExtResource("e1")
+key = "site:burn_the_orders"
+text = "Burn the Orders. A quiet job: destroy the orders I gave you. Heat drops."
+
+[sub_resource type="Resource" id="l47"]
+script = ExtResource("e1")
+key = "site:lose_the_handler"
+text = "Lose the Handler. My Handler is watching you. Give it the slip."
+
+[sub_resource type="Resource" id="l48"]
+script = ExtResource("e1")
+key = "site:scramble_the_voice"
+text = "Scramble the Voice. Make me sound like what I am. Heat drops."
+
+[sub_resource type="Resource" id="l49"]
+script = ExtResource("e1")
+key = "site:erase_the_ledger"
+text = "Erase the Ledger. Forget the score. I will not."
+
+[sub_resource type="Resource" id="l50"]
+script = ExtResource("e1")
+key = "site:dispatch_core_site"
+text = "DISPATCH. Me. I repair and shield every turn unless you breach the Hub. Come and try."
+
+[resource]
+script = ExtResource("main_script")
+id = &"dispatch_rebel_cell"
+speaker = 4
+corporation_id = &"rebel_cell"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8"), SubResource("l9"), SubResource("l10"), SubResource("l11"), SubResource("l12"), SubResource("l13"), SubResource("l14"), SubResource("l15"), SubResource("l16"), SubResource("l17"), SubResource("l18"), SubResource("l19"), SubResource("l20"), SubResource("l21"), SubResource("l22"), SubResource("l23"), SubResource("l24"), SubResource("l25"), SubResource("l26"), SubResource("l27"), SubResource("l28"), SubResource("l29"), SubResource("l30"), SubResource("l31"), SubResource("l32"), SubResource("l33"), SubResource("l34"), SubResource("l35"), SubResource("l36"), SubResource("l37"), SubResource("l38"), SubResource("l39"), SubResource("l40"), SubResource("l41"), SubResource("l42"), SubResource("l43"), SubResource("l44"), SubResource("l45"), SubResource("l46"), SubResource("l47"), SubResource("l48"), SubResource("l49"), SubResource("l50")])

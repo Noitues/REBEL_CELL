@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ProfileUnlockData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/profile_unlock_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/corporations/rebel_cell.tres" id="e1"]
+
+; Corporation unlock (GDD 3.4; decision 2026-09-24). UnlockKind 2 = CORPORATION.
+
+[resource]
+script = ExtResource("main_script")
+id = &"unlock_rebel_cell"
+kind = 2
+display_name = "Corporation: REBEL_CELL"
+description = "Target REBEL_CELL in new campaigns."
+schematic_cost = 0
+unlocks = ExtResource("e1")
+requires_all_corporations_at_ice = 10

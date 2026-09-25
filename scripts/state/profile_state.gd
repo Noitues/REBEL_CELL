@@ -49,6 +49,27 @@ func add_stat(key: String, amount: int = 1) -> void:
 	stats[key] = int(stats.get(key, 0)) + amount
 
 
+## Usage counters for REBEL_CELL (GDD 8.5): stats key "use_<kind>:<id>" (kind = class,
+## daemon, node, asset).
+func record_usage(kind: String, id: StringName, amount: int = 1) -> void:
+	if id != &"":
+		add_stat("use_%s:%s" % [kind, id], amount)
+
+
+## The `n` most-used ids of `kind`, most first (ties: id order).
+func top_used(kind: String, n: int) -> Array[StringName]:
+	var prefix := "use_%s:" % kind
+	var rows := []
+	for k in stats:
+		if String(k).begins_with(prefix):
+			rows.append([int(stats[k]), String(k).trim_prefix(prefix)])
+	rows.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0] or (a[0] == b[0] and a[1] < b[1]))
+	var out: Array[StringName] = []
+	for i in mini(n, rows.size()):
+		out.append(StringName(rows[i][1]))
+	return out
+
+
 func add_achievement(id: StringName) -> void:
 	if not achievements.has(id):
 		achievements.append(id)

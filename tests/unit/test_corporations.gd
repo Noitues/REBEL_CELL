@@ -117,7 +117,6 @@ func test_meridian_voice_and_briefings() -> void:
 
 func test_run_manager_falls_back_to_solace_when_locked() -> void:
 	RunManager.save_slot = "gut_test_corp"
-	var had := RunManager.profile.has_unlock(&"unlock_meridian")
 	RunManager.profile.unlocks.erase(&"unlock_meridian")
 	RunManager.new_campaign(1, &"meridian")
 	assert_eq(RunManager.campaign.corporation_id, &"solace", "locked corporation falls back")
@@ -125,11 +124,10 @@ func test_run_manager_falls_back_to_solace_when_locked() -> void:
 	RunManager.new_campaign(1, &"meridian")
 	assert_eq(RunManager.campaign.corporation_id, &"meridian")
 	assert_eq(RunManager.corporation.id, &"meridian")
-	if not had:
-		RunManager.profile.unlocks.erase(&"unlock_meridian")
 	RunManager.delete_save()
-	RunManager.reset()
+	DirAccess.remove_absolute(RunManager.profile_path())
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.reset()  # reload the untouched default profile
 
 
 func test_hq_start_panel_offers_a_corporation_picker() -> void:

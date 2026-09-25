@@ -380,6 +380,9 @@ func show_hq() -> void:
 		var u := lookup.get_content(id) as ProfileUnlockData
 		if u == null or RunManager.profile.has_unlock(u.id):
 			continue
+		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
+		if u.schematic_cost == 0:
+			continue
 		any_unlock = true
 		var uid := u.id
 		var btn := _button("%s (%d)" % [u.display_name, u.schematic_cost], func() -> void: purchase_unlock(uid))

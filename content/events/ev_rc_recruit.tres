@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/cards/deep_calibrate.tres" id="e3"]
+
+; rebel_cell Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Warn the recruits (-2 Heat, 5 damage)"
+result_text = "One of them does not believe you."
+hp_cost = 5
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Take a recruit's kit (Card: Deep Calibrate)"
+result_text = "They will not need it now."
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You walk on. DISPATCH notes the direction."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_rc_recruit"
+title = "Recruitment Board"
+speaker = 0
+text = "The board where the Cell found its operatives. Someone has been recruiting again, in your name."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"rebel_cell"

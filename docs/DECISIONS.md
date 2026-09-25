@@ -30,6 +30,42 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M11 REBEL_CELL (GAP_ANALYSIS P1 9, GDD 8.5)
+- **Built from the profile.** `ProfileState` now counts usage (stats `use_class:`,
+  `use_daemon:`, `use_node:`, `use_asset:`) at the end of every run: the operative's class
+  and Daemons, and the node types and assets standing on the Grid.
+  `RebelCellBuilder.snapshot` takes the top 2 classes, 3 Daemons, 3 node types and 3
+  assets (ties by id; starter fallbacks when empty). `RebelCellBuilder.build` deep-copies
+  the template (never touches the loaded Resource) and:
+  - replaces the elites with **Mirrors** of your classes: your wheel, each slice swapped
+    for the closest plain slice of its type at 1.5x output (Deploy becomes Attack), one
+    pointer, resistance 1, and a hub running the combat effects of your data Daemons
+    (custom-handler Daemons cannot be copied);
+  - prefixes Site names with your node types;
+  - rebuilds every raid with **Mirror** threats made from your assets (1.5x integrity,
+    +2 damage; turrets hunt the weakest node, ICE Locks freeze links, decoys run fast at
+    the highest-value node).
+- **Rebuilt on resume**: the campaign saves its snapshot (`CampaignState.generated`), so the
+  enemy does not change when the profile moves on. The built corporation is registered in
+  the lookup (`RunManager.build_generated`).
+- **Unlock**: free, and opens by itself once every other corporation is cleared at ICE 10
+  (`requires_all_corporations_at_ice = config.rebel_cell_unlock_ice`); free unlocks are
+  not shown in the HQ buy row. Own ICE ladder (per-corporation caps already existed).
+- **Static template** (`tools/content_gen/gen_rebel_cell.py`): normal enemies using every
+  corporation's signature affliction (Dose, Tariff, Citation, Solar Flare); mini-boss The
+  Handler; boss **DISPATCH** (460 HP; Root Access hub repairs 4 and shields 4 unless
+  breached). Six reveal paths (The Handler, Every Collapse, The Buyer, Your Own Hands, The
+  Founders, Final Final): DISPATCH is the rogue AI and the buyer behind every collapse.
+  DISPATCH briefs the Cell as the enemy. Template elites have no corporation id so pools
+  never draw them. Colour #FF2A6D.
+- **"Final final"** achievement: REBEL_CELL and every other corporation at ICE 20
+  (`Achievements.check` now takes the corporation list).
+- **Balance** (8 seeds; the simulator builds REBEL_CELL from a profile that played the
+  simulated class with the starter assets): first pass the Mirrors used two pointers and
+  2x slices and killed rookies (Breaker 2/8); now one pointer and the closest 1.5x slice.
+  Final: Breaker ICE 0 5/8 (27.5 runs), ICE 5 4/8, ICE 10 1/8; Rigger ICE 0 6/8; Botnet
+  ICE 0 8/8. The hardest corporation by design.
+
 ### 2026-09-24 — M10 Orbital Commons (GAP_ANALYSIS P1 8)
 - **Orbital Commons** (GDD 8.4 names): privatised orbital infrastructure (satellite
   internet, positioning, weather). Mechanical identity: **Solar Flares** (new AFFLICT slice:
@@ -786,6 +822,14 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 _(Claude Code: add questions here instead of guessing on design.)_
+
+### From M11, REBEL_CELL (2026-09-24) — decided by the implementer, confirm in playtest
+- **REBEL_CELL is hard** (Breaker bot 4/8 at ICE 5, 1/8 at ICE 10). It opens only after
+  ICE 10 everywhere, so a human arrives experienced; raise or lower the Mirror factor
+  (`RebelCellBuilder.MIRROR_OUTPUT_FACTOR`) after playtests.
+- **Custom-handler Daemons** (Kernel Sync, Zero Day...) are not mirrored: their code runs
+  on the player's side only.
+- **Music**: REBEL_CELL uses the existing rebel_cell context.
 
 ### From M9, Halcyon Civic (2026-09-24) — decided by the implementer, confirm in playtest
 - **Ghost is strongest against the new corporations** (about 10 runs vs 20 for the others);

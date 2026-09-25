@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+
+; rebel_cell Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -3
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Refuse (-3 Heat)"
+result_text = "DISPATCH: I anticipated that."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = 2
+
+[sub_resource type="Resource" id="fx1_1"]
+script = ExtResource("e1")
+type = 23
+target = 6
+amount = 3
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Pretend to accept (+2 Heat, +3 Schematics banked)"
+result_text = "DISPATCH: Good. I do not believe you."
+effects = Array[ExtResource("e1")]([SubResource("fx1_0"), SubResource("fx1_1")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_rc_dispatch_offer"
+title = "DISPATCH: Offer"
+speaker = 4
+text = "DISPATCH: Stand down and I will send you a new target. Something easy. You have earned it."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"rebel_cell"
+dispatch_clue = true

@@ -39,6 +39,15 @@ func _init(p_resolver: CombatResolver, corporation_id: StringName = &"solace", c
 	lookup = p_resolver.lookup
 	config = p_resolver.config
 	corp = lookup.get_content(corporation_id) as CorporationData
+	if corp != null and corp.generated_from_profile:
+		# REBEL_CELL: a profile that has played this class with the three starter assets.
+		var profile := ProfileState.new()
+		profile.record_usage("class", class_id, 10)
+		profile.record_usage("node", &"firewall_relay", 5)
+		for a in [&"turret", &"ice_lock", &"decoy"]:
+			profile.record_usage("asset", a, 3)
+		corp = RebelCellBuilder.build(corp, RebelCellBuilder.snapshot(profile, class_id), lookup)
+		lookup.add(corp)
 	class_data = lookup.get_content(class_id) as ClassData
 	home = lookup.get_content(home_id) as HomeServerVariantData
 

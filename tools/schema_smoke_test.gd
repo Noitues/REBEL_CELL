@@ -301,4 +301,18 @@ func _m8() -> int:
 	var plain := RaidData.new()
 	print("Raid defaults: corp='", plain.corporation_id, "' replaces='", plain.replaces, "'")
 	if plain.corporation_id != &"" or plain.replaces != &"": fails += 1
+	return fails + _m11()
+
+
+## M11 REBEL_CELL: CampaignState.generated (usage snapshot) and ProfileState usage stats.
+func _m11() -> int:
+	var fails := 0
+	var c := CampaignState.new(); c.generated = {"classes": ["ghost"], "daemons": [], "nodes": ["relay"], "assets": ["turret"]}
+	var back := CampaignState.from_dict(c.to_dict())
+	print("CampaignState.generated round trip: ", back.generated)
+	if back.generated.get("classes", []) != ["ghost"]: fails += 1
+	var p := ProfileState.new(); p.record_usage("class", &"rigger", 3)
+	var pb := ProfileState.from_dict(p.to_dict())
+	print("Profile usage round trip: ", pb.top_used("class", 1))
+	if pb.top_used("class", 1) != [&"rigger"]: fails += 1
 	return fails

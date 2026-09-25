@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ThreatData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="main_script"]
+
+; rebel_cell threat (decision 2026-09-24).
+
+[resource]
+script = ExtResource("main_script")
+id = &"loyalist"
+display_name = "Loyalist"
+description = "Template threat (replaced by mirrors of your assets)."
+integrity = 12
+damage = 5
+edges_per_step = 1
+routing = 0

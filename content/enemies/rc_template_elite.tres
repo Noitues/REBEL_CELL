@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/slices/crit_24.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/atk_12.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/def_12.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e6"]
+
+; rebel_cell enemy (decision 2026-09-24).
+
+[sub_resource type="Resource" id="wheel_slot_crit_24"]
+script = ExtResource("e2")
+slice = ExtResource("e1")
+
+[sub_resource type="Resource" id="wheel_slot_atk_12"]
+script = ExtResource("e2")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="wheel_slot_def_12"]
+script = ExtResource("e2")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e2")
+slice = ExtResource("e5")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e6")
+slice_count = 6
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_crit_24"), SubResource("wheel_slot_atk_12"), SubResource("wheel_slot_atk_12"), SubResource("wheel_slot_atk_12"), SubResource("wheel_slot_def_12"), SubResource("wheel_slot_miss")])
+pointer_ticks = PackedInt32Array(0, 15)
+passive_resistance = 1
+
+[resource]
+script = ExtResource("main_script")
+id = &"rc_template_elite"
+display_name = "Mirror"
+description = "A copy of one of your operatives."
+corporation_id = &""
+hp = 150
+wheel = SubResource("wheel")
+is_elite = true
+cycle_reward = 40

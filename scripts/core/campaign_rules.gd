@@ -582,7 +582,26 @@ static func corporation_available(profile: ProfileState, lookup: ContentLookup, 
 	if profile == null:
 		return true
 	var u := unlock_for(lookup, corp)
-	return u == null or profile.has_unlock(u.id)
+	if u == null:
+		return true
+	# A free unlock (REBEL_CELL) opens by itself once its requirements are met.
+	if u.schematic_cost == 0:
+		return unlock_requirements_met(profile, lookup, u)
+	return profile.has_unlock(u.id)
+
+
+## Whether `profile` meets `u`'s requirements (other unlocks, every corporation cleared at
+## an ICE level). Generated corporations never count toward "every corporation".
+static func unlock_requirements_met(profile: ProfileState, lookup: ContentLookup, u: ProfileUnlockData) -> bool:
+	for req in u.requires_unlock_ids:
+		if not profile.has_unlock(req):
+			return false
+	if u.requires_all_corporations_at_ice >= 0:
+		for id in lookup.ids_of_class(&"CorporationData"):
+			var corp := lookup.get_content(id) as CorporationData
+			if corp != null and not corp.generated_from_profile and profile.best_ice_for(corp.id) < u.requires_all_corporations_at_ice:
+				return false
+	return true
 
 
 ## Corporations a new campaign may target, by id.
@@ -590,7 +609,7 @@ static func available_corporations(profile: ProfileState, lookup: ContentLookup)
 	var out: Array[CorporationData] = []
 	for id in lookup.ids_of_class(&"CorporationData"):
 		var corp := lookup.get_content(id) as CorporationData
-		if corp != null and not corp.generated_from_profile and corporation_available(profile, lookup, corp):
+		if corp != null and corporation_available(profile, lookup, corp):
 			out.append(corp)
 	return out
 

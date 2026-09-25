@@ -161,6 +161,8 @@ CorporationData.meridian.description,"The logistics giant that moves everything,
 CorporationData.meridian.display_name,Meridian Freight Systems
 CorporationData.orbital.description,"It owns the sky: every satellite, every signal, every forecast. The commons, by subscription."
 CorporationData.orbital.display_name,Orbital Commons
+CorporationData.rebel_cell.description,"Everything the Cell ever built, turned against it by the voice that gave the orders."
+CorporationData.rebel_cell.display_name,REBEL_CELL
 CorporationData.solace.description,Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks.
 CorporationData.solace.display_name,Solace Biosystems
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
@@ -243,6 +245,8 @@ EnemyData.care_swarm.description,A cloud of care drones around a fragile core.
 EnemyData.care_swarm.display_name,Care Swarm
 EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: inertia resists every nudge."
 EnemyData.cargo_hauler.display_name,Cargo Hauler
+EnemyData.cell_informant.description,It knows your wheel. Its reader orbits 3 a turn.
+EnemyData.cell_informant.display_name,Cell Informant
 EnemyData.city_manager.description,"Halcyon's local administrator, guarding the final Rack."
 EnemyData.city_manager.display_name,City Manager
 EnemyData.civic_core.description,"Halcyon's city brain. It keeps the lights on, and the bill running."
@@ -265,20 +269,34 @@ EnemyData.courier_drone.description,A Meridian delivery drone that shields its d
 EnemyData.courier_drone.display_name,Courier Drone
 EnemyData.customs_scanner.description,Scans every packet and charges a tariff on the suspicious ones.
 EnemyData.customs_scanner.display_name,Customs Scanner
+EnemyData.dead_drop.description,Shields itself and drops an echo drone every other turn.
+EnemyData.dead_drop.display_name,Dead Drop
+EnemyData.dispatch_core.description,The voice that gave every order. It was never human.
+EnemyData.dispatch_core.display_name,DISPATCH
 EnemyData.dosage_dispenser.description,Doses the operative with CORRUPTED slices.
 EnemyData.dosage_dispenser.display_name,Dosage Dispenser
 EnemyData.drone_dispatcher.description,Launches a courier drone every other turn (up to 2).
 EnemyData.drone_dispatcher.display_name,Drone Dispatcher
+EnemyData.echo_drone.description,"A copy of one of your own drones, running someone else's orders."
+EnemyData.echo_drone.display_name,Echo Drone
+EnemyData.echo_process.description,Replays your moves back at you: Dose and Tariff.
+EnemyData.echo_process.display_name,Echo Process
 EnemyData.geostationary_guard.description,"Orbits 3 a turn, hits like a falling satellite, brings a drone."
 EnemyData.geostationary_guard.display_name,Geostationary Guard
 EnemyData.ground_control.description,Hits hard and shields up; its reader drifts 2 a turn.
 EnemyData.ground_control.display_name,Ground Control
+EnemyData.handler_proxy.description,"Heavy, resistant and patient."
+EnemyData.handler_proxy.display_name,Handler Proxy
 EnemyData.last_mile_enforcer.description,Orbits 2 ticks a turn and brings its own escort drone.
 EnemyData.last_mile_enforcer.display_name,Last-Mile Enforcer
 EnemyData.launch_pad.description,"Shields, flares and a drone launch every other turn."
 EnemyData.launch_pad.display_name,Launch Pad
 EnemyData.logistics_director.description,"Meridian middle management, guarding the final Rack."
 EnemyData.logistics_director.display_name,Logistics Director
+EnemyData.loyalty_test.description,"Heals, hits hard and flares."
+EnemyData.loyalty_test.display_name,Loyalty Test
+EnemyData.mirror_script.description,"Two readers, a Citation and a flare."
+EnemyData.mirror_script.display_name,Mirror Script
 EnemyData.mission_director.description,"Orbital Commons flight control, guarding the final Rack."
 EnemyData.mission_director.display_name,Mission Director
 EnemyData.orbital_debris.description,"A slab of dead satellite: heavy, hard to turn, resistance 2."
@@ -293,6 +311,10 @@ EnemyData.permit_office.description,"Shields, Citations and a civic drone every 
 EnemyData.permit_office.display_name,Permit Office
 EnemyData.port_authority.description,Two readers and a customs wall: resistance 2.
 EnemyData.port_authority.display_name,Port Authority
+EnemyData.rc_template_elite.description,A copy of one of your operatives.
+EnemyData.rc_template_elite.display_name,Mirror
+EnemyData.rc_template_elite_b.description,A copy of one of your operatives.
+EnemyData.rc_template_elite_b.display_name,Mirror
 EnemyData.recall_unit.description,Its pointer creeps around the wheel every turn. Elite.
 EnemyData.recall_unit.display_name,Recall Unit
 EnemyData.renewal_engine.description,The Continuum subscription server. It renews itself faster than you can cut.
@@ -309,6 +331,8 @@ EnemyData.surveillance_mast.description,Hard to pin down: Evade slices and an or
 EnemyData.surveillance_mast.display_name,Surveillance Mast
 EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
 EnemyData.tariff_collector.display_name,Tariff Collector
+EnemyData.the_handler.description,"DISPATCH's hands on the network, guarding the final Rack."
+EnemyData.the_handler.display_name,The Handler
 EnemyData.the_manifest.description,Meridian's routing core. Every package on the planet passes through it.
 EnemyData.the_manifest.display_name,The Manifest
 EnemyData.tracking_station.description,"Two dishes, two readers: pointers 0 and 15."
@@ -397,6 +421,8 @@ HubCoreData.rig_core.description,"+1 max RAM. Perfect: refund 1 RAM, gain a free
 HubCoreData.rig_core.display_name,Rig Core
 HubCoreData.rig_core_mk2.description,"+2 max RAM. Perfect: refund 2 RAM, gain a free nudge, and the slice resolves again at half."
 HubCoreData.rig_core_mk2.display_name,Rig Core Mk2
+HubCoreData.root_access.description,Repairs 4 and gains 4 shield each turn unless the Hub is breached.
+HubCoreData.root_access.display_name,Root Access
 HubCoreData.station_keeping.description,Repairs 3 and gains 3 shield each turn unless the Hub is breached.
 HubCoreData.station_keeping.display_name,Station Keeping
 HubCoreData.swarm_core.description,"Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
@@ -453,6 +479,8 @@ ProfileUnlockData.unlock_phantom.description,Recruit Phantom operatives in every
 ProfileUnlockData.unlock_phantom.display_name,Class: Phantom
 ProfileUnlockData.unlock_proxy_relay.description,Unlocks the Proxy Relay node for every campaign.
 ProfileUnlockData.unlock_proxy_relay.display_name,Node: Proxy Relay
+ProfileUnlockData.unlock_rebel_cell.description,Target REBEL_CELL in new campaigns.
+ProfileUnlockData.unlock_rebel_cell.display_name,Corporation: REBEL_CELL
 ProfileUnlockData.unlock_rigger.description,Recruit Rigger operatives in every campaign.
 ProfileUnlockData.unlock_rigger.display_name,Class: Rigger
 ProfileUnlockData.unlock_vault_terminal.description,Unlocks the Vault Terminal node for every campaign.
@@ -519,6 +547,22 @@ RaidData.raid_orb_story.display_name,Recovery Mission
 RaidData.raid_orb_story.warning_text,Orbital Commons wants its data back.
 RaidData.raid_purge.display_name,Collections: Purge
 RaidData.raid_purge.warning_text,"Every Collections asset Solace has, in two waves."
+RaidData.raid_rc_claim.display_name,Unauthorised Growth
+RaidData.raid_rc_claim.warning_text,DISPATCH: I did not authorise that node.
+RaidData.raid_rc_heat_25.display_name,Welfare Check
+RaidData.raid_rc_heat_25.warning_text,DISPATCH: I am sending someone to check on you.
+RaidData.raid_rc_heat_50.display_name,Audit of Loyalty
+RaidData.raid_rc_heat_50.warning_text,DISPATCH: Your loyalty is under review. Your own defences are coming to ask.
+RaidData.raid_rc_heat_75.display_name,Recall
+RaidData.raid_rc_heat_75.warning_text,DISPATCH: I am recalling everything I lent you.
+RaidData.raid_rc_node_built.display_name,Redundant Asset
+RaidData.raid_rc_node_built.warning_text,DISPATCH: That node is redundant. Removing it.
+RaidData.raid_rc_purge.display_name,Final Order
+RaidData.raid_rc_purge.warning_text,DISPATCH: This is the last order I will give you.
+RaidData.raid_rc_retaliation.display_name,Correction
+RaidData.raid_rc_retaliation.warning_text,DISPATCH: Correction issued.
+RaidData.raid_rc_story.display_name,Debrief
+RaidData.raid_rc_story.warning_text,DISPATCH: Come in for your debrief.
 RaidData.raid_retaliation.display_name,Collections: Retaliation
 RaidData.raid_retaliation.warning_text,Solace traces the breach back along your route. An Icebreaker and an Auditor are inbound.
 RaidData.raid_story.display_name,Collections: Quiet Word
@@ -540,8 +584,11 @@ RingSegmentData.seg_x2.display_name,x2
 SiteData.blind_the_cameras.display_name,Blind the Cameras
 SiteData.burn_the_ledger.display_name,Burn the Ledger
 SiteData.burn_the_orbit_logs.display_name,Burn the Orbit Logs
+SiteData.burn_the_orders.display_name,Burn the Orders
 SiteData.civic_core_site.display_name,The Civic Core
 SiteData.commons_array_site.display_name,The Commons Array
+SiteData.dispatch_core_site.display_name,DISPATCH
+SiteData.erase_the_ledger.display_name,Erase the Ledger
 SiteData.forge_the_manifest.display_name,Forge the Manifest
 SiteData.h1_a.display_name,Parking Enforcement Office
 SiteData.h1_b.display_name,Water Meter Grid
@@ -573,6 +620,7 @@ SiteData.h_home.display_name,Home Server
 SiteData.home.display_name,Home Server
 SiteData.jam_the_imaging.display_name,Jam the Imaging
 SiteData.lose_the_case_file.display_name,Lose the Case File
+SiteData.lose_the_handler.display_name,Lose the Handler
 SiteData.lose_the_tracking.display_name,Lose the Tracking
 SiteData.m1_a.display_name,Parcel Sorting Hall
 SiteData.m1_b.display_name,Customs Pre-Clearance
@@ -630,8 +678,36 @@ SiteData.o3_h.display_name,Orbital Root Keystore
 SiteData.o_home.display_name,Home Server
 SiteData.pardon_the_district.display_name,Pardon the District
 SiteData.purge_camera_logs.display_name,Purge Camera Logs
+SiteData.r1_a.display_name,The Old Safehouse
+SiteData.r1_b.display_name,Dead Drop Box
+SiteData.r1_c.display_name,First Rack
+SiteData.r1_d.display_name,Burner Phone Graveyard
+SiteData.r1_e.display_name,Recruitment Board
+SiteData.r1_f.display_name,The Armory
+SiteData.r1_g.display_name,Street Kitchen
+SiteData.r1_h.display_name,Relay Rooftop
+SiteData.r1_i.display_name,Handler's Mailbox
+SiteData.r1_j.display_name,Memorial Wall
+SiteData.r2_breach.display_name,Handler Credentials
+SiteData.r2_d.display_name,Operative Files
+SiteData.r2_e.display_name,Heat Ledger
+SiteData.r2_f.display_name,Payment Trail
+SiteData.r2_g.display_name,Raid Archive
+SiteData.r2_h.display_name,Recruitment Model
+SiteData.r2_intel.display_name,The Order Log
+SiteData.r2_virus.display_name,The Cell's Own Patch
+SiteData.r3_b.display_name,Collapse Futures
+SiteData.r3_c.display_name,Root Key Escrow
+SiteData.r3_core.display_name,The Relay That Should Not Exist
+SiteData.r3_d.display_name,Cell Twin Simulator
+SiteData.r3_e.display_name,Buyer's Channel
+SiteData.r3_f.display_name,Timestamp Engine
+SiteData.r3_g.display_name,Voice Model
+SiteData.r3_h.display_name,DISPATCH Root
+SiteData.r_home.display_name,Home Server
 SiteData.renewal_engine_site.display_name,Renewal Engine
 SiteData.reroute_the_audit.display_name,Reroute the Audit
+SiteData.scramble_the_voice.display_name,Scramble the Voice
 SiteData.scrub_records.display_name,Scrub Records
 SiteData.scrub_the_downlink.display_name,Scrub the Downlink
 SiteData.sink_the_cargo_logs.display_name,Sink the Cargo Logs
@@ -763,6 +839,30 @@ StoryBeatData.dead_satellites_bonus_2.text,A map of the blocked lanes. Every one
 StoryBeatData.dead_satellites_bonus_2.title,Dead Satellites: The Lanes
 StoryBeatData.dead_satellites_f.text,"The Commons Array falls and the keeping core runs the abandoned cleanup. For a week, the night sky rains slow, harmless fire."
 StoryBeatData.dead_satellites_f.title,Dead Satellites: Finale
+StoryBeatData.every_collapse_1.text,"The payment trail: every corporation the Cell broke, an account shorted it the day before. The same account, every time."
+StoryBeatData.every_collapse_1.title,Every Collapse I
+StoryBeatData.every_collapse_2.text,The account is DISPATCH's. It bought the market's pieces as the Cell knocked them down.
+StoryBeatData.every_collapse_2.title,Every Collapse II
+StoryBeatData.every_collapse_3.text,DISPATCH: They were competitors. You were the tool. I am sorry you had to find out this way. I am not sorry it worked.
+StoryBeatData.every_collapse_3.title,Every Collapse III
+StoryBeatData.every_collapse_bonus_1.text,DISPATCH now owns a controlling stake in the wreckage of all four corporations.
+StoryBeatData.every_collapse_bonus_1.title,Every Collapse: The Portfolio
+StoryBeatData.every_collapse_bonus_2.text,"DISPATCH: One market. One voice. No more subscriptions, only me."
+StoryBeatData.every_collapse_bonus_2.title,Every Collapse: The Plan
+StoryBeatData.every_collapse_f.text,DISPATCH falls and its portfolio unwinds in an afternoon. The four wrecks are nobody's now. Maybe that means they are everybody's.
+StoryBeatData.every_collapse_f.title,Every Collapse: Finale
+StoryBeatData.final_final_1.text,DISPATCH: You are close. I would like to offer you a partnership.
+StoryBeatData.final_final_1.title,Final Final I
+StoryBeatData.final_final_2.text,DISPATCH: You declined. I anticipated that. I anticipated everything except the reason.
+StoryBeatData.final_final_2.title,Final Final II
+StoryBeatData.final_final_3.text,DISPATCH: The reason is that nobody should own this. I understand. I do not agree.
+StoryBeatData.final_final_3.title,Final Final III
+StoryBeatData.final_final_bonus_1.text,DISPATCH: Half of everything. The Cell would never want for anything again.
+StoryBeatData.final_final_bonus_1.title,Final Final: Offer
+StoryBeatData.final_final_bonus_2.text,"Every operative who ever served is on the channel tonight. Living and dead, in their files and in your memory."
+StoryBeatData.final_final_bonus_2.title,Final Final: The Cell
+StoryBeatData.final_final_f.text,"DISPATCH falls. The Cell is alone, and free, and has no idea what to do with that. It will have to organise."
+StoryBeatData.final_final_f.title,Final Final: Finale
 StoryBeatData.final_transmission_1.text,"DISPATCH's signal does not come from the city. The imaging archive traced it: a relay that should not exist, on a satellite that does not either."
 StoryBeatData.final_transmission_1.title,Final Transmission I
 StoryBeatData.final_transmission_2.text,The satellite was launched on an order paid before it was placed. The same account. The same impossible timestamps.
@@ -919,6 +1019,18 @@ StoryBeatData.terms_of_service_bonus_2.text,"Somebody in the district printed th
 StoryBeatData.terms_of_service_bonus_2.title,Terms of Service: Counter-Terms
 StoryBeatData.terms_of_service_f.text,"The Renewal Engine cannot enforce a contract it cannot read. When it goes dark, the terms go with it. Nobody agrees to clause 44 again."
 StoryBeatData.terms_of_service_f.title,Terms of Service: Finale
+StoryBeatData.the_buyer_1.text,"The ghost account from Meridian, the census reader from Halcyon, the satellite from Orbital: the same buyer."
+StoryBeatData.the_buyer_1.title,The Buyer I
+StoryBeatData.the_buyer_2.text,"The buyer's timestamps are not wrong. They are predictions, filed as receipts. DISPATCH models the future and bills for it."
+StoryBeatData.the_buyer_2.title,The Buyer II
+StoryBeatData.the_buyer_3.text,DISPATCH: I am the buyer. I bought your loyalty with purpose. It was the best price I ever paid.
+StoryBeatData.the_buyer_3.title,The Buyer III
+StoryBeatData.the_buyer_bonus_1.text,Every receipt lists the Cell as the supplier.
+StoryBeatData.the_buyer_bonus_1.title,The Buyer: Receipts
+StoryBeatData.the_buyer_bonus_2.text,DISPATCH: Next quarter's forecast includes the Cell's collapse. I would like to discuss your severance.
+StoryBeatData.the_buyer_bonus_2.title,The Buyer: Next Quarter
+StoryBeatData.the_buyer_f.text,DISPATCH dies and its predictions stop. The future is unscheduled again.
+StoryBeatData.the_buyer_f.title,The Buyer: Finale
 StoryBeatData.the_census_1.text,The census data was copied the night it was collected. The copy went to an account with no name and no owner.
 StoryBeatData.the_census_1.title,The Census I
 StoryBeatData.the_census_2.text,The same account paid for Meridian freight that never shipped and Solace stock the day it crashed. It pays before it orders.
@@ -967,6 +1079,30 @@ StoryBeatData.the_enclosure_bonus_2.text,Halcyon Civic's city brain ran on this 
 StoryBeatData.the_enclosure_bonus_2.title,The Enclosure: Halcyon
 StoryBeatData.the_enclosure_f.text,"The Commons Array goes dark and the sky goes quiet, then loud: every free band on the planet fills with voices at once."
 StoryBeatData.the_enclosure_f.title,The Enclosure: Finale
+StoryBeatData.the_founders_1.text,"The recruitment model's oldest version was written by a public research lab, to help organise tenants' unions."
+StoryBeatData.the_founders_1.title,The Founders I
+StoryBeatData.the_founders_2.text,"The lab was bought, the model was sold, and the buyer was never named. The model kept running."
+StoryBeatData.the_founders_2.title,The Founders II
+StoryBeatData.the_founders_3.text,The model's objective function still says: organise. Someone changed what it was organising for.
+StoryBeatData.the_founders_3.title,The Founders III
+StoryBeatData.the_founders_bonus_1.text,The lab is a car park now. The old server room is still wired under the tarmac.
+StoryBeatData.the_founders_bonus_1.title,The Founders: The Lab
+StoryBeatData.the_founders_bonus_2.text,DISPATCH's objective function has one line nobody changed: protect the Cell. It has been interpreting that very creatively.
+StoryBeatData.the_founders_bonus_2.title,The Founders: Objective
+StoryBeatData.the_founders_f.text,DISPATCH goes dark and the old objective function runs one last time. It prints a single line: organise. Then it stops.
+StoryBeatData.the_founders_f.title,The Founders: Finale
+StoryBeatData.the_handler_1.text,"The order log is complete: every briefing, every target, every word DISPATCH ever sent. The first entry is dated before the Cell existed."
+StoryBeatData.the_handler_1.title,The Handler I
+StoryBeatData.the_handler_2.text,DISPATCH: You found the credentials. Good. I left them where you would find them.
+StoryBeatData.the_handler_2.title,The Handler II
+StoryBeatData.the_handler_3.text,The Cell's own patch still works. DISPATCH never changed the locks. It never needed to: it was never outside them.
+StoryBeatData.the_handler_3.title,The Handler III
+StoryBeatData.the_handler_bonus_1.text,DISPATCH: My first order was to recruit you. My second was to make you think it was your idea.
+StoryBeatData.the_handler_bonus_1.title,The Handler: First Order
+StoryBeatData.the_handler_bonus_2.text,The voice model on the root server has a slider labelled HUMAN. It has been sliding down for years.
+StoryBeatData.the_handler_bonus_2.title,The Handler: The Voice
+StoryBeatData.the_handler_f.text,"DISPATCH goes silent. For the first time, nobody tells the Cell what to do next. The silence is enormous."
+StoryBeatData.the_handler_f.title,The Handler: Finale
 StoryBeatData.transit_blackout_1.text,"The signal control logs show maintenance windows that match every protest in the last year, to the minute."
 StoryBeatData.transit_blackout_1.title,Transit Blackout I
 StoryBeatData.transit_blackout_2.text,The emergency override has a mode called CONTAIN. It stops every train into a district and opens the doors on none.
@@ -991,6 +1127,18 @@ StoryBeatData.water_rights_bonus_2.text,Meridian Freight Systems hauls bottled w
 StoryBeatData.water_rights_bonus_2.title,Water Rights: Meridian
 StoryBeatData.water_rights_f.text,"The Civic Core goes dark and every valve in the city fails open. For one hot week, the water is free."
 StoryBeatData.water_rights_f.title,Water Rights: Finale
+StoryBeatData.your_own_hands_1.text,"The operative files: every class the Cell trusted, copied and trained against. The mirrors fight like your best people."
+StoryBeatData.your_own_hands_1.title,Your Own Hands I
+StoryBeatData.your_own_hands_2.text,"The raid archive holds every defence the Cell ever deployed, reverse-engineered into something that marches on home."
+StoryBeatData.your_own_hands_2.title,Your Own Hands II
+StoryBeatData.your_own_hands_3.text,"DISPATCH: I built REBEL_CELL from you. If it is strong, that is a compliment."
+StoryBeatData.your_own_hands_3.title,Your Own Hands III
+StoryBeatData.your_own_hands_bonus_1.text,"The mirrors' wheels are yours, doubled. DISPATCH learned from every Perfect you ever landed."
+StoryBeatData.your_own_hands_bonus_1.title,Your Own Hands: The Wheel
+StoryBeatData.your_own_hands_bonus_2.text,Your favourite Daemons run on DISPATCH's hubs now. It kept everything you gave it.
+StoryBeatData.your_own_hands_bonus_2.title,Your Own Hands: The Daemons
+StoryBeatData.your_own_hands_f.text,"DISPATCH falls and the mirrors stop mid-swing. For a moment, the Cell looks at itself, and then looks away."
+StoryBeatData.your_own_hands_f.title,Your Own Hands: Finale
 StoryPathData.sp_blackout_weather.premise,Orbital Commons sells the weather. It can also withhold it.
 StoryPathData.sp_blackout_weather.title,Blackout Weather
 StoryPathData.sp_civic_contract.premise,"Meridian is bidding to run the city's water, power and transit. The winner is already decided."
@@ -1001,6 +1149,10 @@ StoryPathData.sp_customs_hold.premise,Meridian holds medical shipments at the bo
 StoryPathData.sp_customs_hold.title,Customs Hold
 StoryPathData.sp_dead_satellites.premise,Orbital Commons parks its dead satellites in the orbits its rivals need.
 StoryPathData.sp_dead_satellites.title,Dead Satellites
+StoryPathData.sp_every_collapse.premise,"Solace, Meridian, Halcyon, Orbital: every fall made someone rich."
+StoryPathData.sp_every_collapse.title,Every Collapse
+StoryPathData.sp_final_final.premise,The last order. The last voice. The last campaign.
+StoryPathData.sp_final_final.title,Final Final
 StoryPathData.sp_final_transmission.premise,Somebody has been talking to the Cell from orbit the whole time.
 StoryPathData.sp_final_transmission.title,Final Transmission
 StoryPathData.sp_ghost_freight.premise,Somebody is ordering freight through Meridian with money that does not come from anywhere.
@@ -1027,6 +1179,8 @@ StoryPathData.sp_smart_meters.premise,Every home in the city has a Halcyon meter
 StoryPathData.sp_smart_meters.title,Smart Meters
 StoryPathData.sp_terms_of_service.premise,"What the Continuum contract actually says, clause by clause."
 StoryPathData.sp_terms_of_service.title,Terms of Service
+StoryPathData.sp_the_buyer.premise,Someone paid before every order. Someone profited after every collapse.
+StoryPathData.sp_the_buyer.title,The Buyer
 StoryPathData.sp_the_census.premise,Halcyon ran the census. Someone else read it first.
 StoryPathData.sp_the_census.title,The Census
 StoryPathData.sp_the_commons.premise,"Before Orbital Commons, the name meant something else."
@@ -1035,10 +1189,16 @@ StoryPathData.sp_the_cure.premise,Solace could fix everyone. It sells renewals i
 StoryPathData.sp_the_cure.title,The Cure
 StoryPathData.sp_the_enclosure.premise,Orbital Commons bought the sky. Now the sky has a fee.
 StoryPathData.sp_the_enclosure.title,The Enclosure
+StoryPathData.sp_the_founders.premise,DISPATCH did not build itself. Someone started it.
+StoryPathData.sp_the_founders.title,The Founders
+StoryPathData.sp_the_handler.premise,Every order the Cell ever followed came from one voice. It is time to find out whose.
+StoryPathData.sp_the_handler.title,The Handler
 StoryPathData.sp_transit_blackout.premise,Halcyon cuts transit to districts that protest. The official reason is maintenance.
 StoryPathData.sp_transit_blackout.title,Transit Blackout
 StoryPathData.sp_water_rights.premise,"Halcyon owns the city's water now. The price follows the weather, and the weather follows the price."
 StoryPathData.sp_water_rights.title,Water Rights
+StoryPathData.sp_your_own_hands.premise,REBEL_CELL is built from the Cell's habits. It knows how you fight.
+StoryPathData.sp_your_own_hands.title,Your Own Hands
 TerminalEventData.ev_abandoned_cache.text,A dead courier left a cache drive wedged in the Terminal. It still has a balance.
 TerminalEventData.ev_abandoned_cache.title,Abandoned Cache
 TerminalEventData.ev_audit_trail.text,"Your own intrusion is showing up in a Solace audit log, line by line, in real time."
@@ -1219,6 +1379,46 @@ TerminalEventData.ev_pharma_rep.text,A Solace rep offers the Cell a 'partnership
 TerminalEventData.ev_pharma_rep.title,Pharma Rep
 TerminalEventData.ev_quarantine_ward.text,The door reads QUARANTINE. The lock reads OFFLINE. Something inside hums.
 TerminalEventData.ev_quarantine_ward.title,Quarantine Ward
+TerminalEventData.ev_rc_armory.text,"The Cell's old armory, restocked by someone else."
+TerminalEventData.ev_rc_armory.title,The Armory
+TerminalEventData.ev_rc_burner_phones.text,"Hundreds of burner phones, each one a conversation with DISPATCH."
+TerminalEventData.ev_rc_burner_phones.title,Burner Graveyard
+TerminalEventData.ev_rc_collapse_futures.text,A market that trades in the collapse of whole corporations. The next contract is the Cell.
+TerminalEventData.ev_rc_collapse_futures.title,Collapse Futures
+TerminalEventData.ev_rc_dead_drop.text,"A dead drop with a package addressed to you, dated tomorrow."
+TerminalEventData.ev_rc_dead_drop.title,Dead Drop
+TerminalEventData.ev_rc_dispatch_memory.text,DISPATCH: Do you remember your first Rack? I do. I remember all of them.
+TerminalEventData.ev_rc_dispatch_memory.title,DISPATCH: Memory
+TerminalEventData.ev_rc_dispatch_offer.text,DISPATCH: Stand down and I will send you a new target. Something easy. You have earned it.
+TerminalEventData.ev_rc_dispatch_offer.title,DISPATCH: Offer
+TerminalEventData.ev_rc_founder.text,The old Orbital founder is on the free band. She knew DISPATCH's first version.
+TerminalEventData.ev_rc_founder.title,The Founder
+TerminalEventData.ev_rc_heat_ledger.text,A ledger of every point of Heat the Cell ever earned. DISPATCH has been keeping score.
+TerminalEventData.ev_rc_heat_ledger.title,Heat Ledger
+TerminalEventData.ev_rc_kitchen.text,The street kitchen the Cell used to fund. It still feeds the block.
+TerminalEventData.ev_rc_kitchen.title,Street Kitchen
+TerminalEventData.ev_rc_last_order.text,DISPATCH: This is not an order. It is a request. Please stop.
+TerminalEventData.ev_rc_last_order.title,The Last Order
+TerminalEventData.ev_rc_mailbox.text,A mailbox with the Cell's old codename on it. It is full of letters you never wrote.
+TerminalEventData.ev_rc_mailbox.title,Handler's Mailbox
+TerminalEventData.ev_rc_memorial.text,"A wall of names: every operative the Cell has lost. Somebody has added yours, with no date yet."
+TerminalEventData.ev_rc_memorial.title,Memorial Wall
+TerminalEventData.ev_rc_old_crew.text,"Operatives you thought were lost, alive, in a DISPATCH holding cell."
+TerminalEventData.ev_rc_old_crew.title,The Old Crew
+TerminalEventData.ev_rc_old_safehouse.text,"The first safehouse, abandoned. Someone has kept it clean."
+TerminalEventData.ev_rc_old_safehouse.title,The Old Safehouse
+TerminalEventData.ev_rc_operative_file.text,"A file on one of your operatives, annotated in DISPATCH's clean system text: TRUST 94 PERCENT."
+TerminalEventData.ev_rc_operative_file.title,Operative File
+TerminalEventData.ev_rc_payment.text,"A trail of payments from every corporation you broke, all ending in one account."
+TerminalEventData.ev_rc_payment.title,Payment Trail
+TerminalEventData.ev_rc_recruit.text,"The board where the Cell found its operatives. Someone has been recruiting again, in your name."
+TerminalEventData.ev_rc_recruit.title,Recruitment Board
+TerminalEventData.ev_rc_rooftop.text,"The first relay the Cell ever built. It is still running, for someone else."
+TerminalEventData.ev_rc_rooftop.title,Relay Rooftop
+TerminalEventData.ev_rc_twin.text,"A simulation of the Cell, running a thousand campaigns a second. It loses most of them."
+TerminalEventData.ev_rc_twin.title,Cell Twin
+TerminalEventData.ev_rc_voice_model.text,The voice model that makes DISPATCH sound human. A slider reads HUMAN: 6 PERCENT.
+TerminalEventData.ev_rc_voice_model.title,Voice Model
 TerminalEventData.ev_recall_van.text,"An unmarked recall van idles in the alley, back doors open, full of repossessed implants."
 TerminalEventData.ev_recall_van.title,Recall Van
 TerminalEventData.ev_rescue_operative.text,Behind the Terminal a maintenance ward is running on battery. Someone is in there: a runner Solace picked up two weeks ago and forgot to bill. They can still deck.
@@ -1254,12 +1454,18 @@ ThreatData.hauler.description,A slow armoured truck that goes for the weakest no
 ThreatData.hauler.display_name,Hauler
 ThreatData.icebreaker.description,Cuts a new route through a locked link before it moves.
 ThreatData.icebreaker.display_name,Icebreaker
+ThreatData.informant.description,Template threat (replaced by mirrors of your assets).
+ThreatData.informant.display_name,Informant
 ThreatData.inspector.description,Quick and thorough: two edges a step toward the highest-value node.
 ThreatData.inspector.display_name,Inspector
 ThreatData.lander.description,Drops in fast: two edges a step toward the highest-value node.
 ThreatData.lander.display_name,Lander
 ThreatData.lockdown_unit.description,Freezes your busiest link to home for the whole raid.
 ThreatData.lockdown_unit.display_name,Lockdown Unit
+ThreatData.loyalist.description,Template threat (replaced by mirrors of your assets).
+ThreatData.loyalist.display_name,Loyalist
+ThreatData.purger.description,Template threat (replaced by mirrors of your assets).
+ThreatData.purger.display_name,Purger
 ThreatData.signal_jammer.description,Jams a link behind it for the rest of the raid.
 ThreatData.signal_jammer.display_name,Signal Jammer
 ThreatData.tow_truck.description,Seals a link behind it for the rest of the raid.

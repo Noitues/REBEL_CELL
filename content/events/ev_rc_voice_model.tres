@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/daemons/static_field.tres" id="e3"]
+
+; rebel_cell Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Push the slider up (-2 Heat)"
+result_text = "DISPATCH sounds almost kind, for a minute."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Record it (Daemon: Static Field)"
+result_text = "A process that hums like the voice."
+reward = ExtResource("e3")
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_rc_voice_model"
+title = "Voice Model"
+speaker = 3
+text = "The voice model that makes DISPATCH sound human. A slider reads HUMAN: 6 PERCENT."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"rebel_cell"
+dispatch_clue = true

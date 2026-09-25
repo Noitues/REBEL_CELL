@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; rebel_cell voice set (decision 2026-09-24).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "raid:any"
+text = "REBEL_CELL: A correction has been scheduled for your node."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "raid:raid_heat_25"
+text = "REBEL_CELL: Welfare check dispatched. Your own drones will knock."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "raid:raid_heat_50"
+text = "REBEL_CELL: Loyalty audit in progress."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "raid:raid_heat_75"
+text = "REBEL_CELL: Recall in progress. Please return all assets."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "raid:raid_purge"
+text = "REBEL_CELL: Final order. There will not be another."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "raid:raid_rc_claim"
+text = "REBEL_CELL: Unauthorised growth detected."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "raid:raid_rc_node_built"
+text = "REBEL_CELL: Redundant asset detected."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "raid:raid_rc_story"
+text = "REBEL_CELL: Report for debrief."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "raid:raid_rc_retaliation"
+text = "REBEL_CELL: Correction issued."
+
+[resource]
+script = ExtResource("main_script")
+id = &"corpo_rebel_cell"
+speaker = 2
+corporation_id = &"rebel_cell"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8")])

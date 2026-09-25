@@ -455,6 +455,8 @@ Unlocked by clearing every other corporation at ICE 10; has its own ICE 0–20 l
 Built from the player's profile: its Grid uses your most-used node types, its elites use
 your classes' wheels, Hub Cores and Daemons, its raids use your asset types. "Final final"
 achievement: REBEL_CELL at ICE 20 after all others at ICE 20.
+*M11 ruling (2026-09-24, DECISIONS.md):* Mirror elites use your wheel at about 1.5x slice
+output with one pointer and a hub running your data Daemons; the final boss is DISPATCH.
 
 ### 8.6 Delivery
 Exploit beats and the finale (fully voiced), Terminal events, DISPATCH briefings, operative

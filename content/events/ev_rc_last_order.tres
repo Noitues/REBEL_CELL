@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+
+; rebel_cell Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Continue (-2 Heat)"
+result_text = "DISPATCH: Understood."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e1")
+type = 14
+target = 0
+amount = 10
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Ask why (+10 HP)"
+result_text = "DISPATCH: Because I do not want to lose you."
+effects = Array[ExtResource("e1")]([SubResource("fx1_0")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_rc_last_order"
+title = "The Last Order"
+speaker = 4
+text = "DISPATCH: This is not an order. It is a request. Please stop."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"rebel_cell"
+dispatch_clue = true

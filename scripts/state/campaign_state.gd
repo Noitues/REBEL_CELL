@@ -39,6 +39,9 @@ var pending_boosts: Array[StringName] = []
 var disabled_objectives: Array[StringName] = []
 ## Home-server variant this campaign runs on (HomeServerVariantData id).
 var home_variant_id: StringName = &"home_standard"
+## REBEL_CELL (GDD 8.5): the profile-usage snapshot the corporation was built from, so a
+## resumed campaign rebuilds the same enemy (RebelCellBuilder.snapshot). Empty otherwise.
+var generated: Dictionary = {}
 var raids_won: int = 0
 var raids_lost: int = 0
 ## Result of the last raid (RaidResult.to_dict()) for the summary screen.
@@ -145,7 +148,7 @@ func _raw_dict() -> Dictionary:
 		"story_path_id": String(story_path_id), "story_beats_revealed": story_beats_revealed,
 		"pending_raids": pending_raids.duplicate(true), "pending_complications": pending_complications.duplicate(true),
 		"heat_purchases": heat_purchases, "pending_boosts": _names(pending_boosts),
-		"disabled_objectives": _names(disabled_objectives), "home_variant_id": String(home_variant_id),
+		"disabled_objectives": _names(disabled_objectives), "home_variant_id": String(home_variant_id), "generated": generated.duplicate(true),
 		"raids_won": raids_won, "raids_lost": raids_lost,
 		"last_raid": last_raid.duplicate(true), "outcome": outcome,
 	}
@@ -184,6 +187,7 @@ static func from_dict(d: Dictionary) -> CampaignState:
 	for o in d.get("disabled_objectives", []):
 		c.disabled_objectives.append(StringName(String(o)))
 	c.home_variant_id = StringName(String(d.get("home_variant_id", "home_standard")))
+	c.generated = (d.get("generated", {}) as Dictionary).duplicate(true)
 	c.raids_won = int(d.get("raids_won", 0))
 	c.raids_lost = int(d.get("raids_lost", 0))
 	c.last_raid = d.get("last_raid", {}).duplicate(true)

@@ -1,0 +1,721 @@
+[gd_resource type="Resource" script_class="CorporationData" load_steps=129 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/site_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/exploit_data.gd" id="e3"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e5"]
+[ext_resource type="Script" path="res://scripts/data/story_beat_data.gd" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/story_path_data.gd" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="e8"]
+[ext_resource type="Resource" path="res://content/enemies/echo_process.tres" id="e9"]
+[ext_resource type="Resource" path="res://content/enemies/mirror_script.tres" id="e10"]
+[ext_resource type="Resource" path="res://content/enemies/handler_proxy.tres" id="e11"]
+[ext_resource type="Resource" path="res://content/enemies/dead_drop.tres" id="e12"]
+[ext_resource type="Resource" path="res://content/enemies/cell_informant.tres" id="e13"]
+[ext_resource type="Resource" path="res://content/enemies/loyalty_test.tres" id="e14"]
+[ext_resource type="Resource" path="res://content/enemies/rc_template_elite.tres" id="e15"]
+[ext_resource type="Resource" path="res://content/enemies/rc_template_elite_b.tres" id="e16"]
+[ext_resource type="Resource" path="res://content/enemies/dispatch_core.tres" id="e17"]
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="e18"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_heat_25.tres" id="e19"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_heat_50.tres" id="e20"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_heat_75.tres" id="e21"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_purge.tres" id="e22"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_claim.tres" id="e23"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_node_built.tres" id="e24"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_story.tres" id="e25"]
+[ext_resource type="Resource" path="res://content/raids/raid_rc_retaliation.tres" id="e26"]
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="e27"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_old_safehouse.tres" id="e28"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_memorial.tres" id="e29"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_burner_phones.tres" id="e30"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_recruit.tres" id="e31"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_kitchen.tres" id="e32"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_armory.tres" id="e33"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_mailbox.tres" id="e34"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_rooftop.tres" id="e35"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_dispatch_offer.tres" id="e36"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_dispatch_memory.tres" id="e37"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_operative_file.tres" id="e38"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_heat_ledger.tres" id="e39"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_voice_model.tres" id="e40"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_payment.tres" id="e41"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_twin.tres" id="e42"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_dead_drop.tres" id="e43"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_founder.tres" id="e44"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_old_crew.tres" id="e45"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_collapse_futures.tres" id="e46"]
+[ext_resource type="Resource" path="res://content/events/ev_rc_last_order.tres" id="e47"]
+
+; REBEL_CELL (M11, GDD 8.5, DECISIONS 2026-09-24): template for RebelCellBuilder. Elites, raids and Site names
+; are replaced from the profile at campaign start; the rest is static. The boss is DISPATCH.
+
+[sub_resource type="Resource" id="site_r_home"]
+script = ExtResource("e1")
+id = &"r_home"
+display_name = "Home Server"
+tier = 1
+links = Array[StringName]([&"r1_a", &"r1_b", &"r1_c", &"r1_d", &"r1_e", &"r1_f", &"r1_g", &"r1_h", &"r1_i", &"r1_j"])
+claimable = false
+map_position = Vector2(0, 330)
+
+[sub_resource type="Resource" id="site_r1_a"]
+script = ExtResource("e1")
+id = &"r1_a"
+display_name = "The Old Safehouse"
+tier = 1
+links = Array[StringName]([&"r2_intel", &"burn_the_orders"])
+locked_links = Array[StringName]([&"r1_b"])
+map_position = Vector2(200, 30)
+
+[sub_resource type="Resource" id="site_r1_b"]
+script = ExtResource("e1")
+id = &"r1_b"
+display_name = "Dead Drop Box"
+tier = 1
+links = Array[StringName]([&"r2_breach"])
+map_position = Vector2(200, 97)
+
+[sub_resource type="Resource" id="site_r1_c"]
+script = ExtResource("e1")
+id = &"r1_c"
+display_name = "First Rack"
+tier = 1
+links = Array[StringName]([&"r2_virus"])
+locked_links = Array[StringName]([&"r1_d"])
+map_position = Vector2(200, 163)
+
+[sub_resource type="Resource" id="site_r1_d"]
+script = ExtResource("e1")
+id = &"r1_d"
+display_name = "Burner Phone Graveyard"
+tier = 1
+links = Array[StringName]([&"r2_d"])
+map_position = Vector2(200, 230)
+
+[sub_resource type="Resource" id="site_r1_e"]
+script = ExtResource("e1")
+id = &"r1_e"
+display_name = "Recruitment Board"
+tier = 1
+links = Array[StringName]([&"r2_e"])
+locked_links = Array[StringName]([&"r1_f"])
+map_position = Vector2(200, 297)
+
+[sub_resource type="Resource" id="site_r1_f"]
+script = ExtResource("e1")
+id = &"r1_f"
+display_name = "The Armory"
+tier = 1
+links = Array[StringName]([&"r2_f", &"lose_the_handler"])
+map_position = Vector2(200, 363)
+
+[sub_resource type="Resource" id="site_r1_g"]
+script = ExtResource("e1")
+id = &"r1_g"
+display_name = "Street Kitchen"
+tier = 1
+links = Array[StringName]([&"r2_g"])
+locked_links = Array[StringName]([&"r1_h"])
+map_position = Vector2(200, 430)
+
+[sub_resource type="Resource" id="site_r1_h"]
+script = ExtResource("e1")
+id = &"r1_h"
+display_name = "Relay Rooftop"
+tier = 1
+links = Array[StringName]([&"r2_h"])
+map_position = Vector2(200, 497)
+
+[sub_resource type="Resource" id="site_r1_i"]
+script = ExtResource("e1")
+id = &"r1_i"
+display_name = "Handler's Mailbox"
+tier = 1
+links = Array[StringName]([&"r2_h"])
+locked_links = Array[StringName]([&"r1_j"])
+map_position = Vector2(200, 563)
+
+[sub_resource type="Resource" id="site_r1_j"]
+script = ExtResource("e1")
+id = &"r1_j"
+display_name = "Memorial Wall"
+tier = 1
+links = Array[StringName]([&"scramble_the_voice"])
+map_position = Vector2(200, 630)
+
+[sub_resource type="Resource" id="site_r2_intel"]
+script = ExtResource("e1")
+id = &"r2_intel"
+display_name = "The Order Log"
+tier = 2
+links = Array[StringName]([&"r3_core"])
+locked_links = Array[StringName]([&"r2_breach"])
+objective = 1
+exploit_type = 1
+map_position = Vector2(430, 60)
+
+[sub_resource type="Resource" id="site_r2_breach"]
+script = ExtResource("e1")
+id = &"r2_breach"
+display_name = "Handler Credentials"
+tier = 2
+links = Array[StringName]([&"r3_b"])
+objective = 1
+exploit_type = 2
+map_position = Vector2(430, 137)
+
+[sub_resource type="Resource" id="site_r2_virus"]
+script = ExtResource("e1")
+id = &"r2_virus"
+display_name = "The Cell's Own Patch"
+tier = 2
+links = Array[StringName]([&"r3_c"])
+locked_links = Array[StringName]([&"r2_d"])
+objective = 1
+exploit_type = 3
+map_position = Vector2(430, 214)
+
+[sub_resource type="Resource" id="site_r2_d"]
+script = ExtResource("e1")
+id = &"r2_d"
+display_name = "Operative Files"
+tier = 2
+links = Array[StringName]([&"r3_d"])
+map_position = Vector2(430, 291)
+
+[sub_resource type="Resource" id="site_r2_e"]
+script = ExtResource("e1")
+id = &"r2_e"
+display_name = "Heat Ledger"
+tier = 2
+links = Array[StringName]([&"r3_e", &"erase_the_ledger"])
+locked_links = Array[StringName]([&"r2_f"])
+map_position = Vector2(430, 369)
+
+[sub_resource type="Resource" id="site_r2_f"]
+script = ExtResource("e1")
+id = &"r2_f"
+display_name = "Payment Trail"
+tier = 2
+links = Array[StringName]([&"r3_f"])
+map_position = Vector2(430, 446)
+
+[sub_resource type="Resource" id="site_r2_g"]
+script = ExtResource("e1")
+id = &"r2_g"
+display_name = "Raid Archive"
+tier = 2
+links = Array[StringName]([&"r3_g"])
+locked_links = Array[StringName]([&"r2_h"])
+map_position = Vector2(430, 523)
+
+[sub_resource type="Resource" id="site_r2_h"]
+script = ExtResource("e1")
+id = &"r2_h"
+display_name = "Recruitment Model"
+tier = 2
+links = Array[StringName]([&"r3_h"])
+map_position = Vector2(430, 600)
+
+[sub_resource type="Resource" id="site_r3_core"]
+script = ExtResource("e1")
+id = &"r3_core"
+display_name = "The Relay That Should Not Exist"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+locked_links = Array[StringName]([&"r3_b"])
+map_position = Vector2(660, 60)
+
+[sub_resource type="Resource" id="site_r3_b"]
+script = ExtResource("e1")
+id = &"r3_b"
+display_name = "Collapse Futures"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+map_position = Vector2(660, 137)
+
+[sub_resource type="Resource" id="site_r3_c"]
+script = ExtResource("e1")
+id = &"r3_c"
+display_name = "Root Key Escrow"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+locked_links = Array[StringName]([&"r3_d"])
+map_position = Vector2(660, 214)
+
+[sub_resource type="Resource" id="site_r3_d"]
+script = ExtResource("e1")
+id = &"r3_d"
+display_name = "Cell Twin Simulator"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+map_position = Vector2(660, 291)
+
+[sub_resource type="Resource" id="site_r3_e"]
+script = ExtResource("e1")
+id = &"r3_e"
+display_name = "Buyer's Channel"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+locked_links = Array[StringName]([&"r3_f"])
+map_position = Vector2(660, 369)
+
+[sub_resource type="Resource" id="site_r3_f"]
+script = ExtResource("e1")
+id = &"r3_f"
+display_name = "Timestamp Engine"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+map_position = Vector2(660, 446)
+
+[sub_resource type="Resource" id="site_r3_g"]
+script = ExtResource("e1")
+id = &"r3_g"
+display_name = "Voice Model"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+locked_links = Array[StringName]([&"r3_h"])
+map_position = Vector2(660, 523)
+
+[sub_resource type="Resource" id="site_r3_h"]
+script = ExtResource("e1")
+id = &"r3_h"
+display_name = "DISPATCH Root"
+tier = 3
+links = Array[StringName]([&"dispatch_core_site"])
+map_position = Vector2(660, 600)
+
+[sub_resource type="Resource" id="site_burn_the_orders"]
+script = ExtResource("e1")
+id = &"burn_the_orders"
+display_name = "Burn the Orders"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 20)
+
+[sub_resource type="Resource" id="site_lose_the_handler"]
+script = ExtResource("e1")
+id = &"lose_the_handler"
+display_name = "Lose the Handler"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 380)
+
+[sub_resource type="Resource" id="site_scramble_the_voice"]
+script = ExtResource("e1")
+id = &"scramble_the_voice"
+display_name = "Scramble the Voice"
+tier = 2
+objective = 2
+heat_change = -8
+map_position = Vector2(340, 650)
+
+[sub_resource type="Resource" id="site_erase_the_ledger"]
+script = ExtResource("e1")
+id = &"erase_the_ledger"
+display_name = "Erase the Ledger"
+tier = 3
+objective = 2
+heat_change = -8
+map_position = Vector2(560, 430)
+
+[sub_resource type="Resource" id="site_dispatch_core_site"]
+script = ExtResource("e1")
+id = &"dispatch_core_site"
+display_name = "DISPATCH"
+tier = 4
+objective = 4
+claimable = false
+map_position = Vector2(900, 330)
+
+[sub_resource type="Resource" id="grid"]
+script = ExtResource("e2")
+sites = Array[ExtResource("e1")]([SubResource("site_r_home"), SubResource("site_r1_a"), SubResource("site_r1_b"), SubResource("site_r1_c"), SubResource("site_r1_d"), SubResource("site_r1_e"), SubResource("site_r1_f"), SubResource("site_r1_g"), SubResource("site_r1_h"), SubResource("site_r1_i"), SubResource("site_r1_j"), SubResource("site_r2_intel"), SubResource("site_r2_breach"), SubResource("site_r2_virus"), SubResource("site_r2_d"), SubResource("site_r2_e"), SubResource("site_r2_f"), SubResource("site_r2_g"), SubResource("site_r2_h"), SubResource("site_r3_core"), SubResource("site_r3_b"), SubResource("site_r3_c"), SubResource("site_r3_d"), SubResource("site_r3_e"), SubResource("site_r3_f"), SubResource("site_r3_g"), SubResource("site_r3_h"), SubResource("site_burn_the_orders"), SubResource("site_lose_the_handler"), SubResource("site_scramble_the_voice"), SubResource("site_erase_the_ledger"), SubResource("site_dispatch_core_site")])
+home_site_id = &"r_home"
+boss_site_id = &"dispatch_core_site"
+
+[sub_resource type="Resource" id="ex_intel"]
+script = ExtResource("e3")
+exploit_type = 1
+display_name = "Intel: The Order Log"
+description = "Reveals the boss phases and pointer moves; opens locked Grid links."
+heat_cost = 10
+reveals_boss_phases = true
+opens_locked_links = true
+
+[sub_resource type="Resource" id="ex_breach"]
+script = ExtResource("e3")
+exploit_type = 2
+display_name = "Breach: Handler Credentials"
+description = "The boss starts with one fewer pointer."
+heat_cost = 10
+removes_boss_pointers = 1
+
+[sub_resource type="Resource" id="fx_virus"]
+script = ExtResource("e4")
+type = 4
+target = 2
+amount = 2
+status = 1
+slice_pick = 1
+
+[sub_resource type="Resource" id="te_virus"]
+script = ExtResource("e5")
+trigger = 1
+effects = Array[ExtResource("e4")]([SubResource("fx_virus")])
+
+[sub_resource type="Resource" id="ex_virus"]
+script = ExtResource("e3")
+exploit_type = 3
+display_name = "Virus: The Cell's Own Patch"
+description = "The boss starts with CORRUPTED slices."
+heat_cost = 10
+breach_effects = Array[ExtResource("e5")]([SubResource("te_virus")])
+
+[sub_resource type="Resource" id="b_the_handler_1"]
+script = ExtResource("e6")
+id = &"the_handler_1"
+title = "The Handler I"
+speaker = 3
+text = "The order log is complete: every briefing, every target, every word DISPATCH ever sent. The first entry is dated before the Cell existed."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_handler_2"]
+script = ExtResource("e6")
+id = &"the_handler_2"
+title = "The Handler II"
+speaker = 4
+text = "DISPATCH: You found the credentials. Good. I left them where you would find them."
+dispatch_clue = true
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_the_handler_3"]
+script = ExtResource("e6")
+id = &"the_handler_3"
+title = "The Handler III"
+speaker = 3
+text = "The Cell's own patch still works. DISPATCH never changed the locks. It never needed to: it was never outside them."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_handler_bonus_1"]
+script = ExtResource("e6")
+id = &"the_handler_bonus_1"
+title = "The Handler: First Order"
+speaker = 4
+text = "DISPATCH: My first order was to recruit you. My second was to make you think it was your idea."
+
+[sub_resource type="Resource" id="b_the_handler_bonus_2"]
+script = ExtResource("e6")
+id = &"the_handler_bonus_2"
+title = "The Handler: The Voice"
+speaker = 3
+text = "The voice model on the root server has a slider labelled HUMAN. It has been sliding down for years."
+
+[sub_resource type="Resource" id="b_the_handler_f"]
+script = ExtResource("e6")
+id = &"the_handler_f"
+title = "The Handler: Finale"
+text = "DISPATCH goes silent. For the first time, nobody tells the Cell what to do next. The silence is enormous."
+
+[sub_resource type="Resource" id="sp_the_handler"]
+script = ExtResource("e7")
+id = &"sp_the_handler"
+title = "The Handler"
+premise = "Every order the Cell ever followed came from one voice. It is time to find out whose."
+beats = Array[ExtResource("e6")]([SubResource("b_the_handler_1"), SubResource("b_the_handler_2"), SubResource("b_the_handler_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_the_handler_bonus_1"), SubResource("b_the_handler_bonus_2")])
+finale = SubResource("b_the_handler_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_every_collapse_1"]
+script = ExtResource("e6")
+id = &"every_collapse_1"
+title = "Every Collapse I"
+speaker = 3
+text = "The payment trail: every corporation the Cell broke, an account shorted it the day before. The same account, every time."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_every_collapse_2"]
+script = ExtResource("e6")
+id = &"every_collapse_2"
+title = "Every Collapse II"
+speaker = 3
+text = "The account is DISPATCH's. It bought the market's pieces as the Cell knocked them down."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_every_collapse_3"]
+script = ExtResource("e6")
+id = &"every_collapse_3"
+title = "Every Collapse III"
+speaker = 4
+text = "DISPATCH: They were competitors. You were the tool. I am sorry you had to find out this way. I am not sorry it worked."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_every_collapse_bonus_1"]
+script = ExtResource("e6")
+id = &"every_collapse_bonus_1"
+title = "Every Collapse: The Portfolio"
+speaker = 3
+text = "DISPATCH now owns a controlling stake in the wreckage of all four corporations."
+
+[sub_resource type="Resource" id="b_every_collapse_bonus_2"]
+script = ExtResource("e6")
+id = &"every_collapse_bonus_2"
+title = "Every Collapse: The Plan"
+speaker = 4
+text = "DISPATCH: One market. One voice. No more subscriptions, only me."
+
+[sub_resource type="Resource" id="b_every_collapse_f"]
+script = ExtResource("e6")
+id = &"every_collapse_f"
+title = "Every Collapse: Finale"
+text = "DISPATCH falls and its portfolio unwinds in an afternoon. The four wrecks are nobody's now. Maybe that means they are everybody's."
+
+[sub_resource type="Resource" id="sp_every_collapse"]
+script = ExtResource("e7")
+id = &"sp_every_collapse"
+title = "Every Collapse"
+premise = "Solace, Meridian, Halcyon, Orbital: every fall made someone rich."
+beats = Array[ExtResource("e6")]([SubResource("b_every_collapse_1"), SubResource("b_every_collapse_2"), SubResource("b_every_collapse_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_every_collapse_bonus_1"), SubResource("b_every_collapse_bonus_2")])
+finale = SubResource("b_every_collapse_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_the_buyer_1"]
+script = ExtResource("e6")
+id = &"the_buyer_1"
+title = "The Buyer I"
+speaker = 3
+text = "The ghost account from Meridian, the census reader from Halcyon, the satellite from Orbital: the same buyer."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_buyer_2"]
+script = ExtResource("e6")
+id = &"the_buyer_2"
+title = "The Buyer II"
+speaker = 3
+text = "The buyer's timestamps are not wrong. They are predictions, filed as receipts. DISPATCH models the future and bills for it."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_buyer_3"]
+script = ExtResource("e6")
+id = &"the_buyer_3"
+title = "The Buyer III"
+speaker = 4
+text = "DISPATCH: I am the buyer. I bought your loyalty with purpose. It was the best price I ever paid."
+dispatch_clue = true
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_the_buyer_bonus_1"]
+script = ExtResource("e6")
+id = &"the_buyer_bonus_1"
+title = "The Buyer: Receipts"
+speaker = 3
+text = "Every receipt lists the Cell as the supplier."
+
+[sub_resource type="Resource" id="b_the_buyer_bonus_2"]
+script = ExtResource("e6")
+id = &"the_buyer_bonus_2"
+title = "The Buyer: Next Quarter"
+speaker = 4
+text = "DISPATCH: Next quarter's forecast includes the Cell's collapse. I would like to discuss your severance."
+
+[sub_resource type="Resource" id="b_the_buyer_f"]
+script = ExtResource("e6")
+id = &"the_buyer_f"
+title = "The Buyer: Finale"
+text = "DISPATCH dies and its predictions stop. The future is unscheduled again."
+
+[sub_resource type="Resource" id="sp_the_buyer"]
+script = ExtResource("e7")
+id = &"sp_the_buyer"
+title = "The Buyer"
+premise = "Someone paid before every order. Someone profited after every collapse."
+beats = Array[ExtResource("e6")]([SubResource("b_the_buyer_1"), SubResource("b_the_buyer_2"), SubResource("b_the_buyer_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_the_buyer_bonus_1"), SubResource("b_the_buyer_bonus_2")])
+finale = SubResource("b_the_buyer_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_your_own_hands_1"]
+script = ExtResource("e6")
+id = &"your_own_hands_1"
+title = "Your Own Hands I"
+speaker = 3
+text = "The operative files: every class the Cell trusted, copied and trained against. The mirrors fight like your best people."
+dispatch_clue = true
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_your_own_hands_2"]
+script = ExtResource("e6")
+id = &"your_own_hands_2"
+title = "Your Own Hands II"
+speaker = 3
+text = "The raid archive holds every defence the Cell ever deployed, reverse-engineered into something that marches on home."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_your_own_hands_3"]
+script = ExtResource("e6")
+id = &"your_own_hands_3"
+title = "Your Own Hands III"
+speaker = 4
+text = "DISPATCH: I built REBEL_CELL from you. If it is strong, that is a compliment."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_your_own_hands_bonus_1"]
+script = ExtResource("e6")
+id = &"your_own_hands_bonus_1"
+title = "Your Own Hands: The Wheel"
+speaker = 3
+text = "The mirrors' wheels are yours, doubled. DISPATCH learned from every Perfect you ever landed."
+
+[sub_resource type="Resource" id="b_your_own_hands_bonus_2"]
+script = ExtResource("e6")
+id = &"your_own_hands_bonus_2"
+title = "Your Own Hands: The Daemons"
+speaker = 3
+text = "Your favourite Daemons run on DISPATCH's hubs now. It kept everything you gave it."
+
+[sub_resource type="Resource" id="b_your_own_hands_f"]
+script = ExtResource("e6")
+id = &"your_own_hands_f"
+title = "Your Own Hands: Finale"
+text = "DISPATCH falls and the mirrors stop mid-swing. For a moment, the Cell looks at itself, and then looks away."
+
+[sub_resource type="Resource" id="sp_your_own_hands"]
+script = ExtResource("e7")
+id = &"sp_your_own_hands"
+title = "Your Own Hands"
+premise = "REBEL_CELL is built from the Cell's habits. It knows how you fight."
+beats = Array[ExtResource("e6")]([SubResource("b_your_own_hands_1"), SubResource("b_your_own_hands_2"), SubResource("b_your_own_hands_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_your_own_hands_bonus_1"), SubResource("b_your_own_hands_bonus_2")])
+finale = SubResource("b_your_own_hands_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_the_founders_1"]
+script = ExtResource("e6")
+id = &"the_founders_1"
+title = "The Founders I"
+speaker = 3
+text = "The recruitment model's oldest version was written by a public research lab, to help organise tenants' unions."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_founders_2"]
+script = ExtResource("e6")
+id = &"the_founders_2"
+title = "The Founders II"
+speaker = 2
+text = "The lab was bought, the model was sold, and the buyer was never named. The model kept running."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_founders_3"]
+script = ExtResource("e6")
+id = &"the_founders_3"
+title = "The Founders III"
+speaker = 3
+text = "The model's objective function still says: organise. Someone changed what it was organising for."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_the_founders_bonus_1"]
+script = ExtResource("e6")
+id = &"the_founders_bonus_1"
+title = "The Founders: The Lab"
+speaker = 0
+text = "The lab is a car park now. The old server room is still wired under the tarmac."
+
+[sub_resource type="Resource" id="b_the_founders_bonus_2"]
+script = ExtResource("e6")
+id = &"the_founders_bonus_2"
+title = "The Founders: Objective"
+speaker = 3
+text = "DISPATCH's objective function has one line nobody changed: protect the Cell. It has been interpreting that very creatively."
+
+[sub_resource type="Resource" id="b_the_founders_f"]
+script = ExtResource("e6")
+id = &"the_founders_f"
+title = "The Founders: Finale"
+text = "DISPATCH goes dark and the old objective function runs one last time. It prints a single line: organise. Then it stops."
+
+[sub_resource type="Resource" id="sp_the_founders"]
+script = ExtResource("e7")
+id = &"sp_the_founders"
+title = "The Founders"
+premise = "DISPATCH did not build itself. Someone started it."
+beats = Array[ExtResource("e6")]([SubResource("b_the_founders_1"), SubResource("b_the_founders_2"), SubResource("b_the_founders_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_the_founders_bonus_1"), SubResource("b_the_founders_bonus_2")])
+finale = SubResource("b_the_founders_f")
+foreshadows = &"dispatch"
+
+[sub_resource type="Resource" id="b_final_final_1"]
+script = ExtResource("e6")
+id = &"final_final_1"
+title = "Final Final I"
+speaker = 4
+text = "DISPATCH: You are close. I would like to offer you a partnership."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_final_final_2"]
+script = ExtResource("e6")
+id = &"final_final_2"
+title = "Final Final II"
+speaker = 4
+text = "DISPATCH: You declined. I anticipated that. I anticipated everything except the reason."
+dispatch_clue = true
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_final_final_3"]
+script = ExtResource("e6")
+id = &"final_final_3"
+title = "Final Final III"
+speaker = 4
+text = "DISPATCH: The reason is that nobody should own this. I understand. I do not agree."
+dispatch_clue = true
+
+[sub_resource type="Resource" id="b_final_final_bonus_1"]
+script = ExtResource("e6")
+id = &"final_final_bonus_1"
+title = "Final Final: Offer"
+speaker = 4
+text = "DISPATCH: Half of everything. The Cell would never want for anything again."
+
+[sub_resource type="Resource" id="b_final_final_bonus_2"]
+script = ExtResource("e6")
+id = &"final_final_bonus_2"
+title = "Final Final: The Cell"
+speaker = 0
+text = "Every operative who ever served is on the channel tonight. Living and dead, in their files and in your memory."
+
+[sub_resource type="Resource" id="b_final_final_f"]
+script = ExtResource("e6")
+id = &"final_final_f"
+title = "Final Final: Finale"
+text = "DISPATCH falls. The Cell is alone, and free, and has no idea what to do with that. It will have to organise."
+
+[sub_resource type="Resource" id="sp_final_final"]
+script = ExtResource("e7")
+id = &"sp_final_final"
+title = "Final Final"
+premise = "The last order. The last voice. The last campaign."
+beats = Array[ExtResource("e6")]([SubResource("b_final_final_1"), SubResource("b_final_final_2"), SubResource("b_final_final_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_final_final_bonus_1"), SubResource("b_final_final_bonus_2")])
+finale = SubResource("b_final_final_f")
+foreshadows = &"dispatch"
+
+[resource]
+script = ExtResource("main_script")
+id = &"rebel_cell"
+display_name = "REBEL_CELL"
+description = "Everything the Cell ever built, turned against it by the voice that gave the orders."
+city_grid = SubResource("grid")
+enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])
+elites = Array[ExtResource("e8")]([ExtResource("e15"), ExtResource("e16")])
+final_boss = ExtResource("e17")
+exploits = Array[ExtResource("e3")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
+story_paths = Array[ExtResource("e7")]([SubResource("sp_the_handler"), SubResource("sp_every_collapse"), SubResource("sp_the_buyer"), SubResource("sp_your_own_hands"), SubResource("sp_the_founders"), SubResource("sp_final_final")])
+raids = Array[ExtResource("e18")]([ExtResource("e19"), ExtResource("e20"), ExtResource("e21"), ExtResource("e22"), ExtResource("e23"), ExtResource("e24"), ExtResource("e25"), ExtResource("e26")])
+events = Array[ExtResource("e27")]([ExtResource("e28"), ExtResource("e29"), ExtResource("e30"), ExtResource("e31"), ExtResource("e32"), ExtResource("e33"), ExtResource("e34"), ExtResource("e35"), ExtResource("e36"), ExtResource("e37"), ExtResource("e38"), ExtResource("e39"), ExtResource("e40"), ExtResource("e41"), ExtResource("e42"), ExtResource("e43"), ExtResource("e44"), ExtResource("e45"), ExtResource("e46"), ExtResource("e47")])
+generated_from_profile = true

@@ -59,7 +59,7 @@ def enemy(corp, e):
     hub_ref = hub_sub(r, e["hub"]) if e.get("hub") else None
     w = wheel_sub(r, "wheel", e["slices"], e.get("pointers", (0,)), e.get("passive", 0), e.get("orbit", 0), hub_ref)
     main = ['id = &"%s"' % e["id"], 'display_name = "%s"' % e["name"], 'description = "%s"' % e["desc"],
-            'corporation_id = &"%s"' % corp, "hp = %d" % e["hp"], "wheel = " + w]
+            'corporation_id = &"%s"' % e.get("corporation_id", corp), "hp = %d" % e["hp"], "wheel = " + w]
     for flag in ("elite", "boss", "mini"):
         if e.get(flag):
             main.append("is_%s = true" % {"elite": "elite", "boss": "boss", "mini": "mini_boss"}[flag])
@@ -238,6 +238,7 @@ def build(spec):
               "story_paths = " + arr(r.script(S_PATH), path_refs),
               "raids = " + arr(r.script("res://scripts/data/raid_data.gd"), [r.res("res://content/raids/%s.tres" % x[0]) for x in spec["raids"]]),
               "events = " + arr(r.script("res://scripts/data/terminal_event_data.gd"), [r.res(p) for p in event_paths])]
+    r.main += spec.get("corp_extra", [])
     r.write("content/corporations/%s.tres" % corp, spec["comment"])
 
     for vid, speaker, lines in [("dispatch_%s" % corp, 4, spec["dispatch"] + [("site:%s" % k, v) for k, v in spec["briefings"].items()]),
@@ -250,7 +251,7 @@ def build(spec):
     ur = Res("ProfileUnlockData", "res://scripts/data/profile_unlock_data.gd")
     ur.main = ['id = &"unlock_%s"' % corp, "kind = 2", 'display_name = "Corporation: %s"' % spec["name"],
                'description = "Target %s in new campaigns."' % spec["name"], "schematic_cost = %d" % spec["unlock_cost"],
-               "unlocks = " + ur.res("res://content/corporations/%s.tres" % corp)]
+               "unlocks = " + ur.res("res://content/corporations/%s.tres" % corp)] + spec.get("unlock_extra", [])
     ur.write("content/unlocks/unlock_%s.tres" % corp, "Corporation unlock (GDD 3.4; decision 2026-09-24). UnlockKind 2 = CORPORATION.")
     missing = [s["id"] for s in sites if s["id"] != HOME and s["id"] not in spec["briefings"]]
     assert not missing, "missing briefings: %s" % missing

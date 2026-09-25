@@ -2,7 +2,7 @@ class_name Achievements
 extends RefCounted
 ## Achievements (gap analysis 2.5): definitions in code, evaluated over the profile and
 ## the current campaign. Pure: check() returns the ids newly earned; the caller records
-## them. "final_final" (GDD 8.5) needs REBEL_CELL and stays unreachable until it exists.
+## them. "final_final" (GDD 8.5): REBEL_CELL and every other corporation at ICE 20.
 
 const DEFS: Array[Dictionary] = [
 	{"id": &"first_blood", "title": "First Blood", "text": "Complete a netrun."},
@@ -18,6 +18,9 @@ const DEFS: Array[Dictionary] = [
 ]
 
 
+const FINAL_FINAL_ICE := 20
+
+
 static func definition(id: StringName) -> Dictionary:
 	for d in DEFS:
 		if d["id"] == id:
@@ -27,7 +30,7 @@ static func definition(id: StringName) -> Dictionary:
 
 ## Ids earned by the profile (and the campaign just concluded, if any) that it does not
 ## have yet, in definition order.
-static func check(profile: ProfileState, campaign: CampaignState = null) -> Array[StringName]:
+static func check(profile: ProfileState, campaign: CampaignState = null, corporation_ids: Array = []) -> Array[StringName]:
 	var out: Array[StringName] = []
 	var won := campaign != null and campaign.outcome == CampaignState.Outcome.WON
 	var earned := {
@@ -40,10 +43,21 @@ static func check(profile: ProfileState, campaign: CampaignState = null) -> Arra
 		&"purge_survivor": won and campaign.thresholds_fired.has(100),
 		&"wall": profile.raids_won >= 20,
 		&"perfectionist": int(profile.stats.get("perfects", 0)) >= 500,
-		&"final_final": false,
+		&"final_final": _final_final(profile, corporation_ids),
 	}
 	for d in DEFS:
 		var id: StringName = d["id"]
 		if bool(earned.get(id, false)) and not profile.achievements.has(id):
 			out.append(id)
 	return out
+
+
+## GDD 8.5 "final final": REBEL_CELL cleared at ICE 20 and every other corporation in
+## `corporation_ids` (the non-generated ones) cleared at ICE 20.
+static func _final_final(profile: ProfileState, corporation_ids: Array) -> bool:
+	if corporation_ids.is_empty() or profile.best_ice_for(RebelCellBuilder.ID) < FINAL_FINAL_ICE:
+		return false
+	for id in corporation_ids:
+		if profile.best_ice_for(StringName(String(id))) < FINAL_FINAL_ICE:
+			return false
+	return true

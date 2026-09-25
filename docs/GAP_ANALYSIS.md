@@ -96,8 +96,8 @@ P0 = systems the finished game needs; P1 = content volume for 100 hours; P2 = po
 8. ~~**Meridian Freight Systems** (done in M8), **Halcyon Civic** (done in M9), **Orbital Commons**~~ (done in M10): grid, enemy
    family, mini-boss, boss with phases, Exploits, threats, raids, story paths, events,
    voice sets, music context, corporation colour.
-9. **REBEL_CELL**: generator from the profile, own ICE ladder, DISPATCH reveal, finale,
-   "final final".
+9. ~~**REBEL_CELL**: generator from the profile, own ICE ladder, DISPATCH reveal, finale,
+   "final final".~~ Done in M11.
 10. **More home-server variants** and skins.
 
 ### P2

@@ -104,6 +104,15 @@ func available_home_variants() -> Array[HomeServerVariantData]:
 ## Starts a fresh campaign against `corporation_id` (GDD 5.4 opening) at `ice_level`
 ## (clamped to the profile's cap) on `home_variant_id`.
 ## Classes the profile may recruit now (the Breaker plus unlocked classes).
+## REBEL_CELL (GDD 8.5): builds the corporation from the template and a usage snapshot
+## and registers it (and its generated elites, threats and raids) in the lookup.
+func build_generated(corporation_id: StringName, snap: Dictionary) -> CorporationData:
+	var template := ContentRegistry.get_content(corporation_id) as CorporationData
+	var built := RebelCellBuilder.build(template, snap, lookup())
+	lookup().add(built)
+	return built
+
+
 ## Corporations the profile may start a campaign against (GDD 3.4).
 func available_corporations() -> Array[CorporationData]:
 	return CampaignRules.available_corporations(profile, lookup())
@@ -131,11 +140,16 @@ func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPO
 	var home := lookup().get_content(home_variant_id) as HomeServerVariantData
 	if home == null or not available_home_variants().has(home):
 		home = lookup().get_content(DEFAULT_HOME) as HomeServerVariantData
+	var snap := {}
+	if corporation.generated_from_profile:
+		snap = RebelCellBuilder.snapshot(profile, DEFAULT_CLASS)
+		corporation = build_generated(corporation_id, snap)
 	var ice := clampi(ice_level, 0, ice_cap(corporation_id))
 	var start_class := lookup().get_content(class_id) as ClassData
 	if not CampaignRules.class_available(profile, lookup(), start_class):
 		start_class = class_data()
 	campaign = CampaignRules.new_campaign(corporation, config(), lookup(), campaign_seed, start_class, home.core if home != null else null, ice, home)
+	campaign.generated = snap
 	netrun = null
 	RngService.seed_campaign(campaign_seed)
 	_reset_profile_sync()
@@ -238,12 +252,26 @@ func _record_run_outcome() -> void:
 		profile.add_stat("cycles", r.cycles)
 		profile.add_stat("racks", r.banked_schematics / maxi(1, config().rack_schematics_by_tier[clampi(r.tier - 1, 0, 3)]) if r.kind == "netrun" else 0)
 		profile.add_stat("runs_t%d" % r.tier, 1)
+		_record_usage(r)
 		profile.record_run({"corporation": String(campaign.corporation_id), "tier": r.tier, "site": String(r.site_id),
 			"outcome": RunState.Outcome.keys()[r.outcome].to_lower(), "cycles": r.cycles, "banked": r.banked_schematics})
 	sync_profile_with_campaign()
 
 
 var _history_recorded: bool = false
+
+
+## What the Cell used this run, for REBEL_CELL (GDD 8.5): the class, its Daemons, and the
+## node types and defense assets standing on the Grid.
+func _record_usage(r: RunState) -> void:
+	profile.record_usage("class", r.operative.class_id)
+	for d in r.operative.daemon_ids:
+		profile.record_usage("daemon", d)
+	for site in campaign.grid.claimed_ids():
+		if site != campaign.grid.home_site_id:
+			profile.record_usage("node", campaign.grid.node_type_of(site))
+		for a in campaign.grid.assets_on(site):
+			profile.record_usage("asset", a)
 
 
 ## Counts a Perfect landing for the stats (combat scenes report them).
@@ -271,7 +299,12 @@ func sync_profile_with_campaign() -> void:
 			profile.record_win(campaign.corporation_id, campaign.ice_level)
 		elif campaign.outcome == CampaignState.Outcome.LOST:
 			profile.record_loss()
-	for id in Achievements.check(profile, campaign):
+	var corp_ids := []
+	for id in lookup().ids_of_class(&"CorporationData"):
+		var c := lookup().get_content(id) as CorporationData
+		if c != null and not c.generated_from_profile:
+			corp_ids.append(id)
+	for id in Achievements.check(profile, campaign, corp_ids):
 		profile.add_achievement(id)
 		new_achievements.append(id)
 		var d := Achievements.definition(id)
@@ -380,6 +413,8 @@ func resume() -> bool:
 		return false
 	campaign = CampaignState.from_dict(data["campaign"])
 	corporation = lookup().get_content(StringName(String(data.get("corporation_id", DEFAULT_CORPORATION)))) as CorporationData
+	if corporation != null and corporation.generated_from_profile and not campaign.generated.is_empty():
+		corporation = build_generated(corporation.id, campaign.generated)
 	if data.has("rng") and not data["rng"].is_empty():
 		RngService.from_dict(data["rng"])
 	var run_data: Dictionary = data.get("run", {})
