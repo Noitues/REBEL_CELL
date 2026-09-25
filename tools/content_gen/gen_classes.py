@@ -124,16 +124,16 @@ def hub(hid, name, desc, passive=None, hook=None, extra=(), comment=""):
     r.main = lines
     r.write("content/hub_cores/%s.tres" % hid, comment)
 
-hub("ghost_core", "Ghost Core", "First nudge on an enemy wheel each turn ignores resistance. Perfect: strip 2 resistance and the slice resolves twice.",
+hub("ghost_core", "Ghost Core", "First nudge on an enemy wheel each turn ignores resistance. Perfect: the slice resolves twice; on each resolution, strip 2 resistance.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_strip", 10, 3, -2), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     extra=["free_resistance_nudges = 1"], comment="Ghost Core (GDD 5.2).")
-hub("ghost_core_mk2", "Ghost Core Mk2", "First two nudges on enemy wheels each turn ignore resistance. Perfect: strip 3 resistance, evade the next attack, and the slice resolves twice.",
+hub("ghost_core_mk2", "Ghost Core Mk2", "First two nudges on enemy wheels each turn ignore resistance. Perfect: the slice resolves twice; on each resolution, strip 3 resistance and evade the next attack.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_strip", 10, 3, -3), r.effect("fx_evade", 3, 0, 1), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     extra=["free_resistance_nudges = 2"], comment="Ghost Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
-hub("rig_core", "Rig Core", "+1 max RAM. Perfect: refund 1 RAM, gain a free nudge, and the slice resolves again at half.",
+hub("rig_core", "Rig Core", "+1 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 1 RAM and gain a free nudge.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_ram", 12, 0, 1), r.effect("fx_nudge", 24, 0, 1, custom_handler=r.script("res://scripts/core/handlers/calibrate_handler.gd"))], 2),
     extra=["max_ram_bonus = 1"], comment="Rig Core (GDD 5.2). The free nudge reuses the Calibrate handler (amount = free nudges).")
-hub("rig_core_mk2", "Rig Core Mk2", "+2 max RAM. Perfect: refund 2 RAM, gain a free nudge, and the slice resolves again at half.",
+hub("rig_core_mk2", "Rig Core Mk2", "+2 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 2 RAM and gain a free nudge.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_ram", 12, 0, 2), r.effect("fx_nudge", 24, 0, 1, custom_handler=r.script("res://scripts/core/handlers/calibrate_handler.gd"))], 2),
     extra=["max_ram_bonus = 2"], comment="Rig Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
 hub("swarm_core", "Swarm Core", "Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice.",
@@ -154,25 +154,25 @@ hub("wrecker_core_mk2", "Wrecker Core Mk2", "+1 spin on all cards. Perfect: the 
     passive=lambda r: [r.te("te_spin", 0, [r.effect("fx_spin", 6, 1, 1, ring_scope=2)])],
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="1.5")], 2),
     comment="Wrecker Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
-hub("phantom_core", "Phantom Core", "A free nudge at the start of each turn. Perfect: evade the next attack and the slice resolves twice.",
+hub("phantom_core", "Phantom Core", "A free nudge at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack.",
     passive=lambda r: [r.te("te_nudge", 2, [r.effect("fx_nudge", 24, 0, 1, custom_handler=r.script(CAL))])],
     hook=lambda r: r.te("hook", 6, [r.effect("fx_evade", 3, 0, 1), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     comment="Phantom Core: Ghost alternative (decision 2026-09-24). The turn-start nudge reuses the Calibrate handler.")
-hub("phantom_core_mk2", "Phantom Core Mk2", "Two free nudges at the start of each turn. Perfect: evade the next attack and the slice resolves twice.",
+hub("phantom_core_mk2", "Phantom Core Mk2", "Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack.",
     passive=lambda r: [r.te("te_nudge", 2, [r.effect("fx_nudge", 24, 0, 2, custom_handler=r.script(CAL))])],
     hook=lambda r: r.te("hook", 6, [r.effect("fx_evade", 3, 0, 1), r.effect("fx_retrigger", 19, 0, None, multiplier="1.0")], 2),
     comment="Phantom Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
-hub("overclock_core", "Overclock Core", "+2 max RAM. Perfect: gain 2 RAM and the slice resolves again at half.",
+hub("overclock_core", "Overclock Core", "+2 max RAM. Perfect: the slice resolves again at half; on each resolution, gain 2 RAM.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_ram", 12, 0, 2)], 2),
     extra=["max_ram_bonus = 2"], comment="Overclock Core: Rigger alternative (decision 2026-09-24).")
-hub("overclock_core_mk2", "Overclock Core Mk2", "+3 max RAM. Perfect: gain 3 RAM and the slice resolves again at half.",
+hub("overclock_core_mk2", "Overclock Core Mk2", "+3 max RAM. Perfect: the slice resolves again at half; on each resolution, gain 3 RAM.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_ram", 12, 0, 3)], 2),
     extra=["max_ram_bonus = 3"], comment="Overclock Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
-hub("hive_core", "Hive Core", "Up to 4 drones for this fight only. Perfect: dock a drone and the slice resolves again at half.",
+hub("hive_core", "Hive Core", "Up to 4 drones for this fight only. Perfect: the slice resolves again at half; on each resolution, dock a drone.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_drone", 18, 0, 1)], 2),
     extra=lambda r: ["max_drones = 4", "drone = " + r.res("res://content/enemies/botnet_drone.tres")],
     comment="Hive Core: Botnet alternative (decision 2026-09-24). Drones do not persist.")
-hub("hive_core_mk2", "Hive Core Mk2", "Up to 5 drones for this fight only. Perfect: dock a drone and the slice resolves again at half.",
+hub("hive_core_mk2", "Hive Core Mk2", "Up to 5 drones for this fight only. Perfect: the slice resolves again at half; on each resolution, dock a drone.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_drone", 18, 0, 1)], 2),
     extra=lambda r: ["max_drones = 5", "drone = " + r.res("res://content/enemies/botnet_drone.tres")],
     comment="Hive Core Mk2, Rank 2 upgrade (decision 2026-09-24).")

@@ -98,8 +98,8 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 		RC.EffectType.APPLY_STATUS:
 			for t in targets:
 				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
-				if slot >= 0:
-					apply_status(t, slot, e.status, events)
+				if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_MISS:
+					events[events.size() - 1]["random"] = true
 		RC.EffectType.CLEANSE:
 			for t in targets:
 				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
@@ -232,7 +232,7 @@ func run_triggers(state: CombatState, trigger: int, ctx: Dictionary, listeners: 
 				continue
 			var key := "%s:%d" % [listener.get("limit_key", listener["source_id"]), i]
 			if te.limit_per_combat > 0:
-				if int(state.per_combat_uses.get(key, 0)) >= te.limit_per_combat:
+				if int(state.per_combat_uses.get(key, 0)) >= te.limit_per_combat * int(listener.get("limit_scale", 1)):
 					continue
 				state.per_combat_uses[key] = int(state.per_combat_uses.get(key, 0)) + 1
 			var sub := ctx.duplicate()
@@ -271,7 +271,7 @@ func retrigger_multipliers(state: CombatState, trigger: int, ctx: Dictionary, li
 			if te == null or not trigger_matches(state, te, trigger, ctx):
 				continue
 			var key := "%s:%d" % [listener.get("limit_key", listener["source_id"]), i]
-			if te.limit_per_combat > 0 and int(state.per_combat_uses.get(key, 0)) >= te.limit_per_combat:
+			if te.limit_per_combat > 0 and int(state.per_combat_uses.get(key, 0)) >= te.limit_per_combat * int(listener.get("limit_scale", 1)):
 				continue
 			for e in te.effects:
 				if e != null and e.type == RC.EffectType.RETRIGGER:

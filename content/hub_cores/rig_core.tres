@@ -36,6 +36,6 @@ effects = Array[ExtResource("e2")]([SubResource("fx_retrigger"), SubResource("fx
 script = ExtResource("main_script")
 id = &"rig_core"
 display_name = "Rig Core"
-description = "+1 max RAM. Perfect: refund 1 RAM, gain a free nudge, and the slice resolves again at half."
+description = "+1 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 1 RAM and gain a free nudge."
 perfect_hook = SubResource("hook")
 max_ram_bonus = 1

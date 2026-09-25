@@ -270,7 +270,7 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2(size.x / 2.0 - 280, 100)
+	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
@@ -650,7 +650,7 @@ func _site_row(site: SiteData, launchable: Array[SiteData], living: Array[Operat
 		row.add_child(_button("Claim", func() -> void: claim(sid2, choices[node_pick.selected].id)))
 	if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DISABLED:
 		var sid3 := site.id
-		row.add_child(_button("Repair", func() -> void: repair(sid3)))
+		row.add_child(_button("Repair (%d)" % CampaignRules.repair_cost(c, cfg, lookup, sid3), func() -> void: repair(sid3)))
 	if c.grid.is_active_node(site.id) and site.id != c.grid.home_site_id:
 		var cost := CampaignRules.upgrade_cost(c, cfg, site.id)
 		if cost >= 0:

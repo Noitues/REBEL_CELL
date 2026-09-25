@@ -153,6 +153,11 @@ static func _with_extra(ticks: PackedInt32Array, count: int) -> PackedInt32Array
 
 
 ## A phase's pointer layout with the ICE extra pointer (bosses) and the Breach removal.
+## Also what Intel's phase reveal shows.
+static func phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
+	return _phase_layout(s, data, ticks)
+
+
 static func _phase_layout(s: CombatState, data: EnemyData, ticks: PackedInt32Array) -> PackedInt32Array:
 	var extra := int(s.flags.get("boss_extra_pointer", 0)) if data.is_boss else 0
 	return _trimmed(_with_extra(ticks, extra), int(s.flags.get("boss_pointer_removal", 0)))
@@ -586,7 +591,7 @@ func _slice_listeners(s: CombatState, r: Dictionary) -> Array:
 	var out := [{"source_id": slice.id, "effects": slice.extra_effects}]
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
-		out.append({"source_id": fw.id, "effects": fw.triggered_effects, "limit_key": "%s@%d" % [fw.id, int(r["slice_index"])]})
+		out.append({"source_id": fw.id, "effects": fw.triggered_effects, "limit_scale": maxi(1, owner.wheel.slot_firmware_ids.count(fw.id))})
 	var seg: RingSegmentData = r["segment"]
 	if seg != null:
 		out.append({"source_id": seg.id, "effects": seg.triggered_effects})
@@ -599,7 +604,9 @@ func _slice_listeners(s: CombatState, r: Dictionary) -> Array:
 	if not owner.is_player:
 		out.append_array(_heat_listeners(s, owner, slice))
 	if owner == s.player:
-		out.append_array(_daemon_listeners(s))
+		for d in _daemon_listeners(s):
+			d["once"] = true  # Daemons fire once per landing, not per extra resolution (H15)
+			out.append(d)
 	return out
 
 
@@ -675,20 +682,32 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	if instances.size() > 1:
 		events.append({"type": "retrigger", "owner": owner.id, "count": instances.size(),
 			"text": "%s's %s resolves %d times." % [owner.display_name, _slice_name(slice), instances.size()]})
+	# The slice, its Firmware, segment and Hub repeat with every resolution (M1/M6 rulings);
+	# Daemons fire once per landing, so their text ("each Perfect: +1 damage") holds.
+	var per_instance := listeners.filter(func(l: Dictionary) -> bool: return not l.get("once", false))
+	var once := listeners.filter(func(l: Dictionary) -> bool: return l.get("once", false))
 	for m in instances:
 		var output := roundi(slice.base_output * m)
 		if owner == s.player and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT] and s.damage_bonus > 0:
 			output += s.damage_bonus
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
-		fx.run_triggers(s, RC.Trigger.ON_SLICE_TRIGGER, ctx, listeners, rng, events)
-		if r["tier"] == RC.PrecisionTier.PERFECT:
-			fx.run_triggers(s, RC.Trigger.ON_PERFECT, ctx, listeners, rng, events)
-		if slice.slice_type == RC.SliceType.MISS:
-			fx.run_triggers(s, RC.Trigger.ON_MISS_SLICE, ctx, listeners, rng, events)
+		_landing_triggers(s, r, slice, ctx, per_instance, rng, events)
+	_landing_triggers(s, r, slice, ctx, once, rng, events)
 	if r["status"] == RC.Status.OVERCLOCKED and not r.get("derived", false):
 		wheel.slice_statuses[slot] = RC.Status.CORRUPTED
 		events.append({"type": "status", "target": owner.id, "slot": slot, "status": RC.Status.CORRUPTED,
 			"text": "%s slot %d burns out: OVERCLOCKED -> CORRUPTED." % [owner.display_name, slot]})
+
+
+## ON_SLICE_TRIGGER, then ON_PERFECT on a Perfect and ON_MISS_SLICE on the Miss, for `listeners`.
+func _landing_triggers(s: CombatState, r: Dictionary, slice: SliceData, ctx: Dictionary, listeners: Array, rng: RandomNumberGenerator, events: Array[Dictionary]) -> void:
+	if listeners.is_empty():
+		return
+	fx.run_triggers(s, RC.Trigger.ON_SLICE_TRIGGER, ctx, listeners, rng, events)
+	if r["tier"] == RC.PrecisionTier.PERFECT:
+		fx.run_triggers(s, RC.Trigger.ON_PERFECT, ctx, listeners, rng, events)
+	if slice.slice_type == RC.SliceType.MISS:
+		fx.run_triggers(s, RC.Trigger.ON_MISS_SLICE, ctx, listeners, rng, events)
 
 
 func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, output: int, pierce: bool, ctx: Dictionary, events: Array[Dictionary]) -> void:

@@ -435,7 +435,7 @@ func _at_final_rack() -> bool:
 ## Server Rack capture (GDD 4.2, 11.5): bank Schematics and assets, add Heat (or what a
 ## Daemon says instead), fire ON_SERVER_RACK_CAPTURE hooks.
 func _capture_rack() -> void:
-	var tier_index := clampi(run.tier - 1, 0, 3)
+	var tier_index := clampi(run.tier - 1, 0, mini(config.rack_schematics_by_tier.size(), config.rack_heat_by_tier.size()) - 1)
 	var schematics := config.rack_schematics_by_tier[tier_index]
 	run.banked_schematics += schematics
 	run.racks_captured += 1

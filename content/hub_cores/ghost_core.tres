@@ -28,6 +28,6 @@ effects = Array[ExtResource("e2")]([SubResource("fx_strip"), SubResource("fx_ret
 script = ExtResource("main_script")
 id = &"ghost_core"
 display_name = "Ghost Core"
-description = "First nudge on an enemy wheel each turn ignores resistance. Perfect: strip 2 resistance and the slice resolves twice."
+description = "First nudge on an enemy wheel each turn ignores resistance. Perfect: the slice resolves twice; on each resolution, strip 2 resistance."
 perfect_hook = SubResource("hook")
 free_resistance_nudges = 1

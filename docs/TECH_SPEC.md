@@ -158,7 +158,9 @@ Ties are broken by content id, then node id — never by dictionary order.
   `"version"` and a migrations table.
 - State references content **by id** (`ContentRegistry` resolves ids on load). Never
   serialize Resource paths or objects.
-- Autosave: entering each map node, after each combat, returning to HQ, and after raids.
+- Autosave: entering each map node, after each combat, returning to HQ, and after raids;
+  also on "Save & quit", on the Quit button, and when the window is closed
+  (`NOTIFICATION_WM_CLOSE_REQUEST`), so a fight resumes on the turn it was left.
   Combat saves include `checkpoint_state`, `actions_since_checkpoint` and RNG stream
   states.
 

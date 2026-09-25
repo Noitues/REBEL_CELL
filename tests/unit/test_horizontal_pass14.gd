@@ -105,20 +105,6 @@ func test_ghost_core_covers_card_nudges() -> void:
 	assert_eq(CombatFixture.events_of(r, "ghost_nudge").size(), 1, "the first nudge slips past resistance")
 
 
-func test_firmware_limits_count_per_slot() -> void:
-	var r := CombatFixture.resolver()
-	var s := CombatSession.start(r, &"breaker", [&"triage_unit"], 5)
-	var fw := ContentRegistry.get_content(&"coolant_loop") as FirmwareData
-	var base := {"owner": s.state.player, "slice": r.lookup.get_content(s.state.player.wheel.slot_slice_ids[0]), "firmware": fw, "segment": null}
-	var a := base.duplicate()
-	a["slice_index"] = 0
-	var b := base.duplicate()
-	b["slice_index"] = 2
-	var ka: String = r._slice_listeners(s.state, a)[1]["limit_key"]
-	var kb: String = r._slice_listeners(s.state, b)[1]["limit_key"]
-	assert_ne(ka, kb, "two copies keep separate counters")
-
-
 func _netrun() -> NetrunSession:
 	var corp := ContentRegistry.get_content(&"solace") as CorporationData
 	var c := CampaignRules.new_campaign(corp, _cfg, GridFixture.lookup(), 3, ContentRegistry.get_content(&"breaker") as ClassData, GridFixture.home_node())

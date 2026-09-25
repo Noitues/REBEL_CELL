@@ -30,6 +30,31 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-25 — Horizontal pass 15 fixes (GAP_ANALYSIS H15)
+- **Daemons fire once per landing.** A Perfect resolves two or three times (every Hub
+  Core retriggers, Echo adds one), and each extra resolution used to fire the Daemons
+  again: Clean Signal gave -4 Heat for "-2", Zero Day was a 6x Crit for "3x", Kernel Sync
+  +2 for "+1". Now the slice, its Firmware, segment and Hub repeat with every resolution
+  (the M1/M6 rulings stand) and Daemon listeners fire once after the resolutions. The Hub
+  Core texts now say "on each resolution" for their hook effects.
+- **Nothing acts behind the pause menu**: while it is open it swallows unhandled keys and
+  pad buttons (Space, 1-9, Q/E, LB/RB, Tab), in combat, on the map and at HQ.
+- **The pause menu is 760x520** and its Options panel reports its content's size, so the
+  menu's scroll reaches Close, Reset and every rebind button at text scale 1.6.
+- **Intel's phase reveal shows the real layouts** (`CombatResolver.phase_layout`: Breach
+  removal and the ICE extra pointer), plus the orbit speed of an ORBIT phase.
+- **Firmware per-combat limits: one counter per Firmware id, the limit times the copies
+  socketed.** H14 keyed it by slot, and a Flip moves Firmware between slots, which gave
+  fresh charges (Skimmer fired four times). Two copies still have two charges each.
+- **Repair shows its price** (`CampaignRules.repair_cost`, ICE 13 included).
+- **The End Turn preview shows odds only for random status picks** (DOSE); a fixed slot
+  (Overclock burnout, a Perfect Parasite, the Corrupt segment) says which slot.
+- **Config**: `achievement_ice_low` 5 and `achievement_ice_high` 10; the Rack tier index
+  is bounded by the Rack tables. TECH_SPEC 8 lists the quit and window-close saves.
+- **Balance after H15** (Daemons no longer doubled): Breaker ICE 5 5/8 in 36.4 runs;
+  Ghost ICE 0 6/8 in 27.1; Botnet ICE 0 8/8 in 22.1; Rigger ICE 0 5/8 in 36.5 (was 7/8 in
+  19.8: it leaned on doubled Daemons). Kept on the harder side; see the open question.
+
 ### 2026-09-24 — Horizontal pass 14 fixes (GAP_ANALYSIS H14)
 - **Boss phases keep their layout and ICE extras**: an ORBIT phase that lists pointers
   sets them before orbiting (Commons Array 66%: two readers; Civic Core 33%: two). The ICE
@@ -1085,6 +1110,9 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **Rigger at ICE 0 (H15).** With Daemons firing once per Perfect the bot's Rigger wins
+  5/8 at ICE 0 in about 36 runs (other classes 6-8/8). Should the Rigger's hub or deck
+  get a buff, or is ICE 0 meant to be this hard for it?
 - **Final Rack Daemon (H12).** The final Rack offers a card, not a Daemon (a Daemon at
   both Racks made campaigns about three times faster). Should the final Rack get something
   else, such as a rare Daemon on T4 only or an extra Schematics payout? ICE 0 now runs about

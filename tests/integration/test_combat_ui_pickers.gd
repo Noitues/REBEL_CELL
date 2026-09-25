@@ -94,6 +94,11 @@ func test_revealed_phases_and_drones_reach_the_views() -> void:
 	assert_true(enemy_view.extra_lines[0].contains("MULTIPLY"))
 	assert_true(_scene.daemon_note.label.get_parsed_text().contains("Botnet Seed"))
 	CombatFixture.land(_state().player, 1, 0)
+	var seeded := []  # an Array: lambdas capture ints by value
+	_scene.engine.state_changed.connect(func(_st, evs) -> void:
+		for e in evs:
+			if e.get("type", "") == "botnet_seed":
+				seeded.append(e))
 	_scene.end_turn()
-	assert_eq(_state().living_drones().size(), 1)
-	assert_eq(_scene._player_view.satellites.size(), 1, "the drone shows on the player wheel")
+	assert_eq(seeded.size(), 1, "one Perfect, one seed drone (H15: Daemons fire once per landing)")
+	assert_eq(_scene._player_view.satellites.size(), _state().living_drones().size(), "the player wheel shows its living drones")

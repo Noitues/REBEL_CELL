@@ -387,4 +387,6 @@ func _h14() -> int:
 	if hg.offensive_slices_only or cfg.achievement_racks != 10 or cfg.achievement_raids != 20 or cfg.achievement_perfects != 500: fails += 1
 	var officer: EnemyData = load("res://content/enemies/compliance_officer.tres")
 	if not officer.heat_effects[0].offensive_slices_only: fails += 1
+	print("H15: achievement ICE ", cfg.achievement_ice_low, "/", cfg.achievement_ice_high)
+	if cfg.achievement_ice_low != 5 or cfg.achievement_ice_high != 10: fails += 1
 	return fails

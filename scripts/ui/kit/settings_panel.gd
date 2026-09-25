@@ -14,6 +14,7 @@ const ACTION_LABELS := {&"nudge_left": "Nudge -1", &"nudge_right": "Nudge +1", &
 	&"respin": "Respin", &"open_settings": "Pause / options"}
 
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
+var _paper_panel: ZinePanel = null
 var trap_focus: bool = false
 var reduce_check: CheckButton
 var flash_check: CheckButton
@@ -42,6 +43,9 @@ func _init() -> void:
 	var panel := ZinePanel.new("OPTIONS", 0.0)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
+	_paper_panel = panel
+	# The panel grows with its section (inside the pause menu's scroll), never clipping it.
+	panel.content.minimum_size_changed.connect(update_minimum_size)
 	var box := VBoxContainer.new()
 	panel.content.add_child(box)
 	_tabs = HBoxContainer.new()
@@ -213,3 +217,10 @@ func _labelled(text: String) -> Label:
 
 func _ready() -> void:
 	UiFocus.focus_first(self)
+
+
+## At least the content's size, so a host that scrolls can reach every control.
+func _get_minimum_size() -> Vector2:
+	if _paper_panel == null or _paper_panel.content == null:
+		return Vector2.ZERO
+	return _paper_panel.content.get_combined_minimum_size()

@@ -15,8 +15,13 @@ var _host: VBoxContainer
 var _return_focus: Control = null
 
 
+## Menu size: wide enough for the Controls grid and Accessibility switches at text scale
+## 1.6 (the content scrolls vertically inside it).
+const MENU_SIZE := Vector2(760, 520)
+
+
 func _init() -> void:
-	custom_minimum_size = Vector2(560, 400)
+	custom_minimum_size = MENU_SIZE
 	var panel := ZinePanel.new("PAUSED", 0.0)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
@@ -110,8 +115,13 @@ func _close_sub() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or settings_panel != null:
+	if not visible:
 		return
-	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("open_settings"):
+	if settings_panel == null and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("open_settings")):
 		resumed.emit()
+		get_viewport().set_input_as_handled()
+		return
+	# While the menu is open no hotkey reaches the game behind it (Space ending a turn,
+	# 1-9 entering a map node): it is the last child, so it sees unhandled input first.
+	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
 		get_viewport().set_input_as_handled()

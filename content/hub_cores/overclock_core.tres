@@ -28,6 +28,6 @@ effects = Array[ExtResource("e2")]([SubResource("fx_retrigger"), SubResource("fx
 script = ExtResource("main_script")
 id = &"overclock_core"
 display_name = "Overclock Core"
-description = "+2 max RAM. Perfect: gain 2 RAM and the slice resolves again at half."
+description = "+2 max RAM. Perfect: the slice resolves again at half; on each resolution, gain 2 RAM."
 perfect_hook = SubResource("hook")
 max_ram_bonus = 2

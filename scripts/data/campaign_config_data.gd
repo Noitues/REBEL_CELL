@@ -157,6 +157,9 @@ extends Resource
 @export var achievement_racks: int = 10
 @export var achievement_raids: int = 20
 @export var achievement_perfects: int = 500
+## ICE levels a win must reach for the ICE 5 and ICE 10 achievements.
+@export var achievement_ice_low: int = 5
+@export var achievement_ice_high: int = 10
 ## Raid pacing: steps between waves, and the Heat per step of threat integrity scaling.
 @export var raid_wave_interval: int = 5
 @export var raid_heat_scaling_step: int = 10

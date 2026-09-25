@@ -521,6 +521,13 @@ static func _raid_for(corp: CorporationData, source: int) -> RaidData:
 	return null
 
 
+## Schematics to repair the Disabled node on `site_id` (ICE 13 REPAIR_COST_PCT included).
+static func repair_cost(campaign: CampaignState, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName) -> int:
+	var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
+	var pct := campaign.rule_modifier(config, RC.RuleModifierType.REPAIR_COST_PCT)
+	return roundi(node.install_cost * node.repair_cost_ratio * (1.0 + pct / 100.0)) if node != null else 0
+
+
 ## Repairs a Disabled node for repair_cost_ratio x install cost (GDD 3.3).
 static func repair(campaign: CampaignState, config: CampaignConfigData, lookup: ContentLookup, site_id: StringName) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
@@ -528,9 +535,7 @@ static func repair(campaign: CampaignState, config: CampaignConfigData, lookup: 
 	if s.is_empty() or not campaign.grid.is_claimed(site_id) or int(s["condition"]) != GridState.Condition.DISABLED:
 		events.append({"type": "refused", "text": "%s is not a Disabled node." % site_id})
 		return events
-	var node := lookup.get_content(campaign.grid.node_type_of(site_id)) as NetworkNodeData
-	var pct := campaign.rule_modifier(config, RC.RuleModifierType.REPAIR_COST_PCT)
-	var cost := roundi(node.install_cost * node.repair_cost_ratio * (1.0 + pct / 100.0)) if node != null else 0
+	var cost := repair_cost(campaign, config, lookup, site_id)
 	if campaign.schematics < cost:
 		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % cost})
 		return events

@@ -41,6 +41,6 @@ effects = Array[ExtResource("e3")]([SubResource("fx_evade"), SubResource("fx_ret
 script = ExtResource("main_script")
 id = &"phantom_core_mk2"
 display_name = "Phantom Core Mk2"
-description = "Two free nudges at the start of each turn. Perfect: evade the next attack and the slice resolves twice."
+description = "Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack."
 passive_effects = Array[ExtResource("e1")]([SubResource("te_nudge")])
 perfect_hook = SubResource("hook")

@@ -185,7 +185,7 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2(size.x / 2.0 - 280, 100)
+	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
@@ -776,8 +776,14 @@ func _refresh(state: CombatState) -> void:
 		view.highlighted = e.id == state.target_id
 		var lines: Array[String] = []
 		if reveal:
+			var edata := lookup.get_content(e.source_id) as EnemyData
 			for p in engine.resolver.upcoming_phases(state, e):
-				var where := str(Array(p.pointer_ticks)) if not p.pointer_ticks.is_empty() else ("%+d/turn" % p.orbit_ticks_per_turn if p.orbit_ticks_per_turn != 0 else "")
+				var parts := PackedStringArray()
+				if not p.pointer_ticks.is_empty():
+					parts.append(str(Array(CombatResolver.phase_layout(state, edata, p.pointer_ticks))))
+				if p.pointer_behavior == RC.PointerBehavior.ORBIT and p.orbit_ticks_per_turn != 0:
+					parts.append("%+d/turn" % p.orbit_ticks_per_turn)
+				var where := " ".join(parts)
 				lines.append("@%d%%: %s %s" % [roundi(p.hp_threshold_pct * 100), RC.PointerBehavior.keys()[p.pointer_behavior], where])
 		view.extra_lines = lines
 		if not e.wheel.pending_pointer_ticks.is_empty():
@@ -941,7 +947,10 @@ func _show_end_turn_preview() -> void:
 			preview_note.append(String(e["text"]))
 		elif t == "status":
 			var owner := state.get_combatant(e["target"])
-			preview_note.append("%s gets %s on a random non-Miss slice (%s)." % [owner.display_name, RC.Status.keys()[e["status"]], odds_text(owner, true)])
+			if e.get("random", false):
+				preview_note.append("%s gets %s on a random non-Miss slice (%s)." % [owner.display_name, RC.Status.keys()[e["status"]], odds_text(owner, true)])
+			else:
+				preview_note.append(String(e["text"]))  # a fixed slot: say which
 	var after := result.state
 	var summary := PackedStringArray()
 	for e in after.enemies:
