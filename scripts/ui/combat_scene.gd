@@ -289,6 +289,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		inspect_at((event as InputEventMouseButton).global_position)
 		get_viewport().set_input_as_handled()
 		return
+	if event.is_action_pressed("inspect"):
+		# Pad / keyboard inspect: the focused control (a card, a wheel button) is inspected.
+		var owner := get_viewport().gui_get_focus_owner()
+		if owner != null:
+			inspect_at(owner.get_global_rect().get_center())
+		get_viewport().set_input_as_handled()
+		return
 	for i in 9:
 		if event.is_action_pressed("card_%d" % (i + 1)):
 			play_card(i)
@@ -752,6 +759,7 @@ func _refresh(state: CombatState) -> void:
 		_hand_box.add_child(c)
 	_end_turn_button.disabled = state.is_over()
 	_rewind_button.disabled = not engine.can_rewind()
+	UiFocus.focus_first(_hand_box if _hand_box.get_child_count() > 0 else _end_turn_button.get_parent(), true)
 	_respin_button.text = "Respin %d [X]" % engine.resolver.config.respin_ram_cost
 	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
 	_show_end_turn_preview()

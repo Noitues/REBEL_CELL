@@ -201,7 +201,9 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 
 **Acceptance**
 - [x] Five home-server variants, each a Profile unlock after the standard one.
-- [x] Every combat action has a controller button; rebinding keys keeps it.
+- [x] Every combat action has a controller button (cards: D-pad focus + A); every panel
+      focuses its first button so pad-only play works; rebinding keys keeps the pad button.
+      (Checked headless; confirm on real hardware.)
 - [x] Share codes replay the same campaign; a daily run seeds from the date.
 - [x] Assist mode: extra free nudge and HP, no ICE records or achievements.
 - [ ] Skins: deferred to art integration (M13).

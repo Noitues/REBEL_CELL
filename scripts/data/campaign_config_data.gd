@@ -136,6 +136,13 @@ extends Resource
 @export var mirror_threat_integrity: float = 1.5
 @export var mirror_threat_damage_bonus: int = 2
 @export var final_final_ice: int = 20
+## Mirror elites' passive resistance; the output a Deploy slice mirrors as (an Attack);
+## Mirror threat floors (integrity, damage) and the mirrored decoy's speed.
+@export var mirror_resistance: int = 1
+@export var mirror_deploy_base: int = 6
+@export var mirror_threat_min_integrity: int = 10
+@export var mirror_threat_min_damage: int = 4
+@export var mirror_decoy_speed: int = 2
 ## New corporations may start at (global best ICE - this).
 @export var new_corp_ice_offset: int = 5
 

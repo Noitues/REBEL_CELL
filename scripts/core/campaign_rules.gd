@@ -877,4 +877,5 @@ static func fight_raid(campaign: CampaignState, corp: CorporationData, config: C
 	campaign.pending_raids.erase(pending)
 	var events: Array[Dictionary] = result.events.duplicate()
 	events.append_array(RaidResolver.apply(campaign, result, raid, config))
+	name_pending_raids(campaign, lookup, events)  # a lost raid's Heat can queue the next one
 	return events

@@ -25,6 +25,12 @@ const MIRROR_THREAT_DAMAGE_BONUS := 2
 static var _factor := MIRROR_OUTPUT_FACTOR
 static var _threat_integrity := MIRROR_THREAT_INTEGRITY
 static var _threat_damage := MIRROR_THREAT_DAMAGE_BONUS
+## The rest of the Mirror numbers (config.mirror_*; these defaults serve tools and tests).
+static var _resistance := 1
+static var _deploy_base := 6
+static var _min_integrity := 10
+static var _min_damage := 4
+static var _decoy_speed := 2
 const FALLBACK_NODES: Array[StringName] = [&"relay", &"firewall_relay", &"safehouse"]
 const FALLBACK_ASSETS: Array[StringName] = [&"turret", &"ice_lock", &"decoy"]
 
@@ -56,6 +62,11 @@ static func build(template: CorporationData, snap: Dictionary, lookup: ContentLo
 	_factor = config.mirror_output_factor if config != null else MIRROR_OUTPUT_FACTOR
 	_threat_integrity = config.mirror_threat_integrity if config != null else MIRROR_THREAT_INTEGRITY
 	_threat_damage = config.mirror_threat_damage_bonus if config != null else MIRROR_THREAT_DAMAGE_BONUS
+	_resistance = config.mirror_resistance if config != null else 1
+	_deploy_base = config.mirror_deploy_base if config != null else 6
+	_min_integrity = config.mirror_threat_min_integrity if config != null else 10
+	_min_damage = config.mirror_threat_min_damage if config != null else 4
+	_decoy_speed = config.mirror_decoy_speed if config != null else 2
 	var corp := template.duplicate(true) as CorporationData
 	corp.generated_from_profile = true
 	var elite_base: EnemyData = template.elites[0] if not template.elites.is_empty() else null
@@ -99,7 +110,7 @@ static func _mirror_elite(cls: ClassData, base: EnemyData, hub: HubCoreData, loo
 	w.slots = slots
 	# One pointer like the wheel it mirrors (two made a Tier 1 Mirror Breaker a rookie killer).
 	w.pointer_ticks = PackedInt32Array([0])
-	w.passive_resistance = 1
+	w.passive_resistance = _resistance
 	w.hub = hub
 	e.wheel = w
 	return e
@@ -111,7 +122,7 @@ static func _stronger(slice: SliceData, lookup: ContentLookup) -> SliceData:
 	if slice == null or slice.slice_type == RC.SliceType.MISS:
 		return slice
 	var want_type := RC.SliceType.ATTACK if slice.slice_type == RC.SliceType.DEPLOY else slice.slice_type
-	var base := maxi(1, slice.base_output) if slice.slice_type != RC.SliceType.DEPLOY else 6
+	var base := maxi(1, slice.base_output) if slice.slice_type != RC.SliceType.DEPLOY else _deploy_base
 	var want := base * _factor
 	var best: SliceData = null
 	for id in lookup.ids_of_class(&"SliceData"):
@@ -178,8 +189,8 @@ static func _mirror_threat(asset: DefenseAssetData) -> ThreatData:
 	t.id = StringName("rc_threat_%s" % asset.id)
 	t.display_name = "Mirror %s" % asset.display_name
 	t.description = "Your own %s, marching on your home." % asset.display_name
-	t.integrity = maxi(10, roundi(asset.integrity * _threat_integrity))
-	t.damage = maxi(4, asset.damage + _threat_damage)
+	t.integrity = maxi(_min_integrity, roundi(asset.integrity * _threat_integrity))
+	t.damage = maxi(_min_damage, asset.damage + _threat_damage)
 	match asset.asset_type:
 		RC.AssetType.TURRET:
 			t.routing = RC.ThreatRouting.WEAKEST_NODE
@@ -190,7 +201,7 @@ static func _mirror_threat(asset: DefenseAssetData) -> ThreatData:
 			t.freezes_edges = true
 		_:
 			t.routing = RC.ThreatRouting.HIGHEST_VALUE
-			t.edges_per_step = 2
+			t.edges_per_step = _decoy_speed
 	return t
 
 

@@ -30,6 +30,22 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 3 fixes (GAP_ANALYSIS H3)
+- **Lost-raid Heat** names the next raid for the corporation: `CampaignRules.fight_raid`
+  renames its own events (HQ, netrun interlude and simulator paths all go through it).
+- **REBEL_CELL elite pool** = this campaign's Mirrors only (`corporation.elites`), sorted;
+  netrun pools are rebuilt once the corporation is set. Before, Mirrors from earlier builds
+  in the session leaked in and a resume in a fresh session could play differently.
+- **Pad-only play**: every panel focuses its first usable button (`UiFocus`), the combat
+  hand refocuses only when focus is lost, pad inspect inspects the focused control. Pad
+  layout reworked: LB/RB nudge, Y target, X end turn, Back rewind, L3 inspect, R3 respin,
+  Start options; the D-pad, A and B drive focus (`UI_PAD_BINDS`), so the combat pickers and
+  cards are reached as on-screen buttons. Space no longer presses the focused button (it is
+  End Turn). Confirm on real hardware.
+- **More Mirror numbers in the config**: `mirror_resistance`, `mirror_deploy_base`,
+  `mirror_threat_min_integrity`, `mirror_threat_min_damage`, `mirror_decoy_speed`; the
+  designer's tuning knob is `config.mirror_output_factor`.
+
 ### 2026-09-24 — Horizontal pass 2 fixes (GAP_ANALYSIS H2)
 - **Raid names per corporation**: `CampaignRules.name_pending_raids` rewrites HeatRules'
   "Raid incoming" text with the corporation's own raid (HQ report, netrun Heat, run end).
@@ -907,7 +923,7 @@ _(Claude Code: add questions here instead of guessing on design.)_
 ### From M11, REBEL_CELL (2026-09-24) — decided by the implementer, confirm in playtest
 - **REBEL_CELL is hard** (Breaker bot 4/8 at ICE 5, 1/8 at ICE 10). It opens only after
   ICE 10 everywhere, so a human arrives experienced; raise or lower the Mirror factor
-  (`RebelCellBuilder.MIRROR_OUTPUT_FACTOR`) after playtests.
+  (`config.mirror_output_factor`) after playtests.
 - **Custom-handler Daemons** (Kernel Sync, Zero Day...) are not mirrored: their code runs
   on the player's side only.
 - **Music** (resolved in H1): each corporation now selects its own contexts.

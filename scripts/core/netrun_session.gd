@@ -35,6 +35,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
 	s.corporation = corp
+	s._build_pools()  # a built REBEL_CELL picks its own elites
 	var op := p_campaign.get_operative(operative_id)
 	if op == null or not op.alive:
 		push_error("NetrunSession: no living operative '%s'." % operative_id)
@@ -104,6 +105,7 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
 	s.corporation = corp
+	s._build_pools()  # a built REBEL_CELL picks its own elites
 	var op := p_campaign.get_operative(operative_id)
 	if op == null or not op.alive:
 		push_error("NetrunSession: no living operative '%s'." % operative_id)
@@ -132,6 +134,7 @@ static func from_dict(p_resolver: CombatResolver, p_campaign: CampaignState, d: 
 	var s := NetrunSession.new()
 	s._bind(p_resolver, p_campaign)
 	s.corporation = corp
+	s._build_pools()  # a built REBEL_CELL picks its own elites
 	s.run = RunState.from_dict(d.get("run", {}))
 	s.streams = RngStreams.from_dict(s.run.streams)
 	if not s.run.combat.is_empty():
@@ -959,6 +962,14 @@ func _build_pools() -> void:
 			elites.append(id)
 		else:
 			enemies.append(id)
+	# REBEL_CELL (built at runtime): its elites are this campaign's Mirrors only. Mirrors
+	# from earlier builds in the session stay in the lookup and must not leak in.
+	if corporation != null and corporation.generated_from_profile:
+		elites.clear()
+		for e in corporation.elites:
+			if e != null:
+				elites.append(e.id)
+		elites.sort()
 	var shared_cards: Array = []
 	var class_cards := {}
 	for id in lookup.ids_of_class(&"CardData"):

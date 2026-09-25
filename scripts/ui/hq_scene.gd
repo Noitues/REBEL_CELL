@@ -244,6 +244,7 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
+	UiFocus.focus_first(p)
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
 	var net := name in ["grid", "raid", "raid_playout", "raid_summary"]
 	background.visible = not net

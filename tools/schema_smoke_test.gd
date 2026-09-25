@@ -341,6 +341,8 @@ func _h2() -> int:
 	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	print("Major Heat levels: ", loaded.major_heat_levels())
 	if loaded.major_heat_levels().is_empty(): fails += 1
+	print("Mirror extras: ", cfg.mirror_resistance, " ", cfg.mirror_deploy_base, " ", cfg.mirror_threat_min_integrity, " ", cfg.mirror_threat_min_damage, " ", cfg.mirror_decoy_speed)
+	if cfg.mirror_resistance != 1 or cfg.mirror_deploy_base != 6 or cfg.mirror_threat_min_integrity != 10 or cfg.mirror_threat_min_damage != 4 or cfg.mirror_decoy_speed != 2: fails += 1
 	var c := CampaignState.new(); c.start_class_id = &"rigger"
 	if CampaignState.from_dict(c.to_dict()).start_class_id != &"rigger": fails += 1
 	return fails

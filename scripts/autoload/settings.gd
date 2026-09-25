@@ -45,9 +45,14 @@ const CONTROLLER_BINDS := {
 	&"nudge_left": JOY_BUTTON_LEFT_SHOULDER, &"nudge_right": JOY_BUTTON_RIGHT_SHOULDER,
 	&"cycle_target": JOY_BUTTON_Y, &"end_turn": JOY_BUTTON_X, &"rewind": JOY_BUTTON_BACK,
 	&"inspect": JOY_BUTTON_LEFT_STICK, &"respin": JOY_BUTTON_RIGHT_STICK, &"open_settings": JOY_BUTTON_START,
-	&"toggle_ring": JOY_BUTTON_DPAD_UP, &"toggle_direction": JOY_BUTTON_DPAD_DOWN,
-	&"cycle_slot": JOY_BUTTON_DPAD_LEFT, &"toggle_card_target": JOY_BUTTON_DPAD_RIGHT,
-	&"toggle_nudge_wheel": JOY_BUTTON_B,
+}
+## Menu and focus navigation on the pad (the D-pad moves focus, A presses, B backs out).
+## The combat pickers (ring, direction, slot, card target, nudge wheel) are on-screen
+## buttons reached by focus, so they need no pad button of their own.
+const UI_PAD_BINDS := {
+	&"ui_accept": JOY_BUTTON_A, &"ui_cancel": JOY_BUTTON_B,
+	&"ui_up": JOY_BUTTON_DPAD_UP, &"ui_down": JOY_BUTTON_DPAD_DOWN,
+	&"ui_left": JOY_BUTTON_DPAD_LEFT, &"ui_right": JOY_BUTTON_DPAD_RIGHT,
 }
 
 
@@ -165,18 +170,23 @@ func key_for(action: StringName) -> int:
 
 ## Adds CONTROLLER_BINDS to the input map (once per action; keyboard binds untouched).
 func apply_controller_bindings() -> void:
-	for action in CONTROLLER_BINDS:
-		if not InputMap.has_action(action):
-			continue
-		var has_pad := false
-		for ev in InputMap.action_get_events(action):
-			if ev is InputEventJoypadButton and ev.button_index == CONTROLLER_BINDS[action]:
-				has_pad = true
-		if not has_pad:
-			var pad := InputEventJoypadButton.new()
-			pad.button_index = CONTROLLER_BINDS[action]
-			pad.device = -1
-			InputMap.action_add_event(action, pad)
+	# Space is End Turn (GDD 9.5): it must not also press whatever button has focus.
+	for ev in InputMap.action_get_events(&"ui_accept"):
+		if ev is InputEventKey and ((ev as InputEventKey).keycode == KEY_SPACE or (ev as InputEventKey).physical_keycode == KEY_SPACE):
+			InputMap.action_erase_event(&"ui_accept", ev)
+	for binds in [CONTROLLER_BINDS, UI_PAD_BINDS]:
+		for action in binds:
+			if not InputMap.has_action(action):
+				continue
+			var has_pad := false
+			for ev in InputMap.action_get_events(action):
+				if ev is InputEventJoypadButton and ev.button_index == binds[action]:
+					has_pad = true
+			if not has_pad:
+				var pad := InputEventJoypadButton.new()
+				pad.button_index = binds[action]
+				pad.device = -1
+				InputMap.action_add_event(action, pad)
 
 
 func set_assist_mode(value: bool) -> void:
