@@ -192,11 +192,14 @@ func _show_current() -> void:
 			_show_end()
 
 
-func _set_panel(p: Control) -> void:
+## `glass` = false for screens built from their own terminal windows (the city shows
+## between them).
+func _set_panel(p: Control, glass: bool = true) -> void:
 	if _panel != null:
 		_panel.queue_free()
 	_panel = p
 	combat_scene = null
+	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
 	_panel_host.add_child(p)
 	if p.has_method("focus_hand"):
 		p.focus_hand()  # the combat scene links and focuses its own hand
@@ -272,8 +275,8 @@ func _show_start() -> void:
 ## Keyboard: 1-9 pick the reachable nodes in order.
 func _show_map() -> void:
 	var s := RunManager.netrun
-	var box := VBoxContainer.new()
-	box.add_child(_label("Pick the next node (Heat cost shown; follow the links). Click a glowing node or press 1-9."))
+	var win := TerminalWindow.new("ROUTE // Pick the next node (Heat cost shown; follow the links). Click a glowing node or press 1-9.")
+	var box := win.body
 	map_view = NetrunMapView.new()
 	map_view.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	map_view.show_map(s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes(), s.map_heat())
@@ -293,7 +296,9 @@ func _show_map() -> void:
 		var id: StringName = available[i]
 		row.add_child(_button(text, func() -> void: enter_node(id)))
 	row.add_child(_button("Save & quit to start screen", save_and_quit))
-	_set_panel(box)
+	var panel := VBoxContainer.new()
+	panel.add_child(win)
+	_set_panel(panel, false)
 
 
 ## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip.
@@ -345,7 +350,9 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 func _show_reward() -> void:
 	var s := RunManager.netrun
 	var offer := s.current_reward()
-	var box := VBoxContainer.new()
+	var win := TerminalWindow.new("RACK BREACHED // LOOT: pick a %s" % offer["kind"], Palette.CELL_ACID)
+	win.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var box := win.body
 	box.add_child(GraffitiTag.new("LOOT: pick a %s" % offer["kind"]))
 	var slot_option: OptionButton = null
 	if offer["kind"] == "firmware":
@@ -374,7 +381,9 @@ func _show_reward() -> void:
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
 		stickers.add_child(sticker)
 	box.add_child(_button("Skip", skip_reward))
-	_set_panel(box)
+	var wrap := CenterContainer.new()
+	wrap.add_child(win)
+	_set_panel(wrap, false)
 
 
 ## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
@@ -443,8 +452,16 @@ static func _choice_text(label: String, costs: String) -> String:
 func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
-	var box := VBoxContainer.new()
-	box.add_child(GraffitiTag.new("MODEM - %d CYCLES" % s.run.cycles))
+	var outer := HBoxContainer.new()
+	outer.add_theme_constant_override("separation", 16)
+	outer.add_child(NeonSign.new("MODEM", "CYBER SHOP"))
+	var mid := VBoxContainer.new()
+	mid.add_theme_constant_override("separation", 12)
+	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.add_child(mid)
+	var stock := TerminalWindow.new("STOCK // %d CYCLES" % s.run.cycles)
+	mid.add_child(stock)
+	var box := stock.body
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
 	stickers.add_theme_constant_override("separation", 10)
@@ -470,6 +487,9 @@ func _show_shop() -> void:
 			n += 1
 	if not shop.get("firmware", []).is_empty():
 		box.add_child(fw_slot)
+	var builder := TerminalWindow.new("CARD BUILDER", Palette.CELL_PINK)
+	mid.add_child(builder)
+	box = builder.body
 	var removal := HBoxContainer.new()
 	removal.add_child(_label("Remove a card (%d Cycles):" % s.card_removal_price()))
 	var deck_option := OptionButton.new()
@@ -490,8 +510,16 @@ func _show_shop() -> void:
 	overwrite.add_child(slice_pick)
 	overwrite.add_child(_button("Overwrite", func() -> void: overwrite_slice(slot_pick.selected, slice_pick.selected)))
 	box.add_child(overwrite)
-	box.add_child(_button("Leave the Modem", leave_shop))
-	_set_panel(box)
+	mid.add_child(_button("Leave the Modem", leave_shop))
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 18)
+	outer.add_child(side)
+	var notes := ZineNote.new("SHOP NOTES", Vector2(190, 118))
+	notes.rotation_degrees = 2.0
+	notes.append("> Limited stock\n> No refunds\n> Better chips,\n  better runs")
+	side.add_child(notes)
+	side.add_child(GraffitiScrawl.new("UPGRADE\nOR DIE!", -8.0, 28))
+	_set_panel(outer, false)
 
 
 ## Mid-run raid interlude (GDD 4.4, 7.3): setup with exact projection, run assets and

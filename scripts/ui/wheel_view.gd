@@ -102,6 +102,11 @@ func _draw() -> void:
 	var radius := _radius()
 	var line := _col(wheel_color if combatant.is_alive() else Color(wheel_color, 0.3))
 	var tps := wheel.ticks_per_slice()
+	# Platform: a dark disc with a soft rim so the wheel reads over the city.
+	draw_circle(center, radius + 46, Color(Palette.NIGHT_SKY, 0.55))
+	draw_circle(center, radius + 24, Color(Palette.NIGHT_SKY, 0.6))
+	draw_arc(center, radius + 46, 0, TAU, 96, Color(line, 0.12), 3.0)
+	draw_arc(center, radius + 24, 0, TAU, 96, Color(line, 0.25), 1.0)
 	if inverted:
 		draw_circle(center, radius + 30, Color(Palette.PAPER, 0.9))
 	if highlighted:

@@ -81,7 +81,9 @@ func _draw() -> void:
 		for n in node["next"]:
 			var b: Vector2 = _positions[n]
 			var on_path: bool = (visited.has(node["id"]) and (visited.has(n) or available.has(n))) or node["id"] == current_id
-			draw_line(a, b, Color(Palette.NET_CYAN, 0.55 if on_path else 0.25), 2.0 if on_path else 1.0)
+			if on_path:
+				draw_line(a, b, Color(Palette.CELL_PINK, 0.18), 7.0)
+			draw_line(a, b, Color(Palette.CELL_PINK, 0.85) if on_path else Color(Palette.NET_CYAN, 0.3), 2.0 if on_path else 1.0)
 	# Nodes.
 	for node in map.all_nodes():
 		var id: StringName = node["id"]
@@ -95,8 +97,11 @@ func _draw() -> void:
 			col = Color(Palette.NET_CYAN, 0.35)
 		elif node["type"] == RC.InfilNodeType.SERVER_RACK or node["elite"]:
 			col = corp_color
+		draw_circle(p, NODE_RADIUS + 2, Color(Palette.NIGHT_SKY, 0.92))
+		draw_circle(p, NODE_RADIUS + 2, Color(col, 0.12))
 		if id == current_id or available.has(id):
 			draw_arc(p, NODE_RADIUS + 8, 0, TAU, 32, Color(col, 0.25), 8.0)
+			draw_arc(p, NODE_RADIUS + 14, 0, TAU, 32, Color(col, 0.1), 4.0)
 		match int(node["type"]):
 			RC.InfilNodeType.ROUTER:
 				draw_arc(p, NODE_RADIUS, 0, TAU, 32, col, 1.5)
@@ -131,6 +136,8 @@ func _draw() -> void:
 			label += " %+d Heat" % heat
 		if visited.has(id) and id != current_id:
 			label = "done"
+		var lw := minf(Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x, 80.0)
+		draw_rect(Rect2(p.x - lw * 0.5 - 3, p.y + NODE_RADIUS + 6, lw + 6, 13), Color(Palette.NIGHT_SKY, 0.75))
 		draw_string(Palette.mono(), p + Vector2(-40, NODE_RADIUS + 16), label, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, Color(Palette.PAPER, 0.5 if visited.has(id) and id != current_id else 1.0))
 	# Layer labels.
 	for li in map.layer_count():

@@ -160,16 +160,23 @@ func _style(speaker: int, corporation_id: StringName = &"") -> void:
 	style.content_margin_top = 6
 	style.content_margin_bottom = 6
 	if speaker == RC.Voice.DISPATCH or speaker == RC.Voice.CORPO:
-		style.bg_color = Color(Palette.DESK_DARK, 0.92)
+		style.bg_color = Color(0.02, 0.03, 0.08, 0.95)
 		var corp_color := Palette.corp_color(corporation_id) if corporation_id != &"" else Palette.CORP_SOLACE
 		style.border_color = Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else corp_color
 		style.set_border_width_all(1)
+		style.border_width_left = 4
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 8
 		speaker_label.add_theme_color_override("font_color", style.border_color)
 		text_label.add_theme_color_override("default_color", Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else Palette.PAPER)
 	else:
-		style.bg_color = Color(Palette.PAPER, 0.94)
+		style.bg_color = Color(Palette.NOTE_PAPER, 0.97)
 		style.border_color = Palette.INK
 		style.set_border_width_all(1)
+		style.border_width_left = 4
+		style.border_color = Palette.CELL_PINK
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 8
 		speaker_label.add_theme_color_override("font_color", Palette.CELL_PINK)
 		text_label.add_theme_color_override("default_color", Palette.INK)
 	bar.add_theme_stylebox_override("panel", style)

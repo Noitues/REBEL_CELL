@@ -584,6 +584,7 @@ func _start_music() -> void:
 
 func _build_ui() -> void:
 	background = WireframeBackground.new()
+	background.city.dim = 0.55  # the arena: wheels first, city second
 	add_child(background)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
