@@ -53,6 +53,9 @@ func _ready() -> void:
 			var parts := a.trim_prefix("--demo-jitter=").split(",")
 			(background.city.material as ShaderMaterial).set_shader_parameter("wobble", float(parts[0]))
 			(background.city.material as ShaderMaterial).set_shader_parameter("jitter", float(parts[1]))
+		elif a == "--demo-cultures":
+			background.city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english", &"rebel_cell": "mayan"}
+			background.city.refresh()
 		elif a == "--demo-nopan":
 			background.city.pan = false
 		elif a == "--demo-overview":

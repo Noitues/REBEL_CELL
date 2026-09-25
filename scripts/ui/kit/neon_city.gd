@@ -43,7 +43,17 @@ const DISTRICTS := {
 	&"rebel_cell": {"mix": [2, 2, 1, 5, 1, 1, 1], "height": 0.95, "corp_ink": 0.58, "seed": 53},
 	&"": {"mix": [4, 3, 2, 1, 1, 1, 2], "height": 1.0, "corp_ink": 0.0, "seed": 7},
 }
-enum Shape { BOX, STEPPED, CYLINDER, HEX, TAPER, NEEDLE, WAREHOUSE }
+enum Shape { BOX, STEPPED, CYLINDER, HEX, TAPER, NEEDLE, WAREHOUSE,
+	PYRAMID, OBELISK, MASTABA, PAGODA, GABLE, CLOCKTOWER, DOME, MINARET, STEP_TEMPLE }
+
+## Culture themes (design review): building mixes over every Shape, cyberpunk-inked.
+const CULTURES := {
+	"egyptian": [2, 1, 0, 0, 0, 0, 1, 4, 3, 5, 0, 0, 0, 0, 0, 0],
+	"chinese": [3, 2, 0, 0, 0, 1, 0, 0, 0, 0, 6, 2, 0, 0, 0, 0],
+	"english": [3, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 7, 1, 0, 0, 0],
+	"mayan": [2, 4, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 5],
+	"arabic": [3, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 3, 0],
+}
 
 ## Territory centres (grid lots) and their pull (bigger = larger territory). The
 ## corporations' HQs stand on their centres; &"" entries are the neutral Sprawl.
@@ -88,6 +98,8 @@ var pan: bool = false:
 ## Camera override: this grid point lands on `focus_anchor` (a screen fraction).
 var focus_grid: Vector2 = Vector2.INF
 var focus_anchor: Vector2 = Vector2(0.5, 0.5)
+## Culture theme per territory (corp id -> CULTURES key); empty = the base mixes.
+var cultures: Dictionary = {}
 ## Design review: big territory names over each HQ (the zoomed-out overview).
 var territory_labels: bool = false
 var ink_set: int = 3:
@@ -663,6 +675,8 @@ func _lot(i: int, j: int) -> void:
 
 func _pick_shape(ci: int, cj: int) -> int:
 	var mix: Array = _profile["mix"]
+	if cultures.has(_terr):
+		mix = CULTURES.get(cultures[_terr], mix)
 	var total := 0
 	for w in mix:
 		total += int(w)
@@ -736,6 +750,66 @@ func _building(cell: Rect2i) -> void:
 			for k in 3:
 				var t := (k + 1) / 4.0
 				_ink_line(_iso(lerpf(x0, x1, t), y0) + Vector2(0, -wh), _iso(lerpf(x0, x1, t), y1) + Vector2(0, -wh), Color(ink, 0.35), 1.0, false)
+		Shape.PYRAMID:
+			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, 30.0 + h * 0.6, 0.03, fill, ink, lit, key)
+		Shape.OBELISK:
+			var oh := h * 1.1 + 40.0
+			var k := (x1 - x0) * 0.36
+			_extrude(_rect_pts(cx - k, cy - k, cx + k, cy + k), 0.0, oh, 0.7, fill, ink, lit, key)
+			roof = _extrude(_rect_pts(cx - k * 0.7, cy - k * 0.7, cx + k * 0.7, cy + k * 0.7), oh, 12.0, 0.03, fill, ink, 0.0, key + 1)
+		Shape.MASTABA:
+			roof = _extrude(_rect_pts(x0, y0, x1, y1), 0.0, 12.0 + r * 14.0, 0.82, fill, ink, lit * 0.5, key)
+		Shape.PAGODA:
+			var tiers := 3 + int(_h(ci, cj, 50) * 2.0)
+			var z := 0.0
+			var th := maxf(14.0, h / tiers)
+			for t in tiers:
+				var k := (x1 - x0) * (0.1 + t * 0.07)
+				_extrude(_rect_pts(x0 + k, y0 + k, x1 - k, y1 - k), z, th * 0.7, 1.0, fill, ink, lit, key + t * 3)
+				z += th * 0.7
+				var e := (x1 - x0) * (0.02 + t * 0.07)
+				roof = _extrude(_rect_pts(x0 + e - 0.08, y0 + e - 0.08, x1 - e + 0.08, y1 - e + 0.08), z, th * 0.3, 0.55, fill.lerp(FACE_LIGHT, 0.2), ink, 0.0, key + t * 3 + 1)
+				z += th * 0.3
+		Shape.GABLE:
+			var wall := 14.0 + h * 0.45
+			_extrude(_rect_pts(x0, y0, x1, y1), 0.0, wall, 1.0, fill, ink, lit, key)
+			roof = _gable(x0, y0, x1, y1, wall, 10.0 + (y1 - y0) * 12.0, fill, ink)
+		Shape.CLOCKTOWER:
+			var ch := h * 1.2 + 60.0
+			var k := (x1 - x0) * 0.25
+			_extrude(_rect_pts(x0 + k, y0 + k, x1 - k, y1 - k), 0.0, ch, 1.0, fill, ink, lit, key)
+			roof = _extrude(_rect_pts(x0 + k, y0 + k, x1 - k, y1 - k), ch, 24.0, 0.03, fill, ink, 0.0, key + 1)
+			var face := _iso(x1 - k, (y0 + y1) * 0.5) + Vector2(-TILE_A * 0.25, -ch + 16)
+			var fc := Color(_inks[0], 0.9)
+			for q in 12:
+				var a0 := TAU * q / 12.0
+				var a1 := TAU * (q + 1) / 12.0
+				_ink_line(face + Vector2(cos(a0) * 7, sin(a0) * 8), face + Vector2(cos(a1) * 7, sin(a1) * 8), fc, 1.2, false)
+			_ink_line(face, face + Vector2(0, -6), fc, 1.2, false)
+			_ink_line(face, face + Vector2(4, 1), fc, 1.2, false)
+		Shape.DOME:
+			var dh := 12.0 + h * 0.5
+			roof = _extrude(_ngon(cx, cy, half, 10, 0.1), 0.0, dh, 1.0, fill, ink, lit, key)
+			_dome(_iso(cx, cy) + Vector2(0, -dh), half * TILE_A, fill, ink)
+		Shape.MINARET:
+			var mh := h * 1.3 + 70.0
+			var k := half * 0.4
+			_extrude(_ngon(cx, cy, k, 8, 0.2), 0.0, mh, 1.0, fill, ink, lit, key)
+			_extrude(_ngon(cx, cy, k * 1.6, 8, 0.2), mh * 0.72, 4.0, 1.0, fill, ink, 0.0, key + 1)
+			roof = _extrude(_ngon(cx, cy, k, 8, 0.2), mh, 16.0, 0.05, fill, ink, 0.0, key + 2)
+			_beacons.append({"pos": _iso(cx, cy) + Vector2(0, -mh - 18), "color": ink, "phase": _h(ci, cj, 8)})
+		Shape.STEP_TEMPLE:
+			var steps := 4
+			var sh := maxf(10.0, (h * 0.8 + 30.0) / (steps + 1))
+			for t in steps:
+				var k := (x1 - x0) * t * 0.09
+				roof = _extrude(_rect_pts(x0 + k, y0 + k, x1 - k, y1 - k), t * sh, sh, 1.0, fill, ink, 0.0, key + t)
+			var k2 := (x1 - x0) * 0.33
+			roof = _extrude(_rect_pts(x0 + k2, y0 + k2, x1 - k2, y1 - k2), steps * sh, sh * 1.1, 1.0, fill.lerp(FACE_LIGHT, 0.2), ink, lit, key + 9)
+			# Stair up the front face.
+			var st_a := _iso((x0 + x1) * 0.5, y1)
+			_ink_line(st_a + Vector2(-5, 0), st_a + Vector2(-5, -steps * sh) + Vector2(0, (x1 - x0) * TILE_B * 0.3), Color(ink, 0.7), 1.0, false)
+			_ink_line(st_a + Vector2(5, 0), st_a + Vector2(5, -steps * sh) + Vector2(0, (x1 - x0) * TILE_B * 0.3), Color(ink, 0.7), 1.0, false)
 		_:
 			roof = _extrude(_turned(turn, x0, y0, x1, y1), 0.0, h, 1.0, fill, ink, lit, key)
 	# Roof clutter: antennae, a lit sign, a beacon on the tall ones.
@@ -755,6 +829,46 @@ func _building(cell: Rect2i) -> void:
 		_quad(rc + Vector2(-6, -2), rc + Vector2(6, -2), rc + Vector2(6, -9), rc + Vector2(-6, -9), sc, sc, sc, sc)
 	if r > 0.92:
 		_beacons.append({"pos": rc + Vector2(0, -3), "color": ink, "phase": _h(ci, cj, 8)})
+
+
+## A gabled roof on a wall of height `z`: ridge along i, slopes and gable ends; returns
+## the ridge-and-eaves outline as the roof points.
+func _gable(x0: float, y0: float, x1: float, y1: float, z: float, rh: float, fill: Color, ink: Color) -> PackedVector2Array:
+	var up := Vector2(0, -z)
+	var cy := (y0 + y1) * 0.5
+	var b0 := _iso(x0, y0) + up
+	var b1 := _iso(x1, y0) + up
+	var f0 := _iso(x0, y1) + up
+	var f1 := _iso(x1, y1) + up
+	var ra := _iso(x0, cy) + up + Vector2(0, -rh)
+	var rb := _iso(x1, cy) + up + Vector2(0, -rh)
+	var back := fill.lerp(FACE_LIGHT, 0.1)
+	var front := fill.lerp(FACE_LIGHT, 0.3)
+	_quad(b0, b1, rb, ra, back, back, back, back)
+	_tri(b0, f0, ra, back, back, back)
+	_quad(f0, f1, rb, ra, front, front, front, front)
+	_tri(b1, f1, rb, fill.darkened(0.2), fill.darkened(0.2), fill.darkened(0.2))
+	_ink_line(ra, rb, ink)
+	_ink_line(f0, f1, ink)
+	_ink_line(f0, ra, ink)
+	_ink_line(f1, rb, ink)
+	_ink_line(b1, rb, Color(ink, 0.7), 1.1, false)
+	return PackedVector2Array([ra, rb, f1, f0])
+
+
+## A dome over a drum top centred at `c`, screen radius `rad`.
+func _dome(c: Vector2, rad: float, fill: Color, ink: Color) -> void:
+	var pts := PackedVector2Array()
+	for k in 13:
+		var a := PI + PI * k / 12.0
+		pts.append(c + Vector2(cos(a) * rad, sin(a) * rad * 1.1))
+	var body := pts.duplicate()
+	body.append(c + Vector2(rad, 0))
+	_poly(body, fill.lerp(FACE_LIGHT, 0.3))
+	for k in 12:
+		_ink_line(pts[k], pts[k + 1], ink, 1.3, k % 3 == 0)
+	_ink_line(pts[6], pts[6] + Vector2(0, -10), ink, 1.1, false)
+	_ink_line(c + Vector2(0, -rad * 1.1), c + Vector2(0, -rad * 0.2), Color(ink, 0.4), 1.0, false)
 
 
 # --- Corporation HQs ----------------------------------------------------------------------
