@@ -49,3 +49,39 @@ func test_hq_panels_fit_the_screen_with_everything_unlocked() -> void:
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.reset()
 	RunManager.scene_switching_enabled = true
+
+
+
+func test_the_mid_run_raid_screen_fits_the_screen() -> void:
+	RunManager.save_slot = "gut_test_widths_raid"
+	RunManager.scene_switching_enabled = false
+	RunManager.delete_save()
+	RunManager.reset()
+	RunManager.new_campaign(1)
+	var c := RunManager.campaign
+	var grid_data := RunManager.corporation.city_grid
+	var claimed := 0
+	for sd in grid_data.sites:
+		if sd.tier == 1 and sd.id != grid_data.home_site_id and sd.objective == RC.SiteObjective.NONE and claimed < 6:
+			var s := c.grid.site(sd.id)
+			s["status"] = GridState.SiteStatus.CLAIMED
+			s["node_type"] = "firewall_relay"
+			s["integrity"] = 30
+			s["max_integrity"] = 30
+			s["assets"] = ["turret"]
+			claimed += 1
+	c.armory = [&"turret", &"ice_lock", &"decoy", &"railgun", &"sentry", &"tar_pit"]
+	var scene: Control = add_child_autofree(load("res://scenes/netrun_map/netrun_scene.tscn").instantiate())
+	scene.start_run(1)
+	HeatRules.add_heat(c, 26, RunManager.config(), "test")
+	RunManager.netrun._maybe_raid_interlude()
+	assert_eq(RunManager.netrun.run.phase, RunState.Phase.RAID, "the raid interlude is open")
+	scene._show_current()
+	await _frames()
+	var w: float = scene._panel.get_combined_minimum_size().x
+	assert_true(w <= SCREEN_WIDTH, "raid interlude panel is %d px wide" % w)
+	RunManager.delete_save()
+	DirAccess.remove_absolute(RunManager.profile_path())
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.reset()
+	RunManager.scene_switching_enabled = true

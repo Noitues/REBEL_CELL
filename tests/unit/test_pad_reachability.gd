@@ -142,6 +142,7 @@ func test_combat_inside_a_netrun_is_pad_reachable() -> void:
 	await _frames()
 	var combat: Control = scene.combat_scene
 	assert_not_null(combat)
+	assert_true(get_viewport().gui_get_focus_owner() is ZineCard, "entering a fight focuses the hand, not Settings")
 	var reach := _reachable(combat)
 	for c in combat._hand_box.get_children():
 		if not (c as BaseButton).disabled:

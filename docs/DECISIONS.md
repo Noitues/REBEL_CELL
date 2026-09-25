@@ -30,6 +30,13 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 10 fix (GAP_ANALYSIS H10)
+- **Netrun screens fit 1280**: the mid-run raid row wraps (HFlowContainer) and the netrun
+  panel host scrolls vertically (horizontal scrolling disabled, follows focus), matching the
+  H9 HQ rule.
+- **Entering a fight focuses the hand**: the netrun scene calls `CombatScene.focus_hand()`
+  (first playable card, else SEND IT) instead of linking or focusing the combat panel generically.
+
 ### 2026-09-24 — Horizontal pass 9 fix (GAP_ANALYSIS H9)
 - **HQ panels fit the 1280 screen**: button rows (start panel, actions, boosts, unlocks,
   roster, Site rows, raid rows, codex tabs) are HFlowContainers that wrap; the HQ scroll

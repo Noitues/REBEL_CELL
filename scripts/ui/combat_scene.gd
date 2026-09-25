@@ -294,6 +294,13 @@ func _input(event: InputEvent) -> void:
 		_nav_focus = event.is_action("ui_left") or event.is_action("ui_right") or event.is_action("ui_up") 			or event.is_action("ui_down") or event.is_action("ui_focus_prev") or event.is_action("ui_focus_next")
 
 
+## Gives the hand focus (the first playable card, else SEND IT): the netrun scene calls it
+## when it shows a fight.
+func focus_hand() -> void:
+	_link_hand_focus()
+	UiFocus.focus_first(_hand_box, false, _end_turn_button.get_parent())
+
+
 ## Explicit D-pad neighbours in the hand: the cards are tilted stickers, so Godot's
 ## geometric search would jump to the pickers. Left/right walk the hand, the last card
 ## leads to SEND IT.

@@ -24,6 +24,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H7 | 2026-09-24 | 3 + tests (title Options sections, reference notes unscrollable by pad, netrun combat linked too early) | Fixed in horizontal batch H7 |
 | H8 | 2026-09-24 | 1 + docs/test (reference notes still not pad-scrollable; H7 claim corrected) | Fixed in horizontal batch H8 |
 | H9 | 2026-09-24 | 1 + doc (HQ panels ran off the 1280 screen once many unlocks and classes existed; stale test count) | Fixed in horizontal batch H9 |
+| H10 | 2026-09-24 | 1 + follow-up (mid-run raid screen ran off the 1280 screen; netrun combat entry left focus on Settings) | Fixed in horizontal batch H10 |
 
 ### Pass 3 (vertical) — clean
 

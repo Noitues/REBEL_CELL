@@ -196,9 +196,11 @@ func _set_panel(p: Control) -> void:
 	_panel = p
 	combat_scene = null
 	_panel_host.add_child(p)
-	if not p.has_method("attach_netrun"):
-		UiFocus.link_layout(p)  # the combat scene links its own hand once the fight is set up
-	UiFocus.focus_first(p)
+	if p.has_method("focus_hand"):
+		p.focus_hand()  # the combat scene links and focuses its own hand
+	else:
+		UiFocus.link_layout(p)
+		UiFocus.focus_first(p)
 	var s := RunManager.netrun
 	if s != null and not s.run.is_over():
 		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun", s.campaign.corporation_id)
@@ -468,7 +470,7 @@ func _show_raid() -> void:
 		projection.home_before, projection.home_after, projection.threats_destroyed, projection.steps_run]))
 	var run_assets := s.run_assets()
 	for site_id in c.grid.claimed_ids():
-		var row := HBoxContainer.new()
+		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
 		row.add_child(_label("%s (%s) %s -> %s [%s] assets: %s" % [site_id, c.grid.node_type_of(site_id), n.get("before", "?"), n.get("after", "?"),
 			String(n.get("outcome", "?")).to_upper(), ", ".join(c.grid.assets_on(site_id))]))
@@ -588,9 +590,16 @@ func _build_ui() -> void:
 	add_child(root)
 	_status = Label.new()
 	root.add_child(_status)
+	# Tall panels (a raid with many claimed Sites) scroll vertically; never sideways.
+	var scroll := ScrollContainer.new()
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(scroll)
 	_panel_host = PanelContainer.new()
+	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(_panel_host)
+	scroll.add_child(_panel_host)
 	_log = RichTextLabel.new()
 	_log.bbcode_enabled = true
 	_log.scroll_following = true
