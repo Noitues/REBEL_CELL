@@ -16,3 +16,5 @@ Run from anywhere with Python 3 (`python tools/content_gen/gen_halcyon.py`), the
 `godot --headless --path . --import` and the three checks in CLAUDE.md. Scripts overwrite
 their own files only. Hand edits to generated `.tres` files are lost on regeneration: change
 the script instead.
+
+`gen_orbital.py` writes Orbital Commons (M10).

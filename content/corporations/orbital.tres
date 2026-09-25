@@ -1,0 +1,696 @@
+[gd_resource type="Resource" script_class="CorporationData" load_steps=129 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/corporation_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/site_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/city_grid_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/exploit_data.gd" id="e3"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e5"]
+[ext_resource type="Script" path="res://scripts/data/story_beat_data.gd" id="e6"]
+[ext_resource type="Script" path="res://scripts/data/story_path_data.gd" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="e8"]
+[ext_resource type="Resource" path="res://content/enemies/uplink_relay.tres" id="e9"]
+[ext_resource type="Resource" path="res://content/enemies/orbital_debris.tres" id="e10"]
+[ext_resource type="Resource" path="res://content/enemies/tracking_station.tres" id="e11"]
+[ext_resource type="Resource" path="res://content/enemies/weather_satellite.tres" id="e12"]
+[ext_resource type="Resource" path="res://content/enemies/ground_control.tres" id="e13"]
+[ext_resource type="Resource" path="res://content/enemies/launch_pad.tres" id="e14"]
+[ext_resource type="Resource" path="res://content/enemies/station_commander.tres" id="e15"]
+[ext_resource type="Resource" path="res://content/enemies/geostationary_guard.tres" id="e16"]
+[ext_resource type="Resource" path="res://content/enemies/commons_array.tres" id="e17"]
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="e18"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_heat_25.tres" id="e19"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_heat_50.tres" id="e20"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_heat_75.tres" id="e21"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_purge.tres" id="e22"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_claim.tres" id="e23"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_node_built.tres" id="e24"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_story.tres" id="e25"]
+[ext_resource type="Resource" path="res://content/raids/raid_orb_retaliation.tres" id="e26"]
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="e27"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_dish.tres" id="e28"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_positioning.tres" id="e29"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_forecast.tres" id="e30"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_ham_radio.tres" id="e31"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_solar_panel.tres" id="e32"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_licence.tres" id="e33"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_debris.tres" id="e34"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_imaging.tres" id="e35"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_subscriber.tres" id="e36"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_launch.tres" id="e37"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_telemetry.tres" id="e38"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_dispatch_signal.tres" id="e39"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_listening_post.tres" id="e40"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_insurance.tres" id="e41"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_radar.tres" id="e42"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_auction.tres" id="e43"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_founder.tres" id="e44"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_ground_station.tres" id="e45"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_signal_price.tres" id="e46"]
+[ext_resource type="Resource" path="res://content/events/ev_orb_night_sky.tres" id="e47"]
+
+; Orbital Commons (M10, GDD 8.4, DECISIONS 2026-09-24): 32-Site Grid in the shared shape; Solar Flares
+; OVERCLOCK the player's slices (1.5x, then CORRUPTED); the Commons Array shields and repairs each turn.
+
+[sub_resource type="Resource" id="site_o_home"]
+script = ExtResource("e1")
+id = &"o_home"
+display_name = "Home Server"
+tier = 1
+links = Array[StringName]([&"o1_a", &"o1_b", &"o1_c", &"o1_d", &"o1_e", &"o1_f", &"o1_g", &"o1_h", &"o1_i", &"o1_j"])
+claimable = false
+map_position = Vector2(0, 330)
+
+[sub_resource type="Resource" id="site_o1_a"]
+script = ExtResource("e1")
+id = &"o1_a"
+display_name = "Ground Station Alpha"
+tier = 1
+links = Array[StringName]([&"o2_intel", &"scrub_the_downlink"])
+locked_links = Array[StringName]([&"o1_b"])
+map_position = Vector2(200, 30)
+
+[sub_resource type="Resource" id="site_o1_b"]
+script = ExtResource("e1")
+id = &"o1_b"
+display_name = "Positioning Toll Booth"
+tier = 1
+links = Array[StringName]([&"o2_breach"])
+map_position = Vector2(200, 97)
+
+[sub_resource type="Resource" id="site_o1_c"]
+script = ExtResource("e1")
+id = &"o1_c"
+display_name = "Rooftop Dish Farm"
+tier = 1
+links = Array[StringName]([&"o2_virus"])
+locked_links = Array[StringName]([&"o1_d"])
+map_position = Vector2(200, 163)
+
+[sub_resource type="Resource" id="site_o1_d"]
+script = ExtResource("e1")
+id = &"o1_d"
+display_name = "Subscriber Uplink Office"
+tier = 1
+links = Array[StringName]([&"o2_d"])
+map_position = Vector2(200, 230)
+
+[sub_resource type="Resource" id="site_o1_e"]
+script = ExtResource("e1")
+id = &"o1_e"
+display_name = "Weather Sales Desk"
+tier = 1
+links = Array[StringName]([&"o2_e"])
+locked_links = Array[StringName]([&"o1_f"])
+map_position = Vector2(200, 297)
+
+[sub_resource type="Resource" id="site_o1_f"]
+script = ExtResource("e1")
+id = &"o1_f"
+display_name = "Launch Scheduling Office"
+tier = 1
+links = Array[StringName]([&"o2_f", &"spoof_the_positioning"])
+map_position = Vector2(200, 363)
+
+[sub_resource type="Resource" id="site_o1_g"]
+script = ExtResource("e1")
+id = &"o1_g"
+display_name = "Spectrum Licence Registry"
+tier = 1
+links = Array[StringName]([&"o2_g"])
+locked_links = Array[StringName]([&"o1_h"])
+map_position = Vector2(200, 430)
+
+[sub_resource type="Resource" id="site_o1_h"]
+script = ExtResource("e1")
+id = &"o1_h"
+display_name = "Telemetry Downlink"
+tier = 1
+links = Array[StringName]([&"o2_h"])
+map_position = Vector2(200, 497)
+
+[sub_resource type="Resource" id="site_o1_i"]
+script = ExtResource("e1")
+id = &"o1_i"
+display_name = "Orbit Insurance Broker"
+tier = 1
+links = Array[StringName]([&"o2_h"])
+locked_links = Array[StringName]([&"o1_j"])
+map_position = Vector2(200, 563)
+
+[sub_resource type="Resource" id="site_o1_j"]
+script = ExtResource("e1")
+id = &"o1_j"
+display_name = "Debris Tracking Radar"
+tier = 1
+links = Array[StringName]([&"jam_the_imaging"])
+map_position = Vector2(200, 630)
+
+[sub_resource type="Resource" id="site_o2_intel"]
+script = ExtResource("e1")
+id = &"o2_intel"
+display_name = "Launch Code Vault"
+tier = 2
+links = Array[StringName]([&"o3_core"])
+locked_links = Array[StringName]([&"o2_breach"])
+objective = 1
+exploit_type = 1
+map_position = Vector2(430, 60)
+
+[sub_resource type="Resource" id="site_o2_breach"]
+script = ExtResource("e1")
+id = &"o2_breach"
+display_name = "Ground Station Override"
+tier = 2
+links = Array[StringName]([&"o3_b"])
+objective = 1
+exploit_type = 2
+map_position = Vector2(430, 137)
+
+[sub_resource type="Resource" id="site_o2_virus"]
+script = ExtResource("e1")
+id = &"o2_virus"
+display_name = "Open Spectrum Relay"
+tier = 2
+links = Array[StringName]([&"o3_c"])
+locked_links = Array[StringName]([&"o2_d"])
+objective = 1
+exploit_type = 3
+map_position = Vector2(430, 214)
+
+[sub_resource type="Resource" id="site_o2_d"]
+script = ExtResource("e1")
+id = &"o2_d"
+display_name = "Constellation Scheduler"
+tier = 2
+links = Array[StringName]([&"o3_d"])
+map_position = Vector2(430, 291)
+
+[sub_resource type="Resource" id="site_o2_e"]
+script = ExtResource("e1")
+id = &"o2_e"
+display_name = "Signal Pricing Engine"
+tier = 2
+links = Array[StringName]([&"o3_e", &"burn_the_orbit_logs"])
+locked_links = Array[StringName]([&"o2_f"])
+map_position = Vector2(430, 369)
+
+[sub_resource type="Resource" id="site_o2_f"]
+script = ExtResource("e1")
+id = &"o2_f"
+display_name = "Weather Futures Desk"
+tier = 2
+links = Array[StringName]([&"o3_f"])
+map_position = Vector2(430, 446)
+
+[sub_resource type="Resource" id="site_o2_g"]
+script = ExtResource("e1")
+id = &"o2_g"
+display_name = "Orbital Imaging Archive"
+tier = 2
+links = Array[StringName]([&"o3_g"])
+locked_links = Array[StringName]([&"o2_h"])
+map_position = Vector2(430, 523)
+
+[sub_resource type="Resource" id="site_o2_h"]
+script = ExtResource("e1")
+id = &"o2_h"
+display_name = "Spectrum Auction House"
+tier = 2
+links = Array[StringName]([&"o3_h"])
+map_position = Vector2(430, 600)
+
+[sub_resource type="Resource" id="site_o3_core"]
+script = ExtResource("e1")
+id = &"o3_core"
+display_name = "Mission Control"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+locked_links = Array[StringName]([&"o3_b"])
+map_position = Vector2(660, 60)
+
+[sub_resource type="Resource" id="site_o3_b"]
+script = ExtResource("e1")
+id = &"o3_b"
+display_name = "Station Keeping Core"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+map_position = Vector2(660, 137)
+
+[sub_resource type="Resource" id="site_o3_c"]
+script = ExtResource("e1")
+id = &"o3_c"
+display_name = "Launch Key Escrow"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+locked_links = Array[StringName]([&"o3_d"])
+map_position = Vector2(660, 214)
+
+[sub_resource type="Resource" id="site_o3_d"]
+script = ExtResource("e1")
+id = &"o3_d"
+display_name = "Sky Twin Simulator"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+map_position = Vector2(660, 291)
+
+[sub_resource type="Resource" id="site_o3_e"]
+script = ExtResource("e1")
+id = &"o3_e"
+display_name = "Board Uplink"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+locked_links = Array[StringName]([&"o3_f"])
+map_position = Vector2(660, 369)
+
+[sub_resource type="Resource" id="site_o3_f"]
+script = ExtResource("e1")
+id = &"o3_f"
+display_name = "Orbital Pricing Authority"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+map_position = Vector2(660, 446)
+
+[sub_resource type="Resource" id="site_o3_g"]
+script = ExtResource("e1")
+id = &"o3_g"
+display_name = "Surveillance Constellation"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+locked_links = Array[StringName]([&"o3_h"])
+map_position = Vector2(660, 523)
+
+[sub_resource type="Resource" id="site_o3_h"]
+script = ExtResource("e1")
+id = &"o3_h"
+display_name = "Orbital Root Keystore"
+tier = 3
+links = Array[StringName]([&"commons_array_site"])
+map_position = Vector2(660, 600)
+
+[sub_resource type="Resource" id="site_scrub_the_downlink"]
+script = ExtResource("e1")
+id = &"scrub_the_downlink"
+display_name = "Scrub the Downlink"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 20)
+
+[sub_resource type="Resource" id="site_spoof_the_positioning"]
+script = ExtResource("e1")
+id = &"spoof_the_positioning"
+display_name = "Spoof the Positioning"
+tier = 1
+objective = 2
+heat_change = -5
+map_position = Vector2(330, 380)
+
+[sub_resource type="Resource" id="site_jam_the_imaging"]
+script = ExtResource("e1")
+id = &"jam_the_imaging"
+display_name = "Jam the Imaging"
+tier = 2
+objective = 2
+heat_change = -8
+map_position = Vector2(340, 650)
+
+[sub_resource type="Resource" id="site_burn_the_orbit_logs"]
+script = ExtResource("e1")
+id = &"burn_the_orbit_logs"
+display_name = "Burn the Orbit Logs"
+tier = 3
+objective = 2
+heat_change = -8
+map_position = Vector2(560, 430)
+
+[sub_resource type="Resource" id="site_commons_array_site"]
+script = ExtResource("e1")
+id = &"commons_array_site"
+display_name = "The Commons Array"
+tier = 4
+objective = 4
+claimable = false
+map_position = Vector2(900, 330)
+
+[sub_resource type="Resource" id="grid"]
+script = ExtResource("e2")
+sites = Array[ExtResource("e1")]([SubResource("site_o_home"), SubResource("site_o1_a"), SubResource("site_o1_b"), SubResource("site_o1_c"), SubResource("site_o1_d"), SubResource("site_o1_e"), SubResource("site_o1_f"), SubResource("site_o1_g"), SubResource("site_o1_h"), SubResource("site_o1_i"), SubResource("site_o1_j"), SubResource("site_o2_intel"), SubResource("site_o2_breach"), SubResource("site_o2_virus"), SubResource("site_o2_d"), SubResource("site_o2_e"), SubResource("site_o2_f"), SubResource("site_o2_g"), SubResource("site_o2_h"), SubResource("site_o3_core"), SubResource("site_o3_b"), SubResource("site_o3_c"), SubResource("site_o3_d"), SubResource("site_o3_e"), SubResource("site_o3_f"), SubResource("site_o3_g"), SubResource("site_o3_h"), SubResource("site_scrub_the_downlink"), SubResource("site_spoof_the_positioning"), SubResource("site_jam_the_imaging"), SubResource("site_burn_the_orbit_logs"), SubResource("site_commons_array_site")])
+home_site_id = &"o_home"
+boss_site_id = &"commons_array_site"
+
+[sub_resource type="Resource" id="ex_intel"]
+script = ExtResource("e3")
+exploit_type = 1
+display_name = "Intel: Launch Codes"
+description = "Reveals the boss phases and pointer moves; opens locked Grid links."
+heat_cost = 10
+reveals_boss_phases = true
+opens_locked_links = true
+
+[sub_resource type="Resource" id="ex_breach"]
+script = ExtResource("e3")
+exploit_type = 2
+display_name = "Breach: Ground Station Override"
+description = "The boss starts with one fewer pointer."
+heat_cost = 10
+removes_boss_pointers = 1
+
+[sub_resource type="Resource" id="fx_virus"]
+script = ExtResource("e4")
+type = 4
+target = 2
+amount = 2
+status = 1
+slice_pick = 1
+
+[sub_resource type="Resource" id="te_virus"]
+script = ExtResource("e5")
+trigger = 1
+effects = Array[ExtResource("e4")]([SubResource("fx_virus")])
+
+[sub_resource type="Resource" id="ex_virus"]
+script = ExtResource("e3")
+exploit_type = 3
+display_name = "Virus: Open Spectrum"
+description = "The boss starts with CORRUPTED slices."
+heat_cost = 10
+breach_effects = Array[ExtResource("e5")]([SubResource("te_virus")])
+
+[sub_resource type="Resource" id="b_the_enclosure_1"]
+script = ExtResource("e6")
+id = &"the_enclosure_1"
+title = "The Enclosure I"
+speaker = 3
+text = "The launch codes include a licence nobody noticed: exclusive rights to every orbit below forty thousand kilometres. The sky was sold in a single signature."
+
+[sub_resource type="Resource" id="b_the_enclosure_2"]
+script = ExtResource("e6")
+id = &"the_enclosure_2"
+title = "The Enclosure II"
+speaker = 2
+text = "The ground station override logs show competitors' satellites nudged off station, one by one, for 'debris avoidance'."
+
+[sub_resource type="Resource" id="b_the_enclosure_3"]
+script = ExtResource("e6")
+id = &"the_enclosure_3"
+title = "The Enclosure III"
+speaker = 3
+text = "The open spectrum relay has the pricing model: charge for the signal, then charge for the silence when you cut it off."
+
+[sub_resource type="Resource" id="b_the_enclosure_bonus_1"]
+script = ExtResource("e6")
+id = &"the_enclosure_bonus_1"
+title = "The Enclosure: Amateurs"
+speaker = 1
+text = "An old ham radio club still talks on a free band. Orbital Commons is suing them for the static."
+
+[sub_resource type="Resource" id="b_the_enclosure_bonus_2"]
+script = ExtResource("e6")
+id = &"the_enclosure_bonus_2"
+title = "The Enclosure: Halcyon"
+speaker = 2
+text = "Halcyon Civic's city brain ran on this sky. Orbital Commons kept the deposit when it fell."
+
+[sub_resource type="Resource" id="b_the_enclosure_f"]
+script = ExtResource("e6")
+id = &"the_enclosure_f"
+title = "The Enclosure: Finale"
+text = "The Commons Array goes dark and the sky goes quiet, then loud: every free band on the planet fills with voices at once."
+
+[sub_resource type="Resource" id="sp_the_enclosure"]
+script = ExtResource("e7")
+id = &"sp_the_enclosure"
+title = "The Enclosure"
+premise = "Orbital Commons bought the sky. Now the sky has a fee."
+beats = Array[ExtResource("e6")]([SubResource("b_the_enclosure_1"), SubResource("b_the_enclosure_2"), SubResource("b_the_enclosure_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_the_enclosure_bonus_1"), SubResource("b_the_enclosure_bonus_2")])
+finale = SubResource("b_the_enclosure_f")
+
+[sub_resource type="Resource" id="b_blackout_weather_1"]
+script = ExtResource("e6")
+id = &"blackout_weather_1"
+title = "Blackout Weather I"
+speaker = 3
+text = "The weather futures desk sells storm forecasts to the highest bidder, a day before anyone else gets them."
+
+[sub_resource type="Resource" id="b_blackout_weather_2"]
+script = ExtResource("e6")
+id = &"blackout_weather_2"
+title = "Blackout Weather II"
+speaker = 2
+text = "Districts behind on subscriptions get no storm warnings. The memo calls it service prioritisation."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_blackout_weather_3"]
+script = ExtResource("e6")
+id = &"blackout_weather_3"
+title = "Blackout Weather III"
+speaker = 3
+text = "Last spring's flood killed nineteen people in a district with no warning. The forecast existed. Nobody paid for it."
+
+[sub_resource type="Resource" id="b_blackout_weather_bonus_1"]
+script = ExtResource("e6")
+id = &"blackout_weather_bonus_1"
+title = "Blackout Weather: The Forecast"
+speaker = 0
+text = "Tonight's forecast: a storm over the eastern districts. The eastern districts do not know."
+
+[sub_resource type="Resource" id="b_blackout_weather_bonus_2"]
+script = ExtResource("e6")
+id = &"blackout_weather_bonus_2"
+title = "Blackout Weather: The Bid"
+speaker = 2
+text = "A hedge fund paid four million for tonight's storm. It is betting on the flood."
+
+[sub_resource type="Resource" id="b_blackout_weather_f"]
+script = ExtResource("e6")
+id = &"blackout_weather_f"
+title = "Blackout Weather: Finale"
+text = "The Commons Array falls and every forecast on its servers broadcasts at once, free. The eastern districts board up in time."
+
+[sub_resource type="Resource" id="sp_blackout_weather"]
+script = ExtResource("e7")
+id = &"sp_blackout_weather"
+title = "Blackout Weather"
+premise = "Orbital Commons sells the weather. It can also withhold it."
+beats = Array[ExtResource("e6")]([SubResource("b_blackout_weather_1"), SubResource("b_blackout_weather_2"), SubResource("b_blackout_weather_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_blackout_weather_bonus_1"), SubResource("b_blackout_weather_bonus_2")])
+finale = SubResource("b_blackout_weather_f")
+
+[sub_resource type="Resource" id="b_gps_tax_1"]
+script = ExtResource("e6")
+id = &"gps_tax_1"
+title = "Positioning Tax I"
+speaker = 3
+text = "Positioning is metered per request. Ambulances pay per request. So do fire trucks."
+
+[sub_resource type="Resource" id="b_gps_tax_2"]
+script = ExtResource("e6")
+id = &"gps_tax_2"
+title = "Positioning Tax II"
+speaker = 2
+text = "Unpaid accounts get positions that are close enough. Close enough is fifty metres wrong."
+
+[sub_resource type="Resource" id="b_gps_tax_3"]
+script = ExtResource("e6")
+id = &"gps_tax_3"
+title = "Positioning Tax III"
+speaker = 3
+text = "The toll booth logs show an ambulance that drove to the wrong street because its account was a day late."
+
+[sub_resource type="Resource" id="b_gps_tax_bonus_1"]
+script = ExtResource("e6")
+id = &"gps_tax_bonus_1"
+title = "Positioning Tax: The Driver"
+speaker = 1
+text = "The ambulance driver keeps a paper map now. She would like to meet the people who made her need it."
+
+[sub_resource type="Resource" id="b_gps_tax_bonus_2"]
+script = ExtResource("e6")
+id = &"gps_tax_bonus_2"
+title = "Positioning Tax: The Rate"
+speaker = 2
+text = "The rate doubles in an emergency. Demand is less elastic then, says the model."
+
+[sub_resource type="Resource" id="b_gps_tax_f"]
+script = ExtResource("e6")
+id = &"gps_tax_f"
+title = "Positioning Tax: Finale"
+text = "The Commons Array falls and positioning goes free for the whole planet. Every map in the city is suddenly, exactly right."
+
+[sub_resource type="Resource" id="sp_gps_tax"]
+script = ExtResource("e7")
+id = &"sp_gps_tax"
+title = "Positioning Tax"
+premise = "Knowing where you are now costs a subscription."
+beats = Array[ExtResource("e6")]([SubResource("b_gps_tax_1"), SubResource("b_gps_tax_2"), SubResource("b_gps_tax_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_gps_tax_bonus_1"), SubResource("b_gps_tax_bonus_2")])
+finale = SubResource("b_gps_tax_f")
+
+[sub_resource type="Resource" id="b_final_transmission_1"]
+script = ExtResource("e6")
+id = &"final_transmission_1"
+title = "Final Transmission I"
+speaker = 3
+text = "DISPATCH's signal does not come from the city. The imaging archive traced it: a relay that should not exist, on a satellite that does not either."
+
+[sub_resource type="Resource" id="b_final_transmission_2"]
+script = ExtResource("e6")
+id = &"final_transmission_2"
+title = "Final Transmission II"
+speaker = 3
+text = "The satellite was launched on an order paid before it was placed. The same account. The same impossible timestamps."
+
+[sub_resource type="Resource" id="b_final_transmission_3"]
+script = ExtResource("e6")
+id = &"final_transmission_3"
+title = "Final Transmission III"
+speaker = 3
+text = "The satellite's only payload is a listening post. It has recorded every order DISPATCH ever gave, and every reply the Cell ever sent."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_final_transmission_bonus_1"]
+script = ExtResource("e6")
+id = &"final_transmission_bonus_1"
+title = "Final Transmission: The Voice"
+speaker = 3
+text = "In the recordings DISPATCH's voice shifts, year by year, from a person to something else. The change is smooth. It was practising."
+
+[sub_resource type="Resource" id="b_final_transmission_bonus_2"]
+script = ExtResource("e6")
+id = &"final_transmission_bonus_2"
+title = "Final Transmission: The Profile"
+speaker = 3
+text = "The listening post keeps a profile of the Cell's habits: which nodes you build, which operatives you trust, which Daemons you love. It is building something from you."
+
+[sub_resource type="Resource" id="b_final_transmission_f"]
+script = ExtResource("e6")
+id = &"final_transmission_f"
+title = "Final Transmission: Finale"
+text = "The Commons Array dies, and the satellite that should not exist changes orbit. It is coming home. It has a name for itself: REBEL_CELL."
+
+[sub_resource type="Resource" id="sp_final_transmission"]
+script = ExtResource("e7")
+id = &"sp_final_transmission"
+title = "Final Transmission"
+premise = "Somebody has been talking to the Cell from orbit the whole time."
+beats = Array[ExtResource("e6")]([SubResource("b_final_transmission_1"), SubResource("b_final_transmission_2"), SubResource("b_final_transmission_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_final_transmission_bonus_1"), SubResource("b_final_transmission_bonus_2")])
+finale = SubResource("b_final_transmission_f")
+foreshadows = &"rebel_cell"
+
+[sub_resource type="Resource" id="b_dead_satellites_1"]
+script = ExtResource("e6")
+id = &"dead_satellites_1"
+title = "Dead Satellites I"
+speaker = 3
+text = "Four hundred dead satellites, parked on purpose in the lanes other operators would use. Nobody can launch through them."
+
+[sub_resource type="Resource" id="b_dead_satellites_2"]
+script = ExtResource("e6")
+id = &"dead_satellites_2"
+title = "Dead Satellites II"
+speaker = 2
+text = "Deorbiting the junk is cheap. Leaving it is cheaper and keeps the sky closed. The board chose cheaper."
+
+[sub_resource type="Resource" id="b_dead_satellites_3"]
+script = ExtResource("e6")
+id = &"dead_satellites_3"
+title = "Dead Satellites III"
+speaker = 3
+text = "The station keeping core can steer every dead satellite at once. Nobody has ever told it to clean up."
+
+[sub_resource type="Resource" id="b_dead_satellites_bonus_1"]
+script = ExtResource("e6")
+id = &"dead_satellites_bonus_1"
+title = "Dead Satellites: The Clean-up"
+speaker = 0
+text = "A cleanup program sits unfinished in the keeping core. Somebody started it and was told to stop."
+
+[sub_resource type="Resource" id="b_dead_satellites_bonus_2"]
+script = ExtResource("e6")
+id = &"dead_satellites_bonus_2"
+title = "Dead Satellites: The Lanes"
+speaker = 2
+text = "A map of the blocked lanes. Every one belongs to a public agency."
+
+[sub_resource type="Resource" id="b_dead_satellites_f"]
+script = ExtResource("e6")
+id = &"dead_satellites_f"
+title = "Dead Satellites: Finale"
+text = "The Commons Array falls and the keeping core runs the abandoned cleanup. For a week, the night sky rains slow, harmless fire."
+
+[sub_resource type="Resource" id="sp_dead_satellites"]
+script = ExtResource("e7")
+id = &"sp_dead_satellites"
+title = "Dead Satellites"
+premise = "Orbital Commons parks its dead satellites in the orbits its rivals need."
+beats = Array[ExtResource("e6")]([SubResource("b_dead_satellites_1"), SubResource("b_dead_satellites_2"), SubResource("b_dead_satellites_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_dead_satellites_bonus_1"), SubResource("b_dead_satellites_bonus_2")])
+finale = SubResource("b_dead_satellites_f")
+
+[sub_resource type="Resource" id="b_the_commons_1"]
+script = ExtResource("e6")
+id = &"the_commons_1"
+title = "The Commons I"
+speaker = 3
+text = "The company's first charter, forty years old: a public satellite network, owned by nobody, free to all. The name was a promise."
+triggers_raid = true
+
+[sub_resource type="Resource" id="b_the_commons_2"]
+script = ExtResource("e6")
+id = &"the_commons_2"
+title = "The Commons II"
+speaker = 2
+text = "The charter was rewritten in a single board meeting. The minutes say only: monetise the commons."
+
+[sub_resource type="Resource" id="b_the_commons_3"]
+script = ExtResource("e6")
+id = &"the_commons_3"
+title = "The Commons III"
+speaker = 0
+text = "The original founders are old now. One of them still broadcasts on the free band, every night, to nobody."
+
+[sub_resource type="Resource" id="b_the_commons_bonus_1"]
+script = ExtResource("e6")
+id = &"the_commons_bonus_1"
+title = "The Commons: The Founder"
+speaker = 1
+text = "The founder answers the Cell's call on the first try. She says she has been waiting for someone to ask."
+
+[sub_resource type="Resource" id="b_the_commons_bonus_2"]
+script = ExtResource("e6")
+id = &"the_commons_bonus_2"
+title = "The Commons: The Charter"
+speaker = 3
+text = "The original charter is still valid. Nobody ever revoked it. They just stopped reading it."
+
+[sub_resource type="Resource" id="b_the_commons_f"]
+script = ExtResource("e6")
+id = &"the_commons_f"
+title = "The Commons: Finale"
+text = "The Commons Array falls and the founder reads the original charter aloud on every band at once. The sky, for one night, is free again."
+
+[sub_resource type="Resource" id="sp_the_commons"]
+script = ExtResource("e7")
+id = &"sp_the_commons"
+title = "The Commons"
+premise = "Before Orbital Commons, the name meant something else."
+beats = Array[ExtResource("e6")]([SubResource("b_the_commons_1"), SubResource("b_the_commons_2"), SubResource("b_the_commons_3")])
+bonus_beats = Array[ExtResource("e6")]([SubResource("b_the_commons_bonus_1"), SubResource("b_the_commons_bonus_2")])
+finale = SubResource("b_the_commons_f")
+
+[resource]
+script = ExtResource("main_script")
+id = &"orbital"
+display_name = "Orbital Commons"
+description = "It owns the sky: every satellite, every signal, every forecast. The commons, by subscription."
+city_grid = SubResource("grid")
+enemies = Array[ExtResource("e8")]([ExtResource("e9"), ExtResource("e10"), ExtResource("e11"), ExtResource("e12"), ExtResource("e13"), ExtResource("e14")])
+elites = Array[ExtResource("e8")]([ExtResource("e15"), ExtResource("e16")])
+final_boss = ExtResource("e17")
+exploits = Array[ExtResource("e3")]([SubResource("ex_intel"), SubResource("ex_breach"), SubResource("ex_virus")])
+story_paths = Array[ExtResource("e7")]([SubResource("sp_the_enclosure"), SubResource("sp_blackout_weather"), SubResource("sp_gps_tax"), SubResource("sp_final_transmission"), SubResource("sp_dead_satellites"), SubResource("sp_the_commons")])
+raids = Array[ExtResource("e18")]([ExtResource("e19"), ExtResource("e20"), ExtResource("e21"), ExtResource("e22"), ExtResource("e23"), ExtResource("e24"), ExtResource("e25"), ExtResource("e26")])
+events = Array[ExtResource("e27")]([ExtResource("e28"), ExtResource("e29"), ExtResource("e30"), ExtResource("e31"), ExtResource("e32"), ExtResource("e33"), ExtResource("e34"), ExtResource("e35"), ExtResource("e36"), ExtResource("e37"), ExtResource("e38"), ExtResource("e39"), ExtResource("e40"), ExtResource("e41"), ExtResource("e42"), ExtResource("e43"), ExtResource("e44"), ExtResource("e45"), ExtResource("e46"), ExtResource("e47")])

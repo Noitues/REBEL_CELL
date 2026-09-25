@@ -1,0 +1,134 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=34 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/hub_core_data.gd" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="e4"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/solar_flare.tres" id="e6"]
+[ext_resource type="Resource" path="res://content/slices/def_12.tres" id="e7"]
+[ext_resource type="Resource" path="res://content/slices/crit_24.tres" id="e8"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e9"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e10"]
+[ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="e11"]
+[ext_resource type="Script" path="res://scripts/data/satellite_spawn_data.gd" id="e12"]
+[ext_resource type="Resource" path="res://content/enemies/orbital_drone.tres" id="e13"]
+
+; The Commons Array, Orbital Commons final boss (M10, decision 2026-09-24): 420 HP; Station Keeping repairs 3
+; and shields 3 per turn unless breached; 66%: two pointers orbiting 4; 33%: three pointers, Crit wheel, 2 drones.
+
+[sub_resource type="Resource" id="hfx0"]
+script = ExtResource("e1")
+type = 14
+target = 0
+amount = 3
+
+[sub_resource type="Resource" id="hfx1"]
+script = ExtResource("e1")
+type = 2
+target = 0
+amount = 3
+
+[sub_resource type="Resource" id="hte"]
+script = ExtResource("e2")
+trigger = 2
+effects = Array[ExtResource("e1")]([SubResource("hfx0"), SubResource("hfx1")])
+
+[sub_resource type="Resource" id="hub_station_keeping"]
+script = ExtResource("e3")
+id = &"station_keeping"
+display_name = "Station Keeping"
+description = "Repairs 3 and gains 3 shield each turn unless the Hub is breached."
+passive_effects = Array[ExtResource("e2")]([SubResource("hte")])
+
+[sub_resource type="Resource" id="wheel_slot_atk_14"]
+script = ExtResource("e5")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_solar_flare"]
+script = ExtResource("e5")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel_slot_def_12"]
+script = ExtResource("e5")
+slice = ExtResource("e7")
+
+[sub_resource type="Resource" id="wheel_slot_crit_24"]
+script = ExtResource("e5")
+slice = ExtResource("e8")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e5")
+slice = ExtResource("e9")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e10")
+slice_count = 6
+slots = Array[ExtResource("e5")]([SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_solar_flare"), SubResource("wheel_slot_def_12"), SubResource("wheel_slot_crit_24"), SubResource("wheel_slot_atk_14"), SubResource("wheel_slot_miss")])
+hub = SubResource("hub_station_keeping")
+pointer_ticks = PackedInt32Array(0)
+
+[sub_resource type="Resource" id="phase0"]
+script = ExtResource("e11")
+hp_threshold_pct = 0.66
+pointer_behavior = 3
+pointer_ticks = PackedInt32Array(0, 15)
+orbit_ticks_per_turn = 4
+phase_line = "Orbit change: two readers sweep the sky, fast."
+
+[sub_resource type="Resource" id="wheel_phase1_slot_crit_24"]
+script = ExtResource("e5")
+slice = ExtResource("e8")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_solar_flare"]
+script = ExtResource("e5")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_def_12"]
+script = ExtResource("e5")
+slice = ExtResource("e7")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_atk_14"]
+script = ExtResource("e5")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_phase1_slot_miss"]
+script = ExtResource("e5")
+slice = ExtResource("e9")
+
+[sub_resource type="Resource" id="wheel_phase1"]
+script = ExtResource("e10")
+slice_count = 6
+slots = Array[ExtResource("e5")]([SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_solar_flare"), SubResource("wheel_phase1_slot_def_12"), SubResource("wheel_phase1_slot_crit_24"), SubResource("wheel_phase1_slot_atk_14"), SubResource("wheel_phase1_slot_miss")])
+hub = SubResource("hub_station_keeping")
+pointer_ticks = PackedInt32Array(0, 10, 20)
+
+[sub_resource type="Resource" id="pspawn1_0"]
+script = ExtResource("e12")
+satellite = ExtResource("e13")
+trigger = 1
+every_n = 1
+dock_slot = -1
+max_active = 2
+
+[sub_resource type="Resource" id="phase1"]
+script = ExtResource("e11")
+hp_threshold_pct = 0.33
+pointer_behavior = 1
+pointer_ticks = PackedInt32Array(0, 10, 20)
+wheel_override = SubResource("wheel_phase1")
+spawns = Array[ExtResource("e12")]([SubResource("pspawn1_0")])
+phase_line = "Full constellation: three readers lock on and the drones deploy."
+
+[resource]
+script = ExtResource("main_script")
+id = &"commons_array"
+display_name = "The Commons Array"
+description = "The constellation's brain. It owns the sky and rents it back to you."
+corporation_id = &"orbital"
+hp = 420
+wheel = SubResource("wheel")
+is_boss = true
+cycle_reward = 0
+phases = Array[ExtResource("e11")]([SubResource("phase0"), SubResource("phase1")])

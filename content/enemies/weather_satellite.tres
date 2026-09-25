@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/slices/heal_6.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/atk_9.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/evade_1.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/crit_14.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/solar_flare.tres" id="e6"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e8"]
+
+; orbital enemy (decision 2026-09-24).
+
+[sub_resource type="Resource" id="wheel_slot_heal_6"]
+script = ExtResource("e2")
+slice = ExtResource("e1")
+
+[sub_resource type="Resource" id="wheel_slot_atk_9"]
+script = ExtResource("e2")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="wheel_slot_evade_1"]
+script = ExtResource("e2")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_crit_14"]
+script = ExtResource("e2")
+slice = ExtResource("e5")
+
+[sub_resource type="Resource" id="wheel_slot_solar_flare"]
+script = ExtResource("e2")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e2")
+slice = ExtResource("e7")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e8")
+slice_count = 6
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_heal_6"), SubResource("wheel_slot_atk_9"), SubResource("wheel_slot_evade_1"), SubResource("wheel_slot_crit_14"), SubResource("wheel_slot_solar_flare"), SubResource("wheel_slot_miss")])
+pointer_ticks = PackedInt32Array(0)
+pointer_orbit_per_turn = 4
+
+[resource]
+script = ExtResource("main_script")
+id = &"weather_satellite"
+display_name = "Weather Satellite"
+description = "Fast orbit (4 ticks a turn), self-repair and a flare."
+corporation_id = &"orbital"
+hp = 44
+wheel = SubResource("wheel")
+cycle_reward = 15

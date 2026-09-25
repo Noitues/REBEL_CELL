@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+
+; orbital Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Broadcast it (-2 Heat)"
+result_text = "The district boards up in time."
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e1")
+type = 22
+target = 6
+amount = 30
+
+[sub_resource type="Resource" id="fx1_1"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = 3
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Sell it (+30 Cycles, +3 Heat)"
+result_text = "Someone is betting on the flood."
+effects = Array[ExtResource("e1")]([SubResource("fx1_0"), SubResource("fx1_1")])
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep your head down. The sky keeps watching."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_orb_forecast"
+title = "Storm Forecast"
+speaker = 0
+text = "A leaked storm forecast for tonight. The district it covers does not have a subscription."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"orbital"

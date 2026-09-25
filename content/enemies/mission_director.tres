@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/slices/atk_10.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/crit_15.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/solar_flare.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="e6"]
+[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e7"]
+[ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e8"]
+[ext_resource type="Script" path="res://scripts/data/boss_phase_data.gd" id="e9"]
+
+; orbital enemy (decision 2026-09-24).
+
+[sub_resource type="Resource" id="wheel_slot_atk_10"]
+script = ExtResource("e2")
+slice = ExtResource("e1")
+
+[sub_resource type="Resource" id="wheel_slot_def_8"]
+script = ExtResource("e2")
+slice = ExtResource("e3")
+
+[sub_resource type="Resource" id="wheel_slot_crit_15"]
+script = ExtResource("e2")
+slice = ExtResource("e4")
+
+[sub_resource type="Resource" id="wheel_slot_solar_flare"]
+script = ExtResource("e2")
+slice = ExtResource("e5")
+
+[sub_resource type="Resource" id="wheel_slot_shield_5"]
+script = ExtResource("e2")
+slice = ExtResource("e6")
+
+[sub_resource type="Resource" id="wheel_slot_miss"]
+script = ExtResource("e2")
+slice = ExtResource("e7")
+
+[sub_resource type="Resource" id="wheel"]
+script = ExtResource("e8")
+slice_count = 6
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_atk_10"), SubResource("wheel_slot_def_8"), SubResource("wheel_slot_crit_15"), SubResource("wheel_slot_solar_flare"), SubResource("wheel_slot_shield_5"), SubResource("wheel_slot_miss")])
+pointer_ticks = PackedInt32Array(0)
+passive_resistance = 2
+
+[sub_resource type="Resource" id="phase0"]
+script = ExtResource("e9")
+hp_threshold_pct = 0.5
+pointer_behavior = 1
+pointer_ticks = PackedInt32Array(0, 15)
+phase_line = "Go for launch: a second console lights up."
+
+[sub_resource type="Resource" id="phase1"]
+script = ExtResource("e9")
+hp_threshold_pct = 0.25
+pointer_behavior = 3
+orbit_ticks_per_turn = 3
+phase_line = "Abort window: the readers spin."
+
+[resource]
+script = ExtResource("main_script")
+id = &"mission_director"
+display_name = "Mission Director"
+description = "Orbital Commons flight control, guarding the final Rack."
+corporation_id = &"orbital"
+hp = 150
+wheel = SubResource("wheel")
+is_elite = true
+is_mini_boss = true
+cycle_reward = 60
+phases = Array[ExtResource("e9")]([SubResource("phase0"), SubResource("phase1")])

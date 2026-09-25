@@ -147,7 +147,7 @@ func test_hq_start_panel_offers_a_corporation_picker() -> void:
 
 
 ## Every generated corporation (M8+) has the full shape, its own raids and briefings.
-const GENERATED := [&"meridian", &"halcyon"]
+const GENERATED := [&"meridian", &"halcyon", &"orbital"]
 
 
 func test_every_generated_corporation_is_complete() -> void:
@@ -193,3 +193,34 @@ func test_the_civic_core_heals_and_blocks_unless_breached() -> void:
 	for e in CombatFixture.events_of(r, "block"):
 		blocked = blocked or e["target"] == &"enemy_0"
 	assert_true(healed and blocked, "Emergency Powers: heal and block at turn start")
+
+
+func test_solar_flares_overclock_your_slice() -> void:
+	var s := CombatSession.start(_resolver, &"breaker", [&"uplink_relay"], 4)
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Solar Flare
+	CombatFixture.land(s.state.player, 5)
+	s.apply(CombatAction.end_turn())
+	assert_true(s.state.player.wheel.slice_statuses.has(RC.Status.OVERCLOCKED), "a Solar Flare overclocks one of your slices")
+
+
+func test_the_commons_array_repairs_and_shields_unless_breached() -> void:
+	var s := CombatSession.start(_resolver, &"breaker", [&"commons_array"], 4)
+	s.state.get_combatant(&"enemy_0").hp -= 50
+	CombatFixture.land(s.state.player, 5)
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 5)
+	var r := s.apply(CombatAction.end_turn())
+	var healed := false
+	var shielded := false
+	for e in CombatFixture.events_of(r, "heal"):
+		healed = healed or e["target"] == &"enemy_0"
+	for e in CombatFixture.events_of(r, "shield"):
+		shielded = shielded or e["target"] == &"enemy_0"
+	assert_true(healed and shielded, "Station Keeping: repair and shield at turn start")
+
+
+func test_the_orbital_finale_foreshadows_rebel_cell() -> void:
+	var corp := ContentRegistry.get_content(&"orbital") as CorporationData
+	var found := false
+	for p in corp.story_paths:
+		found = found or p.foreshadows == &"rebel_cell"
+	assert_true(found)

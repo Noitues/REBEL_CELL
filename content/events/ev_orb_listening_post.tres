@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Resource" path="res://content/daemons/adrenal_loop.tres" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e3"]
+
+; orbital Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Listen (Daemon: Adrenal Loop, 6 damage)"
+result_text = "The signal gets into your head. It helps."
+hp_cost = 6
+reward = ExtResource("e1")
+
+[sub_resource type="Resource" id="fx1_0"]
+script = ExtResource("e3")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Cut the cable (-2 Heat)"
+result_text = "The empty sky goes quiet."
+effects = Array[ExtResource("e3")]([SubResource("fx1_0")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_orb_listening_post"
+title = "Listening Post"
+speaker = 3
+text = "A rooftop antenna aimed at a patch of empty sky. It is receiving."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1")])
+corporation_id = &"orbital"
+dispatch_clue = true

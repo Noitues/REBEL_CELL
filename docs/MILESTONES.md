@@ -174,3 +174,13 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [x] Citations (PARASITE on your wheel) and the Civic Core hub are tested.
 - [x] Seeded bot campaigns against Halcyon win at ICE 0 and ICE 5.
 - [x] Tests, schema smoke test and content validation green.
+
+## M10 — Orbital Commons (added 2026-09-24, horizontal loop)
+
+**Acceptance**
+- [x] Orbital Commons: 32-Site Grid, 6 enemies, 2 elites, mini-boss, phased boss, Exploits,
+      threats and 8 raids, 6 story paths (one foreshadows REBEL_CELL), 20 events, briefings,
+      corporate voice, colour.
+- [x] Solar Flares (OVERCLOCK on your wheel) and the Commons Array hub are tested.
+- [x] Seeded bot campaigns against Orbital Commons win at ICE 0 and ICE 5.
+- [x] Tests, schema smoke test and content validation green.

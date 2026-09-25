@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TerminalEventData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/terminal_event_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="e1"]
+[ext_resource type="Script" path="res://scripts/data/event_choice_data.gd" id="e2"]
+[ext_resource type="Resource" path="res://content/cards/short_circuit.tres" id="e3"]
+
+; orbital Terminal event (decision 2026-09-24).
+
+[sub_resource type="Resource" id="fx0_0"]
+script = ExtResource("e1")
+type = 21
+target = 6
+amount = -2
+
+[sub_resource type="Resource" id="c0"]
+script = ExtResource("e2")
+label = "Restore a few accounts (-2 Heat, 4 damage)"
+result_text = "The system fights you. A few families get their signal back."
+hp_cost = 4
+effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
+
+[sub_resource type="Resource" id="c1"]
+script = ExtResource("e2")
+label = "Take the clerk's badge (Card: Short Circuit)"
+result_text = "The badge opens the Hub for a moment."
+reward = ExtResource("e3")
+
+[sub_resource type="Resource" id="c2"]
+script = ExtResource("e2")
+label = "Walk on"
+result_text = "You keep your head down. The sky keeps watching."
+
+[resource]
+script = ExtResource("main_script")
+id = &"ev_orb_subscriber"
+title = "Subscriber Office"
+speaker = 0
+text = "A queue of people waits to beg for their signal back. The office has one clerk and no chairs."
+choices = Array[ExtResource("e2")]([SubResource("c0"), SubResource("c1"), SubResource("c2")])
+corporation_id = &"orbital"

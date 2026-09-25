@@ -30,6 +30,25 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — M10 Orbital Commons (GAP_ANALYSIS P1 8)
+- **Orbital Commons** (GDD 8.4 names): privatised orbital infrastructure (satellite
+  internet, positioning, weather). Mechanical identity: **Solar Flares** (new AFFLICT slice:
+  OVERCLOCK a random non-Miss player slice: 1.5x on its next trigger, then CORRUPTED, a
+  double-edged status), fast orbits and heavy debris. Enemies Uplink Relay, Orbital Debris,
+  Tracking Station, Weather Satellite (orbit 4), Ground Control, Launch Pad; elites Station
+  Commander and Geostationary Guard; mini-boss Mission Director; boss **The Commons Array**
+  (420 HP; Station Keeping hub repairs 3 and shields 3 a turn unless breached; 66% two
+  pointers orbiting 4; 33% three pointers, Crit wheel, drones). Threats Lander, Debris
+  Field, Signal Jammer; eight raids. Exploits: Launch Codes, Ground Station Override, Open
+  Spectrum. Six story paths: The Enclosure, Blackout Weather, Positioning Tax, Final
+  Transmission (DISPATCH clues; foreshadows REBEL_CELL, the satellite that names itself),
+  Dead Satellites, The Commons. Twenty events, briefings, voice, colour gold #FFE14F.
+  Unlock 160 Schematics.
+- **Balance** (8 seeds): first pass easy (Breaker ICE 5 7/8 in 14.5 runs); as the fourth
+  corporation it was strengthened: elites +10% HP, boss 380 -> 420. Final: Breaker ICE 0
+  7/8 (14.3 runs), ICE 5 8/8 (18.4), Ghost ICE 5 8/8 (14.1), Botnet ICE 0 8/8 (13.3),
+  Rigger ICE 0 8/8 (17.6).
+
 ### 2026-09-24 — M9 Halcyon Civic (GAP_ANALYSIS P1 8)
 - **Halcyon Civic** (GDD 8.4 names): smart-city services contractor. Mechanical identity:
   **Citations** (new AFFLICT slice: PARASITE on a random non-Miss player slice, half output

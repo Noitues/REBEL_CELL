@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RaidData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/raid_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/threat_data.gd" id="e1"]
+[ext_resource type="Resource" path="res://content/threats/lander.tres" id="e2"]
+[ext_resource type="Script" path="res://scripts/data/raid_wave_data.gd" id="e3"]
+
+; orbital raid (decision 2026-09-24).
+
+[sub_resource type="Resource" id="wave0"]
+script = ExtResource("e3")
+threats = Array[ExtResource("e1")]([ExtResource("e2"), ExtResource("e2")])
+
+[resource]
+script = ExtResource("main_script")
+id = &"raid_orb_heat_25"
+display_name = "Signal Anomaly"
+trigger_source = 0
+waves = Array[ExtResource("e3")]([SubResource("wave0")])
+schematic_reward = 8
+warning_text = "Orbital Commons has flagged a signal anomaly at your address. Two Landers inbound."
+corporation_id = &"orbital"
+replaces = &"raid_heat_25"

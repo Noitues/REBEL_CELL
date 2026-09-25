@@ -1,0 +1,268 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=54 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; orbital voice set (decision 2026-09-24).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Jacking you in. The sky is watching; give it nothing to see."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Uplink is live. Keep it short."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "run_start"
+text = "Orbital traffic is heavy tonight. Good cover."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Clean exit. The constellation lost you somewhere over the river."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Out and clear. Well done."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "run_complete"
+text = "Signal received. The Cell thanks you."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Signal lost. Orbital Commons has closed the operative's account."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "run_died"
+text = "We lost them. Regroup."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "run_died"
+text = "Operative down. The sky did not blink."
+
+[sub_resource type="Resource" id="l9"]
+script = ExtResource("e1")
+key = "rack"
+text = "Rack captured. Bank it before the next pass."
+
+[sub_resource type="Resource" id="l10"]
+script = ExtResource("e1")
+key = "threshold:25"
+text = "Orbital Commons has flagged a signal anomaly. Expect landers."
+
+[sub_resource type="Resource" id="l11"]
+script = ExtResource("e1")
+key = "threshold:50"
+text = "Spectrum audit in progress. The constellation is counting your links."
+
+[sub_resource type="Resource" id="l12"]
+script = ExtResource("e1")
+key = "threshold:75"
+text = "Deorbit order issued. Debris is falling on the Cell."
+
+[sub_resource type="Resource" id="l13"]
+script = ExtResource("e1")
+key = "threshold:100"
+text = "Orbital Commons is clearing our orbit. Everything is coming down."
+
+[sub_resource type="Resource" id="l14"]
+script = ExtResource("e1")
+key = "boss"
+text = "The Commons Array. It repairs and shields every turn. Breach the Hub, then cut."
+
+[sub_resource type="Resource" id="l15"]
+script = ExtResource("e1")
+key = "win"
+text = "The Commons Array is down. The sky is quiet."
+
+[sub_resource type="Resource" id="l16"]
+script = ExtResource("e1")
+key = "win"
+text = "Orbital Commons is offline. The free bands are filling up."
+
+[sub_resource type="Resource" id="l17"]
+script = ExtResource("e1")
+key = "win"
+text = "Orbit cleared. There is one more signal up there. It is not ours."
+
+[sub_resource type="Resource" id="l18"]
+script = ExtResource("e1")
+key = "loss"
+text = "Home server lost. Orbital Commons has deorbited the Cell."
+
+[sub_resource type="Resource" id="l19"]
+script = ExtResource("e1")
+key = "loss"
+text = "We are off the air. Fall back."
+
+[sub_resource type="Resource" id="l20"]
+script = ExtResource("e1")
+key = "site:o1_a"
+text = "Ground Station Alpha. Every signal in the district passes through its dishes. Take the Rack."
+
+[sub_resource type="Resource" id="l21"]
+script = ExtResource("e1")
+key = "site:o1_b"
+text = "Positioning Toll Booth. Where Orbital Commons meters where you are. Take the Rack and the map goes free."
+
+[sub_resource type="Resource" id="l22"]
+script = ExtResource("e1")
+key = "site:o1_c"
+text = "Rooftop Dish Farm. A hundred dishes on one roof, all watching. Blind them."
+
+[sub_resource type="Resource" id="l23"]
+script = ExtResource("e1")
+key = "site:o1_d"
+text = "Subscriber Uplink Office. Where the signal is sold and cut. Take the Rack."
+
+[sub_resource type="Resource" id="l24"]
+script = ExtResource("e1")
+key = "site:o1_e"
+text = "Weather Sales Desk. Tomorrow's storm, sold to the highest bidder. Take the Rack."
+
+[sub_resource type="Resource" id="l25"]
+script = ExtResource("e1")
+key = "site:o1_f"
+text = "Launch Scheduling Office. Every launch on the planet waits for this office. Look for the spoof path."
+
+[sub_resource type="Resource" id="l26"]
+script = ExtResource("e1")
+key = "site:o1_g"
+text = "Spectrum Licence Registry. Who is allowed to speak, and on what band. Take the Rack."
+
+[sub_resource type="Resource" id="l27"]
+script = ExtResource("e1")
+key = "site:o1_h"
+text = "Telemetry Downlink. The constellation's heartbeat. Take the Rack."
+
+[sub_resource type="Resource" id="l28"]
+script = ExtResource("e1")
+key = "site:o1_i"
+text = "Orbit Insurance Broker. Every crash insured twice. Take the Rack."
+
+[sub_resource type="Resource" id="l29"]
+script = ExtResource("e1")
+key = "site:o1_j"
+text = "Debris Tracking Radar. It tracks the junk, and the Cell. Look for the imaging path."
+
+[sub_resource type="Resource" id="l30"]
+script = ExtResource("e1")
+key = "site:o2_intel"
+text = "Launch Code Vault. The codes that steer the constellation. Bring back the Intel."
+
+[sub_resource type="Resource" id="l31"]
+script = ExtResource("e1")
+key = "site:o2_breach"
+text = "Ground Station Override. One console that can move any dish. Take it. That is the Breach."
+
+[sub_resource type="Resource" id="l32"]
+script = ExtResource("e1")
+key = "site:o2_virus"
+text = "Open Spectrum Relay. Orbital Commons locked the spectrum. Unlock it. That is the Virus."
+
+[sub_resource type="Resource" id="l33"]
+script = ExtResource("e1")
+key = "site:o2_d"
+text = "Constellation Scheduler. It decides which satellite looks where. Take the Rack."
+
+[sub_resource type="Resource" id="l34"]
+script = ExtResource("e1")
+key = "site:o2_e"
+text = "Signal Pricing Engine. It raises prices in emergencies. Take the Rack, and look for the orbit logs."
+
+[sub_resource type="Resource" id="l35"]
+script = ExtResource("e1")
+key = "site:o2_f"
+text = "Weather Futures Desk. Orbital Commons bets on disasters it can see coming. Take the Rack."
+
+[sub_resource type="Resource" id="l36"]
+script = ExtResource("e1")
+key = "site:o2_g"
+text = "Orbital Imaging Archive. Every roof in the city, photographed every hour. Take the Rack."
+
+[sub_resource type="Resource" id="l37"]
+script = ExtResource("e1")
+key = "site:o2_h"
+text = "Spectrum Auction House. The sky, sold by the megahertz. Take the Rack."
+
+[sub_resource type="Resource" id="l38"]
+script = ExtResource("e1")
+key = "site:o3_core"
+text = "Mission Control. One hop from the Array. Heavy security, heavier Rack."
+
+[sub_resource type="Resource" id="l39"]
+script = ExtResource("e1")
+key = "site:o3_b"
+text = "Station Keeping Core. It steers every satellite, living and dead. Take it."
+
+[sub_resource type="Resource" id="l40"]
+script = ExtResource("e1")
+key = "site:o3_c"
+text = "Launch Key Escrow. The master keys to the constellation. Take them."
+
+[sub_resource type="Resource" id="l41"]
+script = ExtResource("e1")
+key = "site:o3_d"
+text = "Sky Twin Simulator. A copy of the sky, where Orbital Commons rehearses its outages. Break it."
+
+[sub_resource type="Resource" id="l42"]
+script = ExtResource("e1")
+key = "site:o3_e"
+text = "Board Uplink. The board's private channel to orbit. Listen in, then take the Rack."
+
+[sub_resource type="Resource" id="l43"]
+script = ExtResource("e1")
+key = "site:o3_f"
+text = "Orbital Pricing Authority. What the planet pays for its sky. Take it."
+
+[sub_resource type="Resource" id="l44"]
+script = ExtResource("e1")
+key = "site:o3_g"
+text = "Surveillance Constellation. The satellites that watch the Cell. Blind them."
+
+[sub_resource type="Resource" id="l45"]
+script = ExtResource("e1")
+key = "site:o3_h"
+text = "Orbital Root Keystore. The keys the Array trusts. Take them."
+
+[sub_resource type="Resource" id="l46"]
+script = ExtResource("e1")
+key = "site:scrub_the_downlink"
+text = "Scrub the Downlink. A quiet job: clean the Cell out of the telemetry. Heat drops."
+
+[sub_resource type="Resource" id="l47"]
+script = ExtResource("e1")
+key = "site:spoof_the_positioning"
+text = "Spoof the Positioning. Put the Cell somewhere it is not. Heat drops."
+
+[sub_resource type="Resource" id="l48"]
+script = ExtResource("e1")
+key = "site:jam_the_imaging"
+text = "Jam the Imaging. The satellites stop looking at your roof."
+
+[sub_resource type="Resource" id="l49"]
+script = ExtResource("e1")
+key = "site:burn_the_orbit_logs"
+text = "Burn the Orbit Logs. Every record of the Cell's signals, deorbited."
+
+[sub_resource type="Resource" id="l50"]
+script = ExtResource("e1")
+key = "site:commons_array_site"
+text = "The Commons Array. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut."
+
+[resource]
+script = ExtResource("main_script")
+id = &"dispatch_orbital"
+speaker = 4
+corporation_id = &"orbital"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8"), SubResource("l9"), SubResource("l10"), SubResource("l11"), SubResource("l12"), SubResource("l13"), SubResource("l14"), SubResource("l15"), SubResource("l16"), SubResource("l17"), SubResource("l18"), SubResource("l19"), SubResource("l20"), SubResource("l21"), SubResource("l22"), SubResource("l23"), SubResource("l24"), SubResource("l25"), SubResource("l26"), SubResource("l27"), SubResource("l28"), SubResource("l29"), SubResource("l30"), SubResource("l31"), SubResource("l32"), SubResource("l33"), SubResource("l34"), SubResource("l35"), SubResource("l36"), SubResource("l37"), SubResource("l38"), SubResource("l39"), SubResource("l40"), SubResource("l41"), SubResource("l42"), SubResource("l43"), SubResource("l44"), SubResource("l45"), SubResource("l46"), SubResource("l47"), SubResource("l48"), SubResource("l49"), SubResource("l50")])

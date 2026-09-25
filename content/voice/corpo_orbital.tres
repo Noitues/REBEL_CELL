@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="LineSetData" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/line_set_data.gd" id="main_script"]
+[ext_resource type="Script" path="res://scripts/data/voice_line_data.gd" id="e1"]
+
+; orbital voice set (decision 2026-09-24).
+
+[sub_resource type="Resource" id="l0"]
+script = ExtResource("e1")
+key = "raid:any"
+text = "ORBITAL COMMONS: Your service is under review. Please keep your antenna pointed skyward."
+
+[sub_resource type="Resource" id="l1"]
+script = ExtResource("e1")
+key = "raid:raid_heat_25"
+text = "ORBITAL COMMONS: A signal anomaly has been detected at your location. Landers have been dispatched."
+
+[sub_resource type="Resource" id="l2"]
+script = ExtResource("e1")
+key = "raid:raid_heat_50"
+text = "ORBITAL COMMONS: A spectrum audit is under way. Please do not transmit."
+
+[sub_resource type="Resource" id="l3"]
+script = ExtResource("e1")
+key = "raid:raid_heat_75"
+text = "ORBITAL COMMONS: A deorbit order has been issued for your network."
+
+[sub_resource type="Resource" id="l4"]
+script = ExtResource("e1")
+key = "raid:raid_purge"
+text = "ORBITAL COMMONS: Your orbit is being cleared. Thank you for choosing Orbital Commons."
+
+[sub_resource type="Resource" id="l5"]
+script = ExtResource("e1")
+key = "raid:raid_orb_claim"
+text = "ORBITAL COMMONS: An unlicensed transmitter has been detected."
+
+[sub_resource type="Resource" id="l6"]
+script = ExtResource("e1")
+key = "raid:raid_orb_node_built"
+text = "ORBITAL COMMONS: A spectrum violation has been logged against your node."
+
+[sub_resource type="Resource" id="l7"]
+script = ExtResource("e1")
+key = "raid:raid_orb_story"
+text = "ORBITAL COMMONS: We are recovering our data. Please stand clear."
+
+[sub_resource type="Resource" id="l8"]
+script = ExtResource("e1")
+key = "raid:raid_orb_retaliation"
+text = "ORBITAL COMMONS: Your service has been terminated."
+
+[resource]
+script = ExtResource("main_script")
+id = &"corpo_orbital"
+speaker = 2
+corporation_id = &"orbital"
+lines = Array[ExtResource("e1")]([SubResource("l0"), SubResource("l1"), SubResource("l2"), SubResource("l3"), SubResource("l4"), SubResource("l5"), SubResource("l6"), SubResource("l7"), SubResource("l8")])

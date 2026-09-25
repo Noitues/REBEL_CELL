@@ -159,6 +159,8 @@ CorporationData.halcyon.description,"The contractor that runs the city: water, p
 CorporationData.halcyon.display_name,Halcyon Civic
 CorporationData.meridian.description,"The logistics giant that moves everything, loses what it likes and bills you for the search."
 CorporationData.meridian.display_name,Meridian Freight Systems
+CorporationData.orbital.description,"It owns the sky: every satellite, every signal, every forecast. The commons, by subscription."
+CorporationData.orbital.display_name,Orbital Commons
 CorporationData.solace.description,Life-critical implants sold as the Continuum subscription. Miss a payment and the implant bricks.
 CorporationData.solace.display_name,Solace Biosystems
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
@@ -253,6 +255,8 @@ EnemyData.collections_agent.description,Solace debt collector with a bodyguard d
 EnemyData.collections_agent.display_name,Collections Agent
 EnemyData.collections_drone.description,A bodyguard drone docked on the Collections Agent.
 EnemyData.collections_drone.display_name,Collections Drone
+EnemyData.commons_array.description,The constellation's brain. It owns the sky and rents it back to you.
+EnemyData.commons_array.display_name,The Commons Array
 EnemyData.compliance_officer.description,Locks its wheel down with Hub-sourced resistance.
 EnemyData.compliance_officer.display_name,Compliance Officer
 EnemyData.conveyor_warden.description,Its read head rides the conveyor: the pointer orbits 3 ticks a turn.
@@ -265,10 +269,22 @@ EnemyData.dosage_dispenser.description,Doses the operative with CORRUPTED slices
 EnemyData.dosage_dispenser.display_name,Dosage Dispenser
 EnemyData.drone_dispatcher.description,Launches a courier drone every other turn (up to 2).
 EnemyData.drone_dispatcher.display_name,Drone Dispatcher
+EnemyData.geostationary_guard.description,"Orbits 3 a turn, hits like a falling satellite, brings a drone."
+EnemyData.geostationary_guard.display_name,Geostationary Guard
+EnemyData.ground_control.description,Hits hard and shields up; its reader drifts 2 a turn.
+EnemyData.ground_control.display_name,Ground Control
 EnemyData.last_mile_enforcer.description,Orbits 2 ticks a turn and brings its own escort drone.
 EnemyData.last_mile_enforcer.display_name,Last-Mile Enforcer
+EnemyData.launch_pad.description,"Shields, flares and a drone launch every other turn."
+EnemyData.launch_pad.display_name,Launch Pad
 EnemyData.logistics_director.description,"Meridian middle management, guarding the final Rack."
 EnemyData.logistics_director.display_name,Logistics Director
+EnemyData.mission_director.description,"Orbital Commons flight control, guarding the final Rack."
+EnemyData.mission_director.display_name,Mission Director
+EnemyData.orbital_debris.description,"A slab of dead satellite: heavy, hard to turn, resistance 2."
+EnemyData.orbital_debris.display_name,Orbital Debris
+EnemyData.orbital_drone.description,A station-keeping drone that screens its controller.
+EnemyData.orbital_drone.display_name,Orbital Drone
 EnemyData.parking_warden.description,Writes Citations: your slice runs at half until you cleanse it.
 EnemyData.parking_warden.display_name,Parking Warden
 EnemyData.patrol_unit.description,"Policing-as-a-service. Hits hard, shields up."
@@ -287,18 +303,26 @@ EnemyData.route_optimizer.description,Reads two routes at once: pointers at tick
 EnemyData.route_optimizer.display_name,Route Optimizer
 EnemyData.seed_drone.description,A one-hit drone sprouted by a Perfect landing.
 EnemyData.seed_drone.display_name,Seed Drone
+EnemyData.station_commander.description,"Two readers, heavy block and a flare."
+EnemyData.station_commander.display_name,Station Commander
 EnemyData.surveillance_mast.description,Hard to pin down: Evade slices and an orbiting read head.
 EnemyData.surveillance_mast.display_name,Surveillance Mast
 EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
 EnemyData.tariff_collector.display_name,Tariff Collector
 EnemyData.the_manifest.description,Meridian's routing core. Every package on the planet passes through it.
 EnemyData.the_manifest.display_name,The Manifest
+EnemyData.tracking_station.description,"Two dishes, two readers: pointers 0 and 15."
+EnemyData.tracking_station.display_name,Tracking Station
 EnemyData.transit_controller.description,Two readers on a slow loop: pointers 0 and 15 orbit 1 a turn.
 EnemyData.transit_controller.display_name,Transit Controller
 EnemyData.triage_unit.description,Patches itself up faster than you can cut it down.
 EnemyData.triage_unit.display_name,Triage Unit
+EnemyData.uplink_relay.description,"Throws Solar Flares: your slice burns hot, then corrupts."
+EnemyData.uplink_relay.display_name,Uplink Relay
 EnemyData.utility_meter.description,Heals itself on the public dime. Resistance 1.
 EnemyData.utility_meter.display_name,Utility Meter
+EnemyData.weather_satellite.description,"Fast orbit (4 ticks a turn), self-repair and a flare."
+EnemyData.weather_satellite.display_name,Weather Satellite
 EnemyData.zoning_board.description,"Shields, heals and rezones its read head 2 ticks a turn."
 EnemyData.zoning_board.display_name,Zoning Board
 FirmwareData.barbed_wire.description,DEF slice also deals 2 damage to the pointer target.
@@ -373,6 +397,8 @@ HubCoreData.rig_core.description,"+1 max RAM. Perfect: refund 1 RAM, gain a free
 HubCoreData.rig_core.display_name,Rig Core
 HubCoreData.rig_core_mk2.description,"+2 max RAM. Perfect: refund 2 RAM, gain a free nudge, and the slice resolves again at half."
 HubCoreData.rig_core_mk2.display_name,Rig Core Mk2
+HubCoreData.station_keeping.description,Repairs 3 and gains 3 shield each turn unless the Hub is breached.
+HubCoreData.station_keeping.display_name,Station Keeping
 HubCoreData.swarm_core.description,"Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
 HubCoreData.swarm_core.display_name,Swarm Core
 HubCoreData.swarm_core_mk2.description,"Up to 4 drones that persist between fights. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice."
@@ -419,6 +445,8 @@ ProfileUnlockData.unlock_home_bunker.description,"Start campaigns on the Bunker 
 ProfileUnlockData.unlock_home_bunker.display_name,Home server: Bunker
 ProfileUnlockData.unlock_meridian.description,Target Meridian Freight Systems in new campaigns.
 ProfileUnlockData.unlock_meridian.display_name,Corporation: Meridian Freight Systems
+ProfileUnlockData.unlock_orbital.description,Target Orbital Commons in new campaigns.
+ProfileUnlockData.unlock_orbital.display_name,Corporation: Orbital Commons
 ProfileUnlockData.unlock_overclocker.description,Recruit Overclocker operatives in every campaign.
 ProfileUnlockData.unlock_overclocker.display_name,Class: Overclocker
 ProfileUnlockData.unlock_phantom.description,Recruit Phantom operatives in every campaign.
@@ -473,6 +501,22 @@ RaidData.raid_mer_story.display_name,Recall Shipment
 RaidData.raid_mer_story.warning_text,Meridian wants its shipment back. Customs and a Hauler inbound.
 RaidData.raid_node_built.display_name,Collections: Asset Seizure
 RaidData.raid_node_built.warning_text,Solace noticed the new vault on their books. An Enforcer is coming to collect it.
+RaidData.raid_orb_claim.display_name,Unlicensed Transmitter
+RaidData.raid_orb_claim.warning_text,A new transmitter without an Orbital licence. A Lander is on the way.
+RaidData.raid_orb_heat_25.display_name,Signal Anomaly
+RaidData.raid_orb_heat_25.warning_text,Orbital Commons has flagged a signal anomaly at your address. Two Landers inbound.
+RaidData.raid_orb_heat_50.display_name,Spectrum Audit
+RaidData.raid_orb_heat_50.warning_text,An Orbital Commons spectrum audit is sweeping your links. Landers and a Jammer inbound.
+RaidData.raid_orb_heat_75.display_name,Deorbit Order
+RaidData.raid_orb_heat_75.warning_text,Orbital Commons has issued a deorbit order for your network. Debris is falling.
+RaidData.raid_orb_node_built.display_name,Spectrum Violation
+RaidData.raid_orb_node_built.warning_text,Your new node is broadcasting on a licensed band. Debris incoming.
+RaidData.raid_orb_purge.display_name,Kessler Event
+RaidData.raid_orb_purge.warning_text,Orbital Commons is clearing your orbit. Everything it has is falling on you.
+RaidData.raid_orb_retaliation.display_name,Service Termination
+RaidData.raid_orb_retaliation.warning_text,Orbital Commons traced the breach and terminated your service.
+RaidData.raid_orb_story.display_name,Recovery Mission
+RaidData.raid_orb_story.warning_text,Orbital Commons wants its data back.
 RaidData.raid_purge.display_name,Collections: Purge
 RaidData.raid_purge.warning_text,"Every Collections asset Solace has, in two waves."
 RaidData.raid_retaliation.display_name,Collections: Retaliation
@@ -495,7 +539,9 @@ RingSegmentData.seg_x2.description,Outer slice output doubled.
 RingSegmentData.seg_x2.display_name,x2
 SiteData.blind_the_cameras.display_name,Blind the Cameras
 SiteData.burn_the_ledger.display_name,Burn the Ledger
+SiteData.burn_the_orbit_logs.display_name,Burn the Orbit Logs
 SiteData.civic_core_site.display_name,The Civic Core
+SiteData.commons_array_site.display_name,The Commons Array
 SiteData.forge_the_manifest.display_name,Forge the Manifest
 SiteData.h1_a.display_name,Parking Enforcement Office
 SiteData.h1_b.display_name,Water Meter Grid
@@ -525,6 +571,7 @@ SiteData.h3_g.display_name,Citizen Profile Archive
 SiteData.h3_h.display_name,Halcyon Root Registry
 SiteData.h_home.display_name,Home Server
 SiteData.home.display_name,Home Server
+SiteData.jam_the_imaging.display_name,Jam the Imaging
 SiteData.lose_the_case_file.display_name,Lose the Case File
 SiteData.lose_the_tracking.display_name,Lose the Tracking
 SiteData.m1_a.display_name,Parcel Sorting Hall
@@ -554,12 +601,41 @@ SiteData.m3_f.display_name,Contract Pricing Authority
 SiteData.m3_g.display_name,Surveillance Route Archive
 SiteData.m3_h.display_name,Meridian Root Ledger
 SiteData.m_home.display_name,Home Server
+SiteData.o1_a.display_name,Ground Station Alpha
+SiteData.o1_b.display_name,Positioning Toll Booth
+SiteData.o1_c.display_name,Rooftop Dish Farm
+SiteData.o1_d.display_name,Subscriber Uplink Office
+SiteData.o1_e.display_name,Weather Sales Desk
+SiteData.o1_f.display_name,Launch Scheduling Office
+SiteData.o1_g.display_name,Spectrum Licence Registry
+SiteData.o1_h.display_name,Telemetry Downlink
+SiteData.o1_i.display_name,Orbit Insurance Broker
+SiteData.o1_j.display_name,Debris Tracking Radar
+SiteData.o2_breach.display_name,Ground Station Override
+SiteData.o2_d.display_name,Constellation Scheduler
+SiteData.o2_e.display_name,Signal Pricing Engine
+SiteData.o2_f.display_name,Weather Futures Desk
+SiteData.o2_g.display_name,Orbital Imaging Archive
+SiteData.o2_h.display_name,Spectrum Auction House
+SiteData.o2_intel.display_name,Launch Code Vault
+SiteData.o2_virus.display_name,Open Spectrum Relay
+SiteData.o3_b.display_name,Station Keeping Core
+SiteData.o3_c.display_name,Launch Key Escrow
+SiteData.o3_core.display_name,Mission Control
+SiteData.o3_d.display_name,Sky Twin Simulator
+SiteData.o3_e.display_name,Board Uplink
+SiteData.o3_f.display_name,Orbital Pricing Authority
+SiteData.o3_g.display_name,Surveillance Constellation
+SiteData.o3_h.display_name,Orbital Root Keystore
+SiteData.o_home.display_name,Home Server
 SiteData.pardon_the_district.display_name,Pardon the District
 SiteData.purge_camera_logs.display_name,Purge Camera Logs
 SiteData.renewal_engine_site.display_name,Renewal Engine
 SiteData.reroute_the_audit.display_name,Reroute the Audit
 SiteData.scrub_records.display_name,Scrub Records
+SiteData.scrub_the_downlink.display_name,Scrub the Downlink
 SiteData.sink_the_cargo_logs.display_name,Sink the Cargo Logs
+SiteData.spoof_the_positioning.display_name,Spoof the Positioning
 SiteData.t1_a.display_name,Continuum Billing Farm
 SiteData.t1_b.display_name,Implant Provisioning Hub
 SiteData.t1_c.display_name,Patient Records Vault
@@ -625,7 +701,20 @@ SliceData.heal_6.display_name,Heal 6
 SliceData.miss.display_name,Miss
 SliceData.shield_5.display_name,Shield 5
 SliceData.shield_8.display_name,Shield 8
+SliceData.solar_flare.display_name,Solar Flare
 SliceData.tariff.display_name,Tariff
+StoryBeatData.blackout_weather_1.text,"The weather futures desk sells storm forecasts to the highest bidder, a day before anyone else gets them."
+StoryBeatData.blackout_weather_1.title,Blackout Weather I
+StoryBeatData.blackout_weather_2.text,Districts behind on subscriptions get no storm warnings. The memo calls it service prioritisation.
+StoryBeatData.blackout_weather_2.title,Blackout Weather II
+StoryBeatData.blackout_weather_3.text,Last spring's flood killed nineteen people in a district with no warning. The forecast existed. Nobody paid for it.
+StoryBeatData.blackout_weather_3.title,Blackout Weather III
+StoryBeatData.blackout_weather_bonus_1.text,Tonight's forecast: a storm over the eastern districts. The eastern districts do not know.
+StoryBeatData.blackout_weather_bonus_1.title,Blackout Weather: The Forecast
+StoryBeatData.blackout_weather_bonus_2.text,A hedge fund paid four million for tonight's storm. It is betting on the flood.
+StoryBeatData.blackout_weather_bonus_2.title,Blackout Weather: The Bid
+StoryBeatData.blackout_weather_f.text,"The Commons Array falls and every forecast on its servers broadcasts at once, free. The eastern districts board up in time."
+StoryBeatData.blackout_weather_f.title,Blackout Weather: Finale
 StoryBeatData.civic_contract_1.text,"A tender for municipal services: water, power, transit. The bidders are Meridian and something called Halcyon Civic. The evaluation was finished before the bids were opened."
 StoryBeatData.civic_contract_1.title,Civic Contract I
 StoryBeatData.civic_contract_2.text,"Halcyon Civic and Meridian share a board member, an auditor and a data centre. The tender is theatre."
@@ -662,6 +751,30 @@ StoryBeatData.customs_hold_bonus_2.text,"Clearwater Holdings has one employee, o
 StoryBeatData.customs_hold_bonus_2.title,Customs Hold: Clearwater
 StoryBeatData.customs_hold_f.text,The Manifest crashes and customs clears itself. Six hundred parcels move at once. The district's doctors have a very busy week.
 StoryBeatData.customs_hold_f.title,Customs Hold: Finale
+StoryBeatData.dead_satellites_1.text,"Four hundred dead satellites, parked on purpose in the lanes other operators would use. Nobody can launch through them."
+StoryBeatData.dead_satellites_1.title,Dead Satellites I
+StoryBeatData.dead_satellites_2.text,Deorbiting the junk is cheap. Leaving it is cheaper and keeps the sky closed. The board chose cheaper.
+StoryBeatData.dead_satellites_2.title,Dead Satellites II
+StoryBeatData.dead_satellites_3.text,The station keeping core can steer every dead satellite at once. Nobody has ever told it to clean up.
+StoryBeatData.dead_satellites_3.title,Dead Satellites III
+StoryBeatData.dead_satellites_bonus_1.text,A cleanup program sits unfinished in the keeping core. Somebody started it and was told to stop.
+StoryBeatData.dead_satellites_bonus_1.title,Dead Satellites: The Clean-up
+StoryBeatData.dead_satellites_bonus_2.text,A map of the blocked lanes. Every one belongs to a public agency.
+StoryBeatData.dead_satellites_bonus_2.title,Dead Satellites: The Lanes
+StoryBeatData.dead_satellites_f.text,"The Commons Array falls and the keeping core runs the abandoned cleanup. For a week, the night sky rains slow, harmless fire."
+StoryBeatData.dead_satellites_f.title,Dead Satellites: Finale
+StoryBeatData.final_transmission_1.text,"DISPATCH's signal does not come from the city. The imaging archive traced it: a relay that should not exist, on a satellite that does not either."
+StoryBeatData.final_transmission_1.title,Final Transmission I
+StoryBeatData.final_transmission_2.text,The satellite was launched on an order paid before it was placed. The same account. The same impossible timestamps.
+StoryBeatData.final_transmission_2.title,Final Transmission II
+StoryBeatData.final_transmission_3.text,"The satellite's only payload is a listening post. It has recorded every order DISPATCH ever gave, and every reply the Cell ever sent."
+StoryBeatData.final_transmission_3.title,Final Transmission III
+StoryBeatData.final_transmission_bonus_1.text,"In the recordings DISPATCH's voice shifts, year by year, from a person to something else. The change is smooth. It was practising."
+StoryBeatData.final_transmission_bonus_1.title,Final Transmission: The Voice
+StoryBeatData.final_transmission_bonus_2.text,"The listening post keeps a profile of the Cell's habits: which nodes you build, which operatives you trust, which Daemons you love. It is building something from you."
+StoryBeatData.final_transmission_bonus_2.title,Final Transmission: The Profile
+StoryBeatData.final_transmission_f.text,"The Commons Array dies, and the satellite that should not exist changes orbit. It is coming home. It has a name for itself: REBEL_CELL."
+StoryBeatData.final_transmission_f.title,Final Transmission: Finale
 StoryBeatData.ghost_freight_1.text,"Shipments ordered by an account with no owner. Delivered to addresses that do not exist. Paid for, in full, before the order was placed."
 StoryBeatData.ghost_freight_1.title,Ghost Freight I
 StoryBeatData.ghost_freight_2.text,The same account bought Solace stock the day the Renewal Engine fell. It is buying Meridian puts now. It knows something.
@@ -686,6 +799,18 @@ StoryBeatData.ghost_patient_bonus_2.text,Escrow records name a buyer for Solace'
 StoryBeatData.ghost_patient_bonus_2.title,Ghost Patient: The Buyer
 StoryBeatData.ghost_patient_f.text,The Engine falls. The ghost patient's account closes itself the same second. DISPATCH sends congratulations with a timestamp four minutes before the last hit landed.
 StoryBeatData.ghost_patient_f.title,Ghost Patient: Finale
+StoryBeatData.gps_tax_1.text,Positioning is metered per request. Ambulances pay per request. So do fire trucks.
+StoryBeatData.gps_tax_1.title,Positioning Tax I
+StoryBeatData.gps_tax_2.text,Unpaid accounts get positions that are close enough. Close enough is fifty metres wrong.
+StoryBeatData.gps_tax_2.title,Positioning Tax II
+StoryBeatData.gps_tax_3.text,The toll booth logs show an ambulance that drove to the wrong street because its account was a day late.
+StoryBeatData.gps_tax_3.title,Positioning Tax III
+StoryBeatData.gps_tax_bonus_1.text,The ambulance driver keeps a paper map now. She would like to meet the people who made her need it.
+StoryBeatData.gps_tax_bonus_1.title,Positioning Tax: The Driver
+StoryBeatData.gps_tax_bonus_2.text,"The rate doubles in an emergency. Demand is less elastic then, says the model."
+StoryBeatData.gps_tax_bonus_2.title,Positioning Tax: The Rate
+StoryBeatData.gps_tax_f.text,"The Commons Array falls and positioning goes free for the whole planet. Every map in the city is suddenly, exactly right."
+StoryBeatData.gps_tax_f.title,Positioning Tax: Finale
 StoryBeatData.hostile_takeover_1.text,The pricing memos were leaked to the Cell by a Solace board member. The board member's other seat is at Meridian Freight Systems.
 StoryBeatData.hostile_takeover_1.title,Hostile Takeover I
 StoryBeatData.hostile_takeover_2.text,"Meridian's autonomous fleet carries Solace's implants. The kill-switch authority is licensed, quietly, to Meridian's logistics AI, in case a shipment is stolen."
@@ -806,6 +931,18 @@ StoryBeatData.the_census_bonus_2.text,A recording from the census call centre. A
 StoryBeatData.the_census_bonus_2.title,The Census: The Voice
 StoryBeatData.the_census_f.text,"The Civic Core dies. The unnamed account withdraws everything one second later, and sends the Cell a thank-you note it did not sign."
 StoryBeatData.the_census_f.title,The Census: Finale
+StoryBeatData.the_commons_1.text,"The company's first charter, forty years old: a public satellite network, owned by nobody, free to all. The name was a promise."
+StoryBeatData.the_commons_1.title,The Commons I
+StoryBeatData.the_commons_2.text,The charter was rewritten in a single board meeting. The minutes say only: monetise the commons.
+StoryBeatData.the_commons_2.title,The Commons II
+StoryBeatData.the_commons_3.text,"The original founders are old now. One of them still broadcasts on the free band, every night, to nobody."
+StoryBeatData.the_commons_3.title,The Commons III
+StoryBeatData.the_commons_bonus_1.text,The founder answers the Cell's call on the first try. She says she has been waiting for someone to ask.
+StoryBeatData.the_commons_bonus_1.title,The Commons: The Founder
+StoryBeatData.the_commons_bonus_2.text,The original charter is still valid. Nobody ever revoked it. They just stopped reading it.
+StoryBeatData.the_commons_bonus_2.title,The Commons: The Charter
+StoryBeatData.the_commons_f.text,"The Commons Array falls and the founder reads the original charter aloud on every band at once. The sky, for one night, is free again."
+StoryBeatData.the_commons_f.title,The Commons: Finale
 StoryBeatData.the_cure_1.text,"The memos price a permanent fix: one firmware update, no leash, no renewals. Projected revenue loss: everything. The memo is marked do not build."
 StoryBeatData.the_cure_1.title,The Cure I
 StoryBeatData.the_cure_2.text,The kill-switch keeps the cure a subscription: a fixed implant that stops calling home gets bricked as a security precaution.
@@ -818,6 +955,18 @@ StoryBeatData.the_cure_bonus_2.text,A free implant costs Solace four renewals a 
 StoryBeatData.the_cure_bonus_2.title,The Cure: The Cost
 StoryBeatData.the_cure_f.text,The Engine goes dark and the cure ships for free through every Rack the Cell ever touched. Solace's stock does what stock does. The district's hearts keep time on their own.
 StoryBeatData.the_cure_f.title,The Cure: Finale
+StoryBeatData.the_enclosure_1.text,The launch codes include a licence nobody noticed: exclusive rights to every orbit below forty thousand kilometres. The sky was sold in a single signature.
+StoryBeatData.the_enclosure_1.title,The Enclosure I
+StoryBeatData.the_enclosure_2.text,"The ground station override logs show competitors' satellites nudged off station, one by one, for 'debris avoidance'."
+StoryBeatData.the_enclosure_2.title,The Enclosure II
+StoryBeatData.the_enclosure_3.text,"The open spectrum relay has the pricing model: charge for the signal, then charge for the silence when you cut it off."
+StoryBeatData.the_enclosure_3.title,The Enclosure III
+StoryBeatData.the_enclosure_bonus_1.text,An old ham radio club still talks on a free band. Orbital Commons is suing them for the static.
+StoryBeatData.the_enclosure_bonus_1.title,The Enclosure: Amateurs
+StoryBeatData.the_enclosure_bonus_2.text,Halcyon Civic's city brain ran on this sky. Orbital Commons kept the deposit when it fell.
+StoryBeatData.the_enclosure_bonus_2.title,The Enclosure: Halcyon
+StoryBeatData.the_enclosure_f.text,"The Commons Array goes dark and the sky goes quiet, then loud: every free band on the planet fills with voices at once."
+StoryBeatData.the_enclosure_f.title,The Enclosure: Finale
 StoryBeatData.transit_blackout_1.text,"The signal control logs show maintenance windows that match every protest in the last year, to the minute."
 StoryBeatData.transit_blackout_1.title,Transit Blackout I
 StoryBeatData.transit_blackout_2.text,The emergency override has a mode called CONTAIN. It stops every train into a district and opens the doors on none.
@@ -842,16 +991,24 @@ StoryBeatData.water_rights_bonus_2.text,Meridian Freight Systems hauls bottled w
 StoryBeatData.water_rights_bonus_2.title,Water Rights: Meridian
 StoryBeatData.water_rights_f.text,"The Civic Core goes dark and every valve in the city fails open. For one hot week, the water is free."
 StoryBeatData.water_rights_f.title,Water Rights: Finale
+StoryPathData.sp_blackout_weather.premise,Orbital Commons sells the weather. It can also withhold it.
+StoryPathData.sp_blackout_weather.title,Blackout Weather
 StoryPathData.sp_civic_contract.premise,"Meridian is bidding to run the city's water, power and transit. The winner is already decided."
 StoryPathData.sp_civic_contract.title,Civic Contract
 StoryPathData.sp_clinical_trial.premise,The Continuum was tested on people who could not say no.
 StoryPathData.sp_clinical_trial.title,Clinical Trial
 StoryPathData.sp_customs_hold.premise,Meridian holds medical shipments at the border until the fees clear. Some never do.
 StoryPathData.sp_customs_hold.title,Customs Hold
+StoryPathData.sp_dead_satellites.premise,Orbital Commons parks its dead satellites in the orbits its rivals need.
+StoryPathData.sp_dead_satellites.title,Dead Satellites
+StoryPathData.sp_final_transmission.premise,Somebody has been talking to the Cell from orbit the whole time.
+StoryPathData.sp_final_transmission.title,Final Transmission
 StoryPathData.sp_ghost_freight.premise,Somebody is ordering freight through Meridian with money that does not come from anywhere.
 StoryPathData.sp_ghost_freight.title,Ghost Freight
 StoryPathData.sp_ghost_patient.premise,Someone in the Cell is a Solace customer. The record has no name.
 StoryPathData.sp_ghost_patient.title,Ghost Patient
+StoryPathData.sp_gps_tax.premise,Knowing where you are now costs a subscription.
+StoryPathData.sp_gps_tax.title,Positioning Tax
 StoryPathData.sp_hostile_takeover.premise,"Somebody wants Solace to fall, and it is not the district."
 StoryPathData.sp_hostile_takeover.title,Hostile Takeover
 StoryPathData.sp_last_mile.premise,"Meridian's delivery drones watch every street they fly over, and sell what they see."
@@ -872,8 +1029,12 @@ StoryPathData.sp_terms_of_service.premise,"What the Continuum contract actually 
 StoryPathData.sp_terms_of_service.title,Terms of Service
 StoryPathData.sp_the_census.premise,Halcyon ran the census. Someone else read it first.
 StoryPathData.sp_the_census.title,The Census
+StoryPathData.sp_the_commons.premise,"Before Orbital Commons, the name meant something else."
+StoryPathData.sp_the_commons.title,The Commons
 StoryPathData.sp_the_cure.premise,Solace could fix everyone. It sells renewals instead.
 StoryPathData.sp_the_cure.title,The Cure
+StoryPathData.sp_the_enclosure.premise,Orbital Commons bought the sky. Now the sky has a fee.
+StoryPathData.sp_the_enclosure.title,The Enclosure
 StoryPathData.sp_transit_blackout.premise,Halcyon cuts transit to districts that protest. The official reason is maintenance.
 StoryPathData.sp_transit_blackout.title,Transit Blackout
 StoryPathData.sp_water_rights.premise,"Halcyon owns the city's water now. The price follows the weather, and the weather follows the price."
@@ -1010,6 +1171,46 @@ TerminalEventData.ev_night_shift_nurse.text,A Solace nurse on a smoke break reco
 TerminalEventData.ev_night_shift_nurse.title,Night Shift
 TerminalEventData.ev_open_source_clinic.text,A free clinic runs on stolen Solace firmware. The medic wants a better firewall.
 TerminalEventData.ev_open_source_clinic.title,Open Clinic
+TerminalEventData.ev_orb_auction.text,A spectrum auction is live. The reserve price is a public school's annual budget.
+TerminalEventData.ev_orb_auction.title,Spectrum Auction
+TerminalEventData.ev_orb_debris.text,A chunk of dead satellite has landed in a courtyard. It is still warm.
+TerminalEventData.ev_orb_debris.title,Falling Debris
+TerminalEventData.ev_orb_dish.text,A rooftop dish points at a satellite the Cell has never seen. Its panel is open.
+TerminalEventData.ev_orb_dish.title,Rooftop Dish
+TerminalEventData.ev_orb_dispatch_signal.text,DISPATCH: Your uplink has been rerouted through a relay the Cell does not own. It is faster. Do not look up.
+TerminalEventData.ev_orb_dispatch_signal.title,DISPATCH: Signal
+TerminalEventData.ev_orb_forecast.text,A leaked storm forecast for tonight. The district it covers does not have a subscription.
+TerminalEventData.ev_orb_forecast.title,Storm Forecast
+TerminalEventData.ev_orb_founder.text,"An old woman broadcasts the original Orbital charter on a free band, to nobody."
+TerminalEventData.ev_orb_founder.title,The Founder
+TerminalEventData.ev_orb_ground_station.text,A ground station runs unattended. Its keeper left a thermos and the door code on a sticky note.
+TerminalEventData.ev_orb_ground_station.title,Ground Station
+TerminalEventData.ev_orb_ham_radio.text,An old radio club runs on a free band. They trade tricks for company.
+TerminalEventData.ev_orb_ham_radio.title,Ham Radio Club
+TerminalEventData.ev_orb_imaging.text,"An orbital imaging feed shows your safehouse roof, in real time."
+TerminalEventData.ev_orb_imaging.title,Imaging Feed
+TerminalEventData.ev_orb_insurance.text,An orbit insurance policy covers a satellite that crashed on purpose. The claim is pending.
+TerminalEventData.ev_orb_insurance.title,Orbit Insurance
+TerminalEventData.ev_orb_launch.text,A launch is scheduled in an hour. The payload manifest has room for one more.
+TerminalEventData.ev_orb_launch.title,Launch Window
+TerminalEventData.ev_orb_licence.text,"A blank spectrum licence sits in a printer tray, already signed."
+TerminalEventData.ev_orb_licence.title,Spectrum Licence
+TerminalEventData.ev_orb_listening_post.text,A rooftop antenna aimed at a patch of empty sky. It is receiving.
+TerminalEventData.ev_orb_listening_post.title,Listening Post
+TerminalEventData.ev_orb_night_sky.text,"The clouds part. For once you can see the satellites, crawling like ants across the dark."
+TerminalEventData.ev_orb_night_sky.title,Night Sky
+TerminalEventData.ev_orb_positioning.text,"A delivery drone circles, lost: its owner is a day behind on positioning fees."
+TerminalEventData.ev_orb_positioning.title,Positioning Error
+TerminalEventData.ev_orb_radar.text,A debris radar tracks everything in the sky. It has a blind spot the size of a satellite.
+TerminalEventData.ev_orb_radar.title,Debris Radar
+TerminalEventData.ev_orb_signal_price.text,The signal pricing engine raises prices whenever it detects an emergency.
+TerminalEventData.ev_orb_signal_price.title,Signal Pricing
+TerminalEventData.ev_orb_solar_panel.text,A private solar array feeds a single tower. The block below it is dark.
+TerminalEventData.ev_orb_solar_panel.title,Solar Array
+TerminalEventData.ev_orb_subscriber.text,A queue of people waits to beg for their signal back. The office has one clerk and no chairs.
+TerminalEventData.ev_orb_subscriber.title,Subscriber Office
+TerminalEventData.ev_orb_telemetry.text,A telemetry downlink spills raw data across the floor of a server room.
+TerminalEventData.ev_orb_telemetry.title,Telemetry Burst
 TerminalEventData.ev_orbital_ad.text,Satellite adverts for 'Solace Premium Forever' cross the sky. Someone hacked one to say FOREVER IS A LEASH.
 TerminalEventData.ev_orbital_ad.title,Orbital Ad
 TerminalEventData.ev_patient_records.text,"A records terminal left logged in. Thousands of leashes, each one a monthly fee."
@@ -1046,6 +1247,8 @@ ThreatData.courier.description,Fast and fragile: two edges a step toward the hig
 ThreatData.courier.display_name,Courier
 ThreatData.customs_agent.description,Seals a link behind it for the rest of the raid.
 ThreatData.customs_agent.display_name,Customs Agent
+ThreatData.debris_field.description,A slow wall of junk that crushes the weakest node.
+ThreatData.debris_field.display_name,Debris Field
 ThreatData.enforcer.display_name,Enforcer
 ThreatData.hauler.description,A slow armoured truck that goes for the weakest node.
 ThreatData.hauler.display_name,Hauler
@@ -1053,7 +1256,11 @@ ThreatData.icebreaker.description,Cuts a new route through a locked link before 
 ThreatData.icebreaker.display_name,Icebreaker
 ThreatData.inspector.description,Quick and thorough: two edges a step toward the highest-value node.
 ThreatData.inspector.display_name,Inspector
+ThreatData.lander.description,Drops in fast: two edges a step toward the highest-value node.
+ThreatData.lander.display_name,Lander
 ThreatData.lockdown_unit.description,Freezes your busiest link to home for the whole raid.
 ThreatData.lockdown_unit.display_name,Lockdown Unit
+ThreatData.signal_jammer.description,Jams a link behind it for the rest of the raid.
+ThreatData.signal_jammer.display_name,Signal Jammer
 ThreatData.tow_truck.description,Seals a link behind it for the rest of the raid.
 ThreatData.tow_truck.display_name,Tow Truck
