@@ -87,7 +87,8 @@ func class_data() -> ClassData:
 
 ## Highest ICE the profile allows for `corporation_id` (GDD 3.4).
 func ice_cap(corporation_id: StringName = DEFAULT_CORPORATION) -> int:
-	return profile.ice_cap_for(corporation_id, config().new_corp_ice_offset)
+	var cfg := config()
+	return profile.ice_cap_for(corporation_id, cfg.new_corp_ice_offset, cfg.ice_base_cap, cfg.max_ice_level(), cfg.ice_unlock_step)
 
 
 ## Home-server variants the profile may start on (the standard one always).

@@ -126,7 +126,7 @@ func _maintain(c: CampaignState) -> void:
 			CampaignRules.repair(c, config, lookup, site_id)
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		CampaignRules.repair_home(c, config)
-	while c.living_operatives().size() < 2 and c.schematics >= config.rookie_cost:
+	while c.living_operatives().size() < 2 and c.schematics >= CampaignRules.rookie_price(c, config):
 		CampaignRules.recruit(c, config, class_data)
 	# Spend surplus Schematics on Heat like a player would, keeping a recruit reserve.
 	var guard := 0

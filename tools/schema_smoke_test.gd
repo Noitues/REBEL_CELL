@@ -345,4 +345,16 @@ func _h2() -> int:
 	if cfg.mirror_resistance != 1 or cfg.mirror_deploy_base != 6 or cfg.mirror_threat_min_integrity != 10 or cfg.mirror_threat_min_damage != 4 or cfg.mirror_decoy_speed != 2: fails += 1
 	var c := CampaignState.new(); c.start_class_id = &"rigger"
 	if CampaignState.from_dict(c.to_dict()).start_class_id != &"rigger": fails += 1
+	return fails + _h11()
+
+
+## Horizontal pass 11: config ICE caps, Modem stock, emergency rookie, max_ice_level().
+func _h11() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	print("H11 config: ICE ", cfg.ice_base_cap, " +", cfg.ice_unlock_step, " shop ", cfg.shop_card_stock, "/", cfg.shop_firmware_stock, "/", cfg.shop_daemon_stock, " rookie ", cfg.emergency_rookie_cost)
+	if cfg.ice_base_cap != 3 or cfg.ice_unlock_step != 3 or cfg.shop_card_stock != 3 or cfg.shop_firmware_stock != 2 or cfg.shop_daemon_stock != 1 or cfg.emergency_rookie_cost != 0: fails += 1
+	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("Top ICE level: ", loaded.max_ice_level())
+	if loaded.max_ice_level() != 20: fails += 1
 	return fails

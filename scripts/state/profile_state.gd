@@ -87,11 +87,12 @@ func add_unlock(id: StringName) -> void:
 
 
 ## Highest ICE selectable for `corporation_id` (GDD 3.4, decision 2026-09-24): a win at
-## ICE n unlocks up to n + 3 on that corporation; any corporation may start at the global
-## best minus new_corp_ice_offset; never below `base_cap` (3) nor above `max_level` (20).
-func ice_cap_for(corporation_id: StringName, new_corp_ice_offset: int, base_cap: int = 3, max_level: int = 20) -> int:
+## ICE n unlocks up to n + `step` on that corporation; any corporation may start at the
+## global best minus new_corp_ice_offset; never below `base_cap` nor above `max_level`
+## (the config's ice_base_cap, ice_unlock_step and max_ice_level()).
+func ice_cap_for(corporation_id: StringName, new_corp_ice_offset: int, base_cap: int = 3, max_level: int = 20, step: int = 3) -> int:
 	var cap := base_cap
-	cap = maxi(cap, best_ice_for(corporation_id) + 3)
+	cap = maxi(cap, best_ice_for(corporation_id) + step)
 	cap = maxi(cap, best_ice - new_corp_ice_offset)
 	return clampi(cap, 0, max_level)
 

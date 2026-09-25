@@ -46,6 +46,7 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.site_id = site_id
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
+	var left_post := s._leave_post(operative_id)
 	var elite_pct := p_campaign.elite_frequency_pct(s.config)
 	var shop_delta := 0
 	for m in p_campaign.pending_complications:
@@ -59,12 +60,37 @@ static func start(p_resolver: CombatResolver, p_campaign: CampaignState, operati
 	s.run.map = MapGenerator.generate(tier, s.config, s.streams.get_stream(&"map"), elite_pct)
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "Netrun started: %s, tier %d, seed %d." % [op.name, tier, run_seed]}]
+	s.last_events.append_array(left_post)
 	s._apply_bug_cards()
 	s._apply_boosts()
 	s._compiler_rack_bonus()
 	s._maybe_raid_interlude()
 	s._sync()
 	return s
+
+
+## A stationed operative leaves its Safehouse to run (GDD 5.4: stationed instead of running).
+func _leave_post(operative_id: StringName) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var post := CampaignRules.stationed_site(campaign, operative_id)
+	if post != &"":
+		CampaignRules.recall(campaign, operative_id)
+		out.append({"type": "recalled", "operative": operative_id, "site": post, "text": "%s leaves the post on %s to run." % [run.operative.name, post]})
+	return out
+
+
+## Heat entering `node_id` adds, as it will be applied (ICE scaling included).
+func node_heat(node_id: StringName) -> int:
+	var node := run.map.get_node(node_id)
+	return 0 if node.is_empty() else HeatRules.scaled_delta(campaign, int(node.get("heat", 0)), config)
+
+
+## node_heat for every node of the map (what the map labels show).
+func map_heat() -> Dictionary:
+	var out := {}
+	for node in run.map.all_nodes():
+		out[node["id"]] = node_heat(node["id"])
+	return out
 
 
 ## Netrun boosts bought at HQ (GDD 11.4): starting Cycles, run-only cards, extra max RAM.
@@ -119,13 +145,16 @@ static func start_special(p_resolver: CombatResolver, p_campaign: CampaignState,
 	s.run.combat_overrides = overrides.duplicate(true)
 	s.run.operative = op.duplicate_state()
 	s.streams = RngStreams.seeded(run_seed)
+	var left_post := s._leave_post(operative_id)
 	var graph := MapGraph.new()
 	graph.layers.append([{"id": MapGraph.make_id(1, 0), "layer": 1, "index": 0, "type": RC.InfilNodeType.SERVER_RACK,
 		"elite": true, "next": [] as Array[StringName], "heat": 0}])
 	s.run.map = graph
 	p_campaign.runs_started += 1
 	s.last_events = [{"type": "run_start", "text": "%s run started: %s vs %s." % [kind.capitalize(), op.name, enemy_id]}]
+	s.last_events.append_array(left_post)
 	s._apply_bug_cards()
+	s._apply_boosts()  # HQ boosts apply to the final breach and Reclaim runs too
 	s._sync()
 	return s
 
@@ -595,14 +624,14 @@ func _rescue_class(fallback: ClassData) -> ClassData:
 func _open_shop() -> void:
 	var rng := streams.get_stream(&"rewards")
 	var stock := {"cards": [], "card_prices": [], "firmware": [], "firmware_prices": [], "daemons": [], "daemon_prices": [], "slices": []}
-	var card_count := maxi(1, 3 + int(run.combat_overrides.get("shop_stock_delta", 0)))
+	var card_count := maxi(1, config.shop_card_stock + int(run.combat_overrides.get("shop_stock_delta", 0)))
 	_stock(stock, "cards", "card_prices", _card_pool(), card_count, config.card_price_range, rng)
-	_stock(stock, "firmware", "firmware_prices", _pools["firmware"], 2, config.firmware_price_range, rng)
+	_stock(stock, "firmware", "firmware_prices", _pools["firmware"], config.shop_firmware_stock, config.firmware_price_range, rng)
 	var daemons: Array = []
 	for d in _pools["daemons"]:
 		if not run.operative.daemon_ids.has(d):
 			daemons.append(d)
-	_stock(stock, "daemons", "daemon_prices", daemons, 1, config.daemon_price_range, rng)
+	_stock(stock, "daemons", "daemon_prices", daemons, config.shop_daemon_stock, config.daemon_price_range, rng)
 	# Slice overwrites come from the config catalogue (designer ruling 2026-09-24).
 	var catalogue: Array = []
 	for slice in config.shop_slices:
@@ -855,6 +884,7 @@ func _die() -> void:
 	if op != null:
 		op.alive = false
 		op.hp = 0
+	CampaignRules.recall(campaign, run.operative.id)  # a dead operative frees its post
 	campaign.deaths += 1
 	campaign.schematics += run.banked_schematics
 	_bank_assets_to_armory()

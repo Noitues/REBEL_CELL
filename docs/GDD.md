@@ -588,8 +588,8 @@ Netrun ≈ 15 min · raid ≈ 5 min · fast campaign 8 runs ≈ 2 h 15 m · aver
 ---
 
 ## 12. Technical Architecture (summary)
-Godot 4.3, GDScript. Deterministic pure-logic core (RefCounted classes) wrapped by Nodes
-that follow **Signal Up, Call Down**. Content as `Resource` `.tres` files (39 schema
+Godot 4.7, GDScript. Deterministic pure-logic core (RefCounted classes) wrapped by Nodes
+that follow **Signal Up, Call Down**. Content as `Resource` `.tres` files (41 schema
 classes in `scripts/data/`); runtime state in separate state objects; seeded RNG streams;
 JSON saves. Full detail: `TECH_SPEC.md`.
 

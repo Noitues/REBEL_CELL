@@ -372,7 +372,7 @@ func resolve_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dict
 		if r["owner"] == s.player and r["pointer_index"] == 0 and not r.get("derived", false):
 			s.consecutive_perfects = s.consecutive_perfects + 1 if r["tier"] == RC.PrecisionTier.PERFECT else 0
 			if r["tier"] == RC.PrecisionTier.PERFECT and int(s.flags.get("steady_hand", 0)) > 0:
-				s.ram_bonus_next_turn += 2 * int(s.flags["steady_hand"])
+				s.ram_bonus_next_turn += int(s.flags["steady_hand"])
 				events.append({"type": "steady_hand", "amount": s.ram_bonus_next_turn, "text": "Steady Hand: Perfect at end of turn, +%d RAM next turn." % s.ram_bonus_next_turn})
 			if r["slice"].slice_type == RC.SliceType.MISS:
 				s.miss_resolved = true

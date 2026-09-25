@@ -543,7 +543,12 @@ static func repair(campaign: CampaignState, config: CampaignConfigData, lookup: 
 static func home_repair_price(campaign: CampaignState, config: CampaignConfigData, points: int = -1) -> int:
 	var missing := campaign.grid.home_max_integrity - campaign.grid.home_integrity
 	var n := missing if points < 0 else mini(points, missing)
-	return ceili(maxi(0, n) * config.home_repair_cost_per_point)
+	return ceili(maxi(0, n) * home_repair_point_cost(campaign, config))
+
+
+## Schematics per home integrity point, with REPAIR_COST_PCT (ICE 13) applied.
+static func home_repair_point_cost(campaign: CampaignState, config: CampaignConfigData) -> float:
+	return config.home_repair_cost_per_point * (1.0 + campaign.rule_modifier(config, RC.RuleModifierType.REPAIR_COST_PCT) / 100.0)
 
 
 ## Patches the home server at HQ (decision 2026-09-24): restores up to `points` integrity
@@ -556,12 +561,13 @@ static func repair_home(campaign: CampaignState, config: CampaignConfigData, poi
 		events.append({"type": "refused", "text": "The home server is at full integrity."})
 		return events
 	var wanted := missing if points < 0 else mini(points, missing)
-	var affordable := int(floor(campaign.schematics / maxf(0.0001, config.home_repair_cost_per_point)))
+	var per_point := home_repair_point_cost(campaign, config)
+	var affordable := int(floor(campaign.schematics / maxf(0.0001, per_point)))
 	var n := mini(wanted, affordable)
 	if n <= 0:
 		events.append({"type": "refused", "text": "Not enough Schematics to patch the home server."})
 		return events
-	var cost := ceili(n * config.home_repair_cost_per_point)
+	var cost := ceili(n * per_point)
 	campaign.schematics -= cost
 	campaign.grid.home_integrity += n
 	campaign.grid.site(campaign.grid.home_site_id)["integrity"] = campaign.grid.home_integrity
@@ -644,14 +650,21 @@ static func available_classes(profile: ProfileState, lookup: ContentLookup) -> A
 	return out
 
 
+## Rookie price: rookie_cost, or emergency_rookie_cost when no operative is alive (the
+## campaign can't stall with an empty roster and too few Schematics).
+static func rookie_price(campaign: CampaignState, config: CampaignConfigData) -> int:
+	return mini(config.rookie_cost, config.emergency_rookie_cost) if campaign.living_operatives().is_empty() else config.rookie_cost
+
+
 static func recruit(campaign: CampaignState, config: CampaignConfigData, class_data: ClassData) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
-	if campaign.schematics < config.rookie_cost:
-		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % config.rookie_cost})
+	var price := rookie_price(campaign, config)
+	if campaign.schematics < price:
+		events.append({"type": "refused", "text": "Not enough Schematics (%d needed)." % price})
 		return events
-	campaign.schematics -= config.rookie_cost
+	campaign.schematics -= price
 	var op := campaign.recruit(class_data)
-	events.append({"type": "recruited", "operative": op.id, "text": "Recruited %s (-%d Schematics)." % [op.name, config.rookie_cost]})
+	events.append({"type": "recruited", "operative": op.id, "text": "Recruited %s (-%d Schematics)." % [op.name, price]})
 	return events
 
 
@@ -721,12 +734,16 @@ static func ring_segment_options(op: OperativeState, cls: ClassData) -> Array[St
 
 
 static func recall(campaign: CampaignState, op_id: StringName) -> void:
+	if campaign.grid == null:  # a netrun-only campaign has no Grid
+		return
 	for id in campaign.grid.sites:
 		if campaign.grid.site(id).get("stationed", "") == String(op_id):
 			campaign.grid.site(id)["stationed"] = ""
 
 
 static func stationed_site(campaign: CampaignState, op_id: StringName) -> StringName:
+	if campaign.grid == null:  # a netrun-only campaign has no Grid
+		return &""
 	for id in campaign.grid.sites:
 		if campaign.grid.site(id).get("stationed", "") == String(op_id):
 			return id

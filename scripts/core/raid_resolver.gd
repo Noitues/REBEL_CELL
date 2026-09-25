@@ -413,8 +413,8 @@ static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], gr
 					result.events.append({"type": "threat_destroyed", "step": step, "threat": target["id"], "text": "Step %d: %s destroyed." % [step, target["name"]]})
 
 
-## Every station bonus on `site` (GDD 5.2): "damage" (asset multiplier, Breaker; also from
-## an adjacent node when `site` is a Firewall Relay), "hold" (steps a threat entering the
+## Every station bonus on `site` (GDD 5.2; a Firewall Relay also takes each adjacent
+## stationed operative's bonus, GDD 3.2): "damage" (asset multiplier, Breaker), "hold" (steps a threat entering the
 ## node is held once, Ghost), "regen" (integrity regained after each wave, Rigger),
 ## "turrets" (free temporary turrets for the raid, Botnet). Rank scales each by the
 ## class's RankRewardData.station_bonus_multiplier (counts round to nearest).
@@ -422,15 +422,28 @@ static func station_bonuses(campaign: CampaignState, grid: GridState, grid_data:
 	var out := {"damage": station_damage_multiplier(campaign, grid, grid_data, lookup, site), "hold": 0, "regen": 0, "turrets": 0}
 	if grid_data == null or not grid.is_active_node(site):
 		return out
+	# GDD 3.2: a Firewall Relay shares an adjacent stationed operative's bonus (the best of each).
+	var candidates: Array[StringName] = [site]
+	var here_node := lookup.get_content(grid.node_type_of(site)) as NetworkNodeData
+	if here_node != null and here_node.node_type == RC.NetworkNodeType.FIREWALL_RELAY:
+		candidates.append_array(grid.neighbors(site, grid_data))
+	for s in candidates:
+		if s == site or grid.is_active_node(s):
+			_add_station_bonus(campaign, grid, lookup, s, out)
+	return out
+
+
+## Folds the operative stationed on `site` into `out` (hold / regen / turrets, max of each).
+static func _add_station_bonus(campaign: CampaignState, grid: GridState, lookup: ContentLookup, site: StringName, out: Dictionary) -> void:
 	var op_id := grid.stationed_on(site)
 	if op_id == &"":
-		return out
+		return
 	var op := campaign.get_operative(op_id)
 	if op == null or not op.alive:
-		return out
+		return
 	var cls := lookup.get_content(op.class_id) as ClassData
 	if cls == null:
-		return out
+		return
 	var mult := op.station_multiplier(cls)
 	for te in cls.station_bonus:
 		if te == null:
@@ -445,7 +458,6 @@ static func station_bonuses(campaign: CampaignState, grid: GridState, grid_data:
 					out["regen"] = maxi(int(out["regen"]), roundi(e.amount * mult))
 				RC.EffectType.DEPLOY_DRONE:
 					out["turrets"] = maxi(int(out["turrets"]), roundi(maxi(1, e.amount) * mult))
-	return out
 
 
 ## Rigger station bonus: every stationed node with "regen" regains that much integrity

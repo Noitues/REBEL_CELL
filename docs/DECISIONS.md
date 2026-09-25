@@ -30,6 +30,28 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 11 fixes (GAP_ANALYSIS H11)
+- **Stationed operatives leave their post to run** (GDD 5.4, "instead of running"):
+  launching a stationed operative recalls it (the launch picker says "leaves <site>"), and
+  a death frees the post.
+- **An empty roster can always recruit**: with no living operative a rookie costs
+  `emergency_rookie_cost` (0), so the campaign can't stall with no operative and fewer
+  than 15 Schematics.
+- **Heat labels show the applied Heat**: map nodes, Scrub Heat and Heat-objective Sites
+  use `HeatRules.scaled_delta` (ICE gain and sink modifiers included). A Daemon override
+  of Rack Heat still applies only on capture.
+- **ICE 13 raises home repairs** as well as node repairs (REPAIR_COST_PCT).
+- **HQ boosts apply to the final breach and Reclaim runs** (Cycles, run-only cards, max
+  RAM), and are spent there.
+- **A Firewall Relay shares every station bonus** (GDD 3.2): hold, regen and turrets from
+  an adjacent stationed operative, the best of each, as well as the Breaker damage bonus.
+  This supersedes the M3 Breaker-only ruling.
+- **Config**: `ice_base_cap` 3, `ice_unlock_step` 3, top ICE from the ladder
+  (`max_ice_level()`), Modem stock `shop_card_stock` 3, `shop_firmware_stock` 2,
+  `shop_daemon_stock` 1; Steady Hand's +2 RAM is the card effect's amount.
+- **Large text scales wrap**: the combat controls row is a flow row, Grid Site labels
+  wrap; widths are tested at `TEXT_SCALE_MAX`.
+
 ### 2026-09-24 — Horizontal pass 10 fix (GAP_ANALYSIS H10)
 - **Netrun screens fit 1280**: the mid-run raid row wraps (HFlowContainer) and the netrun
   panel host scrolls vertically (horizontal scrolling disabled, follows focus), matching the

@@ -43,7 +43,7 @@ var _end_turn_button: ZineStamp
 var _rewind_button: Button
 var _picker_controls: Array[Control] = []
 ## The bottom controls row (layout tests check it fits the 1280-px canvas).
-var controls_row: HBoxContainer
+var controls_row: HFlowContainer
 var _settings_panel: PauseMenu = null
 var _arena: Control
 var _zine_elements: Array[Control] = []
@@ -646,7 +646,7 @@ func _build_ui() -> void:
 	right.add_child(log_note)
 	_zine_elements.append_array([preview_note, log_note])
 
-	var controls := HBoxContainer.new()
+	var controls := HFlowContainer.new()  # wraps at large text scales (GDD 9.6)
 	controls_row = controls
 	root.add_child(controls)
 	_target_option = OptionButton.new()

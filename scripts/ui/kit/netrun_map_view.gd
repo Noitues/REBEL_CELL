@@ -16,6 +16,8 @@ var map: MapGraph = null
 var current_id: StringName = &""
 var visited: Array[StringName] = []
 var available: Array[StringName] = []
+## Heat each node adds as applied (node id -> int); the raw node Heat when missing.
+var heat_shown: Dictionary = {}
 var corp_color: Color = Palette.CORP_SOLACE
 var _positions: Dictionary = {}
 
@@ -28,8 +30,9 @@ func _init() -> void:
 	resized.connect(queue_redraw)
 
 
-func show_map(p_map: MapGraph, p_current: StringName, p_visited: Array[StringName], p_available: Array[StringName]) -> void:
+func show_map(p_map: MapGraph, p_current: StringName, p_visited: Array[StringName], p_available: Array[StringName], p_heat: Dictionary = {}) -> void:
 	map = p_map
+	heat_shown = p_heat
 	current_id = p_current
 	visited = p_visited
 	available = p_available
@@ -123,8 +126,9 @@ func _draw() -> void:
 		var label: String = TYPE_NAMES.get(int(node["type"]), "?")
 		if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER:
 			label = "Elite " + label
-		if int(node["heat"]) != 0:
-			label += " +%d Heat" % int(node["heat"])
+		var heat := int(heat_shown.get(id, node["heat"]))
+		if heat != 0:
+			label += " %+d Heat" % heat
 		if visited.has(id) and id != current_id:
 			label = "done"
 		draw_string(Palette.mono(), p + Vector2(-40, NODE_RADIUS + 16), label, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, Color(Palette.PAPER, 0.5 if visited.has(id) and id != current_id else 1.0))

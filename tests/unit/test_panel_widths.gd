@@ -85,3 +85,34 @@ func test_the_mid_run_raid_screen_fits_the_screen() -> void:
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.reset()
 	RunManager.scene_switching_enabled = true
+
+
+## Horizontal pass 11: the widest text scale (GDD 9.6) still fits the combat controls and
+## the Grid list.
+func test_the_largest_text_scale_still_fits() -> void:
+	var before := Settings.text_scale
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	RunManager.save_slot = "gut_test_widths_scale"
+	RunManager.scene_switching_enabled = false
+	RunManager.delete_save()
+	RunManager.reset()
+	RunManager.new_campaign(1)
+	var combat: Control = add_child_autofree(load("res://scenes/combat/combat_scene.tscn").instantiate())
+	combat.start_fight(&"triage_unit", 7)
+	await _frames()
+	var w: float = combat.controls_row.get_combined_minimum_size().x
+	assert_true(w <= SCREEN_WIDTH, "combat controls %d px at text scale %.1f" % [w, Settings.text_scale])
+	combat.queue_free()
+	var hq: Control = add_child_autofree(load("res://scenes/hq/hq_scene.tscn").instantiate())
+	hq.show_grid()
+	await _frames()
+	_check(hq, "grid at max text scale")
+	hq.show_hq()
+	await _frames()
+	_check(hq, "HQ at max text scale")
+	Settings.set_text_scale(before)
+	RunManager.delete_save()
+	DirAccess.remove_absolute(RunManager.profile_path())
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.reset()
+	RunManager.scene_switching_enabled = true

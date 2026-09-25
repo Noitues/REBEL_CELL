@@ -250,7 +250,7 @@ func _show_map() -> void:
 	box.add_child(_label("Pick the next node (Heat cost shown; follow the links). Click a glowing node or press 1-9."))
 	map_view = NetrunMapView.new()
 	map_view.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
-	map_view.show_map(s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes())
+	map_view.show_map(s.run.map, s.run.current_node_id, s.run.visited, s.available_nodes(), s.map_heat())
 	map_view.node_clicked.connect(func(id: StringName) -> void:
 		if RunManager.netrun != null and RunManager.netrun.available_nodes().has(id):
 			enter_node(id))
@@ -261,8 +261,9 @@ func _show_map() -> void:
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
 		var text: String = "%d: %s%s" % [i + 1, NODE_LABELS.get(node["type"], "?"), " (elite)" if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER else ""]
-		if int(node["heat"]) != 0:
-			text += " +%d Heat" % int(node["heat"])
+		var heat := s.node_heat(available[i])
+		if heat != 0:
+			text += " %+d Heat" % heat
 		var id: StringName = available[i]
 		row.add_child(_button(text, func() -> void: enter_node(id)))
 	row.add_child(_button("Save & quit to start screen", save_and_quit))

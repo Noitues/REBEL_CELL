@@ -145,6 +145,24 @@ extends Resource
 @export var mirror_decoy_speed: int = 2
 ## New corporations may start at (global best ICE - this).
 @export var new_corp_ice_offset: int = 5
+## ICE selectable on a fresh profile, and how far past its best win a corporation unlocks.
+@export var ice_base_cap: int = 3
+@export var ice_unlock_step: int = 3
+## Modem stock (GDD 4.4): cards, Firmware and Daemons offered per visit.
+@export var shop_card_stock: int = 3
+@export var shop_firmware_stock: int = 2
+@export var shop_daemon_stock: int = 1
+## Rookie price when no operative is alive (decision 2026-09-24): the cell can always rebuild.
+@export var emergency_rookie_cost: int = 0
+
+
+## Highest ICE level on the ladder (final_final_ice when the ladder is empty).
+func max_ice_level() -> int:
+	var top := -1
+	for l in ice_ladder:
+		if l != null:
+			top = maxi(top, l.level)
+	return top if top >= 0 else final_final_ice
 
 
 ## The MAJOR Heat threshold levels, ascending (UI bands and poster marks).

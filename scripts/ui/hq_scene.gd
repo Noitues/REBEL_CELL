@@ -8,6 +8,9 @@ extends Control
 const STATUS_NAMES := {GridState.SiteStatus.CORPORATE: "corporate", GridState.SiteStatus.CLEARED: "cleared",
 	GridState.SiteStatus.CLAIMED: "claimed", GridState.SiteStatus.SEIZED: "SEIZED"}
 
+## Site-row label width on the Grid list: the text wraps inside it (large text scales).
+const SITE_LABEL_WIDTH := 560.0
+
 var _status: Label
 var _panel_host: PanelContainer
 var _log: RichTextLabel
@@ -418,8 +421,8 @@ func show_hq() -> void:
 	actions.add_child(_button("Settings [Esc]", open_settings))
 	for cls in RunManager.available_classes():
 		var cid := cls.id
-		actions.add_child(_button("Recruit %s (%d)" % [cls.display_name, cfg.rookie_cost], func() -> void: recruit(cid)))
-	actions.add_child(_button("Scrub Heat -%d (%d)" % [cfg.heat_purchase_amount, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
+		actions.add_child(_button("Recruit %s (%d)" % [cls.display_name, CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)))
+	actions.add_child(_button("Scrub Heat %d (%d)" % [HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg), CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction))
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		actions.add_child(_button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home))
 	if not c.pending_raids.is_empty():
@@ -612,13 +615,15 @@ func _site_row(site: SiteData, launchable: Array[SiteData], living: Array[Operat
 	if objective == RC.SiteObjective.EXPLOIT:
 		text += " (Exploit: %s)" % RC.ExploitType.keys()[site.exploit_type]
 	elif objective == RC.SiteObjective.HEAT_REDUCTION:
-		text += " (Heat %d)" % site.heat_change
+		text += " (Heat %d)" % HeatRules.scaled_delta(c, site.heat_change, cfg)
 	elif objective == RC.SiteObjective.BOSS:
 		text += " (BOSS)"
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
 		text += " (objective off: ICE)"
 	text += " links: %s" % ", ".join(c.grid.neighbors(site.id, corp.city_grid))
-	row.add_child(_label(text))
+	var site_label := _para(text)  # wraps inside the flow row at large text scales
+	site_label.custom_minimum_size.x = SITE_LABEL_WIDTH
+	row.add_child(site_label)
 	var launchable_here := false
 	for l in launchable:
 		if l.id == site.id:
@@ -626,7 +631,8 @@ func _site_row(site: SiteData, launchable: Array[SiteData], living: Array[Operat
 	if launchable_here and not living.is_empty():
 		var op_pick := OptionButton.new()
 		for op in living:
-			op_pick.add_item("%s R%d" % [op.name, op.rank])
+			var post := CampaignRules.stationed_site(c, op.id)
+			op_pick.add_item("%s R%d%s" % [op.name, op.rank, (" (leaves %s)" % post) if post != &"" else ""])
 		row.add_child(op_pick)
 		var sid := site.id
 		var kind := CampaignRules.run_kind_for(c, site)

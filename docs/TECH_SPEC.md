@@ -20,14 +20,17 @@ project.godot
 CLAUDE.md, README.md
 docs/                   GDD, TECH_SPEC, MILESTONES, STYLE_GUIDE, DECISIONS
 scripts/
-  data/                 Resource schemas (provided; 39 classes + RC enums)
-  core/                 Pure logic: wheel_math, combat_state, combat_resolver,
-                        effect_interpreter, preview, rewind, map_generator, raid_resolver
-  state/                Runtime state: wheel_state, combatant_state, operative_state,
-                        run_state, campaign_state, profile_state
-  autoload/             signal_bus, content_registry, rng_service, save_service, run_manager
-  ui/                   Scene scripts (views only)
-scenes/                 hq/, grid/, netrun_map/, combat/, raid/, ui_kit/
+  data/                 Resource schemas (41 classes + RC enums)
+  core/                 Pure logic: wheel_math, combat_resolver, combat_session (preview
+                        and rewind), effect_interpreter + handlers/, map_generator,
+                        netrun_session, campaign_rules, heat_rules, raid_resolver,
+                        rebel_cell_builder, campaign_code, achievements, campaign_simulator
+  state/                Runtime state: combat_state, wheel_state, combatant_state,
+                        operative_state, run_state, campaign_state, grid_state, profile_state
+  autoload/             signal_bus, content_registry, rng_service, save_service,
+                        run_manager, settings, audio_director, fx, dialogue
+  ui/                   Scene scripts (views only); kit/ widgets, fx/ effects
+scenes/                 menu/, hq/ (HQ, Grid, raids), netrun_map/, combat/
 content/                .tres by type: classes/, cards/, slices/, firmware/, daemons/,
                         enemies/, corporations/, nodes/, assets/, threats/, config/
 shaders/                glow, scanline, zine_paper, distortion
@@ -45,6 +48,10 @@ addons/gut/             GUT 9.x (installed in M0)
 | `RngService` | Named, seeded RNG streams (4.) |
 | `SaveService` | Versioned JSON save/load (8.) |
 | `RunManager` | Owns `ProfileState`, `CampaignState`, active `RunState`; scene transitions |
+| `Settings` | Accessibility, display, audio, controls and language settings; input binds |
+| `AudioDirector` | Music contexts and DJ sets per corporation |
+| `Fx` | Screen effects (respecting reduce-effects and the flash limiter) |
+| `Dialogue` | Speaker names and corporation / class lines |
 
 ## 4. Randomness
 - One campaign seed. `RngService` derives **independent streams**: `map`, `combat`,
