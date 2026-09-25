@@ -35,8 +35,9 @@ _(Claude Code: add entries here as you make them.)_
   `link_layout` clears old neighbour paths first, and sliders count as linkable, so every
   Options section (title and pause) is D-pad complete.
 - **Reference notes are readable by pad**: codex, stats, run history and lines-heard notes
-  start at the top, stop auto-following, and take focus so up/down scroll them
-  (`ZineNote.make_reference`).
+  start at the top, stop auto-following, and take focus (`ZineNote.make_reference`). H8: a
+  focused note handles ui_up/ui_down itself (a RichTextLabel only scrolls on keyboard
+  arrows), a quarter page per press, and passes focus on at the top or bottom edge.
 - **Netrun combat** links its own hand; the netrun panel no longer links it before the
   fight pickers are hidden.
 

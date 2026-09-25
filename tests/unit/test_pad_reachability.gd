@@ -154,3 +154,42 @@ func test_reference_notes_start_at_the_top_and_take_focus() -> void:
 	var note := ZineNote.new("CODEX").make_reference()
 	assert_false(note.label.scroll_following)
 	assert_eq(note.label.focus_mode, Control.FOCUS_ALL)
+
+
+
+func _pad(button: JoyButton) -> void:
+	var down := InputEventJoypadButton.new()
+	down.button_index = button
+	down.pressed = true
+	get_viewport().push_input(down)
+	var up := down.duplicate() as InputEventJoypadButton
+	up.pressed = false
+	get_viewport().push_input(up)
+
+
+func test_a_pad_scrolls_a_long_note_and_leaves_it_at_the_edge() -> void:
+	var box := VBoxContainer.new()
+	add_child_autofree(box)
+	var note := ZineNote.new("CODEX", Vector2(400, 120)).make_reference()
+	box.add_child(note)
+	for i in 80:
+		note.append("line %d of a long codex" % i)
+	var after := Button.new()
+	after.text = "Back"
+	box.add_child(after)
+	UiFocus.link_layout(box)
+	await _frames()
+	note.label.grab_focus()
+	await _frames()
+	var bar := note.label.get_v_scroll_bar()
+	assert_eq(bar.value, 0.0, "starts at the top")
+	_pad(JOY_BUTTON_DPAD_DOWN)
+	await _frames()
+	assert_true(bar.value > 0.0, "D-pad down scrolls the note")
+	assert_eq(get_viewport().gui_get_focus_owner(), note.label, "and keeps focus while there is more to read")
+	for i in 200:
+		_pad(JOY_BUTTON_DPAD_DOWN)
+		if get_viewport().gui_get_focus_owner() != note.label:
+			break
+	await _frames()
+	assert_eq(get_viewport().gui_get_focus_owner(), after, "at the bottom, down moves on")

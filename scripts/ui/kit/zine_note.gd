@@ -29,7 +29,28 @@ func make_reference() -> ZineNote:
 	label.scroll_following = false
 	label.focus_mode = Control.FOCUS_ALL
 	label.scroll_to_line.call_deferred(0)
+	if not label.gui_input.is_connected(_on_reference_input):
+		label.gui_input.connect(_on_reference_input)
 	return self
+
+
+## Up/down on a focused reference note scroll it by a quarter page, from any device (a
+## RichTextLabel alone only scrolls on keyboard arrows); at the top or bottom edge the
+## press moves focus to the neighbour instead, so the note never traps the player.
+func _on_reference_input(event: InputEvent) -> void:
+	var down := event.is_action_pressed("ui_down", true)
+	var up := event.is_action_pressed("ui_up", true)
+	if not (down or up):
+		return
+	var bar := label.get_v_scroll_bar()
+	var at_edge := bar == null or not bar.visible or (down and bar.value >= bar.max_value - bar.page - 0.5) or (up and bar.value <= bar.min_value + 0.5)
+	if at_edge:
+		var next := label.find_valid_focus_neighbor(SIDE_BOTTOM if down else SIDE_TOP)
+		if next != null:
+			next.grab_focus()
+	else:
+		bar.value = clampf(bar.value + (1.0 if down else -1.0) * maxf(1.0, bar.page * 0.25), bar.min_value, bar.max_value - bar.page)
+	label.accept_event()
 
 
 func append(text: String) -> void:
