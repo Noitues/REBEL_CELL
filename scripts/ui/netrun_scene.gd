@@ -47,6 +47,14 @@ func _ready() -> void:
 			run.phase = RunState.Phase.EVENT
 		_show_current()
 		return
+	for a in args:
+		if a.begins_with("--demo-cityrun="):
+			RunManager.save_slot = "demo"
+			new_campaign(1)
+			start_run(1)
+			_show_current()
+			show_city_route(int(a.trim_prefix("--demo-cityrun=")))
+			return
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
@@ -233,6 +241,73 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## Design review (#13): the netrun route on the city. The run's nodes are buildings in
+## the target Site's neighbourhood, layers stepping in from the street towards the Site;
+## looks: 0 = x-ray (city washed dark, cyan), 1 = blueprint, 2 = scanner spotlight.
+func show_city_route(variant: int) -> void:
+	var s := RunManager.netrun
+	var map := s.run.map
+	var target: Vector2 = CityLayout.site_points(RunManager.corporation).get(s.run.site_id, NeonCity.hq_of(RunManager.corporation.id))
+	var layers := map.layer_count()
+	var available := s.available_nodes()
+	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
+	var nodes: Array[Dictionary] = []
+	var rows := {}
+	for n in map.all_nodes():
+		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
+	for n in map.all_nodes():
+		var li := int(n["layer"])
+		var count := int(rows[li])
+		var at := target - CityLayout.RIGHT * (layers - li) * 1.7 + CityLayout.DOWN * (int(n["index"]) - (count - 1) * 0.5) * 2.2
+		var col := Palette.NET_CYAN
+		if n["id"] == s.run.current_node_id:
+			col = Palette.CELL_PINK
+		elif available.has(n["id"]):
+			col = Palette.CELL_ACID
+		elif s.run.visited.has(n["id"]):
+			col = Color(Palette.NET_CYAN, 0.5)
+		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
+			col = Palette.corp_color(RunManager.campaign.corporation_id)
+		var label: String = NODE_LABELS.get(n["type"], "?")
+		var idx := available.find(n["id"])
+		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
+			"label": ("%d: %s" % [idx + 1, label]) if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK})
+	var edges: Array[Dictionary] = []
+	for n in map.all_nodes():
+		for nxt in n["next"]:
+			var live: bool = n["id"] == s.run.current_node_id and available.has(nxt)
+			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live})
+	var panel := HBoxContainer.new()
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(spacer)
+	var side := VBoxContainer.new()
+	side.custom_minimum_size.x = 280
+	var names := ["X-RAY", "BLUEPRINT", "SCANNER SPOTLIGHT"]
+	var win := TerminalWindow.new("NETRUN ROUTE // %s" % names[variant], Palette.CELL_ACID)
+	for i in available.size():
+		var node := map.get_node(available[i])
+		var id: StringName = available[i]
+		win.body.add_child(_button("%d: %s" % [i + 1, NODE_LABELS.get(node["type"], "?")], func() -> void: enter_node(id)))
+	side.add_child(win)
+	panel.add_child(side)
+	_set_panel(panel, false)
+	var city := background.city
+	var overlay := CityMapOverlay.new(city)
+	city.add_child(overlay)
+	overlay.set_look([CityMapOverlay.Look.XRAY, CityMapOverlay.Look.BLUEPRINT, CityMapOverlay.Look.SPOTLIGHT][variant])
+	overlay.focus_id = s.run.current_node_id if s.run.current_node_id != &"" else (available[0] if not available.is_empty() else &"")
+	overlay.set_graph(nodes, edges)
+	var z := 1.45
+	city.scale = Vector2(z, z)
+	city.offset_right = -(size.x - size.x / z)
+	city.offset_bottom = -(size.y - size.y / z)
+	city.focus_grid = overlay.centre()
+	city.focus_anchor = Vector2(0.46, 0.55)
+	city.refresh()
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").

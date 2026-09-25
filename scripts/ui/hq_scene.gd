@@ -27,6 +27,8 @@ var background: CyberdeckBackground
 var wireframe: WireframeBackground
 var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
+## The map drawn on the city (Grid, raids); freed when another panel opens.
+var city_overlay: CityMapOverlay = null
 var _settings_panel: PauseMenu = null
 var _last_warned_raid: String = ""
 ## Site picked on the Grid map (its actions are listed first).
@@ -71,6 +73,14 @@ func _ready() -> void:
 			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), _demo_run(first))
 			CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
 			c.armory = [&"turret", &"ice_lock", &"decoy"]
+			for a in args:
+				if a.begins_with("--demo-citymap="):
+					show_city_map(int(a.trim_prefix("--demo-citymap=")))
+					return
+				if a.begins_with("--demo-cityraid="):
+					CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
+					show_city_raid(int(a.trim_prefix("--demo-cityraid=")))
+					return
 			if args.has("--demo-raid") or args.has("--demo-playout"):
 				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
 				show_raid()
@@ -253,6 +263,11 @@ func fight_raid() -> void:
 func _set_panel(p: Control, name: String) -> void:
 	if _panel != null:
 		_panel.queue_free()
+	if city_overlay != null and is_instance_valid(city_overlay) and not name.begins_with("city"):
+		city_overlay.queue_free()
+		city_overlay = null
+		wireframe.city.focus_grid = Vector2.INF
+		wireframe.city.refresh()
 	_panel = p
 	panel_name = name
 	_panel_host.add_child(p)
@@ -265,7 +280,7 @@ func _set_panel(p: Control, name: String) -> void:
 	UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
-	var net := name in ["grid", "raid", "raid_playout", "raid_summary"]
+	var net := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
 	background.visible = not net
 	wireframe.visible = net
 	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
@@ -693,6 +708,183 @@ func show_grid() -> void:
 			continue
 		box.add_child(_site_row(site, launchable, living, choices))
 	_set_panel(outer, "grid")
+
+
+## The campaign's Grid as a graph for the city overlay: every Site on a real building
+## in the corporation's territory (laid out like the Grid data, the boss end near the
+## corporation's HQ), links along the streets, pending threat routes in its colour.
+func grid_graph() -> Dictionary:
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	var points := CityLayout.site_points(corp)
+	var corp_col := Palette.corp_color(corp.id)
+	var nodes: Array[Dictionary] = []
+	for sd in corp.city_grid.sites:
+		if sd == null:
+			continue
+		var status := c.grid.status_of(sd.id)
+		var col := corp_col
+		match status:
+			GridState.SiteStatus.CLAIMED:
+				col = Palette.CELL_PINK
+			GridState.SiteStatus.CLEARED:
+				col = Palette.NET_CYAN
+			GridState.SiteStatus.SEIZED:
+				col = Palette.RESIST_GOLD
+		var glyph := "T%d" % sd.tier
+		match CampaignRules.site_objective(c, sd):
+			RC.SiteObjective.EXPLOIT:
+				glyph = "◈"
+			RC.SiteObjective.HEAT_REDUCTION:
+				glyph = "❄"
+			RC.SiteObjective.BOSS:
+				glyph = "✦"
+		var home := sd.id == c.grid.home_site_id
+		var named := home or status != GridState.SiteStatus.CORPORATE or glyph.length() == 1 or sd.id == selected_site
+		nodes.append({"id": sd.id, "at": points[sd.id], "color": col,
+			"label": ("CORE" if home else sd.display_name) if named else "", "glyph": "⌂" if home else glyph, "big": home or glyph == "✦"})
+	var edges: Array[Dictionary] = []
+	var seen := {}
+	for sd in corp.city_grid.sites:
+		if sd == null:
+			continue
+		for l in sd.links:
+			var key := [String(sd.id), String(l)]
+			key.sort()
+			if seen.has(str(key)):
+				continue
+			seen[str(key)] = true
+			var ours := c.grid.is_claimed(sd.id) and c.grid.is_claimed(l)
+			edges.append({"a": sd.id, "b": l, "color": Palette.CELL_PINK if ours else Color(Palette.NET_CYAN, 0.6), "width": 3.5 if ours else 2.0, "flow": ours})
+	for path in _threat_paths():
+		for i in path.size() - 1:
+			edges.append({"a": path[i], "b": path[i + 1], "color": corp_col, "width": 4.0, "dashed": true, "flow": true})
+	return {"nodes": nodes, "edges": edges}
+
+
+## Design review (#10): the Grid drawn on the city in one of the overlay looks.
+func show_city_map(look: int) -> void:
+	var box := HBoxContainer.new()
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(spacer)
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 10)
+	var names := ["TRACE", "PILLARS", "ISOLATE", "XRAY", "BLUEPRINT", "SPOTLIGHT"]
+	var legend := TerminalWindow.new("CITY GRID // LOOK: %s" % names[look])
+	legend.custom_minimum_size.x = 280
+	for line in ["[color=#FF3DA8]■[/color] claimed", "[color=#5CE1FF]■[/color] cleared", "[color=#3DFF8B]■[/color] corporate", "- - threat route", "◈ exploit  ❄ heat  ✦ boss"]:
+		var l := RichTextLabel.new()
+		l.bbcode_enabled = true
+		l.fit_content = true
+		l.custom_minimum_size.x = 250
+		l.text = line
+		legend.body.add_child(l)
+	side.add_child(legend)
+	side.add_child(_button("Back to HQ", show_hq))
+	box.add_child(side)
+	_set_panel(box, "city_grid")
+	_panel_host.theme_type_variation = &""
+	var g := grid_graph()
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.queue_free()
+	city_overlay = CityMapOverlay.new(wireframe.city)
+	wireframe.city.add_child(city_overlay)
+	city_overlay.set_look(look)
+	city_overlay.set_graph(g["nodes"], g["edges"])
+	wireframe.city.focus_grid = city_overlay.centre()
+	wireframe.city.focus_anchor = Vector2(0.42, 0.55)
+	wireframe.city.refresh()
+
+
+## Design review (#11, #12): the raid on the city. 0 = setup (trace), 1 = setup with
+## the rest of the city greyed out, 2 = playout on the whole network, 3 = playout zoomed
+## on the fight, 4 = zoomed with a picture-in-picture of the network.
+func show_city_raid(variant: int) -> void:
+	var c := RunManager.campaign
+	var projection := RunManager.project_raid()
+	var g := grid_graph()
+	var nodes: Array[Dictionary] = []
+	var network := {}
+	for id in c.grid.claimed_ids():
+		network[id] = true
+	for path in _threat_paths():
+		for id in path:
+			network[id] = true
+	var markers := {}
+	if variant >= 2:
+		# Mid-raid: threats where the first step leaves them.
+		for e in projection.events:
+			if int(e.get("step", 0)) > 1:
+				break
+			if e.get("type", "") == "threat_enters":
+				markers[e["site"]] = [String(e["text"]).get_slice(": ", 1).get_slice(" enters", 0)]
+			elif e.get("type", "") == "move":
+				markers.erase(e.get("from", &""))
+				markers[e["to"]] = ["Collector"]
+	for n in g["nodes"]:
+		if not network.has(n["id"]):
+			continue
+		var res: Dictionary = projection.nodes.get(String(n["id"]), {})
+		if not res.is_empty():
+			n["color"] = Palette.CELL_ACID if String(res["outcome"]) == "holds" else Palette.CELL_PINK
+			n["result"] = "%s > %s %s" % [res["before"], res["after"], String(res["outcome"]).to_upper()]
+			n["label"] = String(n["id"])
+		n["assets"] = c.grid.assets_on(n["id"])
+		nodes.append(n)
+	var edges: Array[Dictionary] = []
+	for e in g["edges"]:
+		if network.has(e["a"]) and network.has(e["b"]):
+			edges.append(e)
+	var box := HBoxContainer.new()
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(spacer)
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 10)
+	side.custom_minimum_size.x = 290
+	var titles := ["RAID SETUP // ON THE CITY", "RAID SETUP // ISOLATED", "RAID LIVE // WHOLE NETWORK", "RAID LIVE // ZOOMED ON THE FIGHT", "RAID LIVE // ZOOM + NETWORK INSET"]
+	var info := ZineNote.new(titles[variant], Vector2(290, 150))
+	info.append("Projection: %s, home %d -> %d" % ["HOLDS" if projection.won else "breached", projection.home_before, projection.home_after])
+	info.append("Assets ride their buildings; threats run the streets.")
+	side.add_child(info)
+	side.add_child(_button("Back to HQ", show_hq))
+	box.add_child(side)
+	_set_panel(box, "city_raid")
+	_panel_host.theme_type_variation = &""
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.queue_free()
+	var city := wireframe.city
+	city_overlay = CityMapOverlay.new(city)
+	city.add_child(city_overlay)
+	city_overlay.set_look(CityMapOverlay.Look.ISOLATE if variant in [1, 3, 4] else CityMapOverlay.Look.TRACE)
+	city_overlay.markers = markers
+	city_overlay.set_graph(nodes, edges)
+	city.focus_grid = city_overlay.centre()
+	city.focus_anchor = Vector2(0.4, 0.55)
+	if variant >= 3 and not markers.is_empty():
+		# Zoom the camera onto the fight.
+		var z := 1.9
+		city.scale = Vector2(z, z)
+		city.offset_right = -(size.x - size.x / z)
+		city.offset_bottom = -(size.y - size.y / z)
+		city.focus_grid = Vector2(city_overlay.lot_of(markers.keys()[0])) + Vector2(0.5, 0.5)
+		city.focus_anchor = Vector2(0.45, 0.6)
+	city.refresh()
+	if variant == 4:
+		# Picture-in-picture: the whole network in a small terminal window.
+		var pip := TerminalWindow.new("NETWORK")
+		pip.position = Vector2(20, 60)
+		var view := RaidBoardView.new()
+		view.custom_minimum_size = Vector2(300, 180)
+		view.show_grid(c, RunManager.corporation, _threat_paths())
+		view.threat_markers = markers
+		view.node_results = projection.nodes
+		pip.body.add_child(view)
+		_panel.add_child(pip)
+		pip.top_level = true
 
 
 ## Pending raids' routes, entry -> home, for the map's corporate arrows.

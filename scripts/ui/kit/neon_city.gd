@@ -11,6 +11,9 @@ extends Control
 ## unless reduce-effects. Every building's roof outline is kept (`roof_of`) so map
 ## overlays can mark real buildings. Pure view: deterministic, never touches game state.
 
+## Emitted after the city geometry is rebuilt (overlays re-read roofs and positions).
+signal rebuilt
+
 const SKETCH_SHADER := preload("res://shaders/city_sketch.gdshader")
 
 ## Tile half-width / half-height of the isometric grid (2:1).
@@ -82,6 +85,9 @@ var pan: bool = false:
 		pan = v
 		_apply_pan_margin()
 ## Ink palette (INK_SETS index).
+## Camera override: this grid point lands on `focus_anchor` (a screen fraction).
+var focus_grid: Vector2 = Vector2.INF
+var focus_anchor: Vector2 = Vector2(0.5, 0.5)
 ## Design review: big territory names over each HQ (the zoomed-out overview).
 var territory_labels: bool = false
 var ink_set: int = 0:
@@ -253,6 +259,22 @@ func roof_of(i: int, j: int) -> Dictionary:
 	return _roofs.get(Vector2i(i, j), {})
 
 
+## The nearest lot with a building to (x, y) within `radius` lots, avoiding `taken`.
+func nearest_building(x: float, y: float, radius: int = 4, taken: Dictionary = {}) -> Vector2i:
+	var best := Vector2i(roundi(x), roundi(y))
+	var best_d := INF
+	for di in range(-radius, radius + 1):
+		for dj in range(-radius, radius + 1):
+			var l := Vector2i(roundi(x) + di, roundi(y) + dj)
+			if not _roofs.has(l) or taken.has(l):
+				continue
+			var d := Vector2(l).distance_to(Vector2(x, y))
+			if d < best_d:
+				best_d = d
+				best = l
+	return best
+
+
 ## True when lot (i, j) is a street (for overlays that route along streets).
 func is_street(i: int, j: int) -> bool:
 	return _street_i.has(i) or _street_j.has(j)
@@ -297,6 +319,9 @@ func _draw() -> void:
 	var anchor := Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y) if district != &"" else size * 0.5
 	if pan:
 		anchor = size * 0.5
+	if focus_grid != Vector2.INF:
+		focus = focus_grid
+		anchor = size * focus_anchor
 	_ox = anchor.x - (focus.x - focus.y) * TILE_A
 	_oy = anchor.y - (focus.x + focus.y) * TILE_B
 	_hq_rects.clear()
@@ -355,6 +380,7 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
 	_built_for = size
 	_fx.queue_redraw()
+	rebuilt.emit()
 
 
 ## Irregular street spacing along both axes (deterministic per district).
