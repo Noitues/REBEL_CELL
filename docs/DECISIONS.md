@@ -30,6 +30,32 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 13 fixes (GAP_ANALYSIS H13)
+- **Cards move the ring they name**: a NUDGE effect with ring_scope INNER (Ring Tap,
+  Ratchet, Inner Drift, Gear Shift) always moves the inner ring. An outer-ring nudge card
+  (Fine Tune's "one ring", Jam, Tap Tap) follows the ring toggle, and falls back to the
+  outer ring on a wheel without an inner one instead of spending the card for nothing.
+  Snap's text now says it snaps the outer ring (Inner Snap does the inner one).
+- **Resistance changed while the turn resolves lasts**: a change made during RESOLVE
+  (Ghost Core strip on a Perfect, Tracer, an enemy's own +resistance slice) carries into
+  the next turn's restore (`CombatantState.resistance_carry`), then full resistance
+  returns a turn later. Changes made in the player phase (the Strip card) work as before.
+- **A kill outside resolution ends the fight**: after a card play and after start-of-turn
+  effects, deaths are settled and the outcome checked (Static Shock and friends no longer
+  leave a 0-HP enemy standing).
+- **Terminal choices show their real costs**: the button text uses the choice's data
+  (Cycles, HP, Heat as it will apply at the current ICE, rewards) in place of the
+  hand-written summary. A choice is refused, and its button disabled, when it costs
+  Cycles you don't have, would flatline the operative, or grants a Daemon already
+  installed. Returns Desk's "Return a Bug" (it never took a Bug) became "Trade in store
+  credit".
+- **Rack Heat labels include Scrubber's override**.
+- **The tutorial sits over the log strip** (right column, never on a wheel), is part of
+  the layout check, and names the bound keys; the combat buttons do too.
+- **Momentum**: Spin `amount` (2), or amount x multiplier (5) after a spin, from the card.
+- **Width tests restore the text scale in after_each**, so a failed run can't leave the
+  player's settings at 1.6. Netrun panels wrap like HQ panels (`UiWrap.fit`).
+
 ### 2026-09-24 — Horizontal pass 12 fixes (GAP_ANALYSIS H12)
 - **One profile for every campaign slot** (GDD 3.4, TECH_SPEC 8): slots 1-3 and the default
   slot share `profile.json`; deleting a slot's campaign keeps it. Test slots (`gut_` prefix)

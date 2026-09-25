@@ -215,7 +215,7 @@ func validate_action(state: CombatState, action: CombatAction) -> String:
 					continue
 				if (e.type == RC.EffectType.FLIP or e.type == RC.EffectType.RESPIN) and target != state.player and target.resistance > 0:
 					return "%s blocked: %s has %d resistance." % [RC.EffectType.keys()[e.type], target.display_name, target.resistance]
-				if e.type == RC.EffectType.NUDGE and e.ring_scope == RC.RingScope.INNER and not target.wheel.has_inner_ring():
+				if e.type == RC.EffectType.NUDGE and EffectInterpreter.nudge_ring(e, action, target) == RC.RingScope.INNER and not target.wheel.has_inner_ring():
 					return "Target has no inner ring."
 				if e.slice_pick == RC.SlicePick.CHOSEN and e.type in [RC.EffectType.APPLY_STATUS, RC.EffectType.CLEANSE, RC.EffectType.DEPLOY_DRONE] and action.slot_index < 0:
 					return "Choose a slice."
@@ -331,7 +331,8 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 			if c.hub_breached_turns == 0:
 				events.append({"type": "hub_restored", "target": c.id, "text": "%s Hub is back online." % c.display_name})
 		if not c.is_player:
-			c.resistance = c.full_resistance()
+			c.resistance = maxi(0, c.full_resistance() + c.resistance_carry)
+			c.resistance_carry = 0
 	for e in s.enemies:
 		if e.is_alive() and not e.is_satellite:
 			_spawn_turn_start(s, e, rng, events)
@@ -350,7 +351,9 @@ func start_turn(s: CombatState, rng: RandomNumberGenerator, events: Array[Dictio
 	fx.draw_cards(s, maxi(0, config.hand_size - s.hand.size()), rng, events)
 	var ctx := {"owner": s.player, "target": s.get_combatant(s.target_id), "pointer_index": 0, "source_id": &"turn"}
 	fx.run_triggers(s, RC.Trigger.ON_TURN_START, ctx, _player_listeners(s), rng, events)
-	s.phase = CombatState.Phase.PLAYER_PHASE
+	_settle_deaths(s, events)
+	if not s.is_over():
+		s.phase = CombatState.Phase.PLAYER_PHASE
 
 
 ## RESOLVE: every pointer of every wheel, defensive -> offensive -> statuses, both
@@ -496,6 +499,16 @@ func _apply_card(s: CombatState, action: CombatAction, rng: RandomNumberGenerato
 		s.exhaust_pile.append(card_id)
 	else:
 		s.discard_pile.append(card_id)
+	_settle_deaths(s, events)
+
+
+## Deaths outside resolution (cards, start-of-turn Daemons): mark them, end the fight when
+## a side is gone, else keep the target on a living wheel.
+func _settle_deaths(s: CombatState, events: Array[Dictionary]) -> void:
+	_apply_deaths(s, [], events)
+	_check_outcome(s, events)
+	if not s.is_over():
+		_retarget_if_needed(s)
 
 
 # --- Internals: resolution -------------------------------------------------------

@@ -5,6 +5,18 @@ extends GutTest
 const SCREEN_WIDTH := 1280.0
 
 
+var _text_scale_before: float = 1.0
+
+
+func before_all() -> void:
+	_text_scale_before = Settings.text_scale
+
+
+## A failed width test must not leave the player's text scale changed.
+func after_each() -> void:
+	if not is_equal_approx(Settings.text_scale, _text_scale_before):
+		Settings.set_text_scale(_text_scale_before)
+
 func _frames(n: int = 3) -> void:
 	for i in n:
 		await get_tree().process_frame
@@ -80,6 +92,11 @@ func test_the_mid_run_raid_screen_fits_the_screen() -> void:
 	await _frames()
 	var w: float = scene._panel.get_combined_minimum_size().x
 	assert_true(w <= SCREEN_WIDTH, "raid interlude panel is %d px wide" % w)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)  # H13: and at the largest text scale
+	scene._show_current()
+	await _frames()
+	w = scene._panel.get_combined_minimum_size().x
+	assert_true(w <= SCREEN_WIDTH, "raid interlude panel is %d px wide at text scale %.1f" % [w, Settings.text_scale])
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())
 	RunManager.save_slot = RunManager.DEFAULT_SLOT

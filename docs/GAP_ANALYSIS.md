@@ -27,6 +27,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H10 | 2026-09-24 | 1 + follow-up (mid-run raid screen ran off the 1280 screen; netrun combat entry left focus on Settings) | Fixed in horizontal batch H10 |
 | H11 | 2026-09-24 | 10 (stationed operatives could run and dead ones kept posts, empty-roster stall, text-scale overflow, Heat previews unscaled, home repair ignored ICE 13, boosts skipped special runs, relay shared only the Breaker bonus, magic numbers, stale TECH_SPEC, stale counts) | Fixed in horizontal batch H11 |
 | H12 | 2026-09-24 | 7 (profile per slot, final Rack rewards unclaimable, patrol Seized mid-run re-extracted its Exploit, raid setup / end / title overflow, Daemon and raid magic numbers, Twin Pointer Miss and Cold Exit, Racks stat estimated) | Fixed in horizontal batch H12 |
+| H13 | 2026-09-24 | 9 + 1 (inner-ring cards moved the outer ring, resolve-time resistance wiped, card kills didn't end fights, hidden and lethal Terminal costs, Daemon choices charged twice, Scrubber Rack labels, tutorial over the wheels, Momentum numbers, GDD header; netrun panels overflowing at text scale 1.6) | Fixed in horizontal batch H13 |
 
 ### Pass 3 (vertical) — clean
 
@@ -50,7 +51,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 480 passing at H12; schema smoke test and content validation green.
+Tests: 489 passing at H13; schema smoke test and content validation green.
 
 ---
 

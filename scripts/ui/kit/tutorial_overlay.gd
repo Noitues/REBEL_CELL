@@ -7,13 +7,16 @@ extends Control
 
 signal finished
 
+## Height kept for the Next / Skip row under the note.
+const BUTTON_ROW_HEIGHT := 40.0
+
 const STEPS: Array[Dictionary] = [
 	{"title": "THE WHEEL", "text": "30 ticks, 6 slices. The white pointer reads the tick under it; the slice it lands on is what you do this turn. Glyphs: ▲ attack, ✦ crit, ■ defend, ⬢ shield, ◇ evade, ⬡ deploy, ✚ heal, ◈ afflict, ✕ miss. Right-click any slice to inspect it.", "until": ""},
-	{"title": "PRECISION", "text": "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD (full), 2 off for PARTIAL (half). Press Q or E to nudge your wheel one tick.", "until": "nudge"},
+	{"title": "PRECISION", "text": "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD (full), 2 off for PARTIAL (half). Press {nudge_left} or {nudge_right} to nudge your wheel one tick.", "until": "nudge"},
 	{"title": "RESISTANCE", "text": "Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked entirely while resistance is up. Strip it, breach the Hub, or spin past it.", "until": ""},
 	{"title": "CARDS & PREVIEW", "text": "Cards spin, nudge and flip wheels; they cost RAM. Hover a card to see exactly what will resolve (dashed acid arc = where your pointer ends up). Play a card with 1-9 or a click.", "until": "card"},
-	{"title": "REWIND", "text": "Press Z to undo anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.", "until": "rewind"},
-	{"title": "SEND IT", "text": "End Turn resolves every pointer at once: defensive slices, then offensive, then statuses. The preview strip already shows the result. Press Space.", "until": "turn_start"},
+	{"title": "REWIND", "text": "Press {rewind} to undo anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.", "until": "rewind"},
+	{"title": "SEND IT", "text": "End Turn resolves every pointer at once: defensive slices, then offensive, then statuses. The preview strip already shows the result. Press {end_turn}.", "until": "turn_start"},
 	{"title": "HEAT & BANKING", "text": "Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.", "until": ""},
 ]
 
@@ -23,12 +26,13 @@ var next_button: Button
 var skip_button: Button
 
 
-func _init() -> void:
-	custom_minimum_size = Vector2(380, 190)
-	note = ZineNote.new("TUTORIAL", Vector2(380, 150))
+func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
+	custom_minimum_size = p_size
+	size = p_size
+	note = ZineNote.new("TUTORIAL", Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT))
 	add_child(note)
 	var row := HBoxContainer.new()
-	row.position = Vector2(10, 152)
+	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
 	add_child(row)
 	next_button = Button.new()
 	next_button.text = "Next"
@@ -45,8 +49,16 @@ func _show() -> void:
 	note.clear()
 	var s: Dictionary = STEPS[step]
 	note.append("[b]%d/%d %s[/b]" % [step + 1, STEPS.size(), s["title"]])
-	note.append(String(s["text"]))
+	note.append(step_text(step))
 	next_button.text = "Finish" if step == STEPS.size() - 1 else "Next"
+
+
+## Step `i`'s text with the current key binds filled in.
+static func step_text(i: int) -> String:
+	var keys := {}
+	for action in [&"nudge_left", &"nudge_right", &"rewind", &"end_turn"]:
+		keys[String(action)] = Settings.key_text(action)
+	return String(STEPS[i]["text"]).format(keys)
 
 
 func current_title() -> String:

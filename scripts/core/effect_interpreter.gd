@@ -107,12 +107,9 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 					cleanse(t, slot, events)
 		RC.EffectType.NUDGE:
 			var action: CombatAction = ctx.get("action")
-			var ring: int = e.ring_scope
 			var direction: int = 1
 			if action != null:
 				direction = action.direction
-				if action.ring == RC.RingScope.INNER or action.ring == RC.RingScope.OUTER:
-					ring = action.ring
 			# Convention: a NUDGE effect with multiplier 0.0 ignores resistance (Jam).
 			# Accelerator segment (GDD 6.4): nudge cards resolve twice this turn.
 			var repeat := 1
@@ -120,6 +117,7 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 				repeat = 2
 				events.append({"type": "accelerator", "text": "Accelerator: the nudge card resolves twice."})
 			for t in targets:
+				var ring := nudge_ring(e, action, t)
 				for i in maxi(1, e.amount) * repeat:
 					nudge(state, owner, t, ring, direction, e.multiplier == 0.0, events)
 		RC.EffectType.SPIN:
@@ -147,7 +145,7 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 				events.append({"type": "freeze", "target": t.id, "text": "%s is FROZEN: it skips its next respin." % t.display_name})
 		RC.EffectType.MODIFY_RESISTANCE:
 			for t in targets:
-				modify_resistance(t, e.amount, events)
+				modify_resistance(t, e.amount, events, state.phase == CombatState.Phase.RESOLVE)
 		RC.EffectType.HUB_BREACH:
 			for t in targets:
 				hub_breach(t, maxi(1, e.amount), events)
@@ -374,6 +372,17 @@ func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary
 
 ## Moves one ring of `c`'s wheel by one tick. Enemy resistance absorbs the tick unless
 ## `ignore_resistance`. Returns true when the wheel moved.
+## The ring a card's NUDGE effect moves on `target`: INNER when the card names the inner
+## ring; otherwise the ring the player picked (the action's ring), falling back to OUTER
+## when the target has no inner ring.
+static func nudge_ring(e: EffectData, action: CombatAction, target: CombatantState) -> int:
+	if e.ring_scope == RC.RingScope.INNER:
+		return RC.RingScope.INNER
+	if action != null and action.ring == RC.RingScope.INNER and target != null and target.wheel.has_inner_ring():
+		return RC.RingScope.INNER
+	return RC.RingScope.OUTER
+
+
 func nudge(state: CombatState, owner: CombatantState, c: CombatantState, ring: int, direction: int, ignore_resistance: bool, events: Array[Dictionary]) -> bool:
 	var step := signi(direction)
 	if c != owner and not ignore_resistance and c.resistance > 0:
@@ -442,8 +451,13 @@ func respin(c: CombatantState, rng: RandomNumberGenerator, events: Array[Diction
 	return true
 
 
-func modify_resistance(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
+## Changes `c`'s resistance now. During RESOLVE the change also carries into the next
+## turn's restore (Ghost Core strip, Tracer, an enemy's own +resistance slice), which
+## would otherwise wipe it before the player acts.
+func modify_resistance(c: CombatantState, amount: int, events: Array[Dictionary], carry: bool = false) -> void:
 	c.resistance = maxi(0, c.resistance + amount)
+	if carry:
+		c.resistance_carry += amount
 	events.append({"type": "resistance", "target": c.id, "amount": amount, "text": "%s resistance %+d (%d)." % [c.display_name, amount, c.resistance]})
 
 

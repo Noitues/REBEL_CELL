@@ -73,6 +73,18 @@ func set_flash_limiter(value: bool) -> void:
 	_apply()
 
 
+## The keyboard key bound to `action`, for on-screen hints ("?" when it has none).
+func key_text(action: StringName) -> String:
+	if not InputMap.has_action(action):
+		return "?"
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			var k := ev as InputEventKey
+			var code := k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
+			return OS.get_keycode_string(code)
+	return "?"
+
+
 func set_text_scale(value: float) -> void:
 	text_scale = clampf(value, TEXT_SCALE_MIN, TEXT_SCALE_MAX)
 	_apply()

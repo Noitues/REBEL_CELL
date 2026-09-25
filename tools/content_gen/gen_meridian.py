@@ -364,7 +364,7 @@ EVENTS = [
       ("Stick it on a Meridian van (Card: Double Jam)", "Now Meridian is tracking itself.", 0, 0, [], C % "double_jam"), LEAVE]),
     ("ev_mer_returns_desk", "Returns Desk", 0, "The returns desk accepts anything, no questions asked, for store credit.",
      [("Return junk (+20 Cycles)", "Store credit, converted at a questionable rate.", 0, 0, [(22, 6, 20)], None),
-      ("Return a Bug (15 Cycles: Card: Scrap Code)", "They take the corrupted code and give you something useful.", 15, 0, [], C % "scrap_code"), LEAVE]),
+      ("Trade in store credit (15 Cycles: Card: Scrap Code)", "They take the corrupted code and give you something useful.", 15, 0, [], C % "scrap_code"), LEAVE]),
     ("ev_mer_priority_lane", "Priority Lane", 2, "A priority freight lane runs straight through the node. Nothing in it is ever inspected.",
      [("Ride the lane (+30 Cycles, +3 Heat)", "Fast, rich and very visible.", 0, 0, [(22, 6, 30), (21, 6, 3)], None),
       ("Poison the lane (Firmware: Tracer)", "You slip a tracer into Meridian's own traffic.", 0, 0, [], F % "tracer"), LEAVE]),

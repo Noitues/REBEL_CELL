@@ -85,7 +85,24 @@ func _leave_post(operative_id: StringName) -> Array[Dictionary]:
 ## Heat entering `node_id` adds, as it will be applied (ICE scaling included).
 func node_heat(node_id: StringName) -> int:
 	var node := run.map.get_node(node_id)
-	return 0 if node.is_empty() else HeatRules.scaled_delta(campaign, int(node.get("heat", 0)), config)
+	if node.is_empty():
+		return 0
+	var heat := int(node.get("heat", 0))
+	if int(node["type"]) == RC.InfilNodeType.SERVER_RACK:
+		heat = _rack_heat_override(heat)
+	return HeatRules.scaled_delta(campaign, heat, config)
+
+
+## The Rack capture Heat after a Daemon's override (Scrubber), without running the hooks.
+func _rack_heat_override(heat: int) -> int:
+	for id in run.operative.daemon_ids:
+		var d := lookup.get_content(id) as DaemonData
+		if d == null or d.custom_handler == null:
+			continue
+		for e in d.custom_handler.new().handle({"trigger": RC.Trigger.ON_SERVER_RACK_CAPTURE, "source_id": d.id, "daemon": d, "run": run}, run, null):
+			if e.get("type", "") == "heat_override":
+				heat = int(e["amount"])
+	return heat
 
 
 ## node_heat for every node of the map (what the map labels show).
@@ -566,8 +583,9 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 	if index < 0 or index >= ev.choices.size():
 		return _refuse("No such choice.")
 	var choice := ev.choices[index]
-	if choice.cycle_cost > run.cycles:
-		return _refuse("Not enough Cycles (%d needed)." % choice.cycle_cost)
+	var err := choice_error(choice)
+	if err != "":
+		return _refuse(err)
 	run.cycles -= choice.cycle_cost
 	run.operative.hp = maxi(0, run.operative.hp - choice.hp_cost)
 	last_events.append({"type": "event_choice", "label": choice.label, "text": "%s -> %s" % [choice.label, choice.result_text]})
@@ -585,6 +603,56 @@ func choose_event_option(index: int) -> Array[Dictionary]:
 	_maybe_raid_interlude()
 	_sync()
 	return last_events
+
+
+## Why `choice` can't be taken now ("" when it can): too few Cycles, an HP cost that
+## would flatline the operative, or a Daemon already installed.
+func choice_error(choice: EventChoiceData) -> String:
+	if choice.cycle_cost > run.cycles:
+		return "Not enough Cycles (%d needed)." % choice.cycle_cost
+	if choice_hp_loss(choice) >= run.operative.hp and choice_hp_loss(choice) > 0:
+		return "That would flatline %s (%d HP left)." % [run.operative.name, run.operative.hp]
+	if choice.reward is DaemonData and run.operative.daemon_ids.has((choice.reward as DaemonData).id):
+		return "%s is already installed." % (choice.reward as DaemonData).display_name
+	return ""
+
+
+## HP a choice costs (its HP cost plus damage effects).
+func choice_hp_loss(choice: EventChoiceData) -> int:
+	var loss := choice.hp_cost
+	for e in choice.effects:
+		if e != null and e.type == RC.EffectType.DEAL_DAMAGE:
+			loss += e.amount
+	return loss
+
+
+## What a choice costs and gives, from its data (Heat as it will apply): shown on the
+## button so no cost is hidden.
+func choice_costs(choice: EventChoiceData) -> String:
+	var parts := PackedStringArray()
+	if choice.cycle_cost > 0:
+		parts.append("-%d Cycles" % choice.cycle_cost)
+	if choice_hp_loss(choice) > 0:
+		parts.append("-%d HP" % choice_hp_loss(choice))
+	for e in choice.effects:
+		if e == null:
+			continue
+		match e.type:
+			RC.EffectType.GAIN_CYCLES:
+				parts.append("%+d Cycles" % e.amount)
+			RC.EffectType.MODIFY_HEAT:
+				parts.append("%+d Heat" % HeatRules.scaled_delta(campaign, e.amount, config))
+			RC.EffectType.HEAL:
+				parts.append("+%d HP" % e.amount)
+			RC.EffectType.GAIN_SCHEMATICS:
+				parts.append("%+d Schematics" % e.amount)
+	if choice.reward != null:
+		var kind := "Card" if choice.reward is CardData else ("Firmware" if choice.reward is FirmwareData else ("Daemon" if choice.reward is DaemonData else ("Asset" if choice.reward is DefenseAssetData else "Operative")))
+		if kind == "Operative":
+			parts.append("rescue an operative")
+		else:
+			parts.append("%s: %s" % [kind, String(choice.reward.get("display_name"))])
+	return ", ".join(parts)
 
 
 func _apply_run_effect(e: EffectData) -> void:

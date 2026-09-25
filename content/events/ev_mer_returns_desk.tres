@@ -21,7 +21,7 @@ effects = Array[ExtResource("e1")]([SubResource("fx0_0")])
 
 [sub_resource type="Resource" id="c1"]
 script = ExtResource("e2")
-label = "Return a Bug (15 Cycles: Card: Scrap Code)"
+label = "Trade in store credit (15 Cycles: Card: Scrap Code)"
 result_text = "They take the corrupted code and give you something useful."
 cycle_cost = 15
 reward = ExtResource("e3")

@@ -9,7 +9,16 @@ var _lookup: ContentLookup
 var _corp: CorporationData
 
 
+var _text_scale_before: float = 1.0
+
+
+## A failed width test must not leave the player's text scale changed.
+func after_each() -> void:
+	if not is_equal_approx(Settings.text_scale, _text_scale_before):
+		Settings.set_text_scale(_text_scale_before)
+
 func before_all() -> void:
+	_text_scale_before = Settings.text_scale
 	_cfg = CombatFixture.config()
 	_lookup = GridFixture.lookup()
 	_corp = ContentRegistry.get_content(&"solace") as CorporationData

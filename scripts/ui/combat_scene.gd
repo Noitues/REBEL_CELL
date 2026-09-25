@@ -50,6 +50,8 @@ var _zine_elements: Array[Control] = []
 var _last_events: Array[Dictionary] = []
 var _log_generation: int = 0
 var tutorial: TutorialOverlay = null
+## Where the tutorial sits: the log strip's place in the right column.
+const TUTORIAL_RECT := Rect2(980, 287, 300, 250)
 var _rewound: bool = false
 var _migrate_tween: Tween = null
 ## Text of the last inspect (tests read it).
@@ -168,8 +170,8 @@ func selected_direction() -> int:
 func start_tutorial() -> void:
 	if tutorial != null and is_instance_valid(tutorial):
 		return
-	tutorial = TutorialOverlay.new()
-	tutorial.position = Vector2(190, 60)
+	tutorial = TutorialOverlay.new(TUTORIAL_RECT.size)
+	tutorial.position = TUTORIAL_RECT.position  # over the log strip: never on a wheel (GDD 9.2)
 	add_child(tutorial)
 	tutorial.finished.connect(func() -> void: tutorial = null)
 
@@ -250,10 +252,13 @@ func layout_violations() -> Array[String]:
 	var wheels: Array[WheelView] = [_player_view]
 	for v in _enemy_views.values():
 		wheels.append(v)
-	for z in _zine_elements:
+	var notes: Array = _zine_elements.duplicate()
+	if tutorial != null and is_instance_valid(tutorial):
+		notes.append(tutorial)
+	for z in notes:
 		if not is_instance_valid(z) or not z.visible:
 			continue
-		var zr := z.get_global_rect()
+		var zr: Rect2 = (z as Control).get_global_rect()
 		for w in wheels:
 			if w.combatant != null and zr.intersects(w.wheel_rect()):
 				out.append("%s covers %s's wheel" % [z.name if z.name != "" else z.get_class(), w.combatant.display_name])
@@ -660,8 +665,8 @@ func _build_ui() -> void:
 	_nudge_ring_option.add_item("Outer [R]")
 	_nudge_ring_option.add_item("Inner [R]")
 	controls.add_child(_nudge_ring_option)
-	controls.add_child(_button("-1 [Q]", func() -> void: nudge(-1)))
-	controls.add_child(_button("+1 [E]", func() -> void: nudge(1)))
+	controls.add_child(_button("-1 [%s]" % Settings.key_text(&"nudge_left"), func() -> void: nudge(-1)))
+	controls.add_child(_button("+1 [%s]" % Settings.key_text(&"nudge_right"), func() -> void: nudge(1)))
 	_card_target_option = OptionButton.new()
 	_card_target_option.add_item("Card>tgt [T]")
 	_card_target_option.add_item("Card>own [T]")
@@ -674,11 +679,11 @@ func _build_ui() -> void:
 	_slot_option = OptionButton.new()
 	_slot_option.add_item("Slice auto [F]")
 	controls.add_child(_slot_option)
-	_respin_button = _button("Respin [X]", respin)
+	_respin_button = _button("Respin [%s]" % Settings.key_text(&"respin"), respin)
 	_respin_button.mouse_entered.connect(_show_respin_odds)
 	_respin_button.mouse_exited.connect(_show_end_turn_preview)
 	controls.add_child(_respin_button)
-	_rewind_button = _button("Undo [Z]", rewind)
+	_rewind_button = _button("Undo [%s]" % Settings.key_text(&"rewind"), rewind)
 	controls.add_child(_rewind_button)
 
 	var bottom := HBoxContainer.new()
@@ -809,7 +814,7 @@ func _refresh(state: CombatState) -> void:
 	_link_hand_focus()
 	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
-	_respin_button.text = "Respin %d [X]" % engine.resolver.config.respin_ram_cost
+	_respin_button.text = "Respin %d [%s]" % [engine.resolver.config.respin_ram_cost, Settings.key_text(&"respin")]
 	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
 	_show_end_turn_preview()
 

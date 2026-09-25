@@ -1,7 +1,7 @@
 # REBEL_CELL — Game Design Document
 
 **Genre:** Cyberpunk tactical dual-spinner deckbuilder with a network-defense campaign layer
-**Engine:** Godot 4.3 · **Platform:** PC (mouse + keyboard)
+**Engine:** Godot 4.7 · **Platform:** PC (mouse + keyboard, gamepad)
 **Status:** v0.9 — consolidated handoff specification
 
 All numbers are tuning placeholders unless marked **locked**. Numeric tuning lives in

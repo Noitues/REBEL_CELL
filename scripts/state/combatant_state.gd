@@ -26,6 +26,8 @@ var wheel: WheelState = null
 var resistance: int = 0
 ## Hub-sourced resistance at full strength (0 when the hub has none).
 var hub_resistance: int = 0
+## Resistance change made while the turn resolved; applied to the next restore, then cleared.
+var resistance_carry: int = 0
 ## > 0 while the hub is breached; counts down at the owner's start of turn.
 var hub_breached_turns: int = 0
 ## Tier scaling for enemy slice outputs (GDD 11.6); 1.0 for the operative.
@@ -68,6 +70,7 @@ func duplicate_state() -> CombatantState:
 	c.evade_charges = evade_charges
 	c.wheel = wheel.duplicate_state() if wheel != null else null
 	c.resistance = resistance
+	c.resistance_carry = resistance_carry
 	c.hub_resistance = hub_resistance
 	c.hub_breached_turns = hub_breached_turns
 	c.output_scale = output_scale
@@ -91,7 +94,7 @@ func to_dict() -> Dictionary:
 		"shield": shield,
 		"evade_charges": evade_charges,
 		"wheel": wheel.to_dict() if wheel != null else {},
-		"resistance": resistance,
+		"resistance": resistance, "resistance_carry": resistance_carry,
 		"hub_resistance": hub_resistance,
 		"hub_breached_turns": hub_breached_turns,
 		"output_scale": output_scale,
@@ -117,6 +120,7 @@ static func from_dict(d: Dictionary) -> CombatantState:
 	var wd: Dictionary = d.get("wheel", {})
 	c.wheel = WheelState.from_dict(wd) if not wd.is_empty() else null
 	c.resistance = int(d.get("resistance", 0))
+	c.resistance_carry = int(d.get("resistance_carry", 0))
 	c.hub_resistance = int(d.get("hub_resistance", 0))
 	c.hub_breached_turns = int(d.get("hub_breached_turns", 0))
 	c.output_scale = float(d.get("output_scale", 1.0))

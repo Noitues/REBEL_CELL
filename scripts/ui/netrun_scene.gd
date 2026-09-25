@@ -199,6 +199,7 @@ func _set_panel(p: Control) -> void:
 	if p.has_method("focus_hand"):
 		p.focus_hand()  # the combat scene links and focuses its own hand
 	else:
+		UiWrap.fit(p)
 		UiFocus.link_layout(p)
 		UiFocus.focus_first(p)
 	var s := RunManager.netrun
@@ -393,12 +394,24 @@ func _show_event() -> void:
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
-		b.text = TextDb.t(c, "label")
-		b.disabled = c.cycle_cost > s.run.cycles
+		b.text = _choice_text(TextDb.t(c, "label"), s.choice_costs(c))
+		var err := s.choice_error(c)
+		b.disabled = err != ""
+		b.tooltip_text = err
 		var index := i
 		b.pressed.connect(func() -> void: choose_event(index))
 		box.add_child(b)
 	_set_panel(box)
+
+
+## A Terminal choice's label with its costs from the data, replacing the hand-written
+## "(...)" summary so a hidden or unscaled cost can't slip through.
+static func _choice_text(label: String, costs: String) -> String:
+	var base := label
+	var open := base.rfind(" (")
+	if open > 0 and base.ends_with(")"):
+		base = base.substr(0, open)
+	return base if costs == "" else "%s (%s)" % [base, costs]
 
 
 ## Modem (GDD 11.2): stock as zine stickers with the Cycle price in the cost circle.
