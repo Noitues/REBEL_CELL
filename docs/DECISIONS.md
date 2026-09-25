@@ -30,6 +30,16 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-24 — Horizontal pass 7 fixes (GAP_ANALYSIS H7)
+- **Settings sections relink**: `show_section` relinks the panel after swapping controls,
+  `link_layout` clears old neighbour paths first, and sliders count as linkable, so every
+  Options section (title and pause) is D-pad complete.
+- **Reference notes are readable by pad**: codex, stats, run history and lines-heard notes
+  start at the top, stop auto-following, and take focus so up/down scroll them
+  (`ZineNote.make_reference`).
+- **Netrun combat** links its own hand; the netrun panel no longer links it before the
+  fight pickers are hidden.
+
 ### 2026-09-24 — Horizontal pass 6 fixes (GAP_ANALYSIS H6)
 - **Every panel is D-pad complete**: `UiFocus.link_layout` groups a panel's focusable
   controls into rows (a horizontal container is a row, a lone control is its own row),

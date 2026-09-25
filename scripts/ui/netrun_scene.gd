@@ -196,7 +196,8 @@ func _set_panel(p: Control) -> void:
 	_panel = p
 	combat_scene = null
 	_panel_host.add_child(p)
-	UiFocus.link_layout(p)
+	if not p.has_method("attach_netrun"):
+		UiFocus.link_layout(p)  # the combat scene links its own hand once the fight is set up
 	UiFocus.focus_first(p)
 	var s := RunManager.netrun
 	if s != null and not s.run.is_over():

@@ -131,6 +131,8 @@ func show_section(name: String) -> void:
 		"Language":
 			for w in [_labelled("Language (translations from assets/text/strings.csv)"), language_option]:
 				_body.add_child(w)
+	UiFocus.link_layout(self)  # the section swapped its controls
+	UiFocus.focus_first(_body)
 
 
 func begin_rebind(action: StringName) -> void:

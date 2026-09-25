@@ -110,3 +110,47 @@ func test_combat_is_pad_reachable() -> void:
 	assert_true(reach.has(scene._end_turn_button), "SEND IT reachable")
 	assert_eq(scene._end_turn_button.find_valid_focus_neighbor(SIDE_LEFT), scene._hand_box.get_child(scene._hand_box.get_child_count() - 1), "Left from SEND IT returns to the hand")
 	_end()
+
+
+func test_title_options_every_section_is_pad_reachable() -> void:
+	var title: Control = add_child_autofree(load("res://scenes/menu/title_scene.tscn").instantiate())
+	title.show_options()
+	await _frames()
+	var settings: SettingsPanel = null
+	for n in title.find_children("*", "SettingsPanel", true, false):
+		settings = n
+	assert_not_null(settings)
+	for section in ["Accessibility", "Display", "Audio", "Controls", "Language"]:
+		settings.show_section(section)
+		await _frames()
+		var reach := _reachable(settings)
+		var want := []
+		_usable(settings, want)
+		for c in want:
+			assert_true(reach.has(c), "%s: '%s' reachable" % [section, c.get("text")])
+		for n in settings.find_children("*", "HSlider", true, false):
+			if (n as Control).is_visible_in_tree():
+				assert_true(reach.has(n), "%s: slider reachable" % section)
+
+
+func test_combat_inside_a_netrun_is_pad_reachable() -> void:
+	_begin("gut_test_pad_netrun_combat")
+	RunManager.new_campaign(1)
+	var scene: Control = add_child_autofree(load("res://scenes/netrun_map/netrun_scene.tscn").instantiate())
+	scene.start_run(1)
+	scene.enter_node(RunManager.netrun.available_nodes()[0])
+	await _frames()
+	var combat: Control = scene.combat_scene
+	assert_not_null(combat)
+	var reach := _reachable(combat)
+	for c in combat._hand_box.get_children():
+		if not (c as BaseButton).disabled:
+			assert_true(reach.has(c))
+	assert_true(reach.has(combat._end_turn_button))
+	_end()
+
+
+func test_reference_notes_start_at_the_top_and_take_focus() -> void:
+	var note := ZineNote.new("CODEX").make_reference()
+	assert_false(note.label.scroll_following)
+	assert_eq(note.label.focus_mode, Control.FOCUS_ALL)

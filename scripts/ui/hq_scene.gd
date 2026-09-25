@@ -707,7 +707,7 @@ func show_codex() -> void:
 	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	var tabs := HBoxContainer.new()
 	box.add_child(tabs)
-	var body := ZineNote.new("", Vector2(900, 380))
+	var body := ZineNote.new("", Vector2(900, 380)).make_reference()
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for section in entries:
 		var name: String = section
@@ -715,7 +715,7 @@ func show_codex() -> void:
 	box.add_child(body)
 	_fill_codex(body, "Slices", entries["Slices"])
 	if not Dialogue.history.is_empty():
-		var lines := ZineNote.new("LINES HEARD", Vector2(900, 100))
+		var lines := ZineNote.new("LINES HEARD", Vector2(900, 100)).make_reference()
 		for h in Dialogue.history.slice(maxi(0, Dialogue.history.size() - 6)):
 			lines.append("[%s] %s" % [Dialogue.speaker_name(int(h["speaker"]), StringName(String(h.get("corporation", "")))), h["text"]])
 		box.add_child(lines)

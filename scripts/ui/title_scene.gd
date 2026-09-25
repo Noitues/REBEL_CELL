@@ -90,7 +90,7 @@ func show_slots() -> void:
 
 func show_codex() -> void:
 	var box := VBoxContainer.new()
-	var note := ZineNote.new("CODEX", Vector2(900, 420))
+	var note := ZineNote.new("CODEX", Vector2(900, 420)).make_reference()
 	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	for section in entries:
 		note.append("[b]%s[/b]" % section)
@@ -104,7 +104,7 @@ func show_codex() -> void:
 func show_stats() -> void:
 	var p := RunManager.profile
 	var box := VBoxContainer.new()
-	var note := ZineNote.new("STATS", Vector2(900, 200))
+	var note := ZineNote.new("STATS", Vector2(900, 200)).make_reference()
 	note.append("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
 	note.append("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d." % [ProfileState.ice_text(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
@@ -119,7 +119,7 @@ func show_stats() -> void:
 		var have := p.achievements.has(d["id"])
 		note.append("%s %s - %s" % ["[x]" if have else "[ ]", d["title"], d["text"]])
 	box.add_child(note)
-	var history := ZineNote.new("RUN HISTORY", Vector2(900, 160))
+	var history := ZineNote.new("RUN HISTORY", Vector2(900, 160)).make_reference()
 	if p.run_history.is_empty():
 		history.append("no runs yet")
 	for r in p.run_history:

@@ -23,6 +23,15 @@ func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
 	add_child(label)
 
 
+## Reference text (codex, stats, history): starts at the top, does not follow new lines,
+## and takes focus so a pad or the keyboard can scroll it (up/down, page up/down).
+func make_reference() -> ZineNote:
+	label.scroll_following = false
+	label.focus_mode = Control.FOCUS_ALL
+	label.scroll_to_line.call_deferred(0)
+	return self
+
+
 func append(text: String) -> void:
 	label.append_text(text + "\n")
 

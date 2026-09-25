@@ -66,6 +66,14 @@ static func owner_of(node: Node) -> Control:
 static func link_layout(root: Node) -> void:
 	var rows: Array = []
 	_collect_rows(root, rows)
+	# Start clean: a relink (settings sections swap their controls) must not leave paths to
+	# controls that are no longer in the tree.
+	for row in rows:
+		for c in row:
+			c.focus_neighbor_left = NodePath()
+			c.focus_neighbor_right = NodePath()
+			c.focus_neighbor_top = NodePath()
+			c.focus_neighbor_bottom = NodePath()
 	for r in rows.size():
 		var row: Array = rows[r]
 		for i in row.size():
@@ -90,6 +98,10 @@ static func _usable(c: Node) -> bool:
 		return false
 	if ctl is BaseButton:
 		return not (ctl as BaseButton).disabled
+	if ctl is Range:
+		return not (ctl is SpinBox) and not (ctl is ScrollBar)  # sliders yes; scrollbars belong to their owner
+	if ctl is RichTextLabel:
+		return true  # a reference note made focusable (ZineNote.make_reference)
 	return ctl is LineEdit and not (ctl.get_parent() is SpinBox)
 
 
