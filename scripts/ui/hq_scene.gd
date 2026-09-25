@@ -306,6 +306,20 @@ func _scroll_to_top() -> void:
 			scroll.scroll_vertical = 0
 
 
+## VIEW LOADOUT: the first living operative's deck and spinner (each crew card also has
+## its own Deck / Spinner buttons).
+func open_loadout(op: OperativeState = null) -> void:
+	var c := RunManager.campaign
+	if c == null:
+		return
+	if op == null:
+		var living := c.living_operatives()
+		if living.is_empty():
+			return
+		op = living[0]
+	add_child(LoadoutView.new(op, RunManager.lookup(), RunManager.config().shop_slices))
+
+
 func open_settings() -> void:
 	if _settings_panel != null:
 		_settings_panel.queue_free()
@@ -594,8 +608,7 @@ func show_hq() -> void:
 		if op.alive:
 			var view_row := HBoxContainer.new()
 			var op_ref := op
-			view_row.add_child(_button("Deck", func() -> void: add_child(DeckView.new(op_ref.deck, lookup, "%s // DECK" % op_ref.name))))
-			view_row.add_child(_button("Spinner", func() -> void: add_child(SpinnerView.new(op_ref.slot_slice_ids, op_ref.slot_firmware_ids, lookup, "%s // SPINNER" % op_ref.name, "", cfg.shop_slices))))
+			view_row.add_child(_button("Loadout", func() -> void: open_loadout(op_ref)))
 			orders.add_child(view_row)
 			if where != &"":
 				var id := op.id
@@ -1306,6 +1319,10 @@ func _refresh_status() -> void:
 	_status.text = "Heat %d/%d | Schematics %d | Home %d/%d | Exploits %d | Raids pending %d | ICE %d | %s" % [
 		c.heat, RunManager.config().heat_max, c.schematics, c.grid.home_integrity, c.grid.home_max_integrity,
 		c.exploits.size(), c.pending_raids.size(), c.ice_level, "campaign over" if c.is_over() else "active"]
+	hud.set_stats([["HEAT", str(c.heat), "/%d" % RunManager.config().heat_max], ["SCHEMATICS", str(c.schematics), ""],
+		["HOME", str(c.grid.home_integrity), "/%d" % c.grid.home_max_integrity], ["EXPLOITS", str(c.exploits.size()), "/%d" % RunManager.config().min_exploits_for_breach],
+		["RAIDS", str(c.pending_raids.size()), ""], ["ICE", str(c.ice_level), ""], ["CREW", str(c.living_operatives().size()), ""]])
+	hud.loadout_button.visible = not c.living_operatives().is_empty()
 
 
 func _report(events: Array[Dictionary]) -> void:
@@ -1326,6 +1343,7 @@ func _build_ui() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	hud = HudBar.new()
+	hud.loadout_pressed.connect(open_loadout)
 	root.add_child(hud)
 	_status = hud.label
 	var scroll := ScrollContainer.new()

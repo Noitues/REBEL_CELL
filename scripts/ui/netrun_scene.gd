@@ -34,12 +34,15 @@ func _ready() -> void:
 		_show_current()
 		if args.has("--demo-deckview"):
 			open_remove()
-			var view := get_node("DeckView") as DeckView
-			view.open_card.call_deferred(2)
+			(get_node("DeckView") as DeckView).select(2)
+		elif args.has("--demo-carddetail"):
+			open_remove()
+			(get_node("DeckView") as DeckView).open_card.call_deferred(2)
 		elif args.has("--demo-spinnerview"):
 			open_overwrite(1)
-			var sv := get_node("SpinnerView") as SpinnerView
-			sv.open_slot.call_deferred(0)
+			(get_node("SpinnerView") as SpinnerView).select(2)
+		elif args.has("--demo-loadout"):
+			open_loadout()
 		elif args.has("--demo-spinnergrid"):
 			open_overwrite(1)
 		elif args.has("--demo-deckgrid"):
@@ -587,7 +590,6 @@ func _show_shop() -> void:
 	for k in op.slot_slice_ids.size():
 		fw_slot.add_item("Socket into slot %d: %s" % [k, op.slot_slice_ids[k]])
 	var chips_win := TerminalWindow.new("MICROCHIPS")
-	chips_win.tag_label.text = "CYCLES %d" % s.run.cycles
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
 	var chips := HBoxContainer.new()
@@ -683,20 +685,7 @@ func _show_shop() -> void:
 	shred.icon_kind = "shred"
 	shred.pressed.connect(open_remove)
 	remove_row.add_child(shred)
-	var deck_btn := ZineCard.new("VIEW DECK", -1, "Look through your deck.", 1)
-	deck_btn.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_PINK)
-	deck_btn.hotkey = ""
-	deck_btn.icon_kind = "deck"
-	deck_btn.pressed.connect(func() -> void: _open_modal(DeckView.new(op.deck, s.lookup, "DECK")))
-	remove_row.add_child(deck_btn)
-	var inv := VBoxContainer.new()
-	inv.custom_minimum_size.x = 150
-	inv.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	inv.add_child(_label("CYCLES   %d" % s.run.cycles))
-	inv.add_child(_label("CARDS    %d" % op.deck.size()))
-	inv.add_child(_label("DAEMONS  %d" % op.daemon_ids.size()))
-	remove_row.add_child(inv)
-	var leave := DripButton.new("LEAVE THE MODEM", "", Palette.CELL_PINK, 34)
+	var leave := DripButton.new("LEAVE THE MODEM", "", DripButton.DRIP_PINK, 34, DripButton.LEAVE_MODEM_DRIPS)
 	leave.name = "LeaveModem"
 	leave.position = Vector2(900, 522)
 	leave.pressed.connect(leave_shop)
@@ -712,7 +701,7 @@ func _open_modal(view: Control) -> void:
 ## Deck viewer in pick mode: the chosen card is removed for the shop's price.
 func open_remove() -> void:
 	var s := RunManager.netrun
-	var view := DeckView.new(s.run.operative.deck, s.lookup, "REMOVE A CARD", "REMOVE FOR %d" % s.card_removal_price())
+	var view := DeckView.new(s.run.operative.deck, s.lookup, "REMOVE A CARD // %d CYCLES" % s.card_removal_price(), "REMOVE")
 	view.card_picked.connect(remove_card)
 	_open_modal(view)
 
@@ -722,8 +711,8 @@ func open_overwrite(stock_index: int) -> void:
 	var s := RunManager.netrun
 	var sd := s.lookup.get_content(StringName(String(s.run.shop["slices"][stock_index]))) as SliceData
 	var name_text := "%s %d" % [Palette.SLICE_NAMES.get(sd.slice_type, "?"), sd.base_output] if sd != null else "?"
-	var view := SpinnerView.new(s.run.operative.slot_slice_ids, s.run.operative.slot_firmware_ids, s.lookup, "OVERWRITE A SLICE // %s" % name_text,
-		"OVERWRITE WITH %s" % name_text, RunManager.config().shop_slices)
+	var view := SpinnerView.new(s.run.operative.slot_slice_ids, s.run.operative.slot_firmware_ids, s.lookup, "UPGRADE A SLICE // INSTALL %s // %d CYCLES" % [name_text, s.slice_overwrite_price(0)],
+		"UPGRADE", RunManager.config().shop_slices)
 	view.slot_picked.connect(func(slot: int) -> void: overwrite_slice(slot, stock_index))
 	_open_modal(view)
 
@@ -802,6 +791,21 @@ func _refresh_status() -> void:
 		var op := s.run.operative
 		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, op.hp, op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
 	_status.text = text
+	var stats := [["HEAT", str(c.heat), "/%d" % RunManager.resolver.config.heat_max], ["SCHEMATICS", str(c.schematics), ""]]
+	if s != null and not s.run.is_over():
+		var op := s.run.operative
+		stats.append_array([["HP", str(op.hp), "/%d" % op.max_hp], ["CYCLES", str(s.run.cycles), ""], ["CARDS", str(op.deck.size()), ""],
+			["RANK", str(op.rank), ""], ["BANKED", str(s.run.banked_schematics), ""]])
+	hud.set_stats(stats)
+	hud.loadout_button.visible = s != null and not s.run.is_over()
+
+
+## VIEW LOADOUT: the running operative's deck and spinner.
+func open_loadout() -> void:
+	var s := RunManager.netrun
+	if s == null:
+		return
+	_open_modal(LoadoutView.new(s.run.operative, s.lookup, RunManager.config().shop_slices))
 
 
 func _report(events: Array[Dictionary]) -> void:
@@ -862,6 +866,7 @@ func _build_ui() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	hud = HudBar.new()
+	hud.loadout_pressed.connect(open_loadout)
 	root.add_child(hud)
 	_status = hud.label
 	# Tall panels (a raid with many claimed Sites) scroll vertically; never sideways.

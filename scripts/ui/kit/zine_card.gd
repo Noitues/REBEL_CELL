@@ -4,7 +4,12 @@ extends Button
 ## rotation, tape strip, title in Anton, cost in marker; hovered or focused cards lift
 ## and glow acid. Emits Button signals; the scene decides what a press means.
 
+## Right-click (inspect): the scene opens the detail popup.
+signal inspected
+
 enum Variant { PAPER, BLACK, PINK }
+## Selection marks drawn over the card.
+enum Mark { NONE, CROSS, CIRCLE }
 ## STICKER: the zine card (hand, loot). CHIP / CARD_TILE: shop tiles (reference: the
 ## Modem's microchips and card builder) with an icon, a name and a Cycle price.
 enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
@@ -22,6 +27,10 @@ var slice_type: int = RC.SliceType.ATTACK
 var slice_output: int = 0
 ## CARD_TILE icon: "" (mini card), "shred" (card through a shredder), "deck" (a fanned stack).
 var icon_kind: String = ""
+var mark: int = Mark.NONE:
+	set(v):
+		mark = v
+		queue_redraw()
 var _lifted: bool = false
 
 
@@ -56,6 +65,12 @@ func as_tile(p_look: int, p_accent: Color) -> ZineCard:
 	return self
 
 
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		inspected.emit()
+		accept_event()
+
+
 func _set_lift(on: bool) -> void:
 	_lifted = on
 	queue_redraw()
@@ -64,7 +79,16 @@ func _set_lift(on: bool) -> void:
 func _draw() -> void:
 	if look != Look.STICKER:
 		_draw_tile()
-		return
+	else:
+		_draw_sticker()
+	match mark:
+		Mark.CROSS:
+			HandMarks.draw_x(self, Rect2(Vector2.ZERO, size), DripButton.DRIP_PINK)
+		Mark.CIRCLE:
+			HandMarks.draw_drip_circle(self, size * 0.5, size * 0.5 * Vector2(0.95, 0.8), DripButton.DRIP_PINK)
+
+
+func _draw_sticker() -> void:
 	var bg := Palette.PAPER
 	var fg := Palette.INK
 	match variant:
@@ -126,7 +150,7 @@ func _draw_tile() -> void:
 		if slice_output > 0:
 			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
 	elif icon_kind == "shred":
-		_mini_card(icon_c + Vector2(0, -8), accent)
+		_mini_card(icon_c + Vector2(0, -8), accent, false)
 		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
 		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), accent, false, 1.5)
 		for k in 6:
@@ -172,7 +196,7 @@ func _big_chip(c: Vector2, col: Color) -> void:
 
 
 ## A little paper card, tilted, for the card builder.
-func _mini_card(c: Vector2, col: Color) -> void:
+func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
 	draw_set_transform(c, -0.12, Vector2.ONE)
 	draw_rect(Rect2(Vector2(-19, -25), Vector2(40, 52)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2(-22, -28), Vector2(40, 52)), Palette.NOTE_PAPER)
@@ -180,7 +204,7 @@ func _mini_card(c: Vector2, col: Color) -> void:
 	draw_rect(Rect2(Vector2(-10, -32), Vector2(16, 7)), Palette.NOTE_TAPE)
 	var initials := ""
 	for w in card_title.split(" "):
-		if w != "" and initials.length() < 2:
+		if w != "" and initials.length() < 2 and initials_on:
 			initials += w[0].to_upper()
 	draw_string(Palette.display(), Vector2(-22, 8), initials, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, col.darkened(0.2))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

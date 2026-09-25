@@ -1,10 +1,11 @@
 class_name SpinnerView
 extends Control
-## Spinner viewer (modal): the operative's wheel drawn large with the slice icons; each
-## slice is a pickable pad. Picking one opens its detail popup: type, output, firmware,
-## and the stronger same-type slices from the Modem catalogue (`upgrades`). In pick mode
-## (`pick_label` set, e.g. "OVERWRITE WITH ATK 8") the popup carries that action and
-## `slot_picked(index)` fires. Emits `closed` on Back / Esc. View only.
+## Spinner viewer (modal): the wheel drawn large, each slice a pad with its icon and
+## value. Right-click opens a slice's detail popup (type, output, firmware, stronger
+## same-type slices from the Modem catalogue). With an `action` ("UPGRADE") left click
+## selects / deselects a slot, marked with a drippy circle, and the action appears in
+## dripping marker next to Close; pressing it emits `slot_picked(index)`. Without an
+## action, left click opens the detail. Emits `closed`. View only.
 
 signal slot_picked(index: int)
 signal closed
@@ -13,20 +14,24 @@ var slices: Array[StringName] = []
 var firmware: Array[StringName] = []
 var lookup: ContentLookup
 var upgrades: Array[SliceData] = []
-var pick_label: String = ""
+var action: String = ""
+var selected: int = -1
 var wheel_color: Color = Palette.CELL_PINK
+var window: TerminalWindow
+var tab_row: HBoxContainer
 var _wheel: Control
 var _pads: Array[Button] = []
+var _action_button: DripButton = null
 var _popup: Control = null
 var _hot: int = -1
 
 
 func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup: ContentLookup, p_title: String = "SPINNER",
-		p_pick_label: String = "", p_upgrades: Array[SliceData] = []) -> void:
+		p_action: String = "", p_upgrades: Array[SliceData] = []) -> void:
 	slices = p_slices
 	firmware = p_firmware
 	lookup = p_lookup
-	pick_label = p_pick_label
+	action = p_action
 	upgrades = p_upgrades
 	name = "SpinnerView"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -35,19 +40,20 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	dim.color = Color(0, 0, 0, 0.72)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
-	var win := TerminalWindow.new(p_title, Palette.CELL_PINK)
-	win.position = Vector2(290, 70)
-	win.custom_minimum_size = Vector2(700, 560)
-	add_child(win)
-	if pick_label != "":
-		var hint := Label.new()
-		hint.text = "Pick the slot to overwrite."
-		hint.add_theme_color_override("font_color", Palette.CELL_ACID)
-		win.body.add_child(hint)
+	window = TerminalWindow.new(p_title, Palette.CELL_PINK)
+	window.position = Vector2(290, 50)
+	window.custom_minimum_size = Vector2(700, 600)
+	add_child(window)
+	tab_row = HBoxContainer.new()
+	window.body.add_child(tab_row)
+	var hint := Label.new()
+	hint.text = "Left click: select the slot to %s. Right click: details." % action.to_lower() if action != "" else "Click a slice for details."
+	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
+	window.body.add_child(hint)
 	_wheel = Control.new()
 	_wheel.custom_minimum_size = Vector2(670, 440)
 	_wheel.draw.connect(_draw_wheel)
-	win.body.add_child(_wheel)
+	window.body.add_child(_wheel)
 	for i in slices.size():
 		var pad := Button.new()
 		pad.flat = true
@@ -56,20 +62,64 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 		pad.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		pad.tooltip_text = _slice_text(i)
 		var index := i
-		pad.pressed.connect(func() -> void: open_slot(index))
+		pad.pressed.connect(func() -> void: _on_left(index))
+		pad.gui_input.connect(func(ev: InputEvent) -> void:
+			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
+				open_slot(index)
+				pad.accept_event())
 		pad.mouse_entered.connect(func() -> void: _hot = index; _wheel.queue_redraw())
 		pad.focus_entered.connect(func() -> void: _hot = index; _wheel.queue_redraw())
 		_wheel.add_child(pad)
 		_pads.append(pad)
-	var back := Button.new()
-	back.text = "Back [Esc]"
-	back.pressed.connect(close)
-	win.body.add_child(back)
+	var bottom := HBoxContainer.new()
+	bottom.add_theme_constant_override("separation", 20)
+	window.body.add_child(bottom)
+	var close_btn := Button.new()
+	close_btn.name = "Close"
+	close_btn.text = "Close [Esc]"
+	close_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close_btn.pressed.connect(close)
+	bottom.add_child(close_btn)
+	if action != "":
+		_action_button = DripButton.new(action, "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
+		_action_button.name = "ActionButton"
+		_action_button.visible = false
+		_action_button.pressed.connect(confirm)
+		bottom.add_child(_action_button)
 
 
 func _ready() -> void:
 	_place_pads.call_deferred()
 	UiFocus.focus_first.call_deferred(self)
+
+
+func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
+	var b := Button.new()
+	b.text = text
+	b.disabled = active
+	b.pressed.connect(on_pressed)
+	tab_row.add_child(b)
+
+
+func _on_left(index: int) -> void:
+	if action == "":
+		open_slot(index)
+		return
+	select(-1 if selected == index else index)
+
+
+func select(index: int) -> void:
+	selected = index
+	if _action_button != null:
+		_action_button.visible = selected >= 0
+	_wheel.queue_redraw()
+
+
+func confirm() -> void:
+	if selected < 0:
+		return
+	slot_picked.emit(selected)
+	close()
 
 
 func _centre() -> Vector2:
@@ -117,14 +167,14 @@ func close() -> void:
 func _draw_wheel() -> void:
 	var c := _centre()
 	var n := slices.size()
-	var r0 := 90.0
-	var r1 := 190.0
-	_wheel.draw_circle(c, r1 + 16, Color(0, 0, 0, 0.6))
+	var r0 := 100.0
+	var r1 := 180.0
+	_wheel.draw_circle(c, r1 + 44, Color(0, 0, 0, 0.6))
 	for i in n:
 		var s := _slice(i)
 		var type := s.slice_type if s != null else RC.SliceType.MISS
-		var a0 := _angle(i) - PI / n + 0.02
-		var a1 := _angle(i) + PI / n - 0.02
+		var a0 := _angle(i) - PI / n + 0.03
+		var a1 := _angle(i) + PI / n - 0.03
 		var pts := PackedVector2Array()
 		for k in 13:
 			var a := lerpf(a0, a1, k / 12.0)
@@ -133,18 +183,21 @@ func _draw_wheel() -> void:
 			var a := lerpf(a1, a0, k / 12.0)
 			pts.append(c + Vector2(cos(a), sin(a)) * r0)
 		var col := Palette.slice_color(type)
-		_wheel.draw_colored_polygon(pts, Color(col, 0.55 if i == _hot else 0.3))
+		_wheel.draw_colored_polygon(pts, Color(col, 0.95 if i == _hot else 0.8) if type != RC.SliceType.MISS else Color(col, 0.2))
 		pts.append(pts[0])
-		_wheel.draw_polyline(pts, Palette.CELL_ACID if i == _hot else col, 2.0 if i == _hot else 1.2)
-		var mid := c + Vector2(cos(_angle(i)), sin(_angle(i))) * 140.0
-		SliceIcon.draw_icon(_wheel, mid + Vector2(0, -8), 14, type, Palette.PAPER)
+		_wheel.draw_polyline(pts, Palette.CELL_ACID if i == _hot else col.lightened(0.3), 2.0 if i == _hot else 1.2)
+		var am := _angle(i)
+		SliceIcon.draw_icon(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, Palette.PAPER)
 		if s != null and s.base_output > 0:
-			_wheel.draw_string(Palette.display(), mid + Vector2(-20, 26), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
+			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
 		if i < firmware.size() and firmware[i] != &"":
-			_wheel.draw_rect(Rect2(mid + Vector2(18, -26), Vector2(10, 10)), Palette.NET_CYAN)
+			_wheel.draw_rect(Rect2(c + Vector2(cos(am), sin(am)) * 116.0 - Vector2(5, 5), Vector2(10, 10)), Palette.NET_CYAN)
 	_wheel.draw_circle(c, r0 - 6, Color("#07080F"))
 	_wheel.draw_arc(c, r1, 0, TAU, 64, wheel_color, 2.5)
 	_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), "%d SLICES" % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
+	if selected >= 0:
+		var am := _angle(selected)
+		HandMarks.draw_drip_circle(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, Vector2(62, 56), DripButton.DRIP_PINK)
 
 
 ## The slice detail popup for slot `index`.
@@ -172,22 +225,15 @@ func open_slot(index: int) -> void:
 	for u in upgrades:
 		if s != null and u.slice_type == s.slice_type and u.base_output > s.base_output:
 			ups.append("%s %d" % [Palette.SLICE_NAMES.get(u.slice_type, "?"), u.base_output])
-	var up_label := Label.new()
-	up_label.text = "UPGRADES: " + (", ".join(ups) + " (at the Modem)" if not ups.is_empty() else "none stronger in the catalogue")
-	up_label.add_theme_color_override("font_color", Palette.CELL_ACID)
-	pop.body.add_child(up_label)
-	var actions := HBoxContainer.new()
-	pop.body.add_child(actions)
-	if pick_label != "":
-		var pick := Button.new()
-		pick.text = pick_label
-		pick.theme_type_variation = &"HotButton"
-		pick.pressed.connect(func() -> void: slot_picked.emit(index); close())
-		actions.add_child(pick)
-	var back := Button.new()
-	back.text = "Back"
-	back.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
-	actions.add_child(back)
+	if not ups.is_empty():
+		var up_label := Label.new()
+		up_label.text = "UPGRADES: " + ", ".join(ups)
+		up_label.add_theme_color_override("font_color", Palette.CELL_ACID)
+		pop.body.add_child(up_label)
+	var close_btn := Button.new()
+	close_btn.text = "Close"
+	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
+	pop.body.add_child(close_btn)
 	add_child(pop)
 	_popup = pop
 	UiFocus.focus_first.call_deferred(pop)
