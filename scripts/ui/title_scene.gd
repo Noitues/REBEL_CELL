@@ -53,8 +53,10 @@ func _ready() -> void:
 			var parts := a.trim_prefix("--demo-jitter=").split(",")
 			(background.city.material as ShaderMaterial).set_shader_parameter("wobble", float(parts[0]))
 			(background.city.material as ShaderMaterial).set_shader_parameter("jitter", float(parts[1]))
+		elif a.begins_with("--demo-texture="):
+			background.city.face_texture = int(a.trim_prefix("--demo-texture="))
 		elif a == "--demo-cultures":
-			background.city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english", &"rebel_cell": "mayan"}
+			background.city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english"}
 			background.city.refresh()
 		elif a.begins_with("--demo-bigoverview="):
 			# Design review: the whole city at a given zoom in a big window.

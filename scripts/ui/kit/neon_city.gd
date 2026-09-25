@@ -40,7 +40,7 @@ const DISTRICTS := {
 	&"meridian": {"mix": [3, 2, 0, 0, 0, 0, 6], "height": 0.7, "corp_ink": 0.58, "seed": 23},
 	&"halcyon": {"mix": [3, 4, 1, 0, 4, 0, 1], "height": 1.0, "corp_ink": 0.58, "seed": 37},
 	&"orbital": {"mix": [2, 1, 2, 1, 1, 5, 0], "height": 1.35, "corp_ink": 0.58, "seed": 41},
-	&"rebel_cell": {"mix": [2, 2, 1, 5, 1, 1, 1], "height": 0.95, "corp_ink": 0.58, "seed": 53},
+	&"rebel_cell": {"mix": [4, 3, 2, 1, 1, 1, 2], "height": 1.0, "corp_ink": 0.58, "seed": 53},
 	&"": {"mix": [4, 3, 2, 1, 1, 1, 2], "height": 1.0, "corp_ink": 0.0, "seed": 7},
 }
 enum Shape { BOX, STEPPED, CYLINDER, HEX, TAPER, NEEDLE, WAREHOUSE,
@@ -80,6 +80,27 @@ const INK_SETS: Array[Dictionary] = [
 	{"name": "FADED PRINT", "tint": Color("#C9BFD9"), "amount": 0.38},
 	{"name": "COOL HAZE", "tint": Color("#D6F2FF"), "amount": 0.32},
 ]
+## The Cell has no tower: its territory is ordinary city, and its roads etch a raised
+## fist (traced from the reference icon; polygons in 0-1 image space, y down) that reads
+## from above. FIST_SIZE is the fist's size on screen (px at zoom 1); the roads are
+## FIST_ROAD_HALF px half-wide, lots within FIST_CLEAR px of a road stay empty and lots
+## within FIST_LOW px stay low so the roads are not hidden behind towers.
+const FIST_TERRITORY := &"rebel_cell"
+const FIST_SIZE := Vector2(1000, 1070)
+const FIST_ROAD_HALF := 13.0
+const FIST_CLEAR := 30.0
+const FIST_LOW := 90.0
+const FIST_POLYS := [
+	[Vector2(0.545, 0.458), Vector2(0.425, 0.491), Vector2(0.487, 0.515)],
+	[Vector2(0.909, 0.379), Vector2(0.724, 0.579), Vector2(0.779, 0.636), Vector2(0.994, 0.461)],
+	[Vector2(0.88, 0.33), Vector2(0.76, 0.245), Vector2(0.558, 0.509), Vector2(0.682, 0.552)],
+	[Vector2(0.227, 0.2), Vector2(0, 0.515), Vector2(0.347, 0.888), Vector2(0.328, 0.997), Vector2(0.776, 0.997), Vector2(0.773, 0.915), Vector2(0.89, 0.779), Vector2(0.919, 0.585), Vector2(0.782, 0.691), Vector2(0.672, 0.597), Vector2(0.464, 0.552), Vector2(0.662, 0.845), Vector2(0.701, 0.873), Vector2(0.636, 0.879), Vector2(0.614, 0.948), Vector2(0.584, 0.879), Vector2(0.519, 0.885), Vector2(0.594, 0.821), Vector2(0.399, 0.539), Vector2(0.247, 0.488), Vector2(0.299, 0.445), Vector2(0.289, 0.367), Vector2(0.315, 0.367), Vector2(0.367, 0.433), Vector2(0.471, 0.43), Vector2(0.542, 0.397), Vector2(0.549, 0.327)],
+	[Vector2(0.584, 0.112), Vector2(0.49, 0.258), Vector2(0.604, 0.312), Vector2(0.601, 0.367), Vector2(0.727, 0.185)],
+	[Vector2(0.396, 0), Vector2(0.289, 0.167), Vector2(0.438, 0.23), Vector2(0.536, 0.082)],
+]
+## Wall textures (design review options): 0 none, 1 panel seams, 2 pen hatching,
+## 3 grime stipple, 4 concrete grain (shader).
+const TEXTURE_NAMES: Array[String] = ["NONE", "PANEL SEAMS", "PEN HATCHING", "GRIME STIPPLE", "CONCRETE GRAIN"]
 ## Pan margin (px beyond the screen on every side) and speed.
 const PAN_MARGIN := 360.0
 
@@ -107,6 +128,12 @@ var cultures: Dictionary = {}
 ## Design review: big territory names over each HQ (the zoomed-out overview).
 var territory_labels: bool = false
 var territory_label_px: float = 30.0
+## Wall texture (TEXTURE_NAMES index).
+var face_texture: int = 0:
+	set(v):
+		face_texture = v
+		(material as ShaderMaterial).set_shader_parameter("concrete", 1.0 if v == 4 else 0.0)
+		refresh()
 var ink_set: int = 3:
 	set(v):
 		ink_set = v
@@ -150,6 +177,8 @@ var _street_i: Dictionary = {}
 var _street_j: Dictionary = {}
 var _local_i: Dictionary = {}
 var _local_j: Dictionary = {}
+var _fist_segs: Array[PackedVector2Array] = []
+var _fist_box: Rect2 = Rect2()
 
 
 func _init() -> void:
@@ -285,7 +314,10 @@ static func hq_of(corporation_id: StringName) -> Vector2:
 
 
 func _set_lot_context(i: int, j: int) -> void:
-	var pair := _territory_pair(i, j)
+	_apply_context(_territory_pair(i, j))
+
+
+func _apply_context(pair: Array) -> void:
 	_terr = pair[0]
 	_terr_next = pair[1]
 	_border = pair[2]
@@ -375,34 +407,47 @@ func _draw() -> void:
 			_hq_rects[t["id"]] = Rect2i(int(at.x), int(at.y), HQ_LOTS, HQ_LOTS)
 	_hq_rect = _hq_rects.get(district, Rect2i())
 	_build_streets()
+	_build_fist()
 	var s_min := int(floor((-40.0 - _oy) / TILE_B)) - 2
 	var s_max := int((size.y + 420.0 - _oy) / TILE_B) + 2
 	var d_min := int(floor((-80.0 - _ox) / TILE_A)) - 1
 	var d_max := int((size.x + 80.0 - _ox) / TILE_A) + 1
+	# Every lot in back-to-front order with its territory context.
+	var lots: Array[Vector2i] = []
+	var ctx: Array = []
 	for s in range(s_min, s_max):
 		for d in range(d_min, d_max + 1):
 			if posmod(s + d, 2) != 0:
 				continue
 			var i := (s + d) / 2
 			var j := (s - d) / 2
-			_set_lot_context(i, j)
-			var in_hq := &""
-			for cid in _hq_rects:
-				if (_hq_rects[cid] as Rect2i).has_point(Vector2i(i, j)):
-					in_hq = cid
-					break
-			if in_hq != &"":
-				_plaza(i, j)
-				var hr: Rect2i = _hq_rects[in_hq]
-				if i == hr.end.x - 1 and j == hr.end.y - 1:
-					_hq(in_hq, hr)
-				continue
-			var street_i := _street_i.has(i)
-			var street_j := _street_j.has(j)
-			if street_i or street_j:
-				_street(i, j, street_i, street_j)
-				continue
-			_lot(i, j)
+			lots.append(Vector2i(i, j))
+			ctx.append(_territory_pair(i, j))
+	# Pass 1, the ground (streets, plazas, lot floors); then the Cell's fist roads on top
+	# of it; pass 2, everything standing, back to front, so towers overlap the roads.
+	for n in lots.size():
+		var l := lots[n]
+		_apply_context(ctx[n])
+		if _hq_at(l.x, l.y) != &"":
+			_plaza(l.x, l.y)
+		elif _street_i.has(l.x) or _street_j.has(l.y):
+			_street(l.x, l.y, _street_i.has(l.x), _street_j.has(l.y))
+		else:
+			var p := _rect_pts(l.x, l.y, l.x + 1, l.y + 1)
+			_quad(p[0], p[1], p[2], p[3], GROUND, GROUND, GROUND, GROUND)
+	_fist_roads()
+	for n in lots.size():
+		var l := lots[n]
+		_apply_context(ctx[n])
+		var in_hq := _hq_at(l.x, l.y)
+		if in_hq != &"":
+			var hr: Rect2i = _hq_rects[in_hq]
+			if l.x == hr.end.x - 1 and l.y == hr.end.y - 1:
+				_hq(in_hq, hr)
+			continue
+		if _street_i.has(l.x) or _street_j.has(l.y):
+			continue
+		_lot(l.x, l.y)
 	var idx := PackedInt32Array()
 	idx.resize(_verts.size())
 	for k in _verts.size():
@@ -456,10 +501,74 @@ func _traffic(i: int, j: int, along_i: bool) -> float:
 	return t
 
 
-## Distance (lots) to the nearest corporation HQ centre.
+## The corporation whose HQ plaza covers lot (i, j), or &"" (the Cell has none).
+func _hq_at(i: int, j: int) -> StringName:
+	for cid in _hq_rects:
+		if cid != FIST_TERRITORY and (_hq_rects[cid] as Rect2i).has_point(Vector2i(i, j)):
+			return cid
+	return &""
+
+
+## Screen segments of the fist roads (with the current camera) and their bounds.
+func _build_fist() -> void:
+	_fist_segs.clear()
+	if not _hq_rects.has(FIST_TERRITORY):
+		_fist_box = Rect2()
+		return
+	var hr: Rect2i = _hq_rects[FIST_TERRITORY]
+	var c := _iso(hr.position.x + HQ_LOTS * 0.5, hr.position.y + HQ_LOTS * 0.5)
+	for poly: Array in FIST_POLYS:
+		for q in poly.size():
+			var a: Vector2 = c + (poly[q] - Vector2(0.5, 0.5)) * FIST_SIZE
+			var b: Vector2 = c + (poly[(q + 1) % poly.size()] - Vector2(0.5, 0.5)) * FIST_SIZE
+			_fist_segs.append(PackedVector2Array([a, b]))
+	_fist_box = Rect2(c - FIST_SIZE * 0.5, FIST_SIZE).grow(FIST_LOW)
+
+
+## Screen distance (px) from lot (i, j)'s centre to the nearest fist road, or INF.
+func _fist_dist(i: int, j: int) -> float:
+	var p := _iso(i + 0.5, j + 0.5)
+	if _fist_segs.is_empty() or not _fist_box.has_point(p):
+		return INF
+	var best := INF
+	for sg in _fist_segs:
+		best = minf(best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, sg[0], sg[1])))
+	return best
+
+
+## The fist roads: like the busiest streets (many skinny marker strokes side by side),
+## wider still, in the Cell's full-strength colour.
+func _fist_roads() -> void:
+	var col := Palette.corp_color(FIST_TERRITORY)
+	var strokes := 22
+	for n in _fist_segs.size():
+		var a: Vector2 = _fist_segs[n][0]
+		var b: Vector2 = _fist_segs[n][1]
+		if a.distance_to(b) < 1.0:
+			continue
+		var dir := (b - a).normalized()
+		var nn := dir.orthogonal()
+		# Dark roadbed first, overshooting so the corners join.
+		var e0 := a - dir * FIST_ROAD_HALF
+		var e1 := b + dir * FIST_ROAD_HALF
+		var bed := STREET
+		_quad(e0 - nn * (FIST_ROAD_HALF + 4.0), e1 - nn * (FIST_ROAD_HALF + 4.0), e1 + nn * (FIST_ROAD_HALF + 4.0), e0 + nn * (FIST_ROAD_HALF + 4.0), bed, bed, bed, bed)
+		var g := Color(col, 0.14)
+		_quad(e0 - nn * (FIST_ROAD_HALF + 6.0), e1 - nn * (FIST_ROAD_HALF + 6.0), e1 + nn * (FIST_ROAD_HALF + 6.0), e0 + nn * (FIST_ROAD_HALF + 6.0), g, g, g, g)
+		for k in strokes:
+			var t := (float(k) + 0.5) / strokes * 2.0 - 1.0
+			var lane := t * FIST_ROAD_HALF + (_h(n, k, 87) - 0.5) * 1.6
+			var over := FIST_ROAD_HALF * (0.4 + 0.6 * _h(k, n, 88))
+			var alpha := 0.55 + 0.4 * _h(n + k, 5, 89)
+			_ink_line(a + nn * lane - dir * over, b + nn * lane + dir * over, Color(col, alpha), 0.9 + _h(k, n, 86) * 0.6, false)
+
+
+## Distance (lots) to the nearest corporation HQ centre (the Cell has no HQ).
 func _hq_distance(i: int, j: int) -> float:
 	var best := INF
 	for cid in _hq_rects:
+		if cid == FIST_TERRITORY:
+			continue
 		best = minf(best, Vector2(i, j).distance_to(Vector2((_hq_rects[cid] as Rect2i).get_center())))
 	return best
 
@@ -513,7 +622,7 @@ func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: boo
 
 
 func _stroke(a: Vector2, b: Vector2, n: Vector2, bow: float, width: float, col: Color, key: int) -> void:
-	var steps := maxi(2, int(a.distance_to(b) / 5.0))
+	var steps := clampi(int(a.distance_to(b) / 5.0), 2, 400)
 	var prev_l := Vector2.ZERO
 	var prev_r := Vector2.ZERO
 	for k in steps + 1:
@@ -591,6 +700,8 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 		var up_col := fill.lerp(FACE_LIGHT, 0.12 + light * 0.35)
 		var low_col := fill.darkened(0.35)
 		_quad(bot[k], bot[k2], top[k2], top[k], low_col, low_col, up_col, up_col)
+		if face_texture in [1, 2, 3] and h > 6.0:
+			_texture_face(bot[k], bot[k2], top[k2], top[k], nrm.x > 0.0, key * 31 + k)
 		if nrm.y > 0.02:
 			visible_v[k] = true
 			visible_v[k2] = true
@@ -604,6 +715,55 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 		# Verticals at the silhouette and the front corners.
 		_ink_line(bot[k], top[k], ink, 1.7, true)
 	return top
+
+
+## Wall texture on the face a-b (bottom) / d-c (top), under the windows.
+func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool, key: int) -> void:
+	var wpx := a.distance_to(b)
+	var hpx := a.distance_to(d)
+	if wpx < 3.0 or hpx < 3.0:
+		return
+	var tone := Color("#8A97C8")
+	match face_texture:
+		1:
+			# Panel seams: a floor line every two storeys, a joint every ~24 px.
+			var rows := int(hpx / 16.0)
+			for r in range(1, rows + 1):
+				var v := (r * 16.0 - 1.5) / hpx
+				_hair(a.lerp(d, v), b.lerp(c, v), Color(tone, 0.4 if r % 3 else 0.65), 1.0)
+			var cols := int(wpx / 24.0)
+			for q in range(1, cols + 1):
+				var u := float(q) / (cols + 1)
+				_hair(a.lerp(b, u), d.lerp(c, u), Color(tone, 0.32), 0.9)
+		2:
+			# Pen hatching at 45 degrees: close on the shaded side, open on the lit side.
+			var gap := 4.0 if shaded else 7.0
+			var rise := hpx / wpx
+			var u0 := -rise
+			while u0 < 1.0:
+				var v_lo := maxf(0.0, -u0 / rise)
+				var v_hi := minf(1.0, (1.0 - u0) / rise)
+				if v_hi > v_lo:
+					var p0 := a.lerp(b, u0 + rise * v_lo).lerp(d.lerp(c, u0 + rise * v_lo), v_lo)
+					var p1 := a.lerp(b, u0 + rise * v_hi).lerp(d.lerp(c, u0 + rise * v_hi), v_hi)
+					_hair(p0, p1, Color(tone, 0.42 if shaded else 0.26), 0.9)
+				u0 += gap / wpx
+		3:
+			# Grime: specks gathering toward the street, lighter and darker.
+			var n := mini(420, int(wpx * hpx / 22.0))
+			for q in n:
+				var u := _h(key, q, 90)
+				var v := pow(_h(key, q, 91), 2.2)
+				var p := a.lerp(b, u).lerp(d.lerp(c, u), v)
+				var sc := Color(tone, 0.55) if q % 3 else Color(0, 0, 0, 0.55)
+				var s := 0.7 + _h(q, key, 92) * 1.1
+				_quad(p + Vector2(-s, 0), p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), sc, sc, sc, sc)
+
+
+## A plain straight hairline (one quad), for dense texture work.
+func _hair(a: Vector2, b: Vector2, col: Color, width: float) -> void:
+	var n := (b - a).orthogonal().normalized() * width * 0.5
+	_quad(a - n, b - n, b + n, a + n, col, col, col, col)
 
 
 func _windows(a: Vector2, b: Vector2, h: float, lit: float, key: int, bright: bool) -> void:
@@ -694,8 +854,8 @@ func _cell_of(i: int, j: int) -> Rect2i:
 
 
 func _lot(i: int, j: int) -> void:
-	var p := _rect_pts(i, j, i + 1, j + 1)
-	_quad(p[0], p[1], p[2], p[3], GROUND, GROUND, GROUND, GROUND)
+	if _fist_dist(i, j) < FIST_CLEAR:
+		return  # a fist road runs here
 	var cell := _cell_of(i, j)
 	# A merged building is drawn once, from its front lot (correct depth order).
 	if i != cell.end.x - 1 or j != cell.end.y - 1:
@@ -735,6 +895,12 @@ func _building(cell: Rect2i) -> void:
 		h += 90.0 * hs
 	# Low-rise around each HQ: its busy streets and the landmark read clearly.
 	h *= lerpf(0.3, 1.0, clampf((_hq_distance(ci, cj) - 6.0) / 7.0, 0.0, 1.0))
+	# Low-rise over the Cell's fist so its roads read from above.
+	var fd := _fist_dist(cell.end.x - 1, cell.end.y - 1)
+	if fd < FIST_LOW:
+		h = minf(h, 10.0 + fd * 0.25)
+	elif fd < INF:
+		h = minf(h, 55.0)
 	var fill := FILLS[int(_h(ci, cj, 5) * FILLS.size()) % FILLS.size()]
 	var ink := _ink(ci, cj)
 	var lit := 0.12 + district_h * 0.22
@@ -945,38 +1111,16 @@ func _hq(corp: StringName, rect: Rect2i) -> void:
 			return
 	match corp:
 		&"solace":
-			# Helix Spire: podium, pods, a round tower wrapped in care-rings, light strips,
-			# a halo cap and an antenna crown.
+			# The Double Helix: a podium with pods, and on it the tower as a DNA strand, two
+			# helices wound round each other and joined by bridges (the base pairs).
 			_extrude(_ngon(cx, cy, 1.75 * k, 8, PI / 8.0), 0.0, 30.0 * k, 1.0, grey, col, 0.35, 900)
 			for m in 4:
 				var a := PI / 4.0 + TAU * m / 4.0
 				if sin(a) < -0.2:
 					continue
 				_extrude(_ngon(cx + cos(a) * 1.55 * k, cy + sin(a) * 1.55 * k, 0.35 * k, 8), 30.0 * k, 18.0 * k, 0.6, mid, col, 0.3, 905 + m)
-			_extrude(_ngon(cx, cy, 1.1 * k, 16), 30.0 * k, 250.0 * k, 1.0, mid, col, 0.3, 901)
-			var top := base + Vector2(0, -280.0 * k)
-			for m in 6:
-				var a := PI * 0.1 + PI * 0.8 * m / 5.0
-				var p0 := _iso(cx + cos(a) * 1.1 * k, cy + sin(a) * 1.1 * k)
-				_ink_line(p0 + Vector2(0, -34.0 * k), p0 + Vector2(0, -276.0 * k), Color(col, 0.35), 1.0, false)
-			for m in 7:
-				var hh := (50.0 + m * 34.0) * k
-				var rr := _ngon(cx, cy, (1.55 + 0.15 * sin(m * 1.7)) * k, 32, m * 0.4)
-				for q in rr.size():
-					if rr[q].y > base.y - 2.0 or q % 2 == 0:
-						_ink_line(rr[q] + Vector2(0, -hh), rr[(q + 1) % rr.size()] + Vector2(0, -hh), col, 1.5)
-			# The medical mark on the tower's front: the rod of Asclepius on a dark banner.
-			var front := _iso(cx + 0.78 * k, cy + 0.78 * k)
-			_asclepius(front + Vector2(0, -175.0 * k), 120.0 * k, col)
-			_extrude(_ngon(cx, cy, 0.7 * k, 16), 280.0 * k, 40.0 * k, 0.35, dark, col, 0.0, 902)
-			var halo := _ngon(cx, cy, 1.0 * k, 32)
-			for q in halo.size():
-				_ink_line(halo[q] + Vector2(0, -330.0 * k), halo[(q + 1) % halo.size()] + Vector2(0, -330.0 * k), col, 1.6)
-			for m in 3:
-				var mast := top + Vector2((m - 1) * 10.0 * k, -40.0 * k)
-				_ink_line(mast, mast + Vector2(0, -(26.0 + m % 2 * 20.0) * k), Color(col, 0.9), 1.2, false)
-			_beacons.append({"pos": top + Vector2(0, -90.0 * k), "color": col, "phase": 0.2})
-			_sign(base + Vector2(-40, -350.0 * k), "SOLACE", col)
+			_hq_dna(cx, cy, k, col, 30.0 * k, 340.0 * k)
+			_sign(base + Vector2(-40, -395.0 * k), "SOLACE", col)
 		&"meridian":
 			# Freight Ziggurat: terraces with loading bays, container yards, a tower with a
 			# helipad and a big crane swinging a container.
@@ -1079,33 +1223,6 @@ func _hq(corp: StringName, rect: Rect2i) -> void:
 			_ink_line(tip, Vector2(tip.x, -2000), Color(col, 0.7), 1.4, false)
 			_beacons.append({"pos": tip + Vector2(0, -16.0 * k), "color": col, "phase": 0.1})
 			_sign(base + Vector2(30.0 * k, -160.0 * k), "ORBITAL", col)
-		&"rebel_cell":
-			# The Hive: a honeycomb of hex towers joined by sky-bridges, painted banners and
-			# the Cell crowning the tallest.
-			var offs := [Vector2(-1.1, 0.0), Vector2(0.0, -1.1), Vector2(1.1, 0.0), Vector2(0.0, 1.1), Vector2(0.0, 0.0)]
-			var hs := [90.0, 130.0, 70.0, 50.0, 220.0]
-			for idx in [1, 0, 2, 4, 3]:
-				var o: Vector2 = offs[idx] * k
-				_extrude(_ngon(cx + o.x, cy + o.y, 0.62 * k, 6, PI / 6.0), 0.0, hs[idx] * k, 1.0, mid if idx % 2 == 0 else dark, col if idx != 4 else _inks[2], 0.3, 940 + idx)
-			for pair in [[0, 4, 60.0], [2, 4, 50.0], [1, 4, 100.0], [0, 1, 70.0]]:
-				var oa: Vector2 = offs[pair[0]] * k
-				var ob: Vector2 = offs[pair[1]] * k
-				var hh: float = pair[2] * k
-				var pa := _iso(cx + oa.x, cy + oa.y) + Vector2(0, -hh)
-				var pb := _iso(cx + ob.x, cy + ob.y) + Vector2(0, -hh)
-				_ink_line(pa, pb, _inks[4], 1.6)
-				_ink_line(pa + Vector2(0, 8), pb + Vector2(0, 8), Color(_inks[4], 0.6), 1.2, false)
-			for m in 3:
-				var bp := _iso(cx + offs[m].x * k, cy + offs[m].y * k) + Vector2(-10, -(30.0 + m * 12.0) * k)
-				_poly(PackedVector2Array([bp, bp + Vector2(20, -4), bp + Vector2(20, 26), bp + Vector2(0, 30)]), Color(_inks[(m + 1) % 5], 0.5))
-			var crown := base + Vector2(0, -238.0 * k)
-			var hexa := PackedVector2Array()
-			for q in 6:
-				hexa.append(crown + Vector2(cos(TAU * q / 6.0), sin(TAU * q / 6.0)) * 16.0 * k)
-			_poly(hexa, Color(Palette.CELL_ACID, 0.9))
-			for q in 6:
-				_ink_line(hexa[q], hexa[(q + 1) % 6], _inks[2], 1.6)
-			_sign(base + Vector2(-58, -280.0 * k), "REBEL_CELL", _inks[2])
 
 
 ## Chinese HQ: a seven-tier pagoda tower, every tier under a sweeping roof whose four
@@ -1187,43 +1304,168 @@ func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> v
 		_ink_line(_iso(cx - f, cy + f) + Vector2(0, -bh), _iso(cx + f, cy + f) + Vector2(0, -bh), Color(col, 0.3), 1.0, false)
 		_ink_line(_iso(cx + f, cy - f) + Vector2(0, -bh), _iso(cx + f, cy + f) + Vector2(0, -bh), Color(col, 0.22), 1.0, false)
 	# The great pyramid on the terrace, with a gilded cap.
-	var ph := 118.0 * k
+	# Colonnades along the terrace's two front edges (either side of the ramp head).
+	var gold := _pale(Palette.RESIST_GOLD)
+	for side in 2:
+		var cols_n := 9
+		var prev_top := Vector2.INF
+		for q in cols_n:
+			var f := lerpf(-0.92, 0.92, float(q) / (cols_n - 1))
+			if side == 0 and absf(f * tr) < rw * 1.3:
+				prev_top = Vector2.INF
+				continue
+			var g := Vector2(cx + f * tr, cy + tr * 0.94) if side == 0 else Vector2(cx + tr * 0.94, cy + f * tr)
+			var foot := _iso(g.x, g.y) + Vector2(0, -bh)
+			var top := foot + Vector2(0, -16.0 * k)
+			_ink_line(foot, top, Color(col, 0.85), 2.2, false)
+			_hair(top + Vector2(-3, 0), top + Vector2(3, 0), gold, 1.4)
+			if prev_top != Vector2.INF:
+				_hair(prev_top + Vector2(0, -1.5), top + Vector2(0, -1.5), Color(gold, 0.8), 1.6)
+			prev_top = top
+	# Hieroglyph friezes: a band of little signs round the base's two visible slopes.
+	for side in 2:
+		var v0 := 0.42
+		var v1 := 0.58
+		var p00: Vector2
+		var p10: Vector2
+		var p01: Vector2
+		var p11: Vector2
+		if side == 0:
+			p00 = _iso(cx - half, cy + half)
+			p10 = _iso(cx + half, cy + half)
+			p01 = _iso(cx - tr, cy + tr) + Vector2(0, -bh)
+			p11 = _iso(cx + tr, cy + tr) + Vector2(0, -bh)
+		else:
+			p00 = _iso(cx + half, cy + half)
+			p10 = _iso(cx + half, cy - half)
+			p01 = _iso(cx + tr, cy + tr) + Vector2(0, -bh)
+			p11 = _iso(cx + tr, cy - tr) + Vector2(0, -bh)
+		var band_col := Color(gold, 0.6)
+		_hair(p00.lerp(p01, v0), p10.lerp(p11, v0), band_col, 1.2)
+		_hair(p00.lerp(p01, v1), p10.lerp(p11, v1), band_col, 1.2)
+		var glyphs := 26
+		for q in glyphs:
+			var u := (q + 0.5) / glyphs
+			if side == 0 and absf(u - 0.5) < 0.09:
+				continue  # the ramp
+			var gp := p00.lerp(p10, u).lerp(p01.lerp(p11, u), (v0 + v1) * 0.5)
+			var gh := (v1 - v0) * p00.distance_to(p01) * 0.32
+			var gc := Color(gold, 0.75)
+			match int(_h(q, side, 95) * 4.0):
+				0:
+					_hair(gp + Vector2(0, -gh), gp + Vector2(0, gh), gc, 1.2)
+				1:
+					for m in 6:
+						var a0 := TAU * m / 6.0
+						_hair(gp + Vector2(cos(a0), sin(a0)) * gh * 0.7, gp + Vector2(cos(a0 + TAU / 6.0), sin(a0 + TAU / 6.0)) * gh * 0.7, gc, 1.0)
+				2:
+					_hair(gp + Vector2(-gh * 0.6, gh * 0.4), gp + Vector2(0, -gh * 0.5), gc, 1.0)
+					_hair(gp + Vector2(0, -gh * 0.5), gp + Vector2(gh * 0.6, gh * 0.4), gc, 1.0)
+				_:
+					_hair(gp + Vector2(-gh * 0.6, -gh * 0.3), gp + Vector2(gh * 0.6, -gh * 0.3), gc, 1.0)
+					_hair(gp + Vector2(0, -gh * 0.3), gp + Vector2(0, gh), gc, 1.0)
+	# Braziers on the terrace corners.
+	for cc in [Vector2(-1, 1), Vector2(1, 1), Vector2(1, -1)]:
+		var bp := _iso(cx + cc.x * tr * 0.97, cy + cc.y * tr * 0.97) + Vector2(0, -bh)
+		_ink_line(bp, bp + Vector2(0, -12.0 * k), Color(gold, 0.9), 1.6, false)
+		_beacons.append({"pos": bp + Vector2(0, -14.0 * k), "color": Palette.CRT_AMBER, "phase": cc.x * 0.2 + cc.y * 0.1})
+	# The great pyramid on the terrace: gentler slopes, stone courses, a gilded cap and
+	# an entrance where the ramp arrives.
+	var ph := 82.0 * k
 	_extrude(_rect_pts(cx - pr, cy - pr, cx + pr, cy + pr), bh, ph, 0.12, FILLS[1].lerp(col, 0.06), col, 0.2, 977)
+	for q in 7:
+		var f := float(q + 1) / 8.0
+		var hh := bh + ph * f
+		var rr := pr * lerpf(1.0, 0.12, f)
+		_hair(_iso(cx - rr, cy + rr) + Vector2(0, -hh), _iso(cx + rr, cy + rr) + Vector2(0, -hh), Color(col, 0.3), 1.0)
+		_hair(_iso(cx + rr, cy - rr) + Vector2(0, -hh), _iso(cx + rr, cy + rr) + Vector2(0, -hh), Color(col, 0.22), 1.0)
+	# Entrance: a dark doorway with a gold lintel on the front slope.
+	var dw := 0.16 * k
+	var d0 := _iso(cx - dw, cy + pr) + Vector2(0, -bh)
+	var d1 := _iso(cx + dw, cy + pr) + Vector2(0, -bh)
+	var dz := ph * 0.2
+	var dr := pr * lerpf(1.0, 0.12, 0.2)
+	var d2 := _iso(cx + dw * 0.7, cy + dr) + Vector2(0, -bh - dz)
+	var d3 := _iso(cx - dw * 0.7, cy + dr) + Vector2(0, -bh - dz)
+	_quad(d0, d1, d2, d3, FILLS[0], FILLS[0], FILLS[0], FILLS[0])
+	_hair(d3 + Vector2(-4, 0), d2 + Vector2(4, 0), gold, 2.0)
+	_hair(d0, d3, Color(col, 0.8), 1.2)
+	_hair(d1, d2, Color(col, 0.8), 1.2)
+	# The cap, and a gold seam up the pyramid's front edge.
+	_hair(_iso(cx + pr, cy + pr) + Vector2(0, -bh), _iso(cx + pr * 0.12, cy + pr * 0.12) + Vector2(0, -bh - ph), Color(gold, 0.55), 1.4)
 	_extrude(_rect_pts(cx - pr * 0.12, cy - pr * 0.12, cx + pr * 0.12, cy + pr * 0.12), bh + ph, 16.0 * k, 0.03, Palette.RESIST_GOLD.darkened(0.4), Palette.RESIST_GOLD, 0.0, 978)
 	_beacons.append({"pos": base + Vector2(0, -(bh + ph + 20.0 * k)), "color": col, "phase": 0.7})
 
 
-## The rod of Asclepius (one snake wound round a staff) centred on `at`, `h` tall, on a
-## dark banner so it reads over the tower's rings.
-func _asclepius(at: Vector2, h: float, col: Color) -> void:
-	var bw := h * 0.3
-	var top := at + Vector2(0, -h * 0.5)
-	var bot := at + Vector2(0, h * 0.5)
-	var panel := Color(Palette.NIGHT_SKY, 0.92)
-	_quad(top + Vector2(-bw, -h * 0.06), top + Vector2(bw, -h * 0.06), bot + Vector2(bw, h * 0.06), bot + Vector2(-bw, h * 0.06), panel, panel, panel, panel)
-	_ink_line(top + Vector2(-bw, -h * 0.06), bot + Vector2(-bw, h * 0.06), Color(col, 0.6), 1.2, false)
-	_ink_line(top + Vector2(bw, -h * 0.06), bot + Vector2(bw, h * 0.06), Color(col, 0.6), 1.2, false)
-	var ink := col.lightened(0.45)
-	# The staff, with a knob at the top.
-	_ink_line(top + Vector2(0, h * 0.02), bot, ink, 3.0)
-	_quad(top + Vector2(-h * 0.035, h * 0.02), top + Vector2(0, -h * 0.02), top + Vector2(h * 0.035, h * 0.02), top + Vector2(0, h * 0.06), ink, ink, ink, ink)
-	# The snake: a tapering sine round the staff, tail at the foot, head near the top.
-	var turns := 2.08
-	var steps := 40
-	var prev := Vector2.ZERO
-	for q in steps + 1:
-		var t := float(q) / steps
-		var y := lerpf(0.88, 0.2, t)
-		var amp := bw * lerpf(0.35, 0.7, sin(t * PI) * 0.6 + t * 0.4)
-		var p := top + Vector2(sin(t * turns * TAU) * amp, h * y)
-		if q > 0:
-			_ink_line(prev, p, ink, lerpf(1.8, 4.2, t))
-		prev = p
-	# The head: a small diamond turned toward the staff, with a forked tongue.
-	var head := prev
-	_quad(head + Vector2(-h * 0.045, 0), head + Vector2(0, -h * 0.03), head + Vector2(h * 0.05, 0), head + Vector2(0, h * 0.03), ink, ink, ink, ink)
-	_ink_line(head + Vector2(h * 0.05, 0), head + Vector2(h * 0.09, -h * 0.015), ink, 1.0, false)
-	_ink_line(head + Vector2(h * 0.05, 0), head + Vector2(h * 0.09, h * 0.015), ink, 1.0, false)
+## Solace's tower: a DNA double helix from height z0 to z1. Two strands (thick tubes)
+## wind round a vertical axis; every few steps a bridge joins them, each half in one of
+## the paired base colours. Pieces are sorted back to front so the strands pass in front
+## of and behind each other; the far side is drawn dimmer.
+func _hq_dna(cx: float, cy: float, k: float, col: Color, z0: float, z1: float) -> void:
+	var r := 1.15 * k
+	var turns := 2.5
+	var n := 100
+	var tube := 9.0 * k
+	var pairs := [[_inks[0], _inks[3]], [_inks[2], col]]
+	var pieces: Array[Dictionary] = []
+	var pts: Array = [[], []]
+	for q in n + 1:
+		var t := float(q) / n
+		for sn in 2:
+			var a := t * turns * TAU + sn * PI
+			var g := Vector2(cx + cos(a) * r, cy + sin(a) * r)
+			pts[sn].append({"g": g, "p": _iso(g.x, g.y) + Vector2(0, -lerpf(z0, z1, t))})
+	for sn in 2:
+		for q in n:
+			var g0: Vector2 = pts[sn][q]["g"]
+			var g1: Vector2 = pts[sn][q + 1]["g"]
+			pieces.append({"d": (g0.x + g0.y + g1.x + g1.y) * 0.5, "kind": 0, "a": pts[sn][q]["p"], "b": pts[sn][q + 1]["p"], "q": q})
+	for q in range(2, n - 1, 4):
+		var pa: Vector2 = pts[0][q]["p"]
+		var pb: Vector2 = pts[1][q]["p"]
+		var mid := (pa + pb) * 0.5
+		var ga: Vector2 = pts[0][q]["g"]
+		var gb: Vector2 = pts[1][q]["g"]
+		var pair: Array = pairs[(q / 4) % 2]
+		var flip := (q / 8) % 2 == 1
+		pieces.append({"d": (ga.x + ga.y + cx + cy) * 0.5, "kind": 1, "a": pa, "b": mid, "col": pair[1 if flip else 0]})
+		pieces.append({"d": (gb.x + gb.y + cx + cy) * 0.5, "kind": 1, "a": mid, "b": pb, "col": pair[0 if flip else 1]})
+	pieces.sort_custom(func(p1: Dictionary, p2: Dictionary) -> bool: return p1["d"] < p2["d"])
+	var centre := cx + cy
+	for pc in pieces:
+		var a: Vector2 = pc["a"]
+		var b: Vector2 = pc["b"]
+		# 0 on the far side of the axis, 1 on the near side.
+		var near := clampf((float(pc["d"]) - centre) / (2.0 * r) + 0.5, 0.0, 1.0)
+		var dir := (b - a).normalized()
+		var nn := dir.orthogonal()
+		if pc["kind"] == 0:
+			var e0 := a - dir * tube * 0.15
+			var e1 := b + dir * tube * 0.15
+			var body := FILLS[1].lerp(col, 0.12 + near * 0.12).darkened(0.3 * (1.0 - near))
+			_quad(e0 - nn * tube * 0.5, e1 - nn * tube * 0.5, e1 + nn * tube * 0.5, e0 + nn * tube * 0.5, body, body, body, body)
+			var edge := Color(col, 0.45 + 0.5 * near)
+			_hair(e0 - nn * tube * 0.5, e1 - nn * tube * 0.5, edge, 1.6)
+			_hair(e0 + nn * tube * 0.5, e1 + nn * tube * 0.5, edge, 1.6)
+			_hair(a + nn * tube * 0.12, b + nn * tube * 0.12, Color(col.lightened(0.5), 0.15 + 0.4 * near), tube * 0.18)
+			if near > 0.55 and int(pc["q"]) % 3 == 0:
+				var w := (a + b) * 0.5 - nn * tube * 0.2
+				var wc := Color(_inks[int(pc["q"]) % _inks.size()], 0.8)
+				_quad(w + Vector2(-2, 0), w + Vector2(0, -2), w + Vector2(2, 0), w + Vector2(0, 2), wc, wc, wc, wc)
+		else:
+			# A bridge: a deck with a rail, in the base's colour.
+			var bc: Color = pc["col"]
+			var deck := FILLS[0].lerp(bc, 0.35)
+			var hw := tube * 0.22
+			_quad(a - nn * hw, b - nn * hw, b + nn * hw, a + nn * hw, deck, deck, deck, deck)
+			_hair(a - nn * hw, b - nn * hw, Color(bc, 0.55 + 0.4 * near), 1.4)
+			_hair(a + nn * hw, b + nn * hw, Color(bc, 0.35 + 0.4 * near), 1.0)
+	# Caps: a node on each strand's top, and a beacon over the axis.
+	for sn in 2:
+		var tp: Vector2 = pts[sn][n]["p"]
+		_quad(tp + Vector2(-tube * 0.6, 0), tp + Vector2(0, -tube * 0.6), tp + Vector2(tube * 0.6, 0), tp + Vector2(0, tube * 0.6), col, col, col, col)
+		_beacons.append({"pos": tp + Vector2(0, -tube), "color": col, "phase": 0.2 + sn * 0.3})
+	_beacons.append({"pos": _iso(cx, cy) + Vector2(0, -z1 - 40.0 * k), "color": col, "phase": 0.5})
 
 
 ## English HQ: a great clock tower (Big Ben style) with glowing clock faces, a belfry and a
@@ -1295,6 +1537,8 @@ func _draw_fx() -> void:
 			var at: Vector2 = t["at"]
 			var k := territory_label_px / 30.0 * inv
 			var p := _iso(at.x + HQ_LOTS * 0.5, at.y + HQ_LOTS * 0.5) + Vector2(-120, -40) * k
+			if t["id"] == FIST_TERRITORY:
+				p.y -= FIST_SIZE.y * 0.56  # above the fist, not over it
 			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
 			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(0, 0, 0, 0.75))
 			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)

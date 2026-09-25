@@ -1169,6 +1169,24 @@ View code only; no rules, content or schema changed.
 - Modem: the vertical circuit-board MODEM CYBER SHOP sign on the left of the quadrants.
 - City: HQs doubled (10x10 plazas) with added detail; streets without traffic dashes.
 
+### Visual pass: landmarks and the Cell's fist (2026-09-25)
+- The Cell has no HQ tower on the city. Its territory builds like the Sprawl (its own
+  colour kept) and its roads etch a raised fist that reads from above (traced from the
+  owner's reference icon; `NeonCity.FIST_*`). Buildings on the fist roads are left out
+  and those near them kept low. `hq_of(&"rebel_cell")` still marks the fist's centre, so
+  camera framing and the city layouts are unchanged.
+- The city now draws all ground first (streets, plazas, lot floors), then the fist
+  roads, then everything standing, back to front.
+- Solace's HQ is a DNA double-helix tower with base-pair bridges; the Egyptian HQ's
+  pyramid is lower on a flat terrace, with colonnades, hieroglyph friezes, braziers and a
+  doorway.
+- Wall texture options (`NeonCity.face_texture`, `--demo-texture=N` on the title
+  screen): none (default), panel seams, pen hatching, grime stipple, concrete grain
+  (shader). The owner picks one; the default stays "none" until then.
+- Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
+  sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
+  px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.
+
 ## Open questions for the designer
 
 - **Deck / spinner viewers (2026-09-25):** added as look-and-pick views (DeckView,

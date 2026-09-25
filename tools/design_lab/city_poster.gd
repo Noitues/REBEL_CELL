@@ -7,6 +7,7 @@ func _ready() -> void:
 	var w := 5760
 	var h := 3240
 	var zoom := 0.95
+	var texture := 0
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
@@ -14,6 +15,8 @@ func _ready() -> void:
 			w = int(a.trim_prefix("--w="))
 		elif a.begins_with("--h="):
 			h = int(a.trim_prefix("--h="))
+		elif a.begins_with("--texture="):
+			texture = int(a.trim_prefix("--texture="))
 		elif a.begins_with("--zoom="):
 			zoom = float(a.trim_prefix("--zoom="))
 	var vp := SubViewport.new()
@@ -27,7 +30,8 @@ func _ready() -> void:
 	city.dim = 0.0
 	city.territory_labels = true
 	city.territory_label_px = 70.0
-	city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english", &"rebel_cell": "mayan"}
+	city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english"}
+	city.face_texture = texture
 	holder.add_child(city)
 	city.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	city.scale = Vector2(zoom, zoom)

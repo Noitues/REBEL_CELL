@@ -10,6 +10,11 @@ uniform float saturation = 1.6;
 uniform float grain : hint_range(0.0, 1.0) = 0.12;
 uniform float scan_strength : hint_range(0.0, 1.0) = 0.07;
 uniform float flicker : hint_range(0.0, 0.1) = 0.0;
+// Design option: concrete grain on the dark grey wall fills only (not lines, windows or
+// signs), anchored to the city so it pans with it.
+uniform float concrete : hint_range(0.0, 1.0) = 0.0;
+
+varying vec2 world;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -24,6 +29,7 @@ float noise(vec2 p) {
 
 void vertex() {
 	// Two octaves: a slow drift of the whole stroke and a fine hand tremor.
+	world = VERTEX;
 	vec2 q = VERTEX * 0.06;
 	vec2 f = VERTEX * 0.23;
 	VERTEX += (vec2(noise(q), noise(q + vec2(17.3, 5.1))) - 0.5) * 2.0 * wobble;
@@ -33,6 +39,12 @@ void vertex() {
 void fragment() {
 	vec4 c = COLOR * texture(TEXTURE, UV);
 	float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+	if (concrete > 0.0) {
+		float spread = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+		float greyish = (1.0 - smoothstep(0.1, 0.2, spread)) * smoothstep(0.03, 0.07, g) * (1.0 - smoothstep(0.3, 0.45, g));
+		float n = noise(world * 0.8) * 0.45 + noise(world * 2.6) * 0.35 + hash(floor(world * 1.3)) * 0.2;
+		c.rgb *= 1.0 + concrete * greyish * (n - 0.5) * 1.8;
+	}
 	c.rgb = clamp(mix(vec3(g), c.rgb, saturation), 0.0, 1.0);
 	c.a *= 1.0 - grain * noise(FRAGCOORD.xy * 0.45);
 	float line = step(0.5, fract(FRAGCOORD.y / 3.0));
