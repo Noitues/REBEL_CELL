@@ -7,12 +7,12 @@ extends RefCounted
 
 
 ## How icons sit on a slice (design review, `--demo-iconstyle=N`):
-## 0 BLACK & WHITE: solid black glyph, white outline (baseline).
+## 0 BLACK & WHITE: solid black glyph, white outline.
 ## 1 BADGE: the black-and-white glyph in a dark disc with a white rim.
 ## 2 INVERSE BADGE: a white glyph with a black outline in a dark disc.
 ## 3 GLOW: the black-and-white glyph over a soft halo of the slice colour.
-## 4 BOLD: a larger black glyph with a heavy white outline.
-static var style: int = 0
+## 4 BOLD: a larger black glyph with a heavy white outline (baseline, owner's pick).
+static var style: int = 4
 static var _outline_w: float = 2.0
 static var _bold: bool = false
 const STYLE_NAMES: Array[String] = ["BLACK & WHITE", "BADGE", "INVERSE BADGE", "GLOW", "BOLD"]

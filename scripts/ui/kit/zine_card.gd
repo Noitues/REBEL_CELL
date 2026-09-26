@@ -146,7 +146,7 @@ func _draw_tile() -> void:
 		draw_colored_polygon(pts, Color(sc, 0.35))
 		pts.append(pts[0])
 		draw_polyline(pts, sc, 1.5)
-		SliceIcon.draw_icon(self, icon_c + Vector2(0, -8), 12, slice_type, Palette.PAPER)
+		SliceIcon.draw_on_slice(self, icon_c + Vector2(0, -15), 11, slice_type, sc)
 		if slice_output > 0:
 			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, Palette.PAPER)
 	elif icon_kind == "shred":

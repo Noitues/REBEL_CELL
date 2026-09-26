@@ -1204,8 +1204,8 @@ View code only; no rules, content or schema changed.
   evade/heal, afflict and deploy unchanged. Wedges are translucent (the city shows
   through) with a bright rim.
 - Slice icons are solid black with a white outline (`SliceIcon.draw_on_slice`). Review
-  styles behind `--demo-iconstyle=N` in combat: 0 black & white (default), 1 badge,
-  2 inverse badge, 3 glow, 4 bold.
+  styles behind `--demo-iconstyle=N` in combat: 0 black & white, 1 badge, 2 inverse
+  badge, 3 glow, 4 bold. Owner's pick: 4 bold is the baseline.
 - Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
   sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
   px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.
