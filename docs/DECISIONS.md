@@ -1192,6 +1192,9 @@ View code only; no rules, content or schema changed.
   gentler saturation boost on the walls (shader `wall_mode` 4). Round towers keep only
   their silhouette and front edge lines so they read as one shaded mass. HQs keep their
   own look.
+- Added 11 tinted slate and 12 strong tinted slate: the painted slate leans 30% / 50%
+  toward each building's line colour (`SLATE_TINT`) with full saturation and the same
+  painted grain (shader `wall_mode` 5), so territories keep their colour identity.
 - Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
   sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
   px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.

@@ -107,10 +107,14 @@ const FIST_HULL := [Vector2(0.396, 0.000), Vector2(0.282, 0.188), Vector2(0.263,
 ## 3 metal) on the dark grey fills.
 ## 9 painted slate (the reference's panel 6): blue-grey faces lit from above, ledges,
 ## recessed panels, ribs and vents, roof rims, a soft painted grain (shader mode 4);
-## 10 the same in a darker slate.
+## 10 the same in a darker slate; 11 and 12 the painted slate tinted toward each
+## building's line colour (light and strong tint), so the territories keep their colour.
 const TEXTURE_NAMES: Array[String] = ["NONE", "PANEL SEAMS", "PEN HATCHING", "GRIME STIPPLE", "CONCRETE GRAIN",
-	"MATTE STONE", "BRUSHED METAL", "HATCHING + STONE", "HATCHING + METAL", "PAINTED SLATE", "DARK SLATE"]
-const TEXTURE_SHADER_MODE: Array[int] = [0, 0, 0, 0, 1, 2, 3, 2, 3, 4, 4]
+	"MATTE STONE", "BRUSHED METAL", "HATCHING + STONE", "HATCHING + METAL", "PAINTED SLATE", "DARK SLATE",
+	"TINTED SLATE", "STRONG TINTED SLATE"]
+const TEXTURE_SHADER_MODE: Array[int] = [0, 0, 0, 0, 1, 2, 3, 2, 3, 4, 4, 5, 5]
+## How far the tinted slates lean toward the building's ink (11, 12).
+const SLATE_TINT: Array[float] = [0.3, 0.5]
 ## Painted slate: the base tone of the walls (light, dark) and the cool light they catch
 ## at the top.
 const SLATE_TONES: Array[Color] = [Color("#4A556F"), Color("#232A3A")]
@@ -743,7 +747,7 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 		var slate := _slate()
 		if slate:
 			# Painted slate: lit from above, the base falling into shadow.
-			var tone := fill.lerp(_slate_tone(), 0.8)
+			var tone := fill.lerp(_slate_tone(ink), 0.8)
 			var catch := 1.0 if face_texture == 9 else 0.6
 			up_col = tone.lerp(SLATE_LIGHT, (0.12 + light * 0.34) * catch)
 			low_col = tone.darkened(0.6 - light * 0.2)
@@ -760,7 +764,7 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 	if top_scale > 0.05:
 		if _slate():
 			# Roof: a lit slab with a raised rim and a recessed inner deck.
-			var roof_col := fill.lerp(_slate_tone(), 0.8).lerp(SLATE_LIGHT, 0.22)
+			var roof_col := fill.lerp(_slate_tone(ink), 0.8).lerp(SLATE_LIGHT, 0.22)
 			_poly(top, roof_col)
 			var tc := Vector2.ZERO
 			for q in top:
@@ -795,12 +799,15 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 	return top
 
 
-## True while walls are painted slate (texture 9 or 10; the HQs keep their own look).
+## True while walls are painted slate (textures 9-12; the HQs keep their own look).
 func _slate() -> bool:
-	return face_texture in [9, 10] and not _drawing_hq
+	return face_texture in [9, 10, 11, 12] and not _drawing_hq
 
 
-func _slate_tone() -> Color:
+## The wall's slate: plain (9), dark (10), or leaning toward the building's `ink` (11, 12).
+func _slate_tone(ink: Color) -> Color:
+	if face_texture >= 11:
+		return SLATE_TONES[0].lerp(Color(ink, 1.0), SLATE_TINT[face_texture - 11])
 	return SLATE_TONES[0 if face_texture == 9 else 1]
 
 
