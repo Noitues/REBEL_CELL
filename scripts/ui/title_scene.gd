@@ -7,6 +7,7 @@ extends Control
 const SLOTS: Array[String] = ["1", "2", "3"]
 
 var background: CyberdeckBackground
+var margin: MarginContainer
 var _panel_host: VBoxContainer
 var _panel: Control = null
 var panel_name: String = ""
@@ -17,14 +18,22 @@ func _ready() -> void:
 	UiTheme.apply(self)
 	background = CyberdeckBackground.new()
 	add_child(background)
+	margin = MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["margin_left", "margin_right"]:
+		margin.add_theme_constant_override(side, 36)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 30)
+	add_child(margin)
 	var root := VBoxContainer.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_theme_constant_override("separation", 8)
-	add_child(root)
+	root.add_theme_constant_override("separation", 10)
+	margin.add_child(root)
 	var header := HBoxContainer.new()
 	header.add_child(GraffitiTag.new("REBEL_CELL"))
 	var v := Label.new()
-	v.text = "  v%s" % ProjectSettings.get_setting("application/config/version", "dev")
+	v.text = "v%s // cell uplink" % ProjectSettings.get_setting("application/config/version", "dev")
+	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	v.add_theme_color_override("font_color", Color(Palette.NET_CYAN, 0.7))
 	header.add_child(v)
 	root.add_child(header)
 	_panel_host = VBoxContainer.new()
@@ -32,10 +41,53 @@ func _ready() -> void:
 	root.add_child(_panel_host)
 	AudioDirector.play_music("hq")
 	var args := OS.get_cmdline_user_args()
+	# The main menu drifts slowly over the whole city.
+	background.city.pan = true
+	for a in args:
+		if a.begins_with("--demo-district="):
+			background.city.pan = false
+			background.set_district(StringName(a.trim_prefix("--demo-district=")))
+		elif a.begins_with("--demo-ink="):
+			background.city.ink_set = int(a.trim_prefix("--demo-ink="))
+		elif a.begins_with("--demo-jitter="):
+			var parts := a.trim_prefix("--demo-jitter=").split(",")
+			(background.city.material as ShaderMaterial).set_shader_parameter("wobble", float(parts[0]))
+			(background.city.material as ShaderMaterial).set_shader_parameter("jitter", float(parts[1]))
+		elif a.begins_with("--demo-texture="):
+			background.city.face_texture = int(a.trim_prefix("--demo-texture="))
+		elif a == "--demo-cultures":
+			background.city.cultures = {&"solace": "arabic", &"meridian": "chinese", &"halcyon": "egyptian", &"orbital": "english"}
+			background.city.refresh()
+		elif a.begins_with("--demo-bigoverview="):
+			# Design review: the whole city at a given zoom in a big window.
+			var city := background.city
+			city.pan = false
+			var z := float(a.trim_prefix("--demo-bigoverview="))
+			city.territory_labels = true
+			city.scale = Vector2(z, z)
+			city.offset_right = get_viewport_rect().size.x * (1.0 / z - 1.0)
+			city.offset_bottom = get_viewport_rect().size.y * (1.0 / z - 1.0)
+			margin.visible = false
+		elif a == "--demo-nopan":
+			background.city.pan = false
+		elif a == "--demo-overview":
+			# Design review: the whole city zoomed out, menus hidden.
+			var city := background.city
+			city.pan = false
+			var z := 0.26
+			city.territory_labels = true
+			city.scale = Vector2(z, z)
+			city.offset_right = 1280.0 * (1.0 / z - 1.0)
+			city.offset_bottom = 720.0 * (1.0 / z - 1.0)
+			margin.visible = false
 	if args.has("--demo-options"):
 		show_options()
 	elif args.has("--demo-slots"):
 		show_slots()
+	elif args.has("--demo-codex"):
+		show_codex()
+	elif args.has("--demo-stats"):
+		show_stats()
 	else:
 		show_main()
 
@@ -54,8 +106,12 @@ func _set_panel(p: Control, name: String) -> void:
 
 
 func show_main() -> void:
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 28)
+	var menu := TerminalWindow.new("REBEL_CELL // MAIN MENU")
+	menu.custom_minimum_size = Vector2(420, 0)
+	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var box := menu.body
 	var latest := RunManager.latest_slot()
 	if latest != "":
 		var summary := RunManager.slot_summary(latest)
@@ -66,14 +122,47 @@ func show_main() -> void:
 	box.add_child(_button("Stats & achievements", show_stats))
 	box.add_child(_button("Options", show_options))
 	box.add_child(_button("Quit", confirm_quit))
+	for b in box.get_children():
+		b.theme_type_variation = &"MenuItem"
+		(b as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+	row.add_child(menu)
+	# Right column: system readout, the plan on a taped note and a scrawl.
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 22)
+	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var p := RunManager.profile
-	box.add_child(_label("%d campaigns, %d won, %d lost | best ICE %s | %d achievements" % [p.campaigns_started, p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), p.achievements.size()]))
-	_set_panel(box, "main")
+	var sys := TerminalWindow.new("SYSTEM ONLINE", Palette.NET_CYAN)
+	sys.custom_minimum_size = Vector2(300, 0)
+	sys.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	sys.body.add_child(_label("%d campaigns, %d won, %d lost | best ICE %s | %d achievements" % [p.campaigns_started, p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), p.achievements.size()]))
+	sys.body.add_child(_label("> RUNS: %d  RAIDS: %d/%d" % [p.runs_completed, p.raids_won, p.raids_lost]))
+	sys.body.add_child(_label("> UPLINK: STABLE"))
+	for l in sys.body.get_children():
+		(l as Label).custom_minimum_size.x = 300
+		(l as Label).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	side.add_child(sys)
+	var notes := HBoxContainer.new()
+	notes.add_theme_constant_override("separation", 30)
+	var plan := ZineNote.new("", Vector2(150, 96))
+	plan.paper_color = Palette.NOTE_YELLOW
+	plan.label.add_theme_font_override("normal_font", Palette.marker())
+	plan.append("1. BREACH\n2. DISABLE\n3. EXFIL")
+	plan.rotation_degrees = -4.0
+	plan.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plan.label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	notes.add_child(plan)
+	notes.add_child(GraffitiScrawl.new("NEVER\nSLEEP", -10.0, 34))
+	side.add_child(notes)
+	row.add_child(side)
+	_set_panel(row, "main")
 
 
 func show_slots() -> void:
-	var box := VBoxContainer.new()
-	box.add_child(_label("Campaign slots"))
+	var win := TerminalWindow.new("Campaign slots")
+	# A compact window, not the full width.
+	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	win.custom_minimum_size.x = 560
+	var box := win.body
 	for slot in SLOTS:
 		var row := HFlowContainer.new()
 		var summary := RunManager.slot_summary(slot)
@@ -86,7 +175,7 @@ func show_slots() -> void:
 			row.add_child(_button("Delete", func() -> void: confirm_delete(s)))
 		box.add_child(row)
 	box.add_child(_button("Back", show_main))
-	_set_panel(box, "slots")
+	_set_panel(win, "slots")
 
 
 func show_codex() -> void:

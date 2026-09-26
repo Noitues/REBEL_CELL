@@ -21,7 +21,7 @@ const PASS_DELAY := 0.35
 var background: WireframeBackground
 var portrait: Polaroid
 var heat_poster: HeatPoster
-var ram_note: ZineNote
+var ram_note: RamBar
 var daemon_note: ZineNote
 var inspect_note: ZineNote
 var preview_note: ZineNote
@@ -38,8 +38,10 @@ var _card_target_option: OptionButton
 var _direction_option: OptionButton
 var _slot_option: OptionButton
 var _respin_button: Button
+## Action stickers around the player spinner (nudge, respin, undo and the toggles).
+var _stickers: Dictionary = {}
 var _hand_box: HBoxContainer
-var _end_turn_button: ZineStamp
+var _end_turn_button: Button
 var _rewind_button: Button
 var _picker_controls: Array[Control] = []
 ## The bottom controls row (layout tests check it fits the 1280-px canvas).
@@ -62,6 +64,23 @@ var _rewound: bool = false
 var _migrate_tween: Tween = null
 ## Text of the last inspect (tests read it).
 var last_inspect: String = ""
+## Where the subtitle bar sits during combat (1280x720 canvas): across the arena, above
+## the spinners; long lines page at SUBTITLE_LINES lines so it never reaches a wheel.
+const SUBTITLE_DOCK := Rect2(8, 58, 964, 56)
+const SUBTITLE_LINES := 2
+## Sticker column: gap between stickers, and to the wheel's reserved edge (px).
+const STICKER_GAP := 6.0
+const STICKER_EDGE := 4.0
+
+
+func _enter_tree() -> void:
+	# DISPATCH and the corporate voices speak from the top strip in combat (between the
+	# turn line and the spinner tags), clear of the hand and SEND IT.
+	Dialogue.dock_at(SUBTITLE_DOCK, SUBTITLE_LINES)
+
+
+func _exit_tree() -> void:
+	Dialogue.dock_bottom()
 
 
 func _ready() -> void:
@@ -136,19 +155,23 @@ func cycle_target() -> void:
 func toggle_card_target() -> void:
 	_card_target_option.select((_card_target_option.selected + 1) % 2)
 	_rebuild_slot_option()
+	_sync_stickers()
 
 
 func toggle_ring() -> void:
 	_nudge_ring_option.select((_nudge_ring_option.selected + 1) % 2)
+	_sync_stickers()
 
 
 func toggle_nudge_wheel() -> void:
 	_nudge_wheel_option.select((_nudge_wheel_option.selected + 1) % 2)
+	_sync_stickers()
 
 
 ## Card nudge direction for cards that nudge (Fine Tune, Micro-Adjust, Jam...).
 func toggle_direction() -> void:
 	_direction_option.select((_direction_option.selected + 1) % 2)
+	_sync_stickers()
 
 
 func set_direction(direction: int) -> void:
@@ -176,12 +199,27 @@ func selected_direction() -> int:
 
 
 ## The guided first fight (onboarding). Steps follow the engine's events.
+## The tutorial fills the right column between the inspect note and SEND IT (wherever
+## the combat screen is mounted), so its buttons never sit on SEND IT.
+func _fit_tutorial() -> void:
+	if tutorial == null or not is_instance_valid(tutorial) or not is_inside_tree():
+		return
+	var origin := get_global_rect().position
+	var top := inspect_note.get_global_rect().end.y - origin.y + 6.0
+	var bottom := _end_turn_button.get_global_rect().position.y - origin.y - 6.0
+	if bottom - top < 150.0:
+		return  # no room to fit: keep the default rect
+	tutorial.position = Vector2(TUTORIAL_RECT.position.x, top)
+	tutorial.fit(Vector2(TUTORIAL_RECT.size.x, bottom - top))
+
+
 func start_tutorial() -> void:
 	if tutorial != null and is_instance_valid(tutorial):
 		return
 	tutorial = TutorialOverlay.new(TUTORIAL_RECT.size)
 	tutorial.position = TUTORIAL_RECT.position  # over the log strip: never on a wheel (GDD 9.2)
 	add_child(tutorial)
+	_fit_tutorial.call_deferred()
 	tutorial.finished.connect(func() -> void: tutorial = null)
 
 
@@ -284,6 +322,18 @@ func layout_violations() -> Array[String]:
 		for w in wheels:
 			if w.combatant != null and cr.intersects(w.wheel_rect()):
 				out.append("card covers %s's wheel" % w.combatant.display_name)
+	# The stickers and the intent tags sit round the spinners, never on a slice or needle.
+	var covers: Array = []
+	for key in _stickers:
+		if (_stickers[key] as Control).is_visible_in_tree():
+			covers.append(["%s sticker" % key, (_stickers[key] as Control).get_global_rect()])
+	for w in wheels:
+		if w.combatant != null and w.intent_rect().has_area():
+			covers.append(["%s's intent tag" % w.combatant.display_name, w.intent_rect()])
+	for cv in covers:
+		for w in wheels:
+			if w.combatant != null and (cv[1] as Rect2).intersects(w.wheel_rect()):
+				out.append("%s covers %s's wheel" % [cv[0], w.combatant.display_name])
 	return out
 
 
@@ -588,6 +638,7 @@ func _start_music() -> void:
 
 func _build_ui() -> void:
 	background = WireframeBackground.new()
+	background.city.dim = 0.55  # the arena: wheels first, city second
 	add_child(background)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -625,54 +676,73 @@ func _build_ui() -> void:
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	middle.add_theme_constant_override("separation", 8)
 	root.add_child(middle)
+	# Side column (right): Polaroid and Heat side by side, the inspect note under them,
+	# and room for the tutorial note; the spinners get the rest of the width.
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(176, 0)
-	middle.add_child(left)
+	left.custom_minimum_size = Vector2(300, 0)
+	var side_top := HBoxContainer.new()
+	side_top.add_theme_constant_override("separation", 10)
+	left.add_child(side_top)
 	portrait = Polaroid.new("Breaker", "[BREAKER PORTRAIT]", -3.0)
 	portrait.name = "Polaroid"
-	left.add_child(portrait)
-	ram_note = ZineNote.new("RAM", Vector2(170, 54))
-	ram_note.name = "RamTally"
-	left.add_child(ram_note)
+	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	side_top.add_child(portrait)
 	heat_poster = HeatPoster.new(false)
 	heat_poster.name = "HeatPoster"
 	if RunManager.campaign != null:
 		heat_poster.hot_color = Palette.corp_color(RunManager.campaign.corporation_id)
-	left.add_child(heat_poster)
+	side_top.add_child(heat_poster)
 	# One note serves both: the installed Daemons by default, the inspect text on right-click
 	# (the left column must stay within the 720-px canvas next to the netrun status bars).
-	inspect_note = ZineNote.new("DAEMONS / INSPECT", Vector2(170, 104))
+	inspect_note = ZineNote.new("DAEMONS / INSPECT", Vector2(290, 90))
 	inspect_note.name = "InspectNote"
 	daemon_note = inspect_note
 	left.add_child(inspect_note)
-	_zine_elements.append_array([portrait, ram_note, heat_poster, inspect_note])
+	_zine_elements.append_array([portrait, heat_poster, inspect_note])
 
 	_arena = HBoxContainer.new()
 	_arena.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arena.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	middle.add_child(_arena)
+	var player_col := VBoxContainer.new()
+	player_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	player_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	player_col.add_theme_constant_override("separation", 0)
+	_arena.add_child(player_col)
 	_player_view = WheelView.new()
 	_player_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_arena.add_child(_player_view)
+	_player_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	player_col.add_child(_player_view)
+	ram_note = RamBar.new()
+	ram_note.name = "RamTally"
+	player_col.add_child(ram_note)
+	_build_stickers()
 	_enemy_views_box = VBoxContainer.new()
 	_enemy_views_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_enemy_views_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arena.add_child(_enemy_views_box)
 
-	var right := VBoxContainer.new()
-	right.custom_minimum_size = Vector2(300, 0)
-	middle.add_child(right)
+	# What-will-resolve now shows as a tag over each spinner, and there is no log strip:
+	# the notes stay (hidden) as the text record the tutorial and tests read.
+	var right := left
+	middle.add_child(left)
 	preview_note = ZineNote.new("WHAT WILL RESOLVE", Vector2(290, 150))
 	preview_note.name = "PreviewNote"
 	preview_note.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	preview_note.visible = false
 	right.add_child(preview_note)
 	log_note = ZineNote.new("LOG", Vector2(290, 150))
 	log_note.name = "LogStrip"
 	log_note.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	log_note.visible = false
 	right.add_child(log_note)
 	_zine_elements.append_array([preview_note, log_note])
 
-	var controls := HFlowContainer.new()  # wraps at large text scales (GDD 9.6)
+	# The old dropdown row keeps the toggle state (keys W/R/T/D/F still drive it) but is not
+	# shown: the stickers around the spinner are the controls now.
+	var controls := HFlowContainer.new()
 	controls_row = controls
+	controls.visible = false
 	root.add_child(controls)
 	_target_option = OptionButton.new()
 	_target_option.item_selected.connect(func(i: int) -> void: engine.submit(CombatAction.target(_target_option.get_item_metadata(i))))
@@ -701,15 +771,8 @@ func _build_ui() -> void:
 	_slot_option = OptionButton.new()
 	_slot_option.add_item(_slot_auto_text())
 	controls.add_child(_slot_option)
-	_respin_button = _button("Respin [%s]" % Settings.key_text(&"respin"), respin)
 	_respin_button.mouse_entered.connect(_show_respin_odds)
 	_respin_button.mouse_exited.connect(_show_end_turn_preview)
-	controls.add_child(_respin_button)
-	_rewind_button = _button("Undo", rewind)
-	controls.add_child(_rewind_button)
-	_refresh_key_hints()
-	if not Settings.changed.is_connected(_refresh_key_hints):
-		Settings.changed.connect(_refresh_key_hints)  # a rebind in the pause menu shows at once
 
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 10)
@@ -718,11 +781,14 @@ func _build_ui() -> void:
 	_hand_box.add_theme_constant_override("separation", 10)
 	_hand_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(_hand_box)
-	_end_turn_button = ZineStamp.new("SEND IT", Palette.CELL_PINK)
+	_end_turn_button = DripButton.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), DripButton.DRIP_PINK, 50, DripButton.SEND_IT_DRIPS)
 	_end_turn_button.name = "SendIt"
 	_end_turn_button.pressed.connect(end_turn)
 	bottom.add_child(_end_turn_button)
 	_zine_elements.append(_end_turn_button)
+	_refresh_key_hints()
+	if not Settings.changed.is_connected(_refresh_key_hints):
+		Settings.changed.connect(_refresh_key_hints)  # a rebind in the pause menu shows at once
 
 
 func _label(text: String) -> Label:
@@ -769,10 +835,20 @@ func _refresh_key_hints() -> void:
 		_slot_option.set_item_text(0, _slot_auto_text())
 	_nudge_minus_button.text = "-1 [%s]" % Settings.key_text(&"nudge_left")
 	_nudge_plus_button.text = "+1 [%s]" % Settings.key_text(&"nudge_right")
-	_rewind_button.text = "Undo [%s]" % Settings.key_text(&"rewind")
 	_settings_button.text = "Settings [%s]" % Settings.key_text(&"open_settings")
-	if engine != null and engine.has_fight():
-		_respin_button.text = "Respin %d [%s]" % [engine.resolver.config.respin_ram_cost, Settings.key_text(&"respin")]
+	(_end_turn_button as DripButton).set_key_hint("[%s]" % Settings.key_text(&"end_turn"))
+	_sync_stickers()
+
+
+## Sticker label with its bound key: the action each sticker runs (H19 hints on the
+## visual-pass controls).
+const STICKER_ACTIONS := {"nudge_l": &"nudge_left", "nudge_r": &"nudge_right", "respin": &"respin",
+	"undo": &"rewind", "wheel": &"toggle_nudge_wheel", "ring": &"toggle_ring", "cards": &"toggle_card_target",
+	"dir": &"toggle_direction"}
+
+
+func _sticker_text(key: String, label: String) -> String:
+	return "%s [%s]" % [label, Settings.key_text(STICKER_ACTIONS[key])]
 
 
 func _rebuild_slot_option() -> void:
@@ -792,16 +868,12 @@ func _refresh(state: CombatState) -> void:
 	var lookup := engine.resolver.lookup
 	_status.text = "  Turn %d | RAM %d/%d | free nudge %d | %s" % [state.turn, state.ram, state.max_ram, state.free_nudges,
 		"VICTORY" if state.outcome == CombatState.Outcome.VICTORY else ("DEFEAT" if state.outcome == CombatState.Outcome.DEFEAT else "player phase")]
-	portrait.caption = "%s  HP %d/%d" % [state.player.display_name, state.player.hp, state.player.max_hp]
+	portrait.caption = state.player.display_name
 	if state.player.source_id != &"":
 		portrait.placeholder_label = "[%s PORTRAIT]" % String(state.player.source_id).to_upper()
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
 	portrait.queue_redraw()
-	ram_note.clear()
-	var tally := ""
-	for i in state.ram:
-		tally += "|" if (i + 1) % 5 != 0 else "/ "
-	ram_note.append("[b]%s[/b] %d/%d" % [tally, state.ram, state.max_ram])
+	ram_note.set_ram(state.ram, state.max_ram)
 	_refresh_inspect_note()
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
 	heat_poster.set_heat(heat, engine.resolver.config.heat_max, engine.resolver.config.major_heat_levels())
@@ -817,6 +889,10 @@ func _refresh(state: CombatState) -> void:
 		if not _enemy_views.has(e.id):
 			var v := WheelView.new()
 			v.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			var eid := e.id
+			v.gui_input.connect(func(ev: InputEvent) -> void:
+				if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and engine.has_fight() and engine.state().target_id != eid:
+					engine.submit(CombatAction.target(eid)))
 			_enemy_views[e.id] = v
 			_enemy_views_box.add_child(v)
 		var view: WheelView = _enemy_views[e.id]
@@ -872,8 +948,8 @@ func _refresh(state: CombatState) -> void:
 	_link_hand_focus()
 	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
-	_respin_button.text = "Respin %d [%s]" % [engine.resolver.config.respin_ram_cost, Settings.key_text(&"respin")]
 	_respin_button.disabled = state.is_over() or state.ram < engine.resolver.config.respin_ram_cost
+	_sync_stickers()
 	_show_end_turn_preview()
 
 
@@ -1004,3 +1080,104 @@ func _show_end_turn_preview() -> void:
 		if not e.is_satellite or e.is_alive():
 			summary.append("%s %d HP" % [e.display_name, e.hp])
 	preview_note.append("[b]=> You %d HP | %s[/b]" % [after.player.hp, ", ".join(summary)])
+	_set_intents(state, after)
+
+
+## The tag over each spinner: what its needle lands on now and the HP change the end of
+## the turn brings (the same preview the notes carry, so tag = real result).
+func _set_intents(state: CombatState, after: CombatState) -> void:
+	var views := {state.player.id: _player_view}
+	for id in _enemy_views:
+		views[id] = _enemy_views[id]
+	for id in views:
+		var c := state.get_combatant(id)
+		var view: WheelView = views[id]
+		if c == null or not c.is_alive():
+			view.intent = {}
+			view.queue_redraw()
+			continue
+		var parts := PackedStringArray()
+		var type := -1
+		for r in engine.readouts(c):
+			var slice: SliceData = r["slice"]
+			if type < 0:
+				type = slice.slice_type
+			var name: String = Palette.SLICE_NAMES.get(slice.slice_type, "?")
+			parts.append(("%s %d" % [name, slice.base_output]) if slice.base_output > 0 else name)
+			parts.append(String(Palette.TIER_NAMES.get(r["tier"], "")).to_lower())
+		var later := after.get_combatant(id)
+		if later != null:
+			var dhp := later.hp - c.hp
+			if dhp != 0:
+				parts.append("%+d HP" % dhp)
+			if later.block > c.block:
+				parts.append("+%d block" % (later.block - c.block))
+		view.intent = {"type": type, "text": " ".join(parts)}
+		view.queue_redraw()
+
+
+## Stickers around the player spinner: nudge either way, respin, undo, and the toggles
+## that used to be dropdowns (which wheel nudges hit, which ring, where cards aim, which
+## way nudge cards turn).
+func _build_stickers() -> void:
+	var specs := [
+		["nudge_l", "◀ NUDGE", Palette.NOTE_YELLOW, -5.0, func() -> void: nudge(-1)],
+		["nudge_r", "NUDGE ▶", Palette.NOTE_YELLOW, 4.0, func() -> void: nudge(1)],
+		["respin", "RESPIN", Palette.STICKER_PINK, 3.0, respin],
+		["undo", "UNDO", Palette.NOTE_PAPER, -3.0, rewind],
+		["wheel", "NUDGE: MINE", Palette.NOTE_PAPER, 2.0, toggle_nudge_wheel],
+		["ring", "RING: OUTER", Palette.NOTE_PAPER, -2.0, toggle_ring],
+		["cards", "CARDS → TARGET", Palette.NOTE_PAPER, 3.0, toggle_card_target],
+		["dir", "CARD TURN +", Palette.NOTE_PAPER, -3.0, toggle_direction],
+	]
+	for sp in specs:
+		var b := StickerButton.new(sp[1], sp[2], sp[3])
+		b.name = "Sticker_" + String(sp[0])
+		b.pressed.connect(sp[4])
+		_player_view.add_child(b)
+		_stickers[sp[0]] = b
+	_respin_button = _stickers["respin"]
+	_rewind_button = _stickers["undo"]
+	_player_view.resized.connect(_place_stickers)
+
+
+## One column left of the player spinner, centred on it; the spinner keeps the rest of
+## its column (WheelView.left_reserve), so no sticker lies on a slice at any text scale.
+func _place_stickers() -> void:
+	var order := ["nudge_l", "nudge_r", "respin", "undo", "wheel", "ring", "cards", "dir"]
+	var shown: Array[StickerButton] = []
+	var widest := 0.0
+	var height := 0.0
+	for key in order:
+		var b: StickerButton = _stickers[key]
+		if not b.visible:
+			continue
+		shown.append(b)
+		widest = maxf(widest, b.size.x)
+		height += b.size.y + STICKER_GAP
+	_player_view.left_reserve = widest + STICKER_EDGE * 2.0
+	var y := _player_view.size.y * 0.56 - height * 0.5
+	for b in shown:
+		b.position = Vector2(STICKER_EDGE, maxf(0.0, y))
+		y += b.size.y + STICKER_GAP
+	_player_view.queue_redraw()
+
+
+func _sync_stickers() -> void:
+	if _stickers.is_empty():
+		return
+	var labels := {"nudge_l": "◀ NUDGE", "nudge_r": "NUDGE ▶", "undo": "UNDO",
+		"wheel": "NUDGE: TGT" if _nudge_wheel_option.selected == 1 else "NUDGE: MINE",
+		"ring": "RING: IN" if _nudge_ring_option.selected == 1 else "RING: OUT",
+		"cards": "CARDS→ME" if _card_target_option.selected == 1 else "CARDS→TGT",
+		"dir": "TURN %s" % ("+" if _direction_option.selected == 0 else "-"),
+		"respin": "RESPIN %d" % engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else "RESPIN"}
+	for k in labels:
+		(_stickers[k] as StickerButton).set_label(_sticker_text(k, labels[k]))
+		(_stickers[k] as StickerButton).refit()
+	if engine != null and engine.has_fight():
+		var state := engine.state()
+		(_stickers["ring"] as StickerButton).visible = state.player.wheel.has_inner_ring() or _nudge_ring_option.selected == 1
+		for k in ["nudge_l", "nudge_r"]:
+			(_stickers[k] as StickerButton).disabled = state.is_over()
+	_place_stickers()

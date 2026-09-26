@@ -16,6 +16,24 @@ const RESIST_GOLD := Color("#FFD24D")
 const DESK_DARK := Color("#1B1D21")
 const DESK_METAL := Color("#34383E")
 const TAPE := Color(0.95, 0.9, 0.6, 0.55)
+## Neon-night look (STYLE_GUIDE 2, "Neon city" row): the isometric city backdrop, the
+## terminal panels laid over it and the taped paper notes.
+const NIGHT_SKY := Color("#060816")
+const NIGHT_BLOCK := Color("#101832")
+const NIGHT_BLOCK_LIT := Color("#1C2A55")
+const NIGHT_STREET := Color("#0A0E22")
+const NEON_VIOLET := Color("#B04DFF")
+const TERMINAL_BG := Color(0.02, 0.05, 0.11, 0.95)
+const TERMINAL_BG_HOT := Color(0.16, 0.04, 0.16, 0.92)
+const TERMINAL_EDGE := Color(0.36, 0.88, 1.0, 0.75)
+const TERMINAL_TEXT := Color("#CFF6FF")
+const NOTE_PAPER := Color("#E9DFC6")
+const NOTE_PINK := Color("#F4C3CF")
+const NOTE_YELLOW := Color("#F2DC7A")
+## Softened hot pink for pink card stickers: black text stays readable on it.
+const STICKER_PINK := Color("#F5AFCB")
+const NOTE_TAPE := Color(0.93, 0.89, 0.78, 0.7)
+const SHADOW := Color(0, 0, 0, 0.45)
 
 const FONT_MARKER := "res://assets/fonts/PermanentMarker-Regular.ttf"
 const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
@@ -57,9 +75,9 @@ static func corp_color(corporation_id: StringName) -> Color:
 static func slice_color(type: int) -> Color:
 	match type:
 		RC.SliceType.ATTACK, RC.SliceType.CRIT:
-			return Color("#FF5A5A")
+			return CELL_PINK
 		RC.SliceType.DEFEND, RC.SliceType.SHIELD:
-			return Color("#4FA8FF")
+			return NET_CYAN
 		RC.SliceType.EVADE, RC.SliceType.HEAL:
 			return Color("#7BE07B")
 		RC.SliceType.AFFLICT:

@@ -31,17 +31,14 @@ var _class_base: Dictionary = {}
 ## Subtitle font sizes at text scale 1.0.
 const SPEAKER_FONT_SIZE := 12
 const TEXT_FONT_SIZE := 15
+## Lines per subtitle page in a docked bar (0 = the bar grows to fit the whole line).
+var dock_lines: int = 0
 
 
 func _ready() -> void:
 	layer = 90
 	bar = PanelContainer.new()
-	bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bar.offset_left = -440
-	bar.offset_right = 440
-	bar.offset_top = -92
-	bar.offset_bottom = -20
-	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN  # larger text grows the bar upwards
+	dock_bottom()
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.visible = false
 	add_child(bar)
@@ -55,7 +52,7 @@ func _ready() -> void:
 	text_label = RichTextLabel.new()
 	text_label.bbcode_enabled = true
 	text_label.fit_content = true
-	text_label.custom_minimum_size = Vector2(860, 40)
+	text_label.custom_minimum_size = Vector2(560, 40)
 	text_label.add_theme_font_override("normal_font", Palette.mono())
 	text_label.add_theme_font_size_override("normal_font_size", TEXT_FONT_SIZE)
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -88,6 +85,62 @@ func add_set(set: LineSetData) -> void:
 
 
 # --- Speaking -----------------------------------------------------------------------------
+
+## The subtitle bar at the foot of the screen (the default). Larger text grows it upwards.
+func dock_bottom() -> void:
+	bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	bar.offset_left = -440
+	bar.offset_right = 440
+	bar.offset_top = -92
+	bar.offset_bottom = -20
+	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	dock_lines = 0
+
+
+## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand). With
+## `max_lines` > 0 a longer line is shown as pages of at most that many lines, one after
+## the other, so the bar never grows past the rect's neighbours at any text scale.
+func dock_at(rect: Rect2, max_lines: int = 0) -> void:
+	bar.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	bar.offset_left = rect.position.x
+	bar.offset_top = rect.position.y
+	bar.offset_right = rect.end.x
+	bar.offset_bottom = rect.end.y
+	bar.grow_vertical = Control.GROW_DIRECTION_END
+	dock_lines = max_lines
+
+
+## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and
+## the current text size (one page when the bar is not paged).
+func pages_of(text: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	if dock_lines <= 0:
+		out.append(text)
+		return out
+	var font := Palette.mono()
+	var fs := text_label.get_theme_font_size("normal_font_size")
+	var sb := bar.get_theme_stylebox("panel")
+	var width := (bar.offset_right - bar.offset_left) - (sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0)
+	var lines := PackedStringArray()
+	var cur := ""
+	for word in text.split(" ", false):
+		var trial := word if cur == "" else cur + " " + word
+		if cur != "" and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width * PAGE_FILL:
+			lines.append(cur)
+			cur = word
+		else:
+			cur = trial
+	if cur != "":
+		lines.append(cur)
+	for i in range(0, lines.size(), dock_lines):
+		out.append(" ".join(lines.slice(i, i + dock_lines)))
+	return out
+
+
+## Share of the bar width a paged line may fill (RichTextLabel wraps a little earlier than
+## the plain measurement).
+const PAGE_FILL := 0.95
+
 
 ## Shows a subtitle (queued behind any line still on screen). Emits line_spoken at once
 ## so voice-over and logs can follow even with subtitles switched off.
@@ -125,6 +178,18 @@ func _next() -> void:
 		bar.visible = false
 		return
 	var line: Dictionary = _queue.pop_front()
+	var pages := pages_of(String(line["text"]))
+	if pages.size() > 1:
+		# The rest of a long line waits at the front of the queue, time shared by length.
+		var whole := maxf(1.0, String(line["text"]).length())
+		var seconds := float(line["seconds"])
+		for k in range(pages.size() - 1, 0, -1):
+			var rest := line.duplicate()
+			rest["text"] = pages[k]
+			rest["seconds"] = maxf(MIN_SECONDS, seconds * pages[k].length() / whole)
+			_queue.push_front(rest)
+		line["text"] = pages[0]
+		line["seconds"] = maxf(MIN_SECONDS, seconds * pages[0].length() / whole)
 	var corp_id := StringName(String(line.get("corporation", "")))
 	_style(int(line["speaker"]), corp_id)
 	var name := speaker_name(int(line["speaker"]), corp_id)
@@ -177,16 +242,23 @@ func _style(speaker: int, corporation_id: StringName = &"") -> void:
 	style.content_margin_top = 6
 	style.content_margin_bottom = 6
 	if speaker == RC.Voice.DISPATCH or speaker == RC.Voice.CORPO:
-		style.bg_color = Color(Palette.DESK_DARK, 0.92)
+		style.bg_color = Color(0.02, 0.03, 0.08, 0.95)
 		var corp_color := Palette.corp_color(corporation_id) if corporation_id != &"" else Palette.CORP_SOLACE
 		style.border_color = Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else corp_color
 		style.set_border_width_all(1)
+		style.border_width_left = 4
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 8
 		speaker_label.add_theme_color_override("font_color", style.border_color)
 		text_label.add_theme_color_override("default_color", Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else Palette.PAPER)
 	else:
-		style.bg_color = Color(Palette.PAPER, 0.94)
+		style.bg_color = Color(Palette.NOTE_PAPER, 0.97)
 		style.border_color = Palette.INK
 		style.set_border_width_all(1)
+		style.border_width_left = 4
+		style.border_color = Palette.CELL_PINK
+		style.shadow_color = Color(0, 0, 0, 0.5)
+		style.shadow_size = 8
 		speaker_label.add_theme_color_override("font_color", Palette.CELL_PINK)
 		text_label.add_theme_color_override("default_color", Palette.INK)
 	bar.add_theme_stylebox_override("panel", style)

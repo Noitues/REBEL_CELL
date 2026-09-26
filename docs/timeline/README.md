@@ -19,3 +19,4 @@ Movie Maker (`godot --path . --resolution 1280x720 --write-movie <file>.png --fi
 | 2026-09-24 | 10_m10 | Orbital Commons' 32-Site Grid in gold (M10). |
 | 2026-09-24 | 11_m11 | REBEL_CELL's Grid (template) in red: the Cell's own history as the map (M11). |
 | 2026-09-24 | 12_h9 | HQ with every Profile unlock listed: button rows now wrap inside the 1280 screen (horizontal pass 9). |
+| 2026-09-26 | 13_merge | Visual/UI pass merged into main (H19): title menu on the neon city, HQ top bar and crew dossiers, the Grid drawn on the city with its legend, the netrun route, combat with the sticker column (bound keys) and intent tags, the MODEM cyber shop, the raid war table. The scene is passed before `--` (e.g. `res://scenes/netrun_map/netrun_scene.tscn -- --demo-combat`); demo runs bump the shared profile's counters, so back up and restore `profile.json` around a capture. |

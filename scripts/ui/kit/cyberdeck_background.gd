@@ -1,57 +1,60 @@
 class_name CyberdeckBackground
 extends Control
-## The physical world (STYLE_GUIDE 1): a diegetic cyberdeck. Rain-streaked window with
-## neon behind it, worn metal deck, an amber CRT panel. Rain animates unless
-## reduce-effects. Searchlights sweep past the window as Heat rises (GDD 9.4).
+## The physical world (STYLE_GUIDE 1): the Cell's room at night, looking down through
+## rain on the isometric neon city (NeonCity); a worn metal deck edge sits at the bottom. Rain animates unless reduce-effects.
+## Searchlights sweep past the window as Heat rises (GDD 9.4).
 
-var heat_band: int = 0
-var _rain_offset: float = 0.0
+var heat_band: int = 0:
+	set(v):
+		heat_band = v
+		if _frame != null:
+			_frame.queue_redraw()
+var city: NeonCity
+var _frame: Control
 var _search_t: float = 0.0
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	city = NeonCity.new()
+	city.rain = true
+	city.dim = 0.2
+	add_child(city)
+	_frame = Control.new()
+	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_frame.draw.connect(_draw_frame)
+	add_child(_frame)
+
+
+func _ready() -> void:
+	if RunManager.campaign != null:
+		set_district(RunManager.campaign.corporation_id)
+
+
+## The window looks out on the district of the corporation being fought.
+func set_district(corporation_id: StringName) -> void:
+	city.district = corporation_id
 
 
 func _process(delta: float) -> void:
-	if Settings.reduce_effects:
+	if Settings.reduce_effects or heat_band <= 0:
 		return
-	_rain_offset = fmod(_rain_offset + delta * 220.0, 60.0)
 	_search_t += delta
-	queue_redraw()
+	_frame.queue_redraw()
 
 
-func _draw() -> void:
-	# Window (top band) with neon glow and rain.
-	var window := Rect2(0, 0, size.x, size.y * 0.42)
-	draw_rect(window, Color("#070912"))
-	draw_rect(Rect2(0, window.size.y * 0.55, size.x, 3), Color(Palette.CELL_PINK, 0.8))
-	draw_rect(Rect2(0, window.size.y * 0.55 + 3, size.x, 18), Color(Palette.CELL_PINK, 0.12))
-	for i in 9:
-		var bx := size.x * (0.05 + i * 0.11)
-		var bh := window.size.y * (0.3 + float((i * 37) % 50) / 100.0)
-		draw_rect(Rect2(bx, window.size.y - bh, size.x * 0.07, bh), Color("#0F1424"))
-		for w in 6:
-			draw_rect(Rect2(bx + 6 + w * 12, window.size.y - bh + 10 + (w % 3) * 22, 6, 6), Color(Palette.CRT_AMBER if (i + w) % 4 == 0 else Palette.NET_CYAN, 0.5))
+func _draw_frame() -> void:
+	var s := size
+	# Heat searchlights sweep across the glass.
 	if heat_band > 0:
-		var sx := fmod(_search_t * 120.0 * heat_band, size.x + 200.0) - 100.0
-		draw_colored_polygon(PackedVector2Array([Vector2(sx, window.size.y), Vector2(sx + 60, window.size.y), Vector2(sx + 220, 0), Vector2(sx + 100, 0)]), Color(Palette.PAPER, 0.06 * heat_band))
-	for i in 40:
-		var rx := float((i * 97) % int(maxf(size.x, 1.0)))
-		var ry := fmod(float((i * 53) % 400) + _rain_offset * (1.0 + (i % 3) * 0.3), window.size.y)
-		draw_line(Vector2(rx, ry), Vector2(rx - 3, ry + 18), Color(Palette.NET_CYAN, 0.25), 1.0)
-	# Deck: worn metal with a highlight edge and screws.
-	var deck := Rect2(0, window.size.y, size.x, size.y - window.size.y)
-	draw_rect(deck, Palette.DESK_DARK)
-	draw_rect(Rect2(0, window.size.y, size.x, 6), Palette.DESK_METAL)
-	for i in 8:
-		draw_circle(Vector2(30 + i * (size.x - 60) / 7.0, window.size.y + 22), 4, Palette.DESK_METAL)
-	# CRT panel (amber readout) on the right of the deck.
-	var crt := Rect2(size.x * 0.66, window.size.y + 40, size.x * 0.3, size.y * 0.3)
-	draw_rect(crt, Color("#0B0A06"))
-	draw_rect(crt, Palette.DESK_METAL, false, 4.0)
-	for k in int(crt.size.y / 4.0):
-		draw_line(Vector2(crt.position.x + 6, crt.position.y + 6 + k * 4), Vector2(crt.end.x - 6, crt.position.y + 6 + k * 4), Color(Palette.CRT_AMBER, 0.05), 1.0)
-	draw_string(Palette.mono(), crt.position + Vector2(14, 28), "[DECK CRT] REBEL_CELL v0.9", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Palette.CRT_AMBER, 0.8))
-	draw_string(Palette.mono(), crt.position + Vector2(14, 50), "DISPATCH: standing by.", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(Palette.CRT_AMBER, 0.6))
+		var sx := fmod(_search_t * 120.0 * heat_band, s.x + 400.0) - 200.0
+		_frame.draw_colored_polygon(PackedVector2Array([Vector2(sx, s.y), Vector2(sx + 90, s.y), Vector2(sx + 320, 0), Vector2(sx + 160, 0)]), Color(Palette.PAPER, 0.05 * heat_band))
+	# The deck edge: worn metal lip with screws and a pink under-glow.
+	var deck_y := s.y - 18.0
+	_frame.draw_rect(Rect2(0, deck_y, s.x, 18), Palette.DESK_DARK)
+	_frame.draw_rect(Rect2(0, deck_y, s.x, 3), Palette.DESK_METAL)
+	_frame.draw_rect(Rect2(0, deck_y - 6, s.x, 6), Color(Palette.CELL_PINK, 0.12))
+	for i in 10:
+		_frame.draw_circle(Vector2(24 + i * (s.x - 48) / 9.0, deck_y + 10), 2.5, Palette.DESK_METAL)

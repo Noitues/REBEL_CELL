@@ -30,6 +30,141 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-26 — Merge: visual/UI pass into main (H17-H19 behaviour kept)
+The visual branch (`claude/game-visual-ui-update-pkc0aj`, forked at H16) is merged. Its
+look wins; main's H17-H19 behaviour is kept or remapped onto the new controls:
+- **Pause menu**: the branch's terminal-glass panel over main's full-screen click-eating
+  `Backdrop` (H17), focus trap, Esc handling and `MENU_SIZE`.
+- **Options**: the branch's map legend and system log switches (Display section) plus
+  main's `bind_error` refusals in the wrapped `BindNote`, `reset_keybinds()` keeping pad
+  buttons and `UiWrap.fit`. Settings serialise every field of both sides.
+- **Combat key hints (H19 on the new UI)**: every sticker names its bound key
+  (`[Q]`, `[W]`...) and SEND IT's drip lettering shows the bound End Turn key under it;
+  both refresh on `Settings.changed`. The hidden dropdown row keeps its hint text (the keys
+  still drive it and tests read it).
+- **Stickers never lie on a slice (GDD 9.2)**: the branch placed them round the spinner,
+  where they covered the value labels and the ring (worse with key hints and at text
+  scale 1.6). They now stand in one column left of the player spinner and the spinner
+  centres in the rest of its column (`WheelView.left_reserve`, shrinking if needed).
+  Sticker lettering follows the text scale. `layout_violations` checks the stickers and
+  the intent tags against every wheel.
+- **Combat subtitles**: the dock spans the arena above the spinners and pages long lines
+  at two lines (`Dialogue.dock_at(rect, max_lines)`), so at text scale 1.6 the longest
+  line never reaches a wheel; the bottom bar grows upwards as in H18. History keeps the
+  whole line.
+- **Log strip, preview wall, dropdown row**: the visual pass wins (hidden; the intent
+  tags carry the preview). H13's "tutorial over the log strip" is superseded by the
+  branch's tutorial fit between the inspect note and SEND IT.
+- HQ keeps main's `Settings.key_text` hints on the branch's CYBERDECK menus; recruits
+  (with `rookie_price`) moved to the branch's market.
+- Test: `tests/integration/test_visual_merge.gd`. Timeline: `13_merge`.
+
+### Visual pass: readability and portraits (2026-09-26)
+- The system log strip (HQ, netrun) shows only when "System log strip" is on in Options
+  > Display (`Settings.system_log`, off by default). Test: `test_layout_rules`.
+- Dripping pink lettering (every `DripButton.draw_drip_text` use: title and HQ tags,
+  scrawls, SEND IT, LEAVE THE MODEM, deck/spinner actions, loot) has a thin white
+  outline round letters and drips (`DripButton.OUTLINE_PX`).
+- Terminal panels are more opaque with a soft dark halo, so text reads over the city.
+- Combat docks the DISPATCH / corporate subtitle bar in the top strip
+  (`Dialogue.dock_at`), clear of the hand and SEND IT; the tutorial note fits between
+  the inspect note and SEND IT.
+- Zine paper panels: the drop shadow no longer darkens the whole sheet, and the halftone
+  is spaced in pixels (the event panel read as flat grey before).
+- Portraits: `PortraitArt` draws every Polaroid until final art, in four review styles
+  (`--demo-portrait=N`: 0 neon bust (default), 1 xerox zine, 2 wire scan, 3 mugshot) for
+  operatives, corporate agents, machines, bosses and corporation faces; sheets from
+  `tools/design_lab/portrait_concepts.tscn`. Enemies, bosses and corporations have no
+  portrait slot on screen yet; the owner picks a style first.
+- Motion roadmap handed off in `docs/ANIMATION_HANDOFF.md`.
+- Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
+  sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
+  px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.
+
+### Visual pass: spinner slices (2026-09-26)
+- Slice colours: attack/crit neon pink (`CELL_PINK`), defend/shield cyan (`NET_CYAN`);
+  evade/heal, afflict and deploy unchanged. Wedges are translucent (the city shows
+  through) with a bright rim.
+- Slice icons are solid black with a white outline (`SliceIcon.draw_on_slice`). Review
+  styles behind `--demo-iconstyle=N` in combat: 0 black & white, 1 badge, 2 inverse
+  badge, 3 glow, 4 bold. Owner's pick: 4 bold is the baseline.
+
+### Visual pass: landmarks and the Cell's fist (2026-09-25)
+- The Cell has no HQ tower on the city. Its territory builds like the Sprawl (its own
+  colour kept) and its roads etch a raised fist (traced from the owner's reference icon;
+  `NeonCity.FIST_*`). No ordinary street runs inside the fist's silhouette
+  (`FIST_HULL`): streets end on its outline and the blocks inside are built up at the
+  usual heights; only lots on the fist roads stay empty. `hq_of(&"rebel_cell")` still
+  marks the fist's centre, so camera framing and the city layouts are unchanged.
+- The city now draws all ground first (streets, plazas, lot floors), then the fist
+  roads, then everything standing, back to front.
+- Solace's HQ is a wide DNA double-helix tower in neon-outlined tubes with base-pair
+  bridges on a plain podium; the Egyptian HQ's pyramid is lower on a flat terrace, with
+  colonnades, gold hieroglyph friezes on the base and the pyramid, braziers and a doorway.
+- Wall texture options (`NeonCity.face_texture`, `--demo-texture=N` on the title
+  screen): none (default), panel seams, dark pen hatching, grime stipple, concrete grain,
+  matte stone, brushed metal, hatching on stone, hatching on metal (4-8 in the sketch
+  shader's `wall_mode`). (Superseded below: strong tinted slate is the baseline.)
+- Added 9 painted slate and 10 dark slate, modelled on the reference sheet's panel 6:
+  blue-grey walls lit from above and falling into shadow at the base, panel detail drawn
+  in face space (ledges, recessed panels, ribs, vent grilles, amber light slots), roofs
+  with a raised rim, a recessed deck and the odd plant box, a soft painted grain and a
+  gentler saturation boost on the walls (shader `wall_mode` 4). Round towers keep only
+  their silhouette and front edge lines so they read as one shaded mass. HQs keep their
+  own look.
+- Added 11 tinted slate and 12 strong tinted slate: the painted slate leans 30% / 50%
+  toward each building's line colour (`SLATE_TINT`) with full saturation and the same
+  painted grain (shader `wall_mode` 5), so territories keep their colour identity.
+- Owner's pick: strong tinted slate (12) is now the baseline wall look everywhere the
+  city is drawn (`NeonCity.DEFAULT_TEXTURE`); the other options stay behind
+  `--demo-texture=N` for review.
+
+### Visual pass: combat and Modem built (2026-09-25)
+- Combat (owner's picks): spinners as neon gauge bars with drawn slice icons in the
+  wedge, values outside (full slice text on hover), white in-slice "perfect" arrows, white
+  gauge-needle pointers, HP as a segmented arc with the numbers in its gap, a bare RAM
+  chip bar. What will resolve is a taped tag over each spinner (from the same end-turn
+  preview as before, so tag = real result). The log strip and the preview wall are no
+  longer shown (kept hidden as the text record the tutorial and tests read). Nudge,
+  respin, undo and the old dropdown toggles are stickers around the player spinner (keys
+  unchanged). Click an enemy spinner to target it. SEND IT is drip lettering.
+  `test_layout_rules` updated to these rules.
+- Modem: the vertical circuit-board MODEM CYBER SHOP sign on the left of the quadrants.
+- City: HQs doubled (10x10 plazas) with added detail; streets without traffic dashes.
+
+### Visual pass: owner picks (2026-09-25)
+- City: sketch jitter 0; Cool Haze palette default; busy streets drawn as re-stroked bands.
+- The Grid, raid setup, raid playout, raid summary and netrun route are drawn ON the city
+  (CityMapOverlay): Grid = rest of the city greyed; raid setup greyed; raid live zoomed on
+  the fight with the camera following the threats (no inset); route = blueprint look with
+  a GRID VIEW toggle zooming out to the Grid. The floating summary maps remain for the
+  HQ monitor only.
+- Top bar: neon title + ransom-note stat tags + VIEW LOADOUT (deck and spinner).
+- Deck / spinner views: left click selects (hand-drawn X to remove, drippy circle to
+  upgrade), right click shows details; drip-lettered action beside Close.
+
+### Visual pass: neon city (2026-09-25)
+Directed by the project owner from `docs/reference/ChatGPT Image Sep 24, 2026, 08_08_40 PM.png`.
+View code only; no rules, content or schema changed.
+- **Backdrop:** `NeonCity` (scripts/ui/kit) replaces the flat window and wireframe skyline in
+  both worlds. It draws an isometric city with dark masses (black, dark grey-blue, dark grey)
+  inked in amber, purple, pink, cyan and green, over an irregular street grid. The
+  `city_sketch` shader adds vertex wobble, grain, a saturation boost and faint scanlines.
+  Each corporation has a district profile (building mix, height, colour share) and a
+  unique landmark HQ; the backgrounds follow `campaign.corporation_id`.
+- **CRT:** the screen-wide overlay keeps only a faint vignette and flicker (its uniforms
+  remain for reduce-effects). Scanlines are applied locally, only to the city and terminal
+  glass (`crt_panel` shader via `UiTheme.crt_material()`), never to paper, Polaroids or stamps.
+- **Theme:** controls are terminal glass (navy, thin cyan edge, pink hover, acid focus).
+  Type variations: MenuItem, TerminalPanel, GlassPanel, HudLabel, LogText, HotButton,
+  NoteButton. New kit: TerminalWindow, ScreenHeader, HudBar, GraffitiScrawl, NeonSign,
+  NeonTag, CrewCard, AssetCard, AssetIcon, RaidBoardView.
+- **Screens:** HQ (menu, City Grid monitor, crew dossiers, wanted, radio), Modem (reference
+  cyber shop), raid war table for setup, playout and summary, Terminal events with
+  taped-note choices, and system dialogs as terminal glass.
+- Screenshot shortcuts added: `--demo-event`, `--demo-dispatch`, `--demo-loot`,
+  `--demo-playout`, `--demo-codex`, `--demo-stats`, `--demo-district=<corp>`.
+
 ### 2026-09-25 — Horizontal pass 19 fixes (GAP_ANALYSIS H19)
 - **A refused rebind is explained in a wrapped note under the Controls grid** (the key
   button keeps its width), so Options never runs off the screen at text scale 1.6.
@@ -1161,6 +1296,17 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **Deck / spinner viewers (2026-09-25):** added as look-and-pick views (DeckView,
+  SpinnerView), used by the Modem and the HQ crew cards. The GDD has no card upgrades and
+  no player rearranging of a wheel, so the viewers show card details and, for slices, the
+  stronger same-type slices in the Modem catalogue. Needed from design: do cards upgrade
+  (how, where, what changes)? When may a player rearrange slices (HQ only? cost?)?
+
+- **Daily run modifiers (2026-09-25):** the start screen now has a TODAY'S RUN panel with
+  room for the day's modifiers (`hq_scene.daily_modifiers`). Today the daily run fixes
+  only the seed, so the list reads "none today". What should a day change: a forced
+  corporation, ICE rules, a starting-deck or wheel twist, a boost? Needs a config table.
 
 - **Pacing after H15/H16.** With Daemons firing once per landing the bot's Breaker needs
   about 43 runs at ICE 5 (4/8 won), 48 after H17 (3/8), 49 after H18 (2/8), against the GDD 11.8 average of 24. Should enemies

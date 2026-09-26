@@ -5,6 +5,8 @@ extends Control
 
 var title: String = ""
 var label: RichTextLabel
+## Paper stock (Palette.NOTE_PAPER, NOTE_PINK, NOTE_YELLOW): the reference's taped notes.
+var paper_color: Color = Palette.NOTE_PAPER
 
 
 func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
@@ -62,6 +64,7 @@ func clear() -> void:
 
 
 func _draw() -> void:
+	# Torn edges: jagged top and bottom, a drop shadow, two strips of tape.
 	var pts := PackedVector2Array()
 	var steps := 18
 	for i in steps + 1:
@@ -70,7 +73,25 @@ func _draw() -> void:
 	for i in steps + 1:
 		var x := size.x - size.x * i / steps
 		pts.append(Vector2(x, size.y - float((i * 5) % 6)))
-	draw_colored_polygon(pts, Palette.PAPER_ALT)
-	draw_polyline(pts, Color(Palette.INK, 0.5), 1.0)
+	var shadow := PackedVector2Array()
+	for p in pts:
+		shadow.append(p + Vector2(4, 5))
+	draw_colored_polygon(shadow, Palette.SHADOW)
+	draw_colored_polygon(pts, paper_color)
+	# Fibre streaks and a soft fold shadow keep the paper from looking flat.
+	for k in 5:
+		var y := size.y * (0.18 + k * 0.17)
+		draw_line(Vector2(4, y), Vector2(size.x - 4, y + 1), Color(Palette.INK, 0.035), 1.0)
+	draw_rect(Rect2(size.x * 0.62, 2, 2, size.y - 6), Color(Palette.INK, 0.05))
+	draw_polyline(pts, Color(Palette.INK, 0.35), 1.0)
+	_tape(Vector2(14, -6), -0.12)
+	_tape(Vector2(size.x - 50, -5), 0.1)
 	if title != "":
 		draw_string(Palette.marker(), Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.INK)
+
+
+func _tape(at: Vector2, angle: float) -> void:
+	draw_set_transform(at, angle, Vector2.ONE)
+	draw_rect(Rect2(0, 0, 38, 12), Palette.NOTE_TAPE)
+	draw_rect(Rect2(0, 0, 38, 12), Color(Palette.INK, 0.08), false, 1.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

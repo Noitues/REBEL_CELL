@@ -18,6 +18,20 @@ Punk energy reference: neon graffiti chaos (spray, drips, scrawled notes, hot pi
 Use original motifs only. Do not copy existing characters, doodles or logos from any IP.
 The Cell mascot is an original grinning hexagon "cell".
 
+### 1.1 Neon city pass (2026-09-25)
+Reference: `docs/reference/ChatGPT Image Sep 24, 2026, 08_08_40 PM.png`. Every screen stands
+over the isometric neon city: in the physical world it is seen through the Cell's window; in
+the net it is re-inked with circuit lanes. Each corporation's district has its own building
+mix, colour weighting and landmark HQ (Solace DNA double helix; with a culture theme,
+the Chinese pagoda, the Egyptian terraced pyramid, the English clock tower). The Cell has
+no tower: its roads etch a raised fist into ordinary city blocks. Buildings are painted
+slate tinted strongly toward their line colour (`NeonCity.DEFAULT_TEXTURE`, "strong
+tinted slate": lit from above, ledges, recessed panels, ribs, vents, amber light slots,
+rimmed roofs), inked by hand in amber, purple, pink, cyan and green. Streets are bundles
+of skinny full-neon marker strokes, wider where traffic is busy. System UI is terminal glass,
+with a mono title and a pink rule. The Cell's voice stays paper (taped notes, Polaroids,
+stamps, marker scrawls). CRT scanlines appear only on the city and terminal glass.
+
 ## 2. Colour Tokens
 | Token | Hex | Use |
 |---|---|---|
@@ -36,6 +50,10 @@ The Cell mascot is an original grinning hexagon "cell".
 | `crt_amber` | #FFB000 | CRT readouts on the physical deck only |
 | `resist_gold` | #FFD24D | Spin resistance, locks |
 | `desk_dark` | #1B1D21 / #34383E | Deck metal |
+| `night_*` | #060816 sky, #101832 / #1C2A55 blocks | City backdrop masses |
+| `neon_violet` | #B04DFF | Fifth ink colour (with amber, pink, cyan, green) |
+| `terminal_*` | navy glass rgba(5,13,28,.9), edge #5CE1FF @75% | Terminal panels |
+| `note_*` | #E9DFC6 paper, #F4C3CF pink, #F2DC7A yellow | Taped notes |
 
 Each corporation gets its own `corp_*` glow colour. Never use colour as the only signal.
 
@@ -50,9 +68,11 @@ All three are on Google Fonts under open licences; confirm each licence before r
 DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-styled.
 
 ## 4. Component Rules
-- **Wheels:** wireframe with glow; player wheel `cell_pink`, enemy wheels `corp_*`;
-  a glyph on every slice (✦ Crit, ▲ Atk, ■ Def, ◈ Afflict, ✕ Miss, plus Shield, Evade,
-  Heal, Deploy glyphs); dashed outline for the Miss slice; resistance shown in `resist_gold`.
+- **Wheels:** neon gauge rings; translucent slices (attack/crit `cell_pink`,
+  defend/shield `net_cyan`, evade/heal green, afflict/deploy violet) with a bright rim;
+  a glyph on every slice drawn **bold**: solid black with a heavy white outline
+  (`SliceIcon.style` 4), the same on Modem slice tiles; value outside the ring; white
+  gauge-needle pointers; dashed outline for the Miss slice; resistance in `resist_gold`.
 - **Zine elements never cover the wheels.**
 - **Cards:** stickers (black/pink/paper), slight rotation (±4°), tape strips, hovered card
   lifts and glows; cost in marker.

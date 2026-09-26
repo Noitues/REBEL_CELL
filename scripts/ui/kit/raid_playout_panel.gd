@@ -9,7 +9,9 @@ signal finished
 
 const STEP_SECONDS := 0.9
 
-var grid_view: GridMapView = null
+## The map the threats are shown on: a GridMapView or a CityMapOverlay (both expose
+## `threat_markers`).
+var grid_view: Control = null
 var log_note: ZineNote
 var step_label: Label
 var speed: float = 1.0
@@ -23,12 +25,16 @@ var _done: bool = false
 var _instant: bool = false
 
 
-func _init(p_grid_view: GridMapView = null) -> void:
+func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
 	grid_view = p_grid_view
 	var controls := HBoxContainer.new()
 	add_child(controls)
 	step_label = Label.new()
 	step_label.text = "Setup"
+	step_label.custom_minimum_size.x = 90
+	step_label.add_theme_font_override("font", Palette.display())
+	step_label.add_theme_font_size_override("font_size", 22)
+	step_label.add_theme_color_override("font_color", Palette.CELL_ACID)
 	controls.add_child(step_label)
 	for s in [1.0, 2.0, 4.0]:
 		var b := Button.new()
@@ -40,7 +46,7 @@ func _init(p_grid_view: GridMapView = null) -> void:
 	skip.text = "Skip"
 	skip.pressed.connect(skip_to_end)
 	controls.add_child(skip)
-	log_note = ZineNote.new("PLAYOUT", Vector2(600, 120))
+	log_note = ZineNote.new("PLAYOUT", log_size)
 	log_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(log_note)
 
@@ -142,7 +148,7 @@ func _apply_step(events: Array) -> void:
 			if _dead.has(id):
 				continue
 			markers.get_or_add(_threat_sites[id], []).append(_threat_names.get(id, String(id)))
-		grid_view.threat_markers = markers
+		grid_view.set("threat_markers", markers)
 		grid_view.queue_redraw()
 
 

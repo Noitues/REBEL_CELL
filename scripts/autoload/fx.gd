@@ -27,6 +27,12 @@ func _ready() -> void:
 	scanlines = _full_rect(Color.WHITE)
 	scanlines.material = ShaderMaterial.new()
 	scanlines.material.shader = SCANLINE_SHADER
+	# The CRT look lives on the city and terminal glass (their own shaders); screen-wide
+	# only a faint vignette and a whisper of flicker remain, so paper stays clean.
+	scanlines.material.set_shader_parameter("scanline_strength", 0.0)
+	scanlines.material.set_shader_parameter("aberration", 0.0)
+	scanlines.material.set_shader_parameter("flicker_strength", 0.01)
+	scanlines.material.set_shader_parameter("vignette", 0.18)
 	distortion = _full_rect(Color.WHITE)
 	distortion.material = ShaderMaterial.new()
 	distortion.material.shader = DISTORTION_SHADER

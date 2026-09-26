@@ -34,7 +34,7 @@ func _init() -> void:
 	_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	_backdrop.focus_mode = Control.FOCUS_NONE
 	add_child(_backdrop)
-	var panel := ZinePanel.new("PAUSED", 0.0)
+	var panel := ZinePanel.new("PAUSED", 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
 	var scroll := ScrollContainer.new()
