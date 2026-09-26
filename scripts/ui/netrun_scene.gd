@@ -72,6 +72,9 @@ func _ready() -> void:
 		return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
+	for a in args:
+		if a.begins_with("--demo-iconstyle="):
+			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"

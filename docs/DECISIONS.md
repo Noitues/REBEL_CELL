@@ -1198,6 +1198,14 @@ View code only; no rules, content or schema changed.
 - Owner's pick: strong tinted slate (12) is now the baseline wall look everywhere the
   city is drawn (`NeonCity.DEFAULT_TEXTURE`); the other options stay behind
   `--demo-texture=N` for review.
+
+### Visual pass: spinner slices (2026-09-26)
+- Slice colours: attack/crit neon pink (`CELL_PINK`), defend/shield cyan (`NET_CYAN`);
+  evade/heal, afflict and deploy unchanged. Wedges are translucent (the city shows
+  through) with a bright rim.
+- Slice icons are solid black with a white outline (`SliceIcon.draw_on_slice`). Review
+  styles behind `--demo-iconstyle=N` in combat: 0 black & white (default), 1 badge,
+  2 inverse badge, 3 glow, 4 bold.
 - Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
   sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
   px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.

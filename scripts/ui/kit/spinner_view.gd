@@ -200,11 +200,11 @@ func _draw_wheel() -> void:
 			var a := lerpf(a1, a0, k / 12.0)
 			pts.append(c + Vector2(cos(a), sin(a)) * r0)
 		var col := Palette.slice_color(type)
-		_wheel.draw_colored_polygon(pts, Color(col, 0.95 if i == _hot else 0.8) if type != RC.SliceType.MISS else Color(col, 0.2))
+		_wheel.draw_colored_polygon(pts, Color(col, 0.7 if i == _hot else 0.5) if type != RC.SliceType.MISS else Color(col, 0.2))
 		pts.append(pts[0])
 		_wheel.draw_polyline(pts, Palette.CELL_ACID if i == _hot else col.lightened(0.3), 2.0 if i == _hot else 1.2)
 		var am := _angle(i)
-		SliceIcon.draw_icon(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, Palette.PAPER)
+		SliceIcon.draw_on_slice(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, col)
 		if s != null and s.base_output > 0:
 			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
 		if i < firmware.size() and firmware[i] != &"":

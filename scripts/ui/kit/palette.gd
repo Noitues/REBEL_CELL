@@ -75,9 +75,9 @@ static func corp_color(corporation_id: StringName) -> Color:
 static func slice_color(type: int) -> Color:
 	match type:
 		RC.SliceType.ATTACK, RC.SliceType.CRIT:
-			return Color("#FF5A5A")
+			return CELL_PINK
 		RC.SliceType.DEFEND, RC.SliceType.SHIELD:
-			return Color("#4FA8FF")
+			return NET_CYAN
 		RC.SliceType.EVADE, RC.SliceType.HEAL:
 			return Color("#7BE07B")
 		RC.SliceType.AFFLICT:

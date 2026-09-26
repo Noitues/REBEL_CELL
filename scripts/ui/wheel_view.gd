@@ -167,12 +167,13 @@ func _draw() -> void:
 			_draw_dashed_arc(center, radius - 1, start + 0.03, end - 0.03, line, 1.5)
 			_draw_dashed_arc(center, inner + 1, start + 0.03, end - 0.03, line, 1.5)
 		else:
-			draw_colored_polygon(wedge, _col(Color(sc, 0.85)))
+			# Translucent neon: the city shows through, a bright rim keeps the shape.
+			draw_colored_polygon(wedge, _col(Color(sc, 0.5)))
 			var closed := wedge.duplicate()
 			closed.append(wedge[0])
-			draw_polyline(closed, _col(Color(sc.lightened(0.3), 0.9)), 1.2)
+			draw_polyline(closed, _col(Color(sc.lightened(0.35), 0.95)), 1.8, true)
 		var dir := Vector2(cos(mid), sin(mid))
-		SliceIcon.draw_icon(self, center + dir * (inner + band * 0.5), band * 0.3, slice.slice_type, _col(Palette.PAPER))
+		SliceIcon.draw_on_slice(self, center + dir * (inner + band * 0.42), band * 0.36, slice.slice_type, sc)
 		if slice.base_output > 0:
 			draw_string(Palette.display(), center + dir * (radius + 16) + Vector2(-20, 8), str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 20, _col(sc.lightened(0.35)))
 		var tip := center + dir * (radius - 3)
