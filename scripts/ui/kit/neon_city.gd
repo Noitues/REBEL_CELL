@@ -105,9 +105,16 @@ const FIST_HULL := [Vector2(0.396, 0.000), Vector2(0.282, 0.188), Vector2(0.263,
 ## ink), 3 grime stipple, 4 concrete grain, 5 matte stone, 6 brushed metal, 7 hatching on
 ## stone, 8 hatching on metal. 4-8 use the sketch shader's `wall_mode` (1 grain, 2 stone,
 ## 3 metal) on the dark grey fills.
+## 9 painted slate (the reference's panel 6): blue-grey faces lit from above, ledges,
+## recessed panels, ribs and vents, roof rims, a soft painted grain (shader mode 4);
+## 10 the same in a darker slate.
 const TEXTURE_NAMES: Array[String] = ["NONE", "PANEL SEAMS", "PEN HATCHING", "GRIME STIPPLE", "CONCRETE GRAIN",
-	"MATTE STONE", "BRUSHED METAL", "HATCHING + STONE", "HATCHING + METAL"]
-const TEXTURE_SHADER_MODE: Array[int] = [0, 0, 0, 0, 1, 2, 3, 2, 3]
+	"MATTE STONE", "BRUSHED METAL", "HATCHING + STONE", "HATCHING + METAL", "PAINTED SLATE", "DARK SLATE"]
+const TEXTURE_SHADER_MODE: Array[int] = [0, 0, 0, 0, 1, 2, 3, 2, 3, 4, 4]
+## Painted slate: the base tone of the walls (light, dark) and the cool light they catch
+## at the top.
+const SLATE_TONES: Array[Color] = [Color("#4A556F"), Color("#232A3A")]
+const SLATE_LIGHT := Color("#B8C4DE")
 ## Pan margin (px beyond the screen on every side) and speed.
 const PAN_MARGIN := 360.0
 
@@ -188,6 +195,7 @@ var _fist_segs: Array[PackedVector2Array] = []
 var _fist_box: Rect2 = Rect2()
 var _fist_hull := PackedVector2Array()
 var _fist_cache: Dictionary = {}
+var _drawing_hq: bool = false
 
 
 func _init() -> void:
@@ -452,7 +460,9 @@ func _draw() -> void:
 		if in_hq != &"":
 			var hr: Rect2i = _hq_rects[in_hq]
 			if l.x == hr.end.x - 1 and l.y == hr.end.y - 1:
+				_drawing_hq = true
 				_hq(in_hq, hr)
+				_drawing_hq = false
 			continue
 		if _is_street_lot(l.x, l.y):
 			continue
@@ -730,7 +740,16 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 		var light := clampf(0.5 - nrm.x * 0.5, 0.0, 1.0)
 		var up_col := fill.lerp(FACE_LIGHT, 0.12 + light * 0.35)
 		var low_col := fill.darkened(0.35)
+		var slate := _slate()
+		if slate:
+			# Painted slate: lit from above, the base falling into shadow.
+			var tone := fill.lerp(_slate_tone(), 0.8)
+			var catch := 1.0 if face_texture == 9 else 0.6
+			up_col = tone.lerp(SLATE_LIGHT, (0.12 + light * 0.34) * catch)
+			low_col = tone.darkened(0.6 - light * 0.2)
 		_quad(bot[k], bot[k2], top[k2], top[k], low_col, low_col, up_col, up_col)
+		if slate and h > 10.0:
+			_greeble_face(bot[k], bot[k2], top[k2], top[k], light, key * 31 + k, top_scale >= 0.99)
 		if face_texture in [1, 2, 3, 7, 8] and h > 6.0:
 			_texture_face(bot[k], bot[k2], top[k2], top[k], nrm.x > 0.0, key * 31 + k)
 		if nrm.y > 0.02:
@@ -739,13 +758,126 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 		if top_scale >= 0.99 and h > 14.0:
 			_windows(bot[k], bot[k2], h, lit, key * 31 + k, nrm.x < 0.0)
 	if top_scale > 0.05:
-		_poly(top, fill.lerp(FACE_LIGHT, 0.25))
+		if _slate():
+			# Roof: a lit slab with a raised rim and a recessed inner deck.
+			var roof_col := fill.lerp(_slate_tone(), 0.8).lerp(SLATE_LIGHT, 0.22)
+			_poly(top, roof_col)
+			var tc := Vector2.ZERO
+			for q in top:
+				tc += q
+			tc /= n
+			var inner := PackedVector2Array()
+			for q in top:
+				inner.append(tc + (q - tc) * 0.74)
+			_poly(inner, roof_col.darkened(0.3))
+			for q in n:
+				_hair(inner[q], inner[(q + 1) % n], Color(SLATE_LIGHT, 0.35 if inner[q].y > tc.y else 0.15), 1.0)
+				_hair(inner[q] + Vector2(0, 1.2), inner[(q + 1) % n] + Vector2(0, 1.2), Color(0, 0, 0, 0.4), 1.0)
+			if h > 14.0 and _h(key, n, 96) < 0.45 and top[0].distance_to(top[2 % n]) > 24.0:
+				_extrude(_roof_box(tc + Vector2(0, z0 + h), key), z0 + h, 5.0 + _h(key, 2, 97) * 7.0, 1.0, fill, Color(SLATE_LIGHT, 0.5), 0.0, key + 7)
+		else:
+			_poly(top, fill.lerp(FACE_LIGHT, 0.25))
 		for k in n:
 			_ink_line(top[k], top[(k + 1) % n], ink)
-	for k in visible_v:
+	var verticals: Array = visible_v.keys()
+	if _slate() and n > 4 and verticals.size() > 3:
+		# Painted slate: a round tower keeps only its silhouette and front edge, so the
+		# wall reads as one smooth shaded mass.
+		verticals.sort_custom(func(k1: int, k2: int) -> bool: return bot[k1].x < bot[k2].x)
+		var front: int = verticals[0]
+		for k in verticals:
+			if bot[k].y > bot[front].y:
+				front = k
+		verticals = [verticals[0], verticals[verticals.size() - 1], front]
+	for k in verticals:
 		# Verticals at the silhouette and the front corners.
 		_ink_line(bot[k], top[k], ink, 1.7, true)
 	return top
+
+
+## True while walls are painted slate (texture 9 or 10; the HQs keep their own look).
+func _slate() -> bool:
+	return face_texture in [9, 10] and not _drawing_hq
+
+
+func _slate_tone() -> Color:
+	return SLATE_TONES[0 if face_texture == 9 else 1]
+
+
+## A small rooftop box (plant room, vent housing) about the roof's centre (`ground`: that
+## centre dropped to street level), returned as a footprint for _extrude.
+func _roof_box(ground: Vector2, key: int) -> PackedVector2Array:
+	var g := _grid_of(ground)
+	var w := 0.12 + _h(key, 3, 98) * 0.1
+	var off := Vector2(_h(key, 4, 98) - 0.5, _h(key, 5, 98) - 0.5) * 0.2
+	return _rect_pts(g.x - w + off.x, g.y - w + off.y, g.x + w + off.x, g.y + w + off.y)
+
+
+## Painted-slate detail on a wall a-b (bottom) / d-c (top), in face space (u across,
+## v up): ledges between storey groups (a light lip over a dark shadow), and in each
+## band a recessed panel, vertical ribs or a vent grille. `light` 0-1 is how much the
+## face is lit. Straight walls only get the full set.
+func _greeble_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, light: float, key: int, straight: bool) -> void:
+	var wpx := a.distance_to(b)
+	var hpx := a.distance_to(d)
+	if wpx < 6.0 or hpx < 8.0:
+		return
+	var hi := Color(SLATE_LIGHT, 0.3 + light * 0.4)
+	var lo := Color(0, 0, 0, 0.6)
+	var at := func(u: float, v: float) -> Vector2: return a.lerp(b, u).lerp(d.lerp(c, u), v)
+	# Top lip: a bright bevel just under the roof edge.
+	_hair(at.call(0.0, 1.0 - 2.0 / hpx), at.call(1.0, 1.0 - 2.0 / hpx), Color(SLATE_LIGHT, 0.25 + light * 0.35), 1.2)
+	if not straight:
+		return
+	var y := 0.0
+	var band := 0
+	while y < hpx - 8.0:
+		var bh := 14.0 + _h(key, band, 100) * 26.0
+		var y1 := minf(hpx - 4.0, y + bh)
+		var v0 := (y + 2.0) / hpx
+		var v1 := (y1 - 2.0) / hpx
+		match int(_h(key, band, 101) * 6.0):
+			0, 1:
+				# Recessed panel: darker inset, shadow along its top, lit lip along its foot.
+				var u0 := 0.1 + _h(key, band, 102) * 0.08
+				var u1 := 0.9 - _h(key, band, 103) * 0.08
+				var shade := Color(0, 0, 0, 0.32)
+				_quad(at.call(u0, v0), at.call(u1, v0), at.call(u1, v1), at.call(u0, v1), shade, shade, shade, shade)
+				_hair(at.call(u0, v1), at.call(u1, v1), lo, 1.1)
+				_hair(at.call(u0, v0), at.call(u1, v0), hi, 1.0)
+				_hair(at.call(u1, v0), at.call(u1, v1), Color(hi, hi.a * 0.6), 0.8)
+			2:
+				# Vertical ribs.
+				var ribs := maxi(2, int(wpx / 9.0))
+				for q in ribs:
+					var u := (q + 0.5) / ribs
+					_hair(at.call(u, v0), at.call(u, v1), hi, 1.0)
+					_hair(at.call(u + 1.4 / wpx, v0), at.call(u + 1.4 / wpx, v1), Color(0, 0, 0, 0.35), 1.0)
+			3:
+				# Vent grille: a small block of slats.
+				var gu := 0.2 + _h(key, band, 104) * 0.4
+				var gw := minf(0.35, 22.0 / wpx)
+				var slats := maxi(2, int((y1 - y) / 3.5))
+				var box := Color(0, 0, 0, 0.3)
+				_quad(at.call(gu, v0), at.call(gu + gw, v0), at.call(gu + gw, v1), at.call(gu, v1), box, box, box, box)
+				for q in slats:
+					var v := lerpf(v0, v1, (q + 0.5) / slats)
+					_hair(at.call(gu, v), at.call(gu + gw, v), hi, 0.8)
+			4:
+				# Light slots: a few tall amber strips glowing out of the wall.
+				var slots := clampi(int(wpx / 14.0), 1, 4)
+				var amber := Color(_inks[0], 0.55 + light * 0.3)
+				for q in slots:
+					var u := (q + 0.5) / slots + (_h(key, band * 7 + q, 105) - 0.5) * 0.08
+					var sw := 1.6 / wpx
+					_quad(at.call(u - sw, v0 + 0.02), at.call(u + sw, v0 + 0.02), at.call(u + sw, v1 - 0.02), at.call(u - sw, v1 - 0.02), amber, amber, amber, amber)
+		# Ledge over the band: lit lip, shadow under it.
+		if y1 < hpx - 6.0:
+			var vl := y1 / hpx
+			_hair(at.call(0.0, vl), at.call(1.0, vl), Color(SLATE_LIGHT, 0.2 + light * 0.35), 1.2)
+			_hair(at.call(0.0, vl - 1.6 / hpx), at.call(1.0, vl - 1.6 / hpx), lo, 1.2)
+		y = y1
+		band += 1
 
 
 ## Wall texture on the face a-b (bottom) / d-c (top), under the windows.

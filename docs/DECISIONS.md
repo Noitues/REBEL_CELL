@@ -1185,6 +1185,13 @@ View code only; no rules, content or schema changed.
   screen): none (default), panel seams, dark pen hatching, grime stipple, concrete grain,
   matte stone, brushed metal, hatching on stone, hatching on metal (4-8 in the sketch
   shader's `wall_mode`). The owner picks one; the default stays "none" until then.
+- Added 9 painted slate and 10 dark slate, modelled on the reference sheet's panel 6:
+  blue-grey walls lit from above and falling into shadow at the base, panel detail drawn
+  in face space (ledges, recessed panels, ribs, vent grilles, amber light slots), roofs
+  with a raised rim, a recessed deck and the odd plant box, a soft painted grain and a
+  gentler saturation boost on the walls (shader `wall_mode` 4). Round towers keep only
+  their silhouette and front edge lines so they read as one shaded mass. HQs keep their
+  own look.
 - Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
   sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
   px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.

@@ -12,7 +12,7 @@ uniform float scan_strength : hint_range(0.0, 1.0) = 0.07;
 uniform float flicker : hint_range(0.0, 0.1) = 0.0;
 // Design option: wall texture on the dark grey fills only (not lines, windows or signs),
 // anchored to the city so it pans with it. 0 none, 1 concrete grain, 2 matte stone,
-// 3 brushed metal.
+// 3 brushed metal, 4 painted grain.
 uniform int wall_mode = 0;
 
 varying vec2 world;
@@ -46,6 +46,10 @@ void fragment() {
 		if (wall_mode == 1) {
 			float n = noise(world * 0.8) * 0.45 + noise(world * 2.6) * 0.35 + hash(floor(world * 1.3)) * 0.2;
 			c.rgb *= 1.0 + greyish * (n - 0.5) * 1.8;
+		} else if (wall_mode == 4) {
+			// Painted: soft brush blotches and a fine tooth, keeping the slate's colour.
+			float n = (noise(world * 0.07) - 0.5) * 0.28 + (noise(world * 0.35) - 0.5) * 0.16 + (hash(floor(world * 1.4)) - 0.5) * 0.08;
+			c.rgb *= 1.0 + greyish * n;
 		} else {
 			// Matte: take the blue out of the fill and darken it a touch.
 			vec3 matte = vec3(g) * 0.9;
@@ -62,7 +66,13 @@ void fragment() {
 			c.rgb = mix(c.rgb, matte * (1.0 + n), greyish);
 		}
 	}
-	c.rgb = clamp(mix(vec3(g), c.rgb, saturation), 0.0, 1.0);
+	float sat = saturation;
+	if (wall_mode == 4) {
+		// Painted slate stays a cool grey: a gentler saturation boost on the walls.
+		float spread2 = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
+		sat = mix(saturation, 1.3, 1.0 - smoothstep(0.1, 0.22, spread2));
+	}
+	c.rgb = clamp(mix(vec3(g), c.rgb, sat), 0.0, 1.0);
 	c.a *= 1.0 - grain * noise(FRAGCOORD.xy * 0.45);
 	float line = step(0.5, fract(FRAGCOORD.y / 3.0));
 	c.rgb *= 1.0 - scan_strength * line;
