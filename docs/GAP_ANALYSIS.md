@@ -34,6 +34,47 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H17 | 2026-09-25 | 6 (pause menu let clicks through, Shunt landings skipped statuses / Stolen Intent / drones, copies took Burner's Overclock free, rebinds took reserved and duplicate keys) | Fixed in horizontal batch H17 |
 | H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
+| Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
+| H20 | 2026-09-26 | **Pending.** 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3). List below. | Awaiting the designer |
+
+### H20 (pending): vertical + horizontal re-review after the merge, with the pass-20 items
+
+Pass-20 P1 (netrun fight cut off at 1.3+) is **fixed** by the merged layout (cards and SEND
+IT fully visible at 1.0/1.3/1.6, system log on or off); a height test is still to add.
+Pass-20 P2 (preview hid results) is **worse** (item 1); pass-20 P2 pad keys (item 8) and
+P3 stale hints (item 16) stand.
+
+| # | Sev | Gap | Evidence |
+|---|---|---|---|
+| 1 | P1 | The resolve outcome is mostly hidden: intent tags show slice, base output, tier, net HP and block only; statuses, RAM, resistance, shield, evade, deploy, heal, bodyguard, retrigger, corrupted, deaths, Burner's Heat (unscaled "MODIFY_HEAT") and enemy satellites' own pointers show nowhere (GDD 2.10 "full outcome") | combat_scene.gd `_set_intents`; preview_note hidden |
+| 2 | P1 | Card-hover results and respin odds go only to the hidden preview note (M5 "odds for random effects" fails) | `_show_card_preview`, `_show_respin_odds` |
+| 3 | P1 | Cards that need a chosen slice (Spawn Drone in Botnet/Hivemind decks, Cleanse, Encrypt, Armor Plate, Hot Patch, Sanitize) can't be aimed by mouse or pad; F cycles an invisible picker (M12 pad box fails) | `_slot_option` in hidden controls_row; no pad bind for cycle_slot |
+| 4 | P1 | Refused actions fail silently ("Not enough RAM...", resistance blocks) | `_on_action_refused` writes to hidden notes |
+| 5 | P1 | The current target isn't drawn (Tab can move it to a satellite unseen) (GDD 9.2 explicit targeting) | `WheelView.highlighted` never drawn |
+| 6 | P2 | Combat subtitle dock covers the intent tags and the status line (standalone 1.0/1.6; netrun at 1.6 and with the system log on) | SUBTITLE_DOCK fixed at y 58; test checks wheels only |
+| 7 | P2 | The bottom subtitle bar hides controls: raid setup asset cards, LEAVE THE MODEM, HQ Loadout buttons, Grid rows, Options Close/Assist at 1.6 | Dialogue.dock_bottom 200-1080 x 578/628-700 |
+| 8 | P2 | Pad players see keyboard keys only (stickers, SEND IT, tutorial, HQ; "Right-click a slice") | Settings.key_text |
+| 9 | P2 | Pad focus escapes the Modem modals (DeckView, SpinnerView, LoadoutView, DaemonTray): A can buy behind them | netrun_scene.gd `_open_modal` |
+| 10 | P2 | Raid setup target node is mouse-only (pad can deploy to the default node only) | hq_scene raid setup |
+| 11 | P2 | Text scale doesn't reach card text (11 px), intent tags (15), hub lines (10), SEND IT and stamp hints (GDD 9.6) | zine_card.gd, wheel_view.gd, drip_button.gd, zine_stamp.gd |
+| 12 | P2 | Tutorial describes the old UI (preview strip, hover preview, no stickers/tags); its rect runs 12 px past the screen in a netrun | tutorial_overlay.gd steps 0/3/5 |
+| 13 | P2 | Modem "UPGRADE A SLICE" shows slot 0's price; the Miss slot costs 150, not 100 | netrun_scene.gd:757, netrun_session.gd:770 |
+| 14 | P2 | REBEL_CELL's colour (#FF2A6D) is nearly the Cell pink: claimed vs corporate Sites, legend rows, enemy vs player wheels differ by colour alone (GDD 9.6) | city_layout.gd, map_legend.gd, wheel_view.gd |
+| 15 | P2 | New kit behaviour untested (CityLayout, CityMapOverlay site clicks, MapLegend live toggle, SpinnerView/DeckView pick flows, LoadoutView, DaemonTray, CrewCard orders) | no test references |
+| 16 | P3 | Rebind hints stale outside combat (HQ Settings/Options, tutorial); hard-coded "[Esc]" (Resume, Close x3); ZineStamp always draws "[SPACE]" (JACK IN does nothing on Space; result stamps take focus with no handler) | hq_scene.gd:468,560; zine_stamp.gd:35 |
+| 17 | P3 | Hints use physical key names, the Controls grid the layout's: may disagree on AZERTY (code-verified only) | settings.gd key_text vs settings_panel.gd |
+| 18 | P3 | Wide intent tags (4-pointer boss) run under the side column | wheel_view.gd intent tag |
+| 19 | P3 | `layout_violations` uses r+22, missing value labels (r+36), satellite labels and the HP arc (r+66) | wheel_view.gd wheel_rect |
+| 20 | P3 | Five cards' text is cut at 5 lines in the hand; pad inspect on a card shows nothing | zine_card.gd, combat_scene inspect_at |
+| 21 | P3 | Raw ids on screen: raid labels ("home", "m_home"), crew stamps "ON <SITE_ID>", NODE ORDERS rows | hq_scene.gd:607,961,974,1038 |
+| 22 | P3 | Raid setup/playout maps have no legend; HQ Grid legend height not live; mid-run raid playout still uses the old GridMapView | hq_scene.gd:760, netrun_scene.gd:451 |
+| 23 | P3 | Portraits keyed by class (every Breaker the same face); combat caption is the class name; wanted poster silhouette; VIEW LOADOUT / Daemon tray show the first operative only; loadout spinner omits hub and inner ring | portrait_art, hq_scene.gd:1217-1245 |
+| 24 | P3 | Code leftovers: `corp_creep = heat / 100.0` (not heat_max); ModemSign "SELL" note and hard-coded pink; unused kit classes (RaidBoardView, DripLabel, NeonSign, NeonTag, ScreenHeader); HP arc literal colour | combat_scene.gd:882, modem_sign.gd, wheel_view.gd:259 |
+| 25 | P3 | Docs drift: STYLE_GUIDE §4 (log strip, circular SEND IT) and §7 (placeholder portraits); `--demo-*` slot shares profile.json | STYLE_GUIDE.md, netrun/hq demo hooks |
+
+Latent, not counted: two main enemies would push the hand 126 px off screen (no shipped
+fight has two). Out of scope: Fx.heat_pulse unused (motion handoff 4.6); fx.gd / NeonCity
+inline animation values await the motion config (handoff §3).
 
 ### Pass 3 (vertical) — clean
 
@@ -57,7 +98,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 533 passing at H19; schema smoke test and content validation green.
+Tests: 540 passing after the visual merge (533 at H19); schema smoke test and content validation green.
 
 ---
 
