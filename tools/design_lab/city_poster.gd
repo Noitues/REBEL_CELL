@@ -7,7 +7,7 @@ func _ready() -> void:
 	var w := 5760
 	var h := 3240
 	var zoom := 0.95
-	var texture := 0
+	var texture := NeonCity.DEFAULT_TEXTURE
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")

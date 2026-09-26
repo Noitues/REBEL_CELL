@@ -146,8 +146,9 @@ var cultures: Dictionary = {}
 ## Design review: big territory names over each HQ (the zoomed-out overview).
 var territory_labels: bool = false
 var territory_label_px: float = 30.0
-## Wall texture (TEXTURE_NAMES index).
-var face_texture: int = 0:
+## Wall texture (TEXTURE_NAMES index). Baseline: strong tinted slate (owner's pick).
+const DEFAULT_TEXTURE := 12
+var face_texture: int = DEFAULT_TEXTURE:
 	set(v):
 		face_texture = v
 		(material as ShaderMaterial).set_shader_parameter("wall_mode", TEXTURE_SHADER_MODE[clampi(v, 0, TEXTURE_SHADER_MODE.size() - 1)])
@@ -207,6 +208,7 @@ func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	material = ShaderMaterial.new()
 	material.shader = SKETCH_SHADER
+	material.set_shader_parameter("wall_mode", TEXTURE_SHADER_MODE[face_texture])
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

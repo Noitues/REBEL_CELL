@@ -1184,7 +1184,7 @@ View code only; no rules, content or schema changed.
 - Wall texture options (`NeonCity.face_texture`, `--demo-texture=N` on the title
   screen): none (default), panel seams, dark pen hatching, grime stipple, concrete grain,
   matte stone, brushed metal, hatching on stone, hatching on metal (4-8 in the sketch
-  shader's `wall_mode`). The owner picks one; the default stays "none" until then.
+  shader's `wall_mode`). (Superseded below: strong tinted slate is the baseline.)
 - Added 9 painted slate and 10 dark slate, modelled on the reference sheet's panel 6:
   blue-grey walls lit from above and falling into shadow at the base, panel detail drawn
   in face space (ledges, recessed panels, ribs, vent grilles, amber light slots), roofs
@@ -1195,6 +1195,9 @@ View code only; no rules, content or schema changed.
 - Added 11 tinted slate and 12 strong tinted slate: the painted slate leans 30% / 50%
   toward each building's line colour (`SLATE_TINT`) with full saturation and the same
   painted grain (shader `wall_mode` 5), so territories keep their colour identity.
+- Owner's pick: strong tinted slate (12) is now the baseline wall look everywhere the
+  city is drawn (`NeonCity.DEFAULT_TEXTURE`); the other options stay behind
+  `--demo-texture=N` for review.
 - Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
   sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
   px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.
