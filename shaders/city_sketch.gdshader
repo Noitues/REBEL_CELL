@@ -10,9 +10,10 @@ uniform float saturation = 1.6;
 uniform float grain : hint_range(0.0, 1.0) = 0.12;
 uniform float scan_strength : hint_range(0.0, 1.0) = 0.07;
 uniform float flicker : hint_range(0.0, 0.1) = 0.0;
-// Design option: concrete grain on the dark grey wall fills only (not lines, windows or
-// signs), anchored to the city so it pans with it.
-uniform float concrete : hint_range(0.0, 1.0) = 0.0;
+// Design option: wall texture on the dark grey fills only (not lines, windows or signs),
+// anchored to the city so it pans with it. 0 none, 1 concrete grain, 2 matte stone,
+// 3 brushed metal.
+uniform int wall_mode = 0;
 
 varying vec2 world;
 
@@ -39,11 +40,27 @@ void vertex() {
 void fragment() {
 	vec4 c = COLOR * texture(TEXTURE, UV);
 	float g = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-	if (concrete > 0.0) {
+	if (wall_mode > 0) {
 		float spread = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b));
-		float greyish = (1.0 - smoothstep(0.1, 0.2, spread)) * smoothstep(0.03, 0.07, g) * (1.0 - smoothstep(0.3, 0.45, g));
-		float n = noise(world * 0.8) * 0.45 + noise(world * 2.6) * 0.35 + hash(floor(world * 1.3)) * 0.2;
-		c.rgb *= 1.0 + concrete * greyish * (n - 0.5) * 1.8;
+		float greyish = (1.0 - smoothstep(0.14, 0.24, spread)) * smoothstep(0.03, 0.07, g) * (1.0 - smoothstep(0.3, 0.45, g));
+		if (wall_mode == 1) {
+			float n = noise(world * 0.8) * 0.45 + noise(world * 2.6) * 0.35 + hash(floor(world * 1.3)) * 0.2;
+			c.rgb *= 1.0 + greyish * (n - 0.5) * 1.8;
+		} else {
+			// Matte: take the blue out of the fill and darken it a touch.
+			vec3 matte = vec3(g) * 0.9;
+			float n;
+			if (wall_mode == 2) {
+				// Stone: broad blotches, a mid mottle, fine grit and the odd dark pit.
+				n = (noise(world * 0.09) - 0.5) * 0.5 + (noise(world * 0.45) - 0.5) * 0.3 + (hash(floor(world * 1.6)) - 0.5) * 0.22;
+				n -= step(0.95, hash(floor(world * 0.9))) * 0.35;
+			} else {
+				// Metal: long vertical brush streaks, finer streaks, a light speckle.
+				n = (noise(vec2(world.x * 1.1, world.y * 0.035)) - 0.5) * 0.45 + (noise(vec2(world.x * 3.7, world.y * 0.08)) - 0.5) * 0.2;
+				n += (hash(floor(world * 2.0)) - 0.5) * 0.08;
+			}
+			c.rgb = mix(c.rgb, matte * (1.0 + n), greyish);
+		}
 	}
 	c.rgb = clamp(mix(vec3(g), c.rgb, saturation), 0.0, 1.0);
 	c.a *= 1.0 - grain * noise(FRAGCOORD.xy * 0.45);

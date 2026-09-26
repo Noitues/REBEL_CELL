@@ -83,13 +83,13 @@ const INK_SETS: Array[Dictionary] = [
 ## The Cell has no tower: its territory is ordinary city, and its roads etch a raised
 ## fist (traced from the reference icon; polygons in 0-1 image space, y down) that reads
 ## from above. FIST_SIZE is the fist's size on screen (px at zoom 1); the roads are
-## FIST_ROAD_HALF px half-wide, lots within FIST_CLEAR px of a road stay empty and lots
-## within FIST_LOW px stay low so the roads are not hidden behind towers.
+## FIST_ROAD_HALF px half-wide and lots within FIST_CLEAR px of a road stay empty. No
+## ordinary street runs inside the fist: streets end on its outline and the blocks
+## inside are built up like the rest of the city.
 const FIST_TERRITORY := &"rebel_cell"
 const FIST_SIZE := Vector2(1000, 1070)
-const FIST_ROAD_HALF := 13.0
-const FIST_CLEAR := 30.0
-const FIST_LOW := 90.0
+const FIST_ROAD_HALF := 17.0
+const FIST_CLEAR := 27.0
 const FIST_POLYS := [
 	[Vector2(0.545, 0.458), Vector2(0.425, 0.491), Vector2(0.487, 0.515)],
 	[Vector2(0.909, 0.379), Vector2(0.724, 0.579), Vector2(0.779, 0.636), Vector2(0.994, 0.461)],
@@ -98,9 +98,16 @@ const FIST_POLYS := [
 	[Vector2(0.584, 0.112), Vector2(0.49, 0.258), Vector2(0.604, 0.312), Vector2(0.601, 0.367), Vector2(0.727, 0.185)],
 	[Vector2(0.396, 0), Vector2(0.289, 0.167), Vector2(0.438, 0.23), Vector2(0.536, 0.082)],
 ]
-## Wall textures (design review options): 0 none, 1 panel seams, 2 pen hatching,
-## 3 grime stipple, 4 concrete grain (shader).
-const TEXTURE_NAMES: Array[String] = ["NONE", "PANEL SEAMS", "PEN HATCHING", "GRIME STIPPLE", "CONCRETE GRAIN"]
+## The fist's whole silhouette (its pieces with the gaps between them closed): no
+## ordinary street runs inside it.
+const FIST_HULL := [Vector2(0.396, 0.000), Vector2(0.282, 0.188), Vector2(0.263, 0.203), Vector2(0.227, 0.200), Vector2(0.000, 0.515), Vector2(0.338, 0.879), Vector2(0.344, 0.918), Vector2(0.328, 0.997), Vector2(0.776, 0.997), Vector2(0.773, 0.921), Vector2(0.890, 0.779), Vector2(0.919, 0.600), Vector2(0.903, 0.545), Vector2(0.994, 0.458), Vector2(0.886, 0.364), Vector2(0.880, 0.330), Vector2(0.727, 0.227), Vector2(0.724, 0.182), Vector2(0.584, 0.112), Vector2(0.555, 0.109), Vector2(0.532, 0.079)]
+## Wall textures (design review options): 0 none, 1 panel seams, 2 pen hatching (dark
+## ink), 3 grime stipple, 4 concrete grain, 5 matte stone, 6 brushed metal, 7 hatching on
+## stone, 8 hatching on metal. 4-8 use the sketch shader's `wall_mode` (1 grain, 2 stone,
+## 3 metal) on the dark grey fills.
+const TEXTURE_NAMES: Array[String] = ["NONE", "PANEL SEAMS", "PEN HATCHING", "GRIME STIPPLE", "CONCRETE GRAIN",
+	"MATTE STONE", "BRUSHED METAL", "HATCHING + STONE", "HATCHING + METAL"]
+const TEXTURE_SHADER_MODE: Array[int] = [0, 0, 0, 0, 1, 2, 3, 2, 3]
 ## Pan margin (px beyond the screen on every side) and speed.
 const PAN_MARGIN := 360.0
 
@@ -132,7 +139,7 @@ var territory_label_px: float = 30.0
 var face_texture: int = 0:
 	set(v):
 		face_texture = v
-		(material as ShaderMaterial).set_shader_parameter("concrete", 1.0 if v == 4 else 0.0)
+		(material as ShaderMaterial).set_shader_parameter("wall_mode", TEXTURE_SHADER_MODE[clampi(v, 0, TEXTURE_SHADER_MODE.size() - 1)])
 		refresh()
 var ink_set: int = 3:
 	set(v):
@@ -179,6 +186,8 @@ var _local_i: Dictionary = {}
 var _local_j: Dictionary = {}
 var _fist_segs: Array[PackedVector2Array] = []
 var _fist_box: Rect2 = Rect2()
+var _fist_hull := PackedVector2Array()
+var _fist_cache: Dictionary = {}
 
 
 func _init() -> void:
@@ -353,7 +362,7 @@ func nearest_building(x: float, y: float, radius: int = 4, taken: Dictionary = {
 
 ## True when lot (i, j) is a street (for overlays that route along streets).
 func is_street(i: int, j: int) -> bool:
-	return _street_i.has(i) or _street_j.has(j)
+	return _is_street_lot(i, j)
 
 
 func _apply_pan_margin() -> void:
@@ -430,7 +439,7 @@ func _draw() -> void:
 		_apply_context(ctx[n])
 		if _hq_at(l.x, l.y) != &"":
 			_plaza(l.x, l.y)
-		elif _street_i.has(l.x) or _street_j.has(l.y):
+		elif _is_street_lot(l.x, l.y):
 			_street(l.x, l.y, _street_i.has(l.x), _street_j.has(l.y))
 		else:
 			var p := _rect_pts(l.x, l.y, l.x + 1, l.y + 1)
@@ -445,7 +454,7 @@ func _draw() -> void:
 			if l.x == hr.end.x - 1 and l.y == hr.end.y - 1:
 				_hq(in_hq, hr)
 			continue
-		if _street_i.has(l.x) or _street_j.has(l.y):
+		if _is_street_lot(l.x, l.y):
 			continue
 		_lot(l.x, l.y)
 	var idx := PackedInt32Array()
@@ -512,35 +521,57 @@ func _hq_at(i: int, j: int) -> StringName:
 ## Screen segments of the fist roads (with the current camera) and their bounds.
 func _build_fist() -> void:
 	_fist_segs.clear()
+	_fist_hull.clear()
+	_fist_cache.clear()
 	if not _hq_rects.has(FIST_TERRITORY):
 		_fist_box = Rect2()
 		return
 	var hr: Rect2i = _hq_rects[FIST_TERRITORY]
 	var c := _iso(hr.position.x + HQ_LOTS * 0.5, hr.position.y + HQ_LOTS * 0.5)
+	for v: Vector2 in FIST_HULL:
+		_fist_hull.append(c + (v - Vector2(0.5, 0.5)) * FIST_SIZE)
 	for poly: Array in FIST_POLYS:
 		for q in poly.size():
 			var a: Vector2 = c + (poly[q] - Vector2(0.5, 0.5)) * FIST_SIZE
 			var b: Vector2 = c + (poly[(q + 1) % poly.size()] - Vector2(0.5, 0.5)) * FIST_SIZE
 			_fist_segs.append(PackedVector2Array([a, b]))
-	_fist_box = Rect2(c - FIST_SIZE * 0.5, FIST_SIZE).grow(FIST_LOW)
+	_fist_box = Rect2(c - FIST_SIZE * 0.5, FIST_SIZE).grow(FIST_ROAD_HALF * 2.0)
 
 
 ## Screen distance (px) from lot (i, j)'s centre to the nearest fist road, or INF.
 func _fist_dist(i: int, j: int) -> float:
+	var key := Vector2i(i, j)
+	if _fist_cache.has(key):
+		return _fist_cache[key]
 	var p := _iso(i + 0.5, j + 0.5)
-	if _fist_segs.is_empty() or not _fist_box.has_point(p):
-		return INF
 	var best := INF
-	for sg in _fist_segs:
-		best = minf(best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, sg[0], sg[1])))
+	if not _fist_segs.is_empty() and _fist_box.has_point(p):
+		for sg in _fist_segs:
+			best = minf(best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, sg[0], sg[1])))
+	_fist_cache[key] = best
 	return best
+
+
+## True when lot (i, j) lies inside the fist (its shapes or its roads).
+func _in_fist(i: int, j: int) -> bool:
+	if _fist_dist(i, j) < FIST_ROAD_HALF * 2.0:
+		return true
+	var p := _iso(i + 0.5, j + 0.5)
+	if not _fist_box.has_point(p):
+		return false
+	return Geometry2D.is_point_in_polygon(p, _fist_hull)
+
+
+## True for an ordinary street lot (streets stop at the fist's outline).
+func _is_street_lot(i: int, j: int) -> bool:
+	return (_street_i.has(i) or _street_j.has(j)) and not _in_fist(i, j)
 
 
 ## The fist roads: like the busiest streets (many skinny marker strokes side by side),
 ## wider still, in the Cell's full-strength colour.
 func _fist_roads() -> void:
 	var col := Palette.corp_color(FIST_TERRITORY)
-	var strokes := 22
+	var strokes := 28
 	for n in _fist_segs.size():
 		var a: Vector2 = _fist_segs[n][0]
 		var b: Vector2 = _fist_segs[n][1]
@@ -700,7 +731,7 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 		var up_col := fill.lerp(FACE_LIGHT, 0.12 + light * 0.35)
 		var low_col := fill.darkened(0.35)
 		_quad(bot[k], bot[k2], top[k2], top[k], low_col, low_col, up_col, up_col)
-		if face_texture in [1, 2, 3] and h > 6.0:
+		if face_texture in [1, 2, 3, 7, 8] and h > 6.0:
 			_texture_face(bot[k], bot[k2], top[k2], top[k], nrm.x > 0.0, key * 31 + k)
 		if nrm.y > 0.02:
 			visible_v[k] = true
@@ -724,7 +755,7 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 	if wpx < 3.0 or hpx < 3.0:
 		return
 	var tone := Color("#8A97C8")
-	match face_texture:
+	match 2 if face_texture >= 7 else face_texture:
 		1:
 			# Panel seams: a floor line every two storeys, a joint every ~24 px.
 			var rows := int(hpx / 16.0)
@@ -736,8 +767,9 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 				var u := float(q) / (cols + 1)
 				_hair(a.lerp(b, u), d.lerp(c, u), Color(tone, 0.32), 0.9)
 		2:
-			# Pen hatching at 45 degrees: close on the shaded side, open on the lit side.
-			var gap := 4.0 if shaded else 7.0
+			# Pen hatching at 45 degrees in dark ink: close on the shaded side, open on the
+			# lit side.
+			var gap := 3.5 if shaded else 5.0
 			var rise := hpx / wpx
 			var u0 := -rise
 			while u0 < 1.0:
@@ -746,7 +778,7 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 				if v_hi > v_lo:
 					var p0 := a.lerp(b, u0 + rise * v_lo).lerp(d.lerp(c, u0 + rise * v_lo), v_lo)
 					var p1 := a.lerp(b, u0 + rise * v_hi).lerp(d.lerp(c, u0 + rise * v_hi), v_hi)
-					_hair(p0, p1, Color(tone, 0.42 if shaded else 0.26), 0.9)
+					_hair(p0, p1, Color(0.01, 0.01, 0.02, 0.7 if shaded else 0.55), 1.1)
 				u0 += gap / wpx
 		3:
 			# Grime: specks gathering toward the street, lighter and darker.
@@ -844,6 +876,12 @@ func _cell_of(i: int, j: int) -> Rect2i:
 	var wide := not _street_i.has(qi + 1) and not _street_i.has(qi)
 	var deep := not _street_j.has(qj + 1) and not _street_j.has(qj)
 	var mode := int(_h(qi, qj, 30) * 6.0)
+	# Merged buildings never straddle a fist road.
+	if mode <= 2 and _fist_box.has_point(_iso(qi + 1.0, qj + 1.0)):
+		for di in 2:
+			for dj in 2:
+				if _fist_dist(qi + di, qj + dj) < FIST_CLEAR:
+					return Rect2i(i, j, 1, 1)
 	if mode == 0 and wide and deep:
 		return Rect2i(qi, qj, 2, 2)
 	if mode == 1 and wide:
@@ -895,12 +933,6 @@ func _building(cell: Rect2i) -> void:
 		h += 90.0 * hs
 	# Low-rise around each HQ: its busy streets and the landmark read clearly.
 	h *= lerpf(0.3, 1.0, clampf((_hq_distance(ci, cj) - 6.0) / 7.0, 0.0, 1.0))
-	# Low-rise over the Cell's fist so its roads read from above.
-	var fd := _fist_dist(cell.end.x - 1, cell.end.y - 1)
-	if fd < FIST_LOW:
-		h = minf(h, 10.0 + fd * 0.25)
-	elif fd < INF:
-		h = minf(h, 55.0)
 	var fill := FILLS[int(_h(ci, cj, 5) * FILLS.size()) % FILLS.size()]
 	var ink := _ink(ci, cj)
 	var lit := 0.12 + district_h * 0.22
@@ -1113,12 +1145,7 @@ func _hq(corp: StringName, rect: Rect2i) -> void:
 		&"solace":
 			# The Double Helix: a podium with pods, and on it the tower as a DNA strand, two
 			# helices wound round each other and joined by bridges (the base pairs).
-			_extrude(_ngon(cx, cy, 1.75 * k, 8, PI / 8.0), 0.0, 30.0 * k, 1.0, grey, col, 0.35, 900)
-			for m in 4:
-				var a := PI / 4.0 + TAU * m / 4.0
-				if sin(a) < -0.2:
-					continue
-				_extrude(_ngon(cx + cos(a) * 1.55 * k, cy + sin(a) * 1.55 * k, 0.35 * k, 8), 30.0 * k, 18.0 * k, 0.6, mid, col, 0.3, 905 + m)
+			_extrude(_ngon(cx, cy, 1.9 * k, 8, PI / 8.0), 0.0, 30.0 * k, 1.0, grey, col, 0.35, 900)
 			_hq_dna(cx, cy, k, col, 30.0 * k, 340.0 * k)
 			_sign(base + Vector2(-40, -395.0 * k), "SOLACE", col)
 		&"meridian":
@@ -1323,47 +1350,8 @@ func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> v
 				_hair(prev_top + Vector2(0, -1.5), top + Vector2(0, -1.5), Color(gold, 0.8), 1.6)
 			prev_top = top
 	# Hieroglyph friezes: a band of little signs round the base's two visible slopes.
-	for side in 2:
-		var v0 := 0.42
-		var v1 := 0.58
-		var p00: Vector2
-		var p10: Vector2
-		var p01: Vector2
-		var p11: Vector2
-		if side == 0:
-			p00 = _iso(cx - half, cy + half)
-			p10 = _iso(cx + half, cy + half)
-			p01 = _iso(cx - tr, cy + tr) + Vector2(0, -bh)
-			p11 = _iso(cx + tr, cy + tr) + Vector2(0, -bh)
-		else:
-			p00 = _iso(cx + half, cy + half)
-			p10 = _iso(cx + half, cy - half)
-			p01 = _iso(cx + tr, cy + tr) + Vector2(0, -bh)
-			p11 = _iso(cx + tr, cy - tr) + Vector2(0, -bh)
-		var band_col := Color(gold, 0.6)
-		_hair(p00.lerp(p01, v0), p10.lerp(p11, v0), band_col, 1.2)
-		_hair(p00.lerp(p01, v1), p10.lerp(p11, v1), band_col, 1.2)
-		var glyphs := 26
-		for q in glyphs:
-			var u := (q + 0.5) / glyphs
-			if side == 0 and absf(u - 0.5) < 0.09:
-				continue  # the ramp
-			var gp := p00.lerp(p10, u).lerp(p01.lerp(p11, u), (v0 + v1) * 0.5)
-			var gh := (v1 - v0) * p00.distance_to(p01) * 0.32
-			var gc := Color(gold, 0.75)
-			match int(_h(q, side, 95) * 4.0):
-				0:
-					_hair(gp + Vector2(0, -gh), gp + Vector2(0, gh), gc, 1.2)
-				1:
-					for m in 6:
-						var a0 := TAU * m / 6.0
-						_hair(gp + Vector2(cos(a0), sin(a0)) * gh * 0.7, gp + Vector2(cos(a0 + TAU / 6.0), sin(a0 + TAU / 6.0)) * gh * 0.7, gc, 1.0)
-				2:
-					_hair(gp + Vector2(-gh * 0.6, gh * 0.4), gp + Vector2(0, -gh * 0.5), gc, 1.0)
-					_hair(gp + Vector2(0, -gh * 0.5), gp + Vector2(gh * 0.6, gh * 0.4), gc, 1.0)
-				_:
-					_hair(gp + Vector2(-gh * 0.6, -gh * 0.3), gp + Vector2(gh * 0.6, -gh * 0.3), gc, 1.0)
-					_hair(gp + Vector2(0, -gh * 0.3), gp + Vector2(0, gh), gc, 1.0)
+	_frieze(_iso(cx - half, cy + half), _iso(cx + half, cy + half), _iso(cx - tr, cy + tr) + Vector2(0, -bh), _iso(cx + tr, cy + tr) + Vector2(0, -bh), 0.42, 0.58, 26, 0.09, gold, 0)
+	_frieze(_iso(cx + half, cy + half), _iso(cx + half, cy - half), _iso(cx + tr, cy + tr) + Vector2(0, -bh), _iso(cx + tr, cy - tr) + Vector2(0, -bh), 0.42, 0.58, 26, 0.0, gold, 1)
 	# Braziers on the terrace corners.
 	for cc in [Vector2(-1, 1), Vector2(1, 1), Vector2(1, -1)]:
 		var bp := _iso(cx + cc.x * tr * 0.97, cy + cc.y * tr * 0.97) + Vector2(0, -bh)
@@ -1379,6 +1367,11 @@ func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> v
 		var rr := pr * lerpf(1.0, 0.12, f)
 		_hair(_iso(cx - rr, cy + rr) + Vector2(0, -hh), _iso(cx + rr, cy + rr) + Vector2(0, -hh), Color(col, 0.3), 1.0)
 		_hair(_iso(cx + rr, cy - rr) + Vector2(0, -hh), _iso(cx + rr, cy + rr) + Vector2(0, -hh), Color(col, 0.22), 1.0)
+	# The same gold frieze round the pyramid, above the doorway.
+	var pt := pr * 0.12
+	var ptop := bh + ph
+	_frieze(_iso(cx - pr, cy + pr) + Vector2(0, -bh), _iso(cx + pr, cy + pr) + Vector2(0, -bh), _iso(cx - pt, cy + pt) + Vector2(0, -ptop), _iso(cx + pt, cy + pt) + Vector2(0, -ptop), 0.3, 0.42, 18, 0.0, gold, 2)
+	_frieze(_iso(cx + pr, cy + pr) + Vector2(0, -bh), _iso(cx + pr, cy - pr) + Vector2(0, -bh), _iso(cx + pt, cy + pt) + Vector2(0, -ptop), _iso(cx + pt, cy - pt) + Vector2(0, -ptop), 0.3, 0.42, 18, 0.0, gold, 3)
 	# Entrance: a dark doorway with a gold lintel on the front slope.
 	var dw := 0.16 * k
 	var d0 := _iso(cx - dw, cy + pr) + Vector2(0, -bh)
@@ -1402,10 +1395,10 @@ func _hq_pyramid(cx: float, cy: float, k: float, col: Color, base: Vector2) -> v
 ## the paired base colours. Pieces are sorted back to front so the strands pass in front
 ## of and behind each other; the far side is drawn dimmer.
 func _hq_dna(cx: float, cy: float, k: float, col: Color, z0: float, z1: float) -> void:
-	var r := 1.15 * k
+	var r := 1.5 * k
 	var turns := 2.5
-	var n := 100
-	var tube := 9.0 * k
+	var n := 110
+	var tube := 14.0 * k
 	var pairs := [[_inks[0], _inks[3]], [_inks[2], col]]
 	var pieces: Array[Dictionary] = []
 	var pts: Array = [[], []]
@@ -1444,9 +1437,14 @@ func _hq_dna(cx: float, cy: float, k: float, col: Color, z0: float, z1: float) -
 			var e1 := b + dir * tube * 0.15
 			var body := FILLS[1].lerp(col, 0.12 + near * 0.12).darkened(0.3 * (1.0 - near))
 			_quad(e0 - nn * tube * 0.5, e1 - nn * tube * 0.5, e1 + nn * tube * 0.5, e0 + nn * tube * 0.5, body, body, body, body)
-			var edge := Color(col, 0.45 + 0.5 * near)
-			_hair(e0 - nn * tube * 0.5, e1 - nn * tube * 0.5, edge, 1.6)
-			_hair(e0 + nn * tube * 0.5, e1 + nn * tube * 0.5, edge, 1.6)
+			# Neon tube outline: a wide soft glow, then a bright core on each edge.
+			var glow := Color(col, 0.1 + 0.14 * near)
+			var edge := Color(col.lightened(0.25), 0.55 + 0.45 * near)
+			for side in [-1.0, 1.0]:
+				var o: Vector2 = nn * tube * 0.5 * side
+				_hair(e0 + o, e1 + o, glow, 9.0)
+				_hair(e0 + o, e1 + o, Color(col, 0.35 + 0.3 * near), 4.0)
+				_hair(e0 + o, e1 + o, edge, 2.0)
 			_hair(a + nn * tube * 0.12, b + nn * tube * 0.12, Color(col.lightened(0.5), 0.15 + 0.4 * near), tube * 0.18)
 			if near > 0.55 and int(pc["q"]) % 3 == 0:
 				var w := (a + b) * 0.5 - nn * tube * 0.2
@@ -1458,14 +1456,44 @@ func _hq_dna(cx: float, cy: float, k: float, col: Color, z0: float, z1: float) -
 			var deck := FILLS[0].lerp(bc, 0.35)
 			var hw := tube * 0.22
 			_quad(a - nn * hw, b - nn * hw, b + nn * hw, a + nn * hw, deck, deck, deck, deck)
-			_hair(a - nn * hw, b - nn * hw, Color(bc, 0.55 + 0.4 * near), 1.4)
-			_hair(a + nn * hw, b + nn * hw, Color(bc, 0.35 + 0.4 * near), 1.0)
+			_hair(a, b, Color(bc, 0.12 + 0.1 * near), hw * 2.0 + 8.0)
+			_hair(a - nn * hw, b - nn * hw, Color(bc.lightened(0.2), 0.6 + 0.4 * near), 2.0)
+			_hair(a + nn * hw, b + nn * hw, Color(bc, 0.45 + 0.4 * near), 1.4)
 	# Caps: a node on each strand's top, and a beacon over the axis.
 	for sn in 2:
 		var tp: Vector2 = pts[sn][n]["p"]
 		_quad(tp + Vector2(-tube * 0.6, 0), tp + Vector2(0, -tube * 0.6), tp + Vector2(tube * 0.6, 0), tp + Vector2(0, tube * 0.6), col, col, col, col)
 		_beacons.append({"pos": tp + Vector2(0, -tube), "color": col, "phase": 0.2 + sn * 0.3})
 	_beacons.append({"pos": _iso(cx, cy) + Vector2(0, -z1 - 40.0 * k), "color": col, "phase": 0.5})
+
+
+## A gold hieroglyph frieze on a sloped face (bottom edge p00-p10, top edge p01-p11):
+## two rules at heights v0 and v1 (0-1 up the face) with `count` little signs between
+## them; `gap` leaves the middle of the band open (for a ramp).
+func _frieze(p00: Vector2, p10: Vector2, p01: Vector2, p11: Vector2, v0: float, v1: float, count: int, gap: float, gold: Color, salt: int) -> void:
+	var band_col := Color(gold, 0.6)
+	_hair(p00.lerp(p01, v0), p10.lerp(p11, v0), band_col, 1.2)
+	_hair(p00.lerp(p01, v1), p10.lerp(p11, v1), band_col, 1.2)
+	for q in count:
+		var u := (q + 0.5) / count
+		if absf(u - 0.5) < gap:
+			continue
+		var gp := p00.lerp(p10, u).lerp(p01.lerp(p11, u), (v0 + v1) * 0.5)
+		var gh := (v1 - v0) * p00.lerp(p10, u).distance_to(p01.lerp(p11, u)) * 0.32
+		var gc := Color(gold, 0.75)
+		match int(_h(q, salt, 95) * 4.0):
+			0:
+				_hair(gp + Vector2(0, -gh), gp + Vector2(0, gh), gc, 1.2)
+			1:
+				for m in 6:
+					var a0 := TAU * m / 6.0
+					_hair(gp + Vector2(cos(a0), sin(a0)) * gh * 0.7, gp + Vector2(cos(a0 + TAU / 6.0), sin(a0 + TAU / 6.0)) * gh * 0.7, gc, 1.0)
+			2:
+				_hair(gp + Vector2(-gh * 0.6, gh * 0.4), gp + Vector2(0, -gh * 0.5), gc, 1.0)
+				_hair(gp + Vector2(0, -gh * 0.5), gp + Vector2(gh * 0.6, gh * 0.4), gc, 1.0)
+			_:
+				_hair(gp + Vector2(-gh * 0.6, -gh * 0.3), gp + Vector2(gh * 0.6, -gh * 0.3), gc, 1.0)
+				_hair(gp + Vector2(0, -gh * 0.3), gp + Vector2(0, gh), gc, 1.0)
 
 
 ## English HQ: a great clock tower (Big Ben style) with glowing clock faces, a belfry and a
