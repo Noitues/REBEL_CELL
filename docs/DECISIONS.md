@@ -1206,6 +1206,25 @@ View code only; no rules, content or schema changed.
 - Slice icons are solid black with a white outline (`SliceIcon.draw_on_slice`). Review
   styles behind `--demo-iconstyle=N` in combat: 0 black & white, 1 badge, 2 inverse
   badge, 3 glow, 4 bold. Owner's pick: 4 bold is the baseline.
+
+### Visual pass: readability and portraits (2026-09-26)
+- The system log strip (HQ, netrun) shows only when "System log strip" is on in Options
+  > Display (`Settings.system_log`, off by default). Test: `test_layout_rules`.
+- Dripping pink lettering (every `DripButton.draw_drip_text` use: title and HQ tags,
+  scrawls, SEND IT, LEAVE THE MODEM, deck/spinner actions, loot) has a thin white
+  outline round letters and drips (`DripButton.OUTLINE_PX`).
+- Terminal panels are more opaque with a soft dark halo, so text reads over the city.
+- Combat docks the DISPATCH / corporate subtitle bar in the top strip
+  (`Dialogue.dock_at`), clear of the hand and SEND IT; the tutorial note fits between
+  the inspect note and SEND IT.
+- Zine paper panels: the drop shadow no longer darkens the whole sheet, and the halftone
+  is spaced in pixels (the event panel read as flat grey before).
+- Portraits: `PortraitArt` draws every Polaroid until final art, in four review styles
+  (`--demo-portrait=N`: 0 neon bust (default), 1 xerox zine, 2 wire scan, 3 mugshot) for
+  operatives, corporate agents, machines, bosses and corporation faces; sheets from
+  `tools/design_lab/portrait_concepts.tscn`. Enemies, bosses and corporations have no
+  portrait slot on screen yet; the owner picks a style first.
+- Motion roadmap handed off in `docs/ANIMATION_HANDOFF.md`.
 - Godot note: a `const` typed as `Array[PackedVector2Array]` built from nested literals
   sometimes read back garbage coordinates at runtime (seen as a hang: a stroke millions of
   px long). `FIST_POLYS` is a plain nested Array, and `_stroke` caps its step count.

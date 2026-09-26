@@ -31,11 +31,7 @@ var _class_base: Dictionary = {}
 func _ready() -> void:
 	layer = 90
 	bar = PanelContainer.new()
-	bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bar.offset_left = -440
-	bar.offset_right = 440
-	bar.offset_top = -92
-	bar.offset_bottom = -20
+	dock_bottom()
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.visible = false
 	add_child(bar)
@@ -49,7 +45,7 @@ func _ready() -> void:
 	text_label = RichTextLabel.new()
 	text_label.bbcode_enabled = true
 	text_label.fit_content = true
-	text_label.custom_minimum_size = Vector2(860, 40)
+	text_label.custom_minimum_size = Vector2(560, 40)
 	text_label.add_theme_font_override("normal_font", Palette.mono())
 	text_label.add_theme_font_size_override("normal_font_size", 15)
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -84,6 +80,24 @@ func add_set(set: LineSetData) -> void:
 
 ## Shows a subtitle (queued behind any line still on screen). Emits line_spoken at once
 ## so voice-over and logs can follow even with subtitles switched off.
+## The subtitle bar at the foot of the screen (the default).
+func dock_bottom() -> void:
+	bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	bar.offset_left = -440
+	bar.offset_right = 440
+	bar.offset_top = -92
+	bar.offset_bottom = -20
+
+
+## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand).
+func dock_at(rect: Rect2) -> void:
+	bar.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	bar.offset_left = rect.position.x
+	bar.offset_top = rect.position.y
+	bar.offset_right = rect.end.x
+	bar.offset_bottom = rect.end.y
+
+
 func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"") -> void:
 	if text == "":
 		return

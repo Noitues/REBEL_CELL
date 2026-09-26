@@ -118,3 +118,14 @@ func test_core_resolution_stays_well_under_a_millisecond_per_turn() -> void:
 		turns += 1
 	var per_turn_ms := (Time.get_ticks_usec() - start) / 1000.0 / turns
 	assert_true(per_turn_ms < 1.0, "%.3f ms per turn (apply incl. preview-grade duplication)" % per_turn_ms)
+
+
+func test_system_log_strip_shows_only_when_toggled_in_options() -> void:
+	var was: bool = Settings.system_log
+	Settings.system_log = false
+	var scene := _open(HQ)
+	await _layout(scene)
+	assert_false(scene._log.is_visible_in_tree(), "log strip hidden by default")
+	Settings.set_system_log(true)
+	assert_true(scene._log.is_visible_in_tree(), "log strip shown when turned on")
+	Settings.set_system_log(was)

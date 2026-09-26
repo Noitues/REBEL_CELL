@@ -9,6 +9,8 @@ var placeholder_label: String = "[PORTRAIT]"
 var portrait: Texture2D = null
 var glitch: bool = false
 var tilt: float = -3.0
+## Who is in the picture (PortraitArt subject); empty = an operative keyed by the label.
+var subject: Dictionary = {}
 
 
 func _init(p_caption: String = "", p_label: String = "[PORTRAIT]", p_tilt: float = -3.0) -> void:
@@ -31,12 +33,21 @@ func _draw() -> void:
 	if portrait != null:
 		draw_texture_rect(portrait, image, false)
 	else:
-		Polaroid.draw_silhouette(self, image, placeholder_label)
-		draw_string(Palette.mono(), image.position + Vector2(4, image.size.y - 5), placeholder_label, HORIZONTAL_ALIGNMENT_LEFT, image.size.x - 8, 8, Color(Palette.PAPER, 0.6))
+		PortraitArt.draw(self, image, _subject())
 	if glitch:
 		for i in 4:
 			draw_rect(Rect2(image.position.x, image.position.y + i * image.size.y / 4.0 + 3, image.size.x, 3), Color(Palette.CELL_PINK, 0.6))
 	draw_string(Palette.marker(), Vector2(8, size.y - 10), caption, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, 13, Palette.INK)
+
+
+## The drawn portrait's subject: `subject` if set, else an operative whose class is read
+## from the placeholder label ("[BREAKER PORTRAIT]").
+func _subject() -> Dictionary:
+	if not subject.is_empty():
+		return subject
+	var key := placeholder_label.trim_prefix("[").trim_suffix("]").replace(" PORTRAIT", "").to_lower()
+	var tints := [Palette.CELL_PINK, Palette.NET_CYAN, Palette.NEON_VIOLET, Palette.CRT_AMBER, Palette.CORP_SOLACE]
+	return {"kind": PortraitArt.Kind.OPERATIVE, "key": key, "tint": tints[absi(hash(key)) % tints.size()], "name": caption}
 
 
 ## Placeholder portrait until final art lands: a neon duotone head-and-shoulders

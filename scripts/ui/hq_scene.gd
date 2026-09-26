@@ -41,6 +41,12 @@ func _ready() -> void:
 	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
+	for a in args:
+		# Design review: portrait and slice-icon styles.
+		if a.begins_with("--demo-portrait="):
+			PortraitArt.style = int(a.trim_prefix("--demo-portrait="))
+		elif a.begins_with("--demo-iconstyle="):
+			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
 	if args.has("--demo-start"):
 		RunManager.save_slot = "demo"
 		show_start()
@@ -1258,6 +1264,9 @@ func _build_ui() -> void:
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 96)
 	root.add_child(_log)
+	# Shown only when the player turns it on in Options.
+	_log.visible = Settings.system_log
+	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
 
 
 ## Turns the buttons in `box` into "> ITEM" terminal menu lines.

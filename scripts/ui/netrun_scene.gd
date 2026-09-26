@@ -28,6 +28,12 @@ func _ready() -> void:
 	UiTheme.apply(self)
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
+	for a in args:
+		# Design review: portrait and slice-icon styles.
+		if a.begins_with("--demo-portrait="):
+			PortraitArt.style = int(a.trim_prefix("--demo-portrait="))
+		elif a.begins_with("--demo-iconstyle="):
+			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
 	if args.has("--demo-shop"):
 		RunManager.save_slot = "demo"
 		new_campaign(1)
@@ -72,9 +78,6 @@ func _ready() -> void:
 		return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
-	for a in args:
-		if a.begins_with("--demo-iconstyle="):
-			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
 		# Dev shortcut for screenshots: godot --path . -- --demo-run (uses its own save slot)
 		RunManager.save_slot = "demo"
@@ -941,6 +944,9 @@ func _build_ui() -> void:
 	_log.scroll_following = true
 	_log.custom_minimum_size = Vector2(0, 110)
 	root.add_child(_log)
+	# Shown only when the player turns it on in Options.
+	_log.visible = Settings.system_log
+	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
 
 
 func _label(text: String) -> Label:

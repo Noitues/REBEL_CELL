@@ -52,7 +52,10 @@ func _draw() -> void:
 	if terminal:
 		_draw_terminal()
 		return
-	draw_rect(Rect2(Vector2(5, 6), size), Palette.SHADOW)
+	# The drop shadow only where it shows (right and bottom edges): the paper sits behind
+	# this drawing, so a full shadow rect would darken the whole sheet.
+	draw_rect(Rect2(Vector2(size.x, 6), Vector2(5, size.y)), Palette.SHADOW)
+	draw_rect(Rect2(Vector2(5, size.y), Vector2(size.x - 5, 6)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 2.0)
 	if title != "":
 		draw_string(Palette.marker(), Vector2(12, 20), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.INK)
@@ -63,7 +66,8 @@ func _draw() -> void:
 
 func _draw_terminal() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(Rect2(Vector2(6, 8), size), Palette.SHADOW)
+	draw_rect(Rect2(Vector2(size.x, 8), Vector2(6, size.y)), Palette.SHADOW)
+	draw_rect(Rect2(Vector2(6, size.y), Vector2(size.x - 6, 8)), Palette.SHADOW)
 	draw_rect(r, Palette.TERMINAL_EDGE, false, 1.0)
 	if title != "":
 		draw_string(Palette.mono(), Vector2(14, 22), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)

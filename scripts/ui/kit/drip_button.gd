@@ -11,6 +11,9 @@ const DRIP_PINK := Color("#FF3DA8")
 ## Drip presets: long -> short, left to right.
 const SEND_IT_DRIPS := [[0, 44, 0.3], [2, 28, 0.88], [6, 14, 0.5]]
 const LEAVE_MODEM_DRIPS := [[0, 42, 0.25], [7, 26, 0.85], [10, 14, 0.2]]
+## The white outline round drip lettering (px each side) and its opacity.
+const OUTLINE_PX := 2.0
+const OUTLINE_ALPHA := 0.95
 
 var tag_text: String = ""
 var key_hint: String = ""
@@ -43,13 +46,15 @@ func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRI
 
 
 ## Draws `text` with drips on any CanvasItem at baseline `base` (shared with views that
-## paint the lettering themselves).
-static func draw_drip_text(ci: CanvasItem, base: Vector2, text: String, size: int, col: Color, p_drips: Array, shadow: bool = true) -> void:
+## paint the lettering themselves). A thin white outline runs round the letters and the
+## drips so the pink reads over the bright city.
+static func draw_drip_text(ci: CanvasItem, base: Vector2, text: String, size: int, col: Color, p_drips: Array, shadow: bool = true, outline: bool = true) -> void:
 	var f := Palette.marker()
 	if shadow:
 		ci.draw_string(f, base + Vector2(3, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7))
-	ci.draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
 	var scale := size / 44.0
+	var edge := OUTLINE_PX * (1.0 if size >= 30 else 0.75)
+	var drops := []
 	for d in p_drips:
 		var idx: int = d[0]
 		if idx < 0 or idx >= text.length():
@@ -58,8 +63,18 @@ static func draw_drip_text(ci: CanvasItem, base: Vector2, text: String, size: in
 		var cw := f.get_string_size(text[idx], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 		var x := base.x + x0 + cw * float(d[2])
 		# Start inside the letter's bottom stroke so the drip is attached to it.
-		var top := base.y - size * 0.12
-		_drip(ci, Vector2(x, top), float(d[1]) * scale + size * 0.12, maxf(3.5, 9.5 * scale), col)
+		drops.append([Vector2(x, base.y - size * 0.12), float(d[1]) * scale + size * 0.12, maxf(3.5, 9.5 * scale)])
+	if outline:
+		var white := Color(1, 1, 1, OUTLINE_ALPHA)
+		# Stamped round the letters (12 directions), so it works with any font import.
+		for k in 12:
+			var o := Vector2(cos(TAU * k / 12.0), sin(TAU * k / 12.0)) * edge
+			ci.draw_string(f, base + o, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, white)
+		for dr in drops:
+			_drip(ci, dr[0] + Vector2(0, -edge * 0.5), dr[1] + edge * 1.5, dr[2] + edge * 2.0, white)
+	ci.draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	for dr in drops:
+		_drip(ci, dr[0], dr[1], dr[2], col)
 
 
 ## One drip: thick where it leaves the letter, a thin neck, a teardrop at the end (point

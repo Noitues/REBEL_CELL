@@ -24,6 +24,7 @@ var step: int = 0
 var note: ZineNote
 var next_button: Button
 var skip_button: Button
+var row: HBoxContainer
 
 
 func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
@@ -31,7 +32,7 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	size = p_size
 	note = ZineNote.new("TUTORIAL", Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)).make_reference()
 	add_child(note)
-	var row := HBoxContainer.new()
+	row = HBoxContainer.new()
 	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
 	add_child(row)
 	next_button = Button.new()
@@ -43,6 +44,16 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	skip_button.pressed.connect(skip)
 	row.add_child(skip_button)
 	_show()
+
+
+## Resizes the overlay (note above, Next / Skip row under it); the note scrolls when the
+## step's text is longer than it.
+func fit(p_size: Vector2) -> void:
+	custom_minimum_size = p_size
+	size = p_size
+	note.custom_minimum_size = Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)
+	note.size = note.custom_minimum_size
+	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
 
 
 func _show() -> void:

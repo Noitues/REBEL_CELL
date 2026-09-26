@@ -61,6 +61,18 @@ var _rewound: bool = false
 var _migrate_tween: Tween = null
 ## Text of the last inspect (tests read it).
 var last_inspect: String = ""
+## Where the subtitle bar sits during combat (1280x720 canvas).
+const SUBTITLE_DOCK := Rect2(420, 58, 560, 56)
+
+
+func _enter_tree() -> void:
+	# DISPATCH and the corporate voices speak from the top strip in combat (between the
+	# turn line and the spinner tags), clear of the hand and SEND IT.
+	Dialogue.dock_at(SUBTITLE_DOCK)
+
+
+func _exit_tree() -> void:
+	Dialogue.dock_bottom()
 
 
 func _ready() -> void:
@@ -179,12 +191,27 @@ func selected_direction() -> int:
 
 
 ## The guided first fight (onboarding). Steps follow the engine's events.
+## The tutorial fills the right column between the inspect note and SEND IT (wherever
+## the combat screen is mounted), so its buttons never sit on SEND IT.
+func _fit_tutorial() -> void:
+	if tutorial == null or not is_instance_valid(tutorial) or not is_inside_tree():
+		return
+	var origin := get_global_rect().position
+	var top := inspect_note.get_global_rect().end.y - origin.y + 6.0
+	var bottom := _end_turn_button.get_global_rect().position.y - origin.y - 6.0
+	if bottom - top < 150.0:
+		return  # no room to fit: keep the default rect
+	tutorial.position = Vector2(TUTORIAL_RECT.position.x, top)
+	tutorial.fit(Vector2(TUTORIAL_RECT.size.x, bottom - top))
+
+
 func start_tutorial() -> void:
 	if tutorial != null and is_instance_valid(tutorial):
 		return
 	tutorial = TutorialOverlay.new(TUTORIAL_RECT.size)
 	tutorial.position = TUTORIAL_RECT.position  # over the log strip: never on a wheel (GDD 9.2)
 	add_child(tutorial)
+	_fit_tutorial.call_deferred()
 	tutorial.finished.connect(func() -> void: tutorial = null)
 
 

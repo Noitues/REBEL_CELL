@@ -181,13 +181,16 @@ static func _panels(t: Theme) -> void:
 	var v := "TerminalPanel"
 	t.set_type_variation(v, "PanelContainer")
 	var p := box(Palette.TERMINAL_BG, Palette.TERMINAL_EDGE, 1, 14, 10)
-	p.shadow_color = Color(0, 0, 0, 0.5)
-	p.shadow_size = 8
+	# A soft dark halo round each panel keeps it readable over the bright city.
+	p.shadow_color = Color(0, 0, 0, 0.6)
+	p.shadow_size = 18
 	p.shadow_offset = Vector2(3, 4)
 	t.set_stylebox("panel", v, p)
 	var g := "GlassPanel"
 	t.set_type_variation(g, "PanelContainer")
-	var glass := box(Color(0.02, 0.04, 0.1, 0.8), Color(Palette.TERMINAL_EDGE, 0.35), 1, 12, 8)
+	var glass := box(Color(0.02, 0.04, 0.1, 0.9), Color(Palette.TERMINAL_EDGE, 0.35), 1, 12, 8)
+	glass.shadow_color = Color(0, 0, 0, 0.45)
+	glass.shadow_size = 14
 	t.set_stylebox("panel", g, glass)
 	var hud := "HudLabel"
 	t.set_type_variation(hud, "Label")
