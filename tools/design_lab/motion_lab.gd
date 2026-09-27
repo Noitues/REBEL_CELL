@@ -83,6 +83,8 @@ const DEMOS := {
 	# ANIM-5 (map, raid, jack and Heat):
 	&"jack_scanlines": ["blink", "stage"], &"raid_step_gap": ["blink", "sticker"], &"home_lag": ["roll", "number"],
 	&"minimap_pulse": ["pop", "sticker"], &"select_ring_ease": ["pop", "sticker"], &"legend_fold": ["drop", "panel"],
+	# ANIM-4 (HQ drag and drop; in context: hq_scene --demo-anim=drag_*):
+	&"drop_stamp": ["pop", "sticker"], &"market_fly": ["fly", "card"],
 }
 
 ## Scene demos: the fight they run, and what the wheel demos turn and shift.

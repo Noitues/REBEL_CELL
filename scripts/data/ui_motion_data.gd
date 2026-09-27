@@ -45,6 +45,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"drag_ghost_tilt", &"card_pile", &"hand_reflow", &"ram_tick", &"ram_pending_blink",  # ANIM-3
 	# Animation pass ANIM-5 (map, raid, jack and Heat motion):
 	&"jack_scanlines", &"raid_step_gap", &"home_lag", &"minimap_pulse", &"select_ring_ease", &"legend_fold",
+	# Animation pass ANIM-4 (HQ drag and drop):
+	&"drop_stamp", &"market_fly",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

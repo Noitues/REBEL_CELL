@@ -9,14 +9,15 @@ extends Control
 ## Cursor speed (px/s) that gives the full tilt.
 const TILT_SPEED := 1200.0
 
-var card: ZineCard
+## The item shown (a ZineCard in combat; operatives, assets and chips since ANIM-4).
+var card: Control
 ## Where the card's centre is drawn (global), trailing the holder.
 var _lagged: Vector2 = Vector2.INF
 var _tilt: float = 0.0
 var _last: Vector2 = Vector2.INF
 
 
-func _init(p_card: ZineCard) -> void:
+func _init(p_card: Control) -> void:
 	card = p_card
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
