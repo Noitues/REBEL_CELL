@@ -216,6 +216,8 @@ var screen_rect: Rect2 = Rect2():
 			_top.queue_redraw()
 ## The tier pips of the last node draw (node id -> tier), for checks.
 var drawn_tiers: Dictionary = {}
+## ANIM-5: false while a RaidFxLayer draws the threats itself (moving along the streets).
+var draw_markers: bool = true
 var _blocked_rects: Array[Rect2] = []
 var _blocked_controls: Array[Control] = []
 
@@ -910,7 +912,7 @@ func _node(n: Dictionary) -> void:
 		AssetIcon.draw_icon(_c, top + Vector2(cos(a) * 26.0, sin(a) * 14.0 - 6.0), 8.0, assets[k])
 	if n["id"] == selected_id:
 		_c.draw_polyline(closed, Palette.CELL_ACID, 1.5, true)
-	if markers.has(n["id"]):
+	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
 		var row := _marker_row(n)
 		for k in names.size():
@@ -972,6 +974,50 @@ static func draw_tier(ci: CanvasItem, at: Vector2, tier: int, col: Color, scale:
 ## Centre of the threat markers' row over node `n` (local px).
 func _marker_row(n: Dictionary) -> Vector2:
 	return icon_pos(n) - Vector2(0, icon_radius(n) + (LABEL_GAP + MARKER_SIZE) * _k())
+
+
+# --- Motion hooks (Animation pass ANIM-5) -----------------------------------------------------
+
+## Where node `id`'s icon sits now (local px; INF when the node is not on this map).
+func icon_at(id: StringName) -> Vector2:
+	return _icon_positions().get(id, Vector2(INF, INF))
+
+
+## Where threat `k` of `count` standing on node `id` is drawn (local px): the marker row
+## over its icon (INF when the node is not on this map).
+func marker_slot(id: StringName, k: int, count: int) -> Vector2:
+	var n := _node_dict(id)
+	if n.is_empty() or icon_at(id).x == INF:
+		return Vector2(INF, INF)
+	return _marker_row(n) + Vector2((k - (count - 1) * 0.5) * MARKER_STEP * _k(), 0)
+
+
+## The street route from node `a` to node `b` (grid points): the map's own edge route
+## when the two are linked (reversed when it runs b -> a), else a street route between
+## their buildings; empty when either is not on this map.
+func route_between(a: StringName, b: StringName) -> PackedVector2Array:
+	for k in edges.size():
+		if k >= _routes.size():
+			break
+		if edges[k]["a"] == a and edges[k]["b"] == b:
+			return _routes[k]
+		if edges[k]["a"] == b and edges[k]["b"] == a:
+			var back := _routes[k].duplicate()
+			back.reverse()
+			return back
+	if city == null or not _lots.has(a) or not _lots.has(b):
+		return PackedVector2Array()
+	return _route(_lots[a], _lots[b])
+
+
+## Grid point `p` in this overlay's local px (under the city's current camera).
+func grid_point_local(p: Vector2) -> Vector2:
+	return _to_local(p) if city != null else p
+
+
+## Local px per screen px (the city's zoom undone): motion sizes are screen px x this.
+func screen_k() -> float:
+	return _k()
 
 
 ## The "you are here" mark: a pink ring round the icon and a pin pointing down at it.

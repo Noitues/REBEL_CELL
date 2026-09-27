@@ -258,22 +258,32 @@ static func _active(threats: Array[Dictionary]) -> Array[Dictionary]:
 	return out
 
 
-static func _target_of(t: Dictionary, grid: GridState, grid_data: CityGridData, lookup: ContentLookup) -> StringName:
-	var home := grid.home_site_id
-	var candidates: Array[StringName] = []
-	for id in grid.claimed_ids():
-		if id != home and grid.is_active_node(id):
-			candidates.append(id)
-	# Decoys pull routing toward their node: strongest pull wins, ties by site id.
+## The node a DECOY pulls threat `t` toward (strongest pull wins, ties by site id), or &""
+## when no decoy on a live node can be reached.
+static func _decoy_site(t: Dictionary, grid: GridState, grid_data: CityGridData, lookup: ContentLookup) -> StringName:
 	var best_pull := 0
 	var pulled: StringName = &""
-	for id in candidates:
+	for id in grid.claimed_ids():
+		if id == grid.home_site_id or not grid.is_active_node(id):
+			continue
 		for a in grid.assets_on(id):
 			var asset := lookup.get_content(a) as DefenseAssetData
 			if asset != null and asset.decoy_pull > best_pull:
 				best_pull = asset.decoy_pull
 				pulled = id
 	if pulled != &"" and grid.distance(t["site"], pulled, grid_data) >= 0:
+		return pulled
+	return &""
+
+
+static func _target_of(t: Dictionary, grid: GridState, grid_data: CityGridData, lookup: ContentLookup) -> StringName:
+	var home := grid.home_site_id
+	var candidates: Array[StringName] = []
+	for id in grid.claimed_ids():
+		if id != home and grid.is_active_node(id):
+			candidates.append(id)
+	var pulled := _decoy_site(t, grid, grid_data, lookup)
+	if pulled != &"":
 		return pulled
 	match int(t["routing"]):
 		RC.ThreatRouting.HIGHEST_VALUE:
@@ -307,6 +317,7 @@ static func _move_threats(threats: Array[Dictionary], grid: GridState, grid_data
 				"text": "Step %d: %s is held at %s (%d more)." % [step, t["name"], t["site"], t["hold"]]})
 			continue
 		var target := _target_of(t, grid, grid_data, lookup)
+		var decoyed := target != &"" and target == _decoy_site(t, grid, grid_data, lookup)
 		var from: StringName = t["site"]
 		if from == target and grid.is_active_node(target):
 			continue  # camp on the target until it falls
@@ -323,7 +334,10 @@ static func _move_threats(threats: Array[Dictionary], grid: GridState, grid_data
 			if nxt == grid.home_site_id or grid.is_active_node(nxt):
 				break  # a live node (or home) stops the advance this step
 		if moved > 0:
+			# ANIM-5: the playout reads where the threat is headed and whether a DECOY pulled it
+			# (the same facts the routing used; no rule reads them).
 			result.events.append({"type": "move", "step": step, "threat": t["id"], "from": from, "to": t["site"],
+				"target": target, "decoy": decoyed,
 				"text": "Step %d: %s moves %s -> %s (toward %s)." % [step, t["name"], from, t["site"], target]})
 
 

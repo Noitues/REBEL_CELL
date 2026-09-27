@@ -29,6 +29,8 @@ var caption: String = ""
 var verdict: String = ""
 var color: Color = Palette.CELL_PINK
 var icon_kind: StringName = &""
+## ANIM-5: the raid has run and the forecast has become its result: the ring is solid.
+var resolved: bool = false
 
 
 func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Palette.CELL_PINK, p_icon: StringName = &"") -> void:
@@ -39,6 +41,18 @@ func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Pale
 	icon_kind = p_icon
 	mouse_filter = Control.MOUSE_FILTER_PASS  # its tooltip explains the forecast
 	focus_mode = Control.FOCUS_NONE
+
+
+## ANIM-5: the forecast becomes the real verdict (the raid playout's end): new caption
+## and verdict, a solid ring, and the stamp lands (`forecast_stamp_resolve`: a pop from
+## its amplitude; the end state at once under reduce effects).
+func resolve(p_caption: String, p_verdict: String) -> void:
+	caption = p_caption
+	verdict = p_verdict
+	resolved = true
+	queue_redraw()
+	pivot_offset = size * 0.5
+	Motion.pop(self, &"forecast_stamp_resolve")
 
 
 ## The caption as drawn: translated (H23 S16).
@@ -120,8 +134,11 @@ func _draw() -> void:
 	var r := _radius()
 	draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
 	var step := TAU / DASHES
-	for k in DASHES:
-		draw_arc(c, r, k * step, k * step + step * DASH_FILL, 6, color, RING_W)
+	if resolved:
+		draw_arc(c, r, 0, TAU, DASHES * 2, color, RING_W)
+	else:
+		for k in DASHES:
+			draw_arc(c, r, k * step, k * step + step * DASH_FILL, 6, color, RING_W)
 	var l := layout()
 	var icon: Rect2 = l["icon"]
 	if icon.has_area():

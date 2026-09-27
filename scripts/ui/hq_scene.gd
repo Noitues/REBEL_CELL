@@ -49,6 +49,9 @@ const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 const VERDICT_HOLDS := "ALL HOLD" # TR
 const VERDICT_HIT := "HOME HIT" # TR
 const VERDICT_LOST := "CAMPAIGN LOST" # TR
+## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
+const RESULT_CAPTION := "RAID
+RESULT:" # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
 ## Words the screens translate that sit in the core's data (H24 S1: exported by the "# TR"
@@ -361,9 +364,15 @@ func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
 
 
 func fight_raid() -> void:
+	# ANIM-5: the playout starts from the Grid as it stood (a view copy, read only) and the
+	# city holds its pre-raid tint until the raid has played; the result spreads at the end.
+	var before := RunManager.campaign.duplicate_state() if RunManager.campaign != null else null
+	wireframe.city.pin_influence(CityInfluence.of(RunManager.campaign, RunManager.corporation))
 	var events := RunManager.fight_raid()
 	_report(events)
-	show_raid_playout(events)
+	if events.is_empty():
+		wireframe.city.release_influence()
+	show_raid_playout(events, before)
 
 
 # --- Panels ---------------------------------------------------------------------------------
@@ -2101,17 +2110,23 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 	return box
 ## The raid's part of the Grid as an overlay graph: claimed nodes (coloured by `results`
 ## outcome, with their assets), the Sites on the threat routes, links among them.
-func raid_graph(results: Variant, markers: Dictionary) -> Dictionary:
-	var c := RunManager.campaign
-	var g := grid_graph()
+## `c` draws another campaign state than the current one (ANIM-5: the playout starts from
+## the Grid as it stood before the raid); `include` keeps more Sites on the map (the
+## pre-raid network after the raid, so a Seized node keeps its stamp).
+func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, include: Array = []) -> Dictionary:
+	if c == null:
+		c = RunManager.campaign
+	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation), selected_site)
 	var nodes_res: Dictionary = results.nodes if results is RaidResolver.RaidResult else results
 	var network := {}
 	for id in c.grid.claimed_ids():
 		network[id] = true
-	for path in _threat_paths():
+	for path in CityLayout.threat_paths(c, RunManager.corporation):
 		for id in path:
 			network[id] = true
 	for id in markers:
+		network[id] = true
+	for id in include:
 		network[id] = true
 	var nodes: Array[Dictionary] = []
 	for n in g["nodes"]:
@@ -2166,7 +2181,7 @@ func _fill_codex(body: ZineNote, section: String, items: Array) -> void:
 
 ## Raid playout (GDD 7.2, 9.3): threat markers animate over the Grid; 1x/2x/4x and skip.
 ## Instant (straight to the summary) when headless or under reduce-effects.
-func show_raid_playout(events: Array[Dictionary]) -> void:
+func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) -> void:
 	var c := RunManager.campaign
 	# The raid live on the city, the camera zoomed in on the fight and following it; the
 	# RAID FEED at the side.
@@ -2180,26 +2195,45 @@ func show_raid_playout(events: Array[Dictionary]) -> void:
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
 	box.add_child(side)
+	# ANIM-5: the setup's forecast rides along and resolves into the real verdict at the end
+	# (the same words: the forecast is exact).
+	var r := c.last_raid
+	var won: bool = r.get("won", false)
+	var verdict := VERDICT_LOST if bool(r.get("campaign_lost", false)) else (VERDICT_HOLDS if won else VERDICT_HIT)
+	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, Palette.CELL_ACID if won else Palette.CELL_PINK, StatIcon.RAIDS if won else StatIcon.HOME)
+	forecast.name = "PlayoutForecast"
+	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
+	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	side.add_child(forecast)
 	var feed := TerminalWindow.new(tr("RAID FEED // LIVE"), Palette.corp_color(c.corporation_id))
 	side.add_child(feed)
 	var cont := _button(tr("Continue"), _after_playout)
 	cont.theme_type_variation = &"HotButton"
 	cont.disabled = true
 	_set_panel(box, "raid_playout")
-	var g := raid_graph({}, {})
+	# The map as it stood before the raid (Seized nodes still yours until they flip).
+	var pre := before if before != null else c
+	var kept: Array = pre.grid.claimed_ids()
+	var g := raid_graph({}, {}, pre)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55), 1.9)
 	city_overlay.avoid_controls([side])
 	var overlay := city_overlay
 	overlay.markers_changed.connect(func() -> void: _follow_fight(overlay))
 	playout = RaidPlayoutPanel.new(overlay, Vector2(330, 330))
 	feed.body.add_child(playout)
+	playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
+		forecast.resolve(RESULT_CAPTION, verdict)
+		# The result's tint spreads from the nodes that flipped (NeonCity, one bake).
+		wireframe.city.release_influence()
 		if is_instance_valid(overlay):
-			var done := raid_graph(RunManager.campaign.last_raid.get("nodes", {}), overlay.markers)
+			var done := raid_graph(RunManager.campaign.last_raid.get("nodes", {}), overlay.markers, null, kept)
 			overlay.set_graph(done["nodes"], done["edges"]))
+	# Skip jumps straight to the summary (ANIM-5).
+	playout.skipped.connect(_after_playout)
 	side.add_child(cont)
-	var instant := DisplayServer.get_name() == "headless" or not Fx.effects_enabled()
+	var instant := not Motion.animating()
 	playout.play(events, instant)
 	if instant:
 		_after_playout()
@@ -2217,6 +2251,7 @@ func _follow_fight(overlay: CityMapOverlay) -> void:
 
 
 func _after_playout() -> void:
+	wireframe.city.release_influence()
 	if RunManager.campaign.is_over():
 		show_end()
 	else:

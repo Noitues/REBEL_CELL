@@ -260,10 +260,14 @@ func raid_move(from_site: StringName, index: int, to_site: StringName) -> void:
 
 
 func raid_fight() -> void:
+	# ANIM-5: the playout starts from the Grid as it stood (a view copy) and the city holds
+	# its pre-raid tint until the raid has played; the result spreads at the end.
+	var before := RunManager.campaign.duplicate_state() if RunManager.campaign != null else null
+	background.city.pin_influence(CityInfluence.of(RunManager.campaign, RunManager.corporation))
 	var events := RunManager.netrun.raid_fight()
 	_report(events)
 	RunManager.after_step()
-	_show_raid_playout(events)
+	_show_raid_playout(events, before)
 
 
 func finish_run() -> void:
@@ -790,7 +794,7 @@ func _clear_route() -> void:
 
 ## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip. The
 ## raid plays on the city (the Grid overlay, like the HQ playout), the feed at the side.
-func _show_raid_playout(events: Array[Dictionary]) -> void:
+func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null) -> void:
 	var c := RunManager.campaign
 	var box := HBoxContainer.new()
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -808,22 +812,28 @@ func _show_raid_playout(events: Array[Dictionary]) -> void:
 	feed.body.add_child(playout)
 	var cont := _icon_button(tr("Continue"), _show_current, StatIcon.CONTINUE)
 	cont.disabled = true
-	playout.finished.connect(func() -> void: cont.disabled = false)
+	playout.finished.connect(func() -> void:
+		cont.disabled = false
+		background.city.release_influence())
+	# ANIM-5: Skip goes straight on (the raid's result).
+	playout.skipped.connect(_show_current)
 	side.add_child(cont)
 	_set_panel(box, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
+	var pre := before if before != null else c
+	var g := CityLayout.grid_graph(pre, RunManager.corporation, CityLayout.threat_paths(pre, RunManager.corporation))
 	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
 	city_overlay.avoid_controls([side])
 	playout.grid_view = city_overlay
+	playout.attach_fx(c.last_raid, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
 		_show_current()
 
 
 func _instant_playout() -> bool:
-	return DisplayServer.get_name() == "headless" or not Fx.effects_enabled()
+	return not Motion.animating()
 
 
 func _show_combat() -> void:
