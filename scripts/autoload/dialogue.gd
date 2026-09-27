@@ -208,6 +208,9 @@ func pages_of(text: String) -> PackedStringArray:
 	var sb := bar.get_theme_stylebox("panel")
 	var width := (bar.offset_right - bar.offset_left) - (sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0)
 	var wrapped := _wrap(text, width * PAGE_FILL, font, fs)
+	if (wrapped[0] as PackedStringArray).size() > dock_lines:
+		# Several pages: each keeps room for CONTINUED_MARK on its last line (H23 S3).
+		wrapped = _wrap(text, width * PAGE_FILL - _text_width(CONTINUED_MARK, font, fs), font, fs)
 	var lines: PackedStringArray = wrapped[0]
 	var glue: PackedStringArray = wrapped[1]
 	for i in range(0, lines.size(), dock_lines):
@@ -306,18 +309,41 @@ const PAGE_FILL := 0.95
 
 
 ## Shows a subtitle (queued behind any line still on screen). Emits line_spoken at once
-## so voice-over and logs can follow even with subtitles switched off.
-func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"") -> void:
+## so voice-over and logs can follow even with subtitles switched off. `translated`: the
+## text is already in the player's language (TextDb content, a voice line through
+## `voice_text`), so it is not translated again (H23 S17: pseudolocalised twice).
+func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"", translated: bool = false) -> void:
 	if text == "":
 		return
 	history.append({"speaker": speaker, "text": text, "corporation": corporation_id})
 	line_spoken.emit(speaker, text)
 	if _queue.size() >= MAX_QUEUE:
 		_queue.pop_front()
-	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id,
+	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id, "translated": translated,
 		"seconds": seconds if seconds > 0.0 else maxf(MIN_SECONDS, text.length() * SECONDS_PER_CHAR)})
 	if _timer == null:
 		_next()
+
+
+## Marks the end of a page when the line goes on in the next one (H23 S3: a page cut
+## mid-sentence read as a cut line). Paging keeps room for it on the page's last line.
+const CONTINUED_MARK := " …"
+## The longest own speaker tag a line may open with ("SOLACE COLLECTIONS: ...", chars).
+const OWN_NAME_MAX := 40
+
+
+## A line that opens with its own speaker tag ("SOLACE COLLECTIONS: This is ...") keeps
+## that tag as the name instead of getting the speaker's name in front of it (H23 S2:
+## "SOLACE: SOLACE COLLECTIONS: ..."): [name, words]. The tag must start with `name` and
+## be written in capitals; otherwise [name, words] unchanged.
+static func own_speaker(name: String, words: String) -> PackedStringArray:
+	var colon := words.find(": ")
+	if name == "" or colon <= 0 or colon > OWN_NAME_MAX:
+		return PackedStringArray([name, words])
+	var tag := words.substr(0, colon)
+	if tag != tag.to_upper() or not tag.begins_with(name):
+		return PackedStringArray([name, words])
+	return PackedStringArray([tag, words.substr(colon + 2)])
 
 
 ## Clears the queue and hides the bar (scene changes).
@@ -348,12 +374,22 @@ func _next() -> void:
 	var corp_id := StringName(String(line.get("corporation", "")))
 	var name := speaker_name(int(line["speaker"]), corp_id)
 	# Default dock: the name leads the first page ("DISPATCH: ..."), not a row of its own.
-	var inline := inline_speaker and name != "" and not bool(line.get("continued", false))
-	# H22 #7: page the words as shown (translated once; a continued page already is).
-	var words := String(line["text"]) if bool(line.get("continued", false)) else shown_text(String(line["text"]))
+	var continued := bool(line.get("continued", false))
+	var inline := inline_speaker and name != "" and not continued
+	# H22 #7: page the words as shown (translated once; a continued page already is, and so
+	# is a line said as translated, H23 S17).
+	var words := String(line["text"]) if continued or bool(line.get("translated", false)) else shown_text(String(line["text"]))
 	var shown_name := shown_text(name)
+	if not continued:
+		# H23 S2: a line naming its own speaker keeps that name (never "SOLACE: SOLACE ...").
+		var own := own_speaker(shown_name, words)
+		shown_name = own[0]
+		words = own[1]
+		name = shown_name
 	var body := ("%s: %s" % [shown_name, words]) if inline else words
 	var pages := pages_of(body)
+	# The page on screen ends in CONTINUED_MARK while the line goes on (H23 S3).
+	var more := bool(line.get("more", false))
 	if pages.size() > 1:
 		# The rest of a long line waits at the front of the queue, time shared by length.
 		var whole := maxf(1.0, body.length())
@@ -362,19 +398,22 @@ func _next() -> void:
 			var rest := line.duplicate()
 			rest["text"] = pages[k]
 			rest["continued"] = true
+			rest["more"] = k < pages.size() - 1 or more
 			rest["seconds"] = maxf(MIN_SECONDS, seconds * pages[k].length() / whole)
 			_queue.push_front(rest)
 		line["seconds"] = maxf(MIN_SECONDS, seconds * pages[0].length() / whole)
+		more = true
 	_style(int(line["speaker"]), corp_id)
 	speaker_label.text = name
 	speaker_label.visible = name != "" and not inline_speaker
-	var shown := _escape(pages[0])
+	var mark := CONTINUED_MARK if more else ""
+	var shown := _escape(pages[0]) + mark
 	_shown = pages[0]
 	if inline and pages[0].begins_with(shown_name + ":"):
 		_shown = pages[0].substr(shown_name.length() + 1).strip_edges()
-		shown = "[color=#%s]%s:[/color] %s" % [speaker_label.get_theme_color("font_color").to_html(false), _escape(shown_name), _escape(_shown)]
+		shown = "[color=#%s]%s:[/color] %s%s" % [speaker_label.get_theme_color("font_color").to_html(false), _escape(shown_name), _escape(_shown), mark]
 	text_label.text = shown
-	_fit_page(pages[0])
+	_fit_page(pages[0] + mark)
 	bar.visible = _subtitles_on()
 	_timer = get_tree().create_timer(float(line["seconds"]))
 	var t := _timer
@@ -430,7 +469,8 @@ func speaker_name(speaker: int, corporation_id: StringName = &"") -> String:
 		var registry: Node = get_tree().root.get_node_or_null(^"ContentRegistry") if is_inside_tree() else null
 		var corp := registry.get_content(corporation_id) as CorporationData if registry != null else null
 		if corp != null:
-			return corp.display_name.split(" ")[0].to_upper()
+			# H23 S15: the translated name (TextDb), its first word.
+			return TextDb.t(corp, "display_name").split(" ")[0].to_upper()
 	return SPEAKER_NAMES.get(speaker, "")
 
 
@@ -520,7 +560,21 @@ func speak(key: String, speaker: int = -1, corporation_id: StringName = &"", cla
 		for set in _sets:
 			if set.lines.has(l):
 				voice = set.speaker
-	say(voice, l.text, 0.0, corporation_id)
+	# H23 S15: the line in the player's language (TextDb key of its set), said as translated.
+	var text := voice_text(l)
+	say(voice, text, 0.0, corporation_id, true)
+	return text
+
+
+## Voice line `l` in the player's language (H23 S15): its set's TextDb key translated, else
+## its own text.
+func voice_text(l: VoiceLineData) -> String:
+	if l == null:
+		return ""
+	for set in _sets:
+		var i := set.lines.find(l)
+		if i >= 0:
+			return TextDb.voice(set, i)
 	return l.text
 
 
