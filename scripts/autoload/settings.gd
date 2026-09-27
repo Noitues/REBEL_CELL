@@ -9,6 +9,10 @@ signal changed
 signal hints_changed
 
 const PATH := "user://settings.json"
+## Where settings live this session: PATH, or under a GUT run a file of this process's own
+## (deleted on exit), so test runs never read or write the player's settings and parallel
+## runs never leak text scale or keybinds into each other (H24).
+var path: String = PATH
 const TEXT_SCALE_MIN := 0.8
 const TEXT_SCALE_MAX := 1.6
 enum WindowMode { WINDOWED, FULLSCREEN, BORDERLESS }
@@ -71,6 +75,9 @@ const UI_PAD_BINDS := {
 
 
 func _ready() -> void:
+	if is_test_run():
+		path = TEST_PATH_FORMAT % OS.get_process_id()
+		DirAccess.remove_absolute(path)
 	load_settings()
 	apply_keybinds()
 	apply_controller_bindings()
@@ -401,8 +408,25 @@ func from_dict(d: Dictionary) -> void:
 	assist_mode = bool(d.get("assist_mode", false))
 
 
+## Whether this process runs the GUT test suite.
+static func is_test_run() -> bool:
+	for a in OS.get_cmdline_args():
+		if a.ends_with("gut_cmdln.gd"):
+			return true
+	return false
+
+
+## A test run's own settings file (by process id).
+const TEST_PATH_FORMAT := "user://gut_settings_%d.json"
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and path != PATH:
+		DirAccess.remove_absolute(path)
+
+
 func save_settings() -> Error:
-	var file := FileAccess.open(PATH, FileAccess.WRITE)
+	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
 		return FileAccess.get_open_error()
 	file.store_string(JSON.stringify(to_dict(), "\t"))
@@ -411,9 +435,9 @@ func save_settings() -> Error:
 
 
 func load_settings() -> void:
-	if not FileAccess.file_exists(PATH):
+	if not FileAccess.file_exists(path):
 		return
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:
 		from_dict(parsed)
 

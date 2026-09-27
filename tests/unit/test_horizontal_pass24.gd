@@ -328,3 +328,9 @@ func test_the_hub_says_how_the_fight_is_won_and_the_tag_explains_the_dots() -> v
 	var tip := enemy._get_tooltip(enemy._center())
 	assert_string_contains(tip, "to 0 to win")
 	assert_string_contains(scene._chips_tooltip([{"text": "X"}]), "perfect aim")
+
+
+func test_a_test_run_never_touches_the_players_settings_file() -> void:
+	assert_true(Settings.is_test_run(), "this is a GUT run")
+	assert_ne(Settings.path, Settings.PATH, "settings live in this run's own file")
+	assert_string_contains(Settings.path, str(OS.get_process_id()))

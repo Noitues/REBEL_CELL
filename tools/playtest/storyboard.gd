@@ -20,6 +20,8 @@ const SETTLE_FRAMES := 12
 var out_dir: String = "user://storyboard"
 var _step: int = 0
 var _scale_before: float = 1.0
+## The storyboard's own settings file.
+const STORYBOARD_SETTINGS := "user://storyboard_settings.json"
 var _shots: PackedStringArray = []
 
 
@@ -44,6 +46,8 @@ func _ready() -> void:
 		ProjectSettings.set_setting("internationalization/pseudolocalization/override", true)
 		TranslationServer.pseudolocalization_enabled = true
 		TranslationServer.reload_pseudolocalization()
+	# Anything saved during the run goes to a file of its own, never the player's (H24).
+	Settings.path = STORYBOARD_SETTINGS
 	_scale_before = Settings.text_scale
 	if not is_equal_approx(scale, _scale_before):
 		Settings.text_scale = scale  # this run only: not saved
