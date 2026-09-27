@@ -40,15 +40,15 @@ const DEMOS := {
 	&"screen_flash": ["flash", "stage"], &"hit_freeze": ["freeze", "wheel"],
 	&"saved_stamp": ["fade_out", "number"], &"toast": ["fade_out", "sticker"],
 	&"jack_in": ["jack_in", "stage"], &"jack_out": ["jack_out", "stage"], &"jack_fade_reduced": ["fade_out", "panel"],
-	&"wheel_spin": ["spin", "wheel"], &"wheel_spin_blur": ["fade_out", "wheel"], &"wheel_nudge": ["shake", "wheel"],
-	&"precision_perfect": ["flash", "wheel"], &"precision_good_ring": ["pop", "wheel"],
-	&"precision_partial": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["blink", "wheel"],
-	&"card_hover": ["lift", "card"], &"card_play": ["pop", "card"], &"card_draw": ["slide_x", "card"], &"card_exhaust": ["fade_out", "card"],
-	&"send_it_press": ["pop", "send"], &"send_it_drips": ["drop", "send"], &"resolve_pass": ["blink", "wheel"], &"resolve_pulse": ["pop", "wheel"],
-	&"number_float": ["lift", "number"], &"number_crit": ["pop", "number"], &"hp_lag": ["fade_out", "wheel"],
-	&"intent_flip": ["tilt", "sticker"], &"rewind_scrub": ["shake", "wheel"],
-	&"pointer_flicker": ["pulse_pointer", "wheel"], &"orbit_trail": ["fade_out", "wheel"],
-	&"enemy_break": ["drop_away", "wheel"], &"hub_shatter": ["shake", "wheel"],
+	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
+	&"precision_perfect": ["flash", "wheel"], &"precision_good_ring": ["view", "good"],
+	&"precision_partial": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
+	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
+	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send"], &"resolve_pulse": ["view", "pulse"],
+	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
+	&"intent_flip": ["view", "tag"], &"rewind_scrub": ["scene", "rewind"],
+	&"pointer_flicker": ["pulse_pointer", "wheel"], &"orbit_trail": ["view", "orbit"],
+	&"enemy_break": ["scene", "break"], &"hub_shatter": ["scene", "shatter"],
 	&"heat_pulse": ["heat", "stage"], &"heat_letters_shake": ["shake", "number"], &"poster_stamp": ["pop", "panel"], &"net_creep": ["fade_out", "panel"],
 	&"hq_crt_hum": ["pulse", "panel"], &"radio_type": ["type", "panel"], &"jack_ring_breathe": ["pulse_scale", "sticker"], &"polaroid_tilt": ["tilt", "card"],
 	&"site_outline_draw": ["fade_in", "panel"], &"map_camera_ease": ["slide_x", "panel"], &"route_crawl": ["slide_x", "sticker"], &"asset_drop": ["drop", "card"],
@@ -64,17 +64,50 @@ const DEMOS := {
 	&"sticky_bump": ["pop", "sticker"], &"number_roll": ["roll", "number"],
 	&"ice_lock_ring": ["fade_in", "sticker"], &"decoy_fire": ["shake", "sticker"], &"raid_hit_effect": ["pop", "sticker"],
 	&"node_damage_number": ["lift", "number"], &"forecast_stamp_resolve": ["pop", "panel"],
-	&"card_pickup": ["pop", "card"], &"drag_ghost_follow": ["fade_to", "card"], &"drop_zone_pulse": ["pulse", "wheel"],
-	&"aim_line_draw": ["fade_in", "wheel"], &"target_snap": ["drop", "card"], &"drag_cancel_return": ["slide_x", "card"],
-	&"card_stamp": ["pop", "card"], &"effect_burst": ["fade_out", "wheel"], &"card_discard": ["drop_away", "card"],
-	&"resolve_beat": ["blink", "wheel"], &"block_number": ["lift", "number"], &"heal_number": ["lift", "number"],
-	&"hp_drain": ["roll", "number"], &"status_stamp": ["pop", "sticker"], &"last_turn_reveal": ["drop", "number"],
-	&"wheel_respin": ["spin", "wheel"], &"inner_ring_turn": ["spin", "wheel"], &"pointer_migrate": ["pulse_pointer", "wheel"],
-	&"pointer_orbit": ["spin", "wheel"], &"enemy_turn_spin": ["spin", "wheel"],
+	&"card_pickup": ["scene", "aim"], &"drag_ghost_follow": ["scene", "drag"], &"drop_zone_pulse": ["scene", "aim"],
+	&"aim_line_draw": ["scene", "aim"], &"target_snap": ["scene", "aim"], &"drag_cancel_return": ["scene", "cancel"],
+	&"card_stamp": ["scene", "play"], &"effect_burst": ["scene", "play"], &"card_discard": ["scene", "send"],
+	&"resolve_beat": ["scene", "send"], &"block_number": ["scene", "numbers"], &"heal_number": ["scene", "numbers"],
+	&"hp_drain": ["view", "hp"], &"status_stamp": ["scene", "send"], &"last_turn_reveal": ["scene", "send"],
+	&"wheel_respin": ["view", "respin"], &"inner_ring_turn": ["view", "nudge_inner"], &"pointer_migrate": ["view", "migrate"],
+	&"pointer_orbit": ["view", "orbit"], &"enemy_turn_spin": ["view", "respin"],
 	&"drag_pickup": ["pop", "sticker"], &"drag_follow": ["slide_x", "sticker"], &"drop_settle": ["drop", "sticker"],
 	&"drop_reject": ["shake", "sticker"], &"loadout_swap": ["fly", "card"], &"crew_assign": ["pop", "card"],
 	&"influence_crossfade": ["fade_in", "panel"], &"influence_spread": ["fade_in", "panel"],
+	# ANIM-2 / ANIM-3 (combat): "view" plays on the lab's wheel / card / SEND IT; "scene"
+	# plays in a live combat scene over the whole lab (1280x720).
+	&"resolve_sequence": ["scene", "send"], &"hit_line": ["scene", "send"], &"victory_stamp": ["scene", "victory"],
+	&"combat_end_hold": ["scene", "victory"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
+	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
+	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
 }
+
+## Scene demos: the fight they run, and what the wheel demos turn and shift.
+const SCENE_ENEMY := &"collections_agent"
+const SCENE_SEED := 5
+## Frames a fresh scene fight lays out before its motion starts.
+const SCENE_SETTLE := 3
+const DEMO_SPIN_TICKS := 9.0
+const DEMO_RESPIN_TICKS := 70.0
+const DEMO_POINTER_SHIFT := 5
+const DEMO_HP_LOSS := 12
+## Drag demo: the ghost's path (from, to) over DRAG_FRAMES frames, in 1280x720 space.
+const DRAG_FROM := Vector2(260, 620)
+const DRAG_TO := Vector2(820, 300)
+const DRAG_FRAMES := 18
+## Aim demo: frames between aim steps; the numbers demo's values [text, crit].
+const AIM_STEP_FRAMES := 8
+const DEMO_NUMBERS := [["-7", false], ["-14", true], ["+5 BLOCK", false]]
+## The cancel demo lets go here.
+const CANCEL_AT := Vector2(760, 330)
+## A number rises at most this share of its hub (as in the combat scene).
+const NUMBER_RISE_SHARE := 0.7
+
+var _scene: Control = null
+var _scene_host: Control = null
+var _drag_ghost: DragGhost = null
+var _drag_frame: int = -1
+var _aim_frame: int = -1
 
 var _cfg: UiMotionData
 var _id: StringName = &"card_hover"
@@ -123,12 +156,34 @@ func _ready() -> void:
 			_loop = false
 		elif arg.begins_with("--demo-speed="):
 			Motion.set_speed(float(arg.trim_prefix("--demo-speed=")))
+		elif arg.begins_with("--demo-set="):
+			_apply_sets(arg.trim_prefix("--demo-set="))
 	if not Motion.has(_id):
 		push_error("motion_lab: no motion id '%s'." % _id)
 		_id = &"card_hover"
 	_speed.value = Motion.speed
 	_loop_box.set_pressed_no_signal(_loop)
 	_select(_id)
+
+
+## Variant capture: `--demo-set=wheel_spin.duration=0.35,wheel_spin.amplitude=2` tunes the
+## lab's copy of the table (the file never changes).
+func _apply_sets(spec: String) -> void:
+	for part in spec.split(",", false):
+		var kv := part.split("=")
+		var path := kv[0].split(".")
+		if kv.size() != 2 or path.size() != 2 or _cfg.find(StringName(path[0])) == null:
+			push_error("motion_lab: bad --demo-set part '%s'." % part)
+			continue
+		var e := _cfg.find(StringName(path[0]))
+		var field := StringName(path[1])
+		if field in [&"ease", &"trans"]:
+			e.set(field, int(kv[1]))
+		elif field == &"enabled":
+			e.set(field, kv[1] == "true")
+		else:
+			e.set(field, float(kv[1]))
+		print("motion_lab: %s.%s = %s" % [path[0], path[1], kv[1]])
 
 
 func _exit_tree() -> void:
@@ -141,6 +196,18 @@ func _process(_delta: float) -> void:
 		print("motion_lab: %s starts on frame %d (speed %.2fx)" % [_id, _frames, Motion.speed])
 		_play()
 	_frames += 1
+	if _drag_frame >= 0 and is_instance_valid(_drag_ghost):
+		_drag_frame += 1
+		var t := clampf(float(_drag_frame) / DRAG_FRAMES, 0.0, 1.0)
+		_drag_ghost.position = DRAG_FROM.lerp(DRAG_TO, t * t * (3.0 - 2.0 * t))
+		if _drag_frame > DRAG_FRAMES * 2:
+			_drag_frame = -1
+	if _aim_frame >= 0 and _scene != null:
+		_aim_frame += 1
+		if _aim_frame % AIM_STEP_FRAMES == 0 and _aim_frame <= AIM_STEP_FRAMES * 3:
+			_scene.step_selection(1)
+		if _aim_frame > AIM_STEP_FRAMES * 3:
+			_aim_frame = -1
 
 
 # --- Stage ------------------------------------------------------------------------------
@@ -212,8 +279,14 @@ func _reset_stage() -> void:
 			c.rotation = r["rotation"]
 			c.modulate = r["modulate"]
 		c.pivot_offset = c.size * 0.5
+	_wheel.stop_motion()
 	_wheel.shake = Vector2.ZERO
 	_wheel.pointer_alpha = 1.0
+	_drag_frame = -1
+	_aim_frame = -1
+	if is_instance_valid(_drag_ghost):
+		_drag_ghost.queue_free()
+	_drag_ghost = null
 	_wheel.queue_redraw()
 	_number.text = "HEAT 42"
 	_typed.visible_ratio = 1.0
@@ -229,7 +302,8 @@ func _play() -> void:
 	if e == null:
 		return
 	var demo: Array = DEMOS.get(_id, ["pop", "sticker"])
-	var target: Control = _pieces[demo[1]]
+	# "view" and "scene" demos name an action, not a piece.
+	var target: Control = _pieces.get(demo[1], _wheel)
 	var amp := e.amplitude
 	var length := Motion.delay_of(_id) + Motion.seconds(_id)
 	match String(demo[0]):
@@ -289,6 +363,11 @@ func _play() -> void:
 			Fx.jack_in(func() -> void: pass)
 		"jack_out":
 			Fx.jack_out(func() -> void: pass)
+		"view":
+			length = _play_view(String(demo[1]))
+		"scene":
+			_play_scene(String(demo[1]))
+			length = maxf(LOOP_HOLD, Motion.seconds(&"resolve_sequence"))
 	_show_values()
 	if _loop:
 		_replay_later(maxf(length, 0.0) + LOOP_GAP)
@@ -299,6 +378,143 @@ func _replay_later(seconds: float) -> void:
 	get_tree().create_timer(seconds).timeout.connect(func() -> void:
 		if is_inside_tree() and gen == _generation and _loop:
 			_play())
+
+
+# --- Combat demos (ANIM-2 / ANIM-3) --------------------------------------------------------
+
+## A motion on the lab's own wheel, card or SEND IT. Returns its length (s).
+func _play_view(what: String) -> float:
+	_show_scene(false)
+	var c := _wheel.combatant
+	var rot := float(c.wheel.rotation)
+	match what:
+		"turn":
+			_wheel.play_turn(_id if _id != &"wheel_spin_blur" else &"wheel_spin", rot - DEMO_SPIN_TICKS, float(c.wheel.inner_rotation) - DEMO_SPIN_TICKS)
+		"respin":
+			_wheel.play_turn(_id, rot - DEMO_RESPIN_TICKS, float(c.wheel.inner_rotation) - DEMO_RESPIN_TICKS)
+		"nudge":
+			for k in 3:
+				_wheel.play_nudge(RC.RingScope.OUTER, 1)
+		"nudge_inner":
+			_wheel.play_nudge(RC.RingScope.INNER, 1)
+		"good":
+			_wheel.play_good_ring()
+		"miss":
+			_wheel.play_miss_static(0)
+		"pulse":
+			_wheel.play_pulse(0)
+		"hp":
+			_wheel.anim_hp = float(c.hp)
+			_wheel.play_hp(float(c.hp - DEMO_HP_LOSS))
+		"migrate", "orbit":
+			var from: Array = []
+			for p in c.wheel.pointer_ticks:
+				from.append(posmod(p - DEMO_POINTER_SHIFT, RC.TICKS))
+			_wheel.play_pointers(from, _id if _id != &"orbit_trail" else &"pointer_orbit", what == "orbit")
+		"flip":
+			_wheel.play_flip()
+		"tag":
+			_wheel.intent = {"type": RC.SliceType.ATTACK, "text": "ATTACK · GOOD %d" % _generation, "chips": [{"text": "HITS 8", "color": Palette.CELL_PINK, "ink": Palette.INK}]}
+			_wheel.queue_redraw()
+		"hover":
+			var card: ZineCard = _pieces["card"]
+			card.grab_focus()
+			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
+		"press":
+			(_pieces["send"] as DripButton).press_motion()
+	return LOOP_HOLD
+
+
+func _show_scene(on: bool) -> void:
+	if on and _scene == null:
+		_scene_host = Control.new()
+		_scene_host.size = Vector2(1280, 720)
+		add_child(_scene_host)
+		_scene = load("res://scenes/combat/combat_scene.tscn").instantiate()
+		_scene.auto_start = false
+		_scene_host.add_child(_scene)
+		_scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if _scene_host != null:
+		_scene_host.visible = on
+
+
+## A motion in a live combat scene (a fresh fight each time, laid out for SCENE_SETTLE
+## frames before the motion starts).
+func _play_scene(what: String) -> void:
+	_show_scene(true)
+	_scene.skip_motion()
+	_scene.cancel_selection()
+	_scene.start_fight(SCENE_ENEMY, SCENE_SEED)
+	_scene.skip_motion()
+	for k in SCENE_SETTLE:
+		await get_tree().process_frame
+	print("motion_lab: scene %s, player view %s" % [_scene.size, _scene._player_view.size])
+	var enemy: StringName = _scene.engine.state().enemies[0].id
+	var ev: WheelView = _scene._view_of(enemy)
+	match what:
+		"send":
+			_scene.end_turn()
+		"play":
+			_scene.select_card(0)
+			if _scene.selecting >= 0:
+				_scene.confirm_selection()
+		"exhaust":
+			var cap: Dictionary = _scene._card_copy(0)
+			_scene.fx_layer.play_card(cap["copy"], cap["rect"], float(cap["rot"]), ev.global_center(), true)
+		"deal":
+			_scene._deal_hand(0)
+		"aim", "drag", "cancel":
+			var i := _multi_target_card()
+			if what == "drag":
+				_scene._dragging = true
+			_scene._begin_targeting(i, CardTargeting.options(_scene.engine.resolver, _scene.engine.state(), i))
+			if what == "aim":
+				_aim_frame = 0
+				var picked: ZineCard = _scene._card_node(i)
+				if picked != null:
+					Motion.pop(picked, &"card_pickup")
+			elif what == "drag":
+				var cap: Dictionary = _scene._card_copy(i)
+				if is_instance_valid(_drag_ghost):
+					_drag_ghost.queue_free()
+				_drag_ghost = DragGhost.new(cap["copy"])
+				_drag_ghost.position = DRAG_FROM
+				_scene.add_child(_drag_ghost)
+				_drag_frame = 0
+			else:
+				_scene._cancel_drag(i, CANCEL_AT)
+		"numbers":
+			var k := 0
+			for n in DEMO_NUMBERS:
+				var block := String(n[0]).contains("BLOCK")
+				_scene.fx_layer.number(ev.number_anchor(k), String(n[0]), Palette.NET_CYAN if block else WheelView.LOSS_COLOR,
+					&"block_number" if block else &"number_float", Vector2.UP, bool(n[1]), minf(Motion.amplitude(&"number_float"), ev.number_room() * NUMBER_RISE_SHARE))
+				k += 1
+		"break":
+			_scene.demo_break(enemy)
+		"shatter":
+			_scene.fx_layer.glass(ev.global_center(), ev.hub_radius(), ev.wheel_color)
+		"victory":
+			_scene._end_beat(CombatState.Outcome.VICTORY)
+		"rewind":
+			_scene.nudge_wheel(&"player", 1)
+			_scene.nudge_wheel(&"player", 1)
+			_scene.skip_motion()
+			_scene._player_view.stop_motion()
+			_scene.rewind()
+		"ram":
+			_scene.ram_note.hold(0)
+			_scene.ram_note.play_refill()
+
+
+
+## The first hand card with several legal targets (else card 0).
+func _multi_target_card() -> int:
+	var s: CombatState = _scene.engine.state()
+	for i in s.hand.size():
+		if CardTargeting.options(_scene.engine.resolver, s, i).size() > 1:
+			return i
+	return 0
 
 
 # --- Controls ---------------------------------------------------------------------------

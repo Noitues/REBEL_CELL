@@ -843,9 +843,18 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 	if state.is_over():
 		RunManager.after_step()
 		_report(RunManager.netrun.last_events)
-		# Leave the final combat state visible for a moment, then move on.
-		var timer := get_tree().create_timer(0.8)
-		timer.timeout.connect(_show_current)
+		# Leave the final combat state visible for a moment, then move on: once the combat
+		# replay (the last hits, the break, VICTORY) has played out or been skipped.
+		if combat_scene != null and combat_scene.has_method("motion_seconds_left") and float(combat_scene.call("motion_seconds_left")) > 0.0:
+			combat_scene.connect("motion_settled", _hold_then_show, CONNECT_ONE_SHOT)
+		else:
+			_hold_then_show()
+
+
+## The pause on the final combat state (`combat_end_hold`) before the netrun moves on.
+func _hold_then_show() -> void:
+	var timer := get_tree().create_timer(Motion.seconds(&"combat_end_hold"))
+	timer.timeout.connect(_show_current)
 
 
 func _show_reward() -> void:

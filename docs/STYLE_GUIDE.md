@@ -149,8 +149,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 
 ## 5. Motion & Feedback
 - Jack in: camera pushes into the deck CRT and dissolves to wireframe; jack out reverses.
-- Precision: Perfect = latch + wheel-local inversion + 2-frame freeze; Good = clean click;
-  Partial = stutter; Miss slice = static burst.
+- Precision: Perfect = latch + wheel-local inversion + 2-frame freeze; Good = clean click
+  and a ring off the rim; Partial = stutter; Miss slice = static burst over that slice only
+  (built in ANIM-2, 5.2).
 - Heat: effects pulse on threshold events; they do not stay on. Physical world adds wanted
   posters and searchlights; the net shows corporate wireframe creeping over zine elements.
 - REBEL_CELL campaign: the net itself renders in zine style.
@@ -176,6 +177,25 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Amplitude units** depend on the helper: px (slide, lift, shake), a scale (pop, bump),
   an alpha (fade, blink, pulse), degrees (tilt, flip) or frames (hit freeze). Each
   entry's comment in the .tres says which.
+
+### 5.2 Combat motion (the Animation pass, ANIM-2 / ANIM-3)
+- **Replay, never re-run.** The state is final at once; motion replays the engine's own
+  events on top (`ResolveBeats`, `CombatFxLayer`, `WheelView` overrides). Skips and
+  reduce effects show the end state.
+- **SEND IT** reads as a sequence under 1.5 s: needles latch, each hit pulses its needle,
+  draws a line to its victim and pops a number in the victim's hub (red loss, cyan guard,
+  green heal, crits 1.5x with a burst), HP arcs drain with a white lag bar, statuses stamp
+  on their slice, dead wheels fall apart, then both wheels spin to the next landing and
+  LAST TURN slides up. Any press skips.
+- **Spins** run the exact ticks with ease-out, a 0.2-tick overshoot and settle; slices blur
+  when fast. **Nudges** are 0.08 s steps with a 2 px recoil, queued and never out of step.
+- **Landings** differ in shape, not only colour: inversion (Perfect), ring (Good), stutter
+  (Partial), static in the slice (Miss).
+- **Cards** lift 12 px and straighten on hover; drag ghosts trail and tilt; zones pulse and
+  a reticle glides to the aim; a play flies, stamps and dissolves (burns when exhausted);
+  a cancel glides home; the hand never moves under the cursor.
+- **Readability**: numbers stay inside the hub, clear of every needle; tags hide while a
+  SEND IT replays and flip back in; nothing waits on motion when the player decides.
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

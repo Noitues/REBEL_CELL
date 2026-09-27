@@ -29,6 +29,44 @@ var font_size: int = 44
 ## the letter's width].
 var drips: Array = []
 var _hot: bool = false
+## Press motion (Animation pass ANIM-2): the lettering squashes (vertical scale; the width
+## grows to keep the paint's volume) and the drips run `drip_run` px further.
+var squash: float = 1.0
+var drip_run: float = 0.0
+var _press_tween: Tween = null
+
+
+## The press: the lettering squashes to `send_it_press`'s amplitude and springs back,
+## the drips run `send_it_drips` px and draw back. Nothing under reduce effects.
+func press_motion() -> void:
+	if _press_tween != null and _press_tween.is_valid():
+		_press_tween.kill()
+	squash = 1.0
+	drip_run = 0.0
+	if not Motion.live(&"send_it_press") or not is_inside_tree():
+		queue_redraw()
+		return
+	var pe := Motion.entry(&"send_it_press")
+	var de := Motion.entry(&"send_it_drips")
+	var d := Motion.seconds(&"send_it_press")
+	var tw := create_tween()
+	tw.tween_method(_set_squash, 1.0, Motion.amplitude(&"send_it_press"), d * Motion.POP_GROW_SHARE).set_ease(Tween.EASE_OUT)
+	tw.tween_method(_set_squash, Motion.amplitude(&"send_it_press"), 1.0, d * (1.0 - Motion.POP_GROW_SHARE)).set_ease(pe.ease).set_trans(pe.trans)
+	if Motion.live(&"send_it_drips"):
+		var dd := Motion.seconds(&"send_it_drips")
+		tw.parallel().tween_method(_set_run, 0.0, Motion.amplitude(&"send_it_drips"), dd * 0.5).set_ease(de.ease).set_trans(de.trans)
+		tw.tween_method(_set_run, Motion.amplitude(&"send_it_drips"), 0.0, dd * 0.5).set_ease(Tween.EASE_IN_OUT)
+	_press_tween = tw
+
+
+func _set_squash(v: float) -> void:
+	squash = v
+	queue_redraw()
+
+
+func _set_run(v: float) -> void:
+	drip_run = v
+	queue_redraw()
 
 
 func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRIP_PINK, p_size: int = 44, p_drips: Array = []) -> void:
@@ -175,7 +213,17 @@ func _draw() -> void:
 		for k in HALO_COPIES:
 			var o := Vector2(k - HALO_COPIES * 0.5, (k * 7) % 5 - 2) * j
 			draw_string(Palette.marker(), base + o, tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, HALO_ALPHA))
-	DripButton.draw_drip_text(self, base, tag_text, font_size, col, drips)
+	if squash != 1.0:
+		# Squash about the baseline: shorter and a little wider.
+		var sx := 1.0 / maxf(0.01, squash)
+		draw_set_transform(Vector2(base.x * (1.0 - sx), base.y * (1.0 - squash)), 0.0, Vector2(sx, squash))
+	var run := drips
+	if drip_run != 0.0:
+		run = []
+		for dr in drips:
+			run.append([dr[0], float(dr[1]) + drip_run * 44.0 / font_size, dr[2]])
+	DripButton.draw_drip_text(self, base, tag_text, font_size, col, run)
+	draw_set_transform(Vector2.ZERO)
 	if key_hint != "":
 		# The key sits centred under the lettering, big enough to find (H22: "[X]" at 13 px in
 		# the corner was barely visible on the most important button).

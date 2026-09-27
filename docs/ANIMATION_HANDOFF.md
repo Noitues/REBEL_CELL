@@ -48,7 +48,9 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `RaidPlayoutPanel` + `hq_scene` | Step-by-step raid playout with 1x/2x/4x/Skip | Stepping only; no tweened motion along paths yet. |
 | `DripButton` | Hover halo (static jitter copies) | No motion yet. |
 | `content/config/ui_motion.tres` + `Motion` | Every timing above now reads its entry (Animation pass, ANIM-1) | `jack_in`, `jack_out`, `screen_flash`, `hit_freeze`, `saved_stamp`, `heat_pulse`, `toast`, `resolve_pass`, `precision_perfect`, `precision_partial`, `precision_blink`, `pointer_flicker`, `beacon_blink`, `drip_halo`. |
-| `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. |
+| `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. `--demo-set=<id>.<field>=<v>,...` tunes the lab's copy for variant strips; combat ids play on the lab wheel ("view") or in a live combat scene ("scene", starts 3 frames later: frame 9). |
+| Combat (ANIM-2) | `ResolveBeats`, `CombatFxLayer`, `WheelView` motion overrides, `combat_scene` replays | SEND IT sequence, spins, nudge queue, landings, pointers, tags, rewind, death / breach / VICTORY: 4.2-4.4, 4.6-4.11 done. Strips: `docs/timeline/motion/`. |
+| Cards (ANIM-3) | `ZineCard` lift / deal offsets, `DragGhost`, `RamBar` ticks, combat_scene flights | Hover, pick-up, drag ghost, zone pulse, aim draw-in, reticle, play fly/stamp/dissolve/burn, cancel return, draw / discard piles, RAM ticks: 4.5 done. |
 
 ## 3. First task: the motion config and a motion lab
 
@@ -81,6 +83,11 @@ Each item: trigger → what moves → feel → acceptance. Durations are startin
 config, to be tuned with the owner.
 
 ### P1 — Combat (the core loop; do first)
+
+**Status (2026-09-27):** 4.2-4.11 are built (Animation pass ANIM-2 = 4.2-4.4, 4.6-4.11;
+ANIM-3 = 4.5 plus card targeting). Choices and values: DECISIONS "Animation pass —
+ANIM-2" / "— ANIM-3"; STYLE_GUIDE 5.2; strips in `docs/timeline/motion/`. 4.1 belongs to
+the jack-in / map slice.
 
 4.1 **Jack in / jack out.** Trigger: leaving HQ for a netrun and back. The camera pushes
 into the deck CRT, the screen dissolves to the wireframe city, scanlines roll. Feel:

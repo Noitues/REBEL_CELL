@@ -161,10 +161,15 @@ func start_fight(enemy_id: StringName, combat_seed: int) -> void:
 
 func end_turn() -> void:
 	cancel_selection()
+	skip_motion()
 	AudioDirector.play_sfx("stamp")
+	(_end_turn_button as DripButton).press_motion()
 	var before := engine.state().duplicate_state() if engine.has_fight() else null
 	_pending_last_turn = before
-	engine.submit(CombatAction.end_turn())
+	_hold_slot = -1
+	_pending_discard = _capture_hand() if Motion.animating() and engine.has_fight() else []
+	if not engine.submit(CombatAction.end_turn()):
+		_pending_discard = []
 
 
 ## State before the SEND IT being resolved (for the last-turn lines).
@@ -276,7 +281,11 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 
 func rewind() -> void:
 	cancel_selection()
-	if engine.rewind() and tutorial != null and is_instance_valid(tutorial):
+	skip_motion()
+	_rewind_from = engine.state().duplicate_state() if Motion.animating() and engine.has_fight() else null
+	var ok := engine.rewind()
+	_rewind_from = null
+	if ok and tutorial != null and is_instance_valid(tutorial):
 		var ev: Array[Dictionary] = [{"type": "rewind"}]
 		tutorial.on_events(ev)
 
@@ -289,7 +298,7 @@ func nudge(direction: int) -> void:
 
 ## A nudge arrow: `direction` +1 turns the wheel clockwise, -1 anticlockwise.
 func nudge_wheel(wheel_id: StringName, direction: int, ring: int = RC.RingScope.OUTER) -> void:
-	engine.submit(CombatAction.nudge(wheel_id, direction, ring))
+	_submit(CombatAction.nudge(wheel_id, direction, ring))
 
 
 ## The RAM respin of your own wheel (GDD 2.5, 11.3).
@@ -299,7 +308,7 @@ func respin() -> void:
 		return
 	var before: String = _landing_title(engine.state(), engine.state().player)["text"]
 	var ram_before := engine.state().ram
-	engine.submit(CombatAction.respin())
+	_submit(CombatAction.respin())
 	var spent := ram_before - engine.state().ram
 	if spent > 0:
 		# Where it landed, even when it's the same slice (H23: 8 RAM seemed to buy nothing).
@@ -331,7 +340,7 @@ func play_card(hand_index: int) -> void:
 	if not engine.has_fight() or hand_index < 0 or hand_index >= engine.state().hand.size():
 		return
 	cancel_selection()
-	engine.submit(_card_action(hand_index))
+	_submit(_card_action(hand_index))
 
 
 ## A card picked by click, key 1-9 or pad A: a card with one legal play plays now; one
@@ -349,7 +358,7 @@ func select_card(hand_index: int) -> void:
 		return
 	if options.size() == 1 and not _dragging:
 		cancel_selection()
-		engine.submit(options[0])
+		_submit(options[0])
 		return
 	_begin_targeting(hand_index, options)
 
@@ -376,8 +385,10 @@ func confirm_selection() -> void:
 	if selecting < 0 or _option_index < 0 or _option_index >= _options.size():
 		return
 	var action := _options[_option_index]
+	var at := _drop_at
+	_drop_at = Vector2.INF
 	cancel_selection()
-	engine.submit(action)
+	_submit(action, at)
 
 
 func cancel_selection() -> void:
@@ -389,7 +400,9 @@ func cancel_selection() -> void:
 	for v in _views():
 		v.valid_zones.clear()
 		v.hover_zone = {}
+		v.stop_zone_pulse()
 		v.queue_redraw()
+	_stop_aim_motion()
 	_dim_hand()
 	_clear_ghost()
 	_show_end_turn_preview()
@@ -400,7 +413,7 @@ func cycle_target() -> void:
 		return
 	var next := (_target_option.selected + 1) % _target_option.item_count
 	_target_option.select(next)
-	engine.submit(CombatAction.target(_target_option.get_item_metadata(next)))
+	_submit(CombatAction.target(_target_option.get_item_metadata(next)))
 
 
 func toggle_card_target() -> void:
@@ -608,6 +621,12 @@ var _nav_focus: bool = false
 
 
 func _input(event: InputEvent) -> void:
+	# ANIM-2: any press during the SEND IT sequence (or a rewind or a death) skips it to
+	# the end state; the press does nothing else.
+	if _skippable() and _is_press(event):
+		skip_motion()
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		_nav_focus = false
 	elif event.is_pressed() and not event.is_echo():
@@ -643,7 +662,7 @@ func focus_hand() -> void:
 func _link_hand_focus() -> void:
 	var cards: Array[Control] = []
 	for c in _hand_box.get_children():
-		if c is Control and not c.is_queued_for_deletion():
+		if c is ZineCard and not c.is_queued_for_deletion():
 			cards.append(c)
 	for i in cards.size():
 		var c := cards[i]
@@ -731,6 +750,10 @@ func _notification(what: int) -> void:
 		if data is Dictionary and (data as Dictionary).has("hand_index") and engine != null and engine.has_fight():
 			_dragging = true
 			var i := int(data["hand_index"])
+			# ANIM-3 pick-up: the card pops as it leaves the hand.
+			var picked := _card_node(i)
+			if picked != null:
+				Motion.pop(picked, &"card_pickup")
 			var options := CardTargeting.options(engine.resolver, engine.state(), i)
 			if options.is_empty():
 				_dragging = false
@@ -741,7 +764,7 @@ func _notification(what: int) -> void:
 		if _dragging:
 			_dragging = false
 			if not get_viewport().gui_is_drag_successful():
-				cancel_selection()
+				_cancel_drag(selecting, get_global_mouse_position())
 
 
 # --- Aiming cards ------------------------------------------------------------------
@@ -781,10 +804,12 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 		var v := _view_of(z[0])
 		if v != null and not WheelView._zone_is(v.valid_zones, z[1]):
 			v.valid_zones.append(z[1])
+	_start_aim_motion()
 	_show_aim_hint()
 	# The card being aimed stays lifted (it holds focus while the aim moves).
-	if hand_index < _hand_box.get_child_count() and not _dragging:
-		(_hand_box.get_child(hand_index) as Control).grab_focus()
+	var aimed_card := _card_node(hand_index)
+	if aimed_card != null and not _dragging:
+		aimed_card.grab_focus()
 	if _dragging:
 		_option_index = -1  # nothing aimed until the card is over a zone
 		_show_end_turn_preview()
@@ -846,7 +871,7 @@ func _on_view_zone(view_id: StringName, zone: Dictionary) -> void:
 		return
 	var want: StringName = StringName(zone["id"]) if String(zone.get("kind", "")) == "satellite" else view_id
 	if engine.state().target_id != want:
-		engine.submit(CombatAction.target(want))
+		_submit(CombatAction.target(want))
 
 
 func _on_view_arrow(view_id: StringName, ring: int, direction: int) -> void:
@@ -878,25 +903,29 @@ func _on_view_drop(view_id: StringName, zone: Dictionary) -> void:
 	var i := _option_for(view_id, zone)
 	if selecting < 0 or i < 0:
 		_dragging = false
-		cancel_selection()
+		_cancel_drag(selecting, get_global_mouse_position())
 		return
 	_option_index = i
 	_dragging = false
+	# The card flies from where it was let go and snaps onto the zone (ANIM-3).
+	_drop_at = get_global_mouse_position()
 	confirm_selection()
 
 
 ## A dashed acid line from the aimed card to the zone it plays on, with a ring there.
 func _draw_aim_line() -> void:
-	if selecting < 0 or _option_index < 0 or selecting >= _hand_box.get_child_count():
+	var card_node := _card_node(selecting)
+	if selecting < 0 or _option_index < 0 or card_node == null:
 		return
 	var z := _zone_of(_options[_option_index])
 	var v := _view_of(z[0])
 	if v == null:
 		return
 	var origin := _aim_line.get_global_rect().position
-	var card := (_hand_box.get_child(selecting) as Control).get_global_rect()
+	var card := card_node.get_global_rect()
 	var from := Vector2(card.get_center().x, card.position.y) - origin
-	var to := v.zone_center(z[1]) - origin
+	# ANIM-3: the line draws in from the card each time the aim moves.
+	var to := from.lerp(v.zone_center(z[1]) - origin, _aim_draw)
 	var n := maxi(2, int(from.distance_to(to) / 14.0))
 	for k in n:
 		if k % 2 == 0:
@@ -907,7 +936,8 @@ func _draw_aim_line() -> void:
 ## Fades the cards not being aimed (and restores them).
 func _dim_hand() -> void:
 	for c in _hand_box.get_children():
-		(c as Control).modulate.a = AIM_DIM if selecting >= 0 and c.get_index() != selecting else 1.0
+		if c is ZineCard and not _returning.has((c as ZineCard).drag_index):
+			(c as Control).modulate.a = AIM_DIM if selecting >= 0 and (c as ZineCard).drag_index != selecting else 1.0
 	_aim_line.queue_redraw()
 	if selecting < 0 and _aim_hint != null:
 		_aim_hint.visible = false
@@ -958,6 +988,8 @@ func _show_selection() -> void:
 	for v in _views():
 		v.hover_zone = z[1] if v == aimed_view else {}
 		v.queue_redraw()
+	if aimed_view != null:
+		_aim_at(aimed_view.zone_center(z[1]))
 	_preview_action(_options[_option_index])
 
 
@@ -965,6 +997,15 @@ func _show_selection() -> void:
 
 func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_last_events = events
+	var before_turn := _pending_last_turn
+	var before_action := _before_action
+	var rewind_from := _rewind_from
+	var play := _pending_play
+	var discard := _pending_discard
+	_before_action = null
+	_rewind_from = null
+	_pending_play = {}
+	_pending_discard = []
 	if _pending_last_turn != null:
 		_last_turn = last_turn_lines(_pending_last_turn, state, events)
 		_pending_last_turn = null
@@ -973,8 +1014,22 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	for e in state.enemies:
 		RunManager.record_seen(e.source_id)
 	_play_log(events)
+	# ANIM-2 / ANIM-3: the state is final now; motion replays it on top. A replay still
+	# running ends first, except queued nudge steps, which a new nudge joins.
+	var live := Motion.animating() and not events.is_empty()
+	var sequence := live and before_turn != null and _has_event(events, "resolve_start")
+	if not (live and _only_nudges(events)):
+		skip_motion()
 	_refresh(state)
-	_feedback(state, events)
+	_feedback(state, events, sequence)
+	if sequence:
+		_play_resolve_sequence(before_turn, state, events, discard)
+	elif live and rewind_from != null:
+		_play_rewind(rewind_from)
+	elif live and before_action != null:
+		_play_action(before_action, state, events, play)
+	else:
+		_free_captures(play, discard)
 	if tutorial != null and is_instance_valid(tutorial):
 		tutorial.on_events(events)
 	if engine.can_rewind() == false and _rewound:
@@ -1001,7 +1056,8 @@ func _on_action_refused(reason: String) -> void:
 
 func _on_fight_ended(outcome: int) -> void:
 	log_note.append("[b]%s[/b]" % ("VICTORY" if outcome == CombatState.Outcome.VICTORY else "DEFEAT"))
-	if outcome == CombatState.Outcome.VICTORY:
+	# With motion, the VICTORY beat of the replay flashes (after the last hit lands).
+	if outcome == CombatState.Outcome.VICTORY and not motion_busy():
 		Fx.flash(Palette.CELL_ACID, 0.3)
 
 
@@ -1038,8 +1094,10 @@ func _instant_playback() -> bool:
 ## inversion + 2-frame freeze (+ a limited flash); Good = click; Partial = stutter shake;
 ## Miss slice = static burst. Nudges tick, spins run down, flips clack. Telegraphed
 ## migrations flicker the boss pointers until they move.
-func _feedback(state: CombatState, events: Array[Dictionary]) -> void:
+func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = false) -> void:
 	for e in events:
+		if replayed and String(e.get("type", "")) == "pointer":
+			continue  # the SEND IT replay lands each needle on its beat
 		match String(e.get("type", "")):
 			"nudge":
 				AudioDirector.play_sfx("tick")
@@ -1269,7 +1327,7 @@ func _build_ui() -> void:
 	controls.visible = false
 	root.add_child(controls)
 	_target_option = OptionButton.new()
-	_target_option.item_selected.connect(func(i: int) -> void: engine.submit(CombatAction.target(_target_option.get_item_metadata(i))))
+	_target_option.item_selected.connect(func(i: int) -> void: _submit(CombatAction.target(_target_option.get_item_metadata(i))))
 	controls.add_child(_target_option)
 	_nudge_wheel_option = OptionButton.new()
 	_nudge_wheel_option.add_item("Nudge own")
@@ -1317,6 +1375,10 @@ func _build_ui() -> void:
 	bottom.add_child(_end_turn_button)
 	_zine_elements.append(_end_turn_button)
 
+	# The motion overlay: over the arena and the hand, under the toast and popups.
+	fx_layer = CombatFxLayer.new()
+	fx_layer.name = "MotionLayer"
+	add_child(fx_layer)
 	toast = Toast.new()
 	toast.name = "Toast"
 	add_child(toast)
@@ -1612,15 +1674,17 @@ func _build_hand(state: CombatState) -> void:
 	for child in _hand_box.get_children():
 		_hand_box.remove_child(child)
 		child.queue_free()
-	var s := _card_scale_for(state.hand.size())
+	_gap = null
+	# ANIM-3: a played card leaves a gap in its slot while it flies, so no card moves under
+	# the cursor; the hand keeps the scale it had with that card in it.
+	var hold := _hold_slot if Motion.animating() and _hold_slot >= 0 and _hold_slot <= state.hand.size() else -1
+	var s := _card_scale_for(state.hand.size() + (1 if hold >= 0 else 0))
 	_hand_scale = s
 	for i in state.hand.size():
+		if i == hold:
+			_add_gap(s)
 		var card := lookup.get_content(state.hand[i]) as CardData
-		var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
-		if Settings.pad_active:
-			c.hotkey = ""
-			c.pad_hint = Settings.key_text(&"ui_accept")
-		c.drag_index = i
+		var c := _make_card(card, i, s)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
 		c.tooltip_text = "%s\n%s" % [Codex.describe(card), "Drag it onto a glowing target, or click it and then the target." if several else "Click to play."]
@@ -1637,6 +1701,19 @@ func _build_hand(state: CombatState) -> void:
 				_clear_ghost()
 				_show_end_turn_preview())
 		_hand_box.add_child(c)
+	if hold == state.hand.size():
+		_add_gap(s)
+
+
+## A hand card sticker for `card` at hand index `i` and scale `s` (no signals: the hand
+## connects its own; flights use the bare copy).
+func _make_card(card: CardData, i: int, s: float) -> ZineCard:
+	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
+	if Settings.pad_active:
+		c.hotkey = ""
+		c.pad_hint = Settings.key_text(&"ui_accept")
+	c.drag_index = i
+	return c
 
 
 ## Card scale: the text scale, shrunk when the hand would not fit beside SEND IT.
@@ -2097,3 +2174,716 @@ func _sync_arrow_hints() -> void:
 		v.arrow_hints = {-1: Settings.hint(&"nudge_left"), 1: Settings.hint(&"nudge_right")} if mine else {}
 		v.key_ring = ring
 		v.queue_redraw()
+
+
+# --- Motion (Animation pass ANIM-2 / ANIM-3) -----------------------------------------------
+# The engine's state is final the moment an action returns; motion replays its events on
+# top of it (the same `events` the engine returned: the replay never runs a rule, GDD
+# 2.10). Headless, under reduce effects or for a disabled entry nothing is captured or
+# played and the screen shows the end state at once. Any press during the SEND IT
+# sequence skips to that end state.
+
+## Emitted when the SEND IT sequence (or a skip) has brought the screen to the end state.
+signal motion_settled
+
+## The overlay the replay draws on (numbers, hit lines, stamps, flights, piles).
+var fx_layer: CombatFxLayer
+## Captured before an action goes to the engine (only while motion plays).
+var _before_action: CombatState = null
+var _pending_play: Dictionary = {}
+var _pending_discard: Array = []
+var _rewind_from: CombatState = null
+## Where a dragged card was let go (INF = not dragged).
+var _drop_at: Vector2 = Vector2.INF
+## The SEND IT sequence: its tween, when it started and how long it runs.
+var _seq: Tween = null
+var _seq_started: float = 0.0
+var _seq_total: float = 0.0
+## Other replay steps waiting to play (card effects after a flight), killed by a skip.
+var _motion_tweens: Array[Tween] = []
+## Floating numbers stacked on each view during a replay (view -> count).
+var _numbers_on: Dictionary = {}
+## The aim line's draw-in (0..1) and its tween.
+var _aim_draw: float = 1.0
+var _aim_tween: Tween = null
+var _aim_target: Vector2 = Vector2.INF
+## Hand slot kept open for a card in flight (-1 = none), its gap node, and hand indices of
+## cards gliding back from a cancelled drag.
+var _hold_slot: int = -1
+var _gap: Control = null
+var _gap_waiting: bool = false
+var _returning: Dictionary = {}
+## The deal-in of the new hand waits for the draw beat.
+var _deal_waiting: bool = false
+## A floating number rises at most this share of the hub room (it stays in the hub).
+const NUMBER_RISE_SHARE := 0.7
+
+
+func _process(_delta: float) -> void:
+	# A gap closes once the cursor is off the hand (the hand never moves under it).
+	if _gap_waiting and is_instance_valid(_gap):
+		if not _hand_box.get_global_rect().has_point(get_global_mouse_position()):
+			_close_gap()
+	elif not _gap_waiting:
+		set_process(false)
+
+
+## True while any combat motion still plays (the SEND IT sequence, flights, wheels).
+func motion_busy() -> bool:
+	if _seq != null or (fx_layer != null and fx_layer.busy()):
+		return true
+	for v in _views():
+		if v.motion_busy():
+			return true
+	return false
+
+
+## Seconds the SEND IT sequence still needs (0 when none plays).
+func motion_seconds_left() -> float:
+	if _seq == null:
+		return 0.0
+	return maxf(0.0, _seq_total - (Time.get_ticks_msec() / 1000.0 - _seq_started))
+
+
+## Brings every motion to its end state at once (a skip): the sequence, flights, wheels,
+## the hand's deal and the RAM chips. The state was final all along.
+func skip_motion() -> void:
+	var had := _seq != null
+	if _seq != null and _seq.is_valid():
+		_seq.kill()
+	_seq = null
+	for tw in _motion_tweens:
+		if tw != null and tw.is_valid():
+			tw.kill()
+	_motion_tweens.clear()
+	if fx_layer != null:
+		fx_layer.clear()
+	for v in _views():
+		v.stop_motion()
+		v.inverted = false
+	_numbers_on.clear()
+	_deal_waiting = false
+	if _hand_box != null:
+		for c in _hand_box.get_children():
+			if c is ZineCard:
+				(c as ZineCard).finish_deal()
+	_returning.clear()
+	if is_instance_valid(_gap):
+		_gap.queue_free()
+	_gap = null
+	_gap_waiting = false
+	if ram_note != null:
+		ram_note.finish_motion()
+	if had:
+		_dim_hand()
+		_show_end_turn_preview()
+		motion_settled.emit()
+
+
+func _skippable() -> bool:
+	return _seq != null
+
+
+static func _is_press(event: InputEvent) -> bool:
+	if not event.is_pressed() or event.is_echo():
+		return false
+	return event is InputEventKey or event is InputEventMouseButton or event is InputEventJoypadButton
+
+
+static func _has_event(events: Array[Dictionary], type: String) -> bool:
+	for e in events:
+		if String(e.get("type", "")) == type:
+			return true
+	return false
+
+
+## True when the action only nudged (its steps join the wheel's queue).
+static func _only_nudges(events: Array[Dictionary]) -> bool:
+	var any := false
+	for e in events:
+		var t := String(e.get("type", ""))
+		if t == "nudge":
+			any = true
+		elif t != "ram":
+			return false
+	return any
+
+
+## Sends `action` to the engine; while motion plays, first keeps what the replay needs
+## (the state before it, and a played card's copy, slot and target zone).
+func _submit(action: CombatAction, from_point: Vector2 = Vector2.INF) -> bool:
+	if Motion.animating() and engine.has_fight():
+		_before_action = engine.state().duplicate_state()
+		if action.type == CombatAction.Type.PLAY_CARD:
+			_capture_play(action, from_point)
+	var ok := engine.submit(action)
+	if not ok:
+		_before_action = null
+		_free_captures(_pending_play, [])
+		_pending_play = {}
+		_hold_slot = -1
+	return ok
+
+
+## The hand card with hand index `i` (null when none: gaps are not cards).
+func _card_node(i: int) -> ZineCard:
+	if i < 0 or _hand_box == null:
+		return null
+	for c in _hand_box.get_children():
+		if c is ZineCard and (c as ZineCard).drag_index == i and not c.is_queued_for_deletion():
+			return c
+	return null
+
+
+## A copy of hand card `i` for a flight, with where it sits now.
+func _card_copy(i: int) -> Dictionary:
+	var node := _card_node(i)
+	var state := engine.state()
+	if node == null or i >= state.hand.size():
+		return {}
+	var card := engine.content(state.hand[i]) as CardData
+	var copy := _make_card(card, i, _hand_scale if _hand_scale > 0.0 else 1.0)
+	copy.variant = node.variant
+	return {"copy": copy, "rect": node.get_global_rect(), "rot": node.rotation, "exhaust": card.exhaust}
+
+
+func _capture_play(action: CombatAction, from_point: Vector2) -> void:
+	var cap := _card_copy(action.hand_index)
+	if cap.is_empty():
+		return
+	if from_point != Vector2.INF:
+		# Dragged: it leaves from where it was let go, upright.
+		var r: Rect2 = cap["rect"]
+		cap["rect"] = Rect2(from_point - r.size * 0.5, r.size)
+		cap["rot"] = 0.0
+	var z := _zone_of(action)
+	var v := _view_of(z[0])
+	cap["to"] = v.zone_center(z[1]) if v != null else (cap["rect"] as Rect2).get_center()
+	cap["zone"] = z
+	_pending_play = cap
+	_hold_slot = action.hand_index
+
+
+func _capture_hand() -> Array:
+	var out: Array = []
+	for i in engine.state().hand.size():
+		var cap := _card_copy(i)
+		if not cap.is_empty():
+			out.append(cap)
+	return out
+
+
+func _free_captures(play: Dictionary, discard: Array) -> void:
+	if play.has("copy") and is_instance_valid(play["copy"]):
+		(play["copy"] as Node).free()
+	for d in discard:
+		if is_instance_valid(d["copy"]):
+			(d["copy"] as Node).free()
+
+
+## Runs `c` after `delay` seconds of motion (a skip drops it).
+func _after(delay: float, c: Callable) -> void:
+	if delay <= 0.0:
+		c.call()
+		return
+	var tw := create_tween()
+	tw.tween_interval(delay)
+	tw.tween_callback(c)
+	_motion_tweens.append(tw)
+
+
+## Where the deck and discard piles sit: the two ends of the hand row.
+func _deck_spot() -> Vector2:
+	var r := _hand_box.get_global_rect()
+	var half := CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5
+	return Vector2(r.position.x + half.x + STICKER_EDGE, r.end.y - half.y - STICKER_EDGE)
+
+
+func _discard_spot() -> Vector2:
+	var r := _hand_box.get_global_rect()
+	var half := CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5
+	return Vector2(r.end.x - half.x - STICKER_EDGE, r.end.y - half.y - STICKER_EDGE)
+
+
+# --- Card targeting (ANIM-3) ---
+
+func _start_aim_motion() -> void:
+	for v in _views():
+		if not v.valid_zones.is_empty():
+			v.start_zone_pulse()
+	ram_note.set_aiming(true)
+	_aim_target = Vector2.INF
+
+
+func _stop_aim_motion() -> void:
+	if ram_note != null:
+		ram_note.set_aiming(false)
+	if fx_layer != null:
+		fx_layer.hide_reticle()
+	if _aim_tween != null and _aim_tween.is_valid():
+		_aim_tween.kill()
+	_aim_draw = 1.0
+	_aim_target = Vector2.INF
+
+
+## The aim moved to `at` (global): the line draws in again (`aim_line_draw`) and the
+## reticle glides there (`target_snap`), for mouse, keys and pad alike.
+func _aim_at(at: Vector2) -> void:
+	if at == _aim_target:
+		return
+	_aim_target = at
+	fx_layer.aim_reticle(at)
+	if _aim_tween != null and _aim_tween.is_valid():
+		_aim_tween.kill()
+	if not Motion.live(&"aim_line_draw"):
+		_aim_draw = 1.0
+		_aim_line.queue_redraw()
+		return
+	var e := Motion.entry(&"aim_line_draw")
+	_aim_draw = 0.0
+	_aim_tween = create_tween()
+	_aim_tween.tween_method(_set_aim_draw, 0.0, 1.0, Motion.seconds(&"aim_line_draw")).set_ease(e.ease).set_trans(e.trans)
+
+
+func _set_aim_draw(v: float) -> void:
+	_aim_draw = v
+	_aim_line.queue_redraw()
+
+
+## A drag let go on nothing (or on no legal target): the card glides home to its slot
+## (`drag_cancel_return`), then shows there again; the aim ends.
+func _cancel_drag(hand_index: int, at: Vector2) -> void:
+	var node := _card_node(hand_index)
+	var cap := _card_copy(hand_index) if Motion.animating() and node != null else {}
+	cancel_selection()
+	if node == null or cap.is_empty():
+		return
+	_returning[hand_index] = true
+	node.modulate.a = 0.0
+	fx_layer.return_card(cap["copy"], at, node.get_global_rect(), node.rotation, _returned.bind(hand_index, node))
+
+
+func _returned(hand_index: int, node: ZineCard) -> void:
+	_returning.erase(hand_index)
+	if is_instance_valid(node):
+		node.modulate.a = 1.0
+	_dim_hand()
+
+
+## The gap a played card leaves (see _build_hand).
+func _add_gap(s: float) -> void:
+	_gap = Control.new()
+	_gap.name = "HandGap"
+	_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_gap.custom_minimum_size = ZineCard.STICKER_SIZE * s
+	_hand_box.add_child(_gap)
+
+
+## The played card has landed: its gap closes now, or once the cursor leaves the hand.
+func _release_gap() -> void:
+	_hold_slot = -1
+	if not is_instance_valid(_gap):
+		return
+	_gap_waiting = true
+	set_process(true)
+
+
+func _close_gap() -> void:
+	_gap_waiting = false
+	var gap := _gap
+	_gap = null
+	if not is_instance_valid(gap):
+		return
+	if not Motion.live(&"hand_reflow"):
+		gap.queue_free()
+		return
+	var e := Motion.entry(&"hand_reflow")
+	var tw := gap.create_tween()
+	tw.tween_property(gap, "custom_minimum_size:x", 0.0, Motion.seconds(&"hand_reflow")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(gap.queue_free)
+
+
+## Deals hand cards from index `from` in from the deck pile with a fan (`card_draw`: its
+## delay staggers them, its amplitude spreads the fan in degrees).
+func _deal_hand(from: int) -> void:
+	_deal_waiting = false
+	var cards: Array[ZineCard] = []
+	for c in _hand_box.get_children():
+		if c is ZineCard and (c as ZineCard).drag_index >= from:
+			cards.append(c)
+	if cards.is_empty():
+		return
+	var pile := _deck_spot()
+	var n := cards.size()
+	var stagger := Motion.delay_of(&"card_draw")
+	fx_layer.pile(pile, stagger * n + Motion.seconds(&"card_draw"))
+	for k in n:
+		var fan := (k - (n - 1) * 0.5) * Motion.amplitude(&"card_draw")
+		cards[k].deal_from(pile, fan, stagger * k)
+
+
+# --- Replays (ANIM-2) ---
+
+## A player action's replay: a played card flies to its zone and stamps (then its effect
+## plays), wheels turn / step / flip, needles move, and the effect's beats (numbers,
+## stamps, deaths) play once the card has landed.
+func _play_action(before: CombatState, state: CombatState, events: Array[Dictionary], play: Dictionary) -> void:
+	var delay := 0.0
+	if play.has("copy"):
+		delay = fx_layer.play_card(play["copy"], play["rect"], float(play["rot"]), play["to"], bool(play["exhaust"]), _release_gap)
+	else:
+		_hold_slot = -1
+	_animate_wheels(before, events, delay)
+	var beats := ResolveBeats.build(before, events, engine.resolver.lookup)
+	var sch := ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), 0.0)
+	var times: PackedFloat32Array = sch["times"]
+	for k in beats.size():
+		var b := beats[k]
+		if b["kind"] in ["spin", "nudge", "flip", "snap", "land"]:
+			continue  # the wheels replay those
+		if b["kind"] == "draw":
+			_hide_new_cards(state.hand.size() - int(b["amount"]))
+		_after(delay + times[k], _play_beat.bind(b, before, state))
+
+
+## Wheels replay what the action did to them: nudges step through the queue, spins and
+## respins turn from the old rotation, flips squash, moved needles glide, all after
+## `delay` (the card's flight).
+func _animate_wheels(before: CombatState, events: Array[Dictionary], delay: float) -> void:
+	for v in _views():
+		if v.combatant == null:
+			continue
+		var c0 := before.get_combatant(v.combatant.id)
+		if c0 == null:
+			continue
+		var nudges: Array[Dictionary] = []
+		var kind := ""
+		for e in events:
+			if StringName(String(e.get("target", ""))) != v.combatant.id:
+				continue
+			match String(e.get("type", "")):
+				"nudge":
+					nudges.append(e)
+				"spin", "snap":
+					if kind != "respin":
+						kind = "spin"
+				"respin":
+					kind = "respin"
+				"flip":
+					v.play_flip(delay)
+		var moved := c0.wheel.rotation != v.combatant.wheel.rotation or c0.wheel.inner_rotation != v.combatant.wheel.inner_rotation
+		if kind == "" and not nudges.is_empty() and delay <= 0.0:
+			for e in nudges:
+				v.play_nudge(int(e.get("ring", RC.RingScope.OUTER)), int(e.get("direction", 1)))
+			v.sync_nudges()
+		elif moved:
+			var id := &"wheel_respin" if kind == "respin" else &"wheel_spin"
+			if kind == "" and not nudges.is_empty():
+				id = &"wheel_nudge"
+			v.play_turn(id, float(c0.wheel.rotation), float(c0.wheel.inner_rotation), delay)
+		if Array(c0.wheel.pointer_ticks) != Array(v.combatant.wheel.pointer_ticks):
+			v.play_pointers(Array(c0.wheel.pointer_ticks), &"pointer_migrate", false, delay)
+
+
+func _hide_new_cards(from: int) -> void:
+	if not Motion.live(&"card_draw"):
+		return
+	_deal_waiting = true
+	for c in _hand_box.get_children():
+		if c is ZineCard and (c as ZineCard).drag_index >= from:
+			(c as ZineCard).modulate.a = 0.0
+
+
+## The SEND IT sequence: the old hand to the discard pile; the needles latch (precision
+## landings); every resolve event on its beat in the engine's order (pulses, hit lines,
+## numbers, HP drains, stamps, deaths); the turn start (wheels spin to the next landing,
+## needles move, RAM refills, the new hand deals in); the LAST TURN plate. Fits
+## `resolve_sequence` seconds at 1x; any press skips to the end.
+func _play_resolve_sequence(before: CombatState, after: CombatState, events: Array[Dictionary], discard: Array) -> void:
+	if not Motion.live(&"resolve_sequence"):
+		_free_captures({}, discard)
+		return
+	var beats := ResolveBeats.build(before, events, engine.resolver.lookup)
+	var sch := sequence_schedule(beats)
+	var times: PackedFloat32Array = sch["times"]
+	# The screen goes back to where SEND IT was pressed: the wheels as they landed, the
+	# HP they had, no forecast.
+	for v in _views():
+		if v.combatant == null:
+			continue
+		var c0 := before.get_combatant(v.combatant.id)
+		if c0 == null:
+			continue
+		v.shown_state = c0
+		v.shown_satellites = before.satellites_of(c0.id)
+		v.anim_hp = c0.hp
+		v.replaying = true
+		v.last_turn_shown = 0.0
+		v.queue_redraw()
+	ram_note.hold(before.ram)
+	_hide_new_cards(0)
+	var discard_spot := _discard_spot()
+	var stagger := Motion.delay_of(&"card_draw")
+	if not discard.is_empty():
+		fx_layer.pile(discard_spot, stagger * discard.size() + Motion.seconds(&"card_discard"))
+	for k in discard.size():
+		fx_layer.discard_card(discard[k]["copy"], discard[k]["rect"], float(discard[k]["rot"]), discard_spot, stagger * k)
+	_numbers_on.clear()
+	_seq = create_tween().set_parallel(true)
+	_seq_started = Time.get_ticks_msec() / 1000.0
+	_seq_total = float(sch["total"])
+	for k in beats.size():
+		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(times[k])
+	var reveal_at := _seq_total - Motion.seconds(&"last_turn_reveal")
+	_seq.tween_callback(_reveal_last_turn).set_delay(maxf(0.0, reveal_at))
+	_seq.tween_callback(_finish_sequence).set_delay(_seq_total)
+
+
+## When each beat of a SEND IT plays (ResolveBeats.schedule with the sequence's budget,
+## the beat gap and a tail for the spin to the next landing and the LAST TURN reveal).
+static func sequence_schedule(beats: Array[Dictionary]) -> Dictionary:
+	var spin_time := maxf(WheelView.spin_seconds(&"wheel_respin", RC.TICKS * SPIN_TICKS_TYPICAL),
+		Motion.delay_of(&"enemy_turn_spin") + WheelView.spin_seconds(&"enemy_turn_spin", RC.TICKS * SPIN_TICKS_TYPICAL))
+	var tail := spin_time + Motion.seconds(&"last_turn_reveal")
+	return ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), tail)
+
+
+## A turn-start respin runs two to three turns (the core adds two full turns and a roll):
+## the sequence keeps room for the longest.
+const SPIN_TICKS_TYPICAL := 3.0
+
+
+func _reveal_last_turn() -> void:
+	for v in _views():
+		v.shown_state = null
+		v.shown_satellites = []
+		v.reveal_last_turn()
+
+
+func _finish_sequence() -> void:
+	_seq = null
+	for v in _views():
+		v.stop_motion()
+	_numbers_on.clear()
+	if _deal_waiting:
+		for c in _hand_box.get_children():
+			if c is ZineCard:
+				(c as ZineCard).finish_deal()
+		_deal_waiting = false
+	ram_note.finish_motion()
+	_show_end_turn_preview()
+	motion_settled.emit()
+
+
+## Rewind: a quick reverse scrub with VHS lines back to the state the engine restored.
+func _play_rewind(from: CombatState) -> void:
+	fx_layer.vhs(_arena.get_global_rect())
+	for v in _views():
+		var c0 := from.get_combatant(v.combatant.id) if v.combatant != null else null
+		if c0 != null:
+			v.play_rewind(float(c0.wheel.rotation), float(c0.wheel.inner_rotation), float(c0.hp))
+
+
+## The view a combatant is drawn on (a satellite's or drone's host), or null.
+func _host_view(id: StringName, s: CombatState) -> WheelView:
+	var c := s.get_combatant(id)
+	if c == null:
+		return null
+	if c.is_satellite and c.host_id != &"":
+		return _view_of(c.host_id)
+	if s.drones.has(c):
+		return _player_view
+	return _view_of(id)
+
+
+## Where a beat's actor stands: its resolving needle's hub, or its satellite token.
+func _source_spot(b: Dictionary, s: CombatState) -> Vector2:
+	var src := StringName(String(b["source"]))
+	var v := _host_view(src, s)
+	if v == null:
+		return Vector2.INF
+	if v.combatant != null and v.combatant.id != src:
+		return v.satellite_spot(src)
+	return v.pointer_spot(maxi(0, int(b["pointer_index"])))
+
+
+## The floating number a beat shows: {at, rise, text, color, crit, id, view} (empty when
+## the beat shows none). Inside the victim's hub, clear of every needle.
+func number_for(b: Dictionary, s: CombatState, k: int) -> Dictionary:
+	var v := _host_view(StringName(String(b["target"])), s)
+	if v == null:
+		return {}
+	var text := ""
+	var color := WheelView.LOSS_COLOR
+	var id := &"number_float"
+	match String(b["kind"]):
+		"damage", "corrupted":
+			if int(b["amount"]) > 0:
+				text = "-%d" % int(b["amount"])
+			elif int(b["soaked"]) > 0:
+				text = tr("%d BLOCKED") % int(b["soaked"])
+				color = CHIP_GUARD
+				id = &"block_number"
+		"evaded":
+			text = tr("EVADED %d") % 1
+			color = CHIP_GUARD
+			id = &"block_number"
+		"heal":
+			if int(b["amount"]) > 0:
+				text = tr("+%d HP") % int(b["amount"])
+				color = WheelView.HP_COLOR
+				id = &"heal_number"
+		"block":
+			text = tr("+%d BLOCK") % int(b["amount"])
+			color = CHIP_GUARD
+			id = &"block_number"
+		"shield":
+			if int(b["amount"]) > 0:
+				text = tr("+%d SHIELD") % int(b["amount"])
+				color = CHIP_GUARD
+				id = &"block_number"
+		"evade":
+			text = tr("%s EVADE") % signed(int(b["amount"]))
+			color = CHIP_GUARD
+			id = &"block_number"
+	if text == "":
+		return {}
+	var room := v.number_room()
+	return {"at": v.number_anchor(k), "rise": minf(Motion.amplitude(id), room * NUMBER_RISE_SHARE), "text": text, "color": color,
+		"crit": bool(b["crit"]) and String(b["kind"]) == "damage", "id": id, "view": v}
+
+
+func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
+	var kind := String(b["kind"])
+	var target := StringName(String(b["target"]))
+	var tv := _host_view(target, after)
+	if tv == null:
+		tv = _host_view(target, before)
+	match kind:
+		"land":
+			_land(b, before)
+			return
+		"spin":
+			if tv != null and b["phase"] == "turn_start":
+				var c0 := before.get_combatant(target)
+				tv.shown_state = null
+				tv.shown_satellites = []
+				if c0 != null and tv.combatant != null and tv.combatant.id == target:
+					var mine := tv == _player_view
+					tv.play_turn(&"wheel_respin" if mine else &"enemy_turn_spin", float(c0.wheel.rotation),
+						float(c0.wheel.inner_rotation), 0.0 if mine else Motion.delay_of(&"enemy_turn_spin"))
+			return
+		"orbit", "migrate":
+			var c0 := before.get_combatant(target)
+			if tv != null and c0 != null:
+				tv.shown_state = null
+				tv.play_pointers(Array(c0.wheel.pointer_ticks), &"pointer_orbit" if kind == "orbit" else &"pointer_migrate", kind == "orbit")
+			return
+		"ram":
+			ram_note.play_refill()
+			return
+		"draw":
+			if _deal_waiting:
+				_deal_hand(maxi(0, engine.state().hand.size() - int(b["amount"])))
+			return
+		"end":
+			_end_beat(int(engine.state().outcome))
+			return
+		"died":
+			_death_beat(target, before)
+			return
+		"breach":
+			if tv != null:
+				fx_layer.glass(tv.global_center(), tv.hub_radius(), tv.wheel_color)
+			return
+		"nudge", "flip", "snap":
+			return
+	# The resolving needle pulses; a hit line runs from it to its victim.
+	var src := StringName(String(b["source"]))
+	var sv := _host_view(src, before)
+	if sv != null:
+		if sv.combatant != null and sv.combatant.id != src:
+			sv.play_pulse(-1, src)
+		elif int(b["pointer_index"]) >= 0:
+			sv.play_pulse(int(b["pointer_index"]))
+	if tv == null:
+		return
+	var on_host := tv.combatant != null and tv.combatant.id == target
+	var victim_at := tv.global_center() if on_host else tv.satellite_spot(target)
+	if kind in ["damage", "evaded", "status"] and src != target and sv != null:
+		var line_to := tv.slot_spot(int(b["slot"])) if kind == "status" and int(b["slot"]) >= 0 and on_host else victim_at
+		fx_layer.hit_line(_source_spot(b, before), line_to, sv.wheel_color)
+	if kind == "status" and int(b["slot"]) >= 0 and on_host:
+		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), Palette.CELL_ACID, motion_seconds_left())
+	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
+		fx_layer.ring(tv.slot_spot(int(b["slot"])), CombatFxLayer.STAMP_DISC, CHIP_RESIST, &"precision_good_ring")
+	var k := int(_numbers_on.get(tv, 0))
+	var n := number_for(b, before, k)
+	if not n.is_empty():
+		_numbers_on[tv] = k + 1
+		fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"])
+	if int(b["hp_after"]) >= 0 and on_host:
+		tv.play_hp(float(b["hp_after"]))
+
+
+## A needle latches: the player's landings show their precision (Perfect: inversion +
+## freeze + a limited flash; Good: a clean ring; Partial: a stutter; Miss: static over that
+## slice only), with their sound and bark; every needle pulses.
+func _land(b: Dictionary, s: CombatState) -> void:
+	var owner := StringName(String(b["source"]))
+	var v := _host_view(owner, s)
+	if v == null:
+		return
+	if v.combatant != null and v.combatant.id != owner:
+		v.play_pulse(-1, owner)
+		return
+	v.play_pulse(int(b["pointer_index"]))
+	if owner != s.player.id:
+		return
+	var slot := int(b["slot"])
+	var slice := engine.content(s.player.wheel.slot_slice_ids[clampi(slot, 0, s.player.wheel.slot_slice_ids.size() - 1)]) as SliceData
+	var is_miss := slice != null and slice.slice_type == RC.SliceType.MISS
+	var tier := int(b["tier"])
+	AudioDirector.play_precision(tier, is_miss)
+	if is_miss:
+		v.play_miss_static(slot)
+		_bark("miss", s)
+	elif tier == RC.PrecisionTier.PERFECT:
+		_perfect_feedback(v)
+		_bark("perfect", s)
+	elif tier == RC.PrecisionTier.PARTIAL:
+		_stutter_view(v)
+	else:
+		v.play_good_ring()
+
+
+## A wheel goes down: an enemy's cracks along its slice borders and falls; a satellite
+## bursts off its host; the operative's wheel breaks too (defeat).
+func _death_beat(id: StringName, before: CombatState) -> void:
+	var c := before.get_combatant(id)
+	var v := _host_view(id, before)
+	if c == null or v == null:
+		return
+	if v.combatant != null and v.combatant.id != id:
+		fx_layer.burst(v.satellite_spot(id), Palette.RESIST_GOLD, &"effect_burst")
+		return
+	fx_layer.shards(v.slice_pieces())
+	v.play_break()
+	AudioDirector.play_sfx("clack")
+
+
+## VICTORY / DEFEAT lands over the arena once the last hit has.
+func _end_beat(outcome: int) -> void:
+	var won := outcome == CombatState.Outcome.VICTORY
+	if won:
+		Fx.flash(Palette.CELL_ACID, 0.3)
+	var at := _arena.get_global_rect().get_center()
+	fx_layer.word(at, tr("VICTORY") if won else tr("DEFEAT"), Palette.CELL_ACID if won else WheelView.LOSS_COLOR, Motion.seconds(&"combat_end_hold"))
+
+
+## Plays the break of `id`'s wheel alone (the motion lab's --demo-anim=enemy_break).
+func demo_break(id: StringName) -> void:
+	var v := _view_of(id)
+	if v != null:
+		fx_layer.shards(v.slice_pieces())
+		v.play_break()
