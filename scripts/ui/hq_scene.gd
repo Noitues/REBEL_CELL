@@ -57,6 +57,10 @@ const GRID_ZOOM := 0.72
 const GRID_ANCHOR := Vector2(0.31, 0.54)
 ## The smallest the fit may make the Grid map (the city's zoom).
 const GRID_MIN_ZOOM := 0.3
+## H24 K1: from this text scale the Grid's step buttons show their icons (and "<" / ">")
+## without words, their words in the tooltip, so the column keeps its width (the same
+## scale the map key folds at).
+const STEP_ICONS_SCALE := MapLegend.FOLD_SCALE
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
 ## The raid orders list's least height at text scale 1.0 (px).
@@ -447,6 +451,12 @@ func open_settings() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_settings"):
 		open_settings()
+		get_viewport().set_input_as_handled()
+		return
+	# H24 K1: the pad's key button (Y) opens and folds the Grid's map key at big text.
+	if event.is_action_pressed("cycle_target") and panel_name == "grid" and grid_legend != null \
+			and is_instance_valid(grid_legend) and grid_legend.visible and grid_legend.foldable():
+		grid_legend.set_opened(not grid_legend.opened)
 		get_viewport().set_input_as_handled()
 		return
 	# B goes back to the HQ from the Grid and the raid setup (H23 S11; Esc stays the
@@ -1024,29 +1034,36 @@ func show_grid() -> void:
 	nav.name = "SiteNav"
 	nav.add_theme_constant_override("h_separation", 8)
 	nav.add_theme_constant_override("v_separation", 6)
-	column.add_child(nav)
-	column.move_child(nav, 0)
+	# H24 K2: the row keeps inside the column's windows (the scroll bar's strip is not
+	# theirs: Back to HQ reached past their border).
+	var nav_box := MarginContainer.new()
+	nav_box.name = "SiteNavBox"
+	nav_box.add_theme_constant_override("margin_right", int(SIDE_SCROLLBAR))
+	nav_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nav_box.add_child(nav)
+	column.add_child(nav_box)
+	column.move_child(nav_box, 0)
 	# H23 #7: every Site row and step button carries the map icon of its Site (kind, map
 	# colour, tier pips), so the list and the map read alike.
 	var map_nodes := {}
 	for n in grid_graph()["nodes"]:
 		map_nodes[n["id"]] = n
-	var prev := _button("< PREV SITE", func() -> void: step_site(-1))
+	var prev := _step_button("< PREV SITE", "<", func() -> void: step_site(-1))
 	prev.name = "PrevSite"
 	_site_mark(prev, map_nodes.get(stepped_site(-1), {}), false)
-	_add_tip(nav, prev, "Select the previous Site on the Grid: %s (the map follows)." % _site_kind_name(stepped_site(-1)))
-	var next := _button("NEXT SITE >", func() -> void: step_site(1))
+	_add_tip(nav, prev, "PREV SITE: select the previous Site on the Grid: %s (the map follows)." % _site_kind_name(stepped_site(-1)))
+	var next := _step_button("NEXT SITE >", ">", func() -> void: step_site(1))
 	next.name = "NextSite"
 	_site_mark(next, map_nodes.get(stepped_site(1), {}), false)
-	_add_tip(nav, next, "Select the next Site on the Grid: %s (the map follows)." % _site_kind_name(stepped_site(1)))
-	var back := _icon(_button("Back to HQ", show_hq), StatIcon.BACK)
+	_add_tip(nav, next, "NEXT SITE: select the next Site on the Grid: %s (the map follows)." % _site_kind_name(stepped_site(1)))
+	var back := _icon(_step_button("Back to HQ", "", show_hq), StatIcon.BACK)
 	back.name = "BackToHq"
-	_add_tip(nav, back, "Back to the HQ: crew, Black Market, Cell status.")
+	_add_tip(nav, back, "Back to HQ: crew, Black Market, Cell status.")
 	if not c.pending_raids.is_empty():
-		var raid_btn := _icon(_button("RAID SETUP", show_raid), StatIcon.RAIDS)
+		var raid_btn := _icon(_step_button("RAID SETUP", "", show_raid), StatIcon.RAIDS)
 		raid_btn.name = "RaidSetup"
 		raid_btn.theme_type_variation = &"HotButton"
-		_add_tip(nav, raid_btn, "A raid is coming along the dashed routes: set up the defence.")
+		_add_tip(nav, raid_btn, "RAID SETUP: a raid is coming along the dashed routes: set up the defence.")
 	if not launchable.is_empty():
 		var runs := TerminalWindow.new("RUNS OPEN NOW", Palette.CELL_ACID)
 		runs.name = "RunsOpen"
@@ -1056,14 +1073,17 @@ func show_grid() -> void:
 		rows.name = "RunRows"
 		rows.add_theme_constant_override("separation", 6)
 		runs.body.add_child(rows)
+		_run_buttons.clear()
 		for s in launchable:
 			var sid := s.id
 			var mn: Dictionary = map_nodes.get(s.id, {})
 			var kind := String(mn.get("kind", CityMapOverlay.KIND_TIER))
-			var words := "T%d %s" % [s.tier, site_name(s.id)]
+			# H24 K7: the words translated here, once (the button does not translate them again).
+			var words := "%s %s" % [CityMapOverlay.tier_text(s.tier), site_name(s.id)]
 			if kind != CityMapOverlay.KIND_TIER:
 				words += " · %s" % CityMapOverlay.kind_word(kind).to_upper()
 			var b := _button(words, func() -> void: select_site(sid))
+			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			b.name = "Run_%s" % s.id
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1073,9 +1093,30 @@ func show_grid() -> void:
 			_site_mark(b, mn)
 			if s.id == selected_site:
 				b.add_theme_color_override("font_color", Palette.CELL_ACID)
-			_add_tip(rows, b, "T%d %s: %s. %s Select it, then %s on its card." % [s.tier, site_name(s.id), CampaignRules.run_kind_for(c, s),
-				String(CityLayout.KIND_TIPS.get(kind, "")), JACK_IN])
+			# H24 K4: what clearing it gives and risks, as icons under the row (the rows
+			# looked alike), and the row lights its node on the map (and the node its row).
+			var preview := CampaignRules.clear_preview(c, corp, cfg, s, RunManager.lookup())
+			var gains := run_gains(s, preview)
+			var said := PackedStringArray()
+			for g: Badge in gains:
+				said.append(g.tooltip_text.replace("\n", " "))
+			_add_tip(rows, b, "%s %s: %s. %s %s Select it, then %s on its card." % [CityMapOverlay.tier_text(s.tier), site_name(s.id), CampaignRules.run_kind_for(c, s),
+				CityMapOverlay.tr_word(String(CityLayout.KIND_TIPS.get(kind, ""))), " ".join(said), JACK_IN])
+			var gain_row := HFlowContainer.new()
+			gain_row.name = "Gains_%s" % s.id
+			gain_row.add_theme_constant_override("h_separation", 10)
+			gain_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			for g: Badge in gains:
+				gain_row.add_child(g)
+			rows.add_child(gain_row)
+			b.set_meta(&"site_id", s.id)
+			b.mouse_entered.connect(_light_site.bind(s.id))
+			b.focus_entered.connect(_light_site.bind(s.id))
+			b.mouse_exited.connect(_unlight_site.bind(s.id))
+			b.focus_exited.connect(_unlight_site.bind(s.id))
+			_run_buttons[s.id] = b
 	_set_panel(outer, "grid")
+	_fit_steps(nav)
 	# More below in the column (the runs at big text): the same tag as the HQ page's.
 	side_hint = ScrollHint.new(side_scroll)
 	side_hint.name = "SideHint"
@@ -1085,12 +1126,17 @@ func show_grid() -> void:
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, GRID_ANCHOR, GRID_ZOOM)
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
+	city_overlay.node_hovered.connect(light_run_row)
 	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
 	_grid_fits = 0
 	_fit_next_frame()
 	spacer.resized.connect(_refit_grid)
 	grid_legend.minimum_size_changed.connect(_on_grid_legend_resized)
 	grid_legend.visibility_changed.connect(_refit_grid)
+	# H24 K1: the folded key opens over the map (no refit) and folds back.
+	grid_legend.fold_changed.connect(_place_grid_legend)
+	if grid_legend.foldable():
+		pad_prompts.set_prompts(prompts_for("grid") + [[&"cycle_target", "Key"]])
 
 
 ## The Grid map fitted to the part of the screen it shows through (H23 #5: at 1.6 a T3
@@ -1111,17 +1157,18 @@ func fit_grid_map() -> void:
 	var area := area_ctl.get_global_rect()
 	if area.size.x <= LegendSpot.MARGIN * 2.0 or area.size.y <= LegendSpot.MARGIN * 2.0 or not get_global_rect().grow(1.0).encloses(area):
 		return  # laid out later: the area's `resized` fits it again
+	# H24 K1: map labels stay on the map's own area (under the top bar, beside the column).
+	city_overlay.screen_rect = area
 	var free := area.grow(-LegendSpot.MARGIN)
 	if grid_legend.visible:
 		# The key runs along the map's foot, in as many columns as the width holds; the
-		# nodes fit above it.
+		# nodes fit above it (above its folded MAP KEY line at big text, H24 K1).
 		_grid_legend_size = Vector2.INF  # the width set here is not a text size change
 		grid_legend.set_strip_width(free.size.x)
-		var own := grid_legend.get_combined_minimum_size()
+		var own := grid_legend.fit_size()
 		_grid_legend_size = own
-		grid_legend.size = own
-		grid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area.size.y - own.y - LegendSpot.MARGIN))
-		free.size.y = maxf(1.0, area.position.y + grid_legend.position.y - LegendSpot.MARGIN - free.position.y)
+		_place_grid_legend()
+		free.size.y = maxf(1.0, area.size.y - own.y - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
 	if _grid_fits >= GRID_FITS_MAX:
 		return
 	var fit := LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x)
@@ -1140,7 +1187,110 @@ func fit_grid_map() -> void:
 	_fit_after_redraw()  # check again under the new camera
 
 
-## Runs `fit_grid_map` once after the city's next draw.
+## H24 K4: what clearing Site `s` gives and risks (`preview` = CampaignRules.clear_preview),
+## one Badge each with its icon and a tooltip: the Exploit, the Heat change (a drop:
+## the cooling icon), a raid it brings, the win, Schematics, the Sites it opens (names
+## and kinds in the tooltip), and whether it can be claimed; "no gain" for a patrol.
+func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
+	var out: Array[Badge] = []
+	if bool(preview.get("won", false)):
+		out.append(Badge.new(CityMapOverlay.tr_word("WIN"), Palette.CELL_ACID, "", CityMapOverlay.tr_word("Clearing it wins the campaign.")).with_icon(StatIcon.WON))
+	var ex := int(preview.get("exploit", -1))
+	if ex >= 0:
+		var ename := String(RC.ExploitType.keys()[ex]).capitalize()
+		out.append(Badge.new(CityMapOverlay.tr_word("EXPLOIT"), Palette.CELL_ACID, "", CityMapOverlay.tr_word("Clearing it gives the %s Exploit for the boss breach.") % ename).with_icon(StatIcon.EXPLOITS))
+	var heat := int(preview.get("heat", 0))
+	if heat != 0:
+		out.append(Badge.new(CityMapOverlay.tr_word("HEAT %+d") % heat, Palette.NET_CYAN if heat < 0 else StatIcon.color_of(StatIcon.HEAT), "",
+			CityMapOverlay.tr_word("Clearing it changes Heat by %+d.") % heat).with_icon(StatIcon.COOLING if heat < 0 else StatIcon.HEAT))
+	if bool(preview.get("raid", false)):
+		out.append(Badge.new(CityMapOverlay.tr_word("RAID"), Palette.CELL_PINK, "", CityMapOverlay.tr_word("Clearing it now brings a raid on your network.")).with_icon(StatIcon.RAIDS))
+	var sch := int(preview.get("schematics", 0))
+	if sch != 0:
+		out.append(Badge.new("%+d" % sch, Palette.NET_CYAN, "", CityMapOverlay.tr_word("Clearing it gives %+d Schematics.") % sch).with_icon(StatIcon.SCHEMATICS))
+	var opens: Array = preview.get("opens", [])
+	if not opens.is_empty():
+		var named := PackedStringArray()
+		for id in opens:
+			named.append(_site_kind_name(id))
+		out.append(Badge.new(CityMapOverlay.tr_word("OPENS %d") % opens.size(), Palette.NET_CYAN, "",
+			CityMapOverlay.tr_word("Clearing it opens %d more Sites to runs: %s.") % [opens.size(), "; ".join(named)]).with_icon(StatIcon.LINKS))
+	if bool(preview.get("claimable", false)):
+		out.append(Badge.new(CityMapOverlay.tr_word("CLAIM"), Palette.CELL_PINK, "", CityMapOverlay.tr_word("Once cleared you can claim it: a node of your network.")).with_icon(StatIcon.CLAIM))
+	if out.is_empty():
+		out.append(Badge.new(CityMapOverlay.tr_word("NO GAIN"), Color(Palette.PAPER, 0.6), "", CityMapOverlay.tr_word("A patrol: loot, Heat and Rank from the run, no objective.")).with_icon(StatIcon.RUNS))
+	for b in out:
+		b.name = "Gain_%d" % out.find(b)
+	return out
+
+
+## H24 K4: the run rows by Site id (the Grid's RUNS OPEN NOW).
+var _run_buttons: Dictionary = {}
+
+
+## H24 K4: a run row is hovered or has the pad's focus: light its node on the map.
+func _light_site(id: StringName) -> void:
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.hover_id = id
+
+
+func _unlight_site(id: StringName) -> void:
+	if city_overlay != null and is_instance_valid(city_overlay) and city_overlay.hover_id == id:
+		city_overlay.hover_id = &""
+
+
+## H24 K4: the pointer is on node `id` of the Grid map: its run row looks hovered (the
+## others as they are); &"" lights none.
+func light_run_row(id: StringName) -> void:
+	for sid in _run_buttons:
+		var b := _run_buttons[sid] as Button
+		if b == null or not is_instance_valid(b):
+			continue
+		var lit: bool = sid == id
+		b.set_meta(&"lit", lit)
+		if lit:
+			b.add_theme_stylebox_override(&"normal", b.get_theme_stylebox(&"hover"))
+		else:
+			b.remove_theme_stylebox_override(&"normal")
+
+
+## H24 K1: the Grid's key at the foot of the map area, growing upward (open, its rows sit
+## over the map; the map is framed for the folded line).
+func _place_grid_legend() -> void:
+	if grid_legend == null or not is_instance_valid(grid_legend):
+		return
+	var area_ctl := grid_legend.get_parent() as Control
+	var own := grid_legend.get_combined_minimum_size()
+	grid_legend.size = own
+	grid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
+
+
+## H24 K1 / K2: a Grid step button that carries its full words and its short form (icon
+## and arrow only; `short` "" = the icon alone), see `_fit_steps`.
+func _step_button(full: String, short: String, on_pressed: Callable) -> Button:
+	var b := _button(full, on_pressed)
+	b.set_meta(&"full_text", full)
+	b.set_meta(&"short_text", short)
+	return b
+
+
+## H24 K1 / K2: the step row fits the column: at big text (STEP_ICONS_SCALE) or when a
+## button's words (translated) are wider than the column, it shows its short form (the
+## words stay in its tooltip); a button still too wide wraps its words inside the column.
+func _fit_steps(nav: HFlowContainer) -> void:
+	var room := GRID_SIDE_WIDTH
+	for b in nav.get_children():
+		if not (b is Button) or not b.has_meta(&"full_text"):
+			continue
+		var btn := b as Button
+		btn.text = String(btn.get_meta(&"full_text"))
+		btn.autowrap_mode = TextServer.AUTOWRAP_OFF
+		btn.custom_minimum_size.x = 0.0
+		if Settings.text_scale >= STEP_ICONS_SCALE - 0.001 or btn.get_combined_minimum_size().x > room:
+			btn.text = String(btn.get_meta(&"short_text"))
+		if btn.get_combined_minimum_size().x > room:
+			btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			btn.custom_minimum_size.x = room
 func _fit_after_redraw() -> void:
 	var city := wireframe.city
 	if not city.rebuilt.is_connected(fit_grid_map):
@@ -1152,7 +1302,7 @@ func _fit_after_redraw() -> void:
 func _on_grid_legend_resized() -> void:
 	if _grid_legend_size == Vector2.INF:
 		return
-	if grid_legend != null and is_instance_valid(grid_legend) and not grid_legend.get_combined_minimum_size().is_equal_approx(_grid_legend_size):
+	if grid_legend != null and is_instance_valid(grid_legend) and not grid_legend.fit_size().is_equal_approx(_grid_legend_size):
 		_refit_grid.call_deferred()
 
 
@@ -1280,7 +1430,7 @@ func _site_glyph(site: SiteData) -> String:
 			return GLYPH_HEAT
 		RC.SiteObjective.BOSS:
 			return GLYPH_BOSS
-	return "T%d" % site.tier
+	return CityMapOverlay.tier_text(site.tier)
 
 
 ## The picked Site as a card (H20, replacing the Site list): its facts as badges (status,
@@ -1295,24 +1445,30 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var accent := Palette.CELL_PINK if status == GridState.SiteStatus.CLAIMED else (Palette.NET_CYAN if status == GridState.SiteStatus.CLEARED else Palette.corp_color(c.corporation_id))
 	var card := TerminalWindow.new(site_name(site.id), accent)
 	card.name = "SelectedSite"
-	card.tag_label.text = "T%d // %s" % [site.tier, String(STATUS_NAMES.get(status, "?")).to_upper()]
+	# H24 K7: tier and status words translated here, once.
+	card.tag_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	card.tag_label.text = "%s // %s" % [CityMapOverlay.tier_text(site.tier), CityMapOverlay.tr_word(String(STATUS_NAMES.get(status, "?"))).to_upper()]
 	var facts := HFlowContainer.new()
 	facts.name = "SiteFacts"
 	facts.add_theme_constant_override("h_separation", 10)
 	facts.add_theme_constant_override("v_separation", 4)
 	card.body.add_child(facts)
-	facts.add_child(Badge.new(String(STATUS_NAMES.get(status, "?")), accent, _site_glyph(site), STATUS_TIPS.get(status, "")))
+	var status_badge := Badge.new(CityMapOverlay.tr_word(String(STATUS_NAMES.get(status, "?"))), accent, _site_glyph(site), STATUS_TIPS.get(status, ""))
+	status_badge.name = "StatusBadge"
+	if CityLayout.site_kind(c, site) == CityMapOverlay.KIND_HEAT:
+		status_badge.with_icon(StatIcon.COOLING)  # H24 K5: the Heat reduction Site's own icon
+	facts.add_child(status_badge)
 	var objective := CampaignRules.site_objective(c, site)
 	if objective == RC.SiteObjective.EXPLOIT:
 		var ename: String = RC.ExploitType.keys()[site.exploit_type]
 		facts.add_child(Badge.new(ename.capitalize(), Palette.CELL_ACID, GLYPH_EXPLOIT, "Clear this Site for the %s Exploit (%d/%d for the breach)." % [ename.capitalize(), c.exploits.size(), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS))
 	elif objective == RC.SiteObjective.HEAT_REDUCTION:
 		var dh := HeatRules.scaled_delta(c, site.heat_change, cfg)
-		facts.add_child(Badge.new("Heat %+d" % dh, Palette.NET_CYAN, GLYPH_HEAT, "Clearing this Site changes Heat by %d." % dh).with_icon(StatIcon.HEAT))
+		facts.add_child(Badge.new(CityMapOverlay.tr_word("HEAT %+d") % dh, Palette.NET_CYAN, GLYPH_HEAT, "Clearing this Site changes Heat by %d." % dh).with_icon(StatIcon.COOLING if dh < 0 else StatIcon.HEAT))
 	elif objective == RC.SiteObjective.BOSS:
 		facts.add_child(Badge.new("BOSS", Palette.corp_color(c.corporation_id), GLYPH_BOSS, "The corporation's core. The breach needs %d Exploits." % cfg.min_exploits_for_breach))
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
-		facts.add_child(Badge.new("off", Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, "This Site's Heat objective is switched off at this ICE level."))
+		facts.add_child(Badge.new(CityMapOverlay.tr_word("off"), Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, "This Site's Heat objective is switched off at this ICE level.").with_icon(StatIcon.COOLING))
 	if c.grid.is_claimed(site.id):
 		var node_col := Palette.CELL_PINK if int(s["condition"]) != GridState.Condition.DISABLED else Palette.RESIST_GOLD
 		var node_text := "%s %d/%d" % [_display(c.grid.node_type_of(site.id)), int(s["integrity"]), int(s["max_integrity"])]

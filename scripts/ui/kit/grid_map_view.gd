@@ -14,6 +14,11 @@ extends Control
 ## H23 #1: labels are placed, not stamped under each block: no two labels (pips
 ## included) overlap, a crowded label shortens or is left out (see `layout_labels`), and
 ## every Site keeps a tooltip naming it, its tier, kind and status.
+##
+## H24: objective and home Sites float the map's own icon (CityMapOverlay.draw_icon, not a
+## font glyph: K5); every word drawn here goes through the TranslationServer once (K7:
+## "CORE", "T2", HOME); a label never covers a Site's block or icon (K8: at 1.6 the T1
+## labels sat on the stacked blocks), it shortens or is left out instead.
 
 signal site_clicked(site_id: StringName)
 
@@ -48,6 +53,10 @@ var drawn_tiers: Dictionary = {}
 ## H23 #1: the label rects of the last draw (Site id -> Rect2, px; pips included), for
 ## checks. A Site left out for room has none.
 var label_rects: Dictionary = {}
+## H24 K8: what each Site draws (its block and floating icon; Site id -> Rect2, px), for
+## the label layout and checks; and the map icon kind each Site floats (K5).
+var icon_rects: Dictionary = {}
+var drawn_icons: Dictionary = {}
 
 
 func _init() -> void:
@@ -65,10 +74,10 @@ static func label_size(base: int) -> int:
 
 ## The label shown under Site `s` (tier, translated name on a sparse Grid, objective
 ## glyph; "CORE" for the home Site).
-func site_label(s: SiteData, glyph: String, dense: bool) -> String:
+func site_label(s: SiteData, dense: bool) -> String:
 	if campaign != null and s.id == campaign.grid.home_site_id:
-		return CityLayout.HOME_LABEL
-	return ("T%d %s" % [s.tier, glyph]) if dense else ("T%d %s %s" % [s.tier, TextDb.t(s, "display_name"), glyph])
+		return CityLayout.home_label()
+	return CityMapOverlay.tier_text(s.tier) if dense else "%s %s" % [CityMapOverlay.tier_text(s.tier), TextDb.t(s, "display_name")]
 
 
 func show_grid(p_campaign: CampaignState, p_corp: CorporationData, p_threat_paths: Array[Array] = []) -> void:
@@ -122,6 +131,8 @@ func _draw() -> void:
 		return
 	drawn_labels.clear()
 	drawn_tiers.clear()
+	drawn_icons.clear()
+	icon_rects.clear()
 	_layout_positions()  # the control's size is only final at draw time
 	var corp_col := Palette.corp_color(corp.id)
 	var dense := corp.city_grid.sites.size() > 16
@@ -188,28 +199,28 @@ func _draw() -> void:
 		if status == GridState.SiteStatus.SEIZED:
 			draw_line(p + Vector2(-w * 0.6, -w * 0.6), p + Vector2(w * 0.6, w * 0.6), Palette.RESIST_GOLD, 2.0)
 			draw_line(p + Vector2(-w * 0.6, w * 0.6), p + Vector2(w * 0.6, -w * 0.6), Palette.RESIST_GOLD, 2.0)
-		var glyph := ""
-		match CampaignRules.site_objective(campaign, s):
-			RC.SiteObjective.EXPLOIT:
-				glyph = "◈"
-			RC.SiteObjective.HEAT_REDUCTION:
-				glyph = "❄"
-			RC.SiteObjective.BOSS:
-				glyph = "✦"
-		if glyph != "" or s.id == campaign.grid.home_site_id:
-			_badge(p + Vector2(0, -h - d - BADGE_LIFT),9.0 if dense else 11.0, col, glyph if glyph != "" else "⌂")
+		# H24 K5: the map's own icon over objective Sites and CORE (the same drawing as the
+		# city map and the key).
+		var kind := CityLayout.site_kind(campaign, s)
+		var floats := kind != CityMapOverlay.KIND_TIER
+		var badge_r := 9.0 if dense else 11.0
+		if floats:
+			CityMapOverlay.draw_icon(self, kind, p + Vector2(0, -h - d - BADGE_LIFT), badge_r, col)
+			drawn_icons[s.id] = kind
 		var home := s.id == campaign.grid.home_site_id
 		var detail_text := ""
 		if status == GridState.SiteStatus.CLAIMED and not home:
 			var site := campaign.grid.site(s.id)
 			var level := campaign.grid.upgrade_level_of(s.id)
-			detail_text = "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""]
+			detail_text = "%s %d/%d%s" % [_node_name(campaign.grid.node_type_of(s.id)), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""]
 		elif home:
-			detail_text = "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity]
-		jobs.append({"id": s.id, "p": p, "body": _body_rect(p, w, d, h, glyph != "" or home, 9.0 if dense else 11.0),
+			detail_text = "%s %d/%d" % [CityMapOverlay.tr_word("HOME"), campaign.grid.home_integrity, campaign.grid.home_max_integrity]
+		var body := _body_rect(p, w, d, h, floats, badge_r)
+		icon_rects[s.id] = body
+		jobs.append({"id": s.id, "p": p, "body": body,
 			"prio": 0 if s.id == selected_id else (1 if home else (2 if status == GridState.SiteStatus.CLAIMED else 3)),
-			"tier": 0 if home else s.tier, "variants": _variants(s, glyph, dense, detail_text)})
-		bodies.append(jobs[jobs.size() - 1]["body"])
+			"tier": 0 if home else s.tier, "variants": _variants(s, dense, detail_text)})
+		bodies.append(body)
 		# Raid playout: threats standing on this Site as corporate markers.
 		if threat_markers.has(s.id):
 			var names: Array = threat_markers[s.id]
@@ -231,12 +242,12 @@ static func _body_rect(p: Vector2, w: float, d: float, h: float, badge: bool, ba
 ## The label variants of Site `s`, longest first (H23 #1): name and detail line, name,
 ## the short "T2 glyph", the tier pips alone. Each: {lines: [[text, font size, colour]],
 ## pips: bool}.
-func _variants(s: SiteData, glyph: String, dense: bool, detail_text: String) -> Array[Dictionary]:
+func _variants(s: SiteData, dense: bool, detail_text: String) -> Array[Dictionary]:
 	var home := s.id == campaign.grid.home_site_id
 	var fs := label_size(LABEL_FONT_DENSE if dense else LABEL_FONT)
 	var dfs := label_size(DETAIL_FONT)
-	var main := site_label(s, glyph, dense)
-	var short := CityLayout.HOME_LABEL if home else ("T%d %s" % [s.tier, glyph]).strip_edges()
+	var main := site_label(s, dense)
+	var short := CityLayout.home_label() if home else CityMapOverlay.tier_text(s.tier)
 	var out: Array[Dictionary] = []
 	if detail_text != "":
 		out.append({"lines": [[main, fs, Palette.PAPER], [detail_text, dfs, Palette.CELL_ACID]], "pips": not home})
@@ -273,9 +284,10 @@ static func _variant_size(v: Dictionary) -> Vector2:
 ## claimed, the rest; ties by Site id), each at the first free spot round its block
 ## (below, above, right, left, then the corners), inside the view and clear of every
 ## label placed before (pips included: they are part of the label). A label with no room
-## drops to a shorter variant (name, "T2 glyph", the pips alone); a spot clear of the other
-## Sites' blocks is preferred even at a shorter variant; a label that fits nowhere is left
-## out and the Site keeps its tooltip. Returns [{id, rect, variant}]; fills `label_rects`.
+## drops to a shorter variant (name, "T2", the pips alone); H24 K8: a label never lies on
+## a Site's block or icon (it used to, as a last resort, on the stacked T1 blocks at 1.6);
+## a label that fits nowhere is left out and the Site keeps its tooltip. Returns
+## [{id, rect, variant}]; fills `label_rects`.
 func layout_labels(jobs: Array[Dictionary], bodies: Array[Rect2]) -> Array[Dictionary]:
 	var order := jobs.duplicate()
 	order.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -287,16 +299,13 @@ func layout_labels(jobs: Array[Dictionary], bodies: Array[Rect2]) -> Array[Dicti
 	label_rects.clear()
 	for job: Dictionary in order:
 		var spot := {}
-		# Clear of the other blocks first (shortening the label if need be), then over them.
-		for strict in [true, false]:
-			for v: Dictionary in job["variants"]:
-				var box := _variant_size(v)
-				for c in _label_spots(job["p"], job["body"], box):
-					var r := Rect2(c, box)
-					if area.encloses(r) and _label_free(r, placed, bodies, job["body"], strict):
-						spot = {"id": job["id"], "rect": r, "variant": v, "tier": job["tier"]}
-						break
-				if not spot.is_empty():
+		# Clear of every block, shortening the label if need be (H24 K8: never over them).
+		for v: Dictionary in job["variants"]:
+			var box := _variant_size(v)
+			for c in _label_spots(job["p"], job["body"], box):
+				var r := Rect2(c, box)
+				if area.encloses(r) and _label_free(r, placed, bodies, job["body"], true):
+					spot = {"id": job["id"], "rect": r, "variant": v, "tier": job["tier"]}
 					break
 			if not spot.is_empty():
 				break
@@ -361,7 +370,7 @@ func _get_tooltip(at_position: Vector2) -> String:
 	if sd == null:
 		return tooltip_text
 	var kind := CityLayout.site_kind(campaign, sd)
-	var name_text := CityLayout.HOME_LABEL if kind == CityMapOverlay.KIND_HOME else TextDb.t(sd, "display_name")
+	var name_text := CityLayout.home_label() if kind == CityMapOverlay.KIND_HOME else TextDb.t(sd, "display_name")
 	return UiTip.fold(CityLayout.site_tip(name_text, sd.tier, campaign.grid.status_of(id), kind))
 
 
@@ -387,16 +396,11 @@ func _iso_block(p: Vector2, w: float, d: float, h: float, col: Color) -> void:
 	draw_line(top[2], top[2] + up, Color(col, 0.6), 1.0)
 
 
-## A hexagon badge floating over a Site: status colour, objective glyph inside.
-func _badge(p: Vector2, r: float, col: Color, glyph: String) -> void:
-	var pts := PackedVector2Array()
-	for k in 7:
-		pts.append(p + Vector2(cos(k * TAU / 6.0 + PI / 6.0), sin(k * TAU / 6.0 + PI / 6.0)) * r)
-	draw_colored_polygon(pts, Color(Palette.NIGHT_SKY, 0.9))
-	draw_polyline(pts, Color(col, 0.3), 4.0)
-	draw_polyline(pts, col, 1.5)
-	if glyph != "":
-		draw_string(Palette.mono(), p + Vector2(-r, r * 0.45), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), col)
+## A claimed node's display name (TextDb through the content lookup), else its id.
+static func _node_name(node_id: StringName) -> String:
+	var lookup := RunManager.lookup() if RunManager != null else null
+	var res: Resource = lookup.get_content(node_id) if lookup != null else null
+	return TextDb.t(res, "display_name") if res != null else String(node_id)
 
 
 func _dashed_line(a: Vector2, b: Vector2, col: Color) -> void:

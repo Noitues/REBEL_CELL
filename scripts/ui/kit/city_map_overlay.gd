@@ -41,6 +41,9 @@ extends Control
 signal node_clicked(id: StringName)
 ## Threat markers moved (raid playout): the scene can follow them with the camera.
 signal markers_changed
+## H24 K4: the pointer moved onto node `id` (&"" when it left every node), so a screen can
+## light the matching row of its list.
+signal node_hovered(id: StringName)
 
 ## TRACE: roof outlines and solid street paths. PILLARS: light pillars and floating
 ## badges, flowing dashed paths. ISOLATE: the rest of the city greyed out.
@@ -86,6 +89,16 @@ const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a
 	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core",
 	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)",
 	KIND_TIER: "Site"}
+## H24 K5: each kind's icon is a silhouette and a symbol, and no two kinds share either
+## silhouette or both (the Modem shop was the Exploit's diamond, the Heat reduction Site
+## ICE's snowflake). A symbol named like a StatIcon is drawn by StatIcon, so a map icon
+## and the tag for the same thing match (the Exploit's diamond, the shop's bag).
+const KIND_SHAPES := {KIND_FIGHT: "circle", KIND_ELITE: "star8", KIND_SHOP: "tag", KIND_EVENT: "square",
+	KIND_RACK: "tower", KIND_BOSS: "star5", KIND_EXPLOIT: "diamond", KIND_HEAT: "drop", KIND_HOME: "house",
+	KIND_TIER: "hexagon"}
+const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades", KIND_SHOP: "shop",
+	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_BOSS: "star", KIND_EXPLOIT: "exploits",
+	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number"}
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
 const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Modem", KIND_EVENT: "Terminal",
 	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction",
@@ -96,9 +109,14 @@ const ICON_RADIUS := 13.0
 const ICON_RADIUS_BIG := 17.0
 const ICON_LIFT := 10.0
 ## Clearance between two icons (screen px), and how many steps an icon may float up to
-## clear the icons in front of it.
+## clear the icons in front of it (H24 K6: trying the columns beside its stalk at each).
 const ICON_SPACING := 3.0
 const ICON_STACK_MAX := 4
+## H24 K6: the columns an icon may shift to at each height (in icon widths, in this
+## order; sideways first keeps a crowd low, so a raid map still fits its frame), and how
+## high it may float at the last (a free spot is always found well before).
+const ICON_FAN: Array[int] = [0, 1, -1]
+const ICON_STACK_LIMIT := 32
 ## Pillars look: how high the badge floats over normal and big nodes (px, local).
 const PILLAR_HEIGHT := 46.0
 const PILLAR_HEIGHT_BIG := 70.0
@@ -122,6 +140,9 @@ const HERE_RING := 5.0
 ## Threat markers over a node: half-height and spacing (screen px).
 const MARKER_SIZE := 9.0
 const MARKER_STEP := 16.0
+## H24 K4: the lit node's ring, beyond the selection ring (screen px), and its ticks.
+const HOVER_RING := 4.0
+const HOVER_TICK := 6.0
 ## Smallest city zoom the screen-size maths accepts.
 const MIN_ZOOM := 0.1
 ## H22: labels keep this far inside the visible map area (screen px).
@@ -157,6 +178,18 @@ var selected_id: StringName = &"":
 	set(v):
 		selected_id = v
 		queue_redraw()
+## H24 K4: a node lit from outside the map (its row in a list is hovered or has the pad's
+## focus): a paper ring with ticks round its icon, and its label shown first.
+var hover_id: StringName = &"":
+	set(v):
+		if v == hover_id:
+			return
+		hover_id = v
+		if _top != null:
+			_top.queue_redraw()
+			_hi.queue_redraw()
+## The node under the pointer (for `node_hovered`).
+var _pointer_id: StringName = &""
 ## Spotlight target (node id) for the SPOTLIGHT look.
 var focus_id: StringName = &""
 var anim_t: float = 0.0
@@ -215,9 +248,30 @@ static func route_kind(node_type: int, elite: bool) -> String:
 	return ""
 
 
-## The word naming node kind `kind` (KIND_WORDS; "" for an unknown kind).
+## The word naming node kind `kind` (KIND_WORDS; "" for an unknown kind), translated
+## (H24 K7).
 static func kind_word(kind: String) -> String:
-	return String(KIND_WORDS.get(kind, ""))
+	var w := String(KIND_WORDS.get(kind, ""))
+	return tr_word(w) if w != "" else ""
+
+
+## H24 K7: `text` through the TranslationServer once (static code has no Node.tr). Words
+## drawn with draw_string are never translated by a Label, so they come through here.
+static func tr_word(text: String) -> String:
+	return String(TranslationServer.translate(text))
+
+
+## H24 K7: a Site's tier as the maps say it ("T2"): the letter translates, the number and
+## the pips carry it for any reader.
+static func tier_text(tier: int) -> String:
+	return tr_word("T%d") % tier
+
+
+## H24 K5: node kind `kind`'s icon identity, "<silhouette>/<symbol>" ("" when unknown).
+static func icon_id(kind: String) -> String:
+	if not KIND_SHAPES.has(kind):
+		return ""
+	return "%s/%s" % [KIND_SHAPES[kind], KIND_SYMBOLS[kind]]
 
 
 func _layer(layer_name: String, painter: Callable) -> Control:
@@ -443,11 +497,25 @@ func _to_local(p: Vector2) -> Vector2:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_point_at(node_at(event.position))
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var id := node_at(event.position)
 		if id != &"":
 			node_clicked.emit(id)
 			accept_event()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT:
+		_point_at(&"")
+
+
+## H24 K4: the pointer is over node `id` now: tell the screen when that changes.
+func _point_at(id: StringName) -> void:
+	if id != _pointer_id:
+		_pointer_id = id
+		node_hovered.emit(id)
 
 
 ## The node under local point `p` (its icon first, then its roof or base), or &"". Icons
@@ -546,9 +614,33 @@ func icon_pos(n: Dictionary) -> Vector2:
 	return _icon_positions().get(n["id"], Vector2(INF, INF))
 
 
+## The box node `n`'s icon covers round centre `p` (local px): its silhouette and, for a
+## Site, its tier pips under it (H24 K6: the pips of one icon sat on the icon below).
+func _icon_box(n: Dictionary, p: Vector2) -> Rect2:
+	var r := icon_radius(n)
+	var shape := icon_shape(String(n.get("kind", "")), p, r)
+	var box := Rect2(p - Vector2(r, r), Vector2(r, r) * 2.0)
+	for q in shape:
+		box = box.expand(q)
+	if tier_of(n) > 0:
+		var s := _pip_scale(n)
+		var pips := tier_pips_size(s)
+		box = box.merge(Rect2(p + Vector2(-pips.x * 0.5, r + (TIER_PIP_GAP + TIER_PIP) * s - pips.y * 0.5), pips))
+	return box
+
+
+## H24 K6: the rect node `n`'s icon and tier pips cover as placed (local px).
+func icon_rect(n: Dictionary) -> Rect2:
+	var p := icon_pos(n)
+	return _icon_box(n, p) if p.x != INF else Rect2()
+
+
 ## Every node's icon position (id -> local px), cached per camera and look. Icons are
-## placed front to back (nearest roof first, ties by id); one that would overlap an icon
-## already placed floats up a step at a time (its stalk grows), at most ICON_STACK_MAX.
+## placed front to back (nearest roof first, ties by id); one whose box (icon and pips)
+## would touch an icon already placed takes (H24 K6) the first free spot of the columns
+## beside its stalk (ICON_FAN) at its height, then a step higher (its stalk grows), up to
+## ICON_STACK_MAX steps, and at the last floats higher in its own column: no two icons
+## ever overlap.
 func _icon_positions() -> Dictionary:
 	if city == null or nodes.is_empty():
 		return {}
@@ -566,27 +658,42 @@ func _icon_positions() -> Dictionary:
 			return a["top"].y > b["top"].y
 		return String(a["n"]["id"]) < String(b["n"]["id"]))
 	var out := {}
-	var placed: Array[Vector3] = []  # x, y, radius
+	var placed: Array[Rect2] = []
 	var gap := ICON_SPACING * _k()
 	for o in order:
 		var n: Dictionary = o["n"]
 		var r := icon_radius(n)
 		var big: bool = n.get("big", false)
-		var p: Vector2 = o["top"] + Vector2(0, -((PILLAR_HEIGHT_BIG if big else PILLAR_HEIGHT) if look == Look.PILLARS else ICON_LIFT + r))
-		for step in ICON_STACK_MAX:
-			var hit := false
-			for q in placed:
-				if p.distance_to(Vector2(q.x, q.y)) < r + q.z + gap:
-					hit = true
+		var base: Vector2 = o["top"] + Vector2(0, -((PILLAR_HEIGHT_BIG if big else PILLAR_HEIGHT) if look == Look.PILLARS else ICON_LIFT + r))
+		var own := _icon_box(n, base).size + Vector2(gap, gap)
+		var p := base
+		var found := false
+		for level in ICON_STACK_MAX:
+			for col in ICON_FAN:
+				p = base + Vector2(col * own.x, -level * own.y)
+				if _box_free(_icon_box(n, p), placed, gap):
+					found = true
 					break
-			if not hit:
+			if found:
 				break
-			p.y -= r * 2.0 + gap
-		placed.append(Vector3(p.x, p.y, r))
+		if not found:
+			for level in range(ICON_STACK_MAX, ICON_STACK_LIMIT):
+				p = base + Vector2(0, -level * own.y)
+				if _box_free(_icon_box(n, p), placed, gap):
+					break
+		placed.append(_icon_box(n, p))
 		out[n["id"]] = p
 	_icon_key = key
 	_icon_cache = out
 	return out
+
+
+static func _box_free(box: Rect2, placed: Array[Rect2], gap: float) -> bool:
+	var grown := box.grow(gap * 0.5)
+	for q in placed:
+		if grown.intersects(q.grow(gap * 0.5)):
+			return false
+	return true
 
 
 ## Static under-layer: the look's veil and every route's keyline and glow. Any redraw of
@@ -634,12 +741,29 @@ func _draw_top() -> void:
 	_c = self
 
 
-## The selected node's pulsing ring.
+## The selected node's pulsing ring, and (H24 K4) the lit node's ticked ring.
 func _draw_hi() -> void:
+	var hc := hover_centre()
+	if hc.x != INF:
+		var k := _k()
+		var hn := _node_dict(hover_id)
+		var hr := (icon_radius(hn) if not hn.is_empty() else ICON_RADIUS * k) + (SELECT_RING + PULSE_AMPLITUDE + HOVER_RING) * k
+		_hi.draw_arc(hc, hr, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
+		_hi.draw_arc(hc, hr, 0, TAU, 32, Palette.PAPER, 2.0 * k)
+		for q in 4:
+			var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
+			_hi.draw_line(hc + d * hr, hc + d * (hr + HOVER_TICK * k), Palette.PAPER, 2.0 * k)
 	var at := ring_centre()
 	if at.x == INF:
 		return
 	_hi.draw_arc(at, ring_radius() + (sin(anim_t * PULSE_SPEED) - 1.0) * PULSE_AMPLITUDE * _k(), 0, TAU, 32, Palette.CELL_ACID, 2.0 * _k())
+
+
+## Centre of the lit node's ring (H24 K4), or INF when no node is lit.
+func hover_centre() -> Vector2:
+	if city == null or hover_id == &"" or not _lots.has(hover_id):
+		return Vector2(INF, INF)
+	return _icon_positions().get(hover_id, Vector2(INF, INF))
 
 
 ## Centre of the selection ring (the selected node's icon), or INF when none shows.
@@ -870,6 +994,44 @@ func label_font_size() -> int:
 	return maxi(1, roundi(TAG_FONT * Settings.text_scale * _k()))
 
 
+## H24 K1 (checks): the nodes with a label to show, on the visible map, that were left
+## out although a spot near them (on one line or two) is free of every placed label, icon,
+## pip row and the rings. The layout never does that; a Site with no label had no room.
+func unplaced_with_room() -> Array[StringName]:
+	var out: Array[StringName] = []
+	if city == null or nodes.is_empty():
+		return out
+	var placed := _layout_labels()
+	var got := {}
+	for l: Dictionary in placed:
+		got[l["key"]] = true
+	var f := Palette.mono()
+	var fs := label_font_size()
+	var pad := TAG_PAD * _k()
+	var line_h := f.get_height(fs)
+	var icons: Array[Dictionary] = []
+	var marks: Array[Rect2] = []
+	for n in nodes:
+		if not _roof(n["id"]).is_empty():
+			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
+			if tier_of(n) > 0:
+				marks.append(tier_pips_rect(n))
+	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius(),
+		"area": label_area(), "blocks": label_blocks()}
+	for n in nodes:
+		var lines := label_lines(n["id"])
+		if lines.is_empty() or got.has(String(n["id"])) or _roof(n["id"]).is_empty():
+			continue
+		var t := {"at": icon_pos(n), "r": icon_radius(n)}
+		if not _visible_at(t["at"], obstacles["area"], obstacles["blocks"]):
+			continue
+		for v: PackedStringArray in [lines, wrap_lines(lines)]:
+			if _free_spot(t, _label_box(v, f, fs, pad, line_h), obstacles).size != Vector2.ZERO:
+				out.append(n["id"])
+				break
+	return out
+
+
 ## The labels drawn now: node id -> Rect2 (local px). Threat tags are keyed "<id>#threats".
 func label_rects() -> Dictionary:
 	var out := {}
@@ -887,6 +1049,9 @@ func label_lines(id: StringName) -> PackedStringArray:
 	var text := String(n.get("label", ""))
 	if text == "" and n.get("here", false):
 		text = HERE_LABEL
+	# H24 K4: a node lit from its list row shows its name even where the map shows none.
+	if text == "" and id == hover_id:
+		text = String(n.get("name", ""))
 	if text != "":
 		lines.append(text)
 	if n.has("result"):
@@ -895,7 +1060,7 @@ func label_lines(id: StringName) -> PackedStringArray:
 
 
 func _prio(n: Dictionary) -> int:
-	if n["id"] == selected_id or n.get("here", false):
+	if n["id"] == selected_id or n.get("here", false) or n["id"] == hover_id:
 		return PRIO_FOCUS
 	if n.get("next", false) or String(n.get("mark", "")) == MARK_SPRAY or n.get("big", false):
 		return PRIO_KEY
@@ -950,19 +1115,32 @@ func _layout_labels() -> Array[Dictionary]:
 		# label moved in for it would float with nothing to point at.
 		if not _visible_at(t["at"], area, blocks):
 			continue
-		var w := 0.0
-		for line in t["lines"]:
-			w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
-		var box := Vector2(w + pad * 2.0, line_h * (t["lines"] as PackedStringArray).size() + pad * 2.0)
 		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks}
-		var spot := _free_spot(t, box, obstacles)
+		# H24 K1: a long name with no room on one line tries two (narrower) lines.
+		var variants: Array[PackedStringArray] = [t["lines"]]
+		var wrapped := wrap_lines(t["lines"])
+		if wrapped != t["lines"]:
+			variants.append(wrapped)
+		var spot := Rect2()
+		var box := Vector2.ZERO
+		for lines: PackedStringArray in variants:
+			box = _label_box(lines, f, fs, pad, line_h)
+			spot = _free_spot(t, box, obstacles)
+			if spot.size != Vector2.ZERO:
+				t["lines"] = lines
+				break
 		if spot.size == Vector2.ZERO:
 			# H22: focus labels (and the landmarks: CORE, the boss) move inward onto the
 			# screen rather than off it or under a side column (H23 #2: never further than
 			# LABEL_REACH from their node; H23 #4: never onto another label).
 			if t["prio"] != PRIO_FOCUS and not _node_dict(t["id"]).get("big", false):
 				continue
-			spot = _inward_spot(t, box, obstacles, t["prio"] == PRIO_FOCUS)
+			for lines: PackedStringArray in variants:
+				box = _label_box(lines, f, fs, pad, line_h)
+				spot = _inward_spot(t, box, obstacles, t["prio"] == PRIO_FOCUS)
+				if spot.size != Vector2.ZERO:
+					t["lines"] = lines
+					break
 			if spot.size == Vector2.ZERO:
 				continue
 		t["rect"] = spot
@@ -970,6 +1148,32 @@ func _layout_labels() -> Array[Dictionary]:
 		t["pad"] = pad
 		placed.append(t)
 	return placed
+
+
+## The size of a label of `lines` (local px).
+static func _label_box(lines: PackedStringArray, f: Font, fs: int, pad: float, line_h: float) -> Vector2:
+	var w := 0.0
+	for line in lines:
+		w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	return Vector2(w + pad * 2.0, line_h * lines.size() + pad * 2.0)
+
+
+## H24 K1: `lines` with its first line broken in two at the space nearest its middle
+## (unchanged when it has no space).
+static func wrap_lines(lines: PackedStringArray) -> PackedStringArray:
+	if lines.is_empty():
+		return lines
+	var text := lines[0]
+	var best := -1
+	for i in text.length():
+		if text[i] == " " and (best < 0 or absi(i * 2 - text.length()) < absi(best * 2 - text.length())):
+			best = i
+	if best < 0:
+		return lines
+	var out := PackedStringArray([text.substr(0, best), text.substr(best + 1)])
+	for k in range(1, lines.size()):
+		out.append(lines[k])
+	return out
 
 
 ## Candidate top-left corners for a `box` label around a centre `c` at distance `d`.
@@ -983,7 +1187,11 @@ static func _spots(c: Vector2, d: float, box: Vector2) -> Array[Vector2]:
 ## The first free spot for label `t` (Rect2 with a zero size when there is none): inside
 ## the label area, out of the blocked screen areas, clear of the obstacles.
 func _free_spot(t: Dictionary, box: Vector2, obstacles: Dictionary) -> Rect2:
+	var reach := LABEL_REACH * _k()
 	for rect in _candidates(t, box):
+		# H24 K1: no spot further than LABEL_REACH either (a two-line label's outer rings).
+		if reach_of(rect, t["at"]) > reach:
+			continue
 		if _on_screen(rect, obstacles) and not _blocked(rect, obstacles):
 			return rect
 	return Rect2()
@@ -1170,12 +1378,28 @@ static func _star(p: Vector2, r_out: float, r_in: float, points: int) -> PackedV
 ## kind on a map has its own shape, so icons differ by more than their symbol.
 static func icon_shape(kind: String, p: Vector2, r: float) -> PackedVector2Array:
 	match kind:
-		KIND_FIGHT, KIND_HEAT:
+		KIND_FIGHT:
 			return _ngon(p, r, 20, 0.0)
+		KIND_HEAT:
+			# A drop (cooling), its point up (H24 K5).
+			var d := PackedVector2Array([p + Vector2(0, -r * 1.25)])
+			for k in 15:
+				var t := -PI / 6.0 + (PI + PI / 3.0) * k / 14.0
+				d.append(p + Vector2(0, r * 0.18) + Vector2(cos(t), sin(t)) * r * 0.92)
+			d.append(p + Vector2(0, -r * 1.25))
+			return d
 		KIND_ELITE:
 			return _star(p, r * 1.1, r * 0.8, 8)
-		KIND_SHOP, KIND_EXPLOIT:
+		KIND_SHOP:
+			# A price tag, its point left (H24 K5: the shop was the Exploit's diamond).
+			return PackedVector2Array([p + Vector2(-r * 1.2, 0), p + Vector2(-r * 0.55, -r * 0.8), p + Vector2(r * 1.05, -r * 0.8),
+				p + Vector2(r * 1.05, r * 0.8), p + Vector2(-r * 0.55, r * 0.8), p + Vector2(-r * 1.2, 0)])
+		KIND_EXPLOIT:
 			return _ngon(p, r * 1.15, 4, -PI * 0.5)
+		KIND_RACK:
+			# A server tower (H24 K5: it was the plain Site's hexagon).
+			return PackedVector2Array([p + Vector2(-r * 0.75, -r * 1.1), p + Vector2(r * 0.75, -r * 1.1), p + Vector2(r * 0.75, r * 1.1),
+				p + Vector2(-r * 0.75, r * 1.1), p + Vector2(-r * 0.75, -r * 1.1)])
 		KIND_EVENT:
 			return _ngon(p, r * 1.2, 4, PI * 0.25)
 		KIND_BOSS:
@@ -1199,6 +1423,8 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 	ci.draw_polyline(shape, ink, w + 3.0, true)
 	ci.draw_polyline(shape, edge, w, true)
 	var f := Palette.mono()
+	if KIND_SHAPES.has(kind):
+		ci.set_meta(&"icon_id", icon_id(kind))  # the last map icon drawn on `ci` (checks)
 	match kind:
 		KIND_FIGHT, KIND_ELITE:
 			# Crossed blades with their guards.
@@ -1209,7 +1435,8 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 				var perp := Vector2(-dir.y, dir.x) * s * 0.35
 				ci.draw_line(g - perp, g + perp, edge, w)
 		KIND_SHOP:
-			_icon_text(ci, f, "$", p, r, edge)
+			StatIcon.draw(ci, p + Vector2(r * 0.12, 0), r * 0.58, StatIcon.SHOP, edge)
+			ci.draw_circle(p + Vector2(-r * 0.72, 0), maxf(1.0, r * 0.1), edge)  # the tag's hole
 		KIND_EVENT:
 			_icon_text(ci, f, "?", p, r, edge)
 		KIND_RACK:
@@ -1223,17 +1450,10 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 		KIND_BOSS:
 			ci.draw_colored_polygon(_star(p, r * 0.55, r * 0.25, 5), edge)
 		KIND_EXPLOIT:
-			ci.draw_colored_polygon(_ngon(p, r * 0.5, 4, -PI * 0.5), edge)
+			StatIcon.draw(ci, p, r * 0.62, StatIcon.EXPLOITS, edge)
 		KIND_HEAT:
-			# A snowflake: three bars with a tick at each end.
-			for a in 3:
-				var dir := Vector2.from_angle(PI * 0.5 + PI * a / 3.0) * r * 0.62
-				ci.draw_line(p - dir, p + dir, edge, w)
-				for end_p: Vector2 in [p - dir, p + dir]:
-					var back := (p - end_p).normalized() * r * 0.22
-					var side := Vector2(-back.y, back.x)
-					ci.draw_line(end_p + back, end_p + back * 0.2 + side, edge, maxf(1.0, w * 0.7))
-					ci.draw_line(end_p + back, end_p + back * 0.2 - side, edge, maxf(1.0, w * 0.7))
+			# Heat going down (H24 K5: the snowflake is ICE's icon on the top bar).
+			StatIcon.draw(ci, p + Vector2(0, r * 0.2), r * 0.6, StatIcon.COOLING, edge)
 		KIND_HOME:
 			var s := r * 0.3
 			ci.draw_rect(Rect2(p.x - s * 0.6, p.y + r * 0.85 - s * 2.0, s * 1.2, s * 2.0), edge)

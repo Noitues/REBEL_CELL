@@ -16,9 +16,11 @@ const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clea
 ## H23 #6: what each Site kind is and does (map and mini-map tooltips), led by its kind
 ## word (CityMapOverlay.kind_word) and the icon's shape, so a newcomer learns the icons
 ## without the legend.
+## H24 K5: the Heat reduction Site is a drop with a flame and a down arrow (the snowflake
+## is ICE's icon on the top bar).
 const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.",
 	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the boss breach.",
-	CityMapOverlay.KIND_HEAT: "Heat reduction Site (snowflake): clearing it lowers Heat.",
+	CityMapOverlay.KIND_HEAT: "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.",
 	CityMapOverlay.KIND_BOSS: "Boss Site (star): the corporation's core.",
 	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."}
 
@@ -44,11 +46,17 @@ static func site_kind(c: CampaignState, sd: SiteData) -> String:
 static func site_tip(site_label: String, tier: int, status: int, kind: String) -> String:
 	var home := kind == CityMapOverlay.KIND_HOME
 	var parts := PackedStringArray()
-	parts.append("%s." % site_label if home else "%s (T%d: difficulty %d of %d)." % [site_label, tier, tier, CityMapOverlay.TIER_PIPS_MAX])
-	parts.append(String(KIND_TIPS.get(kind, KIND_TIPS[CityMapOverlay.KIND_TIER])))
+	parts.append("%s." % site_label if home else "%s (%s: %s)." % [site_label, CityMapOverlay.tier_text(tier),
+		CityMapOverlay.tr_word("difficulty %d of %d") % [tier, CityMapOverlay.TIER_PIPS_MAX]])
+	parts.append(CityMapOverlay.tr_word(String(KIND_TIPS.get(kind, KIND_TIPS[CityMapOverlay.KIND_TIER]))))
 	if not home:
-		parts.append(String(STATUS_TIPS.get(status, "")))
+		parts.append(CityMapOverlay.tr_word(String(STATUS_TIPS.get(status, ""))))
 	return " ".join(parts)
+
+
+## H24 K7: the home Site's map name, translated ("CORE").
+static func home_label() -> String:
+	return CityMapOverlay.tr_word(HOME_LABEL)
 
 
 ## Grid point (lots) for every Site id of `corp`'s City Grid.
@@ -89,18 +97,13 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 				col = Palette.NET_CYAN
 			GridState.SiteStatus.SEIZED:
 				col = Palette.RESIST_GOLD
-		var glyph := "T%d" % sd.tier
+		# H24 K5 / K7: the kind is the drawn icon (no font glyph); a plain Site's hexagon
+		# carries its tier, translated.
 		var objective := CampaignRules.site_objective(c, sd)
-		match objective:
-			RC.SiteObjective.EXPLOIT:
-				glyph = "◈"
-			RC.SiteObjective.HEAT_REDUCTION:
-				glyph = "❄"
-			RC.SiteObjective.BOSS:
-				glyph = "✦"
 		var kind := site_kind(c, sd)
 		var home := kind == CityMapOverlay.KIND_HOME
-		var named := home or status != GridState.SiteStatus.CORPORATE or glyph.length() == 1 or sd.id == selected
+		var glyph := CityMapOverlay.tier_text(sd.tier) if kind == CityMapOverlay.KIND_TIER else ""
+		var named := home or status != GridState.SiteStatus.CORPORATE or kind != CityMapOverlay.KIND_TIER or sd.id == selected
 		# Never colour alone (GDD 9.6): claimed Sites carry a spray ring, Seized a cross.
 		var mark := ""
 		if status == GridState.SiteStatus.CLAIMED:
@@ -108,9 +111,9 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 		elif status == GridState.SiteStatus.SEIZED:
 			mark = CityMapOverlay.MARK_CROSS
 		# H22: the translated name (TextDb), as on every other screen.
-		var site_label := HOME_LABEL if home else TextDb.t(sd, "display_name")
+		var site_label := home_label() if home else TextDb.t(sd, "display_name")
 		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
-			"label": site_label if named else "", "glyph": "⌂" if home else glyph, "big": home or objective == RC.SiteObjective.BOSS,
+			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.BOSS,
 			"tier": 0 if home else sd.tier,
 			"tip": site_tip(site_label, sd.tier, status, kind)})
 	var edges: Array[Dictionary] = []

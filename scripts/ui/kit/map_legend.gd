@@ -13,6 +13,16 @@ extends TerminalWindow
 ##
 ## H23 #3: a strip variant (`pin_to(area, corp, true)`, the Grid) runs along the foot of
 ## a map in as many columns as `set_strip_width` allows, in fewer words (STRIP_ROWS).
+##
+## H24 K1: at big text (FOLD_SCALE and up) the strip folds to one line, its MAP KEY
+## button: hovering it, pressing it, or the pad's key button (hq_scene) opens the rows
+## over the map, and they fold again when the pointer leaves or on a second press. The
+## map is framed for the folded line (`fit_size`), so it keeps its room. K7: every row's
+## words go through the TranslationServer once (the Labels do not translate them again).
+## K5: each icon row names its icon (`icon_id` meta, CityMapOverlay.icon_id).
+
+## H24 K1: the key was folded or opened.
+signal fold_changed
 
 const ROWS := [["○", "#FF3DA8", "claimed (yours): spray ring"], ["■", "#5CE1FF", "cleared"], ["■", "", "corporate"], ["✕", "#FFD24D", "seized: crossed out"],
 	["━", "#FF3DA8", "your network link"], ["- -", "", "threat route"]]
@@ -46,6 +56,10 @@ const STRIP_ICON_ROWS := ["exploit", "heat reduction", "boss", "CORE (your home)
 const STRIP_H_GAP := 16
 const STRIP_V_GAP := 2
 
+## H24 K1: the strip folds to its MAP KEY line from this text scale up (at 1.3 the open
+## strip took about a third of the map's height, at 1.6 over 40 %).
+const FOLD_SCALE := 1.3
+
 ## H23 S4: each ROWS row's key (the ICON_ROWS rows are keyed by their kind).
 const ROW_KEYS: Array[String] = ["claimed", "cleared", "corporate", "seized", "link", "threat"]
 
@@ -57,6 +71,12 @@ var only: Array[String] = []
 var strip: bool = false
 var strip_width: float = 0.0
 var _grid: GridContainer = null
+## H24 K1: the strip's rows are shown (a folded key opened) and whether the pointer
+## opened it (it folds again when the pointer leaves); the MAP KEY button of a foldable
+## strip.
+var opened: bool = false
+var _hover_opened: bool = false
+var fold_button: Button = null
 var _corp_hex: String = ""
 var _built_scale: float = -1.0
 var _linked: Control = null
@@ -111,14 +131,32 @@ func _build() -> void:
 			var outer := bar.get_parent()
 			if outer.get_child_count() > 1 and outer.get_child(1) is ColorRect:
 				(outer.get_child(1) as ColorRect).visible = false
-			var cell := Label.new()
-			cell.name = "StripTitle"
-			cell.text = head.text
-			cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			cell.add_theme_color_override("font_color", head.get_theme_color("font_color"))
-			cell.add_theme_font_size_override("font_size", fs)
-			cell.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			_grid.add_child(cell)
+			fold_button = null
+			if foldable():
+				# H24 K1: folded, the key is this one line; it opens over the map.
+				fold_button = Button.new()
+				fold_button.name = "KeyToggle"
+				fold_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+				fold_button.text = CityMapOverlay.tr_word("MAP KEY")
+				fold_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+				fold_button.add_theme_font_size_override("font_size", fs)
+				fold_button.tooltip_text = UiTip.fold(CityMapOverlay.tr_word("The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."))
+				fold_button.pressed.connect(func() -> void: set_opened(not opened))
+				fold_button.mouse_entered.connect(_on_hover_open)
+				IconMark.attach(fold_button, StatIcon.MORE if not opened else StatIcon.CODEX)
+				body.add_child(fold_button)
+				body.move_child(fold_button, 0)
+				_grid.visible = opened
+			else:
+				var cell := Label.new()
+				cell.name = "StripTitle"
+				cell.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+				cell.text = CityMapOverlay.tr_word(head.text)
+				cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				cell.add_theme_color_override("font_color", head.get_theme_color("font_color"))
+				cell.add_theme_font_size_override("font_size", fs)
+				cell.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				_grid.add_child(cell)
 	for i in ROWS.size():
 		var r: Array = ROWS[i]
 		if not only.is_empty() and not only.has(ROW_KEYS[i]):
@@ -127,6 +165,7 @@ func _build() -> void:
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_theme_constant_override("separation", roundi(ICON_SWATCH_GAP * s))
 		var glyph := Label.new()
+		glyph.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # a mark, not a word
 		glyph.text = r[0]
 		glyph.custom_minimum_size.x = GLYPH_WIDTH * s
 		glyph.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -146,6 +185,54 @@ func _build() -> void:
 	update_minimum_size()
 
 
+## H24 K1: true when this key folds to its MAP KEY line (a strip at big text).
+func foldable() -> bool:
+	return strip and Settings.text_scale >= FOLD_SCALE - 0.001
+
+
+## H24 K1: true when the rows are hidden behind the MAP KEY line.
+func is_folded() -> bool:
+	return foldable() and not opened
+
+
+## H24 K1: opens (or folds) a foldable key's rows over the map.
+func set_opened(value: bool, by_hover: bool = false) -> void:
+	_hover_opened = value and by_hover
+	mouse_filter = Control.MOUSE_FILTER_PASS if _hover_opened else Control.MOUSE_FILTER_IGNORE
+	if value == opened:
+		return
+	opened = value
+	if _grid != null:
+		_grid.visible = opened or not foldable()
+	if fold_button != null:
+		IconMark.attach(fold_button, StatIcon.MORE if not opened else StatIcon.CODEX)
+	_fit_columns()
+	update_minimum_size()
+	fold_changed.emit()
+
+
+func _on_hover_open() -> void:
+	if not opened:
+		set_opened(true, true)
+
+
+func _notification(what: int) -> void:
+	# Opened by the pointer: folds again once the pointer leaves the key (and its rows).
+	if what == NOTIFICATION_MOUSE_EXIT and _hover_opened:
+		set_opened(false)
+
+
+## H24 K1: the size the map is framed around: the folded MAP KEY line for a foldable key
+## (open, its rows sit over the map for a moment), else the whole key.
+func fit_size() -> Vector2:
+	if not foldable() or not opened:
+		return get_combined_minimum_size()
+	_grid.visible = false
+	var folded := get_combined_minimum_size()
+	_grid.visible = true
+	return folded
+
+
 ## H23 #3: a strip legend lays its rows out in as many columns as `width` (px) holds.
 func set_strip_width(width: float) -> void:
 	strip_width = width
@@ -155,7 +242,7 @@ func set_strip_width(width: float) -> void:
 ## The strip's column count: as many of its widest row as fit across `strip_width` (all
 ## in one column when it has no width yet).
 func _fit_columns() -> void:
-	if _grid == null:
+	if _grid == null or not _grid.visible:
 		return
 	var widest := 0.0
 	for row in _grid.get_children():
@@ -172,7 +259,8 @@ func _fit_columns() -> void:
 
 func _text(text: String, fs: int) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # H24 K7: translated here, once
+	l.text = CityMapOverlay.tr_word(text)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", fs)
 	if not compact:
@@ -188,6 +276,7 @@ func _icon_row(kind: String, text: String, meaning: String, fs: int) -> HBoxCont
 	var s := Settings.text_scale
 	var row := HBoxContainer.new()
 	row.name = "Icon_%s" % kind
+	row.set_meta(&"icon_id", CityMapOverlay.icon_id(kind))
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", roundi(ICON_SWATCH_GAP * s))
 	var side := ICON_SWATCH * s
@@ -283,6 +372,9 @@ func link_size(control: Control, with_legend: Vector2, without: Vector2) -> void
 func _on_settings_changed() -> void:
 	visible = Settings.map_legend
 	if not is_equal_approx(_built_scale, Settings.text_scale):
+		if not foldable():
+			opened = false
+			_hover_opened = false
 		_build()
 	_apply_link()
 

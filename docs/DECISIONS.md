@@ -30,6 +30,94 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H24 city: a folding map key, runs that say what they give, one icon per concept
+Pass-24 items K1-K8 (City Grid screen, map overlay, HQ mini-map, the icon set). Views
+(`scripts/ui/kit/`, the Grid page of `hq_scene.gd`) and one pure preview in
+`CampaignRules`; no rule or content change. This entry also answers the H23 city open
+questions (the Grid at 1.6, the key's size, LABEL_REACH), removed from the list below.
+- **The Grid at big text keeps its map (K1).** From text scale `MapLegend.FOLD_SCALE`
+  (1.3) the Grid's key folds to one line, its MAP KEY button (StatIcon "more"); pointing at
+  it or pressing it opens the rows over the map (pointer: they fold again when it leaves;
+  press: until pressed again), and on a pad Y (`cycle_target`, prompt "Y Key" on the Grid
+  at big text) does the same. The map is framed for the folded line (`MapLegend.fit_size`),
+  so opening the key never reframes it. At 1.0 the key stays open as before (it took ~18 %
+  of the map's height; at 1.3 about a third, at 1.6 over 40 %). From the same scale the
+  step buttons show their icon only (PREV / NEXT keep "<" / ">" with the map icon of the
+  Site they go to, Back to HQ its arrow), their words in the tooltip. Measured over all
+  five corporations, early and after six runs: the Grid now keeps its own framing (city
+  zoom 0.72, was ~0.4-0.57 at 1.6) at every text size.
+  Labels are laid out inside the map area itself (`screen_rect` = the GridMapArea: below
+  the top bar and the subtitle band, left of the column; "Kill-Switch Authority" sat at
+  y≈86 on the top bar). A long name with no room on one line tries two lines
+  (`CityMapOverlay.wrap_lines`) before it is left out.
+- **LABEL_REACH stays 110 screen px, now measured, and it binds every label (K1).**
+  Distance from a label's nearest point to its node, all Grid labels placed in the test
+  above: x1.0 n=121 median 21 p90 67 max 98; x1.3 n=104 median 21 p90 75 max 76; x1.6
+  n=89 median 21 p90 86 max 86. The one-line candidate rings reach at most ~91 px at 1.6
+  (big icon 17 + gap 4 + two rings of a 31 px label + gaps), so 110 keeps every one-line
+  spot and every placement measured, with room for an inward move; a two-line label's
+  outer rings (up to ~135 px, seen before the cap) are now refused (`_free_spot` checks
+  the reach too).
+- **Every Site with room gets a label (K1).** The test checks, for every corporation,
+  early and late, at 1.0 / 1.3 / 1.6, that no Site with a label to show is left out while
+  a spot near it is free (`CityMapOverlay.unplaced_with_room`), labels never overlap,
+  stay on the map area under the top bar, and within reach. Labelled of named Sites at
+  1.6: 7-12 of 10-16 (the rest have tooltips, and the run rows light them, K4).
+- **The step row stays in the column (K2).** The row sits in a MarginContainer that keeps
+  it off the column's scroll-bar strip (Back to HQ reached x≈1275, past the windows'
+  border); a button whose translated words are wider than the column takes its short
+  form, and if still too wide wraps its words inside the column (`_fit_steps`). Tested
+  pseudolocalised (accents, doubled vowels, fake bidi) at 1.0 and 1.6 with a raid pending.
+- **GRID_FITS_MAX is 4 (K3).** The code has had 4 since H23; the H23 entry said 3 and is
+  corrected (the code stands: four passes settle a 1.6 raid layout). A test reads the
+  constant and the log.
+- **Run rows say what clearing gives and risks (K4).** `CampaignRules.clear_preview(c,
+  corp, cfg, site, lookup)` applies `on_run_completed` to a copy of the campaign (so the
+  preview is the real result; tested for every open run of every corporation, early and
+  late) and returns the Heat change, the Exploit, a raid queued, Schematics, the win, the
+  Sites it opens and whether it becomes claimable. Under each RUNS OPEN NOW row a line of
+  badges says it with icons (EXPLOIT, HEAT -n with the cooling icon, RAID, WIN, +n
+  Schematics, OPENS n with the Sites named in the tooltip, CLAIM; "NO GAIN" for a
+  patrol), and the row's tooltip says it in words. The ten opening T1 rows now differ by
+  what they open. Hovering a row or giving it the pad's focus lights its node on the map
+  (a paper ring with four ticks, and its name label even for an unnamed Site:
+  `CityMapOverlay.hover_id`); pointing at a node lights its row (`node_hovered`, the row
+  takes its hover look).
+- **One icon per concept (K5).** Each map kind is a silhouette plus a symbol
+  (`CityMapOverlay.KIND_SHAPES` / `KIND_SYMBOLS`, `icon_id`); no two kinds share a
+  silhouette. The Heat reduction Site is a drop with a new StatIcon, COOLING (a small
+  flame and a down arrow): the snowflake is ICE's only. The Modem shop is a price tag with
+  the shop's bag (StatIcon SHOP), no longer the Exploit's diamond; the Exploit Site draws
+  the Exploits StatIcon inside its diamond (as on the top bar); the Rack became a tall
+  box (it shared the plain Site's hexagon). The key rows carry and draw the map's icon
+  (`icon_id` meta), the HQ mini-map floats the same icons (it drew font glyphs ◈ ❄ ✦ ⌂),
+  the Site card's heat badges use COOLING, and new StatIcons CLAIM (spray ring) and LINKS
+  (Sites opened) serve the run rows. STYLE_GUIDE 4 lists the kinds. Words: the map
+  screens use no SHD / shield wording (tested); the combat words DEFEND / ATTACK / EVADE
+  are the ones to use there.
+- **Grid icons never overlap (K6).** An icon's box now includes its tier pips (the pips of
+  one icon sat on the icon below); a crowded icon takes the first free column beside its stalk
+  at its height (ICON_FAN 0, +1, -1 icon widths; ±2 as well cost labels), then a step higher, up to
+  ICON_STACK_MAX steps, then floats higher (up to ICON_STACK_LIMIT). Sideways first keeps
+  a crowd low: stacking the taller boxes first pushed a Rebel Cell raid map at 1.6 past
+  its frame (the H23 raid-framing test caught it). Same order, front to back, ties by node id. Tested: no
+  two icon boxes overlap at 1.0 / 1.3 / 1.6 for every corporation, early and late.
+- **Map words translated once (K7).** Words drawn with draw_string go through
+  `CityMapOverlay.tr_word` (the TranslationServer): kind words, "CORE", the tier ("T%d":
+  the letter translates, the number and pips carry it), the mini-map's labels and HOME
+  line, the Site card's status badge and tag. Labels and buttons that get pre-translated
+  text (key rows, run rows, the card's tag) have auto-translate off, so nothing is
+  translated twice. Tested with pseudolocalisation on (and restored).
+- **Mini-map labels keep off the Site blocks (K8).** The last-resort pass that let a label
+  lie over other blocks is gone: a label shortens (name, "T2", the pips) or is left out
+  (the Site keeps its tooltip). Tested against every Site's block and icon rect
+  (`GridMapView.icon_rects`) at 1.0 / 1.3 / 1.6 for every corporation.
+- Test expectation changed on purpose: pass21 city's "bigger boxes at a bigger text size"
+  compares a label's height per line (a label may now take two lines at one size and one
+  at the other). The H23 city test's label checks now also see two-line labels (still
+  apart and in reach) and pass unchanged.
+  Tests: `tests/unit/test_horizontal_pass24_city.gd`.
+
 ### 2026-09-27 — H23 combat: subtitles that don't blank, wheels sized from the room below, turns that say what happened
 From pass 23 (both audits, a first-time player and a player who can't read English
 looking at the pass-23 storyboards; GAP_ANALYSIS H23).
@@ -184,7 +272,7 @@ Pass-23 items K1-K7 (the City Grid screen, the map overlay, the HQ mini-map). Vi
   are now (only the spread between icon centres scales; icons and pips keep their screen
   size), aiming FIT_INSET (8 px) inside so drift never asks for another pass; it is
   checked again once the city has drawn under the new camera (`NeonCity.camera_settled`,
-  new: the camera inputs of the last draw), at most GRID_FITS_MAX (3) passes. A resize,
+  new: the camera inputs of the last draw), at most GRID_FITS_MAX (4) passes (H24 K3: this entry said 3; the code has had 4 since the change landed, and 4 stands). A resize,
   a text size change or the legend switch fits again. At text scale 1.6 the map is
   smaller (the column and the key take more room), never clipped, and never below
   GRID_MIN_ZOOM (0.3). The step row (PREV / NEXT SITE, Back to HQ, RAID SETUP) wraps
@@ -1974,14 +2062,6 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
-
-- **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column and the map key along the map's foot (about 280
-  px tall at 1.6), the Grid map is framed small enough that every node shows, and only the
-  labels that fit are drawn (the rest keep tooltips); in the densest cluster (ten T1 Sites
-  side by side) some icons touch, as the overlay stacks at most ICON_STACK_MAX (4) deep.
-  Alternatives: a key that folds to
-  its title (open on hover or a button), or a narrower column at big text (the steps as
-  icon-only buttons). Which do you prefer? LABEL_REACH (110 px) is a guess too.
 
 - **Subtitles over the stat tags; toasts (H20, 2026-09-26):** outside combat the subtitle
   bar now sits in the top band over the screen title and the stat tags (the only strip

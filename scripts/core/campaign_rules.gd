@@ -276,6 +276,36 @@ static func on_run_completed(campaign: CampaignState, corp: CorporationData, con
 	return events
 
 
+## H24 K4: what completing a run at `site` would do to the campaign now, worked out by
+## applying `on_run_completed` to a copy (so the preview is the real result): the run
+## kind, the Heat change, the Exploit gained (-1 for none), whether a raid is queued, the
+## Schematics change, whether it wins the campaign, whether the Site becomes claimable,
+## and the Sites it opens to netruns (ids, sorted). The campaign is not changed.
+static func clear_preview(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, site: SiteData, lookup: ContentLookup = null) -> Dictionary:
+	var copy := campaign.duplicate_state()
+	var run := RunState.new()
+	run.site_id = site.id
+	run.kind = run_kind_for(campaign, site)
+	run.patrol = run.kind == "patrol"
+	if run.kind == "patrol":
+		run.kind = "netrun"
+	var before: Array[StringName] = []
+	for s in launchable_sites(campaign, corp, config):
+		before.append(s.id)
+	on_run_completed(copy, corp, config, run, lookup)
+	var opens: Array[StringName] = []
+	for s in launchable_sites(copy, corp, config):
+		if not before.has(s.id) and s.id != site.id:
+			opens.append(s.id)
+	var exploit := -1
+	if copy.exploits.size() > campaign.exploits.size():
+		exploit = copy.exploits[copy.exploits.size() - 1]
+	return {"kind": run_kind_for(campaign, site), "heat": copy.heat - campaign.heat, "exploit": exploit,
+		"raid": copy.pending_raids.size() > campaign.pending_raids.size(), "schematics": copy.schematics - campaign.schematics,
+		"won": copy.outcome == CampaignState.Outcome.WON and campaign.outcome != CampaignState.Outcome.WON,
+		"claimable": site.claimable and copy.grid.is_cleared(site.id) and not campaign.grid.is_cleared(site.id), "opens": opens}
+
+
 ## Queues the corporation's raid for `source` (GDD 4.4: story, retaliation, node-built).
 ## `entry` names the Site the threats enter from (empty = default entries). No raid of
 ## that source in the content = nothing happens.

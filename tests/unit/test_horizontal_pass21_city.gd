@@ -247,12 +247,18 @@ func test_label_size_follows_the_text_scale_live() -> void:
 	Settings.set_text_scale(1.5)
 	assert_almost_eq(float(overlay.label_font_size()), base * 1.5, 1.0, "labels grow with the text size")
 	assert_true(Settings.changed.is_connected(overlay._top.queue_redraw), "and redraw when it changes")
-	var wide := overlay.label_rects()
+	# H24 K1: a label may take two lines where one has no room, so compare the height of a
+	# line (the box over its line count).
+	var wide := {}
+	for l: Dictionary in overlay._layout_labels():
+		wide[l["key"]] = (l["rect"] as Rect2).size.y / (l["lines"] as PackedStringArray).size()
 	Settings.set_text_scale(1.0)
-	var narrow := overlay.label_rects()
+	var narrow := {}
+	for l: Dictionary in overlay._layout_labels():
+		narrow[l["key"]] = (l["rect"] as Rect2).size.y / (l["lines"] as PackedStringArray).size()
 	for key in narrow:
 		if wide.has(key):
-			assert_gt((wide[key] as Rect2).size.y, (narrow[key] as Rect2).size.y, "bigger boxes at a bigger text size")
+			assert_gt(float(wide[key]), float(narrow[key]), "bigger boxes at a bigger text size")
 			break
 
 
