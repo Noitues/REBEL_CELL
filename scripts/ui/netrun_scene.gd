@@ -389,7 +389,15 @@ func _show_map() -> void:
 	# (H20: each button carries its own key hint, refreshed when the device changes).
 	var win := TerminalWindow.new("ROUTE // pick the next node", Palette.CELL_ACID)
 	win.custom_minimum_size.x = 300
-	top.add_child(win)
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	# The route column: the choices, then the map key under them (H22 #14: the route view
+	# had none; in the column it hides no part of the route).
+	var route_col := VBoxContainer.new()
+	route_col.name = "RouteColumn"
+	route_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	route_col.add_theme_constant_override("separation", 8)
+	top.add_child(route_col)
+	route_col.add_child(win)
 	var available := s.available_nodes()
 	var row := VBoxContainer.new()
 	row.name = "RouteNodes"
@@ -432,23 +440,31 @@ func _show_map() -> void:
 	if _grid_zoomed:
 		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
 	else:
-		# The route view's map key (H22 #14: it had none), over the map where it covers no
-		# node (LegendSpot).
-		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		# The route view's map key (H22 #14: it had none) in the room under the choices,
+		# scaled down if that room is short (LegendSpot).
 		top.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		route_legend = MapLegend.pin_to(spacer, RunManager.campaign.corporation_id)
+		route_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var key_room := Control.new()
+		key_room.name = "LegendRoom"
+		key_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		key_room.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		route_col.add_child(key_room)
+		route_legend = MapLegend.pin_to(key_room, RunManager.campaign.corporation_id)
 	_set_panel(panel, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _grid_zoomed:
 		var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, CityLayout.threat_paths(RunManager.campaign, RunManager.corporation), s.run.site_id)
 		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+		city_overlay.avoid_controls([win])  # map labels stay clear of the ROUTE window
 	else:
 		var r := route_graph()
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, 1.45, Vector2(0.46, 0.58), Vector2.INF)
+		city_overlay.avoid_controls([win, route_legend])
+		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
 		place_route_legend.call_deferred()
-		spacer.resized.connect(place_route_legend)
+		route_legend.get_parent().resized.connect(place_route_legend)
 		if not background.city.rebuilt.is_connected(place_route_legend):
 			background.city.rebuilt.connect(place_route_legend)
 
@@ -601,6 +617,7 @@ func _show_raid_playout(events: Array[Dictionary]) -> void:
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
 	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+	city_overlay.avoid_controls([side])
 	playout.grid_view = city_overlay
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():

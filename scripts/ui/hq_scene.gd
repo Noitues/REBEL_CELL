@@ -45,6 +45,8 @@ const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:"
 const VERDICT_HOLDS := "ALL HOLD"
 const VERDICT_HIT := "HOME HIT"
 const VERDICT_LOST := "CAMPAIGN LOST"
+## Passes framing the raid map beside its legend.
+const RAID_REFRAMES_MAX := 2
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
 ## The raid orders list's least height at text scale 1.0 (px).
@@ -85,6 +87,9 @@ var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
 ## The raid setup's map key (placed clear of the nodes).
 var raid_legend: MapLegend = null
+## How many times the raid map was framed to clear the legend's column (at most
+## RAID_REFRAMES_MAX: labels keep their size as the map zooms, so a second pass settles it).
+var _raid_reframes: int = 0
 ## The map drawn on the city (Grid, raids); freed when another panel opens.
 var city_overlay: CityMapOverlay = null
 var _settings_panel: PauseMenu = null
@@ -1005,6 +1010,7 @@ func show_grid() -> void:
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.4, 0.56), 0.85)
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
+	city_overlay.avoid_controls([column])  # map labels stay clear of the column
 
 
 ## Mounts the map overlay on the net city and frames the camera on it. `zoom` > 1 moves
@@ -1219,6 +1225,7 @@ func show_raid() -> void:
 	map_col.add_child(spacer)
 	# The raid map has its key too (H20 #22), placed where it covers no node (H22 #9).
 	raid_legend = MapLegend.pin_to(spacer, c.corporation_id)
+	_raid_reframes = 0
 	var side := VBoxContainer.new()
 	side.name = "RaidSide"
 	side.custom_minimum_size.x = RAID_SIDE_WIDTH
@@ -1292,8 +1299,10 @@ func show_raid() -> void:
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
 		if RunManager.campaign.grid.is_claimed(id):
 			select_target(id))
+	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
 	place_raid_legend.call_deferred()
 	spacer.resized.connect(place_raid_legend)
+	raid_legend.minimum_size_changed.connect(func() -> void: place_raid_legend.call_deferred())
 	if not wireframe.city.rebuilt.is_connected(place_raid_legend):
 		wireframe.city.rebuilt.connect(place_raid_legend)
 	if _last_warned_raid != String(pending.get("raid_id", "")):
@@ -1378,10 +1387,30 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 
 
 ## The raid legend at the first spot over the map that covers no node's icon or label
-## (H22 #9: pinned bottom left it covered CORE at 1.6).
+## (H22 #9: pinned bottom left it covered CORE at 1.6). When every spot covers a node
+## (threat routes cross the whole city), the camera frames the map beside the legend's
+## column (moved, and zoomed out as far as that needs), then the legend is placed again.
 func place_raid_legend() -> void:
-	if raid_legend != null and is_instance_valid(raid_legend):
-		LegendSpot.place(raid_legend, city_overlay)
+	if raid_legend == null or not is_instance_valid(raid_legend) or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	var covered := LegendSpot.place(raid_legend, city_overlay)
+	if covered <= 0.0 or _raid_reframes >= RAID_REFRAMES_MAX:
+		return
+	var fit := LegendSpot.fit_beside(raid_legend, city_overlay)
+	if fit.is_empty():
+		return
+	_raid_reframes += 1
+	var city := wireframe.city
+	var k := float(fit["zoom"])
+	var screen := get_global_rect()
+	var focus_at := screen.position + city.focus_anchor * screen.size
+	# Zooming by k about the focus point moves the nodes' centre to focus + (from - focus) * k;
+	# the focus then goes where that centre lands on the free part of the map.
+	var to: Vector2 = fit["to"]
+	var from: Vector2 = fit["from"]
+	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
+	_frame_city(city.scale.x * k, city.focus_grid, anchor)
+	place_raid_legend.call_deferred()
 
 
 ## Screen rects of the raid map's node icons and labels (the legend must cover none).
@@ -1542,6 +1571,7 @@ func show_raid_playout(events: Array[Dictionary]) -> void:
 	_set_panel(box, "raid_playout")
 	var g := raid_graph({}, {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55), 1.9)
+	city_overlay.avoid_controls([side])
 	var overlay := city_overlay
 	overlay.markers_changed.connect(func() -> void: _follow_fight(overlay))
 	playout = RaidPlayoutPanel.new(overlay, Vector2(330, 330))
@@ -1626,6 +1656,7 @@ func show_raid_summary() -> void:
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
+	city_overlay.avoid_controls([report])
 
 
 func show_end() -> void:

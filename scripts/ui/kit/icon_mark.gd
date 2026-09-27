@@ -9,8 +9,9 @@ extends Control
 ## "icon_kind" meta (tests). Draw-only.
 ## H22 #14: `attach_map` puts a city map node icon on a button instead (drawn by the map's
 ## own painter, CityMapOverlay.draw_icon, so a route choice or a Grid run looks like its
-## node on the map), with optional tier pips after it (a difficulty cue: one pip a tier);
-## the map kind is in the "map_icon_kind" meta and the pips in "tier_pips".
+## node on the map), with the map's tier pips after it (CityMapOverlay.draw_tier: the
+## same difficulty cue as the map, legend and mini-map); the map kind is in the
+## "map_icon_kind" meta and the tier in "tier_pips".
 
 ## Icon side relative to the button's font size.
 const SIZE_FACTOR := 1.15
@@ -18,11 +19,8 @@ const SIZE_FACTOR := 1.15
 const FILL := 0.45
 ## A map icon's radius relative to the slot (its silhouette overhangs a little).
 const MAP_FILL := 0.4
-## Tier pips: width and gap as shares of the icon side, and the lowest pip's height share.
-const PIP_W := 0.16
-const PIP_GAP := 0.1
-const PIP_MIN_H := 0.35
-const PIP_STEP_H := 0.15
+## Gap between a map icon and its tier pips (share of the icon side).
+const PIP_GAP := 0.25
 
 var kind: StringName = &""
 ## Transparent = the button's font colour.
@@ -140,13 +138,17 @@ func _draw() -> void:
 		StatIcon.draw(self, Vector2(left + px * 0.5, size.y * 0.5), px * FILL, kind, col)
 		return
 	CityMapOverlay.draw_icon(self, map_kind, Vector2(left + px * 0.5, size.y * 0.5), px * MAP_FILL, col, map_text)
-	# Tier pips: rising bars, one a tier (the harder the Site, the more bars).
-	for k in pips:
-		var h := px * (PIP_MIN_H + k * PIP_STEP_H)
-		var x := left + px + px * PIP_GAP + k * px * (PIP_W + PIP_GAP)
-		draw_rect(Rect2(x, size.y * 0.5 + px * 0.4 - h, px * PIP_W, h), col)
+	# The tier as the map draws it: lit pips of TIER_PIPS_MAX (the harder, the more lit).
+	if pips > 0:
+		var box := CityMapOverlay.tier_pips_size(_pip_scale(px))
+		CityMapOverlay.draw_tier(self, Vector2(left + px + px * PIP_GAP + box.x * 0.5, size.y * 0.5), pips, col, _pip_scale(px))
+
+
+## The tier pips' scale for an icon of side `px` (1.0 at the base button size).
+func _pip_scale(px: float) -> float:
+	return px / (UiTheme.BASE_SIZE * SIZE_FACTOR)
 
 
 ## Room the tier pips take after an icon of side `px`.
 func _pips_width(px: float) -> float:
-	return pips * px * (PIP_W + PIP_GAP) + (px * PIP_GAP if pips > 0 else 0.0)
+	return px * PIP_GAP + CityMapOverlay.tier_pips_size(_pip_scale(px)).x if pips > 0 else 0.0
