@@ -83,7 +83,7 @@ ground in the raid battles".
   pink). Claimed Sites carry a spray ring (with drips) and Seized ones a cross on every
   city map; MapLegend rows use their own glyphs (○ claimed, ✕ seized). The palette
   change also recolours REBEL_CELL's enemy wheels (wheel_view.gd reads Palette only).
-  STYLE_GUIDE §2's `corp_rebel_cell` row still reads #FF2A6D (doc owner to update).
+  STYLE_GUIDE §2 updated to match.
 - **H20 #22**: raid setup, playout and summary maps pin a compact MapLegend to the map's
   bottom-left; the HQ Grid's Site list resizes with the legend switch live
   (`MapLegend.link_size`); the mid-run raid playout plays on the city overlay (whole Grid,

@@ -605,7 +605,11 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 	var fs := _fs(HUB_FONT_SIZE)
 	var step := fs + 2
 	var top := -6.0 - hub_lines.size() * step * 0.5
-	draw_string(Palette.marker(), center + Vector2(-hw * 0.5, top), combatant.display_name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, hw, _fs(NAME_FONT_SIZE), _col(line.lightened(0.2)))
+	var name := combatant.display_name.to_upper()
+	var name_size := _fs(NAME_FONT_SIZE)
+	while name_size > 7 and Palette.marker().get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x > hw:
+		name_size -= 1  # long names shrink to fit the hub
+	draw_string(Palette.marker(), center + Vector2(-hw * 0.5, top), name, HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if hub_lines[i].begins_with("RESIST") else _col(Palette.PAPER)
 		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), hub_lines[i], HORIZONTAL_ALIGNMENT_CENTER, hw, fs, col)

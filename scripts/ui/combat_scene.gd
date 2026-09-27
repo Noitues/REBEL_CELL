@@ -589,6 +589,9 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 		var v := _view_of(z[0])
 		if v != null and not WheelView._zone_is(v.valid_zones, z[1]):
 			v.valid_zones.append(z[1])
+	# The card being aimed stays lifted (it holds focus while the aim moves).
+	if hand_index < _hand_box.get_child_count() and not _dragging:
+		(_hand_box.get_child(hand_index) as Control).grab_focus()
 	if _dragging:
 		_option_index = -1  # nothing aimed until the card is over a zone
 		_show_end_turn_preview()

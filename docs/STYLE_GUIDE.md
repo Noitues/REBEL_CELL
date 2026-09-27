@@ -46,7 +46,7 @@ stamps, marker scrawls). CRT scanlines appear only on the city and terminal glas
 | `corp_meridian` | #FF8C1A | Meridian Freight Systems (M8) |
 | `corp_halcyon` | #8C7BFF | Halcyon Civic (M9; moved off #4FFFB0, too close to Solace) |
 | `corp_orbital` | #DDE3FF | Orbital Commons (M10; starlight, kept clear of resist_gold) |
-| `corp_rebel_cell` | #FF2A6D | REBEL_CELL (M11) |
+| `corp_rebel_cell` | #E8141E | REBEL_CELL (M11; deep red since H20, #FF2A6D was nearly `cell_pink`) |
 | `crt_amber` | #FFB000 | CRT readouts on the physical deck only |
 | `resist_gold` | #FFD24D | Spin resistance, locks |
 | `desk_dark` | #1B1D21 / #34383E | Deck metal |
@@ -73,12 +73,21 @@ DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-
   a glyph on every slice drawn **bold**: solid black with a heavy white outline
   (`SliceIcon.style` 4), the same on Modem slice tiles; value outside the ring; white
   gauge-needle pointers; dashed outline for the Miss slice; resistance in `resist_gold`.
-- **Zine elements never cover the wheels.**
+  A right nudge turns the wheel clockwise on screen (H20). Curved white nudge arrows sit
+  at the top left (anticlockwise) and top right (clockwise) of every wheel, a second pair
+  marked IN for an inner ring; the current target wears four `cell_acid` reticle brackets.
+- **Zine elements never cover the wheels** (nor their values, satellites or HP arc:
+  radius + 66 px).
 - **Cards:** stickers (black/pink/paper), slight rotation (±4°), tape strips, hovered card
-  lifts and glows; cost in marker.
-- **HUD:** Polaroid portrait, ransom-note Heat, marker tally RAM, torn-paper log strip,
-  circular "SEND IT" stamp for End Turn.
-- **Ghost preview:** dashed `cell_acid` arc from current to predicted pointer position.
+  lifts and glows; cost in marker. Cards are dragged onto what they aim at; legal drop
+  zones glow `cell_acid` (thin), the aimed one thick.
+- **HUD:** Polaroid portrait, ransom-note Heat, RAM chip bar with its count, Daemon sigils
+  under the Polaroid, subtitles and the tutorial in the right column, RESPIN / UNDO
+  stickers beside the drip-lettered SEND IT. No text log the player must read: the taped
+  tag over each spinner shows what its needles land on and a row of result chips (HITS,
+  HP, BLK, statuses, RAM, HEAT...), the HP arc shows the predicted loss in red.
+- **Ghost preview:** dashed `cell_acid` arc from the arriving slice (its icon) to the
+  needle, arrowhead the way the rim moves.
 - **Grid:** isometric wireframe buildings; claimed Sites `cell_pink` with spray circles;
   corporate Sites `corp_*`; threat paths glowing `corp_*` arrows; zine sidebar "THE PLAN".
 - **HQ:** graffiti tag with drips, wanted poster (Heat), Polaroid roster, pirate radio,
