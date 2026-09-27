@@ -686,8 +686,10 @@ func test_tooltips_are_themed_and_on_the_screens_controls() -> void:
 	for line in UiTip.fold(LONG_LINE).split("\n"):
 		assert_true(line.length() <= UiTip.COLUMNS, "tooltip lines wrap")
 	# HUD stat tags answer per tag.
-	assert_ne(hq.hud.stats._get_tooltip(Vector2(10, 20)), "", "HEAT tag tooltip")
-	assert_ne(hq.hud.stats._get_tooltip(Vector2(HudStats.TAG_SIZE.x + HudStats.TAG_GAP + 10, 20)), "", "SCHEMATICS tag tooltip")
+	# At each tag's own rect (H23: tags are sized to their translated names).
+	var rects: Array[Rect2] = hq.hud.stats.tag_rects()
+	assert_ne(hq.hud.stats._get_tooltip(rects[0].get_center()), "", "HEAT tag tooltip")
+	assert_ne(hq.hud.stats._get_tooltip(rects[1].get_center()), "", "SCHEMATICS tag tooltip")
 	assert_ne(hq.hud.stats.mouse_filter, Control.MOUSE_FILTER_IGNORE, "the tags take hover")
 	var tipped := {"poster": false, "crew": false, "jack": false}
 	for n in _all(hq._panel):

@@ -80,7 +80,8 @@ func test_say_queues_shows_and_honours_the_subtitles_setting() -> void:
 func test_briefing_and_bark_helpers_speak() -> void:
 	var text := Dialogue.briefing(&"solace", &"t1_a")
 	assert_true(text.contains("Billing"))
-	assert_eq(Dialogue.current_text(), text)
+	# The bar shows the line's first page (H23: a page that goes on keeps room for " …").
+	assert_true(text.begins_with(Dialogue.current_text().trim_suffix("…").strip_edges()), "first page of the briefing: '%s'" % Dialogue.current_text())
 	assert_eq(Dialogue.raid_warning(&"solace", &"raid_heat_25"), Dialogue.line("raid:raid_heat_25", -1, &"solace").text)
 	assert_ne(Dialogue.bark(&"breaker", "perfect", 3), "")
 	assert_ne(Dialogue.bark(&"ghost", "perfect", 3), "", "M6 classes bark too")
