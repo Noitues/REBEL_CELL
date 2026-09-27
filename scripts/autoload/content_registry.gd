@@ -11,9 +11,15 @@ const CONTENT_ROOT := "res://content"
 const CONFIG_PATH := "res://content/config/campaign_config.tres"
 const RESOURCE_EXTENSIONS: PackedStringArray = ["tres", "res"]
 const CONFIG_KEY := &"__config__"
+## The UI motion table (ANIMATION_HANDOFF 3): view timing, read by the Motion kit.
+const MOTION_PATH := "res://content/config/ui_motion.tres"
+const MOTION_KEY := &"__motion__"
 
 ## The single global tuning resource, or null until scan_directory() finds it.
 var config: CampaignConfigData = null
+## The UI motion table, or null until scan_directory() finds it. Only content validation
+## requires it (the Motion kit loads it by path; rules never read it).
+var motion: UiMotionData = null
 
 var _by_id: Dictionary = {}          # StringName -> Resource
 var _source_of: Dictionary = {}      # StringName -> String (file path)
@@ -40,6 +46,7 @@ func _ready() -> void:
 ## Forgets everything scanned or registered so far.
 func clear() -> void:
 	config = null
+	motion = null
 	_by_id.clear()
 	_source_of.clear()
 	_resources.clear()
@@ -65,6 +72,11 @@ func scan_directory(root: String) -> PackedStringArray:
 				errors.append("More than one CampaignConfigData: %s and %s." % [_source_of.get(CONFIG_KEY, "?"), path])
 			config = res
 			_source_of[CONFIG_KEY] = path
+		elif res is UiMotionData:
+			if motion != null and motion != res:
+				errors.append("More than one UiMotionData: %s and %s." % [_source_of.get(MOTION_KEY, "?"), path])
+			motion = res
+			_source_of[MOTION_KEY] = path
 		errors.append_array(register(res, path))
 	_errors.append_array(errors)
 	return errors

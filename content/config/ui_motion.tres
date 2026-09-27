@@ -1,0 +1,758 @@
+[gd_resource type="Resource" script_class="UiMotionData" load_steps=75 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/ui_motion_data.gd" id="1_motion"]
+[ext_resource type="Script" path="res://scripts/data/ui_motion_entry_data.gd" id="1_entry"]
+
+; UI motion (ANIMATION_HANDOFF 3-4, STYLE_GUIDE 5): every animation's timing, read by
+; the Motion kit by id. Tune in tools/design_lab/motion_lab.tscn and paste lines back.
+; ease: 0 IN, 1 OUT, 2 IN_OUT, 3 OUT_IN. trans: 0 LINEAR, 1 SINE, 2 QUINT, 3 QUART,
+; 4 QUAD, 5 EXPO, 6 ELASTIC, 7 CUBIC, 8 CIRC, 9 BOUNCE, 10 BACK, 11 SPRING.
+
+; ---- Shared (moved from inline numbers) ----
+; Fx.flash default: fade seconds, amplitude = strength (alpha)
+[sub_resource type="Resource" id="m_screen_flash"]
+script = ExtResource("1_entry")
+id = &"screen_flash"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.45
+
+; Fx.freeze_frames default: amplitude = frames held
+[sub_resource type="Resource" id="m_hit_freeze"]
+script = ExtResource("1_entry")
+id = &"hit_freeze"
+duration = 0.0
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 2.0
+
+; Fx.show_saved: SAVED holds `delay`, fades over `duration`
+[sub_resource type="Resource" id="m_saved_stamp"]
+script = ExtResource("1_entry")
+id = &"saved_stamp"
+duration = 1.2
+delay = 0.6
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; Toast: on screen `delay` seconds, then fades over `duration`
+[sub_resource type="Resource" id="m_toast"]
+script = ExtResource("1_entry")
+id = &"toast"
+duration = 0.35
+delay = 2.4
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; ---- 4.1 Jack in / jack out ----
+; Fx.jack_in total seconds; amplitude = CRT rect end scale (x viewport)
+[sub_resource type="Resource" id="m_jack_in"]
+script = ExtResource("1_entry")
+id = &"jack_in"
+duration = 0.7
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 1.2
+
+; Fx.jack_out total seconds; amplitude = CRT rect end scale (x viewport)
+[sub_resource type="Resource" id="m_jack_out"]
+script = ExtResource("1_entry")
+id = &"jack_out"
+duration = 0.7
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.3
+
+; reduce effects: the single short fade (4.1)
+[sub_resource type="Resource" id="m_jack_fade_reduced"]
+script = ExtResource("1_entry")
+id = &"jack_fade_reduced"
+duration = 0.2
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.0
+
+; ---- 4.2 Spin ----
+; seconds for a half turn (scaled by distance 0.25-0.6); amplitude = overshoot (ticks x 0.1)
+[sub_resource type="Resource" id="m_wheel_spin"]
+script = ExtResource("1_entry")
+id = &"wheel_spin"
+duration = 0.45
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.5
+
+; slice blur fade; amplitude = ticks per second above which slices blur
+[sub_resource type="Resource" id="m_wheel_spin_blur"]
+script = ExtResource("1_entry")
+id = &"wheel_spin_blur"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 12.0
+
+; ---- 4.3 Nudge ----
+; one tick step; amplitude = recoil px
+[sub_resource type="Resource" id="m_wheel_nudge"]
+script = ExtResource("1_entry")
+id = &"wheel_nudge"
+duration = 0.1
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 2.0
+
+; ---- 4.4 Precision landing ----
+; Perfect flash: seconds, amplitude = strength (with hit_freeze)
+[sub_resource type="Resource" id="m_precision_perfect"]
+script = ExtResource("1_entry")
+id = &"precision_perfect"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.35
+
+; Good: ring pulse grows amplitude px and fades
+[sub_resource type="Resource" id="m_precision_good_ring"]
+script = ExtResource("1_entry")
+id = &"precision_good_ring"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 10.0
+
+; Partial stutter: 4 steps across `duration`, amplitude = px
+[sub_resource type="Resource" id="m_precision_partial"]
+script = ExtResource("1_entry")
+id = &"precision_partial"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 4.0
+
+; Miss wheel blink: dips to amplitude alpha (1/3) and back (2/3)
+[sub_resource type="Resource" id="m_precision_blink"]
+script = ExtResource("1_entry")
+id = &"precision_blink"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.4
+
+; Miss static burst over the slice; amplitude = noise alpha
+[sub_resource type="Resource" id="m_precision_miss_static"]
+script = ExtResource("1_entry")
+id = &"precision_miss_static"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.8
+
+; ---- 4.5 Card play ----
+; lift px (tilt to 0, glow)
+[sub_resource type="Resource" id="m_card_hover"]
+script = ExtResource("1_entry")
+id = &"card_hover"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 12.0
+
+; fly to the wheel and stamp; amplitude = stamp scale
+[sub_resource type="Resource" id="m_card_play"]
+script = ExtResource("1_entry")
+id = &"card_play"
+duration = 0.3
+delay = 0.0
+ease = 2
+trans = 7
+amplitude = 1.1
+
+; deal from the pile; delay = stagger per card, amplitude = fan degrees
+[sub_resource type="Resource" id="m_card_draw"]
+script = ExtResource("1_entry")
+id = &"card_draw"
+duration = 0.25
+delay = 0.04
+ease = 1
+trans = 7
+amplitude = 6.0
+
+; burn (paper curl + ember)
+[sub_resource type="Resource" id="m_card_exhaust"]
+script = ExtResource("1_entry")
+id = &"card_exhaust"
+duration = 0.35
+delay = 0.0
+ease = 0
+trans = 4
+amplitude = 0.0
+
+; ---- 4.6 SEND IT / resolution ----
+; drip lettering squash scale
+[sub_resource type="Resource" id="m_send_it_press"]
+script = ExtResource("1_entry")
+id = &"send_it_press"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 0.9
+
+; drips run amplitude px on press
+[sub_resource type="Resource" id="m_send_it_drips"]
+script = ExtResource("1_entry")
+id = &"send_it_drips"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 4.0
+
+; seconds between resolution passes in the playback (was PASS_DELAY)
+[sub_resource type="Resource" id="m_resolve_pass"]
+script = ExtResource("1_entry")
+id = &"resolve_pass"
+duration = 0.35
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; pointer pulse as it resolves; scale
+[sub_resource type="Resource" id="m_resolve_pulse"]
+script = ExtResource("1_entry")
+id = &"resolve_pulse"
+duration = 0.18
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.15
+
+; ---- 4.7 Damage, block and heal numbers ----
+; float up amplitude px, then fade
+[sub_resource type="Resource" id="m_number_float"]
+script = ExtResource("1_entry")
+id = &"number_float"
+duration = 0.6
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 28.0
+
+; crit number scale (with star burst)
+[sub_resource type="Resource" id="m_number_crit"]
+script = ExtResource("1_entry")
+id = &"number_crit"
+duration = 0.7
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.5
+
+; white trailing HP segment drains after `delay`
+[sub_resource type="Resource" id="m_hp_lag"]
+script = ExtResource("1_entry")
+id = &"hp_lag"
+duration = 0.4
+delay = 0.25
+ease = 2
+trans = 4
+amplitude = 0.0
+
+; ---- 4.8 Intent tags ----
+; paper flip; amplitude = degrees
+[sub_resource type="Resource" id="m_intent_flip"]
+script = ExtResource("1_entry")
+id = &"intent_flip"
+duration = 0.15
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 90.0
+
+; ---- 4.9 Rewind ----
+; tape-rewind stutter; amplitude = VHS line jitter px
+[sub_resource type="Resource" id="m_rewind_scrub"]
+script = ExtResource("1_entry")
+id = &"rewind_scrub"
+duration = 0.35
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 6.0
+
+; ---- 4.10 Migrating / orbiting pointers ----
+; migration flicker: each half-period seconds, dips to amplitude alpha (loops)
+[sub_resource type="Resource" id="m_pointer_flicker"]
+script = ExtResource("1_entry")
+id = &"pointer_flicker"
+duration = 0.25
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.2
+
+; orbit trail fades from amplitude alpha
+[sub_resource type="Resource" id="m_orbit_trail"]
+script = ExtResource("1_entry")
+id = &"orbit_trail"
+duration = 0.4
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.6
+
+; ---- 4.11 Enemy death / breach ----
+; wheel pieces fall amplitude px
+[sub_resource type="Resource" id="m_enemy_break"]
+script = ExtResource("1_entry")
+id = &"enemy_break"
+duration = 0.6
+delay = 0.0
+ease = 0
+trans = 4
+amplitude = 120.0
+
+; hub glass shards fly amplitude px
+[sub_resource type="Resource" id="m_hub_shatter"]
+script = ExtResource("1_entry")
+id = &"hub_shatter"
+duration = 0.5
+delay = 0.0
+ease = 1
+trans = 5
+amplitude = 40.0
+
+; ---- 4.12 Heat thresholds ----
+; Fx.heat_pulse: seconds, amplitude = peak distortion (rises 30%, falls 70%)
+[sub_resource type="Resource" id="m_heat_pulse"]
+script = ExtResource("1_entry")
+id = &"heat_pulse"
+duration = 0.7
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.85
+
+; ransom HEAT letters shake once; px
+[sub_resource type="Resource" id="m_heat_letters_shake"]
+script = ExtResource("1_entry")
+id = &"heat_letters_shake"
+duration = 0.3
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 3.0
+
+; wanted poster band stamp; scale from
+[sub_resource type="Resource" id="m_poster_stamp"]
+script = ExtResource("1_entry")
+id = &"poster_stamp"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.3
+
+; corporate wireframe creep uniform tween
+[sub_resource type="Resource" id="m_net_creep"]
+script = ExtResource("1_entry")
+id = &"net_creep"
+duration = 1.2
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.0
+
+; ---- 4.13 HQ ----
+; deck screen hum flicker period; alpha dip
+[sub_resource type="Resource" id="m_hq_crt_hum"]
+script = ExtResource("1_entry")
+id = &"hq_crt_hum"
+duration = 2.0
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.06
+
+; pirate radio: seconds per character
+[sub_resource type="Resource" id="m_radio_type"]
+script = ExtResource("1_entry")
+id = &"radio_type"
+duration = 0.03
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; JACK IN ring breathing period; scale
+[sub_resource type="Resource" id="m_jack_ring_breathe"]
+script = ExtResource("1_entry")
+id = &"jack_ring_breathe"
+duration = 2.4
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 1.04
+
+; crew Polaroid hover tilt degrees
+[sub_resource type="Resource" id="m_polaroid_tilt"]
+script = ExtResource("1_entry")
+id = &"polaroid_tilt"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 3.0
+
+; ---- 4.14 City Grid / raid setup ----
+; selected Site roof outline stroke reveal
+[sub_resource type="Resource" id="m_site_outline_draw"]
+script = ExtResource("1_entry")
+id = &"site_outline_draw"
+duration = 0.4
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 0.0
+
+; camera eases to the selected Site
+[sub_resource type="Resource" id="m_map_camera_ease"]
+script = ExtResource("1_entry")
+id = &"map_camera_ease"
+duration = 0.5
+delay = 0.0
+ease = 2
+trans = 7
+amplitude = 0.0
+
+; threat route dash crawl period; px per period
+[sub_resource type="Resource" id="m_route_crawl"]
+script = ExtResource("1_entry")
+id = &"route_crawl"
+duration = 1.0
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 12.0
+
+; deployed asset card drops amplitude px onto the node
+[sub_resource type="Resource" id="m_asset_drop"]
+script = ExtResource("1_entry")
+id = &"asset_drop"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 9
+amplitude = 24.0
+
+; ---- 4.15 Raid playout ----
+; threat moves one playout step along its polyline
+[sub_resource type="Resource" id="m_raid_move"]
+script = ExtResource("1_entry")
+id = &"raid_move"
+duration = 0.5
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.0
+
+; turret fire trace
+[sub_resource type="Resource" id="m_turret_trace"]
+script = ExtResource("1_entry")
+id = &"turret_trace"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; held/seized flip degrees
+[sub_resource type="Resource" id="m_raid_flip"]
+script = ExtResource("1_entry")
+id = &"raid_flip"
+duration = 0.2
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 90.0
+
+; ---- 4.16 Netrun route ----
+; light pulse along the link
+[sub_resource type="Resource" id="m_route_pulse"]
+script = ExtResource("1_entry")
+id = &"route_pulse"
+duration = 0.4
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.0
+
+; new node pops up; scale
+[sub_resource type="Resource" id="m_node_pop"]
+script = ExtResource("1_entry")
+id = &"node_pop"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.2
+
+; visited nodes dim to amplitude alpha
+[sub_resource type="Resource" id="m_visited_dim"]
+script = ExtResource("1_entry")
+id = &"visited_dim"
+duration = 0.3
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.5
+
+; ---- 4.17 Screen transitions ----
+; panel slides in from the edge; px
+[sub_resource type="Resource" id="m_panel_in"]
+script = ExtResource("1_entry")
+id = &"panel_in"
+duration = 0.22
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 48.0
+
+; one-frame CRT roll on terminal glass; px
+[sub_resource type="Resource" id="m_panel_crt_roll"]
+script = ExtResource("1_entry")
+id = &"panel_crt_roll"
+duration = 0.033
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 6.0
+
+; paper panel drops in with tape; px
+[sub_resource type="Resource" id="m_panel_drop"]
+script = ExtResource("1_entry")
+id = &"panel_drop"
+duration = 0.22
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 24.0
+
+; ---- 4.18 Menus ----
+; `> ITEM` cursor blink half-period
+[sub_resource type="Resource" id="m_menu_cursor_blink"]
+script = ExtResource("1_entry")
+id = &"menu_cursor_blink"
+duration = 0.5
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.0
+
+; selected line types in; seconds per character
+[sub_resource type="Resource" id="m_menu_type"]
+script = ExtResource("1_entry")
+id = &"menu_type"
+duration = 0.02
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; focus highlight slide
+[sub_resource type="Resource" id="m_menu_highlight"]
+script = ExtResource("1_entry")
+id = &"menu_highlight"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.0
+
+; ---- 4.19 Modem ----
+; neon MODEM tube warm-up flicker
+[sub_resource type="Resource" id="m_modem_sign_warmup"]
+script = ExtResource("1_entry")
+id = &"modem_sign_warmup"
+duration = 0.8
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.0
+
+; CYBER SHOP circuit traces light up
+[sub_resource type="Resource" id="m_modem_trace"]
+script = ExtResource("1_entry")
+id = &"modem_trace"
+duration = 0.6
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.0
+
+; bought item flies to the top bar icon
+[sub_resource type="Resource" id="m_buy_fly"]
+script = ExtResource("1_entry")
+id = &"buy_fly"
+duration = 0.4
+delay = 0.0
+ease = 2
+trans = 7
+amplitude = 0.0
+
+; BUY / SELL note flap degrees on hover
+[sub_resource type="Resource" id="m_note_flap"]
+script = ExtResource("1_entry")
+id = &"note_flap"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 4.0
+
+; ---- 4.20 Loot / rewards ----
+; reward cards fan in; delay = stagger, amplitude = fan degrees
+[sub_resource type="Resource" id="m_loot_fan"]
+script = ExtResource("1_entry")
+id = &"loot_fan"
+duration = 0.3
+delay = 0.06
+ease = 1
+trans = 7
+amplitude = 8.0
+
+; picked card lifts to the deck icon
+[sub_resource type="Resource" id="m_loot_pick"]
+script = ExtResource("1_entry")
+id = &"loot_pick"
+duration = 0.35
+delay = 0.0
+ease = 2
+trans = 7
+amplitude = 0.0
+
+; Schematics count up
+[sub_resource type="Resource" id="m_count_up"]
+script = ExtResource("1_entry")
+id = &"count_up"
+duration = 0.6
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.0
+
+; ---- 4.21 DISPATCH and subtitles ----
+; seconds per character (instant with the setting)
+[sub_resource type="Resource" id="m_dispatch_type"]
+script = ExtResource("1_entry")
+id = &"dispatch_type"
+duration = 0.025
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; subtitle bar slides in; px
+[sub_resource type="Resource" id="m_subtitle_bar_in"]
+script = ExtResource("1_entry")
+id = &"subtitle_bar_in"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 40.0
+
+; ---- 4.22 Drip lettering ----
+; drips grow on first appearance, then hold
+[sub_resource type="Resource" id="m_drip_grow"]
+script = ExtResource("1_entry")
+id = &"drip_grow"
+duration = 0.6
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.0
+
+; DripButton hover halo: jitter px (pulse period on hover)
+[sub_resource type="Resource" id="m_drip_halo"]
+script = ExtResource("1_entry")
+id = &"drip_halo"
+duration = 0.4
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 3.0
+
+; ---- 4.23 City ambience ----
+; NeonCity beacon period; amplitude = lit share of the period
+[sub_resource type="Resource" id="m_beacon_blink"]
+script = ExtResource("1_entry")
+id = &"beacon_blink"
+duration = 1.6
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.5
+
+; traffic sparks; amplitude = lanes per second
+[sub_resource type="Resource" id="m_city_traffic"]
+script = ExtResource("1_entry")
+id = &"city_traffic"
+duration = 1.0
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.35
+
+; HQ sign flicker period; dips to amplitude alpha
+[sub_resource type="Resource" id="m_hq_sign_flicker"]
+script = ExtResource("1_entry")
+id = &"hq_sign_flicker"
+duration = 3.2
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.45
+
+; ---- 4.24 Top bar stickies ----
+; sticky note bump scale
+[sub_resource type="Resource" id="m_sticky_bump"]
+script = ExtResource("1_entry")
+id = &"sticky_bump"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.08
+
+; the value rolls to its new number
+[sub_resource type="Resource" id="m_number_roll"]
+script = ExtResource("1_entry")
+id = &"number_roll"
+duration = 0.3
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.0
+
+[resource]
+script = ExtResource("1_motion")
+entries = Array[ExtResource("1_entry")]([SubResource("m_screen_flash"), SubResource("m_hit_freeze"), SubResource("m_saved_stamp"), SubResource("m_toast"), SubResource("m_jack_in"), SubResource("m_jack_out"), SubResource("m_jack_fade_reduced"), SubResource("m_wheel_spin"), SubResource("m_wheel_spin_blur"), SubResource("m_wheel_nudge"), SubResource("m_precision_perfect"), SubResource("m_precision_good_ring"), SubResource("m_precision_partial"), SubResource("m_precision_blink"), SubResource("m_precision_miss_static"), SubResource("m_card_hover"), SubResource("m_card_play"), SubResource("m_card_draw"), SubResource("m_card_exhaust"), SubResource("m_send_it_press"), SubResource("m_send_it_drips"), SubResource("m_resolve_pass"), SubResource("m_resolve_pulse"), SubResource("m_number_float"), SubResource("m_number_crit"), SubResource("m_hp_lag"), SubResource("m_intent_flip"), SubResource("m_rewind_scrub"), SubResource("m_pointer_flicker"), SubResource("m_orbit_trail"), SubResource("m_enemy_break"), SubResource("m_hub_shatter"), SubResource("m_heat_pulse"), SubResource("m_heat_letters_shake"), SubResource("m_poster_stamp"), SubResource("m_net_creep"), SubResource("m_hq_crt_hum"), SubResource("m_radio_type"), SubResource("m_jack_ring_breathe"), SubResource("m_polaroid_tilt"), SubResource("m_site_outline_draw"), SubResource("m_map_camera_ease"), SubResource("m_route_crawl"), SubResource("m_asset_drop"), SubResource("m_raid_move"), SubResource("m_turret_trace"), SubResource("m_raid_flip"), SubResource("m_route_pulse"), SubResource("m_node_pop"), SubResource("m_visited_dim"), SubResource("m_panel_in"), SubResource("m_panel_crt_roll"), SubResource("m_panel_drop"), SubResource("m_menu_cursor_blink"), SubResource("m_menu_type"), SubResource("m_menu_highlight"), SubResource("m_modem_sign_warmup"), SubResource("m_modem_trace"), SubResource("m_buy_fly"), SubResource("m_note_flap"), SubResource("m_loot_fan"), SubResource("m_loot_pick"), SubResource("m_count_up"), SubResource("m_dispatch_type"), SubResource("m_subtitle_bar_in"), SubResource("m_drip_grow"), SubResource("m_drip_halo"), SubResource("m_beacon_blink"), SubResource("m_city_traffic"), SubResource("m_hq_sign_flicker"), SubResource("m_sticky_bump"), SubResource("m_number_roll")])
