@@ -17,6 +17,8 @@ const NODE_WORDS := {RC.InfilNodeType.ROUTER: "Fight", RC.InfilNodeType.TERMINAL
 const NODE_ICONS := {RC.InfilNodeType.ROUTER: StatIcon.FIGHT, RC.InfilNodeType.TERMINAL: StatIcon.TERMINAL,
 	RC.InfilNodeType.MODEM: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
 const ELITE_WORD := "Elite fight"
+## A reachable route node's colour on the map (route_graph) and on its button's icon.
+const ROUTE_NEXT_COLOR := Palette.CELL_ACID
 ## The home server's name (as the HQ shows it; never its id).
 const HOME_LABEL := "CORE"
 ## The Modem's quadrant (px) and the room its window frame and title take (px): shop cards
@@ -51,6 +53,8 @@ var _spoken_events: Dictionary = {}
 var _settings_panel: PauseMenu = null
 ## The route's node buttons (their key hints follow the device).
 var _route_buttons: Array[Button] = []
+## The route view's map key (placed clear of the nodes; null when zoomed out).
+var route_legend: MapLegend = null
 
 ## Event types that pop a toast (H20: the log strip is optional).
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
@@ -406,6 +410,9 @@ func _show_map() -> void:
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
 		IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
+		# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
+		# so the same node looks the same on the button and on the map.
+		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
 		b.tooltip_text = UiTip.fold(String(NODE_TIPS.get(node["type"], "")) + (" Elite: a harder fight." if _is_elite(node) else "") + ((" Entering it changes Heat by %+d." % heat) if heat != 0 else ""))
 		_route_buttons.append(b)
 		row.add_child(b)
@@ -424,6 +431,12 @@ func _show_map() -> void:
 	win.body.add_child(quit_btn)
 	if _grid_zoomed:
 		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
+	else:
+		# The route view's map key (H22 #14: it had none), over the map where it covers no
+		# node (LegendSpot).
+		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		top.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		route_legend = MapLegend.pin_to(spacer, RunManager.campaign.corporation_id)
 	_set_panel(panel, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -434,6 +447,16 @@ func _show_map() -> void:
 		var r := route_graph()
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, 1.45, Vector2(0.46, 0.58), Vector2.INF)
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
+		place_route_legend.call_deferred()
+		spacer.resized.connect(place_route_legend)
+		if not background.city.rebuilt.is_connected(place_route_legend):
+			background.city.rebuilt.connect(place_route_legend)
+
+
+## The route legend where it covers no route node (H22 #14).
+func place_route_legend() -> void:
+	if route_legend != null and is_instance_valid(route_legend) and city_overlay != null and is_instance_valid(city_overlay):
+		LegendSpot.place(route_legend, city_overlay)
 
 
 ## A route node in a word: Fight, Elite fight, Event, Shop, Rack.
@@ -498,7 +521,7 @@ func route_graph() -> Dictionary:
 		if n["id"] == s.run.current_node_id:
 			col = Palette.CELL_PINK
 		elif available.has(n["id"]):
-			col = Palette.CELL_ACID
+			col = ROUTE_NEXT_COLOR
 		elif s.run.visited.has(n["id"]):
 			col = Color(Palette.NET_CYAN, 0.5)
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
@@ -509,7 +532,8 @@ func route_graph() -> Dictionary:
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
 			"label": "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
 			"tip": "%s: %s" % [node_word(n), String(NODE_TIPS.get(n["type"], ""))],
-			# The map paints its own node icons (CityMapOverlay); the route buttons use StatIcon.
+			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
+			# kind with the same painter (H22 #14).
 			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
 			"here": n["id"] == s.run.current_node_id, "next": idx >= 0})
 	var edges: Array[Dictionary] = []
@@ -710,12 +734,13 @@ func _show_event() -> void:
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
-		b.text = _choice_text(TextDb.t(c, "label"), s.choice_costs(c))
+		# H21 #13: the outcome as icons with numbers under the words (Heat as it applies);
+		# H22 #12: the amounts it will really apply (a heal at full HP, Heat at 0).
+		var outcome := OutcomeRow.of_choice(s, c)
+		var costs := OutcomeRow.words(outcome)
+		b.text = _choice_text(TextDb.t(c, "label"), costs)
 		var err := s.choice_error(c)
 		b.disabled = err != ""
-		var costs := s.choice_costs(c)
-		# H21 #13: the outcome as icons with numbers under the words (Heat as it applies).
-		var outcome := OutcomeRow.of_choice(s, c)
 		var tip := err if err != "" else (("Costs: %s." % costs) if costs != "" else "")
 		if not outcome.is_empty():
 			tip += ("\n" if tip != "" else "") + OutcomeRow.describe(outcome)
