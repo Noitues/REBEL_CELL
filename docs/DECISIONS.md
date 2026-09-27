@@ -275,6 +275,81 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-27 — Animation pass — ANIM-4: drag and drop, HQ side
+The designer's "drag and drop anything (loadout changes, card use, etc)", HQ side: every
+item the HQ, the City Grid, the raid setup and the loadout view move between places now
+drags, as interaction and motion. Views only: no rule changed. Tests:
+`tests/unit/test_anim4_drag_drop.gd`; strips: `docs/timeline/motion/drag_*.png` (README
+rows marked ANIM-4).
+- **One kit: `DropLayer`** (`scripts/ui/kit/drop_layer.gd`), a full-screen layer over the
+  HQ scene (and one inside the loadout view). A screen registers drop targets (id, the
+  item kinds they take, a locator for their rect) and sources (`add_source`: Godot's drag
+  forwarding, so any control drags, buttons included). A drop is an intent: the layer
+  emits `dropped` / `refused` and `hq_scene._on_dropped` makes the **same call the item's
+  button makes** (Signal Up, Call Down). Whether a target takes an item is asked of the
+  rules themselves: `hq_scene.drop_error` runs the button's own rule call on
+  `campaign.duplicate_state()` and reads its refusal (never a copy of a rule); a target
+  where the item already is is not offered. Rule texts name Sites by their names there.
+- **What drags, and the button path each mirrors:**
+  - Raid setup: an Armory card onto any claimed node, on the map or its YOUR NODES row =
+    pick the node, then press the card (`deploy_asset`); the node's ANIM-5 asset drop
+    (`play_asset_drop`) is the landing and the forecast stamp shows the new projection. A
+    placed asset (its badge in YOUR NODES, its Withdraw / "> Site" buttons, or the picked
+    node itself on the map) onto another node = its "> Site" button (`move_asset`, the drop
+    plays on the new node), onto DEFENSE LOADOUT = Withdraw. Picking the picked node again
+    no longer rebuilds the page (so a press on it can go on into a drag).
+  - HQ: a crew dossier onto a claimed node of the CITY GRID monitor = Station on it; onto
+    CORE = Recall (refused, with the reason, when they are at HQ already). Black Market: a
+    Recruit button onto CREW // ROSTER = the button; a next-run boost onto the next run's
+    kit (a "queued: ..." slot now always shown) = the button. A click on either buys as
+    before and the item flies (`market_fly`: 0.45 s, 60 px arc) to where it went; the new
+    dossier or kit line shows as its copy lands.
+  - City Grid: the Site card lays the living crew out as small Polaroids (`CrewChip`) above
+    JACK IN; one dropped on JACK IN = picking them in the list and pressing JACK IN
+    (`launch`). The list stays.
+  - Loadout view, SPINNER tab, Rank 3: the class's ring segment swaps (and "Class default")
+    sit beside the wheel as chips; one dropped on an inner ring segment = the dossier's
+    "seg k" list (`swap_segment`).
+  - Not HQ-side drags (why): the HQ has no rule that moves cards, Firmware, Daemons or
+    slices (they change in the netrun's Modem and loot, ANIM-4b's), so the deck viewer and
+    the Daemon tray stay view-only; the roster has no order to drag.
+- **Keys and pad**: X (keyboard Space, the `end_turn` action, unused on these screens) picks
+  up the focused item (a dossier's own order buttons pick up its operative); A picks up an
+  item that only moves (crew chips, swap chips) and keeps its meaning on buttons that do
+  something (an Armory card still deploys to the target, a Recruit still buys). While an
+  item is carried the D-pad / arrows step a reticle through every target in screen order
+  (the item follows, `drag_follow` 0.12 s CUBIC out), A drops, B (or X again) puts it back.
+  The pad prompts say "X Pick up", then "A Drop / B Cancel". The mouse also clicks an item
+  that only moves, then clicks its target (click-select-click); the old click-the-node-then
+  -the-card path is unchanged.
+- **Motion** (all in `ui_motion.tres`; ANIM-3's card drag reused for consistency): pick-up
+  pops (`drag_pickup` 0.1 s x1.06) and the slot dims while the item is away; the ghost
+  trails the pointer with ANIM-3's lag and tilt (`drag_ghost_follow`, `drag_ghost_tilt`);
+  targets that take the item pulse corner brackets (`drop_zone_pulse`), the hovered one
+  lights fully; a refusing target under the item shows the drawn no-entry mark (the refusal
+  toast's); the pad reticle is ANIM-3's (`target_snap`). A drop snaps the copy from where it
+  was let go onto the target (`loadout_swap` 0.2 s, operatives `crew_assign` 0.2 s BACK),
+  dips and springs back (`drop_settle` 0.15 s / 6 px) and stamps a ring (`drop_stamp`
+  0.25 s / +18 px, new) as it fades; an operative's dossier pops (`crew_assign` x1.1). A
+  refusal shakes the no-entry mark on the target (`drop_reject` 0.2 s / 6 px), the item
+  glides home (`drag_cancel_return`, ANIM-3's 0.15 s) and the rules' reason shows as a
+  toast; a drop on nothing just glides home. Variants shown (strips): `drop_settle`
+  0.10/4, **0.15/6**, 0.25/10; `drop_stamp` 0.18/12, **0.25/18**, 0.35/26; `drag_pickup`
+  x1.00, **x1.06**, x1.14; `drop_reject` 0.12/3, **0.20/6**, 0.35/10 (picked in bold: the
+  handoff's "zine, tactile, 0.2-0.35 s" and ANIM-3's snappy card drag).
+- **Rules of the pass kept**: the state is final when the drop's call returns; motion plays
+  on top. Reduce effects and headless: no pulses, flights or marks, the end state at once.
+  Any press during a flight completes it. The layer adds nothing to layout (new pieces:
+  the Site card's crew chips, the next run's kit slot, the swap column beside the wheel;
+  checked at 1.0 / 1.3 / 1.6). Tooltips name the drags; focus lands on the target after a
+  pad drop.
+- New ids (data only; REQUIRED_IDS, the lab and the schema unchanged otherwise):
+  `drop_stamp`, `market_fly` (113 entries). Retuned: `drag_follow` (0.12 s CUBIC, the
+  carried item's glide), comments of the ANIM-1 drag ids now say what each drives.
+- Frame capture: `--demo-anim=drag_asset`, `drag_asset_refuse` (`--demo-raid`),
+  `drag_crew`, `drag_crew_cancel`, `drag_crew_refuse` (`--demo-grid`), `drag_loadout`,
+  `drag_loadout_cancel` (`--demo-hq`) on the HQ scene; `--demo-tune` for variants.
+
 #### 2026-09-27 — Animation pass — ANIM-3: card targeting and execution
 - **Hover** (`card_hover`, 0.15 s, 12 px): the sticker lifts, tilts from its resting
   angle to 0 and glows. The lift and the deal-in offset are *drawn* offsets
@@ -2516,6 +2591,14 @@ and annotated in the GDD where it changes a rule.
   the implementer, as the designer asked): no. The city backdrop keeps its own clock at
   1x / 2x / 4x (sped-up beacons would strobe); the raid layer and the map's route dashes
   run at the chosen speed. See "Animation pass — ANIM-5".
+- **Drag and drop, HQ side (Animation pass ANIM-4, 2026-09-27):** decided by the
+  implementer, confirm in playtest. (1) The pad and keyboard pick-up button is X / Space
+  (the `end_turn` action, free on the HQ, the Grid and the raid setup), so A keeps every
+  button's meaning; items that only move (crew and swap chips) also pick up with A. (2)
+  Recall is a drop on CORE (the Cell's home) on the HQ's CITY GRID monitor. (3) A drop on
+  JACK IN starts the run at once, like the button. (4) The HQ drags only what HQ rules can
+  move; card, Firmware, Daemon and slice moves live in the Modem and loot (ANIM-4b). See
+  "Animation pass — ANIM-4".
 
 - **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column and the map key along the map's foot (about 280
   px tall at 1.6), the Grid map is framed small enough that every node shows, and only the

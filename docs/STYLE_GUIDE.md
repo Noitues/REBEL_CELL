@@ -219,6 +219,25 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5"); strips:
   `docs/timeline/motion/`.
 
+### 5.4 Drag and drop, HQ side (the Animation pass, ANIM-4)
+- **Anything that moves between places drags**, with the same feel as a combat card
+  (ANIM-3): it pops as it lifts, its slot dims, the ghost trails the pointer with a lag
+  and a tilt. Every drag has its button, and the button stays.
+- **Targets say yes or no before the drop**: the ones that take the item pulse acid corner
+  brackets, the hovered one lights fully; a target that refuses shows the drawn no-entry
+  mark (the refusal toast's circle and slash) when the item is over it.
+- **A drop snaps and stamps**: the item snaps onto the target, dips a few px and springs
+  back, a ring stamps out as it fades, an operative's dossier pops. A raid asset lands
+  with the node's own drop (5.3). A refusal shakes the no-entry mark and the item glides
+  home; the rules' reason shows as a toast. A drop on nothing glides home.
+- **Keys and pad**: X / Space picks up the focused item (A on items that only move), the
+  D-pad walks a reticle through every target (the item follows), A drops, B puts it back;
+  the pad prompts follow. The mouse can click an item, then its target.
+- **Purchases by click fly**: a Black Market recruit or boost arcs from its button to
+  where it went, which shows as it lands.
+- Reduce effects and headless: no pulses, flights or marks, the end state at once. Values:
+  `ui_motion.tres` (DECISIONS "Animation pass — ANIM-4"); strips `docs/timeline/motion/drag_*`.
+
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
 slice and status, text scaling, subtitles with speaker names.
