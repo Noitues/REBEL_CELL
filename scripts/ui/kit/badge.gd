@@ -20,6 +20,8 @@ var text: String = ""
 var color: Color = Palette.NET_CYAN
 ## 0..1 fills the mini meter; below 0 there is none.
 var fill: float = -1.0
+## A StatIcon drawn in the hex instead of the glyph (H21: the same icon as the stat's tag).
+var icon_kind: StringName = &""
 
 
 func _init(p_text: String = "", p_color: Color = Palette.NET_CYAN, p_glyph: String = "", p_tip: String = "", p_asset: StringName = &"") -> void:
@@ -35,6 +37,13 @@ func _init(p_text: String = "", p_color: Color = Palette.NET_CYAN, p_glyph: Stri
 func with_meter(value: float, maximum: float) -> Badge:
 	fill = clampf(value / maxf(1.0, maximum), 0.0, 1.0)
 	update_minimum_size()
+	return self
+
+
+## Draws StatIcon `kind` in the hex (the resource's own icon, as on its top-bar tag).
+func with_icon(kind: StringName) -> Badge:
+	icon_kind = kind
+	queue_redraw()
 	return self
 
 
@@ -76,6 +85,8 @@ func _draw() -> void:
 	draw_polyline(pts, color, 1.6)
 	if asset_id != &"":
 		AssetIcon.draw_icon(self, c, r * 0.8, asset_id, false)
+	elif icon_kind != &"":
+		StatIcon.draw(self, c, r * 0.62, icon_kind, color)
 	elif glyph != "":
 		draw_string(Palette.mono(), c + Vector2(-r, r * 0.42), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), color)
 	var font := get_theme_font(&"font", &"Label")

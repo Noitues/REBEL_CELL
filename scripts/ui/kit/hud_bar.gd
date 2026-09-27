@@ -10,6 +10,12 @@ signal loadout_pressed
 signal daemons_pressed
 
 const BAND_HEIGHT := 56.0
+## The screen title's lettering and the width it may take (px).
+const NUMBER_SIZE := 20
+const TITLE_SIZE := 15
+const TITLE_PAD := 8.0
+const TITLE_MIN_WIDTH := 24.0
+const TITLE_MAX_WIDTH := 250.0
 
 var label: Label
 var title_box: Control
@@ -70,9 +76,13 @@ func _init() -> void:
 
 
 ## Names the current screen ("01", "CYBERDECK HQ"); an empty title leaves the band blank.
+## The title takes only the width it needs (H21: the stat tags get the rest).
 func set_screen(number: String, title: String) -> void:
 	_number = number
 	_title = title
+	var w := maxf(Palette.mono().get_string_size(number, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE).x,
+		Palette.mono().get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x)
+	title_box.custom_minimum_size.x = clampf(ceilf(w) + TITLE_PAD, TITLE_MIN_WIDTH, TITLE_MAX_WIDTH) if (number != "" or title != "") else TITLE_MIN_WIDTH
 	title_box.queue_redraw()
 
 
@@ -108,7 +118,7 @@ func _draw_daemon_icon() -> void:
 func _draw_title() -> void:
 	var y := 24.0
 	if _number != "":
-		title_box.draw_string(Palette.mono(), Vector2(0, y), _number, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.CELL_PINK)
-		title_box.draw_string(Palette.mono(), Vector2(0, y + 20), _title, HORIZONTAL_ALIGNMENT_LEFT, 250, 15, Palette.PAPER)
+		title_box.draw_string(Palette.mono(), Vector2(0, y), _number, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_SIZE, Palette.CELL_PINK)
+		title_box.draw_string(Palette.mono(), Vector2(0, y + 20), _title, HORIZONTAL_ALIGNMENT_LEFT, title_box.size.x, TITLE_SIZE, Palette.PAPER)
 	elif _title != "":
-		title_box.draw_string(Palette.mono(), Vector2(0, 29), _title, HORIZONTAL_ALIGNMENT_LEFT, 250, 16, Palette.PAPER)
+		title_box.draw_string(Palette.mono(), Vector2(0, 29), _title, HORIZONTAL_ALIGNMENT_LEFT, title_box.size.x, TITLE_SIZE, Palette.PAPER)
