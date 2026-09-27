@@ -1187,6 +1187,9 @@ func _refresh(state: CombatState) -> void:
 	portrait.caption = operative_name
 	if state.player.source_id != &"":
 		portrait.placeholder_label = "[%s PORTRAIT]" % String(state.player.source_id).to_upper()
+	if engine.netrun != null and engine.netrun.run != null and engine.netrun.run.operative != null:
+		# The same face as the operative's dossier (H20 #23).
+		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
 	portrait.tooltip_text = "%s (%s): %d/%d HP." % [operative_name, state.player.display_name, state.player.hp, state.player.max_hp]
 	portrait.queue_redraw()

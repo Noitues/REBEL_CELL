@@ -8,7 +8,7 @@ extends Control
 signal closed
 
 const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"]
-const ACTION_LABELS := {&"nudge_left": "Nudge -1", &"nudge_right": "Nudge +1", &"cycle_target": "Cycle target",
+const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target",
 	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_card_target": "Card target", &"toggle_ring": "Ring",
 	&"toggle_nudge_wheel": "Nudge wheel", &"toggle_direction": "Card direction", &"cycle_slot": "Chosen slice",
 	&"respin": "Respin", &"open_settings": "Pause / options"}

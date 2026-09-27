@@ -35,9 +35,9 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
 | Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
-| H20 | 2026-09-26 | **Pending.** 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3). List below. | Awaiting the designer |
+| H20 | 2026-09-26 | 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3) plus the designer's 7 (tooltips, drag-to-target cards and nudge arrows, a baked backdrop with live lights and territory colour, no text logs, naive-player reviews, directions that read the right way) | Fixed in horizontal batch H20 (combat, city, screens); DECISIONS "H20 ..." entries |
 
-### H20 (pending): vertical + horizontal re-review after the merge, with the pass-20 items
+### H20 (fixed 2026-09-26): vertical + horizontal re-review after the merge, with the pass-20 items
 
 Pass-20 P1 (netrun fight cut off at 1.3+) is **fixed** by the merged layout (cards and SEND
 IT fully visible at 1.0/1.3/1.6, system log on or off); a height test is still to add.
@@ -98,7 +98,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 540 passing after the visual merge (533 at H19); schema smoke test and content validation green.
+Tests: 594 passing at H20 (540 after the visual merge); schema smoke test and content validation green.
 
 ---
 
