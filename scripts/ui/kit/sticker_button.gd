@@ -7,6 +7,10 @@ extends Button
 var paper: Color = Palette.NOTE_YELLOW
 var tilt: float = 0.0
 var _hot: bool = false
+## A drawn mark before the lettering ("respin": a circular arrow, "undo": a hooked arrow),
+## so the sticker reads without words (H22). "" = none.
+var drawn_icon: String = ""
+const ICON_ROOM := 22.0
 
 ## Marker lettering size and sticker height at text scale 1.0 (px).
 const FONT_SIZE := 14
@@ -39,7 +43,7 @@ static func font_px() -> int:
 
 func _fit() -> void:
 	var scale := Settings.text_scale
-	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PADDING * scale
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PADDING * scale + (ICON_ROOM * scale if drawn_icon != "" else 0.0)
 	custom_minimum_size = Vector2(maxf(MIN_WIDTH * scale, w), HEIGHT * scale)
 	size = get_combined_minimum_size()
 
@@ -48,6 +52,21 @@ func _fit() -> void:
 func refit() -> void:
 	_fit()
 	queue_redraw()
+
+
+func _draw_icon(c: Vector2, r: float, col: Color) -> void:
+	match drawn_icon:
+		"respin":
+			draw_arc(c, r, -PI * 0.8, PI * 0.9, 14, col, 2.0)
+			var a := PI * 0.9
+			var tip := c + Vector2(cos(a), sin(a)) * r
+			var tg := Vector2(-sin(a), cos(a))
+			draw_colored_polygon(PackedVector2Array([tip + tg * 5.0, tip + tg.orthogonal() * 4.0, tip - tg.orthogonal() * 4.0]), col)
+		"undo":
+			draw_arc(c + Vector2(1, 1), r * 0.8, -PI * 0.5, PI * 0.5, 10, col, 2.0)
+			draw_line(c + Vector2(1, -r * 0.8 + 1), c + Vector2(-r, -r * 0.8 + 1), col, 2.0)
+			var tip := c + Vector2(-r - 2, -r * 0.8 + 1)
+			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(5, -4), tip + Vector2(5, 4)]), col)
 
 
 func set_label(t: String) -> void:
@@ -69,6 +88,15 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2(-12, rr.position.y - 5), Vector2(24, 9)), Palette.NOTE_TAPE)
 	var fs := font_px()
 	var baseline := rr.position.y + (rr.size.y + Palette.marker().get_ascent(fs) - Palette.marker().get_descent(fs)) * 0.5
-	draw_string(Palette.marker(), Vector2(rr.position.x, baseline), text, HORIZONTAL_ALIGNMENT_CENTER, rr.size.x, fs, Palette.INK if not disabled else Color(Palette.INK, 0.5))
+	var ink := Palette.INK if not disabled else Color(Palette.INK, 0.5)
+	var text_x := rr.position.x
+	var text_w := rr.size.x
+	if drawn_icon != "":
+		var s := Settings.text_scale
+		var ic := Vector2(rr.position.x + ICON_ROOM * 0.5 * s + 4.0, rr.position.y + rr.size.y * 0.5)
+		_draw_icon(ic, 7.0 * s, ink)
+		text_x += ICON_ROOM * s
+		text_w -= ICON_ROOM * s
+	draw_string(Palette.marker(), Vector2(text_x, baseline), text, HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	r = r

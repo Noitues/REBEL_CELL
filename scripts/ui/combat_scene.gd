@@ -105,6 +105,9 @@ var _option_index: int = -1
 var _dragging: bool = false
 ## Draws the aim line (see _draw_aim_line).
 var _aim_line: Control
+## The aiming instruction over the hand.
+var _aim_hint: Label
+const AIM_HINT_FONT := 14
 ## Other cards fade while one is aimed.
 const AIM_DIM := 0.45
 const AIM_LINE_WIDTH := 3.0
@@ -661,6 +664,7 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 		var v := _view_of(z[0])
 		if v != null and not WheelView._zone_is(v.valid_zones, z[1]):
 			v.valid_zones.append(z[1])
+	_show_aim_hint()
 	# The card being aimed stays lifted (it holds focus while the aim moves).
 	if hand_index < _hand_box.get_child_count() and not _dragging:
 		(_hand_box.get_child(hand_index) as Control).grab_focus()
@@ -788,6 +792,23 @@ func _dim_hand() -> void:
 	for c in _hand_box.get_children():
 		(c as Control).modulate.a = AIM_DIM if selecting >= 0 and c.get_index() != selecting else 1.0
 	_aim_line.queue_redraw()
+	if selecting < 0 and _aim_hint != null:
+		_aim_hint.visible = false
+
+
+## While a card is aimed: what to do, over the hand (H22: players didn't know to click a
+## glowing target).
+func _show_aim_hint() -> void:
+	if _aim_hint == null:
+		return
+	var confirm := Settings.key_text(&"ui_accept") if Settings.pad_active else "click"
+	var cancel := Settings.key_text(&"ui_cancel") if Settings.pad_active else "right-click"
+	_aim_hint.text = "Drop or %s on a glowing target  ·  %s cancels" % [confirm, cancel]
+	_aim_hint.add_theme_font_size_override("font_size", roundi(AIM_HINT_FONT * Settings.text_scale))
+	_aim_hint.reset_size()
+	var hand := _hand_box.get_global_rect()
+	_aim_hint.global_position = Vector2(hand.position.x + 8.0, hand.position.y - _aim_hint.get_combined_minimum_size().y - 4.0)
+	_aim_hint.visible = true
 
 
 ## Lights the aimed zone and previews that play.
@@ -1180,6 +1201,14 @@ func _build_ui() -> void:
 	_aim_line.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_aim_line.draw.connect(_draw_aim_line)
 	add_child(_aim_line)
+	_aim_hint = Label.new()
+	_aim_hint.name = "AimHint"
+	_aim_hint.visible = false
+	_aim_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aim_hint.add_theme_color_override("font_color", Palette.CELL_ACID)
+	_aim_hint.add_theme_color_override("font_outline_color", Palette.NIGHT_SKY)
+	_aim_hint.add_theme_constant_override("outline_size", 6)
+	add_child(_aim_hint)
 	_refresh_key_hints()
 
 
@@ -1667,7 +1696,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			chips.append_array(_odds_chips(c, true))
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
 			"statuses": shown_statuses, "satellites": sats}
-		view.intent = {"type": title["type"], "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
+		view.intent = {"type": title["type"], "tier": title.get("tier", -1), "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
 		view.queue_redraw()
 	ram_note.set_pending(o.ram_delta)
 
@@ -1676,18 +1705,20 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 	var parts := PackedStringArray()
 	var type := -1
+	var tier := -1
 	var rs := engine.resolver.pointer_readouts(s, c)
 	for r in rs:
 		var slice: SliceData = r["slice"]
 		if type < 0:
 			type = slice.slice_type
+			tier = int(r["tier"])
 		if rs.size() <= 1:
 			parts.append("%s · %s" % [Palette.SLICE_WORDS.get(slice.slice_type, "?"), Palette.TIER_WORDS.get(r["tier"], "")])
 		elif rs.size() == 2:
 			parts.append("%s %s" % [Palette.SLICE_WORDS.get(slice.slice_type, "?"), String(Palette.TIER_NAMES.get(r["tier"], "")).to_lower()])
 		else:
 			parts.append("%s·%s" % [Palette.SLICE_NAMES.get(slice.slice_type, "?"), String(Palette.TIER_NAMES.get(r["tier"], "")).left(1)])
-	return {"type": type, "text": " + ".join(parts)}
+	return {"type": type, "tier": tier if rs.size() == 1 else -1, "text": " + ".join(parts)}
 
 
 ## Result chips for one combatant (and, on the operative, the run-wide results).
@@ -1803,6 +1834,7 @@ func _build_stickers() -> void:
 	]
 	for sp in specs:
 		var b := StickerButton.new(sp[1], sp[2], sp[3])
+		b.drawn_icon = String(sp[0])
 		b.name = "Sticker_" + String(sp[0])
 		b.pressed.connect(sp[4])
 		_sticker_box.add_child(b)

@@ -11,6 +11,8 @@ const DRIP_PINK := Color("#FF3DA8")
 ## Drip presets: long -> short, left to right.
 const SEND_IT_DRIPS := [[0, 44, 0.3], [2, 28, 0.88], [6, 14, 0.5]]
 const LEAVE_MODEM_DRIPS := [[0, 42, 0.25], [7, 26, 0.85], [10, 14, 0.2]]
+## Key hint lettering under the tag (px at text scale 1.0).
+const HINT_SIZE := 18
 ## The white outline round drip lettering (px each side) and its opacity.
 const OUTLINE_PX := 2.0
 const OUTLINE_ALPHA := 0.95
@@ -38,7 +40,7 @@ func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRI
 	for d in drips:
 		longest = maxf(longest, float(d[1]))
 	var w := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + (18 if key_hint != "" else 0))
+	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + (HINT_SIZE * Settings.text_scale + 6.0 if key_hint != "" else 0.0))
 	mouse_entered.connect(func() -> void: _hot = true; queue_redraw())
 	mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
 	focus_entered.connect(func() -> void: _hot = true; queue_redraw())
@@ -165,4 +167,11 @@ func _draw() -> void:
 			draw_string(Palette.marker(), base + Vector2(k - 3, (k * 7) % 5 - 2), tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, 0.12))
 	DripButton.draw_drip_text(self, base, tag_text, font_size, col, drips)
 	if key_hint != "":
-		draw_string(Palette.mono(), Vector2(14, size.y - 6), key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(Palette.PAPER, 0.75))
+		# The key sits centred under the lettering, big enough to find (H22: "[X]" at 13 px in
+		# the corner was barely visible on the most important button).
+		var hs := roundi(HINT_SIZE * Settings.text_scale)
+		var tw := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		var hw := Palette.mono().get_string_size(key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
+		var hp := Vector2(12 + (tw - hw) * 0.5, size.y - 6)
+		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 6)), Color(Palette.NIGHT_SKY, 0.8))
+		draw_string(Palette.mono(), hp, key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, Palette.PAPER)

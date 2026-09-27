@@ -90,6 +90,11 @@ const ARROW_SPAN := 13.0
 const ARROW_HIT := 18.0
 ## Satellite marker hit radius (px at text scale 1.0).
 const SATELLITE_HIT := 14.0
+## How far out from its marker a satellite's label sits (px at text scale 1.0).
+const SATELLITE_LABEL_OUT := 26.0
+## Aim quality pips on the tag (1 = half power, 2 = good, 3 = perfect).
+const TIER_PIPS := {RC.PrecisionTier.PARTIAL: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
+const PIP_RADIUS := 3.0
 ## Tag rows kept on screen: the title and at most this many chip rows (the rest fold into
 ## a "+N" chip; the tooltip lists them all).
 const TAG_CHIP_ROWS := 2
@@ -383,7 +388,16 @@ func _radius() -> float:
 
 ## Height kept for the tag at the current text scale (title and TAG_CHIP_ROWS rows).
 static func _tag_reserve() -> float:
-	return INTENT_HEIGHT * _ts() + TAG_CHIP_ROWS * (CHIP_HEIGHT * _ts() + 2.0)
+	return INTENT_HEIGHT * _ts() + _chip_row_cap() * (CHIP_HEIGHT * _ts() + 2.0)
+
+
+## Chip rows kept: fewer at big text so the wheel doesn't shrink away (H22).
+static func _chip_row_cap() -> int:
+	return 1 if _ts() > BIG_TEXT else TAG_CHIP_ROWS
+
+
+## Above this text scale the tag keeps one chip row.
+const BIG_TEXT := 1.3
 
 
 ## Width of the slice bar band.
@@ -489,7 +503,19 @@ func _draw() -> void:
 		var sat_text := "%s %d" % [sat.display_name.to_lower(), sat.hp]
 		if not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
 			sat_text += " → %d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " → ✕"
-		draw_string(Palette.mono(), satp + Vector2(-18, 22), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), sat_col)
+		# The label sits outside the values on a dark plate so it never mixes with a slice's
+		# number (H22), with a small portrait-like hex token for the satellite.
+		var out_dir := (satp - _center()).normalized()
+		var lfs := _fs(HUB_FONT_SIZE + 1)
+		var lw := Palette.mono().get_string_size(sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
+		var lp := satp + out_dir * (SATELLITE_LABEL_OUT * _ts()) - Vector2(lw * 0.5, -lfs * 0.35)
+		draw_rect(Rect2(lp - Vector2(3, lfs), Vector2(lw + 6, lfs + 5)), Color(Palette.NIGHT_SKY, 0.85))
+		draw_string(Palette.mono(), lp, sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
+		var hex := PackedVector2Array()
+		for k in 7:
+			var ha := TAU * k / 6.0
+			hex.append(satp + Vector2(cos(ha), sin(ha)) * 6.0)
+		draw_polyline(hex, sat_col, 1.5)
 		if sat.id == targeted_satellite:
 			_draw_crosshair(satp, 15.0)
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
@@ -550,10 +576,11 @@ func _draw() -> void:
 	_draw_hub(center, inner, line)
 	if highlighted and combatant.is_alive():
 		_draw_crosshair(center, radius + 56)
-		# Name the reticle (reviewers read the brackets as a threat).
-		var ts := _fs(HUB_FONT_SIZE)
-		var d := Vector2(cos(PI * 0.25), sin(PI * 0.25)) * (radius + 56 + 10)
-		draw_string(Palette.mono(), center + d + Vector2(-4, ts), "TARGET", HORIZONTAL_ALIGNMENT_LEFT, -1, ts, _col(TARGET_COLOR))
+		# A crosshair mark by the top-right bracket names the reticle without words.
+		var cm := center + Vector2(cos(-PI * 0.25), sin(-PI * 0.25)) * (radius + 56 + 16)
+		draw_arc(cm, 7, 0, TAU, 16, _col(TARGET_COLOR), 2.0)
+		draw_line(cm + Vector2(-11, 0), cm + Vector2(11, 0), _col(TARGET_COLOR), 2.0)
+		draw_line(cm + Vector2(0, -11), cm + Vector2(0, 11), _col(TARGET_COLOR), 2.0)
 	if _zone_is(valid_zones, {"kind": "hub"}):
 		var hot := _zone_is([hover_zone], {"kind": "hub"})
 		draw_arc(center, inner - 4, 0, TAU, 48, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
@@ -666,16 +693,39 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		elif f < frac_after:
 			col = _col(HP_COLOR.lightened(0.5))
 		draw_colored_polygon(_wedge(center, radius + 32, radius + HP_ARC_OUT, a0, a1), col)
+	# The number is the HP now (it agrees with the top bar); the forecast after SEND IT is a
+	# separate dashed plate with an arrow (H22: "60→49" read as a result).
 	var hs := _fs(HP_FONT_SIZE)
+	var base_y := radius + HP_TEXT_GAP + hs - HP_FONT_SIZE
 	var text := "%d/%d" % [combatant.hp, combatant.max_hp]
-	var text_col := hp_col
+	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
+	draw_string(Palette.display(), center + Vector2(-tw * 0.5, base_y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if after != combatant.hp:
-		text = "%d→%d" % [combatant.hp, maxi(0, after)]
-		text_col = _col(LOSS_COLOR) if after < combatant.hp else hp_col
-	draw_string(Palette.display(), center + Vector2(-80, radius + HP_TEXT_GAP + hs - HP_FONT_SIZE), text, HORIZONTAL_ALIGNMENT_CENTER, 160, hs, text_col)
+		var fs := _fs(HUB_FONT_SIZE + 3)
+		var ftext := "NEXT %d" % maxi(0, after)
+		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
+		var fr := Rect2(center + Vector2(tw * 0.5 + 8.0, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
+		draw_rect(fr, Color(Palette.NIGHT_SKY, 0.8))
+		_draw_dashed_rect(fr, fcol)
+		var ay := fr.position.y + fr.size.y * 0.5
+		draw_colored_polygon(PackedVector2Array([Vector2(fr.position.x + 5, ay - 5), Vector2(fr.position.x + 13, ay), Vector2(fr.position.x + 5, ay + 5)]), fcol)
+		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 	if last_turn != "":
+		# The past, greyed: what the last SEND IT did.
 		var ls := _fs(HUB_FONT_SIZE)
-		draw_string(Palette.mono(), center + Vector2(-110, radius + HP_TEXT_GAP + hs - HP_FONT_SIZE + LAST_TURN_GAP + ls), last_turn, HORIZONTAL_ALIGNMENT_CENTER, 220, ls, _col(Palette.PAPER))
+		draw_string(Palette.mono(), center + Vector2(-110, base_y + LAST_TURN_GAP + ls), last_turn, HORIZONTAL_ALIGNMENT_CENTER, 220, ls, _col(Color(Palette.PAPER, 0.6)))
+
+
+func _draw_dashed_rect(r: Rect2, col: Color) -> void:
+	var pts := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
+	for k in 4:
+		var a: Vector2 = pts[k]
+		var b: Vector2 = pts[k + 1]
+		var n := maxi(2, int(a.distance_to(b) / 6.0))
+		for i in n:
+			if i % 2 == 0:
+				draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), col, 1.5)
 
 
 func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
@@ -761,13 +811,14 @@ func _chip_rows() -> Array:
 		w += cw
 	if not row.is_empty():
 		rows.append(row)
-	if rows.size() > TAG_CHIP_ROWS:
+	var cap := _chip_row_cap()
+	if rows.size() > cap:
 		# Fold the overflow into a "+N" chip on the last kept row.
 		var hidden := 0
-		for k in range(TAG_CHIP_ROWS, rows.size()):
+		for k in range(cap, rows.size()):
 			hidden += (rows[k] as Array).size()
-		rows = rows.slice(0, TAG_CHIP_ROWS)
-		var last: Array = rows[TAG_CHIP_ROWS - 1]
+		rows = rows.slice(0, cap)
+		var last: Array = rows[cap - 1]
 		if not last.is_empty():
 			hidden += 1
 			last.pop_back()
@@ -790,6 +841,8 @@ func _intent_rect_local() -> Rect2:
 	var rows := _chip_rows()
 	var h := title_h + rows.size() * (chip_h + 2.0)
 	var w := Palette.marker().get_string_size(String(intent["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(INTENT_FONT_SIZE)).x + (20.0 + 22.0 * ts if int(intent.get("type", -1)) >= 0 else 16.0)
+	if TIER_PIPS.has(int(intent.get("tier", -1))):
+		w += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
 	var fs := _fs(CHIP_FONT_SIZE)
 	for row in rows:
 		var rw := 8.0
@@ -823,6 +876,16 @@ func _intent_tag(r: Rect2) -> void:
 	if type >= 0:
 		SliceIcon.draw_icon(self, r.position + Vector2(17, title_h * 0.5), 9 * ts, type, Palette.slice_color(type))
 		tx += 22 * ts
+	var tier := int(intent.get("tier", -1))
+	if TIER_PIPS.has(tier):
+		# Aim quality as pips (readable without words): filled = how well the needle sits.
+		for k in 3:
+			var pc := Vector2(tx + PIP_RADIUS * ts + k * (PIP_RADIUS * 2.6 * ts), r.position.y + title_h * 0.5)
+			if k < int(TIER_PIPS[tier]):
+				draw_circle(pc, PIP_RADIUS * ts, Palette.INK)
+			else:
+				draw_arc(pc, PIP_RADIUS * ts, 0, TAU, 10, Palette.INK, 1.2)
+		tx += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
 	draw_string(f, Vector2(tx, r.position.y + title_h * 0.7), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), Palette.INK)
 	var fs := _fs(CHIP_FONT_SIZE)
 	var chip_h := CHIP_HEIGHT * ts
