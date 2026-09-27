@@ -92,7 +92,7 @@ func test_revealed_phases_and_drones_reach_the_views() -> void:
 	var enemy_view: WheelView = _scene._enemy_views[&"enemy_0"]
 	assert_eq(enemy_view.extra_lines.size(), 2, "two phases revealed by Intel")
 	assert_true(enemy_view.extra_lines[0].contains("MULTIPLY"))
-	assert_true(_scene.daemon_note.label.get_parsed_text().contains("Botnet Seed"))
+	assert_true(_scene.daemon_row.describe_all().contains("Botnet Seed"), "the Daemon sigil row describes Botnet Seed")
 	CombatFixture.land(_state().player, 1, 0)
 	var seeded := []  # an Array: lambdas capture ints by value
 	_scene.engine.state_changed.connect(func(_st, evs) -> void:

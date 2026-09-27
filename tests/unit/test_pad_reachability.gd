@@ -108,7 +108,11 @@ func test_combat_is_pad_reachable() -> void:
 		if not (c as BaseButton).disabled:
 			assert_true(reach.has(c), "card %s reachable" % c.get("card_title"))
 	assert_true(reach.has(scene._end_turn_button), "SEND IT reachable")
-	assert_eq(scene._end_turn_button.find_valid_focus_neighbor(SIDE_LEFT), scene._hand_box.get_child(scene._hand_box.get_child_count() - 1), "Left from SEND IT returns to the hand")
+	# H20: RESPIN and UNDO stand between the hand and SEND IT.
+	for key in scene._stickers:
+		assert_true(reach.has(scene._stickers[key]), "%s sticker reachable" % key)
+	assert_eq(scene._end_turn_button.find_valid_focus_neighbor(SIDE_LEFT), scene._stickers["respin"], "Left from SEND IT reaches the stickers")
+	assert_eq(scene._stickers["respin"].find_valid_focus_neighbor(SIDE_LEFT), scene._hand_box.get_child(scene._hand_box.get_child_count() - 1), "and left again returns to the hand")
 	_end()
 
 

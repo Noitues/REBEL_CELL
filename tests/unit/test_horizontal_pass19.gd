@@ -33,7 +33,7 @@ func test_a_refused_rebind_keeps_the_panel_on_screen() -> void:
 	var before := menu.settings_panel.get_combined_minimum_size().x
 	menu.settings_panel.begin_rebind(&"nudge_left")
 	var taken := InputEventKey.new()
-	taken.physical_keycode = Settings.key_for(&"toggle_direction")
+	taken.physical_keycode = Settings.key_for(&"toggle_ring")
 	taken.pressed = true
 	menu.settings_panel.handle_key(taken)
 	await _frames()
@@ -50,11 +50,12 @@ func test_combat_key_hints_follow_a_rebind() -> void:
 	var scene: Control = add_child_autofree(load("res://scenes/combat/combat_scene.tscn").instantiate())
 	scene.start_fight(&"triage_unit", 7)
 	await _frames()
-	Settings.rebind(&"toggle_ring", KEY_G)
+	Settings.rebind(&"nudge_left", KEY_G)
 	Settings.rebind(&"rewind", KEY_B)
 	await _frames()
 	var g := OS.get_keycode_string(KEY_G)
-	assert_string_contains(scene._nudge_ring_option.get_item_text(0), "[%s]" % g)
+	# H20: the nudge keys' hints sit by the curved arrows of the wheel they drive.
+	assert_eq(String(scene._player_view.arrow_hints.get(-1, "")), "[%s]" % g)
 	assert_string_contains(scene._rewind_button.text, "[%s]" % OS.get_keycode_string(KEY_B))
 	assert_string_contains(scene._settings_button.text, "[%s]" % Settings.key_text(&"open_settings"))
 	RunManager.delete_save()

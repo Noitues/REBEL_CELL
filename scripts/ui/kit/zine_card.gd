@@ -32,6 +32,16 @@ var mark: int = Mark.NONE:
 		mark = v
 		queue_redraw()
 var _lifted: bool = false
+## Hand index this card drags as (H20 drag-to-target), -1 = not draggable.
+var drag_index: int = -1
+## Lettering scale (the combat hand follows Settings.text_scale; see scaled()).
+var text_scale: float = 1.0
+## Sticker size and lettering at scale 1.0.
+const STICKER_SIZE := Vector2(112, 148)
+const TITLE_SIZE := 17
+const BODY_SIZE := 11
+const BODY_LINE := 15.0
+const BODY_TOP := 58.0
 
 
 func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", index: int = 0) -> void:
@@ -63,6 +73,27 @@ func as_tile(p_look: int, p_accent: Color) -> ZineCard:
 	accent = p_accent
 	custom_minimum_size = Vector2(118, 150)
 	return self
+
+
+## Scales the sticker and its lettering by `s` (the combat hand at text scale > 1).
+func scaled(s: float) -> ZineCard:
+	text_scale = s
+	custom_minimum_size = STICKER_SIZE * s
+	return self
+
+
+## Drag the card onto a target (the combat scene decides what the drop means).
+func _get_drag_data(_at_position: Vector2) -> Variant:
+	if drag_index < 0 or disabled:
+		return null
+	var ghost := ZineCard.new(card_title, cost, description, drag_index).scaled(text_scale)
+	ghost.modulate.a = 0.8
+	ghost.size = ghost.custom_minimum_size
+	var holder := Control.new()
+	holder.add_child(ghost)
+	ghost.position = -ghost.size * 0.5
+	set_drag_preview(holder)
+	return {"hand_index": drag_index}
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -104,15 +135,28 @@ func _draw_sticker() -> void:
 	draw_rect(rect, bg)
 	draw_rect(rect, Palette.INK if variant != Variant.BLACK else Palette.PAPER, false, 2.0)
 	draw_rect(Rect2(size.x * 0.3, -5, 44, 12), Palette.TAPE)
-	draw_string(Palette.display(), Vector2(8, 34), card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, 17, fg)
-	# cost < 0 = no cost circle (Firmware and Daemon offers).
+	var s := text_scale
+	# cost < 0 = no cost circle (Firmware and Daemon offers). The title stops short of it.
+	var title_w := size.x - 16
 	if cost >= 0:
-		var r := 13.0 if cost < 100 else 17.0
+		var r := (13.0 if cost < 100 else 17.0) * s
+		title_w -= r * 2 + 4
 		draw_circle(Vector2(size.x - r - 5, r + 5), r, Palette.CELL_ACID if variant != Variant.PINK else Palette.PAPER)
-		draw_string(Palette.marker(), Vector2(size.x - r * 2 - 1, r + 11), str(cost), HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if cost >= 100 else 16, Palette.INK)
-	var lines := _wrap(description, 16)
-	for i in mini(lines.size(), 5):
-		draw_string(Palette.mono(), Vector2(8, 58 + i * 15), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, 11, fg)
+		draw_string(Palette.marker(), Vector2(size.x - r * 2 - 5, r + 5 + 6 * s), str(cost), HORIZONTAL_ALIGNMENT_CENTER, r * 2, roundi((14 if cost >= 100 else 16) * s), Palette.INK)
+	var title_size := roundi(TITLE_SIZE * s)
+	while title_size > 9 and Palette.display().get_string_size(card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x > title_w:
+		title_size -= 1  # long names shrink to fit beside the cost
+	draw_string(Palette.display(), Vector2(8, 34 * s), card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, title_w, title_size, fg)
+	# The body wraps to the sticker's width; what doesn't fit ends in an ellipsis (the full
+	# text is the tooltip and the inspect).
+	var body := roundi(BODY_SIZE * s)
+	var lines := wrap_px(description, size.x - 16, body)
+	var room := maxi(1, int((size.y - BODY_TOP * s - 26.0 * s) / (BODY_LINE * s)))
+	for i in mini(lines.size(), room):
+		var t := lines[i]
+		if i == room - 1 and lines.size() > room:
+			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
+		draw_string(Palette.mono(), Vector2(8, BODY_TOP * s + i * BODY_LINE * s), t, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, body, fg)
 	_chip(Vector2(size.x - 24, size.y - 22), fg)
 	if hotkey != "":
 		draw_string(Palette.marker(), Vector2(8, size.y - 8), "[%s]" % hotkey, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, fg)
@@ -222,6 +266,22 @@ func _chip(c: Vector2, col: Color) -> void:
 		draw_line(c + Vector2(o, 8), c + Vector2(o, 11), Color(col, 0.7), 1.0)
 		draw_line(c + Vector2(-8, o), c + Vector2(-11, o), Color(col, 0.7), 1.0)
 		draw_line(c + Vector2(8, o), c + Vector2(11, o), Color(col, 0.7), 1.0)
+
+
+## Word-wraps `text` to `width` px at `font_size` in the mono face.
+static func wrap_px(text: String, width: float, font_size: int) -> PackedStringArray:
+	var out := PackedStringArray()
+	var line := ""
+	for word in text.split(" "):
+		var trial := word if line == "" else line + " " + word
+		if line != "" and Palette.mono().get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width:
+			out.append(line)
+			line = word
+		else:
+			line = trial
+	if line != "":
+		out.append(line)
+	return out
 
 
 static func _wrap(text: String, width: int) -> PackedStringArray:

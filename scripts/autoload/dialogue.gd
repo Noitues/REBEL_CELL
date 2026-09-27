@@ -33,6 +33,8 @@ const SPEAKER_FONT_SIZE := 12
 const TEXT_FONT_SIZE := 15
 ## Lines per subtitle page in a docked bar (0 = the bar grows to fit the whole line).
 var dock_lines: int = 0
+## The subtitle text's width at the foot of the screen (px).
+const TEXT_MIN_WIDTH := 560.0
 
 
 func _ready() -> void:
@@ -52,7 +54,7 @@ func _ready() -> void:
 	text_label = RichTextLabel.new()
 	text_label.bbcode_enabled = true
 	text_label.fit_content = true
-	text_label.custom_minimum_size = Vector2(560, 40)
+	text_label.custom_minimum_size = Vector2(TEXT_MIN_WIDTH, 40)
 	text_label.add_theme_font_override("normal_font", Palette.mono())
 	text_label.add_theme_font_size_override("normal_font_size", TEXT_FONT_SIZE)
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -95,6 +97,8 @@ func dock_bottom() -> void:
 	bar.offset_bottom = -20
 	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	dock_lines = 0
+	if text_label != null:
+		text_label.custom_minimum_size.x = TEXT_MIN_WIDTH
 
 
 ## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand). With
@@ -108,6 +112,10 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 	bar.offset_bottom = rect.end.y
 	bar.grow_vertical = Control.GROW_DIRECTION_END
 	dock_lines = max_lines
+	# The text wraps inside the rect (a narrow column dock must not widen the bar).
+	var sb := bar.get_theme_stylebox("panel")
+	var margins := sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0
+	text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, rect.size.x - margins))
 
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and

@@ -90,6 +90,18 @@ func preview_end_turn() -> CombatResult:
 	return session.preview_end_turn() if session != null else null
 
 
+## The End Turn resolve as it would run after `action` (a card or nudge hovered over its
+## target): null when the action is refused. Only meaningful for deterministic actions;
+## random ones show odds instead (GDD 2.10).
+func preview_turn_after(action: CombatAction) -> CombatResult:
+	if session == null:
+		return null
+	var first := session.preview(action)
+	if first == null or not first.ok():
+		return null
+	return resolver.preview_end_turn(first.state, session.rng)
+
+
 func readouts(c: CombatantState) -> Array[Dictionary]:
 	return resolver.pointer_readouts(session.state, c)
 

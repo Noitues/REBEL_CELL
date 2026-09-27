@@ -11,12 +11,12 @@ signal finished
 const BUTTON_ROW_HEIGHT := 40.0
 
 const STEPS: Array[Dictionary] = [
-	{"title": "THE WHEEL", "text": "30 ticks, 6 slices. The white pointer reads the tick under it; the slice it lands on is what you do this turn. Glyphs: ▲ attack, ✦ crit, ■ defend, ⬢ shield, ◇ evade, ⬡ deploy, ✚ heal, ◈ afflict, ✕ miss. Right-click any slice to inspect it.", "until": ""},
-	{"title": "PRECISION", "text": "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD (full), 2 off for PARTIAL (half). Press {nudge_left} or {nudge_right} to nudge your wheel one tick.", "until": "nudge"},
-	{"title": "RESISTANCE", "text": "Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked entirely while resistance is up. Strip it, breach the Hub, or spin past it.", "until": ""},
-	{"title": "CARDS & PREVIEW", "text": "Cards spin, nudge and flip wheels; they cost RAM. Hover a card to see exactly what will resolve (dashed acid arc = where your pointer ends up). Play a card with 1-9 or a click.", "until": "card"},
-	{"title": "REWIND", "text": "Press {rewind} to undo anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.", "until": "rewind"},
-	{"title": "SEND IT", "text": "End Turn resolves every pointer at once: defensive slices, then offensive, then statuses. The preview strip already shows the result. Press {end_turn}.", "until": "turn_start"},
+	{"title": "THE WHEEL", "text": "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it, and its chips show every result (red HP = damage coming, BLK = block, RAM, HEAT...). Glyphs: ▲ attack, ✦ crit, ■ defend, ⬢ shield, ◇ evade, ⬡ deploy, ✚ heal, ◈ afflict, ✕ miss. {inspect_how} anything to read it.", "until": ""},
+	{"title": "NUDGE", "text": "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD, 2 off for PARTIAL (half). The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}", "until": "nudge"},
+	{"title": "RESISTANCE", "text": "Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it.", "until": ""},
+	{"title": "CARDS", "text": "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.", "until": "card"},
+	{"title": "UNDO", "text": "{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.", "until": "rewind"},
+	{"title": "SEND IT", "text": "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.", "until": "turn_start"},
 	{"title": "HEAT & BANKING", "text": "Every Rack you capture banks Schematics for the Cell and adds Heat. Heat thresholds bring raids on your home server. Bank early, cool off at Heat objectives, and never leave loot unbanked when you jack out.", "until": ""},
 ]
 
@@ -44,6 +44,8 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	skip_button.pressed.connect(skip)
 	row.add_child(skip_button)
 	_show()
+	# A rebind or a switch between keyboard and pad rewrites the step at once (H20).
+	Settings.hints_changed.connect(_show)
 
 
 ## Resizes the overlay (note above, Next / Skip row under it); the note scrolls when the
@@ -65,11 +67,16 @@ func _show() -> void:
 	next_button.text = "Finish" if step == STEPS.size() - 1 else "Next"
 
 
-## Step `i`'s text with the current key binds filled in.
+## Step `i`'s text with the current binds filled in (pad buttons when a pad is in use).
 static func step_text(i: int) -> String:
 	var keys := {}
-	for action in [&"nudge_left", &"nudge_right", &"rewind", &"end_turn"]:
-		keys[String(action)] = Settings.key_text(action)
+	for action in [&"nudge_left", &"nudge_right", &"rewind", &"end_turn", &"inspect"]:
+		keys[String(action)] = Settings.hint(action)
+	var pad := Settings.pad_active
+	keys["inspect_how"] = "Press %s on" % Settings.key_text(&"inspect") if pad else "Hover or right-click"
+	keys["nudge_how"] = ("%s and %s nudge the wheel the arrows mark." % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right")]) if Settings.key_text(&"nudge_left") != "" else ""
+	keys["card_how"] = "Pick a card with A, choose a glowing target with the D-pad, press A again (B cancels)." if pad else "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). Keys 1-9 pick cards."
+	keys["undo_how"] = "UNDO %s" % Settings.hint(&"rewind")
 	return String(STEPS[i]["text"]).format(keys)
 
 

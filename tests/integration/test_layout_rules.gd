@@ -55,8 +55,12 @@ func test_combat_zine_elements_never_cover_the_wheels() -> void:
 	assert_ne(String(scene._player_view.intent.get("text", "")), "", "player spinner shows what resolves")
 	for v in scene._enemy_views.values():
 		assert_ne(String(v.intent.get("text", "")), "", "enemy spinner shows what resolves")
-	for key in ["nudge_l", "nudge_r", "respin", "undo"]:
+	# H20: nudges are the curved arrows on every wheel; RESPIN and UNDO stay stickers.
+	for key in ["respin", "undo"]:
 		assert_true(scene._stickers[key] is StickerButton and scene._stickers[key].is_visible_in_tree(), "%s sticker" % key)
+	assert_eq(scene._player_view.arrows().size(), 2 if not scene._player_view.combatant.wheel.has_inner_ring() else 4, "nudge arrows on the player wheel")
+	for v in scene._enemy_views.values():
+		assert_true(v.arrows().size() >= 2, "nudge arrows on every enemy wheel")
 	assert_false(scene.controls_row.is_visible_in_tree(), "no dropdown row")
 	assert_true(scene._end_turn_button is DripButton, "SEND IT in drip lettering")
 	assert_true(scene._hand_box.get_child_count() > 0 and scene._hand_box.get_child(0) is ZineCard, "cards are zine stickers")

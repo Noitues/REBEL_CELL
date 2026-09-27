@@ -29,7 +29,9 @@ func _press(physical: int, ctrl: bool = false) -> void:
 
 
 func test_every_combat_action_has_a_key() -> void:
-	for action in ["nudge_left", "nudge_right", "cycle_target", "end_turn", "rewind", "toggle_card_target", "toggle_ring", "toggle_nudge_wheel", "open_settings"]:
+	# H20: cards are aimed after picking them (arrows / Tab, Enter), so the card-target,
+	# direction and slice toggles are gone.
+	for action in ["nudge_left", "nudge_right", "cycle_target", "end_turn", "rewind", "toggle_ring", "toggle_nudge_wheel", "open_settings"]:
 		assert_true(InputMap.has_action(action), action)
 	for i in range(1, 10):
 		assert_true(InputMap.has_action("card_%d" % i), "card_%d" % i)
@@ -41,7 +43,12 @@ func test_number_keys_play_cards() -> void:
 	var hand := engine.state().hand.size()
 	var ram := engine.state().ram
 	_press(KEY_1)
-	assert_eq(engine.state().hand.size(), hand - 1, "1 played the first card")
+	if _scene.selecting >= 0:
+		# A card with several legal targets waits for one: Enter confirms the aimed one.
+		var enter := _key(KEY_ENTER)
+		enter.keycode = KEY_ENTER
+		_scene._input(enter)
+	assert_eq(engine.state().hand.size(), hand - 1, "1 (then Enter to confirm its target) played the first card")
 	assert_true(engine.state().ram <= ram)
 	_press(KEY_9)
 	assert_eq(engine.state().hand.size(), hand - 1, "9 with no ninth card does nothing")
@@ -62,8 +69,6 @@ func test_q_and_e_nudge_w_r_t_toggle_tab_targets_space_ends_z_rewinds() -> void:
 	assert_true(after.wheel.rotation == enemy_rot - 1 or after.resistance >= 0, "Q nudged (or resistance absorbed) the target")
 	_press(KEY_R)
 	assert_eq(_scene._nudge_ring_option.selected, 1, "R switches to the inner ring")
-	_press(KEY_T)
-	assert_eq(_scene._card_target_option.selected, 1, "T switches cards to own wheel")
 	_press(KEY_TAB)
 	var targets := engine.state().living_enemies(true)
 	assert_true(targets.size() >= 1)

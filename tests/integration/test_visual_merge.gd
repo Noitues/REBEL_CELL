@@ -67,10 +67,10 @@ func test_stickers_and_send_it_show_the_bound_keys() -> void:
 		var action: StringName = scene.STICKER_ACTIONS[key]
 		assert_string_contains(scene._stickers[key].text, "[%s]" % Settings.key_text(action), "%s sticker names its key" % key)
 	assert_eq(scene._end_turn_button.key_hint, "[%s]" % Settings.key_text(&"end_turn"))
-	Settings.rebind(&"toggle_direction", KEY_G)
+	Settings.rebind(&"respin", KEY_G)
 	Settings.rebind(&"end_turn", KEY_B)
 	await _frames()
-	assert_string_contains(scene._stickers["dir"].text, "[%s]" % OS.get_keycode_string(KEY_G), "a rebind shows on the sticker at once")
+	assert_string_contains(scene._stickers["respin"].text, "[%s]" % OS.get_keycode_string(KEY_G), "a rebind shows on the sticker at once")
 	assert_eq(scene._end_turn_button.key_hint, "[%s]" % OS.get_keycode_string(KEY_B), "and under SEND IT")
 
 
@@ -80,8 +80,7 @@ func test_stickers_and_intent_tags_stay_off_the_wheels_at_every_text_scale() -> 
 		assert_eq(scene.layout_violations(), [], "text scale %.1f" % scale)
 		assert_true(scene._player_view.intent_rect().has_area(), "the player spinner has its tag")
 		for key in scene._stickers:
-			var r: Rect2 = scene._stickers[key].get_global_rect()
-			assert_true(r.end.x <= scene._player_view.wheel_rect().position.x, "%s sticker left of the wheel at %.1f" % [key, scale])
+			assert_true(scene._stickers[key].get_global_rect().position.y >= scene._hand_box.get_global_rect().position.y, "H20: the %s sticker sits by SEND IT, under the arena" % key)
 
 
 func test_the_combat_subtitle_pages_and_never_reaches_a_wheel() -> void:
@@ -89,10 +88,10 @@ func test_the_combat_subtitle_pages_and_never_reaches_a_wheel() -> void:
 		var scene := await _combat(scale)
 		Dialogue.say(RC.Voice.DISPATCH, LONG_LINE)
 		await _frames()
-		var bar := Rect2(Dialogue.bar.position, Dialogue.bar.size)
-		var wheels: Array = [scene._player_view] + scene._enemy_views.values()
-		for w in wheels:
-			assert_false(bar.intersects(w.wheel_rect()), "the subtitle stays above %s's wheel at %.1f" % [w.combatant.display_name, scale])
+		# H20: the dock is the right column's free area; layout_violations checks the bar
+		# against every wheel's drawing and every tag while it shows.
+		assert_true(Dialogue.bar.visible)
+		assert_eq(scene.layout_violations(), [], "subtitles clear of the wheels and tags at %.1f" % scale)
 		assert_true(Dialogue.pages_of(LONG_LINE).size() >= 2, "a long line is paged")
 		assert_true(LONG_LINE.begins_with(Dialogue.current_text().strip_edges()), "the first page shows first")
 		assert_eq(Dialogue.history[-1]["text"], LONG_LINE, "the history keeps the whole line")

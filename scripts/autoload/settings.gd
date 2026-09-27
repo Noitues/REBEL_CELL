@@ -13,9 +13,11 @@ const TEXT_SCALE_MIN := 0.8
 const TEXT_SCALE_MAX := 1.6
 enum WindowMode { WINDOWED, FULLSCREEN, BORDERLESS }
 const RESOLUTIONS: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440)]
-## Actions the player may rebind (GDD 9.5); the card keys stay 1-9.
+## Actions the player may rebind (GDD 9.5); the card keys stay 1-9. H20: cards are aimed
+## by dragging or by picking a target, so toggle_card_target, toggle_direction and
+## cycle_slot no longer do anything (their input-map entries stay in project.godot).
 const REBINDABLE: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_target", &"end_turn", &"rewind",
-	&"toggle_card_target", &"toggle_ring", &"toggle_nudge_wheel", &"toggle_direction", &"cycle_slot", &"respin", &"open_settings"]
+	&"toggle_ring", &"toggle_nudge_wheel", &"respin", &"open_settings"]
 
 ## Disables scanlines, flicker, chromatic aberration and the distortion pulse everywhere.
 var reduce_effects: bool = false
