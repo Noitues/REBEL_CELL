@@ -43,7 +43,12 @@ static func font_px() -> int:
 
 ## The lettering as drawn and measured: translated (H23 S16: drawn words never were).
 func shown_text() -> String:
-	return atr(text)
+	return text if pre_translated else atr(text)
+
+
+## The label is already translated (its caller builds it from translated parts with a
+## number or key hint in it, which no translation key matches).
+var pre_translated := false
 
 
 func _fit() -> void:

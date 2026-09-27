@@ -177,7 +177,7 @@ func test_hits_count_the_damage_that_lands() -> void:
 			break
 
 
-func test_tags_and_hp_stay_in_view_and_the_toast_sits_over_the_hand() -> void:
+func test_tags_and_hp_stay_in_view_and_the_toast_sits_in_the_right_column() -> void:
 	for scale in [1.3, Settings.TEXT_SCALE_MAX]:
 		var scene := await _combat(&"compliance_officer", scale)
 		scene._show_respin_odds()
@@ -188,7 +188,8 @@ func test_tags_and_hp_stay_in_view_and_the_toast_sits_over_the_hand() -> void:
 		scene.respin()
 		await _frames(1)
 		assert_eq(scene.layout_violations(), [], "no violation with the toast up at %.1f" % scale)
-		assert_true(scene._hand_box.get_global_rect().intersects(scene.toast.get_global_rect()), "the toast sits over the hand")
+		# H24: in the right column under the subtitles (over the hand it covered the cards).
+		assert_true(scene._notes_area.get_global_rect().grow(1.0).encloses(scene.toast.get_global_rect()), "the toast sits in the right column")
 
 
 func test_send_it_leaves_a_last_turn_line_until_the_player_acts() -> void:

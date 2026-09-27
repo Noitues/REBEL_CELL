@@ -62,6 +62,11 @@ static func between(before: CombatState, after: CombatState, events: Array[Dicti
 				# Every hit that lands (one per pointer of the target; evaded attacks deal
 				# none), before block and shield soak it.
 				var src := StringName(String(e.get("attacker", "")))
+				# What block and shield soaked of the hits a combatant took (H24: "YOU TAKE 11"
+				# beside "HITS YOU 14" needed sums to read).
+				var victim := StringName(String(e.get("target", "")))
+				if o.combatants.has(victim):
+					o.combatants[victim]["soaked"] = int(o.combatants[victim]["soaked"]) + int(e.get("blocked", 0)) + int(e.get("shielded", 0))
 				if o.combatants.has(src):
 					o.combatants[src]["dealt"] = int(o.combatants[src]["dealt"]) + int(e.get("amount", 0))
 					var tgt := String(e.get("target", ""))
@@ -78,7 +83,7 @@ static func _all(s: CombatState) -> Array[CombatantState]:
 
 
 static func _diff(b: CombatantState, a: CombatantState) -> Dictionary:
-	var d := {"dealt": 0, "dealt_to": {}}
+	var d := {"dealt": 0, "dealt_to": {}, "soaked": 0}
 	var src := a if a != null else b
 	d["name"] = src.display_name
 	d["is_satellite"] = src.is_satellite

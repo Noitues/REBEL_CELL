@@ -4,6 +4,8 @@ extends Control
 ## the value in Anton. As a wanted poster in HQ (`poster = true`) it gains a border and a
 ## "WANTED" header. Heat bands follow the thresholds 25/50/75 (GDD 9.4).
 
+## The most ransom-note strips the Heat word takes (a longer translation is cut).
+const RANSOM_LETTERS_MAX := 6
 ## Colour of the number at high Heat: the campaign's corporation (set by the HQ).
 var hot_color: Color = Palette.CORP_SOLACE
 var heat: int = 0
@@ -67,17 +69,21 @@ func _draw() -> void:
 	if poster:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER_ALT)
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
-		draw_string(Palette.display(), Vector2(10, 30), "WANTED", HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
+		draw_string(Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
 		PortraitArt.draw(self, Rect2(size.x * 0.5 - MUG_SIZE * 0.5, 38, MUG_SIZE, MUG_SIZE), wanted)
 		y = POSTER_BLOCK_TOP
-	var letters := ["H", "E", "A", "T"]
+	# The ransom-note word, cut into letters (translated; H24).
+	var word := tr("HEAT")
+	var letters: Array[String] = []
+	for ch in word.left(RANSOM_LETTERS_MAX):
+		letters.append(ch)
 	var fonts := [Palette.display(), Palette.marker(), Palette.mono(), Palette.display()]
 	var x := 8.0
 	for i in letters.size():
 		var strip := Rect2(x, y + 4 + (i % 2) * 4, 24, 28)
 		draw_rect(strip, Palette.PAPER if i % 2 == 0 else Palette.CELL_PINK)
 		draw_rect(strip, Palette.INK, false, 1.0)
-		draw_string(fonts[i], strip.position + Vector2(5, 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.INK)
+		draw_string(fonts[i % fonts.size()], strip.position + Vector2(5, 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.INK)
 		x += 28
 	draw_string(Palette.display(), Vector2(x + 6, y + 30), "%d" % heat, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.CELL_PINK if band < 2 else hot_color)
 	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
@@ -87,4 +93,4 @@ func _draw() -> void:
 	for t in marks:
 		var tx: float = bar.position.x + bar.size.x * int(t) / float(heat_max)
 		draw_line(Vector2(tx, bar.position.y - 3), Vector2(tx, bar.end.y + 3), Palette.INK if poster else Palette.PAPER, 1.0)
-	draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), BAND_WORDS[mini(band, 3)], HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, Palette.INK if poster else Palette.CELL_ACID)
+	draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, Palette.INK if poster else Palette.CELL_ACID)

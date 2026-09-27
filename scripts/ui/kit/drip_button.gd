@@ -57,7 +57,9 @@ func set_key_hint(hint: String) -> void:
 ## Draws `text` with drips on any CanvasItem at baseline `base` (shared with views that
 ## paint the lettering themselves). A thin white outline runs round the letters and the
 ## drips so the pink reads over the bright city.
-static func draw_drip_text(ci: CanvasItem, base: Vector2, text: String, size: int, col: Color, p_drips: Array, shadow: bool = true, outline: bool = true) -> void:
+static func draw_drip_text(ci: CanvasItem, base: Vector2, raw_text: String, size: int, col: Color, p_drips: Array, shadow: bool = true, outline: bool = true) -> void:
+	# Drawn words translate (H24: SEND IT stayed English in the scrambled storyboard).
+	var text := String(TranslationServer.translate(raw_text))
 	var f := Palette.marker()
 	if shadow:
 		ci.draw_string(f, base + Vector2(3, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7))

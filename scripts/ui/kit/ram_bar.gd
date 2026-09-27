@@ -57,7 +57,7 @@ func _draw() -> void:
 	var step := STEP * s
 	var chip := CHIP * s
 	var fs := roundi(FONT_SIZE * s)
-	var label := "RAM %d/%d" % [ram, max_ram]
+	var label := tr("RAM %d/%d") % [ram, max_ram]  # drawn words translate (H24)
 	if pending != 0:
 		label += " (%+d)" % pending
 	var lw := Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0

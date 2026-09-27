@@ -164,11 +164,12 @@ func test_satellite_tokens_keep_off_the_hp_block() -> void:
 		for rot in 30:
 			host.combatant.wheel.rotation = rot
 			for sat in host.satellites:
-				var sp := host._satellite_pos(sat)
-				var below := sp.y > host.global_center().y + host._radius()
-				if below:
-					assert_true(absf(sp.x - host.global_center().x) >= WheelView.HP_BLOCK_HALF * WheelView._ts(),
-						"rot %d at %.1f: the token sits beside the HP block" % [rot, scale])
+				# H24: measured against the HP number, NEXT plate and LAST TURN plate themselves.
+				var r := WheelView.SATELLITE_TOKEN * WheelView._ts()
+				var c := host._satellite_pos(sat) - host.global_position
+				var tok := Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
+				for b in host._hp_block_rects():
+					assert_false(tok.intersects(b), "rot %d at %.1f: the token sits beside the HP block" % [rot, scale])
 
 
 func test_satellite_hp_plates_keep_clear_of_the_tag() -> void:

@@ -32,32 +32,44 @@ func _init() -> void:
 	sb.content_margin_left = MARK_ROOM
 	add_theme_stylebox_override("panel", sb)
 	label = Label.new()
+	# Callers pass translated text (H24: the respin note was translated twice).
+	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	label.add_theme_color_override("font_color", Palette.INK)
 	label.add_theme_font_override("font", Palette.marker())
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
 
 
-## Shows `text` centred on `anchor` (global, the toast's bottom centre).
-func show_text(text: String, anchor: Vector2) -> void:
-	_show(text, anchor, true)
+## Shows `text` centred on `anchor` (global, the toast's bottom centre), wrapped to
+## `max_width` px when given.
+func show_text(text: String, anchor: Vector2, max_width: float = 0.0) -> void:
+	_show(text, anchor, true, max_width)
 
 
 ## Shows what an action just did (no no-entry mark), e.g. where a respin landed (H23: a
 ## respin that landed on the same slice looked like RAM spent for nothing).
-func show_note(text: String, anchor: Vector2) -> void:
-	_show(text, anchor, false)
+func show_note(text: String, anchor: Vector2, max_width: float = 0.0) -> void:
+	_show(text, anchor, false, max_width)
 
 
-func _show(text: String, anchor: Vector2, is_refusal: bool) -> void:
+func _show(text: String, anchor: Vector2, is_refusal: bool, max_width: float = 0.0) -> void:
 	refusal = is_refusal
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	label.custom_minimum_size.x = 0.0
 	_panel.content_margin_left = MARK_ROOM if is_refusal else _panel.content_margin_right
 	queue_redraw()
 	label.text = text
 	label.add_theme_font_size_override("font_size", roundi(FONT_SIZE * Settings.text_scale))
-	reset_size()
-	var sz := get_combined_minimum_size()
-	global_position = (anchor - Vector2(sz.x * 0.5, sz.y)).floor()
+	if max_width > 0.0:
+		var chrome := _panel.content_margin_left + _panel.content_margin_right
+		var natural := label.get_theme_font("font").get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x
+		if natural + chrome > max_width:
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			label.custom_minimum_size.x = max_width - chrome
+	_anchor = anchor
+	_reanchor()
+	# A wrapped label reports its height a frame late: place it again then.
+	_reanchor.call_deferred()
 	modulate.a = 1.0
 	visible = true
 	if _tween != null and _tween.is_valid():
@@ -79,6 +91,16 @@ func _draw() -> void:
 	draw_arc(c, r, 0, TAU, 20, Palette.CELL_PINK.darkened(0.2), 3.0, true)
 	var d := Vector2(r, -r) * 0.7
 	draw_line(c - d, c + d, Palette.CELL_PINK.darkened(0.2), 3.0, true)
+
+
+## Bottom centre on the anchor at the toast's current size.
+func _reanchor() -> void:
+	reset_size()
+	var sz := get_combined_minimum_size()
+	global_position = (_anchor - Vector2(sz.x * 0.5, sz.y)).floor()
+
+
+var _anchor := Vector2.ZERO
 
 
 func text() -> String:

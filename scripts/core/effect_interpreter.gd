@@ -317,8 +317,11 @@ func gain_block(c: CombatantState, amount: int, events: Array[Dictionary]) -> vo
 
 
 func gain_shield(c: CombatantState, amount: int, events: Array[Dictionary]) -> void:
+	var before := c.shield
 	c.shield = mini(c.shield + amount, config.shield_cap)
-	events.append({"type": "shield", "target": c.id, "amount": amount, "text": "%s gains %d shield (%d/%d)." % [c.display_name, amount, c.shield, config.shield_cap]})
+	# The shield actually gained (H24: at the cap LAST TURN read "+5 SHIELD" with no gain).
+	var gained := c.shield - before
+	events.append({"type": "shield", "target": c.id, "amount": gained, "requested": amount, "text": "%s gains %d shield (%d/%d)." % [c.display_name, gained, c.shield, config.shield_cap]})
 
 
 func gain_evade(c: CombatantState, charges: int, events: Array[Dictionary]) -> void:

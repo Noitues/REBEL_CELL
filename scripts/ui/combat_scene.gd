@@ -189,6 +189,7 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 	# absorbed (H23: a turn that defended for 5 and was afflicted read "NO CHANGE").
 	var gained := {}
 	var shielded := {}
+	var guard_guard := {}
 	var statuses := {}
 	var absorbed := {}
 	for e in events:
@@ -196,13 +197,20 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 		var target := StringName(String(e.get("target", "")))
 		if t == "turn_start":
 			starting = true
-		if t == "block":
-			gained[target] = int(gained.get(target, 0)) + int(e.get("amount", 0))
-		elif t == "shield":
-			shielded[target] = int(shielded.get(target, 0)) + int(e.get("amount", 0))
+		if t == "block" or t == "shield":
+			# A satellite's or drone's guard counts on its host's line (H24: "collections
+			# drone +3 BLOCK" was forecast, then LAST TURN said NO CHANGE).
+			var guard := before.get_combatant(target)
+			if guard != null and (guard.is_satellite or before.drones.has(guard)):
+				var host_id := guard.host_id if guard.host_id != &"" else before.player.id
+				guard_guard[host_id] = int(guard_guard.get(host_id, 0)) + int(e.get("amount", 0))
+			elif t == "block":
+				gained[target] = int(gained.get(target, 0)) + int(e.get("amount", 0))
+			else:
+				shielded[target] = int(shielded.get(target, 0)) + int(e.get("amount", 0))
 		elif t == "status":
 			var names: Array = statuses.get(target, [])
-			var sname: String = RC.Status.keys()[int(e.get("status", 0))]
+			var sname: String = String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(int(e.get("status", 0)), RC.Status.keys()[int(e.get("status", 0))]))))
 			if not names.has(sname):
 				names.append(sname)
 			statuses[target] = names
@@ -239,7 +247,7 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 		elif in_resolve > 0:
 			parts.append(String(TranslationServer.translate("+%d HP")) % in_resolve)
 		if at_start != 0:
-			parts.append(String(TranslationServer.translate("%+d AT TURN START")) % at_start)
+			parts.append(String(TranslationServer.translate("%s AT TURN START")) % signed(at_start))
 		if int(soaked.get(c.id, 0)) > 0:
 			parts.append(String(TranslationServer.translate("%d BLOCKED")) % int(soaked[c.id]))
 		if int(evaded.get(c.id, 0)) > 0:
@@ -250,10 +258,15 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 			parts.append(String(TranslationServer.translate("+%d BLOCK")) % int(gained[c.id]))
 		if int(shielded.get(c.id, 0)) > 0:
 			parts.append(String(TranslationServer.translate("+%d SHIELD")) % int(shielded[c.id]))
+		if int(guard_guard.get(c.id, 0)) > 0:
+			parts.append(String(TranslationServer.translate("GUARD +%d BLOCK")) % int(guard_guard[c.id]))
 		for sname in statuses.get(c.id, []):
 			parts.append(String(TranslationServer.translate("GOT %s")) % sname)
 		if int(absorbed.get(c.id, 0)) > 0:
 			parts.append(String(TranslationServer.translate("ENCRYPTED STOPPED %d")) % int(absorbed[c.id]))
+		# The RAM a new turn brings back (H24: RAM went from 6 to 10 with nothing saying so).
+		if c.is_player and after.ram != before.ram:
+			parts.append(String(TranslationServer.translate("RAM %s")) % signed(after.ram - before.ram))
 		if parts.is_empty():
 			parts.append(String(TranslationServer.translate("NO CHANGE")))
 		out[c.id] = String(TranslationServer.translate("LAST TURN: ")) + " · ".join(parts)
@@ -293,10 +306,22 @@ func respin() -> void:
 		_show_note(tr("RESPIN -%d RAM: %s%s") % [spent, after, tr(" AGAIN") if after == before else ""])
 
 
-## A note over the hand saying what an action just did.
+## A note saying what an action just did, in the toast's spot.
 func _show_note(text: String) -> void:
-	var hand := _hand_box.get_global_rect()
-	toast.show_note(text, Vector2(hand.get_center().x, hand.get_center().y + toast.get_combined_minimum_size().y * 0.5))
+	var at := _toast_spot()
+	toast.show_note(text, at.position, at.size.x)
+
+
+## Where toasts go: the foot of the right column, under the subtitles (H24: over the hand
+## it covered the cards; H21: above the hand it covered the HP arcs). Position = the
+## toast's bottom centre, size.x = the width it may take.
+func _toast_spot() -> Rect2:
+	var area := _notes_area.get_global_rect() if _notes_area != null else get_global_rect()
+	return Rect2(Vector2(area.get_center().x, area.end.y - TOAST_GAP), Vector2(area.size.x, 0.0))
+
+
+## Room between a toast and the foot of its column (px).
+const TOAST_GAP := 6.0
 
 
 ## Plays a card at once with the default aim (the current target, the hidden toggles):
@@ -513,7 +538,7 @@ func _odds_chips(c: CombatantState, non_miss_only: bool = false) -> Array[Dictio
 		var slice := engine.content(id) as SliceData
 		if slice == null or (non_miss_only and slice.slice_type == RC.SliceType.MISS):
 			continue
-		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), Palette.SLICE_WORDS.get(slice.slice_type, "?")]
+		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?")))]
 		if not counts.has(key):
 			order.append(key)
 		counts[key] = int(counts.get(key, 0)) + 1
@@ -892,19 +917,34 @@ func _dim_hand() -> void:
 func _show_aim_hint() -> void:
 	if _aim_hint == null:
 		return
+	_aim_hint.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	if Settings.pad_active:
-		_aim_hint.text = "%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel" % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]
+		_aim_hint.text = tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]
 	else:
-		_aim_hint.text = "Drop or click on a glowing target  ·  right-click cancels"
-	_aim_hint.add_theme_font_size_override("font_size", roundi(AIM_HINT_FONT * Settings.text_scale))
-	_aim_hint.reset_size()
-	# Over the enemy side, above the hand: the RAM row runs along the player's side (H23: the
-	# hint sat on the RAM meter).
+		_aim_hint.text = tr("Drop or click on a glowing target  ·  right-click cancels")
+	# Over the enemy side, above both the hand and the RAM row, shrunk to the room to the
+	# screen's edge (H24: at 1.6 it ran over "RAM 6/12" and off the screen).
 	var hand := _hand_box.get_global_rect()
 	var right := _enemy_views_box.get_global_rect()
-	var hs := _aim_hint.get_combined_minimum_size()
-	_aim_hint.global_position = Vector2(clampf(right.position.x + 8.0, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), hand.position.y - hs.y - 4.0)
+	var x := right.position.x + 8.0
+	var room := get_global_rect().end.x - x - AIM_HINT_MARGIN
+	var fs := roundi(AIM_HINT_FONT * Settings.text_scale)
+	var font := _aim_hint.get_theme_font("font")
+	while fs > STATUS_MIN_FONT and font.get_string_size(_aim_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		fs -= 1
+	_aim_hint.add_theme_font_size_override("font_size", fs)
+	# Sized from the font itself: the label's minimum lags a font change by a frame.
+	var hs := Vector2(font.get_string_size(_aim_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_height(fs))
+	_aim_hint.size = hs
+	var top := hand.position.y
+	if ram_note != null and ram_note.is_visible_in_tree():
+		top = minf(top, ram_note.get_global_rect().position.y)
+	_aim_hint.global_position = Vector2(clampf(x, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), top - hs.y - 4.0)
 	_aim_hint.visible = true
+
+
+## Room kept between the aim hint and the screen's right edge (px).
+const AIM_HINT_MARGIN := 8.0
 
 
 ## Lights the aimed zone and previews that play.
@@ -950,9 +990,8 @@ func _on_action_refused(reason: String) -> void:
 	log_note.append("[color=#c05000]%s[/color]" % reason)
 	preview_note.clear()
 	preview_note.append(reason)
-	# Over the middle of the hand (H21: above it, it covered the HP arcs at larger text).
-	var hand := _hand_box.get_global_rect()
-	toast.show_text(reason, Vector2(hand.get_center().x, hand.get_center().y + toast.get_combined_minimum_size().y * 0.5))
+	var at := _toast_spot()
+	toast.show_text(tr(reason), at.position, at.size.x)
 	# The RAM bar flashes when RAM is what's missing.
 	if reason.contains("RAM"):
 		ram_note.flash_short()
@@ -1139,12 +1178,14 @@ func _build_ui() -> void:
 	var fight_label := _label("Fight:")
 	top.add_child(fight_label)
 	_picker_controls.append(fight_label)
+	# One dropdown (H24: a button per enemy left the status line ~100 px at 1.6).
+	var pick := OptionButton.new()
+	pick.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # content ids, dev only
 	for enemy_id in ENEMY_CHOICES:
-		var b := Button.new()
-		b.text = String(enemy_id)
-		b.pressed.connect(func() -> void: start_fight(enemy_id, int(_seed_spin.value)))
-		top.add_child(b)
-		_picker_controls.append(b)
+		pick.add_item(String(enemy_id))
+	pick.item_selected.connect(func(i: int) -> void: start_fight(ENEMY_CHOICES[i], int(_seed_spin.value)))
+	top.add_child(pick)
+	_picker_controls.append(pick)
 	var seed_label := _label("Seed:")
 	top.add_child(seed_label)
 	_picker_controls.append(seed_label)
@@ -1156,6 +1197,10 @@ func _build_ui() -> void:
 	_picker_controls.append(_seed_spin)
 	_status = _label("")
 	_status.clip_text = true
+	# Its text is built from translated parts (not translated again), and shrinks to its
+	# width (H24: at 1.6 the switch keys ran under Settings).
+	_status.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_status.resized.connect(_fit_status)
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.mouse_filter = Control.MOUSE_FILTER_PASS
 	_status.tooltip_text = "The turn, and the free nudges left this turn (each extra nudge costs RAM)."
@@ -1287,13 +1332,15 @@ func _build_ui() -> void:
 	inspect_popup = InspectPopup.new()
 	inspect_popup.name = "InspectPopup"
 	add_child(inspect_popup)
-	# The aim line: from the card being aimed to the zone it would play on (drawn on top).
+	# The aim line: from the card being aimed to the zone it would play on. Drawn under the
+	# wheel views (H24: on top it crossed the HP number and the NEXT plate).
 	_aim_line = Control.new()
 	_aim_line.name = "AimLine"
 	_aim_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_aim_line.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_aim_line.draw.connect(_draw_aim_line)
 	add_child(_aim_line)
+	move_child(_aim_line, root.get_index())
 	_aim_hint = Label.new()
 	_aim_hint.name = "AimHint"
 	_aim_hint.visible = false
@@ -1429,7 +1476,7 @@ func _rebuild_slot_option() -> void:
 	if c != null:
 		for i in c.wheel.slot_slice_ids.size():
 			var slice := engine.content(c.wheel.slot_slice_ids[i]) as SliceData
-			_slot_option.add_item("%d %s" % [i, Palette.SLICE_NAMES.get(slice.slice_type, "?") if slice != null else "?"])
+			_slot_option.add_item("%d %s" % [i, tr(String(Palette.SLICE_NAMES.get(slice.slice_type, "?"))) if slice != null else "?"])
 	_slot_option.select(keep if keep >= 0 and keep < _slot_option.item_count else 0)
 
 
@@ -1480,7 +1527,7 @@ func _refresh(state: CombatState) -> void:
 				if not p.pointer_ticks.is_empty():
 					parts.append(str(Array(CombatResolver.phase_layout(state, edata, p.pointer_ticks))))
 				if p.pointer_behavior == RC.PointerBehavior.ORBIT and p.orbit_ticks_per_turn != 0:
-					parts.append("%+d/turn" % p.orbit_ticks_per_turn)
+					parts.append(tr("%s/turn") % signed(p.orbit_ticks_per_turn))
 				var where := " ".join(parts)
 				lines.append("@%d%%: %s %s" % [roundi(p.hp_threshold_pct * 100), RC.PointerBehavior.keys()[p.pointer_behavior], where])
 		view.extra_lines = lines
@@ -1546,6 +1593,27 @@ func _refresh_status() -> void:
 		if wheel != null and wheel.wheel.has_inner_ring():
 			text += tr(" · %s: %s RING") % [Settings.key_text(&"toggle_ring"), tr("OUTER") if inner else tr("INNER")]
 	_status.text = text
+	_fit_status()
+
+
+## The status line's font: its themed size, smaller until the line fits its width.
+func _fit_status() -> void:
+	if _status == null or _status.size.x <= 0.0 or _fitting_status:
+		return
+	# Changing the font resizes the label, which calls this again: once is enough.
+	_fitting_status = true
+	_status.remove_theme_font_size_override("font_size")
+	var fs := _status.get_theme_font_size("font_size")
+	var font := _status.get_theme_font("font")
+	while fs > STATUS_MIN_FONT and font.get_string_size(_status.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > _status.size.x:
+		fs -= 1
+	_status.add_theme_font_size_override("font_size", fs)
+	_fitting_status = false
+
+
+## The smallest the status line's font shrinks to (px).
+const STATUS_MIN_FONT := 10
+var _fitting_status := false
 
 
 func _build_hand(state: CombatState) -> void:
@@ -1709,6 +1777,24 @@ func _preview_action(action: CombatAction) -> void:
 	var events: Array[Dictionary] = result.events.duplicate()
 	events.append_array(turn.events)
 	_show_outcome(after, turn.state, events)
+	_mark_preview_source(action, card)
+
+
+## The wheel a hovered card or nudge acts on says so first on its tag ("IF JOLT"), so the
+## changes read as that play's (H24: a hovered card seemed to spin the enemy onto
+## CRITICAL by itself).
+func _mark_preview_source(action: CombatAction, card: CardData) -> void:
+	var target := engine.state().get_combatant(action.wheel_id)
+	var host := (target.host_id if target != null and target.is_satellite else action.wheel_id)
+	var v := _view_of(host)
+	if v == null or v.intent.is_empty():
+		return
+	var what := TextDb.t(card, "display_name").to_upper() if card != null else tr("NUDGE")
+	var chips: Array = (v.intent.get("chips", []) as Array).duplicate()
+	chips.push_front({"text": tr("IF %s") % what, "color": CHIP_RUN, "ink": Palette.INK})
+	v.intent["chips"] = chips
+	v.intent["tooltip"] = _chips_tooltip(chips)
+	v.queue_redraw()
 
 
 func _show_respin_odds() -> void:
@@ -1794,14 +1880,14 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			if not rs.is_empty():
 				var sl: SliceData = rs[0]["slice"]
 				landings[sat.id] = {"type": sl.slice_type, "tier": int(rs[0]["tier"]),
-					"text": "%s (%s)" % [Palette.SLICE_WORDS.get(sl.slice_type, "?"), Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")]}
+					"text": "%s (%s)" % [tr(String(Palette.SLICE_WORDS.get(sl.slice_type, "?"))), tr(String(Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")))]}
 		view.satellite_landings = landings
 		var d := o.of(id)
 		var shown_statuses: Array = d.get("statuses", [])
 		if random_picks.has(id):
 			shown_statuses = []
 			chips = chips.filter(func(ch: Dictionary) -> bool: return not bool(ch.get("status", false)))
-			chips.append({"text": "? RANDOM STATUS", "color": CHIP_STATUS, "ink": Palette.INK})
+			chips.append({"text": "? " + tr("RANDOM STATUS"), "color": CHIP_STATUS, "ink": Palette.INK})
 			chips.append_array(_odds_chips(c, true))
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
 			"statuses": shown_statuses, "satellites": sats}
@@ -1822,11 +1908,11 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 			type = slice.slice_type
 			tier = int(r["tier"])
 		if rs.size() <= 1:
-			parts.append("%s · %s" % [Palette.SLICE_WORDS.get(slice.slice_type, "?"), Palette.TIER_WORDS.get(r["tier"], "")])
+			parts.append("%s · %s" % [tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?"))), tr(String(Palette.TIER_WORDS.get(r["tier"], "")))])
 		elif rs.size() == 2:
-			parts.append("%s %s" % [Palette.SLICE_WORDS.get(slice.slice_type, "?"), String(Palette.TIER_NAMES.get(r["tier"], "")).to_lower()])
+			parts.append("%s %s" % [tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).to_lower()])
 		else:
-			parts.append("%s·%s" % [Palette.SLICE_NAMES.get(slice.slice_type, "?"), String(Palette.TIER_NAMES.get(r["tier"], "")).left(1)])
+			parts.append("%s·%s" % [tr(String(Palette.SLICE_NAMES.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).left(1)])
 	return {"type": type, "tier": tier if rs.size() == 1 else -1, "text": " + ".join(parts)}
 
 
@@ -1840,7 +1926,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	var to: Dictionary = d.get("dealt_to", {})
 	for tgt in to:
 		var victim := state.get_combatant(StringName(String(tgt)))
-		var who := "YOU" if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
+		var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
 		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK})
 	if to.is_empty() and int(d["dealt"]) > 0:
 		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK})
@@ -1853,20 +1939,23 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		chips.append({"text": tr("%s %d HP") % [taker, -dhp], "color": CHIP_LOSS, "ink": Palette.PAPER})
 	elif dhp > 0:
 		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK})
+	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do).
+	if int(d.get("soaked", 0)) > 0:
+		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK})
 	for key in ["block", "shield"]:
 		var delta := int(d[key + "_after"]) - int(d[key + "_before"])
 		if delta != 0:
-			chips.append({"text": "%+d %s" % [delta, tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK})
+			chips.append({"text": "%s %s" % [signed(delta), tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK})
 	var ev := int(d["evade_after"]) - int(d["evade_before"])
 	if ev != 0:
-		chips.append({"text": tr("%+d EVADE") % ev, "color": CHIP_GUARD, "ink": Palette.INK})
+		chips.append({"text": tr("%s EVADE") % signed(ev), "color": CHIP_GUARD, "ink": Palette.INK})
 	if int(d["resistance_after"]) != int(d["resistance_before"]):
 		chips.append({"text": tr("RESIST %d→%d") % [int(d["resistance_before"]), int(d["resistance_after"])], "color": CHIP_RESIST, "ink": Palette.INK})
 	if bool(d["breached"]):
 		chips.append({"text": tr("HUB BREACH"), "color": CHIP_RESIST, "ink": Palette.INK})
 	for st in d["statuses"]:
 		var after := int(st["after"])
-		var tag: String = Palette.STATUS_WORDS.get(after, "") if after != RC.Status.NONE else tr("CLEARS %s") % Palette.STATUS_WORDS.get(int(st["before"]), "")
+		var tag: String = tr(String(Palette.STATUS_WORDS.get(after, ""))) if after != RC.Status.NONE else tr("CLEARS %s") % tr(String(Palette.STATUS_WORDS.get(int(st["before"]), "")))
 		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
 	if bool(d["alive_before"]) and not bool(d["alive_after"]):
 		chips.append({"text": tr("DOWN"), "color": CHIP_LOSS, "ink": Palette.PAPER})
@@ -1888,19 +1977,19 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER})
 		elif int(sd["hp_after"]) != int(sd["hp_before"]):
 			var shp := int(sd["hp_after"]) - int(sd["hp_before"])
-			chips.append({"text": tr("%s %+d HP") % [name, shp], "color": CHIP_LOSS if shp < 0 else CHIP_GAIN, "ink": Palette.PAPER if shp < 0 else Palette.INK})
+			chips.append({"text": tr("%s %s HP") % [name, signed(shp)], "color": CHIP_LOSS if shp < 0 else CHIP_GAIN, "ink": Palette.PAPER if shp < 0 else Palette.INK})
 		for key in ["block", "shield"]:
 			var sdelta := int(sd[key + "_after"]) - int(sd[key + "_before"])
 			if sdelta != 0:
-				chips.append({"text": "%s %+d %s" % [name, sdelta, tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK})
+				chips.append({"text": "%s %s %s" % [name, signed(sdelta), tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK})
 		for st in sd["statuses"]:
-			var sw: String = Palette.STATUS_WORDS.get(int(st["after"]), "") if int(st["after"]) != RC.Status.NONE else "CLEARED"
+			var sw: String = tr(String(Palette.STATUS_WORDS.get(int(st["after"]), ""))) if int(st["after"]) != RC.Status.NONE else tr("CLEARED")
 			chips.append({"text": "%s %s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×"), sw], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
 		if int(sd.get("dock_after", -1)) != int(sd.get("dock_before", -1)):
 			chips.append({"text": tr("%s MOVES") % name, "color": CHIP_RESIST, "ink": Palette.INK})
 	if id == state.player.id:
 		if o.ram_delta != 0:
-			chips.append({"text": tr("RAM %+d") % o.ram_delta, "color": CHIP_GUARD, "ink": Palette.INK})
+			chips.append({"text": tr("RAM %s") % signed(o.ram_delta), "color": CHIP_GUARD, "ink": Palette.INK})
 		if o.cards_drawn > 0:
 			chips.append({"text": tr("DRAW %d") % o.cards_drawn, "color": CHIP_RUN, "ink": Palette.INK})
 		if o.heat != 0:
@@ -1908,15 +1997,15 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			var heat := 0
 			for h in o.heat_events:
 				heat += HeatRules.scaled_delta(RunManager.campaign, h, RunManager.config()) if RunManager.campaign != null else h
-			chips.append({"text": tr("HEAT %+d") % heat, "color": heat_poster.hot_color, "ink": Palette.INK})
+			chips.append({"text": tr("HEAT %s") % signed(heat), "color": heat_poster.hot_color, "ink": Palette.INK})
 		if o.cycles != 0:
-			chips.append({"text": tr("CYCLES %+d") % o.cycles, "color": CHIP_RUN, "ink": Palette.INK})
+			chips.append({"text": tr("CYCLES %s") % signed(o.cycles), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.schematics != 0:
-			chips.append({"text": tr("SCHEMATICS %+d") % o.schematics, "color": CHIP_RUN, "ink": Palette.INK})
+			chips.append({"text": tr("SCHEMATICS %s") % signed(o.schematics), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.free_nudges_next_turn != 0:
-			chips.append({"text": tr("FREE NUDGE %+d NEXT") % o.free_nudges_next_turn, "color": CHIP_RUN, "ink": Palette.INK})
+			chips.append({"text": tr("FREE NUDGE %s NEXT") % signed(o.free_nudges_next_turn), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.damage_bonus_delta != 0:
-			chips.append({"text": tr("DAMAGE %+d") % o.damage_bonus_delta, "color": CHIP_RUN, "ink": Palette.INK})
+			chips.append({"text": tr("DAMAGE %s") % signed(o.damage_bonus_delta), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.drones_gained > 0:
 			chips.append({"text": tr("+%d DRONE") % o.drones_gained, "color": CHIP_STATUS, "ink": Palette.INK})
 		if o.double_nudge_next:
@@ -1937,13 +2026,19 @@ func _name_of(c: CombatantState) -> String:
 	return TextDb.t(data, "display_name")
 
 
+## A signed whole number ("+3", "-2", "0") for translated "%s" keys: Godot's
+## pseudolocalisation doesn't skip "%+d" placeholders (H24: they broke the scramble).
+static func signed(n: int) -> String:
+	return "+%d" % n if n > 0 else "%d" % n
+
+
 static func _chips_tooltip(chips: Array) -> String:
 	if chips.is_empty():
 		return "What this wheel's needles land on. Nothing else changes this turn."
 	var parts := PackedStringArray()
 	for c in chips:
 		parts.append(String(c["text"]))
-	return "When you SEND IT: " + ", ".join(parts) + ".\nHITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel)."
+	return "When you SEND IT: " + ", ".join(parts) + ".\nHITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).\nThe dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."
 
 
 # --- Stickers and hints ---------------------------------------------------------------
@@ -1957,6 +2052,7 @@ func _build_stickers() -> void:
 	]
 	for sp in specs:
 		var b := StickerButton.new(sp[1], sp[2], sp[3])
+		b.pre_translated = true  # labels come from _sticker_text (translated there)
 		b.drawn_icon = String(sp[0])
 		b.name = "Sticker_" + String(sp[0])
 		b.pressed.connect(sp[4])
@@ -1990,8 +2086,8 @@ func _sync_stickers() -> void:
 	if _stickers.is_empty():
 		return
 	var cost := engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else 0
-	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", "RESPIN %d RAM" % cost if cost > 0 else "RESPIN"))
-	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", "UNDO"))
+	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", tr("RESPIN %d RAM") % cost if cost > 0 else tr("RESPIN")))
+	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", tr("UNDO")))
 	_respin_button.tooltip_text = "Respin your wheel for %d RAM: a random result (sets a checkpoint)." % cost
 	for key in _stickers:
 		(_stickers[key] as StickerButton).refit()

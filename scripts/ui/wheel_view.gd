@@ -118,6 +118,10 @@ const HP_ARC_OUT := 40.0
 const HP_TEXT_GAP := 44.0
 ## Gap between the HP number and the last-turn line (px).
 const LAST_TURN_GAP := 4.0
+## Padding round the LAST TURN plate (px).
+const LAST_TURN_PAD := 4.0
+## Lines LAST TURN may take before its font shrinks below its text-scale-1.0 size.
+const LAST_TURN_LINES := 2
 ## Lettering sizes at text scale 1.0.
 const INTENT_FONT_SIZE := 15
 const CHIP_FONT_SIZE := 13
@@ -171,7 +175,9 @@ func _get_tooltip(at_position: Vector2) -> String:
 		"slot":
 			return _slice_label(int(z["slot"]))
 		"hub":
-			var lines := PackedStringArray([combatant.display_name])
+			var lines := PackedStringArray([shown_name()])
+			# How the fight is won and lost (H24: never stated).
+			lines.append(tr("Bring its HP to 0 to win the fight.") if not combatant.is_player else tr("At 0 HP you lose the fight."))
 			if combatant.block > 0:
 				lines.append("Block %d: soaks damage this turn." % combatant.block)
 			if combatant.shield > 0:
@@ -304,16 +310,26 @@ func zone_at(point: Vector2) -> Dictionary:
 		return {}
 	# Satellites first (H22: at big text a satellite near the top sat inside an arrow's hit
 	# area and couldn't be aimed at).
+	# The nearest satellite or arrow within reach wins (H24: at 1.6 the inner ring's arrow
+	# answered as the outer one, 26 px away, and a drone next to an arrow took its clicks).
+	var best := {}
+	var best_d := INF
 	for sat in satellites:
 		var sp := _satellite_pos(sat)
-		if sp.distance_to(point) <= SATELLITE_HIT * maxf(1.0, _ts()):
+		var d := sp.distance_to(point)
+		if d <= SATELLITE_HIT * maxf(1.0, _ts()) and d < best_d:
 			# Which side of the satellite: the clockwise side is +1 (a nudge or Undock aimed
 			# at a satellite takes its way from the side it is dropped on).
 			var cw := (sp - global_center()).orthogonal() * -1.0
-			return {"kind": "satellite", "id": sat.id, "direction": 1 if (point - sp).dot(cw) >= 0.0 else -1}
+			best = {"kind": "satellite", "id": sat.id, "direction": 1 if (point - sp).dot(cw) >= 0.0 else -1}
+			best_d = d
 	for ar in arrows():
-		if arrow_center(int(ar["ring"]), int(ar["direction"])).distance_to(point) <= ARROW_HIT * maxf(1.0, _ts()):
-			return {"kind": "arrow", "ring": ar["ring"], "direction": ar["direction"]}
+		var d := arrow_center(int(ar["ring"]), int(ar["direction"])).distance_to(point)
+		if d <= ARROW_HIT * maxf(1.0, _ts()) and d < best_d:
+			best = {"kind": "arrow", "ring": ar["ring"], "direction": ar["direction"]}
+			best_d = d
+	if not best.is_empty():
+		return best
 	var slot := slot_at_global(point)
 	if slot >= 0:
 		return {"kind": "slot", "slot": slot}
@@ -335,9 +351,17 @@ func _satellite_pos(sat: CombatantState) -> Vector2:
 	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + _satellite_out())
 	# In the bottom sector the HP number, NEXT plate and last-turn line sit under the disc:
 	# a token there moves to the side of them (H23: it covered "40/40").
-	if sin(a) > BOTTOM_SECTOR_SIN:
-		var side := 1.0 if cos(a) >= 0.0 else -1.0
-		p.x = global_center().x + side * maxf(absf(p.x - global_center().x), HP_BLOCK_HALF * _ts() + SATELLITE_TOKEN * _ts())
+	# Beside the measured HP number, NEXT plate and LAST TURN plate whenever the token would
+	# meet them (H23: it covered "40/40"; H24: a fixed 90 px half width left it on NEXT).
+	var tok := SATELLITE_TOKEN * _ts()
+	var side := 1.0 if cos(a) >= 0.0 else -1.0
+	var reach := HP_BLOCK_HALF * _ts() if sin(a) > BOTTOM_SECTOR_SIN else 0.0
+	for r in _hp_block_rects():
+		var gr := Rect2(r.position + global_position, r.size).grow(tok)
+		if sin(a) > BOTTOM_SECTOR_SIN or gr.has_point(p):
+			reach = maxf(reach, ((gr.end.x - global_center().x) if side > 0.0 else (global_center().x - gr.position.x)) - tok)
+	if reach > 0.0:
+		p.x = global_center().x + side * maxf(absf(p.x - global_center().x), reach + tok + SATELLITE_GAP * _ts())
 	return p
 
 
@@ -648,15 +672,29 @@ func satellite_plate_rect(sat: CombatantState, text: String) -> Rect2:
 	var lfs := _fs(HUB_FONT_SIZE + 1)
 	var lw := Palette.mono().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
 	var out_dir := (satp - _center()).normalized()
+	var avoid: Array[Rect2] = _hp_block_rects()
 	var tag := _intent_rect_local()
+	if tag.has_area():
+		avoid.append(tag)
+	# Sideways first under the disc (H24: outward pointed down onto LAST TURN).
+	var side := Vector2(signf(out_dir.x) if out_dir.x != 0.0 else 1.0, 0.0)
+	var dirs: Array[Vector2] = [out_dir, out_dir.orthogonal(), -out_dir.orthogonal(), -out_dir]
+	if out_dir.y > BOTTOM_SECTOR_SIN:
+		dirs.push_front(side)
+	else:
+		dirs.append(side)
 	var first := Rect2()
-	for d in [out_dir, out_dir.orthogonal(), -out_dir.orthogonal(), -out_dir]:
-		var dir: Vector2 = d
+	for dir in dirs:
 		var c := satp + dir * (tok_r + maxf(lfs, lw * 0.5 * absf(dir.x)) + 4.0)
 		var r := Rect2(c - Vector2(lw * 0.5 + 3.0, lfs * 0.5 + 2.0), Vector2(lw + 6.0, lfs + 5.0))
 		if first.size == Vector2.ZERO:
 			first = r
-		if not tag.has_area() or not r.intersects(tag):
+		var clear := true
+		for a in avoid:
+			if r.intersects(a):
+				clear = false
+				break
+		if clear:
 			return r
 	return first
 
@@ -768,16 +806,14 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		draw_colored_polygon(_wedge(center, radius + 32, radius + HP_ARC_OUT, a0, a1), col)
 	# The number is the HP now (it agrees with the top bar); the forecast after SEND IT is a
 	# separate dashed plate with an arrow (H22: "60→49" read as a result).
+	var lay := hp_layout()
 	var hs := _fs(HP_FONT_SIZE)
-	var base_y := radius + HP_TEXT_GAP + hs - HP_FONT_SIZE
-	var text := "%d/%d" % [combatant.hp, combatant.max_hp]
-	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
-	draw_string(Palette.display(), center + Vector2(-tw * 0.5, base_y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
+	var hp_rect: Rect2 = lay["hp"]
+	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if after != combatant.hp:
 		var fs := _fs(HUB_FONT_SIZE + 3)
-		var ftext := tr("NEXT %d") % maxi(0, after)
-		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
-		var fr := Rect2(center + Vector2(tw * 0.5 + 8.0, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		var ftext := String(lay["next_text"])
+		var fr: Rect2 = lay["next"]
 		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
 		draw_rect(fr, Color(Palette.NIGHT_SKY, 0.8))
 		_draw_dashed_rect(fr, fcol)
@@ -785,12 +821,88 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		draw_colored_polygon(PackedVector2Array([Vector2(fr.position.x + 5, ay - 5), Vector2(fr.position.x + 13, ay), Vector2(fr.position.x + 5, ay + 5)]), fcol)
 		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 	if last_turn != "":
-		# The past, greyed: what the last SEND IT did.
-		var box := (radius + HP_ARC_OUT) * 2.0
+		# What the last SEND IT did, on a dark plate across the view's width, on up to two
+		# lines, never smaller than at text scale 1.0 unless it can't fit (H24: tiny grey text
+		# was the only word on the most important moment, and shrank as the text grew).
+		var lr: Rect2 = lay["last"]
+		var ls := int(lay["last_fs"])
+		draw_rect(lr, Color(Palette.NIGHT_SKY, 0.8))
+		var lines: PackedStringArray = lay["last_lines"]
+		for i in lines.size():
+			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, _col(Color(Palette.PAPER, 0.92)))
+
+
+## Where the HP number, the NEXT plate and the LAST TURN plate go (local rects), with their
+## texts: one layout for drawing and for keeping satellite tokens and plates off them.
+func hp_layout() -> Dictionary:
+	var center := _center()
+	var radius := _radius()
+	var hs := _fs(HP_FONT_SIZE)
+	var base_y := center.y + radius + HP_TEXT_GAP + hs - HP_FONT_SIZE
+	var text := "%d/%d" % [combatant.hp, combatant.max_hp]
+	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
+	var out := {"hp_text": text, "hp": Rect2(center.x - tw * 0.5, base_y - hs * 0.8, tw, hs * 0.8), "next": Rect2(), "next_text": "",
+		"last": Rect2(), "last_lines": PackedStringArray(), "last_fs": 0}
+	var after := int(outcome.get("hp_after", combatant.hp))
+	if after != combatant.hp:
+		var fs := _fs(HUB_FONT_SIZE + 3)
+		var ftext := tr("NEXT %d") % maxi(0, after)
+		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
+		out["next_text"] = ftext
+		out["next"] = Rect2(Vector2(center.x + tw * 0.5 + 8.0, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+	if last_turn != "":
+		var box := 2.0 * minf(center.x - left_reserve, size.x - center.x) - LAST_TURN_PAD * 2.0
+		var font := Palette.mono()
+		# One line, shrinking to the text-scale-1.0 size; then a second line where the view
+		# has the room under it; only then smaller (the wheel keeps its size for the rare
+		# long line).
+		var top_y := base_y + LAST_TURN_GAP
 		var ls := _fs(HUB_FONT_SIZE)
-		while ls > 7 and Palette.mono().get_string_size(last_turn, HORIZONTAL_ALIGNMENT_LEFT, -1, ls).x > box:
-			ls -= 1  # a long line shrinks to its box (H22: 329 px in a 220 px box at 1.6)
-		draw_string(Palette.mono(), center + Vector2(-box * 0.5, base_y + LAST_TURN_GAP + ls), last_turn, HORIZONTAL_ALIGNMENT_CENTER, box, ls, _col(Color(Palette.PAPER, 0.6)))
+		var room_lines := clampi(floori((size.y - top_y - LAST_TURN_PAD) / maxf(1.0, HUB_FONT_SIZE)), 1, LAST_TURN_LINES)
+		var lines := _wrap_last_turn(last_turn, box, ls)
+		while lines.size() > 1 and ls > HUB_FONT_SIZE:
+			ls -= 1
+			lines = _wrap_last_turn(last_turn, box, ls)
+		var fits := func(n: int, f: int) -> bool: return n * f + LAST_TURN_PAD <= size.y - top_y
+		while (lines.size() > room_lines or not fits.call(lines.size(), ls)) and ls > 7:
+			ls -= 1
+			lines = _wrap_last_turn(last_turn, box, ls)
+		var lw := 0.0
+		for l in lines:
+			lw = maxf(lw, minf(box, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, ls).x))
+		var top := base_y + LAST_TURN_GAP
+		out["last"] = Rect2(center.x - lw * 0.5 - LAST_TURN_PAD, top, lw + LAST_TURN_PAD * 2.0, ls * lines.size() + LAST_TURN_PAD)
+		out["last_lines"] = lines
+		out["last_fs"] = ls
+	return out
+
+
+## LAST TURN wrapped at its " · " breaks to `width` px at font size `fs`.
+static func _wrap_last_turn(text: String, width: float, fs: int) -> PackedStringArray:
+	var font := Palette.mono()
+	var parts := text.split(" · ")
+	var lines := PackedStringArray()
+	var line := ""
+	for p in parts:
+		var trial := p if line == "" else line + " · " + p
+		if line != "" and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+			lines.append(line)
+			line = p
+		else:
+			line = trial
+	if line != "":
+		lines.append(line)
+	return lines
+
+
+## The rects under the disc that satellite tokens and plates keep off (local).
+func _hp_block_rects() -> Array[Rect2]:
+	var lay := hp_layout()
+	var out: Array[Rect2] = [lay["hp"]]
+	for k in ["next", "last"]:
+		if (lay[k] as Rect2).has_area():
+			out.append(lay[k])
+	return out
 
 
 func _draw_dashed_rect(r: Rect2, col: Color) -> void:
@@ -802,6 +914,38 @@ func _draw_dashed_rect(r: Rect2, col: Color) -> void:
 		for i in n:
 			if i % 2 == 0:
 				draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), col, 1.5)
+
+
+## The hub name's font size and lines for a hub `width` px wide: one line shrinking to
+## its text-scale-1.0 size, then two lines split at the middle space, then smaller (H24:
+## "BILLING DAEMON" drew at 10 px at 1.6 and 13 px at 1.0). [size, line, line?]
+func hub_name_lines(width: float) -> Array:
+	var name := shown_name().to_upper()
+	var font := Palette.marker()
+	var fs := _fs(NAME_FONT_SIZE)
+	while fs > NAME_FONT_SIZE and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+		fs -= 1
+	if font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= width:
+		return [fs, name]
+	var words := name.split(" ")
+	if words.size() > 1:
+		var best := 1
+		var best_w := INF
+		for cut in range(1, words.size()):
+			var a := " ".join(words.slice(0, cut))
+			var b := " ".join(words.slice(cut))
+			var w := maxf(font.get_string_size(a, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_string_size(b, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+			if w < best_w:
+				best_w = w
+				best = cut
+		var l1 := " ".join(words.slice(0, best))
+		var l2 := " ".join(words.slice(best))
+		while fs > 7 and maxf(font.get_string_size(l1, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_string_size(l2, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) > width:
+			fs -= 1
+		return [fs, l1, l2]
+	while fs > 7 and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+		fs -= 1
+	return [fs, name]
 
 
 ## The combatant's name in the player's language (generated Mirrors keep runtime names).
@@ -837,11 +981,13 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 	var fs := _fs(HUB_FONT_SIZE)
 	var step := fs + 2
 	var top := -6.0 - hub_lines.size() * step * 0.5
-	var name := shown_name().to_upper()
-	var name_size := _fs(NAME_FONT_SIZE)
-	while name_size > 7 and Palette.marker().get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x > hw:
-		name_size -= 1  # long names shrink to fit the hub
-	draw_string(Palette.marker(), center + Vector2(-hw * 0.5, top), name, HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
+	var name_lines := hub_name_lines(hw)
+	var name_size := int(name_lines[0])
+	var name_count := name_lines.size() - 1
+	for k in name_count:
+		# The last line sits where a one-line name does; a first line goes above it.
+		var ny := top - (name_count - 1 - k) * (name_size + 1)
+		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
 		var lfs := fs
@@ -918,7 +1064,7 @@ func _chip_rows() -> Array:
 		if not last.is_empty():
 			hidden += 1
 			last.pop_back()
-		last.append({"text": "+%d MORE" % hidden, "color": Palette.INK, "ink": Palette.PAPER})  # all listed in the tag tooltip
+		last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER})  # all listed in the tag tooltip
 	return rows
 
 
