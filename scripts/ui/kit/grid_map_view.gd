@@ -10,6 +10,10 @@ extends Control
 ## H22: the Site labels follow Settings.text_scale (redrawn when it changes), use the
 ## translated Site names, and lead with the map's tier difficulty pips
 ## (CityMapOverlay.draw_tier).
+##
+## H23 #1: labels are placed, not stamped under each block: no two labels (pips
+## included) overlap, a crowded label shortens or is left out (see `layout_labels`), and
+## every Site keeps a tooltip naming it, its tier, kind and status.
 
 signal site_clicked(site_id: StringName)
 
@@ -21,6 +25,13 @@ const DETAIL_FONT := 9
 ## The tier pips' scale in a label at text scale 1.0, and their gap to the text (px).
 const PIP_SCALE := 0.8
 const PIP_TEXT_GAP := 4.0
+## H23 #1 label layout (px): the pill's padding, the margin kept inside the view, the gap
+## between a Site's block and its label, and how far the objective badge floats over
+## the roof.
+const LABEL_PAD := 2.0
+const LABEL_EDGE := 2.0
+const LABEL_GAP := 3.0
+const BADGE_LIFT := 12.0
 
 var campaign: CampaignState = null
 var corp: CorporationData = null
@@ -34,6 +45,9 @@ var _positions: Dictionary = {}
 var drawn_labels: Array[Dictionary] = []
 ## The tier pips of the last draw (Site id -> tier), for checks.
 var drawn_tiers: Dictionary = {}
+## H23 #1: the label rects of the last draw (Site id -> Rect2, px; pips included), for
+## checks. A Site left out for room has none.
+var label_rects: Dictionary = {}
 
 
 func _init() -> void:
@@ -143,7 +157,9 @@ func _draw() -> void:
 				var tip := b - dir * 30
 				draw_line(tip, tip - dir.rotated(0.5) * 10, corp_col, 2.0)
 				draw_line(tip, tip - dir.rotated(-0.5) * 10, corp_col, 2.0)
-	# Sites as iso wireframe blocks.
+	# Sites as iso wireframe blocks; their labels are placed after (H23 #1).
+	var jobs: Array[Dictionary] = []
+	var bodies: Array[Rect2] = []
 	for s in corp.city_grid.sites:
 		if s == null:
 			continue
@@ -181,26 +197,19 @@ func _draw() -> void:
 			RC.SiteObjective.BOSS:
 				glyph = "✦"
 		if glyph != "" or s.id == campaign.grid.home_site_id:
-			_badge(p + Vector2(0, -h - d - 12), 9.0 if dense else 11.0, col, glyph if glyph != "" else "⌂")
+			_badge(p + Vector2(0, -h - d - BADGE_LIFT),9.0 if dense else 11.0, col, glyph if glyph != "" else "⌂")
 		var home := s.id == campaign.grid.home_site_id
-		var fs := label_size(LABEL_FONT_DENSE if dense else LABEL_FONT)
-		var detail := label_size(DETAIL_FONT)
-		var at := p + Vector2(-40, d + 16 * Settings.text_scale)
-		if not home:
-			# The tier's difficulty pips lead the label (the map's own cue).
-			var ps := PIP_SCALE * Settings.text_scale
-			var pips := CityMapOverlay.tier_pips_size(ps)
-			CityMapOverlay.draw_tier(self, Vector2(at.x + pips.x * 0.5, at.y - fs * 0.4), s.tier, Palette.PAPER, ps)
-			drawn_tiers[s.id] = s.tier
-			at.x += pips.x + PIP_TEXT_GAP
-		_tag(at, site_label(s, glyph, dense), fs, Palette.PAPER)
-		var below := p + Vector2(-40, d + 16 * Settings.text_scale + detail + 4.0)
+		var detail_text := ""
 		if status == GridState.SiteStatus.CLAIMED and not home:
 			var site := campaign.grid.site(s.id)
 			var level := campaign.grid.upgrade_level_of(s.id)
-			_tag(below, "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""], detail, Palette.CELL_ACID)
+			detail_text = "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""]
 		elif home:
-			_tag(below, "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], detail, Palette.CELL_ACID)
+			detail_text = "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity]
+		jobs.append({"id": s.id, "p": p, "body": _body_rect(p, w, d, h, glyph != "" or home, 9.0 if dense else 11.0),
+			"prio": 0 if s.id == selected_id else (1 if home else (2 if status == GridState.SiteStatus.CLAIMED else 3)),
+			"tier": 0 if home else s.tier, "variants": _variants(s, glyph, dense, detail_text)})
+		bodies.append(jobs[jobs.size() - 1]["body"])
 		# Raid playout: threats standing on this Site as corporate markers.
 		if threat_markers.has(s.id):
 			var names: Array = threat_markers[s.id]
@@ -208,7 +217,152 @@ func _draw() -> void:
 				var mp := p + Vector2(-20 + k * 14, -h - 22)
 				draw_circle(mp, 6, corp_col)
 				draw_circle(mp, 9, Color(corp_col, 0.35))
-			draw_string(Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140 * Settings.text_scale, detail, corp_col)
+			draw_string(Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140 * Settings.text_scale, label_size(DETAIL_FONT), corp_col)
+	for l in layout_labels(jobs, bodies):
+		_draw_label(l)
+
+
+## The rect Site block `p` covers (its footprint glow up to its roof and badge), in px.
+static func _body_rect(p: Vector2, w: float, d: float, h: float, badge: bool, badge_r: float) -> Rect2:
+	var top := h + d + (BADGE_LIFT + badge_r if badge else 0.0)
+	return Rect2(p.x - w, p.y - top, w * 2.0, top + d)
+
+
+## The label variants of Site `s`, longest first (H23 #1): name and detail line, name,
+## the short "T2 glyph", the tier pips alone. Each: {lines: [[text, font size, colour]],
+## pips: bool}.
+func _variants(s: SiteData, glyph: String, dense: bool, detail_text: String) -> Array[Dictionary]:
+	var home := s.id == campaign.grid.home_site_id
+	var fs := label_size(LABEL_FONT_DENSE if dense else LABEL_FONT)
+	var dfs := label_size(DETAIL_FONT)
+	var main := site_label(s, glyph, dense)
+	var short := CityLayout.HOME_LABEL if home else ("T%d %s" % [s.tier, glyph]).strip_edges()
+	var out: Array[Dictionary] = []
+	if detail_text != "":
+		out.append({"lines": [[main, fs, Palette.PAPER], [detail_text, dfs, Palette.CELL_ACID]], "pips": not home})
+	out.append({"lines": [[main, fs, Palette.PAPER]], "pips": not home})
+	if short != main:
+		out.append({"lines": [[short, fs, Palette.PAPER]], "pips": not home})
+	if not home:
+		out.append({"lines": [], "pips": true})
+	return out
+
+
+## The size of a label variant (px): the tier pips leading its first line, each line on
+## its pill.
+static func _variant_size(v: Dictionary) -> Vector2:
+	var f := Palette.mono()
+	var ps := PIP_SCALE * Settings.text_scale
+	var pips := CityMapOverlay.tier_pips_size(ps) if v["pips"] else Vector2.ZERO
+	var lines: Array = v["lines"]
+	if lines.is_empty():
+		return pips + Vector2(LABEL_PAD, LABEL_PAD) * 2.0
+	var wide := 0.0
+	var tall := 0.0
+	for k in lines.size():
+		var line: Array = lines[k]
+		var tw := f.get_string_size(line[0], HORIZONTAL_ALIGNMENT_LEFT, -1, line[1]).x
+		if k == 0 and v["pips"]:
+			tw += pips.x + PIP_TEXT_GAP
+		wide = maxf(wide, tw)
+		tall += f.get_height(line[1])
+	return Vector2(wide, maxf(tall, pips.y)) + Vector2(LABEL_PAD, LABEL_PAD) * 2.0
+
+
+## Places the Site labels (H23 #1: they piled up at 1.6): by priority (selected, CORE,
+## claimed, the rest; ties by Site id), each at the first free spot round its block
+## (below, above, right, left, then the corners), inside the view and clear of every
+## label placed before (pips included: they are part of the label). A label with no room
+## drops to a shorter variant (name, "T2 glyph", the pips alone); a spot clear of the other
+## Sites' blocks is preferred even at a shorter variant; a label that fits nowhere is left
+## out and the Site keeps its tooltip. Returns [{id, rect, variant}]; fills `label_rects`.
+func layout_labels(jobs: Array[Dictionary], bodies: Array[Rect2]) -> Array[Dictionary]:
+	var order := jobs.duplicate()
+	order.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if a["prio"] != b["prio"]:
+			return a["prio"] < b["prio"]
+		return String(a["id"]) < String(b["id"]))
+	var area := Rect2(Vector2.ZERO, size).grow(-LABEL_EDGE)
+	var placed: Array[Dictionary] = []
+	label_rects.clear()
+	for job: Dictionary in order:
+		var spot := {}
+		# Clear of the other blocks first (shortening the label if need be), then over them.
+		for strict in [true, false]:
+			for v: Dictionary in job["variants"]:
+				var box := _variant_size(v)
+				for c in _label_spots(job["p"], job["body"], box):
+					var r := Rect2(c, box)
+					if area.encloses(r) and _label_free(r, placed, bodies, job["body"], strict):
+						spot = {"id": job["id"], "rect": r, "variant": v, "tier": job["tier"]}
+						break
+				if not spot.is_empty():
+					break
+			if not spot.is_empty():
+				break
+		if not spot.is_empty():
+			placed.append(spot)
+			label_rects[job["id"]] = spot["rect"]
+	return placed
+
+
+## Candidate top-left corners for a `box` label round a Site at `p` whose block covers
+## `body`: below, above, right, left, then the four corners.
+static func _label_spots(p: Vector2, body: Rect2, box: Vector2) -> Array[Vector2]:
+	var g := LABEL_GAP
+	return [Vector2(p.x - box.x * 0.5, body.end.y + g), Vector2(p.x - box.x * 0.5, body.position.y - g - box.y),
+		Vector2(body.end.x + g, p.y - box.y * 0.5), Vector2(body.position.x - g - box.x, p.y - box.y * 0.5),
+		Vector2(body.end.x + g, body.end.y + g), Vector2(body.position.x - g - box.x, body.end.y + g),
+		Vector2(body.end.x + g, body.position.y - g - box.y), Vector2(body.position.x - g - box.x, body.position.y - g - box.y)]
+
+
+## True when label rect `r` overlaps no placed label (and, `strict`, no other Site's block).
+static func _label_free(r: Rect2, placed: Array[Dictionary], bodies: Array[Rect2], own: Rect2, strict: bool) -> bool:
+	for other in placed:
+		if r.intersects(other["rect"]):
+			return false
+	if strict:
+		for b in bodies:
+			if b != own and r.intersects(b):
+				return false
+	return true
+
+
+## Draws a placed label: its pill, the tier pips leading the first line, the lines.
+func _draw_label(l: Dictionary) -> void:
+	var r: Rect2 = l["rect"]
+	var v: Dictionary = l["variant"]
+	var f := Palette.mono()
+	draw_rect(r, Color(Palette.NIGHT_SKY, 0.75))
+	var x := r.position.x + LABEL_PAD
+	var y := r.position.y + LABEL_PAD
+	var lines: Array = v["lines"]
+	if v["pips"]:
+		var ps := PIP_SCALE * Settings.text_scale
+		var pips := CityMapOverlay.tier_pips_size(ps)
+		var line_h := f.get_height(lines[0][1]) if not lines.is_empty() else pips.y
+		CityMapOverlay.draw_tier(self, Vector2(x + pips.x * 0.5, y + line_h * 0.5), int(l["tier"]), Palette.PAPER, ps)
+		drawn_tiers[l["id"]] = int(l["tier"])
+		x += pips.x + PIP_TEXT_GAP
+	for k in lines.size():
+		var line: Array = lines[k]
+		draw_string(f, Vector2(x if k == 0 else r.position.x + LABEL_PAD, y + f.get_ascent(line[1])), line[0], HORIZONTAL_ALIGNMENT_LEFT, -1, line[1], line[2])
+		drawn_labels.append({"text": line[0], "size": line[1]})
+		y += f.get_height(line[1])
+
+
+## Hover text for the Site under the pointer (H23 #1: a label left out for room still
+## names its Site): the map tooltip (name, tier, kind, status); else the view's own.
+func _get_tooltip(at_position: Vector2) -> String:
+	var id := site_at(at_position)
+	if id == &"" or campaign == null or corp == null:
+		return tooltip_text
+	var sd := CampaignRules.site_data(corp, id)
+	if sd == null:
+		return tooltip_text
+	var kind := CityLayout.site_kind(campaign, sd)
+	var name_text := CityLayout.HOME_LABEL if kind == CityMapOverlay.KIND_HOME else TextDb.t(sd, "display_name")
+	return UiTip.fold(CityLayout.site_tip(name_text, sd.tier, campaign.grid.status_of(id), kind))
 
 
 func _iso_block(p: Vector2, w: float, d: float, h: float, col: Color) -> void:
@@ -243,16 +397,6 @@ func _badge(p: Vector2, r: float, col: Color, glyph: String) -> void:
 	draw_polyline(pts, col, 1.5)
 	if glyph != "":
 		draw_string(Palette.mono(), p + Vector2(-r, r * 0.45), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), col)
-
-
-## Text on a dark pill so it reads over links and blocks.
-func _tag(at: Vector2, text: String, font_size: int, col: Color, width: float = 120.0) -> void:
-	var f := Palette.mono()
-	var w := width * Settings.text_scale
-	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x, w)
-	draw_rect(Rect2(at.x - 3, at.y - font_size, tw + 6, font_size + 4), Color(Palette.NIGHT_SKY, 0.75))
-	draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, w, font_size, col)
-	drawn_labels.append({"text": text, "size": font_size})
 
 
 func _dashed_line(a: Vector2, b: Vector2, col: Color) -> void:
