@@ -17,10 +17,17 @@ const EDGE := 4.0
 ## The coin's radius and the gap after it at scale 1.0 (px).
 const COIN_R := 5.5
 const COIN_GAP := 3.0
+## A second line's step as a share of the lettering's height (marker lines sit close).
+const LINE_SHARE := 0.8
+## One line may shrink to this share of the text size before the words go on two lines.
+const TWO_LINES_BELOW := 0.85
 
 var host: ZineCard = null
 var verb: String = "BUY"
 var _font_px: int = BUY_FONT
+## H24 S10: the words on two lines (the verb over the price) when one line would have to
+## shrink below the text size to fit the item ("BUY 100-150" on a slice tile at 1.6).
+var _lines: PackedStringArray = PackedStringArray()
 
 
 func _init(p_host: ZineCard = null, p_verb: String = "BUY") -> void:
@@ -67,11 +74,33 @@ func _fit() -> void:
 	var s := _scale()
 	text = label_text()
 	var room := (host.size.x if host != null and host.size.x > 0.0 else 9999.0) - EDGE * 2.0
-	_font_px = roundi(BUY_FONT * s)
+	var full := roundi(BUY_FONT * s)
+	_lines = PackedStringArray([text])
+	_font_px = full
 	while _font_px > MIN_FONT and _needed(_font_px, s) > room:
 		_font_px -= 1
-	var w := minf(room, _needed(_font_px, s))
-	custom_minimum_size = Vector2(w, BUY_HEIGHT * s)
+	# More lines at a bigger size than one line allows: the verb, then the price (and key);
+	# then a price range split after its dash ("100-" over "150").
+	var gap := text.find(" ")
+	var options: Array[PackedStringArray] = []
+	if gap > 0:
+		var rest := text.substr(gap + 1).strip_edges()
+		options.append(PackedStringArray([text.substr(0, gap), rest]))
+		var dash := rest.find("-")
+		if dash > 0:
+			options.append(PackedStringArray([text.substr(0, gap), rest.substr(0, dash + 1), rest.substr(dash + 1).strip_edges()]))
+	for lines in options:
+		if _font_px >= roundi(full * TWO_LINES_BELOW):
+			break
+		var fs2 := full
+		while fs2 > MIN_FONT and _needed_lines(lines, fs2, s) > room:
+			fs2 -= 1
+		if fs2 > _font_px:
+			_lines = lines
+			_font_px = fs2
+	var h := BUY_HEIGHT * s + Palette.marker().get_height(_font_px) * LINE_SHARE * (_lines.size() - 1)
+	var w := minf(room, _needed_lines(_lines, _font_px, s))
+	custom_minimum_size = Vector2(w, h)
 	size = custom_minimum_size
 	if host != null:
 		position = Vector2((host.size.x - size.x) * 0.5, host.size.y - size.y - EDGE * s)
@@ -81,13 +110,33 @@ func _fit() -> void:
 
 ## The width the sticker needs at lettering `fs`.
 func _needed(fs: int, s: float) -> float:
-	return (COIN_R * 2.0 + COIN_GAP) * s + Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + PADDING * 0.6 * s
+	return _needed_lines(PackedStringArray([text]), fs, s)
+
+
+## The width the sticker needs for `lines` at lettering `fs` (the widest line).
+func _needed_lines(lines: PackedStringArray, fs: int, s: float) -> float:
+	var w := 0.0
+	for l in lines:
+		w = maxf(w, Palette.marker().get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	return (COIN_R * 2.0 + COIN_GAP) * s + w + PADDING * 0.6 * s
+
+
+## The sticker's lines of words as drawn (one, or the verb over the price).
+func shown_lines() -> PackedStringArray:
+	return _lines
+
+
+## The lettering size in use (px).
+func lettering_px() -> int:
+	return _font_px
 
 
 ## Re-measures and places the sticker (the item moved, took focus, or the device changed).
 func refit() -> void:
 	_fit()
 	queue_redraw()
+	if host != null:
+		host.queue_redraw()  # its text keeps clear of the sticker's height (H24 S10)
 
 
 func _press_host() -> void:
@@ -108,6 +157,8 @@ func _draw() -> void:
 	var coin := Vector2(PADDING * 0.3 * s + COIN_R * s, rr.size.y * 0.5)
 	StatIcon.draw(self, coin, COIN_R * s, StatIcon.CYCLES, ink)
 	var fs := _font_px
-	var base := (rr.size.y + Palette.marker().get_ascent(fs) - Palette.marker().get_descent(fs)) * 0.5
 	var x := coin.x + COIN_R * s + COIN_GAP * s
-	draw_string(Palette.marker(), Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, rr.size.x - x, fs, ink)
+	var lh := Palette.marker().get_height(fs) * LINE_SHARE
+	var first := (rr.size.y - lh * (_lines.size() - 1) + Palette.marker().get_ascent(fs) - Palette.marker().get_descent(fs)) * 0.5
+	for i in _lines.size():
+		draw_string(Palette.marker(), Vector2(x, first + i * lh), _lines[i], HORIZONTAL_ALIGNMENT_LEFT, rr.size.x - x, fs, ink)

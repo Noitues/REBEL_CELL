@@ -35,13 +35,13 @@ func _ready() -> void:
 
 func show_deck() -> void:
 	tab = "DECK"
-	_swap(DeckView.new(op.deck, lookup, "LOADOUT // %s // DECK" % op.name.to_upper()))
+	_swap(DeckView.new(op.deck, lookup, tr("LOADOUT // %s // DECK") % op.name.to_upper()))
 	_add_tabs()
 
 
 func show_spinner() -> void:
 	tab = "SPINNER"
-	var view := SpinnerView.new(op.slot_slice_ids, op.slot_firmware_ids, lookup, "LOADOUT // %s // SPINNER" % op.name.to_upper(), "", upgrades)
+	var view := SpinnerView.new(op.slot_slice_ids, op.slot_firmware_ids, lookup, tr("LOADOUT // %s // SPINNER") % op.name.to_upper(), "", upgrades)
 	_swap(view)
 	var core := core_of(op, lookup)
 	view.set_core(core["hub"], core["ring"])
@@ -65,10 +65,10 @@ func next_operative() -> void:
 
 
 func _add_tabs() -> void:
-	_view.add_tab("DECK", show_deck, tab == "DECK")
-	_view.add_tab("SPINNER", show_spinner, tab == "SPINNER")
+	_view.add_tab("DECK", show_deck, tab == "DECK") # TR
+	_view.add_tab("SPINNER", show_spinner, tab == "SPINNER") # TR
 	if crew.size() > 1:
-		_view.add_tab("NEXT OPERATIVE >", next_operative)
+		_view.add_tab("NEXT OPERATIVE >", next_operative) # TR
 
 
 ## The operative's hub core and inner ring segments as they fight (rank rewards and Rank 3

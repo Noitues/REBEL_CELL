@@ -41,6 +41,17 @@ const TRACES := {
 }
 
 
+## Whether every character of `text` has a drawn letter (H24 S3: a translated sign word
+## the face cannot draw is written in a plain font instead).
+static func can_draw(text: String) -> bool:
+	if text == "":
+		return false
+	for i in text.length():
+		if not GLYPHS.has(text[i]):
+			return false
+	return true
+
+
 ## Width in px of `text` at cell size `u` (px per grid unit).
 static func width(text: String, u: float) -> float:
 	return text.length() * (W + 1.6) * u - 1.6 * u

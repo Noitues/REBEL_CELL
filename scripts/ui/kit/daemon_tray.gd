@@ -18,6 +18,8 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 	ids = p_ids
 	lookup = p_lookup
 	name = "DaemonTray"
+	# H24 S4: its words come translated (tr, TextDb) and show as given.
+	TextDb.shown_as_given(self)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_strip = PanelContainer.new()
@@ -38,7 +40,7 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 		row.add_child(who)
 	if ids.is_empty():
 		var none := Label.new()
-		none.text = "No Daemons installed."
+		none.text = tr("No Daemons installed.")
 		row.add_child(none)
 	for id in ids:
 		var b := Button.new()
@@ -53,7 +55,7 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 			if b.has_focus() or b.is_hovered():
 				b.draw_arc(b.size * 0.5, 20, 0, TAU, 24, Palette.CELL_ACID, 1.5))
 		var dd := lookup.get_content(did) as DaemonData
-		b.tooltip_text = dd.display_name if dd != null else String(did)
+		b.tooltip_text = TextDb.t(dd, "display_name") if dd != null else String(did)
 		b.mouse_entered.connect(func() -> void: show_card(did, false))
 		b.focus_entered.connect(func() -> void: show_card(did, false))
 		b.pressed.connect(func() -> void: show_card(did, true))
@@ -71,7 +73,7 @@ func show_card(id: StringName, pinned: bool) -> void:
 		_card.queue_free()
 	var d := lookup.get_content(id) as DaemonData
 	_card_id = id
-	_card = TerminalWindow.new("DAEMON" + (" // PINNED" if pinned else ""), DaemonSigil.color_of(id))
+	_card = TerminalWindow.new(tr("DAEMON") + (tr(" // PINNED") if pinned else ""), DaemonSigil.color_of(id))
 	_card.name = "DaemonCard"
 	_card.custom_minimum_size.x = 320
 	_card.position = Vector2(minf(_strip.position.x, 1270.0 - 340.0), _strip.position.y + 62)
@@ -79,7 +81,7 @@ func show_card(id: StringName, pinned: bool) -> void:
 	head.custom_minimum_size = Vector2(300, 56)
 	head.draw.connect(func() -> void:
 		DaemonSigil.draw_sigil(head, Vector2(28, 28), 24, id, d.rarity if d != null else RC.Rarity.UNCOMMON)
-		head.draw_string(Palette.display(), Vector2(62, 36), (d.display_name if d != null else String(id)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER))
+		head.draw_string(Palette.display(), Vector2(62, 36), (TextDb.t(d, "display_name") if d != null else String(id)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Palette.PAPER))
 	_card.body.add_child(head)
 	var desc := Label.new()
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

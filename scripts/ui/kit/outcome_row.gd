@@ -16,9 +16,14 @@ const ITEM_GAP := 12.0
 const GOOD := Color("#17702c")
 const BAD := Color("#b3122f")
 ## Why an amount is less than the choice's number (tooltip words, H22 #12).
-const CAPPED_WORDS := {StatIcon.HP: "HP is full", StatIcon.HEAT: "Heat stops at its limit"}
+const CAPPED_WORDS := {StatIcon.HP: "HP is full", StatIcon.HEAT: "Heat stops at its limit"} # TR
 ## A reward's kind in the button's words (one of it).
-const REWARD_WORDS := {StatIcon.CARDS: "Card", StatIcon.FIRMWARE: "Firmware", StatIcon.DAEMON: "Daemon", StatIcon.ARMORY: "Asset"}
+const REWARD_WORDS := {StatIcon.CARDS: "Card", StatIcon.FIRMWARE: "Firmware", StatIcon.DAEMON: "Daemon", StatIcon.ARMORY: "Asset"} # TR
+## StatIcon.NAMES' words (translation keys; H24 S3: outcome words are translated).
+const RESOURCE_WORDS := ["Heat", "Schematics", "Home server", "Exploits", "Raids", "ICE", "Crew", "HP", "Cycles", "Cards", # TR
+	"Rank", "Banked", "Armory", "Fights won", "Elites", "Campaigns", "Won", "Runs", "Badges", "Firmware", "Daemon", "Operative"] # TR
+## H24 S9: the neutral item of a choice that changes nothing (drawn as an empty-set mark).
+const NO_CHANGE := &"none"
 
 ## [{kind: StringName, amount: int, text: String, good: bool, name: String}]
 var items: Array[Dictionary] = []
@@ -108,29 +113,41 @@ static func words(p_items: Array[Dictionary]) -> String:
 	for it in shown(p_items):
 		var kind := StringName(it["kind"])
 		if kind == StatIcon.OPERATIVE:
-			parts.append("rescue an operative")
+			parts.append(TranslationServer.translate("rescue an operative"))
 		elif String(it.get("name", "")) != "":
-			parts.append("%s: %s" % [String(REWARD_WORDS.get(kind, StatIcon.NAMES.get(kind, String(kind)))), it["name"]])
+			parts.append("%s: %s" % [TranslationServer.translate(String(REWARD_WORDS.get(kind, StatIcon.NAMES.get(kind, String(kind))))), it["name"]])
 		else:
-			parts.append("%s %s" % [it["text"], String(StatIcon.NAMES.get(kind, String(kind)))])
+			parts.append("%s %s" % [it["text"], _name_of(kind)])
 	return ", ".join(parts)
 
 
+## A resource's name in the player's language (StatIcon.NAMES).
+static func _name_of(kind: StringName) -> String:
+	return TranslationServer.translate(String(StatIcon.NAMES.get(kind, String(kind))))
+
+
 static func _item(kind: StringName, amount: int, good: bool) -> Dictionary:
-	return {"kind": kind, "amount": amount, "text": "%+d" % amount, "good": good, "name": "", "capped": false}
+	# H24 S2: the sign from TextDb.signed.
+	return {"kind": kind, "amount": amount, "text": TextDb.signed(amount), "good": good, "name": "", "capped": false}
+
+
+## The row a choice that changes nothing shows (H24 S9: it showed nothing at all, and a
+## player who cannot read the words could not tell): one neutral empty-set mark and "no
+## change".
+static func no_change() -> Array[Dictionary]:
+	return [{"kind": NO_CHANGE, "amount": 0, "text": TranslationServer.translate("no change"), "good": true, "neutral": true, "name": "", "capped": false}] as Array[Dictionary]
 
 
 ## The row in words (a tooltip line): "Cycles -25, Heat +2, Card: Jam".
 static func describe(p_items: Array[Dictionary]) -> String:
 	var parts := PackedStringArray()
 	for it in p_items:
-		var what := String(StatIcon.NAMES.get(it["kind"], String(it["kind"])))
+		var what := _name_of(StringName(it["kind"]))
 		var part := ("%s: %s" % [what, it["name"]]) if String(it.get("name", "")) != "" else "%s %s" % [what, it["text"]]
 		if int(it.get("amount", 0)) == 0:
-			part = "%s: no change" % what  # H23 S9: no "+0"
-
+			part = TranslationServer.translate("%s: no change") % what  # H23 S9: no "+0"
 		if bool(it.get("capped", false)):
-			part += " (%s)" % String(CAPPED_WORDS.get(it["kind"], "capped"))
+			part += " (%s)" % TranslationServer.translate(String(CAPPED_WORDS.get(it["kind"], "capped")))
 		parts.append(part)
 	return ", ".join(parts)
 
@@ -200,7 +217,15 @@ func _draw() -> void:
 	var mid := size.y * 0.5
 	for it in items:
 		var col := GOOD if bool(it["good"]) else BAD
-		StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), Palette.INK)
+		if bool(it.get("neutral", false)):
+			col = Palette.INK
+		if StringName(it["kind"]) == NO_CHANGE:
+			# The empty-set mark: a ring with a slash (no StatIcon means "nothing").
+			var c := Vector2(x + ICON_R * s, mid)
+			draw_arc(c, ICON_R * s * 0.8, 0.0, TAU, 18, Palette.INK, 1.6 * s, true)
+			draw_line(c + Vector2(-ICON_R, ICON_R) * s, c + Vector2(ICON_R, -ICON_R) * s, Palette.INK, 1.6 * s, true)
+		else:
+			StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), Palette.INK)
 		x += (ICON_R * 2.0 + ICON_GAP) * s
 		var t := String(it["text"])
 		draw_string(font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)

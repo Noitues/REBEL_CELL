@@ -35,7 +35,9 @@ func _init() -> void:
 	_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
 	_backdrop.focus_mode = Control.FOCUS_NONE
 	add_child(_backdrop)
-	var panel := ZinePanel.new("PAUSED", 0.0, true)
+	# H24 S4: the menu shows its words as given, translated where set.
+	TextDb.shown_as_given(self)
+	var panel := ZinePanel.new(tr("PAUSED"), 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
 	var scroll := ScrollContainer.new()
@@ -48,21 +50,44 @@ func _init() -> void:
 	scroll.add_child(_host)
 	_menu = VBoxContainer.new()
 	_host.add_child(_menu)
-	resume_button = _add("Resume", func() -> void: resumed.emit())
+	resume_button = _add(tr("Resume"), func() -> void: resumed.emit())
 	resume_button.name = "Resume"
 	_relabel()
 	Settings.hints_changed.connect(_relabel)
-	_add("Options", show_options)
-	_add("Codex", show_codex)
-	_add("Save & quit to title", func() -> void:
+	_add(tr("Options"), show_options)
+	_add(tr("Codex"), show_codex)
+	_add(tr("Save & quit to title"), func() -> void:
 		if RunManager.campaign != null:
 			RunManager.autosave()
 		quit_to_title.emit())
-	_add("Quit to desktop", func() -> void:
-		var confirm := ConfirmDialog.new("Quit REBEL_CELL? Progress is autosaved.")
+	_add(tr("Quit to desktop"), func() -> void:
+		var confirm := ConfirmDialog.new(tr("Quit REBEL_CELL? Progress is autosaved."))
 		confirm.position = Vector2(60, 120)
 		add_child(confirm)
 		confirm.confirmed.connect(func() -> void: RunManager.quit_game()))
+	# H24 S11: the campaign's share code has its line here (it read like debug output on
+	# the HQ's Pirate Radio note).
+	var code := code_line()
+	if code != "":
+		var seed_line := Label.new()
+		seed_line.name = "SeedLine"
+		seed_line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		seed_line.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		seed_line.text = code
+		seed_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		seed_line.mouse_filter = Control.MOUSE_FILTER_PASS
+		seed_line.tooltip_text = UiTip.fold(tr("Share this code: Start from code on the new campaign screen starts this campaign again."))
+		_menu.add_child(seed_line)
+
+
+## The campaign's share code as a line (H24 S11), in the player's language; "" without a
+## campaign.
+static func code_line() -> String:
+	var c := RunManager.campaign
+	if c == null or RunManager.corporation == null:
+		return ""
+	return TranslationServer.translate("Campaign code (share it: it starts this campaign): %s%s") % [CampaignCode.of(c, c.start_class_id),
+		TranslationServer.translate(" (local: REBEL_CELL is built from your profile)") if RunManager.corporation.generated_from_profile else ""]
 
 
 func _notification(what: int) -> void:
@@ -99,7 +124,7 @@ func _add(text: String, on_pressed: Callable) -> Button:
 
 ## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
 func _relabel() -> void:
-	resume_button.text = ("Resume %s" % Settings.hint(&"open_settings")).strip_edges()
+	resume_button.text = ("%s %s" % [tr("Resume"), Settings.hint(&"open_settings")]).strip_edges()
 
 
 func show_options() -> void:
@@ -115,15 +140,15 @@ func show_options() -> void:
 
 func show_codex() -> void:
 	_close_sub()
-	codex_note = ZineNote.new("CODEX", Vector2(520, 220)).make_reference()
+	codex_note = ZineNote.new(tr("CODEX"), Vector2(520, 220)).make_reference()
 	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	for section in entries:
-		codex_note.append("[b]%s[/b]" % section)
+		codex_note.append("[b]%s[/b]" % tr(section))
 		for item in entries[section]:
 			codex_note.append("  %s - %s" % [item["title"], String(item["text"]).split("\n")[0]])
 	_host.add_child(codex_note)
 	var back := Button.new()
-	back.text = "Back"
+	back.text = tr("Back")
 	back.name = "CodexBack"
 	back.pressed.connect(_close_sub)
 	_host.add_child(back)

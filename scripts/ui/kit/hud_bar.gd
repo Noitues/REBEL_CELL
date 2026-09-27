@@ -50,10 +50,12 @@ func _init() -> void:
 	stats = HudStats.new()
 	stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(stats)
+	# H24 S4: the bar shows its words as given, translated once here.
+	TextDb.shown_as_given(self)
 	loadout_button = Button.new()
 	loadout_button.name = "ViewLoadout"
-	loadout_button.text = "VIEW LOADOUT"
-	loadout_button.tooltip_text = UiTip.fold("The operative's deck and spinner (hub core and inner ring included).")
+	loadout_button.text = tr("VIEW LOADOUT")
+	loadout_button.tooltip_text = UiTip.fold(tr("The operative's deck and spinner (hub core and inner ring included)."))
 	loadout_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	loadout_button.pressed.connect(func() -> void: loadout_pressed.emit())
 	loadout_button.visible = false
@@ -61,7 +63,7 @@ func _init() -> void:
 	daemon_button = Button.new()
 	daemon_button.name = "Daemons"
 	daemon_button.flat = true
-	daemon_button.tooltip_text = UiTip.fold("The installed Daemons. Opens the tray: each sigil shows what its Daemon does.")
+	daemon_button.tooltip_text = UiTip.fold(tr("The installed Daemons. Opens the tray: each sigil shows what its Daemon does."))
 	daemon_button.custom_minimum_size = Vector2(52, 44)
 	daemon_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	daemon_button.draw.connect(_draw_daemon_icon)
@@ -75,8 +77,9 @@ func _init() -> void:
 	row.add_child(label)
 
 
-## Names the current screen ("01", "CYBERDECK HQ"); an empty title leaves the band blank.
-## The title takes only the width it needs (H21: the stat tags get the rest).
+## Names the current screen ("01", "CYBERDECK HQ"; the title translated by the caller); an
+## empty title leaves the band blank. The title takes only the width it needs (H21: the
+## stat tags get the rest).
 func set_screen(number: String, title: String) -> void:
 	_number = number
 	_title = title
@@ -86,8 +89,11 @@ func set_screen(number: String, title: String) -> void:
 	title_box.queue_redraw()
 
 
-## The stat tags: each [name, value, suffix] ("HEAT", "12", "/100").
-func set_stats(items: Array) -> void:
+## The stat tags: each [name, value, suffix] ("HEAT", "12", "/100"), and the small
+## captions over their groups (H24 S16: [[first tag index, words, tooltip], ...], the words
+## translated by the caller: "CAMPAIGN", "THIS RUN").
+func set_stats(items: Array, captions: Array = []) -> void:
+	stats.captions = captions
 	stats.items = items
 	stats.queue_redraw()
 	label.tooltip_text = label.text

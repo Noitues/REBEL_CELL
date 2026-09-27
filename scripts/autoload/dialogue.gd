@@ -9,8 +9,8 @@ extends CanvasLayer
 
 signal line_spoken(speaker: int, text: String)
 
-const SPEAKER_NAMES := {RC.Voice.NARRATOR: "", RC.Voice.STREET_MERC: "OPERATIVE", RC.Voice.CORPO: "CORPORATE",
-	RC.Voice.AI_OBSERVER: "OBSERVER", RC.Voice.DISPATCH: "DISPATCH"}
+const SPEAKER_NAMES := {RC.Voice.NARRATOR: "", RC.Voice.STREET_MERC: "OPERATIVE", RC.Voice.CORPO: "CORPORATE", # TR
+	RC.Voice.AI_OBSERVER: "OBSERVER", RC.Voice.DISPATCH: "DISPATCH"} # TR
 const SECONDS_PER_CHAR := 0.045
 const MIN_SECONDS := 1.6
 const MAX_QUEUE := 6
@@ -61,6 +61,8 @@ func _ready() -> void:
 	speaker_label = Label.new()
 	speaker_label.add_theme_font_override("font", Palette.mono())
 	speaker_label.add_theme_font_size_override("font_size", SPEAKER_FONT_SIZE)
+	# H24 S4: the name comes translated (speaker_name); shown as given.
+	speaker_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	box.add_child(speaker_label)
 	text_label = RichTextLabel.new()
 	text_label.bbcode_enabled = true
@@ -198,7 +200,7 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and
 ## the current text size (one page when the bar is not paged).
-func pages_of(text: String) -> PackedStringArray:
+func pages_of(text: String, lead: String = "") -> PackedStringArray:
 	var out := PackedStringArray()
 	if dock_lines <= 0:
 		out.append(text)
@@ -207,10 +209,10 @@ func pages_of(text: String) -> PackedStringArray:
 	var fs := text_label.get_theme_font_size("normal_font_size")
 	var sb := bar.get_theme_stylebox("panel")
 	var width := (bar.offset_right - bar.offset_left) - (sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0)
-	var wrapped := _wrap(text, width * PAGE_FILL, font, fs)
+	var wrapped := _wrap(text, width * PAGE_FILL, font, fs, lead)
 	if (wrapped[0] as PackedStringArray).size() > dock_lines:
 		# Several pages: each keeps room for CONTINUED_MARK on its last line (H23 S3).
-		wrapped = _wrap(text, width * PAGE_FILL - _text_width(CONTINUED_MARK, font, fs), font, fs)
+		wrapped = _wrap(text, width * PAGE_FILL - _text_width(CONTINUED_MARK, font, fs), font, fs, lead)
 	var lines: PackedStringArray = wrapped[0]
 	var glue: PackedStringArray = wrapped[1]
 	for i in range(0, lines.size(), dock_lines):
@@ -224,8 +226,10 @@ func pages_of(text: String) -> PackedStringArray:
 ## Wraps `text` into lines at most `limit` px wide (H22 #7): at spaces, and by characters
 ## inside a word wider than a line (Japanese / Chinese have no spaces; a pseudolocalised or
 ## German word can outgrow a narrow dock). Returns [lines, glue]: glue[k] joins line k to
-## line k + 1 (" " at a space, "" inside a word).
-func _wrap(text: String, limit: float, font: Font, fs: int) -> Array:
+## line k + 1 (" " at a space, "" inside a word). H24 S8: `lead` is the inline speaker's
+## name ("SOLACE:"): a word that does not fit after it fills the rest of that first line by
+## characters, so the first page always carries words (it showed "[SOLACE]:  …" alone).
+func _wrap(text: String, limit: float, font: Font, fs: int, lead: String = "") -> Array:
 	var lines := PackedStringArray()
 	var glue := PackedStringArray()
 	var cur := ""
@@ -234,7 +238,8 @@ func _wrap(text: String, limit: float, font: Font, fs: int) -> Array:
 		if _text_width(trial, font, fs) <= limit:
 			cur = trial
 			continue
-		if _text_width(word, font, fs) <= limit:
+		var after_lead := lead != "" and lines.is_empty() and cur == lead
+		if _text_width(word, font, fs) <= limit and not after_lead:
 			lines.append(cur)
 			glue.append(" ")
 			cur = word
@@ -312,17 +317,58 @@ const PAGE_FILL := 0.95
 ## so voice-over and logs can follow even with subtitles switched off. `translated`: the
 ## text is already in the player's language (TextDb content, a voice line through
 ## `voice_text`), so it is not translated again (H23 S17: pseudolocalised twice).
-func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"", translated: bool = false) -> void:
+## H24 S15: `scope` ties the line to a screen ("route", "event", "raid"...): it ends when
+## the player leaves that screen (`enter_screen` with another), queued or showing. Lines
+## with no scope (campaign news: Heat thresholds, raid warnings from a run) play out.
+func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"", translated: bool = false, scope: String = "") -> void:
 	if text == "":
 		return
 	history.append({"speaker": speaker, "text": text, "corporation": corporation_id})
 	line_spoken.emit(speaker, text)
 	if _queue.size() >= MAX_QUEUE:
 		_queue.pop_front()
-	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id, "translated": translated,
+	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id, "translated": translated, "scope": scope,
 		"seconds": seconds if seconds > 0.0 else maxf(MIN_SECONDS, text.length() * SECONDS_PER_CHAR)})
 	if _timer == null:
 		_next()
+
+
+## The screen on show now (the scenes report it) and the scope of the line on screen.
+var screen: String = ""
+var _shown_scope: String = ""
+var _shown_line: Dictionary = {}
+
+
+## The player is on screen `p_screen` now (H24 S15: the rule): a line tied to another
+## screen ends, the one showing and the queued ones; a new screen's own line takes the bar.
+## Lines with no scope are kept.
+func enter_screen(p_screen: String) -> void:
+	if p_screen == screen:
+		return
+	screen = p_screen
+	# The new screen's own lines first, then the lines with no scope; other screens' end.
+	var own: Array[Dictionary] = []
+	var kept: Array[Dictionary] = []
+	for l in _queue:
+		var sc := String(l.get("scope", ""))
+		if sc == p_screen:
+			own.append(l)
+		elif sc == "":
+			kept.append(l)
+	if bar.visible and _shown_scope == "" and not own.is_empty() and not _shown_line.is_empty():
+		# An unscoped line on show gives the bar to the screen's line and plays after it.
+		kept.push_front(_shown_line)
+	var has_own := not own.is_empty()
+	own.append_array(kept)
+	_queue = own
+	if bar.visible and _shown_scope != p_screen and (_shown_scope != "" or has_own):
+		_timer = null
+		_next()
+
+
+## The scope of the line on screen ("" when none, or when it has none).
+func shown_scope() -> String:
+	return _shown_scope if bar.visible else ""
 
 
 ## Marks the end of a page when the line goes on in the next one (H23 S3: a page cut
@@ -351,6 +397,7 @@ func clear() -> void:
 	_queue.clear()
 	_timer = null
 	bar.visible = false
+	_shown_scope = ""
 
 
 func is_showing() -> bool:
@@ -366,8 +413,11 @@ func _next() -> void:
 	if _queue.is_empty():
 		_timer = null
 		bar.visible = false
+		_shown_scope = ""
 		return
 	var line: Dictionary = _queue.pop_front()
+	_shown_scope = String(line.get("scope", ""))
+	_shown_line = line.duplicate()
 	# Page at the text size in force now (a settings change without a signal can't leave
 	# the bar paging for another size).
 	_apply_text_scale()
@@ -379,7 +429,8 @@ func _next() -> void:
 	# H22 #7: page the words as shown (translated once; a continued page already is, and so
 	# is a line said as translated, H23 S17).
 	var words := String(line["text"]) if continued or bool(line.get("translated", false)) else shown_text(String(line["text"]))
-	var shown_name := shown_text(name)
+	# H24 S4: speaker_name is already translated (it was translated twice).
+	var shown_name := name
 	if not continued:
 		# H23 S2: a line naming its own speaker keeps that name (never "SOLACE: SOLACE ...").
 		var own := own_speaker(shown_name, words)
@@ -387,7 +438,7 @@ func _next() -> void:
 		words = own[1]
 		name = shown_name
 	var body := ("%s: %s" % [shown_name, words]) if inline else words
-	var pages := pages_of(body)
+	var pages := pages_of(body, (shown_name + ":") if inline else "")
 	# The page on screen ends in CONTINUED_MARK while the line goes on (H23 S3).
 	var more := bool(line.get("more", false))
 	if pages.size() > 1:
@@ -463,7 +514,9 @@ func _apply_text_scale() -> void:
 		dock_lines = lines_fitting(default_rect)
 
 
-## The subtitle label: corporate lines carry their corporation's short name.
+## The subtitle label, in the player's language (H24 S4: translated here, once; the bar
+## and the event's speaker label show it as given): corporate lines carry their
+## corporation's short name.
 func speaker_name(speaker: int, corporation_id: StringName = &"") -> String:
 	if speaker == RC.Voice.CORPO and corporation_id != &"":
 		var registry: Node = get_tree().root.get_node_or_null(^"ContentRegistry") if is_inside_tree() else null
@@ -471,7 +524,8 @@ func speaker_name(speaker: int, corporation_id: StringName = &"") -> String:
 		if corp != null:
 			# H23 S15: the translated name (TextDb), its first word.
 			return TextDb.t(corp, "display_name").split(" ")[0].to_upper()
-	return SPEAKER_NAMES.get(speaker, "")
+	var own := String(SPEAKER_NAMES.get(speaker, ""))
+	return tr(own) if own != "" else ""
 
 
 ## DISPATCH: clean dark strip with amber system text; everyone else: paper strip, ink.
@@ -551,7 +605,7 @@ func line(key: String, speaker: int = -1, corporation_id: StringName = &"", clas
 
 
 ## Speaks the line for `key` if any. Returns the text spoken ("" when none).
-func speak(key: String, speaker: int = -1, corporation_id: StringName = &"", class_id: StringName = &"", salt: int = 0) -> String:
+func speak(key: String, speaker: int = -1, corporation_id: StringName = &"", class_id: StringName = &"", salt: int = 0, scope: String = "") -> String:
 	var l := line(key, speaker, corporation_id, class_id, salt)
 	if l == null:
 		return ""
@@ -562,7 +616,7 @@ func speak(key: String, speaker: int = -1, corporation_id: StringName = &"", cla
 				voice = set.speaker
 	# H23 S15: the line in the player's language (TextDb key of its set), said as translated.
 	var text := voice_text(l)
-	say(voice, text, 0.0, corporation_id, true)
+	say(voice, text, 0.0, corporation_id, true, scope)
 	return text
 
 
@@ -578,14 +632,15 @@ func voice_text(l: VoiceLineData) -> String:
 	return l.text
 
 
-func briefing(corporation_id: StringName, site_id: StringName, salt: int = 0) -> String:
-	return speak("site:%s" % site_id, RC.Voice.DISPATCH, corporation_id, &"", salt)
+## A Site's DISPATCH briefing; `scope` as in `say` (the run's route).
+func briefing(corporation_id: StringName, site_id: StringName, salt: int = 0, scope: String = "") -> String:
+	return speak("site:%s" % site_id, RC.Voice.DISPATCH, corporation_id, &"", salt, scope)
 
 
-func raid_warning(corporation_id: StringName, raid_id: StringName, salt: int = 0) -> String:
-	var text := speak("raid:%s" % raid_id, -1, corporation_id, &"", salt)
+func raid_warning(corporation_id: StringName, raid_id: StringName, salt: int = 0, scope: String = "") -> String:
+	var text := speak("raid:%s" % raid_id, -1, corporation_id, &"", salt, scope)
 	if text == "":
-		text = speak("raid:any", -1, corporation_id, &"", salt)
+		text = speak("raid:any", -1, corporation_id, &"", salt, scope)
 	return text
 
 
@@ -593,9 +648,9 @@ func threshold_line(corporation_id: StringName, heat: int, salt: int = 0) -> Str
 	return speak("threshold:%d" % heat, -1, corporation_id, &"", salt)
 
 
-func bark(class_id: StringName, trigger: String, salt: int = 0) -> String:
+func bark(class_id: StringName, trigger: String, salt: int = 0, scope: String = "") -> String:
 	# Class alternatives speak with their base class's barks.
-	return speak("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", _class_base.get(class_id, class_id), salt)
+	return speak("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", _class_base.get(class_id, class_id), salt, scope)
 
 
 func dj(salt: int = 0, corporation_id: StringName = &"") -> String:

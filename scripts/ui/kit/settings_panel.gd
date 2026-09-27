@@ -7,11 +7,15 @@ extends Control
 
 signal closed
 
-const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"]
-const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target",
-	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_ring": "Nudge ring (outer / inner)",
-	&"toggle_nudge_wheel": "Nudge wheel (mine / target)",
-	&"respin": "Respin", &"open_settings": "Pause / options"}
+## H24 S3/S4: the section names and action labels are keys ("# TR"); the panel shows its
+## words as given, translated where they are set.
+const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"] # TR
+const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target", # TR
+	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_ring": "Nudge ring (outer / inner)", # TR
+	&"toggle_nudge_wheel": "Nudge wheel (mine / target)", # TR
+	&"respin": "Respin", &"open_settings": "Pause / options"} # TR
+## The window modes in words (keys).
+const MODE_WORDS := ["Windowed", "Fullscreen", "Borderless"] # TR
 
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
 ## Why the last key pressed while rebinding was refused (Controls section).
@@ -47,7 +51,8 @@ var _label_counter: int = 0
 
 func _init() -> void:
 	custom_minimum_size = Vector2(520, 360)
-	var panel := ZinePanel.new("OPTIONS", 0.0, true)
+	TextDb.shown_as_given(self)
+	var panel := ZinePanel.new(tr("OPTIONS"), 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
 	_paper_panel = panel
@@ -59,7 +64,7 @@ func _init() -> void:
 	box.add_child(_tabs)
 	for name in SECTIONS:
 		var b := Button.new()
-		b.text = name
+		b.text = tr(name)
 		var n: String = name
 		b.pressed.connect(func() -> void: show_section(n))
 		_tabs.add_child(b)
@@ -67,19 +72,19 @@ func _init() -> void:
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(_body)
 	# Widgets are built once so tests (and Settings.changed) can drive them by name.
-	reduce_check = _check("Reduce effects (no scanlines, flicker, chromatic, distortion)", Settings.reduce_effects, Settings.set_reduce_effects)
-	flash_check = _check("Flash limiter (max 3 flashes per second)", Settings.flash_limiter, Settings.set_flash_limiter)
-	subtitles_check = _check("Subtitles with speaker names", Settings.subtitles, Settings.set_subtitles)
+	reduce_check = _check(tr("Reduce effects (no scanlines, flicker, chromatic, distortion)"), Settings.reduce_effects, Settings.set_reduce_effects)
+	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
+	subtitles_check = _check(tr("Subtitles with speaker names"), Settings.subtitles, Settings.set_subtitles)
 	var cfg := RunManager.config()
-	assist_check = _check("Assist mode for new campaigns (+%d free nudge a turn, +%d%% HP; no ICE records or achievements)" % [cfg.assist_free_nudges, roundi((cfg.assist_hp_multiplier - 1.0) * 100.0)], Settings.assist_mode, Settings.set_assist_mode)
+	assist_check = _check(tr("Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)") % [TextDb.signed(cfg.assist_free_nudges), TextDb.signed(roundi((cfg.assist_hp_multiplier - 1.0) * 100.0))], Settings.assist_mode, Settings.set_assist_mode)
 	assist_check.name = "AssistCheck"
 	scale_slider = _slider("Text scale", Settings.TEXT_SCALE_MIN, Settings.TEXT_SCALE_MAX, 0.1, Settings.text_scale, Settings.set_text_scale)
 	master_slider = _slider("Master volume", 0.0, 1.0, 0.05, Settings.master_volume, Settings.set_master_volume)
 	music_slider = _slider("Music volume", 0.0, 1.0, 0.05, Settings.music_volume, Settings.set_music_volume)
 	sfx_slider = _slider("SFX volume", 0.0, 1.0, 0.05, Settings.sfx_volume, Settings.set_sfx_volume)
 	mode_option = OptionButton.new()
-	for m in ["Windowed", "Fullscreen", "Borderless"]:
-		mode_option.add_item(m)
+	for m in MODE_WORDS:
+		mode_option.add_item(tr(m))
 	mode_option.select(Settings.window_mode)
 	mode_option.item_selected.connect(func(i: int) -> void: Settings.set_window_mode(i))
 	resolution_option = OptionButton.new()
@@ -89,11 +94,11 @@ func _init() -> void:
 		if r == Settings.resolution:
 			resolution_option.select(i)
 	resolution_option.item_selected.connect(func(i: int) -> void: Settings.set_resolution(Settings.RESOLUTIONS[i]))
-	vsync_check = _check("V-sync", Settings.vsync, Settings.set_vsync)
-	fps_check = _check("Show frame rate", Settings.show_fps, Settings.set_show_fps)
-	legend_check = _check("Map legend on the city views", Settings.map_legend, Settings.set_map_legend)
+	vsync_check = _check(tr("V-sync"), Settings.vsync, Settings.set_vsync)
+	fps_check = _check(tr("Show frame rate"), Settings.show_fps, Settings.set_show_fps)
+	legend_check = _check(tr("Map legend on the city views"), Settings.map_legend, Settings.set_map_legend)
 	legend_check.name = "LegendCheck"
-	log_check = _check("System log strip at the foot of the screen", Settings.system_log, Settings.set_system_log)
+	log_check = _check(tr("System log strip at the foot of the screen"), Settings.system_log, Settings.set_system_log)
 	log_check.name = "LogCheck"
 	language_option = OptionButton.new()
 	var langs := Settings.available_languages()
@@ -120,21 +125,21 @@ func show_section(name: String) -> void:
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, flash_check, subtitles_check, assist_check, _labelled("Text scale"), scale_slider]:
+			for w in [reduce_check, flash_check, subtitles_check, assist_check, _labelled(tr("Text scale")), scale_slider]:
 				_body.add_child(w)
 		"Display":
-			for w in [_labelled("Window mode"), mode_option, _labelled("Resolution (windowed)"), resolution_option, vsync_check, fps_check, legend_check, log_check]:
+			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, log_check]:
 				_body.add_child(w)
 		"Audio":
-			for w in [_labelled("Master volume"), master_slider, _labelled("Music volume"), music_slider, _labelled("SFX volume"), sfx_slider]:
+			for w in [_labelled(tr("Master volume")), master_slider, _labelled(tr("Music volume")), music_slider, _labelled(tr("SFX volume")), sfx_slider]:
 				_body.add_child(w)
 		"Controls":
-			_body.add_child(_labelled("Click a key, then press the new one. Cards stay on 1-9."))
+			_body.add_child(_labelled(tr("Click a key, then press the new one. Cards stay on 1-9.")))
 			var grid := GridContainer.new()
 			grid.columns = 4
 			_body.add_child(grid)
 			for action in Settings.REBINDABLE:
-				var l := _labelled(ACTION_LABELS.get(action, String(action)))
+				var l := _labelled(tr(String(ACTION_LABELS.get(action, String(action)))))
 				grid.add_child(l)
 				var b := Button.new()
 				b.text = _key_name(Settings.key_for(action))
@@ -148,11 +153,11 @@ func show_section(name: String) -> void:
 			_bind_note.custom_minimum_size.x = BIND_NOTE_WIDTH
 			_body.add_child(_bind_note)
 			var reset := Button.new()
-			reset.text = "Reset to defaults"
+			reset.text = tr("Reset to defaults")
 			reset.pressed.connect(func() -> void: Settings.reset_keybinds(); show_section("Controls"))
 			_body.add_child(reset)
 		"Language":
-			for w in [_labelled("Language (translations from assets/text/strings.csv)"), language_option]:
+			for w in [_labelled(tr("Language (translations from assets/text/strings.csv)")), language_option]:
 				_body.add_child(w)
 	UiWrap.fit(self)
 	if trap_focus:
@@ -165,7 +170,7 @@ func show_section(name: String) -> void:
 func begin_rebind(action: StringName) -> void:
 	rebinding = action
 	if _key_buttons.has(action):
-		_key_buttons[action].text = "press a key..."
+		_key_buttons[action].text = tr("press a key...")
 
 
 ## Feeds a key event to the rebinding (called from _unhandled_input and by tests).
@@ -180,9 +185,9 @@ func handle_key(event: InputEventKey) -> bool:
 	if err != "":
 		# Keep waiting for another key, and say why this one was refused.
 		for action in ACTION_LABELS:
-			err = err.replace("used by %s" % String(action), "used by %s" % ACTION_LABELS[action])
+			err = err.replace("used by %s" % String(action), "used by %s" % tr(String(ACTION_LABELS[action])))
 		if _bind_note != null and is_instance_valid(_bind_note):
-			_bind_note.text = "%s - press another key." % err  # wraps: the grid never widens
+			_bind_note.text = tr("%s - press another key.") % err  # wraps: the grid never widens
 		return true
 	Settings.rebind(rebinding, event.physical_keycode)
 	rebinding = &""
@@ -250,7 +255,7 @@ func _ready() -> void:
 
 ## "Close [Esc]" / "Close [B]": the hint follows the device and the binds (H20).
 func _relabel_close() -> void:
-	close_button.text = ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges()
+	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
 
 
 ## At least the content's size, so a host that scrolls can reach every control.

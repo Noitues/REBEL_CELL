@@ -57,7 +57,9 @@ func _ready() -> void:
 	saved_label.add_theme_font_override("font", Palette.marker())
 	saved_label.add_theme_font_size_override("font_size", 14)
 	saved_label.add_theme_color_override("font_color", Palette.CELL_PINK)
-	saved_label.text = "SAVED"
+	# H24 S4: translated when shown (show_saved), shown as given.
+	saved_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	saved_label.text = tr("SAVED")
 	saved_label.position = Vector2(1200, 690)
 	saved_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	saved_label.modulate.a = 0.0
@@ -71,16 +73,49 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if fps_label.visible:
 		fps_label.text = "%d fps" % Engine.get_frames_per_second()
+	# H24 S7: while the stamp shows, it follows the layout (a page built after the save,
+	# a pad prompt row appearing) and never sits on a control.
+	if _saved_live and saved_label.modulate.a > 0.0:
+		place_saved(saved_screen)
+	elif _saved_live and (_saved_tween == null or not _saved_tween.is_valid()):
+		_saved_live = false
 
 
 ## Autosave indicator (gap analysis 2.5): a marker "SAVED" that fades out, placed where it
 ## covers no control (H23 S1: in the bottom-right corner it sat on the raid's Back to HQ and
-## the route legend).
+## the route legend). H24 S7: placed a frame later, once the page the save came from has
+## laid out (a save runs before its new page is built, so the stamp was placed on the old
+## page's geometry: over the Daemons button after a new campaign), and placed again every
+## frame while it shows.
 func show_saved() -> void:
-	place_saved()
+	saved_label.text = tr("SAVED")
+	saved_label.modulate.a = 0.0
+	if _saved_tween != null and _saved_tween.is_valid():
+		_saved_tween.kill()
+	_saved_live = false
+	await get_tree().process_frame
+	place_saved(saved_screen)
 	saved_label.modulate.a = 1.0
-	var tw := create_tween()
-	tw.tween_property(saved_label, "modulate:a", 0.0, 1.2).set_delay(0.6)
+	_saved_live = true
+	_saved_tween = create_tween()
+	_saved_tween.tween_property(saved_label, "modulate:a", 0.0, SAVED_FADE).set_delay(SAVED_HOLD)
+
+
+## The stamp is up and follows the layout (H24 S7), and its fade.
+var _saved_live: bool = false
+var _saved_tween: Tween = null
+## The screen rect the stamp keeps to (empty: the viewport; tests set the 1280x720 page).
+var saved_screen: Rect2 = Rect2()
+## The process frame the stamp was last placed on (tests).
+var saved_placed_frame: int = -1
+## How long the stamp holds, then fades (s).
+const SAVED_HOLD := 0.6
+const SAVED_FADE := 1.2
+
+
+## Whether the SAVED stamp is on screen now (tests).
+func saved_showing() -> bool:
+	return saved_label.modulate.a > 0.0
 
 
 ## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
@@ -104,6 +139,7 @@ func place_saved(screen: Rect2 = Rect2()) -> Rect2:
 	var spot := saved_spot(own, screen, avoid_rects(get_tree().root))
 	saved_label.position = spot
 	saved_label.size = own
+	saved_placed_frame = Engine.get_process_frames()
 	return Rect2(spot, own)
 
 

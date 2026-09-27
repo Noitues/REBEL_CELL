@@ -63,6 +63,9 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	dim.color = Color(0, 0, 0, 0.72)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
+	# H24 S4: the viewer shows its words as given: the title comes translated, the action
+	# is a key ("UPGRADE") translated where shown.
+	TextDb.shown_as_given(self)
 	window = TerminalWindow.new(p_title, Palette.CELL_PINK)
 	window.custom_minimum_size = Vector2(700, 600)
 	# Under the subtitles (H21), as far as the 720 canvas allows.
@@ -106,7 +109,7 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	close_btn.pressed.connect(close)
 	bottom.add_child(close_btn)
 	if action != "":
-		_action_button = DripButton.new(action, "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
+		_action_button = DripButton.new(tr(action), "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
 		_action_button.name = "ActionButton"
 		_action_button.visible = false
 		_action_button.pressed.connect(confirm)
@@ -132,10 +135,10 @@ func _ready() -> void:
 
 ## Key hints follow the device in use and the binds (H20).
 func _relabel() -> void:
-	close_button.text = ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges()
-	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else "Left click"
-	var more := Settings.key_text(&"inspect") if Settings.pad_active else "Right click"
-	hint_label.text = ("%s: select the slot to %s. %s: details." % [pick, action.to_lower(), more]) if action != "" else "%s a slice for details." % ("Press" if Settings.pad_active else "Click")
+	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
+	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else tr("Left click")
+	var more := Settings.key_text(&"inspect") if Settings.pad_active else tr("Right click")
+	hint_label.text = (tr("%s: select the slot to %s. %s: details.") % [pick, tr(action).to_lower(), more]) if action != "" else tr("%s a slice for details.") % (tr("Press") if Settings.pad_active else tr("Click"))
 
 
 ## Pick mode prices (H20: the Miss slot costs more): `p_price_of(slot) -> int` and the
@@ -158,7 +161,7 @@ func _update_price() -> void:
 	if price_label == null:
 		return
 	var price := selected_price()
-	price_label.text = ("%d CYCLES" % price) if price >= 0 else ""
+	price_label.text = (tr("%d CYCLES") % price) if price >= 0 else ""
 	var short := price >= 0 and budget >= 0 and price > budget
 	price_label.add_theme_color_override("font_color", Palette.CELL_PINK if short else Palette.CELL_ACID)
 	if _action_button != null:
@@ -198,7 +201,7 @@ func set_core(p_hub: HubCoreData, p_ring: Array[RingSegmentData]) -> void:
 
 func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	var b := Button.new()
-	b.text = text
+	b.text = tr(text)
 	b.name = "Tab" + text
 	# Same colours for both tabs: the active one is dark with a border, the other in
 	# reverse video (light block, dark text) without one.
@@ -275,7 +278,7 @@ func _slice_text(i: int) -> String:
 	var s := _slice(i)
 	if s == null:
 		return String(slices[i])
-	var t := "%s %s" % [Palette.SLICE_NAMES.get(s.slice_type, "?"), s.base_output if s.base_output > 0 else ""]
+	var t := "%s %s" % [tr(String(Palette.SLICE_NAMES.get(s.slice_type, "?"))), s.base_output if s.base_output > 0 else ""]
 	if i < firmware.size() and firmware[i] != &"":
 		t += " {%s}" % firmware[i]
 	return t.strip_edges()
@@ -329,7 +332,7 @@ func _draw_wheel() -> void:
 	_wheel.draw_circle(c, r0 - 6, Color("#07080F"))
 	_wheel.draw_arc(c, r1, 0, TAU, 64, wheel_color, 2.5)
 	if hub == null and ring.is_empty():
-		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), "%d SLICES" % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
+		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
 	_draw_core(c)
 	if selected >= 0:
 		var am := _angle(selected)
@@ -341,7 +344,7 @@ func open_slot(index: int) -> void:
 	if _popup != null and is_instance_valid(_popup):
 		_popup.queue_free()
 	var s := _slice(index)
-	var pop := TerminalWindow.new("SLICE %d DETAIL" % index, Palette.CELL_ACID)
+	var pop := TerminalWindow.new(tr("SLICE %d DETAIL") % index, Palette.CELL_ACID)
 	pop.name = "SliceDetail"
 	pop.position = Vector2(400, 180)
 	pop.custom_minimum_size = Vector2(480, 0)
@@ -360,14 +363,14 @@ func open_slot(index: int) -> void:
 	var ups := PackedStringArray()
 	for u in upgrades:
 		if s != null and u.slice_type == s.slice_type and u.base_output > s.base_output:
-			ups.append("%s %d" % [Palette.SLICE_NAMES.get(u.slice_type, "?"), u.base_output])
+			ups.append("%s %d" % [tr(String(Palette.SLICE_NAMES.get(u.slice_type, "?"))), u.base_output])
 	if not ups.is_empty():
 		var up_label := Label.new()
-		up_label.text = "UPGRADES: " + ", ".join(ups)
+		up_label.text = tr("UPGRADES: %s") % ", ".join(ups)
 		up_label.add_theme_color_override("font_color", Palette.CELL_ACID)
 		pop.body.add_child(up_label)
 	var close_btn := Button.new()
-	close_btn.text = "Close"
+	close_btn.text = tr("Close")
 	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
 	pop.body.add_child(close_btn)
 	add_child(pop)
@@ -400,9 +403,9 @@ func _draw_core(c: Vector2) -> void:
 		var hot_hub := not _core_pads.is_empty() and _core_pads[0].has_focus()
 		_wheel.draw_circle(c, HUB_RADIUS, Color(Palette.NIGHT_SKY, 0.95))
 		_wheel.draw_arc(c, HUB_RADIUS, 0, TAU, 48, Palette.CELL_ACID if hot_hub else wheel_color, 2.0)
-		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), "HUB", HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
+		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
 		# The hub's name shrinks to fit the disc.
-		var hub_name := hub.display_name.to_upper()
+		var hub_name := TextDb.t(hub, "display_name").to_upper()
 		var fs := HUB_FONT_SIZE
 		var w := Palette.marker().get_string_size(hub_name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		if w > HUB_RADIUS * 2.0 - 8.0:
@@ -414,7 +417,7 @@ func _draw_core(c: Vector2) -> void:
 func open_part(part: Resource) -> void:
 	if _popup != null and is_instance_valid(_popup):
 		_popup.queue_free()
-	var pop := TerminalWindow.new("HUB CORE" if part is HubCoreData else "INNER RING SEGMENT", Palette.NEON_VIOLET)
+	var pop := TerminalWindow.new(tr("HUB CORE") if part is HubCoreData else tr("INNER RING SEGMENT"), Palette.NEON_VIOLET)
 	pop.name = "CoreDetail"
 	pop.position = Vector2(400, 180)
 	pop.custom_minimum_size = Vector2(480, 0)
@@ -424,7 +427,7 @@ func open_part(part: Resource) -> void:
 	desc.text = Codex.describe(part)
 	pop.body.add_child(desc)
 	var close_btn := Button.new()
-	close_btn.text = "Close"
+	close_btn.text = tr("Close")
 	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
 	pop.body.add_child(close_btn)
 	add_child(pop)

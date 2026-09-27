@@ -66,7 +66,7 @@ func test_fps_counter_follows_the_setting() -> void:
 	assert_true(Fx.fps_label.text.ends_with("fps"))
 	Settings.set_show_fps(false)
 	assert_false(Fx.fps_label.visible)
-	Fx.show_saved()
+	await Fx.show_saved()  # H24 S7: placed a frame later, once the page has laid out
 	assert_almost_eq(Fx.saved_label.modulate.a, 1.0, 0.001, "autosave indicator lit")
 
 

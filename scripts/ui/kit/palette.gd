@@ -49,9 +49,9 @@ const SLICE_GLYPHS := {
 	RC.SliceType.MISS: "✕",
 }
 const SLICE_NAMES := {
-	RC.SliceType.ATTACK: "ATK", RC.SliceType.CRIT: "CRIT", RC.SliceType.DEFEND: "DEF", RC.SliceType.EVADE: "EVD",
-	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFL",
-	RC.SliceType.MISS: "MISS",
+	RC.SliceType.ATTACK: "ATK", RC.SliceType.CRIT: "CRIT", RC.SliceType.DEFEND: "DEF", RC.SliceType.EVADE: "EVD", # TR
+	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFL", # TR
+	RC.SliceType.MISS: "MISS", # TR
 }
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).

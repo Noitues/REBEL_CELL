@@ -58,6 +58,18 @@ var max_height: float = 0.0:
 		_relayout()
 var _rects: Array[Rect2] = []
 var _tip_title: String = ""
+## H24 S16: small captions over groups of tags ([[first tag index, words, tooltip], ...],
+## the words translated by the caller), drawn before their group's first tag outside a
+## fight ("CAMPAIGN", "THIS RUN": the top bar's set changes between the HQ and a run).
+var captions: Array = []:
+	set(v):
+		captions = v
+		_relayout()
+## The captions' rects as laid out now (local; empty while they are not drawn).
+var _caption_rects: Array[Rect2] = []
+## Caption lettering and the gap after a caption at scale 1.0 (px).
+const CAPTION_SIZE := 10
+const CAPTION_GAP := 6.0
 
 
 func _init() -> void:
@@ -82,9 +94,9 @@ static func ice_value(level: int) -> String:
 
 ## The icon of tag `i`.
 ## Tag `i`'s name as drawn and measured: translated (H23 S16; the icon still follows the
-## name's own key).
+## name's own key). H24 S4: `tr`, so a bar shown as given still translates its keys.
 func tag_name(i: int) -> String:
-	return atr(String(items[i][0])) if i >= 0 and i < items.size() else ""
+	return tr(String(items[i][0])) if i >= 0 and i < items.size() else ""
 
 
 func icon_of(i: int) -> StringName:
@@ -115,7 +127,7 @@ func tag_rects() -> Array[Rect2]:
 ## Width of a tag fitted to its words at scale 1.0: the longer of the name and the icon
 ## with its value (H22 #14).
 func _fitted_tag_width(it: Array) -> float:
-	var name_w := Palette.marker().get_string_size(atr(String(it[0])), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
+	var name_w := Palette.marker().get_string_size(tr(String(it[0])), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
 	return maxf(PAD + name_w + PAD, _compact_tag_width(it))
 
 
@@ -135,11 +147,34 @@ func _compact_tag_width(it: Array) -> float:
 	return PAD + ICON_R * 2.0 + 5.0 + w + PAD
 
 
+## The captions' widths at scale `s` (each with its gap).
+func _caption_width(s: float) -> float:
+	var w := 0.0
+	for c in captions:
+		w += Palette.mono().get_string_size(String(c[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(CAPTION_SIZE * s)).x + CAPTION_GAP * s
+	return w
+
+
+## Whether the captions are drawn now (outside a fight, the tags on one row).
+func captions_shown() -> bool:
+	return not _caption_rects.is_empty()
+
+
+## The caption rects as laid out now (local).
+func caption_rects() -> Array[Rect2]:
+	return _caption_rects.duplicate()
+
+
 func _relayout() -> void:
 	var text_s := Settings.text_scale
 	var n := items.size()
 	var room := size.x if size.x > 1.0 else full_width(text_s)
 	_rects.clear()
+	_caption_rects.clear()
+	# The captions take their width off the tags' room (outside a fight).
+	var with_captions := not captions.is_empty() and max_height <= 0.0 and n > 0
+	if with_captions:
+		room = maxf(1.0, room - _caption_width(text_s))
 	# The largest scale each look may take (a height cap keeps a fight's top bar as it is).
 	var s := text_s
 	var most := text_s
@@ -182,10 +217,38 @@ func _relayout() -> void:
 			var w := _compact_tag_width(it) * tag_scale
 			_rects.append(Rect2(x, TOP_ROOM * tag_scale, w, COMPACT_H * tag_scale))
 			x += w + TAG_GAP * tag_scale
+	if with_captions and rows == 1 and not compact:
+		_place_captions()
 	var h := (TOP_ROOM + (COMPACT_H if compact else TAG_SIZE.y) + BOTTOM_ROOM + (rows - 1) * (TAG_SIZE.y + TOP_ROOM)) * tag_scale
 	if not is_equal_approx(custom_minimum_size.y, h):
 		custom_minimum_size.y = h
 	queue_redraw()
+
+
+## Moves the tags right to make room for each caption before its group's first tag.
+func _place_captions() -> void:
+	var t := tag_scale
+	var order := captions.duplicate()
+	order.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) < int(b[0]))
+	var shift := 0.0
+	var next_cap := 0
+	for i in _rects.size():
+		while next_cap < order.size() and int(order[next_cap][0]) == i:
+			var words := String(order[next_cap][1])
+			var w := Palette.mono().get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(CAPTION_SIZE * t)).x
+			var at := _rects[i].position.x + shift
+			_caption_rects.append(Rect2(at, _rects[i].position.y, w, _rects[i].size.y))
+			shift += w + CAPTION_GAP * t
+			next_cap += 1
+		_rects[i].position.x += shift
+
+
+## The caption index under `at` (local), or -1.
+func caption_at(at: Vector2) -> int:
+	for i in _caption_rects.size():
+		if _caption_rects[i].has_point(at):
+			return i
+	return -1
 
 
 ## The tag index under `at` (local), or -1.
@@ -198,11 +261,17 @@ func tag_at(at: Vector2) -> int:
 
 
 func _get_tooltip(at_position: Vector2) -> String:
+	var ci := caption_at(at_position)
+	if ci >= 0:
+		var order := captions.duplicate()
+		order.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) < int(b[0]))
+		_tip_title = String(order[ci][1])
+		return UiTip.fold(String(order[ci][2]) if order[ci].size() > 2 else "")
 	var i := tag_at(at_position)
 	if i < 0:
 		return ""
 	var it: Array = items[i]
-	_tip_title = String(it[0])
+	_tip_title = tr(String(it[0]))
 	var tip := String(it[3]) if it.size() > 3 else ""
 	if tip == "":
 		tip = "%s: %s%s" % [String(StatIcon.NAMES.get(icon_of(i), String(it[0]).capitalize())), String(it[1]), String(it[2]) if it.size() > 2 else ""]
@@ -215,6 +284,15 @@ func _make_custom_tooltip(for_text: String) -> Object:
 
 func _draw() -> void:
 	var s := tag_scale
+	if not _caption_rects.is_empty():
+		var order := captions.duplicate()
+		order.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) < int(b[0]))
+		var cfs := roundi(CAPTION_SIZE * s)
+		var mono := Palette.mono()
+		for k in mini(order.size(), _caption_rects.size()):
+			var cr := _caption_rects[k]
+			draw_line(Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.position.y), Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.end.y), Color(Palette.CELL_ACID, 0.35), 1.0)
+			draw_string(mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Palette.CELL_ACID)
 	for i in mini(items.size(), _rects.size()):
 		var it: Array = items[i]
 		var box := _rects[i]

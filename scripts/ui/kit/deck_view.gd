@@ -24,6 +24,8 @@ var hint_label: Label
 const GRID_WIDTH := 860.0
 const GRID_GAP := 14.0
 const CARDS_PER_ROW := 4
+## Card rarities in words (keys).
+const RARITY_WORDS: Array[String] = ["Common", "Uncommon", "Rare", "Boss"] # TR
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -37,7 +39,10 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	dim.color = Color(0, 0, 0, 0.72)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
-	window = TerminalWindow.new("%s // %d CARDS" % [p_title, deck.size()], Palette.CELL_PINK)
+	# H24 S4: the viewer shows its words as given: the title comes translated, the action
+	# is a key ("REMOVE") translated where shown.
+	TextDb.shown_as_given(self)
+	window = TerminalWindow.new(tr("%s // %d CARDS") % [p_title, deck.size()], Palette.CELL_PINK)
 	window.custom_minimum_size = Vector2(900, 540)
 	window.position = Vector2(190, SubtitleStrip.top_below(70.0))  # under the subtitles (H21)
 	add_child(window)
@@ -88,7 +93,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	close_btn.pressed.connect(close)
 	bottom.add_child(close_btn)
 	if action != "":
-		_action_button = DripButton.new(action, "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
+		_action_button = DripButton.new(tr(action), "", DripButton.DRIP_PINK, 34, [[0, 26, 0.3]])
 		_action_button.name = "ActionButton"
 		_action_button.visible = false
 		_action_button.pressed.connect(confirm)
@@ -111,16 +116,16 @@ func _ready() -> void:
 
 ## Key hints follow the device in use and the binds (H20).
 func _relabel() -> void:
-	close_button.text = ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges()
-	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else "Left click"
-	var more := Settings.key_text(&"inspect") if Settings.pad_active else "Right click"
-	hint_label.text = ("%s: select a card to %s. %s: details." % [pick, action.to_lower(), more]) if action != "" else "%s a card for details." % ("Press" if Settings.pad_active else "Click")
+	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
+	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else tr("Left click")
+	var more := Settings.key_text(&"inspect") if Settings.pad_active else tr("Right click")
+	hint_label.text = (tr("%s: select a card to %s. %s: details.") % [pick, tr(action).to_lower(), more]) if action != "" else tr("%s a card for details.") % (tr("Press") if Settings.pad_active else tr("Click"))
 
 
 ## A header tab (the loadout view's DECK / SPINNER switch).
 func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	var b := Button.new()
-	b.text = text
+	b.text = tr(text)
 	b.name = "Tab" + text
 	# Same colours for both tabs: the active one is dark with a border, the other in
 	# reverse video (light block, dark text) without one.
@@ -187,7 +192,7 @@ func open_card(index: int) -> void:
 	if _popup != null and is_instance_valid(_popup):
 		_popup.queue_free()
 	var card := lookup.get_content(deck[index]) as CardData
-	var pop := TerminalWindow.new("CARD DETAIL", Palette.CELL_ACID)
+	var pop := TerminalWindow.new(tr("CARD DETAIL"), Palette.CELL_ACID)
 	pop.name = "CardDetail"
 	pop.position = Vector2(360, 130)
 	pop.custom_minimum_size = Vector2(560, 0)
@@ -203,15 +208,15 @@ func open_card(index: int) -> void:
 	info.custom_minimum_size.x = 320
 	row.add_child(info)
 	if card != null:
-		for line in ["%s  //  %d RAM" % [TextDb.t(card, "display_name").to_upper(), card.ram_cost],
-				["Common", "Uncommon", "Rare", "Boss"][clampi(card.rarity, 0, 3)] + (" // exhausts" if card.exhaust else ""), Codex.describe(card)]:
+		for line in [tr("%s  //  %d RAM") % [TextDb.t(card, "display_name").to_upper(), card.ram_cost],
+				tr(RARITY_WORDS[clampi(card.rarity, 0, 3)]) + (tr(" // exhausts") if card.exhaust else ""), Codex.describe(card)]:
 			var l := Label.new()
 			l.text = line
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			l.custom_minimum_size.x = 320
 			info.add_child(l)
 	var close_btn := Button.new()
-	close_btn.text = "Close"
+	close_btn.text = tr("Close")
 	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
 	pop.body.add_child(close_btn)
 	add_child(pop)

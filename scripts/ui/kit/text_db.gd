@@ -20,16 +20,142 @@ static func key_for(res: Resource, field: String) -> String:
 static func t(res: Resource, field: String) -> String:
 	if res == null or not (field in res):
 		return ""
-	var fallback := String(res.get(field))
-	var key := key_for(res, field)
-	var translated := TranslationServer.translate(key)
-	return fallback if translated == key or translated == "" else String(translated)
+	return _or_own(key_for(res, field), String(res.get(field)))
 
 
 ## Translated UI string by key (`ui.<name>`), or the fallback.
 static func ui(key: String, fallback: String) -> String:
-	var translated := TranslationServer.translate(key)
-	return fallback if translated == key or translated == "" else String(translated)
+	return _or_own(key, fallback)
+
+
+## `key` translated when a catalogue has it, else `own` (H24 S4: under pseudolocalisation
+## Godot "translates" a key no catalogue has into the key itself, so a generated Mirror
+## elite showed "[ĈàŕðÐàţà.ṁîŕŕôŕ_...]"). Own text is pseudolocalised like everything else
+## then, once.
+static func _or_own(key: String, own: String) -> String:
+	if not has_message(key):
+		return String(TranslationServer.pseudolocalize(own)) if TranslationServer.pseudolocalization_enabled and own != "" else own
+	var translated := String(TranslationServer.translate(key))
+	return own if translated == key or translated == "" else translated
+
+
+## Whether a loaded catalogue has `key` for the player's language or the fallback one.
+static func has_message(key: String) -> bool:
+	for locale in [TranslationServer.get_locale(), String(ProjectSettings.get_setting("internationalization/locale/fallback", "en"))]:
+		var cat := TranslationServer.get_translation_object(locale)
+		if cat != null and String(cat.get_message(key)) != "":
+			return true
+	return false
+
+
+## A signed number for the screen ("+3", "-2", "0"; H24 S2): translated formats take it
+## as "%s" (Godot's pseudolocalisation does not skip "%+d" and broke the format).
+static func signed(n: int) -> String:
+	return ("+%d" % n) if n > 0 else str(n)
+
+
+## Marks `text` as a translation key used in code without translating it here (it is
+## translated where it is shown, e.g. a top-bar tag's name). `tools/export_text.gd` exports
+## every `TextDb.mark("...")`, `tr("...")`, `atr("...")` and `TranslationServer.translate("...")`
+## literal under scripts/ (H24 S1).
+static func mark(text: String) -> String:
+	return text
+
+
+## Makes `node` and everything under it show its words as given (H24 S4: translate exactly
+## once). Screens translate where they build their words (tr for code words, TextDb for
+## content); the Controls that show them must not translate them again (a pseudolocalised
+## "[[Warm Cache] (10)]"), tooltips included.
+static func shown_as_given(node: Node) -> void:
+	node.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	if node is Control:
+		(node as Control).tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	# The map keys under it show their fixed row words as keys and translate them themselves.
+	_legends_translate(node)
+
+
+## The map key's class: it shows its fixed row words as keys and translates them itself.
+const LEGEND_CLASS := &"MapLegend"
+
+
+static func _legends_translate(node: Node) -> void:
+	for child in node.get_children():
+		# By class name: TextDb stays free of the kit's view classes (tools load it alone).
+		var script: Script = child.get_script()
+		if script != null and script.get_global_name() == LEGEND_CLASS:
+			translates_itself(child)
+		else:
+			_legends_translate(child)
+
+
+## Lets a part that shows its own fixed words as keys (a map legend's rows) translate them
+## itself inside a page shown as given (`shown_as_given`).
+static func translates_itself(node: Node) -> void:
+	node.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_ALWAYS
+
+
+## Code-side translation keys (H24 S1): every string literal passed to `tr`, `atr`,
+## `TranslationServer.translate` or `TextDb.mark` in the .gd files under `dirs` (recursive,
+## comment lines skipped), and every string literal on a line ending in the marker
+## `# TR` (words kept in constants, translated where they are shown), unescaped, sorted,
+## no duplicates.
+static func code_keys(dirs: PackedStringArray) -> PackedStringArray:
+	var re := RegEx.create_from_string("(?<![A-Za-z0-9_])(?:tr|atr|TranslationServer\\.translate|TextDb\\.mark)\\(\\s*\"((?:[^\"\\\\]|\\\\.)*)\"")
+	var any := RegEx.create_from_string("(?<![&A-Za-z0-9_])\"((?:[^\"\\\\]|\\\\.)*)\"")
+	var seen := {}
+	for dir in dirs:
+		for path in _gd_files(dir):
+			var src := FileAccess.get_file_as_string(path)
+			for line in src.split("\n"):
+				if line.strip_edges().begins_with("#"):
+					continue
+				var marked := line.strip_edges(false, true).ends_with(CODE_MARK)
+				for m in (any if marked else re).search_all(line):
+					var k := unescape(m.get_string(1))
+					if k != "":
+						seen[k] = true
+	var out := PackedStringArray(seen.keys())
+	out.sort()
+	return out
+
+
+## The end-of-line marker for lines whose string literals are all translation keys.
+const CODE_MARK := "# TR"
+
+
+## A GDScript string literal's body as the string it makes (\n, \t, \", \', \\).
+static func unescape(body: String) -> String:
+	var out := ""
+	var i := 0
+	while i < body.length():
+		var ch := body[i]
+		if ch == "\\" and i + 1 < body.length():
+			var nx := body[i + 1]
+			match nx:
+				"n":
+					out += "\n"
+				"t":
+					out += "\t"
+				_:
+					out += nx
+			i += 2
+			continue
+		out += ch
+		i += 1
+	return out
+
+
+static func _gd_files(dir: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	var d := DirAccess.open(dir)
+	if d == null:
+		return out
+	for f in d.get_files():
+		if f.ends_with(".gd"):
+			out.append(dir.path_join(f))
+	for sub in d.get_directories():
+		out.append_array(_gd_files(dir.path_join(sub)))
+	return out
 
 
 ## Fields that carry player-facing text on any content resource.
@@ -88,16 +214,13 @@ static func voice_key(set: LineSetData, index: int) -> String:
 static func voice(set: LineSetData, index: int) -> String:
 	if set == null or index < 0 or index >= set.lines.size() or set.lines[index] == null:
 		return ""
-	var fallback := set.lines[index].text
-	var key := voice_key(set, index)
-	var translated := TranslationServer.translate(key)
-	return fallback if translated == key or translated == "" else String(translated)
+	return _or_own(voice_key(set, index), set.lines[index].text)
 
 
 ## Screen sentences that are not content (H23 S5: the raid setup's opening line), by key;
 ## exported with the content strings so translators see them.
 const UI_TEXT := {
-	"ui.raid_intro": "The corp is raiding your CORE. Place defences to cut the damage, then RUN THE RAID.",
+	"ui.raid_intro": "The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE.",
 }
 
 

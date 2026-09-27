@@ -55,7 +55,10 @@ func _relabel() -> void:
 		if key == "":
 			continue
 		var l := Label.new()
-		l.text = "%s  %s" % [key, String(p[1])]
+		# H24 S4: the verb is the key, translated here once; "A  Buy" is no key, so the label
+		# shows it as given.
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		l.text = "%s  %s" % [key, tr(String(p[1]))]
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		l.add_theme_color_override("font_color", Palette.CELL_ACID)
 		add_child(l)

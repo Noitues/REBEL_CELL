@@ -43,7 +43,7 @@ static func font_px() -> int:
 
 ## The lettering as drawn and measured: translated (H23 S16: drawn words never were).
 func shown_text() -> String:
-	return text if pre_translated else atr(text)
+	return text if pre_translated else tr(text)  # H24 S4: tr, so a page shown as given still translates the key
 
 
 ## The label is already translated (its caller builds it from translated parts with a

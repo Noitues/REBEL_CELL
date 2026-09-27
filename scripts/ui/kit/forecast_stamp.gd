@@ -43,12 +43,12 @@ func _init(p_caption: String = "", p_verdict: String = "", p_color: Color = Pale
 
 ## The caption as drawn: translated (H23 S16).
 func shown_caption() -> String:
-	return atr(caption)
+	return tr(caption)
 
 
 ## The verdict as drawn: translated (H23 S16).
 func shown_verdict() -> String:
-	return atr(verdict)
+	return tr(verdict)
 
 
 ## The caption's font size: the text scale's, shrunk to fit the ring's width.

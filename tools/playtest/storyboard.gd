@@ -99,8 +99,13 @@ func _close(n: Node) -> void:
 
 func _run() -> void:
 	await _settle(1)  # the root is still adding its children during _ready
-	# 1. Title.
-	var title := _open(TITLE)
+	# 1. Title. H24 S13: its Continue line shows this storyboard's own campaign (private
+	# slot), the one its HQ shots show, not the designer's newest slot (Heat 14 vs 0).
+	RunManager.new_campaign(7)
+	RunManager.autosave()
+	var title: Node = TITLE.instantiate()
+	title.continue_slot = SLOT
+	get_tree().root.add_child(title)
 	await _shot("title", "The game's first screen.")
 	await _close(title)
 	# 2. HQ with a new campaign, then the city Grid.

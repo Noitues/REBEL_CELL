@@ -1,12 +1,17 @@
 extends SceneTree
-## Text export for localisation (GDD 10). Dumps every player-facing content string to
-## assets/text/strings.csv as `keys,en` (Godot's CSV translation importer picks up extra
-## locale columns). Run headless from the project root:
+## Text export for localisation (GDD 10). Dumps every player-facing content string, the
+## screen sentences (TextDb.UI_TEXT) and every word the code translates (H24 S1: the
+## literals passed to tr / atr / TranslationServer.translate / TextDb.mark under
+## scripts/) to assets/text/strings.csv as `keys,en` (Godot's CSV translation importer
+## picks up extra locale columns). Run headless from the project root, then re-import
+## (`godot --headless --path . --import`) to rebuild the .translation:
 ##   godot --headless --path . -s tools/export_text.gd
 ## Existing translations in other columns are kept; new keys get an empty cell.
 
 const RegistryScript := preload("res://scripts/autoload/content_registry.gd")
 const OUT_PATH := "res://assets/text/strings.csv"
+## Where the code-side keys are read from (H24 S1).
+const CODE_ROOT := "res://scripts"
 
 
 func _init() -> void:
@@ -16,6 +21,16 @@ func _init() -> void:
 	for id in registry.all_ids():
 		lookup.add(registry.get_content(id))
 	var rows := TextDb.collect(lookup)
+	# H24 S1: the words the code translates (tr / atr / TranslationServer.translate /
+	# TextDb.mark literals under scripts/), their English being the key itself.
+	var have := {}
+	for row in rows:
+		have[String(row[0])] = true
+	for k in TextDb.code_keys(PackedStringArray([CODE_ROOT])):
+		if not have.has(k):
+			rows.append([k, k])
+			have[k] = true
+	rows.sort_custom(func(a: Array, b: Array) -> bool: return String(a[0]) < String(b[0]))
 	# Keep any translation columns already in the file.
 	var existing := {}
 	var locales: PackedStringArray = PackedStringArray(["en"])
