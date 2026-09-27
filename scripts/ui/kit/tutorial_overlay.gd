@@ -11,7 +11,7 @@ signal finished
 const BUTTON_ROW_HEIGHT := 40.0
 
 const STEPS: Array[Dictionary] = [
-	{"title": "THE WHEEL", "text": "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it, and its chips show every result (red HP = damage coming, BLK = block, RAM, HEAT...). Glyphs: ▲ attack, ✦ crit, ■ defend, ⬢ shield, ◇ evade, ⬡ deploy, ✚ heal, ◈ afflict, ✕ miss. {inspect_how} anything to read it.", "until": ""},
+	{"title": "THE WHEEL", "text": "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it.", "until": ""},
 	{"title": "NUDGE", "text": "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD, 2 off for PARTIAL (half). The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}", "until": "nudge"},
 	{"title": "RESISTANCE", "text": "Enemy wheels resist: each point absorbs one tick of your manipulation before it moves. Flip and Respin are blocked while resistance is up. Strip it, breach the Hub, or spin past it.", "until": ""},
 	{"title": "CARDS", "text": "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.", "until": "card"},
@@ -74,7 +74,7 @@ static func step_text(i: int) -> String:
 		keys[String(action)] = Settings.hint(action)
 	var pad := Settings.pad_active
 	keys["inspect_how"] = "Press %s on" % Settings.key_text(&"inspect") if pad else "Hover or right-click"
-	keys["nudge_how"] = ("%s and %s nudge the wheel the arrows mark." % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right")]) if Settings.key_text(&"nudge_left") != "" else ""
+	keys["nudge_how"] = ("%s and %s nudge the wheel the arrows mark; %s switches between yours and the target, %s between the outer and inner ring." % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right"), Settings.key_text(&"toggle_nudge_wheel"), Settings.key_text(&"toggle_ring")]) if Settings.key_text(&"nudge_left") != "" else ""
 	keys["card_how"] = "Pick a card with A, choose a glowing target with the D-pad, press A again (B cancels)." if pad else "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). Keys 1-9 pick cards."
 	keys["undo_how"] = "UNDO %s" % Settings.hint(&"rewind")
 	return String(STEPS[i]["text"]).format(keys)

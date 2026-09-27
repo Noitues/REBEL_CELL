@@ -32,6 +32,8 @@ var lookup: ContentLookup = null
 var highlighted: bool = false
 ## A docked satellite that is the current target ("" = none).
 var targeted_satellite: StringName = &""
+## What each docked satellite's needle lands on: id -> {type, tier, text} (from the scene).
+var satellite_landings: Dictionary = {}
 var wheel_color: Color = Palette.CELL_PINK
 ## Ghost preview (GDD 9.2): predicted outer/inner rotation after a hovered card, or null.
 var ghost_rotation: Variant = null
@@ -90,8 +92,14 @@ const ARROW_SPAN := 13.0
 const ARROW_HIT := 18.0
 ## Satellite marker hit radius (px at text scale 1.0).
 const SATELLITE_HIT := 14.0
-## How far out from its marker a satellite's label sits (px at text scale 1.0).
-const SATELLITE_LABEL_OUT := 26.0
+## Slice values sit this far outside the rim; satellites dock beyond them with this gap.
+const VALUE_OUT := 16.0
+const SATELLITE_GAP := 12.0
+## At big text the wheel never shrinks below this share of its unconstrained size (H22:
+## at 1.6 it went from 126 to 62 px and names were cut).
+const RADIUS_FLOOR := 0.8
+## A satellite's hex token radius (px at text scale 1.0).
+const SATELLITE_TOKEN := 11.0
 ## Aim quality pips on the tag (1 = half power, 2 = good, 3 = perfect).
 const TIER_PIPS := {RC.PrecisionTier.PARTIAL: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
 const PIP_RADIUS := 3.0
@@ -148,7 +156,11 @@ func _get_tooltip(at_position: Vector2) -> String:
 			return "Nudge %s%s one tick %s.\nDrop a nudge card here to aim it this way." % [combatant.display_name, ring, which]
 		"satellite":
 			var sat := _satellite(StringName(z["id"]))
-			return "%s (%d HP): takes hits aimed at the slice it guards." % [sat.display_name, sat.hp] if sat != null else ""
+			if sat == null:
+				return ""
+			var land: Dictionary = satellite_landings.get(sat.id, {})
+			return "%s (%d HP): takes hits aimed at the slice it guards.%s" % [sat.display_name, sat.hp,
+				("\nIts needle lands on %s." % String(land["text"])) if not land.is_empty() else ""]
 		"slot":
 			return _slice_label(int(z["slot"]))
 		"hub":
@@ -283,9 +295,8 @@ func arrows() -> Array[Dictionary]:
 func zone_at(point: Vector2) -> Dictionary:
 	if combatant == null:
 		return {}
-	for ar in arrows():
-		if arrow_center(int(ar["ring"]), int(ar["direction"])).distance_to(point) <= ARROW_HIT * maxf(1.0, _ts()):
-			return {"kind": "arrow", "ring": ar["ring"], "direction": ar["direction"]}
+	# Satellites first (H22: at big text a satellite near the top sat inside an arrow's hit
+	# area and couldn't be aimed at).
 	for sat in satellites:
 		var sp := _satellite_pos(sat)
 		if sp.distance_to(point) <= SATELLITE_HIT * maxf(1.0, _ts()):
@@ -293,6 +304,9 @@ func zone_at(point: Vector2) -> Dictionary:
 			# at a satellite takes its way from the side it is dropped on).
 			var cw := (sp - global_center()).orthogonal() * -1.0
 			return {"kind": "satellite", "id": sat.id, "direction": 1 if (point - sp).dot(cw) >= 0.0 else -1}
+	for ar in arrows():
+		if arrow_center(int(ar["ring"]), int(ar["direction"])).distance_to(point) <= ARROW_HIT * maxf(1.0, _ts()):
+			return {"kind": "arrow", "ring": ar["ring"], "direction": ar["direction"]}
 	var slot := slot_at_global(point)
 	if slot >= 0:
 		return {"kind": "slot", "slot": slot}
@@ -311,7 +325,12 @@ func _satellite(id: StringName) -> CombatantState:
 func _satellite_pos(sat: CombatantState) -> Vector2:
 	var tps := combatant.wheel.ticks_per_slice()
 	var a := _ang(sat.dock_slot * tps - combatant.wheel.rotation)
-	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + 34)
+	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + _satellite_out())
+
+
+## How far outside the rim satellites dock: past the slice values (H22: they sat on them).
+static func _satellite_out() -> float:
+	return VALUE_OUT + _fs(VALUE_FONT_SIZE) * 0.5 + SATELLITE_GAP * _ts()
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -381,7 +400,10 @@ func _radius() -> float:
 	# current text scale (H21: at 1.3+ the tag ran over the status line).
 	var cy := size.y * CENTER_Y
 	var tag_room := _tag_reserve()
-	r = minf(r, (cy - INTENT_HEIGHT - tag_room) / (1.0 + BAND_SHARE))
+	# Room above for the tag, but never below RADIUS_FLOOR of the unconstrained size: the tag
+	# then clamps to the view's top and the arrows draw over it (H22: the wheel vanished).
+	r = minf(r, maxf((cy - INTENT_HEIGHT - tag_room) / (1.0 + BAND_SHARE), r * RADIUS_FLOOR))
+	# Room below for the HP number and the last-turn line is a hard limit (the hand is there).
 	r = minf(r, size.y - cy - HP_TEXT_GAP - _fs(HP_FONT_SIZE) - _fs(HUB_FONT_SIZE) - LAST_TURN_GAP - DISC_MARGIN * 0.2)
 	return maxf(MIN_RADIUS, r)
 
@@ -476,7 +498,7 @@ func _draw() -> void:
 		SliceIcon.draw_on_slice(self, center + dir * (inner + band * 0.42), band * 0.36, slice.slice_type, sc)
 		if slice.base_output > 0:
 			var vs := _fs(VALUE_FONT_SIZE)
-			draw_string(Palette.display(), center + dir * (radius + 16) + Vector2(-vs, vs * 0.4), str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, vs * 2, vs, _col(sc.lightened(0.35)))
+			draw_string(Palette.display(), center + dir * (radius + VALUE_OUT) + Vector2(-vs, vs * 0.4), str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, vs * 2, vs, _col(sc.lightened(0.35)))
 		var tip := center + dir * (radius - 3)
 		var base := center + dir * (radius - 10)
 		var side := dir.orthogonal() * 4.0
@@ -498,24 +520,28 @@ func _draw() -> void:
 	for sat in satellites:
 		var satp := _satellite_pos(sat) - global_position
 		var sat_col := _col(Palette.CELL_ACID if sat.is_player else Palette.RESIST_GOLD)
-		draw_arc(satp, 9, 0, TAU, 16, sat_col, 1.5)
+		# A hex token with the slice its own needle lands on (its wheel, GDD 2.10) and its HP
+		# on a plate beside it; the name and the slice words are the tooltip (H22).
+		var tok_r := SATELLITE_TOKEN * _ts()
+		var hex := PackedVector2Array()
+		for k in 7:
+			var ha := TAU * k / 6.0 + PI / 6.0
+			hex.append(satp + Vector2(cos(ha), sin(ha)) * tok_r)
+		draw_colored_polygon(hex, Color(Palette.NIGHT_SKY, 0.9))
+		draw_polyline(hex, sat_col, 2.0)
+		var land: Dictionary = satellite_landings.get(sat.id, {})
+		if not land.is_empty():
+			SliceIcon.draw_icon(self, satp, tok_r * 0.6, int(land["type"]), Palette.slice_color(int(land["type"])))
 		var sat_out: Dictionary = outcome.get("satellites", {}).get(sat.id, {})
-		var sat_text := "%s %d" % [sat.display_name.to_lower(), sat.hp]
+		var sat_text := "%d" % sat.hp
 		if not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
-			sat_text += " → %d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " → ✕"
-		# The label sits outside the values on a dark plate so it never mixes with a slice's
-		# number (H22), with a small portrait-like hex token for the satellite.
+			sat_text += "→%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else "→✕"
 		var out_dir := (satp - _center()).normalized()
 		var lfs := _fs(HUB_FONT_SIZE + 1)
 		var lw := Palette.mono().get_string_size(sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
-		var lp := satp + out_dir * (SATELLITE_LABEL_OUT * _ts()) - Vector2(lw * 0.5, -lfs * 0.35)
+		var lp := satp + out_dir * (tok_r + lfs) - Vector2(lw * 0.5, -lfs * 0.35)
 		draw_rect(Rect2(lp - Vector2(3, lfs), Vector2(lw + 6, lfs + 5)), Color(Palette.NIGHT_SKY, 0.85))
 		draw_string(Palette.mono(), lp, sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
-		var hex := PackedVector2Array()
-		for k in 7:
-			var ha := TAU * k / 6.0
-			hex.append(satp + Vector2(cos(ha), sin(ha)) * 6.0)
-		draw_polyline(hex, sat_col, 1.5)
 		if sat.id == targeted_satellite:
 			_draw_crosshair(satp, 15.0)
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
@@ -542,7 +568,7 @@ func _draw() -> void:
 			var e0 := _tick_angle(k * 10 + 5, wheel.inner_rotation)
 			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
 			var m := _tick_angle(k * 10, wheel.inner_rotation)
-			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), seg.display_name if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, _col(Palette.PAPER))
+			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), seg.display_name if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, mini(_fs(9), 12), _col(Palette.PAPER))
 	# Pointers: short white gauge needles, hub just outside the rim, tip just past its edge.
 	var pcol := Color(_col(Palette.PAPER), pointer_alpha)
 	for p in wheel.pointer_ticks:
@@ -571,7 +597,6 @@ func _draw() -> void:
 		draw_string(Palette.mono(), hub + Vector2(10, -4), "next", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
 	_draw_ghost(center, radius, wheel)
 	_draw_inner_ghost(center, radius, wheel)
-	_draw_arrows()
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
 	if highlighted and combatant.is_alive():
@@ -588,6 +613,7 @@ func _draw() -> void:
 	var tag := _intent_rect_local()
 	if tag.has_area():
 		_intent_tag(tag)
+	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
 
 
 ## Ghost preview (GDD 9.2): where the wheel ends up after the hovered card or nudge. A
@@ -602,7 +628,7 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 		return
 	var a_needle := _ang(p0)
 	var a_from := _ang(p0 + delta)
-	var r := radius + 30
+	var r := radius + GHOST_OUT  # on the rim, inside the values (H22: it crossed a value)
 	_draw_dashed_arc(center, r, minf(a_needle, a_from), maxf(a_needle, a_from), _col(Palette.CELL_ACID), 2.0)
 	# Arrowhead at the needle, pointing the way the rim moves.
 	var tangent := Vector2(-sin(a_needle), cos(a_needle)) * signf(a_needle - a_from)
@@ -636,6 +662,8 @@ func _draw_inner_ghost(center: Vector2, radius: float, wheel: WheelState) -> voi
 	draw_colored_polygon(PackedVector2Array([tip + tangent * 7.0, tip - tangent * 3.0 + normal * 5.0, tip - tangent * 3.0 - normal * 5.0]), _col(Palette.CELL_ACID))
 
 
+## The outer ghost arc runs this far outside the rim (px), inside the values.
+const GHOST_OUT := 5.0
 ## The inner ghost runs this far inside the slice band (px).
 const INNER_GHOST_INSET := 12.0
 
@@ -713,8 +741,11 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 	if last_turn != "":
 		# The past, greyed: what the last SEND IT did.
+		var box := (radius + HP_ARC_OUT) * 2.0
 		var ls := _fs(HUB_FONT_SIZE)
-		draw_string(Palette.mono(), center + Vector2(-110, base_y + LAST_TURN_GAP + ls), last_turn, HORIZONTAL_ALIGNMENT_CENTER, 220, ls, _col(Color(Palette.PAPER, 0.6)))
+		while ls > 7 and Palette.mono().get_string_size(last_turn, HORIZONTAL_ALIGNMENT_LEFT, -1, ls).x > box:
+			ls -= 1  # a long line shrinks to its box (H22: 329 px in a 220 px box at 1.6)
+		draw_string(Palette.mono(), center + Vector2(-box * 0.5, base_y + LAST_TURN_GAP + ls), last_turn, HORIZONTAL_ALIGNMENT_CENTER, box, ls, _col(Color(Palette.PAPER, 0.6)))
 
 
 func _draw_dashed_rect(r: Rect2, col: Color) -> void:
