@@ -21,6 +21,8 @@ var damage_bonus_delta: int = 0
 var outcome: int = CombatState.Outcome.NONE
 ## Drones the operative gains (count).
 var drones_gained: int = 0
+## Nudge cards resolve twice next turn (Accelerator armed).
+var double_nudge_next: bool = false
 
 
 static func between(before: CombatState, after: CombatState, events: Array[Dictionary]) -> CombatOutcome:
@@ -41,6 +43,7 @@ static func between(before: CombatState, after: CombatState, events: Array[Dicti
 	o.damage_bonus_delta = after.damage_bonus - before.damage_bonus
 	o.outcome = after.outcome
 	o.drones_gained = maxi(0, after.drones.size() - before.drones.size())
+	o.double_nudge_next = after.double_nudge_cards_next and not before.double_nudge_cards_next
 	for e in events:
 		match String(e.get("type", "")):
 			"campaign_effect":
@@ -56,6 +59,9 @@ static func between(before: CombatState, after: CombatState, events: Array[Dicti
 				var src := StringName(String(e.get("attacker", "")))
 				if o.combatants.has(src):
 					o.combatants[src]["dealt"] = int(o.combatants[src]["dealt"]) + int(e.get("amount", 0))
+					var tgt := String(e.get("target", ""))
+					var to: Dictionary = o.combatants[src]["dealt_to"]
+					to[tgt] = int(to.get(tgt, 0)) + int(e.get("amount", 0))
 	return o
 
 
@@ -67,7 +73,7 @@ static func _all(s: CombatState) -> Array[CombatantState]:
 
 
 static func _diff(b: CombatantState, a: CombatantState) -> Dictionary:
-	var d := {"dealt": 0}
+	var d := {"dealt": 0, "dealt_to": {}}
 	var src := a if a != null else b
 	d["name"] = src.display_name
 	d["is_satellite"] = src.is_satellite
@@ -91,6 +97,14 @@ static func _diff(b: CombatantState, a: CombatantState) -> Dictionary:
 		d["inner_before"] = b.wheel.inner_rotation
 		d["inner_after"] = a.wheel.inner_rotation
 	d["statuses"] = statuses
+	# Satellites that move (Undock), boss phases and the needles they bring.
+	d["dock_before"] = b.dock_slot if b != null else -1
+	d["dock_after"] = a.dock_slot if a != null else -1
+	d["phase_before"] = b.phase_index if b != null else 0
+	d["phase_after"] = a.phase_index if a != null else 0
+	d["pointers_before"] = b.wheel.pointer_ticks.size() if b != null and b.wheel != null else 0
+	d["pointers_after"] = a.wheel.pointer_ticks.size() if a != null and a.wheel != null else 0
+	d["slices_changed"] = a != null and b != null and a.wheel != null and b.wheel != null and a.wheel.slot_slice_ids != b.wheel.slot_slice_ids
 	return d
 
 
@@ -103,7 +117,7 @@ func of(id: StringName) -> Dictionary:
 func is_empty() -> bool:
 	if ram_delta != 0 or cards_drawn != 0 or heat != 0 or cycles != 0 or schematics != 0 or drones_gained != 0:
 		return false
-	if free_nudges_next_turn != 0 or damage_bonus_delta != 0 or outcome != CombatState.Outcome.NONE:
+	if free_nudges_next_turn != 0 or damage_bonus_delta != 0 or outcome != CombatState.Outcome.NONE or double_nudge_next:
 		return false
 	for id in combatants:
 		var d: Dictionary = combatants[id]

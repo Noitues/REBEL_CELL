@@ -34,6 +34,19 @@ var mark: int = Mark.NONE:
 var _lifted: bool = false
 ## Hand index this card drags as (H20 drag-to-target), -1 = not draggable.
 var drag_index: int = -1
+## What the card does as pictograms (H21: readable without words): [{kind, amount,
+## type}] from pictos_of(); drawn in a row above the foot of the sticker.
+var pictos: Array[Dictionary] = []
+## A pad is in use: the focused card shows the button that plays it.
+var pad_hint: String = ""
+## Pictogram row: icon radius and spacing at scale 1.0 (px).
+const PICTO_RADIUS := 8.0
+const PICTO_STEP := 34.0
+const PICTO_FONT := 12
+## Slice icon for each effect that does what a slice does.
+const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.ATTACK, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFEND,
+	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.EVADE, RC.EffectType.HEAL: RC.SliceType.HEAL,
+	RC.EffectType.DEPLOY_DRONE: RC.SliceType.DEPLOY, RC.EffectType.APPLY_STATUS: RC.SliceType.AFFLICT}
 ## Lettering scale (the combat hand follows Settings.text_scale; see scaled()).
 var text_scale: float = 1.0
 ## Sticker size and lettering at scale 1.0.
@@ -72,6 +85,50 @@ func as_tile(p_look: int, p_accent: Color) -> ZineCard:
 	look = p_look
 	accent = p_accent
 	custom_minimum_size = Vector2(118, 150)
+	return self
+
+
+## The card's effects as pictograms: spin / nudge / flip / respin arrows, slice icons for
+## damage, block, shield, evade, heal, deploy, statuses, and short tags for the rest.
+static func pictos_of(card: CardData) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if card == null:
+		return out
+	for e in card.effects:
+		if e == null:
+			continue
+		match e.type:
+			RC.EffectType.SPIN:
+				out.append({"kind": "spin", "amount": e.amount})
+			RC.EffectType.NUDGE:
+				out.append({"kind": "nudge", "amount": maxi(1, e.amount), "inner": e.ring_scope == RC.RingScope.INNER})
+			RC.EffectType.FLIP:
+				out.append({"kind": "flip", "amount": 0})
+			RC.EffectType.RESPIN:
+				out.append({"kind": "respin", "amount": 0})
+			RC.EffectType.GAIN_RAM:
+				if e.amount != 0:
+					out.append({"kind": "tag", "text": "RAM%+d" % e.amount})
+			RC.EffectType.DRAW_CARDS:
+				out.append({"kind": "tag", "text": "DRAW %d" % e.amount})
+			RC.EffectType.FREEZE:
+				out.append({"kind": "tag", "text": "FREEZE"})
+			RC.EffectType.MODIFY_RESISTANCE:
+				out.append({"kind": "tag", "text": "RES%+d" % e.amount})
+			RC.EffectType.HUB_BREACH:
+				out.append({"kind": "tag", "text": "BREACH"})
+			RC.EffectType.CLEANSE:
+				out.append({"kind": "tag", "text": "CLEANSE"})
+			_:
+				if EFFECT_SLICE.has(e.type):
+					out.append({"kind": "slice", "type": EFFECT_SLICE[e.type], "amount": e.amount,
+						"status": e.status if e.type == RC.EffectType.APPLY_STATUS else RC.Status.NONE})
+	return out
+
+
+## Sets the pictograms from the card's data (combat hand, loot, shop, deck views).
+func with_card(card: CardData) -> ZineCard:
+	pictos = pictos_of(card)
 	return self
 
 
@@ -151,15 +208,18 @@ func _draw_sticker() -> void:
 	# text is the tooltip and the inspect).
 	var body := roundi(BODY_SIZE * s)
 	var lines := wrap_px(description, size.x - 16, body)
-	var room := maxi(1, int((size.y - BODY_TOP * s - 26.0 * s) / (BODY_LINE * s)))
+	var foot := (26.0 + (PICTO_RADIUS * 2.0 + 6.0 if not pictos.is_empty() else 0.0)) * s
+	var room := maxi(1, int((size.y - BODY_TOP * s - foot) / (BODY_LINE * s)))
 	for i in mini(lines.size(), room):
 		var t := lines[i]
 		if i == room - 1 and lines.size() > room:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
 		draw_string(Palette.mono(), Vector2(8, BODY_TOP * s + i * BODY_LINE * s), t, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, body, fg)
+	_draw_pictos(Vector2(8 + PICTO_RADIUS * s, size.y - 26.0 * s - PICTO_RADIUS * s - 2.0), s, fg)
 	_chip(Vector2(size.x - 24, size.y - 22), fg)
-	if hotkey != "":
-		draw_string(Palette.marker(), Vector2(8, size.y - 8), "[%s]" % hotkey, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, fg)
+	var key := pad_hint if pad_hint != "" and has_focus() else hotkey
+	if key != "":
+		draw_string(Palette.marker(), Vector2(8, size.y - 8), "[%s]" % key, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(14 * s), fg)
 	if disabled:
 		draw_rect(rect, Color(0, 0, 0, 0.5))
 
@@ -282,6 +342,50 @@ static func wrap_px(text: String, width: float, font_size: int) -> PackedStringA
 	if line != "":
 		out.append(line)
 	return out
+
+
+## The pictogram row, left to right from `at` (the first icon's centre).
+func _draw_pictos(at: Vector2, s: float, fg: Color) -> void:
+	var r := PICTO_RADIUS * s
+	var x := at.x
+	var fs := roundi(PICTO_FONT * s)
+	for p in pictos:
+		var c := Vector2(x, at.y)
+		var label := ""
+		match String(p["kind"]):
+			"spin", "respin":
+				# A circular arrow: clockwise for a positive spin.
+				var d := -1.0 if int(p["amount"]) < 0 else 1.0
+				draw_arc(c, r, -PI * 0.9, PI * 0.6, 12, fg, 2.0 * s)
+				var a := PI * 0.6 if d > 0.0 else -PI * 0.9
+				var tip := c + Vector2(cos(a), sin(a)) * r
+				var tg := Vector2(-sin(a), cos(a)) * d
+				draw_colored_polygon(PackedVector2Array([tip + tg * 4.0 * s, tip + tg.orthogonal() * 3.5 * s, tip - tg.orthogonal() * 3.5 * s]), fg)
+				label = "?" if String(p["kind"]) == "respin" else str(absi(int(p["amount"])))
+			"nudge":
+				# Two small arrows, one each way (a nudge card is aimed either way).
+				for side in [-1.0, 1.0]:
+					var t := c + Vector2(side * r, 0)
+					draw_colored_polygon(PackedVector2Array([t, t - Vector2(side * r * 0.8, r * 0.6), t - Vector2(side * r * 0.8, -r * 0.6)]), fg)
+				label = "×%d" % int(p["amount"]) + (" IN" if bool(p.get("inner", false)) else "")
+			"flip":
+				draw_line(c + Vector2(-r * 0.4, -r), c + Vector2(-r * 0.4, r), fg, 2.0 * s)
+				draw_colored_polygon(PackedVector2Array([c + Vector2(-r * 0.4, -r - 3 * s), c + Vector2(-r * 0.9, -r * 0.3), c + Vector2(0.1 * r, -r * 0.3)]), fg)
+				draw_line(c + Vector2(r * 0.4, -r), c + Vector2(r * 0.4, r), fg, 2.0 * s)
+				draw_colored_polygon(PackedVector2Array([c + Vector2(r * 0.4, r + 3 * s), c + Vector2(-0.1 * r, r * 0.3), c + Vector2(r * 0.9, r * 0.3)]), fg)
+			"slice":
+				SliceIcon.draw_icon(self, c, r, int(p["type"]), Palette.slice_color(int(p["type"])))
+				var st := int(p.get("status", RC.Status.NONE))
+				label = String(Palette.STATUS_GLYPHS.get(st, "")) if st != RC.Status.NONE else (str(int(p["amount"])) if int(p["amount"]) > 0 else "")
+			"tag":
+				draw_string(Palette.mono(), Vector2(c.x - r, c.y + fs * 0.35), String(p["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fg)
+				x += Palette.mono().get_string_size(String(p["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0 * s
+				continue
+		if label != "":
+			draw_string(Palette.mono(), Vector2(c.x + r + 2.0 * s, c.y + fs * 0.35), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fg)
+		x += PICTO_STEP * s + (Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x if label.length() > 2 else 0.0)
+		if x > size.x - 30.0:
+			break
 
 
 static func _wrap(text: String, width: int) -> PackedStringArray:

@@ -49,6 +49,10 @@ var intent: Dictionary = {}
 ## Predicted end state from CombatOutcome (hp_after, block_after, statuses...): drawn as
 ## the HP ghost, status ghosts and a DOWN mark. Empty = no preview.
 var outcome: Dictionary = {}
+## What the last SEND IT did to this combatant ("" = nothing yet), drawn under the HP
+## number until the player acts (H21: after SEND IT nothing showed what happened; the
+## motion pass adds floating numbers on top of this).
+var last_turn: String = ""
 ## Horizontal position of the wheel centre as a fraction of the view's width (of the
 ## width right of `left_reserve`).
 var center_x: float = 0.5
@@ -84,6 +88,16 @@ const ARROW_RADIUS := 48.0
 const ARROW_INNER_RADIUS := 74.0
 const ARROW_SPAN := 13.0
 const ARROW_HIT := 18.0
+## Satellite marker hit radius (px at text scale 1.0).
+const SATELLITE_HIT := 14.0
+## Tag rows kept on screen: the title and at most this many chip rows (the rest fold into
+## a "+N" chip; the tooltip lists them all).
+const TAG_CHIP_ROWS := 2
+## HP arc and number below the rim (px): the arc's outer edge, then the number's offset.
+const HP_ARC_OUT := 40.0
+const HP_TEXT_GAP := 44.0
+## Gap between the HP number and the last-turn line (px).
+const LAST_TURN_GAP := 4.0
 ## Lettering sizes at text scale 1.0.
 const INTENT_FONT_SIZE := 15
 const CHIP_FONT_SIZE := 13
@@ -191,7 +205,7 @@ func global_center() -> Vector2:
 ## Radius (px) within which everything drawn round the disc lies (values, satellites,
 ## the HP arc and its numbers).
 func extent_radius() -> float:
-	return _radius() + EXTENT
+	return _radius() + maxf(EXTENT, HP_TEXT_GAP + _fs(HP_FONT_SIZE) + LAST_TURN_GAP + _fs(HUB_FONT_SIZE))
 
 
 ## Whether `r` (global) covers any of the wheel's drawing (a circle test, not a box).
@@ -253,8 +267,12 @@ func zone_at(point: Vector2) -> Dictionary:
 		if arrow_center(int(ar["ring"]), int(ar["direction"])).distance_to(point) <= ARROW_HIT * maxf(1.0, _ts()):
 			return {"kind": "arrow", "ring": ar["ring"], "direction": ar["direction"]}
 	for sat in satellites:
-		if _satellite_pos(sat).distance_to(point) <= 14.0:
-			return {"kind": "satellite", "id": sat.id}
+		var sp := _satellite_pos(sat)
+		if sp.distance_to(point) <= SATELLITE_HIT * maxf(1.0, _ts()):
+			# Which side of the satellite: the clockwise side is +1 (a nudge or Undock aimed
+			# at a satellite takes its way from the side it is dropped on).
+			var cw := (sp - global_center()).orthogonal() * -1.0
+			return {"kind": "satellite", "id": sat.id, "direction": 1 if (point - sp).dot(cw) >= 0.0 else -1}
 	var slot := slot_at_global(point)
 	if slot >= 0:
 		return {"kind": "slot", "slot": slot}
@@ -324,8 +342,14 @@ func _corporation_of(c: CombatantState) -> StringName:
 	return data.corporation_id if data != null and "corporation_id" in data else &""
 
 
+## Vertical position of the wheel centre as a fraction of the view's height.
+const CENTER_Y := 0.56
+## Width of the slice band as a share of the radius.
+const BAND_SHARE := 0.34
+
+
 func _center() -> Vector2:
-	return Vector2(left_reserve + (size.x - left_reserve) * center_x, size.y * 0.56) + shake
+	return Vector2(left_reserve + (size.x - left_reserve) * center_x, size.y * CENTER_Y) + shake
 
 
 func _radius() -> float:
@@ -333,12 +357,23 @@ func _radius() -> float:
 	if left_reserve > 0.0:
 		var avail := size.x - left_reserve
 		r = minf(r, minf(avail * center_x, avail * (1.0 - center_x)) - DISC_MARGIN)
+	# Room above for the tag (title + chip rows) and below for the HP number, at the
+	# current text scale (H21: at 1.3+ the tag ran over the status line).
+	var cy := size.y * CENTER_Y
+	var tag_room := _tag_reserve()
+	r = minf(r, (cy - INTENT_HEIGHT - tag_room) / (1.0 + BAND_SHARE))
+	r = minf(r, size.y - cy - HP_TEXT_GAP - _fs(HP_FONT_SIZE) - _fs(HUB_FONT_SIZE) - LAST_TURN_GAP - DISC_MARGIN * 0.2)
 	return maxf(MIN_RADIUS, r)
+
+
+## Height kept for the tag at the current text scale (title and TAG_CHIP_ROWS rows).
+static func _tag_reserve() -> float:
+	return INTENT_HEIGHT * _ts() + TAG_CHIP_ROWS * (CHIP_HEIGHT * _ts() + 2.0)
 
 
 ## Width of the slice bar band.
 func _band() -> float:
-	return _radius() * 0.34
+	return _radius() * BAND_SHARE
 
 
 ## Screen angle of a position `x` ticks round from the top, clockwise on screen when the
@@ -445,6 +480,17 @@ func _draw() -> void:
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
 			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
 			draw_arc(satp, 13, 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
+			# A play with a way (a nudge card, Undock) marks each side: drop on the side it
+			# should turn to (the clockwise side is +1).
+			var cw := (satp - _center()).normalized().orthogonal() * -1.0
+			for z in valid_zones:
+				if String(z.get("kind", "")) == "satellite" and z.get("id") == sat.id and z.has("direction"):
+					var d := float(z["direction"])
+					var side_hot := hot and int(hover_zone.get("direction", 0)) == int(d)
+					var tip := satp + cw * d * 21.0
+					var back := satp + cw * d * 13.0
+					var n := cw.orthogonal() * 5.0
+					draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), _col(TARGET_COLOR if side_hot else Color(TARGET_COLOR, 0.55)))
 	draw_arc(center, radius, 0, TAU, 96, Color(line, 0.9), 1.5)
 	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
 	if wheel.has_inner_ring():
@@ -483,6 +529,7 @@ func _draw() -> void:
 				draw_line(hub.lerp(ntip, float(k) / n), hub.lerp(ntip, float(k + 1) / n), mcol, 3.0)
 		draw_string(Palette.mono(), hub + Vector2(10, -4), "next", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
 	_draw_ghost(center, radius, wheel)
+	_draw_inner_ghost(center, radius, wheel)
 	_draw_arrows()
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
@@ -522,6 +569,29 @@ func _draw_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
 	draw_circle(from, 11, Palette.NIGHT_SKY)
 	if slice != null:
 		SliceIcon.draw_icon(self, from, 8, slice.slice_type, Palette.slice_color(slice.slice_type))
+
+
+## The inner ring's ghost (H21): a dashed arc inside the band from the segment that will
+## arrive to the needle, arrowhead the way the ring turns.
+func _draw_inner_ghost(center: Vector2, radius: float, wheel: WheelState) -> void:
+	if ghost_inner_rotation == null or wheel.pointer_ticks.is_empty() or not wheel.has_inner_ring():
+		return
+	var delta := int(ghost_inner_rotation) - wheel.inner_rotation
+	if delta == 0:
+		return
+	var p0: int = wheel.pointer_ticks[0]
+	var a_needle := _ang(p0)
+	var a_from := _ang(p0 + delta)
+	var r := radius - _band() - INNER_GHOST_INSET
+	_draw_dashed_arc(center, r, minf(a_needle, a_from), maxf(a_needle, a_from), _col(Palette.CELL_ACID), 2.0)
+	var tangent := Vector2(-sin(a_needle), cos(a_needle)) * signf(a_needle - a_from)
+	var tip := center + Vector2(cos(a_needle), sin(a_needle)) * r
+	var normal := tangent.orthogonal()
+	draw_colored_polygon(PackedVector2Array([tip + tangent * 7.0, tip - tangent * 3.0 + normal * 5.0, tip - tangent * 3.0 - normal * 5.0]), _col(Palette.CELL_ACID))
+
+
+## The inner ghost runs this far inside the slice band (px).
+const INNER_GHOST_INSET := 12.0
 
 
 func _draw_arrows() -> void:
@@ -576,14 +646,17 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 			col = _col(LOSS_COLOR)
 		elif f < frac_after:
 			col = _col(HP_COLOR.lightened(0.5))
-		draw_colored_polygon(_wedge(center, radius + 32, radius + 40, a0, a1), col)
+		draw_colored_polygon(_wedge(center, radius + 32, radius + HP_ARC_OUT, a0, a1), col)
 	var hs := _fs(HP_FONT_SIZE)
 	var text := "%d/%d" % [combatant.hp, combatant.max_hp]
 	var text_col := hp_col
 	if after != combatant.hp:
 		text = "%d→%d" % [combatant.hp, maxi(0, after)]
 		text_col = _col(LOSS_COLOR) if after < combatant.hp else hp_col
-	draw_string(Palette.display(), center + Vector2(-80, radius + 44 + hs - 22), text, HORIZONTAL_ALIGNMENT_CENTER, 160, hs, text_col)
+	draw_string(Palette.display(), center + Vector2(-80, radius + HP_TEXT_GAP + hs - HP_FONT_SIZE), text, HORIZONTAL_ALIGNMENT_CENTER, 160, hs, text_col)
+	if last_turn != "":
+		var ls := _fs(HUB_FONT_SIZE)
+		draw_string(Palette.mono(), center + Vector2(-110, radius + HP_TEXT_GAP + hs - HP_FONT_SIZE + LAST_TURN_GAP + ls), last_turn, HORIZONTAL_ALIGNMENT_CENTER, 220, ls, _col(Palette.PAPER))
 
 
 func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
@@ -669,6 +742,17 @@ func _chip_rows() -> Array:
 		w += cw
 	if not row.is_empty():
 		rows.append(row)
+	if rows.size() > TAG_CHIP_ROWS:
+		# Fold the overflow into a "+N" chip on the last kept row.
+		var hidden := 0
+		for k in range(TAG_CHIP_ROWS, rows.size()):
+			hidden += (rows[k] as Array).size()
+		rows = rows.slice(0, TAG_CHIP_ROWS)
+		var last: Array = rows[TAG_CHIP_ROWS - 1]
+		if not last.is_empty():
+			hidden += 1
+			last.pop_back()
+		last.append({"text": "+%d" % hidden, "color": Palette.INK, "ink": Palette.PAPER})
 	return rows
 
 
@@ -686,7 +770,7 @@ func _intent_rect_local() -> Rect2:
 	var chip_h := CHIP_HEIGHT * ts
 	var rows := _chip_rows()
 	var h := title_h + rows.size() * (chip_h + 2.0)
-	var w := Palette.marker().get_string_size(String(intent["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(INTENT_FONT_SIZE)).x + (38.0 if int(intent.get("type", -1)) >= 0 else 16.0)
+	var w := Palette.marker().get_string_size(String(intent["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(INTENT_FONT_SIZE)).x + (20.0 + 22.0 * ts if int(intent.get("type", -1)) >= 0 else 16.0)
 	var fs := _fs(CHIP_FONT_SIZE)
 	for row in rows:
 		var rw := 8.0
@@ -696,7 +780,7 @@ func _intent_rect_local() -> Rect2:
 	w = minf(w, size.x * TAG_MAX_SHARE)
 	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
 	var x := clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w))
-	return Rect2(Vector2(x, bottom - h), Vector2(w, h))
+	return Rect2(Vector2(x, maxf(0.0, bottom - h)), Vector2(w, h))
 
 
 ## The intent tag on screen (layout checks: it never covers a wheel), or an empty rect.

@@ -103,6 +103,8 @@ var selecting: int = -1
 var _options: Array[CombatAction] = []
 var _option_index: int = -1
 var _dragging: bool = false
+## Pad triggers held down (axis -> bool): a squeeze toggles once.
+var _trigger_down: Dictionary = {}
 ## Scale the hand's cards were built at (rebuilt when the room or text scale changes it).
 var _hand_scale: float = 0.0
 
@@ -151,7 +153,54 @@ func start_fight(enemy_id: StringName, combat_seed: int) -> void:
 func end_turn() -> void:
 	cancel_selection()
 	AudioDirector.play_sfx("stamp")
+	var before := engine.state().duplicate_state() if engine.has_fight() else null
+	_pending_last_turn = before
 	engine.submit(CombatAction.end_turn())
+
+
+## State before the SEND IT being resolved (for the last-turn lines).
+var _pending_last_turn: CombatState = null
+## Last-turn line per combatant id (kept until the player acts).
+var _last_turn: Dictionary = {}
+
+
+## What the resolve just did, per combatant, from the damage and heal events: HP lost or
+## healed, and what block / shield soaked. Short and numeric; the motion pass animates it.
+static func last_turn_lines(events: Array[Dictionary]) -> Dictionary:
+	var lost := {}
+	var soaked := {}
+	var healed := {}
+	var seen := {}
+	var resolving := false
+	for e in events:
+		var t := String(e.get("type", ""))
+		if t == "turn_start":
+			break  # the next turn's own events (respin, draws) are not the resolve
+		if t == "pass":
+			resolving = true
+		if not resolving:
+			continue
+		var target := StringName(String(e.get("target", "")))
+		if t == "damage":
+			seen[target] = true
+			lost[target] = int(lost.get(target, 0)) + int(e.get("hp_damage", 0))
+			soaked[target] = int(soaked.get(target, 0)) + int(e.get("blocked", 0)) + int(e.get("shielded", 0))
+		elif t == "heal":
+			seen[target] = true
+			healed[target] = int(healed.get(target, 0)) + int(e.get("amount", 0))
+	var out := {}
+	for id in seen:
+		var parts := PackedStringArray()
+		if int(lost.get(id, 0)) > 0:
+			parts.append("-%d HP" % int(lost[id]))
+		if int(soaked.get(id, 0)) > 0:
+			parts.append("%d BLOCKED" % int(soaked[id]))
+		if int(healed.get(id, 0)) > 0:
+			parts.append("+%d HP" % int(healed[id]))
+		if parts.is_empty():
+			parts.append("NO DAMAGE")
+		out[id] = "LAST TURN: " + " · ".join(parts)
+	return out
 
 
 func rewind() -> void:
@@ -427,6 +476,8 @@ func layout_violations() -> Array[String]:
 		for cv in covers:
 			if cv[0] == "subtitles" and (cv[1] as Rect2).intersects(w.intent_rect()):
 				out.append("subtitles cover %s's tag" % w.combatant.display_name)
+		if not w.get_global_rect().grow(0.5).encloses(w.intent_rect()):
+			out.append("%s's tag leaves its view" % w.combatant.display_name)
 	return out
 
 
@@ -525,6 +576,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			inspect_at(owner.get_global_rect().get_center())
 		get_viewport().set_input_as_handled()
 		return
+	if event is InputEventJoypadMotion:
+		# The triggers toggle the nudge wheel / ring once per squeeze (a trigger sends a stream
+		# of motion events while it moves).
+		var m := event as InputEventJoypadMotion
+		var down := m.axis_value >= Settings.PAD_SWITCH_DEADZONE
+		var was: bool = _trigger_down.get(m.axis, false)
+		_trigger_down[m.axis] = down
+		if down and not was:
+			if event.is_action("toggle_nudge_wheel"):
+				toggle_nudge_wheel()
+				get_viewport().set_input_as_handled()
+			elif event.is_action("toggle_ring"):
+				toggle_ring()
+				get_viewport().set_input_as_handled()
+		return
 	for i in 9:
 		if event.is_action_pressed("card_%d" % (i + 1)):
 			select_card(i)
@@ -612,6 +678,8 @@ func _zone_of(a: CombatAction) -> Array:
 	if slot_wheel != null and a.slot_index >= 0:
 		return [slot_wheel.id, {"kind": "slot", "slot": a.slot_index}]
 	if aimed.is_satellite:
+		if CardTargeting.uses_direction(card):
+			return [aimed.host_id, {"kind": "satellite", "id": aimed.id, "direction": CardTargeting.screen_direction(card, a)}]
 		return [aimed.host_id, {"kind": "satellite", "id": aimed.id}]
 	if CardTargeting.uses_direction(card):
 		var ring := a.ring
@@ -704,6 +772,15 @@ func _show_selection() -> void:
 
 func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_last_events = events
+	if _pending_last_turn != null:
+		_last_turn = last_turn_lines(events)
+		# Wheels the resolve didn't touch say so too.
+		for c in [state.player] + state.living_enemies(false):
+			if not _last_turn.has(c.id):
+				_last_turn[c.id] = "LAST TURN: NO DAMAGE"
+		_pending_last_turn = null
+	elif not events.is_empty():
+		_last_turn.clear()  # the player acted: the result gives way to the new preview
 	for e in state.enemies:
 		RunManager.record_seen(e.source_id)
 	_play_log(events)
@@ -725,8 +802,12 @@ func _on_action_refused(reason: String) -> void:
 	log_note.append("[color=#c05000]%s[/color]" % reason)
 	preview_note.clear()
 	preview_note.append(reason)
+	# Over the middle of the hand (H21: above it, it covered the HP arcs at larger text).
 	var hand := _hand_box.get_global_rect()
-	toast.show_text(reason, Vector2(hand.get_center().x, hand.position.y - STICKER_GAP))
+	toast.show_text(reason, Vector2(hand.get_center().x, hand.get_center().y + toast.get_combined_minimum_size().y * 0.5))
+	# The RAM bar flashes when RAM is what's missing.
+	if reason.contains("RAM"):
+		ram_note.flash_short()
 	AudioDirector.play_sfx("click")
 
 
@@ -1149,10 +1230,16 @@ func _card_target_wheel() -> CombatantState:
 	return state.get_combatant(state.target_id)
 
 
-## Rewrites every key hint from the current binds and device (GDD 9.5, H19, H20).
+## Rewrites every key hint from the current binds and device (GDD 9.5, H19, H20). The hand
+## is rebuilt for its hotkeys, so the focused card keeps focus (H21: the first pad press
+## used to leave the pad with nothing focused).
 func _refresh_key_hints() -> void:
 	if not is_instance_valid(_nudge_wheel_option):
 		return
+	var focused := -1
+	var owner := UiFocus.owner_of(self) if is_inside_tree() else null
+	if owner != null and owner.get_parent() == _hand_box:
+		focused = owner.get_index()
 	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
 	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
 	_settings_button.text = "Settings %s" % Settings.hint(&"open_settings")
@@ -1162,6 +1249,11 @@ func _refresh_key_hints() -> void:
 	if engine != null and engine.has_fight() and is_inside_tree():
 		_build_hand(engine.state())
 		_link_hand_focus()
+		if focused >= 0:
+			var cards := _hand_box.get_children()
+			if not cards.is_empty():
+				(cards[mini(focused, cards.size() - 1)] as Control).grab_focus()
+		_refresh_status()
 		_relayout.call_deferred()
 
 
@@ -1179,8 +1271,7 @@ func _rebuild_slot_option() -> void:
 
 func _refresh(state: CombatState) -> void:
 	var lookup := engine.resolver.lookup
-	_status.text = "TURN %d · FREE NUDGE %d%s" % [state.turn, state.free_nudges,
-		" · VICTORY" if state.outcome == CombatState.Outcome.VICTORY else (" · DEFEAT" if state.outcome == CombatState.Outcome.DEFEAT else "")]
+	_refresh_status()
 	var operative_name := state.player.display_name
 	if engine.netrun != null and engine.netrun.run != null and engine.netrun.run.operative != null:
 		operative_name = engine.netrun.run.operative.name
@@ -1263,9 +1354,26 @@ func _refresh(state: CombatState) -> void:
 		v.valid_zones.clear()
 		v.hover_zone = {}
 		v.show_arrows = not state.is_over()
+		v.last_turn = String(_last_turn.get(v.combatant.id, "")) if v.combatant != null else ""
 	toast.hide()
 	inspect_popup.hide()
 	_show_end_turn_preview()
+
+
+## The status line: turn, free nudges, and on a pad the triggers that pick which wheel and
+## ring the nudge buttons drive.
+func _refresh_status() -> void:
+	if not engine.has_fight():
+		return
+	var state := engine.state()
+	var text := "TURN %d · FREE NUDGE %d" % [state.turn, state.free_nudges]
+	if state.outcome == CombatState.Outcome.VICTORY:
+		text += " · VICTORY"
+	elif state.outcome == CombatState.Outcome.DEFEAT:
+		text += " · DEFEAT"
+	elif Settings.pad_active:
+		text += " · %s wheel · %s ring" % [Settings.hint(&"toggle_nudge_wheel"), Settings.hint(&"toggle_ring")]
+	_status.text = text
 
 
 func _build_hand(state: CombatState) -> void:
@@ -1277,9 +1385,10 @@ func _build_hand(state: CombatState) -> void:
 	_hand_scale = s
 	for i in state.hand.size():
 		var card := lookup.get_content(state.hand[i]) as CardData
-		var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s)
+		var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
 		if Settings.pad_active:
 			c.hotkey = ""
+			c.pad_hint = Settings.key_text(&"ui_accept")
 		c.drag_index = i
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
@@ -1484,6 +1593,12 @@ func _show_end_turn_preview() -> void:
 func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Dictionary]) -> void:
 	var state := engine.state()
 	var o := CombatOutcome.between(state, resolved, events)
+	# Random slice picks during the resolve (DOSE, Citations, Solar Flares) show odds, not
+	# the slot the roll picked (GDD 2.10).
+	var random_picks := {}
+	for e in events:
+		if String(e.get("type", "")) == "status" and bool(e.get("random", false)):
+			random_picks[StringName(String(e.get("target", "")))] = true
 	var views := {state.player.id: _player_view}
 	for id in _enemy_views:
 		views[id] = _enemy_views[id]
@@ -1502,8 +1617,14 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		for sat in state.satellites_of(id):
 			sats[sat.id] = o.of(sat.id)
 		var d := o.of(id)
+		var shown_statuses: Array = d.get("statuses", [])
+		if random_picks.has(id):
+			shown_statuses = []
+			chips = chips.filter(func(ch: Dictionary) -> bool: return not bool(ch.get("status", false)))
+			chips.append({"text": "? RANDOM STATUS", "color": CHIP_STATUS, "ink": Palette.INK})
+			chips.append_array(_odds_chips(c, true))
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
-			"statuses": d.get("statuses", []), "satellites": sats}
+			"statuses": shown_statuses, "satellites": sats}
 		view.intent = {"type": title["type"], "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
 		view.queue_redraw()
 	ram_note.set_pending(o.ram_delta)
@@ -1518,9 +1639,12 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 		var slice: SliceData = r["slice"]
 		if type < 0:
 			type = slice.slice_type
-		var name: String = Palette.SLICE_NAMES.get(slice.slice_type, "?")
-		var tier: String = String(Palette.TIER_NAMES.get(r["tier"], "")).to_lower()
-		parts.append(("%s %s" % [name, tier]) if rs.size() <= 2 else "%s·%s" % [name, tier.left(1).to_upper()])
+		if rs.size() <= 1:
+			parts.append("%s · %s" % [Palette.SLICE_WORDS.get(slice.slice_type, "?"), Palette.TIER_WORDS.get(r["tier"], "")])
+		elif rs.size() == 2:
+			parts.append("%s %s" % [Palette.SLICE_WORDS.get(slice.slice_type, "?"), String(Palette.TIER_NAMES.get(r["tier"], "")).to_lower()])
+		else:
+			parts.append("%s·%s" % [Palette.SLICE_NAMES.get(slice.slice_type, "?"), String(Palette.TIER_NAMES.get(r["tier"], "")).left(1)])
 	return {"type": type, "text": " + ".join(parts)}
 
 
@@ -1530,7 +1654,13 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	var d := o.of(id)
 	if d.is_empty():
 		return chips
-	if int(d["dealt"]) > 0:
+	# Who takes the hits: "HITS YOU 14" on an enemy's tag, "HITS <NAME> 12" on yours.
+	var to: Dictionary = d.get("dealt_to", {})
+	for tgt in to:
+		var victim := state.get_combatant(StringName(String(tgt)))
+		var who := "YOU" if victim != null and victim.is_player else (victim.display_name.to_upper() if victim != null else "?")
+		chips.append({"text": "HITS %s %d" % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK})
+	if to.is_empty() and int(d["dealt"]) > 0:
 		chips.append({"text": "HITS %d" % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK})
 	var dhp := int(d["hp_after"]) - int(d["hp_before"])
 	if dhp < 0:
@@ -1540,7 +1670,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	for key in ["block", "shield"]:
 		var delta := int(d[key + "_after"]) - int(d[key + "_before"])
 		if delta != 0:
-			chips.append({"text": "%+d %s" % [delta, "BLK" if key == "block" else "SHD"], "color": CHIP_GUARD, "ink": Palette.INK})
+			chips.append({"text": "%+d %s" % [delta, "BLOCK" if key == "block" else "SHIELD"], "color": CHIP_GUARD, "ink": Palette.INK})
 	var ev := int(d["evade_after"]) - int(d["evade_before"])
 	if ev != 0:
 		chips.append({"text": "%+d EVADE" % ev, "color": CHIP_GUARD, "ink": Palette.INK})
@@ -1550,10 +1680,16 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		chips.append({"text": "HUB BREACH", "color": CHIP_RESIST, "ink": Palette.INK})
 	for st in d["statuses"]:
 		var after := int(st["after"])
-		var tag: String = Palette.STATUS_TAGS.get(after, "") if after != RC.Status.NONE else "CLEAR %s" % Palette.STATUS_TAGS.get(int(st["before"]), "")
-		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_STATUS, "ink": Palette.INK})
+		var tag: String = Palette.STATUS_WORDS.get(after, "") if after != RC.Status.NONE else "CLEARS %s" % Palette.STATUS_WORDS.get(int(st["before"]), "")
+		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
 	if bool(d["alive_before"]) and not bool(d["alive_after"]):
 		chips.append({"text": "DOWN", "color": CHIP_LOSS, "ink": Palette.PAPER})
+	if int(d.get("phase_after", 0)) != int(d.get("phase_before", 0)):
+		chips.append({"text": "PHASE %d" % (int(d["phase_after"]) + 1), "color": CHIP_RESIST, "ink": Palette.INK})
+	if int(d.get("pointers_after", 0)) > int(d.get("pointers_before", 0)):
+		chips.append({"text": "+%d NEEDLE" % (int(d["pointers_after"]) - int(d["pointers_before"])), "color": CHIP_RESIST, "ink": Palette.INK})
+	if bool(d.get("slices_changed", false)):
+		chips.append({"text": "NEW SLICES", "color": CHIP_RESIST, "ink": Palette.INK})
 	# Satellites docked here: what they deal and take.
 	for sat in state.satellites_of(id):
 		var sd := o.of(sat.id)
@@ -1564,8 +1700,17 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			chips.append({"text": "%s HITS %d" % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
 			chips.append({"text": "%s DOWN" % name, "color": CHIP_LOSS, "ink": Palette.PAPER})
-		elif int(sd["hp_after"]) < int(sd["hp_before"]):
-			chips.append({"text": "%s %d HP" % [name, int(sd["hp_after"]) - int(sd["hp_before"])], "color": CHIP_LOSS, "ink": Palette.PAPER})
+		elif int(sd["hp_after"]) != int(sd["hp_before"]):
+			var shp := int(sd["hp_after"]) - int(sd["hp_before"])
+			chips.append({"text": "%s %+d HP" % [name, shp], "color": CHIP_LOSS if shp < 0 else CHIP_GAIN, "ink": Palette.PAPER if shp < 0 else Palette.INK})
+		for key in ["block", "shield"]:
+			var sdelta := int(sd[key + "_after"]) - int(sd[key + "_before"])
+			if sdelta != 0:
+				chips.append({"text": "%s %+d %s" % [name, sdelta, "BLK" if key == "block" else "SHD"], "color": CHIP_GUARD, "ink": Palette.INK})
+		for st in sd["statuses"]:
+			chips.append({"text": "%s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×")], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
+		if int(sd.get("dock_after", -1)) != int(sd.get("dock_before", -1)):
+			chips.append({"text": "%s MOVES" % name, "color": CHIP_RESIST, "ink": Palette.INK})
 	if id == state.player.id:
 		if o.ram_delta != 0:
 			chips.append({"text": "RAM %+d" % o.ram_delta, "color": CHIP_GUARD, "ink": Palette.INK})
@@ -1584,6 +1729,8 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			chips.append({"text": "DAMAGE %+d" % o.damage_bonus_delta, "color": CHIP_RUN, "ink": Palette.INK})
 		if o.drones_gained > 0:
 			chips.append({"text": "+%d DRONE" % o.drones_gained, "color": CHIP_STATUS, "ink": Palette.INK})
+		if o.double_nudge_next:
+			chips.append({"text": "2× NUDGE CARDS NEXT", "color": CHIP_RUN, "ink": Palette.INK})
 		if o.outcome == CombatState.Outcome.VICTORY:
 			chips.append({"text": "VICTORY", "color": CHIP_GAIN, "ink": Palette.INK})
 		elif o.outcome == CombatState.Outcome.DEFEAT:
@@ -1597,7 +1744,7 @@ static func _chips_tooltip(chips: Array) -> String:
 	var parts := PackedStringArray()
 	for c in chips:
 		parts.append(String(c["text"]))
-	return "When you SEND IT: " + ", ".join(parts) + ".\nHITS = damage dealt; HP = health change; BLK / SHD = block and shield; glyphs = statuses on a slice (dashed ring on the wheel)."
+	return "When you SEND IT: " + ", ".join(parts) + ".\nHITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel)."
 
 
 # --- Stickers and hints ---------------------------------------------------------------

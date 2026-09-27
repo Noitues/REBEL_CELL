@@ -243,7 +243,7 @@ func _centre() -> Vector2:
 
 
 func _angle(i: int) -> float:
-	return -PI * 0.5 + TAU * i / maxf(1.0, slices.size())
+	return -PI * 0.5 - TAU * i / maxf(1.0, slices.size())  # slot order as in combat (H21: +1 anticlockwise on screen)
 
 
 func _place_pads() -> void:
@@ -260,7 +260,7 @@ func _place_pads() -> void:
 
 ## Middle angle of inner ring segment `k` (the segments share the circle evenly).
 func _ring_angle(k: int) -> float:
-	return -PI * 0.5 + TAU * (k + 0.5) / maxf(1.0, ring.size()) - PI / maxf(1.0, slices.size())
+	return -PI * 0.5 - TAU * (k + 0.5) / maxf(1.0, ring.size()) + PI / maxf(1.0, slices.size())
 
 
 func _slice(i: int) -> SliceData:

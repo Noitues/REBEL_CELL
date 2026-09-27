@@ -21,11 +21,29 @@ func _init() -> void:
 
 
 func set_ram(value: int, maximum: int) -> void:
+	_flash = false
 	ram = value
 	max_ram = maximum
 	custom_minimum_size.y = (CHIP + 4.0) * Settings.text_scale
 	tooltip_text = "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn." % [value, maximum]
 	queue_redraw()
+
+
+## Seconds the bar flashes when RAM was short (refused action).
+const FLASH_SECONDS := 0.6
+var _flash: bool = false
+
+
+## Flashes the bar (a refusal for want of RAM); static under reduce effects.
+func flash_short() -> void:
+	_flash = true
+	queue_redraw()
+	if DisplayServer.get_name() == "headless" or not Fx.effects_enabled():
+		return
+	get_tree().create_timer(FLASH_SECONDS).timeout.connect(func() -> void:
+		if is_instance_valid(self):
+			_flash = false
+			queue_redraw())
 
 
 func set_pending(delta: int) -> void:
@@ -52,6 +70,8 @@ func _draw() -> void:
 			col = Palette.NET_CYAN
 		elif k < ram:
 			col = Palette.CELL_PINK  # spent by the previewed action
+		if _flash and k >= ram:
+			col = Color(Palette.CELL_PINK, 0.45)  # the RAM that was missing
 		draw_rect(rc, col)
 		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= ram and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= ram and k < after) else 1.0)
 	draw_string(Palette.mono(), Vector2(x0 + max_ram * step + 6.0, chip), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.NET_CYAN)

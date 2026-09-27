@@ -53,6 +53,16 @@ const SLICE_NAMES := {
 	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFL",
 	RC.SliceType.MISS: "MISS",
 }
+## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
+## noise).
+const SLICE_WORDS := {
+	RC.SliceType.ATTACK: "ATTACK", RC.SliceType.CRIT: "CRITICAL", RC.SliceType.DEFEND: "DEFEND", RC.SliceType.EVADE: "EVADE",
+	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFFLICT",
+	RC.SliceType.MISS: "MISS",
+}
+const STATUS_WORDS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CORRUPTED", RC.Status.OVERCLOCKED: "OVERCLOCKED", RC.Status.ENCRYPTED: "ENCRYPTED", RC.Status.PARASITE: "PARASITE"}
+## How well a needle lands, in plain words.
+const TIER_WORDS := {RC.PrecisionTier.PERFECT: "perfect aim", RC.PrecisionTier.GOOD: "good aim", RC.PrecisionTier.PARTIAL: "half power"}
 ## A glyph and tag for every status, also readable without colour.
 const STATUS_GLYPHS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "☠", RC.Status.OVERCLOCKED: "⚡", RC.Status.ENCRYPTED: "⌗", RC.Status.PARASITE: "✺"}
 const STATUS_TAGS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CRPT", RC.Status.OVERCLOCKED: "OVCL", RC.Status.ENCRYPTED: "ENC", RC.Status.PARASITE: "PRST"}

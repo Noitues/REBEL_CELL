@@ -96,10 +96,12 @@ func preview_end_turn() -> CombatResult:
 func preview_turn_after(action: CombatAction) -> CombatResult:
 	if session == null:
 		return null
-	var first := session.preview(action)
+	# The card's own RNG draws (a reshuffle) carry into the resolve preview.
+	var rng := CombatResolver.clone_rng(session.rng)
+	var first := resolver.apply(session.state, action, rng)
 	if first == null or not first.ok():
 		return null
-	return resolver.preview_end_turn(first.state, session.rng)
+	return resolver.preview_end_turn(first.state, rng)
 
 
 func readouts(c: CombatantState) -> Array[Dictionary]:

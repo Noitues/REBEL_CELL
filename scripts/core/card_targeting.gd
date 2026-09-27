@@ -64,7 +64,25 @@ static func uses_direction(card: CardData) -> bool:
 	for e in card.effects:
 		if e != null and e.type == RC.EffectType.NUDGE:
 			return true
+		if e != null and e.type == RC.EffectType.CUSTOM and _handler_const(e, "USES_DIRECTION", false):
+			return true
 	return false
+
+
+## The way a play turns on screen: +1 clockwise. Nudges follow the action's direction; a
+## custom handler (Undock) may say its direction reads the other way round on screen.
+static func screen_direction(card: CardData, action: CombatAction) -> int:
+	for e in card.effects:
+		if e != null and e.type == RC.EffectType.CUSTOM and _handler_const(e, "USES_DIRECTION", false):
+			return action.direction * int(_handler_const(e, "SCREEN_SIGN", 1))
+	return action.direction
+
+
+static func _handler_const(e: EffectData, name: String, fallback: Variant) -> Variant:
+	if e.custom_handler == null:
+		return fallback
+	var consts := e.custom_handler.get_script_constant_map()
+	return consts.get(name, fallback)
 
 
 ## A nudge card whose ring follows the player's choice (not fixed to the inner ring).
@@ -92,3 +110,13 @@ static func is_random(card: CardData) -> bool:
 		if e != null and (e.type == RC.EffectType.RESPIN or e.slice_pick == RC.SlicePick.RANDOM_NON_MISS):
 			return true
 	return false
+
+
+## Whether playing the card may reshuffle the discard pile (a random draw): its draws
+## exceed the draw pile.
+static func may_reshuffle(state: CombatState, card: CardData) -> bool:
+	var draws := 0
+	for e in card.effects:
+		if e != null and e.type == RC.EffectType.DRAW_CARDS:
+			draws += maxi(0, e.amount)
+	return draws > state.draw_pile.size() and not state.discard_pile.is_empty()

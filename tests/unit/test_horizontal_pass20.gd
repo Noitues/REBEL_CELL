@@ -179,9 +179,9 @@ func test_the_tags_show_every_change_the_turn_brings() -> void:
 				if not c.is_satellite and int(d["hp_after"]) != int(d["hp_before"]):
 					assert_string_contains(all, "HP", "%s HP change shown" % c.display_name)
 				if not c.is_satellite and int(d["block_after"]) != int(d["block_before"]):
-					assert_string_contains(all, "BLK")
+					assert_string_contains(all, "BLOCK")
 				if not (d["statuses"] as Array).is_empty():
-					assert_true(texts.size() > 0 and (view.outcome.get("statuses", []) as Array).size() > 0, "status ghosts on %s" % c.display_name)
+					assert_true((view.outcome.get("statuses", []) as Array).size() > 0 or all.contains("RANDOM"), "status ghosts (or odds for a random pick) on %s" % c.display_name)
 				if int(d["dealt"]) > 0:
 					assert_string_contains(all, "HITS", "%s damage dealt shown" % c.display_name)
 			scene.end_turn()

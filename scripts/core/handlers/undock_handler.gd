@@ -1,4 +1,10 @@
 extends RefCounted
+
+## The action's direction chooses the side (CardTargeting offers both ways).
+const USES_DIRECTION := true
+## Slot + 1 lies anticlockwise on screen (the wheel is drawn so rotation + 1 is
+## clockwise), so the way the satellite moves on screen is the opposite of `direction`.
+const SCREEN_SIGN := -1
 ## Undock (GDD A.2 #14): move a satellite to an adjacent slice of its host, in the
 ## direction the action gives (default clockwise). Falls back to the other side when
 ## that slot is taken.

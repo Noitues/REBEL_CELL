@@ -112,8 +112,10 @@ func _run() -> void:
 	var first: StringName = grid_data.get_site(grid_data.home_site_id).links[0]
 	CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
 	c.armory = [&"turret", &"ice_lock", &"decoy"]
+	c.pending_raids.append({"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "heat": 25})
 	hq.show_raid()
 	await _shot("raid_setup", "Defending against a raid: placing defences.")
+	c.pending_raids.clear()
 	await _close(hq)
 	Dialogue.clear()
 	# 4. A netrun: the route, a fight and its moments.
@@ -138,7 +140,11 @@ func _run() -> void:
 		await _shot("fight_after_nudge", "The player clicked the right arrow above their wheel once.")
 		combat.end_turn()
 		await _shot("fight_after_send_it", "The player pressed SEND IT once.")
-		combat.engine.state().ram = 0
+		# Spend RAM the honest way (respins) until the next one is refused.
+		for i in 8:
+			if combat.engine.state().ram < combat.engine.resolver.config.respin_ram_cost:
+				break
+			combat.respin()
 		combat.respin()
 		await _shot("fight_refused", "The player tried to respin with no RAM.")
 	# 5. The shop, an event and a reward.

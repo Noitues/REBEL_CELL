@@ -57,9 +57,12 @@ const CONTROLLER_BINDS := {
 	&"cycle_target": JOY_BUTTON_Y, &"end_turn": JOY_BUTTON_X, &"rewind": JOY_BUTTON_BACK,
 	&"inspect": JOY_BUTTON_LEFT_STICK, &"respin": JOY_BUTTON_RIGHT_STICK, &"open_settings": JOY_BUTTON_START,
 }
+## The triggers switch which wheel (LT) and which ring (RT) the pad's nudges drive (H21:
+## the on-screen pickers are gone since cards are aimed by dragging; the nudge arrows are
+## mouse targets).
+const CONTROLLER_AXIS_BINDS := {&"toggle_nudge_wheel": JOY_AXIS_TRIGGER_LEFT, &"toggle_ring": JOY_AXIS_TRIGGER_RIGHT}
+const PAD_AXIS_NAMES := {JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT"}
 ## Menu and focus navigation on the pad (the D-pad moves focus, A presses, B backs out).
-## The combat pickers (ring, direction, slot, card target, nudge wheel) are on-screen
-## buttons reached by focus, so they need no pad button of their own.
 const UI_PAD_BINDS := {
 	&"ui_accept": JOY_BUTTON_A, &"ui_cancel": JOY_BUTTON_B,
 	&"ui_up": JOY_BUTTON_DPAD_UP, &"ui_down": JOY_BUTTON_DPAD_DOWN,
@@ -141,6 +144,8 @@ func key_text(action: StringName) -> String:
 	for ev in InputMap.action_get_events(action):
 		if pad_active and ev is InputEventJoypadButton:
 			return String(PAD_NAMES.get((ev as InputEventJoypadButton).button_index, "Pad %d" % (ev as InputEventJoypadButton).button_index))
+		if pad_active and ev is InputEventJoypadMotion:
+			return String(PAD_AXIS_NAMES.get((ev as InputEventJoypadMotion).axis, "Stick"))
 		if not pad_active and ev is InputEventKey:
 			var k := ev as InputEventKey
 			return key_name(k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode)
@@ -303,6 +308,19 @@ func apply_controller_bindings() -> void:
 				pad.button_index = binds[action]
 				pad.device = -1
 				InputMap.action_add_event(action, pad)
+	for action in CONTROLLER_AXIS_BINDS:
+		if not InputMap.has_action(action):
+			continue
+		var has_axis := false
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventJoypadMotion and (ev as InputEventJoypadMotion).axis == CONTROLLER_AXIS_BINDS[action]:
+				has_axis = true
+		if not has_axis:
+			var motion := InputEventJoypadMotion.new()
+			motion.axis = CONTROLLER_AXIS_BINDS[action]
+			motion.axis_value = 1.0
+			motion.device = -1
+			InputMap.action_add_event(action, motion)
 
 
 func set_assist_mode(value: bool) -> void:
