@@ -43,6 +43,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	# Animation pass ANIM-2 / ANIM-3 (combat): ids the combat motion added.
 	&"resolve_sequence", &"hit_line", &"victory_stamp", &"combat_end_hold", &"wheel_flip", &"dead_wheel_fade",  # ANIM-2
 	&"drag_ghost_tilt", &"card_pile", &"hand_reflow", &"ram_tick", &"ram_pending_blink",  # ANIM-3
+	# Animation pass ANIM-6 (screens, menus and ambience): ids the screen motion added.
+	&"saved_stamp_in", &"pad_prompts_in", &"focus_tip_in", &"event_outcome_pop", &"event_choice_stamp",
+	&"sold_stamp", &"caption_crossfade", &"city_sign_pick",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
