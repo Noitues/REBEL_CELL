@@ -56,11 +56,13 @@ audit's S14-S18). Views only: no rule or balance changed.
   `integrity_text`, `shown_text`).
 - **Raid map** (S4, S14): one legend, listing only what the raid map shows
   (`MapLegend.show_only(MapLegend.keys_of(graph, grid))`: marks, statuses, link / threat
-  edges and node kinds). Framing runs on `rebuilt` (positions measured after the city
-  redrew; the old pass measured before the redraw and aimed with stale positions): each
-  pass zooms (never past `RAID_MIN_ZOOM`, never in) and moves the node icons' box into the
-  map area beside the legend's column, the area as far as it is on screen, until it is
-  inside or `RAID_REFRAMES_MAX` (4) passes ran. Tags make way for the legend as before
+  edges and node kinds). Framing acts only on a settled measure (the free rect and the node
+  icons' box unchanged for `RAID_STABLE_FRAMES` frames: the icons follow the camera a
+  redraw or two late, the old pass aimed with stale positions and moved the camera twice
+  as far): each pass zooms out as far as needed (never past `RAID_MIN_ZOOM` 0.6, never in)
+  and moves the box into the map area right of the legend's column, the area as far as it
+  is on screen; a move's size is corrected by how far the last move really took the box;
+  at most `RAID_REFRAMES_MAX` (6) passes per layout. Tags make way for the legend as before
   (`avoid_controls`); the test checks node icons, pips, tags and labels against it.
 - **Raid words** (S5): an opening sentence (`ui.raid_intro`: "The corp is raiding your
   CORE. Place defences to cut the damage, then RUN THE RAID."); the facts read "HOME 50 >
