@@ -244,6 +244,21 @@ func arrow_center(ring: int, direction: int) -> Vector2:
 	return global_position + _center() + Vector2(cos(a), sin(a)) * r
 
 
+## Where a zone sits on screen (the aim line from a card ends there).
+func zone_center(zone: Dictionary) -> Vector2:
+	match String(zone.get("kind", "")):
+		"arrow":
+			return arrow_center(int(zone["ring"]), int(zone["direction"]))
+		"satellite":
+			var sat := _satellite(StringName(zone["id"]))
+			return _satellite_pos(sat) if sat != null else global_center()
+		"slot":
+			var tps := combatant.wheel.ticks_per_slice()
+			var a := _ang(int(zone["slot"]) * tps - combatant.wheel.rotation)
+			return global_center() + Vector2(cos(a), sin(a)) * (_radius() - _band() * 0.5)
+	return global_center()
+
+
 ## Nudge arrows this wheel offers: [{ring, direction}].
 func arrows() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -535,6 +550,10 @@ func _draw() -> void:
 	_draw_hub(center, inner, line)
 	if highlighted and combatant.is_alive():
 		_draw_crosshair(center, radius + 56)
+		# Name the reticle (reviewers read the brackets as a threat).
+		var ts := _fs(HUB_FONT_SIZE)
+		var d := Vector2(cos(PI * 0.25), sin(PI * 0.25)) * (radius + 56 + 10)
+		draw_string(Palette.mono(), center + d + Vector2(-4, ts), "TARGET", HORIZONTAL_ALIGNMENT_LEFT, -1, ts, _col(TARGET_COLOR))
 	if _zone_is(valid_zones, {"kind": "hub"}):
 		var hot := _zone_is([hover_zone], {"kind": "hub"})
 		draw_arc(center, inner - 4, 0, TAU, 48, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)

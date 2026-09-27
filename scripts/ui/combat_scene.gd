@@ -103,6 +103,11 @@ var selecting: int = -1
 var _options: Array[CombatAction] = []
 var _option_index: int = -1
 var _dragging: bool = false
+## Draws the aim line (see _draw_aim_line).
+var _aim_line: Control
+## Other cards fade while one is aimed.
+const AIM_DIM := 0.45
+const AIM_LINE_WIDTH := 3.0
 ## Pad triggers held down (axis -> bool): a squeeze toggles once.
 var _trigger_down: Dictionary = {}
 ## Scale the hand's cards were built at (rebuilt when the room or text scale changes it).
@@ -292,6 +297,7 @@ func cancel_selection() -> void:
 		v.valid_zones.clear()
 		v.hover_zone = {}
 		v.queue_redraw()
+	_dim_hand()
 	_clear_ghost()
 	_show_end_turn_preview()
 
@@ -661,6 +667,7 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 	if _dragging:
 		_option_index = -1  # nothing aimed until the card is over a zone
 		_show_end_turn_preview()
+		_dim_hand()
 		for v in _views():
 			v.queue_redraw()
 		return
@@ -741,6 +748,7 @@ func _on_view_drag_hover(view_id: StringName, zone: Dictionary) -> void:
 			v.queue_redraw()
 		_clear_ghost()
 		_show_end_turn_preview()
+		_aim_line.queue_redraw()
 		return
 	_show_selection()
 
@@ -756,8 +764,35 @@ func _on_view_drop(view_id: StringName, zone: Dictionary) -> void:
 	confirm_selection()
 
 
+## A dashed acid line from the aimed card to the zone it plays on, with a ring there.
+func _draw_aim_line() -> void:
+	if selecting < 0 or _option_index < 0 or selecting >= _hand_box.get_child_count():
+		return
+	var z := _zone_of(_options[_option_index])
+	var v := _view_of(z[0])
+	if v == null:
+		return
+	var origin := _aim_line.get_global_rect().position
+	var card := (_hand_box.get_child(selecting) as Control).get_global_rect()
+	var from := Vector2(card.get_center().x, card.position.y) - origin
+	var to := v.zone_center(z[1]) - origin
+	var n := maxi(2, int(from.distance_to(to) / 14.0))
+	for k in n:
+		if k % 2 == 0:
+			_aim_line.draw_line(from.lerp(to, float(k) / n), from.lerp(to, float(k + 1) / n), Palette.CELL_ACID, AIM_LINE_WIDTH)
+	_aim_line.draw_arc(to, 12.0, 0, TAU, 20, Palette.CELL_ACID, AIM_LINE_WIDTH)
+
+
+## Fades the cards not being aimed (and restores them).
+func _dim_hand() -> void:
+	for c in _hand_box.get_children():
+		(c as Control).modulate.a = AIM_DIM if selecting >= 0 and c.get_index() != selecting else 1.0
+	_aim_line.queue_redraw()
+
+
 ## Lights the aimed zone and previews that play.
 func _show_selection() -> void:
+	_dim_hand()
 	if selecting < 0 or _option_index < 0:
 		return
 	var z := _zone_of(_options[_option_index])
@@ -1138,6 +1173,13 @@ func _build_ui() -> void:
 	inspect_popup = InspectPopup.new()
 	inspect_popup.name = "InspectPopup"
 	add_child(inspect_popup)
+	# The aim line: from the card being aimed to the zone it would play on (drawn on top).
+	_aim_line = Control.new()
+	_aim_line.name = "AimLine"
+	_aim_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aim_line.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_aim_line.draw.connect(_draw_aim_line)
+	add_child(_aim_line)
 	_refresh_key_hints()
 
 

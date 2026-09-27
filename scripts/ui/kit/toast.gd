@@ -8,6 +8,10 @@ extends PanelContainer
 const SHOW_SECONDS := 2.4
 const FADE_SECONDS := 0.35
 const FONT_SIZE := 15
+## A drawn no-entry mark leads the message (readable without the words): radius and the
+## room it takes on the left (px at text scale 1.0).
+const MARK_RADIUS := 8.0
+const MARK_ROOM := 28.0
 
 var label: Label
 var _tween: Tween = null
@@ -21,6 +25,7 @@ func _init() -> void:
 	sb.border_color = Palette.INK
 	sb.set_border_width_all(2)
 	sb.set_content_margin_all(8)
+	sb.content_margin_left = MARK_ROOM
 	add_theme_stylebox_override("panel", sb)
 	label = Label.new()
 	label.add_theme_color_override("font_color", Palette.INK)
@@ -47,6 +52,14 @@ func show_text(text: String, anchor: Vector2) -> void:
 	if Fx.effects_enabled():
 		_tween.tween_property(self, "modulate:a", 0.0, FADE_SECONDS)
 	_tween.tween_callback(hide)
+
+
+func _draw() -> void:
+	var r := MARK_RADIUS * Settings.text_scale
+	var c := Vector2(MARK_ROOM * 0.5, size.y * 0.5)
+	draw_arc(c, r, 0, TAU, 20, Palette.CELL_PINK.darkened(0.2), 3.0, true)
+	var d := Vector2(r, -r) * 0.7
+	draw_line(c - d, c + d, Palette.CELL_PINK.darkened(0.2), 3.0, true)
 
 
 func text() -> String:

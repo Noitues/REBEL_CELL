@@ -119,6 +119,14 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 				out.append({"kind": "tag", "text": "BREACH"})
 			RC.EffectType.CLEANSE:
 				out.append({"kind": "tag", "text": "CLEANSE"})
+			RC.EffectType.DRAIN_RAM:
+				out.append({"kind": "tag", "text": "RAM-%d" % absi(e.amount)})
+			RC.EffectType.SNAP_TO_CENTER:
+				out.append({"kind": "tag", "text": "SNAP"})
+			RC.EffectType.DOUBLE_NUDGE_CARDS:
+				out.append({"kind": "tag", "text": "2x NUDGE"})
+			RC.EffectType.RETRIGGER:
+				out.append({"kind": "tag", "text": "AGAIN"})
 			_:
 				if EFFECT_SLICE.has(e.type):
 					out.append({"kind": "slice", "type": EFFECT_SLICE[e.type], "amount": e.amount,
