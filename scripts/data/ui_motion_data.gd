@@ -40,6 +40,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"wheel_respin", &"inner_ring_turn", &"pointer_migrate", &"pointer_orbit", &"enemy_turn_spin",  # spinner movement
 	&"drag_pickup", &"drag_follow", &"drop_settle", &"drop_reject", &"loadout_swap", &"crew_assign",  # drag and drop
 	&"influence_crossfade", &"influence_spread",  # city influence
+	# Animation pass ANIM-5 (map, raid, jack and Heat motion):
+	&"jack_scanlines", &"raid_step_gap", &"home_lag", &"minimap_pulse", &"select_ring_ease", &"legend_fold",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

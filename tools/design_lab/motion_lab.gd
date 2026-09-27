@@ -74,6 +74,8 @@ const DEMOS := {
 	&"drag_pickup": ["pop", "sticker"], &"drag_follow": ["slide_x", "sticker"], &"drop_settle": ["drop", "sticker"],
 	&"drop_reject": ["shake", "sticker"], &"loadout_swap": ["fly", "card"], &"crew_assign": ["pop", "card"],
 	&"influence_crossfade": ["fade_in", "panel"], &"influence_spread": ["fade_in", "panel"],
+	&"jack_scanlines": ["blink", "stage"], &"raid_step_gap": ["blink", "sticker"], &"home_lag": ["roll", "number"],
+	&"minimap_pulse": ["pop", "sticker"], &"select_ring_ease": ["pop", "sticker"], &"legend_fold": ["drop", "panel"],
 }
 
 var _cfg: UiMotionData
