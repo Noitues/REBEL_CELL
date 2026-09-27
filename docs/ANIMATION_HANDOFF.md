@@ -51,6 +51,7 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. `--demo-set=<id>.<field>=<v>,...` tunes the lab's copy for variant strips; combat ids play on the lab wheel ("view") or in a live combat scene ("scene", starts 3 frames later: frame 9). |
 | Combat (ANIM-2) | `ResolveBeats`, `CombatFxLayer`, `WheelView` motion overrides, `combat_scene` replays | SEND IT sequence, spins, nudge queue, landings, pointers, tags, rewind, death / breach / VICTORY: 4.2-4.4, 4.6-4.11 done. Strips: `docs/timeline/motion/`. |
 | Cards (ANIM-3) | `ZineCard` lift / deal offsets, `DragGhost`, `RamBar` ticks, combat_scene flights | Hover, pick-up, drag ghost, zone pulse, aim draw-in, reticle, play fly/stamp/dissolve/burn, cancel return, draw / discard piles, RAM ticks: 4.5 done. |
+| Screens (ANIM-6) | `PageTransition`, `MenuMotion`, `FlightFx`, `Typing`, `CrtHum`, `MotionDemo`; `HudStats` bumps, `DripButton` growth, `ModemSign` warm-up, `Dialogue` typing | Page entrances (glass / paper), menu cursor, Modem entry and purchase flights, loot fan and pick, subtitle type-in (Options: instant), drips, top bar bump / roll, HQ idle, event outcomes, city traffic and sign flicker: 4.13 (non-map panels), 4.17-4.24 done. `FlightFx` is the shared flight helper. `tools/design_lab/profile_frames.gd` profiles frame time. |
 
 ## 3. First task: the motion config and a motion lab
 
@@ -157,6 +158,11 @@ config durations; Skip jumps to the summary.
 node pops up in the isometric view; visited nodes dim.
 
 ### P3 — Screens, menus and ambience
+
+**Status (2026-09-27):** 4.17-4.24 are built (Animation pass ANIM-6), with 4.13's HQ
+panels (hum, radio, JACK IN, Polaroids, dossiers, Black Market). Choices, values and the
+frame-time profile: DECISIONS "Animation pass — ANIM-6"; STYLE_GUIDE 5.3; strips in
+`docs/timeline/motion/`.
 
 4.17 **Screen transitions.** Panels slide in from the edge with a 1-frame CRT roll
 (terminal glass) or drop in with tape (paper). Keep under 0.25 s.
