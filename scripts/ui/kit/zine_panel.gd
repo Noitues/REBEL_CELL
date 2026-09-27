@@ -48,6 +48,32 @@ func _ready() -> void:
 	pivot_offset = size / 2.0
 
 
+## The paper title's lettering at scale 1.0 (px), and the size in use.
+const TITLE_SIZE := 16
+var title_size: int = TITLE_SIZE
+## Tape strips overhang the panel's top edge by this much (px).
+const TAPE_OVERHANG := 6.0
+
+
+## The paper title follows text scale `s` (H23 S10: the event's title stayed small and
+## squeezed at 1.6); the content moves down to keep clear of it.
+func scale_title(s: float) -> ZinePanel:
+	title_size = roundi(TITLE_SIZE * s)
+	if title != "" and not terminal:
+		content.add_theme_constant_override("margin_top", roundi(26.0 * s))
+	queue_redraw()
+	return self
+
+
+## The paper title's rect (local px), for layout checks.
+func title_rect() -> Rect2:
+	if title == "":
+		return Rect2()
+	var f := Palette.marker()
+	var base := 20.0 * title_size / TITLE_SIZE
+	return Rect2(12, base - f.get_ascent(title_size), minf(size.x - 24.0, f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x), f.get_height(title_size))
+
+
 func _draw() -> void:
 	if terminal:
 		_draw_terminal()
@@ -58,7 +84,7 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2(5, size.y), Vector2(size.x - 5, 6)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 2.0)
 	if title != "":
-		draw_string(Palette.marker(), Vector2(12, 20), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.INK)
+		draw_string(Palette.marker(), Vector2(12, 20.0 * title_size / TITLE_SIZE), title, HORIZONTAL_ALIGNMENT_LEFT, size.x - 24.0, title_size, Palette.INK)
 	if tape:
 		draw_rect(Rect2(size.x * 0.35, -6, 60, 14), Palette.TAPE)
 		draw_rect(Rect2(-8, size.y * 0.4, 16, 40), Palette.TAPE)

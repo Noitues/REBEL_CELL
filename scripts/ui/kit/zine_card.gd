@@ -287,9 +287,12 @@ func _draw_tile() -> void:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	else:
 		_mini_card(icon_c, accent)
+	# H23 S8: the shade dims the art only; the name stays in the text colour.
+	if disabled:
+		draw_rect(rect, Color(0, 0, 0, 0.55))
 	var name_lines := _wrap(card_title.to_upper(), 13)
 	for i in mini(name_lines.size(), 2):
-		draw_string(Palette.mono(), Vector2(4, 100 + i * 13), name_lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, 11, Palette.PAPER)
+		draw_string(Palette.mono(), Vector2(4, 100 + i * 13), name_lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, 11, Palette.TERMINAL_TEXT)
 	if cost >= 0:
 		var price := "%d" % cost
 		var pw := Palette.mono().get_string_size(price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
@@ -297,8 +300,6 @@ func _draw_tile() -> void:
 		draw_arc(Vector2(px + 6, size.y - 15), 6, 0, TAU, 16, Palette.CELL_ACID, 1.5)
 		draw_circle(Vector2(px + 6, size.y - 15), 2, Palette.CELL_ACID)
 		draw_string(Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
-	if disabled:
-		draw_rect(rect, Color(0, 0, 0, 0.55))
 
 
 ## The reference's glowing microchip: a die with pins and a circuit square inside.
@@ -477,8 +478,8 @@ func price_tag_rect() -> Rect2:
 
 
 func _draw_price_tag() -> void:
-	if price < 0:
-		return
+	if price < 0 or buy_button != null:
+		return  # H23 S8: the buy button carries the price
 	var s := text_scale
 	var rt := price_tag_rect()
 	var h := rt.size.y
@@ -498,7 +499,9 @@ func _draw_price_tag() -> void:
 ## Tiles at text scale 1.0 draw as before; at other scales the lettering grows inside the
 ## same tile (the icon moves up to make room).
 func _draw_tile_any() -> void:
-	if is_equal_approx(text_scale, 1.0):
+	if look == Look.CHIP:
+		_draw_chip_tile()
+	elif is_equal_approx(text_scale, 1.0):
 		_draw_tile()
 	else:
 		_draw_tile_scaled()
@@ -550,8 +553,11 @@ func _draw_tile_scaled() -> void:
 			draw_line(icon_c + Vector2(-18 + k * 7, 22), icon_c + Vector2(-20 + k * 7, 36), Palette.NOTE_PAPER, 2.0)
 	else:
 		_mini_card(icon_c, accent)
+	# H23 S8: the shade dims the art only; the name stays in the text colour.
+	if disabled:
+		draw_rect(rect, Color(0, 0, 0, 0.55))
 	for i in shown:
-		draw_string(Palette.mono(), Vector2(4, name_top + fs + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.PAPER)
+		draw_string(Palette.mono(), Vector2(4, name_top + fs + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
 	if cost >= 0:
 		var pfs := roundi(14 * s)
 		var cost_text := "%d" % cost
@@ -559,5 +565,105 @@ func _draw_tile_scaled() -> void:
 		var px := size.x / 2.0 - (pw + 18 * s) / 2.0
 		StatIcon.draw(self, Vector2(px + 6 * s, size.y - 15 * s), 6 * s, StatIcon.CYCLES, Palette.CELL_ACID)
 		draw_string(Palette.mono(), Vector2(px + 17 * s, size.y - 10 * s), cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, Palette.CELL_ACID)
+
+
+# --- H23 screens: chips say what they do, a buy button on every shop item ------------------
+
+## The shop item's buy button (a sticker at the foot of the card or tile, over where the
+## price tag hung); null when the card is not for sale.
+var buy_button: BuyButton = null
+## A price that depends on a choice made later (a slice's slot): the highest (-1 = one price).
+var price_high: int = -1
+## Chip tiles: description lettering at scale 1.0 (px) and the chip icon's least room (px).
+const CHIP_TEXT_SIZE := 10
+const CHIP_ICON_MIN := 30.0
+## Share of the chip icon's usual size when it gives way to the description.
+const CHIP_ICON_SHRINK := 0.6
+
+
+## Gives the shop item a buy button reading `verb` and its price (H23 S8: the price tags
+## and the decoration did not read as buttons). The card stays the focus stop (the pad
+## presses it with A); the button presses it too and shows the pad button when focused.
+func with_buy(verb: String = "BUY") -> ZineCard:
+	if buy_button == null:
+		buy_button = BuyButton.new(self, verb)
+		add_child(buy_button)
+	buy_button.verb = verb
+	buy_button.refit()
+	queue_redraw()
+	return self
+
+
+## The price in words for the buy button: "45", or "100-150" when it depends on a choice.
+func price_words() -> String:
+	if price < 0:
+		return ""
+	if price_high > price:
+		return "%d-%d" % [price, price_high]
+	return "%d" % price
+
+
+## The description as the tile shows it: a chip's effect text (the kind prefix dropped).
+func tile_description() -> String:
+	var d := description
+	var colon := d.find(": ")
+	if colon > 0 and colon < 12:
+		d = d.substr(colon + 2)
+	return d
+
+
+## A microchip tile (Firmware, Daemons) at any text scale (H23 S8: chips had no words for
+## what they do): the chip icon (smaller when the words need the room), the name in the
+## text colour, then as much of the effect text as fits, ending in an ellipsis (the whole
+## text is the tooltip and shows on focus). The foot is the buy button's.
+func _draw_chip_tile() -> void:
+	var s := text_scale
+	var rect := Rect2(Vector2.ZERO, size)
+	var hot := _lifted and not disabled
+	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	if hot:
+		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
+	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
+	var foot := PRICE_TAG_H * s + 8.0 if price >= 0 else 6.0
+	var fs := roundi(TILE_NAME_SIZE * s)
+	var names := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	while names.size() > 2 and fs > 9:
+		fs -= 1
+		names = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	var dfs := roundi(CHIP_TEXT_SIZE * s)
+	var dline := dfs + 2.0
+	var desc := wrap_px(tile_description(), size.x - 8.0, dfs)
+	var name_h := (fs + 2.0) * mini(names.size(), 2)
+	var room := size.y - foot - name_h - CHIP_ICON_MIN - 4.0
+	var rows := clampi(floori(room / dline), 0, desc.size())
+	var text_top := size.y - foot - rows * dline
+	var name_top := text_top - name_h
+	var icon_c := Vector2(size.x / 2.0, maxf(CHIP_ICON_MIN * 0.5 + 2.0, name_top * 0.5))
+	var k := clampf((name_top - 4.0) / 60.0, CHIP_ICON_SHRINK, 1.0)
+	draw_set_transform(icon_c, 0.0, Vector2(k, k))
+	draw_circle(Vector2.ZERO, 24, Color(accent, 0.1))
+	_big_chip(Vector2.ZERO, accent)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if disabled:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
+	for i in mini(names.size(), 2):
+		draw_string(Palette.mono(), Vector2(4, name_top + fs + i * (fs + 2.0)), names[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+	for i in rows:
+		var t := desc[i]
+		if i == rows - 1 and desc.size() > rows:
+			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
+		draw_string(Palette.mono(), Vector2(4, text_top + dfs + i * dline), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
+
+
+## The chip's effect lines shown on the tile now (tests: at least one at every text size).
+func chip_lines_shown() -> int:
+	var s := text_scale
+	var foot := PRICE_TAG_H * s + 8.0 if price >= 0 else 6.0
+	var fs := roundi(TILE_NAME_SIZE * s)
+	var names := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	while names.size() > 2 and fs > 9:
+		fs -= 1
+		names = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	var dfs := roundi(CHIP_TEXT_SIZE * s)
+	var room := size.y - foot - (fs + 2.0) * mini(names.size(), 2) - CHIP_ICON_MIN - 4.0
+	return clampi(floori(room / (dfs + 2.0)), 0, wrap_px(tile_description(), size.x - 8.0, dfs).size())

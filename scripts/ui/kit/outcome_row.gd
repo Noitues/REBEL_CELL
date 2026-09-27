@@ -89,11 +89,23 @@ static func of_choice(s: NetrunSession, choice: EventChoiceData) -> Array[Dictio
 	return out
 
 
+## The items a choice shows (H23 S9: "(+0 Heat) +0" showed a change that is none): the
+## amounts that change something and the rewards; a zero amount shows no number (the
+## tooltip still says why, e.g. "HP is full").
+static func shown(p_items: Array[Dictionary]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for it in p_items:
+		if int(it.get("amount", 0)) != 0:
+			out.append(it)
+	return out
+
+
 ## The row in the words a choice button carries after its label ("-25 Cycles, -2 Heat,
-## Card: Jam, rescue an operative"), with the capped amounts (H22 #12).
+## Card: Jam, rescue an operative"), with the capped amounts (H22 #12); zero amounts are
+## left out (H23 S9).
 static func words(p_items: Array[Dictionary]) -> String:
 	var parts := PackedStringArray()
-	for it in p_items:
+	for it in shown(p_items):
 		var kind := StringName(it["kind"])
 		if kind == StatIcon.OPERATIVE:
 			parts.append("rescue an operative")
@@ -114,6 +126,9 @@ static func describe(p_items: Array[Dictionary]) -> String:
 	for it in p_items:
 		var what := String(StatIcon.NAMES.get(it["kind"], String(it["kind"])))
 		var part := ("%s: %s" % [what, it["name"]]) if String(it.get("name", "")) != "" else "%s %s" % [what, it["text"]]
+		if int(it.get("amount", 0)) == 0:
+			part = "%s: no change" % what  # H23 S9: no "+0"
+
 		if bool(it.get("capped", false)):
 			part += " (%s)" % String(CAPPED_WORDS.get(it["kind"], "capped"))
 		parts.append(part)

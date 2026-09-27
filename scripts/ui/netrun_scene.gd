@@ -35,6 +35,9 @@ const LEAVE_ICON := 34.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
 const LOOT_CARD := Vector2(150, 170)
 const LOOT_ROW_MAX := 900.0
+## Room above the event's paper at text scale 1.0 (px): its tape and title keep clear of
+## the subtitle band (H23 S10).
+const EVENT_TOP_GAP := 12.0
 
 var _status: Label
 ## Top strip: screen title and the status line (`_status`).
@@ -55,8 +58,11 @@ var _spoken_events: Dictionary = {}
 var _settings_panel: PauseMenu = null
 ## The route's node buttons (their key hints follow the device).
 var _route_buttons: Array[Button] = []
-## The route view's map key (placed clear of the nodes; null when zoomed out).
-var route_legend: MapLegend = null
+## The route view's key: the route's node kinds (placed clear of the nodes; null when
+## zoomed out, where the campaign map's MapLegend shows in the ROUTE window).
+var route_legend: RouteLegend = null
+## Pad button prompts at the foot of the screen (H23 S11).
+var pad_prompts: PadPrompts
 
 ## Event types that pop a toast (H20: the log strip is optional).
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
@@ -300,6 +306,7 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		UiFocus.focus_first(p)
 	var s := RunManager.netrun
 	_title_screen(s)
+	pad_prompts.set_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
 	if s != null and not s.run.is_over():
 		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun", s.campaign.corporation_id)
 		if s.run.phase != RunState.Phase.COMBAT:
@@ -310,6 +317,39 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## The pad prompts of the screen for the run's phase (H23 S11): A presses the focused
+## choice (its verb here), B leaves the Modem, Menu opens the settings. A fight shows its
+## own prompts.
+static func prompts_for(s: NetrunSession) -> Array:
+	var accept := "Select"
+	var out: Array = []
+	if s != null:
+		match s.run.phase:
+			RunState.Phase.MAP:
+				accept = "Go"
+			RunState.Phase.REWARD:
+				accept = "Take"
+			RunState.Phase.EVENT:
+				accept = "Choose"
+			RunState.Phase.SHOP:
+				accept = "Buy"
+			RunState.Phase.COMBAT:
+				return out
+	out.append([&"ui_accept", accept])
+	if s != null and s.run.phase == RunState.Phase.SHOP:
+		out.append([&"ui_cancel", "Leave"])
+	out.append([&"open_settings", "Settings"])
+	return out
+
+
+## A viewer, the Daemon tray or the pause menu is open over the screen (it takes B).
+func _modal_open() -> bool:
+	for n in ["DeckView", "SpinnerView", "LoadoutView", "DaemonTray"]:
+		if has_node(n):
+			return true
+	return _settings_panel != null
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
@@ -451,7 +491,9 @@ func _show_map() -> void:
 		key_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		key_room.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		route_col.add_child(key_room)
-		route_legend = MapLegend.pin_to(key_room, RunManager.campaign.corporation_id)
+		# H23 S7: the route's own key, the node kinds this route has (not the campaign map's).
+		route_legend = RouteLegend.new(RouteLegend.kinds_of(route_graph()["nodes"]))
+		key_room.add_child(route_legend)
 	_set_panel(panel, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -549,7 +591,8 @@ func route_graph() -> Dictionary:
 		# is the StatIcon the button shows.
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
 			"label": "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
-			"tip": "%s: %s" % [node_word(n), String(NODE_TIPS.get(n["type"], ""))],
+			# H23 S7: the kind and what it does, in the route key's words.
+			"tip": "%s." % String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(n["type"]), n["elite"]), node_word(n))),
 			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
 			# kind with the same painter (H22 #14).
 			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
@@ -723,11 +766,17 @@ func _show_event() -> void:
 		strip.add_child(body)
 		holder = strip
 	else:
-		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0)
+		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0).scale_title(Settings.text_scale)
 		panel.custom_minimum_size = Vector2(760, 200)
 		panel.content.add_child(body)
 		holder = panel
 	holder.name = "EventPanel"
+	# H23 S10: room above the paper for its tape and title, clear of the subtitle band.
+	var gap := Control.new()
+	gap.name = "EventTopGap"
+	gap.custom_minimum_size.y = EVENT_TOP_GAP * Settings.text_scale
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(gap)
 	var split := HBoxContainer.new()
 	split.add_theme_constant_override("separation", 22)
 	box.add_child(split)
@@ -749,7 +798,8 @@ func _show_event() -> void:
 	body.add_child(text)
 	if not _spoken_events.has(ev.id):
 		_spoken_events[ev.id] = true
-		Dialogue.say(ev.speaker, TextDb.t(ev, "text"), 0.0, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
+		# TextDb text is already translated: said once, not translated again (H23 S17).
+		Dialogue.say(ev.speaker, TextDb.t(ev, "text"), 0.0, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id, true)
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
@@ -771,8 +821,10 @@ func _show_event() -> void:
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		options.add_child(b)
-		if not outcome.is_empty():
-			OutcomeRow.attach(b, OutcomeRow.new(outcome))
+		# H23 S9: no numbers for a change that is none (a choice with none shows no row).
+		var numbers := OutcomeRow.shown(outcome)
+		if not numbers.is_empty():
+			OutcomeRow.attach(b, OutcomeRow.new(numbers))
 	options.add_child(GraffitiScrawl.new("PLAY IT\nSAFE??", -6.0, 24))
 	_set_panel(box, false)
 
@@ -883,8 +935,11 @@ func _show_shop() -> void:
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
 			elif kind == "daemons":
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
-			sticker.tooltip_text = UiTip.fold("%d Cycles (you have %d)\n%s" % [int(prices[i]), s.run.cycles, Codex.describe(res)])
+			sticker.tooltip_text = UiTip.fold("%s\n%s\nBuy: %d Cycles (you have %d)." % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles])
 			sticker.disabled = int(prices[i]) > s.run.cycles
+			# H23 S8: a clear buy button on every item, and the whole text on focus.
+			sticker.with_buy("BUY")
+			FocusTip.attach(sticker)
 			var index: int = i
 			var k: String = kind
 			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
@@ -927,7 +982,12 @@ func _show_shop() -> void:
 		tile.hotkey = ""
 		if low >= 0:
 			tile.with_price(low, high > low)
-		tile.tooltip_text = UiTip.fold("Overwrite a slot of your spinner with this slice: %d Cycles%s (you have %d).\n" % [low, (" (%d for a pricier slot)" % high) if high > low else "", s.run.cycles] + Codex.describe(sd))
+			tile.price_high = high
+		# H23 S8: the real prices ("100-150": the slot you overwrite sets it), said in words.
+		tile.tooltip_text = UiTip.fold("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n" % [tile.price_words(),
+			(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next" % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd))
+		tile.with_buy("BUY")
+		FocusTip.attach(tile)
 		var si := i
 		tile.pressed.connect(func() -> void: open_overwrite(si))
 		slice_row.add_child(tile)
@@ -948,6 +1008,8 @@ func _show_shop() -> void:
 	shred.icon_kind = "shred"
 	shred.tooltip_text = UiTip.fold("Remove a card from your deck: %d Cycles (you have %d)." % [s.card_removal_price(), s.run.cycles])
 	shred.pressed.connect(open_remove)
+	shred.with_buy("SHRED")
+	FocusTip.attach(shred)
 	remove_row.add_child(shred)
 	# The wallet (H21 #11): the Cycles to spend, beside the shredder, in sight whatever
 	# covers the top bar.
@@ -970,6 +1032,13 @@ func _show_shop() -> void:
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
 	_set_panel(root, false)
+
+
+## What a shop item does in words (H23 S8: microchips showed no description): the
+## content's translated description, else the Codex's.
+static func shop_text(res: Resource) -> String:
+	var d := TextDb.t(res, "description") if res != null else ""
+	return d if d != "" else (Codex.describe(res) if res != null else "")
 
 
 ## Opens a modal viewer over the netrun screen. The viewers hold focus themselves
@@ -1190,6 +1259,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		open_settings()
 		get_viewport().set_input_as_handled()
 		return
+	# B leaves the Modem (H23 S11; Esc stays the settings key on a keyboard).
+	if event.is_action_pressed("ui_cancel") and not event.is_action("open_settings") and not _modal_open() \
+			and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.SHOP:
+		leave_shop()
+		get_viewport().set_input_as_handled()
+		return
 	if map_view != null and is_instance_valid(map_view) and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.MAP:
 		var available := RunManager.netrun.available_nodes()
 		for i in mini(9, available.size()):
@@ -1225,6 +1300,9 @@ func _build_ui() -> void:
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
+	# Pad prompts in a row of their own under the page (H23 S11).
+	pad_prompts = PadPrompts.new()
+	root.add_child(pad_prompts)
 	_log = RichTextLabel.new()
 	_log.theme_type_variation = &"LogText"
 	_log.material = UiTheme.crt_material()
