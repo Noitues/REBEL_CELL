@@ -102,6 +102,10 @@ func show_saved() -> void:
 	await get_tree().process_frame
 	place_saved(saved_screen)
 	saved_label.modulate.a = 1.0
+	# Animation pass ANIM-6: the stamp stamps down (`saved_stamp_in`) before it holds and fades.
+	saved_label.pivot_offset = saved_label.size * 0.5
+	saved_label.scale = Vector2.ONE * (Motion.amplitude(&"saved_stamp_in") if Motion.live(&"saved_stamp_in") else 1.0)
+	Motion.run(&"saved_stamp_in", saved_label, ^"scale", Vector2.ONE)
 	_saved_live = true
 	var e := Motion.entry(&"saved_stamp")
 	_saved_tween = create_tween()

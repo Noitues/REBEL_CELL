@@ -51,6 +51,10 @@ var _return_focus: Control = null
 
 func _ready() -> void:
 	_return_focus = UiFocus.owner_of(self)
+	# The question drops in (Animation pass ANIM-6); a press during the drop completes it.
+	var glass := get_child(0) as Control
+	if glass is ZinePanel:
+		PageTransition.enter(glass, PageTransition.Look.PAPER)
 	UiFocus.trap.call_deferred(self)  # Yes <-> No, and never out to the screen behind
 	# Pad / keyboard: the safe answer takes focus.
 	if no_button != null:

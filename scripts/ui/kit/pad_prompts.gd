@@ -63,4 +63,16 @@ func _relabel() -> void:
 		l.add_theme_color_override("font_color", Palette.CELL_ACID)
 		add_child(l)
 		any = true
+	var was := visible
 	visible = any and Settings.pad_active
+	# Animation pass ANIM-6: a new set of prompts fades in (`pad_prompts_in`); a relabel of
+	# the same set does not.
+	var sig := str(prompts) + str(visible)
+	if visible and (sig != _shown_sig or not was):
+		modulate.a = 0.0
+		Motion.fade(self, 1.0, &"pad_prompts_in")
+	_shown_sig = sig
+
+
+## The prompt set last shown (a relabel of the same set does not fade).
+var _shown_sig: String = ""

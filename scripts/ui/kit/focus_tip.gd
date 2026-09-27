@@ -38,6 +38,9 @@ static func _show_for(control: Control) -> void:
 	tip.add_child(UiTip.make(control.tooltip_text))
 	control.add_child(tip)
 	tip._place.call_deferred(control)
+	# Animation pass ANIM-6: the tip fades in (`focus_tip_in`).
+	tip.modulate.a = 0.0
+	Motion.fade(tip, 1.0, &"focus_tip_in")
 
 
 static func _hide_for(control: Control) -> void:
