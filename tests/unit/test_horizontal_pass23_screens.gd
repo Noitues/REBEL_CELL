@@ -315,7 +315,7 @@ func test_every_raid_number_says_what_it_is() -> void:
 		var intro := hq._panel.find_child("RaidIntro", true, false) as Label
 		assert_not_null(intro, "one plain sentence opens the setup")
 		assert_eq(intro.text, TextDb.ui_text("ui.raid_intro"))
-		assert_string_contains(intro.text, "RUN THE RAID")
+		assert_string_contains(intro.text, "START DEFENSE")  # H24 S14: the button was renamed
 		var letters := RegEx.create_from_string("[A-Za-z]{2,}")
 		var digits := RegEx.create_from_string("[0-9]")
 		for n in _all(hq._panel):
@@ -495,7 +495,9 @@ func test_a_change_that_is_none_shows_no_number() -> void:
 		var row := b.find_child("OutcomeRow", false, false) as OutcomeRow
 		if row != null:
 			for it in row.items:
-				assert_ne(int(it["amount"]), 0, "choice %d's row has no zero" % i)
+				# H24 S9: a choice that changes nothing shows the neutral "no change" mark.
+				if StringName(it["kind"]) != OutcomeRow.NO_CHANGE:
+					assert_ne(int(it["amount"]), 0, "choice %d's row has no zero" % i)
 	await _close(scene)
 
 

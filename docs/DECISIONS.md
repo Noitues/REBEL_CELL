@@ -30,6 +30,108 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H24 screens: every word to the translators and translated once, a key that makes room, pages that carry words, lines that end with their screen
+Pass-24 screens items S1-S17 (the audits, a first-time player and a player who can't read
+English looking at the pass-24 storyboards, the scrambled one included). Views and tools
+only: no rule, content number or balance changed.
+- **The code's words reach the translators (S1).** `tools/export_text.gd` also exports
+  every string literal passed to `tr`, `atr`, `TranslationServer.translate` or the new
+  no-op marker `TextDb.mark` under `scripts/`, and every literal on a line ending in the
+  marker `# TR` (words kept in constants: node words, map key rows, verbs): their English
+  is the key itself (`TextDb.code_keys`, `TextDb.unescape`). `strings.csv` regenerated (the
+  `.translation` is rebuilt by the import). **After merging another branch's new tr()
+  words, run the export again** (a test checks every code key is in the CSV).
+- **Signed numbers (S2).** `TextDb.signed(n)` ("+3", "-2", "0"); a translated line takes
+  the number as `%s` (Godot's pseudolocalisation accents the `d` of `%+d` and the format
+  broke). None of the H24 screens' translated lines has `%+`; the combat's
+  (`combat_scene.gd`, `wheel_view.gd`, other owner) still do.
+- **Translate exactly once (S3, S4), the rule:** a page translates its words where it
+  builds them (`tr` for code words, `TextDb` for content) and shows them as given
+  (`TextDb.shown_as_given`: auto-translate and tooltip auto-translate off for the page's
+  tree). Applied to the HQ, Grid, raid setup and playout, the netrun pages but the fight,
+  the title, the top bar, the pause and settings menus, the confirm dialog, the deck and
+  spinner viewers, the Daemon tray, the raid playout panel, the MORE BELOW tag and the
+  SAVED stamp. Parts that show their own fixed words as keys translate themselves
+  (`TextDb.translates_itself`: the city agent's `MapLegend`, found by class name). Drawn
+  words (Badge, ZineNote and ZinePanel titles, GraffitiTag, GraffitiScrawl, HudBar's
+  title, CrewCard, route and raid map labels) come translated; kit parts that translate an
+  internal key use `tr`, not `atr` (HudStats names, AssetCard HP/LEFT, StickerButton,
+  ForecastStamp, BuyButton's verb, PadPrompts' verbs). The Modem sign draws its translated
+  words in the cybernetic face when it has every letter (`CyberType.can_draw`), else in the
+  display font. The route and raid overlays show the node tips the screens build as given.
+  The REBEL_CELL tag on the title and start screens stays as the brand mark (not
+  translated). `TextDb.t` / `ui` / `voice`: a key no catalogue has (a generated Mirror
+  elite) gives the content's own text, pseudolocalised once, never the key
+  (`TextDb.has_message`). Dialogue's speaker name is translated once (`speaker_name`), the
+  name label shows it as given.
+- **Late-campaign raid map (S5).** The raid key starts as the column at the map's left;
+  when the nodes cannot fit beside it without zooming out past `RAID_MIN_ZOOM` (now 0.45,
+  was 0.6), it becomes the Grid's strip key along the map's foot (`_use_raid_strip`), and
+  the map is framed above it. The choice holds for the layout (`raid_layout_key`: text
+  size, screen, network size), so redraws of the same setup keep it.
+- **B-back (S6).** Only a pad's B (`InputEventJoypadButton`) leaves the Modem, the Grid
+  and the raid setup; a keyboard's Esc is `ui_cancel` too and left when `open_settings`
+  was rebound off Esc.
+- **SAVED (S7).** `Fx.show_saved` places the stamp a frame later (a save runs before the
+  new page is built: after a new campaign it sat on the Daemons button, stale geometry)
+  and places it again every frame while it shows, so a pad prompt row or a late layout
+  never ends up under it. `Fx.saved_screen` lets tests give the 1280x720 page.
+- **Pager (S8).** `_wrap` takes the inline speaker's name as `lead`: a word that does not
+  fit after the name fills the rest of the first line by characters, so page one always
+  carries words (it showed "[SOLACE]:  …" alone).
+- **Event (S9).** The choice column keeps `EVENT_RIGHT_GAP` (16 px x text size) from the
+  screen's right edge. A choice that changes nothing shows a neutral empty-set mark and
+  "no change" (`OutcomeRow.no_change`, kind `NO_CHANGE`) and says so in its tooltip.
+- **Modem (S10).** Tiles lay out from `ZineCard.tile_parts`: the foot is the buy
+  sticker's real height (`buy_room`), the icon shrinks (to `CHIP_ICON_SHRINK`) and centres
+  in the room above the names, the effect lines fit between; shop tiles at 1.0 use the same
+  layout when they carry a buy sticker. A shop card's corner chip mark is dropped under
+  its buy sticker. The buy sticker's words go on two lines (verb over price) when one line
+  would shrink under `TWO_LINES_BELOW` (85%) of the text size; slice tiles widen with the
+  text as far as the SLICES window holds them (`slice_tile_size`). The shop items' effect
+  text no longer carries an untranslated "firmware: " prefix.
+- **HQ (S11).** From text scale `CrewCard.COMPACT_FROM` (1.3) dossiers are compact (the
+  card grows only to `CARD_MAX_SCALE`, the Polaroid shrinks to 70%), so the crew sits side
+  by side; every dossier fits the page view and is reached by the page scroll (mouse) and
+  by focus (pad). The share code left the Pirate Radio note: it is in the note's tooltip and
+  on the pause menu's seed line (`PauseMenu.code_line`).
+- **Route (S12).** The route map is fitted into the area left of the ROUTE column
+  (`fit_route_map`, at most `ROUTE_FITS_MAX` passes, never under `ROUTE_MIN_ZOOM`), as the
+  Grid is. The Route Key lists what the node colours mean (here, next, later, visited, the
+  corporation's). Each route choice says where it leads ("Fight > Event · Shop") and its
+  tooltip what it pays (the fight's Cycle range) and what is after it: the enemy is rolled
+  on entry, so what differs between two fights is the route beyond them.
+- **Title (S13).** Continue is one word, with the saved campaign as a line of stat icons
+  under it (`IconLine`: the corporation, Heat, ICE, runs, the state), the tooltip in words.
+  Supersedes H23 S12's "left as is": the storyboard's title shows its own private slot
+  (`title_scene.continue_slot`), created before the title shot, so it matches its HQ.
+- **Raid setup (S14).** Defence cards carry a pictogram (crosshair: it shoots; snowflake:
+  it holds threats; a lure: it pulls their routes) and a one-line effect built from the
+  asset's numbers ("HITS 4 x2 · REACH 1", "HOLDS 2 STEPS", "LURES, PULL 3";
+  `AssetCard.effect_of`). RUN THE RAID is START DEFENSE (and `ui.raid_intro`). The HQ badge
+  and the DEFENSE LOADOUT title both read `armory_words()` ("ARMORY 3/6": assets waiting in
+  the Armory, not those deployed, of its room) with the same tooltip.
+- **Screen-tied lines (S15), the rule:** a line may be said with a `scope` (a screen); it
+  ends when the player enters another screen (`Dialogue.enter_screen`, called by every
+  page change), queued or showing; lines without a scope (Heat thresholds, raid warnings
+  from a run, barks) play out. The briefing and the jack-in line belong to the route, the
+  event text to the event, the Rack line to the loot, run end lines to the run's end, the
+  raid warning to the raid setup.
+- **Top bar (S16).** HudStats draws small captions before tag groups ("CAMPAIGN" at HQ;
+  "CAMPAIGN" then "THIS RUN" in a run), each with a tooltip, outside a fight; every tag has
+  a tooltip.
+- **Whole text on focus (S17).** Loot stickers now carry `FocusTip` (the Modem's had it)
+  and a tooltip with the name and the whole description. The combat hand's cards are the
+  combat owner's.
+- Notes for the other owners: the combat's translated lines still use `%+d` (use `%s` and
+  `TextDb.signed`); the city files' constant words (`CityMapOverlay.KIND_WORDS`,
+  `CityLayout.KIND_TIPS`) can take the `# TR` marker to be exported (the Grid page wraps
+  them in `tr` already).
+- Tests: `tests/unit/test_horizontal_pass24_screens.gd`. Updated on purpose: pass23's raid
+  words test expects START DEFENSE; pass23's zero-outcome test lets the neutral "no
+  change" item through; `test_settings_extras` awaits `Fx.show_saved()` (placed a frame
+  later).
+
 ### 2026-09-27 — H23 combat: subtitles that don't blank, wheels sized from the room below, turns that say what happened
 From pass 23 (both audits, a first-time player and a player who can't read English
 looking at the pass-23 storyboards; GAP_ANALYSIS H23).
