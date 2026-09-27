@@ -26,6 +26,7 @@ func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	city = NeonCity.new()
 	city.net_mode = true
+	city.follow_campaign = true  # territory influence (H20)
 	city.dim = 0.35
 	city.city_seed = skyline_seed
 	add_child(city)

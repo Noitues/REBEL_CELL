@@ -10,11 +10,65 @@ extends Control
 ## per size into one triangle array; a light overlay animates traffic, beacons and rain
 ## unless reduce-effects. Every building's roof outline is kept (`roof_of`) so map
 ## overlays can mark real buildings. Pure view: deterministic, never touches game state.
+##
+## Baked (H20): building that geometry costs seconds and drawing it costs a full GPU pass
+## every frame, so outside headless the city is painted ONCE per look into a texture
+## (CityBakeCache, shared by every scene) and this control just draws the part of it the
+## camera shows. A cheap live layer (window lights blinking, beacons, traffic sparks,
+## sign flicker) keeps it alive; `influence` (CityInfluence) tints the territory as the
+## Cell or the corporation gains ground, and is part of the bake key.
 
 ## Emitted after the city geometry is rebuilt (overlays re-read roofs and positions).
 signal rebuilt
 
 const SKETCH_SHADER := preload("res://shaders/city_sketch.gdshader")
+const LIVE_SHADER := preload("res://shaders/city_live.gdshader")
+const LIGHTS_SHADER := preload("res://shaders/city_lights.gdshader")
+## The sketch shader's look parameters (copied to the bake painter, part of the key).
+const SKETCH_PARAMS: Array[String] = ["wobble", "jitter", "saturation", "grain", "wall_mode"]
+## Bake scale (texture px per city px): net maps zoom in (to 1.9), backdrops don't. Both
+## are multiplied by the window's stretch (a 1080p window renders the 720p canvas 1.5x).
+const BAKE_SCALE_MAP := 1.5
+const BAKE_SCALE_BACKDROP := 1.0
+const STRETCH_STEP := 0.25
+## A bake covers the camera's view grown by REGION_MARGIN (world px) and snapped to
+## REGION_SNAP; any later camera whose view fits inside a bake of the same look reuses it
+## (the HQ backdrop, the netrun and the combat arena share one; a zoomed raid playout
+## usually sits inside the Grid's). Bakes are painted in world space, so two bakes of
+## one look match where they overlap.
+const REGION_MARGIN := 160.0
+const REGION_SNAP := 128.0
+## Heat creep is baked in steps (a Heat point never re-bakes the city on its own).
+const CREEP_STEP := 0.05
+## Territory influence (CityInfluence): share of lines taking the lean colour at full
+## influence, and how far the ground leans.
+const INFLUENCE_INK_SHARE := 0.55
+const INFLUENCE_GROUND_TINT := 0.16
+## Live layer over the baked image: share of lit windows that blink, their period
+## (seconds, min + hash spread) and on-share; at most LIGHTS_MAX / SPARKS_MAX drawn per
+## frame. Blinks are small and slow (well under the flash limiter's 3 per second).
+const LIGHT_PICK := 0.03
+const LIGHT_PERIOD_MIN := 2.4
+const LIGHT_PERIOD_SPREAD := 5.0
+const LIGHT_ON_SHARE := 0.7
+const LIGHT_GLOW := 3.0
+const LIGHTS_MAX := 220
+## Traffic sparks: streets at least this busy, this share of their lots, speed (lanes per
+## second) and length (share of a lot).
+const SPARK_TRAFFIC := 0.3
+const SPARK_PICK := 0.35
+const SPARK_SPEED := 0.35
+const SPARK_LENGTH := 0.35
+const SPARKS_MAX := 120
+## Beacons are lit for BEACON_DUTY of BEACON_PERIOD (seconds); signs dip for SIGN_DIP of
+## every SIGN_FLICKER_PERIOD seconds, to SIGN_DIP_ALPHA. Window lights and beacons blink
+## on the GPU (city_lights shader); sparks and signs are the only per-frame drawing.
+const BEACON_PERIOD := 1.6
+const BEACON_DUTY := 0.5
+const BEACONS_MAX := 240
+const SIGN_FLICKER_PERIOD := 3.2
+const SIGN_DIP := 0.07
+const SIGN_DIP_ALPHA := 0.45
 
 ## Tile half-width / half-height of the isometric grid (2:1).
 const TILE_A := 34.0
@@ -202,6 +256,41 @@ var _fist_hull := PackedVector2Array()
 var _fist_cache: Dictionary = {}
 var _drawing_hq: bool = false
 
+## Draw from the shared baked image when the renderer can (false = always procedural).
+var use_bake: bool = true
+## Territory influence (CityInfluence.of); {} = none. Set with `set_influence`.
+var influence: Dictionary = {}
+## Set on a bake painter: the world rect (px) it paints; empty on a live city.
+var painter_region: Rect2 = Rect2()
+var _painter: bool = false
+## A bake came back empty (no readback on this renderer): draw procedurally.
+var _fallback: bool = false
+## The live layer: the baked image, the screen shade and the fx overlay (own material).
+var _view: Control
+## Offset from the stored overlay data (roofs, beacons...) to this control's space.
+var _shift: Vector2 = Vector2.ZERO
+var _baked_key: String = ""
+var _live_for: Array = []
+var _lights: Array[Dictionary] = []
+var _live_lights: Array[Dictionary] = []
+var _live_trails: Array[Dictionary] = []
+var _live_beacons: Array[Dictionary] = []
+var _lights_layer: Control
+var _beacons_layer: Control
+## Size at the last real resize (px); smaller changes are the pan's float jitter.
+const RESIZE_EPSILON := 0.5
+var _last_size: Vector2 = Vector2.ZERO
+## Influence at the lot being drawn (-1 corporation .. +1 the Cell).
+var _infl: float = 0.0
+## Campaign the influence follows (read only), polled every INFLUENCE_POLL seconds:
+## `follow_campaign` tracks RunManager's current campaign (the scene backdrops), else
+## the one given to `bind_campaign`.
+const INFLUENCE_POLL := 0.5
+var follow_campaign: bool = false
+var _campaign: CampaignState = null
+var _corp: CorporationData = null
+var _poll_t: float = 0.0
+
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -209,34 +298,118 @@ func _init() -> void:
 	material = ShaderMaterial.new()
 	material.shader = SKETCH_SHADER
 	material.set_shader_parameter("wall_mode", TEXTURE_SHADER_MODE[face_texture])
+	_view = Control.new()
+	_view.name = "CityView"
+	_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_view.material = ShaderMaterial.new()
+	(_view.material as ShaderMaterial).shader = LIVE_SHADER
+	_view.draw.connect(_draw_view)
+	add_child(_view)
+	_lights_layer = _blink_layer("CityLights", LIGHT_ON_SHARE, _draw_lights)
+	_beacons_layer = _blink_layer("CityBeacons", BEACON_DUTY, _draw_beacons)
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_fx.use_parent_material = true
 	_fx.draw.connect(_draw_fx)
-	add_child(_fx)
-	resized.connect(queue_redraw)
+	_view.add_child(_fx)
+	resized.connect(_on_resized)
+
+
+## A layer of GPU-blinking lights (city_lights shader), under the fx overlay.
+func _blink_layer(layer_name: String, duty: float, painter: Callable) -> Control:
+	var c := Control.new()
+	c.name = layer_name
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var m := ShaderMaterial.new()
+	m.shader = LIGHTS_SHADER
+	m.set_shader_parameter("duty", duty)
+	c.material = m
+	c.draw.connect(painter)
+	_view.add_child(c)
+	return c
 
 
 func _ready() -> void:
 	Settings.changed.connect(_apply_effects)
 	_apply_effects()
+	sync_influence()
 
 
 func _apply_effects() -> void:
+	var live := not _painter and not Settings.reduce_effects
 	var sm := material as ShaderMaterial
-	sm.set_shader_parameter("scan_strength", 0.0 if Settings.reduce_effects else 0.07)
-	sm.set_shader_parameter("flicker", 0.0 if Settings.reduce_effects else 0.012)
+	sm.set_shader_parameter("scan_strength", 0.07 if live else 0.0)
+	sm.set_shader_parameter("flicker", 0.012 if live else 0.0)
+	var vm := _view.material as ShaderMaterial
+	vm.set_shader_parameter("scan_strength", 0.07 if live else 0.0)
+	vm.set_shader_parameter("flicker", 0.012 if live else 0.0)
+	for layer in [_lights_layer, _beacons_layer]:
+		((layer as Control).material as ShaderMaterial).set_shader_parameter("animate", 1.0 if live else 0.0)
+	_fx.queue_redraw()
 
 
-## Rebuilds the static city (after a district, colour or creep change).
+## A real resize re-frames the city; the menu pan's sub-pixel size jitter (its offsets
+## move every frame) does not.
+func _on_resized() -> void:
+	if (size - _last_size).length() > RESIZE_EPSILON:
+		_last_size = size
+		refresh()
+
+
+## Rebuilds the static city (after a district, colour or creep change). Baked, this only
+## re-frames the cached image (or starts a bake when the look changed).
 func refresh() -> void:
 	_built_for = Vector2.ZERO
 	queue_redraw()
+	if _view != null:
+		_view.queue_redraw()
+
+
+## Follows a campaign's Grid for the territory influence (read only; null = none).
+func bind_campaign(c: CampaignState, corp: CorporationData) -> void:
+	_campaign = c
+	_corp = corp
+	set_influence(CityInfluence.of(c, corp))
+
+
+## Sets the territory influence; re-frames (and re-bakes) only when it changed.
+func set_influence(inf: Dictionary) -> void:
+	if CityInfluence.signature(inf) == CityInfluence.signature(influence):
+		return
+	influence = inf
+	refresh()
+
+
+## True while this city draws the shared baked image (not headless, not a painter).
+func is_baked() -> bool:
+	return use_bake and not _painter and not _fallback and CityBakeCache.can_bake()
+
+
+## Re-reads the followed campaign's influence (re-bakes only if it changed).
+func sync_influence() -> void:
+	if follow_campaign or _campaign != null:
+		set_influence(_followed_influence())
+
+
+## The influence of the followed campaign (the current one if nothing is followed).
+func _followed_influence() -> Dictionary:
+	if follow_campaign:
+		return CityInfluence.of(RunManager.campaign, RunManager.corporation)
+	if _campaign != null:
+		return CityInfluence.of(_campaign, _corp)
+	return influence
 
 
 func _process(delta: float) -> void:
-	if Settings.reduce_effects or not is_visible_in_tree():
+	if follow_campaign or _campaign != null:
+		_poll_t += delta
+		if _poll_t >= INFLUENCE_POLL:
+			_poll_t = 0.0
+			sync_influence()
+	if not Fx.effects_enabled() or not is_visible_in_tree():
 		return
 	anim_t += delta
 	if pan:
@@ -244,10 +417,9 @@ func _process(delta: float) -> void:
 		_pan_t += delta
 		var dx := sin(_pan_t * 0.019) * PAN_MARGIN * 0.9
 		var dy := sin(_pan_t * 0.013 + 1.0) * PAN_MARGIN * 0.7
-		offset_left = -PAN_MARGIN + dx
-		offset_right = PAN_MARGIN + dx
-		offset_top = -PAN_MARGIN + dy
-		offset_bottom = PAN_MARGIN + dy
+		# Move, don't resize: four separate offsets made the size jitter every frame, and
+		# every layer redrew (H20).
+		position = Vector2(-PAN_MARGIN + dx, -PAN_MARGIN + dy)
 	_fx.queue_redraw()
 
 
@@ -261,6 +433,8 @@ func _h(a: int, b: int, c: int = 0) -> float:
 
 ## Line colour: the corporation's ink for its share of buildings, else any of the five.
 func _ink(a: int, b: int) -> Color:
+	if _infl != 0.0 and _h(a, b, 15) < absf(_infl) * INFLUENCE_INK_SHARE:
+		return _pale(CityInfluence.color_for(influence, _infl))
 	var share: float = float(_profile.get("corp_ink", 0.0))
 	if _terr == district and district != &"":
 		share += corp_creep * 0.35
@@ -273,6 +447,8 @@ func _ink(a: int, b: int) -> Color:
 
 ## A street's ink: like `_ink` but at full neon strength (no palette paleness).
 func _street_ink(a: int, b: int) -> Color:
+	if _infl != 0.0 and _h(a, b, 16) < absf(_infl) * INFLUENCE_INK_SHARE:
+		return CityInfluence.color_for(influence, _infl)
 	var share: float = float(_profile.get("corp_ink", 0.0))
 	if _terr != &"" and _h(a, b, 12) < share:
 		return Palette.corp_color(_terr)
@@ -355,7 +531,14 @@ func grid_to_local(x: float, y: float) -> Vector2:
 
 ## The building on lot (i, j): {"roof", "base", "shape", "height"} or {}.
 func roof_of(i: int, j: int) -> Dictionary:
-	return _roofs.get(Vector2i(i, j), {})
+	var rec: Dictionary = _roofs.get(Vector2i(i, j), {})
+	if rec.is_empty() or _shift == Vector2.ZERO:
+		return rec
+	# Baked: the roofs are stored in the image's space; move them under the camera.
+	var out := rec.duplicate()
+	out["roof"] = Transform2D(0.0, _shift) * (rec["roof"] as PackedVector2Array)
+	out["base"] = (rec["base"] as Vector2) + _shift
+	return out
 
 
 ## The nearest lot with a building to (x, y) within `radius` lots, avoiding `taken`.
@@ -398,22 +581,13 @@ func _grid_of(p: Vector2) -> Vector2:
 	return Vector2((s + d) * 0.5, (s - d) * 0.5)
 
 
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
-	if size.x < 2.0 or size.y < 2.0:
+## Camera: the focused HQ lands on hq_anchor; the whole city centres the Sprawl; a
+## painter maps its region's corner to (0, 0).
+func _camera() -> void:
+	if _painter:
+		_ox = 0.0
+		_oy = 0.0
 		return
-	_inks.clear()
-	for c in INKS:
-		_inks.append(_pale(c))
-	if district != &"":
-		corp_color = _pale(Palette.corp_color(district))
-	_trails.clear()
-	_beacons.clear()
-	_signs.clear()
-	_roofs.clear()
-	_verts = PackedVector2Array()
-	_cols = PackedColorArray()
-	# Camera: the focused HQ lands on hq_anchor; the whole city centres the Sprawl.
 	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2(0, 0)
 	var anchor := Vector2(size.x * hq_anchor.x, size.y * hq_anchor.y) if district != &"" else size * 0.5
 	if pan:
@@ -423,6 +597,302 @@ func _draw() -> void:
 		anchor = size * focus_anchor
 	_ox = anchor.x - (focus.x - focus.y) * TILE_A
 	_oy = anchor.y - (focus.x + focus.y) * TILE_B
+
+
+## World px (camera-free iso space) of grid point (x, y).
+static func world_of(x: float, y: float) -> Vector2:
+	return Vector2((x - y) * TILE_A, (x + y) * TILE_B)
+
+
+## The world rect (px) this camera shows.
+func view_rect() -> Rect2:
+	return Rect2(-_ox, -_oy, size.x, size.y)
+
+
+## The region to bake for the current camera: the view grown and snapped.
+func bake_region() -> Rect2:
+	var g := view_rect().grow(REGION_MARGIN)
+	var p := (g.position / REGION_SNAP).floor() * REGION_SNAP
+	var e := (g.end / REGION_SNAP).ceil() * REGION_SNAP
+	return Rect2(p, e - p)
+
+
+## The window's stretch of the 720p canvas (1 at 1280x720, 1.5 at 1080p), snapped.
+func _stretch() -> float:
+	if not is_inside_tree():
+		return 1.0
+	return maxf(1.0, snappedf(get_viewport().get_final_transform().get_scale().x, STRETCH_STEP))
+
+
+## Texture px per city px for a bake of `region` (see BAKE_SCALE_*).
+func bake_scale(region: Rect2) -> float:
+	return CityBakeCache.fit_scale(region, (BAKE_SCALE_MAP if net_mode else BAKE_SCALE_BACKDROP) * _stretch())
+
+
+## Everything that changes the baked look (not where the camera is), as a cache key.
+func look_key() -> String:
+	var sketch := []
+	for p in SKETCH_PARAMS:
+		sketch.append(material.get_shader_parameter(p))
+	var cult := []
+	var names: Array = cultures.keys()
+	names.sort()
+	for k in names:
+		cult.append([String(k), String(cultures[k])])
+	return CityBakeCache.key_of([city_seed, String(district), net_mode, ink_set, face_texture, cult, _baked_creep(),
+		CityInfluence.signature(influence), sketch, _stretch()])
+
+
+## The cache key of one bake: the look and the region it covers.
+func bake_key(region: Rect2) -> String:
+	return look_key() + "@" + var_to_str(Rect2i(region))
+
+
+func _baked_creep() -> float:
+	return snappedf(corp_creep, CREEP_STEP)
+
+
+## A painter for the bake cache: a copy of this city's look that paints `region` (world
+## px) at `scale` into a SubViewport. It draws in world space (camera at the origin),
+## placed so the region's corner lands on the viewport's corner.
+func make_painter(region: Rect2, p_scale: float) -> NeonCity:
+	var p := NeonCity.new()
+	p._painter = true
+	p.painter_region = region
+	p.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	p.position = -region.position * p_scale
+	p.size = region.size
+	p.scale = Vector2(p_scale, p_scale)
+	p.city_seed = city_seed
+	p.district = district
+	p.net_mode = net_mode
+	p.ink_set = ink_set
+	p.face_texture = face_texture
+	p.cultures = cultures.duplicate()
+	p.corp_creep = _baked_creep()
+	p.influence = influence
+	p.dim = 0.0
+	for k in SKETCH_PARAMS:
+		# Only values set on this city (unset ones read back null: keep the defaults).
+		var v: Variant = material.get_shader_parameter(k)
+		if v != null:
+			p.material.set_shader_parameter(k, v)
+	p.set_process(false)
+	return p
+
+
+## What a painter recorded besides pixels, in its image space (for the live layer).
+func overlay_data() -> Dictionary:
+	return {"roofs": _roofs, "beacons": _beacons, "lights": _lights, "trails": _trails, "signs": _signs}
+
+
+func _draw() -> void:
+	if is_baked():
+		_view.queue_redraw()
+		return
+	_draw_city()
+
+
+## The live, baked city: the cached image under the camera, then the screen shade. Starts
+## a bake when the look has none yet (the sky shows meanwhile, a frame or two).
+func _draw_view() -> void:
+	if not is_baked():
+		return
+	_view.draw_rect(Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
+	if size.x < 2.0 or size.y < 2.0:
+		return
+	_camera()
+	# Read the territory now, not at the next poll: a scene whose campaign loads after
+	# the backdrop is built would otherwise bake twice.
+	var inf := _followed_influence()
+	if CityInfluence.signature(inf) != CityInfluence.signature(influence):
+		influence = inf
+	var look := look_key()
+	var key := CityBakeCache.find(look, view_rect())
+	if key == "":
+		var want := bake_region()
+		_start_bake.call_deferred(bake_key(want), want, look)
+		# Meanwhile show what we have: this look elsewhere, or the previous look (say,
+		# before a territory change), rather than an empty sky while the bake runs.
+		key = CityBakeCache.find_overlapping(look, view_rect())
+		if key == "" and CityBakeCache.has(_baked_key) and not CityBakeCache.entry(_baked_key).has("failed"):
+			key = _baked_key
+		if key == "":
+			_draw_shade(_view)
+			return
+	var e := CityBakeCache.entry(key)
+	if e.has("failed"):
+		_fallback = true
+		queue_redraw()
+		return
+	var region: Rect2 = e["region"]
+	_shift = Vector2(_ox, _oy)
+	_view.draw_texture_rect(e["texture"], Rect2(region.position + _shift, region.size), false)
+	_draw_shade(_view)
+	if key != _baked_key:
+		_baked_key = key
+		_roofs = e["roofs"]
+		_beacons = e["beacons"]
+		_lights = e["lights"]
+		_trails = e["trails"]
+		_signs = e["signs"]
+		_live_for = []
+	_collect_live()
+	_built_for = size
+	_fx.queue_redraw()
+	rebuilt.emit()
+
+
+func _start_bake(key: String, region: Rect2, look: String) -> void:
+	if not is_inside_tree() or CityBakeCache.has(key):
+		_view.queue_redraw()
+		return
+	if CityBakeCache.is_pending(key):
+		CityBakeCache.wait(key, _view)
+		return
+	CityBakeCache.request(key, look, make_painter(region, bake_scale(region)), _view)
+
+
+## The live layer's visible share (culled to the view, capped), refreshed when the camera
+## or the image changes.
+func _collect_live() -> void:
+	var sig := [_baked_key, _shift, size]
+	if sig == _live_for:
+		return
+	_live_for = sig
+	var vis := Rect2(-_shift, size).grow(LIGHT_GLOW * 4.0)
+	_live_lights = _pick_visible(_lights, vis, "a", LIGHTS_MAX)
+	_live_trails = _pick_visible(_trails, vis, "a", SPARKS_MAX)
+	_live_beacons = _pick_visible(_beacons, vis, "pos", BEACONS_MAX)
+	_lights_layer.queue_redraw()
+	_beacons_layer.queue_redraw()
+
+
+## Window lights for the GPU blink layer: a lit window (brighter, with a soft glow) shown
+## while lit, a dark pane shown while off. Built once per camera, not per frame.
+func _draw_lights() -> void:
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	var uvs := PackedVector2Array()
+	for lt in _live_lights:
+		var a: Vector2 = lt["a"] + _shift
+		var w: Vector2 = lt["w"]
+		var col: Color = lt["color"]
+		var up := Vector2(0, -3.2)
+		var period: float = lt["period"]
+		var ph: float = lt["phase"]
+		var g := Vector2(LIGHT_GLOW, LIGHT_GLOW * 0.6)
+		var glow := [a + Vector2(-g.x, g.y), a + w + g, a + w + up + Vector2(g.x, -g.y), a + up - g]
+		_blink_quad(pts, cols, uvs, glow, Color(col, 0.18), ph, period)
+		_blink_quad(pts, cols, uvs, [a, a + w, a + w + up, a + up], col.lightened(0.35), ph, period)
+		_blink_quad(pts, cols, uvs, [a, a + w, a + w + up, a + up], Color(Palette.NIGHT_SKY, 0.9), ph, -period)
+	_submit(_lights_layer, pts, cols, uvs)
+
+
+## Beacons for the GPU blink layer: a big halo and bright core while lit, a small dim
+## one while off.
+func _draw_beacons() -> void:
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	var uvs := PackedVector2Array()
+	for bcn in _live_beacons:
+		var p: Vector2 = bcn["pos"] + _shift
+		var col: Color = bcn["color"]
+		# Same timing as ever: lit while (phase * 3 + t) mod period < half the period.
+		var ph := fmod(float(bcn["phase"]) * 3.0 / BEACON_PERIOD, 1.0)
+		_blink_hex(pts, cols, uvs, p, 5.0, Color(col, 0.25), ph, BEACON_PERIOD)
+		_blink_hex(pts, cols, uvs, p, 1.6, Color(col, 0.95), ph, BEACON_PERIOD)
+		_blink_hex(pts, cols, uvs, p, 3.0, Color(col, 0.1), ph, -BEACON_PERIOD)
+		_blink_hex(pts, cols, uvs, p, 1.6, Color(col, 0.4), ph, -BEACON_PERIOD)
+	_submit(_beacons_layer, pts, cols, uvs)
+
+
+static func _blink_quad(pts: PackedVector2Array, cols: PackedColorArray, uvs: PackedVector2Array, q: Array, col: Color, phase: float, period: float) -> void:
+	for k in [0, 1, 2, 0, 2, 3]:
+		pts.append(q[k])
+		cols.append(col)
+		uvs.append(Vector2(phase, period))
+
+
+static func _blink_hex(pts: PackedVector2Array, cols: PackedColorArray, uvs: PackedVector2Array, c: Vector2, r: float, col: Color, phase: float, period: float) -> void:
+	for k in 6:
+		pts.append(c)
+		pts.append(c + Vector2.from_angle(TAU * k / 6.0) * r)
+		pts.append(c + Vector2.from_angle(TAU * (k + 1) / 6.0) * r)
+		for n in 3:
+			cols.append(col)
+			uvs.append(Vector2(phase, period))
+
+
+static func _submit(layer: Control, pts: PackedVector2Array, cols: PackedColorArray, uvs: PackedVector2Array) -> void:
+	if pts.is_empty():
+		return
+	var idx := PackedInt32Array()
+	idx.resize(pts.size())
+	for k in pts.size():
+		idx[k] = k
+	RenderingServer.canvas_item_add_triangle_array(layer.get_canvas_item(), idx, pts, cols, uvs)
+
+
+## Deterministic 0-1 hash of a point (view decoration only).
+func _hv(p: Vector2) -> float:
+	return _h(int(p.x), int(p.y), 120)
+
+
+## Up to `cap` items whose `field` point lies in `vis`, spread evenly over the list.
+static func _pick_visible(items: Array[Dictionary], vis: Rect2, field: String, cap: int) -> Array[Dictionary]:
+	var inside: Array[Dictionary] = []
+	for it in items:
+		if vis.has_point(it[field]):
+			inside.append(it)
+	if inside.size() <= cap:
+		return inside
+	var out: Array[Dictionary] = []
+	var stride := float(inside.size()) / cap
+	for k in cap:
+		out.append(inside[int(k * stride)])
+	return out
+
+
+## Haze (darker towards the top, for text), side vignette, and the dim veil.
+func _draw_shade(ci: CanvasItem) -> void:
+	if not pan:
+		var top := Color(Palette.NIGHT_SKY, 0.7)
+		var clear := Color(Palette.NIGHT_SKY, 0.0)
+		ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.28), Vector2(0, size.y * 0.28)]), PackedColorArray([top, top, clear, clear]))
+		var v := Color(0, 0, 0, 0.5)
+		var c0 := Color(0, 0, 0, 0)
+		ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
+		ci.draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
+	if dim > 0.0:
+		ci.draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
+
+
+## The procedural city (headless, painters, and any renderer that can't read back).
+func _draw_city() -> void:
+	if _painter:
+		# A painter draws in world space, outside its own control rect: cull by the
+		# region instead, or the viewport would skip it.
+		RenderingServer.canvas_item_set_custom_rect(get_canvas_item(), true, painter_region)
+	draw_rect(painter_region if _painter else Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
+	if size.x < 2.0 or size.y < 2.0:
+		return
+	_inks.clear()
+	for c in INKS:
+		_inks.append(_pale(c))
+	if district != &"":
+		corp_color = _pale(Palette.corp_color(district))
+	# Fresh containers (a live city may hold the bake cache's shared ones).
+	_trails = []
+	_beacons = []
+	_signs = []
+	_lights = []
+	_roofs = {}
+	_shift = Vector2.ZERO
+	_baked_key = ""
+	_verts = PackedVector2Array()
+	_cols = PackedColorArray()
+	_camera()
 	_hq_rects.clear()
 	for t in TERRITORIES:
 		if t["id"] != &"":
@@ -431,13 +901,17 @@ func _draw() -> void:
 	_hq_rect = _hq_rects.get(district, Rect2i())
 	_build_streets()
 	_build_fist()
-	var s_min := int(floor((-40.0 - _oy) / TILE_B)) - 2
-	var s_max := int((size.y + 420.0 - _oy) / TILE_B) + 2
-	var d_min := int(floor((-80.0 - _ox) / TILE_A)) - 1
-	var d_max := int((size.x + 80.0 - _ox) / TILE_A) + 1
+	# The lots to draw: the control (or, painting a bake, its region) plus margins for
+	# buildings standing below the edge and reaching up into it.
+	var dr := painter_region if _painter else Rect2(Vector2.ZERO, size)
+	var s_min := int(floor((dr.position.y - 40.0 - _oy) / TILE_B)) - 2
+	var s_max := int((dr.end.y + 420.0 - _oy) / TILE_B) + 2
+	var d_min := int(floor((dr.position.x - 80.0 - _ox) / TILE_A)) - 1
+	var d_max := int((dr.end.x + 80.0 - _ox) / TILE_A) + 1
 	# Every lot in back-to-front order with its territory context.
 	var lots: Array[Vector2i] = []
 	var ctx: Array = []
+	var infl: Array[float] = []
 	for s in range(s_min, s_max):
 		for d in range(d_min, d_max + 1):
 			if posmod(s + d, 2) != 0:
@@ -445,34 +919,42 @@ func _draw() -> void:
 			var i := (s + d) / 2
 			var j := (s - d) / 2
 			lots.append(Vector2i(i, j))
-			ctx.append(_territory_pair(i, j))
+			var pair := _territory_pair(i, j)
+			ctx.append(pair)
+			infl.append(CityInfluence.value_at(influence, Vector2(i + 0.5, j + 0.5), pair[0]))
 	# Pass 1, the ground (streets, plazas, lot floors); then the Cell's fist roads on top
 	# of it; pass 2, everything standing, back to front, so towers overlap the roads.
 	for n in lots.size():
 		var l := lots[n]
 		_apply_context(ctx[n])
+		_infl = infl[n]
 		if _hq_at(l.x, l.y) != &"":
 			_plaza(l.x, l.y)
 		elif _is_street_lot(l.x, l.y):
 			_street(l.x, l.y, _street_i.has(l.x), _street_j.has(l.y))
 		else:
 			var p := _rect_pts(l.x, l.y, l.x + 1, l.y + 1)
-			_quad(p[0], p[1], p[2], p[3], GROUND, GROUND, GROUND, GROUND)
+			var ground := GROUND.lerp(CityInfluence.color_for(influence, _infl), absf(_infl) * INFLUENCE_GROUND_TINT)
+			_quad(p[0], p[1], p[2], p[3], ground, ground, ground, ground)
+	_infl = 0.0
 	_fist_roads()
 	for n in lots.size():
 		var l := lots[n]
 		_apply_context(ctx[n])
+		_infl = infl[n]
 		var in_hq := _hq_at(l.x, l.y)
 		if in_hq != &"":
 			var hr: Rect2i = _hq_rects[in_hq]
 			if l.x == hr.end.x - 1 and l.y == hr.end.y - 1:
 				_drawing_hq = true
+				_infl = 0.0
 				_hq(in_hq, hr)
 				_drawing_hq = false
 			continue
 		if _is_street_lot(l.x, l.y):
 			continue
 		_lot(l.x, l.y)
+	_infl = 0.0
 	var idx := PackedInt32Array()
 	idx.resize(_verts.size())
 	for k in _verts.size():
@@ -481,17 +963,15 @@ func _draw() -> void:
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, _verts, _cols)
 	_verts = PackedVector2Array()
 	_cols = PackedColorArray()
-	if not pan:
-		# Haze: darker towards the top for text; vignette at the sides.
-		var top := Color(Palette.NIGHT_SKY, 0.7)
-		var clear := Color(Palette.NIGHT_SKY, 0.0)
-		draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.28), Vector2(0, size.y * 0.28)]), PackedColorArray([top, top, clear, clear]))
-		var v := Color(0, 0, 0, 0.5)
-		var c0 := Color(0, 0, 0, 0)
-		draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
-		draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
-	if dim > 0.0:
-		draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
+	if not _painter:
+		_draw_shade(self)
+	var vis := Rect2(Vector2.ZERO, size).grow(LIGHT_GLOW * 4.0)
+	_live_lights = _pick_visible(_lights, vis, "a", LIGHTS_MAX)
+	_live_trails = _pick_visible(_trails, vis, "a", SPARKS_MAX)
+	_live_beacons = _pick_visible(_beacons, vis, "pos", BEACONS_MAX)
+	_lights_layer.queue_redraw()
+	_beacons_layer.queue_redraw()
+	_live_for = []
 	_built_for = size
 	_fx.queue_redraw()
 	rebuilt.emit()
@@ -965,6 +1445,10 @@ func _windows(a: Vector2, b: Vector2, h: float, lit: float, key: int, bright: bo
 			if not bright:
 				wc = wc.darkened(0.3)
 			_quad(o, o + w, o + w + Vector2(0, -3.2), o + Vector2(0, -3.2), wc, wc, wc, wc)
+			if _h(key, ci * 64 + r, 110) < LIGHT_PICK:
+				# A blinking light for the live layer (the baked window stays lit).
+				_lights.append({"a": o, "w": w, "color": Color(wc, 1.0), "phase": _h(key, ci * 64 + r, 111),
+					"period": LIGHT_PERIOD_MIN + _h(key, ci * 64 + r, 112) * LIGHT_PERIOD_SPREAD})
 
 
 # --- Lots ---------------------------------------------------------------------------------
@@ -982,6 +1466,11 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 	var b := _iso(i + 0.5, j + 1) if along_i else _iso(i + 1, j + 0.5)
 	var nn := (b - a).orthogonal().normalized()
 	var dir := (b - a).normalized()
+	if traffic >= SPARK_TRAFFIC and _h(i, j, 63) < SPARK_PICK:
+		# A traffic spark for the live layer, sliding along this lot of the street.
+		var lane_off := nn * (_h(i, j, 64) - 0.5) * 6.0
+		var fwd := _h(i if along_i else 0, 0 if along_i else j, 66) < 0.5
+		_trails.append({"a": (a if fwd else b) + lane_off, "b": (b if fwd else a) + lane_off, "color": col, "phase": _h(i, j, 65), "width": 2.0})
 	# Fine-tip marker: the street's width is built from many skinny strokes laid side by
 	# side, each a little crooked and overlapping its neighbours. Busy streets get more
 	# strokes (up to ~12) and so read wider; quiet ones 2-3.
@@ -1711,27 +2200,31 @@ func _draw_fx() -> void:
 			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
 			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(0, 0, 0, 0.75))
 			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)
+	# Everything below was recorded in the image's space (baked) or the city's (not).
+	_fx.draw_set_transform(_shift)
 	for sg in _signs:
 		var p: Vector2 = sg["pos"]
 		var col: Color = sg["color"]
+		# Neon flicker: a short dip now and then (hash-phased per sign, never faster
+		# than one dip per SIGN_FLICKER_PERIOD).
+		var ph := fmod(anim_t / SIGN_FLICKER_PERIOD + _hv(p), 1.0)
+		if ph < SIGN_DIP:
+			col = Color(col, SIGN_DIP_ALPHA)
 		var w := Palette.mono().get_string_size(sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 14
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(Palette.NIGHT_SKY, 0.85))
-		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(col, 0.2), false, 5.0)
+		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(col, 0.2 * col.a), false, 5.0)
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), col, false, 1.2)
 		_fx.draw_string(Palette.mono(), p + Vector2(7, 16), sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, col.lightened(0.3))
-	# Traffic: bright dashes sliding along the lanes.
-	for t in _trails:
+	# Traffic: bright sparks sliding along the busy lanes. (Window lights and beacons
+	# blink on the GPU: _draw_lights / _draw_beacons.)
+	for t in _live_trails:
 		var a: Vector2 = t["a"]
 		var b: Vector2 = t["b"]
-		var k := fmod(float(t["phase"]) + anim_t * 0.35, 1.0)
+		var k := fmod(float(t["phase"]) + anim_t * SPARK_SPEED, 1.0)
 		var p := a.lerp(b, k)
 		var col: Color = t["color"]
-		_fx.draw_line(p, p + (b - a) * 0.35, Color(col, 0.6), float(t.get("width", 2.0)))
-	for bcn in _beacons:
-		var on := fmod(float(bcn["phase"]) * 3.0 + anim_t, 1.6) < 0.8
-		var col: Color = bcn["color"]
-		_fx.draw_circle(bcn["pos"], 5.0 if on else 3.0, Color(col, 0.25 if on else 0.1))
-		_fx.draw_circle(bcn["pos"], 1.6, Color(col, 0.95 if on else 0.4))
+		_fx.draw_line(p, p + (b - a) * SPARK_LENGTH, Color(col, 0.6), float(t.get("width", 2.0)))
+	_fx.draw_set_transform(Vector2.ZERO)
 	if rain:
 		var off := fmod(anim_t * 480.0, 80.0)
 		for k in 70:

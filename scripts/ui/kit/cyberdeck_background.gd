@@ -19,6 +19,7 @@ func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	city = NeonCity.new()
 	city.rain = true
+	city.follow_campaign = true  # territory influence (H20)
 	city.dim = 0.2
 	add_child(city)
 	_frame = Control.new()
