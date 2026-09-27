@@ -149,11 +149,19 @@ func test_a_focus_label_moves_inward_when_its_node_is_at_the_edge() -> void:
 	var overlay: CityMapOverlay = hq.city_overlay
 	var area := overlay.label_area()
 	# Block everything but a strip at the left: every label that shows lies in the strip,
-	# and the selected one always shows.
+	# and the selected one always shows. H23 #2 (on purpose): a node under the blocked part
+	# has no label at all now, so the selected node is the one nearest the strip's edge.
 	var strip := 260.0
 	var col := overlay.get_global_transform_with_canvas() * Rect2(area.position.x + strip, area.position.y - 10.0, area.size.x, area.size.y + 20.0)
 	overlay.set_blocked_rects([col])
-	var id: StringName = overlay.nodes[overlay.nodes.size() - 1]["id"]
+	var id: StringName = &""
+	var best := -INF
+	for n in overlay.nodes:
+		var x: float = overlay.icon_pos(n).x
+		if x < area.position.x + strip and x > best:
+			best = x
+			id = n["id"]
+	assert_ne(id, &"", "a node in the strip")
 	var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, [], id)
 	overlay.set_graph(g["nodes"], g["edges"])
 	overlay.selected_id = id
