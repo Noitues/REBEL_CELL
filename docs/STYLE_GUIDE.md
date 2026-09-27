@@ -140,7 +140,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   posters and searchlights; the net shows corporate wireframe creeping over zine elements.
 - REBEL_CELL campaign: the net itself renders in zine style.
 
-### 5.1 Motion config (H24-anim A1)
+### 5.1 Motion config (the Animation pass, ANIM-1)
 - **One table.** Every UI animation's duration, delay, ease, transition, amplitude and
   on/off switch is an entry in `content/config/ui_motion.tres` (schema
   `UiMotionData` / `UiMotionEntryData`), looked up by id (`&"card_hover"`,

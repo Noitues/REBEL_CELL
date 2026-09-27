@@ -47,14 +47,17 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `NeonCity` | Beacon blink, slow menu pan (Lissajous), rain | `_process` / `_draw_fx`. |
 | `RaidPlayoutPanel` + `hq_scene` | Step-by-step raid playout with 1x/2x/4x/Skip | Stepping only; no tweened motion along paths yet. |
 | `DripButton` | Hover halo (static jitter copies) | No motion yet. |
-| `content/config/ui_motion.tres` + `Motion` | Every timing above now reads its entry (H24-anim A1) | `jack_in`, `jack_out`, `screen_flash`, `hit_freeze`, `saved_stamp`, `heat_pulse`, `toast`, `resolve_pass`, `precision_perfect`, `precision_partial`, `precision_blink`, `pointer_flicker`, `beacon_blink`, `drip_halo`. |
+| `content/config/ui_motion.tres` + `Motion` | Every timing above now reads its entry (Animation pass, ANIM-1) | `jack_in`, `jack_out`, `screen_flash`, `hit_freeze`, `saved_stamp`, `heat_pulse`, `toast`, `resolve_pass`, `precision_perfect`, `precision_partial`, `precision_blink`, `pointer_flicker`, `beacon_blink`, `drip_halo`. |
 | `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. |
 
 ## 3. First task: the motion config and a motion lab
 
-**Done (H24-anim A1, 2026-09-27; DECISIONS "Motion pass").** All three pieces below exist.
-`content/config/ui_motion.tres` holds an entry for every id in section 4, and content
-validation requires them (`UiMotionData.REQUIRED_IDS`). New effects add or retune entries
+**Done (the Animation pass, ANIM-1, 2026-09-27; DECISIONS "Motion pass").** All three pieces below exist.
+`content/config/ui_motion.tres` holds an entry for every id in section 4. It also covers
+the wider scope the designer set for the Animation pass: raid execution, card targeting
+and execution, the end-turn sequence, spinner movement, drag and drop everywhere, and
+city influence changes. Content validation requires every id
+(`UiMotionData.REQUIRED_IDS`). New effects add or retune entries
 and build their tweens with `Motion` (STYLE_GUIDE 5.1).
 
 Before building effects, make motion tunable so the owner can react to numbers, not code.

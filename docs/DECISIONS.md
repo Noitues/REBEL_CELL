@@ -34,8 +34,9 @@ _(Claude Code: add entries here as you make them.)_
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
-#### 2026-09-27 — H24-anim A1: motion foundation
-The designer ruled motion in scope. This slice makes motion tunable before any new effect
+#### 2026-09-27 — Animation pass — ANIM-1: motion foundation
+The designer made motion its own Animation pass ("nothing should be deferred"). ANIM-1
+makes motion tunable before any new effect
 is built (ANIMATION_HANDOFF 3).
 - **Schema (CLAUDE.md rule 8):** two new resources in `scripts/data/`.
   `UiMotionEntryData` holds `id`, `duration`, `delay`, `ease` (Tween.EaseType), `trans`
@@ -51,8 +52,19 @@ is built (ANIMATION_HANDOFF 3).
   validation (`tools/validate_content.gd`) but not `ContentRegistry.validate()`. That
   keeps the registry's existing tests exact, and rules never read motion. Entry ids
   share the content id namespace, so the registry's duplicate check guards against clashes.
-- **72 entries**: every roadmap item 4.1-4.24 has at least one id, plus the shared ones
-  (`screen_flash`, `hit_freeze`, `saved_stamp`, `toast`). Where the handoff gives a
+- **105 entries**: every roadmap item 4.1-4.24 has at least one id, plus the shared ones
+  (`screen_flash`, `hit_freeze`, `saved_stamp`, `toast`). 33 more cover the pass scope the
+  designer added beyond the roadmap. Raid execution: `ice_lock_ring` (not `ice_lock`, an asset id), `decoy_fire`,
+  `raid_hit_effect`, `node_damage_number`, `forecast_stamp_resolve`. Card targeting:
+  `card_pickup`, `drag_ghost_follow`, `drop_zone_pulse`, `aim_line_draw`, `target_snap`,
+  `drag_cancel_return`. Card execution: `card_stamp`, `effect_burst`, `card_discard`.
+  End-turn resolution: `resolve_beat`, `block_number`, `heal_number`, `hp_drain`,
+  `status_stamp`, `last_turn_reveal`. Spinners: `wheel_respin`, `inner_ring_turn`,
+  `pointer_migrate`, `pointer_orbit`, `enemy_turn_spin`. Drag and drop: `drag_pickup`,
+  `drag_follow`, `drop_settle`, `drop_reject`, `loadout_swap`, `crew_assign`. City
+  influence: `influence_crossfade`, `influence_spread`. Screen transitions, number rolls
+  and top-bar bumps already had ids (4.17, 4.24). Ids are data: adding one needs no
+  schema change. Where the handoff gives a
   range, the pick is its middle or the existing value. `jack_in` / `jack_out` keep 0.7 s
   (range 0.6-0.9). `wheel_spin` is 0.45 s for a half turn (range 0.25-0.6). `wheel_nudge`
   is 0.1 s (under 0.12). `card_*` run 0.15-0.35 s (0.2-0.35). `panel_in` is 0.22 s (under
@@ -90,8 +102,9 @@ is built (ANIMATION_HANDOFF 3).
   frame 6, then holds. `tools/design_lab/frame_strip.py` (Pillow) montages the Movie Maker
   frames into a strip labelled in ms. Verified on this Windows machine; the command is in
   ANIMATION_HANDOFF 6.
-- **Tests**: `tests/unit/test_motion.gd` (16 tests) covers the table, reduce effects,
-  headless, disabled entries, speed, config-driven values, `stop` and game state.
+- **Tests**: `tests/unit/test_motion.gd` (18 tests) covers the table, reduce effects,
+  headless, disabled entries, speed, config-driven values, `stop`, game state and a lab
+  demo for every id.
 
 ### 2026-09-27 — H23 combat: subtitles that don't blank, wheels sized from the room below, turns that say what happened
 From pass 23 (both audits, a first-time player and a player who can't read English
@@ -2038,13 +2051,13 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
-- **Motion starting values (H24-anim A1, 2026-09-27):** the 72 entries in
+- **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
   `content/config/ui_motion.tres` are guesses inside the handoff's ranges. None has been
   reviewed as a frame strip yet. Guesses that matter most: `wheel_spin` 0.45 s per half
   turn with BACK overshoot, `card_play` 0.3 s, `resolve_pass` 0.35 s between passes and
   `number_float` 28 px over 0.6 s. Each will be offered as snappy / heavy / bouncy
   variants when its slice is built.
-- **Motion speed and ambience (H24-anim A1):** `Motion.speed` scales helper-built
+- **Motion speed and ambience (Animation pass ANIM-1):** `Motion.speed` scales helper-built
   motion only. City ambience (beacons) keeps its own clock, so raid playback at 4x does
   not speed up the backdrop. Should a sped-up raid also hurry the city?
 
