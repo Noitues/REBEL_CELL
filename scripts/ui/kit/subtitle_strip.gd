@@ -31,7 +31,7 @@ func _init(p_lines: int = 1) -> void:
 
 
 func _ready() -> void:
-	item_rect_changed.connect(_register)  # moved (the top bar grew) or resized
+	item_rect_changed.connect(_on_moved)  # moved (the top bar grew) or resized
 	visibility_changed.connect(_register)
 	Settings.changed.connect(_fit)
 	_fit()
@@ -49,6 +49,14 @@ func _fit() -> void:
 func dock_rect() -> Rect2:
 	var r := get_global_rect()
 	return Rect2(r.position.x + SIDE_GAP, r.position.y, maxf(0.0, r.size.x - SIDE_GAP * 2.0), r.size.y)
+
+
+## A strip that moved keeps the dock only if it holds it (H22: a screen left behind under
+## a newer one, e.g. its header re-laid out, must not take the subtitles back).
+func _on_moved() -> void:
+	var holder := Dialogue.default_owner()
+	if holder == null or holder == self:
+		_register()
 
 
 func _register() -> void:

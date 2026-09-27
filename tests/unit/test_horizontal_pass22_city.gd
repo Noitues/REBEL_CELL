@@ -95,7 +95,8 @@ func test_the_overlay_covers_the_screen_and_reads_the_side_column() -> void:
 	var screen := overlay.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, overlay.size)
 	assert_almost_eq(screen.position.x, 0.0, 1.0, "the overlay starts at the screen's left edge")
 	assert_almost_eq(screen.size.x, 1280.0, 2.0, "and spans it")
-	assert_true(overlay.label_blocks().is_empty(), "nothing blocked until the screen says so")
+	# The Grid registers its side column (H22 screens wired avoid_controls).
+	assert_false(overlay.label_blocks().is_empty(), "the Grid's column is blocked for labels")
 	var column := hq.find_child("GridColumn", true, false) as Control
 	overlay.avoid_controls([column])
 	assert_eq(overlay.label_blocks().size(), 1, "the side column is blocked")

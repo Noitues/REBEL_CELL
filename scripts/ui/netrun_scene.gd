@@ -17,6 +17,8 @@ const NODE_WORDS := {RC.InfilNodeType.ROUTER: "Fight", RC.InfilNodeType.TERMINAL
 const NODE_ICONS := {RC.InfilNodeType.ROUTER: StatIcon.FIGHT, RC.InfilNodeType.TERMINAL: StatIcon.TERMINAL,
 	RC.InfilNodeType.MODEM: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
 const ELITE_WORD := "Elite fight"
+## The pause menu's least top (px); it opens under the subtitle band.
+const PAUSE_TOP := 100.0
 ## A reachable route node's colour on the map (route_graph) and on its button's icon.
 const ROUTE_NEXT_COLOR := Palette.CELL_ACID
 ## The home server's name (as the HQ shows it; never its id).
@@ -1176,7 +1178,7 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
+	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, SubtitleStrip.top_below(PAUSE_TOP))  # under the subtitle band (H22: the top bar grows with its words)
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)

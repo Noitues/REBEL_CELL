@@ -133,6 +133,11 @@ func set_default_rect(rect: Rect2, owner: Object) -> void:
 		dock_default()
 
 
+## Who holds the default dock now (null: DEFAULT_DOCK).
+func default_owner() -> Object:
+	return _default_owner if is_instance_valid(_default_owner) else null
+
+
 ## Gives the default dock back (DEFAULT_DOCK) when `owner` still holds it.
 func release_default_rect(owner: Object) -> void:
 	if _default_owner != owner:

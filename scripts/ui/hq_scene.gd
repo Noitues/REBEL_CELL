@@ -38,6 +38,8 @@ const GLYPH_ENTRY := ">"
 const GLYPH_LINK := "⛓"
 ## Raid setup: the projection stamp's side and a node's target button width (px).
 const PROJECTION_STAMP := 124.0
+## The pause menu's least top (px); it opens under the subtitle band.
+const PAUSE_TOP := 100.0
 ## How much of the text scale the forecast stamp's size follows.
 const PROJECTION_FOLLOW := 0.3
 ## The forecast stamp's words (H22 #9): a caption over the verdict.
@@ -417,7 +419,7 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
+	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, SubtitleStrip.top_below(PAUSE_TOP))  # under the subtitle band (H22: the top bar grows with its words)
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
