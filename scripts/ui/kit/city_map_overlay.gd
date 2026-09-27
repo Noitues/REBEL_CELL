@@ -8,14 +8,24 @@ extends Control
 ##
 ## Feed it a graph with `set_graph(nodes, edges)`:
 ##   nodes: [{id, at: Vector2 (grid target), color, label, glyph, big: bool,
-##            mark: "spray" (claimed: a spray-paint ring) | "cross" (Seized) | ""}]
+##            mark: "spray" (claimed: a spray-paint ring) | "cross" (Seized) | "",
+##            kind: an icon (KIND_*; "" draws `glyph` in a hexagon), tip: hover text,
+##            here: bool (you are here), next: bool (reachable now)}]
 ##   edges: [{a, b, color, width, dashed: bool, flow: bool}]
 ## and optional `markers` (node id -> Array[String]) for threats standing on nodes.
+## When any node carries `here` or `next` (a netrun route), nodes that can no longer be
+## reached along the (directed) edges are dimmed.
 ##
 ## Drawing is layered so only the moving parts redraw every frame (H20): this control
 ## draws the static under-layer (looks, route keylines), `_anim` the flowing dashes and
 ## packets, `_top` the nodes, badges, tags and markers (redrawn only when something
 ## changes), `_hi` the pulsing selection ring.
+##
+## H21: node icons are drawn shapes (not font glyphs), sized in screen pixels (the city's
+## zoom is undone) and shared with the MapLegend; labels follow Settings.text_scale and
+## are placed so no two overlap (priority: selected / you are here, then reachable,
+## claimed and landmark nodes, then the rest; ties by node id; a label with no free spot
+## is left out and its node keeps its tooltip).
 
 signal node_clicked(id: StringName)
 ## Threat markers moved (raid playout): the scene can follow them with the camera.
@@ -42,10 +52,63 @@ const DASH_ON := 9.0
 const DASH_PERIOD := 16.0
 const DASH_SPEED := 30.0
 const PACKET_SPEED := 90.0
-## Selection ring pulse (radius px, amplitude px, speed rad/s).
-const PULSE_RADIUS := 30.0
+## Selection ring pulse round the selected icon (gap beyond the icon and amplitude, screen
+## px; speed rad/s).
+const SELECT_RING := 6.0
 const PULSE_AMPLITUDE := 3.0
 const PULSE_SPEED := 4.0
+
+## Node icons (H21 #14): each kind has its own silhouette and symbol.
+const KIND_FIGHT := "fight"
+const KIND_ELITE := "elite"
+const KIND_SHOP := "shop"
+const KIND_EVENT := "event"
+const KIND_RACK := "rack"
+const KIND_BOSS := "boss"
+const KIND_EXPLOIT := "exploit"
+const KIND_HEAT := "heat"
+const KIND_HOME := "home"
+const KIND_TIER := "tier"
+## Plain names of the kinds (tooltips built here when a node has no tip).
+const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight",
+	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices",
+	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core",
+	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)",
+	KIND_TIER: "Site"}
+## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
+## how far above the roof the icon floats (px, local).
+const ICON_RADIUS := 13.0
+const ICON_RADIUS_BIG := 17.0
+const ICON_LIFT := 10.0
+## Clearance between two icons (screen px), and how many steps an icon may float up to
+## clear the icons in front of it.
+const ICON_SPACING := 3.0
+const ICON_STACK_MAX := 4
+## Pillars look: how high the badge floats over normal and big nodes (px, local).
+const PILLAR_HEIGHT := 46.0
+const PILLAR_HEIGHT_BIG := 70.0
+## Map labels: font size at text scale 1.0 (screen px), padding and gap to the icon (px).
+const TAG_FONT := 13
+const TAG_PAD := 3.0
+const LABEL_GAP := 4.0
+## Candidate rings a label may step out to when its first spots are taken.
+const LABEL_RINGS := 3
+## Label priorities (lower is placed first).
+const PRIO_FOCUS := 0
+const PRIO_KEY := 1
+const PRIO_REST := 2
+## The label of the "you are here" node when it has none of its own.
+const HERE_LABEL := "YOU ARE HERE"
+## Unreachable route nodes are drawn at this opacity.
+const DIM_ALPHA := 0.3
+## The "you are here" pin: size (screen px) and the ring around the icon (px beyond it).
+const HERE_PIN := 9.0
+const HERE_RING := 5.0
+## Threat markers over a node: half-height and spacing (screen px).
+const MARKER_SIZE := 9.0
+const MARKER_STEP := 16.0
+## Smallest city zoom the screen-size maths accepts.
+const MIN_ZOOM := 0.1
 
 var city: NeonCity
 var look: int = Look.TRACE
@@ -70,6 +133,11 @@ var anim_t: float = 0.0
 
 var _lots: Dictionary = {}  # node id -> Vector2i
 var _routes: Array[PackedVector2Array] = []  # grid points per edge
+## Route graphs: node id -> true for nodes still reachable (empty = nothing dimmed).
+var _reach: Dictionary = {}
+## Icon positions (id -> local px) and the camera/look key they were placed for.
+var _icon_cache: Dictionary = {}
+var _icon_key: String = ""
 var _anim: Control
 var _top: Control
 var _hi: Control
@@ -87,6 +155,22 @@ func _init(p_city: NeonCity = null) -> void:
 	_hi = _layer("Selection", _draw_hi)
 	if city != null:
 		city.rebuilt.connect(_relayout)
+	# Labels follow the text size live (redrawn once per change, never per frame).
+	Settings.changed.connect(_top.queue_redraw)
+
+
+## The netrun route kind for an InfilNodeType (elite Routers are their own kind).
+static func route_kind(node_type: int, elite: bool) -> String:
+	match node_type:
+		RC.InfilNodeType.ROUTER:
+			return KIND_ELITE if elite else KIND_FIGHT
+		RC.InfilNodeType.TERMINAL:
+			return KIND_EVENT
+		RC.InfilNodeType.MODEM:
+			return KIND_SHOP
+		RC.InfilNodeType.SERVER_RACK:
+			return KIND_RACK
+	return ""
 
 
 func _layer(layer_name: String, painter: Callable) -> Control:
@@ -139,9 +223,49 @@ func mark_of(id: StringName) -> String:
 	return ""
 
 
+## The "you are here" node (&"" when the graph has none).
+func here_id() -> StringName:
+	for n in nodes:
+		if n.get("here", false):
+			return n["id"]
+	return &""
+
+
+## True when node `id` is on a route graph and can no longer be reached (drawn dimmed).
+func is_dimmed(id: StringName) -> bool:
+	return not _reach.is_empty() and not _reach.has(id)
+
+
+## Route graphs: every node reachable from "you are here" and the nodes open now, along
+## the directed edges (a -> b). Empty for graphs without route state (nothing dimmed).
+func _reachable() -> Dictionary:
+	var out := {}
+	var queue: Array[StringName] = []
+	var routed := false
+	for n in nodes:
+		if n.has("here") or n.has("next"):
+			routed = true
+		if n.get("here", false) or n.get("next", false):
+			out[n["id"]] = true
+			queue.append(n["id"])
+	if not routed:
+		return {}
+	var head := 0
+	while head < queue.size():
+		var cur := queue[head]
+		head += 1
+		for e in edges:
+			if e["a"] == cur and not out.has(e["b"]):
+				out[e["b"]] = true
+				queue.append(e["b"])
+	return out
+
+
 func _relayout() -> void:
 	_lots.clear()
 	_routes.clear()
+	_reach = _reachable()
+	_icon_key = ""
 	if city == null:
 		return
 	var taken := {}
@@ -227,15 +351,149 @@ func _to_local(p: Vector2) -> Vector2:
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		for n in nodes:
-			var rec := city.roof_of(lot_of(n["id"]).x, lot_of(n["id"]).y)
-			if rec.is_empty():
-				continue
-			var roof: PackedVector2Array = rec["roof"]
-			if Geometry2D.is_point_in_polygon(event.position, roof) or event.position.distance_to(rec["base"]) < 18.0:
-				node_clicked.emit(n["id"])
-				accept_event()
-				return
+		var id := node_at(event.position)
+		if id != &"":
+			node_clicked.emit(id)
+			accept_event()
+
+
+## The node under local point `p` (its icon first, then its roof or base), or &"". Icons
+## are tested nearest first; roofs in graph order.
+func node_at(p: Vector2) -> StringName:
+	if city == null:
+		return &""
+	var best: StringName = &""
+	var best_d := INF
+	for n in nodes:
+		var d := p.distance_to(icon_pos(n))
+		if d <= icon_radius(n) and d < best_d:
+			best_d = d
+			best = n["id"]
+	if best != &"":
+		return best
+	for n in nodes:
+		var rec := _roof(n["id"])
+		if rec.is_empty():
+			continue
+		if Geometry2D.is_point_in_polygon(p, rec["roof"]) or p.distance_to(rec["base"]) < ICON_RADIUS_BIG:
+			return n["id"]
+	return &""
+
+
+## Hover text for the node under the pointer (H21 #14): its tip, where it stands on the
+## route, the raid result and the threats on it; folded for the tooltip popup.
+func _get_tooltip(at_position: Vector2) -> String:
+	var id := node_at(at_position)
+	return UiTip.fold(tip_of(id)) if id != &"" else ""
+
+
+## The hover text of node `id`: its own "tip" or one built from what the node carries
+## (label, kind, mark), plus its route state, raid result and threats.
+func tip_of(id: StringName) -> String:
+	var n := _node_dict(id)
+	if n.is_empty():
+		return ""
+	var parts := PackedStringArray()
+	var tip := String(n.get("tip", ""))
+	if tip == "":
+		var name_text := String(n.get("label", ""))
+		var kind_text := String(KIND_NAMES.get(String(n.get("kind", "")), ""))
+		if name_text != "" and kind_text != "":
+			tip = "%s: %s." % [name_text, kind_text]
+		elif name_text != "" or kind_text != "":
+			tip = "%s." % (name_text if name_text != "" else kind_text)
+		else:
+			tip = String(n.get("glyph", String(id)))
+		match String(n.get("mark", "")):
+			MARK_SPRAY:
+				tip += " Claimed: part of your network."
+			MARK_CROSS:
+				tip += " Seized by the corporation."
+	parts.append(tip)
+	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains("Elite"):
+		parts.append("Elite: a harder fight.")
+	if n.get("here", false):
+		parts.append("You are here.")
+	elif n.get("next", false):
+		parts.append("You can move here now.")
+	elif is_dimmed(id):
+		parts.append("Out of reach from here.")
+	if n.has("result"):
+		parts.append("Raid: %s." % String(n["result"]))
+	if markers.has(id):
+		parts.append("Threats here: %s." % ", ".join(markers[id]))
+	return "\n".join(parts)
+
+
+func _node_dict(id: StringName) -> Dictionary:
+	for n in nodes:
+		if n["id"] == id:
+			return n
+	return {}
+
+
+func _roof(id: StringName) -> Dictionary:
+	var lot := lot_of(id)
+	return city.roof_of(lot.x, lot.y) if city != null else {}
+
+
+## Screen-size factor: local px per screen px (the city's zoom undone).
+func _k() -> float:
+	return 1.0 / maxf(MIN_ZOOM, city.scale.x) if city != null else 1.0
+
+
+## Icon radius of node `n` (local px).
+func icon_radius(n: Dictionary) -> float:
+	return (ICON_RADIUS_BIG if n.get("big", false) else ICON_RADIUS) * _k()
+
+
+## Where node `n`'s icon sits (local px): floating over its roof, or atop its pillar;
+## lifted higher when it would sit on a nearer node's icon (see `_icon_positions`).
+func icon_pos(n: Dictionary) -> Vector2:
+	return _icon_positions().get(n["id"], Vector2(INF, INF))
+
+
+## Every node's icon position (id -> local px), cached per camera and look. Icons are
+## placed front to back (nearest roof first, ties by id); one that would overlap an icon
+## already placed floats up a step at a time (its stalk grows), at most ICON_STACK_MAX.
+func _icon_positions() -> Dictionary:
+	if city == null or nodes.is_empty():
+		return {}
+	var first := _roof(nodes[0]["id"])
+	var key := str([look, city.scale.x, first.get("base", Vector2.INF), nodes.size(), _lots.size()])
+	if key == _icon_key:
+		return _icon_cache
+	var order: Array[Dictionary] = []
+	for n in nodes:
+		var rec := _roof(n["id"])
+		if not rec.is_empty():
+			order.append({"n": n, "top": _centroid(rec["roof"])})
+	order.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if not is_equal_approx(a["top"].y, b["top"].y):
+			return a["top"].y > b["top"].y
+		return String(a["n"]["id"]) < String(b["n"]["id"]))
+	var out := {}
+	var placed: Array[Vector3] = []  # x, y, radius
+	var gap := ICON_SPACING * _k()
+	for o in order:
+		var n: Dictionary = o["n"]
+		var r := icon_radius(n)
+		var big: bool = n.get("big", false)
+		var p: Vector2 = o["top"] + Vector2(0, -((PILLAR_HEIGHT_BIG if big else PILLAR_HEIGHT) if look == Look.PILLARS else ICON_LIFT + r))
+		for step in ICON_STACK_MAX:
+			var hit := false
+			for q in placed:
+				if p.distance_to(Vector2(q.x, q.y)) < r + q.z + gap:
+					hit = true
+					break
+			if not hit:
+				break
+			p.y -= r * 2.0 + gap
+		placed.append(Vector3(p.x, p.y, r))
+		out[n["id"]] = p
+	_icon_key = key
+	_icon_cache = out
+	return out
 
 
 ## Static under-layer: the look's veil and every route's keyline and glow. Any redraw of
@@ -277,18 +535,30 @@ func _draw_top() -> void:
 	_c = _top
 	for n in nodes:
 		_node(n)
+	for l: Dictionary in _layout_labels():
+		_tag_box(l)
 	_c = self
 
 
 ## The selected node's pulsing ring.
 func _draw_hi() -> void:
+	var at := ring_centre()
+	if at.x == INF:
+		return
+	_hi.draw_arc(at, ring_radius() + (sin(anim_t * PULSE_SPEED) - 1.0) * PULSE_AMPLITUDE * _k(), 0, TAU, 32, Palette.CELL_ACID, 2.0 * _k())
+
+
+## Centre of the selection ring (the selected node's icon), or INF when none shows.
+func ring_centre() -> Vector2:
 	if city == null or selected_id == &"" or not _lots.has(selected_id):
-		return
-	var rec := city.roof_of(lot_of(selected_id).x, lot_of(selected_id).y)
-	if rec.is_empty():
-		return
-	var top := _centroid(rec["roof"])
-	_hi.draw_arc(top, PULSE_RADIUS + sin(anim_t * PULSE_SPEED) * PULSE_AMPLITUDE, 0, TAU, 32, Palette.CELL_ACID, 2.0)
+		return Vector2(INF, INF)
+	return _icon_positions().get(selected_id, Vector2(INF, INF))
+
+
+## Outer radius of the pulsing selection ring (local px): round the icon, clear of it.
+func ring_radius() -> float:
+	var n := _node_dict(selected_id)
+	return (icon_radius(n) if not n.is_empty() else ICON_RADIUS * _k()) + (SELECT_RING + PULSE_AMPLITUDE) * _k()
 
 
 func _route_px(k: int) -> PackedVector2Array:
@@ -377,55 +647,224 @@ static func _centroid(pts: PackedVector2Array) -> Vector2:
 
 
 func _node(n: Dictionary) -> void:
-	var lot: Vector2i = _lots.get(n["id"], Vector2i.ZERO)
-	var rec := city.roof_of(lot.x, lot.y)
+	var rec := _roof(n["id"])
 	if rec.is_empty():
 		return
+	var dim := is_dimmed(n["id"])
 	var col: Color = n.get("color", Palette.CELL_PINK)
+	if dim:
+		col = Color(col, col.a * DIM_ALPHA)
 	var roof: PackedVector2Array = rec["roof"]
 	var base: Vector2 = rec["base"]
 	var top := _centroid(roof)
 	var closed := roof.duplicate()
 	closed.append(roof[0])
-	var big: bool = n.get("big", false)
+	var ink := Color(0, 0, 0, 0.85 * (DIM_ALPHA if dim else 1.0))
+	var at := icon_pos(n)
+	var r := icon_radius(n)
 	match look:
 		Look.PILLARS:
-			var tip := top + Vector2(0, -70 if big else -46)
-			_c.draw_colored_polygon(PackedVector2Array([base + Vector2(-7, 0), base + Vector2(7, 0), tip + Vector2(3, 0), tip + Vector2(-3, 0)]), Color(col, 0.16))
-			_c.draw_line(base, tip, Color(col, 0.8), 1.5)
-			_c.draw_colored_polygon(roof, Color(col, 0.3))
-			_c.draw_polyline(closed, Color(0, 0, 0, 0.85), 6.0, true)
+			_c.draw_colored_polygon(PackedVector2Array([base + Vector2(-7, 0), base + Vector2(7, 0), at + Vector2(3, 0), at + Vector2(-3, 0)]), Color(col, col.a * 0.16))
+			_c.draw_line(base, at, Color(col, col.a * 0.8), 1.5)
+			_c.draw_colored_polygon(roof, Color(col, col.a * 0.3))
+			_c.draw_polyline(closed, ink, 6.0, true)
 			_c.draw_polyline(closed, col, 2.0, true)
-			_mark(n, top, col)
-			_badge(tip, 13.0 if big else 10.0, col, n.get("glyph", ""))
-			_tag(tip + Vector2(16, 4), n.get("label", ""), col)
 		_:
 			var fill_a := 0.45 if look == Look.ISOLATE or look == Look.XRAY or look == Look.BLUEPRINT else 0.28
-			_c.draw_colored_polygon(roof, Color(col, fill_a))
-			_c.draw_polyline(closed, Color(0, 0, 0, 0.85), 7.0, true)
-			_c.draw_polyline(closed, Color(col, 0.3), 11.0, true)
+			_c.draw_colored_polygon(roof, Color(col, col.a * fill_a))
+			_c.draw_polyline(closed, ink, 7.0, true)
+			_c.draw_polyline(closed, Color(col, col.a * 0.3), 11.0, true)
 			_c.draw_polyline(closed, col, 2.6, true)
 			if look == Look.ISOLATE or look == Look.XRAY:
-				_c.draw_line(base, top, Color(col, 0.6), 1.5)
-			_mark(n, top, col)
-			_badge(top + Vector2(0, -20), 10.0 if big else 8.0, col, n.get("glyph", ""))
-			_tag(top + Vector2(14, -16), n.get("label", ""), col)
+				_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
+			# A short stalk ties the floating icon to its roof.
+			_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * 0.7), 1.5)
+	_mark(n, top, col)
+	if n.get("here", false):
+		_here(at, r)
+	draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
 	var assets: Array = n.get("assets", [])
 	for k in assets.size():
 		var a := TAU * k / maxf(1.0, assets.size()) - PI * 0.5
 		AssetIcon.draw_icon(_c, top + Vector2(cos(a) * 26.0, sin(a) * 14.0 - 6.0), 8.0, assets[k])
-	if n.has("result"):
-		_tag(top + Vector2(14, 2), String(n["result"]), col)
 	if n["id"] == selected_id:
 		_c.draw_polyline(closed, Palette.CELL_ACID, 1.5, true)
 	if markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
+		var row := _marker_row(n)
 		for k in names.size():
-			var mp := top + Vector2(-16 + k * 16, -44)
-			var dia := PackedVector2Array([mp + Vector2(0, -9), mp + Vector2(8, 0), mp + Vector2(0, 9), mp + Vector2(-8, 0)])
+			var mp := row + Vector2((k - (names.size() - 1) * 0.5) * MARKER_STEP * _k(), 0)
+			var s := MARKER_SIZE * _k()
+			var dia := PackedVector2Array([mp + Vector2(0, -s), mp + Vector2(s * 0.9, 0), mp + Vector2(0, s), mp + Vector2(-s * 0.9, 0)])
 			_c.draw_colored_polygon(dia, Palette.corp_color(StringName(n.get("threat_corp", "solace"))) if n.has("threat_corp") else Palette.CORP_SOLACE)
 			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, 1.2)
-		_tag(top + Vector2(-40, -60), ", ".join(names), Palette.PAPER)
+
+
+## Centre of the threat markers' row over node `n` (local px).
+func _marker_row(n: Dictionary) -> Vector2:
+	return icon_pos(n) - Vector2(0, icon_radius(n) + (LABEL_GAP + MARKER_SIZE) * _k())
+
+
+## The "you are here" mark: a pink ring round the icon and a pin pointing down at it.
+func _here(at: Vector2, r: float) -> void:
+	var k := _k()
+	var ring := r + HERE_RING * k
+	_c.draw_arc(at, ring, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
+	_c.draw_arc(at, ring, 0, TAU, 32, Palette.CELL_PINK, 2.5 * k)
+	var tip := at - Vector2(0, ring + 2.0 * k)
+	var s := HERE_PIN * k
+	var pin := PackedVector2Array([tip, tip + Vector2(-s, -s * 1.4), tip + Vector2(s, -s * 1.4)])
+	_c.draw_colored_polygon(pin, Palette.CELL_PINK)
+	_c.draw_polyline(pin + PackedVector2Array([pin[0]]), Color(0, 0, 0, 0.85), 1.5 * k)
+
+
+# --- Labels -----------------------------------------------------------------------------
+
+## Font size of the map labels (local px): TAG_FONT screen px at the current text scale.
+func label_font_size() -> int:
+	return maxi(1, roundi(TAG_FONT * Settings.text_scale * _k()))
+
+
+## The labels drawn now: node id -> Rect2 (local px). Threat tags are keyed "<id>#threats".
+func label_rects() -> Dictionary:
+	var out := {}
+	for l: Dictionary in _layout_labels():
+		out[l["key"]] = l["rect"]
+	return out
+
+
+## The text lines of node `id`'s label ([] when it has none).
+func label_lines(id: StringName) -> PackedStringArray:
+	var n := _node_dict(id)
+	var lines := PackedStringArray()
+	if n.is_empty() or is_dimmed(id):
+		return lines
+	var text := String(n.get("label", ""))
+	if text == "" and n.get("here", false):
+		text = HERE_LABEL
+	if text != "":
+		lines.append(text)
+	if n.has("result"):
+		lines.append(String(n["result"]))
+	return lines
+
+
+func _prio(n: Dictionary) -> int:
+	if n["id"] == selected_id or n.get("here", false):
+		return PRIO_FOCUS
+	if n.get("next", false) or String(n.get("mark", "")) == MARK_SPRAY or n.get("big", false):
+		return PRIO_KEY
+	return PRIO_REST
+
+
+## Places every label (H21 #15): by priority, then node id, each at the first free spot
+## around its icon (right, left, above, below, then the corners, stepping further out);
+## a spot is free when it overlaps no placed label, no node icon and not the selection
+## ring. Focus labels (selected, you are here, threats) always show; others with no
+## free spot are left out. Deterministic: the same graph and camera give the same layout.
+func _layout_labels() -> Array[Dictionary]:
+	var placed: Array[Dictionary] = []
+	if city == null or nodes.is_empty():
+		return placed
+	var f := Palette.mono()
+	var fs := label_font_size()
+	var k := _k()
+	var pad := TAG_PAD * k
+	var line_h := f.get_height(fs)
+	var icons: Array[Dictionary] = []
+	for n in nodes:
+		if not _roof(n["id"]).is_empty():
+			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
+	var ring_c := ring_centre()
+	var ring_r := ring_radius()
+	var todo: Array[Dictionary] = []
+	for n in nodes:
+		if _roof(n["id"]).is_empty():
+			continue
+		var lines := label_lines(n["id"])
+		if not lines.is_empty():
+			todo.append({"key": String(n["id"]), "id": n["id"], "lines": lines, "col": n.get("color", Palette.CELL_PINK), "prio": _prio(n), "at": icon_pos(n), "r": icon_radius(n)})
+		if markers.has(n["id"]) and not (markers[n["id"]] as Array).is_empty():
+			var names := PackedStringArray()
+			for m in markers[n["id"]]:
+				names.append(String(m))
+			var half := MARKER_SIZE * k
+			todo.append({"key": "%s#threats" % n["id"], "id": n["id"], "lines": PackedStringArray([", ".join(names)]), "col": Palette.PAPER, "prio": PRIO_FOCUS,
+				"at": _marker_row(n), "r": half + MARKER_STEP * k * 0.5 * (names.size() - 1)})
+	todo.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if a["prio"] != b["prio"]:
+			return a["prio"] < b["prio"]
+		return String(a["key"]) < String(b["key"]))
+	for t in todo:
+		var w := 0.0
+		for line in t["lines"]:
+			w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		var box := Vector2(w + pad * 2.0, line_h * (t["lines"] as PackedStringArray).size() + pad * 2.0)
+		var spot := _free_spot(t, box, icons, placed, ring_c, ring_r)
+		if spot.size == Vector2.ZERO:
+			if t["prio"] != PRIO_FOCUS:
+				continue
+			spot = Rect2(_spots(t["at"], t["r"] + LABEL_GAP * k, box)[0], box)
+		t["rect"] = spot
+		t["fs"] = fs
+		t["pad"] = pad
+		placed.append(t)
+	return placed
+
+
+## Candidate top-left corners for a `box` label around a centre `c` at distance `d`.
+static func _spots(c: Vector2, d: float, box: Vector2) -> Array[Vector2]:
+	return [Vector2(c.x + d, c.y - box.y * 0.5), Vector2(c.x - d - box.x, c.y - box.y * 0.5),
+		Vector2(c.x - box.x * 0.5, c.y - d - box.y), Vector2(c.x - box.x * 0.5, c.y + d),
+		Vector2(c.x + d * 0.7, c.y - d * 0.7 - box.y), Vector2(c.x - d * 0.7 - box.x, c.y - d * 0.7 - box.y),
+		Vector2(c.x + d * 0.7, c.y + d * 0.7), Vector2(c.x - d * 0.7 - box.x, c.y + d * 0.7)]
+
+
+## The first free spot for label `t` (Rect2 with a zero size when there is none).
+func _free_spot(t: Dictionary, box: Vector2, icons: Array[Dictionary], placed: Array[Dictionary], ring_c: Vector2, ring_r: float) -> Rect2:
+	var k := _k()
+	for ring in LABEL_RINGS:
+		var d: float = t["r"] + LABEL_GAP * k + ring * (box.y + LABEL_GAP * k)
+		for p in _spots(t["at"], d, box):
+			var rect := Rect2(p, box)
+			if _blocked(rect, icons, placed, ring_c, ring_r):
+				continue
+			return rect
+	return Rect2()
+
+
+static func _blocked(rect: Rect2, icons: Array[Dictionary], placed: Array[Dictionary], ring_c: Vector2, ring_r: float) -> bool:
+	for other in placed:
+		if rect.intersects(other["rect"]):
+			return true
+	for ic in icons:
+		if _rect_hits_disc(rect, ic["at"], ic["r"]):
+			return true
+	return ring_c.x != INF and _rect_hits_disc(rect, ring_c, ring_r)
+
+
+static func _rect_hits_disc(rect: Rect2, c: Vector2, r: float) -> bool:
+	var q := Vector2(clampf(c.x, rect.position.x, rect.end.x), clampf(c.y, rect.position.y, rect.end.y))
+	return q.distance_to(c) < r
+
+
+## Draws a placed label: a dark box with a colour edge, one line per row, and a thin
+## leader back to its node when it had to step away.
+func _tag_box(l: Dictionary) -> void:
+	var rect: Rect2 = l["rect"]
+	var col: Color = l["col"]
+	var f := Palette.mono()
+	var fs: int = l["fs"]
+	var pad: float = l["pad"]
+	var near := Vector2(clampf(l["at"].x, rect.position.x, rect.end.x), clampf(l["at"].y, rect.position.y, rect.end.y))
+	if near.distance_to(l["at"]) > float(l["r"]) + LABEL_GAP * _k() * 2.0:
+		_c.draw_line(l["at"] + (near - l["at"]).normalized() * float(l["r"]), near, Color(col, 0.7), 1.0)
+	_c.draw_rect(rect, Color(Palette.NIGHT_SKY, 0.86))
+	_c.draw_rect(Rect2(rect.position, Vector2(2.0 * _k(), rect.size.y)), col)
+	var y := rect.position.y + pad + f.get_ascent(fs)
+	for line in l["lines"]:
+		_c.draw_string(f, Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+		y += f.get_height(fs)
 
 
 ## The node's non-colour mark: a spray-paint ring (claimed) or a cross (Seized). The
@@ -454,22 +893,103 @@ func _mark(n: Dictionary, at: Vector2, col: Color) -> void:
 				_c.draw_line(at + pair[0], at + pair[1], col, 3.0)
 
 
-func _badge(p: Vector2, r: float, col: Color, glyph: String) -> void:
+# --- Icons ------------------------------------------------------------------------------
+
+## Regular polygon (closed) of `sides` round `p`, radius `r`, first corner at `rot`.
+static func _ngon(p: Vector2, r: float, sides: int, rot: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	for k in 7:
-		var t := PI / 6.0 + TAU * k / 6.0
+	for k in sides + 1:
+		var t := rot + TAU * k / sides
 		pts.append(p + Vector2(cos(t), sin(t)) * r)
-	_c.draw_colored_polygon(pts, Color(Palette.NIGHT_SKY, 0.92))
-	_c.draw_polyline(pts, col, 1.6)
-	if glyph != "":
-		_c.draw_string(Palette.mono(), p + Vector2(-r, r * 0.45), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.15), col)
+	return pts
 
 
-func _tag(at: Vector2, text: String, col: Color) -> void:
-	if text == "":
-		return
+## Star (closed) with `points` tips between radii `r_out` and `r_in`, a tip pointing up.
+static func _star(p: Vector2, r_out: float, r_in: float, points: int) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for k in points * 2 + 1:
+		var t := -PI * 0.5 + PI * k / points
+		pts.append(p + Vector2(cos(t), sin(t)) * (r_out if k % 2 == 0 else r_in))
+	return pts
+
+
+## The silhouette of a node icon of `kind` (closed outline) round `p`, radius `r`. Each
+## kind on a map has its own shape, so icons differ by more than their symbol.
+static func icon_shape(kind: String, p: Vector2, r: float) -> PackedVector2Array:
+	match kind:
+		KIND_FIGHT, KIND_HEAT:
+			return _ngon(p, r, 20, 0.0)
+		KIND_ELITE:
+			return _star(p, r * 1.1, r * 0.8, 8)
+		KIND_SHOP, KIND_EXPLOIT:
+			return _ngon(p, r * 1.15, 4, -PI * 0.5)
+		KIND_EVENT:
+			return _ngon(p, r * 1.2, 4, PI * 0.25)
+		KIND_BOSS:
+			return _star(p, r * 1.3, r * 0.72, 5)
+		KIND_HOME:
+			var s := r * 0.85
+			return PackedVector2Array([p + Vector2(-s, s), p + Vector2(-s, -s * 0.2), p + Vector2(0, -s * 1.25),
+				p + Vector2(s, -s * 0.2), p + Vector2(s, s), p + Vector2(-s, s)])
+	return _ngon(p, r, 6, PI / 6.0)
+
+
+## Draws a node icon (H21 #14): a dark silhouette of the kind's shape edged in `col`, and
+## the kind's symbol; unknown kinds show `text` (the node's glyph) in a hexagon. Shared
+## with MapLegend so the key shows exactly what the map draws. `alpha` dims it.
+static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: Color, text: String = "", alpha: float = 1.0) -> void:
+	var shape := icon_shape(kind, p, r)
+	var ink := Color(0, 0, 0, 0.85 * alpha)
+	var edge := Color(col, alpha)
+	var w := maxf(1.5, r * 0.13)
+	ci.draw_colored_polygon(shape, Color(Palette.NIGHT_SKY, 0.94 * alpha))
+	ci.draw_polyline(shape, ink, w + 3.0, true)
+	ci.draw_polyline(shape, edge, w, true)
 	var f := Palette.mono()
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-	_c.draw_rect(Rect2(at.x - 3, at.y - 11, w + 6, 15), Color(Palette.NIGHT_SKY, 0.82))
-	_c.draw_rect(Rect2(at.x - 3, at.y - 11, 2, 15), col)
-	_c.draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.PAPER)
+	match kind:
+		KIND_FIGHT, KIND_ELITE:
+			# Crossed blades with their guards.
+			var s := r * 0.5
+			for dir: Vector2 in [Vector2(1, 1), Vector2(-1, 1)]:
+				ci.draw_line(p - dir * s, p + dir * s, edge, w)
+				var g := p + dir * s * 0.55
+				var perp := Vector2(-dir.y, dir.x) * s * 0.35
+				ci.draw_line(g - perp, g + perp, edge, w)
+		KIND_SHOP:
+			_icon_text(ci, f, "$", p, r, edge)
+		KIND_EVENT:
+			_icon_text(ci, f, "?", p, r, edge)
+		KIND_RACK:
+			# Three server blades with a status light each.
+			var bw := r * 1.0
+			var bh := r * 0.26
+			for k in 3:
+				var y := p.y + (k - 1) * bh * 1.5 - bh * 0.5
+				ci.draw_rect(Rect2(p.x - bw * 0.5, y, bw, bh), edge, false, maxf(1.0, w * 0.7))
+				ci.draw_circle(Vector2(p.x + bw * 0.3, y + bh * 0.5), bh * 0.3, edge)
+		KIND_BOSS:
+			ci.draw_colored_polygon(_star(p, r * 0.55, r * 0.25, 5), edge)
+		KIND_EXPLOIT:
+			ci.draw_colored_polygon(_ngon(p, r * 0.5, 4, -PI * 0.5), edge)
+		KIND_HEAT:
+			# A snowflake: three bars with a tick at each end.
+			for a in 3:
+				var dir := Vector2.from_angle(PI * 0.5 + PI * a / 3.0) * r * 0.62
+				ci.draw_line(p - dir, p + dir, edge, w)
+				for end_p: Vector2 in [p - dir, p + dir]:
+					var back := (p - end_p).normalized() * r * 0.22
+					var side := Vector2(-back.y, back.x)
+					ci.draw_line(end_p + back, end_p + back * 0.2 + side, edge, maxf(1.0, w * 0.7))
+					ci.draw_line(end_p + back, end_p + back * 0.2 - side, edge, maxf(1.0, w * 0.7))
+		KIND_HOME:
+			var s := r * 0.3
+			ci.draw_rect(Rect2(p.x - s * 0.6, p.y + r * 0.85 - s * 2.0, s * 1.2, s * 2.0), edge)
+		_:
+			if text != "":
+				_icon_text(ci, f, text, p, r, edge)
+
+
+static func _icon_text(ci: CanvasItem, f: Font, text: String, p: Vector2, r: float, col: Color) -> void:
+	var fs := maxi(1, roundi(r * (1.25 if text.length() == 1 else 0.95)))
+	var y := p.y + (f.get_ascent(fs) - f.get_descent(fs)) * 0.5
+	ci.draw_string(f, Vector2(p.x - r, y), text, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, fs, col)

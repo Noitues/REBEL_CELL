@@ -452,7 +452,8 @@ func route_graph() -> Dictionary:
 		var hint := Settings.hint(StringName("card_%d" % (idx + 1))) if idx >= 0 and idx < 9 else ""
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
 			"label": ("%s %s" % [hint, NODE_LABELS.get(n["type"], "?")]).strip_edges() if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
-			"tip": String(NODE_TIPS.get(n["type"], ""))})
+			"tip": String(NODE_TIPS.get(n["type"], "")), "kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]),
+			"here": n["id"] == s.run.current_node_id, "next": idx >= 0})
 	var edges: Array[Dictionary] = []
 	for n in map.all_nodes():
 		for nxt in n["next"]:
