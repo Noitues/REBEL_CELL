@@ -35,7 +35,40 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
 | Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
+| H21 | 2026-09-26 | **In progress.** 22 from pass 21 (3 P1: pad nudge wheel/ring, pad focus lost, no visible turn result; 12 P2; 7 P3) incl. the first naive-player reviews. List below. | Batch H21 |
 | H20 | 2026-09-26 | 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3) plus the designer's 7 (tooltips, drag-to-target cards and nudge arrows, a baked backdrop with live lights and territory colour, no text logs, naive-player reviews, directions that read the right way) | Fixed in horizontal batch H20 (combat, city, screens); DECISIONS "H20 ..." entries |
+
+### H21 (in progress): pass 21 = vertical + horizontal audits and the first naive-player reviews
+
+Reviewers: a vertical and a horizontal auditor, a first-time player and a player who
+can't read English (the last two judged `tools/playtest/storyboard.tscn` screenshots;
+`--scramble` turns interface text into asterisks). Preview == result held over 112 fights;
+card aiming held for 71 cards x 8 classes x 5 corporations.
+
+| # | Sev | Gap | Source |
+|---|---|---|---|
+| 1 | P1 | Pad can't pick the nudge wheel or ring (the pickers went with H20) | vertical, horizontal |
+| 2 | P1 | First pad press after the mouse drops focus (hand rebuilt on hints_changed) | vertical |
+| 3 | P1 | Nothing shows what SEND IT did (preview for next turn replaces it at once) | beginner, non-English |
+| 4 | P2 | Random resolve picks (DOSE, Citations, Solar Flares) preview the exact slot | vertical, horizontal |
+| 5 | P2 | Preview after a reshuffling card uses the wrong RNG (preview != result) | horizontal |
+| 6 | P2 | HITS chip counts one hit per attack, not per pointer (multi-pointer targets) | horizontal |
+| 7 | P2 | Nudge cards / Undock on a satellite only go one way by mouse | vertical, horizontal |
+| 8 | P2 | Tags run over the status line / off the view at 1.3+; toast covers HP arcs | vertical |
+| 9 | P2 | Cards say what they do in words only; tags use abbreviations (DEF, AFL, BLK, CRPT) | beginner, non-English |
+| 10 | P2 | Top-bar stats have no icons; CELL STATUS icons unlabelled | beginner, non-English |
+| 11 | P2 | Subtitles in the top band hide the stats (money in the Modem) | beginner, non-English |
+| 12 | P2 | Modem card prices sit in the RAM-cost circle; raw "crit_12" in the socket list; no wallet | beginner, non-English |
+| 13 | P2 | Event choices and menus carry meaning in words only (no outcome icons, no menu icons) | non-English |
+| 14 | P2 | Route choices identical ("Router"), no "you are here", tiny similar node icons; map nodes have no tooltips | beginner, non-English, vertical |
+| 15 | P2 | Big text reaches menus but not crew cards, shop / loot / deck cards, stat tags, map labels; Grid side column and HQ notes overflow | beginner, horizontal |
+| 16 | P3 | Modem / Loadout spinners run the slot order the other way round to combat | vertical |
+| 17 | P3 | Missing chips: boss phase / new needles, 2x nudge next turn, satellite block / heal / statuses / moves | vertical |
+| 18 | P3 | Inner-ring ghost arc not drawn; tag title clipped at 1.6 | vertical |
+| 19 | P3 | Content text bypasses TextDb in new HQ code and hub names | horizontal |
+| 20 | P3 | Retired keybinds kept from old settings files; Heat chip scaled on the total | horizontal |
+| 21 | P3 | HQ / Grid naming: JACK IN vs Launch netrun; raw corporation id on the title | beginner |
+| 22 | P3 | Halcyon's Sites lie mostly outside its district, so raid sway barely tints its Grid | horizontal |
 
 ### H20 (fixed 2026-09-26): vertical + horizontal re-review after the merge, with the pass-20 items
 
