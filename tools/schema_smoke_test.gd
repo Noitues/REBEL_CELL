@@ -389,4 +389,36 @@ func _h14() -> int:
 	if not officer.heat_effects[0].offensive_slices_only: fails += 1
 	print("H15: achievement ICE ", cfg.achievement_ice_low, "/", cfg.achievement_ice_high)
 	if cfg.achievement_ice_low != 5 or cfg.achievement_ice_high != 10: fails += 1
+	return fails + _anim1()
+
+
+## Animation pass ANIM-1: UiMotionData / UiMotionEntryData (the UI motion table) round-trip, and
+## content/config/ui_motion.tres carries every required id.
+func _anim1() -> int:
+	var fails := 0
+	var e := UiMotionEntryData.new()
+	print("ANIM-1: entry defaults ", e.duration, "/", e.delay, "/", e.ease, "/", e.trans, "/", e.amplitude, "/", e.enabled, " errors ", e.validate())
+	if e.validate().size() != 1 or not e.enabled: fails += 1  # no id
+	e.id = &"smoke_pop"
+	e.duration = 0.3
+	e.ease = Tween.EASE_IN_OUT
+	e.trans = Tween.TRANS_BACK
+	e.amplitude = 1.2
+	var table := UiMotionData.new()
+	table.entries = [e]
+	if table.validate().size() != 0 or e.validate().size() != 0: fails += 1
+	var err := ResourceSaver.save(table, "user://smoke_motion.tres")
+	var back: UiMotionData = load("user://smoke_motion.tres")
+	var be := back.find(&"smoke_pop")
+	print("Save=", err, " reload ", be.duration if be != null else -1.0, " ease ", be.ease if be != null else -1, " trans ", be.trans if be != null else -1)
+	if be == null or be.ease != Tween.EASE_IN_OUT or be.trans != Tween.TRANS_BACK or not is_equal_approx(be.amplitude, 1.2): fails += 1
+	table.entries = [e, e]
+	if table.validate().size() != 1: fails += 1  # repeated id
+	var shipped: UiMotionData = load("res://content/config/ui_motion.tres")
+	var missing := 0
+	for id in UiMotionData.REQUIRED_IDS:
+		if shipped == null or shipped.find(id) == null:
+			missing += 1
+	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
+	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
 	return fails

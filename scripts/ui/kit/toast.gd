@@ -4,9 +4,8 @@ extends PanelContainer
 ## RAM") right where the player is looking (H20: refusals used to go to a hidden log).
 ## View only. Instant and static under headless or reduce effects.
 
-## Seconds on screen, and the fade at the end.
-const SHOW_SECONDS := 2.4
-const FADE_SECONDS := 0.35
+## Seconds on screen (delay) and the fade at the end (duration): the `toast` motion entry.
+const MOTION := &"toast"
 const FONT_SIZE := 15
 ## A drawn no-entry mark leads the message (readable without the words): radius and the
 ## room it takes on the left (px at text scale 1.0).
@@ -77,9 +76,10 @@ func _show(text: String, anchor: Vector2, is_refusal: bool, max_width: float = 0
 	if DisplayServer.get_name() == "headless":
 		return  # stays up for tests to read; the next action replaces it
 	_tween = create_tween()
-	_tween.tween_interval(SHOW_SECONDS)
+	_tween.tween_interval(Motion.delay_of(MOTION))
 	if Fx.effects_enabled():
-		_tween.tween_property(self, "modulate:a", 0.0, FADE_SECONDS)
+		var e := Motion.entry(MOTION)
+		_tween.tween_property(self, "modulate:a", 0.0, Motion.seconds(MOTION)).set_ease(e.ease).set_trans(e.trans)
 	_tween.tween_callback(hide)
 
 

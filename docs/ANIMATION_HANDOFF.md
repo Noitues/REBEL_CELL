@@ -47,8 +47,18 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `NeonCity` | Beacon blink, slow menu pan (Lissajous), rain | `_process` / `_draw_fx`. |
 | `RaidPlayoutPanel` + `hq_scene` | Step-by-step raid playout with 1x/2x/4x/Skip | Stepping only; no tweened motion along paths yet. |
 | `DripButton` | Hover halo (static jitter copies) | No motion yet. |
+| `content/config/ui_motion.tres` + `Motion` | Every timing above now reads its entry (Animation pass, ANIM-1) | `jack_in`, `jack_out`, `screen_flash`, `hit_freeze`, `saved_stamp`, `heat_pulse`, `toast`, `resolve_pass`, `precision_perfect`, `precision_partial`, `precision_blink`, `pointer_flicker`, `beacon_blink`, `drip_halo`. |
+| `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. |
 
 ## 3. First task: the motion config and a motion lab
+
+**Done (the Animation pass, ANIM-1, 2026-09-27; DECISIONS "Motion pass").** All three pieces below exist.
+`content/config/ui_motion.tres` holds an entry for every id in section 4. It also covers
+the wider scope the designer set for the Animation pass: raid execution, card targeting
+and execution, the end-turn sequence, spinner movement, drag and drop everywhere, and
+city influence changes. Content validation requires every id
+(`UiMotionData.REQUIRED_IDS`). New effects add or retune entries
+and build their tweens with `Motion` (STYLE_GUIDE 5.1).
 
 Before building effects, make motion tunable so the owner can react to numbers, not code.
 
@@ -180,7 +190,37 @@ and the number rolls.
   `docs/STYLE_GUIDE.md` §5.
 - Commit small: one animation (or one family) per commit, criterion in the message.
 
-## 6. Capturing motion (how the visual pass did it)
+## 6. Capturing motion
+
+### 6.1 One animation, from the motion lab (use this for frame strips)
+
+The motion lab plays one id once and then holds when given `--demo-anim=<id>`. The play
+starts on frame 6 (`DEMO_START_FRAME`). `--demo-speed=<x>` sets the speed. Movie Maker
+writes one numbered PNG per frame at a fixed frame rate, so timing is exact and
+repeatable. Verified on this Windows machine (Godot 4.7.2; it needs a real display, so
+not `--headless`):
+
+```
+godot --path . --resolution 1280x720 --write-movie <dir>/f.png --fixed-fps 30   --quit-after 40 res://tools/design_lab/motion_lab.tscn -- --demo-anim=card_hover
+```
+
+It writes `<dir>/f00000000.png` ... `f00000039.png` (and an `f.wav`). The log prints
+`motion_lab: card_hover starts on frame 6`. Redirect the output to a file; never pipe
+Godot. Pick `--quit-after` to cover the motion: frames = 6 + seconds x 30 + a few.
+
+Then montage 6-10 frames into one strip, each labelled with its ms from the start:
+
+```
+python tools/design_lab/frame_strip.py <dir> <out.png> --start 6 --count 8 --step 1   --crop 380,0,900,720 --scale 0.5 --title "card_hover 0.15s OUT QUAD lift 12px"
+```
+
+`--step 2` or `3` spreads a long motion (jack in: `--step 3` covers 0-700 ms in 8
+frames). `--crop x,y,w,h` (1280x720 coordinates) cuts to the piece; the lab's stage
+starts at x = 380. For variants side by side, capture each with the lab's values changed
+(or a tuned copy of the entry), strip each, and put the strips under one another with the
+values in `--title`. The script needs Pillow. Run it as a file; never `python -`.
+
+### 6.2 Whole screens (in context)
 
 Screens have demo flags that jump straight to a state, e.g. (full list: `grep -o
 '"--demo-[a-z_-]*' scripts/ui/*.gd`):
@@ -191,19 +231,17 @@ godot --path . res://scenes/hq/hq_scene.tscn -- --demo-playout
 godot --path . res://scenes/menu/title_scene.tscn -- --demo-district=solace
 ```
 
-Headless capture of every frame (a cloud box has no display; use a virtual one):
+The same Movie Maker flags record them on Windows (as in 6.1). A cloud box has no
+display, so use a virtual one there:
 
 ```
-xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 --path . \
-  --resolution 1280x720 --write-movie /tmp/frames/f.png --fixed-fps 30 --quit-after 45 \
-  res://scenes/netrun_map/netrun_scene.tscn -- --demo-combat
+xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 --path .   --resolution 1280x720 --write-movie /tmp/frames/f.png --fixed-fps 30 --quit-after 45   res://scenes/netrun_map/netrun_scene.tscn -- --demo-combat
 ```
 
-`--write-movie` with a `.png` path writes one numbered PNG per frame at a fixed frame
-rate, so timing is exact and repeatable. Add a demo flag that triggers the animation
-under review a few frames in (e.g. `--demo-anim=card_play`), then pick frames for the
-strip. Large offline renders use a `SubViewport` tool (see
-`tools/design_lab/city_poster.gd`, `portrait_concepts.gd`).
+When an animation is wired into a screen, add a demo flag there that triggers it a few
+frames in (e.g. `--demo-anim=card_play` on the combat scene), then strip it as in 6.1.
+Large offline renders use a `SubViewport` tool (see `tools/design_lab/city_poster.gd`,
+`portrait_concepts.gd`).
 
 ## 7. Checklist per animation
 

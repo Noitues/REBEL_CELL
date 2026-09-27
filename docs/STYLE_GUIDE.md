@@ -155,6 +155,28 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   posters and searchlights; the net shows corporate wireframe creeping over zine elements.
 - REBEL_CELL campaign: the net itself renders in zine style.
 
+### 5.1 Motion config (the Animation pass, ANIM-1)
+- **One table.** Every UI animation's duration, delay, ease, transition, amplitude and
+  on/off switch is an entry in `content/config/ui_motion.tres` (schema
+  `UiMotionData` / `UiMotionEntryData`), looked up by id (`&"card_hover"`,
+  `&"resolve_pass"`...). No motion number lives inline in a view. Every roadmap item in
+  ANIMATION_HANDOFF 4 has at least one id, and content validation requires them all.
+- **Build tweens with `Motion`** (`scripts/ui/kit/motion.gd`): `Motion.pop(node, id)`,
+  `slide_in(node, from, id)`, `fade`, `shake`, `blink`, `loop_pulse`, `number_roll`,
+  `run(id, node, property, to)` and `stop(node)`. Code that builds its own tween reads
+  `Motion.seconds(id)`, `delay_of(id)`, `amplitude(id)` and `entry(id).ease/.trans`.
+- **Reduce effects and headless** show the end state at once: the helpers return null
+  and never leave a tween running, and a disabled entry does the same. Never `await` a
+  motion in a rule path.
+- **Speed.** `Motion.set_speed()` (0.25x-4x) divides the durations the kit hands out: the
+  lab uses 0.25x-2x, raid playback 1x/2x/4x. Ambient loops (beacons) keep their own clock.
+- **Tuning.** `tools/design_lab/motion_lab.tscn` loops any id on real pieces. It has
+  sliders and pickers, and "copy values" gives paste-ready .tres lines. Frame strips for
+  review: ANIMATION_HANDOFF 6.
+- **Amplitude units** depend on the helper: px (slide, lift, shake), a scale (pop, bump),
+  an alpha (fade, blink, pulse), degrees (tilt, flip) or frames (hit freeze). Each
+  entry's comment in the .tres says which.
+
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
 slice and status, text scaling, subtitles with speaker names.

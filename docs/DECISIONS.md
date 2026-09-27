@@ -271,6 +271,82 @@ only: no rule, content number or balance changed.
   awaits `Fx.show_saved()` (placed a frame
   later).
 
+### Motion pass
+Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
+`content/config/ui_motion.tres`; each entry below says what was picked and why.
+
+#### 2026-09-27 — Animation pass — ANIM-1: motion foundation
+The designer made motion its own Animation pass ("nothing should be deferred"). ANIM-1
+makes motion tunable before any new effect
+is built (ANIMATION_HANDOFF 3).
+- **Schema (CLAUDE.md rule 8):** two new resources in `scripts/data/`.
+  `UiMotionEntryData` holds `id`, `duration`, `delay`, `ease` (Tween.EaseType), `trans`
+  (Tween.TransitionType), `amplitude` and `enabled`. `UiMotionData` holds `entries` and
+  `REQUIRED_IDS`. The table is a sub-resource per entry, so one entry reads as one
+  block in the .tres and the lab prints paste-ready lines. `amplitude` has no unit of
+  its own; the helper and the entry's comment name it (px for slides, lifts and shakes, a
+  scale for pops, an alpha for fades and blinks, degrees for tilts, frames for the hit
+  freeze). The schema smoke test round-trips both classes and checks that the shipped
+  table has every required id.
+- **One table, loaded by path.** `ContentRegistry` records the `UiMotionData` it scans
+  (`motion`, `MOTION_PATH`), like the campaign config. A missing table fails content
+  validation (`tools/validate_content.gd`) but not `ContentRegistry.validate()`. That
+  keeps the registry's existing tests exact, and rules never read motion. Entry ids
+  share the content id namespace, so the registry's duplicate check guards against clashes.
+- **105 entries**: every roadmap item 4.1-4.24 has at least one id, plus the shared ones
+  (`screen_flash`, `hit_freeze`, `saved_stamp`, `toast`). 33 more cover the pass scope the
+  designer added beyond the roadmap. Raid execution: `ice_lock_ring` (not `ice_lock`, an asset id), `decoy_fire`,
+  `raid_hit_effect`, `node_damage_number`, `forecast_stamp_resolve`. Card targeting:
+  `card_pickup`, `drag_ghost_follow`, `drop_zone_pulse`, `aim_line_draw`, `target_snap`,
+  `drag_cancel_return`. Card execution: `card_stamp`, `effect_burst`, `card_discard`.
+  End-turn resolution: `resolve_beat`, `block_number`, `heal_number`, `hp_drain`,
+  `status_stamp`, `last_turn_reveal`. Spinners: `wheel_respin`, `inner_ring_turn`,
+  `pointer_migrate`, `pointer_orbit`, `enemy_turn_spin`. Drag and drop: `drag_pickup`,
+  `drag_follow`, `drop_settle`, `drop_reject`, `loadout_swap`, `crew_assign`. City
+  influence: `influence_crossfade`, `influence_spread`. Screen transitions, number rolls
+  and top-bar bumps already had ids (4.17, 4.24). Ids are data: adding one needs no
+  schema change. Where the handoff gives a
+  range, the pick is its middle or the existing value. `jack_in` / `jack_out` keep 0.7 s
+  (range 0.6-0.9). `wheel_spin` is 0.45 s for a half turn (range 0.25-0.6). `wheel_nudge`
+  is 0.1 s (under 0.12). `card_*` run 0.15-0.35 s (0.2-0.35). `panel_in` is 0.22 s (under
+  0.25). `intent_flip` is 0.15 s. `drip_grow` is 0.6 s. `sticky_bump` is 1.08 over
+  0.12 s. `resolve_pass` stays 0.35 s: a full resolution of four passes plus statuses
+  stays under 1.5 s. Values for effects later slices build are starting points; those
+  slices may add ids.
+- **`Motion` kit** (`scripts/ui/kit/motion.gd`): `run`, `fade`, `pop`, `slide_in`,
+  `shake`, `blink`, `loop_pulse`, `number_roll` and `stop`, plus `seconds` / `delay_of` /
+  `amplitude` / `live` for code that builds its own tweens. It returns null and applies
+  the end state at once under reduce effects, under a headless display server and for a
+  disabled entry (`force_live` lets tests and captures animate headless; reduce effects
+  still wins). A helper started again mid-motion settles on the true rest value, which
+  node meta records. `Motion.speed` (`set_speed`, clamped to 0.25x-4x) divides every duration
+  and delay the kit hands out. It serves the lab (0.25x-2x) and raid playback (1x/2x/4x). Ambient loops (beacon
+  period) read the raw duration, so a raid at 4x doesn't strobe the city.
+- **Inline numbers moved**: `Fx.flash` (strength/seconds default to `screen_flash`),
+  `freeze_frames` (`hit_freeze` frames), `show_saved` (`saved_stamp`: hold 0.6, fade
+  1.2), `heat_pulse` (`heat_pulse` duration and peak), `jack_in` / `jack_out` (durations;
+  the CRT rect runs between `jack_out`'s 0.3 and `jack_in`'s 1.2 of the viewport, eased by
+  the entry). In combat: PASS_DELAY (`resolve_pass`), the Perfect flash
+  (`precision_perfect`), the Partial stutter (`Motion.shake` on the wheel's `shake`, now
+  redrawn each step, so it shows), the miss blink (`precision_blink`) and the migration
+  flicker (`pointer_flicker`, looping). The NeonCity beacon uses `beacon_blink`: its
+  period, with amplitude as the lit share. The DripButton hover halo takes its jitter
+  reach from `drip_halo`, and the Toast its hold and fade from `toast`. Behaviour is
+  unchanged at 1x. The one change: headless runs now show the migration telegraph's
+  static state (pointer alpha 0.6, as under reduce effects) instead of a loop no one sees.
+- **Motion lab** (`tools/design_lab/motion_lab.tscn`, not exported): it tunes a
+  duplicate of the table (`Motion.use_config`), so the loaded resource never changes.
+  Each id has a demo kind and a piece in `DEMOS`: the pieces are a ZineCard, a WheelView
+  showing a real breaker fight, a StickerButton, SEND IT, a ZinePanel and a number.
+  "Copy values" prints the entry's .tres lines and copies them to the clipboard.
+- **Capture**: `--demo-anim=<id>` (plus `--demo-speed=<x>`) plays one motion once, on
+  frame 6, then holds. `tools/design_lab/frame_strip.py` (Pillow) montages the Movie Maker
+  frames into a strip labelled in ms. Verified on this Windows machine; the command is in
+  ANIMATION_HANDOFF 6.
+- **Tests**: `tests/unit/test_motion.gd` (18 tests) covers the table, reduce effects,
+  headless, disabled entries, speed, config-driven values, `stop`, game state and a lab
+  demo for every id.
+
 ### 2026-09-27 — H23 combat: subtitles that don't blank, wheels sized from the room below, turns that say what happened
 From pass 23 (both audits, a first-time player and a player who can't read English
 looking at the pass-23 storyboards; GAP_ANALYSIS H23).
@@ -2215,6 +2291,24 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
+  `content/config/ui_motion.tres` are guesses inside the handoff's ranges. None has been
+  reviewed as a frame strip yet. Guesses that matter most: `wheel_spin` 0.45 s per half
+  turn with BACK overshoot, `card_play` 0.3 s, `resolve_pass` 0.35 s between passes and
+  `number_float` 28 px over 0.6 s. Each will be offered as snappy / heavy / bouncy
+  variants when its slice is built.
+- **Motion speed and ambience (Animation pass ANIM-1):** `Motion.speed` scales helper-built
+  motion only. City ambience (beacons) keeps its own clock, so raid playback at 4x does
+  not speed up the backdrop. Should a sped-up raid also hurry the city?
+
+- **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column and the map key along the map's foot (about 280
+  px tall at 1.6), the Grid map is framed small enough that every node shows, and only the
+  labels that fit are drawn (the rest keep tooltips); in the densest cluster (ten T1 Sites
+  side by side) some icons touch, as the overlay stacks at most ICON_STACK_MAX (4) deep.
+  Alternatives: a key that folds to
+  its title (open on hover or a button), or a narrower column at big text (the steps as
+  icon-only buttons). Which do you prefer? LABEL_REACH (110 px) is a guess too.
 
 - **Subtitles over the stat tags; toasts (H20, 2026-09-26):** outside combat the subtitle
   bar now sits in the top band over the screen title and the stat tags (the only strip
