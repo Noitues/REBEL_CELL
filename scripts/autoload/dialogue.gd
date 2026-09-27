@@ -112,8 +112,11 @@ func add_set(set: LineSetData) -> void:
 ## LEAVE THE MODEM, crew Loadout buttons, Grid rows and menu buttons).
 func dock_default() -> void:
 	dock_at(default_rect, lines_fitting(default_rect))
-	# The label's own minimum must not stretch the bar past a one-line strip.
+	# The label's own minimum must not stretch the bar past a one-line strip; a line on
+	# screen is refitted to the strip (H23: zeroing it left the label 0 px tall).
 	text_label.custom_minimum_size.y = 0.0
+	if bar.visible and text_label.get_parsed_text() != "":
+		_fit_page(text_label.get_parsed_text())
 	inline_speaker = true
 	_default_dock = true
 

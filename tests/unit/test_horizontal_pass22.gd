@@ -91,7 +91,7 @@ func test_the_wheel_keeps_most_of_its_size_at_big_text() -> void:
 	var r1: float = small._player_view._radius()
 	var big := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
 	var r16: float = big._player_view._radius()
-	assert_true(r16 >= r1 * WheelView.RADIUS_FLOOR - 1.0 or r16 >= big._player_view.size.y * 0.2, "radius %.0f at 1.6 vs %.0f at 1.0" % [r16, r1])
+	assert_true(r16 >= r1 * WheelView.BIG_TEXT_RADIUS_KEEP - 1.0, "radius %.0f at 1.6 vs %.0f at 1.0" % [r16, r1])
 	assert_eq(big.layout_violations(), [], "still nothing over a wheel")
 
 

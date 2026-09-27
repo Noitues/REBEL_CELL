@@ -180,9 +180,23 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 	var soaked := {}
 	var evaded := {}
 	var guarded := {}
+	# HP changed by the resolve itself (before the next turn starts); the rest of the real
+	# change happened at the start of the next turn (a boss's Auto-Renew heal, H23), which
+	# the NEXT forecast (the end of the resolve) doesn't include.
+	var resolved := {}
+	var starting := false
 	for e in events:
 		var t := String(e.get("type", ""))
 		var target := StringName(String(e.get("target", "")))
+		if t == "turn_start":
+			starting = true
+		if not starting:
+			if t == "damage":
+				resolved[target] = int(resolved.get(target, 0)) - int(e.get("hp_damage", 0))
+			elif t == "corrupted":
+				resolved[target] = int(resolved.get(target, 0)) - int(e.get("amount", 0))
+			elif t == "heal":
+				resolved[target] = int(resolved.get(target, 0)) + int(e.get("amount", 0))
 		if t == "damage":
 			soaked[target] = int(soaked.get(target, 0)) + int(e.get("blocked", 0)) + int(e.get("shielded", 0))
 			var victim := before.get_combatant(target)
@@ -200,10 +214,14 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 		var now := after.get_combatant(c.id)
 		var parts := PackedStringArray()
 		var dhp := (now.hp if now != null else 0) - c.hp
-		if dhp < 0:
-			parts.append("%d HP" % dhp)
-		elif dhp > 0:
-			parts.append("+%d HP" % dhp)
+		var in_resolve := int(resolved.get(c.id, 0))
+		var at_start := dhp - in_resolve
+		if in_resolve < 0:
+			parts.append("%d HP" % in_resolve)
+		elif in_resolve > 0:
+			parts.append("+%d HP" % in_resolve)
+		if at_start != 0:
+			parts.append("%+d AT TURN START" % at_start)
 		if int(soaked.get(c.id, 0)) > 0:
 			parts.append("%d BLOCKED" % int(soaked[c.id]))
 		if int(evaded.get(c.id, 0)) > 0:
@@ -833,13 +851,18 @@ func _dim_hand() -> void:
 func _show_aim_hint() -> void:
 	if _aim_hint == null:
 		return
-	var confirm := Settings.key_text(&"ui_accept") if Settings.pad_active else "click"
-	var cancel := Settings.key_text(&"ui_cancel") if Settings.pad_active else "right-click"
-	_aim_hint.text = "Drop or %s on a glowing target  ·  %s cancels" % [confirm, cancel]
+	if Settings.pad_active:
+		_aim_hint.text = "%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel" % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]
+	else:
+		_aim_hint.text = "Drop or click on a glowing target  ·  right-click cancels"
 	_aim_hint.add_theme_font_size_override("font_size", roundi(AIM_HINT_FONT * Settings.text_scale))
 	_aim_hint.reset_size()
+	# Over the enemy side, above the hand: the RAM row runs along the player's side (H23: the
+	# hint sat on the RAM meter).
 	var hand := _hand_box.get_global_rect()
-	_aim_hint.global_position = Vector2(hand.position.x + 8.0, hand.position.y - _aim_hint.get_combined_minimum_size().y - 4.0)
+	var right := _enemy_views_box.get_global_rect()
+	var hs := _aim_hint.get_combined_minimum_size()
+	_aim_hint.global_position = Vector2(clampf(right.position.x + 8.0, 0.0, maxf(0.0, get_global_rect().end.x - hs.x)), hand.position.y - hs.y - 4.0)
 	_aim_hint.visible = true
 
 

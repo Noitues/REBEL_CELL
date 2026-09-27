@@ -250,7 +250,7 @@ func test_retired_keybinds_are_dropped_on_load() -> void:
 
 func test_last_turn_lines_match_the_real_hp_change() -> void:
 	# H22: CORRUPTED bites and heals counted (the line said NO DAMAGE when HP was lost).
-	for enemy in [&"claims_adjuster", &"collections_agent", &"dosage_dispenser", &"civic_core"]:
+	for enemy in [&"claims_adjuster", &"collections_agent", &"dosage_dispenser", &"civic_core", &"renewal_engine"]:
 		var scene := await _combat(enemy)
 		for turn in 3:
 			var before: CombatState = scene.engine.state().duplicate_state()
@@ -262,9 +262,12 @@ func test_last_turn_lines_match_the_real_hp_change() -> void:
 				var was := before.get_combatant(v.combatant.id)
 				var dhp: int = v.combatant.hp - was.hp
 				var line: String = v.last_turn
-				if dhp != 0:
-					assert_string_contains(line, ("%d HP" % dhp) if dhp < 0 else ("+%d HP" % dhp), "%s vs %s: %s" % [v.combatant.display_name, enemy, line])
-				else:
-					assert_false(line.contains(" HP"), "no HP change claimed: %s" % line)
+				# H23: the resolve's change and the next turn's start are shown apart; they sum
+				# to the real change.
+				var total := 0
+				var rx := RegEx.create_from_string("([+-]?\\d+) (HP|AT TURN START)")
+				for m in rx.search_all(line):
+					total += int(m.get_string(1))
+				assert_eq(total, dhp, "%s vs %s: %s" % [v.combatant.display_name, enemy, line])
 			if after.is_over():
 				break

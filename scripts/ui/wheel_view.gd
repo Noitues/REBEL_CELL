@@ -98,8 +98,15 @@ const SATELLITE_GAP := 12.0
 ## At big text the wheel never shrinks below this share of its unconstrained size (H22:
 ## at 1.6 it went from 126 to 62 px and names were cut).
 const RADIUS_FLOOR := 0.8
+## At the biggest text the wheel keeps at least this share of its 1.0-scale radius: the
+## title row and the HP block grow with the text and the view's height is fixed (H23).
+const BIG_TEXT_RADIUS_KEEP := 0.75
 ## A satellite's hex token radius (px at text scale 1.0).
 const SATELLITE_TOKEN := 11.0
+## Tokens below this sine of their angle (the bottom sector) keep to the side of the HP
+## block, whose half width is about this (px at text scale 1.0).
+const BOTTOM_SECTOR_SIN := 0.8
+const HP_BLOCK_HALF := 90.0
 ## Aim quality pips on the tag (1 = half power, 2 = good, 3 = perfect).
 const TIER_PIPS := {RC.PrecisionTier.PARTIAL: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
 const PIP_RADIUS := 3.0
@@ -325,7 +332,13 @@ func _satellite(id: StringName) -> CombatantState:
 func _satellite_pos(sat: CombatantState) -> Vector2:
 	var tps := combatant.wheel.ticks_per_slice()
 	var a := _ang(sat.dock_slot * tps - combatant.wheel.rotation)
-	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + _satellite_out())
+	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + _satellite_out())
+	# In the bottom sector the HP number, NEXT plate and last-turn line sit under the disc:
+	# a token there moves to the side of them (H23: it covered "40/40").
+	if sin(a) > BOTTOM_SECTOR_SIN:
+		var side := 1.0 if cos(a) >= 0.0 else -1.0
+		p.x = global_center().x + side * maxf(absf(p.x - global_center().x), HP_BLOCK_HALF * _ts() + SATELLITE_TOKEN * _ts())
+	return p
 
 
 ## How far outside the rim satellites dock: past the slice values (H22: they sat on them).
@@ -388,7 +401,15 @@ const BAND_SHARE := 0.34
 
 
 func _center() -> Vector2:
-	return Vector2(left_reserve + (size.x - left_reserve) * center_x, size.y * CENTER_Y) + shake
+	# The centre sits at CENTER_Y, raised when the HP number and the last-turn line need
+	# the room below (H23: the fixed centre left 210 px above and pinned the wheel small).
+	var cy := minf(size.y * CENTER_Y, size.y - _bottom_need() - _radius())
+	return Vector2(left_reserve + (size.x - left_reserve) * center_x, cy) + shake
+
+
+## Room kept under the disc for the HP number and the last-turn line (px).
+static func _bottom_need() -> float:
+	return HP_TEXT_GAP + _fs(HP_FONT_SIZE) + _fs(HUB_FONT_SIZE) + LAST_TURN_GAP + DISC_MARGIN * 0.2
 
 
 func _radius() -> float:
@@ -396,15 +417,14 @@ func _radius() -> float:
 	if left_reserve > 0.0:
 		var avail := size.x - left_reserve
 		r = minf(r, minf(avail * center_x, avail * (1.0 - center_x)) - DISC_MARGIN)
-	# Room above for the tag (title + chip rows) and below for the HP number, at the
-	# current text scale (H21: at 1.3+ the tag ran over the status line).
-	var cy := size.y * CENTER_Y
-	var tag_room := _tag_reserve()
-	# Room above for the tag, but never below RADIUS_FLOOR of the unconstrained size: the tag
-	# then clamps to the view's top and the arrows draw over it (H22: the wheel vanished).
-	r = minf(r, maxf((cy - INTENT_HEIGHT - tag_room) / (1.0 + BAND_SHARE), r * RADIUS_FLOOR))
-	# Room below for the HP number and the last-turn line is a hard limit (the hand is there).
-	r = minf(r, size.y - cy - HP_TEXT_GAP - _fs(HP_FONT_SIZE) - _fs(HUB_FONT_SIZE) - LAST_TURN_GAP - DISC_MARGIN * 0.2)
+	# Vertically the disc (r above with its band, r below), the tag above and the HP number
+	# and last-turn line below share the view's height; the centre moves to fit (_center).
+	# Everything fits at r_full; below that the tag may clamp under the arrows down to
+	# RADIUS_FLOOR of the unconstrained size, as long as its title row still fits (H23).
+	var span := 2.0 + BAND_SHARE
+	var r_full := (size.y - _bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
+	var r_title := (size.y - _bottom_need() - INTENT_HEIGHT * _ts()) / span
+	r = minf(r, maxf(r_full, minf(r_title, r * RADIUS_FLOOR)))
 	return maxf(MIN_RADIUS, r)
 
 
@@ -535,7 +555,7 @@ func _draw() -> void:
 		var sat_out: Dictionary = outcome.get("satellites", {}).get(sat.id, {})
 		var sat_text := "%d" % sat.hp
 		if not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
-			sat_text += "→%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else "→✕"
+			sat_text += " >%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " >x"
 		var out_dir := (satp - _center()).normalized()
 		var lfs := _fs(HUB_FONT_SIZE + 1)
 		var lw := Palette.mono().get_string_size(sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
@@ -543,10 +563,10 @@ func _draw() -> void:
 		draw_rect(Rect2(lp - Vector2(3, lfs), Vector2(lw + 6, lfs + 5)), Color(Palette.NIGHT_SKY, 0.85))
 		draw_string(Palette.mono(), lp, sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
 		if sat.id == targeted_satellite:
-			_draw_crosshair(satp, 15.0)
+			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
 			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
-			draw_arc(satp, 13, 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
+			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
 			# A play with a way (a nudge card, Undock) marks each side: drop on the side it
 			# should turn to (the clockwise side is +1).
 			var cw := (satp - _center()).normalized().orthogonal() * -1.0
@@ -785,7 +805,13 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 	draw_string(Palette.marker(), center + Vector2(-hw * 0.5, top), name, HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if hub_lines[i].begins_with("RESIST") else _col(Palette.PAPER)
-		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), hub_lines[i], HORIZONTAL_ALIGNMENT_CENTER, hw, fs, col)
+		var lfs := fs
+		while lfs > 6 and Palette.mono().get_string_size(hub_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
+			lfs -= 1  # shrink to the hub (H23: "Breaker Core" was cut to "Breake")
+		var line_text: String = hub_lines[i]
+		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
+			line_text = line_text.substr(0, line_text.length() - 2) + "…"
+		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, col)
 	if not bool(outcome.get("alive_after", true)) and combatant.is_alive():
 		# This turn takes it down: a red cross over the hub.
 		var r := inner * 0.55
