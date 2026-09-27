@@ -110,7 +110,7 @@ func test_click_then_target_and_keyboard_aim() -> void:
 	assert_eq(scene.engine.state().hand.size(), 1, "confirm plays the aimed option")
 	var moved: CombatantState = scene.engine.state().get_combatant(aimed.wheel_id)
 	var was := before.get_combatant(aimed.wheel_id)
-	assert_true(moved.wheel.rotation != was.wheel.rotation or moved.resistance < was.resistance, "the aimed wheel moved (or resistance absorbed it)")
+	assert_true(moved.wheel.rotation != was.wheel.rotation or moved.wheel.inner_rotation != was.wheel.inner_rotation or moved.resistance < was.resistance, "the aimed wheel (or its inner ring) moved, or resistance absorbed it")
 	scene.select_card(0)
 	scene.cancel_selection()
 	assert_eq(scene.engine.state().hand.size(), 1, "cancel plays nothing")

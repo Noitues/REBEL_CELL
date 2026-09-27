@@ -324,13 +324,22 @@ func toggle_card_target() -> void:
 
 
 func toggle_ring() -> void:
+	var driven := engine.state().get_combatant(_selected_nudge_wheel()) if engine.has_fight() else null
+	if _nudge_ring_option.selected == 0 and driven != null and not driven.wheel.has_inner_ring():
+		_on_action_refused("%s has no inner ring." % driven.display_name)
+		return
 	_nudge_ring_option.select((_nudge_ring_option.selected + 1) % 2)
 	_sync_arrow_hints()
 
 
 func toggle_nudge_wheel() -> void:
 	_nudge_wheel_option.select((_nudge_wheel_option.selected + 1) % 2)
+	# A wheel without an inner ring takes outer nudges (H22: LB/RB were refused silently).
+	var driven := engine.state().get_combatant(_selected_nudge_wheel()) if engine.has_fight() else null
+	if driven != null and not driven.wheel.has_inner_ring():
+		_nudge_ring_option.select(0)
 	_sync_arrow_hints()
+	_refresh_status()
 
 
 ## Default card nudge direction for play_card() (players aim with the arrows instead).
@@ -445,7 +454,7 @@ func _odds_chips(c: CombatantState, non_miss_only: bool = false) -> Array[Dictio
 		var slice := engine.content(id) as SliceData
 		if slice == null or (non_miss_only and slice.slice_type == RC.SliceType.MISS):
 			continue
-		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), Palette.SLICE_NAMES.get(slice.slice_type, "?")]
+		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), Palette.SLICE_WORDS.get(slice.slice_type, "?")]
 		if not counts.has(key):
 			order.append(key)
 		counts[key] = int(counts.get(key, 0)) + 1
@@ -655,6 +664,24 @@ func _notification(what: int) -> void:
 func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 	selecting = hand_index
 	_options = options
+	# Arrows / D-pad step through the targets in screen order, left to right then top to
+	# bottom (H22: list order jumped about); ties keep the list order.
+	var keyed: Array = []
+	for i in _options.size():
+		var z := _zone_of(_options[i])
+		var v := _view_of(z[0])
+		var at: Vector2 = v.zone_center(z[1]) if v != null else Vector2.ZERO
+		keyed.append([at.x, at.y, i])
+	keyed.sort_custom(func(a: Array, b: Array) -> bool:
+		if not is_equal_approx(a[0], b[0]):
+			return a[0] < b[0]
+		if not is_equal_approx(a[1], b[1]):
+			return a[1] < b[1]
+		return a[2] < b[2])
+	var sorted: Array[CombatAction] = []
+	for k in keyed:
+		sorted.append(_options[int(k[2])])
+	_options = sorted
 	_option_index = 0
 	var state := engine.state()
 	for i in _options.size():
@@ -1070,6 +1097,7 @@ func _build_ui() -> void:
 	_status.tooltip_text = "The turn, and the free nudges left this turn (each extra nudge costs RAM)."
 	top.add_child(_status)
 	_settings_button = _button("Settings", open_settings)
+	_settings_button.tooltip_text = "Pause: options, codex, save and quit." 
 	top.add_child(_settings_button)
 
 	var middle := HBoxContainer.new()
@@ -1443,8 +1471,10 @@ func _refresh_status() -> void:
 		text += " · VICTORY"
 	elif state.outcome == CombatState.Outcome.DEFEAT:
 		text += " · DEFEAT"
-	elif Settings.pad_active:
-		text += " · %s wheel · %s ring" % [Settings.hint(&"toggle_nudge_wheel"), Settings.hint(&"toggle_ring")]
+	else:
+		var mine := _nudge_wheel_option.selected == 0
+		var ring := "INNER" if _nudge_ring_option.selected == 1 else "OUTER"
+		text += " · NUDGES: %s %s %s %s" % ["YOURS" if mine else "TARGET", Settings.hint(&"toggle_nudge_wheel"), ring, Settings.hint(&"toggle_ring")]
 	_status.text = text
 
 
@@ -1686,8 +1716,16 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		var title := _landing_title(landing, lc if lc != null else c)
 		var chips := _chips_for(o, id, state)
 		var sats := {}
+		var landings := {}
 		for sat in state.satellites_of(id):
 			sats[sat.id] = o.of(sat.id)
+			var ls := landing.get_combatant(sat.id)
+			var rs := engine.resolver.pointer_readouts(landing, ls if ls != null else sat)
+			if not rs.is_empty():
+				var sl: SliceData = rs[0]["slice"]
+				landings[sat.id] = {"type": sl.slice_type, "tier": int(rs[0]["tier"]),
+					"text": "%s (%s)" % [Palette.SLICE_WORDS.get(sl.slice_type, "?"), Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")]}
+		view.satellite_landings = landings
 		var d := o.of(id)
 		var shown_statuses: Array = d.get("statuses", [])
 		if random_picks.has(id):

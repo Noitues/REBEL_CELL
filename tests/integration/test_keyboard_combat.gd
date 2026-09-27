@@ -67,8 +67,14 @@ func test_q_and_e_nudge_w_r_t_toggle_tab_targets_space_ends_z_rewinds() -> void:
 	_press(KEY_Q)
 	var after := engine.state().get_combatant(engine.state().target_id)
 	assert_true(after.wheel.rotation == enemy_rot - 1 or after.resistance >= 0, "Q nudged (or resistance absorbed) the target")
+	var target_ring: bool = engine.state().get_combatant(engine.state().target_id).wheel.has_inner_ring()
 	_press(KEY_R)
-	assert_eq(_scene._nudge_ring_option.selected, 1, "R switches to the inner ring")
+	# H22: R switches to the inner ring only on a wheel that has one (a toast says why not).
+	assert_eq(_scene._nudge_ring_option.selected, 1 if target_ring else 0, "R follows the driven wheel's rings")
+	_press(KEY_W)
+	if engine.state().player.wheel.has_inner_ring():
+		_press(KEY_R)
+		assert_eq(_scene._nudge_ring_option.selected, 1, "R switches your wheel to the inner ring")
 	_press(KEY_TAB)
 	var targets := engine.state().living_enemies(true)
 	assert_true(targets.size() >= 1)
