@@ -27,10 +27,11 @@ var _instant: bool = false
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
 	grid_view = p_grid_view
+	TextDb.shown_as_given(self)  # H24 S4: its words translated here, shown as given
 	var controls := HBoxContainer.new()
 	add_child(controls)
 	step_label = Label.new()
-	step_label.text = "Setup"
+	step_label.text = tr("Setup")
 	step_label.custom_minimum_size.x = 90
 	step_label.add_theme_font_override("font", Palette.display())
 	step_label.add_theme_font_size_override("font_size", 22)
@@ -43,10 +44,10 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 		b.pressed.connect(func() -> void: set_speed(value))
 		controls.add_child(b)
 	var skip := Button.new()
-	skip.text = "Skip"
+	skip.text = tr("Skip")
 	skip.pressed.connect(skip_to_end)
 	controls.add_child(skip)
-	log_note = ZineNote.new("PLAYOUT", log_size)
+	log_note = ZineNote.new(tr("PLAYOUT"), log_size)
 	log_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(log_note)
 
@@ -139,9 +140,9 @@ func _apply_step(events: Array) -> void:
 		if e.has("text"):
 			log_note.append(String(e["text"]))
 		if t == "raid_end":
-			step_label.text = "Raid over"
+			step_label.text = tr("Raid over")
 		elif e.has("step"):
-			step_label.text = "Step %d" % int(e["step"]) if int(e["step"]) > 0 else "Setup"
+			step_label.text = tr("Step %d") % int(e["step"]) if int(e["step"]) > 0 else tr("Setup")
 	if grid_view != null:
 		var markers := {}
 		for id in _threat_sites:

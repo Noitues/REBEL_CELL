@@ -24,9 +24,10 @@ var room: Control = null
 func _init(p_scroll: ScrollContainer) -> void:
 	name = "ScrollHint"
 	scroll = p_scroll
-	text = "MORE BELOW"
+	TextDb.shown_as_given(self)  # H24 S4: translated here, shown as given
+	text = tr("MORE BELOW")
 	focus_mode = Control.FOCUS_NONE
-	tooltip_text = UiTip.fold("There is more further down this page: scroll, or press this.")
+	tooltip_text = UiTip.fold(tr("There is more further down this page: scroll, or press this."))
 	visible = false
 	IconMark.attach(self, StatIcon.MORE, Palette.CELL_ACID)
 	add_theme_color_override("font_color", Palette.CELL_ACID)

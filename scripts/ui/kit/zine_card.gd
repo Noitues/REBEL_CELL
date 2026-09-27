@@ -45,8 +45,12 @@ const PICTO_STEP := 34.0
 const PICTO_FONT := 12
 ## Short tags for the scripted card effects (by handler script name; H22: they had no
 ## pictogram). "%d" takes the effect's amount.
-const CUSTOM_PICTOS := {"calibrate_handler": "FREE NUDGE x%d", "momentum_handler": "SPIN %d+", "ring_lock_handler": "RING LOCK",
-	"steady_hand_handler": "PERFECT: RAM+", "undock_handler": "UNDOCK"}
+const CUSTOM_PICTOS := {"calibrate_handler": "FREE NUDGE x%d", "momentum_handler": "SPIN %d+", "ring_lock_handler": "RING LOCK", # TR
+	"steady_hand_handler": "PERFECT: RAM+", "undock_handler": "UNDOCK"} # TR
+## The sticker's foot (the hand's key hint) at scale 1.0, and the gap kept between a tile's
+## parts (px; H24 S10).
+const STICKER_FOOT := 26.0
+const TILE_GAP := 2.0
 ## Slice icon for each effect that does what a slice does.
 const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.ATTACK, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFEND,
 	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.EVADE, RC.EffectType.HEAL: RC.SliceType.HEAL,
@@ -111,32 +115,33 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 			RC.EffectType.RESPIN:
 				out.append({"kind": "respin", "amount": 0})
 			RC.EffectType.GAIN_RAM:
+				# H24 S2/S3: the tags' words translated, the sign from TextDb.signed.
 				if e.amount != 0:
-					out.append({"kind": "tag", "text": "RAM%+d" % e.amount})
+					out.append({"kind": "tag", "text": TranslationServer.translate("RAM%s") % TextDb.signed(e.amount)})
 			RC.EffectType.DRAW_CARDS:
-				out.append({"kind": "tag", "text": "DRAW %d" % e.amount})
+				out.append({"kind": "tag", "text": TranslationServer.translate("DRAW %d") % e.amount})
 			RC.EffectType.FREEZE:
-				out.append({"kind": "tag", "text": "FREEZE"})
+				out.append({"kind": "tag", "text": TranslationServer.translate("FREEZE")})
 			RC.EffectType.MODIFY_RESISTANCE:
-				out.append({"kind": "tag", "text": "RES%+d" % e.amount})
+				out.append({"kind": "tag", "text": TranslationServer.translate("RES%s") % TextDb.signed(e.amount)})
 			RC.EffectType.HUB_BREACH:
-				out.append({"kind": "tag", "text": "BREACH"})
+				out.append({"kind": "tag", "text": TranslationServer.translate("BREACH")})
 			RC.EffectType.CLEANSE:
-				out.append({"kind": "tag", "text": "CLEANSE"})
+				out.append({"kind": "tag", "text": TranslationServer.translate("CLEANSE")})
 			RC.EffectType.DRAIN_RAM:
-				out.append({"kind": "tag", "text": "RAM-%d" % absi(e.amount)})
+				out.append({"kind": "tag", "text": TranslationServer.translate("RAM%s") % TextDb.signed(-absi(e.amount))})
 			RC.EffectType.SNAP_TO_CENTER:
-				out.append({"kind": "tag", "text": "SNAP"})
+				out.append({"kind": "tag", "text": TranslationServer.translate("SNAP")})
 			RC.EffectType.DOUBLE_NUDGE_CARDS:
-				out.append({"kind": "tag", "text": "2x NUDGE"})
+				out.append({"kind": "tag", "text": TranslationServer.translate("2x NUDGE")})
 			RC.EffectType.RETRIGGER:
-				out.append({"kind": "tag", "text": "AGAIN"})
+				out.append({"kind": "tag", "text": TranslationServer.translate("AGAIN")})
 			RC.EffectType.CUSTOM:
 				if e.custom_handler != null:
 					var key := e.custom_handler.resource_path.get_file().get_basename()
 					if CUSTOM_PICTOS.has(key):
-						var text := String(CUSTOM_PICTOS[key])
-						out.append({"kind": "tag", "text": text % e.amount if text.contains("%d") else text})
+						var text := TranslationServer.translate(String(CUSTOM_PICTOS[key]))
+						out.append({"kind": "tag", "text": text % e.amount if String(CUSTOM_PICTOS[key]).contains("%d") else text})
 			_:
 				if EFFECT_SLICE.has(e.type):
 					out.append({"kind": "slice", "type": EFFECT_SLICE[e.type], "amount": e.amount,
@@ -228,15 +233,16 @@ func _draw_sticker() -> void:
 	# text is the tooltip and the inspect).
 	var body := roundi(BODY_SIZE * s)
 	var lines := wrap_px(description, size.x - 16, body)
-	var foot := (26.0 + (PICTO_RADIUS * 2.0 + 6.0 if not pictos.is_empty() else 0.0)) * s
-	var room := maxi(1, int((size.y - BODY_TOP * s - foot) / (BODY_LINE * s)))
+	var room := sticker_body_rows()
 	for i in mini(lines.size(), room):
 		var t := lines[i]
 		if i == room - 1 and lines.size() > room:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
 		draw_string(Palette.mono(), Vector2(8, BODY_TOP * s + i * BODY_LINE * s), t, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, body, fg)
-	_draw_pictos(Vector2(8 + PICTO_RADIUS * s, size.y - 26.0 * s - PICTO_RADIUS * s - 2.0), s, fg)
-	_chip(Vector2(size.x - 24, size.y - 22), fg)
+	_draw_pictos(Vector2(8 + PICTO_RADIUS * s, _sticker_foot_top() - PICTO_RADIUS * s - 2.0), s, fg)
+	# H24 S10: the corner chip mark is decoration; a shop card's buy sticker sits there.
+	if buy_button == null:
+		_chip(Vector2(size.x - 24, size.y - 22), fg)
 	var key := pad_hint if pad_hint != "" and has_focus() else hotkey
 	if key != "":
 		draw_string(Palette.marker(), Vector2(8, size.y - 8), "[%s]" % key, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(14 * s), fg)
@@ -362,6 +368,43 @@ static func wrap_px(text: String, width: float, font_size: int) -> PackedStringA
 			line = trial
 	if line != "":
 		out.append(line)
+	return out
+
+
+## Where the sticker's foot starts (px from the top): the buy sticker's top on a shop card
+## (H24 S10), else the room the hand's key hint takes.
+func _sticker_foot_top() -> float:
+	if buy_button != null:
+		return size.y - buy_room()
+	return size.y - STICKER_FOOT * text_scale
+
+
+## How many body lines fit on the sticker above its pictograms and foot.
+func sticker_body_rows() -> int:
+	var s := text_scale
+	var picto_h := (PICTO_RADIUS * 2.0 + 6.0) * s if not pictos.is_empty() else 0.0
+	return maxi(1, int((_sticker_foot_top() - picto_h - BODY_TOP * s) / (BODY_LINE * s)))
+
+
+## The sticker's parts as drawn (local rects; H24 S10 tests: none overlaps another): the
+## title, each body line shown, the pictogram row, the corner chip mark and the buy sticker.
+func sticker_parts() -> Dictionary:
+	var s := text_scale
+	var body := roundi(BODY_SIZE * s)
+	var mono := Palette.mono()
+	var lines := wrap_px(description, size.x - 16, body)
+	var rows: Array[Rect2] = []
+	for i in mini(lines.size(), sticker_body_rows()):
+		var base := BODY_TOP * s + i * BODY_LINE * s
+		rows.append(Rect2(8, base - mono.get_ascent(body), size.x - 16, mono.get_height(body)))
+	var out := {"body": rows}
+	if not pictos.is_empty():
+		var y := _sticker_foot_top() - PICTO_RADIUS * s - 2.0
+		out["pictos"] = Rect2(8, y - PICTO_RADIUS * s, size.x - 16, PICTO_RADIUS * 2.0 * s)
+	if buy_button == null:
+		out["chip"] = Rect2(Vector2(size.x - 24, size.y - 22) - Vector2(11, 11), Vector2(22, 22))
+	else:
+		out["buy"] = Rect2(buy_button.position, buy_button.size)
 	return out
 
 
@@ -496,15 +539,87 @@ func _draw_price_tag() -> void:
 	draw_string(Palette.display(), Vector2(coin.x + PRICE_COIN_R * s + 3.0 * s, rt.position.y + h * 0.5 + fs * 0.36), price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
 
 
-## Tiles at text scale 1.0 draw as before; at other scales the lettering grows inside the
-## same tile (the icon moves up to make room).
+## Tiles at text scale 1.0 draw as before; at other scales, or with a buy sticker at the
+## foot (H24 S10), the lettering and the icon are laid out by `tile_parts` inside the tile.
 func _draw_tile_any() -> void:
 	if look == Look.CHIP:
 		_draw_chip_tile()
-	elif is_equal_approx(text_scale, 1.0):
+	elif is_equal_approx(text_scale, 1.0) and buy_button == null:
 		_draw_tile()
 	else:
 		_draw_tile_scaled()
+
+
+## The room a shop item's foot takes (px): its buy sticker, the edge under it and a gap
+## (H24 S10: text and icons ran under the sticker at 1.6), else the price tag's.
+func buy_room() -> float:
+	var s := text_scale
+	if buy_button != null:
+		var h := buy_button.size.y if buy_button.size.y > 0.0 else BuyButton.BUY_HEIGHT * s
+		return h + BuyButton.EDGE * s + TILE_GAP * s
+	return PRICE_TAG_H * s + 8.0 if (price >= 0 or cost >= 0) else 6.0
+
+
+## The icon's extent round its centre at scale 1 for this tile's look (px): [left, top,
+## right, bottom] as positive distances.
+func _icon_extent() -> Vector4:
+	match look:
+		Look.CHIP:
+			return Vector4(26, 26, 26, 26)
+		Look.SLICE_TILE:
+			return Vector4(37, 27, 37, 28)
+	if icon_kind == "shred":
+		return Vector4(30, 42, 30, 36)
+	return Vector4(24, 33, 21, 27)
+
+
+## A shop tile's layout (H24 S10; local px): "icon" (its rect), "k" (its scale), "centre",
+## "names" (a rect per name line), "fs" (the name size), "desc" (a rect per effect line,
+## chip tiles), "rows" (their count), "dfs" and "buy" (the sticker's rect).
+func tile_parts() -> Dictionary:
+	var s := text_scale
+	var mono := Palette.mono()
+	var foot := buy_room()
+	var fs := roundi(TILE_NAME_SIZE * s)
+	var lines := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	while lines.size() > 2 and fs > 9:
+		fs -= 1
+		lines = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	var line_h := mono.get_height(fs)
+	var shown := mini(lines.size(), 2)
+	var desc_rows := 0
+	var dfs := roundi(CHIP_TEXT_SIZE * s)
+	var dline := mono.get_height(dfs)
+	var ext := _icon_extent()
+	var icon_h := ext.y + ext.w
+	var desc_lines := PackedStringArray()
+	if look == Look.CHIP:
+		desc_lines = wrap_px(tile_description(), size.x - 8.0, dfs)
+		var spare := size.y - foot - line_h * shown - icon_h * CHIP_ICON_SHRINK - TILE_GAP * 2.0 * s
+		desc_rows = clampi(floori(spare / dline), 0, desc_lines.size())
+	var text_top := size.y - foot - desc_rows * dline
+	var name_top := text_top - line_h * shown
+	# The icon in the room above the names, shrunk (never under CHIP_ICON_SHRINK) when the
+	# room is short, centred in it.
+	var room := name_top - TILE_GAP * s * 2.0
+	var k := clampf(room / icon_h, CHIP_ICON_SHRINK, 1.0)
+	var top := TILE_GAP * s + maxf(0.0, (room - icon_h * k) * 0.5)
+	var centre := Vector2(size.x * 0.5, top + ext.y * k)
+	var out := {"k": k, "centre": centre, "fs": fs, "dfs": dfs, "rows": desc_rows, "lines": lines, "desc_lines": desc_lines,
+		"icon": Rect2(centre - Vector2(ext.x, ext.y) * k, Vector2(ext.x + ext.z, ext.y + ext.w) * k)}
+	var names: Array[Rect2] = []
+	for i in shown:
+		var w := minf(size.x - 8.0, mono.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		names.append(Rect2((size.x - w) * 0.5, name_top + i * line_h, w, line_h))
+	out["names"] = names
+	var desc: Array[Rect2] = []
+	for i in desc_rows:
+		var w := minf(size.x - 8.0, mono.get_string_size(desc_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, dfs).x)
+		desc.append(Rect2((size.x - w) * 0.5, text_top + i * dline, w, dline))
+	out["desc"] = desc
+	if buy_button != null:
+		out["buy"] = Rect2(buy_button.position, buy_button.size)
+	return out
 
 
 func _draw_tile_scaled() -> void:
@@ -515,17 +630,18 @@ func _draw_tile_scaled() -> void:
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
-	var fs := roundi(TILE_NAME_SIZE * s)
-	var lines := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
-	while lines.size() > 2 and fs > 9:
-		fs -= 1
-		lines = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
-	var line_h := fs + 2.0
-	var foot := PRICE_TAG_H * s + 8.0 if (price >= 0 or cost >= 0) else 6.0
-	var shown := mini(lines.size(), 2)
-	var name_top := size.y - foot - line_h * shown
-	var icon_c := Vector2(size.x / 2.0, clampf(name_top * 0.5, 32.0, 50.0))
-	draw_circle(icon_c, 34, Color(accent, 0.08))
+	var parts := tile_parts()
+	var fs: int = parts["fs"]
+	var lines: PackedStringArray = parts["lines"]
+	var names: Array[Rect2] = parts["names"]
+	var shown := names.size()
+	var line_h := names[0].size.y if shown > 0 else 0.0
+	var name_top := names[0].position.y if shown > 0 else size.y - buy_room()
+	var icon_c: Vector2 = parts["centre"]
+	var ik: float = parts["k"]
+	draw_set_transform(icon_c, 0.0, Vector2(ik, ik))
+	var home := icon_c
+	icon_c = Vector2.ZERO
 	draw_circle(icon_c, 24, Color(accent, 0.1))
 	if look == Look.CHIP:
 		_big_chip(icon_c, accent)
@@ -553,12 +669,15 @@ func _draw_tile_scaled() -> void:
 			draw_line(icon_c + Vector2(-18 + k * 7, 22), icon_c + Vector2(-20 + k * 7, 36), Palette.NOTE_PAPER, 2.0)
 	else:
 		_mini_card(icon_c, accent)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	icon_c = home
 	# H23 S8: the shade dims the art only; the name stays in the text colour.
 	if disabled:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
+	var mono := Palette.mono()
 	for i in shown:
-		draw_string(Palette.mono(), Vector2(4, name_top + fs + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
-	if cost >= 0:
+		draw_string(mono, Vector2(4, name_top + mono.get_ascent(fs) + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+	if cost >= 0 and buy_button == null:
 		var pfs := roundi(14 * s)
 		var cost_text := "%d" % cost
 		var pw := Palette.mono().get_string_size(cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x
@@ -615,55 +734,40 @@ func tile_description() -> String:
 ## A microchip tile (Firmware, Daemons) at any text scale (H23 S8: chips had no words for
 ## what they do): the chip icon (smaller when the words need the room), the name in the
 ## text colour, then as much of the effect text as fits, ending in an ellipsis (the whole
-## text is the tooltip and shows on focus). The foot is the buy button's.
+## text is the tooltip and shows on focus). The foot is the buy button's (H24 S10: the
+## text measured against the sticker's real height; its third line ran under it at 1.6).
 func _draw_chip_tile() -> void:
-	var s := text_scale
 	var rect := Rect2(Vector2.ZERO, size)
 	var hot := _lifted and not disabled
 	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
 	if hot:
 		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
 	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
-	var foot := PRICE_TAG_H * s + 8.0 if price >= 0 else 6.0
-	var fs := roundi(TILE_NAME_SIZE * s)
-	var names := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
-	while names.size() > 2 and fs > 9:
-		fs -= 1
-		names = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
-	var dfs := roundi(CHIP_TEXT_SIZE * s)
-	var dline := dfs + 2.0
-	var desc := wrap_px(tile_description(), size.x - 8.0, dfs)
-	var name_h := (fs + 2.0) * mini(names.size(), 2)
-	var room := size.y - foot - name_h - CHIP_ICON_MIN - 4.0
-	var rows := clampi(floori(room / dline), 0, desc.size())
-	var text_top := size.y - foot - rows * dline
-	var name_top := text_top - name_h
-	var icon_c := Vector2(size.x / 2.0, maxf(CHIP_ICON_MIN * 0.5 + 2.0, name_top * 0.5))
-	var k := clampf((name_top - 4.0) / 60.0, CHIP_ICON_SHRINK, 1.0)
-	draw_set_transform(icon_c, 0.0, Vector2(k, k))
+	var parts := tile_parts()
+	var k: float = parts["k"]
+	draw_set_transform(parts["centre"], 0.0, Vector2(k, k))
 	draw_circle(Vector2.ZERO, 24, Color(accent, 0.1))
 	_big_chip(Vector2.ZERO, accent)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if disabled:
 		draw_rect(rect, Color(0, 0, 0, 0.55))
-	for i in mini(names.size(), 2):
-		draw_string(Palette.mono(), Vector2(4, name_top + fs + i * (fs + 2.0)), names[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+	var mono := Palette.mono()
+	var fs: int = parts["fs"]
+	var lines: PackedStringArray = parts["lines"]
+	var names: Array[Rect2] = parts["names"]
+	for i in names.size():
+		draw_string(mono, Vector2(4, names[i].position.y + mono.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.TERMINAL_TEXT)
+	var dfs: int = parts["dfs"]
+	var desc: PackedStringArray = parts["desc_lines"]
+	var rows_at: Array[Rect2] = parts["desc"]
+	var rows := rows_at.size()
 	for i in rows:
 		var t := desc[i]
 		if i == rows - 1 and desc.size() > rows:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
-		draw_string(Palette.mono(), Vector2(4, text_top + dfs + i * dline), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
+		draw_string(mono, Vector2(4, rows_at[i].position.y + mono.get_ascent(dfs)), t, HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, dfs, Color(Palette.TERMINAL_TEXT, 0.85))
 
 
 ## The chip's effect lines shown on the tile now (tests: at least one at every text size).
 func chip_lines_shown() -> int:
-	var s := text_scale
-	var foot := PRICE_TAG_H * s + 8.0 if price >= 0 else 6.0
-	var fs := roundi(TILE_NAME_SIZE * s)
-	var names := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
-	while names.size() > 2 and fs > 9:
-		fs -= 1
-		names = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
-	var dfs := roundi(CHIP_TEXT_SIZE * s)
-	var room := size.y - foot - (fs + 2.0) * mini(names.size(), 2) - CHIP_ICON_MIN - 4.0
-	return clampi(floori(room / (dfs + 2.0)), 0, wrap_px(tile_description(), size.x - 8.0, dfs).size())
+	return int(tile_parts()["rows"])

@@ -43,7 +43,7 @@ static func font_px() -> int:
 
 ## The lettering as drawn and measured: translated (H23 S16: drawn words never were).
 func shown_text() -> String:
-	return atr(text)
+	return tr(text)  # H24 S4: tr, so a page shown as given still translates the key
 
 
 func _fit() -> void:

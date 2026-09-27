@@ -21,6 +21,14 @@ var name_text: String = ""
 const CARD_WIDTH := 196.0
 const NAME_SIZE := 20
 const DETAIL_SIZE := 12
+## H24 S11: at big text the dossier goes compact so the crew sits side by side and every
+## dossier is on the page (at 1.6 the second was cut by MORE BELOW): from COMPACT_FROM the
+## card grows with the text only up to CARD_MAX_SCALE and the Polaroid shrinks to
+## COMPACT_POLAROID of its size.
+const COMPACT_FROM := 1.3
+const CARD_MAX_SCALE := 1.15
+const COMPACT_POLAROID := 0.7
+const POLAROID_SIZE := Vector2(120, 144)
 
 
 func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, detail: String, p_tilt: float = 0.0) -> void:
@@ -29,7 +37,8 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	hp_frac = clampf(float(hp) / maxf(1.0, max_hp), 0.0, 1.0)
 	# The dossier's lettering and width follow the text size (H21 #15).
 	var s := Settings.text_scale
-	custom_minimum_size = Vector2(CARD_WIDTH * s, 0)
+	var compact := is_compact()
+	custom_minimum_size = Vector2(CARD_WIDTH * (minf(s, CARD_MAX_SCALE) if compact else s), 0)
 	var style := UiTheme.box(Palette.NOTE_PAPER, Color(Palette.INK, 0.45), 1, 10, 12)
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = 7
@@ -38,8 +47,10 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	add_child(box)
-	polaroid = Polaroid.new("%s R%d" % [p_name, rank], "[%s PORTRAIT]" % p_class.to_upper(), -2.0 + tilt)
-	polaroid.custom_minimum_size = Vector2(120, 144)
+	# H24 S3: the rank tag and the class tags in the player's language ("R0" and "RANK" were
+	# English); the words come translated, the card shows them as given.
+	polaroid = Polaroid.new(tr("%s R%d") % [p_name, rank], "[%s PORTRAIT]" % p_class.to_upper(), -2.0 + tilt)
+	polaroid.custom_minimum_size = POLAROID_SIZE * (COMPACT_POLAROID if compact else 1.0)
 	polaroid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(polaroid)
 	var name_label := Label.new()
@@ -50,7 +61,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	box.add_child(name_label)
 	var tags := Label.new()
-	tags.text = "// %s // RANK %d" % [p_class.to_upper(), rank]
+	tags.text = tr("// %s // RANK %d") % [p_class.to_upper(), rank]
 	tags.add_theme_color_override("font_color", Color(Palette.INK, 0.75))
 	tags.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	tags.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
@@ -67,7 +78,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var info := Label.new()
 	info.text = detail
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info.custom_minimum_size.x = (CARD_WIDTH - 20.0) * s
+	info.custom_minimum_size.x = custom_minimum_size.x - 20.0 * s
 	info.add_theme_color_override("font_color", Palette.INK)
 	info.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	info.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
@@ -75,6 +86,11 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	orders = VBoxContainer.new()
 	orders.add_theme_constant_override("separation", 4)
 	box.add_child(orders)
+
+
+## Whether dossiers are compact at the current text size (H24 S11).
+static func is_compact() -> bool:
+	return Settings.text_scale >= COMPACT_FROM
 
 
 ## Gives the Polaroid this operative's own face (PortraitArt.operative_subject).
@@ -94,8 +110,8 @@ func _ready() -> void:
 func _draw() -> void:
 	draw_rect(Rect2(size.x * 0.5 - 24, -7, 48, 14), Palette.NOTE_TAPE)
 	if dead or stamp_text != "":
-		var t := stamp_text if stamp_text != "" else "FLATLINED"
-		draw_set_transform(Vector2(size.x * 0.5, 90), -0.3, Vector2.ONE)
+		var t := stamp_text if stamp_text != "" else tr("FLATLINED")
+		draw_set_transform(Vector2(size.x * 0.5, polaroid.position.y + polaroid.size.y * 0.55), -0.3, Vector2.ONE)
 		draw_rect(Rect2(-80, -20, 160, 40), Color(Palette.CELL_PINK, 0.85), false, 3.0)
 		# Long Site names shrink to fit the stamp.
 		var fs := STAMP_FONT_SIZE

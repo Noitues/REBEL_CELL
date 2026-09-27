@@ -139,8 +139,8 @@ static func tier_text(tier: int) -> String:
 ## Every codex entry, grouped by section. With a `profile`, enemies appear only once met
 ## (no spoilers for bosses and REBEL_CELL); without one (tests, tools) everything shows.
 static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dictionary:
-	var out := {"Slices": [], "Statuses & precision": [], "Classes": [], "Corporations": [], "Cards": [], "Firmware": [], "Daemons": [],
-		"Ring segments": [], "Enemies": [], "Nodes": [], "Home servers": [], "Defense assets": [], "Threats": [], "Lexicon": []}
+	var out := {"Slices": [], "Statuses & precision": [], "Classes": [], "Corporations": [], "Cards": [], "Firmware": [], "Daemons": [], # TR
+		"Ring segments": [], "Enemies": [], "Nodes": [], "Home servers": [], "Defense assets": [], "Threats": [], "Lexicon": []} # TR
 	for id in lookup.ids_of_class(&"ClassData"):
 		var cls := lookup.get_content(id) as ClassData
 		var hub := cls.starting_wheel.hub if cls.starting_wheel != null else null

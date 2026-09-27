@@ -7,8 +7,15 @@ extends Control
 ## sells and removes cards; nothing is sold back, H20). Decoration.
 
 const PINK := Palette.CELL_PINK
-## The sticky notes: what the Modem does.
-const NOTES: Array[String] = ["BUY", "SHRED"]
+## The sticky notes' lettering (px; a longer translation shrinks to fit).
+const STICKY_FONT := 24
+## The sticky notes: what the Modem does (keys, translated when drawn).
+const NOTES: Array[String] = ["BUY", "SHRED"] # TR
+## The sign's words (keys; H24 S3: drawn in the player's language, in the cybernetic face
+## when it has every letter, else in the display font).
+const WORD_MODEM := "MODEM" # TR
+const WORD_CYBER := "CYBER" # TR
+const WORD_SHOP := "SHOP" # TR
 
 
 func _init() -> void:
@@ -21,16 +28,39 @@ func _draw() -> void:
 	_rounded_border(r, 26, PINK)
 	_board_traces(r.grow(-12), PINK, 80)
 	_border_traces(r, PINK)
-	var step := (r.size.y - 160.0) / 5.0
+	# The name stacked letter by letter down the sign (as many rows as it has letters).
+	var name_word := tr(WORD_MODEM).to_upper()
+	var n := maxi(1, name_word.length())
+	var step := (r.size.y - 160.0) / float(maxi(5, n))
 	var u := minf(11.0, step / 8.2)
-	for i in 5:
-		CyberType.draw_text(self, r.position + Vector2((r.size.x - 4.0 * u) * 0.5, 26 + i * step), "MODEM"[i], u, PINK, 3.2, i == 0 or i == 4, 0.7)
+	var cyber := CyberType.can_draw(name_word)
+	for i in name_word.length():
+		var at := r.position + Vector2((r.size.x - 4.0 * u) * 0.5, 26 + i * step)
+		if cyber:
+			CyberType.draw_text(self, at, name_word[i], u, PINK, 3.2, i == 0 or i == name_word.length() - 1, 0.7)
+		else:
+			_plain(Rect2(r.position.x, at.y, r.size.x, step), name_word[i], PINK)
 	var cu := 4.4
 	for k in 2:
-		var word: String = ["CYBER", "SHOP"][k]
-		CyberType.draw_text(self, r.position + Vector2((r.size.x - CyberType.width(word, cu)) * 0.5, r.size.y - 118 + k * 42), word, cu, Palette.NET_CYAN, 2.0, false, 0.8)
-	_sticky(r.end + Vector2(-8, -54), NOTES[0], Palette.NOTE_YELLOW, 0.1)
-	_sticky(r.end + Vector2(14, 4), NOTES[1], Palette.STICKER_PINK, -0.07)
+		var word: String = tr([WORD_CYBER, WORD_SHOP][k]).to_upper()
+		var row := Rect2(r.position.x + 6.0, r.position.y + r.size.y - 118 + k * 42, r.size.x - 12.0, 6.0 * cu)
+		if CyberType.can_draw(word) and CyberType.width(word, cu) <= row.size.x:
+			CyberType.draw_text(self, Vector2(r.position.x + (r.size.x - CyberType.width(word, cu)) * 0.5, row.position.y), word, cu, Palette.NET_CYAN, 2.0, false, 0.8)
+		else:
+			_plain(row, word, Palette.NET_CYAN)
+	_sticky(r.end + Vector2(-8, -54), tr(NOTES[0]), Palette.NOTE_YELLOW, 0.1)
+	_sticky(r.end + Vector2(14, 4), tr(NOTES[1]), Palette.STICKER_PINK, -0.07)
+
+
+## `text` in the display font, centred in `box` and as large as fits it (a translated sign
+## word the cybernetic face has no letters for).
+func _plain(box: Rect2, text: String, col: Color) -> void:
+	var f := Palette.display()
+	var fs := maxi(8, roundi(box.size.y * 0.9))
+	while fs > 8 and f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > box.size.x:
+		fs -= 1
+	var y := box.position.y + (box.size.y + f.get_ascent(fs) - f.get_descent(fs)) * 0.5
+	draw_string(f, Vector2(box.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, box.size.x, fs, col)
 
 
 func _rounded_border(r: Rect2, radius: float, col: Color) -> void:
@@ -91,5 +121,13 @@ func _sticky(at: Vector2, text: String, paper: Color, tilt: float) -> void:
 	draw_rect(Rect2(Vector2(-44 + 4, -26 + 5), Vector2(88, 52)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2(-44, -26), Vector2(88, 52)), paper)
 	draw_rect(Rect2(Vector2(-18, -31), Vector2(36, 11)), Palette.NOTE_TAPE)
-	draw_string(Palette.marker(), Vector2(-44, 10), text, HORIZONTAL_ALIGNMENT_CENTER, 88, 24, Palette.INK)
+	var fs := STICKY_FONT
+	while fs > 8 and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > 84.0:
+		fs -= 1
+	draw_string(Palette.marker(), Vector2(-44, 10), text, HORIZONTAL_ALIGNMENT_CENTER, 88, fs, Palette.INK)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## The sign's words as drawn, in the player's language (tests).
+func shown_words() -> PackedStringArray:
+	return PackedStringArray([tr(WORD_MODEM), tr(WORD_CYBER), tr(WORD_SHOP), tr(NOTES[0]), tr(NOTES[1])])
