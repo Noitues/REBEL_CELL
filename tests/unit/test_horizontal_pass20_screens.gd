@@ -357,7 +357,7 @@ func test_the_default_dock_pages_and_names_the_speaker_inline() -> void:
 	assert_string_contains(Dialogue.text_label.get_parsed_text(), "DISPATCH:")
 	Dialogue.clear()
 	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
-	assert_eq(Dialogue.dock_lines, Dialogue.lines_fitting(Dialogue.DEFAULT_DOCK), "the page size follows the text scale")
+	assert_eq(Dialogue.dock_lines, Dialogue.lines_fitting(Dialogue.default_rect), "the page size follows the text scale")
 
 
 # --- #9 modals hold pad focus ---------------------------------------------------------------
@@ -501,7 +501,8 @@ func test_viewer_close_and_route_hints_follow_the_device() -> void:
 	assert_true(first.text.begins_with(Settings.hint(&"card_1")), "keyboard: [1] before the node")
 	Settings.set_pad_active(true)
 	await _frames()
-	assert_eq(first.text, String(first.get_meta(&"route_base")), "pad: no number hint")
+	# H21 #14: a pad still sees the index (the map label carries it too), not the key.
+	assert_eq(first.text, "1 %s" % String(first.get_meta(&"route_base")), "pad: the index, no key hint")
 	scene.open_loadout()
 	await _frames()
 	var deck := (scene.get_node("LoadoutView") as LoadoutView)._view as DeckView
@@ -699,7 +700,7 @@ func test_tooltips_are_themed_and_on_the_screens_controls() -> void:
 	hq.show_grid()
 	await _frames()
 	for b in _all(hq._panel.find_child("SelectedSite", true, false)):
-		if b is Button and (b as Button).text.begins_with("Launch"):
+		if b is Button and (b as Button).name == "Launch":  # JACK IN (H21 #21)
 			assert_ne((b as Button).tooltip_text, "", "Launch tooltip")
 	hq.show_raid()
 	await _frames()

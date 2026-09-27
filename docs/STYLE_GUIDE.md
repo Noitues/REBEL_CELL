@@ -91,7 +91,39 @@ DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-
 - **Grid:** isometric wireframe buildings; claimed Sites `cell_pink` with spray circles;
   corporate Sites `corp_*`; threat paths glowing `corp_*` arrows; zine sidebar "THE PLAN".
 - **HQ:** graffiti tag with drips, wanted poster (Heat), Polaroid roster, pirate radio,
-  deck CRT, "JACK IN" button.
+  deck CRT, "JACK IN" button (the Site card's launch button says JACK IN too).
+- **Subtitles** have a band of their own (`SubtitleStrip`): under the top bar on the HQ
+  and netrun screens, beside the tag on the title; nothing interactive and no stat tag
+  sits in it. A fight docks its own in the right column.
+
+### 4.1 Icon set (H21)
+One line-drawn vector icon per resource and action (`StatIcon`, no font glyphs or emoji,
+so it reads in every language and at every text size), drawn in ink on paper tags and in
+the resource's colour on the dark screens. The same icon wherever the resource shows:
+top-bar tags, CELL STATUS badges, Modem price tags and wallet, event choice outcomes, run
+and profile tags.
+
+| Resource / action | Icon | | Resource / action | Icon |
+|---|---|---|---|---|
+| Heat | flame | | Cycles (money) | coin (ring, inner ring, dot) |
+| Schematics | blueprint sheet | | Cards | two stacked cards |
+| Home server | house | | Rank | two chevrons |
+| Exploits | diamond with a solid core | | Banked | vault door with dial |
+| Raids | shield with "!" | | Armory / assets | crate |
+| ICE | snowflake | | Crew / operative | two people / one person |
+| HP | heart | | Firmware | chip with pins |
+| Daemon | ghost | | Fights won / fight | crossed swords / crosshair |
+| Elite | crown | | Shop (Modem) | bag |
+| Terminal event | screen with a prompt | | Rack | server rack |
+| Play / continue | triangle / bar + triangle | | Map / Grid | folded map |
+| Codex | open book | | Settings | gear |
+| Save | floppy | | Exit / back / next | door with arrow / arrows |
+| Skip | double chevron | | More below | double chevron down |
+
+Menu items carry their icon in place of the terminal chevron (`IconMark`, sized to the
+button's font); a shop price hangs on a yellow price tag with the coin (pink when out of
+reach), never in a card's RAM circle; an event choice shows its outcome as icons with
+signed numbers (green helps, red costs) under its words.
 
 ## 5. Motion & Feedback
 - Jack in: camera pushes into the deck CRT and dissolves to wireframe; jack out reverses.
