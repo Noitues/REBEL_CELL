@@ -490,8 +490,8 @@ func spread_progress() -> Vector2:
 	var df := maxf(Motion.seconds(FADE_MOTION), 0.001)
 	var ts := clampf(_spread_elapsed / ds, 0.0, 1.0)
 	var tf := clampf((_spread_elapsed - Motion.delay_of(FADE_MOTION)) / df, 0.0, 1.0)
-	return Vector2(Tween.interpolate_value(0.0, 1.0, ts, 1.0, s.trans, s.ease),
-		Tween.interpolate_value(0.0, 1.0, tf, 1.0, f.trans, f.ease))
+	return Vector2(float(Tween.interpolate_value(0.0, 1.0, ts, 1.0, s.trans, s.ease)),
+		float(Tween.interpolate_value(0.0, 1.0, tf, 1.0, f.trans, f.ease)))
 
 
 ## Starts the spread from `prev` (the influence shown before) to the current one: the old
