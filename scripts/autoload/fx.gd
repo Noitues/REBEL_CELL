@@ -73,11 +73,111 @@ func _process(_delta: float) -> void:
 		fps_label.text = "%d fps" % Engine.get_frames_per_second()
 
 
-## Autosave indicator (gap analysis 2.5): a marker "SAVED" that fades out.
+## Autosave indicator (gap analysis 2.5): a marker "SAVED" that fades out, placed where it
+## covers no control (H23 S1: in the bottom-right corner it sat on the raid's Back to HQ and
+## the route legend).
 func show_saved() -> void:
+	place_saved()
 	saved_label.modulate.a = 1.0
 	var tw := create_tween()
 	tw.tween_property(saved_label, "modulate:a", 0.0, 1.2).set_delay(0.6)
+
+
+## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
+const SAVED_FONT := 14
+const SAVED_MARGIN := 8.0
+## Step between the spots tried along the screen's edges (px).
+const SAVED_STEP := 24.0
+
+
+## Puts the SAVED stamp at the first spot of `screen` (the viewport when empty) that
+## covers no control on screen: along the bottom edge right to left, then the top edge,
+## then the left and right edges; the least covered spot when none is clear. Returns its
+## rect.
+func place_saved(screen: Rect2 = Rect2()) -> Rect2:
+	if not screen.has_area():
+		screen = get_viewport().get_visible_rect()
+	var fs := roundi(SAVED_FONT * Settings.text_scale)
+	saved_label.add_theme_font_size_override("font_size", fs)
+	saved_label.size = Vector2.ZERO
+	var own := saved_label.get_combined_minimum_size()
+	var spot := saved_spot(own, screen, avoid_rects(get_tree().root))
+	saved_label.position = spot
+	saved_label.size = own
+	return Rect2(spot, own)
+
+
+## The first spot for a `stamp`-sized rect in `screen` that meets none of `avoid` (see
+## place_saved); pure, for tests.
+static func saved_spot(stamp: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Vector2:
+	var inner := screen.grow(-SAVED_MARGIN)
+	var right := inner.end.x - stamp.x
+	var bottom := inner.end.y - stamp.y
+	var spots: Array[Vector2] = []
+	var x := right
+	while x >= inner.position.x:
+		spots.append(Vector2(x, bottom))
+		x -= SAVED_STEP
+	x = right
+	while x >= inner.position.x:
+		spots.append(Vector2(x, inner.position.y))
+		x -= SAVED_STEP
+	var y := bottom
+	while y >= inner.position.y:
+		spots.append(Vector2(inner.position.x, y))
+		spots.append(Vector2(right, y))
+		y -= SAVED_STEP
+	var best := Vector2(right, bottom)
+	var best_hits := INF
+	for at in spots:
+		var r := Rect2(at, stamp)
+		var hits := 0.0
+		for a in avoid:
+			if r.intersects(a):
+				hits += r.intersection(a).get_area() + 1.0
+		if hits < best_hits:
+			best_hits = hits
+			best = at
+			if hits == 0.0:
+				break
+	return best
+
+
+## Screen rects of the controls on screen under `root` the stamp must not cover: usable
+## buttons, fields and sliders, and map legends (as far as a scroll view shows them).
+func avoid_rects(root: Node) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	_collect_avoid(root, out)
+	return out
+
+
+func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
+	for child in node.get_children():
+		if child == self or child == saved_label:
+			continue
+		if child is CanvasItem and not (child as CanvasItem).visible:
+			continue
+		if child is Control:
+			var c := child as Control
+			var usable := (c is BaseButton and c.mouse_filter != Control.MOUSE_FILTER_IGNORE) or c is LineEdit or (c is Range and not (c is ScrollBar))
+			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts:
+				var r := _shown_rect(c)
+				if r.has_area():
+					out.append(r)
+				if usable:
+					continue
+		_collect_avoid(child, out)
+
+
+## `c`'s rect clipped to the scroll views above it (the part on screen).
+static func _shown_rect(c: Control) -> Rect2:
+	var r := c.get_global_rect()
+	var p := c.get_parent()
+	while p != null:
+		if p is ScrollContainer:
+			r = r.intersection((p as Control).get_global_rect())
+		p = p.get_parent()
+	return r
 
 
 func _full_rect(color: Color) -> ColorRect:

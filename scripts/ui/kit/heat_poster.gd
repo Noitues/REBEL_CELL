@@ -18,9 +18,30 @@ var wanted: Dictionary = PortraitArt.operative_subject(&"operative")
 const MUG_SIZE := 44.0
 
 
+## The Heat block's top on a wanted poster (under the header and mugshot), the band
+## word's baseline below that block's top, its lettering, and the paper kept under it (px).
+const POSTER_BLOCK_TOP := 84.0
+const BAND_BASELINE := 68.0
+const BAND_FONT := 13
+const BAND_PAD := 6.0
+## The Heat band words, by band.
+const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"]
+
+
 func _init(p_poster: bool = false) -> void:
 	poster = p_poster
-	custom_minimum_size = Vector2(170, 96 if not p_poster else 150)
+	# H23 S6: the poster is tall enough for its band word ("cool" hung under the paper,
+	# hidden by the Pirate Radio note).
+	custom_minimum_size = Vector2(170, 96 if not p_poster else ceilf(band_label_rect().end.y + BAND_PAD))
+
+
+## Where the band word ("cool", "hunted") is drawn (local px).
+func band_label_rect() -> Rect2:
+	var top := POSTER_BLOCK_TOP if poster else 0.0
+	var f := Palette.marker()
+	var word := BAND_WORDS[mini(band, 3)]
+	var base := top + BAND_BASELINE
+	return Rect2(8, base - f.get_ascent(BAND_FONT), f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT).x, f.get_height(BAND_FONT))
 	# PASS: the scene's tooltip (what the thresholds do) shows on hover.
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
@@ -48,7 +69,7 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
 		draw_string(Palette.display(), Vector2(10, 30), "WANTED", HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
 		PortraitArt.draw(self, Rect2(size.x * 0.5 - MUG_SIZE * 0.5, 38, MUG_SIZE, MUG_SIZE), wanted)
-		y = 84
+		y = POSTER_BLOCK_TOP
 	var letters := ["H", "E", "A", "T"]
 	var fonts := [Palette.display(), Palette.marker(), Palette.mono(), Palette.display()]
 	var x := 8.0
@@ -66,4 +87,4 @@ func _draw() -> void:
 	for t in marks:
 		var tx: float = bar.position.x + bar.size.x * int(t) / float(heat_max)
 		draw_line(Vector2(tx, bar.position.y - 3), Vector2(tx, bar.end.y + 3), Palette.INK if poster else Palette.PAPER, 1.0)
-	draw_string(Palette.marker(), Vector2(8, y + 68), ["cool", "noticed", "flagged", "hunted"][mini(band, 3)], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Palette.INK if poster else Palette.CELL_ACID)
+	draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), BAND_WORDS[mini(band, 3)], HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, Palette.INK if poster else Palette.CELL_ACID)
