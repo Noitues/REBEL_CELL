@@ -27,6 +27,8 @@ var trap_focus: bool = false
 var reduce_check: CheckButton
 var flash_check: CheckButton
 var subtitles_check: CheckButton
+## Subtitles type in, or show whole at once (Animation pass ANIM-6).
+var typing_check: CheckButton
 var assist_check: CheckButton
 var scale_slider: HSlider
 var master_slider: HSlider
@@ -75,6 +77,8 @@ func _init() -> void:
 	reduce_check = _check(tr("Reduce effects (no scanlines, flicker, chromatic, distortion)"), Settings.reduce_effects, Settings.set_reduce_effects)
 	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
 	subtitles_check = _check(tr("Subtitles with speaker names"), Settings.subtitles, Settings.set_subtitles)
+	typing_check = _check(tr("Subtitles type in (off: each line shows at once)"), Settings.subtitle_typing, Settings.set_subtitle_typing)
+	typing_check.name = "TypingCheck"
 	var cfg := RunManager.config()
 	assist_check = _check(tr("Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)") % [TextDb.signed(cfg.assist_free_nudges), TextDb.signed(roundi((cfg.assist_hp_multiplier - 1.0) * 100.0))], Settings.assist_mode, Settings.set_assist_mode)
 	assist_check.name = "AssistCheck"
@@ -125,7 +129,7 @@ func show_section(name: String) -> void:
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, flash_check, subtitles_check, assist_check, _labelled(tr("Text scale")), scale_slider]:
+			for w in [reduce_check, flash_check, subtitles_check, typing_check, assist_check, _labelled(tr("Text scale")), scale_slider]:
 				_body.add_child(w)
 		"Display":
 			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, log_check]:
