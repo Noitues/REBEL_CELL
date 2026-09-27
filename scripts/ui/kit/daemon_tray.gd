@@ -25,7 +25,7 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, o
 	var w := maxf(200.0, ids.size() * 48.0 + 30.0)
 	if anchor_x < 200.0:
 		anchor_x = 1270.0  # the icon sits at the bar's right end
-	_strip.position = Vector2(clampf(anchor_x - w, 10.0, 1270.0 - w), 60)
+	_strip.position = Vector2(clampf(anchor_x - w, 10.0, 1270.0 - w), SubtitleStrip.top_below(60.0))  # under the subtitles (H21)
 	add_child(_strip)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)

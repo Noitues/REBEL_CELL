@@ -174,9 +174,10 @@ func _set_lift(on: bool) -> void:
 
 func _draw() -> void:
 	if look != Look.STICKER:
-		_draw_tile()
+		_draw_tile_any()
 	else:
 		_draw_sticker()
+	_draw_price_tag()
 	match mark:
 		Mark.CROSS:
 			HandMarks.draw_x(self, Rect2(Vector2.ZERO, size), DripButton.DRIP_PINK)
@@ -408,3 +409,144 @@ static func _wrap(text: String, width: int) -> PackedStringArray:
 	if line != "":
 		out.append(line)
 	return out
+
+
+# --- H21 screens: price tags and big lettering on shop tiles ------------------------------
+
+## A shop price (Cycles), drawn on a price tag with the coin (H21 #12: prices sat in the
+## RAM-cost circle and read as a play cost; the circle keeps the card's real RAM cost).
+## -1 = no price.
+var price: int = -1
+## The tag reads "N+" (a slice's price depends on the slot it overwrites).
+var price_from: bool = false
+## Price tag height, coin radius and lettering at scale 1.0 (px).
+const PRICE_TAG_H := 20.0
+const PRICE_COIN_R := 6.0
+const PRICE_FONT := 14
+## Shop tile lettering at scale 1.0 (the tile keeps its size; the lettering grows).
+const TILE_NAME_SIZE := 11
+const TILE_VALUE_SIZE := 20
+## Largest scale of a slice tile's value (its wedge does not grow).
+const TILE_VALUE_MAX_SCALE := 1.3
+
+
+## Puts a shop price on the card or tile (a price tag with the coin, H21 #12).
+func with_price(p_price: int, p_from: bool = false) -> ZineCard:
+	price = p_price
+	price_from = p_from
+	queue_redraw()
+	return self
+
+
+## Scales a shop tile's lettering by `s` without growing the tile (H21 #15).
+func tile_text(s: float) -> ZineCard:
+	text_scale = s
+	queue_redraw()
+	return self
+
+
+## The price as the tag reads it ("" without a price).
+func price_text() -> String:
+	if price < 0:
+		return ""
+	return ("%d+" if price_from else "%d") % price
+
+
+## The price tag's rect (local): bottom right of a sticker, bottom centre of a tile.
+func price_tag_rect() -> Rect2:
+	var s := text_scale
+	var fs := roundi(PRICE_FONT * s)
+	var h := PRICE_TAG_H * s
+	var tw := Palette.display().get_string_size(price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := h * 0.45 + PRICE_COIN_R * 2.0 * s + 3.0 * s + tw + 6.0 * s
+	var y := size.y - h - 4.0 * s
+	if look == Look.STICKER:
+		return Rect2(size.x - w - 4.0 * s, y, w, h)
+	return Rect2((size.x - w) * 0.5, y, w, h)
+
+
+func _draw_price_tag() -> void:
+	if price < 0:
+		return
+	var s := text_scale
+	var rt := price_tag_rect()
+	var h := rt.size.y
+	var pts := PackedVector2Array([rt.position + Vector2(h * 0.35, 0), rt.position + Vector2(rt.size.x, 0), rt.end,
+		rt.position + Vector2(h * 0.35, h), rt.position + Vector2(0, h * 0.5)])
+	# Out of reach (disabled in the shop): the tag turns pink.
+	draw_colored_polygon(pts, Palette.NOTE_PINK if disabled else Palette.NOTE_YELLOW)
+	pts.append(pts[0])
+	draw_polyline(pts, Palette.INK, 1.0)
+	draw_circle(rt.position + Vector2(h * 0.28, h * 0.5), 1.6 * s, Palette.INK)
+	var coin := rt.position + Vector2(h * 0.45 + PRICE_COIN_R * s, h * 0.5)
+	StatIcon.draw(self, coin, PRICE_COIN_R * s, StatIcon.CYCLES, Palette.INK)
+	var fs := roundi(PRICE_FONT * s)
+	draw_string(Palette.display(), Vector2(coin.x + PRICE_COIN_R * s + 3.0 * s, rt.position.y + h * 0.5 + fs * 0.36), price_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
+
+
+## Tiles at text scale 1.0 draw as before; at other scales the lettering grows inside the
+## same tile (the icon moves up to make room).
+func _draw_tile_any() -> void:
+	if is_equal_approx(text_scale, 1.0):
+		_draw_tile()
+	else:
+		_draw_tile_scaled()
+
+
+func _draw_tile_scaled() -> void:
+	var s := text_scale
+	var rect := Rect2(Vector2.ZERO, size)
+	var hot := _lifted and not disabled
+	draw_rect(rect, Palette.TERMINAL_BG_HOT if hot else Color(0.02, 0.05, 0.11, 0.95))
+	if hot:
+		draw_rect(rect.grow(3), Color(Palette.CELL_PINK, 0.3), false, 6.0)
+	draw_rect(rect, Palette.CELL_PINK if hot else Color(accent, 0.7), false, 1.5)
+	var fs := roundi(TILE_NAME_SIZE * s)
+	var lines := wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	while lines.size() > 2 and fs > 9:
+		fs -= 1
+		lines = wrap_px(card_title.to_upper(), size.x - 8.0, fs)
+	var line_h := fs + 2.0
+	var foot := PRICE_TAG_H * s + 8.0 if (price >= 0 or cost >= 0) else 6.0
+	var shown := mini(lines.size(), 2)
+	var name_top := size.y - foot - line_h * shown
+	var icon_c := Vector2(size.x / 2.0, clampf(name_top * 0.5, 32.0, 50.0))
+	draw_circle(icon_c, 34, Color(accent, 0.08))
+	draw_circle(icon_c, 24, Color(accent, 0.1))
+	if look == Look.CHIP:
+		_big_chip(icon_c, accent)
+	elif look == Look.SLICE_TILE:
+		var pts := PackedVector2Array()
+		for k in 9:
+			var a := lerpf(-PI * 0.5 - 0.5, -PI * 0.5 + 0.5, k / 8.0)
+			pts.append(icon_c + Vector2(0, 50) + Vector2(cos(a), sin(a)) * 76)
+		for k in 9:
+			var a := lerpf(-PI * 0.5 + 0.5, -PI * 0.5 - 0.5, k / 8.0)
+			pts.append(icon_c + Vector2(0, 50) + Vector2(cos(a), sin(a)) * 30)
+		var sc := Palette.slice_color(slice_type)
+		draw_colored_polygon(pts, Color(sc, 0.35))
+		pts.append(pts[0])
+		draw_polyline(pts, sc, 1.5)
+		SliceIcon.draw_on_slice(self, icon_c + Vector2(0, -15), 11, slice_type, sc)
+		if slice_output > 0:
+			var vs := roundi(TILE_VALUE_SIZE * minf(s, TILE_VALUE_MAX_SCALE))
+			draw_string(Palette.display(), icon_c + Vector2(-20, 22), str(slice_output), HORIZONTAL_ALIGNMENT_CENTER, 40, vs, Palette.PAPER)
+	elif icon_kind == "shred":
+		_mini_card(icon_c + Vector2(0, -8), accent, false)
+		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), Palette.DESK_METAL)
+		draw_rect(Rect2(icon_c + Vector2(-30, 10), Vector2(60, 12)), accent, false, 1.5)
+		for k in 6:
+			draw_line(icon_c + Vector2(-18 + k * 7, 22), icon_c + Vector2(-20 + k * 7, 36), Palette.NOTE_PAPER, 2.0)
+	else:
+		_mini_card(icon_c, accent)
+	for i in shown:
+		draw_string(Palette.mono(), Vector2(4, name_top + fs + i * line_h), lines[i], HORIZONTAL_ALIGNMENT_CENTER, size.x - 8, fs, Palette.PAPER)
+	if cost >= 0:
+		var pfs := roundi(14 * s)
+		var cost_text := "%d" % cost
+		var pw := Palette.mono().get_string_size(cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x
+		var px := size.x / 2.0 - (pw + 18 * s) / 2.0
+		StatIcon.draw(self, Vector2(px + 6 * s, size.y - 15 * s), 6 * s, StatIcon.CYCLES, Palette.CELL_ACID)
+		draw_string(Palette.mono(), Vector2(px + 17 * s, size.y - 10 * s), cost_text, HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, Palette.CELL_ACID)
+	if disabled:
+		draw_rect(rect, Color(0, 0, 0, 0.55))

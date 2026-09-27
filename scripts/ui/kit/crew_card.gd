@@ -17,13 +17,19 @@ const STAMP_FONT_SIZE := 26
 const STAMP_MIN_FONT_SIZE := 10
 ## The operative's name (the tooltip's title).
 var name_text: String = ""
+## Dossier width and lettering at text scale 1.0 (they grow with it, H21 #15).
+const CARD_WIDTH := 196.0
+const NAME_SIZE := 20
+const DETAIL_SIZE := 12
 
 
 func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, detail: String, p_tilt: float = 0.0) -> void:
 	tilt = p_tilt
 	name_text = p_name
 	hp_frac = clampf(float(hp) / maxf(1.0, max_hp), 0.0, 1.0)
-	custom_minimum_size = Vector2(196, 0)
+	# The dossier's lettering and width follow the text size (H21 #15).
+	var s := Settings.text_scale
+	custom_minimum_size = Vector2(CARD_WIDTH * s, 0)
 	var style := UiTheme.box(Palette.NOTE_PAPER, Color(Palette.INK, 0.45), 1, 10, 12)
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = 7
@@ -39,7 +45,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var name_label := Label.new()
 	name_label.text = p_name.to_upper()
 	name_label.add_theme_font_override("font", Palette.marker())
-	name_label.add_theme_font_size_override("font_size", 20)
+	name_label.add_theme_font_size_override("font_size", roundi(NAME_SIZE * s))
 	name_label.add_theme_color_override("font_color", Palette.INK)
 	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	box.add_child(name_label)
@@ -47,7 +53,8 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	tags.text = "// %s // RANK %d" % [p_class.to_upper(), rank]
 	tags.add_theme_color_override("font_color", Color(Palette.INK, 0.75))
 	tags.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
-	tags.add_theme_font_size_override("font_size", 12)
+	tags.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
+	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(tags)
 	var hp_strip := Control.new()
 	hp_strip.custom_minimum_size = Vector2(0, 16)
@@ -60,10 +67,10 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var info := Label.new()
 	info.text = detail
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info.custom_minimum_size.x = 176
+	info.custom_minimum_size.x = (CARD_WIDTH - 20.0) * s
 	info.add_theme_color_override("font_color", Palette.INK)
 	info.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
-	info.add_theme_font_size_override("font_size", 12)
+	info.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
 	box.add_child(info)
 	orders = VBoxContainer.new()
 	orders.add_theme_constant_override("separation", 4)

@@ -10,6 +10,9 @@ extends Control
 signal slot_picked(index: int)
 signal closed
 
+## The design canvas's bottom less a margin (px): the window never runs off it.
+const CANVAS_BOTTOM := 718.0
+
 var slices: Array[StringName] = []
 var firmware: Array[StringName] = []
 var lookup: ContentLookup
@@ -61,8 +64,9 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	window = TerminalWindow.new(p_title, Palette.CELL_PINK)
-	window.position = Vector2(290, 50)
 	window.custom_minimum_size = Vector2(700, 600)
+	# Under the subtitles (H21), as far as the 720 canvas allows.
+	window.position = Vector2(290, minf(SubtitleStrip.top_below(50.0), CANVAS_BOTTOM - window.custom_minimum_size.y))
 	add_child(window)
 	tab_row = HBoxContainer.new()
 	window.body.add_child(tab_row)

@@ -22,6 +22,8 @@ const TOAST_NEWS_EVENTS: Array[String] = ["unlocked"]
 ## The Grid's side column and the raid setup column (px).
 const GRID_SIDE_WIDTH := 440.0
 const RAID_SIDE_WIDTH := 380.0
+## Room for the Grid side column's scroll bar (px).
+const SIDE_SCROLLBAR := 14.0
 ## Glyphs for Site objectives and facts on badges (the map uses the same).
 const GLYPH_EXPLOIT := "◈"
 const GLYPH_HEAT := "❄"
@@ -41,6 +43,13 @@ const TARGET_BUTTON_WIDTH := 150.0
 const MAX_ENTRY_BADGES := 3
 ## Height of the raid's node orders list (px); more nodes scroll inside it.
 const ORDERS_HEIGHT := 150.0
+## PIRATE RADIO: width, room for its title and foot (px) and the lines it shows at once.
+const RADIO_WIDTH := 230.0
+const RADIO_TOP := 24.0
+const RADIO_BOTTOM := 8.0
+const RADIO_LINES := 4
+## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
+const JACK_IN := "JACK IN"
 ## What each Site status means (the selected Site card's status badge).
 const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clear it.",
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.",
@@ -50,6 +59,12 @@ const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clea
 var _status: Label
 ## Top strip: screen title and the status line (`_status`).
 var hud: HudBar
+## The subtitles' band under the top bar (H21 #11).
+var subtitle_strip: SubtitleStrip
+## "More below" at the foot of a page that scrolls on (H21 #15: the HQ's BLACK MARKET),
+## and at the foot of the Grid's side column (freed with the Grid).
+var more_hint: ScrollHint
+var side_hint: ScrollHint = null
 var _panel_host: PanelContainer
 var _log: RichTextLabel
 var _panel: Control = null
@@ -157,7 +172,7 @@ func ice_records_text() -> String:
 			continue
 		if corp.generated_from_profile and not CampaignRules.corporation_available(p, lookup, corp):
 			continue
-		parts.append("%s %s" % [corp.display_name, ProfileState.ice_text(p.best_ice_for(corp.id))])
+		parts.append("%s %s" % [TextDb.t(corp, "display_name"), HudStats.ice_value(p.best_ice_for(corp.id))])
 		if not corp.generated_from_profile:
 			total += 1
 			if p.best_ice_for(corp.id) >= need:
@@ -181,7 +196,7 @@ func start_from_code(code: String) -> bool:
 func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS, corporation_id: StringName = RunManager.DEFAULT_CORPORATION) -> void:
 	RunManager.new_campaign(seed, corporation_id, ice, home_variant_id, class_id)
 	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
-		RunManager.campaign.home_variant_id, RunManager.corporation.display_name, RunManager.campaign.story_path_id])
+		RunManager.campaign.home_variant_id, TextDb.t(RunManager.corporation, "display_name"), RunManager.campaign.story_path_id])
 	show_hq()
 
 
@@ -302,6 +317,9 @@ func fight_raid() -> void:
 func _set_panel(p: Control, name: String) -> void:
 	if _panel != null:
 		_panel.queue_free()
+	if side_hint != null and is_instance_valid(side_hint):
+		side_hint.queue_free()
+	side_hint = null
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
 	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
@@ -423,7 +441,7 @@ func show_start() -> void:
 	corp_pick.name = "CorporationPicker"
 	var corps := RunManager.available_corporations()
 	for corp in corps:
-		corp_pick.add_item(corp.display_name)
+		corp_pick.add_item(TextDb.t(corp, "display_name"))
 	row.add_child(corp_pick)
 	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
 	var ice_label := _label("ICE (0-%d):" % cap)
@@ -452,13 +470,13 @@ func show_start() -> void:
 	var home_pick := OptionButton.new()
 	var variants := RunManager.available_home_variants()
 	for v in variants:
-		home_pick.add_item(v.display_name)
+		home_pick.add_item(TextDb.t(v, "display_name"))
 	row.add_child(home_pick)
 	row.add_child(_label("Crew:"))
 	var class_pick := OptionButton.new()
 	var classes := RunManager.available_classes()
 	for cls in classes:
-		class_pick.add_item(cls.display_name)
+		class_pick.add_item(TextDb.t(cls, "display_name"))
 	row.add_child(class_pick)
 	var start_btn := _button("New campaign", func() -> void:
 		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
@@ -466,6 +484,7 @@ func show_start() -> void:
 			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION))
 	start_btn.theme_type_variation = &"HotButton"
 	start_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_icon(start_btn, StatIcon.PLAY)
 	setup.body.add_child(ice_text)
 	setup.body.add_child(start_btn)
 	# Daily run and share codes side by side; the daily panel lists today's setup and
@@ -482,7 +501,7 @@ func show_start() -> void:
 	daily.tag_label.text = "%04d-%02d-%02d" % [today["year"], today["month"], today["day"]]
 	for line in daily_lines(daily_seed):
 		daily.body.add_child(_label(line))
-	daily.body.add_child(_button("Daily run", func() -> void: new_campaign(daily_seed)))
+	daily.body.add_child(_icon(_button("Daily run", func() -> void: new_campaign(daily_seed)), StatIcon.PLAY))
 	var codes := TerminalWindow.new("SHARE CODES", Palette.CELL_ACID)
 	codes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	code_split.add_child(codes)
@@ -498,7 +517,7 @@ func show_start() -> void:
 			code_edit.accept_event()
 			UiFocus.focus_first(_panel))
 	code_row.add_child(code_edit)
-	code_row.add_child(_button("Start from code", func() -> void: start_from_code(code_edit.text)))
+	code_row.add_child(_icon(_button("Start from code", func() -> void: start_from_code(code_edit.text)), StatIcon.PLAY))
 	codes.body.add_child(code_row)
 	var lower := HBoxContainer.new()
 	lower.add_theme_constant_override("separation", 14)
@@ -511,21 +530,21 @@ func show_start() -> void:
 	profile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lower.add_child(profile)
 	if RunManager.has_save():
-		menu.body.add_child(_button("Resume saved campaign", resume))
+		menu.body.add_child(_icon(_button("Resume saved campaign", resume), StatIcon.CONTINUE))
 	var p := RunManager.profile
 	profile.body.add_child(_para("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s." % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, ProfileState.ice_text(p.best_ice)]))
+		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, HudStats.ice_value(p.best_ice)]))
 	profile.body.add_child(_para(ice_records_text()))
 	var unlock_names := PackedStringArray()
 	for uid in p.unlocks:
 		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
-		unlock_names.append(ud.display_name if ud != null else String(uid))
+		unlock_names.append(TextDb.t(ud, "display_name") if ud != null else String(uid))
 	profile.body.add_child(_para("Unlocks: %s" % (", ".join(unlock_names) if not unlock_names.is_empty() else "none yet (buy them at HQ with campaign Schematics)")))
 	var options_btn := _hint_button("Options", &"open_settings", open_settings)
 	options_btn.name = "OptionsButton"
-	menu.body.add_child(options_btn)
-	menu.body.add_child(_button("Codex", show_codex))
-	menu.body.add_child(_button("Back to title", RunManager.go_to_title))
+	menu.body.add_child(_icon(options_btn, StatIcon.SETTINGS))
+	menu.body.add_child(_icon(_button("Codex", show_codex), StatIcon.CODEX))
+	menu.body.add_child(_icon(_button("Back to title", RunManager.go_to_title), StatIcon.EXIT))
 	_as_menu(menu.body)
 	_set_panel(box, "start")
 
@@ -535,7 +554,7 @@ func show_start() -> void:
 func daily_lines(seed: int) -> PackedStringArray:
 	var lines := PackedStringArray()
 	lines.append("> SEED     %d" % seed)
-	lines.append("> TARGET   %s" % RunManager.lookup().get_content(RunManager.DEFAULT_CORPORATION).display_name)
+	lines.append("> TARGET   %s" % TextDb.t(RunManager.lookup().get_content(RunManager.DEFAULT_CORPORATION), "display_name"))
 	lines.append("> ICE      0")
 	lines.append("> HOME     standard")
 	lines.append("> CREW     Breaker")
@@ -584,19 +603,24 @@ func show_hq() -> void:
 	var lead := selected_op()
 	if lead != null:
 		poster.wanted = PortraitArt.operative_subject(lead.class_id, lead.id, lead.name)
-	var radio := ZineNote.new("PIRATE RADIO", Vector2(230, 96))
+	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
+	# half); the rest scrolls.
+	var line_h := Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale))
+	var radio := ZineNote.new("PIRATE RADIO", Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
+	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	radio.append(dj_line.text if dj_line != null else "lo-fi loop: HQ")
-	radio.append("vs %s | ICE %d%s" % [RunManager.corporation.display_name, c.ice_level, " | ASSIST" if c.is_assisted() else ""])
+	radio.append("vs %s | ICE %d%s" % [TextDb.t(RunManager.corporation, "display_name"), c.ice_level, " | ASSIST" if c.is_assisted() else ""])
 	var code := CampaignCode.of(c, c.start_class_id)
 	radio.append("Code: %s%s" % [code, " (local: REBEL_CELL is built from your profile)" if RunManager.corporation.generated_from_profile else ""])
-	radio.tooltip_text = dj_line.text if dj_line != null else ""
+	radio.tooltip_text = UiTip.fold(dj_line.text if dj_line != null else "")
 	radio.label.scroll_following = false
-	# No key hint: JACK IN is pressed by click or focus (Space does nothing here).
+	# No key hint: JACK IN is pressed by click or focus (Space does nothing here). It is the
+	# same JACK IN as on a Site's card (H21 #21): here it opens the Grid to pick the Site.
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
 	jack.name = "JackIn"
 	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	jack.tooltip_text = "Open the City Grid: pick a Site and launch a netrun."
+	jack.tooltip_text = UiTip.fold("JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun.")
 	jack.pressed.connect(show_grid)
 	var top_right := HBoxContainer.new()
 	top_right.add_theme_constant_override("separation", 10)
@@ -612,23 +636,33 @@ func show_hq() -> void:
 	var deck := TerminalWindow.new("CYBERDECK")
 	left.add_child(deck)
 	var actions := deck.body
-	_add_tip(actions, _button("City Grid", show_grid), "The campaign map: pick a Site, launch runs, claim and upgrade nodes.")
+	# Each item carries its icon (H21 #13): the map, the raid shield, the flame (Heat), the
+	# house (home), the book, the gear, the floppy.
+	var grid_btn := _icon(_button("City Grid", show_grid), StatIcon.MAP)
+	grid_btn.name = "CityGrid"
+	_add_tip(actions, grid_btn, "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.")
 	if not c.pending_raids.is_empty():
 		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
-		var raid_btn := _button("RAID PENDING: %s (%d)" % [raid.display_name, c.pending_raids.size()], show_raid)
+		var raid_btn := _icon(_button("RAID PENDING: %s (%d)" % [TextDb.t(raid, "display_name"), c.pending_raids.size()], show_raid), StatIcon.RAIDS)
+		raid_btn.name = "RaidPending"
+		# Long raid names wrap in the menu column instead of widening the page at big text.
+		raid_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
-		_add_tip(actions, raid_btn, raid.warning_text)
+		_add_tip(actions, raid_btn, TextDb.t(raid, "warning_text"))
 	var scrub := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
-	_add_tip(actions, _button("Scrub Heat %d (%d)" % [scrub, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction),
-		"Pay %d Schematics to change Heat by %d." % [CampaignRules.heat_purchase_price(c, cfg), scrub])
+	var scrub_btn := _icon(_button("Scrub Heat %d (%d)" % [scrub, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction), StatIcon.HEAT)
+	scrub_btn.name = "ScrubHeat"
+	_add_tip(actions, scrub_btn, "Pay %d Schematics to change Heat by %d." % [CampaignRules.heat_purchase_price(c, cfg), scrub])
 	if c.grid.home_integrity < c.grid.home_max_integrity:
-		_add_tip(actions, _button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home),
+		_add_tip(actions, _icon(_button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME),
 			"Repair the home server to full integrity.")
-	_add_tip(actions, _button("Codex", show_codex), "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.")
+	_add_tip(actions, _icon(_button("Codex", show_codex), StatIcon.CODEX), "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.")
 	var settings_btn := _hint_button("Settings", &"open_settings", open_settings)
 	settings_btn.name = "SettingsButton"
-	actions.add_child(settings_btn)
-	_add_tip(actions, _button("Save", func() -> void: RunManager.autosave(); _log.append_text("Saved.\n"); notify("Saved.")), "Save the campaign now (it also saves after every action).")
+	_add_tip(actions, _icon(settings_btn, StatIcon.SETTINGS), "Options: text size, sound, controls, subtitles.")
+	var save_btn := _icon(_button("Save", func() -> void: RunManager.autosave(); _log.append_text("Saved.\n"); notify("Saved.")), StatIcon.SAVE)
+	save_btn.name = "SaveButton"
+	_add_tip(actions, save_btn, "Save the campaign now (it also saves after every action).")
 	_as_menu(actions)
 	# The Cell at a glance (H20: badges, not a text readout): home, Exploits, Armory and the
 	# rules the Heat thresholds added; each badge's tooltip says what it means.
@@ -638,7 +672,7 @@ func show_hq() -> void:
 	status.body.add_child(cell_badges())
 	# The crew: Polaroids with their stats and orders.
 	# The deck monitor: the City Grid at a glance (click or JACK IN to open it).
-	var monitor := TerminalWindow.new("CITY GRID // %s" % RunManager.corporation.display_name)
+	var monitor := TerminalWindow.new("CITY GRID // %s" % TextDb.t(RunManager.corporation, "display_name"))
 	monitor.tag_label.text = "STATUS: %s" % ("RAID INBOUND" if not c.pending_raids.is_empty() else "STABLE")
 	monitor.tag_label.add_theme_color_override("font_color", Palette.CELL_PINK if not c.pending_raids.is_empty() else Palette.CELL_ACID)
 	monitor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -664,12 +698,12 @@ func show_hq() -> void:
 		# A crew dossier: Polaroid, name, tags, HP, kit, then orders.
 		var where := CampaignRules.stationed_site(c, op.id)
 		var cls_data := lookup.get_content(op.class_id) as ClassData
-		var row := CrewCard.new(op.name, cls_data.display_name if cls_data != null else String(op.class_id), op.rank, op.hp, op.max_hp,
+		var row := CrewCard.new(op.name, TextDb.t(cls_data, "display_name") if cls_data != null else String(op.class_id), op.rank, op.hp, op.max_hp,
 			"HP %d/%d · DECK %d · DAEMONS %d%s" % [op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size(),
 			"" if op.alive else " · [DEAD]"], -1.5 if c.roster.find(op) % 2 == 0 else 1.5)
 		row.name = "Crew_%s" % op.id
 		row.set_operative(op.class_id, op.id)
-		row.tooltip_text = UiTip.fold("%s%s" % [cls_data.description if cls_data != null else "", ("\nStationed on %s." % site_name(where)) if where != &"" else ""])
+		row.tooltip_text = UiTip.fold("%s%s" % [TextDb.t(cls_data, "description") if cls_data != null else "", ("\nStationed on %s." % site_name(where)) if where != &"" else ""])
 		row.polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
 		row.dead = not op.alive
 		if where != &"" and op.alive:
@@ -693,7 +727,7 @@ func show_hq() -> void:
 						var oid := op.id
 						var sid := site_id
 						_add_tip(orders, _button("Station on %s" % site_name(site_id), func() -> void: station(oid, sid)),
-							"%s guards %s (%s): the class's station bonus helps it hold in raids." % [op.name, site_name(site_id), node.display_name])
+							"%s guards %s (%s): the class's station bonus helps it hold in raids." % [op.name, site_name(site_id), TextDb.t(node, "display_name")])
 			# Rank 3 Inner Ring segment swaps (GDD 6.4).
 			var cls := lookup.get_content(op.class_id) as ClassData
 			var options := CampaignRules.ring_segment_options(op, cls)
@@ -705,7 +739,7 @@ func show_hq() -> void:
 					var current: StringName = op.ring_segment_ids[k] if k < op.ring_segment_ids.size() else &""
 					for i in options.size():
 						var seg := lookup.get_content(options[i]) as RingSegmentData
-						pick.add_item("seg %d: %s" % [k, seg.display_name if seg != null else String(options[i])])
+						pick.add_item("seg %d: %s" % [k, TextDb.t(seg, "display_name") if seg != null else String(options[i])])
 						pick.set_item_metadata(i + 1, options[i])
 						if options[i] == current:
 							pick.select(i + 1)
@@ -718,21 +752,27 @@ func show_hq() -> void:
 	center.add_child(crew)
 	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
 	var market := TerminalWindow.new("BLACK MARKET // SCHEMATICS %d" % c.schematics, Palette.CELL_ACID)
+	market.name = "BlackMarket"
 	box.add_child(market)
 	var recruits := HFlowContainer.new()
+	recruits.name = "Recruits"
 	recruits.add_child(_label("Recruit:"))
 	for cls in RunManager.available_classes():
 		var cid := cls.id
-		_add_tip(recruits, _button("Recruit %s (%d)" % [cls.display_name, CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)), cls.description)
+		var rb := _icon(_button("Recruit %s (%d)" % [TextDb.t(cls, "display_name"), CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)), StatIcon.OPERATIVE)
+		rb.name = "Recruit_%s" % cls.id
+		_add_tip(recruits, rb, TextDb.t(cls, "description"))
 	market.body.add_child(recruits)
 	var boosts := HFlowContainer.new()
+	boosts.name = "Boosts"
 	boosts.add_child(_label("Next-run boosts:"))
 	for b in cfg.netrun_boosts:
 		if b == null:
 			continue
 		var bid := b.id
-		var btn := _button("%s (%d)" % [b.display_name, b.cost], func() -> void: buy_boost(bid))
-		btn.tooltip_text = UiTip.fold(b.description)
+		var btn := _button("%s (%d)" % [TextDb.t(b, "display_name"), b.cost], func() -> void: buy_boost(bid))
+		btn.name = "Boost_%s" % b.id
+		btn.tooltip_text = UiTip.fold(TextDb.t(b, "description"))
 		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
 		boosts.add_child(btn)
 	if not c.pending_boosts.is_empty():
@@ -740,7 +780,7 @@ func show_hq() -> void:
 		for bid in c.pending_boosts:
 			for b in cfg.netrun_boosts:
 				if b != null and b.id == bid:
-					queued.append(b.display_name)
+					queued.append(TextDb.t(b, "display_name"))
 		boosts.add_child(_label("queued: %s" % ", ".join(queued)))
 	market.body.add_child(boosts)
 	var unlocks := HFlowContainer.new()
@@ -755,8 +795,8 @@ func show_hq() -> void:
 			continue
 		any_unlock = true
 		var uid := u.id
-		var btn := _button("%s (%d)" % [u.display_name, u.schematic_cost], func() -> void: purchase_unlock(uid))
-		btn.tooltip_text = UiTip.fold(u.description)
+		var btn := _button("%s (%d)" % [TextDb.t(u, "display_name"), u.schematic_cost], func() -> void: purchase_unlock(uid))
+		btn.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
 		btn.disabled = c.schematics < u.schematic_cost
 		unlocks.add_child(btn)
 	if not any_unlock:
@@ -770,7 +810,7 @@ func show_hq() -> void:
 			var t := RichTextLabel.new()
 			t.fit_content = true
 			t.custom_minimum_size = Vector2(700, 0)
-			t.text = "  [%s] %s" % [b.title, b.text]
+			t.text = "  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]
 			story.body.add_child(t)
 	_set_panel(box, "hq")
 
@@ -810,7 +850,23 @@ func show_grid() -> void:
 	side.name = "GridSide"
 	side.custom_minimum_size.x = GRID_SIDE_WIDTH
 	side.add_theme_constant_override("separation", 10)
-	outer.add_child(side)
+	# The column scrolls on its own (H21 #15: at 1.6, or with a raid pending and many
+	# claimed nodes, RUNS OPEN NOW went off the screen; the city page itself never scrolls):
+	# by mouse wheel over it, and by pad as focus moves down (follow_focus).
+	var side_scroll := ScrollContainer.new()
+	side_scroll.name = "GridSideScroll"
+	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side_scroll.follow_focus = true
+	side_scroll.custom_minimum_size.x = GRID_SIDE_WIDTH + SIDE_SCROLLBAR
+	side_scroll.add_child(side)
+	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# The site navigation stays pinned above the scrolling part (merge fix: a taller legend
+	# let follow_focus scroll the nav row under the subtitle band).
+	var column := VBoxContainer.new()
+	column.name = "GridColumn"
+	column.add_theme_constant_override("separation", 10)
+	column.add_child(side_scroll)
+	outer.add_child(column)
 	# H20: no plan note or Site list; the map carries status and objectives, the side
 	# column holds the picked Site's card with its actions, the runs open now, the legend.
 	var launchable := RunManager.launchable_sites()
@@ -819,10 +875,10 @@ func show_grid() -> void:
 		selected_site = launchable[0].id
 	if selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null:
 		selected_site = c.grid.home_site_id
-	# A 2-column grid, not an HBox: the pad links the card's own action row (UiFocus).
+	# The card over the full column; the map legend goes last (H21 #15: beside the card it
+	# grew tall at big text and pushed RUNS OPEN NOW off the screen).
 	var top := GridContainer.new()
-	top.columns = 2
-	top.add_theme_constant_override("h_separation", 10)
+	top.columns = 1
 	side.add_child(top)
 	var site := CampaignRules.site_data(corp, selected_site)
 	if site != null:
@@ -831,26 +887,26 @@ func show_grid() -> void:
 		card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		top.add_child(card)
 	var legend := MapLegend.new(c.corporation_id)
-	top.add_child(legend)
 	# Every Site stays reachable without the mouse: step through them, or jump to a run.
 	# First in the column: the city screens don't scroll by mouse wheel, so Back to HQ
 	# must stay on screen at text scale 1.6.
 	var nav := HBoxContainer.new()
 	nav.name = "SiteNav"
 	nav.add_theme_constant_override("separation", 8)
-	side.add_child(nav)
-	side.move_child(nav, 0)
+	column.add_child(nav)
+	column.move_child(nav, 0)
 	var prev := _button("< PREV SITE", func() -> void: step_site(-1))
 	prev.name = "PrevSite"
 	_add_tip(nav, prev, "Select the previous Site on the Grid (the map follows).")
 	var next := _button("NEXT SITE >", func() -> void: step_site(1))
 	next.name = "NextSite"
 	_add_tip(nav, next, "Select the next Site on the Grid (the map follows).")
-	var back := _button("Back to HQ", show_hq)
+	var back := _icon(_button("Back to HQ", show_hq), StatIcon.BACK)
 	back.name = "BackToHq"
-	nav.add_child(back)
+	_add_tip(nav, back, "Back to the HQ: crew, Black Market, Cell status.")
 	if not c.pending_raids.is_empty():
-		var raid_btn := _button("RAID SETUP", show_raid)
+		var raid_btn := _icon(_button("RAID SETUP", show_raid), StatIcon.RAIDS)
+		raid_btn.name = "RaidSetup"
 		raid_btn.theme_type_variation = &"HotButton"
 		_add_tip(nav, raid_btn, "A raid is coming along the dashed routes: set up the defence.")
 	if not launchable.is_empty():
@@ -867,9 +923,14 @@ func show_grid() -> void:
 			b.name = "Run_%s" % s.id
 			if s.id == selected_site:
 				b.add_theme_color_override("font_color", Palette.CELL_ACID)
-			_add_tip(flow, b, "T%d %s: %s. Select it to launch." % [s.tier, site_name(s.id), CampaignRules.run_kind_for(c, s)])
+			_add_tip(flow, b, "T%d %s: %s. Select it, then %s on its card." % [s.tier, site_name(s.id), CampaignRules.run_kind_for(c, s), JACK_IN])
+	side.add_child(legend)
 	_set_panel(outer, "grid")
-	UiFocus.link_layout(side)  # the side column row by row (nav, card actions, runs)
+	# More below in the column (the legend at big text): the same tag as the HQ page's.
+	side_hint = ScrollHint.new(side_scroll)
+	side_hint.name = "SideHint"
+	add_child(side_hint)
+	UiFocus.link_layout(column)  # the side column row by row (nav, card actions, runs)
 	var g := grid_graph()
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.4, 0.56), 0.85)
 	city_overlay.selected_id = selected_site
@@ -980,10 +1041,10 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var objective := CampaignRules.site_objective(c, site)
 	if objective == RC.SiteObjective.EXPLOIT:
 		var ename: String = RC.ExploitType.keys()[site.exploit_type]
-		facts.add_child(Badge.new(ename.capitalize(), Palette.CELL_ACID, GLYPH_EXPLOIT, "Clear this Site for the %s Exploit (%d/%d for the breach)." % [ename.capitalize(), c.exploits.size(), cfg.min_exploits_for_breach]))
+		facts.add_child(Badge.new(ename.capitalize(), Palette.CELL_ACID, GLYPH_EXPLOIT, "Clear this Site for the %s Exploit (%d/%d for the breach)." % [ename.capitalize(), c.exploits.size(), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS))
 	elif objective == RC.SiteObjective.HEAT_REDUCTION:
 		var dh := HeatRules.scaled_delta(c, site.heat_change, cfg)
-		facts.add_child(Badge.new("Heat %+d" % dh, Palette.NET_CYAN, GLYPH_HEAT, "Clearing this Site changes Heat by %d." % dh))
+		facts.add_child(Badge.new("Heat %+d" % dh, Palette.NET_CYAN, GLYPH_HEAT, "Clearing this Site changes Heat by %d." % dh).with_icon(StatIcon.HEAT))
 	elif objective == RC.SiteObjective.BOSS:
 		facts.add_child(Badge.new("BOSS", Palette.corp_color(c.corporation_id), GLYPH_BOSS, "The corporation's core. The breach needs %d Exploits." % cfg.min_exploits_for_breach))
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
@@ -994,12 +1055,12 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		if int(s["condition"]) == GridState.Condition.DISABLED:
 			node_text += " DISABLED"
 		var node_data := lookup.get_content(c.grid.node_type_of(site.id)) as NetworkNodeData
-		facts.add_child(Badge.new(node_text, node_col, GLYPH_NODE, node_data.description if node_data != null else "").with_meter(int(s["integrity"]), int(s["max_integrity"])))
+		facts.add_child(Badge.new(node_text, node_col, GLYPH_NODE, TextDb.t(node_data, "description") if node_data != null else "").with_meter(int(s["integrity"]), int(s["max_integrity"])))
 		if c.grid.upgrade_level_of(site.id) > 0:
 			facts.add_child(Badge.new("+%d" % c.grid.upgrade_level_of(site.id), Palette.CELL_ACID, GLYPH_UPGRADE, "Node upgrade level %d." % c.grid.upgrade_level_of(site.id)))
 		for aid in c.grid.assets_on(site.id):
 			var data := lookup.get_content(aid) as DefenseAssetData
-			facts.add_child(Badge.new(_display(aid), Palette.CELL_PINK, "", data.description if data != null else "", aid))
+			facts.add_child(Badge.new(_display(aid), Palette.CELL_PINK, "", TextDb.t(data, "description") if data != null else "", aid))
 		var guard := c.grid.stationed_on(site.id)
 		if guard != &"":
 			var guard_op := c.get_operative(guard)
@@ -1022,19 +1083,20 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		row.add_child(op_pick)
 		var sid := site.id
 		var kind := CampaignRules.run_kind_for(c, site)
-		var go := _button("Launch %s" % kind, func() -> void: launch(sid, living[op_pick.selected].id))
+		# One name for one idea (H21 #21): JACK IN, as on the HQ's stamp.
+		var go := _icon(_button(JACK_IN, func() -> void: launch(sid, living[op_pick.selected].id)), StatIcon.JACK_IN)
 		go.name = "Launch"
 		go.theme_type_variation = &"HotButton"
-		_add_tip(row, go, "Jack into %s: a %s netrun." % [site_name(site.id), kind])
+		_add_tip(row, go, "JACK IN to %s: start a %s here with the picked operative." % [site_name(site.id), kind])
 	if c.grid.is_cleared(site.id) and site.claimable:
 		var node_pick := OptionButton.new()
 		node_pick.name = "NodePick"
 		for i in choices.size():
 			var node := choices[i]
 			var available := CampaignRules.node_available(RunManager.profile, lookup, node)
-			node_pick.add_item("%s (%d)%s" % [node.display_name, node.install_cost, "" if available else " [locked]"])
+			node_pick.add_item("%s (%d)%s" % [TextDb.t(node, "display_name"), node.install_cost, "" if available else " [locked]"])
 			node_pick.set_item_disabled(i, not available)
-			node_pick.set_item_tooltip(i, UiTip.fold(node.description))
+			node_pick.set_item_tooltip(i, UiTip.fold(TextDb.t(node, "description")))
 		row.add_child(node_pick)
 		var sid2 := site.id
 		_add_tip(row, _button("Claim", func() -> void: claim(sid2, choices[node_pick.selected].id)), "Build the picked node here: it joins your network and defends in raids.")
@@ -1101,11 +1163,11 @@ func show_raid() -> void:
 	var go := HBoxContainer.new()
 	go.add_theme_constant_override("separation", 10)
 	side.add_child(go)
-	var run_btn := _button("RUN THE RAID", fight_raid)
+	var run_btn := _icon(_button("RUN THE RAID", fight_raid), StatIcon.PLAY)
 	run_btn.name = "RunRaid"
 	run_btn.theme_type_variation = &"HotButton"
 	_add_tip(go, run_btn, "Play the raid out on the map; the result matches the projection.")
-	go.add_child(_button("Back to HQ", show_hq))
+	_add_tip(go, _icon(_button("Back to HQ", show_hq), StatIcon.BACK), "Back to the HQ; the raid waits until you run it.")
 	var loadout := TerminalWindow.new("DEFENSE LOADOUT // ARMORY %d/%d // pick a node, then a card" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK)
 	loadout.tag_label.text = "TARGET: %s" % site_name(selected_site)
 	outer.add_child(loadout)
@@ -1120,9 +1182,9 @@ func show_raid() -> void:
 			continue
 		seen[aid] = true
 		var data := lookup.get_content(aid) as DefenseAssetData
-		var card := AssetCard.new(aid, data.display_name if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
+		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
 		card.custom_minimum_size = Vector2(110, 120)
-		card.tooltip_text = UiTip.fold("%s\nDeploys to %s." % [data.description if data != null else "", site_name(selected_site)])
+		card.tooltip_text = UiTip.fold("%s\nDeploys to %s." % [TextDb.t(data, "description") if data != null else "", site_name(selected_site)])
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
@@ -1158,9 +1220,9 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var corp_col := Palette.corp_color(c.corporation_id)
-	var card := TerminalWindow.new("RAID // %s" % raid.display_name, corp_col)
+	var card := TerminalWindow.new("RAID // %s" % TextDb.t(raid, "display_name"), corp_col)
 	card.name = "RaidCard"
-	card.tooltip_text = UiTip.fold(raid.warning_text)
+	card.tooltip_text = UiTip.fold(TextDb.t(raid, "warning_text"))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	card.body.add_child(row)
@@ -1177,7 +1239,7 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	row.add_child(facts)
 	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
 	facts.add_child(Badge.new("%d > %d" % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
-		"Projected home integrity after the raid (exact: the playout matches it).").with_meter(projection.home_after, c.grid.home_max_integrity))
+		"Projected home integrity after the raid (exact: the playout matches it).").with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME))
 	var total := projection.threats_destroyed + projection.threats_reached_home + _still_active(projection)
 	facts.add_child(Badge.new("%d/%d" % [projection.threats_destroyed, total], Palette.CELL_ACID, GLYPH_THREAT, "Threats your nodes destroy, of all that come."))
 	facts.add_child(Badge.new("%+.0f%%" % CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation), corp_col, GLYPH_RULE, "Threat strength from Heat, ICE and seized Sites."))
@@ -1289,7 +1351,7 @@ func show_codex() -> void:
 		for h in Dialogue.history.slice(maxi(0, Dialogue.history.size() - 6)):
 			lines.append("[%s] %s" % [Dialogue.speaker_name(int(h["speaker"]), StringName(String(h.get("corporation", "")))), h["text"]])
 		box.add_child(lines)
-	box.add_child(_button("Back to HQ", show_hq if RunManager.campaign != null else show_start))
+	box.add_child(_icon(_button("Back to HQ", show_hq if RunManager.campaign != null else show_start), StatIcon.BACK))
 	_set_panel(box, "codex")
 
 
@@ -1386,7 +1448,7 @@ func show_raid_summary() -> void:
 	facts.add_theme_constant_override("v_separation", 4)
 	box.add_child(facts)
 	facts.add_child(Badge.new("%d > %d" % [int(r.get("home_before", 0)), int(r.get("home_after", 0))], Palette.CELL_ACID if won else Palette.CELL_PINK, GLYPH_HOME,
-		"Home integrity before and after the raid.").with_meter(int(r.get("home_after", 0)), c.grid.home_max_integrity))
+		"Home integrity before and after the raid.").with_meter(int(r.get("home_after", 0)), c.grid.home_max_integrity).with_icon(StatIcon.HOME))
 	facts.add_child(Badge.new("%d destroyed" % int(r.get("threats_destroyed", 0)), Palette.CELL_ACID, GLYPH_THREAT, "Threats your network destroyed."))
 	if int(r.get("threats_reached_home", 0)) > 0:
 		facts.add_child(Badge.new("%d reached home" % int(r.get("threats_reached_home", 0)), Palette.CELL_PINK, GLYPH_THREAT, "Threats that hit the home server."))
@@ -1404,7 +1466,7 @@ func show_raid_summary() -> void:
 		for id in r.get(key, []):
 			box.add_child(Badge.new("%s %s" % [site_name(StringName(String(id))), key.to_upper()], Palette.RESIST_GOLD, GLYPH_RULE,
 				"Seized: the corporation took the Site back." if key == "seized" else "Disabled: repair the node on the Grid."))
-	box.add_child(_button("Back to HQ", show_hq))
+	box.add_child(_icon(_button("Back to HQ", show_hq), StatIcon.BACK))
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
@@ -1414,14 +1476,14 @@ func show_end() -> void:
 	var c := RunManager.campaign
 	Dialogue.speak("win" if c.outcome == CampaignState.Outcome.WON else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
 	var box := VBoxContainer.new()
-	box.add_child(_label("CAMPAIGN %s" % (("WON - %s is down" % RunManager.corporation.final_boss.display_name) if c.outcome == CampaignState.Outcome.WON else "LOST - home server destroyed")))
+	box.add_child(_label("CAMPAIGN %s" % (("WON - %s is down" % TextDb.t(RunManager.corporation.final_boss, "display_name")) if c.outcome == CampaignState.Outcome.WON else "LOST - home server destroyed")))
 	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
-		box.add_child(_label("  [%s] %s" % [b.title, b.text]))
+		box.add_child(_label("  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]))
 	var p := RunManager.profile
-	box.add_child(_para("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), RunManager.corporation.display_name, RunManager.ice_cap(c.corporation_id)]))
+	box.add_child(_para("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d." % [p.campaigns_won, p.campaigns_lost, HudStats.ice_value(p.best_ice), TextDb.t(RunManager.corporation, "display_name"), RunManager.ice_cap(c.corporation_id)]))
 	box.add_child(_para(ice_records_text()))
-	box.add_child(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()))
-	box.add_child(_button("Back to title", RunManager.go_to_title))
+	box.add_child(_icon(_button("New campaign", func() -> void: RunManager.campaign = null; show_start()), StatIcon.PLAY))
+	box.add_child(_icon(_button("Back to title", RunManager.go_to_title), StatIcon.EXIT))
 	_set_panel(box, "end")
 
 
@@ -1513,13 +1575,14 @@ func site_name(site_id: StringName) -> String:
 	if c != null and c.grid != null and site_id == c.grid.home_site_id:
 		return HOME_LABEL
 	var sd := CampaignRules.site_data(RunManager.corporation, site_id) if RunManager.corporation != null else null
-	return sd.display_name if sd != null else String(site_id)
+	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
 
 
-## A content id's display name (node types, assets, boosts), else the id.
+## A content id's display name (node types, assets, boosts) through TextDb (H21 #19), else
+## the id.
 func _display(id: StringName) -> String:
 	var res := RunManager.lookup().get_content(id)
-	return String(res.get("display_name")) if res != null and res.get("display_name") != null else String(id)
+	return TextDb.t(res, "display_name") if res != null and "display_name" in res else String(id)
 
 
 ## Adds `control` to `parent` with a wrapped tooltip; returns it.
@@ -1540,28 +1603,35 @@ func cell_badges() -> HFlowContainer:
 	flow.name = "CellBadges"
 	flow.add_theme_constant_override("h_separation", 12)
 	flow.add_theme_constant_override("v_separation", 6)
+	# H21 #10: each badge names what it counts and carries the icon of that stat's top-bar
+	# tag (house = HOME, diamond = EXPLOITS, crate = ARMORY); Armory assets by short name.
 	var home_col := Palette.CELL_ACID if c.grid.home_integrity * 2 > c.grid.home_max_integrity else Palette.CELL_PINK
-	flow.add_child(Badge.new("%d/%d" % [c.grid.home_integrity, c.grid.home_max_integrity], home_col, GLYPH_HOME,
-		"Home server integrity. At 0 the campaign is lost.").with_meter(c.grid.home_integrity, c.grid.home_max_integrity))
-	if c.exploits.is_empty():
-		flow.add_child(Badge.new("0/%d" % cfg.min_exploits_for_breach, Palette.NET_CYAN, GLYPH_EXPLOIT,
-			"No Exploits yet. Exploit Sites (◈ on the Grid) give one each; the breach needs %d." % cfg.min_exploits_for_breach))
+	var home := Badge.new("HOME %d/%d" % [c.grid.home_integrity, c.grid.home_max_integrity], home_col, GLYPH_HOME,
+		"Home server integrity. At 0 the campaign is lost.").with_meter(c.grid.home_integrity, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
+	home.name = "HomeBadge"
+	flow.add_child(home)
+	var exploits := Badge.new("EXPLOITS %d/%d" % [c.exploits.size(), cfg.min_exploits_for_breach], Palette.CELL_ACID if not c.exploits.is_empty() else Palette.NET_CYAN, GLYPH_EXPLOIT,
+		"Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d." % [_exploit_names(c), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS)
+	exploits.name = "ExploitsBadge"
+	flow.add_child(exploits)
 	for e in c.exploits:
 		var ename: String = RC.ExploitType.keys()[e]
 		flow.add_child(Badge.new(ename.capitalize(), Palette.CELL_ACID, GLYPH_EXPLOIT,
-			"Exploit %s found (%d/%d for the breach)." % [ename.capitalize(), c.exploits.size(), cfg.min_exploits_for_breach]))
+			"Exploit %s found (%d/%d for the breach)." % [ename.capitalize(), c.exploits.size(), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS))
+	var armory := Badge.new("ARMORY %d/%d" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK, GLYPH_NODE,
+		"The Armory: defence assets banked from runs, deployed on your nodes in raid setup." if not c.armory.is_empty() else "The Armory is empty: runs bank defence assets from their drops.").with_icon(StatIcon.ARMORY)
+	armory.name = "ArmoryBadge"
+	flow.add_child(armory)
 	var seen := {}
 	for aid in c.armory:
 		if seen.has(aid):
 			continue
 		seen[aid] = true
 		var data := lookup.get_content(aid) as DefenseAssetData
-		flow.add_child(Badge.new("x%d" % c.armory.count(aid), Palette.CELL_PINK, "", "%s (Armory %d/%d)\n%s" % [
-			_display(aid), c.armory.size(), cfg.armory_capacity, data.description if data != null else ""], aid))
-	if c.armory.is_empty():
-		flow.add_child(Badge.new("0/%d" % cfg.armory_capacity, Palette.CELL_PINK, GLYPH_NODE, "The Armory is empty: runs bank defence assets from their drops."))
+		flow.add_child(Badge.new("%s x%d" % [_display(aid), c.armory.count(aid)], Palette.CELL_PINK, "", "%s (Armory %d/%d)\n%s" % [
+			_display(aid), c.armory.size(), cfg.armory_capacity, TextDb.t(data, "description") if data != null else ""], aid))
 	for m in HeatRules.active_modifiers(c, cfg):
-		flow.add_child(Badge.new(_modifier_text(m), Palette.corp_color(c.corporation_id), GLYPH_RULE, "In force since a Heat threshold. Scrub Heat to fall back under it."))
+		flow.add_child(Badge.new(_modifier_text(m), Palette.corp_color(c.corporation_id), GLYPH_RULE, "In force since a Heat threshold. Scrub Heat to fall back under it.").with_icon(StatIcon.HEAT))
 	return flow
 
 
@@ -1621,7 +1691,11 @@ func _build_ui() -> void:
 	hud.daemons_pressed.connect(open_daemons)
 	root.add_child(hud)
 	_status = hud.label
+	# The subtitles' own band under the top bar: no control and no stat tag under it (H21 #11).
+	subtitle_strip = SubtitleStrip.new()
+	root.add_child(subtitle_strip)
 	var scroll := ScrollContainer.new()
+	scroll.name = "PageScroll"
 	scroll.follow_focus = true  # pad focus scrolls long lists (Grid Sites)
 	# Never sideways: rows wrap (HFlowContainer) to the 1280-wide screen instead.
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1643,6 +1717,9 @@ func _build_ui() -> void:
 	# Shown only when the player turns it on in Options.
 	_log.visible = Settings.system_log
 	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
+	# More below (the HQ's BLACK MARKET): a tag at the foot of the page while it scrolls on.
+	more_hint = ScrollHint.new(scroll)
+	add_child(more_hint)
 
 
 ## Turns the buttons in `box` into "> ITEM" terminal menu lines.
@@ -1671,4 +1748,10 @@ func _button(text: String, on_pressed: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.pressed.connect(on_pressed)
+	return b
+
+
+## Puts StatIcon `kind` before button `b`'s words (H21 #13: menus in words only); returns b.
+func _icon(b: Button, kind: StringName) -> Button:
+	IconMark.attach(b, kind)
 	return b

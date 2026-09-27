@@ -30,6 +30,42 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-26 — H21 combat: pad triggers, turn results, odds for random picks, words and pictograms
+From pass 21 (vertical and horizontal audits, a first-time player, a player who can't read
+English; GAP_ANALYSIS H21).
+- **Pad**: LT switches the wheel the nudge buttons drive (yours / the target), RT the ring;
+  one toggle per squeeze; the status line names them on a pad. A switch between mouse and
+  pad keeps focus on the card that had it (the hand used to be rebuilt without it).
+- **What SEND IT did** stays under each HP number ("LAST TURN: -3 HP · 5 BLOCKED",
+  "NO DAMAGE") until the player acts; the motion pass (ANIMATION_HANDOFF 4.7) adds floating
+  numbers on top.
+- **Random picks during the resolve** (DOSE, Citations, Solar Flares, the Handler's
+  corrupt) show "? RANDOM STATUS" and the slice odds, no ghost on the rolled slot (GDD
+  2.10). The preview after a card uses the card's own RNG draws, so a reshuffling draw
+  (Pull, Data Surge, Scrap Code, Tailspin) previews the real resolve.
+- **HITS** counts the damage that lands per pointer (multi-pointer targets were
+  under-reported), per victim: "HITS YOU 14" on an enemy's tag.
+- **Satellites and Undock**: a nudge card or Undock dropped on a satellite takes its way
+  from the side it is dropped on (arrowheads mark both sides); a custom handler declares
+  `USES_DIRECTION` and `SCREEN_SIGN` (Undock's slot + 1 is anticlockwise on screen).
+- **Room at big text**: the wheel shrinks so its tag (title + two chip rows; more fold into
+  a "+N" chip) and its HP number and last-turn line stay inside its view at every text
+  scale; `layout_violations` checks it. The refusal toast sits over the hand (it covered
+  the HP arcs) with a drawn no-entry mark, and the RAM bar flashes when RAM was short.
+- **Words**: tags read "DEFEND · good aim", chips BLOCK / SHIELD / CORRUPTED (Palette
+  SLICE_WORDS, STATUS_WORDS, TIER_WORDS); the reticle says TARGET.
+- **Cards show what they do**: `ZineCard.pictos_of` draws spin / nudge / flip / respin
+  arrows, slice icons for damage, block, shield, evade, heal, deploy, statuses, and short
+  tags (RAM, DRAW, SNAP, 2x NUDGE...) on every card; the focused card on a pad shows [A].
+  While a card is aimed the other cards dim and a dashed line runs to the aimed zone.
+- **More chips**: PHASE n, +n NEEDLE, NEW SLICES, 2x NUDGE CARDS NEXT, satellites' block,
+  shield, healing, statuses and moves; the inner ring gets its own ghost arc.
+- The Modem / Loadout spinner lays slots out the same way round as combat. Retired
+  keybinds in an old settings.json are dropped on load; Heat chips are scaled per change as
+  the netrun applies them; hub names go through TextDb.
+- Tests: `tests/unit/test_horizontal_pass21.gd`. No rule changed (views, and the preview's
+  RNG), so the balance numbers stand.
+
 ### 2026-09-26 — H21 city maps: node tooltips, you-are-here, readable labels, influence on each corporation's Sites
 Pass-21 audits and naive-player reviews (H21 #14, #15, #22): map nodes showed nothing on
 hover; the route had no "you are here" and every node looked reachable; node icons were
@@ -75,6 +111,86 @@ of its own Grid. View-only throughout (`scripts/ui/kit/`), no rule or content ch
 - Not done here (other owners' files): the route (non-zoomed) view mounts no legend, and
   the raid setup's pinned legend can cover CORE at the left of the frame (hq_scene
   framing).
+
+### 2026-09-26 — H21 screens: icons for every stat, wallet and price tags, event outcome icons, subtitles clear of the stats, big text everywhere
+Naive-player reviews (first-time player; player who can't read English) of the
+storyboard: GAP_ANALYSIS H21 #10-15, #19, #21 on the HQ, Grid, raid, route, Modem,
+event, loot and title screens. Direction: nothing the player must read; tooltips on
+everything; big text reaches everything; pad players see pad buttons.
+- **One icon set** (`StatIcon`, STYLE_GUIDE 4.1): line-drawn vector icons (no font glyphs
+  or emoji), `StatIcon.draw(ci, centre, radius, kind, colour)` from any draw pass, so the
+  combat scene can use them too. Every stat tag carries its resource's icon (`HudStats`
+  item's 5th field, else `StatIcon.kind_for(name)`): flame Heat, blueprint Schematics,
+  house Home, diamond Exploits, shield Raids, snowflake ICE, people Crew, heart HP, coin
+  Cycles, cards Cards, chevrons Rank, vault Banked (+ run end and profile tags). The same
+  icon wherever the resource shows: CELL STATUS badges (`Badge.with_icon`), Modem price
+  tags and wallet (coin), event choice outcomes, the Site card's Exploit / Heat badges,
+  raid home badges.
+- **CELL STATUS** badges name what they count: `HOME 50/50`, `EXPLOITS 0/3`,
+  `ARMORY 3/6`, each asset kind as `Turret x1` (asset icon + short name + tooltip), no
+  bare "x1".
+- **Stat tags follow the text size**: full tags (name, icon, value) while they fit at the
+  text scale (down to 85 % of it); otherwise compact tags (icon + value, the name as the
+  tooltip's title) scaled to fill the row, up to the text scale. The HUD band grows with
+  them, except in a fight (`HudStats.max_height`: the band keeps 56 px so the arena keeps
+  its height; tags there scale to at most ~1.04 full / 1.27 compact). The screen title in
+  the band takes only its own width.
+- **Subtitles** (#11): a `SubtitleStrip` of their own, laid out like any row, so no
+  control and no stat tag can sit under it: under the top bar on the HQ and netrun screens
+  (one line, the full 1264 px width: ~140 characters a line at 1.0, ~88 at 1.6, so most
+  lines need no paging and the "Rack." stale fragments are gone), beside the tag in the
+  title's header (two lines). The strip registers its rect (`Dialogue.set_default_rect`);
+  `dock_default` / `dock_bottom` use it (DEFAULT_DOCK is only the fallback), so a fight's
+  exit comes back to it. It hides during a fight (combat docks its own). `dock_at`'s
+  signature and paging are unchanged. Cost: about 32 px of height at 1.0 and 42 px at 1.6
+  on those screens. Modal viewers (DeckView, SpinnerView, DaemonTray) open under the band
+  (`SubtitleStrip.top_below`).
+- **The Modem shows the wallet** (coin + Cycles) beside the shredder, whatever covers the
+  top bar; LEAVE THE MODEM moved up into that quadrant's free corner so the Modem ends on
+  screen at 1.6.
+- **Price tags** (#12): `ZineCard.with_price(p, from)` hangs the price on a yellow tag with
+  the coin (pink when out of reach); a card's circle is its real RAM cost; shop tiles
+  (Firmware, Daemons, slices "100+" since the slot sets the price, SHRED) show their tag.
+  `ZineCard` changes are additions (`price`, `price_from`, `with_price`, `tile_text`,
+  `price_tag_rect`, `_draw_price_tag`, `_draw_tile_scaled`); `_draw` calls the tag and
+  picks the scaled tile drawing only when `text_scale != 1`. The socket lists name slots
+  ("Socket into Slot 1: CRIT 12 + Barbed Wire", `slot_name`), never ids. `with_card` on
+  every card sticker built from CardData (Modem, loot, deck view and its detail).
+- **Event outcomes** (#13): `OutcomeRow.of_choice(session, choice)` reads the choice data
+  the way `NetrunSession` applies it (Cycles cost, HP loss, Cycles / Heat through
+  `HeatRules.scaled_delta` / heal / Schematics, the reward's kind) and draws icon + signed
+  number under the choice's words (green helps, red costs); the tooltip says it in words.
+- **Menu icons** (`IconMark.attach(button, kind)`: a transparent icon slot sized to the
+  button's font, the icon drawn in it; in terminal menus it replaces the chevron): title
+  menu and slots, HQ CYBERDECK and start menus, Grid nav, raid, run start, route
+  (GRID VIEW, Save & quit), Skip, Back to HQ, Continue; LEAVE THE MODEM gets an exit icon
+  beside it. Every one has a tooltip.
+- **Route** (#14, my part): each button reads "[1] Fight" on the keyboard and "1 Fight" on
+  a pad (index on every device, the map label carries the same index), the node type in a
+  word (Fight, Elite fight, Event, Shop, Rack) and its icon (crosshair, crown, terminal,
+  bag, rack); the route graph's nodes carry `"kind"` (the icon) and a tip that starts with
+  the word, for the city worker's map.
+- **Big text** (#15): crew dossiers scale lettering and width; Modem cards scale to what a
+  quadrant holds (1.31 at 1.6) and tile lettering scales inside the tile; loot cards scale
+  to a 900 px row; deck view cards scale while a row keeps 4; PIRATE RADIO shows whole
+  lines (4, the rest scrolls); the title's plan note fits its three lines; the Grid side
+  column is a ScrollContainer (wheel, pad focus), the card over the full width, RUNS OPEN
+  NOW before the map legend; a `ScrollHint` "MORE BELOW" tag sits at the foot of the HQ
+  page (the Black Market) and of the Grid column while there is more below (press to
+  scroll on). A long RAID PENDING item wraps in the menu instead of widening the HQ.
+- **TextDb** (#19): recruit, boost and unlock buttons, asset / node badges and pickers,
+  raid card title and warning, station orders, segment names, story beats, corporation /
+  class / home names, the netrun raid interlude (it showed raw ids).
+- **Naming** (#21): the Site card's launch button is JACK IN (as the HQ stamp, whose
+  tooltip says: pick a Site on the Grid, then JACK IN on its card); the title's Continue
+  line names the corporation; profile values show "—" (`HudStats.ice_value`), never
+  "none" (also the HQ profile and Stats notes).
+- Tests: `tests/unit/test_horizontal_pass21_screens.gd` (icons on every tag, badges,
+  dock clear of controls and tags on HQ, Grid, raid, route, Modem, event, loot and title
+  at 1.0 and 1.6, wallet, price tags vs RAM circles, socket names, outcome icons vs the
+  data with `HeatRules.scaled_delta`, menu icons, route buttons on both devices, heights
+  at 1.6, TextDb, naming). Updated on purpose: pass20 (pad route index, the dock rect,
+  JACK IN), vertical pass 2 (price tag, JACK IN).
 
 ### 2026-09-26 — H20 combat: drag to target, nudge arrows, the outcome on the spinners
 Designer direction (H20): ditch the nudge and card-target buttons for card drag-and-target

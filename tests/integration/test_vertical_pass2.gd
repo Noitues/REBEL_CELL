@@ -60,7 +60,7 @@ func test_clicking_a_site_on_the_map_selects_it_and_lists_its_actions_first() ->
 	assert_not_null(picked, "the selected row is shown")
 	var launch := false
 	for n in _descendants(picked):
-		if n is Button and String(n.text).begins_with("Launch"):
+		if n is Button and String(n.text) == "JACK IN":  # H21 #21: one name with the HQ stamp
 			launch = true
 	assert_true(launch, "its launch action is right there")
 
@@ -96,7 +96,8 @@ func test_netrun_panels_are_zine_styled() -> void:
 	var shop_stickers: Node = scene._panel.find_child("Stickers", true, false)
 	assert_true(shop_stickers.get_child_count() >= 3)
 	var first: ZineCard = shop_stickers.get_child(0)
-	assert_eq(first.cost, int(s.run.shop["card_prices"][0]), "the cost circle shows the price")
+	assert_eq(first.price, int(s.run.shop["card_prices"][0]), "the price tag shows the price (H21 #12)")
+	assert_eq(first.cost, (s.lookup.get_content(StringName(String(s.run.shop["cards"][0]))) as CardData).ram_cost, "the circle keeps the RAM cost")
 	# End: a stamp.
 	s.run.outcome = RunState.Outcome.COMPLETED
 	s.run.phase = RunState.Phase.ENDED

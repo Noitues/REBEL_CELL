@@ -5,8 +5,17 @@ extends Control
 ## through RunManager; the scene only displays state.
 
 const SLOTS: Array[String] = ["1", "2", "3"]
+## Subtitle lines the header band holds.
+const HEADER_LINES := 2
+## The plan note on the main menu at text scale 1.0 (it grows with the text, H21 #15).
+const PLAN_NOTE := Vector2(150, 96)
+## The plan note's text box: its side and top margins (ZineNote) and the lines it holds.
+const PLAN_PAD := Vector2(20, 16)
+const PLAN_LINES := 3
 
 var background: CyberdeckBackground
+## The subtitles' band in the header (H21 #11).
+var subtitle_strip: SubtitleStrip
 var margin: MarginContainer
 var _panel_host: VBoxContainer
 var _panel: Control = null
@@ -38,6 +47,9 @@ func _ready() -> void:
 	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	v.add_theme_color_override("font_color", Color(Palette.NET_CYAN, 0.7))
 	header.add_child(v)
+	# The subtitles' band beside the tag (H21 #11): no menu, no tag under it.
+	subtitle_strip = SubtitleStrip.new(HEADER_LINES)
+	header.add_child(subtitle_strip)
 	root.add_child(header)
 	_panel_host = VBoxContainer.new()
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -116,15 +128,18 @@ func show_main() -> void:
 	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var box := menu.body
 	var latest := RunManager.latest_slot()
+	# Each item carries an icon (H21 #13) and says what it does on hover.
 	if latest != "":
 		var summary := RunManager.slot_summary(latest)
-		box.add_child(_button("Continue (slot %s: %s)" % [latest, _describe(summary)], func() -> void: load_slot(latest)))
-	box.add_child(_button("Campaigns", show_slots))
-	box.add_child(_button("Tutorial", start_tutorial))
-	box.add_child(_button("Codex", show_codex))
-	box.add_child(_button("Stats & achievements", show_stats))
-	box.add_child(_button("Options", show_options))
-	box.add_child(_button("Quit", confirm_quit))
+		var cont := _item(box, "Continue (slot %s: %s)" % [latest, _describe(summary)], func() -> void: load_slot(latest), StatIcon.CONTINUE,
+			"Pick up the campaign saved most recently.")
+		cont.name = "Continue"
+	_item(box, "Campaigns", show_slots, StatIcon.SLOTS, "The three campaign slots: start, load or delete.")
+	_item(box, "Tutorial", start_tutorial, StatIcon.TUTORIAL, "A guided first fight.")
+	_item(box, "Codex", show_codex, StatIcon.CODEX, "Everything the Cell knows: slices, cards, Firmware, Daemons, rules.")
+	_item(box, "Stats & achievements", show_stats, StatIcon.STATS, "Your records, achievements and run history.")
+	_item(box, "Options", show_options, StatIcon.SETTINGS, "Text size, sound, controls, subtitles.")
+	_item(box, "Quit", confirm_quit, StatIcon.QUIT, "Leave REBEL_CELL (asks first).")
 	for b in box.get_children():
 		b.theme_type_variation = &"MenuItem"
 		(b as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -137,22 +152,31 @@ func show_main() -> void:
 	# The profile at a glance as paper tags (H20: no text readout); Stats has the rest.
 	var sys := TerminalWindow.new("SYSTEM ONLINE", Palette.NET_CYAN)
 	sys.name = "ProfileTags"
-	sys.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	sys.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var tags := HudStats.new()
+	tags.name = "Tags"
+	# A number or "—", never "none" (H21 #21).
 	tags.items = [["CAMPAIGNS", str(p.campaigns_started), "", "Campaigns started on this profile."],
 		["WON", str(p.campaigns_won), "", "Campaigns won."],
-		["BEST ICE", ProfileState.ice_text(p.best_ice), "", "The highest ICE level cleared. Each corporation keeps its own ladder."],
+		["BEST ICE", HudStats.ice_value(p.best_ice), "", "The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder."],
 		["RUNS", str(p.runs_completed), "", "Netruns completed."],
 		["RAIDS", "%d/%d" % [p.raids_won, p.raids_lost], "", "Raids repelled / lost."],
 		["BADGES", str(p.achievements.size()), "", "Achievements earned (Stats & achievements lists them)."]]
-	tags.custom_minimum_size.x = tags.items.size() * (HudStats.TAG_SIZE.x + HudStats.TAG_GAP)
+	# The least room the tags need; they grow with the text where the column allows.
+	tags.custom_minimum_size.x = tags.compact_width(1.0)
 	sys.body.add_child(tags)
 	side.add_child(sys)
 	var notes := HBoxContainer.new()
 	notes.add_theme_constant_override("separation", 30)
-	var plan := ZineNote.new("", Vector2(150, 96))
+	# The plan note holds its three lines at any text size (H21 #15: at 1.6 it showed only
+	# the last two and scrolled "1. BREACH" away).
+	var ts := Settings.text_scale
+	var plan_h := PLAN_PAD.y + Palette.marker().get_height(roundi(UiTheme.BASE_SIZE * ts)) * PLAN_LINES
+	var plan := ZineNote.new("", Vector2(PLAN_NOTE.x * maxf(1.0, ts), maxf(PLAN_NOTE.y, plan_h)))
+	plan.name = "PlanNote"
 	plan.paper_color = Palette.NOTE_YELLOW
 	plan.label.add_theme_font_override("normal_font", Palette.marker())
+	plan.label.scroll_following = false
 	plan.append("1. BREACH\n2. DISABLE\n3. EXFIL")
 	plan.rotation_degrees = -4.0
 	plan.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -176,12 +200,12 @@ func show_slots() -> void:
 		row.add_child(_label("Slot %s: %s" % [slot, _describe(summary)]))
 		var s := slot
 		if summary.is_empty():
-			row.add_child(_button("New campaign", func() -> void: new_in_slot(s)))
+			_item(row, "New campaign", func() -> void: new_in_slot(s), StatIcon.PLAY, "Start a new campaign in slot %s." % s)
 		else:
-			row.add_child(_button("Load", func() -> void: load_slot(s)))
-			row.add_child(_button("Delete", func() -> void: confirm_delete(s)))
+			_item(row, "Load", func() -> void: load_slot(s), StatIcon.CONTINUE, "Load the campaign in slot %s." % s)
+			_item(row, "Delete", func() -> void: confirm_delete(s), StatIcon.QUIT, "Delete the campaign in slot %s (asks first)." % s)
 		box.add_child(row)
-	box.add_child(_button("Back", show_main))
+	_item(box, "Back", show_main, StatIcon.BACK, "Back to the main menu.")
 	_set_panel(win, "slots")
 
 
@@ -194,7 +218,7 @@ func show_codex() -> void:
 		for item in entries[section]:
 			note.append("  %s - %s" % [item["title"], String(item["text"]).split("\n")[0]])
 	box.add_child(note)
-	box.add_child(_button("Back", show_main))
+	_item(box, "Back", show_main, StatIcon.BACK, "Back to the main menu.")
 	_set_panel(box, "codex")
 
 
@@ -204,12 +228,12 @@ func show_stats() -> void:
 	var note := ZineNote.new("STATS", Vector2(900, 200)).make_reference()
 	note.append("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost." % [
 		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
-	note.append("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d." % [ProfileState.ice_text(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
+	note.append("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d." % [HudStats.ice_value(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
 	var per_corp := PackedStringArray()
 	for cid in RunManager.lookup().ids_of_class(&"CorporationData"):
 		var corp := RunManager.lookup().get_content(cid) as CorporationData
 		if corp != null and (not corp.generated_from_profile or CampaignRules.corporation_available(p, RunManager.lookup(), corp)):
-			per_corp.append("%s %s" % [corp.display_name, ProfileState.ice_text(p.best_ice_for(corp.id))])
+			per_corp.append("%s %s" % [TextDb.t(corp, "display_name"), HudStats.ice_value(p.best_ice_for(corp.id))])
 	note.append("Best ICE by corporation: %s." % ", ".join(per_corp))
 	note.append("[b]Achievements[/b]")
 	for d in Achievements.DEFS:
@@ -221,9 +245,9 @@ func show_stats() -> void:
 		history.append("no runs yet")
 	for r in p.run_history:
 		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
-		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [corp.display_name if corp != null else r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
+		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [TextDb.t(corp, "display_name") if corp != null else r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
 	box.add_child(history)
-	box.add_child(_button("Back", show_main))
+	_item(box, "Back", show_main, StatIcon.BACK, "Back to the main menu.")
 	_set_panel(box, "stats")
 
 
@@ -288,8 +312,23 @@ func confirm_visible() -> bool:
 func _describe(summary: Dictionary) -> String:
 	if summary.is_empty():
 		return "empty"
-	return "%s, Heat %d, ICE %d, %d runs, %s%s" % [summary.get("corporation", "?"), int(summary.get("heat", 0)), int(summary.get("ice", 0)),
+	return "%s, Heat %d, ICE %d, %d runs, %s%s" % [corporation_name(String(summary.get("corporation", ""))), int(summary.get("heat", 0)), int(summary.get("ice", 0)),
 		int(summary.get("runs", 0)), String(summary.get("state", "active")), (" (run in progress)" if summary.get("in_run", false) else "")]
+
+
+## A corporation's display name from its id (H21 #21: the Continue line showed "solace").
+static func corporation_name(corporation_id: String) -> String:
+	var corp := RunManager.lookup().get_content(StringName(corporation_id)) as CorporationData if corporation_id != "" else null
+	return TextDb.t(corp, "display_name") if corp != null else (corporation_id if corporation_id != "" else "?")
+
+
+## A terminal-menu item with an icon and a tooltip, added to `box`.
+func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, tip: String) -> Button:
+	var b := _button(text, on_pressed)
+	IconMark.attach(b, kind)
+	b.tooltip_text = UiTip.fold(tip)
+	box.add_child(b)
+	return b
 
 
 func _label(text: String) -> Label:

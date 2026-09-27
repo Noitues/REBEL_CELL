@@ -4,17 +4,39 @@ extends Control
 ## action goes through RunManager's NetrunSession; the scene only displays state.
 
 const COMBAT_SCENE := preload("res://scenes/combat/combat_scene.tscn")
-const NODE_LABELS := {RC.InfilNodeType.ROUTER: "Router", RC.InfilNodeType.TERMINAL: "Terminal",
-	RC.InfilNodeType.MODEM: "Modem", RC.InfilNodeType.SERVER_RACK: "Server Rack"}
 ## What each route node holds (the route buttons' tooltips).
 const NODE_TIPS := {RC.InfilNodeType.ROUTER: "Router: a fight. Win it for Cycles and loot.",
 	RC.InfilNodeType.TERMINAL: "Terminal: an event with choices.",
 	RC.InfilNodeType.MODEM: "Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).",
 	RC.InfilNodeType.SERVER_RACK: "Server Rack: the Site's guardian. Breach it to complete the run."}
 
+## What each route node is, in a word (H21 #14: two "Router" buttons looked the same) and
+## as an icon; an elite Router is an "Elite fight" with the crown.
+const NODE_WORDS := {RC.InfilNodeType.ROUTER: "Fight", RC.InfilNodeType.TERMINAL: "Event",
+	RC.InfilNodeType.MODEM: "Shop", RC.InfilNodeType.SERVER_RACK: "Rack"}
+const NODE_ICONS := {RC.InfilNodeType.ROUTER: StatIcon.FIGHT, RC.InfilNodeType.TERMINAL: StatIcon.TERMINAL,
+	RC.InfilNodeType.MODEM: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
+const ELITE_WORD := "Elite fight"
+## The home server's name (as the HQ shows it; never its id).
+const HOME_LABEL := "CORE"
+## The Modem's quadrant (px) and the room its window frame and title take (px): shop cards
+## grow with the text size only as far as a quadrant holds them (H21 #15).
+const MODEM_QUAD := Vector2(490, 250)
+const QUAD_FRAME := Vector2(24, 56)
+const QUAD_GAP := 12.0
+## LEAVE THE MODEM (in the free corner of the REMOVE A CARD quadrant, so the Modem ends
+## on screen at text scale 1.6) and its exit icon beside it (px).
+const LEAVE_AT := Vector2(900, 440)
+const LEAVE_ICON := 34.0
+## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
+const LOOT_CARD := Vector2(150, 170)
+const LOOT_ROW_MAX := 900.0
+
 var _status: Label
 ## Top strip: screen title and the status line (`_status`).
 var hud: HudBar
+## The subtitles' band under the top bar (H21 #11); hidden while a fight docks its own.
+var subtitle_strip: SubtitleStrip
 ## The route drawn on the city (map phase) and whether it is zoomed out to the Grid.
 var city_overlay: CityMapOverlay = null
 var _grid_zoomed: bool = false
@@ -257,6 +279,9 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		_panel.queue_free()
 	_panel = p
 	combat_scene = null
+	# A fight docks its subtitles in its own column and needs the height (H21 #11).
+	subtitle_strip.visible = not p.has_method("attach_netrun")
+	hud.stats.max_height = HudBar.BAND_HEIGHT if p.has_method("attach_netrun") else 0.0
 	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
@@ -317,18 +342,18 @@ func _show_start() -> void:
 	row.add_child(seed_spin)
 	row.add_child(_button("New campaign", func() -> void: new_campaign(int(seed_spin.value))))
 	if RunManager.has_save():
-		box.add_child(_button("Resume saved game", resume))
+		box.add_child(_icon_button("Resume saved game", resume, StatIcon.CONTINUE))
 	if RunManager.campaign != null:
 		var living := RunManager.campaign.living_operatives()
 		var info := "Campaign: Heat %d, Schematics %d, roster %d living." % [RunManager.campaign.heat, RunManager.campaign.schematics, living.size()]
 		box.add_child(_label(info))
 		for op in living:
-			box.add_child(_label("  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d" % [op.name, op.class_id, op.rank, op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size()]))
+			box.add_child(_label("  %s (%s) Rank %d, HP %d/%d, deck %d, daemons %d" % [op.name, _content_name(op.class_id), op.rank, op.hp, op.max_hp, op.deck.size(), op.daemon_ids.size()]))
 		if RunManager.has_active_run():
-			box.add_child(_button("Continue the current run", _show_current))
+			box.add_child(_icon_button("Continue the current run", _show_current, StatIcon.CONTINUE))
 		elif not living.is_empty():
-			box.add_child(_button("Start a netrun at the first open Site", func() -> void: start_run(1)))
-		box.add_child(_button("Go to HQ (City Grid, raids, roster)", RunManager.go_to_hq))
+			box.add_child(_icon_button("Start a netrun at the first open Site", func() -> void: start_run(1), StatIcon.PLAY))
+		box.add_child(_icon_button("Go to HQ (City Grid, raids, roster)", RunManager.go_to_hq, StatIcon.BACK))
 	_set_panel(box)
 
 
@@ -368,16 +393,20 @@ func _show_map() -> void:
 	_route_buttons.clear()
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
-		var text: String = "%s%s" % [NODE_LABELS.get(node["type"], "?"), " (elite)" if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER else ""]
+		# H21 #14: what the node is (word + icon), its index on every device (the map's
+		# label carries the same index), Heat when entering changes it.
+		var text := node_word(node)
 		var heat := s.node_heat(available[i])
 		if heat != 0:
 			text += " %+d Heat" % heat
 		var id: StringName = available[i]
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
-		b.tooltip_text = UiTip.fold(String(NODE_TIPS.get(node["type"], "")) + (" Elite: a harder fight." if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER else "") + ((" Entering it changes Heat by %+d." % heat) if heat != 0 else ""))
+		IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
+		b.tooltip_text = UiTip.fold(String(NODE_TIPS.get(node["type"], "")) + (" Elite: a harder fight." if _is_elite(node) else "") + ((" Entering it changes Heat by %+d." % heat) if heat != 0 else ""))
 		_route_buttons.append(b)
 		row.add_child(b)
 	_label_route_buttons()
@@ -385,8 +414,14 @@ func _show_map() -> void:
 		_grid_zoomed = not _grid_zoomed
 		_show_map())
 	zoom_btn.name = "GridZoom"
+	zoom_btn.tooltip_text = UiTip.fold("Zoom out to the whole City Grid." if not _grid_zoomed else "Back to this run's route.")
+	IconMark.attach(zoom_btn, StatIcon.MAP)
 	win.body.add_child(zoom_btn)
-	win.body.add_child(_button("Save & quit to start screen", save_and_quit))
+	var quit_btn := _button("Save & quit to start screen", save_and_quit)
+	quit_btn.name = "SaveQuit"
+	quit_btn.tooltip_text = UiTip.fold("Save the run and leave it; Continue picks it up here.")
+	IconMark.attach(quit_btn, StatIcon.SAVE)
+	win.body.add_child(quit_btn)
 	if _grid_zoomed:
 		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
 	_set_panel(panel, false)
@@ -401,8 +436,29 @@ func _show_map() -> void:
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
 
 
-## "[1] Router" on the keyboard, "Router" on a pad (no number buttons): the route's key
-## hints follow the device and the binds.
+## A route node in a word: Fight, Elite fight, Event, Shop, Rack.
+static func node_word(node: Dictionary) -> String:
+	return ELITE_WORD if _is_elite(node) else String(NODE_WORDS.get(node["type"], "?"))
+
+
+## A route node's icon: crosshair, crown (elite), terminal, bag (shop), server rack.
+static func node_icon(node: Dictionary) -> StringName:
+	return StatIcon.ELITE if _is_elite(node) else StringName(NODE_ICONS.get(node["type"], &""))
+
+
+static func _is_elite(node: Dictionary) -> bool:
+	return bool(node["elite"]) and int(node["type"]) == RC.InfilNodeType.ROUTER
+
+
+## The index route choice `i` shows on its button and its map label: the key that picks it
+## on the keyboard ("[1]"), its number on a pad (H21 #14: the pad's labels were identical).
+static func route_index_text(i: int) -> String:
+	var hint := Settings.hint(StringName("card_%d" % (i + 1))) if i < 9 else ""
+	return hint if hint != "" else str(i + 1)
+
+
+## "[1] Fight" on the keyboard, "1 Fight" on a pad: the route's index follows the device
+## and the binds.
 func _relabel_route() -> void:
 	_label_route_buttons()
 	# The map's node labels carry the same hints.
@@ -416,8 +472,7 @@ func _label_route_buttons() -> void:
 	for b in _route_buttons:
 		if not is_instance_valid(b) or b.is_queued_for_deletion():
 			continue
-		var hint := Settings.hint(StringName("card_%d" % (int(b.get_meta(&"route_index")) + 1)))
-		b.text = ("%s %s" % [hint, String(b.get_meta(&"route_base"))]).strip_edges()
+		b.text = "%s %s" % [route_index_text(int(b.get_meta(&"route_index"))), String(b.get_meta(&"route_base"))]
 		alive.append(b)
 	_route_buttons = alive
 
@@ -449,10 +504,13 @@ func route_graph() -> Dictionary:
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
 			col = Palette.corp_color(RunManager.campaign.corporation_id)
 		var idx := available.find(n["id"])
-		var hint := Settings.hint(StringName("card_%d" % (idx + 1))) if idx >= 0 and idx < 9 else ""
+		# The reachable nodes carry their route button's index and word (H21 #14); "kind"
+		# is the StatIcon the button shows.
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
-			"label": ("%s %s" % [hint, NODE_LABELS.get(n["type"], "?")]).strip_edges() if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
-			"tip": String(NODE_TIPS.get(n["type"], "")), "kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]),
+			"label": "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
+			"tip": "%s: %s" % [node_word(n), String(NODE_TIPS.get(n["type"], ""))],
+			# The map paints its own node icons (CityMapOverlay); the route buttons use StatIcon.
+			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
 			"here": n["id"] == s.run.current_node_id, "next": idx >= 0})
 	var edges: Array[Dictionary] = []
 	for n in map.all_nodes():
@@ -510,7 +568,7 @@ func _show_raid_playout(events: Array[Dictionary]) -> void:
 	side.add_child(feed)
 	playout = RaidPlayoutPanel.new(null, Vector2(330, 330))
 	feed.body.add_child(playout)
-	var cont := _button("Continue", _show_current)
+	var cont := _icon_button("Continue", _show_current, StatIcon.CONTINUE)
 	cont.disabled = true
 	playout.finished.connect(func() -> void: cont.disabled = false)
 	side.add_child(cont)
@@ -563,31 +621,38 @@ func _show_reward() -> void:
 		var row := HBoxContainer.new()
 		row.add_child(_label("Socket into slot:"))
 		slot_option = OptionButton.new()
+		slot_option.name = "SlotPick"
 		for i in s.run.operative.slot_slice_ids.size():
-			var fw := s.run.operative.slot_firmware_ids[i]
-			slot_option.add_item("%d: %s%s" % [i, s.run.operative.slot_slice_ids[i], (" {%s}" % fw) if fw != &"" else ""])
+			slot_option.add_item(slot_name(s.run.operative, i))
 		slot_option.tooltip_text = "The spinner slot the Firmware chip goes into."
 		row.add_child(slot_option)
 		box.add_child(row)
-	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost, others none.
+	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost and what they do as
+	# pictograms, others none. They grow with the text size as far as the row allows (H21).
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
 	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	stickers.add_theme_constant_override("separation", 14)
 	box.add_child(stickers)
-	for i in offer["options"].size():
+	var n: int = offer["options"].size()
+	var ls := clampf(minf(Settings.text_scale, (LOOT_ROW_MAX - 14.0 * (n - 1)) / maxf(1.0, n * LOOT_CARD.x)), 1.0, Settings.TEXT_SCALE_MAX)
+	for i in n:
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
 		var cost := int(res.get("ram_cost")) if res is CardData else -1
-		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i)
-		sticker.custom_minimum_size = Vector2(150, 170)
+		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
+		if res is CardData:
+			sticker.with_card(res as CardData)
+		sticker.custom_minimum_size = LOOT_CARD * ls
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		sticker.tooltip_text = UiTip.fold(Codex.describe(res))
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
 		stickers.add_child(sticker)
 	var skip := _button("Skip", skip_reward)
+	skip.name = "Skip"
 	skip.tooltip_text = "Take nothing from this payout."
+	IconMark.attach(skip, StatIcon.SKIP)
 	box.add_child(skip)
 	var wrap := CenterContainer.new()
 	wrap.add_child(win)
@@ -649,15 +714,36 @@ func _show_event() -> void:
 		var err := s.choice_error(c)
 		b.disabled = err != ""
 		var costs := s.choice_costs(c)
-		b.tooltip_text = UiTip.fold(err if err != "" else (("Costs: %s." % costs) if costs != "" else ""))
+		# H21 #13: the outcome as icons with numbers under the words (Heat as it applies).
+		var outcome := OutcomeRow.of_choice(s, c)
+		var tip := err if err != "" else (("Costs: %s." % costs) if costs != "" else "")
+		if not outcome.is_empty():
+			tip += ("\n" if tip != "" else "") + OutcomeRow.describe(outcome)
+		b.tooltip_text = UiTip.fold(tip)
 		var index := i
+		b.name = "Choice%d" % (i + 1)
 		b.pressed.connect(func() -> void: choose_event(index))
 		b.theme_type_variation = &"NoteButton"
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		options.add_child(b)
+		if not outcome.is_empty():
+			OutcomeRow.attach(b, OutcomeRow.new(outcome))
 	options.add_child(GraffitiScrawl.new("PLAY IT\nSAFE??", -6.0, 24))
 	_set_panel(box, false)
+
+
+## A spinner slot by what is in it, never by ids (H21 #12: "crit_12" in the socket list):
+## "Slot 2: ATK 10 + Barbed Wire".
+static func slot_name(op: OperativeState, k: int) -> String:
+	var lookup := RunManager.lookup()
+	var sd := lookup.get_content(op.slot_slice_ids[k]) as SliceData
+	var slice := "?"
+	if sd != null:
+		slice = String(Palette.SLICE_NAMES.get(sd.slice_type, "?")) + ((" %d" % sd.base_output) if sd.base_output > 0 else "")
+	var fw_id: StringName = op.slot_firmware_ids[k] if k < op.slot_firmware_ids.size() else &""
+	var fw: Resource = lookup.get_content(fw_id) if fw_id != &"" else null
+	return "Slot %d: %s%s" % [k + 1, slice, (" + %s" % TextDb.t(fw, "display_name")) if fw != null else ""]
 
 
 ## A Terminal choice's label with its costs from the data, replacing the hand-written
@@ -692,11 +778,13 @@ func _show_shop() -> void:
 	grid.add_theme_constant_override("v_separation", 12)
 	grid.position = Vector2(236, 0)
 	root.add_child(grid)
-	var q_size := Vector2(490, 250)
-	# Top left: microchips (Firmware).
+	var q_size := MODEM_QUAD
+	var ts := Settings.text_scale
+	# Top left: microchips (Firmware). The socket list names each slot by its slice.
 	var fw_slot := OptionButton.new()
+	fw_slot.name = "SocketPick"
 	for k in op.slot_slice_ids.size():
-		fw_slot.add_item("Socket into slot %d: %s" % [k, op.slot_slice_ids[k]])
+		fw_slot.add_item("Socket into %s" % slot_name(op, k))
 	var chips_win := TerminalWindow.new("MICROCHIPS")
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
@@ -729,18 +817,29 @@ func _show_shop() -> void:
 	daemon_row.name = "Daemons"
 	daemons_win.body.add_child(daemon_row)
 	var n := 0
+	# Cards grow with the text size as far as their quadrant holds them (H21 #15).
+	var card_count: int = shop.get("cards", []).size()
+	var card_fit := minf((q_size.x - QUAD_FRAME.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
+		(q_size.y - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
+	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
 		for i in shop.get(kind, []).size():
 			var id := StringName(String(shop[kind][i]))
 			var res := s.lookup.get_content(id)
-			var sticker := ZineCard.new(TextDb.t(res, "display_name"), int(prices[i]), TextDb.t(res, "description") if kind == "cards" else "%s: %s" % [kind.trim_suffix("s"), TextDb.t(res, "description")], n)
+			# H21 #12: the circle shows a card's real RAM cost; the price hangs on a tag with
+			# the coin.
+			var ram := (res as CardData).ram_cost if res is CardData else -1
+			var sticker := ZineCard.new(TextDb.t(res, "display_name"), ram, TextDb.t(res, "description") if kind == "cards" else "%s: %s" % [kind.trim_suffix("s"), TextDb.t(res, "description")], n)
 			sticker.hotkey = ""
-			if kind == "firmware":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN)
+			sticker.with_price(int(prices[i]))
+			if kind == "cards":
+				sticker.scaled(cs).with_card(res as CardData)
+			elif kind == "firmware":
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
 			elif kind == "daemons":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET)
-			sticker.tooltip_text = UiTip.fold("%d Cycles\n%s" % [int(prices[i]), Codex.describe(res)])
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
+			sticker.tooltip_text = UiTip.fold("%d Cycles (you have %d)\n%s" % [int(prices[i]), s.run.cycles, Codex.describe(res)])
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			var index: int = i
 			var k: String = kind
@@ -764,17 +863,27 @@ func _show_shop() -> void:
 	slice_row.add_theme_constant_override("separation", 8)
 	slices_win.body.add_child(slice_row)
 	var stock: Array = shop.get("slices", [])
+	# A slice's price depends on the slot it overwrites: the tile shows the lowest ("N+"
+	# when some slot costs more).
+	var low := -1
+	var high := -1
+	for k in op.slot_slice_ids.size():
+		var p := s.slice_overwrite_price(k)
+		low = p if low < 0 else mini(low, p)
+		high = maxi(high, p)
 	for i in stock.size():
 		var sd := s.lookup.get_content(StringName(String(stock[i]))) as SliceData
 		if sd == null:
 			continue
 		var tile := ZineCard.new("%s %d" % [Palette.SLICE_NAMES.get(sd.slice_type, "?"), sd.base_output] if sd.base_output > 0 else String(Palette.SLICE_NAMES.get(sd.slice_type, "?")), -1, Codex.describe(sd), i)
-		tile.as_tile(ZineCard.Look.SLICE_TILE, Palette.slice_color(sd.slice_type))
+		tile.as_tile(ZineCard.Look.SLICE_TILE, Palette.slice_color(sd.slice_type)).tile_text(ts)
 		tile.slice_type = sd.slice_type
 		tile.slice_output = sd.base_output
 		tile.custom_minimum_size = Vector2(96, 130)
 		tile.hotkey = ""
-		tile.tooltip_text = UiTip.fold("Overwrite a slot of your spinner with this slice (the price depends on the slot).\n" + Codex.describe(sd))
+		if low >= 0:
+			tile.with_price(low, high > low)
+		tile.tooltip_text = UiTip.fold("Overwrite a slot of your spinner with this slice: %d Cycles%s (you have %d).\n" % [low, (" (%d for a pricier slot)" % high) if high > low else "", s.run.cycles] + Codex.describe(sd))
 		var si := i
 		tile.pressed.connect(func() -> void: open_overwrite(si))
 		slice_row.add_child(tile)
@@ -786,20 +895,36 @@ func _show_shop() -> void:
 	remove_row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_theme_constant_override("separation", 16)
 	remove_win.body.add_child(remove_row)
-	var shred := ZineCard.new("SHRED A CARD", s.card_removal_price(), "Pick a card from your deck to remove.", 0)
-	shred.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_ACID)
+	var shred := ZineCard.new("SHRED A CARD", -1, "Pick a card from your deck to remove.", 0)
+	shred.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_ACID).tile_text(ts)
+	shred.with_price(s.card_removal_price())
 	shred.name = "RemoveCard"
 	shred.hotkey = ""
 	shred.disabled = s.run.cycles < s.card_removal_price() or op.deck.is_empty()
 	shred.icon_kind = "shred"
+	shred.tooltip_text = UiTip.fold("Remove a card from your deck: %d Cycles (you have %d)." % [s.card_removal_price(), s.run.cycles])
 	shred.pressed.connect(open_remove)
 	remove_row.add_child(shred)
+	# The wallet (H21 #11): the Cycles to spend, beside the shredder, in sight whatever
+	# covers the top bar.
+	var wallet := HudStats.new()
+	wallet.name = "Wallet"
+	wallet.items = [["CYCLES", str(s.run.cycles), "", "Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run."]]
+	wallet.custom_minimum_size.x = wallet.full_width(ts)
+	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	remove_row.add_child(wallet)
 	var leave := DripButton.new("LEAVE THE MODEM", "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
 	leave.name = "LeaveModem"
-	leave.position = Vector2(900, 522)
+	leave.position = LEAVE_AT
 	leave.pressed.connect(leave_shop)
 	leave.tooltip_text = "Leave the Modem and go back to the route."
 	root.add_child(leave)
+	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON, DripButton.DRIP_PINK)
+	leave_icon.name = "LeaveIcon"
+	leave_icon.position = LEAVE_AT + Vector2(-LEAVE_ICON - 4.0, 4.0)
+	leave_icon.tooltip_text = leave.tooltip_text
+	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
+	root.add_child(leave_icon)
 	_set_panel(root, false)
 
 
@@ -841,7 +966,7 @@ func _show_raid() -> void:
 	var raid := CampaignRules.raid_data(pending, s.lookup)
 	var projection := s.raid_projection()
 	var box := VBoxContainer.new()
-	box.add_child(_label("RAID INTERLUDE - %s: %s" % [raid.display_name, raid.warning_text]))
+	box.add_child(_label("RAID INTERLUDE - %s: %s" % [TextDb.t(raid, "display_name"), TextDb.t(raid, "warning_text")]))
 	box.add_child(_label("Projection: %s, home %d -> %d, %d threats destroyed, %d steps" % [
 		"HOLDS" if projection.won else ("CAMPAIGN LOST" if projection.campaign_lost else "breached"),
 		projection.home_before, projection.home_after, projection.threats_destroyed, projection.steps_run]))
@@ -849,31 +974,51 @@ func _show_raid() -> void:
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
-		row.add_child(_label("%s (%s) %s -> %s [%s] assets: %s" % [site_id, c.grid.node_type_of(site_id), n.get("before", "?"), n.get("after", "?"),
-			String(n.get("outcome", "?")).to_upper(), ", ".join(c.grid.assets_on(site_id))]))
+		var asset_names := PackedStringArray()
+		for a in c.grid.assets_on(site_id):
+			asset_names.append(_content_name(a))
+		row.add_child(_label("%s (%s) %s -> %s [%s] assets: %s" % [_site_name(site_id), _content_name(c.grid.node_type_of(site_id)), n.get("before", "?"), n.get("after", "?"),
+			String(n.get("outcome", "?")).to_upper(), ", ".join(asset_names)]))
 		var deployed := c.grid.assets_on(site_id)
 		for i in deployed.size():
 			var idx := i
 			var sid := site_id
-			row.add_child(_button("Withdraw %s" % deployed[i], func() -> void: raid_move(sid, idx, &"")))
+			row.add_child(_button("Withdraw %s" % _content_name(deployed[i]), func() -> void: raid_move(sid, idx, &"")))
 		if c.grid.is_active_node(site_id):
 			if not run_assets.is_empty():
 				var pick := OptionButton.new()
 				for a in run_assets:
-					pick.add_item("run: %s" % a)
+					pick.add_item("run: %s" % _content_name(a))
 				row.add_child(pick)
 				var sid2 := site_id
 				row.add_child(_button("Deploy run asset", func() -> void: raid_deploy_run_asset(pick.selected, sid2)))
 			if not c.armory.is_empty():
 				var pick2 := OptionButton.new()
 				for a in c.armory:
-					pick2.add_item("armory: %s" % a)
+					pick2.add_item("armory: %s" % _content_name(a))
 				row.add_child(pick2)
 				var sid3 := site_id
 				row.add_child(_button("Deploy armory asset", func() -> void: raid_deploy_armory(pick2.selected, sid3)))
 		box.add_child(row)
-	box.add_child(_button("RUN THE RAID", raid_fight))
+	var run_btn := _button("RUN THE RAID", raid_fight)
+	IconMark.attach(run_btn, StatIcon.RAIDS)
+	box.add_child(run_btn)
 	_set_panel(box)
+
+
+## A content id's translated display name (the id only when there is no such content).
+func _content_name(id: Variant) -> String:
+	var res := RunManager.lookup().get_content(StringName(String(id)))
+	return TextDb.t(res, "display_name") if res != null and "display_name" in res else String(id)
+
+
+## A Site's translated name (CORE for the home server).
+func _site_name(site_id: StringName) -> String:
+	var c := RunManager.campaign
+	if c != null and c.grid != null and site_id == c.grid.home_site_id:
+		return HOME_LABEL
+	var sd := CampaignRules.site_data(RunManager.corporation, site_id) if RunManager.corporation != null else null
+	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
 
 
 func _show_end() -> void:
@@ -899,10 +1044,15 @@ func _show_end() -> void:
 		["CYCLES", str(s.run.cycles), "", "Cycles in hand when the run ended."],
 		["BANKED", str(s.run.banked_schematics), "", "Schematics the run banked for the campaign."],
 		["HEAT", "%+d" % s.run.heat_gained, "", "Heat the run added (campaign Heat is now %d)." % s.campaign.heat]]
-	tags.custom_minimum_size.x = tags.items.size() * (HudStats.TAG_SIZE.x + HudStats.TAG_GAP)
+	# The least room the tags need; they grow with the text size where the window allows.
+	tags.custom_minimum_size.x = tags.compact_width(1.0)
+	report.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	report.body.add_child(tags)
 	box.add_child(head)
-	box.add_child(_button("Back to HQ", finish_run))
+	var back := _button("Back to HQ", finish_run)
+	back.tooltip_text = UiTip.fold("Back to HQ: the campaign, the City Grid and the crew.")
+	IconMark.attach(back, StatIcon.BACK)
+	box.add_child(back)
 	_set_panel(box)
 
 
@@ -919,11 +1069,16 @@ func _refresh_status() -> void:
 		var op := s.run.operative
 		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, op.hp, op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
 	_status.text = text
-	var stats := [["HEAT", str(c.heat), "/%d" % RunManager.resolver.config.heat_max], ["SCHEMATICS", str(c.schematics), ""]]
+	# Every tag says what it means on hover (H21 #9); its icon is the resource's own.
+	var stats := [["HEAT", str(c.heat), "/%d" % RunManager.resolver.config.heat_max, "Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules."],
+		["SCHEMATICS", str(c.schematics), "", "Schematics: the campaign's currency, spent at HQ."]]
 	if s != null and not s.run.is_over():
 		var op := s.run.operative
-		stats.append_array([["HP", str(op.hp), "/%d" % op.max_hp], ["CYCLES", str(s.run.cycles), ""], ["CARDS", str(op.deck.size()), ""],
-			["RANK", str(op.rank), ""], ["BANKED", str(s.run.banked_schematics), ""]])
+		stats.append_array([["HP", str(op.hp), "/%d" % op.max_hp, "%s's HP. At 0 the operative flatlines." % op.name],
+			["CYCLES", str(s.run.cycles), "", "Cycles: this run's money, spent in the Modem."],
+			["CARDS", str(op.deck.size()), "", "Cards in %s's deck (VIEW LOADOUT shows them)." % op.name],
+			["RANK", str(op.rank), "", "Rank: runs survived. It brings wheel upgrades and higher netrun tiers."],
+			["BANKED", str(s.run.banked_schematics), "", "Schematics this run has banked for the campaign."]])
 	hud.set_stats(stats)
 	hud.loadout_button.visible = s != null and not s.run.is_over()
 	if s != null and not s.run.is_over():
@@ -1012,6 +1167,8 @@ func _build_ui() -> void:
 	hud.daemons_pressed.connect(open_daemons)
 	root.add_child(hud)
 	_status = hud.label
+	subtitle_strip = SubtitleStrip.new()
+	root.add_child(subtitle_strip)
 	# Tall panels (a raid with many claimed Sites) scroll vertically; never sideways.
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true
@@ -1046,4 +1203,11 @@ func _button(text: String, on_pressed: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.pressed.connect(on_pressed)
+	return b
+
+
+## A button with a StatIcon before its words (H21 #13).
+func _icon_button(text: String, on_pressed: Callable, kind: StringName) -> Button:
+	var b := _button(text, on_pressed)
+	IconMark.attach(b, kind)
 	return b

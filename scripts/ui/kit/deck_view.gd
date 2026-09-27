@@ -20,6 +20,10 @@ var _action_button: DripButton = null
 var _popup: Control = null
 var close_button: Button
 var hint_label: Label
+## The card grid's width, gap, and the fewest cards a row keeps at big text (px).
+const GRID_WIDTH := 860.0
+const GRID_GAP := 14.0
+const CARDS_PER_ROW := 4
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -35,7 +39,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	add_child(dim)
 	window = TerminalWindow.new("%s // %d CARDS" % [p_title, deck.size()], Palette.CELL_PINK)
 	window.custom_minimum_size = Vector2(900, 540)
-	window.position = Vector2(190, 70)
+	window.position = Vector2(190, SubtitleStrip.top_below(70.0))  # under the subtitles (H21)
 	add_child(window)
 	tab_row = HBoxContainer.new()
 	window.body.add_child(tab_row)
@@ -55,10 +59,13 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 14)
 	scroll.add_child(grid)
+	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
+	# show what they do as pictograms.
+	var ds := clampf(minf(Settings.text_scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
 	for i in deck.size():
 		var card := lookup.get_content(deck[i]) as CardData
 		var sticker := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[i]), card.ram_cost if card != null else 0,
-			TextDb.t(card, "description") if card != null else "", i)
+			TextDb.t(card, "description") if card != null else "", i).scaled(ds).with_card(card)
 		sticker.hotkey = ""
 		var index := i
 		sticker.pressed.connect(func() -> void: _on_left(index))
@@ -187,7 +194,7 @@ func open_card(index: int) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	pop.body.add_child(row)
-	var big := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[index]), card.ram_cost if card != null else 0, TextDb.t(card, "description") if card != null else "", index)
+	var big := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[index]), card.ram_cost if card != null else 0, TextDb.t(card, "description") if card != null else "", index).with_card(card)
 	big.hotkey = ""
 	big.custom_minimum_size = Vector2(170, 224)
 	big.focus_mode = Control.FOCUS_NONE
