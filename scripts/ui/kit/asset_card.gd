@@ -74,8 +74,34 @@ func _draw() -> void:
 	if disabled:
 		draw_rect(Rect2(0, 0, size.x, plate.position.y), DISABLED_SHADE)
 	draw_rect(plate, Palette.INK)
+	# H23 S5: the numbers in words ("HP 10", "1 LEFT"; "10" and "x1" were unexplained),
+	# translated (H23 S16) and a size smaller while both don't fit the plate.
+	var it := integrity_text()
+	var ct := count_text()
+	while (num > MIN_NUMBER_SIZE or cs > MIN_NUMBER_SIZE) and mono.get_string_size(it, HORIZONTAL_ALIGNMENT_LEFT, -1, num).x \
+			+ Palette.marker().get_string_size(ct, HORIZONTAL_ALIGNMENT_LEFT, -1, cs).x + PAD * 3.0 > size.x:
+		num = maxi(MIN_NUMBER_SIZE, num - 1)
+		cs = maxi(MIN_NUMBER_SIZE, cs - 1)
 	var base_y := plate.get_center().y + mono.get_ascent(num) * 0.5 - mono.get_descent(num) * 0.25
-	draw_string(mono, Vector2(PAD, base_y), "⬡ %d" % integrity, HORIZONTAL_ALIGNMENT_LEFT, -1, num, Palette.PAPER)
-	var ct := "x%d" % count
+	draw_string(mono, Vector2(PAD, base_y), it, HORIZONTAL_ALIGNMENT_LEFT, -1, num, Palette.PAPER)
 	var cw := Palette.marker().get_string_size(ct, HORIZONTAL_ALIGNMENT_LEFT, -1, cs).x
 	draw_string(Palette.marker(), Vector2(size.x - PAD - cw, base_y), ct, HORIZONTAL_ALIGNMENT_LEFT, -1, cs, Palette.CELL_PINK)
+
+
+## The least lettering of the numbers' plate (px).
+const MIN_NUMBER_SIZE := 9
+
+
+## The integrity as the card writes it ("HP 10"), in the player's language.
+func integrity_text() -> String:
+	return "%s %d" % [atr("HP"), integrity]
+
+
+## How many sit in the Armory as the card writes it ("1 LEFT"), in the player's language.
+func count_text() -> String:
+	return "%d %s" % [count, atr("LEFT")]
+
+
+## What the card's numbers mean (its tooltip adds this under the asset's description).
+func numbers_tip() -> String:
+	return "HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy." % [integrity, count]

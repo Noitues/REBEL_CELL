@@ -81,6 +81,12 @@ static func ice_value(level: int) -> String:
 
 
 ## The icon of tag `i`.
+## Tag `i`'s name as drawn and measured: translated (H23 S16; the icon still follows the
+## name's own key).
+func tag_name(i: int) -> String:
+	return atr(String(items[i][0])) if i >= 0 and i < items.size() else ""
+
+
 func icon_of(i: int) -> StringName:
 	var it: Array = items[i]
 	if it.size() > 4 and String(it[4]) != "":
@@ -109,7 +115,7 @@ func tag_rects() -> Array[Rect2]:
 ## Width of a tag fitted to its words at scale 1.0: the longer of the name and the icon
 ## with its value (H22 #14).
 func _fitted_tag_width(it: Array) -> float:
-	var name_w := Palette.marker().get_string_size(String(it[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
+	var name_w := Palette.marker().get_string_size(atr(String(it[0])), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
 	return maxf(PAD + name_w + PAD, _compact_tag_width(it))
 
 
@@ -227,7 +233,7 @@ func _draw() -> void:
 			icon_c = r.position + Vector2(PAD + ICON_R, COMPACT_H * 0.5) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, COMPACT_H * 0.5 + VALUE_SIZE * 0.36) * s
 		else:
-			draw_string(Palette.marker(), r.position + Vector2(PAD, 14) * s, String(it[0]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.INK)
+			draw_string(Palette.marker(), r.position + Vector2(PAD, 14) * s, tag_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.INK)
 			icon_c = r.position + Vector2(PAD + ICON_R, 30) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, 38) * s
 		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), Palette.INK)

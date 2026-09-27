@@ -41,9 +41,14 @@ static func font_px() -> int:
 	return roundi(FONT_SIZE * Settings.text_scale)
 
 
+## The lettering as drawn and measured: translated (H23 S16: drawn words never were).
+func shown_text() -> String:
+	return atr(text)
+
+
 func _fit() -> void:
 	var scale := Settings.text_scale
-	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PADDING * scale + (ICON_ROOM * scale if drawn_icon != "" else 0.0)
+	var w := Palette.marker().get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PADDING * scale + (ICON_ROOM * scale if drawn_icon != "" else 0.0)
 	custom_minimum_size = Vector2(maxf(MIN_WIDTH * scale, w), HEIGHT * scale)
 	size = get_combined_minimum_size()
 
@@ -97,6 +102,6 @@ func _draw() -> void:
 		_draw_icon(ic, 7.0 * s, ink)
 		text_x += ICON_ROOM * s
 		text_w -= ICON_ROOM * s
-	draw_string(Palette.marker(), Vector2(text_x, baseline), text, HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
+	draw_string(Palette.marker(), Vector2(text_x, baseline), shown_text(), HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	r = r
