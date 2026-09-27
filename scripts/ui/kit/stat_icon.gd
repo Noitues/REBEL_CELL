@@ -54,11 +54,17 @@ const ELITE := &"elite"
 const SHOP := &"shop"
 const TERMINAL := &"terminal"
 const RACK := &"rack"
+# H24 K5: map concepts with a glyph of their own (a Heat reduction Site is not ICE's
+# snowflake; the Modem shop is not an Exploit's diamond), and a Site run's outcomes.
+const COOLING := &"cooling"
+const CLAIM := &"claim"
+const LINKS := &"links"
 
 ## Every icon kind (tests draw each one).
 const ALL: Array[StringName] = [HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW, HP, CYCLES, CARDS, RANK, BANKED,
 	ARMORY, COMBATS, ELITES, CAMPAIGNS, WON, RUNS, BADGES, FIRMWARE, DAEMON, OPERATIVE, PLAY, CONTINUE, MAP, CODEX,
-	SETTINGS, SAVE, EXIT, BACK, NEXT, SKIP, SLOTS, STATS, TUTORIAL, QUIT, JACK_IN, MORE, FIGHT, ELITE, SHOP, TERMINAL, RACK]
+	SETTINGS, SAVE, EXIT, BACK, NEXT, SKIP, SLOTS, STATS, TUTORIAL, QUIT, JACK_IN, MORE, FIGHT, ELITE, SHOP, TERMINAL, RACK,
+	COOLING, CLAIM, LINKS]
 
 ## Tag names (as the tags spell them) -> icon.
 const TAG_KINDS := {"HEAT": HEAT, "SCHEMATICS": SCHEMATICS, "HOME": HOME, "EXPLOITS": EXPLOITS, "RAIDS": RAIDS,
@@ -70,7 +76,8 @@ const TAG_KINDS := {"HEAT": HEAT, "SCHEMATICS": SCHEMATICS, "HOME": HOME, "EXPLO
 const NAMES := {HEAT: "Heat", SCHEMATICS: "Schematics", HOME: "Home server", EXPLOITS: "Exploits", RAIDS: "Raids",
 	ICE: "ICE", CREW: "Crew", HP: "HP", CYCLES: "Cycles", CARDS: "Cards", RANK: "Rank", BANKED: "Banked",
 	ARMORY: "Armory", COMBATS: "Fights won", ELITES: "Elites", CAMPAIGNS: "Campaigns", WON: "Won", RUNS: "Runs",
-	BADGES: "Badges", FIRMWARE: "Firmware", DAEMON: "Daemon", OPERATIVE: "Operative"}
+	BADGES: "Badges", FIRMWARE: "Firmware", DAEMON: "Daemon", OPERATIVE: "Operative", COOLING: "Heat reduction",
+	CLAIM: "Claim", LINKS: "Opens Sites", SHOP: "Shop"}
 
 
 ## The icon for a tag name ("HEAT" -> HEAT), or &"" when there is none.
@@ -83,11 +90,11 @@ static func color_of(kind: StringName) -> Color:
 	match String(kind):
 		"heat":
 			return Color("#FF7A2F")
-		"schematics", "banked", "firmware":
+		"schematics", "banked", "firmware", "cooling", "links":
 			return Palette.NET_CYAN
 		"home", "exploits", "cycles", "won":
 			return Palette.CELL_ACID
-		"raids", "hp", "armory", "elites", "elite", "fight", "rack":
+		"raids", "hp", "armory", "elites", "elite", "fight", "rack", "claim":
 			return Palette.CELL_PINK
 		"ice":
 			return Color("#8FE8FF")
@@ -293,6 +300,21 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Co
 				ci.draw_rect(Rect2(c + Vector2(-0.7, -0.88 + k * 0.6) * r, Vector2(1.4, 0.5) * r), col, false, w)
 				ci.draw_circle(c + Vector2(0.42, -0.63 + k * 0.6) * r, w * 0.8, col)
 				ci.draw_line(c + Vector2(-0.5, -0.63 + k * 0.6) * r, c + Vector2(0.1, -0.63 + k * 0.6) * r, col, w * 0.6)
+		"cooling":
+			# Heat going down (H24 K5): a small flame and a bold down arrow beside it.
+			_line(ci, c + Vector2(-0.32, 0.02) * r, r * 0.62, [[0, -1.0], [0.38, -0.45], [0.62, 0.05], [0.58, 0.5], [0.3, 0.85], [0, 0.95], [-0.3, 0.85], [-0.58, 0.5], [-0.55, 0.0], [-0.3, -0.32], [-0.12, 0.02], [0, -1.0]], col, w * 0.85)
+			ci.draw_line(c + Vector2(0.52, -0.85) * r, c + Vector2(0.52, 0.35) * r, col, w * 1.2)
+			_fill(ci, c, r, [[0.16, 0.25], [0.88, 0.25], [0.52, 0.9]], col)
+		"claim":
+			# The map's claimed mark: a spray-paint ring with a drip.
+			ci.draw_arc(c + Vector2(0, -0.12) * r, 0.62 * r, 0, TAU, 20, col, w * 1.3)
+			ci.draw_line(c + Vector2(0.32, 0.4) * r, c + Vector2(0.32, 0.9) * r, col, w)
+			ci.draw_circle(c + Vector2(0.32, 0.92) * r, w * 0.8, col)
+		"links":
+			# Sites a run opens: a node, a street to a new node, its arrowhead.
+			ci.draw_arc(c + Vector2(-0.6, 0.45) * r, 0.28 * r, 0, TAU, 12, col, w)
+			ci.draw_line(c + Vector2(-0.4, 0.25) * r, c + Vector2(0.4, -0.45) * r, col, w)
+			_fill(ci, c, r, [[0.88, -0.88], [0.62, -0.18], [0.18, -0.62]], col)
 		_:
 			ci.draw_arc(c, r * 0.6, 0, TAU, 16, col, w)
 

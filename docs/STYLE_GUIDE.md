@@ -119,6 +119,21 @@ and profile tags.
 | Codex | open book | | Settings | gear |
 | Save | floppy | | Exit / back / next | door with arrow / arrows |
 | Skip | double chevron | | More below | double chevron down |
+| Heat reduction | small flame + down arrow | | Claim | spray ring with a drip |
+| Sites a run opens | node, street, arrowhead | | | |
+
+H24: every **map node kind** has its own silhouette *and* symbol, and never borrows a
+resource's icon for another concept (the snowflake is ICE only; the diamond is Exploits
+only). `CityMapOverlay.KIND_SHAPES` / `KIND_SYMBOLS`; the key rows, the HQ mini-map, the
+route and Grid buttons and the tooltips all use the same painter.
+
+| Kind | Silhouette | Symbol | | Kind | Silhouette | Symbol |
+|---|---|---|---|---|---|---|
+| Fight | circle | crossed blades | | Boss Site | star | small star |
+| Elite fight | 8-point star | crossed blades | | Exploit Site | diamond | Exploits diamond |
+| Shop (Modem) | price tag | bag | | Heat reduction Site | drop | flame + down arrow |
+| Event | square | ? | | CORE | house | door |
+| Rack | tall box | server blades | | Site (tier) | hexagon | its tier ("T2") |
 
 Menu items carry their icon in place of the terminal chevron (`IconMark`, sized to the
 button's font); a shop price hangs on a yellow price tag with the coin (pink when out of
