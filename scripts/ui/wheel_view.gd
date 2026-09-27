@@ -73,6 +73,55 @@ var hover_zone: Dictionary = {}
 ## The arrow under the mouse (lit on hover).
 var _mouse_zone: Dictionary = {}
 
+# Motion (Animation pass ANIM-2): what the view shows while the scene replays a change
+# the state already holds. NAN / null / empty / 1.0 = show the state itself. The state is
+# never touched: these are the view's own numbers, and every one of them is back at its
+# rest value when a motion ends or is skipped (stop_motion).
+## A snapshot drawn instead of `combatant` (and its docked satellites) while a SEND IT
+## replays from the state it started in; null = the combatant.
+var shown_state: CombatantState = null
+var shown_satellites: Array[CombatantState] = []
+## Shown outer / inner rotation in ticks (fractional mid-spin).
+var anim_rotation: float = NAN
+var anim_inner_rotation: float = NAN
+## Shown needle ticks (fractional mid-move); empty = the wheel's.
+var anim_pointers: Array[float] = []
+## Shown HP and the white lag bar trailing a loss.
+var anim_hp: float = NAN
+var lag_hp: float = NAN
+## The needle (index) or docked satellite (id) pulsing as it resolves, and its scale.
+var pulse_pointer: int = -1
+var pulse_satellite: StringName = &""
+var pulse_scale: float = 1.0
+## Good landing: a ring growing off the rim (progress 0..1; 0 = none).
+var ring_pulse: float = 0.0
+## Miss landing: static over one slice (strength 0..1; 0 = none).
+var miss_static: float = 0.0
+var miss_slot: int = -1
+## Slice blur while the wheel turns fast (0..1) and which way it turns.
+var blur: float = 0.0
+var _blur_dir: float = 1.0
+## Orbit trails: [from tick, to tick] arcs fading at `trail_alpha`.
+var trails: Array = []
+var trail_alpha: float = 0.0
+## FLIP: horizontal squash of the disc (1 = none).
+var flip_squash: float = 1.0
+## Drop zones pulse while a card is aimed (alpha factor of the unhovered zones).
+var zone_pulse: float = 1.0
+## Paper flip of the tag when its content changes (1 = flat on the wall).
+var tag_flip: float = 1.0
+## A SEND IT replays: the tag, the NEXT plate and the forecast marks hide until it ends.
+var replaying: bool = false
+## LAST TURN plate reveal (0 hidden .. 1 in place).
+var last_turn_shown: float = 1.0
+## Running motion tweens by key, the queued nudge steps ({ring, to}) and the shown value
+## the last queued step ends on per ring.
+var _tweens: Dictionary = {}
+var _nudge_queue: Array[Dictionary] = []
+var _queue_end: Dictionary = {}
+var _intent_sig: String = ""
+var _last_shown_rot: float = NAN
+
 ## Share of the view's smaller side used as the wheel radius.
 const RADIUS_SHARE := 0.26
 ## Space kept round the disc for the values drawn outside the slices (px).
@@ -143,6 +192,7 @@ func _init() -> void:
 	# PASS: hover tooltips on slices; clicks still reach the scene.
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	tooltip_text = " "
+	set_process(false)
 
 
 static func _ts() -> float:
@@ -218,6 +268,566 @@ func set_ghost(outer: Variant, inner: Variant = null) -> void:
 	queue_redraw()
 
 
+# --- Motion (Animation pass ANIM-2) ----------------------------------------------------------
+
+## A spin's time grows with the square root of its distance, measured in half turns, and
+## stays within this share of its entry's duration (the handoff's 0.25-0.6 s at 0.45 s).
+const HALF_TURN := RC.TICKS / 2.0
+const SPIN_MIN_SHARE := 0.55
+const SPIN_MAX_SHARE := 1.35
+## The last share of a spin settles back from its overshoot.
+const SETTLE_SHARE := 0.3
+## A spin's overshoot: its entry's amplitude x this many ticks.
+const OVERSHOOT_TICKS := 0.1
+## A nudge step travels over this share of its time, then recoils.
+const NUDGE_TRAVEL_SHARE := 0.7
+## Rewind scrub: the tape stutters in this many steps.
+const SCRUB_STEPS := 5
+## Slice blur: faint copies trail the slices this many ticks apart.
+const BLUR_COPIES := 2
+const BLUR_STEP := 0.6
+## Miss static: flecks drawn over the slice, and their length (px).
+const STATIC_FLECKS := 26
+const STATIC_FLECK := 7.0
+## Floating numbers keep inside this share of the inner disc's radius (clear of every
+## needle, which only reaches the slice band).
+const NUMBER_ROOM := 0.62
+
+
+## The rotation the view shows (ticks; the state's unless a motion runs).
+func shown_rotation() -> float:
+	return anim_rotation if not is_nan(anim_rotation) else float(_shown().wheel.rotation)
+
+
+func shown_inner_rotation() -> float:
+	return anim_inner_rotation if not is_nan(anim_inner_rotation) else float(_shown().wheel.inner_rotation)
+
+
+## The needle ticks the view shows.
+func shown_pointers() -> Array[float]:
+	if not anim_pointers.is_empty():
+		return anim_pointers
+	var out: Array[float] = []
+	for p in _shown().wheel.pointer_ticks:
+		out.append(float(p))
+	return out
+
+
+## The HP the view shows.
+func shown_hp() -> float:
+	return anim_hp if not is_nan(anim_hp) else float(_shown().hp)
+
+
+func _shown() -> CombatantState:
+	return shown_state if shown_state != null else combatant
+
+
+## True while any motion of this view still runs.
+func motion_busy() -> bool:
+	for k in _tweens:
+		var tw: Tween = _tweens[k]
+		if tw != null and tw.is_valid() and tw.is_running():
+			return true
+	return not _nudge_queue.is_empty()
+
+
+## Ends every motion of this view at once: the view shows the state as it is (skip,
+## reduce effects, a new state arriving mid-motion).
+func stop_motion() -> void:
+	for k in _tweens:
+		var tw: Tween = _tweens[k]
+		if tw != null and tw.is_valid():
+			tw.kill()
+	_tweens.clear()
+	_nudge_queue.clear()
+	_queue_end.clear()
+	shown_state = null
+	shown_satellites = []
+	anim_rotation = NAN
+	anim_inner_rotation = NAN
+	anim_pointers = []
+	anim_hp = NAN
+	lag_hp = NAN
+	pulse_pointer = -1
+	pulse_satellite = &""
+	pulse_scale = 1.0
+	ring_pulse = 0.0
+	miss_static = 0.0
+	miss_slot = -1
+	blur = 0.0
+	trails = []
+	trail_alpha = 0.0
+	flip_squash = 1.0
+	tag_flip = 1.0
+	replaying = false
+	last_turn_shown = 1.0
+	shake = Vector2.ZERO
+	modulate.a = 1.0
+	_last_shown_rot = NAN
+	set_process(false)
+	queue_redraw()
+
+
+## A fresh tween for motion `key` (the one running under that key stops).
+func _tw(key: StringName) -> Tween:
+	var old: Tween = _tweens.get(key)
+	if old != null and old.is_valid():
+		old.kill()
+	var tw := create_tween()
+	_tweens[key] = tw
+	return tw
+
+
+func _end(key: StringName) -> void:
+	_tweens.erase(key)
+
+
+## Seconds a spin of `ticks` takes under `id`: its duration x sqrt(distance in half turns),
+## within SPIN_MIN_SHARE..SPIN_MAX_SHARE of it.
+static func spin_seconds(id: StringName, ticks: float) -> float:
+	return Motion.seconds(id) * clampf(sqrt(absf(ticks) / HALF_TURN), SPIN_MIN_SHARE, SPIN_MAX_SHARE)
+
+
+## A spin's travel at progress `p` (0..1) over `dist` ticks: the entry's ease to `dist`
+## plus `over` ticks of overshoot, then a settle back. Exactly `dist` at p = 1.
+static func spin_curve(p: float, dist: float, over: float, trans: int, ease: int) -> float:
+	if p >= 1.0:
+		return dist
+	var run := 1.0 - SETTLE_SHARE
+	var o := signf(dist) * over
+	if p < run:
+		return float(Tween.interpolate_value(0.0, 1.0, p / run, 1.0, trans, ease)) * (dist + o)
+	var q := (p - run) / SETTLE_SHARE
+	return dist + o * (1.0 - smoothstep(0.0, 1.0, q))
+
+
+## Replays a turn: the outer ring runs from `from` ticks (and the inner ring from
+## `inner_from`, when given) to the state's rotation with `id`'s timing (ANIM-2 spin:
+## ease-out, overshoot of amplitude x OVERSHOOT_TICKS, settle), after `delay` seconds.
+## Ends exactly on the core's tick; shows the end at once when motion doesn't play.
+func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: float = 0.0) -> void:
+	_nudge_queue.clear()
+	_queue_end.clear()
+	if combatant == null or not Motion.live(id):
+		anim_rotation = NAN
+		anim_inner_rotation = NAN
+		_end(&"turn")
+		queue_redraw()
+		return
+	var to := float(combatant.wheel.rotation)
+	var inner_to := float(combatant.wheel.inner_rotation)
+	var dist := to - from
+	var inner_dist := inner_to - inner_from if not is_nan(inner_from) else 0.0
+	if is_zero_approx(dist) and is_zero_approx(inner_dist):
+		anim_rotation = NAN
+		anim_inner_rotation = NAN
+		return
+	var e := Motion.entry(id)
+	anim_rotation = from
+	anim_inner_rotation = inner_from if not is_nan(inner_from) else NAN
+	var over := Motion.amplitude(id) * OVERSHOOT_TICKS
+	var secs := spin_seconds(id, maxf(absf(dist), absf(inner_dist)))
+	var tw := _tw(&"turn")
+	tw.tween_interval(delay)
+	tw.tween_method(_turn_step.bind(from, dist, inner_from, inner_dist, over, e.trans, e.ease), 0.0, 1.0, secs)
+	tw.tween_callback(func() -> void:
+		anim_rotation = NAN
+		anim_inner_rotation = NAN
+		_end(&"turn")
+		queue_redraw())
+	_blur_dir = signf(dist) if dist != 0.0 else 1.0
+	set_process(true)
+
+
+func _turn_step(p: float, from: float, dist: float, inner_from: float, inner_dist: float, over: float, trans: int, ease: int) -> void:
+	anim_rotation = from + spin_curve(p, dist, over, trans, ease)
+	if not is_nan(inner_from):
+		anim_inner_rotation = inner_from + spin_curve(p, inner_dist, over, trans, ease)
+	queue_redraw()
+
+
+## A nudge of `ring` by `direction` the state already holds: a one-tick step with a
+## recoil (`wheel_nudge`). Steps queue behind each other; a long queue runs faster so it
+## catches up, and the last queued step always ends on the state's tick (sync_nudges).
+func play_nudge(ring: int, direction: int) -> void:
+	var id := &"inner_ring_turn" if ring == RC.RingScope.INNER else &"wheel_nudge"
+	if combatant == null or not Motion.live(id):
+		stop_turns()
+		return
+	var core := float(combatant.wheel.inner_rotation if ring == RC.RingScope.INNER else combatant.wheel.rotation)
+	var start: float = _queue_end.get(ring, core - direction)
+	if not _queue_end.has(ring) and _tweens.has(&"turn"):
+		start = shown_inner_rotation() if ring == RC.RingScope.INNER else shown_rotation()
+	var to := start + direction
+	_nudge_queue.append({"ring": ring, "to": to, "direction": direction})
+	_queue_end[ring] = to
+	if ring == RC.RingScope.INNER:
+		if is_nan(anim_inner_rotation):
+			anim_inner_rotation = start
+	elif is_nan(anim_rotation):
+		anim_rotation = start
+	if not _tweens.has(&"nudge"):
+		_next_nudge()
+
+
+## Ends the queued steps on the state: when the last one would stop off the state's tick
+## (a spin or snap in the same action), it goes to the state's tick instead.
+func sync_nudges() -> void:
+	if combatant == null:
+		return
+	for ring in _queue_end.keys():
+		var core := float(combatant.wheel.inner_rotation if int(ring) == RC.RingScope.INNER else combatant.wheel.rotation)
+		if not is_equal_approx(float(_queue_end[ring]), core):
+			for k in range(_nudge_queue.size() - 1, -1, -1):
+				if int(_nudge_queue[k]["ring"]) == int(ring):
+					_nudge_queue[k]["to"] = core
+					break
+			_queue_end[ring] = core
+
+
+## Where the queued steps of `ring` end (the state's tick once synced), NAN when none.
+func queue_target(ring: int) -> float:
+	return float(_queue_end.get(ring, NAN))
+
+
+## Steps still waiting in the nudge queue (the one running excluded).
+func queued_steps() -> int:
+	return _nudge_queue.size()
+
+
+func _next_nudge() -> void:
+	if _nudge_queue.is_empty():
+		_end(&"nudge")
+		_queue_end.clear()
+		anim_rotation = NAN
+		anim_inner_rotation = NAN
+		shake = Vector2.ZERO
+		queue_redraw()
+		return
+	var step: Dictionary = _nudge_queue.pop_front()
+	var ring := int(step["ring"])
+	var id := &"inner_ring_turn" if ring == RC.RingScope.INNER else &"wheel_nudge"
+	var e := Motion.entry(id)
+	var from := shown_inner_rotation() if ring == RC.RingScope.INNER else shown_rotation()
+	# A queue catches up: each waiting step shares the time of one.
+	var secs := Motion.seconds(id) / float(1 + _nudge_queue.size())
+	var tw := _tw(&"nudge")
+	tw.tween_method(_nudge_step.bind(ring, from, float(step["to"]), float(step["direction"]), e.trans, e.ease), 0.0, 1.0, secs)
+	tw.tween_callback(_next_nudge)
+
+
+func _nudge_step(p: float, ring: int, from: float, to: float, direction: float, trans: int, ease: int) -> void:
+	var q: float = Tween.interpolate_value(0.0, 1.0, minf(1.0, p / NUDGE_TRAVEL_SHARE), 1.0, trans, ease)
+	var v := lerpf(from, to, q)
+	if ring == RC.RingScope.INNER:
+		anim_inner_rotation = v
+	else:
+		anim_rotation = v
+	# The recoil: the disc kicks back against the step and returns.
+	var r := maxf(0.0, (p - NUDGE_TRAVEL_SHARE) / (1.0 - NUDGE_TRAVEL_SHARE))
+	shake = Vector2(-direction * Motion.amplitude(&"wheel_nudge") * sin(PI * r), 0.0)
+	queue_redraw()
+
+
+## Stops the turn and nudge motions (the rings show the state).
+func stop_turns() -> void:
+	for key in [&"turn", &"nudge"]:
+		var tw: Tween = _tweens.get(key)
+		if tw != null and tw.is_valid():
+			tw.kill()
+		_tweens.erase(key)
+	_nudge_queue.clear()
+	_queue_end.clear()
+	anim_rotation = NAN
+	anim_inner_rotation = NAN
+	shake = Vector2.ZERO
+	queue_redraw()
+
+
+## FLIP: the disc squashes to a line and opens mirrored (`wheel_flip`), after `delay`.
+func play_flip(delay: float = 0.0) -> void:
+	if not Motion.live(&"wheel_flip"):
+		flip_squash = 1.0
+		return
+	var e := Motion.entry(&"wheel_flip")
+	var tw := _tw(&"flip")
+	tw.tween_interval(delay)
+	tw.tween_method(func(p: float) -> void: flip_squash = absf(cos(PI * p)); queue_redraw(), 0.0, 1.0, Motion.seconds(&"wheel_flip")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: flip_squash = 1.0; _end(&"flip"); queue_redraw())
+
+
+## Needles move from `from` ticks to the state's (`pointer_migrate`, or `pointer_orbit`
+## with a fading trail arc when `trail`), after `delay`. Each takes the short way round.
+func play_pointers(from: Array, id: StringName, trail: bool = false, delay: float = 0.0) -> void:
+	var to := PackedInt32Array()
+	if combatant != null:
+		to = combatant.wheel.pointer_ticks
+	if not Motion.live(id) or from.size() != to.size() or from.is_empty():
+		anim_pointers = []
+		return
+	var starts: Array[float] = []
+	var ends: Array[float] = []
+	for k in to.size():
+		var f := float(from[k])
+		starts.append(f)
+		ends.append(f + float(posmod(roundi(to[k] - f) + RC.TICKS / 2, RC.TICKS) - RC.TICKS / 2))
+	anim_pointers = starts.duplicate()
+	var e := Motion.entry(id)
+	var tw := _tw(&"pointers")
+	tw.tween_interval(delay)
+	var secs := Motion.seconds(id) if not trail else Motion.seconds(&"orbit_trail")
+	tw.tween_method(_pointer_step.bind(starts, ends), 0.0, 1.0, secs).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: anim_pointers = []; _end(&"pointers"); queue_redraw())
+	if trail and Motion.live(&"orbit_trail"):
+		trails = []
+		for k in starts.size():
+			trails.append([starts[k], ends[k]])
+		trail_alpha = Motion.amplitude(&"orbit_trail")
+		var te := Motion.entry(&"orbit_trail")
+		var ttw := _tw(&"trail")
+		ttw.tween_interval(delay + secs)
+		ttw.tween_method(func(a: float) -> void: trail_alpha = a; queue_redraw(), trail_alpha, 0.0, Motion.seconds(&"orbit_trail")).set_ease(te.ease).set_trans(te.trans)
+		ttw.tween_callback(func() -> void: trails = []; _end(&"trail"))
+
+
+func _pointer_step(p: float, starts: Array[float], ends: Array[float]) -> void:
+	var out: Array[float] = []
+	for k in starts.size():
+		out.append(lerpf(starts[k], ends[k], p))
+	anim_pointers = out
+	queue_redraw()
+
+
+## HP runs from what it shows to `to` (`hp_drain`); a loss leaves a white lag bar that
+## drains after it (`hp_lag`).
+func play_hp(to: float) -> void:
+	if not Motion.live(&"hp_drain"):
+		anim_hp = to
+		lag_hp = NAN
+		queue_redraw()
+		return
+	var from := shown_hp()
+	if is_nan(lag_hp) or lag_hp < from:
+		lag_hp = from
+	var e := Motion.entry(&"hp_drain")
+	var tw := _tw(&"hp")
+	tw.tween_method(func(v: float) -> void: anim_hp = v; queue_redraw(), from, to, Motion.seconds(&"hp_drain")).set_ease(e.ease).set_trans(e.trans)
+	if to >= from:
+		lag_hp = NAN
+		return
+	var le := Motion.entry(&"hp_lag")
+	var lag := _tw(&"lag")
+	lag.tween_interval(Motion.delay_of(&"hp_lag"))
+	lag.tween_method(func(v: float) -> void: lag_hp = v; queue_redraw(), lag_hp, to, Motion.seconds(&"hp_lag")).set_ease(le.ease).set_trans(le.trans)
+
+
+## The needle `index` (or docked satellite `sat`) pulses as it resolves (`resolve_pulse`).
+func play_pulse(index: int, sat: StringName = &"") -> void:
+	if not Motion.live(&"resolve_pulse"):
+		return
+	pulse_pointer = index if sat == &"" else -1
+	pulse_satellite = sat
+	var amp := Motion.amplitude(&"resolve_pulse")
+	var d := Motion.seconds(&"resolve_pulse")
+	var e := Motion.entry(&"resolve_pulse")
+	var tw := _tw(&"pulse")
+	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), 1.0, amp, d * Motion.POP_GROW_SHARE).set_ease(Tween.EASE_OUT)
+	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), amp, 1.0, d * (1.0 - Motion.POP_GROW_SHARE)).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: pulse_pointer = -1; pulse_satellite = &""; pulse_scale = 1.0; _end(&"pulse"))
+
+
+## Good landing: a ring grows off the rim and fades (`precision_good_ring`).
+func play_good_ring() -> void:
+	if not Motion.live(&"precision_good_ring"):
+		return
+	ring_pulse = 0.001
+	var e := Motion.entry(&"precision_good_ring")
+	var tw := _tw(&"ring")
+	tw.tween_method(func(v: float) -> void: ring_pulse = v; queue_redraw(), 0.001, 1.0, Motion.seconds(&"precision_good_ring")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: ring_pulse = 0.0; _end(&"ring"); queue_redraw())
+
+
+## Miss landing: static over slice `slot` only (`precision_miss_static`).
+func play_miss_static(slot: int) -> void:
+	if not Motion.live(&"precision_miss_static"):
+		return
+	miss_slot = slot
+	miss_static = 1.0
+	var e := Motion.entry(&"precision_miss_static")
+	var tw := _tw(&"static")
+	tw.tween_method(func(v: float) -> void: miss_static = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"precision_miss_static")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: miss_static = 0.0; miss_slot = -1; _end(&"static"))
+
+
+## Rewind: the rings and HP scrub back from `from_*` to the state (the checkpoint side)
+## in SCRUB_STEPS tape stutters (`rewind_scrub`); every shown value stays between the two
+## states, so it never crosses the checkpoint.
+func play_rewind(from_rotation: float, from_inner: float, from_hp: float) -> void:
+	stop_turns()
+	if combatant == null or not Motion.live(&"rewind_scrub"):
+		return
+	var to := float(combatant.wheel.rotation)
+	var inner_to := float(combatant.wheel.inner_rotation)
+	var hp_to := float(combatant.hp)
+	anim_rotation = from_rotation
+	anim_inner_rotation = from_inner
+	anim_hp = from_hp
+	var tw := _tw(&"turn")
+	tw.tween_method(_rewind_step.bind(Vector3(from_rotation, from_inner, from_hp), Vector3(to, inner_to, hp_to)), 0.0, 1.0, Motion.seconds(&"rewind_scrub"))
+	tw.tween_callback(func() -> void: anim_rotation = NAN; anim_inner_rotation = NAN; anim_hp = NAN; _end(&"turn"); queue_redraw())
+
+
+func _rewind_step(p: float, from: Vector3, to: Vector3) -> void:
+	anim_rotation = scrub_value(from.x, to.x, p)
+	anim_inner_rotation = scrub_value(from.y, to.y, p)
+	anim_hp = scrub_value(from.z, to.z, p)
+	queue_redraw()
+
+
+## The rewind scrub's value at `p` (0..1) from `from` to `to`: SCRUB_STEPS stutters,
+## each a jump then a hold. Always between `from` and `to`.
+static func scrub_value(from: float, to: float, p: float) -> float:
+	var steps := float(SCRUB_STEPS)
+	var q := clampf(ceilf(p * steps) / steps, 0.0, 1.0)
+	return lerpf(from, to, q)
+
+
+## Enemy death: the disc is gone while its pieces fall (the scene draws them), then the
+## dead wheel's ghost fades back in (`dead_wheel_fade`).
+func play_break() -> void:
+	if not Motion.live(&"enemy_break"):
+		return
+	modulate.a = 0.0
+	var tw := _tw(&"break")
+	tw.tween_interval(Motion.seconds(&"enemy_break"))
+	tw.tween_property(self, "modulate:a", Motion.amplitude(&"dead_wheel_fade"), Motion.seconds(&"dead_wheel_fade"))
+	tw.tween_callback(func() -> void: modulate.a = 1.0; _end(&"break"))
+
+
+## The LAST TURN plate slides up into place and fades in (`last_turn_reveal`).
+func reveal_last_turn() -> void:
+	if not Motion.live(&"last_turn_reveal"):
+		last_turn_shown = 1.0
+		queue_redraw()
+		return
+	last_turn_shown = 0.0
+	var e := Motion.entry(&"last_turn_reveal")
+	var tw := _tw(&"last_turn")
+	tw.tween_method(func(v: float) -> void: last_turn_shown = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"last_turn_reveal")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: _end(&"last_turn"))
+
+
+## Valid drop zones pulse while a card is aimed (`drop_zone_pulse`); the hovered one stays
+## bright. Off: `stop_zone_pulse`.
+func start_zone_pulse() -> void:
+	stop_zone_pulse()
+	if not Motion.live(&"drop_zone_pulse"):
+		return
+	var e := Motion.entry(&"drop_zone_pulse")
+	var d := Motion.seconds(&"drop_zone_pulse")
+	var tw := _tw(&"zones")
+	tw.set_loops()
+	tw.tween_method(func(v: float) -> void: zone_pulse = v; queue_redraw(), 1.0, Motion.amplitude(&"drop_zone_pulse"), d).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_method(func(v: float) -> void: zone_pulse = v; queue_redraw(), Motion.amplitude(&"drop_zone_pulse"), 1.0, d).set_ease(e.ease).set_trans(e.trans)
+
+
+func stop_zone_pulse() -> void:
+	var tw: Tween = _tweens.get(&"zones")
+	if tw != null and tw.is_valid():
+		tw.kill()
+	_tweens.erase(&"zones")
+	zone_pulse = 1.0
+	queue_redraw()
+
+
+## Where needle `index` stands on screen (its hub, as shown).
+func pointer_spot(index: int) -> Vector2:
+	var ps := shown_pointers()
+	if ps.is_empty():
+		return global_center()
+	var a := _ang(ps[clampi(index, 0, ps.size() - 1)])
+	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + _band() * 0.55)
+
+
+## Where docked satellite `id` stands on screen (its token), the centre when it's gone.
+func satellite_spot(id: StringName) -> Vector2:
+	for s in (shown_satellites if shown_state != null else satellites):
+		if s.id == id:
+			return _satellite_pos(s)
+	for s in satellites:
+		if s.id == id:
+			return _satellite_pos(s)
+	return global_center()
+
+
+## The middle of slice `slot` on screen (at its status mark), as shown.
+func slot_spot(slot: int) -> Vector2:
+	var c := _shown()
+	var tps := c.wheel.ticks_per_slice()
+	var a := _ang(slot * tps - shown_rotation())
+	var dir := Vector2(cos(a), sin(a))
+	return global_center() + dir * (_radius() - _band() * 0.5)
+
+
+## Where the `k`-th floating number of a burst starts (global) and how far it may rise:
+## inside the inner disc, clear of every needle (they only reach the slice band); numbers
+## side by side step left and right.
+func number_anchor(k: int) -> Vector2:
+	var room := number_room()
+	var step: float = [0.0, -0.5, 0.5][posmod(k, 3)] * room
+	return global_center() + Vector2(step, room * 0.35)
+
+
+## The radius (px) floating numbers keep within, round the centre.
+func number_room() -> float:
+	return (_radius() - _band()) * NUMBER_ROOM
+
+
+## The slices as polygons on screen with their colours (the pieces a broken wheel falls
+## apart into), as shown.
+func slice_pieces() -> Array:
+	var out: Array = []
+	var c := _shown()
+	if c == null or lookup == null:
+		return out
+	var center := global_center()
+	var radius := _radius()
+	var inner := radius - _band()
+	var tps := c.wheel.ticks_per_slice()
+	var rot := shown_rotation()
+	for i in c.wheel.slice_count:
+		var slice := lookup.get_content(c.wheel.slot_slice_ids[i]) as SliceData
+		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
+		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
+		var col := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
+		out.append([_wedge(center, inner * 0.2, radius, minf(a0, a1), maxf(a0, a1)), Color(col, 0.75)])
+	return out
+
+
+## The hub's radius on screen.
+func hub_radius() -> float:
+	return _radius() - _band()
+
+
+func _process(delta: float) -> void:
+	# Slice blur follows the turn speed (ticks per second) against `wheel_spin_blur`'s
+	# amplitude, fading in and out over its duration.
+	var rot := shown_rotation() if combatant != null else 0.0
+	var speed := 0.0
+	if not is_nan(_last_shown_rot) and delta > 0.0:
+		speed = absf(rot - _last_shown_rot) / delta
+	_last_shown_rot = rot
+	var want := 1.0 if Motion.live(&"wheel_spin_blur") and speed > Motion.amplitude(&"wheel_spin_blur") else 0.0
+	var rate := delta / maxf(0.001, Motion.seconds(&"wheel_spin_blur"))
+	var was := blur
+	blur = move_toward(blur, want, rate)
+	if blur != was:
+		queue_redraw()
+	if not _tweens.has(&"turn") and blur <= 0.0:
+		_last_shown_rot = NAN
+		set_process(false)
+
+
 # --- Geometry ---------------------------------------------------------------------------
 
 ## The wheel's disc (slices and needles) on screen.
@@ -284,7 +894,7 @@ func zone_center(zone: Dictionary) -> Vector2:
 			return _satellite_pos(sat) if sat != null else global_center()
 		"slot":
 			var tps := combatant.wheel.ticks_per_slice()
-			var a := _ang(int(zone["slot"]) * tps - combatant.wheel.rotation)
+			var a := _ang(int(zone["slot"]) * tps - shown_rotation())
 			return global_center() + Vector2(cos(a), sin(a)) * (_radius() - _band() * 0.5)
 	return global_center()
 
@@ -347,7 +957,7 @@ func _satellite(id: StringName) -> CombatantState:
 
 func _satellite_pos(sat: CombatantState) -> Vector2:
 	var tps := combatant.wheel.ticks_per_slice()
-	var a := _ang(sat.dock_slot * tps - combatant.wheel.rotation)
+	var a := _ang(sat.dock_slot * tps - shown_rotation())
 	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + _satellite_out())
 	# In the bottom sector the HP number, NEXT plate and last-turn line sit under the disc:
 	# a token there moves to the side of them (H23: it covered "40/40").
@@ -477,7 +1087,7 @@ static func _ang(x: float) -> float:
 	return deg_to_rad(-x * DEG_PER_TICK - 90.0)
 
 
-func _tick_angle(tick: float, rotation_ticks: int) -> float:
+func _tick_angle(tick: float, rotation_ticks: float) -> float:
 	return _ang(tick - rotation_ticks)
 
 
@@ -502,6 +1112,21 @@ func _draw() -> void:
 	if combatant == null or combatant.wheel == null:
 		draw_string(Palette.mono(), Vector2(8, 20), "(no wheel)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.PAPER)
 		return
+	if shown_state == null:
+		_draw_view()
+		return
+	# A SEND IT replay draws the snapshot it started from (the view's own copy; the state
+	# is untouched), then puts the live combatant back.
+	var real := combatant
+	var real_sats := satellites
+	combatant = shown_state
+	satellites = shown_satellites
+	_draw_view()
+	combatant = real
+	satellites = real_sats
+
+
+func _draw_view() -> void:
 	var wheel := combatant.wheel
 	var center := _center()
 	var radius := _radius()
@@ -509,21 +1134,33 @@ func _draw() -> void:
 	var inner := radius - band
 	var line := _col(wheel_color if combatant.is_alive() else Color(wheel_color, 0.3))
 	var tps := wheel.ticks_per_slice()
+	var rot := shown_rotation()
 	# Platform so the wheel reads over the city.
 	draw_circle(center, radius + 40, Color(Palette.NIGHT_SKY, 0.55))
+	if flip_squash < 1.0:
+		# FLIP: the disc squashes to a line about its centre and opens mirrored.
+		draw_set_transform(Vector2(center.x * (1.0 - flip_squash), 0.0), 0.0, Vector2(flip_squash, 1.0))
 	if inverted:
 		draw_circle(center, radius + 24, Color(Palette.PAPER, 0.9))
 	draw_circle(center, inner - 3, Color("#07080F"))
 	var status_ghosts := {}
-	for st in outcome.get("statuses", []):
-		status_ghosts[int(st["slot"])] = int(st["after"])
+	if not replaying:
+		for st in outcome.get("statuses", []):
+			status_ghosts[int(st["slot"])] = int(st["after"])
 	# Slices: neon bars, icon inside, value outside, the perfect arrow at the outer edge.
 	for i in wheel.slice_count:
 		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
-		var a0 := _tick_angle(i * tps - tps / 2.0, wheel.rotation)
-		var a1 := _tick_angle(i * tps + tps / 2.0, wheel.rotation)
-		var mid := _tick_angle(i * tps, wheel.rotation)
+		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
+		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
+		var mid := _tick_angle(i * tps, rot)
 		var sc := Palette.slice_color(slice.slice_type)
+		if blur > 0.0:
+			# Fast turn: faint copies trail each slice against the way it turns.
+			for k in range(1, BLUR_COPIES + 1):
+				var back := -_blur_dir * BLUR_STEP * k
+				var b0 := _tick_angle(i * tps - tps / 2.0 + back, rot)
+				var b1 := _tick_angle(i * tps + tps / 2.0 + back, rot)
+				draw_colored_polygon(_wedge(center, inner, radius, minf(b0, b1), maxf(b0, b1)), _col(Color(sc, 0.22 * blur / k)))
 		var wedge := _wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03)
 		if slice.slice_type == RC.SliceType.MISS:
 			draw_colored_polygon(wedge, _col(Color(sc, 0.18)))
@@ -537,7 +1174,9 @@ func _draw() -> void:
 			draw_polyline(closed, _col(Color(sc.lightened(0.35), 0.95)), 1.8, true)
 		if _zone_is(valid_zones, {"kind": "slot", "slot": i}):
 			var hot := _zone_is([hover_zone], {"kind": "slot", "slot": i})
-			draw_polyline(wedge, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5, true)
+			draw_polyline(wedge, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5, true)
+		if i == miss_slot and miss_static > 0.0:
+			_draw_static(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		var dir := Vector2(cos(mid), sin(mid))
 		SliceIcon.draw_on_slice(self, center + dir * (inner + band * 0.42), band * 0.36, slice.slice_type, sc)
 		if slice.base_output > 0:
@@ -565,27 +1204,42 @@ func _draw() -> void:
 	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
 	if wheel.has_inner_ring():
 		var ring_r := inner - 12
+		var irot := shown_inner_rotation()
 		for k in RC.RING_SEGMENTS:
 			var seg := lookup.get_content(wheel.ring_segment_ids[k]) as RingSegmentData
-			var s0 := _tick_angle(k * 10 - 5, wheel.inner_rotation)
-			var e0 := _tick_angle(k * 10 + 5, wheel.inner_rotation)
+			var s0 := _tick_angle(k * 10 - 5, irot)
+			var e0 := _tick_angle(k * 10 + 5, irot)
 			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
-			var m := _tick_angle(k * 10, wheel.inner_rotation)
+			var m := _tick_angle(k * 10, irot)
 			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), TextDb.t(seg, "display_name") if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, mini(_fs(9), 12), _col(Palette.PAPER))
+	if ring_pulse > 0.0:
+		# Good landing: a clean ring grows off the rim and fades.
+		draw_arc(center, radius + Motion.amplitude(&"precision_good_ring") * ring_pulse, 0, TAU, 64, _col(Color(Palette.PAPER, 1.0 - ring_pulse)), 3.0, true)
+	for t in trails:
+		# Orbit trail: the arc a needle just swept, fading.
+		var ta := _ang(float(t[0]))
+		var tb := _ang(float(t[1]))
+		_draw_dashed_arc(center, radius + band * 0.55, minf(ta, tb), maxf(ta, tb), Color(_col(Palette.PAPER), trail_alpha), 3.0)
 	# Pointers: short white gauge needles, hub just outside the rim, tip just past its edge.
 	var pcol := Color(_col(Palette.PAPER), pointer_alpha)
-	for p in wheel.pointer_ticks:
+	var ps := shown_pointers()
+	for pk in ps.size():
+		var p: float = ps[pk]
 		var a := _ang(p)
 		var dir := Vector2(cos(a), sin(a))
 		var hub := center + dir * (radius + band * 0.55)
 		var ntip := center + dir * (radius - band * 0.2)
+		var hub_r := 9.0 * (pulse_scale if pk == pulse_pointer else 1.0)
+		if pk == pulse_pointer:
+			# The needle resolving now: its hub swells and glows.
+			draw_circle(hub, hub_r + 5.0, Color(_col(Palette.CELL_ACID), 0.35))
 		draw_colored_polygon(PackedVector2Array([ntip, hub + dir.orthogonal() * 4.0, hub - dir.orthogonal() * 4.0]), pcol)
-		draw_circle(hub, 9, Palette.NIGHT_SKY)
-		draw_arc(hub, 9, 0, TAU, 20, pcol, 2.5)
+		draw_circle(hub, hub_r, Palette.NIGHT_SKY)
+		draw_arc(hub, hub_r, 0, TAU, 20, pcol, 2.5)
 		draw_circle(hub, 3, pcol)
 		if wheel.pointer_orbit != 0:
 			for k in range(1, 4):
-				var oa := _ang(posmod(p + wheel.pointer_orbit * k, RC.TICKS))
+				var oa := _ang(fposmod(p + wheel.pointer_orbit * k, RC.TICKS))
 				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - k * 0.12))
 	# Telegraphed migration (GDD 2.11, 9.2): next turn's needles, dashed and flickering.
 	for p in wheel.pending_pointer_ticks:
@@ -598,8 +1252,11 @@ func _draw() -> void:
 			if k % 2 == 0:
 				draw_line(hub.lerp(ntip, float(k) / n), hub.lerp(ntip, float(k + 1) / n), mcol, 3.0)
 		draw_string(Palette.mono(), hub + Vector2(10, -4), tr("next"), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
-	_draw_ghost(center, radius, wheel)
-	_draw_inner_ghost(center, radius, wheel)
+	if not replaying:
+		_draw_ghost(center, radius, wheel)
+		_draw_inner_ghost(center, radius, wheel)
+	if flip_squash < 1.0:
+		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
 	if highlighted and combatant.is_alive():
@@ -611,13 +1268,72 @@ func _draw() -> void:
 		draw_line(cm + Vector2(0, -11), cm + Vector2(0, 11), _col(TARGET_COLOR), 2.0)
 	if _zone_is(valid_zones, {"kind": "hub"}):
 		var hot := _zone_is([hover_zone], {"kind": "hub"})
-		draw_arc(center, inner - 4, 0, TAU, 48, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
+		draw_arc(center, inner - 4, 0, TAU, 48, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5)
 	# Intent: a taped paper tag above the needle (what resolves next and its results).
 	var tag := _intent_rect_local()
-	if tag.has_area():
+	_check_tag_change(tag)
+	if tag.has_area() and not replaying:
+		if tag_flip < 1.0:
+			# Paper flip: the tag turns on its tape (top edge) as its content changes.
+			var s := cos(deg_to_rad((1.0 - tag_flip) * Motion.amplitude(&"intent_flip")))
+			draw_set_transform(Vector2(0.0, tag.position.y * (1.0 - s)), 0.0, Vector2(1.0, s))
 		_intent_tag(tag)
+		draw_set_transform(Vector2.ZERO)
 	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
 	_draw_satellites()
+
+
+## The tag's content as text (title and chips): a change flips the tag, the same content
+## re-set on every hover doesn't (ANIM-2: chips don't jitter).
+func intent_signature() -> String:
+	if replaying or intent.is_empty():
+		return ""
+	var parts := PackedStringArray([String(intent.get("text", ""))])
+	for chip in intent.get("chips", []):
+		parts.append(String(chip.get("text", "")))
+	return "|".join(parts)
+
+
+func _check_tag_change(tag: Rect2) -> void:
+	var sig := intent_signature() if tag.has_area() else ""
+	if sig == _intent_sig:
+		return
+	_intent_sig = sig
+	if sig != "":
+		_flip_tag.call_deferred()
+
+
+## Starts the tag's paper flip (`intent_flip`).
+func _flip_tag() -> void:
+	if not Motion.live(&"intent_flip"):
+		tag_flip = 1.0
+		return
+	var e := Motion.entry(&"intent_flip")
+	tag_flip = 0.0
+	var tw := _tw(&"tag")
+	tw.tween_method(func(v: float) -> void: tag_flip = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"intent_flip")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: tag_flip = 1.0; _end(&"tag"))
+
+
+## True while the tag flips (tests: the same content never starts a flip).
+func tag_flipping() -> bool:
+	return _tweens.has(&"tag")
+
+
+## Miss landing: static flecks over one slice only (hash scatter, a new pattern each frame).
+func _draw_static(center: Vector2, r0: float, r1: float, a0: float, a1: float) -> void:
+	var frame := Engine.get_process_frames()
+	var strength := miss_static * Motion.amplitude(&"precision_miss_static")
+	for k in STATIC_FLECKS:
+		var h := hash(Vector3i(k, frame, miss_slot))
+		var u := float(h & 0xFF) / 255.0
+		var v := float((h >> 8) & 0xFF) / 255.0
+		var a := lerpf(a0, a1, u)
+		var r := lerpf(r0, r1, v)
+		var p := center + Vector2(cos(a), sin(a)) * r
+		var t := Vector2(-sin(a), cos(a)) * STATIC_FLECK * 0.5
+		var col := Palette.PAPER if k % 2 == 0 else Palette.INK
+		draw_line(p - t, p + t, Color(col, strength), 2.0)
 
 
 ## Satellite tokens, their HP plates and their aim marks: drawn after the tag and the arrows
@@ -628,7 +1344,7 @@ func _draw_satellites() -> void:
 		var sat_col := _col(Palette.CELL_ACID if sat.is_player else Palette.RESIST_GOLD)
 		# A hex token with the slice its own needle lands on (its wheel, GDD 2.10) and its HP
 		# on a plate beside it; the name and the slice words are the tooltip (H22).
-		var tok_r := SATELLITE_TOKEN * _ts()
+		var tok_r := SATELLITE_TOKEN * _ts() * (pulse_scale if sat.id == pulse_satellite else 1.0)
 		var hex := PackedVector2Array()
 		for k in 7:
 			var ha := TAU * k / 6.0 + PI / 6.0
@@ -650,7 +1366,7 @@ func _draw_satellites() -> void:
 			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
 		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
 			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
-			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
+			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5)
 			# A play with a way (a nudge card, Undock) marks each side: drop on the side it
 			# should turn to (the clockwise side is +1).
 			var cw := (satp - _center()).normalized().orthogonal() * -1.0
@@ -787,9 +1503,12 @@ func _draw_arrows() -> void:
 func _draw_hp(center: Vector2, radius: float) -> void:
 	var hp_col := _col(HP_COLOR)
 	var segs := 20
-	var frac := float(combatant.hp) / maxf(1.0, combatant.max_hp)
-	var after := int(outcome.get("hp_after", combatant.hp))
+	var hp_now := shown_hp()
+	var frac := hp_now / maxf(1.0, combatant.max_hp)
+	var after := int(outcome.get("hp_after", combatant.hp)) if not replaying and is_nan(anim_hp) else roundi(hp_now)
 	var frac_after := float(after) / maxf(1.0, combatant.max_hp)
+	# The white lag bar: HP just lost, draining after the arc (ANIM-2).
+	var frac_lag := (lag_hp / maxf(1.0, combatant.max_hp)) if not is_nan(lag_hp) else frac
 	for k in segs:
 		var a0 := PI * 0.1 + PI * 0.8 * k / segs
 		var a1 := a0 + PI * 0.8 / segs * 0.8
@@ -803,6 +1522,8 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 			col = _col(LOSS_COLOR)
 		elif f < frac_after:
 			col = _col(HP_COLOR.lightened(0.5))
+		elif f < frac_lag:
+			col = _col(Palette.PAPER)
 		draw_colored_polygon(_wedge(center, radius + 32, radius + HP_ARC_OUT, a0, a1), col)
 	# The number is the HP now (it agrees with the top bar); the forecast after SEND IT is a
 	# separate dashed plate with an arrow (H22: "60→49" read as a result).
@@ -810,7 +1531,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var hs := _fs(HP_FONT_SIZE)
 	var hp_rect: Rect2 = lay["hp"]
 	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
-	if after != combatant.hp:
+	if not replaying and is_nan(anim_hp) and after != combatant.hp:
 		var fs := _fs(HUB_FONT_SIZE + 3)
 		var ftext := String(lay["next_text"])
 		var fr: Rect2 = lay["next"]
@@ -826,10 +1547,13 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		# was the only word on the most important moment, and shrank as the text grew).
 		var lr: Rect2 = lay["last"]
 		var ls := int(lay["last_fs"])
-		draw_rect(lr, Color(Palette.NIGHT_SKY, 0.8))
+		# ANIM-2: it slides up into place and fades in once a SEND IT has played out.
+		var reveal := clampf(last_turn_shown, 0.0, 1.0)
+		lr.position.y += (1.0 - last_turn_shown) * Motion.amplitude(&"last_turn_reveal")
+		draw_rect(lr, Color(Palette.NIGHT_SKY, 0.8 * reveal))
 		var lines: PackedStringArray = lay["last_lines"]
 		for i in lines.size():
-			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, _col(Color(Palette.PAPER, 0.92)))
+			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, _col(Color(Palette.PAPER, 0.92 * reveal)))
 
 
 ## Where the HP number, the NEXT plate and the LAST TURN plate go (local rects), with their
@@ -839,7 +1563,7 @@ func hp_layout() -> Dictionary:
 	var radius := _radius()
 	var hs := _fs(HP_FONT_SIZE)
 	var base_y := center.y + radius + HP_TEXT_GAP + hs - HP_FONT_SIZE
-	var text := "%d/%d" % [combatant.hp, combatant.max_hp]
+	var text := "%d/%d" % [roundi(shown_hp()), combatant.max_hp]
 	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 	var out := {"hp_text": text, "hp": Rect2(center.x - tw * 0.5, base_y - hs * 0.8, tw, hs * 0.8), "next": Rect2(), "next_text": "",
 		"last": Rect2(), "last_lines": PackedStringArray(), "last_fs": 0}
@@ -997,7 +1721,7 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
 			line_text = line_text.substr(0, line_text.length() - 2) + "…"
 		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, col)
-	if not bool(outcome.get("alive_after", true)) and combatant.is_alive():
+	if not replaying and not bool(outcome.get("alive_after", true)) and combatant.is_alive():
 		# This turn takes it down: a red cross over the hub.
 		var r := inner * 0.55
 		draw_line(center + Vector2(-r, -r), center + Vector2(r, r), _col(LOSS_COLOR), 6.0)
