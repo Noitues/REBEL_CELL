@@ -143,6 +143,17 @@ var selected_operative: StringName = &""
 var _hint_buttons: Array[Button] = []
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
+## ANIM-4: the page's prompts (restored when a carry ends).
+var _page_prompts: Array = []
+## ANIM-4: drag and drop on the HQ, the Grid and the raid setup (DropLayer).
+var drops: DropLayer
+## ANIM-4: the Grid's Site card crew chips and its JACK IN (drop targets and sources).
+var _grid_chips: Array[CrewChip] = []
+var _jack_button: Button = null
+## ANIM-4: map-node target size on the HQ's mini-map (px, as GridMapView.site_at's reach).
+const MINI_TARGET_R := 24.0
+## ANIM-4: pages whose items the pick-up key takes (the pad prompt names it).
+const DRAG_PANELS: Array[String] = ["hq", "grid", "raid"]
 
 
 func _ready() -> void:
@@ -394,9 +405,303 @@ func fight_raid() -> void:
 	show_raid_playout(events, before)
 
 
+# --- Drag and drop (Animation pass ANIM-4) --------------------------------------------------
+# Every drop mirrors a button: the layer emits the intent, and `_on_dropped` makes the same
+# call that button makes. Whether a target takes an item is the rules' own answer, asked of
+# a copy of the campaign (`_dry`), so nothing here decides a rule.
+
+## Sets the page's pad prompts (kept, so a carry can swap them and put them back).
+func set_page_prompts(list: Array) -> void:
+	_page_prompts = list
+	if drops == null or drops.mode != DropLayer.Mode.CARRY:
+		pad_prompts.set_prompts(list)
+
+
+func _on_carry_changed(carrying: bool) -> void:
+	pad_prompts.set_prompts([[&"ui_accept", "Drop"], [&"ui_cancel", "Cancel"]] if carrying else _page_prompts) # TR
+
+
+## HQ: the crew's posts on the mini-map (claimed nodes: station; CORE: recall), the crew
+## window (recruits land there) and the next run's kit (boosts).
+func _register_hq_drops(crew: Control, mini: GridMapView, queue: Control) -> void:
+	var c := RunManager.campaign
+	for site_id in c.grid.claimed_ids():
+		var sid: StringName = site_id
+		var kind := "recall" if sid == c.grid.home_site_id else "station"
+		drops.add_target("%s:%s" % [kind, sid], ["crew"], kind, sid, _mini_rect.bind(weakref(mini), sid))
+	drops.add_target("roster", ["recruit"], "roster", null, DropLayer.rect_of(crew))
+	drops.add_target("queue", ["boost"], "queue", null, DropLayer.rect_of(queue))
+
+
+## Site `site_id`'s spot on the HQ mini-map `mini_ref` (global; empty when not shown).
+func _mini_rect(mini_ref: WeakRef, site_id: StringName) -> Rect2:
+	var mini: GridMapView = mini_ref.get_ref()
+	if mini == null or not mini.is_visible_in_tree() or mini.is_queued_for_deletion():
+		return Rect2()
+	var at := mini.get_global_transform() * mini.position_of(site_id)
+	return Rect2(at - Vector2.ONE * MINI_TARGET_R, Vector2.ONE * MINI_TARGET_R * 2.0)
+
+
+## Grid: the Site card's crew chips drag onto its JACK IN.
+func _register_grid_drops(site: SiteData) -> void:
+	if _jack_button == null or site == null:
+		return
+	for chip in _grid_chips:
+		drops.add_source(chip, {"kind": "crew", "op": chip.operative_id, "motion": &"crew_assign", "prefer": site.id}, true)
+	drops.add_target("jack", ["crew"], "jack", site.id, DropLayer.rect_of(_jack_button))
+
+
+## Raid setup: every claimed node on the map and in YOUR NODES takes assets; the DEFENSE
+## LOADOUT takes a placed asset back; the target node's assets drag off the map too.
+func _register_raid_drops(claimed: Array[StringName], loadout: Control) -> void:
+	for site_id in claimed:
+		var sid: StringName = site_id
+		var on_map := _map_node_rect(sid).has_area()
+		# The node's own asset drop (ANIM-5's hook) is the landing on the map.
+		drops.add_target("node:%s" % sid, ["asset", "placed"], "node", sid, _map_node_rect.bind(sid), true, false)
+		var row := _panel.find_child("Order_%s" % sid, true, false) as Control
+		if row != null:
+			drops.add_target("row:%s" % sid, ["asset", "placed"], "node", sid, DropLayer.rect_of(row), not on_map)
+	drops.add_target("armory", ["placed"], "armory", &"", DropLayer.rect_of(loadout))
+	var overlay := city_overlay
+	overlay.set_drag_forwarding(func(at: Vector2) -> Variant:
+		var id := overlay.node_at(at)
+		var assets := RunManager.campaign.grid.assets_on(id) if id != &"" else []
+		if id == &"" or id != selected_site or assets.is_empty():
+			return null
+		return drops.begin_drag(null, _placed_payload(id, assets.size() - 1, assets[assets.size() - 1]), _map_node_rect(id), overlay), Callable(), Callable())
+
+
+## Node `site_id`'s icon on the city map (global; empty when it is not on the map).
+func _map_node_rect(site_id: StringName) -> Rect2:
+	if city_overlay == null or not is_instance_valid(city_overlay) or not city_overlay.is_inside_tree():
+		return Rect2()
+	for n in city_overlay.nodes:
+		if n["id"] == site_id:
+			var p := city_overlay.icon_at(site_id)
+			if p.x == INF:
+				return Rect2()
+			var xf := city_overlay.get_global_transform()
+			var r := city_overlay.icon_radius(n) * xf.get_scale().x
+			var c := xf * p
+			return Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0)
+	return Rect2()
+
+
+## Whether `target` takes `payload`: "" yes, a reason (the rules' own refusal) no, or
+## DropLayer.SKIP when the target is no place for it (where it already is).
+func drop_error(payload: Dictionary, target: Dictionary) -> String:
+	var c := RunManager.campaign
+	if c == null:
+		return DropLayer.SKIP
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var value: Variant = target.get("value")
+	match [String(payload.get("kind", "")), String(target.get("kind", ""))]:
+		["asset", "node"]:
+			return _named(_dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.deploy_asset(d, cfg, lookup, int(payload["index"]), value)), [value])
+		["placed", "node"]:
+			if value == payload["site"]:
+				return DropLayer.SKIP
+			return _named(_dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.move_asset(d, cfg, lookup, payload["site"], int(payload["index"]), value)), [value, payload["site"]])
+		["placed", "armory"]:
+			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.move_asset(d, cfg, lookup, payload["site"], int(payload["index"]), &""))
+		["crew", "station"]:
+			if CampaignRules.stationed_site(c, payload["op"]) == value:
+				return DropLayer.SKIP
+			return _named(_dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.station(d, lookup, payload["op"], value)), [value])
+		["crew", "recall"]:
+			var op := c.get_operative(payload["op"])
+			if CampaignRules.stationed_site(c, payload["op"]) == &"":
+				return tr("%s is at HQ already.") % (op.name if op != null else String(payload["op"]))
+			return ""
+		["crew", "jack"]:
+			return RunManager.launch_error(payload["op"], value)
+		["recruit", "roster"]:
+			var cls := lookup.get_content(payload["cls"]) as ClassData
+			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.recruit(d, cfg, cls))
+		["boost", "queue"]:
+			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.buy_boost(d, cfg, payload["boost"]))
+		["segment", "ring"]:
+			var op := c.get_operative(payload["op"])
+			var current: StringName = op.ring_segment_ids[int(value)] if op != null and int(value) < op.ring_segment_ids.size() else &""
+			if current == payload["segment"]:
+				return DropLayer.SKIP
+			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.swap_ring_segment(d, lookup, payload["op"], int(value), payload["segment"]))
+	return DropLayer.SKIP
+
+
+## Runs rule call `f` on a copy of the campaign: its refusal text, or "" when it would go
+## through. The real campaign is never touched.
+func _dry(f: Callable) -> String:
+	var events: Array[Dictionary] = f.call(RunManager.campaign.duplicate_state())
+	for e in events:
+		if String(e.get("type", "")) == "refused":
+			return String(e.get("text", "refused"))
+	return ""
+
+
+## `text` (a rules refusal) with the Site ids in `ids` written as the screens name them
+## (the rules speak in ids: "t1_a has no free asset slot").
+func _named(text: String, ids: Array) -> String:
+	for id in ids:
+		if String(id) != "" and text.contains(String(id)):
+			text = text.replace(String(id), site_name(StringName(String(id))))
+	return text
+
+
+## What a dragged item looks like (its ghost and flying copies): an asset card, a crew
+## Polaroid, or a note with the item's name.
+func drop_ghost(payload: Dictionary, _source: Control) -> Control:
+	var c := RunManager.campaign
+	var lookup := RunManager.lookup()
+	match String(payload.get("kind", "")):
+		"asset", "placed":
+			var aid := StringName(String(payload["asset"]))
+			var data := lookup.get_content(aid) as DefenseAssetData
+			var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, 1)
+			card.set_effect(data)
+			card.size = card.custom_minimum_size
+			return card
+		"crew":
+			var op := c.get_operative(payload["op"]) if c != null else null
+			var chip := CrewChip.new(op.class_id if op != null else &"", payload["op"], op.name if op != null else "")
+			chip.size = chip.custom_minimum_size
+			return chip
+		"recruit":
+			var cls := lookup.get_content(payload["cls"]) as ClassData
+			var rookie := CrewChip.new(payload["cls"], &"", TextDb.t(cls, "display_name") if cls != null else "")
+			rookie.size = rookie.custom_minimum_size
+			return rookie
+		"boost":
+			for b in RunManager.config().netrun_boosts:
+				if b != null and b.id == payload["boost"]:
+					return _note_ghost(TextDb.t(b, "display_name"))
+		"segment":
+			var seg := lookup.get_content(payload["segment"]) as RingSegmentData if payload["segment"] != &"" else null
+			return _note_ghost(TextDb.t(seg, "display_name") if seg != null else tr("Class default"))
+	return null
+
+
+## A taped note with `text` (already translated): the ghost of a boost or a segment.
+func _note_ghost(text: String) -> Control:
+	var b := Button.new()
+	b.theme_type_variation = &"NoteButton"
+	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	b.text = text
+	b.size = b.get_combined_minimum_size()
+	return b
+
+
+## A valid drop: the same call the item's button makes (the layer already flies the copy).
+func _on_dropped(payload: Dictionary, target: Dictionary) -> void:
+	var value: Variant = target.get("value")
+	var flight: Dictionary = drops.last_flight
+	match [String(payload.get("kind", "")), String(target.get("kind", ""))]:
+		["asset", "node"]:
+			# The button path: pick the node as the target, then press the card.
+			selected_site = value
+			deploy_asset(int(payload["index"]), value)
+			_focus_named.call_deferred("Target_%s" % value)
+		["placed", "node"]:
+			move_asset(payload["site"], int(payload["index"]), value)
+			play_asset_drop(value)
+			_focus_named.call_deferred("Target_%s" % value)
+		["placed", "armory"]:
+			move_asset(payload["site"], int(payload["index"]), &"")
+		["crew", "station"]:
+			station(payload["op"], value)
+			drops.reveal_on_land(flight, _panel.find_child("Crew_%s" % payload["op"], true, false) as Control, false)
+			_focus_in.call_deferred("Crew_%s" % payload["op"])
+		["crew", "recall"]:
+			recall(payload["op"])
+			drops.reveal_on_land(flight, _panel.find_child("Crew_%s" % payload["op"], true, false) as Control, false)
+			_focus_in.call_deferred("Crew_%s" % payload["op"])
+		["crew", "jack"]:
+			launch(value, payload["op"])
+		["recruit", "roster"]:
+			_market_apply(payload, flight, func() -> void: recruit(payload["cls"]))
+		["boost", "queue"]:
+			_market_apply(payload, flight, func() -> void: buy_boost(payload["boost"]))
+		["segment", "ring"]:
+			swap_segment(payload["op"], int(value), payload["segment"])
+			var view := get_node_or_null("LoadoutView") as LoadoutView
+			if view != null:
+				view.show_spinner()
+				view.focus_ring(int(value))
+
+
+## A drop the target refuses: nothing changes; the rules' reason shows, as a button's
+## refusal does.
+func _on_refused(_payload: Dictionary, _target: Dictionary, reason: String) -> void:
+	_log.append_text("[color=orange]%s[/color]\n" % reason)
+	notify(reason, true)
+
+
+## A Black Market purchase by click: it buys as before, then the item flies from the
+## button to where it went (the new operative in the crew, the boost in the next run's
+## kit), which shows as the copy lands.
+func _market_buy(button: Control, payload: Dictionary, apply: Callable) -> void:
+	var from := button.get_global_rect() if button != null and button.is_inside_tree() else Rect2()
+	var before := _market_count(payload)
+	apply.call()
+	if _market_count(payload) > before and from.has_area():
+		var f := drops.buy_flight(payload, from, _market_rect.bind(payload))
+		drops.reveal_on_land(f, _market_node(payload))
+
+
+## A purchase dropped on its target: bought as by the button; the new item shows as the
+## landing copy stamps down.
+func _market_apply(payload: Dictionary, flight: Dictionary, apply: Callable) -> void:
+	var before := _market_count(payload)
+	apply.call()
+	if _market_count(payload) > before:
+		drops.reveal_on_land(flight, _market_node(payload))
+
+
+func _market_count(payload: Dictionary) -> int:
+	var c := RunManager.campaign
+	if c == null:
+		return 0
+	return c.roster.size() if String(payload.get("kind", "")) == "recruit" else c.pending_boosts.size()
+
+
+## Where a purchase shows on the page now: the newest dossier, or the next run's kit.
+func _market_node(payload: Dictionary) -> Control:
+	if _panel == null:
+		return null
+	if String(payload.get("kind", "")) == "recruit":
+		var c := RunManager.campaign
+		return _panel.find_child("Crew_%s" % c.roster[c.roster.size() - 1].id, true, false) as Control if c != null and not c.roster.is_empty() else null
+	return _panel.find_child("QueuedBoosts", true, false) as Control
+
+
+func _market_rect(payload: Dictionary) -> Rect2:
+	var n := _market_node(payload)
+	return n.get_global_rect() if n != null and n.is_inside_tree() else Rect2()
+
+
+## Focus on the first usable control inside `node_name` (an operative's dossier).
+func _focus_in(node_name: String) -> void:
+	var n := _panel.find_child(node_name, true, false) if _panel != null else null
+	var first := UiFocus.first_focusable(n) if n != null else null
+	if first != null:
+		first.grab_focus()
+
+
+func _focus_named(node_name: String) -> void:
+	var n := _panel.find_child(node_name, true, false) as Control if _panel != null else null
+	if n != null and n.is_visible_in_tree():
+		n.grab_focus()
+
+
+
 # --- Panels ---------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# ANIM-4: the old page's drop targets go with it (a flight in the air keeps going).
+	if drops != null:
+		drops.reset()
 	if _panel != null:
 		_panel.queue_free()
 	if side_hint != null and is_instance_valid(side_hint):
@@ -421,7 +726,7 @@ func _set_panel(p: Control, name: String) -> void:
 	hud.set_screen(String(SCREEN_NUMBERS.get(name, "")), screen_title(name))
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(name)
-	pad_prompts.set_prompts(prompts_for(name))
+	set_page_prompts(prompts_for(name))
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
@@ -491,6 +796,7 @@ func open_loadout(op: OperativeState = null) -> void:
 	var view := LoadoutView.new(op, RunManager.lookup(), RunManager.config().shop_slices, c.living_operatives())
 	view.operative_changed.connect(select_operative)
 	add_child(view)
+	_wire_drops(view.drops)  # ANIM-4: ring segment swaps dropped in the view come here
 
 
 ## The Daemon tray of the selected operative (top bar DAEMONS icon).
@@ -548,6 +854,9 @@ const BACK_PANELS: Array[String] = ["grid", "raid"]
 ## where the panel has a Back to HQ, Menu opens the settings.
 static func prompts_for(p_name: String) -> Array:
 	var out: Array = [[&"ui_accept", "Select"]] # TR
+	# ANIM-4: the pick-up key carries the focused item to a target (D-pad, A drops).
+	if p_name in DRAG_PANELS:
+		out.append([&"end_turn", "Pick up"]) # TR
 	if p_name in BACK_PANELS:
 		out.append([&"ui_cancel", "Back"]) # TR
 	out.append([&"open_settings", "Settings"]) # TR
@@ -859,9 +1168,14 @@ func show_hq() -> void:
 			"" if op.alive else tr(" · [DEAD]")], -1.5 if c.roster.find(op) % 2 == 0 else 1.5)
 		row.name = "Crew_%s" % op.id
 		row.set_operative(op.class_id, op.id)
-		row.tooltip_text = UiTip.fold("%s%s" % [TextDb.t(cls_data, "description") if cls_data != null else "", (tr("\nStationed on %s.") % site_name(where)) if where != &"" else ""])
+		row.tooltip_text = UiTip.fold("%s%s%s" % [TextDb.t(cls_data, "description") if cls_data != null else "", (tr("\nStationed on %s.") % site_name(where)) if where != &"" else "",
+			("\n" + tr("Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.")) if op.alive else ""])
 		row.polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
 		row.dead = not op.alive
+		if op.alive:
+			# ANIM-4: the dossier drags onto a post on the mini-map (station) or CORE (recall);
+			# a click picks it up, and so does the pick-up key on any of its orders.
+			drops.add_source(row, {"kind": "crew", "op": op.id, "motion": &"crew_assign", "prefer": where}, true)
 		if where != &"" and op.alive:
 			row.stamp_text = tr("ON %s") % site_name(where).to_upper()
 		var orders := row.orders
@@ -916,9 +1230,16 @@ func show_hq() -> void:
 	recruits.add_child(_label(tr("Recruit:")))
 	for cls in RunManager.available_classes():
 		var cid := cls.id
-		var rb := _icon(_button(tr("Recruit %s (%d)") % [TextDb.t(cls, "display_name"), CampaignRules.rookie_price(c, cfg)], func() -> void: recruit(cid)), StatIcon.OPERATIVE)
+		# ANIM-4: a click buys as before and the new operative flies to the crew; or drag the
+		# button onto CREW // ROSTER.
+		var pay := {"kind": "recruit", "cls": cid, "motion": &"crew_assign"}
+		var ref: Array = [null]
+		var rb := _icon(_button(tr("Recruit %s (%d)") % [TextDb.t(cls, "display_name"), CampaignRules.rookie_price(c, cfg)],
+			func() -> void: _market_buy(ref[0], pay, func() -> void: recruit(cid))), StatIcon.OPERATIVE)
+		ref[0] = rb
 		rb.name = "Recruit_%s" % cls.id
 		_add_tip(recruits, rb, TextDb.t(cls, "description"))
+		drops.add_source(rb, pay)
 	market.body.add_child(recruits)
 	var boosts := HFlowContainer.new()
 	boosts.name = "Boosts"
@@ -927,18 +1248,27 @@ func show_hq() -> void:
 		if b == null:
 			continue
 		var bid := b.id
-		var btn := _button("%s (%d)" % [TextDb.t(b, "display_name"), b.cost], func() -> void: buy_boost(bid))
+		var pay := {"kind": "boost", "boost": bid}
+		var ref: Array = [null]
+		var btn := _button("%s (%d)" % [TextDb.t(b, "display_name"), b.cost], func() -> void: _market_buy(ref[0], pay, func() -> void: buy_boost(bid)))
+		ref[0] = btn
 		btn.name = "Boost_%s" % b.id
 		btn.tooltip_text = UiTip.fold(TextDb.t(b, "description"))
 		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
 		boosts.add_child(btn)
-	if not c.pending_boosts.is_empty():
-		var queued := PackedStringArray()
-		for bid in c.pending_boosts:
-			for b in cfg.netrun_boosts:
-				if b != null and b.id == bid:
-					queued.append(TextDb.t(b, "display_name"))
-		boosts.add_child(_label(tr("queued: %s") % ", ".join(queued)))
+		drops.add_source(btn, pay)
+	# ANIM-4: the next run's kit is a slot of its own (always shown: the boosts' drop target).
+	var queued := PackedStringArray()
+	for bid in c.pending_boosts:
+		for b in cfg.netrun_boosts:
+			if b != null and b.id == bid:
+				queued.append(TextDb.t(b, "display_name"))
+	var queue := _label(tr("queued: %s") % (", ".join(queued) if not queued.is_empty() else "-"))
+	queue.name = "QueuedBoosts"
+	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	queue.mouse_filter = Control.MOUSE_FILTER_PASS
+	queue.tooltip_text = UiTip.fold(tr("The boosts bought for the next run. Drag a boost here to buy it."))
+	boosts.add_child(queue)
 	market.body.add_child(boosts)
 	var unlocks := HFlowContainer.new()
 	unlocks.add_child(_label(tr("Profile unlocks:")))
@@ -971,6 +1301,7 @@ func show_hq() -> void:
 			story.body.add_child(t)
 	_set_panel(box, "hq")
 	_link_crew_focus(roster_box, jack, market)
+	_register_hq_drops(crew, mini, queue)
 
 
 ## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
@@ -1044,6 +1375,8 @@ func show_grid() -> void:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
+	_grid_chips.clear()
+	_jack_button = null
 	# The Grid lives on the city (M3: the rest of the city greyed out); the side column
 	# holds the plan, the legend and the Site list. `grid_view` stays as the (hidden)
 	# summary map model: its clicks and selection mirror the city map's.
@@ -1215,7 +1548,8 @@ func show_grid() -> void:
 	# H24 K1: the folded key opens over the map (no refit) and folds back.
 	grid_legend.fold_changed.connect(_place_grid_legend)
 	if grid_legend.foldable():
-		pad_prompts.set_prompts(prompts_for("grid") + [[&"cycle_target", "Key"]])
+		set_page_prompts(prompts_for("grid") + [[&"cycle_target", "Key"]])
+	_register_grid_drops(site)
 
 
 ## The Grid map fitted to the part of the screen it shows through (H23 #5: at 1.6 a T3
@@ -1643,6 +1977,21 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		go.name = "Launch"
 		go.theme_type_variation = &"HotButton"
 		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
+		_jack_button = go
+		# ANIM-4: the crew as small Polaroids: drag one onto JACK IN (or pick it up with a
+		# press) to choose who runs it. The list above stays the button path.
+		var chips := HFlowContainer.new()
+		chips.name = "CrewChips"
+		chips.add_theme_constant_override("h_separation", 6)
+		chips.add_theme_constant_override("v_separation", 6)
+		for op in living:
+			var chip := CrewChip.new(op.class_id, op.id, op.name)
+			chip.name = "Chip_%s" % op.id
+			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to run %s (or pick them in the list).") % [op.name, site_name(site.id)])
+			chips.add_child(chip)
+			_grid_chips.append(chip)
+		card.body.add_child(chips)
+		card.body.move_child(chips, row.get_index())
 	if c.grid.is_cleared(site.id) and site.claimable:
 		var node_pick := OptionButton.new()
 		node_pick.name = "NodePick"
@@ -1782,10 +2131,13 @@ func show_raid() -> void:
 		var data := lookup.get_content(aid) as DefenseAssetData
 		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
 		card.set_effect(data)  # H24 S14: what it does, in a line and a pictogram
-		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)])
+		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)]
+			+ " " + tr("Or drag it onto any of your nodes."))
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
+		# ANIM-4: or drag it onto a node (the map or YOUR NODES); the pad picks it up.
+		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
 		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
@@ -1797,6 +2149,7 @@ func show_raid() -> void:
 			select_target(id))
 	_raid_avoid = [side, loadout]
 	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
+	_register_raid_drops(claimed, loadout)
 	place_raid_legend.call_deferred()
 	spacer.resized.connect(place_raid_legend)
 	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
@@ -1810,6 +2163,13 @@ func show_raid() -> void:
 ## Makes claimed node `site_id` the raid setup's target (map click, or its target button
 ## in the node orders for the pad and keyboard; H20).
 func select_target(site_id: StringName) -> void:
+	# ANIM-4: the target already picked stays as it is (no rebuild), so a press on its node
+	# can go on into a drag of its assets.
+	if panel_name == "raid" and site_id == selected_site and _panel != null:
+		var same := _panel.find_child("Target_%s" % site_id, true, false) as Control
+		if same != null:
+			same.grab_focus.call_deferred()
+		return
 	selected_site = site_id
 	if panel_name == "raid":
 		wireframe.hold_camera()  # ANIM-5: the map holds still while the page rebuilds
@@ -2176,8 +2536,13 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 		row.add_child(Badge.new(tr("HP %s > %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(String(n.get("outcome", "")))],
 			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, tr("%s's integrity (HP) now and after the raid: %s > %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
 	var assets := c.grid.assets_on(site_id)
-	for aid in assets:
-		row.add_child(Badge.new("", Palette.CELL_PINK, "", _display(aid), aid))
+	for i in assets.size():
+		var badge := Badge.new("", Palette.CELL_PINK, "", _display(assets[i]), assets[i])
+		badge.name = "Placed_%s_%d" % [site_id, i]
+		row.add_child(badge)
+		# ANIM-4: a placed asset drags off its node: onto another node (moves it) or the
+		# DEFENSE LOADOUT (back to the Armory), as its buttons below do.
+		drops.add_source(badge, _placed_payload(site_id, i, assets[i]))
 	if picked:
 		var moves := HFlowContainer.new()
 		moves.name = "Moves"
@@ -2185,12 +2550,22 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 		box.add_child(moves)
 		for i in assets.size():
 			var idx := i
-			_add_tip(moves, _button(tr("Withdraw %s") % _display(assets[i]), func() -> void: move_asset(site_id, idx, &"")), tr("Back to the Armory."))
+			var withdraw := _button(tr("Withdraw %s") % _display(assets[i]), func() -> void: move_asset(site_id, idx, &""))
+			_add_tip(moves, withdraw, tr("Back to the Armory."))
+			# ANIM-4: the pick-up key on an asset's button carries that asset.
+			drops.add_source(withdraw, _placed_payload(site_id, i, assets[i]))
 			for other in claimed:
 				if other != site_id and c.grid.is_active_node(other):
 					var oid := other
-					_add_tip(moves, _button("%s > %s" % [_display(assets[i]), site_name(other)], func() -> void: move_asset(site_id, idx, oid)), tr("Move it to %s.") % site_name(other))
+					var move := _button("%s > %s" % [_display(assets[i]), site_name(other)], func() -> void: move_asset(site_id, idx, oid))
+					_add_tip(moves, move, tr("Move it to %s.") % site_name(other))
+					drops.add_source(move, _placed_payload(site_id, i, assets[i]))
 	return box
+
+
+## ANIM-4: the drag payload of asset `index` (id `asset_id`) deployed on `site_id`.
+func _placed_payload(site_id: StringName, index: int, asset_id: StringName) -> Dictionary:
+	return {"kind": "placed", "site": site_id, "index": index, "asset": asset_id, "prefer": site_id}
 ## The raid's part of the Grid as an overlay graph: claimed nodes (coloured by `results`
 ## outcome, with their assets), the Sites on the threat routes, links among them.
 ## `c` draws another campaign state than the current one (ANIM-5: the playout starts from
@@ -2441,6 +2816,9 @@ func _demo_anim(id: String) -> void:
 		if city.showing_current_look() and city.camera_settled():
 			break
 		await get_tree().process_frame
+	if id.begins_with("drag_"):
+		await _demo_drag(id)
+		return
 	print("anim5: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
 	match id:
 		"site_select":
@@ -2474,6 +2852,95 @@ func _demo_anim(id: String) -> void:
 					print("anim5: influence_spread spreads from frame %d" % Engine.get_frames_drawn())
 					break
 				await get_tree().process_frame
+
+
+## ANIM-4 frame capture: frames a scripted pointer takes from the item to where it lets go,
+## the frames it rests there first, the frames a page gets to lay out, and the arc of the
+## pointer's path (px up at its middle).
+const DEMO_DRAG_FRAMES := 18
+const DEMO_DRAG_HOLD := 3
+const DEMO_LAYOUT_FRAMES := 12
+const DEMO_DRAG_ARC := 40.0
+## Where the demo lets go: this far off the target's centre (px), at most this share of
+## its size (so it stays inside).
+const DEMO_RELEASE_OFFSET := Vector2(18, 12)
+const DEMO_RELEASE_SHARE := 0.3
+
+
+## ANIM-4 frame capture (a demo campaign in its own slot): picks an item up, carries it
+## along a scripted pointer path and lets go: on a target that takes it (`drag_asset`,
+## `drag_crew`, `drag_loadout`), on one that refuses it (`drag_asset_refuse`,
+## `drag_crew_refuse`) or on nothing (`drag_crew_cancel`, `drag_loadout_cancel`). Prints
+## "anim4: <id> starts on frame N" at the pick-up.
+func _demo_drag(id: String) -> void:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var layer := drops
+	var src: Control = null
+	var target_id := ""
+	var end := Vector2.INF
+	if id.begins_with("drag_asset"):
+		if id == "drag_asset_refuse":
+			# The relay's second slot filled: the last asset has nowhere to go there.
+			CampaignRules.deploy_asset(c, cfg, lookup, 0, selected_site)
+		show_raid()
+		for f in DEMO_LAYOUT_FRAMES:
+			await get_tree().process_frame
+		var cards := _panel.find_child("AssetCards", true, false)
+		src = cards.get_child(cards.get_child_count() - 1) as Control
+		target_id = "node:%s" % (selected_site if id == "drag_asset_refuse" else c.grid.home_site_id)
+	elif id == "drag_crew_refuse":
+		show_hq()
+		for f in DEMO_LAYOUT_FRAMES:
+			await get_tree().process_frame
+		src = _panel.find_child("Crew_%s" % c.living_operatives()[0].id, true, false) as Control
+		target_id = "station:%s" % c.grid.claimed_ids()[c.grid.claimed_ids().size() - 1]
+	elif id.begins_with("drag_crew"):
+		RunManager.scene_switching_enabled = false  # the capture holds on the drop, not the jack
+		var sites := RunManager.launchable_sites()
+		if not sites.is_empty():
+			selected_site = sites[0].id
+		show_grid()
+		for f in DEMO_LAYOUT_FRAMES:
+			await get_tree().process_frame
+		src = _grid_chips[0] if not _grid_chips.is_empty() else null
+		target_id = "jack"
+		if id == "drag_crew_cancel":
+			end = Vector2(size.x * 0.3, size.y * 0.45)
+	elif id.begins_with("drag_loadout"):
+		var op := c.living_operatives()[0]
+		op.rank = 3
+		open_loadout(op)
+		var view := get_node("LoadoutView") as LoadoutView
+		view.show_spinner()
+		for f in DEMO_LAYOUT_FRAMES:
+			await get_tree().process_frame
+		layer = view.drops
+		var options := CampaignRules.ring_segment_options(op, lookup.get_content(op.class_id) as ClassData)
+		src = view.find_child("Swap_%s" % options[0], true, false) as Control if not options.is_empty() else null
+		target_id = "ring:1"
+		if id == "drag_loadout_cancel":
+			end = (view._view as SpinnerView).window.get_global_rect().position + Vector2(40, 120)
+	if src == null:
+		print("anim4: %s has nothing to drag" % id)
+		return
+	var from := src.get_global_rect().get_center()
+	layer.start_carry(src, false)
+	layer.point_at(from)
+	if end == Vector2.INF:
+		# Let go a little off the target's centre (inside it), so the snap onto it shows.
+		var r := layer.locate(layer.target(target_id))
+		end = r.get_center() + DEMO_RELEASE_OFFSET.min(r.size * DEMO_RELEASE_SHARE)
+	print("anim4: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
+	for i in DEMO_DRAG_FRAMES:
+		await get_tree().process_frame
+		var q := Tween.interpolate_value(0.0, 1.0, float(i + 1) / DEMO_DRAG_FRAMES, 1.0, Tween.TRANS_SINE, Tween.EASE_IN_OUT) as float
+		layer.point_at(from.lerp(end, q) - Vector2(0, DEMO_DRAG_ARC * sin(PI * q)))
+	for i in DEMO_DRAG_HOLD:
+		await get_tree().process_frame
+	print("anim4: %s lets go on frame %d" % [id, Engine.get_frames_drawn()])
+	layer.release_at(end)
 
 
 func _still_active(projection: RaidResolver.RaidResult) -> int:
@@ -2738,6 +3205,20 @@ func _build_ui() -> void:
 	# More below (the HQ's BLACK MARKET): a tag at the foot of the page while it scrolls on.
 	more_hint = ScrollHint.new(scroll)
 	add_child(more_hint)
+	# ANIM-4: drag and drop over every page (targets pulse, the pad's reticle, flights).
+	drops = DropLayer.new()
+	_wire_drops(drops)
+	add_child(drops)
+
+
+## ANIM-4: a drop layer's questions and intents come to this screen: whether a target
+## takes an item (the rules, dry-run), what the item looks like, and the drop itself.
+func _wire_drops(layer: DropLayer) -> void:
+	layer.check = drop_error
+	layer.ghost_maker = drop_ghost
+	layer.dropped.connect(_on_dropped)
+	layer.refused.connect(_on_refused)
+	layer.carry_changed.connect(_on_carry_changed)
 
 
 ## Turns the buttons in `box` into "> ITEM" terminal menu lines.

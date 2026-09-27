@@ -38,3 +38,22 @@ Variants: add `--demo-tune=<id>:<duration>[:<amplitude>]` (a duplicate of the ta
 file never changes). Command: `godot --path . --resolution 1280x720 --write-movie
 <dir>/f.png --fixed-fps 30 --quit-after N <scene> -- <flags>`; the log prints "anim5: <id>
 starts on frame N" for `tools/design_lab/frame_strip.py --start`.
+
+## Drag and drop, HQ side (ANIM-4)
+
+Each strip follows one item from the pick-up (0 ms: it pops and its slot dims; the
+targets that take it pulse, the others stay dark) along a scripted pointer (the item
+trails it with ANIM-3's ghost lag) to the let-go at about +700 ms, a little off the
+target's centre so the snap shows.
+
+| Strip | Motion | Variants (top to bottom) | Picked | Captured with |
+|---|---|---|---|---|
+| `drag_loadout.png` | Rank 3 ring swap: a swap chip carried onto an inner ring segment of the loadout view's wheel; it snaps in, dips and stamps, the ring shows the new segment | `drop_settle` 0.10 s / 4 px, **0.15 s / 6 px**, 0.25 s / 10 px | 0.15 s / 6 px: tactile without a bounce that reads as a second action | hq `--demo-hq --demo-anim=drag_loadout` |
+| `drag_crew.png` | An operative's chip carried from the Site card onto JACK IN (who runs it): reticle, snap, stamp ring (the jack itself is ANIM-5's, switched off for the capture) | `drop_stamp` 0.18 s / +12 px, **0.25 s / +18 px**, 0.35 s / +26 px | 0.25 s / +18 px: reads as a stamp, gone before the jack | hq `--demo-grid --demo-anim=drag_crew` |
+| `drag_asset.png` | A DECOY card carried from the Armory onto CORE on the map; the node's own asset drop (ANIM-5 `asset_drop`) is the landing | `drag_pickup` x1.00, **0.10 s x1.06**, 0.16 s x1.14 | x1.06: the card visibly lifts; x1.14 jumps out of its row | hq `--demo-raid --demo-anim=drag_asset` |
+| `drag_refuse.png` | The same card onto a node with no free slot: the no-entry mark shakes on the node, the card glides home, the rules' reason shows | `drop_reject` 0.12 s / 3 px, **0.20 s / 6 px**, 0.35 s / 10 px | 0.20 s / 6 px: a clear "no" that doesn't hold the item up | hq `--demo-raid --demo-anim=drag_asset_refuse` |
+| `drag_cancel.png` | Top: a crew chip let go over nothing glides home (`drag_cancel_return`, ANIM-3's 0.15 s). Bottom: a dossier carried to the mini-map's firewall relay (no station slot) is refused and glides home | one each (chosen values) | as is | hq `--demo-grid --demo-anim=drag_crew_cancel` and `--demo-anim=drag_crew_refuse` |
+
+The log prints "anim4: <id> starts on frame N" (the pick-up) and "lets go on frame N";
+the strips take 8 frames every 5 from the pick-up. `--demo-anim=drag_loadout_cancel` (a
+swap let go beside the wheel) plays too.

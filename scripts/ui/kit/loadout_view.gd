@@ -16,6 +16,9 @@ var upgrades: Array[SliceData] = []
 var crew: Array[OperativeState] = []
 var tab: String = "DECK"
 var _view: Control = null
+## ANIM-4: drag and drop inside the view (the screen wires its check and its drops): at
+## Rank 3 the ring segment swaps sit beside the wheel as chips to drag onto a segment.
+var drops: DropLayer = null
 
 
 func _init(p_op: OperativeState, p_lookup: ContentLookup, p_upgrades: Array[SliceData] = [], p_crew: Array[OperativeState] = []) -> void:
@@ -28,8 +31,15 @@ func _init(p_op: OperativeState, p_lookup: ContentLookup, p_upgrades: Array[Slic
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
+func _init_drops() -> void:
+	if drops == null:
+		drops = DropLayer.new()
+		add_child(drops)
+
+
 func _ready() -> void:
 	UiFocus.hold(self)
+	_init_drops()
 	show_deck()
 
 
@@ -46,6 +56,46 @@ func show_spinner() -> void:
 	var core := core_of(op, lookup)
 	view.set_core(core["hub"], core["ring"])
 	_add_tabs()
+	_add_swaps(view, core["ring"])
+
+
+## ANIM-4: the Rank 3 ring segment swaps (GDD 6.4) as chips beside the wheel (the class
+## default first): drag one onto an inner ring segment, or press it and pick the segment
+## with the D-pad. The dossier's segment lists stay the button path. Nothing here changes
+## the operative: the drop goes up to the screen.
+func _add_swaps(view: SpinnerView, ring: Array) -> void:
+	var cls := lookup.get_content(op.class_id) as ClassData
+	var options: Array[StringName] = []
+	if cls != null:
+		options = CampaignRules.ring_segment_options(op, cls)
+	if options.is_empty() or drops == null:
+		return
+	var ids: Array[StringName] = [&""]
+	ids.append_array(options)
+	for id in ids:
+		var seg := lookup.get_content(id) as RingSegmentData if id != &"" else null
+		var chip := Button.new()
+		chip.name = "Swap_%s" % (String(id) if id != &"" else "default")
+		chip.theme_type_variation = &"NoteButton"
+		chip.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		chip.text = TextDb.t(seg, "display_name") if seg != null else tr("Class default")
+		chip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		chip.custom_minimum_size.x = SpinnerView.SIDE_W
+		chip.tooltip_text = UiTip.fold((Codex.describe(seg) + "\n" if seg != null else "") + tr("Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."))
+		view.add_side(chip)
+		drops.add_source(chip, {"kind": "segment", "op": op.id, "segment": id}, true)
+	for k in ring.size():
+		var pad := view.ring_pad(k)
+		if pad != null:
+			drops.add_target("ring:%d" % k, ["segment"], "ring", k, DropLayer.rect_of(pad))
+
+
+## Focus on inner ring segment `k`'s pad (after a swap dropped there).
+func focus_ring(k: int) -> void:
+	var view := _view as SpinnerView
+	var pad := view.ring_pad(k) if view != null else null
+	if pad != null:
+		pad.grab_focus.call_deferred()
 
 
 ## Shows the next operative of `crew` on the same tab.
@@ -109,6 +159,10 @@ func _swap(view: Control) -> void:
 	_view = view
 	_view.closed.connect(_on_closed)
 	add_child(_view)
+	# ANIM-4: the drop layer stays over the view; the old view's targets go with it.
+	if drops != null:
+		drops.reset()
+		move_child(drops, -1)
 
 
 func _on_closed() -> void:

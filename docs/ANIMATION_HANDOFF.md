@@ -54,6 +54,7 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. `--demo-set=<id>.<field>=<v>,...` tunes the lab's copy for variant strips; combat ids play on the lab wheel ("view") or in a live combat scene ("scene", starts 3 frames later: frame 9). |
 | Combat (ANIM-2) | `ResolveBeats`, `CombatFxLayer`, `WheelView` motion overrides, `combat_scene` replays | SEND IT sequence, spins, nudge queue, landings, pointers, tags, rewind, death / breach / VICTORY: 4.2-4.4, 4.6-4.11 done. Strips: `docs/timeline/motion/`. |
 | Cards (ANIM-3) | `ZineCard` lift / deal offsets, `DragGhost`, `RamBar` ticks, combat_scene flights | Hover, pick-up, drag ghost, zone pulse, aim draw-in, reticle, play fly/stamp/dissolve/burn, cancel return, draw / discard piles, RAM ticks: 4.5 done. |
+| HQ drag and drop (ANIM-4) | `DropLayer`, `CrewChip`, `hq_scene` drop targets, the loadout view's swap chips | Raid assets onto nodes and off them, crew onto posts / CORE / JACK IN, recruits and boosts onto the crew and the next run's kit (click flights too), Rank 3 ring swaps; target pulses, no-entry refusals, snap and stamp, glide home; pad and keys carry with a reticle. The Modem and loot drags are ANIM-4b. |
 
 ## 3. First task: the motion config and a motion lab
 
@@ -91,6 +92,9 @@ config, to be tuned with the owner.
 ANIM-3 = 4.5 plus card targeting). Choices and values: DECISIONS "Animation pass —
 ANIM-2" / "— ANIM-3"; STYLE_GUIDE 5.2; strips in `docs/timeline/motion/`. 4.1, 4.12, 4.14,
 4.15 and 4.16 are built in ANIM-5 (DECISIONS "Animation pass — ANIM-5"; STYLE_GUIDE 5.3).
+The designer's "drag and drop anything", HQ side (loadout, crew, raid defences, Black
+Market), is built in ANIM-4 (DECISIONS "Animation pass — ANIM-4"; STYLE_GUIDE 5.4); the
+Modem and loot drags follow as ANIM-4b.
 
 4.1 **Jack in / jack out.** *Done (ANIM-5).* Trigger: leaving HQ for a netrun and back. The camera pushes
 into the deck CRT, the screen dissolves to the wireframe city, scanlines roll. Feel:
@@ -148,8 +152,8 @@ stays on.
 4.13 **HQ.** Idle: CRT hum flicker on the deck screen, pirate radio text types in, JACK IN
 ring breathes slowly. Crew Polaroids tilt slightly on hover.
 
-4.14 **City Grid / raid setup.** *Done (ANIM-5; the drag itself is ANIM-4's, it calls
-`hq_scene.play_asset_drop`).* Selecting a Site: the roof outline draws on (stroke
+4.14 **City Grid / raid setup.** *Done (ANIM-5; the drag itself is ANIM-4's, done: it
+calls `hq_scene.play_asset_drop`).* Selecting a Site: the roof outline draws on (stroke
 reveal), the camera eases to it. Threat routes: dashes crawl along the path toward home.
 Deploying an asset: the card drops onto the node with a stamp.
 
