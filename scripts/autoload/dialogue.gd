@@ -187,6 +187,10 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 		text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, rect.size.x - margins))
 	inline_speaker = false
 	_default_dock = false
+	# A line on screen when the dock moves is fitted to its new rect (H23: moving from the
+	# top band into combat's column left the label 0 px tall, an empty framed box).
+	if text_label != null and bar.visible and text_label.get_parsed_text() != "":
+		_fit_page(text_label.get_parsed_text())
 
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and
