@@ -99,9 +99,12 @@ func test_the_combat_subtitle_pages_and_never_reaches_a_wheel() -> void:
 		Dialogue.clear()
 
 
-func test_the_bottom_dock_does_not_page() -> void:
+## H20: the default dock (the old bottom bar moved to the top band) pages long lines to
+## the lines that fit, so it never grows over a control.
+func test_the_default_dock_pages_to_the_lines_that_fit() -> void:
 	Dialogue.dock_bottom()
-	assert_eq(Dialogue.pages_of(LONG_LINE), PackedStringArray([LONG_LINE]))
+	assert_true(Dialogue.dock_lines >= 1, "paged")
+	assert_true(Dialogue.pages_of(LONG_LINE).size() >= 2, "a long line is shown in pages")
 
 
 func test_the_pause_menu_keeps_its_backdrop_on_the_terminal_panel() -> void:
