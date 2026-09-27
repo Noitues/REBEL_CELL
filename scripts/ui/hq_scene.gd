@@ -50,8 +50,7 @@ const VERDICT_HOLDS := "ALL HOLD" # TR
 const VERDICT_HIT := "HOME HIT" # TR
 const VERDICT_LOST := "CAMPAIGN LOST" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
-const RESULT_CAPTION := "RAID
-RESULT:" # TR
+const RESULT_CAPTION := "RAID\nRESULT:" # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
 ## Words the screens translate that sit in the core's data (H24 S1: exported by the "# TR"
@@ -125,6 +124,10 @@ var _raid_reframes: int = 0
 ## The Grid map's key, on the map (H23 #3), and the passes fitting the map so far.
 var grid_legend: MapLegend = null
 var _grid_fits: int = 0
+## ANIM-5: the Grid camera has leaned toward the selected Site on this page.
+var _grid_leaned: bool = false
+## Leans shorter than this (screen px) are not worth a new frame.
+const GRID_LEAN_MIN := 1.0
 ## The key's size the last fit laid the map out for.
 var _grid_legend_size: Vector2 = Vector2.ZERO
 ## The map drawn on the city (Grid, raids); freed when another panel opens.
@@ -200,6 +203,10 @@ func _ready() -> void:
 						selected_site = sd.id
 						break
 				show_grid()
+		# ANIM-5 frame capture: `--demo-anim=<id>` plays one motion once the city has baked.
+		for a in args:
+			if a.begins_with("--demo-anim="):
+				_demo_anim.call_deferred(a.trim_prefix("--demo-anim="))
 		return
 	if RunManager.campaign == null and RunManager.has_save():
 		RunManager.resume()
@@ -352,9 +359,19 @@ func swap_segment(operative_id: StringName, index: int, segment_id: StringName) 
 
 
 func deploy_asset(armory_index: int, site_id: StringName) -> void:
-	_report(CampaignRules.deploy_asset(RunManager.campaign, RunManager.config(), RunManager.lookup(), armory_index, site_id))
+	var events := CampaignRules.deploy_asset(RunManager.campaign, RunManager.config(), RunManager.lookup(), armory_index, site_id)
+	_report(events)
 	RunManager.autosave()
 	show_raid()
+	if not events.is_empty() and String(events[0].get("type", "")) != "refused":
+		play_asset_drop(site_id)
+
+
+## ANIM-5 (4.14): the asset just deployed on `site_id` drops onto its node with a stamp
+## (the hook drag-and-drop deploying calls; the end state at once without motion).
+func play_asset_drop(site_id: StringName) -> void:
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.drop_asset(site_id)
 
 
 func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
@@ -390,6 +407,10 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = p
 	panel_name = name
+	# ANIM-5: only the Grid and the playout ease their camera; any other page shows its
+	# frame at once.
+	if wireframe != null and not name in ["grid", "raid_playout"]:
+		wireframe.settle_camera()
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
@@ -811,8 +832,11 @@ func show_hq() -> void:
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cols.add_child(center)
 	center.add_child(monitor)
+	# ANIM-5 (4.1): the deck monitor is the CRT jack in pushes into and jack out leaves.
+	monitor.add_to_group(Fx.JACK_FOCUS_GROUP)
 	var mini := GridMapView.new()
 	mini.custom_minimum_size = Vector2(420, 170)
+	mini.track_seen = true  # ANIM-5: a Site whose status changed since last seen pulses once
 	mini.show_grid(c, RunManager.corporation, _threat_paths())
 	mini.site_clicked.connect(func(id: StringName) -> void: selected_site = id; show_grid())
 	mini.tooltip_text = tr("Click a Site to open it on the City Grid.")
@@ -1181,6 +1205,7 @@ func show_grid() -> void:
 	city_overlay.node_hovered.connect(light_run_row)
 	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
 	_grid_fits = 0
+	_grid_leaned = false
 	_fit_next_frame()
 	spacer.resized.connect(_refit_grid)
 	grid_legend.minimum_size_changed.connect(_on_grid_legend_resized)
@@ -1222,9 +1247,12 @@ func fit_grid_map() -> void:
 		_place_grid_legend()
 		free.size.y = maxf(1.0, area.size.y - own.y - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
 	if _grid_fits >= GRID_FITS_MAX:
+		_grid_settled(free)
 		return
-	var fit := LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x)
+	var fit: Dictionary = wireframe.unrigged(func() -> Dictionary:
+		return LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x))
 	if fit.is_empty():
+		_grid_settled(free)
 		return
 	_grid_fits += 1
 	var k := float(fit["zoom"])
@@ -1237,6 +1265,46 @@ func fit_grid_map() -> void:
 	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
 	_frame_city(city.scale.x * k, city.focus_grid, anchor)
 	_fit_after_redraw()  # check again under the new camera
+
+
+## ANIM-5 (4.14): the Grid map has settled into `free`: the camera leans toward the
+## selected Site once (`grid_lean`), then the picture eases from the frame it held.
+func _grid_settled(free: Rect2) -> void:
+	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay):
+		_grid_leaned = true
+		var lean: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_lean(free))
+		if lean.length() >= GRID_LEAN_MIN:
+			var city := wireframe.city
+			_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + lean / get_global_rect().size)
+			if not city.rebuilt.is_connected(_grid_settled):
+				city.rebuilt.connect(_grid_settled.bind(free), CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+			return
+	wireframe.ease_camera()
+
+
+## ANIM-5 (4.14): how far (screen px) the Grid camera leans so the selected Site moves
+## toward the middle of `free`: at most `map_camera_ease`'s amplitude, and only as far as
+## keeps every node (icon and tier pips) inside the area the fit aims at, so the H23/H24
+## framing holds at the end.
+func grid_lean(free: Rect2) -> Vector2:
+	if city_overlay == null or not is_instance_valid(city_overlay) or selected_site == &"":
+		return Vector2.ZERO
+	var at := city_overlay.icon_at(selected_site)
+	var rects := LegendSpot.node_rects(city_overlay, false)
+	if at.x == INF or rects.is_empty():
+		return Vector2.ZERO
+	var box := rects[0]
+	for r in rects:
+		box = box.merge(r)
+	var aim := free.grow(-LegendSpot.FIT_INSET) if free.size.x > LegendSpot.FIT_INSET * 4.0 and free.size.y > LegendSpot.FIT_INSET * 4.0 else free
+	var want := aim.get_center() - city_overlay.get_global_transform() * at
+	var lo := aim.position - box.position
+	var hi := aim.end - box.end
+	var out := Vector2.ZERO
+	for axis in 2:
+		if lo[axis] <= 0.0 and hi[axis] >= 0.0:
+			out[axis] = clampf(want[axis], lo[axis], hi[axis])
+	return out.limit_length(Motion.amplitude(&"map_camera_ease"))
 
 
 ## H24 K4: what clearing Site `s` gives and risks (`preview` = CampaignRules.clear_preview),
@@ -1425,7 +1493,11 @@ func _threat_paths() -> Array[Array]:
 
 
 ## Selects a Site clicked on the Grid map and redraws the Grid with its actions first.
+## ANIM-5 (4.14): the picture holds the old frame while the page refits and then eases
+## to the new one (the camera leans toward the Site, `grid_lean`).
 func select_site(site_id: StringName) -> void:
+	if panel_name == "grid":
+		wireframe.hold_camera()
 	selected_site = site_id
 	show_grid()
 
@@ -1564,6 +1636,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		var kind := CampaignRules.run_kind_for(c, site)
 		# One name for one idea (H21 #21): JACK IN, as on the HQ's stamp.
 		var go := _icon(_button(tr(JACK_IN), func() -> void: launch(sid, living[op_pick.selected].id)), StatIcon.JACK_IN)
+		go.add_to_group(Fx.JACK_FOCUS_GROUP)  # ANIM-5: jack in pushes into this JACK IN
 		go.name = "Launch"
 		go.theme_type_variation = &"HotButton"
 		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
@@ -2247,7 +2320,14 @@ func _follow_fight(overlay: CityMapOverlay) -> void:
 	for id in overlay.markers:
 		target = Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5)
 		break
+	var city := wireframe.city
+	if city.focus_grid == target:
+		return
+	# ANIM-5: the camera follows the fight by easing, not jumping.
+	wireframe.hold_camera()
 	_frame_city(1.9, target, Vector2(0.36, 0.55))
+	if not city.rebuilt.is_connected(wireframe.ease_camera):
+		city.rebuilt.connect(wireframe.ease_camera, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 
 
 func _after_playout() -> void:
@@ -2327,6 +2407,64 @@ func show_end() -> void:
 
 
 # --- Helpers ----------------------------------------------------------------------------------
+
+## Frames the ANIM-5 demos wait for the page to settle, and the most they wait for the
+## city's bake before playing anyway.
+const DEMO_SETTLE_FRAMES := 20
+const DEMO_BAKE_FRAMES := 240
+
+
+## ANIM-5 frame capture (dev shortcut, a demo campaign in its own slot): once the page and
+## the city's bake have settled, plays motion `id` and prints the frame it starts on
+## ("anim5: <id> starts on frame N") for tools/design_lab/frame_strip.py.
+func _demo_anim(id: String) -> void:
+	var tune_script: GDScript = load("res://scripts/ui/netrun_scene.gd")
+	tune_script.demo_tune(OS.get_cmdline_user_args())
+	var c := RunManager.campaign
+	if id == "heat_pulse":
+		c.heat = 20
+		show_hq()
+	for f in DEMO_SETTLE_FRAMES:
+		await get_tree().process_frame
+	var city := (background.city if background.visible else wireframe.city)
+	for f in DEMO_BAKE_FRAMES:
+		if city.showing_current_look() and city.camera_settled():
+			break
+		await get_tree().process_frame
+	print("anim5: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
+	match id:
+		"site_select":
+			select_site(stepped_site(1))
+		"raid_playout":
+			fight_raid()
+		"asset_drop":
+			if not c.armory.is_empty():
+				deploy_asset(0, selected_site)
+		"heat_pulse":
+			c.heat = 30
+			show_hq()
+		"jack_in":
+			RunManager.scene_switching_enabled = true
+			var sites := RunManager.launchable_sites()
+			var living := c.living_operatives()
+			if not sites.is_empty() and not living.is_empty():
+				launch(sites[0].id, living[0].id)
+		"influence_spread":
+			# A second Site cleared and claimed (a demo campaign): the tint spreads from it once
+			# its new look has baked.
+			var corp := RunManager.corporation
+			for sd in RunManager.launchable_sites():
+				if not c.grid.is_claimed(sd.id):
+					CampaignRules.on_run_completed(c, corp, RunManager.config(), _demo_run(sd.id))
+					CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), sd.id, &"firewall_relay")
+					break
+			city.sync_influence()
+			for f in DEMO_BAKE_FRAMES:
+				if city.spreading():
+					print("anim5: influence_spread spreads from frame %d" % Engine.get_frames_drawn())
+					break
+				await get_tree().process_frame
+
 
 func _still_active(projection: RaidResolver.RaidResult) -> int:
 	return projection.seized.size()

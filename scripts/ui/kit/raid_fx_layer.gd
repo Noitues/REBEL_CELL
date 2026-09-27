@@ -13,8 +13,10 @@ extends Control
 ## city backdrop keeps its own clock. View only: it reads events and the resolved raid,
 ## never game state, and uses no RNG.
 
-## Stamp words by node outcome (the raid summary's words), translated when drawn.
-const STAMP_WORDS := {"holds": "HOLDS", "disabled": "DISABLED", "seized": "SEIZED", "passed": "PASSED", "breached": "BREACHED"} # TR
+## Node outcomes (RaidResolver) and their stamp words (the raid summary's words, in the
+## same order), translated when drawn.
+const STAMP_OUTCOMES: Array[String] = ["holds", "disabled", "seized", "passed", "breached"]
+const STAMP_TEXT: Array[String] = ["HOLDS", "DISABLED", "SEIZED", "PASSED", "BREACHED"] # TR
 ## Screen px (x screen_k): stamp lettering, its padding, tilt (degrees) and lift over
 ## the icon; damage numbers; traces; hit rings; the home bar and its gap under CORE.
 const STAMP_FONT := 14
@@ -188,7 +190,13 @@ func _number(site: StringName, text: String, col: Color, t0: float, dur: float) 
 
 
 func _stamp(site: StringName, outcome: String, col: Color, t0: float, dur: float) -> void:
-	_stamps[String(site)] = {"word": String(STAMP_WORDS.get(outcome, outcome.to_upper())), "color": col, "t0": t0, "dur": dur}
+	_stamps[String(site)] = {"word": stamp_text(outcome), "color": col, "t0": t0, "dur": dur}
+
+
+## The stamp word for node outcome `outcome` (untranslated; drawn translated).
+static func stamp_text(outcome: String) -> String:
+	var i := STAMP_OUTCOMES.find(outcome)
+	return STAMP_TEXT[i] if i >= 0 else outcome.to_upper()
 
 
 func _home_hit(damage: int, t0: float) -> void:
@@ -203,7 +211,7 @@ func _home_lag_value() -> float:
 	if e == null or _home_lag_t0 == -INF:
 		return home_value
 	var u := clampf((clock - _home_lag_t0 - e.delay) / maxf(e.duration, 0.001), 0.0, 1.0)
-	return Tween.interpolate_value(float(_home_from), float(home_value - _home_from), u, 1.0, e.trans, e.ease)
+	return float(Tween.interpolate_value(float(_home_from), float(home_value - _home_from), u, 1.0, e.trans, e.ease))
 
 
 # --- Checks (tests) ---------------------------------------------------------------------------
@@ -274,7 +282,7 @@ func _u(t0: float, dur: float) -> float:
 
 func _eased(id: StringName, u: float) -> float:
 	var e := Motion.entry(id)
-	return Tween.interpolate_value(0.0, 1.0, u, 1.0, e.trans, e.ease) if e != null else u
+	return float(Tween.interpolate_value(0.0, 1.0, u, 1.0, e.trans, e.ease)) if e != null else u
 
 
 ## Every token's position now (local px), INF for one not on the map or not shown.

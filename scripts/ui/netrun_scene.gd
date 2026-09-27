@@ -160,6 +160,8 @@ func _ready() -> void:
 		if args.has("--demo-combat") or args.has("--demo-tutorial"):
 			RunManager.pending_tutorial = args.has("--demo-tutorial")
 			enter_node(RunManager.netrun.available_nodes()[0])
+		elif args.has("--demo-anim=route_pulse"):
+			_demo_route_pulse.call_deferred()
 		return
 	if RunManager.has_active_run():
 		_show_current()
@@ -193,9 +195,79 @@ func resume() -> void:
 
 
 func enter_node(node_id: StringName) -> void:
+	if _travelling:
+		# A choice pressed while the last move still plays skips it (input skips to the end).
+		_end_travel()
+		return
 	var s := RunManager.netrun
+	var from := s.run.current_node_id
 	_report(s.enter_node(node_id))
 	RunManager.after_step()
+	# ANIM-5 (4.16): the move plays on the route map (a light pulse along the link, the new
+	# node pops up, the old one dims), then the node's screen opens. The rules have already
+	# run; this only delays the view.
+	var secs := 0.0
+	if city_overlay != null and is_instance_valid(city_overlay) and not _grid_zoomed and RunManager.netrun != null \
+			and RunManager.netrun.run.current_node_id == node_id:
+		secs = city_overlay.travel(from, node_id)
+	if secs <= 0.0:
+		_show_current()
+		return
+	_travelling = true
+	get_tree().create_timer(secs).timeout.connect(_end_travel)
+
+
+## ANIM-5 frame capture (dev shortcut): once the route map and the city have settled, the
+## first choice is taken so its move plays; prints the frame it starts on.
+func _demo_route_pulse() -> void:
+	demo_tune(OS.get_cmdline_user_args())
+	for f in DEMO_SETTLE_FRAMES:
+		await get_tree().process_frame
+	for f in DEMO_BAKE_FRAMES:
+		if background.city.showing_current_look() and background.city.camera_settled():
+			break
+		await get_tree().process_frame
+	print("anim5: route_pulse starts on frame %d" % Engine.get_frames_drawn())
+	enter_node(RunManager.netrun.available_nodes()[0])
+
+
+## Frames the ANIM-5 demo waits for the page to settle, and the most it waits for the
+## city's bake before playing anyway.
+const DEMO_SETTLE_FRAMES := 20
+const DEMO_BAKE_FRAMES := 240
+
+
+## ANIM-5 variants for review: `--demo-tune=<id>:<duration>[:<amplitude>]` plays `id`
+## with those values (a duplicate of the table; the file never changes).
+static func demo_tune(args: PackedStringArray) -> void:
+	var cfg: UiMotionData = null
+	for a in args:
+		if not a.begins_with("--demo-tune="):
+			continue
+		var parts := a.trim_prefix("--demo-tune=").split(":")
+		if cfg == null:
+			cfg = (load(Motion.CONFIG_PATH) as UiMotionData).duplicate(true)
+		var e := cfg.find(StringName(parts[0]))
+		if e == null or parts.size() < 2:
+			continue
+		e.duration = float(parts[1])
+		if parts.size() > 2:
+			e.amplitude = float(parts[2])
+	if cfg != null:
+		Motion.use_config(cfg)
+
+
+## ANIM-5: a netrun move is playing on the route map (the node's screen opens after it).
+var _travelling: bool = false
+
+
+## Ends the move (its time is up, or input skipped it) and opens the node's screen.
+func _end_travel() -> void:
+	if not _travelling:
+		return
+	_travelling = false
+	if city_overlay != null and is_instance_valid(city_overlay):
+		city_overlay.finish_travel()
 	_show_current()
 
 
@@ -562,6 +634,7 @@ func _show_map() -> void:
 	else:
 		var r := route_graph()
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, ROUTE_ZOOM, ROUTE_ANCHOR, Vector2.INF)
+		city_overlay.ease_rings()  # ANIM-5: the "you are here" ring eases in
 		city_overlay.avoid_controls([win, route_legend])
 		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
@@ -1461,6 +1534,10 @@ func open_settings() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _travelling and ((event is InputEventMouseButton and event.pressed) or (event is InputEventKey and event.pressed and not event.echo)):
+		_end_travel()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("open_settings") and combat_scene == null:
 		open_settings()
 		get_viewport().set_input_as_handled()
