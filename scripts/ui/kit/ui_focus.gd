@@ -14,7 +14,8 @@ static func first_focusable(root: Node) -> Control:
 			var c := child as Control
 			if not c.is_visible_in_tree() or c.is_queued_for_deletion():
 				continue
-			if c.focus_mode != Control.FOCUS_NONE and not (c is BaseButton and (c as BaseButton).disabled) and (c is BaseButton or c is LineEdit or c is Range):
+			# The effective mode: a modal (hold) switches focus off for the screen behind it.
+			if c.get_focus_mode_with_override() != Control.FOCUS_NONE and not (c is BaseButton and (c as BaseButton).disabled) and (c is BaseButton or c is LineEdit or c is Range):
 				return c
 		if child.is_queued_for_deletion():
 			continue
@@ -94,7 +95,7 @@ static func _usable(c: Node) -> bool:
 	if not (c is Control):
 		return false
 	var ctl := c as Control
-	if not ctl.is_visible_in_tree() or ctl.is_queued_for_deletion() or ctl.focus_mode == Control.FOCUS_NONE:
+	if not ctl.is_visible_in_tree() or ctl.is_queued_for_deletion() or ctl.get_focus_mode_with_override() == Control.FOCUS_NONE:
 		return false
 	if ctl is BaseButton:
 		return not (ctl as BaseButton).disabled
@@ -141,6 +142,50 @@ static func _first_usable(node: Node) -> Control:
 		if deeper != null:
 			return deeper
 	return null
+
+
+## Makes `view` modal for the keyboard and the pad (H20): while it is open nothing beside
+## it can take focus (its siblings' focus is switched off recursively, so the D-pad and
+## Tab can't reach the screen behind and A can't press a control there), and when it
+## closes the siblings get focus back and so does whoever had it when the view opened.
+## Call it once `view` is in the tree (its _ready). The view keeps Godot's geometric
+## D-pad search inside itself (card grids, the spinner's pads).
+static func hold(view: Control) -> void:
+	if view == null or not view.is_inside_tree() or view.get_parent() == null:
+		return
+	var owner := owner_of(view)
+	# Weak: the opener may be freed while the view is open (the panel behind rebuilt).
+	var back: WeakRef = weakref(owner) if owner != null and not view.is_ancestor_of(owner) else null
+	var blocked: Array = []
+	for sib in view.get_parent().get_children():
+		if sib == view or not (sib is Control):
+			continue
+		var ctl := sib as Control
+		if ctl.focus_behavior_recursive == Control.FOCUS_BEHAVIOR_DISABLED:
+			continue
+		blocked.append([ctl, ctl.focus_behavior_recursive])
+		ctl.focus_behavior_recursive = Control.FOCUS_BEHAVIOR_DISABLED
+	view.tree_exiting.connect(func() -> void:
+		for pair in blocked:
+			if is_instance_valid(pair[0]):
+				(pair[0] as Control).focus_behavior_recursive = pair[1]
+		var ctl: Object = back.get_ref() if back != null else null
+		if ctl != null and (ctl as Control).is_inside_tree() and not (ctl as Control).is_queued_for_deletion():
+			(ctl as Control).grab_focus.call_deferred(), CONNECT_ONE_SHOT)
+
+
+## Takes `view` (a modal holding focus) out of the tree at once, so the screen behind can
+## take focus again before whatever the view's result rebuilds, then frees it.
+static func release(view: Control) -> void:
+	if view.get_parent() != null:
+		view.get_parent().remove_child(view)
+	view.queue_free()
+
+
+## True when `event` is a key or pad input a modal view should keep from the screen
+## behind it (number keys entering map nodes, Space, the pad's face buttons).
+static func is_device_input(event: InputEvent) -> bool:
+	return event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion
 
 
 ## Links `root` like link_layout, then points every open edge back at the control itself,

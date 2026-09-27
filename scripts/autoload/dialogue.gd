@@ -33,14 +33,25 @@ const SPEAKER_FONT_SIZE := 12
 const TEXT_FONT_SIZE := 15
 ## Lines per subtitle page in a docked bar (0 = the bar grows to fit the whole line).
 var dock_lines: int = 0
-## The subtitle text's width at the foot of the screen (px).
+## The subtitle text's widest minimum (a narrower dock wraps inside its rect) (px).
 const TEXT_MIN_WIDTH := 560.0
+## Where the bar sits outside combat (H20; 1280x720 canvas): the top band over the screen
+## title and the stat tags. Every control sits below the band (the screens' content starts
+## under the HUD strip) or right of it (VIEW LOADOUT, the Daemons icon), so a line never
+## covers one; long lines page to the lines that fit at the current text size.
+const DEFAULT_DOCK := Rect2(8, 2, 964, 52)
+## Vertical padding of the bar's panel (top + bottom content margins, px).
+const BAR_PADDING := 12.0
+## In the default dock the speaker's name leads the line (no separate name row).
+var inline_speaker: bool = false
+var _default_dock: bool = false
+## The words of the page on screen (without the inline name).
+var _shown: String = ""
 
 
 func _ready() -> void:
 	layer = 90
 	bar = PanelContainer.new()
-	dock_bottom()
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.visible = false
 	add_child(bar)
@@ -64,6 +75,7 @@ func _ready() -> void:
 	if has_node("/root/Settings"):
 		get_node("/root/Settings").changed.connect(_on_settings_changed)
 	_apply_text_scale()
+	dock_default()
 
 
 func _collect_sets() -> void:
@@ -88,17 +100,25 @@ func add_set(set: LineSetData) -> void:
 
 # --- Speaking -----------------------------------------------------------------------------
 
-## The subtitle bar at the foot of the screen (the default). Larger text grows it upwards.
+## The subtitle bar in its place outside combat (DEFAULT_DOCK): the top band, the speaker's
+## name inline, paged to the lines that fit (H20: the old bottom bar covered raid asset
+## cards, LEAVE THE MODEM, crew Loadout buttons, Grid rows and menu buttons).
+func dock_default() -> void:
+	dock_at(DEFAULT_DOCK, lines_fitting(DEFAULT_DOCK))
+	inline_speaker = true
+	_default_dock = true
+
+
+## Kept for callers from before H20 (the combat scene restores the dock on exit): the
+## default dock, no longer at the foot of the screen.
 func dock_bottom() -> void:
-	bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bar.offset_left = -440
-	bar.offset_right = 440
-	bar.offset_top = -92
-	bar.offset_bottom = -20
-	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	dock_lines = 0
-	if text_label != null:
-		text_label.custom_minimum_size.x = TEXT_MIN_WIDTH
+	dock_default()
+
+
+## How many subtitle lines fit in `rect`'s height at the current text size (at least 1).
+func lines_fitting(rect: Rect2) -> int:
+	var fs := text_label.get_theme_font_size("normal_font_size")
+	return maxi(1, floori((rect.size.y - BAR_PADDING) / Palette.mono().get_height(fs)))
 
 
 ## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand). With
@@ -115,7 +135,10 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 	# The text wraps inside the rect (a narrow column dock must not widen the bar).
 	var sb := bar.get_theme_stylebox("panel")
 	var margins := sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0
-	text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, rect.size.x - margins))
+	if text_label != null:
+		text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, rect.size.x - margins))
+	inline_speaker = false
+	_default_dock = false
 
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and
@@ -176,8 +199,9 @@ func is_showing() -> bool:
 	return bar.visible
 
 
+## The words on screen now (the current page, without an inline speaker name).
 func current_text() -> String:
-	return text_label.get_parsed_text() if bar.visible else ""
+	return _shown if bar.visible else ""
 
 
 func _next() -> void:
@@ -186,24 +210,35 @@ func _next() -> void:
 		bar.visible = false
 		return
 	var line: Dictionary = _queue.pop_front()
-	var pages := pages_of(String(line["text"]))
+	# Page at the text size in force now (a settings change without a signal can't leave
+	# the bar paging for another size).
+	_apply_text_scale()
+	var corp_id := StringName(String(line.get("corporation", "")))
+	var name := speaker_name(int(line["speaker"]), corp_id)
+	# Default dock: the name leads the first page ("DISPATCH: ..."), not a row of its own.
+	var inline := inline_speaker and name != "" and not bool(line.get("continued", false))
+	var body := ("%s: %s" % [name, String(line["text"])]) if inline else String(line["text"])
+	var pages := pages_of(body)
 	if pages.size() > 1:
 		# The rest of a long line waits at the front of the queue, time shared by length.
-		var whole := maxf(1.0, String(line["text"]).length())
+		var whole := maxf(1.0, body.length())
 		var seconds := float(line["seconds"])
 		for k in range(pages.size() - 1, 0, -1):
 			var rest := line.duplicate()
 			rest["text"] = pages[k]
+			rest["continued"] = true
 			rest["seconds"] = maxf(MIN_SECONDS, seconds * pages[k].length() / whole)
 			_queue.push_front(rest)
-		line["text"] = pages[0]
 		line["seconds"] = maxf(MIN_SECONDS, seconds * pages[0].length() / whole)
-	var corp_id := StringName(String(line.get("corporation", "")))
 	_style(int(line["speaker"]), corp_id)
-	var name := speaker_name(int(line["speaker"]), corp_id)
 	speaker_label.text = name
-	speaker_label.visible = name != ""
-	text_label.text = String(line["text"])
+	speaker_label.visible = name != "" and not inline_speaker
+	var shown := pages[0]
+	_shown = shown
+	if inline and shown.begins_with(name + ":"):
+		_shown = shown.substr(name.length() + 1).strip_edges()
+		shown = "[color=#%s]%s:[/color] %s" % [speaker_label.get_theme_color("font_color").to_html(false), name, _shown]
+	text_label.text = shown
 	bar.visible = _subtitles_on()
 	_timer = get_tree().create_timer(float(line["seconds"]))
 	var t := _timer
@@ -230,6 +265,8 @@ func _apply_text_scale() -> void:
 		scale = float(get_node("/root/Settings").text_scale)
 	speaker_label.add_theme_font_size_override("font_size", roundi(SPEAKER_FONT_SIZE * scale))
 	text_label.add_theme_font_size_override("normal_font_size", roundi(TEXT_FONT_SIZE * scale))
+	if _default_dock:
+		dock_lines = lines_fitting(DEFAULT_DOCK)
 
 
 ## The subtitle label: corporate lines carry their corporation's short name.

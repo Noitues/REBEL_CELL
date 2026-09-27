@@ -95,10 +95,8 @@ func test_hq_is_a_cyberdeck_and_the_grid_is_wireframe() -> void:
 	assert_true(hq.wireframe.visible, "the Grid is wireframe")
 	assert_false(hq.background.visible)
 	assert_not_null(hq.grid_view)
-	var plan := false
-	for n in _descendants(hq._panel):
-		plan = plan or (n is ZineNote and n.title == "THE PLAN")
-	assert_true(plan, "zine sidebar THE PLAN")
+	# H20: the plan note and the Site list gave way to the picked Site's card.
+	assert_true(hq._panel.find_child("SelectedSite", true, false) is TerminalWindow, "the selected Site's card in the side column")
 
 
 func _descendants(node: Node) -> Array[Node]:

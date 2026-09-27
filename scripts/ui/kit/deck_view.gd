@@ -18,6 +18,8 @@ var tab_row: HBoxContainer
 var _cards: Array[ZineCard] = []
 var _action_button: DripButton = null
 var _popup: Control = null
+var close_button: Button
+var hint_label: Label
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -38,7 +40,8 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	tab_row = HBoxContainer.new()
 	window.body.add_child(tab_row)
 	var hint := Label.new()
-	hint.text = ("Left click: select a card to %s. Right click: details." % action.to_lower()) if action != "" else "Click a card for details."
+	hint.name = "Hint"
+	hint_label = hint
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
 	window.body.add_child(hint)
 	var scroll := ScrollContainer.new()
@@ -60,6 +63,12 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 		var index := i
 		sticker.pressed.connect(func() -> void: _on_left(index))
 		sticker.inspected.connect(func() -> void: open_card(index))
+		# The pad inspects with its inspect button (right click has no pad twin).
+		sticker.gui_input.connect(func(ev: InputEvent) -> void:
+			if ev.is_action_pressed(&"inspect"):
+				open_card(index)
+				sticker.accept_event())
+		sticker.tooltip_text = UiTip.fold(Codex.describe(card)) if card != null else ""
 		grid.add_child(sticker)
 		_cards.append(sticker)
 	var bottom := HBoxContainer.new()
@@ -67,7 +76,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	window.body.add_child(bottom)
 	var close_btn := Button.new()
 	close_btn.name = "Close"
-	close_btn.text = "Close [Esc]"
+	close_button = close_btn
 	close_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	close_btn.pressed.connect(close)
 	bottom.add_child(close_btn)
@@ -80,11 +89,25 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 
 
 func _ready() -> void:
+	# Modal for keys and the pad (H20): nothing behind it takes focus; inside the loadout
+	# view, the loadout view holds focus for both tabs.
+	if not (get_parent() is LoadoutView):
+		UiFocus.hold(self)
+	Settings.hints_changed.connect(_relabel)
+	_relabel()
 	# Start on the first card (not the header tabs).
 	if not _cards.is_empty():
 		_cards[0].grab_focus.call_deferred()
 	else:
 		UiFocus.focus_first.call_deferred(self)
+
+
+## Key hints follow the device in use and the binds (H20).
+func _relabel() -> void:
+	close_button.text = ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges()
+	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else "Left click"
+	var more := Settings.key_text(&"inspect") if Settings.pad_active else "Right click"
+	hint_label.text = ("%s: select a card to %s. %s: details." % [pick, action.to_lower(), more]) if action != "" else "%s a card for details." % ("Press" if Settings.pad_active else "Click")
 
 
 ## A header tab (the loadout view's DECK / SPINNER switch).
@@ -129,8 +152,10 @@ func select(index: int) -> void:
 func confirm() -> void:
 	if selected < 0:
 		return
-	card_picked.emit(selected)
+	# Out of the tree first: the screen behind takes focus again before the pick rebuilds it.
+	var picked := selected
 	close()
+	card_picked.emit(picked)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -141,11 +166,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			_popup = null
 		else:
 			close()
+	elif UiFocus.is_device_input(event):
+		get_viewport().set_input_as_handled()  # no hotkey reaches the screen behind
 
 
 func close() -> void:
 	closed.emit()
-	queue_free()
+	UiFocus.release(self)
 
 
 ## The card detail popup for deck index `index`: the card, its text, and Close.

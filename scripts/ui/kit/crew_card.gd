@@ -11,10 +11,17 @@ var dead: bool = false
 var tilt: float = 0.0
 var hp_frac: float = 1.0
 var stamp_text: String = ""
+## The stamp over the Polaroid ("ON <SITE>", FLATLINED): width and largest font size.
+const STAMP_WIDTH := 160.0
+const STAMP_FONT_SIZE := 26
+const STAMP_MIN_FONT_SIZE := 10
+## The operative's name (the tooltip's title).
+var name_text: String = ""
 
 
 func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, detail: String, p_tilt: float = 0.0) -> void:
 	tilt = p_tilt
+	name_text = p_name
 	hp_frac = clampf(float(hp) / maxf(1.0, max_hp), 0.0, 1.0)
 	custom_minimum_size = Vector2(196, 0)
 	var style := UiTheme.box(Palette.NOTE_PAPER, Color(Palette.INK, 0.45), 1, 10, 12)
@@ -63,6 +70,15 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	box.add_child(orders)
 
 
+## Gives the Polaroid this operative's own face (PortraitArt.operative_subject).
+func set_operative(class_id: StringName, operative_id: StringName) -> void:
+	polaroid.set_operative(class_id, operative_id)
+
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return UiTip.make(for_text, name_text) if for_text != "" else null
+
+
 func _ready() -> void:
 	pivot_offset = size / 2.0
 	rotation_degrees = tilt
@@ -74,5 +90,10 @@ func _draw() -> void:
 		var t := stamp_text if stamp_text != "" else "FLATLINED"
 		draw_set_transform(Vector2(size.x * 0.5, 90), -0.3, Vector2.ONE)
 		draw_rect(Rect2(-80, -20, 160, 40), Color(Palette.CELL_PINK, 0.85), false, 3.0)
-		draw_string(Palette.display(), Vector2(-80, 10), t, HORIZONTAL_ALIGNMENT_CENTER, 160, 26, Color(Palette.CELL_PINK, 0.9))
+		# Long Site names shrink to fit the stamp.
+		var fs := STAMP_FONT_SIZE
+		var w := Palette.display().get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		if w > STAMP_WIDTH - 8.0:
+			fs = maxi(STAMP_MIN_FONT_SIZE, floori(fs * (STAMP_WIDTH - 8.0) / w))
+		draw_string(Palette.display(), Vector2(-STAMP_WIDTH * 0.5, 10), t, HORIZONTAL_ALIGNMENT_CENTER, STAMP_WIDTH, fs, Color(Palette.CELL_PINK, 0.9))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

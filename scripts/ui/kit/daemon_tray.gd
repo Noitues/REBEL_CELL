@@ -13,7 +13,8 @@ var _card: TerminalWindow = null
 var _card_id: StringName = &""
 
 
-func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float) -> void:
+## `owner_name` (the operative whose Daemons these are) leads the strip when given.
+func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float, owner_name: String = "") -> void:
 	ids = p_ids
 	lookup = p_lookup
 	name = "DaemonTray"
@@ -29,6 +30,12 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float) -
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	_strip.add_child(row)
+	if owner_name != "":
+		var who := Label.new()
+		who.name = "Owner"
+		who.text = owner_name.to_upper()
+		who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(who)
 	if ids.is_empty():
 		var none := Label.new()
 		none.text = "No Daemons installed."
@@ -45,6 +52,8 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float) -
 			DaemonSigil.draw_sigil(b, b.size * 0.5, 17, did, d.rarity if d != null else RC.Rarity.UNCOMMON)
 			if b.has_focus() or b.is_hovered():
 				b.draw_arc(b.size * 0.5, 20, 0, TAU, 24, Palette.CELL_ACID, 1.5))
+		var dd := lookup.get_content(did) as DaemonData
+		b.tooltip_text = dd.display_name if dd != null else String(did)
 		b.mouse_entered.connect(func() -> void: show_card(did, false))
 		b.focus_entered.connect(func() -> void: show_card(did, false))
 		b.pressed.connect(func() -> void: show_card(did, true))
@@ -52,6 +61,7 @@ func _init(p_ids: Array[StringName], p_lookup: ContentLookup, anchor_x: float) -
 
 
 func _ready() -> void:
+	UiFocus.hold(self)  # modal for keys and the pad (H20)
 	UiFocus.focus_first.call_deferred(_strip)
 
 
@@ -88,8 +98,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		close()
+	elif UiFocus.is_device_input(event):
+		get_viewport().set_input_as_handled()  # no hotkey reaches the screen behind
 
 
 func close() -> void:
 	closed.emit()
-	queue_free()
+	UiFocus.release(self)

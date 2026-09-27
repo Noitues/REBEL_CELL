@@ -16,6 +16,9 @@ var _confirm: ConfirmDialog = null
 
 func _ready() -> void:
 	UiTheme.apply(self)
+	# Subtitles still on screen from a campaign sit in the top band over the header, clear
+	# of every menu (H20).
+	Dialogue.dock_default()
 	background = CyberdeckBackground.new()
 	add_child(background)
 	margin = MarginContainer.new()
@@ -131,15 +134,19 @@ func show_main() -> void:
 	side.add_theme_constant_override("separation", 22)
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var p := RunManager.profile
+	# The profile at a glance as paper tags (H20: no text readout); Stats has the rest.
 	var sys := TerminalWindow.new("SYSTEM ONLINE", Palette.NET_CYAN)
-	sys.custom_minimum_size = Vector2(300, 0)
+	sys.name = "ProfileTags"
 	sys.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	sys.body.add_child(_label("%d campaigns, %d won, %d lost | best ICE %s | %d achievements" % [p.campaigns_started, p.campaigns_won, p.campaigns_lost, ProfileState.ice_text(p.best_ice), p.achievements.size()]))
-	sys.body.add_child(_label("> RUNS: %d  RAIDS: %d/%d" % [p.runs_completed, p.raids_won, p.raids_lost]))
-	sys.body.add_child(_label("> UPLINK: STABLE"))
-	for l in sys.body.get_children():
-		(l as Label).custom_minimum_size.x = 300
-		(l as Label).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var tags := HudStats.new()
+	tags.items = [["CAMPAIGNS", str(p.campaigns_started), "", "Campaigns started on this profile."],
+		["WON", str(p.campaigns_won), "", "Campaigns won."],
+		["BEST ICE", ProfileState.ice_text(p.best_ice), "", "The highest ICE level cleared. Each corporation keeps its own ladder."],
+		["RUNS", str(p.runs_completed), "", "Netruns completed."],
+		["RAIDS", "%d/%d" % [p.raids_won, p.raids_lost], "", "Raids repelled / lost."],
+		["BADGES", str(p.achievements.size()), "", "Achievements earned (Stats & achievements lists them)."]]
+	tags.custom_minimum_size.x = tags.items.size() * (HudStats.TAG_SIZE.x + HudStats.TAG_GAP)
+	sys.body.add_child(tags)
 	side.add_child(sys)
 	var notes := HBoxContainer.new()
 	notes.add_theme_constant_override("separation", 30)

@@ -241,7 +241,9 @@ func test_raid_playout_map_has_a_legend() -> void:
 	assert_true(all.size() >= 2, "the playout (and then the summary) carry a legend")
 
 
-func test_the_grid_legend_and_site_list_follow_the_switch_live() -> void:
+## The H20 screens pass replaced the Grid's Site list with the picked Site's card, so only
+## the legend itself follows the switch now.
+func test_the_grid_legend_follows_the_switch_live() -> void:
 	var hq: Control = add_child_autofree(load(HQ).instantiate())
 	hq.new_campaign(1)
 	Settings.set_map_legend(true)
@@ -250,15 +252,10 @@ func test_the_grid_legend_and_site_list_follow_the_switch_live() -> void:
 	var legends := _legends(hq)
 	assert_eq(legends.size(), 1)
 	var legend := legends[0]
-	var scroll: Control = legend._linked
-	assert_not_null(scroll, "the Site list is linked to the legend")
-	var with_legend := scroll.custom_minimum_size.y
 	Settings.set_map_legend(false)
 	assert_false(legend.visible, "legend hides live")
-	assert_gt(scroll.custom_minimum_size.y, with_legend, "the Site list takes the room back live")
 	Settings.set_map_legend(true)
 	assert_true(legend.visible)
-	assert_eq(scroll.custom_minimum_size.y, with_legend)
 
 
 func test_claimed_and_seized_sites_carry_a_non_colour_mark() -> void:

@@ -12,12 +12,21 @@ var poster: bool = false
 var band: int = 0
 ## Threshold marks on the bar (the config's MAJOR Heat levels, passed by the scenes).
 var marks: Array[int] = [25, 50, 75]
+## Who the wanted poster shows (a PortraitArt subject; the HQ names the crew's lead).
+var wanted: Dictionary = PortraitArt.operative_subject(&"operative")
+## The mugshot's side on the wanted poster (px).
+const MUG_SIZE := 44.0
 
 
 func _init(p_poster: bool = false) -> void:
 	poster = p_poster
 	custom_minimum_size = Vector2(170, 96 if not p_poster else 150)
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# PASS: the scene's tooltip (what the thresholds do) shows on hover.
+	mouse_filter = Control.MOUSE_FILTER_PASS
+
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return UiTip.make(for_text, "Heat") if for_text != "" else null
 
 
 func set_heat(value: int, maximum: int, thresholds: Array[int] = [] as Array[int]) -> void:
@@ -38,7 +47,7 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER_ALT)
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
 		draw_string(Palette.display(), Vector2(10, 30), "WANTED", HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
-		Polaroid.draw_silhouette(self, Rect2(size.x * 0.3, 38, size.x * 0.4, 44), "[OPERATIVE]")
+		PortraitArt.draw(self, Rect2(size.x * 0.5 - MUG_SIZE * 0.5, 38, MUG_SIZE, MUG_SIZE), wanted)
 		y = 84
 	var letters := ["H", "E", "A", "T"]
 	var fonts := [Palette.display(), Palette.marker(), Palette.mono(), Palette.display()]

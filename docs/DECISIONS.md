@@ -30,6 +30,57 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-26 — H20 combat: drag to target, nudge arrows, the outcome on the spinners
+Designer direction (H20): ditch the nudge and card-target buttons for card drag-and-target
+as in Slay the Spire; nudge arrows round each spinner; no text logs the player must read;
+tooltips; spinner nudges and card results must read the right way round.
+- **Cards are aimed, not toggled.** `CardTargeting.options` lists every legal play of a
+  card (wheel, and for nudge cards the ring and the way, for chosen-slice cards the slice).
+  Dragging a card lights its drop zones (a wheel, a nudge arrow, a slice, a docked
+  satellite) and dropping plays it there; a click, 1-9 or pad A picks the card, then a
+  click on a zone, or arrows / Tab / D-pad and Enter / A, confirms; Esc / B / right-click
+  cancels. A card with one legal play plays at once. The card-target (T), direction (D) and
+  slice (F) toggles are gone from play and from the Controls list (their input-map entries
+  stay in project.godot, which holds the designer's uncommitted editor changes).
+- **Nudge arrows on every wheel**: curved arrows at the top left (anticlockwise) and top
+  right (clockwise), a second pair for an inner ring. The nudge keys' hints sit on the
+  arrows of the wheel they drive (W / R still switch wheel and ring from the keyboard).
+- **Direction reads the right way round**: the wheel is drawn mirrored so rotation +1 turns
+  it clockwise on screen: a right nudge / E / RB moves the top of the wheel to the right
+  (it used to move it left). The ghost arc now runs from the arriving slice (its icon) to
+  the needle with an arrowhead the way the rim moves, in place of "-> tick N". View only:
+  the rules, the preview and the tick maths are unchanged.
+- **The full outcome is on the spinners** (GDD 2.10): `CombatOutcome.between` diffs the state
+  before and after the resolve (plus campaign effects). Each tag shows what the needles
+  land on, then chips: HITS n (damage dealt), -n HP / +n HP, +n BLK / SHD / EVADE,
+  RESIST a→b, HUB BREACH, status glyphs (and dashed ghosts on the slice), DOWN, docked
+  satellites' hits and losses, and on the operative RAM, DRAW, HEAT (as
+  `HeatRules.scaled_delta` applies it), CYCLES, SCHEMATICS, FREE NUDGE NEXT, DAMAGE,
+  +DRONE, VICTORY / DEFEAT. HP arcs show the predicted loss in red; the RAM bar shows the
+  pending change. Hovering a card or a nudge arrow, or aiming a card, shows that play's
+  result; random effects (Respin, random slice picks) show odds chips on the wheel they
+  roll. The preview wall and log strip stay hidden records for tests.
+- **Refusals toast** over the hand ("Not enough RAM..."); the **target wears a reticle**
+  (a targeted satellite a ring on its host).
+- **Right column**: Polaroid (operative name) and Heat, the Daemons as sigils with tooltips
+  (the DAEMONS / INSPECT note is gone; pad inspect opens a popup beside the thing), then the
+  combat subtitles (paged at up to 3 lines, fewer while the tutorial needs the room) and
+  the tutorial under them. The top-of-arena dock covered the tags. RESPIN and UNDO stand
+  between the hand and SEND IT.
+- **Text scale** reaches the tags, chips, hub text, values, HP numbers, stickers, RAM bar and
+  hand cards (the hand shrinks cards to fit beside SEND IT; long card text ends in an
+  ellipsis, the whole text is the tooltip and the inspect).
+- **Tooltips** on every combat control (slices, arrows, satellites, hubs, tags, cards,
+  stickers, SEND IT, RAM, Heat, Polaroid, Daemons). `RamBar` ignored the mouse, which is
+  one reason tooltips never showed.
+- **Hints follow the device** (H20 1/n): pad players see pad buttons on the stickers,
+  arrows, SEND IT and in the tutorial, which was rewritten for the new controls.
+- `layout_violations` checks everything against each wheel's full drawing (radius + 66:
+  values, satellites, HP arc) as a circle, tags against other wheels, and the subtitles
+  against the tags.
+- Tests: `tests/unit/test_horizontal_pass20.gd` (combat), updated layout, keyboard, pad
+  and tutorial tests (the design changed on purpose).
+
 ### 2026-09-26 — H20 city backdrop: baked image, live lights, territory influence
 Designer: "the performance is slow due to the backdrop... take a static image... add
 blinking lights... the city should change colour as we or the corporation gain or lose
@@ -88,6 +139,100 @@ ground in the raid battles".
   bottom-left; the HQ Grid's Site list resizes with the legend switch live
   (`MapLegend.link_size`); the mid-run raid playout plays on the city overlay (whole Grid,
   zoom 0.85, feed at the side) instead of the old GridMapView.
+
+### 2026-09-26 — H20 screens: no text logs, tooltips, subtitles clear of controls, pad reach
+Designer: "ditch any text logs that we expect the player to use" and "there are no
+tooltips". GAP_ANALYSIS H20 items 7, 9, 10, 13, 16, 21, 23, 24 (ModemSign, unused kit),
+25 (demo profile, STYLE_GUIDE 7), 15 (kit tests) on the non-combat screens.
+- **What went and where each fact shows now**:
+  - HQ `SYSTEM ONLINE` readout -> `CELL STATUS` badges (`Badge`, a hex glyph or asset
+    icon + a short value + a tooltip): home integrity with a meter, each Exploit found (or
+    `0/N`), each Armory asset kind by icon and count, every rule a crossed Heat threshold
+    added ("Raid strength +10%", no enum names). Heat, Schematics, Home, Exploits, Raids,
+    ICE and Crew stay on the top bar's tags, which now say what they mean on hover; the
+    wanted poster's tooltip gives the next threshold and the rules in force.
+  - Grid `THE PLAN` note and the `SITES // NODE STATUS` list (raw ids, raw links) -> the
+    picked Site's card (`SelectedSite`: status, objective, node + integrity meter,
+    upgrade level, assets, the stationed operative as badges; launch / claim / repair /
+    upgrade under them), `RUNS OPEN NOW` (one button per launchable Site and patrol, the
+    old plan's "->" lines), `< PREV SITE` / `NEXT SITE >` (every Site by pad), Back to HQ
+    and, with a raid pending, RAID SETUP. The first open run is picked when nothing is.
+    Links, statuses and objectives are on the map (unchanged). Dropped: "ICE switched
+    off: ..." as a list (the Site card shows "off" on such a Site) and the plan's
+    Exploit/ICE/Heat line (top bar).
+  - Raid setup `THREAT ROUTE` text wall -> the raid card: the projected result as a stamp
+    (HOLDS / BREACHED / LOST), badges for home before > after (meter), threats destroyed of
+    all, strength %, one badge per entry Site, link changes (text in the tooltip); the
+    raid's warning in the card's tooltip. `NODE ORDERS` text rows -> `YOUR NODES`: per node
+    a target button (name) and its exact projected outcome badge ("30 > 22 HOLDS", GDD 9.3
+    still visible per node, also on the map), its assets as icons; the target's row
+    carries Withdraw / move buttons with names.
+  - Raid report lines -> badges with Site names; the netrun end note -> the run's numbers
+    as paper tags (`HudStats`); the title's SYSTEM ONLINE line -> profile tags.
+  - The log strip stays behind its Options switch (off by default) as a record. What the
+    player must see once (refusals, launch errors, "Saved.", unlocks) now also pops a
+    `ToastNote` at the foot of the screen for 3.5 s (mouse- and focus-transparent).
+- **Tooltips**: Godot's tooltip popup is parented to the hovered control, so it takes
+  the screen theme (`TooltipPanel`: dark glass, pink edge; `TooltipLabel`: scaled mono);
+  its label never wraps, so every long tooltip goes through `UiTip.fold` (56 columns at
+  1.0, fewer at larger text). Kit controls that draw themselves build a titled body
+  (`UiTip.make`, `_make_custom_tooltip`): badges, HUD tags (per tag, `_get_tooltip`),
+  the wanted poster, crew dossiers. Tooltips on: HQ menu, market, dossiers and their
+  orders, JACK IN, the monitor; Grid card actions, open runs, nav; raid card, targets,
+  asset cards (with the target they deploy to), moves; route node buttons (what each node
+  type holds, Heat); Modem firmware slot, LEAVE THE MODEM; reward skip and slot; deck
+  stickers, spinner pads (with the slot's price), hub / ring pads, Daemon sigils.
+  Mouse filters: the tags and the poster pass hover (they ignored it before).
+  City map nodes: the route graph now carries a `"tip"` per node; drawing it on hover is
+  CityMapOverlay's (city worker's file).
+- **#7 subtitles**: the default dock (`Dialogue.dock_default`, `dock_bottom` kept as its
+  alias for the combat scene's exit) is the top band `DEFAULT_DOCK` (8,2)-(972,54) over
+  the screen title and the stat tags: every control on the HQ, Grid, raid, Modem, netrun,
+  title, pause menu and viewers sits below it or right of it (VIEW LOADOUT, Daemons).
+  The speaker's name leads the line ("DISPATCH: ...") and long lines page to the lines
+  that fit at the current text size (`lines_fitting`; 2 at 1.0, 1 at 1.6). Paging reads
+  the text size at each line. The HQ, netrun and title scenes dock on `_ready`; combat's
+  own dock is unchanged. Trade-off: while a line is up it hides the stat tags.
+- **#9 modals**: `UiFocus.hold(view)`: while DeckView, SpinnerView, LoadoutView or
+  DaemonTray is open its siblings' `focus_behavior_recursive` is off (the D-pad, Tab and
+  A can't reach the Modem or HQ behind), key / pad events stop at the view (no route
+  1-9 behind the loadout), and on close the siblings come back and focus returns to the
+  control that opened it. Views keep Godot's geometric D-pad search inside.
+- **#10**: raid setup target by pad: each claimed node's target button in YOUR NODES
+  (`select_target`), focus stays on it; asset cards then deploy there.
+- **#13**: the Modem's UPGRADE A SLICE title has no price; `SpinnerView.set_prices`
+  shows the picked slot's own price beside UPGRADE (pink and UPGRADE off when short);
+  each pad's tooltip names its price (Miss 150 vs 100, config).
+- **#16**: `Settings.hint()` everywhere outside combat, refreshed on
+  `Settings.hints_changed`: HQ Settings / Options, Resume, the Close buttons of DeckView,
+  SpinnerView and SettingsPanel, the viewers' "Left click / Right click" line (pad: its
+  buttons), the route's node numbers (none on a pad) and the route map labels. ZineStamp
+  has an optional `hint` (default ""): JACK IN shows none; result stamps are
+  `display_only()` (no focus, no clicks), so Back to HQ gets the netrun end's first focus.
+  The pad can inspect a deck card or slice with its inspect button.
+- **#21**: Site display names everywhere (`site_name`; the home server is CORE as on the
+  Grid): raid map labels, crew stamps "ON <SITE>", station / recall orders, raid orders
+  and moves, the raid report; asset and node type display names; queued boosts by name.
+- **#23**: `selected_operative`: a dossier's Loadout opens its operative and makes them
+  the one the top bar's VIEW LOADOUT and DAEMONS show; LoadoutView's NEXT OPERATIVE tab
+  cycles the living crew; the Daemon tray names its operative. The loadout spinner draws
+  the hub core and the inner ring (rank rewards and Rank 3 swaps applied,
+  `LoadoutView.core_of`) as pads with details. Faces: `PortraitArt.operative_subject(
+  class_id, operative_id)` / `draw_operative(ci, rect, class_id, operative_id, name)` hash
+  class + operative id (no RNG) into hair, visor and tint; `Polaroid.set_operative`,
+  `CrewCard.set_operative`; the wanted poster shows the selected operative through
+  PortraitArt (`Polaroid.draw_silhouette` removed). Combat can call the same API.
+- **#24**: ModemSign's notes read BUY / SHRED (nothing is sold back) and its pink is
+  `Palette.CELL_PINK`. Unused kit classes deleted: RaidBoardView, DripLabel, NeonSign,
+  NeonTag, ScreenHeader (none served the redone screens). Netrun's `corp_creep` uses
+  `heat_max`.
+- **#25**: slots starting with `demo` keep a private profile like the `gut_` test slots
+  (`RunManager.is_private_slot`), so `--demo-*` captures never bump the player's
+  campaigns. STYLE_GUIDE 7 describes PortraitArt instead of grey placeholders.
+- Tests: `tests/unit/test_horizontal_pass20_screens.gd` (with the bar-vs-control overlap
+  measurement at 1.0 and 1.6 on HQ, loadout view, Grid, raid setup, HQ start, pause
+  Options, Modem, title Codex and Controls). `test_layout_rules` checks the Site card
+  instead of THE PLAN; `test_visual_merge` checks that the default dock pages.
 
 ### 2026-09-26 — Merge: visual/UI pass into main (H17-H19 behaviour kept)
 The visual branch (`claude/game-visual-ui-update-pkc0aj`, forked at H16) is merged. Its
@@ -1355,6 +1500,14 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **Subtitles over the stat tags; toasts (H20, 2026-09-26):** outside combat the subtitle
+  bar now sits in the top band over the screen title and the stat tags (the only strip
+  with no control on any screen), so the tags are hidden while a line is up. Refusals,
+  saves and unlocks show as a toast at the foot of the screen for 3.5 s (it lets clicks
+  through but can sit over a bottom control for that time). Alternatives: a reserved band
+  under the HUD on every screen (costs ~50 px of the screens), or refusals shown on the
+  control itself (disabled with the reason in its tooltip). Which do you prefer?
 
 - **Deck / spinner viewers (2026-09-25):** added as look-and-pick views (DeckView,
   SpinnerView), used by the Modem and the HQ crew cards. The GDD has no card upgrades and

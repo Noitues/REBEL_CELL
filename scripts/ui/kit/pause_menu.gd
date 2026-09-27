@@ -11,6 +11,7 @@ var settings_panel: SettingsPanel = null
 var codex_note: ZineNote = null
 var _menu: VBoxContainer
 var _host: VBoxContainer
+var resume_button: Button
 ## Who had focus before the menu opened (the combat hand); it gets it back on close.
 var _return_focus: Control = null
 
@@ -47,7 +48,10 @@ func _init() -> void:
 	scroll.add_child(_host)
 	_menu = VBoxContainer.new()
 	_host.add_child(_menu)
-	_add("Resume [Esc]", func() -> void: resumed.emit())
+	resume_button = _add("Resume", func() -> void: resumed.emit())
+	resume_button.name = "Resume"
+	_relabel()
+	Settings.hints_changed.connect(_relabel)
 	_add("Options", show_options)
 	_add("Codex", show_codex)
 	_add("Save & quit to title", func() -> void:
@@ -85,11 +89,17 @@ func _cover_screen() -> void:
 	_backdrop.global_position = Vector2.ZERO
 
 
-func _add(text: String, on_pressed: Callable) -> void:
+func _add(text: String, on_pressed: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.pressed.connect(on_pressed)
 	_menu.add_child(b)
+	return b
+
+
+## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
+func _relabel() -> void:
+	resume_button.text = ("Resume %s" % Settings.hint(&"open_settings")).strip_edges()
 
 
 func show_options() -> void:

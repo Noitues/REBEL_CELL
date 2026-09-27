@@ -35,6 +35,7 @@ var fps_check: CheckButton
 var legend_check: CheckButton
 var log_check: CheckButton
 var language_option: OptionButton
+var close_button: Button
 var section: String = "Accessibility"
 ## Action waiting for a key press (Controls section), or empty.
 var rebinding: StringName = &""
@@ -102,7 +103,8 @@ func _init() -> void:
 			language_option.select(i)
 	language_option.item_selected.connect(func(i: int) -> void: Settings.set_language(langs[i]))
 	var close := Button.new()
-	close.text = "Close [Esc]"
+	close.name = "Close"
+	close_button = close
 	close.pressed.connect(func() -> void: closed.emit())
 	box.add_child(close)
 	show_section("Accessibility")
@@ -241,7 +243,14 @@ func _labelled(text: String) -> Label:
 
 
 func _ready() -> void:
+	Settings.hints_changed.connect(_relabel_close)
+	_relabel_close()
 	UiFocus.focus_first(self)
+
+
+## "Close [Esc]" / "Close [B]": the hint follows the device and the binds (H20).
+func _relabel_close() -> void:
+	close_button.text = ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges()
 
 
 ## At least the content's size, so a host that scrolls can reach every control.
