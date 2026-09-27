@@ -10,7 +10,8 @@ extends Control
 ##   nodes: [{id, at: Vector2 (grid target), color, label, glyph, big: bool,
 ##            mark: "spray" (claimed: a spray-paint ring) | "cross" (Seized) | "",
 ##            kind: an icon (KIND_*; "" draws `glyph` in a hexagon), tip: hover text,
-##            here: bool (you are here), next: bool (reachable now)}]
+##            here: bool (you are here), next: bool (reachable now),
+##            tier: int (a Site's tier 1-4: difficulty pips; 0 or missing = none)}]
 ##   edges: [{a, b, color, width, dashed: bool, flow: bool}]
 ## and optional `markers` (node id -> Array[String]) for threats standing on nodes.
 ## When any node carries `here` or `next` (a netrun route), nodes that can no longer be
@@ -26,6 +27,12 @@ extends Control
 ## are placed so no two overlap (priority: selected / you are here, then reachable,
 ## claimed and landmark nodes, then the rest; ties by node id; a label with no free spot
 ## is left out and its node keeps its tooltip).
+##
+## H22: labels stay inside the visible map (`screen_rect`, else the overlay's own rect)
+## and out of the screen areas the scene names (`avoid_controls`, `set_blocked_rects`: a
+## side column); a focus label (selected, you are here, threats) or a landmark's (CORE,
+## the boss) with no free spot near its node moves inward instead. Sites carry a tier
+## difficulty cue: `draw_tier` pips under the icon, shared with the legend and mini-map.
 
 signal node_clicked(id: StringName)
 ## Threat markers moved (raid playout): the scene can follow them with the camera.
@@ -109,6 +116,18 @@ const MARKER_SIZE := 9.0
 const MARKER_STEP := 16.0
 ## Smallest city zoom the screen-size maths accepts.
 const MIN_ZOOM := 0.1
+## H22: labels keep this far inside the visible map area (screen px).
+const EDGE_MARGIN := 4.0
+## How far past a blocked area's edge a label moved out of it lands (local px).
+const SHIFT_CLEARANCE := 1.0
+## H22 tier difficulty cue: a row of TIER_PIPS_MAX pips under a Site's icon, `tier` of
+## them lit (SiteData.tier is 1-4). Pip radius and spacing (screen px, at text scale
+## 1.0 on the legend and mini-map; the map's pips follow the icon size) and the gap
+## between the icon and the row.
+const TIER_PIPS_MAX := 4
+const TIER_PIP := 2.6
+const TIER_PIP_STEP := 7.0
+const TIER_PIP_GAP := 3.0
 
 var city: NeonCity
 var look: int = Look.TRACE
@@ -143,6 +162,18 @@ var _top: Control
 var _hi: Control
 ## The canvas item the helpers draw on (self, _anim, _top or _hi).
 var _c: CanvasItem
+## H22: the part of the viewport the map shows through (viewport px; a zero size means
+## the overlay's own rect), and the screen areas labels keep out of: rects (viewport px)
+## and controls read at each layout (a screen's side column).
+var screen_rect: Rect2 = Rect2():
+	set(v):
+		screen_rect = v
+		if _top != null:
+			_top.queue_redraw()
+## The tier pips of the last node draw (node id -> tier), for checks.
+var drawn_tiers: Dictionary = {}
+var _blocked_rects: Array[Rect2] = []
+var _blocked_controls: Array[Control] = []
 
 
 func _init(p_city: NeonCity = null) -> void:
@@ -201,6 +232,52 @@ func set_graph(p_nodes: Array[Dictionary], p_edges: Array[Dictionary]) -> void:
 func set_look(value: int) -> void:
 	look = value
 	queue_redraw()
+
+
+## H22: screen areas the map labels keep out of, in viewport px (e.g. a panel over the
+## map). Replaces the previous rects.
+func set_blocked_rects(rects: Array[Rect2]) -> void:
+	_blocked_rects = rects.duplicate()
+	_top.queue_redraw()
+
+
+## H22: controls over the map (a screen's side column) the labels keep out of; their
+## on-screen rects are read at each layout, and the labels move when they do.
+func avoid_controls(controls: Array[Control]) -> void:
+	_blocked_controls = controls.duplicate()
+	for c in _blocked_controls:
+		if is_instance_valid(c) and not c.item_rect_changed.is_connected(_top.queue_redraw):
+			c.item_rect_changed.connect(_top.queue_redraw)
+	_top.queue_redraw()
+
+
+## The area map labels may use (local px): the overlay's own rect (or `screen_rect` within
+## it) less EDGE_MARGIN.
+func label_area() -> Rect2:
+	var area := Rect2(Vector2.ZERO, size)
+	if screen_rect.has_area() and is_inside_tree():
+		area = area.intersection(_to_local_rect(screen_rect))
+	var m := EDGE_MARGIN * _k()
+	return area.grow(-m) if area.size.x > m * 2.0 and area.size.y > m * 2.0 else area
+
+
+## The screen areas labels keep out of (local px): the blocked rects and the visible
+## blocked controls.
+func label_blocks() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not is_inside_tree():
+		return out
+	for r in _blocked_rects:
+		out.append(_to_local_rect(r))
+	for c in _blocked_controls:
+		if is_instance_valid(c) and c.is_visible_in_tree() and c.size != Vector2.ZERO:
+			out.append(_to_local_rect(c.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, c.size)))
+	return out
+
+
+## A viewport-px rect in this overlay's local px.
+func _to_local_rect(r: Rect2) -> Rect2:
+	return get_global_transform_with_canvas().affine_inverse() * r
 
 
 ## Grid centre of the graph (for framing the camera on it).
@@ -533,6 +610,7 @@ func _draw_top() -> void:
 	if city == null or nodes.is_empty():
 		return
 	_c = _top
+	drawn_tiers.clear()
 	for n in nodes:
 		_node(n)
 	for l: Dictionary in _layout_labels():
@@ -683,6 +761,9 @@ func _node(n: Dictionary) -> void:
 	if n.get("here", false):
 		_here(at, r)
 	draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
+	if tier_of(n) > 0:
+		draw_tier(_c, tier_pips_centre(n), tier_of(n), col, _pip_scale(n), DIM_ALPHA if dim else 1.0)
+		drawn_tiers[n["id"]] = tier_of(n)
 	var assets: Array = n.get("assets", [])
 	for k in assets.size():
 		var a := TAU * k / maxf(1.0, assets.size()) - PI * 0.5
@@ -698,6 +779,54 @@ func _node(n: Dictionary) -> void:
 			var dia := PackedVector2Array([mp + Vector2(0, -s), mp + Vector2(s * 0.9, 0), mp + Vector2(0, s), mp + Vector2(-s * 0.9, 0)])
 			_c.draw_colored_polygon(dia, Palette.corp_color(StringName(n.get("threat_corp", "solace"))) if n.has("threat_corp") else Palette.CORP_SOLACE)
 			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, 1.2)
+
+
+## Node `n`'s Site tier for the difficulty pips (0: no pips, e.g. route nodes, CORE).
+static func tier_of(n: Dictionary) -> int:
+	return clampi(int(n.get("tier", 0)), 0, TIER_PIPS_MAX)
+
+
+## Map pips' scale for node `n`: they follow its icon's size (local px per legend px).
+func _pip_scale(n: Dictionary) -> float:
+	return icon_radius(n) / ICON_RADIUS
+
+
+## Centre of node `n`'s tier pip row, under its icon (local px).
+func tier_pips_centre(n: Dictionary) -> Vector2:
+	var s := _pip_scale(n)
+	return icon_pos(n) + Vector2(0, icon_radius(n) + (TIER_PIP_GAP + TIER_PIP) * s)
+
+
+## The rect node `n`'s tier pips cover (local px; zero size when it has none).
+func tier_pips_rect(n: Dictionary) -> Rect2:
+	if tier_of(n) <= 0:
+		return Rect2()
+	var box := tier_pips_size(_pip_scale(n))
+	return Rect2(tier_pips_centre(n) - box * 0.5, box)
+
+
+## Size of a tier pip row drawn at `scale` (px).
+static func tier_pips_size(scale: float = 1.0) -> Vector2:
+	return Vector2(TIER_PIP_STEP * (TIER_PIPS_MAX - 1) + TIER_PIP * 2.0 + 2.0, TIER_PIP * 2.0 + 2.0) * scale
+
+
+## Draws the tier difficulty cue (H22 #14) centred at `at`: TIER_PIPS_MAX pips in a row,
+## the first `tier` lit in `col`, the rest hollow, so harder Sites read at a glance
+## without the word "tier". Shared by the map, the MapLegend and the HQ mini-map (and
+## any Site list) so the cue is the same everywhere. `scale` sizes it (1.0 = legend px).
+static func draw_tier(ci: CanvasItem, at: Vector2, tier: int, col: Color, scale: float = 1.0, alpha: float = 1.0) -> void:
+	var r := TIER_PIP * scale
+	var step := TIER_PIP_STEP * scale
+	var x0 := at.x - step * (TIER_PIPS_MAX - 1) * 0.5
+	var ink := Color(0, 0, 0, 0.85 * alpha)
+	var lit := Color(col, col.a * alpha)
+	for k in TIER_PIPS_MAX:
+		var p := Vector2(x0 + step * k, at.y)
+		ci.draw_circle(p, r + maxf(1.0, scale), ink)
+		if k < tier:
+			ci.draw_circle(p, r, lit)
+		else:
+			ci.draw_arc(p, r * 0.8, 0, TAU, 12, Color(col, col.a * 0.55 * alpha), maxf(1.0, scale * 0.8))
 
 
 ## Centre of the threat markers' row over node `n` (local px).
@@ -772,9 +901,14 @@ func _layout_labels() -> Array[Dictionary]:
 	var pad := TAG_PAD * k
 	var line_h := f.get_height(fs)
 	var icons: Array[Dictionary] = []
+	var marks: Array[Rect2] = []
 	for n in nodes:
 		if not _roof(n["id"]).is_empty():
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
+			if tier_of(n) > 0:
+				marks.append(tier_pips_rect(n))
+	var area := label_area()
+	var blocks := label_blocks()
 	var ring_c := ring_centre()
 	var ring_r := ring_radius()
 	var todo: Array[Dictionary] = []
@@ -800,11 +934,16 @@ func _layout_labels() -> Array[Dictionary]:
 		for line in t["lines"]:
 			w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
 		var box := Vector2(w + pad * 2.0, line_h * (t["lines"] as PackedStringArray).size() + pad * 2.0)
-		var spot := _free_spot(t, box, icons, placed, ring_c, ring_r)
+		var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_c, "ring_r": ring_r, "area": area, "blocks": blocks}
+		var spot := _free_spot(t, box, obstacles)
 		if spot.size == Vector2.ZERO:
-			if t["prio"] != PRIO_FOCUS:
+			# H22: focus labels (and the landmarks: CORE, the boss) move inward onto the
+			# screen rather than off it or under a side column.
+			if t["prio"] != PRIO_FOCUS and not _node_dict(t["id"]).get("big", false):
 				continue
-			spot = Rect2(_spots(t["at"], t["r"] + LABEL_GAP * k, box)[0], box)
+			spot = _inward_spot(t, box, obstacles, t["prio"] == PRIO_FOCUS)
+			if spot.size == Vector2.ZERO:
+				continue
 		t["rect"] = spot
 		t["fs"] = fs
 		t["pad"] = pad
@@ -820,27 +959,90 @@ static func _spots(c: Vector2, d: float, box: Vector2) -> Array[Vector2]:
 		Vector2(c.x + d * 0.7, c.y + d * 0.7), Vector2(c.x - d * 0.7 - box.x, c.y + d * 0.7)]
 
 
-## The first free spot for label `t` (Rect2 with a zero size when there is none).
-func _free_spot(t: Dictionary, box: Vector2, icons: Array[Dictionary], placed: Array[Dictionary], ring_c: Vector2, ring_r: float) -> Rect2:
-	var k := _k()
-	for ring in LABEL_RINGS:
-		var d: float = t["r"] + LABEL_GAP * k + ring * (box.y + LABEL_GAP * k)
-		for p in _spots(t["at"], d, box):
-			var rect := Rect2(p, box)
-			if _blocked(rect, icons, placed, ring_c, ring_r):
-				continue
+## The first free spot for label `t` (Rect2 with a zero size when there is none): inside
+## the label area, out of the blocked screen areas, clear of the obstacles.
+func _free_spot(t: Dictionary, box: Vector2, obstacles: Dictionary) -> Rect2:
+	for rect in _candidates(t, box):
+		if _on_screen(rect, obstacles) and not _blocked(rect, obstacles):
 			return rect
 	return Rect2()
 
 
-static func _blocked(rect: Rect2, icons: Array[Dictionary], placed: Array[Dictionary], ring_c: Vector2, ring_r: float) -> bool:
-	for other in placed:
+## Label `t`'s candidate rects, nearest ring first (see `_spots`).
+func _candidates(t: Dictionary, box: Vector2) -> Array[Rect2]:
+	var k := _k()
+	var out: Array[Rect2] = []
+	for ring in LABEL_RINGS:
+		var d: float = t["r"] + LABEL_GAP * k + ring * (box.y + LABEL_GAP * k)
+		for p in _spots(t["at"], d, box):
+			out.append(Rect2(p, box))
+	return out
+
+
+## H22: a spot for a label that has no free one near its node: each candidate moved into
+## the label area and out of the blocked screen areas, the first clear of the obstacles.
+## With `always`, the first moved candidate when none is clear (a focus label shows).
+func _inward_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, always: bool) -> Rect2:
+	var first := Rect2()
+	for rect in _candidates(t, box):
+		var moved := _shift_inside(rect, obstacles["area"], obstacles["blocks"])
+		if first.size == Vector2.ZERO:
+			first = moved
+		if _on_screen(moved, obstacles) and not _blocked(moved, obstacles):
+			return moved
+	return first if always else Rect2()
+
+
+## True when `rect` lies inside the label area and off every blocked screen area.
+static func _on_screen(rect: Rect2, obstacles: Dictionary) -> bool:
+	if not (obstacles["area"] as Rect2).encloses(rect):
+		return false
+	for b: Rect2 in obstacles["blocks"]:
+		if rect.intersects(b):
+			return false
+	return true
+
+
+## `rect` moved the least way into `area` and out of the `blocks` it overlaps (sideways
+## first, the way that stays inside; else up or down), then clamped into `area` again.
+static func _shift_inside(rect: Rect2, area: Rect2, blocks: Array[Rect2]) -> Rect2:
+	var r := _clamp_into(rect, area)
+	for b in blocks:
+		if not r.intersects(b):
+			continue
+		# A pixel past the edge, so rounding never leaves the label touching the block.
+		var e := SHIFT_CLEARANCE
+		var moves: Array[Vector2] = [Vector2(b.position.x - r.end.x - e, 0), Vector2(b.end.x - r.position.x + e, 0),
+			Vector2(0, b.position.y - r.end.y - e), Vector2(0, b.end.y - r.position.y + e)]
+		var best := Vector2.INF
+		for m in moves:
+			if area.encloses(Rect2(r.position + m, r.size)) and m.length() < best.length():
+				best = m
+		if best != Vector2.INF:
+			r.position += best
+	return _clamp_into(r, area)
+
+
+static func _clamp_into(rect: Rect2, area: Rect2) -> Rect2:
+	var p := Vector2(clampf(rect.position.x, area.position.x, maxf(area.position.x, area.end.x - rect.size.x)),
+		clampf(rect.position.y, area.position.y, maxf(area.position.y, area.end.y - rect.size.y)))
+	return Rect2(p, rect.size)
+
+
+## True when `rect` overlaps a placed label, a node icon, a tier pip row or the
+## selection ring.
+static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
+	for other: Dictionary in obstacles["placed"]:
 		if rect.intersects(other["rect"]):
 			return true
-	for ic in icons:
+	for ic: Dictionary in obstacles["icons"]:
 		if _rect_hits_disc(rect, ic["at"], ic["r"]):
 			return true
-	return ring_c.x != INF and _rect_hits_disc(rect, ring_c, ring_r)
+	for m: Rect2 in obstacles["marks"]:
+		if rect.intersects(m):
+			return true
+	var ring_c: Vector2 = obstacles["ring_c"]
+	return ring_c.x != INF and _rect_hits_disc(rect, ring_c, obstacles["ring_r"])
 
 
 static func _rect_hits_disc(rect: Rect2, c: Vector2, r: float) -> bool:

@@ -30,6 +30,45 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H22 city maps: labels stay on screen, translated names, scaled legend, tier pips
+Pass-22 items H22 #11 (map labels off the screen edge / under the Grid column; labels
+skip TextDb), #9 part (legend and mini-map labels don't scale) and #14 part (no tier
+difficulty cue). View-only (`scripts/ui/kit/`), no rule or content change.
+- **Labels stay on screen.** `CityMapOverlay` now places labels only inside its label
+  area (the overlay's own rect, or `screen_rect` within it, less EDGE_MARGIN 4 screen px)
+  and off the screen areas a scene names: `avoid_controls([Control])` (their on-screen
+  rects are read at each layout; the labels redraw when those controls move or resize)
+  or `set_blocked_rects([Rect2])` (viewport px). A focus label (selected, you are here,
+  threats) or a landmark's (CORE, the boss Site: `big`) with no free spot near its node
+  takes a candidate moved inward (clamped into the area, then shifted the least way out
+  of a blocked area) with its leader line; focus labels always show, landmarks show when
+  a moved spot is clear; other labels with no spot are left out as before. The scenes
+  call it once after mounting the map (screen owners' files): the Grid page
+  `city_overlay.avoid_controls([column])` (the `GridColumn`), the route and zoomed Grid
+  in the netrun `city_overlay.avoid_controls([win])` (the ROUTE window), the raid maps
+  their side panels. Tested with the Grid column blocked, every node of every
+  corporation (REBEL_CELL included) selected in turn at text scale 1.0 and 1.6, and the
+  route's YOU ARE HERE.
+- **Translated names.** `CityLayout.grid_graph` takes Site names through
+  `TextDb.t(sd, "display_name")` (labels and tooltips); so does `GridMapView`.
+- **Legend and mini-map follow the text size.** `MapLegend` rows are plain Labels (not
+  fit-content RichTextLabels) at COMPACT_FONT 12 (pinned) / FULL_FONT 15 x text scale,
+  with icon swatches and title scaled; the legend rebuilds when the text scale changes.
+  Labels report their minimum size at once, so a pinned legend grows upward from its
+  corner (and shrinks back) and never runs off its area; the full legend in a column
+  keeps its 230 px width and wraps its text. `GridMapView` (the HQ mini-map) draws its
+  labels at 9/10 px x text scale and redraws on `Settings.changed`.
+- **Tier pips.** "T1-T4" is jargon, so every Site but CORE gets a non-verbal difficulty
+  cue: a row of TIER_PIPS_MAX (4, SiteData.tier's range) pips under its map icon, `tier`
+  of them lit in the node's colour, the rest hollow. One painter,
+  `CityMapOverlay.draw_tier(ci, at, tier, col, scale, alpha)` (with `tier_pips_size`),
+  is used by the map, the MapLegend's tier row ("Site tier: more lit pips, harder") and
+  the mini-map (pips lead each label); the Grid Site list can use it too. Labels keep
+  clear of the pips; the Site tooltip says "T2: difficulty 2 of 4".
+- Not done here (other owners' files): the one-line `avoid_controls` calls in
+  `hq_scene.gd` / `netrun_scene.gd`; the raid setup's pinned legend covering CORE is
+  framing.
+
 ### 2026-09-26 — H21 combat: pad triggers, turn results, odds for random picks, words and pictograms
 From pass 21 (vertical and horizontal audits, a first-time player, a player who can't read
 English; GAP_ANALYSIS H21).

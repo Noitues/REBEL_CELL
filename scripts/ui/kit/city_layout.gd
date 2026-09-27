@@ -19,9 +19,10 @@ const OBJECTIVE_TIPS := {RC.SiteObjective.EXPLOIT: "Exploit Site: clearing it gi
 	RC.SiteObjective.BOSS: "Boss Site: the corporation's core."}
 
 
-## A Site's hover text on the city maps (H21 #14): name and tier, status, objective.
+## A Site's hover text on the city maps (H21 #14): name and tier (with its difficulty,
+## H22: the tier pips' meaning in words), status, objective.
 static func site_tip(site_label: String, tier: int, status: int, objective: int, home: bool) -> String:
-	var parts := PackedStringArray(["%s (T%d)." % [site_label, tier]])
+	var parts := PackedStringArray(["%s (T%d: difficulty %d of %d)." % [site_label, tier, tier, CityMapOverlay.TIER_PIPS_MAX]])
 	if home:
 		parts.append("Your home server: if its integrity reaches 0 the campaign is lost.")
 	else:
@@ -92,9 +93,11 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 			mark = CityMapOverlay.MARK_SPRAY
 		elif status == GridState.SiteStatus.SEIZED:
 			mark = CityMapOverlay.MARK_CROSS
-		var site_label := HOME_LABEL if home else sd.display_name
+		# H22: the translated name (TextDb), as on every other screen.
+		var site_label := HOME_LABEL if home else TextDb.t(sd, "display_name")
 		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
 			"label": site_label if named else "", "glyph": "⌂" if home else glyph, "big": home or objective == RC.SiteObjective.BOSS,
+			"tier": 0 if home else sd.tier,
 			"tip": site_tip(site_label, sd.tier, status, objective, home)})
 	var edges: Array[Dictionary] = []
 	var seen := {}

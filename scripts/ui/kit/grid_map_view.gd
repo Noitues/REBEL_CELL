@@ -6,8 +6,21 @@ extends Control
 ## frozen links in resist_gold, threat paths as glowing corporate arrows (pending raid
 ## entry -> home) and, during a playout, threat markers on the Sites they stand on.
 ## Emits site_clicked so the sidebar can act; the view never changes state.
+##
+## H22: the Site labels follow Settings.text_scale (redrawn when it changes), use the
+## translated Site names, and lead with the map's tier difficulty pips
+## (CityMapOverlay.draw_tier).
 
 signal site_clicked(site_id: StringName)
+
+## Label font sizes at text scale 1.0 (px): Site labels on a dense (> 16 Sites) and a
+## sparse Grid, and the second line (node / home integrity, threats).
+const LABEL_FONT_DENSE := 9
+const LABEL_FONT := 10
+const DETAIL_FONT := 9
+## The tier pips' scale in a label at text scale 1.0, and their gap to the text (px).
+const PIP_SCALE := 0.8
+const PIP_TEXT_GAP := 4.0
 
 var campaign: CampaignState = null
 var corp: CorporationData = null
@@ -17,6 +30,10 @@ var threat_markers: Dictionary = {}
 ## Site picked by the player (drawn with an acid ring).
 var selected_id: StringName = &""
 var _positions: Dictionary = {}
+## The labels of the last draw ({text, size}), for checks.
+var drawn_labels: Array[Dictionary] = []
+## The tier pips of the last draw (Site id -> tier), for checks.
+var drawn_tiers: Dictionary = {}
 
 
 func _init() -> void:
@@ -24,6 +41,20 @@ func _init() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(queue_redraw)
+	Settings.changed.connect(queue_redraw)
+
+
+## Label font size now (px): `base` at the current text scale.
+static func label_size(base: int) -> int:
+	return maxi(1, roundi(base * Settings.text_scale))
+
+
+## The label shown under Site `s` (tier, translated name on a sparse Grid, objective
+## glyph; "CORE" for the home Site).
+func site_label(s: SiteData, glyph: String, dense: bool) -> String:
+	if campaign != null and s.id == campaign.grid.home_site_id:
+		return CityLayout.HOME_LABEL
+	return ("T%d %s" % [s.tier, glyph]) if dense else ("T%d %s %s" % [s.tier, TextDb.t(s, "display_name"), glyph])
 
 
 func show_grid(p_campaign: CampaignState, p_corp: CorporationData, p_threat_paths: Array[Array] = []) -> void:
@@ -75,6 +106,8 @@ func _gui_input(event: InputEvent) -> void:
 func _draw() -> void:
 	if campaign == null or corp == null:
 		return
+	drawn_labels.clear()
+	drawn_tiers.clear()
 	_layout_positions()  # the control's size is only final at draw time
 	var corp_col := Palette.corp_color(corp.id)
 	var dense := corp.city_grid.sites.size() > 16
@@ -149,16 +182,25 @@ func _draw() -> void:
 				glyph = "✦"
 		if glyph != "" or s.id == campaign.grid.home_site_id:
 			_badge(p + Vector2(0, -h - d - 12), 9.0 if dense else 11.0, col, glyph if glyph != "" else "⌂")
-		var label := ("T%d %s" % [s.tier, glyph]) if dense else ("T%d %s %s" % [s.tier, s.display_name, glyph])
-		if s.id == campaign.grid.home_site_id:
-			label = "CORE"
-		_tag(p + Vector2(-40, d + 16), label, 9 if dense else 10, Palette.PAPER)
-		if status == GridState.SiteStatus.CLAIMED and s.id != campaign.grid.home_site_id:
+		var home := s.id == campaign.grid.home_site_id
+		var fs := label_size(LABEL_FONT_DENSE if dense else LABEL_FONT)
+		var detail := label_size(DETAIL_FONT)
+		var at := p + Vector2(-40, d + 16 * Settings.text_scale)
+		if not home:
+			# The tier's difficulty pips lead the label (the map's own cue).
+			var ps := PIP_SCALE * Settings.text_scale
+			var pips := CityMapOverlay.tier_pips_size(ps)
+			CityMapOverlay.draw_tier(self, Vector2(at.x + pips.x * 0.5, at.y - fs * 0.4), s.tier, Palette.PAPER, ps)
+			drawn_tiers[s.id] = s.tier
+			at.x += pips.x + PIP_TEXT_GAP
+		_tag(at, site_label(s, glyph, dense), fs, Palette.PAPER)
+		var below := p + Vector2(-40, d + 16 * Settings.text_scale + detail + 4.0)
+		if status == GridState.SiteStatus.CLAIMED and not home:
 			var site := campaign.grid.site(s.id)
 			var level := campaign.grid.upgrade_level_of(s.id)
-			_tag(p + Vector2(-40, d + 29), "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""], 9, Palette.CELL_ACID)
-		elif s.id == campaign.grid.home_site_id:
-			_tag(p + Vector2(-40, d + 29), "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], 9, Palette.CELL_ACID)
+			_tag(below, "%s %d/%d%s" % [campaign.grid.node_type_of(s.id), site["integrity"], site["max_integrity"], (" +%d" % level) if level > 0 else ""], detail, Palette.CELL_ACID)
+		elif home:
+			_tag(below, "HOME %d/%d" % [campaign.grid.home_integrity, campaign.grid.home_max_integrity], detail, Palette.CELL_ACID)
 		# Raid playout: threats standing on this Site as corporate markers.
 		if threat_markers.has(s.id):
 			var names: Array = threat_markers[s.id]
@@ -166,7 +208,7 @@ func _draw() -> void:
 				var mp := p + Vector2(-20 + k * 14, -h - 22)
 				draw_circle(mp, 6, corp_col)
 				draw_circle(mp, 9, Color(corp_col, 0.35))
-			draw_string(Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140, 9, corp_col)
+			draw_string(Palette.mono(), p + Vector2(-40, -h - 30), ", ".join(names), HORIZONTAL_ALIGNMENT_LEFT, 140 * Settings.text_scale, detail, corp_col)
 
 
 func _iso_block(p: Vector2, w: float, d: float, h: float, col: Color) -> void:
@@ -206,9 +248,11 @@ func _badge(p: Vector2, r: float, col: Color, glyph: String) -> void:
 ## Text on a dark pill so it reads over links and blocks.
 func _tag(at: Vector2, text: String, font_size: int, col: Color, width: float = 120.0) -> void:
 	var f := Palette.mono()
-	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x, width)
+	var w := width * Settings.text_scale
+	var tw := minf(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x, w)
 	draw_rect(Rect2(at.x - 3, at.y - font_size, tw + 6, font_size + 4), Color(Palette.NIGHT_SKY, 0.75))
-	draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, width, font_size, col)
+	draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, w, font_size, col)
+	drawn_labels.append({"text": text, "size": font_size})
 
 
 func _dashed_line(a: Vector2, b: Vector2, col: Color) -> void:
