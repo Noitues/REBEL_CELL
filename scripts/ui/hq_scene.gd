@@ -38,11 +38,25 @@ const GLYPH_ENTRY := ">"
 const GLYPH_LINK := "⛓"
 ## Raid setup: the projection stamp's side and a node's target button width (px).
 const PROJECTION_STAMP := 124.0
+## The pause menu's least top (px); it opens under the subtitle band.
+const PAUSE_TOP := 100.0
+## How much of the text scale the forecast stamp's size follows.
+const PROJECTION_FOLLOW := 0.3
+## The forecast stamp's words (H22 #9): a caption over the verdict.
+const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:"
+const VERDICT_HOLDS := "ALL HOLD"
+const VERDICT_HIT := "HOME HIT"
+const VERDICT_LOST := "CAMPAIGN LOST"
+## Passes framing the raid map beside its legend.
+const RAID_REFRAMES_MAX := 2
+## The deploy steps' icons, a little larger than a button's.
+const DEPLOY_ICON_GROW := 1.2
+## The raid orders list's least height at text scale 1.0 (px).
+const ORDERS_MIN_HEIGHT := 70.0
 const TARGET_BUTTON_WIDTH := 150.0
 ## Entry Sites shown one badge each up to this many; more collapse into a count.
 const MAX_ENTRY_BADGES := 3
 ## Height of the raid's node orders list (px); more nodes scroll inside it.
-const ORDERS_HEIGHT := 150.0
 ## PIRATE RADIO: width, room for its title and foot (px) and the lines it shows at once.
 const RADIO_WIDTH := 230.0
 const RADIO_TOP := 24.0
@@ -73,6 +87,11 @@ var background: CyberdeckBackground
 var wireframe: WireframeBackground
 var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
+## The raid setup's map key (placed clear of the nodes).
+var raid_legend: MapLegend = null
+## How many times the raid map was framed to clear the legend's column (at most
+## RAID_REFRAMES_MAX: labels keep their size as the map zooms, so a second pass settles it).
+var _raid_reframes: int = 0
 ## The map drawn on the city (Grid, raids); freed when another panel opens.
 var city_overlay: CityMapOverlay = null
 var _settings_panel: PauseMenu = null
@@ -400,7 +419,7 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
+	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, SubtitleStrip.top_below(PAUSE_TOP))  # under the subtitle band (H22: the top bar grows with its words)
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)
@@ -621,6 +640,7 @@ func show_hq() -> void:
 	jack.name = "JackIn"
 	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	jack.tooltip_text = UiTip.fold("JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun.")
+	jack.icon_kind = StatIcon.JACK_IN  # H22 #14: the plug, as on the Site card's JACK IN
 	jack.pressed.connect(show_grid)
 	var top_right := HBoxContainer.new()
 	top_right.add_theme_constant_override("separation", 10)
@@ -712,21 +732,21 @@ func show_hq() -> void:
 		if op.alive:
 			var view_row := HBoxContainer.new()
 			var op_ref := op
-			var loadout_btn := _button("Loadout", func() -> void: open_loadout(op_ref))
+			var loadout_btn := _icon(_button("Loadout", func() -> void: open_loadout(op_ref)), StatIcon.CARDS)
 			loadout_btn.name = "Loadout"
 			loadout_btn.tooltip_text = "%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them." % op.name
 			view_row.add_child(loadout_btn)
 			orders.add_child(view_row)
 			if where != &"":
 				var id := op.id
-				_add_tip(orders, _button("Recall", func() -> void: recall(id)), "Bring %s back from %s." % [op.name, site_name(where)])
+				_add_tip(orders, _icon(_button("Recall", func() -> void: recall(id)), StatIcon.BACK), "Bring %s back from %s." % [op.name, site_name(where)])
 			else:
 				for site_id in c.grid.claimed_ids():
 					var node := lookup.get_content(c.grid.node_type_of(site_id)) as NetworkNodeData
 					if node != null and node.station_slots > 0 and c.grid.stationed_on(site_id) == &"" and c.grid.is_active_node(site_id):
 						var oid := op.id
 						var sid := site_id
-						_add_tip(orders, _button("Station on %s" % site_name(site_id), func() -> void: station(oid, sid)),
+						_add_tip(orders, _icon(_button("Station on %s" % site_name(site_id), func() -> void: station(oid, sid)), StatIcon.RAIDS),
 							"%s guards %s (%s): the class's station bonus helps it hold in raids." % [op.name, site_name(site_id), TextDb.t(node, "display_name")])
 			# Rank 3 Inner Ring segment swaps (GDD 6.4).
 			var cls := lookup.get_content(op.class_id) as ClassData
@@ -749,6 +769,7 @@ func show_hq() -> void:
 					pick.tooltip_text = "Inner ring segment %d: Rank 3 lets you swap it for another." % k
 					orders.add_child(pick)
 		roster_box.add_child(row)
+	roster_box.name = "Roster"
 	center.add_child(crew)
 	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
 	var market := TerminalWindow.new("BLACK MARKET // SCHEMATICS %d" % c.schematics, Palette.CELL_ACID)
@@ -813,6 +834,53 @@ func show_hq() -> void:
 			t.text = "  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]
 			story.body.add_child(t)
 	_set_panel(box, "hq")
+	_link_crew_focus(roster_box, jack, market)
+
+
+## D-pad through the crew (H22 #10: the second dossier's Loadout could not be reached; the
+## page's row links saw only each column's first control): each dossier's orders top to
+## bottom, left / right to the same line of the dossier beside it (JACK IN after the last),
+## and down from a dossier's last order to the next dossier, then to the Black Market.
+func _link_crew_focus(roster: Control, jack: Control, market: Control) -> void:
+	var cards: Array = []
+	for card in roster.get_children():
+		var list: Array[Control] = []
+		_usable_in(card, list)
+		if not list.is_empty():
+			cards.append(list)
+	var after := UiFocus.first_focusable(market)
+	for k in cards.size():
+		var list: Array = cards[k]
+		for i in list.size():
+			var c: Control = list[i]
+			if i > 0:
+				c.focus_neighbor_top = c.get_path_to(list[i - 1])
+			if i + 1 < list.size():
+				c.focus_neighbor_bottom = c.get_path_to(list[i + 1])
+			elif k + 1 < cards.size():
+				c.focus_neighbor_bottom = c.get_path_to(cards[k + 1][0])
+			elif after != null:
+				c.focus_neighbor_bottom = c.get_path_to(after)
+			if k + 1 < cards.size():
+				var nxt: Array = cards[k + 1]
+				c.focus_neighbor_right = c.get_path_to(nxt[mini(i, nxt.size() - 1)])
+			elif jack != null:
+				c.focus_neighbor_right = c.get_path_to(jack)
+			if k > 0:
+				var prv: Array = cards[k - 1]
+				c.focus_neighbor_left = c.get_path_to(prv[mini(i, prv.size() - 1)])
+		if k == 0 and jack != null:
+			jack.focus_neighbor_left = jack.get_path_to(list[0])
+
+
+## The focusable controls under `node`, in tree order.
+func _usable_in(node: Node, out: Array[Control]) -> void:
+	for child in node.get_children():
+		if child is Control and (child as Control).is_visible_in_tree() and (child as Control).focus_mode != Control.FOCUS_NONE \
+				and (child is BaseButton and not (child as BaseButton).disabled):
+			out.append(child)
+			continue
+		_usable_in(child, out)
 
 
 ## Node types the player can install, in id order (home cores excluded); locked ones
@@ -917,10 +985,19 @@ func show_grid() -> void:
 		flow.add_theme_constant_override("h_separation", 8)
 		flow.add_theme_constant_override("v_separation", 6)
 		runs.body.add_child(flow)
+		var map_nodes := {}
+		for n in grid_graph()["nodes"]:
+			map_nodes[n["id"]] = n
 		for s in launchable:
 			var sid := s.id
-			var b := _button("%s %s" % [_site_glyph(s), site_name(s.id)], func() -> void: select_site(sid))
+			var b := _button("T%d %s" % [s.tier, site_name(s.id)], func() -> void: select_site(sid))
 			b.name = "Run_%s" % s.id
+			# H22 #14: the Site's own map icon (objective or tier, the map's colour) and its tier
+			# as pips (the harder the run, the more bars).
+			var mn: Dictionary = map_nodes.get(s.id, {})
+			IconMark.attach(b, StatIcon.MAP)
+			IconMark.attach_map(b, String(mn.get("kind", CityMapOverlay.KIND_TIER)), mn.get("color", Palette.NET_CYAN),
+				String(mn.get("glyph", "")) if String(mn.get("kind", "")) == CityMapOverlay.KIND_TIER else "", s.tier)
 			if s.id == selected_site:
 				b.add_theme_color_override("font_color", Palette.CELL_ACID)
 			_add_tip(flow, b, "T%d %s: %s. Select it, then %s on its card." % [s.tier, site_name(s.id), CampaignRules.run_kind_for(c, s), JACK_IN])
@@ -935,6 +1012,7 @@ func show_grid() -> void:
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.4, 0.56), 0.85)
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
+	city_overlay.avoid_controls([column])  # map labels stay clear of the column
 
 
 ## Mounts the map overlay on the net city and frames the camera on it. `zoom` > 1 moves
@@ -1080,6 +1158,11 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 			var post := CampaignRules.stationed_site(c, op.id)
 			op_pick.add_item("%s R%d%s" % [op.name, op.rank, (" (leaves %s)" % site_name(post)) if post != &"" else ""])
 		op_pick.tooltip_text = "Who runs it."
+		# H22 #14: the dropdown carries the operative icon beside it.
+		var who := IconMark.standalone(StatIcon.OPERATIVE, UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR, Palette.CELL_PINK)
+		who.name = "OperativeIcon"
+		who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(who)
 		row.add_child(op_pick)
 		var sid := site.id
 		var kind := CampaignRules.run_kind_for(c, site)
@@ -1127,29 +1210,41 @@ func show_raid() -> void:
 	# Raid setup on the city (rest of the city greyed out): the network and the threat
 	# routes on real streets, each node's projected outcome on the map; the raid card, the
 	# node orders and the Armory in the side column and below (H20: no text wall).
-	var outer := VBoxContainer.new()
+	# H22 #9: the side column takes the page's full height and the Armory sits under the
+	# map beside it (full width under both, it went off the screen at 1.6).
+	var outer := HBoxContainer.new()
 	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var top := HBoxContainer.new()
-	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	outer.add_child(top)
+	var map_col := VBoxContainer.new()
+	map_col.name = "RaidMapColumn"
+	map_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	map_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.add_child(map_col)
 	var spacer := Control.new()
+	spacer.name = "RaidMapArea"
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top.add_child(spacer)
-	MapLegend.pin_to(spacer, c.corporation_id)  # the raid map has its key too (H20 #22)
+	map_col.add_child(spacer)
+	# The raid map has its key too (H20 #22), placed where it covers no node (H22 #9).
+	raid_legend = MapLegend.pin_to(spacer, c.corporation_id)
+	_raid_reframes = 0
 	var side := VBoxContainer.new()
 	side.name = "RaidSide"
 	side.custom_minimum_size.x = RAID_SIDE_WIDTH
 	side.add_theme_constant_override("separation", 8)
-	top.add_child(side)
+	outer.add_child(side)
 	side.add_child(_raid_card(raid, pending, projection))
 	var orders_win := TerminalWindow.new("YOUR NODES // pick the target", Palette.CELL_PINK)
 	orders_win.name = "NodeOrders"
 	side.add_child(orders_win)
 	# A fixed-height list (many claimed nodes scroll inside it; follow_focus for the pad).
+	# H22 #9: the list takes the column's spare height (at least ORDERS_MIN_HEIGHT at the
+	# text scale), so the Armory's cards under it stay on screen at big text.
 	var orders_scroll := ScrollContainer.new()
-	orders_scroll.custom_minimum_size = Vector2(0, ORDERS_HEIGHT)
+	orders_scroll.name = "OrdersScroll"
+	orders_scroll.custom_minimum_size = Vector2(0, ORDERS_MIN_HEIGHT * Settings.text_scale)
+	orders_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	orders_win.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	orders_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	orders_scroll.follow_focus = true
 	orders_win.body.add_child(orders_scroll)
@@ -1168,13 +1263,22 @@ func show_raid() -> void:
 	run_btn.theme_type_variation = &"HotButton"
 	_add_tip(go, run_btn, "Play the raid out on the map; the result matches the projection.")
 	_add_tip(go, _icon(_button("Back to HQ", show_hq), StatIcon.BACK), "Back to the HQ; the raid waits until you run it.")
-	var loadout := TerminalWindow.new("DEFENSE LOADOUT // ARMORY %d/%d // pick a node, then a card" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK)
+	var loadout := TerminalWindow.new("DEFENSE LOADOUT // ARMORY %d/%d" % [c.armory.size(), cfg.armory_capacity], Palette.CELL_PINK)
+	loadout.name = "DefenseLoadout"
 	loadout.tag_label.text = "TARGET: %s" % site_name(selected_site)
-	outer.add_child(loadout)
+	map_col.add_child(loadout)
+	# How to deploy, in pictures (H22 #9): 1 pick a node (map or YOUR NODES), 2 press a
+	# card: it goes to the target. The cards sit beside the steps.
+	var deploy_row := HBoxContainer.new()
+	deploy_row.add_theme_constant_override("separation", 14)
+	loadout.body.add_child(deploy_row)
+	deploy_row.add_child(_deploy_steps())
 	var cards := HFlowContainer.new()
 	cards.name = "AssetCards"
+	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cards.add_theme_constant_override("h_separation", 14)
-	loadout.body.add_child(cards)
+	cards.add_theme_constant_override("v_separation", 8)
+	deploy_row.add_child(cards)
 	var seen := {}
 	for i in c.armory.size():
 		var aid: StringName = c.armory[i]
@@ -1183,8 +1287,7 @@ func show_raid() -> void:
 		seen[aid] = true
 		var data := lookup.get_content(aid) as DefenseAssetData
 		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
-		card.custom_minimum_size = Vector2(110, 120)
-		card.tooltip_text = UiTip.fold("%s\nDeploys to %s." % [TextDb.t(data, "description") if data != null else "", site_name(selected_site)])
+		card.tooltip_text = UiTip.fold("%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES)." % [TextDb.t(data, "description") if data != null else "", site_name(selected_site)])
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
@@ -1198,6 +1301,12 @@ func show_raid() -> void:
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
 		if RunManager.campaign.grid.is_claimed(id):
 			select_target(id))
+	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
+	place_raid_legend.call_deferred()
+	spacer.resized.connect(place_raid_legend)
+	raid_legend.minimum_size_changed.connect(func() -> void: place_raid_legend.call_deferred())
+	if not wireframe.city.rebuilt.is_connected(place_raid_legend):
+		wireframe.city.rebuilt.connect(place_raid_legend)
 	if _last_warned_raid != String(pending.get("raid_id", "")):
 		_last_warned_raid = String(pending.get("raid_id", ""))
 		Dialogue.raid_warning(c.corporation_id, StringName(String(pending.get("raid_id", raid.id))), c.raids_won + c.raids_lost)
@@ -1226,10 +1335,13 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	card.body.add_child(row)
-	var verdict := "HOLDS" if projection.won else ("LOST" if projection.campaign_lost else "BREACHED")
-	var stamp := ZineStamp.new(verdict, Palette.CELL_ACID if projection.won else Palette.CELL_PINK).display_only()
-	stamp.name = "Projection"
-	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP)
+	# A forecast, not a result (H22 #9): "IF THE RAID RUNS NOW: HOME HIT" on a dashed
+	# ring like combat's NEXT plate; the tooltip says so.
+	var verdict := raid_verdict(projection)
+	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, Palette.CELL_ACID if projection.won else Palette.CELL_PINK,
+		StatIcon.HOME if not projection.won else StatIcon.RAIDS)
+	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
+	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
 	row.add_child(stamp)
 	var facts := HFlowContainer.new()
 	facts.name = "RaidFacts"
@@ -1257,6 +1369,81 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
 			facts.add_child(Badge.new("link", Palette.RESIST_GOLD, GLYPH_LINK, String(e["text"])))
 	return card
+
+
+## The raid forecast in words: what happens if the raid runs now (H22 #9).
+static func raid_verdict(projection: RaidResolver.RaidResult) -> String:
+	if projection.campaign_lost:
+		return VERDICT_LOST
+	return VERDICT_HOLDS if projection.won else VERDICT_HIT
+
+
+## The forecast stamp's tooltip: a projection, exact, and how to change it.
+func forecast_tip(projection: RaidResolver.RaidResult) -> String:
+	var what := "your network holds every threat"
+	if projection.campaign_lost:
+		what = "the home server falls and the campaign is lost"
+	elif not projection.won:
+		what = "threats reach the home server: home %d > %d" % [projection.home_before, projection.home_after]
+	return "Forecast, not a result: if you run the raid now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it." % what
+
+
+## The raid legend at the first spot over the map that covers no node's icon or label
+## (H22 #9: pinned bottom left it covered CORE at 1.6). When every spot covers a node
+## (threat routes cross the whole city), the camera frames the map beside the legend's
+## column (moved, and zoomed out as far as that needs), then the legend is placed again.
+func place_raid_legend() -> void:
+	if raid_legend == null or not is_instance_valid(raid_legend) or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	var covered := LegendSpot.place(raid_legend, city_overlay)
+	if covered <= 0.0 or _raid_reframes >= RAID_REFRAMES_MAX:
+		return
+	var fit := LegendSpot.fit_beside(raid_legend, city_overlay)
+	if fit.is_empty():
+		return
+	_raid_reframes += 1
+	var city := wireframe.city
+	var k := float(fit["zoom"])
+	var screen := get_global_rect()
+	var focus_at := screen.position + city.focus_anchor * screen.size
+	# Zooming by k about the focus point moves the nodes' centre to focus + (from - focus) * k;
+	# the focus then goes where that centre lands on the free part of the map.
+	var to: Vector2 = fit["to"]
+	var from: Vector2 = fit["from"]
+	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
+	_frame_city(city.scale.x * k, city.focus_grid, anchor)
+	place_raid_legend.call_deferred()
+
+
+## Screen rects of the raid map's node icons and labels (the legend must cover none).
+func raid_node_rects() -> Array[Rect2]:
+	return LegendSpot.node_rects(city_overlay)
+
+
+## How to deploy (H22 #9): numbered steps with the map's node icon and the Armory icon.
+func _deploy_steps() -> VBoxContainer:
+	var steps := VBoxContainer.new()
+	steps.name = "DeploySteps"
+	steps.add_theme_constant_override("separation", 6)
+	steps.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR * DEPLOY_ICON_GROW
+	var target := site_name(selected_site) if selected_site != &"" else "?"
+	for step in [[StatIcon.MAP, "1  Pick a node", "Pick the target: click a node of yours on the map, or its button in YOUR NODES."],
+			[StatIcon.ARMORY, "2  Press a card", "Press an asset card: it deploys to the target (%s now)." % target]]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.tooltip_text = UiTip.fold(String(step[2]))
+		row.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(IconMark.standalone(step[0], side, Palette.CELL_ACID))
+		var l := _label(String(step[1]))
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(l)
+		steps.add_child(row)
+	var to := _label("> %s" % target)
+	to.name = "DeployTarget"
+	to.add_theme_color_override("font_color", Palette.CELL_ACID)
+	steps.add_child(to)
+	return steps
 
 
 ## One claimed node in the raid orders: its target button (name, node type) and its
@@ -1386,6 +1573,7 @@ func show_raid_playout(events: Array[Dictionary]) -> void:
 	_set_panel(box, "raid_playout")
 	var g := raid_graph({}, {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55), 1.9)
+	city_overlay.avoid_controls([side])
 	var overlay := city_overlay
 	overlay.markers_changed.connect(func() -> void: _follow_fight(overlay))
 	playout = RaidPlayoutPanel.new(overlay, Vector2(330, 330))
@@ -1470,6 +1658,7 @@ func show_raid_summary() -> void:
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
+	city_overlay.avoid_controls([report])
 
 
 func show_end() -> void:

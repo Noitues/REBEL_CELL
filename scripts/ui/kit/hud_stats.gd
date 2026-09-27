@@ -10,6 +10,11 @@ extends Control
 ## under it, FULL_MIN_FIT) they are drawn full; otherwise they go compact (icon and value,
 ## the name in the tooltip's title) and shrink only as far as the row needs. The height
 ## follows.
+## H22 #14: outside a fight the words stay (the first-time player found icon-only tags
+## worse): when the fixed-width full tags don't fit, the tags are fitted to their own words
+## (name over icon and value, each tag as wide as its longest line) and shrink as a row;
+## if even that would go under FULL_MIN_FIT of the text size (a narrow window), they wrap
+## to two rows. Only a fight (max_height set) still goes compact.
 
 ## A full tag at text scale 1.0, and the gap between tags (px).
 const TAG_SIZE := Vector2(100, 44)
@@ -19,6 +24,8 @@ const TAG_GAP := 8.0
 const FULL_MIN_FIT := 0.85
 ## A compact tag's height at scale 1.0 (px).
 const COMPACT_H := 34.0
+## Room past a fitted tag's name (the tilt and the marker's overhang, px at 1.0).
+const NAME_SLACK := 4.0
 ## Space above the tags (the tape) and below them (px at scale 1.0).
 const TOP_ROOM := 7.0
 const BOTTOM_ROOM := 3.0
@@ -41,6 +48,8 @@ var items: Array = []:
 ## Compact tags (icon and value) and the scale they are drawn at (read-only).
 var compact: bool = false
 var tag_scale: float = 1.0
+## Rows of tags (2 when fitted tags wrap outside a fight).
+var rows: int = 1
 ## When above 0, the tags never make the row taller than this (px): a fight keeps its
 ## height under the top bar (the netrun sets it while the combat scene is up).
 var max_height: float = 0.0:
@@ -97,6 +106,21 @@ func tag_rects() -> Array[Rect2]:
 	return _rects.duplicate()
 
 
+## Width of a tag fitted to its words at scale 1.0: the longer of the name and the icon
+## with its value (H22 #14).
+func _fitted_tag_width(it: Array) -> float:
+	var name_w := Palette.marker().get_string_size(String(it[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
+	return maxf(PAD + name_w + PAD, _compact_tag_width(it))
+
+
+## Width the fitted tags `from`..`to` (exclusive) take at scale 1.0.
+func _fitted_width(from: int, to: int) -> float:
+	var total := 0.0
+	for i in range(from, to):
+		total += _fitted_tag_width(items[i]) + TAG_GAP
+	return total
+
+
 func _compact_tag_width(it: Array) -> float:
 	var value := String(it[1])
 	var w := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, VALUE_SIZE).x
@@ -117,12 +141,33 @@ func _relayout() -> void:
 		s = minf(text_s, maxf(1.0, max_height / (TOP_ROOM + TAG_SIZE.y + BOTTOM_ROOM)))
 		most = minf(text_s, maxf(1.0, max_height / (TOP_ROOM + COMPACT_H + BOTTOM_ROOM)))
 	var fit_full := room / maxf(1.0, full_width(1.0))
+	rows = 1
 	if n == 0 or fit_full >= s * FULL_MIN_FIT:
 		compact = false
 		tag_scale = minf(s, fit_full) if n > 0 else s
 		var t := tag_scale
 		for i in n:
 			_rects.append(Rect2(i * (TAG_SIZE.x + TAG_GAP) * t, TOP_ROOM * t, TAG_SIZE.x * t, TAG_SIZE.y * t))
+	elif max_height <= 0.0:
+		# Words kept (H22 #14): fitted tags on one row, else on two.
+		compact = false
+		var fit_one := room / maxf(1.0, _fitted_width(0, n))
+		var split := n
+		if fit_one < s * FULL_MIN_FIT and n > 1:
+			rows = 2
+			split = ceili(n / 2.0)
+			tag_scale = minf(s, room / maxf(1.0, maxf(_fitted_width(0, split), _fitted_width(split, n))))
+		else:
+			tag_scale = minf(s, fit_one)
+		var t := tag_scale
+		var x := 0.0
+		for i in n:
+			if i == split:
+				x = 0.0
+			var row := 0 if i < split else 1
+			var w := _fitted_tag_width(items[i]) * t
+			_rects.append(Rect2(x, (TOP_ROOM + row * (TAG_SIZE.y + TOP_ROOM)) * t, w, TAG_SIZE.y * t))
+			x += w + TAG_GAP * t
 	else:
 		compact = true
 		tag_scale = clampf(room / maxf(1.0, compact_width(1.0)), 0.5, most)
@@ -131,7 +176,7 @@ func _relayout() -> void:
 			var w := _compact_tag_width(it) * tag_scale
 			_rects.append(Rect2(x, TOP_ROOM * tag_scale, w, COMPACT_H * tag_scale))
 			x += w + TAG_GAP * tag_scale
-	var h := (TOP_ROOM + (COMPACT_H if compact else TAG_SIZE.y) + BOTTOM_ROOM) * tag_scale
+	var h := (TOP_ROOM + (COMPACT_H if compact else TAG_SIZE.y) + BOTTOM_ROOM + (rows - 1) * (TAG_SIZE.y + TOP_ROOM)) * tag_scale
 	if not is_equal_approx(custom_minimum_size.y, h):
 		custom_minimum_size.y = h
 	queue_redraw()
@@ -140,7 +185,8 @@ func _relayout() -> void:
 ## The tag index under `at` (local), or -1.
 func tag_at(at: Vector2) -> int:
 	for i in _rects.size():
-		if at.x >= _rects[i].position.x and at.x <= _rects[i].end.x:
+		var r := _rects[i]
+		if at.x >= r.position.x and at.x <= r.end.x and (rows == 1 or (at.y >= r.position.y - TOP_ROOM * tag_scale and at.y <= r.end.y)):
 			return i
 	return -1
 

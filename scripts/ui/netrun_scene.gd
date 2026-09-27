@@ -17,6 +17,10 @@ const NODE_WORDS := {RC.InfilNodeType.ROUTER: "Fight", RC.InfilNodeType.TERMINAL
 const NODE_ICONS := {RC.InfilNodeType.ROUTER: StatIcon.FIGHT, RC.InfilNodeType.TERMINAL: StatIcon.TERMINAL,
 	RC.InfilNodeType.MODEM: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
 const ELITE_WORD := "Elite fight"
+## The pause menu's least top (px); it opens under the subtitle band.
+const PAUSE_TOP := 100.0
+## A reachable route node's colour on the map (route_graph) and on its button's icon.
+const ROUTE_NEXT_COLOR := Palette.CELL_ACID
 ## The home server's name (as the HQ shows it; never its id).
 const HOME_LABEL := "CORE"
 ## The Modem's quadrant (px) and the room its window frame and title take (px): shop cards
@@ -51,6 +55,8 @@ var _spoken_events: Dictionary = {}
 var _settings_panel: PauseMenu = null
 ## The route's node buttons (their key hints follow the device).
 var _route_buttons: Array[Button] = []
+## The route view's map key (placed clear of the nodes; null when zoomed out).
+var route_legend: MapLegend = null
 
 ## Event types that pop a toast (H20: the log strip is optional).
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
@@ -385,7 +391,15 @@ func _show_map() -> void:
 	# (H20: each button carries its own key hint, refreshed when the device changes).
 	var win := TerminalWindow.new("ROUTE // pick the next node", Palette.CELL_ACID)
 	win.custom_minimum_size.x = 300
-	top.add_child(win)
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	# The route column: the choices, then the map key under them (H22 #14: the route view
+	# had none; in the column it hides no part of the route).
+	var route_col := VBoxContainer.new()
+	route_col.name = "RouteColumn"
+	route_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	route_col.add_theme_constant_override("separation", 8)
+	top.add_child(route_col)
+	route_col.add_child(win)
 	var available := s.available_nodes()
 	var row := VBoxContainer.new()
 	row.name = "RouteNodes"
@@ -406,6 +420,9 @@ func _show_map() -> void:
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
 		IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
+		# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
+		# so the same node looks the same on the button and on the map.
+		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
 		b.tooltip_text = UiTip.fold(String(NODE_TIPS.get(node["type"], "")) + (" Elite: a harder fight." if _is_elite(node) else "") + ((" Entering it changes Heat by %+d." % heat) if heat != 0 else ""))
 		_route_buttons.append(b)
 		row.add_child(b)
@@ -424,16 +441,40 @@ func _show_map() -> void:
 	win.body.add_child(quit_btn)
 	if _grid_zoomed:
 		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
+	else:
+		# The route view's map key (H22 #14: it had none) in the room under the choices,
+		# scaled down if that room is short (LegendSpot).
+		top.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		route_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var key_room := Control.new()
+		key_room.name = "LegendRoom"
+		key_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		key_room.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		route_col.add_child(key_room)
+		route_legend = MapLegend.pin_to(key_room, RunManager.campaign.corporation_id)
 	_set_panel(panel, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _grid_zoomed:
 		var g := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, CityLayout.threat_paths(RunManager.campaign, RunManager.corporation), s.run.site_id)
 		_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+		city_overlay.avoid_controls([win])  # map labels stay clear of the ROUTE window
 	else:
 		var r := route_graph()
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, 1.45, Vector2(0.46, 0.58), Vector2.INF)
+		city_overlay.avoid_controls([win, route_legend])
+		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
+		place_route_legend.call_deferred()
+		route_legend.get_parent().resized.connect(place_route_legend)
+		if not background.city.rebuilt.is_connected(place_route_legend):
+			background.city.rebuilt.connect(place_route_legend)
+
+
+## The route legend where it covers no route node (H22 #14).
+func place_route_legend() -> void:
+	if route_legend != null and is_instance_valid(route_legend) and city_overlay != null and is_instance_valid(city_overlay):
+		LegendSpot.place(route_legend, city_overlay)
 
 
 ## A route node in a word: Fight, Elite fight, Event, Shop, Rack.
@@ -498,7 +539,7 @@ func route_graph() -> Dictionary:
 		if n["id"] == s.run.current_node_id:
 			col = Palette.CELL_PINK
 		elif available.has(n["id"]):
-			col = Palette.CELL_ACID
+			col = ROUTE_NEXT_COLOR
 		elif s.run.visited.has(n["id"]):
 			col = Color(Palette.NET_CYAN, 0.5)
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
@@ -509,7 +550,8 @@ func route_graph() -> Dictionary:
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
 			"label": "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
 			"tip": "%s: %s" % [node_word(n), String(NODE_TIPS.get(n["type"], ""))],
-			# The map paints its own node icons (CityMapOverlay); the route buttons use StatIcon.
+			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
+			# kind with the same painter (H22 #14).
 			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
 			"here": n["id"] == s.run.current_node_id, "next": idx >= 0})
 	var edges: Array[Dictionary] = []
@@ -577,6 +619,7 @@ func _show_raid_playout(events: Array[Dictionary]) -> void:
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
 	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+	city_overlay.avoid_controls([side])
 	playout.grid_view = city_overlay
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
@@ -710,12 +753,13 @@ func _show_event() -> void:
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
-		b.text = _choice_text(TextDb.t(c, "label"), s.choice_costs(c))
+		# H21 #13: the outcome as icons with numbers under the words (Heat as it applies);
+		# H22 #12: the amounts it will really apply (a heal at full HP, Heat at 0).
+		var outcome := OutcomeRow.of_choice(s, c)
+		var costs := OutcomeRow.words(outcome)
+		b.text = _choice_text(TextDb.t(c, "label"), costs)
 		var err := s.choice_error(c)
 		b.disabled = err != ""
-		var costs := s.choice_costs(c)
-		# H21 #13: the outcome as icons with numbers under the words (Heat as it applies).
-		var outcome := OutcomeRow.of_choice(s, c)
 		var tip := err if err != "" else (("Costs: %s." % costs) if costs != "" else "")
 		if not outcome.is_empty():
 			tip += ("\n" if tip != "" else "") + OutcomeRow.describe(outcome)
@@ -1134,7 +1178,7 @@ func open_settings() -> void:
 		_settings_panel = null
 		return
 	_settings_panel = PauseMenu.new()
-	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, 100)
+	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, SubtitleStrip.top_below(PAUSE_TOP))  # under the subtitle band (H22: the top bar grows with its words)
 	_settings_panel.resumed.connect(open_settings)
 	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
 	add_child(_settings_panel)

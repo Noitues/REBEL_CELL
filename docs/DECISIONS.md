@@ -30,6 +30,78 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H22 screens: subtitles for any language, raid forecast wording, readable defences, labels that stay
+Pass-22 items H22 #7, #9, #10, #12 and the screens' part of #14 (GAP_ANALYSIS). Direction
+as before: nothing the player must read, tooltips, big text reaches everything, pad
+players reach everything.
+- **Subtitles page what is shown** (#7): `Dialogue` translates a line once
+  (`shown_text` = `tr`, pseudolocalised when that is on) and pages that; the label's own
+  auto-translate is off (a page would be translated again). Lines break at spaces, and a
+  word wider than the band (Japanese / Chinese have no spaces, a long German word, a
+  narrow dock) breaks by characters (pages joined without a space there, so no character
+  is added or lost). A paged dock's label is as tall as its page's wrapped lines (the
+  fallback font's height counted); a page still taller than the dock (accents stacked by
+  pseudolocalisation) is drawn one size smaller, and the label clips to the dock as the
+  last resort. BBCode brackets in the words are escaped. `dock_at(rect, lines)`,
+  `pages_of` and the paging contract are unchanged.
+- **Raid forecast** (#9): the raid card's stamp is a `ForecastStamp` (dashed ring like
+  combat's NEXT plate): "IF THE RAID RUNS NOW:" over ALL HOLD / HOME HIT / CAMPAIGN LOST
+  (BREACHED read as if the raid had run, beside "50 > 40 HOLDS"); its tooltip says it is a
+  forecast, exact, and how to change it. The result screens keep REPELLED / BREACHED.
+- **Raid layout** (#9): the side column takes the full height (the node list fills the
+  spare height, `ORDERS_MIN_HEIGHT` at least) and the DEFENSE LOADOUT sits under the map
+  beside it, so the asset cards are whole on screen at 1.6. The cards (`AssetCard`) scale
+  their lettering with the text size (their size follows half of it), their numbers sit
+  on a dark plate in light lettering and the disabled shade is lighter. Deploy cue: "1
+  Pick a node" (map icon), "2 Press a card" (Armory icon) and "> <target>" beside the
+  cards, each with a tooltip.
+- **Legends clear of nodes** (#9, #14): `LegendSpot.place` puts a pinned legend at the
+  first spot of its area (columns left to right, bottom up) that covers no node icon or
+  tier pips, scaling it down only if it is bigger than the area; the screen registers the
+  legend with `CityMapOverlay.avoid_controls`, so labels make way. On the raid setup, when
+  every spot covers a node (threat routes cross the city), the camera frames the map
+  beside the legend's column (`LegendSpot.fit_beside`: moved, zoomed out as far as that
+  needs, at most `RAID_REFRAMES_MAX` passes). The route view (not zoomed) mounts the map
+  legend in the room under the ROUTE choices (it had none). `avoid_controls` is wired for
+  the Grid column, the ROUTE window, the raid setup (side, loadout, legend), the raid
+  playouts and the raid report.
+- **MORE BELOW over no control** (#10): `ScrollHint` puts a room of its own
+  (`ScrollHintRoom`) after its ScrollContainer in the box container; while the content
+  overflows, the room takes the tag's height and the view ends above it (kept while the
+  content overflows, so the view does not jump as the tag comes and goes).
+- **Crew by pad** (#10): the HQ links each dossier's orders top to bottom, left / right to
+  the same line of the dossier beside it (JACK IN after the last), and down from a
+  dossier's last order to the next dossier, then the Black Market (the page's row links
+  only saw each column's first control, so the second Loadout was unreachable). At 1.6 the
+  second dossier wraps under the first; MORE BELOW (in its room) says so.
+- **Event outcomes** (#12): `OutcomeRow.of_choice` reads the amounts the choice will apply
+  now, in the order the session applies them, without changing anything: a heal stops at
+  max HP (+0 at full HP), Heat stops at 0 and at the maximum (a sink of 3 at Heat 1 shows
+  -1); capped items say why in the tooltip. A rescue names no class ("rescue an
+  operative": the class is rolled from the roster). The choice button's words come from
+  the same items (`OutcomeRow.words`), so words, icons and result agree.
+- **Words that stay** (#14): outside a fight the stat tags never go icon-only: when the
+  fixed-width full tags don't fit, tags are fitted to their own words (name over icon and
+  value) and shrink as a row, wrapping to two rows only below `FULL_MIN_FIT` of the text
+  size (a narrow window). A fight (`max_height`) still goes compact to keep its height.
+- **Icons** (#14): route buttons draw their node's map icon with the map's own painter
+  (`IconMark.attach_map` -> `CityMapOverlay.draw_icon`, the map's colour for a next node;
+  the StatIcon kind stays in the "icon_kind" meta); Grid RUNS OPEN NOW rows carry the
+  Site's map icon (objective or tier, the map's colour) and the map's tier pips
+  (`CityMapOverlay.draw_tier`) before "T1 <name>"; the operative dropdown has the
+  operative icon beside it; the HQ JACK IN stamp carries the plug (`ZineStamp.icon_kind`);
+  dossier Loadout / Recall / Station buttons carry cards / back / shield icons.
+- Tests: `tests/unit/test_horizontal_pass22_screens.gd` (CJK, a long word and
+  pseudolocalised text page inside the HQ band and a narrow combat-like dock at 1.0/1.6;
+  the page shown is the translated one; the forecast stamp's words and tooltip; the raid
+  legend covers no node and stays in its area at 1.0/1.6; the asset cards whole on screen
+  with the deploy steps; MORE BELOW over no control on the HQ, Grid and raid at
+  1.0/1.3/1.6; every dossier Loadout reachable by D-pad; rescue wording and capped
+  amounts equal to the applied result; stat tags keep words at 1.6 on HQ, Grid, raid,
+  route, Modem and event; the route legend on screen; route buttons draw the map icon of
+  their node; Grid runs with map icon and tier). Updated on purpose: pass21's event
+  outcome test expects the capped amounts.
+
 ### 2026-09-27 — H22 city maps: labels stay on screen, translated names, scaled legend, tier pips
 Pass-22 items H22 #11 (map labels off the screen edge / under the Grid column; labels
 skip TextDb), #9 part (legend and mini-map labels don't scale) and #14 part (no tier

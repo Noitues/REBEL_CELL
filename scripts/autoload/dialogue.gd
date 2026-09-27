@@ -69,6 +69,11 @@ func _ready() -> void:
 	text_label.add_theme_font_override("normal_font", Palette.mono())
 	text_label.add_theme_font_size_override("normal_font_size", TEXT_FONT_SIZE)
 	text_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# H22 #7: lines are translated once (shown_text) and paged as shown; the label must not
+	# translate a page again (a pseudolocalised page would grow twice).
+	text_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	text_label.scroll_active = false
+	text_label.clip_contents = true
 	box.add_child(text_label)
 	_style(RC.Voice.DISPATCH)
 	_collect_sets()
@@ -128,6 +133,11 @@ func set_default_rect(rect: Rect2, owner: Object) -> void:
 		dock_default()
 
 
+## Who holds the default dock now (null: DEFAULT_DOCK).
+func default_owner() -> Object:
+	return _default_owner if is_instance_valid(_default_owner) else null
+
+
 ## Gives the default dock back (DEFAULT_DOCK) when `owner` still holds it.
 func release_default_rect(owner: Object) -> void:
 	if _default_owner != owner:
@@ -169,6 +179,7 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 	bar.offset_bottom = rect.end.y
 	bar.grow_vertical = Control.GROW_DIRECTION_END
 	dock_lines = max_lines
+	_dock_rect = rect
 	# The text wraps inside the rect (a narrow column dock must not widen the bar).
 	var sb := bar.get_theme_stylebox("panel")
 	var margins := sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0
@@ -189,20 +200,97 @@ func pages_of(text: String) -> PackedStringArray:
 	var fs := text_label.get_theme_font_size("normal_font_size")
 	var sb := bar.get_theme_stylebox("panel")
 	var width := (bar.offset_right - bar.offset_left) - (sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0)
+	var wrapped := _wrap(text, width * PAGE_FILL, font, fs)
+	var lines: PackedStringArray = wrapped[0]
+	var glue: PackedStringArray = wrapped[1]
+	for i in range(0, lines.size(), dock_lines):
+		var page := ""
+		for k in range(i, mini(i + dock_lines, lines.size())):
+			page += lines[k] if k == i else glue[k - 1] + lines[k]
+		out.append(page)
+	return out
+
+
+## Wraps `text` into lines at most `limit` px wide (H22 #7): at spaces, and by characters
+## inside a word wider than a line (Japanese / Chinese have no spaces; a pseudolocalised or
+## German word can outgrow a narrow dock). Returns [lines, glue]: glue[k] joins line k to
+## line k + 1 (" " at a space, "" inside a word).
+func _wrap(text: String, limit: float, font: Font, fs: int) -> Array:
 	var lines := PackedStringArray()
+	var glue := PackedStringArray()
 	var cur := ""
 	for word in text.split(" ", false):
 		var trial := word if cur == "" else cur + " " + word
-		if cur != "" and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width * PAGE_FILL:
-			lines.append(cur)
-			cur = word
-		else:
+		if _text_width(trial, font, fs) <= limit:
 			cur = trial
+			continue
+		if _text_width(word, font, fs) <= limit:
+			lines.append(cur)
+			glue.append(" ")
+			cur = word
+			continue
+		# A word wider than a line: its characters fill the current line, then new ones.
+		var head := "" if cur == "" else cur + " "
+		for i in word.length():
+			var ch := word[i]
+			if head.strip_edges() == "" or _text_width(head + ch, font, fs) <= limit:
+				head += ch
+				continue
+			if head.ends_with(" "):
+				lines.append(head.substr(0, head.length() - 1))
+				glue.append(" ")
+			else:
+				lines.append(head)
+				glue.append("")
+			head = ch
+		cur = head
 	if cur != "":
 		lines.append(cur)
-	for i in range(0, lines.size(), dock_lines):
-		out.append(" ".join(lines.slice(i, i + dock_lines)))
-	return out
+	return [lines, glue]
+
+
+func _text_width(s: String, font: Font, fs: int) -> float:
+	return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+
+
+## `text` as the player reads it (H22 #7): translated once here (TextDb content is already
+## translated; tr of a translated line returns it), pseudolocalised when that is on. The
+## label shows it untouched, so paging measures the text on screen.
+func shown_text(text: String) -> String:
+	return tr(text)
+
+
+## The wrapped line count of `page` in the bar and the height those lines take (px): at
+## least the subtitle font's line height, taller for a fallback font's glyphs (CJK).
+func _page_height(page: String) -> float:
+	var font := Palette.mono()
+	var fs := text_label.get_theme_font_size("normal_font_size")
+	var sb := bar.get_theme_stylebox("panel")
+	var width := (bar.offset_right - bar.offset_left) - (sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0)
+	var lines: PackedStringArray = _wrap(page, width * PAGE_FILL, font, fs)[0]
+	var h := 0.0
+	for l in lines:
+		h += maxf(font.get_height(fs), font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).y)
+	return maxf(h, font.get_height(fs))
+
+
+## The text's height the dock's rect leaves (px): the rect less the bar's padding and a
+## speaker row (a docked page is clipped to it as a last resort, H22 #7).
+func _dock_text_room() -> float:
+	var room := _dock_rect.size.y - BAR_PADDING
+	if speaker_label.visible:
+		var box := speaker_label.get_parent() as BoxContainer
+		room -= speaker_label.get_combined_minimum_size().y + (box.get_theme_constant("separation") if box != null else 0)
+	return maxf(Palette.mono().get_height(text_label.get_theme_font_size("normal_font_size")), room)
+
+
+## Escapes BBCode in shown words (pseudolocalisation wraps a line in brackets).
+static func _escape(s: String) -> String:
+	return s.replace("[", "[lb]")
+
+
+## The rect of the last dock (a paged page is clipped to its height).
+var _dock_rect: Rect2 = DEFAULT_DOCK
 
 
 ## Share of the bar width a paged line may fill (RichTextLabel wraps a little earlier than
@@ -254,7 +342,10 @@ func _next() -> void:
 	var name := speaker_name(int(line["speaker"]), corp_id)
 	# Default dock: the name leads the first page ("DISPATCH: ..."), not a row of its own.
 	var inline := inline_speaker and name != "" and not bool(line.get("continued", false))
-	var body := ("%s: %s" % [name, String(line["text"])]) if inline else String(line["text"])
+	# H22 #7: page the words as shown (translated once; a continued page already is).
+	var words := String(line["text"]) if bool(line.get("continued", false)) else shown_text(String(line["text"]))
+	var shown_name := shown_text(name)
+	var body := ("%s: %s" % [shown_name, words]) if inline else words
 	var pages := pages_of(body)
 	if pages.size() > 1:
 		# The rest of a long line waits at the front of the queue, time shared by length.
@@ -270,18 +361,38 @@ func _next() -> void:
 	_style(int(line["speaker"]), corp_id)
 	speaker_label.text = name
 	speaker_label.visible = name != "" and not inline_speaker
-	var shown := pages[0]
-	_shown = shown
-	if inline and shown.begins_with(name + ":"):
-		_shown = shown.substr(name.length() + 1).strip_edges()
-		shown = "[color=#%s]%s:[/color] %s" % [speaker_label.get_theme_color("font_color").to_html(false), name, _shown]
+	var shown := _escape(pages[0])
+	_shown = pages[0]
+	if inline and pages[0].begins_with(shown_name + ":"):
+		_shown = pages[0].substr(shown_name.length() + 1).strip_edges()
+		shown = "[color=#%s]%s:[/color] %s" % [speaker_label.get_theme_color("font_color").to_html(false), _escape(shown_name), _escape(_shown)]
 	text_label.text = shown
+	_fit_page(pages[0])
 	bar.visible = _subtitles_on()
 	_timer = get_tree().create_timer(float(line["seconds"]))
 	var t := _timer
 	_timer.timeout.connect(func() -> void:
 		if _timer == t:
 			_next())
+
+
+## A paged dock holds the page's own lines and no more (H22 #7): the label is as tall as
+## the page's wrapped lines, capped at the dock's room and clipped there as a last resort
+## (a font's line taller than planned, the label wrapping differently from the measure).
+func _fit_page(page: String) -> void:
+	if dock_lines <= 0:
+		text_label.fit_content = true
+		return
+	text_label.fit_content = false
+	var room := _dock_text_room()
+	var h := _page_height(page)
+	if h > room + 0.5:
+		# Before clipping: this page a size smaller (accents stacked by pseudolocalisation, a
+		# taller fallback font); the next page starts at the text size again.
+		var fs := text_label.get_theme_font_size("normal_font_size")
+		text_label.add_theme_font_size_override("normal_font_size", maxi(1, floori(fs * room / h)))
+		h = _page_height(page)
+	text_label.custom_minimum_size.y = minf(h, room)
 
 
 func _subtitles_on() -> bool:

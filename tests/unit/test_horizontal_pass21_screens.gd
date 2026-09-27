@@ -393,15 +393,24 @@ func test_event_choice_outcomes_match_the_data() -> void:
 				expect.append({"kind": StatIcon.CYCLES, "amount": -choice.cycle_cost})
 			if s.choice_hp_loss(choice) > 0:
 				expect.append({"kind": StatIcon.HP, "amount": -s.choice_hp_loss(choice)})
+			# H22 #12 (updated on purpose): heal and Heat as they will apply (capped).
+			var hp := maxi(0, s.run.operative.hp - choice.hp_cost)
+			var heat := c.heat
 			for e in choice.effects:
 				if e == null:
 					continue
 				if e.type == RC.EffectType.GAIN_CYCLES and e.amount != 0:
 					expect.append({"kind": StatIcon.CYCLES, "amount": e.amount})
 				elif e.type == RC.EffectType.MODIFY_HEAT:
-					expect.append({"kind": StatIcon.HEAT, "amount": HeatRules.scaled_delta(c, e.amount, s.config)})
+					var dh := clampi(heat + HeatRules.scaled_delta(c, e.amount, s.config), 0, s.config.heat_max) - heat
+					heat += dh
+					expect.append({"kind": StatIcon.HEAT, "amount": dh})
+				elif e.type == RC.EffectType.DEAL_DAMAGE:
+					hp = maxi(0, hp - e.amount)
 				elif e.type == RC.EffectType.HEAL:
-					expect.append({"kind": StatIcon.HP, "amount": e.amount})
+					var healed := mini(e.amount, s.run.operative.max_hp - hp)
+					hp += healed
+					expect.append({"kind": StatIcon.HP, "amount": healed})
 				elif e.type == RC.EffectType.GAIN_SCHEMATICS:
 					expect.append({"kind": StatIcon.SCHEMATICS, "amount": e.amount})
 			if choice.reward != null:

@@ -218,8 +218,9 @@ func test_raid_setup_shows_each_nodes_projected_outcome_without_a_text_wall() ->
 			if b is Badge and (b as Badge).text.contains(">"):
 				badge_text = (b as Badge).text
 		assert_eq(badge_text, "%s > %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()], "exact projected outcome for %s (GDD 9.3)" % id)
-	var stamp := hq._panel.find_child("Projection", true, false) as ZineStamp
-	assert_eq(stamp.stamp_text, "HOLDS" if projection.won else ("LOST" if projection.campaign_lost else "BREACHED"))
+	# H22 #9 (updated on purpose): a dashed forecast, "IF THE RAID RUNS NOW:" + verdict.
+	var stamp := hq._panel.find_child("Projection", true, false) as ForecastStamp
+	assert_eq(stamp.verdict, "ALL HOLD" if projection.won else ("CAMPAIGN LOST" if projection.campaign_lost else "HOME HIT"))
 	assert_eq(stamp.focus_mode, Control.FOCUS_NONE, "the projection stamp is display only")
 	# The map labels the network by name (CORE for the home server), never by id.
 	var g: Dictionary = hq.raid_graph(projection, {})

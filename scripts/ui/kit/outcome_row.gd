@@ -15,6 +15,10 @@ const ITEM_GAP := 12.0
 ## Amount colours on the paper choice notes.
 const GOOD := Color("#17702c")
 const BAD := Color("#b3122f")
+## Why an amount is less than the choice's number (tooltip words, H22 #12).
+const CAPPED_WORDS := {StatIcon.HP: "HP is full", StatIcon.HEAT: "Heat stops at its limit"}
+## A reward's kind in the button's words (one of it).
+const REWARD_WORDS := {StatIcon.CARDS: "Card", StatIcon.FIRMWARE: "Firmware", StatIcon.DAEMON: "Daemon", StatIcon.ARMORY: "Asset"}
 
 ## [{kind: StringName, amount: int, text: String, good: bool, name: String}]
 var items: Array[Dictionary] = []
@@ -28,6 +32,10 @@ func _init(p_items: Array[Dictionary] = []) -> void:
 
 
 ## The outcome of `choice` for session `s`: costs first, then gains, then the reward.
+## H22 #12: the amounts the choice will really apply now, read (not applied) the way
+## NetrunSession applies them in order: a heal stops at max HP ("+0" at full HP), Heat
+## stops at 0 and at the maximum (a sink of 3 at Heat 1 shows -1); a rescue names no class
+## (the class is rolled from the roster when it happens).
 static func of_choice(s: NetrunSession, choice: EventChoiceData) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	if choice == null:
@@ -37,6 +45,9 @@ static func of_choice(s: NetrunSession, choice: EventChoiceData) -> Array[Dictio
 	var hp_loss := s.choice_hp_loss(choice)
 	if hp_loss > 0:
 		out.append(_item(StatIcon.HP, -hp_loss, false))
+	var op := s.run.operative
+	var hp := maxi(0, op.hp - choice.hp_cost)
+	var heat := s.campaign.heat
 	for e in choice.effects:
 		if e == null:
 			continue
@@ -46,9 +57,19 @@ static func of_choice(s: NetrunSession, choice: EventChoiceData) -> Array[Dictio
 					out.append(_item(StatIcon.CYCLES, e.amount, e.amount > 0))
 			RC.EffectType.MODIFY_HEAT:
 				var dh := HeatRules.scaled_delta(s.campaign, e.amount, s.config)
-				out.append(_item(StatIcon.HEAT, dh, dh <= 0))
+				var applied := clampi(heat + dh, 0, s.config.heat_max) - heat
+				heat += applied
+				var hi := _item(StatIcon.HEAT, applied, dh <= 0)
+				hi["capped"] = applied != dh
+				out.append(hi)
 			RC.EffectType.HEAL:
-				out.append(_item(StatIcon.HP, e.amount, true))
+				var healed := mini(e.amount, op.max_hp - hp)
+				hp += healed
+				var it := _item(StatIcon.HP, healed, true)
+				it["capped"] = healed != e.amount
+				out.append(it)
+			RC.EffectType.DEAL_DAMAGE:
+				hp = maxi(0, hp - e.amount)
 			RC.EffectType.GAIN_SCHEMATICS:
 				out.append(_item(StatIcon.SCHEMATICS, e.amount, e.amount >= 0))
 	if choice.reward != null:
@@ -62,13 +83,29 @@ static func of_choice(s: NetrunSession, choice: EventChoiceData) -> Array[Dictio
 		elif choice.reward is DefenseAssetData:
 			kind = StatIcon.ARMORY
 		var it := _item(kind, 1, true)
-		it["name"] = TextDb.t(choice.reward, "display_name") if "display_name" in choice.reward else ""
+		# A rescue's class is rolled from the roster: no class name (H22 #12).
+		it["name"] = TextDb.t(choice.reward, "display_name") if kind != StatIcon.OPERATIVE and "display_name" in choice.reward else ""
 		out.append(it)
 	return out
 
 
+## The row in the words a choice button carries after its label ("-25 Cycles, -2 Heat,
+## Card: Jam, rescue an operative"), with the capped amounts (H22 #12).
+static func words(p_items: Array[Dictionary]) -> String:
+	var parts := PackedStringArray()
+	for it in p_items:
+		var kind := StringName(it["kind"])
+		if kind == StatIcon.OPERATIVE:
+			parts.append("rescue an operative")
+		elif String(it.get("name", "")) != "":
+			parts.append("%s: %s" % [String(REWARD_WORDS.get(kind, StatIcon.NAMES.get(kind, String(kind)))), it["name"]])
+		else:
+			parts.append("%s %s" % [it["text"], String(StatIcon.NAMES.get(kind, String(kind)))])
+	return ", ".join(parts)
+
+
 static func _item(kind: StringName, amount: int, good: bool) -> Dictionary:
-	return {"kind": kind, "amount": amount, "text": "%+d" % amount, "good": good, "name": ""}
+	return {"kind": kind, "amount": amount, "text": "%+d" % amount, "good": good, "name": "", "capped": false}
 
 
 ## The row in words (a tooltip line): "Cycles -25, Heat +2, Card: Jam".
@@ -76,7 +113,10 @@ static func describe(p_items: Array[Dictionary]) -> String:
 	var parts := PackedStringArray()
 	for it in p_items:
 		var what := String(StatIcon.NAMES.get(it["kind"], String(it["kind"])))
-		parts.append(("%s: %s" % [what, it["name"]]) if String(it.get("name", "")) != "" else "%s %s" % [what, it["text"]])
+		var part := ("%s: %s" % [what, it["name"]]) if String(it.get("name", "")) != "" else "%s %s" % [what, it["text"]]
+		if bool(it.get("capped", false)):
+			part += " (%s)" % String(CAPPED_WORDS.get(it["kind"], "capped"))
+		parts.append(part)
 	return ", ".join(parts)
 
 

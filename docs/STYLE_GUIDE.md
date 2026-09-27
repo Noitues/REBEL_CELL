@@ -125,6 +125,13 @@ button's font); a shop price hangs on a yellow price tag with the coin (pink whe
 reach), never in a card's RAM circle; an event choice shows its outcome as icons with
 signed numbers (green helps, red costs) under its words.
 
+H22: a button that stands for a map node (route choices, Grid RUNS OPEN NOW rows) draws
+that node's **map icon** with the map's own painter and colour (not a StatIcon), and a
+Site row adds the map's **tier pips** (lit pips of four: the harder, the more lit). The
+HQ JACK IN stamp carries the plug over its word. A **forecast** (what happens if you act
+now, e.g. the raid setup's "IF THE RAID RUNS NOW: HOME HIT") is drawn dashed like
+combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the raid).
+
 ## 5. Motion & Feedback
 - Jack in: camera pushes into the deck CRT and dissolves to wireframe; jack out reverses.
 - Precision: Perfect = latch + wheel-local inversion + 2-frame freeze; Good = clean click;
