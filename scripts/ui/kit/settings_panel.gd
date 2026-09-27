@@ -207,11 +207,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 static func _key_name(physical: int) -> String:
-	if physical <= 0:
-		return "-"
-	if DisplayServer.get_name() == "headless":
-		return OS.get_keycode_string(physical)
-	return OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(physical))
+	return Settings.key_name(physical)
 
 
 func _check(text: String, value: bool, setter: Callable) -> CheckButton:

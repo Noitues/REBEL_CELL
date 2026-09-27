@@ -4,6 +4,9 @@ extends Node
 ## read these and listen to `changed`; nothing here touches game state.
 
 signal changed
+## The on-screen key hints changed: a setting changed, or the player switched between the
+## keyboard/mouse and a pad (hints then name pad buttons).
+signal hints_changed
 
 const PATH := "user://settings.json"
 const TEXT_SCALE_MIN := 0.8
@@ -79,16 +82,78 @@ func set_flash_limiter(value: bool) -> void:
 	_apply()
 
 
-## The keyboard key bound to `action`, for on-screen hints ("?" when it has none).
+## Whether the last input came from a pad: hints then name pad buttons (H20).
+var pad_active: bool = false
+## Stick motion below this doesn't count as switching to the pad.
+const PAD_SWITCH_DEADZONE := 0.5
+## Xbox-layout button names for hints (Godot maps other pads onto this layout).
+const PAD_NAMES := {
+	JOY_BUTTON_A: "A", JOY_BUTTON_B: "B", JOY_BUTTON_X: "X", JOY_BUTTON_Y: "Y",
+	JOY_BUTTON_LEFT_SHOULDER: "LB", JOY_BUTTON_RIGHT_SHOULDER: "RB", JOY_BUTTON_BACK: "View",
+	JOY_BUTTON_START: "Menu", JOY_BUTTON_LEFT_STICK: "L3", JOY_BUTTON_RIGHT_STICK: "R3",
+	JOY_BUTTON_DPAD_UP: "D-pad up", JOY_BUTTON_DPAD_DOWN: "D-pad down",
+	JOY_BUTTON_DPAD_LEFT: "D-pad left", JOY_BUTTON_DPAD_RIGHT: "D-pad right",
+}
+## Short names for long key names in hints.
+const SHORT_KEY_NAMES := {"Escape": "Esc", "Backspace": "Bksp", "Delete": "Del"}
+
+
+func _input(event: InputEvent) -> void:
+	var pad := pad_active
+	if event is InputEventJoypadButton:
+		pad = true
+	elif event is InputEventJoypadMotion:
+		if absf((event as InputEventJoypadMotion).axis_value) >= PAD_SWITCH_DEADZONE:
+			pad = true
+	elif event is InputEventKey or event is InputEventMouseButton:
+		pad = false
+	if pad != pad_active:
+		set_pad_active(pad)
+
+
+## Switches the hints between keyboard keys and pad buttons.
+func set_pad_active(value: bool) -> void:
+	if value == pad_active:
+		return
+	pad_active = value
+	hints_changed.emit()
+
+
+## The name of a physical key as the player's keyboard layout prints it (the Controls grid,
+## the hints and the rebind refusals all use this, so they agree on AZERTY too).
+static func key_name(physical: int) -> String:
+	if physical <= 0:
+		return "-"
+	var code := physical
+	if DisplayServer.get_name() != "headless":
+		code = DisplayServer.keyboard_get_keycode_from_physical(physical)
+	var name := OS.get_keycode_string(code)
+	return String(SHORT_KEY_NAMES.get(name, name))
+
+
+## What to press for `action` on the device in use: a pad button name when the pad is in
+## use, else the bound key ("" when the action has none on that device).
 func key_text(action: StringName) -> String:
 	if not InputMap.has_action(action):
-		return "?"
+		return ""
 	for ev in InputMap.action_get_events(action):
-		if ev is InputEventKey:
+		if pad_active and ev is InputEventJoypadButton:
+			return String(PAD_NAMES.get((ev as InputEventJoypadButton).button_index, "Pad %d" % (ev as InputEventJoypadButton).button_index))
+		if not pad_active and ev is InputEventKey:
 			var k := ev as InputEventKey
-			var code := k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
-			return OS.get_keycode_string(code)
-	return "?"
+			return key_name(k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode)
+		if not pad_active and ev is InputEventMouseButton:
+			return MOUSE_NAMES.get((ev as InputEventMouseButton).button_index, "Mouse")
+	return ""
+
+
+## A bracketed hint for labels ("[Q]", "[LB]"), or "" when the device has no button for it.
+func hint(action: StringName) -> String:
+	var t := key_text(action)
+	return "[%s]" % t if t != "" else ""
+
+
+const MOUSE_NAMES := {MOUSE_BUTTON_LEFT: "Click", MOUSE_BUTTON_RIGHT: "Right-click", MOUSE_BUTTON_MIDDLE: "Middle-click"}
 
 
 func set_text_scale(value: float) -> void:
@@ -187,10 +252,10 @@ const RESERVED_KEYS: Array[int] = [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY
 ## already held by another rebindable action.
 func bind_error(action: StringName, physical_keycode: int) -> String:
 	if RESERVED_KEYS.has(physical_keycode):
-		return "%s is reserved" % OS.get_keycode_string(physical_keycode)
+		return "%s is reserved" % key_name(physical_keycode)
 	for other in REBINDABLE:
 		if other != action and key_for(other) == physical_keycode:
-			return "%s is used by %s" % [OS.get_keycode_string(physical_keycode), String(other)]
+			return "%s is used by %s" % [key_name(physical_keycode), String(other)]
 	return ""
 
 
@@ -242,6 +307,7 @@ func set_assist_mode(value: bool) -> void:
 	assist_mode = value
 	save_settings()
 	changed.emit()
+	hints_changed.emit()
 
 
 func apply_keybinds() -> void:
@@ -332,3 +398,4 @@ func load_settings() -> void:
 func _apply() -> void:
 	save_settings()
 	changed.emit()
+	hints_changed.emit()
