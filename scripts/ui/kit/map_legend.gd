@@ -36,7 +36,13 @@ const ICON_SWATCH_GAP := 8
 ## Margin (px) of a legend pinned to a map area's bottom-left corner.
 const PIN_MARGIN := 10.0
 
+## H23 S4: each ROWS row's key (the ICON_ROWS rows are keyed by their kind).
+const ROW_KEYS: Array[String] = ["claimed", "cleared", "corporate", "seized", "link", "threat"]
+
 var compact: bool = false
+## H23 S4: the rows shown, by key (ROW_KEYS, icon kinds); empty = every row. A map key
+## lists what its map shows (the raid legend took a quarter of the screen).
+var only: Array[String] = []
 var _corp_hex: String = ""
 var _built_scale: float = -1.0
 var _linked: Control = null
@@ -71,7 +77,10 @@ func _build() -> void:
 		body.remove_child(child)
 		child.free()
 	var fs := font_size()
-	for r in ROWS:
+	for i in ROWS.size():
+		var r: Array = ROWS[i]
+		if not only.is_empty() and not only.has(ROW_KEYS[i]):
+			continue
 		var row := HBoxContainer.new()
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_theme_constant_override("separation", roundi(ICON_SWATCH_GAP * s))
@@ -86,6 +95,8 @@ func _build() -> void:
 		row.add_child(_text(r[2], fs))
 		body.add_child(row)
 	for r in ICON_ROWS:
+		if not only.is_empty() and not only.has(String(r[0])):
+			continue
 		body.add_child(_icon_row(r[0], r[1], r[2], fs))
 	update_minimum_size()
 
@@ -141,6 +152,45 @@ static func pin_to(area: Control, corporation_id: StringName) -> MapLegend:
 	legend.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	legend.minimum_size_changed.connect(legend._repin)
 	return legend
+
+
+## Shows only the rows keyed in `keys` (ROW_KEYS and icon kinds; [] = every row).
+func show_only(keys: Array[String]) -> MapLegend:
+	only = keys.duplicate()
+	_build()
+	return self
+
+
+## The row keys a city map graph shows (H23 S4): marks, the Sites' statuses (from the
+## campaign grid), link and threat route edges, and the node icon kinds.
+static func keys_of(graph: Dictionary, grid: GridState) -> Array[String]:
+	var out: Array[String] = []
+	for n in graph.get("nodes", []):
+		match String(n.get("mark", "")):
+			CityMapOverlay.MARK_SPRAY:
+				_add_key(out, "claimed")
+			CityMapOverlay.MARK_CROSS:
+				_add_key(out, "seized")
+		if grid != null:
+			match grid.status_of(n["id"]):
+				GridState.SiteStatus.CLEARED:
+					_add_key(out, "cleared")
+				GridState.SiteStatus.CORPORATE:
+					_add_key(out, "corporate")
+		var kind := String(n.get("kind", ""))
+		if kind != "":
+			_add_key(out, kind)
+	for e in graph.get("edges", []):
+		if bool(e.get("dashed", false)):
+			_add_key(out, "threat")
+		elif bool(e.get("flow", false)):
+			_add_key(out, "link")
+	return out
+
+
+static func _add_key(out: Array[String], key: String) -> void:
+	if not out.has(key):
+		out.append(key)
 
 
 ## Keeps a pinned legend's bottom-left corner in place when its minimum size changes.

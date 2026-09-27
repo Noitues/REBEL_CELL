@@ -429,7 +429,8 @@ func test_event_choice_outcomes_match_the_data() -> void:
 	for i in ev.choices.size():
 		var b := scene._panel.find_child("Choice%d" % (i + 1), true, false) as Button
 		var row := b.find_child("OutcomeRow", false, false) as OutcomeRow
-		var want := OutcomeRow.of_choice(s, ev.choices[i])
+		# H23 S9 (updated on purpose): the row shows the amounts that change something.
+		var want := OutcomeRow.shown(OutcomeRow.of_choice(s, ev.choices[i]))
 		if want.is_empty():
 			continue
 		assert_not_null(row, "choice %d shows its outcome" % i)

@@ -47,8 +47,8 @@ const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:"
 const VERDICT_HOLDS := "ALL HOLD"
 const VERDICT_HIT := "HOME HIT"
 const VERDICT_LOST := "CAMPAIGN LOST"
-## Passes framing the raid map beside its legend.
-const RAID_REFRAMES_MAX := 2
+## Passes framing the raid map beside its legend (each on the positions the last one gave).
+const RAID_REFRAMES_MAX := 6
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
 ## The raid orders list's least height at text scale 1.0 (px).
@@ -64,6 +64,8 @@ const RADIO_BOTTOM := 8.0
 const RADIO_LINES := 4
 ## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
 const JACK_IN := "JACK IN"
+## Gap round a price's currency icon at a button's right end (px).
+const PRICE_ICON_GAP := 8.0
 ## What each Site status means (the selected Site card's status badge).
 const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clear it.",
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.",
@@ -103,6 +105,8 @@ var selected_site: StringName = &""
 var selected_operative: StringName = &""
 ## Buttons carrying a key hint (relabelled on Settings.hints_changed).
 var _hint_buttons: Array[Button] = []
+## Pad button prompts at the foot of the screen (H23 S11).
+var pad_prompts: PadPrompts
 
 
 func _ready() -> void:
@@ -351,6 +355,7 @@ func _set_panel(p: Control, name: String) -> void:
 	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city") else &"GlassPanel"
 	var t: Array = SCREEN_TITLES.get(name, ["", ""])
 	hud.set_screen(t[0], t[1])
+	pad_prompts.set_prompts(prompts_for(name))
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	UiFocus.focus_first(p)
@@ -430,6 +435,27 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_settings"):
 		open_settings()
 		get_viewport().set_input_as_handled()
+		return
+	# B goes back to the HQ from the Grid and the raid setup (H23 S11; Esc stays the
+	# settings key on a keyboard).
+	if event.is_action_pressed("ui_cancel") and not event.is_action("open_settings") and panel_name in BACK_PANELS \
+			and _settings_panel == null and not has_node("LoadoutView") and not has_node("DaemonTray"):
+		show_hq()
+		get_viewport().set_input_as_handled()
+
+
+## Panels B leaves for the HQ (their "Back to HQ" button).
+const BACK_PANELS: Array[String] = ["grid", "raid"]
+
+
+## The pad prompts of panel `p_name` (H23 S11): A presses the focused control, B goes back
+## where the panel has a Back to HQ, Menu opens the settings.
+static func prompts_for(p_name: String) -> Array:
+	var out: Array = [[&"ui_accept", "Select"]]
+	if p_name in BACK_PANELS:
+		out.append([&"ui_cancel", "Back"])
+	out.append([&"open_settings", "Settings"])
+	return out
 
 
 func show_start() -> void:
@@ -634,6 +660,12 @@ func show_hq() -> void:
 	radio.append("Code: %s%s" % [code, " (local: REBEL_CELL is built from your profile)" if RunManager.corporation.generated_from_profile else ""])
 	radio.tooltip_text = UiTip.fold(dj_line.text if dj_line != null else "")
 	radio.label.scroll_following = false
+	# H23 S6: the note grows to its words (at 1.0 and 1.6 its text was cut, a scroll bar in
+	# the corner); RADIO_LINES is its least height.
+	radio.label.fit_content = true
+	radio.label.scroll_active = false
+	radio.label.minimum_size_changed.connect(_fit_radio.bind(radio, line_h))
+	_fit_radio.call_deferred(radio, line_h)
 	# No key hint: JACK IN is pressed by click or focus (Space does nothing here). It is the
 	# same JACK IN as on a Site's card (H21 #21): here it opens the Grid to pick the Site.
 	var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
@@ -670,9 +702,11 @@ func show_hq() -> void:
 		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
 		_add_tip(actions, raid_btn, TextDb.t(raid, "warning_text"))
 	var scrub := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
-	var scrub_btn := _icon(_button("Scrub Heat %d (%d)" % [scrub, CampaignRules.heat_purchase_price(c, cfg)], buy_heat_reduction), StatIcon.HEAT)
+	# H23 S13: the price says what it is: "pay 25" and the Schematics icon after it.
+	var scrub_price := CampaignRules.heat_purchase_price(c, cfg)
+	var scrub_btn := _icon(_button("Scrub Heat %d · pay %d" % [scrub, scrub_price], buy_heat_reduction), StatIcon.HEAT)
 	scrub_btn.name = "ScrubHeat"
-	_add_tip(actions, scrub_btn, "Pay %d Schematics to change Heat by %d." % [CampaignRules.heat_purchase_price(c, cfg), scrub])
+	_add_tip(actions, scrub_btn, "Costs %d Schematics (you have %d): Heat changes by %d." % [scrub_price, c.schematics, scrub])
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		_add_tip(actions, _icon(_button("Patch home +%d (%d)" % [c.grid.home_max_integrity - c.grid.home_integrity, CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME),
 			"Repair the home server to full integrity.")
@@ -684,6 +718,7 @@ func show_hq() -> void:
 	save_btn.name = "SaveButton"
 	_add_tip(actions, save_btn, "Save the campaign now (it also saves after every action).")
 	_as_menu(actions)
+	_price_icon(scrub_btn, StatIcon.SCHEMATICS)
 	# The Cell at a glance (H20: badges, not a text readout): home, Exploits, Armory and the
 	# rules the Heat thresholds added; each badge's tooltip says what it means.
 	var status := TerminalWindow.new("CELL STATUS")
@@ -835,6 +870,16 @@ func show_hq() -> void:
 			story.body.add_child(t)
 	_set_panel(box, "hq")
 	_link_crew_focus(roster_box, jack, market)
+
+
+## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
+func _fit_radio(note: Variant, line_h: float) -> void:
+	if not is_instance_valid(note) or not (note is ZineNote):
+		return
+	var radio := note as ZineNote
+	var h := RADIO_TOP + RADIO_BOTTOM + maxf(line_h * RADIO_LINES, radio.label.get_combined_minimum_size().y)
+	if not is_equal_approx(radio.custom_minimum_size.y, h):
+		radio.custom_minimum_size.y = h
 
 
 ## D-pad through the crew (H22 #10: the second dossier's Loadout could not be reached; the
@@ -1225,14 +1270,27 @@ func show_raid() -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	map_col.add_child(spacer)
-	# The raid map has its key too (H20 #22), placed where it covers no node (H22 #9).
-	raid_legend = MapLegend.pin_to(spacer, c.corporation_id)
+	# The raid map has its key too (H20 #22), placed where it covers no node (H22 #9); one
+	# key, listing only what this map shows (H23 S4: all its rows took a quarter of the
+	# screen).
+	var g := raid_graph(projection, {})
+	raid_legend = MapLegend.pin_to(spacer, c.corporation_id).show_only(MapLegend.keys_of(g, c.grid))
 	_raid_reframes = 0
+	_raid_free = Rect2()
+	_raid_step = {}
+	_raid_box = Rect2()
+	_raid_same = 0
 	var side := VBoxContainer.new()
 	side.name = "RaidSide"
 	side.custom_minimum_size.x = RAID_SIDE_WIDTH
 	side.add_theme_constant_override("separation", 8)
 	outer.add_child(side)
+	# H23 S5: what the raid is and what to do, in one plain sentence.
+	var intro := _para(TextDb.ui_text("ui.raid_intro"))
+	intro.name = "RaidIntro"
+	intro.custom_minimum_size.x = RAID_SIDE_WIDTH  # wrapped at the column's width from the start
+	intro.add_theme_color_override("font_color", Palette.PAPER)
+	side.add_child(intro)
 	side.add_child(_raid_card(raid, pending, projection))
 	var orders_win := TerminalWindow.new("YOUR NODES // pick the target", Palette.CELL_PINK)
 	orders_win.name = "NodeOrders"
@@ -1287,7 +1345,7 @@ func show_raid() -> void:
 		seen[aid] = true
 		var data := lookup.get_content(aid) as DefenseAssetData
 		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
-		card.tooltip_text = UiTip.fold("%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES)." % [TextDb.t(data, "description") if data != null else "", site_name(selected_site)])
+		card.tooltip_text = UiTip.fold("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES)." % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)])
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
@@ -1295,7 +1353,6 @@ func show_raid() -> void:
 	if c.armory.is_empty():
 		cards.add_child(_label("Armory empty: runs bank assets from their drops."))
 	_set_panel(outer, "raid")
-	var g := raid_graph(projection, {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.42))
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
@@ -1350,11 +1407,21 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	facts.add_theme_constant_override("v_separation", 4)
 	row.add_child(facts)
 	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
-	facts.add_child(Badge.new("%d > %d" % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
-		"Projected home integrity after the raid (exact: the playout matches it).").with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME))
+	# H23 S5: every number says what it counts ("HOME 50 > 40", "STOPPED 0/2", "STRENGTH
+	# +0%"), and its tooltip says what it means.
+	var home_badge := Badge.new("HOME %d > %d" % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
+		"Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it." % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
+	home_badge.name = "HomeForecast"
+	facts.add_child(home_badge)
 	var total := projection.threats_destroyed + projection.threats_reached_home + _still_active(projection)
-	facts.add_child(Badge.new("%d/%d" % [projection.threats_destroyed, total], Palette.CELL_ACID, GLYPH_THREAT, "Threats your nodes destroy, of all that come."))
-	facts.add_child(Badge.new("%+.0f%%" % CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation), corp_col, GLYPH_RULE, "Threat strength from Heat, ICE and seized Sites."))
+	var stopped := Badge.new("STOPPED %d/%d" % [projection.threats_destroyed, total], Palette.CELL_ACID, GLYPH_THREAT,
+		"Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server." % [projection.threats_destroyed, total])
+	stopped.name = "ThreatsStopped"
+	facts.add_child(stopped)
+	var strength := Badge.new("STRENGTH %+.0f%%" % CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation), corp_col, GLYPH_RULE,
+		"How much stronger than normal the threats are (from Heat, ICE and seized Sites). +0% is normal strength.")
+	strength.name = "RaidStrength"
+	facts.add_child(strength)
 	# Entry Sites: a badge each for a few, else one count (names in its tooltip); the
 	# dashed routes on the map show them all.
 	var entries := PackedStringArray()
@@ -1364,7 +1431,7 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 		for entry in entries:
 			facts.add_child(Badge.new(entry, corp_col, GLYPH_ENTRY, "Threats come in at %s (the dashed routes on the map)." % entry))
 	else:
-		facts.add_child(Badge.new("%d entries" % entries.size(), corp_col, GLYPH_ENTRY, "Threats come in at: %s (the dashed routes on the map)." % ", ".join(entries)))
+		facts.add_child(Badge.new("%d ENTRY SITES" % entries.size(), corp_col, GLYPH_ENTRY, "Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes." % [entries.size(), ", ".join(entries)]))
 	for e in projection.events:
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
 			facts.add_child(Badge.new("link", Palette.RESIST_GOLD, GLYPH_LINK, String(e["text"])))
@@ -1376,6 +1443,15 @@ static func raid_verdict(projection: RaidResolver.RaidResult) -> String:
 	if projection.campaign_lost:
 		return VERDICT_LOST
 	return VERDICT_HOLDS if projection.won else VERDICT_HIT
+
+
+## What a node's raid outcome word means (H23 S5).
+static func outcome_tip(outcome: String) -> String:
+	if outcome == "holds":
+		return "HOLDS: the node survives and keeps fighting."
+	if outcome == "":
+		return ""
+	return "%s: the node falls; threats go on past it." % outcome.to_upper()
 
 
 ## The forecast stamp's tooltip: a projection, exact, and how to change it.
@@ -1395,24 +1471,115 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 func place_raid_legend() -> void:
 	if raid_legend == null or not is_instance_valid(raid_legend) or city_overlay == null or not is_instance_valid(city_overlay):
 		return
-	var covered := LegendSpot.place(raid_legend, city_overlay)
-	if covered <= 0.0 or _raid_reframes >= RAID_REFRAMES_MAX:
+	LegendSpot.place(raid_legend, city_overlay)
+	# H23 S14: the nodes must also sit inside the map's free part (they sat under the top
+	# bar or the DEFENSE LOADOUT). Framing runs on the positions measured after the city
+	# redrew (this runs on `rebuilt`), so each pass corrects the last; at most
+	# RAID_REFRAMES_MAX passes.
+	var free := raid_free_rect()
+	var box := raid_node_box()
+	if not free.has_area() or not box.has_area():
 		return
-	var fit := LegendSpot.fit_beside(raid_legend, city_overlay)
-	if fit.is_empty():
+	# Act only on a settled measure: the same free rect and node box for RAID_STABLE_FRAMES
+	# frames in a row. The icons follow the camera a redraw or two late (and jump again when
+	# the city's new stretch is baked), and the page's layout settles over a few frames;
+	# acting on a passing measure moved the camera twice as far.
+	if not free.is_equal_approx(_raid_free) or not box.is_equal_approx(_raid_box):
+		if not free.is_equal_approx(_raid_free):
+			_raid_reframes = 0  # a new layout: its own passes
+		_raid_free = free
+		_raid_box = box
+		_raid_same = 0
+	elif Engine.get_process_frames() != _raid_frame:
+		_raid_same += 1  # once a frame, however often the city redraws in it
+	_raid_frame = Engine.get_process_frames()
+	if _raid_reframes >= RAID_REFRAMES_MAX or (free.encloses(box) and _raid_same >= RAID_STABLE_FRAMES):
+		return
+	if _raid_same < RAID_STABLE_FRAMES:
+		if not get_tree().process_frame.is_connected(place_raid_legend):
+			get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
+		return
+	if free.encloses(box):
 		return
 	_raid_reframes += 1
 	var city := wireframe.city
-	var k := float(fit["zoom"])
 	var screen := get_global_rect()
-	var focus_at := screen.position + city.focus_anchor * screen.size
-	# Zooming by k about the focus point moves the nodes' centre to focus + (from - focus) * k;
-	# the focus then goes where that centre lands on the free part of the map.
-	var to: Vector2 = fit["to"]
-	var from: Vector2 = fit["from"]
-	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
+	var k := 1.0
+	if box.size.x > free.size.x or box.size.y > free.size.y:
+		k = minf(1.0, minf(free.size.x / box.size.x, free.size.y / box.size.y) * RAID_FIT_SHARE)
+	# Never further out than RAID_MIN_ZOOM (a far camera bakes a huge stretch of city).
+	k = clampf(k, RAID_MIN_ZOOM / maxf(RAID_MIN_ZOOM, city.scale.x), 1.0)
+	var anchor := city.focus_anchor
+	if k < 1.0:
+		# Zooming by k about the focus point moves the box centre to focus + (from - focus)
+		# * k; the focus goes where that puts the centre on the free rect's centre.
+		var focus_at := screen.position + city.focus_anchor * screen.size
+		anchor = (free.get_center() - (box.get_center() - focus_at) * k - screen.position) / screen.size
+		_raid_step = {}
+	else:
+		# A move only: how far the box went for the last move (per axis) sets this one's
+		# size, so the measured response, not the planned one, steers the camera.
+		var want := free.get_center() - box.get_center()
+		var gain := Vector2.ONE
+		if not _raid_step.is_empty():
+			var moved: Vector2 = box.get_center() - Vector2(_raid_step["centre"])
+			var stepped: Vector2 = _raid_step["step"]
+			for axis in 2:
+				if absf(stepped[axis]) > 1.0 and absf(moved[axis]) > 1.0:
+					gain[axis] = clampf(stepped[axis] / moved[axis], RAID_GAIN_MIN, RAID_GAIN_MAX)
+		var step := want * gain
+		anchor = city.focus_anchor + step / screen.size
+		_raid_step = {"centre": box.get_center(), "step": step}
+	_raid_same = 0
+	_raid_box = Rect2()
 	_frame_city(city.scale.x * k, city.focus_grid, anchor)
-	place_raid_legend.call_deferred()
+	if not get_tree().process_frame.is_connected(place_raid_legend):
+		get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
+
+
+## Share of the free rect the raid's nodes are framed into (a margin round them), and the
+## furthest the raid map zooms out.
+const RAID_FIT_SHARE := 0.9
+const RAID_MIN_ZOOM := 0.6
+## Bounds of a camera move's measured gain (anchor px per px the nodes moved).
+const RAID_GAIN_MIN := 0.25
+const RAID_GAIN_MAX := 4.0
+## The free rect the passes were counted for, and the last move ({centre, step}).
+var _raid_free: Rect2 = Rect2()
+var _raid_step: Dictionary = {}
+## The last node box measured and for how many frames in a row it (and the free rect) held.
+var _raid_box: Rect2 = Rect2()
+var _raid_same: int = 0
+var _raid_frame: int = -1
+## Frames a measure must hold before the camera acts on it.
+const RAID_STABLE_FRAMES := 2
+
+
+## The part of the raid map's area the nodes should sit in (screen px): the area less its
+## margin and less the legend's column (the legend's side of the area).
+func raid_free_rect() -> Rect2:
+	var area_ctl := raid_legend.get_parent() as Control if raid_legend != null and is_instance_valid(raid_legend) else null
+	if area_ctl == null:
+		return Rect2()
+	# The area as far as it is on screen (a page taller than the screen scrolls).
+	var area := area_ctl.get_global_rect().intersection(get_global_rect()).grow(-LegendSpot.MARGIN)
+	if not raid_legend.is_visible_in_tree():
+		return area
+	# The legend's column at the area's left (LegendSpot tries it first, so the legend lands
+	# there once the nodes leave it).
+	var left := area.position.x + raid_legend.get_combined_minimum_size().x * raid_legend.scale.x + LegendSpot.MARGIN
+	return Rect2(left, area.position.y, maxf(0.0, area.end.x - left), area.size.y)
+
+
+## The screen box round the raid map's node icons and tier pips (empty when none).
+func raid_node_box() -> Rect2:
+	var rects := LegendSpot.node_rects(city_overlay, false)
+	if rects.is_empty():
+		return Rect2()
+	var box := rects[0]
+	for r in rects:
+		box = box.merge(r)
+	return box
 
 
 ## Screen rects of the raid map's node icons and labels (the legend must cover none).
@@ -1468,8 +1635,9 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 	target.disabled = not c.grid.is_active_node(site_id)
 	_add_tip(row, target, "%s (%s): make it the target for the Armory's assets." % [site_name(site_id), _display(c.grid.node_type_of(site_id))])
 	if not n.is_empty():
-		row.add_child(Badge.new("%s > %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()],
-			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, "Projected integrity before and after the raid, and whether the node holds."))
+		# H23 S5: the numbers are the node's integrity (HP); HOLDS / BREACHED said in the tip.
+		row.add_child(Badge.new("HP %s > %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()],
+			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, "%s's integrity (HP) now and after the raid: %s > %s. %s" % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
 	var assets := c.grid.assets_on(site_id)
 	for aid in assets:
 		row.add_child(Badge.new("", Palette.CELL_PINK, "", _display(aid), aid))
@@ -1509,6 +1677,8 @@ func raid_graph(results: Variant, markers: Dictionary) -> Dictionary:
 			n["color"] = Palette.CELL_ACID if String(res["outcome"]) == "holds" else Palette.CELL_PINK
 			n["result"] = "%s > %s %s" % [res["before"], res["after"], String(res["outcome"]).to_upper()]
 			n["label"] = site_name(n["id"])  # never the raw id (H20)
+			# H23 S5: the tag's numbers and word explained on hover.
+			n["tip"] = "%s: integrity (HP) %s > %s in the raid. %s" % [site_name(n["id"]), res["before"], res["after"], outcome_tip(String(res["outcome"]))]
 		n["assets"] = c.grid.assets_on(n["id"])
 		n["threat_corp"] = String(c.corporation_id)
 		nodes.append(n)
@@ -1896,6 +2066,9 @@ func _build_ui() -> void:
 	_panel_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_panel_host)
+	# Pad prompts in a row of their own under the page (H23 S11).
+	pad_prompts = PadPrompts.new()
+	root.add_child(pad_prompts)
 	_log = RichTextLabel.new()
 	_log.theme_type_variation = &"LogText"
 	_log.material = UiTheme.crt_material()
@@ -1938,6 +2111,35 @@ func _button(text: String, on_pressed: Callable) -> Button:
 	b.text = text
 	b.pressed.connect(on_pressed)
 	return b
+
+
+## Puts the currency's StatIcon `kind` after button `b`'s price (H23 S13: "(25)" did not
+## say it was Schematics): a mark at the button's right end, the words kept clear of it.
+## The kind is in the button's "price_kind" meta.
+func _price_icon(b: Button, kind: StringName) -> IconMark:
+	var px := roundf(UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR)
+	var mark := IconMark.standalone(kind, px)
+	mark.name = "PriceIcon"
+	b.add_child(mark)
+	b.set_meta(&"price_kind", kind)
+	var place := func() -> void:
+		mark.position = Vector2(b.size.x - px - PRICE_ICON_GAP * 0.5, (b.size.y - px) * 0.5)
+	# The theme's boxes are known once the button is in the tree: room made on the right then.
+	var make_room := func() -> void:
+		for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
+			var sb := b.get_theme_stylebox(st)
+			if sb == null:
+				continue
+			var room := sb.duplicate() as StyleBox
+			room.content_margin_right = sb.get_margin(SIDE_RIGHT) + px + PRICE_ICON_GAP
+			b.add_theme_stylebox_override(st, room)
+		place.call()
+	if b.is_inside_tree():
+		make_room.call()
+	else:
+		b.ready.connect(make_room, CONNECT_ONE_SHOT)
+	b.resized.connect(place)
+	return mark
 
 
 ## Puts StatIcon `kind` before button `b`'s words (H21 #13: menus in words only); returns b.

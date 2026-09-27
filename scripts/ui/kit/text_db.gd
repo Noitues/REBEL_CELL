@@ -43,6 +43,8 @@ static func collect(lookup: ContentLookup) -> Array[Array]:
 	var seen := {}
 	for id in lookup.ids():
 		_walk(lookup.get_content(id), out, seen)
+	for key in UI_TEXT:
+		out.append([String(key), String(UI_TEXT[key])])
 	out.sort_custom(func(a: Array, b: Array) -> bool: return String(a[0]) < String(b[0]))
 	return out
 
@@ -66,3 +68,39 @@ static func _walk(res: Resource, out: Array[Array], seen: Dictionary) -> void:
 			for item in value:
 				if item is Resource:
 					_walk(item, out, seen)
+	# H23 S15: voice lines have no id; they are keyed by their set and place.
+	if res is LineSetData and has_id:
+		var set := res as LineSetData
+		for i in set.lines.size():
+			if set.lines[i] != null and set.lines[i].text != "":
+				out.append([voice_key(set, i), set.lines[i].text])
+
+
+# --- H23: voice lines and screen sentences ---------------------------------------------------
+
+## Key of line `index` of voice line set `set` (H23 S15: a VoiceLineData has no id of its
+## own, so its set's id and its place in the set name it).
+static func voice_key(set: LineSetData, index: int) -> String:
+	return "LineSetData.%s.lines.%d" % [set.id, index]
+
+
+## Line `index` of `set` in the player's language, or its own text.
+static func voice(set: LineSetData, index: int) -> String:
+	if set == null or index < 0 or index >= set.lines.size() or set.lines[index] == null:
+		return ""
+	var fallback := set.lines[index].text
+	var key := voice_key(set, index)
+	var translated := TranslationServer.translate(key)
+	return fallback if translated == key or translated == "" else String(translated)
+
+
+## Screen sentences that are not content (H23 S5: the raid setup's opening line), by key;
+## exported with the content strings so translators see them.
+const UI_TEXT := {
+	"ui.raid_intro": "The corp is raiding your CORE. Place defences to cut the damage, then RUN THE RAID.",
+}
+
+
+## A screen sentence from UI_TEXT in the player's language.
+static func ui_text(key: String) -> String:
+	return ui(key, String(UI_TEXT.get(key, key)))

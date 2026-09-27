@@ -478,11 +478,12 @@ func test_the_route_view_has_its_legend() -> void:
 		RunManager.new_campaign(1)
 		var scene := _netrun()
 		await _frames()
-		var legend: MapLegend = null
+		# H23 S7 (updated on purpose): the route's own key (its node kinds), not the map's.
+		var legend: RouteLegend = null
 		for n in _all(scene._panel):
-			if n is MapLegend:
+			if n is RouteLegend:
 				legend = n
-		assert_not_null(legend, "the route view mounts the map legend")
+		assert_not_null(legend, "the route view mounts the route key")
 		if legend != null:
 			assert_true(legend.is_visible_in_tree())
 			var lr := legend.get_global_rect()
