@@ -290,3 +290,20 @@ func test_tres_lines_round_trip_an_entry() -> void:
 	assert_true(lines.contains("duration = %s" % Motion._num(e.duration)))
 	assert_true(lines.contains("ease = %d" % e.ease))
 	assert_true(lines.contains("trans = %d" % e.trans))
+
+
+func test_stop_puts_every_motion_back_at_rest() -> void:
+	_live_all()
+	var n := _node()
+	var slide := Motion.slide_in(n, Vector2(0, -40), &"panel_drop")
+	var pop := Motion.pop(n, &"node_pop")
+	var pulse := Motion.loop_pulse(n, ^"modulate:a", &"pointer_flicker")
+	for tw in [slide, pop, pulse]:
+		(tw as Tween).custom_step(0.05)
+	Motion.stop(n)
+	for tw in [slide, pop, pulse]:
+		assert_false((tw as Tween).is_valid(), "stopped")
+	assert_almost_eq(n.position, Vector2(200, 100), Vector2.ONE * 0.001)
+	assert_almost_eq(n.scale, Vector2.ONE, Vector2.ONE * 0.001)
+	assert_almost_eq(n.modulate.a, 1.0, 0.001)
+	assert_eq(n.get_meta_list().size(), 0, "nothing held")

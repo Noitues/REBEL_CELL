@@ -207,6 +207,7 @@ static func loop_pulse(node: CanvasItem, property: NodePath, id: StringName) -> 
 	var tw := node.create_tween().set_loops()
 	tw.tween_method(_setter(node, property), 1.0, amplitude(id), d).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_method(_setter(node, property), amplitude(id), 1.0, d).set_ease(e.ease).set_trans(e.trans)
+	_hold(node, property, tw, 1.0)
 	return tw
 
 
@@ -222,6 +223,21 @@ static func number_roll(label: Control, from: int, to: int, id: StringName, fmt:
 		.set_delay(delay_of(id)).set_ease(e.ease).set_trans(e.trans)
 	_hold(label, ^"text", tw, fmt % to)
 	return tw
+
+
+## Stops every helper tween still running on `node` and puts each property back at the
+## value its motion rests at (e.g. before replaying, or when a view is reused).
+static func stop(node: Node) -> void:
+	for key in node.get_meta_list():
+		if not String(key).begins_with(META_PREFIX):
+			continue
+		var held: Array = node.get_meta(key)
+		node.remove_meta(key)
+		var tw: Tween = held[0]
+		if tw != null and tw.is_valid():
+			tw.kill()
+		node.set_indexed(held[2], held[1])
+	_redraw(node)
 
 
 ## The .tres lines for `e` (the motion lab's "copy values").
@@ -266,7 +282,7 @@ static func _settle(node: Node, property: NodePath) -> Variant:
 
 static func _hold(node: Node, property: NodePath, tw: Tween, rest: Variant) -> void:
 	var key := META_PREFIX + String(property).replace(":", "_")
-	node.set_meta(key, [tw, rest])
+	node.set_meta(key, [tw, rest, property])
 	# Captures the tween's id, not the tween: a lambda holding its own tween is a cycle.
 	var tw_id := tw.get_instance_id()
 	tw.finished.connect(func() -> void:
