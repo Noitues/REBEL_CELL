@@ -444,21 +444,34 @@ func _clear_route() -> void:
 		city.refresh()
 
 
-## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip.
+## Raid playout (GDD 7.2): threat markers animate over the Grid; 1x/2x/4x and skip. The
+## raid plays on the city (the Grid overlay, like the HQ playout), the feed at the side.
 func _show_raid_playout(events: Array[Dictionary]) -> void:
 	var c := RunManager.campaign
-	var box := VBoxContainer.new()
-	var view := GridMapView.new()
-	view.custom_minimum_size = Vector2(760, 300)
-	view.show_grid(c, RunManager.corporation)
-	box.add_child(view)
-	playout = RaidPlayoutPanel.new(view)
-	box.add_child(playout)
+	var box := HBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(spacer)
+	MapLegend.pin_to(spacer, c.corporation_id)
+	var side := VBoxContainer.new()
+	side.add_theme_constant_override("separation", 12)
+	box.add_child(side)
+	var feed := TerminalWindow.new("RAID FEED // LIVE", Palette.corp_color(c.corporation_id))
+	side.add_child(feed)
+	playout = RaidPlayoutPanel.new(null, Vector2(330, 330))
+	feed.body.add_child(playout)
 	var cont := _button("Continue", _show_current)
 	cont.disabled = true
 	playout.finished.connect(func() -> void: cont.disabled = false)
-	box.add_child(cont)
-	_set_panel(box)
+	side.add_child(cont)
+	_set_panel(box, false)
+	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
+	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
+	playout.grid_view = city_overlay
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
 		_show_current()
