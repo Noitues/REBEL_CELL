@@ -82,6 +82,14 @@ var _built_scale: float = -1.0
 var _linked: Control = null
 var _size_on: Vector2 = Vector2.ZERO
 var _size_off: Vector2 = Vector2.ZERO
+## ANIM-5: the folding key's rows slide in (1 = in place) by `legend_fold`'s amplitude px
+## and fade with it; their resting y from the last container sort.
+const FOLD_MOTION := &"legend_fold"
+var fold_slide: float = 1.0:
+	set(v):
+		fold_slide = v
+		_apply_slide()
+var _rows_rest_y: float = 0.0
 
 
 func _init(corporation_id: StringName = &"", p_compact: bool = false, p_strip: bool = false) -> void:
@@ -93,6 +101,7 @@ func _init(corporation_id: StringName = &"", p_compact: bool = false, p_strip: b
 	_build()
 	visible = Settings.map_legend
 	Settings.changed.connect(_on_settings_changed)
+	body.sort_children.connect(_on_body_sorted)
 
 
 ## The rows' font size now (px): the variant's size at the current text scale.
@@ -203,7 +212,14 @@ func set_opened(value: bool, by_hover: bool = false) -> void:
 		return
 	opened = value
 	if _grid != null:
-		_grid.visible = opened or not foldable()
+		var show := opened or not foldable()
+		if show:
+			_grid.visible = true
+			_slide_rows(true)
+		elif _grid.visible and Motion.live(FOLD_MOTION) and is_inside_tree():
+			_slide_rows(false)  # the rows hide when they have slid out
+		else:
+			_grid.visible = false
 	if fold_button != null:
 		IconMark.attach(fold_button, StatIcon.MORE if not opened else StatIcon.CODEX)
 	_fit_columns()
@@ -225,12 +241,51 @@ func _notification(what: int) -> void:
 ## H24 K1: the size the map is framed around: the folded MAP KEY line for a foldable key
 ## (open, its rows sit over the map for a moment), else the whole key.
 func fit_size() -> Vector2:
-	if not foldable() or not opened:
+	if not foldable() or _grid == null or not _grid.visible:
 		return get_combined_minimum_size()
 	_grid.visible = false
 	var folded := get_combined_minimum_size()
 	_grid.visible = true
 	return folded
+
+
+## ANIM-5: the rows slide in (opening) or out (folding; hidden at the end). The end state
+## at once when motion doesn't play.
+func _slide_rows(opening: bool) -> void:
+	if not Motion.live(FOLD_MOTION) or not is_inside_tree():
+		fold_slide = 1.0
+		return
+	if opening:
+		fold_slide = 0.0
+		Motion.run(FOLD_MOTION, self, ^"fold_slide", 1.0)
+		return
+	var tw := Motion.run(FOLD_MOTION, self, ^"fold_slide", 0.0)
+	if tw == null:
+		_rows_folded()
+	else:
+		tw.finished.connect(_rows_folded)
+
+
+## The fold's slide ended: the rows hide and the key takes its one-line size.
+func _rows_folded() -> void:
+	if _grid != null and not opened and foldable():
+		_grid.visible = false
+		fold_slide = 1.0
+		_fit_columns()
+		update_minimum_size()
+
+
+func _on_body_sorted() -> void:
+	if _grid != null and is_instance_valid(_grid):
+		_rows_rest_y = _grid.position.y
+		_apply_slide()
+
+
+func _apply_slide() -> void:
+	if _grid == null or not is_instance_valid(_grid):
+		return
+	_grid.position.y = _rows_rest_y + (1.0 - fold_slide) * Motion.amplitude(FOLD_MOTION)
+	_grid.modulate.a = fold_slide
 
 
 ## H23 #3: a strip legend lays its rows out in as many columns as `width` (px) holds.
