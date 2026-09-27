@@ -8,9 +8,11 @@ extends RefCounted
 ## tween. Never `await` a Motion tween inside a rule path.
 
 const CONFIG_PATH := "res://content/config/ui_motion.tres"
-## Playback speed range (the motion lab and raid playback speed controls).
+## Playback speed range: the motion lab offers SPEED_MIN..LAB_SPEED_MAX; raid playback
+## runs 1x/2x/4x (hq_scene), so the kit accepts up to SPEED_MAX.
 const SPEED_MIN := 0.25
-const SPEED_MAX := 2.0
+const SPEED_MAX := 4.0
+const LAB_SPEED_MAX := 2.0
 ## A shake is this many steps across its duration: out, across, out, home.
 const SHAKE_STEPS := 4
 ## A blink spends this share of its duration dipping and the rest coming back.

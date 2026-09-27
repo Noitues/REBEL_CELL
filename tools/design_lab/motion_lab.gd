@@ -330,7 +330,7 @@ func _build_panel() -> void:
 	box.add_child(_caption("speed (x)"))
 	_speed = HSlider.new()
 	_speed.min_value = Motion.SPEED_MIN
-	_speed.max_value = Motion.SPEED_MAX
+	_speed.max_value = Motion.LAB_SPEED_MAX
 	_speed.step = Motion.SPEED_MIN / 5.0
 	_speed.value_changed.connect(func(v: float) -> void:
 		Motion.set_speed(v)
