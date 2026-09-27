@@ -56,13 +56,17 @@ Pass-23 items K1-K7 (the City Grid screen, the map overlay, the HQ mini-map). Vi
 - **Nodes stay beside the column (K5).** `hq_scene.fit_grid_map` fits the Grid map into the
   map area above the key, once the page's layout has settled (next frame): when a node's
   icon or pips lie outside it, the camera pans and zooms out (never in past the Grid's
-  own GRID_ZOOM 0.85). `LegendSpot.fit_into` works the frame out from where the icons
+  own framing, now GRID_ZOOM 0.72 at GRID_ANCHOR (0.31, 0.54), was 0.85 at (0.4, 0.56):
+  at text scale 1.0 the Grid then fits above the key with no refit). `LegendSpot.fit_into` works the frame out from where the icons
   are now (only the spread between icon centres scales; icons and pips keep their screen
   size), aiming FIT_INSET (8 px) inside so drift never asks for another pass; it is
   checked again once the city has drawn under the new camera (`NeonCity.camera_settled`,
   new: the camera inputs of the last draw), at most GRID_FITS_MAX (3) passes. A resize,
   a text size change or the legend switch fits again. At text scale 1.6 the map is
-  smaller (the column and the key take more room), never clipped.
+  smaller (the column and the key take more room), never clipped, and never below
+  GRID_MIN_ZOOM (0.3). The step row (PREV / NEXT SITE, Back to HQ, RAID SETUP) wraps
+  inside the column (an HFlowContainer): as one row at 1.6 with a raid pending it widened
+  the column over most of the map.
 - **Tooltips name the kind (K6).** `CityLayout.KIND_TIPS`: each Site tooltip says its kind
   word and icon shape and what it does ("Exploit Site (diamond): clearing it gives an
   Exploit for the boss breach."), then its status; `CityMapOverlay.KIND_WORDS` /
@@ -1848,10 +1852,11 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
-- **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column (588 px at
-  1.6, its SITE step row sets the width) and the map key along the map's foot (about 280
+- **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column and the map key along the map's foot (about 280
   px tall at 1.6), the Grid map is framed small enough that every node shows, and only the
-  labels that fit are drawn (the rest keep tooltips). Alternatives: a key that folds to
+  labels that fit are drawn (the rest keep tooltips); in the densest cluster (ten T1 Sites
+  side by side) some icons touch, as the overlay stacks at most ICON_STACK_MAX (4) deep.
+  Alternatives: a key that folds to
   its title (open on hover or a button), or a narrower column at big text (the steps as
   icon-only buttons). Which do you prefer? LABEL_REACH (110 px) is a guess too.
 

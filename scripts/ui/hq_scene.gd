@@ -55,6 +55,8 @@ const GRID_FITS_MAX := 4
 ## screen fraction) before it is fitted to the screen.
 const GRID_ZOOM := 0.72
 const GRID_ANCHOR := Vector2(0.31, 0.54)
+## The smallest the fit may make the Grid map (the city's zoom).
+const GRID_MIN_ZOOM := 0.3
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
 ## The raid orders list's least height at text scale 1.0 (px).
@@ -971,9 +973,12 @@ func show_grid() -> void:
 	# Every Site stays reachable without the mouse: step through them, or jump to a run.
 	# First in the column: the city screens don't scroll by mouse wheel, so Back to HQ
 	# must stay on screen at text scale 1.6.
-	var nav := HBoxContainer.new()
+	# H23 #5: the row wraps inside the column (as one row, with RAID SETUP at text scale 1.6
+	# it widened the column over most of the map).
+	var nav := HFlowContainer.new()
 	nav.name = "SiteNav"
-	nav.add_theme_constant_override("separation", 8)
+	nav.add_theme_constant_override("h_separation", 8)
+	nav.add_theme_constant_override("v_separation", 6)
 	column.add_child(nav)
 	column.move_child(nav, 0)
 	# H23 #7: every Site row and step button carries the map icon of its Site (kind, map
@@ -1074,7 +1079,7 @@ func fit_grid_map() -> void:
 		free.size.y = maxf(1.0, area.position.y + grid_legend.position.y - LegendSpot.MARGIN - free.position.y)
 	if _grid_fits >= GRID_FITS_MAX:
 		return
-	var fit := LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x)
+	var fit := LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x)
 	if fit.is_empty():
 		return
 	_grid_fits += 1

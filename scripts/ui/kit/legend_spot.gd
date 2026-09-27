@@ -127,8 +127,10 @@ static func fit_beside(legend: Control, overlay: CityMapOverlay) -> Dictionary:
 ## factor, "from": the icon centres' box centre, "to": where it should go}; {} when the
 ## nodes already fit and zooming in would gain less than REFIT_SLACK. Icons and pips keep
 ## their screen size as the city zooms, so only the spread between icon centres scales:
-## the answer is exact but for icons floating up to clear each other.
-static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0) -> Dictionary:
+## the answer is exact but for icons floating up to clear each other. The zoom factor is
+## never below `min_zoom` (a floor on how small the map may get; at the floor the nodes
+## are centred in `free` as well as they go).
+static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0, min_zoom: float = MIN_FIT_ZOOM) -> Dictionary:
 	var rects := node_rects(overlay, false)
 	if rects.is_empty() or free.size.x <= 0.0 or free.size.y <= 0.0:
 		return {}
@@ -162,7 +164,8 @@ static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0
 		# Zoomed out, crowded icons float up to clear each other and the box grows a little
 		# past the estimate: aim lower so one more pass settles it.
 		k *= FIT_OVERSHOOT
-	return {"zoom": maxf(MIN_FIT_ZOOM, k), "from": centres.get_center(), "to": aim.position + pad_lo + room * 0.5}
+	k = maxf(k, minf(1.0, min_zoom))
+	return {"zoom": k, "from": centres.get_center(), "to": aim.position + pad_lo + room * 0.5}
 
 
 ## Node area (px²) `rect` covers.
