@@ -137,10 +137,14 @@ var selected_operative: StringName = &""
 var _hint_buttons: Array[Button] = []
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
+## Whether the last page entered a new panel (its entrance plays) or rebuilt the same one.
+var entering: bool = false
 
 
 func _ready() -> void:
 	UiTheme.apply(self)
+	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
+	MotionDemo.apply_args()
 	# Subtitles sit in the top band, clear of every control on these screens (H20).
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_hints)
@@ -306,9 +310,16 @@ func repair_home() -> void:
 
 
 func recruit(class_id: StringName = RunManager.DEFAULT_CLASS) -> void:
+	var before := RunManager.campaign.roster.size()
 	_report(RunManager.recruit(class_id))
 	RunManager.autosave()
 	show_hq()
+	# ANIM-6: the new operative's dossier drops onto the crew with its tape.
+	var c := RunManager.campaign
+	if c.roster.size() > before and _panel != null:
+		var card := _panel.find_child("Crew_%s" % c.roster[c.roster.size() - 1].id, true, false) as Control
+		if card != null:
+			PageTransition.enter(card, PageTransition.Look.PAPER)
 
 
 func station(operative_id: StringName, site_id: StringName) -> void:
@@ -330,16 +341,33 @@ func buy_heat_reduction() -> void:
 
 
 func buy_boost(boost_id: StringName) -> void:
+	var spent := RunManager.campaign.schematics
+	var button := _market_button("Boost_%s" % boost_id)
 	_report(CampaignRules.buy_boost(RunManager.campaign, RunManager.config(), boost_id))
+	_stamp_sold(button, spent)
 	RunManager.autosave()
 	show_hq()
 
 
 func purchase_unlock(unlock_id: StringName) -> void:
+	var spent := RunManager.campaign.schematics
+	var button := _market_button("Unlock_%s" % unlock_id)
 	_report(CampaignRules.purchase_unlock(RunManager.campaign, RunManager.profile, RunManager.lookup(), unlock_id))
+	_stamp_sold(button, spent)
 	RunManager.save_profile()
 	RunManager.autosave()
 	show_hq()
+
+
+## A Black Market button on the page on screen (null when none).
+func _market_button(button_name: String) -> Control:
+	return _panel.find_child(button_name, true, false) as Control if _panel != null else null
+
+
+## ANIM-6: a Black Market buy stamps SOLD where its button was (when Schematics were spent).
+func _stamp_sold(button: Control, schematics_before: int) -> void:
+	if button != null and RunManager.campaign.schematics < schematics_before:
+		FlightFx.stamp_on(self, button, tr("SOLD"))
 
 
 func swap_segment(operative_id: StringName, index: int, segment_id: StringName) -> void:
@@ -380,6 +408,10 @@ func _set_panel(p: Control, name: String) -> void:
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE if on_city else Control.MOUSE_FILTER_STOP
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel = p
+	# ANIM-6: a new page enters (glass slides in, back to the HQ from the left); the same page
+	# rebuilt after an action just shows.
+	entering = name != panel_name
+	var back := name == "hq" and panel_name != ""
 	panel_name = name
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
@@ -392,7 +424,10 @@ func _set_panel(p: Control, name: String) -> void:
 	pad_prompts.set_prompts(prompts_for(name))
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
-	UiFocus.focus_first(p)
+	if entering:
+		PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
+	else:
+		UiFocus.focus_first(p)
 	_scroll_to_top.call_deferred()
 	# Worlds (STYLE_GUIDE 1): the room is a cyberdeck, the Grid and raids are wireframe.
 	var net := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
@@ -918,6 +953,7 @@ func show_hq() -> void:
 		any_unlock = true
 		var uid := u.id
 		var btn := _button("%s (%d)" % [TextDb.t(u, "display_name"), u.schematic_cost], func() -> void: purchase_unlock(uid))
+		btn.name = "Unlock_%s" % u.id
 		btn.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
 		btn.disabled = c.schematics < u.schematic_cost
 		unlocks.add_child(btn)
@@ -936,6 +972,12 @@ func show_hq() -> void:
 			story.body.add_child(t)
 	_set_panel(box, "hq")
 	_link_crew_focus(roster_box, jack, market)
+	# HQ idle (ANIM-6, 4.13): the deck monitor hums, JACK IN breathes, and on arrival the
+	# pirate radio types in.
+	CrtHum.attach(monitor)
+	jack.breathe()
+	if entering:
+		Typing.type_in(radio.label, &"radio_type")
 
 
 ## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
@@ -2563,6 +2605,8 @@ func _as_menu(box: Control) -> void:
 		if b is Button:
 			b.theme_type_variation = &"MenuItem"
 			(b as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+	# ANIM-6: the highlight slides, the line types in, the caret blinks.
+	MenuMotion.attach(box)
 
 
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).
