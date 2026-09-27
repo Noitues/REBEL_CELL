@@ -35,10 +35,42 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
 | Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
+| H24 | 2026-09-27 | 38 from pass 24 (0 P1; 11 P2; 27 P3) incl. the fourth naive-player reviews, plus test isolation (parallel runs shared one settings file) | Fixed in horizontal batch H24 (combat, city maps, screens); DECISIONS "H24 ..." entries. Motion moved to its own Animation pass |
 | H23 | 2026-09-27 | 21 from pass 23 (1 P1: an empty subtitle box after a re-dock; 12 P2; 8 P3) incl. the third naive-player reviews | Fixed in horizontal batch H23 (combat, city maps, screens); DECISIONS "H23 ..." entries |
 | H22 | 2026-09-27 | 14 from pass 22 (0 P1, 8 P2, 6 P3) incl. the second naive-player reviews | Fixed in horizontal batch H22 (combat, city maps, screens); DECISIONS "H22 ..." entries |
 | H21 | 2026-09-26 | 22 from pass 21 (3 P1: pad nudge wheel/ring, pad focus lost, no visible turn result; 12 P2; 7 P3) incl. the first naive-player reviews | Fixed in horizontal batch H21 (combat, city maps, screens); DECISIONS "H21 ..." entries |
 | H20 | 2026-09-26 | 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3) plus the designer's 7 (tooltips, drag-to-target cards and nudge arrows, a baked backdrop with live lights and territory colour, no text logs, naive-player reviews, directions that read the right way) | Fixed in horizontal batch H20 (combat, city, screens); DECISIONS "H20 ..." entries |
+
+### H24 (fixed 2026-09-27): pass 24 = audits + fourth naive-player reviews
+
+No P1. Preview == result held for 7 enemies (4 bosses) x 2 seeds x 8 turns, LAST TURN
+parts summed to the real change for all 59 enemies incl. DISPATCH and a Mirror; satellite
+plates stayed clear of tags in 3,510 placements; the Grid held for all corporations at
+1.0 / 1.3 / 1.6 early and late.
+
+| # | Sev | Gap | Source |
+|---|---|---|---|
+| 1 | P2 | Translators never saw the code's words (no tr() keys in strings.csv) | horizontal |
+| 2 | P2 | Words translated twice (status line, respin note, HQ buttons, pad prompts, speaker names) or never (tag titles, YOU, statuses, SEND IT, RAM, Heat poster, raid facts, screen titles, Modem, map words) | horizontal, vertical, non-English |
+| 3 | P2 | "%+d" keys lost their numbers under pseudolocalisation | vertical, horizontal |
+| 4 | P2 | At 1.6 the inner-ring arrow answered as the outer; drones took arrow clicks | vertical |
+| 5 | P2 | At 1.6 the aim hint covered the RAM counter; the status line ran under Settings | vertical, beginner |
+| 6 | P2 | Satellite tokens and plates sat on NEXT and LAST TURN | vertical |
+| 7 | P2 | Bigger text made LAST TURN and hub names smaller | vertical, beginner |
+| 8 | P2 | Raid map at 1.6 late in a campaign: nodes outside, legend over nodes | horizontal |
+| 9 | P2 | Grid at 1.6 small, labels dropped or touching the top bar (H23 open question) | vertical, beginner |
+| 10 | P2 | RUNS OPEN NOW rows alike: no reason to pick one | beginner, non-English |
+| 11 | P2 | Icon collisions: snowflake = ICE and Heat reduction; diamond = Exploit and shop | beginner |
+| 12 | P3 | LAST TURN missed drone block and RAM refill; counted capped shield | vertical, horizontal, beginner |
+| 13 | P3 | "-11 HP" / "HITS YOU 14" needed a sum; hovered cards didn't say which wheel they act on; no win condition; aim dots unexplained | beginner, non-English |
+| 14 | P3 | Toasts over the cards; the aim line over HP and NEXT; standalone status line ~100 px | beginner, vertical |
+| 15 | P3 | SAVED placed with stale geometry; pager page of only a speaker name | vertical |
+| 16 | P3 | Esc left the Modem when Settings was rebound | horizontal |
+| 17 | P3 | Event, Modem, HQ dossier, route panel, step-row and label overlaps at 1.0 / 1.6 | vertical, beginner |
+| 18 | P3 | Title Continue line read as debug; the storyboard's title showed another slot | beginner |
+| 19 | P3 | Raid defences unexplained, RUN THE RAID read as attacking, ARMORY counts differed | beginner, non-English |
+| 20 | P3 | Stale DISPATCH lines on later screens; top-bar set changed unexplained | beginner |
+| 21 | P3 | Test runs and storyboards shared the player's settings file (flaky failures) | ANIM-1 agent |
 
 ### H23 (fixed 2026-09-27): pass 23 = audits + third naive-player reviews
 

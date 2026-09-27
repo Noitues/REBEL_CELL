@@ -1124,7 +1124,7 @@ func show_grid() -> void:
 			# H24 K7: the words translated here, once (the button does not translate them again).
 			var words := "%s %s" % [CityMapOverlay.tier_text(s.tier), site_name(s.id)]
 			if kind != CityMapOverlay.KIND_TIER:
-				words += " · %s" % tr(CityMapOverlay.kind_word(kind)).to_upper()
+				words += " · %s" % CityMapOverlay.kind_word(kind).to_upper()  # kind_word translates
 			var b := _button(words, func() -> void: select_site(sid))
 			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			b.name = "Run_%s" % s.id
@@ -1459,7 +1459,7 @@ func _site_kind_name(id: StringName) -> String:
 	var kind := CityLayout.site_kind(RunManager.campaign, sd)
 	if kind == CityMapOverlay.KIND_HOME:
 		return tr("%s, your home server") % tr(CityLayout.HOME_LABEL)
-	var word := tr(CityMapOverlay.kind_word(kind))
+	var word := CityMapOverlay.kind_word(kind)  # already translated
 	return tr("%s, a T%d %s") % [site_name(id), sd.tier, word if kind == CityMapOverlay.KIND_TIER else tr("%s Site") % word]
 
 

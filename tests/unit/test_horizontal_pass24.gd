@@ -7,6 +7,7 @@ const SCENE := "res://scenes/combat/combat_scene.tscn"
 
 var _text_scale_before: float = 1.0
 var _translation: Translation = null
+var _locale_before := ""
 
 
 func before_all() -> void:
@@ -26,6 +27,7 @@ func after_each() -> void:
 	if _translation != null:
 		TranslationServer.remove_translation(_translation)
 		_translation = null
+		TranslationServer.set_locale(_locale_before)
 	if not is_equal_approx(Settings.text_scale, _text_scale_before):
 		Settings.set_text_scale(_text_scale_before)
 	Settings.set_pad_active(false)
@@ -55,9 +57,13 @@ func _combat(enemy: StringName = &"collections_agent", scale: float = 1.0) -> Co
 	return scene
 
 
+## A throwaway catalogue in a locale of its own ("xx"): the English catalogue holds the
+## same keys and would answer first.
 func _translate(pairs: Dictionary) -> void:
+	_locale_before = TranslationServer.get_locale()
+	TranslationServer.set_locale("xx")
 	_translation = Translation.new()
-	_translation.locale = TranslationServer.get_locale()
+	_translation.locale = "xx"
 	for k in pairs:
 		_translation.add_message(String(k), String(pairs[k]))
 	TranslationServer.add_translation(_translation)

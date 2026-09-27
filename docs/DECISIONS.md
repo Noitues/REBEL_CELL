@@ -30,6 +30,55 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H24 combat: every drawn word translates once, text that fits at big sizes, turns that explain themselves
+From pass 24 (both audits, a first-time player and a player who can't read English;
+GAP_ANALYSIS H24). New standing rule from the designer: nothing is deferred. Every
+finding gets a slice, and motion is now its own dedicated Animation pass.
+- **Translate once**: the slice, aim and status words (`Palette.*_WORDS`), "YOU", SEND IT
+  (drip lettering), the RAM bar, the Heat poster (WANTED, the ransom-note letters of the
+  translated word, capped at `RANSOM_LETTERS_MAX`), "+N MORE", "? RANDOM STATUS", RESPIN
+  and UNDO stickers, the aim hint and refusal toasts all go through `tr()`. Labels that
+  get pre-translated text (the status line, the aim hint, the toast) and the combat
+  stickers (`StickerButton.pre_translated`) don't translate it again. "%+d" keys became
+  "%s" with `CombatScene.signed()`: Godot's pseudolocalisation override doesn't skip "%+d"
+  and dropped the numbers.
+- **Fit at big text**: the status line shrinks its font to its width (floor
+  `STATUS_MIN_FONT`, re-entry guarded). The dev fight picker is one dropdown, so the line
+  has its room in the standalone fight too. The aim hint sits above both the hand and
+  the RAM row and shrinks to the room to the screen's edge. It is sized from its font,
+  because a Label's minimum lags a font change by a frame.
+- **HP block layout**: one `hp_layout()` places the HP number, the NEXT plate and the LAST
+  TURN plate. Drawing, satellite tokens and satellite HP plates all use it. Tokens that
+  would meet the block move beside it. Plates try sideways first under the disc and keep
+  clear of the tag and the block.
+- **LAST TURN** is a dark plate across the view's width. It first shrinks on one line to
+  its text-scale-1.0 size, then takes a second line where the view has room, and only
+  then goes smaller. The wheel keeps its size; a second reserved line had cost 10 px of
+  radius at 1.6. The line also shows the RAM a new turn brings back ("RAM +4"), a
+  satellite's or drone's block on its host ("GUARD +3 BLOCK"), and shield actually gained.
+  `gain_shield` now reports the gain after the cap, with the request kept as
+  `requested`.
+- **Readable results**: a loss chip is followed by what block and shield soaked ("3
+  BLOCKED", from a new `soaked` count in `CombatOutcome`). A hovered card or nudge puts
+  "IF JOLT" / "IF NUDGE" first on the tag of the wheel it acts on. The hub tooltip says how
+  the fight is won or lost. The tag tooltip explains the aim dots.
+- **Hit-testing**: the nearest satellite or arrow within reach takes a click. At 1.6 the
+  inner ring's arrow had answered as the outer one, and a drone beside an arrow took its
+  clicks.
+- **Hub names** shrink to their 1.0 size, then split onto two lines at the best space,
+  and only then shrink further.
+- **Toasts** (refusals and the respin note) sit at the foot of the right column under the
+  subtitles, wrapped to its width. Over the hand they covered the cards (H21 had moved
+  them off the HP arcs). They are re-anchored a frame later, when a wrapped label knows
+  its height.
+- **Aim line** is drawn under the UI root, so the wheels' HP and NEXT stay on top.
+- **H23 wheel-size figures corrected**: 126 → 97 px was the standalone fight. In a run the
+  wheel is 108 px at 1.0 and 81 px at 1.3 and 1.6 (75%). `BIG_TEXT_RADIUS_KEEP` is the
+  bound the tests hold.
+- Tests: `tests/unit/test_horizontal_pass24.gd`. Updated on purpose: pass-21 (the toast
+  sits in the right column) and pass-23 (tokens measured against the real HP block).
+  Views only, plus the shield event's amount: the balance numbers stand.
+
 ### 2026-09-27 — H24 city: a folding map key, runs that say what they give, one icon per concept
 Pass-24 items K1-K8 (City Grid screen, map overlay, HQ mini-map, the icon set). Views
 (`scripts/ui/kit/`, the Grid page of `hq_scene.gd`) and one pure preview in
