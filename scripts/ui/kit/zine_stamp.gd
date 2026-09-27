@@ -13,10 +13,20 @@ var hint: String = "":
 		hint = value
 		queue_redraw()
 var _hot: bool = false
+## A StatIcon over the word (H22 #14: JACK IN carried its meaning in words only); &"" none.
+var icon_kind: StringName = &"":
+	set(value):
+		icon_kind = value
+		queue_redraw()
 
 ## Hint font size at text scale 1.0.
 const HINT_SIZE := 11
 const WORD_SIZE := 20
+## The icon over the word: radius and lift as shares of the stamp's radius; the word moves
+## down by WORD_DROP of the radius to make room.
+const ICON_SHARE := 0.2
+const ICON_LIFT := 0.36
+const WORD_DROP := 0.12
 
 
 func _init(p_text: String = "SEND IT", p_color: Color = Palette.CELL_PINK, p_hint: String = "") -> void:
@@ -51,6 +61,10 @@ func _draw() -> void:
 		draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
 	draw_arc(c, r, 0, TAU, 48, col, 4.0)
 	draw_arc(c, r - 9, 0, TAU, 48, col, 1.5)
-	draw_string(Palette.display(), c + Vector2(-r + 12, 8), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, WORD_SIZE, col)
+	var drop := 0.0
+	if icon_kind != &"":
+		StatIcon.draw(self, c + Vector2(0, -r * ICON_LIFT), r * ICON_SHARE, icon_kind, col)
+		drop = r * WORD_DROP
+	draw_string(Palette.display(), c + Vector2(-r + 12, 8 + drop), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, WORD_SIZE, col)
 	if hint != "":
 		draw_string(Palette.mono(), c + Vector2(-r + 12, 26), hint, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, roundi(HINT_SIZE * Settings.text_scale), col)
