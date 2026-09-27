@@ -189,7 +189,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 667 passing at H22 (635 at H21); schema smoke test and content validation green.
+Tests: 700 passing at H23 (667 at H22); schema smoke test and content validation green.
 
 ---
 
