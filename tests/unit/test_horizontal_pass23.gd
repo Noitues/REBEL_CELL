@@ -187,7 +187,11 @@ func test_satellite_hp_plates_keep_clear_of_the_tag() -> void:
 
 func test_combat_words_go_through_the_translation() -> void:
 	var t := Translation.new()
-	t.locale = TranslationServer.get_locale()
+	# A locale of its own (H24 S1: the English catalogue now carries these keys too and
+	# would answer first for "en").
+	var locale_before := TranslationServer.get_locale()
+	t.locale = "xx"
+	TranslationServer.set_locale("xx")
 	t.add_message("NO CHANGE", "XX_NO_CHANGE")
 	t.add_message("LAST TURN: ", "XX_LAST: ")
 	t.add_message("TURN %d · FREE NUDGE %d", "XX_TURN %d XX_FREE %d")
@@ -204,6 +208,7 @@ func test_combat_words_go_through_the_translation() -> void:
 	scene._refresh_status()
 	var status: String = scene._status.text
 	TranslationServer.remove_translation(t)
+	TranslationServer.set_locale(locale_before)
 	assert_eq(line, "XX_LAST: XX_NO_CHANGE")
 	assert_string_contains(status, "XX_TURN 1 XX_FREE")
 	assert_string_contains(status, "XX_YOURS")

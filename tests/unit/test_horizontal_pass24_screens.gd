@@ -664,6 +664,7 @@ func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 			RunManager.new_campaign(1)
 			var scene := _netrun()
 			await _frames(8)
+			RunManager.autosave()
 			await _assert_saved_clear(scene, "route")
 			_shop(scene)
 			await _frames()
