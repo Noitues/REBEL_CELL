@@ -43,6 +43,7 @@ const PAPERS: Array[Color] = [Color("#E9DFC6"), Color("#F5AFCB"), Color("#F2DC7A
 ## defaults to StatIcon.kind_for(name)).
 var items: Array = []:
 	set(v):
+		_note_changes(items, v)
 		items = v
 		_relayout()
 ## Compact tags (icon and value) and the scale they are drawn at (read-only).
@@ -63,6 +64,7 @@ var _tip_title: String = ""
 ## fight ("CAMPAIGN", "THIS RUN": the top bar's set changes between the HQ and a run).
 var captions: Array = []:
 	set(v):
+		_note_caption_change(v)
 		captions = v
 		_relayout()
 ## The captions' rects as laid out now (local; empty while they are not drawn).
@@ -70,6 +72,20 @@ var _caption_rects: Array[Rect2] = []
 ## Caption lettering and the gap after a caption at scale 1.0 (px).
 const CAPTION_SIZE := 10
 const CAPTION_GAP := 6.0
+
+
+## Animation pass ANIM-6 (ANIMATION_HANDOFF 4.24): a tag whose value changed bumps
+## (`sticky_bump`: its scale to the entry's amplitude and back) and its number rolls from
+## the old value (`number_roll`; Cycles and Schematics count up with `count_up` when they
+## rise). Tags are matched by name between two sets, so only a changed value moves. When
+## the captions change (CAMPAIGN / THIS RUN) the old ones fade out as the new fade in
+## (`caption_crossfade`). Drawn only: the rects and the value shown at rest never change.
+## Tag name -> {bump: 0..1, roll: 0..1, from: int, to: int, rolls: bool, tween}.
+var _moving: Dictionary = {}
+## Caption cross-fade: 0 -> 1 (1 = the new captions only) and the old captions' look.
+var _caption_fade: float = 1.0
+var _old_captions: Array = []
+var _caption_tween: Tween = null
 
 
 func _init() -> void:
@@ -85,6 +101,126 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		_relayout()
+
+
+## The global centre of the tag carrying icon `kind` (a flight's target: a bought card goes
+## to CARDS), or Vector2.INF when no tag has it.
+func icon_point(kind: StringName) -> Vector2:
+	for i in mini(items.size(), _rects.size()):
+		if icon_of(i) == kind:
+			return get_global_transform() * _rects[i].get_center()
+	return Vector2.INF
+
+
+## The tag names bumping now (tests).
+func bumping() -> PackedStringArray:
+	var out := PackedStringArray()
+	for k in _moving:
+		out.append(String(k))
+	return out
+
+
+## The value tag `i` shows now (mid-roll: the rolling number).
+func shown_value(i: int) -> String:
+	var it: Array = items[i]
+	var m: Dictionary = _moving.get(String(it[0]), {})
+	if m.is_empty() or not bool(m["rolls"]):
+		return String(it[1])
+	return str(roundi(lerpf(float(m["from"]), float(m["to"]), float(m["roll"]))))
+
+
+## Ends every bump, roll and cross-fade now.
+func settle() -> void:
+	for k in _moving.keys():
+		var tw: Tween = _moving[k]["tween"]
+		if tw != null and tw.is_valid():
+			tw.kill()
+	_moving.clear()
+	if _caption_tween != null and _caption_tween.is_valid():
+		_caption_tween.kill()
+	_caption_fade = 1.0
+	_old_captions = []
+	queue_redraw()
+
+
+func _note_changes(old: Array, new: Array) -> void:
+	if old.is_empty() or not Motion.live(&"sticky_bump") or not is_inside_tree():
+		return
+	var before := {}
+	for it in old:
+		before[String(it[0])] = String(it[1])
+	for it in new:
+		var key := String(it[0])
+		var value := String(it[1])
+		if not before.has(key) or before[key] == value:
+			continue
+		var kind := StatIcon.kind_for(key) if it.size() <= 4 or String(it[4]) == "" else StringName(String(it[4]))
+		_bump(key, String(before[key]), value, kind)
+
+
+func _bump(key: String, from: String, to: String, kind: StringName) -> void:
+	if _moving.has(key):
+		var old_tw: Tween = _moving[key]["tween"]
+		if old_tw != null and old_tw.is_valid():
+			old_tw.kill()
+	var rolls := from.is_valid_int() and to.is_valid_int()
+	var rising := rolls and to.to_int() > from.to_int()
+	var roll_id := &"count_up" if rising and kind in [StatIcon.CYCLES, StatIcon.SCHEMATICS] else &"number_roll"
+	var m := {"bump": 0.0, "roll": 0.0, "from": from.to_int() if rolls else 0, "to": to.to_int() if rolls else 0, "rolls": rolls}
+	var e := Motion.entry(&"sticky_bump")
+	var tw := create_tween().set_parallel(true)
+	tw.tween_method(func(v: float) -> void:
+		m["bump"] = v
+		queue_redraw(), 0.0, 1.0, Motion.seconds(&"sticky_bump")).set_ease(e.ease).set_trans(e.trans)
+	if rolls and Motion.live(roll_id):
+		var re := Motion.entry(roll_id)
+		tw.tween_method(func(v: float) -> void:
+			m["roll"] = v
+			queue_redraw(), 0.0, 1.0, Motion.seconds(roll_id)).set_delay(Motion.delay_of(roll_id)).set_ease(re.ease).set_trans(re.trans)
+	else:
+		m["roll"] = 1.0
+	tw.chain().tween_callback(func() -> void:
+		if is_same(_moving.get(key, null), m):
+			_moving.erase(key)
+		queue_redraw())
+	m["tween"] = tw
+	_moving[key] = m
+
+
+## A tag's drawn scale while it bumps (1 at rest): up to the entry's amplitude and back.
+func _bump_scale(key: String) -> float:
+	var m: Dictionary = _moving.get(key, {})
+	if m.is_empty():
+		return 1.0
+	var t := float(m["bump"])
+	var up := t / Motion.POP_GROW_SHARE if t < Motion.POP_GROW_SHARE else 1.0 - (t - Motion.POP_GROW_SHARE) / (1.0 - Motion.POP_GROW_SHARE)
+	return lerpf(1.0, Motion.amplitude(&"sticky_bump"), clampf(up, 0.0, 1.0))
+
+
+static func _caption_words(a: Array) -> String:
+	var parts := PackedStringArray()
+	for c in a:
+		parts.append(String(c[1]))
+	return "|".join(parts)
+
+
+func _note_caption_change(new: Array) -> void:
+	if captions.is_empty() or _caption_words(captions) == _caption_words(new) or not Motion.live(&"caption_crossfade") or not is_inside_tree():
+		return
+	var order := captions.duplicate()
+	order.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) < int(b[0]))
+	_old_captions = []
+	for k in mini(order.size(), _caption_rects.size()):
+		_old_captions.append([_caption_rects[k], String(order[k][1])])
+	if _caption_tween != null and _caption_tween.is_valid():
+		_caption_tween.kill()
+	_caption_fade = 0.0
+	var e := Motion.entry(&"caption_crossfade")
+	_caption_tween = create_tween()
+	_caption_tween.tween_method(func(v: float) -> void:
+		_caption_fade = v
+		queue_redraw(), 0.0, 1.0, Motion.seconds(&"caption_crossfade")).set_ease(e.ease).set_trans(e.trans)
+	_caption_tween.tween_callback(func() -> void: _old_captions = [])
 
 
 ## A best-ICE style number for a tag: NO_VALUE when there is none yet.
@@ -291,19 +427,23 @@ func _draw() -> void:
 		var mono := Palette.mono()
 		for k in mini(order.size(), _caption_rects.size()):
 			var cr := _caption_rects[k]
-			draw_line(Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.position.y), Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.end.y), Color(Palette.CELL_ACID, 0.35), 1.0)
-			draw_string(mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Palette.CELL_ACID)
+			draw_line(Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.position.y), Vector2(cr.end.x + CAPTION_GAP * s * 0.5, cr.end.y), Color(Palette.CELL_ACID, 0.35 * _caption_fade), 1.0)
+			draw_string(mono, Vector2(cr.position.x, cr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(order[k][1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, _caption_fade))
+		# The old captions fade out where they were (the cross-fade).
+		for oc in _old_captions:
+			var orr: Rect2 = oc[0]
+			draw_string(mono, Vector2(orr.position.x, orr.get_center().y + mono.get_ascent(cfs) * 0.5 - mono.get_descent(cfs) * 0.25), String(oc[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.CELL_ACID, 1.0 - _caption_fade))
 	for i in mini(items.size(), _rects.size()):
 		var it: Array = items[i]
 		var box := _rects[i]
 		var tilt := (-2.0 if i % 2 == 0 else 2.5) * PI / 180.0
-		draw_set_transform(box.get_center(), tilt, Vector2.ONE)
+		draw_set_transform(box.get_center(), tilt, Vector2.ONE * _bump_scale(String(it[0])))
 		var r := Rect2(-box.size * 0.5, box.size)
 		draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Palette.SHADOW)
 		draw_rect(r, PAPERS[i % PAPERS.size()])
 		draw_rect(r, Color(Palette.INK, 0.45), false, 1.0)
 		draw_rect(Rect2(Vector2(-13, r.position.y - 5), Vector2(26, 9)), Palette.NOTE_TAPE)
-		var value := String(it[1])
+		var value := shown_value(i)
 		var vs := roundi(VALUE_SIZE * s)
 		var icon_c: Vector2
 		var value_at: Vector2

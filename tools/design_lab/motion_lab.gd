@@ -50,18 +50,18 @@ const DEMOS := {
 	&"pointer_flicker": ["pulse_pointer", "wheel"], &"orbit_trail": ["view", "orbit"],
 	&"enemy_break": ["scene", "break"], &"hub_shatter": ["scene", "shatter"],
 	&"heat_pulse": ["heat", "stage"], &"heat_letters_shake": ["shake", "number"], &"poster_stamp": ["pop", "panel"], &"net_creep": ["fade_out", "panel"],
-	&"hq_crt_hum": ["pulse", "panel"], &"radio_type": ["type", "panel"], &"jack_ring_breathe": ["pulse_scale", "sticker"], &"polaroid_tilt": ["tilt", "card"],
+	&"hq_crt_hum": ["screen", "hum"], &"radio_type": ["screen", "radio"], &"jack_ring_breathe": ["screen", "jack"], &"polaroid_tilt": ["screen", "dossier"],
 	&"site_outline_draw": ["fade_in", "panel"], &"map_camera_ease": ["slide_x", "panel"], &"route_crawl": ["slide_x", "sticker"], &"asset_drop": ["drop", "card"],
 	&"raid_move": ["slide_x", "sticker"], &"turret_trace": ["blink", "sticker"], &"raid_flip": ["tilt", "sticker"],
 	&"route_pulse": ["blink", "sticker"], &"node_pop": ["pop", "sticker"], &"visited_dim": ["fade_to", "sticker"],
-	&"panel_in": ["slide_x", "panel"], &"panel_crt_roll": ["drop", "panel"], &"panel_drop": ["drop", "panel"],
-	&"menu_cursor_blink": ["pulse", "number"], &"menu_type": ["type", "panel"], &"menu_highlight": ["slide_x", "sticker"],
-	&"modem_sign_warmup": ["blink", "send"], &"modem_trace": ["fade_in", "panel"], &"buy_fly": ["fly", "card"], &"note_flap": ["tilt", "sticker"],
-	&"loot_fan": ["slide_x", "card"], &"loot_pick": ["fly", "card"], &"count_up": ["roll", "number"],
-	&"dispatch_type": ["type", "panel"], &"subtitle_bar_in": ["drop", "panel"],
-	&"drip_grow": ["fade_in", "send"], &"drip_halo": ["pulse", "send"],
-	&"beacon_blink": ["pulse", "sticker"], &"city_traffic": ["slide_x", "sticker"], &"hq_sign_flicker": ["blink", "send"],
-	&"sticky_bump": ["pop", "sticker"], &"number_roll": ["roll", "number"],
+	&"panel_in": ["screen", "glass"], &"panel_crt_roll": ["screen", "glass"], &"panel_drop": ["screen", "paper"],
+	&"menu_cursor_blink": ["screen", "menu"], &"menu_type": ["screen", "menu"], &"menu_highlight": ["screen", "menu"],
+	&"modem_sign_warmup": ["screen", "modem"], &"modem_trace": ["screen", "modem"], &"buy_fly": ["screen", "buy"], &"note_flap": ["screen", "flap"],
+	&"loot_fan": ["screen", "loot"], &"loot_pick": ["screen", "pick"], &"count_up": ["screen", "hud"],
+	&"dispatch_type": ["screen", "subtitle"], &"subtitle_bar_in": ["screen", "subtitle"],
+	&"drip_grow": ["screen", "drip"], &"drip_halo": ["screen", "halo"],
+	&"beacon_blink": ["pulse", "sticker"], &"city_traffic": ["screen", "city"], &"hq_sign_flicker": ["screen", "city"],
+	&"sticky_bump": ["screen", "hud"], &"number_roll": ["screen", "hud"],
 	&"ice_lock_ring": ["fade_in", "sticker"], &"decoy_fire": ["shake", "sticker"], &"raid_hit_effect": ["pop", "sticker"],
 	&"node_damage_number": ["lift", "number"], &"forecast_stamp_resolve": ["pop", "panel"],
 	&"card_pickup": ["scene", "aim"], &"drag_ghost_follow": ["scene", "drag"], &"drop_zone_pulse": ["scene", "aim"],
@@ -85,7 +85,21 @@ const DEMOS := {
 	&"minimap_pulse": ["pop", "sticker"], &"select_ring_ease": ["pop", "sticker"], &"legend_fold": ["drop", "panel"],
 	# ANIM-4 (HQ drag and drop; in context: hq_scene --demo-anim=drag_*):
 	&"drop_stamp": ["pop", "sticker"], &"market_fly": ["fly", "card"],
+	# ANIM-6 (screens): "screen" builds a fresh piece on the stage (a menu, the Modem sign, a
+	# loot row, the top bar, a dossier...) and plays the real motion on it.
+	&"saved_stamp_in": ["screen", "saved"], &"pad_prompts_in": ["fade_in", "sticker"], &"focus_tip_in": ["fade_in", "panel"],
+	&"event_outcome_pop": ["pop", "sticker"], &"event_choice_stamp": ["screen", "stamp"], &"sold_stamp": ["screen", "buy"],
+	&"caption_crossfade": ["screen", "caption"], &"city_sign_pick": ["screen", "city"],
 }
+
+## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
+## subtitle demo says, and how long the frames between a menu's focus moves are (s).
+const HUD_BEFORE := [["HEAT", "12", "/100"], ["SCHEMATICS", "40", ""], ["CYCLES", "85", ""], ["CARDS", "10", ""]]
+const HUD_AFTER := [["HEAT", "12", "/100"], ["SCHEMATICS", "40", ""], ["CYCLES", "140", ""], ["CARDS", "11", ""]]
+const SUBTITLE_TEXT := "Jacking you in. The rack is two hops out: keep your Heat down."
+const MENU_STEP := 0.45
+## How long a screen demo holds before it loops (s).
+const SCREEN_LOOP := 2.5
 
 ## Scene demos: the fight they run, and what the wheel demos turn and shift.
 const SCENE_ENEMY := &"collections_agent"
@@ -110,6 +124,8 @@ const NUMBER_RISE_SHARE := 0.7
 
 var _scene: Control = null
 var _scene_host: Control = null
+var _screen_host: Control = null
+var _hud: HudStats = null
 var _drag_ghost: DragGhost = null
 var _drag_frame: int = -1
 var _aim_frame: int = -1
@@ -273,7 +289,16 @@ func _record_rest() -> void:
 		_rest[key] = {"position": c.position, "scale": c.scale, "rotation": c.rotation, "modulate": c.modulate}
 
 
+## Takes a screen demo's piece away (the stage's own pieces show again).
+func _clear_screen() -> void:
+	if _screen_host != null:
+		_screen_host.queue_free()
+	_screen_host = null
+	_hud = null
+
+
 func _reset_stage() -> void:
+	_clear_screen()
 	for key in _pieces:
 		var c: Control = _pieces[key]
 		Motion.stop(c)
@@ -370,6 +395,9 @@ func _play() -> void:
 			Fx.jack_out(func() -> void: pass)
 		"view":
 			length = _play_view(String(demo[1]))
+		"screen":
+			_play_screen(String(demo[1]))
+			length = SCREEN_LOOP
 		"scene":
 			_play_scene(String(demo[1]))
 			length = maxf(LOOP_HOLD, Motion.seconds(&"resolve_sequence"))
@@ -387,9 +415,180 @@ func _replay_later(seconds: float) -> void:
 
 # --- Combat demos (ANIM-2 / ANIM-3) --------------------------------------------------------
 
+# --- Screen demos (ANIM-6) -------------------------------------------------------------------
+
+## A screen motion on a fresh piece over the stage (the stage's own pieces hide). Returns
+## its length (s).
+func _play_screen(what: String) -> void:
+	_show_scene(false)
+	if _screen_host != null:
+		_screen_host.queue_free()
+	_screen_host = Control.new()
+	_screen_host.name = "ScreenDemo"
+	_screen_host.position = Vector2(PANEL_W, 0)
+	_screen_host.size = Vector2(1280 - PANEL_W, 720)
+	add_child(_screen_host)
+	var bg := ColorRect.new()
+	bg.color = Palette.NIGHT_SKY
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_screen_host.add_child(bg)
+	_hud = HudStats.new()
+	_hud.position = Vector2(30, 16)
+	_hud.size = Vector2(820, 60)
+	_screen_host.add_child(_hud)
+	_hud.items = HUD_BEFORE.duplicate(true)
+	var length := LOOP_HOLD
+	match what:
+		"glass", "paper":
+			var page: Control = TerminalWindow.new("CITY GRID // SOLACE") if what == "glass" else ZinePanel.new("TERMINAL EVENT", -1.0)
+			page.position = Vector2(120, 160)
+			page.size = Vector2(560, 300)
+			var words := Label.new()
+			words.text = "%s\n%s\n> JACK IN" % [TYPE_TEXT, SUBTITLE_TEXT]
+			words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			words.add_theme_color_override("font_color", Palette.TERMINAL_TEXT if what == "glass" else Palette.INK)
+			(page.body if page is TerminalWindow else (page as ZinePanel).content).add_child(words)
+			_screen_host.add_child(page)
+			PageTransition.enter(page, PageTransition.Look.GLASS if what == "glass" else PageTransition.Look.PAPER)
+		"menu":
+			var win := TerminalWindow.new("REBEL_CELL // MAIN MENU")
+			win.position = Vector2(120, 140)
+			win.custom_minimum_size = Vector2(420, 0)
+			_screen_host.add_child(win)
+			for t in ["Continue", "Campaigns", "Tutorial", "Codex", "Options"]:
+				var b := Button.new()
+				b.text = t
+				b.theme_type_variation = &"MenuItem"
+				b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+				win.body.add_child(b)
+			MenuMotion.attach(win.body)
+			(win.body.get_child(0) as Button).grab_focus()
+			for k in 3:
+				var at := MENU_STEP * (k + 1)
+				get_tree().create_timer(at).timeout.connect(func() -> void:
+					if is_instance_valid(win):
+						(win.body.get_child(k + 1) as Button).grab_focus())
+			length = MENU_STEP * 4.0
+		"modem":
+			var sign := ModemSign.new()
+			sign.position = Vector2(300, 90)
+			sign.size = Vector2(230, 560)
+			_screen_host.add_child(sign)
+			sign.warm_up()
+			length = Motion.delay_of(&"modem_trace") + Motion.seconds(&"modem_trace")
+		"buy", "pick", "loot", "flap":
+			var row := HBoxContainer.new()
+			row.position = Vector2(160, 300)
+			row.add_theme_constant_override("separation", 14)
+			_screen_host.add_child(row)
+			for i in 3:
+				var card := ZineCard.new(["OVERCLOCK", "JAM", "CACHE"][i], i + 1, "Deal 8. Nudge +1.", i)
+				card.hotkey = ""
+				if what in ["buy", "flap"]:
+					card.with_price(45 + i * 20)
+					card.with_buy("BUY")
+				row.add_child(card)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			var first := row.get_child(1) as ZineCard
+			match what:
+				"loot":
+					var r := row.get_global_rect()
+					for i in 3:
+						(row.get_child(i) as ZineCard).fan_in(Vector2(r.get_center().x, r.end.y + 74.0), Motion.amplitude(&"loot_fan") * (i - 1.0), Motion.delay_of(&"loot_fan") * i)
+				"flap":
+					first.buy_button.flap(true)
+				"buy":
+					FlightFx.fly(self, first, _hud.icon_point(StatIcon.CARDS), &"buy_fly", "SOLD")
+					first.visible = false
+					_hud.items = HUD_AFTER.duplicate(true)
+				"pick":
+					FlightFx.fly(self, first, _hud.icon_point(StatIcon.CARDS), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+					first.visible = false
+					_hud.items = HUD_AFTER.duplicate(true)
+			length = 1.0
+		"stamp":
+			var b := Button.new()
+			b.text = "Pay them off (-20 Cycles)"
+			b.theme_type_variation = &"NoteButton"
+			b.position = Vector2(180, 300)
+			_screen_host.add_child(b)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			FlightFx.stamp_on(self, b, "")
+			b.visible = false
+		"hud":
+			await get_tree().process_frame
+			_hud.items = HUD_AFTER.duplicate(true)
+			length = Motion.seconds(&"count_up")
+		"caption":
+			_hud.captions = [[0, "CAMPAIGN"]]
+			await get_tree().process_frame
+			_hud.captions = [[0, "CAMPAIGN"], [2, "THIS RUN"]]
+		"subtitle":
+			Dialogue.clear()
+			Dialogue.dock_at(Rect2(PANEL_W + 30, 90, 820, 60), 2)
+			Dialogue.say(RC.Voice.DISPATCH, SUBTITLE_TEXT)
+			length = SUBTITLE_TEXT.length() * Motion.seconds(&"dispatch_type")
+		"drip", "halo":
+			DripButton.reset_growth()
+			var send := DripButton.new("SEND IT", "[Space]", DripButton.DRIP_PINK, 44, DripButton.SEND_IT_DRIPS)
+			send.position = Vector2(260, 280)
+			send.size = send.custom_minimum_size
+			_screen_host.add_child(send)
+			if what == "halo":
+				send.settle_motion()
+				send._set_hot(true)
+			length = Motion.seconds(&"drip_grow")
+		"saved":
+			Fx.show_saved()
+			length = Motion.delay_of(&"saved_stamp") + Motion.seconds(&"saved_stamp")
+		"hum", "radio", "jack", "dossier":
+			match what:
+				"hum":
+					var mon := TerminalWindow.new("CITY GRID // SOLACE")
+					mon.position = Vector2(120, 140)
+					mon.custom_minimum_size = Vector2(520, 260)
+					_screen_host.add_child(mon)
+					CrtHum.attach(mon)
+					length = Motion.entry(&"hq_crt_hum").duration * 2.0
+				"radio":
+					var radio := ZineNote.new("PIRATE RADIO", Vector2(300, 150))
+					radio.position = Vector2(200, 200)
+					_screen_host.add_child(radio)
+					radio.append(TYPE_TEXT)
+					radio.append("vs Solace Collections | ICE 0")
+					await get_tree().process_frame
+					length = Typing.type_in(radio.label, &"radio_type")
+				"jack":
+					var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
+					jack.icon_kind = StatIcon.JACK_IN
+					jack.position = Vector2(300, 240)
+					jack.size = Vector2(160, 160)
+					_screen_host.add_child(jack)
+					jack.breathe()
+					length = Motion.entry(&"jack_ring_breathe").duration * 2.0
+				"dossier":
+					var card := CrewCard.new("VEX", "BREAKER", 1, 30, 40, "HP 30/40 · DECK 10", -1.5)
+					card.position = Vector2(300, 150)
+					_screen_host.add_child(card)
+					await get_tree().process_frame
+					card.tilt_polaroid(true)
+		"city":
+			var city := NeonCity.new()
+			city.size = _screen_host.size
+			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			city.district = &"solace"
+			_screen_host.add_child(city)
+			_screen_host.move_child(_hud, -1)
+			length = Motion.entry(&"hq_sign_flicker").duration
+	print("motion_lab: screen demo %s, %.2f s" % [what, length])
+
+
 ## A motion on the lab's own wheel, card or SEND IT. Returns its length (s).
 func _play_view(what: String) -> float:
 	_show_scene(false)
+	_clear_screen()
 	var c := _wheel.combatant
 	var rot := float(c.wheel.rotation)
 	match what:
@@ -447,6 +646,7 @@ func _show_scene(on: bool) -> void:
 ## frames before the motion starts).
 func _play_scene(what: String) -> void:
 	_show_scene(true)
+	_clear_screen()
 	_scene.skip_motion()
 	_scene.cancel_selection()
 	_scene.start_fight(SCENE_ENEMY, SCENE_SEED)

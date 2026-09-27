@@ -237,6 +237,26 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   where it went, which shows as it lands.
 - Reduce effects and headless: no pulses, flights or marks, the end state at once. Values:
   `ui_motion.tres` (DECISIONS "Animation pass — ANIM-4"); strips `docs/timeline/motion/drag_*`.
+### 5.5 Screens, menus and ambience (the Animation pass, ANIM-6)
+- **Pages enter in their world's way** (`PageTransition`): glass slides in from an edge
+  with a one-frame CRT roll, paper drops in and settles on its tape; under 0.25 s. Only a
+  new screen enters (a page rebuilt after an action just shows). Focus lands when it ends;
+  any press completes it and does nothing else.
+- **Menus**: the highlight slides between lines, the new line types in (at most 0.18 s),
+  a block caret blinks after the focused line's words.
+- **Things you get fly to where they live** (`FlightFx`): a bought item stamps SOLD and
+  flies to its top bar icon, a picked loot card lifts and flies to CARDS, the chosen event
+  outcome stamps over the next screen. The state is already final; the flight replays it.
+- **Numbers**: a top bar tag whose value changed bumps (x1.08) and rolls to it; Cycles and
+  Schematics count up when they rise; CAMPAIGN / THIS RUN cross-fade.
+- **Words type in**: subtitles (the page's time starts once it is all shown), the event's
+  DISPATCH text, the pirate radio. Options can make them instant; the words are always
+  whole underneath, and any press shows them.
+- **Once, then hold**: drips grow the first time a tag appears; the Modem's tubes warm up
+  and its traces light on entry; hover gives one halo pulse. Idle loops are few and slow:
+  the deck monitor's hum, JACK IN breathing, the caret, a third of the HQ signs, sparse
+  traffic dashes on the busiest streets. All stop under reduce effects.
+- **Settings changes animate nothing** (text size, language): the page just re-lays out.
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

@@ -220,6 +220,23 @@ func deal_from(pile: Vector2, fan: float, delay: float) -> void:
 var _deal_tween: Tween = null
 
 
+## Loot (Animation pass ANIM-6, ANIMATION_HANDOFF 4.20): the sticker fans in from `from`
+## (global, the row's foot), turned `fan` degrees and clear, after `delay` (`loot_fan`).
+## Drawn only, like deal_from: the slot never moves.
+func fan_in(from: Vector2, fan: float, delay: float) -> void:
+	if not Motion.live(&"loot_fan"):
+		return
+	var e := Motion.entry(&"loot_fan")
+	draw_offset = from - get_global_rect().get_center()
+	draw_tilt = deg_to_rad(fan)
+	modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_interval(delay)
+	tw.tween_property(self, "modulate:a", 1.0, 0.0)
+	tw.tween_method(_deal_step.bind(draw_offset, draw_tilt), 0.0, 1.0, Motion.seconds(&"loot_fan")).set_ease(e.ease).set_trans(e.trans)
+	_deal_tween = tw
+
+
 func _deal_step(p: float, from: Vector2, tilt: float) -> void:
 	draw_offset = from * (1.0 - p)
 	draw_tilt = tilt * (1.0 - p)

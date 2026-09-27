@@ -350,6 +350,105 @@ rows marked ANIM-4).
   `drag_crew`, `drag_crew_cancel`, `drag_crew_refuse` (`--demo-grid`), `drag_loadout`,
   `drag_loadout_cancel` (`--demo-hq`) on the HQ scene; `--demo-tune` for variants.
 
+#### 2026-09-27 — Animation pass — ANIM-6: screens, menus and ambience
+Roadmap 4.13 (the HQ's non-map panels), 4.17-4.24. Strips with variants:
+`docs/timeline/motion/` (README table). Every value is in `ui_motion.tres`.
+- **Screen transitions** (`PageTransition`, 4.17): terminal glass slides in from an edge
+  (`panel_in` 0.22 s, 48 px, CUBIC out) with a one-frame CRT roll (`panel_crt_roll`: the
+  glass drops 6 px and a bright scan band crosses it for its first frame); paper drops in
+  and settles on its tape (`panel_drop` 0.22 s, 24 px, BACK out). A page's look comes from
+  its surface (`look_of`: a zine paper panel or note = paper). Snappy 0.14 s / 32 px read
+  as a cut; heavy 0.24 s / 96 px dragged on every page change; BOUNCE made paper jelly.
+  Used by the netrun (`_set_panel`: route, Modem, loot, event, raid, end), the HQ (home
+  from the left when coming back, Grid, raid, codex...), the title's pages (title → HQ is
+  the HQ's first page entering), the pause menu (drops), Options and the Codex inside it,
+  the confirm dialog and a newly recruited dossier. The helper moves the page by an
+  offset from wherever its container lays it out, so it works in any container; the page
+  is clear for its first frame (before layout). **A page rebuilt on the same screen does
+  not re-enter** (the Modem after a purchase, the HQ after every action): only a new
+  screen does (`entering`). **Focus lands when it ends**; any key, button or click during
+  it completes it (and the fans, drips, typing and the sign under it,
+  `PageTransition.settle`) and does nothing else, like a SEND IT skip.
+- **Menus** (`MenuMotion`, 4.18) on the title's main menu, the HQ deck menu and the pause
+  menu: the focus box slides from the old line to the new (`menu_highlight` 0.12 s QUAD
+  out), the new line types in (`menu_type` 0.02 s a character, at most 0.18 s a line: its
+  new amplitude; 0.4 s felt like waiting on the menu), and a block caret blinks after the
+  focused line's words (`menu_cursor_blink` 0.5 s half-period; we read "the `> ITEM`
+  cursor" as the terminal caret on the selected line). Typing holds the line's size, so
+  nothing moves; a key press completes it; the first focus after a page opens shows at
+  once (the page entrance is the motion then). The caret is steady under reduce effects.
+- **Modem** (4.19): on entering, the neon tubes warm up (`modem_sign_warmup` 0.8 s: each
+  tube lights at hash-picked steps, unlit = its colour darkened) and the circuit traces
+  light one after another from 0.35 s, CYBER SHOP last (`modem_trace` 0.6 s). 0.45 s
+  missed the flicker; 1.2 s left the sign dark while the player shops. A purchase: SOLD
+  stamps on the item (`sold_stamp` x1.5 → 1, 0.14 s BACK), then a picture of it flies to
+  its top bar icon (`buy_fly` 0.4 s CUBIC in-out, arriving at x0.35: cards to CARDS,
+  Daemons to DAEMONS, chips and slices to VIEW LOADOUT) while Cycles roll down. The BUY /
+  SHRED stickers flap on their tape while their item is hovered or focused (`note_flap`
+  4°). **`FlightFx`** is the shared flight / stamp layer (a CanvasLayer on the screen, so a
+  page rebuilt under it does not cut it): `fly(screen, source, to, id, stamp, lift)`,
+  `fly_node(...)` for a node copy, `stamp_on(...)`, `finish_all`, `active_count` — open to
+  ANIM-4 (asset drops). The picture is the source's last drawn frame (one viewport read
+  on the click); headless it is a paper card of the same size.
+- **Loot** (4.20): the stickers fan in from the foot of their row (`loot_fan` 0.3 s CUBIC
+  out, 0.06 s stagger, 8° a card; drawn offsets, the slots never move); the picked card
+  lifts 12 px and flies to the CARDS tag (`loot_pick` 0.35 s, its amplitude is the lift);
+  Cycles and Schematics **count up** on the top bar when they rise (`count_up` 0.6 s).
+- **Subtitles** (4.21): each page types in at 0.025 s a character (40 cps: ahead of
+  reading, so it never holds the reader back; 0.045 s felt slow on long DISPATCH lines),
+  the inline speaker's name shows at once, the bar slides in from above (`subtitle_bar_in`
+  0.2 s, 40 px) when it appears. **Paging respects the typed text**: a page's time starts
+  once its words are all shown. Any press shows the page whole. Options → Accessibility has
+  "Subtitles type in (off: each line shows at once)" (`Settings.subtitle_typing`, on by
+  default, saved). Only `visible_characters` changes, so `current_text()` and tests read
+  the whole page at once. The Terminal event's text types in the same way (`Typing`).
+- **Drip lettering** (4.22): the drips grow from the letters the first time a tag appears
+  this session (`drip_grow` 0.6 s QUAD out; a page rebuilt with the same tag does not
+  regrow it), then hold; hovering or focusing gives one halo pulse (the jitter reaches out
+  to twice and back, `drip_halo` 0.4 s), then the steady halo. Nothing loops. ELASTIC
+  wobbled like jelly; 0.35 s was missed.
+- **City ambience** (4.23): the live dashes now show only on the busiest streets
+  (`city_traffic` amplitude 0.55 of the street's traffic, 2.8 s along a lot; they were
+  every recorded spark at 0.3 / 1.4 s) as short bright dashes with a white core; only a
+  third of the HQ name signs flicker (`city_sign_pick` 0.34, `hq_sign_flicker` period
+  3.2 s, a 0.22 s dip to 0.45 alpha). Both stop under reduce effects. The city stays one
+  baked draw plus the light FX layer. **Profile** (`tools/design_lab/profile_frames.gd`,
+  600 frames after 120 warm-up, vsync off, RX 6700 XT, 1280x720): title (the whole-screen
+  panning city) mean 1.07 ms before and 1.07 ms after (p95 1.39-1.58 → 1.45-1.50), 0.77 ms
+  with reduce effects; HQ `--demo-hq` (city through the window plus the HQ idle) 2.08 ms
+  before → 1.89 ms after (p95 2.52-2.74 → 2.23-2.40, GPU 0.90-1.11 → 0.95-0.99 ms), 1.70 ms
+  with reduce effects. The ambience costs nothing measurable.
+- **Top bar** (4.24): a tag whose value changed bumps (`sticky_bump` x1.08, 0.12 s BACK)
+  and its number rolls from the old value (`number_roll` 0.3 s; `count_up` for rising
+  Cycles / Schematics). Tags are matched by name, so only a changed value moves; drawn
+  only (rects never move). The CAMPAIGN / THIS RUN captions cross-fade when the set
+  changes (`caption_crossfade` 0.2 s). x1.15 over 0.2 s shouted on every purchase.
+- **HQ idle** (4.13): the deck monitor hums (`CrtHum`: a faint band rolls down the glass
+  once per 2 s, 0.06 alpha), JACK IN's rings breathe (1 ↔ 1.04 over 2.4 s each way), the
+  pirate radio types in on arrival (`radio_type` 0.03 s a character), a crew Polaroid
+  tilts 3° further while its dossier is hovered (`polaroid_tilt`, from wherever the
+  dossier lays it out), a new recruit's dossier drops in on its tape, and a Black Market
+  boost or unlock stamps SOLD where its button was. The strong hum (0.14) read as a fault.
+- **Event** (4.19-4.21 family): a choice's outcome icons pop when it is hovered or
+  focused (`event_outcome_pop` x1.15); the chosen outcome stamps down over the next screen
+  as it comes in, holds and fades (`event_choice_stamp` 0.6 s).
+- **Small pieces**: the pad prompt row fades in when its prompts change
+  (`pad_prompts_in`), a focus tip fades in (`focus_tip_in`), the SAVED stamp stamps down
+  (`saved_stamp_in` x1.35 → 1) before its hold and fade.
+- **Text size / language changes**: nothing animates (checked: a settings change re-lays
+  the page out with no entrance, flight or bump; tested).
+- **Reduce effects / headless**: every piece shows its end state at once (no helper node
+  is even created), focus is given at once as before, flights and stamps are skipped.
+  Scene captures take `--demo-set` / `--demo-speed` (`MotionDemo`), and the netrun has
+  `--demo-buy`, `--demo-pick`, `--demo-choose` to act 30 frames in.
+- New ids (data only, required by content validation): `saved_stamp_in`,
+  `pad_prompts_in`, `focus_tip_in`, `event_outcome_pop`, `event_choice_stamp`,
+  `sold_stamp`, `caption_crossfade`, `city_sign_pick`. Retuned meanings (comments in the
+  .tres): `menu_type` amplitude = most seconds a line, `buy_fly` amplitude = every
+  flight's arrival scale, `loot_pick` amplitude = lift px, `city_traffic` = seconds a lot
+  and the traffic a street needs, `hq_sign_flicker` delay = dip seconds, `modem_trace`
+  delay 0.35 s. No schema change. Words added: "SOLD", the typing switch's label.
+
 #### 2026-09-27 — Animation pass — ANIM-3: card targeting and execution
 - **Hover** (`card_hover`, 0.15 s, 12 px): the sticker lifts, tilts from its resting
   angle to 0 and glows. The lift and the deal-in offset are *drawn* offsets

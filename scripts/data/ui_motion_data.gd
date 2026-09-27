@@ -47,6 +47,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"jack_scanlines", &"raid_step_gap", &"home_lag", &"minimap_pulse", &"select_ring_ease", &"legend_fold",
 	# Animation pass ANIM-4 (HQ drag and drop):
 	&"drop_stamp", &"market_fly",
+	# Animation pass ANIM-6 (screens, menus and ambience): ids the screen motion added.
+	&"saved_stamp_in", &"pad_prompts_in", &"focus_tip_in", &"event_outcome_pop", &"event_choice_stamp",
+	&"sold_stamp", &"caption_crossfade", &"city_sign_pick",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

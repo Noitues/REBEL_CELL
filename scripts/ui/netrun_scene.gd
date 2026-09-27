@@ -83,6 +83,13 @@ var _route_buttons: Array[Button] = []
 var route_legend: RouteLegend = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
+## The screen on show (screen_name) and whether the last page entered a new screen (its
+## entrance plays) or refreshed the same one (Animation pass ANIM-6).
+var _shown_screen: String = ""
+var entering: bool = false
+## Capture demos (--demo-buy / --demo-pick / --demo-choose) act this many frames in, once
+## the screen has come in.
+const DEMO_ACTION_FRAMES := 30
 
 ## Event types that pop a toast (H20: the log strip is optional).
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
@@ -93,6 +100,8 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
+	MotionDemo.apply_args()
 	_build_ui()
 	var args := OS.get_cmdline_user_args()
 	for a in args:
@@ -128,6 +137,9 @@ func _ready() -> void:
 			open_overwrite(1)
 		elif args.has("--demo-deckgrid"):
 			open_remove()
+		elif args.has("--demo-buy"):
+			# Capture (ANIM-6): the first card is bought once the Modem has come in.
+			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: buy("cards", 0))
 		return
 	if args.has("--demo-event") or args.has("--demo-dispatch") or args.has("--demo-loot"):
 		# Screenshot shortcuts for the Terminal event (street / DISPATCH voice) and loot.
@@ -142,6 +154,11 @@ func _ready() -> void:
 			run.event_id = &"ev_dispatch_early_reply" if args.has("--demo-dispatch") else &"ev_leash_on_the_floor"
 			run.phase = RunState.Phase.EVENT
 		_show_current()
+		# Capture (ANIM-6): the loot's second card is picked / the first choice is taken.
+		if args.has("--demo-pick"):
+			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_reward(1))
+		elif args.has("--demo-choose"):
+			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_event(0))
 		return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
@@ -275,7 +292,13 @@ func _end_travel() -> void:
 
 
 func choose_reward(index: int, slot: int = -1) -> void:
-	_report(RunManager.netrun.choose_reward(index, slot))
+	var s := RunManager.netrun
+	var offer := s.current_reward() if s.run.phase == RunState.Phase.REWARD else {}
+	var left := s.run.pending_rewards.size()
+	_report(s.choose_reward(index, slot))
+	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
+	if s.run.pending_rewards.size() < left and not offer.is_empty():
+		_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
 	RunManager.after_step()
 	_show_current()
 
@@ -287,15 +310,55 @@ func skip_reward() -> void:
 
 
 func choose_event(index: int) -> void:
-	_report(RunManager.netrun.choose_event_option(index))
+	var s := RunManager.netrun
+	var phase := s.run.phase
+	var chosen := _panel.find_child("Choice%d" % (index + 1), true, false) as Control if _panel != null else null
+	_report(s.choose_event_option(index))
+	# The chosen outcome stamps (ANIM-6) over the next screen as it comes in.
+	if phase == RunState.Phase.EVENT and s.run.phase != RunState.Phase.EVENT and chosen != null:
+		var row := chosen.get_node_or_null(^"OutcomeRow") as Control
+		FlightFx.stamp_on(self, row if row != null else chosen, "")
 	RunManager.after_step()
 	_show_current()
 
 
 func buy(kind: String, index: int, slot: int = -1) -> void:
-	_report(RunManager.netrun.buy(kind, index, slot))
+	var s := RunManager.netrun
+	var cycles := s.run.cycles
+	var item := _page_item({"cards": "Stickers", "firmware": "Chips", "daemons": "Daemons"}.get(kind, ""), index)
+	_report(s.buy(kind, index, slot))
+	# Bought (ANIM-6): SOLD stamps on its price and the item flies to its top bar icon.
+	if s.run.cycles < cycles:
+		_fly_item(item, kind.trim_suffix("s"), &"buy_fly", tr("SOLD"))
 	RunManager.after_step()
 	_show_current()
+
+
+## Item `index` of the row named `row` on the page on screen (a loot or shop sticker).
+func _page_item(row: String, index: int) -> Control:
+	var holder := _panel.find_child(row, true, false) if _panel != null and row != "" else null
+	if holder == null or index < 0 or index >= holder.get_child_count():
+		return null
+	return holder.get_child(index) as Control
+
+
+## Where an item of `kind` goes on the top bar: a card to CARDS, a Daemon to the DAEMONS
+## icon, a Firmware chip or a slice to VIEW LOADOUT (global).
+func item_target(kind: String) -> Vector2:
+	match kind:
+		"card":
+			var p := hud.stats.icon_point(StatIcon.CARDS)
+			if p != Vector2.INF:
+				return p
+		"daemon":
+			if hud.daemon_button.is_visible_in_tree():
+				return hud.daemon_button.get_global_rect().get_center()
+	return hud.loadout_button.get_global_rect().get_center() if hud.loadout_button.is_visible_in_tree() else hud.get_global_rect().get_center()
+
+
+func _fly_item(item: Control, kind: String, id: StringName, stamp: String = "", lift: float = 0.0) -> void:
+	if item != null:
+		FlightFx.fly(self, item, item_target(kind), id, stamp, lift)
 
 
 func remove_card(deck_index: int) -> void:
@@ -401,13 +464,21 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 	_clear_route()
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
+	var s := RunManager.netrun
+	# ANIM-6: a new screen enters (glass slides in, paper drops); a page rebuilt on the same
+	# screen (the Modem after a purchase) just shows. Focus lands when it ends.
+	var screen := screen_name(s)
+	entering = screen != _shown_screen
+	_shown_screen = screen
 	if p.has_method("focus_hand"):
 		p.focus_hand()  # the combat scene links and focuses its own hand
 	else:
 		UiWrap.fit(p)
 		UiFocus.link_layout(p)
-		UiFocus.focus_first(p)
-	var s := RunManager.netrun
+		if entering:
+			PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p))
+		else:
+			UiFocus.focus_first(p)
 	_title_screen(s)
 	pad_prompts.set_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
 	# H24 S15: lines tied to the screen being left end here.
@@ -994,6 +1065,23 @@ func _show_reward() -> void:
 	var wrap := CenterContainer.new()
 	wrap.add_child(win)
 	_set_panel(wrap, false)
+	if entering:
+		_fan_loot.call_deferred(stickers)
+
+
+## The loot fans in from the foot of its row, one after another (ANIM-6, `loot_fan`).
+func _fan_loot(row: Control) -> void:
+	if not is_instance_valid(row) or not row.is_inside_tree():
+		return
+	var r := row.get_global_rect()
+	var n := row.get_child_count()
+	for i in n:
+		var card := row.get_child(i) as ZineCard
+		if card == null:
+			continue
+		var from := Vector2(r.get_center().x, r.end.y + card.size.y * 0.5)
+		var fan := Motion.amplitude(&"loot_fan") * (float(i) - (n - 1) * 0.5)
+		card.fan_in(from, fan, Motion.delay_of(&"loot_fan") * i)
 
 
 ## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
@@ -1075,7 +1163,11 @@ func _show_event() -> void:
 		# H23 S9: no numbers for a change that is none; H24 S9: a choice that changes nothing
 		# says so with the neutral "no change" mark (it showed nothing at all).
 		var numbers := OutcomeRow.shown(outcome)
-		OutcomeRow.attach(b, OutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change()))
+		var row := OutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
+		OutcomeRow.attach(b, row)
+		# ANIM-6: the outcome's icons pop when the choice is hovered or focused.
+		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
+		b.focus_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
 	options.add_child(GraffitiScrawl.new(tr("PLAY IT\nSAFE??"), -6.0, 24))
 	# H24 S9: the choices keep clear of the screen's right edge (their border was cut).
 	options.custom_minimum_size.x = 0.0
@@ -1085,6 +1177,8 @@ func _show_event() -> void:
 	right_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	split.add_child(right_gap)
 	_set_panel(box, false)
+	if entering:
+		Typing.type_in(text)
 
 
 ## A spinner slot by what is in it, never by ids (H21 #12: "crit_12" in the socket list):
@@ -1295,6 +1389,8 @@ func _show_shop() -> void:
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
 	_set_panel(root, false)
+	if entering:
+		sign.warm_up()
 
 
 ## What a shop item does in words (H23 S8: microchips showed no description): the

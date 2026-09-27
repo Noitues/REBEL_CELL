@@ -28,6 +28,8 @@ var continue_slot: String = ""
 
 func _ready() -> void:
 	UiTheme.apply(self)
+	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
+	MotionDemo.apply_args()
 	# Subtitles still on screen from a campaign sit in the top band over the header, clear
 	# of every menu (H20).
 	Dialogue.dock_default()
@@ -117,6 +119,9 @@ func _set_panel(p: Control, name: String) -> void:
 	if _panel != null:
 		_panel.queue_free()
 	_panel = p
+	# ANIM-6: each page enters (glass slides in, back to the main menu from the left; paper
+	# drops); focus lands when it ends.
+	var back := name == "main" and panel_name != ""
 	panel_name = name
 	# H24 S4: the page shows its words as given (translated once where built).
 	TextDb.shown_as_given(p)
@@ -124,7 +129,7 @@ func _set_panel(p: Control, name: String) -> void:
 	Dialogue.enter_screen("title")
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
-	UiFocus.focus_first(p)
+	PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
 
 
 func show_main() -> void:
@@ -155,6 +160,8 @@ func show_main() -> void:
 	for b in box.get_children():
 		b.theme_type_variation = &"MenuItem"
 		(b as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+	# ANIM-6: the highlight slides, the line types in, the caret blinks.
+	MenuMotion.attach(box)
 	row.add_child(menu)
 	# Right column: system readout, the plan on a taped note and a scrawl.
 	var side := VBoxContainer.new()

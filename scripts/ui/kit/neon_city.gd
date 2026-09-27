@@ -53,22 +53,26 @@ const LIGHT_PERIOD_SPREAD := 5.0
 const LIGHT_ON_SHARE := 0.7
 const LIGHT_GLOW := 3.0
 const LIGHTS_MAX := 220
-## Traffic sparks: streets at least this busy, this share of their lots, speed (lanes per
-## second) and length (share of a lot).
+## Traffic dashes (Animation pass ANIM-6, ANIMATION_HANDOFF 4.23): the geometry records a
+## spark on streets at least SPARK_TRAFFIC busy (SPARK_PICK of their lots); the live layer
+## shows only those on the busiest streets (`city_traffic`: amplitude = the traffic a
+## street needs, duration = seconds along one lot), as short bright dashes (SPARK_LENGTH of
+## a lot, a white core over the street's ink).
 const SPARK_TRAFFIC := 0.3
 const SPARK_PICK := 0.35
-const SPARK_SPEED := 0.35
-const SPARK_LENGTH := 0.35
+const SPARK_LENGTH := 0.18
+const SPARK_CORE := 0.55
 const SPARKS_MAX := 120
+const TRAFFIC_MOTION := &"city_traffic"
 ## Beacons blink per the `beacon_blink` motion entry: lit for its amplitude (share) of its
-## duration (the period, seconds); signs dip for SIGN_DIP of every SIGN_FLICKER_PERIOD
-## seconds, to SIGN_DIP_ALPHA. Window lights and beacons blink on the GPU (city_lights
-## shader); sparks and signs are the only per-frame drawing.
+## duration (the period, seconds). A few HQ signs flicker (`city_sign_pick`: the share, by
+## hash; `hq_sign_flicker`: duration = period, delay = dip seconds, amplitude = the dip's
+## alpha). Window lights and beacons blink on the GPU (city_lights shader); dashes and signs
+## are the only per-frame drawing, and reduce effects stops both.
 const BEACON_MOTION := &"beacon_blink"
 const BEACONS_MAX := 240
-const SIGN_FLICKER_PERIOD := 3.2
-const SIGN_DIP := 0.07
-const SIGN_DIP_ALPHA := 0.45
+const SIGN_MOTION := &"hq_sign_flicker"
+const SIGN_PICK_MOTION := &"city_sign_pick"
 
 ## Tile half-width / half-height of the isometric grid (2:1).
 const TILE_A := 34.0
@@ -964,7 +968,7 @@ func _collect_live() -> void:
 	_live_for = sig
 	var vis := Rect2(-_shift, size).grow(LIGHT_GLOW * 4.0)
 	_live_lights = _pick_visible(_lights, vis, "a", LIGHTS_MAX)
-	_live_trails = _pick_visible(_trails, vis, "a", SPARKS_MAX)
+	_live_trails = _pick_visible(_busy_trails(), vis, "a", SPARKS_MAX)
 	_live_beacons = _pick_visible(_beacons, vis, "pos", BEACONS_MAX)
 	_lights_layer.queue_redraw()
 	_beacons_layer.queue_redraw()
@@ -1040,6 +1044,17 @@ static func _submit(layer: Control, pts: PackedVector2Array, cols: PackedColorAr
 ## Deterministic 0-1 hash of a point (view decoration only).
 func _hv(p: Vector2) -> float:
 	return _h(int(p.x), int(p.y), 120)
+
+
+## The traffic sparks on the busiest streets (`city_traffic`'s amplitude: the traffic a
+## street needs), the only ones the live layer draws.
+func _busy_trails() -> Array[Dictionary]:
+	var least := Motion.amplitude(TRAFFIC_MOTION)
+	var out: Array[Dictionary] = []
+	for t in _trails:
+		if float(t.get("traffic", 1.0)) >= least:
+			out.append(t)
+	return out
 
 
 ## Up to `cap` items whose `field` point lies in `vis`, spread evenly over the list.
@@ -1172,7 +1187,7 @@ func _draw_city() -> void:
 		_draw_shade(self)
 	var vis := Rect2(Vector2.ZERO, size).grow(LIGHT_GLOW * 4.0)
 	_live_lights = _pick_visible(_lights, vis, "a", LIGHTS_MAX)
-	_live_trails = _pick_visible(_trails, vis, "a", SPARKS_MAX)
+	_live_trails = _pick_visible(_busy_trails(), vis, "a", SPARKS_MAX)
 	_live_beacons = _pick_visible(_beacons, vis, "pos", BEACONS_MAX)
 	_lights_layer.queue_redraw()
 	_beacons_layer.queue_redraw()
@@ -1687,7 +1702,7 @@ func _street(i: int, j: int, along_i: bool, along_j: bool) -> void:
 		# A traffic spark for the live layer, sliding along this lot of the street.
 		var lane_off := nn * (_h(i, j, 64) - 0.5) * 6.0
 		var fwd := _h(i if along_i else 0, 0 if along_i else j, 66) < 0.5
-		_trails.append({"a": (a if fwd else b) + lane_off, "b": (b if fwd else a) + lane_off, "color": col, "phase": _h(i, j, 65), "width": 2.0})
+		_trails.append({"a": (a if fwd else b) + lane_off, "b": (b if fwd else a) + lane_off, "color": col, "phase": _h(i, j, 65), "width": 2.0, "traffic": traffic})
 	# Fine-tip marker: the street's width is built from many skinny strokes laid side by
 	# side, each a little crooked and overlapping its neighbours. Busy streets get more
 	# strokes (up to ~12) and so read wider; quiet ones 2-3.
@@ -2419,28 +2434,37 @@ func _draw_fx() -> void:
 			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)
 	# Everything below was recorded in the image's space (baked) or the city's (not).
 	_fx.draw_set_transform(_shift)
+	var flicker := Motion.live(SIGN_MOTION)
+	var period := maxf(0.1, Motion.entry(SIGN_MOTION).duration)
+	var dip := Motion.entry(SIGN_MOTION).delay / period
+	var pick := Motion.amplitude(SIGN_PICK_MOTION)
 	for sg in _signs:
 		var p: Vector2 = sg["pos"]
 		var col: Color = sg["color"]
-		# Neon flicker: a short dip now and then (hash-phased per sign, never faster
-		# than one dip per SIGN_FLICKER_PERIOD).
-		var ph := fmod(anim_t / SIGN_FLICKER_PERIOD + _hv(p), 1.0)
-		if ph < SIGN_DIP:
-			col = Color(col, SIGN_DIP_ALPHA)
+		# Neon flicker on a few signs: a short dip once a period (hash-phased and hash-picked
+		# per sign, so the city never strobes).
+		if flicker and _h(int(p.x), int(p.y), 121) < pick:
+			var ph := fmod(anim_t / period + _hv(p), 1.0)
+			if ph < dip:
+				col = Color(col, Motion.amplitude(SIGN_MOTION))
 		var w := Palette.mono().get_string_size(sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 14
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(Palette.NIGHT_SKY, 0.85))
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(col, 0.2 * col.a), false, 5.0)
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), col, false, 1.2)
 		_fx.draw_string(Palette.mono(), p + Vector2(7, 16), sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, col.lightened(0.3))
-	# Traffic: bright sparks sliding along the busy lanes. (Window lights and beacons
-	# blink on the GPU: _draw_lights / _draw_beacons.)
-	for t in _live_trails:
-		var a: Vector2 = t["a"]
-		var b: Vector2 = t["b"]
-		var k := fmod(float(t["phase"]) + anim_t * SPARK_SPEED, 1.0)
-		var p := a.lerp(b, k)
-		var col: Color = t["color"]
-		_fx.draw_line(p, p + (b - a) * SPARK_LENGTH, Color(col, 0.6), float(t.get("width", 2.0)))
+	# Traffic: small bright dashes sliding along the busiest lanes. (Window lights and
+	# beacons blink on the GPU: _draw_lights / _draw_beacons.)
+	if Motion.live(TRAFFIC_MOTION):
+		var speed := 1.0 / maxf(0.1, Motion.entry(TRAFFIC_MOTION).duration)
+		for t in _live_trails:
+			var a: Vector2 = t["a"]
+			var b: Vector2 = t["b"]
+			var k := fmod(float(t["phase"]) + anim_t * speed, 1.0)
+			var p := a.lerp(b, k)
+			var col: Color = t["color"]
+			var w := float(t.get("width", 2.0))
+			_fx.draw_line(p, p + (b - a) * SPARK_LENGTH, Color(col.lightened(0.3), 0.9), w)
+			_fx.draw_line(p + (b - a) * SPARK_LENGTH * 0.3, p + (b - a) * SPARK_LENGTH * 0.8, Color(1, 1, 1, SPARK_CORE), w * 0.5)
 	_fx.draw_set_transform(Vector2.ZERO)
 	if rain:
 		var off := fmod(anim_t * 480.0, 80.0)

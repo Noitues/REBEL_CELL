@@ -86,6 +86,25 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	orders = VBoxContainer.new()
 	orders.add_theme_constant_override("separation", 4)
 	box.add_child(orders)
+	# Animation pass ANIM-6 (4.13): the Polaroid tilts a little while the dossier is hovered.
+	mouse_entered.connect(tilt_polaroid.bind(true))
+	mouse_exited.connect(tilt_polaroid.bind(false))
+
+
+## Tilts the Polaroid `polaroid_tilt` degrees further (hover) or back to its rest.
+func tilt_polaroid(on: bool) -> void:
+	if polaroid == null or not polaroid.is_inside_tree():
+		return
+	if on and not _tilted:
+		# Its rest as the dossier lays it out (the box straightens it).
+		_polaroid_rest = polaroid.rotation_degrees
+	_tilted = on
+	polaroid.pivot_offset = polaroid.size * 0.5
+	Motion.run(&"polaroid_tilt", polaroid, ^"rotation_degrees", _polaroid_rest + (Motion.amplitude(&"polaroid_tilt") if on else 0.0))
+
+
+var _tilted: bool = false
+var _polaroid_rest: float = 0.0
 
 
 ## Whether dossiers are compact at the current text size (H24 S11).

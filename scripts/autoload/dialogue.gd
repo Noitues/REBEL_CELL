@@ -177,6 +177,8 @@ func lines_fitting(rect: Rect2) -> int:
 ## `max_lines` > 0 a longer line is shown as pages of at most that many lines, one after
 ## the other, so the bar never grows past the rect's neighbours at any text scale.
 func dock_at(rect: Rect2, max_lines: int = 0) -> void:
+	# A bar sliding in lands where the new dock puts it.
+	Motion.stop(bar)
 	bar.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	bar.offset_left = rect.position.x
 	bar.offset_top = rect.position.y
@@ -396,8 +398,60 @@ static func own_speaker(name: String, words: String) -> PackedStringArray:
 func clear() -> void:
 	_queue.clear()
 	_timer = null
+	finish_typing()
+	Motion.stop(bar)
 	bar.visible = false
 	_shown_scope = ""
+
+
+# --- Typing (Animation pass ANIM-6, ANIMATION_HANDOFF 4.21) ------------------------------------
+
+var _type_tween: Tween = null
+
+
+## True while the line on screen is still typing in.
+func typing() -> bool:
+	return _type_tween != null and _type_tween.is_valid()
+
+
+## Shows the whole page at once (a press, the instant setting, a new line).
+func finish_typing() -> void:
+	if _type_tween != null and _type_tween.is_valid():
+		_type_tween.kill()
+	_type_tween = null
+	if text_label != null:
+		text_label.visible_characters = -1
+
+
+## Whether lines type in now: the setting (Options: typing, or instant) and motion playing.
+func types_in() -> bool:
+	var s: Node = get_node_or_null("/root/Settings")
+	return (s == null or bool(s.subtitle_typing)) and Motion.live(&"dispatch_type")
+
+
+## Types the page in from character `from` (the inline speaker's name shows at once);
+## returns the seconds it takes (0 when it shows whole).
+func _type_page(from: int) -> float:
+	finish_typing()
+	if not types_in() or not bar.visible:
+		return 0.0
+	var total := text_label.get_total_character_count()
+	if total <= from:
+		return 0.0
+	var seconds := (total - from) * Motion.seconds(&"dispatch_type")
+	text_label.visible_characters = from
+	var e := Motion.entry(&"dispatch_type")
+	_type_tween = create_tween()
+	_type_tween.tween_property(text_label, "visible_characters", total, seconds).set_ease(e.ease).set_trans(e.trans)
+	_type_tween.tween_callback(func() -> void: text_label.visible_characters = -1)
+	return seconds
+
+
+func _input(event: InputEvent) -> void:
+	# Any press shows the typing page whole (never consumed: the press still acts).
+	if typing() and ((event is InputEventKey and event.pressed and not event.echo) or (event is InputEventJoypadButton and event.pressed) \
+			or (event is InputEventMouseButton and event.pressed)):
+		finish_typing()
 
 
 func is_showing() -> bool:
@@ -412,6 +466,7 @@ func current_text() -> String:
 func _next() -> void:
 	if _queue.is_empty():
 		_timer = null
+		finish_typing()
 		bar.visible = false
 		_shown_scope = ""
 		return
@@ -465,8 +520,14 @@ func _next() -> void:
 		shown = "[color=#%s]%s:[/color] %s%s" % [speaker_label.get_theme_color("font_color").to_html(false), _escape(shown_name), _escape(_shown), mark]
 	text_label.text = shown
 	_fit_page(pages[0] + mark)
+	var was_up := bar.visible
 	bar.visible = _subtitles_on()
-	_timer = get_tree().create_timer(float(line["seconds"]))
+	if bar.visible and not was_up:
+		# The bar slides in from above (subtitle_bar_in); a bar already up stays put.
+		Motion.slide_in(bar, Vector2(0.0, -Motion.amplitude(&"subtitle_bar_in")), &"subtitle_bar_in")
+	# Paging waits for the typing: the page's time starts once its words are all shown.
+	var typed := _type_page(shown_name.length() + 1 if inline and pages[0].begins_with(shown_name + ":") else 0)
+	_timer = get_tree().create_timer(float(line["seconds"]) + typed)
 	var t := _timer
 	_timer.timeout.connect(func() -> void:
 		if _timer == t:
@@ -500,6 +561,8 @@ func _subtitles_on() -> bool:
 func _on_settings_changed() -> void:
 	if not _subtitles_on():
 		bar.visible = false
+	if not types_in():
+		finish_typing()
 	_apply_text_scale()
 
 

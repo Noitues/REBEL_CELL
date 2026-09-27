@@ -34,6 +34,65 @@ var _hot: bool = false
 var squash: float = 1.0
 var drip_run: float = 0.0
 var _press_tween: Tween = null
+## Animation pass ANIM-6 (ANIMATION_HANDOFF 4.22): the drips grow from the letters the first
+## time a tag appears this session (`drip_grow`; 0 = just a bead at the letter, 1 = full),
+## then hold. Hover / focus: one halo pulse (`drip_halo`: the jitter reaches out and back),
+## then the steady halo. Nothing loops.
+var grow: float = 1.0
+var halo_pulse: float = 1.0
+var _grow_tween: Tween = null
+var _halo_tween: Tween = null
+## Tags that have grown this session (a tag grows once; a rebuilt page doesn't regrow it).
+static var _grown: Dictionary = {}
+
+
+## Forgets which tags have grown (the motion lab replays the growth).
+static func reset_growth() -> void:
+	_grown.clear()
+
+
+## Grows the drips now if this tag has not grown this session.
+func grow_in() -> void:
+	if _grown.has(tag_text) or not is_visible_in_tree():
+		return
+	_grown[tag_text] = true
+	if not Motion.live(&"drip_grow"):
+		return
+	var e := Motion.entry(&"drip_grow")
+	grow = 0.0
+	_grow_tween = create_tween()
+	_grow_tween.tween_method(func(v: float) -> void:
+		grow = v
+		queue_redraw(), 0.0, 1.0, Motion.seconds(&"drip_grow")).set_delay(Motion.delay_of(&"drip_grow")).set_ease(e.ease).set_trans(e.trans)
+
+
+## Ends the growth and the halo pulse at once.
+func settle_motion() -> void:
+	for tw in [_grow_tween, _halo_tween]:
+		if tw != null and (tw as Tween).is_valid():
+			(tw as Tween).kill()
+	grow = 1.0
+	halo_pulse = 1.0
+	queue_redraw()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_READY or (what == NOTIFICATION_VISIBILITY_CHANGED and is_inside_tree()):
+		grow_in.call_deferred()
+
+
+func _set_hot(on: bool) -> void:
+	if on and not _hot and Motion.live(HALO_MOTION):
+		if _halo_tween != null and _halo_tween.is_valid():
+			_halo_tween.kill()
+		var e := Motion.entry(HALO_MOTION)
+		halo_pulse = 0.0
+		_halo_tween = create_tween()
+		_halo_tween.tween_method(func(v: float) -> void:
+			halo_pulse = v
+			queue_redraw(), 0.0, 1.0, Motion.seconds(HALO_MOTION)).set_ease(e.ease).set_trans(e.trans)
+	_hot = on
+	queue_redraw()
 
 
 ## The press: the lettering squashes to `send_it_press`'s amplitude and springs back,
@@ -83,10 +142,10 @@ func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRI
 		longest = maxf(longest, float(d[1]))
 	var w := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + (HINT_SIZE * Settings.text_scale + 6.0 if key_hint != "" else 0.0))
-	mouse_entered.connect(func() -> void: _hot = true; queue_redraw())
-	mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
-	focus_entered.connect(func() -> void: _hot = true; queue_redraw())
-	focus_exited.connect(func() -> void: _hot = false; queue_redraw())
+	mouse_entered.connect(_set_hot.bind(true))
+	mouse_exited.connect(_set_hot.bind(false))
+	focus_entered.connect(_set_hot.bind(true))
+	focus_exited.connect(_set_hot.bind(false))
 
 
 ## Replaces the key hint under the tag (rebinds, pad glyphs).
@@ -209,19 +268,21 @@ func _draw() -> void:
 	if _hot and not disabled:
 		# A fixed jitter pattern (x -3..2, y -2..2 steps), scaled so its x reach is the
 		# halo amplitude in px.
-		var j := Motion.amplitude(HALO_MOTION) / (HALO_COPIES * 0.5)
+		# The hover pulse: the jitter reaches out to twice its reach and back once.
+		var swell := 1.0 + sin(PI * clampf(halo_pulse, 0.0, 1.0))
+		var j := Motion.amplitude(HALO_MOTION) / (HALO_COPIES * 0.5) * swell
 		for k in HALO_COPIES:
 			var o := Vector2(k - HALO_COPIES * 0.5, (k * 7) % 5 - 2) * j
-			draw_string(Palette.marker(), base + o, tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, HALO_ALPHA))
+			draw_string(Palette.marker(), base + o, tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, HALO_ALPHA * swell))
 	if squash != 1.0:
 		# Squash about the baseline: shorter and a little wider.
 		var sx := 1.0 / maxf(0.01, squash)
 		draw_set_transform(Vector2(base.x * (1.0 - sx), base.y * (1.0 - squash)), 0.0, Vector2(sx, squash))
 	var run := drips
-	if drip_run != 0.0:
+	if drip_run != 0.0 or grow < 1.0:
 		run = []
 		for dr in drips:
-			run.append([dr[0], float(dr[1]) + drip_run * 44.0 / font_size, dr[2]])
+			run.append([dr[0], (float(dr[1]) + drip_run * 44.0 / font_size) * grow, dr[2]])
 	DripButton.draw_drip_text(self, base, tag_text, font_size, col, run)
 	draw_set_transform(Vector2.ZERO)
 	if key_hint != "":

@@ -30,6 +30,9 @@ var flash_limiter: bool = true
 var text_scale: float = 1.0
 ## Subtitles with speaker names for voiced lines (story beats, events, DISPATCH).
 var subtitles: bool = true
+## Subtitles and DISPATCH text type in (Animation pass ANIM-6); off shows each line whole
+## at once.
+var subtitle_typing: bool = true
 var master_volume: float = 1.0
 var music_volume: float = 0.6
 var sfx_volume: float = 0.8
@@ -177,6 +180,11 @@ func set_text_scale(value: float) -> void:
 
 func set_subtitles(value: bool) -> void:
 	subtitles = value
+	_apply()
+
+
+func set_subtitle_typing(value: bool) -> void:
+	subtitle_typing = value
 	_apply()
 
 
@@ -376,7 +384,7 @@ func apply_display() -> void:
 
 func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
-		"subtitles": subtitles, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
+		"subtitles": subtitles, "subtitle_typing": subtitle_typing, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
 		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
 
@@ -386,6 +394,7 @@ func from_dict(d: Dictionary) -> void:
 	flash_limiter = bool(d.get("flash_limiter", true))
 	text_scale = clampf(float(d.get("text_scale", 1.0)), TEXT_SCALE_MIN, TEXT_SCALE_MAX)
 	subtitles = bool(d.get("subtitles", true))
+	subtitle_typing = bool(d.get("subtitle_typing", true))
 	master_volume = clampf(float(d.get("master_volume", 1.0)), 0.0, 1.0)
 	music_volume = clampf(float(d.get("music_volume", 0.6)), 0.0, 1.0)
 	sfx_volume = clampf(float(d.get("sfx_volume", 0.8)), 0.0, 1.0)

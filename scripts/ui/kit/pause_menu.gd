@@ -40,6 +40,7 @@ func _init() -> void:
 	var panel := ZinePanel.new(tr("PAUSED"), 0.0, true)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
+	_panel = panel
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
@@ -78,6 +79,8 @@ func _init() -> void:
 		seed_line.mouse_filter = Control.MOUSE_FILTER_PASS
 		seed_line.tooltip_text = UiTip.fold(tr("Share this code: Start from code on the new campaign screen starts this campaign again."))
 		_menu.add_child(seed_line)
+	# Focus moves slide the highlight and type the line in (Animation pass ANIM-6).
+	MenuMotion.attach(_menu)
 
 
 ## The campaign's share code as a line (H24 S11), in the player's language; "" without a
@@ -90,7 +93,13 @@ static func code_line() -> String:
 		TranslationServer.translate(" (local: REBEL_CELL is built from your profile)") if RunManager.corporation.generated_from_profile else ""]
 
 
+## The menu's glass (it drops in when the menu opens, Animation pass ANIM-6).
+var _panel: ZinePanel = null
+
+
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_READY and _panel != null:
+		PageTransition.enter(_panel, PageTransition.Look.PAPER)
 	if what == NOTIFICATION_VISIBILITY_CHANGED or what == NOTIFICATION_READY:
 		if is_visible_in_tree():
 			_cover_screen.call_deferred()
@@ -133,6 +142,7 @@ func show_options() -> void:
 	settings_panel.closed.connect(_close_sub)
 	settings_panel.trap_focus = true
 	_host.add_child(settings_panel)
+	PageTransition.enter(settings_panel, PageTransition.Look.GLASS)
 	UiWrap.fit(settings_panel)
 	UiFocus.trap.call_deferred(settings_panel)
 	UiFocus.focus_first(settings_panel)
@@ -147,6 +157,7 @@ func show_codex() -> void:
 		for item in entries[section]:
 			codex_note.append("  %s - %s" % [item["title"], String(item["text"]).split("\n")[0]])
 	_host.add_child(codex_note)
+	PageTransition.enter(codex_note, PageTransition.Look.PAPER)
 	var back := Button.new()
 	back.text = tr("Back")
 	back.name = "CodexBack"

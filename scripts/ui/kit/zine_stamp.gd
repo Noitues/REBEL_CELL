@@ -44,6 +44,25 @@ func _init(p_text: String = "SEND IT", p_color: Color = Palette.CELL_PINK, p_hin
 	focus_exited.connect(func() -> void: _hot = false; queue_redraw())
 
 
+## Animation pass ANIM-6 (4.13): the rings' scale; JACK IN breathes (`jack_ring_breathe`,
+## a slow loop between 1 and the entry's amplitude). 1 at rest.
+var ring_scale: float = 1.0
+var _breath: Tween = null
+
+
+## Starts the slow breathing of the rings (the HQ's JACK IN). Nothing under reduce effects
+## or headless: the rings rest at 1.
+func breathe() -> void:
+	if _breath != null and _breath.is_valid():
+		_breath.kill()
+	_breath = Motion.loop_pulse(self, ^"ring_scale", &"jack_ring_breathe")
+
+
+## True while the rings breathe.
+func breathing() -> bool:
+	return _breath != null and _breath.is_valid()
+
+
 ## A stamp that only shows a result: it takes no focus and no clicks.
 func display_only() -> ZineStamp:
 	focus_mode = Control.FOCUS_NONE
@@ -59,8 +78,8 @@ func _draw() -> void:
 	if _hot and not disabled:
 		draw_circle(c, r + 4, Color(Palette.CELL_ACID, 0.45))
 		draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
-	draw_arc(c, r, 0, TAU, 48, col, 4.0)
-	draw_arc(c, r - 9, 0, TAU, 48, col, 1.5)
+	draw_arc(c, r * ring_scale, 0, TAU, 48, col, 4.0)
+	draw_arc(c, (r - 9) * ring_scale, 0, TAU, 48, col, 1.5)
 	var drop := 0.0
 	if icon_kind != &"":
 		StatIcon.draw(self, c + Vector2(0, -r * ICON_LIFT), r * ICON_SHARE, icon_kind, col)

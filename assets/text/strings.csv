@@ -1545,6 +1545,7 @@ SLICE %d DETAIL,SLICE %d DETAIL
 SLICES,SLICES
 SLOT %s · %s,SLOT %s · %s
 SNAP,SNAP
+SOLD,SOLD
 SPIN %d+,SPIN %d+
 SPINNER,SPINNER
 STABLE,STABLE
@@ -2217,6 +2218,7 @@ StoryPathData.sp_water_rights.premise,"Halcyon owns the city's water now. The pr
 StoryPathData.sp_water_rights.title,Water Rights
 StoryPathData.sp_your_own_hands.premise,REBEL_CELL is built from the Cell's habits. It knows how you fight.
 StoryPathData.sp_your_own_hands.title,Your Own Hands
+Subtitles type in (off: each line shows at once),Subtitles type in (off: each line shows at once)
 Subtitles with speaker names,Subtitles with speaker names
 System log strip at the foot of the screen,System log strip at the foot of the screen
 TAKES,TAKES
