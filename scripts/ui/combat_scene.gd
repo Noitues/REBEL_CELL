@@ -172,42 +172,47 @@ var _pending_last_turn: CombatState = null
 var _last_turn: Dictionary = {}
 
 
-## What the resolve just did, per combatant, from the damage and heal events: HP lost or
-## healed, and what block / shield soaked. Short and numeric; the motion pass animates it.
-static func last_turn_lines(events: Array[Dictionary]) -> Dictionary:
-	var lost := {}
+## What the last SEND IT did, per wheel: the real HP change since it was pressed (so
+## CORRUPTED bites, heals and turn-start effects count, H22), what block and shield soaked,
+## attacks evaded, and hits its satellites or drones took for it. Short and numeric; the
+## motion pass animates it.
+static func last_turn_lines(before: CombatState, after: CombatState, events: Array[Dictionary]) -> Dictionary:
 	var soaked := {}
-	var healed := {}
-	var seen := {}
-	var resolving := false
+	var evaded := {}
+	var guarded := {}
 	for e in events:
 		var t := String(e.get("type", ""))
-		if t == "turn_start":
-			break  # the next turn's own events (respin, draws) are not the resolve
-		if t == "pass":
-			resolving = true
-		if not resolving:
-			continue
 		var target := StringName(String(e.get("target", "")))
 		if t == "damage":
-			seen[target] = true
-			lost[target] = int(lost.get(target, 0)) + int(e.get("hp_damage", 0))
 			soaked[target] = int(soaked.get(target, 0)) + int(e.get("blocked", 0)) + int(e.get("shielded", 0))
-		elif t == "heal":
-			seen[target] = true
-			healed[target] = int(healed.get(target, 0)) + int(e.get("amount", 0))
+			var victim := before.get_combatant(target)
+			if victim != null and (victim.is_satellite or before.drones.has(victim)):
+				var host := victim.host_id if victim.host_id != &"" else before.player.id
+				guarded[host] = int(guarded.get(host, 0)) + int(e.get("hp_damage", 0))
+		elif t == "evaded":
+			evaded[target] = int(evaded.get(target, 0)) + 1
 	var out := {}
-	for id in seen:
+	var wheels: Array[CombatantState] = [before.player]
+	for c in before.enemies:
+		if not c.is_satellite:
+			wheels.append(c)
+	for c in wheels:
+		var now := after.get_combatant(c.id)
 		var parts := PackedStringArray()
-		if int(lost.get(id, 0)) > 0:
-			parts.append("-%d HP" % int(lost[id]))
-		if int(soaked.get(id, 0)) > 0:
-			parts.append("%d BLOCKED" % int(soaked[id]))
-		if int(healed.get(id, 0)) > 0:
-			parts.append("+%d HP" % int(healed[id]))
+		var dhp := (now.hp if now != null else 0) - c.hp
+		if dhp < 0:
+			parts.append("%d HP" % dhp)
+		elif dhp > 0:
+			parts.append("+%d HP" % dhp)
+		if int(soaked.get(c.id, 0)) > 0:
+			parts.append("%d BLOCKED" % int(soaked[c.id]))
+		if int(evaded.get(c.id, 0)) > 0:
+			parts.append("EVADED %d" % int(evaded[c.id]))
+		if int(guarded.get(c.id, 0)) > 0:
+			parts.append("GUARD TOOK %d" % int(guarded[c.id]))
 		if parts.is_empty():
-			parts.append("NO DAMAGE")
-		out[id] = "LAST TURN: " + " · ".join(parts)
+			parts.append("NO CHANGE")
+		out[c.id] = "LAST TURN: " + " · ".join(parts)
 	return out
 
 
@@ -829,11 +834,7 @@ func _show_selection() -> void:
 func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_last_events = events
 	if _pending_last_turn != null:
-		_last_turn = last_turn_lines(events)
-		# Wheels the resolve didn't touch say so too.
-		for c in [state.player] + state.living_enemies(false):
-			if not _last_turn.has(c.id):
-				_last_turn[c.id] = "LAST TURN: NO DAMAGE"
+		_last_turn = last_turn_lines(_pending_last_turn, state, events)
 		_pending_last_turn = null
 	elif not events.is_empty():
 		_last_turn.clear()  # the player acted: the result gives way to the new preview
@@ -1731,7 +1732,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	var to: Dictionary = d.get("dealt_to", {})
 	for tgt in to:
 		var victim := state.get_combatant(StringName(String(tgt)))
-		var who := "YOU" if victim != null and victim.is_player else (victim.display_name.to_upper() if victim != null else "?")
+		var who := "YOU" if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
 		chips.append({"text": "HITS %s %d" % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK})
 	if to.is_empty() and int(d["dealt"]) > 0:
 		chips.append({"text": "HITS %d" % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK})
@@ -1768,7 +1769,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		var sd := o.of(sat.id)
 		if sd.is_empty():
 			continue
-		var name := sat.display_name.to_lower()
+		var name := _name_of(sat).to_lower()
 		if int(sd["dealt"]) > 0:
 			chips.append({"text": "%s HITS %d" % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
@@ -1779,9 +1780,10 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		for key in ["block", "shield"]:
 			var sdelta := int(sd[key + "_after"]) - int(sd[key + "_before"])
 			if sdelta != 0:
-				chips.append({"text": "%s %+d %s" % [name, sdelta, "BLK" if key == "block" else "SHD"], "color": CHIP_GUARD, "ink": Palette.INK})
+				chips.append({"text": "%s %+d %s" % [name, sdelta, "BLOCK" if key == "block" else "SHIELD"], "color": CHIP_GUARD, "ink": Palette.INK})
 		for st in sd["statuses"]:
-			chips.append({"text": "%s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×")], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
+			var sw: String = Palette.STATUS_WORDS.get(int(st["after"]), "") if int(st["after"]) != RC.Status.NONE else "CLEARED"
+			chips.append({"text": "%s %s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×"), sw], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
 		if int(sd.get("dock_after", -1)) != int(sd.get("dock_before", -1)):
 			chips.append({"text": "%s MOVES" % name, "color": CHIP_RESIST, "ink": Palette.INK})
 	if id == state.player.id:
@@ -1812,6 +1814,15 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		elif o.outcome == CombatState.Outcome.DEFEAT:
 			chips.append({"text": "DEFEAT", "color": CHIP_LOSS, "ink": Palette.PAPER})
 	return chips
+
+
+## A combatant's name through TextDb (translations), falling back to its runtime name.
+func _name_of(c: CombatantState) -> String:
+	var data: Resource = engine.content(c.source_id) if c.source_id != &"" and engine.resolver.lookup.has(c.source_id) else null
+	# Generated combatants (REBEL_CELL Mirrors) keep their runtime names.
+	if data == null or not ("display_name" in data) or String(data.display_name) != c.display_name:
+		return c.display_name
+	return TextDb.t(data, "display_name")
 
 
 static func _chips_tooltip(chips: Array) -> String:

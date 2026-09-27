@@ -731,9 +731,9 @@ func _draw_dashed_rect(r: Rect2, col: Color) -> void:
 func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 	var hub_lines: Array[String] = []
 	if combatant.block > 0:
-		hub_lines.append("BLK %d" % combatant.block)
+		hub_lines.append("BLOCK %d" % combatant.block)
 	if combatant.shield > 0:
-		hub_lines.append("SHD %d" % combatant.shield)
+		hub_lines.append("SHIELD %d" % combatant.shield)
 	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
 		hub_lines.append("RESIST %d" % combatant.resistance)
 	if combatant.wheel.frozen:

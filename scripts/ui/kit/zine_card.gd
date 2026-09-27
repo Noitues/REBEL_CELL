@@ -43,6 +43,10 @@ var pad_hint: String = ""
 const PICTO_RADIUS := 8.0
 const PICTO_STEP := 34.0
 const PICTO_FONT := 12
+## Short tags for the scripted card effects (by handler script name; H22: they had no
+## pictogram). "%d" takes the effect's amount.
+const CUSTOM_PICTOS := {"calibrate_handler": "FREE NUDGE x%d", "momentum_handler": "SPIN %d+", "ring_lock_handler": "RING LOCK",
+	"steady_hand_handler": "PERFECT: RAM+", "undock_handler": "UNDOCK"}
 ## Slice icon for each effect that does what a slice does.
 const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.ATTACK, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFEND,
 	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.EVADE, RC.EffectType.HEAL: RC.SliceType.HEAL,
@@ -127,6 +131,12 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 				out.append({"kind": "tag", "text": "2x NUDGE"})
 			RC.EffectType.RETRIGGER:
 				out.append({"kind": "tag", "text": "AGAIN"})
+			RC.EffectType.CUSTOM:
+				if e.custom_handler != null:
+					var key := e.custom_handler.resource_path.get_file().get_basename()
+					if CUSTOM_PICTOS.has(key):
+						var text := String(CUSTOM_PICTOS[key])
+						out.append({"kind": "tag", "text": text % e.amount if text.contains("%d") else text})
 			_:
 				if EFFECT_SLICE.has(e.type):
 					out.append({"kind": "slice", "type": EFFECT_SLICE[e.type], "amount": e.amount,
@@ -152,6 +162,7 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	if drag_index < 0 or disabled:
 		return null
 	var ghost := ZineCard.new(card_title, cost, description, drag_index).scaled(text_scale)
+	ghost.pictos = pictos
 	ghost.modulate.a = 0.8
 	ghost.size = ghost.custom_minimum_size
 	var holder := Control.new()

@@ -221,7 +221,7 @@ func test_every_card_draws_what_it_does() -> void:
 		var p := ZineCard.pictos_of(card)
 		var mapped := false
 		for e in card.effects:
-			mapped = mapped or (e != null and e.type != RC.EffectType.CUSTOM and e.type != RC.EffectType.MODIFY_HEAT)
+			mapped = mapped or (e != null and e.type != RC.EffectType.MODIFY_HEAT)
 		if mapped:
 			assert_false(p.is_empty(), "%s has pictograms" % id)
 
@@ -246,3 +246,25 @@ func test_retired_keybinds_are_dropped_on_load() -> void:
 	assert_false(Settings.keybinds.has("toggle_direction"))
 	assert_true(Settings.keybinds.has("nudge_left"))
 	Settings.from_dict(saved)
+
+
+func test_last_turn_lines_match_the_real_hp_change() -> void:
+	# H22: CORRUPTED bites and heals counted (the line said NO DAMAGE when HP was lost).
+	for enemy in [&"claims_adjuster", &"collections_agent", &"dosage_dispenser", &"civic_core"]:
+		var scene := await _combat(enemy)
+		for turn in 3:
+			var before: CombatState = scene.engine.state().duplicate_state()
+			scene.end_turn()
+			var after: CombatState = scene.engine.state()
+			for v in scene._views():
+				if v.combatant == null:
+					continue
+				var was := before.get_combatant(v.combatant.id)
+				var dhp: int = v.combatant.hp - was.hp
+				var line: String = v.last_turn
+				if dhp != 0:
+					assert_string_contains(line, ("%d HP" % dhp) if dhp < 0 else ("+%d HP" % dhp), "%s vs %s: %s" % [v.combatant.display_name, enemy, line])
+				else:
+					assert_false(line.contains(" HP"), "no HP change claimed: %s" % line)
+			if after.is_over():
+				break
