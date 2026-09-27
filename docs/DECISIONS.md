@@ -275,6 +275,109 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-27 — Animation pass — ANIM-3: card targeting and execution
+- **Hover** (`card_hover`, 0.15 s, 12 px): the sticker lifts, tilts from its resting
+  angle to 0 and glows. The lift and the deal-in offset are *drawn* offsets
+  (`ZineCard.lift`, `draw_offset`, `draw_tilt`): the card's rect never moves, so the hand
+  never shifts under the cursor and layout checks are unaffected. Every ZineCard gets it
+  (loot and shop stickers too: one card kit).
+- **Pick-up / drag** (`card_pickup` pop; `DragGhost`): the drag preview trails the cursor
+  with an exponential lag (`drag_ghost_follow`: duration = time constant 0.08 s, amplitude
+  = ghost alpha 0.6) and tilts with the cursor's speed (`drag_ghost_tilt`: 0.12 s smoothing,
+  8° most). Variants tight 0.04 / loose 0.16 / 0.08: 0.08 reads as "carried" without
+  feeling late.
+- **Aiming** (mouse, keys and pad alike): valid zones pulse (`drop_zone_pulse`, the
+  unhovered ones between 0.55 and 0.28 alpha; the hovered one stays full); the aim line
+  draws in from the card each time the aim moves (`aim_line_draw`); a bracket reticle on
+  the motion layer glides to the aimed zone with a snap pop (`target_snap`); the RAM cost
+  chips blink while aiming (`ram_pending_blink`).
+- **Cancel** (drop on nothing / on no legal target): a copy glides from where it was let
+  go back to the card's slot (`drag_cancel_return`, chosen snappy 0.15 s over 0.3 heavy
+  and 0.22 back-eased), the slot's card shows again when it lands. Key / pad cancel never
+  moved the card, so nothing flies.
+- **Play**: the card copy flies from its slot (or the drop point, upright) to the centre
+  of the zone the action used (captured before the engine call), grows, stamps down
+  (`card_stamp`) and dissolves into an acid burst (`effect_burst`) — or, with `exhaust`,
+  curls flat and darkens with embers (`card_exhaust`). Chosen snappy: `card_play` 0.22 s,
+  `card_stamp` 0.1 s (heavy 0.4 / bouncy 0.3 back-eased shown). The effect (spin, nudge,
+  numbers, deaths) waits for the stamp.
+- **No reflow under the cursor**: while the card flies, the hand keeps a gap in its slot
+  at the old card scale; the gap closes (`hand_reflow`) only once the cursor is off the
+  hand. Hand lookups go by `drag_index`, never child index.
+- **Draw / discard**: SEND IT sends the old hand to a discard pile at the hand's right
+  end (`card_discard` arc, staggered by `card_draw`'s delay); the new hand deals in from a
+  deck pile at its left end with a fan (`card_draw`: 0.25 s, 0.04 s stagger, 6° fan) on
+  the turn-start draw beat. The piles are drawn only while cards move (`card_pile`), so
+  the static layout gains nothing.
+- **RAM** (`ram_tick`): the chips drain / refill one chip per 0.05 s with a pop; the number
+  is always the state's. SEND IT holds the old RAM until the turn-start RAM beat.
+- New ids: `drag_ghost_tilt`, `card_pile`, `hand_reflow`, `ram_tick`, `ram_pending_blink`
+  (data only, required by content validation).
+
+#### 2026-09-27 — Animation pass — ANIM-2: spinners and end-turn resolution
+- **The replay rule.** The engine's state is final when an action returns; motion replays
+  the same `events` array on top (GDD 2.10: preview = result). `ResolveBeats.build(before,
+  events)` turns events into beats (one per damage / heal / block / shield / evade /
+  status / corrupted / death / breach / spin / orbit / migrate / RAM / draw / combat end,
+  in event order) and tracks HP only by subtracting the events' own numbers, so the beats
+  end on the state's HP (tested). It never runs a rule; the pulsing needle of a beat is
+  picked from the landing events (the next needle of the actor on a slice of that kind).
+  Views are overridden, never the state: `WheelView.shown_state` (a snapshot the scene
+  took before SEND IT), `anim_rotation`, `anim_pointers`, `anim_hp`, `lag_hp`...
+- **SEND IT sequence** (`resolve_sequence` = 1.45 s budget at 1x; variants 1.2 / 1.8 / 1.45
+  shown, 1.45 kept: beginners asked to *see* what happened and it still fits "under
+  ~1.5 s"). Press: the drip lettering squashes (`send_it_press`) and the drips run
+  (`send_it_drips`). Then: needles latch (precision landings, all at 0); beats one gap apart
+  in resolve order (defensive, offensive, statuses; a gap more at each pass), the gap being
+  `resolve_beat` squeezed so everything fits; each beat pulses its needle (or satellite
+  token), draws a hit line attacker → victim (`hit_line`), pops a number, drains the HP arc
+  with a white lag bar (`hp_drain`, `hp_lag`), stamps statuses on their slice
+  (`status_stamp`), cracks dead wheels; then the turn start: both wheels spin to the next
+  landing (`wheel_respin`; enemies `enemy_turn_spin` 0.15 s later), needles orbit / migrate,
+  RAM refills, the hand deals in; the LAST TURN plate slides up last (`last_turn_reveal`).
+  The tags and NEXT plates hide while it plays (they forecast the *next* turn) and flip back
+  in at the end. **Any press** (key, mouse button, pad button) skips to the end state and
+  does nothing else (so a double click on SEND IT never ends two turns).
+- **Numbers** float inside the victim's hub (inner disc x 0.62), stepping left / right when
+  several land together: needles only reach the slice band and satellites sit outside the
+  rim, so a number never covers the next resolving needle (tested for every beat at
+  1.0/1.3/1.6). Damage red "-N", soaked hits "N BLOCKED", guard gains cyan "+N BLOCK /
+  SHIELD", heals green "+N HP"; crits (a CRIT slice or a Perfect needle) are 1.5x with a star
+  burst. Existing word keys only (no new translation keys).
+- **Spin** (`wheel_spin` card spins, `wheel_respin`, `enemy_turn_spin`): the ring runs the
+  exact ticks the core moved (rotation is unbounded, so the distance is exact) with the
+  entry's ease, overshoots by amplitude x 0.1 tick and settles over the last 30%; its time
+  scales with sqrt(distance in half turns) within 0.55x-1.35x of the entry (the handoff's
+  0.25-0.6 s). Chosen snappy (0.35 s card spin, 0.4 s respin, overshoot 0.2 tick, CUBIC)
+  over heavy (0.55 s QUART) and bouncy (BACK: its built-in overshoot grows with distance and
+  showed a wrong slice on a 70-tick respin). Slices blur (faint trailing copies) above
+  `wheel_spin_blur`'s 12 ticks/s.
+- **Nudge** (`wheel_nudge` 0.08 s, 2 px recoil; `inner_ring_turn` for the inner ring): each
+  step travels 70% of its time then the disc kicks back. Steps queue; a queue of n steps
+  runs each at 1/n speed so it catches up; the last queued step is forced onto the core's
+  tick (`sync_nudges`), so rapid input never desyncs (tested).
+- **Precision landings**, distinct in greyscale: Perfect = inversion + 2-frame freeze + a
+  limited `Fx.flash` + needle pop; Good = a clean white ring off the rim; Partial = stutter;
+  Miss = static flecks over that slice only (it replaced the whole-wheel blink).
+- **Pointers**: migrations glide the short way round (`pointer_migrate`); orbits leave a
+  fading dashed trail arc (`orbit_trail`). The flicker stays.
+- **Intent tags** flip on their tape (`intent_flip`, 90°) only when their text or chips
+  change: the content signature is compared at draw time, so re-setting the same chips on
+  every hover doesn't jitter.
+- **Rewind**: VHS bands over the arena and a 5-step tape stutter of the rings and HP back
+  to the restored state (`rewind_scrub`); every shown value stays between the two states,
+  so it never crosses the checkpoint.
+- **Death / breach / end**: a dead wheel falls apart into its slices (`enemy_break`,
+  chosen heavy 0.75 s / 160 px: the climax of a fight) and its dim ghost fades back
+  (`dead_wheel_fade`); a hub breach shatters the hub glass (`hub_shatter`); defeat breaks
+  the operative's wheel; VICTORY / DEFEAT stamps over the arena (`victory_stamp`), the
+  victory flash moved onto that beat. The netrun now waits for the replay (`motion_settled`)
+  and then holds `combat_end_hold` (0.8 s, the old inline number).
+- **FLIP** squashes the disc to a line and back (`wheel_flip`).
+- **Reduce effects / headless**: nothing is captured or played; the end state shows at
+  once. Tests drive the live path with `Motion.force_live`.
+- Frame strips with variants: `docs/timeline/motion/` (README table).
+
 #### 2026-09-27 — Animation pass — ANIM-1: motion foundation
 The designer made motion its own Animation pass ("nothing should be deferred"). ANIM-1
 makes motion tunable before any new effect
