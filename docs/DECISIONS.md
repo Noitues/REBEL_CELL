@@ -30,6 +30,51 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H23 city: mini-map labels apart, labels by their nodes, the key on the map, nodes beside the column
+Pass-23 items K1-K7 (the City Grid screen, the map overlay, the HQ mini-map). View-only
+(`scripts/ui/kit/`, the Grid page of `hq_scene.gd`); no rule or content change.
+- **Mini-map labels are placed (K1).** `GridMapView` no longer stamps a label under every
+  block: labels go by priority (selected, CORE, claimed, the rest; ties by Site id) to the
+  first free spot round their block (below, above, right, left, corners) inside the view,
+  never on another label (the tier pips are part of the label, so they never cover one),
+  preferring spots off the other blocks. A crowded label drops to a shorter variant (name
+  and detail, name, "T2 glyph", the pips alone) and is left out when none fits; every Site
+  keeps a tooltip (`_get_tooltip`: name, tier, kind, status). `label_rects` for checks.
+- **A label stays by its node (K2).** "Renewal Engine" floated over PREV SITE because its
+  node sat under the side column and the H22 inward move shifted its focus label up out of
+  the column, far from anything. Now a node off the visible map (outside the label area or
+  under a blocked control) gets no label, and a moved label must stay within LABEL_REACH
+  (110 screen px, to its nearest point) of its node.
+- **No two map labels overlap (K4).** A focus label with no clear spot used to take the
+  first moved spot even over another label; it now takes one clear of every label (it may
+  cover an icon) or is left out. Order unchanged: priority, then node id (= Site content id).
+- **The key sits on the map (K3).** The Grid's MapLegend left the scrolling column (it was
+  its last item, below the fold): it is a *strip* legend (`MapLegend.pin_to(area, corp,
+  true)`) along the foot of the map area, as wide as the map, rows in as many columns as
+  fit (`set_strip_width`), with shorter row words (STRIP_ROWS). Its text is the compact
+  size x text scale (rebuilt live). The Settings switch hides it and the map refits.
+- **Nodes stay beside the column (K5).** `hq_scene.fit_grid_map` fits the Grid map into the
+  map area above the key, once the page's layout has settled (next frame): when a node's
+  icon or pips lie outside it, the camera pans and zooms out (never in past the Grid's
+  own GRID_ZOOM 0.85). `LegendSpot.fit_into` works the frame out from where the icons
+  are now (only the spread between icon centres scales; icons and pips keep their screen
+  size), aiming FIT_INSET (8 px) inside so drift never asks for another pass; it is
+  checked again once the city has drawn under the new camera (`NeonCity.camera_settled`,
+  new: the camera inputs of the last draw), at most GRID_FITS_MAX (3) passes. A resize,
+  a text size change or the legend switch fits again. At text scale 1.6 the map is
+  smaller (the column and the key take more room), never clipped.
+- **Tooltips name the kind (K6).** `CityLayout.KIND_TIPS`: each Site tooltip says its kind
+  word and icon shape and what it does ("Exploit Site (diamond): clearing it gives an
+  Exploit for the boss breach."), then its status; `CityMapOverlay.KIND_WORDS` /
+  `kind_word`, `CityLayout.site_kind`. Used by the map, the mini-map and the run rows.
+- **Run rows and steps carry their Site's icon (K7).** RUNS OPEN NOW lists one run a row
+  (wrapping long names), each with its Site's map icon and tier pips and, for an objective
+  Site, its kind word ("· EXPLOIT"); the tooltip adds what the kind does. PREV SITE /
+  NEXT SITE show the map icon of the Site they step to (no pips, to keep the row narrow)
+  and name it in the tooltip. Both controls kept (decided before).
+- Test expectation changed on purpose: none of the H20-H22 tests changed; the Grid legend
+  is still one MapLegend that follows the switch live.
+
 ### 2026-09-27 — H22 combat: now vs next, satellites that read, wheels that stay big
 From pass 22 (both audits, a first-time player and a player who can't read English
 looking at the new storyboards; GAP_ANALYSIS H22).
@@ -1802,6 +1847,13 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column (588 px at
+  1.6, its SITE step row sets the width) and the map key along the map's foot (about 280
+  px tall at 1.6), the Grid map is framed small enough that every node shows, and only the
+  labels that fit are drawn (the rest keep tooltips). Alternatives: a key that folds to
+  its title (open on hover or a button), or a narrower column at big text (the steps as
+  icon-only buttons). Which do you prefer? LABEL_REACH (110 px) is a guess too.
 
 - **Subtitles over the stat tags; toasts (H20, 2026-09-26):** outside combat the subtitle
   bar now sits in the top band over the screen title and the stat tags (the only strip
