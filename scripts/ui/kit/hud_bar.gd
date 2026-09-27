@@ -47,6 +47,7 @@ func _init() -> void:
 	loadout_button = Button.new()
 	loadout_button.name = "ViewLoadout"
 	loadout_button.text = "VIEW LOADOUT"
+	loadout_button.tooltip_text = UiTip.fold("The operative's deck and spinner (hub core and inner ring included).")
 	loadout_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	loadout_button.pressed.connect(func() -> void: loadout_pressed.emit())
 	loadout_button.visible = false
@@ -54,7 +55,7 @@ func _init() -> void:
 	daemon_button = Button.new()
 	daemon_button.name = "Daemons"
 	daemon_button.flat = true
-	daemon_button.tooltip_text = "Daemons"
+	daemon_button.tooltip_text = UiTip.fold("The installed Daemons. Opens the tray: each sigil shows what its Daemon does.")
 	daemon_button.custom_minimum_size = Vector2(52, 44)
 	daemon_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	daemon_button.draw.connect(_draw_daemon_icon)
