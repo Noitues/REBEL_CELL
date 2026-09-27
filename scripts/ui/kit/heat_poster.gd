@@ -29,6 +29,22 @@ const BAND_PAD := 6.0
 ## The Heat band words, by band.
 const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"] # TR
 
+## ANIM-5 (4.12): the Heat each campaign's posters last showed (view memory, not game
+## state), so a threshold crossed anywhere (a run, a lost raid) plays once where the Heat
+## shows next: Fx.heat_pulse per crossing up (with the corporate wireframe creeping in),
+## the ransom letters shake once, and the band word stamps on. A crossing down (Heat
+## bought off) only stamps the new band. A steady value plays nothing.
+static var _seen_heat: Dictionary = {}
+## The ransom letters' shake offset (px) and the band word's stamp scale (1 = at rest).
+var shake_offset: Vector2 = Vector2.ZERO
+var stamp_scale: float = 1.0
+## Crossings up still to play (they wait until the poster shows and no jack runs), and
+## whether the band word still has to stamp.
+var pending_pulses: int = 0
+var _pending_stamp: bool = false
+## The ink box round the band word while it stamps (px).
+const STAMP_BOX_PAD := 3.0
+
 
 func _init(p_poster: bool = false) -> void:
 	poster = p_poster
@@ -61,7 +77,72 @@ func set_heat(value: int, maximum: int, thresholds: Array[int] = [] as Array[int
 	for t in thresholds:
 		if heat >= t:
 			band += 1
+	# ANIM-5: what changed since this campaign's Heat last showed.
+	var key := memory_key()
+	var prev: int = _seen_heat.get(key, -1)
+	_seen_heat[key] = value
+	if prev >= 0 and prev != value:
+		pending_pulses += crossings(prev, value, marks)
+		if band_of(prev, thresholds) != band:
+			_pending_stamp = true
+		_play_pending()
 	queue_redraw()
+
+
+## Thresholds in `at` crossed going up from Heat `from` to `to` (0 going down).
+static func crossings(from: int, to: int, at: Array[int]) -> int:
+	var n := 0
+	for t in at:
+		if from < t and to >= t:
+			n += 1
+	return n
+
+
+## The band Heat `value` falls in for thresholds `at`.
+static func band_of(value: int, at: Array[int]) -> int:
+	var b := 0
+	for t in at:
+		if value >= t:
+			b += 1
+	return b
+
+
+## The Heat memory's key: the current campaign ("-" when none).
+static func memory_key() -> String:
+	var c := RunManager.campaign
+	return "%s|%d" % [c.corporation_id, c.campaign_seed] if c != null else "-"
+
+
+## Plays what waits once the poster shows (not under a jack cover): one Heat pulse per
+## crossing (Fx.heat_pulse, a pulse's length apart), the letters' shake, the band stamp.
+func _play_pending() -> void:
+	if pending_pulses <= 0 and not _pending_stamp:
+		set_process(false)
+		return
+	if not is_inside_tree() or not is_visible_in_tree() or Fx.transitioning():
+		set_process(true)
+		return
+	set_process(false)
+	if pending_pulses > 0:
+		_pulse_chain(pending_pulses)
+		pending_pulses = 0
+		Motion.shake(self, &"heat_letters_shake", ^"shake_offset")
+	if _pending_stamp:
+		_pending_stamp = false
+		stamp_scale = Motion.amplitude(&"poster_stamp")
+		Motion.run(&"poster_stamp", self, ^"stamp_scale", 1.0)
+
+
+func _pulse_chain(left: int) -> void:
+	if left <= 0:
+		return
+	Fx.heat_pulse(-1.0, hot_color)
+	if left > 1 and is_inside_tree():
+		get_tree().create_timer(Motion.seconds(&"heat_pulse")).timeout.connect(_pulse_chain.bind(left - 1))
+
+
+func _process(_delta: float) -> void:
+	_play_pending()
 
 
 func _draw() -> void:
@@ -80,7 +161,7 @@ func _draw() -> void:
 	var fonts := [Palette.display(), Palette.marker(), Palette.mono(), Palette.display()]
 	var x := 8.0
 	for i in letters.size():
-		var strip := Rect2(x, y + 4 + (i % 2) * 4, 24, 28)
+		var strip := Rect2(Vector2(x, y + 4 + (i % 2) * 4) + shake_offset * (1.0 if i % 2 == 0 else -1.0), Vector2(24, 28))
 		draw_rect(strip, Palette.PAPER if i % 2 == 0 else Palette.CELL_PINK)
 		draw_rect(strip, Palette.INK, false, 1.0)
 		draw_string(fonts[i % fonts.size()], strip.position + Vector2(5, 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.INK)
@@ -93,4 +174,15 @@ func _draw() -> void:
 	for t in marks:
 		var tx: float = bar.position.x + bar.size.x * int(t) / float(heat_max)
 		draw_line(Vector2(tx, bar.position.y - 3), Vector2(tx, bar.end.y + 3), Palette.INK if poster else Palette.PAPER, 1.0)
-	draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, Palette.INK if poster else Palette.CELL_ACID)
+	var word_col := Palette.INK if poster else Palette.CELL_ACID
+	if stamp_scale > 1.0:
+		# ANIM-5: the new band stamps on (scaled down onto the paper, an ink box round it).
+		var r := band_label_rect()
+		var c := r.get_center()
+		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
+		var box := Rect2(r.position - c, r.size).grow(STAMP_BOX_PAD)
+		draw_rect(box, Color(hot_color, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
+		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		draw_set_transform(Vector2.ZERO)
+	else:
+		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)

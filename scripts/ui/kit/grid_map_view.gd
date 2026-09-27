@@ -57,6 +57,16 @@ var label_rects: Dictionary = {}
 ## the label layout and checks; and the map icon kind each Site floats (K5).
 var icon_rects: Dictionary = {}
 var drawn_icons: Dictionary = {}
+## ANIM-5 (HQ mini-map): the Site statuses each campaign's mini-map last showed (view
+## memory, not game state). A Site whose status changed since pulses once when the map
+## shows; the home ("you are here") and selected rings ease in.
+static var _seen_status: Dictionary = {}
+## True on the HQ's mini-map (the Grid page's hidden model is not "seen").
+var track_seen: bool = false
+## Sites that changed since last seen, their pulse (0..1) and the rings' ease (0..1).
+var changed_ids: Array[StringName] = []
+var pulse_t: float = 1.0
+var ring_ease: float = 1.0
 
 
 func _init() -> void:
@@ -84,8 +94,44 @@ func show_grid(p_campaign: CampaignState, p_corp: CorporationData, p_threat_path
 	campaign = p_campaign
 	corp = p_corp
 	threat_paths = p_threat_paths
+	if track_seen:
+		changed_ids = _note_statuses()
 	_layout_positions()
 	queue_redraw()
+	_start_motion.call_deferred()
+
+
+## Records the statuses shown now and returns the Sites whose status differs from the
+## last time this campaign's mini-map showed (none the first time), sorted by id.
+func _note_statuses() -> Array[StringName]:
+	var out: Array[StringName] = []
+	if campaign == null or corp == null:
+		return out
+	var key := "%s|%d" % [corp.id, campaign.campaign_seed]
+	var now := {}
+	for s in corp.city_grid.sites:
+		if s != null:
+			now[s.id] = campaign.grid.status_of(s.id)
+	var before: Variant = _seen_status.get(key)
+	_seen_status[key] = now
+	if before == null:
+		return out
+	for id in now:
+		if (before as Dictionary).has(id) and int(before[id]) != int(now[id]):
+			out.append(id)
+	out.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return out
+
+
+## The changed Sites' pulse and the rings' ease (the end state at once without motion).
+func _start_motion() -> void:
+	if not is_inside_tree():
+		return
+	ring_ease = 0.0
+	Motion.run(&"select_ring_ease", self, ^"ring_ease", 1.0)
+	if not changed_ids.is_empty():
+		pulse_t = 0.0
+		Motion.run(&"minimap_pulse", self, ^"pulse_t", 1.0)
 
 
 func _layout_positions() -> void:
@@ -187,12 +233,16 @@ func _draw() -> void:
 				col = Color(Palette.NET_CYAN, 0.7)
 			GridState.SiteStatus.SEIZED:
 				col = Palette.RESIST_GOLD
+		var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
 		if s.id == campaign.grid.home_site_id:
 			for k in 3:
-				draw_arc(p, w + 10 + k * 9, 0, TAU, 40, Color(Palette.CELL_PINK, 0.55 - k * 0.15), 2.0 - k * 0.4)
+				draw_arc(p, (w + 10 + k * 9) * grow, 0, TAU, 40, Color(Palette.CELL_PINK, (0.55 - k * 0.15) * ring_ease), 2.0 - k * 0.4)
 		_iso_block(p, w, d, h, col)
 		if s.id == selected_id:
-			draw_arc(p + Vector2(0, -h * 0.5), w + 10, 0, TAU, 32, Palette.CELL_ACID, 2.0)
+			draw_arc(p + Vector2(0, -h * 0.5), (w + 10) * grow, 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0)
+		if pulse_t < 1.0 and changed_ids.has(s.id):
+			# ANIM-5: its status changed since the map last showed: one pulse.
+			draw_arc(p + Vector2(0, -h * 0.5), w + 10 + pulse_t * Motion.amplitude(&"minimap_pulse"), 0, TAU, 32, Color(col, 1.0 - pulse_t), 3.0)
 		if status == GridState.SiteStatus.CLAIMED:
 			draw_arc(p + Vector2(0, 6), w + 4, 0, TAU * 0.92, 24, Color(Palette.CELL_PINK, 0.5), 4.0)
 			draw_arc(p + Vector2(3, 4), w - 2, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_PINK, 0.3), 2.0)

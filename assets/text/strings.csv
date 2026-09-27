@@ -1355,6 +1355,9 @@ Quit REBEL_CELL?,Quit REBEL_CELL?
 Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
 Quit to desktop,Quit to desktop
 RACK BREACHED // LOOT: pick a %s,RACK BREACHED // LOOT: pick a %s
+"RAID
+RESULT:","RAID
+RESULT:"
 RAID // %s,RAID // %s
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID IN PROGRESS,RAID IN PROGRESS

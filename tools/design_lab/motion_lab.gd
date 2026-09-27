@@ -80,6 +80,9 @@ const DEMOS := {
 	&"combat_end_hold": ["scene", "victory"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
+	# ANIM-5 (map, raid, jack and Heat):
+	&"jack_scanlines": ["blink", "stage"], &"raid_step_gap": ["blink", "sticker"], &"home_lag": ["roll", "number"],
+	&"minimap_pulse": ["pop", "sticker"], &"select_ring_ease": ["pop", "sticker"], &"legend_fold": ["drop", "panel"],
 }
 
 ## Scene demos: the fight they run, and what the wheel demos turn and shift.

@@ -378,6 +378,117 @@ Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
   once. Tests drive the live path with `Motion.force_live`.
 - Frame strips with variants: `docs/timeline/motion/` (README table).
 
+#### 2026-09-27 — Animation pass — ANIM-5: campaign, map and raid motion
+Handoff items 4.1, 4.12, 4.14, 4.15, 4.16, the city influence change the designer asked
+for, and the HQ mini-map. Views only: no rule changed; the resolver's `move` event gained
+two facts it already computed (below). Every value is in `content/config/ui_motion.tres`.
+Reduce effects and headless show every end state at once (the jack: one short fade under
+reduce effects). Tests: `tests/unit/test_anim5_map_motion.gd`. Frame strips:
+`docs/timeline/motion/` (README rows marked ANIM-5).
+- **City colour influence (the designer's ask).** A change of territory no longer jumps.
+  The city still bakes once per look (H20's static image stays): the new look is baked
+  while the old image stays on screen, then the new image shows through the old one as
+  the tint spreads from the Site(s) whose pull changed (`InfluenceSpread`, pure; mask
+  shader `shaders/influence_reveal.gdshader`). Distance is Manhattan along the street
+  grid in lots, plus a per-block hash jitter, so whole blocks turn along the streets; a
+  light band in the new owner's colour (the Cell's pink, or the corporation's) rides the
+  front. Whatever changed beyond the front's reach (a raid's sway over the whole
+  territory) cross-fades in behind it. A sway-only change spreads from the corporation's
+  HQ. Values: `influence_spread` 1.0 s OUT CUBIC, reach 10 lots (CityInfluence.RADIUS is
+  7.5); `influence_crossfade` 0.6 s after 0.4 s, IN_OUT SINE, front edge 1.5 lots. The
+  bake happens BEFORE the spread (not at its end, as first sketched): then the end state is
+  pixel-exact (the real bake) and the bake's hitch never lands mid-motion. It plays
+  wherever the change is first seen: each city family (net/physical, district, campaign)
+  remembers the influence it last showed (`NeonCity._seen`), so a Site cleared in a run
+  spreads when the HQ backdrop shows it on return (and on the netrun's summary). Headless
+  never spreads (no bake); an old image evicted from the cache leaves the light front only.
+- **Raid execution (4.15).** The playout is built from the events the resolver returned
+  (`RaidBeats`: grouped by step, beats in the resolver's phase order: enter, move/held,
+  ICE LOCK and ghost holds, shots one after another half a trace apart, then damage,
+  Disabled, Seized; the raid's end is its own group) and drawn on the city map by a
+  `RaidFxLayer`: threats travel the street route between nodes (`raid_move` 0.5 s IN_OUT
+  SINE), gun traces (`turret_trace` 0.15 s) with a hit ring (`raid_hit_effect`), ICE
+  LOCK rings close from 2.2x (`ice_lock_ring` 0.25 s) and leave a frost ring while
+  held, a DECOY's gold lure line pulls a threat 8 px aside (`decoy_fire`), numbers rise
+  24 px off nodes (`node_damage_number` 0.6 s), HOLDS / DISABLED / SEIZED / BREACHED
+  stamps flip in from 90 degrees (`raid_flip` 0.2 s), home integrity drains with a white
+  lag bar (`home_lag` 0.45 s after 0.2 s), a rest of `raid_step_gap` 0.2 s after each
+  step, and a Seized node spreads a corporate tint disc until the city's own tint lands.
+  At 1x a typical step reads in about 1.2-1.8 s. The playout starts from the Grid as it
+  stood (a view copy of the campaign), and the city holds its pre-raid tint
+  (`NeonCity.pin_influence`) until the end, then lets the result spread (one bake). The
+  end is snapped to the resolved raid (`last_raid.home_after`, node outcomes), never a sum
+  of the beats. The setup's ForecastStamp rides along in the feed and resolves into the
+  real verdict ("RAID / RESULT:", solid ring, `forecast_stamp_resolve` pop). Speed:
+  1x / 2x / 4x set `Motion.speed` for the playout (the panel's clock and every motion it
+  builds), back to 1x when it ends. Skip jumps every beat to its end and goes straight to
+  the summary (HQ) or on (netrun). A click or accept press ends the current step's motion.
+  The mid-run raid (netrun) plays the same way. Resolver facts: `move` events now carry
+  `target` and `decoy` (whether a DECOY's pull chose the target), the values the routing
+  already used (`_decoy_site` factored out; results and hashes unchanged, tested).
+- **Answer to the ANIM-1 open question (does a sped-up raid hurry the city?): no.** The
+  city backdrop (window lights, beacons, traffic, rain) keeps its own clock at every
+  speed; 4x beacons would strobe. Everything that belongs to the raid (tokens, traces,
+  numbers, stamps, the map's route dashes and packets) runs at the chosen speed.
+- **City Grid / raid setup (4.14).** Selecting a Site draws its roof outline on (stroke
+  reveal with a bright head, `site_outline_draw` 0.4 s OUT CUBIC) and its ring eases in
+  from 1.8x (`select_ring_ease` 0.25 s OUT BACK). The camera eases instead of jumping: the
+  net city hangs from a camera rig (`WireframeBackground.rig`). The camera itself always
+  changes at once, so every H22-H24 fit and label layout reads the real frame (fits run
+  with the rig at rest, `unrigged`); the rig only holds the old picture while the page
+  refits and then eases it to the new one (`map_camera_ease` 0.5 s IN_OUT CUBIC). The
+  camera leans toward the selected Site (`grid_lean`): at most 90 px, and only inside the
+  slack that keeps every node in the fitted area, so the H23/H24 framing holds at the end
+  state (tested). The raid playout's follow camera eases the same way, and the raid setup holds its map still while it rebuilds after a deploy or a new target (then eases to the refit). Threat route
+  dashes crawl toward home at `route_crawl` 30 px per 1.0 s (the old DASH_SPEED, now in
+  the table). Deploying an asset: it drops 24 px onto its node with a stamp ring
+  (`asset_drop` 0.25 s BOUNCE); the hook for ANIM-4's drag and drop is
+  `hq_scene.play_asset_drop(site_id)` (`CityMapOverlay.drop_asset`). The folding map key
+  (H24 K1) slides its rows 14 px in and out with a fade (`legend_fold` 0.18 s); the map
+  is framed for the folded line throughout, and the rows hide when they have slid out.
+- **Heat thresholds (4.12).** `Fx.heat_pulse` is wired: `HeatPoster` remembers the Heat
+  each campaign last showed (`_seen_heat`, view memory) and plays, once the poster shows
+  and no jack runs: one pulse per threshold crossed going up (two at once play a pulse
+  apart), the ransom letters shake once (`heat_letters_shake` 3 px), and the band word
+  stamps on from 1.3x with an ink box (`poster_stamp`). The pulse also sends the
+  corporation's wireframe creeping in from the screen edges over the zine layer to 30 %
+  of the half-height and back (`net_creep` 1.2 s; `shaders/corp_creep.gdshader`). A
+  steady value plays nothing; a crossing down (Heat bought off) only stamps the band (no
+  pulse: the corporation's attention fading is not a threat event). Nothing stays on.
+- **Netrun route (4.16).** Choosing a node applies the rule at once, then the route map
+  plays the move before the node's screen opens: a light pulse with a fading trail runs
+  the street route and carries the "you are here" marker (`route_pulse` 0.4 s), the new
+  node pops from 1.2x with the marker on it (`node_pop` 0.25 s BACK) while the node left
+  behind dims to 0.5 (`visited_dim` 0.3 s). About 0.65 s; any input (or another choice)
+  skips it. The route map's "you are here" ring eases in when the map opens.
+- **Jack in / jack out (4.1).** The real version (`Fx._transition`): the HQ scene scales
+  2.6x about its deck CRT (the monitor on the HQ page, or the Site card's JACK IN;
+  `Fx.JACK_FOCUS_GROUP`) while the screen dissolves cell by cell from that point into the
+  wireframe city (the net's iso lattice) with scanlines rolling (`jack_scanlines` roll
+  0.45 s, strength 0.35; `shaders/jack_cover.gdshader`); the scene changes under the
+  opaque cover, and the net arrives from 1.24x as the cover clears. Jack out is the
+  exact reverse (the net pulls back, the HQ comes out of the CRT from 2.6x). 0.8 s
+  (`jack_in` / `jack_out`, IN_OUT CUBIC: the push eases in, the arrival out). No frame
+  shows both scenes (tested at the switch). Reduce effects: a 0.2 s fade through black
+  (`jack_fade_reduced`). Headless: the switch at once. The old growing CRT rect is gone.
+- **HQ mini-map.** A Site whose status changed since the mini-map last showed (a run
+  cleared it, a raid Seized it) pulses once, a ring growing 18 px as it fades
+  (`minimap_pulse` 0.6 s); the home "you are here" rings (and a selected ring) ease in
+  (`select_ring_ease`). Only the HQ's mini-map remembers (the Grid page's hidden model
+  never counts as seen).
+- **New ids (data only; REQUIRED_IDS and the lab updated):** `jack_scanlines`,
+  `raid_step_gap`, `home_lag`, `minimap_pulse`, `select_ring_ease`, `legend_fold` (111
+  entries). Retuned: `jack_in` / `jack_out` (0.8 s, zoom 2.6), `net_creep` (reach 0.3),
+  `map_camera_ease` (lean 90 px), `heat_pulse` (peak 0.5, was 0.85), `route_crawl` (30 px per s), `ice_lock_ring` (start
+  2.2x), `influence_spread` / `influence_crossfade` (above).
+- **Variants shown (frame strips, docs/timeline/motion):** influence_spread 0.7 / **1.0** / 1.4 s (1.4 lingers after the panels have settled); raid_move 0.35 / **0.5** / 0.7 s (0.35 skips past the route, 0.7 drags a four-step raid past 6 s); heat_pulse peak 0.85 / **0.5** / 0.3 (0.85, ANIM-1's value, tore the UI apart; 0.3 barely reads as a threat; retuned); jack_in 0.6 / **0.8** / 0.9 s (the handoff's "heavy"); route_pulse 0.3 / **0.4** / 0.6 s; site_outline_draw 0.25 / **0.4** / 0.6 s. Picked values in bold; the owner may swap any of them in the table.
+- Frame capture: `--demo-anim=<id>` on the HQ scene (`site_select`, `influence_spread`,
+  `raid_playout`, `asset_drop`, `heat_pulse`, `jack_in`; with `--demo-grid` /
+  `--demo-raid` / `--demo-hq`) and on the netrun scene (`--demo-run
+  --demo-anim=route_pulse`) play one motion once the city has baked and print "anim5: <id>
+  starts on frame N"; `--demo-tune=<id>:<duration>[:<amplitude>]` plays a variant from a
+  duplicate of the table.
+
 #### 2026-09-27 — Animation pass — ANIM-1: motion foundation
 The designer made motion its own Animation pass ("nothing should be deferred"). ANIM-1
 makes motion tunable before any new effect
@@ -2401,9 +2512,10 @@ and annotated in the GDD where it changes a rule.
   turn with BACK overshoot, `card_play` 0.3 s, `resolve_pass` 0.35 s between passes and
   `number_float` 28 px over 0.6 s. Each will be offered as snappy / heavy / bouncy
   variants when its slice is built.
-- **Motion speed and ambience (Animation pass ANIM-1):** `Motion.speed` scales helper-built
-  motion only. City ambience (beacons) keeps its own clock, so raid playback at 4x does
-  not speed up the backdrop. Should a sped-up raid also hurry the city?
+- **Motion speed and ambience (Animation pass ANIM-1):** answered in ANIM-5 (decided by
+  the implementer, as the designer asked): no. The city backdrop keeps its own clock at
+  1x / 2x / 4x (sped-up beacons would strobe); the raid layer and the map's route dashes
+  run at the chosen speed. See "Animation pass — ANIM-5".
 
 - **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column and the map key along the map's foot (about 280
   px tall at 1.6), the Grid map is framed small enough that every node shows, and only the

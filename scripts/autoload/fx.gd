@@ -7,12 +7,30 @@ extends CanvasLayer
 
 const SCANLINE_SHADER := preload("res://shaders/scanline.gdshader")
 const DISTORTION_SHADER := preload("res://shaders/distortion.gdshader")
+const JACK_SHADER := preload("res://shaders/jack_cover.gdshader")
+const CREEP_SHADER := preload("res://shaders/corp_creep.gdshader")
+## ANIM-5 (4.1): the node group a scene puts its deck CRT in (the point jack in pushes
+## into and jack out pulls out of); the screen's centre when none shows.
+const JACK_FOCUS_GROUP := &"jack_focus"
+## Share of the push zoom the scene on the far side of the cover starts at (it keeps the
+## push going as the cover clears).
+const JACK_ARRIVE_SHARE := 0.15
+const SCANLINE_MOTION := &"jack_scanlines"
+const CREEP_MOTION := &"net_creep"
 
 var scanlines: ColorRect
 var distortion: ColorRect
 var flash_rect: ColorRect
 var transition_rect: ColorRect
-var crt_rect: ColorRect
+## ANIM-5: the jack cover (dissolve to the wireframe city, rolling scanlines) and the
+## Heat crossing's corporate wireframe creeping in from the edges.
+var jack_cover: ColorRect
+var creep_rect: ColorRect
+## Heat pulses played (one per threshold crossing; tests read this).
+var heat_pulses: int = 0
+var _jacking: bool = false
+var _cover_opaque: bool = false
+var _creep_tween: Tween
 var limiter := FlashLimiter.new(3)
 var fps_label: Label
 var saved_label: Label
@@ -38,13 +56,17 @@ func _ready() -> void:
 	distortion.material.shader = DISTORTION_SHADER
 	distortion.material.set_shader_parameter("intensity", 0.0)
 	distortion.visible = false
+	creep_rect = _full_rect(Color.WHITE)
+	creep_rect.material = ShaderMaterial.new()
+	creep_rect.material.shader = CREEP_SHADER
+	creep_rect.material.set_shader_parameter("reach", 0.0)
+	creep_rect.visible = false
 	flash_rect = _full_rect(Color(1, 1, 1, 0))
+	jack_cover = _full_rect(Color.WHITE)
+	jack_cover.material = ShaderMaterial.new()
+	jack_cover.material.shader = JACK_SHADER
+	jack_cover.visible = false
 	transition_rect = _full_rect(Color(0, 0, 0, 0))
-	crt_rect = ColorRect.new()
-	crt_rect.color = Color(Palette.CRT_AMBER, 0.0)
-	crt_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	crt_rect.visible = false
-	add_child(crt_rect)
 	fps_label = Label.new()
 	fps_label.add_theme_font_override("font", Palette.mono())
 	fps_label.add_theme_font_size_override("font_size", 12)
@@ -238,6 +260,9 @@ func apply_settings() -> void:
 		distortion.material.set_shader_parameter("intensity", 0.0)
 		if _pulse_tween != null and _pulse_tween.is_valid():
 			_pulse_tween.kill()
+		creep_rect.visible = false
+		if _creep_tween != null and _creep_tween.is_valid():
+			_creep_tween.kill()
 	limiter.enabled = Settings.flash_limiter
 	fps_label.visible = Settings.show_fps
 
@@ -265,10 +290,16 @@ func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = 
 
 ## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on. Rises for
 ## HEAT_PULSE_RISE of the time to the `heat_pulse` entry's amplitude, then falls; a
-## negative `seconds` takes the entry's duration.
-func heat_pulse(seconds: float = -1.0) -> void:
+## negative `seconds` takes the entry's duration. ANIM-5 (4.12): one per threshold
+## crossing (HeatPoster calls it); `creep` (a corporation's colour, alpha > 0) also sends
+## the corporate wireframe creeping in from the screen's edges over the zine layer and back
+## (`net_creep`). Counted in `heat_pulses` even under reduce effects (nothing shows then).
+func heat_pulse(seconds: float = -1.0, creep: Color = Color(0, 0, 0, 0)) -> void:
+	heat_pulses += 1
 	if not effects_enabled():
 		return
+	if creep.a > 0.0:
+		_creep(creep)
 	if seconds < 0.0:
 		seconds = Motion.seconds(&"heat_pulse")
 	var peak := Motion.amplitude(&"heat_pulse")
@@ -280,6 +311,24 @@ func heat_pulse(seconds: float = -1.0) -> void:
 	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.0, peak, seconds * HEAT_PULSE_RISE)
 	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), peak, 0.0, seconds * (1.0 - HEAT_PULSE_RISE))
 	_pulse_tween.tween_callback(func() -> void: distortion.visible = false)
+
+
+## The corporate wireframe creeps in from the edges to `net_creep`'s reach and back.
+func _creep(col: Color) -> void:
+	if _creep_tween != null and _creep_tween.is_valid():
+		_creep_tween.kill()
+	var m := creep_rect.material as ShaderMaterial
+	m.set_shader_parameter("tint", col)
+	m.set_shader_parameter("reach", 0.0)
+	creep_rect.visible = true
+	var e := Motion.entry(CREEP_MOTION)
+	var half := Motion.seconds(CREEP_MOTION) * 0.5
+	var reach := Motion.amplitude(CREEP_MOTION)
+	var set_reach := func(v: float) -> void: m.set_shader_parameter("reach", v)
+	_creep_tween = create_tween()
+	_creep_tween.tween_method(set_reach, 0.0, reach, half).set_ease(Tween.EASE_OUT).set_trans(e.trans)
+	_creep_tween.tween_method(set_reach, reach, 0.0, half).set_ease(Tween.EASE_IN).set_trans(e.trans)
+	_creep_tween.tween_callback(func() -> void: creep_rect.visible = false)
 
 
 ## Freezes time for `frames` frames (Perfect hit feel); a negative count takes the
@@ -297,11 +346,15 @@ func freeze_frames(frames: int = -1) -> void:
 	_frozen = false
 
 
-## Jack in (STYLE_GUIDE 5): the camera pushes into the deck CRT and dissolves to
-## wireframe. `on_switch` runs at the darkest point (the scene change). Instant under
-## reduce-effects. Timing from the `jack_in` / `jack_out` motion entries (a negative
-## `seconds` takes the entry's duration): the CRT rect runs between the deck screen's
-## size (`jack_out` amplitude, x viewport) and past the screen (`jack_in` amplitude).
+## Jack in (STYLE_GUIDE 5, ANIM-5 4.1): the camera pushes into the deck CRT (the scene
+## scales up about its `jack_focus` node) while the screen dissolves, cell by cell from the
+## CRT outward, into the wireframe city with scanlines rolling; `on_switch` runs when the
+## cover is opaque (the scene change), then the net arrives as the cover clears. Jack out
+## reverses it: the net pulls back into the dissolve and the HQ comes out of the CRT.
+## Timing from the `jack_in` / `jack_out` entries (a negative `seconds` takes the entry's
+## duration; amplitude = the push zoom). No frame shows both scenes: the old one is only
+## ever under a partial cover before the switch, the new one only after it. Reduce
+## effects: one short fade (`jack_fade_reduced`); headless (tests): the switch at once.
 func jack_in(on_switch: Callable, seconds: float = -1.0) -> void:
 	await _transition(on_switch, seconds, &"jack_in")
 
@@ -310,36 +363,116 @@ func jack_out(on_switch: Callable, seconds: float = -1.0) -> void:
 	await _transition(on_switch, seconds, &"jack_out")
 
 
-## Alpha the CRT rect glows to at the transition's darkest point.
-const CRT_GLOW_ALPHA := 0.55
 ## Share of a Heat pulse spent rising (the rest falls).
 const HEAT_PULSE_RISE := 0.3
 
 
+## True while a jack transition runs (views hold their own effects till it ends).
+func transitioning() -> bool:
+	return _jacking
+
+
+## True while the jack cover hides the whole screen (the scene switches then).
+func cover_opaque() -> bool:
+	return _cover_opaque
+
+
 func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
-	if not effects_enabled():
+	if DisplayServer.get_name() == "headless" and not Motion.force_live:
 		on_switch.call()
+		return
+	_jacking = true
+	if not effects_enabled():
+		await _fade_switch(on_switch)
+		_jacking = false
 		return
 	var inward := id == &"jack_in"
 	if seconds < 0.0:
 		seconds = Motion.seconds(id)
 	var e := Motion.entry(id)
+	var half := seconds * 0.5
+	var zoom := maxf(1.0, Motion.amplitude(id))
+	var arrive := 1.0 + (zoom - 1.0) * JACK_ARRIVE_SHARE
 	var vp := get_viewport().get_visible_rect().size
-	var screen := vp * Motion.amplitude(&"jack_out")
-	var past := vp * Motion.amplitude(&"jack_in")
-	var end_size := past if inward else screen
-	crt_rect.visible = true
-	crt_rect.size = screen if inward else vp
-	crt_rect.position = (vp - crt_rect.size) / 2.0
-	crt_rect.color = Color(Palette.CRT_AMBER if inward else Palette.NET_CYAN, 0.0)
-	var tw := create_tween().set_parallel(true).set_ease(e.ease).set_trans(e.trans)
-	tw.tween_property(crt_rect, "color:a", CRT_GLOW_ALPHA, seconds * 0.5)
-	tw.tween_property(crt_rect, "size", end_size, seconds * 0.5)
-	tw.tween_property(crt_rect, "position", (vp - end_size) / 2.0, seconds * 0.5)
-	tw.tween_property(transition_rect, "color:a", 1.0, seconds * 0.5)
+	var m := jack_cover.material as ShaderMaterial
+	m.set_shader_parameter("screen", vp)
+	m.set_shader_parameter("tile", Vector2(NeonCity.TILE_A, NeonCity.TILE_B))
+	m.set_shader_parameter("scan", Motion.amplitude(SCANLINE_MOTION))
+	m.set_shader_parameter("lattice", Palette.NET_CYAN)
+	var old := get_tree().current_scene as Control
+	var focus := _jack_focus(old, vp)
+	m.set_shader_parameter("focus", focus)
+	jack_cover.visible = true
+	_set_cover(0.0, 0.0)
+	var t0 := Time.get_ticks_msec()
+	var tw := create_tween().set_parallel(true)
+	tw.tween_method(func(v: float) -> void: _set_cover(v, _roll(t0)), 0.0, 1.0, half).set_ease(Tween.EASE_IN).set_trans(e.trans)
+	var old_scale := Vector2.ONE
+	if old != null:
+		old_scale = old.scale
+		old.pivot_offset = focus - old.global_position
+		tw.tween_property(old, "scale", Vector2.ONE * (zoom if inward else 1.0 / arrive), half).set_ease(Tween.EASE_IN).set_trans(e.trans)
 	await tw.finished
+	_set_cover(1.0, _roll(t0))
+	_cover_opaque = true
 	on_switch.call()
-	crt_rect.visible = false
-	var tw2 := create_tween().set_ease(e.ease).set_trans(e.trans)
-	tw2.tween_property(transition_rect, "color:a", 0.0, seconds * 0.5)
+	if is_instance_valid(old):
+		old.scale = old_scale
+	# The new scene takes over at the end of this frame and builds its page in the next.
+	for f in 2:
+		await get_tree().process_frame
+	var fresh := get_tree().current_scene as Control
+	focus = _jack_focus(fresh, vp)
+	m.set_shader_parameter("focus", focus)
+	var tw2 := create_tween().set_parallel(true)
+	if fresh != null:
+		fresh.pivot_offset = focus - fresh.global_position
+		fresh.scale = Vector2.ONE * (arrive if inward else zoom)
+		tw2.tween_property(fresh, "scale", Vector2.ONE, half).set_ease(Tween.EASE_OUT).set_trans(e.trans)
+	_cover_opaque = false
+	tw2.tween_method(func(v: float) -> void: _set_cover(v, _roll(t0)), 1.0, 0.0, half).set_ease(Tween.EASE_OUT).set_trans(e.trans)
 	await tw2.finished
+	if is_instance_valid(fresh):
+		fresh.scale = Vector2.ONE
+	jack_cover.visible = false
+	_jacking = false
+
+
+## Reduce effects: one short fade through black (`jack_fade_reduced`), the switch at its
+## darkest.
+func _fade_switch(on_switch: Callable) -> void:
+	var e := Motion.entry(&"jack_fade_reduced")
+	var half := (e.duration if e != null else 0.0) * 0.5
+	var tw := create_tween()
+	tw.tween_property(transition_rect, "color:a", 1.0, half)
+	await tw.finished
+	_cover_opaque = true
+	on_switch.call()
+	for f in 2:
+		await get_tree().process_frame
+	_cover_opaque = false
+	var tw2 := create_tween()
+	tw2.tween_property(transition_rect, "color:a", 0.0, half)
+	await tw2.finished
+
+
+func _set_cover(progress: float, roll: float) -> void:
+	var m := jack_cover.material as ShaderMaterial
+	m.set_shader_parameter("progress", progress)
+	m.set_shader_parameter("roll", roll)
+
+
+## The scanlines' phase: one roll every `jack_scanlines` seconds since `t0` (msec).
+func _roll(t0: int) -> float:
+	var period := maxf(Motion.seconds(SCANLINE_MOTION), 0.001)
+	return fmod((Time.get_ticks_msec() - t0) / 1000.0 / period, 1.0)
+
+
+## The deck CRT in `scene` (the first visible node of JACK_FOCUS_GROUP in it; viewport
+## px), else the middle of the screen.
+func _jack_focus(scene: Node, vp: Vector2) -> Vector2:
+	if scene != null and is_inside_tree():
+		for n in get_tree().get_nodes_in_group(JACK_FOCUS_GROUP):
+			if n is Control and scene.is_ancestor_of(n) and (n as Control).is_visible_in_tree():
+				return (n as Control).get_global_rect().get_center()
+	return vp * 0.5

@@ -197,6 +197,28 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Readability**: numbers stay inside the hub, clear of every needle; tags hide while a
   SEND IT replays and flip back in; nothing waits on motion when the player decides.
 
+### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
+- **Territory tint never jumps.** The city bakes the new look once; the new image shows
+  through the old one as the tint spreads from the Site that changed owner, block by
+  block along the streets (a light band in the new owner's colour on the front), and the
+  rest of the change cross-fades behind it. It plays where the change is first seen.
+- **Raids play from the resolver's events**, never recomputed: threats travel the street
+  routes, traces fire, ICE LOCK rings close, decoys pull aside, numbers rise off nodes,
+  outcome stamps flip on, home drains with a white lag bar, the forecast resolves. 1x /
+  2x / 4x scale the raid layer only; the city's own lights keep their clock.
+- **Map cameras ease, frames stay honest.** A camera change moves a rig under the city
+  from the old frame to the new; fits and labels always read the real frame. A lean
+  toward the selected Site stays inside the fitted map.
+- **Jack in / out**: push into the deck CRT, dissolve cell by cell to the wireframe city
+  with rolling scanlines; the scene changes under the opaque cover (never both scenes).
+- **Heat**: one pulse per threshold crossed going up (distortion, the corporate
+  wireframe creeping in from the edges, the ransom letters shaking, the band stamped);
+  nothing stays on.
+- **Netrun move**: a light pulse carries the "you are here" marker along the link, the
+  new node pops, the old one dims; any input skips it.
+- Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5"); strips:
+  `docs/timeline/motion/`.
+
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
 slice and status, text scaling, subtitles with speaker names.

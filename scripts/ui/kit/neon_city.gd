@@ -293,6 +293,30 @@ var _campaign: CampaignState = null
 var _corp: CorporationData = null
 var _poll_t: float = 0.0
 
+## Animation pass ANIM-5 (territory colour change): a change of influence does not jump.
+## The new look is baked once, as always; while it lands the old image stays up, then the
+## new one shows through the old as the tint spreads from the Sites that changed owner
+## (InfluenceSpread, shaders/influence_reveal.gdshader). Nothing re-bakes mid-spread: the
+## spread is two textures and a mask. Headless (no bake), reduce effects and a disabled
+## entry show the new look at once.
+const SPREAD_MOTION := &"influence_spread"
+const FADE_MOTION := &"influence_crossfade"
+const REVEAL_SHADER := preload("res://shaders/influence_reveal.gdshader")
+## The last influence each city family (net/physical, district, campaign) showed, so a
+## change made while the player was away (a run cleared a Site) spreads when they are
+## back. View memory only.
+static var _seen: Dictionary = {}
+## A pinned influence (the raid playout holds the pre-raid tint until its end) or null.
+var influence_pin: Variant = null
+## The spread running: the old image ({"texture", "region"}; {} = light front only), its
+## origins (grid lots), front colour and elapsed seconds (< 0: none).
+var _spread_old: Dictionary = {}
+var _spread_origins := PackedVector2Array()
+var _spread_color: Color = Palette.CELL_PINK
+var _spread_elapsed: float = -1.0
+var _old_layer: Control
+var _front_layer: Control
+
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -308,8 +332,10 @@ func _init() -> void:
 	(_view.material as ShaderMaterial).shader = LIVE_SHADER
 	_view.draw.connect(_draw_view)
 	add_child(_view)
+	_old_layer = _reveal_layer("InfluenceOld", 0, _draw_old)
 	_lights_layer = _blink_layer("CityLights", LIGHT_ON_SHARE, _draw_lights)
 	_beacons_layer = _blink_layer("CityBeacons", Motion.amplitude(BEACON_MOTION), _draw_beacons)
+	_front_layer = _reveal_layer("InfluenceFront", 1, _draw_front)
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -329,6 +355,23 @@ func _blink_layer(layer_name: String, duty: float, painter: Callable) -> Control
 	m.shader = LIGHTS_SHADER
 	m.set_shader_parameter("duty", duty)
 	c.material = m
+	c.draw.connect(painter)
+	_view.add_child(c)
+	return c
+
+
+## A layer of the influence spread (ANIM-5): `mode` 0 the old image, 1 the front's glow.
+func _reveal_layer(layer_name: String, mode: int, painter: Callable) -> Control:
+	var c := Control.new()
+	c.name = layer_name
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var m := ShaderMaterial.new()
+	m.shader = REVEAL_SHADER
+	m.set_shader_parameter("mode", mode)
+	m.set_shader_parameter("tile", Vector2(TILE_A, TILE_B))
+	c.material = m
+	c.visible = false
 	c.draw.connect(painter)
 	_view.add_child(c)
 	return c
@@ -396,8 +439,139 @@ func sync_influence() -> void:
 		set_influence(_followed_influence())
 
 
+## Holds the city on `inf` (a CityInfluence.of dictionary) whatever the followed campaign
+## says, until `release_influence` (ANIM-5: the raid playout shows the pre-raid tint and
+## lets the result spread at its end).
+func pin_influence(inf: Dictionary) -> void:
+	influence_pin = inf
+	set_influence(inf)
+
+
+## Lets the followed campaign's influence show again; a change spreads (ANIM-5).
+func release_influence() -> void:
+	influence_pin = null
+	sync_influence()
+
+
+## The campaign whose influence this city shows (null when none).
+func _followed_campaign() -> CampaignState:
+	if follow_campaign:
+		return RunManager.campaign
+	return _campaign
+
+
+## The spread memory's key: world (net/physical), district and campaign.
+func _family() -> String:
+	var c := _followed_campaign()
+	return "%s|%s|%s" % [net_mode, district, str(c.campaign_seed) + String(c.corporation_id) if c != null else "-"]
+
+
+## True while a territory change is spreading (ANIM-5).
+func spreading() -> bool:
+	return _spread_elapsed >= 0.0
+
+
+## True when the city shows its current look (its bake is on screen, or it spreads in,
+## or the city draws procedurally): a territory change has landed.
+func showing_current_look() -> bool:
+	if not is_baked():
+		return true
+	return spreading() or (CityBakeCache.has(_baked_key) and String(CityBakeCache.entry(_baked_key).get("look", "")) == look_key())
+
+
+## The spread's eased progress: x = the front (0..1 of its reach), y = the cross-fade of
+## the rest (0..1). (1, 1) when none runs (the end state).
+func spread_progress() -> Vector2:
+	if _spread_elapsed < 0.0:
+		return Vector2.ONE
+	var s := Motion.entry(SPREAD_MOTION)
+	var f := Motion.entry(FADE_MOTION)
+	var ds := maxf(Motion.seconds(SPREAD_MOTION), 0.001)
+	var df := maxf(Motion.seconds(FADE_MOTION), 0.001)
+	var ts := clampf(_spread_elapsed / ds, 0.0, 1.0)
+	var tf := clampf((_spread_elapsed - Motion.delay_of(FADE_MOTION)) / df, 0.0, 1.0)
+	return Vector2(float(Tween.interpolate_value(0.0, 1.0, ts, 1.0, s.trans, s.ease)),
+		float(Tween.interpolate_value(0.0, 1.0, tf, 1.0, f.trans, f.ease)))
+
+
+## Starts the spread from `prev` (the influence shown before) to the current one: the old
+## image is the one on screen (or any bake of the old look over this view); without one
+## only the light front plays over the new image.
+func _start_spread(prev: Dictionary) -> void:
+	if not Motion.live(SPREAD_MOTION) or prev.is_empty() or influence.is_empty() or prev.get("corp") != influence.get("corp"):
+		return
+	var from := InfluenceSpread.origins(prev, influence)
+	if from.is_empty():
+		return
+	var old_look := look_key(prev)
+	var old_key := ""
+	if CityBakeCache.has(_baked_key) and CityBakeCache.entry(_baked_key).get("look", "") == old_look:
+		old_key = _baked_key
+	else:
+		old_key = CityBakeCache.find(old_look, view_rect())
+	_spread_old = {}
+	if old_key != "":
+		var oe := CityBakeCache.entry(old_key)
+		if oe.has("texture"):
+			_spread_old = {"texture": oe["texture"], "region": oe["region"]}
+	_spread_origins = from
+	_spread_color = InfluenceSpread.front_color(prev, influence)
+	_spread_elapsed = 0.0
+	for layer in [_old_layer, _front_layer]:
+		var m := (layer as Control).material as ShaderMaterial
+		m.set_shader_parameter("origins", from)
+		m.set_shader_parameter("origin_count", from.size())
+		m.set_shader_parameter("feather", Motion.amplitude(FADE_MOTION))
+		m.set_shader_parameter("front_color", _spread_color)
+		(layer as Control).visible = true
+	_old_layer.visible = not _spread_old.is_empty()
+	_step_spread(0.0)
+
+
+## Advances the spread by `delta` seconds and updates the mask; ends it when both the
+## front and the cross-fade are done.
+func _step_spread(delta: float) -> void:
+	if _spread_elapsed < 0.0:
+		return
+	_spread_elapsed += delta
+	var p := spread_progress()
+	for layer in [_old_layer, _front_layer]:
+		var m := (layer as Control).material as ShaderMaterial
+		m.set_shader_parameter("cam", Vector2(_ox, _oy))
+		m.set_shader_parameter("radius", p.x * Motion.amplitude(SPREAD_MOTION))
+		m.set_shader_parameter("fade", p.y)
+	var done := Motion.seconds(SPREAD_MOTION) <= _spread_elapsed and Motion.delay_of(FADE_MOTION) + Motion.seconds(FADE_MOTION) <= _spread_elapsed
+	if done or not Fx.effects_enabled():
+		finish_spread()
+
+
+## Jumps a running spread to its end (the new look alone).
+func finish_spread() -> void:
+	_spread_elapsed = -1.0
+	_spread_old = {}
+	_old_layer.visible = false
+	_front_layer.visible = false
+
+
+## The old image under the camera, then the same shade the view draws (masked by the
+## reveal shader).
+func _draw_old() -> void:
+	if _spread_old.is_empty():
+		return
+	var region: Rect2 = _spread_old["region"]
+	_old_layer.draw_texture_rect(_spread_old["texture"], Rect2(region.position + _shift, region.size), false)
+	_draw_shade(_old_layer)
+
+
+## The front's glow: one rect the shader turns into the spreading band.
+func _draw_front() -> void:
+	_front_layer.draw_rect(Rect2(Vector2.ZERO, size), Color.WHITE)
+
+
 ## The influence of the followed campaign (the current one if nothing is followed).
 func _followed_influence() -> Dictionary:
+	if influence_pin != null:
+		return influence_pin
 	if follow_campaign:
 		return CityInfluence.of(RunManager.campaign, RunManager.corporation)
 	if _campaign != null:
@@ -411,6 +585,8 @@ func _process(delta: float) -> void:
 		if _poll_t >= INFLUENCE_POLL:
 			_poll_t = 0.0
 			sync_influence()
+	if _spread_elapsed >= 0.0:
+		_step_spread(delta)
 	if not Fx.effects_enabled() or not is_visible_in_tree():
 		return
 	anim_t += delta
@@ -601,6 +777,12 @@ func _camera() -> void:
 	_oy = anchor.y - (focus.x + focus.y) * TILE_B
 
 
+## Works the camera out now from focus, anchor and size (ANIM-5: the camera rig reads the
+## new frame before the city redraws).
+func update_camera() -> void:
+	_camera()
+
+
 ## World px (camera-free iso space) of grid point (x, y).
 static func world_of(x: float, y: float) -> Vector2:
 	return Vector2((x - y) * TILE_A, (x + y) * TILE_B)
@@ -631,8 +813,10 @@ func bake_scale(region: Rect2) -> float:
 	return CityBakeCache.fit_scale(region, (BAKE_SCALE_MAP if net_mode else BAKE_SCALE_BACKDROP) * _stretch())
 
 
-## Everything that changes the baked look (not where the camera is), as a cache key.
-func look_key() -> String:
+## Everything that changes the baked look (not where the camera is), as a cache key;
+## `inf` names another influence than the current one (ANIM-5: the old look of a spread).
+func look_key(inf: Variant = null) -> String:
+	var infl: Dictionary = influence if inf == null else inf
 	var sketch := []
 	for p in SKETCH_PARAMS:
 		sketch.append(material.get_shader_parameter(p))
@@ -642,7 +826,7 @@ func look_key() -> String:
 	for k in names:
 		cult.append([String(k), String(cultures[k])])
 	return CityBakeCache.key_of([city_seed, String(district), net_mode, ink_set, face_texture, cult, _baked_creep(),
-		CityInfluence.signature(influence), sketch, _stretch()])
+		CityInfluence.signature(infl), sketch, _stretch()])
 
 
 ## The cache key of one bake: the look and the region it covers.
@@ -711,6 +895,8 @@ func _draw_view() -> void:
 		influence = inf
 	var look := look_key()
 	var key := CityBakeCache.find(look, view_rect())
+	if key != "" and not CityBakeCache.entry(key).has("failed"):
+		_note_seen()
 	if key == "":
 		var want := bake_region()
 		_start_bake.call_deferred(bake_key(want), want, look)
@@ -744,6 +930,19 @@ func _draw_view() -> void:
 	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
 	rebuilt.emit()
+
+
+## The current look's own bake is on screen: when this family last showed another
+## influence, that change spreads now (ANIM-5); then the family remembers this one.
+func _note_seen() -> void:
+	var fam := _family()
+	var prev: Variant = _seen.get(fam)
+	if prev != null and CityInfluence.signature(prev) != CityInfluence.signature(influence):
+		_start_spread(prev)
+	_seen[fam] = influence
+	if _spread_elapsed >= 0.0:
+		_old_layer.queue_redraw()
+		_front_layer.queue_redraw()
 
 
 func _start_bake(key: String, region: Rect2, look: String) -> void:
@@ -869,7 +1068,9 @@ func _draw_shade(ci: CanvasItem) -> void:
 		ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
 		ci.draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
 	if dim > 0.0:
-		ci.draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
+		# ANIM-5: past the control too (the baked image reaches beyond it, and a camera ease
+		# can show that margin for a moment).
+		ci.draw_rect(Rect2(-size, size * 3.0), Color(Palette.NIGHT_SKY, dim))
 
 
 ## The procedural city (headless, painters, and any renderer that can't read back).
