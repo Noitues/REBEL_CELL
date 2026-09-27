@@ -74,6 +74,10 @@ func _sync_city() -> void:
 
 
 func _process(delta: float) -> void:
+	# ANIM-5: while a frame is held, the rig follows every camera change before the frame
+	# draws (a fit pass or the lean moves the camera; waiting for the redraw showed one
+	# frame of the new camera under the old rig).
+	sync_hold()
 	if Settings.reduce_effects:
 		return
 	floor_offset = fmod(floor_offset + delta * 0.15, 1.0)
@@ -152,6 +156,14 @@ func unrigged(measure: Callable) -> Variant:
 	rig.position = pos
 	rig.scale = scl
 	return out
+
+
+## While a frame is held: the rig shows it under the camera as it is now (call right after
+## a camera change so no frame shows the new camera under the old rig).
+func sync_hold() -> void:
+	if not _held.is_empty():
+		city.update_camera()
+		_apply_hold()
 
 
 func _on_city_rebuilt() -> void:

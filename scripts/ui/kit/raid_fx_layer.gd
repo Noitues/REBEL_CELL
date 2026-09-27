@@ -23,13 +23,16 @@ const STAMP_FONT := 14
 const STAMP_PAD := 4.0
 const STAMP_TILT := -6.0
 const STAMP_LIFT := 30.0
-const NUMBER_FONT := 18
+const NUMBER_FONT := 22
 const TRACE_WIDTH := 2.5
 const HIT_RING := 10.0
 const FROST_RING := 13.0
 const HOME_BAR := Vector2(64, 7)
 const HOME_BAR_GAP := 8.0
 const PULL_DASH := 6.0
+## A threat token is the map's marker this much bigger, with a glow this much wider.
+const TOKEN_SCALE := 1.5
+const TOKEN_GLOW := 1.8
 ## Alpha of a Seized node's corporate tint disc (its reach is CityInfluence.RADIUS lots).
 const TINT_ALPHA := 0.24
 const TINT_RINGS := 24
@@ -351,7 +354,7 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 	var enter := float(t.get("enter_at", -INF))
 	if clock < enter:
 		return
-	var s := CityMapOverlay.MARKER_SIZE * k
+	var s := CityMapOverlay.MARKER_SIZE * k * TOKEN_SCALE
 	var alpha := 1.0
 	if enter > -INF:
 		var pop := _u(enter, float(t.get("enter_at_dur", 0.0)))
@@ -369,6 +372,7 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 		if lure.x != INF:
 			_dashed(lure, p, Color(Palette.RESIST_GOLD, 0.8), 1.5 * k, PULL_DASH * k)
 	var dia := _diamond(p, s)
+	draw_circle(p, s * TOKEN_GLOW, Color(threat_color, 0.25 * alpha))
 	draw_colored_polygon(dia, Color(threat_color, alpha))
 	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(Palette.PAPER, alpha), 1.2 * k)
 	if t.get("frozen", false):

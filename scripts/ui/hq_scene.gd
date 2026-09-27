@@ -362,6 +362,8 @@ func deploy_asset(armory_index: int, site_id: StringName) -> void:
 	var events := CampaignRules.deploy_asset(RunManager.campaign, RunManager.config(), RunManager.lookup(), armory_index, site_id)
 	_report(events)
 	RunManager.autosave()
+	if panel_name == "raid":
+		wireframe.hold_camera()  # ANIM-5: the map holds still while the page rebuilds
 	show_raid()
 	if not events.is_empty() and String(events[0].get("type", "")) != "refused":
 		play_asset_drop(site_id)
@@ -409,7 +411,7 @@ func _set_panel(p: Control, name: String) -> void:
 	panel_name = name
 	# ANIM-5: only the Grid and the playout ease their camera; any other page shows its
 	# frame at once.
-	if wireframe != null and not name in ["grid", "raid_playout"]:
+	if wireframe != null and not name in ["grid", "raid", "raid_playout"]:
 		wireframe.settle_camera()
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
@@ -1467,6 +1469,7 @@ func _frame_city(zoom: float, focus: Vector2, anchor: Vector2) -> void:
 	city.focus_grid = focus
 	city.focus_anchor = anchor
 	city.refresh()
+	wireframe.sync_hold()  # ANIM-5: a held frame stays on screen through the change
 
 
 func _clear_city_map() -> void:
@@ -1808,6 +1811,8 @@ func show_raid() -> void:
 ## in the node orders for the pad and keyboard; H20).
 func select_target(site_id: StringName) -> void:
 	selected_site = site_id
+	if panel_name == "raid":
+		wireframe.hold_camera()  # ANIM-5: the map holds still while the page rebuilds
 	show_raid()
 	var b := _panel.find_child("Target_%s" % site_id, true, false) as Control if _panel != null else null
 	if b != null:
@@ -1911,16 +1916,19 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 func place_raid_legend() -> void:
 	if raid_legend == null or not is_instance_valid(raid_legend) or city_overlay == null or not is_instance_valid(city_overlay):
 		return
+	# ANIM-5: measured with the camera rig at rest (a held frame may be on screen).
 	if _raid_strip:
-		_place_raid_strip()
+		wireframe.unrigged(func() -> bool:
+			_place_raid_strip()
+			return true)
 	else:
-		LegendSpot.place(raid_legend, city_overlay)
+		wireframe.unrigged(func() -> float: return LegendSpot.place(raid_legend, city_overlay))
 	# H23 S14: the nodes must also sit inside the map's free part (they sat under the top
 	# bar or the DEFENSE LOADOUT). Framing runs on the positions measured after the city
 	# redrew (this runs on `rebuilt`), so each pass corrects the last; at most
 	# RAID_REFRAMES_MAX passes.
 	var free := raid_free_rect()
-	var box := raid_node_box()
+	var box: Rect2 = wireframe.unrigged(raid_node_box)
 	if not free.has_area() or not box.has_area():
 		return
 	# Act only on a settled measure: the same free rect and node box for RAID_STABLE_FRAMES
@@ -1937,12 +1945,14 @@ func place_raid_legend() -> void:
 		_raid_same += 1  # once a frame, however often the city redraws in it
 	_raid_frame = Engine.get_process_frames()
 	if _raid_reframes >= RAID_REFRAMES_MAX or (free.encloses(box) and _raid_same >= RAID_STABLE_FRAMES):
+		wireframe.ease_camera()  # ANIM-5: settled: the held picture eases to it
 		return
 	if _raid_same < RAID_STABLE_FRAMES:
 		if not get_tree().process_frame.is_connected(place_raid_legend):
 			get_tree().process_frame.connect(place_raid_legend, CONNECT_ONE_SHOT)
 		return
 	if free.encloses(box):
+		wireframe.ease_camera()
 		return
 	var city := wireframe.city
 	var screen := get_global_rect()

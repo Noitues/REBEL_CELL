@@ -777,6 +777,12 @@ func _camera() -> void:
 	_oy = anchor.y - (focus.x + focus.y) * TILE_B
 
 
+## Works the camera out now from focus, anchor and size (ANIM-5: the camera rig reads the
+## new frame before the city redraws).
+func update_camera() -> void:
+	_camera()
+
+
 ## World px (camera-free iso space) of grid point (x, y).
 static func world_of(x: float, y: float) -> Vector2:
 	return Vector2((x - y) * TILE_A, (x + y) * TILE_B)
@@ -1062,7 +1068,9 @@ func _draw_shade(ci: CanvasItem) -> void:
 		ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
 		ci.draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
 	if dim > 0.0:
-		ci.draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.NIGHT_SKY, dim))
+		# ANIM-5: past the control too (the baked image reaches beyond it, and a camera ease
+		# can show that margin for a moment).
+		ci.draw_rect(Rect2(-size, size * 3.0), Color(Palette.NIGHT_SKY, dim))
 
 
 ## The procedural city (headless, painters, and any renderer that can't read back).

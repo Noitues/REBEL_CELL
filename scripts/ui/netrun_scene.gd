@@ -217,8 +217,9 @@ func enter_node(node_id: StringName) -> void:
 	get_tree().create_timer(secs).timeout.connect(_end_travel)
 
 
-## ANIM-5 frame capture (dev shortcut): once the route map and the city have settled, the
-## first choice is taken so its move plays; prints the frame it starts on.
+## ANIM-5 frame capture (dev shortcut): once the route map and the city have settled, a
+## move plays on the map (view only: from the first choice to the node after it, a link
+## mid-route; the run itself does not move); prints the frame it starts on.
 func _demo_route_pulse() -> void:
 	demo_tune(OS.get_cmdline_user_args())
 	for f in DEMO_SETTLE_FRAMES:
@@ -228,7 +229,9 @@ func _demo_route_pulse() -> void:
 			break
 		await get_tree().process_frame
 	print("anim5: route_pulse starts on frame %d" % Engine.get_frames_drawn())
-	enter_node(RunManager.netrun.available_nodes()[0])
+	var from: StringName = RunManager.netrun.available_nodes()[0]
+	var to: StringName = RunManager.netrun.run.map.get_node(from)["next"][0]
+	city_overlay.travel(from, to)
 
 
 ## Frames the ANIM-5 demo waits for the page to settle, and the most it waits for the

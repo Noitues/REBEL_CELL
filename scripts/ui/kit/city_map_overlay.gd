@@ -732,11 +732,11 @@ func _draw() -> void:
 	_c = self
 	match look:
 		Look.ISOLATE:
-			draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.02, 0.04, 0.62))
+			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.02, 0.04, 0.62))
 		Look.XRAY:
-			draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.03, 0.05, 0.72))
+			draw_rect(Rect2(-size, size * 3.0), Color(0.0, 0.03, 0.05, 0.72))
 		Look.BLUEPRINT:
-			draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.1, 0.32, 0.55))
+			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.1, 0.32, 0.55))
 		Look.SPOTLIGHT:
 			_spotlight()
 	for k in edges.size():
