@@ -42,9 +42,20 @@ func _init(p_host: ZineCard = null, p_verb: String = "BUY") -> void:
 		host.resized.connect(refit)
 		host.focus_entered.connect(refit)
 		host.focus_exited.connect(refit)
-		host.mouse_entered.connect(func() -> void: _hot = true; queue_redraw())
-		host.mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
+		host.mouse_entered.connect(func() -> void: _hot = true; queue_redraw(); flap(true))
+		host.mouse_exited.connect(func() -> void: _hot = false; queue_redraw(); flap(false))
+		host.focus_entered.connect(flap.bind(true))
+		host.focus_exited.connect(flap.bind(false))
 	Settings.hints_changed.connect(refit)
+
+
+## The sticker flaps on its tape while its item is hovered or focused (Animation pass
+## ANIM-6: `note_flap` degrees about its top edge) and settles back after.
+func flap(on: bool) -> void:
+	if not is_inside_tree():
+		return
+	pivot_offset = Vector2(size.x * 0.5, 0.0)
+	Motion.run(&"note_flap", self, ^"rotation_degrees", Motion.amplitude(&"note_flap") if on and not disabled else 0.0)
 
 
 func _ready() -> void:
