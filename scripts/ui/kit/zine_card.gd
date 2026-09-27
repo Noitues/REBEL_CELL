@@ -32,6 +32,13 @@ var mark: int = Mark.NONE:
 		mark = v
 		queue_redraw()
 var _lifted: bool = false
+## Motion (Animation pass ANIM-3), drawn only (the card's rect and layout never move):
+## the hover lift (px up), the deal-in offset (px) and tilt (radians) from the deck pile.
+var lift: float = 0.0
+var draw_offset: Vector2 = Vector2.ZERO
+var draw_tilt: float = 0.0
+## The sticker's resting tilt (degrees; hover tilts it to 0).
+var rest_tilt: float = 0.0
 ## Hand index this card drags as (H20 drag-to-target), -1 = not draggable.
 var drag_index: int = -1
 ## What the card does as pictograms (H21: readable without words): [{kind, amount,
@@ -85,7 +92,8 @@ func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", in
 
 func _ready() -> void:
 	pivot_offset = size / 2.0
-	rotation_degrees = float(((hash(card_title) % 9) - 4)) if look == Look.STICKER else 0.0
+	rest_tilt = float(((hash(card_title) % 9) - 4)) if look == Look.STICKER else 0.0
+	rotation_degrees = 0.0 if _lifted and look == Look.STICKER else rest_tilt
 
 
 ## Turns this into a shop tile (chip or card builder) in `p_accent`.
@@ -168,12 +176,10 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 		return null
 	var ghost := ZineCard.new(card_title, cost, description, drag_index).scaled(text_scale)
 	ghost.pictos = pictos
-	ghost.modulate.a = 0.8
+	ghost.variant = variant
 	ghost.size = ghost.custom_minimum_size
-	var holder := Control.new()
-	holder.add_child(ghost)
-	ghost.position = -ghost.size * 0.5
-	set_drag_preview(holder)
+	# ANIM-3: the ghost trails the cursor with a lag and a tilt (DragGhost).
+	set_drag_preview(DragGhost.new(ghost))
 	return {"hand_index": drag_index}
 
 
@@ -183,12 +189,63 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+## Hover / focus: the sticker lifts `card_hover` px, tilts to 0 and glows (ANIM-3); off,
+## it settles back to its resting tilt.
 func _set_lift(on: bool) -> void:
 	_lifted = on
+	if look == Look.STICKER and is_inside_tree():
+		pivot_offset = size / 2.0
+		Motion.run(&"card_hover", self, ^"lift", Motion.amplitude(&"card_hover") if on and not disabled else 0.0)
+		Motion.run(&"card_hover", self, ^"rotation_degrees", 0.0 if on else rest_tilt)
 	queue_redraw()
 
 
+## Deals the sticker in from `pile` (global): it starts there, turned `fan` degrees and
+## clear, and lands in its slot after `delay` (`card_draw`). Drawn only: the slot is
+## already where the card lives, so nothing under the cursor moves.
+func deal_from(pile: Vector2, fan: float, delay: float) -> void:
+	if not Motion.live(&"card_draw"):
+		return
+	var e := Motion.entry(&"card_draw")
+	draw_offset = pile - get_global_rect().get_center()
+	draw_tilt = deg_to_rad(fan)
+	modulate.a = 0.0
+	var tw := create_tween()
+	tw.tween_interval(delay)
+	tw.tween_property(self, "modulate:a", 1.0, 0.0)
+	tw.tween_method(_deal_step.bind(draw_offset, draw_tilt), 0.0, 1.0, Motion.seconds(&"card_draw")).set_ease(e.ease).set_trans(e.trans)
+	_deal_tween = tw
+
+
+var _deal_tween: Tween = null
+
+
+func _deal_step(p: float, from: Vector2, tilt: float) -> void:
+	draw_offset = from * (1.0 - p)
+	draw_tilt = tilt * (1.0 - p)
+	queue_redraw()
+
+
+## Ends a deal-in at once (skip): the card sits in its slot.
+func finish_deal() -> void:
+	if _deal_tween != null and _deal_tween.is_valid():
+		_deal_tween.kill()
+	_deal_tween = null
+	draw_offset = Vector2.ZERO
+	draw_tilt = 0.0
+	modulate.a = 1.0
+	queue_redraw()
+
+
+## True while the card is still being dealt in.
+func dealing() -> bool:
+	return _deal_tween != null and _deal_tween.is_valid() and _deal_tween.is_running()
+
+
 func _draw() -> void:
+	if lift != 0.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0:
+		var c := size * 0.5
+		draw_set_transform_matrix(Transform2D(draw_tilt, c + draw_offset + Vector2(0.0, -lift)) * Transform2D(0.0, -c))
 	if look != Look.STICKER:
 		_draw_tile_any()
 	else:

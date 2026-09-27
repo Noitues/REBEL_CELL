@@ -13,6 +13,15 @@ var ram: int = 0
 var max_ram: int = 0
 ## Predicted change (the preview), 0 = none.
 var pending: int = 0
+## Motion (Animation pass ANIM-3): the chips shown lit (they drain or refill one chip per
+## `ram_tick`, the chip changing now pops), and the pending cost's blink while a card is
+## aimed (`ram_pending_blink`). `ram` is always the real value.
+var shown_ram: int = 0
+var tick_pop: float = 0.0
+var pending_alpha: float = 1.0
+var aiming: bool = false
+var _tick_tween: Tween = null
+var _blink_tween: Tween = null
 
 
 func _init() -> void:
@@ -22,8 +31,10 @@ func _init() -> void:
 
 func set_ram(value: int, maximum: int) -> void:
 	_flash = false
+	var from := shown_ram if max_ram > 0 else value
 	ram = value
 	max_ram = maximum
+	_tick_to(from, value)
 	custom_minimum_size.y = (CHIP + 4.0) * Settings.text_scale
 	tooltip_text = "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn." % [value, maximum]
 	queue_redraw()
@@ -46,6 +57,65 @@ func flash_short() -> void:
 			queue_redraw())
 
 
+## The lit chips step from `from` to `to`, one chip per `ram_tick`.
+func _tick_to(from: int, to: int) -> void:
+	if _tick_tween != null and _tick_tween.is_valid():
+		_tick_tween.kill()
+	_tick_tween = null
+	if from == to or not Motion.live(&"ram_tick") or not is_inside_tree():
+		shown_ram = to
+		tick_pop = 0.0
+		return
+	shown_ram = from
+	var tw := create_tween()
+	var step := 1 if to > from else -1
+	for v in range(from + step, to + step, step):
+		tw.tween_callback(_tick.bind(v))
+		tw.tween_method(func(p: float) -> void: tick_pop = 1.0 - p; queue_redraw(), 0.0, 1.0, Motion.seconds(&"ram_tick"))
+	tw.tween_callback(func() -> void: tick_pop = 0.0; queue_redraw())
+	_tick_tween = tw
+
+
+func _tick(v: int) -> void:
+	shown_ram = v
+	tick_pop = 1.0
+	queue_redraw()
+
+
+## Shows `value` chips lit until the next tick or finish_motion (a SEND IT replay holds
+## the RAM the turn ended with until its turn-start beat).
+func hold(value: int) -> void:
+	if _tick_tween != null and _tick_tween.is_valid():
+		_tick_tween.kill()
+	_tick_tween = null
+	shown_ram = value if Motion.live(&"ram_tick") else ram
+	tick_pop = 0.0
+	queue_redraw()
+
+
+## The held chips tick on to the real RAM (`ram_tick`).
+func play_refill() -> void:
+	_tick_to(shown_ram, ram)
+
+
+## Ends the drain / refill at once (skip).
+func finish_motion() -> void:
+	_tick_to(ram, ram)
+	queue_redraw()
+
+
+## While a card is aimed its cost blinks (`ram_pending_blink`); off, it holds.
+func set_aiming(on: bool) -> void:
+	aiming = on
+	if _blink_tween != null and _blink_tween.is_valid():
+		_blink_tween.kill()
+	_blink_tween = null
+	pending_alpha = 1.0
+	if on and Motion.live(&"ram_pending_blink") and is_inside_tree():
+		_blink_tween = Motion.loop_pulse(self, ^"pending_alpha", &"ram_pending_blink")
+	queue_redraw()
+
+
 func set_pending(delta: int) -> void:
 	if delta != pending:
 		pending = delta
@@ -62,16 +132,21 @@ func _draw() -> void:
 		label += " (%+d)" % pending
 	var lw := Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
 	var x0 := (size.x - max_ram * step - lw) * 0.5
-	var after := clampi(ram + pending, 0, max_ram)
+	var lit := shown_ram
+	var after := clampi(lit + pending, 0, max_ram)
 	for k in max_ram:
 		var rc := Rect2(x0 + k * step, 1, chip, chip)
 		var col := Color(1, 1, 1, 0.1)
-		if k < mini(ram, after):
+		if k < mini(lit, after):
 			col = Palette.NET_CYAN
-		elif k < ram:
-			col = Palette.CELL_PINK  # spent by the previewed action
-		if _flash and k >= ram:
+		elif k < lit:
+			col = Color(Palette.CELL_PINK, pending_alpha)  # spent by the previewed action
+		if _flash and k >= lit:
 			col = Color(Palette.CELL_PINK, 0.45)  # the RAM that was missing
+		if tick_pop > 0.0 and k == (lit - 1 if lit > 0 and ram >= lit else lit):
+			# The chip ticking now pops (`ram_tick` amplitude).
+			rc = rc.grow(chip * (Motion.amplitude(&"ram_tick") - 1.0) * 0.5 * tick_pop)
+			col = col.lerp(Palette.PAPER, tick_pop * 0.6)
 		draw_rect(rc, col)
-		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= ram and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= ram and k < after) else 1.0)
+		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= lit and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= lit and k < after) else 1.0)
 	draw_string(Palette.mono(), Vector2(x0 + max_ram * step + 6.0, chip), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.NET_CYAN)
