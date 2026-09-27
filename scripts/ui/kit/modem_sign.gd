@@ -3,9 +3,12 @@ extends Control
 ## The Modem's vertical neon sign (left edge of the shop): a rounded pink border, a dense
 ## printed-circuit board inside it with traces running in from the border, MODEM stacked
 ## in the drawn cybernetic face (pink) and CYBER SHOP under it (cyan), both sprouting
-## traces, and BUY / SELL sticky notes overlapping the bottom-right corner. Decoration.
+## traces, and BUY / SHRED sticky notes overlapping the bottom-right corner (the Modem
+## sells and removes cards; nothing is sold back, H20). Decoration.
 
-const PINK := Color("#FF3DA8")
+const PINK := Palette.CELL_PINK
+## The sticky notes: what the Modem does.
+const NOTES: Array[String] = ["BUY", "SHRED"]
 
 
 func _init() -> void:
@@ -26,8 +29,8 @@ func _draw() -> void:
 	for k in 2:
 		var word: String = ["CYBER", "SHOP"][k]
 		CyberType.draw_text(self, r.position + Vector2((r.size.x - CyberType.width(word, cu)) * 0.5, r.size.y - 118 + k * 42), word, cu, Palette.NET_CYAN, 2.0, false, 0.8)
-	_sticky(r.end + Vector2(-8, -54), "BUY", Palette.NOTE_YELLOW, 0.1)
-	_sticky(r.end + Vector2(14, 4), "SELL", Palette.STICKER_PINK, -0.07)
+	_sticky(r.end + Vector2(-8, -54), NOTES[0], Palette.NOTE_YELLOW, 0.1)
+	_sticky(r.end + Vector2(14, 4), NOTES[1], Palette.STICKER_PINK, -0.07)
 
 
 func _rounded_border(r: Rect2, radius: float, col: Color) -> void:
