@@ -11,6 +11,9 @@ const NET_CYAN := Color("#5CE1FF")
 const NET_BG_INNER := Color("#0D1440")
 const NET_BG_OUTER := Color("#02030A")
 const CORP_SOLACE := Color("#3DFF8B")
+## REBEL_CELL (the handler AI): a deep blood red, clearly apart from the Cell pink in hue
+## and lightness (H20 #14; was #FF2A6D, nearly the Cell pink).
+const CORP_REBEL_CELL := Color("#E8141E")
 const CRT_AMBER := Color("#FFB000")
 const RESIST_GOLD := Color("#FFD24D")
 const DESK_DARK := Color("#1B1D21")
@@ -67,7 +70,7 @@ static func corp_color(corporation_id: StringName) -> Color:
 		&"orbital":
 			return Color("#DDE3FF")
 		&"rebel_cell":
-			return Color("#FF2A6D")
+			return CORP_REBEL_CELL
 		_:
 			return NET_CYAN
 

@@ -757,7 +757,7 @@ func show_grid() -> void:
 	var box := sites_win.body
 	box.add_child(_button("Back to HQ", show_hq))
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(420, 250 if not Settings.map_legend else 190)
+	legend.link_size(scroll, Vector2(420, 190), Vector2(420, 250))  # follows the legend switch live (H20 #22)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	box.add_child(scroll)
@@ -927,6 +927,7 @@ func show_raid() -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top.add_child(spacer)
+	MapLegend.pin_to(spacer, c.corporation_id)  # the raid map has its key too (H20 #22)
 	var side := VBoxContainer.new()
 	side.custom_minimum_size.x = 380
 	side.add_theme_constant_override("separation", 8)
@@ -1088,6 +1089,7 @@ func show_raid_playout(events: Array[Dictionary]) -> void:
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
+	MapLegend.pin_to(spacer, c.corporation_id)
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
 	box.add_child(side)
@@ -1151,6 +1153,7 @@ func show_raid_summary() -> void:
 	stamp.rotation_degrees = -8.0
 	table.add_child(stamp)
 	outer.add_child(table)
+	MapLegend.pin_to(table, c.corporation_id)
 	var report := TerminalWindow.new("RAID REPORT", Palette.CELL_ACID if won else Palette.CELL_PINK)
 	report.custom_minimum_size.x = 340
 	outer.add_child(report)

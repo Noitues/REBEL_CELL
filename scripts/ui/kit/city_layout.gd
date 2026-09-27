@@ -56,7 +56,13 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 				glyph = "✦"
 		var home := sd.id == c.grid.home_site_id
 		var named := home or status != GridState.SiteStatus.CORPORATE or glyph.length() == 1 or sd.id == selected
-		nodes.append({"id": sd.id, "at": points[sd.id], "color": col,
+		# Never colour alone (GDD 9.6): claimed Sites carry a spray ring, Seized a cross.
+		var mark := ""
+		if status == GridState.SiteStatus.CLAIMED:
+			mark = CityMapOverlay.MARK_SPRAY
+		elif status == GridState.SiteStatus.SEIZED:
+			mark = CityMapOverlay.MARK_CROSS
+		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark,
 			"label": ("CORE" if home else sd.display_name) if named else "", "glyph": "⌂" if home else glyph, "big": home or glyph == "✦"})
 	var edges: Array[Dictionary] = []
 	var seen := {}

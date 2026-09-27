@@ -30,6 +30,65 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-26 — H20 city backdrop: baked image, live lights, territory influence
+Designer: "the performance is slow due to the backdrop... take a static image... add
+blinking lights... the city should change colour as we or the corporation gain or lose
+ground in the raid battles".
+- **Measured cause.** NeonCity built its city in GDScript as one triangle array: 2.2-4.4
+  million vertices, 0.9-2.9 s per build, redone on every camera change (Grid mount, every
+  raid-playout camera follow step: ~0.9-1.1 s hitches) and, on the title, on *every
+  frame* (the menu pan moved four offsets separately, so the size jittered and each
+  resize rebuilt: 2.6-3.5 s per frame). Steady frames also re-rasterised the whole mesh
+  through the sketch shader, and the Grid overlay redrew every node, tag and route each
+  frame.
+- **Baked image** (`CityBakeCache`, static, shared by every scene): a painter copy of the
+  city renders the camera's view grown by 160 px (snapped to 128) once into a SubViewport,
+  the pixels are read back into an ImageTexture and every view of that look draws the
+  texture. Key = look (seed, district, net/physical, ink set, texture, sketch params,
+  cultures, Heat creep in 0.05 steps, territory influence signature, window stretch) +
+  region; any camera whose view fits inside a baked region of its look reuses it
+  (backdrop, netrun and combat share one; the zoomed playout sits inside the Grid's).
+  Bake scale 1.5 for net maps (zoom up to 1.9), 1.0 for backdrops, times the window's
+  stretch, capped at 12 Mpx per bake; cache of 8 entries / 160 MB, least recently used
+  out. Painters draw in world space (world-anchored hashes), so bakes of one look match;
+  they set a custom cull rect (they draw outside their control rect). While a bake runs
+  the last image of the look (or the previous look) stands in. Headless has no renderer:
+  `can_bake()` is false and the procedural path runs as before (tests unchanged); an
+  empty readback marks the entry failed and the city falls back the same way.
+- **Live layer** (all positions from layout hashes, no RNG): blinking window lights (3 %
+  of lit windows, 2.4-7.4 s periods, lit 70 %) and beacons blink on the GPU
+  (`shaders/city_lights.gdshader`, geometry built once per camera); traffic sparks on busy
+  streets and a short sign flicker dip (7 % of a 3.2 s period) are the only per-frame
+  drawing (caps: 220 lights, 240 beacons, 120 sparks visible). Reduce effects freezes it
+  all (shader `animate` 0, no redraw). Scanlines and flicker stay live in
+  `shaders/city_live.gdshader`. The CityMapOverlay is layered: static under-layer and
+  nodes redraw only on change; only flowing dashes, packets and the selection pulse
+  redraw per frame. The title pan moves the city (`position`) instead of resizing it.
+- **Territory influence** (`CityInfluence`, pure, Sites in id order): claimed +1 (a
+  disabled claimed Site -0.6 back), cleared +0.45, Seized -1, falloff (1 - d/7.5 lots)^2;
+  raid balance sways the corporation's whole territory 0.08 per net raid (cap 0.32).
+  Positive leans lines (up to 55 %) and ground (16 %) toward the Cell pink, negative
+  toward the corporation. Backdrops follow `RunManager.campaign` (`follow_campaign`, read
+  every 0.5 s and at each re-frame); a change re-keys the bake once.
+- **Measured** (1280x720, RX 6700 XT, vsync off, 8 s after 120 warm-up frames,
+  `tools/city_perf_probe.gd`), frame avg / max: HQ 6.06 / 10.7 ms -> 1.46 / 2.8; Grid
+  16.90 / 29.1 -> 2.12 / 7.6; raid setup 7.70 / 12.6 -> 1.34 / 11.9; raid playout 5.73 /
+  1108 (camera-follow rebuilds) -> 0.98 / 11.3; combat 5.91 / 11.6 -> 1.36 / 18.4; netrun
+  Grid view 4.80 / 12.3 -> 0.68 / 2.4; title 2600-3500 ms per frame -> 1.10 / 8.3. GPU
+  time 2.0-3.8 ms -> 0.3-0.9 ms. First bake of a view costs about what one build did
+  (scene start 2.5-3.5 s -> 3.0-5.2 s including the bake's margin and readback); later
+  visits cost nothing. Bake memory 7.6-22.5 MB per view; total VRAM 159-324 MB ->
+  157-316 MB (the old per-view vertex buffers were larger than the textures).
+- **H20 #14**: REBEL_CELL's colour is now #E8141E (deep red; was #FF2A6D next to the Cell
+  pink). Claimed Sites carry a spray ring (with drips) and Seized ones a cross on every
+  city map; MapLegend rows use their own glyphs (○ claimed, ✕ seized). The palette
+  change also recolours REBEL_CELL's enemy wheels (wheel_view.gd reads Palette only).
+  STYLE_GUIDE §2's `corp_rebel_cell` row still reads #FF2A6D (doc owner to update).
+- **H20 #22**: raid setup, playout and summary maps pin a compact MapLegend to the map's
+  bottom-left; the HQ Grid's Site list resizes with the legend switch live
+  (`MapLegend.link_size`); the mid-run raid playout plays on the city overlay (whole Grid,
+  zoom 0.85, feed at the side) instead of the old GridMapView.
+
 ### 2026-09-26 — Merge: visual/UI pass into main (H17-H19 behaviour kept)
 The visual branch (`claude/game-visual-ui-update-pkc0aj`, forked at H16) is merged. Its
 look wins; main's H17-H19 behaviour is kept or remapped onto the new controls:
