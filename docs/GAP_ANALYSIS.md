@@ -35,11 +35,11 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
 | Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
-| H22 | 2026-09-27 | **In progress.** 14 from pass 22 (0 P1, 8 P2, 6 P3). List below. | Batch H22 |
+| H22 | 2026-09-27 | 14 from pass 22 (0 P1, 8 P2, 6 P3) incl. the second naive-player reviews | Fixed in horizontal batch H22 (combat, city maps, screens); DECISIONS "H22 ..." entries |
 | H21 | 2026-09-26 | 22 from pass 21 (3 P1: pad nudge wheel/ring, pad focus lost, no visible turn result; 12 P2; 7 P3) incl. the first naive-player reviews | Fixed in horizontal batch H21 (combat, city maps, screens); DECISIONS "H21 ..." entries |
 | H20 | 2026-09-26 | 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3) plus the designer's 7 (tooltips, drag-to-target cards and nudge arrows, a baked backdrop with live lights and territory colour, no text logs, naive-player reviews, directions that read the right way) | Fixed in horizontal batch H20 (combat, city, screens); DECISIONS "H20 ..." entries |
 
-### H22 (in progress): pass 22 = audits + second naive-player reviews
+### H22 (fixed 2026-09-27): pass 22 = audits + second naive-player reviews
 
 Pass 22 found no P1. Preview == result held for 112 fights, 653 card hovers (100
 reshuffling) and every random pick; aiming held for 3,408 card x class x ring cases; the
@@ -155,7 +155,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 635 passing at H21 (594 at H20); schema smoke test and content validation green.
+Tests: 667 passing at H22 (635 at H21); schema smoke test and content validation green.
 
 ---
 

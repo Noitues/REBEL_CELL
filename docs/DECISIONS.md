@@ -30,6 +30,35 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H22 combat: now vs next, satellites that read, wheels that stay big
+From pass 22 (both audits, a first-time player and a player who can't read English
+looking at the new storyboards; GAP_ANALYSIS H22).
+- **Now vs next**: the HP number under a wheel is the HP now (it agrees with the top bar);
+  the forecast after SEND IT is a separate dashed plate with an arrow ("▸ NEXT 49"); the
+  greyed LAST TURN line is the past. LAST TURN comes from the real HP change since SEND IT
+  (CORRUPTED bites, heals and turn-start effects count), plus what block soaked, evades and
+  hits a bodyguard or drone took; it shrinks to fit its box.
+- **Satellites** dock past the slice values (they sat on them), are hit-tested before the
+  nudge arrows (a drone near the top couldn't be aimed at 1.3+), and show their own
+  needle's landing slice in a hex token with their HP (the name and the landing in words
+  are the tooltip).
+- **Big text**: the wheel keeps at least 80% of its size (the tag clamps to the view's top
+  and the arrows draw over it); one chip row above 1.3; ring names scale a little.
+- **Words and marks**: tags carry aim-quality pips; odds chips use whole words; satellite
+  chips and hub lines say BLOCK / SHIELD / status words; names go through TextDb (runtime
+  names kept for generated Mirrors). RESPIN and UNDO stickers carry drawn icons, SEND IT's
+  key sits big under its lettering, the reticle has a crosshair mark, the ghost arc runs on
+  the rim clear of the values, and an aiming hint says what to do.
+- **Pad and keys**: the status line names the wheel and ring the nudges drive and their
+  switches (LT / RT on a pad, W / R on keys); the ring switch refuses (with a toast) on a
+  wheel without an inner ring, and switching wheels drops back to the outer ring. Aiming
+  steps left to right across the screen. The tutorial teaches the switches, LAST TURN and
+  NEXT, and uses the new words.
+- Scripted cards (Calibrate, Momentum, Ring Lock, Steady Hand, Undock) get pictogram tags;
+  the drag ghost carries the pictograms.
+- Tests: `tests/unit/test_horizontal_pass22.gd`; LAST TURN totals checked against the real
+  HP change in `test_horizontal_pass21.gd`. Views only: the balance numbers stand.
+
 ### 2026-09-27 — H22 screens: subtitles for any language, raid forecast wording, readable defences, labels that stay
 Pass-22 items H22 #7, #9, #10, #12 and the screens' part of #14 (GAP_ANALYSIS). Direction
 as before: nothing the player must read, tooltips, big text reaches everything, pad
