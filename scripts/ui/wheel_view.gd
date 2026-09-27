@@ -537,47 +537,6 @@ func _draw() -> void:
 		if wheel.slot_firmware_ids[i] != &"":
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
-	for sat in satellites:
-		var satp := _satellite_pos(sat) - global_position
-		var sat_col := _col(Palette.CELL_ACID if sat.is_player else Palette.RESIST_GOLD)
-		# A hex token with the slice its own needle lands on (its wheel, GDD 2.10) and its HP
-		# on a plate beside it; the name and the slice words are the tooltip (H22).
-		var tok_r := SATELLITE_TOKEN * _ts()
-		var hex := PackedVector2Array()
-		for k in 7:
-			var ha := TAU * k / 6.0 + PI / 6.0
-			hex.append(satp + Vector2(cos(ha), sin(ha)) * tok_r)
-		draw_colored_polygon(hex, Color(Palette.NIGHT_SKY, 0.9))
-		draw_polyline(hex, sat_col, 2.0)
-		var land: Dictionary = satellite_landings.get(sat.id, {})
-		if not land.is_empty():
-			SliceIcon.draw_icon(self, satp, tok_r * 0.6, int(land["type"]), Palette.slice_color(int(land["type"])))
-		var sat_out: Dictionary = outcome.get("satellites", {}).get(sat.id, {})
-		var sat_text := "%d" % sat.hp
-		if not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
-			sat_text += " >%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " >x"
-		var out_dir := (satp - _center()).normalized()
-		var lfs := _fs(HUB_FONT_SIZE + 1)
-		var lw := Palette.mono().get_string_size(sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
-		var lp := satp + out_dir * (tok_r + lfs) - Vector2(lw * 0.5, -lfs * 0.35)
-		draw_rect(Rect2(lp - Vector2(3, lfs), Vector2(lw + 6, lfs + 5)), Color(Palette.NIGHT_SKY, 0.85))
-		draw_string(Palette.mono(), lp, sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
-		if sat.id == targeted_satellite:
-			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
-		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
-			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
-			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
-			# A play with a way (a nudge card, Undock) marks each side: drop on the side it
-			# should turn to (the clockwise side is +1).
-			var cw := (satp - _center()).normalized().orthogonal() * -1.0
-			for z in valid_zones:
-				if String(z.get("kind", "")) == "satellite" and z.get("id") == sat.id and z.has("direction"):
-					var d := float(z["direction"])
-					var side_hot := hot and int(hover_zone.get("direction", 0)) == int(d)
-					var tip := satp + cw * d * 21.0
-					var back := satp + cw * d * 13.0
-					var n := cw.orthogonal() * 5.0
-					draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), _col(TARGET_COLOR if side_hot else Color(TARGET_COLOR, 0.55)))
 	draw_arc(center, radius, 0, TAU, 96, Color(line, 0.9), 1.5)
 	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
 	if wheel.has_inner_ring():
@@ -588,7 +547,7 @@ func _draw() -> void:
 			var e0 := _tick_angle(k * 10 + 5, wheel.inner_rotation)
 			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
 			var m := _tick_angle(k * 10, wheel.inner_rotation)
-			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), seg.display_name if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, mini(_fs(9), 12), _col(Palette.PAPER))
+			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), TextDb.t(seg, "display_name") if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, mini(_fs(9), 12), _col(Palette.PAPER))
 	# Pointers: short white gauge needles, hub just outside the rim, tip just past its edge.
 	var pcol := Color(_col(Palette.PAPER), pointer_alpha)
 	for p in wheel.pointer_ticks:
@@ -614,7 +573,7 @@ func _draw() -> void:
 		for k in n:
 			if k % 2 == 0:
 				draw_line(hub.lerp(ntip, float(k) / n), hub.lerp(ntip, float(k + 1) / n), mcol, 3.0)
-		draw_string(Palette.mono(), hub + Vector2(10, -4), "next", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
+		draw_string(Palette.mono(), hub + Vector2(10, -4), tr("next"), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
 	_draw_ghost(center, radius, wheel)
 	_draw_inner_ghost(center, radius, wheel)
 	_draw_hp(center, radius)
@@ -634,6 +593,72 @@ func _draw() -> void:
 	if tag.has_area():
 		_intent_tag(tag)
 	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
+	_draw_satellites()
+
+
+## Satellite tokens, their HP plates and their aim marks: drawn after the tag and the arrows
+## (they are hit-tested first, and at 1.3+ the tag hid a drone and its HP, H23).
+func _draw_satellites() -> void:
+	for sat in satellites:
+		var satp := _satellite_pos(sat) - global_position
+		var sat_col := _col(Palette.CELL_ACID if sat.is_player else Palette.RESIST_GOLD)
+		# A hex token with the slice its own needle lands on (its wheel, GDD 2.10) and its HP
+		# on a plate beside it; the name and the slice words are the tooltip (H22).
+		var tok_r := SATELLITE_TOKEN * _ts()
+		var hex := PackedVector2Array()
+		for k in 7:
+			var ha := TAU * k / 6.0 + PI / 6.0
+			hex.append(satp + Vector2(cos(ha), sin(ha)) * tok_r)
+		draw_colored_polygon(hex, Color(Palette.NIGHT_SKY, 0.9))
+		draw_polyline(hex, sat_col, 2.0)
+		var land: Dictionary = satellite_landings.get(sat.id, {})
+		if not land.is_empty():
+			SliceIcon.draw_icon(self, satp, tok_r * 0.6, int(land["type"]), Palette.slice_color(int(land["type"])))
+		var sat_out: Dictionary = outcome.get("satellites", {}).get(sat.id, {})
+		var sat_text := "%d" % sat.hp
+		if not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
+			sat_text += " >%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " >x"
+		var lfs := _fs(HUB_FONT_SIZE + 1)
+		var plate := satellite_plate_rect(sat, sat_text)
+		draw_rect(plate, Color(Palette.NIGHT_SKY, 0.85))
+		draw_string(Palette.mono(), plate.position + Vector2(3, lfs), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
+		if sat.id == targeted_satellite:
+			_draw_crosshair(satp, (SATELLITE_TOKEN + 5.0) * _ts())
+		if _zone_is(valid_zones, {"kind": "satellite", "id": sat.id}):
+			var hot := _zone_is([hover_zone], {"kind": "satellite", "id": sat.id})
+			draw_arc(satp, (SATELLITE_TOKEN + 3.0) * _ts(), 0, TAU, 20, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55)), 3.0 if hot else 1.5)
+			# A play with a way (a nudge card, Undock) marks each side: drop on the side it
+			# should turn to (the clockwise side is +1).
+			var cw := (satp - _center()).normalized().orthogonal() * -1.0
+			for z in valid_zones:
+				if String(z.get("kind", "")) == "satellite" and z.get("id") == sat.id and z.has("direction"):
+					var d := float(z["direction"])
+					var side_hot := hot and int(hover_zone.get("direction", 0)) == int(d)
+					var tip := satp + cw * d * 21.0
+					var back := satp + cw * d * 13.0
+					var n := cw.orthogonal() * 5.0
+					draw_colored_polygon(PackedVector2Array([tip, back + n, back - n]), _col(TARGET_COLOR if side_hot else Color(TARGET_COLOR, 0.55)))
+
+
+## Where a satellite's HP plate goes (local): outward from the wheel, else to either side,
+## else inward, the first that keeps clear of the tag (H23: at 1.3+ the plate sat under it).
+func satellite_plate_rect(sat: CombatantState, text: String) -> Rect2:
+	var satp := _satellite_pos(sat) - global_position
+	var tok_r := SATELLITE_TOKEN * _ts()
+	var lfs := _fs(HUB_FONT_SIZE + 1)
+	var lw := Palette.mono().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
+	var out_dir := (satp - _center()).normalized()
+	var tag := _intent_rect_local()
+	var first := Rect2()
+	for d in [out_dir, out_dir.orthogonal(), -out_dir.orthogonal(), -out_dir]:
+		var dir: Vector2 = d
+		var c := satp + dir * (tok_r + maxf(lfs, lw * 0.5 * absf(dir.x)) + 4.0)
+		var r := Rect2(c - Vector2(lw * 0.5 + 3.0, lfs * 0.5 + 2.0), Vector2(lw + 6.0, lfs + 5.0))
+		if first.size == Vector2.ZERO:
+			first = r
+		if not tag.has_area() or not r.intersects(tag):
+			return r
+	return first
 
 
 ## Ghost preview (GDD 9.2): where the wheel ends up after the hovered card or nudge. A
@@ -750,7 +775,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	draw_string(Palette.display(), center + Vector2(-tw * 0.5, base_y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if after != combatant.hp:
 		var fs := _fs(HUB_FONT_SIZE + 3)
-		var ftext := "NEXT %d" % maxi(0, after)
+		var ftext := tr("NEXT %d") % maxi(0, after)
 		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
 		var fr := Rect2(center + Vector2(tw * 0.5 + 8.0, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
 		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
@@ -779,32 +804,46 @@ func _draw_dashed_rect(r: Rect2, col: Color) -> void:
 				draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), col, 1.5)
 
 
+## The combatant's name in the player's language (generated Mirrors keep runtime names).
+func shown_name() -> String:
+	var data: Resource = null
+	if lookup != null and combatant.source_id != &"" and lookup.has(combatant.source_id):
+		data = lookup.get_content(combatant.source_id)
+	if data == null or not ("display_name" in data) or String(data.display_name) != combatant.display_name:
+		return combatant.display_name
+	return TextDb.t(data, "display_name")
+
+
 func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
+	# Drawn words go through tr() (H23: drawn text never translated; the scrambled
+	# storyboard still showed them in English).
 	var hub_lines: Array[String] = []
+	var resist_line := -1
 	if combatant.block > 0:
-		hub_lines.append("BLOCK %d" % combatant.block)
+		hub_lines.append(tr("BLOCK %d") % combatant.block)
 	if combatant.shield > 0:
-		hub_lines.append("SHIELD %d" % combatant.shield)
+		hub_lines.append(tr("SHIELD %d") % combatant.shield)
 	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
-		hub_lines.append("RESIST %d" % combatant.resistance)
+		resist_line = hub_lines.size()
+		hub_lines.append(tr("RESIST %d") % combatant.resistance)
 	if combatant.wheel.frozen:
-		hub_lines.append("FROZEN")
+		hub_lines.append(tr("FROZEN"))
 	if combatant.wheel.hub_id != &"":
 		var hub_data := lookup.get_content(combatant.wheel.hub_id) if lookup != null else null
 		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(combatant.wheel.hub_id)
-		hub_lines.append(hub_name + (" (BREACHED)" if combatant.is_hub_breached() else ""))
+		hub_lines.append(hub_name + (tr(" (BREACHED)") if combatant.is_hub_breached() else ""))
 	hub_lines.append_array(extra_lines)
 	var hw := (inner - 10) * 2.0
 	var fs := _fs(HUB_FONT_SIZE)
 	var step := fs + 2
 	var top := -6.0 - hub_lines.size() * step * 0.5
-	var name := combatant.display_name.to_upper()
+	var name := shown_name().to_upper()
 	var name_size := _fs(NAME_FONT_SIZE)
 	while name_size > 7 and Palette.marker().get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x > hw:
 		name_size -= 1  # long names shrink to fit the hub
 	draw_string(Palette.marker(), center + Vector2(-hw * 0.5, top), name, HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
 	for i in hub_lines.size():
-		var col := _col(Palette.RESIST_GOLD) if hub_lines[i].begins_with("RESIST") else _col(Palette.PAPER)
+		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
 		var lfs := fs
 		while lfs > 6 and Palette.mono().get_string_size(hub_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
 			lfs -= 1  # shrink to the hub (H23: "Breaker Core" was cut to "Breake")
@@ -870,7 +909,7 @@ func _chip_rows() -> Array:
 		rows.append(row)
 	var cap := _chip_row_cap()
 	if rows.size() > cap:
-		# Fold the overflow into a "+N" chip on the last kept row.
+		# Fold the overflow into a "+N MORE" chip on the last kept row (H23: a bare "+4" was a mystery).
 		var hidden := 0
 		for k in range(cap, rows.size()):
 			hidden += (rows[k] as Array).size()
@@ -879,7 +918,7 @@ func _chip_rows() -> Array:
 		if not last.is_empty():
 			hidden += 1
 			last.pop_back()
-		last.append({"text": "+%d" % hidden, "color": Palette.INK, "ink": Palette.PAPER})
+		last.append({"text": "+%d MORE" % hidden, "color": Palette.INK, "ink": Palette.PAPER})  # all listed in the tag tooltip
 	return rows
 
 

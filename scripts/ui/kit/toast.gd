@@ -15,12 +15,16 @@ const MARK_ROOM := 28.0
 
 var label: Label
 var _tween: Tween = null
+## A refusal leads with the no-entry mark; a note (what an action just did) doesn't.
+var refusal := true
+var _panel: StyleBoxFlat
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	var sb := StyleBoxFlat.new()
+	_panel = sb
 	sb.bg_color = Palette.NOTE_YELLOW
 	sb.border_color = Palette.INK
 	sb.set_border_width_all(2)
@@ -36,6 +40,19 @@ func _init() -> void:
 
 ## Shows `text` centred on `anchor` (global, the toast's bottom centre).
 func show_text(text: String, anchor: Vector2) -> void:
+	_show(text, anchor, true)
+
+
+## Shows what an action just did (no no-entry mark), e.g. where a respin landed (H23: a
+## respin that landed on the same slice looked like RAM spent for nothing).
+func show_note(text: String, anchor: Vector2) -> void:
+	_show(text, anchor, false)
+
+
+func _show(text: String, anchor: Vector2, is_refusal: bool) -> void:
+	refusal = is_refusal
+	_panel.content_margin_left = MARK_ROOM if is_refusal else _panel.content_margin_right
+	queue_redraw()
 	label.text = text
 	label.add_theme_font_size_override("font_size", roundi(FONT_SIZE * Settings.text_scale))
 	reset_size()
@@ -55,6 +72,8 @@ func show_text(text: String, anchor: Vector2) -> void:
 
 
 func _draw() -> void:
+	if not refusal:
+		return
 	var r := MARK_RADIUS * Settings.text_scale
 	var c := Vector2(MARK_ROOM * 0.5, size.y * 0.5)
 	draw_arc(c, r, 0, TAU, 20, Palette.CELL_PINK.darkened(0.2), 3.0, true)
