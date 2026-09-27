@@ -671,7 +671,7 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 		hub_lines.append("FROZEN")
 	if combatant.wheel.hub_id != &"":
 		var hub_data := lookup.get_content(combatant.wheel.hub_id) if lookup != null else null
-		var hub_name: String = hub_data.display_name if hub_data != null and "display_name" in hub_data else String(combatant.wheel.hub_id)
+		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(combatant.wheel.hub_id)
 		hub_lines.append(hub_name + (" (BREACHED)" if combatant.is_hub_breached() else ""))
 	hub_lines.append_array(extra_lines)
 	var hw := (inner - 10) * 2.0

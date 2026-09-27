@@ -393,7 +393,10 @@ func from_dict(d: Dictionary) -> void:
 	system_log = bool(d.get("system_log", false))
 	keybinds = {}
 	for k in d.get("keybinds", {}):
-		keybinds[String(k)] = int(d["keybinds"][k])
+		# Only actions that can still be rebound (H20 retired the card-target, direction and
+		# slice toggles; a key saved for them must not stay bound twice).
+		if REBINDABLE.has(StringName(String(k))):
+			keybinds[String(k)] = int(d["keybinds"][k])
 	tutorial_done = bool(d.get("tutorial_done", false))
 	assist_mode = bool(d.get("assist_mode", false))
 

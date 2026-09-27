@@ -1717,7 +1717,10 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		if o.cards_drawn > 0:
 			chips.append({"text": "DRAW %d" % o.cards_drawn, "color": CHIP_RUN, "ink": Palette.INK})
 		if o.heat != 0:
-			var heat := HeatRules.scaled_delta(RunManager.campaign, o.heat, RunManager.config()) if RunManager.campaign != null else o.heat
+			# Scaled one change at a time, as the netrun applies them.
+			var heat := 0
+			for h in o.heat_events:
+				heat += HeatRules.scaled_delta(RunManager.campaign, h, RunManager.config()) if RunManager.campaign != null else h
 			chips.append({"text": "HEAT %+d" % heat, "color": heat_poster.hot_color, "ink": Palette.INK})
 		if o.cycles != 0:
 			chips.append({"text": "CYCLES %+d" % o.cycles, "color": CHIP_RUN, "ink": Palette.INK})

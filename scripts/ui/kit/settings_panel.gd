@@ -9,8 +9,8 @@ signal closed
 
 const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"]
 const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target",
-	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_card_target": "Card target", &"toggle_ring": "Ring",
-	&"toggle_nudge_wheel": "Nudge wheel", &"toggle_direction": "Card direction", &"cycle_slot": "Chosen slice",
+	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_ring": "Nudge ring (outer / inner)",
+	&"toggle_nudge_wheel": "Nudge wheel (mine / target)",
 	&"respin": "Respin", &"open_settings": "Pause / options"}
 
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.

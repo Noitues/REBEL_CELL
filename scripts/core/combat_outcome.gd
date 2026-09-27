@@ -14,6 +14,8 @@ var ram_delta: int = 0
 var cards_drawn: int = 0
 ## Campaign effects, raw (the caller scales Heat with HeatRules.scaled_delta).
 var heat: int = 0
+## Each Heat change as reported (the netrun scales them one by one).
+var heat_events: Array[int] = []
 var cycles: int = 0
 var schematics: int = 0
 var free_nudges_next_turn: int = 0
@@ -51,11 +53,14 @@ static func between(before: CombatState, after: CombatState, events: Array[Dicti
 				match int(e.get("effect", -1)):
 					RC.EffectType.MODIFY_HEAT:
 						o.heat += amount
+						o.heat_events.append(amount)
 					RC.EffectType.GAIN_CYCLES:
 						o.cycles += amount
 					RC.EffectType.GAIN_SCHEMATICS:
 						o.schematics += amount
-			"attack", "afflict":
+			"damage":
+				# Every hit that lands (one per pointer of the target; evaded attacks deal
+				# none), before block and shield soak it.
 				var src := StringName(String(e.get("attacker", "")))
 				if o.combatants.has(src):
 					o.combatants[src]["dealt"] = int(o.combatants[src]["dealt"]) + int(e.get("amount", 0))
