@@ -11,6 +11,9 @@ signal campaign_ended(campaign: CampaignState)
 const DEFAULT_SLOT := "current"
 ## Save slots whose name starts with this keep a private profile (the GUT tests use it).
 const TEST_SLOT_PREFIX := "gut_"
+## The `--demo-*` screenshot shortcuts' slots ("demo"): private profile too, so a capture
+## never bumps the player's campaign count or unlocks (H20).
+const DEMO_SLOT_PREFIX := "demo"
 const HQ_SCENE := "res://scenes/hq/hq_scene.tscn"
 const NETRUN_SCENE := "res://scenes/netrun_map/netrun_scene.tscn"
 const TITLE_SCENE := "res://scenes/menu/title_scene.tscn"
@@ -57,10 +60,15 @@ func save_path() -> String:
 
 
 ## The profile file: one for every campaign slot (GDD 3.4: unlocks carry across
-## campaigns). Test slots (TEST_SLOT_PREFIX) keep a private profile so tests never touch
-## the player's.
+## campaigns). Test and demo slots (is_private_slot) keep a private profile so tests and
+## screenshot runs never touch the player's.
 func profile_path() -> String:
-	return _slot_profile_path(save_slot) if save_slot.begins_with(TEST_SLOT_PREFIX) else SaveService.profile_path()
+	return _slot_profile_path(save_slot) if is_private_slot(save_slot) else SaveService.profile_path()
+
+
+## Slots with their own profile file: the GUT tests' and the `--demo-*` shortcuts'.
+static func is_private_slot(slot: String) -> bool:
+	return slot.begins_with(TEST_SLOT_PREFIX) or slot.begins_with(DEMO_SLOT_PREFIX)
 
 
 func _slot_profile_path(slot: String) -> String:
@@ -490,7 +498,7 @@ func clear_run() -> void:
 ## Deletes the slot's campaign (and a test slot's private profile; the shared profile stays).
 func delete_save() -> void:
 	SaveService.delete_save(save_path())
-	if save_slot.begins_with(TEST_SLOT_PREFIX):
+	if is_private_slot(save_slot):
 		SaveService.delete_save(profile_path())
 
 

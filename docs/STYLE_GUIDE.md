@@ -96,10 +96,20 @@ DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
 slice and status, text scaling, subtitles with speaker names.
 
-## 7. Placeholder Art Policy (M0–M3)
-- Use simple shapes in the correct colour tokens and fonts; label placeholders in
-  brackets, e.g. `[BREAKER PORTRAIT]`.
-- Portraits: grey rectangles at final aspect ratio (Polaroid 1:1 image area).
-- Keep art behind a thin view layer so final art swaps in without code changes.
+## 7. Placeholder Art Policy
+- Use simple shapes in the correct colour tokens and fonts until final art lands.
+- Portraits are drawn by `PortraitArt` (no grey boxes since the visual pass): one subject
+  model (operative, corporate agent, machine, boss, corporation face) in four looks
+  (NEON BUST default, XEROX ZINE, WIRE SCAN, MUGSHOT; `--demo-portrait=N`), at the final
+  1:1 aspect ratio inside the Polaroid frame. Every operative has its own face: the class
+  sets the kind, a hash of the operative id varies hair, visor and tint
+  (`PortraitArt.operative_subject` / `draw_operative`, `Polaroid.set_operative`;
+  deterministic, no RNG), so the dossier, the wanted poster and the combat Polaroid show
+  the same face for the same operative. Enemies come from
+  `enemy_subject` (machine / agent / boss by name).
+- The `[CLASS PORTRAIT]` label on a Polaroid only picks the class's default face when no
+  operative is named.
+- Keep art behind a thin view layer so final art swaps in without code changes
+  (`Polaroid.portrait` texture, `ClassData.portrait`).
 - Portrait pipeline (final): painted in full colour with strong value contrast, shown
   through a shader matching the screen's world; glitch variants at low HP and death.
