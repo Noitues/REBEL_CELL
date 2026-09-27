@@ -344,7 +344,7 @@ rows marked ANIM-4).
   checked at 1.0 / 1.3 / 1.6). Tooltips name the drags; focus lands on the target after a
   pad drop.
 - New ids (data only; REQUIRED_IDS, the lab and the schema unchanged otherwise):
-  `drop_stamp`, `market_fly` (113 entries). Retuned: `drag_follow` (0.12 s CUBIC, the
+  `drop_stamp`, `market_fly` (124 entries). Retuned: `drag_follow` (0.12 s CUBIC, the
   carried item's glide), comments of the ANIM-1 drag ids now say what each drives.
 - Frame capture: `--demo-anim=drag_asset`, `drag_asset_refuse` (`--demo-raid`),
   `drag_crew`, `drag_crew_cancel`, `drag_crew_refuse` (`--demo-grid`), `drag_loadout`,
