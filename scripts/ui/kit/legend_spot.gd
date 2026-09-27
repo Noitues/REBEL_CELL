@@ -14,6 +14,13 @@ const STEP := 16.0
 const MARGIN := 10.0
 ## Clearance round a node icon (share of its radius).
 const ICON_CLEAR := 0.3
+## The most one `fit_into` pass zooms out (a factor per pass; later passes settle it), and
+## the least zoom-in worth a new frame when the nodes already fit.
+const MIN_FIT_ZOOM := 0.4
+const REFIT_SLACK := 0.05
+## How far inside the free area a fit aims (px), and the share of a zoom-out it takes.
+const FIT_INSET := 8.0
+const FIT_OVERSHOOT := 0.9
 
 
 ## Screen rects of `overlay`'s node icons (with a little clearance), tier pips and, with
@@ -113,6 +120,49 @@ static func fit_beside(legend: Control, overlay: CityMapOverlay) -> Dictionary:
 		return {}
 	var k := minf(1.0, minf(free.size.x / maxf(1.0, box.size.x), free.size.y / maxf(1.0, box.size.y)))
 	return {"zoom": k, "from": box.get_center(), "to": free.get_center()}
+
+
+## H23 #5: how to frame the map so every node (icon and tier pips) lies inside `free`
+## (screen px), as large as `max_zoom` (a factor on the current zoom) allows: {"zoom":
+## factor, "from": the icon centres' box centre, "to": where it should go}; {} when the
+## nodes already fit and zooming in would gain less than REFIT_SLACK. Icons and pips keep
+## their screen size as the city zooms, so only the spread between icon centres scales:
+## the answer is exact but for icons floating up to clear each other.
+static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0) -> Dictionary:
+	var rects := node_rects(overlay, false)
+	if rects.is_empty() or free.size.x <= 0.0 or free.size.y <= 0.0:
+		return {}
+	var xf := overlay.get_global_transform()
+	var centres := Rect2()
+	var first := true
+	for n in overlay.nodes:
+		var at := overlay.icon_pos(n)
+		if at.x == INF:
+			continue
+		var p := xf * at
+		centres = Rect2(p, Vector2.ZERO) if first else centres.expand(p)
+		first = false
+	var box := rects[0]
+	for r in rects:
+		box = box.merge(r)
+	# Aim a little inside `free` so a small drift (icons floating to clear each other)
+	# never asks for another pass.
+	var aim := free.grow(-FIT_INSET) if free.size.x > FIT_INSET * 4.0 and free.size.y > FIT_INSET * 4.0 else free
+	var pad_lo := centres.position - box.position
+	var pad_hi := box.end - centres.end
+	var room := (aim.size - pad_lo - pad_hi).max(Vector2.ONE)
+	var k := max_zoom
+	if centres.size.x > 0.0:
+		k = minf(k, room.x / centres.size.x)
+	if centres.size.y > 0.0:
+		k = minf(k, room.y / centres.size.y)
+	if free.encloses(box) and k < 1.0 + REFIT_SLACK:
+		return {}
+	if k < 1.0:
+		# Zoomed out, crowded icons float up to clear each other and the box grows a little
+		# past the estimate: aim lower so one more pass settles it.
+		k *= FIT_OVERSHOOT
+	return {"zoom": maxf(MIN_FIT_ZOOM, k), "from": centres.get_center(), "to": aim.position + pad_lo + room * 0.5}
 
 
 ## Node area (px²) `rect` covers.

@@ -10,6 +10,9 @@ extends TerminalWindow
 ## changes); rows are plain Labels so the legend reports its full minimum size at once
 ## (a legend pinned over a map grows upward from its corner and never runs off it); the
 ## tier row shows the map's difficulty pips.
+##
+## H23 #3: a strip variant (`pin_to(area, corp, true)`, the Grid) runs along the foot of
+## a map in as many columns as `set_strip_width` allows, in fewer words (STRIP_ROWS).
 
 const ROWS := [["○", "#FF3DA8", "claimed (yours): spray ring"], ["■", "#5CE1FF", "cleared"], ["■", "", "corporate"], ["✕", "#FFD24D", "seized: crossed out"],
 	["━", "#FF3DA8", "your network link"], ["- -", "", "threat route"]]
@@ -35,8 +38,19 @@ const ICON_SHARE := 0.36
 const ICON_SWATCH_GAP := 8
 ## Margin (px) of a legend pinned to a map area's bottom-left corner.
 const PIN_MARGIN := 10.0
+## H23 #3: the strip variant (the Grid's key along the foot of its map) says each row in
+## fewer words, in as many columns as its width holds; gaps between them (px at text
+## scale 1.0).
+const STRIP_ROWS := ["claimed: spray ring", "cleared", "corporate", "seized: crossed out", "your network link", "threat route"]
+const STRIP_ICON_ROWS := ["exploit", "heat reduction", "boss", "CORE (your home)", "tier: more pips, harder"]
+const STRIP_H_GAP := 16
+const STRIP_V_GAP := 2
 
 var compact: bool = false
+## H23 #3: rows laid out in columns across `strip_width` (see `strip`).
+var strip: bool = false
+var strip_width: float = 0.0
+var _grid: GridContainer = null
 var _corp_hex: String = ""
 var _built_scale: float = -1.0
 var _linked: Control = null
@@ -44,10 +58,11 @@ var _size_on: Vector2 = Vector2.ZERO
 var _size_off: Vector2 = Vector2.ZERO
 
 
-func _init(corporation_id: StringName = &"", p_compact: bool = false) -> void:
+func _init(corporation_id: StringName = &"", p_compact: bool = false, p_strip: bool = false) -> void:
 	super("MAP LEGEND")
 	name = "MapLegend"
-	compact = p_compact
+	strip = p_strip
+	compact = p_compact or p_strip
 	_corp_hex = Palette.corp_color(corporation_id).to_html(false)
 	_build()
 	visible = Settings.map_legend
@@ -71,7 +86,35 @@ func _build() -> void:
 		body.remove_child(child)
 		child.free()
 	var fs := font_size()
-	for r in ROWS:
+	var into: Container = body
+	_grid = null
+	if strip:
+		custom_minimum_size.x = 0.0
+		_grid = GridContainer.new()
+		_grid.name = "Rows"
+		_grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_grid.add_theme_constant_override("h_separation", roundi(STRIP_H_GAP * s))
+		_grid.add_theme_constant_override("v_separation", roundi(STRIP_V_GAP * s))
+		body.add_child(_grid)
+		into = _grid
+		# The title takes the grid's first cell (the strip's rows fill whole lines, so it
+		# costs no height), not a bar of its own over the rows.
+		if head != null:
+			var bar := head.get_parent() as Control
+			bar.visible = false
+			var outer := bar.get_parent()
+			if outer.get_child_count() > 1 and outer.get_child(1) is ColorRect:
+				(outer.get_child(1) as ColorRect).visible = false
+			var cell := Label.new()
+			cell.name = "StripTitle"
+			cell.text = head.text
+			cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			cell.add_theme_color_override("font_color", head.get_theme_color("font_color"))
+			cell.add_theme_font_size_override("font_size", fs)
+			cell.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			_grid.add_child(cell)
+	for i in ROWS.size():
+		var r: Array = ROWS[i]
 		var row := HBoxContainer.new()
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_theme_constant_override("separation", roundi(ICON_SWATCH_GAP * s))
@@ -83,10 +126,37 @@ func _build() -> void:
 		glyph.add_theme_font_size_override("font_size", fs)
 		glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(glyph)
-		row.add_child(_text(r[2], fs))
-		body.add_child(row)
-	for r in ICON_ROWS:
-		body.add_child(_icon_row(r[0], r[1], r[2], fs))
+		row.add_child(_text(STRIP_ROWS[i] if strip else r[2], fs))
+		into.add_child(row)
+	for i in ICON_ROWS.size():
+		var r: Array = ICON_ROWS[i]
+		into.add_child(_icon_row(r[0], r[1], STRIP_ICON_ROWS[i] if strip else r[2], fs))
+	if strip:
+		_fit_columns()
+	update_minimum_size()
+
+
+## H23 #3: a strip legend lays its rows out in as many columns as `width` (px) holds.
+func set_strip_width(width: float) -> void:
+	strip_width = width
+	_fit_columns()
+
+
+## The strip's column count: as many of its widest row as fit across `strip_width` (all
+## in one column when it has no width yet).
+func _fit_columns() -> void:
+	if _grid == null:
+		return
+	var widest := 0.0
+	for row in _grid.get_children():
+		widest = maxf(widest, (row as Control).get_combined_minimum_size().x)
+	var chrome := get_combined_minimum_size().x - _grid.get_combined_minimum_size().x
+	var gap := float(_grid.get_theme_constant("h_separation"))
+	var room := strip_width - chrome
+	var cols := 1
+	if widest > 0.0 and room > widest:
+		cols = floori((room + gap) / (widest + gap))
+	_grid.columns = clampi(cols, 1, _grid.get_child_count())
 	update_minimum_size()
 
 
@@ -133,8 +203,8 @@ func _icon_row(kind: String, text: String, meaning: String, fs: int) -> HBoxCont
 ## A compact legend pinned to `area`'s bottom-left corner (the raid maps: the map is the
 ## city behind the panels, `area` the open part of the screen over it). It grows up and
 ## right from that corner with its minimum size (bigger text makes it taller).
-static func pin_to(area: Control, corporation_id: StringName) -> MapLegend:
-	var legend := MapLegend.new(corporation_id, true)
+static func pin_to(area: Control, corporation_id: StringName, p_strip: bool = false) -> MapLegend:
+	var legend := MapLegend.new(corporation_id, true, p_strip)
 	legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	area.add_child(legend)
 	legend.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, int(PIN_MARGIN))

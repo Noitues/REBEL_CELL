@@ -225,6 +225,8 @@ var hq_anchor: Vector2 = Vector2(0.8, 0.8)
 
 var _fx: Control
 var _built_for: Vector2 = Vector2.ZERO
+## The camera inputs of the last draw that placed the roofs (see `camera_settled`).
+var _drawn_camera: Array = []
 var _trails: Array[Dictionary] = []
 var _beacons: Array[Dictionary] = []
 var _signs: Array[Dictionary] = []
@@ -739,6 +741,7 @@ func _draw_view() -> void:
 		_live_for = []
 	_collect_live()
 	_built_for = size
+	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
 	rebuilt.emit()
 
@@ -973,8 +976,20 @@ func _draw_city() -> void:
 	_beacons_layer.queue_redraw()
 	_live_for = []
 	_built_for = size
+	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
 	rebuilt.emit()
+
+
+## The camera's inputs (what `_camera` reads).
+func _camera_key() -> Array:
+	return [focus_grid, focus_anchor, size, district, pan, hq_anchor]
+
+
+## True when the city was last drawn (and its roofs placed) under the current camera:
+## overlays measuring node positions after a camera change wait for this (H23 #5).
+func camera_settled() -> bool:
+	return _drawn_camera == _camera_key()
 
 
 ## Irregular street spacing along both axes (deterministic per district).
