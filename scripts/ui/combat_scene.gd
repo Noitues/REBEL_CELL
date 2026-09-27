@@ -15,8 +15,9 @@ extends Control
 const ENEMY_CHOICES: Array[StringName] = [&"collections_agent", &"compliance_officer", &"dosage_dispenser"]
 const CLASS_ID := &"breaker"
 const RING_ID := &"rank:1"
-## Seconds between resolution passes in the log playback (0 under headless / reduce-effects).
-const PASS_DELAY := 0.35
+## Motion entry for the seconds between resolution passes in the log playback (0 under
+## headless / reduce-effects); timings live in content/config/ui_motion.tres.
+const PASS_MOTION := &"resolve_pass"
 ## Canvas layer of the pause menu: above the combat scene and the netrun around it.
 const MENU_LAYER := 10
 ## Right column width at text scale 1.0 (Polaroid, Heat, Daemons, subtitles, tutorial).
@@ -981,7 +982,7 @@ func _play_log(events: Array[Dictionary]) -> void:
 			continue
 		var t: String = e.get("type", "")
 		if t == "pass" or t == "turn_start" or t == "resolve_start":
-			delay += PASS_DELAY
+			delay += Motion.seconds(PASS_MOTION)
 		if delay <= 0.0:
 			log_note.append(text)
 		else:
@@ -1060,8 +1061,8 @@ func _slice_type_of(state: CombatState, e: Dictionary) -> int:
 func _perfect_feedback(view: WheelView) -> void:
 	view.inverted = true
 	view.queue_redraw()
-	Fx.flash(Palette.CELL_PINK, 0.35, 0.12)
-	Fx.freeze_frames(2)
+	Fx.flash(Palette.CELL_PINK, Motion.amplitude(&"precision_perfect"), Motion.seconds(&"precision_perfect"))
+	Fx.freeze_frames()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	if is_instance_valid(view):
@@ -1072,19 +1073,13 @@ func _perfect_feedback(view: WheelView) -> void:
 func _stutter_view(view: WheelView) -> void:
 	if not Fx.effects_enabled():
 		return
-	var tw := create_tween()
-	for i in 3:
-		tw.tween_property(view, "shake", Vector2(4 if i % 2 == 0 else -4, 0), 0.03)
-	tw.tween_property(view, "shake", Vector2.ZERO, 0.03)
-	tw.tween_callback(view.queue_redraw)
+	Motion.shake(view, &"precision_partial", ^"shake")
 
 
 func _flicker_view(view: WheelView) -> void:
 	if not Fx.effects_enabled():
 		return
-	var tw := create_tween()
-	tw.tween_property(view, "modulate:a", 0.4, 0.04)
-	tw.tween_property(view, "modulate:a", 1.0, 0.08)
+	Motion.blink(view, &"precision_blink")
 
 
 ## Migration flicker (GDD 9.2): the current pointers fade in and out while the dashed
@@ -1092,15 +1087,11 @@ func _flicker_view(view: WheelView) -> void:
 func _start_migrate_flicker(view: WheelView) -> void:
 	if _migrate_tween != null and _migrate_tween.is_valid():
 		_migrate_tween.kill()
-	if not Fx.effects_enabled():
+	if not Motion.live(&"pointer_flicker"):
 		view.pointer_alpha = 0.6
 		view.queue_redraw()
 		return
-	_migrate_tween = create_tween().set_loops()
-	_migrate_tween.tween_property(view, "pointer_alpha", 0.2, 0.25)
-	_migrate_tween.tween_callback(view.queue_redraw)
-	_migrate_tween.tween_property(view, "pointer_alpha", 1.0, 0.25)
-	_migrate_tween.tween_callback(view.queue_redraw)
+	_migrate_tween = Motion.loop_pulse(view, ^"pointer_alpha", &"pointer_flicker")
 
 
 func _stop_migrate_flicker() -> void:

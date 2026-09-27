@@ -60,11 +60,11 @@ const SPARK_PICK := 0.35
 const SPARK_SPEED := 0.35
 const SPARK_LENGTH := 0.35
 const SPARKS_MAX := 120
-## Beacons are lit for BEACON_DUTY of BEACON_PERIOD (seconds); signs dip for SIGN_DIP of
-## every SIGN_FLICKER_PERIOD seconds, to SIGN_DIP_ALPHA. Window lights and beacons blink
-## on the GPU (city_lights shader); sparks and signs are the only per-frame drawing.
-const BEACON_PERIOD := 1.6
-const BEACON_DUTY := 0.5
+## Beacons blink per the `beacon_blink` motion entry: lit for its amplitude (share) of its
+## duration (the period, seconds); signs dip for SIGN_DIP of every SIGN_FLICKER_PERIOD
+## seconds, to SIGN_DIP_ALPHA. Window lights and beacons blink on the GPU (city_lights
+## shader); sparks and signs are the only per-frame drawing.
+const BEACON_MOTION := &"beacon_blink"
 const BEACONS_MAX := 240
 const SIGN_FLICKER_PERIOD := 3.2
 const SIGN_DIP := 0.07
@@ -309,7 +309,7 @@ func _init() -> void:
 	_view.draw.connect(_draw_view)
 	add_child(_view)
 	_lights_layer = _blink_layer("CityLights", LIGHT_ON_SHARE, _draw_lights)
-	_beacons_layer = _blink_layer("CityBeacons", BEACON_DUTY, _draw_beacons)
+	_beacons_layer = _blink_layer("CityBeacons", Motion.amplitude(BEACON_MOTION), _draw_beacons)
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -798,15 +798,16 @@ func _draw_beacons() -> void:
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var uvs := PackedVector2Array()
+	var period := Motion.entry(BEACON_MOTION).duration
 	for bcn in _live_beacons:
 		var p: Vector2 = bcn["pos"] + _shift
 		var col: Color = bcn["color"]
 		# Same timing as ever: lit while (phase * 3 + t) mod period < half the period.
-		var ph := fmod(float(bcn["phase"]) * 3.0 / BEACON_PERIOD, 1.0)
-		_blink_hex(pts, cols, uvs, p, 5.0, Color(col, 0.25), ph, BEACON_PERIOD)
-		_blink_hex(pts, cols, uvs, p, 1.6, Color(col, 0.95), ph, BEACON_PERIOD)
-		_blink_hex(pts, cols, uvs, p, 3.0, Color(col, 0.1), ph, -BEACON_PERIOD)
-		_blink_hex(pts, cols, uvs, p, 1.6, Color(col, 0.4), ph, -BEACON_PERIOD)
+		var ph := fmod(float(bcn["phase"]) * 3.0 / period, 1.0)
+		_blink_hex(pts, cols, uvs, p, 5.0, Color(col, 0.25), ph, period)
+		_blink_hex(pts, cols, uvs, p, 1.6, Color(col, 0.95), ph, period)
+		_blink_hex(pts, cols, uvs, p, 3.0, Color(col, 0.1), ph, -period)
+		_blink_hex(pts, cols, uvs, p, 1.6, Color(col, 0.4), ph, -period)
 	_submit(_beacons_layer, pts, cols, uvs)
 
 

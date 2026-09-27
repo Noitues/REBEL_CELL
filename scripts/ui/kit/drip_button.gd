@@ -16,6 +16,10 @@ const HINT_SIZE := 18
 ## The white outline round drip lettering (px each side) and its opacity.
 const OUTLINE_PX := 2.0
 const OUTLINE_ALPHA := 0.95
+## Hover halo: HALO_COPIES faint copies jittered by the `drip_halo` motion amplitude (px).
+const HALO_MOTION := &"drip_halo"
+const HALO_COPIES := 6
+const HALO_ALPHA := 0.12
 
 var tag_text: String = ""
 var key_hint: String = ""
@@ -163,8 +167,12 @@ func _draw() -> void:
 		col = paint.lightened(0.2)
 	var base := Vector2(12, font_size * 1.0)
 	if _hot and not disabled:
-		for k in 6:
-			draw_string(Palette.marker(), base + Vector2(k - 3, (k * 7) % 5 - 2), tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, 0.12))
+		# A fixed jitter pattern (x -3..2, y -2..2 steps), scaled so its x reach is the
+		# halo amplitude in px.
+		var j := Motion.amplitude(HALO_MOTION) / (HALO_COPIES * 0.5)
+		for k in HALO_COPIES:
+			var o := Vector2(k - HALO_COPIES * 0.5, (k * 7) % 5 - 2) * j
+			draw_string(Palette.marker(), base + o, tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, HALO_ALPHA))
 	DripButton.draw_drip_text(self, base, tag_text, font_size, col, drips)
 	if key_hint != "":
 		# The key sits centred under the lettering, big enough to find (H22: "[X]" at 13 px in

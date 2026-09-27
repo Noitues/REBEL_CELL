@@ -68,6 +68,11 @@ func _ready() -> void:
 	apply_settings()
 
 
+## Lets the Motion kit's table go before the engine checks for leaked resources at exit.
+func _exit_tree() -> void:
+	Motion.use_config(null)
+
+
 func _process(_delta: float) -> void:
 	if fps_label.visible:
 		fps_label.text = "%d fps" % Engine.get_frames_per_second()
@@ -75,12 +80,13 @@ func _process(_delta: float) -> void:
 
 ## Autosave indicator (gap analysis 2.5): a marker "SAVED" that fades out, placed where it
 ## covers no control (H23 S1: in the bottom-right corner it sat on the raid's Back to HQ and
-## the route legend).
+## the route legend). Holds and fades per the `saved_stamp` motion entry.
 func show_saved() -> void:
 	place_saved()
 	saved_label.modulate.a = 1.0
+	var e := Motion.entry(&"saved_stamp")
 	var tw := create_tween()
-	tw.tween_property(saved_label, "modulate:a", 0.0, 1.2).set_delay(0.6)
+	tw.tween_property(saved_label, "modulate:a", 0.0, Motion.seconds(&"saved_stamp")).set_delay(Motion.delay_of(&"saved_stamp")).set_ease(e.ease).set_trans(e.trans)
 
 
 ## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
@@ -206,11 +212,16 @@ func effects_enabled() -> bool:
 	return not Settings.reduce_effects
 
 
-## Screen flash (Perfect latch, threshold events). Returns whether it was shown.
-func flash(color: Color = Color.WHITE, strength: float = 0.45, seconds: float = 0.15) -> bool:
+## Screen flash (Perfect latch, threshold events). Returns whether it was shown. A
+## negative strength or seconds takes the `screen_flash` motion entry's amplitude/duration.
+func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = -1.0) -> bool:
 	var now := Time.get_ticks_msec() / 1000.0
 	if not limiter.request(now):
 		return false
+	if strength < 0.0:
+		strength = Motion.amplitude(&"screen_flash")
+	if seconds < 0.0:
+		seconds = Motion.seconds(&"screen_flash")
 	flashes_shown.append(now)
 	flash_rect.color = Color(color, strength)
 	var tw := create_tween()
@@ -218,22 +229,30 @@ func flash(color: Color = Color.WHITE, strength: float = 0.45, seconds: float = 
 	return true
 
 
-## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on.
-func heat_pulse(seconds: float = 0.7) -> void:
+## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on. Rises for
+## HEAT_PULSE_RISE of the time to the `heat_pulse` entry's amplitude, then falls; a
+## negative `seconds` takes the entry's duration.
+func heat_pulse(seconds: float = -1.0) -> void:
 	if not effects_enabled():
 		return
+	if seconds < 0.0:
+		seconds = Motion.seconds(&"heat_pulse")
+	var peak := Motion.amplitude(&"heat_pulse")
 	distortion.visible = true
 	distortion.material.set_shader_parameter("intensity", 0.0)
 	if _pulse_tween != null and _pulse_tween.is_valid():
 		_pulse_tween.kill()
 	_pulse_tween = create_tween()
-	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.0, 0.85, seconds * 0.3)
-	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.85, 0.0, seconds * 0.7)
+	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.0, peak, seconds * HEAT_PULSE_RISE)
+	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), peak, 0.0, seconds * (1.0 - HEAT_PULSE_RISE))
 	_pulse_tween.tween_callback(func() -> void: distortion.visible = false)
 
 
-## Freezes time for `frames` frames (Perfect hit feel). No-op under reduce-effects.
-func freeze_frames(frames: int = 2) -> void:
+## Freezes time for `frames` frames (Perfect hit feel); a negative count takes the
+## `hit_freeze` motion entry's amplitude. No-op under reduce-effects.
+func freeze_frames(frames: int = -1) -> void:
+	if frames < 0:
+		frames = roundi(Motion.amplitude(&"hit_freeze"))
 	if not effects_enabled() or _frozen or frames <= 0:
 		return
 	_frozen = true
@@ -246,32 +265,47 @@ func freeze_frames(frames: int = 2) -> void:
 
 ## Jack in (STYLE_GUIDE 5): the camera pushes into the deck CRT and dissolves to
 ## wireframe. `on_switch` runs at the darkest point (the scene change). Instant under
-## reduce-effects.
-func jack_in(on_switch: Callable, seconds: float = 0.7) -> void:
-	await _transition(on_switch, seconds, true)
+## reduce-effects. Timing from the `jack_in` / `jack_out` motion entries (a negative
+## `seconds` takes the entry's duration): the CRT rect runs between the deck screen's
+## size (`jack_out` amplitude, x viewport) and past the screen (`jack_in` amplitude).
+func jack_in(on_switch: Callable, seconds: float = -1.0) -> void:
+	await _transition(on_switch, seconds, &"jack_in")
 
 
-func jack_out(on_switch: Callable, seconds: float = 0.7) -> void:
-	await _transition(on_switch, seconds, false)
+func jack_out(on_switch: Callable, seconds: float = -1.0) -> void:
+	await _transition(on_switch, seconds, &"jack_out")
 
 
-func _transition(on_switch: Callable, seconds: float, inward: bool) -> void:
+## Alpha the CRT rect glows to at the transition's darkest point.
+const CRT_GLOW_ALPHA := 0.55
+## Share of a Heat pulse spent rising (the rest falls).
+const HEAT_PULSE_RISE := 0.3
+
+
+func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	if not effects_enabled():
 		on_switch.call()
 		return
+	var inward := id == &"jack_in"
+	if seconds < 0.0:
+		seconds = Motion.seconds(id)
+	var e := Motion.entry(id)
 	var vp := get_viewport().get_visible_rect().size
+	var screen := vp * Motion.amplitude(&"jack_out")
+	var past := vp * Motion.amplitude(&"jack_in")
+	var end_size := past if inward else screen
 	crt_rect.visible = true
-	crt_rect.size = Vector2(vp.x * 0.3, vp.y * 0.3) if inward else vp
+	crt_rect.size = screen if inward else vp
 	crt_rect.position = (vp - crt_rect.size) / 2.0
 	crt_rect.color = Color(Palette.CRT_AMBER if inward else Palette.NET_CYAN, 0.0)
-	var tw := create_tween().set_parallel(true)
-	tw.tween_property(crt_rect, "color:a", 0.55, seconds * 0.5)
-	tw.tween_property(crt_rect, "size", vp * 1.2 if inward else Vector2(vp.x * 0.3, vp.y * 0.3), seconds * 0.5)
-	tw.tween_property(crt_rect, "position", -vp * 0.1 if inward else (vp - Vector2(vp.x * 0.3, vp.y * 0.3)) / 2.0, seconds * 0.5)
+	var tw := create_tween().set_parallel(true).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_property(crt_rect, "color:a", CRT_GLOW_ALPHA, seconds * 0.5)
+	tw.tween_property(crt_rect, "size", end_size, seconds * 0.5)
+	tw.tween_property(crt_rect, "position", (vp - end_size) / 2.0, seconds * 0.5)
 	tw.tween_property(transition_rect, "color:a", 1.0, seconds * 0.5)
 	await tw.finished
 	on_switch.call()
 	crt_rect.visible = false
-	var tw2 := create_tween()
+	var tw2 := create_tween().set_ease(e.ease).set_trans(e.trans)
 	tw2.tween_property(transition_rect, "color:a", 0.0, seconds * 0.5)
 	await tw2.finished
