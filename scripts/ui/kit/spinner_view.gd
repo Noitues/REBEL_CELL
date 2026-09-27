@@ -199,6 +199,32 @@ func set_core(p_hub: HubCoreData, p_ring: Array[RingSegmentData]) -> void:
 	_wheel.queue_redraw()
 
 
+## ANIM-4: a column right of the wheel, clear of its slices, for pieces the loadout view
+## adds (the Rank 3 ring segment swaps). Position and width in the wheel area (px).
+const SIDE_X := 566.0
+const SIDE_Y := 16.0
+const SIDE_W := 100.0
+const SIDE_GAP := 6
+var _side: VBoxContainer = null
+
+
+## Adds `control` to the column right of the wheel.
+func add_side(control: Control) -> void:
+	if _side == null:
+		_side = VBoxContainer.new()
+		_side.name = "Side"
+		_side.position = Vector2(SIDE_X, SIDE_Y)
+		_side.custom_minimum_size.x = SIDE_W
+		_side.add_theme_constant_override("separation", SIDE_GAP)
+		_wheel.add_child(_side)
+	_side.add_child(control)
+
+
+## The pad of inner ring segment `k` (null when the ring has none).
+func ring_pad(k: int) -> Button:
+	return _wheel.get_node_or_null("RingPad%d" % k) as Button
+
+
 func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	var b := Button.new()
 	b.text = tr(text)

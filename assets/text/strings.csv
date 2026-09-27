@@ -64,6 +64,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s a card for details.,%s a card for details.
 %s a slice for details.,%s a slice for details.
 %s guards %s (%s): the class's station bonus helps it hold in raids.,%s guards %s (%s): the class's station bonus helps it hold in raids.
+%s is at HQ already.,%s is at HQ already.
 %s rolls,%s rolls
 %s's HP. At 0 the operative flatlines.,%s's HP. At 0 the operative flatlines.
 "%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them.","%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them."
@@ -72,6 +73,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s, a T%d %s","%s, a T%d %s"
 "%s, your home server","%s, your home server"
 %s/turn,%s/turn
+%s: drag onto JACK IN to run %s (or pick them in the list).,%s: drag onto JACK IN to run %s (or pick them in the list).
 %s: integrity (HP) %s > %s in the raid. %s,%s: integrity (HP) %s > %s in the raid. %s
 %s: no change,%s: no change
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
@@ -198,6 +200,7 @@ Campaigns,Campaigns
 Campaigns started on this profile.,Campaigns started on this profile.
 Campaigns won.,Campaigns won.
 "Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
+Cancel,Cancel
 Card,Card
 CardData.arc_flash.description,Deal 3 damage to every enemy.
 CardData.arc_flash.display_name,Arc Flash
@@ -347,6 +350,7 @@ Choose,Choose
 City Grid,City Grid
 Claim,Claim
 Claimed: part of your network; it defends in raids.,Claimed: part of your network; it defends in raids.
+Class default,Class default
 ClassData.botnet.description,Fights through drones that ride the whole netrun.
 ClassData.botnet.display_name,Botnet
 ClassData.breaker.description,Hits hard and spins harder. Perfect landings resolve the slice twice.
@@ -494,6 +498,8 @@ Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Disabled: repair the node on the Grid.,Disabled: repair the node on the Grid.
 Display,Display
+"Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.","Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."
+Drop,Drop
 Drop or click on a glowing target  ·  right-click cancels,Drop or click on a glowing target  ·  right-click cancels
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
@@ -1285,6 +1291,7 @@ OVERCLOCKED,OVERCLOCKED
 Operative,Operative
 Options,Options
 "Options: text size, sound, controls, subtitles.","Options: text size, sound, controls, subtitles."
+Or drag it onto any of your nodes.,Or drag it onto any of your nodes.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
@@ -1307,6 +1314,7 @@ Pause / options,Pause / options
 Pays %d-%d Cycles.,Pays %d-%d Cycles.
 Pick a card from your deck to remove.,Pick a card from your deck to remove.
 "Pick the target: click a node of yours on the map, or its button in YOUR NODES.","Pick the target: click a node of yours on the map, or its button in YOUR NODES."
+Pick up,Pick up
 Pick up the campaign saved most recently.,Pick up the campaign saved most recently.
 Press,Press
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
@@ -1483,6 +1491,7 @@ Raids,Raids
 Raids pending against your network. Set up the defence before the next run.,Raids pending against your network. Set up the defence before the next run.
 Raids repelled / lost.,Raids repelled / lost.
 Rank,Rank
+"Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
 Rare,Rare
 Recall,Recall
@@ -2478,6 +2487,7 @@ Text scale,Text scale
 That is not a campaign code.,That is not a campaign code.
 The Armory is empty: runs bank defence assets from their drops.,The Armory is empty: runs bank defence assets from their drops.
 "The Armory: defence assets banked from runs, deployed on your nodes in raid setup.","The Armory: defence assets banked from runs, deployed on your nodes in raid setup."
+The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
 "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.","The campaign map: pick a Site and JACK IN, claim and upgrade nodes."
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
