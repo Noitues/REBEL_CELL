@@ -33,6 +33,10 @@ extends Control
 ## side column); a focus label (selected, you are here, threats) or a landmark's (CORE,
 ## the boss) with no free spot near its node moves inward instead. Sites carry a tier
 ## difficulty cue: `draw_tier` pips under the icon, shared with the legend and mini-map.
+##
+## H23: a node off the visible map (outside it or under a blocked area) gets no label; a
+## moved label stays within LABEL_REACH of its node and never lands on another label.
+## Every kind has a word (`kind_word`) its tooltip leads with.
 
 signal node_clicked(id: StringName)
 ## Threat markers moved (raid playout): the scene can follow them with the camera.
@@ -82,6 +86,10 @@ const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a
 	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core",
 	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)",
 	KIND_TIER: "Site"}
+## H23 #6: the one word naming each kind (it leads every node tooltip).
+const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Modem", KIND_EVENT: "Terminal",
+	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction",
+	KIND_HOME: "CORE", KIND_TIER: "Site"}
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
 ## how far above the roof the icon floats (px, local).
 const ICON_RADIUS := 13.0
@@ -120,6 +128,9 @@ const MIN_ZOOM := 0.1
 const EDGE_MARGIN := 4.0
 ## How far past a blocked area's edge a label moved out of it lands (local px).
 const SHIFT_CLEARANCE := 1.0
+## H23 #2: the furthest a label may sit from its node's centre (its nearest point, screen
+## px); a label with no spot that near is left out (the node keeps its tooltip).
+const LABEL_REACH := 110.0
 ## H22 tier difficulty cue: a row of TIER_PIPS_MAX pips under a Site's icon, `tier` of
 ## them lit (SiteData.tier is 1-4). Pip radius and spacing (screen px, at text scale
 ## 1.0 on the legend and mini-map; the map's pips follow the icon size) and the gap
@@ -202,6 +213,11 @@ static func route_kind(node_type: int, elite: bool) -> String:
 		RC.InfilNodeType.SERVER_RACK:
 			return KIND_RACK
 	return ""
+
+
+## The word naming node kind `kind` (KIND_WORDS; "" for an unknown kind).
+static func kind_word(kind: String) -> String:
+	return String(KIND_WORDS.get(kind, ""))
 
 
 func _layer(layer_name: String, painter: Callable) -> Control:
@@ -930,6 +946,10 @@ func _layout_labels() -> Array[Dictionary]:
 			return a["prio"] < b["prio"]
 		return String(a["key"]) < String(b["key"]))
 	for t in todo:
+		# H23 #2: a node off the visible map (outside it, or under a panel) has no label: a
+		# label moved in for it would float with nothing to point at.
+		if not _visible_at(t["at"], area, blocks):
+			continue
 		var w := 0.0
 		for line in t["lines"]:
 			w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
@@ -938,7 +958,8 @@ func _layout_labels() -> Array[Dictionary]:
 		var spot := _free_spot(t, box, obstacles)
 		if spot.size == Vector2.ZERO:
 			# H22: focus labels (and the landmarks: CORE, the boss) move inward onto the
-			# screen rather than off it or under a side column.
+			# screen rather than off it or under a side column (H23 #2: never further than
+			# LABEL_REACH from their node; H23 #4: never onto another label).
 			if t["prio"] != PRIO_FOCUS and not _node_dict(t["id"]).get("big", false):
 				continue
 			spot = _inward_spot(t, box, obstacles, t["prio"] == PRIO_FOCUS)
@@ -981,16 +1002,46 @@ func _candidates(t: Dictionary, box: Vector2) -> Array[Rect2]:
 
 ## H22: a spot for a label that has no free one near its node: each candidate moved into
 ## the label area and out of the blocked screen areas, the first clear of the obstacles.
-## With `always`, the first moved candidate when none is clear (a focus label shows).
+## With `always` (a focus label), the first moved candidate that is clear of the other
+## labels when none is clear of everything (it may cover an icon, never a label: H23 #4).
+## H23 #2: a moved spot must stay within LABEL_REACH of its node.
 func _inward_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, always: bool) -> Rect2:
-	var first := Rect2()
+	var loose := Rect2()
+	var reach := LABEL_REACH * _k()
 	for rect in _candidates(t, box):
 		var moved := _shift_inside(rect, obstacles["area"], obstacles["blocks"])
-		if first.size == Vector2.ZERO:
-			first = moved
-		if _on_screen(moved, obstacles) and not _blocked(moved, obstacles):
+		if not _on_screen(moved, obstacles) or reach_of(moved, t["at"]) > reach:
+			continue
+		if not _blocked(moved, obstacles):
 			return moved
-	return first if always else Rect2()
+		if always and loose.size == Vector2.ZERO and not _hits_label(moved, obstacles):
+			loose = moved
+	return loose
+
+
+## How far label `rect` lies from its node's centre `at` (its nearest point; local px).
+static func reach_of(rect: Rect2, at: Vector2) -> float:
+	var q := Vector2(clampf(at.x, rect.position.x, rect.end.x), clampf(at.y, rect.position.y, rect.end.y))
+	return q.distance_to(at)
+
+
+## True when node point `at` shows on the map: inside the label area and under no
+## blocked screen area.
+static func _visible_at(at: Vector2, area: Rect2, blocks: Array[Rect2]) -> bool:
+	if not area.has_point(at):
+		return false
+	for b in blocks:
+		if b.has_point(at):
+			return false
+	return true
+
+
+## True when `rect` overlaps a label placed before it.
+static func _hits_label(rect: Rect2, obstacles: Dictionary) -> bool:
+	for other: Dictionary in obstacles["placed"]:
+		if rect.intersects(other["rect"]):
+			return true
+	return false
 
 
 ## True when `rect` lies inside the label area and off every blocked screen area.

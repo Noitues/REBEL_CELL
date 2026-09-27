@@ -13,22 +13,41 @@ const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clea
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.",
 	GridState.SiteStatus.CLAIMED: "Claimed: part of your network; it defends in raids.",
 	GridState.SiteStatus.SEIZED: "Seized by a raid: run it again to take it back."}
-## What a Site's objective adds (map tooltips).
-const OBJECTIVE_TIPS := {RC.SiteObjective.EXPLOIT: "Exploit Site: clearing it gives an Exploit for the boss breach.",
-	RC.SiteObjective.HEAT_REDUCTION: "Heat reduction: clearing it lowers Heat.",
-	RC.SiteObjective.BOSS: "Boss Site: the corporation's core."}
+## H23 #6: what each Site kind is and does (map and mini-map tooltips), led by its kind
+## word (CityMapOverlay.kind_word) and the icon's shape, so a newcomer learns the icons
+## without the legend.
+const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.",
+	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the boss breach.",
+	CityMapOverlay.KIND_HEAT: "Heat reduction Site (snowflake): clearing it lowers Heat.",
+	CityMapOverlay.KIND_BOSS: "Boss Site (star): the corporation's core.",
+	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."}
+
+
+## The map kind (CityMapOverlay.KIND_*) of Site `sd` in campaign `c`: home, objective or
+## a plain tier Site.
+static func site_kind(c: CampaignState, sd: SiteData) -> String:
+	if sd.id == c.grid.home_site_id:
+		return CityMapOverlay.KIND_HOME
+	match CampaignRules.site_objective(c, sd):
+		RC.SiteObjective.EXPLOIT:
+			return CityMapOverlay.KIND_EXPLOIT
+		RC.SiteObjective.HEAT_REDUCTION:
+			return CityMapOverlay.KIND_HEAT
+		RC.SiteObjective.BOSS:
+			return CityMapOverlay.KIND_BOSS
+	return CityMapOverlay.KIND_TIER
 
 
 ## A Site's hover text on the city maps (H21 #14): name and tier (with its difficulty,
-## H22: the tier pips' meaning in words), status, objective.
-static func site_tip(site_label: String, tier: int, status: int, objective: int, home: bool) -> String:
-	var parts := PackedStringArray(["%s (T%d: difficulty %d of %d)." % [site_label, tier, tier, CityMapOverlay.TIER_PIPS_MAX]])
-	if home:
-		parts.append("Your home server: if its integrity reaches 0 the campaign is lost.")
-	else:
+## H22: the tier pips' meaning in words), then (H23 #6) its kind and what it does, then
+## its status.
+static func site_tip(site_label: String, tier: int, status: int, kind: String) -> String:
+	var home := kind == CityMapOverlay.KIND_HOME
+	var parts := PackedStringArray()
+	parts.append("%s." % site_label if home else "%s (T%d: difficulty %d of %d)." % [site_label, tier, tier, CityMapOverlay.TIER_PIPS_MAX])
+	parts.append(String(KIND_TIPS.get(kind, KIND_TIPS[CityMapOverlay.KIND_TIER])))
+	if not home:
 		parts.append(String(STATUS_TIPS.get(status, "")))
-	if OBJECTIVE_TIPS.has(objective):
-		parts.append(String(OBJECTIVE_TIPS[objective]))
 	return " ".join(parts)
 
 
@@ -71,21 +90,16 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 			GridState.SiteStatus.SEIZED:
 				col = Palette.RESIST_GOLD
 		var glyph := "T%d" % sd.tier
-		var kind := CityMapOverlay.KIND_TIER
 		var objective := CampaignRules.site_objective(c, sd)
 		match objective:
 			RC.SiteObjective.EXPLOIT:
 				glyph = "◈"
-				kind = CityMapOverlay.KIND_EXPLOIT
 			RC.SiteObjective.HEAT_REDUCTION:
 				glyph = "❄"
-				kind = CityMapOverlay.KIND_HEAT
 			RC.SiteObjective.BOSS:
 				glyph = "✦"
-				kind = CityMapOverlay.KIND_BOSS
-		var home := sd.id == c.grid.home_site_id
-		if home:
-			kind = CityMapOverlay.KIND_HOME
+		var kind := site_kind(c, sd)
+		var home := kind == CityMapOverlay.KIND_HOME
 		var named := home or status != GridState.SiteStatus.CORPORATE or glyph.length() == 1 or sd.id == selected
 		# Never colour alone (GDD 9.6): claimed Sites carry a spray ring, Seized a cross.
 		var mark := ""
@@ -98,7 +112,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
 			"label": site_label if named else "", "glyph": "⌂" if home else glyph, "big": home or objective == RC.SiteObjective.BOSS,
 			"tier": 0 if home else sd.tier,
-			"tip": site_tip(site_label, sd.tier, status, objective, home)})
+			"tip": site_tip(site_label, sd.tier, status, kind)})
 	var edges: Array[Dictionary] = []
 	var seen := {}
 	for sd in corp.city_grid.sites:

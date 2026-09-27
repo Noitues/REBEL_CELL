@@ -30,6 +30,52 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H23 combat: subtitles that don't blank, wheels sized from the room below, turns that say what happened
+From pass 23 (both audits, a first-time player and a player who can't read English
+looking at the pass-23 storyboards; GAP_ANALYSIS H23).
+- **Subtitle refit** (P1): a line already on screen is re-paged and refitted whenever the
+  bar docks somewhere new (`dock_at`, `dock_default`). Zeroing the label's minimum height
+  on the move back to the strip had left an empty framed box at almost every fight start.
+- **Wheel size**: the centre is no longer fixed at 0.56 of the view. It rises when the HP
+  number and the LAST TURN line need room below (`WheelView._center`, `_bottom_need`).
+  The radius is the largest that fits the tag, the disc and that block. Below that, the tag
+  may clamp under the arrows down to `RADIUS_FLOOR` of the unconstrained size, provided
+  its title row still fits. At the biggest text the wheel keeps at least
+  `BIG_TEXT_RADIUS_KEEP` (75%) of its 1.0 size. The view's height is fixed and the title
+  row and HP block grow with the text, so 80% could not be promised (a fight at 1280x720:
+  126 px at 1.0, 97 at 1.6; before, 91, and 60 inside a run). Hub lines shrink, then
+  ellipsise, to fit the hub.
+- **LAST TURN** splits the resolve from the next turn's start: "-6 HP · +6 AT TURN START"
+  (a boss's Auto-Renew heal had cancelled the damage into "NO CHANGE" and disagreed with
+  NEXT). It also counts block and shield gained, statuses put on the wheel ("GOT
+  CORRUPTED") and statuses an Encrypted slice stopped. A turn that defended and was
+  afflicted no longer reads "NO CHANGE".
+- **Respin** says what it bought: a note over the hand ("RESPIN -4 RAM: DEFEND · GOOD AIM",
+  with "AGAIN" when it landed on the same thing). The sticker reads "RESPIN 4 RAM". The
+  toast gains a note mode without the no-entry mark.
+- **Status line**: one nudge pair, "Q/E NUDGE YOUR WHEEL", then what the switches switch
+  *to* ("W: NUDGE THE TARGET", and "R: INNER RING" only when the nudged wheel has an inner
+  ring). "YOURS [W] OUTER [R]" had read as a second nudge pair.
+- **Words**: a loss on a tag reads "YOU TAKE 11 HP" / "TAKES 8 HP", not "-11 HP" under DEFEND.
+  The folded chip reads "+4 MORE" (the tag tooltip lists every chip). Satellite plates use
+  " >2" like the wheels. The aim hint moves over the enemy side, off the RAM row; on a pad
+  it names the D-pad and buttons, not "Drop". The tutorial takes its keys from Settings
+  and says GOOD AIM / HALF POWER.
+- **Satellite tokens** in the bottom sector sit beside the HP block, not on it; their target
+  ring and crosshair scale with the token. Tokens are drawn after the tag and the arrows (they are
+  hit-tested first), and a token's HP plate goes outward, else to a side, else inward,
+  whichever first keeps clear of the tag (at 1.3+ the plate sat under it).
+- **Drawn words translate**: the combat's drawn text (tag chips, LAST TURN, the status
+  line, NEXT, hub lines, ring segment and wheel names) goes through `tr()`, and through
+  `TranslationServer.translate` in static helpers, with format strings as keys. Before,
+  only the subtitles translated, and the scrambled storyboard showed these words in
+  English. Tooltips and sticker labels are left to translate where they are shown.
+- Tests: `tests/unit/test_horizontal_pass23.gd`. Updated on purpose: the pass-21 LAST TURN
+  test (resolve plus turn-start parts sum to the real change, now including Renewal
+  Engine), the pass-21 pad status test (the switch key rather than "[LT]") and the pass-22
+  big-text radius test (`BIG_TEXT_RADIUS_KEEP`, and no fallback clause). Views only: the
+  balance numbers stand.
+
 ### 2026-09-27 — H23 screens: nothing over a control, speakers once, a key per map, words for every number, buy buttons, pad prompts
 Pass-23 screens items S1-S18 (reviewers at text 1.0 and 1.6 with a pad; the horizontal
 audit's S14-S18). Views only: no rule or balance changed.
@@ -106,6 +152,55 @@ audit's S14-S18). Views only: no rule or balance changed.
 - Tests: `tests/unit/test_horizontal_pass23_screens.gd`. Updated on purpose: pass20's
   raid order badge expects "HP 50 > 40 HOLDS"; pass21's event row test compares with
   `OutcomeRow.shown`; pass22's route legend test expects the RouteLegend.
+
+### 2026-09-27 — H23 city: mini-map labels apart, labels by their nodes, the key on the map, nodes beside the column
+Pass-23 items K1-K7 (the City Grid screen, the map overlay, the HQ mini-map). View-only
+(`scripts/ui/kit/`, the Grid page of `hq_scene.gd`); no rule or content change.
+- **Mini-map labels are placed (K1).** `GridMapView` no longer stamps a label under every
+  block: labels go by priority (selected, CORE, claimed, the rest; ties by Site id) to the
+  first free spot round their block (below, above, right, left, corners) inside the view,
+  never on another label (the tier pips are part of the label, so they never cover one),
+  preferring spots off the other blocks. A crowded label drops to a shorter variant (name
+  and detail, name, "T2 glyph", the pips alone) and is left out when none fits; every Site
+  keeps a tooltip (`_get_tooltip`: name, tier, kind, status). `label_rects` for checks.
+- **A label stays by its node (K2).** "Renewal Engine" floated over PREV SITE because its
+  node sat under the side column and the H22 inward move shifted its focus label up out of
+  the column, far from anything. Now a node off the visible map (outside the label area or
+  under a blocked control) gets no label, and a moved label must stay within LABEL_REACH
+  (110 screen px, to its nearest point) of its node.
+- **No two map labels overlap (K4).** A focus label with no clear spot used to take the
+  first moved spot even over another label; it now takes one clear of every label (it may
+  cover an icon) or is left out. Order unchanged: priority, then node id (= Site content id).
+- **The key sits on the map (K3).** The Grid's MapLegend left the scrolling column (it was
+  its last item, below the fold): it is a *strip* legend (`MapLegend.pin_to(area, corp,
+  true)`) along the foot of the map area, as wide as the map, rows in as many columns as
+  fit (`set_strip_width`), with shorter row words (STRIP_ROWS). Its text is the compact
+  size x text scale (rebuilt live). The Settings switch hides it and the map refits.
+- **Nodes stay beside the column (K5).** `hq_scene.fit_grid_map` fits the Grid map into the
+  map area above the key, once the page's layout has settled (next frame): when a node's
+  icon or pips lie outside it, the camera pans and zooms out (never in past the Grid's
+  own framing, now GRID_ZOOM 0.72 at GRID_ANCHOR (0.31, 0.54), was 0.85 at (0.4, 0.56):
+  at text scale 1.0 the Grid then fits above the key with no refit). `LegendSpot.fit_into` works the frame out from where the icons
+  are now (only the spread between icon centres scales; icons and pips keep their screen
+  size), aiming FIT_INSET (8 px) inside so drift never asks for another pass; it is
+  checked again once the city has drawn under the new camera (`NeonCity.camera_settled`,
+  new: the camera inputs of the last draw), at most GRID_FITS_MAX (3) passes. A resize,
+  a text size change or the legend switch fits again. At text scale 1.6 the map is
+  smaller (the column and the key take more room), never clipped, and never below
+  GRID_MIN_ZOOM (0.3). The step row (PREV / NEXT SITE, Back to HQ, RAID SETUP) wraps
+  inside the column (an HFlowContainer): as one row at 1.6 with a raid pending it widened
+  the column over most of the map.
+- **Tooltips name the kind (K6).** `CityLayout.KIND_TIPS`: each Site tooltip says its kind
+  word and icon shape and what it does ("Exploit Site (diamond): clearing it gives an
+  Exploit for the boss breach."), then its status; `CityMapOverlay.KIND_WORDS` /
+  `kind_word`, `CityLayout.site_kind`. Used by the map, the mini-map and the run rows.
+- **Run rows and steps carry their Site's icon (K7).** RUNS OPEN NOW lists one run a row
+  (wrapping long names), each with its Site's map icon and tier pips and, for an objective
+  Site, its kind word ("· EXPLOIT"); the tooltip adds what the kind does. PREV SITE /
+  NEXT SITE show the map icon of the Site they step to (no pips, to keep the row narrow)
+  and name it in the tooltip. Both controls kept (decided before).
+- Test expectation changed on purpose: none of the H20-H22 tests changed; the Grid legend
+  is still one MapLegend that follows the switch live.
 
 ### 2026-09-27 — H22 combat: now vs next, satellites that read, wheels that stay big
 From pass 22 (both audits, a first-time player and a player who can't read English
@@ -1879,6 +1974,14 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **The Grid at text scale 1.6 (H23 city, 2026-09-27):** with the side column and the map key along the map's foot (about 280
+  px tall at 1.6), the Grid map is framed small enough that every node shows, and only the
+  labels that fit are drawn (the rest keep tooltips); in the densest cluster (ten T1 Sites
+  side by side) some icons touch, as the overlay stacks at most ICON_STACK_MAX (4) deep.
+  Alternatives: a key that folds to
+  its title (open on hover or a button), or a narrower column at big text (the steps as
+  icon-only buttons). Which do you prefer? LABEL_REACH (110 px) is a guess too.
 
 - **Subtitles over the stat tags; toasts (H20, 2026-09-26):** outside combat the subtitle
   bar now sits in the top band over the screen title and the stat tags (the only strip

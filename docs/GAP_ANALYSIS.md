@@ -35,9 +35,43 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H18 | 2026-09-25 | 5 (Reset dropped pad buttons, combat pause menu unthemed / unscaled, subtitles unscaled, Mirror copies of Overclocked slots, Stolen Intent kept Burner's Overclock) | Fixed in horizontal batch H18 |
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
 | Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
+| H23 | 2026-09-27 | 21 from pass 23 (1 P1: an empty subtitle box after a re-dock; 12 P2; 8 P3) incl. the third naive-player reviews | Fixed in horizontal batch H23 (combat, city maps, screens); DECISIONS "H23 ..." entries |
 | H22 | 2026-09-27 | 14 from pass 22 (0 P1, 8 P2, 6 P3) incl. the second naive-player reviews | Fixed in horizontal batch H22 (combat, city maps, screens); DECISIONS "H22 ..." entries |
 | H21 | 2026-09-26 | 22 from pass 21 (3 P1: pad nudge wheel/ring, pad focus lost, no visible turn result; 12 P2; 7 P3) incl. the first naive-player reviews | Fixed in horizontal batch H21 (combat, city maps, screens); DECISIONS "H21 ..." entries |
 | H20 | 2026-09-26 | 25 after the merge (5 P1: hidden resolve outcome, hidden card/respin previews, blind slice choice, silent refusals, no target marker; 10 P2; 10 P3) plus the designer's 7 (tooltips, drag-to-target cards and nudge arrows, a baked backdrop with live lights and territory colour, no text logs, naive-player reviews, directions that read the right way) | Fixed in horizontal batch H20 (combat, city, screens); DECISIONS "H20 ..." entries |
+
+### H23 (fixed 2026-09-27): pass 23 = audits + third naive-player reviews
+
+LAST TURN matched the real HP change for 58 enemies x 4 turns; satellite landings matched
+the resolver for every satellite-bearing enemy; the raid forecast verdict matched
+`raid_verdict` in 720 cases; event outcome rows matched the applied deltas in 7,895.
+
+| # | Sev | Gap | Source |
+|---|---|---|---|
+| 1 | P1 | A line on screen when the subtitle bar re-docks (fight start, screen change, text scale) turns into an empty framed box | vertical, horizontal, beginner |
+| 2 | P2 | Wheels still shrink at big text (60 px in a run at 1.6); hub names cut ("Breake") | vertical, horizontal, beginner |
+| 3 | P2 | NEXT disagrees with the HP after SEND IT when a turn-start effect fires (Auto-Renew); LAST TURN nets them into NO CHANGE | vertical |
+| 4 | P2 | Drone tokens cover their host's HP; at 1.3+ a drone's HP plate sits under the tag | vertical, horizontal |
+| 5 | P2 | Raid map nodes under the top bar, off screen or under the Armory | horizontal |
+| 6 | P2 | Spoken lines and drawn words (tags, stamps, stickers, combat chips) never translate | horizontal, non-English |
+| 7 | P2 | After SEND IT nothing says what happened (defend + afflict read NO CHANGE); a respin that lands the same looks like RAM for nothing | beginner, non-English |
+| 8 | P2 | Two key pairs for nudging ([Q]/[E] arrows vs "YOURS [W] OUTER [R]"); OUTER on one-ring wheels | beginner |
+| 9 | P2 | Route legend is the campaign legend; route icons unexplained | beginner, non-English |
+| 10 | P2 | Modem items: no descriptions, "100+" prices, BUY/SHRED not buttons, cut card text | beginner |
+| 11 | P2 | City Grid: legend below the fold, labels piled or floating from their node, a node under the panel; HQ mini-map labels pile at 1.6 | beginner, vertical |
+| 12 | P2 | Raid setup numbers ("50 > 40", "0/2", "x1", 10/8/12) unexplained; no line saying what a raid is | beginner, non-English |
+| 13 | P2 | Pad prompts missing on HQ, Grid, raid, route, Modem, loot, event | beginner |
+| 14 | P3 | SAVED stamp over Back to HQ; raid speaker named twice; raid line cut with no cue | vertical, beginner |
+| 15 | P3 | Aim hint on the RAM row and "Drop" on a pad; tutorial hard-codes A/B/1-9 and says PARTIAL | vertical |
+| 16 | P3 | Satellite plates use "5→2"; target ring doesn't scale | vertical |
+| 17 | P3 | "-11 HP" under DEFEND reads as a cost; bare "+4" folded chip; RESPIN 4 without its unit | beginner |
+| 18 | P3 | Event subtitles pseudolocalised twice; forecast stamp icon over its caption at 1.6 | horizontal |
+| 19 | P3 | "+0 Heat" event option; event title under the subtitle band; "Scrub Heat -5 (25)" | beginner |
+| 20 | P3 | WANTED poster's COOL hidden; Pirate Radio clipped | vertical, beginner |
+| 21 | P3 | Node kinds unexplained until the legend; run list rows without icons | beginner, non-English |
+
+Not changed: the title's Continue summary reads the newest real slot (the storyboard plays
+in a private slot); the toast still sits over the hand (H21 moved it off the HP arcs).
 
 ### H22 (fixed 2026-09-27): pass 22 = audits + second naive-player reviews
 

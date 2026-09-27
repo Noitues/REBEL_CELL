@@ -1,0 +1,320 @@
+extends GutTest
+## H23 city: the HQ mini-map's labels never pile up (#1); a Grid label is drawn near its
+## node or not at all (#2); the Grid's key is on screen and follows the text size (#3); no
+## two Grid labels overlap (#4); every Grid node shows beside the side column (#5); node
+## tooltips name the kind (#6); the runs open now and the Site steps carry their Site's
+## map icon (#7). At text scale 1.0 and 1.6, for every corporation. The Grid checks share
+## one Grid per corporation and text size (a headless city draw is slow).
+
+const HQ := "res://scenes/hq/hq_scene.tscn"
+const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
+const SCALES: Array[float] = [1.0, 1.6]
+const SCREEN := Rect2(0, 0, 1280, 720)
+## The HQ mini-map's least size (hq_scene's CITY GRID monitor).
+const MINI_SIZE := Vector2(420, 170)
+## Frames for the Grid map to settle (the fit waits for the city to redraw each pass).
+const SETTLE := 12
+
+var _text_scale_before: float = 1.0
+var _legend_before: bool = true
+
+
+func before_all() -> void:
+	_text_scale_before = Settings.text_scale
+	_legend_before = Settings.map_legend
+
+
+func before_each() -> void:
+	AudioDirector.muted = true
+	RunManager.save_slot = "gut_c23_city"
+	RunManager.scene_switching_enabled = false
+	RunManager.delete_save()
+	RunManager.reset()
+
+
+func after_each() -> void:
+	if not is_equal_approx(Settings.text_scale, _text_scale_before):
+		Settings.set_text_scale(_text_scale_before)
+	if Settings.map_legend != _legend_before:
+		Settings.set_map_legend(_legend_before)
+	Dialogue.clear()
+	AudioDirector.muted = false
+	RunManager.delete_save()
+	DirAccess.remove_absolute(RunManager.profile_path())
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	RunManager.reset()
+	RunManager.scene_switching_enabled = true
+
+
+func _frames(n: int = 3) -> void:
+	for i in n:
+		await get_tree().process_frame
+
+
+## A 1280x720 holder (the headless window is tiny) with `path` instanced in it.
+func _scene(path: String) -> Control:
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var scene: Control = load(path).instantiate()
+	holder.add_child(scene)
+	scene.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return scene
+
+
+func _open_all() -> void:
+	for u in [&"unlock_halcyon", &"unlock_meridian", &"unlock_orbital"]:
+		RunManager.profile.add_unlock(u)
+	for id in ["solace", "meridian", "halcyon", "orbital"]:
+		RunManager.profile.best_ice_by_corp[id] = 10
+
+
+## The HQ on corporation `corp`'s Grid at text scale `scale`, settled.
+func _hq_grid(corp: StringName, scale: float) -> Control:
+	RunManager.reset()
+	Settings.set_text_scale(scale)
+	var hq := _scene(HQ)
+	_open_all()
+	hq.new_campaign(1, 0, RunManager.DEFAULT_HOME, RunManager.DEFAULT_CLASS, corp)
+	hq.show_grid()
+	await _frames(SETTLE)
+	return hq
+
+
+func _close(hq: Control) -> void:
+	hq.get_parent().queue_free()
+	await _frames(1)
+
+
+## Asserts no two rects of `rects` (key -> Rect2) overlap.
+func _assert_apart(rects: Dictionary, what: String) -> void:
+	var keys := rects.keys()
+	keys.sort()
+	for i in keys.size():
+		for j in range(i + 1, keys.size()):
+			var a: Rect2 = rects[keys[i]]
+			var b: Rect2 = rects[keys[j]]
+			assert_false(a.intersects(b), "%s: labels %s %s and %s %s overlap" % [what, keys[i], a, keys[j], b])
+
+
+## Screen centre of `overlay`'s node `n` icon.
+func _screen_at(overlay: CityMapOverlay, n: Dictionary) -> Vector2:
+	return overlay.get_global_transform() * overlay.icon_pos(n)
+
+
+## The legend's rect on screen (its scale included).
+func _legend_rect(legend: MapLegend) -> Rect2:
+	return Rect2(legend.get_global_rect().position, legend.size * legend.scale)
+
+
+# --- #1 The HQ mini-map ---------------------------------------------------------------------
+
+func test_mini_map_labels_never_overlap_and_keep_their_tooltips() -> void:
+	for corp in CORPS:
+		RunManager.reset()
+		_open_all()
+		RunManager.new_campaign(1, corp)
+		var c := RunManager.campaign
+		for scale in SCALES:
+			Settings.set_text_scale(scale)
+			var mini: GridMapView = add_child_autofree(GridMapView.new())
+			mini.custom_minimum_size = MINI_SIZE
+			mini.size = MINI_SIZE
+			mini.show_grid(c, RunManager.corporation)
+			await _frames(2)
+			var what := "%s x%.1f" % [corp, scale]
+			assert_false(mini.label_rects.is_empty(), "%s: the mini-map labels some Sites" % what)
+			_assert_apart(mini.label_rects, what)
+			for id in mini.label_rects:
+				assert_true(Rect2(Vector2.ZERO, mini.size).encloses(mini.label_rects[id]), "%s: %s's label inside the mini-map" % [what, id])
+			# Pips only where a label was placed (they are part of it, never on another).
+			for id in mini.drawn_tiers:
+				assert_true(mini.label_rects.has(id), "%s: %s's pips sit in its label" % [what, id])
+			# Every Site keeps a tooltip naming its kind, labelled or not.
+			for sd in RunManager.corporation.city_grid.sites:
+				if sd == null:
+					continue
+				var tip: String = String(mini._get_tooltip(mini.position_of(sd.id))).replace("\n", " ")
+				var word := CityMapOverlay.kind_word(CityLayout.site_kind(c, sd))
+				assert_string_contains(tip, word, "%s: %s's tooltip names its kind" % [what, sd.id])
+			mini.free()
+	# CORE comes first: it always has its label.
+	Settings.set_text_scale(1.6)
+	var m: GridMapView = add_child_autofree(GridMapView.new())
+	m.size = MINI_SIZE
+	m.show_grid(RunManager.campaign, RunManager.corporation)
+	await _frames(2)
+	assert_true(m.label_rects.has(RunManager.campaign.grid.home_site_id), "CORE is labelled")
+
+
+func test_the_hq_mini_map_on_the_hq_page_keeps_labels_apart() -> void:
+	for scale in SCALES:
+		RunManager.reset()
+		Settings.set_text_scale(scale)
+		var hq := _scene(HQ)
+		hq.new_campaign(1)
+		await _frames(4)
+		var minis := hq.find_children("*", "GridMapView", true, false).filter(func(n: Node) -> bool: return (n as Control).is_visible_in_tree())
+		assert_eq(minis.size(), 1, "the HQ shows its mini-map")
+		var mini: GridMapView = minis[0]
+		_assert_apart(mini.label_rects, "HQ x%.1f" % scale)
+		assert_false(mini.label_rects.is_empty())
+		await _close(hq)
+
+
+# --- #2-#5 and #7 The Grid screen -------------------------------------------------------------
+
+func test_the_grid_at_every_corporation_and_text_size() -> void:
+	Settings.set_map_legend(true)
+	for corp in CORPS:
+		for scale in SCALES:
+			var hq: Control = await _hq_grid(corp, scale)
+			var what := "%s x%.1f" % [corp, scale]
+			_check_legend(hq, what, scale)
+			_check_nodes_beside_the_column(hq, what)
+			_check_labels(hq, what)
+			if corp == &"solace":
+				_check_run_rows_and_steps(hq, what)
+			await _close(hq)
+
+
+## #3: the key is on screen, over the map, clear of the column and of every node, and its
+## text follows the text size.
+func _check_legend(hq: Control, what: String, scale: float) -> void:
+	var legend: MapLegend = hq.grid_legend
+	assert_not_null(legend, "%s: the Grid has its key" % what)
+	assert_true(legend.is_visible_in_tree(), what)
+	var lr := _legend_rect(legend)
+	assert_true(SCREEN.encloses(lr), "%s: the key %s is on screen" % [what, lr])
+	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
+	assert_true(area.grow(0.5).encloses(lr), "%s: over the map %s" % [what, area])
+	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
+	assert_false(lr.intersects(column), "%s: clear of the side column" % what)
+	assert_eq(legend.font_size(), roundi(MapLegend.COMPACT_FONT * scale), "%s: its text follows the scale" % what)
+	var labels := legend.body.find_children("*", "Label", true, false)
+	assert_false(labels.is_empty())
+	for l in labels:
+		assert_eq((l as Label).get_theme_font_size("font_size"), legend.font_size(), "%s: row text at the scale" % what)
+	assert_eq(LegendSpot.covered(lr, LegendSpot.node_rects(hq.city_overlay, false)), 0.0, "%s: the key covers no node" % what)
+
+
+## #5: every node's icon centre and tier pips on the map area, none under the column.
+func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
+	var overlay: CityMapOverlay = hq.city_overlay
+	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
+	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
+	var xf := overlay.get_global_transform()
+	for n in overlay.nodes:
+		var at := _screen_at(overlay, n)
+		var where := "%s %s at %s" % [what, n["id"], at]
+		assert_true(area.has_point(at), "%s: on the map %s" % [where, area])
+		assert_false(column.has_point(at), "%s: not under the column" % where)
+		var pips := overlay.tier_pips_rect(n)
+		if pips.has_area():
+			assert_true(area.grow(0.5).encloses(Rect2(xf * pips.position, pips.size * xf.get_scale())), "%s: its tier pips too" % where)
+
+
+## #2 and #4: with each node selected in turn, the selected one is labelled, no two labels
+## overlap, and each lies on the map within LABEL_REACH of its node.
+func _check_labels(hq: Control, what: String) -> void:
+	var overlay: CityMapOverlay = hq.city_overlay
+	var c := RunManager.campaign
+	var paths := CityLayout.threat_paths(c, RunManager.corporation)
+	var ids: Array[StringName] = []
+	for n in overlay.nodes:
+		ids.append(n["id"])
+	var reach := CityMapOverlay.LABEL_REACH * overlay._k()
+	for id in ids:
+		var g := CityLayout.grid_graph(c, RunManager.corporation, paths, id)
+		overlay.set_graph(g["nodes"], g["edges"])
+		overlay.selected_id = id
+		var sel := "%s selected %s" % [what, id]
+		var rects := overlay.label_rects()
+		assert_true(rects.has(String(id)), "%s: the selected Site is labelled" % sel)
+		_assert_apart(rects, sel)
+		var area := overlay.label_area()
+		for key in rects:
+			var n := overlay._node_dict(StringName(String(key).get_slice("#", 0)))
+			var r: Rect2 = rects[key]
+			assert_true(area.grow(0.01).encloses(r), "%s: %s inside the map" % [sel, key])
+			assert_true(CityMapOverlay.reach_of(r, overlay.icon_pos(n)) <= reach + 0.01, "%s: %s within reach of its node" % [sel, key])
+
+
+## #7: each run row and each Site step carries its Site's map icon and names its kind.
+func _check_run_rows_and_steps(hq: Control, what: String) -> void:
+	var nodes := {}
+	for n in hq.grid_graph()["nodes"]:
+		nodes[n["id"]] = n
+	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
+	assert_not_null(rows, "%s: one run a row" % what)
+	var checked := 0
+	for b in rows.get_children():
+		if b is Button and String(b.name).begins_with("Run_"):
+			var id := StringName(String(b.name).trim_prefix("Run_"))
+			var kind := String(nodes[id]["kind"])
+			assert_eq(IconMark.map_kind_of(b), kind, "%s %s: the map icon of its kind" % [what, id])
+			assert_string_contains((b as Button).tooltip_text.replace("\n", " "), CityMapOverlay.kind_word(kind), "%s %s: the tip names the kind" % [what, id])
+			if kind != CityMapOverlay.KIND_TIER:
+				assert_string_contains((b as Button).text, CityMapOverlay.kind_word(kind).to_upper(), "%s %s: the row says its kind" % [what, id])
+			checked += 1
+	assert_gt(checked, 0, "%s: runs checked" % what)
+	for pair in [["PrevSite", -1], ["NextSite", 1]]:
+		var b := hq.find_child(pair[0], true, false) as Button
+		var to: StringName = hq.stepped_site(pair[1])
+		assert_eq(IconMark.map_kind_of(b), String(nodes[to]["kind"]), "%s: %s shows the icon of the Site it goes to" % [what, pair[0]])
+		assert_string_contains(b.tooltip_text.replace("\n", " "), CityMapOverlay.kind_word(String(nodes[to]["kind"])), "%s: %s names it" % [what, pair[0]])
+
+
+func test_a_hidden_node_has_no_floating_label_and_the_fit_is_measured() -> void:
+	var hq: Control = await _hq_grid(&"solace", 1.0)
+	var overlay: CityMapOverlay = hq.city_overlay
+	var n: Dictionary = {}
+	for m in overlay.nodes:
+		if m.get("big", false) and m["id"] != RunManager.campaign.grid.home_site_id:
+			n = m
+	assert_false(n.is_empty(), "the boss Site")
+	overlay.selected_id = n["id"]
+	assert_true(overlay.label_rects().has(String(n["id"])), "labelled while it shows")
+	# A panel over the node (Renewal Engine floated over PREV SITE): no label anywhere.
+	var at := _screen_at(overlay, n)
+	overlay.set_blocked_rects([Rect2(at - Vector2(60, 60), Vector2(120, 120))])
+	assert_false(overlay.label_rects().has(String(n["id"])), "a hidden node's label is left out, not moved away")
+	overlay.set_blocked_rects([])
+	# The fit: nothing to do with room enough; a small room asks to zoom out.
+	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
+	assert_true(LegendSpot.fit_into(overlay, SCREEN.grow(4000.0)).is_empty(), "room enough: no change")
+	var fit := LegendSpot.fit_into(overlay, Rect2(area.position, area.size * 0.3))
+	assert_false(fit.is_empty(), "a small room asks for a new frame")
+	assert_true(float(fit["zoom"]) < 1.0, "zoomed out")
+	# The legend switch: off, the key hides and the map may use its room; on, the key
+	# covers no node again.
+	Settings.set_map_legend(false)
+	await _frames(SETTLE)
+	assert_false(hq.grid_legend.visible, "the key hides")
+	Settings.set_map_legend(true)
+	await _frames(SETTLE)
+	assert_eq(LegendSpot.covered(_legend_rect(hq.grid_legend), LegendSpot.node_rects(overlay, false)), 0.0, "back on, it covers no node")
+	await _close(hq)
+
+
+# --- #6 Tooltips name the kind ---------------------------------------------------------------
+
+func test_every_node_tooltip_names_its_kind_and_what_it_does() -> void:
+	for corp in CORPS:
+		RunManager.reset()
+		_open_all()
+		RunManager.new_campaign(1, corp)
+		var c := RunManager.campaign
+		var g := CityLayout.grid_graph(c, RunManager.corporation, [])
+		var overlay: CityMapOverlay = autofree(CityMapOverlay.new())
+		overlay.set_graph(g["nodes"], g["edges"])
+		var kinds := {}
+		for n in g["nodes"]:
+			var kind := String(n["kind"])
+			kinds[kind] = true
+			var tip := overlay.tip_of(n["id"])
+			assert_ne(tip, "", "%s %s: a tooltip" % [corp, n["id"]])
+			assert_string_contains(tip, CityMapOverlay.kind_word(kind), "%s %s: names its kind" % [corp, n["id"]])
+			assert_string_contains(tip, String(CityLayout.KIND_TIPS[kind]), "%s %s: says what it does" % [corp, n["id"]])
+		assert_true(kinds.has(CityMapOverlay.KIND_HOME) and kinds.has(CityMapOverlay.KIND_TIER), "%s: CORE and plain Sites checked" % corp)
+	for kind in [CityMapOverlay.KIND_TIER, CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_BOSS, CityMapOverlay.KIND_HOME]:
+		assert_true(String(CityLayout.KIND_TIPS[kind]).begins_with(CityMapOverlay.kind_word(kind)), "%s: the tip leads with its word" % kind)

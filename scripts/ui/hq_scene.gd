@@ -49,6 +49,14 @@ const VERDICT_HIT := "HOME HIT"
 const VERDICT_LOST := "CAMPAIGN LOST"
 ## Passes framing the raid map beside its legend (each on the positions the last one gave).
 const RAID_REFRAMES_MAX := 6
+## Passes fitting the Grid map into the screen beside its column and legend (H23 #5).
+const GRID_FITS_MAX := 4
+## The Grid map's own framing (the city's zoom, and where the graph's centre lands as a
+## screen fraction) before it is fitted to the screen.
+const GRID_ZOOM := 0.72
+const GRID_ANCHOR := Vector2(0.31, 0.54)
+## The smallest the fit may make the Grid map (the city's zoom).
+const GRID_MIN_ZOOM := 0.3
 ## The deploy steps' icons, a little larger than a button's.
 const DEPLOY_ICON_GROW := 1.2
 ## The raid orders list's least height at text scale 1.0 (px).
@@ -94,6 +102,11 @@ var raid_legend: MapLegend = null
 ## How many times the raid map was framed to clear the legend's column (at most
 ## RAID_REFRAMES_MAX: labels keep their size as the map zooms, so a second pass settles it).
 var _raid_reframes: int = 0
+## The Grid map's key, on the map (H23 #3), and the passes fitting the map so far.
+var grid_legend: MapLegend = null
+var _grid_fits: int = 0
+## The key's size the last fit laid the map out for.
+var _grid_legend_size: Vector2 = Vector2.ZERO
 ## The map drawn on the city (Grid, raids); freed when another panel opens.
 var city_overlay: CityMapOverlay = null
 var _settings_panel: PauseMenu = null
@@ -950,9 +963,13 @@ func show_grid() -> void:
 	outer.add_theme_constant_override("separation", 0)
 	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var spacer := Control.new()
+	spacer.name = "GridMapArea"
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	outer.add_child(spacer)
+	# H23 #3: the map key sits on the map (in the side column's foot it fell below the fold),
+	# a strip along the map's foot; the map is framed above it (`fit_grid_map`).
+	grid_legend = MapLegend.pin_to(spacer, c.corporation_id, true)
 	grid_view = GridMapView.new()
 	grid_view.visible = false
 	grid_view.show_grid(c, corp, _threat_paths())
@@ -988,8 +1005,7 @@ func show_grid() -> void:
 		selected_site = launchable[0].id
 	if selected_site == &"" or CampaignRules.site_data(corp, selected_site) == null:
 		selected_site = c.grid.home_site_id
-	# The card over the full column; the map legend goes last (H21 #15: beside the card it
-	# grew tall at big text and pushed RUNS OPEN NOW off the screen).
+	# The card over the full column, then the runs open now (the legend is on the map).
 	var top := GridContainer.new()
 	top.columns = 1
 	side.add_child(top)
@@ -999,21 +1015,30 @@ func show_grid() -> void:
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		top.add_child(card)
-	var legend := MapLegend.new(c.corporation_id)
 	# Every Site stays reachable without the mouse: step through them, or jump to a run.
 	# First in the column: the city screens don't scroll by mouse wheel, so Back to HQ
 	# must stay on screen at text scale 1.6.
-	var nav := HBoxContainer.new()
+	# H23 #5: the row wraps inside the column (as one row, with RAID SETUP at text scale 1.6
+	# it widened the column over most of the map).
+	var nav := HFlowContainer.new()
 	nav.name = "SiteNav"
-	nav.add_theme_constant_override("separation", 8)
+	nav.add_theme_constant_override("h_separation", 8)
+	nav.add_theme_constant_override("v_separation", 6)
 	column.add_child(nav)
 	column.move_child(nav, 0)
+	# H23 #7: every Site row and step button carries the map icon of its Site (kind, map
+	# colour, tier pips), so the list and the map read alike.
+	var map_nodes := {}
+	for n in grid_graph()["nodes"]:
+		map_nodes[n["id"]] = n
 	var prev := _button("< PREV SITE", func() -> void: step_site(-1))
 	prev.name = "PrevSite"
-	_add_tip(nav, prev, "Select the previous Site on the Grid (the map follows).")
+	_site_mark(prev, map_nodes.get(stepped_site(-1), {}), false)
+	_add_tip(nav, prev, "Select the previous Site on the Grid: %s (the map follows)." % _site_kind_name(stepped_site(-1)))
 	var next := _button("NEXT SITE >", func() -> void: step_site(1))
 	next.name = "NextSite"
-	_add_tip(nav, next, "Select the next Site on the Grid (the map follows).")
+	_site_mark(next, map_nodes.get(stepped_site(1), {}), false)
+	_add_tip(nav, next, "Select the next Site on the Grid: %s (the map follows)." % _site_kind_name(stepped_site(1)))
 	var back := _icon(_button("Back to HQ", show_hq), StatIcon.BACK)
 	back.name = "BackToHq"
 	_add_tip(nav, back, "Back to the HQ: crew, Black Market, Cell status.")
@@ -1026,38 +1051,125 @@ func show_grid() -> void:
 		var runs := TerminalWindow.new("RUNS OPEN NOW", Palette.CELL_ACID)
 		runs.name = "RunsOpen"
 		side.add_child(runs)
-		var flow := HFlowContainer.new()
-		flow.add_theme_constant_override("h_separation", 8)
-		flow.add_theme_constant_override("v_separation", 6)
-		runs.body.add_child(flow)
-		var map_nodes := {}
-		for n in grid_graph()["nodes"]:
-			map_nodes[n["id"]] = n
+		# One run a row (H23 #7: wrapped side by side they read as a jumble).
+		var rows := VBoxContainer.new()
+		rows.name = "RunRows"
+		rows.add_theme_constant_override("separation", 6)
+		runs.body.add_child(rows)
 		for s in launchable:
 			var sid := s.id
-			var b := _button("T%d %s" % [s.tier, site_name(s.id)], func() -> void: select_site(sid))
+			var mn: Dictionary = map_nodes.get(s.id, {})
+			var kind := String(mn.get("kind", CityMapOverlay.KIND_TIER))
+			var words := "T%d %s" % [s.tier, site_name(s.id)]
+			if kind != CityMapOverlay.KIND_TIER:
+				words += " · %s" % CityMapOverlay.kind_word(kind).to_upper()
+			var b := _button(words, func() -> void: select_site(sid))
 			b.name = "Run_%s" % s.id
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long name wraps in the column
 			# H22 #14: the Site's own map icon (objective or tier, the map's colour) and its tier
 			# as pips (the harder the run, the more bars).
-			var mn: Dictionary = map_nodes.get(s.id, {})
-			IconMark.attach(b, StatIcon.MAP)
-			IconMark.attach_map(b, String(mn.get("kind", CityMapOverlay.KIND_TIER)), mn.get("color", Palette.NET_CYAN),
-				String(mn.get("glyph", "")) if String(mn.get("kind", "")) == CityMapOverlay.KIND_TIER else "", s.tier)
+			_site_mark(b, mn)
 			if s.id == selected_site:
 				b.add_theme_color_override("font_color", Palette.CELL_ACID)
-			_add_tip(flow, b, "T%d %s: %s. Select it, then %s on its card." % [s.tier, site_name(s.id), CampaignRules.run_kind_for(c, s), JACK_IN])
-	side.add_child(legend)
+			_add_tip(rows, b, "T%d %s: %s. %s Select it, then %s on its card." % [s.tier, site_name(s.id), CampaignRules.run_kind_for(c, s),
+				String(CityLayout.KIND_TIPS.get(kind, "")), JACK_IN])
 	_set_panel(outer, "grid")
-	# More below in the column (the legend at big text): the same tag as the HQ page's.
+	# More below in the column (the runs at big text): the same tag as the HQ page's.
 	side_hint = ScrollHint.new(side_scroll)
 	side_hint.name = "SideHint"
 	add_child(side_hint)
 	UiFocus.link_layout(column)  # the side column row by row (nav, card actions, runs)
 	var g := grid_graph()
-	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.4, 0.56), 0.85)
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, GRID_ANCHOR, GRID_ZOOM)
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
-	city_overlay.avoid_controls([column])  # map labels stay clear of the column
+	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
+	_grid_fits = 0
+	_fit_next_frame()
+	spacer.resized.connect(_refit_grid)
+	grid_legend.minimum_size_changed.connect(_on_grid_legend_resized)
+	grid_legend.visibility_changed.connect(_refit_grid)
+
+
+## The Grid map fitted to the part of the screen it shows through (H23 #5: at 1.6 a T3
+## Site sat under the side column; H23 #3: the key sits on the map): the legend is a strip
+## along the map's foot, as wide as the map, its rows in columns. Then, when a node (icon
+## or tier pips) lies outside the part above it, the camera pans and zooms out to fit
+## them, and checks again once the city has redrawn (at most GRID_FITS_MAX passes).
+func fit_grid_map() -> void:
+	if panel_name != "grid" or city_overlay == null or not is_instance_valid(city_overlay) \
+			or grid_legend == null or not is_instance_valid(grid_legend) or not grid_legend.is_inside_tree():
+		return
+	var city := wireframe.city
+	if not city.camera_settled():
+		# The icons move once the city has drawn under the new camera: measure then.
+		_fit_after_redraw()
+		return
+	var area_ctl := grid_legend.get_parent() as Control
+	var area := area_ctl.get_global_rect()
+	if area.size.x <= LegendSpot.MARGIN * 2.0 or area.size.y <= LegendSpot.MARGIN * 2.0 or not get_global_rect().grow(1.0).encloses(area):
+		return  # laid out later: the area's `resized` fits it again
+	var free := area.grow(-LegendSpot.MARGIN)
+	if grid_legend.visible:
+		# The key runs along the map's foot, in as many columns as the width holds; the
+		# nodes fit above it.
+		_grid_legend_size = Vector2.INF  # the width set here is not a text size change
+		grid_legend.set_strip_width(free.size.x)
+		var own := grid_legend.get_combined_minimum_size()
+		_grid_legend_size = own
+		grid_legend.size = own
+		grid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area.size.y - own.y - LegendSpot.MARGIN))
+		free.size.y = maxf(1.0, area.position.y + grid_legend.position.y - LegendSpot.MARGIN - free.position.y)
+	if _grid_fits >= GRID_FITS_MAX:
+		return
+	var fit := LegendSpot.fit_into(city_overlay, free, GRID_ZOOM / city.scale.x, GRID_MIN_ZOOM / city.scale.x)
+	if fit.is_empty():
+		return
+	_grid_fits += 1
+	var k := float(fit["zoom"])
+	var screen := get_global_rect()
+	var focus_at := screen.position + city.focus_anchor * screen.size
+	# Zooming by k about the focus point moves the nodes' centre to focus + (from - focus) * k;
+	# the focus then goes where that centre lands in the free part of the map.
+	var to: Vector2 = fit["to"]
+	var from: Vector2 = fit["from"]
+	var anchor := (to - (from - focus_at) * k - screen.position) / screen.size
+	_frame_city(city.scale.x * k, city.focus_grid, anchor)
+	_fit_after_redraw()  # check again under the new camera
+
+
+## Runs `fit_grid_map` once after the city's next draw.
+func _fit_after_redraw() -> void:
+	var city := wireframe.city
+	if not city.rebuilt.is_connected(fit_grid_map):
+		city.rebuilt.connect(fit_grid_map, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+
+
+## The key's size changed (its text size): fit the map again. The fit itself sets the
+## key's width, so a size it has already fitted to is ignored.
+func _on_grid_legend_resized() -> void:
+	if _grid_legend_size == Vector2.INF:
+		return
+	if grid_legend != null and is_instance_valid(grid_legend) and not grid_legend.get_combined_minimum_size().is_equal_approx(_grid_legend_size):
+		_refit_grid.call_deferred()
+
+
+## The Grid map's area or key changed size (text scale, legend switch): fit it again. A
+## fit is worked out from where the nodes are now, so fits never compound.
+func _refit_grid() -> void:
+	if panel_name != "grid" or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	_grid_fits = 0
+	_fit_next_frame()
+
+
+## Runs `fit_grid_map` once at the next frame, when the page's layout has settled (a fit
+## during the containers' first sorts would frame the map for a size it never keeps).
+func _fit_next_frame() -> void:
+	if not get_tree().process_frame.is_connected(fit_grid_map):
+		get_tree().process_frame.connect(fit_grid_map, CONNECT_ONE_SHOT)
 
 
 ## Mounts the map overlay on the net city and frames the camera on it. `zoom` > 1 moves
@@ -1117,14 +1229,43 @@ func select_site(site_id: StringName) -> void:
 ## Selects the Site `step` places after the selected one in the Grid's order (wraps), so a
 ## pad reaches every Site without the map (H20).
 func step_site(step: int) -> void:
+	var to := stepped_site(step)
+	if to != &"":
+		select_site(to)
+
+
+## The Site `step` places after the selected one in the Grid's order (wraps; &"" when the
+## Grid has none).
+func stepped_site(step: int) -> StringName:
 	var sites := RunManager.corporation.city_grid.sites.filter(func(s: SiteData) -> bool: return s != null)
 	if sites.is_empty():
-		return
+		return &""
 	var i := 0
 	for k in sites.size():
 		if sites[k].id == selected_site:
 			i = k
-	select_site(sites[posmod(i + step, sites.size())].id)
+	return sites[posmod(i + step, sites.size())].id
+
+
+## Puts map node `mn`'s icon on button `b` (H22 #14, H23 #7): its kind in the map's
+## colour, the tier inside a plain Site's hexagon and, with `pips`, the tier pips after it.
+func _site_mark(b: Button, mn: Dictionary, pips: bool = true) -> void:
+	var kind := String(mn.get("kind", CityMapOverlay.KIND_TIER))
+	IconMark.attach(b, StatIcon.MAP)
+	IconMark.attach_map(b, kind, mn.get("color", Palette.NET_CYAN), String(mn.get("glyph", "")) if kind == CityMapOverlay.KIND_TIER else "",
+		CityMapOverlay.tier_of(mn) if pips else 0)
+
+
+## Site `id`'s name and kind for a tooltip ("Kill-Switch Authority, a T2 Exploit Site").
+func _site_kind_name(id: StringName) -> String:
+	var sd := CampaignRules.site_data(RunManager.corporation, id)
+	if sd == null:
+		return site_name(id)
+	var kind := CityLayout.site_kind(RunManager.campaign, sd)
+	if kind == CityMapOverlay.KIND_HOME:
+		return "%s, your home server" % CityLayout.HOME_LABEL
+	var word := CityMapOverlay.kind_word(kind)
+	return "%s, a T%d %s" % [site_name(id), sd.tier, word if kind == CityMapOverlay.KIND_TIER else "%s Site" % word]
 
 
 ## The glyph the map puts on a Site (objective, tier, CORE).
