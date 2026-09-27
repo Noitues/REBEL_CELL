@@ -18,11 +18,11 @@ const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clea
 ## without the legend.
 ## H24 K5: the Heat reduction Site is a drop with a flame and a down arrow (the snowflake
 ## is ICE's icon on the top bar).
-const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.",
-	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the boss breach.",
-	CityMapOverlay.KIND_HEAT: "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.",
-	CityMapOverlay.KIND_BOSS: "Boss Site (star): the corporation's core.",
-	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."}
+const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.", # TR
+	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the boss breach.", # TR
+	CityMapOverlay.KIND_HEAT: "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.", # TR
+	CityMapOverlay.KIND_BOSS: "Boss Site (star): the corporation's core.", # TR
+	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."} # TR
 
 
 ## The map kind (CityMapOverlay.KIND_*) of Site `sd` in campaign `c`: home, objective or

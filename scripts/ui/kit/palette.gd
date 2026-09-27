@@ -56,17 +56,17 @@ const SLICE_NAMES := {
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).
 const SLICE_WORDS := {
-	RC.SliceType.ATTACK: "ATTACK", RC.SliceType.CRIT: "CRITICAL", RC.SliceType.DEFEND: "DEFEND", RC.SliceType.EVADE: "EVADE",
-	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFFLICT",
-	RC.SliceType.MISS: "MISS",
+	RC.SliceType.ATTACK: "ATTACK", RC.SliceType.CRIT: "CRITICAL", RC.SliceType.DEFEND: "DEFEND", RC.SliceType.EVADE: "EVADE", # TR
+	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFFLICT", # TR
+	RC.SliceType.MISS: "MISS", # TR
 }
-const STATUS_WORDS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CORRUPTED", RC.Status.OVERCLOCKED: "OVERCLOCKED", RC.Status.ENCRYPTED: "ENCRYPTED", RC.Status.PARASITE: "PARASITE"}
+const STATUS_WORDS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CORRUPTED", RC.Status.OVERCLOCKED: "OVERCLOCKED", RC.Status.ENCRYPTED: "ENCRYPTED", RC.Status.PARASITE: "PARASITE"} # TR
 ## How well a needle lands, in plain words.
-const TIER_WORDS := {RC.PrecisionTier.PERFECT: "perfect aim", RC.PrecisionTier.GOOD: "good aim", RC.PrecisionTier.PARTIAL: "half power"}
+const TIER_WORDS := {RC.PrecisionTier.PERFECT: "perfect aim", RC.PrecisionTier.GOOD: "good aim", RC.PrecisionTier.PARTIAL: "half power"} # TR
 ## A glyph and tag for every status, also readable without colour.
 const STATUS_GLYPHS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "☠", RC.Status.OVERCLOCKED: "⚡", RC.Status.ENCRYPTED: "⌗", RC.Status.PARASITE: "✺"}
 const STATUS_TAGS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CRPT", RC.Status.OVERCLOCKED: "OVCL", RC.Status.ENCRYPTED: "ENC", RC.Status.PARASITE: "PRST"}
-const TIER_NAMES := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.PARTIAL: "PARTIAL"}
+const TIER_NAMES := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.PARTIAL: "PARTIAL"} # TR
 
 ## Corporation glow colour (each corporation has its own; see STYLE_GUIDE).
 static func corp_color(corporation_id: StringName) -> Color:

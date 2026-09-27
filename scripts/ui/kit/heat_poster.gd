@@ -27,7 +27,7 @@ const BAND_BASELINE := 68.0
 const BAND_FONT := 13
 const BAND_PAD := 6.0
 ## The Heat band words, by band.
-const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"]
+const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"] # TR
 
 
 func _init(p_poster: bool = false) -> void:

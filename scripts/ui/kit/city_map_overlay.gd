@@ -100,9 +100,9 @@ const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades
 	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_BOSS: "star", KIND_EXPLOIT: "exploits",
 	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number"}
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
-const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Modem", KIND_EVENT: "Terminal",
-	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction",
-	KIND_HOME: "CORE", KIND_TIER: "Site"}
+const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Modem", KIND_EVENT: "Terminal", # TR
+	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
+	KIND_HOME: "CORE", KIND_TIER: "Site"} # TR
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
 ## how far above the roof the icon floats (px, local).
 const ICON_RADIUS := 13.0
