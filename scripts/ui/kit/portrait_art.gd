@@ -30,6 +30,25 @@ static func enemy_subject(id: StringName, display_name: String, corporation_id: 
 	return {"kind": kind, "key": String(id), "tint": Palette.corp_color(corporation_id), "name": display_name}
 
 
+## Tints an operative's portrait may take (picked by the operative's hash).
+const OPERATIVE_TINTS: Array[Color] = [Palette.CELL_PINK, Palette.NET_CYAN, Palette.NEON_VIOLET, Palette.CRT_AMBER, Palette.CELL_ACID]
+
+
+## A subject for one operative (H20: every operative of a class had the same face): the
+## class sets the kind and the operative id varies hair, visor and tint through a hash
+## of both (deterministic, no RNG), so two Breakers look different and one operative
+## looks the same on every screen. An empty `operative_id` gives the class's own face.
+static func operative_subject(class_id: StringName, operative_id: StringName = &"", display_name: String = "") -> Dictionary:
+	var key := String(class_id) if operative_id == &"" else "%s/%s" % [class_id, operative_id]
+	return {"kind": Kind.OPERATIVE, "key": key, "tint": OPERATIVE_TINTS[absi(hash(key)) % OPERATIVE_TINTS.size()], "name": display_name}
+
+
+## Draws one operative's portrait into `rect` in the current style (the combat caption
+## and the dossiers use the same call, so an operative keeps one face everywhere).
+static func draw_operative(ci: CanvasItem, rect: Rect2, class_id: StringName, operative_id: StringName = &"", display_name: String = "") -> void:
+	draw(ci, rect, operative_subject(class_id, operative_id, display_name))
+
+
 ## Draws `subj` into `rect` in the current style.
 static func draw(ci: CanvasItem, rect: Rect2, subj: Dictionary) -> void:
 	match style:
