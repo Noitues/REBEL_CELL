@@ -38,14 +38,17 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 
 | Where | What | Notes |
 |---|---|---|
-| `Fx.jack_in / jack_out` | CRT push-in / pull-out between HQ and netrun (0.7 s) | Used by `RunManager`. Crude: a rect grows and fades. Needs the real version (4.1). |
+| `Fx.jack_in / jack_out` | Push into the deck CRT, dissolve to the wireframe city, scanlines roll; jack out reverses (0.8 s) | The real version (ANIM-5, 4.1). Focus: `Fx.JACK_FOCUS_GROUP`. Reduce effects: 0.2 s fade. |
 | `Fx.flash` | Full-screen colour flash, limited | Used on Perfect, enemy Perfect, previews. |
 | `Fx.freeze_frames(n)` | Short hit-stop | Perfect landing (2 frames). |
-| `Fx.heat_pulse` | Distortion pulse | **Defined but never called.** Wire to Heat thresholds (4.6). |
+| `Fx.heat_pulse` | Distortion pulse + corporate wireframe creep | Wired (ANIM-5, 4.12): `HeatPoster` fires one per threshold crossed going up. |
 | `Fx.show_saved` | "SAVED" fades out | Fine. |
 | `combat_scene` | Partial = 4-step shake; Good = alpha blink; migrating pointers flicker (looping tween on `pointer_alpha`) | See `_feedback()` and `_flicker_view()`. |
 | `NeonCity` | Beacon blink, slow menu pan (Lissajous), rain | `_process` / `_draw_fx`. |
-| `RaidPlayoutPanel` + `hq_scene` | Step-by-step raid playout with 1x/2x/4x/Skip | Stepping only; no tweened motion along paths yet. |
+| `RaidPlayoutPanel` + `RaidBeats` + `RaidFxLayer` | Raid playout as motion built from the resolver's events, 1x/2x/4x (`Motion.speed`), Skip to the summary | ANIM-5 (4.15). |
+| `NeonCity` + `InfluenceSpread` | Territory tint spreads from the Site that changed owner (one bake, a masked old image) | ANIM-5 (designer's ask). `pin_influence` holds it during a raid. |
+| `WireframeBackground.rig` | Camera ease on the city maps (hold the old frame, ease to the new) | ANIM-5 (4.14). Fits read the frame with the rig at rest (`unrigged`). |
+| `CityMapOverlay` | Selection outline draw-on, ring ease, dash crawl, `drop_asset`, `travel` (netrun move) | ANIM-5 (4.14, 4.16). |
 | `DripButton` | Hover halo (static jitter copies) | No motion yet. |
 | `content/config/ui_motion.tres` + `Motion` | Every timing above now reads its entry (Animation pass, ANIM-1) | `jack_in`, `jack_out`, `screen_flash`, `hit_freeze`, `saved_stamp`, `heat_pulse`, `toast`, `resolve_pass`, `precision_perfect`, `precision_partial`, `precision_blink`, `pointer_flicker`, `beacon_blink`, `drip_halo`. |
 | `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. |
@@ -82,7 +85,7 @@ config, to be tuned with the owner.
 
 ### P1 — Combat (the core loop; do first)
 
-4.1 **Jack in / jack out.** Trigger: leaving HQ for a netrun and back. The camera pushes
+4.1 **Jack in / jack out.** *Done (ANIM-5).* Trigger: leaving HQ for a netrun and back. The camera pushes
 into the deck CRT, the screen dissolves to the wireframe city, scanlines roll. Feel:
 heavy, 0.6-0.9 s. Jack out reverses. Acceptance: no frame shows both scenes' UI at once;
 reduce effects = a 0.2 s fade.
@@ -130,7 +133,7 @@ fall with the city visible through; hub breach = the hub glass shatters.
 
 ### P2 — Heat, HQ and the map
 
-4.12 **Heat thresholds (25/50/75).** Call `Fx.heat_pulse` on each crossing (GDD 9.4). The
+4.12 **Heat thresholds (25/50/75).** *Done (ANIM-5).* Call `Fx.heat_pulse` on each crossing (GDD 9.4). The
 ransom HEAT letters shake once; the wanted poster stamps a new band. Net: the corporate
 wireframe creeps over the zine layer (tween the creep uniform). Acceptance: pulses, never
 stays on.
@@ -138,15 +141,16 @@ stays on.
 4.13 **HQ.** Idle: CRT hum flicker on the deck screen, pirate radio text types in, JACK IN
 ring breathes slowly. Crew Polaroids tilt slightly on hover.
 
-4.14 **City Grid / raid setup.** Selecting a Site: the roof outline draws on (stroke
+4.14 **City Grid / raid setup.** *Done (ANIM-5; the drag itself is ANIM-4's, it calls
+`hq_scene.play_asset_drop`).* Selecting a Site: the roof outline draws on (stroke
 reveal), the camera eases to it. Threat routes: dashes crawl along the path toward home.
 Deploying an asset: the card drops onto the node with a stamp.
 
-4.15 **Raid playout.** Threats move along the street-routed paths (tween along the polyline),
+4.15 **Raid playout.** *Done (ANIM-5).* Threats move along the street-routed paths (tween along the polyline),
 turrets fire traces, damage numbers on nodes, held/seized flips. Speed controls scale the
 config durations; Skip jumps to the summary.
 
-4.16 **Netrun route.** Choosing the next node: a light pulse travels the link; the new
+4.16 **Netrun route.** *Done (ANIM-5).* Choosing the next node: a light pulse travels the link; the new
 node pops up in the isometric view; visited nodes dim.
 
 ### P3 — Screens, menus and ambience
