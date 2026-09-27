@@ -30,6 +30,52 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-26 — H21 city maps: node tooltips, you-are-here, readable labels, influence on each corporation's Sites
+Pass-21 audits and naive-player reviews (H21 #14, #15, #22): map nodes showed nothing on
+hover; the route had no "you are here" and every node looked reachable; node icons were
+tiny, alike font glyphs; labels were ~8 px and overlapped; Halcyon's raid sway missed most
+of its own Grid. View-only throughout (`scripts/ui/kit/`), no rule or content change.
+- **Tooltips.** `CityMapOverlay._get_tooltip` hit-tests the node under the pointer (its
+  icon first, then its roof) and returns `UiTip.fold(tip_of(id))`. A node's tip is its
+  "tip" key (the route's NODE_TIPS; the Grid and raid maps' `CityLayout.site_tip`: name,
+  tier, status, objective, CORE's loss rule) or, when missing, one built from its label,
+  icon kind and mark. The overlay adds the route state ("You are here." / "You can move
+  here now." / "Out of reach from here."), the raid result and the threats on the node.
+  Clicks use the same hit test, so an icon is clickable too.
+- **You are here, dimmed nodes.** Route nodes carry `here` (the current node) and `next`
+  (open now) — a two-line hunk in `netrun_scene.route_graph`, beside the tip. The current
+  node gets a pink ring and a pin, and its label reads YOU ARE HERE. On any graph with
+  route state, nodes that can no longer be reached along the directed edges from here
+  (and the open nodes) are drawn at DIM_ALPHA with no label; the Server Rack ahead stays
+  lit. Grid and raid graphs carry no route state, so nothing dims there.
+- **Icons.** Node icons are drawn shapes, not font glyphs (a stray glyph fallback showed
+  a "y"): route — fight (circle, crossed blades), elite (8-point star), Modem shop
+  (diamond, $), Terminal event (square, ?), Server Rack (hexagon, server blades); Grid —
+  exploit (diamond), heat reduction (circle, snowflake), boss (star), CORE (house), tier
+  (hexagon, T1-T4). Each kind has its own silhouette on its map. Icons are 13 px (17 px
+  for CORE / boss) on screen whatever the city zoom, float over the roof on a stalk, and
+  an icon that would sit on a nearer one floats up a step (front to back, ties by id,
+  cached per camera). The selection ring now circles the selected icon. `MapLegend`
+  draws its icon rows with the same painter (`CityMapOverlay.draw_icon`).
+- **Labels.** TAG_FONT 13 screen px x `Settings.text_scale` (redrawn on
+  `Settings.changed`, never per frame). Placement is greedy and deterministic: priority
+  selected / you are here / threats, then reachable, claimed and landmark nodes, then the
+  rest, ties by id; each label takes the first spot round its icon (right, left, above,
+  below, corners, then further out, with a leader line) that overlaps no placed label,
+  no icon and not the selection ring; non-focus labels with no free spot are left out
+  (their node keeps its tooltip). The raid result is a second line of the node's label.
+- **Influence follows the Sites (H21 #22).** Per the audit, 18 of Halcyon's 32 Site points
+  fall outside its district. Rather than move the Grid layout (every map, route and the
+  Site-to-building mapping would shift), the raid sway now applies inside the
+  corporation's territory *and* within SWAY_REACH (4.5 lots, fading over 1.5) of any of
+  its own Sites, whatever territory they stand in (`CityInfluence.sway_share`). Site
+  pulls were already centred on the Sites. The influence carries its Site points, and
+  their hash is part of the signature, so the bake key stays correct for generated
+  (REBEL_CELL) Grids. The bake cache and live lights are unchanged.
+- Not done here (other owners' files): the route (non-zoomed) view mounts no legend, and
+  the raid setup's pinned legend can cover CORE at the left of the frame (hq_scene
+  framing).
+
 ### 2026-09-26 — H20 combat: drag to target, nudge arrows, the outcome on the spinners
 Designer direction (H20): ditch the nudge and card-target buttons for card drag-and-target
 as in Slay the Spire; nudge arrows round each spinner; no text logs the player must read;
