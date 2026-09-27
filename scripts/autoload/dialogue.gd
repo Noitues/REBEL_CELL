@@ -35,10 +35,10 @@ const TEXT_FONT_SIZE := 15
 var dock_lines: int = 0
 ## The subtitle text's widest minimum (a narrower dock wraps inside its rect) (px).
 const TEXT_MIN_WIDTH := 560.0
-## Where the bar sits outside combat (H20; 1280x720 canvas): the top band over the screen
-## title and the stat tags. Every control sits below the band (the screens' content starts
-## under the HUD strip) or right of it (VIEW LOADOUT, the Daemons icon), so a line never
-## covers one; long lines page to the lines that fit at the current text size.
+## Where the bar sits outside combat when no screen has registered a SubtitleStrip (H20;
+## 1280x720 canvas): the top band over the screen title and the stat tags. H21: the HQ,
+## netrun and title screens register their own strip (default_rect), which covers no
+## stat tag; this band is only the fallback. Long lines page to the lines that fit.
 const DEFAULT_DOCK := Rect2(8, 2, 964, 52)
 ## Vertical padding of the bar's panel (top + bottom content margins, px).
 const BAR_PADDING := 12.0
@@ -100,13 +100,50 @@ func add_set(set: LineSetData) -> void:
 
 # --- Speaking -----------------------------------------------------------------------------
 
-## The subtitle bar in its place outside combat (DEFAULT_DOCK): the top band, the speaker's
-## name inline, paged to the lines that fit (H20: the old bottom bar covered raid asset
-## cards, LEAVE THE MODEM, crew Loadout buttons, Grid rows and menu buttons).
+## The subtitle bar in its place outside combat: the screen's SubtitleStrip (H21 #11: a
+## band of its own under the top bar that no control and no stat tag sits in; the H20 top
+## band hid the stats, the money in the Modem), else DEFAULT_DOCK. The speaker's name
+## inline, paged to the lines that fit (H20: the old bottom bar covered raid asset cards,
+## LEAVE THE MODEM, crew Loadout buttons, Grid rows and menu buttons).
 func dock_default() -> void:
-	dock_at(DEFAULT_DOCK, lines_fitting(DEFAULT_DOCK))
+	dock_at(default_rect, lines_fitting(default_rect))
+	# The label's own minimum must not stretch the bar past a one-line strip.
+	text_label.custom_minimum_size.y = 0.0
 	inline_speaker = true
 	_default_dock = true
+
+
+## Where dock_default puts the bar: the rect a SubtitleStrip registered, else DEFAULT_DOCK.
+var default_rect: Rect2 = DEFAULT_DOCK
+var _default_owner: Object = null
+## Room a subtitle band needs beyond its lines (px).
+const BAND_SLACK := 2.0
+
+
+## A screen's subtitle band (`owner` releases it); the bar moves there when docked by default.
+func set_default_rect(rect: Rect2, owner: Object) -> void:
+	default_rect = rect
+	_default_owner = owner
+	if _default_dock:
+		dock_default()
+
+
+## Gives the default dock back (DEFAULT_DOCK) when `owner` still holds it.
+func release_default_rect(owner: Object) -> void:
+	if _default_owner != owner:
+		return
+	_default_owner = null
+	default_rect = DEFAULT_DOCK
+	if _default_dock:
+		dock_default()
+
+
+## Height of a subtitle band that holds `lines` lines at the current text size (px).
+func band_height(lines: int = 1) -> float:
+	var scale := 1.0
+	if has_node("/root/Settings"):
+		scale = float(get_node("/root/Settings").text_scale)
+	return BAR_PADDING + Palette.mono().get_height(roundi(TEXT_FONT_SIZE * scale)) * maxi(1, lines) + BAND_SLACK
 
 
 ## Kept for callers from before H20 (the combat scene restores the dock on exit): the
@@ -266,7 +303,7 @@ func _apply_text_scale() -> void:
 	speaker_label.add_theme_font_size_override("font_size", roundi(SPEAKER_FONT_SIZE * scale))
 	text_label.add_theme_font_size_override("normal_font_size", roundi(TEXT_FONT_SIZE * scale))
 	if _default_dock:
-		dock_lines = lines_fitting(DEFAULT_DOCK)
+		dock_lines = lines_fitting(default_rect)
 
 
 ## The subtitle label: corporate lines carry their corporation's short name.
