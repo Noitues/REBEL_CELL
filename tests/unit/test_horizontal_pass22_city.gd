@@ -226,7 +226,7 @@ func test_map_labels_and_tips_use_translated_site_names() -> void:
 	var mini: GridMapView = add_child_autofree(GridMapView.new())
 	mini.size = Vector2(760, 380)
 	mini.show_grid(c, corp)
-	assert_string_contains(mini.site_label(site, "", false), "XL_SITE", "the mini-map label too")
+	assert_string_contains(mini.site_label(site, false), "XL_SITE", "the mini-map label too")
 
 
 # --- Legend and mini-map scale -----------------------------------------------------------
