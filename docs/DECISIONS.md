@@ -30,6 +30,81 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — H23 screens: nothing over a control, speakers once, a key per map, words for every number, buy buttons, pad prompts
+Pass-23 screens items S1-S18 (reviewers at text 1.0 and 1.6 with a pad; the horizontal
+audit's S14-S18). Views only: no rule or balance changed.
+- **SAVED** (S1): `Fx.place_saved` puts the stamp at the first spot along the screen's
+  edges (bottom right to left, then the top, then the sides) that covers no usable
+  control, map legend or pad prompt row on screen (`Fx.saved_spot`, pure), at the text
+  size; the least covered spot when none is clear.
+- **Subtitles** (S2, S3, S17): a line that opens with its own sender tag in capitals that
+  starts with the speaker's name ("SOLACE COLLECTIONS: ...") keeps that tag as the name
+  (`Dialogue.own_speaker`; it was "SOLACE: SOLACE COLLECTIONS: ..."). A page that goes on
+  ends in " …" (`CONTINUED_MARK`); a line that pages is wrapped with room for the mark on
+  each page's last line (a line that fits in one page is wrapped as before). The raid line
+  at 1.6 was paging, but its first page ended mid-sentence with no cue. `say(...,
+  translated = true)` skips the second translation: voice lines and event text come
+  translated (they were pseudolocalised twice).
+- **Voice lines translate** (S15): a voice line's key is `LineSetData.<set id>.lines.<n>`
+  (a VoiceLineData has no id); `TextDb.collect` exports them and `tools/export_text.gd`
+  regenerated `assets/text/strings.csv`; `Dialogue.speak` says `TextDb.voice(...)`; the
+  corporate speaker's name is the first word of its TextDb name. Screen sentences that
+  are not content live in `TextDb.UI_TEXT` (exported too; `TextDb.ui_text`).
+- **Drawn words translate** (S16): ForecastStamp caption and verdict, HudStats tag names,
+  AssetCard numbers' words, StickerButton lettering and the buy button's verb are drawn
+  and measured through `atr` / `tr` (accessors `shown_verdict`, `tag_name`,
+  `integrity_text`, `shown_text`).
+- **Raid map** (S4, S14): one legend, listing only what the raid map shows
+  (`MapLegend.show_only(MapLegend.keys_of(graph, grid))`: marks, statuses, link / threat
+  edges and node kinds). Framing runs on `rebuilt` (positions measured after the city
+  redrew; the old pass measured before the redraw and aimed with stale positions): each
+  pass zooms (never past `RAID_MIN_ZOOM`, never in) and moves the node icons' box into the
+  map area beside the legend's column, the area as far as it is on screen, until it is
+  inside or `RAID_REFRAMES_MAX` (4) passes ran. Tags make way for the legend as before
+  (`avoid_controls`); the test checks node icons, pips, tags and labels against it.
+- **Raid words** (S5): an opening sentence (`ui.raid_intro`: "The corp is raiding your
+  CORE. Place defences to cut the damage, then RUN THE RAID."); the facts read "HOME 50 >
+  40", "STOPPED 0/2", "STRENGTH +0%", "10 ENTRY SITES"; node rows "HP 50 > 40 HOLDS" (the
+  map tag keeps "50 > 40 HOLDS" and its tooltip says it is HP and what HOLDS / BREACHED
+  mean); asset cards "HP 10" and "1 LEFT", explained in their tooltips. Every badge keeps
+  a tooltip.
+- **ForecastStamp** (S18): icon, caption and verdict are stacked from their measured
+  heights, centred, and shrink together when taller than `STACK_ROOM` of the ring.
+- **HQ** (S6, S13): the wanted poster is as tall as its band word (it hung under the paper,
+  under the radio note); PIRATE RADIO grows to its words (at least `RADIO_LINES`), no
+  scroll bar. Scrub Heat reads "Scrub Heat -5 · pay 25" with the Schematics icon at the
+  button's right end ("price_kind" meta) and a tooltip naming the currency and what you
+  have.
+- **Route key** (S7): `RouteLegend` lists the node kinds the route has (fight, elite,
+  event, shop, rack; map icons from `CityMapOverlay.draw_icon`) and what each does; it is
+  placed by `LegendSpot` in the room under ROUTE; the zoomed-out GRID VIEW keeps the
+  campaign map's MapLegend. Node tooltips start with the same words ("Rack: fight, then
+  bank Schematics and assets.").
+- **Modem** (S8): every item carries a `BuyButton` (a StickerButton kind: coin, "BUY 45",
+  "SHRED 50", "BUY 100-150" for a slice whose price depends on the slot) over where its
+  price tag hung; the item stays the pad's focus stop and the sticker shows the pad button
+  ("BUY 45  A") while it has focus; clicking the sticker presses the item. Microchip and
+  Daemon tiles draw their effect text under the name (the chip icon shrinks for it), in
+  the text colour (the disabled shade now dims the art only). `FocusTip` shows a focused
+  item's tooltip (the whole text) under it when the focus did not come from the mouse.
+- **Outcomes** (S9): `OutcomeRow.shown` drops zero amounts from the row and the button's
+  words ("(+0 Heat) +0"); the tooltip says "HP: no change (HP is full)".
+- **Event** (S10): the paper's title follows the text size (`ZinePanel.scale_title`) and
+  the panel starts `EVENT_TOP_GAP` under the subtitle band; the bar is hidden with no line
+  (the dock refit on main keeps a line's label its height).
+- **Pad prompts** (S11): `PadPrompts`, a row under the page (it covers nothing), shown
+  while a pad is in use: HQ "A Select / Menu Settings", Grid and raid setup add "B Back"
+  (B goes to the HQ), route "A Go", Modem "A Buy / B Leave" (B leaves the Modem), loot "A
+  Take", event "A Choose"; relabelled on `Settings.hints_changed`. On a keyboard Esc stays
+  the settings key (B's action runs only for an event that is not also `open_settings`).
+- **Title Continue vs HQ Heat** (S12): not a bug. The title's Continue line summarises the
+  newest of the three player slots (`RunManager.latest_slot`); the storyboard plays its
+  campaign in its private slot `gut_storyboard`, so its title shot shows the designer's
+  own slot 1 (Heat 14) and its HQ shot a new campaign (Heat 0). Left as is.
+- Tests: `tests/unit/test_horizontal_pass23_screens.gd`. Updated on purpose: pass20's
+  raid order badge expects "HP 50 > 40 HOLDS"; pass21's event row test compares with
+  `OutcomeRow.shown`; pass22's route legend test expects the RouteLegend.
+
 ### 2026-09-27 — H22 combat: now vs next, satellites that read, wheels that stay big
 From pass 22 (both audits, a first-time player and a player who can't read English
 looking at the new storyboards; GAP_ANALYSIS H22).
