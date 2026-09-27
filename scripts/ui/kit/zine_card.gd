@@ -328,7 +328,8 @@ func _big_chip(c: Vector2, col: Color) -> void:
 
 ## A little paper card, tilted, for the card builder.
 func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
-	draw_set_transform(c, -0.12, Vector2.ONE)
+	# Within the icon's frame (a scaled tile draws its icon under `_icon_xf`, H24 S10).
+	draw_set_transform_matrix(_icon_xf * Transform2D(-0.12, c))
 	draw_rect(Rect2(Vector2(-19, -25), Vector2(40, 52)), Palette.SHADOW)
 	draw_rect(Rect2(Vector2(-22, -28), Vector2(40, 52)), Palette.NOTE_PAPER)
 	draw_rect(Rect2(Vector2(-22, -28), Vector2(40, 52)), Palette.INK, false, 1.0)
@@ -338,7 +339,11 @@ func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
 		if w != "" and initials.length() < 2 and initials_on:
 			initials += w[0].to_upper()
 	draw_string(Palette.display(), Vector2(-22, 8), initials, HORIZONTAL_ALIGNMENT_CENTER, 40, 22, col.darkened(0.2))
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_set_transform_matrix(_icon_xf)
+
+
+## The frame a tile's icon is drawn in (identity but while a scaled tile draws its icon).
+var _icon_xf: Transform2D = Transform2D.IDENTITY
 
 
 ## A small microchip mark in the corner (the reference's chip stickers).
@@ -639,7 +644,8 @@ func _draw_tile_scaled() -> void:
 	var name_top := names[0].position.y if shown > 0 else size.y - buy_room()
 	var icon_c: Vector2 = parts["centre"]
 	var ik: float = parts["k"]
-	draw_set_transform(icon_c, 0.0, Vector2(ik, ik))
+	_icon_xf = Transform2D(0.0, Vector2(ik, ik), 0.0, icon_c)
+	draw_set_transform_matrix(_icon_xf)
 	var home := icon_c
 	icon_c = Vector2.ZERO
 	draw_circle(icon_c, 24, Color(accent, 0.1))
@@ -669,6 +675,7 @@ func _draw_tile_scaled() -> void:
 			draw_line(icon_c + Vector2(-18 + k * 7, 22), icon_c + Vector2(-20 + k * 7, 36), Palette.NOTE_PAPER, 2.0)
 	else:
 		_mini_card(icon_c, accent)
+	_icon_xf = Transform2D.IDENTITY
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	icon_c = home
 	# H23 S8: the shade dims the art only; the name stays in the text colour.
