@@ -129,7 +129,9 @@ only: no rule, content number or balance changed.
   them in `tr` already).
 - Tests: `tests/unit/test_horizontal_pass24_screens.gd`. Updated on purpose: pass23's raid
   words test expects START DEFENSE; pass23's zero-outcome test lets the neutral "no
-  change" item through; `test_settings_extras` awaits `Fx.show_saved()` (placed a frame
+  change" item through; pass23's combat translation test uses a locale of its own (the
+  English catalogue now holds the code's keys and answered first); `test_settings_extras`
+  awaits `Fx.show_saved()` (placed a frame
   later).
 
 ### 2026-09-27 — H23 combat: subtitles that don't blank, wheels sized from the room below, turns that say what happened
