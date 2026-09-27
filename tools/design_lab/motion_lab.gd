@@ -62,6 +62,18 @@ const DEMOS := {
 	&"drip_grow": ["fade_in", "send"], &"drip_halo": ["pulse", "send"],
 	&"beacon_blink": ["pulse", "sticker"], &"city_traffic": ["slide_x", "sticker"], &"hq_sign_flicker": ["blink", "send"],
 	&"sticky_bump": ["pop", "sticker"], &"number_roll": ["roll", "number"],
+	&"ice_lock_ring": ["fade_in", "sticker"], &"decoy_fire": ["shake", "sticker"], &"raid_hit_effect": ["pop", "sticker"],
+	&"node_damage_number": ["lift", "number"], &"forecast_stamp_resolve": ["pop", "panel"],
+	&"card_pickup": ["pop", "card"], &"drag_ghost_follow": ["fade_to", "card"], &"drop_zone_pulse": ["pulse", "wheel"],
+	&"aim_line_draw": ["fade_in", "wheel"], &"target_snap": ["drop", "card"], &"drag_cancel_return": ["slide_x", "card"],
+	&"card_stamp": ["pop", "card"], &"effect_burst": ["fade_out", "wheel"], &"card_discard": ["drop_away", "card"],
+	&"resolve_beat": ["blink", "wheel"], &"block_number": ["lift", "number"], &"heal_number": ["lift", "number"],
+	&"hp_drain": ["roll", "number"], &"status_stamp": ["pop", "sticker"], &"last_turn_reveal": ["drop", "number"],
+	&"wheel_respin": ["spin", "wheel"], &"inner_ring_turn": ["spin", "wheel"], &"pointer_migrate": ["pulse_pointer", "wheel"],
+	&"pointer_orbit": ["spin", "wheel"], &"enemy_turn_spin": ["spin", "wheel"],
+	&"drag_pickup": ["pop", "sticker"], &"drag_follow": ["slide_x", "sticker"], &"drop_settle": ["drop", "sticker"],
+	&"drop_reject": ["shake", "sticker"], &"loadout_swap": ["fly", "card"], &"crew_assign": ["pop", "card"],
+	&"influence_crossfade": ["fade_in", "panel"], &"influence_spread": ["fade_in", "panel"],
 }
 
 var _cfg: UiMotionData

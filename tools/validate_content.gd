@@ -23,7 +23,7 @@ func _init() -> void:
 	quit(0 if errors.is_empty() else 1)
 
 
-## The UI motion table must exist at its path (H24-anim A1) and carry every animation id
+## The UI motion table must exist at its path (Animation pass ANIM-1) and carry every animation id
 ## the kit and the roadmap name (ANIMATION_HANDOFF 4).
 func _motion_errors(motion: UiMotionData) -> PackedStringArray:
 	var errors := PackedStringArray()

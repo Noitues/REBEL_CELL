@@ -1,5 +1,5 @@
 extends GutTest
-## H24-anim A1 (ANIMATION_HANDOFF 1, 3; STYLE_GUIDE 5-6): the UI motion table and the
+## Animation pass ANIM-1 (ANIMATION_HANDOFF 1, 3; STYLE_GUIDE 5-6): the UI motion table and the
 ## Motion kit. The table loads and carries every id; every helper applies its end state
 ## at once (no running tween) under reduce effects and headless; motion never touches
 ## game state; the speed multiplier scales durations; timings come from the table.
@@ -307,3 +307,19 @@ func test_stop_puts_every_motion_back_at_rest() -> void:
 	assert_almost_eq(n.scale, Vector2.ONE, Vector2.ONE * 0.001)
 	assert_almost_eq(n.modulate.a, 1.0, 0.001)
 	assert_eq(n.get_meta_list().size(), 0, "nothing held")
+
+
+func test_the_motion_lab_shows_every_id() -> void:
+	var lab: Script = load("res://tools/design_lab/motion_lab.gd")
+	var demos: Dictionary = lab.get_script_constant_map()["DEMOS"]
+	for id in UiMotionData.REQUIRED_IDS:
+		assert_true(demos.has(id), "the lab has a demo for %s" % id)
+
+
+func test_animation_pass_scope_ids_are_in_the_table() -> void:
+	# The designer's Animation pass scope beyond handoff 4 (raid execution, card targeting
+	# and execution, end-turn resolution, spinner movement, drag and drop, city influence).
+	for id in [&"ice_lock_ring", &"forecast_stamp_resolve", &"card_pickup", &"drag_cancel_return", &"card_stamp",
+			&"resolve_beat", &"last_turn_reveal", &"wheel_respin", &"enemy_turn_spin", &"drop_settle",
+			&"loadout_swap", &"crew_assign", &"influence_crossfade", &"influence_spread"]:
+		assert_true(Motion.has(id), "entry %s" % id)

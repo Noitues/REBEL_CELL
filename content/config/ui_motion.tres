@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="UiMotionData" load_steps=75 format=3]
+[gd_resource type="Resource" script_class="UiMotionData" load_steps=108 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/ui_motion_data.gd" id="1_motion"]
 [ext_resource type="Script" path="res://scripts/data/ui_motion_entry_data.gd" id="1_entry"]
@@ -753,6 +753,343 @@ ease = 1
 trans = 4
 amplitude = 0.0
 
+; ---- Animation pass scope: raid execution ----
+; ICE lock ring closes on a threat; amplitude = ring alpha
+[sub_resource type="Resource" id="m_ice_lock_ring"]
+script = ExtResource("1_entry")
+id = &"ice_lock_ring"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 0.6
+
+; decoy fires / threat veers amplitude px
+[sub_resource type="Resource" id="m_decoy_fire"]
+script = ExtResource("1_entry")
+id = &"decoy_fire"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 8.0
+
+; hit burst on a threat or node; scale
+[sub_resource type="Resource" id="m_raid_hit_effect"]
+script = ExtResource("1_entry")
+id = &"raid_hit_effect"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.3
+
+; damage number rises amplitude px off a node, then fades
+[sub_resource type="Resource" id="m_node_damage_number"]
+script = ExtResource("1_entry")
+id = &"node_damage_number"
+duration = 0.6
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 24.0
+
+; raid forecast stamp resolves (lands) from amplitude scale
+[sub_resource type="Resource" id="m_forecast_stamp_resolve"]
+script = ExtResource("1_entry")
+id = &"forecast_stamp_resolve"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.3
+
+; ---- Animation pass scope: card targeting ----
+; card lifts off the hand; scale
+[sub_resource type="Resource" id="m_card_pickup"]
+script = ExtResource("1_entry")
+id = &"card_pickup"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.1
+
+; drag ghost trails the cursor; amplitude = ghost alpha
+[sub_resource type="Resource" id="m_drag_ghost_follow"]
+script = ExtResource("1_entry")
+id = &"drag_ghost_follow"
+duration = 0.08
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.6
+
+; valid drop zone glow pulse half-period; dips to amplitude alpha (loops)
+[sub_resource type="Resource" id="m_drop_zone_pulse"]
+script = ExtResource("1_entry")
+id = &"drop_zone_pulse"
+duration = 0.6
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.5
+
+; aim line draws from the card to the target
+[sub_resource type="Resource" id="m_aim_line_draw"]
+script = ExtResource("1_entry")
+id = &"aim_line_draw"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 0.0
+
+; card/aim snaps onto the target; overshoot px
+[sub_resource type="Resource" id="m_target_snap"]
+script = ExtResource("1_entry")
+id = &"target_snap"
+duration = 0.1
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 6.0
+
+; a cancelled drag returns to its slot
+[sub_resource type="Resource" id="m_drag_cancel_return"]
+script = ExtResource("1_entry")
+id = &"drag_cancel_return"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 0.0
+
+; ---- Animation pass scope: card execution ----
+; card stamps onto its target; scale from
+[sub_resource type="Resource" id="m_card_stamp"]
+script = ExtResource("1_entry")
+id = &"card_stamp"
+duration = 0.12
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.2
+
+; effect burst after the stamp; radius px
+[sub_resource type="Resource" id="m_effect_burst"]
+script = ExtResource("1_entry")
+id = &"effect_burst"
+duration = 0.3
+delay = 0.0
+ease = 1
+trans = 5
+amplitude = 40.0
+
+; played card slides to the discard pile; px
+[sub_resource type="Resource" id="m_card_discard"]
+script = ExtResource("1_entry")
+id = &"card_discard"
+duration = 0.25
+delay = 0.0
+ease = 0
+trans = 4
+amplitude = 60.0
+
+; ---- Animation pass scope: end-turn resolution ----
+; gap between pointer resolves inside a pass
+[sub_resource type="Resource" id="m_resolve_beat"]
+script = ExtResource("1_entry")
+id = &"resolve_beat"
+duration = 0.18
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 0.0
+
+; block number rises px
+[sub_resource type="Resource" id="m_block_number"]
+script = ExtResource("1_entry")
+id = &"block_number"
+duration = 0.6
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 20.0
+
+; heal number rises px
+[sub_resource type="Resource" id="m_heal_number"]
+script = ExtResource("1_entry")
+id = &"heal_number"
+duration = 0.6
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 24.0
+
+; HP arc drains to the new value (hp_lag trails it)
+[sub_resource type="Resource" id="m_hp_drain"]
+script = ExtResource("1_entry")
+id = &"hp_drain"
+duration = 0.3
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.0
+
+; status stamp lands on the wheel from amplitude scale
+[sub_resource type="Resource" id="m_status_stamp"]
+script = ExtResource("1_entry")
+id = &"status_stamp"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.4
+
+; LAST TURN line slides up px and fades in
+[sub_resource type="Resource" id="m_last_turn_reveal"]
+script = ExtResource("1_entry")
+id = &"last_turn_reveal"
+duration = 0.25
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 16.0
+
+; ---- Animation pass scope: spinner movement ----
+; respin; amplitude = overshoot (ticks x 0.1)
+[sub_resource type="Resource" id="m_wheel_respin"]
+script = ExtResource("1_entry")
+id = &"wheel_respin"
+duration = 0.5
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.5
+
+; inner ring rotation; overshoot (ticks x 0.1)
+[sub_resource type="Resource" id="m_inner_ring_turn"]
+script = ExtResource("1_entry")
+id = &"inner_ring_turn"
+duration = 0.35
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.0
+
+; a migrating pointer moves to its new tick
+[sub_resource type="Resource" id="m_pointer_migrate"]
+script = ExtResource("1_entry")
+id = &"pointer_migrate"
+duration = 0.4
+delay = 0.0
+ease = 2
+trans = 7
+amplitude = 0.0
+
+; orbiting pointer: seconds per step around the wheel
+[sub_resource type="Resource" id="m_pointer_orbit"]
+script = ExtResource("1_entry")
+id = &"pointer_orbit"
+duration = 1.2
+delay = 0.0
+ease = 2
+trans = 0
+amplitude = 0.0
+
+; enemy wheel spins on its turn after `delay`; overshoot
+[sub_resource type="Resource" id="m_enemy_turn_spin"]
+script = ExtResource("1_entry")
+id = &"enemy_turn_spin"
+duration = 0.5
+delay = 0.15
+ease = 1
+trans = 10
+amplitude = 1.5
+
+; ---- Animation pass scope: drag and drop ----
+; any draggable lifts; scale
+[sub_resource type="Resource" id="m_drag_pickup"]
+script = ExtResource("1_entry")
+id = &"drag_pickup"
+duration = 0.1
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.06
+
+; dragged item eases to the cursor
+[sub_resource type="Resource" id="m_drag_follow"]
+script = ExtResource("1_entry")
+id = &"drag_follow"
+duration = 0.06
+delay = 0.0
+ease = 1
+trans = 4
+amplitude = 0.0
+
+; dropped item settles into its slot; overshoot px
+[sub_resource type="Resource" id="m_drop_settle"]
+script = ExtResource("1_entry")
+id = &"drop_settle"
+duration = 0.15
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 6.0
+
+; refused drop shakes px, then returns
+[sub_resource type="Resource" id="m_drop_reject"]
+script = ExtResource("1_entry")
+id = &"drop_reject"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 0
+amplitude = 6.0
+
+; cards/chips/daemons/slices move between deck, loadout and inventory
+[sub_resource type="Resource" id="m_loadout_swap"]
+script = ExtResource("1_entry")
+id = &"loadout_swap"
+duration = 0.2
+delay = 0.0
+ease = 2
+trans = 7
+amplitude = 0.0
+
+; crew Polaroid lands on its post; scale
+[sub_resource type="Resource" id="m_crew_assign"]
+script = ExtResource("1_entry")
+id = &"crew_assign"
+duration = 0.2
+delay = 0.0
+ease = 1
+trans = 10
+amplitude = 1.1
+
+; ---- Animation pass scope: city influence ----
+; territory tint cross-fades after a node changes owner
+[sub_resource type="Resource" id="m_influence_crossfade"]
+script = ExtResource("1_entry")
+id = &"influence_crossfade"
+duration = 0.8
+delay = 0.0
+ease = 2
+trans = 1
+amplitude = 0.0
+
+; new tint spreads from the node out to amplitude px
+[sub_resource type="Resource" id="m_influence_spread"]
+script = ExtResource("1_entry")
+id = &"influence_spread"
+duration = 1.2
+delay = 0.0
+ease = 1
+trans = 7
+amplitude = 180.0
+
 [resource]
 script = ExtResource("1_motion")
-entries = Array[ExtResource("1_entry")]([SubResource("m_screen_flash"), SubResource("m_hit_freeze"), SubResource("m_saved_stamp"), SubResource("m_toast"), SubResource("m_jack_in"), SubResource("m_jack_out"), SubResource("m_jack_fade_reduced"), SubResource("m_wheel_spin"), SubResource("m_wheel_spin_blur"), SubResource("m_wheel_nudge"), SubResource("m_precision_perfect"), SubResource("m_precision_good_ring"), SubResource("m_precision_partial"), SubResource("m_precision_blink"), SubResource("m_precision_miss_static"), SubResource("m_card_hover"), SubResource("m_card_play"), SubResource("m_card_draw"), SubResource("m_card_exhaust"), SubResource("m_send_it_press"), SubResource("m_send_it_drips"), SubResource("m_resolve_pass"), SubResource("m_resolve_pulse"), SubResource("m_number_float"), SubResource("m_number_crit"), SubResource("m_hp_lag"), SubResource("m_intent_flip"), SubResource("m_rewind_scrub"), SubResource("m_pointer_flicker"), SubResource("m_orbit_trail"), SubResource("m_enemy_break"), SubResource("m_hub_shatter"), SubResource("m_heat_pulse"), SubResource("m_heat_letters_shake"), SubResource("m_poster_stamp"), SubResource("m_net_creep"), SubResource("m_hq_crt_hum"), SubResource("m_radio_type"), SubResource("m_jack_ring_breathe"), SubResource("m_polaroid_tilt"), SubResource("m_site_outline_draw"), SubResource("m_map_camera_ease"), SubResource("m_route_crawl"), SubResource("m_asset_drop"), SubResource("m_raid_move"), SubResource("m_turret_trace"), SubResource("m_raid_flip"), SubResource("m_route_pulse"), SubResource("m_node_pop"), SubResource("m_visited_dim"), SubResource("m_panel_in"), SubResource("m_panel_crt_roll"), SubResource("m_panel_drop"), SubResource("m_menu_cursor_blink"), SubResource("m_menu_type"), SubResource("m_menu_highlight"), SubResource("m_modem_sign_warmup"), SubResource("m_modem_trace"), SubResource("m_buy_fly"), SubResource("m_note_flap"), SubResource("m_loot_fan"), SubResource("m_loot_pick"), SubResource("m_count_up"), SubResource("m_dispatch_type"), SubResource("m_subtitle_bar_in"), SubResource("m_drip_grow"), SubResource("m_drip_halo"), SubResource("m_beacon_blink"), SubResource("m_city_traffic"), SubResource("m_hq_sign_flicker"), SubResource("m_sticky_bump"), SubResource("m_number_roll")])
+entries = Array[ExtResource("1_entry")]([SubResource("m_screen_flash"), SubResource("m_hit_freeze"), SubResource("m_saved_stamp"), SubResource("m_toast"), SubResource("m_jack_in"), SubResource("m_jack_out"), SubResource("m_jack_fade_reduced"), SubResource("m_wheel_spin"), SubResource("m_wheel_spin_blur"), SubResource("m_wheel_nudge"), SubResource("m_precision_perfect"), SubResource("m_precision_good_ring"), SubResource("m_precision_partial"), SubResource("m_precision_blink"), SubResource("m_precision_miss_static"), SubResource("m_card_hover"), SubResource("m_card_play"), SubResource("m_card_draw"), SubResource("m_card_exhaust"), SubResource("m_send_it_press"), SubResource("m_send_it_drips"), SubResource("m_resolve_pass"), SubResource("m_resolve_pulse"), SubResource("m_number_float"), SubResource("m_number_crit"), SubResource("m_hp_lag"), SubResource("m_intent_flip"), SubResource("m_rewind_scrub"), SubResource("m_pointer_flicker"), SubResource("m_orbit_trail"), SubResource("m_enemy_break"), SubResource("m_hub_shatter"), SubResource("m_heat_pulse"), SubResource("m_heat_letters_shake"), SubResource("m_poster_stamp"), SubResource("m_net_creep"), SubResource("m_hq_crt_hum"), SubResource("m_radio_type"), SubResource("m_jack_ring_breathe"), SubResource("m_polaroid_tilt"), SubResource("m_site_outline_draw"), SubResource("m_map_camera_ease"), SubResource("m_route_crawl"), SubResource("m_asset_drop"), SubResource("m_raid_move"), SubResource("m_turret_trace"), SubResource("m_raid_flip"), SubResource("m_route_pulse"), SubResource("m_node_pop"), SubResource("m_visited_dim"), SubResource("m_panel_in"), SubResource("m_panel_crt_roll"), SubResource("m_panel_drop"), SubResource("m_menu_cursor_blink"), SubResource("m_menu_type"), SubResource("m_menu_highlight"), SubResource("m_modem_sign_warmup"), SubResource("m_modem_trace"), SubResource("m_buy_fly"), SubResource("m_note_flap"), SubResource("m_loot_fan"), SubResource("m_loot_pick"), SubResource("m_count_up"), SubResource("m_dispatch_type"), SubResource("m_subtitle_bar_in"), SubResource("m_drip_grow"), SubResource("m_drip_halo"), SubResource("m_beacon_blink"), SubResource("m_city_traffic"), SubResource("m_hq_sign_flicker"), SubResource("m_sticky_bump"), SubResource("m_number_roll"), SubResource("m_ice_lock_ring"), SubResource("m_decoy_fire"), SubResource("m_raid_hit_effect"), SubResource("m_node_damage_number"), SubResource("m_forecast_stamp_resolve"), SubResource("m_card_pickup"), SubResource("m_drag_ghost_follow"), SubResource("m_drop_zone_pulse"), SubResource("m_aim_line_draw"), SubResource("m_target_snap"), SubResource("m_drag_cancel_return"), SubResource("m_card_stamp"), SubResource("m_effect_burst"), SubResource("m_card_discard"), SubResource("m_resolve_beat"), SubResource("m_block_number"), SubResource("m_heal_number"), SubResource("m_hp_drain"), SubResource("m_status_stamp"), SubResource("m_last_turn_reveal"), SubResource("m_wheel_respin"), SubResource("m_inner_ring_turn"), SubResource("m_pointer_migrate"), SubResource("m_pointer_orbit"), SubResource("m_enemy_turn_spin"), SubResource("m_drag_pickup"), SubResource("m_drag_follow"), SubResource("m_drop_settle"), SubResource("m_drop_reject"), SubResource("m_loadout_swap"), SubResource("m_crew_assign"), SubResource("m_influence_crossfade"), SubResource("m_influence_spread")])

@@ -389,15 +389,15 @@ func _h14() -> int:
 	if not officer.heat_effects[0].offensive_slices_only: fails += 1
 	print("H15: achievement ICE ", cfg.achievement_ice_low, "/", cfg.achievement_ice_high)
 	if cfg.achievement_ice_low != 5 or cfg.achievement_ice_high != 10: fails += 1
-	return fails + _h24_anim()
+	return fails + _anim1()
 
 
-## H24-anim A1: UiMotionData / UiMotionEntryData (the UI motion table) round-trip, and
+## Animation pass ANIM-1: UiMotionData / UiMotionEntryData (the UI motion table) round-trip, and
 ## content/config/ui_motion.tres carries every required id.
-func _h24_anim() -> int:
+func _anim1() -> int:
 	var fails := 0
 	var e := UiMotionEntryData.new()
-	print("H24-anim: entry defaults ", e.duration, "/", e.delay, "/", e.ease, "/", e.trans, "/", e.amplitude, "/", e.enabled, " errors ", e.validate())
+	print("ANIM-1: entry defaults ", e.duration, "/", e.delay, "/", e.ease, "/", e.trans, "/", e.amplitude, "/", e.enabled, " errors ", e.validate())
 	if e.validate().size() != 1 or not e.enabled: fails += 1  # no id
 	e.id = &"smoke_pop"
 	e.duration = 0.3
@@ -419,6 +419,6 @@ func _h24_anim() -> int:
 	for id in UiMotionData.REQUIRED_IDS:
 		if shipped == null or shipped.find(id) == null:
 			missing += 1
-	print("H24-anim: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
+	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
 	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
 	return fails

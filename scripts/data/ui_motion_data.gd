@@ -32,6 +32,14 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"drip_grow", &"drip_halo",  # 4.22
 	&"beacon_blink", &"city_traffic", &"hq_sign_flicker",  # 4.23
 	&"sticky_bump", &"number_roll",  # 4.24
+	# Animation pass scope beyond the handoff roadmap (designer, 2026-09-27):
+	&"ice_lock_ring", &"decoy_fire", &"raid_hit_effect", &"node_damage_number", &"forecast_stamp_resolve",  # raid execution
+	&"card_pickup", &"drag_ghost_follow", &"drop_zone_pulse", &"aim_line_draw", &"target_snap", &"drag_cancel_return",  # card targeting
+	&"card_stamp", &"effect_burst", &"card_discard",  # card execution
+	&"resolve_beat", &"block_number", &"heal_number", &"hp_drain", &"status_stamp", &"last_turn_reveal",  # end-turn resolution
+	&"wheel_respin", &"inner_ring_turn", &"pointer_migrate", &"pointer_orbit", &"enemy_turn_spin",  # spinner movement
+	&"drag_pickup", &"drag_follow", &"drop_settle", &"drop_reject", &"loadout_swap", &"crew_assign",  # drag and drop
+	&"influence_crossfade", &"influence_spread",  # city influence
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
