@@ -91,12 +91,25 @@ const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
 const KIND_HOME := "home"
 const KIND_TIER := "tier"
-## Plain names of the kinds (tooltips built here when a node has no tip).
-const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight",
-	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices",
-	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core",
-	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)",
-	KIND_TIER: "Site"}
+## Plain names of the kinds (tooltips built here when a node has no tip; translated where
+## the tip is built, ANIM-R4 H7).
+const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight", # TR
+	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
+	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core", # TR
+	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)", # TR
+	KIND_TIER: "Site"} # TR
+## ANIM-R4 H7: the hover text's own sentences, translated once where the tip is built (they
+## showed in English in every language). Each takes the words noted.
+const TIP_NAMED := "%s: %s." # TR
+const TIP_ONE := "%s." # TR
+const TIP_CLAIMED := "Claimed: part of your network." # TR
+const TIP_SEIZED := "Seized by the corporation." # TR
+const TIP_ELITE := "Elite: a harder fight." # TR
+const TIP_HERE := "You are here." # TR
+const TIP_NEXT := "You can move here now." # TR
+const TIP_OUT := "Out of reach from here." # TR
+const TIP_RAID := "Raid: %s." # TR
+const TIP_THREATS := "Threats here: %s." # TR
 ## H24 K5: each kind's icon is a silhouette and a symbol, and no two kinds share either
 ## silhouette or both (the Modem shop was the Exploit's diamond, the Heat reduction Site
 ## ICE's snowflake). A symbol named like a StatIcon is drawn by StatIcon, so a map icon
@@ -288,6 +301,8 @@ var _blocked_controls: Array[Control] = []
 
 
 func _init(p_city: NeonCity = null) -> void:
+	# ANIM-R4 H7: the hover text is translated where it is built (tip_of); shown as given.
+	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city = p_city
 	_c = self
 	mouse_filter = Control.MOUSE_FILTER_PASS
@@ -737,31 +752,33 @@ func tip_of(id: StringName) -> String:
 	var tip := String(n.get("tip", ""))
 	if tip == "":
 		var name_text := String(n.get("label", ""))
-		var kind_text := String(KIND_NAMES.get(String(n.get("kind", "")), ""))
+		var kind_key := String(KIND_NAMES.get(String(n.get("kind", "")), ""))
+		var kind_text := tr_word(kind_key) if kind_key != "" else ""
 		if name_text != "" and kind_text != "":
-			tip = "%s: %s." % [name_text, kind_text]
+			tip = tr_word(TIP_NAMED) % [name_text, kind_text]
 		elif name_text != "" or kind_text != "":
-			tip = "%s." % (name_text if name_text != "" else kind_text)
+			tip = tr_word(TIP_ONE) % (name_text if name_text != "" else kind_text)
 		else:
 			tip = String(n.get("glyph", String(id)))
 		match String(n.get("mark", "")):
 			MARK_SPRAY:
-				tip += " Claimed: part of your network."
+				tip += " " + tr_word(TIP_CLAIMED)
 			MARK_CROSS:
-				tip += " Seized by the corporation."
+				tip += " " + tr_word(TIP_SEIZED)
 	parts.append(tip)
-	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains("Elite"):
-		parts.append("Elite: a harder fight.")
+	var elite := tr_word(TIP_ELITE)
+	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains(elite.get_slice(":", 0)):
+		parts.append(elite)
 	if n.get("here", false):
-		parts.append("You are here.")
+		parts.append(tr_word(TIP_HERE))
 	elif n.get("next", false):
-		parts.append("You can move here now.")
+		parts.append(tr_word(TIP_NEXT))
 	elif is_dimmed(id):
-		parts.append("Out of reach from here.")
+		parts.append(tr_word(TIP_OUT))
 	if n.has("result"):
-		parts.append("Raid: %s." % String(n["result"]))
+		parts.append(tr_word(TIP_RAID) % String(n["result"]))
 	if markers.has(id):
-		parts.append("Threats here: %s." % ", ".join(markers[id]))
+		parts.append(tr_word(TIP_THREATS) % ", ".join(markers[id]))
 	return "\n".join(parts)
 
 
