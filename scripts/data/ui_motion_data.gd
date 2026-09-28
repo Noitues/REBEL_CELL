@@ -61,6 +61,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"number_to_hp", &"hit_flash", &"hit_shake", &"enemy_enter", &"victory_flash", &"boss_phase_flash",
 	&"ram_refusal", &"ram_refusal_pop", &"send_it_ready", &"send_it_drips_share", &"drag_ghost_tilt_speed",
 	&"toast_note_hold", &"stamp_fade_in",
+	# ANIM-R2 combat, events and screens: a hit's absorb, the RAM spend float, the price refusal.
+	&"hit_absorb", &"ram_spend_float", &"price_refusal",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
