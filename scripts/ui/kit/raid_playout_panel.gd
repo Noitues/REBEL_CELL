@@ -264,7 +264,7 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 		match t:
 			"threat_enters":
 				_threat_sites[e["threat"]] = e["site"]
-				_threat_names[e["threat"]] = String(e["text"]).get_slice(": ", 1).get_slice(" enters", 0)
+				_threat_names[e["threat"]] = threat_word(e)
 			"move":
 				_threat_sites[e["threat"]] = e["to"]
 			"threat_destroyed":
@@ -338,7 +338,7 @@ func feed_line(e: Dictionary) -> String:
 		"link_frozen":
 			text = tr(FEED_FREEZES) % [threat_word(e), site_word(e.get("a", &"")), site_word(e.get("b", &""))]
 		"recalled":
-			text = tr(FEED_RECALLED) % String(e.get("operative", ""))
+			text = tr(FEED_RECALLED) % operative_word(e.get("operative", ""))
 		"raid_end":
 			text = (tr(FEED_REPELLED) if bool(e.get("won", false)) else tr(FEED_ENDED)) % int(e.get("steps", 0))
 			if not results.is_empty():
@@ -372,14 +372,33 @@ func site_word(id: Variant) -> String:
 	return TextDb.t(sd, "display_name") if sd != null else String(sid)
 
 
-## A threat's name (from its entry line, translated); "a threat" when unknown.
+## ANIM-R4 H4: a threat's name in the player's language, from the content the event names
+## (`threat_content`: ThreatData's display_name through TextDb; the English display name
+## never had a translation key of its own), else the name its entry gave, else its English
+## name from the resolver's line; "a threat" when unknown.
 func threat_word(e: Dictionary) -> String:
+	var content := StringName(String(e.get("threat_content", "")))
+	if content != &"":
+		var td := RunManager.lookup().get_content(content) as ThreatData
+		if td != null:
+			return TextDb.t(td, "display_name")
 	var id: Variant = e.get("threat", "")
 	if _threat_names.has(id):
-		return tr(String(_threat_names[id]))
+		return String(_threat_names[id])
 	if e.has("text") and t_name_from(String(e["text"])) != "":
 		return tr(t_name_from(String(e["text"])))
 	return tr("a threat")
+
+
+## ANIM-R4 H2: an operative's name (the campaign roster's; "an operative" when the id is not
+## on it). The feed never shows an operative's id ("op_1 returns to the reserves").
+static func operative_word(id: Variant) -> String:
+	var c := RunManager.campaign
+	if c != null:
+		for op in c.roster:
+			if String(op.id) == String(id):
+				return op.name
+	return TranslationServer.translate("an operative")
 
 
 ## The threat's name in a resolver line ("Step 1: Collector enters at t1_a.", "Setup:
