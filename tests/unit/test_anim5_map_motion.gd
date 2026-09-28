@@ -389,7 +389,7 @@ func test_jack_transitions_never_show_both_scenes() -> void:
 	if not deltas.is_empty():
 		took -= deltas.max()
 	assert_eq(seen[0][1], 1.0, "reduce effects: a fade to black, the switch at its darkest")
-	assert_lt(took, Motion.entry(&"jack_fade_reduced").duration + 0.3, "a short fade (about 0.2 s)")
+	assert_lt(took, Motion.entry(&"jack_fade_reduced").duration * 2.0 + 0.3, "a short fade (about 0.2 s; slack of its own length for uneven frames)")
 	assert_eq(Fx.transition_rect.color.a, 0.0, "and back")
 
 

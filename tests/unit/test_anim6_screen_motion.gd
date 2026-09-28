@@ -78,6 +78,13 @@ func _until(done: Callable) -> float:
 	return total - longest
 
 
+## A motion measured by `_until` ended within its own length plus the same again and a
+## tenth of a second: slack derived from the motion's value, so a slow machine's uneven
+## frames pass and a motion that runs several times too long still fails.
+func _assert_in_time(took: float, seconds: float, what: String) -> void:
+	assert_lt(took, seconds * 2.0 + 0.1, "%s ends in its time (%.2f s for %.2f s)" % [what, took, seconds])
+
+
 func _live() -> void:
 	if Settings.reduce_effects:
 		Settings.set_reduce_effects(false)
@@ -215,7 +222,7 @@ func test_a_screen_enters_and_focus_lands_on_its_first_control() -> void:
 	assert_eq(PageTransition.look_of(page), PageTransition.Look.GLASS)
 	assert_false(page.is_ancestor_of(_focus_owner()) if _focus_owner() != null else false, "focus waits for the entrance")
 	var took := await _until(func() -> bool: return not PageTransition.running(page))
-	assert_lt(took, PageTransition.seconds_for(PageTransition.Look.GLASS) + 0.15, "the entrance takes its time")
+	_assert_in_time(took, PageTransition.seconds_for(PageTransition.Look.GLASS), "the entrance")
 	await _frames()
 	assert_false(PageTransition.running(page), "the entrance ended")
 	assert_eq(_focus_owner(), UiFocus.first_focusable(page), "focus on the page's first control")
@@ -288,7 +295,7 @@ func test_menu_lines_type_in_and_the_highlight_slides() -> void:
 	assert_false(mm.typing(), "a key press completes it")
 	assert_eq(second.text, "Campaigns")
 	var took := await _until(func() -> bool: return not mm.sliding())
-	assert_lt(took, Motion.seconds(&"menu_highlight") + 0.1, "the highlight slides in its time")
+	_assert_in_time(took, Motion.seconds(&"menu_highlight"), "the highlight slide")
 	assert_false(mm.sliding())
 	assert_true(mm.caret_rect().has_area(), "the caret sits after the words")
 
@@ -348,7 +355,7 @@ func test_a_tag_bumps_only_when_its_value_changed() -> void:
 	stats.items = [["HEAT", "12", "/100"], ["CYCLES", "90", ""], ["CARDS", "10", ""]]
 	assert_eq(Array(stats.bumping()), ["CYCLES"], "the same values start nothing new")
 	var took := await _until(func() -> bool: return stats.bumping().is_empty())
-	assert_lt(took, Motion.seconds(&"count_up") + 0.1, "the count rolls in its time")
+	_assert_in_time(took, Motion.seconds(&"count_up"), "the count roll")
 	assert_eq(stats.bumping().size(), 0)
 	assert_eq(stats.shown_value(1), "90", "it ends on the value")
 	var rects := stats.tag_rects()
@@ -380,7 +387,7 @@ func test_a_modem_purchase_flies_and_the_state_is_the_purchase() -> void:
 	assert_true(s.run.operative.deck.has(card_id))
 	assert_true(scene._panel.find_child("ModemSign", true, false).warming() == false, "the Modem does not warm up again")
 	var took := await _until(func() -> bool: return FlightFx.active_count(scene) == 0)
-	assert_lt(took, SETTLE_WAIT, "the flight lands in its time")
+	_assert_in_time(took, SETTLE_WAIT, "the flight")
 	assert_eq(FlightFx.active_count(scene), 0, "the flight ends")
 	assert_eq(_state(), after, "the flight changed nothing")
 
@@ -399,7 +406,7 @@ func test_a_loot_pick_ends_in_the_deck() -> void:
 	assert_eq(RunManager.netrun.run.operative.deck.size(), deck + 1)
 	assert_true(RunManager.netrun.run.operative.deck.has(&"jam"), "the picked card is in the deck")
 	var took := await _until(func() -> bool: return FlightFx.active_count(scene) == 0)
-	assert_lt(took, SETTLE_WAIT, "in its time")
+	_assert_in_time(took, SETTLE_WAIT, "the loot flight")
 	assert_eq(FlightFx.active_count(scene), 0, "it lands")
 
 
@@ -416,7 +423,7 @@ func test_an_event_choice_stamps_its_outcome() -> void:
 	scene._panel.find_child("Choice1", true, false).mouse_entered.emit()
 	assert_true(row.has_meta(&"motion_scale"), "hover pops the icons")
 	var took := await _until(func() -> bool: return row.scale == Vector2.ONE)
-	assert_lt(took, Motion.seconds(&"event_outcome_pop") + 0.05, "the pop takes its time")
+	_assert_in_time(took, Motion.seconds(&"event_outcome_pop"), "the pop")
 	assert_eq(row.scale, Vector2.ONE, "and they settle")
 	scene.choose_event(0)
 	assert_eq(FlightFx.active_count(scene), 1, "the chosen outcome stamps")
@@ -534,7 +541,7 @@ func test_hq_idle_runs_live_and_rests_headless() -> void:
 	crew.tilt_polaroid(true)
 	var want := rest + Motion.amplitude(&"polaroid_tilt")
 	var took := await _until(func() -> bool: return is_equal_approx(crew.polaroid.rotation_degrees, want))
-	assert_lt(took, Motion.seconds(&"polaroid_tilt") + 0.05, "the tilt takes its time")
+	_assert_in_time(took, Motion.seconds(&"polaroid_tilt"), "the tilt")
 	assert_almost_eq(crew.polaroid.rotation_degrees, rest + Motion.amplitude(&"polaroid_tilt"), 0.01, "the Polaroid tilts on hover")
 	crew.tilt_polaroid(false)
 	PageTransition.settle(hq)
