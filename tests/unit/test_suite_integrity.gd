@@ -160,15 +160,76 @@ func test_game_scripts_print_only_capture_markers() -> void:
 const FRAME_SIGNALS: Array[String] = ["process_frame", "physics_frame", "frame_pre_draw", "frame_post_draw"]
 
 
-## True when `line` connects a lambda to a frame signal.
-static func frame_lambda(line: String) -> bool:
+## ANIM-R3 B11: the forms a frame signal is connected in: `<sig>.connect(`, `<sig> .connect (`
+## and `connect("<sig>", ` / `connect(&"<sig>", ` (Object.connect by name). Group 1 is what is
+## connected (up to the next comma or the line's end).
+const FRAME_CONNECT_PATTERNS: Array[String] = [
+	"\\b(?:%s)\\s*\\.\\s*connect\\s*\\(\\s*(.*)$",
+	"\\bconnect\\s*\\(\\s*&?\"(?:%s)\"\\s*,\\s*(.*)$",
+]
+
+
+## The code of `line` without its comment ("" for a comment line). Strings are kept.
+static func _code_of(line: String) -> String:
 	var code := line.strip_edges()
 	if code.begins_with("#"):
+		return ""
+	return code
+
+
+## What `line` connects to a frame signal ("" when it connects nothing to one).
+static func _frame_target(line: String) -> String:
+	var code := _code_of(line)
+	if code == "":
+		return ""
+	var sigs := "|".join(FRAME_SIGNALS)
+	for pat in FRAME_CONNECT_PATTERNS:
+		var re := RegEx.create_from_string(pat % sigs)
+		var m := re.search(code)
+		if m != null:
+			return m.get_string(1).strip_edges()
+	return ""
+
+
+## True when `line` connects a lambda to a frame signal: `func` written in the call (any
+## spacing), a `Callable(func` or a lambda held in a variable of `lambdas` (names assigned
+## a `func` in the same script; see frame_lambda_lines).
+static func frame_lambda(line: String, lambdas: Dictionary = {}) -> bool:
+	var target := _frame_target(line)
+	if target == "":
 		return false
-	for s in FRAME_SIGNALS:
-		if code.contains("." + s + ".connect(func"):
-			return true
-	return false
+	var is_func := RegEx.create_from_string("^(?:Callable\\s*\\(\\s*)?func\\b")
+	if is_func.search(target) != null:
+		return true
+	var ident := target
+	for stop in [",", ")", " ", "."]:
+		var at := ident.find(stop)
+		if at >= 0:
+			ident = ident.left(at)
+	return lambdas.has(ident)
+
+
+## The names `lines` assign a lambda to (`var name := func`, `var name = func`,
+## `name = func`, typed `var name: Callable = func`), as a set.
+static func lambda_names(lines: PackedStringArray) -> Dictionary:
+	var out := {}
+	var re := RegEx.create_from_string("^(?:var\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?::\\s*[A-Za-z_][A-Za-z0-9_\\[\\]]*\\s*)?:?=\\s*func\\b")
+	for line in lines:
+		var code := _code_of(line)
+		var m := re.search(code)
+		if m != null:
+			out[m.get_string(1)] = true
+	return out
+
+
+## The 0-based numbers of `lines` (one script) that connect a lambda to a frame signal.
+static func frame_lambda_lines(lines: PackedStringArray) -> Array[int]:
+	var lambdas := lambda_names(lines)
+	var out: Array[int] = []
+	for n in lines.size():
+		if frame_lambda(lines[n], lambdas):
+			out.append(n)
+	return out
 
 
 func test_no_lambda_is_connected_to_a_frame_signal() -> void:
@@ -180,7 +241,37 @@ func test_no_lambda_is_connected_to_a_frame_signal() -> void:
 	var found: Array[String] = []
 	for p in paths:
 		var lines := FileAccess.get_file_as_string(p).split("\n")
-		for n in lines.size():
-			if frame_lambda(lines[n]):
-				found.append("%s:%d %s" % [p, n + 1, lines[n].strip_edges()])
+		for n in frame_lambda_lines(lines):
+			found.append("%s:%d %s" % [p, n + 1, lines[n].strip_edges()])
 	assert_eq(found, [] as Array[String], "no lambda on a frame signal in scripts/")
+
+
+## ANIM-R3 B11: the rule's heuristics: the spacings and forms that slipped past it, lambdas
+## held in a variable, and no false alarm on a method callable.
+func test_the_frame_lambda_rule_catches_every_form() -> void:
+	assert_true(frame_lambda("\tget_tree().process_frame.connect( func() -> void:"), "a space before func")
+	assert_true(frame_lambda("\tget_tree().process_frame.connect(\tfunc(): pass)"), "a tab before func")
+	assert_true(frame_lambda("\ttree.process_frame .connect (func(): pass)"), "spaces round the dot and paren")
+	assert_true(frame_lambda("\tget_tree().connect(\"process_frame\", func() -> void: pass)"), "connect by the signal's name")
+	assert_true(frame_lambda("\tget_tree().connect(&\"physics_frame\", func(): pass, CONNECT_ONE_SHOT)"), "by a StringName")
+	assert_true(frame_lambda("\tRenderingServer.connect(\"frame_pre_draw\",func(): pass)"), "no space after the comma")
+	assert_true(frame_lambda("\tget_tree().process_frame.connect(Callable(func(): pass))"), "a lambda wrapped in Callable")
+	var held := PackedStringArray([
+		"func _ready() -> void:",
+		"\tvar redraw := func() -> void: queue_redraw()",
+		"\tvar typed: Callable = func() -> void: pass",
+		"\t_later = func(): pass",
+		"\tget_tree().process_frame.connect(redraw, CONNECT_ONE_SHOT)",
+		"\tget_tree().connect(\"process_frame\", typed)",
+		"\tRenderingServer.frame_post_draw.connect(_later)",
+		"\tget_tree().process_frame.connect(_method_callable)",
+		"\tbutton.pressed.connect(redraw)",
+	])
+	assert_eq(frame_lambda_lines(held), [4, 5, 6] as Array[int], "lambdas held in variables are caught; a method and another signal pass")
+	# No false alarms.
+	assert_false(frame_lambda("\tget_tree().process_frame.connect(function_name)"), "a method whose name starts with func")
+	assert_false(frame_lambda("\tget_tree().process_frame.connect(_on_frame.bind(3))"), "a bound method")
+	assert_false(frame_lambda("\t# get_tree().process_frame.connect(func(): pass)"), "a comment")
+	assert_false(frame_lambda("\tbutton.pressed.connect(func(): pass)"), "a lambda on another signal")
+	assert_false(frame_lambda("\tawait get_tree().process_frame"), "an await")
+	assert_false(frame_lambda("\tget_tree().process_frame.disconnect(_on_frame)"), "a disconnect")
