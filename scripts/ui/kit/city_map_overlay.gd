@@ -911,10 +911,17 @@ func _queue_top() -> void:
 		return
 	if not _top_later:
 		_top_later = true
-		get_tree().process_frame.connect(func() -> void:
-			_top_later = false
-			if is_instance_valid(_top):
-				_top.queue_redraw(), CONNECT_ONE_SHOT)
+		# A method, never a lambda: a lambda using self keeps a raw pointer to this overlay, and
+		# a one-shot slot on the tree's process_frame is dropped before the emission calls it, so
+		# an overlay freed earlier in that emission (a test's free(), a scene switch) had its
+		# lambda run on freed memory (the bake crash, DECISIONS "Animation pass - bake crash").
+		get_tree().process_frame.connect(_redraw_top_later, CONNECT_ONE_SHOT)
+
+
+func _redraw_top_later() -> void:
+	_top_later = false
+	if is_instance_valid(_top):
+		_top.queue_redraw()
 
 
 ## ANIM-R2 R9: the labels too draw at most once a process frame (a page's first frame
@@ -931,10 +938,13 @@ func _queue_tags() -> void:
 		return
 	if not _tags_later:
 		_tags_later = true
-		get_tree().process_frame.connect(func() -> void:
-			_tags_later = false
-			if is_instance_valid(_tags):
-				_tags.queue_redraw(), CONNECT_ONE_SHOT)
+		get_tree().process_frame.connect(_redraw_tags_later, CONNECT_ONE_SHOT)  # a method (see _queue_top)
+
+
+func _redraw_tags_later() -> void:
+	_tags_later = false
+	if is_instance_valid(_tags):
+		_tags.queue_redraw()
 
 
 ## Nodes, marks, badges, tags, assets and threat markers.

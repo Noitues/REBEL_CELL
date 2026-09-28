@@ -895,9 +895,21 @@ func _scroll_to_top() -> void:
 		scroll.scroll_vertical = 0
 		# Again next frame, without awaiting: a page freed meanwhile just drops the call
 		# (an await resumed on a freed HQ and logged "class instance is gone").
-		get_tree().process_frame.connect(func() -> void:
-			if is_instance_valid(scroll):
-				scroll.scroll_vertical = 0, CONNECT_ONE_SHOT)
+		# A bound method, not a lambda (DECISIONS "Animation pass - bake crash"): a freed HQ drops
+		# the call, a freed scroll is only skipped (the lambda logged "capture was freed").
+		_scroll_later = scroll
+		if not get_tree().process_frame.is_connected(_reset_scroll):
+			get_tree().process_frame.connect(_reset_scroll, CONNECT_ONE_SHOT)
+
+
+## The scroll `_scroll_to_top` resets again next frame (null when none).
+var _scroll_later: ScrollContainer = null
+
+
+func _reset_scroll() -> void:
+	if is_instance_valid(_scroll_later):
+		_scroll_later.scroll_vertical = 0
+	_scroll_later = null
 
 
 ## VIEW LOADOUT: an operative's deck and spinner. A dossier's Loadout button opens its
