@@ -211,3 +211,25 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [x] Assist mode: extra free nudge and HP, no ICE records or achievements.
 - [ ] Skins: deferred to art integration (M13).
 - [x] Tests, schema smoke test and content validation green.
+
+## Queued passes (designer, 2026-09-27)
+
+Order: finish the Animation pass review loop (ANIM-R1…, until an audit is clean), then the
+horizontal review loop (pass 25+), then these passes, each with its own review loop. See
+DECISIONS "Designer rulings on the open questions".
+
+- [ ] **Rulings and balance**: rewards up slightly for pacing (sim-tuned); a small Rigger
+      buff at ICE 0; an extra Schematics payout at the final Rack; a soft enrage for boss
+      stalls; more Schematics sinks (boosts, unlocks); balance simulation logged.
+- [ ] **Corporation unlocks**: beat Solace → Meridian; Halcyon bought with Schematics;
+      REBEL_CELL after ICE X on every other corporation; Orbital's rule decided in the
+      pass; profile, title and HQ show each rule; tests.
+- [ ] **Card upgrades**: design (how, where, what changes, price), content for every card,
+      shop and viewer support, balance lever in config, tests, simulation.
+- [ ] **Slice rearranging**: the player rearranges wheel slices at any time outside combat
+      (HQ and in a run), with drag and drop and pad/keys, rules and tests.
+- [ ] **Daily run modifiers**: a config table of modifiers (corporation, ICE rules,
+      starting deck/wheel twists, boosts...), the day's pick from the date seed, shown on
+      the start screen, and a test that each modifier works.
+- [ ] **Skins** (M12's open box): a skin system with procedural palette skins now; art later.
+

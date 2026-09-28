@@ -16,6 +16,11 @@ enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
 
 var card_title: String = ""
 var cost: int = 0
+## ANIM-R1 C6: a RAM refusal's pulse on the cost circle (0..1; 0 = none).
+var cost_alarm: float = 0.0
+## The refusal's red, and how far its ring grows past the cost circle (share of its radius).
+const REFUSED_COLOR := Color("#FF4D4D")
+const COST_PULSE_GROW := 0.6
 var description: String = ""
 var variant: int = Variant.PAPER
 var hotkey: String = ""
@@ -288,6 +293,23 @@ func finish_deal() -> void:
 	queue_redraw()
 
 
+## ANIM-R1 C6: not enough RAM for this card: its cost circle pulses red (`ram_refusal`:
+## its duration, amplitude = pulses). With motion off it shows red at once and stays so
+## until the hand is dealt again.
+func pulse_cost() -> void:
+	if not Motion.live(&"ram_refusal"):
+		cost_alarm = 1.0
+		queue_redraw()
+		return
+	var pulses := maxf(1.0, Motion.amplitude(&"ram_refusal"))
+	var e := Motion.entry(&"ram_refusal")
+	var tw := create_tween()
+	tw.tween_method(func(p: float) -> void:
+		cost_alarm = absf(sin(p * PI * pulses))
+		queue_redraw(), 0.0, 1.0, Motion.seconds(&"ram_refusal")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: cost_alarm = 0.0; queue_redraw())
+
+
 ## True while the card is still being dealt in.
 func dealing() -> bool:
 	return _deal_tween != null and _deal_tween.is_valid() and _deal_tween.is_running()
@@ -341,7 +363,12 @@ func _draw_sticker() -> void:
 	if cost >= 0:
 		var r := (13.0 if cost < 100 else 17.0) * s
 		title_w -= r * 2 + 4
-		draw_circle(Vector2(size.x - r - 5, r + 5), r, Palette.CELL_ACID if variant != Variant.PINK else Palette.PAPER)
+		var cost_fill := Palette.CELL_ACID if variant != Variant.PINK else Palette.PAPER
+		if cost_alarm > 0.0:
+			# ANIM-R1 C6: a RAM refusal pulses the cost red (not enough RAM for it).
+			cost_fill = cost_fill.lerp(REFUSED_COLOR, cost_alarm)
+			draw_arc(Vector2(size.x - r - 5, r + 5), r + 2.0 + r * COST_PULSE_GROW * cost_alarm, 0, TAU, 24, Color(REFUSED_COLOR, cost_alarm), 3.0, true)
+		draw_circle(Vector2(size.x - r - 5, r + 5), r, cost_fill)
 		draw_string(Palette.marker(), Vector2(size.x - r * 2 - 5, r + 5 + 6 * s), str(cost), HORIZONTAL_ALIGNMENT_CENTER, r * 2, roundi((14 if cost >= 100 else 16) * s), Palette.INK)
 	var title_size := roundi(TITLE_SIZE * s)
 	while title_size > 9 and Palette.display().get_string_size(card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x > title_w:

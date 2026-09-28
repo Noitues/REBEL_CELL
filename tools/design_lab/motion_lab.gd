@@ -48,7 +48,7 @@ const DEMOS := {
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
 	&"intent_flip": ["view", "tag"], &"rewind_scrub": ["scene", "rewind"],
 	&"pointer_flicker": ["pulse_pointer", "wheel"], &"orbit_trail": ["view", "orbit"],
-	&"enemy_break": ["scene", "break"], &"hub_shatter": ["scene", "shatter"],
+	&"enemy_break": ["scene", "send_kill"], &"hub_shatter": ["scene", "shatter"],
 	&"heat_pulse": ["heat", "stage"], &"heat_letters_shake": ["shake", "number"], &"poster_stamp": ["pop", "panel"], &"net_creep": ["fade_out", "panel"],
 	&"hq_crt_hum": ["screen", "hum"], &"radio_type": ["screen", "radio"], &"jack_ring_breathe": ["screen", "jack"], &"polaroid_tilt": ["screen", "dossier"],
 	&"site_outline_draw": ["fade_in", "panel"], &"map_camera_ease": ["slide_x", "panel"], &"route_crawl": ["slide_x", "sticker"], &"asset_drop": ["drop", "card"],
@@ -76,7 +76,7 @@ const DEMOS := {
 	&"influence_crossfade": ["fade_in", "panel"], &"influence_spread": ["fade_in", "panel"],
 	# ANIM-2 / ANIM-3 (combat): "view" plays on the lab's wheel / card / SEND IT; "scene"
 	# plays in a live combat scene over the whole lab (1280x720).
-	&"resolve_sequence": ["scene", "send"], &"hit_line": ["scene", "send"], &"victory_stamp": ["scene", "victory"],
+	&"resolve_sequence": ["scene", "send_hit"], &"hit_line": ["scene", "send_hit"], &"victory_stamp": ["scene", "victory"],
 	&"combat_end_hold": ["scene", "victory"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
@@ -96,6 +96,14 @@ const DEMOS := {
 	# ANIM-R1 (the first fix batch; in context: hq_scene / netrun_scene --demo-anim=<id>):
 	&"net_creep_recede": ["fade_in", "panel"], &"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["blink", "stage"],
 	&"select_ring_pulse": ["pulse", "sticker"], &"loot_reject": ["drop_away", "card"], &"home_number_fly": ["fly", "number"], &"influence_mark": ["pop", "panel"], &"heat_number_pop": ["pop", "number"], &"heat_banner": ["pop", "panel"],
+	# ANIM-R1 (combat and input): the SEND IT replay's pieces play in a live SEND IT.
+	&"resolve_landing_hold": ["scene", "send"], &"landing_pulse": ["scene", "send"], &"resolve_result_hold": ["scene", "send"],
+	&"result_caption": ["scene", "send"], &"result_stamp": ["scene", "send"], &"number_to_hp": ["scene", "numbers"],
+	&"hit_flash": ["scene", "send"], &"hit_shake": ["scene", "send"], &"enemy_enter": ["scene", "enter"],
+	&"victory_flash": ["scene", "victory"], &"boss_phase_flash": ["flash", "stage"],
+	&"ram_refusal": ["scene", "refuse"], &"ram_refusal_pop": ["scene", "refuse"], &"send_it_ready": ["view", "ready"],
+	&"send_it_drips_share": ["view", "press"], &"drag_ghost_tilt_speed": ["scene", "drag"],
+	&"toast_note_hold": ["fade_out", "sticker"], &"stamp_fade_in": ["screen", "stamp"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -116,6 +124,10 @@ const DEMO_SPIN_TICKS := 9.0
 const DEMO_RESPIN_TICKS := 70.0
 const DEMO_POINTER_SHIFT := 5
 const DEMO_HP_LOSS := 12
+## ANIM-R1 captures: nudges tried to make the SEND IT land a hit, and the enemy HP the
+## kill capture starts from.
+const DEMO_NUDGE_TRIES := 12
+const DEMO_KILL_HP := 3
 ## Drag demo: the ghost's path (from, to) over DRAG_FRAMES frames, in 1280x720 space.
 const DRAG_FROM := Vector2(260, 620)
 const DRAG_TO := Vector2(820, 300)
@@ -632,6 +644,11 @@ func _play_view(what: String) -> float:
 			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
 		"press":
 			(_pieces["send"] as DripButton).press_motion()
+		"ready":
+			var send := _pieces["send"] as DripButton
+			send.glyph = true
+			send.set_ready(false)
+			send.set_ready(true)
 	return LOOP_HOLD
 
 
@@ -665,6 +682,20 @@ func _play_scene(what: String) -> void:
 	match what:
 		"send":
 			_scene.end_turn()
+		"send_hit", "send_kill":
+			# ANIM-R1 captures: a SEND IT whose hits land (the operative's wheel nudged until
+			# the preview deals damage), and one that breaks the enemy (lab only: its HP set
+			# low first, so the kill turn is the first one).
+			for k in DEMO_NUDGE_TRIES:
+				if _preview_hits(enemy):
+					break
+				_scene.nudge_wheel(&"player", 1)
+			if what == "send_kill":
+				_scene.engine.state().get_combatant(enemy).hp = DEMO_KILL_HP
+				_scene._refresh(_scene.engine.state())
+			_scene.skip_motion()
+			await get_tree().process_frame
+			_scene.end_turn()
 		"play":
 			_scene.select_card(0)
 			if _scene.selecting >= 0:
@@ -695,12 +726,26 @@ func _play_scene(what: String) -> void:
 			else:
 				_scene._cancel_drag(i, CANCEL_AT)
 		"numbers":
-			var k := 0
+			# ANIM-R1: a guard number under the hub's lines, damage numbers above the name that
+			# travel into the HP counter (the HP rolls down as each arrives).
+			var hp := ev.combatant.hp
 			for n in DEMO_NUMBERS:
-				var block := String(n[0]).contains("BLOCK")
-				_scene.fx_layer.number(ev.number_anchor(k), String(n[0]), Palette.NET_CYAN if block else WheelView.LOSS_COLOR,
-					&"block_number" if block else &"number_float", Vector2.UP, bool(n[1]), minf(Motion.amplitude(&"number_float"), ev.number_room() * NUMBER_RISE_SHARE))
-				k += 1
+				var text := String(n[0])
+				if text.contains("BLOCK"):
+					var g := ev.number_slot("guard", text, false)
+					_scene.fx_layer.number(g["at"], text, Palette.NET_CYAN, &"block_number", Vector2.UP, false, float(g["room"]), int(g["fs"]), "guard")
+				else:
+					var s := ev.number_slot("hp", text, bool(n[1]))
+					hp -= absi(int(text))
+					_scene.fx_layer.travel_number(s["at"], ev.hp_counter_spot(), text, WheelView.LOSS_COLOR, bool(n[1]), int(s["fs"]), "hp",
+						_scene._hp_arrives.bind(ev, hp))
+		"enter":
+			ev.play_enter()
+		"refuse":
+			_scene.engine.state().ram = 0
+			_scene._refresh(_scene.engine.state())
+			_scene.select_card(0)
+			_scene.respin()
 		"break":
 			_scene.demo_break(enemy)
 		"shatter":
@@ -717,6 +762,14 @@ func _play_scene(what: String) -> void:
 			_scene.ram_note.hold(0)
 			_scene.ram_note.play_refill()
 
+
+
+## True when SEND IT would take HP off `enemy` now (the engine's own preview).
+func _preview_hits(enemy: StringName) -> bool:
+	for e in _scene.engine.preview_end_turn().events:
+		if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == enemy and int(e.get("hp_damage", 0)) > 0:
+			return true
+	return false
 
 
 ## The first hand card with several legal targets (else card 0).

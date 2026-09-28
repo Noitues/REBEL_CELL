@@ -2503,11 +2503,15 @@ func open_settings() -> void:
 	get_tree().paused = false
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if _travelling and ((event is InputEventMouseButton and event.pressed) or (event is InputEventKey and event.pressed and not event.echo)):
+func _input(event: InputEvent) -> void:
+	# ANIM-R1 (MotionSkip): a press during a route move (key, click or pad button) ends it
+	# and is consumed before any control sees it.
+	if _travelling and MotionSkip.is_press(event):
 		_end_travel()
-		get_viewport().set_input_as_handled()
-		return
+		MotionSkip.consume(self)
+
+
+func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("open_settings") and combat_scene == null:
 		open_settings()
 		get_viewport().set_input_as_handled()

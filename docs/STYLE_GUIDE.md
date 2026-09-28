@@ -175,18 +175,36 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   sliders and pickers, and "copy values" gives paste-ready .tres lines. Frame strips for
   review: ANIMATION_HANDOFF 6.
 - **Amplitude units** depend on the helper: px (slide, lift, shake), a scale (pop, bump),
-  an alpha (fade, blink, pulse), degrees (tilt, flip) or frames (hit freeze). Each
-  entry's comment in the .tres says which.
+  an alpha (fade, blink, pulse, flash), degrees (tilt, flip), frames (hit freeze), ticks
+  per second (spin blur), tenths of a tick (spin overshoot), a seconds cap (a menu
+  line's typing), a share 0..1 (a split of a motion's time), px per second (the drag
+  ghost's full-tilt speed) or a count (pulses). Each entry's comment in the .tres says
+  which (`UiMotionEntryData` lists them too).
+- **One press rule (ANIM-R1, `MotionSkip`).** A press is a key going down (no auto-repeat),
+  mouse button 1-3 going down (never the wheel) or a pad button going down. A press that
+  completes a motion is consumed and does nothing else: the SEND IT replay, drops and
+  landings, flights and stamps, typing words and subtitles, page entrances and the route
+  move all end at once and nothing behind them sees the press. One exception: in a menu a
+  focus move (arrows, D-pad, Tab) passes on, since moving on ends the line's motion and a
+  menu must never drop a fast tap.
 
 ### 5.2 Combat motion (the Animation pass, ANIM-2 / ANIM-3)
 - **Replay, never re-run.** The state is final at once; motion replays the engine's own
   events on top (`ResolveBeats`, `CombatFxLayer`, `WheelView` overrides). Skips and
   reduce effects show the end state.
-- **SEND IT** reads as a sequence under 1.5 s: needles latch, each hit pulses its needle,
-  draws a line to its victim and pops a number in the victim's hub (red loss, cyan guard,
-  green heal, crits 1.5x with a burst), HP arcs drain with a white lag bar, statuses stamp
-  on their slice, dead wheels fall apart, then both wheels spin to the next landing and
-  LAST TURN slides up. Any press skips.
+- **SEND IT** reads as a sequence of about 2 s (ANIM-R1): needles latch and the landed
+  slices pulse in their colour (a MISS slice gets a big grey X) and hold 0.3 s; each hit
+  pulses its needle and flies as a thick projectile in the attacker's colour from its
+  landed slice to the victim's HP ring (no line when nothing is dealt: the victim stamps
+  BLOCKED or EVADED); damage and heal numbers pop in the hub above the name, then travel
+  into the HP counter, which rolls down with a white lag bar as the wheel flashes and
+  shakes; guard numbers sit under the hub's lines; statuses stamp on their slice; a wheel
+  whose HP didn't change stamps NO DAMAGE (ALL BLOCKED when every hit was soaked); a
+  dying enemy's HP is seen at 0 before it falls apart and leaves its empty spot marked
+  DEFEATED. The result holds 0.5 s under THIS TURN with LAST TURN, then the wheels spin to
+  the next landing and the forecast flips in, its tape reading NEXT TURN; the TURN counter
+  changes when the replay ends. A new fight's enemy enters from the edge with its name.
+  Any press skips (and does nothing else).
 - **Spins** run the exact ticks with ease-out, a 0.2-tick overshoot and settle; slices blur
   when fast. **Nudges** are 0.08 s steps with a 2 px recoil, queued and never out of step.
 - **Landings** differ in shape, not only colour: inversion (Perfect), ring (Good), stutter
@@ -194,8 +212,14 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Cards** lift 12 px and straighten on hover; drag ghosts trail and tilt; zones pulse and
   a reticle glides to the aim; a play flies, stamps and dissolves (burns when exhausted);
   a cancel glides home; the hand never moves under the cursor.
-- **Readability**: numbers stay inside the hub, clear of every needle; tags hide while a
-  SEND IT replays and flip back in; nothing waits on motion when the player decides.
+- **Readability**: numbers stay inside the hub (sized to fit it at every text size), off
+  the hub's words and never on each other, clear of every needle; tags and NEXT plates
+  hide while a SEND IT replays and flip back in; nothing waits on motion when the player
+  decides.
+- **Refusals and SEND IT** (ANIM-R1): not enough RAM flashes the RAM chips red with "COST >
+  RAM" beside them and pulses the card's cost (or the respin sticker); SEND IT carries a
+  drawn ▶▶ that pulses gently when no RAM is left. Tag chips come in order of importance
+  (damage to you, damage dealt, HP, then the rest), so "+N MORE" never hides damage.
 
 ### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
 - **Territory tint never jumps.** The city bakes the new look once; the new image shows

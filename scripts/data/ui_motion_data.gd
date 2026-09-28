@@ -55,6 +55,12 @@ const REQUIRED_IDS: Array[StringName] = [
 	# Animation pass ANIM-R1 (the first fix batch): inline fractions moved into the table,
 	# the jack's arrival wait, and the campaign screens' readability motion.
 	&"net_creep_recede", &"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject", &"home_number_fly", &"influence_mark", &"heat_number_pop", &"heat_banner",
+	# ANIM-R1 combat and input: the SEND IT replay's legibility, refusals, SEND IT's mark,
+	# and inline numbers moved into the table.
+	&"resolve_landing_hold", &"landing_pulse", &"resolve_result_hold", &"result_caption", &"result_stamp",
+	&"number_to_hp", &"hit_flash", &"hit_shake", &"enemy_enter", &"victory_flash", &"boss_phase_flash",
+	&"ram_refusal", &"ram_refusal_pop", &"send_it_ready", &"send_it_drips_share", &"drag_ghost_tilt_speed",
+	&"toast_note_hold", &"stamp_fade_in",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

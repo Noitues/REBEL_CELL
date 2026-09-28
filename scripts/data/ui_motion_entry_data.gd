@@ -11,8 +11,13 @@ extends Resource
 @export_range(0.0, 10.0, 0.005, "or_greater") var delay: float = 0.0
 @export var ease: Tween.EaseType = Tween.EASE_OUT
 @export var trans: Tween.TransitionType = Tween.TRANS_QUAD
-## Size of the motion in the unit its helper names: px for slides, lifts and shakes, a
-## scale for pops and bumps, an alpha for fades and blinks, degrees for tilts.
+## Size of the motion in the unit its helper names (the entry's comment in the .tres says
+## which): px for slides, lifts and shakes; a scale for pops and bumps (and a radius
+## multiplier for bursts under 4); an alpha for fades, blinks and flashes; degrees for
+## tilts and flips; frames for the hit freeze; ticks per second for the spin blur; tenths
+## of a tick for spin overshoot; seconds as a cap (a menu line's typing); a share (0..1)
+## for splits of a motion's time or of a quantity; px per second for speeds; a count for
+## pulses.
 @export var amplitude: float = 0.0
 ## Off = the end state at once, as under reduce effects.
 @export var enabled: bool = true

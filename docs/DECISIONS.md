@@ -30,6 +30,44 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — Designer rulings on the open questions (resolved by the designer)
+Answered by the designer as a numbered list against the open-questions digest. Defaults
+accepted unless noted; the items that need work are scheduled in MILESTONES
+("Queued passes").
+1. **Late-campaign Grid labels** keep off other nodes' icons too (built in ANIM-R1).
+2. **Grid at 1.6**: keep the folding map key, icon-only step buttons and LABEL_REACH 110 px.
+3. **Subtitles outside combat** stay in the top band.
+4. **Toasts** stay for refusals, saves and unlocks.
+5. **Drag pick-up** is X / Space; A keeps each button's meaning.
+6. **Recall** is a drop on CORE.
+7. **Changed:** a drop on JACK IN does *not* start a run ("drag and drop to start is not
+   intuitive"). Select the operative, then press JACK IN. Crew drags only select (ANIM-R1).
+8. **Motion values** as chosen from the strips.
+9. **Changed:** cards upgrade. Cards are in the shop and upgrades are a balance lever; a
+   new horizontal pass designs and builds card upgrades (Queued passes).
+10. **Changed:** players may rearrange wheel slices at any time outside combat (a new
+    horizontal pass; Queued passes).
+11. **Changed:** the daily run changes more than the seed. A horizontal pass builds a list
+    of daily modifiers and tests that each one works (not exhaustive combinations).
+12. **Pacing**: raise rewards slightly (not lower enemies); tune by simulation.
+13. **Rigger at ICE 0**: a small buff to its hub or deck.
+14. **Final Rack**: an extra Schematics payout; ICE 0 length is fine.
+15. **REBEL_CELL difficulty**: leave the Mirror factor.
+16. **Ghost**: leave until playtest.
+17. **Rigger speed**: leave its Atk 16 slices.
+18. **Changed:** each corporation unlocks differently. Beat Solace to open Meridian;
+    Halcyon is bought with Schematics; REBEL_CELL opens after ICE X on each other
+    corporation; Orbital's rule is set in the unlock pass (Queued passes).
+19. **Meridian difficulty**: no change; the ICE ladder handles it.
+20. **Boss stalls**: add a soft enrage.
+21. **Solace**: no guaranteed Cleanse-type card.
+22. **Enemy damage scaling**: leave 1.2 per tier.
+23. **Patrol runs**: no cap.
+24. **Schematics surplus**: add more sinks (boosts and unlocks).
+25. **Confirmed as built**: Perfect-hook burst for every class, hooks repeat per resolution,
+    alternatives cost 60 with no base unlock, the freeze cooldown, custom-handler Daemons
+    not mirrored, and Meridian without raid music of its own for now.
+
 ### 2026-09-27 — Test suite optimization
 The designer asked to look for overlapping tests and to speed up the suite (about 49 min
 single-process for 858 tests, over 60 min on a busy machine). Details, the profile, the
@@ -323,6 +361,116 @@ only: no rule, content number or balance changed.
 ### Motion pass
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
+
+#### 2026-09-28 — Animation pass — ANIM-R1 combat and input
+The first fix batch of the Animation pass review (four reviewers), combat and input part
+(C1-C10). Views only, except two facts added to engine events (C4). Tests:
+`tests/unit/test_anim_r1_combat.gd` (full tier); strips recaptured:
+`docs/timeline/motion/resolve_sequence.png`, `number_float.png`, `enemy_break.png`
+(chosen on top, one variant under each; README rows marked ANIM-R1).
+- **C2 One press rule.** New kit class `MotionSkip`: `is_press` (a key going down, not an
+  echo; mouse buttons 1-3 going down, never the wheel's scroll buttons; a pad button going
+  down) and `consume`. The rule: *a press that completes a motion is consumed and does
+  nothing else*. Applied in every helper that ends its motion on a press: the combat
+  replay skip, DropLayer (it used to finish its flights and let the press act: a pad B
+  during a shred landing closed the viewer and then left the Modem), FlightFx (mouse
+  clicks now complete flights too), MenuMotion, Typing, the Dialogue subtitles,
+  PageTransition and the netrun's route move (moved to `_input` so no button sees the
+  press first; pad buttons skip it now). Decided exceptions: in a menu, a focus move
+  (arrows, D-pad, Tab) completes the line's motion and is let through, since moving on
+  ends it anyway and a menu must never drop a fast tap; the Dialogue subtitles follow the
+  rule too (a line types for about a second; the press only shows it whole), accepted for
+  one predictable rule. A second motion running on another layer at the same time needs a
+  second press (each helper consumes the press it completed).
+- **C1** `_perfect_feedback` shows the end state when `precision_perfect` isn't live
+  (reduce effects, headless, entry off): no inversion, flash or freeze (headless used to
+  call `Fx.freeze_frames`).
+- **C3** `WheelView.stop_motion` also settles the kit's one-shot helpers on the view (the
+  Partial shake, the Miss blink; the migration flicker is the scene's loop and stays) and,
+  on a skip, takes the tag's content as shown so it lands without a flip;
+  `motion_busy()` counts those helpers. Only a replay that plays out flips the tags in.
+- **C4 Beats for every combatant.** `satellite_spawn` and `deploy` events now carry the
+  newcomer's `hp`; `boss_phase` carries `spawned` ([{id, hp, slot}]) and `ticks` (its
+  needles after the phase). Values the resolver already had; results, hashes and
+  replays unchanged (engine events aren't part of any hash). `ResolveBeats` seeds those
+  HPs, makes `spawn` and `phase` beats, sets HP 0 on `died` (satellites going down with
+  their host get no damage event), and marks a whole wheel's death (`wheel`). Tested for
+  every enemy in content (two seeds, six turns, cards played): the beats end on every
+  combatant's HP, drones and satellites included. On the replay a satellite's token goes
+  on its death beat, a launched satellite or deployed drone docks on its spawn beat, a
+  boss phase stamps PHASE N (with its alarm and flash, moved from the state change to the
+  beat) and MULTIPLY's needles fan out; satellite HP plates follow their beats.
+- **C5 The SEND IT replay's legibility** (only the engine's own events):
+  - a. Landing: the landed slices pulse in their colour (`landing_pulse`, 0.3 s, keeping a
+    0.35 glow until the wheel turns on), a MISS slice gets a big grey X, and nothing
+    resolves for `resolve_landing_hold` (0.3 s).
+  - b. Hits: a thick projectile (`hit_line` width 3 → 6 px, with a bright head) in the
+    attacker's colour from its landed slice (`source_slot` on the beat) to the victim's
+    HP ring where its HP ends; none when nothing is dealt: a fully blocked hit stamps "N
+    BLOCKED", an evaded one "EVADED N" (existing words) at the victim (`result_stamp`).
+  - c. Numbers: HP changes (damage, heals) sit above the name, guards (block, shield,
+    evade, what a partly blocked hit's guard soaked) under the hub's lines; each is sized
+    so every corner stays inside 0.9 of the hub (at 1.6 they spilled over the slices) and
+    never over the hub's words; a new number in a band sends the resting one on (never on
+    each other). A damage or heal number holds 0.22 s, then travels 0.22 s into the HP
+    counter (`number_to_hp`, arrives at x0.5); the HP rolls down with the white lag bar
+    as it arrives and a loss flashes the disc (`hit_flash`) and shakes the wheel
+    (`hit_shake` 3 px; none under reduce effects, where nothing replays).
+  - d. A wheel whose HP the resolve didn't change stamps NO DAMAGE, or ALL BLOCKED when it
+    was hit and nothing got through (new words), in its hub above the name.
+  - e. After the beats the result holds `resolve_result_hold` (0.5 s) under a THIS TURN
+    plate where the tag goes (new word), with LAST TURN sliding up then (it used to slide
+    up after the spin); only then do the wheels spin to the next landing. The next turn's
+    forecast (tags, NEXT plates) is withheld while the replay runs and flips in at its
+    end; the tag's tape now reads NEXT TURN (new word). The status line's TURN counter
+    shows the turn played until the replay ends. A skip puts the forecast on at once,
+    without a flip.
+  - f. A wheel's death waits for its HP to be seen at 0: the killing number's travel, the
+    HP roll (`hp_drain`) and `enemy_break`'s new delay (0.15 s) come first. After the
+    break a beaten enemy's view is its empty spot (dashed rings, its name, a red DEFEATED
+    stamp; new word), during the replay and after it. A new fight's enemies enter from the
+    right edge with their name on the tag's plate (`enemy_enter`, 0.35 s, 260 px), so a new
+    enemy on the same view never reads as the beaten one coming back.
+  - g. `resolve_sequence` 1.45 → 2.0 s (the beats' gap is squeezed to fit, as before).
+    Variants shown: 1.6 s with holds 0.15 / 0.3 s lost the result before it read. A turn
+    that kills a wheel and goes on (another enemy still up) can run to about 2.4 s: the
+    HP-at-0 wait is not squeezed (tested budget: single-enemy fights).
+- **C6 RAM refusal**: the RAM chips flash red and "COST > RAM" (e.g. "3 > 2") shows beside
+  the count with a drawn RAM chip, pulsing (`ram_refusal` 0.6 s, 2 pulses); the refused
+  card's cost circle pulses red, a refused respin pops the respin sticker
+  (`ram_refusal_pop`). With motion off the red shows until the next RAM change. The
+  toast stays.
+- **C7 SEND IT's mark**: a drawn ▶▶ by its key hint (no layout change); it pulses gently
+  (`send_it_ready`, x1.18 over 0.6 s each way) while no RAM is left; still under reduce
+  effects.
+- **C8 Chip order**: chips carry a rank (damage to you, damage dealt, HP, the rest) and are
+  sorted stably; the fold keeps that order (rows fill in order, the first chip that no
+  longer fits and all after it fold into "+N MORE", room for which is kept), so at 1.6 the
+  damage chips always show.
+- **C9 Inline numbers moved** (data only): `victory_flash`, `boss_phase_flash` (the three
+  `Fx.flash(..., 0.3)` calls), `drag_ghost_tilt_speed` (1200 px/s), `ram_refusal` (the
+  0.6 s flash), `toast_note_hold` (3.5 s, read raw: reading time is never sped up or cut),
+  `stamp_fade_in` (FlightFx's 0.5 share), `send_it_drips_share` (the drips' 0.5 split).
+  `UiMotionEntryData`'s doc comment now lists every amplitude unit in use (px, scale,
+  alpha, degrees, frames, ticks per second, tenths of a tick, a seconds cap, shares, px
+  per second, counts); STYLE_GUIDE 5.1 too. Comment-only change in `scripts/data/` (no
+  field changed; the schema smoke test is unaffected).
+- **C10 Menu typing is drawn**: `MenuMotion` no longer rewrites `Button.text`; the line's
+  font colours go clear while the menu draws the typed part on top, so the text stays
+  whole for screen readers and tests and nothing re-lays out.
+- New ids (18, REQUIRED_IDS and motion lab demos; 152 entries): `resolve_landing_hold`,
+  `landing_pulse`, `resolve_result_hold`, `result_caption`, `result_stamp`,
+  `number_to_hp`, `hit_flash`, `hit_shake`, `enemy_enter`, `victory_flash`,
+  `boss_phase_flash`, `ram_refusal`, `ram_refusal_pop`, `send_it_ready`,
+  `send_it_drips_share`, `drag_ghost_tilt_speed`, `toast_note_hold`, `stamp_fade_in`.
+  Retuned: `resolve_sequence` 2.0 s, `hit_line` 6 px, `enemy_break` delay 0.15 s. The
+  lab's SEND IT capture now nudges the operative's wheel until the preview hits
+  (`send_hit`) and `send_kill` starts the enemy at 3 HP (lab only).
+- Words added (translated once; strings.csv exported): NEXT TURN, THIS TURN, NO DAMAGE,
+  ALL BLOCKED, DEFEATED.
+- Test expectations changed on purpose: `test_anim6_screen_motion` (menu typing: the
+  line's text stays whole while `typed_count()` grows; a key press completes the typing
+  and the slide together).
 
 #### 2026-09-27 — Animation pass — ANIM-R1 campaign and screens
 The first fix batch of the Animation pass review, campaign and screens half (items M1-M16
@@ -2939,7 +3087,7 @@ and annotated in the GDD where it changes a rule.
   the implementer, as the designer asked): no. The city backdrop keeps its own clock at
   1x / 2x / 4x (sped-up beacons would strobe); the raid layer and the map's route dashes
   run at the chosen speed. See "Animation pass — ANIM-5".
-- **Drag and drop, HQ side (Animation pass ANIM-4, 2026-09-27):** decided by the
+- ~~**Drag and drop, HQ side (Animation pass ANIM-4, 2026-09-27):**~~ resolved: see "Designer rulings on the open questions" (items 5-7). Original note: decided by the
   implementer, confirm in playtest. (1) The pad and keyboard pick-up button is X / Space
   (the `end_turn` action, free on the HQ, the Grid and the raid setup), so A keeps every
   button's meaning; items that only move (crew and swap chips) also pick up with A. (2)

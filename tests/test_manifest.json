@@ -89,6 +89,10 @@
 			"seconds": 24.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_r1_combat.gd": {
+			"seconds": 13.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.1,
 			"tier": "fast"

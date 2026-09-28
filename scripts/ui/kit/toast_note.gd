@@ -3,9 +3,11 @@ extends PanelContainer
 ## A short-lived note at the foot of the screen for what the player must see once (H20:
 ## the system log is an optional record, so refusals, saves and unlocks can't live only
 ## there): pink edge for a refusal, acid for news. One per screen (a new one replaces
-## it); ignores the mouse and focus; gone after SECONDS. View only.
+## it); ignores the mouse and focus; gone after `toast_note_hold`'s duration (read raw:
+## it is how long words stay to be read, so reduce effects and a raid's speed never
+## shorten it). View only.
 
-const SECONDS := 3.5
+const HOLD_MOTION := &"toast_note_hold"
 ## Gap to the screen's bottom edge (px).
 const BOTTOM_GAP := 18.0
 ## The least gap to the screen's side edges (px).
@@ -42,7 +44,7 @@ static func show_on(host: Control, text: String, warn: bool = false) -> ToastNot
 	t._place.call_deferred()
 	if host.is_inside_tree():
 		# Bound to the note itself: a note already replaced or freed drops the call.
-		host.get_tree().create_timer(SECONDS).timeout.connect(t.queue_free)
+		host.get_tree().create_timer(Motion.entry(HOLD_MOTION).duration).timeout.connect(t.queue_free)
 	return t
 
 
