@@ -126,6 +126,36 @@ func _ready() -> void:
 	apply_settings()
 	input_gate = JackInputGate.new()
 	get_tree().root.add_child.call_deferred(input_gate)
+	_warm_materials()
+
+
+## ANIM-R3 B1: the jack cover's and the Heat distortion's shaders are drawn once, invisibly
+## (the cover at progress 0 draws nothing; the distortion at intensity 0 changes nothing),
+## for WARM_FRAMES frames at start, so the first jack does not compile them in its first
+## frame (a 70-92 ms hitch as the cover started).
+func _warm_materials() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	_set_cover(0.0, 0.0)
+	jack_cover.visible = true
+	distortion.visible = true
+	_warm_left = WARM_FRAMES
+	get_tree().process_frame.connect(_warm_step)
+
+
+const WARM_FRAMES := 2
+var _warm_left: int = 0
+
+
+func _warm_step() -> void:
+	_warm_left -= 1
+	if _warm_left > 0:
+		return
+	get_tree().process_frame.disconnect(_warm_step)
+	if not _jacking:
+		jack_cover.visible = false
+	if _pulse_tween == null or not _pulse_tween.is_valid():
+		distortion.visible = false
 
 
 ## Lets the Motion kit's table go before the engine checks for leaked resources at exit.

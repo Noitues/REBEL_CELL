@@ -336,14 +336,20 @@ func launch(site_id: StringName, operative_id: StringName) -> bool:
 		_log.append_text("[color=orange]%s[/color]\n" % err)
 		notify(err, true)
 		return false
+	# ANIM-R3 B1: the run is built (and saved) at the jack's scene switch, under its opaque
+	# cover (at once when no jack plays): it took ~45 ms of the cover's first frame.
+	RunManager.go_to_netrun(_start_launched.bind(operative_id, site_id), site_id)
+	return RunManager.netrun != null or RunManager.scene_change_pending()
+
+
+## ANIM-R3 B1: starts the launched run (RunManager.go_to_netrun calls it at the switch).
+func _start_launched(operative_id: StringName, site_id: StringName) -> void:
 	var s := RunManager.start_run(operative_id, site_id)
 	if s == null:
-		return false
+		return
 	_report(s.last_events)
 	# H24 S15: the briefing belongs to the run's route (it ends when the player leaves it).
 	Dialogue.briefing(RunManager.campaign.corporation_id, site_id, RunManager.campaign.campaign_seed, "route")
-	RunManager.go_to_netrun()
-	return true
 
 
 func claim(site_id: StringName, node_type_id: StringName) -> void:

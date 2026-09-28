@@ -250,6 +250,21 @@ func start_run(operative_id: StringName = &"", site_id: StringName = &"") -> Net
 	return netrun
 
 
+## ANIM-R3 B1: work to do at the jack in's scene switch, under its opaque cover (the HQ's
+## JACK IN starts the run there: building it and its first save took ~45 ms of the cover's
+## first frame, a 92 ms hitch).
+var _before_switch: Callable = Callable()
+
+
+## The jack in's scene switch (under the opaque cover): the waiting work, then the scene.
+func _switch_to_netrun() -> void:
+	var todo := _before_switch
+	_before_switch = Callable()
+	if todo.is_valid():
+		todo.call()
+	change_scene(NETRUN_SCENE)
+
+
 ## Called by the UI after any run step; saves, records outcomes, announces the end.
 func after_step() -> void:
 	if netrun != null and netrun.run.is_over():
@@ -544,20 +559,27 @@ func go_to_hq() -> void:
 		change_scene(HQ_SCENE)
 
 
-## Jack in: the camera pushes into the deck CRT and dissolves to wireframe.
-func go_to_netrun() -> void:
+## Jack in: the camera pushes into the deck CRT and dissolves to wireframe. ANIM-R3 B1:
+## `before_switch` (optional) runs at the switch, under the opaque cover (at once when no
+## jack plays); `site_id` names the destination before the run exists.
+func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"") -> void:
 	if scene_change_pending():
 		return
 	AudioDirector.play_sfx("jack_in")
+	_before_switch = before_switch
 	if scene_switching_enabled:
-		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE), -1.0, jack_destination(), jack_note())
+		Fx.jack_in(_switch_to_netrun, -1.0, jack_destination(site_id), jack_note())
 	else:
-		change_scene(NETRUN_SCENE)
+		_switch_to_netrun()
 
 
 ## ANIM-R2 R5: where a jack in connects to, named on the cover: the run's Site (its
 ## translated name), else the net.
-func jack_destination() -> String:
+func jack_destination(site_id: StringName = &"") -> String:
+	if site_id != &"" and corporation != null:
+		var named := CampaignRules.site_data(corporation, site_id)
+		if named != null:
+			return TextDb.t(named, "display_name")
 	if netrun != null and corporation != null:
 		var sd := CampaignRules.site_data(corporation, netrun.run.site_id)
 		if sd != null:
@@ -568,7 +590,8 @@ func jack_destination() -> String:
 ## ANIM-R3 B5: the jack cover's second line: a run that opens on a raid interlude says so
 ## ("CONNECTING TO SCRUB RECORDS" then "INTERRUPTED: RAID INCOMING"); "" otherwise.
 func jack_note() -> String:
-	if netrun != null and netrun.in_raid():
+	# Before the run is built (ANIM-R3 B1) a queued raid tells: a run opens on it.
+	if (netrun != null and netrun.in_raid()) or (_before_switch.is_valid() and campaign != null and not campaign.pending_raids.is_empty()):
 		return tr("INTERRUPTED: RAID INCOMING")
 	return ""
 
