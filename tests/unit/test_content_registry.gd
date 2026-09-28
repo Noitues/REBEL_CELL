@@ -2,7 +2,8 @@ extends GutTest
 ## ContentRegistry resolves every content id; duplicate ids fail validation (M0 acceptance).
 
 const RegistryScript := preload("res://scripts/autoload/content_registry.gd")
-const TEMP_DIR := "user://test_content_registry"
+## This run's own folder (by process id): test runs in parallel never share it.
+var TEMP_DIR: String = "user://test_content_registry_%d" % OS.get_process_id()
 
 var _registry: Node
 
