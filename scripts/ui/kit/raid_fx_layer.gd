@@ -34,8 +34,25 @@ const HOME_BAR := Vector2(64, 7)
 const HOME_BAR_GAP := 8.0
 const PULL_DASH := 6.0
 ## A threat token is the map's marker this much bigger, with a glow this much wider.
-const TOKEN_SCALE := 2.2
+## ANIM-R2 R6: bigger again, and high-contrast whatever the corporation: a white diamond
+## ringed in THREAT_RED on a dark keyline (Solace's green threats were green on a green
+## city), the corporation's colour only as a dot at its heart; a moving token leaves a
+## fading red trail of TRAIL_DOTS dots, TRAIL_STEP of the move apart.
+const TOKEN_SCALE := 3.0
 const TOKEN_GLOW := 1.8
+const THREAT_RED := Color("#FF2A3D")
+const TRAIL_DOTS := 7
+const TRAIL_STEP := 0.05
+## ANIM-R2 R6: the raid's result banner ("HOME -5", "HOME HOLDS"): lettering and padding
+## (screen px x screen_k) and its lift over the home node's stamp.
+const BANNER_FONT := 34
+const BANNER_PAD := 10.0
+const BANNER_LIFT := 96.0
+const STAGGER_MOTION := &"raid_outcome_stagger"
+const BANNER_MOTION := &"raid_result_banner"
+## The banner's words (translated when drawn).
+const BANNER_HOME := "HOME %s" # TR
+const BANNER_HOLDS := "HOME HOLDS" # TR
 
 ## ANIM-R1 M4: a hit on the home server shows now (its number starts): `damage` from Site
 ## `site` (the screen flies the number into its home counter).
@@ -63,6 +80,8 @@ var _results: Dictionary = {}
 var _owner_done: bool = false
 ## ANIM-R1 M4: hits on home still to show ({"t0", "damage", "site"}), in time order.
 var _home_due: Array[Dictionary] = []
+## ANIM-R2 R6: the raid's result banner ({"text", "color", "t0"}; {} before the end).
+var _banner: Dictionary = {}
 ## Home integrity as shown now (the hits that have shown so far; the bar draws it).
 var home_shown: int = 0
 
@@ -92,6 +111,7 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	_tints.clear()
 	_tint_fade_t0 = INF
 	_owner_done = false
+	_banner = {}
 	queue_redraw()
 
 
@@ -142,6 +162,8 @@ func _last_end() -> float:
 		end = maxf(end, float(f["t0"]) + float(f["dur"]))
 	for id in _stamps:
 		end = maxf(end, float(_stamps[id]["t0"]) + float(_stamps[id]["dur"]))
+	if not _banner.is_empty():
+		end = maxf(end, float(_banner["t0"]) + Motion.seconds(BANNER_MOTION))
 	return maxf(end, _home_lag_t0 + RaidBeats.raw_seconds(&"home_lag"))
 
 
@@ -199,7 +221,11 @@ func play_beat(b: Dictionary, t0: float) -> void:
 		"home_lost":
 			_stamp(home_id, "breached", Palette.CELL_PINK, t0, dur)
 		"raid_end":
-			var flip := RaidBeats.raw_seconds(&"raid_flip")
+			# ANIM-R2 R6: the outcomes stamp node after node (`raid_outcome_stagger`, by id,
+			# home last), then the result banner stamps over home.
+			var flip := Motion.seconds(STAGGER_MOTION)
+			var gap := Motion.delay_of(STAGGER_MOTION)
+			var at := t0
 			var ids: Array = _results.get("nodes", {}).keys()
 			ids.sort()
 			for id in ids:
@@ -207,10 +233,14 @@ func play_beat(b: Dictionary, t0: float) -> void:
 				if sid == home_id or _stamps.has(String(sid)):
 					continue
 				var outcome := String(_results["nodes"][id].get("outcome", "holds"))
-				_stamp(sid, outcome, Palette.CELL_ACID if outcome == "holds" else Palette.CELL_PINK, t0, flip)
+				_stamp(sid, outcome, Palette.CELL_ACID if outcome == "holds" else Palette.CELL_PINK, at, flip)
+				at += gap
+			var lost := int(_results.get("home_before", home_value)) - int(_results.get("home_after", home_value))
 			if home_id != &"" and not _stamps.has(String(home_id)):
-				var hit := int(_results.get("home_after", home_value)) < int(_results.get("home_before", home_value))
-				_stamp(home_id, "breached" if hit else "holds", Palette.CELL_PINK if hit else Palette.CELL_ACID, t0, flip)
+				_stamp(home_id, "breached" if lost > 0 else "holds", Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID, at, flip)
+				at += gap
+			_banner = {"text": CityMapOverlay.tr_word(BANNER_HOME) % ("-%d" % lost) if lost > 0 else CityMapOverlay.tr_word(BANNER_HOLDS),
+				"color": Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID, "t0": at + flip}
 			# The end state is the resolved raid's (never a sum that could drift).
 			if _results.has("home_after"):
 				var after := int(_results["home_after"])
@@ -311,6 +341,37 @@ func _draw() -> void:
 	for id in _stamps:
 		_draw_stamp(StringName(id), _stamps[id], k)
 	_draw_home(k)
+	_draw_banner(k)
+
+
+## ANIM-R2 R6: the result banner over home: stamps on from `raid_result_banner`'s amplitude
+## and stays (the result).
+func _draw_banner(k: float) -> void:
+	if _banner.is_empty() or clock < float(_banner["t0"]):
+		return
+	var p := overlay.icon_at(home_id)
+	if p.x == INF:
+		return
+	var u := _u(float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
+	var grow := lerpf(Motion.amplitude(BANNER_MOTION), 1.0, _eased(BANNER_MOTION, u))
+	var fs := maxi(1, roundi(BANNER_FONT * Settings.text_scale * k))
+	var font := Palette.display()
+	var text := String(_banner["text"])
+	var size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(BANNER_PAD, BANNER_PAD) * 2.0 * k
+	var col: Color = _banner["color"]
+	var a := clampf(u * 3.0, 0.0, 1.0)
+	draw_set_transform(p + Vector2(0, -BANNER_LIFT * k - CityMapOverlay.ICON_RADIUS_BIG * k), deg_to_rad(STAMP_TILT), Vector2.ONE * grow)
+	var box := Rect2(-size * 0.5, size)
+	draw_rect(box.grow(3.0 * k), Color(0, 0, 0, 0.85 * a))
+	draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
+	draw_rect(box, Color(col, a), false, 3.0 * k)
+	draw_string(font, box.position + Vector2(BANNER_PAD * k, BANNER_PAD * k + font.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+	draw_set_transform(Vector2.ZERO)
+
+
+## The result banner's words ("" before the raid's end; tests).
+func banner_text() -> String:
+	return String(_banner.get("text", ""))
 
 
 func _u(t0: float, dur: float) -> float:
@@ -401,14 +462,26 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 		s *= lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), du)
 		alpha *= 1.0 - du
 	var mv: Dictionary = t.get("move", {})
-	if not mv.is_empty() and mv["decoy"] != &"" and clock > float(mv["t0"]) and clock < float(mv["t0"]) + float(mv["dur"]):
+	var moving: bool = not mv.is_empty() and clock > float(mv["t0"]) and clock < float(mv["t0"]) + float(mv["dur"])
+	if moving and mv["decoy"] != &"":
 		var lure := overlay.icon_at(mv["decoy"])
 		if lure.x != INF:
 			_dashed(lure, p, Color(Palette.RESIST_GOLD, 0.8), 1.5 * k, PULL_DASH * k)
+	if moving:
+		# ANIM-R2 R6: a fading red trail behind it along its street.
+		var u := _u(float(mv["t0"]), float(mv["dur"]))
+		for q in range(1, TRAIL_DOTS + 1):
+			var tp := _along_move(mv, _eased(&"raid_move", maxf(0.0, u - q * TRAIL_STEP)))
+			if tp.x != INF:
+				var fade := 1.0 - float(q) / (TRAIL_DOTS + 1)
+				draw_circle(tp, s * 0.45 * fade, Color(THREAT_RED, 0.75 * fade * alpha))
 	var dia := _diamond(p, s)
-	draw_circle(p, s * TOKEN_GLOW, Color(threat_color, 0.25 * alpha))
-	draw_colored_polygon(dia, Color(threat_color, alpha))
-	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(Palette.PAPER, alpha), 1.2 * k)
+	draw_circle(p, s * TOKEN_GLOW, Color(THREAT_RED, 0.3 * alpha))
+	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(0, 0, 0, 0.9 * alpha), 6.0 * k)
+	draw_colored_polygon(dia, Color(Palette.PAPER, alpha))
+	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(THREAT_RED, alpha), 3.0 * k)
+	draw_circle(p, s * 0.28, Color(threat_color, alpha))
+	draw_arc(p, s * 0.28, 0, TAU, 12, Color(0, 0, 0, 0.8 * alpha), 1.0 * k)
 	if t.get("frozen", false):
 		draw_arc(p, FROST_RING * k, 0, TAU, 20, Color(Palette.NET_CYAN, 0.8 * alpha), 2.0 * k)
 
