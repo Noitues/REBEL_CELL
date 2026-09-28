@@ -1,19 +1,27 @@
 extends GutTest
 ## Test suite optimization (docs/TEST_SUITE.md): under GUT the headless city keeps each
-## built geometry by its inputs (NeonCity.geometry_memo_enabled). A reused geometry must be
-## exactly the one a fresh build makes, and any input that changes the city must change
-## the key, so the memo never changes what a test sees.
+## built geometry by its inputs (NeonCity.geometry_memo_enabled) and skips emitting the
+## triangles the dummy renderer never shows (NeonCity.emit_triangles). A reused geometry
+## must be exactly the one a fresh build makes, any input that changes the city must change
+## the key, and a build without triangles must place every roof, light, trail, beacon and
+## sign exactly as a full build does, so neither switch changes what a test sees. Every
+## district is still built with its triangles here, so the drawing code keeps running.
+
+const DISTRICTS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell", &""]
 
 var _memo_before: bool = true
+var _emit_before: bool = false
 
 
 func before_each() -> void:
 	_memo_before = NeonCity.geometry_memo_enabled
+	_emit_before = NeonCity.emit_triangles
 	NeonCity.clear_geometry_memo()
 
 
 func after_each() -> void:
 	NeonCity.geometry_memo_enabled = _memo_before
+	NeonCity.emit_triangles = _emit_before
 	NeonCity.clear_geometry_memo()
 
 
@@ -33,12 +41,47 @@ func _built(city: NeonCity) -> Dictionary:
 		"fist": [city._fist_segs, city._fist_box, city._fist_hull]}
 
 
-func test_the_memo_is_on_under_the_test_runner_only() -> void:
+## What a build places for the overlays and the live layer (everything but triangles).
+func _placed(city: NeonCity) -> Dictionary:
+	var b := _built(city)
+	b.erase("verts")
+	b.erase("cols")
+	return b
+
+
+func test_the_switches_are_on_under_the_test_runner_only() -> void:
 	assert_true(NeonCity._is_gut_run(), "this process runs GUT")
 	assert_true(_memo_before, "so the memo is on by default here (and off in the game)")
+	assert_false(_emit_before, "and triangles are skipped here (and drawn in the game)")
+
+
+func test_a_build_without_triangles_places_everything_a_full_build_does() -> void:
+	NeonCity.geometry_memo_enabled = false
+	for district in DISTRICTS:
+		for net in [false, true]:
+			NeonCity.emit_triangles = true
+			var full := _city(district)
+			full.net_mode = net
+			full._camera()
+			full._build_geometry()
+			var what := "%s%s" % [district, " net" if net else ""]
+			assert_gt(full._verts.size(), 1000, "%s: the full build draws the city" % what)
+			assert_eq(full._verts.size(), full._cols.size(), what)
+			NeonCity.emit_triangles = false
+			var lean := _city(district)
+			lean.net_mode = net
+			lean._camera()
+			lean._build_geometry()
+			assert_eq(lean._verts.size(), 0, "%s: no triangles" % what)
+			assert_false(lean._roofs.is_empty(), "%s: roofs placed" % what)
+			# Compared with == (a failing assert_eq would print megabytes).
+			assert_true(_placed(lean) == _placed(full), "%s: the same roofs, lights, trails, beacons, signs, streets and fist" % what)
+			full.queue_free()
+			lean.queue_free()
 
 
 func test_a_reused_geometry_equals_a_fresh_build() -> void:
+	NeonCity.emit_triangles = true
 	NeonCity.geometry_memo_enabled = false
 	var fresh := _city()
 	fresh._camera()
@@ -58,13 +101,13 @@ func test_a_reused_geometry_equals_a_fresh_build() -> void:
 	second._memo_restore(key)
 	var got := _built(second)
 	for k in want:
-		assert_eq(var_to_str(got[k]), var_to_str(want[k]), "reused %s equals a fresh build" % k)
+		assert_true(got[k] == want[k], "reused %s equals a fresh build" % k)
 	# A drawn city with the memo on ends with the same roofs and camera as one without.
 	var drawn := _city()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	assert_true(drawn.camera_settled())
-	assert_eq(var_to_str(drawn._roofs), var_to_str(want["roofs"]), "a memo hit draws the same roofs")
+	assert_true(drawn._roofs == want["roofs"], "a memo hit draws the same roofs")
 
 
 func test_every_input_of_the_city_changes_the_key() -> void:
@@ -82,6 +125,9 @@ func test_every_input_of_the_city_changes_the_key() -> void:
 	moved.focus_grid = Vector2(3, 4)
 	moved._camera()
 	assert_ne(moved._memo_key(), k0, "camera")
+	NeonCity.emit_triangles = not NeonCity.emit_triangles
+	assert_ne(base._memo_key(), k0, "triangles drawn or not")
+	NeonCity.emit_triangles = not NeonCity.emit_triangles
 	for change in ["city_seed", "net_mode", "ink_set", "face_texture", "corp_creep"]:
 		var c := _city()
 		match change:

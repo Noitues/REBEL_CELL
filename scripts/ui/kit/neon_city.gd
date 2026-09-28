@@ -1217,6 +1217,11 @@ func _build_geometry() -> void:
 ## it (the same triangles, roofs, lights, trails, beacons and signs). Off outside the test
 ## runner (the game bakes instead); a test can switch it off.
 static var geometry_memo_enabled: bool = _is_gut_run()
+## Test runs only: the headless city skips emitting its triangles (the dummy renderer
+## never shows them) and still places every roof, light, trail, beacon and sign the
+## overlays and tests read, exactly as a full build does. On outside the test runner;
+## test_city_geometry_memo builds every district with it on.
+static var emit_triangles: bool = not _is_gut_run()
 ## Kept geometries (least recently used drop out past GEOMETRY_MEMO_CAP).
 const GEOMETRY_MEMO_CAP := 48
 static var _geometry_memo: Dictionary = {}
@@ -1232,7 +1237,7 @@ func _memo_key() -> String:
 	names.sort()
 	for k in names:
 		cult.append([String(k), String(cultures[k])])
-	return var_to_str([city_seed, String(district), net_mode, ink_set, face_texture, cult, corp_creep, corp_color,
+	return var_to_str([emit_triangles, city_seed, String(district), net_mode, ink_set, face_texture, cult, corp_creep, corp_color,
 		var_to_str(influence), size, _ox, _oy])
 
 
@@ -1433,16 +1438,22 @@ func _hq_distance(i: int, j: int) -> float:
 # --- Primitives ---------------------------------------------------------------------------
 
 func _tri(a: Vector2, b: Vector2, c: Vector2, ca: Color, cb: Color, cc: Color) -> void:
+	if not emit_triangles:
+		return
 	_verts.append_array([a, b, c])
 	_cols.append_array([ca, cb, cc])
 
 
 func _quad(a: Vector2, b: Vector2, c: Vector2, d: Vector2, ca: Color, cb: Color, cc: Color, cd: Color) -> void:
+	if not emit_triangles:
+		return
 	_tri(a, b, c, ca, cb, cc)
 	_tri(a, c, d, ca, cc, cd)
 
 
 func _poly(pts: PackedVector2Array, col: Color) -> void:
+	if not emit_triangles:
+		return
 	var c := Vector2.ZERO
 	for p in pts:
 		c += p
@@ -1456,6 +1467,8 @@ func _poly(pts: PackedVector2Array, col: Color) -> void:
 ## and tapers, overshooting the corners by a varying amount, then a faint second pass a
 ## hair off the first, as if the line was gone over again.
 func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: bool = true) -> void:
+	if not emit_triangles:
+		return
 	var length := a.distance_to(b)
 	if length < 0.5:
 		return
@@ -1479,6 +1492,8 @@ func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: boo
 
 
 func _stroke(a: Vector2, b: Vector2, n: Vector2, bow: float, width: float, col: Color, key: int) -> void:
+	if not emit_triangles:
+		return
 	var steps := clampi(int(a.distance_to(b) / 5.0), 2, 400)
 	var prev_l := Vector2.ZERO
 	var prev_r := Vector2.ZERO
