@@ -242,6 +242,11 @@ func _input(event: InputEvent) -> void:
 	# and is consumed; it does nothing else.
 	if flights.is_empty():
 		return
-	if MotionSkip.is_press(event):
-		finish()
+	# ANIM-R4 C2 (MotionSkip.verdict): a press that works the screen ends them and passes on;
+	# an open pause menu keeps its presses.
+	var v := MotionSkip.verdict(event, self)
+	if v == MotionSkip.Verdict.IGNORE:
+		return
+	finish()
+	if v == MotionSkip.Verdict.CONSUME:
 		MotionSkip.consume(self, event)

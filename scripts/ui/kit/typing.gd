@@ -29,6 +29,10 @@ static func type_in(p_label: Control, id: StringName = &"dispatch_type") -> floa
 	if total <= 0:
 		return 0.0
 	var seconds := total * Motion.seconds(id)
+	# ANIM-R4 C7: an entry with an amplitude types the whole text within that many seconds
+	# (an event's story took 8 s, its panel empty meanwhile).
+	if Motion.amplitude(id) > 0.0:
+		seconds = minf(seconds, Motion.amplitude(id) / maxf(Motion.speed, Motion.SPEED_MIN))
 	p_label.set(&"visible_characters", 0)
 	var e := Motion.entry(id)
 	var tw := p_label.create_tween()

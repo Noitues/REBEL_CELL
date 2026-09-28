@@ -154,7 +154,7 @@ func test_the_press_predicate() -> void:
 			"res://scripts/ui/kit/menu_motion.gd", "res://scripts/ui/kit/typing.gd", "res://scripts/ui/kit/page_transition.gd",
 			"res://scripts/autoload/dialogue.gd", "res://scripts/ui/netrun_scene.gd"]:
 		var src := FileAccess.get_file_as_string(path)
-		assert_true(src.contains("MotionSkip.is_press(event)"), "%s uses the shared predicate" % path)
+		assert_true(src.contains("MotionSkip.is_press(event)") or src.contains("MotionSkip.verdict(event"), "%s uses the shared predicate (ANIM-R4 C2: or the verdict built on it)" % path)
 		assert_true(src.contains("MotionSkip.consume("), "%s applies the consume rule" % path)
 		assert_false(src.contains("InputEventJoypadButton and event.pressed"), "%s has no press test of its own" % path)
 
@@ -545,9 +545,24 @@ func _allowed(scene: Control, beats: Array[Dictionary]) -> float:
 	var extra := 0.0
 	var settle := 0.0
 	for b in beats:
-		if ResolveBeats.flies(b):
-			extra += float(timing["hit_gap"])
 		settle = maxf(settle, ResolveBeats.settle_after(b, timing))
+	# ANIM-R4 C6a (on purpose): each projectile waits for the last one's arrival, and the other
+	# side's first one for every roll plus `resolve_side_gap` (another attacker on the same
+	# side: `resolve_attacker_gap`); none of it is squeezed.
+	var last_side := ""
+	var last_source := ""
+	for b in beats:
+		if not ResolveBeats.flies(b):
+			continue
+		extra += maxf(float(timing["hit_gap"]), ResolveBeats.arrive_after(b, timing))
+		var side := String(b.get("side", ""))
+		if last_side != "" and side != "" and side != last_side:
+			extra += settle + float(timing["side_gap"])
+		elif last_source != "" and String(b["source"]) != last_source:
+			extra += float(timing["attacker_gap"])
+		if side != "":
+			last_side = side
+		last_source = String(b["source"])
 	return Motion.seconds(&"resolve_sequence") + extra + settle + 0.001
 
 

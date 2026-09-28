@@ -100,6 +100,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d HP,+%d HP
 +%d MORE,+%d MORE
 +%d NEEDLE,+%d NEEDLE
++%d RAM,+%d RAM
 +%d SHIELD,+%d SHIELD
 ", a run in progress",", a run in progress"
 -%d RAM,-%d RAM
@@ -165,6 +166,7 @@ Back to the HQ; the raid waits until you start the defence.,Back to the HQ; the 
 Back to the main menu.,Back to the main menu.
 Back to this run's route.,Back to this run's route.
 Back to title,Back to title
+Bad for you: %s,Bad for you: %s
 Badges,Badges
 Banked,Banked
 Best ICE by corporation: %s.,Best ICE by corporation: %s.
@@ -735,6 +737,7 @@ GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
+Good for you: %s,Good for you: %s
 HEAL,HEAL
 HEAT,HEAT
 HEAT %d - %s,HEAT %d - %s
@@ -1429,7 +1432,7 @@ RAIDS,RAIDS
 RAM %d/%d,RAM %d/%d
 RAM %s,RAM %s
 RAM%s,RAM%s
-RANDOM STATUS,RANDOM STATUS
+RANDOM SLICE,RANDOM SLICE
 RANDOM: ODDS,RANDOM: ODDS
 RANK,RANK
 RC1-corporation-ice-seed-home-class,RC1-corporation-ice-seed-home-class

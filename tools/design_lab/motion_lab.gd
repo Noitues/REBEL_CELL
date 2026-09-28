@@ -113,6 +113,13 @@ const DEMOS := {
 	# ANIM-R3 (combat, input and screens): each plays in a live SEND IT.
 	&"impact_mark": ["scene", "send_block"], &"forecast_tick": ["scene", "send_hit"], &"forecast_fade": ["scene", "send_hit"],
 	&"status_mark": ["scene", "send_hit"],
+	# ANIM-R4 (combat, input and screens): the shares that were inline play where they act (a
+	# live SEND IT, the break, the MODEM sign); the two sides one after the other in a SEND IT
+	# where both hit; the RAM refill in the RAM demo.
+	&"hit_line_flight": ["scene", "send_hit"], &"ride_swap": ["scene", "send_hit"], &"ride_shrink": ["scene", "send_hit"],
+	&"ride_perfect": ["scene", "send_hit"], &"break_crack": ["scene", "send_kill"], &"modem_sign_strike": ["screen", "modem"],
+	&"modem_sign_flicker": ["screen", "modem"], &"resolve_side_gap": ["scene", "send_both"], &"resolve_attacker_gap": ["scene", "send_both"],
+	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -147,8 +154,8 @@ const DRAG_TO := Vector2(820, 300)
 const DRAG_FRAMES := 18
 ## Aim demo: frames between aim steps.
 const AIM_STEP_FRAMES := 8
-## ANIM-R2: the number demo's hits: [HP it takes, what its guard soaked].
-const DEMO_HITS := [[9, 5], [3, 0]]
+## ANIM-R4 C6e: the number demo gives the enemy a guard of this fraction (1/N) of the hit.
+const DEMO_GUARD_SHARE := 3
 ## The cancel demo lets go here.
 const CANCEL_AT := Vector2(760, 330)
 ## A number rises at most this share of its hub (as in the combat scene).
@@ -592,7 +599,7 @@ func _play_screen(what: String) -> void:
 					radio.append(TYPE_TEXT)
 					radio.append("vs Solace Collections | ICE 0")
 					await get_tree().process_frame
-					length = Typing.type_in(radio.label, &"radio_type")
+					length = Typing.type_in(radio.label, _id if _id == &"event_type" else &"radio_type")
 				"jack":
 					var jack := ZineStamp.new("JACK IN", Palette.CELL_PINK)
 					jack.icon_kind = StatIcon.JACK_IN
@@ -711,6 +718,25 @@ func _play_scene(what: String) -> void:
 			_scene.skip_motion()
 			await get_tree().process_frame
 			_scene.end_turn()
+		"send_both":
+			# ANIM-R4 C6a: a SEND IT where both sides land hits (fights and nudges tried until
+			# the preview has the operative hitting the enemy and the enemy hitting back): the
+			# operative's land in full, a gap, then the enemy's.
+			var found := false
+			for s in DEMO_BLOCK_SEEDS:
+				for k in DEMO_NUDGE_TRIES:
+					if _preview_hits(enemy) and _enemy_hits_player():
+						found = true
+						break
+					_scene.nudge_wheel(&"player", 1)
+				if found:
+					break
+				_scene.start_fight(SCENE_ENEMY, SCENE_SEED + s + 1)
+				_scene.skip_motion()
+				enemy = _scene.engine.state().enemies[0].id
+			_scene.skip_motion()
+			await get_tree().process_frame
+			_scene.end_turn()
 		"send_block":
 			# ANIM-R3: a SEND IT where the enemy's hit reaches the operative and is soaked whole
 			# (lab only: a fight whose enemy lands a hit, the operative given the guard for it):
@@ -755,28 +781,34 @@ func _play_scene(what: String) -> void:
 			else:
 				_scene._cancel_drag(i, CANCEL_AT)
 		"numbers":
-			# ANIM-R2: two hits played as the replay plays them (ResolveBeats beats through the
-			# scene): a partly blocked one (the raw 14, the guard's "5 BLOCKED" chip, then 9
-			# travelling into the HP), then a plain 3, one projectile at a time.
-			var st: CombatState = _scene.engine.state()
-			var before := st.duplicate_state()
-			var hp := ev.combatant.hp
-			var t := 0.0
-			for n in DEMO_HITS:
-				var through: int = n[0]
-				var soaked: int = n[1]
-				hp -= through
-				var b := {"kind": "damage", "event_index": 0, "phase": "resolve", "pass": "offensive", "source": st.player.id,
-					"pointer_index": 0, "target": ev.combatant.id, "amount": through, "crit": false, "hp_after": hp, "slot": -1,
-					"status": 0, "tier": -1, "soaked": soaked, "host": &"", "source_slot": -1, "raw": through + soaked,
-					"blocked": soaked, "shielded": 0}
-				_scene._after(t, _scene._play_beat.bind(b, before, st))
-				t += Motion.seconds(&"hit_line")
+			# ANIM-R4 C6e: a real SEND IT (the ANIM-R2 demo played made-up beats over the live
+			# fight, so its tag read "MISS · half power" while a 14 flew). The operative's hits
+			# pierce (its ring), so the guarded hit is the enemy's: fights tried until the enemy
+			# hits the operative, who is given a block of a third of that hit (lab only), and the
+			# forecast refreshed, so the tag says what then happens: the raw hit rides, meets
+			# the guard where it strikes (sword - shield = through) and the rest pops and travels.
+			var pl: StringName = _scene.engine.state().player.id
+			for s in DEMO_BLOCK_SEEDS:
+				var raw := _preview_raw_hit(pl)
+				if raw > 1:
+					_scene.engine.state().player.block = maxi(1, raw / DEMO_GUARD_SHARE)
+					if _preview_guarded(pl):
+						break
+					_scene.engine.state().player.block = 0
+				_scene.start_fight(SCENE_ENEMY, SCENE_SEED + s + 1)
+				_scene.skip_motion()
+				pl = _scene.engine.state().player.id
+			_scene._refresh(_scene.engine.state())
+			_scene.skip_motion()
+			await get_tree().process_frame
+			_scene.end_turn()
 		"enter":
 			ev.play_enter()
 		"refuse":
 			_scene.engine.state().ram = 0
 			_scene._refresh(_scene.engine.state())
+			# ANIM-R4 C6h: the lab set RAM to 0; that is no spend (no "-N RAM" float before the refusal).
+			_scene.ram_note.finish_motion()
 			_scene.select_card(0)
 			_scene.respin()
 		"break":
@@ -804,6 +836,25 @@ func _enemy_hits_player() -> bool:
 		return false
 	for e in result.events:
 		if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == _scene.engine.state().player.id:
+			return true
+	return false
+
+
+## The biggest raw hit SEND IT would land on `enemy` (any combatant) now that a guard can
+## meet (no pierce; 0 when none), from the preview.
+func _preview_raw_hit(enemy: StringName) -> int:
+	var best := 0
+	for e in _scene.engine.preview_end_turn().events:
+		if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == enemy and not bool(e.get("pierce", false)):
+			best = maxi(best, int(e.get("amount", 0)))
+	return best
+
+
+## True when SEND IT would land a hit on `enemy` (any combatant) that its guard partly
+## takes (the preview).
+func _preview_guarded(enemy: StringName) -> bool:
+	for e in _scene.engine.preview_end_turn().events:
+		if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == enemy and int(e.get("blocked", 0)) + int(e.get("shielded", 0)) > 0 and int(e.get("hp_damage", 0)) > 0:
 			return true
 	return false
 

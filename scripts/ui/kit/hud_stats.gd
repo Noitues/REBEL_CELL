@@ -155,6 +155,14 @@ func flash_refusal(tag: String, text: String) -> void:
 		queue_redraw())
 
 
+## ANIM-R4 C7: the refusal's words as drawn under a tag `width` px wide at `fs`: one line,
+## or split at its dots when the line is wider than the tag (it ran past the panel edge).
+static func refusal_lines(text: String, width: float, fs: int) -> PackedStringArray:
+	if Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= width or not text.contains(" · "):
+		return PackedStringArray([text])
+	return text.split(" · ")
+
+
 ## The refusal shown on a tag now ("" when none; tests).
 func refusal_text() -> String:
 	return _refused_text
@@ -532,8 +540,12 @@ func _draw() -> void:
 			draw_rect(r, Color(red, red.a * REFUSED_FILL), true)
 			draw_rect(r, red, false, 2.0)
 			var rfs := roundi(VALUE_SIZE * s * REFUSED_TEXT_SHARE)
-			var tw := Palette.display().get_string_size(_refused_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
-			var at := Vector2(-tw * 0.5, r.end.y + rfs)
-			draw_string_outline(Palette.display(), at, _refused_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, 4, Palette.NIGHT_SKY)
-			draw_string(Palette.display(), at, _refused_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, red)
+			# ANIM-R4 C7: wider than its tag, the words wrap at their dot (NEED 53 over HAVE 5):
+			# on one line they ran past the Modem's panel edge at 1.6.
+			var lines := refusal_lines(_refused_text, r.size.x, rfs)
+			for li in lines.size():
+				var tw := Palette.display().get_string_size(lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
+				var at := Vector2(r.get_center().x - tw * 0.5, r.end.y + rfs * (li + 1))
+				draw_string_outline(Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, 4, Palette.NIGHT_SKY)
+				draw_string(Palette.display(), at, lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, red)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

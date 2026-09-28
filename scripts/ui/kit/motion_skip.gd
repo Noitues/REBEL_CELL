@@ -30,11 +30,34 @@ extends RefCounted
 ##   aimed at the motion itself are consumed (the raid playout's step, ambient typing, the
 ##   subtitles). A consumed press still switches the key hints between keys and pad
 ##   (`consume` tells Settings which device it came from).
+## - **One rule everywhere (ANIM-R4 C2, `verdict`)**: every helper asks `verdict`: IGNORE
+##   while a PauseMenu is open (the menu keeps its presses; the motion plays on), PASS for a
+##   press that works the screen (complete the motion, let the press through), CONSUME for
+##   any other press. `works_ui` trusts the hovered control under the point (a button
+##   covered by a panel is not clicked), requires the button's `button_mask` (a right-click
+##   on a button works nothing), and searches rects only when nothing hovered holds the
+##   point (a click pushed without a mouse move first). A helper may name buttons whose
+##   press it keeps (`keep`: the combat replay keeps SEND IT, RESPIN, UNDO and the hand, so
+##   a press that ends the replay never also plays the next turn blind).
 
 ## Focus-move actions (a menu's D-pad / arrows / Tab).
 const FOCUS_ACTIONS: Array[StringName] = [&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"]
 ## The group every open PauseMenu is in (presses belong to it while it is open).
 const PAUSE_GROUP := &"pause_menu"
+## What a helper does with a press while its motion plays (`verdict`).
+enum Verdict { IGNORE, PASS, CONSUME }
+
+
+## ANIM-R4 C2: the one press rule as a verdict. IGNORE: not a press, or an open PauseMenu
+## owns it (the motion goes on); PASS: a press that works the screen (`works_ui`, and not
+## on a button in `keep`): complete the motion and let it through; CONSUME: complete the
+## motion and `consume` the press.
+static func verdict(event: InputEvent, node: Node, keep: Array = []) -> Verdict:
+	if not is_press(event) or pause_open(node):
+		return Verdict.IGNORE
+	if works_ui(event, node, keep):
+		return Verdict.PASS
+	return Verdict.CONSUME
 
 
 ## True when `event` is a press that completes a motion (see the class notes).
@@ -68,8 +91,10 @@ static func consume(node: Node, event: InputEvent = null) -> void:
 
 ## True when `event` works the screen (ANIM-R3): a focus move, the Settings key, accept on
 ## the focused usable button, or a click on a usable button (the one under the pointer).
-## Such a press completes a motion and passes on to what it works.
-static func works_ui(event: InputEvent, node: Node) -> bool:
+## Such a press completes a motion and passes on to what it works. ANIM-R4 C2: the click's
+## mouse button must be in the button's `button_mask`; a button in `keep` (or inside one)
+## doesn't count (its helper keeps that press).
+static func works_ui(event: InputEvent, node: Node, keep: Array = []) -> bool:
 	if event == null:
 		return false
 	if is_focus_move(event) or event.is_action(&"open_settings"):
@@ -79,10 +104,20 @@ static func works_ui(event: InputEvent, node: Node) -> bool:
 	var vp := node.get_viewport()
 	if vp == null:
 		return false
-	if event.is_action(&"ui_accept") and not (event is InputEventMouseButton):
-		return usable_button(vp.gui_get_focus_owner()) != null
+	var b: BaseButton = null
 	if event is InputEventMouseButton:
-		return button_at(vp, (event as InputEventMouseButton).global_position) != null
+		var mb := event as InputEventMouseButton
+		b = button_at(vp, mb.global_position, mb.button_index)
+	elif event.is_action(&"ui_accept"):
+		b = usable_button(vp.gui_get_focus_owner())
+	return b != null and not kept(b, keep)
+
+
+## True when `b` is one of `keep` or inside one of them.
+static func kept(b: Node, keep: Array) -> bool:
+	for k in keep:
+		if k is Node and is_instance_valid(k) and (k == b or (k as Node).is_ancestor_of(b)):
+			return true
 	return false
 
 
@@ -105,19 +140,40 @@ static func usable_button(c: Node) -> BaseButton:
 	return null
 
 
-## The usable button at `at` (global) in `vp`: the hovered control's, else the topmost
-## button whose rect holds the point (a click pushed without a mouse move first).
-static func button_at(vp: Viewport, at: Vector2) -> BaseButton:
-	var hovered := usable_button(vp.gui_get_hovered_control())
-	if hovered != null and hovered.get_global_rect().has_point(at):
-		return hovered
-	var best: BaseButton = null
-	for b in vp.get_tree().root.find_children("*", "BaseButton", true, false):
-		var btn := b as BaseButton
-		if btn.get_viewport() == vp and btn.is_visible_in_tree() and not btn.disabled and btn.mouse_filter != Control.MOUSE_FILTER_IGNORE \
-				and btn.get_global_rect().has_point(at):
-			best = btn  # tree order: the last one found draws on top
-	return best
+## The usable button at `at` (global) in `vp` that mouse button `button` (an index; 0 =
+## any) presses. ANIM-R4 C2: the hovered control is trusted when it holds the point (a
+## button under a panel isn't clicked: the panel is what is hovered); only when nothing
+## hovered holds the point (a click pushed without a mouse move first) is the topmost
+## usable button whose rect holds it taken. A button whose `button_mask` leaves out
+## `button` (a right-click on a left-click button) works nothing.
+static func button_at(vp: Viewport, at: Vector2, button: int = 0) -> BaseButton:
+	var hovered := vp.gui_get_hovered_control()
+	if hovered != null and is_instance_valid(hovered) and hovered.is_visible_in_tree() and hovered.get_global_rect().has_point(at):
+		var hb := usable_button(hovered)
+		return hb if hb != null and takes(hb, button) else null
+	# Nothing hovered holds the point: the topmost control that takes the mouse there (a
+	# higher canvas layer first, then the later in tree order: it draws on top) is what the
+	# click reaches, as the viewport would find it; a button only when it is (or holds) that.
+	var top: Control = null
+	var top_layer := -INF
+	for n in vp.get_tree().root.find_children("*", "Control", true, false):
+		var c := n as Control
+		if c.get_viewport() != vp or c.mouse_filter == Control.MOUSE_FILTER_IGNORE or not c.is_visible_in_tree() or not c.get_global_rect().has_point(at):
+			continue
+		var cl := c.get_canvas_layer_node()
+		var layer := float(cl.layer) if cl != null else 0.0
+		if layer >= top_layer:
+			top_layer = layer
+			top = c
+	var best := usable_button(top)
+	return best if best != null and takes(best, button) else null
+
+
+## True when mouse button `button` (an index; 0 = any) presses `b` (its `button_mask`).
+static func takes(b: BaseButton, button: int) -> bool:
+	if button <= 0:
+		return true
+	return (b.button_mask & (1 << (button - 1))) != 0
 
 
 ## True while a PauseMenu is open (its presses are its own).

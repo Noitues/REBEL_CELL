@@ -574,10 +574,11 @@ func test_a_hit_soaked_whole_shows_zero_with_a_shield_where_it_struck_and_all_bl
 		assert_eq(String(tags[0]["text"]), tr("ALL BLOCKED"))
 		assert_eq(String(tags[0]["icon"]), CombatFxLayer.GUARD_NULL, "with its shield-over-empty-set mark")
 		assert_almost_eq(float(tags[0]["delay"]), CombatFxLayer.impact_seconds(), 0.001, "at the impact moment, not later")
-	var guards: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "number" and int(s.get("icon", -1)) >= 0)
-	assert_eq(guards.size(), 1, "the blocker's guard pops as a glyph and a number (A6e)")
-	if not guards.is_empty():
-		assert_eq(String(guards[0]["text"]), "6")
+	# ANIM-R4 C6c (expectation changed): the guard's part is in the impact's equation (sword 6
+	# − shield 6 = 0), not a separate number under the hub.
+	if not marks.is_empty():
+		var texts: Array = (marks[0]["items"] as Array).map(func(it: Dictionary) -> String: return String(it["text"]))
+		assert_eq(texts, ["6", "6", "0"], "sword 6 − shield 6 = 0")
 	for s in scene.fx_layer.sprites:
 		assert_false(String(s.get("text", "")).contains(tr("BLOCKED")) and s["kind"] == "number", "no BLOCKED word badge")
 	scene.skip_motion()
@@ -752,8 +753,8 @@ func test_the_icon_row_under_the_hp_says_the_last_turn() -> void:
 		{"type": "heal", "target": "player", "amount": 3},
 	]
 	var icons: Dictionary = load("res://scripts/ui/combat_scene.gd").last_turn_icons(before, events)
-	assert_eq(icons[&"player"], {"hit": 6, "soaked": 5, "evaded": 0, "hp": -1}, "sword 6 -> shield 5 = -1 (the turn start's heal is not the resolve's)")
-	assert_eq(icons[&"enemy_0"], {"hit": 4, "soaked": 4, "evaded": 0, "hp": 0}, "a hit soaked whole: -0 with a shield")
+	assert_eq(icons[&"player"], {"hit": 6, "soaked": 5, "evaded": 0, "hp": -1, "dealt": 1}, "sword 6 − shield 5 = 1 (the turn start's heal is not the resolve's)")
+	assert_eq(icons[&"enemy_0"], {"hit": 4, "soaked": 4, "evaded": 0, "hp": 0, "dealt": 0}, "a hit soaked whole: = 0 with a shield")
 	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		var scene := await _combat(&"collections_agent", scale)
 		_live()
@@ -839,7 +840,7 @@ func test_after_a_win_the_next_step_replaces_send_it_at_once() -> void:
 	assert_false(send.visible, "SEND IT is gone at once (A6h)")
 	assert_false(combat._sticker_box.visible, "and RESPIN / UNDO")
 	assert_true(combat.continue_shown(), "the next step's action shows in its place, replay or not")
-	assert_eq((combat._continue_button as DripButton).tag_text, tr("LOOT") if RunManager.netrun.run.phase == RunState.Phase.REWARD else tr("CONTINUE"), "named for the next step")
+	assert_eq((combat._continue_button as DripButton).tag_text, "LOOT" if RunManager.netrun.run.phase == RunState.Phase.REWARD else "CONTINUE", "named for the next step")
 	# Pressing it moves on at once.
 	(combat._continue_button as Button).emit_signal(&"pressed")
 	await _frames(2)
@@ -938,12 +939,12 @@ func test_the_modem_first_focus_is_the_first_item() -> void:
 func test_the_modem_sign_is_whole_before_its_warm_up_ends() -> void:
 	var sign := ModemSign.new()
 	add_child_autofree(sign)
-	var lit_at := ModemSign.STRIKE_SHARE + ModemSign.FLICKER_SHARE
+	var lit_at := ModemSign.strike_share() + ModemSign.flicker_share()
 	assert_lt(lit_at, 0.8, "every tube holds lit well before the warm-up ends")
 	sign.warm = lit_at + 0.01
 	for id in 12:
 		assert_eq(sign.tube(id), 1.0, "tube %d is lit" % id)
-	sign.warm = ModemSign.STRIKE_SHARE * 0.5 + ModemSign.FLICKER_SHARE
+	sign.warm = ModemSign.strike_share() * 0.5 + ModemSign.flicker_share()
 	var lit := 0
 	for id in 6:
 		if sign.tube(id) >= 1.0:

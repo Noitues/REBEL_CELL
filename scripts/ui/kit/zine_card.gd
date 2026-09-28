@@ -744,7 +744,10 @@ func buy_room() -> float:
 	var s := text_scale
 	if buy_button != null:
 		var h := buy_button.size.y if buy_button.size.y > 0.0 else BuyButton.BUY_HEIGHT * s
-		return h + BuyButton.EDGE * s + TILE_GAP * s
+		# ANIM-R4 C7: and the reach of its flap (`note_flap` degrees about its top edge lift a
+		# top corner by half its width x sin: at 1.0 the flapping BUY lay on the text's last line).
+		var flap := buy_button.size.x * 0.5 * absf(sin(deg_to_rad(Motion.amplitude(&"note_flap"))))
+		return h + BuyButton.EDGE * s + TILE_GAP * s + flap
 	return PRICE_TAG_H * s + 8.0 if (price >= 0 or cost >= 0) else 6.0
 
 

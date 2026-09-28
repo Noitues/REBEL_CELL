@@ -28,10 +28,9 @@ var _tweens: Array[Tween] = []
 ## Flicker steps across the warm-up, and the alpha of an unlit tube.
 const WARM_STEPS := 14
 const TUBE_OFF_ALPHA := 0.12
-## ANIM-R3 A7: every tube strikes within this share of the warm-up, flickers for this share
-## after it (lit at a flicker step with this chance), then holds.
-const STRIKE_SHARE := 0.45
-const FLICKER_SHARE := 0.25
+## ANIM-R3 A7 / ANIM-R4 C5: every tube strikes within `modem_sign_strike` of the warm-up,
+## flickers for `modem_sign_flicker` after it (lit at a flicker step with this chance: a
+## drawing threshold, not motion), then holds.
 const FLICKER_ON := 0.6
 ## Tube ids for the warm-up hash: the border, then each letter.
 const TUBE_BORDER := 0
@@ -82,16 +81,16 @@ func warming() -> bool:
 
 ## A tube's brightness now: lit once warm, else flickering on at hash-picked steps.
 ## ANIM-R3 A7: each tube strikes at its own hash-picked moment in the first
-## STRIKE_SHARE of the warm-up, flickers for FLICKER_SHARE, then holds lit, so the sign is
+## strike_share() of the warm-up, flickers for flicker_share(), then holds lit, so the sign is
 ## whole well before the warm-up ends (a still mid-way showed one lit letter: it read as
 ## broken).
 func tube(id: int) -> float:
 	if warm >= 1.0:
 		return 1.0
-	var strike := float(absi(hash([id, 41])) % 1000) / 1000.0 * STRIKE_SHARE
+	var strike := float(absi(hash([id, 41])) % 1000) / 1000.0 * strike_share()
 	if warm < strike:
 		return TUBE_OFF_ALPHA
-	if warm >= strike + FLICKER_SHARE:
+	if warm >= strike + flicker_share():
 		return 1.0
 	var step := floori(warm * WARM_STEPS)
 	var h := float(absi(hash([id, step, 43])) % 1000) / 1000.0
@@ -220,3 +219,13 @@ func _sticky(at: Vector2, text: String, paper: Color, tilt: float) -> void:
 ## The sign's words as drawn, in the player's language (tests).
 func shown_words() -> PackedStringArray:
 	return PackedStringArray([tr(WORD_MODEM), tr(WORD_CYBER), tr(WORD_SHOP), tr(NOTES[0]), tr(NOTES[1])])
+
+
+## ANIM-R4 C5: each tube strikes within this share of the warm-up (`modem_sign_strike`).
+static func strike_share() -> float:
+	return clampf(Motion.amplitude(&"modem_sign_strike"), 0.0, 1.0)
+
+
+## ANIM-R4 C5: a struck tube flickers for this share of the warm-up (`modem_sign_flicker`).
+static func flicker_share() -> float:
+	return clampf(Motion.amplitude(&"modem_sign_flicker"), 0.0, 1.0)

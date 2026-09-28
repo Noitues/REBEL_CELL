@@ -461,12 +461,17 @@ func test_a_hit_flies_in_its_sides_colour_with_its_raw_number_and_its_guard_chip
 	assert_eq(String(lines[0]["label"]), "14", "its raw number rides with it")
 	var travel: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "travel")
 	assert_eq(travel.size(), 1)
-	assert_eq(String(travel[0]["raw"]), "-14", "the raw number lands first")
-	assert_eq(String(travel[0]["text"]), "-9", "then what gets through, which travels into the HP")
-	assert_almost_eq(float(travel[0]["delay"]), CombatFxLayer.impact_seconds(), 0.001, "on impact")
-	# ANIM-R3 A6e (expectation changed): the guard's part is the blocker's glyph and number.
-	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "number" and String(s["text"]) == "5" and int(s.get("icon", -1)) >= 0).size(), 1,
-		"the guard's part comes off as a shield and its number")
+	# ANIM-R4 C6c (expectation changed): the raw hit meets its guard where it struck (sword 14
+	# − shield 5 = 9), then what gets through pops fresh in the hub and travels (no raw number
+	# morphing into it, no separate guard number).
+	assert_eq(String(travel[0].get("raw", "")), "", "no raw number morphs in the hub")
+	assert_eq(String(travel[0]["text"]), "-9", "what gets through travels into the HP")
+	assert_almost_eq(float(travel[0]["delay"]), CombatFxLayer.impact_seconds() + Motion.seconds(&"hit_absorb"), 0.001, "after the impact's equation")
+	var eq: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
+	assert_eq(eq.size(), 1, "the equation shows where it struck")
+	if not eq.is_empty():
+		var texts: Array = (eq[0]["items"] as Array).map(func(it: Dictionary) -> String: return String(it["text"]))
+		assert_eq(texts, ["14", "5", "9"], "sword 14 − shield 5 = 9")
 	scene.skip_motion()
 	# The operative's hits in the operative's colour; a blocked hit still flies and shows it.
 	var mine := base.duplicate()

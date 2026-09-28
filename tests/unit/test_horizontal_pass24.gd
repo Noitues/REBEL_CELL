@@ -4,6 +4,9 @@ extends GutTest
 ## hint fit at big text; what block soaked is shown beside a loss.
 
 const SCENE := "res://scenes/combat/combat_scene.tscn"
+## The scene script, for its static helpers (ANIM-R4 C3: instantiating the scene for them
+## left a CombatScene unfreed per test).
+const SCENE_SCRIPT := "res://scripts/ui/combat_scene.gd"
 
 var _text_scale_before: float = 1.0
 var _translation: Translation = null
@@ -257,12 +260,12 @@ func test_guard_block_counts_on_the_host_line() -> void:
 			host = e
 	assert_not_null(guard, "the drone")
 	var events: Array[Dictionary] = [{"type": "block", "target": guard.id, "amount": 3}]
-	var lines: Dictionary = load(SCENE).instantiate().get_script().last_turn_lines(s, s.duplicate_state(), events)
+	var lines: Dictionary = load(SCENE_SCRIPT).last_turn_lines(s, s.duplicate_state(), events)
 	assert_string_contains(String(lines[guard.host_id if guard.host_id != &"" else host.id]), "GUARD +3 BLOCK")
 
 
 func test_signed_numbers_avoid_the_plus_format() -> void:
-	var script: Script = load(SCENE).instantiate().get_script()
+	var script: Script = load(SCENE_SCRIPT)
 	assert_eq(script.signed(3), "+3")
 	assert_eq(script.signed(-2), "-2")
 	assert_eq(script.signed(0), "0")
@@ -290,7 +293,7 @@ func test_a_capped_shield_event_reports_the_shield_gained() -> void:
 	assert_eq(int(events[0]["amount"]), 2, "the event says what was gained")
 	var before := s.duplicate_state()
 	before.player.shield = cap - 2
-	var line: String = load(SCENE).instantiate().get_script().last_turn_lines(before, s, events)[s.player.id]
+	var line: String = load(SCENE_SCRIPT).last_turn_lines(before, s, events)[s.player.id]
 	assert_string_contains(line, "+2 SHIELD")
 
 
@@ -332,7 +335,7 @@ func test_last_turn_shows_the_ram_a_turn_brings_back() -> void:
 	var after := before.duplicate_state()
 	after.ram = 10
 	var none: Array[Dictionary] = []
-	var line: String = load(SCENE).instantiate().get_script().last_turn_lines(before, after, none)[&"player"]
+	var line: String = load(SCENE_SCRIPT).last_turn_lines(before, after, none)[&"player"]
 	assert_string_contains(line, "RAM +4")
 
 

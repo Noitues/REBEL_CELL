@@ -26,17 +26,15 @@ const FADE_SHARE := 0.35
 const GROW_FROM := 0.6
 const CRIT_POP_SCALE := 1.35
 const TRAVEL_FADE_TO := 0.6
-## A hit's projectile flies over this share of `hit_line` (the impact), and its line fades
-## over the rest.
-const LINE_DRAW_SHARE := 0.5
+## ANIM-R4 C5: a hit's projectile flies over `hit_line_flight`'s share of `hit_line` (the
+## impact), and its line fades over the rest (the table's, see line_share()).
 ## The number riding with a projectile: its size as a share of a floating number's, and its
 ## offset from the projectile's head (share of that size).
 const RIDE_FONT_SHARE := 0.8
 const RIDE_OFFSET := 0.9
-## ANIM-R3 A6c: the slice's own value rides this share of the flight, shrinking to this
-## share of its size, before the dealt value takes its place.
-const RIDE_SWAP_SHARE := 0.45
-const RIDE_SHRINK_TO := 0.6
+## ANIM-R3 A6c / ANIM-R4 C5: the slice's own value rides `ride_swap`'s share of the flight,
+## shrinking to `ride_shrink`'s share of its size, before the dealt value takes its place
+## (both in the motion table).
 ## Status stamp lettering (px at text scale 1.0) and its disc.
 const STAMP_FONT := 16
 const STAMP_DISC := 11.0
@@ -166,12 +164,66 @@ func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector
 ## victim's HP ring or its token): a glyph (`icon`, a slice type: DEFEND for a hit soaked
 ## whole, EVADE for one evaded) and `text` ("0"), popping from `impact_mark`'s amplitude
 ## scale after `delay` (the impact), holding its duration and fading.
-func impact(at: Vector2, text: String, icon: int, color: Color, delay: float = 0.0) -> void:
+## ANIM-R4 C6c: with `items` (hit_equation's: sword and the raw hit, the guard's glyph and
+## what it took, "=" and what got through) the mark is that equation, the one notation for
+## a hit meeting a guard ("8 - 8 = 0" as glyphs).
+func impact(at: Vector2, text: String, icon: int, color: Color, delay: float = 0.0, items: Array = []) -> void:
 	if not Motion.live(&"impact_mark"):
 		return
 	var fs := roundi(NUMBER_FONT * Settings.text_scale * IMPACT_FONT_SHARE)
 	_add({"kind": "impact", "at": at, "text": text, "icon": icon, "color": color, "fs": fs, "delay": delay,
-		"dur": Motion.seconds(&"impact_mark"), "from": Motion.amplitude(&"impact_mark")})
+		"dur": Motion.seconds(&"impact_mark"), "from": Motion.amplitude(&"impact_mark"), "items": items})
+
+
+## The box an impact mark covers at rest (global), for the layout checks.
+static func impact_rect(at: Vector2, text: String, icon: int, items: Array = []) -> Rect2:
+	var fs := roundi(NUMBER_FONT * Settings.text_scale * IMPACT_FONT_SHARE)
+	var w := equation_width(items, fs, Palette.display()) if not items.is_empty() \
+		else Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + glyph_width(fs, icon)
+	return Rect2(at - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3))
+
+
+## ANIM-R4 C6c: one notation for a hit and its guard, everywhere (the mark where a hit
+## struck, the icon row under an HP): items [{icon (a slice type, -1 = none), text, color,
+## sep ("" / the minus / "=", drawn before it)}]. Their width at `fs` in `font`.
+static func equation_width(items: Array, fs: int, font: Font) -> float:
+	var w := 0.0
+	for it in items:
+		if String(it.get("sep", "")) != "":
+			w += fs * EQ_SEP_SHARE
+		if int(it.get("icon", -1)) >= 0:
+			w += fs * EQ_ICON_SHARE
+		w += font.get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * EQ_GAP_SHARE
+	return maxf(0.0, w - fs * EQ_GAP_SHARE)
+
+
+## Draws `items` (see equation_width) from `left_mid` (the left end of its middle line) on
+## `ci` at `fs` in `font`, faded to `alpha`; `outline` rings the numbers (0 = none).
+static func draw_equation(ci: CanvasItem, left_mid: Vector2, items: Array, fs: int, font: Font, alpha: float, outline: int = 0) -> void:
+	var x := left_mid.x
+	var mid := left_mid.y
+	for it in items:
+		var col := Color(it.get("color", Palette.PAPER), alpha)
+		var sep := String(it.get("sep", ""))
+		if sep != "":
+			ci.draw_string(font, Vector2(x, mid + fs * 0.35), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * EQ_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
+			x += fs * EQ_SEP_SHARE
+		if int(it.get("icon", -1)) >= 0:
+			SliceIcon.draw_icon(ci, Vector2(x + fs * EQ_ICON_SHARE * 0.5, mid), fs * 0.45, int(it["icon"]), col)
+			x += fs * EQ_ICON_SHARE
+		var t := String(it["text"])
+		if outline > 0:
+			ci.draw_string_outline(font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, Color(Palette.NIGHT_SKY, alpha))
+		ci.draw_string(font, Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * EQ_GAP_SHARE
+
+
+## The equation's parts (drawing, not motion): a joining sign's room, a glyph's room and the
+## gap after a number, as shares of the lettering; the minus it uses.
+const EQ_SEP_SHARE := 1.0
+const EQ_ICON_SHARE := 1.05
+const EQ_GAP_SHARE := 0.2
+const EQ_MINUS := "−"
 
 
 ## ANIM-R1: a number that pops at `at` (global), holds (`number_to_hp`'s delay), then
@@ -274,12 +326,12 @@ func ring(at: Vector2, radius: float, color: Color, id: StringName) -> void:
 
 
 ## A hit from `from` to `to` (global): a projectile (a bright head with an arrowhead, its
-## thick trail in the attacker's `color`) flies over LINE_DRAW_SHARE of `hit_line`, `label`
+## thick trail in the attacker's `color`) flies over `hit_line_flight` of `hit_line`, `label`
 ## (the hit's raw number) riding beside it; the line then fades with the arrowhead at the
 ## victim. ANIM-R2: hits play one at a time (the schedule spaces them `hit_line` apart).
 ## ANIM-R3 A6c: the aim's multiplier rides too: with `from_label` (the slice's own value)
 ## that value shows at launch and shrinks into `label` (the hit it deals: "12" becomes
-## "6 ½" at half power) over RIDE_SWAP_SHARE of the flight; `scale` > 1 draws the riding
+## "6 ½" at half power) over `ride_swap` of the flight; `scale` > 1 draws the riding
 ## number bigger (a PERFECT landing).
 func hit_line(from: Vector2, to: Vector2, color: Color, label: String = "", from_label: String = "", scale: float = 1.0) -> void:
 	if not Motion.live(&"hit_line") or from.distance_to(to) < 1.0:
@@ -312,7 +364,12 @@ func travelling() -> bool:
 
 ## Seconds from a hit's launch to its impact at the victim (0 when hits don't fly).
 static func impact_seconds() -> float:
-	return Motion.seconds(&"hit_line") * LINE_DRAW_SHARE if Motion.live(&"hit_line") else 0.0
+	return Motion.seconds(&"hit_line") * line_share() if Motion.live(&"hit_line") else 0.0
+
+
+## ANIM-R4 C5: the share of `hit_line` the projectile flies (the table's `hit_line_flight`).
+static func line_share() -> float:
+	return clampf(Motion.amplitude(&"hit_line_flight"), 0.05, 0.95)
 
 
 ## ANIM-R2 E5: a short local flash (a disc of `radius` at `at`, global) in `color`, `id`'s
@@ -378,11 +435,13 @@ const WORD_STAMP_MIN := 9
 const WORD_BOX_PAD := 0.3
 const WORD_BOX_H := 1.4
 const WORD_TILT := -0.2
-## A projectile's head: its radius as a share of the line's width.
-const PROJECTILE_HEAD := 1.3
-## ANIM-R3 A6g: the break's crack holds the pieces in place for this share of it; the
-## crack line's alpha and width (px).
-const CRACK_SHARE := 0.22
+## A projectile's head: its radius as a share of the line's width (ANIM-R4 C6d: bigger, and
+## ringed in paper, so the operative's acid shot reads over its own acid wheel).
+const PROJECTILE_HEAD := 1.8
+const PROJECTILE_RING := 2.0
+## ANIM-R3 A6g: the crack line's alpha and width (px; drawing, not motion). ANIM-R4 C5: the
+## share of the break the pieces hold in place while it cracks is `break_crack`'s
+## amplitude (the motion table).
 const CRACK_ALPHA := 0.95
 const CRACK_WIDTH := 3.0
 
@@ -420,12 +479,29 @@ func vhs(area: Rect2) -> void:
 	_add({"kind": "vhs", "rect": area, "dur": Motion.seconds(&"rewind_scrub"), "jitter": Motion.amplitude(&"rewind_scrub")})
 
 
-## The VICTORY / DEFEAT stamp at `at` (global).
-func word(at: Vector2, text: String, color: Color, hold: float) -> void:
+## The VICTORY / DEFEAT stamp at `at` (global). ANIM-R4 C6g: `font_size` > 0 sets its
+## lettering (VICTORY fitted to the room above the beaten wheel, `word_fit`).
+func word(at: Vector2, text: String, color: Color, hold: float, font_size: int = -1) -> void:
 	if not Motion.live(&"victory_stamp"):
 		return
 	_add({"kind": "word", "at": at, "text": text, "color": color, "delay": Motion.delay_of(&"victory_stamp"),
-		"dur": Motion.seconds(&"victory_stamp") + hold, "land": Motion.seconds(&"victory_stamp"), "from": Motion.amplitude(&"victory_stamp")})
+		"dur": Motion.seconds(&"victory_stamp") + hold, "land": Motion.seconds(&"victory_stamp"), "from": Motion.amplitude(&"victory_stamp"),
+		"fs": font_size if font_size > 0 else roundi(WORD_FONT * Settings.text_scale)})
+
+
+## ANIM-R4 C6g: the biggest VICTORY / DEFEAT lettering (px, at most WORD_FONT at the text
+## scale, at least WORD_STAMP_MIN) whose box fits `room`.
+static func word_fit(text: String, room: Vector2) -> int:
+	var fs := roundi(WORD_FONT * Settings.text_scale)
+	while fs > WORD_STAMP_MIN and (Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room.x or fs * WORD_BOX_H > room.y):
+		fs -= 1
+	return fs
+
+
+## The box a VICTORY / DEFEAT word of `fs` px covers at rest, centred at `at` (global).
+static func word_rect(at: Vector2, text: String, fs: int) -> Rect2:
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return Rect2(at - Vector2(w * 0.5, fs * 0.65), Vector2(w, fs * 0.9))
 
 
 ## A deck or discard pile mark at `at` (global) for `seconds` (fading in and out).
@@ -686,11 +762,16 @@ func _draw_impact(s: Dictionary) -> void:
 	var text := String(s["text"])
 	var f := Palette.display()
 	var gw := glyph_width(fs, int(s["icon"]))
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw
+	var items: Array = s.get("items", [])
+	var w := equation_width(items, fs, f) if not items.is_empty() else f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw
 	var c := _local(s["at"])
 	var col := Color(s["color"], alpha)
 	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), Color(Palette.NIGHT_SKY, 0.85 * alpha))
 	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), col, false, 2.0)
+	if not items.is_empty():
+		# ANIM-R4 C6c: the hit meets its guard: sword 8 - shield 8 = 0.
+		draw_equation(self, c - Vector2(w * 0.5, 0.0), items, fs, f, alpha, NUMBER_OUTLINE)
+		return
 	SliceIcon.draw_icon(self, c + Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.45, int(s["icon"]), col)
 	var base := c + Vector2(-w * 0.5 + gw, fs * 0.35)
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Color(Palette.NIGHT_SKY, alpha))
@@ -764,7 +845,7 @@ func _draw_burst(s: Dictionary) -> void:
 
 func _draw_line(s: Dictionary) -> void:
 	var p := _p(s)
-	var share := LINE_DRAW_SHARE
+	var share := line_share()
 	var from := _local(s["from"])
 	var to := _local(s["to"])
 	var flight := clampf(p / share, 0.0, 1.0)
@@ -783,7 +864,8 @@ func _draw_line(s: Dictionary) -> void:
 	if p < share:
 		# The projectile's head, bright, flying from the attacker's slice.
 		var hr := width * PROJECTILE_HEAD
-		draw_circle(head, hr + 2.0, Color(Palette.NIGHT_SKY, 0.7))
+		draw_circle(head, hr + PROJECTILE_RING + 2.0, Color(Palette.NIGHT_SKY, 0.8))
+		draw_arc(head, hr + PROJECTILE_RING * 0.5, 0.0, TAU, 20, Palette.PAPER, PROJECTILE_RING, true)
 		draw_circle(head, hr, col.lightened(0.35))
 		var label := String(s.get("label", ""))
 		var from_label := String(s.get("from_label", ""))
@@ -793,10 +875,10 @@ func _draw_line(s: Dictionary) -> void:
 			# bigger on a PERFECT landing.
 			var fs := roundi(NUMBER_FONT * Settings.text_scale * RIDE_FONT_SHARE * float(s.get("scale", 1.0)))
 			var shown := label
-			var swap := clampf(flight / RIDE_SWAP_SHARE, 0.0, 1.0)
+			var swap := clampf(flight / maxf(0.01, Motion.amplitude(&"ride_swap")), 0.0, 1.0)
 			if from_label != "" and swap < 1.0:
 				shown = from_label
-				fs = maxi(1, roundi(fs * lerpf(1.0, RIDE_SHRINK_TO, swap)))
+				fs = maxi(1, roundi(fs * lerpf(1.0, Motion.amplitude(&"ride_shrink"), swap)))
 			var f := Palette.display()
 			var w := f.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var off := d.orthogonal() * fs * RIDE_OFFSET
@@ -822,15 +904,16 @@ func _draw_stamp(s: Dictionary) -> void:
 
 
 func _draw_shards(s: Dictionary) -> void:
-	# ANIM-R3 A6g: the real wheel cracks, then its pieces fall. For the first CRACK_SHARE of
+	# ANIM-R3 A6g: the real wheel cracks, then its pieces fall. For the first `break_crack` of
 	# the break every piece holds its place (the wheel as it was, its slices' art and values)
 	# while white cracks run along the slice borders; then each piece drops and turns,
 	# keeping its art, and fades.
 	var p := _p(s)
-	var crack := clampf(p / CRACK_SHARE, 0.0, 1.0)
+	var crack_share := clampf(Motion.amplitude(&"break_crack"), 0.01, 0.95)
+	var crack := clampf(p / crack_share, 0.0, 1.0)
 	var q := 0.0
-	if p > CRACK_SHARE:
-		q = Tween.interpolate_value(0.0, 1.0, (p - CRACK_SHARE) / (1.0 - CRACK_SHARE), 1.0, int(s.get("trans", Tween.TRANS_LINEAR)), int(s.get("ease", Tween.EASE_OUT)))
+	if p > crack_share:
+		q = Tween.interpolate_value(0.0, 1.0, (p - crack_share) / (1.0 - crack_share), 1.0, int(s.get("trans", Tween.TRANS_LINEAR)), int(s.get("ease", Tween.EASE_OUT)))
 	var fall := float(s["fall"])
 	var origin := get_global_rect().position
 	var pieces: Array = s["pieces"]
@@ -912,7 +995,7 @@ func _draw_word(s: Dictionary) -> void:
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
 	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
 	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
-	var fs := roundi(WORD_FONT * Settings.text_scale * sc)
+	var fs := roundi(float(s.get("fs", WORD_FONT * Settings.text_scale)) * sc)
 	var text := String(s["text"])
 	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var base := _local(s["at"]) + Vector2(-w * 0.5, fs * 0.35)

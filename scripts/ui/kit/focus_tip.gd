@@ -12,7 +12,10 @@ const GAP := 6.0
 ## of its columns, never under FOLD_MIN columns) and the spot covering least wins, so a
 ## tall narrow tip can go beside the loot row instead of over Skip.
 const FOLD_SHARES: Array[float] = [0.7, 0.5, 0.35]
-const FOLD_MIN := 16
+## ANIM-R4 C7: a fold never goes under this many columns (at 1.6 a 16-column fold put one
+## word per line and the tall tip covered the MODEM sign and a loot card); a crowded tip
+## keeps that width, tries the screen's edges and steps its lettering down (FONT_SHARES).
+const FOLD_MIN := 20
 
 
 ## Shows `control`'s tooltip while it has focus (not while the mouse is over it).
@@ -77,33 +80,55 @@ func _place(control: Control) -> void:
 	var at := spot(r, size, screen, avoid)
 	var hits := covered(Rect2(at, size), r, avoid)
 	if hits > 0.0 and text != "":
-		# ANIM-R2 E8: narrower folds, the one covering least.
+		# ANIM-R2 E8: narrower folds, the one covering least. ANIM-R4 C7: never under FOLD_MIN
+		# columns; when every fold still covers something the lettering steps down
+		# (FONT_SHARES) at the same folds before a word a line ever would.
 		var cols := maxi(FOLD_MIN, roundi(UiTip.COLUMNS / maxf(1.0, Settings.text_scale)))
 		var best_cols := -1
+		var best_font := 1.0
 		var chrome: Vector2 = get_combined_minimum_size() - (get_child(0) as Control).get_combined_minimum_size()
-		for share in FOLD_SHARES:
-			var c := maxi(FOLD_MIN, roundi(cols * share))
-			var body := UiTip.make(UiTip.fold_to(text, c))
-			add_child(body)
-			var sz: Vector2 = body.get_combined_minimum_size() + chrome
-			remove_child(body)
-			body.free()
-			var p := spot(r, sz, screen, avoid)
-			var h := covered(Rect2(p, sz), r, avoid)
-			if h < hits:
-				hits = h
-				at = p
-				best_cols = c
-			if h == 0.0:
+		for fshare in FONT_SHARES:
+			for share in FOLD_SHARES:
+				var c := maxi(FOLD_MIN, roundi(cols * share))
+				var body := _body(c, fshare)
+				add_child(body)
+				var sz: Vector2 = body.get_combined_minimum_size() + chrome
+				remove_child(body)
+				body.free()
+				var p := spot(r, sz, screen, avoid)
+				var h := covered(Rect2(p, sz), r, avoid)
+				if h < hits:
+					hits = h
+					at = p
+					best_cols = c
+					best_font = fshare
+				if h == 0.0:
+					break
+			if hits == 0.0:
 				break
 		if best_cols > 0:
 			var old := get_child(0)
 			remove_child(old)
 			old.queue_free()
-			add_child(UiTip.make(UiTip.fold_to(text, best_cols)))
+			add_child(_body(best_cols, best_font))
 			size = Vector2.ZERO
 			size = get_combined_minimum_size()
 	global_position = at
+
+
+## The tip's body folded to `cols` columns, its lettering at `fshare` of the theme's.
+func _body(cols: int, fshare: float) -> Control:
+	var body := UiTip.make(UiTip.fold_to(text, cols))
+	if fshare < 1.0:
+		var fs := roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare)
+		for l in body.get_children():
+			if l is Label:
+				(l as Label).add_theme_font_size_override(&"font_size", maxi(1, fs))
+	return body
+
+
+## ANIM-R4 C7: the lettering steps a crowded tip tries (shares of the theme's size).
+const FONT_SHARES: Array[float] = [1.0, 0.85, 0.72]
 
 
 ## How much of `avoid` (and the control's own rect `own`) a tip at `box` covers (0: none).
@@ -127,7 +152,11 @@ static func spot(r: Rect2, tip: Vector2, screen: Rect2, avoid: Array[Rect2]) -> 
 		Vector2(r.end.x + GAP, r.end.y - tip.y), Vector2(r.position.x - GAP - tip.x, r.end.y - tip.y),
 		# ANIM-R2 E8: the screen's side margins, level with the control (a middle loot card's
 		# tip beside it covered its neighbour).
-		Vector2(screen.position.x + GAP, r.position.y), Vector2(screen.end.x - GAP - tip.x, r.position.y)]
+		Vector2(screen.position.x + GAP, r.position.y), Vector2(screen.end.x - GAP - tip.x, r.position.y),
+		# ANIM-R4 C7: the screen's top and bottom edges above / below the control, then its
+		# corners (a wide tip that fits nowhere beside a big-text loot row goes under the page).
+		Vector2(r.get_center().x - tip.x * 0.5, screen.end.y - GAP - tip.y), Vector2(r.get_center().x - tip.x * 0.5, screen.position.y + GAP),
+		Vector2(screen.position.x + GAP, screen.end.y - GAP - tip.y), Vector2(screen.end.x - GAP - tip.x, screen.end.y - GAP - tip.y)]
 	var best := Vector2.INF
 	var best_hits := INF
 	for at in tries:
@@ -168,6 +197,7 @@ static func _titles(node: Node, out: Array[Rect2]) -> void:
 	for c in node.get_children():
 		if c is CanvasItem and not (c as CanvasItem).visible:
 			continue
-		if c is GraffitiTag or (c is Label and c.name == &"TerminalTitle"):
+		# ANIM-R4 C7: the MODEM sign too (a tip lay over it at 1.6).
+		if c is GraffitiTag or c is ModemSign or (c is Label and c.name == &"TerminalTitle"):
 			out.append((c as Control).get_global_rect())
 		_titles(c, out)
