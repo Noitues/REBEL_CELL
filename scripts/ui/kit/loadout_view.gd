@@ -82,6 +82,9 @@ func _add_swaps(view: SpinnerView, ring: Array) -> void:
 		chip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		chip.custom_minimum_size.x = SpinnerView.SIDE_W
 		chip.tooltip_text = UiTip.fold((Codex.describe(seg) + "\n" if seg != null else "") + tr("Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."))
+		# ANIM-R3 A7: a ring pictogram on each chip (they were words only): the segment it
+		# swaps in lit on a small ring, the class default with its hub lit.
+		SegmentMark.attach(chip, seg == null)
 		view.add_side(chip)
 		drops.add_source(chip, {"kind": "segment", "op": op.id, "segment": id}, true)
 	for k in ring.size():
