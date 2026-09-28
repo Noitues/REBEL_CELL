@@ -68,8 +68,12 @@ func _frames(n: int = 3) -> void:
 		await get_tree().process_frame
 
 
-func _seconds(s: float) -> void:
-	await get_tree().create_timer(s).timeout
+## Waits (bounded) for a jack in or out to end: the push, the arrival wait, the CONNECTING
+## hold and the reveal (Test suite: bounded waits; was an unbounded frame loop).
+func _jack_ends() -> void:
+	var limit := BoundedWait.motion_limit([&"jack_in", &"jack_out", &"jack_arrive", Fx.ARRIVAL_WAIT_MOTION, Fx.CONNECT_MOTION])
+	await BoundedWait.until(get_tree(), func() -> bool: return not Fx.transitioning(), limit)
+	assert_false(Fx.transitioning(), "the jack ends")
 
 
 func _scene(path: String) -> Control:
@@ -167,8 +171,7 @@ func test_a_second_press_during_the_jack_does_nothing() -> void:
 	click.pressed = true
 	Fx._input(click)
 	assert_true(get_viewport().is_input_handled(), "a press during the jack reaches no screen")
-	while Fx.transitioning():
-		await get_tree().process_frame
+	await _jack_ends()
 	assert_eq(switched[0], 1, "the jack switched once")
 	assert_eq(second[0], 0, "the jack asked for during it never switches")
 	assert_eq(c.state_hash(), before, "the campaign is unchanged")
@@ -188,8 +191,7 @@ func test_netrun_leave_buttons_ask_once_during_the_jack() -> void:
 	run.finish_run()
 	assert_eq(_scene_asks.size(), asks, "Save & quit / Go to HQ during the jack ask for nothing")
 	assert_same(RunManager.netrun, saved, "the run is not cleared by a press during the jack")
-	while Fx.transitioning():
-		await get_tree().process_frame
+	await _jack_ends()
 	await _close(run)
 
 
@@ -240,9 +242,15 @@ func test_saved_switched_off_shows_still_then_goes_at_once() -> void:
 	_switch_off([&"saved_stamp"])
 	await Fx.show_saved()
 	assert_eq(Fx.saved_label.modulate.a, 1.0, "SAVED shows")
-	await _seconds(Motion.delay_of(&"saved_stamp") * 0.5)
-	assert_eq(Fx.saved_label.modulate.a, 1.0, "no fade: it holds still")
-	await _seconds(Motion.delay_of(&"saved_stamp") + Motion.seconds(&"saved_stamp") + 0.2)
+	# Every frame up to its going (bounded), not two fixed looks: a slow frame could carry a
+	# fixed half-delay look past the whole hold (Test suite: bounded waits). Every alpha
+	# seen is whole or none: no fade.
+	var seen := {}
+	var gone := func() -> bool:
+		seen[Fx.saved_label.modulate.a] = true
+		return Fx.saved_label.modulate.a == 0.0
+	await BoundedWait.until(get_tree(), gone, BoundedWait.motion_limit([&"saved_stamp"]))
+	assert_eq(seen.keys().filter(func(a: float) -> bool: return a != 0.0 and a != 1.0), [], "no fade: it holds still")
 	assert_eq(Fx.saved_label.modulate.a, 0.0, "then goes at once")
 
 
@@ -425,15 +433,17 @@ func test_a_heat_crossing_rolls_the_number_and_stamps_a_banner_then_goes() -> vo
 	# Frame by frame up to the stamp (bounded), keeping the number's largest scale: a fixed
 	# number_roll + 0.1 s sometimes landed after the pop under loaded parallel shards
 	# (DECISIONS "Animation pass - bake crash").
-	var peak := poster.number_scale
-	var t0 := Time.get_ticks_msec()
-	while poster.banner_alpha < 1.0 and Time.get_ticks_msec() - t0 < int(Motion.seconds(&"number_roll") * 4000.0):
-		await get_tree().process_frame
-		peak = maxf(peak, poster.number_scale)
-	assert_gt(peak, 1.0, "the number grows on the crossing")
+	# Test suite: bounded waits: the bound is game time now, not the wall clock.
+	var peak := [poster.number_scale]
+	var stamped := func() -> bool:
+		peak[0] = maxf(peak[0], poster.number_scale)
+		return poster.banner_alpha >= 1.0
+	await BoundedWait.until(get_tree(), stamped, BoundedWait.motion_limit([&"number_roll", &"heat_banner"]))
+	assert_gt(peak[0], 1.0, "the number grows on the crossing")
 	assert_eq(poster.banner_alpha, 1.0, "the banner stamps on")
 	assert_string_contains(poster.banner_text(), "25")
-	await _seconds(Motion.delay_of(&"heat_banner") + Motion.seconds(&"heat_banner") + Motion.seconds(&"number_roll") + 0.3)
+	await BoundedWait.until(get_tree(), func() -> bool: return poster.banner_alpha == 0.0 and poster.number_scale == 1.0 and is_equal_approx(poster.shown_heat, 30.0),
+		BoundedWait.motion_limit([&"heat_banner", &"number_roll"]))
 	assert_eq(poster.banner_alpha, 0.0, "nothing stays on")
 	assert_eq(poster.number_scale, 1.0)
 	assert_almost_eq(poster.shown_heat, 30.0, 0.01, "the number rolled to the Heat")
@@ -515,7 +525,7 @@ func test_the_event_choices_wait_for_the_words() -> void:
 	run.event_id = &"ev_leash_on_the_floor"
 	run.phase = RunState.Phase.EVENT
 	scene._show_current()
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)  # the words must still be typing after the frame
 	var c1 := scene._panel.find_child("Choice1", true, false) as Button
 	assert_true(scene.choices_held(), "the words are typing")
 	# ANIM-R2 E1/E2 (on purpose): a held choice waits readable and focusable, not disabled.
@@ -664,10 +674,13 @@ func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
 # --- M15: loops on measured geometry end ---------------------------------------------------------------------
 
 func test_placement_loops_end_on_geometry_that_is_not_finite() -> void:
-	var t0 := Time.get_ticks_msec()
+	# Test suite: bounded waits: "at once" is counted in frames, not wall milliseconds (a
+	# loaded machine can stall any call; a loop that never ends hangs the shard, which the
+	# runner's timeout fails).
+	var f0 := Engine.get_process_frames()
 	var spot := Fx.saved_spot(Vector2(40, 20), Rect2(0, 0, INF, INF), [] as Array[Rect2])
 	assert_true(spot.is_finite() or spot == Vector2.ZERO, "SAVED on an unbounded screen")
 	Fx.saved_spot(Vector2(NAN, NAN), Rect2(0, 0, 1280, 720), [] as Array[Rect2])
-	assert_lt(Time.get_ticks_msec() - t0, 500, "returns at once")
+	assert_eq(Engine.get_process_frames(), f0, "returns at once")
 	assert_gt(HQ_SCRIPT.RAID_CHECKS_MAX, 0, "the raid page's framing is bounded")
 	assert_gt(LegendSpot.SPOTS_MAX, 0)
