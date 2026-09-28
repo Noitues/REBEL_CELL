@@ -114,6 +114,13 @@ const SHORT_KEY_NAMES := {"Escape": "Esc", "Backspace": "Bksp", "Delete": "Del"}
 
 
 func _input(event: InputEvent) -> void:
+	observe_device(event)
+
+
+## Switches the hints to the device `event` came from (a pad button or a firm stick push:
+## the pad; a key or a mouse button: keys). ANIM-R3 A4: MotionSkip.consume calls it too, so
+## a pad press that ends a motion (and never reaches this node) still switches the prompts.
+func observe_device(event: InputEvent) -> void:
 	var pad := pad_active
 	if event is InputEventJoypadButton:
 		pad = true

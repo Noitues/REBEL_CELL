@@ -144,6 +144,15 @@ static func settle(root: Node) -> void:
 		settle(child)
 
 
+## The entrance's own clock (ANIM-R3 A8): its progress 0..1 as of its last frame (0 before
+## the delay has run, 1 once done). The CRT roll shows only from FADE_SHARE on.
+func progress() -> float:
+	if _done:
+		return 1.0
+	var id := id_for(look)
+	return clampf(maxf(0.0, _t - Motion.delay_of(id)) / maxf(0.0001, Motion.seconds(id)), 0.0, 1.0)
+
+
 ## Ends the entrance now: the page at rest, opaque, focus given (on_done).
 func finish() -> void:
 	if _done:
@@ -173,7 +182,7 @@ func _input(event: InputEvent) -> void:
 		return
 	# ANIM-R1 (MotionSkip): a press completes the entrance and is consumed.
 	if MotionSkip.is_press(event):
-		MotionSkip.consume(self)
+		MotionSkip.consume(self, event)
 		var p := page
 		finish()
 		settle(p)

@@ -65,6 +65,8 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 	controls.add_child(step_label)
 	for s in [1.0, 2.0, 4.0]:
 		var b := Button.new()
+		b.name = "Speed%dx" % int(s)
+		b.focus_mode = Control.FOCUS_ALL
 		b.text = "%dx" % int(s)
 		var value: float = s
 		b.pressed.connect(func() -> void: set_speed(value))
@@ -173,15 +175,17 @@ func _process(delta: float) -> void:
 
 ## ANIM-R2 R6: a press ends the current step's motion, by the one press rule (MotionSkip:
 ## any key, mouse button 1-3 or pad button going down; consumed, so nothing behind sees
-## it). The panel's own buttons stay usable: a click on one, or accept on the focused one,
-## is theirs.
+## it). ANIM-R3 A2: a press that works the screen passes on untouched (MotionSkip.works_ui:
+## a focus move, so the keys and the pad reach Skip and 2x / 4x; the Settings key; accept
+## on the focused usable button; a click on a usable button), and while a PauseMenu is
+## open every press is the menu's. Any other press skips one step.
 func _input(event: InputEvent) -> void:
 	if _done or _instant or not is_visible_in_tree() or not MotionSkip.is_press(event):
 		return
-	if _for_own_button(event):
+	if MotionSkip.pause_open(self) or MotionSkip.works_ui(event, self):
 		return
 	skip_step()
-	MotionSkip.consume(self)
+	MotionSkip.consume(self, event)
 
 
 ## Ends the current step's motion at once (its beats at their ends).
@@ -191,22 +195,18 @@ func skip_step() -> void:
 		fx.clock = _clock
 
 
-## True when `event` is meant for a button: this panel's (Skip, 1x/2x/4x) or any usable
-## button the pointer is on (the screen's own, the settings).
+## True when `event` is meant for a button (the panel's, the screen's, the settings'):
+## MotionSkip.works_ui, kept under its ANIM-R2 name.
 func _for_own_button(event: InputEvent) -> bool:
-	if event is InputEventMouseButton:
-		var hovered := get_viewport().gui_get_hovered_control()
-		if hovered is BaseButton and not (hovered as BaseButton).disabled:
-			return true
-	for b in find_children("*", "BaseButton", true, false):
-		var btn := b as BaseButton
-		if not btn.is_visible_in_tree() or btn.disabled:
-			continue
-		if event is InputEventMouseButton and btn.get_global_rect().has_point((event as InputEventMouseButton).global_position):
-			return true
-		if btn.has_focus() and event.is_action_pressed(&"ui_accept"):
-			return true
-	return false
+	return MotionSkip.works_ui(event, self)
+
+
+## The panel's controls (Skip, 1x / 2x / 4x) in order: keys and the pad walk them.
+func controls() -> Array[Button]:
+	var out: Array[Button] = []
+	for b in find_children("*", "Button", true, false):
+		out.append(b as Button)
+	return out
 
 
 func _show_step() -> void:

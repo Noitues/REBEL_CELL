@@ -81,7 +81,7 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 			"pointer_index": -1, "target": target, "amount": int(e.get("amount", 0)), "crit": false,
 			"hp_after": -1, "slot": int(e.get("slot", e.get("slice_index", -1))), "status": int(e.get("status", 0)),
 			"tier": int(e.get("tier", -1)), "soaked": int(e.get("blocked", 0)) + int(e.get("shielded", 0)),
-			"host": host, "source_slot": -1, "raw": int(e.get("amount", 0)), "blocked": int(e.get("blocked", 0)),
+			"host": host, "source_slot": -1, "source_tier": -1, "raw": int(e.get("amount", 0)), "blocked": int(e.get("blocked", 0)),
 			"shielded": int(e.get("shielded", 0))}
 		match kind:
 			"land":
@@ -107,6 +107,8 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 			for l in landings.get(b["source"], []):
 				if int(l.get("pointer_index", 0)) == int(b["pointer_index"]):
 					b["source_slot"] = int(l.get("slice_index", -1))
+					# ANIM-R3 A6c: how well that needle landed (the hit's aim multiplier shows).
+					b["source_tier"] = int(l.get("tier", -1))
 					break
 		if kind == "spawn":
 			hp[target] = int(e.get("hp", 0))
@@ -183,6 +185,21 @@ static func settle_after(b: Dictionary, timing: Dictionary) -> float:
 	return t
 
 
+## Seconds from hit `b`'s launch until its number has entered the victim's HP counter
+## (ANIM-R3 A6d: the next hit waits for it): its impact, a partly blocked hit's absorb, the
+## number's hold and travel (`timing` "arrive"). A hit that changes no HP: its impact. 0 for
+## a beat that doesn't fly.
+static func arrive_after(b: Dictionary, timing: Dictionary) -> float:
+	if not flies(b):
+		return 0.0
+	var t := float(timing.get("impact", 0.0))
+	if is_hit(b) and changes_hp(b):
+		t += float(timing.get("arrive", 0.0))
+		if int(b.get("soaked", 0)) > 0:
+			t += float(timing.get("absorb", 0.0))
+	return t
+
+
 ## When each beat plays (seconds from the start), in beat order and never decreasing:
 ## the landings together at 0; the landing hold (`lead`, only after landings); then the
 ## resolve beats one `gap` apart with a gap more at each new pass. ANIM-R2 (`timing`, all
@@ -241,6 +258,9 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 	var kill_at := -1.0
 	var kill_settled := -1.0
 	var last_t := 0.0
+	# ANIM-R3 A6d: a projectile never launches before the last hit's number has entered its
+	# HP counter (never two numbers on their way at once; one HP roll per hit).
+	var fly_ready := -INF
 	for b in beats:
 		if b["kind"] == "land":
 			times.append(0.0)
@@ -270,6 +290,9 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 				# The last break before the fight ends (another enemy may fall earlier).
 				kill_settled = maxf(settled_at, last_t)
 				kill_at = t
+		if flies(b) and hit_gap > 0.0:
+			t = maxf(t, fly_ready)
+			fly_ready = maxf(fly_ready, t + maxf(hit_gap, arrive_after(b, timing)))
 		times.append(t)
 		if spin_at < 0.0:
 			var s := settle_after(b, timing)

@@ -28,6 +28,11 @@ var _tweens: Array[Tween] = []
 ## Flicker steps across the warm-up, and the alpha of an unlit tube.
 const WARM_STEPS := 14
 const TUBE_OFF_ALPHA := 0.12
+## ANIM-R3 A7: every tube strikes within this share of the warm-up, flickers for this share
+## after it (lit at a flicker step with this chance), then holds.
+const STRIKE_SHARE := 0.45
+const FLICKER_SHARE := 0.25
+const FLICKER_ON := 0.6
 ## Tube ids for the warm-up hash: the border, then each letter.
 const TUBE_BORDER := 0
 
@@ -75,14 +80,22 @@ func warming() -> bool:
 	return warm < 1.0 or trace < 1.0
 
 
-## A tube's brightness now: lit once warm, else flickering on at hash-picked steps (a tube
-## is lit at a step when its hash for that step is under the warm-up's progress).
+## A tube's brightness now: lit once warm, else flickering on at hash-picked steps.
+## ANIM-R3 A7: each tube strikes at its own hash-picked moment in the first
+## STRIKE_SHARE of the warm-up, flickers for FLICKER_SHARE, then holds lit, so the sign is
+## whole well before the warm-up ends (a still mid-way showed one lit letter: it read as
+## broken).
 func tube(id: int) -> float:
 	if warm >= 1.0:
 		return 1.0
+	var strike := float(absi(hash([id, 41])) % 1000) / 1000.0 * STRIKE_SHARE
+	if warm < strike:
+		return TUBE_OFF_ALPHA
+	if warm >= strike + FLICKER_SHARE:
+		return 1.0
 	var step := floori(warm * WARM_STEPS)
-	var h := float(absi(hash([id, step, 41])) % 1000) / 1000.0
-	return 1.0 if h < warm * warm else TUBE_OFF_ALPHA
+	var h := float(absi(hash([id, step, 43])) % 1000) / 1000.0
+	return 1.0 if h < FLICKER_ON else TUBE_OFF_ALPHA
 
 
 ## `col` at brightness `k` (1 = lit; an unlit tube is the colour darkened, so every glow

@@ -5,8 +5,9 @@ extends Node
 ## entry's seconds per character. Only what is drawn changes (`visible_characters`): the
 ## text itself is whole from the start, so tests and screen readers read it all. Honours
 ## the Options switch (Settings.subtitle_typing: off shows the words at once), reduce
-## effects and headless. Any press (MotionSkip) shows the words whole and is consumed (it
-## does nothing else); so do `finish` and PageTransition.settle. ANIM-R2: the press shows
+## effects and headless. Any press (MotionSkip) shows the words whole; it is consumed unless
+## it works the screen (ANIM-R3: a focus move, accept on a button, a click on a button pass
+## on); so do `finish` and PageTransition.settle. ANIM-R2: the press shows
 ## every word typing on screen at once (all Typing labels and the Dialogue subtitle), so an
 ## event's story and its subtitle need one press, not two.
 
@@ -90,7 +91,14 @@ static func any_typing(tree: SceneTree) -> bool:
 	return false
 
 
+## ANIM-R3 A3: a press shows every typing word whole; a press that works the screen
+## (MotionSkip.works_ui: a focus move, the Settings key, accept on the focused button, a
+## click on a button: the first click on City Grid or JACK IN while the pirate radio types)
+## passes on to what it works. Only a press aimed at the words (a click on them, a key or
+## pad button that works nothing) is consumed. While a PauseMenu is open presses are its.
 func _input(event: InputEvent) -> void:
-	if MotionSkip.is_press(event) and typing(label):
-		finish_all(get_tree())
-		MotionSkip.consume(self)
+	if not MotionSkip.is_press(event) or not typing(label) or MotionSkip.pause_open(self):
+		return
+	finish_all(get_tree())
+	if not MotionSkip.works_ui(event, self):
+		MotionSkip.consume(self, event)

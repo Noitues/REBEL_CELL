@@ -437,12 +437,23 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 		if fly:
 			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
 		# ANIM-R1 M11: the offers not taken fall away (`loot_reject`), picked by click or drag.
+		# ANIM-R3 A7: within the loot's window (they fell across the route coming in under it).
 		for i in (offer["options"] as Array).size():
 			var other := _page_item("Stickers", i)
 			if i != index and other != null:
-				FlightFx.fly(self, other, other.get_global_rect().get_center() + Vector2(0.0, Motion.amplitude(&"loot_reject")), &"loot_reject")
+				FlightFx.fly(self, other, other.get_global_rect().get_center() + Vector2(0.0, Motion.amplitude(&"loot_reject")), &"loot_reject", "", 0.0,
+					loot_window_rect(other))
 	RunManager.after_step()
 	_show_current()
+
+
+## The loot window a sticker sits in (global; ANIM-R3 A7: loot not taken falls within it),
+## an empty rect when it has none.
+static func loot_window_rect(sticker: Control) -> Rect2:
+	var n: Node = sticker
+	while n != null and not (n is TerminalWindow):
+		n = n.get_parent()
+	return (n as Control).get_global_rect() if n != null else Rect2()
 
 
 func skip_reward() -> void:
@@ -665,9 +676,9 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 				# the CRT roll's band crosses them, never the whole screen (on the loot pick's
 				# first frame it ran across half the screen over the bare city).
 				PageTransition.glass_is_windows(p)
-			PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p))
+			PageTransition.enter(p, PageTransition.look_of(p), _focus_page.bind(p))
 		else:
-			UiFocus.focus_first(p)
+			_focus_page(p)
 	_title_screen(s)
 	set_page_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
 	# H24 S15: lines tied to the screen being left end here.
@@ -682,6 +693,32 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## A page's first focus: the control it names (FIRST_FOCUS_META: the Modem's first item,
+## ANIM-R3 A7: its prompt says "A Buy" and the focus sat on the socket list), else its first
+## usable control.
+func _focus_page(p: Control) -> void:
+	var first: Variant = p.get_meta(FIRST_FOCUS_META) if is_instance_valid(p) and p.has_meta(FIRST_FOCUS_META) else null
+	if first is Control and is_instance_valid(first) and (first as Control).is_inside_tree() \
+			and (first as Control).get_focus_mode_with_override() != Control.FOCUS_NONE:
+		_focus_now.call_deferred(p, first)
+		return
+	UiFocus.focus_first(p)
+
+
+## Untyped on purpose: the deferred call can land after the page was freed.
+func _focus_now(page, first) -> void:
+	if not is_instance_valid(page) or not is_instance_valid(first) or not (first as Control).is_inside_tree() \
+			or (first as Control).get_focus_mode_with_override() == Control.FOCUS_NONE:
+		return
+	var owner := get_viewport().gui_get_focus_owner()
+	if owner == null or not (page as Node).is_ancestor_of(owner):
+		(first as Control).grab_focus()
+
+
+## The meta naming a page's first focus.
+const FIRST_FOCUS_META := &"first_focus"
 
 
 ## The pad prompts of the screen for the run's phase (H23 S11): A presses the focused
@@ -1286,6 +1323,8 @@ func _show_combat() -> void:
 	combat_scene = scene
 	scene.attach_netrun(s)
 	scene.engine.state_changed.connect(_on_combat_state_changed)
+	if scene.has_signal(&"continue_requested"):
+		scene.connect(&"continue_requested", _leave_fight)
 
 
 func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) -> void:
@@ -1293,18 +1332,43 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 	if state.is_over():
 		RunManager.after_step()
 		_report(RunManager.netrun.last_events)
+		# ANIM-R3 A6h: the fight's next step shows in SEND IT's place at once (LOOT when a
+		# payout waits, else CONTINUE); pressing it moves on now.
+		if combat_scene != null and combat_scene.has_method(&"show_continue"):
+			var phase := RunManager.netrun.run.phase if RunManager.netrun != null else RunState.Phase.MAP
+			combat_scene.call(&"show_continue", tr("LOOT") if phase == RunState.Phase.REWARD else tr("CONTINUE"))
 		# Leave the final combat state visible for a moment, then move on: once the combat
 		# replay (the last hits, the break, VICTORY) has played out or been skipped.
+		_leave_generation += 1
 		if combat_scene != null and combat_scene.has_method("motion_seconds_left") and float(combat_scene.call("motion_seconds_left")) > 0.0:
-			combat_scene.connect("motion_settled", _hold_then_show, CONNECT_ONE_SHOT)
+			combat_scene.connect("motion_settled", _hold_then_show.bind(_leave_generation), CONNECT_ONE_SHOT)
 		else:
-			_hold_then_show()
+			_hold_then_show(_leave_generation)
 
 
 ## The pause on the final combat state (`combat_end_hold`) before the netrun moves on.
-func _hold_then_show() -> void:
+func _hold_then_show(generation: int = -1) -> void:
 	var timer := get_tree().create_timer(Motion.seconds(&"combat_end_hold"))
-	timer.timeout.connect(_show_current)
+	timer.timeout.connect(_leave_after_hold.bind(generation if generation >= 0 else _leave_generation))
+
+
+## The hold ran out: the netrun moves on, unless the player already did.
+func _leave_after_hold(generation: int) -> void:
+	if generation == _leave_generation and combat_scene != null:
+		_show_current()
+
+
+## ANIM-R3 A6h: the fight's next-step action was pressed: on now (the hold is dropped).
+func _leave_fight() -> void:
+	if combat_scene == null:
+		return
+	_leave_generation += 1
+	_show_current()
+
+
+## Counts fight endings and early leaves (a hold that ran out after the player moved on
+## does nothing).
+var _leave_generation: int = 0
 
 
 func _show_reward() -> void:
@@ -1838,6 +1902,23 @@ func _show_shop() -> void:
 	leave_icon.tooltip_text = leave.tooltip_text
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
+	# ANIM-R3 A7: the first focus is the first item (one the Cycles reach, else the first),
+	# never the socket list: the pad prompt says "A Buy".
+	var first_item: ZineCard = null
+	for row in [chips, stickers, slice_row, daemon_row]:
+		for c in (row as Node).get_children():
+			var zc := c as ZineCard
+			if zc == null or zc.sold_stub:
+				continue
+			if first_item == null or (first_item.disabled and not zc.disabled):
+				first_item = zc
+			if not zc.disabled:
+				break
+		if first_item != null and not first_item.disabled:
+			break
+	if first_item != null:
+		first_item.focus_mode = Control.FOCUS_ALL
+		root.set_meta(FIRST_FOCUS_META, first_item)
 	_set_panel(root, false)
 	_register_shop_drops(mini, fw_slot)
 	if entering:
@@ -2588,7 +2669,8 @@ func price_refused(price: int) -> void:
 	var s := RunManager.netrun
 	if s == null:
 		return
-	var text := "%d > %d" % [price, s.run.cycles]
+	# ANIM-R3 A6j: the same plain words as a RAM refusal ("69 > 10" was a sum to decode).
+	var text := tr("NEED %d · HAVE %d") % [price, s.run.cycles]
 	hud.stats.flash_refusal(TextDb.mark("CYCLES"), text)
 	var wallet := _panel.find_child("Wallet", true, false) as HudStats if _panel != null else null
 	if wallet != null:
@@ -2701,7 +2783,7 @@ func _input(event: InputEvent) -> void:
 	# and is consumed before any control sees it.
 	if _travelling and MotionSkip.is_press(event):
 		_end_travel()
-		MotionSkip.consume(self)
+		MotionSkip.consume(self, event)
 
 
 func _unhandled_input(event: InputEvent) -> void:

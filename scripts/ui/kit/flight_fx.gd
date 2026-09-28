@@ -84,15 +84,21 @@ static func snapshot(c: Control) -> Texture2D:
 ## Flies a picture of `source` to `to` (global) with motion `id` (its duration and ease): it lifts `lift` px,
 ## (after a `stamp` word lands on it, when given) travels, shrinks to ARRIVE_MOTION's
 ## amplitude and fades into its target. Returns the flying node, or null.
-static func fly(screen: Node, source: Control, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0) -> Control:
+static func fly(screen: Node, source: Control, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0, clip: Rect2 = Rect2()) -> Control:
 	if not Motion.live(id) or source == null or not source.is_inside_tree():
 		return null
-	return fly_node(screen, picture_of(source), source.get_global_rect(), to, id, stamp, lift)
+	return fly_node(screen, picture_of(source), source.get_global_rect(), to, id, stamp, lift, clip)
 
 
-## A copy of how `source` looks now: its last drawn frame, or (no frame to read: a headless
-## capture or test) a paper card of its size.
+## A copy of how `source` looks now: a card draws a fresh copy of itself (ANIM-R3 A7: a
+## snapshot of a card still dealing in was the empty slot, a grey blank card), anything else
+## its last drawn frame, or (no frame to read: a headless capture or test) a paper card of
+## its size.
 static func picture_of(source: Control) -> Control:
+	if source is ZineCard:
+		var copy := (source as ZineCard).ghost_copy()
+		copy.rotation = 0.0
+		return copy
 	var tex := snapshot(source)
 	if tex != null:
 		var pic := TextureRect.new()
@@ -106,13 +112,28 @@ static func picture_of(source: Control) -> Control:
 
 
 ## Flies node `node` (a copy the layer now owns) from `from` (global rect) to `to`
-## (global) on `screen`; see `fly`. Returns the node, or null (then freed).
-static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0) -> Control:
+## (global) on `screen`; see `fly`. Returns the node, or null (then freed). ANIM-R3 A7:
+## with `clip` (global) the flight shows inside that rect only (loot not taken falls within
+## its window, never across the page that comes in under it).
+static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0, clip: Rect2 = Rect2()) -> Control:
 	var l := layer_for(screen)
 	if not Motion.live(id) or l == null:
 		node.free()
 		return null
-	l.add_child(node)
+	var holder: Control = null
+	if clip.has_area():
+		holder = Control.new()
+		holder.name = "Clip"
+		holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.clip_contents = true
+		holder.position = clip.position
+		holder.size = clip.size
+		l.add_child(holder)
+		holder.add_child(node)
+		from.position -= clip.position
+		to -= clip.position
+	else:
+		l.add_child(node)
 	node.position = from.position
 	node.size = from.size
 	node.pivot_offset = from.size * 0.5
@@ -130,7 +151,7 @@ static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: 
 	tw.tween_property(node, "position", end_pos, d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(node, "scale", Vector2.ONE * Motion.amplitude(ARRIVE_MOTION), d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(node, "modulate:a", 0.0, d * FADE_SHARE).set_delay(d * (1.0 - FADE_SHARE))
-	var f := {"node": node, "tween": tw, "to": to, "id": id}
+	var f := {"node": holder if holder != null else node, "tween": tw, "to": to + (clip.position if holder != null else Vector2.ZERO), "id": id}
 	tw.tween_callback(l._end.bind(f))
 	l.flights.append(f)
 	return node
@@ -223,4 +244,4 @@ func _input(event: InputEvent) -> void:
 		return
 	if MotionSkip.is_press(event):
 		finish()
-		MotionSkip.consume(self)
+		MotionSkip.consume(self, event)

@@ -438,6 +438,118 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R3 combat, input and screens
+The third fix batch of the Animation pass review, combat, input and screens part (A1-A8).
+Views only (no rule, no schema field changed). Every call below was the implementer's (the
+standing rule: nothing deferred). Tests: `tests/unit/test_anim_r3_combat.gd` (full tier, 33
+tests); strips recaptured in `docs/timeline/motion/` (CHOSEN on top, a variant under it,
+quantized to 128 colours; raw frames never entered the repo): `resolve_sequence` (with a
+second CHOSEN row: an enemy hit soaked whole), `number_float`, `enemy_break`, `card_play`,
+`drag_buy_card`, `loot_pick`.
+- **A1 drone numbers.** `numbers_for`, `_play_beat`, `_source_spot` and `hit_color` look a
+  combatant up in the state the resolve ends on when the state it started from doesn't have
+  it (a drone deployed, a satellite launched mid-resolve): its hits fly in the operative's
+  colour and its HP changes show at its token. The "every HP change has exactly one number
+  of its size, and a combatant's numbers add up to its HP roll" sweep now runs every class
+  (8) against every enemy in content (seed 3, three turns; spawned combatants start from
+  their spawn HP), and a live `_play_beat` check finds a Botnet drone deployed and hit (or
+  hitting) in the same resolve.
+- **One press rule, third revision (A2-A4, `MotionSkip.works_ui`).** Outside menus too, a
+  press that works the screen completes a motion and passes on: a focus move, the Settings
+  key, accept on the focused usable button, a click on a usable button (the hovered one,
+  else the topmost button under the point). Only presses aimed at the motion are consumed.
+  - A2 the raid playout: such presses pass (so keys and the pad walk to Skip and 1x/2x/4x,
+    now named `Speed1x`..., and press them); while a PauseMenu is open (group `pause_menu`,
+    `MotionSkip.pause_open`) every press is the menu's; any other press skips one step.
+    `_for_own_button` stays as the ANIM-R2 name for `works_ui`.
+  - A3 ambient typing (`Typing`) and the Dialogue subtitle: a press shows the words whole;
+    one that works the screen passes on (the first click on City Grid or JACK IN while the
+    pirate radio types, accept on a focused button); a click on the words or a key that works
+    nothing is consumed. An event's held choice still only shows its words on that press (its
+    hold is released a frame later), so E1's pad flow is unchanged.
+  - A4 `MotionSkip.consume(node, event)` hands the event to `Settings.observe_device` (the
+    old `_input` body) before marking it handled: a pad press that ends a motion switches the
+    prompts to the pad. Every helper passes its event.
+- **A5 the result never shows mid-roll.** `_show_result` first lands every number still on
+  its way (`CombatFxLayer.arrive_all`), ends every HP roll on its value
+  (`WheelView.finish_hp`) and sets each wheel to the HP its resolve ends on. **Decided:** the
+  snap, not slack in the table (slack shortens the hold and still loses to a long frame).
+  Tested with every frame of the replay stalled 12 ms.
+- **A6 SEND IT legibility (the naive reviewers' final push).**
+  - a. A hit that gets nothing through shows where it struck (the arrowhead on the HP ring,
+    or the token): its glyph (a shield when soaked whole, the evade mark when evaded) and "0"
+    in a small box (`impact_mark`, new: 0.6 s, pops from x1.5). A wheel all of whose hits
+    were soaked stamps ALL BLOCKED on its last hit's impact (the schedule marks that beat),
+    NO DAMAGE still at the result; both carry a drawn mark (a shield over the empty-set sign,
+    `CombatFxLayer.GUARD_NULL`). The red projectile to the HP ring with its arrowhead was
+    already there (ANIM-R2); checked in the new `send_block` lab capture.
+  - b. The forecast stays through the replay: the tag showing when SEND IT is pressed (the
+    end-turn preview, never a hovered card's) is held on its view (`replay_tag`); each chip
+    names the beats that make it happen (`ForecastTicks.filter`: kinds, source, target) and
+    ticks (an acid check disc on its top-right corner, `forecast_tick`, new: 0.18 s from x1.6)
+    once its last beat has landed (a hit on impact, an HP change once its number has settled);
+    a chip no beat makes (RAM, Heat, odds) ticks when the result holds. The tape then reads
+    THIS TURN (the plate caption is used only when no tag was held), and the tag fades
+    (`forecast_fade`, new: 0.25 s) as the wheels turn on, before the next forecast flips in.
+    **Decided:** a tick, not a strike-through (a struck line is harder to read and, preview =
+    result, no line is ever contradicted); nothing is struck.
+  - c. The riding number shows the aim: at half power the slice's own value rides first and
+    shrinks into the dealt value marked ½ ("12" -> "6 ½", `RIDE_SWAP_SHARE` 0.45 of the flight,
+    to x0.6); a PERFECT landing rides x1.35. `ResolveBeats` beats carry `source_tier`.
+  - d. A projectile never launches before the last HP-changing hit's number has entered its
+    counter (`ResolveBeats.arrive_after`: impact, absorb, `number_to_hp` hold and travel;
+    `beat_timing().arrive`); one HP roll per hit (`play_hp` ends a running roll on its own value
+    first). Turns with several hits now run longer (any press skips).
+  - e. A guard is a glyph and its number from the blocker: the wheel's own guard under its
+    hub lines (shield "5", "+3" block, "+1" evade), a satellite's or drone's beside its token;
+    no "N BLOCKED" word badge in the replay (LAST TURN keeps the words).
+  - f. An icon row left of each HP number after a turn (sword 6 -> shield 5 = -1; "-0" when
+    soaked whole; a heal without hits shows the heal icon and +N), with LAST TURN, kept until
+    the player acts (`last_turn_icons`, the resolve phase only); shrinks to 8 px to fit; the
+    satellite tokens and plates keep off it.
+  - g. The break cracks the real wheel: each slice piece keeps its fill, rim, icon and value,
+    the dark hub cracks into a wedge per slice, white cracks draw along the borders for the
+    first 22 % (`CRACK_SHARE`) with the pieces in place, then they fall. A skull (drawn) sits
+    under DEFEATED on the beaten side.
+  - h. Once the fight is over SEND IT, RESPIN and UNDO go at once and a CONTINUE drip button
+    takes their place; the netrun names it (LOOT when a payout waits, else CONTINUE) and moves
+    on when it is pressed (click, accept, or SEND IT's key; a press during the replay that is
+    meant for it ends the replay and presses it). The `combat_end_hold` wait still moves on by
+    itself; a generation counter stops it acting after an early leave.
+  - i. A played card's effect (and so its wheel's spin) waits for the card's dissolve or burn
+    (`play_card` returns fly + stamp + dissolve): it never covers a spinning wheel.
+  - j. Words: "YOU PLAY JOLT" (PLAYING read as the enemy playing it); "NEED 3 · HAVE 2" for a
+    RAM refusal and the same for a price refusal; NEXT, the HP number, LAST TURN and the icon
+    row have tooltips (LAST TURN explains each status it names: GOT CORRUPTED says what
+    corruption does); a status landing on a slice marks it at once on the view's own copy of
+    the wheel (its mark rings out and the slice's rim lights, `status_mark`, new: 0.6 s, 10 px);
+    the tag is never narrower than its tape's words and the tape stands above the title
+    (`tape_width`, `tape_height`, `TAPE_INSET`).
+- **A7 screens.** The Modem's first focus is its first item a player can afford (else its first
+  item), never the socket list (`FIRST_FOCUS_META`). The MODEM sign: each tube strikes within
+  the first 45 % of the warm-up, flickers 25 %, then holds lit, and the warm-up is 0.45 s (was
+  0.8 s: a still mid-way showed one lit letter). A flight of a card flies a fresh copy of it
+  (`FlightFx.picture_of`; the snapshot of a card still dealing in was the empty slot, a grey
+  blank card); loot not taken falls clipped to its window (`FlightFx.fly(..., clip)`,
+  `loot_window_rect`). The empty-set mark's slash ends on its ring. The loadout's swap chips
+  wear a ring pictogram badge on their corner (`SegmentMark`: the segment it swaps in lit; the
+  class default with its hub lit), so they keep their size. Every event choice shows outcome
+  icons (tested over every event; they all did). Discards land inside the hand's row, clear
+  of RESPIN / UNDO. The drag ghost of shop and loot drags already used the 0.92 alpha
+  (ANIM-R2); only its strip was old: recaptured.
+- **A8** `test_the_crt_roll_waits_for_the_glass_to_show` keeps main's frozen-frames check and
+  then judges the roll frame by frame on the transition's own clock (`PageTransition.progress`).
+- New ids (data; REQUIRED_IDS and lab demos): `impact_mark`, `forecast_tick`, `forecast_fade`,
+  `status_mark` (175 entries). Retuned: `modem_sign_warmup` 0.45 s. Lab: `send_block` (a fight
+  whose enemy hits the operative, soaked whole; lab only).
+- Words (exported once, strings.csv): YOU PLAY %s, NEED %d · HAVE %d, LOOT, CONTINUE, the NEXT
+  and HP tooltips, the LAST TURN icon note; dropped: PLAYING %s.
+- Test expectations changed on purpose: `test_anim_r1_combat` (a blocked or evaded hit shows 0
+  with its glyph, not a word stamp; NEED/HAVE; token numbers are not hub numbers),
+  `test_anim_r2_combat` (the guard is a glyph and a number; the fully blocked hit's mark;
+  NEED/HAVE; YOU PLAY; the sweep passes the end state), `test_anim2_combat_motion` (token
+  numbers skipped by the hub rule), `test_horizontal_pass24` (YOU PLAY JOLT).
+
 #### 2026-09-28 — Animation pass — bake crash
 The parallel runner's shard holding `test_anim_r2_city.gd` sometimes died with "signal 11"
 right after `test_the_route_and_the_raid_setup_draw_their_nodes_before_any_bake` (1 run in

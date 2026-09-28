@@ -66,6 +66,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"city_bake_fade", &"jack_connect", &"raid_outcome_stagger", &"raid_result_banner", &"asset_drop_stamp", &"influence_tint", &"route_target_pulse",
 	# ANIM-R2 combat, events and screens: a hit's absorb, the RAM spend float, the price refusal.
 	&"hit_absorb", &"ram_spend_float", &"price_refusal",
+	# ANIM-R3 combat, input and screens: a hit's outcome where it struck, the forecast kept
+	# through the replay (its ticks and its fade), a status landing on its slice.
+	&"impact_mark", &"forecast_tick", &"forecast_fade", &"status_mark",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

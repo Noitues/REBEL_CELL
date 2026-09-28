@@ -148,15 +148,29 @@ func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRI
 	flat = true
 	focus_mode = Control.FOCUS_ALL
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	_fit_size()
+	mouse_entered.connect(_set_hot.bind(true))
+	mouse_exited.connect(_set_hot.bind(false))
+	focus_entered.connect(_set_hot.bind(true))
+	focus_exited.connect(_set_hot.bind(false))
+
+
+func _fit_size() -> void:
 	var longest := 0.0
 	for d in drips:
 		longest = maxf(longest, float(d[1]))
 	var w := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + (HINT_SIZE * Settings.text_scale + 6.0 if key_hint != "" else 0.0))
-	mouse_entered.connect(_set_hot.bind(true))
-	mouse_exited.connect(_set_hot.bind(false))
-	focus_entered.connect(_set_hot.bind(true))
-	focus_exited.connect(_set_hot.bind(false))
+
+
+## Replaces the lettering (ANIM-R3 A6h: the fight's next-step action is named by the
+## netrun); the button refits.
+func set_tag_text(text: String) -> void:
+	if text == tag_text:
+		return
+	tag_text = text
+	_fit_size()
+	queue_redraw()
 
 
 ## Replaces the key hint under the tag (rebinds, pad glyphs).

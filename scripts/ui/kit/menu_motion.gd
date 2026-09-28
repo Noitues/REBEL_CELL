@@ -251,7 +251,7 @@ func _input(event: InputEvent) -> void:
 		return
 	finish()
 	if not works_menu(event):
-		MotionSkip.consume(self)
+		MotionSkip.consume(self, event)
 
 
 ## True when `event` works this menu (ANIM-R2): a focus move, an accept, or a click on one
