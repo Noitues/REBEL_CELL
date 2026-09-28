@@ -5,8 +5,8 @@ extends Node
 ## entry's seconds per character. Only what is drawn changes (`visible_characters`): the
 ## text itself is whole from the start, so tests and screen readers read it all. Honours
 ## the Options switch (Settings.subtitle_typing: off shows the words at once), reduce
-## effects and headless. Any press shows the words whole (the press still acts); so do
-## `finish` and PageTransition.settle.
+## effects and headless. Any press (MotionSkip) shows the words whole and is consumed (it
+## does nothing else); so do `finish` and PageTransition.settle.
 
 const META := &"typing_tween"
 const NODE_NAME := "Typing"
@@ -61,6 +61,6 @@ static func finish(p_label: Control) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if (event is InputEventKey and event.pressed and not event.echo) or (event is InputEventJoypadButton and event.pressed) \
-			or (event is InputEventMouseButton and event.pressed):
+	if MotionSkip.is_press(event) and typing(label):
 		finish(label)
+		MotionSkip.consume(self)

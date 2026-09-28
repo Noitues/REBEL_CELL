@@ -448,10 +448,11 @@ func _type_page(from: int) -> float:
 
 
 func _input(event: InputEvent) -> void:
-	# Any press shows the typing page whole (never consumed: the press still acts).
-	if typing() and ((event is InputEventKey and event.pressed and not event.echo) or (event is InputEventJoypadButton and event.pressed) \
-			or (event is InputEventMouseButton and event.pressed)):
+	# ANIM-R1 (MotionSkip): a press shows the typing page whole and is consumed (it does
+	# nothing else).
+	if typing() and MotionSkip.is_press(event):
 		finish_typing()
+		MotionSkip.consume(self)
 
 
 func is_showing() -> bool:

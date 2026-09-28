@@ -731,9 +731,12 @@ func _stamp(at: Vector2, r0: float) -> void:
 # --- Input --------------------------------------------------------------------------------
 
 func _input(event: InputEvent) -> void:
-	# Input during a flight completes it (the event still does what it does).
-	if busy() and _is_press(event):
+	# ANIM-R1 (MotionSkip): a press during a flight, mark or stamp completes it and is
+	# consumed (a B that ends a viewer's landing never also leaves the page behind it).
+	if busy() and MotionSkip.is_press(event):
 		finish_all()
+		MotionSkip.consume(self)
+		return
 	if retiring:
 		return
 	if mode == Mode.CARRY:
@@ -798,16 +801,6 @@ func _carry_input(event: InputEvent) -> void:
 	elif not UiFocus.is_device_input(event):
 		return
 	get_viewport().set_input_as_handled()
-
-
-static func _is_press(event: InputEvent) -> bool:
-	if event is InputEventMouseButton:
-		return (event as InputEventMouseButton).pressed
-	if event is InputEventKey:
-		return (event as InputEventKey).pressed and not event.is_echo()
-	if event is InputEventJoypadButton:
-		return (event as InputEventJoypadButton).pressed
-	return false
 
 
 # --- Godot drag: the layer takes the drop -------------------------------------------------
