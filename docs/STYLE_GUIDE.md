@@ -190,6 +190,10 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   menu never drops a fast tap: Down then Enter activates the new line); a press that
   completes typing shows every word typing on screen at once (the page's text and the
   subtitle); while the jack covers the screen nothing is a press.
+  ANIM-R3: outside menus too a press that works the screen (a focus move, the Settings key,
+  accept on the focused button, a click on a button) completes the motion and passes on: the
+  raid playout, ambient typing and subtitles consume only presses aimed at them; an open
+  pause menu keeps its presses; a consumed pad press still switches the prompts to the pad.
 
 ### 5.2 Combat motion (the Animation pass, ANIM-2 / ANIM-3)
 - **Replay, never re-run.** The state is final at once; motion replays the engine's own
@@ -230,7 +234,17 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   drawn ▶▶ that pulses gently when no RAM is left. Tag chips come in order of importance
   (damage to you, damage dealt, HP, then the rest), so "+N MORE" never hides damage; at big
   text they shrink to their 1.3 size before any folds (ANIM-R2). Spent RAM floats "-N RAM"
-  off the count; a purchase short of Cycles flashes the CYCLES tag red with PRICE > CYCLES.
+  off the count; a purchase short of Cycles flashes the CYCLES tag red (NEED N · HAVE M).
+- **SEND IT reads to a newcomer (ANIM-R3)**: the forecast tag stays up through the replay and
+  ticks each line as it happens, its tape then reads THIS TURN and it fades; a hit rides its aim
+  (12 -> 6 ½ at half power, bigger on PERFECT) and waits until the last number has entered its
+  HP (one roll per hit); a hit soaked or evaded whole shows its glyph and 0 where it struck, and
+  ALL BLOCKED / NO DAMAGE carry a shield-over-empty-set mark (ALL BLOCKED on the last impact);
+  guards are a glyph and a number from the blocker, never a word badge; an icon row beside
+  each HP (sword 6 -> shield 5 = -1) stays with LAST TURN; a breaking wheel cracks with its own
+  art and falls, a skull on the beaten side; a won fight swaps SEND IT, RESPIN and UNDO for the
+  next step (LOOT / CONTINUE) at once; a played card is gone before its wheel spins; a status
+  marks its slice as it lands; YOU PLAY X; NEXT and LAST TURN explain themselves on hover.
 
 ### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
 - **Territory tint never jumps.** The city bakes the new look once; the new image shows
@@ -329,6 +343,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   words (ANIM-R2: readable and focusable on their paper with a typing mark; a press shows
   the words, the first choice then has focus); shop and loot cards show their whole text; a bought Modem item stays as a SOLD
   stub in its place; loot not taken falls away; tips keep off buttons and titles.
+- **ANIM-R3 screens**: the Modem's first focus is an item; its sign is whole within 0.3 s; a
+  flying card is a fresh copy of itself; loot not taken falls within its window; swap chips
+  wear a ring pictogram; every event choice shows icons; discards keep off RESPIN / UNDO.
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

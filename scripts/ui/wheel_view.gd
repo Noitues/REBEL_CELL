@@ -2667,7 +2667,8 @@ func _chip_tick(chip: Dictionary, shown: Dictionary) -> float:
 func _draw_tick(at: Vector2, chip_h: float, pop: float, alpha: float) -> void:
 	var sc := lerpf(Motion.amplitude(&"forecast_tick"), 1.0, clampf(pop, 0.0, 1.0)) if Motion.live(&"forecast_tick") else 1.0
 	var rr := chip_h * TICK_SHARE * sc
-	var c := at + Vector2(-rr * 0.4, rr * 0.2)
+	# On the chip's top-right corner, half above it: clear of the chip's own words.
+	var c := at + Vector2(0.0, -chip_h * TICK_SHARE * 0.35)
 	draw_circle(c, rr + 1.5, Color(Palette.INK, alpha))
 	draw_circle(c, rr, Color(Palette.CELL_ACID, alpha))
 	draw_polyline(PackedVector2Array([c + Vector2(-rr * 0.5, 0.0), c + Vector2(-rr * 0.12, rr * 0.4), c + Vector2(rr * 0.55, -rr * 0.45)]),
@@ -2675,7 +2676,7 @@ func _draw_tick(at: Vector2, chip_h: float, pop: float, alpha: float) -> void:
 
 
 ## A tick's radius as a share of a chip's height.
-const TICK_SHARE := 0.42
+const TICK_SHARE := 0.32
 
 
 ## The forecast tag's tape caption (translated).
