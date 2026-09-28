@@ -13,9 +13,15 @@ spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid d
 
 ## Commands
 - Tests: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`
+- Tests in parallel (same scripts, shards balanced by measured time, each shard its own
+  user://; exits non-zero on any failure, crash or skipped script):
+  `python tools/run_tests.py` (4 shards; `-j N` for N). Fast tier for iteration (a
+  couple of minutes): `python tools/run_tests.py --tier fast`. See `docs/TEST_SUITE.md`.
 - Schema smoke test: `godot --headless --path . -s tools/schema_smoke_test.gd`
 - Content validation (from M0): `godot --headless --path . -s tools/validate_content.gd`
-- Run all three before declaring any task done.
+- Run all three before declaring any task done, with the **full** suite (single process or
+  the parallel runner; the fast tier alone never counts). A new test script goes into
+  `tests/test_manifest.json` with its tier (`test_suite_integrity.gd` checks it).
 
 ## Non-negotiable rules
 1. **Deterministic core.** Game rules live in pure `RefCounted` classes under

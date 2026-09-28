@@ -30,6 +30,55 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — Test suite optimization
+The designer asked to look for overlapping tests and to speed up the suite (about 49 min
+single-process for 858 tests, over 60 min on a busy machine). Details, the profile, the
+coverage mapping and the commands: `docs/TEST_SUITE.md`.
+- **The cost was the city, not the tests.** Profiling (GUT's JUnit times per test) showed
+  that about 87% of the suite's test time was the headless neon city: its procedural geometry
+  was rebuilt in GDScript (2-4 s a build) on every scene open, camera move and resize.
+  Two test-run-only switches on `NeonCity`, both on only when the process runs GUT
+  (`gut_cmdln.gd` on the command line) and off in the game:
+  - `geometry_memo_enabled`: a built geometry is kept (at most `GEOMETRY_MEMO_CAP`, least
+    recently used out), keyed by every input the build reads (seed, district, net mode,
+    inks, face texture, cultures, exact creep and influence, colour, size and camera), and
+    reused by a redraw with the same inputs.
+  - `emit_triangles` off: the build skips emitting the triangles the dummy renderer never
+    shows, and still places every roof, window light, trail, beacon and sign the overlays
+    and tests read. `test_city_geometry_memo` builds every district, physical and net,
+    both ways and checks the placed geometry is identical; it also keeps the drawing code
+    running with triangles on.
+- **Consolidation, coverage kept.** The four every-corporation Grid sweeps of H21-H24 city
+  (50 settled Grids) are one sweep, `test_city_map_sweeps` (30 Grids: every corporation,
+  text size 1.0/1.3/1.6, early and late), running every check the four made; the H21 and
+  H22 route sweeps are one route sweep; the H23 SAVED-stamp screen sweep is covered by
+  H24's. Every removed assertion is mapped to the test that keeps it in
+  `docs/TEST_SUITE.md`. No UI sweep was sampled down: each corporation has its own Grid
+  (per-corporation bugs have happened), 1.3 is `MapLegend.FOLD_SCALE`, early and late are
+  different layouts, and after the city fix the whole sweep costs about a minute.
+- **Isolation for parallel runs.** Under GUT, `SaveService.save_dir` is the run's own
+  folder `user://saves/gut_<pid>` (removed when the run ends), as Settings already had
+  `user://gut_settings_<pid>.json`; the tests' own temp files carry the process id. The
+  parallel runner also gives each shard its own user:// (APPDATA / XDG_DATA_HOME).
+- **Parallel runner and tiers.** `tools/run_tests.py` splits the scripts into N shards
+  balanced by the times in `tests/test_manifest.json` (longest first), merges the JUnit
+  results and fails on any failing test, crash, timeout or script that did not run (GUT
+  skips a script that fails to parse and still exits 0). The manifest gives each script
+  its tier: `fast` (the rule guards, every pure-core script and the cheap screen scripts,
+  under 2 minutes) or `full`. The full suite stays required before work is declared done.
+  `test_suite_integrity` checks every test script is listed once with a tier, holds a
+  test, and that the fast tier keeps the preview, rewind, replay, RNG, wheel math, raid
+  resolver, map generator and save guards.
+- **Order and timing robustness** (shards run scripts in another order, and fast frames
+  change timing): pad reachability now restores the pad state it switches on (it made a
+  later key-hint test read "R3"); the anim6 motion checks and the anim5 jack fade measure
+  game time less the longest frame, with slack of the motion's own length, instead of
+  fixed waits or wall time; the anim6 event stamp compares with the row's own size (it
+  caught the row mid-pop once frames were fast); the resolver timing takes the fastest
+  of 20 short batches (same 300 turns, same 1 ms limit).
+- **Result** (busy machine, 864 tests): one process 10-12 min (was about 49); the runner
+  at N=4 about 4.7 min (median of three), N=2 about 7 min; the fast tier 1-2 min.
+
 ### 2026-09-27 — H24 combat: every drawn word translates once, text that fits at big sizes, turns that explain themselves
 From pass 24 (both audits, a first-time player and a player who can't read English;
 GAP_ANALYSIS H24). New standing rule from the designer: nothing is deferred. Every
@@ -2766,6 +2815,15 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **Grid labels over other nodes' icons, late campaign at big text (Test suite
+  optimization, 2026-09-27):** found while merging the Grid sweeps. H21's "a label never
+  covers a node icon" held wherever it was checked (early campaign, text 1.0, and 1.5
+  live) and holds now for the early campaign at 1.0, 1.3 and 1.6. In the late campaign
+  (six runs done) at 1.3 and 1.6, one long label per corporation lies over a few other
+  node icons (Meridian m1_f, Halcyon's Blind the Cameras and Orbital o1_g at both sizes,
+  Solace t1_f at 1.6; none for REBEL_CELL). Labels still never overlap each other and every other H24 K1 check passes.
+  Not asserted, so the suite stays green; should a label also keep off other icons there
+  (a layout slice for the next pass), or is covering an icon acceptable at big text?
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
   `content/config/ui_motion.tres` are guesses inside the handoff's ranges. None has been
   reviewed as a frame strip yet. Guesses that matter most: `wheel_spin` 0.45 s per half
