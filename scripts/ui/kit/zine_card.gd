@@ -70,6 +70,18 @@ const TITLE_SIZE := 17
 const BODY_SIZE := 11
 const BODY_LINE := 15.0
 const BODY_TOP := 58.0
+## ANIM-R1 M10: shop and reward cards show their whole text: the body (a sticker's) or the
+## effect lines (a chip tile's) shrink, and a chip's icon gives way further, until every
+## word fits; never under FIT_MIN_TEXT px (past that the focus tip carries the rest).
+## Off for the combat hand (its cards keep their layout).
+var fit_whole: bool = false
+## ANIM-R1 M11: a Modem item bought on this visit: its place stays, dimmed and stamped SOLD.
+var sold_stub: bool = false
+const SOLD_WORD := "SOLD" # TR
+const SOLD_FONT := 22
+const SOLD_TILT := -0.25
+const FIT_MIN_TEXT := 8
+const CHIP_ICON_FIT_SHRINK := 0.3
 
 
 func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", index: int = 0) -> void:
@@ -290,6 +302,16 @@ func _draw() -> void:
 	else:
 		_draw_sticker()
 	_draw_price_tag()
+	if sold_stub:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.6))
+		var fs := roundi(SOLD_FONT * text_scale)
+		draw_set_transform(size * 0.5, SOLD_TILT, Vector2.ONE)
+		var word := tr(SOLD_WORD)
+		var w := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var box := Rect2(Vector2(-w * 0.5 - 6.0, -fs * 0.7), Vector2(w + 12.0, fs * 1.3))
+		draw_rect(box, Palette.CELL_PINK, false, 3.0)
+		draw_string(Palette.display(), Vector2(-w * 0.5, fs * 0.36), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
+		draw_set_transform(Vector2.ZERO)
 	match mark:
 		Mark.CROSS:
 			HandMarks.draw_x(self, Rect2(Vector2.ZERO, size), DripButton.DRIP_PINK)
@@ -326,15 +348,17 @@ func _draw_sticker() -> void:
 		title_size -= 1  # long names shrink to fit beside the cost
 	draw_string(Palette.display(), Vector2(8, 34 * s), card_title.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, title_w, title_size, fg)
 	# The body wraps to the sticker's width; what doesn't fit ends in an ellipsis (the full
-	# text is the tooltip and the inspect).
-	var body := roundi(BODY_SIZE * s)
-	var lines := wrap_px(description, size.x - 16, body)
-	var room := sticker_body_rows()
+	# text is the tooltip and the inspect). ANIM-R1 M10: with `fit_whole` it shrinks first.
+	var fit := sticker_body_fit()
+	var body: int = fit["fs"]
+	var lines: PackedStringArray = fit["lines"]
+	var room: int = fit["rows"]
+	var step: float = fit["line"]
 	for i in mini(lines.size(), room):
 		var t := lines[i]
 		if i == room - 1 and lines.size() > room:
 			t = t.substr(0, maxi(0, t.length() - 1)) + "…"
-		draw_string(Palette.mono(), Vector2(8, BODY_TOP * s + i * BODY_LINE * s), t, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, body, fg)
+		draw_string(Palette.mono(), Vector2(8, BODY_TOP * s + i * step), t, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16, body, fg)
 	_draw_pictos(Vector2(8 + PICTO_RADIUS * s, _sticker_foot_top() - PICTO_RADIUS * s - 2.0), s, fg)
 	# H24 S10: the corner chip mark is decoration; a shop card's buy sticker sits there.
 	if buy_button == null:
@@ -483,20 +507,54 @@ func _sticker_foot_top() -> float:
 ## How many body lines fit on the sticker above its pictograms and foot.
 func sticker_body_rows() -> int:
 	var s := text_scale
+	return _body_rows_at(BODY_LINE * s)
+
+
+func _body_rows_at(line: float) -> int:
+	var s := text_scale
 	var picto_h := (PICTO_RADIUS * 2.0 + 6.0) * s if not pictos.is_empty() else 0.0
-	return maxi(1, int((_sticker_foot_top() - picto_h - BODY_TOP * s) / (BODY_LINE * s)))
+	return maxi(1, int((_sticker_foot_top() - picto_h - BODY_TOP * s) / line))
+
+
+## The sticker body as drawn: {"fs": font px, "line": line step px, "rows": lines that fit,
+## "lines": the wrapped text}. ANIM-R1 M10: with `fit_whole` the font steps down (never
+## under FIT_MIN_TEXT) until every line fits.
+func sticker_body_fit() -> Dictionary:
+	var s := text_scale
+	var fs := roundi(BODY_SIZE * s)
+	var line := BODY_LINE * s
+	var lines := wrap_px(description, size.x - 16, fs)
+	var rows := _body_rows_at(line)
+	while fit_whole and lines.size() > rows and fs > FIT_MIN_TEXT:
+		fs -= 1
+		line = BODY_LINE * s * fs / float(roundi(BODY_SIZE * s))
+		lines = wrap_px(description, size.x - 16, fs)
+		rows = _body_rows_at(line)
+	return {"fs": fs, "line": line, "rows": rows, "lines": lines}
+
+
+## True when the whole text shows on the card (body lines, or a chip tile's effect lines).
+func text_whole() -> bool:
+	if look == Look.STICKER:
+		var fit := sticker_body_fit()
+		return (fit["lines"] as PackedStringArray).size() <= int(fit["rows"])
+	if look == Look.CHIP:
+		var parts := tile_parts()
+		return int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size()
+	return true
 
 
 ## The sticker's parts as drawn (local rects; H24 S10 tests: none overlaps another): the
 ## title, each body line shown, the pictogram row, the corner chip mark and the buy sticker.
 func sticker_parts() -> Dictionary:
 	var s := text_scale
-	var body := roundi(BODY_SIZE * s)
 	var mono := Palette.mono()
-	var lines := wrap_px(description, size.x - 16, body)
+	var fit := sticker_body_fit()
+	var body: int = fit["fs"]
+	var lines: PackedStringArray = fit["lines"]
 	var rows: Array[Rect2] = []
-	for i in mini(lines.size(), sticker_body_rows()):
-		var base := BODY_TOP * s + i * BODY_LINE * s
+	for i in mini(lines.size(), int(fit["rows"])):
+		var base := BODY_TOP * s + i * float(fit["line"])
 		rows.append(Rect2(8, base - mono.get_ascent(body), size.x - 16, mono.get_height(body)))
 	var out := {"body": rows}
 	if not pictos.is_empty():
@@ -694,16 +752,29 @@ func tile_parts() -> Dictionary:
 	var ext := _icon_extent()
 	var icon_h := ext.y + ext.w
 	var desc_lines := PackedStringArray()
+	var icon_floor := CHIP_ICON_SHRINK
 	if look == Look.CHIP:
 		desc_lines = wrap_px(tile_description(), size.x - 8.0, dfs)
 		var spare := size.y - foot - line_h * shown - icon_h * CHIP_ICON_SHRINK - TILE_GAP * 2.0 * s
 		desc_rows = clampi(floori(spare / dline), 0, desc_lines.size())
+		if fit_whole and desc_rows < desc_lines.size():
+			# ANIM-R1 M10: the icon gives way further, then the lettering steps down, until
+			# the whole effect text fits (never under FIT_MIN_TEXT px).
+			icon_floor = CHIP_ICON_FIT_SHRINK
+			while true:
+				dline = mono.get_height(dfs)
+				desc_lines = wrap_px(tile_description(), size.x - 8.0, dfs)
+				spare = size.y - foot - line_h * shown - icon_h * icon_floor - TILE_GAP * 2.0 * s
+				desc_rows = clampi(floori(spare / dline), 0, desc_lines.size())
+				if desc_rows >= desc_lines.size() or dfs <= FIT_MIN_TEXT:
+					break
+				dfs -= 1
 	var text_top := size.y - foot - desc_rows * dline
 	var name_top := text_top - line_h * shown
 	# The icon in the room above the names, shrunk (never under CHIP_ICON_SHRINK) when the
 	# room is short, centred in it.
 	var room := name_top - TILE_GAP * s * 2.0
-	var k := clampf(room / icon_h, CHIP_ICON_SHRINK, 1.0)
+	var k := clampf(room / icon_h, icon_floor, 1.0)
 	var top := TILE_GAP * s + maxf(0.0, (room - icon_h * k) * 0.5)
 	var centre := Vector2(size.x * 0.5, top + ext.y * k)
 	var out := {"k": k, "centre": centre, "fs": fs, "dfs": dfs, "rows": desc_rows, "lines": lines, "desc_lines": desc_lines,

@@ -57,10 +57,57 @@ func _place(control: Control) -> void:
 		return
 	size = get_combined_minimum_size()
 	var screen := control.get_viewport_rect()
-	var r := control.get_global_rect()
-	var at := Vector2(r.position.x, r.end.y + GAP)
-	if at.y + size.y > screen.end.y:
-		at.y = r.position.y - GAP - size.y
-	at.x = clampf(at.x, screen.position.x, maxf(screen.position.x, screen.end.x - size.x))
-	at.y = clampf(at.y, screen.position.y, maxf(screen.position.y, screen.end.y - size.y))
-	global_position = at
+	global_position = spot(control.get_global_rect(), size, screen, avoid_rects(control))
+
+
+## ANIM-R1 M11: where a `tip`-sized tip for a control at `r` goes on `screen`: under it,
+## beside it (right, then left) or over it, the first spot inside the screen that covers
+## none of `avoid` (the page's buttons, tags and titles: the loot's tip hid Skip and the
+## window's title); else the one covering the least. Pure (tests).
+static func spot(r: Rect2, tip: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Vector2:
+	var tries: Array[Vector2] = [Vector2(r.position.x, r.end.y + GAP), Vector2(r.end.x + GAP, r.position.y),
+		Vector2(r.position.x - GAP - tip.x, r.position.y), Vector2(r.position.x, r.position.y - GAP - tip.y),
+		Vector2(r.end.x + GAP, r.end.y - tip.y), Vector2(r.position.x - GAP - tip.x, r.end.y - tip.y)]
+	var best := Vector2.INF
+	var best_hits := INF
+	for at in tries:
+		var p := Vector2(clampf(at.x, screen.position.x, maxf(screen.position.x, screen.end.x - tip.x)),
+			clampf(at.y, screen.position.y, maxf(screen.position.y, screen.end.y - tip.y)))
+		var box := Rect2(p, tip)
+		var hits := 0.0
+		for a in avoid:
+			if box.intersects(a):
+				hits += box.intersection(a).get_area() + 1.0
+		# The tip never covers its own control either.
+		if box.intersects(r):
+			hits += box.intersection(r).get_area() + 1.0
+		if hits < best_hits:
+			best_hits = hits
+			best = p
+			if hits == 0.0:
+				break
+	return best
+
+
+## What a tip keeps off (screen rects): the usable controls and legends on screen (as the
+## SAVED stamp does), graffiti titles and terminal window title bars, except `control`
+## and what is inside it.
+static func avoid_rects(control: Control) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not control.is_inside_tree():
+		return out
+	var own := control.get_global_rect()
+	for r in Fx.avoid_rects(control.get_tree().root):
+		if not own.encloses(r):
+			out.append(r)
+	_titles(control.get_tree().root, out)
+	return out
+
+
+static func _titles(node: Node, out: Array[Rect2]) -> void:
+	for c in node.get_children():
+		if c is CanvasItem and not (c as CanvasItem).visible:
+			continue
+		if c is GraffitiTag or (c is Label and c.name == &"TerminalTitle"):
+			out.append((c as Control).get_global_rect())
+		_titles(c, out)

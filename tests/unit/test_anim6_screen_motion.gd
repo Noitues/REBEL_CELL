@@ -400,8 +400,12 @@ func test_a_loot_pick_ends_in_the_deck() -> void:
 	await _frames()
 	var deck := RunManager.netrun.run.operative.deck.size()
 	scene.choose_reward(1)
-	assert_eq(FlightFx.active_count(scene), 1, "the card lifts and flies")
-	var flight: Dictionary = FlightFx.existing(scene).flights[0]
+	# ANIM-R1 M11 (expectation changed on purpose): the two offers not taken fall away too.
+	var picks := FlightFx.existing(scene).flights.filter(func(f: Dictionary) -> bool: return f["id"] == &"loot_pick")
+	var rejects := FlightFx.existing(scene).flights.filter(func(f: Dictionary) -> bool: return f["id"] == &"loot_reject")
+	assert_eq(picks.size(), 1, "the card lifts and flies")
+	assert_eq(rejects.size(), 2, "the others fall away")
+	var flight: Dictionary = picks[0]
 	assert_eq(flight["to"], scene.hud.stats.icon_point(StatIcon.CARDS), "to the deck (CARDS) icon")
 	assert_eq(RunManager.netrun.run.operative.deck.size(), deck + 1)
 	assert_true(RunManager.netrun.run.operative.deck.has(&"jam"), "the picked card is in the deck")

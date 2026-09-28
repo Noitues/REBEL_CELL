@@ -8,6 +8,8 @@ extends PanelContainer
 const SECONDS := 3.5
 ## Gap to the screen's bottom edge (px).
 const BOTTOM_GAP := 18.0
+## The least gap to the screen's side edges (px).
+const SIDE_GAP := 24.0
 const NODE_NAME := "Toast"
 
 var label: Label
@@ -48,5 +50,13 @@ func _place() -> void:
 	var host := get_parent() as Control
 	if host == null:
 		return
+	# ANIM-R1 M10: never wider than the screen (less its margins): a long refusal wraps,
+	# whole, instead of running off the edges.
+	var room := maxf(1.0, host.size.x - SIDE_GAP * 2.0)
 	size = get_combined_minimum_size()
-	position = Vector2((host.size.x - size.x) * 0.5, host.size.y - size.y - BOTTOM_GAP)
+	if size.x > room:
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.custom_minimum_size.x = room - (size.x - label.get_combined_minimum_size().x)
+		size = Vector2.ZERO
+		size = get_combined_minimum_size()
+	position = Vector2(clampf((host.size.x - size.x) * 0.5, 0.0, maxf(0.0, host.size.x - size.x)), host.size.y - size.y - BOTTOM_GAP)

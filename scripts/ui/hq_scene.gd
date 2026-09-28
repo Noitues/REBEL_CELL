@@ -814,6 +814,8 @@ func _set_panel(p: Control, name: String) -> void:
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	if entering:
+		if _panel_host.theme_type_variation == &"" and name != "start":
+			PageTransition.glass_is_windows(p)  # ANIM-R1 M11: the roll band crosses the windows only
 		PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
 	else:
 		UiFocus.focus_first(p)
@@ -3383,7 +3385,16 @@ func _price_icon(b: Button, kind: StringName) -> IconMark:
 	b.add_child(mark)
 	b.set_meta(&"price_kind", kind)
 	var place := func() -> void:
-		mark.position = Vector2(b.size.x - px - PRICE_ICON_GAP * 0.5, (b.size.y - px) * 0.5)
+		# ANIM-R1 M12: right after the price ("pay 25" then the icon), not at the far end of
+		# a wide menu line; never past the button's right edge.
+		var end_x := b.size.x - px - PRICE_ICON_GAP * 0.5
+		var sb := b.get_theme_stylebox(&"normal")
+		var font := b.get_theme_font(&"font")
+		if sb != null and font != null and b.alignment == HORIZONTAL_ALIGNMENT_LEFT:
+			var icon_w := float(b.icon.get_width()) + b.get_theme_constant(&"h_separation") if b.icon != null else 0.0
+			var text_w := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size(&"font_size")).x
+			end_x = minf(end_x, sb.get_margin(SIDE_LEFT) + icon_w + text_w + PRICE_ICON_GAP)
+		mark.position = Vector2(end_x, (b.size.y - px) * 0.5)
 	# The theme's boxes are known once the button is in the tree: room made on the right then.
 	var make_room := func() -> void:
 		for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
