@@ -34,6 +34,8 @@ var _started: bool = false
 var _rest: Vector2 = Vector2.ZERO
 var _last_set: Vector2 = Vector2.INF
 var _roll: Control = null
+## Seconds of the CRT roll still to show (it starts once the glass is fully shown).
+var _roll_left: float = 0.0
 var _alpha: float = 1.0
 var _done: bool = false
 
@@ -186,6 +188,7 @@ func _process(delta: float) -> void:
 		_rest = page.position
 		if look == Look.GLASS:
 			_add_roll()
+			_roll_left = Motion.seconds(&"panel_crt_roll")
 	elif page.position != _last_set:
 		# The container laid the page out again: the offset rides on the new rest.
 		_rest = page.position
@@ -202,8 +205,11 @@ func _process(delta: float) -> void:
 	var amp := Motion.amplitude(id)
 	var from := Vector2(0.0, -amp) if look == Look.PAPER else Vector2(amp * direction, 0.0)
 	var offset := from * (1.0 - eased)
-	if look == Look.GLASS and _t - delta < Motion.seconds(&"panel_crt_roll") and Motion.live(&"panel_crt_roll"):
+	# ANIM-R2 E8: the CRT roll comes once the glass is fully shown (the fade's end), not on the
+	# entrance's first frame: over the still-clear page the band read as a half-drawn screen.
+	if look == Look.GLASS and k >= FADE_SHARE and _roll_left > 0.0 and Motion.live(&"panel_crt_roll"):
 		# The CRT roll: for its one frame the glass jumps down and a band crosses it.
+		_roll_left -= delta
 		offset.y += Motion.amplitude(&"panel_crt_roll")
 		if _roll != null:
 			_roll.visible = true
