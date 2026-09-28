@@ -46,9 +46,6 @@ const PAUSE_TOP := 100.0
 const PROJECTION_FOLLOW := 0.3
 ## The forecast stamp's words (H22 #9): a caption over the verdict.
 const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
-const VERDICT_HOLDS := "ALL HOLD" # TR
-const VERDICT_HIT := "HOME HIT" # TR
-const VERDICT_LOST := "CAMPAIGN LOST" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
 const RESULT_CAPTION := "RAID\nRESULT:" # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
@@ -2447,11 +2444,12 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	card.body.add_child(row)
-	# A forecast, not a result (H22 #9): "IF THE RAID RUNS NOW: HOME HIT" on a dashed
-	# ring like combat's NEXT plate; the tooltip says so.
+	# A forecast, not a result (H22 #9): "IF THE RAID RUNS NOW: HOME -5" on a dashed
+	# ring like combat's NEXT plate; the tooltip says so. ANIM-R4 H3: the verdict names the
+	# losses (RaidVerdict), ALL HOLD only when there are none.
 	var verdict := raid_verdict(projection)
-	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, Palette.CELL_ACID if projection.won else Palette.CELL_PINK,
-		StatIcon.HOME if not projection.won else StatIcon.RAIDS)
+	var clean := RaidVerdict.clean_projection(projection)
+	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
 	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
 	row.add_child(stamp)
@@ -2493,11 +2491,10 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	return card
 
 
-## The raid forecast in words: what happens if the raid runs now (H22 #9).
+## The raid forecast in words: what happens if the raid runs now (H22 #9; ANIM-R4 H3: the
+## one verdict, RaidVerdict, translated).
 static func raid_verdict(projection: RaidResolver.RaidResult) -> String:
-	if projection.campaign_lost:
-		return VERDICT_LOST
-	return VERDICT_HOLDS if projection.won else VERDICT_HIT
+	return RaidVerdict.of_projection(projection)
 
 
 ## What a node's raid outcome word means (H23 S5).
@@ -2519,8 +2516,10 @@ func forecast_tip(projection: RaidResolver.RaidResult) -> String:
 	var what := tr("your network holds every threat")
 	if projection.campaign_lost:
 		what = tr("the home server falls and the campaign is lost")
-	elif not projection.won:
-		what = tr("threats reach the home server: home %d > %d") % [projection.home_before, projection.home_after]
+	elif not RaidVerdict.clean_projection(projection):
+		# ANIM-R4 H3: the losses, in the verdict's words (a Disabled node with every threat
+		# stopped is not "holds every threat").
+		what = tr("it costs you %s") % raid_verdict(projection).replace("\n", ", ")
 	return tr("Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.") % what
 
 
@@ -2929,9 +2928,10 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-5: the setup's forecast rides along and resolves into the real verdict at the end
 	# (the same words: the forecast is exact).
 	var r := c.last_raid
-	var won: bool = r.get("won", false)
-	var verdict := VERDICT_LOST if bool(r.get("campaign_lost", false)) else (VERDICT_HOLDS if won else VERDICT_HIT)
-	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, Palette.CELL_ACID if won else Palette.CELL_PINK, StatIcon.RAIDS if won else StatIcon.HOME)
+	# ANIM-R4 H3: the one verdict (RaidVerdict), the same words as the setup's forecast.
+	var verdict := RaidVerdict.of_result(r)
+	var clean := RaidVerdict.clean(r)
+	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
 	forecast.name = "PlayoutForecast"
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -3102,21 +3102,26 @@ func _after_playout() -> void:
 func show_raid_summary() -> void:
 	var c := RunManager.campaign
 	var r := c.last_raid
-	var won: bool = r.get("won", false)
 	var outer := HBoxContainer.new()
 	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var table := Control.new()
 	table.name = "WarTable"
 	table.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var stamp := ZineStamp.new(tr("REPELLED") if won else tr("BREACHED"), Palette.CELL_ACID if won else Palette.CELL_PINK).display_only()
+	# ANIM-R4 H3: the report's stamp is the raid's one verdict, as the playout's stamp
+	# resolved (it said BREACHED for a raid home never felt, beside HOLDS rows).
+	var clean := RaidVerdict.clean(r)
+	var stamp := ForecastStamp.new(RESULT_CAPTION, RaidVerdict.of_result(r), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	stamp.name = "RaidVerdict"
+	stamp.resolved = true
 	stamp.custom_minimum_size = Vector2(150, 150)
+	stamp.size = stamp.custom_minimum_size
 	stamp.position = Vector2(20, 16)
 	stamp.rotation_degrees = -8.0
 	table.add_child(stamp)
 	outer.add_child(table)
 	MapLegend.pin_to(table, c.corporation_id)
-	var report := TerminalWindow.new(tr("RAID REPORT"), Palette.CELL_ACID if won else Palette.CELL_PINK)
+	var report := TerminalWindow.new(tr("RAID REPORT"), RaidVerdict.color_of(clean))
 	report.custom_minimum_size.x = 340
 	outer.add_child(report)
 	var box := report.body
@@ -3126,7 +3131,7 @@ func show_raid_summary() -> void:
 	facts.add_theme_constant_override("h_separation", 10)
 	facts.add_theme_constant_override("v_separation", 4)
 	box.add_child(facts)
-	facts.add_child(Badge.new("%d > %d" % [int(r.get("home_before", 0)), int(r.get("home_after", 0))], Palette.CELL_ACID if won else Palette.CELL_PINK, GLYPH_HOME,
+	facts.add_child(Badge.new("%d > %d" % [int(r.get("home_before", 0)), int(r.get("home_after", 0))], RaidVerdict.color_of(int(r.get("home_after", 0)) >= int(r.get("home_before", 0))), GLYPH_HOME,
 		tr("Home integrity before and after the raid.")).with_meter(int(r.get("home_after", 0)), c.grid.home_max_integrity).with_icon(StatIcon.HOME))
 	facts.add_child(Badge.new(tr("%d destroyed") % int(r.get("threats_destroyed", 0)), Palette.CELL_ACID, GLYPH_THREAT, tr("Threats your network destroyed.")))
 	if int(r.get("threats_reached_home", 0)) > 0:

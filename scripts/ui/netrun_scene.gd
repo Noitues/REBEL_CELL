@@ -1465,9 +1465,6 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 ## ANIM-R3 B5: the interlude's forecast words (the raid setup's, translated once) and its
 ## stamp's side at text scale 1.0 and how far it follows the text size.
 const RAID_FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
-const RAID_VERDICT_HOLDS := "ALL HOLD" # TR
-const RAID_VERDICT_HIT := "HOME HIT" # TR
-const RAID_VERDICT_LOST := "CAMPAIGN LOST" # TR
 const RAID_STAMP := 104.0
 const RAID_STAMP_FOLLOW := 0.3
 
@@ -2393,14 +2390,14 @@ func _show_raid() -> void:
 
 
 ## ANIM-R3 B5: the interlude's forecast as the raid setup shows it: the dashed stamp ("IF
-## THE RAID RUNS NOW: HOME HIT") beside badges for home, threats stopped and steps.
+## THE RAID RUNS NOW: HOME -5") beside badges for home, threats stopped and steps.
 func _raid_forecast(projection: RaidResolver.RaidResult) -> Control:
 	var row := HBoxContainer.new()
 	row.name = "RaidForecast"
 	row.add_theme_constant_override("separation", 10)
-	var verdict := RAID_VERDICT_LOST if projection.campaign_lost else (RAID_VERDICT_HOLDS if projection.won else RAID_VERDICT_HIT)
-	var stamp := ForecastStamp.new(RAID_FORECAST_CAPTION, verdict, Palette.CELL_ACID if projection.won else Palette.CELL_PINK,
-		StatIcon.HOME if not projection.won else StatIcon.RAIDS)
+	# ANIM-R4 H3: the one verdict (RaidVerdict), as the HQ's raid setup says it.
+	var clean := RaidVerdict.clean_projection(projection)
+	var stamp := ForecastStamp.new(RAID_FORECAST_CAPTION, RaidVerdict.of_projection(projection), RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
 	stamp.name = "InterludeForecast"
 	stamp.custom_minimum_size = Vector2(RAID_STAMP, RAID_STAMP) * (1.0 + (Settings.text_scale - 1.0) * RAID_STAMP_FOLLOW)
 	row.add_child(stamp)

@@ -51,11 +51,12 @@ const BANNER_LIFT := 96.0
 const STAGGER_MOTION := &"raid_outcome_stagger"
 const BANNER_MOTION := &"raid_result_banner"
 ## The banner's words (translated when drawn). ANIM-R3 B5: the banner is home's one verdict
-## (home gets no stamp of its own): what it lost and the resolved outcome, or BREACHED when
-## the home server fell (the campaign is lost).
-const BANNER_HOME := "HOME %s - HOLDS" # TR
+## (home gets no stamp of its own): what it lost and the resolved outcome. ANIM-R4 H3: in
+## the raid verdict's words (RaidVerdict): "HOME -5 · HOLDS" (never "HOME HIT"), and
+## CAMPAIGN LOST, the verdict's own word, when the home server fell.
+const BANNER_HOME := "HOME %s · HOLDS" # TR
 const BANNER_HOLDS := "HOME HOLDS" # TR
-const BANNER_BREACHED := "HOME BREACHED" # TR
+const BANNER_BREACHED := RaidVerdict.LOST
 ## ANIM-R3 B5: gap between the banner and what it keeps clear of, and from the map's edge
 ## (screen px x screen_k); numbers on one node stack this many of their lines apart.
 const BANNER_CLEAR := 8.0
