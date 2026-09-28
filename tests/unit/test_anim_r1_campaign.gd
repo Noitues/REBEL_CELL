@@ -222,14 +222,13 @@ func test_jack_in_switched_off_switches_at_once() -> void:
 	assert_false(Fx.transitioning())
 
 
-func test_heat_pulse_creep_and_ring_switched_off_show_nothing() -> void:
+func test_heat_pulse_and_ring_switched_off_show_nothing() -> void:
 	_live()
-	_switch_off([&"heat_pulse", &"net_creep", &"select_ring_pulse"])
+	_switch_off([&"heat_pulse", &"select_ring_pulse"])
 	var n := Fx.heat_pulses
-	Fx.heat_pulse(-1.0, Palette.CORP_SOLACE)
+	Fx.heat_pulse()
 	assert_eq(Fx.heat_pulses, n + 1, "still counted")
 	assert_false(Fx.distortion.visible, "no distortion")
-	assert_false(Fx.creep_rect.visible, "no creep")
 	var overlay := CityMapOverlay.new()
 	assert_eq(overlay.pulse_amplitude(), 0.0, "the selection ring holds still")
 	overlay.free()
@@ -248,13 +247,13 @@ func test_saved_switched_off_shows_still_then_goes_at_once() -> void:
 
 func test_no_inline_fractions_are_left_in_fx() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/autoload/fx.gd")
-	for inline in ["else 0.0) * 0.5", "seconds(CREEP_MOTION) * 0.5", "seconds * 0.5", "JACK_ARRIVE_SHARE"]:
+	for inline in ["else 0.0) * 0.5", "seconds * 0.5", "JACK_ARRIVE_SHARE"]:
 		assert_false(src.contains(inline), "no inline share of an entry's time in Fx: %s" % inline)
 	var fx_layer := FileAccess.get_file_as_string("res://scripts/ui/kit/raid_fx_layer.gd")
 	assert_false(fx_layer.contains("dur * 0.5"), "the raid hit is timed by the table, not half a trace")
 	var overlay := FileAccess.get_file_as_string("res://scripts/ui/kit/city_map_overlay.gd")
 	assert_false(overlay.contains("PULSE_AMPLITUDE") or overlay.contains("PULSE_SPEED"), "the ring's pulse is in the table")
-	for id in [&"net_creep_recede", &"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse"]:
+	for id in [&"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse"]:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)
 		assert_true(Motion.has(id), "%s is in the table" % id)
 

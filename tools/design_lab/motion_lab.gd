@@ -49,7 +49,7 @@ const DEMOS := {
 	&"intent_flip": ["view", "tag"], &"rewind_scrub": ["scene", "rewind"],
 	&"pointer_flicker": ["pulse_pointer", "wheel"], &"orbit_trail": ["view", "orbit"],
 	&"enemy_break": ["scene", "send_kill"], &"hub_shatter": ["scene", "shatter"],
-	&"heat_pulse": ["heat", "stage"], &"heat_letters_shake": ["shake", "number"], &"poster_stamp": ["pop", "panel"], &"net_creep": ["fade_out", "panel"],
+	&"heat_pulse": ["heat", "stage"], &"heat_letters_shake": ["shake", "number"], &"poster_stamp": ["pop", "panel"],
 	&"hq_crt_hum": ["screen", "hum"], &"radio_type": ["screen", "radio"], &"jack_ring_breathe": ["screen", "jack"], &"polaroid_tilt": ["screen", "dossier"],
 	&"site_outline_draw": ["fade_in", "panel"], &"map_camera_ease": ["slide_x", "panel"], &"route_crawl": ["slide_x", "sticker"], &"asset_drop": ["drop", "card"],
 	&"raid_move": ["slide_x", "sticker"], &"turret_trace": ["blink", "sticker"], &"raid_flip": ["tilt", "sticker"],
@@ -94,7 +94,7 @@ const DEMOS := {
 	# --demo-anim=drag_*):
 	&"drop_buy": ["fly", "card"], &"shred_feed": ["drop", "sticker"],
 	# ANIM-R1 (the first fix batch; in context: hq_scene / netrun_scene --demo-anim=<id>):
-	&"net_creep_recede": ["fade_in", "panel"], &"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["blink", "stage"],
+	&"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["blink", "stage"],
 	&"select_ring_pulse": ["pulse", "sticker"], &"loot_reject": ["drop_away", "card"], &"home_number_fly": ["fly", "number"], &"influence_mark": ["pop", "panel"], &"heat_number_pop": ["pop", "number"], &"heat_banner": ["pop", "panel"],
 	# ANIM-R1 (combat and input): the SEND IT replay's pieces play in a live SEND IT.
 	&"resolve_landing_hold": ["scene", "send"], &"landing_pulse": ["scene", "send"], &"resolve_result_hold": ["scene", "send"],
@@ -108,6 +108,8 @@ const DEMOS := {
 	&"city_bake_fade": ["fade_in", "panel"], &"jack_connect": ["fade_in", "panel"], &"raid_outcome_stagger": ["pop", "sticker"], &"raid_result_banner": ["pop", "panel"], &"asset_drop_stamp": ["pop", "sticker"], &"influence_tint": ["fade_in", "panel"], &"route_target_pulse": ["pulse", "sticker"],
 	# ANIM-R2 (combat, events and screens):
 	&"hit_absorb": ["scene", "send_hit"], &"ram_spend_float": ["scene", "ram"], &"price_refusal": ["pulse", "sticker"],
+	# ANIM-R3 (city, raid, jack, heat and route; in context: hq_scene --demo-raid --demo-anim=asset_drop):
+	&"asset_drop_wait": ["blink", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -408,7 +410,8 @@ func _play() -> void:
 		"flash":
 			Fx.flash(Palette.CELL_PINK if _id == &"precision_perfect" else Color.WHITE, amp, Motion.seconds(_id))
 		"heat":
-			Fx.heat_pulse()
+			# ANIM-R2 R8 / ANIM-R3 B9: a Heat crossing distorts round the poster only.
+			Fx.heat_pulse_at(target.get_global_rect())
 		"freeze":
 			Fx.freeze_frames()
 			length = LOOP_HOLD

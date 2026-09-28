@@ -372,7 +372,7 @@ func _layer(layer_name: String, painter: Callable) -> Control:
 func _process(delta: float) -> void:
 	if _drop.get("waiting", false):
 		var ready: Callable = _drop.get("ready", Callable())
-		if not ready.is_valid() or bool(ready.call()) or Time.get_ticks_msec() - int(_drop["since"]) > DROP_WAIT_MAX * 1000.0:
+		if not ready.is_valid() or bool(ready.call()) or Time.get_ticks_msec() - int(_drop["since"]) > Motion.seconds(DROP_WAIT_MOTION) * 1000.0:
 			_start_drop()
 	if not Fx.effects_enabled() or not is_visible_in_tree():
 		return
@@ -1383,7 +1383,7 @@ func ease_rings() -> void:
 ## ANIM-5 (4.14): a raid asset lands on node `site_id` (the last asset in its list) with a
 ## stamp. The hook drag-and-drop deploying calls once the asset is placed.
 ## ANIM-R2 R6: `ready` (optional) says when the screen's camera has settled: the drop waits
-## for it (a camera pan at the same time hid it), at most DROP_WAIT_MAX seconds; `label`
+## for it (a camera pan at the same time hid it), at most `asset_drop_wait`; `label`
 ## names the defence under its marker once it has landed (it stays).
 func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "") -> void:
 	var n := _node_dict(site_id)
@@ -1407,8 +1407,8 @@ func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String
 	_start_drop()
 
 
-## The wait for the camera before a drop (seconds).
-const DROP_WAIT_MAX := 1.5
+## ANIM-R3 B9: the most a drop waits for the camera (its duration, seconds).
+const DROP_WAIT_MOTION := &"asset_drop_wait"
 var drop_stamp_t: float:
 	get:
 		return _mv.value(&"drop_stamp_t")

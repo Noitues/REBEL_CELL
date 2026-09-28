@@ -359,7 +359,8 @@ func _draw_banner(k: float) -> void:
 	var text := String(_banner["text"])
 	var size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(BANNER_PAD, BANNER_PAD) * 2.0 * k
 	var col: Color = _banner["color"]
-	var a := clampf(u * 3.0, 0.0, 1.0)
+	# ANIM-R3 B9: it fades in over `stamp_fade_in`'s share of its stamp-on (was u * 3.0).
+	var a := clampf(u / maxf(Motion.amplitude(&"stamp_fade_in"), 0.001), 0.0, 1.0)
 	draw_set_transform(p + Vector2(0, -BANNER_LIFT * k - CityMapOverlay.ICON_RADIUS_BIG * k), deg_to_rad(STAMP_TILT), Vector2.ONE * grow)
 	var box := Rect2(-size * 0.5, size)
 	draw_rect(box.grow(3.0 * k), Color(0, 0, 0, 0.85 * a))

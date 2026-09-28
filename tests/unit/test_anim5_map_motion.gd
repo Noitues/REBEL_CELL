@@ -307,9 +307,8 @@ func test_heat_pulse_fires_once_per_crossing_and_never_on_a_steady_value() -> vo
 	assert_eq(Fx.heat_pulses, pulses + 2, "one pulse now, the second a pulse later")
 	await _seconds(Motion.seconds(&"heat_pulse") + 0.2)
 	assert_eq(Fx.heat_pulses, pulses + 3, "each crossing pulses once")
-	await _seconds(maxf(Motion.seconds(&"heat_pulse"), Motion.seconds(&"net_creep")) + 0.2)
+	await _seconds(Motion.seconds(&"heat_pulse") + 0.2)
 	assert_false(Fx.distortion.visible, "the pulse ends: nothing stays on")
-	assert_false(Fx.creep_rect.visible, "the creep recedes")
 	assert_eq(again.stamp_scale, 1.0, "the band stamp lands")
 	assert_eq(again.shake_offset, Vector2.ZERO, "the letters settle")
 

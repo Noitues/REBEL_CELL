@@ -174,8 +174,10 @@ func _ready() -> void:
 		elif a.begins_with("--demo-iconstyle="):
 			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
 		elif a.begins_with("--demo-text-scale="):
-			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6).
-			Settings.set_text_scale(float(a.trim_prefix("--demo-text-scale=")))
+			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6). ANIM-R3 B9: this run
+			# only, never saved to the player's settings (like --demo-scale).
+			Settings.text_scale = float(a.trim_prefix("--demo-text-scale="))
+			Settings.changed.emit()
 	if args.has("--demo-start"):
 		RunManager.save_slot = "demo"
 		show_start()

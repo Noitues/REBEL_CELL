@@ -19,7 +19,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"rewind_scrub",  # 4.9
 	&"pointer_flicker", &"orbit_trail",  # 4.10
 	&"enemy_break", &"hub_shatter",  # 4.11
-	&"heat_pulse", &"heat_letters_shake", &"poster_stamp", &"net_creep",  # 4.12
+	&"heat_pulse", &"heat_letters_shake", &"poster_stamp",  # 4.12
 	&"hq_crt_hum", &"radio_type", &"jack_ring_breathe", &"polaroid_tilt",  # 4.13
 	&"site_outline_draw", &"map_camera_ease", &"route_crawl", &"asset_drop",  # 4.14
 	&"raid_move", &"turret_trace", &"raid_flip",  # 4.15
@@ -54,7 +54,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"drop_buy", &"shred_feed",
 	# Animation pass ANIM-R1 (the first fix batch): inline fractions moved into the table,
 	# the jack's arrival wait, and the campaign screens' readability motion.
-	&"net_creep_recede", &"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject", &"home_number_fly", &"influence_mark", &"heat_number_pop", &"heat_banner",
+	&"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject", &"home_number_fly", &"influence_mark", &"heat_number_pop", &"heat_banner",
 	# ANIM-R1 combat and input: the SEND IT replay's legibility, refusals, SEND IT's mark,
 	# and inline numbers moved into the table.
 	&"resolve_landing_hold", &"landing_pulse", &"resolve_result_hold", &"result_caption", &"result_stamp",
@@ -66,6 +66,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"city_bake_fade", &"jack_connect", &"raid_outcome_stagger", &"raid_result_banner", &"asset_drop_stamp", &"influence_tint", &"route_target_pulse",
 	# ANIM-R2 combat, events and screens: a hit's absorb, the RAM spend float, the price refusal.
 	&"hit_absorb", &"ram_spend_float", &"price_refusal",
+	# ANIM-R3 city, raid, jack, heat and route: the drop's camera wait moved into the table.
+	&"asset_drop_wait",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

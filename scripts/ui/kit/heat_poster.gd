@@ -96,6 +96,9 @@ func _init(p_poster: bool = false) -> void:
 	# H23 S6: the poster is tall enough for its band word ("cool" hung under the paper,
 	# hidden by the Pirate Radio note).
 	custom_minimum_size = Vector2(170, 96 if not p_poster else ceilf(band_label_rect().end.y + BAND_PAD))
+	# PASS: the scene's tooltip (what the thresholds do) shows on hover. ANIM-R3 B9: set here
+	# (it sat after a return in band_label_rect and never ran).
+	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 ## Where the band word ("cool", "hunted") is drawn (local px).
@@ -105,8 +108,6 @@ func band_label_rect() -> Rect2:
 	var word := BAND_WORDS[mini(band, 3)]
 	var base := top + BAND_BASELINE
 	return Rect2(8, base - f.get_ascent(BAND_FONT), f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT).x, f.get_height(BAND_FONT))
-	# PASS: the scene's tooltip (what the thresholds do) shows on hover.
-	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 func _make_custom_tooltip(for_text: String) -> Object:
