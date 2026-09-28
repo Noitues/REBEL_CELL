@@ -113,6 +113,9 @@ func _ready() -> void:
 			PortraitArt.style = int(a.trim_prefix("--demo-portrait="))
 		elif a.begins_with("--demo-iconstyle="):
 			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
+		elif a.begins_with("--demo-text-scale="):
+			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6).
+			Settings.set_text_scale(float(a.trim_prefix("--demo-text-scale=")))
 	if args.has("--demo-shop"):
 		RunManager.save_slot = "demo"
 		new_campaign(1)
@@ -816,6 +819,7 @@ func _show_map() -> void:
 	row.name = "RouteNodes"
 	win.body.add_child(row)
 	_route_buttons.clear()
+	var twins := choice_twins(s)
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
 		# H21 #14: what the node is (word + icon), its index on every device (the map's
@@ -830,6 +834,10 @@ func _show_map() -> void:
 		if ahead != "":
 			text += "  > %s" % ahead
 		var id: StringName = available[i]
+		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
+		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
+		if twins.has(id):
+			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -1059,6 +1067,24 @@ func _label_route_buttons() -> void:
 	_route_buttons = alive
 
 
+## ANIM-R2 R12: the open choices that are the same as an earlier one (the same kind, Heat
+## and nodes beyond): id -> the index of the first such choice. Two "Fight > Fight" buttons
+## read the same because they are (the enemy is rolled on entry); saying so tells the
+## player the pick does not matter.
+static func choice_twins(s: NetrunSession) -> Dictionary:
+	var out := {}
+	var first := {}
+	var open := s.available_nodes()
+	for i in open.size():
+		var node := s.run.map.get_node(open[i])
+		var sig := var_to_str([node_word(node), s.node_heat(open[i]), ahead_words(s.run.map, node)])
+		if first.has(sig):
+			out[open[i]] = first[sig]
+		else:
+			first[sig] = i
+	return out
+
+
 ## The run's map as buildings in the target Site's neighbourhood (layers step in from
 ## the street towards the Site).
 func route_graph() -> Dictionary:
@@ -1068,6 +1094,7 @@ func route_graph() -> Dictionary:
 	var layers := map.layer_count()
 	var available := s.available_nodes()
 	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
+	var twins := choice_twins(s)
 	var rows := {}
 	for n in map.all_nodes():
 		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
@@ -1086,10 +1113,13 @@ func route_graph() -> Dictionary:
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
 			col = Palette.corp_color(RunManager.campaign.corporation_id)
 		var idx := available.find(n["id"])
+		var label := "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else ""
+		if twins.has(n["id"]):
+			label += " " + tr("(same as %d)") % (int(twins[n["id"]]) + 1)
 		# The reachable nodes carry their route button's index and word (H21 #14); "kind"
 		# is the StatIcon the button shows.
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
-			"label": "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
+			"label": label, "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
 			# H23 S7: the kind and what it does, in the route key's words (H24 S3: translated).
 			"tip": "%s." % tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(n["type"]), n["elite"]), node_word(n)))),
 			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
@@ -1154,7 +1184,7 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	box.add_child(side)
 	var feed := TerminalWindow.new(tr("RAID FEED // LIVE"), Palette.corp_color(c.corporation_id))
 	side.add_child(feed)
-	playout = RaidPlayoutPanel.new(null, Vector2(330, 330))
+	playout = RaidPlayoutPanel.new(null, RaidPlayoutPanel.LOG_SIZE)
 	feed.body.add_child(playout)
 	var cont := _icon_button(tr("Continue"), _show_current, StatIcon.CONTINUE)
 	cont.disabled = true

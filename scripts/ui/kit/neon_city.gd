@@ -569,10 +569,16 @@ func spread_progress() -> Vector2:
 ## image is the one on screen (or any bake of the old look over this view); without one
 ## only the light front plays over the new image.
 func _start_spread(prev: Dictionary) -> void:
-	if not Motion.live(SPREAD_MOTION) or prev.is_empty() or influence.is_empty() or prev.get("corp") != influence.get("corp"):
+	if prev.is_empty() or influence.is_empty() or prev.get("corp") != influence.get("corp"):
 		return
 	var from := InfluenceSpread.origins(prev, influence)
 	if from.is_empty():
+		return
+	if not Motion.live(SPREAD_MOTION):
+		# ANIM-R2 R7: no spread plays, but its end state stays: the district's lasting tint.
+		_spread_origins = from
+		_spread_color = InfluenceSpread.front_color(prev, influence)
+		_show_tint(Motion.amplitude(TINT_MOTION))
 		return
 	var old_look := look_key(prev)
 	var old_key := ""
@@ -596,7 +602,44 @@ func _start_spread(prev: Dictionary) -> void:
 		m.set_shader_parameter("front_color", _spread_color)
 		(layer as Control).visible = true
 	_old_layer.visible = not _spread_old.is_empty()
+	# ANIM-R2 R7: a stronger front, and the lasting tint washing in behind it.
+	var fm := _front_layer.material as ShaderMaterial
+	fm.set_shader_parameter("front_alpha", FRONT_ALPHA)
+	tint_wash = 0.0
+	Motion.run(TINT_MOTION, self, ^"tint_wash", Motion.amplitude(TINT_MOTION))
 	_step_spread(0.0)
+
+
+## ANIM-R2 R7: the lasting tint's strength over the changed district (0..`influence_tint`'s
+## amplitude; it stays until the next change).
+const TINT_MOTION := &"influence_tint"
+## The spreading front's band strength (it was 0.5 and barely read at map scale).
+const FRONT_ALPHA := 0.9
+var tint_wash: float = 0.0:
+	set(v):
+		tint_wash = v
+		if _front_layer != null:
+			(_front_layer.material as ShaderMaterial).set_shader_parameter("wash", v)
+
+
+## ANIM-R2 R7: the lasting tint alone (the front at full reach, its band gone) at `wash`.
+func _show_tint(wash: float) -> void:
+	var m := _front_layer.material as ShaderMaterial
+	m.set_shader_parameter("origins", _spread_origins)
+	m.set_shader_parameter("origin_count", _spread_origins.size())
+	m.set_shader_parameter("feather", Motion.amplitude(FADE_MOTION))
+	m.set_shader_parameter("front_color", _spread_color)
+	m.set_shader_parameter("radius", Motion.amplitude(SPREAD_MOTION))
+	m.set_shader_parameter("fade", 1.0)
+	m.set_shader_parameter("cam", Vector2(_ox, _oy))
+	tint_wash = wash
+	_front_layer.visible = wash > 0.0
+	_front_layer.queue_redraw()
+
+
+## ANIM-R2 R7: the lasting tint's colour and strength now (a = 0 when none shows; tests).
+func lasting_tint() -> Color:
+	return Color(_spread_color, tint_wash) if _front_layer.visible else Color(0, 0, 0, 0)
 
 
 ## Advances the spread by `delta` seconds and updates the mask; ends it when both the
@@ -689,10 +732,16 @@ func draw_marks_on(ci: CanvasItem) -> void:
 
 ## Jumps a running spread to its end (the new look alone).
 func finish_spread() -> void:
+	var was := _spread_elapsed >= 0.0
 	_spread_elapsed = -1.0
 	_spread_old = {}
 	_old_layer.visible = false
-	_front_layer.visible = false
+	# ANIM-R2 R7: the district keeps its tint (the front's band goes).
+	if was and not _spread_origins.is_empty():
+		Motion._settle(self, ^"tint_wash")  # its tween only (the fade-in and stamps keep theirs)
+		_show_tint(Motion.amplitude(TINT_MOTION))
+	else:
+		_front_layer.visible = false
 
 
 ## The old image under the camera, then the same shade the view draws (masked by the
@@ -1064,6 +1113,8 @@ func _draw_view() -> void:
 	_camera()
 	_shift = Vector2(_ox, _oy)
 	_placer_stale = true
+	if _front_layer.visible:
+		(_front_layer.material as ShaderMaterial).set_shader_parameter("cam", Vector2(_ox, _oy))
 	# Read the territory now, not at the next poll: a scene whose campaign loads after
 	# the backdrop is built would otherwise bake twice.
 	var inf := _followed_influence()

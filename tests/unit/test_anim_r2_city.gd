@@ -303,3 +303,292 @@ func test_a_threaded_bake_builds_in_slices_and_lets_the_slot_go() -> void:
 	var painter: NeonCity = rec["painter"]
 	assert_true(painter._slices.is_empty(), "the slices are freed")
 	assert_true(painter._parts.is_empty(), "the geometry was handed over")
+
+
+func _seconds(s: float) -> void:
+	await get_tree().create_timer(s).timeout
+
+
+func _live() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+		Fx.apply_settings()
+
+
+func _hq_raid() -> Control:
+	var hq := _scene(HQ)
+	hq.new_campaign(1)
+	var c := RunManager.campaign
+	c.schematics = 100
+	var grid_data := RunManager.corporation.city_grid
+	var first: StringName = grid_data.get_site(grid_data.home_site_id).links[0]
+	CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), hq._demo_run(first))
+	CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
+	c.armory = [&"turret", &"ice_lock", &"decoy"]
+	CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
+	return hq
+
+
+# --- R5: the jack names where it connects --------------------------------------------------------
+
+func test_the_jack_says_where_it_connects_while_the_screen_builds() -> void:
+	await _frames(1)
+	_live()
+	var switched := [false]
+	Fx.jack_in(func() -> void: switched[0] = true, -1.0, "Test Site")
+	var saw := false
+	var words := ""
+	for k in 240:
+		if Fx.connecting():
+			saw = true
+			words = Fx.connect_label.text
+			break
+		await _frames(1)
+	assert_true(switched[0], "the switch happened under the cover")
+	assert_true(saw, "CONNECTING shows on the opaque cover")
+	assert_string_contains(words, "TEST SITE", "naming the place")
+	for k in 240:
+		if not Fx.transitioning():
+			break
+		await _frames(1)
+	assert_false(Fx.connecting(), "and goes with the cover")
+	assert_eq(RunManager.jack_destination(), tr("the net"), "no run: the net")
+
+
+# --- R6: raid playout readability and the press rule ---------------------------------------------
+
+func test_a_press_skips_a_playout_step_but_its_buttons_stay_clickable() -> void:
+	var probe := InputProbe.new()
+	add_child_autofree(probe)
+	var seen := [0]
+	probe.seen.connect(func(e: InputEvent) -> void:
+		if MotionSkip.is_press(e):
+			seen[0] += 1)
+	var grid := GridFixture.chain_grid([&"c1", &"c2"])
+	var c := GridFixture.campaign(grid, {&"c1": &"firewall_relay", &"c2": &"relay"})
+	GridFixture.deploy(c, &"c1", &"turret")
+	var raid := GridFixture.raid(&"two", [&"collector", &"enforcer"])
+	var result := RaidResolver.resolve(c, grid, raid, GridFixture.lookup(), CombatFixture.config())
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var panel := RaidPlayoutPanel.new()
+	holder.add_child(panel)
+	_live()
+	panel.play(result.events, false)
+	await _frames(1)
+	panel._clock = 0.0
+	var next := panel._next_at
+	var key := InputEventKey.new()
+	key.keycode = KEY_X
+	key.physical_keycode = KEY_X
+	key.pressed = true
+	get_viewport().push_input(key)
+	assert_almost_eq(panel._clock, next, 0.0001, "a press (any key, the one rule) ends the step's motion")
+	assert_eq(seen[0], 0, "and is consumed: nothing behind the playout sees it")
+	var echo := key.duplicate() as InputEventKey
+	echo.echo = true
+	panel._clock = 0.0
+	get_viewport().push_input(echo)
+	assert_eq(panel._clock, 0.0, "a held key's repeat is no press")
+	# A click on its own Skip button is the button's, not a step skip.
+	await _frames(1)
+	var skip := panel.find_child("Skip", true, false) as Button
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = skip.get_global_rect().get_center()
+	click.global_position = click.position
+	assert_true(panel._for_own_button(click), "a click on Skip is Skip's")
+
+
+func test_the_raid_ends_with_staggered_outcomes_and_a_result_banner() -> void:
+	var hq := _hq_raid()
+	await _frames()
+	hq.show_raid()
+	await _frames(2)
+	var c := RunManager.campaign
+	var events := RunManager.fight_raid()
+	# Headless the screen's playout is instant and moves on to the summary; play it on the
+	# setup's map here to read its end state.
+	var panel := RaidPlayoutPanel.new(hq.city_overlay)
+	add_child_autofree(panel)
+	panel.attach_fx(c.last_raid, c.grid.home_site_id, c.grid.home_max_integrity, Palette.CORP_SOLACE)
+	panel.play(events, true)
+	var fx: RaidFxLayer = panel.fx
+	assert_not_null(fx)
+	var r: Dictionary = c.last_raid
+	var lost := int(r.get("home_before", 0)) - int(r.get("home_after", 0))
+	var want := (CityMapOverlay.tr_word(RaidFxLayer.BANNER_HOME) % ("-%d" % lost)) if lost > 0 else CityMapOverlay.tr_word(RaidFxLayer.BANNER_HOLDS)
+	assert_eq(fx.banner_text(), want, "the result banner says what home lost")
+	var starts: Array[float] = []
+	for id in fx._stamps:
+		starts.append(float(fx._stamps[id]["t0"]))
+	starts.sort()
+	assert_gt(starts.size(), 1, "every node stamps its outcome")
+	for i in range(1, starts.size()):
+		assert_gt(starts[i], starts[i - 1], "the outcomes stamp one after another")
+	assert_eq(RaidFxLayer.TOKEN_SCALE, 3.0, "threat tokens read at map scale")
+
+
+func test_an_asset_drop_waits_for_the_camera_then_lands_with_its_name() -> void:
+	var hq := _hq_raid()
+	await _frames()
+	hq.show_raid()
+	await _frames(4)
+	_live()
+	var target: StringName = hq.selected_site
+	var moving := [true]
+	hq.city_overlay.drop_asset(target, func() -> bool: return not moving[0], "TURRET")
+	assert_true(hq.city_overlay.drop_waiting(), "it waits while the camera pans")
+	assert_eq(hq.city_overlay.drop_t, 0.0)
+	moving[0] = false
+	await _frames(2)
+	assert_false(hq.city_overlay.drop_waiting(), "then drops")
+	await _seconds(Motion.seconds(&"asset_drop") + Motion.seconds(&"asset_drop_stamp") + 0.3)
+	assert_eq(hq.city_overlay.drop_t, 1.0, "it lands")
+	assert_eq(hq.city_overlay.drop_stamp_t, 1.0, "and stamps")
+	assert_eq(String(hq.city_overlay._drop.get("label", "")), "TURRET", "its name stays under it")
+
+
+# --- R7: the district keeps its tint -----------------------------------------------------------------
+
+func test_a_territory_change_leaves_a_lasting_tint() -> void:
+	RunManager.new_campaign(1)
+	var c := RunManager.campaign
+	var before := CityInfluence.of(c, RunManager.corporation)
+	var first: StringName = RunManager.corporation.city_grid.get_site(c.grid.home_site_id).links[0]
+	c.schematics = 100
+	var hq := _scene(HQ)
+	CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), hq._demo_run(first))
+	CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var city := NeonCity.new()
+	holder.add_child(city)
+	await _frames(1)
+	city.set_influence(CityInfluence.of(c, RunManager.corporation))
+	city._start_spread(before)
+	assert_gt(city.lasting_tint().a, 0.0, "headless (no spread plays): the end state is the tint")
+	assert_almost_eq(city.lasting_tint().a, Motion.amplitude(&"influence_tint"), 0.001, "at influence_tint's strength")
+
+
+# --- R8: the Heat crossing in order, the banner fits ------------------------------------------------
+
+func test_a_multi_band_rise_rolls_to_each_threshold_and_stamps_a_banner_each() -> void:
+	RunManager.new_campaign(1)
+	HeatPoster._seen_heat.clear()
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var poster := HeatPoster.new(true)
+	holder.add_child(poster)
+	var marks: Array[int] = [25, 50, 75]
+	poster.set_heat(20, 100, marks)
+	await _frames()
+	_live()
+	var pulses := Fx.heat_pulses
+	poster.set_heat(60, 100, marks)
+	assert_eq(poster.banner_alpha, 0.0, "nothing before the number reaches 25")
+	assert_eq(Fx.heat_pulses, pulses, "no distortion before the crossing")
+	await _seconds(Motion.seconds(&"number_roll") + 0.08)
+	assert_string_contains(poster.banner_text(), "25", "the first banner names 25")
+	assert_eq(Fx.heat_pulses, pulses + 1, "one distortion at 25")
+	assert_false(Fx.distortion.get_rect().encloses(Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)), "round the poster, not the screen")
+	await _seconds(Motion.seconds(&"number_roll") + 0.08)
+	assert_string_contains(poster.banner_text(), "50", "then one for 50")
+	assert_eq(Fx.heat_pulses, pulses + 2)
+	await _seconds(Motion.seconds(&"number_roll") + Motion.seconds(&"heat_pulse") + 0.1)
+	assert_almost_eq(poster.shown_heat, 60.0, 0.01, "the number ends on the Heat")
+	assert_false(Fx.distortion.visible, "the distortion is brief")
+	assert_true(Motion.seconds(&"heat_pulse") <= 0.3, "at most 0.3 s")
+	# A drop across a band re-stamps the band word only.
+	var banner := poster.banner_alpha
+	poster.set_heat(20, 100, marks)
+	assert_gt(poster.stamp_scale, 1.0, "the band word stamps again")
+	assert_eq(Fx.heat_pulses, pulses + 2, "no distortion going down")
+	assert_true(poster.banner_alpha <= banner, "and no new banner")
+
+
+func test_the_heat_banner_fits_its_poster_at_every_text_size_and_a_long_translation() -> void:
+	RunManager.new_campaign(1)
+	var tr_long := Translation.new()
+	tr_long.locale = "xx"
+	tr_long.add_message("hunted", "activement recherché")
+	tr_long.add_message("HEAT %d - %s", "CHALEUR %d - %s")
+	TranslationServer.add_translation(tr_long)
+	var locale := TranslationServer.get_locale()
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	for scale in [1.0, 1.3, 1.6]:
+		Settings.set_text_scale(scale)
+		for loc in [locale, "xx"]:
+			TranslationServer.set_locale(loc)
+			var poster := HeatPoster.new(true)
+			holder.add_child(poster)
+			poster.size = poster.custom_minimum_size
+			poster.heat = 80
+			poster._banner_at = 75
+			var fs := poster.banner_font_size()
+			var span := HeatPoster.banner_span(Palette.display(), poster.banner_text(), fs)
+			assert_true(span <= poster.size.x - HeatPoster.BANNER_MARGIN * 2.0 + 0.5, "%s at %.1f (%s): %.0f px in %.0f" % [poster.banner_text(), scale, loc, span, poster.size.x])
+			poster.queue_free()
+	TranslationServer.set_locale(locale)
+	TranslationServer.remove_translation(tr_long)
+
+
+# --- R9: the label layout is worked out once per change -----------------------------------------------
+
+func test_the_label_layout_is_cached_until_something_changes() -> void:
+	var hq: Control = _scene(HQ)
+	await _frames(1)
+	hq.new_campaign(1)
+	hq.show_grid()
+	await _frames(3)
+	var overlay: CityMapOverlay = hq.city_overlay
+	var a := overlay._layout_labels()
+	assert_true(is_same(a, overlay._layout_labels()), "the same layout while nothing changed")
+	overlay.hover_id = overlay.nodes[0]["id"]
+	assert_false(is_same(a, overlay._layout_labels()), "a new layout when the focus moves")
+
+
+# --- R12: equal route choices say so ------------------------------------------------------------------
+
+func test_equal_route_choices_say_they_are_the_same() -> void:
+	var nr: Control = _scene(NETRUN)
+	await _frames(1)
+	nr.new_campaign(1)
+	nr.start_run(1)
+	await _frames(2)
+	var s := RunManager.netrun
+	var twins: Dictionary = nr.choice_twins(s)
+	assert_false(twins.is_empty(), "seed 1's first choices are three plain fights")
+	var open := s.available_nodes()
+	for i in open.size():
+		var b := nr.find_child("Node%d" % (i + 1), true, false) as Button
+		if twins.has(open[i]):
+			assert_string_contains(b.text, tr("(same as %d)") % (int(twins[open[i]]) + 1), "a twin choice says which it equals")
+		else:
+			assert_false(b.text.contains("(same as"), "a choice unlike the others says nothing")
+	for n: Dictionary in nr.city_overlay.nodes:
+		if twins.has(n["id"]):
+			assert_string_contains(String(n["label"]), "(same as", "and so does its map label")
+
+
+# --- R13: big text -------------------------------------------------------------------------------------
+
+func test_big_text_raid_key_folds_and_the_crew_orders_show() -> void:
+	Settings.set_text_scale(1.6)
+	var hq := _hq_raid()
+	await _frames()
+	hq.show_raid()
+	await _frames(6)
+	assert_true(hq.raid_legend_is_strip(), "at 1.6 the raid key is the folding strip")
+	assert_true(hq.raid_legend.foldable() and hq.raid_legend.is_folded(), "folded to its MAP KEY line")
+	hq.show_hq()
+	await _frames(6)
+	var screen := hq.get_global_rect()
+	var found := 0
+	for b in hq.find_children("Loadout", "Button", true, false):
+		found += 1
+		assert_true(screen.encloses((b as Button).get_global_rect()), "a dossier's Loadout is on the first screen at 1.6")
+	assert_gt(found, 0, "the dossiers have their Loadout")

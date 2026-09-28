@@ -27,7 +27,10 @@ const DETAIL_SIZE := 12
 ## COMPACT_POLAROID of its size.
 const COMPACT_FROM := 1.3
 const CARD_MAX_SCALE := 1.15
-const COMPACT_POLAROID := 0.7
+## ANIM-R2 R13: compact, the Polaroid is this share of its size and the class tags sit
+## beside it (at 1.6 the tags were cut by the page's foot and the Loadout button hidden
+## under MORE BELOW).
+const COMPACT_POLAROID := 0.5
 const POLAROID_SIZE := Vector2(120, 144)
 
 
@@ -88,6 +91,16 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 		# the first screen of the HQ shows it (at 1.6 the page cut the dossier above it).
 		box.move_child(hp_strip, name_label.get_index() + 1)
 		box.move_child(info, hp_strip.get_index() + 1)
+		# ANIM-R2 R13: the class tags beside the Polaroid, so the orders (Loadout) come on the
+		# first screen too.
+		var top := HBoxContainer.new()
+		top.add_theme_constant_override("separation", 6)
+		box.add_child(top)
+		box.move_child(top, 0)
+		polaroid.reparent(top)
+		tags.reparent(top)
+		tags.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tags.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	orders = VBoxContainer.new()
 	orders.add_theme_constant_override("separation", 4)
 	box.add_child(orders)

@@ -208,7 +208,7 @@ var ring_ease: float:
 	set(v):
 		_mv.put(&"ring_ease", v)
 ## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
-var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0})
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
 var drop_t: float:
@@ -236,7 +236,9 @@ var dim_t: float:
 		_mv.put(&"dim_t", v)
 var _travel_tween: Tween = null
 ## The move's light trail: this many fading dots, each this share of the link behind.
-const TRAVEL_TRAIL := 6
+const TRAVEL_TRAIL := 8
+## ANIM-R2 R12: the trail's width (screen px).
+const TRAVEL_WIDTH := 7.0
 ## ANIM-R1 M7: a visited route node's tick (screen px).
 const TICK := 11.0
 const TRAVEL_TRAIL_STEP := 0.04
@@ -312,7 +314,7 @@ func _on_motion_value(key: StringName) -> void:
 	if _hi == null:
 		return
 	match key:
-		&"drop_t", &"arrive_t", &"dim_t":
+		&"drop_t", &"drop_stamp_t", &"arrive_t", &"dim_t":
 			_queue_top()
 	_hi.queue_redraw()
 
@@ -368,6 +370,10 @@ func _layer(layer_name: String, painter: Callable) -> Control:
 
 
 func _process(delta: float) -> void:
+	if _drop.get("waiting", false):
+		var ready: Callable = _drop.get("ready", Callable())
+		if not ready.is_valid() or bool(ready.call()) or Time.get_ticks_msec() - int(_drop["since"]) > DROP_WAIT_MAX * 1000.0:
+			_start_drop()
 	if not Fx.effects_enabled() or not is_visible_in_tree():
 		return
 	# The map's own motion runs at the playout's speed (Motion.speed: 1x outside a raid).
@@ -1197,15 +1203,30 @@ func _node(n: Dictionary) -> void:
 	for k in assets.size():
 		var slot := asset_slot(n, k, assets.size())
 		var ar := ASSET_ICON * _k()
-		if not _drop.is_empty() and _drop["site"] == n["id"] and int(_drop["index"]) == k and drop_t < 1.0:
-			# ANIM-5: falling onto its node, then a stamp ring as it lands.
+		var landing: bool = not _drop.is_empty() and _drop["site"] == n["id"] and int(_drop["index"]) == k
+		if landing and _drop.get("waiting", false):
+			continue  # ANIM-R2 R6: it drops once the camera has panned there
+		if landing and drop_t < 1.0:
+			# ANIM-5: falling onto its node. ANIM-R2 R6: a bigger stamp ring as it lands.
 			slot.y -= (1.0 - drop_t) * Motion.amplitude(&"asset_drop") * _k()
-			_c.draw_arc(slot, ar * (1.0 + 1.2 * drop_t), 0, TAU, 20, Color(Palette.PAPER, sin(drop_t * PI) * 0.8), 2.0 * _k())
+		if landing and drop_stamp_t < 1.0 and drop_t >= 1.0:
+			var grow := lerpf(1.0, Motion.amplitude(&"asset_drop_stamp"), drop_stamp_t)
+			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(0, 0, 0, 0.8 * (1.0 - drop_stamp_t)), 5.0 * _k())
+			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(Palette.PAPER, 1.0 - drop_stamp_t), 2.5 * _k())
 		# ANIM-R1 M4: the placed defence stays on its node as a marker the size of a map
 		# icon (a dark plate, a pink ring, the asset's own icon), readable at any zoom.
 		_c.draw_circle(slot, ar * 1.25, Color(0, 0, 0, 0.85))
 		_c.draw_arc(slot, ar * 1.25, 0, TAU, 20, Palette.CELL_PINK, 2.0 * _k())
 		AssetIcon.draw_icon(_c, slot, ar, assets[k])
+		if landing and String(_drop.get("label", "")) != "":
+			# ANIM-R2 R6: the defence that just landed keeps its name under it.
+			var f := Palette.mono()
+			var fs := label_font_size()
+			var word: String = str(_drop["label"])
+			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
+			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
+			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, AssetIcon.color_of(assets[k]))
 	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
 		var row := _marker_row(n)
@@ -1351,17 +1372,55 @@ func ease_rings() -> void:
 
 ## ANIM-5 (4.14): a raid asset lands on node `site_id` (the last asset in its list) with a
 ## stamp. The hook drag-and-drop deploying calls once the asset is placed.
-func drop_asset(site_id: StringName) -> void:
+## ANIM-R2 R6: `ready` (optional) says when the screen's camera has settled: the drop waits
+## for it (a camera pan at the same time hid it), at most DROP_WAIT_MAX seconds; `label`
+## names the defence under its marker once it has landed (it stays).
+func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "") -> void:
 	var n := _node_dict(site_id)
 	var count := (n.get("assets", []) as Array).size()
 	if n.is_empty() or count == 0:
 		return
-	_drop = {"site": site_id, "index": count - 1}
+	_drop = {"site": site_id, "index": count - 1, "label": label}
 	drop_t = 0.0
-	if not is_inside_tree():
+	drop_stamp_t = 0.0
+	if not is_inside_tree() or not Motion.live(&"asset_drop"):
 		drop_t = 1.0
+		drop_stamp_t = 1.0
+		_queue_top()
 		return
-	Motion.run(&"asset_drop", _mv, ^"drop_t", 1.0)
+	if ready.is_valid() and not bool(ready.call()):
+		_drop["waiting"] = true
+		_drop["ready"] = ready
+		_drop["since"] = Time.get_ticks_msec()
+		_queue_top()
+		return
+	_start_drop()
+
+
+## The wait for the camera before a drop (seconds).
+const DROP_WAIT_MAX := 1.5
+var drop_stamp_t: float:
+	get:
+		return _mv.value(&"drop_stamp_t")
+	set(v):
+		_mv.put(&"drop_stamp_t", v)
+
+
+func _start_drop() -> void:
+	_drop.erase("waiting")
+	_drop.erase("ready")
+	var tw := Motion.run(&"asset_drop", _mv, ^"drop_t", 1.0)
+	if tw == null:
+		drop_stamp_t = 1.0
+		return
+	tw.finished.connect(func() -> void:
+		if is_instance_valid(_mv) and Motion.run(&"asset_drop_stamp", _mv, ^"drop_stamp_t", 1.0) == null:
+			drop_stamp_t = 1.0)
+
+
+## True while a dropped defence waits for the camera (tests).
+func drop_waiting() -> bool:
+	return bool(_drop.get("waiting", false))
 
 
 ## ANIM-5 (4.16): the netrun moves from node `from` to node `to`: a light pulse runs the
@@ -1467,10 +1526,24 @@ func _draw_travel() -> void:
 		return
 	var k := _k()
 	var head := _travel_point(travel_t)
-	for q in TRAVEL_TRAIL:
-		var u := maxf(0.0, travel_t - q * TRAVEL_TRAIL_STEP)
-		_hi.draw_circle(_travel_point(u), (5.0 - q * 0.6) * k, Color(Palette.CELL_ACID, 0.7 * (1.0 - float(q) / TRAVEL_TRAIL)))
-	_hi.draw_circle(head, 3.0 * k, Palette.PAPER)
+	# ANIM-R2 R12: the node it heads for pulses (`route_target_pulse`) while it travels.
+	var to := icon_at(_travel["to"])
+	if to.x != INF:
+		var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
+		var swell := (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
+		var tr_r := icon_radius(_node_dict(_travel["to"])) + (SELECT_RING + swell) * k
+		_hi.draw_arc(to, tr_r, 0, TAU, 32, Color(0, 0, 0, 0.8), 6.0 * k)
+		_hi.draw_arc(to, tr_r, 0, TAU, 32, Palette.CELL_ACID, 3.0 * k)
+	# ANIM-R2 R12: a thick, bright trail along the street behind the head (it was a row of
+	# small dots), a dark keyline under it.
+	var trail := PackedVector2Array()
+	for q in TRAVEL_TRAIL + 1:
+		trail.append(_travel_point(maxf(0.0, travel_t - (TRAVEL_TRAIL - q) * TRAVEL_TRAIL_STEP)))
+	_hi.draw_polyline(trail, Color(0, 0, 0, 0.8), TRAVEL_WIDTH * 2.0 * k, true)
+	_hi.draw_polyline(trail, Color(Palette.CELL_ACID, 0.9), TRAVEL_WIDTH * k, true)
+	_hi.draw_polyline(trail, Palette.PAPER, TRAVEL_WIDTH * 0.35 * k, true)
+	_hi.draw_circle(head, TRAVEL_WIDTH * 1.1 * k, Palette.CELL_ACID)
+	_hi.draw_circle(head, TRAVEL_WIDTH * 0.6 * k, Palette.PAPER)
 	var c0 := _c
 	_c = _hi
 	_here(head, ICON_RADIUS * k)

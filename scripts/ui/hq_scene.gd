@@ -173,6 +173,9 @@ func _ready() -> void:
 			PortraitArt.style = int(a.trim_prefix("--demo-portrait="))
 		elif a.begins_with("--demo-iconstyle="):
 			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
+		elif a.begins_with("--demo-text-scale="):
+			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6).
+			Settings.set_text_scale(float(a.trim_prefix("--demo-text-scale=")))
 	if args.has("--demo-start"):
 		RunManager.save_slot = "demo"
 		show_start()
@@ -447,7 +450,12 @@ func deploy_asset(armory_index: int, site_id: StringName) -> void:
 ## (the hook drag-and-drop deploying calls; the end state at once without motion).
 func play_asset_drop(site_id: StringName) -> void:
 	if city_overlay != null and is_instance_valid(city_overlay):
-		city_overlay.drop_asset(site_id)
+		# ANIM-R2 R6: it drops once the camera has panned to the page's new frame, and keeps its
+		# name under it.
+		var placed: Array = RunManager.campaign.grid.site(site_id).get("assets", []) if RunManager.campaign != null else []
+		var label := _display(StringName(placed[placed.size() - 1])) if not placed.is_empty() else ""
+		var bg := wireframe
+		city_overlay.drop_asset(site_id, func() -> bool: return not is_instance_valid(bg) or not bg.camera_easing(), label)
 
 
 func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
@@ -944,6 +952,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("cycle_target") and panel_name == "grid" and grid_legend != null \
 			and is_instance_valid(grid_legend) and grid_legend.visible and grid_legend.foldable():
 		grid_legend.set_opened(not grid_legend.opened)
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("cycle_target") and panel_name == "raid" and raid_legend != null \
+			and is_instance_valid(raid_legend) and raid_legend.visible and raid_legend.foldable():
+		# ANIM-R2 R13: the raid's folding key opens and folds as the Grid's does.
+		raid_legend.set_opened(not raid_legend.opened)
 		get_viewport().set_input_as_handled()
 		return
 	# B goes back to the HQ from the Grid and the raid setup (H23 S11). H24 S6: only a pad's
@@ -2220,10 +2234,13 @@ func show_raid() -> void:
 	var g := raid_graph(projection, {})
 	# H24 S5: the key is a column at the map's left, or a strip along its foot when the
 	# nodes cannot fit beside the column (kept for this layout once chosen).
-	_raid_strip = _raid_strip_key != "" and _raid_strip_key == raid_layout_key()
+	# ANIM-R2 R13: at big text (MapLegend.FOLD_SCALE and up) the key is the Grid's folding
+	# strip from the start (its column covered about half the map at 1.6).
+	_raid_strip = (_raid_strip_key != "" and _raid_strip_key == raid_layout_key()) or Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001
 	raid_legend = MapLegend.pin_to(spacer, c.corporation_id, _raid_strip).show_only(MapLegend.keys_of(g, c.grid))
 	if _raid_strip:
 		raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
+		raid_legend.fold_changed.connect(_place_raid_strip)
 	_raid_reframes = 0
 	_raid_passes = 0
 	_raid_checks = 0
@@ -2312,6 +2329,8 @@ func show_raid() -> void:
 	if c.armory.is_empty():
 		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
 	_set_panel(outer, "raid")
+	if raid_legend.foldable():
+		set_page_prompts(prompts_for("raid") + [[&"cycle_target", "Key"]])  # ANIM-R2 R13: as the Grid
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.42))
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
@@ -2636,6 +2655,7 @@ func _use_raid_strip() -> void:
 	raid_legend = MapLegend.pin_to(area, RunManager.campaign.corporation_id, true).show_only(keys)
 	raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
 	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
+	raid_legend.fold_changed.connect(_place_raid_strip)
 	TextDb.translates_itself(raid_legend)  # its row words are keys
 	var avoid: Array[Control] = []
 	for ctl in _raid_avoid:
@@ -2866,7 +2886,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
 	city_overlay.avoid_controls([side])
 	var overlay := city_overlay
-	playout = RaidPlayoutPanel.new(overlay, Vector2(330, 330))
+	playout = RaidPlayoutPanel.new(overlay, PLAYOUT_LOG_SIZE)
 	feed.body.add_child(playout)
 	var fx := playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	# ANIM-R1 M4: each step's fight is framed (the camera eases to it) before it plays, and
@@ -2917,6 +2937,8 @@ func _prebake_playout(c: CampaignState, inf: Variant) -> void:
 
 ## The raid playout's camera: zoom and where its focus sits on screen.
 const PLAYOUT_ZOOM := 1.9
+## ANIM-R2 R6: the RAID FEED log (it was 330x330, half the window beside the map).
+const PLAYOUT_LOG_SIZE := RaidPlayoutPanel.LOG_SIZE
 const PLAYOUT_ANCHOR := Vector2(0.36, 0.55)
 ## ANIM-R1 M4: the furthest out a framed fight goes (its guns and targets must all show).
 const PLAYOUT_MIN_ZOOM := 1.2

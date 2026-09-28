@@ -163,6 +163,9 @@ static func shutdown() -> void:
 		var painter: NeonCity = rec.get("painter")
 		if painter != null and is_instance_valid(painter):
 			painter.cancelled = true
+			for t in painter._slices:
+				if is_instance_valid(t):
+					t.cancelled = true
 		if rec.has("task"):
 			WorkerThreadPool.wait_for_task_completion(int(rec["task"]))
 			rec.erase("task")
