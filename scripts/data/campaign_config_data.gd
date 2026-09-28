@@ -204,12 +204,19 @@ func validate() -> PackedStringArray:
 		if b != null and (b.cost < netrun_boost_cost_range.x or b.cost > netrun_boost_cost_range.y):
 			errors.append("Boost %s costs %d, outside %s." % [b.id, b.cost, netrun_boost_cost_range])
 	var last := 0
+	var threshold_ids := {}
 	for t in heat_thresholds:
 		if t == null:
 			continue
 		if t.heat <= last:
 			errors.append("Heat thresholds must be in ascending order.")
 		last = t.heat
+		# ANIM-R4 H5: the id keys the threshold's text for translation.
+		if t.id == &"":
+			errors.append("Heat threshold %d needs an id." % t.heat)
+		elif threshold_ids.has(t.id):
+			errors.append("Duplicate Heat threshold id %s." % t.id)
+		threshold_ids[t.id] = true
 	var levels := {}
 	for l in ice_ladder:
 		if l == null:

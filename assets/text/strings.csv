@@ -23,8 +23,10 @@ Stationed on %s."
  · [DEAD], · [DEAD]
 %d BLOCKED,%d BLOCKED
 %d CYCLES,%d CYCLES
+%d DISABLED,%d DISABLED
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
+%d SEIZED,%d SEIZED
 %d SLICES,%d SLICES
 %d destroyed,%d destroyed
 %d reached home,%d reached home
@@ -87,7 +89,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s, Heat %d, ICE %d, %d runs, %s%s","%s, Heat %d, ICE %d, %d runs, %s%s"
 "%s, a T%d %s","%s, a T%d %s"
 "%s, your home server","%s, your home server"
+%s.,%s.
 %s/turn,%s/turn
+%s: %s.,%s: %s.
 "%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
 %s: integrity (HP) %s > %s in the raid. %s,%s: integrity (HP) %s > %s in the raid. %s
 %s: no change,%s: no change
@@ -175,6 +179,7 @@ Boss,Boss
 Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
 Boss Site (star): the corporation's core.,Boss Site (star): the corporation's core.
+Boss Site: the corporation's core,Boss Site: the corporation's core
 Boss Strength,Boss Strength
 Breach,Breach
 Bring %s back from %s.,Bring %s back from %s.
@@ -375,6 +380,7 @@ Cascade: %s takes %d damage.,Cascade: %s takes %d damage.
 Choose,Choose
 City Grid,City Grid
 Claim,Claim
+Claimed: part of your network.,Claimed: part of your network.
 Claimed: part of your network; it defends in raids.,Claimed: part of your network; it defends in raids.
 Class default,Class default
 ClassData.botnet.description,Fights through drones that ride the whole netrun.
@@ -542,10 +548,12 @@ EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
 Elite Frequency,Elite Frequency
 Elite Router,Elite Router
+Elite Router: a harder fight,Elite Router: a harder fight
 Elite fight,Elite fight
 "Elite fight: harder, better loot","Elite fight: harder, better loot"
 Elite fights won.,Elite fights won.
 "Elite: a harder fight, and a Firmware chip to pick.","Elite: a harder fight, and a Firmware chip to pick."
+Elite: a harder fight.,Elite: a harder fight.
 Elites,Elites
 End turn,End turn
 Enemies,Enemies
@@ -673,6 +681,7 @@ Event,Event
 Exploit,Exploit
 Exploit %s found (%d/%d for the breach).,Exploit %s found (%d/%d for the breach).
 Exploit Heat,Exploit Heat
+Exploit Site,Exploit Site
 Exploit Site (diamond): clearing it gives an Exploit for the boss breach.,Exploit Site (diamond): clearing it gives an Exploit for the boss breach.
 Exploits,Exploits
 Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.,Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.
@@ -737,7 +746,8 @@ Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 HEAL,HEAL
 HEAT,HEAT
-HEAT %d - %s,HEAT %d - %s
+HEAT %d · %s,HEAT %d · %s
+HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %s,HEAT %s
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
@@ -747,9 +757,8 @@ HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps 
 HOME,HOME
 HOME %d > %d,HOME %d > %d
 HOME %d/%d,HOME %d/%d
-HOME %s - HOLDS,HOME %s - HOLDS
-HOME BREACHED,HOME BREACHED
-HOME HIT,HOME HIT
+HOME %s,HOME %s
+HOME %s · HOLDS,HOME %s · HOLDS
 HOME HOLDS,HOME HOLDS
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
@@ -769,10 +778,23 @@ Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
 Heat reduction,Heat reduction
+Heat reduction Site,Heat reduction Site
 "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.","Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat."
 Heat stops at its limit,Heat stops at its limit
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
 Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.,Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.
+HeatThresholdData.heat_10.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_100.event_text,PURGE: the corporation sends the largest raid of the campaign.
+HeatThresholdData.heat_20.event_text,An extra elite patrols the next netrun.
+HeatThresholdData.heat_25.event_text,"The corporation raids the Cell. While Heat stays at 25 or more, elites are more frequent."
+HeatThresholdData.heat_30.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_40.event_text,An extra elite patrols the next netrun.
+HeatThresholdData.heat_50.event_text,"The corporation raids the Cell. While Heat stays at 50 or more, every enemy gains +1 resistance."
+HeatThresholdData.heat_60.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_70.event_text,An extra elite patrols the next netrun.
+HeatThresholdData.heat_75.event_text,"The corporation raids the Cell. While Heat stays at 75 or more, raids are 25% stronger."
+HeatThresholdData.heat_80.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 Home integrity before and after the raid.,Home integrity before and after the raid.
 Home server,Home server
 Home server integrity. At 0 the campaign is lost.,Home server integrity. At 0 the campaign is lost.
@@ -1252,6 +1274,7 @@ MORE BELOW,MORE BELOW
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
 Modem,Modem
+Modem: the cyber shop,Modem: the cyber shop
 "Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Move it to %s.,Move it to %s.
 Music volume,Music volume
@@ -1343,6 +1366,7 @@ Or drag it onto a slot of your spinner: the slice overwrites that slot.,Or drag 
 Or drag it onto any of your nodes.,Or drag it onto any of your nodes.
 Or drag it onto the CARDS tag: the card goes into your deck.,Or drag it onto the CARDS tag: the card goes into your deck.
 Or drag it onto the DAEMONS icon: the Daemon is installed.,Or drag it onto the DAEMONS icon: the Daemon is installed.
+Out of reach from here.,Out of reach from here.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
@@ -1437,7 +1461,6 @@ REBEL_CELL // MAIN MENU,REBEL_CELL // MAIN MENU
 REMOVE,REMOVE
 REMOVE A CARD,REMOVE A CARD
 REMOVE A CARD // %d CYCLES,REMOVE A CARD // %d CYCLES
-REPELLED,REPELLED
 RES%s,RES%s
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
@@ -1460,6 +1483,7 @@ Raid Strength,Raid Strength
 Raid over,Raid over
 Raid over after %d step(s).,Raid over after %d step(s).
 Raid repelled after %d step(s).,Raid repelled after %d step(s).
+Raid: %s.,Raid: %s.
 RaidData.raid_claim.display_name,Collections: Trespass
 RaidData.raid_claim.warning_text,You built next to Solace property. A Collector is on its way.
 RaidData.raid_hal_claim.display_name,Unlicensed Premises
@@ -1581,6 +1605,7 @@ RingSegmentData.seg_pierce.display_name,Pierce
 RingSegmentData.seg_x2.description,Outer slice output doubled.
 RingSegmentData.seg_x2.display_name,x2
 Router,Router
+Router: a fight,Router: a fight
 Router: a fight. Win it for Cycles and loot.,Router: a fight. Win it for Cycles and loot.
 Runs,Runs
 SAVED,SAVED
@@ -1624,9 +1649,11 @@ Schematics this run has banked for the campaign.,Schematics this run has banked 
 Scrub Heat %d · pay %d,Scrub Heat %d · pay %d
 Seized Raid Strength,Seized Raid Strength
 Seized by a raid: run it again to take it back.,Seized by a raid: run it again to take it back.
+Seized by the corporation.,Seized by the corporation.
 Seized: the corporation took the Site back.,Seized: the corporation took the Site back.
 Select,Select
 Server Rack,Server Rack
+Server Rack: the Site's guardian,Server Rack: the Site's guardian
 Server Rack: the Site's guardian. Breach it to complete the run.,Server Rack: the Site's guardian. Breach it to complete the run.
 Settings,Settings
 Setup,Setup
@@ -2292,6 +2319,7 @@ Take,Take
 Take nothing from this payout.,Take nothing from this payout.
 Target:,Target:
 Terminal,Terminal
+Terminal: an event with choices,Terminal: an event with choices
 Terminal: an event with choices.,Terminal: an event with choices.
 TerminalEventData.ev_abandoned_cache.text,A dead courier left a cache drive wedged in the Terminal. It still has a balance.
 TerminalEventData.ev_abandoned_cache.title,Abandoned Cache
@@ -2598,6 +2626,7 @@ Threats,Threats
 Threats come in at %s (the dashed routes on the map).,Threats come in at %s (the dashed routes on the map).
 Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.,Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.
 Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.,Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.
+Threats here: %s.,Threats here: %s.
 Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
@@ -2629,6 +2658,9 @@ YOU TAKE,YOU TAKE
 YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR WHEEL,YOUR WHEEL
 Yes,Yes
+You are here.,You are here.
+You can move here now.,You can move here now.
+Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
 Your spinner. Drag a microchip or a slice onto a slot to put it there.,Your spinner. Drag a microchip or a slice onto a slot to put it there.
@@ -2640,6 +2672,7 @@ active,active
 already visited,already visited
 an Elite fight,an Elite fight
 an Event,an Event
+an operative,an operative
 armory: %s,armory: %s
 boss,boss
 calibrate_handler,calibrate_handler
@@ -2661,6 +2694,7 @@ guarded,guarded
 half power,half power
 hunted,hunted
 in a run,in a run
+it costs you %s,it costs you %s
 link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 lost,lost
@@ -2690,7 +2724,6 @@ steady_hand_handler,steady_hand_handler
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
 then:,then:
-threats reach the home server: home %d > %d,threats reach the home server: home %d > %d
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler
 v%s // cell uplink,v%s // cell uplink

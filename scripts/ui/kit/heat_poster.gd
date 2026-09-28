@@ -120,7 +120,7 @@ func _init(p_poster: bool = false) -> void:
 func band_label_rect() -> Rect2:
 	var top := POSTER_BLOCK_TOP if poster else 0.0
 	var f := Palette.marker()
-	var word := BAND_WORDS[mini(band, 3)]
+	var word := tr(BAND_WORDS[mini(shown_band(), 3)])
 	var base := top + BAND_BASELINE
 	return Rect2(8, base - f.get_ascent(BAND_FONT), f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT).x, f.get_height(BAND_FONT))
 
@@ -276,10 +276,30 @@ func _stamp_banner() -> void:
 	tw.parallel().tween_method(func(_v: float) -> void: queue_redraw(), 0.0, 1.0, Motion.seconds(&"heat_banner") + Motion.delay_of(&"heat_banner"))
 
 
-## The banner's words for the threshold crossed ("HEAT 25 - NOTICED").
+## ANIM-R4 H6: the banner's words: the Heat now, the band it is in and the threshold that
+## band starts at ("HEAT 30 · NOTICED (25+)"); the band is the one crossed while a crossing
+## plays. "HEAT 5 · COOL" below the first threshold.
 func banner_text() -> String:
-	var at := _banner_at if _banner_at > 0 else heat
-	return tr("HEAT %d - %s") % [at, tr(BAND_WORDS[mini(band_of(at, marks), 3)]).to_upper()]
+	var at := _banner_at if _banner_at > 0 else _band_floor(heat)
+	var word := tr(BAND_WORDS[mini(band_of(at, marks), 3)]).to_upper()
+	if at <= 0:
+		return tr("HEAT %d · %s") % [heat, word]
+	return tr("HEAT %d · %s (%d+)") % [heat, word, at]
+
+
+## The threshold the band of Heat `value` starts at (0 below the first).
+func _band_floor(value: int) -> int:
+	var best := 0
+	for t in marks:
+		if value >= t:
+			best = maxi(best, t)
+	return best
+
+
+## ANIM-R4 H6: the band the poster's number is in now (the band word follows the number
+## as it rolls: it said NOTICED while the roll still showed 21).
+func shown_band() -> int:
+	return band_of(roundi(shown_heat), marks)
 
 
 ## ANIM-R3 B7: the banner's colour: the band's warning colour (BAND_COLORS).
@@ -288,9 +308,9 @@ func banner_color() -> Color:
 	return BAND_COLORS[clampi(band_of(at, marks), 0, BAND_COLORS.size() - 1)]
 
 
-## ANIM-R3 B7: what threshold `at` brings (its content text, translated: "Raid. While Heat
-## stays at 25 or above, elites are more frequent."); "" when no campaign or no such
-## threshold.
+## ANIM-R3 B7 / ANIM-R4 H5: what threshold `at` brings (its content text, translated through
+## its TextDb key: "The corporation raids the Cell. While Heat stays at 25 or more, elites
+## are more frequent."); "" when no campaign or no such threshold.
 static func consequence(at: int) -> String:
 	var cfg: CampaignConfigData = RunManager.config() if RunManager.campaign != null else null
 	if cfg == null:
@@ -299,38 +319,169 @@ static func consequence(at: int) -> String:
 	for t in cfg.heat_thresholds:
 		if t != null and t.kind == RC.ThresholdKind.MAJOR and t.heat <= at and (best == null or t.heat > best.heat):
 			best = t
-	return TranslationServer.translate(best.event_text) if best != null and best.event_text != "" else ""
+	return TextDb.t(best, "event_text") if best != null else ""
 
 
-## The banner's lines at its lettering size: {"lines": PackedStringArray, "fs": int} (one
-## line when it fits at BANNER_FONT_MIN or more, else two).
-func banner_lines() -> Dictionary:
-	var f := Palette.display()
+## ANIM-R4 H6: the banner laid out in the room it has (banner_room), worked out once per
+## change (its inputs are the key): {"lines", "fs" (the words' lettering), "subs" (the
+## consequence's lines, maybe none), "sfs" (their lettering), "rect" (the box, unrotated,
+## local px)}. The words keep one line down to BANNER_FONT_MIN, then wrap (at " · ", then
+## at spaces, a word too long for a line broken between letters) down to BANNER_FONT_FLOOR;
+## the consequence shrinks with them and is left to the tooltip only when the box would not
+## fit the room even at the floor. The whole tilted box, sub-lines included, stays inside
+## the room ("room" in the result: banner_room, or on a short small poster whose room under
+## the bar holds nothing at the floor, banner_room_wide, which takes the bar too).
+func banner_layout() -> Dictionary:
+	var room := banner_room()
 	var text := banner_text()
-	var room := (size.x if size.x > 0.0 else custom_minimum_size.x) - BANNER_MARGIN * 2.0
+	var sub := consequence(_banner_at if _banner_at > 0 else heat)
+	var key := "%s|%s|%s|%.2f|%s" % [text, sub, room, Settings.text_scale, TranslationServer.get_locale()]
+	if key == _layout_key:
+		return _layout
+	_layout_key = key
+	_layout = _fit_banner(text, sub, room)
+	if _layout.is_empty():
+		var wide := banner_room_wide()
+		_layout = _fit_banner(text, sub, wide)
+		if _layout.is_empty():
+			_layout = _floor_banner(text, wide)
+	return _layout
+
+
+var _layout_key: String = ""
+var _layout: Dictionary = {}
+
+
+## The room the banner may cover (local px): the wanted poster's header (WANTED and the
+## mugshot, above the Heat block); the small poster's paper under its Heat bar. Never the
+## number.
+func banner_room() -> Rect2:
+	var width := size.x if size.x > 0.0 else custom_minimum_size.x
+	var height := size.y if size.y > 0.0 else custom_minimum_size.y
+	if poster:
+		return Rect2(BANNER_MARGIN, BANNER_GAP, width - BANNER_MARGIN * 2.0, POSTER_BLOCK_TOP - BANNER_GAP * 2.0)
+	var top := BAR_BOTTOM + BANNER_GAP
+	return Rect2(BANNER_MARGIN, top, width - BANNER_MARGIN * 2.0, maxf(0.0, height - top - BANNER_GAP))
+
+
+## The small poster's last resort (banner_layout): its paper from the top of the Heat bar
+## down (the bar hides for the banner's hold; the number and "/max" stay clear). The wanted
+## poster's room is its header either way.
+func banner_room_wide() -> Rect2:
+	if poster:
+		return banner_room()
+	var width := size.x if size.x > 0.0 else custom_minimum_size.x
+	var height := size.y if size.y > 0.0 else custom_minimum_size.y
+	return Rect2(BANNER_MARGIN, BAR_TOP, width - BANNER_MARGIN * 2.0, maxf(0.0, height - BAR_TOP - BANNER_GAP))
+
+
+## The top of the Heat bar below the block's top (px).
+const BAR_TOP := 44.0
+
+
+func _fit_banner(text: String, sub: String, room: Rect2) -> Dictionary:
+	var f := Palette.display()
 	var top := maxi(BANNER_FONT_MIN, roundi(BANNER_FONT * Settings.text_scale))
-	var one := PackedStringArray([text])
-	for fs in range(top, BANNER_FONT_MIN - 1, -1):
-		if banner_span(f, one, fs) <= room:
-			return {"lines": one, "fs": fs}
-	var two := split_banner(text)
-	for fs in range(top, BANNER_FONT_FLOOR - 1, -1):
-		if banner_span(f, two, fs) <= room:
-			return {"lines": two, "fs": fs}
-	return {"lines": two, "fs": BANNER_FONT_FLOOR}
+	var sub_top := maxi(BANNER_FONT_FLOOR, roundi(SUB_FONT * Settings.text_scale))
+	for with_sub in ([true, false] if sub != "" else [false]):
+		for wrap in [false, true]:
+			for fs in range(top, (BANNER_FONT_FLOOR if wrap else BANNER_FONT_MIN) - 1, -1):
+				var inner := room.size.x - fs * (EYE_W + EYE_GAP) - BANNER_PAD * 2.0 - SUB_TILT_ROOM
+				var lines := wrap_words(f, text, fs, inner, " · ") if wrap else PackedStringArray([text])
+				if not wrap and banner_span(f, lines, fs) > room.size.x:
+					continue
+				var sfs := clampi(roundi(fs * float(SUB_FONT) / BANNER_FONT), BANNER_FONT_FLOOR, sub_top)
+				var subs := wrap_words(Palette.mono(), sub, sfs, room.size.x - BANNER_PAD * 2.0 - SUB_TILT_ROOM) if with_sub else PackedStringArray()
+				if subs.size() > SUB_LINES_MAX:
+					continue
+				var r := _banner_box(lines, fs, subs, sfs, room)
+				var t := _tilted(r.size)
+				if t.x <= room.size.x + 0.5 and t.y <= room.size.y + 0.5:
+					return {"lines": lines, "fs": fs, "subs": subs, "sfs": sfs, "rect": r, "room": room}
+	return {}
+
+
+## The words alone at the floor in `room` (nothing fits it otherwise).
+func _floor_banner(text: String, room: Rect2) -> Dictionary:
+	var last := wrap_words(Palette.display(), text, BANNER_FONT_FLOOR, room.size.x - BANNER_FONT_FLOOR * (EYE_W + EYE_GAP) - BANNER_PAD * 2.0 - SUB_TILT_ROOM, " · ")
+	return {"lines": last, "fs": BANNER_FONT_FLOOR, "subs": PackedStringArray(), "sfs": BANNER_FONT_FLOOR,
+		"rect": _banner_box(last, BANNER_FONT_FLOOR, PackedStringArray(), BANNER_FONT_FLOOR, room), "room": room}
+
+
+## The unrotated box of a banner (local px): as wide as its widest line, as tall as its
+## lines; centred across the poster, and in the room: the wanted poster's header centres it,
+## the small poster hangs it under the bar.
+func _banner_box(lines: PackedStringArray, fs: int, subs: PackedStringArray, sfs: int, room: Rect2) -> Rect2:
+	var w := 0.0
+	for line in lines:
+		w = maxf(w, Palette.display().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	w += fs * (EYE_W + EYE_GAP) + BANNER_PAD * 2.0
+	for line in subs:
+		w = maxf(w, Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x + BANNER_PAD * 2.0)
+	var h := banner_height(lines.size(), fs) + subs.size() * sfs * BANNER_LINE
+	var t := _tilted(Vector2(w, h))
+	var cy := room.get_center().y if poster else room.position.y + t.y * 0.5
+	return Rect2(Vector2(room.get_center().x - w * 0.5, cy - h * 0.5), Vector2(w, h))
+
+
+## The span of a box `s` tilted by BANNER_TILT (px): its bounding box's size.
+static func _tilted(s: Vector2) -> Vector2:
+	var a := deg_to_rad(absf(BANNER_TILT))
+	return Vector2(s.x * cos(a) + s.y * sin(a), s.x * sin(a) + s.y * cos(a))
+
+
+## `text` wrapped to lines no wider than `room` at `fs`: first at `first_break` (the
+## banner's " · "), then at spaces; a word wider than a line on its own is broken between
+## letters (a long compound in a translation never runs off the poster).
+static func wrap_words(f: Font, text: String, fs: int, room: float, first_break: String = "") -> PackedStringArray:
+	var out := PackedStringArray()
+	if text == "":
+		return out
+	var parts := PackedStringArray([text])
+	if first_break != "" and text.contains(first_break):
+		parts = text.split(first_break, false)
+	for part in parts:
+		var line := ""
+		for word in part.strip_edges().split(" ", false):
+			var next := word if line == "" else line + " " + word
+			if f.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= room:
+				line = next
+				continue
+			if line != "":
+				out.append(line)
+			line = ""
+			# The word alone: whole when it fits, else in pieces.
+			var piece := ""
+			for ch in word:
+				if piece != "" and f.get_string_size(piece + ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+					out.append(piece)
+					piece = ""
+				piece += ch
+			line = piece
+		if line != "":
+			out.append(line)
+	return out
+
+
+## The banner's lines at its lettering size: {"lines": PackedStringArray, "fs": int}
+## (banner_layout).
+func banner_lines() -> Dictionary:
+	var lay := banner_layout()
+	return {"lines": lay["lines"], "fs": lay["fs"]}
 
 
 ## ANIM-R2 R8: the banner's lettering (px) (banner_lines).
 func banner_font_size() -> int:
-	return int(banner_lines()["fs"])
+	return int(banner_layout()["fs"])
 
 
-## `text` in two lines: after its " - " when it has one, else at the space nearest its middle
-## (one line when it has no space).
+## `text` in two lines: after its " · " (or " - ") when it has one, else at the space
+## nearest its middle (one line when it has no space).
 static func split_banner(text: String) -> PackedStringArray:
-	var dash := text.find(" - ")
-	if dash >= 0:
-		return PackedStringArray([text.left(dash + 2).strip_edges(), text.substr(dash + 3).strip_edges()])
+	for mark in [" · ", " - "]:
+		var at := text.find(mark)
+		if at >= 0:
+			return PackedStringArray([text.left(at + mark.length() - 1).strip_edges(), text.substr(at + mark.length()).strip_edges()])
 	var best := -1
 	for i in text.length():
 		if text[i] == " " and (best < 0 or absi(i - text.length() / 2) < absi(best - text.length() / 2)):
@@ -358,28 +509,21 @@ static func banner_height(count: int, fs: int) -> float:
 	return count * fs * BANNER_LINE + BANNER_PAD * 1.5
 
 
-## ANIM-R3 B7: where the banner's box sits, unrotated (local px): a wanted poster puts it
-## over its header (WANTED and the mugshot), clear of the Heat number; the small poster
-## (combat's side) puts it under the Heat bar. Never over the number.
+## ANIM-R3 B7 / ANIM-R4 H6: where the banner's box sits, unrotated (local px), sub-lines
+## included (banner_layout): over the wanted poster's header, under the small poster's bar;
+## never over the number, and (tilted) inside the poster.
 func banner_rect() -> Rect2:
-	var lay := banner_lines()
-	var fs: int = lay["fs"]
-	var lines: PackedStringArray = lay["lines"]
-	var w := 0.0
-	for line in lines:
-		w = maxf(w, Palette.display().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
-	w += fs * (EYE_W + EYE_GAP) + BANNER_PAD * 2.0
-	var subs := sub_lines()
-	for line in subs:
-		w = maxf(w, Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_font_size()).x + BANNER_PAD * 2.0)
-	var h := banner_height(lines.size(), fs) + subs.size() * sub_font_size() * BANNER_LINE
-	var width := size.x if size.x > 0.0 else custom_minimum_size.x
-	var cy := 0.0
-	if poster:
-		cy = clampf(POSTER_BLOCK_TOP * 0.5, h * 0.5 + BANNER_GAP, POSTER_BLOCK_TOP - BANNER_GAP - h * 0.5)
-	else:
-		cy = BAR_BOTTOM + BANNER_GAP + h * 0.5
-	return Rect2(Vector2(width * 0.5 - w * 0.5, cy - h * 0.5), Vector2(w, h))
+	return banner_layout()["rect"]
+
+
+## The banner box's corners as drawn (tilted round its centre, local px).
+func banner_corners() -> PackedVector2Array:
+	var r := banner_rect()
+	var c := r.get_center()
+	var out := PackedVector2Array()
+	for p in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]:
+		out.append(c + (p - c).rotated(deg_to_rad(BANNER_TILT)))
+	return out
 
 
 ## The bottom of the Heat bar below the block's top (px; the small poster's banner hangs
@@ -388,41 +532,17 @@ const BAR_BOTTOM := 52.0
 
 
 func sub_font_size() -> int:
-	return maxi(BANNER_FONT_FLOOR, roundi(SUB_FONT * Settings.text_scale))
+	return int(banner_layout()["sfs"])
 
 
-## The consequence under the banner, wrapped to the poster (at most SUB_LINES_MAX lines;
-## none when it would not fit the wanted poster's header: the tooltip says it then).
+## The consequence under the banner, wrapped to the poster (banner_layout; none when it
+## would not fit even at the smallest lettering: the tooltip says it then).
 func sub_lines() -> PackedStringArray:
-	var text := consequence(_banner_at if _banner_at > 0 else heat)
-	var out := PackedStringArray()
-	if text == "":
-		return out
-	var f := Palette.mono()
-	var fs := sub_font_size()
-	var room := (size.x if size.x > 0.0 else custom_minimum_size.x) - BANNER_MARGIN * 2.0 - BANNER_PAD * 2.0 - SUB_TILT_ROOM
-	var line := ""
-	for word in text.split(" ", false):
-		var next := word if line == "" else line + " " + word
-		if f.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room and line != "":
-			out.append(line)
-			line = word
-		else:
-			line = next
-	if line != "":
-		out.append(line)
-	if out.size() > SUB_LINES_MAX:
-		return PackedStringArray()
-	if poster:
-		var lay := banner_lines()
-		var h := banner_height((lay["lines"] as PackedStringArray).size(), int(lay["fs"])) + out.size() * fs * BANNER_LINE
-		if h > POSTER_BLOCK_TOP - BANNER_GAP * 2.0:
-			return PackedStringArray()
-	return out
+	return banner_layout()["subs"]
 
 
 const SUB_LINES_MAX := 4
-## Width kept free beside the sub-lines so the tilted, taller box still fits (px).
+## Width kept free beside the lines so the tilted, taller box still fits (px).
 const SUB_TILT_ROOM := 12.0
 
 
@@ -494,10 +614,10 @@ func _draw() -> void:
 		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
 		var box := Rect2(r.position - c, r.size).grow(STAMP_BOX_PAD)
 		draw_rect(box, Color(hot_color, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 		draw_set_transform(Vector2.ZERO)
 	else:
-		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(shown_band(), 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 	if banner_alpha > 0.0:
 		_draw_banner(y)
 

@@ -163,10 +163,15 @@ func _batch2() -> int:
 
 	# Config
 	var cfg := CampaignConfigData.new()
-	var h1 := HeatThresholdData.new(); h1.heat = 25; h1.kind = RC.ThresholdKind.MAJOR
-	var h2 := HeatThresholdData.new(); h2.heat = 10
+	var h1 := HeatThresholdData.new(); h1.heat = 25; h1.kind = RC.ThresholdKind.MAJOR; h1.id = &"heat_25"
+	var h2 := HeatThresholdData.new(); h2.heat = 10; h2.id = &"heat_10"
 	cfg.heat_thresholds = [h1, h2]
 	print("Config wrong order (expect 1): ", cfg.validate())
+	# ANIM-R4 H5: a threshold's id keys its text for translation.
+	var h3 := HeatThresholdData.new(); h3.heat = 50
+	cfg.heat_thresholds = [h2, h1, h3]
+	print("Config threshold without id (expect 1): ", cfg.validate())
+	if cfg.validate().size() != 1: fails += 1
 
 	# Home server
 	var core := NetworkNodeData.new(); core.node_type = RC.NetworkNodeType.HOME_SERVER
