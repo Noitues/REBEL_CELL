@@ -245,7 +245,14 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			_node_left[String(site)] = 0
 			_stamp(site, "disabled", Palette.CELL_PINK, t0, dur)
 		"seized":
-			_stamp(StringName(e["site"]), "seized", Palette.RESIST_GOLD, t0, dur)
+			# ANIM-R3 B5: a Site seized with integrity left (threats standing on it at the step
+			# cap) loses it all: its own number, so the numbers add up to before - after.
+			var seized_site := StringName(e["site"])
+			var seized_left := int(_node_left.get(String(seized_site), 0))
+			if seized_left > 0:
+				_number(seized_site, -seized_left, Palette.RESIST_GOLD, t0, dur)
+			_node_left[String(seized_site)] = 0
+			_stamp(seized_site, "seized", Palette.RESIST_GOLD, t0, dur)
 			_tints.append({"site": StringName(e["site"]), "t0": t0, "dur": RaidBeats.raw_seconds(&"influence_spread")})
 		"home_lost":
 			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
