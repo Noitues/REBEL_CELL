@@ -37,6 +37,7 @@ stamps, marker scrawls). CRT scanlines appear only on the city and terminal glas
 |---|---|---|
 | `cell_pink` | #FF3DA8 | The Cell: player wheel, tags, primary actions |
 | `cell_acid` | #D4FF00 | Secondary Cell highlight: previews, scribbles, emphasis |
+| `cell_turf` | #D4FF00 | The Cell's territory: claimed Sites, its network links, the district tint, CLAIMED marks, the spray ring (ANIM-R3: never `cell_pink`, which is damage) |
 | `paper` | #F2EEE4 | Zine paper |
 | `paper_alt` | #E9E4D6 | Aged paper, posters |
 | `ink` | #111111 | Zine ink |
@@ -260,9 +261,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   toward the selected Site stays inside the fitted map.
 - **Jack in / out**: push into the deck CRT, dissolve cell by cell to the wireframe city
   with rolling scanlines; the scene changes under the opaque cover (never both scenes).
-- **Heat**: one pulse per threshold crossed going up (distortion, the corporate
-  wireframe creeping in from the edges, the ransom letters shaking, the band stamped);
-  nothing stays on.
+- **Heat**: one pulse per threshold crossed going up (a short distortion round the poster,
+  the ransom letters shaking, the band stamped); nothing stays on (the corporate wireframe
+  creep is gone since ANIM-R2 / ANIM-R3).
 - **Netrun move**: a light pulse carries the "you are here" marker along the link, the
   new node pops, the old one dims; any input skips it.
 - **Readable at fight scale (ANIM-R1)**: a raid step is framed before it plays (the camera
@@ -286,8 +287,20 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   briefly (one banner per band crossed; a drop re-stamps the band word). A claimed district
   keeps a lasting tint. A route move draws a thick trail and its target pulses; equal choices
   say "(same as 1)".
+- **Verdicts, numbers and places that agree (ANIM-R3)**: every raided node stamps its resolved
+  outcome, the word its label says; home's one verdict is its banner (HOME -5 - HOLDS, HOME
+  BREACHED), placed clear of stamps, labels and icons. One number per hit, adding up to the
+  node's change; a node's rises on its right, a threat's on its left. The feed names places
+  and threats, never ids. A dropped defence falls large, stamps and shows the forecast numbers
+  it changed ("25 > 30"). Territory is the Cell's acid (`cell_turf`), hatched, its stamp over
+  the labels. A Heat banner warns (amber, orange, red, an eye), says what the band brings and
+  never covers the number. A map baking shows the city's silhouette, never the empty sky; the
+  image fades in from it. The route frames where you are (a marker at the street before the
+  first node) and the next choices; "(same as N)" means the same whole road, and other
+  choices show the icons of what only they reach. The jack dissolves in a calm wave from the
+  CRT and names the run (and a raid that interrupts it).
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5", "— ANIM-R1 campaign and
-  screens"); strips: `docs/timeline/motion/`.
+  screens", "— ANIM-R3 city, raid, jack, heat and route"); strips: `docs/timeline/motion/`.
 
 ### 5.4 Drag and drop, HQ side and in the run (the Animation pass, ANIM-4 / ANIM-4b)
 - **Anything that moves between places drags**, with the same feel as a combat card

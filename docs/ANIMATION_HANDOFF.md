@@ -41,7 +41,7 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `Fx.jack_in / jack_out` | Push into the deck CRT, dissolve to the wireframe city, scanlines roll; jack out reverses (0.8 s) | The real version (ANIM-5, 4.1). Focus: `Fx.JACK_FOCUS_GROUP`. Reduce effects: 0.2 s fade. |
 | `Fx.flash` | Full-screen colour flash, limited | Used on Perfect, enemy Perfect, previews. |
 | `Fx.freeze_frames(n)` | Short hit-stop | Perfect landing (2 frames). |
-| `Fx.heat_pulse` | Distortion pulse + corporate wireframe creep | Wired (ANIM-5, 4.12): `HeatPoster` fires one per threshold crossed going up. |
+| `Fx.heat_pulse` / `heat_pulse_at` | Distortion pulse round the poster (the corporate wireframe creep was removed in ANIM-R3) | Wired (ANIM-5, 4.12): `HeatPoster` fires one per threshold crossed going up. |
 | `Fx.show_saved` | "SAVED" fades out | Fine. |
 | `combat_scene` | Partial = 4-step shake; Good = alpha blink; migrating pointers flicker (looping tween on `pointer_alpha`) | See `_feedback()` and `_flicker_view()`. |
 | `NeonCity` | Beacon blink, slow menu pan (Lissajous), rain | `_process` / `_draw_fx`. |

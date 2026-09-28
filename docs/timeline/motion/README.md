@@ -22,21 +22,22 @@ in its title, and the chosen one says CHOSEN. The chosen values are in
 | `drag_cancel_return` | a cancelled drag gliding back to its slot | 0.15 s, CUBIC out | a cancel should feel instant; 0.3 s read as a second action |
 | `enemy_break` | ANIM-R3 recapture (`--demo-anim=enemy_break`): the real wheel cracks (its slices keep their art: fill, rim, icon, value; white cracks run along the borders for the first 22 %), then the pieces and the dark hub wedges fall; DEFEATED with a skull on the beaten side | 0.75 s, 160 px fall, `delay` 0.15 s at 0; `victory_flash` local | top CHOSEN; at 0.5 s the crack was barely seen before the fall |
 
-## Map, raid, jack and Heat (ANIM-5; captured again in ANIM-R1)
+## Map, raid, jack and Heat (ANIM-5; captured again in ANIM-R1, R2 and R3)
 
-Recaptured after the ANIM-R1 fixes (raid framing and order, territory marks, the Heat
-number and banner, the arrival wait, route labels): three variants each, the picked one
-titled CHOSEN, frames every 2-18 frames at 30 fps (the ms label says when).
+Recaptured after the ANIM-R3 fixes (DECISIONS "Animation pass — ANIM-R3 city, raid, jack,
+heat and route"): two variants each, the picked one on top titled CHOSEN, quantized to 128
+colours, frames every 3-48 frames at 30 fps (the ms label says when). `site_select` is from
+ANIM-R1.
 
 | Strip | Slice | Motion | Variants (top to bottom) | Picked | Captured with |
 |---|---|---|---|---|---|
-| `influence_spread.png` | ANIM-5 / R1 / R2 | Territory tint spreads from a newly claimed Site: a strong front (0.9), the lasting tint left over the district, the CLAIMED stamp and outline | `influence_tint` 0.3 / 0.2 | 0.3 (at 0.2 the tint left behind is hard to tell from the lit city) | hq `--demo-grid --demo-anim=influence_spread` |
-| `raid_playout.png` | ANIM-5 / R1 / R2 | Framed steps whose beats start while the camera eases, big white/red threat tokens with a trail, shot / hit / number, outcomes stamping one after another, HOME banner, the short log | `raid_outcome_stagger` delay 0.12 / 0.25 s | 0.12 s (0.25 s dragged the end out) | hq `--demo-raid --demo-anim=raid_playout` |
-| `heat_pulse.png` | ANIM-5 / R1 / R2 | Heat crosses 25: the number rolls to 25, then the HEAT 25 - NOTICED banner stamps and the poster alone distorts briefly; the number rolls on | `heat_pulse` 0.3 / 0.2 s round the poster | 0.3 s (0.2 barely registered) | hq `--demo-hq --demo-anim=heat_pulse` |
-| `jack_in.png` | ANIM-5 / R1 / R2 | Push into JACK IN, dissolve, CONNECTING TO <SITE> on the cover (at least 0.35 s), the arriving page lifts with it (no ~3 s empty tunnel) | `jack_in` push 0.4 s, `jack_connect` 0.35 s, `jack_arrive` 0.4 s | as shown (single row) | hq `--demo-grid --demo-anim=jack_in` |
-| `route_pulse.png` | ANIM-5 / R1 / R2 | Netrun move: a thick acid trail carries the marker along the street, the target node pulses, it pops, the old one dims with a tick; equal choices say "(same as 1)" | `route_pulse` 0.4 / 0.6 s | 0.4 s | netrun `--demo-run --demo-anim=route_pulse` |
+| `influence_spread.png` | ANIM-5 / R1-R3 | Territory tint spreads from a newly claimed Site in the Cell's acid (`cell_turf`); the district keeps a 0.45 tint and a hatch; CLAIMED stamps over its Site, above the labels | `influence_tint` 0.45 / 0.3 | 0.45 (0.3 was nearly invisible over the lit city) | hq `--demo-grid --demo-anim=influence_spread` |
+| `raid_playout.png` | ANIM-5 / R1-R3 | Framed steps, threat tokens with a trail, shot / hit / number (a node's number on its right, a threat's on its left), each node stamping its resolved outcome, home's verdict as its banner placed clear, the feed in sentences with names | `raid_outcome_stagger` 0.3 / 0.5 s | 0.3 s (0.5 s dragged the end out) | hq `--demo-raid --demo-anim=raid_playout` |
+| `heat_pulse.png` | ANIM-5 / R1-R3 | Heat crosses 25: the number rolls to 25, the amber HEAT 25 - NOTICED banner with its eye and the band's consequence stamps over the WANTED header (never the number) and fades; the poster distorts briefly | `heat_banner` stamp x1.5 / x1.0 | x1.5 (x1.0 did not read as a stamp) | hq `--demo-hq --demo-anim=heat_pulse` |
+| `jack_in.png` | ANIM-5 / R1-R3 | Push into JACK IN (no first-frame hitch: the run is built under the cover, the shaders warmed), a calm dissolve wave from the CRT, CONNECTING TO <SITE>, the arriving route lifts with it | `jack_dissolve` spread 0.9 feather 0.08 / spread 0.6 hard cells (ANIM-R2) | 0.9 / 0.08 (the hard scattered cells read as corruption) | hq `--demo-grid --demo-anim=jack_in` |
+| `route_pulse.png` | ANIM-5 / R1-R3 | Netrun move on a route framed with a margin (you-are-here at the street before the first node), twins only for the same whole road, "then:" icons for what only one choice reaches, a thick acid trail, the target pulses and pops | `route_pulse` 0.4 / 0.6 s | 0.4 s | netrun `--demo-run --demo-anim=route_pulse` |
 | `site_select.png` | ANIM-5 / R1 | Grid Site selected: roof outline draws on, ring eases in and breathes (`select_ring_pulse`), camera leans and eases | `site_outline_draw` 0.25 / 0.4 / 0.6 s | 0.4 s | hq `--demo-grid --demo-anim=site_select` |
-| `asset_drop.png` | ANIM-5 / R1 / R2 | Raid asset deployed: waits for the camera, drops, stamps a big ring and keeps its name under its marker | `asset_drop_stamp` x2.4 / x1.6 | x2.4 (x1.6 hid under the icon) | hq `--demo-raid --demo-anim=asset_drop` |
+| `asset_drop.png` | ANIM-5 / R1-R3 | Raid asset deployed: waits for the camera, falls 56 px from x2.2 its size, stamps a thick ring with a flash, keeps its name, and the forecast numbers it changed rise off their nodes ("25 > 30") | `asset_drop_grow` x2.2 / x1.0 | x2.2 (at its own size the landing was nearly invisible) | hq `--demo-raid --demo-anim=asset_drop` |
 
 Variants: add `--demo-tune=<id>:<duration>[:<amplitude>]` (a duplicate of the table; the
 file never changes). Command: `godot --path . --resolution 1280x720 --write-movie
