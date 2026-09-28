@@ -514,7 +514,10 @@ func test_the_schedule_holds_the_landing_and_the_result_within_budget() -> void:
 				for k in beats.size():
 					if beats[k]["kind"] != "land" and beats[k]["phase"] != "turn_start":
 						first = minf(first, times[k])
-						last_hit = maxf(last_hit, times[k])
+						# ANIM-R2 E5 (on purpose): a fight that ends on a break shows its result just
+						# before the break (the break and VICTORY come after it).
+						if not (beats[k]["kind"] in ["died", "end"]):
+							last_hit = maxf(last_hit, times[k])
 					if beats[k]["kind"] == "died" and bool(beats[k].get("wheel", false)):
 						# Its HP is seen at 0 first.
 						for j in k:
@@ -522,12 +525,30 @@ func test_the_schedule_holds_the_landing_and_the_result_within_budget() -> void:
 								assert_true(times[k] - times[j] >= scene.death_lead() - 0.0001, "%s: the break waits for HP 0" % enemy)
 				if first < INF:
 					assert_true(first >= Motion.seconds(&"resolve_landing_hold") - 0.0001, "%s: the landing holds before anything resolves" % enemy)
-					assert_true(float(sch["result_at"]) >= last_hit, "%s: the result comes after the last hit" % enemy)
+					var dbg := PackedStringArray()
+					for k in beats.size():
+						dbg.append("%s/%s@%.2f" % [beats[k]["kind"], beats[k]["phase"], times[k]])
+					assert_true(float(sch["result_at"]) >= last_hit - 0.0001, "%s: the result comes after the last hit (%.2f < %.2f: %s)" % [enemy, float(sch["result_at"]), last_hit, " ".join(dbg)])
 				if float(sch["spin_at"]) >= 0.0:
 					assert_true(float(sch["spin_at"]) - float(sch["result_at"]) >= Motion.seconds(&"resolve_result_hold") - 0.0001,
 						"%s: the result holds before the wheels turn on" % enemy)
-				assert_lte(float(sch["total"]), Motion.seconds(&"resolve_sequence") + 0.001, "%s: fits the budget" % enemy)
+				# ANIM-R2 (on purpose): hits one at a time and the HP settling before the result are
+				# never squeezed; the budget holds the rest.
+				assert_lte(float(sch["total"]), _allowed(scene, beats), "%s: fits the budget" % enemy)
 			await _close(scene)
+
+
+## The replay's time: `resolve_sequence` for the squeezable gaps, plus what ANIM-R2 never
+## squeezes (each projectile's `hit_line` spacing and the last HP change settling).
+func _allowed(scene: Control, beats: Array[Dictionary]) -> float:
+	var timing: Dictionary = scene.beat_timing()
+	var extra := 0.0
+	var settle := 0.0
+	for b in beats:
+		if ResolveBeats.flies(b):
+			extra += float(timing["hit_gap"])
+		settle = maxf(settle, ResolveBeats.settle_after(b, timing))
+	return Motion.seconds(&"resolve_sequence") + extra + settle + 0.001
 
 
 func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
@@ -546,7 +567,8 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 		assert_true(wv.outcome.is_empty(), "%s: no NEXT plate either" % wv.combatant.display_name)
 	# Played out: the forecast flips in, the turn counter moves on.
 	var waited := 0.0
-	while scene._seq != null and waited < Motion.seconds(&"resolve_sequence") + 1.0:
+	var limit: float = scene.motion_seconds_left() + 1.0
+	while scene._seq != null and waited < limit:
 		await get_tree().process_frame
 		waited += get_process_delta_time()
 	assert_null(scene._seq, "the replay ends by itself")
@@ -559,7 +581,7 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 		flips_after += wv.tag_flips
 		if not wv.intent.is_empty():
 			assert_false(wv.replaying)
-	assert_gt(flips_after, flips_before, "the NEXT TURN tags flip in")
+	assert_gt(flips_after, flips_before, "the forecast tags flip in")
 	await _close(scene)
 
 
@@ -601,14 +623,14 @@ func test_hits_fly_to_the_hp_ring_and_hits_that_deal_nothing_stamp() -> void:
 	assert_eq(lines.size(), 1, "a hit that deals damage draws its line")
 	assert_eq(lines[0]["to"], pv.hp_ring_spot(), "to the victim's HP ring")
 	assert_eq(lines[0]["from"], ev.slot_spot(0), "from the attacker's landed slice")
-	assert_eq(lines[0]["color"], ev.wheel_color, "in the attacker's colour")
+	assert_eq(lines[0]["color"], scene.hit_color(enemy.id, before), "in the attacker's side's colour (ANIM-R2: not the wheel's)")
 	assert_eq(float(lines[0]["width"]), Motion.amplitude(&"hit_line"), "thick (the table's width)")
 	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "travel").size(), 1, "its number travels into the HP counter")
 	scene.skip_motion()
 	var blocked := base.duplicate()
 	blocked.merge({"kind": "damage", "amount": 0, "soaked": 4, "hp_after": state.player.hp})
 	scene._play_beat(blocked, before, state)
-	assert_true(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line").is_empty(), "a fully blocked hit draws no line")
+	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line").size(), 1, "ANIM-R2: a fully blocked hit still flies (who hit whom)")
 	var tags: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
 	assert_eq(tags.size(), 1)
 	assert_eq(tags[0]["text"], tr("%d BLOCKED") % 4, "it stamps BLOCKED at the victim")
@@ -616,7 +638,7 @@ func test_hits_fly_to_the_hp_ring_and_hits_that_deal_nothing_stamp() -> void:
 	var evaded := base.duplicate()
 	evaded.merge({"kind": "evaded", "amount": 7, "soaked": 0, "hp_after": -1})
 	scene._play_beat(evaded, before, state)
-	assert_true(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line").is_empty(), "an evaded hit draws no line")
+	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line").size(), 1, "ANIM-R2: an evaded hit still flies")
 	tags = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
 	assert_eq(tags[0]["text"], tr("EVADED %d") % 7, "it stamps EVADED")
 	scene.skip_motion()
