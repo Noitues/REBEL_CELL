@@ -540,7 +540,7 @@ second CHOSEN row: an enemy hit soaked whole), `number_float`, `enemy_break`, `c
 - **A8** `test_the_crt_roll_waits_for_the_glass_to_show` keeps main's frozen-frames check and
   then judges the roll frame by frame on the transition's own clock (`PageTransition.progress`).
 - New ids (data; REQUIRED_IDS and lab demos): `impact_mark`, `forecast_tick`, `forecast_fade`,
-  `status_mark` (178 entries). Retuned: `modem_sign_warmup` 0.45 s. Lab: `send_block` (a fight
+  `status_mark` (175 entries). Retuned: `modem_sign_warmup` 0.45 s. Lab: `send_block` (a fight
   whose enemy hits the operative, soaked whole; lab only).
 - Words (exported once, strings.csv): YOU PLAY %s, NEED %d · HAVE %d, LOOT, CONTINUE, the NEXT
   and HP tooltips, the LAST TURN icon note; dropped: PLAYING %s.
