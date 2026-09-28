@@ -840,7 +840,7 @@ func _spawn_turn_start(s: CombatState, host: CombatantState, rng: RandomNumberGe
 			continue
 		var sat := _spawn_satellite(s, host, spawn, rng)
 		_scale_enemy(sat, host.hp_scale, host.output_scale)
-		events.append({"type": "satellite_spawn", "target": host.id, "satellite": sat.id, "slot": sat.dock_slot,
+		events.append({"type": "satellite_spawn", "target": host.id, "satellite": sat.id, "slot": sat.dock_slot, "hp": sat.hp,
 			"text": "%s launches %s on slot %d." % [host.display_name, sat.display_name, sat.dock_slot]})
 
 
@@ -896,11 +896,17 @@ func _check_boss_phases(s: CombatState, rng: RandomNumberGenerator, events: Arra
 			if phase.hub_override != null:
 				e.wheel.hub_id = phase.hub_override.id
 				e.hub_resistance = phase.hub_override.hub_resistance
+			# The facts the replay shows (ANIM-R1): who docked (with the HP they start on) and
+			# the needles the phase left.
+			var spawned: Array = []
 			for spawn in phase.spawns:
 				if spawn != null and spawn.satellite != null:
 					for k in spawn.max_active:
-						_scale_enemy(_spawn_satellite(s, e, spawn, rng), e.hp_scale, e.output_scale)
+						var sat := _spawn_satellite(s, e, spawn, rng)
+						_scale_enemy(sat, e.hp_scale, e.output_scale)
+						spawned.append({"id": sat.id, "hp": sat.hp, "slot": sat.dock_slot})
 			events.append({"type": "boss_phase", "target": e.id, "phase": e.phase_index, "behavior": phase.pointer_behavior,
+				"spawned": spawned, "ticks": Array(e.wheel.pointer_ticks),
 				"text": "%s enters phase %d (%s)%s" % [e.display_name, e.phase_index, RC.PointerBehavior.keys()[phase.pointer_behavior],
 					(": " + phase.phase_line) if phase.phase_line != "" else "."]})
 
