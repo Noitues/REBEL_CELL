@@ -108,6 +108,9 @@ const DEMOS := {
 	&"city_bake_fade": ["fade_in", "panel"], &"jack_connect": ["fade_in", "panel"], &"raid_outcome_stagger": ["pop", "sticker"], &"raid_result_banner": ["pop", "panel"], &"asset_drop_stamp": ["pop", "sticker"], &"influence_tint": ["fade_in", "panel"], &"route_target_pulse": ["pulse", "sticker"],
 	# ANIM-R2 (combat, events and screens):
 	&"hit_absorb": ["scene", "send_hit"], &"ram_spend_float": ["scene", "ram"], &"price_refusal": ["pulse", "sticker"],
+	# ANIM-R3 (combat, input and screens): each plays in a live SEND IT.
+	&"impact_mark": ["scene", "send_hit"], &"forecast_tick": ["scene", "send_hit"], &"forecast_fade": ["scene", "send_hit"],
+	&"status_mark": ["scene", "send_hit"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

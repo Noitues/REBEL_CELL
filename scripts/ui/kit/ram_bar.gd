@@ -105,9 +105,10 @@ func flashing() -> bool:
 	return _flash
 
 
-## The refusal's words ("3 > 2": the cost against the RAM there is), "" when none shows.
+## The refusal's words ("NEED 3 · HAVE 2": the cost against the RAM there is; ANIM-R3 A6j:
+## "3 > 2" was a sum to decode), "" when none shows.
 func refusal_text() -> String:
-	return "%d > %d" % [_need, ram] if _flash and _need > 0 else ""
+	return tr("NEED %d · HAVE %d") % [_need, ram] if _flash and _need > 0 else ""
 
 
 ## The lit chips step from `from` to `to`, one chip per `ram_tick`.

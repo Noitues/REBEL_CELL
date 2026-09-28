@@ -229,6 +229,17 @@ func _get_tooltip(at_position: Vector2) -> String:
 		return ""
 	if _intent_rect_local().has_point(at_position):
 		return String(intent.get("tooltip", ""))
+	# ANIM-R3 A6j: the plates under the disc say what they are.
+	var lay := hp_layout()
+	if (lay["next"] as Rect2).has_point(at_position):
+		var next_hp := int(outcome.get("hp_after", combatant.hp))
+		if combatant.is_player:
+			return tr("NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).") % next_hp
+		return tr("NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).") % next_hp
+	if ((lay["last"] as Rect2).has_point(at_position) or (lay["icons"] as Rect2).has_point(at_position)) and last_turn != "":
+		return last_turn_tip if last_turn_tip != "" else last_turn
+	if (lay["hp"] as Rect2).has_point(at_position):
+		return tr("HP now: %d of %d.") % [combatant.hp, combatant.max_hp]
 	var z := zone_at(global_position + at_position)
 	match String(z.get("kind", "")):
 		"arrow":
@@ -324,6 +335,11 @@ const MISS_X_WIDTH := 5.0
 ## The DEFEATED stamp's lettering (px at text scale 1.0) and tilt (rad).
 const DEFEATED_FONT := 22
 const STAMP_TILT := -0.2
+## ANIM-R3 A6g: the skull under DEFEATED, its radius as a share of the stamp's lettering.
+const SKULL_SHARE := 0.75
+## ANIM-R3 A6j: a landing status's ring starts just round its mark (px; it grows by
+## `status_mark`'s amplitude).
+const STATUS_MARK_R := 9.0
 
 
 ## The rotation the view shows (ticks; the state's unless a motion runs).
@@ -416,6 +432,11 @@ func stop_motion(sync_tag: bool = true) -> void:
 	caption_shown = 0.0
 	enter_slide = 0.0
 	hit_flash = 0.0
+	_hp_to = NAN
+	replay_tag = {}
+	tag_ticks = {}
+	replay_tag_alpha = 1.0
+	status_flash = {}
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
 	set_process(false)
@@ -653,19 +674,26 @@ func _pointer_step(p: float, starts: Array[float], ends: Array[float]) -> void:
 
 
 ## HP runs from what it shows to `to` (`hp_drain`); a loss leaves a white lag bar that
-## drains after it (`hp_lag`).
+## drains after it (`hp_lag`). ANIM-R3 A6d: one roll per hit: a roll still running ends on
+## its own value first, so the counter never passes through a value no hit left.
 func play_hp(to: float) -> void:
 	if not Motion.live(&"hp_drain"):
 		anim_hp = to
 		lag_hp = NAN
+		_hp_to = NAN
 		queue_redraw()
 		return
+	var running: Tween = _tweens.get(&"hp")
+	if running != null and running.is_valid() and running.is_running() and not is_nan(_hp_to):
+		anim_hp = _hp_to
 	var from := shown_hp()
 	if is_nan(lag_hp) or lag_hp < from:
 		lag_hp = from
 	var e := Motion.entry(&"hp_drain")
 	var tw := _tw(&"hp")
-	tw.tween_method(func(v: float) -> void: anim_hp = v; queue_redraw(), from, to, Motion.seconds(&"hp_drain")).set_ease(e.ease).set_trans(e.trans)
+	_hp_to = to
+	tw.tween_method(_set_anim_hp, from, to, Motion.seconds(&"hp_drain")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: _hp_to = NAN; _end(&"hp"))
 	if to >= from:
 		lag_hp = NAN
 		return
@@ -673,6 +701,39 @@ func play_hp(to: float) -> void:
 	var lag := _tw(&"lag")
 	lag.tween_interval(Motion.delay_of(&"hp_lag"))
 	lag.tween_method(func(v: float) -> void: lag_hp = v; queue_redraw(), lag_hp, to, Motion.seconds(&"hp_lag")).set_ease(le.ease).set_trans(le.trans)
+
+
+func _set_anim_hp(v: float) -> void:
+	anim_hp = v
+	queue_redraw()
+
+
+## The HP roll (and its lag bar) ends on its value now (ANIM-R3 A5: the result never shows
+## while a counter still rolls). True when a roll was running.
+func finish_hp() -> bool:
+	var was := false
+	for key in [&"hp", &"lag"]:
+		var tw: Tween = _tweens.get(key)
+		if tw != null and tw.is_valid() and tw.is_running():
+			was = true
+			tw.kill()
+		_tweens.erase(key)
+	if not is_nan(_hp_to):
+		anim_hp = _hp_to
+	_hp_to = NAN
+	lag_hp = NAN
+	queue_redraw()
+	return was
+
+
+## True while the HP counter still rolls.
+func hp_rolling() -> bool:
+	var tw: Tween = _tweens.get(&"hp")
+	return tw != null and tw.is_valid() and tw.is_running()
+
+
+## Where the running HP roll ends (NAN when none runs).
+var _hp_to: float = NAN
 
 
 ## The needle `index` (or docked satellite `sat`) pulses as it resolves (`resolve_pulse`).
@@ -855,6 +916,89 @@ func show_caption(text: String) -> void:
 	tw.tween_callback(func() -> void: _end(&"caption"))
 
 
+## ANIM-R3 A6b: the forecast stays up through a SEND IT replay. The tag that showed when SEND
+## IT was pressed (`replay_tag`, a copy of `intent`; each chip numbered `tick_i`) keeps its
+## place; each of its lines gets a tick as the replay does what it said (`tick_chip`,
+## `forecast_tick`), its tape then reads THIS TURN, and it fades (`fade_replay_tag`,
+## `forecast_fade`) before the next forecast flips in. Empty = none.
+var replay_tag: Dictionary = {}
+## Ticked chips of the replay tag: tick_i -> the tick's pop (0 landing .. 1 settled).
+var tag_ticks: Dictionary = {}
+var replay_tag_alpha: float = 1.0
+## ANIM-R3 A6j: a status just put on a slice during the replay: slot -> its mark's ring
+## (1 as it lands .. 0).
+var status_flash: Dictionary = {}
+
+
+## Keeps forecast `tag` (what the tag showed when SEND IT was pressed) on screen for the
+## replay.
+func hold_forecast_tag(tag: Dictionary) -> void:
+	replay_tag = tag.duplicate(true) if not tag.is_empty() and String(tag.get("text", "")) != "" else {}
+	var chips: Array = replay_tag.get("chips", [])
+	for k in chips.size():
+		(chips[k] as Dictionary)["tick_i"] = k
+	tag_ticks = {}
+	replay_tag_alpha = 1.0
+
+
+## The tag drawn now: the held forecast while a replay plays, else the live one.
+func tag_intent() -> Dictionary:
+	return replay_tag if replaying and not replay_tag.is_empty() else intent
+
+
+## Ticks line `i` of the held forecast: it happened (a check pops on it).
+func tick_chip(i: int) -> void:
+	if tag_ticks.has(i):
+		return
+	if not Motion.live(&"forecast_tick"):
+		tag_ticks[i] = 1.0
+		queue_redraw()
+		return
+	tag_ticks[i] = 0.0
+	var e := Motion.entry(&"forecast_tick")
+	var tw := _tw(StringName("tick_%d" % i))
+	tw.tween_method(_set_tick.bind(i), 0.0, 1.0, Motion.seconds(&"forecast_tick")).set_ease(e.ease).set_trans(e.trans)
+
+
+func _set_tick(v: float, i: int) -> void:
+	tag_ticks[i] = v
+	queue_redraw()
+
+
+## The held forecast fades away (the replay has read it out).
+func fade_replay_tag() -> void:
+	if replay_tag.is_empty():
+		return
+	if not Motion.live(&"forecast_fade"):
+		replay_tag_alpha = 0.0
+		queue_redraw()
+		return
+	var e := Motion.entry(&"forecast_fade")
+	var tw := _tw(&"tag_fade")
+	tw.tween_method(func(v: float) -> void: replay_tag_alpha = v; queue_redraw(), replay_tag_alpha, 0.0, Motion.seconds(&"forecast_fade")).set_ease(e.ease).set_trans(e.trans)
+
+
+## A status lands on slice `slot` during the replay: the view's own snapshot shows it on
+## that slice from now on, with a ring round its mark (`status_mark`).
+func show_slice_status(slot: int, status: int) -> void:
+	if shown_state == null or slot < 0 or slot >= shown_state.wheel.slice_statuses.size():
+		return
+	shown_state.wheel.slice_statuses[slot] = status
+	if not Motion.live(&"status_mark"):
+		queue_redraw()
+		return
+	status_flash[slot] = 1.0
+	var e := Motion.entry(&"status_mark")
+	var tw := _tw(StringName("status_%d" % slot))
+	tw.tween_method(_set_status_flash.bind(slot), 1.0, 0.0, Motion.seconds(&"status_mark")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: status_flash.erase(slot); queue_redraw())
+
+
+func _set_status_flash(v: float, slot: int) -> void:
+	status_flash[slot] = v
+	queue_redraw()
+
+
 func hide_caption() -> void:
 	var tw: Tween = _tweens.get(&"caption")
 	if tw != null and tw.is_valid():
@@ -919,7 +1063,7 @@ func play_phase_needles(ticks: Array) -> void:
 ## shield and evade, under the hub's lines) goes, and the font size that keeps `text`
 ## inside the hub (ANIM-R1: numbers never overlap the name, and at 1.6 they spilled over
 ## the slices). Returns {at (global), fs, room (px the number may drift)}.
-func number_slot(band: String, text: String, crit: bool) -> Dictionary:
+func number_slot(band: String, text: String, crit: bool, icon: int = -1) -> Dictionary:
 	var c := global_center()
 	var r := hub_radius() * NUMBER_HUB_SHARE
 	var ext := hub_text_extent()
@@ -932,7 +1076,7 @@ func number_slot(band: String, text: String, crit: bool) -> Dictionary:
 	var mid := edge + side * fs * 0.5
 	while fs > NUMBER_MIN_FONT:
 		mid = edge + side * fs * 0.5
-		var hw := (Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + CombatFxLayer.NUMBER_OUTLINE) * 0.5
+		var hw := (Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + CombatFxLayer.NUMBER_OUTLINE + CombatFxLayer.glyph_width(fs, icon)) * 0.5
 		var far := maxf(absf(mid - fs * 0.5), absf(mid + fs * 0.5))
 		if hw * hw + far * far <= r * r:
 			break
@@ -1053,8 +1197,10 @@ func number_room() -> float:
 	return (_radius() - _band()) * NUMBER_ROOM
 
 
-## The slices as polygons on screen with their colours (the pieces a broken wheel falls
-## apart into), as shown.
+## The pieces a broken wheel falls apart into, as shown (global): ANIM-R3 A6g, the real
+## wheel: each slice's band keeps its art (its translucent neon fill, bright rim, icon and
+## value: [polygon, fill, {type, slice_col, icon_at, icon_r, value, value_at, value_fs,
+## rim}]), and the dark hub cracks into a wedge per slice ([polygon, fill, {rim}]).
 func slice_pieces() -> Array:
 	var out: Array = []
 	var c := _shown()
@@ -1062,16 +1208,37 @@ func slice_pieces() -> Array:
 		return out
 	var center := global_center()
 	var radius := _radius()
-	var inner := radius - _band()
+	var band := _band()
+	var inner := radius - band
 	var tps := c.wheel.ticks_per_slice()
 	var rot := shown_rotation()
 	for i in c.wheel.slice_count:
 		var slice := lookup.get_content(c.wheel.slot_slice_ids[i]) as SliceData
 		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
 		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
-		var col := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
-		out.append([_wedge(center, inner * 0.2, radius, minf(a0, a1), maxf(a0, a1)), Color(col, 0.75)])
+		var mid := _tick_angle(i * tps, rot)
+		var dir := Vector2(cos(mid), sin(mid))
+		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
+		var miss := slice != null and slice.slice_type == RC.SliceType.MISS
+		var art := {"rim": sc.lightened(0.35), "slice_col": sc, "value": "", "value_fs": _fs(VALUE_FONT_SIZE)}
+		if slice != null:
+			art["type"] = slice.slice_type
+			art["icon_at"] = center + dir * (inner + band * 0.42)
+			art["icon_r"] = band * 0.36
+			if slice.base_output > 0:
+				art["value"] = str(slice.base_output)
+				art["value_at"] = center + dir * (radius + VALUE_OUT)
+		out.append([_wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03), Color(sc, 0.18 if miss else 0.5), art])
+		var fan := PackedVector2Array([center])
+		for k in 11:
+			var a := lerpf(minf(a0, a1), maxf(a0, a1), k / 10.0)
+			fan.append(center + Vector2(cos(a), sin(a)) * (inner - 3.0))
+		out.append([fan, HUB_FILL, {"rim": Color(wheel_color, 0.6)}])
 	return out
+
+
+## The hub disc's fill (the break's hub pieces too).
+const HUB_FILL := Color("#07080F")
 
 
 ## The hub's radius on screen.
@@ -1497,6 +1664,14 @@ func _draw_view() -> void:
 		if status != RC.Status.NONE:
 			draw_circle(sp, 7, Palette.NIGHT_SKY)
 			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(status, ""), HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
+		if status_flash.has(i):
+			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
+			# slice's rim lights, so the slice it hit is seen as it lands.
+			var fl := float(status_flash[i])
+			draw_arc(sp, STATUS_MARK_R + Motion.amplitude(&"status_mark") * (1.0 - fl), 0, TAU, 24, _col(Color(Palette.CELL_ACID, 0.35 + 0.65 * fl)), 3.0, true)
+			var sclosed := wedge.duplicate()
+			sclosed.append(wedge[0])
+			draw_polyline(sclosed, _col(Color(Palette.CELL_ACID, fl)), 3.0, true)
 		if status_ghosts.has(i):
 			# The status this turn will leave on the slice: a dashed acid ring (or a cross
 			# when it clears).
@@ -1582,7 +1757,13 @@ func _draw_view() -> void:
 	# Intent: a taped paper tag above the needle (what resolves next and its results).
 	var tag := _intent_rect_local()
 	_check_tag_change(tag)
-	if replaying and caption != "" and caption_shown > 0.0:
+	var held := replaying and not replay_tag.is_empty() and tag.has_area()
+	if held:
+		# ANIM-R3 A6b: the forecast stays through the replay, its lines ticked as they happen
+		# (its tape reads THIS TURN once the result holds), then fades.
+		if replay_tag_alpha > 0.0:
+			_intent_tag(tag, replay_tag_alpha)
+	elif replaying and caption != "" and caption_shown > 0.0:
 		_draw_caption(caption, caption_shown)
 	elif enter_slide > 0.0 and not tag.has_area():
 		# An enemy entering with no forecast yet: its own name on the plate where its tag
@@ -1603,7 +1784,7 @@ func _draw_view() -> void:
 ## The tag's content as text (title and chips): a change flips the tag, the same content
 ## re-set on every hover doesn't (ANIM-2: chips don't jitter).
 func intent_signature() -> String:
-	if replaying or intent.is_empty():
+	if replaying or intent.is_empty() or String(intent.get("text", "")) == "":
 		return ""
 	var parts := PackedStringArray([String(intent.get("text", ""))])
 	for chip in intent.get("chips", []):
@@ -1691,6 +1872,22 @@ func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
 	draw_rect(box, _col(LOSS_COLOR), false, 3.0)
 	draw_string(font, Vector2(-ww * 0.5, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(LOSS_COLOR))
 	draw_set_transform(Vector2.ZERO)
+	# ANIM-R3 A6g: a skull under the stamp marks the beaten side without words.
+	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
+	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, _col(LOSS_COLOR))
+
+
+## A skull mark centred at `c`, `r` px in radius, in `col` (ANIM-R3 A6g: the defeated side):
+## a round cranium, a jaw with teeth, dark eye holes and a nose.
+static func draw_skull(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+	ci.draw_circle(c + Vector2(0, -r * 0.15), r, Palette.NIGHT_SKY)
+	ci.draw_circle(c + Vector2(0, -r * 0.15), r * 0.86, col)
+	ci.draw_rect(Rect2(c + Vector2(-r * 0.5, r * 0.35), Vector2(r, r * 0.55)), col)
+	for k in 3:
+		ci.draw_line(c + Vector2(-r * 0.25 + k * r * 0.25, r * 0.45), c + Vector2(-r * 0.25 + k * r * 0.25, r * 0.9), Palette.NIGHT_SKY, maxf(1.0, r * 0.1))
+	for sx in [-1.0, 1.0]:
+		ci.draw_circle(c + Vector2(sx * r * 0.36, -r * 0.1), r * 0.24, Palette.NIGHT_SKY)
+	ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0, r * 0.12), c + Vector2(-r * 0.12, r * 0.34), c + Vector2(r * 0.12, r * 0.34)]), Palette.NIGHT_SKY)
 
 
 ## A caption on a paper plate where the tag goes (THIS TURN, an entering enemy's name).
@@ -1929,6 +2126,8 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		var ay := fr.position.y + fr.size.y * 0.5
 		draw_colored_polygon(PackedVector2Array([Vector2(fr.position.x + 5, ay - 5), Vector2(fr.position.x + 13, ay), Vector2(fr.position.x + 5, ay + 5)]), fcol)
 		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
+	if (lay["icons"] as Rect2).has_area():
+		_draw_icon_row(lay["icons"], int(lay["icons_fs"]), clampf(last_turn_shown, 0.0, 1.0))
 	if last_turn != "":
 		# What the last SEND IT did, on a dark plate across the view's width, on up to two
 		# lines, never smaller than at text scale 1.0 unless it can't fit (H24: tiny grey text
@@ -1954,7 +2153,19 @@ func hp_layout() -> Dictionary:
 	var text := "%d/%d" % [roundi(shown_hp()), combatant.max_hp]
 	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 	var out := {"hp_text": text, "hp": Rect2(center.x - tw * 0.5, base_y - hs * 0.8, tw, hs * 0.8), "next": Rect2(), "next_text": "",
-		"last": Rect2(), "last_lines": PackedStringArray(), "last_fs": 0}
+		"last": Rect2(), "last_lines": PackedStringArray(), "last_fs": 0, "icons": Rect2(), "icons_fs": 0}
+	var items := icon_row_items()
+	if not items.is_empty():
+		# ANIM-R3 A6f: the last turn as icons left of the HP number (sword 6 -> shield 5 = -1),
+		# shrinking to fit the room there.
+		var ifs := _fs(HUB_FONT_SIZE + 3)
+		var room := center.x - tw * 0.5 - ICON_ROW_GAP - left_reserve
+		var iw := icon_row_width(items, ifs)
+		while ifs > ICON_ROW_MIN_FONT and iw > room:
+			ifs -= 1
+			iw = icon_row_width(items, ifs)
+		out["icons"] = Rect2(Vector2(maxf(left_reserve, center.x - tw * 0.5 - ICON_ROW_GAP - iw), base_y - hs * 0.75), Vector2(iw, ifs + 6.0))
+		out["icons_fs"] = ifs
 	var after := int(outcome.get("hp_after", combatant.hp))
 	if after != combatant.hp:
 		var fs := _fs(HUB_FONT_SIZE + 3)
@@ -1989,6 +2200,84 @@ func hp_layout() -> Dictionary:
 	return out
 
 
+## ANIM-R3 A6f: what the last SEND IT did to this wheel as numbers (the scene's
+## CombatScene.last_turn_icons): {hit (the hits' raw total), soaked (what block and shield
+## took), evaded (what was evaded), hp (the HP change in the resolve)}; empty = none. It
+## stays with LAST TURN until the player acts.
+var last_turn_icons: Dictionary = {}
+## Tooltip words for the LAST TURN plate and the icon row (the scene's: each status named
+## in it explained).
+var last_turn_tip: String = ""
+## Room between the icon row and the HP number, and the row's smallest lettering (px).
+const ICON_ROW_GAP := 8.0
+const ICON_ROW_MIN_FONT := 8
+
+
+## The icon row's items: [{icon (a slice type, -1 = none), text, color, sep (a joining mark
+## before it: "→" drawn as an arrow, "=" as text)}]; empty when the turn did nothing to it.
+func icon_row_items() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var d := last_turn_icons
+	if d.is_empty() or last_turn == "":
+		return out
+	var hit := int(d.get("hit", 0))
+	var soaked := int(d.get("soaked", 0))
+	var evaded := int(d.get("evaded", 0))
+	var hp := int(d.get("hp", 0))
+	if hit <= 0 and hp == 0:
+		return out
+	if hit > 0:
+		out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
+	if soaked > 0:
+		out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": "arrow"})
+	if evaded > 0:
+		out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": "arrow"})
+	var hp_text := ("+%d" % hp) if hp > 0 else ("-%d" % absi(hp))
+	out.append({"icon": RC.SliceType.HEAL if hp > 0 and hit <= 0 else -1, "text": hp_text, "color": HP_COLOR if hp > 0 else LOSS_COLOR,
+		"sep": "=" if hit > 0 else ""})
+	return out
+
+
+static func icon_row_width(items: Array[Dictionary], fs: int) -> float:
+	var w := 0.0
+	for it in items:
+		if String(it["sep"]) != "":
+			w += fs * ICON_SEP_SHARE
+		if int(it["icon"]) >= 0:
+			w += fs * 1.05
+		w += Palette.mono().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * 0.25
+	return w
+
+
+## A joining mark's room in the icon row, as a share of its lettering.
+const ICON_SEP_SHARE := 1.1
+
+
+func _draw_icon_row(r: Rect2, fs: int, alpha: float) -> void:
+	var items := icon_row_items()
+	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, 0.8 * alpha))
+	var x := r.position.x
+	var mid := r.position.y + r.size.y * 0.5
+	for it in items:
+		var col := _col(Color(it["color"], alpha))
+		var sep := String(it["sep"])
+		if sep == "arrow":
+			var a0 := Vector2(x + fs * 0.15, mid)
+			var a1 := Vector2(x + fs * ICON_SEP_SHARE - fs * 0.2, mid)
+			draw_line(a0, a1, Color(Palette.PAPER, alpha), maxf(1.5, fs * 0.12))
+			draw_colored_polygon(PackedVector2Array([a1 + Vector2(fs * 0.12, 0), a1 + Vector2(-fs * 0.2, -fs * 0.22), a1 + Vector2(-fs * 0.2, fs * 0.22)]), Color(Palette.PAPER, alpha))
+			x += fs * ICON_SEP_SHARE
+		elif sep != "":
+			draw_string(Palette.mono(), Vector2(x, mid + fs * 0.35), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * ICON_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
+			x += fs * ICON_SEP_SHARE
+		if int(it["icon"]) >= 0:
+			SliceIcon.draw_icon(self, Vector2(x + fs * 0.5, mid), fs * 0.45, int(it["icon"]), col)
+			x += fs * 1.05
+		var t := String(it["text"])
+		draw_string(Palette.mono(), Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		x += Palette.mono().get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * 0.25
+
+
 ## LAST TURN wrapped at its " · " breaks to `width` px at font size `fs`.
 static func _wrap_last_turn(text: String, width: float, fs: int) -> PackedStringArray:
 	var font := Palette.mono()
@@ -2011,7 +2300,7 @@ static func _wrap_last_turn(text: String, width: float, fs: int) -> PackedString
 func _hp_block_rects() -> Array[Rect2]:
 	var lay := hp_layout()
 	var out: Array[Rect2] = [lay["hp"]]
-	for k in ["next", "last"]:
+	for k in ["next", "last", "icons"]:
 		if (lay[k] as Rect2).has_area():
 			out.append(lay[k])
 	return out
@@ -2182,7 +2471,7 @@ static func _folds(rows: Array) -> bool:
 
 func _chip_rows_at(fs: int) -> Array:
 	var rows: Array = []
-	var chips: Array = intent.get("chips", [])
+	var chips: Array = tag_intent().get("chips", [])
 	if chips.is_empty():
 		return rows
 	var max_w := size.x * TAG_MAX_SHARE
@@ -2240,7 +2529,8 @@ static func _chip_width(text: String, fs: int) -> float:
 ## The intent tag's rect in view space (empty without an intent): a title row and one row
 ## per line of result chips, grown upwards from just above the pointer hub.
 func _intent_rect_local() -> Rect2:
-	if combatant == null or intent.is_empty() or String(intent.get("text", "")) == "":
+	var it := tag_intent()
+	if combatant == null or it.is_empty() or String(it.get("text", "")) == "":
 		return Rect2()
 	var ts := _ts()
 	var title_h := INTENT_HEIGHT * ts
@@ -2248,18 +2538,40 @@ func _intent_rect_local() -> Rect2:
 	var fs := chip_font()
 	var rows := _chip_rows_at(fs)
 	var h := title_h + rows.size() * (chip_h + 2.0)
-	var w := Palette.marker().get_string_size(String(intent["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(INTENT_FONT_SIZE)).x + (20.0 + 22.0 * ts if int(intent.get("type", -1)) >= 0 else 16.0)
-	if TIER_PIPS.has(int(intent.get("tier", -1))):
+	var w := Palette.marker().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(INTENT_FONT_SIZE)).x + (20.0 + 22.0 * ts if int(it.get("type", -1)) >= 0 else 16.0)
+	if TIER_PIPS.has(int(it.get("tier", -1))):
 		w += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
 	for row in rows:
 		var rw := 8.0
 		for chip in row:
 			rw += _chip_width(String(chip["text"]), fs)
 		w = maxf(w, rw)
+	# ANIM-R3 A6j: the tape's words never run past the tag (IF YOU SEND IT spilled over a
+	# short tag's title).
+	w = maxf(w, tape_width())
 	w = minf(w, size.x * TAG_MAX_SHARE)
 	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
 	var x := clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w))
-	return Rect2(Vector2(x, maxf(0.0, bottom - h)), Vector2(w, h))
+	# The tape stands above the tag (off its title): the tag keeps room for it in the view.
+	return Rect2(Vector2(x, maxf(tape_height() - TAPE_INSET * ts, bottom - h)), Vector2(w, h))
+
+
+## The tape on a tag (ANIM-R3 A6j): its height, and its width for the widest words it
+## carries (IF YOU SEND IT, THIS TURN) plus padding; it overlaps the tag by TAPE_INSET px.
+static func tape_height() -> float:
+	return _fs(HUB_FONT_SIZE) + 3.0
+
+
+static func tape_width() -> float:
+	var fs := _fs(HUB_FONT_SIZE)
+	var w := 0.0
+	for t in [forecast_caption(), TranslationServer.translate("THIS TURN")]:
+		w = maxf(w, Palette.mono().get_string_size(String(t), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	return w + TAPE_PAD * 2.0
+
+
+const TAPE_INSET := 3.0
+const TAPE_PAD := 6.0
 
 
 ## The intent tag on screen (layout checks: it never covers a wheel), or an empty rect.
@@ -2268,52 +2580,102 @@ func intent_rect() -> Rect2:
 	return Rect2(global_position + r.position, r.size) if r.has_area() else r
 
 
-func _intent_tag(r: Rect2) -> void:
-	var type := int(intent.get("type", -1))
-	var text := String(intent["text"])
+func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
+	var it := tag_intent()
+	var type := int(it.get("type", -1))
+	var text := String(it["text"])
 	var ts := _ts()
 	var f := Palette.marker()
 	var w := r.size.x
-	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Palette.SHADOW)
-	draw_rect(r, Palette.NOTE_PAPER)
-	draw_rect(r, Color(Palette.INK, 0.5), false, 1.0)
+	var fade := func(c: Color) -> Color: return Color(c, c.a * alpha)
+	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), fade.call(Palette.SHADOW))
+	draw_rect(r, fade.call(Palette.NOTE_PAPER))
+	draw_rect(r, fade.call(Color(Palette.INK, 0.5)), false, 1.0)
 	# ANIM-R1 / R2 E4d: the tape says what the tag is, a forecast of what SEND IT does now
 	# ("IF YOU SEND IT"; "NEXT TURN" read as "not this turn" before the first SEND IT), so
-	# it never reads as the result of the turn just played.
+	# it never reads as the result of the turn just played. ANIM-R3 A6b: once a replay's
+	# result holds, the same tag's tape reads THIS TURN (its lines ticked). A6j: the tape
+	# stands above the tag, off the title, and the tag is never narrower than its words.
 	var cap_fs := _fs(HUB_FONT_SIZE)
-	var cap_text := forecast_caption()
-	var cap_w := minf(w - 4.0, Palette.mono().get_string_size(cap_text, HORIZONTAL_ALIGNMENT_LEFT, -1, cap_fs).x + 10.0)
-	var tape := Rect2(r.position + Vector2((w - cap_w) * 0.5, -(cap_fs + 3.0) * 0.5), Vector2(cap_w, cap_fs + 3.0))
-	draw_rect(tape, Palette.NOTE_TAPE)
-	draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, Palette.INK)
+	var cap_text := caption if replaying and caption != "" and not replay_tag.is_empty() else forecast_caption()
+	var cap_w := minf(w, Palette.mono().get_string_size(cap_text, HORIZONTAL_ALIGNMENT_LEFT, -1, cap_fs).x + TAPE_PAD * 2.0)
+	var th := tape_height()
+	var tape := Rect2(r.position + Vector2((w - cap_w) * 0.5, -th + TAPE_INSET * ts), Vector2(cap_w, th))
+	draw_rect(tape, fade.call(Palette.NOTE_TAPE))
+	draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, fade.call(Palette.INK))
 	var tx := r.position.x + 8
 	var title_h := INTENT_HEIGHT * ts
 	if type >= 0:
-		SliceIcon.draw_icon(self, r.position + Vector2(17, title_h * 0.5), 9 * ts, type, Palette.slice_color(type))
+		SliceIcon.draw_icon(self, r.position + Vector2(17, title_h * 0.5 + TAPE_INSET * ts * 0.5), 9 * ts, type, fade.call(Palette.slice_color(type)))
 		tx += 22 * ts
-	var tier := int(intent.get("tier", -1))
+	var tier := int(it.get("tier", -1))
 	if TIER_PIPS.has(tier):
 		# Aim quality as pips (readable without words): filled = how well the needle sits.
 		for k in 3:
-			var pc := Vector2(tx + PIP_RADIUS * ts + k * (PIP_RADIUS * 2.6 * ts), r.position.y + title_h * 0.5)
+			var pc := Vector2(tx + PIP_RADIUS * ts + k * (PIP_RADIUS * 2.6 * ts), r.position.y + title_h * 0.5 + TAPE_INSET * ts * 0.5)
 			if k < int(TIER_PIPS[tier]):
-				draw_circle(pc, PIP_RADIUS * ts, Palette.INK)
+				draw_circle(pc, PIP_RADIUS * ts, fade.call(Palette.INK))
 			else:
-				draw_arc(pc, PIP_RADIUS * ts, 0, TAU, 10, Palette.INK, 1.2)
+				draw_arc(pc, PIP_RADIUS * ts, 0, TAU, 10, fade.call(Palette.INK), 1.2)
 		tx += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
-	draw_string(f, Vector2(tx, r.position.y + title_h * 0.7), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), Palette.INK)
+	draw_string(f, Vector2(tx, r.position.y + title_h * 0.7 + TAPE_INSET * ts * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), fade.call(Palette.INK))
 	var fs := chip_font()
 	var chip_h := CHIP_HEIGHT * ts
 	var y := r.position.y + title_h
-	for row in _chip_rows_at(fs):
+	var rows := _chip_rows_at(fs)
+	var shown := {}
+	for row in rows:
+		for chip in row:
+			if (chip as Dictionary).has("tick_i"):
+				shown[int(chip["tick_i"])] = true
+	for row in rows:
 		var x := r.position.x + 4
 		for chip in row:
 			var cw := _chip_width(String(chip["text"]), fs)
 			var cr := Rect2(Vector2(x, y), Vector2(cw - 4, chip_h))
-			draw_rect(cr, Color(chip.get("color", Palette.INK)))
-			draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(chip.get("ink", Palette.PAPER)))
+			draw_rect(cr, fade.call(Color(chip.get("color", Palette.INK))))
+			draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
+			var tick := _chip_tick(chip, shown)
+			if tick >= 0.0:
+				_draw_tick(Vector2(cr.end.x, cr.position.y), chip_h, tick, alpha)
 			x += cw
 		y += chip_h + 2.0
+
+
+## A held forecast chip's tick (ANIM-R3 A6b): its pop 0..1, or -1 when not ticked. The fold
+## chip ("+N MORE") ticks once every chip it hides has.
+func _chip_tick(chip: Dictionary, shown: Dictionary) -> float:
+	if replay_tag.is_empty() or not replaying:
+		return -1.0
+	if chip.has("tick_i"):
+		return float(tag_ticks.get(int(chip["tick_i"]), -1.0))
+	if bool(chip.get("more", false)):
+		var least := 1.0
+		for c in replay_tag.get("chips", []):
+			var i := int((c as Dictionary).get("tick_i", -1))
+			if i < 0 or shown.has(i):
+				continue
+			if not tag_ticks.has(i):
+				return -1.0
+			least = minf(least, float(tag_ticks[i]))
+		return least
+	return -1.0
+
+
+## A tick on a chip's top-right corner `at` (local): an acid disc with a check, popping in
+## from `forecast_tick`'s amplitude scale.
+func _draw_tick(at: Vector2, chip_h: float, pop: float, alpha: float) -> void:
+	var sc := lerpf(Motion.amplitude(&"forecast_tick"), 1.0, clampf(pop, 0.0, 1.0)) if Motion.live(&"forecast_tick") else 1.0
+	var rr := chip_h * TICK_SHARE * sc
+	var c := at + Vector2(-rr * 0.4, rr * 0.2)
+	draw_circle(c, rr + 1.5, Color(Palette.INK, alpha))
+	draw_circle(c, rr, Color(Palette.CELL_ACID, alpha))
+	draw_polyline(PackedVector2Array([c + Vector2(-rr * 0.5, 0.0), c + Vector2(-rr * 0.12, rr * 0.4), c + Vector2(rr * 0.55, -rr * 0.45)]),
+		Color(Palette.INK, alpha), maxf(1.5, rr * 0.3), true)
+
+
+## A tick's radius as a share of a chip's height.
+const TICK_SHARE := 0.42
 
 
 ## The forecast tag's tape caption (translated).

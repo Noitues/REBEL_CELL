@@ -83,6 +83,11 @@ var _stickers: Dictionary = {}
 var _sticker_box: VBoxContainer
 var _hand_box: HBoxContainer
 var _end_turn_button: Button
+## ANIM-R3 A6h: the next step's action once the fight is over ("" label = none shown).
+var _continue_button: Button
+var _continue_label: String = ""
+## The fight is over and the player chose to go on (the netrun moves to the next step).
+signal continue_requested
 var _rewind_button: Button
 var _picker_controls: Array[Control] = []
 var controls_row: HFlowContainer
@@ -172,8 +177,17 @@ func end_turn() -> void:
 	_pending_last_turn = before
 	_hold_slot = -1
 	_pending_discard = _capture_hand() if Motion.animating() and engine.has_fight() else []
+	_held_tags.clear()
+	if Motion.animating() and engine.has_fight():
+		# ANIM-R3 A6b: the forecast SEND IT carries out (never a hovered card's) stays up
+		# through the replay, its lines ticked as they happen.
+		_show_end_turn_preview()
+		for v in _views():
+			if v.combatant != null and not v.intent.is_empty():
+				_held_tags[v.combatant.id] = v.intent.duplicate(true)
 	if not engine.submit(CombatAction.end_turn()):
 		_pending_discard = []
+		_held_tags.clear()
 
 
 ## State before the SEND IT being resolved (for the last-turn lines).
@@ -184,6 +198,9 @@ var _hold_forecast: bool = false
 var _shown_turn: int = -1
 ## Last-turn line per combatant id (kept until the player acts).
 var _last_turn: Dictionary = {}
+## ANIM-R3 A6f / A6j: the last turn's icon numbers and plate tooltips per wheel id.
+var _last_icons: Dictionary = {}
+var _last_tips: Dictionary = {}
 
 
 ## What the last SEND IT did, per wheel: the real HP change since it was pressed (so
@@ -284,6 +301,61 @@ static func last_turn_lines(before: CombatState, after: CombatState, events: Arr
 		if parts.is_empty():
 			parts.append(String(TranslationServer.translate("NO CHANGE")))
 		out[c.id] = String(TranslationServer.translate("LAST TURN: ")) + " · ".join(parts)
+	return out
+
+
+## ANIM-R3 A6f: what the last SEND IT did to each wheel as numbers, for the icon row under
+## its HP (sword 6 -> shield 5 = -1): {id: {hit (the raw total of the hits aimed at it),
+## soaked (what its block and shield took), evaded (what it evaded), hp (its HP change in
+## the resolve)}}. Hits on its satellites and drones are theirs, not its.
+static func last_turn_icons(before: CombatState, events: Array[Dictionary]) -> Dictionary:
+	var out := {}
+	var wheels: Array[CombatantState] = [before.player]
+	for c in before.enemies:
+		if not c.is_satellite:
+			wheels.append(c)
+	for c in wheels:
+		out[c.id] = {"hit": 0, "soaked": 0, "evaded": 0, "hp": 0}
+	for e in events:
+		var t := String(e.get("type", ""))
+		if t == "turn_start":
+			break
+		var id := StringName(String(e.get("target", "")))
+		if not out.has(id):
+			continue
+		var d: Dictionary = out[id]
+		match t:
+			"damage":
+				d["hit"] = int(d["hit"]) + int(e.get("amount", 0))
+				d["soaked"] = int(d["soaked"]) + int(e.get("blocked", 0)) + int(e.get("shielded", 0))
+				d["hp"] = int(d["hp"]) - int(e.get("hp_damage", 0))
+			"evaded":
+				d["hit"] = int(d["hit"]) + int(e.get("amount", 0))
+				d["evaded"] = int(d["evaded"]) + int(e.get("amount", 0))
+			"corrupted":
+				d["hp"] = int(d["hp"]) - int(e.get("amount", 0))
+			"heal":
+				d["hp"] = int(d["hp"]) + int(e.get("amount", 0))
+	return out
+
+
+## ANIM-R3 A6j: the LAST TURN plate's tooltip per wheel: its line, then what each status it
+## got does (GOT CORRUPTED said nothing about corruption).
+static func last_turn_tips(lines: Dictionary, events: Array[Dictionary]) -> Dictionary:
+	var got := {}
+	for e in events:
+		if String(e.get("type", "")) == "status":
+			var id := StringName(String(e.get("target", "")))
+			var list: Array = got.get(id, [])
+			if not list.has(int(e.get("status", 0))):
+				list.append(int(e.get("status", 0)))
+			got[id] = list
+	var out := {}
+	for id in lines:
+		var parts := PackedStringArray([String(lines[id]), TranslationServer.translate("What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.")])
+		for st in got.get(id, []):
+			parts.append(Codex.status_text(int(st)))
+		out[id] = "\n".join(parts)
 	return out
 
 
@@ -635,7 +707,11 @@ func _input(event: InputEvent) -> void:
 	# is consumed (MotionSkip: the one press predicate and consume rule).
 	if _skippable() and MotionSkip.is_press(event):
 		skip_motion()
-		MotionSkip.consume(self)
+		# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press
+		# ends the replay and goes on to it).
+		if continue_shown() and _for_continue(event):
+			return
+		MotionSkip.consume(self, event)
 		return
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		_nav_focus = false
@@ -657,6 +733,16 @@ func _input(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+## True when `event` is meant for the next-step action: a click on it, accept while it has
+## focus, or SEND IT's key.
+func _for_continue(event: InputEvent) -> bool:
+	if event.is_action(&"end_turn"):
+		return true
+	if event is InputEventMouseButton:
+		return _continue_button.get_global_rect().has_point((event as InputEventMouseButton).global_position)
+	return event.is_action(&"ui_accept") and _continue_button.has_focus()
 
 
 ## Gives the hand focus (the first playable card, else SEND IT): the netrun scene calls it
@@ -738,7 +824,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("nudge_right"):
 		nudge(1)
 	elif event.is_action_pressed("end_turn"):
-		end_turn()
+		if continue_shown():
+			_continue_pressed()  # ANIM-R3 A6h: SEND IT's key goes on once the fight is over
+		else:
+			end_turn()
 	elif event.is_action_pressed("rewind"):
 		rewind()
 	elif event.is_action_pressed("cycle_target"):
@@ -1020,9 +1109,13 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	_pending_discard = []
 	if _pending_last_turn != null:
 		_last_turn = last_turn_lines(_pending_last_turn, state, events)
+		_last_icons = last_turn_icons(_pending_last_turn, events)
+		_last_tips = last_turn_tips(_last_turn, events)
 		_pending_last_turn = null
 	elif not events.is_empty():
 		_last_turn.clear()  # the player acted: the result gives way to the new preview
+		_last_icons.clear()
+		_last_tips.clear()
 	for e in state.enemies:
 		RunManager.record_seen(e.source_id)
 	_play_log(events)
@@ -1450,6 +1543,14 @@ func _build_ui() -> void:
 	_end_turn_button.pressed.connect(end_turn)
 	bottom.add_child(_end_turn_button)
 	_zine_elements.append(_end_turn_button)
+	# ANIM-R3 A6h: once the fight is over, SEND IT, RESPIN and UNDO go and the next step's
+	# action takes their place at once (the netrun names it: LOOT, CONTINUE).
+	_continue_button = DripButton.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), DripButton.DRIP_PINK, 40, DripButton.SEND_IT_DRIPS)
+	_continue_button.name = "Continue"
+	_continue_button.visible = false
+	_continue_button.pressed.connect(_continue_pressed)
+	bottom.add_child(_continue_button)
+	_zine_elements.append(_continue_button)
 
 	# The motion overlay: over the arena and the hand, under the toast and popups.
 	fx_layer = CombatFxLayer.new()
@@ -1584,6 +1685,7 @@ func _refresh_key_hints() -> void:
 	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
 	_settings_button.text = "Settings %s" % Settings.hint(&"open_settings")
 	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
+	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	_sync_stickers()
 	_sync_arrow_hints()
 	if engine != null and engine.has_fight() and is_inside_tree():
@@ -1680,6 +1782,7 @@ func _refresh(state: CombatState) -> void:
 	_rebuild_slot_option()
 	_build_hand(state)
 	_end_turn_button.disabled = state.is_over()
+	_sync_over(state.is_over())
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
 	_rewind_button.disabled = not engine.can_rewind()
@@ -1697,9 +1800,47 @@ func _refresh(state: CombatState) -> void:
 		v.hover_zone = {}
 		v.show_arrows = not state.is_over()
 		v.last_turn = String(_last_turn.get(v.combatant.id, "")) if v.combatant != null else ""
+		v.last_turn_icons = _last_icons.get(v.combatant.id, {}) if v.combatant != null else {}
+		v.last_turn_tip = String(_last_tips.get(v.combatant.id, "")) if v.combatant != null else ""
 	toast.hide()
 	inspect_popup.hide()
 	_show_end_turn_preview()
+
+
+## ANIM-R3 A6h: the netrun names the step after the fight (LOOT, CONTINUE); the action shows
+## in SEND IT's place once the fight is over (at once, the replay may still play) and takes
+## focus.
+func show_continue(label: String) -> void:
+	_continue_label = label
+	if _continue_button == null:
+		return
+	(_continue_button as DripButton).set_tag_text(label)
+	_continue_button.tooltip_text = label
+	_sync_over(engine.has_fight() and engine.state().is_over())
+
+
+func _sync_over(over: bool) -> void:
+	if _continue_button == null:
+		return
+	_end_turn_button.visible = not over
+	_sticker_box.visible = not over
+	var show := over and _continue_label != ""
+	var was := _continue_button.visible
+	_continue_button.visible = show
+	if show and not was and is_inside_tree():
+		_continue_button.grab_focus.call_deferred()
+
+
+## True when the next step's action is on screen (the fight is over).
+func continue_shown() -> bool:
+	return _continue_button != null and _continue_button.is_visible_in_tree()
+
+
+func _continue_pressed() -> void:
+	if not continue_shown():
+		return
+	skip_motion()
+	continue_requested.emit()
 
 
 ## The status line: turn, free nudges, and on a pad the triggers that pick which wheel and
@@ -1937,8 +2078,9 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 		return
 	var what := TextDb.t(card, "display_name").to_upper() if card != null else tr("NUDGE")
 	var chips: Array = (v.intent.get("chips", []) as Array).duplicate()
-	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic).
-	chips.push_front({"text": tr("PLAYING %s") % what, "color": CHIP_RUN, "ink": Palette.INK})
+	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic). ANIM-R3 A6j: says who plays it
+	# ("PLAYING JOLT" on the enemy's tag read as the enemy playing it).
+	chips.push_front({"text": tr("YOU PLAY %s") % what, "color": CHIP_RUN, "ink": Palette.INK})
 	v.intent["chips"] = chips
 	v.intent["tooltip"] = _chips_tooltip(chips)
 	v.queue_redraw()
@@ -2064,6 +2206,8 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 
 
 ## Result chips for one combatant (and, on the operative, the run-wide results).
+## ANIM-R3 A6b: each chip names the beats that make it happen ("beats": ForecastTicks
+## filter), so a held forecast ticks each line as the replay does it.
 func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	var chips: Array = []
 	var d := o.of(id)
@@ -2075,9 +2219,11 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		var victim := state.get_combatant(StringName(String(tgt)))
 		var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
 		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK,
-			"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT})
+			"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT,
+			"beats": ForecastTicks.filter(["damage", "evaded"], id, StringName(String(tgt)))})
 	if to.is_empty() and int(d["dealt"]) > 0:
-		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK, "rank": CHIP_RANK_DEALT})
+		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK, "rank": CHIP_RANK_DEALT,
+			"beats": ForecastTicks.filter(["damage", "evaded"], id)})
 	var dhp := int(d["hp_after"]) - int(d["hp_before"])
 	if dhp < 0:
 		# Said as damage taken (H23: "−11 HP" under the player's DEFEND read as DEFEND costing
@@ -2085,33 +2231,40 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		var victim_self := state.get_combatant(id)
 		var taker := tr("YOU TAKE") if victim_self != null and victim_self.is_player else tr("TAKES")
 		chips.append({"text": tr("%s %d HP") % [taker, -dhp], "color": CHIP_LOSS, "ink": Palette.PAPER,
-			"rank": CHIP_RANK_HURTS_YOU if victim_self != null and victim_self.is_player else CHIP_RANK_HP})
+			"rank": CHIP_RANK_HURTS_YOU if victim_self != null and victim_self.is_player else CHIP_RANK_HP,
+			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
 	elif dhp > 0:
-		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP})
+		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
+			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
 	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do).
 	if int(d.get("soaked", 0)) > 0:
-		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK})
+		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK,
+			"beats": ForecastTicks.filter(["damage"], &"", id)})
 	for key in ["block", "shield"]:
 		var delta := int(d[key + "_after"]) - int(d[key + "_before"])
 		if delta != 0:
-			chips.append({"text": "%s %s" % [signed(delta), tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK})
+			chips.append({"text": "%s %s" % [signed(delta), tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK,
+				"beats": ForecastTicks.filter([key, "damage"], &"", id)})
 	var ev := int(d["evade_after"]) - int(d["evade_before"])
 	if ev != 0:
-		chips.append({"text": tr("%s EVADE") % signed(ev), "color": CHIP_GUARD, "ink": Palette.INK})
+		chips.append({"text": tr("%s EVADE") % signed(ev), "color": CHIP_GUARD, "ink": Palette.INK,
+			"beats": ForecastTicks.filter(["evade", "evaded"], &"", id)})
 	if int(d["resistance_after"]) != int(d["resistance_before"]):
 		chips.append({"text": tr("RESIST %d→%d") % [int(d["resistance_before"]), int(d["resistance_after"])], "color": CHIP_RESIST, "ink": Palette.INK})
 	if bool(d["breached"]):
-		chips.append({"text": tr("HUB BREACH"), "color": CHIP_RESIST, "ink": Palette.INK})
+		chips.append({"text": tr("HUB BREACH"), "color": CHIP_RESIST, "ink": Palette.INK, "beats": ForecastTicks.filter(["breach"], &"", id)})
 	for st in d["statuses"]:
 		var after := int(st["after"])
 		var tag: String = tr(String(Palette.STATUS_WORDS.get(after, ""))) if after != RC.Status.NONE else tr("CLEARS %s") % tr(String(Palette.STATUS_WORDS.get(int(st["before"]), "")))
-		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
+		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_STATUS, "ink": Palette.INK, "status": true,
+			"beats": ForecastTicks.filter(["status", "absorbed"], &"", id)})
 	if bool(d["alive_before"]) and not bool(d["alive_after"]):
-		chips.append({"text": tr("DOWN"), "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP})
+		chips.append({"text": tr("DOWN"), "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", id)})
 	if int(d.get("phase_after", 0)) != int(d.get("phase_before", 0)):
-		chips.append({"text": tr("PHASE %d") % (int(d["phase_after"]) + 1), "color": CHIP_RESIST, "ink": Palette.INK})
+		chips.append({"text": tr("PHASE %d") % (int(d["phase_after"]) + 1), "color": CHIP_RESIST, "ink": Palette.INK, "beats": ForecastTicks.filter(["phase"], &"", id)})
 	if int(d.get("pointers_after", 0)) > int(d.get("pointers_before", 0)):
-		chips.append({"text": tr("+%d NEEDLE") % (int(d["pointers_after"]) - int(d["pointers_before"])), "color": CHIP_RESIST, "ink": Palette.INK})
+		chips.append({"text": tr("+%d NEEDLE") % (int(d["pointers_after"]) - int(d["pointers_before"])), "color": CHIP_RESIST, "ink": Palette.INK,
+			"beats": ForecastTicks.filter(["phase"], &"", id)})
 	if bool(d.get("slices_changed", false)):
 		chips.append({"text": tr("NEW SLICES"), "color": CHIP_RESIST, "ink": Palette.INK})
 	# Satellites docked here: what they deal and take.
@@ -2122,27 +2275,29 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		var name := _name_of(sat).to_lower()
 		if int(sd["dealt"]) > 0:
 			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK,
-				"rank": CHIP_RANK_DEALT if sat.is_player else CHIP_RANK_HURTS_YOU})
+				"rank": CHIP_RANK_DEALT if sat.is_player else CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["damage", "evaded"], sat.id)})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
-			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP})
+			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", sat.id)})
 		elif int(sd["hp_after"]) != int(sd["hp_before"]):
 			var shp := int(sd["hp_after"]) - int(sd["hp_before"])
 			chips.append({"text": tr("%s %s HP") % [name, signed(shp)], "color": CHIP_LOSS if shp < 0 else CHIP_GAIN, "ink": Palette.PAPER if shp < 0 else Palette.INK,
-				"rank": CHIP_RANK_HP})
+				"rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", sat.id, true)})
 		for key in ["block", "shield"]:
 			var sdelta := int(sd[key + "_after"]) - int(sd[key + "_before"])
 			if sdelta != 0:
-				chips.append({"text": "%s %s %s" % [name, signed(sdelta), tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK})
+				chips.append({"text": "%s %s %s" % [name, signed(sdelta), tr("BLOCK") if key == "block" else tr("SHIELD")], "color": CHIP_GUARD, "ink": Palette.INK,
+					"beats": ForecastTicks.filter([key, "damage"], &"", sat.id)})
 		for st in sd["statuses"]:
 			var sw: String = tr(String(Palette.STATUS_WORDS.get(int(st["after"]), ""))) if int(st["after"]) != RC.Status.NONE else tr("CLEARED")
-			chips.append({"text": "%s %s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×"), sw], "color": CHIP_STATUS, "ink": Palette.INK, "status": true})
+			chips.append({"text": "%s %s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×"), sw], "color": CHIP_STATUS, "ink": Palette.INK, "status": true,
+				"beats": ForecastTicks.filter(["status", "absorbed"], &"", sat.id)})
 		if int(sd.get("dock_after", -1)) != int(sd.get("dock_before", -1)):
 			chips.append({"text": tr("%s MOVES") % name, "color": CHIP_RESIST, "ink": Palette.INK})
 	if id == state.player.id:
 		if o.ram_delta != 0:
-			chips.append({"text": tr("RAM %s") % signed(o.ram_delta), "color": CHIP_GUARD, "ink": Palette.INK})
+			chips.append({"text": tr("RAM %s") % signed(o.ram_delta), "color": CHIP_GUARD, "ink": Palette.INK, "beats": ForecastTicks.filter(["ram"])})
 		if o.cards_drawn > 0:
-			chips.append({"text": tr("DRAW %d") % o.cards_drawn, "color": CHIP_RUN, "ink": Palette.INK})
+			chips.append({"text": tr("DRAW %d") % o.cards_drawn, "color": CHIP_RUN, "ink": Palette.INK, "beats": ForecastTicks.filter(["draw"])})
 		if o.heat != 0:
 			# Scaled one change at a time, as the netrun applies them.
 			var heat := 0
@@ -2158,13 +2313,13 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		if o.damage_bonus_delta != 0:
 			chips.append({"text": tr("DAMAGE %s") % signed(o.damage_bonus_delta), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.drones_gained > 0:
-			chips.append({"text": tr("+%d DRONE") % o.drones_gained, "color": CHIP_STATUS, "ink": Palette.INK})
+			chips.append({"text": tr("+%d DRONE") % o.drones_gained, "color": CHIP_STATUS, "ink": Palette.INK, "beats": ForecastTicks.filter(["spawn"])})
 		if o.double_nudge_next:
 			chips.append({"text": tr("2× NUDGE CARDS NEXT"), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.outcome == CombatState.Outcome.VICTORY:
-			chips.append({"text": tr("VICTORY"), "color": CHIP_GAIN, "ink": Palette.INK})
+			chips.append({"text": tr("VICTORY"), "color": CHIP_GAIN, "ink": Palette.INK, "beats": ForecastTicks.filter(["end"])})
 		elif o.outcome == CombatState.Outcome.DEFEAT:
-			chips.append({"text": tr("DEFEAT"), "color": CHIP_LOSS, "ink": Palette.PAPER})
+			chips.append({"text": tr("DEFEAT"), "color": CHIP_LOSS, "ink": Palette.PAPER, "beats": ForecastTicks.filter(["end"])})
 	return ranked_chips(chips)
 
 
@@ -2513,7 +2668,10 @@ func _deck_spot() -> Vector2:
 
 func _discard_spot() -> Vector2:
 	var r := _hand_box.get_global_rect()
-	var half := CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5
+	# ANIM-R3 A7: far enough inside the hand's row that a discarded card, at the size it
+	# lands with, stays off RESPIN / UNDO beside it (flights overlapped them).
+	var card := ZineCard.STICKER_SIZE * (_hand_scale if _hand_scale > 0.0 else Settings.text_scale) * CombatFxLayer.DISCARD_SCALE * 0.5
+	var half := (CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5).max(card)
 	return Vector2(r.end.x - half.x - STICKER_EDGE, r.end.y - half.y - STICKER_EDGE)
 
 
@@ -2725,20 +2883,47 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	var beats := ResolveBeats.build(before, events, engine.resolver.lookup)
 	var sch := sequence_schedule(beats)
 	var times: PackedFloat32Array = sch["times"]
+	var result_at := float(sch["result_at"])
+	var hold := Motion.seconds(&"resolve_result_hold")
+	# ANIM-R3 A6a: a wheel every hit of which was soaked says ALL BLOCKED on its last hit's
+	# impact (not later); the result stamps the rest (NO DAMAGE).
+	_impact_stamped.clear()
+	var stamps := result_stamps(beats, before)
+	for id in stamps:
+		if String(stamps[id]) != tr("ALL BLOCKED"):
+			continue
+		for k in range(beats.size() - 1, -1, -1):
+			var b := beats[k]
+			if b["phase"] != "turn_start" and ResolveBeats.is_hit(b) and StringName(String(b["target"])) == id:
+				b["final_stamp"] = stamps[id]
+				b["final_hold"] = maxf(Motion.seconds(&"number_float"), result_at + hold - times[k] - CombatFxLayer.impact_seconds())
+				_impact_stamped[id] = true
+				break
 	# The screen goes back to where SEND IT was pressed: the wheels as they landed, the
-	# HP they had, no forecast.
+	# HP they had. ANIM-R3 A6b: the forecast that showed then stays (its lines tick as the
+	# replay does them, then it fades); the next one is withheld.
+	var fade_at := float(sch["spin_at"]) if float(sch["spin_at"]) >= 0.0 else result_at + hold
+	var cap := result_at
 	for v in _views():
 		if v.combatant == null:
 			continue
 		var c0 := before.get_combatant(v.combatant.id)
 		if c0 == null:
 			continue
-		v.shown_state = c0
+		# The view's own copy: statuses landing mid-replay mark its slices (A6j).
+		v.shown_state = c0.duplicate_state()
 		v.shown_satellites = before.satellites_of(c0.id)
 		v.anim_hp = c0.hp
 		v.replaying = true
 		v.last_turn_shown = 0.0
+		v.hold_forecast_tag(_held_tags.get(c0.id, {}))
+		if not v.replay_tag.is_empty():
+			var ticks := ForecastTicks.schedule(v.replay_tag.get("chips", []), beats, times, beat_timing(), cap)
+			for i in ticks:
+				_after_seq(float(ticks[i]), v.tick_chip.bind(int(i)))
+			_after_seq(fade_at, v.fade_replay_tag)
 		v.queue_redraw()
+	_held_tags.clear()
 	ram_note.hold(before.ram)
 	_hide_new_cards(0)
 	var discard_spot := _discard_spot()
@@ -2753,8 +2938,25 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	_seq_total = float(sch["total"])
 	for k in beats.size():
 		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(times[k])
-	_seq.tween_callback(_show_result.bind(beats, before, after)).set_delay(float(sch["result_at"]))
+	_seq.tween_callback(_show_result.bind(beats, before, after)).set_delay(result_at)
+	for c in _seq_calls:
+		_seq.tween_callback(c[1]).set_delay(float(c[0]))
+	_seq_calls.clear()
 	_seq.tween_callback(_finish_sequence).set_delay(_seq_total)
+
+
+## Calls queued for the SEND IT sequence being built ([seconds, callable]).
+var _seq_calls: Array = []
+## ANIM-R3 A6a: wheels whose ALL BLOCKED stamped on a hit's impact (the result doesn't
+## stamp them again).
+var _impact_stamped: Dictionary = {}
+## ANIM-R3 A6b: the forecast tags showing when SEND IT was pressed (view id -> tag), held
+## for the replay.
+var _held_tags: Dictionary = {}
+
+
+func _after_seq(seconds: float, c: Callable) -> void:
+	_seq_calls.append([seconds, c])
 
 
 ## When each beat of a SEND IT plays (ResolveBeats.schedule with the sequence's budget,
@@ -2771,9 +2973,10 @@ static func sequence_schedule(beats: Array[Dictionary]) -> Dictionary:
 ## projectiles at once), their impact, a partly blocked hit's absorb, a number's travel
 ## into the HP counter and the roll, and the break's wait at HP 0.
 static func beat_timing() -> Dictionary:
+	var arrive := Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") if Motion.live(&"number_to_hp") else 0.0
 	return {"hit_gap": Motion.seconds(&"hit_line"), "impact": CombatFxLayer.impact_seconds(), "absorb": Motion.seconds(&"hit_absorb"),
 		"settle": Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + Motion.seconds(&"hp_drain"),
-		"break_delay": Motion.delay_of(&"enemy_break")}
+		"arrive": arrive, "break_delay": Motion.delay_of(&"enemy_break")}
 
 
 ## How long a wheel's death waits after the hit that killed it (C5f: its HP is seen at 0
@@ -2792,6 +2995,14 @@ const SPIN_TICKS_TYPICAL := 3.0
 ## up, and a wheel whose HP this turn didn't change stamps NO DAMAGE (ALL BLOCKED when it
 ## was hit and every hit was soaked or evaded), before the wheels turn on.
 func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatState) -> void:
+	# ANIM-R3 A5: the result never shows while a counter still rolls (under load a frame can
+	# land THIS TURN a frame or two early): numbers still on their way arrive, rolls end.
+	fx_layer.arrive_all()
+	for v in _views():
+		if v.combatant != null and not v.defeated():
+			v.finish_hp()
+			if v.shown_state != null:
+				v.anim_hp = float(_resolve_hp(beats, before, v.combatant.id))
 	var stamps := result_stamps(beats, before)
 	for v in _views():
 		if v.combatant == null:
@@ -2799,9 +3010,23 @@ func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatS
 		v.reveal_last_turn()
 		if not v.defeated():
 			v.show_caption(tr("THIS TURN"))
-		if stamps.has(v.combatant.id) and not v.defeated():
+		if stamps.has(v.combatant.id) and not v.defeated() and not _impact_stamped.has(v.combatant.id):
 			var spot := v.stamp_slot()
-			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]), int(spot["max_fs"]))
+			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]),
+				int(spot["max_fs"]), 0.0, CombatFxLayer.GUARD_NULL)
+
+
+## The HP `id` ends the resolve on (before the next turn starts): the last resolve-phase HP
+## beat's, else what it started with.
+static func _resolve_hp(beats: Array[Dictionary], before: CombatState, id: StringName) -> int:
+	var c := before.get_combatant(id)
+	var hp := c.hp if c != null else 0
+	for b in beats:
+		if b["phase"] == "turn_start":
+			break
+		if StringName(String(b["target"])) == id and int(b["hp_after"]) >= 0 and String(b["kind"]) in ResolveBeats.HP_KINDS:
+			hp = int(b["hp_after"])
+	return hp
 
 
 ## Wheels (the operative and the enemies, not satellites) that took no HP-changing beat in
@@ -2869,10 +3094,13 @@ func _host_view(id: StringName, s: CombatState) -> WheelView:
 
 
 ## Where a beat's actor stands: the slice its resolving needle landed on (ANIM-R1: hits
-## fly from the attacker's slice), else its needle's hub, or its satellite token.
-func _source_spot(b: Dictionary, s: CombatState) -> Vector2:
+## fly from the attacker's slice), else its needle's hub, or its satellite token. ANIM-R3
+## A1: a drone deployed during the resolve is found in the state it ends on.
+func _source_spot(b: Dictionary, s: CombatState, after: CombatState = null) -> Vector2:
 	var src := StringName(String(b["source"]))
 	var v := _host_view(src, s)
+	if v == null and after != null:
+		v = _host_view(src, after)
 	if v == null:
 		return Vector2.INF
 	if v.combatant != null and v.combatant.id != src:
@@ -2883,85 +3111,117 @@ func _source_spot(b: Dictionary, s: CombatState) -> Vector2:
 
 
 ## The floating number a beat shows first (see numbers_for), or {} when it shows none.
-func number_for(b: Dictionary, s: CombatState, _k: int = 0) -> Dictionary:
-	var list := numbers_for(b, s)
+func number_for(b: Dictionary, s: CombatState, _k: int = 0, after: CombatState = null) -> Dictionary:
+	var list := numbers_for(b, s, after)
 	return list[0] if not list.is_empty() else {}
 
 
 ## The floating numbers a beat shows (ANIM-R1 C5c): HP changes (red loss, green heal) sit
-## in the hub above its name and travel into the HP counter; guards (block, shield, evade,
-## what a partly blocked hit's guard soaked) sit under the hub's lines. Each is sized to
-## stay inside the hub, never on the name, and never on another number (a new one in the
-## same band sends the one resting there on). A hit that deals nothing shows no number: it
-## stamps BLOCKED or EVADED instead. Each: {at, rise, text, color, crit, id, view, fs,
-## band (the view's band key), travel}.
-func numbers_for(b: Dictionary, s: CombatState) -> Array[Dictionary]:
+## in the hub above its name and travel into the HP counter; guards sit under the hub's
+## lines. Each is sized to stay inside the hub, never on the name, and never on another
+## number (a new one in the same band sends the one resting there on). ANIM-R3 A6e: a guard
+## is a glyph and a number from the blocker (a shield and "5" under the wheel's own guard
+## lines, or at the drone's or satellite's token), never a word badge; a hit soaked or
+## evaded whole shows "0" with its glyph where it struck (see _play_beat), no number here.
+## Each: {at, rise, text, color, crit, id, view, fs, band (the view's band key), travel,
+## icon (a slice type, -1 = none), hp (HP numbers only)}. ANIM-R3 A1: `after` finds the
+## host of a drone deployed during this resolve.
+func numbers_for(b: Dictionary, s: CombatState, after: CombatState = null) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var target := StringName(String(b["target"]))
+	# ANIM-R3 A1: a drone deployed (a satellite launched) during this resolve isn't in the
+	# state it started from: its host is found in the state it ends on.
 	var v := _host_view(target, s)
+	if v == null and after != null:
+		v = _host_view(target, after)
 	if v == null:
 		return out
 	var amount := int(b["amount"])
-	var crit := bool(b["crit"]) and String(b["kind"]) == "damage"
+	var kind := String(b["kind"])
+	var crit := bool(b["crit"]) and kind == "damage"
 	if v.combatant != null and v.combatant.id != target:
 		# ANIM-R2 E4b: a satellite's or drone's HP change shows at its own token (in the hub it
 		# read as the host's HP, which didn't move).
-		if String(b["kind"]) in ResolveBeats.HP_KINDS and amount > 0:
-			var heal := String(b["kind"]) == "heal"
-			var fs := roundi(CombatFxLayer.number_font(false) * SAT_NUMBER_SHARE)
-			var at := v.satellite_spot(target) + Vector2(0.0, -(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * 0.6))
+		var fs := roundi(CombatFxLayer.number_font(false) * SAT_NUMBER_SHARE)
+		var tok := v.satellite_spot(target)
+		if kind in ResolveBeats.HP_KINDS and amount > 0:
+			var heal := kind == "heal"
+			var at := tok + Vector2(0.0, -(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * 0.6))
 			out.append({"at": at, "rise": 0.0, "text": (tr("+%d HP") % amount) if heal else "-%d" % amount,
 				"color": WheelView.HP_COLOR if heal else WheelView.LOSS_COLOR, "crit": false, "id": &"number_float", "view": v, "fs": fs,
-				"band": "%d:sat:%s" % [v.get_instance_id(), target], "travel": false, "hub": false, "hp": amount})
+				"band": "%d:sat:%s" % [v.get_instance_id(), target], "travel": false, "hub": false, "hp": amount, "icon": -1})
+		var guard := _guard_of(b)
+		if not guard.is_empty():
+			# The token's own guard pops beside it (a satellite guards itself).
+			var gat := tok + Vector2(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * 0.9, 0.0)
+			out.append({"at": gat, "rise": 0.0, "text": String(guard["text"]), "color": CHIP_GUARD, "crit": false, "id": &"block_number", "view": v,
+				"fs": fs, "band": "%d:satguard:%s" % [v.get_instance_id(), target], "travel": false, "hub": false, "icon": int(guard["icon"])})
 		return out
-	match String(b["kind"]):
+	match kind:
 		"damage", "corrupted":
 			if amount > 0:
 				var n := _number(v, "hp", "-%d" % amount, WheelView.LOSS_COLOR, &"number_float", crit, true)
 				n["hp"] = amount
 				if int(b["soaked"]) > 0 and ResolveBeats.is_hit(b):
-					# ANIM-R2 E4b: the hit's raw number first, its guard's part coming off (a chip
-					# under the hub's lines), then what gets through travels into the HP.
+					# ANIM-R2 E4b: the hit's raw number first, its guard's part coming off (the
+					# blocker's shield glyph under the hub's lines), then what gets through travels
+					# into the HP.
 					n["raw"] = "-%d" % int(b.get("raw", amount + int(b["soaked"])))
 					n["absorb"] = Motion.seconds(&"hit_absorb")
 				out.append(n)
-				if int(b["soaked"]) > 0:
-					out.append(_number(v, "guard", tr("%d BLOCKED") % int(b["soaked"]), CHIP_GUARD, &"block_number", false, false))
-		"heal":
-			if amount > 0:
-				var n := _number(v, "hp", tr("+%d HP") % amount, WheelView.HP_COLOR, &"heal_number", false, true)
-				n["hp"] = amount
-				out.append(n)
-		"block":
-			out.append(_number(v, "guard", tr("+%d BLOCK") % amount, CHIP_GUARD, &"block_number", false, false))
-		"shield":
-			if amount > 0:
-				out.append(_number(v, "guard", tr("+%d SHIELD") % amount, CHIP_GUARD, &"block_number", false, false))
-		"evade":
-			out.append(_number(v, "guard", tr("%s EVADE") % signed(amount), CHIP_GUARD, &"block_number", false, false))
+	var guard := _guard_of(b)
+	if not guard.is_empty():
+		out.append(_number(v, "guard", String(guard["text"]), CHIP_GUARD, &"block_number", false, false, int(guard["icon"])))
+	if kind == "heal" and amount > 0:
+		var n := _number(v, "hp", tr("+%d HP") % amount, WheelView.HP_COLOR, &"heal_number", false, true)
+		n["hp"] = amount
+		out.append(n)
 	return out
 
 
-func _number(v: WheelView, band: String, text: String, color: Color, id: StringName, crit: bool, travel: bool) -> Dictionary:
-	var slot := v.number_slot(band, text, crit)
+## The guard a beat shows as a glyph and a number (ANIM-R3 A6e): a hit's soaked part
+## (a shield and "5"), a block, shield or evade gained ("+3"); {} when none. {text, icon}.
+func _guard_of(b: Dictionary) -> Dictionary:
+	var amount := int(b["amount"])
+	match String(b["kind"]):
+		"damage":
+			if int(b["soaked"]) > 0:
+				return {"text": str(int(b["soaked"])), "icon": RC.SliceType.SHIELD if int(b.get("blocked", 0)) <= 0 else RC.SliceType.DEFEND}
+		"block":
+			return {"text": signed(amount), "icon": RC.SliceType.DEFEND}
+		"shield":
+			if amount > 0:
+				return {"text": signed(amount), "icon": RC.SliceType.SHIELD}
+		"evade":
+			return {"text": signed(amount), "icon": RC.SliceType.EVADE}
+	return {}
+
+
+func _number(v: WheelView, band: String, text: String, color: Color, id: StringName, crit: bool, travel: bool, icon: int = -1) -> Dictionary:
+	var slot := v.number_slot(band, text, crit, icon)
 	return {"at": slot["at"], "rise": minf(Motion.amplitude(id), float(slot["room"])), "text": text, "color": color, "crit": crit,
-		"id": id, "view": v, "fs": int(slot["fs"]), "band": "%d:%s" % [v.get_instance_id(), band], "travel": travel, "hub": true}
+		"id": id, "view": v, "fs": int(slot["fs"]), "band": "%d:%s" % [v.get_instance_id(), band], "travel": travel, "hub": true, "icon": icon}
 
 
 ## A satellite's number: its size as a share of a hub number's.
 const SAT_NUMBER_SHARE := 0.75
 
 
-## The colour of `id`'s hits (ANIM-R2 E4a): the operative's side or the enemies'.
-static func hit_color(id: StringName, s: CombatState) -> Color:
+## The colour of `id`'s hits (ANIM-R2 E4a): the operative's side or the enemies'. ANIM-R3
+## A1: a drone deployed during the resolve is looked up in `after`.
+static func hit_color(id: StringName, s: CombatState, after: CombatState = null) -> Color:
 	var c := s.get_combatant(id) if s != null else null
-	if c != null and (c.is_player or s.drones.has(c)):
+	var in_s := c != null
+	if c == null and after != null:
+		c = after.get_combatant(id)
+	if c != null and (c.is_player or (s.drones.has(c) if in_s else after.drones.has(c))):
 		return PLAYER_HIT_COLOR
 	return ENEMY_HIT_COLOR
 
 
 ## What a hit that dealt nothing stamps at its victim: "N BLOCKED" (all soaked) or
-## "EVADED N" ("" when it dealt something, or isn't a hit).
+## "EVADED N" ("" when it dealt something, or isn't a hit). ANIM-R3 A6a: the replay shows
+## these as a glyph and "0" where the hit struck (`zero_mark`); the words stay for the log.
 func hit_stamp_for(b: Dictionary) -> String:
 	match String(b["kind"]):
 		"evaded":
@@ -2970,6 +3230,48 @@ func hit_stamp_for(b: Dictionary) -> String:
 			if int(b["amount"]) <= 0 and int(b["soaked"]) > 0:
 				return tr("%d BLOCKED") % int(b["soaked"])
 	return ""
+
+
+## ANIM-R3 A6a: what a hit that dealt nothing shows where it struck: {text "0", icon (a
+## shield when it was soaked whole, the evade mark when evaded)}; {} for any other beat.
+static func zero_mark(b: Dictionary) -> Dictionary:
+	match String(b["kind"]):
+		"evaded":
+			return {"text": "0", "icon": RC.SliceType.EVADE}
+		"damage":
+			if int(b["amount"]) <= 0 and int(b["soaked"]) > 0:
+				return {"text": "0", "icon": RC.SliceType.SHIELD if int(b.get("blocked", 0)) <= 0 else RC.SliceType.DEFEND}
+	return {}
+
+
+## ANIM-R3 A6c: what rides with a hit: {label (what it deals, "6 ½" at half power), from
+## (the slice's own value when the aim changed it, "" otherwise), scale (bigger on a
+## PERFECT landing)}.
+func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
+	var kind := String(b["kind"])
+	var raw := int(b.get("raw", b["amount"])) if kind == "damage" else int(b["amount"])
+	var out := {"label": str(raw), "from": "", "scale": 1.0}
+	var tier := int(b.get("source_tier", -1))
+	var slot := int(b.get("source_slot", -1))
+	var src := s.get_combatant(StringName(String(b["source"]))) if s != null else null
+	var base := -1
+	if src != null and slot >= 0 and slot < src.wheel.slot_slice_ids.size():
+		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
+		if slice != null and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
+			base = slice.base_output
+	if tier == RC.PrecisionTier.PARTIAL:
+		out["label"] = "%d %s" % [raw, HALF_MARK]
+	elif tier == RC.PrecisionTier.PERFECT:
+		out["scale"] = PERFECT_RIDE_SCALE
+	if base > 0 and base != raw and tier in [RC.PrecisionTier.PARTIAL, RC.PrecisionTier.PERFECT]:
+		out["from"] = str(base)
+	return out
+
+
+## ANIM-R3 A6c: the half-power mark after a hit's number, and a PERFECT hit's riding number
+## size (x its usual size).
+const HALF_MARK := "½"
+const PERFECT_RIDE_SCALE := 1.35
 
 
 func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
@@ -3029,6 +3331,8 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	# The resolving needle pulses; a hit flies from its slice to its victim's HP ring.
 	var src := StringName(String(b["source"]))
 	var sv := _host_view(src, before)
+	if sv == null:
+		sv = _host_view(src, after)  # ANIM-R3 A1: a drone deployed during this resolve
 	if sv != null:
 		if sv.combatant != null and sv.combatant.id != src:
 			sv.play_pulse(-1, src)
@@ -3038,38 +3342,40 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		return
 	var on_host := tv.combatant != null and tv.combatant.id == target
 	var victim_at := tv.hp_ring_spot() if on_host else tv.satellite_spot(target)
-	var stamp_word := hit_stamp_for(b)
 	# ANIM-R2 E4a: every hit (and a status put on a slice) flies from its attacker's landed
 	# slice to its victim, one at a time, thick, in its side's colour, its raw number riding
-	# with it; what it does shows on impact.
+	# with it (ANIM-R3 A6c: with its aim's multiplier); what it does shows on impact.
 	var impact := 0.0
 	if sv != null and ResolveBeats.flies(b):
 		var line_to := tv.slot_spot(int(b["slot"])) if kind in ["status", "absorbed"] and int(b["slot"]) >= 0 and on_host else victim_at
-		var label := ""
-		if kind == "damage":
-			label = str(int(b.get("raw", b["amount"])))
-		elif kind == "evaded":
-			label = str(int(b["amount"]))
-		fx_layer.hit_line(_source_spot(b, before), line_to, hit_color(src, before), label)
+		var ride := ride_for(b, before) if kind in ["damage", "evaded"] else {"label": "", "from": "", "scale": 1.0}
+		fx_layer.hit_line(_source_spot(b, before, after), line_to, hit_color(src, before, after), String(ride["label"]), String(ride["from"]), float(ride["scale"]))
 		impact = CombatFxLayer.impact_seconds()
-	if stamp_word != "":
-		# Nothing got through: the victim stamps it (no number).
+	# ANIM-R3 A6a: a hit that got nothing through shows "0" with its glyph where it struck
+	# (the arrowhead on the HP ring, or the token); the wheel whose every hit was soaked says
+	# ALL BLOCKED (with its mark) on its last hit's impact.
+	var zero := zero_mark(b)
+	if not zero.is_empty():
+		fx_layer.impact(victim_at, String(zero["text"]), int(zero["icon"]), CHIP_GUARD, impact)
+	if b.has("final_stamp") and on_host:
 		var spot := tv.stamp_slot()
-		var at: Vector2 = spot["at"] if on_host else tv.satellite_spot(target)
-		fx_layer.word_stamp(at, stamp_word, CHIP_GUARD, Motion.seconds(&"number_float"), float(spot["max_w"]), int(spot["max_fs"]), impact)
+		fx_layer.word_stamp(spot["at"], String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))),
+			float(spot["max_w"]), int(spot["max_fs"]), impact, CombatFxLayer.GUARD_NULL)
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
 		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), Palette.CELL_ACID, motion_seconds_left(), impact)
+		# ANIM-R3 A6j: the slice keeps the status's mark from the moment it lands.
+		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"])))
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
 		_after(impact, fx_layer.ring.bind(tv.slot_spot(int(b["slot"])), CombatFxLayer.STAMP_DISC, CHIP_RESIST, &"precision_good_ring"))
 	var hp_after := int(b["hp_after"])
 	var hp_waits := false
-	for n in numbers_for(b, before):
+	for n in numbers_for(b, before, after):
 		if bool(n["travel"]) and on_host and hp_after >= 0:
 			fx_layer.travel_number(n["at"], tv.hp_counter_spot(), n["text"], n["color"], n["crit"], int(n["fs"]), String(n["band"]),
 				_hp_arrives.bind(tv, hp_after), impact, String(n.get("raw", "")), float(n.get("absorb", 0.0)))
 			hp_waits = true
 		else:
-			fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"], int(n["fs"]), String(n["band"]), impact)
+			fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"], int(n["fs"]), String(n["band"]), impact, int(n.get("icon", -1)))
 	if hp_after >= 0:
 		if not on_host:
 			_after(impact, tv.set_sat_hp.bind(target, hp_after))
