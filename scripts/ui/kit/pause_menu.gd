@@ -29,6 +29,8 @@ var _backdrop: ColorRect
 
 func _init() -> void:
 	custom_minimum_size = MENU_SIZE
+	# ANIM-R3 A2: motion helpers leave presses to an open pause menu (MotionSkip.pause_open).
+	add_to_group(MotionSkip.PAUSE_GROUP)
 	_backdrop = ColorRect.new()
 	_backdrop.name = "Backdrop"
 	_backdrop.color = BACKDROP_COLOR
