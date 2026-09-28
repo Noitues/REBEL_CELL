@@ -170,6 +170,28 @@ func scaled(s: float) -> ZineCard:
 	return self
 
 
+## A fresh copy of how this card or tile looks (no buy sticker, no hotkey, not pressable):
+## the ghost and the flying copies of a dragged Modem, loot or deck item (ANIM-4b).
+func ghost_copy() -> ZineCard:
+	var g := ZineCard.new(card_title, cost, description, 0)
+	g.variant = variant
+	g.look = look
+	g.accent = accent
+	g.slice_type = slice_type
+	g.slice_output = slice_output
+	g.icon_kind = icon_kind
+	g.pictos = pictos
+	g.text_scale = text_scale
+	g.price = price
+	g.price_from = price_from
+	g.hotkey = ""
+	g.focus_mode = Control.FOCUS_NONE
+	g.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	g.custom_minimum_size = size if size.x > 0.0 and size.y > 0.0 else custom_minimum_size
+	g.size = g.custom_minimum_size
+	return g
+
+
 ## Drag the card onto a target (the combat scene decides what the drop means).
 func _get_drag_data(_at_position: Vector2) -> Variant:
 	if drag_index < 0 or disabled:

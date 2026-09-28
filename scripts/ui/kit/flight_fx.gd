@@ -177,6 +177,11 @@ static func stamp_on(screen: Node, source: Control, word: String, id: StringName
 
 ## A rubber-stamp box with `word` on `onto` (pink ink, tilted), as big as `box` allows.
 func _stamp_mark(onto: Control, box: Rect2, word: String) -> Control:
+	return stamp_mark(onto, box, word)
+
+
+## The same stamp box as a flight's (ANIM-4b: a drag purchase's landing copy carries SOLD).
+static func stamp_mark(onto: Control, box: Rect2, word: String) -> Control:
 	var mark := Control.new()
 	mark.name = "Stamp"
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -84,6 +84,7 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	window.body.add_child(_wheel)
 	for i in slices.size():
 		var pad := Button.new()
+		pad.name = "SlotPad%d" % i
 		pad.flat = true
 		pad.custom_minimum_size = Vector2(70, 70)
 		pad.size = Vector2(70, 70)
@@ -218,6 +219,28 @@ func add_side(control: Control) -> void:
 		_side.add_theme_constant_override("separation", SIDE_GAP)
 		_wheel.add_child(_side)
 	_side.add_child(control)
+
+
+## Slot `k`'s pad (null when there is no such slot).
+func slot_pad(k: int) -> Button:
+	return _pads[k] if k >= 0 and k < _pads.size() else null
+
+
+## ANIM-4b: drag and drop in UPGRADE mode, on a layer the screen owns (over the viewer,
+## outliving it): `chip` (the slice being installed) sits in the column right of the wheel
+## and drags onto a slot pad, the same as selecting the slot and pressing UPGRADE; pressing
+## the chip picks it up (then a slot is aimed, or clicked).
+var drops: DropLayer = null
+
+
+func enable_drops(layer: DropLayer, chip: Control, payload: Dictionary) -> void:
+	if drops != null or layer == null:
+		return
+	drops = layer
+	add_side(chip)
+	drops.add_source(chip, payload, true)
+	for k in _pads.size():
+		drops.add_target("slot:%d" % k, [String(payload.get("kind", ""))], "slot", k, DropLayer.rect_of(_pads[k]))
 
 
 ## The pad of inner ring segment `k` (null when the ring has none).
