@@ -328,6 +328,33 @@ var _spread_elapsed: float = -1.0
 var _old_layer: Control
 var _front_layer: Control
 
+## ANIM-R2 R1: the live baked city's placement (a world-space twin that places buildings lot
+## by lot when asked, never drawing), the bake the view waits for ({} when none), whether
+## the sky showed since the last image, and the sky's veil over a bake fading in.
+var _placing: bool = false
+## Procedural builds so far (a build replaces the roofs: see `frame_stamp`).
+var _built_serial: int = 0
+var _placer: NeonCity = null
+var _placer_key: String = ""
+## The look may have changed since the placement was checked (a refresh, a redraw).
+var _placer_stale: bool = true
+var _fronts: Dictionary = {}
+var _covers: Dictionary = {}
+var _want: Dictionary = {}
+var _sky_shown: bool = false
+var _veil: Control
+const NO_LOT := Vector2i(-1073741824, -1073741824)
+## Frames the camera must hold still before its bake is asked for (a fit moves it every
+## frame for a few frames; each move used to start a bake of its own).
+const BAKE_SETTLE_FRAMES := 3
+## A finished bake of this look stands in while the view's own bakes only when it covers
+## at least this share of the view.
+const STANDIN_COVER := 0.9
+const BAKE_FADE_MOTION := &"city_bake_fade"
+## Slices a painter's build is split into (run on the worker pool in parallel, joined in
+## order: the same triangles as one build).
+const BUILD_SLICES := 12
+
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -343,6 +370,15 @@ func _init() -> void:
 	(_view.material as ShaderMaterial).shader = LIVE_SHADER
 	_view.draw.connect(_draw_view)
 	add_child(_view)
+	# ANIM-R2 R1: the sky over a bake that just landed, fading out (`city_bake_fade`): the
+	# first layer over the view's own drawing, under the lights and the rest.
+	_veil = Control.new()
+	_veil.name = "BakeVeil"
+	_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_veil.visible = false
+	_veil.draw.connect(_draw_veil)
+	_view.add_child(_veil)
 	_old_layer = _reveal_layer("InfluenceOld", 0, _draw_old)
 	_lights_layer = _blink_layer("CityLights", LIGHT_ON_SHARE, _draw_lights)
 	_beacons_layer = _blink_layer("CityBeacons", Motion.amplitude(BEACON_MOTION), _draw_beacons)
@@ -395,6 +431,12 @@ func _reveal_layer(layer_name: String, mode: int, painter: Callable) -> Control:
 	return c
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_free_placement()
+		free_slices()
+
+
 func _ready() -> void:
 	Settings.changed.connect(_apply_effects)
 	_apply_effects()
@@ -426,6 +468,7 @@ func _on_resized() -> void:
 ## re-frames the cached image (or starts a bake when the look changed).
 func refresh() -> void:
 	_built_for = Vector2.ZERO
+	_placer_stale = true
 	queue_redraw()
 	if _view != null:
 		_view.queue_redraw()
@@ -526,10 +569,16 @@ func spread_progress() -> Vector2:
 ## image is the one on screen (or any bake of the old look over this view); without one
 ## only the light front plays over the new image.
 func _start_spread(prev: Dictionary) -> void:
-	if not Motion.live(SPREAD_MOTION) or prev.is_empty() or influence.is_empty() or prev.get("corp") != influence.get("corp"):
+	if prev.is_empty() or influence.is_empty() or prev.get("corp") != influence.get("corp"):
 		return
 	var from := InfluenceSpread.origins(prev, influence)
 	if from.is_empty():
+		return
+	if not Motion.live(SPREAD_MOTION):
+		# ANIM-R2 R7: no spread plays, but its end state stays: the district's lasting tint.
+		_spread_origins = from
+		_spread_color = InfluenceSpread.front_color(prev, influence)
+		_show_tint(Motion.amplitude(TINT_MOTION))
 		return
 	var old_look := look_key(prev)
 	var old_key := ""
@@ -553,7 +602,44 @@ func _start_spread(prev: Dictionary) -> void:
 		m.set_shader_parameter("front_color", _spread_color)
 		(layer as Control).visible = true
 	_old_layer.visible = not _spread_old.is_empty()
+	# ANIM-R2 R7: a stronger front, and the lasting tint washing in behind it.
+	var fm := _front_layer.material as ShaderMaterial
+	fm.set_shader_parameter("front_alpha", FRONT_ALPHA)
+	tint_wash = 0.0
+	Motion.run(TINT_MOTION, self, ^"tint_wash", Motion.amplitude(TINT_MOTION))
 	_step_spread(0.0)
+
+
+## ANIM-R2 R7: the lasting tint's strength over the changed district (0..`influence_tint`'s
+## amplitude; it stays until the next change).
+const TINT_MOTION := &"influence_tint"
+## The spreading front's band strength (it was 0.5 and barely read at map scale).
+const FRONT_ALPHA := 0.9
+var tint_wash: float = 0.0:
+	set(v):
+		tint_wash = v
+		if _front_layer != null:
+			(_front_layer.material as ShaderMaterial).set_shader_parameter("wash", v)
+
+
+## ANIM-R2 R7: the lasting tint alone (the front at full reach, its band gone) at `wash`.
+func _show_tint(wash: float) -> void:
+	var m := _front_layer.material as ShaderMaterial
+	m.set_shader_parameter("origins", _spread_origins)
+	m.set_shader_parameter("origin_count", _spread_origins.size())
+	m.set_shader_parameter("feather", Motion.amplitude(FADE_MOTION))
+	m.set_shader_parameter("front_color", _spread_color)
+	m.set_shader_parameter("radius", Motion.amplitude(SPREAD_MOTION))
+	m.set_shader_parameter("fade", 1.0)
+	m.set_shader_parameter("cam", Vector2(_ox, _oy))
+	tint_wash = wash
+	_front_layer.visible = wash > 0.0
+	_front_layer.queue_redraw()
+
+
+## ANIM-R2 R7: the lasting tint's colour and strength now (a = 0 when none shows; tests).
+func lasting_tint() -> Color:
+	return Color(_spread_color, tint_wash) if _front_layer.visible else Color(0, 0, 0, 0)
 
 
 ## Advances the spread by `delta` seconds and updates the mask; ends it when both the
@@ -646,10 +732,16 @@ func draw_marks_on(ci: CanvasItem) -> void:
 
 ## Jumps a running spread to its end (the new look alone).
 func finish_spread() -> void:
+	var was := _spread_elapsed >= 0.0
 	_spread_elapsed = -1.0
 	_spread_old = {}
 	_old_layer.visible = false
-	_front_layer.visible = false
+	# ANIM-R2 R7: the district keeps its tint (the front's band goes).
+	if was and not _spread_origins.is_empty():
+		Motion._settle(self, ^"tint_wash")  # its tween only (the fade-in and stamps keep theirs)
+		_show_tint(Motion.amplitude(TINT_MOTION))
+	else:
+		_front_layer.visible = false
 
 
 ## The old image under the camera, then the same shade the view draws (masked by the
@@ -679,6 +771,12 @@ func _followed_influence() -> Dictionary:
 
 
 func _process(delta: float) -> void:
+	if not _want.is_empty() and Engine.get_process_frames() - int(_want["frame"]) >= BAKE_SETTLE_FRAMES:
+		if _want["cam"] == _camera_key():
+			_request_want()
+	# Prebakes held for this city's own view go ahead once it is hidden (the page moved on).
+	if not _deferred_prebakes.is_empty() and not is_visible_in_tree():
+		_flush_prebakes()
 	if follow_campaign or _campaign != null:
 		_poll_t += delta
 		if _poll_t >= INFLUENCE_POLL:
@@ -806,9 +904,11 @@ func grid_to_local(x: float, y: float) -> Vector2:
 	return _iso(x, y)
 
 
-## The building on lot (i, j): {"roof", "base", "shape", "height"} or {}.
+## The building on lot (i, j): {"roof", "base", "shape", "height"} or {}. ANIM-R2 R1: a
+## baked city answers from its placement (`_placement`), worked out lot by lot the moment
+## it is asked, so a map draws its nodes on its first frame, long before the image lands.
 func roof_of(i: int, j: int) -> Dictionary:
-	var rec: Dictionary = _roofs.get(Vector2i(i, j), {})
+	var rec: Dictionary = _placement().placed_roof(Vector2i(i, j)) if is_baked() else _roofs.get(Vector2i(i, j), {})
 	if rec.is_empty() or _shift == Vector2.ZERO:
 		return rec
 	# Baked: the roofs are stored in the image's space; move them under the camera.
@@ -822,10 +922,11 @@ func roof_of(i: int, j: int) -> Dictionary:
 func nearest_building(x: float, y: float, radius: int = 4, taken: Dictionary = {}) -> Vector2i:
 	var best := Vector2i(roundi(x), roundi(y))
 	var best_d := INF
+	var src := _placement() if is_baked() else self
 	for di in range(-radius, radius + 1):
 		for dj in range(-radius, radius + 1):
 			var l := Vector2i(roundi(x) + di, roundi(y) + dj)
-			if not _roofs.has(l) or taken.has(l):
+			if not src._has_building(l) or taken.has(l):
 				continue
 			var d := Vector2(l).distance_to(Vector2(x, y))
 			if d < best_d:
@@ -836,7 +937,14 @@ func nearest_building(x: float, y: float, radius: int = 4, taken: Dictionary = {
 
 ## True when lot (i, j) is a street (for overlays that route along streets).
 func is_street(i: int, j: int) -> bool:
-	return _is_street_lot(i, j)
+	# ANIM-R2 R1: a baked city asks its placement (its own street grid was never built, so
+	# the game's routes cut across blocks while the headless tests' followed the streets).
+	return _placement()._is_street_lot(i, j) if is_baked() else _is_street_lot(i, j)
+
+
+## True when a building stands on lot `l` (a placement works it out without building it).
+func _has_building(l: Vector2i) -> bool:
+	return _front_of(l) != NO_LOT if _placing else _roofs.has(l)
 
 
 func _apply_pan_margin() -> void:
@@ -878,8 +986,13 @@ func _camera() -> void:
 
 ## Works the camera out now from focus, anchor and size (ANIM-5: the camera rig reads the
 ## new frame before the city redraws).
+## ANIM-R2 R1: a baked city's placement holds under any camera, so its roofs are known under
+## the new one at once (`camera_settled`): a map's fit passes measure without a redraw each.
 func update_camera() -> void:
 	_camera()
+	if is_baked():
+		_shift = Vector2(_ox, _oy)
+		_drawn_camera = _camera_key()
 
 
 ## World px (camera-free iso space) of grid point (x, y).
@@ -894,10 +1007,7 @@ func view_rect() -> Rect2:
 
 ## The region to bake for the current camera: the view grown and snapped.
 func bake_region() -> Rect2:
-	var g := view_rect().grow(REGION_MARGIN)
-	var p := (g.position / REGION_SNAP).floor() * REGION_SNAP
-	var e := (g.end / REGION_SNAP).ceil() * REGION_SNAP
-	return Rect2(p, e - p)
+	return snap_region(view_rect().grow(REGION_MARGIN))
 
 
 ## The window's stretch of the 720p canvas (1 at 1280x720, 1.5 at 1080p), snapped.
@@ -941,13 +1051,22 @@ func _baked_creep() -> float:
 ## px) at `scale` into a SubViewport. It draws in world space (camera at the origin),
 ## placed so the region's corner lands on the viewport's corner.
 func make_painter(region: Rect2, p_scale: float) -> NeonCity:
-	var p := NeonCity.new()
-	p._painter = true
+	var p := _twin()
 	p.painter_region = region
 	p.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	p.position = -region.position * p_scale
 	p.size = region.size
 	p.scale = Vector2(p_scale, p_scale)
+	return p
+
+
+## A copy of this city's look drawing in world space (camera at the origin), outside the
+## tree: a bake's painter, one of its build slices or the placement. ANIM-R2 R11: the
+## influence is copied (a painter's worker threads read it while this city may take a new
+## one).
+func _twin() -> NeonCity:
+	var p := NeonCity.new()
+	p._painter = true
 	p.city_seed = city_seed
 	p.district = district
 	p.net_mode = net_mode
@@ -955,7 +1074,7 @@ func make_painter(region: Rect2, p_scale: float) -> NeonCity:
 	p.face_texture = face_texture
 	p.cultures = cultures.duplicate()
 	p.corp_creep = _baked_creep()
-	p.influence = influence
+	p.influence = influence.duplicate(true)
 	p.dim = 0.0
 	for k in SKETCH_PARAMS:
 		# Only values set on this city (unset ones read back null: keep the defaults).
@@ -978,8 +1097,13 @@ func _draw() -> void:
 	_draw_city()
 
 
-## The live, baked city: the cached image under the camera, then the screen shade. Starts
-## a bake when the look has none yet (the sky shows meanwhile, a frame or two).
+## The live, baked city: the cached image under the camera, then the screen shade.
+## ANIM-R2 R1: a camera no finished bake of this look covers shows the night sky (or a
+## stand-in that covers nearly all of it) while its bake runs; the placement answers the
+## overlays at once all the same (`roof_of`), so a map is never empty; the bake is asked
+## for once the camera has held still (`BAKE_SETTLE_FRAMES`: a fit's passes never start a
+## bake each), or waits on a running one that will cover the view; when it lands it fades
+## in over the sky (`city_bake_fade`).
 func _draw_view() -> void:
 	if not is_baked():
 		return
@@ -987,48 +1111,131 @@ func _draw_view() -> void:
 	if size.x < 2.0 or size.y < 2.0:
 		return
 	_camera()
+	_shift = Vector2(_ox, _oy)
+	_placer_stale = true
+	if _front_layer.visible:
+		(_front_layer.material as ShaderMaterial).set_shader_parameter("cam", Vector2(_ox, _oy))
 	# Read the territory now, not at the next poll: a scene whose campaign loads after
 	# the backdrop is built would otherwise bake twice.
 	var inf := _followed_influence()
 	if CityInfluence.signature(inf) != CityInfluence.signature(influence):
 		influence = inf
 	var look := look_key()
-	var key := CityBakeCache.find(look, view_rect())
-	if key != "" and not CityBakeCache.entry(key).has("failed"):
-		_note_seen()
-	if key == "":
-		var want := bake_region()
-		_start_bake.call_deferred(bake_key(want), want, look)
-		# Meanwhile show what we have: this look elsewhere, or the previous look (say,
-		# before a territory change), rather than an empty sky while the bake runs.
-		key = CityBakeCache.find_overlapping(look, view_rect())
-		if key == "" and CityBakeCache.has(_baked_key) and not CityBakeCache.entry(_baked_key).has("failed"):
-			key = _baked_key
-		if key == "":
-			_draw_shade(_view)
-			return
-	var e := CityBakeCache.entry(key)
-	if e.has("failed"):
+	var view := view_rect()
+	var key := CityBakeCache.find(look, view)
+	if key != "" and CityBakeCache.entry(key).has("failed"):
 		_fallback = true
 		queue_redraw()
 		return
-	var region: Rect2 = e["region"]
-	_shift = Vector2(_ox, _oy)
-	_view.draw_texture_rect(e["texture"], Rect2(region.position + _shift, region.size), false)
+	if key != "":
+		_want = {}
+		_note_seen()
+		_note_frame_size()
+		if not _deferred_prebakes.is_empty():
+			_flush_prebakes.call_deferred()
+	else:
+		_want_bake(look)
+		key = _stand_in(look, view)
+	if key == "":
+		_sky_shown = true
+		if _baked_key != "":
+			_baked_key = ""
+			_lights = []
+			_beacons = []
+			_trails = []
+			_signs = []
+			_live_for = []
+		bake_fade = 0.0
+	else:
+		var e := CityBakeCache.entry(key)
+		var region: Rect2 = e["region"]
+		_view.draw_texture_rect(e["texture"], Rect2(region.position + _shift, region.size), false)
+		if key != _baked_key:
+			_baked_key = key
+			_beacons = e.get("beacons", [] as Array[Dictionary])
+			_lights = e.get("lights", [] as Array[Dictionary])
+			_trails = e.get("trails", [] as Array[Dictionary])
+			_signs = e.get("signs", [] as Array[Dictionary])
+			_live_for = []
+			if _sky_shown:
+				# It lands over the sky the view showed meanwhile: it fades in.
+				_sky_shown = false
+				bake_fade = 0.0
+				if Motion.run(BAKE_FADE_MOTION, self, ^"bake_fade", 1.0) == null:
+					bake_fade = 1.0
+			elif bake_fade < 1.0 and not Motion.live(BAKE_FADE_MOTION):
+				bake_fade = 1.0
 	_draw_shade(_view)
-	if key != _baked_key:
-		_baked_key = key
-		_roofs = e["roofs"]
-		_beacons = e["beacons"]
-		_lights = e["lights"]
-		_trails = e["trails"]
-		_signs = e["signs"]
-		_live_for = []
 	_collect_live()
 	_built_for = size
 	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
 	rebuilt.emit()
+
+
+## ANIM-R2 R1: what shows while this view's bake runs: a finished bake of this look that
+## covers at least STANDIN_COVER of the view, or the image on screen until now when it still
+## covers the whole view (the old look while the new one bakes); else "" (the night sky: a
+## strip of city over part of the screen, over the wheels, read worse than the dark).
+func _stand_in(look: String, view: Rect2) -> String:
+	var key := CityBakeCache.find_covering(look, view, STANDIN_COVER)
+	if key != "":
+		return key
+	if _baked_key != "" and CityBakeCache.has(_baked_key):
+		var e := CityBakeCache.entry(_baked_key)
+		if not e.has("failed") and e.has("texture") and (e.get("region", Rect2()) as Rect2).encloses(view):
+			return _baked_key
+	return ""
+
+
+## ANIM-R2 R1: the view needs a bake of `look`: noted with the camera now, asked for once
+## the camera has held still BAKE_SETTLE_FRAMES frames (`_process`).
+func _want_bake(look: String) -> void:
+	var cam := _camera_key()
+	if _want.get("look", "") != look or _want.get("cam", []) != cam:
+		_want = {"look": look, "cam": cam, "region": bake_region(), "frame": Engine.get_process_frames()}
+
+
+## ANIM-R2 R1: asks for the wanted bake: nothing when one of its look now covers the view,
+## a wait on a running one whose region will cover it, else a new bake (ahead of prebakes).
+func _request_want() -> void:
+	var w := _want
+	_want = {}
+	if w.is_empty() or not is_inside_tree() or not is_baked():
+		return
+	var look: String = w["look"]
+	if look != look_key():
+		_view.queue_redraw()
+		return
+	var view := view_rect()
+	if CityBakeCache.find(look, view) != "":
+		_view.queue_redraw()
+		return
+	var running := CityBakeCache.find_pending(look, view)
+	if running != "":
+		CityBakeCache.wait(running, _view)
+		return
+	var region: Rect2 = w["region"]
+	CityBakeCache.request(look + "@" + var_to_str(Rect2i(region)), look, make_painter(region, bake_scale(region)), _view, true)
+
+
+## ANIM-R2 R1: how far a bake that landed over the sky has faded in (0 the sky, 1 the city):
+## the veil over it and the live layer follow.
+var bake_fade: float = 1.0:
+	set(v):
+		bake_fade = clampf(v, 0.0, 1.0)
+		if _veil != null:
+			_veil.visible = bake_fade < 1.0 and _baked_key != ""
+			_veil.modulate.a = 1.0 - bake_fade
+			_lights_layer.modulate.a = bake_fade
+			_beacons_layer.modulate.a = bake_fade
+			if _veil.visible:
+				_veil.queue_redraw()
+
+
+func _draw_veil() -> void:
+	_veil.draw_rect(Rect2(-size, size * 3.0), Palette.NIGHT_SKY)
+	_draw_shade(_veil)
 
 
 ## The current look's own bake is on screen: when this family last showed another
@@ -1043,17 +1250,6 @@ func _note_seen() -> void:
 	if _spread_elapsed >= 0.0:
 		_old_layer.queue_redraw()
 		_front_layer.queue_redraw()
-
-
-func _start_bake(key: String, region: Rect2, look: String) -> void:
-	print("SBDBG ", Engine.get_process_frames(), " ", region, " ", look.md5_text().left(6), " scale ", scale.x, " focus ", focus_grid)
-	if not is_inside_tree() or CityBakeCache.has(key):
-		_view.queue_redraw()
-		return
-	if CityBakeCache.is_pending(key):
-		CityBakeCache.wait(key, _view)
-		return
-	CityBakeCache.request(key, look, make_painter(region, bake_scale(region)), _view)
 
 
 ## The live layer's visible share (culled to the view, capped), refreshed when the camera
@@ -1074,6 +1270,8 @@ func _collect_live() -> void:
 ## Window lights for the GPU blink layer: a lit window (brighter, with a soft glow) shown
 ## while lit, a dark pane shown while off. Built once per camera, not per frame.
 func _draw_lights() -> void:
+	if _painter:
+		return  # ANIM-R2 R11: blinking lights are live, never baked
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var uvs := PackedVector2Array()
@@ -1095,6 +1293,8 @@ func _draw_lights() -> void:
 ## Beacons for the GPU blink layer: a big halo and bright core while lit, a small dim
 ## one while off.
 func _draw_beacons() -> void:
+	if _painter:
+		return
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var uvs := PackedVector2Array()
@@ -1216,6 +1416,7 @@ func _draw_city() -> void:
 			_build_geometry()
 			if memo_key != "":
 				_memo_store(memo_key)
+		_built_serial += 1
 		idx.resize(_verts.size())
 		for k in _verts.size():
 			idx[k] = k
@@ -1245,6 +1446,25 @@ var _chunk_idx := PackedInt32Array()
 var _chunk_rids: Array[RID] = []
 ## Vertices submitted per frame (a multiple of 3: whole triangles).
 const CHUNK_VERTS := 240000
+## ANIM-R2 R1 / R11: a painter's build split into slices (twins of it building a run of the
+## lots each, on the worker pool at once), the lots in draw order with their territory
+## context and influence, and the slices' own runs (first, last + 1). `cancelled` stops a
+## build early (the game quits mid-bake).
+var _slices: Array[NeonCity] = []
+var _lot_list: Array[Vector2i] = []
+var _lot_ctx: Array = []
+var _lot_infl: Array[float] = []
+var _run: Vector2i = Vector2i.ZERO
+var _ground_verts := PackedVector2Array()
+var _ground_cols := PackedColorArray()
+var _ground_trails: Array[Dictionary] = []
+var cancelled: bool = false
+## ANIM-R2 R1: the built geometry as parts in draw order ([verts, cols] each: a sliced build's
+## runs are submitted as they are, never copied into one array), where each starts and the
+## vertices in all.
+var _parts: Array = []
+var _part_base := PackedInt32Array()
+var _part_total: int = 0
 
 
 ## ANIM-R1 M2: builds a painter's whole geometry now, so its first draw only lays it out
@@ -1254,23 +1474,159 @@ const CHUNK_VERTS := 240000
 func prebuild() -> void:
 	_camera()
 	_build_geometry()
+	_finish_prebuild()
+
+
+func _finish_prebuild() -> void:
+	if _parts.is_empty():
+		_parts = [[_verts, _cols]]
+	_part_base = PackedInt32Array()
+	var total := 0
+	var biggest := 0
+	for part: Array in _parts:
+		_part_base.append(total)
+		total += (part[0] as PackedVector2Array).size()
+		biggest = maxi(biggest, (part[0] as PackedVector2Array).size())
+	_part_total = total
 	_chunk_idx = PackedInt32Array()
-	_chunk_idx.resize(mini(CHUNK_VERTS, _verts.size()))
+	_chunk_idx.resize(mini(CHUNK_VERTS, biggest))
 	for k in _chunk_idx.size():
 		_chunk_idx[k] = k
 	_prebuilt = true
+
+
+## ANIM-R2 R1: makes this painter's `count` build slices and one for the fist roads (main
+## thread: they are nodes).
+func make_slices(count: int) -> void:
+	free_slices()
+	for n in count + 1:
+		var t := NeonCity.new()
+		t._painter = true
+		t.set_process(false)
+		# The look (setters run here, on the main thread; the worker only shares data).
+		t.painter_region = painter_region
+		t.city_seed = city_seed
+		t.district = district
+		t.net_mode = net_mode
+		t.ink_set = ink_set
+		t.face_texture = face_texture
+		t.cultures = cultures
+		t.corp_creep = corp_creep
+		t.influence = influence
+		_slices.append(t)
+
+
+## Frees the build slices (main thread).
+func free_slices() -> void:
+	for t in _slices:
+		if is_instance_valid(t):
+			t.free()
+	_slices.clear()
+
+
+## ANIM-R2 R1, worker thread: the shared part of a sliced build (the palette, the HQs, the
+## street grid, the fist and every lot in draw order with its context), then each slice's
+## run of lots and the look it reads (shared, read only).
+func prebuild_lots() -> void:
+	_camera()
+	_prepare_build()
+	_order_lots()
+	var count := _slices.size() - 1
+	for n in count + 1:
+		var t := _slices[n]
+		t.corp_color = corp_color
+		t._inks = _inks
+		t._hq_rects = _hq_rects
+		t._hq_rect = _hq_rect
+		t._street_i = _street_i
+		t._street_j = _street_j
+		t._local_i = _local_i
+		t._local_j = _local_j
+		t._fist_segs = _fist_segs
+		t._fist_box = _fist_box
+		t._fist_hull = _fist_hull
+		t._fist_cache = {}
+		t._lot_list = _lot_list
+		t._lot_ctx = _lot_ctx
+		t._lot_infl = _lot_infl
+		t._run = Vector2i(_lot_list.size() * n / count, _lot_list.size() * (n + 1) / count)
+
+
+## ANIM-R2 R1, worker thread `n` of the group: slice `n` builds its run of lots, the ground
+## pass and the standing pass apart (kept to be joined in the build's order).
+func prebuild_slice(n: int) -> void:
+	var t := _slices[n]
+	t._camera()
+	if n == _slices.size() - 1:
+		# The last slice: the fist roads (drawn between the ground and the standing pass).
+		t._infl = 0.0
+		t._fist_roads()
+		return
+	t._pass_ground(t._run.x, t._run.y)
+	t._ground_verts = t._verts
+	t._ground_cols = t._cols
+	t._ground_trails = t._trails
+	t._verts = PackedVector2Array()
+	t._cols = PackedColorArray()
+	t._trails = []
+	t._pass_standing(t._run.x, t._run.y)
+
+
+## ANIM-R2 R1, worker thread: joins the slices in the build's order (every slice's ground,
+## the fist roads, every slice's standing pass), exactly the one build's triangles, roofs,
+## lights, trails, beacons and signs.
+func prebuild_join() -> void:
+	_verts = PackedVector2Array()
+	_cols = PackedColorArray()
+	_parts = []
+	var lots: Array[NeonCity] = []
+	lots.assign(_slices.slice(0, _slices.size() - 1))
+	for t in lots:
+		if not t._ground_verts.is_empty():
+			_parts.append([t._ground_verts, t._ground_cols])
+		_trails.append_array(t._ground_trails)
+		t._ground_verts = PackedVector2Array()
+		t._ground_cols = PackedColorArray()
+	var fist: NeonCity = _slices[_slices.size() - 1]
+	if not fist._verts.is_empty():
+		_parts.append([fist._verts, fist._cols])
+	fist._verts = PackedVector2Array()
+	fist._cols = PackedColorArray()
+	for t in lots:
+		if not t._verts.is_empty():
+			_parts.append([t._verts, t._cols])
+		_lights.append_array(t._lights)
+		_beacons.append_array(t._beacons)
+		_signs.append_array(t._signs)
+		_roofs.merge(t._roofs, true)
+		t._verts = PackedVector2Array()
+		t._cols = PackedColorArray()
+	if _parts.is_empty():
+		_parts = [[PackedVector2Array(), PackedColorArray()]]
+	_finish_prebuild()
 
 
 ## ANIM-R1 M2: submits the prebuilt geometry's vertices from `from` (at most CHUNK_VERTS)
 ## as a canvas item under the painter; returns where the next chunk starts (-1: done, the
 ## vertex arrays let go).
 func submit_chunk(from: int) -> int:
-	if from >= _verts.size():
+	if _parts.is_empty():
+		_finish_prebuild()
+	if from >= _part_total:
 		_verts = PackedVector2Array()
 		_cols = PackedColorArray()
+		_parts = []
 		_chunk_idx = PackedInt32Array()
 		return -1
-	var to := mini(_verts.size(), from + CHUNK_VERTS)
+	# The part holding vertex `from` (a chunk never spans two parts).
+	var k := _part_base.size() - 1
+	while k > 0 and _part_base[k] > from:
+		k -= 1
+	var pv: PackedVector2Array = _parts[k][0]
+	var pc: PackedColorArray = _parts[k][1]
+	var at := from - _part_base[k]
+	var end := mini(pv.size(), at + CHUNK_VERTS)
+	var to := _part_base[k] + end
 	var ci := RenderingServer.canvas_item_create()
 	RenderingServer.canvas_item_set_parent(ci, get_canvas_item())
 	RenderingServer.canvas_item_set_custom_rect(ci, true, painter_region)
@@ -1278,9 +1634,9 @@ func submit_chunk(from: int) -> int:
 	# order, or without the material, lost the buildings or the look).
 	RenderingServer.canvas_item_set_draw_index(ci, _chunk_rids.size())
 	RenderingServer.canvas_item_set_use_parent_material(ci, true)
-	var n := to - from
+	var n := end - at
 	var idx := _chunk_idx if n == _chunk_idx.size() else _chunk_idx.slice(0, n)
-	RenderingServer.canvas_item_add_triangle_array(ci, idx, _verts.slice(from, to), _cols.slice(from, to))
+	RenderingServer.canvas_item_add_triangle_array(ci, idx, pv.slice(at, end), pc.slice(at, end))
 	_chunk_rids.append(ci)
 	return to
 
@@ -1295,30 +1651,121 @@ func free_chunks() -> void:
 ## ANIM-R1 M2: bakes `region` (world px) of this city's look under influence `inf` (null:
 ## the current one) ahead of need (a raid's playout area behind its setup, the post-raid
 ## look while the raid plays), unless a finished or running bake of that look covers it.
-## Returns the cache key ("" when nothing was needed or the city does not bake).
+## Returns the cache key ("" when nothing was needed, the city does not bake, or the bake
+## waits). ANIM-R2 R1: a city on screen whose own view is not baked yet asks for it first:
+## the prebake waits until the view's image has landed (it took the build slot before the
+## view's own bake, and the raid setup sat 3.5 s on the sky).
 func prebake(region: Rect2, inf: Variant = null) -> String:
 	if not is_baked() or not is_inside_tree():
 		return ""
+	var held: Dictionary = (_followed_influence() if inf == null else inf as Dictionary).duplicate(true)
+	if is_visible_in_tree() and not view_covered():
+		_deferred_prebakes.append([region, held])
+		return ""
 	var saved := influence
-	if inf != null:
-		influence = inf
+	influence = held
 	var look := look_key()
 	var key := ""
 	if CityBakeCache.find(look, region) == "":
-		var p := (region.position / REGION_SNAP).floor() * REGION_SNAP
-		var e := (region.end / REGION_SNAP).ceil() * REGION_SNAP
-		var r := Rect2(p, e - p)
+		var r := snap_region(region)
 		key = look + "@" + var_to_str(Rect2i(r))
-		if not CityBakeCache.has(key) and not CityBakeCache.is_pending(key):
+		# ANIM-R2 R1: nothing when a running bake of this look will cover it.
+		var running := CityBakeCache.find_pending(look, region)
+		if running != "":
+			key = running
+		elif not CityBakeCache.has(key) and not CityBakeCache.is_pending(key):
 			CityBakeCache.request(key, look, make_painter(r, bake_scale(r)), _view)
 	influence = saved
 	return key
+
+
+## ANIM-R2 R1: prebakes asked for while this city's own view was not baked yet ([region,
+## influence] each), asked for once it is.
+var _deferred_prebakes: Array = []
+
+
+func _flush_prebakes() -> void:
+	var todo := _deferred_prebakes
+	_deferred_prebakes = []
+	for q: Array in todo:
+		prebake(q[0], q[1])
+
+
+## `region` (world px) grown out to the REGION_SNAP grid (bakes of nearby cameras share it).
+static func snap_region(region: Rect2) -> Rect2:
+	var p := (region.position / REGION_SNAP).floor() * REGION_SNAP
+	var e := (region.end / REGION_SNAP).ceil() * REGION_SNAP
+	return Rect2(p, e - p)
+
+
+## ANIM-R2 R1: the bake region the default frame (the district's HQ at `hq_anchor`, no zoom,
+## no pan) shows at `view_size` (the Modem, event and loot backdrops, a fight's arena).
+func frame_region(view_size: Vector2) -> Rect2:
+	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2.ZERO
+	var anchor := Vector2(view_size.x * hq_anchor.x, view_size.y * hq_anchor.y) if district != &"" else view_size * 0.5
+	var ox := anchor.x - (focus.x - focus.y) * TILE_A
+	var oy := anchor.y - (focus.x + focus.y) * TILE_B
+	return snap_region(Rect2(-ox, -oy, view_size.x, view_size.y).grow(REGION_MARGIN))
+
+
+## ANIM-R2 R1 (view memory): the view sizes the net's default frame was last drawn at (a
+## run's backdrop, a fight's arena), newest last, at most FRAME_SIZES_MAX.
+static var frame_sizes: Array[Vector2] = []
+const FRAME_SIZES_MAX := 4
+
+
+func _note_frame_size() -> void:
+	if not net_mode or pan or focus_grid != Vector2.INF or not scale.is_equal_approx(Vector2.ONE):
+		return
+	var at := frame_sizes.find(size)
+	if at == frame_sizes.size() - 1 and at >= 0:
+		return
+	if at >= 0:
+		frame_sizes.remove_at(at)
+	frame_sizes.append(size)
+	while frame_sizes.size() > FRAME_SIZES_MAX:
+		frame_sizes.remove_at(0)
+
+
+## ANIM-R2 R1: bakes, ahead, the default frame at every size in `sizes` and every size it was
+## drawn at lately (one region enclosing them all): a fight's arena, the Modem, event and
+## loot pages open on their city. Returns prebake's key.
+func prebake_frames(sizes: Array[Vector2]) -> String:
+	var all: Array[Vector2] = sizes.duplicate()
+	for v in frame_sizes:
+		if not all.has(v):
+			all.append(v)
+	var region := Rect2()
+	for v in all:
+		if v.x < 2.0 or v.y < 2.0:
+			continue
+		var r := frame_region(v)
+		region = r if not region.has_area() else region.merge(r)
+	if not region.has_area():
+		return ""
+	return prebake(region)
 
 
 ## The procedural city's geometry for the current camera and look: streets, the fist,
 ## every lot back to front into `_verts` / `_cols`, and the roofs, lights, trails,
 ## beacons and signs the overlays and the live layer read.
 func _build_geometry() -> void:
+	_prepare_build()
+	_order_lots()
+	# Pass 1, the ground (streets, plazas, lot floors); then the Cell's fist roads on top
+	# of it; pass 2, everything standing, back to front, so towers overlap the roads.
+	_pass_ground(0, _lot_list.size())
+	_infl = 0.0
+	_fist_roads()
+	_pass_standing(0, _lot_list.size())
+	_lot_list = []
+	_lot_ctx = []
+	_lot_infl = []
+
+
+## The palette, fresh containers, the HQ plazas, the street grid and the fist (ANIM-R2 R1:
+## shared by a whole build, a sliced one and the placement).
+func _prepare_build() -> void:
 	_inks.clear()
 	for c in INKS:
 		_inks.append(_pale(c))
@@ -1332,7 +1779,7 @@ func _build_geometry() -> void:
 	_roofs = {}
 	_verts = PackedVector2Array()
 	_cols = PackedColorArray()
-	_hq_rects.clear()
+	_hq_rects = {}
 	for t in TERRITORIES:
 		if t["id"] != &"":
 			var at: Vector2 = t["at"]
@@ -1340,33 +1787,40 @@ func _build_geometry() -> void:
 	_hq_rect = _hq_rects.get(district, Rect2i())
 	_build_streets()
 	_build_fist()
-	# The lots to draw: the control (or, painting a bake, its region) plus margins for
-	# buildings standing below the edge and reaching up into it.
+
+
+## Every lot to draw, back to front, with its territory context and influence: the control
+## (or, painting a bake, its region) plus margins for buildings standing below the edge and
+## reaching up into it.
+func _order_lots() -> void:
 	var dr := painter_region if _painter else Rect2(Vector2.ZERO, size)
 	var s_min := int(floor((dr.position.y - 40.0 - _oy) / TILE_B)) - 2
 	var s_max := int((dr.end.y + 420.0 - _oy) / TILE_B) + 2
 	var d_min := int(floor((dr.position.x - 80.0 - _ox) / TILE_A)) - 1
 	var d_max := int((dr.end.x + 80.0 - _ox) / TILE_A) + 1
-	# Every lot in back-to-front order with its territory context.
-	var lots: Array[Vector2i] = []
-	var ctx: Array = []
-	var infl: Array[float] = []
+	_lot_list = []
+	_lot_ctx = []
+	_lot_infl = []
 	for s in range(s_min, s_max):
 		for d in range(d_min, d_max + 1):
 			if posmod(s + d, 2) != 0:
 				continue
 			var i := (s + d) / 2
 			var j := (s - d) / 2
-			lots.append(Vector2i(i, j))
+			_lot_list.append(Vector2i(i, j))
 			var pair := _territory_pair(i, j)
-			ctx.append(pair)
-			infl.append(CityInfluence.value_at(influence, Vector2(i + 0.5, j + 0.5), pair[0]))
-	# Pass 1, the ground (streets, plazas, lot floors); then the Cell's fist roads on top
-	# of it; pass 2, everything standing, back to front, so towers overlap the roads.
-	for n in lots.size():
-		var l := lots[n]
-		_apply_context(ctx[n])
-		_infl = infl[n]
+			_lot_ctx.append(pair)
+			_lot_infl.append(CityInfluence.value_at(influence, Vector2(i + 0.5, j + 0.5), pair[0]))
+
+
+## Pass 1 over lots [from, to): the ground (streets, plazas, lot floors).
+func _pass_ground(from: int, to: int) -> void:
+	for n in range(from, to):
+		if cancelled:
+			return
+		var l := _lot_list[n]
+		_apply_context(_lot_ctx[n])
+		_infl = _lot_infl[n]
 		if _hq_at(l.x, l.y) != &"":
 			_plaza(l.x, l.y)
 		elif _is_street_lot(l.x, l.y):
@@ -1376,11 +1830,17 @@ func _build_geometry() -> void:
 			var ground := GROUND.lerp(CityInfluence.color_for(influence, _infl), absf(_infl) * INFLUENCE_GROUND_TINT)
 			_quad(p[0], p[1], p[2], p[3], ground, ground, ground, ground)
 	_infl = 0.0
-	_fist_roads()
-	for n in lots.size():
-		var l := lots[n]
-		_apply_context(ctx[n])
-		_infl = infl[n]
+
+
+## Pass 2 over lots [from, to): everything standing, back to front (the HQs from their
+## front lot).
+func _pass_standing(from: int, to: int) -> void:
+	for n in range(from, to):
+		if cancelled:
+			return
+		var l := _lot_list[n]
+		_apply_context(_lot_ctx[n])
+		_infl = _lot_infl[n]
 		var in_hq := _hq_at(l.x, l.y)
 		if in_hq != &"":
 			var hr: Rect2i = _hq_rects[in_hq]
@@ -1394,6 +1854,80 @@ func _build_geometry() -> void:
 			continue
 		_lot(l.x, l.y)
 	_infl = 0.0
+
+
+# --- Placement (ANIM-R2 R1) -------------------------------------------------------------------
+# A baked city's image takes a second or more to build and paint, but where its buildings
+# stand is cheap to work out lot by lot. The live city keeps a world-space twin of its look
+# (`_placement`) that answers `roof_of`, `nearest_building` and `is_street` the moment a map
+# asks: the same roofs the bake shows (the same building code, only nothing emitted), so
+# the nodes and labels draw on a map's first frame and stay put when the image lands.
+
+## The placement for this city's look (made when the look's layout changed).
+func _placement() -> NeonCity:
+	if _placer != null and not _placer_stale:
+		return _placer
+	_placer_stale = false
+	var cult := []
+	var names: Array = cultures.keys()
+	names.sort()
+	for k in names:
+		cult.append([String(k), String(cultures[k])])
+	var key := var_to_str([city_seed, String(district), cult])
+	if _placer == null or key != _placer_key:
+		_free_placement()
+		_placer = _twin()
+		_placer._placing = true
+		_placer._camera()
+		_placer._prepare_build()
+		_placer_key = key
+	return _placer
+
+
+func _free_placement() -> void:
+	if _placer != null and is_instance_valid(_placer):
+		_placer.free()
+	_placer = null
+	_placer_key = ""
+
+
+## The lot whose building covers lot `l` (the front lot of its cell, as the build draws it:
+## of the lots that may draw one over `l`, the last in draw order), or NO_LOT.
+func _front_of(l: Vector2i) -> Vector2i:
+	var known: Variant = _covers.get(l)
+	if known != null:
+		return known
+	var best := NO_LOT
+	# Draw order: by i + j, then i - j (a cell is at most 2x2, `l` in it).
+	for f: Vector2i in [l, l + Vector2i(0, 1), l + Vector2i(1, 0), l + Vector2i(1, 1)]:
+		if _builds_at(f) and _cell_of(f.x, f.y).has_point(l):
+			best = f
+	_covers[l] = best
+	return best
+
+
+## True when the build draws a building from lot `f` (as `_pass_standing` / `_lot` decide).
+func _builds_at(f: Vector2i) -> bool:
+	if _hq_at(f.x, f.y) != &"" or _is_street_lot(f.x, f.y) or _fist_dist(f.x, f.y) < FIST_CLEAR:
+		return false
+	return f == _cell_of(f.x, f.y).end - Vector2i.ONE
+
+
+## The building on lot `l` in world space ({} when none), placed the first time it is asked.
+func placed_roof(l: Vector2i) -> Dictionary:
+	var f := _front_of(l)
+	if f == NO_LOT:
+		return {}
+	if not _fronts.has(f):
+		_apply_context(_territory_pair(f.x, f.y))
+		_infl = 0.0
+		_roofs = {}
+		_building(_cell_of(f.x, f.y))
+		_fronts[f] = _roofs.get(f, {})
+		_roofs = {}
+		_beacons = []
+		_lights = []
+	return _fronts[f]
 
 
 ## Test runs only (docs/TEST_SUITE.md): the procedural city's geometry is a pure function
@@ -1484,6 +2018,22 @@ static func _is_gut_run() -> bool:
 ## Empties the test-run geometry memo.
 static func clear_geometry_memo() -> void:
 	_geometry_memo.clear()
+
+
+## ANIM-R2 R1: what a map's layout (the lot of each node, the street routes) depends on: a
+## baked city's placement (the camera never changes it), or, drawn procedurally, the look
+## and the camera (a build places only the lots it draws).
+func placement_sig() -> String:
+	if is_baked():
+		_placement()
+		return "placed:" + _placer_key
+	return var_to_str([look_key(), _camera_key(), _built_serial])
+
+
+## ANIM-R2 R9: what a roof's screen position depends on besides its lot: the frame the city
+## was last drawn under (its camera and, baked, the image's shift) and its placement.
+func frame_stamp() -> Array:
+	return [_drawn_camera, _shift, _placer_key if is_baked() else "built", _built_serial]
 
 
 ## The camera's inputs (what `_camera` reads).
@@ -1623,21 +2173,37 @@ func _hq_distance(i: int, j: int) -> float:
 # --- Primitives ---------------------------------------------------------------------------
 
 func _tri(a: Vector2, b: Vector2, c: Vector2, ca: Color, cb: Color, cc: Color) -> void:
-	if not emit_triangles:
+	if not emit_triangles or _placing:
 		return
-	_verts.append_array([a, b, c])
-	_cols.append_array([ca, cb, cc])
+	# ANIM-R2 R1: pushed one by one (append_array of an Array literal built a temporary
+	# Array per triangle: most of a bake's build time).
+	_verts.push_back(a)
+	_verts.push_back(b)
+	_verts.push_back(c)
+	_cols.push_back(ca)
+	_cols.push_back(cb)
+	_cols.push_back(cc)
 
 
 func _quad(a: Vector2, b: Vector2, c: Vector2, d: Vector2, ca: Color, cb: Color, cc: Color, cd: Color) -> void:
-	if not emit_triangles:
+	if not emit_triangles or _placing:
 		return
-	_tri(a, b, c, ca, cb, cc)
-	_tri(a, c, d, ca, cc, cd)
+	_verts.push_back(a)
+	_verts.push_back(b)
+	_verts.push_back(c)
+	_verts.push_back(a)
+	_verts.push_back(c)
+	_verts.push_back(d)
+	_cols.push_back(ca)
+	_cols.push_back(cb)
+	_cols.push_back(cc)
+	_cols.push_back(ca)
+	_cols.push_back(cc)
+	_cols.push_back(cd)
 
 
 func _poly(pts: PackedVector2Array, col: Color) -> void:
-	if not emit_triangles:
+	if not emit_triangles or _placing:
 		return
 	var c := Vector2.ZERO
 	for p in pts:
@@ -1652,7 +2218,7 @@ func _poly(pts: PackedVector2Array, col: Color) -> void:
 ## and tapers, overshooting the corners by a varying amount, then a faint second pass a
 ## hair off the first, as if the line was gone over again.
 func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: bool = true) -> void:
-	if not emit_triangles:
+	if not emit_triangles or _placing:
 		return
 	var length := a.distance_to(b)
 	if length < 0.5:
@@ -1677,7 +2243,7 @@ func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: boo
 
 
 func _stroke(a: Vector2, b: Vector2, n: Vector2, bow: float, width: float, col: Color, key: int) -> void:
-	if not emit_triangles:
+	if not emit_triangles or _placing:
 		return
 	var steps := clampi(int(a.distance_to(b) / 5.0), 2, 400)
 	var prev_l := Vector2.ZERO
@@ -1736,6 +2302,8 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 	for p in base:
 		bot.append(p + Vector2(0, -z0))
 		top.append(c + (p - c) * top_scale + Vector2(0, -z0 - h))
+	if _placing:
+		return top  # ANIM-R2 R1: the placement needs the roof, nothing drawn
 	var faces: Array[Dictionary] = []
 	for k in n:
 		var a := bot[k]
@@ -2719,7 +3287,9 @@ func _sign(at: Vector2, text: String, col: Color) -> void:
 
 
 func _draw_fx() -> void:
-	if _built_for != size:
+	# ANIM-R2 R11: a painter bakes no live layer (the signs, sparks and rain are drawn live
+	# over the image; the synchronous bake drew the signs into it too, twice over the live one).
+	if _built_for != size or _painter:
 		return
 	if territory_labels:
 		var inv := 1.0 / maxf(0.01, scale.x)

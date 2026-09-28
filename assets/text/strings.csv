@@ -79,6 +79,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
+(same as %d),(same as %d)
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
 +%d HP,+%d HP
@@ -185,6 +186,8 @@ CLEARED,CLEARED
 CLEARS %s,CLEARS %s
 CODEX,CODEX
 COMBATS,COMBATS
+CONNECTING,CONNECTING
+CONNECTING TO %s,CONNECTING TO %s
 CORE,CORE
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
 CORPORATE,CORPORATE
@@ -726,12 +729,15 @@ HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps 
 HOME,HOME
 HOME %d > %d,HOME %d > %d
 HOME %d/%d,HOME %d/%d
+HOME %s,HOME %s
 HOME HIT,HOME HIT
+HOME HOLDS,HOME HOLDS
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s > %s %s,HP %s > %s %s
 HP is full,HP is full
+HQ,HQ
 HUB,HUB
 HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
@@ -2644,6 +2650,7 @@ slice,slice
 sold out,sold out
 steady_hand_handler,steady_hand_handler
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
+the net,the net
 threats reach the home server: home %d > %d,threats reach the home server: home %d > %d
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler

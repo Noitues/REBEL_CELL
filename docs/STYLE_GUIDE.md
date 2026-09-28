@@ -261,6 +261,17 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   lifts only onto a built screen. Visited route nodes carry a tick.
 - **No frame freezes for a bake**: the city is baked off the main thread, a chunk a frame,
   and the raid's areas ahead of time.
+- **A map is never empty (ANIM-R2)**: a map's nodes and labels draw on its first frame (the
+  city's placement is known at once); the city's image fades in over the night sky when its
+  bake lands, never a strip of city over part of the screen. The jack says CONNECTING TO
+  <place> while the arriving screen builds and lifts onto the page, not the image.
+- **Raids, Heat and routes read at a glance (ANIM-R2)**: threats are big white diamonds ringed
+  in red with a trail; the end's outcomes stamp one after another and a HOME -N / HOME HOLDS
+  banner stays; a defence lands after the camera pans and keeps its name. A Heat crossing plays
+  in order: the number reaches the threshold, the banner stamps, the poster alone distorts
+  briefly (one banner per band crossed; a drop re-stamps the band word). A claimed district
+  keeps a lasting tint. A route move draws a thick trail and its target pulses; equal choices
+  say "(same as 1)".
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5", "— ANIM-R1 campaign and
   screens"); strips: `docs/timeline/motion/`.
 

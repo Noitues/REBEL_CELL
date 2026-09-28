@@ -539,7 +539,7 @@ func go_to_hq() -> void:
 	if scene_change_pending():
 		return
 	if scene_switching_enabled:
-		Fx.jack_out(func() -> void: change_scene(HQ_SCENE))
+		Fx.jack_out(func() -> void: change_scene(HQ_SCENE), -1.0, tr("HQ"))
 	else:
 		change_scene(HQ_SCENE)
 
@@ -550,9 +550,19 @@ func go_to_netrun() -> void:
 		return
 	AudioDirector.play_sfx("jack_in")
 	if scene_switching_enabled:
-		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE))
+		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE), -1.0, jack_destination())
 	else:
 		change_scene(NETRUN_SCENE)
+
+
+## ANIM-R2 R5: where a jack in connects to, named on the cover: the run's Site (its
+## translated name), else the net.
+func jack_destination() -> String:
+	if netrun != null and corporation != null:
+		var sd := CampaignRules.site_data(corporation, netrun.run.site_id)
+		if sd != null:
+			return TextDb.t(sd, "display_name")
+	return tr("the net")
 
 
 func _ensure_resolver() -> void:

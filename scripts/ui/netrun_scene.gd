@@ -124,6 +124,9 @@ func _ready() -> void:
 			PortraitArt.style = int(a.trim_prefix("--demo-portrait="))
 		elif a.begins_with("--demo-iconstyle="):
 			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
+		elif a.begins_with("--demo-text-scale="):
+			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6).
+			Settings.set_text_scale(float(a.trim_prefix("--demo-text-scale=")))
 		elif a.begins_with("--demo-scale="):
 			# Captures at a text size (ANIM-R2): this run only, never saved.
 			Settings.text_scale = float(a.trim_prefix("--demo-scale="))
@@ -199,6 +202,10 @@ func _ready() -> void:
 			enter_node(RunManager.netrun.available_nodes()[0])
 		elif args.has("--demo-anim=route_pulse"):
 			_demo_route_pulse.call_deferred()
+		for a in args:
+			# ANIM-R2 R2 profiling: the route shows, then N frames in the first fight on it opens.
+			if a.begins_with("--demo-run-fight="):
+				MotionDemo.after_frames(self, int(a.trim_prefix("--demo-run-fight=")), _demo_enter_fight)
 		return
 	if RunManager.has_active_run():
 		_show_current()
@@ -260,6 +267,16 @@ func enter_node(node_id: StringName) -> void:
 	get_tree().create_timer(secs).timeout.connect(_end_travel)
 
 
+## ANIM-R2 R2 profiling: enters the first open Router (a fight), else the first open node.
+func _demo_enter_fight() -> void:
+	var open: Array = RunManager.netrun.available_nodes()
+	for id in open:
+		if int(RunManager.netrun.run.map.get_node(id).get("type", -1)) == RC.InfilNodeType.ROUTER:
+			enter_node(id)
+			return
+	enter_node(open[0])
+
+
 ## ANIM-5 frame capture (dev shortcut): once the route map and the city have settled, a
 ## move plays on the map (view only: from the first choice to the node after it, a link
 ## mid-route; the run itself does not move); prints the frame it starts on.
@@ -268,7 +285,7 @@ func _demo_route_pulse() -> void:
 	for f in DEMO_SETTLE_FRAMES:
 		await get_tree().process_frame
 	for f in DEMO_BAKE_FRAMES:
-		if background.city.showing_current_look() and background.city.camera_settled():
+		if background.city.showing_current_look() and background.city.camera_settled() and background.city.bake_fade >= 1.0:
 			break
 		await get_tree().process_frame
 	print("anim5: route_pulse starts on frame %d" % Engine.get_frames_drawn())
@@ -552,14 +569,15 @@ func raid_fight() -> void:
 
 ## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
 ## cover up until then, so it never lifts onto an empty dark screen): a page is on, the
-## city behind it shows its own look under the current camera, and the route map's fit
-## passes have run.
+## city behind it was drawn under the current camera (its placement: the route's nodes and
+## labels in place), and the route map's fit passes have run. ANIM-R2 R1: the city's image
+## is not waited for; it fades in over the night sky when its bake lands.
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
 	var city: NeonCity = background.city if background != null else null
 	if city != null and city.is_visible_in_tree():
-		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
+		if not city.camera_settled():
 			return false
 		if city.rebuilt.is_connected(fit_route_map) or get_tree().process_frame.is_connected(fit_route_map) or _raid_map_framing:
 			return false
@@ -818,6 +836,7 @@ func _show_map() -> void:
 	row.name = "RouteNodes"
 	win.body.add_child(row)
 	_route_buttons.clear()
+	var twins := choice_twins(s)
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
 		# H21 #14: what the node is (word + icon), its index on every device (the map's
@@ -832,6 +851,10 @@ func _show_map() -> void:
 		if ahead != "":
 			text += "  > %s" % ahead
 		var id: StringName = available[i]
+		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
+		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
+		if twins.has(id):
+			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -897,6 +920,24 @@ func _show_map() -> void:
 		_route_fits = 0
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
+	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Modem, an event or loot, all on
+	# the default frame of this city's look: baked now, behind the route (after its own view).
+	_prebake_backdrops.call_deferred()
+
+
+## ANIM-R2 R1 / R2: the default frame's bake at this scene's size and at the page's (a fight's
+## arena fills the page), with the sizes it was drawn at lately (NeonCity.frame_sizes).
+func _prebake_backdrops() -> void:
+	if background == null or not is_inside_tree() or RunManager.campaign == null:
+		return
+	var sizes: Array[Vector2] = [size]
+	if _panel_host != null and is_instance_valid(_panel_host):
+		var inner := _panel_host.size
+		var box := _panel_host.get_theme_stylebox(&"panel", &"GlassPanel")
+		if box != null:
+			inner -= box.get_minimum_size()
+		sizes.append(inner.floor())
+	background.city.prebake_frames(sizes)
 
 
 ## The route legend where it covers no route node (H22 #14).
@@ -951,6 +992,11 @@ func fit_route_map() -> void:
 
 func _fit_route_after_redraw() -> void:
 	var city := background.city
+	if city.is_baked():
+		# ANIM-R2 R1: measured at once under the new camera (see hq_scene._fit_after_redraw).
+		city.update_camera()
+		fit_route_map()
+		return
 	if not city.rebuilt.is_connected(fit_route_map):
 		city.rebuilt.connect(fit_route_map, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 
@@ -1038,6 +1084,24 @@ func _label_route_buttons() -> void:
 	_route_buttons = alive
 
 
+## ANIM-R2 R12: the open choices that are the same as an earlier one (the same kind, Heat
+## and nodes beyond): id -> the index of the first such choice. Two "Fight > Fight" buttons
+## read the same because they are (the enemy is rolled on entry); saying so tells the
+## player the pick does not matter.
+static func choice_twins(s: NetrunSession) -> Dictionary:
+	var out := {}
+	var first := {}
+	var open := s.available_nodes()
+	for i in open.size():
+		var node := s.run.map.get_node(open[i])
+		var sig := var_to_str([node_word(node), s.node_heat(open[i]), ahead_words(s.run.map, node)])
+		if first.has(sig):
+			out[open[i]] = first[sig]
+		else:
+			first[sig] = i
+	return out
+
+
 ## The run's map as buildings in the target Site's neighbourhood (layers step in from
 ## the street towards the Site).
 func route_graph() -> Dictionary:
@@ -1047,6 +1111,7 @@ func route_graph() -> Dictionary:
 	var layers := map.layer_count()
 	var available := s.available_nodes()
 	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
+	var twins := choice_twins(s)
 	var rows := {}
 	for n in map.all_nodes():
 		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
@@ -1065,10 +1130,13 @@ func route_graph() -> Dictionary:
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
 			col = Palette.corp_color(RunManager.campaign.corporation_id)
 		var idx := available.find(n["id"])
+		var label := "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else ""
+		if twins.has(n["id"]):
+			label += " " + tr("(same as %d)") % (int(twins[n["id"]]) + 1)
 		# The reachable nodes carry their route button's index and word (H21 #14); "kind"
 		# is the StatIcon the button shows.
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
-			"label": "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else "", "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
+			"label": label, "big": n["type"] == RC.InfilNodeType.SERVER_RACK,
 			# H23 S7: the kind and what it does, in the route key's words (H24 S3: translated).
 			"tip": "%s." % tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(n["type"]), n["elite"]), node_word(n)))),
 			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
@@ -1133,7 +1201,7 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	box.add_child(side)
 	var feed := TerminalWindow.new(tr("RAID FEED // LIVE"), Palette.corp_color(c.corporation_id))
 	side.add_child(feed)
-	playout = RaidPlayoutPanel.new(null, Vector2(330, 330))
+	playout = RaidPlayoutPanel.new(null, RaidPlayoutPanel.LOG_SIZE)
 	feed.body.add_child(playout)
 	var cont := _icon_button(tr("Continue"), _show_current, StatIcon.CONTINUE)
 	cont.disabled = true

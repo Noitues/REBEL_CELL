@@ -104,6 +104,8 @@ const DEMOS := {
 	&"ram_refusal": ["scene", "refuse"], &"ram_refusal_pop": ["scene", "refuse"], &"send_it_ready": ["view", "ready"],
 	&"send_it_drips_share": ["view", "press"], &"drag_ghost_tilt_speed": ["scene", "drag"],
 	&"toast_note_hold": ["fade_out", "sticker"], &"stamp_fade_in": ["screen", "stamp"],
+	# ANIM-R2 (city, maps and transitions; in context: hq_scene / netrun_scene --demo-anim=<id>):
+	&"city_bake_fade": ["fade_in", "panel"], &"jack_connect": ["fade_in", "panel"], &"raid_outcome_stagger": ["pop", "sticker"], &"raid_result_banner": ["pop", "panel"], &"asset_drop_stamp": ["pop", "sticker"], &"influence_tint": ["fade_in", "panel"], &"route_target_pulse": ["pulse", "sticker"],
 	# ANIM-R2 (combat, events and screens):
 	&"hit_absorb": ["scene", "send_hit"], &"ram_spend_float": ["scene", "ram"], &"price_refusal": ["pulse", "sticker"],
 }

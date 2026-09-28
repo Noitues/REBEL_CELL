@@ -197,20 +197,48 @@ var selected_id: StringName = &"":
 		queue_redraw()
 ## ANIM-5 (4.14): the selected node's roof outline drawn so far (0..1, `site_outline_draw`)
 ## and its ring's ease in (0..1, `select_ring_ease`; the "you are here" ring too).
-var select_reveal: float = 1.0
-var ring_ease: float = 1.0
+var select_reveal: float:
+	get:
+		return _mv.value(&"select_reveal")
+	set(v):
+		_mv.put(&"select_reveal", v)
+var ring_ease: float:
+	get:
+		return _mv.value(&"ring_ease")
+	set(v):
+		_mv.put(&"ring_ease", v)
+## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
-var drop_t: float = 1.0
+var drop_t: float:
+	get:
+		return _mv.value(&"drop_t")
+	set(v):
+		_mv.put(&"drop_t", v)
 ## ANIM-5 (4.16): a netrun move playing (`travel`): {"from", "to"}, the light pulse along
 ## the link (0..1), the new node's pop (0..1) and the old node's dim (0..1).
 var _travel: Dictionary = {}
-var travel_t: float = 1.0
-var arrive_t: float = 1.0
-var dim_t: float = 1.0
+var travel_t: float:
+	get:
+		return _mv.value(&"travel_t")
+	set(v):
+		_mv.put(&"travel_t", v)
+var arrive_t: float:
+	get:
+		return _mv.value(&"arrive_t")
+	set(v):
+		_mv.put(&"arrive_t", v)
+var dim_t: float:
+	get:
+		return _mv.value(&"dim_t")
+	set(v):
+		_mv.put(&"dim_t", v)
 var _travel_tween: Tween = null
 ## The move's light trail: this many fading dots, each this share of the link behind.
-const TRAVEL_TRAIL := 6
+const TRAVEL_TRAIL := 8
+## ANIM-R2 R12: the trail's width (screen px).
+const TRAVEL_WIDTH := 7.0
 ## ANIM-R1 M7: a visited route node's tick (screen px).
 const TICK := 11.0
 const TRAVEL_TRAIL_STEP := 0.04
@@ -222,7 +250,7 @@ var hover_id: StringName = &"":
 			return
 		hover_id = v
 		if _top != null:
-			_top.queue_redraw()
+			_queue_tags()
 			_hi.queue_redraw()
 ## The node under the pointer (for `node_hovered`).
 var _pointer_id: StringName = &""
@@ -239,6 +267,7 @@ var _icon_cache: Dictionary = {}
 var _icon_key: String = ""
 var _anim: Control
 var _top: Control
+var _tags: Control
 var _hi: Control
 ## The canvas item the helpers draw on (self, _anim, _top or _hi).
 var _c: CanvasItem
@@ -248,8 +277,8 @@ var _c: CanvasItem
 var screen_rect: Rect2 = Rect2():
 	set(v):
 		screen_rect = v
-		if _top != null:
-			_top.queue_redraw()
+		if _tags != null:
+			_queue_tags()
 ## The tier pips of the last node draw (node id -> tier), for checks.
 var drawn_tiers: Dictionary = {}
 ## ANIM-5: false while a RaidFxLayer draws the threats itself (moving along the streets).
@@ -265,12 +294,29 @@ func _init(p_city: NeonCity = null) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_anim = _layer("Flow", _draw_anim)
 	_top = _layer("Nodes", _draw_top)
+	# ANIM-R2 R9: the labels are a layer of their own (a column sliding in moves them every
+	# frame; the nodes under them stay drawn).
+	_tags = _layer("Labels", _draw_tags)
 	_hi = _layer("Selection", _draw_hi)
+	add_child(_mv)
+	_mv.changed.connect(_on_motion_value)
 	if city != null:
 		city.rebuilt.connect(_relayout)
 		city.marks_changed.connect(queue_redraw)
 	# Labels follow the text size live (redrawn once per change, never per frame).
-	Settings.changed.connect(_top.queue_redraw)
+	Settings.changed.connect(_queue_top)
+
+
+## ANIM-R2 R9: a motion value changed: only the layer that draws it redraws (the selection's
+## draw-on and ring and the move's pulse on the selection layer; a landing asset, a node's
+## pop and the node left dimming on the node layer).
+func _on_motion_value(key: StringName) -> void:
+	if _hi == null:
+		return
+	match key:
+		&"drop_t", &"drop_stamp_t", &"arrive_t", &"dim_t":
+			_queue_top()
+	_hi.queue_redraw()
 
 
 ## The netrun route kind for an InfilNodeType (elite Routers are their own kind).
@@ -324,6 +370,10 @@ func _layer(layer_name: String, painter: Callable) -> Control:
 
 
 func _process(delta: float) -> void:
+	if _drop.get("waiting", false):
+		var ready: Callable = _drop.get("ready", Callable())
+		if not ready.is_valid() or bool(ready.call()) or Time.get_ticks_msec() - int(_drop["since"]) > DROP_WAIT_MAX * 1000.0:
+			_start_drop()
 	if not Fx.effects_enabled() or not is_visible_in_tree():
 		return
 	# The map's own motion runs at the playout's speed (Motion.speed: 1x outside a raid).
@@ -336,6 +386,7 @@ func _process(delta: float) -> void:
 func set_graph(p_nodes: Array[Dictionary], p_edges: Array[Dictionary]) -> void:
 	nodes = p_nodes
 	edges = p_edges
+	_graph_serial += 1
 	_relayout()
 
 
@@ -348,7 +399,7 @@ func set_look(value: int) -> void:
 ## map). Replaces the previous rects.
 func set_blocked_rects(rects: Array[Rect2]) -> void:
 	_blocked_rects = rects.duplicate()
-	_top.queue_redraw()
+	_queue_tags()
 
 
 ## H22: controls over the map (a screen's side column) the labels keep out of; their
@@ -356,9 +407,9 @@ func set_blocked_rects(rects: Array[Rect2]) -> void:
 func avoid_controls(controls: Array[Control]) -> void:
 	_blocked_controls = controls.duplicate()
 	for c in _blocked_controls:
-		if is_instance_valid(c) and not c.item_rect_changed.is_connected(_top.queue_redraw):
-			c.item_rect_changed.connect(_top.queue_redraw)
-	_top.queue_redraw()
+		if is_instance_valid(c) and not c.item_rect_changed.is_connected(_queue_tags):
+			c.item_rect_changed.connect(_queue_tags)
+	_queue_tags()
 
 
 ## The area map labels may use (local px): the overlay's own rect (or `screen_rect` within
@@ -454,7 +505,26 @@ func _reachable() -> Dictionary:
 	return out
 
 
+## ANIM-R2 R1: the graph given last (a count) and what the last layout was worked out from
+## (the graph and the city's placement): a redraw that changes neither (a camera move over
+## a baked city, its image landing) keeps the lots and routes and only redraws.
+var _graph_serial: int = 0
+var _layout_sig: Array = []
+var _drawn_stamp: Array = []
+
+
 func _relayout() -> void:
+	if city != null:
+		var sig := [_graph_serial, city.placement_sig()]
+		if sig == _layout_sig:
+			# Only a new frame (the camera moved) needs a redraw; an image landing does not.
+			var stamp := city.frame_stamp()
+			if stamp != _drawn_stamp:
+				_drawn_stamp = stamp
+				queue_redraw()
+			return
+		_drawn_stamp = city.frame_stamp()
+		_layout_sig = sig
 	_lots.clear()
 	_routes.clear()
 	_reach = _reachable()
@@ -493,9 +563,28 @@ func _door(lot: Vector2i) -> Vector2i:
 	return lot
 
 
+## ANIM-R2 R1: street routes worked out so far, by the city's placement and the two lots
+## (view memory; a baked city's routes never change with its camera). Emptied past
+## ROUTE_MEMO_MAX.
+static var _route_memo: Dictionary = {}
+const ROUTE_MEMO_MAX := 4096
+
+
 ## Street route between two buildings: door -> BFS over street lots -> door, as grid
 ## points (lot centres). Falls back to an L-shaped path if the search fails.
 func _route(a: Vector2i, b: Vector2i) -> PackedVector2Array:
+	var key := [_layout_sig[1] if _layout_sig.size() > 1 else "", a, b]
+	var known: Variant = _route_memo.get(key)
+	if known != null:
+		return known
+	if _route_memo.size() >= ROUTE_MEMO_MAX:
+		_route_memo.clear()
+	var pts := _street_route(a, b)
+	_route_memo[key] = pts
+	return pts
+
+
+func _street_route(a: Vector2i, b: Vector2i) -> PackedVector2Array:
 	var da := _door(a)
 	var db := _door(b)
 	var box := Rect2i(Vector2i(mini(da.x, db.x) - 8, mini(da.y, db.y) - 8), Vector2i(absi(da.x - db.x) + 17, absi(da.y - db.y) + 17))
@@ -640,8 +729,36 @@ func _node_dict(id: StringName) -> Dictionary:
 
 
 func _roof(id: StringName) -> Dictionary:
-	var lot := lot_of(id)
-	return city.roof_of(lot.x, lot.y) if city != null else {}
+	if city == null:
+		return {}
+	# ANIM-R2 R9: the roofs under the current frame are worked out once per frame change.
+	_frame_cache()
+	var rec: Variant = _roofs_now.get(id)
+	if rec == null:
+		var lot := lot_of(id)
+		rec = city.roof_of(lot.x, lot.y)
+		_roofs_now[id] = rec
+	return rec
+
+
+## ANIM-R2 R9: what the roofs, icons and labels on screen were worked out for (the look, the
+## zoom, the city's frame and placement, the graph); the roofs under it (id -> the
+## roof_of record, filled as asked) and the label layout's own key and result.
+var _frame_key: Array = []
+var _roofs_now: Dictionary = {}
+var _labels_key: Array = []
+var _labels_now: Array[Dictionary] = []
+
+
+## Drops the roofs, icons and labels worked out for another frame (ANIM-R2 R9: they were
+## worked out again on every call, ~15 ms a node pass and 100-300 ms a label pass).
+func _frame_cache() -> void:
+	var key := [look, city.scale.x, city.frame_stamp(), _layout_sig, nodes.size(), _lots.size()]
+	if key != _frame_key:
+		_frame_key = key
+		_roofs_now = {}
+		_icon_key = ""
+		_labels_key = []
 
 
 ## Screen-size factor: local px per screen px (the city's zoom undone).
@@ -690,8 +807,8 @@ func icon_rect(n: Dictionary) -> Rect2:
 func _icon_positions() -> Dictionary:
 	if city == null or nodes.is_empty():
 		return {}
-	var first := _roof(nodes[0]["id"])
-	var key := str([look, city.scale.x, first.get("base", Vector2.INF), nodes.size(), _lots.size()])
+	_frame_cache()
+	var key := "placed"
 	if key == _icon_key:
 		return _icon_cache
 	var order: Array[Dictionary] = []
@@ -745,7 +862,7 @@ static func _box_free(box: Rect2, placed: Array[Rect2], gap: float) -> bool:
 ## Static under-layer: the look's veil and every route's keyline and glow. Any redraw of
 ## the overlay also refreshes the layers above it.
 func _draw() -> void:
-	_top.queue_redraw()
+	_queue_top()
 	_anim.queue_redraw()
 	_hi.queue_redraw()
 	if city == null or nodes.is_empty():
@@ -777,14 +894,67 @@ func _draw_anim() -> void:
 	_c = self
 
 
+## ANIM-R2 R1 / R9: the node layer draws at most once a process frame. A screen's first
+## frame moved its column and key many times over (each container sort asked again), and
+## each ask drew every node and label anew (8 draws, ~130 ms, in the Grid's first frame); a
+## later ask in the same frame is drawn at the start of the next.
+var _top_frame: int = -1
+var _top_later: bool = false
+
+
+func _queue_top() -> void:
+	if _top == null:
+		return
+	_queue_tags()
+	if _top_frame != Engine.get_process_frames() or not is_inside_tree():
+		_top.queue_redraw()
+		return
+	if not _top_later:
+		_top_later = true
+		get_tree().process_frame.connect(func() -> void:
+			_top_later = false
+			if is_instance_valid(_top):
+				_top.queue_redraw(), CONNECT_ONE_SHOT)
+
+
+## ANIM-R2 R9: the labels too draw at most once a process frame (a page's first frame
+## moved the column and key several times, each a new layout).
+var _tags_frame: int = -1
+var _tags_later: bool = false
+
+
+func _queue_tags() -> void:
+	if _tags == null:
+		return
+	if _tags_frame != Engine.get_process_frames() or not is_inside_tree():
+		_tags.queue_redraw()
+		return
+	if not _tags_later:
+		_tags_later = true
+		get_tree().process_frame.connect(func() -> void:
+			_tags_later = false
+			if is_instance_valid(_tags):
+				_tags.queue_redraw(), CONNECT_ONE_SHOT)
+
+
 ## Nodes, marks, badges, tags, assets and threat markers.
 func _draw_top() -> void:
+	_top_frame = Engine.get_process_frames()
 	if city == null or nodes.is_empty():
 		return
 	_c = _top
 	drawn_tiers.clear()
 	for n in nodes:
 		_node(n)
+	_c = self
+
+
+## The labels (ANIM-R2 R9: a layer of their own over the nodes).
+func _draw_tags() -> void:
+	if city == null or nodes.is_empty():
+		return
+	_tags_frame = Engine.get_process_frames()
+	_c = _tags
 	for l: Dictionary in _layout_labels():
 		_tag_box(l)
 	_c = self
@@ -795,6 +965,16 @@ func _draw_top() -> void:
 func _draw_hi() -> void:
 	if not _travel.is_empty() and travel_t < 1.0:
 		_draw_travel()
+	# The selected node's roof outline, drawing on (ANIM-5; ANIM-R2 R9: on this layer).
+	if city != null and selected_id != &"" and _lots.has(selected_id):
+		var rec := _roof(selected_id)
+		if not rec.is_empty():
+			var closed: PackedVector2Array = (rec["roof"] as PackedVector2Array).duplicate()
+			closed.append(closed[0])
+			var c0 := _c
+			_c = _hi
+			_stroke_on(closed, select_reveal, Palette.CELL_ACID, 1.5)
+			_c = c0
 	var hc := hover_centre()
 	if hc.x != INF:
 		var k := _k()
@@ -1023,17 +1203,30 @@ func _node(n: Dictionary) -> void:
 	for k in assets.size():
 		var slot := asset_slot(n, k, assets.size())
 		var ar := ASSET_ICON * _k()
-		if not _drop.is_empty() and _drop["site"] == n["id"] and int(_drop["index"]) == k and drop_t < 1.0:
-			# ANIM-5: falling onto its node, then a stamp ring as it lands.
+		var landing: bool = not _drop.is_empty() and _drop["site"] == n["id"] and int(_drop["index"]) == k
+		if landing and _drop.get("waiting", false):
+			continue  # ANIM-R2 R6: it drops once the camera has panned there
+		if landing and drop_t < 1.0:
+			# ANIM-5: falling onto its node. ANIM-R2 R6: a bigger stamp ring as it lands.
 			slot.y -= (1.0 - drop_t) * Motion.amplitude(&"asset_drop") * _k()
-			_c.draw_arc(slot, ar * (1.0 + 1.2 * drop_t), 0, TAU, 20, Color(Palette.PAPER, sin(drop_t * PI) * 0.8), 2.0 * _k())
+		if landing and drop_stamp_t < 1.0 and drop_t >= 1.0:
+			var grow := lerpf(1.0, Motion.amplitude(&"asset_drop_stamp"), drop_stamp_t)
+			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(0, 0, 0, 0.8 * (1.0 - drop_stamp_t)), 5.0 * _k())
+			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(Palette.PAPER, 1.0 - drop_stamp_t), 2.5 * _k())
 		# ANIM-R1 M4: the placed defence stays on its node as a marker the size of a map
 		# icon (a dark plate, a pink ring, the asset's own icon), readable at any zoom.
 		_c.draw_circle(slot, ar * 1.25, Color(0, 0, 0, 0.85))
 		_c.draw_arc(slot, ar * 1.25, 0, TAU, 20, Palette.CELL_PINK, 2.0 * _k())
 		AssetIcon.draw_icon(_c, slot, ar, assets[k])
-	if n["id"] == selected_id:
-		_stroke_on(closed, select_reveal, Palette.CELL_ACID, 1.5)
+		if landing and String(_drop.get("label", "")) != "":
+			# ANIM-R2 R6: the defence that just landed keeps its name under it.
+			var f := Palette.mono()
+			var fs := label_font_size()
+			var word: String = str(_drop["label"])
+			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
+			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
+			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, AssetIcon.color_of(assets[k]))
 	if draw_markers and markers.has(n["id"]):
 		var names: Array = markers[n["id"]]
 		var row := _marker_row(n)
@@ -1165,8 +1358,8 @@ func _draw_on_selection() -> void:
 		return
 	select_reveal = 0.0
 	ring_ease = 0.0
-	Motion.run(&"site_outline_draw", self, ^"select_reveal", 1.0)
-	Motion.run(&"select_ring_ease", self, ^"ring_ease", 1.0)
+	Motion.run(&"site_outline_draw", _mv, ^"select_reveal", 1.0)
+	Motion.run(&"select_ring_ease", _mv, ^"ring_ease", 1.0)
 
 
 ## ANIM-5: eases the selection / "you are here" ring in again (a screen that just opened).
@@ -1174,22 +1367,60 @@ func ease_rings() -> void:
 	if not is_inside_tree():
 		return
 	ring_ease = 0.0
-	Motion.run(&"select_ring_ease", self, ^"ring_ease", 1.0)
+	Motion.run(&"select_ring_ease", _mv, ^"ring_ease", 1.0)
 
 
 ## ANIM-5 (4.14): a raid asset lands on node `site_id` (the last asset in its list) with a
 ## stamp. The hook drag-and-drop deploying calls once the asset is placed.
-func drop_asset(site_id: StringName) -> void:
+## ANIM-R2 R6: `ready` (optional) says when the screen's camera has settled: the drop waits
+## for it (a camera pan at the same time hid it), at most DROP_WAIT_MAX seconds; `label`
+## names the defence under its marker once it has landed (it stays).
+func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "") -> void:
 	var n := _node_dict(site_id)
 	var count := (n.get("assets", []) as Array).size()
 	if n.is_empty() or count == 0:
 		return
-	_drop = {"site": site_id, "index": count - 1}
+	_drop = {"site": site_id, "index": count - 1, "label": label}
 	drop_t = 0.0
-	if not is_inside_tree():
+	drop_stamp_t = 0.0
+	if not is_inside_tree() or not Motion.live(&"asset_drop"):
 		drop_t = 1.0
+		drop_stamp_t = 1.0
+		_queue_top()
 		return
-	Motion.run(&"asset_drop", self, ^"drop_t", 1.0)
+	if ready.is_valid() and not bool(ready.call()):
+		_drop["waiting"] = true
+		_drop["ready"] = ready
+		_drop["since"] = Time.get_ticks_msec()
+		_queue_top()
+		return
+	_start_drop()
+
+
+## The wait for the camera before a drop (seconds).
+const DROP_WAIT_MAX := 1.5
+var drop_stamp_t: float:
+	get:
+		return _mv.value(&"drop_stamp_t")
+	set(v):
+		_mv.put(&"drop_stamp_t", v)
+
+
+func _start_drop() -> void:
+	_drop.erase("waiting")
+	_drop.erase("ready")
+	var tw := Motion.run(&"asset_drop", _mv, ^"drop_t", 1.0)
+	if tw == null:
+		drop_stamp_t = 1.0
+		return
+	tw.finished.connect(func() -> void:
+		if is_instance_valid(_mv) and Motion.run(&"asset_drop_stamp", _mv, ^"drop_stamp_t", 1.0) == null:
+			drop_stamp_t = 1.0)
+
+
+## True while a dropped defence waits for the camera (tests).
+func drop_waiting() -> bool:
+	return bool(_drop.get("waiting", false))
 
 
 ## ANIM-5 (4.16): the netrun moves from node `from` to node `to`: a light pulse runs the
@@ -1208,14 +1439,14 @@ func travel(from: StringName, to: StringName, on_land: Callable = Callable()) ->
 	travel_t = 0.0 if icon_at(from).x != INF else 1.0
 	arrive_t = 0.0
 	dim_t = 0.0
-	var pulse := Motion.run(&"route_pulse", self, ^"travel_t", 1.0) if travel_t < 1.0 else null
+	var pulse := Motion.run(&"route_pulse", _mv, ^"travel_t", 1.0) if travel_t < 1.0 else null
 	var lead := Motion.seconds(&"route_pulse") + Motion.delay_of(&"route_pulse") if pulse != null else 0.0
 	var pop := create_tween()
 	pop.tween_interval(lead)
 	pop.tween_callback(func() -> void:
 		_land()
-		Motion.run(&"node_pop", self, ^"arrive_t", 1.0)
-		Motion.run(&"visited_dim", self, ^"dim_t", 1.0))
+		Motion.run(&"node_pop", _mv, ^"arrive_t", 1.0)
+		Motion.run(&"visited_dim", _mv, ^"dim_t", 1.0))
 	_travel_tween = pop
 	queue_redraw()
 	return lead + maxf(Motion.seconds(&"node_pop") + Motion.delay_of(&"node_pop"), Motion.seconds(&"visited_dim") + Motion.delay_of(&"visited_dim"))
@@ -1239,6 +1470,7 @@ func finish_travel() -> void:
 	if _travel_tween != null and _travel_tween.is_valid():
 		_travel_tween.kill()
 	Motion.stop(self)
+	Motion.stop(_mv)
 	travel_t = 1.0
 	arrive_t = 1.0
 	dim_t = 1.0
@@ -1294,10 +1526,24 @@ func _draw_travel() -> void:
 		return
 	var k := _k()
 	var head := _travel_point(travel_t)
-	for q in TRAVEL_TRAIL:
-		var u := maxf(0.0, travel_t - q * TRAVEL_TRAIL_STEP)
-		_hi.draw_circle(_travel_point(u), (5.0 - q * 0.6) * k, Color(Palette.CELL_ACID, 0.7 * (1.0 - float(q) / TRAVEL_TRAIL)))
-	_hi.draw_circle(head, 3.0 * k, Palette.PAPER)
+	# ANIM-R2 R12: the node it heads for pulses (`route_target_pulse`) while it travels.
+	var to := icon_at(_travel["to"])
+	if to.x != INF:
+		var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
+		var swell := (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
+		var tr_r := icon_radius(_node_dict(_travel["to"])) + (SELECT_RING + swell) * k
+		_hi.draw_arc(to, tr_r, 0, TAU, 32, Color(0, 0, 0, 0.8), 6.0 * k)
+		_hi.draw_arc(to, tr_r, 0, TAU, 32, Palette.CELL_ACID, 3.0 * k)
+	# ANIM-R2 R12: a thick, bright trail along the street behind the head (it was a row of
+	# small dots), a dark keyline under it.
+	var trail := PackedVector2Array()
+	for q in TRAVEL_TRAIL + 1:
+		trail.append(_travel_point(maxf(0.0, travel_t - (TRAVEL_TRAIL - q) * TRAVEL_TRAIL_STEP)))
+	_hi.draw_polyline(trail, Color(0, 0, 0, 0.8), TRAVEL_WIDTH * 2.0 * k, true)
+	_hi.draw_polyline(trail, Color(Palette.CELL_ACID, 0.9), TRAVEL_WIDTH * k, true)
+	_hi.draw_polyline(trail, Palette.PAPER, TRAVEL_WIDTH * 0.35 * k, true)
+	_hi.draw_circle(head, TRAVEL_WIDTH * 1.1 * k, Palette.CELL_ACID)
+	_hi.draw_circle(head, TRAVEL_WIDTH * 0.6 * k, Palette.PAPER)
 	var c0 := _c
 	_c = _hi
 	_here(head, ICON_RADIUS * k)
@@ -1427,9 +1673,25 @@ func _prio(n: Dictionary) -> int:
 ## ring. Focus labels (selected, you are here, threats) always show; others with no
 ## free spot are left out. Deterministic: the same graph and camera give the same layout.
 func _layout_labels() -> Array[Dictionary]:
-	var placed: Array[Dictionary] = []
 	if city == null or nodes.is_empty():
-		return placed
+		return [] as Array[Dictionary]
+	# ANIM-R2 R9: the layout is worked out again only when something it reads changed: the
+	# frame (roofs and icons), the text size, the focus, the labels' words and priorities, the
+	# threats, the area and the blocked rects, the ring.
+	_frame_cache()
+	var sig := []
+	for n in nodes:
+		sig.append([n["id"], label_lines(n["id"]), _prio(n)])
+	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius()]
+	if key == _labels_key:
+		return _labels_now
+	_labels_now = _place_labels()
+	_labels_key = key
+	return _labels_now
+
+
+func _place_labels() -> Array[Dictionary]:
+	var placed: Array[Dictionary] = []
 	var f := Palette.mono()
 	var fs := label_font_size()
 	var k := _k()

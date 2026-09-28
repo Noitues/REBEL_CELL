@@ -173,6 +173,9 @@ func _ready() -> void:
 			PortraitArt.style = int(a.trim_prefix("--demo-portrait="))
 		elif a.begins_with("--demo-iconstyle="):
 			SliceIcon.style = int(a.trim_prefix("--demo-iconstyle="))
+		elif a.begins_with("--demo-text-scale="):
+			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6).
+			Settings.set_text_scale(float(a.trim_prefix("--demo-text-scale=")))
 	if args.has("--demo-start"):
 		RunManager.save_slot = "demo"
 		show_start()
@@ -199,6 +202,14 @@ func _ready() -> void:
 			for id in [&"ghost", &"rigger", &"botnet", &"wrecker", &"phantom", &"overclocker", &"hivemind"]:
 				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
 			show_hq()
+		for a in args:
+			# ANIM-R2 R1 / R9 profiling: from the HQ page the Grid opens N frames in, the HQ comes
+			# back N frames later and the Grid opens again N frames after that (a re-open).
+			if a.begins_with("--demo-grid-open="):
+				var n := int(a.trim_prefix("--demo-grid-open="))
+				MotionDemo.after_frames(self, n, show_grid)
+				MotionDemo.after_frames(self, n * 2, show_hq)
+				MotionDemo.after_frames(self, n * 3, show_grid)
 		if args.has("--demo-grid") or args.has("--demo-raid") or args.has("--demo-playout"):
 			var c := RunManager.campaign
 			c.schematics = 100
@@ -297,14 +308,16 @@ func resume() -> void:
 
 
 ## ANIM-R1 M8: whether the screen a jack out lands on is built and framed (Fx keeps its
-## cover up until then): a page is on, the city behind it shows its own look under the
-## current camera, and no map fit or legend placement is still waiting for a redraw.
+## cover up until then): a page is on, the city behind it was drawn under the current
+## camera (its placement: every map node and label in place), and no map fit or legend
+## placement is still waiting for a redraw. ANIM-R2 R1: the city's image is not waited for;
+## it fades in over the night sky when its bake lands.
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
 	var city: NeonCity = background.city if background.visible else wireframe.city
 	if city != null and city.is_visible_in_tree():
-		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
+		if not city.camera_settled():
 			return false
 		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
 				or get_tree().process_frame.is_connected(place_raid_legend):
@@ -437,7 +450,12 @@ func deploy_asset(armory_index: int, site_id: StringName) -> void:
 ## (the hook drag-and-drop deploying calls; the end state at once without motion).
 func play_asset_drop(site_id: StringName) -> void:
 	if city_overlay != null and is_instance_valid(city_overlay):
-		city_overlay.drop_asset(site_id)
+		# ANIM-R2 R6: it drops once the camera has panned to the page's new frame, and keeps its
+		# name under it.
+		var placed: Array = RunManager.campaign.grid.site(site_id).get("assets", []) if RunManager.campaign != null else []
+		var label := _display(StringName(placed[placed.size() - 1])) if not placed.is_empty() else ""
+		var bg := wireframe
+		city_overlay.drop_asset(site_id, func() -> bool: return not is_instance_valid(bg) or not bg.camera_easing(), label)
 
 
 func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
@@ -936,6 +954,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		grid_legend.set_opened(not grid_legend.opened)
 		get_viewport().set_input_as_handled()
 		return
+	if event.is_action_pressed("cycle_target") and panel_name == "raid" and raid_legend != null \
+			and is_instance_valid(raid_legend) and raid_legend.visible and raid_legend.foldable():
+		# ANIM-R2 R13: the raid's folding key opens and folds as the Grid's does.
+		raid_legend.set_opened(not raid_legend.opened)
+		get_viewport().set_input_as_handled()
+		return
 	# B goes back to the HQ from the Grid and the raid setup (H23 S11). H24 S6: only a pad's
 	# B: a keyboard's Esc is ui_cancel too and must not leave when open_settings is bound
 	# elsewhere.
@@ -1416,6 +1440,35 @@ func show_hq() -> void:
 	jack.breathe()
 	if entering:
 		Typing.type_in(radio.label, &"radio_type")
+	# ANIM-R2 R1: the Grid is a press away: its city bakes now, behind the HQ (while a jack out
+	# still covers the screen too), so the Grid opens on its image.
+	_prebake_grid.call_deferred()
+
+
+## ANIM-R2 R1 (view memory): the bake region the Grid was last framed at, per campaign.
+static var _grid_views: Dictionary = {}
+
+
+func _grid_memory_key() -> String:
+	var c := RunManager.campaign
+	return "%d|%s" % [c.campaign_seed, c.corporation_id] if c != null else ""
+
+
+## ANIM-R2 R1: bakes, ahead, the net city's current look over the region the Grid was last
+## framed at in this campaign (nothing the first time: the Grid then bakes its own view).
+func _prebake_grid() -> void:
+	if wireframe == null or not is_inside_tree() or RunManager.campaign == null:
+		return
+	var region: Variant = _grid_views.get(_grid_memory_key())
+	if region is Rect2:
+		wireframe.city.prebake(region)
+	# The Grid's placement (its buildings and street routes) worked out now too: the Grid's
+	# first frame then only draws (~35 ms less in it).
+	if wireframe.city.is_baked():
+		var warm := CityMapOverlay.new(wireframe.city)
+		var g := grid_graph()
+		warm.set_graph(g["nodes"], g["edges"])
+		warm.free()
 
 
 ## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
@@ -1726,9 +1779,17 @@ func _grid_settled(free: Rect2) -> void:
 		if lean.length() >= GRID_LEAN_MIN:
 			var city := wireframe.city
 			_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + lean / get_global_rect().size)
+			if city.is_baked():
+				city.update_camera()
+				_grid_settled(free)
+				return
 			if not city.rebuilt.is_connected(_grid_settled):
 				city.rebuilt.connect(_grid_settled.bind(free), CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 			return
+	# ANIM-R2 R1: remembered, so the next visit's city is baked ahead (`_prebake_grid`).
+	if panel_name == "grid" and RunManager.campaign != null:
+		wireframe.city.update_camera()
+		_grid_views[_grid_memory_key()] = wireframe.city.bake_region()
 	wireframe.ease_camera()
 
 
@@ -1863,6 +1924,12 @@ func _fit_steps(nav: HFlowContainer) -> void:
 			btn.custom_minimum_size.x = room
 func _fit_after_redraw() -> void:
 	var city := wireframe.city
+	if city.is_baked():
+		# ANIM-R2 R1: a baked city's placement follows the camera at once: the next pass
+		# measures now (each pass waited for a redraw, all of them in one long frame).
+		city.update_camera()
+		fit_grid_map()
+		return
 	if not city.rebuilt.is_connected(fit_grid_map):
 		city.rebuilt.connect(fit_grid_map, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 
@@ -2167,10 +2234,13 @@ func show_raid() -> void:
 	var g := raid_graph(projection, {})
 	# H24 S5: the key is a column at the map's left, or a strip along its foot when the
 	# nodes cannot fit beside the column (kept for this layout once chosen).
-	_raid_strip = _raid_strip_key != "" and _raid_strip_key == raid_layout_key()
+	# ANIM-R2 R13: at big text (MapLegend.FOLD_SCALE and up) the key is the Grid's folding
+	# strip from the start (its column covered about half the map at 1.6).
+	_raid_strip = (_raid_strip_key != "" and _raid_strip_key == raid_layout_key()) or Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001
 	raid_legend = MapLegend.pin_to(spacer, c.corporation_id, _raid_strip).show_only(MapLegend.keys_of(g, c.grid))
 	if _raid_strip:
 		raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
+		raid_legend.fold_changed.connect(_place_raid_strip)
 	_raid_reframes = 0
 	_raid_passes = 0
 	_raid_checks = 0
@@ -2259,6 +2329,8 @@ func show_raid() -> void:
 	if c.armory.is_empty():
 		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
 	_set_panel(outer, "raid")
+	if raid_legend.foldable():
+		set_page_prompts(prompts_for("raid") + [[&"cycle_target", "Key"]])  # ANIM-R2 R13: as the Grid
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.42))
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
@@ -2583,6 +2655,7 @@ func _use_raid_strip() -> void:
 	raid_legend = MapLegend.pin_to(area, RunManager.campaign.corporation_id, true).show_only(keys)
 	raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
 	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
+	raid_legend.fold_changed.connect(_place_raid_strip)
 	TextDb.translates_itself(raid_legend)  # its row words are keys
 	var avoid: Array[Control] = []
 	for ctl in _raid_avoid:
@@ -2813,7 +2886,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
 	city_overlay.avoid_controls([side])
 	var overlay := city_overlay
-	playout = RaidPlayoutPanel.new(overlay, Vector2(330, 330))
+	playout = RaidPlayoutPanel.new(overlay, PLAYOUT_LOG_SIZE)
 	feed.body.add_child(playout)
 	var fx := playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	# ANIM-R1 M4: each step's fight is framed (the camera eases to it) before it plays, and
@@ -2864,6 +2937,8 @@ func _prebake_playout(c: CampaignState, inf: Variant) -> void:
 
 ## The raid playout's camera: zoom and where its focus sits on screen.
 const PLAYOUT_ZOOM := 1.9
+## ANIM-R2 R6: the RAID FEED log (it was 330x330, half the window beside the map).
+const PLAYOUT_LOG_SIZE := RaidPlayoutPanel.LOG_SIZE
 const PLAYOUT_ANCHOR := Vector2(0.36, 0.55)
 ## ANIM-R1 M4: the furthest out a framed fight goes (its guns and targets must all show).
 const PLAYOUT_MIN_ZOOM := 1.2
@@ -3051,7 +3126,7 @@ func _demo_anim(id: String) -> void:
 		await get_tree().process_frame
 	var city := (background.city if background.visible else wireframe.city)
 	for f in DEMO_BAKE_FRAMES:
-		if city.showing_current_look() and city.camera_settled():
+		if city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0:
 			break
 		await get_tree().process_frame
 	if id.begins_with("drag_"):

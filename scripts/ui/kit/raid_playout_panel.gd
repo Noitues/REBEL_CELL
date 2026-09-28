@@ -11,8 +11,8 @@ extends VBoxContainer
 ## RaidBeats, built from the resolver's events (never recomputed); the panel's clock runs
 ## at Motion.speed, which the speed buttons set (1x / 2x / 4x, back to 1x when the playout
 ## ends) so every beat scales. Skip jumps every beat to its end and emits `skipped` (the
-## screens go straight to the summary); a click or accept press ends the current step's
-## motion. Instant (tests, headless, reduce effects): every step and beat at once.
+## screens go straight to the summary); a press (the one rule, MotionSkip) ends the current
+## step's motion. Instant (tests, headless, reduce effects): every step and beat at once.
 
 signal finished
 ## Skip was pressed: the playout jumped to its end (screens show the summary).
@@ -43,6 +43,12 @@ var _set_speed: bool = false
 ## seconds that takes, which the step's beats wait (the fight is framed before it plays).
 ## Not called when the playout is instant.
 var framer: Callable = Callable()
+## ANIM-R2 R6: a step's beats start this share of the way through its camera ease (they
+## waited the whole ease: the playout opened on ~2 s of a still map while it framed).
+const FRAME_WAIT_SHARE := 0.35
+## ANIM-R2 R6: the log window beside a playout map (px at text scale 1.0; it was 330x330,
+## half the window: now a short strip that follows its newest line).
+const LOG_SIZE := Vector2(330, 150)
 
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
@@ -165,16 +171,42 @@ func _process(delta: float) -> void:
 		_show_step()
 
 
-## A click or accept press ends the current step's motion (input skips to the end).
-func _unhandled_input(event: InputEvent) -> void:
-	if _done or _instant or not is_visible_in_tree():
+## ANIM-R2 R6: a press ends the current step's motion, by the one press rule (MotionSkip:
+## any key, mouse button 1-3 or pad button going down; consumed, so nothing behind sees
+## it). The panel's own buttons stay usable: a click on one, or accept on the focused one,
+## is theirs.
+func _input(event: InputEvent) -> void:
+	if _done or _instant or not is_visible_in_tree() or not MotionSkip.is_press(event):
 		return
-	var click: bool = event is InputEventMouseButton and event.pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT
-	if click or event.is_action_pressed(&"ui_accept"):
-		_clock = maxf(_clock, _next_at)
-		if fx != null and is_instance_valid(fx):
-			fx.clock = _clock
-		get_viewport().set_input_as_handled()
+	if _for_own_button(event):
+		return
+	skip_step()
+	MotionSkip.consume(self)
+
+
+## Ends the current step's motion at once (its beats at their ends).
+func skip_step() -> void:
+	_clock = maxf(_clock, _next_at)
+	if fx != null and is_instance_valid(fx):
+		fx.clock = _clock
+
+
+## True when `event` is meant for a button: this panel's (Skip, 1x/2x/4x) or any usable
+## button the pointer is on (the screen's own, the settings).
+func _for_own_button(event: InputEvent) -> bool:
+	if event is InputEventMouseButton:
+		var hovered := get_viewport().gui_get_hovered_control()
+		if hovered is BaseButton and not (hovered as BaseButton).disabled:
+			return true
+	for b in find_children("*", "BaseButton", true, false):
+		var btn := b as BaseButton
+		if not btn.is_visible_in_tree() or btn.disabled:
+			continue
+		if event is InputEventMouseButton and btn.get_global_rect().has_point((event as InputEventMouseButton).global_position):
+			return true
+		if btn.has_focus() and event.is_action_pressed(&"ui_accept"):
+			return true
+	return false
 
 
 func _show_step() -> void:
@@ -183,8 +215,10 @@ func _show_step() -> void:
 		return
 	var start := _clock
 	var tl := RaidBeats.timeline(_steps[_index])
-	if framer.is_valid():
-		start += float(framer.call(RaidBeats.focus_sites(_steps[_index], _threat_sites)))
+	if framer.is_valid() and not (tl.get("beats", []) as Array).is_empty():
+		# ANIM-R2 R6: the beats set off while the camera is still easing in (and a step with
+		# nothing to show is not framed at all).
+		start += float(framer.call(RaidBeats.focus_sites(_steps[_index], _threat_sites))) * FRAME_WAIT_SHARE
 	_apply_step(_steps[_index], start, tl)
 	_index += 1
 	_next_at = start + float(tl["seconds"])
@@ -206,7 +240,7 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 			"home_hit":
 				_dead[e["threat"]] = true
 		if e.has("text"):
-			log_note.append(String(e["text"]))
+			_log(String(e["text"]))
 		if t == "raid_end":
 			step_label.text = tr("Raid over")
 		elif e.has("step"):
@@ -222,6 +256,10 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 			markers.get_or_add(_threat_sites[id], []).append(_threat_names.get(id, String(id)))
 		grid_view.set("threat_markers", markers)
 		grid_view.queue_redraw()
+
+
+func _log(line: String) -> void:
+	log_note.append(line)
 
 
 func _finish() -> void:

@@ -61,6 +61,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"number_to_hp", &"hit_flash", &"hit_shake", &"enemy_enter", &"victory_flash", &"boss_phase_flash",
 	&"ram_refusal", &"ram_refusal_pop", &"send_it_ready", &"send_it_drips_share", &"drag_ghost_tilt_speed",
 	&"toast_note_hold", &"stamp_fade_in",
+	# ANIM-R2 city, maps and transitions: the bake fade-in, the jack's CONNECTING line, raid
+	# readability, the lasting territory tint, the route target's pulse.
+	&"city_bake_fade", &"jack_connect", &"raid_outcome_stagger", &"raid_result_banner", &"asset_drop_stamp", &"influence_tint", &"route_target_pulse",
 	# ANIM-R2 combat, events and screens: a hit's absorb, the RAM spend float, the price refusal.
 	&"hit_absorb", &"ram_spend_float", &"price_refusal",
 ]

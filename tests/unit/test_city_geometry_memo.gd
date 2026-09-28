@@ -165,3 +165,84 @@ func test_the_memo_keeps_a_bounded_number_of_geometries() -> void:
 		var c := _city()
 		c._memo_store("s%d" % n)
 	assert_true(NeonCity._geometry_memo.size() <= NeonCity.GEOMETRY_MEMO_CAP, "least recently used drop out")
+
+
+# --- ANIM-R2 R1: the split build ------------------------------------------------------------------
+
+## A painter's build split into slices (run on the worker pool at once and joined in order,
+## CityBakeCache) gives exactly the one build's triangles (in draw order), roofs, lights,
+## trails, beacons and signs, with triangles and without.
+func test_a_sliced_build_equals_one_build() -> void:
+	NeonCity.geometry_memo_enabled = false
+	for emit in [true, false]:
+		NeonCity.emit_triangles = emit
+		for district in [&"solace", &"rebel_cell"]:
+			var live := _city(district)
+			live.net_mode = true
+			var region := Rect2(-900, -500, 900, 640) if district == &"solace" else Rect2(-400, -800, 700, 700)
+			var one := live.make_painter(region, 1.0)
+			one.prebuild()
+			var sliced := live.make_painter(region, 1.0)
+			sliced.make_slices(5)
+			sliced.prebuild_lots()
+			for n in 6:
+				sliced.prebuild_slice(n)
+			sliced.prebuild_join()
+			sliced.free_slices()
+			var verts := PackedVector2Array()
+			var cols := PackedColorArray()
+			for part: Array in sliced._parts:
+				verts.append_array(part[0])
+				cols.append_array(part[1])
+			var what := "%s, triangles %s" % [district, emit]
+			if emit:
+				assert_gt(verts.size(), 1000, "%s: a city was built" % what)
+			assert_true(verts == one._verts and cols == one._cols, "%s: the same triangles in the same order" % what)
+			assert_true(sliced._roofs == one._roofs, "%s: the same roofs" % what)
+			for field in ["_lights", "_trails", "_beacons", "_signs"]:
+				assert_true(sliced.get(field) == one.get(field), "%s: the same %s" % [what, field])
+			one.free()
+			sliced.free()
+			live.queue_free()
+
+
+## The placement a baked city answers the maps from (lot by lot, when asked) gives the roof
+## a full build places on every lot inside the view (the camera's shift apart), and no roof
+## where the build has none.
+func test_the_placement_places_the_roofs_a_build_does() -> void:
+	NeonCity.geometry_memo_enabled = false
+	NeonCity.emit_triangles = false
+	for district in DISTRICTS:
+		var city := _city(district)
+		city.net_mode = district == &"meridian"
+		city._camera()
+		city._build_geometry()
+		var place := city._placement()
+		var shift := Vector2(city._ox, city._oy)
+		var inner := Rect2(Vector2.ZERO, city.size).grow(-60.0)
+		var checked := 0
+		var missing := 0
+		for s in range(-60, 160):
+			for d in range(-80, 80):
+				if posmod(s + d, 2) != 0:
+					continue
+				var l := Vector2i((s + d) / 2, (s - d) / 2)
+				if not inner.has_point(city.grid_to_local(l.x + 0.5, l.y + 0.5)):
+					continue
+				var built: Dictionary = city._roofs.get(l, {})
+				var placed := place.placed_roof(l)
+				checked += 1
+				if built.is_empty() != placed.is_empty():
+					missing += 1
+					continue
+				if built.is_empty():
+					continue
+				var moved := Transform2D(0.0, shift) * (placed["roof"] as PackedVector2Array)
+				var same := moved.size() == (built["roof"] as PackedVector2Array).size()
+				for k in mini(moved.size(), (built["roof"] as PackedVector2Array).size()):
+					same = same and moved[k].distance_to(built["roof"][k]) < 0.05
+				if not same or placed["cell"] != built["cell"]:
+					missing += 1
+		assert_gt(checked, 500, "%s: the view's lots were compared" % district)
+		assert_eq(missing, 0, "%s: the placement's roofs are the build's" % district)
+		city.queue_free()

@@ -362,6 +362,140 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R2 city, maps and transitions
+The second fix batch of the Animation pass review, city, maps and transitions half (items
+R1-R13 of the four reviewers). Views only. Every decision here was the implementer's (the
+designer's standing rule: nothing deferred). Tests: `tests/unit/test_anim_r2_city.gd` (20),
+two new checks in `test_city_geometry_memo` (the split build, the placement), a print guard
+in `test_suite_integrity`. Measurements: `tools/design_lab/profile_frames.gd --timeline
+--probe-map` on this machine's display (1280x720, 6 cores); "before" is a755e2d, run the same
+way.
+- **R1: a map is never empty.** A baked city's placement (where its buildings stand, its street
+  grid and the fist) is now answered lot by lot the moment a map asks (`NeonCity._placement`: a
+  world-space twin that runs the same building code with nothing emitted; `roof_of`,
+  `nearest_building`, `is_street`). It is the bake's own geometry (`test_the_placement_places_the_roofs_a_build_does`:
+  every lot of every district's view, the same roof), so nodes and labels draw on a map's
+  first frame and do not move when the image lands. The baked city had never built its street
+  grid: in the game the map's links cut straight across blocks (headless tests followed the
+  streets); they now follow the streets everywhere. While a view's bake runs it shows the night
+  sky under the drawn map (a finished bake of the look stands in only when it covers
+  `STANDIN_COVER` 0.9 of the view, or the image on screen until now still covers it: a 245 px
+  strip over the wheels read worse than the dark); the image fades in over the sky when it
+  lands (`city_bake_fade` 0.35 s; at once headless and under reduce effects). A bake is asked
+  for only after the camera has held still `BAKE_SETTLE_FRAMES` (3) frames (a fit's passes no
+  longer each start one: the route asked for a 1792x1152 bake at frame 0), and a view that a
+  running bake will cover waits on it (`CityBakeCache.find_pending`). On a baked city a map's
+  fit passes measure at once under the new camera (`update_camera` places it), instead of one
+  redraw per pass all inside the first frame. Prebakes: the HQ page bakes the Grid's last
+  framed region (view memory per campaign) and works out its placement and routes; the route
+  bakes the default frame (the Modem, event and loot backdrops and a fight's arena, at the
+  scene's and the page's sizes and the sizes that frame was last drawn at); prebakes wait for
+  the city's own view (they took the build slot first: the raid setup sat 3.5 s on the sky).
+  **Builds are sliced**: a painter's lots run in `BUILD_SLICES` (12) slices plus the fist roads
+  on the worker pool at once, joined in draw order without copying (the chunks are handed to
+  the renderer from the slices' own arrays, `SUBMIT_BUDGET_USEC` 6 ms a frame); triangles are
+  pushed one by one (`append_array` of a literal Array built a temporary per triangle: 4.5 s ->
+  2.1 s for a 1280x720 build before slicing). Measured (after vs before):
+  - first Grid (`--demo-grid`): nodes 32/32 on frame 1 (before: 0/32 until the bake, 4.0-4.2 s
+    by the reviewers; within 300 frames here never); the city covers the view ~1.4 s after
+    the first frame (a 2176x1536 region, 5.4M vertices: lots 60 ms, slices ~0.8 s, submission
+    ~0.4 s); the landing frame under 50 ms (before 97-120 ms);
+  - the Grid opened from the HQ page (`--demo-grid-open=150`): its frame 161 ms (before
+    204 ms, and that drew no node), the HQ page back 113 ms (140), the re-open 96 ms (141;
+    the reviewers' 325-340 ms);
+  - route (`--demo-run`): 15/15 nodes on frame 1 (before 0/15 for its whole visit); a fight
+    entered 1.4 s after it has its arena ~1.0 s after entering (before ~2.9 s here, ~5 s by the
+    reviewers), dark sky meanwhile, never a strip;
+  - raid setup after a claim (`--demo-raid`): 3/3 nodes on frame 1, covered 1.3 s in (before
+    3.5 s; not within 300 frames here);
+  - the only frames over 50 ms are a scene's first two frames (its page build: 150-205 ms,
+    before 170-210 ms) and a page switch's first frame (Grid open 161 ms, a fight's page 177 ms).
+  The jack lands once the page and its placement are there (`arrival_ready` no longer waits for
+  the image): the arrival wait fell from ~3 s to the CONNECTING line's 0.35 s.
+- **ANIM-R1 M2 corrected:** "the ~0.5 s the bake now takes" was wrong: measured, a map view's
+  bake took 2.4-4.2 s on its worker thread then (the 3.5 s raid setup, the 4 s first Grid); after
+  R1 1.0-1.5 s, and the map is drawn meanwhile.
+- **R2:** the arena is covered by R1's rules (no strip stand-in, the backdrop prebake, the view
+  bake ahead of prebakes); tested by `test_a_partial_stand_in_never_shows` and measured above.
+- **R3: the jack blocks input first.** `_input` reaches nodes in reverse tree order, so Fx (an
+  early child of the root) saw a press after the scene's own handlers. `JackInputGate` is added
+  last under the root and moved back behind any node the root gains (the arriving scene), so it
+  sees every event first; while a jack runs it stops each (but pointer motion). Tested with
+  `get_viewport().push_input` through the real propagation, a node added under the root after
+  the jack started included. Main's `MotionSkip.is_press` also returns false during a jack.
+- **R4:** the `print("SBDBG ...")` on every bake request is gone. Rule (test_suite_integrity):
+  scripts/ may only `print("<tag>` a frame-capture marker the strip tooling reads (`anim4: `,
+  `anim4b: `, `anim5: `, `MotionDemo: `); any other print, prints, printt, print_raw, print_rich
+  or print_debug under scripts/ fails. tools/ and tests/ may print.
+- **R5:** "CONNECTING TO <SITE>" (the run's Site, translated; HQ on the way out; "the net"
+  without a run) and a bar filling over `jack_arrival_wait` show on the opaque cover, whole at
+  once, at least `jack_connect` 0.35 s (to be read), and lift with the cover. Reduce effects:
+  the words on the black fade, no bar. Cap as before (4 s).
+- **R6: raids at map scale.** Threat tokens x3.0 (was 2.2), a white diamond ringed in red on a
+  dark keyline with the corporation's colour as a dot (Solace's green threats were green on
+  green), a fading red trail of 7 dots behind a moving one. A step's beats set off 35 % of the
+  way through its camera ease (`FRAME_WAIT_SHARE`; they waited all of it) and a step with no
+  beats is not framed at all. The end's outcomes stamp node after node (`raid_outcome_stagger`
+  0.3 s each, 0.12 s apart, home last) and a "HOME -5" / "HOME HOLDS" banner stamps over home
+  (`raid_result_banner`) and stays. The log is a 330x150 strip that follows its newest line (it
+  was 330x330). A deployed asset waits for the camera to settle (at most 1.5 s), drops, stamps a
+  x2.4 ring (`asset_drop_stamp` 0.35 s) and keeps its name under its marker. The step skip now
+  uses `_input` with `MotionSkip.is_press` / `consume`; a click on a button (the panel's or any
+  under the pointer) and accept on a focused panel button stay the buttons'.
+- **R7:** the spreading front's band at 0.9 (was 0.5), and the district it crosses keeps a
+  lasting tint in the new owner's colour (`influence_tint` 0.3 alpha, faded in 0.6 s after 0.2 s)
+  until the next change; with no spread (headless, reduce effects) the tint is the end state.
+  The CLAIMED stamp and the SITES counter's bump stay.
+- **R8: the Heat crossing in order.** Per threshold crossed going up: the number rolls to the
+  threshold (`number_roll`), the "HEAT 25 - NOTICED" banner stamps, the poster distorts briefly
+  round itself only (`Fx.heat_pulse_at`, `heat_pulse` 0.3 s, was 0.45 s full-screen), the letters
+  shake; the next threshold after it; then the number rolls on to the Heat. No corporate
+  wireframe creep on a crossing any more (it lingered and read as a display fault). **Decided:**
+  a multi-band jump shows one banner per band crossed, in order (the DECISIONS line "one per
+  crossing" and the code now agree); a drop across a band re-stamps the band word only (no
+  banner, no distortion). The banner's lettering follows the text size and shrinks until the
+  tilted banner fits the poster (to 8 px; French-length words ran 8-9 px past it at 18 px).
+- **R9:** the Grid re-open is back under 150 ms (96 ms): a map's roofs, icons and labels are
+  worked out once per frame change (`CityMapOverlay._frame_cache`, the label layout keyed by
+  what it reads), the labels are a layer of their own (a sliding column redraws only them),
+  the node and label layers draw at most once a process frame, a motion value (the selection's
+  draw-on, a drop, a move) redraws only its layer (`MotionValues`), street routes are kept per
+  placement, and a bake landing no longer re-lays the map (its placement did not change).
+- **R10:** `CityBakeCache.shutdown()` (Fx on exit and on the window's close request) stops every
+  running build (slices included), joins its worker tasks, frees its painter, slices and
+  viewport and drops the queue and every texture; `clear()` lets go of every texture (tested
+  with weak refs).
+- **R11:** one bake builds at a time (`MAX_BUILDING`, the rest queue, a view's own bakes ahead
+  of prebakes): geometry memory is bounded to one region's. A painter copies the influence
+  (`_twin`). A painter no longer draws the live layer (signs, window lights) into its image: the
+  synchronous path did, so the two paths differed; `tools/design_lab/bake_compare.gd` (real
+  display) now finds the sliced threaded GPU-copy bake pixel-identical to the synchronous one on
+  three regions (solace 1792x1152, rebel_cell 2048x1536 with signs and the fist, meridian
+  2400x1500: 0 pixels differ).
+- **R12:** the move's trail is a 7 px acid line with a white core over a dark keyline (it was a
+  row of small dots) and the node it heads for pulses (`route_target_pulse`). The choice labels
+  move to the new next nodes when the pulse lands (M7, seen in the live route). **Decided:**
+  equal choices (the same kind, Heat and nodes beyond: the enemy is rolled on entry) are
+  genuinely identical, so they say so: "(same as 1)" on the button and on the map label.
+- **R13 (1.6):** the raid setup's key is the Grid's folding strip at `MapLegend.FOLD_SCALE` and
+  up (Y opens it, as on the Grid); compact dossiers put the class tags beside a half-size
+  Polaroid so the whole dossier and its Loadout are on the first screen; SAVED keeps off the top
+  bar's captions. The route key sits under the ROUTE window in its own room (checked at 1.6).
+- **New ids (data; REQUIRED_IDS and the lab):** `city_bake_fade`, `jack_connect`,
+  `raid_outcome_stagger`, `raid_result_banner`, `asset_drop_stamp`, `influence_tint`,
+  `route_target_pulse`. Retuned: `heat_pulse` 0.3 s.
+- **Expectation changes:** `test_anim_r1_campaign` (a beatless step is not framed and beats set
+  off at 35 % of the ease; the Heat banner comes after the roll and names the threshold),
+  `test_horizontal_pass21_city` / `pass22_city` (the labels' own redraw hooks).
+- **Input helpers that must check `Fx.transitioning()`:** `MotionSkip.is_press` (done on main),
+  and so everything built on it (DropLayer carry and drops, PageTransition / Typing / MenuMotion
+  / FlightFx / Dialogue skips, the combat replay skip, the netrun route travel skip, this
+  playout's step skip). The gate already stops their `_input` during a jack; the check is the
+  second line of defence for code that reads Input directly (`Input.is_action_just_pressed` in
+  `_process`), which the gate cannot stop.
+- Strips (`docs/timeline/motion/`, recaptured, quantized, raw frames deleted): `raid_playout`,
+  `influence_spread`, `heat_pulse`, `jack_in`, `route_pulse`, `asset_drop`.
+
 #### 2026-09-28 — Animation pass — ANIM-R2 combat, events and screens
 The second fix batch of the Animation pass review (four reviewers), combat, events and
 screens part (E1-E10). Views only; every call below was the implementer's (the standing
@@ -623,7 +757,8 @@ marked ANIM-5 / R1).
   and 80-97 ms at its first frame; after, nothing over 50 ms but the scene's first two frames
   and the START DEFENSE press itself (65-70 ms: the raid resolves and the page builds, before any
   motion). Trade-off: a camera that leaves every baked region shows its stand-in (or the sky)
-  for the ~0.5 s the bake now takes in the background instead of freezing for it.
+  for the ~0.5 s the bake now takes in the background instead of freezing for it. (ANIM-R2:
+  wrong, measured 2.4-4.2 s then; see "ANIM-R2 city, maps and transitions".)
 - **M3: switched-off entries.** `Fx.jack_in` / `jack_out` (switch at once), `heat_pulse`,
   the creep, `show_saved` (shown still for its hold and fade time, then gone at once) and the
   map's selection ring gate on `Motion.live`. The inline halves became entries:

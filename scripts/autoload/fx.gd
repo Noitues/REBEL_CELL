@@ -46,6 +46,20 @@ var saved_label: Label
 var flashes_shown: Array[float] = []
 var _pulse_tween: Tween
 var _frozen: bool = false
+## ANIM-R2 R3: the jack's input blocker, kept last under the root (first in the input order).
+var input_gate: JackInputGate
+## ANIM-R2 R5: "CONNECTING TO <place>" and its progress mark on the cover while the arriving
+## screen builds (the wait was ~3 s of an empty tunnel with no words).
+var connect_label: Label
+var connect_bar: ColorRect
+var connect_fill: ColorRect
+## The place the running jack connects to (translated; "" = none named).
+var _destination: String = ""
+const CONNECT_MOTION := &"jack_connect"
+## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
+const CONNECT_FONT := 20
+const CONNECT_BAR_H := 4.0
+const CONNECT_GAP := 12.0
 
 
 func _ready() -> void:
@@ -75,6 +89,26 @@ func _ready() -> void:
 	jack_cover.material.shader = JACK_SHADER
 	jack_cover.visible = false
 	transition_rect = _full_rect(Color(0, 0, 0, 0))
+	connect_label = Label.new()
+	connect_label.name = "JackConnecting"
+	connect_label.add_theme_font_override("font", Palette.mono())
+	connect_label.add_theme_color_override("font_color", Palette.NET_CYAN)
+	connect_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	connect_label.add_theme_constant_override("outline_size", 6)
+	connect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	connect_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	connect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	connect_label.visible = false
+	add_child(connect_label)
+	connect_bar = ColorRect.new()
+	connect_bar.color = Color(Palette.NET_CYAN, 0.25)
+	connect_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	connect_bar.visible = false
+	add_child(connect_bar)
+	connect_fill = ColorRect.new()
+	connect_fill.color = Palette.NET_CYAN
+	connect_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	connect_bar.add_child(connect_fill)
 	fps_label = Label.new()
 	fps_label.add_theme_font_override("font", Palette.mono())
 	fps_label.add_theme_font_size_override("font_size", 12)
@@ -98,14 +132,26 @@ func _ready() -> void:
 		get_node("/root/SignalBus").save_completed.connect(func(_path: String) -> void: show_saved())
 	Settings.changed.connect(apply_settings)
 	apply_settings()
+	input_gate = JackInputGate.new()
+	get_tree().root.add_child.call_deferred(input_gate)
 
 
 ## Lets the Motion kit's table go before the engine checks for leaked resources at exit.
+## ANIM-R2 R10: the city bakes too (running builds stopped and joined, their painters and
+## viewports freed, every baked texture let go while the renderer still runs).
 func _exit_tree() -> void:
+	CityBakeCache.shutdown()
 	Motion.use_config(null)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		CityBakeCache.shutdown()
+
+
 func _process(_delta: float) -> void:
+	if _jacking and input_gate != null:
+		input_gate.stay_last()
 	if fps_label.visible:
 		fps_label.text = "%d fps" % Engine.get_frames_per_second()
 	# H24 S7: while the stamp shows, it follows the layout (a page built after the save,
@@ -254,6 +300,11 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 				var xf := c.get_global_transform()
 				for r: Rect2 in (c as HudStats).tag_rects():
 					out.append(Rect2(xf * r.position, r.size * xf.get_scale()))
+				# ANIM-R2 R13: and its captions (at 1.6 SAVED sat on CAMPAIGN).
+				var caps: Variant = c.get("_caption_rects")
+				if caps is Array:
+					for r: Rect2 in caps:
+						out.append(Rect2(xf * r.position, r.size * xf.get_scale()))
 			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts:
 				var r := _shown_rect(c)
 				if r.has_area():
@@ -345,7 +396,28 @@ func heat_pulse(seconds: float = -1.0, creep: Color = Color(0, 0, 0, 0)) -> void
 	_pulse_tween = create_tween()
 	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.0, peak, seconds * HEAT_PULSE_RISE)
 	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), peak, 0.0, seconds * (1.0 - HEAT_PULSE_RISE))
-	_pulse_tween.tween_callback(func() -> void: distortion.visible = false)
+	_pulse_tween.tween_callback(func() -> void:
+		distortion.visible = false
+		distortion.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT))
+
+
+## ANIM-R2 R8: a Heat crossing's distortion, local: only round `rect` (viewport px, grown
+## by HEAT_PULSE_MARGIN; the whole screen when empty) and over `heat_pulse`'s duration (at
+## most 0.3 s). No corporate creep: the full-screen wireframe lingered and read as a
+## display fault. Counted in `heat_pulses` like `heat_pulse`.
+func heat_pulse_at(rect: Rect2, seconds: float = -1.0) -> void:
+	if rect.has_area():
+		distortion.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		var r := rect.grow(HEAT_PULSE_MARGIN)
+		distortion.position = r.position
+		distortion.size = r.size
+	else:
+		distortion.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	heat_pulse(seconds)
+
+
+## ANIM-R2 R8: how far past the poster its distortion reaches (px).
+const HEAT_PULSE_MARGIN := 24.0
 
 
 ## The corporate wireframe creeps in from the edges to `net_creep`'s reach (over its
@@ -395,12 +467,71 @@ func freeze_frames(frames: int = -1) -> void:
 ## duration; amplitude = the push zoom). No frame shows both scenes: the old one is only
 ## ever under a partial cover before the switch, the new one only after it. Reduce
 ## effects: one short fade (`jack_fade_reduced`); headless (tests): the switch at once.
-func jack_in(on_switch: Callable, seconds: float = -1.0) -> void:
+## ANIM-R2 R5: `destination` (translated) is named on the cover while the arriving screen
+## builds ("CONNECTING TO <place>").
+func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:
+	if not _jacking:
+		_destination = destination
 	await _transition(on_switch, seconds, &"jack_in")
 
 
-func jack_out(on_switch: Callable, seconds: float = -1.0) -> void:
+func jack_out(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:
+	if not _jacking:
+		_destination = destination
 	await _transition(on_switch, seconds, &"jack_out")
+
+
+## ANIM-R2 R5: the CONNECTING line (translated once here) over the opaque cover, its bar
+## empty; it fades in over `jack_connect` (at once when motion doesn't play). The bar shows
+## only when the line may animate (reduce effects: the words alone).
+func _show_connect() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var fs := roundi(CONNECT_FONT * Settings.text_scale)
+	connect_label.add_theme_font_size_override("font_size", fs)
+	connect_label.text = tr("CONNECTING TO %s") % _destination.to_upper() if _destination != "" else tr("CONNECTING")
+	connect_label.size = Vector2(vp.x, 0.0)
+	connect_label.size = Vector2(vp.x, connect_label.get_combined_minimum_size().y)
+	connect_label.position = Vector2(0.0, vp.y * 0.5 - connect_label.size.y)
+	var w := minf(Motion.amplitude(CONNECT_MOTION), vp.x * 0.8)
+	connect_bar.size = Vector2(w, CONNECT_BAR_H)
+	connect_bar.position = Vector2((vp.x - w) * 0.5, vp.y * 0.5 + CONNECT_GAP)
+	connect_fill.size = Vector2(0.0, CONNECT_BAR_H)
+	connect_label.visible = true
+	connect_bar.visible = effects_enabled()
+	# Whole at once (words, not an effect); it fades with the cover's reveal (`_set_cover`)
+	# and stays up at least `jack_connect`'s duration so it can be read.
+	connect_label.modulate.a = 1.0
+	connect_bar.modulate.a = 1.0
+	_connect_since = Time.get_ticks_msec()
+
+
+## When the CONNECTING line came up (msec).
+var _connect_since: int = 0
+
+
+## ANIM-R2 R5: waits until the CONNECTING line has shown `jack_connect`'s duration (game
+## time is not needed: it is a reading time).
+func _hold_connect() -> void:
+	if not connect_label.visible or not Motion.live(CONNECT_MOTION):
+		return
+	while Time.get_ticks_msec() - _connect_since < Motion.seconds(CONNECT_MOTION) * 1000.0:
+		await get_tree().process_frame
+
+
+## The bar's fill: `share` (0..1) of the arrival wait spent.
+func _connect_progress(share: float) -> void:
+	connect_fill.size = Vector2(connect_bar.size.x * clampf(share, 0.0, 1.0), CONNECT_BAR_H)
+
+
+func _hide_connect() -> void:
+	connect_label.visible = false
+	connect_bar.visible = false
+	_destination = ""
+
+
+## True while the CONNECTING line shows (tests).
+func connecting() -> bool:
+	return connect_label.visible
 
 
 ## Share of a Heat pulse spent rising (the rest falls).
@@ -465,6 +596,7 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	_set_cover(1.0, _roll(t0))
 	_cover_opaque = true
 	on_switch.call()
+	_show_connect()
 	if is_instance_valid(old):
 		old.scale = old_scale
 	# ANIM-R1 M8: the new scene takes over at the end of this frame and builds its page in
@@ -474,6 +606,7 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	for f in 2:
 		await get_tree().process_frame
 	await _wait_arrival(func() -> void: _set_cover(1.0, _roll(t0)))
+	await _hold_connect()
 	var fresh := get_tree().current_scene as Control
 	focus = _jack_focus(fresh, vp)
 	m.set_shader_parameter("focus", focus)
@@ -488,6 +621,7 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	if is_instance_valid(fresh):
 		fresh.scale = Vector2.ONE
 	jack_cover.visible = false
+	_hide_connect()
 	_set_jacking(false)
 
 
@@ -495,9 +629,11 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 ## arriving screen is ready (`ARRIVAL_READY_METHOD`), or `jack_arrival_wait` has passed.
 func _wait_arrival(tick: Callable = Callable()) -> void:
 	# Game time (frame deltas), so a capture at a fixed frame rate waits as the game does.
-	var left := Motion.seconds(ARRIVAL_WAIT_MOTION)
+	var wait := Motion.seconds(ARRIVAL_WAIT_MOTION)
+	var left := wait
 	while left > 0.0:
 		left -= get_process_delta_time()
+		_connect_progress(1.0 - left / maxf(wait, 0.001))
 		var scene := get_tree().current_scene
 		if scene == null or not scene.has_method(ARRIVAL_READY_METHOD) or bool(scene.call(ARRIVAL_READY_METHOD)):
 			return
@@ -510,6 +646,10 @@ func _wait_arrival(tick: Callable = Callable()) -> void:
 ## other press while a jack runs, so the page under it (or arriving) takes no input.
 func _set_jacking(on: bool) -> void:
 	_jacking = on
+	# ANIM-R2 R3: the gate sees every press before the scene's own `_input` handlers.
+	if input_gate != null:
+		input_gate.blocking = on
+		input_gate.stay_last()
 	var stop := Control.MOUSE_FILTER_STOP if on else Control.MOUSE_FILTER_IGNORE
 	jack_cover.mouse_filter = stop
 	transition_rect.mouse_filter = stop
@@ -536,9 +676,11 @@ func _fade_switch(on_switch: Callable) -> void:
 	await tw.finished
 	_cover_opaque = true
 	on_switch.call()
+	_show_connect()
 	for f in 2:
 		await get_tree().process_frame
 	await _wait_arrival()
+	_hide_connect()
 	_cover_opaque = false
 	var tw2 := create_tween()
 	tw2.tween_property(transition_rect, "color:a", 0.0, e.duration - dark)
@@ -546,6 +688,10 @@ func _fade_switch(on_switch: Callable) -> void:
 
 
 func _set_cover(progress: float, roll: float) -> void:
+	if connect_label.visible and not _cover_opaque:
+		# ANIM-R2 R5: the CONNECTING line goes with the cover as it lifts.
+		connect_label.modulate.a = progress
+		connect_bar.modulate.a = progress
 	var m := jack_cover.material as ShaderMaterial
 	m.set_shader_parameter("progress", progress)
 	m.set_shader_parameter("roll", roll)

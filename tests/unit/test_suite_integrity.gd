@@ -92,3 +92,62 @@ func test_the_fast_tier_keeps_the_rule_guards() -> void:
 		assert_true(entries.has(p), "%s is listed" % p)
 		if entries.has(p):
 			assert_eq(String((entries[p] as Dictionary).get("tier", "")), "fast", "%s runs in the fast tier" % p)
+
+
+## ANIM-R2 R4: the game's scripts print nothing but the frame-capture markers the strip
+## tooling reads (ANIMATION_HANDOFF 6: "anim5: <id> starts on frame N" and the like). A
+## debug print left in a script (the city printed on every bake request) fails here.
+## Allowed: `print("<tag>` with a tag of CAPTURE_PRINT_TAGS; everything else (other
+## prints, prints/printt/print_raw/print_rich/print_debug) is not. tools/ and tests/ may
+## print.
+const CAPTURE_PRINT_TAGS: Array[String] = ["anim4: ", "anim4b: ", "anim5: ", "MotionDemo: "]
+const PRINT_CALLS: Array[String] = ["print(", "prints(", "printt(", "print_raw(", "print_rich(", "print_debug("]
+
+
+func _game_scripts(dir: String, out: Array[String]) -> void:
+	for f in DirAccess.get_files_at(dir):
+		if f.ends_with(".gd"):
+			out.append(dir.path_join(f))
+	for d in DirAccess.get_directories_at(dir):
+		_game_scripts(dir.path_join(d), out)
+
+
+## The print calls on `line` that break the rule (empty when none).
+static func bad_prints(line: String) -> Array[String]:
+	var out: Array[String] = []
+	var code := line.strip_edges()
+	if code.begins_with("#"):
+		return out
+	for call in PRINT_CALLS:
+		var at := code.find(call)
+		while at >= 0:
+			# A word boundary before the call (not `_print(` or `fingerprint(`).
+			var starts := at == 0 or not (code[at - 1].is_valid_identifier() or code[at - 1] == "_" or code[at - 1] == ".")
+			if starts:
+				var ok := false
+				if call == "print(":
+					for tag in CAPTURE_PRINT_TAGS:
+						if code.substr(at + call.length()).begins_with("\"" + tag):
+							ok = true
+				if not ok:
+					out.append(code)
+			at = code.find(call, at + call.length())
+	return out
+
+
+func test_game_scripts_print_only_capture_markers() -> void:
+	assert_eq(bad_prints("\tprint(\"SBDBG \", 1)").size(), 1, "a debug print is caught")
+	assert_eq(bad_prints("\tprints(\"x\")").size(), 1, "prints is caught")
+	assert_eq(bad_prints("\tprint(\"anim5: %s starts\" % id)").size(), 0, "a capture marker passes")
+	assert_eq(bad_prints("\t# print(\"x\")").size(), 0, "a comment passes")
+	assert_eq(bad_prints("\tvar fp := fingerprint(x)").size(), 0, "a longer name passes")
+	var paths: Array[String] = []
+	_game_scripts("res://scripts", paths)
+	assert_gt(paths.size(), 100, "the game's scripts were found")
+	var found: Array[String] = []
+	for p in paths:
+		var lines := FileAccess.get_file_as_string(p).split("\n")
+		for n in lines.size():
+			for b in bad_prints(lines[n]):
+				found.append("%s:%d %s" % [p, n + 1, b])
+	assert_eq(found, [] as Array[String], "no debug prints in scripts/")

@@ -18,6 +18,9 @@ uniform float feather = 1.5;
 uniform float fade = 0.0;
 uniform vec4 front_color : source_color = vec4(1.0, 0.24, 0.66, 1.0);
 uniform float front_alpha = 0.5;
+// ANIM-R2 R7: the lasting tint over the district the front has crossed (mode 1), in the new
+// owner's colour; it stays after the spread (the front's band fades, the wash does not).
+uniform float wash = 0.0;
 
 varying vec2 local_pos;
 
@@ -47,6 +50,6 @@ void fragment() {
 		COLOR.a *= 1.0 - reveal;
 	} else {
 		float band = radius > 0.0 ? 1.0 - smoothstep(0.0, feather, abs(d - radius)) : 0.0;
-		COLOR = vec4(front_color.rgb, band * front_alpha * (1.0 - fade));
+		COLOR = vec4(front_color.rgb, clamp(band * front_alpha * (1.0 - fade) + spread * wash, 0.0, 1.0));
 	}
 }

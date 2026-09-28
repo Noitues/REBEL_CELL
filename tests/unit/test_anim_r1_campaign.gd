@@ -349,8 +349,13 @@ func test_the_camera_frames_each_fight_before_it_plays() -> void:
 		asked.append(sites)
 		return 0.5
 	panel.play(result.events, false)
-	assert_eq(asked.size(), 1, "the first step asked for its frame")
-	assert_almost_eq(panel._next_at, 0.5 + float(RaidBeats.timeline(panel._steps[0])["seconds"]), 0.0001, "and its beats wait for the ease")
+	# ANIM-R2 R6 (changed on purpose): a step with nothing to show is not framed, and a
+	# step's beats set off FRAME_WAIT_SHARE of the way through the ease (the playout opened
+	# on ~2 s of a still map).
+	var tl0 := RaidBeats.timeline(panel._steps[0])
+	var framed := not (tl0["beats"] as Array).is_empty()
+	assert_eq(asked.size(), 1 if framed else 0, "the first step asked for its frame (when it shows something)")
+	assert_almost_eq(panel._next_at, (0.5 * RaidPlayoutPanel.FRAME_WAIT_SHARE if framed else 0.0) + float(tl0["seconds"]), 0.0001, "and its beats set off while the camera eases")
 	panel.skip_to_end()
 	assert_true(panel.is_done())
 
@@ -414,9 +419,13 @@ func test_a_heat_crossing_rolls_the_number_and_stamps_a_banner_then_goes() -> vo
 	await _frames()
 	_live()
 	poster.set_heat(30, 100, [25, 50, 75] as Array[int])
+	# ANIM-R2 R8 (changed on purpose): the number rolls to the threshold first; the banner
+	# stamps when it gets there, naming the threshold crossed.
+	assert_eq(poster.banner_alpha, 0.0, "no banner before the number crosses")
+	await _seconds(Motion.seconds(&"number_roll") + 0.1)
 	assert_gt(poster.number_scale, 1.0, "the number grows on the crossing")
 	assert_eq(poster.banner_alpha, 1.0, "the banner stamps on")
-	assert_string_contains(poster.banner_text(), "30")
+	assert_string_contains(poster.banner_text(), "25")
 	await _seconds(Motion.delay_of(&"heat_banner") + Motion.seconds(&"heat_banner") + Motion.seconds(&"number_roll") + 0.3)
 	assert_eq(poster.banner_alpha, 0.0, "nothing stays on")
 	assert_eq(poster.number_scale, 1.0)
