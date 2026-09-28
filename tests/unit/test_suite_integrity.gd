@@ -170,7 +170,7 @@ const FRAME_CONNECT_PATTERNS: Array[String] = [
 
 
 ## The code of `line` without its comment ("" for a comment line). Strings are kept.
-static func _code_of(line: String) -> String:
+static func _frame_code(line: String) -> String:
 	var code := line.strip_edges()
 	if code.begins_with("#"):
 		return ""
@@ -179,7 +179,7 @@ static func _code_of(line: String) -> String:
 
 ## What `line` connects to a frame signal ("" when it connects nothing to one).
 static func _frame_target(line: String) -> String:
-	var code := _code_of(line)
+	var code := _frame_code(line)
 	if code == "":
 		return ""
 	var sigs := "|".join(FRAME_SIGNALS)
@@ -215,7 +215,7 @@ static func lambda_names(lines: PackedStringArray) -> Dictionary:
 	var out := {}
 	var re := RegEx.create_from_string("^(?:var\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?::\\s*[A-Za-z_][A-Za-z0-9_\\[\\]]*\\s*)?:?=\\s*func\\b")
 	for line in lines:
-		var code := _code_of(line)
+		var code := _frame_code(line)
 		var m := re.search(code)
 		if m != null:
 			out[m.get_string(1)] = true
@@ -275,3 +275,100 @@ func test_the_frame_lambda_rule_catches_every_form() -> void:
 	assert_false(frame_lambda("\tbutton.pressed.connect(func(): pass)"), "a lambda on another signal")
 	assert_false(frame_lambda("\tawait get_tree().process_frame"), "an await")
 	assert_false(frame_lambda("\tget_tree().process_frame.disconnect(_on_frame)"), "a disconnect")
+
+
+## Test suite: bounded waits (DECISIONS): a test that starts a motion and then waits a fixed
+## time (a timer, `wait_seconds`) or reads the wall clock before asserting flakes under
+## load: a slow frame, a tween chain a frame late, a stalled process. Wait on the real
+## condition with `BoundedWait.until` (bounded in game time and frames), measure with
+## `BoundedWait.timed`, hold a mid-motion look with `BoundedWait.frozen_frames`. The rule flags,
+## in the test scripts, a fixed wait or wall-clock read followed by an assertion in the same
+## test, and any in a helper function (its caller asserts after it). A line (or the comment
+## line right above it) carrying FIXED_WAIT_OK and a reason is let through: a wait that only
+## lets motion run before a skip or settle, or a performance bound. Text in strings and
+## comments is not code.
+const FIXED_WAIT_CALLS: Array[String] = ["create_timer(", "wait_seconds(", "Time.get_ticks_msec(", "Time.get_ticks_usec("]
+const FIXED_WAIT_OK := "# fixed-wait-ok:"
+const ASSERT_CALLS: Array[String] = ["assert_", "pass_test(", "fail_test(", "pending("]
+
+
+## `line` without its string literals and its comment.
+static func _code_of(line: String) -> String:
+	var out := ""
+	var in_str := false
+	var quote := ""
+	var i := 0
+	while i < line.length():
+		var ch := line[i]
+		if in_str:
+			if ch == "\\":
+				i += 1
+			elif ch == quote:
+				in_str = false
+		elif ch == "\"" or ch == "'":
+			in_str = true
+			quote = ch
+		elif ch == "#":
+			break
+		else:
+			out += ch
+		i += 1
+	return out
+
+
+## The fixed waits in a test script's source `src` that break the rule, as "line: code".
+static func fixed_waits(src: String) -> Array[String]:
+	var out: Array[String] = []
+	var lines := src.split("\n")
+	var fn_is_test := false
+	var in_fn := false
+	for n in lines.size():
+		var raw := lines[n]
+		if raw.begins_with("func ") or raw.begins_with("static func "):
+			in_fn = true
+			fn_is_test = raw.begins_with("func test_")
+			continue
+		if raw.begins_with("const ") or raw.begins_with("var ") or raw.begins_with("class ") or raw.begins_with("static var "):
+			in_fn = false
+			continue
+		if not in_fn:
+			continue
+		var code := _code_of(raw)
+		var waits := false
+		for call in FIXED_WAIT_CALLS:
+			if code.contains(call):
+				waits = true
+		if not waits:
+			continue
+		if raw.contains(FIXED_WAIT_OK) or (n > 0 and lines[n - 1].strip_edges().begins_with(FIXED_WAIT_OK)):
+			continue
+		var asserts := not fn_is_test
+		var k := n  # the wait's own line may assert (a wall-clock read inside an assert)
+		while not asserts and k < lines.size() and not (lines[k].begins_with("func ") or lines[k].begins_with("static func ")):
+			var later := _code_of(lines[k])
+			for a in ASSERT_CALLS:
+				if later.contains(a):
+					asserts = true
+			k += 1
+		if asserts:
+			out.append("%d: %s" % [n + 1, raw.strip_edges()])
+	return out
+
+
+func test_no_fixed_wait_gates_an_assertion() -> void:
+	var gated := "func test_x() -> void:\n\tstart()\n\tawait get_tree().create_timer(0.3).timeout\n\tassert_true(done())\n"
+	assert_eq(fixed_waits(gated).size(), 1, "a timer before an assertion is caught")
+	assert_eq(fixed_waits(gated.replace("create_timer(0.3).timeout", "create_timer(Motion.seconds(&\"x\") + 0.1).timeout")).size(), 1, "whatever its argument")
+	assert_eq(fixed_waits(gated.replace("get_tree().create_timer(0.3).timeout", "wait_seconds(0.5)")).size(), 1, "wait_seconds too")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tvar t := Time.get_ticks_msec()\n\trun()\n\tassert_lt(Time.get_ticks_msec() - t, 500)\n").size(), 2, "a wall-clock assert")
+	assert_eq(fixed_waits("func _wait(s: float) -> void:\n\tawait get_tree().create_timer(s).timeout\n").size(), 1, "a helper that waits a fixed time")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tassert_true(a)\n\tawait get_tree().create_timer(0.3).timeout\n\tskip()\n").size(), 0, "no assertion after it: passes")
+	assert_eq(fixed_waits(gated.replace(".timeout\n", ".timeout  # fixed-wait-ok: lets it run before the skip\n")).size(), 0, "the marker lets it through")
+	assert_eq(fixed_waits(gated.replace("\tawait get_tree()", "\t# fixed-wait-ok: why\n\tawait get_tree()")).size(), 0, "on the line above too")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tassert_true(has(\"create_timer(\"))\n\t# wait_seconds(1)\n\tassert_true(b)\n").size(), 0, "strings and comments are not code")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tawait BoundedWait.until(get_tree(), f, 1.0)\n\tassert_true(f.call())\n").size(), 0, "a bounded poll passes")
+	var found: Array[String] = []
+	for p in _test_scripts():
+		for w in fixed_waits(FileAccess.get_file_as_string(p)):
+			found.append("%s:%s" % [p, w])
+	assert_eq(found, [] as Array[String], "no fixed wait or wall-clock read gates an assertion (use BoundedWait; see DECISIONS \"Test suite: bounded waits\")")

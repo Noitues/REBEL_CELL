@@ -11,6 +11,10 @@ extends GutTest
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
+## Bound on a threaded test bake: seconds of game time and at least this many frames (the
+## old frame-only bound).
+const BAKE_WAIT_LIMIT := 20.0
+const BAKE_WAIT_FRAMES := 600
 
 var _reduce: bool
 var _scale: float
@@ -293,10 +297,9 @@ func test_a_threaded_bake_builds_in_slices_and_lets_the_slot_go() -> void:
 	CityBakeCache.request("small", city.look_key(), city.make_painter(Rect2(0, 0, 256, 192), 1.0), city)
 	var rec: Dictionary = CityBakeCache._live.get("small", {})
 	assert_false(rec.is_empty(), "the bake runs")
-	for k in 600:
-		if rec.has("vp") and CityBakeCache._building == 0:
-			break
-		await _frames(1)
+	# A worker thread's pace, bounded in game time as well as frames (Test suite: bounded
+	# waits: 600 fast frames can pass before a loaded worker is done).
+	await BoundedWait.until(get_tree(), func() -> bool: return rec.has("vp") and CityBakeCache._building == 0, BAKE_WAIT_LIMIT, BAKE_WAIT_FRAMES)
 	# (The dummy renderer never draws a frame, so a headless bake stops at its readback.)
 	assert_true(rec.has("vp"), "the sliced build ran through and its chunks went in")
 	assert_eq(CityBakeCache._building, 0, "the build slot is free for the next bake")
@@ -305,15 +308,10 @@ func test_a_threaded_bake_builds_in_slices_and_lets_the_slot_go() -> void:
 	assert_true(painter._parts.is_empty(), "the geometry was handed over")
 
 
-func _seconds(s: float) -> void:
-	await get_tree().create_timer(s).timeout
-
-
-## Waits a frame at a time until `cond` holds or `limit` seconds have passed.
+## Waits a frame at a time until `cond` holds or `limit` seconds of game time (and
+## BoundedWait's frame floor) have passed (Test suite: bounded waits: was the wall clock).
 func _until(cond: Callable, limit: float) -> void:
-	var t0 := Time.get_ticks_msec()
-	while not cond.call() and Time.get_ticks_msec() - t0 < int(limit * 1000.0):
-		await get_tree().process_frame
+	await BoundedWait.until(get_tree(), cond, limit)
 
 
 func _live() -> void:
@@ -344,21 +342,15 @@ func test_the_jack_says_where_it_connects_while_the_screen_builds() -> void:
 	_live()
 	var switched := [false]
 	Fx.jack_in(func() -> void: switched[0] = true, -1.0, "Test Site")
-	var saw := false
-	var words := ""
-	for k in 240:
-		if Fx.connecting():
-			saw = true
-			words = Fx.connect_label.text
-			break
-		await _frames(1)
+	# Bounded by the jack's own seconds in game time, not 240 frames (Test suite: bounded
+	# waits: fast frames could end a frame-count wait before the push did).
+	var jack_limit := BoundedWait.motion_limit([&"jack_in", &"jack_arrive", Fx.ARRIVAL_WAIT_MOTION, Fx.CONNECT_MOTION])
+	var saw := await BoundedWait.until(get_tree(), Fx.connecting, jack_limit)
+	var words := Fx.connect_label.text if saw else ""
 	assert_true(switched[0], "the switch happened under the cover")
 	assert_true(saw, "CONNECTING shows on the opaque cover")
 	assert_string_contains(words, "TEST SITE", "naming the place")
-	for k in 240:
-		if not Fx.transitioning():
-			break
-		await _frames(1)
+	await BoundedWait.until(get_tree(), func() -> bool: return not Fx.transitioning(), jack_limit)
 	assert_false(Fx.connecting(), "and goes with the cover")
 	assert_eq(RunManager.jack_destination(), tr("the net"), "no run: the net")
 
@@ -452,7 +444,7 @@ func test_an_asset_drop_waits_for_the_camera_then_lands_with_its_name() -> void:
 	moving[0] = false
 	await _frames(2)
 	assert_false(hq.city_overlay.drop_waiting(), "then drops")
-	await _seconds(Motion.seconds(&"asset_drop") + Motion.seconds(&"asset_drop_stamp") + 0.3)
+	await _until(func() -> bool: return hq.city_overlay.drop_t == 1.0 and hq.city_overlay.drop_stamp_t == 1.0, BoundedWait.motion_limit([&"asset_drop", &"asset_drop_stamp"]))
 	assert_eq(hq.city_overlay.drop_t, 1.0, "it lands")
 	assert_eq(hq.city_overlay.drop_stamp_t, 1.0, "and stamps")
 	assert_eq(String(hq.city_overlay._drop.get("label", "")), "TURRET", "its name stays under it")

@@ -104,6 +104,31 @@ methods to `process_frame` / `physics_frame` / `frame_pre_draw` / `frame_post_dr
 never lambdas (`test_suite_integrity.gd` guards it; `test_bake_crash.gd` reproduces the
 crash on the old code). See DECISIONS "Animation pass — bake crash".
 
+### Waiting on motion (bounded waits)
+
+A test that starts a motion (`Motion.force_live`) never waits a fixed time before asserting
+how far it got: under parallel shards one slow frame, a tween chain that starts a frame
+late or a timer firing before the tween it waits for lands the assert early. Use
+`BoundedWait` (`tests/helpers/bounded_wait.gd`):
+
+- `await BoundedWait.until(get_tree(), cond, limit)`: polls `cond` once a frame and
+  returns as soon as it holds; gives up only after `limit` seconds of game time (the
+  frames' deltas, the clock tweens and timers run on) **and** `MIN_FRAMES` frames. Derive
+  the limit from the Motion table: `BoundedWait.motion_limit([&"id", ...])` (their delay
+  and seconds plus `SLACK`). Then assert on the end state.
+- `await BoundedWait.timed(get_tree(), cond, limit)`: the same, returning the game time
+  the motion took less its two longest frames, for "ends in its time" asserts.
+- `await BoundedWait.frozen_frames(get_tree(), n)`: `n` frames with `Engine.time_scale`
+  0, for an assert that a motion is still under way after the layout's frames.
+- Count events instead of catching a state mid-way (`WheelView.tag_flips`), and poll
+  view-side queries (`motion_busy()`, `PageTransition.running()`, `FlightFx.active_count()`).
+
+`test_suite_integrity.gd` fails on a `create_timer(`, `wait_seconds(` or
+`Time.get_ticks_msec/usec(` in a test script that an assertion follows in the same test
+(or in any helper function), unless the line or the comment line above it carries
+`# fixed-wait-ok: <reason>` (a wait that only lets motion run before a skip or settle, or
+the resolver's performance bound). See DECISIONS "Test suite: bounded waits".
+
 ## The 2026-09-27 optimization pass
 
 ### Before and after

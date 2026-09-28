@@ -38,7 +38,10 @@ func _step() -> void:
 						_scene.combat_scene.play_card(i)
 			_scene.combat_scene.end_turn()
 			if RunManager.netrun.run.phase != RunState.Phase.COMBAT:
-				await wait_seconds(1.0)  # the scene lingers on the final combat frame
+				# The scene lingers on the final combat frame (combat_end_hold), then shows the
+				# next page, which takes the combat panel down (Test suite: bounded waits).
+				var moved_on := await BoundedWait.until(get_tree(), func() -> bool: return _scene.combat_scene == null, BoundedWait.motion_limit([&"combat_end_hold"]))
+				assert_true(moved_on, "the scene moves on after the final combat frame")
 		RunState.Phase.REWARD:
 			if s.current_reward()["kind"] == "firmware":
 				_scene.skip_reward()

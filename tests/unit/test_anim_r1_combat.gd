@@ -566,22 +566,22 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 		assert_true(wv.intent.is_empty(), "%s: no forecast during the replay" % wv.combatant.display_name)
 		assert_true(wv.outcome.is_empty(), "%s: no NEXT plate either" % wv.combatant.display_name)
 	# Played out: the forecast flips in, the turn counter moves on.
-	var waited := 0.0
-	var limit: float = scene.motion_seconds_left() + 1.0
-	while scene._seq != null and waited < limit:
-		await get_tree().process_frame
-		waited += get_process_delta_time()
+	await BoundedWait.until(get_tree(), func() -> bool: return scene._seq == null, scene.motion_seconds_left() + BoundedWait.SLACK)
 	assert_null(scene._seq, "the replay ends by itself")
 	assert_true(scene._status.text.contains(str(scene.engine.state().turn)), "the TURN counter changes when the replay ends")
-	await _frames(2)
-	# Counted, not caught mid-flip: under load one frame can outlast the whole flip.
-	var flips_after := 0
+	# Counted, not caught mid-flip: under load one frame can outlast the whole flip. The
+	# flips start on a redraw, so wait for them (bounded) rather than two frames.
+	var flips := func() -> int:
+		var n := 0
+		for v in scene._views():
+			n += (v as WheelView).tag_flips
+		return n
+	await BoundedWait.until(get_tree(), func() -> bool: return flips.call() > flips_before, BoundedWait.motion_limit([&"intent_flip"]))
 	for v in scene._views():
 		var wv: WheelView = v
-		flips_after += wv.tag_flips
 		if not wv.intent.is_empty():
 			assert_false(wv.replaying)
-	assert_gt(flips_after, flips_before, "the forecast tags flip in")
+	assert_gt(flips.call(), flips_before, "the forecast tags flip in")
 	await _close(scene)
 
 
@@ -592,12 +592,15 @@ func test_the_result_holds_under_this_turn() -> void:
 	scene.end_turn()
 	var beats := ResolveBeats.build(before, scene._last_events, scene.engine.resolver.lookup)
 	var sch: Dictionary = scene.sequence_schedule(beats)
-	await get_tree().create_timer(float(sch["result_at"]) + Motion.seconds(&"result_caption") + 0.05).timeout
+	# Wait for the hold itself (bounded), not a fixed result_at + caption time that a slow
+	# frame could carry past it (Test suite: bounded waits).
+	var pv: WheelView = scene._player_view
+	await BoundedWait.until(get_tree(), func() -> bool: return scene._seq == null or (pv.caption == tr("THIS TURN") and pv.last_turn_shown > 0.0),
+		float(sch["result_at"]) + Motion.seconds(&"result_caption") + BoundedWait.SLACK)
 	if scene._seq == null:
 		pending("the machine was too slow to catch the hold")
 		await _close(scene)
 		return
-	var pv: WheelView = scene._player_view
 	assert_eq(pv.caption, tr("THIS TURN"), "THIS TURN over the wheel")
 	assert_not_null(pv.shown_state, "the wheel has not turned on yet (the result stays in view)")
 	assert_true(pv.last_turn_shown > 0.0, "LAST TURN slides up with the result")
@@ -656,10 +659,8 @@ func test_a_number_travels_into_the_hp_counter_which_rolls_down() -> void:
 	assert_eq(pv.shown_hp(), hp, "the HP waits for the number")
 	# Bounded wait for the arrival (a fixed delay + 0.1 s missed it under loaded parallel shards;
 	# DECISIONS "Animation pass - bake crash").
-	var limit := (Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp")) * 4.0 + 0.1
-	var t0 := Time.get_ticks_msec()
-	while pv.shown_hp() >= hp and Time.get_ticks_msec() - t0 < int(limit * 1000.0):
-		await get_tree().process_frame
+	# Test suite: bounded waits: the bound is game time and a frame floor, not the wall clock.
+	await BoundedWait.until(get_tree(), func() -> bool: return pv.shown_hp() < hp, BoundedWait.motion_limit([&"number_to_hp"]))
 	assert_true(pv.shown_hp() < hp, "it rolls down once the number arrives")
 	assert_false(is_nan(pv.lag_hp), "with the white lag bar")
 	scene.skip_motion()

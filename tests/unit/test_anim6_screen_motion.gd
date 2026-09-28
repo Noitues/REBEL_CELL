@@ -13,8 +13,8 @@ const HQ := "res://scenes/hq/hq_scene.tscn"
 const SLOT := "gut_test_anim6"
 ## Longer than any entrance or flight (s).
 const SETTLE_WAIT := 0.8
-## Wall-clock ceiling for `_until` (a motion that never ends fails its assert after it).
-const WAIT_LIMIT_MS := 10000
+## Game-time ceiling for `_until` (a motion that never ends fails its assert after it).
+const WAIT_LIMIT := 10.0
 
 var _scale_before: float = 1.0
 var _reduce_before: bool = false
@@ -61,21 +61,14 @@ func _frames(n: int = 3) -> void:
 		await get_tree().process_frame
 
 
-## Awaits frames until `done` holds (at most WAIT_LIMIT_MS of wall time) and returns the
-## game time that took, less its longest frame. Test suite optimization: fixed waits of a
-## motion's length plus a margin failed on a busy machine, where one long frame can carry
-## the timer past the margin before the tween's last step; this measures the motion
-## itself, so the timing asserts keep their margins and a stalled frame cannot fail them.
+## Awaits frames until `done` holds (at most WAIT_LIMIT of game time) and returns the game
+## time that took, less its longest frames (BoundedWait.timed). Test suite optimization: fixed
+## waits of a motion's length plus a margin failed on a busy machine, where one long frame
+## can carry the timer past the margin before the tween's last step; this measures the
+## motion itself, so the timing asserts keep their margins and a stalled frame cannot fail
+## them. Test suite: bounded waits: the ceiling is game time, not the wall clock.
 func _until(done: Callable) -> float:
-	var total := 0.0
-	var longest := 0.0
-	var start := Time.get_ticks_msec()
-	while not done.call() and Time.get_ticks_msec() - start < WAIT_LIMIT_MS:
-		await get_tree().process_frame
-		var d := get_process_delta_time()
-		total += d
-		longest = maxf(longest, d)
-	return total - longest
+	return await BoundedWait.timed(get_tree(), done, WAIT_LIMIT)
 
 
 ## A motion measured by `_until` ended within its own length plus the same again and a
@@ -238,7 +231,9 @@ func test_a_press_mid_entrance_completes_it() -> void:
 	_live()
 	_to_loot(scene)
 	var page: Control = scene._panel
-	await _frames(2)
+	# Game time held still over the two frames: a slow frame must not end the entrance
+	# before the press this test is about (Test suite: bounded waits).
+	await BoundedWait.frozen_frames(get_tree(), 2)
 	assert_true(PageTransition.running(page), "the loot comes in")
 	var cards := page.find_child("Stickers", true, false)
 	_press(KEY_SPACE)
@@ -457,7 +452,7 @@ func test_screen_motion_never_changes_game_state() -> void:
 	scene.hud.stats.items = [["CYCLES", "1", ""]]
 	scene._refresh_status()
 	Dialogue.say(RC.Voice.DISPATCH, "No state changes here.")
-	await wait_seconds(SETTLE_WAIT)
+	await wait_seconds(SETTLE_WAIT)  # fixed-wait-ok: lets the motions run; the settle then ends them and only the state is asserted
 	PageTransition.settle(scene)
 	assert_eq(_state(), before, "campaign, run and RNG untouched")
 	for path in ["res://scripts/ui/kit/page_transition.gd", "res://scripts/ui/kit/menu_motion.gd", "res://scripts/ui/kit/flight_fx.gd",
@@ -492,7 +487,8 @@ func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
 			_live()
 			scene._shown_screen = ""
 			scene._show_current()
-			await wait_seconds(SETTLE_WAIT)
+			# The entrance plays out on its own (bounded, not a fixed time), then the settle.
+			await BoundedWait.until(get_tree(), func() -> bool: return not PageTransition.running(scene._panel) and FlightFx.active_count(scene) == 0, SETTLE_WAIT + BoundedWait.SLACK)
 			await _frames(2)
 			PageTransition.settle(scene)
 			await _frames(2)
@@ -541,7 +537,8 @@ func test_hq_idle_runs_live_and_rests_headless() -> void:
 	_live()
 	hq.panel_name = ""
 	hq.show_hq()
-	await _frames()
+	# Game time held: the radio must still be typing after the layout frames.
+	await BoundedWait.frozen_frames(get_tree(), 3)
 	jack = hq._panel.find_child("JackIn", true, false) as ZineStamp
 	assert_true(jack.breathing(), "live: JACK IN breathes")
 	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
