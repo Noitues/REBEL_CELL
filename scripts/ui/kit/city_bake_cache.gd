@@ -19,6 +19,12 @@ extends RefCounted
 ## once (NeonCity.BUILD_SLICES), joined in order; `find_pending` lets a view wait on a
 ## running bake that will cover it; `shutdown()` (the game quitting) stops and joins every
 ## running build and frees its painter, viewport and textures.
+## ANIM-R3 B10: a bake whose every waiter is gone (the scene that asked for it was left:
+## the HQ's Grid and playout prebakes when the jack takes the player into a run) is stale:
+## it is dropped from the queue, or stopped if it is building, whenever a bake is asked for
+## or the slot frees (`drop_stale`), so it never keeps the one build slot from the scene on
+## screen. A bake's coroutine checks its own record (never just the key: after `shutdown`
+## a new request for the same key has a record of its own).
 
 ## Entries kept, and their texture memory budget (least recently used dropped first).
 const CAPACITY := 8
@@ -159,27 +165,7 @@ static func clear() -> void:
 ## queued bakes are dropped; then `clear()`. Safe to call twice.
 static func shutdown() -> void:
 	for key: String in _live.keys():
-		var rec: Dictionary = _live[key]
-		var painter: NeonCity = rec.get("painter")
-		if painter != null and is_instance_valid(painter):
-			painter.cancelled = true
-			for t in painter._slices:
-				if is_instance_valid(t):
-					t.cancelled = true
-		if rec.has("task"):
-			WorkerThreadPool.wait_for_task_completion(int(rec["task"]))
-			rec.erase("task")
-		if rec.has("group"):
-			WorkerThreadPool.wait_for_group_task_completion(int(rec["group"]))
-			rec.erase("group")
-		if painter != null and is_instance_valid(painter):
-			painter.free_chunks()
-			painter.free_slices()
-			if not painter.is_inside_tree():
-				painter.free()
-		var vp: SubViewport = rec.get("vp")
-		if vp != null and is_instance_valid(vp):
-			vp.free()
+		_stop(_live[key])
 	_live.clear()
 	for job in _queue:
 		var p: NeonCity = job.get("painter")
@@ -189,6 +175,73 @@ static func shutdown() -> void:
 	_pending.clear()
 	_building = 0
 	clear()
+
+
+## Stops a running build's record `rec`: tells its painter and slices to stop, joins its
+## worker tasks, frees its painter, slices and viewport. The caller drops it from `_live`.
+static func _stop(rec: Dictionary) -> void:
+	var painter: NeonCity = rec.get("painter")
+	if painter != null and is_instance_valid(painter):
+		painter.cancelled = true
+		for t in painter._slices:
+			if is_instance_valid(t):
+				t.cancelled = true
+	if rec.has("task"):
+		WorkerThreadPool.wait_for_task_completion(int(rec["task"]))
+		rec.erase("task")
+	if rec.has("group"):
+		WorkerThreadPool.wait_for_group_task_completion(int(rec["group"]))
+		rec.erase("group")
+	if painter != null and is_instance_valid(painter):
+		painter.free_chunks()
+		painter.free_slices()
+		if not painter.is_inside_tree():
+			painter.free()
+	var vp: SubViewport = rec.get("vp")
+	if vp != null and is_instance_valid(vp):
+		vp.free()
+
+
+## True when some waiter of the bake for `key` is still alive (a bake nobody waits for is
+## stale).
+static func _wanted(key: String) -> bool:
+	for id in _pending.get(key, {}).get("waiters", []):
+		var w := instance_from_id(id)
+		if w != null and is_instance_valid(w) and not (w as Node).is_queued_for_deletion():
+			return true
+	return false
+
+
+## ANIM-R3 B10: drops the bakes whose every waiter is gone (the scene that asked for them was
+## left): queued ones leave the queue, a building one is stopped and gives the slot back.
+## Returns how many were dropped. Called on every request and when the slot frees.
+static func drop_stale() -> int:
+	var dropped := 0
+	for i in range(_queue.size() - 1, -1, -1):
+		var job: Dictionary = _queue[i]
+		if not _wanted(job["key"]):
+			var p: NeonCity = job.get("painter")
+			if p != null and is_instance_valid(p):
+				p.free()
+			_pending.erase(job["key"])
+			_queue.remove_at(i)
+			dropped += 1
+	for key: String in _live.keys():
+		if _wanted(key):
+			continue
+		var rec: Dictionary = _live[key]
+		_live.erase(key)
+		_pending.erase(key)
+		if bool(rec.get("holding", false)):
+			_building = maxi(0, _building - 1)
+		_stop(rec)
+		dropped += 1
+	stale_dropped += dropped
+	return dropped
+
+
+## Stale bakes dropped so far (tests).
+static var stale_dropped: int = 0
 
 
 ## Bakes running or queued (tests).
@@ -206,6 +259,7 @@ static func fit_scale(region: Rect2, wanted: float) -> float:
 ## (a region of `look`), unless one is running; `waiter` is redrawn when it lands.
 ## ANIM-R2 R1: `urgent` (a view waiting on it) goes ahead of queued prebakes.
 static func request(key: String, look: String, painter: NeonCity, waiter: Node, urgent: bool = false) -> void:
+	drop_stale()
 	if _pending.has(key):
 		wait(key, waiter)
 		painter.free()
@@ -224,6 +278,8 @@ static func request(key: String, look: String, painter: NeonCity, waiter: Node, 
 
 ## Starts queued bakes while the build slot is free.
 static func _pump() -> void:
+	if _building >= MAX_BUILDING or not _queue.is_empty():
+		drop_stale()
 	while _building < MAX_BUILDING and not _queue.is_empty():
 		var job: Dictionary = _queue.pop_front()
 		_building += 1
@@ -300,7 +356,7 @@ static func _join(key: String, rec: Dictionary, field: String, group: bool) -> b
 	var tree := Engine.get_main_loop() as SceneTree
 	while rec.has(field) and not (WorkerThreadPool.is_group_task_completed(int(rec[field])) if group else WorkerThreadPool.is_task_completed(int(rec[field]))):
 		await tree.process_frame
-	if not rec.has(field) or not _live.has(key):
+	if not rec.has(field) or not is_same(_live.get(key), rec):
 		return false
 	if group:
 		WorkerThreadPool.wait_for_group_task_completion(int(rec[field]))
@@ -312,7 +368,8 @@ static func _join(key: String, rec: Dictionary, field: String, group: bool) -> b
 
 
 static func _bake(key: String, look: String, painter: NeonCity) -> void:
-	var rec := {"painter": painter}
+	# `holding`: this build has the slot (drop_stale gives it back if it stops the build).
+	var rec := {"painter": painter, "holding": true}
 	_live[key] = rec
 	if threaded:
 		# ANIM-R1 M2 / ANIM-R2 R1: the seconds of GDScript that build the geometry run off the
@@ -342,7 +399,7 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 	# submitted a chunk a frame); let the viewport render it (READBACK_FRAMES frames, so the
 	# render has surely landed), then take the picture and drop the viewport and geometry.
 	await painter.rebuilt
-	if not _live.has(key):
+	if not is_same(_live.get(key), rec):
 		return
 	if threaded:
 		# ANIM-R2 R1: chunks go in while the frame's budget lasts (SUBMIT_BUDGET_USEC), then
@@ -353,16 +410,17 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 			at = painter.submit_chunk(at)
 			if at >= 0 and Time.get_ticks_usec() - t0 >= SUBMIT_BUDGET_USEC:
 				await (Engine.get_main_loop() as SceneTree).process_frame
-				if not _live.has(key):
+				if not is_same(_live.get(key), rec):
 					return
 				t0 = Time.get_ticks_usec()
 		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	# The geometry is on the GPU now: the next bake may build.
+	rec["holding"] = false
 	_building = maxi(0, _building - 1)
 	_pump()
 	for f in READBACK_FRAMES:
 		await RenderingServer.frame_post_draw
-		if not _live.has(key):
+		if not is_same(_live.get(key), rec):
 			return
 	var e := {"look": look, "region": painter.painter_region, "scale": painter.scale.x}
 	var tex: Texture2D = _gpu_copy(vp) if is_instance_valid(vp) else null
