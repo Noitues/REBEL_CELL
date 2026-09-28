@@ -700,12 +700,21 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 ## usable control.
 func _focus_page(p: Control) -> void:
 	var first: Variant = p.get_meta(FIRST_FOCUS_META) if is_instance_valid(p) and p.has_meta(FIRST_FOCUS_META) else null
-	if first is Control and is_instance_valid(first) and (first as Control).is_inside_tree():
-		var owner := get_viewport().gui_get_focus_owner()
-		if owner == null or not p.is_ancestor_of(owner):
-			(first as Control).grab_focus.call_deferred()
+	if first is Control and is_instance_valid(first) and (first as Control).is_inside_tree() \
+			and (first as Control).get_focus_mode_with_override() != Control.FOCUS_NONE:
+		_focus_now.call_deferred(p, first)
 		return
 	UiFocus.focus_first(p)
+
+
+## Untyped on purpose: the deferred call can land after the page was freed.
+func _focus_now(page, first) -> void:
+	if not is_instance_valid(page) or not is_instance_valid(first) or not (first as Control).is_inside_tree() \
+			or (first as Control).get_focus_mode_with_override() == Control.FOCUS_NONE:
+		return
+	var owner := get_viewport().gui_get_focus_owner()
+	if owner == null or not (page as Node).is_ancestor_of(owner):
+		(first as Control).grab_focus()
 
 
 ## The meta naming a page's first focus.

@@ -284,7 +284,7 @@ const LINE_GAP := 2.0
 ## The empty-set mark: its ring's radius (share of the icon radius) and its slash's reach
 ## along the diagonal (share of the ring: it ends on the ring).
 const NULL_RING := 0.72
-const NULL_SLASH := 0.72
+const NULL_SLASH := 0.7
 
 
 func _draw() -> void:
