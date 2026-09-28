@@ -209,7 +209,12 @@ func test_the_sequence_plays_out_by_itself() -> void:
 		waited += 0.1
 	assert_null(scene._seq, "the sequence ends within its budget")
 	assert_true(settled[0], "motion_settled fires")
-	await get_tree().create_timer(0.3).timeout
+	# The after-effects (tag flips, floats, the HP settle) finish on their own clocks; wait
+	# for the scene to say it is idle rather than a fixed time (it flaked under 4-shard load).
+	var idle_wait := 0.0
+	while scene.motion_busy() and idle_wait < limit:
+		await get_tree().create_timer(0.1).timeout
+		idle_wait += 0.1
 	_assert_end_state(scene, "played out")
 	assert_eq(_signature(scene), sig, "the replay changed no game state")
 

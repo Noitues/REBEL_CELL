@@ -893,9 +893,11 @@ func _scroll_to_top() -> void:
 	var scroll := _panel_host.get_parent() as ScrollContainer
 	if scroll != null:
 		scroll.scroll_vertical = 0
-		await get_tree().process_frame
-		if is_instance_valid(scroll):
-			scroll.scroll_vertical = 0
+		# Again next frame, without awaiting: a page freed meanwhile just drops the call
+		# (an await resumed on a freed HQ and logged "class instance is gone").
+		get_tree().process_frame.connect(func() -> void:
+			if is_instance_valid(scroll):
+				scroll.scroll_vertical = 0, CONNECT_ONE_SHOT)
 
 
 ## VIEW LOADOUT: an operative's deck and spinner. A dossier's Loadout button opens its
