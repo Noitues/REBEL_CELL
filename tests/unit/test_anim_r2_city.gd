@@ -531,7 +531,8 @@ func test_the_heat_banner_fits_its_poster_at_every_text_size_and_a_long_translat
 			poster.heat = 80
 			poster._banner_at = 75
 			var fs := poster.banner_font_size()
-			var span := HeatPoster.banner_span(Palette.display(), poster.banner_text(), fs)
+			# ANIM-R3 B7: the banner wraps to two lines before it shrinks under its readable floor.
+			var span := HeatPoster.banner_span(Palette.display(), poster.banner_lines()["lines"], fs)
 			assert_true(span <= poster.size.x - HeatPoster.BANNER_MARGIN * 2.0 + 0.5, "%s at %.1f (%s): %.0f px in %.0f" % [poster.banner_text(), scale, loc, span, poster.size.x])
 			poster.queue_free()
 	TranslationServer.set_locale(locale)
