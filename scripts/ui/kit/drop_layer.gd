@@ -2,7 +2,8 @@ class_name DropLayer
 extends Control
 ## Drag and drop between places (Animation pass ANIM-4): the HQ, the City Grid, the raid
 ## setup and the loadout view move items (defence assets, operatives, recruits, boosts,
-## ring segments) onto targets. A full-screen layer over its screen: it knows the
+## ring segments) onto targets; since ANIM-4b the netrun too (Modem purchases, deck cards
+## onto the shredder, loot, event rewards, raid assets). A full-screen layer over its screen: it knows the
 ## screen's drop targets, draws their pulses, the pad reticle and the no-entry mark, and
 ## flies copies of the items (land, glide home). View only: a drop is an intent; the layer
 ## emits `dropped` and the screen applies it with the same call its buttons make (Signal
@@ -50,6 +51,15 @@ const MARK_W := 4.0
 ## The stamp ring's line width and its starting radius share of the landing copy.
 const STAMP_W := 3.0
 const STAMP_START := 0.35
+## Shred strips (ANIM-4b): how many, their width, share of the card's width they span,
+## each one's share of the full length, their slant (px per strip from the middle) and how
+## much longer than the feed they stay (they fade over the rest).
+const STRIP_COUNT := 6
+const STRIP_W := 3.0
+const STRIP_SPAN := 0.6
+const STRIP_LENGTHS: Array[float] = [0.8, 1.0, 0.7, 0.95, 0.75, 0.9]
+const STRIP_SLANT := 0.8
+const STRIP_HOLD := 1.6
 ## The carried item sits this far up-right of the aimed target's corner (px).
 const CARRY_OFFSET := Vector2(6, -6)
 
@@ -490,6 +500,11 @@ func _ghost(p: Dictionary, holder: Control) -> Control:
 ## payload's "motion" such as `crew_assign`), settles into place (`drop_settle`: it dips its
 ## amplitude px and springs back) and stamps (`drop_stamp`: a ring grows its amplitude px
 ## as the copy fades). Returns the flight ({} when motion doesn't play).
+##
+## ANIM-4b payload keys: "land" = "buy" shrinks the copy to its travel's amplitude as it
+## arrives (a purchase going into a small top bar tag or slot, `drop_buy`); "shred" feeds
+## it into the target's mouth instead of settling (`shred_feed`); "stamp" = a word (SOLD)
+## stamped on the copy as it travels (`sold_stamp`, as ANIM-6's click purchases).
 func _fly_land(p: Dictionary, holder: Control, from: Vector2, to: Vector2) -> Dictionary:
 	last_flight = {}
 	var travel := StringName(String(p.get("motion", "loadout_swap")))
@@ -503,10 +518,40 @@ func _fly_land(p: Dictionary, holder: Control, from: Vector2, to: Vector2) -> Di
 	f["to"] = to
 	var tw: Tween = f["tween"]
 	var e := Motion.entry(travel)
-	tw.tween_method(_place.bind(copy, from, to), 0.0, 1.0, Motion.seconds(travel)).set_ease(e.ease).set_trans(e.trans)
-	_settle_and_stamp(tw, copy, f)
+	var land := String(p.get("land", ""))
+	var end := to - Vector2(0, copy.size.y * 0.5) if land == "shred" else to
+	tw.tween_method(_place.bind(copy, from, end), 0.0, 1.0, Motion.seconds(travel)).set_ease(e.ease).set_trans(e.trans)
+	if land == "buy":
+		tw.parallel().tween_property(copy, "scale", Vector2.ONE * Motion.amplitude(travel), Motion.seconds(travel)).set_ease(e.ease).set_trans(e.trans)
+	var word := String(p.get("stamp", ""))
+	if word != "" and Motion.live(&"sold_stamp"):
+		var se := Motion.entry(&"sold_stamp")
+		var mark := FlightFx.stamp_mark(copy, Rect2(Vector2.ZERO, copy.size), word)
+		mark.scale = Vector2.ONE * Motion.amplitude(&"sold_stamp")
+		tw.parallel().tween_property(mark, "scale", Vector2.ONE, Motion.seconds(&"sold_stamp")).set_ease(se.ease).set_trans(se.trans)
+	if land == "shred":
+		_feed(tw, copy, f)
+	else:
+		_settle_and_stamp(tw, copy, f)
 	tw.tween_callback(_end_flight.bind(f))
 	return f
+
+
+## Shredded (ANIM-4b): the copy, its foot on the target's middle (the shredder's mouth),
+## squashes down into it (`shred_feed`) while paper strips run out under the mouth
+## (the entry's amplitude = the strips' length, px).
+func _feed(tw: Tween, copy: Control, f: Dictionary) -> void:
+	var fe := Motion.entry(&"shred_feed")
+	var d := Motion.seconds(&"shred_feed")
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(copy):
+			var at := copy.global_position + copy.size * 0.5
+			copy.pivot_offset = Vector2(copy.size.x * 0.5, copy.size.y)
+			copy.global_position = at - copy.size * 0.5
+			_strips(f["to"], copy.size.x))
+	tw.tween_property(copy, "scale:y", 0.0, d).set_ease(fe.ease).set_trans(fe.trans)
+	tw.parallel().tween_property(copy, "modulate:a", 0.0, d).set_ease(Tween.EASE_IN)
+	tw.tween_callback(_reveal.bind(f))
 
 
 ## A purchase made with a click flies from `from` (global rect: the button) to wherever
@@ -583,7 +628,7 @@ func _settle_and_stamp(tw: Tween, copy: Control, f: Dictionary) -> void:
 			copy.global_position = to - copy.size * 0.5 + Vector2(0, dip * sin(PI * q)), 0.0, 1.0, Motion.seconds(&"drop_settle")).set_ease(se.ease).set_trans(se.trans)
 	tw.tween_callback(func() -> void:
 		if is_instance_valid(copy):
-			_stamp(f["to"], maxf(copy.size.x, copy.size.y) * STAMP_START)
+			_stamp(f["to"], maxf(copy.size.x, copy.size.y) * copy.scale.x * STAMP_START)
 		_reveal(f))
 	tw.tween_property(copy, "modulate:a", 0.0, Motion.seconds(&"drop_stamp")).set_ease(Tween.EASE_OUT)
 
@@ -634,6 +679,10 @@ func _end_flight(f: Dictionary) -> void:
 			n.modulate.a = 1.0
 	if f.get("holder") != null:
 		_restore_source((f["holder"] as WeakRef).get_ref())
+	# ANIM-4b: what the screen waits on (a viewer that closes once its landing has played).
+	var done: Callable = f.get("on_done", Callable())
+	if done.is_valid():
+		done.call()
 	queue_redraw()
 
 
@@ -662,6 +711,15 @@ func _mark(at: Vector2) -> void:
 	set_process(true)
 
 
+## Paper strips running out of a shredder's mouth at `at` (global) under a card `width` px
+## wide (ANIM-4b), for `shred_feed`'s duration.
+func _strips(at: Vector2, width: float) -> void:
+	if not Motion.live(&"shred_feed"):
+		return
+	sprites.append({"kind": "strips", "at": at, "age": 0.0, "dur": Motion.seconds(&"shred_feed") * STRIP_HOLD, "len": Motion.amplitude(&"shred_feed"), "w": width * STRIP_SPAN})
+	set_process(true)
+
+
 ## The stamp ring where an item landed.
 func _stamp(at: Vector2, r0: float) -> void:
 	if not Motion.live(&"drop_stamp"):
@@ -676,6 +734,8 @@ func _input(event: InputEvent) -> void:
 	# Input during a flight completes it (the event still does what it does).
 	if busy() and _is_press(event):
 		finish_all()
+	if retiring:
+		return
 	if mode == Mode.CARRY:
 		_carry_input(event)
 		return
@@ -787,7 +847,23 @@ func _process(delta: float) -> void:
 			sprites.erase(s)
 	if mode == Mode.IDLE and flights.is_empty() and sprites.is_empty():
 		set_process(false)
+		if retiring:
+			queue_free()
 	queue_redraw()
+
+
+## ANIM-4b: a layer over a viewer that has closed: it takes nothing more and frees itself
+## once its flights and marks have played (at once when none are left).
+var retiring: bool = false
+
+
+func retire() -> void:
+	retiring = true
+	reset()
+	if mode == Mode.IDLE and not busy():
+		queue_free()
+	else:
+		set_process(true)
 
 
 func _local(p: Vector2) -> Vector2:
@@ -826,6 +902,15 @@ func _draw() -> void:
 				_no_entry(_local(s["at"]) + Vector2(dx, 0), 1.0 - p * p, dx)
 			"stamp":
 				draw_arc(_local(s["at"]), float(s["r0"]) + float(s["grow"]) * p, 0, TAU, 40, Color(Palette.CELL_ACID, 1.0 - p), STAMP_W, true)
+			"strips":
+				# They run out over the feed, then fade (fixed lengths per strip: no randomness).
+				var mouth := _local(s["at"])
+				var grow := clampf(p * STRIP_HOLD, 0.0, 1.0)
+				var w := float(s["w"])
+				for k in STRIP_COUNT:
+					var x := mouth.x - w * 0.5 + w * (k + 0.5) / STRIP_COUNT
+					var reach := float(s["len"]) * grow * STRIP_LENGTHS[k % STRIP_LENGTHS.size()]
+					draw_line(Vector2(x, mouth.y), Vector2(x + STRIP_SLANT * (k - STRIP_COUNT * 0.5), mouth.y + reach), Color(Palette.NOTE_PAPER, 1.0 - p * p), STRIP_W, true)
 
 
 ## Corner brackets round `r` (local) in `col`.

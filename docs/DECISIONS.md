@@ -275,6 +275,92 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-27 — Animation pass — ANIM-4b: drag and drop in the run
+The designer's "drag and drop anything", run side: every item a netrun moves between
+places now drags there as well, with ANIM-4's kit and feel. Views only: no rule changed.
+Tests: `tests/unit/test_anim4b_run_drag_drop.gd`; strips: `docs/timeline/motion/drag_buy_*.png`,
+`drag_shred.png`, `drag_loot.png` (README rows marked ANIM-4b).
+- **Same kit as the HQ.** `netrun_scene` owns a `DropLayer` over every page (reset when a
+  page is rebuilt; flights in the air keep going) and wires it as `hq_scene` does: `check`
+  = `drop_error`, which runs **the button's own rule call** on `dry_session()` (a
+  `NetrunSession.from_dict` of the run with its RNG streams, over
+  `campaign.duplicate_state()`: the real run and campaign are never touched) and reads its
+  refusal; `dropped` → `_on_dropped` makes the same call the button makes. Refusal texts
+  name content and Sites as the screens do (the rules speak in ids). Views that open over
+  the page (the REMOVE deck viewer, the UPGRADE spinner viewer) get a layer of their own
+  added **after** them by the scene (`_modal_layer`), so it draws on top and outlives the
+  viewer (it frees itself when done, `DropLayer.retire`). A drop there makes the call the
+  viewer's UPGRADE / REMOVE makes at once (the state is final), and the viewer closes as
+  that button closes it **once the landing on its wheel or shredder has played** (a
+  flight's `on_done`; at once headless / reduce effects; any press ends it): closing first
+  left the copy squashing over the Modem page (first capture). Focus then lands on the
+  Modem's first control.
+- **What drags, and the button path each mirrors:**
+  - Modem: a card onto the top bar's CARDS tag = its BUY; a Daemon onto the DAEMONS icon =
+    its BUY; a microchip onto a slot of the new small spinner = "Socket into Slot N" in
+    the socket list, then BUY (the list stays and aims the carry: a chip picked up with
+    the keys starts on the listed slot); a slice upgrade onto a slot of the small spinner
+    = the UPGRADE viewer's select that slot + UPGRADE (`overwrite_slice`, the call the
+    viewer's UPGRADE makes). In the UPGRADE viewer the slice being installed sits beside
+    the wheel (`InstallSlice`) and drags onto a slot = select + UPGRADE. In the REMOVE
+    viewer every card drags onto a new SHRED tile beside Close = select the card + REMOVE
+    (`remove_card`; pressing the tile is REMOVE too).
+    A click on BUY keeps ANIM-6's SOLD + flight; a drag doesn't also fly (`_buy` /
+    `_choose_reward` take `fly`), its copy lands on the target instead.
+  - The **small spinner** (`SpinnerMini`, new kit piece) sits in the REMOVE A CARD window
+    beside the wallet: the slots as wedges in their slice colours with their icons, a cyan
+    square where a chip is socketed, SPINNER under it, each slot's pad tooltip named as the
+    socket list names it. It is no focus stop (the carry's reticle reaches the slots).
+  - Loot: a card onto CARDS, a Daemon onto DAEMONS, a Firmware chip onto a slot of the
+    small spinner (shown beside a chip offer; the offer's row gives it its width) = the
+    sticker's press (with the slot list's slot). Skip stays a button.
+  - Event: a choice that hands over a card or a Daemon drags onto CARDS / DAEMONS = pressing
+    the choice. No second place (logged, no drag): a Firmware reward goes on to the loot
+    (where it drags onto its slot), an asset reward is carried until a Rack banks it (no
+    place on screen), a rescued operative joins the roster at HQ; choices without an item
+    are decisions, not items.
+  - Mid-run raid interlude: the run's assets and the Armory's are chips (`RunAsset_i`,
+    `Armory_i`) above the node rows; a chip onto a node's row = its row's "Deploy run
+    asset" / "Deploy armory asset" with that asset picked; a placed asset's Withdraw drags
+    onto another row (`raid_move` there) or onto the ARMORY chips (= Withdraw). The lists
+    and buttons stay.
+  - Not drags (why): the netrun's VIEW LOADOUT and the Daemon tray only show (no rule
+    moves anything there); combat cards are ANIM-3's; the route moves the operative, not an
+    item (ANIM-5's travel); Rack payouts are the loot above (Schematics and assets bank
+    by themselves).
+- **Keys, pad, clicks** as ANIM-4: X / Space picks up the focused item; A keeps buying /
+  taking / choosing on buttons and picks up the items that only move (raid chips, the
+  slice beside the viewer's wheel); the D-pad walks the reticle, A drops, B puts it back
+  (and does not leave the Modem while carrying); the pad prompts add "X Pick up" on the
+  Modem, the loot, the raid interlude and an event with an item, then "A Drop / B
+  Cancel". Click-select-click on move-only items. Tooltips name the drag. After a drop
+  the rebuilt page's focus lands on its first control, as after a click purchase.
+- **Motion** (ANIM-4's ids reused; two new): a purchase, loot pick or event reward travels
+  from where it was let go onto its target **shrinking into it** (`drop_buy` 0.22 s CUBIC
+  out, arriving at x0.45: the targets are small top bar tags and slots), a purchase with
+  SOLD stamping on the copy as it goes (`sold_stamp`, ANIM-6's), then ANIM-4's settle and
+  stamp ring. A deck card dropped on the shredder travels to its mouth and **squashes
+  into it** while paper strips run out below (`shred_feed` 0.3 s QUAD in, strips 28 px;
+  six strips of fixed lengths, no randomness). Raid chips land with ANIM-4's
+  `loadout_swap`. Refusals (not enough Cycles, a chip that fits no slice there, a full
+  node) are ANIM-4's: the no-entry mark shakes, the item glides home, the rules' reason is
+  a toast. Variants shown (strips): `drop_buy` 0.16 s / x0.35, **0.22 s / x0.45**, 0.32 s
+  / x0.6 (card to deck, chip to slot, loot to deck); `drop_reject` 0.12/3, **0.20/6**,
+  0.35/10 (not enough Cycles); `shred_feed` 0.2 s / 18 px, **0.3 s / 28 px**, 0.45 s / 40
+  px. Picked: the snappy middle, matching ANIM-4's landing; the slow ones held the item
+  over the top bar after the Cycles had already rolled, the fast shred read as a vanish.
+- **Rules of the pass kept**: the state is final when the drop's call returns. Reduce
+  effects and headless: no pulses, flights, marks or strips, the end state at once. Any
+  press during a landing completes it. Layout at 1.0 / 1.3 / 1.6 checked: the small
+  spinner inside its window and clear of the wallet, SHRED and LEAVE; the REMOVE viewer's
+  card grid gives the SHRED tile its room (the window keeps its height); the viewer's
+  slice beside the wheel over no slot; a chip offer's spinner in its row with Skip on
+  screen; the raid chips wrap inside the 1280 width.
+- New ids (data only; schema unchanged; REQUIRED_IDS and the motion lab updated):
+  `drop_buy`, `shred_feed`. Frame capture: `netrun_scene --demo-shop
+  --demo-anim=drag_buy_card | drag_buy_chip | drag_buy_refuse | drag_shred` and `--demo-loot
+  --demo-anim=drag_loot`, with `--demo-set` for variants.
+
 #### 2026-09-27 — Animation pass — ANIM-4: drag and drop, HQ side
 The designer's "drag and drop anything (loadout changes, card use, etc)", HQ side: every
 item the HQ, the City Grid, the raid setup and the loadout view move between places now

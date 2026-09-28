@@ -90,6 +90,9 @@ const DEMOS := {
 	&"saved_stamp_in": ["screen", "saved"], &"pad_prompts_in": ["fade_in", "sticker"], &"focus_tip_in": ["fade_in", "panel"],
 	&"event_outcome_pop": ["pop", "sticker"], &"event_choice_stamp": ["screen", "stamp"], &"sold_stamp": ["screen", "buy"],
 	&"caption_crossfade": ["screen", "caption"], &"city_sign_pick": ["screen", "city"],
+	# ANIM-4b (drag and drop in the run; in context: netrun_scene --demo-shop / --demo-loot
+	# --demo-anim=drag_*):
+	&"drop_buy": ["fly", "card"], &"shred_feed": ["drop", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

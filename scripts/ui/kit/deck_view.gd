@@ -54,6 +54,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
 	window.body.add_child(hint)
 	var scroll := ScrollContainer.new()
+	_scroll = scroll
 	scroll.custom_minimum_size = Vector2(880, 380)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
@@ -86,6 +87,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 20)
 	window.body.add_child(bottom)
+	_bottom = bottom
 	var close_btn := Button.new()
 	close_btn.name = "Close"
 	close_button = close_btn
@@ -98,6 +100,56 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 		_action_button.visible = false
 		_action_button.pressed.connect(confirm)
 		bottom.add_child(_action_button)
+
+
+## ANIM-4b: drag and drop inside the viewer, on a layer the screen owns (it sits over the
+## viewer and outlives it, so a shred still plays as the viewer closes); in REMOVE mode the
+## cards drag onto the SHRED tile beside Close.
+var drops: DropLayer = null
+## The SHRED tile in REMOVE mode with drops on (null otherwise).
+var shred_tile: ZineCard = null
+
+
+## ANIM-4b (REMOVE mode): the deck's cards become drag sources of `layer` and a SHRED tile
+## beside Close takes them; a drop there is the same as selecting the card and pressing
+## REMOVE. Pressing the tile is REMOVE too (nothing happens with no card selected).
+func enable_drops(layer: DropLayer) -> void:
+	if drops != null or layer == null:
+		return
+	drops = layer
+	if action != "REMOVE":
+		return
+	shred_tile = ZineCard.new(tr("SHRED"), -1, "", 0)
+	shred_tile.name = "ShredTarget"
+	shred_tile.as_tile(ZineCard.Look.CARD_TILE, Palette.CELL_ACID).tile_text(Settings.text_scale)
+	shred_tile.icon_kind = "shred"
+	shred_tile.hotkey = ""
+	shred_tile.focus_mode = Control.FOCUS_NONE
+	shred_tile.custom_minimum_size = SHRED_TILE * clampf(Settings.text_scale, 1.0, SHRED_GROW_MAX)
+	shred_tile.tooltip_text = UiTip.fold(tr("Drag a card here to shred it (or select it and press REMOVE)."))
+	shred_tile.pressed.connect(confirm)
+	_bottom.add_child(shred_tile)
+	# The window keeps its height: the card grid gives the tile its room.
+	_scroll.custom_minimum_size.y = maxf(SCROLL_MIN, _scroll.custom_minimum_size.y - maxf(0.0, shred_tile.custom_minimum_size.y - BOTTOM_ROOM))
+	for i in _cards.size():
+		drops.add_source(_cards[i], {"kind": "deck_card", "index": i, "card": deck[i], "land": "shred", "motion": &"loadout_swap"})
+	drops.add_target("shred", ["deck_card"], "shred", null, DropLayer.rect_of(shred_tile))
+
+
+## The SHRED tile's size at text scale 1.0, and the most it grows (px).
+const SHRED_TILE := Vector2(96, 110)
+const SHRED_GROW_MAX := 1.3
+## The bottom row's height without the tile (the REMOVE lettering and its drips) and the
+## least height the card grid keeps (px).
+const BOTTOM_ROOM := 64.0
+const SCROLL_MIN := 240.0
+var _bottom: HBoxContainer = null
+var _scroll: ScrollContainer = null
+
+
+## Deck card `i`'s sticker (null when there is none).
+func card(i: int) -> ZineCard:
+	return _cards[i] if i >= 0 and i < _cards.size() else null
 
 
 func _ready() -> void:
