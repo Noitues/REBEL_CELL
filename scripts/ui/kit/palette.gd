@@ -6,8 +6,9 @@ const CELL_PINK := Color("#FF3DA8")
 const CELL_ACID := Color("#D4FF00")
 ## ANIM-R3 B6: the Cell's territory (claimed Sites, its network links, the district tint and
 ## the CLAIMED marks): the Cell's acid, never `cell_pink` (pink is damage on every map and
-## in every fight, so a pink claim read as a hit). Furthest from every corporation's hue
-## (Solace's mint is 70 degrees away) and carried with a non-colour mark (spray ring, hatch).
+## in every fight, so a pink claim read as a hit). At least 40 degrees of hue from every
+## corporation's colour (Meridian's orange is the nearest; ANIM-R4 H9 corrected "furthest"),
+## so it is always carried with a non-colour mark too (spray ring, hatch, stamp word).
 const CELL_TURF := Color("#D4FF00")
 const PAPER := Color("#F2EEE4")
 const PAPER_ALT := Color("#E9E4D6")
@@ -130,3 +131,35 @@ static func display() -> Font:
 
 static func mono() -> Font:
 	return font(FONT_MONO)
+
+
+## ANIM-R4 H11b: the mono lettering with the display face as its fallback for the glyphs
+## Share Tech Mono lacks (the change arrows "→ ▲ ▼"): a variation of its own (the loaded font
+## file is never changed). Only text that carries those glyphs uses it (`mono_for`): a
+## fallback raises the font's line height, so everything else keeps the plain face.
+static func mono_arrows() -> Font:
+	if not _fonts.has(MONO_WITH_ARROWS):
+		var v := FontVariation.new()
+		v.base_font = font(FONT_MONO)
+		v.fallbacks = [display()]
+		_fonts[MONO_WITH_ARROWS] = v
+	return _fonts[MONO_WITH_ARROWS]
+
+
+## The cache key of the mono lettering with its fallback.
+const MONO_WITH_ARROWS := "mono+arrows"
+## The glyphs the mono face lacks that the screens write (a change: "a → b ▲").
+const ARROW_GLYPHS := "→▲▼"
+
+
+## True when `text` carries a glyph the mono face lacks (ARROW_GLYPHS).
+static func has_arrows(text: String) -> bool:
+	for ch in ARROW_GLYPHS:
+		if text.contains(ch):
+			return true
+	return false
+
+
+## The mono lettering for `text`: with the arrows' fallback when it needs it.
+static func mono_for(text: String) -> Font:
+	return mono_arrows() if has_arrows(text) else mono()

@@ -264,13 +264,14 @@ func enter_node(node_id: StringName) -> void:
 	var secs := 0.0
 	if city_overlay != null and is_instance_valid(city_overlay) and not _grid_zoomed and RunManager.netrun != null \
 			and RunManager.netrun.run.current_node_id == node_id:
-		# ANIM-R1 M7: when the pulse lands, the map shows the run's new state: the [1] / [2]
-		# labels on the new next nodes, the node left ticked and dimmed as visited.
-		var overlay := city_overlay
-		secs = city_overlay.travel(from, node_id, func() -> void:
-			if is_instance_valid(overlay) and overlay == city_overlay and not _grid_zoomed and RunManager.netrun != null:
-				var r := route_graph()
-				overlay.set_graph(r["nodes"], r["edges"]))
+		# ANIM-R1 M7 / ANIM-R4 H11c: the map shows the run's new state as the move starts (it
+		# waited for the pulse to land): the [1] / [2] labels on the new next nodes, the ROUTE
+		# window's buttons the same choices, the node left ticked and dimmed as visited, the
+		# walked route a faint trail; the marker travels the link to the node entered.
+		var r := route_graph()
+		city_overlay.set_graph(r["nodes"], r["edges"])
+		_refresh_route_choices()
+		secs = city_overlay.travel(from, node_id)
 	if secs <= 0.0:
 		_show_current()
 		return
@@ -289,10 +290,16 @@ func _demo_enter_fight() -> void:
 
 
 ## ANIM-5 frame capture (dev shortcut): once the route map and the city have settled, a
-## move plays on the map (view only: from the first choice to the node after it, a link
-## mid-route; the run itself does not move); prints the frame it starts on.
+## move plays on the map; prints the frame it starts on. ANIM-R4 H11c: a real move (the demo
+## run, in its own slot, stands on its first node, then moves on to the next): the pulse, the
+## new choices on the map and in the ROUTE window at once, the walked link as a trail.
 func _demo_route_pulse() -> void:
 	demo_tune(OS.get_cmdline_user_args())
+	var s := RunManager.netrun
+	var first: StringName = s.available_nodes()[0]
+	s.run.current_node_id = first
+	s.run.visited.append(first)
+	_show_map()
 	for f in DEMO_SETTLE_FRAMES:
 		await get_tree().process_frame
 	for f in DEMO_BAKE_FRAMES:
@@ -300,9 +307,7 @@ func _demo_route_pulse() -> void:
 			break
 		await get_tree().process_frame
 	print("anim5: route_pulse starts on frame %d" % Engine.get_frames_drawn())
-	var from: StringName = RunManager.netrun.available_nodes()[0]
-	var to: StringName = RunManager.netrun.run.map.get_node(from)["next"][0]
-	city_overlay.travel(from, to)
+	enter_node(s.available_nodes()[0])
 
 
 ## ANIM-4b frame capture: frames a scripted pointer takes from the item to where it lets go,
@@ -416,6 +421,16 @@ static func demo_tune(args: PackedStringArray) -> void:
 			e.amplitude = float(parts[2])
 	if cfg != null:
 		Motion.use_config(cfg)
+
+
+## ANIM-R4 H11c: the ROUTE window shows the view's choices now (a move has started).
+func _refresh_route_choices() -> void:
+	var row := _panel.find_child("RouteNodes", true, false) as VBoxContainer if _panel != null and is_instance_valid(_panel) else null
+	if row == null:
+		return
+	_fill_route_choices(row)
+	UiFocus.link_layout(_panel)
+	UiFocus.focus_first(row)
 
 
 ## ANIM-5: a netrun move is playing on the route map (the node's screen opens after it).
@@ -879,52 +894,10 @@ func _show_map() -> void:
 	route_col.add_theme_constant_override("separation", 8)
 	top.add_child(route_col)
 	route_col.add_child(win)
-	var available := s.available_nodes()
 	var row := VBoxContainer.new()
 	row.name = "RouteNodes"
 	win.body.add_child(row)
-	_route_buttons.clear()
-	var twins := choice_twins(s)
-	var differs := choice_differences(s)
-	var ahead_rows := {}
-	for i in available.size():
-		var node := s.run.map.get_node(available[i])
-		# H21 #14: what the node is (word + icon), its index on every device (the map's
-		# label carries the same index), Heat when entering changes it.
-		var text := node_word(node)
-		var heat := s.node_heat(available[i])
-		if heat != 0:
-			text += tr(" %s Heat") % TextDb.signed(heat)
-		# H24 S12: what lies beyond each choice ("> Event · Shop"): two "Fight" buttons read
-		# the same; where they lead is what differs (the enemy is rolled on entry).
-		var ahead := ahead_words(s.run.map, node)
-		if ahead != "":
-			text += "  > %s" % ahead
-		var id: StringName = available[i]
-		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
-		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
-		if twins.has(id):
-			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
-		var b := _button(text, func() -> void: enter_node(id))
-		b.name = "Node%d" % (i + 1)
-		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
-		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
-		var marks := differs.get(id, []) as Array
-		if not twins.has(id) and (not marks.is_empty() or heat != 0):
-			ahead_rows[i] = _ahead_row(i, marks, heat)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.set_meta(&"route_base", text)
-		b.set_meta(&"route_index", i)
-		IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
-		# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
-		# so the same node looks the same on the button and on the map.
-		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
-		b.tooltip_text = UiTip.fold(route_tip(s, node, heat))
-		_route_buttons.append(b)
-		row.add_child(b)
-		if ahead_rows.has(i):
-			row.add_child(ahead_rows[i])
-	_label_route_buttons()
+	_fill_route_choices(row)
 	var zoom_btn := _button(tr("GRID VIEW") if not _grid_zoomed else tr("ROUTE VIEW"), func() -> void:
 		_grid_zoomed = not _grid_zoomed
 		_show_map())
@@ -978,9 +951,65 @@ func _show_map() -> void:
 		_route_fits = 0
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
+	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
+	# built its loop).
+	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
 	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Modem, an event or loot, all on
 	# the default frame of this city's look: baked now, behind the route (after its own view).
 	_prebake_backdrops.call_deferred()
+
+
+## The ROUTE window's choice buttons for the choices the view shows (view_choices: ANIM-R4
+## H11c, the new ones as soon as a move starts), into `row` (emptied first).
+func _fill_route_choices(row: VBoxContainer) -> void:
+	var s := RunManager.netrun
+	# Hidden and freed in place: the button pressed (the move) may be one of them, mid-signal.
+	for old in row.get_children():
+		(old as CanvasItem).visible = false
+		old.queue_free()
+	var available := view_choices(s)
+	_route_buttons.clear()
+	var twins := choice_twins(s)
+	var differs := choice_differences(s)
+	var ahead_rows := {}
+	for i in available.size():
+		var node := s.run.map.get_node(available[i])
+		# H21 #14: what the node is (word + icon), its index on every device (the map's
+		# label carries the same index), Heat when entering changes it.
+		var text := node_word(node)
+		var heat := s.node_heat(available[i])
+		if heat != 0:
+			text += tr(" %s Heat") % TextDb.signed(heat)
+		# H24 S12: what lies beyond each choice ("> Event · Shop"): two "Fight" buttons read
+		# the same; where they lead is what differs (the enemy is rolled on entry).
+		var ahead := ahead_words(s.run.map, node)
+		if ahead != "":
+			text += "  > %s" % ahead
+		var id: StringName = available[i]
+		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
+		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
+		if twins.has(id):
+			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
+		var b := _button(text, func() -> void: enter_node(id))
+		b.name = "Node%d" % (i + 1)
+		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
+		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
+		var marks := differs.get(id, []) as Array
+		if not twins.has(id) and (not marks.is_empty() or heat != 0):
+			ahead_rows[i] = _ahead_row(i, marks, heat)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.set_meta(&"route_base", text)
+		b.set_meta(&"route_index", i)
+		IconMark.attach(b, node_icon(node), StatIcon.color_of(node_icon(node)))
+		# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
+		# so the same node looks the same on the button and on the map.
+		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
+		b.tooltip_text = UiTip.fold(route_tip(s, node, heat))
+		_route_buttons.append(b)
+		row.add_child(b)
+		if ahead_rows.has(i):
+			row.add_child(ahead_rows[i])
+	_label_route_buttons()
 
 
 ## ANIM-R2 R1 / R2: the default frame's bake at this scene's size and at the page's (a fight's
@@ -1189,7 +1218,7 @@ func _label_route_buttons() -> void:
 static func choice_twins(s: NetrunSession) -> Dictionary:
 	var out := {}
 	var first := {}
-	var open := s.available_nodes()
+	var open := view_choices(s)
 	var signs := subgraph_signatures(s.run.map, s.node_heat)
 	for i in open.size():
 		var sig: int = signs.get(open[i], -1)
@@ -1252,7 +1281,7 @@ const AHEAD_ORDER: Array[StringName] = [StatIcon.ELITE, StatIcon.SHOP, StatIcon.
 ## ANIM-R3 B3: per open choice, the kinds ahead it reaches that not every choice reaches
 ## (id -> Array[StringName]): what telling them apart rests on.
 static func choice_differences(s: NetrunSession) -> Dictionary:
-	var open := s.available_nodes()
+	var open := view_choices(s)
 	var per := {}
 	var common := {}
 	for i in open.size():
@@ -1317,12 +1346,31 @@ const AHEAD_WORDS := {StatIcon.ELITE: "an Elite fight", StatIcon.SHOP: "a Shop",
 
 ## The run's map as buildings in the target Site's neighbourhood (layers step in from
 ## the street towards the Site).
+## ANIM-R4 H11c: the choices the route view shows: the open nodes, or, while the node just
+## entered is being played (a move under way, a fight), the nodes it leads to (the next
+## choices, shown at once: they were the old ones until the move's pulse landed).
+static func view_choices(s: NetrunSession) -> Array[StringName]:
+	var open := s.available_nodes()
+	if not open.is_empty() or s.run.current_node_id == &"" or s.run.is_over():
+		return open
+	var out: Array[StringName] = []
+	for n in s.run.current_node().get("next", []):
+		out.append(n)
+	return out
+
+
+## ANIM-R4 H11c: the walked route (the nodes visited and the one the Cell stands on) stays
+## on the map as a faint line (alpha of the Cell's pink, px width).
+const ROUTE_TRAIL_ALPHA := 0.4
+const ROUTE_TRAIL_WIDTH := 2.2
+
+
 func route_graph() -> Dictionary:
 	var s := RunManager.netrun
 	var map := s.run.map
 	var target: Vector2 = CityLayout.site_points(RunManager.corporation).get(s.run.site_id, NeonCity.hq_of(RunManager.corporation.id))
 	var layers := map.layer_count()
-	var available := s.available_nodes()
+	var available := view_choices(s)
 	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
 	var twins := choice_twins(s)
 	var rows := {}
@@ -1365,6 +1413,10 @@ func route_graph() -> Dictionary:
 	for n in map.all_nodes():
 		for nxt in n["next"]:
 			var live: bool = n["id"] == s.run.current_node_id and available.has(nxt)
+			var walked: bool = _walked(s, n["id"]) and _walked(s, nxt)
+			if walked:
+				edges.append({"a": n["id"], "b": nxt, "color": Color(Palette.CELL_PINK, ROUTE_TRAIL_ALPHA), "width": ROUTE_TRAIL_WIDTH, "dashed": false, "flow": false, "trail": true})
+				continue
 			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live})
 	# ANIM-R3 B8: before the first node the Cell stands at the street, one step before the
 	# route's first layer: the "you are here" marker is drawn there (it was drawn nowhere).
@@ -1372,6 +1424,11 @@ func route_graph() -> Dictionary:
 	if s.run.current_node_id == &"":
 		entry = target - CityLayout.RIGHT * (layers + 1) * 1.7
 	return {"nodes": nodes, "edges": edges, "entry": entry}
+
+
+## Whether the run has walked node `id` (visited, or where it stands).
+static func _walked(s: NetrunSession, id: StringName) -> bool:
+	return s.run.visited.has(id) or id == s.run.current_node_id
 
 
 func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2) -> void:
@@ -1444,9 +1501,33 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	playout.attach_fx(c.last_raid, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	# ANIM-R1 M4: each step's fight is framed (the camera eases in to it) before it plays.
 	playout.framer = _frame_fight.bind(city_overlay)
+	# ANIM-R4 H11a: the top bar's Heat changes with the feed's Heat line, not before.
+	if not _instant_playout() and before != null:
+		hud_heat_shown = before.heat
+		_refresh_status()
+	playout.event_shown.connect(_on_raid_event_shown)
+	playout.finished.connect(_release_hud_heat)
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
 		_show_current()
+
+
+## ANIM-R4 H11a: the top bar's HEAT during a raid's playout: what the feed has told (-1:
+## the campaign's own).
+var hud_heat_shown: int = -1
+
+
+## ANIM-R4 H11a: a raid event the feed has just told: its Heat line moves the top bar's Heat.
+func _on_raid_event_shown(e: Dictionary) -> void:
+	if String(e.get("type", "")) == "heat" and hud_heat_shown >= 0 and e.has("after"):
+		hud_heat_shown = int(e["after"])
+		_refresh_status()
+
+
+func _release_hud_heat() -> void:
+	if hud_heat_shown >= 0:
+		hud_heat_shown = -1
+		_refresh_status()
 
 
 ## ANIM-R1 M4: the mid-run raid's camera: each step eases to its fight (the guns firing
@@ -2408,8 +2489,8 @@ func _raid_forecast(projection: RaidResolver.RaidResult) -> Control:
 	row.add_child(facts)
 	var c := RunManager.netrun.campaign
 	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
-	var home := Badge.new(tr("HOME %d > %d") % [projection.home_before, projection.home_after], home_col, "",
-		tr("Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
+	var home := Badge.new(tr("HOME %d → %d") % [projection.home_before, projection.home_after], home_col, "",
+		tr("Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
 	home.name = "HomeForecast"
 	facts.add_child(home)
 	var total := projection.threats_destroyed + projection.threats_reached_home
@@ -2426,7 +2507,7 @@ func _raid_node_badge(site_id: StringName, n: Dictionary) -> Control:
 	var c := RunManager.netrun.campaign
 	var outcome := String(n.get("outcome", ""))
 	var col := Palette.CELL_ACID if outcome == "holds" else Palette.CELL_PINK
-	var text := tr("%s  HP %s > %s  %s") % [_site_name(site_id), n.get("before", "?"), n.get("after", "?"), RaidFxLayer.tr_outcome(outcome)]
+	var text := tr("%s  HP %s → %s  %s") % [_site_name(site_id), n.get("before", "?"), n.get("after", "?"), RaidFxLayer.tr_outcome(outcome)]
 	var tip := tr("%s (%s): integrity (HP) now and after the raid.") % [_site_name(site_id), _content_name(c.grid.node_type_of(site_id))]
 	var names := PackedStringArray()
 	for a in c.grid.assets_on(site_id):
@@ -2942,7 +3023,7 @@ func _refresh_status() -> void:
 		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, op.hp, op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
 	_status.text = text
 	# Every tag says what it means on hover (H21 #9); its icon is the resource's own.
-	var stats := [[TextDb.mark("HEAT"), str(c.heat), "/%d" % RunManager.resolver.config.heat_max, tr("Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.")],
+	var stats := [[TextDb.mark("HEAT"), str(c.heat if hud_heat_shown < 0 else hud_heat_shown), "/%d" % RunManager.resolver.config.heat_max, tr("Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.")],
 		[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency, spent at HQ.")]]
 	# H24 S16: whose numbers these are: the campaign's, then this run's.
 	var captions := [[0, tr("CAMPAIGN"), tr("The campaign's numbers: they stay between runs.")]]

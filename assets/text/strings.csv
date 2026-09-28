@@ -44,7 +44,7 @@ Press to deploy it to %s (the target: pick another node on the map or in YOUR NO
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
 %s  //  %d RAM,%s  //  %d RAM
-%s  HP %s > %s  %s,%s  HP %s > %s  %s
+%s  HP %s → %s  %s,%s  HP %s → %s  %s
 %s %d HP,%s %d HP
 %s %s HP,%s %s HP
 "%s %s: %s. %s %s Select it, then %s on its card.","%s %s: %s. %s %s Select it, then %s on its card."
@@ -79,13 +79,13 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s moves from %s to %s.,%s moves from %s to %s.
 %s on %s hits %s for %d.,%s on %s hits %s for %d.
-%s reaches %s: %d damage.,%s reaches %s: %d damage.
+"%s reaches %s: %d damage, HP %d → %d.","%s reaches %s: %d damage, HP %d → %d."
 %s returns to the reserves.,%s returns to the reserves.
 %s rolls,%s rolls
-%s takes %d damage.,%s takes %d damage.
+%s takes %d damage: HP %d → %d.,%s takes %d damage: HP %d → %d.
 %s's HP. At 0 the operative flatlines.,%s's HP. At 0 the operative flatlines.
 "%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them.","%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them."
-%s's integrity (HP) now and after the raid: %s > %s. %s,%s's integrity (HP) now and after the raid: %s > %s. %s
+%s's integrity (HP) now and after the raid: %s → %s. %s,%s's integrity (HP) now and after the raid: %s → %s. %s
 "%s, Heat %d, ICE %d, %d runs, %s%s","%s, Heat %d, ICE %d, %d runs, %s%s"
 "%s, a T%d %s","%s, a T%d %s"
 "%s, your home server","%s, your home server"
@@ -93,7 +93,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s/turn,%s/turn
 %s: %s.,%s: %s.
 "%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
-%s: integrity (HP) %s > %s in the raid. %s,%s: integrity (HP) %s > %s in the raid. %s
+%s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
 %s: no change,%s: no change
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
@@ -376,7 +376,7 @@ CardData.whirl.description,Spin a wheel 7 ticks.
 CardData.whirl.display_name,Whirl
 Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
-Cascade: %s takes %d damage.,Cascade: %s takes %d damage.
+Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
 Choose,Choose
 City Grid,City Grid
 Claim,Claim
@@ -755,7 +755,7 @@ HOLDS,HOLDS
 HOLDS %d STEPS,HOLDS %d STEPS
 HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps fighting.
 HOME,HOME
-HOME %d > %d,HOME %d > %d
+HOME %d → %d,HOME %d → %d
 HOME %d/%d,HOME %d/%d
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
@@ -763,7 +763,7 @@ HOME HOLDS,HOME HOLDS
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
-HP %s > %s %s,HP %s > %s %s
+HP %s → %s %s,HP %s → %s %s
 HP is full,HP is full
 HP now: %d of %d.,HP now: %d of %d.
 HQ,HQ
@@ -771,9 +771,10 @@ HUB,HUB
 HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
 Heat,Heat
+Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
-Heat %s for the lost raid: now %d.,Heat %s for the lost raid: now %d.
-Heat %s: now %d.,Heat %s: now %d.
+Heat %s for the lost raid: %d → %d.,Heat %s for the lost raid: %d → %d.
+Heat %s: %d → %d.,Heat %s: %d → %d.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
@@ -867,7 +868,6 @@ RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
-INTERRUPTED: RAID INCOMING,INTERRUPTED: RAID INCOMING
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Inner ring segment %d: Rank 3 lets you swap it for another.,Inner ring segment %d: Rank 3 lets you swap it for another.
@@ -1445,6 +1445,9 @@ RAID // %s,RAID // %s
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID IN PROGRESS,RAID IN PROGRESS
 RAID INBOUND,RAID INBOUND
+"RAID INCOMING
+%s","RAID INCOMING
+%s"
 RAID PENDING: %s (%d),RAID PENDING: %s (%d)
 RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
@@ -2661,7 +2664,7 @@ Yes,Yes
 You are here.,You are here.
 You can move here now.,You can move here now.
 Your home Site (CORE),Your home Site (CORE)
-Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
+Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
 Your spinner. Drag a microchip or a slice onto a slot to put it there.,Your spinner. Drag a microchip or a slice onto a slot to put it there.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.

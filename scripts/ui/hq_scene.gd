@@ -453,6 +453,62 @@ func deploy_asset(armory_index: int, site_id: StringName) -> void:
 		play_asset_drop(site_id, was)
 
 
+## ANIM-R4 H10: the Sites' clear previews (CampaignRules.clear_preview: a copy of the
+## campaign runs each Site's clear; ~4 ms a Site, ~44 ms of the Grid's first frame) kept for
+## the campaign state they were worked out for (`_previews_key`: the state's serialised hash),
+## worked out ahead on the HQ page a Site a frame, else when the Grid needs them.
+var _previews: Dictionary = {}
+var _previews_key: int = 0
+var _warm_sites: Array[StringName] = []
+
+
+## The campaign state's key for the preview cache (its serialised form's hash).
+static func campaign_key(c: CampaignState) -> int:
+	return var_to_str(c.to_dict()).hash() if c != null else 0
+
+
+## Drops the cached previews when the campaign changed since they were worked out.
+func _sync_previews() -> void:
+	var key := campaign_key(RunManager.campaign)
+	if key != _previews_key:
+		_previews.clear()
+		_previews_key = key
+
+
+## Site `s`'s clear preview for the campaign as it stands (cached: `_sync_previews` first).
+func clear_preview_of(s: SiteData) -> Dictionary:
+	if not _previews.has(s.id):
+		_previews[s.id] = CampaignRules.clear_preview(RunManager.campaign, RunManager.corporation, RunManager.config(), s, RunManager.lookup())
+	return _previews[s.id]
+
+
+## ANIM-R4 H10: works out the open runs' previews ahead, one a frame, while the HQ page shows
+## (the Grid opens with them ready). Stops when the page changes.
+func _warm_previews() -> void:
+	if RunManager.campaign == null:
+		return
+	_sync_previews()
+	_warm_sites.clear()
+	var sites := RunManager.launchable_sites()
+	sites.append_array(RunManager.patrol_sites())
+	for s in sites:
+		if not _previews.has(s.id):
+			_warm_sites.append(s.id)
+	if not _warm_sites.is_empty() and is_inside_tree() and not get_tree().process_frame.is_connected(_warm_preview_step):
+		get_tree().process_frame.connect(_warm_preview_step, CONNECT_ONE_SHOT)
+
+
+func _warm_preview_step() -> void:
+	if panel_name != "hq" or RunManager.campaign == null or _warm_sites.is_empty() or not is_inside_tree():
+		return
+	_sync_previews()
+	var sd := CampaignRules.site_data(RunManager.corporation, _warm_sites.pop_front())
+	if sd != null:
+		clear_preview_of(sd)
+	if not _warm_sites.is_empty() and not get_tree().process_frame.is_connected(_warm_preview_step):
+		get_tree().process_frame.connect(_warm_preview_step, CONNECT_ONE_SHOT)
+
+
 ## ANIM-R3 B5: the raid forecast's integrity after the raid per node (site id -> int; home
 ## included); {} with no raid pending.
 func forecast_values() -> Dictionary:
@@ -491,7 +547,29 @@ func play_asset_drop(site_id: StringName, was: Dictionary = {}) -> void:
 		var placed: Array = RunManager.campaign.grid.site(site_id).get("assets", []) if RunManager.campaign != null else []
 		var label := _display(StringName(placed[placed.size() - 1])) if not placed.is_empty() else ""
 		var bg := wireframe
-		city_overlay.drop_asset(site_id, func() -> bool: return not is_instance_valid(bg) or not bg.camera_easing(), label, forecast_changes(was))
+		city_overlay.drop_asset(site_id, func() -> bool: return not is_instance_valid(bg) or not bg.camera_easing(), label, forecast_changes(was), threat_road(site_id))
+
+
+## ANIM-R4 H11b: the road threats take from `site_id` to CORE (the Grid's next hops toward
+## home, as the threat routes are drawn): the drop's pulse runs it. [] when there is none.
+func threat_road(site_id: StringName) -> Array:
+	var c := RunManager.campaign
+	if c == null or RunManager.corporation == null:
+		return []
+	var road: Array = [site_id]
+	var cur := site_id
+	var guard := 0
+	while cur != c.grid.home_site_id and guard < ROAD_HOPS_MAX:
+		guard += 1
+		cur = c.grid.next_hop(cur, c.grid.home_site_id, RunManager.corporation.city_grid)
+		if cur == &"" or road.has(cur):
+			return []
+		road.append(cur)
+	return road if cur == c.grid.home_site_id else []
+
+
+## The most hops a drop's road to CORE may take (as CityLayout.threat_paths).
+const ROAD_HOPS_MAX := 12
 
 
 func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
@@ -507,6 +585,9 @@ func fight_raid() -> void:
 	wireframe.city.pin_influence(CityInfluence.of(RunManager.campaign, RunManager.corporation))
 	if Motion.animating() and RunManager.campaign != null:
 		hud_home_shown = RunManager.campaign.grid.home_integrity  # ANIM-R1 M4: HOME rolls down as hits land
+		# ANIM-R4 H11a: Heat and RAIDS hold too, until the feed tells what changes them.
+		hud_heat_shown = RunManager.campaign.heat
+		hud_raids_shown = RunManager.campaign.pending_raids.size()
 	var events := RunManager.fight_raid()
 	_report(events)
 	if events.is_empty():
@@ -1271,6 +1352,10 @@ func show_hq() -> void:
 	top_right.add_child(jack)
 	right.add_child(top_right)
 	right.add_child(radio)
+	# ANIM-R4 H10: what the pages this one leads to need is made ahead (their first frames
+	# made it): the Grid's and a raid's music, a run's, and the open runs' previews.
+	AudioDirector.prewarm_music(["grid", "raid", "netrun", "combat"], c.corporation_id)
+	_warm_previews.call_deferred()
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 12)
 	left.custom_minimum_size.x = 300
@@ -1595,6 +1680,9 @@ func show_grid() -> void:
 	var c := RunManager.campaign
 	var corp := RunManager.corporation
 	var cfg := RunManager.config()
+	_sync_previews()
+	# ANIM-R4 H10: the run a JACK IN here starts, and a raid, have their music made ahead.
+	AudioDirector.prewarm_music(["netrun", "combat", "raid"], c.corporation_id)
 	_grid_chips.clear()
 	_jack_button = null
 	# The Grid lives on the city (M3: the rest of the city greyed out); the side column
@@ -1726,7 +1814,7 @@ func show_grid() -> void:
 				b.add_theme_color_override("font_color", Palette.CELL_ACID)
 			# H24 K4: what clearing it gives and risks, as icons under the row (the rows
 			# looked alike), and the row lights its node on the map (and the node its row).
-			var preview := CampaignRules.clear_preview(c, corp, cfg, s, RunManager.lookup())
+			var preview := clear_preview_of(s)
 			var gains := run_gains(s, preview)
 			var said := PackedStringArray()
 			for g: Badge in gains:
@@ -2462,8 +2550,8 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
 	# H23 S5: every number says what it counts ("HOME 50 > 40", "STOPPED 0/2", "STRENGTH
 	# +0%"), and its tooltip says what it means.
-	var home_badge := Badge.new(tr("HOME %d > %d") % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
-		tr("Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
+	var home_badge := Badge.new(tr("HOME %d → %d") % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
+		tr("Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.") % [projection.home_before, projection.home_after]).with_meter(projection.home_after, c.grid.home_max_integrity).with_icon(StatIcon.HOME)
 	home_badge.name = "HomeForecast"
 	facts.add_child(home_badge)
 	var total := projection.threats_destroyed + projection.threats_reached_home + _still_active(projection)
@@ -2804,8 +2892,8 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 	_add_tip(row, target, tr("%s (%s): make it the target for the Armory's assets.") % [site_name(site_id), _display(c.grid.node_type_of(site_id))])
 	if not n.is_empty():
 		# H23 S5: the numbers are the node's integrity (HP); HOLDS / BREACHED said in the tip.
-		row.add_child(Badge.new(tr("HP %s > %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(String(n.get("outcome", "")))],
-			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, tr("%s's integrity (HP) now and after the raid: %s > %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
+		row.add_child(Badge.new(tr("HP %s → %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(String(n.get("outcome", "")))],
+			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, tr("%s's integrity (HP) now and after the raid: %s → %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
 	var assets := c.grid.assets_on(site_id)
 	for i in assets.size():
 		var badge := Badge.new("", Palette.CELL_PINK, "", _display(assets[i]), assets[i])
@@ -2864,10 +2952,10 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 		var res: Dictionary = nodes_res.get(String(n["id"]), {})
 		if not res.is_empty():
 			n["color"] = Palette.CELL_ACID if String(res["outcome"]) == "holds" else Palette.CELL_PINK
-			n["result"] = "%s > %s %s" % [res["before"], res["after"], outcome_word(String(res["outcome"]))]
+			n["result"] = "%s → %s %s" % [res["before"], res["after"], outcome_word(String(res["outcome"]))]
 			n["label"] = site_name(n["id"])  # never the raw id (H20)
 			# H23 S5: the tag's numbers and word explained on hover.
-			n["tip"] = tr("%s: integrity (HP) %s > %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(String(res["outcome"]))]
+			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(String(res["outcome"]))]
 		n["assets"] = c.grid.assets_on(n["id"])
 		n["threat_corp"] = String(c.corporation_id)
 		nodes.append(n)
@@ -2955,6 +3043,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-R1 M4: each step's fight is framed (the camera eases to it) before it plays, and
 	# every hit on home flies its number into the top bar's HOME, which rolls down.
 	playout.framer = _frame_fight.bind(overlay)
+	playout.event_shown.connect(_on_raid_event_shown)
 	if fx != null and Motion.animating():
 		hud_home_shown = int(r.get("home_before", c.grid.home_integrity))
 		_refresh_status()
@@ -2962,6 +3051,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
 		hud_home_shown = -1
+		hud_heat_shown = -1
+		hud_raids_shown = -1
 		_refresh_status()
 		forecast.resolve(RESULT_CAPTION, verdict)
 		# The result's tint spreads from the nodes that flipped (NeonCity, one bake).
@@ -3040,6 +3131,37 @@ static func fight_area(parts: Array) -> Rect2:
 ## ANIM-R1 M4: the top bar's HOME during a raid's playout: the value the hits shown so far
 ## leave (-1: the campaign's own).
 var hud_home_shown: int = -1
+## ANIM-R4 H11a: the top bar's HEAT and RAIDS during a raid's playout: what the feed has told
+## so far (-1: the campaign's own). They change with the line that changes them: Heat with
+## its "Heat +5 for the lost raid: 1 → 6." line, RAIDS going down with the raid's end line
+## and up with a threshold's line that queues a raid.
+var hud_heat_shown: int = -1
+var hud_raids_shown: int = -1
+
+
+## ANIM-R4 H11a: a raid event the feed has just told (RaidPlayoutPanel.event_shown).
+func _on_raid_event_shown(e: Dictionary) -> void:
+	match String(e.get("type", "")):
+		"heat":
+			if hud_heat_shown >= 0 and e.has("after"):
+				hud_heat_shown = int(e["after"])
+		"raid_end":
+			if hud_raids_shown >= 0:
+				hud_raids_shown = maxi(0, hud_raids_shown - 1)
+		"heat_threshold":
+			if hud_raids_shown >= 0 and _threshold_raids(int(e.get("heat", 0))):
+				hud_raids_shown += 1
+		_:
+			return
+	_refresh_status()
+
+
+## Whether the Heat threshold at `at` queues a raid.
+static func _threshold_raids(at: int) -> bool:
+	for t in RunManager.config().heat_thresholds:
+		if t != null and t.heat == at:
+			return t.event_raid != null
+	return false
 
 
 ## ANIM-R1 M4: a hit on home: its red number flies from the node on the map into the top
@@ -3090,6 +3212,8 @@ const HOME_NUMBER_FONT := 30
 
 func _after_playout() -> void:
 	hud_home_shown = -1
+	hud_heat_shown = -1
+	hud_raids_shown = -1
 	for n in find_children("HomeHitNumber", "Label", false, false):
 		n.queue_free()
 	wireframe.city.release_influence()
@@ -3131,7 +3255,7 @@ func show_raid_summary() -> void:
 	facts.add_theme_constant_override("h_separation", 10)
 	facts.add_theme_constant_override("v_separation", 4)
 	box.add_child(facts)
-	facts.add_child(Badge.new("%d > %d" % [int(r.get("home_before", 0)), int(r.get("home_after", 0))], RaidVerdict.color_of(int(r.get("home_after", 0)) >= int(r.get("home_before", 0))), GLYPH_HOME,
+	facts.add_child(Badge.new("%d → %d" % [int(r.get("home_before", 0)), int(r.get("home_after", 0))], RaidVerdict.color_of(int(r.get("home_after", 0)) >= int(r.get("home_before", 0))), GLYPH_HOME,
 		tr("Home integrity before and after the raid.")).with_meter(int(r.get("home_after", 0)), c.grid.home_max_integrity).with_icon(StatIcon.HOME))
 	facts.add_child(Badge.new(tr("%d destroyed") % int(r.get("threats_destroyed", 0)), Palette.CELL_ACID, GLYPH_THREAT, tr("Threats your network destroyed.")))
 	if int(r.get("threats_reached_home", 0)) > 0:
@@ -3143,7 +3267,7 @@ func show_raid_summary() -> void:
 		var holds := String(n["outcome"]) == "holds"
 		var node_row := HFlowContainer.new()
 		node_row.add_child(_label(site_name(StringName(String(id)))))
-		node_row.add_child(Badge.new("%d > %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
+		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
 			tr("Integrity before and after, and whether the node held.")))
 		box.add_child(node_row)
 	for key in ["seized", "disabled"]:
@@ -3376,11 +3500,11 @@ func _refresh_status() -> void:
 		c.heat, cfg.heat_max, c.schematics, c.grid.home_integrity, c.grid.home_max_integrity,
 		c.exploits.size(), c.pending_raids.size(), c.ice_level, "campaign over" if c.is_over() else "active"]
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
-	hud.set_stats([[TextDb.mark("HEAT"), str(c.heat), "/%d" % cfg.heat_max, heat_tip()],
+	hud.set_stats([[TextDb.mark("HEAT"), str(c.heat if hud_heat_shown < 0 else hud_heat_shown), "/%d" % cfg.heat_max, heat_tip()],
 		[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
 		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
-		[TextDb.mark("RAIDS"), str(c.pending_raids.size()), "", tr("Raids pending against your network. Set up the defence before the next run.")],
+		[TextDb.mark("RAIDS"), str(c.pending_raids.size() if hud_raids_shown < 0 else hud_raids_shown), "", tr("Raids pending against your network. Set up the defence before the next run.")],
 		[TextDb.mark("ICE"), str(c.ice_level), "", _ice_description(c.ice_level)],
 		[TextDb.mark("CREW"), str(c.living_operatives().size()), "", tr("Living operatives in the Cell.")]],
 		# H24 S16: whose numbers these are (a run adds its own group).

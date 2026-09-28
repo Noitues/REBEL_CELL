@@ -215,10 +215,10 @@ func test_raid_setup_shows_each_nodes_projected_outcome_without_a_text_wall() ->
 		var n: Dictionary = projection.nodes.get(String(id), {})
 		var badge_text := ""
 		for b in _all(row):
-			if b is Badge and (b as Badge).text.contains(">"):
+			if b is Badge and (b as Badge).text.contains("→"):
 				badge_text = (b as Badge).text
 		# H23 S5 (updated on purpose): the numbers say they are the node's HP.
-		assert_eq(badge_text, "HP %s > %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()], "exact projected outcome for %s (GDD 9.3)" % id)
+		assert_eq(badge_text, "HP %s → %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()], "exact projected outcome for %s (GDD 9.3)" % id)
 	# H22 #9 (updated on purpose): a dashed forecast, "IF THE RAID RUNS NOW:" + verdict.
 	var stamp := hq._panel.find_child("Projection", true, false) as ForecastStamp
 	# ANIM-R4 H3 (updated on purpose): ALL HOLD only when nothing is lost; else the losses.

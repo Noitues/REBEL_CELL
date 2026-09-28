@@ -47,6 +47,13 @@ func with_icon(kind: StringName) -> Badge:
 	return self
 
 
+## The badge's lettering: the theme's, or (ANIM-R4 H11b) the mono face with the arrows'
+## fallback when the text writes a change ("HP 50 → 40").
+func _font() -> Font:
+	var f := get_theme_font(&"font", &"Label")
+	return Palette.mono_arrows() if Palette.has_arrows(text) and not f.has_char(0x2192) else f
+
+
 func _font_size() -> int:
 	return get_theme_font_size(&"font_size", &"Label")
 
@@ -56,7 +63,7 @@ func _scale() -> float:
 
 
 func _get_minimum_size() -> Vector2:
-	var font := get_theme_font(&"font", &"Label")
+	var font := _font()
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, _font_size()).x
 	if fill >= 0.0:
 		w = maxf(w, METER_W)
@@ -89,7 +96,7 @@ func _draw() -> void:
 		StatIcon.draw(self, c, r * 0.62, icon_kind, color)
 	elif glyph != "":
 		draw_string(Palette.mono(), c + Vector2(-r, r * 0.42), glyph, HORIZONTAL_ALIGNMENT_CENTER, r * 2.0, int(r * 1.1), color)
-	var font := get_theme_font(&"font", &"Label")
+	var font := _font()
 	var fs := _font_size()
 	var x := r * 2.0 + GAP + 2.0
 	var base := (size.y - (METER_H + 2.0 if fill >= 0.0 else 0.0)) * 0.5 + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25
