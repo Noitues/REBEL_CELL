@@ -48,7 +48,7 @@ const DEMOS := {
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
 	&"intent_flip": ["view", "tag"], &"rewind_scrub": ["scene", "rewind"],
 	&"pointer_flicker": ["pulse_pointer", "wheel"], &"orbit_trail": ["view", "orbit"],
-	&"enemy_break": ["scene", "break"], &"hub_shatter": ["scene", "shatter"],
+	&"enemy_break": ["scene", "send_kill"], &"hub_shatter": ["scene", "shatter"],
 	&"heat_pulse": ["heat", "stage"], &"heat_letters_shake": ["shake", "number"], &"poster_stamp": ["pop", "panel"], &"net_creep": ["fade_out", "panel"],
 	&"hq_crt_hum": ["screen", "hum"], &"radio_type": ["screen", "radio"], &"jack_ring_breathe": ["screen", "jack"], &"polaroid_tilt": ["screen", "dossier"],
 	&"site_outline_draw": ["fade_in", "panel"], &"map_camera_ease": ["slide_x", "panel"], &"route_crawl": ["slide_x", "sticker"], &"asset_drop": ["drop", "card"],
@@ -76,7 +76,7 @@ const DEMOS := {
 	&"influence_crossfade": ["fade_in", "panel"], &"influence_spread": ["fade_in", "panel"],
 	# ANIM-2 / ANIM-3 (combat): "view" plays on the lab's wheel / card / SEND IT; "scene"
 	# plays in a live combat scene over the whole lab (1280x720).
-	&"resolve_sequence": ["scene", "send"], &"hit_line": ["scene", "send"], &"victory_stamp": ["scene", "victory"],
+	&"resolve_sequence": ["scene", "send_hit"], &"hit_line": ["scene", "send_hit"], &"victory_stamp": ["scene", "victory"],
 	&"combat_end_hold": ["scene", "victory"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
@@ -121,6 +121,10 @@ const DEMO_SPIN_TICKS := 9.0
 const DEMO_RESPIN_TICKS := 70.0
 const DEMO_POINTER_SHIFT := 5
 const DEMO_HP_LOSS := 12
+## ANIM-R1 captures: nudges tried to make the SEND IT land a hit, and the enemy HP the
+## kill capture starts from.
+const DEMO_NUDGE_TRIES := 12
+const DEMO_KILL_HP := 3
 ## Drag demo: the ghost's path (from, to) over DRAG_FRAMES frames, in 1280x720 space.
 const DRAG_FROM := Vector2(260, 620)
 const DRAG_TO := Vector2(820, 300)
@@ -675,6 +679,20 @@ func _play_scene(what: String) -> void:
 	match what:
 		"send":
 			_scene.end_turn()
+		"send_hit", "send_kill":
+			# ANIM-R1 captures: a SEND IT whose hits land (the operative's wheel nudged until
+			# the preview deals damage), and one that breaks the enemy (lab only: its HP set
+			# low first, so the kill turn is the first one).
+			for k in DEMO_NUDGE_TRIES:
+				if _preview_hits(enemy):
+					break
+				_scene.nudge_wheel(&"player", 1)
+			if what == "send_kill":
+				_scene.engine.state().get_combatant(enemy).hp = DEMO_KILL_HP
+				_scene._refresh(_scene.engine.state())
+			_scene.skip_motion()
+			await get_tree().process_frame
+			_scene.end_turn()
 		"play":
 			_scene.select_card(0)
 			if _scene.selecting >= 0:
@@ -741,6 +759,14 @@ func _play_scene(what: String) -> void:
 			_scene.ram_note.hold(0)
 			_scene.ram_note.play_refill()
 
+
+
+## True when SEND IT would take HP off `enemy` now (the engine's own preview).
+func _preview_hits(enemy: StringName) -> bool:
+	for e in _scene.engine.preview_end_turn().events:
+		if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == enemy and int(e.get("hp_damage", 0)) > 0:
+			return true
+	return false
 
 
 ## The first hand card with several legal targets (else card 0).

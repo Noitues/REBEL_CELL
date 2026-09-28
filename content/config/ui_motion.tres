@@ -320,12 +320,12 @@ trans = 4
 amplitude = 0.6
 
 ; ---- 4.11 Enemy death / breach ----
-; wheel pieces fall amplitude px; delay = how long a SEND IT shows its HP at 0 before it breaks (ANIM-R1)
+; wheel pieces fall amplitude px; delay = how long a SEND IT holds its HP at 0 (after the number arrives and the HP rolls down) before it breaks (ANIM-R1)
 [sub_resource type="Resource" id="m_enemy_break"]
 script = ExtResource("1_entry")
 id = &"enemy_break"
 duration = 0.75
-delay = 0.3
+delay = 0.15
 ease = 0
 trans = 4
 amplitude = 160.0

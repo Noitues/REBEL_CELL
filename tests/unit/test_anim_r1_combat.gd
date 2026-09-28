@@ -516,7 +516,7 @@ func test_the_schedule_holds_the_landing_and_the_result_within_budget() -> void:
 						# Its HP is seen at 0 first.
 						for j in k:
 							if beats[j]["kind"] == "damage" and beats[j]["target"] == beats[k]["target"]:
-								assert_true(times[k] - times[j] >= Motion.delay_of(&"enemy_break") - 0.0001, "%s: the break waits for HP 0" % enemy)
+								assert_true(times[k] - times[j] >= scene.death_lead() - 0.0001, "%s: the break waits for HP 0" % enemy)
 				if first < INF:
 					assert_true(first >= Motion.seconds(&"resolve_landing_hold") - 0.0001, "%s: the landing holds before anything resolves" % enemy)
 					assert_true(float(sch["result_at"]) >= last_hit, "%s: the result comes after the last hit" % enemy)

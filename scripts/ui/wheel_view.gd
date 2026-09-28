@@ -939,6 +939,21 @@ func number_slot(band: String, text: String, crit: bool) -> Dictionary:
 	return {"at": c + Vector2(0.0, mid), "fs": int(fs), "room": 0.0}
 
 
+## Where a word stamp goes (BLOCKED, EVADED, NO DAMAGE...): in the HP band above the name,
+## where the hit's number would have been, and the width it may take there so its box stays
+## inside the hub. Returns {at (global), max_w}.
+func stamp_slot() -> Dictionary:
+	var r := hub_radius() * NUMBER_HUB_SHARE
+	var edge := hub_text_extent().x - NUMBER_GAP
+	# As tall as the room over the name allows (never over the name), down to the floor.
+	var h := clampf(edge + r, CombatFxLayer.WORD_STAMP_MIN * CombatFxLayer.WORD_BOX_H, CombatFxLayer.WORD_STAMP_FONT * _ts() * CombatFxLayer.WORD_BOX_H)
+	edge = maxf(edge, -r + h)
+	var mid := edge - h * 0.5
+	var far := absf(mid) + h * 0.5
+	return {"at": global_center() + Vector2(0.0, mid), "max_w": 2.0 * sqrt(maxf(r * r - far * far, NUMBER_MIN_FONT * NUMBER_MIN_FONT)),
+		"max_fs": int(h / CombatFxLayer.WORD_BOX_H)}
+
+
 ## The hub's words from the top of the name to the foot of its last line (local y, from
 ## the centre): numbers keep off them.
 func hub_text_extent() -> Vector2:

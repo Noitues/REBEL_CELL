@@ -2754,7 +2754,14 @@ static func sequence_schedule(beats: Array[Dictionary]) -> Dictionary:
 	var spin_time := maxf(WheelView.spin_seconds(&"wheel_respin", RC.TICKS * SPIN_TICKS_TYPICAL),
 		Motion.delay_of(&"enemy_turn_spin") + WheelView.spin_seconds(&"enemy_turn_spin", RC.TICKS * SPIN_TICKS_TYPICAL))
 	return ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), spin_time,
-		Motion.seconds(&"resolve_landing_hold"), Motion.seconds(&"resolve_result_hold"), Motion.delay_of(&"enemy_break"))
+		Motion.seconds(&"resolve_landing_hold"), Motion.seconds(&"resolve_result_hold"), death_lead())
+
+
+## How long a wheel's death waits after the hit that killed it (C5f: its HP is seen at 0
+## first): the hit's number travelling into the HP counter, the HP rolling down, then
+## `enemy_break`'s delay at 0.
+static func death_lead() -> float:
+	return Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + Motion.seconds(&"hp_drain") + Motion.delay_of(&"enemy_break")
 
 
 ## A turn-start respin runs two to three turns (the core adds two full turns and a roll):
@@ -2774,8 +2781,8 @@ func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatS
 		if not v.defeated():
 			v.show_caption(tr("THIS TURN"))
 		if stamps.has(v.combatant.id) and not v.defeated():
-			fx_layer.word_stamp(v.global_center(), String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"),
-				v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
+			var spot := v.stamp_slot()
+			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]), int(spot["max_fs"]))
 
 
 ## Wheels (the operative and the enemies, not satellites) whose HP the resolve didn't
@@ -2984,8 +2991,9 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		fx_layer.hit_line(_source_spot(b, before), line_to, sv.wheel_color)
 	if stamp_word != "":
 		# Nothing got through: the victim stamps it (no line, no number).
-		var at: Vector2 = tv.number_slot("hp", stamp_word, false)["at"] if on_host else tv.satellite_spot(target)
-		fx_layer.word_stamp(at, stamp_word, CHIP_GUARD, Motion.seconds(&"number_float"), tv.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
+		var spot := tv.stamp_slot()
+		var at: Vector2 = spot["at"] if on_host else tv.satellite_spot(target)
+		fx_layer.word_stamp(at, stamp_word, CHIP_GUARD, Motion.seconds(&"number_float"), float(spot["max_w"]), int(spot["max_fs"]))
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
 		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), Palette.CELL_ACID, motion_seconds_left())
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:

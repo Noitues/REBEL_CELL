@@ -235,8 +235,8 @@ func hit_line(from: Vector2, to: Vector2, color: Color) -> void:
 ## ANIM-R1: a word stamped at `at` (global) in a tilted box (BLOCKED, EVADED, NO DAMAGE,
 ## PHASE 2...): lands from `result_stamp`'s amplitude scale, holds `hold` seconds, fades.
 ## Its lettering fits `max_w` px (the hub it sits in). Returns the box it covers (global).
-func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float) -> Rect2:
-	var fs := word_stamp_font(text, max_w)
+func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float, max_fs: int = -1) -> Rect2:
+	var fs := word_stamp_font(text, max_w, max_fs)
 	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0
 	var box := Rect2(at - Vector2(w * 0.5, fs * WORD_BOX_H * 0.5), Vector2(w, fs * WORD_BOX_H))
 	if not Motion.live(&"result_stamp"):
@@ -246,9 +246,12 @@ func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: flo
 	return box
 
 
-## The stamp's font size: WORD_STAMP_FONT at the text scale, smaller until it fits `max_w`.
-static func word_stamp_font(text: String, max_w: float) -> int:
+## The stamp's font size: WORD_STAMP_FONT at the text scale (at most `max_fs`), smaller
+## until it fits `max_w`.
+static func word_stamp_font(text: String, max_w: float, max_fs: int = -1) -> int:
 	var fs := roundi(WORD_STAMP_FONT * Settings.text_scale)
+	if max_fs > 0:
+		fs = maxi(WORD_STAMP_MIN, mini(fs, max_fs))
 	while fs > WORD_STAMP_MIN and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0 > max_w:
 		fs -= 1
 	return fs
