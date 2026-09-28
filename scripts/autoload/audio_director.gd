@@ -14,6 +14,12 @@ const CORP_CONTEXTS := {
 
 var _sfx: Dictionary = {}
 var _music: Dictionary = {}
+## ANIM-R4 H10: music being built ahead on the worker pool (context -> task id) and what
+## those tasks built (context -> AudioStreamWAV, under `_warm_lock`): the Grid's first open
+## built its 4 s loop on the main thread, ~59 ms of that frame.
+var _warming: Dictionary = {}
+var _warmed: Dictionary = {}
+var _warm_lock := Mutex.new()
 var _players: Array[AudioStreamPlayer] = []
 var _music_player: AudioStreamPlayer
 var _layer_player: AudioStreamPlayer
@@ -88,11 +94,53 @@ func play_music(context: String, corporation_id: StringName = &"") -> void:
 	played.append("music:%s" % context)
 	if muted:
 		return
+	_collect_warm(context)
 	if not _music.has(context):
 		_music[context] = _make_music(context)
 	_music_player.stream = _music[context]
 	_music_player.play()
 	_update_layer()
+
+
+## ANIM-R4 H10: builds the music of `contexts` (as play_music names them, before
+## context_for) for `corporation_id` ahead on the worker pool, so a page that starts it later
+## (the Grid, the raid) does not build it in its first frame. Nothing when muted (tests) or
+## already built or building.
+func prewarm_music(contexts: Array, corporation_id: StringName = &"") -> void:
+	if muted:
+		return
+	for c in contexts:
+		var ctx := context_for(String(c), corporation_id)
+		if _music.has(ctx) or _warming.has(ctx):
+			continue
+		_warming[ctx] = WorkerThreadPool.add_task(_warm_music.bind(ctx), false, "music %s" % ctx)
+
+
+## Worker thread: builds `ctx`'s loop (pure maths, no tree) and leaves it for the main thread.
+func _warm_music(ctx: String) -> void:
+	var wav := _make_music(ctx)
+	_warm_lock.lock()
+	_warmed[ctx] = wav
+	_warm_lock.unlock()
+
+
+## Takes `ctx`'s loop from its worker (waiting for it if it is still being built).
+func _collect_warm(ctx: String) -> void:
+	if not _warming.has(ctx):
+		return
+	WorkerThreadPool.wait_for_task_completion(int(_warming[ctx]))
+	_warming.erase(ctx)
+	_warm_lock.lock()
+	var wav: Variant = _warmed.get(ctx)
+	_warmed.erase(ctx)
+	_warm_lock.unlock()
+	if wav != null and not _music.has(ctx):
+		_music[ctx] = wav
+
+
+func _exit_tree() -> void:
+	for ctx in _warming.keys():
+		_collect_warm(String(ctx))
 
 
 ## The context actually played for `context` in a campaign against `corporation_id`.
