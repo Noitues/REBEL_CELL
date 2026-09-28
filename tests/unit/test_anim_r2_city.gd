@@ -309,6 +309,13 @@ func _seconds(s: float) -> void:
 	await get_tree().create_timer(s).timeout
 
 
+## Waits a frame at a time until `cond` holds or `limit` seconds have passed.
+func _until(cond: Callable, limit: float) -> void:
+	var t0 := Time.get_ticks_msec()
+	while not cond.call() and Time.get_ticks_msec() - t0 < int(limit * 1000.0):
+		await get_tree().process_frame
+
+
 func _live() -> void:
 	Motion.force_live = true
 	if Settings.reduce_effects:
@@ -490,14 +497,17 @@ func test_a_multi_band_rise_rolls_to_each_threshold_and_stamps_a_banner_each() -
 	poster.set_heat(60, 100, marks)
 	assert_eq(poster.banner_alpha, 0.0, "nothing before the number reaches 25")
 	assert_eq(Fx.heat_pulses, pulses, "no distortion before the crossing")
-	await _seconds(Motion.seconds(&"number_roll") + 0.08)
+	# Waits for each stamp (bounded) rather than a fixed number_roll + 0.08 s: under a loaded
+	# parallel run one frame outlasted that slack (DECISIONS "Animation pass - bake crash").
+	await _until(func() -> bool: return Fx.heat_pulses > pulses, Motion.seconds(&"number_roll") * 4.0)
 	assert_string_contains(poster.banner_text(), "25", "the first banner names 25")
 	assert_eq(Fx.heat_pulses, pulses + 1, "one distortion at 25")
 	assert_false(Fx.distortion.get_rect().encloses(Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)), "round the poster, not the screen")
-	await _seconds(Motion.seconds(&"number_roll") + 0.08)
+	await _until(func() -> bool: return Fx.heat_pulses > pulses + 1, Motion.seconds(&"number_roll") * 4.0)
 	assert_string_contains(poster.banner_text(), "50", "then one for 50")
 	assert_eq(Fx.heat_pulses, pulses + 2)
-	await _seconds(Motion.seconds(&"number_roll") + Motion.seconds(&"heat_pulse") + 0.1)
+	await _until(func() -> bool: return is_equal_approx(poster.shown_heat, 60.0) and not Fx.distortion.visible,
+		(Motion.seconds(&"number_roll") + Motion.seconds(&"heat_pulse")) * 4.0)
 	assert_almost_eq(poster.shown_heat, 60.0, 0.01, "the number ends on the Heat")
 	assert_false(Fx.distortion.visible, "the distortion is brief")
 	assert_true(Motion.seconds(&"heat_pulse") <= 0.3, "at most 0.3 s")
