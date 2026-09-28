@@ -83,6 +83,11 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	info.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	info.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
 	box.add_child(info)
+	if compact:
+		# ANIM-R1 M12: at big text the HP (strip and numbers) comes right under the name, so
+		# the first screen of the HQ shows it (at 1.6 the page cut the dossier above it).
+		box.move_child(hp_strip, name_label.get_index() + 1)
+		box.move_child(info, hp_strip.get_index() + 1)
 	orders = VBoxContainer.new()
 	orders.add_theme_constant_override("separation", 4)
 	box.add_child(orders)

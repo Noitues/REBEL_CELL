@@ -80,6 +80,11 @@ static func timeline(group_events: Array) -> Dictionary:
 		var length := 0.0
 		var shot_at := cursor
 		var trace := raw_seconds(&"turret_trace")
+		# ANIM-R1 M4: a shot reads strictly shot, hit, number: the trace flies to its target,
+		# the hit lands when it arrives (`raid_hit_effect`), the number rises after the hit;
+		# a threat breaks up only once the shot that kills it has hit.
+		var hit := raw_seconds(&"raid_hit_effect")
+		var shot_end := {}
 		for e: Dictionary in by_phase[phase]:
 			var t := String(e["type"])
 			var motion: StringName = MOTION_OF[t]
@@ -88,8 +93,10 @@ static func timeline(group_events: Array) -> Dictionary:
 			if t == "shot":
 				t0 = shot_at
 				shot_at += trace * SHOT_STAGGER
+				dur = trace + hit
+				shot_end[String(e.get("threat", ""))] = t0 + dur
 			elif t == "threat_destroyed":
-				t0 = maxf(cursor, shot_at - trace * SHOT_STAGGER + trace)
+				t0 = maxf(cursor, float(shot_end.get(String(e.get("threat", "")), shot_at - trace * SHOT_STAGGER + trace + hit)))
 			beats.append({"event": e, "type": t, "phase": phase, "motion": motion, "t0": t0, "dur": dur})
 			length = maxf(length, t0 - cursor + dur)
 		cursor += length
@@ -107,6 +114,39 @@ static func timeline(group_events: Array) -> Dictionary:
 	for i in order:
 		sorted.append(beats[i])
 	return {"beats": sorted, "seconds": cursor}
+
+
+## ANIM-R1 M4: the Sites a step's fight happens at, for the playout camera: where threats
+## enter and move from and to, the guns that fire and where their targets stand (the
+## firing defence stays in frame before its shot), and the nodes hit. `threat_sites`: where
+## each threat stood before the step (threat id -> Site); moves in the step move them.
+## Sorted by id, no repeats. Pure.
+static func focus_sites(events: Array, threat_sites: Dictionary) -> Array[StringName]:
+	var at := threat_sites.duplicate()
+	var out: Array[StringName] = []
+	for e: Dictionary in events:
+		match String(e.get("type", "")):
+			"threat_enters":
+				at[String(e["threat"])] = StringName(String(e["site"]))
+				_add(out, StringName(String(e["site"])))
+			"move":
+				_add(out, StringName(String(e["from"])))
+				at[String(e["threat"])] = StringName(String(e["to"]))
+				_add(out, StringName(String(e["to"])))
+			"shot":
+				_add(out, StringName(String(e["site"])))
+				if at.has(String(e["threat"])):
+					_add(out, StringName(String(at[String(e["threat"])])))
+			"node_hit", "cascade", "disabled", "seized", "home_hit":
+				if e.has("site"):
+					_add(out, StringName(String(e["site"])))
+	out.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
+	return out
+
+
+static func _add(list: Array[StringName], id: StringName) -> void:
+	if id != &"" and not list.has(id):
+		list.append(id)
 
 
 ## Seconds of `id` at 1x: its delay plus its duration from the motion table.

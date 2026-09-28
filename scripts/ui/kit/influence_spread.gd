@@ -71,6 +71,37 @@ static func front_color(old_inf: Dictionary, new_inf: Dictionary) -> Color:
 	return Palette.CELL_PINK if delta >= 0.0 else Palette.corp_color(corp)
 
 
+## ANIM-R1 M5: what a territory change leaves on the city once it has spread: one mark per
+## Site whose pull changed (id order, at most MAX_ORIGINS): {"id", "at" (grid lots),
+## "word" (untranslated: CLAIMED / CLEARED toward the Cell, SEIZED / DISABLED away from
+## it), "color" (the Cell's pink, or the corporation's)}. Empty for a sway-only change.
+static func marks(old_inf: Dictionary, new_inf: Dictionary) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var corp: StringName = new_inf.get("corp", old_inf.get("corp", &""))
+	var before := _weights(old_inf)
+	var after := _weights(new_inf)
+	for id in changed_sites(old_inf, new_inf):
+		if out.size() >= MAX_ORIGINS:
+			break
+		var w0 := float(before.get(id, 0.0))
+		var w1 := float(after.get(id, 0.0))
+		var word := ""
+		if w1 > w0:
+			word = MARK_CLAIMED if w1 >= CityInfluence.WEIGHT_CLAIMED - WEIGHT_EPSILON else MARK_CLEARED
+		else:
+			word = MARK_SEIZED if w1 <= CityInfluence.WEIGHT_SEIZED + WEIGHT_EPSILON else MARK_DISABLED
+		var at := _site_point(new_inf, id) if _has_source(new_inf, id) else _site_point(old_inf, id)
+		out.append({"id": id, "at": at, "word": word, "color": Palette.CELL_PINK if w1 > w0 else Palette.corp_color(corp)})
+	return out
+
+
+## The marks' words (translation keys).
+const MARK_CLAIMED := "CLAIMED" # TR
+const MARK_CLEARED := "CLEARED" # TR
+const MARK_SEIZED := "SEIZED" # TR
+const MARK_DISABLED := "DISABLED" # TR
+
+
 ## Deterministic 0-1 jitter of lot `lot` (whole blocks turn together). The shader uses
 ## the same formula.
 static func lot_jitter(lot: Vector2) -> float:

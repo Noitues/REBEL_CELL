@@ -93,6 +93,9 @@ const DEMOS := {
 	# ANIM-4b (drag and drop in the run; in context: netrun_scene --demo-shop / --demo-loot
 	# --demo-anim=drag_*):
 	&"drop_buy": ["fly", "card"], &"shred_feed": ["drop", "sticker"],
+	# ANIM-R1 (the first fix batch; in context: hq_scene / netrun_scene --demo-anim=<id>):
+	&"net_creep_recede": ["fade_in", "panel"], &"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["blink", "stage"],
+	&"select_ring_pulse": ["pulse", "sticker"], &"loot_reject": ["drop_away", "card"], &"home_number_fly": ["fly", "number"], &"influence_mark": ["pop", "panel"], &"heat_number_pop": ["pop", "number"], &"heat_banner": ["pop", "panel"],
 	# ANIM-R1 (combat and input): the SEND IT replay's pieces play in a live SEND IT.
 	&"resolve_landing_hold": ["scene", "send"], &"landing_pulse": ["scene", "send"], &"resolve_result_hold": ["scene", "send"],
 	&"result_caption": ["scene", "send"], &"result_stamp": ["scene", "send"], &"number_to_hp": ["scene", "numbers"],

@@ -238,7 +238,10 @@ func test_crew_station_and_recall_match_their_buttons() -> void:
 	await _close(hq)
 
 
-func test_a_crew_chip_on_jack_in_matches_picking_them_and_pressing_jack_in() -> void:
+## ANIM-R1 (designer ruling 2026-09-27: "Drag and drop to start is not intuitive - prefer
+## select, then jack in"): a chip dropped on JACK IN only picks the operative in the list;
+## the run starts when JACK IN is pressed, the same run as picking them and pressing it.
+func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() -> void:
 	var results := []
 	for use_drag in [false, true]:
 		var hq := _scene()
@@ -252,19 +255,23 @@ func test_a_crew_chip_on_jack_in_matches_picking_them_and_pressing_jack_in() -> 
 		await _frames(4)
 		var living := c.living_operatives()
 		var who := living[living.size() - 1]
+		var pick := hq._panel.find_child("OperativePick", true, false) as OptionButton
 		if use_drag:
 			var chip := hq._panel.find_child("Chip_%s" % who.id, true, false) as Control
 			assert_not_null(chip, "the Site card shows the crew as chips")
+			var before := _hash()
 			assert_eq(_drag(hq.drops, chip, "jack"), "dropped")
+			assert_false(RunManager.has_active_run(), "the drop alone starts no run")
+			assert_eq(_hash(), before, "and changes nothing in the campaign")
+			assert_eq(pick.selected, living.size() - 1, "it picks the operative in the list")
 		else:
-			var pick := hq._panel.find_child("OperativePick", true, false) as OptionButton
 			pick.select(living.size() - 1)
-			(hq._panel.find_child("Launch", true, false) as Button).pressed.emit()
-		assert_true(RunManager.has_active_run(), "the run started")
+		(hq._panel.find_child("Launch", true, false) as Button).pressed.emit()
+		assert_true(RunManager.has_active_run(), "the press on JACK IN starts the run")
 		results.append([_hash(), RunManager.netrun.run.operative.id if RunManager.netrun != null else &""])
 		await _close(hq)
 		RunManager.reset()
-	assert_eq(results[1], results[0], "the chip dropped on JACK IN starts the same run as the list and the button")
+	assert_eq(results[1], results[0], "the chip's pick then JACK IN starts the same run as the list and the button")
 
 
 func test_recruit_and_boost_drops_match_their_buttons() -> void:
@@ -456,7 +463,7 @@ func test_a_click_picks_up_a_chip_and_a_click_on_the_target_drops_it() -> void:
 	click.position = jack.get_center()
 	hq.drops._input(click)
 	assert_eq(hq.drops.last_outcome, "dropped", "a click on JACK IN drops the operative there")
-	assert_true(RunManager.has_active_run(), "and the run starts")
+	assert_false(RunManager.has_active_run(), "ANIM-R1 ruling: the drop picks them; no run starts")
 	await _close(hq)
 
 

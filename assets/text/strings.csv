@@ -73,7 +73,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s, a T%d %s","%s, a T%d %s"
 "%s, your home server","%s, your home server"
 %s/turn,%s/turn
-%s: drag onto JACK IN to run %s (or pick them in the list).,%s: drag onto JACK IN to run %s (or pick them in the list).
+"%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
 %s: integrity (HP) %s > %s in the raid. %s,%s: integrity (HP) %s > %s in the raid. %s
 %s: no change,%s: no change
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
@@ -105,6 +105,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > SEED     %d,> SEED     %d
 > TARGET   %s,> TARGET   %s
 A guided first fight.,A guided first fight.
+A run is already in progress: finish it first.,A run is already in progress: finish it first.
 ABORTED,ABORTED
 AFFLICT,AFFLICT
 AFL,AFL
@@ -176,6 +177,7 @@ CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL STATUS,CELL STATUS
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
+CLAIMED,CLAIMED
 CLEAN EXIT,CLEAN EXIT
 CLEANSE,CLEANSE
 CLEARED,CLEARED
@@ -713,6 +715,7 @@ Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 HEAL,HEAL
 HEAT,HEAT
+HEAT %d - %s,HEAT %d - %s
 HEAT %s,HEAT %s
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
@@ -820,6 +823,7 @@ Intel,Intel
 JACK A CAMPAIGN IN,JACK A CAMPAIGN IN
 JACK IN,JACK IN
 JACK IN to %s: start a %s here with the picked operative.,JACK IN to %s: start a %s here with the picked operative.
+JACK IN: back into the run you left.,JACK IN: back into the run you left.
 "JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun.","JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."
 LAST TURN: ,LAST TURN: 
 LEAVE THE MODEM,LEAVE THE MODEM
@@ -1383,6 +1387,7 @@ RAID // %s,RAID // %s
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID IN PROGRESS,RAID IN PROGRESS
 RAID INBOUND,RAID INBOUND
+RAID INTERLUDE,RAID INTERLUDE
 RAID INTERLUDE - %s: %s,RAID INTERLUDE - %s: %s
 RAID PENDING: %s (%d),RAID PENDING: %s (%d)
 RAID REPORT,RAID REPORT
@@ -1555,6 +1560,7 @@ SHIELD %d,SHIELD %d
 SHOP,SHOP
 SHRED,SHRED
 SHRED A CARD,SHRED A CARD
+SITES %d,SITES %d
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES,SLICES
 SLOT %s · %s,SLOT %s · %s
@@ -1756,6 +1762,7 @@ SiteData.t3_h.display_name,Solace Root Certificate Store
 SiteData.the_manifest_site.display_name,The Manifest
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
+Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.
 Skip,Skip
 SliceData.atk_10.display_name,Attack 10
 SliceData.atk_12.display_name,Attack 12

@@ -6,9 +6,16 @@ extends SceneTree
 ##
 ##   godot --path . -s tools/design_lab/profile_frames.gd -- --demo-hq [--scene=res://...]
 ##     [--reduce] (reduce effects on: the city's live layer off)
+##
+## ANIM-R1 M2: `--timeline` times every frame from the first (no warm-up) for `--frames=N`
+## (default FRAMES) and prints the longest frame and every frame over SPIKE_MS with its
+## number, so a flow (e.g. `--demo-playout-delay=<frames>`: the raid setup, then START
+## DEFENSE) can be read for hitches frame by frame.
 
 const WARMUP := 120
 const FRAMES := 600
+## ANIM-R1 M2: a frame longer than this (ms) is listed as a hitch in --timeline.
+const SPIKE_MS := 50.0
 
 var _frame := 0
 var _times: Array[float] = []
@@ -16,6 +23,9 @@ var _cpu: Array[float] = []
 var _gpu: Array[float] = []
 var _last := 0
 var _vp: RID
+var _timeline: bool = false
+var _frames: int = FRAMES
+var _warmup: int = WARMUP
 
 
 func _initialize() -> void:
@@ -23,6 +33,11 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--scene="):
 			path = a.trim_prefix("--scene=")
+		elif a == "--timeline":
+			_timeline = true
+			_warmup = 1
+		elif a.begins_with("--frames="):
+			_frames = int(a.trim_prefix("--frames="))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	var scene: Node = (load(path) as PackedScene).instantiate()
 	root.add_child(scene)
@@ -32,7 +47,7 @@ func _initialize() -> void:
 
 func _process(_delta: float) -> bool:
 	_frame += 1
-	if _frame < WARMUP:
+	if _frame < _warmup or (_timeline and _frame < 3):
 		# The Settings autoload applies its own vsync on start: switch it off again.
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
@@ -42,18 +57,26 @@ func _process(_delta: float) -> bool:
 		settings.set("reduce_effects", true)
 		settings.emit_signal("changed")
 	var now := Time.get_ticks_usec()
-	if _frame > WARMUP:
+	if _frame > _warmup:
 		_times.append((now - _last) / 1000.0)
 		_cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(_vp) + RenderingServer.get_frame_setup_time_cpu())
 		_gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(_vp))
 	_last = now
-	if _frame >= WARMUP + FRAMES:
+	if _frame >= _warmup + _frames:
 		_report()
 		return true
 	return false
 
 
 func _report() -> void:
+	if _timeline:
+		var spikes := PackedStringArray()
+		var worst := 0.0
+		for i in _times.size():
+			worst = maxf(worst, _times[i])
+			if _times[i] > SPIKE_MS:
+				spikes.append("f%d %.0f ms" % [i + _warmup + 1, _times[i]])
+		print("profile_frames timeline: %d frames, max %.1f ms; over %.0f ms: %s" % [_times.size(), worst, SPIKE_MS, ", ".join(spikes) if not spikes.is_empty() else "none"])
 	_times.sort()
 	var mean := 0.0
 	for t in _times:

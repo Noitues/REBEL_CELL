@@ -199,7 +199,8 @@ func launch_error(operative_id: StringName, site_id: StringName) -> String:
 		return "No such Site."
 	var op := campaign.get_operative(operative_id)
 	var cls := lookup().get_content(op.class_id) as ClassData if op != null else class_data()
-	return CampaignRules.launch_error(campaign, corporation, config(), op, cls, site)
+	# ANIM-R1 M1: never a second run over one under way (a double JACK IN, a saved run).
+	return CampaignRules.launch_error(campaign, corporation, config(), op, cls, site, has_active_run())
 
 
 ## Launches a run at `site_id` with `operative_id` (default: the first living operative).
@@ -505,12 +506,29 @@ func delete_save() -> void:
 # --- Scenes ----------------------------------------------------------------------------------
 
 func change_scene(scene_path: String) -> void:
+	# ANIM-R1 M1: one scene change per frame (two presses in one frame ask once).
+	if scene_switching_enabled and _changed_frame == Engine.get_process_frames():
+		return
+	_changed_frame = Engine.get_process_frames()
 	SignalBus.scene_change_requested.emit(scene_path)
 	if scene_switching_enabled:
 		get_tree().change_scene_to_file(scene_path)
 
 
+## The process frame the last scene change was asked on (ANIM-R1 M1).
+var _changed_frame: int = -1
+
+
+## ANIM-R1 M1: true while a scene change is under way (a jack in or out): every
+## scene-changing action does nothing then, so a second press during the jack never
+## starts a second run or asks for a second scene.
+func scene_change_pending() -> bool:
+	return Fx.transitioning()
+
+
 func go_to_title() -> void:
+	if scene_change_pending():
+		return
 	if has_node("/root/Dialogue"):
 		get_node("/root/Dialogue").clear()
 	change_scene(TITLE_SCENE)
@@ -518,6 +536,8 @@ func go_to_title() -> void:
 
 ## Jack out (STYLE_GUIDE 5): wireframe dissolves back to the deck CRT.
 func go_to_hq() -> void:
+	if scene_change_pending():
+		return
 	if scene_switching_enabled:
 		Fx.jack_out(func() -> void: change_scene(HQ_SCENE))
 	else:
@@ -526,6 +546,8 @@ func go_to_hq() -> void:
 
 ## Jack in: the camera pushes into the deck CRT and dissolves to wireframe.
 func go_to_netrun() -> void:
+	if scene_change_pending():
+		return
 	AudioDirector.play_sfx("jack_in")
 	if scene_switching_enabled:
 		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE))

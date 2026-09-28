@@ -9,8 +9,9 @@ extends GutTest
 ##   no Site with room left unlabelled;
 ## - H23 #3/#5: the key on screen, over the map, clear of the column, its text at the
 ##   scale, covering no node; every node icon and tier pips on the map beside the column;
-## - H21: icons never on one another, labels never on one another or on an icon (early
-##   campaign, every text size; H21 checked 1.0 and a live 1.5);
+## - H21: icons never on one another, labels never on one another or on an icon (every
+##   campaign stage and text size; H21 checked 1.0 and a live 1.5; ANIM-R1 M13 added the
+##   late campaign);
 ## - with every node selected in turn (early, 1.0 and 1.6, as H22 and H23 did): the selected
 ##   Site labelled, labels apart, inside the label area and clear of its blocks (the side
 ##   column), within reach; the landmarks labelled (H22); the selection ring clear of the
@@ -163,8 +164,9 @@ func test_the_grid_for_every_corporation_text_size_and_stage() -> void:
 				_check_labels_k1(hq, what, reaches[scale])
 				_check_legend(hq, what, scale)
 				_check_nodes_beside_the_column(hq, what)
-				if not late:
-					_assert_no_overlap(overlay, what)
+				# ANIM-R1 M13: late too (the selected Site's long name lay over other nodes'
+				# icons in a late campaign at 1.3 / 1.6: now asserted everywhere).
+				_assert_no_overlap(overlay, what)
 				if not late and SELECT_SCALES.has(scale):
 					_check_every_selection(hq, what, is_equal_approx(scale, 1.0))
 					if corp == &"solace":
@@ -340,6 +342,13 @@ func _check_every_selection(hq: Control, what: String, ring: bool) -> void:
 		for key in rects:
 			var n := overlay._node_dict(StringName(String(key).get_slice("#", 0)))
 			assert_true(CityMapOverlay.reach_of(rects[key], overlay.icon_pos(n)) <= reach + 0.01, "%s: %s within reach of its node" % [sel, key])
+		# ANIM-R1 M13: the selected Site's label keeps off every other node's icon.
+		for other in overlay.nodes:
+			var at := overlay.icon_pos(other)
+			if other["id"] == id or at.x == INF:
+				continue
+			assert_false(CityMapOverlay._rect_hits_disc(rects[String(id)], at, overlay.icon_radius(other) - 0.01),
+				"%s: its label keeps off %s's icon" % [sel, other["id"]])
 	var g0 := CityLayout.grid_graph(c, RunManager.corporation, paths, c.grid.home_site_id)
 	overlay.set_graph(g0["nodes"], g0["edges"])
 	overlay.selected_id = c.grid.home_site_id

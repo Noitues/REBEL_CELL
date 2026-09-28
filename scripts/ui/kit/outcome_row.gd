@@ -169,11 +169,53 @@ func _font() -> Font:
 
 func _get_minimum_size() -> Vector2:
 	var s := _scale()
-	var fs := get_theme_font_size(&"font_size", &"Label")
+	# ANIM-R1 M9: the row wraps inside its choice (at 1.6 six outcome items pushed the page
+	# off the screen): as narrow as its widest item, as tall as its lines at its width.
 	var w := 0.0
 	for it in items:
-		w += (ICON_R * 2.0 + ICON_GAP) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + ITEM_GAP * s
-	return Vector2(w, maxf(ICON_R * 2.0 * s, _font().get_height(fs)))
+		w = maxf(w, _item_width(it))
+	var lines := maxi(1, lines_at(size.x if size.x > 0.0 else _one_line_width()).size())
+	return Vector2(w, _line_height() * lines + LINE_GAP * s * (lines - 1))
+
+
+## The width of one item: its icon, the gap, its words (px).
+func _item_width(it: Dictionary) -> float:
+	var s := _scale()
+	var fs := get_theme_font_size(&"font_size", &"Label")
+	return (ICON_R * 2.0 + ICON_GAP) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+
+
+## Every item on one line (px).
+func _one_line_width() -> float:
+	var w := 0.0
+	for it in items:
+		w += _item_width(it) + ITEM_GAP * _scale()
+	return w
+
+
+func _line_height() -> float:
+	var fs := get_theme_font_size(&"font_size", &"Label")
+	return maxf(ICON_R * 2.0 * _scale(), _font().get_height(fs))
+
+
+## ANIM-R1 M9: the items laid out in lines no wider than `width` (each line an Array of
+## item indices, in order; an item wider than the line still gets a line of its own).
+func lines_at(width: float) -> Array[Array]:
+	var out: Array[Array] = []
+	var line: Array = []
+	var x := 0.0
+	var gap := ITEM_GAP * _scale()
+	for k in items.size():
+		var w := _item_width(items[k])
+		if not line.is_empty() and x + w > width:
+			out.append(line)
+			line = []
+			x = 0.0
+		line.append(k)
+		x += w + gap
+	if not line.is_empty():
+		out.append(line)
+	return out
 
 
 func _notification(what: int) -> void:
@@ -183,50 +225,82 @@ func _notification(what: int) -> void:
 		queue_redraw()
 
 
-## Room at the bottom of the parent button for the row; the row placed in it.
+## Room at the bottom of the parent button for the row (its lines at the button's width;
+## again whenever the button's width changes); the row placed in it.
 func _fit_parent() -> void:
 	var b := get_parent() as Button
 	if b == null or items.is_empty():
 		return
-	var h := get_combined_minimum_size().y
+	if not b.resized.is_connected(_on_parent_resized):
+		b.resized.connect(_on_parent_resized)
 	var left := 0.0
 	var bottom := 0.0
-	for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
-		b.remove_theme_stylebox_override(st)
-		var sb := b.get_theme_stylebox(st)
-		if sb == null:
-			continue
-		if st == &"normal":
-			left = sb.get_margin(SIDE_LEFT)
-			bottom = sb.get_margin(SIDE_BOTTOM)
+	var normal := b.get_theme_stylebox(&"normal")
+	if normal != null and not _base_margins.has(&"normal"):
+		for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
+			b.remove_theme_stylebox_override(st)
+			var sb := b.get_theme_stylebox(st)
+			if sb != null:
+				_base_margins[st] = [sb.get_margin(SIDE_LEFT), sb.get_margin(SIDE_BOTTOM), sb]
+	if not _base_margins.has(&"normal"):
+		return
+	left = float(_base_margins[&"normal"][0])
+	bottom = float(_base_margins[&"normal"][1])
+	var width := b.size.x - left * 2.0 if b.size.x > left * 2.0 else _one_line_width()
+	var lines := maxi(1, lines_at(width).size())
+	var h := _line_height() * lines + LINE_GAP * _scale() * (lines - 1)
+	if is_equal_approx(h, _fitted_h):
+		return
+	_fitted_h = h
+	for st in _base_margins:
+		var sb: StyleBox = _base_margins[st][2]
 		var room := sb.duplicate() as StyleBox
-		room.content_margin_bottom = sb.get_margin(SIDE_BOTTOM) + h + 4.0
+		room.content_margin_bottom = float(_base_margins[st][1]) + h + 4.0
 		b.add_theme_stylebox_override(st, room)
 	set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	offset_left = left
 	offset_right = -left
 	offset_bottom = -bottom
 	offset_top = -bottom - h
+	update_minimum_size()
+	queue_redraw()
+
+
+func _on_parent_resized() -> void:
+	_fit_parent.call_deferred()
+
+
+## The parent button's own style boxes (and their left and bottom margins) before the row
+## made room in them, and the row height the room was made for.
+var _base_margins: Dictionary = {}
+var _fitted_h: float = -1.0
+## Gap between the row's lines at text scale 1.0 (px).
+const LINE_GAP := 2.0
 
 
 func _draw() -> void:
 	var s := _scale()
 	var fs := get_theme_font_size(&"font_size", &"Label")
 	var font := _font()
-	var x := 0.0
-	var mid := size.y * 0.5
-	for it in items:
-		var col := GOOD if bool(it["good"]) else BAD
-		if bool(it.get("neutral", false)):
-			col = Palette.INK
-		if StringName(it["kind"]) == NO_CHANGE:
-			# The empty-set mark: a ring with a slash (no StatIcon means "nothing").
-			var c := Vector2(x + ICON_R * s, mid)
-			draw_arc(c, ICON_R * s * 0.8, 0.0, TAU, 18, Palette.INK, 1.6 * s, true)
-			draw_line(c + Vector2(-ICON_R, ICON_R) * s, c + Vector2(ICON_R, -ICON_R) * s, Palette.INK, 1.6 * s, true)
-		else:
-			StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), Palette.INK)
-		x += (ICON_R * 2.0 + ICON_GAP) * s
-		var t := String(it["text"])
-		draw_string(font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-		x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + ITEM_GAP * s
+	var line_h := _line_height()
+	var y0 := 0.0
+	for line: Array in lines_at(size.x):
+		var x := 0.0
+		var mid := y0 + line_h * 0.5
+		for k: int in line:
+			var it: Dictionary = items[k]
+			var col := GOOD if bool(it["good"]) else BAD
+			if bool(it.get("neutral", false)):
+				col = Palette.INK
+			if StringName(it["kind"]) == NO_CHANGE:
+				# The empty-set mark: a ring with a slash (no StatIcon means "nothing").
+				var c := Vector2(x + ICON_R * s, mid)
+				draw_arc(c, ICON_R * s * 0.8, 0.0, TAU, 18, Palette.INK, 1.6 * s, true)
+				draw_line(c + Vector2(-ICON_R, ICON_R) * s, c + Vector2(ICON_R, -ICON_R) * s, Palette.INK, 1.6 * s, true)
+			else:
+				StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), Palette.INK)
+			x += (ICON_R * 2.0 + ICON_GAP) * s
+			var t := String(it["text"])
+			draw_string(font, Vector2(x, mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+			x += font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + ITEM_GAP * s
+		y0 += line_h + LINE_GAP * s

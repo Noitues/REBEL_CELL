@@ -37,6 +37,9 @@ const LEAVE_ICON := 34.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
 const LOOT_CARD := Vector2(150, 170)
 const LOOT_ROW_MAX := 900.0
+## ANIM-R1 M11: the gap between the loot stickers and Skip at text scale 1.0 (px): a
+## sticker's rest tilt and hover lift reach this far below its box.
+const LOOT_SKIP_GAP := 14.0
 ## Room above the event's paper at text scale 1.0 (px): its tape and title keep clear of
 ## the subtitle band (H23 S10).
 const EVENT_TOP_GAP := 12.0
@@ -228,7 +231,13 @@ func enter_node(node_id: StringName) -> void:
 	var secs := 0.0
 	if city_overlay != null and is_instance_valid(city_overlay) and not _grid_zoomed and RunManager.netrun != null \
 			and RunManager.netrun.run.current_node_id == node_id:
-		secs = city_overlay.travel(from, node_id)
+		# ANIM-R1 M7: when the pulse lands, the map shows the run's new state: the [1] / [2]
+		# labels on the new next nodes, the node left ticked and dimmed as visited.
+		var overlay := city_overlay
+		secs = city_overlay.travel(from, node_id, func() -> void:
+			if is_instance_valid(overlay) and overlay == city_overlay and not _grid_zoomed and RunManager.netrun != null:
+				var r := route_graph()
+				overlay.set_graph(r["nodes"], r["edges"]))
 	if secs <= 0.0:
 		_show_current()
 		return
@@ -392,8 +401,14 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	var left := s.run.pending_rewards.size()
 	_report(s.choose_reward(index, slot))
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
-	if fly and s.run.pending_rewards.size() < left and not offer.is_empty():
-		_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+	if s.run.pending_rewards.size() < left and not offer.is_empty():
+		if fly:
+			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+		# ANIM-R1 M11: the offers not taken fall away (`loot_reject`), picked by click or drag.
+		for i in (offer["options"] as Array).size():
+			var other := _page_item("Stickers", i)
+			if i != index and other != null:
+				FlightFx.fly(self, other, other.get_global_rect().get_center() + Vector2(0.0, Motion.amplitude(&"loot_reject")), &"loot_reject")
 	RunManager.after_step()
 	_show_current()
 
@@ -435,12 +450,23 @@ func _buy(kind: String, index: int, slot: int, fly: bool) -> void:
 	_show_current()
 
 
-## Item `index` of the row named `row` on the page on screen (a loot or shop sticker).
+## Item `index` of the row named `row` on the page on screen (a loot or shop sticker;
+## ANIM-R1 M11: a Modem row's SOLD stubs are not items).
 func _page_item(row: String, index: int) -> Control:
 	var holder := _panel.find_child(row, true, false) if _panel != null and row != "" else null
-	if holder == null or index < 0 or index >= holder.get_child_count():
+	if holder == null or index < 0:
 		return null
-	return holder.get_child(index) as Control
+	var items := _row_items(holder)
+	return items[index] if index < items.size() else null
+
+
+## The items of a page row in stock order (a Modem row's SOLD stubs left out).
+static func _row_items(row: Node) -> Array[Control]:
+	var out: Array[Control] = []
+	for c in row.get_children():
+		if c is Control and not (c is ZineCard and (c as ZineCard).sold_stub):
+			out.append(c as Control)
+	return out
 
 
 ## Where an item of `kind` goes on the top bar: a card to CARDS, a Daemon to the DAEMONS
@@ -509,13 +535,34 @@ func raid_fight() -> void:
 	_show_raid_playout(events, before)
 
 
+## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
+## cover up until then, so it never lifts onto an empty dark screen): a page is on, the
+## city behind it shows its own look under the current camera, and the route map's fit
+## passes have run.
+func arrival_ready() -> bool:
+	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
+		return false
+	var city: NeonCity = background.city if background != null else null
+	if city != null and city.is_visible_in_tree():
+		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
+			return false
+		if city.rebuilt.is_connected(fit_route_map) or get_tree().process_frame.is_connected(fit_route_map) or _raid_map_framing:
+			return false
+	return true
+
+
 func finish_run() -> void:
+	# ANIM-R1 M1: a second press during the jack out asks nothing again.
+	if RunManager.scene_change_pending():
+		return
 	RunManager.clear_run()
 	RunManager.go_to_hq()
 	_show_start()
 
 
 func save_and_quit() -> void:
+	if RunManager.scene_change_pending():
+		return
 	RunManager.autosave()
 	_log.append_text("Saved.\n")
 	RunManager.go_to_hq()
@@ -580,6 +627,11 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		UiWrap.fit(p)
 		UiFocus.link_layout(p)
 		if entering:
+			if not glass:
+				# ANIM-R1 M11: a page of windows over the city: its glass is the windows, so
+				# the CRT roll's band crosses them, never the whole screen (on the loot pick's
+				# first frame it ran across half the screen over the bare city).
+				PageTransition.glass_is_windows(p)
 			PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p))
 		else:
 			UiFocus.focus_first(p)
@@ -992,7 +1044,7 @@ func route_graph() -> Dictionary:
 		elif available.has(n["id"]):
 			col = ROUTE_NEXT_COLOR
 		elif s.run.visited.has(n["id"]):
-			col = Color(Palette.NET_CYAN, 0.5)
+			col = Palette.NET_CYAN  # ANIM-R1 M7: dimmed and ticked by the map (visited_dim)
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
 			col = Palette.corp_color(RunManager.campaign.corporation_id)
 		var idx := available.find(n["id"])
@@ -1005,7 +1057,8 @@ func route_graph() -> Dictionary:
 			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
 			# kind with the same painter (H22 #14).
 			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
-			"here": n["id"] == s.run.current_node_id, "next": idx >= 0})
+			"here": n["id"] == s.run.current_node_id, "next": idx >= 0,
+			"visited": s.run.visited.has(n["id"]) and n["id"] != s.run.current_node_id})
 	var edges: Array[Dictionary] = []
 	for n in map.all_nodes():
 		for nxt in n["next"]:
@@ -1056,7 +1109,8 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	MapLegend.pin_to(spacer, c.corporation_id)
+	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	_fight_parts = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
 	box.add_child(side)
@@ -1081,9 +1135,56 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	city_overlay.avoid_controls([side])
 	playout.grid_view = city_overlay
 	playout.attach_fx(c.last_raid, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
+	# ANIM-R1 M4: each step's fight is framed (the camera eases in to it) before it plays.
+	playout.framer = _frame_fight.bind(city_overlay)
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
 		_show_current()
+
+
+## ANIM-R1 M4: the mid-run raid's camera: each step eases to its fight (the guns firing
+## and their targets, else the nodes hit, else where threats go) at RAID_ZOOM; returns the
+## seconds the ease takes (0 when the frame stays).
+func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
+	if not is_instance_valid(overlay) or overlay != city_overlay or sites.is_empty():
+		return 0.0
+	var pts := PackedVector2Array()
+	for id in sites:
+		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
+	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
+	return background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+
+
+## ANIM-R1 M8: the raid interlude's map area, framed once laid out (every node of the Grid in
+## it), and whether that framing is still to come (arrival_ready waits for it).
+var _raid_map_area: Control = null
+var _raid_map_framing: bool = false
+## The interlude window's width at text scale 1.0 and how far it grows with the text (px, x).
+const RAID_WINDOW_WIDTH := 560.0
+const RAID_WINDOW_GROW := 1.3
+const RAID_MAP_ANCHOR := Vector2(0.7, 0.55)
+
+
+func _frame_raid_map() -> void:
+	_raid_map_framing = true
+	await get_tree().process_frame
+	_raid_map_framing = false
+	if _raid_map_area == null or not is_instance_valid(_raid_map_area) or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	var pts := PackedVector2Array()
+	for n in city_overlay.nodes:
+		pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
+	background.frame_points(pts, _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
+	background.settle_camera()
+
+
+
+
+## The raid playout map's parts the fight frame keeps to: [the map's area, its key].
+var _fight_parts: Array = []
+## ANIM-R1 M4: the mid-run raid playout's fight camera: the closest and furthest zoom.
+const RAID_ZOOM := 1.6
+const RAID_MIN_ZOOM := 0.85
 
 
 func _instant_playout() -> bool:
@@ -1170,6 +1271,7 @@ func _show_reward() -> void:
 		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
 		if res is CardData:
 			sticker.with_card(res as CardData)
+		sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the card
 		sticker.custom_minimum_size = LOOT_CARD * ls
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		# H24 S17: the whole text on hover and, for a pad or keyboard, on focus (FocusTip).
@@ -1179,6 +1281,13 @@ func _show_reward() -> void:
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
 		stickers.add_child(sticker)
+	# ANIM-R1 M11: room under the stickers for their tilt and lift (at 1.6 the CACHE card's
+	# corner lay on the Skip bar).
+	var gap := Control.new()
+	gap.name = "SkipGap"
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gap.custom_minimum_size.y = LOOT_SKIP_GAP * ls
+	box.add_child(gap)
 	var skip := _button(tr("Skip"), skip_reward)
 	skip.name = "Skip"
 	skip.tooltip_text = tr("Take nothing from this payout.")
@@ -1202,7 +1311,9 @@ func _fan_loot(row: Control) -> void:
 		var card := row.get_child(i) as ZineCard
 		if card == null:
 			continue
-		var from := Vector2(r.get_center().x, r.end.y + card.size.y * 0.5)
+		# ANIM-R1 M11: from the middle of the row's own foot (the deck pile), inside the row:
+		# from under it the cards crossed the Skip bar at 1.6 on their way up.
+		var from := Vector2(r.get_center().x, r.end.y - card.size.y * 0.5)
 		var fan := Motion.amplitude(&"loot_fan") * (float(i) - (n - 1) * 0.5)
 		card.fan_in(from, fan, Motion.delay_of(&"loot_fan") * i)
 
@@ -1301,8 +1412,55 @@ func _show_event() -> void:
 	split.add_child(right_gap)
 	_set_panel(box, false)
 	_register_event_drops(ev, options)
-	if entering:
-		Typing.type_in(text)
+	if entering and Typing.type_in(text) > 0.0:
+		_hold_choices(options, text)
+
+
+## ANIM-R1 M9: while the event's story types in, its choices wait (shown disabled) and take
+## no press: the first press completes the typing (Typing's own rule) and only the words
+## whole let the choices act (stills caught "A bricked i" with the choices live).
+func _hold_choices(options: Control, text: Control) -> void:
+	var held: Array[WeakRef] = []
+	for b in options.get_children():
+		if b is Button and not (b as Button).disabled:
+			(b as Button).disabled = true
+			held.append(weakref(b))
+	if held.is_empty():
+		return
+	_held_choices = held
+	_held_text = weakref(text)
+	if not get_tree().process_frame.is_connected(_poll_held_choices):
+		get_tree().process_frame.connect(_poll_held_choices)
+
+
+## The choices waiting for the event's words, and the words (weak: the page may go first).
+var _held_choices: Array[WeakRef] = []
+var _held_text: WeakRef = null
+
+
+func _poll_held_choices() -> void:
+	var text := _held_text.get_ref() as Control if _held_text != null else null
+	if text != null and Typing.typing(text):
+		return
+	for w in _held_choices:
+		var b := w.get_ref() as Button
+		if b != null:
+			b.disabled = false
+	_held_choices.clear()
+	_held_text = null
+	if get_tree().process_frame.is_connected(_poll_held_choices):
+		get_tree().process_frame.disconnect(_poll_held_choices)
+
+
+## True while the event's choices wait for its words (tests).
+func choices_held() -> bool:
+	var text := _panel.find_child("EventPanel", true, false) if _panel != null else null
+	if text == null:
+		return false
+	for n in text.find_children("*", "RichTextLabel", true, false):
+		if Typing.typing(n as Control):
+			return true
+	return false
 
 
 ## A spinner slot by what is in it, never by ids (H21 #12: "crit_12" in the socket list):
@@ -1389,21 +1547,37 @@ func _show_shop() -> void:
 	daemon_row.name = "Daemons"
 	daemons_win.body.add_child(daemon_row)
 	var n := 0
+	# ANIM-R1 M11: what the Modem offered when the player came in; a bought item stays as a
+	# SOLD stub in its place (the rest keep their spots and colours).
+	var seen := _shop_seen(s)
 	# Cards grow with the text size as far as their quadrant holds them (H21 #15).
-	var card_count: int = shop.get("cards", []).size()
+	var card_count: int = (seen["cards"] as Array).size()
 	var card_fit := minf((q_size.x - QUAD_FRAME.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
 		(q_size.y - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
-		for i in shop.get(kind, []).size():
-			var id := StringName(String(shop[kind][i]))
+		for slot: Array in shop_slots(seen[kind], shop.get(kind, [])):
+			var i: int = slot[1]
+			var id := StringName(String(slot[0]))
 			var res := s.lookup.get_content(id)
+			if i < 0:
+				var stub := _sold_stub(TextDb.t(res, "display_name"), (res as CardData).ram_cost if res is CardData else -1, n, kind, cs, ts)
+				match kind:
+					"cards":
+						stickers.add_child(stub)
+					"firmware":
+						chips.add_child(stub)
+					_:
+						daemon_row.add_child(stub)
+				n += 1
+				continue
 			# H21 #12: the circle shows a card's real RAM cost; the price hangs on a tag with
 			# the coin.
 			var ram := (res as CardData).ram_cost if res is CardData else -1
 			# H24 S3: the effect text alone (a "firmware: " prefix was an untranslated word).
 			var sticker := ZineCard.new(TextDb.t(res, "display_name"), ram, shop_text(res), n)
+			sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the tile or card
 			sticker.hotkey = ""
 			sticker.with_price(int(prices[i]))
 			if kind == "cards":
@@ -1420,6 +1594,7 @@ func _show_shop() -> void:
 			FocusTip.attach(sticker)
 			var index: int = i
 			var k: String = kind
+			sticker.set_meta(STOCK_META, i)
 			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
 			match kind:
 				"cards":
@@ -1448,18 +1623,28 @@ func _show_shop() -> void:
 		var p := s.slice_overwrite_price(k)
 		low = p if low < 0 else mini(low, p)
 		high = maxi(high, p)
-	for i in stock.size():
-		var sd := s.lookup.get_content(StringName(String(stock[i]))) as SliceData
+	for slot: Array in shop_slots(seen["slices"], stock):
+		var i: int = slot[1]
+		var sd := s.lookup.get_content(StringName(String(slot[0]))) as SliceData
 		if sd == null:
 			continue
 		var slice_word := tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?")))
+		if i < 0:
+			var stub := _sold_stub("%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word, -1, (seen["slices"] as Array).size(), "slices", 1.0, ts)
+			stub.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
+			stub.slice_type = sd.slice_type
+			stub.slice_output = sd.base_output
+			stub.accent = Palette.slice_color(sd.slice_type)
+			slice_row.add_child(stub)
+			continue
 		var tile := ZineCard.new("%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word, -1, Codex.describe(sd), i)
+		tile.set_meta(STOCK_META, i)
 		tile.as_tile(ZineCard.Look.SLICE_TILE, Palette.slice_color(sd.slice_type)).tile_text(ts)
 		tile.slice_type = sd.slice_type
 		tile.slice_output = sd.base_output
 		# H24 S10: the tile widens with the text size as far as the SLICES window holds the
 		# row (its buy sticker "BUY 100-150" shrank to fit a fixed 96 px at 1.6).
-		tile.custom_minimum_size = slice_tile_size(stock.size(), ts)
+		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
 		tile.hotkey = ""
 		if low >= 0:
 			tile.with_price(low, high > low)
@@ -1523,6 +1708,73 @@ func _show_shop() -> void:
 	_register_shop_drops(mini, fw_slot)
 	if entering:
 		sign.warm_up()
+
+
+## ANIM-R1 M11: the node meta naming a Modem item's stock index (SOLD stubs have none).
+const STOCK_META := &"stock_index"
+## What the Modem offered when the player came in (view memory, per visit): "key" (the
+## run and node), then each kind's stock.
+var _shop_memory: Dictionary = {}
+
+
+## The Modem's stock as first seen on this visit, kind -> ids (taken again when the stock
+## is not what was seen less some purchases: a new visit, a restock).
+func _shop_seen(s: NetrunSession) -> Dictionary:
+	var key := "%s|%s|%s" % [s.run.site_id, s.run.current_node_id, s.run.visited.size()]
+	var shop := s.run.shop
+	var fresh: bool = _shop_memory.get("key", "") != key
+	if not fresh:
+		for kind in ["cards", "firmware", "daemons", "slices"]:
+			var cur: Array = shop.get(kind, [])
+			var slots := shop_slots(_shop_memory.get(kind, []), cur)
+			var live := 0
+			for slot: Array in slots:
+				if int(slot[1]) >= 0:
+					live += 1
+			if live != cur.size():
+				fresh = true
+	if fresh:
+		_shop_memory = {"key": key}
+		for kind in ["cards", "firmware", "daemons", "slices"]:
+			_shop_memory[kind] = (shop.get(kind, []) as Array).duplicate()
+	return _shop_memory
+
+
+## ANIM-R1 M11: the Modem's places for one kind: [id, stock index] for each item first
+## offered (`seen`), in order; the index is -1 for one bought since (a SOLD stub). Items are
+## matched in order, so a repeated id keeps its place.
+static func shop_slots(seen: Array, current: Array) -> Array[Array]:
+	var out: Array[Array] = []
+	var j := 0
+	for i in seen.size():
+		if j < current.size() and String(current[j]) == String(seen[i]):
+			out.append([seen[i], j])
+			j += 1
+		else:
+			out.append([seen[i], -1])
+	return out
+
+
+## A bought Modem item's place: its tile, dimmed, stamped SOLD; not a button any more.
+func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts: float) -> ZineCard:
+	var stub := ZineCard.new(title, ram, "", index)
+	match kind:
+		"cards":
+			stub.scaled(cs)
+		"firmware":
+			stub.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
+		"daemons":
+			stub.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
+		"slices":
+			stub.as_tile(ZineCard.Look.SLICE_TILE, Palette.CRT_AMBER).tile_text(ts)
+	stub.name = "Sold_%s_%d" % [kind, index]
+	stub.hotkey = ""
+	stub.sold_stub = true
+	stub.disabled = true
+	stub.focus_mode = Control.FOCUS_NONE
+	stub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stub.tooltip_text = ""
+	return stub
 
 
 ## What a shop item does in words (H23 S8: microchips showed no description): the
@@ -1668,7 +1920,31 @@ func _show_raid() -> void:
 	var run_btn := _button(tr(START_DEFENSE), raid_fight)
 	IconMark.attach(run_btn, StatIcon.RAIDS)
 	box.add_child(run_btn)
-	_set_panel(box)
+	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
+	# threats' routes to CORE), framed before the jack's cover lifts: a jack into a mid-run
+	# raid lands on the setup with its map, not on a dark page of text.
+	var root := HBoxContainer.new()
+	root.name = "RaidInterlude"
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var win := TerminalWindow.new(tr("RAID INTERLUDE"), Palette.corp_color(c.corporation_id))
+	win.name = "RaidWindow"
+	win.custom_minimum_size.x = RAID_WINDOW_WIDTH * minf(Settings.text_scale, RAID_WINDOW_GROW)
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	win.body.add_child(box)
+	root.add_child(win)
+	var area := Control.new()
+	area.name = "RaidMapArea"
+	area.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.add_child(area)
+	_set_panel(root, false)
+	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
+	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, RAID_MIN_ZOOM, RAID_MAP_ANCHOR, Vector2.INF)
+	city_overlay.avoid_controls([win])
+	_raid_map_area = area
+	_frame_raid_map.call_deferred()
 	_register_raid_drops(run_assets, armory_row)
 
 
@@ -1908,8 +2184,9 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 		if row == null:
 			continue
 		var stock: Array = shop.get(String(pair[1]), [])
-		for i in mini(row.get_child_count(), stock.size()):
-			var c := row.get_child(i) as Control
+		var items := _row_items(row)
+		for i in mini(items.size(), stock.size()):
+			var c := items[i]
 			if c == null:
 				continue
 			var p := _item_payload(String(pair[2]), "shop", i, StringName(String(stock[i])))

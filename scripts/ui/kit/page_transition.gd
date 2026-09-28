@@ -20,6 +20,9 @@ const FADE_SHARE := 0.4
 ## The CRT roll band's height as a share of the page's.
 const ROLL_BAND_SHARE := 0.12
 const NODE_NAME := "PageTransition"
+## ANIM-R1 M11: a page whose glass is only some of its controls (windows over the city)
+## names them in this meta (Array of Controls); the roll band crosses each of them only.
+const GLASS_META := &"page_glass"
 
 var page: Control = null
 var look: int = Look.GLASS
@@ -57,6 +60,23 @@ static func enter(p_page: Control, p_look: int = Look.GLASS, on_done: Callable =
 	p_page.modulate.a = 0.0
 	p_page.add_child(tr_node)
 	return tr_node
+
+
+## ANIM-R1 M11: marks page `p` as a page of windows over the city: the roll band crosses
+## its outermost terminal windows only.
+static func glass_is_windows(p: Control) -> void:
+	p.set_meta(GLASS_META, windows_of(p))
+
+
+## The outermost terminal windows under `root`, in tree order.
+static func windows_of(root: Node) -> Array[Control]:
+	var out: Array[Control] = []
+	for c in root.get_children():
+		if c is TerminalWindow:
+			out.append(c as Control)
+		else:
+			out.append_array(windows_of(c))
+	return out
 
 
 ## The motion id of a look.
@@ -209,11 +229,20 @@ func _add_roll() -> void:
 	_roll.size = r.size
 	_roll.visible = false
 	var band := ROLL_BAND_SHARE
+	# The glass the band crosses (page-local rects): the page, or the controls it names.
+	var glass: Array[Rect2] = []
+	for g in page.get_meta(GLASS_META, []):
+		if g is Control and is_instance_valid(g):
+			var gr := (g as Control).get_global_rect()
+			glass.append(Rect2(gr.position - r.position, gr.size))
+	if glass.is_empty():
+		glass.append(Rect2(Vector2.ZERO, r.size))
 	_roll.draw.connect(func() -> void:
-		var h := _roll.size.y * band
-		var y := _roll.size.y * 0.3
-		_roll.draw_rect(Rect2(0, y, _roll.size.x, h), Color(Palette.NET_CYAN, 0.32))
-		_roll.draw_rect(Rect2(0, y + h * 0.45, _roll.size.x, 2.0), Color(Palette.PAPER, 0.7)))
+		for gr: Rect2 in glass:
+			var h := gr.size.y * band
+			var y := gr.position.y + gr.size.y * 0.3
+			_roll.draw_rect(Rect2(gr.position.x, y, gr.size.x, h), Color(Palette.NET_CYAN, 0.32))
+			_roll.draw_rect(Rect2(gr.position.x, y + h * 0.45, gr.size.x, 2.0), Color(Palette.PAPER, 0.7)))
 	page.add_child(_roll)
 
 

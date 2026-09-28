@@ -212,6 +212,10 @@ func _ready() -> void:
 				show_raid()
 				if args.has("--demo-playout"):
 					fight_raid()
+				for a in args:
+					# ANIM-R1 M2 profiling: the setup shows, START DEFENSE is pressed N frames in.
+					if a.begins_with("--demo-playout-delay="):
+						MotionDemo.after_frames(self, int(a.trim_prefix("--demo-playout-delay=")), fight_raid)
 			else:
 				for sd in grid_data.sites:
 					if sd.objective == RC.SiteObjective.EXPLOIT:
@@ -279,6 +283,8 @@ func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunMana
 
 
 func resume() -> void:
+	if RunManager.scene_change_pending():
+		return
 	if RunManager.resume():
 		_log.append_text("[b]Resumed.[/b]\n")
 		if RunManager.has_active_run():
@@ -290,7 +296,26 @@ func resume() -> void:
 		notify(tr("Nothing to resume."), true)
 
 
+## ANIM-R1 M8: whether the screen a jack out lands on is built and framed (Fx keeps its
+## cover up until then): a page is on, the city behind it shows its own look under the
+## current camera, and no map fit or legend placement is still waiting for a redraw.
+func arrival_ready() -> bool:
+	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
+		return false
+	var city: NeonCity = background.city if background.visible else wireframe.city
+	if city != null and city.is_visible_in_tree():
+		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
+			return false
+		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
+				or get_tree().process_frame.is_connected(place_raid_legend):
+			return false
+	return true
+
+
 func launch(site_id: StringName, operative_id: StringName) -> bool:
+	# ANIM-R1 M1: a press during the jack (a second JACK IN) does nothing.
+	if RunManager.scene_change_pending():
+		return false
 	var err := RunManager.launch_error(operative_id, site_id)
 	if err != "":
 		_log.append_text("[color=orange]%s[/color]\n" % err)
@@ -426,11 +451,17 @@ func fight_raid() -> void:
 	# city holds its pre-raid tint until the raid has played; the result spreads at the end.
 	var before := RunManager.campaign.duplicate_state() if RunManager.campaign != null else null
 	wireframe.city.pin_influence(CityInfluence.of(RunManager.campaign, RunManager.corporation))
+	if Motion.animating() and RunManager.campaign != null:
+		hud_home_shown = RunManager.campaign.grid.home_integrity  # ANIM-R1 M4: HOME rolls down as hits land
 	var events := RunManager.fight_raid()
 	_report(events)
 	if events.is_empty():
 		wireframe.city.release_influence()
 	show_raid_playout(events, before)
+	# ANIM-R1 M2: the post-raid look bakes while the raid plays (the pre-raid one stays
+	# pinned), so the result spreads at the end without the ~2 s freeze of a bake then.
+	if before != null and not events.is_empty():
+		_prebake_playout(before, CityInfluence.of(RunManager.campaign, RunManager.corporation))
 
 
 # --- Drag and drop (Animation pass ANIM-4) --------------------------------------------------
@@ -544,7 +575,9 @@ func drop_error(payload: Dictionary, target: Dictionary) -> String:
 				return tr("%s is at HQ already.") % (op.name if op != null else String(payload["op"]))
 			return ""
 		["crew", "jack"]:
-			return RunManager.launch_error(payload["op"], value)
+			# ANIM-R1 (designer ruling 2026-09-27): a chip on JACK IN only picks who runs
+			# it; the operative's own eligibility, not whether a run could start now.
+			return _pick_error(payload["op"], value)
 		["recruit", "roster"]:
 			var cls := lookup.get_content(payload["cls"]) as ClassData
 			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.recruit(d, cfg, cls))
@@ -557,6 +590,33 @@ func drop_error(payload: Dictionary, target: Dictionary) -> String:
 				return DropLayer.SKIP
 			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.swap_ring_segment(d, lookup, payload["op"], int(value), payload["segment"]))
 	return DropLayer.SKIP
+
+
+## ANIM-R1 (designer ruling): picks operative `operative_id` in the Site card's list (a
+## crew chip dropped on JACK IN) and puts focus on JACK IN; nothing starts.
+func pick_operative(operative_id: StringName) -> void:
+	var pick := _panel.find_child("OperativePick", true, false) as OptionButton if _panel != null else null
+	if pick == null:
+		return
+	var living := RunManager.campaign.living_operatives()
+	for i in living.size():
+		if living[i].id == operative_id and i < pick.item_count:
+			pick.select(i)
+	var go := _panel.find_child("Launch", true, false) as Control
+	if go != null and go.is_visible_in_tree():
+		go.grab_focus.call_deferred()
+
+
+## Why operative `operative_id` can't run Site `site_id` ("" when they can), whatever
+## else is under way (a pick is not a launch).
+func _pick_error(operative_id: StringName, site_id: StringName) -> String:
+	var c := RunManager.campaign
+	var site := CampaignRules.site_data(RunManager.corporation, site_id)
+	var op := c.get_operative(operative_id)
+	if site == null or op == null:
+		return DropLayer.SKIP
+	var cls := RunManager.lookup().get_content(op.class_id) as ClassData
+	return CampaignRules.launch_error(c, RunManager.corporation, RunManager.config(), op, cls, site)
 
 
 ## Runs rule call `f` on a copy of the campaign: its refusal text, or "" when it would go
@@ -646,7 +706,9 @@ func _on_dropped(payload: Dictionary, target: Dictionary) -> void:
 			drops.reveal_on_land(flight, _panel.find_child("Crew_%s" % payload["op"], true, false) as Control, false)
 			_focus_in.call_deferred("Crew_%s" % payload["op"])
 		["crew", "jack"]:
-			launch(value, payload["op"])
+			# ANIM-R1 (designer ruling 2026-09-27: "prefer select, then jack in"): the drop
+			# picks the operative in the list; only pressing JACK IN starts the run.
+			pick_operative(payload["op"])
 		["recruit", "roster"]:
 			_market_apply(payload, flight, func() -> void: recruit(payload["cls"]))
 		["boost", "queue"]:
@@ -762,6 +824,8 @@ func _set_panel(p: Control, name: String) -> void:
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
 	if entering:
+		if _panel_host.theme_type_variation == &"" and name != "start":
+			PageTransition.glass_is_windows(p)  # ANIM-R1 M11: the roll band crosses the windows only
 		PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
 	else:
 		UiFocus.focus_first(p)
@@ -1115,7 +1179,15 @@ func show_hq() -> void:
 	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	jack.tooltip_text = UiTip.fold(tr("JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."))
 	jack.icon_kind = StatIcon.JACK_IN  # H22 #14: the plug, as on the Site card's JACK IN
-	jack.pressed.connect(show_grid)
+	if RunManager.has_active_run():
+		# ANIM-R1 M1: a run saved and left (Save & quit) waits: JACK IN goes back into it (a
+		# second run can't start over it).
+		jack.tooltip_text = UiTip.fold(tr("JACK IN: back into the run you left."))
+		jack.pressed.connect(func() -> void:
+			if not RunManager.scene_change_pending():
+				RunManager.go_to_netrun())
+	else:
+		jack.pressed.connect(show_grid)
 	var top_right := HBoxContainer.new()
 	top_right.add_theme_constant_override("separation", 10)
 	top_right.add_child(poster)
@@ -2021,7 +2093,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
 		_jack_button = go
 		# ANIM-4: the crew as small Polaroids: drag one onto JACK IN (or pick it up with a
-		# press) to choose who runs it. The list above stays the button path.
+		# press) to choose who runs it (ANIM-R1: it picks; the press on JACK IN launches).
+		# The list above stays the button path.
 		var chips := HFlowContainer.new()
 		chips.name = "CrewChips"
 		chips.add_theme_constant_override("h_separation", 6)
@@ -2029,7 +2102,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		for op in living:
 			var chip := CrewChip.new(op.class_id, op.id, op.name)
 			chip.name = "Chip_%s" % op.id
-			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to run %s (or pick them in the list).") % [op.name, site_name(site.id)])
+			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.") % [op.name, site_name(site.id)])
 			chips.add_child(chip)
 			_grid_chips.append(chip)
 		card.body.add_child(chips)
@@ -2099,6 +2172,8 @@ func show_raid() -> void:
 	if _raid_strip:
 		raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
 	_raid_reframes = 0
+	_raid_passes = 0
+	_raid_checks = 0
 	_raid_free = Rect2()
 	_raid_step = {}
 	_raid_box = Rect2()
@@ -2193,6 +2268,9 @@ func show_raid() -> void:
 	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
 	_register_raid_drops(claimed, loadout)
 	place_raid_legend.call_deferred()
+	# ANIM-R1 M2: the playout's zoomed map baked behind the setup (off the main thread), so
+	# START DEFENSE opens onto a city that is already there.
+	_prebake_playout.call_deferred(RunManager.campaign, null)
 	spacer.resized.connect(place_raid_legend)
 	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
 	if not wireframe.city.rebuilt.is_connected(place_raid_legend):
@@ -2333,6 +2411,14 @@ func place_raid_legend() -> void:
 	var box: Rect2 = wireframe.unrigged(raid_node_box)
 	if not free.has_area() or not box.has_area():
 		return
+	# ANIM-R1 M15: the whole page's framing is bounded, whatever its layouts do. A free
+	# rect that kept changing reset the per-layout pass count, and a measure that never held
+	# still asked for a check every frame: under some layouts and timings the framing never
+	# ended (each pass a new camera, a new city build), the full suite hanging at 100% CPU.
+	_raid_checks += 1
+	if _raid_checks > RAID_CHECKS_MAX or _raid_passes >= RAID_PASSES_MAX:
+		wireframe.ease_camera()
+		return
 	# Act only on a settled measure: the same free rect and node box for RAID_STABLE_FRAMES
 	# frames in a row. The icons follow the camera a redraw or two late (and jump again when
 	# the city's new stretch is baked), and the page's layout settles over a few frames;
@@ -2368,6 +2454,7 @@ func place_raid_legend() -> void:
 		_use_raid_strip()
 		return
 	_raid_reframes += 1
+	_raid_passes += 1
 	# Never further out than RAID_MIN_ZOOM (a far camera bakes a huge stretch of city).
 	k = clampf(k, RAID_MIN_ZOOM / maxf(RAID_MIN_ZOOM, city.scale.x), 1.0)
 	var anchor := city.focus_anchor
@@ -2423,6 +2510,13 @@ var _raid_same: int = 0
 var _raid_frame: int = -1
 ## Frames a measure must hold before the camera acts on it.
 const RAID_STABLE_FRAMES := 2
+## ANIM-R1 M15: bounds on one raid page's framing, whatever its layouts do: the camera
+## moves (over every layout the page goes through) and the checks (frames and redraws the
+## framing looks at the map). Past either, the frame it has is the frame it keeps.
+const RAID_PASSES_MAX := RAID_REFRAMES_MAX * 3
+const RAID_CHECKS_MAX := 240
+var _raid_passes: int = 0
+var _raid_checks: int = 0
 
 
 ## The part of the raid map's area the nodes should sit in (screen px): the area less its
@@ -2691,7 +2785,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	MapLegend.pin_to(spacer, c.corporation_id)
+	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	_fight_area = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
 	box.add_child(side)
@@ -2715,15 +2810,23 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var pre := before if before != null else c
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
-	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55), 1.9)
+	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
 	city_overlay.avoid_controls([side])
 	var overlay := city_overlay
-	overlay.markers_changed.connect(func() -> void: _follow_fight(overlay))
 	playout = RaidPlayoutPanel.new(overlay, Vector2(330, 330))
 	feed.body.add_child(playout)
-	playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
+	var fx := playout.attach_fx(r, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
+	# ANIM-R1 M4: each step's fight is framed (the camera eases to it) before it plays, and
+	# every hit on home flies its number into the top bar's HOME, which rolls down.
+	playout.framer = _frame_fight.bind(overlay)
+	if fx != null and Motion.animating():
+		hud_home_shown = int(r.get("home_before", c.grid.home_integrity))
+		_refresh_status()
+		fx.home_hit_shown.connect(_fly_home_number)
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
+		hud_home_shown = -1
+		_refresh_status()
 		forecast.resolve(RESULT_CAPTION, verdict)
 		# The result's tint spreads from the nodes that flipped (NeonCity, one bake).
 		wireframe.city.release_influence()
@@ -2739,25 +2842,118 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		_after_playout()
 
 
-## Keeps the zoomed camera on the threats (their first Site, else the network).
-func _follow_fight(overlay: CityMapOverlay) -> void:
-	if not is_instance_valid(overlay) or overlay != city_overlay:
+## ANIM-R1 M2: bakes (ahead, off the main thread) the stretch of city the raid playout's
+## camera can show for campaign `c`'s raid map: every node of it as the fight's focus at
+## PLAYOUT_ZOOM, under influence `inf` (null: the city's current one).
+func _prebake_playout(c: CampaignState, inf: Variant) -> void:
+	if c == null or not is_inside_tree() or wireframe == null:
 		return
-	var target := overlay.centre()
-	for id in overlay.markers:
-		target = Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5)
-		break
-	var city := wireframe.city
-	if city.focus_grid == target:
+	var nodes: Array = raid_graph({}, {}, c)["nodes"]
+	var view := size / PLAYOUT_MIN_ZOOM
+	var region := Rect2()
+	var first := true
+	for n: Dictionary in nodes:
+		var at: Vector2 = n["at"]
+		var w := NeonCity.world_of(at.x + 0.5, at.y + 0.5)
+		var r := Rect2(w - PLAYOUT_ANCHOR * view, view)
+		region = r if first else region.merge(r)
+		first = false
+	if not first:
+		wireframe.city.prebake(region.grow(NeonCity.REGION_MARGIN), inf)
+
+
+## The raid playout's camera: zoom and where its focus sits on screen.
+const PLAYOUT_ZOOM := 1.9
+const PLAYOUT_ANCHOR := Vector2(0.36, 0.55)
+## ANIM-R1 M4: the furthest out a framed fight goes (its guns and targets must all show).
+const PLAYOUT_MIN_ZOOM := 1.2
+
+
+## ANIM-R1 M4: frames a raid step's fight (`sites`: the guns firing and their targets, else
+## the nodes hit, else where threats move or enter) at PLAYOUT_ZOOM, easing the camera there
+## (it never cuts); returns the seconds the ease takes (the step's beats wait for it), 0
+## when the frame does not change.
+func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
+	if not is_instance_valid(overlay) or overlay != city_overlay or sites.is_empty():
+		return 0.0
+	var pts := PackedVector2Array()
+	for id in sites:
+		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
+	return wireframe.frame_points(pts, fight_area(_fight_area), PLAYOUT_ZOOM, PLAYOUT_MIN_ZOOM)
+
+
+## The playout map's parts the fight frame keeps to: [the map's area, its key].
+var _fight_area: Array = []
+
+
+## ANIM-R1 M4: the free part of a playout map (screen px): its area right of its key's
+## column (the key sits at the area's left), less a margin.
+static func fight_area(parts: Array) -> Rect2:
+	if parts.is_empty() or not is_instance_valid(parts[0]):
+		return Rect2()
+	var area := (parts[0] as Control).get_global_rect()
+	if parts.size() > 1 and is_instance_valid(parts[1]) and (parts[1] as Control).is_visible_in_tree():
+		var key := (parts[1] as Control).get_global_rect()
+		var right := minf(area.end.x, key.end.x)
+		area = Rect2(Vector2(right, area.position.y), Vector2(area.end.x - right, area.size.y))
+	return area.grow(-LegendSpot.MARGIN * 2.0)
+
+
+## ANIM-R1 M4: the top bar's HOME during a raid's playout: the value the hits shown so far
+## leave (-1: the campaign's own).
+var hud_home_shown: int = -1
+
+
+## ANIM-R1 M4: a hit on home: its red number flies from the node on the map into the top
+## bar's HOME (`home_number_fly`), which then shows the lower value (the tag bumps and rolls).
+func _fly_home_number(damage: int, site: StringName) -> void:
+	var land := func() -> void:
+		if hud_home_shown >= 0:
+			hud_home_shown = maxi(0, hud_home_shown - damage)
+			_refresh_status()
+	var to := hud.stats.icon_point(StatIcon.HOME)
+	if not Motion.live(&"home_number_fly") or city_overlay == null or not is_instance_valid(city_overlay) or to == Vector2.INF:
+		land.call()
 		return
-	# ANIM-5: the camera follows the fight by easing, not jumping.
-	wireframe.hold_camera()
-	_frame_city(1.9, target, Vector2(0.36, 0.55))
-	if not city.rebuilt.is_connected(wireframe.ease_camera):
-		city.rebuilt.connect(wireframe.ease_camera, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+	var p := city_overlay.icon_at(site)
+	if p.x == INF:
+		land.call()
+		return
+	var from := city_overlay.get_global_transform() * p
+	var num := Label.new()
+	num.name = "HomeHitNumber"
+	num.top_level = true
+	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	num.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	num.text = "-%d" % damage
+	num.add_theme_font_override("font", Palette.display())
+	num.add_theme_font_size_override("font_size", roundi(HOME_NUMBER_FONT * Settings.text_scale))
+	num.add_theme_color_override("font_color", Palette.CELL_PINK)
+	num.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	num.add_theme_constant_override("outline_size", 6)
+	num.z_index = 60
+	add_child(num)
+	num.size = num.get_combined_minimum_size()
+	num.pivot_offset = num.size * 0.5
+	num.global_position = from - num.size * 0.5
+	num.scale = Vector2.ONE * Motion.amplitude(&"home_number_fly")
+	var e := Motion.entry(&"home_number_fly")
+	var tw := num.create_tween().set_parallel(true)
+	tw.tween_property(num, "global_position", to - num.size * 0.5, Motion.seconds(&"home_number_fly")).set_delay(Motion.delay_of(&"home_number_fly")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_property(num, "scale", Vector2.ONE, Motion.seconds(&"home_number_fly")).set_delay(Motion.delay_of(&"home_number_fly")).set_ease(e.ease).set_trans(e.trans)
+	tw.chain().tween_callback(func() -> void:
+		land.call()
+		num.queue_free())
+
+
+## The flying home-hit number's lettering at text scale 1.0 (px).
+const HOME_NUMBER_FONT := 30
 
 
 func _after_playout() -> void:
+	hud_home_shown = -1
+	for n in find_children("HomeHitNumber", "Label", false, false):
+		n.queue_free()
 	wireframe.city.release_influence()
 	if RunManager.campaign.is_over():
 		show_end()
@@ -3039,7 +3235,7 @@ func _refresh_status() -> void:
 	# H24 S3: the tags' names are keys (translated where drawn); the tooltips translated here.
 	hud.set_stats([[TextDb.mark("HEAT"), str(c.heat), "/%d" % cfg.heat_max, heat_tip()],
 		[TextDb.mark("SCHEMATICS"), str(c.schematics), "", tr("Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.")],
-		[TextDb.mark("HOME"), str(c.grid.home_integrity), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
+		[TextDb.mark("HOME"), str(c.grid.home_integrity if hud_home_shown < 0 else hud_home_shown), "/%d" % c.grid.home_max_integrity, tr("Home server integrity. At 0 the campaign is lost; raids that reach it take it down. Patch it at HQ.")],
 		[TextDb.mark("EXPLOITS"), str(c.exploits.size()), "/%d" % cfg.min_exploits_for_breach, tr("Exploits found: %s. The breach on the corporation's core needs %d.") % [_exploit_names(c), cfg.min_exploits_for_breach]],
 		[TextDb.mark("RAIDS"), str(c.pending_raids.size()), "", tr("Raids pending against your network. Set up the defence before the next run.")],
 		[TextDb.mark("ICE"), str(c.ice_level), "", _ice_description(c.ice_level)],
@@ -3143,6 +3339,12 @@ func cell_badges() -> HFlowContainer:
 		var ename := exploit_name(e)
 		flow.add_child(Badge.new(ename, Palette.CELL_ACID, GLYPH_EXPLOIT,
 			tr("Exploit %s found (%d/%d for the breach).") % [ename, c.exploits.size(), cfg.min_exploits_for_breach]).with_icon(StatIcon.EXPLOITS))
+	# ANIM-R1 M5: the Cell's claimed Sites (its network), the counter a territory change bumps.
+	var sites := maxi(0, c.grid.claimed_ids().size() - 1)
+	var network := Badge.new(tr("SITES %d") % sites, Palette.CELL_PINK, GLYPH_NODE,
+		tr("Sites your network holds besides CORE: claim cleared Sites on the City Grid.")).with_icon(StatIcon.MAP)
+	network.name = "NetworkBadge"
+	flow.add_child(network)
 	var armory := Badge.new(armory_words(), Palette.CELL_PINK, GLYPH_NODE, armory_tip()).with_icon(StatIcon.ARMORY)
 	armory.name = "ArmoryBadge"
 	flow.add_child(armory)
@@ -3157,6 +3359,14 @@ func cell_badges() -> HFlowContainer:
 	for m in HeatRules.active_modifiers(c, cfg):
 		flow.add_child(Badge.new(_modifier_text(m), Palette.corp_color(c.corporation_id), GLYPH_RULE, tr("In force since a Heat threshold. Scrub Heat to fall back under it.")).with_icon(StatIcon.HEAT))
 	return flow
+
+
+## ANIM-R1 M5: a territory change landed on the city: the counter it changes bumps (the
+## CELL STATUS SITES badge on the HQ page).
+func _on_territory_marked(_marks: Array) -> void:
+	var badge := _panel.find_child("NetworkBadge", true, false) as Control if _panel != null else null
+	if badge != null and badge.is_visible_in_tree():
+		Motion.pop(badge, &"sticky_bump")
 
 
 ## Refusals, saves and unlocks the player must see (the log strip is optional): a toast.
@@ -3202,8 +3412,10 @@ func _relabel_hints() -> void:
 
 func _build_ui() -> void:
 	background = CyberdeckBackground.new()
+	background.city.territory_marked.connect(_on_territory_marked)
 	add_child(background)
 	wireframe = WireframeBackground.new()
+	wireframe.city.territory_marked.connect(_on_territory_marked)
 	wireframe.visible = false
 	add_child(wireframe)
 	var root := VBoxContainer.new()
@@ -3304,7 +3516,16 @@ func _price_icon(b: Button, kind: StringName) -> IconMark:
 	b.add_child(mark)
 	b.set_meta(&"price_kind", kind)
 	var place := func() -> void:
-		mark.position = Vector2(b.size.x - px - PRICE_ICON_GAP * 0.5, (b.size.y - px) * 0.5)
+		# ANIM-R1 M12: right after the price ("pay 25" then the icon), not at the far end of
+		# a wide menu line; never past the button's right edge.
+		var end_x := b.size.x - px - PRICE_ICON_GAP * 0.5
+		var sb := b.get_theme_stylebox(&"normal")
+		var font := b.get_theme_font(&"font")
+		if sb != null and font != null and b.alignment == HORIZONTAL_ALIGNMENT_LEFT:
+			var icon_w := float(b.icon.get_width()) + b.get_theme_constant(&"h_separation") if b.icon != null else 0.0
+			var text_w := font.get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size(&"font_size")).x
+			end_x = minf(end_x, sb.get_margin(SIDE_LEFT) + icon_w + text_w + PRICE_ICON_GAP)
+		mark.position = Vector2(end_x, (b.size.y - px) * 0.5)
 	# The theme's boxes are known once the button is in the tree: room made on the right then.
 	var make_room := func() -> void:
 		for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
