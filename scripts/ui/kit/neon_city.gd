@@ -1219,6 +1219,8 @@ func _collect_live() -> void:
 ## Window lights for the GPU blink layer: a lit window (brighter, with a soft glow) shown
 ## while lit, a dark pane shown while off. Built once per camera, not per frame.
 func _draw_lights() -> void:
+	if _painter:
+		return  # ANIM-R2 R11: blinking lights are live, never baked
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var uvs := PackedVector2Array()
@@ -1240,6 +1242,8 @@ func _draw_lights() -> void:
 ## Beacons for the GPU blink layer: a big halo and bright core while lit, a small dim
 ## one while off.
 func _draw_beacons() -> void:
+	if _painter:
+		return
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var uvs := PackedVector2Array()
@@ -3232,7 +3236,9 @@ func _sign(at: Vector2, text: String, col: Color) -> void:
 
 
 func _draw_fx() -> void:
-	if _built_for != size:
+	# ANIM-R2 R11: a painter bakes no live layer (the signs, sparks and rain are drawn live
+	# over the image; the synchronous bake drew the signs into it too, twice over the live one).
+	if _built_for != size or _painter:
 		return
 	if territory_labels:
 		var inv := 1.0 / maxf(0.01, scale.x)

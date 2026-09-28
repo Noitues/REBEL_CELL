@@ -86,11 +86,19 @@ func _report(a: Image, b: Image) -> void:
 		return
 	var differ := 0
 	var worst := 0.0
+	var box := Rect2i()
 	for y in a.get_height():
 		for x in a.get_width():
 			var ca := a.get_pixel(x, y)
 			var cb := b.get_pixel(x, y)
 			if ca != cb:
+				box = Rect2i(x, y, 1, 1) if differ == 0 else box.expand(Vector2i(x, y))
 				differ += 1
 				worst = maxf(worst, maxf(maxf(absf(ca.r - cb.r), absf(ca.g - cb.g)), maxf(absf(ca.b - cb.b), absf(ca.a - cb.a))))
-	print("bake_compare: %dx%d, region %s, %d pixels differ (max channel diff %.4f)" % [a.get_width(), a.get_height(), _region, differ, worst])
+	print("bake_compare: %dx%d, region %s, %d pixels differ (max channel diff %.4f)%s" % [a.get_width(), a.get_height(), _region, differ, worst,
+		(" within image px %s" % box) if differ > 0 else ""])
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--dump=") and differ > 0:
+			var dir := arg.trim_prefix("--dump=")
+			a.save_png(dir.path_join("bake_threaded.png"))
+			b.save_png(dir.path_join("bake_sync.png"))
