@@ -11,18 +11,51 @@ const SAVE_DIR := "user://saves"
 const PROFILE_FILE := "profile.json"
 const CAMPAIGN_FILE_FORMAT := "campaign_%s.json"
 
+## A GUT run's own save folder under SAVE_DIR (by process id), as Settings keeps its own
+## file: parallel test shards and test runs by other people on the machine never share a
+## save slot or a profile (Test suite optimization, docs/TEST_SUITE.md).
+const TEST_DIR_FORMAT := "gut_%d"
+
 ## from_version (int) -> Callable(data: Dictionary) -> Dictionary at from_version + 1.
 var _migrations: Dictionary = {}
+## Where saves live: SAVE_DIR, or this test run's own folder in it.
+var save_dir: String = SAVE_DIR.path_join(TEST_DIR_FORMAT % OS.get_process_id()) if is_test_run() else SAVE_DIR
+
+
+## Whether this process runs the GUT test suite (as Settings.is_test_run; SaveService loads
+## before the Settings autoload).
+static func is_test_run() -> bool:
+	for a in OS.get_cmdline_args():
+		if a.ends_with("gut_cmdln.gd"):
+			return true
+	return false
+
+
+## A test run removes its own save folder when it ends.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and save_dir != SAVE_DIR:
+		_remove_tree(save_dir)
+
+
+static func _remove_tree(dir_path: String) -> void:
+	var dir := DirAccess.open(dir_path)
+	if dir == null:
+		return
+	for f in dir.get_files():
+		DirAccess.remove_absolute(dir_path.path_join(f))
+	for d in dir.get_directories():
+		_remove_tree(dir_path.path_join(d))
+	DirAccess.remove_absolute(dir_path)
 
 
 ## Path of the profile save file.
 func profile_path() -> String:
-	return SAVE_DIR.path_join(PROFILE_FILE)
+	return save_dir.path_join(PROFILE_FILE)
 
 
 ## Path of a campaign save file.
 func campaign_path(campaign_id: String) -> String:
-	return SAVE_DIR.path_join(CAMPAIGN_FILE_FORMAT % campaign_id)
+	return save_dir.path_join(CAMPAIGN_FILE_FORMAT % campaign_id)
 
 
 ## Registers a migration that upgrades data from `from_version` to `from_version + 1`.
@@ -87,7 +120,7 @@ func migrate(data: Dictionary) -> Dictionary:
 ## Campaign slot names with a save file, sorted.
 func list_campaign_slots() -> PackedStringArray:
 	var out := PackedStringArray()
-	var dir := DirAccess.open(SAVE_DIR)
+	var dir := DirAccess.open(save_dir)
 	if dir == null:
 		return out
 	dir.list_dir_begin()

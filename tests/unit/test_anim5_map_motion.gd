@@ -375,10 +375,21 @@ func test_jack_transitions_never_show_both_scenes() -> void:
 	assert_eq(seen, [true], "jack out too")
 	Settings.set_reduce_effects(true)
 	seen.clear()
-	var t0 := Time.get_ticks_msec()
+	# The fade's length in game time (the frames' deltas), less its longest frame: wall time
+	# failed on a busy machine, where one stalled frame outlasts the margin (Test suite
+	# optimization).
+	var deltas: Array[float] = []
+	var tick := func() -> void: deltas.append(get_process_delta_time())
+	get_tree().process_frame.connect(tick)
 	await Fx.jack_in(func() -> void: seen.append([Fx.cover_opaque(), Fx.transition_rect.color.a]))
+	get_tree().process_frame.disconnect(tick)
+	var took := 0.0
+	for d in deltas:
+		took += d
+	if not deltas.is_empty():
+		took -= deltas.max()
 	assert_eq(seen[0][1], 1.0, "reduce effects: a fade to black, the switch at its darkest")
-	assert_lt(Time.get_ticks_msec() - t0, int((Motion.entry(&"jack_fade_reduced").duration + 0.3) * 1000.0), "a short fade (about 0.2 s)")
+	assert_lt(took, Motion.entry(&"jack_fade_reduced").duration * 2.0 + 0.3, "a short fade (about 0.2 s; slack of its own length for uneven frames)")
 	assert_eq(Fx.transition_rect.color.a, 0.0, "and back")
 
 

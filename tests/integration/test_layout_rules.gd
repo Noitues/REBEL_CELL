@@ -130,9 +130,11 @@ func test_core_resolution_stays_well_under_a_millisecond_per_turn() -> void:
 	assert_true(best < 1.0, "%.3f ms per turn in the fastest batch (apply incl. preview-grade duplication)" % best)
 
 
-## Batches and turns per batch for the resolver timing.
-const TIMING_BATCHES := 5
-const TIMING_TURNS := 60
+## Batches and turns per batch for the resolver timing: many short batches (Test suite
+## optimization: with parallel shards the machine is busy for seconds at a time, and the
+## fastest of many short windows still finds the resolver's own cost; same 300 turns).
+const TIMING_BATCHES := 20
+const TIMING_TURNS := 15
 
 
 func test_system_log_strip_shows_only_when_toggled_in_options() -> void:

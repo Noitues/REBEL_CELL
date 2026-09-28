@@ -4,7 +4,8 @@ extends GutTest
 
 const SaveServiceScript := preload("res://scripts/autoload/save_service.gd")
 const RngServiceScript := preload("res://scripts/autoload/rng_service.gd")
-const PATH := "user://test_saves/roundtrip.json"
+## This run's own file (by process id): test runs in parallel never share it.
+var PATH: String = "user://test_saves_%d/roundtrip.json" % OS.get_process_id()
 
 var _saves: Node
 
@@ -15,6 +16,7 @@ func before_each() -> void:
 
 func after_each() -> void:
 	_saves.delete_save(PATH)
+	DirAccess.remove_absolute(PATH.get_base_dir())
 
 
 func _draw(rng: RandomNumberGenerator, count: int) -> PackedInt64Array:
@@ -64,7 +66,40 @@ func test_paths_live_under_the_save_dir() -> void:
 
 
 func test_delete_missing_save_is_ok() -> void:
-	assert_eq(_saves.delete_save("user://test_saves/nope.json"), OK)
+	assert_eq(_saves.delete_save(PATH.get_base_dir().path_join("nope.json")), OK)
+
+
+func test_a_test_run_keeps_its_saves_in_its_own_folder() -> void:
+	assert_true(SaveServiceScript.is_test_run(), "this is a GUT run")
+	var own := SaveServiceScript.SAVE_DIR.path_join(SaveServiceScript.TEST_DIR_FORMAT % OS.get_process_id())
+	assert_eq(_saves.save_dir, own, "saves live in this run's own folder")
+	assert_eq(SaveService.save_dir, own, "the autoload too")
+	assert_true(_saves.profile_path().begins_with(own + "/"))
+	assert_true(_saves.campaign_path("gut_test").begins_with(own + "/"), "a test slot is this run's alone")
+	RunManager.save_slot = "gut_isolation"
+	assert_true(RunManager.save_path().begins_with(own + "/"))
+	assert_true(RunManager.profile_path().begins_with(own + "/"), "and so is its private profile")
+	RunManager.save_slot = RunManager.DEFAULT_SLOT
+	# Another process's slot (a file straight in SAVE_DIR or in another run's folder) is not
+	# listed, and this run's own is.
+	var stranger := SaveServiceScript.SAVE_DIR.path_join("campaign_gut_stranger_%d.json" % OS.get_process_id())
+	assert_eq(_saves.save_dict(stranger, {"campaign": {}}), OK)
+	assert_eq(_saves.save_dict(_saves.campaign_path("gut_mine"), {"campaign": {}}), OK)
+	var slots: PackedStringArray = _saves.list_campaign_slots()
+	assert_false(slots.has("gut_stranger_%d" % OS.get_process_id()), "another run's slot is not listed")
+	assert_true(slots.has("gut_mine"), "this run's slot is")
+	_saves.delete_save(stranger)
+	_saves.delete_save(_saves.campaign_path("gut_mine"))
+
+
+func test_a_test_runs_folder_is_removed_when_its_save_service_ends() -> void:
+	var service: Node = SaveServiceScript.new()
+	service.save_dir = SaveServiceScript.SAVE_DIR.path_join("gut_%d_cleanup" % OS.get_process_id())
+	assert_eq(service.save_dict(service.campaign_path("gut_x"), {"campaign": {}}), OK)
+	var dir: String = service.save_dir
+	assert_true(DirAccess.dir_exists_absolute(dir))
+	service.free()
+	assert_false(DirAccess.dir_exists_absolute(dir), "the folder went with the run")
 
 
 func test_rng_stream_state_survives_save_and_load() -> void:

@@ -1097,6 +1097,43 @@ func _draw_city() -> void:
 	draw_rect(painter_region if _painter else Rect2(Vector2.ZERO, size), Palette.NIGHT_SKY)
 	if size.x < 2.0 or size.y < 2.0:
 		return
+	_shift = Vector2.ZERO
+	_baked_key = ""
+	_camera()
+	var memo_key := _memo_key()
+	if memo_key != "" and _geometry_memo.has(memo_key):
+		_memo_restore(memo_key)
+	else:
+		_build_geometry()
+		if memo_key != "":
+			_memo_store(memo_key)
+	var idx := PackedInt32Array()
+	idx.resize(_verts.size())
+	for k in _verts.size():
+		idx[k] = k
+	if not _verts.is_empty():
+		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, _verts, _cols)
+	_verts = PackedVector2Array()
+	_cols = PackedColorArray()
+	if not _painter:
+		_draw_shade(self)
+	var vis := Rect2(Vector2.ZERO, size).grow(LIGHT_GLOW * 4.0)
+	_live_lights = _pick_visible(_lights, vis, "a", LIGHTS_MAX)
+	_live_trails = _pick_visible(_busy_trails(), vis, "a", SPARKS_MAX)
+	_live_beacons = _pick_visible(_beacons, vis, "pos", BEACONS_MAX)
+	_lights_layer.queue_redraw()
+	_beacons_layer.queue_redraw()
+	_live_for = []
+	_built_for = size
+	_drawn_camera = _camera_key()
+	_fx.queue_redraw()
+	rebuilt.emit()
+
+
+## The procedural city's geometry for the current camera and look: streets, the fist,
+## every lot back to front into `_verts` / `_cols`, and the roofs, lights, trails,
+## beacons and signs the overlays and the live layer read.
+func _build_geometry() -> void:
 	_inks.clear()
 	for c in INKS:
 		_inks.append(_pale(c))
@@ -1108,11 +1145,8 @@ func _draw_city() -> void:
 	_signs = []
 	_lights = []
 	_roofs = {}
-	_shift = Vector2.ZERO
-	_baked_key = ""
 	_verts = PackedVector2Array()
 	_cols = PackedColorArray()
-	_camera()
 	_hq_rects.clear()
 	for t in TERRITORIES:
 		if t["id"] != &"":
@@ -1175,27 +1209,96 @@ func _draw_city() -> void:
 			continue
 		_lot(l.x, l.y)
 	_infl = 0.0
-	var idx := PackedInt32Array()
-	idx.resize(_verts.size())
-	for k in _verts.size():
-		idx[k] = k
-	if not _verts.is_empty():
-		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, _verts, _cols)
-	_verts = PackedVector2Array()
-	_cols = PackedColorArray()
-	if not _painter:
-		_draw_shade(self)
-	var vis := Rect2(Vector2.ZERO, size).grow(LIGHT_GLOW * 4.0)
-	_live_lights = _pick_visible(_lights, vis, "a", LIGHTS_MAX)
-	_live_trails = _pick_visible(_busy_trails(), vis, "a", SPARKS_MAX)
-	_live_beacons = _pick_visible(_beacons, vis, "pos", BEACONS_MAX)
-	_lights_layer.queue_redraw()
-	_beacons_layer.queue_redraw()
-	_live_for = []
-	_built_for = size
-	_drawn_camera = _camera_key()
-	_fx.queue_redraw()
-	rebuilt.emit()
+
+
+## Test runs only (docs/TEST_SUITE.md): the procedural city's geometry is a pure function
+## of the look and the camera, and building it costs seconds in GDScript, so under GUT a
+## built geometry is kept by those inputs and a city drawn again with the same ones reuses
+## it (the same triangles, roofs, lights, trails, beacons and signs). Off outside the test
+## runner (the game bakes instead); a test can switch it off.
+static var geometry_memo_enabled: bool = _is_gut_run()
+## Test runs only: the headless city skips emitting its triangles (the dummy renderer
+## never shows them) and still places every roof, light, trail, beacon and sign the
+## overlays and tests read, exactly as a full build does. On outside the test runner;
+## test_city_geometry_memo builds every district with it on.
+static var emit_triangles: bool = not _is_gut_run()
+## Kept geometries (least recently used drop out past GEOMETRY_MEMO_CAP).
+const GEOMETRY_MEMO_CAP := 48
+static var _geometry_memo: Dictionary = {}
+
+
+## The memo key: every input the geometry reads (the look, the camera's result and the
+## size), or "" when the memo is off or this city paints a bake.
+func _memo_key() -> String:
+	if not geometry_memo_enabled or _painter:
+		return ""
+	var cult := []
+	var names: Array = cultures.keys()
+	names.sort()
+	for k in names:
+		cult.append([String(k), String(cultures[k])])
+	return var_to_str([emit_triangles, city_seed, String(district), net_mode, ink_set, face_texture, cult, corp_creep, corp_color,
+		var_to_str(influence), size, _ox, _oy])
+
+
+func _memo_store(key: String) -> void:
+	_geometry_memo.erase(key)
+	while _geometry_memo.size() >= GEOMETRY_MEMO_CAP:
+		_geometry_memo.erase(_geometry_memo.keys()[0])
+	# Containers a later build clears in place are copied; the rest are replaced by a
+	# build, never changed after it (as with the bake cache's shared ones).
+	_geometry_memo[key] = {"verts": _verts, "cols": _cols, "roofs": _roofs, "lights": _lights,
+		"trails": _trails, "beacons": _beacons, "signs": _signs, "inks": _inks.duplicate(),
+		"corp_color": corp_color, "hq_rects": _hq_rects.duplicate(), "hq_rect": _hq_rect,
+		"street_i": _street_i, "street_j": _street_j, "local_i": _local_i, "local_j": _local_j,
+		"fist_segs": _fist_segs.duplicate(), "fist_box": _fist_box, "fist_hull": _fist_hull,
+		"fist_cache": _fist_cache.duplicate(), "terr": _terr, "terr_next": _terr_next,
+		"border": _border, "profile": _profile, "terr_col": _terr_col}
+
+
+func _memo_restore(key: String) -> void:
+	var m: Dictionary = _geometry_memo[key]
+	# Most recently used last.
+	_geometry_memo.erase(key)
+	_geometry_memo[key] = m
+	_verts = m["verts"]
+	_cols = m["cols"]
+	_roofs = m["roofs"]
+	_lights = m["lights"]
+	_trails = m["trails"]
+	_beacons = m["beacons"]
+	_signs = m["signs"]
+	_inks.assign(m["inks"])
+	corp_color = m["corp_color"]
+	_hq_rects = (m["hq_rects"] as Dictionary).duplicate()
+	_hq_rect = m["hq_rect"]
+	_street_i = m["street_i"]
+	_street_j = m["street_j"]
+	_local_i = m["local_i"]
+	_local_j = m["local_j"]
+	_fist_segs.assign(m["fist_segs"])
+	_fist_box = m["fist_box"]
+	_fist_hull = m["fist_hull"]
+	_fist_cache = (m["fist_cache"] as Dictionary).duplicate()
+	_terr = m["terr"]
+	_terr_next = m["terr_next"]
+	_border = m["border"]
+	_profile = m["profile"]
+	_terr_col = m["terr_col"]
+
+
+## Whether this process runs the GUT test suite (as Settings.is_test_run, without naming
+## the autoload: a static initializer can run before autoloads exist).
+static func _is_gut_run() -> bool:
+	for a in OS.get_cmdline_args():
+		if a.ends_with("gut_cmdln.gd"):
+			return true
+	return false
+
+
+## Empties the test-run geometry memo.
+static func clear_geometry_memo() -> void:
+	_geometry_memo.clear()
 
 
 ## The camera's inputs (what `_camera` reads).
@@ -1335,16 +1438,22 @@ func _hq_distance(i: int, j: int) -> float:
 # --- Primitives ---------------------------------------------------------------------------
 
 func _tri(a: Vector2, b: Vector2, c: Vector2, ca: Color, cb: Color, cc: Color) -> void:
+	if not emit_triangles:
+		return
 	_verts.append_array([a, b, c])
 	_cols.append_array([ca, cb, cc])
 
 
 func _quad(a: Vector2, b: Vector2, c: Vector2, d: Vector2, ca: Color, cb: Color, cc: Color, cd: Color) -> void:
+	if not emit_triangles:
+		return
 	_tri(a, b, c, ca, cb, cc)
 	_tri(a, c, d, ca, cc, cd)
 
 
 func _poly(pts: PackedVector2Array, col: Color) -> void:
+	if not emit_triangles:
+		return
 	var c := Vector2.ZERO
 	for p in pts:
 		c += p
@@ -1358,6 +1467,8 @@ func _poly(pts: PackedVector2Array, col: Color) -> void:
 ## and tapers, overshooting the corners by a varying amount, then a faint second pass a
 ## hair off the first, as if the line was gone over again.
 func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: bool = true) -> void:
+	if not emit_triangles:
+		return
 	var length := a.distance_to(b)
 	if length < 0.5:
 		return
@@ -1381,6 +1492,8 @@ func _ink_line(a: Vector2, b: Vector2, col: Color, width: float = 1.3, glow: boo
 
 
 func _stroke(a: Vector2, b: Vector2, n: Vector2, bow: float, width: float, col: Color, key: int) -> void:
+	if not emit_triangles:
+		return
 	var steps := clampi(int(a.distance_to(b) / 5.0), 2, 400)
 	var prev_l := Vector2.ZERO
 	var prev_r := Vector2.ZERO

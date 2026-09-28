@@ -64,6 +64,12 @@ func _combat(enemy: StringName = &"collections_agent", scale: float = 1.0, comba
 	return scene
 
 
+## Frees a fight a sweep is done with (Test suite optimization: a sweep kept every fight
+## it opened alive, and each one's frames slowed the next).
+func _close(scene: Control) -> void:
+	scene.get_parent().queue_free()
+
+
 func _live() -> void:
 	if Settings.reduce_effects:
 		Settings.set_reduce_effects(false)
@@ -142,6 +148,7 @@ func test_resolve_beats_match_the_engine_events() -> void:
 				for k in range(1, times.size()):
 					assert_true(times[k] >= times[k - 1] - 0.0001, "the schedule never goes back")
 				assert_true(float(sch["total"]) <= Motion.seconds(&"resolve_sequence") + 0.001, "%s: the sequence fits %.2f s (took %.2f)" % [enemy, Motion.seconds(&"resolve_sequence"), sch["total"]])
+			_close(scene)
 
 
 func CombatScene_schedule(scene: Control, beats: Array[Dictionary]) -> Dictionary:
@@ -293,6 +300,7 @@ func test_numbers_never_cover_the_next_resolving_needle() -> void:
 					for sat in wv.satellites:
 						assert_false(rect.has_point(wv.satellite_spot(sat.id)), "%s %.1f: clear of %s" % [enemy, scale, sat.display_name])
 				assert_true(v.global_center().distance_to(n["at"]) <= v.hub_radius(), "starts inside the hub")
+			_close(scene)
 
 
 func test_no_layout_violation_at_the_end_state() -> void:
@@ -308,6 +316,7 @@ func test_no_layout_violation_at_the_end_state() -> void:
 		await _frames(2)
 		assert_eq(scene.layout_violations(), [] as Array[String], "scale %.1f after a nudge" % scale)
 		Motion.force_live = false
+		_close(scene)
 
 
 func test_intent_tags_flip_only_when_their_content_changes() -> void:

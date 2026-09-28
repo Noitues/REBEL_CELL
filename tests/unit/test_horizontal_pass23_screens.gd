@@ -183,26 +183,10 @@ func _loot(scene: Control) -> void:
 
 # --- S1 the SAVED stamp -----------------------------------------------------------------------
 
-func _assert_saved_clear(root: Node, what: String) -> void:
-	var r := Fx.place_saved(Rect2(Vector2.ZERO, CANVAS))
-	assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(r), "%s: SAVED on screen %s" % [what, r])
-	for c in _controls(root):
-		assert_false(r.intersects(_shown_rect(c)), "%s: SAVED %s covers %s '%s' at %s (text %.1f)" % [what, r, c.get_class(), c.get("text"), _shown_rect(c), Settings.text_scale])
-
-
-func test_the_saved_stamp_covers_no_control() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
-		var hq: Control = await _raid(scale)
-		_assert_saved_clear(hq, "raid setup")
-		await _close(hq)
-		RunManager.new_campaign(1)
-		var scene := _netrun()
-		await _frames(8)
-		_assert_saved_clear(scene, "route")
-		_shop(scene)
-		await _frames()
-		_assert_saved_clear(scene, "Modem")
-		await _close(scene)
+## The screens themselves (raid setup, route, Modem at 1.0 and 1.6) are checked where the
+## stamp really lands after each autosave, keyboard and pad: test_horizontal_pass24_screens
+## test_the_saved_stamp_is_placed_on_the_page_it_lands_on (Test suite optimization).
+func test_a_control_in_the_corner_moves_the_saved_stamp() -> void:
 	var spot := Fx.saved_spot(Vector2(50, 20), Rect2(Vector2.ZERO, CANVAS), [Rect2(1150, 660, 130, 60)] as Array[Rect2])
 	assert_false(Rect2(spot, Vector2(50, 20)).intersects(Rect2(1150, 660, 130, 60)), "a control in the corner moves the stamp")
 

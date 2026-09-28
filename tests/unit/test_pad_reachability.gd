@@ -4,6 +4,19 @@ extends GutTest
 ## Control.find_valid_focus_neighbor on the four sides). Covers the HQ start panel, the
 ## Grid list, netrun rewards, the Modem and combat.
 
+var _pad_before: bool = false
+
+
+func before_each() -> void:
+	_pad_before = Settings.pad_active
+
+
+## A pushed pad button switches the device to the pad: put it back (Test suite
+## optimization: a later script in the same process read pad hints where it expected keys).
+func after_each() -> void:
+	if Settings.pad_active != _pad_before:
+		Settings.set_pad_active(_pad_before)
+
 
 func _frames(n: int = 3) -> void:
 	for i in n:

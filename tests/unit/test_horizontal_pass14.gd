@@ -144,11 +144,11 @@ func test_achievement_thresholds_come_from_the_config() -> void:
 
 
 func test_an_old_per_slot_profile_is_read_when_the_shared_one_is_missing() -> void:
-	var legacy := "user://gut_test_legacy_profile.json"
+	var legacy := "user://gut_test_legacy_profile_%d.json" % OS.get_process_id()
 	var p := ProfileState.new()
 	p.add_unlock(&"gut_legacy_unlock")
 	SaveService.save_dict(legacy, {"profile": p.to_dict()})
-	RunManager.load_profile_from("user://gut_test_missing_profile.json", legacy)
+	RunManager.load_profile_from("user://gut_test_missing_profile_%d.json" % OS.get_process_id(), legacy)
 	assert_true(RunManager.profile.unlocks.has(&"gut_legacy_unlock"))
 	DirAccess.remove_absolute(legacy)
 	RunManager.reset()

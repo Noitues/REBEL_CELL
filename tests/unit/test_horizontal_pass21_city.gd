@@ -4,6 +4,8 @@ extends GutTest
 ## icons shared with the legend; map labels that follow the text size and never overlap
 ## (Grid and route, every corporation); the raid sway following each corporation's own
 ## Sites (Halcyon's Grid reaches past its district).
+## The every-corporation Grid and route label sweeps are in test_city_map_sweeps.gd (Test
+## suite optimization, docs/TEST_SUITE.md).
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
@@ -90,32 +92,6 @@ func _assert_tooltips(overlay: CityMapOverlay, what: String) -> void:
 		assert_eq(tip, UiTip.fold(overlay.tip_of(n["id"])), "%s: the tooltip is the node's tip" % what)
 	assert_gt(placed, 0, "%s nodes stand on buildings" % what)
 	assert_eq(overlay._get_tooltip(Vector2(-5000, -5000)), "", "no tooltip off the nodes")
-
-
-## No two drawn labels overlap, and no label covers a node icon.
-func _assert_no_overlap(overlay: CityMapOverlay, what: String) -> void:
-	var rects := overlay.label_rects()
-	assert_gt(rects.size(), 0, "%s draws labels" % what)
-	# Icons never sit on one another either (a crowded block stacks them up).
-	for a in overlay.nodes.size():
-		for b in range(a + 1, overlay.nodes.size()):
-			var na: Dictionary = overlay.nodes[a]
-			var nb: Dictionary = overlay.nodes[b]
-			if overlay.icon_pos(na).x == INF or overlay.icon_pos(nb).x == INF:
-				continue
-			assert_true(overlay.icon_pos(na).distance_to(overlay.icon_pos(nb)) >= overlay.icon_radius(na) + overlay.icon_radius(nb),
-				"%s: icons %s and %s overlap" % [what, na["id"], nb["id"]])
-	var keys: Array = rects.keys()
-	for i in keys.size():
-		for j in range(i + 1, keys.size()):
-			assert_false((rects[keys[i]] as Rect2).intersects(rects[keys[j]]), "%s: labels %s and %s overlap" % [what, keys[i], keys[j]])
-		for n in overlay.nodes:
-			var at := overlay.icon_pos(n)
-			if at.x == INF:
-				continue
-			var r: Rect2 = rects[keys[i]]
-			var q := Vector2(clampf(at.x, r.position.x, r.end.x), clampf(at.y, r.position.y, r.end.y))
-			assert_true(q.distance_to(at) >= overlay.icon_radius(n) - 0.01 or String(keys[i]).ends_with("#threats"), "%s: label %s clears icon %s" % [what, keys[i], n["id"]])
 
 
 # --- Tooltips -------------------------------------------------------------------------------
@@ -260,43 +236,6 @@ func test_label_size_follows_the_text_scale_live() -> void:
 		if wide.has(key):
 			assert_gt(float(wide[key]), float(narrow[key]), "bigger boxes at a bigger text size")
 			break
-
-
-func test_grid_labels_never_overlap_for_every_corporation() -> void:
-	for corp in CORPS:
-		RunManager.reset()
-		var hq: Control = await _hq_grid(corp)
-		var overlay: CityMapOverlay = hq.city_overlay
-		_assert_no_overlap(overlay, "Grid %s" % corp)
-		# A selected Site's label clears the selection ring.
-		var pick: StringName = overlay.nodes[overlay.nodes.size() - 1]["id"]
-		overlay.selected_id = pick
-		var ring := overlay.ring_centre()
-		assert_eq(ring, overlay.icon_pos(overlay.nodes[overlay.nodes.size() - 1]), "the ring circles the selected icon")
-		assert_gt(overlay.ring_radius(), overlay.icon_radius(overlay.nodes[overlay.nodes.size() - 1]), "clear of it")
-		for key in overlay.label_rects():
-			assert_false(CityMapOverlay._rect_hits_disc(overlay.label_rects()[key], ring, overlay.ring_radius()),
-				"%s: label %s clears the selection ring" % [corp, key])
-		_assert_no_overlap(overlay, "Grid %s selected" % corp)
-		Settings.set_text_scale(1.5)
-		_assert_no_overlap(overlay, "Grid %s large text" % corp)
-		Settings.set_text_scale(1.0)
-		hq.get_parent().queue_free()
-		await _frames(1)
-
-
-func test_route_labels_never_overlap_for_every_corporation() -> void:
-	for corp in CORPS:
-		RunManager.reset()
-		var scene: Control = await _route(corp)
-		_assert_no_overlap(scene.city_overlay, "route %s" % corp)
-		var s := RunManager.netrun
-		s.run.current_node_id = s.run.map.first_layer_ids()[0]
-		scene._show_map()
-		await _frames()
-		_assert_no_overlap(scene.city_overlay, "route %s under way" % corp)
-		scene.get_parent().queue_free()
-		await _frames(1)
 
 
 func test_label_layout_is_deterministic() -> void:

@@ -72,7 +72,7 @@ static func is_private_slot(slot: String) -> bool:
 
 
 func _slot_profile_path(slot: String) -> String:
-	return SaveService.SAVE_DIR.path_join("profile_%s.json" % slot)
+	return SaveService.save_dir.path_join("profile_%s.json" % slot)
 
 
 func has_save() -> bool:

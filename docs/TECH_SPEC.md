@@ -167,6 +167,9 @@ Ties are broken by content id, then node id — never by dictionary order.
 ## 9. Testing
 - **GUT 9.x** (Godot 4 compatible). Tests in `tests/unit` and `tests/integration`.
 - Run headless: `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit`
+- In parallel shards: `python tools/run_tests.py` (`-j N`, `--tier fast` for the
+  iteration tier). Tiers, the manifest, the test-run switches (the city's geometry memo
+  and skipped triangles, per-run save folders) and the profile: `docs/TEST_SUITE.md`.
 - Schema check: `godot --headless --path . -s tools/schema_smoke_test.gd`
 - Content check (M0): `godot --headless --path . -s tools/validate_content.gd` runs every
   Resource's `validate()`.

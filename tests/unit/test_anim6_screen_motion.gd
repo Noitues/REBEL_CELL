@@ -13,6 +13,8 @@ const HQ := "res://scenes/hq/hq_scene.tscn"
 const SLOT := "gut_test_anim6"
 ## Longer than any entrance or flight (s).
 const SETTLE_WAIT := 0.8
+## Wall-clock ceiling for `_until` (a motion that never ends fails its assert after it).
+const WAIT_LIMIT_MS := 10000
 
 var _scale_before: float = 1.0
 var _reduce_before: bool = false
@@ -57,6 +59,30 @@ func after_each() -> void:
 func _frames(n: int = 3) -> void:
 	for i in n:
 		await get_tree().process_frame
+
+
+## Awaits frames until `done` holds (at most WAIT_LIMIT_MS of wall time) and returns the
+## game time that took, less its longest frame. Test suite optimization: fixed waits of a
+## motion's length plus a margin failed on a busy machine, where one long frame can carry
+## the timer past the margin before the tween's last step; this measures the motion
+## itself, so the timing asserts keep their margins and a stalled frame cannot fail them.
+func _until(done: Callable) -> float:
+	var total := 0.0
+	var longest := 0.0
+	var start := Time.get_ticks_msec()
+	while not done.call() and Time.get_ticks_msec() - start < WAIT_LIMIT_MS:
+		await get_tree().process_frame
+		var d := get_process_delta_time()
+		total += d
+		longest = maxf(longest, d)
+	return total - longest
+
+
+## A motion measured by `_until` ended within its own length plus the same again and a
+## tenth of a second: slack derived from the motion's value, so a slow machine's uneven
+## frames pass and a motion that runs several times too long still fails.
+func _assert_in_time(took: float, seconds: float, what: String) -> void:
+	assert_lt(took, seconds * 2.0 + 0.1, "%s ends in its time (%.2f s for %.2f s)" % [what, took, seconds])
 
 
 func _live() -> void:
@@ -195,7 +221,8 @@ func test_a_screen_enters_and_focus_lands_on_its_first_control() -> void:
 	assert_true(PageTransition.running(page), "the Modem slides in")
 	assert_eq(PageTransition.look_of(page), PageTransition.Look.GLASS)
 	assert_false(page.is_ancestor_of(_focus_owner()) if _focus_owner() != null else false, "focus waits for the entrance")
-	await wait_seconds(PageTransition.seconds_for(PageTransition.Look.GLASS) + 0.15)
+	var took := await _until(func() -> bool: return not PageTransition.running(page))
+	_assert_in_time(took, PageTransition.seconds_for(PageTransition.Look.GLASS), "the entrance")
 	await _frames()
 	assert_false(PageTransition.running(page), "the entrance ended")
 	assert_eq(_focus_owner(), UiFocus.first_focusable(page), "focus on the page's first control")
@@ -267,7 +294,8 @@ func test_menu_lines_type_in_and_the_highlight_slides() -> void:
 	_press(KEY_A)
 	assert_false(mm.typing(), "a key press completes it")
 	assert_eq(second.text, "Campaigns")
-	await wait_seconds(Motion.seconds(&"menu_highlight") + 0.1)
+	var took := await _until(func() -> bool: return not mm.sliding())
+	_assert_in_time(took, Motion.seconds(&"menu_highlight"), "the highlight slide")
 	assert_false(mm.sliding())
 	assert_true(mm.caret_rect().has_area(), "the caret sits after the words")
 
@@ -326,7 +354,8 @@ func test_a_tag_bumps_only_when_its_value_changed() -> void:
 	assert_eq(stats.shown_value(1), "40", "its number rolls from the old value")
 	stats.items = [["HEAT", "12", "/100"], ["CYCLES", "90", ""], ["CARDS", "10", ""]]
 	assert_eq(Array(stats.bumping()), ["CYCLES"], "the same values start nothing new")
-	await wait_seconds(Motion.seconds(&"count_up") + 0.1)
+	var took := await _until(func() -> bool: return stats.bumping().is_empty())
+	_assert_in_time(took, Motion.seconds(&"count_up"), "the count roll")
 	assert_eq(stats.bumping().size(), 0)
 	assert_eq(stats.shown_value(1), "90", "it ends on the value")
 	var rects := stats.tag_rects()
@@ -357,7 +386,8 @@ func test_a_modem_purchase_flies_and_the_state_is_the_purchase() -> void:
 	assert_eq(s.run.operative.deck.size(), deck + 1, "the card is in the deck")
 	assert_true(s.run.operative.deck.has(card_id))
 	assert_true(scene._panel.find_child("ModemSign", true, false).warming() == false, "the Modem does not warm up again")
-	await wait_seconds(SETTLE_WAIT)
+	var took := await _until(func() -> bool: return FlightFx.active_count(scene) == 0)
+	_assert_in_time(took, SETTLE_WAIT, "the flight")
 	assert_eq(FlightFx.active_count(scene), 0, "the flight ends")
 	assert_eq(_state(), after, "the flight changed nothing")
 
@@ -375,7 +405,8 @@ func test_a_loot_pick_ends_in_the_deck() -> void:
 	assert_eq(flight["to"], scene.hud.stats.icon_point(StatIcon.CARDS), "to the deck (CARDS) icon")
 	assert_eq(RunManager.netrun.run.operative.deck.size(), deck + 1)
 	assert_true(RunManager.netrun.run.operative.deck.has(&"jam"), "the picked card is in the deck")
-	await wait_seconds(SETTLE_WAIT)
+	var took := await _until(func() -> bool: return FlightFx.active_count(scene) == 0)
+	_assert_in_time(took, SETTLE_WAIT, "the loot flight")
 	assert_eq(FlightFx.active_count(scene), 0, "it lands")
 
 
@@ -386,14 +417,17 @@ func test_an_event_choice_stamps_its_outcome() -> void:
 	PageTransition.settle(scene)
 	await _frames()
 	var row := scene._panel.find_child("Choice1", true, false).get_node("OutcomeRow") as Control
-	var rect := row.get_global_rect()
+	# The row's own size (its global rect is scaled while an entrance pop still runs, and
+	# with fast frames one frame after the page settles it can still run).
+	var rest_size := row.size
 	scene._panel.find_child("Choice1", true, false).mouse_entered.emit()
 	assert_true(row.has_meta(&"motion_scale"), "hover pops the icons")
-	await wait_seconds(Motion.seconds(&"event_outcome_pop") + 0.05)
+	var took := await _until(func() -> bool: return row.scale == Vector2.ONE)
+	_assert_in_time(took, Motion.seconds(&"event_outcome_pop"), "the pop")
 	assert_eq(row.scale, Vector2.ONE, "and they settle")
 	scene.choose_event(0)
 	assert_eq(FlightFx.active_count(scene), 1, "the chosen outcome stamps")
-	assert_almost_eq((FlightFx.existing(scene).flights[0]["node"] as Control).size, rect.size, Vector2.ONE, "over the chosen outcome")
+	assert_almost_eq((FlightFx.existing(scene).flights[0]["node"] as Control).size, rest_size, Vector2.ONE, "over the chosen outcome")
 	FlightFx.finish_all(scene)
 	assert_eq(FlightFx.active_count(scene), 0)
 
@@ -505,7 +539,9 @@ func test_hq_idle_runs_live_and_rests_headless() -> void:
 	var crew := hq._panel.find_child("Roster", true, false).get_child(0) as CrewCard
 	var rest := crew.polaroid.rotation_degrees
 	crew.tilt_polaroid(true)
-	await wait_seconds(Motion.seconds(&"polaroid_tilt") + 0.05)
+	var want := rest + Motion.amplitude(&"polaroid_tilt")
+	var took := await _until(func() -> bool: return is_equal_approx(crew.polaroid.rotation_degrees, want))
+	_assert_in_time(took, Motion.seconds(&"polaroid_tilt"), "the tilt")
 	assert_almost_eq(crew.polaroid.rotation_degrees, rest + Motion.amplitude(&"polaroid_tilt"), 0.01, "the Polaroid tilts on hover")
 	crew.tilt_polaroid(false)
 	PageTransition.settle(hq)
