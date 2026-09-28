@@ -151,3 +151,36 @@ func test_game_scripts_print_only_capture_markers() -> void:
 			for b in bad_prints(lines[n]):
 				found.append("%s:%d %s" % [p, n + 1, b])
 	assert_eq(found, [] as Array[String], "no debug prints in scripts/")
+
+
+## Bake crash (DECISIONS "Animation pass - bake crash"): a lambda connected to one of the
+## tree's or the renderer's frame signals outlives the view that made it (a lambda using self
+## holds a raw pointer; a one-shot slot is called after its view was freed earlier in the same
+## emission). Those signals take a method callable (it holds the object's id).
+const FRAME_SIGNALS: Array[String] = ["process_frame", "physics_frame", "frame_pre_draw", "frame_post_draw"]
+
+
+## True when `line` connects a lambda to a frame signal.
+static func frame_lambda(line: String) -> bool:
+	var code := line.strip_edges()
+	if code.begins_with("#"):
+		return false
+	for s in FRAME_SIGNALS:
+		if code.contains("." + s + ".connect(func"):
+			return true
+	return false
+
+
+func test_no_lambda_is_connected_to_a_frame_signal() -> void:
+	assert_true(frame_lambda("\tget_tree().process_frame.connect(func() -> void:"), "a lambda on process_frame is caught")
+	assert_true(frame_lambda("RenderingServer.frame_post_draw.connect(func() -> void: pass)"), "and on the renderer's")
+	assert_false(frame_lambda("\tget_tree().process_frame.connect(_redraw_top_later, CONNECT_ONE_SHOT)"), "a method passes")
+	var paths: Array[String] = []
+	_game_scripts("res://scripts", paths)
+	var found: Array[String] = []
+	for p in paths:
+		var lines := FileAccess.get_file_as_string(p).split("\n")
+		for n in lines.size():
+			if frame_lambda(lines[n]):
+				found.append("%s:%d %s" % [p, n + 1, lines[n].strip_edges()])
+	assert_eq(found, [] as Array[String], "no lambda on a frame signal in scripts/")
