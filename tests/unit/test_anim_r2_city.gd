@@ -424,7 +424,9 @@ func test_the_raid_ends_with_staggered_outcomes_and_a_result_banner() -> void:
 	for id in fx._stamps:
 		starts.append(float(fx._stamps[id]["t0"]))
 	starts.sort()
-	assert_gt(starts.size(), 1, "every node stamps its outcome")
+	# ANIM-R3 B5: every node but home stamps its outcome (home's verdict is the banner).
+	assert_gt(starts.size(), 0, "every node stamps its outcome")
+	assert_eq(fx.stamp_word(c.grid.home_site_id), "", "home has no stamp of its own")
 	for i in range(1, starts.size()):
 		assert_gt(starts[i], starts[i - 1], "the outcomes stamp one after another")
 	assert_eq(RaidFxLayer.TOKEN_SCALE, 3.0, "threat tokens read at map scale")

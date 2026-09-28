@@ -174,7 +174,9 @@ func test_playout_ends_on_the_resolved_campaign_and_speed_scales_it() -> void:
 		assert_eq(p.fx.stamp_word(StringName(String(id))), RaidFxLayer.stamp_text(String(r["nodes"][id]["outcome"])),
 			"%s's stamp is its resolved outcome" % id)
 	var hit := int(r["home_after"]) < int(r["home_before"])
-	assert_eq(p.fx.stamp_word(c.grid.home_site_id), "BREACHED" if hit else "HOLDS", "home's stamp")
+	# ANIM-R3 B5: home's one verdict is the banner (no stamp that could say otherwise).
+	assert_eq(p.fx.stamp_word(c.grid.home_site_id), "", "home has no stamp")
+	assert_string_contains(p.fx.banner_text(), CityMapOverlay.tr_word("HOME HOLDS") if not hit else "HOME", "home's banner")
 	var forecast := hq.find_child("PlayoutForecast", true, false) as ForecastStamp
 	assert_not_null(forecast)
 	assert_true(forecast.resolved, "the forecast resolved into the verdict")

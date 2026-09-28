@@ -438,6 +438,8 @@ func swap_segment(operative_id: StringName, index: int, segment_id: StringName) 
 
 
 func deploy_asset(armory_index: int, site_id: StringName) -> void:
+	# ANIM-R3 B5: the forecast before, so the drop can show what it changed.
+	var was := forecast_values()
 	var events := CampaignRules.deploy_asset(RunManager.campaign, RunManager.config(), RunManager.lookup(), armory_index, site_id)
 	_report(events)
 	RunManager.autosave()
@@ -445,19 +447,48 @@ func deploy_asset(armory_index: int, site_id: StringName) -> void:
 		wireframe.hold_camera()  # ANIM-5: the map holds still while the page rebuilds
 	show_raid()
 	if not events.is_empty() and String(events[0].get("type", "")) != "refused":
-		play_asset_drop(site_id)
+		play_asset_drop(site_id, was)
+
+
+## ANIM-R3 B5: the raid forecast's integrity after the raid per node (site id -> int; home
+## included); {} with no raid pending.
+func forecast_values() -> Dictionary:
+	var out := {}
+	var projection := RunManager.project_raid() if RunManager.campaign != null else null
+	if projection == null:
+		return out
+	for id in projection.nodes:
+		out[String(id)] = int(projection.nodes[id].get("after", 0))
+	return out
+
+
+## ANIM-R3 B5: the forecast numbers that moved since `was` (forecast_values), by Site id:
+## [{"site", "from", "to"}].
+func forecast_changes(was: Dictionary) -> Array:
+	var out: Array = []
+	if was.is_empty():
+		return out
+	var now := forecast_values()
+	var ids := now.keys()
+	ids.sort()
+	for id in ids:
+		if was.has(id) and int(was[id]) != int(now[id]):
+			out.append({"site": StringName(id), "from": int(was[id]), "to": int(now[id])})
+	return out
 
 
 ## ANIM-5 (4.14): the asset just deployed on `site_id` drops onto its node with a stamp
 ## (the hook drag-and-drop deploying calls; the end state at once without motion).
-func play_asset_drop(site_id: StringName) -> void:
+## ANIM-R3 B5: `was` (forecast_values before the change) lets the landing show the forecast
+## numbers it changed.
+func play_asset_drop(site_id: StringName, was: Dictionary = {}) -> void:
 	if city_overlay != null and is_instance_valid(city_overlay):
 		# ANIM-R2 R6: it drops once the camera has panned to the page's new frame, and keeps its
 		# name under it.
 		var placed: Array = RunManager.campaign.grid.site(site_id).get("assets", []) if RunManager.campaign != null else []
 		var label := _display(StringName(placed[placed.size() - 1])) if not placed.is_empty() else ""
 		var bg := wireframe
-		city_overlay.drop_asset(site_id, func() -> bool: return not is_instance_valid(bg) or not bg.camera_easing(), label)
+		city_overlay.drop_asset(site_id, func() -> bool: return not is_instance_valid(bg) or not bg.camera_easing(), label, forecast_changes(was))
 
 
 func move_asset(from_site: StringName, index: int, to_site: StringName) -> void:
@@ -712,8 +743,9 @@ func _on_dropped(payload: Dictionary, target: Dictionary) -> void:
 			deploy_asset(int(payload["index"]), value)
 			_focus_named.call_deferred("Target_%s" % value)
 		["placed", "node"]:
+			var was := forecast_values()
 			move_asset(payload["site"], int(payload["index"]), value)
-			play_asset_drop(value)
+			play_asset_drop(value, was)
 			_focus_named.call_deferred("Target_%s" % value)
 		["placed", "armory"]:
 			move_asset(payload["site"], int(payload["index"]), &"")
@@ -843,7 +875,9 @@ func _set_panel(p: Control, name: String) -> void:
 	set_page_prompts(prompts_for(name))
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
-	if entering:
+	# ANIM-R3 B5: the raid playout goes on from the raid setup's map: it shows whole at once
+	# (a page entrance showed a dim, half-drawn map for its first frames).
+	if entering and name != "raid_playout":
 		if _panel_host.theme_type_variation == &"" and name != "start":
 			PageTransition.glass_is_windows(p)  # ANIM-R1 M11: the roll band crosses the windows only
 		PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)

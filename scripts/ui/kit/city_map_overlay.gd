@@ -208,7 +208,7 @@ var ring_ease: float:
 	set(v):
 		_mv.put(&"ring_ease", v)
 ## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
-var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0})
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
 var drop_t: float:
@@ -316,6 +316,8 @@ func _on_motion_value(key: StringName) -> void:
 	match key:
 		&"drop_t", &"drop_stamp_t", &"arrive_t", &"dim_t":
 			_queue_top()
+		&"change_t":
+			_hi.queue_redraw()
 	_hi.queue_redraw()
 
 
@@ -975,6 +977,8 @@ func _draw_tags() -> void:
 func _draw_hi() -> void:
 	if not _travel.is_empty() and travel_t < 1.0:
 		_draw_travel()
+	if change_t < 1.0 and drop_stamp_t > 0.0:
+		_draw_changes()
 	# The selected node's roof outline, drawing on (ANIM-5; ANIM-R2 R9: on this layer).
 	if city != null and selected_id != &"" and _lots.has(selected_id):
 		var rec := _roof(selected_id)
@@ -1000,6 +1004,32 @@ func _draw_hi() -> void:
 		return
 	var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
 	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * TAU / maxf(Motion.entry(PULSE_MOTION).duration, 0.001)) - 1.0) * pulse_amplitude() * _k(), 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0 * _k())
+
+
+## ANIM-R3 B5: the forecast numbers a drop changed rise off their nodes ("25 > 30": green
+## when it got better, pink when worse), over the labels, fading over their last third.
+func _draw_changes() -> void:
+	var k := _k()
+	var f := Palette.display()
+	var fs := maxi(1, roundi(CHANGE_FONT * Settings.text_scale * k))
+	var u := change_t
+	var e := Motion.entry(CHANGE_MOTION)
+	var rise := Motion.amplitude(CHANGE_MOTION) * k * (float(Tween.interpolate_value(0.0, 1.0, u, 1.0, e.trans, e.ease)) if e != null else u)
+	var a := clampf((1.0 - u) / CHANGE_FADE_SHARE, 0.0, 1.0)
+	for ch: Dictionary in _drop.get("changes", []):
+		var p := icon_at(StringName(ch["site"]))
+		if p.x == INF:
+			continue
+		var better := int(ch["to"]) >= int(ch["from"])
+		var col := Palette.CELL_ACID if better else Palette.CELL_PINK
+		var text := "%d > %d" % [int(ch["from"]), int(ch["to"])]
+		var size := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * k
+		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
+		var box := Rect2(at, size)
+		_hi.draw_rect(box.grow(2.0 * k), Color(0, 0, 0, 0.85 * a))
+		_hi.draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
+		_hi.draw_rect(box, Color(col, a), false, 2.0 * k)
+		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
 
 
 ## The selection ring's breathing (screen px): `select_ring_pulse`'s amplitude, 0 when that
@@ -1218,11 +1248,16 @@ func _node(n: Dictionary) -> void:
 			continue  # ANIM-R2 R6: it drops once the camera has panned there
 		if landing and drop_t < 1.0:
 			# ANIM-5: falling onto its node. ANIM-R2 R6: a bigger stamp ring as it lands.
+			# ANIM-R3 B5: a longer fall, from `asset_drop_grow` x its size (it was nearly
+			# invisible).
 			slot.y -= (1.0 - drop_t) * Motion.amplitude(&"asset_drop") * _k()
+			ar *= lerpf(maxf(1.0, Motion.amplitude(GROW_MOTION)), 1.0, drop_t)
 		if landing and drop_stamp_t < 1.0 and drop_t >= 1.0:
 			var grow := lerpf(1.0, Motion.amplitude(&"asset_drop_stamp"), drop_stamp_t)
-			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(0, 0, 0, 0.8 * (1.0 - drop_stamp_t)), 5.0 * _k())
-			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(Palette.PAPER, 1.0 - drop_stamp_t), 2.5 * _k())
+			var fade := 1.0 - drop_stamp_t
+			_c.draw_circle(slot, ar * 1.25 * grow, Color(Palette.CELL_PINK, 0.35 * fade))
+			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(0, 0, 0, 0.8 * fade), 7.0 * _k())
+			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(Palette.PAPER, fade), 4.0 * _k())
 		# ANIM-R1 M4: the placed defence stays on its node as a marker the size of a map
 		# icon (a dark plate, a pink ring, the asset's own icon), readable at any zoom.
 		_c.draw_circle(slot, ar * 1.25, Color(0, 0, 0, 0.85))
@@ -1385,19 +1420,24 @@ func ease_rings() -> void:
 ## ANIM-R2 R6: `ready` (optional) says when the screen's camera has settled: the drop waits
 ## for it (a camera pan at the same time hid it), at most `asset_drop_wait`; `label`
 ## names the defence under its marker once it has landed (it stays).
-func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "") -> void:
+## ANIM-R3 B5: `changes` ([{"site", "from", "to"}]) are the forecast numbers the drop
+## changed: once it has landed each shows "25 > 30" rising off its node (`forecast_change`).
+func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "", changes: Array = []) -> void:
 	var n := _node_dict(site_id)
 	var count := (n.get("assets", []) as Array).size()
 	if n.is_empty() or count == 0:
 		return
-	_drop = {"site": site_id, "index": count - 1, "label": label}
+	_drop = {"site": site_id, "index": count - 1, "label": label, "changes": changes}
 	drop_t = 0.0
 	drop_stamp_t = 0.0
+	change_t = 1.0
 	if not is_inside_tree() or not Motion.live(&"asset_drop"):
 		drop_t = 1.0
 		drop_stamp_t = 1.0
 		_queue_top()
 		return
+	if not changes.is_empty() and Motion.live(CHANGE_MOTION):
+		change_t = 0.0
 	if ready.is_valid() and not bool(ready.call()):
 		_drop["waiting"] = true
 		_drop["ready"] = ready
@@ -1409,6 +1449,23 @@ func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String
 
 ## ANIM-R3 B9: the most a drop waits for the camera (its duration, seconds).
 const DROP_WAIT_MOTION := &"asset_drop_wait"
+## ANIM-R3 B5: the forecast change after a drop, and the landing's size.
+const CHANGE_MOTION := &"forecast_change"
+const GROW_MOTION := &"asset_drop_grow"
+## The forecast change's lettering at text scale 1.0 (px).
+const CHANGE_FONT := 20
+## The share of its time the forecast change spends fading out (its last third).
+const CHANGE_FADE_SHARE := 1.0 / 3.0
+var change_t: float:
+	get:
+		return _mv.value(&"change_t")
+	set(v):
+		_mv.put(&"change_t", v)
+
+
+## ANIM-R3 B5: the forecast changes the last drop shows ([{"site", "from", "to"}]; tests).
+func drop_changes() -> Array:
+	return _drop.get("changes", [])
 var drop_stamp_t: float:
 	get:
 		return _mv.value(&"drop_stamp_t")
@@ -1423,9 +1480,17 @@ func _start_drop() -> void:
 	if tw == null:
 		drop_stamp_t = 1.0
 		return
-	tw.finished.connect(func() -> void:
-		if is_instance_valid(_mv) and Motion.run(&"asset_drop_stamp", _mv, ^"drop_stamp_t", 1.0) == null:
-			drop_stamp_t = 1.0)
+	tw.finished.connect(_on_dropped_down)
+
+
+## The drop has landed: the stamp rings out and the forecast numbers it changed rise.
+func _on_dropped_down() -> void:
+	if not is_instance_valid(_mv):
+		return
+	if Motion.run(&"asset_drop_stamp", _mv, ^"drop_stamp_t", 1.0) == null:
+		drop_stamp_t = 1.0
+	if change_t < 1.0 and Motion.run(CHANGE_MOTION, _mv, ^"change_t", 1.0) == null:
+		change_t = 1.0
 
 
 ## True while a dropped defence waits for the camera (tests).

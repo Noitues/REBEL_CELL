@@ -109,7 +109,7 @@ const DEMOS := {
 	# ANIM-R2 (combat, events and screens):
 	&"hit_absorb": ["scene", "send_hit"], &"ram_spend_float": ["scene", "ram"], &"price_refusal": ["pulse", "sticker"],
 	# ANIM-R3 (city, raid, jack, heat and route; in context: hq_scene --demo-raid --demo-anim=asset_drop):
-	&"asset_drop_wait": ["blink", "sticker"],
+	&"asset_drop_wait": ["blink", "sticker"], &"asset_drop_grow": ["pop", "sticker"], &"forecast_change": ["lift", "number"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

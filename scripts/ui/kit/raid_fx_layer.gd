@@ -50,9 +50,17 @@ const BANNER_PAD := 10.0
 const BANNER_LIFT := 96.0
 const STAGGER_MOTION := &"raid_outcome_stagger"
 const BANNER_MOTION := &"raid_result_banner"
-## The banner's words (translated when drawn).
-const BANNER_HOME := "HOME %s" # TR
+## The banner's words (translated when drawn). ANIM-R3 B5: the banner is home's one verdict
+## (home gets no stamp of its own): what it lost and the resolved outcome, or BREACHED when
+## the home server fell (the campaign is lost).
+const BANNER_HOME := "HOME %s - HOLDS" # TR
 const BANNER_HOLDS := "HOME HOLDS" # TR
+const BANNER_BREACHED := "HOME BREACHED" # TR
+## ANIM-R3 B5: gap between the banner and what it keeps clear of, and from the map's edge
+## (screen px x screen_k); numbers on one node stack this many of their lines apart.
+const BANNER_CLEAR := 8.0
+const NUMBER_STACK := 1.05
+const NUMBER_GAP := 6.0
 
 ## ANIM-R1 M4: a hit on the home server shows now (its number starts): `damage` from Site
 ## `site` (the screen flies the number into its home counter).
@@ -84,6 +92,10 @@ var _home_due: Array[Dictionary] = []
 var _banner: Dictionary = {}
 ## Home integrity as shown now (the hits that have shown so far; the bar draws it).
 var home_shown: int = 0
+## ANIM-R3 B5: each node's integrity as the numbers so far leave it (site id -> int, from the
+## resolved raid's `before`), so the disabling hit shows the integrity it takes and every
+## node's numbers add up to its before - after.
+var _node_left: Dictionary = {}
 
 
 func _init(p_overlay: CityMapOverlay = null) -> void:
@@ -112,6 +124,10 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	_tint_fade_t0 = INF
 	_owner_done = false
 	_banner = {}
+	_node_left.clear()
+	var nodes: Dictionary = results.get("nodes", {})
+	for id in nodes:
+		_node_left[String(id)] = int(nodes[id].get("before", 0))
 	queue_redraw()
 
 
@@ -196,61 +212,94 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			_fx.append({"kind": "trace", "site": StringName(e["site"]), "threat": String(e["threat"]), "t0": t0, "dur": trace, "hit": hit})
 			_fx.append({"kind": "hit", "threat": String(e["threat"]), "t0": t0 + trace, "dur": hit})
 			if int(e.get("damage", 0)) > 0:
-				_fx.append({"kind": "number", "threat": String(e["threat"]), "text": "-%d" % int(e["damage"]), "color": Palette.CELL_ACID,
-					"t0": t0 + trace + hit, "dur": RaidBeats.raw_seconds(&"node_damage_number")})
+				_fx.append({"kind": "number", "threat": String(e["threat"]), "text": TextDb.signed(-int(e["damage"])), "value": -int(e["damage"]),
+					"color": Palette.CELL_ACID, "t0": t0 + trace + hit, "dur": RaidBeats.raw_seconds(&"node_damage_number")})
 		"threat_destroyed":
 			var tok: Dictionary = _tokens.get(String(e["threat"]), {})
 			if not tok.is_empty():
 				tok["dead_at"] = t0
 				tok["dead_at_dur"] = dur
-		"node_hit", "cascade":
-			var site := StringName(e["site"])
-			_number(site, "-%d" % int(e.get("damage", 0)), Palette.CELL_PINK, t0, dur)
+		"node_hit", "cascade", "home_hit":
+			# ANIM-R3 B5: one number per hit, the integrity it really took (a cascade or a hit
+			# on home stops at 0), on the node it hit; home's also fly into HOME.
+			var site := home_id if String(b["type"]) == "home_hit" else StringName(e["site"])
 			if site == home_id:
-				_home_hit(int(e.get("damage", 0)), t0, site)
-		"home_hit":
-			_number(home_id, "-%d" % int(e.get("damage", 0)), Palette.CELL_PINK, t0, dur)
-			_home_hit(int(e.get("damage", 0)), t0, home_id)
+				var took := mini(int(e.get("damage", 0)), home_value)
+				_number(site, -took, Palette.CELL_PINK, t0, dur)
+				_home_hit(took, t0, site)
+			else:
+				var left := int(_node_left.get(String(site), 0))
+				var took := mini(int(e.get("damage", 0)), left)
+				_node_left[String(site)] = left - took
+				_number(site, -took, Palette.CELL_PINK, t0, dur)
 		"station_regen":
-			_number(StringName(e["site"]), "+%d" % int(e.get("amount", 0)), Palette.CELL_ACID, t0, dur)
+			var site := StringName(e["site"])
+			_node_left[String(site)] = int(_node_left.get(String(site), 0)) + int(e.get("amount", 0))
+			_number(site, int(e.get("amount", 0)), Palette.CELL_ACID, t0, dur)
 		"disabled":
-			_stamp(StringName(e["site"]), "disabled", Palette.CELL_PINK, t0, dur)
+			# ANIM-R3 B5: the hit that disables takes what integrity was left (its own number).
+			var site := StringName(e["site"])
+			var left := int(_node_left.get(String(site), 0))
+			if left > 0:
+				_number(site, -left, Palette.CELL_PINK, t0, dur)
+			_node_left[String(site)] = 0
+			_stamp(site, "disabled", Palette.CELL_PINK, t0, dur)
 		"seized":
 			_stamp(StringName(e["site"]), "seized", Palette.RESIST_GOLD, t0, dur)
 			_tints.append({"site": StringName(e["site"]), "t0": t0, "dur": RaidBeats.raw_seconds(&"influence_spread")})
 		"home_lost":
-			_stamp(home_id, "breached", Palette.CELL_PINK, t0, dur)
+			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
+			_banner = {"text": CityMapOverlay.tr_word(BANNER_BREACHED), "color": Palette.CELL_PINK, "t0": t0}
 		"raid_end":
-			# ANIM-R2 R6: the outcomes stamp node after node (`raid_outcome_stagger`, by id,
-			# home last), then the result banner stamps over home.
+			# ANIM-R2 R6: the outcomes stamp node after node (`raid_outcome_stagger`, by id),
+			# then the result banner stamps over home. ANIM-R3 B5: every node's stamp is its
+			# resolved outcome (one verdict word per node, the word its label says), home's
+			# verdict is the banner alone.
 			var flip := Motion.seconds(STAGGER_MOTION)
 			var gap := Motion.delay_of(STAGGER_MOTION)
 			var at := t0
+			var last := t0 - gap
 			var ids: Array = _results.get("nodes", {}).keys()
 			ids.sort()
 			for id in ids:
 				var sid := StringName(String(id))
-				if sid == home_id or _stamps.has(String(sid)):
+				if sid == home_id:
 					continue
 				var outcome := String(_results["nodes"][id].get("outcome", "holds"))
-				_stamp(sid, outcome, Palette.CELL_ACID if outcome == "holds" else Palette.CELL_PINK, at, flip)
+				if stamp_word(sid) == stamp_text(outcome):
+					continue
+				_stamp(sid, outcome, stamp_color(outcome), at, flip)
+				last = at
 				at += gap
-			var lost := int(_results.get("home_before", home_value)) - int(_results.get("home_after", home_value))
-			if home_id != &"" and not _stamps.has(String(home_id)):
-				_stamp(home_id, "breached" if lost > 0 else "holds", Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID, at, flip)
-				at += gap
-			_banner = {"text": CityMapOverlay.tr_word(BANNER_HOME) % ("-%d" % lost) if lost > 0 else CityMapOverlay.tr_word(BANNER_HOLDS),
-				"color": Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID, "t0": at + flip}
-			# The end state is the resolved raid's (never a sum that could drift).
+			# The end state is the resolved raid's (never a sum that could drift): a change
+			# no event showed gets its own number too.
 			if _results.has("home_after"):
 				var after := int(_results["home_after"])
 				if after != home_value:
+					_number(home_id, after - home_value, Palette.CELL_PINK, t0, dur)
 					_home_hit(home_value - after, t0, home_id)
+			if _banner.is_empty():
+				var lost := int(_results.get("home_before", home_value)) - int(_results.get("home_after", home_value))
+				_banner = {"text": CityMapOverlay.tr_word(BANNER_HOME) % TextDb.signed(-lost) if lost > 0 else CityMapOverlay.tr_word(BANNER_HOLDS),
+					"color": Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID,
+					"t0": maxf(t0, last + flip) + Motion.delay_of(BANNER_MOTION)}
 	queue_redraw()
 
 
-func _number(site: StringName, text: String, col: Color, t0: float, dur: float) -> void:
-	_fx.append({"kind": "number", "site": site, "text": text, "color": col, "t0": t0, "dur": dur})
+## ANIM-R3 B5: a stamp's colour by outcome (acid holds, gold seized, pink the rest).
+static func stamp_color(outcome: String) -> Color:
+	match outcome:
+		"holds":
+			return Palette.CELL_ACID
+		"seized":
+			return Palette.RESIST_GOLD
+	return Palette.CELL_PINK
+
+
+func _number(site: StringName, value: int, col: Color, t0: float, dur: float) -> void:
+	if value == 0:
+		return
+	_fx.append({"kind": "number", "site": site, "text": TextDb.signed(value), "value": value, "color": col, "t0": t0, "dur": dur})
 
 
 func _stamp(site: StringName, outcome: String, col: Color, t0: float, dur: float) -> void:
@@ -286,6 +335,15 @@ func _home_lag_value() -> float:
 ## The stamp word on Site `site` ("" when none).
 func stamp_word(site: StringName) -> String:
 	return String(_stamps.get(String(site), {}).get("word", ""))
+
+
+## ANIM-R3 B5: the numbers shown on Site `site` (its hits and patches, in order; tests).
+func numbers_at(site: StringName) -> Array[int]:
+	var out: Array[int] = []
+	for f in _fx:
+		if f["kind"] == "number" and f.has("site") and StringName(f["site"]) == site:
+			out.append(int(f["value"]))
+	return out
 
 
 ## Every stamp (site id -> word).
@@ -336,11 +394,13 @@ func _draw() -> void:
 				_draw_lock(f, at, k)
 			"hit":
 				_draw_hit(f, at, k)
-			"number":
-				_draw_number(f, k, at)
 	for id in _stamps:
 		_draw_stamp(StringName(id), _stamps[id], k)
 	_draw_home(k)
+	# ANIM-R3 B5: numbers over the stamps (a stamp hid the hit on home under it).
+	for f in _fx:
+		if f["kind"] == "number":
+			_draw_number(f, k, at)
 	_draw_banner(k)
 
 
@@ -349,19 +409,19 @@ func _draw() -> void:
 func _draw_banner(k: float) -> void:
 	if _banner.is_empty() or clock < float(_banner["t0"]):
 		return
-	var p := overlay.icon_at(home_id)
-	if p.x == INF:
+	var place := banner_rect()
+	if not place.has_area():
 		return
 	var u := _u(float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
 	var grow := lerpf(Motion.amplitude(BANNER_MOTION), 1.0, _eased(BANNER_MOTION, u))
 	var fs := maxi(1, roundi(BANNER_FONT * Settings.text_scale * k))
 	var font := Palette.display()
 	var text := String(_banner["text"])
-	var size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(BANNER_PAD, BANNER_PAD) * 2.0 * k
+	var size := place.size
 	var col: Color = _banner["color"]
 	# ANIM-R3 B9: it fades in over `stamp_fade_in`'s share of its stamp-on (was u * 3.0).
 	var a := clampf(u / maxf(Motion.amplitude(&"stamp_fade_in"), 0.001), 0.0, 1.0)
-	draw_set_transform(p + Vector2(0, -BANNER_LIFT * k - CityMapOverlay.ICON_RADIUS_BIG * k), deg_to_rad(STAMP_TILT), Vector2.ONE * grow)
+	draw_set_transform(place.get_center(), deg_to_rad(STAMP_TILT), Vector2.ONE * grow)
 	var box := Rect2(-size * 0.5, size)
 	draw_rect(box.grow(3.0 * k), Color(0, 0, 0, 0.85 * a))
 	draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
@@ -373,6 +433,86 @@ func _draw_banner(k: float) -> void:
 ## The result banner's words ("" before the raid's end; tests).
 func banner_text() -> String:
 	return String(_banner.get("text", ""))
+
+
+## ANIM-R3 B5: where the result banner sits (local px, unrotated; empty when home is off
+## the map): above home's icon when that is clear, else below its bar, else to its left or
+## right: the first spot that keeps BANNER_CLEAR off every stamp, node label and icon, and
+## inside the map; the least covered one when none is clear (at big text a stamp above and a
+## label beside can leave no room).
+func banner_rect() -> Rect2:
+	if _banner.is_empty() or overlay == null:
+		return Rect2()
+	var p := overlay.icon_at(home_id)
+	if p.x == INF:
+		return Rect2()
+	var k := overlay.screen_k()
+	var fs := maxi(1, roundi(BANNER_FONT * Settings.text_scale * k))
+	var size := Palette.display().get_string_size(String(_banner["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(BANNER_PAD, BANNER_PAD) * 2.0 * k
+	var clear := BANNER_CLEAR * k
+	var r_icon := CityMapOverlay.ICON_RADIUS_BIG * k
+	var bar_bottom := r_icon + (HOME_BAR_GAP + HOME_BAR.y) * k
+	var spots: Array[Vector2] = [
+		p + Vector2(0, -r_icon - clear - size.y * 0.5),
+		p + Vector2(0, -BANNER_LIFT * k - r_icon),
+		p + Vector2(0, bar_bottom + clear + size.y * 0.5),
+		p + Vector2(-r_icon - clear - size.x * 0.5, 0),
+		p + Vector2(r_icon + clear + size.x * 0.5, 0),
+	]
+	var avoid := banner_avoid()
+	var area := get_rect().grow(-clear)
+	var best := Rect2()
+	var best_hits := INF
+	for c in spots:
+		var r := Rect2(c - size * 0.5, size)
+		# Kept inside the map (slid in from an edge).
+		r.position = r.position.clamp(area.position, (area.end - r.size).max(area.position))
+		var hits := 0.0
+		for a in avoid:
+			var g := a.grow(clear * 0.5)
+			if r.intersects(g):
+				hits += r.intersection(g).get_area() + 1.0
+		if hits < best_hits:
+			best_hits = hits
+			best = r
+			if hits == 0.0:
+				break
+	return best
+
+
+## ANIM-R3 B5: what the banner keeps clear of: every stamp, node label and node icon (local
+## px), home's bar.
+func banner_avoid() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var k := overlay.screen_k()
+	for id in _stamps:
+		out.append(stamp_rect(StringName(id)))
+	for key in overlay.label_rects():
+		out.append(overlay.label_rects()[key])
+	for n: Dictionary in overlay.nodes:
+		var c := overlay.icon_at(n["id"])
+		if c.x != INF:
+			var r := CityMapOverlay.ICON_RADIUS_BIG * k
+			out.append(Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0))
+	var p := overlay.icon_at(home_id)
+	if p.x != INF:
+		var w := HOME_BAR.x * k
+		out.append(Rect2(p + Vector2(-w * 0.5, CityMapOverlay.ICON_RADIUS_BIG * k + HOME_BAR_GAP * k), Vector2(w, HOME_BAR.y * k)))
+	return out
+
+
+## ANIM-R3 B5: a stamp's box on Site `site` (local px, unrotated; empty when none).
+func stamp_rect(site: StringName) -> Rect2:
+	if not _stamps.has(String(site)):
+		return Rect2()
+	var p := overlay.icon_at(site)
+	if p.x == INF:
+		return Rect2()
+	var k := overlay.screen_k()
+	var fs := maxi(1, roundi(STAMP_FONT * Settings.text_scale * k))
+	var word := CityMapOverlay.tr_word(String(_stamps[String(site)]["word"]))
+	var size := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(STAMP_PAD, STAMP_PAD) * 2.0 * k
+	return Rect2(p + Vector2(0, -STAMP_LIFT * k - CityMapOverlay.ICON_RADIUS * k) - size * 0.5, size)
 
 
 func _u(t0: float, dur: float) -> float:
@@ -566,10 +706,27 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 	var font := Palette.display()
 	var text := String(f["text"])
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var at := p + Vector2(-w * 0.5, -CityMapOverlay.ICON_RADIUS * k - rise)
+	# ANIM-R3 B5: a node's number rises on its right, a threat's on its left (a threat standing
+	# on a node never puts its number on the node's); numbers on one node at once stack.
+	var at: Vector2
+	if f.has("threat"):
+		at = p + Vector2(-w - CityMapOverlay.MARKER_SIZE * TOKEN_SCALE * k - NUMBER_GAP * k, -rise)
+	else:
+		at = p + Vector2(CityMapOverlay.ICON_RADIUS_BIG * k + NUMBER_GAP * k, font.get_ascent(fs) * 0.5 - rise - _stack_of(f) * fs * NUMBER_STACK)
 	var a := 1.0 if u < 0.66 else (1.0 - u) / 0.34
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(4.0 * k)), Color(0, 0, 0, 0.9 * a))
 	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
+
+
+## How many numbers on the same Site show now and started before `f` (its row in the stack).
+func _stack_of(f: Dictionary) -> int:
+	var n := 0
+	for g in _fx:
+		if g == f:
+			break
+		if g["kind"] == "number" and g.has("site") and g["site"] == f["site"] and clock >= float(g["t0"]) and _u(float(g["t0"]), float(g["dur"])) < 1.0:
+			n += 1
+	return n
 
 
 func _draw_stamp(site: StringName, s: Dictionary, k: float) -> void:
