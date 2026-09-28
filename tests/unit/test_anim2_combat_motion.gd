@@ -160,9 +160,24 @@ func _allowed(scene: Control, beats: Array[Dictionary]) -> float:
 	var extra := 0.0
 	var settle := 0.0
 	for b in beats:
-		if ResolveBeats.flies(b):
-			extra += float(timing["hit_gap"])
 		settle = maxf(settle, ResolveBeats.settle_after(b, timing))
+	# ANIM-R4 C6a (on purpose): each projectile waits for the last one's arrival, and the other
+	# side's first one for every roll plus `resolve_side_gap` (another attacker on the same
+	# side: `resolve_attacker_gap`); none of it is squeezed.
+	var last_side := ""
+	var last_source := ""
+	for b in beats:
+		if not ResolveBeats.flies(b):
+			continue
+		extra += maxf(float(timing["hit_gap"]), ResolveBeats.arrive_after(b, timing))
+		var side := String(b.get("side", ""))
+		if last_side != "" and side != "" and side != last_side:
+			extra += settle + float(timing["side_gap"])
+		elif last_source != "" and String(b["source"]) != last_source:
+			extra += float(timing["attacker_gap"])
+		if side != "":
+			last_side = side
+		last_source = String(b["source"])
 	return Motion.seconds(&"resolve_sequence") + extra + settle + 0.001
 
 
