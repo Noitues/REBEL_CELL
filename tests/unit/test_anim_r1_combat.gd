@@ -654,7 +654,12 @@ func test_a_number_travels_into_the_hp_counter_which_rolls_down() -> void:
 	var slot := pv.number_slot("hp", "-6", false)
 	scene.fx_layer.travel_number(slot["at"], pv.hp_counter_spot(), "-6", WheelView.LOSS_COLOR, false, int(slot["fs"]), "t", scene._hp_arrives.bind(pv, int(hp) - 6))
 	assert_eq(pv.shown_hp(), hp, "the HP waits for the number")
-	await get_tree().create_timer(Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + 0.1).timeout
+	# Bounded wait for the arrival (a fixed delay + 0.1 s missed it under loaded parallel shards;
+	# DECISIONS "Animation pass - bake crash").
+	var limit := (Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp")) * 4.0 + 0.1
+	var t0 := Time.get_ticks_msec()
+	while pv.shown_hp() >= hp and Time.get_ticks_msec() - t0 < int(limit * 1000.0):
+		await get_tree().process_frame
 	assert_true(pv.shown_hp() < hp, "it rolls down once the number arrives")
 	assert_false(is_nan(pv.lag_hp), "with the white lag bar")
 	scene.skip_motion()
