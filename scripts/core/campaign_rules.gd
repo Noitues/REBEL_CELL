@@ -7,6 +7,8 @@ extends RefCounted
 ## Pure functions over CampaignState + content; every mutating call returns events.
 
 const RELAY_TYPES := [RC.NetworkNodeType.RELAY, RC.NetworkNodeType.FIREWALL_RELAY, RC.NetworkNodeType.PROXY_RELAY]
+## launch_error's refusal while a netrun is under way (ANIM-R1 M1).
+const RUN_IN_PROGRESS := "A run is already in progress: finish it first." # TR
 
 
 # --- Campaign start ------------------------------------------------------------------
@@ -163,10 +165,14 @@ static func max_tier_for(op: OperativeState, class_data: ClassData) -> int:
 	return tier
 
 
-## Empty when `op` may launch at `site`; otherwise why not.
-static func launch_error(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, op: OperativeState, class_data: ClassData, site: SiteData) -> String:
+## Empty when `op` may launch at `site`; otherwise why not. `run_in_progress`: a netrun
+## is already under way (ANIM-R1 M1: a second JACK IN during the jack, or a launch from HQ
+## while a saved run waits, must never start a second run and change the campaign).
+static func launch_error(campaign: CampaignState, corp: CorporationData, config: CampaignConfigData, op: OperativeState, class_data: ClassData, site: SiteData, run_in_progress: bool = false) -> String:
 	if campaign.is_over():
 		return "The campaign is over."
+	if run_in_progress:
+		return RUN_IN_PROGRESS
 	if op == null or not op.alive:
 		return "That operative is not available."
 	var allowed := is_patrol(campaign, site)

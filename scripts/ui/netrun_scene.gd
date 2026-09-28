@@ -509,13 +509,34 @@ func raid_fight() -> void:
 	_show_raid_playout(events, before)
 
 
+## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
+## cover up until then, so it never lifts onto an empty dark screen): a page is on, the
+## city behind it shows its own look under the current camera, and the route map's fit
+## passes have run.
+func arrival_ready() -> bool:
+	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
+		return false
+	var city: NeonCity = background.city if background != null else null
+	if city != null and city.is_visible_in_tree():
+		if not city.showing_current_look() or not city.camera_settled():
+			return false
+		if city.rebuilt.is_connected(fit_route_map) or get_tree().process_frame.is_connected(fit_route_map):
+			return false
+	return true
+
+
 func finish_run() -> void:
+	# ANIM-R1 M1: a second press during the jack out asks nothing again.
+	if RunManager.scene_change_pending():
+		return
 	RunManager.clear_run()
 	RunManager.go_to_hq()
 	_show_start()
 
 
 func save_and_quit() -> void:
+	if RunManager.scene_change_pending():
+		return
 	RunManager.autosave()
 	_log.append_text("Saved.\n")
 	RunManager.go_to_hq()

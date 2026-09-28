@@ -52,6 +52,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"sold_stamp", &"caption_crossfade", &"city_sign_pick",
 	# Animation pass ANIM-4b (drag and drop in the run):
 	&"drop_buy", &"shred_feed",
+	# Animation pass ANIM-R1 (the first fix batch): inline fractions moved into the table,
+	# the jack's arrival wait, and the campaign screens' readability motion.
+	&"net_creep_recede", &"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

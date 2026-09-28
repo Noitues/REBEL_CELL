@@ -230,6 +230,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   back, a ring stamps out as it fades, an operative's dossier pops. A raid asset lands
   with the node's own drop (5.3). A refusal shakes the no-entry mark and the item glides
   home; the rules' reason shows as a toast. A drop on nothing glides home.
+- **Drops pick; presses start** (designer ruling 2026-09-27, ANIM-R1): a crew chip dropped
+  on a Site card's JACK IN picks that operative for the run; only pressing JACK IN (click,
+  A) launches it.
 - **Keys and pad**: X / Space picks up the focused item (A on items that only move), the
   D-pad walks a reticle through every target (the item follows), A drops, B puts it back;
   the pad prompts follow. The mouse can click an item, then its target.

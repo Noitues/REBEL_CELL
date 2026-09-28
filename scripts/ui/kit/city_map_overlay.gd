@@ -68,11 +68,10 @@ const DASH_PERIOD := 16.0
 ## edge's b end: threat routes run entry -> home); packets run PACKET_SHARE times faster.
 const CRAWL_MOTION := &"route_crawl"
 const PACKET_SHARE := 3.0
-## Selection ring pulse round the selected icon (gap beyond the icon and amplitude, screen
-## px; speed rad/s).
+## Selection ring round the selected icon: its gap beyond the icon (screen px); it breathes
+## by `select_ring_pulse` (ANIM-R1: amplitude px over one period, from the motion table).
 const SELECT_RING := 6.0
-const PULSE_AMPLITUDE := 3.0
-const PULSE_SPEED := 4.0
+const PULSE_MOTION := &"select_ring_pulse"
 
 ## Node icons (H21 #14): each kind has its own silhouette and symbol.
 const KIND_FIGHT := "fight"
@@ -775,7 +774,7 @@ func _draw_hi() -> void:
 	if hc.x != INF:
 		var k := _k()
 		var hn := _node_dict(hover_id)
-		var hr := (icon_radius(hn) if not hn.is_empty() else ICON_RADIUS * k) + (SELECT_RING + PULSE_AMPLITUDE + HOVER_RING) * k
+		var hr := (icon_radius(hn) if not hn.is_empty() else ICON_RADIUS * k) + (SELECT_RING + pulse_amplitude() + HOVER_RING) * k
 		_hi.draw_arc(hc, hr, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
 		_hi.draw_arc(hc, hr, 0, TAU, 32, Palette.PAPER, 2.0 * k)
 		for q in 4:
@@ -785,7 +784,14 @@ func _draw_hi() -> void:
 	if at.x == INF:
 		return
 	var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
-	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * PULSE_SPEED) - 1.0) * PULSE_AMPLITUDE * _k(), 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0 * _k())
+	_hi.draw_arc(at, ring_radius() * grow + (sin(anim_t * TAU / maxf(Motion.entry(PULSE_MOTION).duration, 0.001)) - 1.0) * pulse_amplitude() * _k(), 0, TAU, 32, Color(Palette.CELL_ACID, ring_ease), 2.0 * _k())
+
+
+## The selection ring's breathing (screen px): `select_ring_pulse`'s amplitude, 0 when that
+## entry is off (ANIM-R1 M3: the end state, a still ring).
+func pulse_amplitude() -> float:
+	var e := Motion.entry(PULSE_MOTION)
+	return e.amplitude if e != null and e.enabled else 0.0
 
 
 ## Centre of the lit node's ring (H24 K4), or INF when no node is lit.
@@ -805,7 +811,7 @@ func ring_centre() -> Vector2:
 ## Outer radius of the pulsing selection ring (local px): round the icon, clear of it.
 func ring_radius() -> float:
 	var n := _node_dict(selected_id)
-	return (icon_radius(n) if not n.is_empty() else ICON_RADIUS * _k()) + (SELECT_RING + PULSE_AMPLITUDE) * _k()
+	return (icon_radius(n) if not n.is_empty() else ICON_RADIUS * _k()) + (SELECT_RING + pulse_amplitude()) * _k()
 
 
 func _route_px(k: int) -> PackedVector2Array:

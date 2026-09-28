@@ -93,6 +93,9 @@ const DEMOS := {
 	# ANIM-4b (drag and drop in the run; in context: netrun_scene --demo-shop / --demo-loot
 	# --demo-anim=drag_*):
 	&"drop_buy": ["fly", "card"], &"shred_feed": ["drop", "sticker"],
+	# ANIM-R1 (the first fix batch; in context: hq_scene / netrun_scene --demo-anim=<id>):
+	&"net_creep_recede": ["fade_in", "panel"], &"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["blink", "stage"],
+	&"select_ring_pulse": ["pulse", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

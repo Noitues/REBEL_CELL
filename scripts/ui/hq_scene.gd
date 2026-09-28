@@ -279,6 +279,8 @@ func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunMana
 
 
 func resume() -> void:
+	if RunManager.scene_change_pending():
+		return
 	if RunManager.resume():
 		_log.append_text("[b]Resumed.[/b]\n")
 		if RunManager.has_active_run():
@@ -290,7 +292,26 @@ func resume() -> void:
 		notify(tr("Nothing to resume."), true)
 
 
+## ANIM-R1 M8: whether the screen a jack out lands on is built and framed (Fx keeps its
+## cover up until then): a page is on, the city behind it shows its own look under the
+## current camera, and no map fit or legend placement is still waiting for a redraw.
+func arrival_ready() -> bool:
+	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
+		return false
+	var city: NeonCity = background.city if background.visible else wireframe.city
+	if city != null and city.is_visible_in_tree():
+		if not city.showing_current_look() or not city.camera_settled():
+			return false
+		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
+				or get_tree().process_frame.is_connected(place_raid_legend):
+			return false
+	return true
+
+
 func launch(site_id: StringName, operative_id: StringName) -> bool:
+	# ANIM-R1 M1: a press during the jack (a second JACK IN) does nothing.
+	if RunManager.scene_change_pending():
+		return false
 	var err := RunManager.launch_error(operative_id, site_id)
 	if err != "":
 		_log.append_text("[color=orange]%s[/color]\n" % err)
@@ -544,7 +565,9 @@ func drop_error(payload: Dictionary, target: Dictionary) -> String:
 				return tr("%s is at HQ already.") % (op.name if op != null else String(payload["op"]))
 			return ""
 		["crew", "jack"]:
-			return RunManager.launch_error(payload["op"], value)
+			# ANIM-R1 (designer ruling 2026-09-27): a chip on JACK IN only picks who runs
+			# it; the operative's own eligibility, not whether a run could start now.
+			return _pick_error(payload["op"], value)
 		["recruit", "roster"]:
 			var cls := lookup.get_content(payload["cls"]) as ClassData
 			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.recruit(d, cfg, cls))
@@ -557,6 +580,33 @@ func drop_error(payload: Dictionary, target: Dictionary) -> String:
 				return DropLayer.SKIP
 			return _dry(func(d: CampaignState) -> Array[Dictionary]: return CampaignRules.swap_ring_segment(d, lookup, payload["op"], int(value), payload["segment"]))
 	return DropLayer.SKIP
+
+
+## ANIM-R1 (designer ruling): picks operative `operative_id` in the Site card's list (a
+## crew chip dropped on JACK IN) and puts focus on JACK IN; nothing starts.
+func pick_operative(operative_id: StringName) -> void:
+	var pick := _panel.find_child("OperativePick", true, false) as OptionButton if _panel != null else null
+	if pick == null:
+		return
+	var living := RunManager.campaign.living_operatives()
+	for i in living.size():
+		if living[i].id == operative_id and i < pick.item_count:
+			pick.select(i)
+	var go := _panel.find_child("Launch", true, false) as Control
+	if go != null and go.is_visible_in_tree():
+		go.grab_focus.call_deferred()
+
+
+## Why operative `operative_id` can't run Site `site_id` ("" when they can), whatever
+## else is under way (a pick is not a launch).
+func _pick_error(operative_id: StringName, site_id: StringName) -> String:
+	var c := RunManager.campaign
+	var site := CampaignRules.site_data(RunManager.corporation, site_id)
+	var op := c.get_operative(operative_id)
+	if site == null or op == null:
+		return DropLayer.SKIP
+	var cls := RunManager.lookup().get_content(op.class_id) as ClassData
+	return CampaignRules.launch_error(c, RunManager.corporation, RunManager.config(), op, cls, site)
 
 
 ## Runs rule call `f` on a copy of the campaign: its refusal text, or "" when it would go
@@ -646,7 +696,9 @@ func _on_dropped(payload: Dictionary, target: Dictionary) -> void:
 			drops.reveal_on_land(flight, _panel.find_child("Crew_%s" % payload["op"], true, false) as Control, false)
 			_focus_in.call_deferred("Crew_%s" % payload["op"])
 		["crew", "jack"]:
-			launch(value, payload["op"])
+			# ANIM-R1 (designer ruling 2026-09-27: "prefer select, then jack in"): the drop
+			# picks the operative in the list; only pressing JACK IN starts the run.
+			pick_operative(payload["op"])
 		["recruit", "roster"]:
 			_market_apply(payload, flight, func() -> void: recruit(payload["cls"]))
 		["boost", "queue"]:
@@ -1115,7 +1167,15 @@ func show_hq() -> void:
 	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	jack.tooltip_text = UiTip.fold(tr("JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."))
 	jack.icon_kind = StatIcon.JACK_IN  # H22 #14: the plug, as on the Site card's JACK IN
-	jack.pressed.connect(show_grid)
+	if RunManager.has_active_run():
+		# ANIM-R1 M1: a run saved and left (Save & quit) waits: JACK IN goes back into it (a
+		# second run can't start over it).
+		jack.tooltip_text = UiTip.fold(tr("JACK IN: back into the run you left."))
+		jack.pressed.connect(func() -> void:
+			if not RunManager.scene_change_pending():
+				RunManager.go_to_netrun())
+	else:
+		jack.pressed.connect(show_grid)
 	var top_right := HBoxContainer.new()
 	top_right.add_theme_constant_override("separation", 10)
 	top_right.add_child(poster)
@@ -2021,7 +2081,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
 		_jack_button = go
 		# ANIM-4: the crew as small Polaroids: drag one onto JACK IN (or pick it up with a
-		# press) to choose who runs it. The list above stays the button path.
+		# press) to choose who runs it (ANIM-R1: it picks; the press on JACK IN launches).
+		# The list above stays the button path.
 		var chips := HFlowContainer.new()
 		chips.name = "CrewChips"
 		chips.add_theme_constant_override("h_separation", 6)
@@ -2029,7 +2090,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		for op in living:
 			var chip := CrewChip.new(op.class_id, op.id, op.name)
 			chip.name = "Chip_%s" % op.id
-			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to run %s (or pick them in the list).") % [op.name, site_name(site.id)])
+			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.") % [op.name, site_name(site.id)])
 			chips.add_child(chip)
 			_grid_chips.append(chip)
 		card.body.add_child(chips)

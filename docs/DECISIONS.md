@@ -440,8 +440,9 @@ rows marked ANIM-4).
     before and the item flies (`market_fly`: 0.45 s, 60 px arc) to where it went; the new
     dossier or kit line shows as its copy lands.
   - City Grid: the Site card lays the living crew out as small Polaroids (`CrewChip`) above
-    JACK IN; one dropped on JACK IN = picking them in the list and pressing JACK IN
-    (`launch`). The list stays.
+    JACK IN; one dropped on JACK IN = picking them in the list (`pick_operative`; the
+    designer's ruling of 2026-09-27, applied in ANIM-R1: "prefer select, then jack in", so
+    the drop no longer launches). Only pressing JACK IN starts the run. The list stays.
   - Loadout view, SPINNER tab, Rank 3: the class's ring segment swaps (and "Class default")
     sit beside the wheel as chips; one dropped on an inner ring segment = the dossier's
     "seg k" list (`swap_segment`).
@@ -2838,8 +2839,7 @@ and annotated in the GDD where it changes a rule.
   implementer, confirm in playtest. (1) The pad and keyboard pick-up button is X / Space
   (the `end_turn` action, free on the HQ, the Grid and the raid setup), so A keeps every
   button's meaning; items that only move (crew and swap chips) also pick up with A. (2)
-  Recall is a drop on CORE (the Cell's home) on the HQ's CITY GRID monitor. (3) A drop on
-  JACK IN starts the run at once, like the button. (4) The HQ drags only what HQ rules can
+  Recall is a drop on CORE (the Cell's home) on the HQ's CITY GRID monitor. (3) The HQ drags only what HQ rules can
   move; card, Firmware, Daemon and slice moves live in the Modem and loot (ANIM-4b). See
   "Animation pass — ANIM-4".
 
