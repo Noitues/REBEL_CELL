@@ -30,6 +30,44 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-27 — Designer rulings on the open questions (resolved by the designer)
+Answered by the designer as a numbered list against the open-questions digest. Defaults
+accepted unless noted; the items that need work are scheduled in MILESTONES
+("Queued passes").
+1. **Late-campaign Grid labels** keep off other nodes' icons too (built in ANIM-R1).
+2. **Grid at 1.6**: keep the folding map key, icon-only step buttons and LABEL_REACH 110 px.
+3. **Subtitles outside combat** stay in the top band.
+4. **Toasts** stay for refusals, saves and unlocks.
+5. **Drag pick-up** is X / Space; A keeps each button's meaning.
+6. **Recall** is a drop on CORE.
+7. **Changed:** a drop on JACK IN does *not* start a run ("drag and drop to start is not
+   intuitive"). Select the operative, then press JACK IN. Crew drags only select (ANIM-R1).
+8. **Motion values** as chosen from the strips.
+9. **Changed:** cards upgrade. Cards are in the shop and upgrades are a balance lever; a
+   new horizontal pass designs and builds card upgrades (Queued passes).
+10. **Changed:** players may rearrange wheel slices at any time outside combat (a new
+    horizontal pass; Queued passes).
+11. **Changed:** the daily run changes more than the seed. A horizontal pass builds a list
+    of daily modifiers and tests that each one works (not exhaustive combinations).
+12. **Pacing**: raise rewards slightly (not lower enemies); tune by simulation.
+13. **Rigger at ICE 0**: a small buff to its hub or deck.
+14. **Final Rack**: an extra Schematics payout; ICE 0 length is fine.
+15. **REBEL_CELL difficulty**: leave the Mirror factor.
+16. **Ghost**: leave until playtest.
+17. **Rigger speed**: leave its Atk 16 slices.
+18. **Changed:** each corporation unlocks differently. Beat Solace to open Meridian;
+    Halcyon is bought with Schematics; REBEL_CELL opens after ICE X on each other
+    corporation; Orbital's rule is set in the unlock pass (Queued passes).
+19. **Meridian difficulty**: no change; the ICE ladder handles it.
+20. **Boss stalls**: add a soft enrage.
+21. **Solace**: no guaranteed Cleanse-type card.
+22. **Enemy damage scaling**: leave 1.2 per tier.
+23. **Patrol runs**: no cap.
+24. **Schematics surplus**: add more sinks (boosts and unlocks).
+25. **Confirmed as built**: Perfect-hook burst for every class, hooks repeat per resolution,
+    alternatives cost 60 with no base unlock, the freeze cooldown, custom-handler Daemons
+    not mirrored, and Meridian without raid music of its own for now.
+
 ### 2026-09-27 — Test suite optimization
 The designer asked to look for overlapping tests and to speed up the suite (about 49 min
 single-process for 858 tests, over 60 min on a busy machine). Details, the profile, the
@@ -2834,7 +2872,7 @@ and annotated in the GDD where it changes a rule.
   the implementer, as the designer asked): no. The city backdrop keeps its own clock at
   1x / 2x / 4x (sped-up beacons would strobe); the raid layer and the map's route dashes
   run at the chosen speed. See "Animation pass — ANIM-5".
-- **Drag and drop, HQ side (Animation pass ANIM-4, 2026-09-27):** decided by the
+- ~~**Drag and drop, HQ side (Animation pass ANIM-4, 2026-09-27):**~~ resolved: see "Designer rulings on the open questions" (items 5-7). Original note: decided by the
   implementer, confirm in playtest. (1) The pad and keyboard pick-up button is X / Space
   (the `end_turn` action, free on the HQ, the Grid and the raid setup), so A keeps every
   button's meaning; items that only move (crew and swap chips) also pick up with A. (2)
