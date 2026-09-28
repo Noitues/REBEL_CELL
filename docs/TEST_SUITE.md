@@ -84,6 +84,26 @@ the command line); the game never sees them. `test_city_geometry_memo.gd` guards
 
 A test that needs the triangles sets `NeonCity.emit_triangles = true` and puts it back.
 
+### What bakes or threads run headless
+
+`CityBakeCache.can_bake()` is false headless, so no city asks for a bake. With
+`CityBakeCache.simulate` (test_anim_r2_city) the cities take the baked path but
+`request` frees each painter at once: nothing builds, no worker task starts. Only two
+tests start real worker builds, on purpose, by calling `request` directly
+(`test_shutdown_stops_a_running_bake_and_frees_its_painter`,
+`test_a_threaded_bake_builds_in_slices_and_lets_the_slot_go`); their `after_each`
+`shutdown()` joins every task. A headless bake stops at its readback (the dummy renderer
+never posts a frame) and never touches a RenderingDevice.
+
+### Freeing views inside a frame (bake crash)
+
+GUT's `add_child_autofree` frees with `free()` while the tree's `process_frame` emission
+is still running (a test resumes from `await get_tree().process_frame`). A lambda using
+self connected to a frame signal would then run on freed memory: game scripts connect
+methods to `process_frame` / `physics_frame` / `frame_pre_draw` / `frame_post_draw`,
+never lambdas (`test_suite_integrity.gd` guards it; `test_bake_crash.gd` reproduces the
+crash on the old code). See DECISIONS "Animation pass — bake crash".
+
 ## The 2026-09-27 optimization pass
 
 ### Before and after

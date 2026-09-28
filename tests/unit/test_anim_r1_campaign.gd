@@ -422,8 +422,15 @@ func test_a_heat_crossing_rolls_the_number_and_stamps_a_banner_then_goes() -> vo
 	# ANIM-R2 R8 (changed on purpose): the number rolls to the threshold first; the banner
 	# stamps when it gets there, naming the threshold crossed.
 	assert_eq(poster.banner_alpha, 0.0, "no banner before the number crosses")
-	await _seconds(Motion.seconds(&"number_roll") + 0.1)
-	assert_gt(poster.number_scale, 1.0, "the number grows on the crossing")
+	# Frame by frame up to the stamp (bounded), keeping the number's largest scale: a fixed
+	# number_roll + 0.1 s sometimes landed after the pop under loaded parallel shards
+	# (DECISIONS "Animation pass - bake crash").
+	var peak := poster.number_scale
+	var t0 := Time.get_ticks_msec()
+	while poster.banner_alpha < 1.0 and Time.get_ticks_msec() - t0 < int(Motion.seconds(&"number_roll") * 4000.0):
+		await get_tree().process_frame
+		peak = maxf(peak, poster.number_scale)
+	assert_gt(peak, 1.0, "the number grows on the crossing")
 	assert_eq(poster.banner_alpha, 1.0, "the banner stamps on")
 	assert_string_contains(poster.banner_text(), "25")
 	await _seconds(Motion.delay_of(&"heat_banner") + Motion.seconds(&"heat_banner") + Motion.seconds(&"number_roll") + 0.3)

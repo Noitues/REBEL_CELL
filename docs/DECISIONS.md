@@ -362,6 +362,61 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — bake crash
+The parallel runner's shard holding `test_anim_r2_city.gd` sometimes died with "signal 11"
+right after `test_the_route_and_the_raid_setup_draw_their_nodes_before_any_bake` (1 run in
+3; the ANIM-R2 implementer saw it once too and suspected the bakes). Every call below was
+the implementer's.
+- **Not the bakes.** Headless, `can_bake()` is false; under `CityBakeCache.simulate` (that
+  test) `request` frees each painter at once, so no worker task, SubViewport or
+  RenderingDevice texture exists during it. Only two tests start real sliced builds (on
+  purpose, by calling `request`), and `shutdown()` in their `after_each` joins them.
+  Nothing to gate. (docs/TEST_SUITE.md "What bakes or threads run headless".)
+- **Root cause: a lambda connected one-shot to `process_frame`.** ANIM-R2 R9 made
+  `CityMapOverlay._queue_top` / `_queue_tags` defer a second redraw in a frame with
+  `get_tree().process_frame.connect(func(): _top_later = false ..., CONNECT_ONE_SHOT)`. A
+  GDScript lambda that uses self (`GDScriptLambdaSelfCallable`) keeps a raw `Object *`
+  and reads it in `get_object()` / `is_valid()`. The engine drops one-shot slots from the
+  signal (and from the target's connection list) before calling them, from a copied slot
+  list. A test resumes from `await get_tree().process_frame` inside that emission, ends,
+  and GUT's autofree `free()`s the HQ right there; the emission then reaches the overlay's
+  slot, which its destructor could no longer disconnect, and reads freed memory: nothing
+  when the block is untouched, a lambda run on whatever object took the block, or an access
+  violation. Reproduced deterministically: with the old overlay the new test's lambda ran on
+  other objects in every round (12 "Trying to call a lambda with an invalid instance", 2 on
+  a fresh overlay); a method callable in the same place never did.
+- **Fix:** those two, and `HqScene._scroll_to_top`'s next-frame reset (a lambda capturing
+  the scroll: it logged "Lambda capture at index 0 was freed" in the suite), connect
+  methods (`_redraw_top_later`, `_redraw_tags_later`, `_reset_scroll`); a method callable
+  holds the object's id and is skipped once the object is gone. **Rule:** no lambda is
+  connected to `process_frame`, `physics_frame`, `frame_pre_draw` or `frame_post_draw` in
+  scripts/ (`test_suite_integrity.test_no_lambda_is_connected_to_a_frame_signal`). Other
+  signals keep lambdas: a normal connection is removed by the destructor, and a one-shot
+  one on a signal the freed view's own subtree emits (`tree_exiting`) runs before the free
+  completes.
+- **Tests:** `tests/unit/test_bake_crash.gd` (full tier): an overlay whose redraw waits for
+  the next frame is freed inside that frame's emission, then 64 fresh overlays take its
+  memory (fails on the old code, see above); the route and the Grid / raid setup opened and
+  freed with `free()` mid-frame six times. Also `test_a_multi_band_rise_...` in
+  test_anim_r2_city waits for each crossing (bounded at 4x its motion) instead of
+  `number_roll + 0.08 s`: under four loaded shards one frame outlasted the slack (1 of 60
+  loops failed there, no crash). Two more waits of that kind failed once each in the full-run
+  evidence below and now poll too (bounded): `test_anim_r1_combat` number-to-HP arrival and
+  `test_anim_r1_campaign` Heat crossing (it keeps the number's peak scale up to the stamp).
+- **Stress tool:** `tools/design_lab/bake_stress.gd` (real display; `--simulate` headless)
+  opens the route and the Grid and raid setup over and over while their bakes run and frees
+  them mid-bake three ways in turn (`free()` inside process_frame, `queue_free`,
+  `shutdown()` then `free()`).
+- **Evidence** (this machine, 6 cores, RX 6700 XT, Vulkan Forward+). Before: 60 runs of
+  test_anim_r2_city, four at once: 1 signal 11 (right after the route/raid test, as reported)
+  and the Heat flake once. After: 50 runs, four at once, all clean (no crash, no failure, no
+  "capture was freed" error); `python tools/run_tests.py -j 4` 15 times (968 tests), no crash:
+  the first 10 had one timing failure each in two runs (the two waits above, then fixed), the
+  last 5 all passed; `bake_stress.gd` on the display: 40 and 60 cycles, 41 and 60 bakes landed,
+  13 and 20 shutdowns mid-bake, no error. **Uncertain:** the display stress does not reach the
+  overlay's deferred redraw at the moment of a free (it ran clean on the old code too), so it
+  covers the bake paths, not this bug; `test_bake_crash.gd` covers the bug.
+
 #### 2026-09-28 — Animation pass — ANIM-R2 city, maps and transitions
 The second fix batch of the Animation pass review, city, maps and transitions half (items
 R1-R13 of the four reviewers). Views only. Every decision here was the implementer's (the
