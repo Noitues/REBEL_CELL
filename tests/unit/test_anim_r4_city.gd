@@ -6,6 +6,7 @@ extends GutTest
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const COMBAT := "res://scenes/combat/combat_scene.tscn"
+const NetrunScript := preload("res://scripts/ui/netrun_scene.gd")
 const SCREEN := Rect2(0, 0, 1280, 720)
 const CORPORATIONS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
 
@@ -329,4 +330,286 @@ func test_the_combat_heat_banner_never_spills_over_the_daemon_row() -> void:
 			assert_true((xf * c).y <= row.position.y + 0.5, "%.1f: the banner ends above the Daemons (%.0f > %.0f)" % [scale, (xf * c).y, row.position.y])
 		assert_false(p.sub_lines().is_empty(), "%.1f: the consequence still shows under the banner" % scale)
 		combat.get_parent().queue_free()
+		await _frames(1)
+
+
+## Every text control's box under `root` inside what clips it, across (a word cut at the
+## column's edge); `out` gets "name 'text'" for each that is not.
+func _clip_rect(c: Control) -> Rect2:
+	var r := Rect2(-1e6, -1e6, 2e6, 2e6)
+	var p := c.get_parent()
+	while p != null and p is Control:
+		if (p as Control).clip_contents or p is ScrollContainer:
+			r = r.intersection((p as Control).get_global_rect())
+		p = p.get_parent()
+	return r
+
+
+func _clipped(root: Node, out: Array) -> void:
+	for n in root.get_children():
+		if n is Control and (n as Control).is_visible_in_tree():
+			var c := n as Control
+			if c is Label or c is Button or c is Badge:
+				var text := String(c.get("text"))
+				if text != "":
+					var fs := c.get_theme_font_size(&"font_size")
+					var w := c.get_theme_font(&"font").get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+					var wraps: bool = c is Badge or c.get("autowrap_mode") != TextServer.AUTOWRAP_OFF
+					var g := c.get_global_rect()
+					var vis := _clip_rect(c)
+					if (not wraps and w > c.size.x + 1.0) or g.position.x < vis.position.x - 1.0 or g.end.x > vis.end.x + 1.0 or g.end.x > SCREEN.end.x + 1.0:
+						out.append("%s '%s'" % [c.name, text.left(40)])
+		_clipped(n, out)
+
+
+# --- H11 a: raid readability ---------------------------------------------------------------------------
+
+func _hud_value(hq: Control, tag: String) -> String:
+	for it in hq.hud.stats.items:
+		if String(it[0]) == tag:
+			return String(it[1])
+	return ""
+
+
+func test_the_raids_top_bar_changes_with_the_line_that_changes_it() -> void:
+	# A lost raid from Heat 1: the feed says where Heat went from and to, and the top bar
+	# shows the old Heat and RAIDS until the lines that change them are told.
+	_raid_campaign(&"solace", false)
+	var c := RunManager.campaign
+	c.heat = 1
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(2)
+	hq.hud_heat_shown = c.heat
+	hq.hud_raids_shown = c.pending_raids.size()
+	var raids_before := c.pending_raids.size()
+	var events := RunManager.fight_raid()
+	hq._refresh_status()
+	assert_eq(_hud_value(hq, "HEAT"), "1", "Heat holds before its line")
+	assert_eq(_hud_value(hq, "RAIDS"), str(raids_before), "RAIDS holds before the raid's end line")
+	var panel := RaidPlayoutPanel.new(null)
+	add_child_autofree(panel)
+	panel.results = c.last_raid
+	panel.event_shown.connect(hq._on_raid_event_shown)
+	var heat_line := ""
+	for e in events:
+		var t := String(e.get("type", ""))
+		var line := panel.feed_line(e)
+		if t == "heat" and int(e.get("amount", 0)) != 0:
+			heat_line = line
+			assert_eq(_hud_value(hq, "HEAT"), "1", "still the old Heat as its line comes")
+		panel.event_shown.emit(e)
+		if t == "heat" and int(e.get("amount", 0)) != 0:
+			assert_eq(_hud_value(hq, "HEAT"), str(int(e["after"])), "the Heat changes with its line")
+			assert_eq(int(e["before"]) + int(e["amount"]), int(e["after"]), "the line's arithmetic holds")
+			assert_string_contains(line, "%d → %d" % [int(e["before"]), int(e["after"])], "it says from and to")
+		if t == "raid_end":
+			assert_eq(_hud_value(hq, "RAIDS"), str(maxi(0, raids_before - 1)), "RAIDS drops with the raid's end line")
+	assert_ne(heat_line, "", "a lost raid tells its Heat")
+	assert_string_contains(heat_line, "1 → ", "from Heat 1")
+
+
+func test_a_hit_line_says_the_hp_it_took_as_the_map_does() -> void:
+	for corp in CORPORATIONS:
+		_raid_campaign(corp, false)
+		var c := RunManager.campaign
+		var events := RunManager.fight_raid()
+		var panel := RaidPlayoutPanel.new(null)
+		add_child_autofree(panel)
+		panel.results = c.last_raid
+		panel.play(events, true)
+		var r: Dictionary = c.last_raid
+		for id in r["nodes"]:
+			var n: Dictionary = r["nodes"][id]
+			assert_eq(int(panel._hp.get(String(id), -1)), int(n["after"]), "%s %s: the feed's HP ends where the node's label does" % [corp, id])
+		for e in events:
+			if String(e.get("type", "")) == "node_hit":
+				var hit_site := String(e["site"])
+				assert_string_contains(panel.log_note.label.get_parsed_text(), "%s → " % int(r["nodes"][hit_site]["before"]), "%s: the first hit's line starts from the node's HP" % corp)
+				break
+
+
+## WCAG contrast of `a` against `b` (both opaque).
+static func _contrast(a: Color, b: Color) -> float:
+	var la := a.get_luminance()
+	var lb := b.get_luminance()
+	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
+
+
+func test_a_threat_token_stands_out_on_every_node_colour() -> void:
+	var nodes: Array[Color] = [Palette.CELL_PINK, Palette.CELL_ACID, Palette.RESIST_GOLD, Palette.NET_CYAN, Palette.CELL_TURF]
+	for corp in CORPORATIONS:
+		nodes.append(Palette.corp_color(corp))
+	var halo := RaidFxLayer.TOKEN_HALO_COLOR
+	assert_eq(halo.a, 1.0, "an opaque halo: no node colour shows through (red over pink read pink)")
+	assert_gt(_contrast(Palette.PAPER, halo), 7.0, "the paper rim stands out on the halo")
+	for col in nodes:
+		# WCAG non-text contrast (3:1): the token's edge (its paper rim or its dark halo)
+		# stands out on the node under it.
+		var edge := maxf(_contrast(halo, col), _contrast(Palette.PAPER, col))
+		assert_gt(edge, 3.0, "the token stands out on %s (%.1f)" % [col.to_html(false), edge])
+		assert_gt(_contrast(halo, col) + _contrast(Palette.PAPER, col), 7.0, "halo and rim together on %s" % col.to_html(false))
+	assert_gt(RaidFxLayer.TOKEN_HALO, 1.0, "the halo is wider than the diamond")
+
+
+func test_raid_incoming_is_a_large_amber_stamp_naming_the_corporation_held_a_second() -> void:
+	_raid_campaign(&"meridian", false)
+	RunManager._before_switch = func() -> void: pass
+	var note := RunManager.jack_note()
+	RunManager._before_switch = Callable()
+	var corp_name := TextDb.t(RunManager.corporation, "display_name")
+	assert_string_contains(note, corp_name, "the stamp names the corporation")
+	assert_string_contains(note, tr("RAID INCOMING\n%s").get_slice("\n", 0), "and says RAID INCOMING")
+	assert_true(Fx.note_hold() >= 1.0, "held at least a second (%.2f s)" % Fx.note_hold())
+	for scale in [1.0, 1.6]:
+		Settings.set_text_scale(scale)
+		Fx._note = note
+		Fx._show_note(SCREEN.size)
+		assert_true(Fx.note_label.visible)
+		assert_eq(Fx.note_label.get_theme_color(&"font_color"), Palette.CRT_AMBER, "amber")
+		assert_true(Fx.note_label.get_theme_font_size(&"font_size") >= roundi(Fx.NOTE_FONT * scale), "large")
+		assert_string_contains(Fx.note_label.text, corp_name.to_upper())
+		assert_true(SCREEN.grow(1.0).encloses(Fx.note_label.get_global_rect()), "on the screen at %.1f" % scale)
+		Fx._hide_connect()
+		assert_false(Fx.note_label.visible, "gone with the cover")
+
+
+# --- H11 b: the asset drop and the forecast ------------------------------------------------------------
+
+func test_a_drop_runs_its_road_to_core_and_every_forecast_change_reads_as_arrows() -> void:
+	assert_eq(CityMapOverlay.change_text(45, 50), "45 → 50 ▲", "a gain")
+	assert_eq(CityMapOverlay.change_text(50, 45), "50 → 45 ▼", "a loss")
+	assert_true(Palette.mono_arrows().has_char(0x2192) and Palette.mono_arrows().has_char(0x25B2), "the arrows' lettering draws them (display fallback)")
+	assert_eq(Palette.mono_for("HP 50 → 40"), Palette.mono_arrows(), "text with an arrow takes it")
+	assert_eq(Palette.mono_for("HP 50"), Palette.mono(), "other text keeps the plain face (its line height)")
+	var hq := _scene(HQ)
+	await _frames(1)
+	_raid_campaign(&"solace", false)
+	hq.show_raid()
+	await _frames(3)
+	var c := RunManager.campaign
+	var site: StringName = c.grid.claimed_ids()[0] if c.grid.claimed_ids()[0] != c.grid.home_site_id else c.grid.claimed_ids()[1]
+	var road: Array = hq.threat_road(site)
+	assert_eq(road.front(), site, "the road starts at the defence's node")
+	assert_eq(road.back(), c.grid.home_site_id, "and ends at CORE")
+	c.armory = [&"turret"]
+	hq.deploy_asset(0, site)
+	await _frames(2)
+	var overlay: CityMapOverlay = hq.city_overlay
+	assert_eq(overlay._drop.get("road", []), road, "the drop carries the road")
+	assert_eq(overlay.road_t, 1.0, "headless: the pulse at its end at once")
+	assert_eq(overlay.change_t, 1.0)
+	for ch: Dictionary in overlay.drop_changes():
+		if StringName(ch["site"]) == c.grid.home_site_id:
+			var core: Dictionary = overlay._node_dict(c.grid.home_site_id)
+			assert_string_contains(String(core.get("result", "")), "→ %d" % int(ch["to"]), "CORE's label and the float show the same number")
+	# The raid setup's rows use the arrows too.
+	var arrows := 0
+	for b in hq._panel.find_children("*", "Badge", true, false):
+		if (b as Badge).text.contains(" > "):
+			fail_test("a forecast still reads 'a > b': %s" % (b as Badge).text)
+		if (b as Badge).text.contains("→"):
+			arrows += 1
+			assert_true((b as Badge)._font().has_char(0x2192), "a badge writing a change draws its arrow")
+	assert_gt(arrows, 0, "the forecast badges read a → b")
+
+
+# --- H11 c: the route ---------------------------------------------------------------------------------
+
+func test_a_move_shows_the_new_choices_at_once_the_marker_off_them_and_the_trail() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	RunManager.new_campaign(1)
+	var scene := _scene(NETRUN)
+	scene.start_run(1)
+	await _frames(3)
+	var s := RunManager.netrun
+	var to: StringName = s.available_nodes()[0]
+	scene.enter_node(to)
+	var overlay: CityMapOverlay = scene.city_overlay
+	var next: Array[StringName] = []
+	for n in s.run.current_node().get("next", []):
+		next.append(n)
+	assert_eq(NetrunScript.view_choices(s), next, "the view's choices are the node's next ones while it plays")
+	if overlay != null and is_instance_valid(overlay) and scene._travelling:
+		var labelled: Array[StringName] = []
+		for n in overlay.nodes:
+			if n.get("next", false):
+				labelled.append(n["id"])
+		labelled.sort()
+		var want := next.duplicate()
+		want.sort()
+		assert_eq(labelled, want, "the map's [1] / [2] labels are on the new choices as the move starts")
+		var row: Node = scene._panel.find_child("RouteNodes", true, false)
+		var buttons := 0
+		for b in row.get_children():
+			if b is Button and (b as Button).visible and not b.is_queued_for_deletion():
+				buttons += 1
+		assert_eq(buttons, next.size(), "the ROUTE window lists the new choices")
+		for u in [0.0, 0.5, 1.0]:
+			overlay.travel_t = u
+			var here := overlay.here_marker_pos()
+			for id in next:
+				assert_true(here.distance_to(overlay.icon_at(id)) > overlay.icon_radius(overlay._node_dict(id)), "the marker is never on a choice (t %.1f)" % u)
+		scene._end_travel()
+	else:
+		fail_test("the move did not play on the route map")
+	# The walked route stays as a faint trail: one move on, the link walked is the trail.
+	if not s.run.visited.has(to):
+		s.run.visited.append(to)
+	s.run.current_node_id = next[0]
+	var g: Dictionary = scene.route_graph()
+	var trail: Array = []
+	for e: Dictionary in g["edges"]:
+		if e.get("trail", false):
+			trail.append([e["a"], e["b"]])
+			assert_lt((e["color"] as Color).a, 0.6, "faint")
+			assert_false(bool(e.get("dashed", true)), "a solid line")
+	assert_eq(trail, [[to, next[0]]], "the walked link is the trail")
+
+
+# --- H11 d: territory -----------------------------------------------------------------------------------
+
+func test_the_claimed_stamp_keeps_off_the_sites_name_and_the_side_panel_never_clips() -> void:
+	for scale in [1.0, 1.3, 1.6]:
+		Settings.set_text_scale(scale)
+		_raid_campaign(&"solace", true)
+		var c := RunManager.campaign
+		var hq := _scene(HQ)
+		await _frames(1)
+		var site: StringName = c.grid.claimed_ids()[0] if c.grid.claimed_ids()[0] != c.grid.home_site_id else c.grid.claimed_ids()[1]
+		for sid in [site, &""]:
+			hq.selected_site = sid
+			hq.show_grid()
+			await _frames(3)
+			var out := []
+			_clipped(hq._panel, out)
+			assert_eq(out, [], "%.1f %s: no word cut at the side panel's edge" % [scale, sid])
+		hq.show_raid()
+		await _frames(3)
+		var cut := []
+		_clipped(hq._panel, cut)
+		assert_eq(cut, [], "%.1f raid setup: no word cut" % scale)
+		hq.selected_site = site
+		hq.show_grid()
+		await _frames(3)
+		# A claim's stamp beside or below the Site's name, never on it.
+		var city: NeonCity = hq.wireframe.city
+		var before := c.duplicate_state()
+		before.grid.site(site)["status"] = GridState.SiteStatus.CORPORATE
+		city.mark_changes(CityInfluence.of(before, RunManager.corporation), CityInfluence.of(c, RunManager.corporation))
+		var overlay: CityMapOverlay = hq.city_overlay
+		city.stamp_avoid = overlay.stamp_avoid_rects()
+		var labels := overlay.label_rects()
+		var checked := 0
+		for m: Dictionary in city.marks:
+			var spot := NeonCity._tilted_bounds(city.stamp_rect(m), NeonCity.MARK_TILT)
+			for key in labels:
+				if String(key) == String(site):
+					checked += 1
+					assert_false(spot.intersects(overlay.get_transform() * (labels[key] as Rect2)), "%.1f: CLAIMED keeps off %s's name" % [scale, site])
+		assert_gt(checked, 0, "%.1f: the claimed Site's label was checked" % scale)
+		hq.get_parent().queue_free()
 		await _frames(1)
