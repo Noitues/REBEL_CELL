@@ -122,9 +122,13 @@ func _init() -> void:
 func show_section(name: String) -> void:
 	section = name
 	rebinding = &""
+	# ANIM-R4 C3: the built widgets wait off the tree for their section; everything else a
+	# section made (its labels, the Controls grid, the note, Reset) goes (they leaked: 49
+	# Controls per Options opened). Queued: Reset calls this from its own press.
+	var keep := _persistent()
 	for c in _body.get_children():
 		_body.remove_child(c)
-		if c is Label and c.name.begins_with("_tmp"):
+		if not keep.has(c):
 			c.queue_free()
 	_key_buttons.clear()
 	match name:
@@ -169,6 +173,21 @@ func show_section(name: String) -> void:
 	else:
 		UiFocus.link_layout(self)  # the section swapped its controls
 	UiFocus.focus_first(_body)
+
+
+## The widgets built once in _init (they move between the body and off the tree).
+func _persistent() -> Array[Control]:
+	return [reduce_check, flash_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
+		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option]
+
+
+## ANIM-R4 C3: the built widgets of the sections not showing are off the tree, so the
+## panel's own free never reaches them: they go with it.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for w in _persistent():
+			if w != null and is_instance_valid(w) and w.get_parent() == null:
+				w.free()
 
 
 func begin_rebind(action: StringName) -> void:
