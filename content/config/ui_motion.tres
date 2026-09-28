@@ -341,11 +341,11 @@ trans = 5
 amplitude = 40.0
 
 ; ---- 4.12 Heat thresholds ----
-; Fx.heat_pulse: seconds, amplitude = peak distortion (rises 30%, falls 70%); ANIM-R1 M6: 0.45 s at 0.25 (was 0.7 s at 0.5: it read as a screen glitch; the number and banner carry the crossing now)
+; Fx.heat_pulse: seconds, amplitude = peak distortion (rises 30%, falls 70%); ANIM-R1 M6: 0.45 s at 0.25 (was 0.7 s at 0.5: it read as a screen glitch; the number and banner carry the crossing now); ANIM-R2 R8: 0.3 s, round the poster only (Fx.heat_pulse_at), after the number reaches the threshold and the banner stamps
 [sub_resource type="Resource" id="m_heat_pulse"]
 script = ExtResource("1_entry")
 id = &"heat_pulse"
-duration = 0.45
+duration = 0.3
 delay = 0.0
 ease = 2
 trans = 1
