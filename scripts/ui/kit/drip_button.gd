@@ -89,6 +89,8 @@ func settle_motion() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY or (what == NOTIFICATION_VISIBILITY_CHANGED and is_inside_tree()):
 		grow_in.call_deferred()
+	elif what == NOTIFICATION_TRANSLATION_CHANGED:
+		_fit_size()  # ANIM-R4 C1: the room follows the words drawn
 
 
 func _set_hot(on: bool) -> void:
@@ -159,7 +161,7 @@ func _fit_size() -> void:
 	var longest := 0.0
 	for d in drips:
 		longest = maxf(longest, float(d[1]))
-	var w := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var w := lettering_room()
 	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + (HINT_SIZE * Settings.text_scale + 6.0 if key_hint != "" else 0.0))
 
 
@@ -183,9 +185,12 @@ func set_key_hint(hint: String) -> void:
 ## Draws `text` with drips on any CanvasItem at baseline `base` (shared with views that
 ## paint the lettering themselves). A thin white outline runs round the letters and the
 ## drips so the pink reads over the bright city.
-static func draw_drip_text(ci: CanvasItem, base: Vector2, raw_text: String, size: int, col: Color, p_drips: Array, shadow: bool = true, outline: bool = true) -> void:
+## ANIM-R4 C1 / C7: `translate` false draws `raw_text` as given (words that arrive
+## translated are translated once, where they are made).
+static func draw_drip_text(ci: CanvasItem, base: Vector2, raw_text: String, size: int, col: Color, p_drips: Array, shadow: bool = true, outline: bool = true,
+		translate: bool = true) -> void:
 	# Drawn words translate (H24: SEND IT stayed English in the scrambled storyboard).
-	var text := String(TranslationServer.translate(raw_text))
+	var text := String(TranslationServer.translate(raw_text)) if translate else raw_text
 	var f := Palette.marker()
 	if shadow:
 		ci.draw_string(f, base + Vector2(3, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7))
@@ -288,15 +293,39 @@ static func auto_drips(text: String, count: int = 3) -> Array:
 ## The lettering as shown (translated) and the font size it is drawn at: the button is
 ## laid out for the source word, so a longer translation shrinks to that width instead of
 ## running off the screen's edge (ANIM-R1: SEND IT was cut under pseudolocalisation).
+## ANIM-R4 C1: `tag_text` is a key, translated here once (LOOT / CONTINUE came translated
+## and were translated again); a translation too long even at the smallest size widens
+## the room (`lettering_room`), so what is drawn always fits the button.
 func shown_lettering() -> Array:
 	var shown := String(TranslationServer.translate(tag_text))
 	var f := Palette.marker()
-	var room := f.get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var room := lettering_room()
 	var fs := font_size
 	var floor_size := maxi(1, roundi(font_size * FIT_MIN_SHARE))
 	while fs > floor_size and f.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
 		fs -= 1
 	return [shown, fs]
+
+
+## ANIM-R4 C1: the width the lettering may take (px): the source word's at the button's
+## size, or the translation's at the smallest size when that is wider.
+func lettering_room() -> float:
+	var f := Palette.marker()
+	var shown := String(TranslationServer.translate(tag_text))
+	var floor_size := maxi(1, roundi(font_size * FIT_MIN_SHARE))
+	return maxf(f.get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x,
+		f.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, floor_size).x)
+
+
+## ANIM-R4 C1: the px the lettering takes as drawn (the translated words at the size they
+## are drawn at), from the button's left edge: its inset and the words.
+func drawn_width() -> float:
+	var lettering := shown_lettering()
+	return LETTER_INSET + Palette.marker().get_string_size(String(lettering[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(lettering[1])).x
+
+
+## Where the lettering starts from the button's left edge (px).
+const LETTER_INSET := 12.0
 
 
 ## The smallest a translated lettering shrinks to, as a share of its font size.
@@ -329,7 +358,8 @@ func _draw() -> void:
 		run = []
 		for dr in drips:
 			run.append([dr[0], (float(dr[1]) + drip_run * 44.0 / font_size) * grow, dr[2]])
-	DripButton.draw_drip_text(self, base, tag_text, fs, col, run)
+	# ANIM-R4 C1: the words measured are the words drawn (translated once, here).
+	DripButton.draw_drip_text(self, base, shown, fs, col, run, true, true, false)
 	draw_set_transform(Vector2.ZERO)
 	if key_hint != "":
 		# The key sits centred under the lettering, big enough to find (H22: "[X]" at 13 px in

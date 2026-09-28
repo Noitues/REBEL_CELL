@@ -438,6 +438,120 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R4 combat, input and screens
+The fourth fix batch of the Animation pass review, combat, input and screens part (C1-C7).
+Views only (no rule, no schema field changed; new motion ids are data). Every call below was
+the implementer's (the standing rule: nothing deferred). Tests: `tests/unit/test_anim_r4_combat.gd`
+(full tier). Strips recaptured in `docs/timeline/motion/` (CHOSEN on top, a variant under it,
+quantized to 128 colours; raw frames never entered the repo): `resolve_sequence` (both rows),
+`number_float`, `enemy_break`, `card_play`, `loot_pick`.
+- **C1 LOOT / CONTINUE translated once.** The netrun names the next step with the key
+  (`TextDb.mark("LOOT")`), the drip lettering translates it once where it draws it, and the
+  tooltip is that translation shown as given (`TextDb.shown_as_given` on the button). A
+  DripButton measures what it draws: `lettering_room` is the source word's width or the
+  translation's at the smallest size, whichever is wider, and `drawn_width` is the words as
+  drawn (tests: under pseudolocalisation and with an "xx" catalogue). Found on the way and
+  fixed the same way: LEAVE THE MODEM, the graffiti tag and the graffiti scrawl (they arrive
+  translated; `draw_drip_text(..., translate)` false draws them as given).
+- **C2 one press rule everywhere (`MotionSkip.verdict`).** IGNORE while a PauseMenu is open
+  (the motion plays on; the press is the menu's), PASS for a press that works the screen,
+  CONSUME otherwise. Applied to PageTransition, FlightFx, DropLayer, the route move and the
+  combat replay (Typing, Dialogue and the raid playout already followed it). `works_ui`
+  trusts the hovered control when it holds the point (a button under a panel is not
+  clicked), requires the clicking button in `button_mask` (a right-click works no left-click
+  button) and searches rects only when nothing hovered holds the point. **Decided:** the
+  replay keeps the presses on the fight's own controls (`replay_keeps`: SEND IT, the
+  stickers, the hand): such a press ends the replay and does nothing else, so a double tap
+  never plays the next turn blind (the next-step LOOT / CONTINUE still works at once).
+  `MenuMotion.works_menu` passes the Settings key; a menu behind an open pause menu leaves
+  it its presses. STYLE_GUIDE 5.1 says so.
+- **C3 leaks and orphans.** `SettingsPanel.show_section` frees what a section made (labels,
+  the Controls grid, the note, Reset: queued, Reset calls it from its own press) and the
+  built widgets waiting off the tree go with the panel (`NOTIFICATION_PREDELETE`); tested
+  with Options opened and closed five times (node and orphan counts unchanged).
+  `_build_hand` frees the old cards at once (queued only while a card's own press or a drag
+  is being handled). The pass23 / pass24 tests call the scene script's statics instead of
+  instantiating the scene for them.
+- **C4 nudge key hints** (`WheelView.arrow_hint_rect`): above the arrow as before unless that
+  touches the tag (at 1.3 / 1.6 a two-row tag reaches past the arrows), then beside the arrow
+  on its outer side, then under it; `layout_violations` reports a hint on any tag.
+- **C5 motion numbers in the table**: `hit_line_flight` (0.6; was the inline 0.5),
+  `ride_swap` (0.45), `ride_shrink` (0.6), `ride_perfect` (1.35), `break_crack` (0.22),
+  `modem_sign_strike` (0.45), `modem_sign_flicker` (0.25). Kept inline and documented as
+  drawing, not motion: the tick's radius share (`TICK_SHARE`), the crack line's alpha and
+  width, the flicker's lit chance, the equation's spacing. STYLE_GUIDE 5.2's "stamps
+  BLOCKED or EVADED on impact" now says what the replay does.
+- **C6 SEND IT for a beginner and a non-English reader.**
+  - a. Beats carry their `side` and `wheel_source`; the schedule makes the first projectile
+    of the other side wait until every HP roll so far has ended and every hit has landed,
+    plus `resolve_side_gap` (new, 0.35 s), and another attacker on the same side (a drone
+    after its wheel, a satellite after its host) wait `resolve_attacker_gap` (new, 0.15 s)
+    after the last arrival. The engine already orders the operative, its drones, then each
+    enemy and its satellites within a pass, so nothing is reordered (the HP a beat shows is
+    the engine's order's). Turns with hits from both sides run longer (any press skips).
+  - b. A hit's number, its equation and its HP change appear only at the impact (they did;
+    now tested for every kind). The source slice is the landing of the needle's own
+    resolution (`_landing_for`, a SHUNT / MIRROR neighbour resolves as a second entry under
+    one needle), and the projectile leaves from that slice's band right under the needle
+    (`needle_slot_spot`; the slice's middle when a neighbour rule resolved the slice beside it).
+  - c. One notation everywhere: `hit_equation` (sword and the raw hit, minus the shield or the
+    evade mark and what it took, = what got through; `CombatFxLayer.draw_equation`) is the
+    mark where a guarded hit strikes and the LAST TURN icon row (no arrow; an HP change the
+    hits don't explain follows after a dot). Any soak (block or shield) wears the shield
+    glyph (DEFEND). What gets through pops fresh in the hub `hit_absorb` after the impact
+    and travels; the raw number no longer morphs into it and no separate guard number shows
+    for a soak. The raw hit value rides every projectile, the enemies' included.
+  - d. Colours were already by side (acid, red), checked for drones too. The projectile is
+    seen: `hit_line` 0.45 s (was 0.3) flying 60 % of it (0.27 s, was 0.15 s), a bigger head
+    ringed in paper so the acid shot reads over the operative's acid wheel.
+  - e. After a card or a respin that turns a wheel the forecast tags hide until the turn
+    lands (`_card_hold`, released by the spin's end or a skip; `play_turn` / `play_pointers`
+    return when they land). **The "MISS · half power" tag with a 14 hit was a demo
+    artefact**: the lab's `numbers` demo played made-up beats over a live fight whose own
+    forecast said MISS. The demo now plays a real SEND IT (the Breaker's ring makes its own
+    hits pierce, so the guarded hit is the enemy's: a fight where the enemy hits, the
+    operative given a block of a third of that hit, lab only, the forecast refreshed), so the
+    tag says what happens. Regression test: over three enemies and three seeds the tag's landing
+    slices equal the resolve's (no preview≠result found).
+  - f. A status lands as its glyph in green (good for you) or red (bad for you:
+    `WheelView.status_good_for_you`; OVERCLOCKED and ENCRYPTED help their slice's owner,
+    CORRUPTED and PARASITE hurt it), and the slice's mark, its landing ring and rim and the
+    tag's status chips wear the same colours; the slice's tooltip starts "Bad for you:" /
+    "Good for you:". A random status's chip says which and whose ("☠ CORRUPTED · RANDOM
+    SLICE", red on your wheel, the note in the tag's tooltip).
+  - g. DEFEATED and its skull wear the beaten wheel's own colour (`defeated_color`); VICTORY
+    stands in the room above the first enemy's disc (`room_above_disc`, fitted there by
+    `CombatFxLayer.word_fit`), never over the crack.
+  - h. A refusal ends any RAM float (it read as a loss; NEED / HAVE says it); the turn-start
+    refill floats "+N RAM" in cyan (`ram_refill_float`, new); the float starts above the
+    count's words and rises from there (`spend_rect` never meets `label_rect` at 1.0-1.6).
+    The lab's refusal demo no longer floats the RAM it set to 0.
+- **C7 screens.** The loot page stays, inert (a blocker, focus released), until the offers not
+  taken have fallen inside its window (`loot_reject`; a press lands them and the page goes),
+  then the route shows: they floated over the route map. The loot's graffiti tag shrinks to
+  fit the loot row (`GraffitiTag.fit_width`, down to 22 px) and draws its words as given. A
+  focus tip never folds under 20 columns (it folded to 16 at 1.6: a word a line); a crowded
+  one tries the screen's top and bottom edges and corners, then steps its lettering down
+  (0.85, 0.72 of the tooltip size) before covering anything, and keeps off the MODEM sign. A shop card's text keeps clear of its BUY sticker's flap (its reach
+  is in `buy_room`). A price refusal under a tag narrower than its words wraps at its dot
+  (NEED 53 over HAVE 5). An event's story types within 0.8 s (`event_type`, new: 0.02 s a
+  character, the whole text within its amplitude; `Typing` caps any entry with an
+  amplitude) and its paper is as tall as its words (no 200 px floor).
+- New ids (data; REQUIRED_IDS and lab demos): `hit_line_flight`, `ride_swap`, `ride_shrink`,
+  `ride_perfect`, `break_crack`, `modem_sign_strike`, `modem_sign_flicker`,
+  `resolve_side_gap`, `resolve_attacker_gap`, `ram_refill_float`, `event_type` (188
+  entries). Retuned: `hit_line` 0.45 s. Lab: `send_both` (both sides hit), `numbers` is a
+  real SEND IT.
+- Words (exported once, strings.csv): RANDOM SLICE, Good for you: %s, Bad for you: %s, +%d
+  RAM; dropped: RANDOM STATUS.
+- Test expectations changed on purpose: `test_anim_r1_combat` and `test_anim2_combat_motion`
+  (the budget allows the arrival waits and the side and attacker gaps; the shared-predicate
+  check accepts the verdict), `test_anim_r2_combat` (the hit's equation where it struck,
+  no raw number in the hub, the HP number after `hit_absorb`), `test_anim_r3_combat` (the
+  guard is in the equation; the icon row's `dealt`; the MODEM sign's shares from the table;
+  the continue button carries the key), `test_horizontal_pass23` / `pass24` (the script's
+  statics without an instance).
+
 #### 2026-09-28 — Animation pass — ANIM-R3 city, raid, jack, heat and route
 The third fix batch of the Animation pass review, city, raid, jack, Heat and route part
 (B1-B13). Views only (no rule or schema field changed). Every call below was the

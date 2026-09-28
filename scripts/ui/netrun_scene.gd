@@ -464,13 +464,66 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
 		# ANIM-R1 M11: the offers not taken fall away (`loot_reject`), picked by click or drag.
 		# ANIM-R3 A7: within the loot's window (they fell across the route coming in under it).
+		var fell := false
 		for i in (offer["options"] as Array).size():
 			var other := _page_item("Stickers", i)
 			if i != index and other != null:
-				FlightFx.fly(self, other, other.get_global_rect().get_center() + Vector2(0.0, Motion.amplitude(&"loot_reject")), &"loot_reject", "", 0.0,
-					loot_window_rect(other))
+				if FlightFx.fly(self, other, other.get_global_rect().get_center() + Vector2(0.0, Motion.amplitude(&"loot_reject")), &"loot_reject", "", 0.0,
+						loot_window_rect(other)) != null:
+					fell = true
+					other.modulate.a = 0.0  # its copy falls; the sticker is gone from its slot
+		if fell:
+			var picked := _page_item("Stickers", index)
+			if fly and picked != null:
+				picked.modulate.a = 0.0  # its fresh copy is flying to CARDS
+			# ANIM-R4 C7: the loot page stays (inert) while the offers not taken fall inside its
+			# window, and leaves when they have (they floated over the route map that came in
+			# under them); a press ends them (FlightFx) and the page goes at once.
+			RunManager.after_step()
+			_hold_loot_page()
+			return
 	RunManager.after_step()
 	_show_current()
+
+
+## ANIM-R4 C7: the loot page waits for its falling offers (`loot_reject`), taking no input.
+var _loot_hold: Tween = null
+
+
+func _hold_loot_page() -> void:
+	if _panel != null and is_instance_valid(_panel):
+		var block := Control.new()
+		block.name = "LootLeaving"
+		block.mouse_filter = Control.MOUSE_FILTER_STOP
+		block.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_panel.add_child(block)
+	var owner := get_viewport().gui_get_focus_owner() if get_viewport() != null else null
+	if owner != null and _panel != null and _panel.is_ancestor_of(owner):
+		owner.release_focus()
+	if _loot_hold != null and _loot_hold.is_valid():
+		_loot_hold.kill()
+	_loot_hold = create_tween()
+	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"))
+	_loot_hold.tween_callback(_end_loot_hold)
+
+
+func _loot_hold_step(_p: float) -> void:
+	if FlightFx.active_count(self) == 0:
+		_end_loot_hold()
+
+
+func _end_loot_hold() -> void:
+	if _loot_hold == null:
+		return
+	if _loot_hold.is_valid():
+		_loot_hold.kill()
+	_loot_hold = null
+	_show_current()
+
+
+## True while the loot page waits for its falling offers (tests).
+func loot_leaving() -> bool:
+	return _loot_hold != null
 
 
 ## The loot window a sticker sits in (global; ANIM-R3 A7: loot not taken falls within it),
@@ -642,6 +695,11 @@ func save_and_quit() -> void:
 # --- Panels --------------------------------------------------------------------------
 
 func _show_current() -> void:
+	if _loot_hold != null:
+		# ANIM-R4 C7: whatever shows next ends the loot page's wait.
+		if _loot_hold.is_valid():
+			_loot_hold.kill()
+		_loot_hold = null
 	var s := RunManager.netrun
 	if s == null:
 		_show_start()
@@ -1609,7 +1667,7 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 		# payout waits, else CONTINUE); pressing it moves on now.
 		if combat_scene != null and combat_scene.has_method(&"show_continue"):
 			var phase := RunManager.netrun.run.phase if RunManager.netrun != null else RunState.Phase.MAP
-			combat_scene.call(&"show_continue", tr("LOOT") if phase == RunState.Phase.REWARD else tr("CONTINUE"))
+			combat_scene.call(&"show_continue", TextDb.mark("LOOT") if phase == RunState.Phase.REWARD else TextDb.mark("CONTINUE"))
 		# Leave the final combat state visible for a moment, then move on: once the combat
 		# replay (the last hits, the break, VICTORY) has played out or been skipped.
 		_leave_generation += 1
@@ -1651,7 +1709,9 @@ func _show_reward() -> void:
 	var win := TerminalWindow.new(tr("RACK BREACHED // LOOT: pick a %s") % kind_word, Palette.CELL_ACID)
 	win.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var box := win.body
-	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word))
+	# ANIM-R4 C7: the tag fits the loot's row (its words shrink rather than run out of the
+	# window under a long translation).
+	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(LOOT_ROW_MAX))
 	var slot_option: OptionButton = null
 	if offer["kind"] == "firmware":
 		var row := HBoxContainer.new()
@@ -1760,12 +1820,12 @@ func _show_event() -> void:
 		style.shadow_size = 8
 		strip.add_theme_stylebox_override("panel", style)
 		strip.material = UiTheme.crt_material()
-		strip.custom_minimum_size = Vector2(700, 220)
+		strip.custom_minimum_size = Vector2(700, 0)  # ANIM-R4 C7: as tall as its words
 		strip.add_child(body)
 		holder = strip
 	else:
 		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0).scale_title(Settings.text_scale)
-		panel.custom_minimum_size = Vector2(760, 200)
+		panel.custom_minimum_size = Vector2(760, 0)  # ANIM-R4 C7: as tall as its words
 		panel.content.add_child(body)
 		holder = panel
 	holder.name = "EventPanel"
@@ -1791,7 +1851,7 @@ func _show_event() -> void:
 	body.add_child(speaker)
 	var text := RichTextLabel.new()
 	text.fit_content = true
-	text.custom_minimum_size = Vector2(720, 60)
+	text.custom_minimum_size = Vector2(720, 0)
 	text.text = TextDb.t(ev, "text")
 	text.add_theme_color_override("default_color", Palette.CRT_AMBER if dispatch else Palette.INK)
 	body.add_child(text)
@@ -1837,7 +1897,9 @@ func _show_event() -> void:
 	split.add_child(right_gap)
 	_set_panel(box, false)
 	_register_event_drops(ev, options)
-	if entering and Typing.type_in(text) > 0.0:
+	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s), not a char at a time
+	# for 8 s under an empty panel.
+	if entering and Typing.type_in(text, &"event_type") > 0.0:
 		_hold_choices(options, text)
 
 
@@ -2163,7 +2225,7 @@ func _show_shop() -> void:
 	var mini := _spinner_mini()
 	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(mini)
-	var leave := DripButton.new(tr("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
+	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
 	leave.name = "LeaveModem"
 	leave.position = LEAVE_AT
 	leave.pressed.connect(leave_shop)
@@ -3103,8 +3165,15 @@ func open_settings() -> void:
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press during a route move (key, click or pad button) ends it
 	# and is consumed before any control sees it.
-	if _travelling and MotionSkip.is_press(event):
-		_end_travel()
+	# ANIM-R4 C2 (MotionSkip.verdict): a press that works the screen ends it and passes on; an
+	# open pause menu keeps its presses.
+	if not _travelling:
+		return
+	var v := MotionSkip.verdict(event, self)
+	if v == MotionSkip.Verdict.IGNORE:
+		return
+	_end_travel()
+	if v == MotionSkip.Verdict.CONSUME:
 		MotionSkip.consume(self, event)
 
 

@@ -73,6 +73,11 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"impact_mark", &"forecast_tick", &"forecast_fade", &"status_mark",
 	# ANIM-R4 city, raid, Heat, route and HQ.
 	&"forecast_change_fade", &"raid_incoming_hold", &"forecast_road_pulse",
+	# ANIM-R4 combat, input and screens: motion shares that were inline (the projectile's
+	# flight, the riding number's swap, shrink and PERFECT size, the break's crack, the MODEM
+	# tubes' strike and flicker), the two sides' hits one after the other, the RAM refill.
+	&"hit_line_flight", &"ride_swap", &"ride_shrink", &"ride_perfect", &"break_crack", &"modem_sign_strike", &"modem_sign_flicker",
+	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

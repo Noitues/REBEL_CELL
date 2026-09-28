@@ -6,6 +6,9 @@ extends GutTest
 ## wheel centre moves up for the room below; satellite tokens keep off the HP block.
 
 const SCENE := "res://scenes/combat/combat_scene.tscn"
+## The scene script, for its static helpers (ANIM-R4 C3: instantiating the scene for them
+## left a CombatScene unfreed per test).
+const SCENE_SCRIPT := "res://scripts/ui/combat_scene.gd"
 
 var _text_scale_before: float = 1.0
 
@@ -112,7 +115,7 @@ func test_last_turn_counts_block_shield_and_statuses() -> void:
 		{"type": "status", "target": &"player", "slot": 1, "status": RC.Status.CORRUPTED},
 		{"type": "status_absorbed", "target": &"player", "slot": 2, "status": RC.Status.CORRUPTED},
 	]
-	var line: String = load(SCENE).instantiate().get_script().last_turn_lines(before, after, events)[&"player"]
+	var line: String = load(SCENE_SCRIPT).last_turn_lines(before, after, events)[&"player"]
 	assert_string_contains(line, "+5 BLOCK")
 	assert_string_contains(line, "+2 SHIELD")
 	assert_string_contains(line, "GOT CORRUPTED")
@@ -204,7 +207,7 @@ func test_combat_words_go_through_the_translation() -> void:
 	p.is_player = true
 	before.player = p
 	var none: Array[Dictionary] = []
-	var line: String = load(SCENE).instantiate().get_script().last_turn_lines(before, before.duplicate_state(), none)[&"player"]
+	var line: String = load(SCENE_SCRIPT).last_turn_lines(before, before.duplicate_state(), none)[&"player"]
 	var scene := await _combat(&"compliance_officer")
 	scene._refresh_status()
 	var status: String = scene._status.text
