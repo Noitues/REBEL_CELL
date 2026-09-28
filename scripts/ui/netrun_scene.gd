@@ -1395,23 +1395,36 @@ func _show_event() -> void:
 ## no press: the first press completes the typing (Typing's own rule) and only the words
 ## whole let the choices act (stills caught "A bricked i" with the choices live).
 func _hold_choices(options: Control, text: Control) -> void:
-	var held: Array[Button] = []
+	var held: Array[WeakRef] = []
 	for b in options.get_children():
 		if b is Button and not (b as Button).disabled:
 			(b as Button).disabled = true
-			held.append(b)
+			held.append(weakref(b))
 	if held.is_empty():
 		return
-	var release := func() -> void:
-		for b in held:
-			if is_instance_valid(b):
-				b.disabled = false
-	var poll := func(poll_self: Callable) -> void:
-		if not is_instance_valid(text) or not Typing.typing(text):
-			release.call()
-			return
-		get_tree().process_frame.connect(poll_self.bind(poll_self), CONNECT_ONE_SHOT)
-	get_tree().process_frame.connect(poll.bind(poll), CONNECT_ONE_SHOT)
+	_held_choices = held
+	_held_text = weakref(text)
+	if not get_tree().process_frame.is_connected(_poll_held_choices):
+		get_tree().process_frame.connect(_poll_held_choices)
+
+
+## The choices waiting for the event's words, and the words (weak: the page may go first).
+var _held_choices: Array[WeakRef] = []
+var _held_text: WeakRef = null
+
+
+func _poll_held_choices() -> void:
+	var text := _held_text.get_ref() as Control if _held_text != null else null
+	if text != null and Typing.typing(text):
+		return
+	for w in _held_choices:
+		var b := w.get_ref() as Button
+		if b != null:
+			b.disabled = false
+	_held_choices.clear()
+	_held_text = null
+	if get_tree().process_frame.is_connected(_poll_held_choices):
+		get_tree().process_frame.disconnect(_poll_held_choices)
 
 
 ## True while the event's choices wait for its words (tests).

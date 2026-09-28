@@ -26,6 +26,19 @@ const POSTER_BLOCK_TOP := 84.0
 const BAND_BASELINE := 68.0
 const BAND_FONT := 13
 const BAND_PAD := 6.0
+## ANIM-R1 M16: the ransom letters' layout for `count` letters on this poster's width:
+## {"step", "strip" (a strip's width), "num_w" (the widest the number or "/max" is),
+## "num_x" (where the number starts)}; the number's right end stays on the poster.
+func letter_layout(count: int) -> Dictionary:
+	var num_w := maxf(Palette.display().get_string_size("%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT).x,
+		Palette.mono().get_string_size("/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
+	var width := size.x if size.x > 0.0 else custom_minimum_size.x
+	var room := width - 8.0 - 6.0 - num_w - 4.0
+	var step := clampf(room / maxf(1.0, count), LETTER_STEP_MIN, LETTER_STEP)
+	var num_x := minf(8.0 + step * count, width - 6.0 - num_w) + 6.0
+	return {"step": step, "strip": step - (LETTER_STEP - LETTER_WIDTH), "num_w": num_w, "num_x": num_x}
+
+
 ## The Heat band words, by band.
 const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"] # TR
 
@@ -212,11 +225,10 @@ func _draw() -> void:
 	# ANIM-R1 M16: the letters and the number fit the poster's width (a longer translated or
 	# pseudolocalised word ran the number and "/100" off its right edge): the strips close up
 	# to fit beside the widest the number and its maximum can be.
-	var num_w := maxf(Palette.display().get_string_size("%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT).x,
-		Palette.mono().get_string_size("/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
-	var room := size.x - 8.0 - 6.0 - num_w - 4.0
-	var step := clampf(room / maxf(1.0, letters.size()), LETTER_STEP_MIN, LETTER_STEP)
-	var strip_w := step - (LETTER_STEP - LETTER_WIDTH)
+	var lay := letter_layout(letters.size())
+	var step: float = lay["step"]
+	var strip_w: float = lay["strip"]
+	var num_w: float = lay["num_w"]
 	var x := 8.0
 	for i in letters.size():
 		var strip := Rect2(Vector2(x, y + 4 + (i % 2) * 4) + shake_offset * (1.0 if i % 2 == 0 else -1.0), Vector2(strip_w, 28))
