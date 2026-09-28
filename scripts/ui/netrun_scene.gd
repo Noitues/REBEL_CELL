@@ -140,6 +140,7 @@ func _ready() -> void:
 		elif args.has("--demo-buy"):
 			# Capture (ANIM-6): the first card is bought once the Modem has come in.
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: buy("cards", 0))
+		_demo_drag_arg(args)
 		return
 	if args.has("--demo-event") or args.has("--demo-dispatch") or args.has("--demo-loot"):
 		# Screenshot shortcuts for the Terminal event (street / DISPATCH voice) and loot.
@@ -159,6 +160,7 @@ func _ready() -> void:
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_reward(1))
 		elif args.has("--demo-choose"):
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_event(0))
+		_demo_drag_arg(args)
 		return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
@@ -251,6 +253,86 @@ func _demo_route_pulse() -> void:
 	city_overlay.travel(from, to)
 
 
+## ANIM-4b frame capture: frames a scripted pointer takes from the item to where it lets go,
+## the frames it rests there first, the frames a page gets to lay out after a change, and
+## the arc of the pointer's path (px up at its middle), as the HQ's ANIM-4 demos.
+const DEMO_DRAG_FRAMES := 18
+const DEMO_DRAG_HOLD := 3
+const DEMO_LAYOUT_FRAMES := 12
+const DEMO_DRAG_ARC := 40.0
+## Where the demo lets go: this far off the target's centre (px), at most this share of its
+## size (so it stays inside); the Cycles a refusal demo leaves the player.
+const DEMO_RELEASE_OFFSET := Vector2(10, 8)
+const DEMO_RELEASE_SHARE := 0.3
+const DEMO_POOR_CYCLES := 5
+
+
+## `--demo-anim=drag_*` (with --demo-shop or --demo-loot): the drag plays once the page has
+## come in.
+func _demo_drag_arg(args: PackedStringArray) -> void:
+	for a in args:
+		if a.begins_with("--demo-anim=drag_"):
+			var id := a.trim_prefix("--demo-anim=")
+			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: _demo_drag(id))
+
+
+## ANIM-4b frame capture: picks an item up, carries it along a scripted pointer path and
+## lets go: a Modem card onto the deck (`drag_buy_card`), a microchip onto a slot it fits
+## (`drag_buy_chip`), a card too dear for the Cycles left (`drag_buy_refuse`), a deck card
+## onto the shredder (`drag_shred`), a loot card onto the deck (`drag_loot`). Prints
+## "anim4b: <id> starts on frame N" at the pick-up.
+func _demo_drag(id: String) -> void:
+	var s := RunManager.netrun
+	var layer := drops
+	var src: Control = null
+	var target_id := "deck"
+	match id:
+		"drag_buy_card", "drag_loot":
+			src = _page_item("Stickers", 1 if id == "drag_loot" else 0)
+		"drag_buy_refuse":
+			s.run.cycles = DEMO_POOR_CYCLES
+			_show_current()
+			for f in DEMO_LAYOUT_FRAMES:
+				await get_tree().process_frame
+			src = _page_item("Stickers", 0)
+		"drag_buy_chip":
+			src = _page_item("Chips", 0)
+			target_id = "slot:0"
+			if src != null:
+				drops.start_carry(src, false)
+				for k in s.run.operative.slot_slice_ids.size():
+					if drops.takes("slot:%d" % k):
+						target_id = "slot:%d" % k
+						break
+				drops.cancel()
+				drops.finish_all()
+		"drag_shred":
+			open_remove()
+			for f in DEMO_LAYOUT_FRAMES:
+				await get_tree().process_frame
+			layer = modal_drops
+			var view := get_node_or_null("DeckView") as DeckView
+			src = view.card(0) if view != null else null
+			target_id = "shred"
+	if src == null or layer == null:
+		print("anim4b: %s has nothing to drag" % id)
+		return
+	var from := src.get_global_rect().get_center()
+	layer.start_carry(src, false)
+	layer.point_at(from)
+	var r := layer.locate(layer.target(target_id))
+	var end := r.get_center() + DEMO_RELEASE_OFFSET.min(r.size * DEMO_RELEASE_SHARE)
+	print("anim4b: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
+	for i in DEMO_DRAG_FRAMES:
+		await get_tree().process_frame
+		var q := Tween.interpolate_value(0.0, 1.0, float(i + 1) / DEMO_DRAG_FRAMES, 1.0, Tween.TRANS_SINE, Tween.EASE_IN_OUT) as float
+		layer.point_at(from.lerp(end, q) - Vector2(0, DEMO_DRAG_ARC * sin(PI * q)))
+	for i in DEMO_DRAG_HOLD:
+		await get_tree().process_frame
+	print("anim4b: %s lets go on frame %d" % [id, Engine.get_frames_drawn()])
+	layer.release_at(end)
+
+
 ## Frames the ANIM-5 demo waits for the page to settle, and the most it waits for the
 ## city's bake before playing anyway.
 const DEMO_SETTLE_FRAMES := 20
@@ -292,12 +374,18 @@ func _end_travel() -> void:
 
 
 func choose_reward(index: int, slot: int = -1) -> void:
+	_choose_reward(index, slot, true)
+
+
+## Takes loot option `index` (as its sticker's press). `fly` false: a drag (ANIM-4b) already
+## lands the item on its target, so the click's flight (ANIM-6) does not play too.
+func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	var s := RunManager.netrun
 	var offer := s.current_reward() if s.run.phase == RunState.Phase.REWARD else {}
 	var left := s.run.pending_rewards.size()
 	_report(s.choose_reward(index, slot))
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
-	if s.run.pending_rewards.size() < left and not offer.is_empty():
+	if fly and s.run.pending_rewards.size() < left and not offer.is_empty():
 		_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
 	RunManager.after_step()
 	_show_current()
@@ -323,12 +411,18 @@ func choose_event(index: int) -> void:
 
 
 func buy(kind: String, index: int, slot: int = -1) -> void:
+	_buy(kind, index, slot, true)
+
+
+## Buys stock item `index` of `kind` (as its BUY press). `fly` false: a drag (ANIM-4b)
+## already lands the item on its target with SOLD, so the click's flight does not play too.
+func _buy(kind: String, index: int, slot: int, fly: bool) -> void:
 	var s := RunManager.netrun
 	var cycles := s.run.cycles
 	var item := _page_item({"cards": "Stickers", "firmware": "Chips", "daemons": "Daemons"}.get(kind, ""), index)
 	_report(s.buy(kind, index, slot))
 	# Bought (ANIM-6): SOLD stamps on its price and the item flies to its top bar icon.
-	if s.run.cycles < cycles:
+	if fly and s.run.cycles < cycles:
 		_fly_item(item, kind.trim_suffix("s"), &"buy_fly", tr("SOLD"))
 	RunManager.after_step()
 	_show_current()
@@ -453,6 +547,9 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		_panel.queue_free()
 	_panel = p
 	combat_scene = null
+	# ANIM-4b: the old page's drop targets go with it (flights in the air keep going).
+	if drops != null:
+		drops.reset()
 	# H24 S4: a page shows its words as given (translated once where built); the fight
 	# translates its own.
 	if not p.has_method("attach_netrun"):
@@ -480,7 +577,7 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		else:
 			UiFocus.focus_first(p)
 	_title_screen(s)
-	pad_prompts.set_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
+	set_page_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(screen_name(s))
 	if s != null and not s.run.is_over():
@@ -514,6 +611,9 @@ static func prompts_for(s: NetrunSession) -> Array:
 			RunState.Phase.COMBAT:
 				return out
 	out.append([&"ui_accept", accept])
+	# ANIM-4b: the pick-up key carries the focused item to a target (D-pad, A drops).
+	if s != null and has_drags(s):
+		out.append([&"end_turn", "Pick up"]) # TR
 	if s != null and s.run.phase == RunState.Phase.SHOP:
 		out.append([&"ui_cancel", "Leave"]) # TR
 	out.append([&"open_settings", "Settings"]) # TR
@@ -1039,9 +1139,23 @@ func _show_reward() -> void:
 	stickers.name = "Stickers"
 	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	stickers.add_theme_constant_override("separation", 14)
-	box.add_child(stickers)
+	# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
+	var mini: SpinnerMini = null
+	var room := LOOT_ROW_MAX
+	if offer["kind"] == "firmware":
+		var loot_row := HBoxContainer.new()
+		loot_row.name = "LootRow"
+		loot_row.add_theme_constant_override("separation", 14)
+		box.add_child(loot_row)
+		loot_row.add_child(stickers)
+		mini = _spinner_mini()
+		mini.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		loot_row.add_child(mini)
+		room -= mini.custom_minimum_size.x + 14.0
+	else:
+		box.add_child(stickers)
 	var n: int = offer["options"].size()
-	var ls := clampf(minf(Settings.text_scale, (LOOT_ROW_MAX - 14.0 * (n - 1)) / maxf(1.0, n * LOOT_CARD.x)), 1.0, Settings.TEXT_SCALE_MAX)
+	var ls := clampf(minf(Settings.text_scale, (room - 14.0 * (n - 1)) / maxf(1.0, n * LOOT_CARD.x)), 1.0, Settings.TEXT_SCALE_MAX)
 	for i in n:
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
@@ -1052,7 +1166,8 @@ func _show_reward() -> void:
 		sticker.custom_minimum_size = LOOT_CARD * ls
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		# H24 S17: the whole text on hover and, for a pad or keyboard, on focus (FocusTip).
-		sticker.tooltip_text = UiTip.fold(loot_tip(res))
+		var drag_kind := String({"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer["kind"]), ""))
+		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + tr(String(DRAG_TIPS[drag_kind])) if drag_kind != "" else ""))
 		FocusTip.attach(sticker)
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
@@ -1065,6 +1180,7 @@ func _show_reward() -> void:
 	var wrap := CenterContainer.new()
 	wrap.add_child(win)
 	_set_panel(wrap, false)
+	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
 
@@ -1177,6 +1293,7 @@ func _show_event() -> void:
 	right_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	split.add_child(right_gap)
 	_set_panel(box, false)
+	_register_event_drops(ev, options)
 	if entering:
 		Typing.type_in(text)
 
@@ -1288,7 +1405,8 @@ func _show_shop() -> void:
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
 			elif kind == "daemons":
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
-			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles])
+			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
+				+ "\n" + tr(String(DRAG_TIPS[{"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]])))
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			# H23 S8: a clear buy button on every item, and the whole text on focus.
 			sticker.with_buy(TextDb.mark("BUY"))
@@ -1341,7 +1459,8 @@ func _show_shop() -> void:
 			tile.price_high = high
 		# H23 S8: the real prices ("100-150": the slot you overwrite sets it), said in words.
 		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
-			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd))
+			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
+			+ "\n" + tr(String(DRAG_TIPS["slice"])))
 		tile.with_buy(TextDb.mark("BUY"))
 		FocusTip.attach(tile)
 		var si := i
@@ -1376,6 +1495,11 @@ func _show_shop() -> void:
 	wallet.custom_minimum_size.x = wallet.full_width(ts)
 	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(wallet)
+	# ANIM-4b: the spinner in small beside the wallet: microchips and slice upgrades drag onto
+	# its slots (the socket list and the UPGRADE viewer stay).
+	var mini := _spinner_mini()
+	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	remove_row.add_child(mini)
 	var leave := DripButton.new(tr("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
 	leave.name = "LeaveModem"
 	leave.position = LEAVE_AT
@@ -1389,6 +1513,7 @@ func _show_shop() -> void:
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
 	_set_panel(root, false)
+	_register_shop_drops(mini, fw_slot)
 	if entering:
 		sign.warm_up()
 
@@ -1436,6 +1561,8 @@ func open_remove() -> void:
 	var view := DeckView.new(s.run.operative.deck, s.lookup, tr("REMOVE A CARD // %d CYCLES") % s.card_removal_price(), TextDb.mark("REMOVE"))
 	view.card_picked.connect(remove_card)
 	_open_modal(view)
+	# ANIM-4b: the cards drag onto the SHRED tile (select + REMOVE stays).
+	view.enable_drops(_modal_layer(view))
 
 
 ## Spinner viewer in pick mode: the chosen slot is overwritten with stock slice `stock_index`.
@@ -1450,6 +1577,18 @@ func open_overwrite(stock_index: int) -> void:
 	view.slot_picked.connect(func(slot: int) -> void: overwrite_slice(slot, stock_index))
 	_open_modal(view)
 	view.set_prices(s.slice_overwrite_price, s.run.cycles)
+	# ANIM-4b: the slice being installed sits beside the wheel and drags onto a slot (select
+	# + UPGRADE stays).
+	if sd != null:
+		var chip := ZineCard.new(name_text, -1, Codex.describe(sd), 0)
+		chip.name = "InstallSlice"
+		chip.as_tile(ZineCard.Look.SLICE_TILE, Palette.slice_color(sd.slice_type)).tile_text(Settings.text_scale)
+		chip.slice_type = sd.slice_type
+		chip.slice_output = sd.base_output
+		chip.hotkey = ""
+		chip.custom_minimum_size = Vector2(SpinnerView.SIDE_W, SLICE_TILE.y * tile_growth(Settings.text_scale))
+		chip.tooltip_text = UiTip.fold(tr("Drag it onto a slot to overwrite that slot (or press it, then pick the slot)."))
+		view.enable_drops(_modal_layer(view), chip, _item_payload("slice", "modal", stock_index, sd.id))
 
 
 ## Mid-run raid interlude (GDD 4.4, 7.3): setup with exact projection, run assets and
@@ -1466,8 +1605,29 @@ func _show_raid() -> void:
 		tr("HOLDS") if projection.won else (tr("CAMPAIGN LOST") if projection.campaign_lost else tr("breached")),
 		projection.home_before, projection.home_after, projection.threats_destroyed, projection.steps_run]))
 	var run_assets := s.run_assets()
+	# ANIM-4b: the run's assets and the Armory's as chips to drag onto a node's row (the
+	# lists and buttons stay); a placed asset's Withdraw drags onto another row or back onto
+	# the Armory.
+	var chips := VBoxContainer.new()
+	chips.name = "RaidAssets"
+	box.add_child(chips)
+	var run_row := HFlowContainer.new()
+	run_row.name = "RunAssetChips"
+	run_row.add_theme_constant_override("h_separation", 8)
+	chips.add_child(run_row)
+	run_row.add_child(_label(tr("RUN ASSETS:")))
+	for i in run_assets.size():
+		run_row.add_child(_asset_chip("RunAsset_%d" % i, run_assets[i]))
+	var armory_row := HFlowContainer.new()
+	armory_row.name = "ArmoryChips"
+	armory_row.add_theme_constant_override("h_separation", 8)
+	chips.add_child(armory_row)
+	armory_row.add_child(_label(tr("ARMORY:")))
+	for i in c.armory.size():
+		armory_row.add_child(_asset_chip("Armory_%d" % i, c.armory[i]))
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
+		row.name = "RaidRow_%s" % site_id
 		var n: Dictionary = projection.nodes.get(String(site_id), {})
 		var asset_names := PackedStringArray()
 		for a in c.grid.assets_on(site_id):
@@ -1478,7 +1638,10 @@ func _show_raid() -> void:
 		for i in deployed.size():
 			var idx := i
 			var sid := site_id
-			row.add_child(_button(tr("Withdraw %s") % _content_name(deployed[i]), func() -> void: raid_move(sid, idx, &"")))
+			var withdraw := _button(tr("Withdraw %s") % _content_name(deployed[i]), func() -> void: raid_move(sid, idx, &""))
+			withdraw.name = "Withdraw_%s_%d" % [sid, idx]
+			withdraw.tooltip_text = UiTip.fold(tr("Back to the Armory. Or drag it onto another node's row to move it there."))
+			row.add_child(withdraw)
 		if c.grid.is_active_node(site_id):
 			if not run_assets.is_empty():
 				var pick := OptionButton.new()
@@ -1499,6 +1662,44 @@ func _show_raid() -> void:
 	IconMark.attach(run_btn, StatIcon.RAIDS)
 	box.add_child(run_btn)
 	_set_panel(box)
+	_register_raid_drops(run_assets, armory_row)
+
+
+## A raid interlude's asset chip (ANIM-4b): a taped note with the asset's name that only
+## moves (a press picks it up, as the HQ's crew chips).
+func _asset_chip(chip_name: String, asset: StringName) -> Button:
+	var b := Button.new()
+	b.name = chip_name
+	b.theme_type_variation = &"NoteButton"
+	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	b.text = _content_name(asset)
+	b.tooltip_text = UiTip.fold(tr("Drag it onto a node's row to deploy it there (or press it, then pick the row)."))
+	return b
+
+
+## Raid interlude: the run's and the Armory's chips drag onto every claimed node's row; a
+## placed asset (its Withdraw) onto another row or onto the ARMORY chips.
+func _register_raid_drops(run_assets: Array[StringName], armory_row: Control) -> void:
+	var c := RunManager.campaign
+	for i in run_assets.size():
+		var chip := _panel.find_child("RunAsset_%d" % i, true, false) as Control
+		if chip != null:
+			drops.add_source(chip, {"kind": "run_asset", "index": i, "asset": run_assets[i], "motion": &"loadout_swap"}, true)
+	for i in c.armory.size():
+		var chip := _panel.find_child("Armory_%d" % i, true, false) as Control
+		if chip != null:
+			drops.add_source(chip, {"kind": "armory_asset", "index": i, "asset": c.armory[i], "motion": &"loadout_swap"}, true)
+	for site_id in c.grid.claimed_ids():
+		var sid: StringName = site_id
+		var deployed := c.grid.assets_on(sid)
+		for i in deployed.size():
+			var w := _panel.find_child("Withdraw_%s_%d" % [sid, i], true, false) as Control
+			if w != null:
+				drops.add_source(w, {"kind": "placed", "site": sid, "index": i, "asset": deployed[i], "motion": &"loadout_swap"})
+		var row := _panel.find_child("RaidRow_%s" % sid, true, false) as Control
+		if row != null:
+			drops.add_target("node:%s" % sid, ["run_asset", "armory_asset", "placed"], "node", sid, DropLayer.rect_of(row))
+	drops.add_target("armory", ["placed"], "armory", &"", DropLayer.rect_of(armory_row))
 
 
 ## A content id's translated display name (the id only when there is no such content).
@@ -1549,6 +1750,361 @@ func _show_end() -> void:
 	IconMark.attach(back, StatIcon.BACK)
 	box.add_child(back)
 	_set_panel(box)
+
+
+# --- Drag and drop (Animation pass ANIM-4b) --------------------------------------------------
+# Every item a run moves between places drags there too, as on the HQ (ANIM-4's DropLayer):
+# Modem purchases onto the deck, a slot or the Daemons, deck cards onto the shredder, loot
+# onto the deck, a slot or the Daemons, event rewards onto the deck or the Daemons, raid
+# assets onto nodes. A drop is an intent: `_on_dropped` makes the same call the item's
+# button makes (Signal Up, Call Down). Whether a target takes an item is the rules' own
+# answer, asked of a copy of the run and the campaign (`_dry`): nothing here decides a rule.
+
+## What an item's tooltip adds about dragging it, by item kind (keys).
+const DRAG_TIPS := {"card": "Or drag it onto the CARDS tag: the card goes into your deck.", # TR
+	"chip": "Or drag it onto a slot of your spinner: the chip goes into that slot.", # TR
+	"daemon": "Or drag it onto the DAEMONS icon: the Daemon is installed.", # TR
+	"slice": "Or drag it onto a slot of your spinner: the slice overwrites that slot."} # TR
+
+## The run's drop layer (over every page) and the pad prompts of the page on show (kept, so
+## a carry can swap them and put them back).
+var drops: DropLayer
+var _page_prompts: Array = []
+## The drop layer over an open viewer (the REMOVE deck view, the UPGRADE spinner view);
+## null when none is open.
+var modal_drops: DropLayer = null
+
+
+## True when the run's page for `s` has items to pick up and carry (the pad's X prompt).
+static func has_drags(s: NetrunSession) -> bool:
+	match s.run.phase:
+		RunState.Phase.SHOP, RunState.Phase.REWARD, RunState.Phase.RAID:
+			return true
+		RunState.Phase.EVENT:
+			var ev := s.current_event()
+			if ev != null:
+				for c in ev.choices:
+					if choice_item(c) != "":
+						return true
+	return false
+
+
+## The kind of item an event choice hands over that has a place on screen to go ("card" to
+## the deck, "daemon" to the Daemons), or "" (no item, or one with no second place: a
+## Firmware chip goes on to the loot, where its slot is picked; an asset is banked at a
+## Rack; a rescued operative joins the roster at HQ).
+static func choice_item(c: EventChoiceData) -> String:
+	if c == null or c.reward == null:
+		return ""
+	if c.reward is CardData:
+		return "card"
+	if c.reward is DaemonData:
+		return "daemon"
+	return ""
+
+
+## Sets the page's pad prompts (kept, so a carry can swap them and put them back).
+func set_page_prompts(list: Array) -> void:
+	_page_prompts = list
+	if (drops == null or drops.mode != DropLayer.Mode.CARRY) and (modal_drops == null or not is_instance_valid(modal_drops) or modal_drops.mode != DropLayer.Mode.CARRY):
+		pad_prompts.set_prompts(list)
+
+
+func _on_carry_changed(carrying: bool) -> void:
+	pad_prompts.set_prompts([[&"ui_accept", "Drop"], [&"ui_cancel", "Cancel"]] if carrying else _page_prompts) # TR
+
+
+## A drop layer's questions and intents come to this screen: whether a target takes an
+## item (the rules, dry-run), what the item looks like, and the drop itself.
+func _wire_drops(layer: DropLayer) -> void:
+	layer.check = drop_error
+	layer.ghost_maker = drop_ghost
+	layer.dropped.connect(_on_dropped.bind(layer))
+	layer.refused.connect(_on_refused)
+	layer.carry_changed.connect(_on_carry_changed)
+
+
+## A drop layer over viewer `view` (added after it, so it draws on top, and outliving it:
+## a landing still plays as the viewer closes; it frees itself once its flights end).
+func _modal_layer(view: Control) -> DropLayer:
+	if modal_drops != null and is_instance_valid(modal_drops):
+		modal_drops.retire()
+	var layer := DropLayer.new()
+	layer.name = "ModalDrops"
+	_wire_drops(layer)
+	add_child(layer)
+	modal_drops = layer
+	view.tree_exiting.connect(func() -> void:
+		if is_instance_valid(layer):
+			layer.retire()
+		if modal_drops == layer:
+			modal_drops = null, CONNECT_ONE_SHOT)
+	return layer
+
+
+## The top bar's CARDS tag (global; empty when not shown): where cards go.
+func deck_rect() -> Rect2:
+	var st := hud.stats
+	if st == null or not st.is_visible_in_tree():
+		return Rect2()
+	var rects := st.tag_rects()
+	for i in mini(st.items.size(), rects.size()):
+		if st.icon_of(i) == StatIcon.CARDS:
+			var xf := st.get_global_transform()
+			return Rect2(xf * rects[i].position, rects[i].size * xf.get_scale())
+	return Rect2()
+
+
+## The targets every run page shares: the deck (the CARDS tag) and the Daemons (the top
+## bar's DAEMONS icon, which opens the tray).
+func _add_bar_targets(accepts_deck: Array, accepts_daemons: Array) -> void:
+	if not accepts_deck.is_empty():
+		drops.add_target("deck", accepts_deck, "deck", null, deck_rect)
+	if not accepts_daemons.is_empty():
+		drops.add_target("daemons", accepts_daemons, "daemons", null, DropLayer.rect_of(hud.daemon_button))
+
+
+## The slots of the small spinner `mini` as targets of `accepts` on `layer`.
+func _add_slot_targets(layer: DropLayer, mini: SpinnerMini, accepts: Array) -> void:
+	for k in mini.slices.size():
+		layer.add_target("slot:%d" % k, accepts, "slot", k, DropLayer.rect_of(mini.pad(k)))
+
+
+## The running operative's small spinner (the Modem and a Firmware loot: its slots are
+## where chips and slices go), each slot's pad named as the socket lists name it.
+func _spinner_mini() -> SpinnerMini:
+	var op := RunManager.netrun.run.operative
+	var tips: Array = []
+	for k in op.slot_slice_ids.size():
+		tips.append(slot_name(op, k))
+	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
+	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag a microchip or a slice onto a slot to put it there."))
+	return mini
+
+
+## A drag payload for item `index` of `kind` ("card", "chip", "daemon", "slice") from `src`
+## ("shop", "loot", "event", "modal"): purchases land shrinking into their target with
+## SOLD (`drop_buy`), loot and event items without it.
+func _item_payload(kind: String, src: String, index: int, item: StringName) -> Dictionary:
+	var p := {"kind": kind, "src": src, "index": index, "item": item, "motion": &"drop_buy", "land": "buy"}
+	if src in ["shop", "modal"]:
+		p["stamp"] = tr("SOLD")
+	return p
+
+
+## Modem: cards drag onto the deck, microchips onto a slot of the small spinner, Daemons
+## onto the DAEMONS icon, slice upgrades onto the slot they overwrite.
+func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
+	var shop := RunManager.netrun.run.shop
+	for pair in [["Stickers", "cards", "card"], ["Chips", "firmware", "chip"], ["Daemons", "daemons", "daemon"], ["Slices", "slices", "slice"]]:
+		var row := _panel.find_child(String(pair[0]), true, false) if _panel != null else null
+		if row == null:
+			continue
+		var stock: Array = shop.get(String(pair[1]), [])
+		for i in mini(row.get_child_count(), stock.size()):
+			var c := row.get_child(i) as Control
+			if c == null:
+				continue
+			var p := _item_payload(String(pair[2]), "shop", i, StringName(String(stock[i])))
+			if pair[2] == "chip" and fw_slot != null:
+				p["prefer"] = fw_slot.selected
+			drops.add_source(c, p)
+	_add_bar_targets(["card"], ["daemon"])
+	if mini != null:
+		_add_slot_targets(drops, mini, ["chip", "slice"])
+
+
+## Loot: the offer drags onto where it goes (a card to the deck, a Firmware chip onto a slot,
+## a Daemon onto the DAEMONS icon).
+func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionButton) -> void:
+	var offer := RunManager.netrun.current_reward()
+	var kind := {"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer.get("kind", "")), "") as String
+	if kind == "" or row == null:
+		return
+	var options: Array = offer["options"]
+	for i in mini(row.get_child_count(), options.size()):
+		var p := _item_payload(kind, "loot", i, StringName(String(options[i])))
+		if slot_option != null:
+			p["prefer"] = slot_option.selected
+		drops.add_source(row.get_child(i) as Control, p)
+	_add_bar_targets(["card"], ["daemon"])
+	if mini != null:
+		_add_slot_targets(drops, mini, ["chip"])
+
+
+## Event: a choice that hands over a card or a Daemon drags onto the deck or the Daemons (the
+## choice's own press stays).
+func _register_event_drops(ev: TerminalEventData, options: Control) -> void:
+	var any := false
+	for i in ev.choices.size():
+		var kind := choice_item(ev.choices[i])
+		var b := options.find_child("Choice%d" % (i + 1), false, false) as Control
+		if kind == "" or b == null:
+			continue
+		var p := _item_payload(kind, "event", i, (ev.choices[i].reward as Resource).get("id"))
+		drops.add_source(b, p)
+		b.tooltip_text += "\n" + tr(String(DRAG_TIPS.get(kind, "")))
+		any = true
+	if any:
+		_add_bar_targets(["card"], ["daemon"])
+
+
+## Whether `target` takes `payload`: "" yes, a reason (the rules' own refusal) no, or
+## DropLayer.SKIP when the target is no place for it (where it already is).
+func drop_error(payload: Dictionary, target: Dictionary) -> String:
+	var s := RunManager.netrun
+	if s == null:
+		return DropLayer.SKIP
+	var value: Variant = target.get("value")
+	var i := int(payload.get("index", -1))
+	var src := String(payload.get("src", ""))
+	var ids: Array = [payload.get("item", &"")]
+	match [String(payload.get("kind", "")), String(target.get("kind", ""))]:
+		["card", "deck"], ["daemon", "daemons"]:
+			var plural := "cards" if payload["kind"] == "card" else "daemons"
+			match src:
+				"shop":
+					return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.buy(plural, i), ids)
+				"loot":
+					return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.choose_reward(i), ids)
+				"event":
+					return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.choose_event_option(i), ids)
+		["chip", "slot"]:
+			ids.append(s.run.operative.slot_firmware_ids[int(value)] if int(value) < s.run.operative.slot_firmware_ids.size() else &"")
+			match src:
+				"shop":
+					return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.buy("firmware", i, int(value)), ids)
+				"loot":
+					return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.choose_reward(i, int(value)), ids)
+		["slice", "slot"]:
+			ids.append(s.run.operative.slot_firmware_ids[int(value)] if int(value) < s.run.operative.slot_firmware_ids.size() else &"")
+			return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.overwrite_slice(int(value), i), ids)
+		["deck_card", "shred"]:
+			return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.remove_card(i), ids)
+		["run_asset", "node"]:
+			return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.raid_deploy_run_asset(i, value), ids + [value])
+		["armory_asset", "node"]:
+			return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.raid_deploy_armory(i, value), ids + [value])
+		["placed", "node"]:
+			if value == payload.get("site"):
+				return DropLayer.SKIP
+			return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.raid_move(payload["site"], i, value), ids + [value, payload["site"]])
+		["placed", "armory"]:
+			return _dry(func(d: NetrunSession) -> Array[Dictionary]: return d.raid_move(payload["site"], i, &""), ids + [payload["site"]])
+	return DropLayer.SKIP
+
+
+## Runs rule call `f` on a copy of the run and the campaign: its refusal text (content and
+## Site ids in `ids` written as the screens name them), or "" when it would go through.
+## The real run and campaign are never touched.
+func _dry(f: Callable, ids: Array = []) -> String:
+	var events: Array[Dictionary] = f.call(dry_session())
+	for e in events:
+		if String(e.get("type", "")) == "refused":
+			return _named(String(e.get("text", "refused")), ids)
+	return ""
+
+
+## A copy of the running session with a copy of the campaign (a dry run's playground: the
+## same rules, the same RNG state, nothing shared with the real ones).
+func dry_session() -> NetrunSession:
+	var s := RunManager.netrun
+	var d := s.run.to_dict()
+	d["streams"] = s.streams.to_dict()
+	d["combat"] = s.combat.to_dict() if s.combat != null else {}
+	return NetrunSession.from_dict(s.resolver, s.campaign.duplicate_state(), {"run": d}, s.corporation)
+
+
+## `text` (a rules refusal) with the ids in `ids` written as the screens name them (the rules
+## speak in ids: "barbed_wire does not fit a ATTACK slice.").
+func _named(text: String, ids: Array) -> String:
+	for id in ids:
+		var key := String(id)
+		if key == "" or not text.contains(key):
+			continue
+		var c := RunManager.campaign
+		var is_site := c != null and c.grid != null and (c.grid.is_claimed(StringName(key)) or StringName(key) == c.grid.home_site_id)
+		text = text.replace(key, _site_name(StringName(key)) if is_site else _content_name(key))
+	return text
+
+
+## What a dragged item looks like (its ghost and flying copies): a copy of its sticker or
+## tile, else the item drawn from its content (an event's reward, a raid asset).
+func drop_ghost(payload: Dictionary, source: Control) -> Control:
+	if source is ZineCard:
+		return (source as ZineCard).ghost_copy()
+	var lookup := RunManager.lookup()
+	var id := StringName(String(payload.get("item", payload.get("asset", ""))))
+	var res := lookup.get_content(id) if id != &"" else null
+	if res is CardData:
+		var card := ZineCard.new(TextDb.t(res, "display_name"), (res as CardData).ram_cost, TextDb.t(res, "description"), 0).scaled(Settings.text_scale).with_card(res as CardData)
+		card.hotkey = ""
+		card.size = card.custom_minimum_size
+		return card
+	if res is DaemonData or res is FirmwareData:
+		var tile := ZineCard.new(TextDb.t(res, "display_name"), -1, shop_text(res), 0)
+		tile.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET if res is DaemonData else Palette.NET_CYAN).tile_text(Settings.text_scale)
+		tile.hotkey = ""
+		tile.size = tile.custom_minimum_size
+		return tile
+	if res is DefenseAssetData:
+		var asset := AssetCard.new(id, TextDb.t(res, "display_name"), (res as DefenseAssetData).integrity, 1)
+		asset.set_effect(res)
+		asset.size = asset.custom_minimum_size
+		return asset
+	return null
+
+
+## A valid drop: the same call the item's button makes (the layer already flies the copy).
+func _on_dropped(payload: Dictionary, target: Dictionary, _layer: DropLayer) -> void:
+	var value: Variant = target.get("value")
+	var i := int(payload.get("index", -1))
+	var src := String(payload.get("src", ""))
+	match [String(payload.get("kind", "")), String(target.get("kind", ""))]:
+		["card", "deck"], ["daemon", "daemons"]:
+			match src:
+				"shop":
+					_buy("cards" if payload["kind"] == "card" else "daemons", i, -1, false)
+				"loot":
+					_choose_reward(i, -1, false)
+				"event":
+					choose_event(i)
+		["chip", "slot"]:
+			# The button path: pick the slot in the socket list, then press BUY (or take the loot).
+			if src == "shop":
+				_buy("firmware", i, int(value), false)
+			else:
+				_choose_reward(i, int(value), false)
+		["slice", "slot"]:
+			# In the UPGRADE viewer: select the slot and press UPGRADE; on the Modem page the
+			# same call the viewer's UPGRADE makes.
+			var view := get_node_or_null("SpinnerView") as SpinnerView
+			if src == "modal" and view != null:
+				view.select(int(value))
+				view.confirm()
+			else:
+				overwrite_slice(int(value), i)
+		["deck_card", "shred"]:
+			# The button path: select the card and press REMOVE.
+			var deck_view := get_node_or_null("DeckView") as DeckView
+			if deck_view != null:
+				deck_view.select(i)
+				deck_view.confirm()
+		["run_asset", "node"]:
+			raid_deploy_run_asset(i, value)
+		["armory_asset", "node"]:
+			raid_deploy_armory(i, value)
+		["placed", "node"]:
+			raid_move(payload["site"], i, value)
+		["placed", "armory"]:
+			raid_move(payload["site"], i, &"")
+
+
+## A drop the target refuses: nothing changes; the rules' reason shows, as a button's refusal
+## does.
+func _on_refused(_payload: Dictionary, _target: Dictionary, reason: String) -> void:
+	_log.append_text("[color=orange]%s[/color]\n" % reason)
+	ToastNote.show_on(self, reason, true)
 
 
 # --- Helpers --------------------------------------------------------------------------
@@ -1705,6 +2261,10 @@ func _build_ui() -> void:
 	# Shown only when the player turns it on in Options.
 	_log.visible = Settings.system_log
 	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
+	# ANIM-4b: drag and drop over every page (targets pulse, the pad's reticle, flights).
+	drops = DropLayer.new()
+	_wire_drops(drops)
+	add_child(drops)
 
 
 func _label(text: String) -> Label:

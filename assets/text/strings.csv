@@ -112,6 +112,7 @@ AGAIN,AGAIN
 ALL HOLD,ALL HOLD
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
+ARMORY:,ARMORY:
 ATK,ATK
 ATTACK,ATTACK
 Accessibility,Accessibility
@@ -139,6 +140,7 @@ Back,Back
 Back to HQ,Back to HQ
 "Back to HQ: the campaign, the City Grid and the crew.","Back to HQ: the campaign, the City Grid and the crew."
 Back to the Armory.,Back to the Armory.
+Back to the Armory. Or drag it onto another node's row to move it there.,Back to the Armory. Or drag it onto another node's row to move it there.
 "Back to the HQ: crew, Black Market, Cell status.","Back to the HQ: crew, Black Market, Cell status."
 Back to the HQ; the raid waits until you start the defence.,Back to the HQ; the raid waits until you start the defence.
 Back to the main menu.,Back to the main menu.
@@ -498,6 +500,9 @@ Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Disabled: repair the node on the Grid.,Disabled: repair the node on the Grid.
 Display,Display
+Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
+"Drag it onto a node's row to deploy it there (or press it, then pick the row).","Drag it onto a node's row to deploy it there (or press it, then pick the row)."
+"Drag it onto a slot to overwrite that slot (or press it, then pick the slot).","Drag it onto a slot to overwrite that slot (or press it, then pick the slot)."
 "Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.","Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."
 Drop,Drop
 Drop or click on a glowing target  ·  right-click cancels,Drop or click on a glowing target  ·  right-click cancels
@@ -1291,7 +1296,11 @@ OVERCLOCKED,OVERCLOCKED
 Operative,Operative
 Options,Options
 "Options: text size, sound, controls, subtitles.","Options: text size, sound, controls, subtitles."
+Or drag it onto a slot of your spinner: the chip goes into that slot.,Or drag it onto a slot of your spinner: the chip goes into that slot.
+Or drag it onto a slot of your spinner: the slice overwrites that slot.,Or drag it onto a slot of your spinner: the slice overwrites that slot.
 Or drag it onto any of your nodes.,Or drag it onto any of your nodes.
+Or drag it onto the CARDS tag: the card goes into your deck.,Or drag it onto the CARDS tag: the card goes into your deck.
+Or drag it onto the DAEMONS icon: the Daemon is installed.,Or drag it onto the DAEMONS icon: the Daemon is installed.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
@@ -1399,6 +1408,7 @@ RING LOCK,RING LOCK
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE KEY,ROUTE KEY
 ROUTE VIEW,ROUTE VIEW
+RUN ASSETS:,RUN ASSETS:
 RUN HISTORY,RUN HISTORY
 RUNS,RUNS
 RUNS OPEN NOW,RUNS OPEN NOW
@@ -2568,6 +2578,7 @@ YOUR WHEEL,YOUR WHEEL
 Yes,Yes
 Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
+Your spinner. Drag a microchip or a slice onto a slot to put it there.,Your spinner. Drag a microchip or a slice onto a slot to put it there.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 active,active
 already visited,already visited
@@ -2576,6 +2587,7 @@ boss,boss
 breached,breached
 calibrate_handler,calibrate_handler
 card,card
+chip,chip
 claimed,claimed
 cleared,cleared
 cool,cool
