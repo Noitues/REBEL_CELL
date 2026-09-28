@@ -50,6 +50,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# Animation pass ANIM-6 (screens, menus and ambience): ids the screen motion added.
 	&"saved_stamp_in", &"pad_prompts_in", &"focus_tip_in", &"event_outcome_pop", &"event_choice_stamp",
 	&"sold_stamp", &"caption_crossfade", &"city_sign_pick",
+	# Animation pass ANIM-4b (drag and drop in the run):
+	&"drop_buy", &"shred_feed",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

@@ -219,7 +219,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5"); strips:
   `docs/timeline/motion/`.
 
-### 5.4 Drag and drop, HQ side (the Animation pass, ANIM-4)
+### 5.4 Drag and drop, HQ side and in the run (the Animation pass, ANIM-4 / ANIM-4b)
 - **Anything that moves between places drags**, with the same feel as a combat card
   (ANIM-3): it pops as it lifts, its slot dims, the ghost trails the pointer with a lag
   and a tilt. Every drag has its button, and the button stays.
@@ -237,6 +237,15 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   where it went, which shows as it lands.
 - Reduce effects and headless: no pulses, flights or marks, the end state at once. Values:
   `ui_motion.tres` (DECISIONS "Animation pass — ANIM-4"); strips `docs/timeline/motion/drag_*`.
+- **In the run too (ANIM-4b)**: Modem purchases drag onto where they go (cards onto the
+  CARDS tag, Daemons onto the DAEMONS icon, microchips and slice upgrades onto a slot of
+  the small spinner in the REMOVE A CARD window, or of the UPGRADE viewer's wheel); deck
+  cards drag onto the REMOVE viewer's SHRED tile; loot and an event's card or Daemon drag
+  onto theirs; raid interlude assets onto a node's row. A purchase's copy shrinks into its
+  small target with SOLD stamping on it (`drop_buy`, `sold_stamp`), then settles and
+  stamps; a shredded card squashes into the shredder's mouth as paper strips run out
+  (`shred_feed`). BUY, the socket list, UPGRADE / REMOVE and the loot's press stay (DECISIONS
+  "Animation pass — ANIM-4b"; strips `drag_buy_*`, `drag_shred`, `drag_loot`).
 ### 5.5 Screens, menus and ambience (the Animation pass, ANIM-6)
 - **Pages enter in their world's way** (`PageTransition`): glass slides in from an edge
   with a one-frame CRT roll, paper drops in and settles on its tape; under 0.25 s. Only a

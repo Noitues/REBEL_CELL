@@ -58,6 +58,22 @@ The log prints "anim4: <id> starts on frame N" (the pick-up) and "lets go on fra
 the strips take 8 frames every 5 from the pick-up. `--demo-anim=drag_loadout_cancel` (a
 swap let go beside the wheel) plays too.
 
+## Drag and drop in the run (ANIM-4b)
+
+Same scripted pointer as ANIM-4 (pick-up at 0 ms, let go at about +700 ms a little off the
+target's centre); 10 frames every 4 from the pick-up. Strips are quantized (128 colours).
+
+| Strip | Motion | Variants (top to bottom) | Picked | Captured with |
+|---|---|---|---|---|
+| `drag_buy_card.png` | A Modem card carried onto the top bar's CARDS tag: it shrinks into the tag with SOLD stamping on it, settles and stamps; Cycles roll down, CARDS bumps | `drop_buy` 0.16 s / x0.35, **0.22 s / x0.45**, 0.32 s / x0.6 | 0.22 s / x0.45: lands as the Cycles roll; 0.32 s still hung over the bar after the numbers had changed | netrun `--demo-shop --demo-anim=drag_buy_card` |
+| `drag_buy_chip.png` | A microchip carried onto a slot of the small spinner beside the wallet (the capture has 300 Cycles) | `drop_buy` as above | 0.22 s / x0.45 | netrun `--demo-shop --demo-anim=drag_buy_chip` |
+| `drag_buy_refuse.png` | The same card with 5 Cycles: CARDS refuses, the no-entry mark shakes on it, the card glides home, "Not enough Cycles" | `drop_reject` 0.12 s / 3 px, **0.20 s / 6 px**, 0.35 s / 10 px | 0.20 s / 6 px (ANIM-4's) | netrun `--demo-shop --demo-anim=drag_buy_refuse` |
+| `drag_shred.png` | A deck card carried onto the REMOVE viewer's SHRED tile: it squashes into the mouth as paper strips run out; the viewer closes once it has played | `shred_feed` 0.2 s / 18 px, **0.3 s / 28 px**, 0.45 s / 40 px | 0.3 s / 28 px: reads as shredded; 0.2 s was a vanish, 0.45 s waited | netrun `--demo-shop --demo-anim=drag_shred` |
+| `drag_loot.png` | A loot card carried onto CARDS; the route comes in under the landing | `drop_buy` as above | 0.22 s / x0.45 | netrun `--demo-loot --demo-anim=drag_loot` |
+
+The log prints "anim4b: <id> starts on frame N" and "lets go on frame N"; variants use
+`--demo-set=<id>.<field>=<value>,...`.
+
 ## Screens, menus and ambience (ANIM-6)
 
 Lab strips use `--demo-anim=<id>` ("screen" demos); in-context strips run the scene with
