@@ -10,6 +10,9 @@ extends GutTest
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const SCREEN := Rect2(0, 0, 1280, 720)
 const SETTLE := 12
+## Frames of a reduce-effects jack that are not the fade's own time (the two held frames
+## and each of the two fades' last, overshooting frame).
+const FADE_OVERHEAD_FRAMES := 4
 
 var _reduce: bool
 var _speed: float
@@ -55,10 +58,6 @@ func after_each() -> void:
 func _frames(n: int = 3) -> void:
 	for i in n:
 		await get_tree().process_frame
-
-
-func _seconds(s: float) -> void:
-	await get_tree().create_timer(s).timeout
 
 
 func _scene(path: String) -> Control:
@@ -151,7 +150,7 @@ func test_playout_ends_on_the_resolved_campaign_and_speed_scales_it() -> void:
 		Settings.set_reduce_effects(false)
 	hq.fight_raid()  # the rule, then the playout from the Grid as it stood
 	var resolved := c.to_dict()
-	await _frames()
+	await BoundedWait.frozen_frames(get_tree(), 3)  # the playout must still be under way after the layout frames
 	var p: RaidPlayoutPanel = hq.playout
 	assert_false(p.is_done(), "live, the raid plays over time")
 	assert_not_null(p.fx, "on the city map it plays as motion")
@@ -305,9 +304,9 @@ func test_heat_pulse_fires_once_per_crossing_and_never_on_a_steady_value() -> vo
 	assert_eq(Fx.heat_pulses, pulses + 1, "the same Heat on a new poster: nothing")
 	again.set_heat(55, 100, marks)
 	assert_eq(Fx.heat_pulses, pulses + 2, "one pulse now, the second a pulse later")
-	await _seconds(Motion.seconds(&"heat_pulse") + 0.2)
+	await BoundedWait.until(get_tree(), func() -> bool: return Fx.heat_pulses >= pulses + 3, BoundedWait.motion_limit([&"heat_pulse"]))
 	assert_eq(Fx.heat_pulses, pulses + 3, "each crossing pulses once")
-	await _seconds(maxf(Motion.seconds(&"heat_pulse"), Motion.seconds(&"net_creep")) + 0.2)
+	await BoundedWait.until(get_tree(), func() -> bool: return not Fx.distortion.visible and not Fx.creep_rect.visible and again.stamp_scale == 1.0 and again.shake_offset == Vector2.ZERO, BoundedWait.motion_limit([&"heat_pulse", &"net_creep"]))
 	assert_false(Fx.distortion.visible, "the pulse ends: nothing stays on")
 	assert_false(Fx.creep_rect.visible, "the creep recedes")
 	assert_eq(again.stamp_scale, 1.0, "the band stamp lands")
@@ -344,7 +343,7 @@ func test_a_netrun_move_ends_with_the_marker_on_the_chosen_node() -> void:
 	var secs := overlay2.travel(&"a", &"b")
 	assert_gt(secs, 0.0, "live, the move takes its time")
 	assert_ne(overlay2.here_marker_pos(), overlay2.icon_at(&"b"), "the marker sets off from the old node")
-	await _seconds(secs + 0.2)
+	await BoundedWait.until(get_tree(), func() -> bool: return overlay2.here_marker_pos() == overlay2.icon_at(&"b") and overlay2.dim_t == 1.0, secs + BoundedWait.SLACK)
 	assert_eq(overlay2.here_marker_pos(), overlay2.icon_at(&"b"), "and ends on the chosen node")
 	assert_eq(overlay2.dim_t, 1.0, "the node left behind has dimmed")
 	var overlay3 := _route_map()
@@ -383,11 +382,13 @@ func test_jack_transitions_never_show_both_scenes() -> void:
 	get_tree().process_frame.connect(tick)
 	await Fx.jack_in(func() -> void: seen.append([Fx.cover_opaque(), Fx.transition_rect.color.a]))
 	get_tree().process_frame.disconnect(tick)
+	# Less its FADE_OVERHEAD_FRAMES longest frames (Test suite: bounded waits): besides the
+	# two fades' own time the switch holds two frames and each fade ends on a frame that
+	# overshoots it; on a loaded machine those frames alone can outlast the margin.
 	var took := 0.0
-	for d in deltas:
-		took += d
-	if not deltas.is_empty():
-		took -= deltas.max()
+	deltas.sort()
+	for i in maxi(0, deltas.size() - FADE_OVERHEAD_FRAMES):
+		took += deltas[i]
 	assert_eq(seen[0][1], 1.0, "reduce effects: a fade to black, the switch at its darkest")
 	assert_lt(took, Motion.entry(&"jack_fade_reduced").duration * 2.0 + 0.3, "a short fade (about 0.2 s; slack of its own length for uneven frames)")
 	assert_eq(Fx.transition_rect.color.a, 0.0, "and back")
@@ -432,7 +433,7 @@ func test_an_asset_drops_onto_its_node_with_a_stamp() -> void:
 		Settings.set_reduce_effects(false)
 	hq.play_asset_drop(target)
 	assert_lt(hq.city_overlay.drop_t, 1.0, "live: it falls")
-	await _seconds(Motion.seconds(&"asset_drop") + 0.2)
+	await BoundedWait.until(get_tree(), func() -> bool: return hq.city_overlay.drop_t == 1.0, BoundedWait.motion_limit([&"asset_drop"]))
 	assert_eq(hq.city_overlay.drop_t, 1.0, "and lands")
 
 
@@ -456,7 +457,7 @@ func test_the_folding_key_slides_and_frames_for_its_folded_line() -> void:
 	legend.set_opened(false)
 	assert_false(legend.opened, "folded at once for the layout")
 	assert_eq(legend.fit_size(), folded)
-	await _seconds(Motion.seconds(&"legend_fold") + 0.2)
+	await BoundedWait.until(get_tree(), func() -> bool: return legend.fit_size() == legend.get_combined_minimum_size(), BoundedWait.motion_limit([&"legend_fold"]))
 	assert_eq(legend.fit_size(), legend.get_combined_minimum_size(), "the rows hide when they have slid out")
 
 

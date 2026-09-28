@@ -585,7 +585,7 @@ func test_views_never_change_game_state() -> void:
 	for k in 6:
 		hq.drops.step_aim(1)
 	hq.drops.cancel()
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3).timeout  # fixed-wait-ok: any point mid-motion; finish_all then shows the end state
 	hq.drops.finish_all()
 	hq.show_hq()
 	await _frames(3)
