@@ -161,20 +161,38 @@ const FRAME_SIGNALS: Array[String] = ["process_frame", "physics_frame", "frame_p
 
 
 ## ANIM-R3 B11: the forms a frame signal is connected in: `<sig>.connect(`, `<sig> .connect (`
-## and `connect("<sig>", ` / `connect(&"<sig>", ` (Object.connect by name). Group 1 is what is
-## connected (up to the next comma or the line's end).
+## and `connect("<sig>", ` / `connect(&"<sig>", ` (Object.connect by name); ANIM-R4 H8:
+## `Signal(obj, "<sig>").connect(`. Group 1 is what is connected (to the line's end).
 const FRAME_CONNECT_PATTERNS: Array[String] = [
 	"\\b(?:%s)\\s*\\.\\s*connect\\s*\\(\\s*(.*)$",
 	"\\bconnect\\s*\\(\\s*&?\"(?:%s)\"\\s*,\\s*(.*)$",
+	"\\bSignal\\s*\\(.*?,\\s*&?\"(?:%s)\"\\s*\\)\\s*\\.\\s*connect\\s*\\(\\s*(.*)$",
 ]
 
 
-## The code of `line` without its comment ("" for a comment line). Strings are kept.
+## The code of `line` without its comment ("" for a comment line). ANIM-R4 H8: string
+## literals are emptied ("" stays) unless they name a frame signal (the connect-by-name
+## forms), so a test's quoted example line is not code.
 static func _frame_code(line: String) -> String:
-	var code := line.strip_edges()
-	if code.begins_with("#"):
-		return ""
-	return code
+	var out := ""
+	var i := 0
+	while i < line.length():
+		var ch := line[i]
+		if ch == "#":
+			break
+		if ch == "\"" or ch == "'":
+			var j := i + 1
+			while j < line.length() and line[j] != ch:
+				if line[j] == "\\":
+					j += 1
+				j += 1
+			var body := line.substr(i + 1, j - i - 1)
+			out += ch + (body if FRAME_SIGNALS.has(body) else "") + ch
+			i = j + 1
+			continue
+		out += ch
+		i += 1
+	return out.strip_edges()
 
 
 ## What `line` connects to a frame signal ("" when it connects nothing to one).
@@ -223,11 +241,18 @@ static func lambda_names(lines: PackedStringArray) -> Dictionary:
 
 
 ## The 0-based numbers of `lines` (one script) that connect a lambda to a frame signal.
+## ANIM-R4 H8: a connect whose line ends open (`process_frame.connect(` with the `func` on
+## the next line) is read with the lines that follow it until the call has an argument.
 static func frame_lambda_lines(lines: PackedStringArray) -> Array[int]:
 	var lambdas := lambda_names(lines)
 	var out: Array[int] = []
 	for n in lines.size():
-		if frame_lambda(lines[n], lambdas):
+		var line := lines[n]
+		var k := n
+		while k + 1 < lines.size() and (_frame_code(line).ends_with("(") or _frame_code(line).ends_with(",")) and _frame_target(line) == "" and k - n < 3:
+			k += 1
+			line = _frame_code(line) + " " + _frame_code(lines[k])
+		if frame_lambda(line, lambdas):
 			out.append(n)
 	return out
 
@@ -236,14 +261,17 @@ func test_no_lambda_is_connected_to_a_frame_signal() -> void:
 	assert_true(frame_lambda("\tget_tree().process_frame.connect(func() -> void:"), "a lambda on process_frame is caught")
 	assert_true(frame_lambda("RenderingServer.frame_post_draw.connect(func() -> void: pass)"), "and on the renderer's")
 	assert_false(frame_lambda("\tget_tree().process_frame.connect(_redraw_top_later, CONNECT_ONE_SHOT)"), "a method passes")
+	# ANIM-R4 H8: the tests and the tools too (a test's lambda on process_frame outlives a
+	# freed test the same way).
 	var paths: Array[String] = []
-	_game_scripts("res://scripts", paths)
+	for root in ["res://scripts", "res://tests", "res://tools"]:
+		_game_scripts(root, paths)
 	var found: Array[String] = []
 	for p in paths:
 		var lines := FileAccess.get_file_as_string(p).split("\n")
 		for n in frame_lambda_lines(lines):
 			found.append("%s:%d %s" % [p, n + 1, lines[n].strip_edges()])
-	assert_eq(found, [] as Array[String], "no lambda on a frame signal in scripts/")
+	assert_eq(found, [] as Array[String], "no lambda on a frame signal in scripts/, tests/ or tools/")
 
 
 ## ANIM-R3 B11: the rule's heuristics: the spacings and forms that slipped past it, lambdas
@@ -275,6 +303,13 @@ func test_the_frame_lambda_rule_catches_every_form() -> void:
 	assert_false(frame_lambda("\tbutton.pressed.connect(func(): pass)"), "a lambda on another signal")
 	assert_false(frame_lambda("\tawait get_tree().process_frame"), "an await")
 	assert_false(frame_lambda("\tget_tree().process_frame.disconnect(_on_frame)"), "a disconnect")
+	# ANIM-R4 H8: a connect over two lines, Signal(obj, name), and quoted examples.
+	assert_eq(frame_lambda_lines(PackedStringArray(["\tget_tree().process_frame.connect(", "\t\tfunc() -> void: pass)"])), [0] as Array[int], "the func on the next line")
+	assert_eq(frame_lambda_lines(PackedStringArray(["\tget_tree().process_frame.connect(", "\t\t_on_frame, CONNECT_ONE_SHOT)"])), [] as Array[int], "a method on the next line passes")
+	assert_true(frame_lambda("\tSignal(get_tree(), \"process_frame\").connect(func(): pass)"), "Signal(obj, name).connect(func")
+	assert_true(frame_lambda("\tSignal(tree, &\"frame_post_draw\") .connect( func(): pass)"), "with a StringName and spaces")
+	assert_false(frame_lambda("\tSignal(get_tree(), \"process_frame\").connect(_on_frame)"), "a method on Signal() passes")
+	assert_false(frame_lambda("\tassert_true(frame_lambda(\"tree.process_frame.connect(func(): pass)\"))"), "a quoted example is not code")
 
 
 ## Test suite: bounded waits (DECISIONS): a test that starts a motion and then waits a fixed
@@ -287,7 +322,11 @@ func test_the_frame_lambda_rule_catches_every_form() -> void:
 ## line right above it) carrying FIXED_WAIT_OK and a reason is let through: a wait that only
 ## lets motion run before a skip or settle, or a performance bound. Text in strings and
 ## comments is not code.
-const FIXED_WAIT_CALLS: Array[String] = ["create_timer(", "wait_seconds(", "Time.get_ticks_msec(", "Time.get_ticks_usec("]
+## ANIM-R4 H8: a tween's pause (`tween_interval`), a Timer made in the test (`Timer.new()`,
+## its `wait_time`), a blocking sleep (`OS.delay_msec` / `delay_usec`) and the wall clock's
+## other reads (`get_unix_time`) too.
+const FIXED_WAIT_CALLS: Array[String] = ["create_timer(", "wait_seconds(", "Time.get_ticks_msec(", "Time.get_ticks_usec(",
+	"tween_interval(", "Timer.new(", "wait_time", "OS.delay_msec(", "OS.delay_usec(", "get_unix_time"]
 const FIXED_WAIT_OK := "# fixed-wait-ok:"
 const ASSERT_CALLS: Array[String] = ["assert_", "pass_test(", "fail_test(", "pending("]
 
@@ -324,11 +363,14 @@ static func fixed_waits(src: String) -> Array[String]:
 	var in_fn := false
 	for n in lines.size():
 		var raw := lines[n]
-		if raw.begins_with("func ") or raw.begins_with("static func "):
+		# ANIM-R4 H8: an inner class's methods are functions of their own (indented): a wait in
+		# one is its own (a helper: its caller asserts), not the test above it.
+		if _is_func_line(raw):
 			in_fn = true
 			fn_is_test = raw.begins_with("func test_")
 			continue
-		if raw.begins_with("const ") or raw.begins_with("var ") or raw.begins_with("class ") or raw.begins_with("static var "):
+		var bare := raw.strip_edges()
+		if bare.begins_with("const ") or (raw.begins_with("var ") or raw.begins_with("static var ")) or bare.begins_with("class ") or bare.begins_with("class_name "):
 			in_fn = false
 			continue
 		if not in_fn:
@@ -336,7 +378,7 @@ static func fixed_waits(src: String) -> Array[String]:
 		var code := _code_of(raw)
 		var waits := false
 		for call in FIXED_WAIT_CALLS:
-			if code.contains(call):
+			if code.contains(call) and _waits_here(call, lines, n):
 				waits = true
 		if not waits:
 			continue
@@ -344,7 +386,7 @@ static func fixed_waits(src: String) -> Array[String]:
 			continue
 		var asserts := not fn_is_test
 		var k := n  # the wait's own line may assert (a wall-clock read inside an assert)
-		while not asserts and k < lines.size() and not (lines[k].begins_with("func ") or lines[k].begins_with("static func ")):
+		while not asserts and k < lines.size() and (k == n or not _is_func_line(lines[k])):
 			var later := _code_of(lines[k])
 			for a in ASSERT_CALLS:
 				if later.contains(a):
@@ -353,6 +395,53 @@ static func fixed_waits(src: String) -> Array[String]:
 		if asserts:
 			out.append("%d: %s" % [n + 1, raw.strip_edges()])
 	return out
+
+
+## ANIM-R4 H8: whether `call` on line `n` of `lines` is a wait. A tween's interval waits only
+## when something awaits it (the line, or a later `await ... .finished` in the function):
+## an interval that only keeps a tween running (a sequence under way) is no wait. A blocking
+## sleep inside a lambda (a poll's condition standing in for a loaded machine's slow frames)
+## is load, not a wait. Every other call always is.
+static func _waits_here(call: String, lines: PackedStringArray, n: int) -> bool:
+	if call == "tween_interval(":
+		if _code_of(lines[n]).contains("await"):
+			return true
+		var k := n + 1
+		while k < lines.size() and not _is_func_line(lines[k]):
+			var later := _code_of(lines[k])
+			if later.contains("await") and later.contains(".finished"):
+				return true
+			k += 1
+		return false
+	if call.begins_with("OS.delay_"):
+		return not _in_lambda(lines, n)
+	return true
+
+
+## True when line `n` sits in a lambda's body: the nearest line above it indented less opens
+## a `func(`.
+static func _in_lambda(lines: PackedStringArray, n: int) -> bool:
+	var depth := _indent(lines[n])
+	for k in range(n - 1, -1, -1):
+		if lines[k].strip_edges() == "":
+			continue
+		if _indent(lines[k]) < depth:
+			var code := _code_of(lines[k])
+			return code.contains("func(") or code.contains("func (")
+	return false
+
+
+static func _indent(line: String) -> int:
+	var i := 0
+	while i < line.length() and line[i] == "\t":
+		i += 1
+	return i
+
+
+## True when `raw` starts a function (at the top level or in an inner class).
+static func _is_func_line(raw: String) -> bool:
+	var bare := raw.strip_edges()
+	return bare.begins_with("func ") or bare.begins_with("static func ")
 
 
 func test_no_fixed_wait_gates_an_assertion() -> void:
@@ -367,6 +456,18 @@ func test_no_fixed_wait_gates_an_assertion() -> void:
 	assert_eq(fixed_waits(gated.replace("\tawait get_tree()", "\t# fixed-wait-ok: why\n\tawait get_tree()")).size(), 0, "on the line above too")
 	assert_eq(fixed_waits("func test_x() -> void:\n\tassert_true(has(\"create_timer(\"))\n\t# wait_seconds(1)\n\tassert_true(b)\n").size(), 0, "strings and comments are not code")
 	assert_eq(fixed_waits("func test_x() -> void:\n\tawait BoundedWait.until(get_tree(), f, 1.0)\n\tassert_true(f.call())\n").size(), 0, "a bounded poll passes")
+	# ANIM-R4 H8: the other fixed waits and clocks, and inner classes.
+	assert_eq(fixed_waits(gated.replace("get_tree().create_timer(0.3).timeout", "create_tween().tween_interval(0.3).finished")).size(), 1, "tween_interval")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tvar t := Timer.new()\n\tt.wait_time = 0.3\n\tawait t.timeout\n\tassert_true(a)\n").size(), 2, "a Timer made in the test and its wait_time")
+	assert_eq(fixed_waits(gated.replace("await get_tree().create_timer(0.3).timeout", "OS.delay_msec(300)")).size(), 1, "OS.delay_msec")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tvar t := Time.get_unix_time_from_system()\n\tassert_lt(Time.get_unix_time_from_system() - t, 1.0)\n").size(), 2, "get_unix_time")
+	var inner := "func test_x() -> void:\n\tassert_true(a)\n\nclass Helper:\n\tfunc wait_a_bit() -> void:\n\t\tawait tree.create_timer(0.3).timeout\n"
+	assert_eq(fixed_waits(inner), ["6: await tree.create_timer(0.3).timeout"] as Array[String], "an inner class's helper is its own function, flagged on its own line")
+	var inner_test := "class Helper:\n\tfunc go() -> void:\n\t\tpass\n\nfunc test_x() -> void:\n\tawait get_tree().create_timer(0.3).timeout\n\tskip()\n"
+	assert_eq(fixed_waits(inner_test).size(), 0, "a test after an inner class is a test (no assertion after its wait: passes)")
+	# No false alarms: an interval that keeps a sequence running, a sleep standing in for load.
+	assert_eq(fixed_waits("func test_x() -> void:\n\tseq = create_tween()\n\tseq.tween_interval(5.0)\n\tbreak_it()\n\tassert_true(busy())\n").size(), 0, "an interval nothing awaits")
+	assert_eq(fixed_waits("func test_x() -> void:\n\tvar ok := await BoundedWait.until(get_tree(), func() -> bool:\n\t\tOS.delay_msec(12)\n\t\treturn done(), 2.0)\n\tassert_true(ok)\n").size(), 0, "a sleep in a poll's lambda (load)")
 	var found: Array[String] = []
 	for p in _test_scripts():
 		for w in fixed_waits(FileAccess.get_file_as_string(p)):
