@@ -75,6 +75,8 @@ const SIGN_MOTION := &"hq_sign_flicker"
 const SIGN_PICK_MOTION := &"city_sign_pick"
 
 ## Tile half-width / half-height of the isometric grid (2:1).
+## ANIM-R1 M15: the smallest hatch step along a face (a share of its width).
+const HATCH_STEP_MIN := 0.0005
 const TILE_A := 34.0
 const TILE_B := 17.0
 ## Streets are one lot wide; blocks between them run BLOCK_MIN..BLOCK_MAX lots, so the
@@ -1738,6 +1740,9 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 			var gap := 3.5 if shaded else 5.0
 			var rise := hpx / wpx
 			var u0 := -rise
+			# ANIM-R1 M15: a bounded count of hatch lines (a face measured huge never loops).
+			if not is_finite(rise) or gap / wpx < HATCH_STEP_MIN:
+				return
 			while u0 < 1.0:
 				var v_lo := maxf(0.0, -u0 / rise)
 				var v_hi := minf(1.0, (1.0 - u0) / rise)

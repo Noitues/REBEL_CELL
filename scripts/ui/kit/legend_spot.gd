@@ -12,6 +12,8 @@ extends RefCounted
 ## Step between the spots tried (px) and the margin kept from the area's edges (px).
 const STEP := 16.0
 const MARGIN := 10.0
+## ANIM-R1 M15: the most spots tried along each axis (a bigger area is sampled evenly).
+const SPOTS_MAX := 200
 ## Clearance round a node icon (share of its radius).
 const ICON_CLEAR := 0.3
 ## The most one `fit_into` pass zooms out (a factor per pass; later passes settle it), and
@@ -70,23 +72,32 @@ static func place(legend: Control, overlay: CityMapOverlay) -> float:
 	var blocked := node_rects(overlay, false)
 	var max_x := maxf(MARGIN, area.size.x - lsize.x - MARGIN)
 	var max_y := maxf(MARGIN, area.size.y - lsize.y - MARGIN)
+	# ANIM-R1 M15: measured geometry that is not finite (a frame mid-layout) never loops:
+	# maxf / minf with NaN kept the old loops going for ever.
+	if not (is_finite(max_x) and is_finite(max_y) and is_finite(lsize.x) and is_finite(lsize.y)):
+		legend.position = Vector2(MARGIN, MARGIN)
+		return INF
 	var best := Vector2(MARGIN, max_y)
 	var best_hits := INF
-	var x := MARGIN
-	while best_hits > 0.0:
-		var y := max_y
-		while true:
-			var at := Vector2(x, y)
+	# The spots tried: at most SPOTS_MAX per axis (a huge area is sampled, never walked).
+	var cols := ceili((max_x - MARGIN) / STEP) + 1
+	var rows := ceili((max_y - MARGIN) / STEP) + 1
+	var step_x := STEP if cols <= SPOTS_MAX else (max_x - MARGIN) / (SPOTS_MAX - 1)
+	var step_y := STEP if rows <= SPOTS_MAX else (max_y - MARGIN) / (SPOTS_MAX - 1)
+	cols = mini(cols, SPOTS_MAX)
+	rows = mini(rows, SPOTS_MAX)
+	for ci in cols:
+		var x := minf(max_x, MARGIN + step_x * ci)
+		for ri in rows:
+			var at := Vector2(x, maxf(MARGIN, max_y - step_y * ri))
 			var hits := covered(Rect2(area.position + at, lsize), blocked)
 			if hits < best_hits:
 				best_hits = hits
 				best = at
-			if hits == 0.0 or y <= MARGIN:
+			if hits == 0.0:
 				break
-			y = maxf(MARGIN, y - STEP)
-		if x >= max_x:
+		if best_hits <= 0.0:
 			break
-		x = minf(max_x, x + STEP)
 	legend.position = best
 	return best_hits
 

@@ -171,6 +171,8 @@ const SAVED_FONT := 14
 const SAVED_MARGIN := 8.0
 ## Step between the spots tried along the screen's edges (px).
 const SAVED_STEP := 24.0
+## ANIM-R1 M15: the largest screen side the spot search walks (px).
+const SAVED_SCREEN_MAX := 16384.0
 
 
 ## Puts the SAVED stamp at the first spot of `screen` (the viewport when empty) that
@@ -197,6 +199,9 @@ static func saved_spot(stamp: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Ve
 	var inner := screen.grow(-SAVED_MARGIN)
 	var right := inner.end.x - stamp.x
 	var bottom := inner.end.y - stamp.y
+	# ANIM-R1 M15: a measure that is not finite (or a screen far too big) never loops.
+	if not (is_finite(right) and is_finite(bottom) and is_finite(inner.position.x) and is_finite(inner.position.y)) 			or inner.size.x > SAVED_SCREEN_MAX or inner.size.y > SAVED_SCREEN_MAX:
+		return Vector2(right, bottom) if is_finite(right) and is_finite(bottom) else Vector2.ZERO
 	var spots: Array[Vector2] = []
 	var x := right
 	while x >= inner.position.x:
@@ -244,6 +249,11 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 		if child is Control:
 			var c := child as Control
 			var usable := (c is BaseButton and c.mouse_filter != Control.MOUSE_FILTER_IGNORE) or c is LineEdit or (c is Range and not (c is ScrollBar))
+			if c is HudStats:
+				# ANIM-R1 M12: the top bar's tags carry numbers (at 1.6 the stamp sat on CREW).
+				var xf := c.get_global_transform()
+				for r: Rect2 in (c as HudStats).tag_rects():
+					out.append(Rect2(xf * r.position, r.size * xf.get_scale()))
 			if usable or c is MapLegend or c is RouteLegend or c is PadPrompts:
 				var r := _shown_rect(c)
 				if r.has_area():

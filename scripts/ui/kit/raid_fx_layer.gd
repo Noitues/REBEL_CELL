@@ -513,8 +513,10 @@ func _draw_tints(_k: float) -> void:
 
 func _dashed(a: Vector2, b: Vector2, col: Color, width: float, dash: float) -> void:
 	var length := a.distance_to(b)
+	# ANIM-R1 M15: a bounded count (a zero dash or a length not finite never loops).
+	if dash <= 0.0 or not is_finite(length) or not is_finite(dash):
+		return
 	var dir := (b - a) / maxf(length, 0.001)
-	var t := 0.0
-	while t < length:
+	for q in mini(CityMapOverlay.DASHES_MAX, ceili(length / (dash * 2.0))):
+		var t := q * dash * 2.0
 		draw_line(a + dir * t, a + dir * minf(t + dash, length), col, width)
-		t += dash * 2.0

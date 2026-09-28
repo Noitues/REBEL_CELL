@@ -2160,6 +2160,8 @@ func show_raid() -> void:
 	if _raid_strip:
 		raid_legend.minimum_size_changed.disconnect(raid_legend._repin)
 	_raid_reframes = 0
+	_raid_passes = 0
+	_raid_checks = 0
 	_raid_free = Rect2()
 	_raid_step = {}
 	_raid_box = Rect2()
@@ -2394,6 +2396,14 @@ func place_raid_legend() -> void:
 	var box: Rect2 = wireframe.unrigged(raid_node_box)
 	if not free.has_area() or not box.has_area():
 		return
+	# ANIM-R1 M15: the whole page's framing is bounded, whatever its layouts do. A free
+	# rect that kept changing reset the per-layout pass count, and a measure that never held
+	# still asked for a check every frame: under some layouts and timings the framing never
+	# ended (each pass a new camera, a new city build), the full suite hanging at 100% CPU.
+	_raid_checks += 1
+	if _raid_checks > RAID_CHECKS_MAX or _raid_passes >= RAID_PASSES_MAX:
+		wireframe.ease_camera()
+		return
 	# Act only on a settled measure: the same free rect and node box for RAID_STABLE_FRAMES
 	# frames in a row. The icons follow the camera a redraw or two late (and jump again when
 	# the city's new stretch is baked), and the page's layout settles over a few frames;
@@ -2429,6 +2439,7 @@ func place_raid_legend() -> void:
 		_use_raid_strip()
 		return
 	_raid_reframes += 1
+	_raid_passes += 1
 	# Never further out than RAID_MIN_ZOOM (a far camera bakes a huge stretch of city).
 	k = clampf(k, RAID_MIN_ZOOM / maxf(RAID_MIN_ZOOM, city.scale.x), 1.0)
 	var anchor := city.focus_anchor
@@ -2484,6 +2495,13 @@ var _raid_same: int = 0
 var _raid_frame: int = -1
 ## Frames a measure must hold before the camera acts on it.
 const RAID_STABLE_FRAMES := 2
+## ANIM-R1 M15: bounds on one raid page's framing, whatever its layouts do: the camera
+## moves (over every layout the page goes through) and the checks (frames and redraws the
+## framing looks at the map). Past either, the frame it has is the frame it keeps.
+const RAID_PASSES_MAX := RAID_REFRAMES_MAX * 3
+const RAID_CHECKS_MAX := 240
+var _raid_passes: int = 0
+var _raid_checks: int = 0
 
 
 ## The part of the raid map's area the nodes should sit in (screen px): the area less its
