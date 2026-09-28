@@ -21,6 +21,18 @@ const ARROW_HEAD := 9.0
 ## over the last FADE_SHARE.
 const GROW_SHARE := 0.25
 const FADE_SHARE := 0.35
+## ANIM-R2 E10 (named, were inline): a number grows in from this share of its size; a crit
+## pops from this scale and settles; a travelling number fades to this alpha on its way.
+const GROW_FROM := 0.6
+const CRIT_POP_SCALE := 1.35
+const TRAVEL_FADE_TO := 0.6
+## A hit's projectile flies over this share of `hit_line` (the impact), and its line fades
+## over the rest.
+const LINE_DRAW_SHARE := 0.5
+## The number riding with a projectile: its size as a share of a floating number's, and its
+## offset from the projectile's head (share of that size).
+const RIDE_FONT_SHARE := 0.8
+const RIDE_OFFSET := 0.9
 ## Status stamp lettering (px at text scale 1.0) and its disc.
 const STAMP_FONT := 16
 const STAMP_DISC := 11.0
@@ -131,7 +143,7 @@ func _local(global: Vector2) -> Vector2:
 ## entry: amplitude = the drift unless `rise` >= 0). Crits grow by `number_crit` and get
 ## a star burst. Returns the rect it covers at its biggest (global), for layout checks.
 func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector2 = Vector2.UP, crit: bool = false, rise: float = -1.0,
-		font_size: int = -1, band: String = "") -> Rect2:
+		font_size: int = -1, band: String = "", extra_delay: float = 0.0) -> Rect2:
 	var fs := number_font(crit) if font_size <= 0 else font_size
 	var drift := Motion.amplitude(id) if rise < 0.0 else rise
 	var rect := number_rect(at, text, crit, dir * drift, fs)
@@ -139,7 +151,7 @@ func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector
 		return rect
 	_hurry(band)
 	var e := Motion.entry(id)
-	_add({"kind": "number", "at": at, "text": text, "color": color, "dur": Motion.seconds(id), "delay": Motion.delay_of(id),
+	_add({"kind": "number", "at": at, "text": text, "color": color, "dur": Motion.seconds(id), "delay": Motion.delay_of(id) + extra_delay,
 		"dir": dir, "rise": drift, "fs": fs, "crit": crit, "ease": e.ease, "trans": e.trans, "band": band})
 	if crit and Motion.live(&"number_crit"):
 		burst(at, color, &"number_crit")
@@ -151,19 +163,24 @@ func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector
 ## `on_arrive` runs as it gets there (the HP rolls down then). A skip drops it (the end
 ## state shows anyway). `band` names the hub band it sits in: a new number in the same
 ## band sends the one resting there on its way at once, so two never rest on each other.
+## ANIM-R2: it shows `delay` seconds from now (a hit's impact); with `raw` it first shows
+## the hit's raw number for `absorb` seconds (a guard takes its part meanwhile), then pops
+## to `text`, the HP it takes, which is what travels.
 func travel_number(at: Vector2, to: Vector2, text: String, color: Color, crit: bool, font_size: int, band: String,
-		on_arrive: Callable = Callable()) -> void:
+		on_arrive: Callable = Callable(), delay: float = 0.0, raw: String = "", absorb: float = 0.0) -> void:
 	if not Motion.live(&"number_to_hp"):
 		if on_arrive.is_valid():
 			on_arrive.call()
 		return
 	_hurry(band)
 	var e := Motion.entry(&"number_to_hp")
-	_add({"kind": "travel", "at": at, "to": to, "text": text, "color": color, "fs": font_size, "crit": crit,
-		"hold": Motion.delay_of(&"number_to_hp"), "dur": Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp"),
+	var swap := absorb if raw != "" else 0.0
+	var hold := swap + Motion.delay_of(&"number_to_hp")
+	_add({"kind": "travel", "at": at, "to": to, "text": text, "raw": raw, "swap": swap, "color": color, "fs": font_size, "crit": crit,
+		"delay": delay, "hold": hold, "dur": hold + Motion.seconds(&"number_to_hp"),
 		"shrink": Motion.amplitude(&"number_to_hp"), "ease": e.ease, "trans": e.trans, "band": band, "on_arrive": on_arrive})
 	if crit and Motion.live(&"number_crit"):
-		burst(at, color, &"number_crit")
+		burst(at, color, &"number_crit", delay)
 
 
 ## The numbers resting in `band` move on: a travelling one sets off now, a floating one
@@ -175,7 +192,7 @@ func _hurry(band: String) -> void:
 		if String(s.get("band", "")) != band:
 			continue
 		if String(s["kind"]) == "travel":
-			s["age"] = maxf(float(s["age"]), float(s["hold"]))
+			s["age"] = maxf(float(s["age"]), float(s.get("delay", 0.0)) + float(s["hold"]))
 		elif String(s["kind"]) == "number":
 			sprites.erase(s)
 
@@ -186,7 +203,10 @@ func resting_numbers() -> Array:
 	var out: Array = []
 	for s in sprites:
 		var k := String(s["kind"])
-		if k == "number" or (k == "travel" and float(s["age"]) < float(s["hold"])):
+		var a := float(s["age"]) - float(s.get("delay", 0.0))
+		if a < 0.0:
+			continue
+		if k == "number" or (k == "travel" and a < float(s["hold"])):
 			out.append({"rect": number_rect(s["at"], String(s["text"]), bool(s["crit"]), Vector2.ZERO, int(s["fs"])), "band": String(s.get("band", ""))})
 	return out
 
@@ -209,12 +229,12 @@ static func number_rect(at: Vector2, text: String, crit: bool, travel: Vector2, 
 
 ## A star burst at `at` (global) growing to `id`'s amplitude px (or x its scale when the
 ## amplitude is a scale below 4).
-func burst(at: Vector2, color: Color, id: StringName) -> void:
+func burst(at: Vector2, color: Color, id: StringName, delay: float = 0.0) -> void:
 	if not Motion.live(id):
 		return
 	var amp := Motion.amplitude(id)
 	var radius := amp if amp >= 4.0 else NUMBER_FONT * Settings.text_scale * amp
-	_add({"kind": "burst", "at": at, "color": color, "dur": Motion.seconds(id), "radius": radius})
+	_add({"kind": "burst", "at": at, "color": color, "dur": Motion.seconds(id), "radius": radius, "delay": delay})
 
 
 ## A ring at `at` (global) growing from `radius` by `id`'s amplitude px as it fades.
@@ -224,25 +244,42 @@ func ring(at: Vector2, radius: float, color: Color, id: StringName) -> void:
 	_add({"kind": "ring", "at": at, "r0": radius, "grow": Motion.amplitude(id), "color": color, "dur": Motion.seconds(id)})
 
 
-## A hit line from `from` to `to` (global): draws in over the first half, fades over the
-## second, an arrowhead at the victim.
-func hit_line(from: Vector2, to: Vector2, color: Color) -> void:
+## A hit from `from` to `to` (global): a projectile (a bright head with an arrowhead, its
+## thick trail in the attacker's `color`) flies over LINE_DRAW_SHARE of `hit_line`, `label`
+## (the hit's raw number) riding beside it; the line then fades with the arrowhead at the
+## victim. ANIM-R2: hits play one at a time (the schedule spaces them `hit_line` apart).
+func hit_line(from: Vector2, to: Vector2, color: Color, label: String = "") -> void:
 	if not Motion.live(&"hit_line") or from.distance_to(to) < 1.0:
 		return
-	_add({"kind": "line", "from": from, "to": to, "color": color, "dur": Motion.seconds(&"hit_line"), "width": Motion.amplitude(&"hit_line")})
+	_add({"kind": "line", "from": from, "to": to, "color": color, "dur": Motion.seconds(&"hit_line"), "width": Motion.amplitude(&"hit_line"),
+		"label": label})
+
+
+## Seconds from a hit's launch to its impact at the victim (0 when hits don't fly).
+static func impact_seconds() -> float:
+	return Motion.seconds(&"hit_line") * LINE_DRAW_SHARE if Motion.live(&"hit_line") else 0.0
+
+
+## ANIM-R2 E5: a short local flash (a disc of `radius` at `at`, global) in `color`, `id`'s
+## amplitude its alpha, fading over its duration: a wheel's break flashes here, never the
+## whole screen.
+func disc_flash(at: Vector2, radius: float, color: Color, id: StringName) -> void:
+	if not Motion.live(id):
+		return
+	_add({"kind": "disc", "at": at, "r": radius, "color": color, "alpha": Motion.amplitude(id), "dur": Motion.seconds(id)})
 
 
 ## ANIM-R1: a word stamped at `at` (global) in a tilted box (BLOCKED, EVADED, NO DAMAGE,
 ## PHASE 2...): lands from `result_stamp`'s amplitude scale, holds `hold` seconds, fades.
 ## Its lettering fits `max_w` px (the hub it sits in). Returns the box it covers (global).
-func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float, max_fs: int = -1) -> Rect2:
+func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float, max_fs: int = -1, delay: float = 0.0) -> Rect2:
 	var fs := word_stamp_font(text, max_w, max_fs)
 	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0
 	var box := Rect2(at - Vector2(w * 0.5, fs * WORD_BOX_H * 0.5), Vector2(w, fs * WORD_BOX_H))
 	if not Motion.live(&"result_stamp"):
 		return box
 	_add({"kind": "tag", "at": at, "text": text, "color": color, "fs": fs, "dur": Motion.seconds(&"result_stamp") + hold,
-		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp")})
+		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp"), "delay": delay})
 	return box
 
 
@@ -270,11 +307,11 @@ const PROJECTILE_HEAD := 1.3
 
 ## A status glyph stamped at `at` (global): lands from `status_stamp`'s amplitude scale,
 ## holds `hold` seconds (the wheel then shows the status itself) and fades.
-func stamp(at: Vector2, glyph: String, color: Color, hold: float) -> void:
+func stamp(at: Vector2, glyph: String, color: Color, hold: float, delay: float = 0.0) -> void:
 	if not Motion.live(&"status_stamp"):
 		return
 	_add({"kind": "stamp", "at": at, "glyph": glyph, "color": color, "dur": Motion.seconds(&"status_stamp") + hold,
-		"land": Motion.seconds(&"status_stamp"), "from": Motion.amplitude(&"status_stamp")})
+		"land": Motion.seconds(&"status_stamp"), "from": Motion.amplitude(&"status_stamp"), "delay": delay})
 
 
 ## A broken wheel: `pieces` ([polygon (global), colour]) fall `enemy_break`'s amplitude px
@@ -500,6 +537,9 @@ func _draw() -> void:
 				draw_arc(_local(s["at"]), float(s["r0"]) + float(s["grow"]) * p, 0, TAU, 40, Color(s["color"], 1.0 - p), 3.0, true)
 			"line":
 				_draw_line(s)
+			"disc":
+				var q := _p(s)
+				draw_circle(_local(s["at"]), float(s["r"]), Color(s["color"], float(s["alpha"]) * (1.0 - q)))
 			"stamp":
 				_draw_stamp(s)
 			"shards":
@@ -529,9 +569,9 @@ func _draw_number(s: Dictionary) -> void:
 	var size := fs
 	if bool(s["crit"]):
 		# The crit overshoots its size and settles (a pop).
-		size = roundi(fs * lerpf(1.35, 1.0, grow)) if p < GROW_SHARE else fs
+		size = roundi(fs * lerpf(CRIT_POP_SCALE, 1.0, grow)) if p < GROW_SHARE else fs
 	else:
-		size = roundi(fs * lerpf(0.6, 1.0, grow))
+		size = roundi(fs * lerpf(GROW_FROM, 1.0, grow))
 	var at := _local(s["at"]) + (s["dir"] as Vector2) * float(s["rise"]) * _ease(s)
 	var alpha := 1.0 - clampf((p - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var text := String(s["text"])
@@ -543,23 +583,29 @@ func _draw_number(s: Dictionary) -> void:
 
 
 func _draw_travel(s: Dictionary) -> void:
-	var a := float(s["age"])
+	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var hold := float(s["hold"])
+	var swap := float(s.get("swap", 0.0))
 	var fs := int(s["fs"])
 	var at := _local(s["at"])
 	var size := float(fs)
 	var alpha := 1.0
-	if a < hold:
-		var grow := clampf(a / maxf(0.001, hold * GROW_SHARE), 0.0, 1.0)
-		size = fs * (lerpf(1.35, 1.0, grow) if bool(s["crit"]) else lerpf(0.6, 1.0, grow))
+	var text := String(s["text"])
+	if a < swap:
+		# ANIM-R2: the hit's raw number first (its guard takes its part meanwhile).
+		text = String(s["raw"])
+		var grow := clampf(a / maxf(0.001, swap * GROW_SHARE), 0.0, 1.0)
+		size = fs * (lerpf(CRIT_POP_SCALE, 1.0, grow) if bool(s["crit"]) else lerpf(GROW_FROM, 1.0, grow))
+	elif a < hold:
+		var grow := clampf((a - swap) / maxf(0.001, (hold - swap) * GROW_SHARE), 0.0, 1.0)
+		size = fs * (lerpf(CRIT_POP_SCALE, 1.0, grow) if bool(s["crit"]) or swap > 0.0 else lerpf(GROW_FROM, 1.0, grow))
 	else:
 		var d := maxf(0.001, float(s["dur"]) - hold)
 		var q: float = Tween.interpolate_value(0.0, 1.0, clampf((a - hold) / d, 0.0, 1.0), 1.0, int(s["trans"]), int(s["ease"]))
 		at = at.lerp(_local(s["to"]), q)
 		size = fs * lerpf(1.0, float(s["shrink"]), q)
-		alpha = lerpf(1.0, 0.6, q)
+		alpha = lerpf(1.0, TRAVEL_FADE_TO, q)
 	var isz := maxi(1, roundi(size))
-	var text := String(s["text"])
 	var f := Palette.display()
 	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz).x
 	var base := at + Vector2(-w * 0.5, isz * 0.35)
@@ -599,22 +645,39 @@ func _draw_burst(s: Dictionary) -> void:
 
 func _draw_line(s: Dictionary) -> void:
 	var p := _p(s)
+	var share := LINE_DRAW_SHARE
 	var from := _local(s["from"])
 	var to := _local(s["to"])
-	var head := from.lerp(to, clampf(p * 2.0, 0.0, 1.0))
-	var tail := from.lerp(to, clampf(p * 2.0 - 1.0, 0.0, 1.0))
-	var col := Color(s["color"], 1.0 - maxf(0.0, p - 0.5))
-	draw_line(tail, head, Color(Palette.NIGHT_SKY, col.a * 0.6), float(s["width"]) + 3.0)
-	draw_line(tail, head, col, float(s["width"]))
-	if p < 0.5:
-		# ANIM-R1: the projectile's head, bright, flying from the attacker's slice.
-		var hr := float(s["width"]) * PROJECTILE_HEAD
+	var flight := clampf(p / share, 0.0, 1.0)
+	var fade := clampf((p - share) / (1.0 - share), 0.0, 1.0)
+	var head := from.lerp(to, flight)
+	var tail := from.lerp(to, fade)
+	var col := Color(s["color"], 1.0 - fade)
+	var width := float(s["width"])
+	draw_line(tail, head, Color(Palette.NIGHT_SKY, col.a * 0.7), width + 4.0)
+	draw_line(tail, head, col, width)
+	var d := (to - from).normalized()
+	var arrow := ARROW_HEAD + width
+	var n := d.orthogonal() * arrow * 0.6
+	# The arrowhead leads the projectile and stays at the victim as the line fades.
+	draw_colored_polygon(PackedVector2Array([head + d * arrow * 0.5, head - d * arrow * 0.5 + n, head - d * arrow * 0.5 - n]), col)
+	if p < share:
+		# The projectile's head, bright, flying from the attacker's slice.
+		var hr := width * PROJECTILE_HEAD
 		draw_circle(head, hr + 2.0, Color(Palette.NIGHT_SKY, 0.7))
 		draw_circle(head, hr, col.lightened(0.35))
-	if p >= 0.5:
-		var d := (to - from).normalized()
-		var n := d.orthogonal() * ARROW_HEAD * 0.6
-		draw_colored_polygon(PackedVector2Array([to, to - d * ARROW_HEAD + n, to - d * ARROW_HEAD - n]), col)
+		var label := String(s.get("label", ""))
+		if label != "":
+			# ANIM-R2: the hit's number rides with it.
+			var fs := roundi(NUMBER_FONT * Settings.text_scale * RIDE_FONT_SHARE)
+			var f := Palette.display()
+			var w := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var off := d.orthogonal() * fs * RIDE_OFFSET
+			if off.y > 0.0:
+				off = -off
+			var base := head + off + Vector2(-w * 0.5, fs * 0.35)
+			draw_string_outline(f, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Palette.NIGHT_SKY)
+			draw_string(f, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lightened(0.2))
 
 
 func _draw_stamp(s: Dictionary) -> void:

@@ -43,6 +43,10 @@ const CHIP_GUARD := Palette.NET_CYAN
 const CHIP_STATUS := Palette.CELL_ACID
 const CHIP_RESIST := Palette.RESIST_GOLD
 const CHIP_RUN := Palette.NOTE_YELLOW
+## ANIM-R2 E4a: a hit's projectile is coloured by its side, never by the slice: the
+## operative's (and its drones') hits in acid, the enemies' (and their satellites') in red.
+const PLAYER_HIT_COLOR := Palette.CELL_ACID
+const ENEMY_HIT_COLOR := CHIP_LOSS
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
 
@@ -1204,10 +1208,14 @@ func _boss_phase_feedback(state: CombatState) -> void:
 	_bark("boss", state)
 
 
-## The VICTORY flash (`victory_flash`: amplitude = strength), limited by Fx.flash.
+## The VICTORY flash (ANIM-R2 E5): a short local white flash on each beaten enemy's wheel
+## (`victory_flash`: amplitude = its alpha), never the whole screen.
 func _victory_flash() -> void:
-	if Motion.live(&"victory_flash"):
-		Fx.flash(Palette.CELL_ACID, Motion.amplitude(&"victory_flash"), Motion.seconds(&"victory_flash"))
+	if not Motion.live(&"victory_flash"):
+		return
+	for v in _enemy_views.values():
+		var wv := v as WheelView
+		fx_layer.disc_flash(wv.global_center(), wv.disc_radius(), Color.WHITE, &"victory_flash")
 
 
 func _slice_type_of(state: CombatState, e: Dictionary) -> int:
@@ -1918,7 +1926,7 @@ func _preview_action(action: CombatAction) -> void:
 	_mark_preview_source(action, card)
 
 
-## The wheel a hovered card or nudge acts on says so first on its tag ("IF JOLT"), so the
+## The wheel a hovered card or nudge acts on says so first on its tag ("PLAYING JOLT"), so the
 ## changes read as that play's (H24: a hovered card seemed to spin the enemy onto
 ## CRITICAL by itself).
 func _mark_preview_source(action: CombatAction, card: CardData) -> void:
@@ -1929,7 +1937,8 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 		return
 	var what := TextDb.t(card, "display_name").to_upper() if card != null else tr("NUDGE")
 	var chips: Array = (v.intent.get("chips", []) as Array).duplicate()
-	chips.push_front({"text": tr("IF %s") % what, "color": CHIP_RUN, "ink": Palette.INK})
+	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic).
+	chips.push_front({"text": tr("PLAYING %s") % what, "color": CHIP_RUN, "ink": Palette.INK})
 	v.intent["chips"] = chips
 	v.intent["tooltip"] = _chips_tooltip(chips)
 	v.queue_redraw()
@@ -2638,7 +2647,8 @@ func _play_action(before: CombatState, state: CombatState, events: Array[Diction
 		_hold_slot = -1
 	_animate_wheels(before, events, delay)
 	var beats := ResolveBeats.build(before, events, engine.resolver.lookup)
-	var sch := ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), 0.0)
+	var sch := ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), 0.0, 0.0, 0.0,
+		death_lead(), beat_timing())
 	var times: PackedFloat32Array = sch["times"]
 	for k in beats.size():
 		var b := beats[k]
@@ -2754,7 +2764,16 @@ static func sequence_schedule(beats: Array[Dictionary]) -> Dictionary:
 	var spin_time := maxf(WheelView.spin_seconds(&"wheel_respin", RC.TICKS * SPIN_TICKS_TYPICAL),
 		Motion.delay_of(&"enemy_turn_spin") + WheelView.spin_seconds(&"enemy_turn_spin", RC.TICKS * SPIN_TICKS_TYPICAL))
 	return ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), spin_time,
-		Motion.seconds(&"resolve_landing_hold"), Motion.seconds(&"resolve_result_hold"), death_lead())
+		Motion.seconds(&"resolve_landing_hold"), Motion.seconds(&"resolve_result_hold"), death_lead(), beat_timing())
+
+
+## The replay's timing (ANIM-R2, ResolveBeats.schedule): hits `hit_line` apart (never two
+## projectiles at once), their impact, a partly blocked hit's absorb, a number's travel
+## into the HP counter and the roll, and the break's wait at HP 0.
+static func beat_timing() -> Dictionary:
+	return {"hit_gap": Motion.seconds(&"hit_line"), "impact": CombatFxLayer.impact_seconds(), "absorb": Motion.seconds(&"hit_absorb"),
+		"settle": Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + Motion.seconds(&"hp_drain"),
+		"break_delay": Motion.delay_of(&"enemy_break")}
 
 
 ## How long a wheel's death waits after the hit that killed it (C5f: its HP is seen at 0
@@ -2785,9 +2804,9 @@ func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatS
 			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]), int(spot["max_fs"]))
 
 
-## Wheels (the operative and the enemies, not satellites) whose HP the resolve didn't
-## change, from the beats: id -> the word they stamp ("ALL BLOCKED" when hits came and
-## none got through, else "NO DAMAGE").
+## Wheels (the operative and the enemies, not satellites) that took no HP-changing beat in
+## the resolve, from the beats: id -> the word they stamp ("ALL BLOCKED" when hits came and
+## none got through, else "NO DAMAGE"). A wheel hurt and healed back stamps nothing.
 func result_stamps(beats: Array[Dictionary], before: CombatState) -> Dictionary:
 	var out := {}
 	var wheels: Array[CombatantState] = [before.player]
@@ -2795,16 +2814,18 @@ func result_stamps(beats: Array[Dictionary], before: CombatState) -> Dictionary:
 		if not e.is_satellite and e.is_alive():
 			wheels.append(e)
 	for c in wheels:
-		var hp := c.hp
+		# ANIM-R2 E4f: any HP change stamps nothing (damage and an equal heal net to zero, but
+		# a hit landed: "NO DAMAGE" would be false).
+		var changed := false
 		var hit := false
 		for b in beats:
 			if b["phase"] == "turn_start" or StringName(String(b["target"])) != c.id:
 				continue
-			if b["kind"] in ResolveBeats.HP_KINDS and int(b["hp_after"]) >= 0:
-				hp = int(b["hp_after"])
+			if b["kind"] in ResolveBeats.HP_KINDS and int(b["amount"]) > 0:
+				changed = true
 			if b["kind"] == "evaded" or (b["kind"] == "damage" and int(b["soaked"]) > 0):
 				hit = true
-		if hp == c.hp:
+		if not changed:
 			out[c.id] = tr("ALL BLOCKED") if hit else tr("NO DAMAGE")
 	return out
 
@@ -2876,20 +2897,41 @@ func number_for(b: Dictionary, s: CombatState, _k: int = 0) -> Dictionary:
 ## band (the view's band key), travel}.
 func numbers_for(b: Dictionary, s: CombatState) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	var v := _host_view(StringName(String(b["target"])), s)
+	var target := StringName(String(b["target"]))
+	var v := _host_view(target, s)
 	if v == null:
 		return out
 	var amount := int(b["amount"])
 	var crit := bool(b["crit"]) and String(b["kind"]) == "damage"
+	if v.combatant != null and v.combatant.id != target:
+		# ANIM-R2 E4b: a satellite's or drone's HP change shows at its own token (in the hub it
+		# read as the host's HP, which didn't move).
+		if String(b["kind"]) in ResolveBeats.HP_KINDS and amount > 0:
+			var heal := String(b["kind"]) == "heal"
+			var fs := roundi(CombatFxLayer.number_font(false) * SAT_NUMBER_SHARE)
+			var at := v.satellite_spot(target) + Vector2(0.0, -(WheelView.SATELLITE_TOKEN * Settings.text_scale + fs * 0.6))
+			out.append({"at": at, "rise": 0.0, "text": (tr("+%d HP") % amount) if heal else "-%d" % amount,
+				"color": WheelView.HP_COLOR if heal else WheelView.LOSS_COLOR, "crit": false, "id": &"number_float", "view": v, "fs": fs,
+				"band": "%d:sat:%s" % [v.get_instance_id(), target], "travel": false, "hub": false, "hp": amount})
+		return out
 	match String(b["kind"]):
 		"damage", "corrupted":
 			if amount > 0:
-				out.append(_number(v, "hp", "-%d" % amount, WheelView.LOSS_COLOR, &"number_float", crit, true))
+				var n := _number(v, "hp", "-%d" % amount, WheelView.LOSS_COLOR, &"number_float", crit, true)
+				n["hp"] = amount
+				if int(b["soaked"]) > 0 and ResolveBeats.is_hit(b):
+					# ANIM-R2 E4b: the hit's raw number first, its guard's part coming off (a chip
+					# under the hub's lines), then what gets through travels into the HP.
+					n["raw"] = "-%d" % int(b.get("raw", amount + int(b["soaked"])))
+					n["absorb"] = Motion.seconds(&"hit_absorb")
+				out.append(n)
 				if int(b["soaked"]) > 0:
 					out.append(_number(v, "guard", tr("%d BLOCKED") % int(b["soaked"]), CHIP_GUARD, &"block_number", false, false))
 		"heal":
 			if amount > 0:
-				out.append(_number(v, "hp", tr("+%d HP") % amount, WheelView.HP_COLOR, &"heal_number", false, true))
+				var n := _number(v, "hp", tr("+%d HP") % amount, WheelView.HP_COLOR, &"heal_number", false, true)
+				n["hp"] = amount
+				out.append(n)
 		"block":
 			out.append(_number(v, "guard", tr("+%d BLOCK") % amount, CHIP_GUARD, &"block_number", false, false))
 		"shield":
@@ -2903,7 +2945,19 @@ func numbers_for(b: Dictionary, s: CombatState) -> Array[Dictionary]:
 func _number(v: WheelView, band: String, text: String, color: Color, id: StringName, crit: bool, travel: bool) -> Dictionary:
 	var slot := v.number_slot(band, text, crit)
 	return {"at": slot["at"], "rise": minf(Motion.amplitude(id), float(slot["room"])), "text": text, "color": color, "crit": crit,
-		"id": id, "view": v, "fs": int(slot["fs"]), "band": "%d:%s" % [v.get_instance_id(), band], "travel": travel}
+		"id": id, "view": v, "fs": int(slot["fs"]), "band": "%d:%s" % [v.get_instance_id(), band], "travel": travel, "hub": true}
+
+
+## A satellite's number: its size as a share of a hub number's.
+const SAT_NUMBER_SHARE := 0.75
+
+
+## The colour of `id`'s hits (ANIM-R2 E4a): the operative's side or the enemies'.
+static func hit_color(id: StringName, s: CombatState) -> Color:
+	var c := s.get_combatant(id) if s != null else null
+	if c != null and (c.is_player or s.drones.has(c)):
+		return PLAYER_HIT_COLOR
+	return ENEMY_HIT_COLOR
 
 
 ## What a hit that dealt nothing stamps at its victim: "N BLOCKED" (all soaked) or
@@ -2985,33 +3039,42 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	var on_host := tv.combatant != null and tv.combatant.id == target
 	var victim_at := tv.hp_ring_spot() if on_host else tv.satellite_spot(target)
 	var stamp_word := hit_stamp_for(b)
-	var dealt := kind == "damage" and int(b["amount"]) > 0
-	if src != target and sv != null and (dealt or kind == "status"):
-		var line_to := tv.slot_spot(int(b["slot"])) if kind == "status" and int(b["slot"]) >= 0 and on_host else victim_at
-		fx_layer.hit_line(_source_spot(b, before), line_to, sv.wheel_color)
+	# ANIM-R2 E4a: every hit (and a status put on a slice) flies from its attacker's landed
+	# slice to its victim, one at a time, thick, in its side's colour, its raw number riding
+	# with it; what it does shows on impact.
+	var impact := 0.0
+	if sv != null and ResolveBeats.flies(b):
+		var line_to := tv.slot_spot(int(b["slot"])) if kind in ["status", "absorbed"] and int(b["slot"]) >= 0 and on_host else victim_at
+		var label := ""
+		if kind == "damage":
+			label = str(int(b.get("raw", b["amount"])))
+		elif kind == "evaded":
+			label = str(int(b["amount"]))
+		fx_layer.hit_line(_source_spot(b, before), line_to, hit_color(src, before), label)
+		impact = CombatFxLayer.impact_seconds()
 	if stamp_word != "":
-		# Nothing got through: the victim stamps it (no line, no number).
+		# Nothing got through: the victim stamps it (no number).
 		var spot := tv.stamp_slot()
 		var at: Vector2 = spot["at"] if on_host else tv.satellite_spot(target)
-		fx_layer.word_stamp(at, stamp_word, CHIP_GUARD, Motion.seconds(&"number_float"), float(spot["max_w"]), int(spot["max_fs"]))
+		fx_layer.word_stamp(at, stamp_word, CHIP_GUARD, Motion.seconds(&"number_float"), float(spot["max_w"]), int(spot["max_fs"]), impact)
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
-		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), Palette.CELL_ACID, motion_seconds_left())
+		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), Palette.CELL_ACID, motion_seconds_left(), impact)
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
-		fx_layer.ring(tv.slot_spot(int(b["slot"])), CombatFxLayer.STAMP_DISC, CHIP_RESIST, &"precision_good_ring")
+		_after(impact, fx_layer.ring.bind(tv.slot_spot(int(b["slot"])), CombatFxLayer.STAMP_DISC, CHIP_RESIST, &"precision_good_ring"))
 	var hp_after := int(b["hp_after"])
 	var hp_waits := false
 	for n in numbers_for(b, before):
 		if bool(n["travel"]) and on_host and hp_after >= 0:
 			fx_layer.travel_number(n["at"], tv.hp_counter_spot(), n["text"], n["color"], n["crit"], int(n["fs"]), String(n["band"]),
-				_hp_arrives.bind(tv, hp_after))
+				_hp_arrives.bind(tv, hp_after), impact, String(n.get("raw", "")), float(n.get("absorb", 0.0)))
 			hp_waits = true
 		else:
-			fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"], int(n["fs"]), String(n["band"]))
+			fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"], int(n["fs"]), String(n["band"]), impact)
 	if hp_after >= 0:
 		if not on_host:
-			tv.set_sat_hp(target, hp_after)
+			_after(impact, tv.set_sat_hp.bind(target, hp_after))
 		elif not hp_waits:
-			tv.play_hp(float(hp_after))
+			_after(impact, tv.play_hp.bind(float(hp_after)))
 
 
 ## A number reached `v`'s HP counter: the HP rolls to `hp` with the white lag bar, and a
@@ -3102,18 +3165,29 @@ func _death_beat(id: StringName, before: CombatState, after: CombatState = null)
 		v.remove_shown_satellite(id)
 		return
 	v.anim_hp = 0.0
+	# ANIM-R2 E5: a short white flash on the breaking wheel only (a full-screen flash read as
+	# a rendering fault).
+	fx_layer.disc_flash(v.global_center(), v.disc_radius(), Color.WHITE, &"victory_flash")
 	fx_layer.shards(v.slice_pieces())
 	v.play_break()
 	AudioDirector.play_sfx("clack")
 
 
-## VICTORY / DEFEAT lands over the arena once the last hit has.
+## VICTORY / DEFEAT lands once the last hit has (ANIM-R2 E5): VICTORY centred over the
+## enemies' side (never on the operative's wheel), DEFEAT over the operative's. The break
+## flashed its own wheel already (no full-screen flash).
 func _end_beat(outcome: int) -> void:
 	var won := outcome == CombatState.Outcome.VICTORY
-	if won:
-		_victory_flash()
-	var at := _arena.get_global_rect().get_center()
-	fx_layer.word(at, tr("VICTORY") if won else tr("DEFEAT"), Palette.CELL_ACID if won else WheelView.LOSS_COLOR, Motion.seconds(&"combat_end_hold"))
+	fx_layer.word(end_word_spot(won), tr("VICTORY") if won else tr("DEFEAT"), Palette.CELL_ACID if won else WheelView.LOSS_COLOR, Motion.seconds(&"combat_end_hold"))
+
+
+## Where VICTORY (the enemies' side) or DEFEAT (the operative's wheel) lands (global).
+func end_word_spot(won: bool) -> Vector2:
+	if not won:
+		return _player_view.global_center()
+	if _enemy_views_box != null and _enemy_views_box.get_global_rect().has_area():
+		return _enemy_views_box.get_global_rect().get_center()
+	return _arena.get_global_rect().get_center()
 
 
 ## Plays the break of `id`'s wheel alone (the motion lab's --demo-anim=enemy_break).
