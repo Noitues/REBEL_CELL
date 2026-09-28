@@ -679,6 +679,10 @@ func _end_flight(f: Dictionary) -> void:
 			n.modulate.a = 1.0
 	if f.get("holder") != null:
 		_restore_source((f["holder"] as WeakRef).get_ref())
+	# ANIM-4b: what the screen waits on (a viewer that closes once its landing has played).
+	var done: Callable = f.get("on_done", Callable())
+	if done.is_valid():
+		done.call()
 	queue_redraw()
 
 

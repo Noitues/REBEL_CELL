@@ -618,14 +618,17 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 	var view := scene.get_node("DeckView") as DeckView
 	var layer: DropLayer = scene.modal_drops
 	assert_eq(_drag(layer, view.card(0), "shred"), "dropped")
-	assert_eq(layer.flights.size(), 1, "the card's copy goes on to the shredder after the viewer closed")
+	assert_eq(layer.flights.size(), 1, "the card's copy goes into the shredder")
+	assert_eq(RunManager.netrun.run.card_removals, 1, "the state is final at once")
+	assert_not_null(scene.get_node_or_null("DeckView"), "the viewer holds while the shred plays")
 	await get_tree().create_timer(Motion.seconds(&"loadout_swap") + Motion.seconds(&"shred_feed") * 0.5).timeout
-	assert_true(is_instance_valid(layer), "the layer outlives the viewer while it plays")
 	assert_false(layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "strips").is_empty(), "paper strips run out")
 	layer._input(key)
 	assert_false(layer.busy(), "a press completes it")
 	await _frames(2)
-	assert_false(is_instance_valid(layer), "and the layer frees itself")
+	assert_null(scene.get_node_or_null("DeckView"), "and the viewer closes, as REMOVE closes it")
+	assert_false(is_instance_valid(layer), "the layer frees itself")
+	assert_not_null(scene.get_viewport().gui_get_focus_owner(), "focus is back on the Modem")
 	await _close(scene)
 
 

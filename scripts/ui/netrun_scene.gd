@@ -265,6 +265,7 @@ const DEMO_DRAG_ARC := 40.0
 const DEMO_RELEASE_OFFSET := Vector2(10, 8)
 const DEMO_RELEASE_SHARE := 0.3
 const DEMO_POOR_CYCLES := 5
+const DEMO_RICH_CYCLES := 300
 
 
 ## `--demo-anim=drag_*` (with --demo-shop or --demo-loot): the drag plays once the page has
@@ -296,6 +297,11 @@ func _demo_drag(id: String) -> void:
 				await get_tree().process_frame
 			src = _page_item("Stickers", 0)
 		"drag_buy_chip":
+			# Enough Cycles for any chip (the demo shows a purchase, not a refusal).
+			s.run.cycles = DEMO_RICH_CYCLES
+			_show_current()
+			for f in DEMO_LAYOUT_FRAMES:
+				await get_tree().process_frame
 			src = _page_item("Chips", 0)
 			target_id = "slot:0"
 			if src != null:
@@ -318,6 +324,7 @@ func _demo_drag(id: String) -> void:
 		print("anim4b: %s has nothing to drag" % id)
 		return
 	var from := src.get_global_rect().get_center()
+	get_viewport().gui_release_focus()  # the focused tile's tip would cover the capture
 	layer.start_carry(src, false)
 	layer.point_at(from)
 	var r := layer.locate(layer.target(target_id))
@@ -2056,7 +2063,28 @@ func drop_ghost(payload: Dictionary, source: Control) -> Control:
 
 
 ## A valid drop: the same call the item's button makes (the layer already flies the copy).
-func _on_dropped(payload: Dictionary, target: Dictionary, _layer: DropLayer) -> void:
+## A viewer a drop was made in closes as its UPGRADE / REMOVE closes it, but only once the
+## landing on its wheel or shredder has played (at once when none plays; any press ends
+## the landing). The state changed already: this holds only the view.
+func _close_after_landing(view: Control, layer: DropLayer) -> void:
+	if view == null or not is_instance_valid(view):
+		return
+	var ref: WeakRef = weakref(view)
+	var shut := func() -> void:
+		var v: Control = ref.get_ref()
+		if v != null and v.is_inside_tree() and v.has_method("close"):
+			v.call("close")
+			# The page was rebuilt under the viewer: focus its first control, as after a click.
+			if _panel != null and is_instance_valid(_panel):
+				UiFocus.focus_first.call_deferred(_panel)
+	var f: Dictionary = layer.last_flight if layer != null else {}
+	if f.is_empty() or not layer.flights.has(f):
+		shut.call()
+	else:
+		f["on_done"] = shut
+
+
+func _on_dropped(payload: Dictionary, target: Dictionary, layer: DropLayer) -> void:
 	var value: Variant = target.get("value")
 	var i := int(payload.get("index", -1))
 	var src := String(payload.get("src", ""))
@@ -2078,18 +2106,19 @@ func _on_dropped(payload: Dictionary, target: Dictionary, _layer: DropLayer) -> 
 		["slice", "slot"]:
 			# In the UPGRADE viewer: select the slot and press UPGRADE; on the Modem page the
 			# same call the viewer's UPGRADE makes.
-			var view := get_node_or_null("SpinnerView") as SpinnerView
-			if src == "modal" and view != null:
-				view.select(int(value))
-				view.confirm()
-			else:
-				overwrite_slice(int(value), i)
+			overwrite_slice(int(value), i)
+			if src == "modal":
+				_close_after_landing(get_node_or_null("SpinnerView") as Control, layer)
 		["deck_card", "shred"]:
-			# The button path: select the card and press REMOVE.
+			# The button path: select the card and press REMOVE (the call REMOVE makes).
 			var deck_view := get_node_or_null("DeckView") as DeckView
 			if deck_view != null:
-				deck_view.select(i)
-				deck_view.confirm()
+				# (No select: its REMOVE lettering would push the SHRED tile from under the copy.)
+				var shredded := deck_view.card(i)
+				if shredded != null:
+					shredded.modulate.a = 0.0  # its copy is on its way into the shredder
+			remove_card(i)
+			_close_after_landing(deck_view, layer)
 		["run_asset", "node"]:
 			raid_deploy_run_asset(i, value)
 		["armory_asset", "node"]:
