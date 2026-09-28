@@ -479,6 +479,40 @@ func here_id() -> StringName:
 	return &""
 
 
+## ANIM-R3 B8: where the "you are here" marker stands when no node is "here" (grid lots:
+## the street before a route's first node; INF: none). The marker is always drawn.
+var here_at: Vector2 = Vector2.INF:
+	set(v):
+		here_at = v
+		_queue_top()
+
+
+## ANIM-R3 B8: the "you are here" marker's position (local px; INF when not shown): on the
+## node that is "here", else at `here_at`.
+func here_point() -> Vector2:
+	var id := here_id()
+	if id != &"":
+		return icon_at(id)
+	if here_at.x == INF or city == null:
+		return Vector2(INF, INF)
+	return grid_point_local(here_at + Vector2(0.5, 0.5))
+
+
+## ANIM-R3 B8: the street marker's box (screen px, for fitting the route); [] when the
+## marker is on a node.
+func here_marker_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if here_id() != &"" or here_at.x == INF or not is_inside_tree():
+		return out
+	var p := here_point()
+	if p.x == INF:
+		return out
+	var xf := get_global_transform()
+	var r := (ICON_RADIUS + HERE_RING + HERE_PIN * 2.0) * _k()
+	out.append(Rect2(xf * (p - Vector2(r, r)), Vector2(r, r) * 2.0 * xf.get_scale()))
+	return out
+
+
 ## True when node `id` is on a route graph and can no longer be reached (drawn dimmed).
 func is_dimmed(id: StringName) -> bool:
 	return not _reach.is_empty() and not _reach.has(id) and not is_visited(id)
@@ -967,6 +1001,18 @@ func _draw_top() -> void:
 	drawn_tiers.clear()
 	for n in nodes:
 		_node(n)
+	# ANIM-R3 B8: before the route's first node the marker stands at the street, with its words.
+	if here_id() == &"" and here_at.x != INF and _travel.is_empty():
+		var p := here_point()
+		if p.x != INF:
+			_here(p, ICON_RADIUS * _k())
+			var f := Palette.mono()
+			var fs := label_font_size()
+			var word := tr_word(HERE_LABEL)
+			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var at := p + Vector2(-w * 0.5, (ICON_RADIUS + HERE_RING + LABEL_GAP) * _k() + f.get_ascent(fs))
+			_c.draw_rect(Rect2(at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
+			_c.draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
 	_c = self
 
 

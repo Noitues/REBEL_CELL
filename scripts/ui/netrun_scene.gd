@@ -56,6 +56,10 @@ const ROUTE_FITS_MAX := 3
 const ROUTE_ZOOM := 1.45
 const ROUTE_ANCHOR := Vector2(0.46, 0.58)
 const ROUTE_MIN_ZOOM := 0.7
+## ANIM-R3 B8: the whole route is framed down to this zoom (icons keep their screen size, so
+## a far-out route stays readable); a route that needs less shows the part the player decides
+## on (route_focus_ids) at ROUTE_MIN_ZOOM or closer.
+const ROUTE_FIT_FLOOR := 0.4
 ## The slice tiles in the Modem at text scale 1.0 (px): they widen with the text as far as
 ## their window holds them (H24 S10: "BUY 100-150" shrank to fit a fixed tile at 1.6).
 const SLICE_TILE := Vector2(96, 130)
@@ -844,6 +848,8 @@ func _show_map() -> void:
 	win.body.add_child(row)
 	_route_buttons.clear()
 	var twins := choice_twins(s)
+	var differs := choice_differences(s)
+	var ahead_rows := {}
 	for i in available.size():
 		var node := s.run.map.get_node(available[i])
 		# H21 #14: what the node is (word + icon), its index on every device (the map's
@@ -864,6 +870,11 @@ func _show_map() -> void:
 			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
+		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
+		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
+		var marks := differs.get(id, []) as Array
+		if not twins.has(id) and (not marks.is_empty() or heat != 0):
+			ahead_rows[i] = _ahead_row(i, marks, heat)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
@@ -874,6 +885,8 @@ func _show_map() -> void:
 		b.tooltip_text = UiTip.fold(route_tip(s, node, heat))
 		_route_buttons.append(b)
 		row.add_child(b)
+		if ahead_rows.has(i):
+			row.add_child(ahead_rows[i])
 	_label_route_buttons()
 	var zoom_btn := _button(tr("GRID VIEW") if not _grid_zoomed else tr("ROUTE VIEW"), func() -> void:
 		_grid_zoomed = not _grid_zoomed
@@ -914,6 +927,7 @@ func _show_map() -> void:
 	else:
 		var r := route_graph()
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, ROUTE_ZOOM, ROUTE_ANCHOR, Vector2.INF)
+		city_overlay.here_at = r["entry"]
 		city_overlay.ease_rings()  # ANIM-5: the "you are here" ring eases in
 		city_overlay.avoid_controls([win, route_legend])
 		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
@@ -976,8 +990,19 @@ func fit_route_map() -> void:
 		return
 	if _route_fits >= ROUTE_FITS_MAX:
 		return
-	var free := area.grow(-LegendSpot.MARGIN)
-	var fit := LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x)
+	# ANIM-R3 B8: a margin the size of a node's reach (its icon, label tab and pips) off the
+	# screen's edge, and the street marker kept in frame with the nodes.
+	var free := area.grow(-ROUTE_MARGIN * Settings.text_scale)
+	var here := city_overlay.here_marker_rects()
+	# ANIM-R3 B8: the whole route when it fits at ROUTE_FIT_FLOOR or closer; else the part the
+	# player decides on (where they are and the next choices) inside the area with its margins
+	# (the whole route squeezed to the minimum zoom jammed its nodes against the screen's edge
+	# and put the current node off it).
+	var fit := LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
+	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR:
+		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
+	elif fit.is_empty() and not route_frames(free):
+		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
 	if fit.is_empty():
 		return
 	_route_fits += 1
@@ -995,6 +1020,34 @@ func fit_route_map() -> void:
 	city.focus_anchor = anchor
 	city.refresh()
 	_fit_route_after_redraw()
+
+
+## ANIM-R3 B8: the route nodes the player decides on: where they are and the next choices.
+func route_focus_ids() -> Array:
+	var s := RunManager.netrun
+	var out: Array = []
+	if s == null:
+		return out
+	if s.run.current_node_id != &"":
+		out.append(s.run.current_node_id)
+	out.append_array(s.available_nodes())
+	return out
+
+
+## ANIM-R3 B8: true when the part the player decides on (the "you are here" marker, the
+## current node and the next choices) is inside `free` (screen px).
+func route_frames(free: Rect2) -> bool:
+	var rects := LegendSpot.node_rects(city_overlay, false, route_focus_ids())
+	rects.append_array(city_overlay.here_marker_rects())
+	for r in rects:
+		if not free.encloses(r):
+			return false
+	return true
+
+
+## ANIM-R3 B8: the route map's margin inside its area at text scale 1.0 (px): a node's icon,
+## label tab and pips never touch the screen's edge.
+const ROUTE_MARGIN := 36.0
 
 
 func _fit_route_after_redraw() -> void:
@@ -1091,22 +1144,138 @@ func _label_route_buttons() -> void:
 	_route_buttons = alive
 
 
-## ANIM-R2 R12: the open choices that are the same as an earlier one (the same kind, Heat
-## and nodes beyond): id -> the index of the first such choice. Two "Fight > Fight" buttons
-## read the same because they are (the enemy is rolled on entry); saying so tells the
-## player the pick does not matter.
+## ANIM-R2 R12: the open choices that are the same as an earlier one: id -> the index of
+## the first such choice. ANIM-R3 B3: the same means the same whole road ahead (it was the
+## kind, Heat and the next layer's kinds only: 26 of 42 "(same as N)" choices differed
+## further on): the node's kind and Heat and, recursively, the same of every node it leads
+## to (subgraph_signatures). The enemy is rolled on entry, so twins really are one choice.
 static func choice_twins(s: NetrunSession) -> Dictionary:
 	var out := {}
 	var first := {}
 	var open := s.available_nodes()
+	var signs := subgraph_signatures(s.run.map, s.node_heat)
 	for i in open.size():
-		var node := s.run.map.get_node(open[i])
-		var sig := var_to_str([node_word(node), s.node_heat(open[i]), ahead_words(s.run.map, node)])
+		var sig: int = signs.get(open[i], -1)
 		if first.has(sig):
 			out[open[i]] = first[sig]
 		else:
 			first[sig] = i
 	return out
+
+
+## ANIM-R3 B3: every node's signature of the whole road from it (id -> int): two nodes get
+## the same number exactly when their kinds, their Heat (`heat_of`: id -> int) and, as
+## multisets, the signatures of the nodes they lead to are the same. Built from the last
+## layer back, interned (linear in the map, no unfolding). Pure.
+static func subgraph_signatures(map: MapGraph, heat_of: Callable) -> Dictionary:
+	var out := {}
+	var intern := {}
+	for li in range(map.layers.size() - 1, -1, -1):
+		for n: Dictionary in map.layers[li]:
+			var kids: Array[int] = []
+			for nxt in n.get("next", []):
+				kids.append(int(out.get(nxt, -1)))
+			kids.sort()
+			var key := "%s|%s|%d|%s" % [int(n["type"]), _is_elite(n), int(heat_of.call(n["id"])), ",".join(PackedStringArray(kids.map(func(v: int) -> String: return str(v))))]
+			if not intern.has(key):
+				intern[key] = intern.size()
+			out[n["id"]] = intern[key]
+	return out
+
+
+## ANIM-R3 B3: the kinds of node (their StatIcons, in AHEAD_ORDER) and Heat reachable
+## further on from `node` (not the node itself). Pure.
+static func ahead_kinds(map: MapGraph, node: Dictionary, heat_of: Callable) -> Array[StringName]:
+	var seen := {}
+	var found := {}
+	var todo: Array = (node.get("next", []) as Array).duplicate()
+	while not todo.is_empty():
+		var id: StringName = todo.pop_back()
+		if seen.has(id):
+			continue
+		seen[id] = true
+		var n := map.get_node(id)
+		if n.is_empty():
+			continue
+		found[node_icon(n)] = true
+		if int(heat_of.call(id)) > 0:
+			found[StatIcon.HEAT] = true
+		todo.append_array(n.get("next", []))
+	var out: Array[StringName] = []
+	for k in AHEAD_ORDER:
+		if found.has(k):
+			out.append(k)
+	return out
+
+
+## The reward and risk icons a route choice can show, in order.
+const AHEAD_ORDER: Array[StringName] = [StatIcon.ELITE, StatIcon.SHOP, StatIcon.TERMINAL, StatIcon.RACK, StatIcon.HEAT]
+
+
+## ANIM-R3 B3: per open choice, the kinds ahead it reaches that not every choice reaches
+## (id -> Array[StringName]): what telling them apart rests on.
+static func choice_differences(s: NetrunSession) -> Dictionary:
+	var open := s.available_nodes()
+	var per := {}
+	var common := {}
+	for i in open.size():
+		var kinds := ahead_kinds(s.run.map, s.run.map.get_node(open[i]), s.node_heat)
+		per[open[i]] = kinds
+		if i == 0:
+			for k in kinds:
+				common[k] = true
+		else:
+			for k in common.keys():
+				if not kinds.has(k):
+					common.erase(k)
+	var out := {}
+	for id in per:
+		var diff: Array[StringName] = []
+		for k in per[id]:
+			if not common.has(k):
+				diff.append(k)
+		out[id] = diff
+	return out
+
+
+## ANIM-R3 B3: the row under choice `i`'s button: its own Heat on entering (a Heat icon and
+## the number, it was in words only) and the icons of what lies further on that the other
+## choices do not reach, each with its word as a tooltip.
+func _ahead_row(i: int, kinds: Array, heat: int) -> Control:
+	var row := HBoxContainer.new()
+	row.name = "Ahead%d" % (i + 1)
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_theme_constant_override("separation", 4)
+	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
+	var pad := Control.new()
+	pad.custom_minimum_size.x = side
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(pad)
+	if heat != 0:
+		var hm := IconMark.standalone(StatIcon.HEAT, side, StatIcon.color_of(StatIcon.HEAT))
+		hm.name = "EnterHeat"
+		hm.tooltip_text = UiTip.fold(tr("Entering it changes Heat by %s.") % TextDb.signed(heat))
+		hm.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(hm)
+		var hl := _label(TextDb.signed(heat))
+		hl.name = "EnterHeatValue"
+		row.add_child(hl)
+	if not kinds.is_empty():
+		var lead := _label(tr("then:"))
+		lead.name = "AheadWord"
+		row.add_child(lead)
+		for k: StringName in kinds:
+			var m := IconMark.standalone(k, side, StatIcon.color_of(k))
+			m.name = "Ahead_%s" % k
+			m.tooltip_text = UiTip.fold(tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, ""))))
+			m.mouse_filter = Control.MOUSE_FILTER_PASS
+			row.add_child(m)
+	return row
+
+
+## The words of the reward and risk icons (translated where shown).
+const AHEAD_WORDS := {StatIcon.ELITE: "an Elite fight", StatIcon.SHOP: "a Shop", StatIcon.TERMINAL: "an Event", # TR
+	StatIcon.RACK: "a Rack", StatIcon.HEAT: "Heat"} # TR
 
 
 ## The run's map as buildings in the target Site's neighbourhood (layers step in from
@@ -1138,6 +1307,10 @@ func route_graph() -> Dictionary:
 			col = Palette.corp_color(RunManager.campaign.corporation_id)
 		var idx := available.find(n["id"])
 		var label := "%s %s" % [route_index_text(idx), node_word(n)] if idx >= 0 else ""
+		# ANIM-R3 B3: a choice's Heat shows on the map too (it was on its button in words only).
+		var nh := s.node_heat(n["id"]) if idx >= 0 else 0
+		if nh != 0:
+			label += tr(" %s Heat") % TextDb.signed(nh)
 		if twins.has(n["id"]):
 			label += " " + tr("(same as %d)") % (int(twins[n["id"]]) + 1)
 		# The reachable nodes carry their route button's index and word (H21 #14); "kind"
@@ -1156,7 +1329,12 @@ func route_graph() -> Dictionary:
 		for nxt in n["next"]:
 			var live: bool = n["id"] == s.run.current_node_id and available.has(nxt)
 			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live})
-	return {"nodes": nodes, "edges": edges}
+	# ANIM-R3 B8: before the first node the Cell stands at the street, one step before the
+	# route's first layer: the "you are here" marker is drawn there (it was drawn nowhere).
+	var entry := Vector2.INF
+	if s.run.current_node_id == &"":
+		entry = target - CityLayout.RIGHT * (layers + 1) * 1.7
+	return {"nodes": nodes, "edges": edges, "entry": entry}
 
 
 func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2) -> void:
