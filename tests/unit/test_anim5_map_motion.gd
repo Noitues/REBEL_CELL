@@ -174,7 +174,9 @@ func test_playout_ends_on_the_resolved_campaign_and_speed_scales_it() -> void:
 		assert_eq(p.fx.stamp_word(StringName(String(id))), RaidFxLayer.stamp_text(String(r["nodes"][id]["outcome"])),
 			"%s's stamp is its resolved outcome" % id)
 	var hit := int(r["home_after"]) < int(r["home_before"])
-	assert_eq(p.fx.stamp_word(c.grid.home_site_id), "BREACHED" if hit else "HOLDS", "home's stamp")
+	# ANIM-R3 B5: home's one verdict is the banner (no stamp that could say otherwise).
+	assert_eq(p.fx.stamp_word(c.grid.home_site_id), "", "home has no stamp")
+	assert_string_contains(p.fx.banner_text(), CityMapOverlay.tr_word("HOME HOLDS") if not hit else "HOME", "home's banner")
 	var forecast := hq.find_child("PlayoutForecast", true, false) as ForecastStamp
 	assert_not_null(forecast)
 	assert_true(forecast.resolved, "the forecast resolved into the verdict")
@@ -236,7 +238,7 @@ func test_influence_spread_ends_on_city_influence_colours() -> void:
 	var from := InfluenceSpread.origins(old, new)
 	assert_eq(from.size(), 1)
 	assert_eq(from[0], CityLayout.site_points(corp)[first], "the spread starts at that Site")
-	assert_eq(InfluenceSpread.front_color(old, new), Palette.CELL_PINK, "toward the Cell: the Cell's pink")
+	assert_eq(InfluenceSpread.front_color(old, new), Palette.CELL_TURF, "toward the Cell: the Cell's territory colour (ANIM-R3 B6)")
 	var reach := Motion.amplitude(&"influence_spread")
 	var feather := Motion.amplitude(&"influence_crossfade")
 	for dx in [-6, -2, 0, 3, 7]:
@@ -306,9 +308,8 @@ func test_heat_pulse_fires_once_per_crossing_and_never_on_a_steady_value() -> vo
 	assert_eq(Fx.heat_pulses, pulses + 2, "one pulse now, the second a pulse later")
 	await BoundedWait.until(get_tree(), func() -> bool: return Fx.heat_pulses >= pulses + 3, BoundedWait.motion_limit([&"heat_pulse"]))
 	assert_eq(Fx.heat_pulses, pulses + 3, "each crossing pulses once")
-	await BoundedWait.until(get_tree(), func() -> bool: return not Fx.distortion.visible and not Fx.creep_rect.visible and again.stamp_scale == 1.0 and again.shake_offset == Vector2.ZERO, BoundedWait.motion_limit([&"heat_pulse", &"net_creep"]))
+	await BoundedWait.until(get_tree(), func() -> bool: return not Fx.distortion.visible and again.stamp_scale == 1.0 and again.shake_offset == Vector2.ZERO, BoundedWait.motion_limit([&"heat_pulse"]))
 	assert_false(Fx.distortion.visible, "the pulse ends: nothing stays on")
-	assert_false(Fx.creep_rect.visible, "the creep recedes")
 	assert_eq(again.stamp_scale, 1.0, "the band stamp lands")
 	assert_eq(again.shake_offset, Vector2.ZERO, "the letters settle")
 

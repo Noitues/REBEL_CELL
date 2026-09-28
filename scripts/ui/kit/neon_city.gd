@@ -323,7 +323,7 @@ var influence_pin: Variant = null
 ## origins (grid lots), front colour and elapsed seconds (< 0: none).
 var _spread_old: Dictionary = {}
 var _spread_origins := PackedVector2Array()
-var _spread_color: Color = Palette.CELL_PINK
+var _spread_color: Color = Palette.CELL_TURF
 var _spread_elapsed: float = -1.0
 var _old_layer: Control
 var _front_layer: Control
@@ -378,6 +378,14 @@ func _init() -> void:
 	_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_veil.visible = false
 	_veil.draw.connect(_draw_veil)
+	# ANIM-R3 B4: the silhouette under the veil, over the view's sky.
+	_sil = Control.new()
+	_sil.name = "CitySilhouette"
+	_sil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sil.visible = false
+	_sil.draw.connect(_draw_sil)
+	_view.add_child(_sil)
 	_view.add_child(_veil)
 	_old_layer = _reveal_layer("InfluenceOld", 0, _draw_old)
 	_lights_layer = _blink_layer("CityLights", LIGHT_ON_SHARE, _draw_lights)
@@ -670,10 +678,16 @@ var mark_t: float = 1.0:
 		marks_changed.emit()
 var _marks_layer: Control
 ## A mark's outline (lots round its Site) and its stamp's lettering and lift (screen px).
+## ANIM-R3 B6: the stamp sits right over its Site (it hung 70 px up a leader, under the
+## labels); the district inside the outline is hatched (MARK_HATCH px apart, its lines at
+## MARK_HATCH_ALPHA) over a MARK_FILL wash, so a claim reads without its colour.
 const MARK_RADIUS := 2.2
 const MARK_FONT := 20
-const MARK_LIFT := 70.0
+const MARK_LIFT := 26.0
 const MARK_PAD := 6.0
+const MARK_FILL := 0.2
+const MARK_HATCH := 9.0
+const MARK_HATCH_ALPHA := 0.5
 
 
 ## ANIM-R1 M5: a territory change from `prev` to `now` ends in lasting marks: an outline
@@ -697,7 +711,9 @@ func _draw_marks() -> void:
 
 ## Draws the marks on canvas item `ci` (in this city's local space: the city's own layer,
 ## or a map overlay over it, which draws them above its dimming and under its nodes).
-func draw_marks_on(ci: CanvasItem) -> void:
+## ANIM-R3 B6: `rings` (the outline, wash and hatch) and `stamps` (the CLAIMED / SEIZED
+## stamps) can go on different layers: a map puts its stamps over its labels.
+func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> void:
 	if marks.is_empty() or ci == null:
 		return
 	var _marks_layer := ci
@@ -712,9 +728,13 @@ func draw_marks_on(ci: CanvasItem) -> void:
 		for q in 33:
 			var t := TAU * q / 32.0
 			ring.append(c + Vector2(cos(t) * TILE_A, sin(t) * TILE_B) * MARK_RADIUS)
-		_marks_layer.draw_colored_polygon(ring, Color(col, 0.12))
-		_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
-		_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
+		if rings:
+			_marks_layer.draw_colored_polygon(ring, Color(col, MARK_FILL))
+			_hatch(_marks_layer, c, Vector2(TILE_A, TILE_B) * MARK_RADIUS, Color(col, MARK_HATCH_ALPHA), k)
+			_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
+			_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
+		if not stamps:
+			continue
 		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
 		var word := CityMapOverlay.tr_word(String(m["word"]))
 		var size := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(MARK_PAD, MARK_PAD) * 2.0 * k
@@ -728,6 +748,25 @@ func draw_marks_on(ci: CanvasItem) -> void:
 		_marks_layer.draw_rect(box, Color(col, alpha), false, 3.0 * k)
 		_marks_layer.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
 		_marks_layer.draw_set_transform(Vector2.ZERO)
+
+
+## ANIM-R3 B6: diagonal hatch lines across the ellipse of radii `r` round `c` (a claimed
+## district reads without its colour).
+func _hatch(ci: CanvasItem, c: Vector2, r: Vector2, col: Color, k: float) -> void:
+	var step := MARK_HATCH * k
+	var n := ceili(2.0 * (r.x + r.y) / maxf(step, 0.001))
+	for i in range(-n, n + 1):
+		# The line x - y = d (a 45 degree stroke) inside the ellipse (x/rx)^2 + (y/ry)^2 = 1.
+		var d := i * step
+		var a := 1.0 / (r.x * r.x) + 1.0 / (r.y * r.y)
+		var b := 2.0 * d / (r.x * r.x)
+		var cc := d * d / (r.x * r.x) - 1.0
+		var disc := b * b - 4.0 * a * cc
+		if disc <= 0.0:
+			continue
+		var y0 := (-b - sqrt(disc)) / (2.0 * a)
+		var y1 := (-b + sqrt(disc)) / (2.0 * a)
+		ci.draw_line(c + Vector2(y0 + d, y0), c + Vector2(y1 + d, y1), col, 1.5 * k)
 
 
 ## Jumps a running spread to its end (the new look alone).
@@ -771,6 +810,7 @@ func _followed_influence() -> Dictionary:
 
 
 func _process(delta: float) -> void:
+	_step_silhouette()
 	if not _want.is_empty() and Engine.get_process_frames() - int(_want["frame"]) >= BAKE_SETTLE_FRAMES:
 		if _want["cam"] == _camera_key():
 			_request_want()
@@ -1138,6 +1178,10 @@ func _draw_view() -> void:
 		key = _stand_in(look, view)
 	if key == "":
 		_sky_shown = true
+		# ANIM-R3 B4: the city's shape, dim, from its placement while the image bakes (its own
+		# layer: redrawing it never re-lays the maps over the view).
+		_sil.visible = true
+		_sil.queue_redraw()
 		if _baked_key != "":
 			_baked_key = ""
 			_lights = []
@@ -1147,6 +1191,7 @@ func _draw_view() -> void:
 			_live_for = []
 		bake_fade = 0.0
 	else:
+		_sil.visible = false
 		var e := CityBakeCache.entry(key)
 		var region: Rect2 = e["region"]
 		_view.draw_texture_rect(e["texture"], Rect2(region.position + _shift, region.size), false)
@@ -1235,7 +1280,121 @@ var bake_fade: float = 1.0:
 
 func _draw_veil() -> void:
 	_veil.draw_rect(Rect2(-size, size * 3.0), Palette.NIGHT_SKY)
+	# ANIM-R3 B4: the image fades in from the silhouette the view showed, not from black.
+	_draw_silhouette(_veil)
 	_draw_shade(_veil)
+
+
+## ANIM-R3 B4: while a view's bake runs, the city is drawn as its silhouette from the known
+## placement (every building's lot footprint in view as a dim block with a faint outline and
+## a low lift) so a map, the route or a fight's arena never shows an empty sky: the lots are
+## the bake's own (the placement's `_front_of`, cheap: the buildings themselves are not
+## built), worked out SILHOUETTE_BUDGET_USEC a frame (the layer redraws until all are known),
+## and kept per look.
+const SILHOUETTE_BUDGET_USEC := 8000
+const SILHOUETTE_FILL := 0.9
+const SILHOUETTE_EDGE := 0.4
+## The block's lift (px, its top face drawn this far above its footprint).
+const SILHOUETTE_LIFT := 10.0
+## Lots beyond the view's corners the silhouette also covers (a tall roof leans in).
+const SILHOUETTE_MARGIN := 3
+var _silhouette: Dictionary = {}  # lot (Vector2i) -> the building's front lot (NO_LOT: none)
+var _silhouette_look: String = ""
+## Roofs drawn by the last silhouette pass, and whether it knew every lot in view (tests).
+var silhouette_roofs: int = 0
+var silhouette_done: bool = false
+var _sil: Control
+
+
+func _draw_sil() -> void:
+	_draw_silhouette(_sil)
+
+
+## ANIM-R3 B4: the silhouette's next slice of lots, a frame after the last (NeonCity's
+## _process calls it).
+func _step_silhouette() -> void:
+	if _sil != null and _sil.visible and not silhouette_done:
+		_sil.queue_redraw()
+
+
+func _draw_silhouette(ci: CanvasItem) -> void:
+	if not is_baked() or size.x < 2.0 or size.y < 2.0:
+		return
+	var look := look_key()
+	if look != _silhouette_look:
+		_silhouette.clear()
+		_silhouette_look = look
+	var corners: Array[Vector2] = [_grid_of(Vector2.ZERO), _grid_of(Vector2(size.x, 0)), _grid_of(Vector2(0, size.y)), _grid_of(size)]
+	var lo := corners[0]
+	var hi := corners[0]
+	for c in corners:
+		lo = lo.min(c)
+		hi = hi.max(c)
+	var i0 := floori(lo.x) - SILHOUETTE_MARGIN
+	var i1 := ceili(hi.x) + SILHOUETTE_MARGIN
+	var j0 := floori(lo.y) - SILHOUETTE_MARGIN
+	var j1 := ceili(hi.y) + SILHOUETTE_MARGIN
+	var t0 := Time.get_ticks_usec()
+	var place := _placement()
+	var fill := Color(Palette.NIGHT_BLOCK_LIT, SILHOUETTE_FILL)
+	var side := Color(Palette.NIGHT_BLOCK, SILHOUETTE_FILL)
+	var edge := Color(Palette.NET_CYAN, SILHOUETTE_EDGE)
+	var seen := {}
+	var done := true
+	silhouette_roofs = 0
+	var view := Rect2(Vector2.ZERO, size).grow(TILE_A * 2.0)
+	var up := Vector2(0, -SILHOUETTE_LIFT)
+	# From the view's middle outward (the part a map frames is known first), ring by ring.
+	var mid := _grid_of(size * 0.5)
+	var ci0 := clampi(roundi(mid.x), i0, i1)
+	var cj0 := clampi(roundi(mid.y), j0, j1)
+	var reach := maxi(maxi(ci0 - i0, i1 - ci0), maxi(cj0 - j0, j1 - cj0))
+	for ring in reach + 1:
+		for l: Vector2i in _ring_lots(Vector2i(ci0, cj0), ring, Rect2i(i0, j0, i1 - i0 + 1, j1 - j0 + 1)):
+			if not _silhouette.has(l):
+				if Time.get_ticks_usec() - t0 > SILHOUETTE_BUDGET_USEC:
+					done = false
+					continue
+				_silhouette[l] = place._front_of(l)
+			var f: Vector2i = _silhouette[l]
+			if f == NO_LOT or seen.has(f):
+				continue
+			seen[f] = true
+			var cell := place._cell_of(f.x, f.y)
+			var a := _iso(cell.position.x, cell.position.y)
+			if not view.has_point(a):
+				continue
+			var b := _iso(cell.end.x, cell.position.y)
+			var c := _iso(cell.end.x, cell.end.y)
+			var d := _iso(cell.position.x, cell.end.y)
+			# The two lit sides, then the top face lifted, then its outline.
+			ci.draw_colored_polygon(PackedVector2Array([d, c, c + up, d + up]), side)
+			ci.draw_colored_polygon(PackedVector2Array([c, b, b + up, c + up]), side)
+			var top := PackedVector2Array([a + up, b + up, c + up, d + up])
+			ci.draw_colored_polygon(top, fill)
+			ci.draw_polyline(top + PackedVector2Array([a + up]), edge, 1.0)
+			silhouette_roofs += 1
+	if ci == _sil:
+		# The rest next frame when the budget ran out (_step_silhouette).
+		silhouette_done = done
+
+
+## The lots `r` steps (Chebyshev) round `c` inside `box` (r = 0: `c` itself).
+static func _ring_lots(c: Vector2i, r: int, box: Rect2i) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if r == 0:
+		if box.has_point(c):
+			out.append(c)
+		return out
+	for d in range(-r, r + 1):
+		for l: Vector2i in [c + Vector2i(d, -r), c + Vector2i(d, r)]:
+			if box.has_point(l):
+				out.append(l)
+	for d in range(-r + 1, r):
+		for l: Vector2i in [c + Vector2i(-r, d), c + Vector2i(r, d)]:
+			if box.has_point(l):
+				out.append(l)
+	return out
 
 
 ## The current look's own bake is on screen: when this family last showed another

@@ -228,7 +228,7 @@ func _draw() -> void:
 		var status := campaign.grid.status_of(s.id)
 		match status:
 			GridState.SiteStatus.CLAIMED:
-				col = Palette.CELL_PINK
+				col = Palette.CELL_TURF  # ANIM-R3 B6
 			GridState.SiteStatus.CLEARED:
 				col = Color(Palette.NET_CYAN, 0.7)
 			GridState.SiteStatus.SEIZED:
@@ -244,8 +244,8 @@ func _draw() -> void:
 			# ANIM-5: its status changed since the map last showed: one pulse.
 			draw_arc(p + Vector2(0, -h * 0.5), w + 10 + pulse_t * Motion.amplitude(&"minimap_pulse"), 0, TAU, 32, Color(col, 1.0 - pulse_t), 3.0)
 		if status == GridState.SiteStatus.CLAIMED:
-			draw_arc(p + Vector2(0, 6), w + 4, 0, TAU * 0.92, 24, Color(Palette.CELL_PINK, 0.5), 4.0)
-			draw_arc(p + Vector2(3, 4), w - 2, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_PINK, 0.3), 2.0)
+			draw_arc(p + Vector2(0, 6), w + 4, 0, TAU * 0.92, 24, Color(Palette.CELL_TURF, 0.5), 4.0)
+			draw_arc(p + Vector2(3, 4), w - 2, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_TURF, 0.3), 2.0)
 		if status == GridState.SiteStatus.SEIZED:
 			draw_line(p + Vector2(-w * 0.6, -w * 0.6), p + Vector2(w * 0.6, w * 0.6), Palette.RESIST_GOLD, 2.0)
 			draw_line(p + Vector2(-w * 0.6, w * 0.6), p + Vector2(w * 0.6, -w * 0.6), Palette.RESIST_GOLD, 2.0)

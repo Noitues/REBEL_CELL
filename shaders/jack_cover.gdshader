@@ -17,7 +17,11 @@ uniform vec2 tile = vec2(34.0, 17.0);
 uniform float roll = 0.0;
 uniform float scan = 0.35;
 // Share of a cell's threshold from its distance to the focus (the rest is its hash).
-uniform float spread = 0.6;
+// ANIM-R3 B5: mostly distance now (Fx sets it from `jack_dissolve`), and each cell fades in
+// over `feather` of the progress instead of popping: a wave from the CRT, not the scattered
+// hard cells that read as a corrupted screen.
+uniform float spread = 0.9;
+uniform float feather = 0.08;
 
 float h(vec2 p) {
 	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -28,7 +32,7 @@ void fragment() {
 	vec2 c = floor(px / cell);
 	float d = length((c + 0.5) * cell - focus) / length(screen);
 	float thr = d * spread + h(c) * (1.0 - spread);
-	float a = progress > 0.0 ? step(thr, progress * 1.02) : 0.0;
+	float a = progress > 0.0 ? smoothstep(thr - feather, thr, progress * (1.02 + feather)) : 0.0;
 	float gx = abs(fract((px.x / tile.x + px.y / tile.y) / 6.0) - 0.5);
 	float gy = abs(fract((px.x / tile.x - px.y / tile.y) / 6.0) - 0.5);
 	float line = smoothstep(0.46, 0.5, max(gx, gy));

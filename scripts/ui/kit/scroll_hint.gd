@@ -19,6 +19,14 @@ var scroll: ScrollContainer
 ## The strip under the scroll view the tag sits in (null when the scroll's parent is not a
 ## box container: the tag then sits at the view's foot, as before H22).
 var room: Control = null
+## ANIM-R3 B13: when on, the view (at the top of its content) ends above the first list row
+## it would cut (a row of a box container, shorter than ROW_SHARE of the view): at 1.6 the
+## Grid's RUNS OPEN NOW list ended in a half-drawn row.
+var snap_rows: bool = false
+## The extra room the snap keeps (px; worked out at the top of the content, kept while it
+## scrolls so the view never jumps).
+var snap_reserve: float = 0.0
+const ROW_SHARE := 1.0 / 3.0
 
 
 func _init(p_scroll: ScrollContainer) -> void:
@@ -73,11 +81,44 @@ func overflows() -> bool:
 
 ## Shows or hides the tag and keeps it centred under the view (in its room).
 func refresh() -> void:
-	if not is_instance_valid(scroll) or not scroll.is_inside_tree():
+	# ANIM-R3 B13: a room change resizes the view, which calls back in here; one pass at a
+	# time (the snap measures the laid-out view on the next call).
+	if _refreshing or not is_instance_valid(scroll) or not scroll.is_inside_tree():
 		return
+	_refreshing = true
+	_refresh()
+	_refreshing = false
+
+
+var _refreshing: bool = false
+## What the snap reserve was worked out for, how often and when last (see _refresh).
+var _snap_key: Array = []
+var _snap_passes: int = 0
+var _snap_frame: int = -1
+## The most times a content's snap is worked out (its layout settles in a pass or two).
+const SNAP_PASSES := 3
+
+
+func _refresh() -> void:
 	size = get_combined_minimum_size()
 	if room != null and is_instance_valid(room):
-		var want := size.y + MARGIN.y * 2.0 if overflows() else 0.0
+		# ANIM-R3 B13: the snap is worked out at most once a frame and SNAP_PASSES times per
+		# content (a new page's content, or the text size), never while the room is still
+		# being laid out: the room it sets can move the rows it measured (a scroll bar coming
+		# and going rewraps them), and an unbounded snap made the layout chase itself through
+		# the deferred calls until the message queue ran out (the sweep tests crashed).
+		if snap_rows and scroll.scroll_vertical == 0 and scroll.get_child_count() > 0:
+			var content := scroll.get_child(0)
+			var key := [content.get_instance_id(), Settings.text_scale]
+			if key != _snap_key:
+				_snap_key = key
+				_snap_passes = 0
+			var frame := Engine.get_process_frames()
+			if _snap_passes < SNAP_PASSES and frame != _snap_frame and is_equal_approx(room.size.y, room.custom_minimum_size.y):
+				_snap_frame = frame
+				_snap_passes += 1
+				snap_reserve = cut_row_reserve()
+		var want := size.y + MARGIN.y * 2.0 + snap_reserve if overflows() else 0.0
 		if not is_equal_approx(room.custom_minimum_size.y, want):
 			room.custom_minimum_size.y = want
 	visible = more_below()
@@ -86,6 +127,33 @@ func refresh() -> void:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, room.get_global_rect().position.y + MARGIN.y)
 	else:
 		global_position = Vector2(r.get_center().x - size.x * 0.5, r.end.y - size.y - MARGIN.y)
+
+
+## ANIM-R3 B13: how far above the view's foot the first row it cuts starts (0 when no row
+## is cut): the rows are the children of box containers inside the content, each shorter
+## than ROW_SHARE of the view; the smallest one crossing the foot decides.
+func cut_row_reserve() -> float:
+	if scroll.get_child_count() == 0:
+		return 0.0
+	var view := scroll.get_global_rect()
+	# The view's foot as it would be with no snap reserve: the view and its room share a
+	# fixed height, so the foot is their bottom less the tag's own room (whatever reserve the
+	# room holds now).
+	var tag_room := size.y + MARGIN.y * 2.0 if room.custom_minimum_size.y > 0.0 else 0.0
+	var foot := view.end.y + room.size.y - tag_room
+	var best := 0.0
+	var best_h := INF
+	for n in scroll.get_child(0).find_children("*", "Control", true, false):
+		var c := n as Control
+		if not c.is_visible_in_tree() or not (c.get_parent() is BoxContainer):
+			continue
+		var r := c.get_global_rect()
+		if r.size.y <= 0.0 or r.size.y > view.size.y * ROW_SHARE:
+			continue
+		if r.position.y < foot and r.end.y > foot + 0.5 and r.position.y > view.position.y and r.size.y < best_h:
+			best_h = r.size.y
+			best = foot - r.position.y
+	return best
 
 
 ## Scrolls the page on by most of a view.

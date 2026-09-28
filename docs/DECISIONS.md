@@ -438,6 +438,141 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R3 city, raid, jack, heat and route
+The third fix batch of the Animation pass review, city, raid, jack, Heat and route part
+(B1-B13). Views only (no rule or schema field changed). Every call below was the
+implementer's (the standing rule: nothing deferred). Tests: `tests/unit/test_anim_r3_city.gd`
+(full tier, 18 tests) and a lambda-rule test in `test_suite_integrity`; expectation changes
+listed at the end. Strips recaptured in `docs/timeline/motion/` (CHOSEN on top, a variant
+under it, quantized to 128 colours, raw frames deleted): `raid_playout`, `influence_spread`,
+`heat_pulse`, `jack_in`, `route_pulse`, `asset_drop`. Measured on this machine's display
+(1280x720, RX 6700 XT, Vulkan Forward+) with `tools/design_lab/profile_frames.gd --timeline`.
+- **B1 the jack's first frame.** Two causes, both fixed. (1) The HQ's JACK IN built the run
+  (`RunManager.start_run`: the map, the session, its autosave: ~44 ms measured in place) in
+  the frame the cover started; now `RunManager.go_to_netrun(before_switch, site_id)` runs it
+  at the scene switch, under the opaque cover (at once when no jack plays: tests, reduce
+  effects' fade, switching off), and the cover names the Site from its id before the run
+  exists. (2) The cover's and the Heat distortion's shaders compiled on their first draw:
+  `Fx._warm_materials` draws both, invisibly (progress 0, intensity 0), for `WARM_FRAMES` (2)
+  frames at start. Measured (`--demo-grid --demo-anim=jack_in`): before, the jack's frame
+  took 92 ms (f94); after, no frame over 50 ms from the press to the switch (the switch
+  frame itself, 148 ms, is under the opaque cover, as before).
+- **B2:** `_hold_connect` is a reading time, not an effect: it holds under reduce effects
+  too (the fade showed CONNECTING ~2 frames); only the entry switched off skips it.
+- **B3 route twins.** "(same as N)" now means the same whole road: `subgraph_signatures`
+  interns, from the last layer back, each node's kind, Heat and the multiset of its
+  successors' signatures (linear, no unfolding), and `choice_twins` compares those. Checked
+  against a plain recursive comparison on 60 generated maps (every same-layer pair; some
+  real twins, and pairs the old next-layer label called twins that now differ). A choice
+  that is not a twin shows a row under its button: its entering Heat as an icon and number
+  (it was only words) and the icons of what only it reaches further on (Elite, Shop, Event,
+  Rack, Heat: `choice_differences`, the kinds some but not all choices reach), each with its
+  word as a tooltip; the map label carries the Heat too.
+- **B4 never an empty map.** While a view bakes, NeonCity draws the city's silhouette on a
+  layer of its own (`CitySilhouette`, under the veil): each building's footprint cell from
+  the placement (`_front_of`, cheap; the buildings are not built) as a dim lifted block with
+  a faint outline, from the view's middle outward, `SILHOUETTE_BUDGET_USEC` 8 ms a frame
+  until every lot is known (the first Grid frame shows the middle; ~1 s fills the rest). The
+  veil draws it too, so a landing image fades in from the silhouette, not from black, over
+  `city_bake_fade` 0.8 s (was 0.35 s: the arena "popped in" mid-fight). A first attempt drew
+  roofs (`placed_roof`): too slow per lot (the view filled over seconds) and it re-laid the
+  maps each redraw (it drew on the view, whose redraw emits `rebuilt`); a deferred redraw
+  from inside a draw looped in one frame. Both avoided by the layer and `_process` stepping.
+- **B5 raids read true.**
+  - One verdict per node: every node's stamp is its resolved outcome (`nodes[id].outcome`,
+    the word its label says); home gets no stamp: its verdict is the banner ("HOME -5 -
+    HOLDS", "HOME HOLDS", "HOME BREACHED" when the campaign is lost). The old code stamped
+    home BREACHED whenever it lost anything, beside a label that said HOLDS.
+  - Numbers: one per hit, the integrity it really took (a cascade or a hit on home stops at
+    0); the hit that disables a node shows what was left, a Site seized with integrity left
+    shows its loss, so a node's numbers add up to its before - after (checked for every
+    corporation, three setups each). Node numbers rise on the node's right, a shot's on the
+    threat's left (the -4 on the threat standing on CORE sat on home's -5), stacked when
+    several show at once, drawn over the stamps.
+  - The banner is placed clear of every stamp, node label and icon and inside the map
+    (`banner_rect`: above home, below its bar, left, right, the least covered), so at 1.6 it
+    no longer covers the stamps and labels; it stamps on `raid_result_banner`'s delay (now
+    read: 0.2 s) after the last outcome flips, fading in over `stamp_fade_in`'s share.
+  - The RAID FEED speaks in translated sentences with display names (`feed_line`: CORE, the
+    Site's name, the threat's and defence's names), never an id ("Turret at t1_a"); the end
+    is "Raid over after 2 step(s). Threats destroyed: 0. Reached home: 1. Disabled: 0.
+    Seized: 0."; a Heat line only when Heat moved.
+  - The playout page shows whole at once (no page entrance: its first frames were a dim,
+    half-drawn map).
+  - A landing defence falls 56 px (was 24) from x2.2 its size (`asset_drop_grow`), its stamp
+    ring is thicker with a pink flash, and each forecast number it changed rises off its node
+    ("25 > 30", green when better, pink when worse; `forecast_change` 1.4 s, fading over its
+    last third); the HQ passes the forecast before the change (`forecast_values`).
+  - The mid-run raid interlude is set up like the raid setup (the raid's warning, the dashed
+    forecast stamp, HOME a > b and STOPPED badges, a badge per node with HP now > after and
+    the outcome word) instead of a form of text lines; `--demo-interlude` opens it. The jack
+    into a run that opens on it says "CONNECTING TO <SITE>" and "INTERRUPTED: RAID INCOMING"
+    (`jack_note`: a raid queued on the campaign).
+  - The jack's dissolve is a calm wave from the CRT: `jack_dissolve` (spread 0.9 of a cell's
+    turn from its distance, 0.1 from its hash; each cell fades in over 0.08 of the progress)
+    instead of scattered hard cells (spread 0.6, a step) that read as corruption.
+- **B6 territory.** The CLAIMED / SEIZED stamps draw on the map's top layer, over the
+  labels, right over their Site (`MARK_LIFT` 26, was 70 up a leader); the district is hatched
+  (`MARK_HATCH` 9 px, alpha 0.5) over a 0.2 wash, and the lasting tint is 0.45 (`influence_tint`,
+  was 0.3). The Grid's Site card rebuilds in place when a claim is seen (`refresh_site_card`):
+  CLAIMED with the claim mark, no CLAIM offer. **Colour:** the Cell's territory (claimed Sites,
+  its links, the tint, the marks, the spray ring and the key's rows) is `Palette.CELL_TURF`,
+  the Cell's acid #D4FF00, never `cell_pink` (pink is damage and hits everywhere). Acid is
+  furthest from every corporation's hue (Solace's mint is ~70 degrees away), and every
+  territory mark carries a non-colour cue (spray ring, hatch, stamp word). STYLE_GUIDE 2 and
+  5.3.
+- **B7 Heat.** The crossing's banner no longer sits on the number: on the wanted poster it
+  covers the WANTED header and mugshot, on the small poster it hangs under the bar; it fades
+  after its hold as before. Its colour is the band's warning (amber NOTICED, orange FLAGGED,
+  red HUNTED), with a drawn eye before the words; the band's consequence (the threshold's own
+  text) is under it when it fits and always in the tooltip. Long translations wrap to two lines
+  (at " - ", else the middle space) before the lettering goes under 12 px (it was one line
+  down to 8 px, 168 px in 164).
+- **B8 route framing.** The route fits the whole route down to `ROUTE_FIT_FLOOR` 0.4 (icons
+  keep their screen size), else the part the player decides on (where they are and the next
+  choices), inside a `ROUTE_MARGIN` of 36 px x the text size; the you-are-here marker stands
+  at the street before the first node (`here_at`: it was drawn nowhere at a run's start) and
+  is kept in frame.
+- **B9 cleanups.** `net_creep`, `net_creep_recede`, `corp_creep.gdshader` and the Fx creep path
+  are gone (REQUIRED_IDS, the table, the lab); the lab's heat demo is the local pulse;
+  `--demo-text-scale=` no longer saves the player's settings; `raid_result_banner`'s comment
+  says what it does and its delay is read; the banner's fade-in share comes from
+  `stamp_fade_in` (was `u * 3.0`); the drop's camera wait is `asset_drop_wait` (was
+  DROP_WAIT_MAX); HeatPoster's `mouse_filter` is set in `_init` (it sat after a return).
+- **B10 bakes.** `CityBakeCache.drop_stale()` (on every request and when the slot is wanted)
+  drops queued bakes whose every waiter is gone and stops a building one (its slot given back:
+  records carry `holding`): the HQ's Grid and playout prebakes no longer hold the one build
+  slot after the jack into a run. A bake's coroutine checks its own record (`is_same`), never
+  just the key (after `shutdown` a new request for the key has a record of its own).
+- **B11 lambda rule.** `frame_lambda` now reads `<sig> .connect ( func`, `connect("<sig>",
+  func` / `connect(&"<sig>", func`, `Callable(func` and a lambda held in a variable of the same
+  script and then connected (`frame_lambda_lines`); method callables (and bound ones), other
+  signals, comments, awaits and disconnects pass.
+- **B12 orphans.** `PadPrompts` freed its old labels with `queue_free` after removing them:
+  a text size change relabels twice (changed, hints_changed), so a page torn down in the same
+  frame left 6 orphan Labels. They are freed at once now. **Not mine, seen in passing:**
+  `test_netrun_scene.test_resume_restores_the_identical_run_mid_combat` leaves 5 orphan hand
+  buttons (combat) and `test_accessibility.test_settings_panel_toggles_write_to_settings` 49
+  (the settings panel's controls): both pre-existing, left to their owners.
+- **B13.** SAVED keeps off the screen title (`HudBar.title_box`) and window titles and, when
+  every edge spot covers something, searches a grid over the whole screen (`SAVED_INNER_STEP`
+  40 px) (at 1.0 the least covered edge spot was over UNDO). The Grid's side column ends above
+  the first run row it would cut (`ScrollHint.snap_rows`: the room under the view takes the
+  cut row's height at the top of the content). The snap is worked out at most once a frame
+  and `SNAP_PASSES` (3) times per page: unbounded, the room it set brought a scroll bar in or
+  out, which rewrapped the rows it had measured, and the layout chased itself through deferred
+  calls until the message queue ran out (`test_city_map_sweeps` crashed with signal 11 in the
+  full run); a re-entrant refresh is refused too. The Site card also rebuilds only when what it
+  shows changed (`refresh_site_card` compares the card's Site and status).
+- **New ids:** `asset_drop_wait`, `asset_drop_grow`, `forecast_change`, `jack_dissolve`.
+  Removed: `net_creep`, `net_creep_recede`. Retuned: `asset_drop` 56 px, `city_bake_fade` 0.8 s,
+  `influence_tint` 0.45, `raid_result_banner` delay 0.2 s (now read).
+- **Expectation changes:** `test_anim5_map_motion` (home's stamp is gone: the banner; the
+  creep), `test_anim_r1_campaign` (the creep; the mark's colour), `test_anim_r2_city` (the
+  outcomes stamp every node but home; the Heat banner's width is its widest line),
+  `test_horizontal_pass20_city` (territory colour), `test_suite_integrity` (the rule's
+  helper renamed `_frame_code` next to the bounded-wait rule's `_code_of`).
+
 #### 2026-09-28 — Animation pass — ANIM-R3 combat, input and screens
 The third fix batch of the Animation pass review, combat, input and screens part (A1-A8).
 Views only (no rule, no schema field changed). Every call below was the implementer's (the

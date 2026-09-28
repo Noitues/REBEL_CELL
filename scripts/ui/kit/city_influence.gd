@@ -100,10 +100,11 @@ static func sway_share(inf: Dictionary, p: Vector2, terr: StringName = &"") -> f
 	return clampf((SWAY_REACH + SWAY_FEATHER - sqrt(nearest)) / SWAY_FEATHER, 0.0, 1.0)
 
 
-## The colour the influence leans toward: the Cell's pink (v > 0) or the corporation's.
+## The colour the influence leans toward: the Cell's territory colour (v > 0; ANIM-R3 B6:
+## Palette.CELL_TURF, not the damage pink) or the corporation's.
 static func color_for(inf: Dictionary, v: float) -> Color:
 	if v >= 0.0 or inf.is_empty():
-		return Palette.CELL_PINK
+		return Palette.CELL_TURF
 	return Palette.corp_color(inf["corp"])
 
 

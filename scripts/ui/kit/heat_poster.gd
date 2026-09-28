@@ -77,11 +77,26 @@ const NUMBER_FONT := 30
 const BANNER_FONT := 18
 const BANNER_PAD := 6.0
 const BANNER_TILT := -7.0
-## ANIM-R2 R8: the banner's lettering follows the text size and shrinks (to BANNER_FONT_MIN)
-## until the tilted banner fits the poster less BANNER_MARGIN a side (at 18 px a French
-## band word ran 8-9 px past it).
-const BANNER_FONT_MIN := 8
+## ANIM-R2 R8 / ANIM-R3 B7: the banner's lettering follows the text size and shrinks (to
+## BANNER_FONT_MIN, still readable) until the tilted banner fits the poster less
+## BANNER_MARGIN a side; past that it wraps to two lines (at "-", else the middle space) and
+## only then shrinks further (to BANNER_FONT_FLOOR). The 8 px floor on one line ran a French
+## banner 168 px in 164.
+const BANNER_FONT_MIN := 12
+const BANNER_FONT_FLOOR := 8
 const BANNER_MARGIN := 3.0
+## Line height of the banner's lettering (x its size) and the gap between it and the poster's
+## Heat block (px).
+const BANNER_LINE := 1.15
+const BANNER_GAP := 4.0
+## ANIM-R3 B7: the band's consequence under the banner's words (mono, px at text scale 1.0)
+## and the eye glyph before them (x the lettering: width, and the gap after it).
+const SUB_FONT := 10
+const EYE_W := 1.3
+const EYE_GAP := 0.35
+## ANIM-R3 B7: a crossing is a warning, never good news: amber (noticed), orange (flagged),
+## red (hunted), by band (1-3), not the corporation's colour (Solace green read as good).
+const BAND_COLORS: Array[Color] = [Color("#FFB000"), Color("#FFB000"), Color("#FF8C1A"), Color("#FF2A3D")]
 ## The ink box round the band word while it stamps (px).
 const STAMP_BOX_PAD := 3.0
 ## A ransom letter's strip and the step between strips at rest, and the closest the
@@ -96,6 +111,9 @@ func _init(p_poster: bool = false) -> void:
 	# H23 S6: the poster is tall enough for its band word ("cool" hung under the paper,
 	# hidden by the Pirate Radio note).
 	custom_minimum_size = Vector2(170, 96 if not p_poster else ceilf(band_label_rect().end.y + BAND_PAD))
+	# PASS: the scene's tooltip (what the thresholds do) shows on hover. ANIM-R3 B9: set here
+	# (it sat after a return in band_label_rect and never ran).
+	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 ## Where the band word ("cool", "hunted") is drawn (local px).
@@ -105,12 +123,10 @@ func band_label_rect() -> Rect2:
 	var word := BAND_WORDS[mini(band, 3)]
 	var base := top + BAND_BASELINE
 	return Rect2(8, base - f.get_ascent(BAND_FONT), f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT).x, f.get_height(BAND_FONT))
-	# PASS: the scene's tooltip (what the thresholds do) shows on hover.
-	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
 func _make_custom_tooltip(for_text: String) -> Object:
-	return UiTip.make(for_text, "Heat") if for_text != "" else null
+	return UiTip.make(tooltip_words(for_text), "Heat") if for_text != "" else null
 
 
 func set_heat(value: int, maximum: int, thresholds: Array[int] = [] as Array[int]) -> void:
@@ -266,24 +282,156 @@ func banner_text() -> String:
 	return tr("HEAT %d - %s") % [at, tr(BAND_WORDS[mini(band_of(at, marks), 3)]).to_upper()]
 
 
-## ANIM-R2 R8: the banner's lettering (px): BANNER_FONT at the text size, shrunk until the
-## tilted banner fits the poster.
-func banner_font_size() -> int:
+## ANIM-R3 B7: the banner's colour: the band's warning colour (BAND_COLORS).
+func banner_color() -> Color:
+	var at := _banner_at if _banner_at > 0 else heat
+	return BAND_COLORS[clampi(band_of(at, marks), 0, BAND_COLORS.size() - 1)]
+
+
+## ANIM-R3 B7: what threshold `at` brings (its content text, translated: "Raid. While Heat
+## stays at 25 or above, elites are more frequent."); "" when no campaign or no such
+## threshold.
+static func consequence(at: int) -> String:
+	var cfg: CampaignConfigData = RunManager.config() if RunManager.campaign != null else null
+	if cfg == null:
+		return ""
+	var best: HeatThresholdData = null
+	for t in cfg.heat_thresholds:
+		if t != null and t.kind == RC.ThresholdKind.MAJOR and t.heat <= at and (best == null or t.heat > best.heat):
+			best = t
+	return TranslationServer.translate(best.event_text) if best != null and best.event_text != "" else ""
+
+
+## The banner's lines at its lettering size: {"lines": PackedStringArray, "fs": int} (one
+## line when it fits at BANNER_FONT_MIN or more, else two).
+func banner_lines() -> Dictionary:
 	var f := Palette.display()
 	var text := banner_text()
 	var room := (size.x if size.x > 0.0 else custom_minimum_size.x) - BANNER_MARGIN * 2.0
-	var fs := maxi(BANNER_FONT_MIN, roundi(BANNER_FONT * Settings.text_scale))
-	while fs > BANNER_FONT_MIN and banner_span(f, text, fs) > room:
-		fs -= 1
-	return fs
+	var top := maxi(BANNER_FONT_MIN, roundi(BANNER_FONT * Settings.text_scale))
+	var one := PackedStringArray([text])
+	for fs in range(top, BANNER_FONT_MIN - 1, -1):
+		if banner_span(f, one, fs) <= room:
+			return {"lines": one, "fs": fs}
+	var two := split_banner(text)
+	for fs in range(top, BANNER_FONT_FLOOR - 1, -1):
+		if banner_span(f, two, fs) <= room:
+			return {"lines": two, "fs": fs}
+	return {"lines": two, "fs": BANNER_FONT_FLOOR}
 
 
-## The width the tilted banner at `fs` spans on the poster (px).
-static func banner_span(f: Font, text: String, fs: int) -> float:
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + BANNER_PAD * 2.0
-	var h := fs * 1.5
+## ANIM-R2 R8: the banner's lettering (px) (banner_lines).
+func banner_font_size() -> int:
+	return int(banner_lines()["fs"])
+
+
+## `text` in two lines: after its " - " when it has one, else at the space nearest its middle
+## (one line when it has no space).
+static func split_banner(text: String) -> PackedStringArray:
+	var dash := text.find(" - ")
+	if dash >= 0:
+		return PackedStringArray([text.left(dash + 2).strip_edges(), text.substr(dash + 3).strip_edges()])
+	var best := -1
+	for i in text.length():
+		if text[i] == " " and (best < 0 or absi(i - text.length() / 2) < absi(best - text.length() / 2)):
+			best = i
+	if best < 0:
+		return PackedStringArray([text])
+	return PackedStringArray([text.left(best), text.substr(best + 1)])
+
+
+## The width the tilted banner of `lines` at `fs` spans on the poster (px), its eye glyph
+## included.
+static func banner_span(f: Font, lines: Variant, fs: int) -> float:
+	var list: PackedStringArray = PackedStringArray([lines]) if lines is String else lines
+	var w := 0.0
+	for line in list:
+		w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	w += fs * (EYE_W + EYE_GAP) + BANNER_PAD * 2.0
+	var h := banner_height(list.size(), fs)
 	var a := deg_to_rad(absf(BANNER_TILT))
 	return w * cos(a) + h * sin(a)
+
+
+## The banner box's height for `count` lines at `fs` (px, sub-line not included).
+static func banner_height(count: int, fs: int) -> float:
+	return count * fs * BANNER_LINE + BANNER_PAD * 1.5
+
+
+## ANIM-R3 B7: where the banner's box sits, unrotated (local px): a wanted poster puts it
+## over its header (WANTED and the mugshot), clear of the Heat number; the small poster
+## (combat's side) puts it under the Heat bar. Never over the number.
+func banner_rect() -> Rect2:
+	var lay := banner_lines()
+	var fs: int = lay["fs"]
+	var lines: PackedStringArray = lay["lines"]
+	var w := 0.0
+	for line in lines:
+		w = maxf(w, Palette.display().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	w += fs * (EYE_W + EYE_GAP) + BANNER_PAD * 2.0
+	var subs := sub_lines()
+	for line in subs:
+		w = maxf(w, Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_font_size()).x + BANNER_PAD * 2.0)
+	var h := banner_height(lines.size(), fs) + subs.size() * sub_font_size() * BANNER_LINE
+	var width := size.x if size.x > 0.0 else custom_minimum_size.x
+	var cy := 0.0
+	if poster:
+		cy = clampf(POSTER_BLOCK_TOP * 0.5, h * 0.5 + BANNER_GAP, POSTER_BLOCK_TOP - BANNER_GAP - h * 0.5)
+	else:
+		cy = BAR_BOTTOM + BANNER_GAP + h * 0.5
+	return Rect2(Vector2(width * 0.5 - w * 0.5, cy - h * 0.5), Vector2(w, h))
+
+
+## The bottom of the Heat bar below the block's top (px; the small poster's banner hangs
+## under it).
+const BAR_BOTTOM := 52.0
+
+
+func sub_font_size() -> int:
+	return maxi(BANNER_FONT_FLOOR, roundi(SUB_FONT * Settings.text_scale))
+
+
+## The consequence under the banner, wrapped to the poster (at most SUB_LINES_MAX lines;
+## none when it would not fit the wanted poster's header: the tooltip says it then).
+func sub_lines() -> PackedStringArray:
+	var text := consequence(_banner_at if _banner_at > 0 else heat)
+	var out := PackedStringArray()
+	if text == "":
+		return out
+	var f := Palette.mono()
+	var fs := sub_font_size()
+	var room := (size.x if size.x > 0.0 else custom_minimum_size.x) - BANNER_MARGIN * 2.0 - BANNER_PAD * 2.0 - SUB_TILT_ROOM
+	var line := ""
+	for word in text.split(" ", false):
+		var next := word if line == "" else line + " " + word
+		if f.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room and line != "":
+			out.append(line)
+			line = word
+		else:
+			line = next
+	if line != "":
+		out.append(line)
+	if out.size() > SUB_LINES_MAX:
+		return PackedStringArray()
+	if poster:
+		var lay := banner_lines()
+		var h := banner_height((lay["lines"] as PackedStringArray).size(), int(lay["fs"])) + out.size() * fs * BANNER_LINE
+		if h > POSTER_BLOCK_TOP - BANNER_GAP * 2.0:
+			return PackedStringArray()
+	return out
+
+
+const SUB_LINES_MAX := 4
+## Width kept free beside the sub-lines so the tilted, taller box still fits (px).
+const SUB_TILT_ROOM := 12.0
+
+
+## ANIM-R3 B7: the tooltip adds what the band in force does.
+func tooltip_words(for_text: String) -> String:
+	var band_line := consequence(heat)
+	if band_line == "" or for_text.contains(band_line):
+		return for_text
+	return for_text + "\n" + tr(BAND_WORDS[mini(band, 3)]).to_upper() + ": " + band_line
 
 
 func _process(_delta: float) -> void:
@@ -354,16 +502,53 @@ func _draw() -> void:
 		_draw_banner(y)
 
 
-## ANIM-R1 M6: the crossing's banner across the poster's Heat block ("HEAT 30 - NOTICED"),
-## in the corporation's colour, tilted like a stamp.
+## ANIM-R1 M6 / ANIM-R3 B7: the crossing's banner ("HEAT 30 - NOTICED"), tilted like a
+## stamp, in the band's warning colour with an eye glyph, the band's consequence under it;
+## beside the Heat number, never over it (banner_rect), and it fades after its hold.
 func _draw_banner(y: float) -> void:
 	var f := Palette.display()
-	var text := banner_text()
-	var fs := banner_font_size()
-	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var box := Rect2(Vector2(-tw * 0.5 - BANNER_PAD, -fs * 0.8), Vector2(tw + BANNER_PAD * 2.0, fs * 1.5))
-	draw_set_transform(Vector2(size.x * 0.5, y + 34), deg_to_rad(BANNER_TILT), Vector2.ONE * banner_scale)
-	draw_rect(box, Color(Palette.NIGHT_SKY, 0.92 * banner_alpha))
-	draw_rect(box, Color(hot_color, banner_alpha), false, 3.0)
-	draw_string(f, Vector2(-tw * 0.5, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(hot_color.lerp(Palette.PAPER, 0.3), banner_alpha))
+	var lay := banner_lines()
+	var fs: int = lay["fs"]
+	var lines: PackedStringArray = lay["lines"]
+	var subs := sub_lines()
+	var sfs := sub_font_size()
+	var r := banner_rect()
+	if not poster:
+		r.position.y += y
+	var col := banner_color()
+	var a := banner_alpha
+	draw_set_transform(r.get_center(), deg_to_rad(BANNER_TILT), Vector2.ONE * banner_scale)
+	var box := Rect2(-r.size * 0.5, r.size)
+	draw_rect(box.grow(2.0), Color(0, 0, 0, 0.8 * a))
+	draw_rect(box, Color(Palette.NIGHT_SKY, 0.94 * a))
+	draw_rect(box, Color(col, a), false, 3.0)
+	var x := box.position.x + BANNER_PAD
+	var line_h := fs * BANNER_LINE
+	var top := box.position.y + BANNER_PAD * 0.75
+	_draw_eye(Vector2(x + fs * EYE_W * 0.5, top + line_h * lines.size() * 0.5), fs, Color(col, a))
+	x += fs * (EYE_W + EYE_GAP)
+	for i in lines.size():
+		draw_string(f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
+	var sy := top + line_h * lines.size()
+	for i in subs.size():
+		draw_string(Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(Palette.PAPER, a))
 	draw_set_transform(Vector2.ZERO)
+
+
+## ANIM-R3 B7: the watching eye before the banner's words (an almond outline and its pupil),
+## `fs` px tall, centred on `c`.
+func _draw_eye(c: Vector2, fs: int, col: Color) -> void:
+	var w := fs * EYE_W * 0.5
+	var h := fs * 0.42
+	var pts := PackedVector2Array()
+	for i in 17:
+		var t := PI * i / 16.0
+		pts.append(c + Vector2(-cos(t) * w, -sin(t) * h))
+	for i in range(1, 16):
+		var t := PI * i / 16.0
+		pts.append(c + Vector2(cos(t) * w, sin(t) * h))
+	pts.append(pts[0])
+	draw_polyline(pts, col, 2.0)
+	draw_circle(c, h * 0.62, col)
+	draw_circle(c, h * 0.25, Palette.NIGHT_SKY)

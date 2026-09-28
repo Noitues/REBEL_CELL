@@ -424,7 +424,9 @@ func test_the_raid_ends_with_staggered_outcomes_and_a_result_banner() -> void:
 	for id in fx._stamps:
 		starts.append(float(fx._stamps[id]["t0"]))
 	starts.sort()
-	assert_gt(starts.size(), 1, "every node stamps its outcome")
+	# ANIM-R3 B5: every node but home stamps its outcome (home's verdict is the banner).
+	assert_gt(starts.size(), 0, "every node stamps its outcome")
+	assert_eq(fx.stamp_word(c.grid.home_site_id), "", "home has no stamp of its own")
 	for i in range(1, starts.size()):
 		assert_gt(starts[i], starts[i - 1], "the outcomes stamp one after another")
 	assert_eq(RaidFxLayer.TOKEN_SCALE, 3.0, "threat tokens read at map scale")
@@ -531,7 +533,8 @@ func test_the_heat_banner_fits_its_poster_at_every_text_size_and_a_long_translat
 			poster.heat = 80
 			poster._banner_at = 75
 			var fs := poster.banner_font_size()
-			var span := HeatPoster.banner_span(Palette.display(), poster.banner_text(), fs)
+			# ANIM-R3 B7: the banner wraps to two lines before it shrinks under its readable floor.
+			var span := HeatPoster.banner_span(Palette.display(), poster.banner_lines()["lines"], fs)
 			assert_true(span <= poster.size.x - HeatPoster.BANNER_MARGIN * 2.0 + 0.5, "%s at %.1f (%s): %.0f px in %.0f" % [poster.banner_text(), scale, loc, span, poster.size.x])
 			poster.queue_free()
 	TranslationServer.set_locale(locale)

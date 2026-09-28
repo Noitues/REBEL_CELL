@@ -28,13 +28,16 @@ const FIT_OVERSHOOT := 0.9
 ## Screen rects of `overlay`'s node icons (with a little clearance), tier pips and, with
 ## `labels`, node labels. The legend is placed against icons and pips only: the screen
 ## registers it with `CityMapOverlay.avoid_controls`, so the labels make way for it.
-static func node_rects(overlay: CityMapOverlay, labels: bool = true) -> Array[Rect2]:
+## ANIM-R3 B8: `only` (node ids; empty: every node) limits the rects to those nodes.
+static func node_rects(overlay: CityMapOverlay, labels: bool = true, only: Array = []) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	if overlay == null or not is_instance_valid(overlay) or not overlay.is_inside_tree():
 		return out
 	var xf := overlay.get_global_transform()
 	var k := xf.get_scale().x
 	for n in overlay.nodes:
+		if not only.is_empty() and not only.has(n["id"]):
+			continue
 		var at := overlay.icon_pos(n)
 		if at.x == INF:
 			continue
@@ -141,19 +144,27 @@ static func fit_beside(legend: Control, overlay: CityMapOverlay) -> Dictionary:
 ## the answer is exact but for icons floating up to clear each other. The zoom factor is
 ## never below `min_zoom` (a floor on how small the map may get; at the floor the nodes
 ## are centred in `free` as well as they go).
-static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0, min_zoom: float = MIN_FIT_ZOOM) -> Dictionary:
-	var rects := node_rects(overlay, false)
+## ANIM-R3 B8: `only` (node ids; empty: every node) fits just those nodes, and `extra`
+## (screen rects, e.g. the "you are here" marker off the nodes) is kept inside too.
+static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0, min_zoom: float = MIN_FIT_ZOOM, only: Array = [], extra: Array[Rect2] = []) -> Dictionary:
+	var rects := node_rects(overlay, false, only)
+	rects.append_array(extra)
 	if rects.is_empty() or free.size.x <= 0.0 or free.size.y <= 0.0:
 		return {}
 	var xf := overlay.get_global_transform()
 	var centres := Rect2()
 	var first := true
 	for n in overlay.nodes:
+		if not only.is_empty() and not only.has(n["id"]):
+			continue
 		var at := overlay.icon_pos(n)
 		if at.x == INF:
 			continue
 		var p := xf * at
 		centres = Rect2(p, Vector2.ZERO) if first else centres.expand(p)
+		first = false
+	for r in extra:
+		centres = Rect2(r.get_center(), Vector2.ZERO) if first else centres.expand(r.get_center())
 		first = false
 	var box := rects[0]
 	for r in rects:

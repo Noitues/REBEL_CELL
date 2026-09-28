@@ -8,7 +8,6 @@ extends CanvasLayer
 const SCANLINE_SHADER := preload("res://shaders/scanline.gdshader")
 const DISTORTION_SHADER := preload("res://shaders/distortion.gdshader")
 const JACK_SHADER := preload("res://shaders/jack_cover.gdshader")
-const CREEP_SHADER := preload("res://shaders/corp_creep.gdshader")
 ## ANIM-5 (4.1): the node group a scene puts its deck CRT in (the point jack in pushes
 ## into and jack out pulls out of); the screen's centre when none shows.
 const JACK_FOCUS_GROUP := &"jack_focus"
@@ -17,10 +16,7 @@ const JACK_FOCUS_GROUP := &"jack_focus"
 ## opaque until then (at most `jack_arrival_wait`).
 const ARRIVAL_READY_METHOD := &"arrival_ready"
 const SCANLINE_MOTION := &"jack_scanlines"
-const CREEP_MOTION := &"net_creep"
-## ANIM-R1 M3: the creep's way back and the jack's arrival (the reveal half) have entries
-## of their own (no inline fractions of another entry's time).
-const CREEP_RECEDE_MOTION := &"net_creep_recede"
+## ANIM-R1 M3: the jack's arrival (the reveal half) has an entry of its own.
 const ARRIVE_MOTION := &"jack_arrive"
 ## ANIM-R1 M8: the most the jack cover waits, opaque, for the arriving screen to be built
 ## and framed (its duration, seconds).
@@ -30,15 +26,12 @@ var scanlines: ColorRect
 var distortion: ColorRect
 var flash_rect: ColorRect
 var transition_rect: ColorRect
-## ANIM-5: the jack cover (dissolve to the wireframe city, rolling scanlines) and the
-## Heat crossing's corporate wireframe creeping in from the edges.
+## ANIM-5: the jack cover (dissolve to the wireframe city, rolling scanlines).
 var jack_cover: ColorRect
-var creep_rect: ColorRect
 ## Heat pulses played (one per threshold crossing; tests read this).
 var heat_pulses: int = 0
 var _jacking: bool = false
 var _cover_opaque: bool = false
-var _creep_tween: Tween
 var limiter := FlashLimiter.new(3)
 var fps_label: Label
 var saved_label: Label
@@ -56,6 +49,10 @@ var connect_fill: ColorRect
 ## The place the running jack connects to (translated; "" = none named).
 var _destination: String = ""
 const CONNECT_MOTION := &"jack_connect"
+const DISSOLVE_MOTION := &"jack_dissolve"
+## ANIM-R3 B5: a second line under CONNECTING TO <place> ("INTERRUPTED: RAID INCOMING" when
+## the run opens on a raid interlude; "" for none), translated by the caller.
+var _note: String = ""
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
 const CONNECT_FONT := 20
 const CONNECT_BAR_H := 4.0
@@ -78,11 +75,6 @@ func _ready() -> void:
 	distortion.material.shader = DISTORTION_SHADER
 	distortion.material.set_shader_parameter("intensity", 0.0)
 	distortion.visible = false
-	creep_rect = _full_rect(Color.WHITE)
-	creep_rect.material = ShaderMaterial.new()
-	creep_rect.material.shader = CREEP_SHADER
-	creep_rect.material.set_shader_parameter("reach", 0.0)
-	creep_rect.visible = false
 	flash_rect = _full_rect(Color(1, 1, 1, 0))
 	jack_cover = _full_rect(Color.WHITE)
 	jack_cover.material = ShaderMaterial.new()
@@ -134,6 +126,36 @@ func _ready() -> void:
 	apply_settings()
 	input_gate = JackInputGate.new()
 	get_tree().root.add_child.call_deferred(input_gate)
+	_warm_materials()
+
+
+## ANIM-R3 B1: the jack cover's and the Heat distortion's shaders are drawn once, invisibly
+## (the cover at progress 0 draws nothing; the distortion at intensity 0 changes nothing),
+## for WARM_FRAMES frames at start, so the first jack does not compile them in its first
+## frame (a 70-92 ms hitch as the cover started).
+func _warm_materials() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	_set_cover(0.0, 0.0)
+	jack_cover.visible = true
+	distortion.visible = true
+	_warm_left = WARM_FRAMES
+	get_tree().process_frame.connect(_warm_step)
+
+
+const WARM_FRAMES := 2
+var _warm_left: int = 0
+
+
+func _warm_step() -> void:
+	_warm_left -= 1
+	if _warm_left > 0:
+		return
+	get_tree().process_frame.disconnect(_warm_step)
+	if not _jacking:
+		jack_cover.visible = false
+	if _pulse_tween == null or not _pulse_tween.is_valid():
+		distortion.visible = false
 
 
 ## Lets the Motion kit's table go before the engine checks for leaked resources at exit.
@@ -275,7 +297,31 @@ static func saved_spot(stamp: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Ve
 			best = at
 			if hits == 0.0:
 				break
+	# ANIM-R3 B13: when every spot along the edges covers something, a grid over the whole
+	# screen (SAVED_INNER_STEP apart) is tried too: at 1.0 the least covered edge spot was
+	# over UNDO.
+	if best_hits > 0.0:
+		var gy := bottom
+		while gy >= inner.position.y and best_hits > 0.0:
+			var gx := right
+			while gx >= inner.position.x:
+				var r := Rect2(Vector2(gx, gy), stamp)
+				var hits := 0.0
+				for a in avoid:
+					if r.intersects(a):
+						hits += r.intersection(a).get_area() + 1.0
+				if hits < best_hits:
+					best_hits = hits
+					best = Vector2(gx, gy)
+					if hits == 0.0:
+						break
+				gx -= SAVED_INNER_STEP
+			gy -= SAVED_INNER_STEP
 	return best
+
+
+## ANIM-R3 B13: the step of the whole-screen grid tried after the edges (px).
+const SAVED_INNER_STEP := 40.0
 
 
 ## Screen rects of the controls on screen under `root` the stamp must not cover: usable
@@ -295,6 +341,14 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 		if child is Control:
 			var c := child as Control
 			var usable := (c is BaseButton and c.mouse_filter != Control.MOUSE_FILTER_IGNORE) or c is LineEdit or (c is Range and not (c is ScrollBar))
+			if c is HudBar:
+				# ANIM-R3 B13: the screen's title (at 1.6 SAVED landed on "CITY GRID").
+				var tb: Control = (c as HudBar).title_box
+				if tb != null and tb.is_visible_in_tree():
+					out.append(tb.get_global_rect())
+			if c is Label and c.name == &"TerminalTitle":
+				# ANIM-R3 B13: and the windows' titles.
+				out.append(_shown_rect(c.get_parent() as Control))
 			if c is HudStats:
 				# ANIM-R1 M12: the top bar's tags carry numbers (at 1.6 the stamp sat on CREW).
 				var xf := c.get_global_transform()
@@ -343,9 +397,6 @@ func apply_settings() -> void:
 		distortion.material.set_shader_parameter("intensity", 0.0)
 		if _pulse_tween != null and _pulse_tween.is_valid():
 			_pulse_tween.kill()
-		creep_rect.visible = false
-		if _creep_tween != null and _creep_tween.is_valid():
-			_creep_tween.kill()
 	limiter.enabled = Settings.flash_limiter
 	fps_label.visible = Settings.show_fps
 
@@ -374,15 +425,13 @@ func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = 
 ## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on. Rises for
 ## HEAT_PULSE_RISE of the time to the `heat_pulse` entry's amplitude, then falls; a
 ## negative `seconds` takes the entry's duration. ANIM-5 (4.12): one per threshold
-## crossing (HeatPoster calls it); `creep` (a corporation's colour, alpha > 0) also sends
-## the corporate wireframe creeping in from the screen's edges over the zine layer and back
-## (`net_creep`). Counted in `heat_pulses` even under reduce effects (nothing shows then).
-func heat_pulse(seconds: float = -1.0, creep: Color = Color(0, 0, 0, 0)) -> void:
+## crossing (HeatPoster calls it through `heat_pulse_at`). Counted in `heat_pulses` even
+## under reduce effects (nothing shows then). ANIM-R3 B9: the corporate wireframe creep
+## (`net_creep`) is gone; ANIM-R2 R8 had stopped every caller from asking for it.
+func heat_pulse(seconds: float = -1.0) -> void:
 	heat_pulses += 1
 	if not effects_enabled():
 		return
-	if creep.a > 0.0:
-		_creep(creep)
 	# ANIM-R1 M3: an entry switched off (or headless) is its end state at once: no pulse.
 	if not Motion.live(&"heat_pulse"):
 		return
@@ -420,29 +469,6 @@ func heat_pulse_at(rect: Rect2, seconds: float = -1.0) -> void:
 const HEAT_PULSE_MARGIN := 24.0
 
 
-## The corporate wireframe creeps in from the edges to `net_creep`'s reach (over its
-## duration) and back (over `net_creep_recede`'s). ANIM-R1 M3: nothing when `net_creep` is
-## off (its end state is no creep).
-func _creep(col: Color) -> void:
-	if _creep_tween != null and _creep_tween.is_valid():
-		_creep_tween.kill()
-	creep_rect.visible = false
-	if not Motion.live(CREEP_MOTION):
-		return
-	var m := creep_rect.material as ShaderMaterial
-	m.set_shader_parameter("tint", col)
-	m.set_shader_parameter("reach", 0.0)
-	creep_rect.visible = true
-	var e := Motion.entry(CREEP_MOTION)
-	var back := Motion.entry(CREEP_RECEDE_MOTION)
-	var reach := Motion.amplitude(CREEP_MOTION)
-	var set_reach := func(v: float) -> void: m.set_shader_parameter("reach", v)
-	_creep_tween = create_tween()
-	_creep_tween.tween_method(set_reach, 0.0, reach, Motion.seconds(CREEP_MOTION)).set_ease(e.ease).set_trans(e.trans)
-	_creep_tween.tween_method(set_reach, reach, 0.0, Motion.seconds(CREEP_RECEDE_MOTION)).set_delay(Motion.delay_of(CREEP_RECEDE_MOTION)).set_ease(back.ease).set_trans(back.trans)
-	_creep_tween.tween_callback(func() -> void: creep_rect.visible = false)
-
-
 ## Freezes time for `frames` frames (Perfect hit feel); a negative count takes the
 ## `hit_freeze` motion entry's amplitude. No-op under reduce-effects.
 func freeze_frames(frames: int = -1) -> void:
@@ -469,9 +495,10 @@ func freeze_frames(frames: int = -1) -> void:
 ## effects: one short fade (`jack_fade_reduced`); headless (tests): the switch at once.
 ## ANIM-R2 R5: `destination` (translated) is named on the cover while the arriving screen
 ## builds ("CONNECTING TO <place>").
-func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:
+func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "", note: String = "") -> void:
 	if not _jacking:
 		_destination = destination
+		_note = note
 	await _transition(on_switch, seconds, &"jack_in")
 
 
@@ -489,6 +516,8 @@ func _show_connect() -> void:
 	var fs := roundi(CONNECT_FONT * Settings.text_scale)
 	connect_label.add_theme_font_size_override("font_size", fs)
 	connect_label.text = tr("CONNECTING TO %s") % _destination.to_upper() if _destination != "" else tr("CONNECTING")
+	if _note != "":
+		connect_label.text += "\n" + _note.to_upper()
 	connect_label.size = Vector2(vp.x, 0.0)
 	connect_label.size = Vector2(vp.x, connect_label.get_combined_minimum_size().y)
 	connect_label.position = Vector2(0.0, vp.y * 0.5 - connect_label.size.y)
@@ -510,9 +539,12 @@ var _connect_since: int = 0
 
 
 ## ANIM-R2 R5: waits until the CONNECTING line has shown `jack_connect`'s duration (game
-## time is not needed: it is a reading time).
+## time is not needed: it is a reading time). ANIM-R3 B2: a reading time, not an effect, so
+## it holds under reduce effects too (the fade's line showed ~2 frames); only the entry
+## switched off skips it. Never reached headless (the jack switches at once there).
 func _hold_connect() -> void:
-	if not connect_label.visible or not Motion.live(CONNECT_MOTION):
+	var e := Motion.entry(CONNECT_MOTION)
+	if not connect_label.visible or e == null or not e.enabled:
 		return
 	while Time.get_ticks_msec() - _connect_since < Motion.seconds(CONNECT_MOTION) * 1000.0:
 		await get_tree().process_frame
@@ -527,6 +559,7 @@ func _hide_connect() -> void:
 	connect_label.visible = false
 	connect_bar.visible = false
 	_destination = ""
+	_note = ""
 
 
 ## True while the CONNECTING line shows (tests).
@@ -579,6 +612,11 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	m.set_shader_parameter("tile", Vector2(NeonCity.TILE_A, NeonCity.TILE_B))
 	m.set_shader_parameter("scan", Motion.amplitude(SCANLINE_MOTION))
 	m.set_shader_parameter("lattice", Palette.NET_CYAN)
+	# ANIM-R3 B5: a calm wave from the CRT (`jack_dissolve`), not scattered hard cells.
+	var dissolve := Motion.entry(DISSOLVE_MOTION)
+	if dissolve != null:
+		m.set_shader_parameter("spread", clampf(dissolve.amplitude, 0.0, 1.0))
+		m.set_shader_parameter("feather", maxf(dissolve.duration, 0.001))
 	var old := get_tree().current_scene as Control
 	var focus := _jack_focus(old, vp)
 	m.set_shader_parameter("focus", focus)
@@ -680,6 +718,7 @@ func _fade_switch(on_switch: Callable) -> void:
 	for f in 2:
 		await get_tree().process_frame
 	await _wait_arrival()
+	await _hold_connect()
 	_hide_connect()
 	_cover_opaque = false
 	var tw2 := create_tween()

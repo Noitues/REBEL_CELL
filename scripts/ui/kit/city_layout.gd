@@ -92,7 +92,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 		var col := corp_col
 		match status:
 			GridState.SiteStatus.CLAIMED:
-				col = Palette.CELL_PINK
+				col = Palette.CELL_TURF  # ANIM-R3 B6: territory, not the damage pink
 			GridState.SiteStatus.CLEARED:
 				col = Palette.NET_CYAN
 			GridState.SiteStatus.SEIZED:
@@ -128,7 +128,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 				continue
 			seen[str(key)] = true
 			var ours := c.grid.is_claimed(sd.id) and c.grid.is_claimed(l)
-			edges.append({"a": sd.id, "b": l, "color": Palette.CELL_PINK if ours else Color(Palette.NET_CYAN, 0.6), "width": 3.5 if ours else 2.0, "flow": ours})
+			edges.append({"a": sd.id, "b": l, "color": Palette.CELL_TURF if ours else Color(Palette.NET_CYAN, 0.6), "width": 3.5 if ours else 2.0, "flow": ours})
 	for path in paths:
 		for i in path.size() - 1:
 			edges.append({"a": path[i], "b": path[i + 1], "color": corp_col, "width": 4.0, "dashed": true, "flow": true, "arrows": true})

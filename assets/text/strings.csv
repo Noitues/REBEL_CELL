@@ -42,10 +42,11 @@ Press to deploy it to %s (the target: pick another node on the map or in YOUR NO
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
 %s  //  %d RAM,%s  //  %d RAM
+%s  HP %s > %s  %s,%s  HP %s > %s  %s
 %s %d HP,%s %d HP
 %s %s HP,%s %s HP
 "%s %s: %s. %s %s Select it, then %s on its card.","%s %s: %s. %s %s Select it, then %s on its card."
-%s (%s) %s -> %s [%s] assets: %s,%s (%s) %s -> %s [%s] assets: %s
+%s (%s): integrity (HP) now and after the raid.,%s (%s): integrity (HP) now and after the raid.
 %s (%s): make it the target for the Armory's assets.,%s (%s): make it the target for the Armory's assets.
 "%s (Armory %d/%d)
 %s","%s (Armory %d/%d)
@@ -63,9 +64,23 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s Site,%s Site
 %s a card for details.,%s a card for details.
 %s a slice for details.,%s a slice for details.
+%s cuts a new route: %s - %s.,%s cuts a new route: %s - %s.
+%s enters at %s.,%s enters at %s.
+%s finds no locked route to open near %s.,%s finds no locked route to open near %s.
+%s freezes the link %s - %s for this raid.,%s freezes the link %s - %s for this raid.
 %s guards %s (%s): the class's station bonus helps it hold in raids.,%s guards %s (%s): the class's station bonus helps it hold in raids.
+%s is DISABLED.,%s is DISABLED.
+%s is SEIZED.,%s is SEIZED.
 %s is at HQ already.,%s is at HQ already.
+%s is destroyed.,%s is destroyed.
+%s is held at %s (%d more).,%s is held at %s (%d more).
+%s is lost. The campaign is over.,%s is lost. The campaign is over.
+%s moves from %s to %s.,%s moves from %s to %s.
+%s on %s hits %s for %d.,%s on %s hits %s for %d.
+%s reaches %s: %d damage.,%s reaches %s: %d damage.
+%s returns to the reserves.,%s returns to the reserves.
 %s rolls,%s rolls
+%s takes %d damage.,%s takes %d damage.
 %s's HP. At 0 the operative flatlines.,%s's HP. At 0 the operative flatlines.
 "%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them.","%s's deck, spinner, hub core and inner ring. VIEW LOADOUT and DAEMONS in the top bar follow them."
 %s's integrity (HP) now and after the raid: %s > %s. %s,%s's integrity (HP) now and after the raid: %s > %s. %s
@@ -356,6 +371,7 @@ CardData.whirl.description,Spin a wheel 7 ticks.
 CardData.whirl.display_name,Whirl
 Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
+Cascade: %s takes %d damage.,Cascade: %s takes %d damage.
 Choose,Choose
 City Grid,City Grid
 Claim,Claim
@@ -479,6 +495,7 @@ DaemonData.zero_day.display_name,Zero Day
 Daemons,Daemons
 Daily run,Daily run
 Death Heat,Death Heat
+Defences: %s.,Defences: %s.
 Defense assets,Defense assets
 DefenseAssetData.bunker_turret.description,Built in: 3 damage to threats on the home server.
 DefenseAssetData.bunker_turret.display_name,Bunker turret
@@ -709,8 +726,8 @@ FirmwareData.tracer.description,ATK or CRIT slice strips 1 resistance from the t
 FirmwareData.tracer.display_name,Tracer
 Flash limiter (max 3 flashes per second),Flash limiter (max 3 flashes per second)
 "Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
-"Forecast: %s, home %d -> %d, %d threats destroyed, %d steps","Forecast: %s, home %d -> %d, %d threats destroyed, %d steps"
 Fullscreen,Fullscreen
+Further on: %s (only this way).,Further on: %s (only this way).
 GOOD,GOOD
 GOT %s,GOT %s
 GRID VIEW,GRID VIEW
@@ -730,7 +747,8 @@ HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps 
 HOME,HOME
 HOME %d > %d,HOME %d > %d
 HOME %d/%d,HOME %d/%d
-HOME %s,HOME %s
+HOME %s - HOLDS,HOME %s - HOLDS
+HOME BREACHED,HOME BREACHED
 HOME HIT,HOME HIT
 HOME HOLDS,HOME HOLDS
 HP,HP
@@ -745,6 +763,8 @@ HUB BREACH,HUB BREACH
 HUB CORE,HUB CORE
 Heat,Heat
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
+Heat %s for the lost raid: now %d.,Heat %s for the lost raid: now %d.
+Heat %s: now %d.,Heat %s: now %d.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
@@ -818,12 +838,14 @@ ICE,ICE
 ICE %d: %s,ICE %d: %s
 ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
+ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
+INTERRUPTED: RAID INCOMING,INTERRUPTED: RAID INCOMING
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Inner ring segment %d: Rank 3 lets you swap it for another.,Inner ring segment %d: Rank 3 lets you swap it for another.
@@ -1399,8 +1421,6 @@ RAID // %s,RAID // %s
 RAID FEED // LIVE,RAID FEED // LIVE
 RAID IN PROGRESS,RAID IN PROGRESS
 RAID INBOUND,RAID INBOUND
-RAID INTERLUDE,RAID INTERLUDE
-RAID INTERLUDE - %s: %s,RAID INTERLUDE - %s: %s
 RAID PENDING: %s (%d),RAID PENDING: %s (%d)
 RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
@@ -1438,6 +1458,8 @@ Rack,Rack
 Raid Extra Wave,Raid Extra Wave
 Raid Strength,Raid Strength
 Raid over,Raid over
+Raid over after %d step(s).,Raid over after %d step(s).
+Raid repelled after %d step(s).,Raid repelled after %d step(s).
 RaidData.raid_claim.display_name,Collections: Trespass
 RaidData.raid_claim.warning_text,You built next to Solace property. A Collector is on its way.
 RaidData.raid_hal_claim.display_name,Unlicensed Premises
@@ -1540,6 +1562,7 @@ Respin for %d RAM,Respin for %d RAM
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
+Reward: %s Schematics.,Reward: %s Schematics.
 Rewind,Rewind
 Right click,Right click
 Ring segments,Ring segments
@@ -2528,7 +2551,10 @@ The boosts bought for the next run. Drag a boost here to buy it.,The boosts boug
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
+The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
+The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
+The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
 The spinner slot a bought Firmware chip goes into.,The spinner slot a bought Firmware chip goes into.
 The spinner slot the Firmware chip goes into.,The spinner slot the Firmware chip goes into.
@@ -2571,6 +2597,7 @@ ThreatData.tow_truck.display_name,Tow Truck
 Threats,Threats
 Threats come in at %s (the dashed routes on the map).,Threats come in at %s (the dashed routes on the map).
 Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.,Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.
+Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.,Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.
 Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
@@ -2606,11 +2633,15 @@ Your home server (CORE) now and after the raid: %d > %d integrity. At 0 the camp
 "Your records, achievements and run history.","Your records, achievements and run history."
 Your spinner. Drag a microchip or a slice onto a slot to put it there.,Your spinner. Drag a microchip or a slice onto a slot to put it there.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
+a Rack,a Rack
+a Shop,a Shop
+a threat,a threat
 active,active
 already visited,already visited
+an Elite fight,an Elite fight
+an Event,an Event
 armory: %s,armory: %s
 boss,boss
-breached,breached
 calibrate_handler,calibrate_handler
 card,card
 chip,chip
@@ -2658,6 +2689,7 @@ sold out,sold out
 steady_hand_handler,steady_hand_handler
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
+then:,then:
 threats reach the home server: home %d > %d,threats reach the home server: home %d > %d
 ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, then START DEFENSE."
 undock_handler,undock_handler

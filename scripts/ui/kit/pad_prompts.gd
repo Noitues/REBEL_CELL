@@ -45,9 +45,13 @@ func texts() -> PackedStringArray:
 
 
 func _relabel() -> void:
+	# ANIM-R3 B12: freed at once (plain Labels, nothing waits on them). Removed and queued,
+	# each relabel left its old Labels as orphans until the frame ended; a text size change
+	# relabels twice (changed, hints_changed), so a screen torn down right after one leaked
+	# them (6 per HQ page in test_anim_r2_city).
 	for child in get_children():
 		remove_child(child)
-		child.queue_free()
+		child.free()
 	add_theme_constant_override("separation", roundi(GAP * Settings.text_scale))
 	var any := false
 	for p in prompts:

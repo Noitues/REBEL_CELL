@@ -149,7 +149,7 @@ func test_influence_is_deterministic_and_leans_the_right_way() -> void:
 	var claimed := CityInfluence.of(c, corp)
 	assert_eq(CityInfluence.signature(claimed), CityInfluence.signature(CityInfluence.of(c, corp)), "deterministic")
 	assert_gt(CityInfluence.value_at(claimed, at), base, "a claimed Site pulls toward the Cell")
-	assert_eq(CityInfluence.color_for(claimed, 0.5), Palette.CELL_PINK)
+	assert_eq(CityInfluence.color_for(claimed, 0.5), Palette.CELL_TURF)
 	c.grid.sites[site]["status"] = GridState.SiteStatus.SEIZED
 	var seized := CityInfluence.of(c, corp)
 	assert_lt(CityInfluence.value_at(seized, at), CityInfluence.value_at(claimed, at), "Seized pulls back")

@@ -49,6 +49,37 @@ const FRAME_WAIT_SHARE := 0.35
 ## ANIM-R2 R6: the log window beside a playout map (px at text scale 1.0; it was 330x330,
 ## half the window: now a short strip that follows its newest line).
 const LOG_SIZE := Vector2(330, 150)
+## ANIM-R3 B5: the RAID FEED's sentences, translated once here: display names, never an id
+## (the resolver's own log lines named Sites by id: "Turret at t1_a hits..."). Each takes
+## names and numbers in order.
+const FEED_ENTERS := "%s enters at %s." # TR
+const FEED_MOVES := "%s moves from %s to %s." # TR
+const FEED_HELD := "%s is held at %s (%d more)." # TR
+const FEED_GHOSTS := "The operative on %s ghosts %s for %d step(s)." # TR
+const FEED_ICE := "ICE Lock on %s holds %s for %d step(s)." # TR
+const FEED_SHOT := "%s on %s hits %s for %d." # TR
+const FEED_DESTROYED := "%s is destroyed." # TR
+const FEED_NODE_HIT := "%s takes %d damage." # TR
+const FEED_CASCADE := "Cascade: %s takes %d damage." # TR
+const FEED_DISABLED := "%s is DISABLED." # TR
+const FEED_SEIZED := "%s is SEIZED." # TR
+const FEED_HOME_HIT := "%s reaches %s: %d damage." # TR
+const FEED_HOME_LOST := "%s is lost. The campaign is over." # TR
+const FEED_REGEN := "The operative on %s patches it: %s." # TR
+const FEED_CUTS := "%s cuts a new route: %s - %s." # TR
+const FEED_NO_ROUTE := "%s finds no locked route to open near %s." # TR
+const FEED_FREEZES := "%s freezes the link %s - %s for this raid." # TR
+const FEED_RECALLED := "%s returns to the reserves." # TR
+const FEED_REPELLED := "Raid repelled after %d step(s)." # TR
+const FEED_ENDED := "Raid over after %d step(s)." # TR
+const FEED_TALLY := "Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d." # TR
+const FEED_WON := "Reward: %s Schematics." # TR
+const FEED_CAMPAIGN_LOST := "The home server is gone. Campaign lost." # TR
+const FEED_HEAT := "Heat %s: now %d." # TR
+const FEED_HEAT_RAID := "Heat %s for the lost raid: now %d." # TR
+const FEED_STEP := "Step %d" # TR
+## The resolved raid (RaidResult.to_dict) the feed's end tally reads.
+var results: Dictionary = {}
 
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
@@ -88,14 +119,15 @@ func _exit_tree() -> void:
 ## Puts the raid's motion on the map (a CityMapOverlay): `results` is the resolved raid
 ## (campaign.last_raid / RaidResult.to_dict), `home` the home Site, `home_max` its full
 ## integrity, `color` the threats' colour. Call before `play`.
-func attach_fx(results: Dictionary, home: StringName, home_max: int, color: Color) -> RaidFxLayer:
+func attach_fx(p_results: Dictionary, home: StringName, home_max: int, color: Color) -> RaidFxLayer:
+	results = p_results
 	if not (grid_view is CityMapOverlay):
 		return null
 	var overlay := grid_view as CityMapOverlay
 	if fx == null or not is_instance_valid(fx):
 		fx = RaidFxLayer.new(overlay)
 		overlay.add_child(fx)
-	fx.setup(results, home, home_max, color)
+	fx.setup(p_results, home, home_max, color)
 	overlay.draw_markers = false
 	return fx
 
@@ -239,8 +271,9 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 				_dead[e["threat"]] = true
 			"home_hit":
 				_dead[e["threat"]] = true
-		if e.has("text"):
-			_log(String(e["text"]))
+		var line := feed_line(e)
+		if line != "":
+			_log(line)
 		if t == "raid_end":
 			step_label.text = tr("Raid over")
 		elif e.has("step"):
@@ -260,6 +293,134 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 
 func _log(line: String) -> void:
 	log_note.append(line)
+
+
+## ANIM-R3 B5: event `e`'s RAID FEED sentence, translated, with display names (a Site's name,
+## CORE for home, a threat's and a defence's names), "Step N: " before a step's lines; "" for
+## an event the feed does not tell. Never a content or Site id.
+func feed_line(e: Dictionary) -> String:
+	var text := ""
+	var t := String(e.get("type", ""))
+	match t:
+		"threat_enters":
+			text = tr(FEED_ENTERS) % [threat_word(e), site_word(e.get("site", &""))]
+		"move":
+			text = tr(FEED_MOVES) % [threat_word(e), site_word(e.get("from", &"")), site_word(e.get("to", &""))]
+		"held":
+			text = tr(FEED_HELD) % [threat_word(e), site_word(e.get("site", &"")), _count_in(e, "(")]
+		"station_hold":
+			text = tr(FEED_GHOSTS) % [site_word(e.get("site", &"")), threat_word(e), _count_in(e, "for ")]
+		"ice_lock":
+			text = tr(FEED_ICE) % [site_word(e.get("site", &"")), threat_word(e), _count_in(e, "for ")]
+		"shot":
+			text = tr(FEED_SHOT) % [content_word(StringName(e.get("asset", &""))), site_word(e.get("site", &"")), threat_word(e), int(e.get("damage", 0))]
+		"threat_destroyed":
+			text = tr(FEED_DESTROYED) % threat_word(e)
+		"node_hit":
+			text = tr(FEED_NODE_HIT) % [site_word(e.get("site", &"")), int(e.get("damage", 0))]
+		"cascade":
+			text = tr(FEED_CASCADE) % [site_word(e.get("site", &"")), int(e.get("damage", 0))]
+		"disabled":
+			text = tr(FEED_DISABLED) % site_word(e.get("site", &""))
+		"seized":
+			text = tr(FEED_SEIZED) % site_word(e.get("site", &""))
+		"home_hit":
+			text = tr(FEED_HOME_HIT) % [threat_word(e), site_word(_home()), int(e.get("damage", 0))]
+		"home_lost":
+			text = tr(FEED_HOME_LOST) % site_word(_home())
+		"station_regen":
+			text = tr(FEED_REGEN) % [site_word(e.get("site", &"")), TextDb.signed(int(e.get("amount", 0)))]
+		"link_altered":
+			if StringName(e.get("b", &"")) != &"":
+				text = tr(FEED_CUTS) % [threat_word(e), site_word(e.get("a", &"")), site_word(e.get("b", &""))]
+			else:
+				text = tr(FEED_NO_ROUTE) % [threat_word(e), site_word(e.get("a", &""))]
+		"link_frozen":
+			text = tr(FEED_FREEZES) % [threat_word(e), site_word(e.get("a", &"")), site_word(e.get("b", &""))]
+		"recalled":
+			text = tr(FEED_RECALLED) % String(e.get("operative", ""))
+		"raid_end":
+			text = (tr(FEED_REPELLED) if bool(e.get("won", false)) else tr(FEED_ENDED)) % int(e.get("steps", 0))
+			if not results.is_empty():
+				text += " " + tr(FEED_TALLY) % [int(results.get("threats_destroyed", 0)), int(results.get("threats_reached_home", 0)),
+					(results.get("disabled", []) as Array).size(), (results.get("seized", []) as Array).size()]
+		"raid_won":
+			text = tr(FEED_WON) % TextDb.signed(int(e.get("schematics", 0)))
+		"campaign_lost":
+			text = tr(FEED_CAMPAIGN_LOST)
+		"heat":
+			var amount := int(e.get("amount", 0))
+			if amount == 0:
+				return ""
+			text = (tr(FEED_HEAT_RAID) if String(e.get("reason", "")) == "lost raid" else tr(FEED_HEAT)) % [TextDb.signed(amount), RunManager.campaign.heat if RunManager.campaign != null else 0]
+		_:
+			return ""
+	if e.has("step") and int(e["step"]) > 0 and t != "raid_end":
+		text = tr(FEED_STEP) % int(e["step"]) + ": " + text
+	return text
+
+
+## A Site's display name (CORE for home; the Site's own name; its id only when the content
+## is unknown).
+func site_word(id: Variant) -> String:
+	var sid := StringName(String(id))
+	if sid == &"":
+		return "-"
+	if sid == _home():
+		return tr("CORE")
+	var sd := CampaignRules.site_data(RunManager.corporation, sid) if RunManager.corporation != null else null
+	return TextDb.t(sd, "display_name") if sd != null else String(sid)
+
+
+## A threat's name (from its entry line, translated); "a threat" when unknown.
+func threat_word(e: Dictionary) -> String:
+	var id: Variant = e.get("threat", "")
+	if _threat_names.has(id):
+		return tr(String(_threat_names[id]))
+	if e.has("text") and t_name_from(String(e["text"])) != "":
+		return tr(t_name_from(String(e["text"])))
+	return tr("a threat")
+
+
+## The threat's name in a resolver line ("Step 1: Collector enters at t1_a.", "Setup:
+## Collector cuts a new route..."); "" when not one.
+static func t_name_from(line: String) -> String:
+	var body := line.get_slice(": ", 1) if line.contains(": ") else line
+	for verb in NAME_VERBS:
+		if body.contains(verb):
+			return body.get_slice(verb, 0)
+	return ""
+
+
+## The verbs that follow a threat's name in the resolver's lines.
+const NAME_VERBS: Array[String] = [" enters", " cuts", " finds", " freezes"]
+
+
+## A content id's display name (a defence), translated; the id when unknown.
+static func content_word(id: StringName) -> String:
+	var res := RunManager.lookup().get_content(id) if id != &"" else null
+	return TextDb.t(res, "display_name") if res != null and "display_name" in res else String(id)
+
+
+func _home() -> StringName:
+	var c := RunManager.campaign
+	return c.grid.home_site_id if c != null and c.grid != null else &""
+
+
+## The first whole number after the last `after` in the event's line (a count the event
+## keeps only in its words); 0 when none.
+static func _count_in(e: Dictionary, after: String) -> int:
+	var line := String(e.get("text", ""))
+	var at := line.rfind(after)
+	if at < 0:
+		return 0
+	var digits := ""
+	for ch in line.substr(at + after.length()):
+		if ch >= "0" and ch <= "9":
+			digits += ch
+		elif digits != "":
+			break
+	return int(digits) if digits != "" else 0
 
 
 func _finish() -> void:
