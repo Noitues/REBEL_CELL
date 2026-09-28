@@ -517,10 +517,13 @@ under it, quantized to 128 colours, raw frames deleted): `raid_playout`, `influe
   was 0.3). The Grid's Site card rebuilds in place when a claim is seen (`refresh_site_card`):
   CLAIMED with the claim mark, no CLAIM offer. **Colour:** the Cell's territory (claimed Sites,
   its links, the tint, the marks, the spray ring and the key's rows) is `Palette.CELL_TURF`,
-  the Cell's acid #D4FF00, never `cell_pink` (pink is damage and hits everywhere). Acid is
-  furthest from every corporation's hue (Solace's mint is ~70 degrees away), and every
-  territory mark carries a non-colour cue (spray ring, hatch, stamp word). STYLE_GUIDE 2 and
-  5.3.
+  the Cell's acid #D4FF00, never `cell_pink` (pink is damage and hits everywhere). Acid
+  (hue 70) is at least 40 degrees of hue from every corporation's colour: Meridian's orange
+  #FF8C1A (hue 30) is the nearest, at 40; Solace's mint 74, REBEL_CELL's red 73, Orbital's
+  pale blue 159, Halcyon's violet 178. (Corrected in ANIM-R4 H9: this entry first said acid
+  was *furthest* from every corporation, which is wrong for Meridian.) Hue alone does not
+  carry it, so every territory mark carries a non-colour cue (spray ring, hatch, stamp word).
+  STYLE_GUIDE 2 and 5.3.
 - **B7 Heat.** The crossing's banner no longer sits on the number: on the wanted poster it
   covers the WANTED header and mugshot, on the small poster it hangs under the bar; it fades
   after its hold as before. Its colour is the band's warning (amber NOTICED, orange FLAGGED,
