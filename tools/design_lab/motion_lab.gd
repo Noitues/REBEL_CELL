@@ -93,6 +93,14 @@ const DEMOS := {
 	# ANIM-4b (drag and drop in the run; in context: netrun_scene --demo-shop / --demo-loot
 	# --demo-anim=drag_*):
 	&"drop_buy": ["fly", "card"], &"shred_feed": ["drop", "sticker"],
+	# ANIM-R1 (combat and input): the SEND IT replay's pieces play in a live SEND IT.
+	&"resolve_landing_hold": ["scene", "send"], &"landing_pulse": ["scene", "send"], &"resolve_result_hold": ["scene", "send"],
+	&"result_caption": ["scene", "send"], &"result_stamp": ["scene", "send"], &"number_to_hp": ["scene", "numbers"],
+	&"hit_flash": ["scene", "send"], &"hit_shake": ["scene", "send"], &"enemy_enter": ["scene", "enter"],
+	&"victory_flash": ["scene", "victory"], &"boss_phase_flash": ["flash", "stage"],
+	&"ram_refusal": ["scene", "refuse"], &"ram_refusal_pop": ["scene", "refuse"], &"send_it_ready": ["view", "ready"],
+	&"send_it_drips_share": ["view", "press"], &"drag_ghost_tilt_speed": ["scene", "drag"],
+	&"toast_note_hold": ["fade_out", "sticker"], &"stamp_fade_in": ["screen", "stamp"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -629,6 +637,11 @@ func _play_view(what: String) -> float:
 			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
 		"press":
 			(_pieces["send"] as DripButton).press_motion()
+		"ready":
+			var send := _pieces["send"] as DripButton
+			send.glyph = true
+			send.set_ready(false)
+			send.set_ready(true)
 	return LOOP_HOLD
 
 
@@ -692,12 +705,26 @@ func _play_scene(what: String) -> void:
 			else:
 				_scene._cancel_drag(i, CANCEL_AT)
 		"numbers":
-			var k := 0
+			# ANIM-R1: a guard number under the hub's lines, damage numbers above the name that
+			# travel into the HP counter (the HP rolls down as each arrives).
+			var hp := ev.combatant.hp
 			for n in DEMO_NUMBERS:
-				var block := String(n[0]).contains("BLOCK")
-				_scene.fx_layer.number(ev.number_anchor(k), String(n[0]), Palette.NET_CYAN if block else WheelView.LOSS_COLOR,
-					&"block_number" if block else &"number_float", Vector2.UP, bool(n[1]), minf(Motion.amplitude(&"number_float"), ev.number_room() * NUMBER_RISE_SHARE))
-				k += 1
+				var text := String(n[0])
+				if text.contains("BLOCK"):
+					var g := ev.number_slot("guard", text, false)
+					_scene.fx_layer.number(g["at"], text, Palette.NET_CYAN, &"block_number", Vector2.UP, false, float(g["room"]), int(g["fs"]), "guard")
+				else:
+					var s := ev.number_slot("hp", text, bool(n[1]))
+					hp -= absi(int(text))
+					_scene.fx_layer.travel_number(s["at"], ev.hp_counter_spot(), text, WheelView.LOSS_COLOR, bool(n[1]), int(s["fs"]), "hp",
+						_scene._hp_arrives.bind(ev, hp))
+		"enter":
+			ev.play_enter()
+		"refuse":
+			_scene.engine.state().ram = 0
+			_scene._refresh(_scene.engine.state())
+			_scene.select_card(0)
+			_scene.respin()
 		"break":
 			_scene.demo_break(enemy)
 		"shatter":

@@ -44,6 +44,16 @@ var _grow_tween: Tween = null
 var _halo_tween: Tween = null
 ## Tags that have grown this session (a tag grows once; a rebuilt page doesn't regrow it).
 static var _grown: Dictionary = {}
+## ANIM-R1 C7: SEND IT carries a drawn "▶▶" mark (by its key hint) that pulses gently
+## (`send_it_ready`) while all RAM is spent. Its height (share of the hint's), width of one
+## arrow (share of the hint's height) and gap to the hint (px).
+var glyph: bool = false
+var ready_pulse: float = 1.0
+var _ready_on: bool = false
+var _ready_tween: Tween = null
+const GLYPH_H := 0.9
+const GLYPH_W := 0.5
+const GLYPH_GAP := 6.0
 
 
 ## Forgets which tags have grown (the motion lab replays the growth).
@@ -113,8 +123,9 @@ func press_motion() -> void:
 	tw.tween_method(_set_squash, Motion.amplitude(&"send_it_press"), 1.0, d * (1.0 - Motion.POP_GROW_SHARE)).set_ease(pe.ease).set_trans(pe.trans)
 	if Motion.live(&"send_it_drips"):
 		var dd := Motion.seconds(&"send_it_drips")
-		tw.parallel().tween_method(_set_run, 0.0, Motion.amplitude(&"send_it_drips"), dd * 0.5).set_ease(de.ease).set_trans(de.trans)
-		tw.tween_method(_set_run, Motion.amplitude(&"send_it_drips"), 0.0, dd * 0.5).set_ease(Tween.EASE_IN_OUT)
+		var out_share := clampf(Motion.amplitude(&"send_it_drips_share"), 0.0, 1.0)
+		tw.parallel().tween_method(_set_run, 0.0, Motion.amplitude(&"send_it_drips"), dd * out_share).set_ease(de.ease).set_trans(de.trans)
+		tw.tween_method(_set_run, Motion.amplitude(&"send_it_drips"), 0.0, dd * (1.0 - out_share)).set_ease(Tween.EASE_IN_OUT)
 	_press_tween = tw
 
 
@@ -294,3 +305,40 @@ func _draw() -> void:
 		var hp := Vector2(12 + (tw - hw) * 0.5, size.y - 6)
 		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 6)), Color(Palette.NIGHT_SKY, 0.8))
 		draw_string(Palette.mono(), hp, key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, Palette.PAPER)
+		if glyph:
+			_draw_glyph(Vector2(hp.x - 6.0 - GLYPH_GAP, hp.y - hs * 0.5 + 3.0), hs, col)
+	elif glyph:
+		var hs := roundi(HINT_SIZE * Settings.text_scale)
+		var tw := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		_draw_glyph(Vector2(12 + tw * 0.5 + hs * GLYPH_W, size.y - 6 - hs * 0.5), hs, col)
+
+
+## ANIM-R1 C7: a drawn "▶▶" (the end-turn mark, readable in any language), right edge at
+## `right` (vertical middle there), `h` px tall, scaled by the ready pulse.
+func _draw_glyph(right: Vector2, h: float, col: Color) -> void:
+	var s := h * GLYPH_H * ready_pulse
+	var w := s * GLYPH_W / GLYPH_H
+	for k in 2:
+		var x1 := right.x - k * w
+		var tri := PackedVector2Array([Vector2(x1, right.y), Vector2(x1 - w, right.y - s * 0.5), Vector2(x1 - w, right.y + s * 0.5)])
+		draw_colored_polygon(tri, Color(1, 1, 1, OUTLINE_ALPHA))
+		draw_colored_polygon(PackedVector2Array([tri[0] + Vector2(-OUTLINE_PX, 0), tri[1] + Vector2(OUTLINE_PX * 0.5, OUTLINE_PX), tri[2] + Vector2(OUTLINE_PX * 0.5, -OUTLINE_PX)]), col)
+
+
+## ANIM-R1 C7: the end-turn mark pulses gently while there's nothing left to spend (`on`);
+## off under reduce effects (the mark holds still).
+func set_ready(on: bool) -> void:
+	if on == _ready_on:
+		return
+	_ready_on = on
+	Motion._settle(self, ^"ready_pulse")
+	_ready_tween = null
+	ready_pulse = 1.0
+	if on and is_inside_tree():
+		_ready_tween = Motion.loop_pulse(self, ^"ready_pulse", &"send_it_ready")
+	queue_redraw()
+
+
+## True while the ready pulse runs.
+func ready_pulsing() -> bool:
+	return _ready_tween != null and _ready_tween.is_valid()

@@ -81,11 +81,16 @@ func clear() -> void:
 
 func _process(delta: float) -> void:
 	var keep: Array[Dictionary] = []
+	var arrived: Array[Callable] = []
 	for s in sprites:
 		s["age"] = float(s["age"]) + delta
 		if float(s["age"]) < float(s["dur"]) + float(s.get("delay", 0.0)):
 			keep.append(s)
+		elif String(s["kind"]) == "travel" and (s["on_arrive"] as Callable).is_valid():
+			arrived.append(s["on_arrive"])
 	sprites = keep
+	for c in arrived:
+		c.call()
 	queue_redraw()
 	if sprites.is_empty() and flights.is_empty():
 		set_process(false)
@@ -125,18 +130,65 @@ func _local(global: Vector2) -> Vector2:
 ## A number that pops at `at` (global) and drifts `rise` px along `dir` (`id` = its motion
 ## entry: amplitude = the drift unless `rise` >= 0). Crits grow by `number_crit` and get
 ## a star burst. Returns the rect it covers at its biggest (global), for layout checks.
-func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector2 = Vector2.UP, crit: bool = false, rise: float = -1.0) -> Rect2:
-	var fs := number_font(crit)
+func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector2 = Vector2.UP, crit: bool = false, rise: float = -1.0,
+		font_size: int = -1, band: String = "") -> Rect2:
+	var fs := number_font(crit) if font_size <= 0 else font_size
 	var drift := Motion.amplitude(id) if rise < 0.0 else rise
-	var rect := number_rect(at, text, crit, dir * drift)
+	var rect := number_rect(at, text, crit, dir * drift, fs)
 	if not Motion.live(id):
 		return rect
+	_hurry(band)
 	var e := Motion.entry(id)
 	_add({"kind": "number", "at": at, "text": text, "color": color, "dur": Motion.seconds(id), "delay": Motion.delay_of(id),
-		"dir": dir, "rise": drift, "fs": fs, "crit": crit, "ease": e.ease, "trans": e.trans})
+		"dir": dir, "rise": drift, "fs": fs, "crit": crit, "ease": e.ease, "trans": e.trans, "band": band})
 	if crit and Motion.live(&"number_crit"):
 		burst(at, color, &"number_crit")
 	return rect
+
+
+## ANIM-R1: a number that pops at `at` (global), holds (`number_to_hp`'s delay), then
+## travels into `to` (the victim's HP counter) shrinking to `number_to_hp`'s amplitude;
+## `on_arrive` runs as it gets there (the HP rolls down then). A skip drops it (the end
+## state shows anyway). `band` names the hub band it sits in: a new number in the same
+## band sends the one resting there on its way at once, so two never rest on each other.
+func travel_number(at: Vector2, to: Vector2, text: String, color: Color, crit: bool, font_size: int, band: String,
+		on_arrive: Callable = Callable()) -> void:
+	if not Motion.live(&"number_to_hp"):
+		if on_arrive.is_valid():
+			on_arrive.call()
+		return
+	_hurry(band)
+	var e := Motion.entry(&"number_to_hp")
+	_add({"kind": "travel", "at": at, "to": to, "text": text, "color": color, "fs": font_size, "crit": crit,
+		"hold": Motion.delay_of(&"number_to_hp"), "dur": Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp"),
+		"shrink": Motion.amplitude(&"number_to_hp"), "ease": e.ease, "trans": e.trans, "band": band, "on_arrive": on_arrive})
+	if crit and Motion.live(&"number_crit"):
+		burst(at, color, &"number_crit")
+
+
+## The numbers resting in `band` move on: a travelling one sets off now, a floating one
+## goes (ANIM-R1: numbers never rest on each other).
+func _hurry(band: String) -> void:
+	if band == "":
+		return
+	for s in sprites.duplicate():
+		if String(s.get("band", "")) != band:
+			continue
+		if String(s["kind"]) == "travel":
+			s["age"] = maxf(float(s["age"]), float(s["hold"]))
+		elif String(s["kind"]) == "number":
+			sprites.erase(s)
+
+
+## Numbers resting in their band now (not yet travelling): [{rect (global), band}], for
+## the layout checks.
+func resting_numbers() -> Array:
+	var out: Array = []
+	for s in sprites:
+		var k := String(s["kind"])
+		if k == "number" or (k == "travel" and float(s["age"]) < float(s["hold"])):
+			out.append({"rect": number_rect(s["at"], String(s["text"]), bool(s["crit"]), Vector2.ZERO, int(s["fs"])), "band": String(s.get("band", ""))})
+	return out
 
 
 ## Font size of a floating number (crits bigger by `number_crit`'s amplitude).
@@ -148,8 +200,8 @@ static func number_font(crit: bool) -> int:
 
 
 ## Everything a number covers on its way (global): its start and end boxes merged.
-static func number_rect(at: Vector2, text: String, crit: bool, travel: Vector2) -> Rect2:
-	var fs := number_font(crit)
+static func number_rect(at: Vector2, text: String, crit: bool, travel: Vector2, font_size: int = -1) -> Rect2:
+	var fs := number_font(crit) if font_size <= 0 else font_size
 	var w := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + NUMBER_OUTLINE
 	var box := Rect2(at - Vector2(w * 0.5, fs * 0.5), Vector2(w, fs))
 	return box.merge(Rect2(box.position + travel, box.size))
@@ -178,6 +230,39 @@ func hit_line(from: Vector2, to: Vector2, color: Color) -> void:
 	if not Motion.live(&"hit_line") or from.distance_to(to) < 1.0:
 		return
 	_add({"kind": "line", "from": from, "to": to, "color": color, "dur": Motion.seconds(&"hit_line"), "width": Motion.amplitude(&"hit_line")})
+
+
+## ANIM-R1: a word stamped at `at` (global) in a tilted box (BLOCKED, EVADED, NO DAMAGE,
+## PHASE 2...): lands from `result_stamp`'s amplitude scale, holds `hold` seconds, fades.
+## Its lettering fits `max_w` px (the hub it sits in). Returns the box it covers (global).
+func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float) -> Rect2:
+	var fs := word_stamp_font(text, max_w)
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0
+	var box := Rect2(at - Vector2(w * 0.5, fs * WORD_BOX_H * 0.5), Vector2(w, fs * WORD_BOX_H))
+	if not Motion.live(&"result_stamp"):
+		return box
+	_add({"kind": "tag", "at": at, "text": text, "color": color, "fs": fs, "dur": Motion.seconds(&"result_stamp") + hold,
+		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp")})
+	return box
+
+
+## The stamp's font size: WORD_STAMP_FONT at the text scale, smaller until it fits `max_w`.
+static func word_stamp_font(text: String, max_w: float) -> int:
+	var fs := roundi(WORD_STAMP_FONT * Settings.text_scale)
+	while fs > WORD_STAMP_MIN and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0 > max_w:
+		fs -= 1
+	return fs
+
+
+## Word stamps (ANIM-R1): lettering at text scale 1.0 and its floor (px), the box's side
+## padding and height (shares of the font size) and its tilt (rad).
+const WORD_STAMP_FONT := 20
+const WORD_STAMP_MIN := 9
+const WORD_BOX_PAD := 0.3
+const WORD_BOX_H := 1.4
+const WORD_TILT := -0.2
+## A projectile's head: its radius as a share of the line's width.
+const PROJECTILE_HEAD := 1.3
 
 
 ## A status glyph stamped at `at` (global): lands from `status_stamp`'s amplitude scale,
@@ -401,6 +486,10 @@ func _draw() -> void:
 		match String(s["kind"]):
 			"number":
 				_draw_number(s)
+			"travel":
+				_draw_travel(s)
+			"tag":
+				_draw_tag(s)
 			"burst":
 				_draw_burst(s)
 			"ring":
@@ -450,6 +539,50 @@ func _draw_number(s: Dictionary) -> void:
 	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
 
 
+func _draw_travel(s: Dictionary) -> void:
+	var a := float(s["age"])
+	var hold := float(s["hold"])
+	var fs := int(s["fs"])
+	var at := _local(s["at"])
+	var size := float(fs)
+	var alpha := 1.0
+	if a < hold:
+		var grow := clampf(a / maxf(0.001, hold * GROW_SHARE), 0.0, 1.0)
+		size = fs * (lerpf(1.35, 1.0, grow) if bool(s["crit"]) else lerpf(0.6, 1.0, grow))
+	else:
+		var d := maxf(0.001, float(s["dur"]) - hold)
+		var q: float = Tween.interpolate_value(0.0, 1.0, clampf((a - hold) / d, 0.0, 1.0), 1.0, int(s["trans"]), int(s["ease"]))
+		at = at.lerp(_local(s["to"]), q)
+		size = fs * lerpf(1.0, float(s["shrink"]), q)
+		alpha = lerpf(1.0, 0.6, q)
+	var isz := maxi(1, roundi(size))
+	var text := String(s["text"])
+	var f := Palette.display()
+	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz).x
+	var base := at + Vector2(-w * 0.5, isz * 0.35)
+	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, NUMBER_OUTLINE, Color(Palette.PAPER, alpha))
+	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, isz, Color(s["color"], alpha))
+
+
+func _draw_tag(s: Dictionary) -> void:
+	var land := float(s["land"])
+	var a := float(s["age"])
+	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
+	var fs := int(s["fs"])
+	var text := String(s["text"])
+	var font := Palette.marker()
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var box := Rect2(-w * 0.5 - fs * WORD_BOX_PAD, -fs * WORD_BOX_H * 0.5, w + fs * WORD_BOX_PAD * 2.0, fs * WORD_BOX_H)
+	var col: Color = s["color"]
+	draw_set_transform(_local(s["at"]), WORD_TILT, Vector2.ONE * sc)
+	draw_rect(box, Color(Palette.NIGHT_SKY, 0.88 * alpha))
+	draw_rect(box, Color(col, alpha), false, 3.0)
+	draw_string(font, Vector2(-w * 0.5, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
+	draw_set_transform(Vector2.ZERO)
+
+
 func _draw_burst(s: Dictionary) -> void:
 	var p := _p(s)
 	var c := _local(s["at"])
@@ -470,6 +603,11 @@ func _draw_line(s: Dictionary) -> void:
 	var col := Color(s["color"], 1.0 - maxf(0.0, p - 0.5))
 	draw_line(tail, head, Color(Palette.NIGHT_SKY, col.a * 0.6), float(s["width"]) + 3.0)
 	draw_line(tail, head, col, float(s["width"]))
+	if p < 0.5:
+		# ANIM-R1: the projectile's head, bright, flying from the attacker's slice.
+		var hr := float(s["width"]) * PROJECTILE_HEAD
+		draw_circle(head, hr + 2.0, Color(Palette.NIGHT_SKY, 0.7))
+		draw_circle(head, hr, col.lightened(0.35))
 	if p >= 0.5:
 		var d := (to - from).normalized()
 		var n := d.orthogonal() * ARROW_HEAD * 0.6

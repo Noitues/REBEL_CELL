@@ -40,21 +40,47 @@ func set_ram(value: int, maximum: int) -> void:
 	queue_redraw()
 
 
-## Seconds the bar flashes when RAM was short (refused action).
-const FLASH_SECONDS := 0.6
+## A refusal for want of RAM (ANIM-R1 C6): the chips flash red and "COST > RAM" shows
+## beside the count with a chip for RAM, pulsing for `ram_refusal`'s duration (amplitude =
+## pulses). The words need no reading: the numbers and the red say it.
 var _flash: bool = false
+const REFUSED_COLOR := Color("#FF4D4D")
+## The missing chips (and the refusal at its faintest) keep this alpha.
+const MISSING_ALPHA := 0.45
+## The RAM the refused action needed (0 = unknown) and the pulse's strength (0..1).
+var _need: int = 0
+var flash_alpha: float = 1.0
 
 
-## Flashes the bar (a refusal for want of RAM); static under reduce effects.
-func flash_short() -> void:
+## Flashes the bar (a refusal for want of RAM; `need` = what it cost); static (shown until
+## the next RAM change) under reduce effects and headless.
+func flash_short(need: int = 0) -> void:
 	_flash = true
+	_need = need
+	flash_alpha = 1.0
 	queue_redraw()
-	if DisplayServer.get_name() == "headless" or not Fx.effects_enabled():
+	if not Motion.live(&"ram_refusal") or not is_inside_tree():
 		return
-	get_tree().create_timer(FLASH_SECONDS).timeout.connect(func() -> void:
-		if is_instance_valid(self):
-			_flash = false
-			queue_redraw())
+	var pulses := maxf(1.0, Motion.amplitude(&"ram_refusal"))
+	var tw := create_tween()
+	tw.tween_method(func(p: float) -> void:
+		flash_alpha = absf(cos(p * PI * pulses))
+		queue_redraw(), 0.0, 1.0, Motion.seconds(&"ram_refusal"))
+	tw.tween_callback(func() -> void:
+		_flash = false
+		_need = 0
+		flash_alpha = 1.0
+		queue_redraw())
+
+
+## True while the refusal shows (tests).
+func flashing() -> bool:
+	return _flash
+
+
+## The refusal's words ("3 > 2": the cost against the RAM there is), "" when none shows.
+func refusal_text() -> String:
+	return "%d > %d" % [_need, ram] if _flash and _need > 0 else ""
 
 
 ## The lit chips step from `from` to `to`, one chip per `ram_tick`.
@@ -131,7 +157,11 @@ func _draw() -> void:
 	if pending != 0:
 		label += " (%+d)" % pending
 	var lw := Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
-	var x0 := (size.x - max_ram * step - lw) * 0.5
+	var refusal := refusal_text()
+	var rw := 0.0
+	if refusal != "":
+		rw = chip + 4.0 + Palette.mono().get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
+	var x0 := (size.x - max_ram * step - lw - rw) * 0.5
 	var lit := shown_ram
 	var after := clampi(lit + pending, 0, max_ram)
 	for k in max_ram:
@@ -141,8 +171,9 @@ func _draw() -> void:
 			col = Palette.NET_CYAN
 		elif k < lit:
 			col = Color(Palette.CELL_PINK, pending_alpha)  # spent by the previewed action
-		if _flash and k >= lit:
-			col = Color(Palette.CELL_PINK, 0.45)  # the RAM that was missing
+		if _flash:
+			# The RAM there is falls short: every chip flashes red, the missing ones faint.
+			col = col.lerp(Color(REFUSED_COLOR, 1.0 if k < lit else MISSING_ALPHA), flash_alpha)
 		if tick_pop > 0.0 and k == (lit - 1 if lit > 0 and ram >= lit else lit):
 			# The chip ticking now pops (`ram_tick` amplitude).
 			rc = rc.grow(chip * (Motion.amplitude(&"ram_tick") - 1.0) * 0.5 * tick_pop)
@@ -150,3 +181,10 @@ func _draw() -> void:
 		draw_rect(rc, col)
 		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= lit and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= lit and k < after) else 1.0)
 	draw_string(Palette.mono(), Vector2(x0 + max_ram * step + 6.0, chip), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.NET_CYAN)
+	if refusal != "":
+		# A RAM chip, then "COST > RAM" in red.
+		var rx := x0 + max_ram * step + lw + 4.0
+		var red := Color(REFUSED_COLOR, maxf(MISSING_ALPHA, flash_alpha))
+		draw_rect(Rect2(rx, 1, chip, chip), red)
+		draw_rect(Rect2(rx, 1, chip, chip), Palette.PAPER, false, 1.0)
+		draw_string(Palette.mono(), Vector2(rx + chip + 4.0, chip), refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)

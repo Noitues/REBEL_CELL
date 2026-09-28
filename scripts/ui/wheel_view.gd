@@ -114,6 +114,24 @@ var tag_flip: float = 1.0
 var replaying: bool = false
 ## LAST TURN plate reveal (0 hidden .. 1 in place).
 var last_turn_shown: float = 1.0
+# ANIM-R1 (the SEND IT replay's legibility): the landed slices, the break, satellite HP,
+# the THIS TURN caption, an enemy's entrance and the hit flash. Rest values as above.
+## Slices the needles landed on this replay: slot -> true when it is a MISS slice (drawn
+## with a big grey X until the wheel turns on), and their pulse (0..1).
+var landed: Dictionary = {}
+var landing_pulse: float = 0.0
+## The wheel broke this replay: the view shows its empty spot (DEFEATED) from now on.
+var broken: bool = false
+## Docked satellites' shown HP while a replay plays (id -> HP; missing = its state).
+var anim_sat_hp: Dictionary = {}
+## A caption on a plate where the tag goes (THIS TURN while the result holds), and its
+## reveal (0..1).
+var caption: String = ""
+var caption_shown: float = 0.0
+## An enemy entering from the right edge: px it still has to travel.
+var enter_slide: float = 0.0
+## A hit landing in the HP counter: the disc flashes (0..1).
+var hit_flash: float = 0.0
 ## Running motion tweens by key, the queued nudge steps ({ring, to}) and the shown value
 ## the last queued step ends on per ring.
 var _tweens: Dictionary = {}
@@ -292,6 +310,18 @@ const STATIC_FLECK := 7.0
 ## Floating numbers keep inside this share of the inner disc's radius (clear of every
 ## needle, which only reaches the slice band).
 const NUMBER_ROOM := 0.62
+## ANIM-R1 replay numbers: they keep inside this share of the hub's radius, this far (px)
+## off the hub's words, and never shrink below NUMBER_MIN_FONT px.
+const NUMBER_HUB_SHARE := 0.9
+const NUMBER_GAP := 2.0
+const NUMBER_MIN_FONT := 10.0
+## A landed slice's rim (px); the MISS X's arm as a share of the slice band, its width.
+const LANDED_RIM := 4.0
+const MISS_X_SHARE := 0.32
+const MISS_X_WIDTH := 5.0
+## The DEFEATED stamp's lettering (px at text scale 1.0) and tilt (rad).
+const DEFEATED_FONT := 22
+const STAMP_TILT := -0.2
 
 
 ## The rotation the view shows (ticks; the state's unless a motion runs).
@@ -322,18 +352,30 @@ func _shown() -> CombatantState:
 	return shown_state if shown_state != null else combatant
 
 
-## True while any motion of this view still runs.
+## True while any motion of this view still runs (its own tweens, queued nudges, and the
+## kit's helpers on it: the Partial stutter, the Miss blink).
 func motion_busy() -> bool:
 	for k in _tweens:
 		var tw: Tween = _tweens[k]
 		if tw != null and tw.is_valid() and tw.is_running():
 			return true
+	for key in get_meta_list():
+		if String(key) in [Motion.META_PREFIX + "shake", Motion.META_PREFIX + "modulate_a"]:
+			var held: Array = get_meta(key)
+			var htw: Tween = held[0]
+			if htw != null and htw.is_valid() and htw.is_running():
+				return true
 	return not _nudge_queue.is_empty()
 
 
 ## Ends every motion of this view at once: the view shows the state as it is (skip,
-## reduce effects, a new state arriving mid-motion).
-func stop_motion() -> void:
+## reduce effects, a new state arriving mid-motion). ANIM-R1 C3: the kit's helpers stop
+## too (the Partial shake kept running), and with `sync_tag` the tag takes the content it
+## shows now without a flip (a skip lands; only a replay that plays out flips the tags in).
+func stop_motion(sync_tag: bool = true) -> void:
+	# The kit's one-shot helpers (the migration flicker is the scene's loop and stays).
+	for prop in [^"shake", ^"modulate:a"]:
+		Motion._settle(self, prop)
 	for k in _tweens:
 		var tw: Tween = _tweens[k]
 		if tw != null and tw.is_valid():
@@ -364,6 +406,16 @@ func stop_motion() -> void:
 	shake = Vector2.ZERO
 	modulate.a = 1.0
 	_last_shown_rot = NAN
+	landed = {}
+	landing_pulse = 0.0
+	broken = false
+	anim_sat_hp = {}
+	caption = ""
+	caption_shown = 0.0
+	enter_slide = 0.0
+	hit_flash = 0.0
+	if sync_tag:
+		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
 	set_process(false)
 	queue_redraw()
 
@@ -697,6 +749,9 @@ static func scrub_value(from: float, to: float, p: float) -> float:
 func play_break() -> void:
 	if not Motion.live(&"enemy_break"):
 		return
+	# ANIM-R1: an enemy's spot shows DEFEATED from the break on (the replay still draws the
+	# state it started from).
+	broken = combatant != null and not combatant.is_player
 	modulate.a = 0.0
 	var tw := _tw(&"break")
 	tw.tween_interval(Motion.seconds(&"enemy_break"))
@@ -715,6 +770,204 @@ func reveal_last_turn() -> void:
 	var tw := _tw(&"last_turn")
 	tw.tween_method(func(v: float) -> void: last_turn_shown = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"last_turn_reveal")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: _end(&"last_turn"))
+
+
+# --- ANIM-R1: the SEND IT replay's legibility --------------------------------------------------
+
+## A needle latched on slice `slot`: the slice pulses in its colour (`landing_pulse`: from
+## full to its amplitude, where it stays until the wheel turns on); a MISS slice gets a big
+## grey X. Nothing plays when motion doesn't.
+func play_landing(slot: int) -> void:
+	if not Motion.live(&"landing_pulse"):
+		return
+	var c := _shown()
+	var is_miss := false
+	if c != null and lookup != null and slot >= 0 and slot < c.wheel.slot_slice_ids.size():
+		var slice := lookup.get_content(c.wheel.slot_slice_ids[slot]) as SliceData
+		is_miss = slice != null and slice.slice_type == RC.SliceType.MISS
+	landed[slot] = is_miss
+	var e := Motion.entry(&"landing_pulse")
+	var tw := _tw(&"landing")
+	tw.tween_method(func(v: float) -> void: landing_pulse = v; queue_redraw(), 1.0, Motion.amplitude(&"landing_pulse"), Motion.seconds(&"landing_pulse")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: _end(&"landing"))
+
+
+## The landed marks go (the wheel turns on to the next landing).
+func clear_landing() -> void:
+	var tw: Tween = _tweens.get(&"landing")
+	if tw != null and tw.is_valid():
+		tw.kill()
+	_tweens.erase(&"landing")
+	landed = {}
+	landing_pulse = 0.0
+	queue_redraw()
+
+
+## True when this view shows a beaten enemy (its empty spot and DEFEATED).
+func defeated() -> bool:
+	return combatant != null and not combatant.is_player and (broken or not combatant.is_alive())
+
+
+## Satellite `id`'s shown HP during a replay.
+func set_sat_hp(id: StringName, hp: int) -> void:
+	anim_sat_hp[id] = hp
+	queue_redraw()
+
+
+## A satellite or drone docks during a replay (its token appears and pops).
+func add_shown_satellite(c: CombatantState) -> void:
+	if c == null:
+		return
+	var list: Array[CombatantState] = []
+	for s in shown_satellites:
+		if s.id != c.id:
+			list.append(s)
+	list.append(c)
+	shown_satellites = list
+	play_pulse(-1, c.id)
+	queue_redraw()
+
+
+## A satellite or drone goes down during a replay: its token vanishes.
+func remove_shown_satellite(id: StringName) -> void:
+	var list: Array[CombatantState] = []
+	for s in shown_satellites:
+		if s.id != id:
+			list.append(s)
+	shown_satellites = list
+	queue_redraw()
+
+
+## A caption on a plate where the tag goes (THIS TURN while the result holds); it fades in
+## (`result_caption`).
+func show_caption(text: String) -> void:
+	caption = text
+	if not Motion.live(&"result_caption"):
+		caption_shown = 1.0
+		queue_redraw()
+		return
+	caption_shown = 0.0
+	var e := Motion.entry(&"result_caption")
+	var tw := _tw(&"caption")
+	tw.tween_method(func(v: float) -> void: caption_shown = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"result_caption")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: _end(&"caption"))
+
+
+func hide_caption() -> void:
+	var tw: Tween = _tweens.get(&"caption")
+	if tw != null and tw.is_valid():
+		tw.kill()
+	_tweens.erase(&"caption")
+	caption = ""
+	caption_shown = 0.0
+	queue_redraw()
+
+
+## A new enemy enters from the right edge with its name on a plate (`enemy_enter`: px it
+## travels), so it never reads as a beaten one coming back.
+func play_enter() -> void:
+	if not Motion.live(&"enemy_enter"):
+		enter_slide = 0.0
+		return
+	var e := Motion.entry(&"enemy_enter")
+	enter_slide = Motion.amplitude(&"enemy_enter")
+	var tw := _tw(&"enter")
+	tw.tween_interval(Motion.delay_of(&"enemy_enter"))
+	tw.tween_method(func(v: float) -> void: enter_slide = v; queue_redraw(), enter_slide, 0.0, Motion.seconds(&"enemy_enter")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: enter_slide = 0.0; _end(&"enter"); queue_redraw())
+
+
+## A hit arrives in the HP counter: the disc flashes (`hit_flash`) and shakes (`hit_shake`;
+## no shake under reduce effects: Motion shows the rest state then).
+func play_hit() -> void:
+	if not Motion.live(&"hit_flash"):
+		return
+	var e := Motion.entry(&"hit_flash")
+	var tw := _tw(&"hit")
+	tw.tween_method(func(v: float) -> void: hit_flash = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"hit_flash")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: hit_flash = 0.0; _end(&"hit"))
+	Motion.shake(self, &"hit_shake", ^"shake")
+
+
+## A boss phase set new needles (MULTIPLY): they fan out from the first old needle to
+## `ticks` (`pointer_migrate`) and stay until the wheel shows its state again.
+func play_phase_needles(ticks: Array) -> void:
+	if ticks.is_empty():
+		return
+	var old := shown_pointers()
+	var start := old[0] if not old.is_empty() else 0.0
+	var starts: Array[float] = []
+	var ends: Array[float] = []
+	for k in ticks.size():
+		var f: float = old[k] if k < old.size() else start
+		starts.append(f)
+		ends.append(f + float(posmod(roundi(float(ticks[k]) - f) + RC.TICKS / 2, RC.TICKS) - RC.TICKS / 2))
+	if not Motion.live(&"pointer_migrate"):
+		anim_pointers = ends
+		queue_redraw()
+		return
+	anim_pointers = starts.duplicate()
+	var e := Motion.entry(&"pointer_migrate")
+	var tw := _tw(&"pointers")
+	tw.tween_method(_pointer_step.bind(starts, ends), 0.0, 1.0, Motion.seconds(&"pointer_migrate")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: _end(&"pointers"))
+
+
+## Where a replay number of `band` ("hp": damage and heals, above the name; "guard": block,
+## shield and evade, under the hub's lines) goes, and the font size that keeps `text`
+## inside the hub (ANIM-R1: numbers never overlap the name, and at 1.6 they spilled over
+## the slices). Returns {at (global), fs, room (px the number may drift)}.
+func number_slot(band: String, text: String, crit: bool) -> Dictionary:
+	var c := global_center()
+	var r := hub_radius() * NUMBER_HUB_SHARE
+	var ext := hub_text_extent()
+	# The number's box sits against the hub's words (where the hub is widest): its top at
+	# the foot of the lines (guard), or its foot at the top of the name (HP). It is as big
+	# as the font allows while every corner stays inside the hub.
+	var edge := minf(ext.y + NUMBER_GAP, r - NUMBER_MIN_FONT) if band == "guard" else maxf(ext.x - NUMBER_GAP, -r + NUMBER_MIN_FONT)
+	var side := 1.0 if band == "guard" else -1.0
+	var fs := CombatFxLayer.number_font(crit)
+	var mid := edge + side * fs * 0.5
+	while fs > NUMBER_MIN_FONT:
+		mid = edge + side * fs * 0.5
+		var hw := (Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + CombatFxLayer.NUMBER_OUTLINE) * 0.5
+		var far := maxf(absf(mid - fs * 0.5), absf(mid + fs * 0.5))
+		if hw * hw + far * far <= r * r:
+			break
+		fs -= 1
+	mid = edge + side * fs * 0.5
+	return {"at": c + Vector2(0.0, mid), "fs": int(fs), "room": 0.0}
+
+
+## The hub's words from the top of the name to the foot of its last line (local y, from
+## the centre): numbers keep off them.
+func hub_text_extent() -> Vector2:
+	var c := _shown()
+	var hw := (hub_radius() - 10) * 2.0
+	var n := _hub_lines(c).size()
+	var fs := _fs(HUB_FONT_SIZE)
+	var step := fs + 2
+	var top := -6.0 - n * step * 0.5
+	var name_lines := hub_name_lines(hw)
+	var name_size := int(name_lines[0])
+	var name_count := name_lines.size() - 1
+	var y0 := top - (name_count - 1) * (name_size + 1) - name_size * 0.8
+	var y1 := top + 16.0 + (n - 1) * step + fs * 0.3 if n > 0 else top + name_size * 0.3
+	return Vector2(y0, y1)
+
+
+## Where the HP number sits (global): a damage number travels into it.
+func hp_counter_spot() -> Vector2:
+	var r: Rect2 = hp_layout()["hp"]
+	return global_position + r.get_center()
+
+
+## A point on the HP ring (global) where the HP shown now ends: hit lines end there.
+func hp_ring_spot() -> Vector2:
+	var c := _shown()
+	var frac := clampf(shown_hp() / maxf(1.0, c.max_hp), 0.0, 1.0)
+	var a := PI * 0.1 + PI * 0.8 * frac
+	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + (32.0 + HP_ARC_OUT) * 0.5)
 
 
 ## Valid drop zones pulse while a card is aimed (`drop_zone_pulse`); the hovered one stays
@@ -1038,7 +1291,7 @@ func _center() -> Vector2:
 	# The centre sits at CENTER_Y, raised when the HP number and the last-turn line need
 	# the room below (H23: the fixed centre left 210 px above and pinned the wheel small).
 	var cy := minf(size.y * CENTER_Y, size.y - _bottom_need() - _radius())
-	return Vector2(left_reserve + (size.x - left_reserve) * center_x, cy) + shake
+	return Vector2(left_reserve + (size.x - left_reserve) * center_x + enter_slide, cy) + shake
 
 
 ## Room kept under the disc for the HP number and the last-turn line (px).
@@ -1137,6 +1390,12 @@ func _draw_view() -> void:
 	var rot := shown_rotation()
 	# Platform so the wheel reads over the city.
 	draw_circle(center, radius + 40, Color(Palette.NIGHT_SKY, 0.55))
+	if defeated():
+		# ANIM-R1: a beaten enemy leaves its empty spot with a DEFEATED stamp (a new enemy
+		# can never read as this one coming back).
+		_draw_defeated(center, radius, inner)
+		_draw_hp(center, radius)
+		return
 	if flip_squash < 1.0:
 		# FLIP: the disc squashes to a line about its centre and opens mirrored.
 		draw_set_transform(Vector2(center.x * (1.0 - flip_squash), 0.0), 0.0, Vector2(flip_squash, 1.0))
@@ -1200,8 +1459,12 @@ func _draw_view() -> void:
 		if wheel.slot_firmware_ids[i] != &"":
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
+	_draw_landed(center, radius, inner, tps, rot)
 	draw_arc(center, radius, 0, TAU, 96, Color(line, 0.9), 1.5)
 	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
+	if hit_flash > 0.0:
+		# A hit landed in the HP counter: the disc flashes.
+		draw_circle(center, radius, _col(Color(LOSS_COLOR, hit_flash * Motion.amplitude(&"hit_flash"))))
 	if wheel.has_inner_ring():
 		var ring_r := inner - 12
 		var irot := shown_inner_rotation()
@@ -1272,7 +1535,12 @@ func _draw_view() -> void:
 	# Intent: a taped paper tag above the needle (what resolves next and its results).
 	var tag := _intent_rect_local()
 	_check_tag_change(tag)
-	if tag.has_area() and not replaying:
+	if replaying and caption != "" and caption_shown > 0.0:
+		_draw_caption(caption, caption_shown)
+	elif enter_slide > 0.0:
+		# An enemy entering: its own name on the plate where its tag will go.
+		_draw_caption(shown_name().to_upper(), 1.0)
+	if tag.has_area() and not replaying and enter_slide <= 0.0:
 		if tag_flip < 1.0:
 			# Paper flip: the tag turns on its tape (top edge) as its content changes.
 			var s := cos(deg_to_rad((1.0 - tag_flip) * Motion.amplitude(&"intent_flip")))
@@ -1320,6 +1588,76 @@ func tag_flipping() -> bool:
 	return _tweens.has(&"tag")
 
 
+## The slices the needles landed on (ANIM-R1): a thick rim in the slice's colour, bright
+## as they latch; a MISS slice gets a big grey X.
+func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot: float) -> void:
+	if landed.is_empty():
+		return
+	for slot in landed:
+		var i := int(slot)
+		if i < 0 or i >= combatant.wheel.slice_count:
+			continue
+		var slice := lookup.get_content(combatant.wheel.slot_slice_ids[i]) as SliceData
+		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
+		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
+		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
+		var wedge := _wedge(center, inner, radius, minf(a0, a1), maxf(a0, a1))
+		draw_colored_polygon(wedge, _col(Color(sc.lightened(0.3), 0.55 * landing_pulse)))
+		var closed := wedge.duplicate()
+		closed.append(wedge[0])
+		draw_polyline(closed, _col(Color(sc.lightened(0.4), maxf(0.6, landing_pulse))), LANDED_RIM, true)
+		if bool(landed[slot]):
+			# MISS: a big grey X across the slice.
+			var m := (a0 + a1) * 0.5
+			var mid := center + Vector2(cos(m), sin(m)) * (inner + radius) * 0.5
+			var arm := (radius - inner) * MISS_X_SHARE
+			var grey := _col(Palette.slice_color(RC.SliceType.MISS).lightened(0.3))
+			draw_line(mid + Vector2(-arm, -arm), mid + Vector2(arm, arm), Color(Palette.INK, 0.8), MISS_X_WIDTH + 3.0)
+			draw_line(mid + Vector2(-arm, arm), mid + Vector2(arm, -arm), Color(Palette.INK, 0.8), MISS_X_WIDTH + 3.0)
+			draw_line(mid + Vector2(-arm, -arm), mid + Vector2(arm, arm), grey, MISS_X_WIDTH)
+			draw_line(mid + Vector2(-arm, arm), mid + Vector2(arm, -arm), grey, MISS_X_WIDTH)
+
+
+## A beaten enemy's empty spot: a dashed ring where the disc was, its name and DEFEATED.
+func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
+	_draw_dashed_arc(center, radius, 0.0, TAU, _col(Color(wheel_color, 0.45)), 2.0)
+	_draw_dashed_arc(center, inner, 0.0, TAU, _col(Color(wheel_color, 0.3)), 1.5)
+	var hw := (inner - 10) * 2.0
+	var name_lines := hub_name_lines(hw)
+	var name_size := int(name_lines[0])
+	for k in name_lines.size() - 1:
+		var ny := -inner * 0.45 - (name_lines.size() - 2 - k) * (name_size + 1)
+		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(Color(wheel_color, 0.7)))
+	var word := tr("DEFEATED")
+	var fs := _fs(DEFEATED_FONT)
+	var font := Palette.marker()
+	var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	while fs > NUMBER_MIN_FONT and ww + fs > radius * 1.8:
+		fs -= 1
+		ww = font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var box := Rect2(-ww * 0.5 - fs * 0.3, -fs * 0.7, ww + fs * 0.6, fs * 1.4)
+	draw_set_transform(center, STAMP_TILT, Vector2.ONE)
+	draw_rect(box, Color(Palette.NIGHT_SKY, 0.85))
+	draw_rect(box, _col(LOSS_COLOR), false, 3.0)
+	draw_string(font, Vector2(-ww * 0.5, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(LOSS_COLOR))
+	draw_set_transform(Vector2.ZERO)
+
+
+## A caption on a paper plate where the tag goes (THIS TURN, an entering enemy's name).
+func _draw_caption(text: String, shown: float) -> void:
+	var fs := _fs(INTENT_FONT_SIZE)
+	var font := Palette.marker()
+	var w := minf(size.x * TAG_MAX_SHARE, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 16.0)
+	var h := INTENT_HEIGHT * _ts()
+	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
+	var r := Rect2(Vector2(clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w)), maxf(0.0, bottom - h)), Vector2(w, h))
+	var a := clampf(shown, 0.0, 1.0)
+	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(Palette.SHADOW, Palette.SHADOW.a * a))
+	draw_rect(r, Color(Palette.INK, 0.92 * a))
+	draw_rect(r, Color(Palette.PAPER, 0.8 * a), false, 1.5)
+	draw_string(font, Vector2(r.position.x, r.position.y + h * 0.7), text, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Color(Palette.PAPER, a))
+
+
 ## Miss landing: static flecks over one slice only (hash scatter, a new pattern each frame).
 func _draw_static(center: Vector2, r0: float, r1: float, a0: float, a1: float) -> void:
 	var frame := Engine.get_process_frames()
@@ -1355,8 +1693,8 @@ func _draw_satellites() -> void:
 		if not land.is_empty():
 			SliceIcon.draw_icon(self, satp, tok_r * 0.6, int(land["type"]), Palette.slice_color(int(land["type"])))
 		var sat_out: Dictionary = outcome.get("satellites", {}).get(sat.id, {})
-		var sat_text := "%d" % sat.hp
-		if not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
+		var sat_text := "%d" % int(anim_sat_hp.get(sat.id, sat.hp))
+		if not replaying and not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
 			sat_text += " >%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " >x"
 		var lfs := _fs(HUB_FONT_SIZE + 1)
 		var plate := satellite_plate_rect(sat, sat_text)
@@ -1682,25 +2020,35 @@ func shown_name() -> String:
 	return TextDb.t(data, "display_name")
 
 
-func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
+## The hub's lines under the name for `c` (block, shield, resistance, frozen, its hub
+## core, extra lines), and which one is the resistance line (-1 for none).
+func _hub_lines(c: CombatantState) -> Array[String]:
 	# Drawn words go through tr() (H23: drawn text never translated; the scrambled
 	# storyboard still showed them in English).
 	var hub_lines: Array[String] = []
-	var resist_line := -1
-	if combatant.block > 0:
-		hub_lines.append(tr("BLOCK %d") % combatant.block)
-	if combatant.shield > 0:
-		hub_lines.append(tr("SHIELD %d") % combatant.shield)
-	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
-		resist_line = hub_lines.size()
-		hub_lines.append(tr("RESIST %d") % combatant.resistance)
-	if combatant.wheel.frozen:
+	if c == null:
+		return hub_lines
+	if c.block > 0:
+		hub_lines.append(tr("BLOCK %d") % c.block)
+	if c.shield > 0:
+		hub_lines.append(tr("SHIELD %d") % c.shield)
+	if c.resistance > 0 or c.hub_resistance > 0 or c.wheel.passive_resistance > 0:
+		hub_lines.append(tr("RESIST %d") % c.resistance)
+	if c.wheel.frozen:
 		hub_lines.append(tr("FROZEN"))
-	if combatant.wheel.hub_id != &"":
-		var hub_data := lookup.get_content(combatant.wheel.hub_id) if lookup != null else null
-		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(combatant.wheel.hub_id)
-		hub_lines.append(hub_name + (tr(" (BREACHED)") if combatant.is_hub_breached() else ""))
+	if c.wheel.hub_id != &"":
+		var hub_data := lookup.get_content(c.wheel.hub_id) if lookup != null else null
+		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(c.wheel.hub_id)
+		hub_lines.append(hub_name + (tr(" (BREACHED)") if c.is_hub_breached() else ""))
 	hub_lines.append_array(extra_lines)
+	return hub_lines
+
+
+func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
+	var hub_lines := _hub_lines(combatant)
+	var resist_line := -1
+	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
+		resist_line = (1 if combatant.block > 0 else 0) + (1 if combatant.shield > 0 else 0)
 	var hw := (inner - 10) * 2.0
 	var fs := _fs(HUB_FONT_SIZE)
 	var step := fs + 2
@@ -1765,30 +2113,50 @@ func _chip_rows() -> Array:
 		return rows
 	var max_w := size.x * TAG_MAX_SHARE
 	var fs := _fs(CHIP_FONT_SIZE)
+	var cap := _chip_row_cap()
+	# ANIM-R1 C8: the chips come in order of importance (the scene sorts them: damage to
+	# you, damage dealt, HP, then the rest), and the fold keeps that order: the rows fill in
+	# order, and once a chip no longer fits the kept rows, it and every chip after it fold
+	# into "+N MORE" (room for which is kept on the last row). The first chip always shows.
 	var row: Array = []
 	var w := 0.0
-	for chip in chips:
+	for i in chips.size():
+		var chip: Dictionary = chips[i]
 		var cw := _chip_width(String(chip["text"]), fs)
 		if not row.is_empty() and w + cw > max_w:
 			rows.append(row)
 			row = []
 			w = 0.0
+		if rows.size() >= cap:
+			return _fold_rows(rows, chips.size() - i, fs, max_w)
+		var more := 0.0
+		if rows.size() == cap - 1 and i < chips.size() - 1:
+			more = _chip_width(tr("+%d MORE") % (chips.size() - i - 1), fs)
+		if rows.size() == cap - 1 and not row.is_empty() and w + cw + more > max_w and i < chips.size() - 1:
+			# This chip would leave no room to say what else there is.
+			rows.append(row)
+			return _fold_rows(rows, chips.size() - i, fs, max_w)
 		row.append(chip)
 		w += cw
 	if not row.is_empty():
 		rows.append(row)
+	return rows
+
+
+## Adds the "+N MORE" chip to the last of `rows` (H23: a bare "+4" was a mystery); every
+## folded chip is listed in the tag's tooltip.
+func _fold_rows(rows: Array, hidden: int, fs: int, max_w: float) -> Array:
 	var cap := _chip_row_cap()
-	if rows.size() > cap:
-		# Fold the overflow into a "+N MORE" chip on the last kept row (H23: a bare "+4" was a mystery).
-		var hidden := 0
-		for k in range(cap, rows.size()):
-			hidden += (rows[k] as Array).size()
-		rows = rows.slice(0, cap)
-		var last: Array = rows[cap - 1]
-		if not last.is_empty():
-			hidden += 1
-			last.pop_back()
-		last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER})  # all listed in the tag tooltip
+	rows = rows.slice(0, cap)
+	var last: Array = rows[rows.size() - 1]
+	var w := 0.0
+	for c in last:
+		w += _chip_width(String(c["text"]), fs)
+	while last.size() > 1 and w + _chip_width(tr("+%d MORE") % hidden, fs) > max_w:
+		var gone: Dictionary = last.pop_back()
+		w -= _chip_width(String(gone["text"]), fs)
+		hidden += 1
+	last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER})
 	return rows
 
 
@@ -1836,7 +2204,14 @@ func _intent_tag(r: Rect2) -> void:
 	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Palette.SHADOW)
 	draw_rect(r, Palette.NOTE_PAPER)
 	draw_rect(r, Color(Palette.INK, 0.5), false, 1.0)
-	draw_rect(Rect2(r.position + Vector2(w * 0.5 - 14, -5), Vector2(28, 9)), Palette.NOTE_TAPE)
+	# ANIM-R1: the tape says what the tag is, a forecast (NEXT TURN), so it never reads as
+	# the result of the turn just played.
+	var cap_fs := _fs(HUB_FONT_SIZE)
+	var cap_text := tr("NEXT TURN")
+	var cap_w := minf(w - 4.0, Palette.mono().get_string_size(cap_text, HORIZONTAL_ALIGNMENT_LEFT, -1, cap_fs).x + 10.0)
+	var tape := Rect2(r.position + Vector2((w - cap_w) * 0.5, -(cap_fs + 3.0) * 0.5), Vector2(cap_w, cap_fs + 3.0))
+	draw_rect(tape, Palette.NOTE_TAPE)
+	draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, Palette.INK)
 	var tx := r.position.x + 8
 	var title_h := INTENT_HEIGHT * ts
 	if type >= 0:
