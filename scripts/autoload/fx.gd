@@ -46,6 +46,8 @@ var saved_label: Label
 var flashes_shown: Array[float] = []
 var _pulse_tween: Tween
 var _frozen: bool = false
+## ANIM-R2 R3: the jack's input blocker, kept last under the root (first in the input order).
+var input_gate: JackInputGate
 
 
 func _ready() -> void:
@@ -98,14 +100,26 @@ func _ready() -> void:
 		get_node("/root/SignalBus").save_completed.connect(func(_path: String) -> void: show_saved())
 	Settings.changed.connect(apply_settings)
 	apply_settings()
+	input_gate = JackInputGate.new()
+	get_tree().root.add_child.call_deferred(input_gate)
 
 
 ## Lets the Motion kit's table go before the engine checks for leaked resources at exit.
+## ANIM-R2 R10: the city bakes too (running builds stopped and joined, their painters and
+## viewports freed, every baked texture let go while the renderer still runs).
 func _exit_tree() -> void:
+	CityBakeCache.shutdown()
 	Motion.use_config(null)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		CityBakeCache.shutdown()
+
+
 func _process(_delta: float) -> void:
+	if _jacking and input_gate != null:
+		input_gate.stay_last()
 	if fps_label.visible:
 		fps_label.text = "%d fps" % Engine.get_frames_per_second()
 	# H24 S7: while the stamp shows, it follows the layout (a page built after the save,
@@ -510,6 +524,10 @@ func _wait_arrival(tick: Callable = Callable()) -> void:
 ## other press while a jack runs, so the page under it (or arriving) takes no input.
 func _set_jacking(on: bool) -> void:
 	_jacking = on
+	# ANIM-R2 R3: the gate sees every press before the scene's own `_input` handlers.
+	if input_gate != null:
+		input_gate.blocking = on
+		input_gate.stay_last()
 	var stop := Control.MOUSE_FILTER_STOP if on else Control.MOUSE_FILTER_IGNORE
 	jack_cover.mouse_filter = stop
 	transition_rect.mouse_filter = stop
