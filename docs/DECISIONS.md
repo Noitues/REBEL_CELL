@@ -558,8 +558,12 @@ under it, quantized to 128 colours, raw frames deleted): `raid_playout`, `influe
   every edge spot covers something, searches a grid over the whole screen (`SAVED_INNER_STEP`
   40 px) (at 1.0 the least covered edge spot was over UNDO). The Grid's side column ends above
   the first run row it would cut (`ScrollHint.snap_rows`: the room under the view takes the
-  cut row's height at the top of the content; one refresh at a time: a re-entrant refresh
-  crashed the first try).
+  cut row's height at the top of the content). The snap is worked out at most once a frame
+  and `SNAP_PASSES` (3) times per page: unbounded, the room it set brought a scroll bar in or
+  out, which rewrapped the rows it had measured, and the layout chased itself through deferred
+  calls until the message queue ran out (`test_city_map_sweeps` crashed with signal 11 in the
+  full run); a re-entrant refresh is refused too. The Site card also rebuilds only when what it
+  shows changed (`refresh_site_card` compares the card's Site and status).
 - **New ids:** `asset_drop_wait`, `asset_drop_grow`, `forecast_change`, `jack_dissolve`.
   Removed: `net_creep`, `net_creep_recede`. Retuned: `asset_drop` 56 px, `city_bake_fade` 0.8 s,
   `influence_tint` 0.45, `raid_result_banner` delay 0.2 s (now read).
