@@ -195,6 +195,16 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   accept on the focused button, a click on a button) completes the motion and passes on: the
   raid playout, ambient typing and subtitles consume only presses aimed at them; an open
   pause menu keeps its presses; a consumed pad press still switches the prompts to the pad.
+  ANIM-R4: one rule in every helper (`MotionSkip.verdict`: the SEND IT replay, page
+  entrances, flights, drops, the route move, typing, subtitles, the raid playout): while a
+  pause menu is open the motion plays on and the press is the menu's; a press that works the
+  screen completes the motion and passes on; any other press completes it and is consumed.
+  "A click on a button" means the control under the pointer (a button covered by a panel is
+  not clicked), with the clicking mouse button in its button mask (a right-click works no
+  left-click button); the topmost button under the point counts only when nothing hovered
+  holds it. The SEND IT replay keeps presses on the fight's own controls (SEND IT, RESPIN,
+  UNDO, the hand): they end the replay and do nothing else, so a turn is never played blind.
+  In a menu the Settings key passes too (Esc while a pause-menu line types closes it).
 
 ### 5.2 Combat motion (the Animation pass, ANIM-2 / ANIM-3)
 - **Replay, never re-run.** The state is final at once; motion replays the engine's own
@@ -205,9 +215,10 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   pulses its needle and flies as a thick projectile in the attacker's colour from its
   landed slice to the victim's HP ring, one at a time (ANIM-R2: never two at once), acid
   for the operative's side and red for the enemies', its raw number riding with it (a hit
-  soaked whole still flies and the victim stamps BLOCKED or EVADED on impact); a partly
-  blocked hit lands its raw number, the guard's part comes off as a chip, and what got
-  through pops and travels into the HP counter, which rolls down with a white lag bar as
+  soaked whole still flies and shows its guard's glyph and "0" where it struck; since ANIM-R4
+  the equation sword 8 − shield 8 = 0); a partly blocked hit meets its guard where it struck
+  (sword 14 − shield 5 = 9) and what got through pops fresh in the hub and travels into the
+  HP counter, which rolls down with a white lag bar as
   the wheel flashes and shakes (every HP change has a number of exactly its size; a
   satellite's shows at its token); guard numbers sit under the hub's lines; statuses stamp on their slice; a wheel
   whose HP didn't change stamps NO DAMAGE (ALL BLOCKED when every hit was soaked); a
@@ -246,6 +257,20 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   art and falls, a skull on the beaten side; a won fight swaps SEND IT, RESPIN and UNDO for the
   next step (LOOT / CONTINUE) at once; a played card is gone before its wheel spins; a status
   marks its slice as it lands; YOU PLAY X; NEXT and LAST TURN explain themselves on hover.
+- **SEND IT for a beginner (ANIM-R4)**: the operative's hits (then its drones', staggered)
+  land in full, their HP rolls done, then a gap (`resolve_side_gap`), then the enemies' (then
+  their satellites'); a hit leaves from the slice right under the needle that resolves it, and
+  its number shows only when it arrives; one notation for a hit and its guard everywhere, the
+  mark where it struck and the icon row under the HP alike: sword and the raw hit, minus the
+  shield (or the evade mark) and what it took, = what got through (no arrow formula; each
+  hit's HP number pops fresh, never morphing in the hub); the operative's projectiles are
+  always acid, the enemies' always red, with a big paper-ringed head flying 0.27 s; after a
+  card or a respin the forecast waits (hidden) until the spin lands; a status lands as its
+  glyph in green (good for you) or red (bad for you), on its slice's mark too, and a random
+  status says which and whose ("☠ CORRUPTED · RANDOM SLICE", red on your wheel); DEFEATED
+  and its skull wear the beaten wheel's own colour, and VICTORY stands in the room above its
+  disc, never over the crack; RAM floats "-N RAM" above its count when spent (never on a
+  refusal, which says NEED / HAVE) and "+N RAM" when the turn refills it.
 
 ### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
 - **Territory tint never jumps.** The city bakes the new look once; the new image shows
@@ -359,6 +384,12 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **ANIM-R3 screens**: the Modem's first focus is an item; its sign is whole within 0.3 s; a
   flying card is a fresh copy of itself; loot not taken falls within its window; swap chips
   wear a ring pictogram; every event choice shows icons; discards keep off RESPIN / UNDO.
+- **ANIM-R4 screens**: the loot page stays (inert) until the offers not taken have fallen
+  inside its window, then leaves; drawn words are translated once (LOOT / CONTINUE, the loot's
+  graffiti tag and scrawls) and measured as drawn, the tag shrinking to fit its window; a
+  focus tip never folds under 26 columns and goes beside (off the MODEM sign); a flapping BUY
+  keeps off its card's text; a price refusal under a narrow tag wraps at its dot; an event's
+  story types within 0.8 s on paper as tall as its words.
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
