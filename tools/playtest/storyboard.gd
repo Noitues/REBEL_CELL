@@ -20,6 +20,8 @@ const SETTLE_FRAMES := 12
 var out_dir: String = "user://storyboard"
 var _step: int = 0
 var _scale_before: float = 1.0
+## Frames the storyboard waits for a fight to open after the route move.
+const FIGHT_WAIT_FRAMES := 600
 ## The storyboard's own settings file.
 const STORYBOARD_SETTINGS := "user://storyboard_settings.json"
 var _shots: PackedStringArray = []
@@ -133,8 +135,15 @@ func _run() -> void:
 	net.start_run(1)
 	await _shot("route", "A run: choosing where to go next.")
 	net.enter_node(RunManager.netrun.available_nodes()[0])
+	# The route move plays first (Animation pass ANIM-5), then the fight opens: wait for it.
+	for i in FIGHT_WAIT_FRAMES:
+		if net.combat_scene != null:
+			break
+		await get_tree().process_frame
 	await _settle(4)
 	var combat: Control = net.combat_scene
+	if combat == null:
+		push_error("storyboard: the fight never opened")
 	if combat != null:
 		await _shot("fight", "A fight starts.")
 		combat._preview_card(0)
@@ -148,7 +157,12 @@ func _run() -> void:
 		combat.nudge_wheel(&"player", 1)
 		await _shot("fight_after_nudge", "The player clicked the right arrow above their wheel once.")
 		combat.end_turn()
-		await _shot("fight_after_send_it", "The player pressed SEND IT once.")
+		await _shot("fight_resolving", "The player pressed SEND IT once; the turn is still playing out.")
+		for i in FIGHT_WAIT_FRAMES:
+			if not combat.motion_busy():
+				break
+			await get_tree().process_frame
+		await _shot("fight_after_send_it", "The same turn after it has finished playing out.")
 		# Spend RAM the honest way (respins) until the next one is refused.
 		for i in 8:
 			if combat.engine.state().ram < combat.engine.resolver.config.respin_ram_cost:
