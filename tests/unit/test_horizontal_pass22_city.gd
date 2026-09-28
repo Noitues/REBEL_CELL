@@ -105,7 +105,7 @@ func test_the_overlay_covers_the_screen_and_reads_the_side_column() -> void:
 	var local_col: Rect2 = overlay.label_blocks()[0]
 	var back := overlay.get_global_transform_with_canvas() * local_col
 	assert_almost_eq(back.position.x, column.get_global_rect().position.x, 1.0, "at the column's place on screen")
-	assert_true(column.item_rect_changed.is_connected(overlay._top.queue_redraw), "labels move when the column does")
+	assert_true(column.item_rect_changed.is_connected(overlay._queue_tags), "labels move when the column does")
 	# Rects work too (viewport px), and an explicit screen rect narrows the area.
 	overlay.set_blocked_rects([Rect2(0, 0, 100, 720)])
 	assert_eq(overlay.label_blocks().size(), 2)

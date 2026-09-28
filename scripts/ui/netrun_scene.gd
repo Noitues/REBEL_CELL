@@ -184,6 +184,10 @@ func _ready() -> void:
 			enter_node(RunManager.netrun.available_nodes()[0])
 		elif args.has("--demo-anim=route_pulse"):
 			_demo_route_pulse.call_deferred()
+		for a in args:
+			# ANIM-R2 R2 profiling: the route shows, then N frames in the first fight on it opens.
+			if a.begins_with("--demo-run-fight="):
+				MotionDemo.after_frames(self, int(a.trim_prefix("--demo-run-fight=")), _demo_enter_fight)
 		return
 	if RunManager.has_active_run():
 		_show_current()
@@ -243,6 +247,16 @@ func enter_node(node_id: StringName) -> void:
 		return
 	_travelling = true
 	get_tree().create_timer(secs).timeout.connect(_end_travel)
+
+
+## ANIM-R2 R2 profiling: enters the first open Router (a fight), else the first open node.
+func _demo_enter_fight() -> void:
+	var open: Array = RunManager.netrun.available_nodes()
+	for id in open:
+		if int(RunManager.netrun.run.map.get_node(id).get("type", -1)) == RC.InfilNodeType.ROUTER:
+			enter_node(id)
+			return
+	enter_node(open[0])
 
 
 ## ANIM-5 frame capture (dev shortcut): once the route map and the city have settled, a
@@ -537,14 +551,15 @@ func raid_fight() -> void:
 
 ## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
 ## cover up until then, so it never lifts onto an empty dark screen): a page is on, the
-## city behind it shows its own look under the current camera, and the route map's fit
-## passes have run.
+## city behind it was drawn under the current camera (its placement: the route's nodes and
+## labels in place), and the route map's fit passes have run. ANIM-R2 R1: the city's image
+## is not waited for; it fades in over the night sky when its bake lands.
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
 	var city: NeonCity = background.city if background != null else null
 	if city != null and city.is_visible_in_tree():
-		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
+		if not city.camera_settled():
 			return false
 		if city.rebuilt.is_connected(fit_route_map) or get_tree().process_frame.is_connected(fit_route_map) or _raid_map_framing:
 			return false
@@ -880,6 +895,24 @@ func _show_map() -> void:
 		_route_fits = 0
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
+	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Modem, an event or loot, all on
+	# the default frame of this city's look: baked now, behind the route (after its own view).
+	_prebake_backdrops.call_deferred()
+
+
+## ANIM-R2 R1 / R2: the default frame's bake at this scene's size and at the page's (a fight's
+## arena fills the page), with the sizes it was drawn at lately (NeonCity.frame_sizes).
+func _prebake_backdrops() -> void:
+	if background == null or not is_inside_tree() or RunManager.campaign == null:
+		return
+	var sizes: Array[Vector2] = [size]
+	if _panel_host != null and is_instance_valid(_panel_host):
+		var inner := _panel_host.size
+		var box := _panel_host.get_theme_stylebox(&"panel", &"GlassPanel")
+		if box != null:
+			inner -= box.get_minimum_size()
+		sizes.append(inner.floor())
+	background.city.prebake_frames(sizes)
 
 
 ## The route legend where it covers no route node (H22 #14).
@@ -934,6 +967,11 @@ func fit_route_map() -> void:
 
 func _fit_route_after_redraw() -> void:
 	var city := background.city
+	if city.is_baked():
+		# ANIM-R2 R1: measured at once under the new camera (see hq_scene._fit_after_redraw).
+		city.update_camera()
+		fit_route_map()
+		return
 	if not city.rebuilt.is_connected(fit_route_map):
 		city.rebuilt.connect(fit_route_map, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 

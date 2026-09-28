@@ -199,6 +199,14 @@ func _ready() -> void:
 			for id in [&"ghost", &"rigger", &"botnet", &"wrecker", &"phantom", &"overclocker", &"hivemind"]:
 				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
 			show_hq()
+		for a in args:
+			# ANIM-R2 R1 / R9 profiling: from the HQ page the Grid opens N frames in, the HQ comes
+			# back N frames later and the Grid opens again N frames after that (a re-open).
+			if a.begins_with("--demo-grid-open="):
+				var n := int(a.trim_prefix("--demo-grid-open="))
+				MotionDemo.after_frames(self, n, show_grid)
+				MotionDemo.after_frames(self, n * 2, show_hq)
+				MotionDemo.after_frames(self, n * 3, show_grid)
 		if args.has("--demo-grid") or args.has("--demo-raid") or args.has("--demo-playout"):
 			var c := RunManager.campaign
 			c.schematics = 100
@@ -297,14 +305,16 @@ func resume() -> void:
 
 
 ## ANIM-R1 M8: whether the screen a jack out lands on is built and framed (Fx keeps its
-## cover up until then): a page is on, the city behind it shows its own look under the
-## current camera, and no map fit or legend placement is still waiting for a redraw.
+## cover up until then): a page is on, the city behind it was drawn under the current
+## camera (its placement: every map node and label in place), and no map fit or legend
+## placement is still waiting for a redraw. ANIM-R2 R1: the city's image is not waited for;
+## it fades in over the night sky when its bake lands.
 func arrival_ready() -> bool:
 	if _panel == null or not is_instance_valid(_panel) or not _panel.is_inside_tree():
 		return false
 	var city: NeonCity = background.city if background.visible else wireframe.city
 	if city != null and city.is_visible_in_tree():
-		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
+		if not city.camera_settled():
 			return false
 		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
 				or get_tree().process_frame.is_connected(place_raid_legend):
@@ -1416,6 +1426,35 @@ func show_hq() -> void:
 	jack.breathe()
 	if entering:
 		Typing.type_in(radio.label, &"radio_type")
+	# ANIM-R2 R1: the Grid is a press away: its city bakes now, behind the HQ (while a jack out
+	# still covers the screen too), so the Grid opens on its image.
+	_prebake_grid.call_deferred()
+
+
+## ANIM-R2 R1 (view memory): the bake region the Grid was last framed at, per campaign.
+static var _grid_views: Dictionary = {}
+
+
+func _grid_memory_key() -> String:
+	var c := RunManager.campaign
+	return "%d|%s" % [c.campaign_seed, c.corporation_id] if c != null else ""
+
+
+## ANIM-R2 R1: bakes, ahead, the net city's current look over the region the Grid was last
+## framed at in this campaign (nothing the first time: the Grid then bakes its own view).
+func _prebake_grid() -> void:
+	if wireframe == null or not is_inside_tree() or RunManager.campaign == null:
+		return
+	var region: Variant = _grid_views.get(_grid_memory_key())
+	if region is Rect2:
+		wireframe.city.prebake(region)
+	# The Grid's placement (its buildings and street routes) worked out now too: the Grid's
+	# first frame then only draws (~35 ms less in it).
+	if wireframe.city.is_baked():
+		var warm := CityMapOverlay.new(wireframe.city)
+		var g := grid_graph()
+		warm.set_graph(g["nodes"], g["edges"])
+		warm.free()
 
 
 ## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
@@ -1726,9 +1765,17 @@ func _grid_settled(free: Rect2) -> void:
 		if lean.length() >= GRID_LEAN_MIN:
 			var city := wireframe.city
 			_frame_city(city.scale.x, city.focus_grid, city.focus_anchor + lean / get_global_rect().size)
+			if city.is_baked():
+				city.update_camera()
+				_grid_settled(free)
+				return
 			if not city.rebuilt.is_connected(_grid_settled):
 				city.rebuilt.connect(_grid_settled.bind(free), CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 			return
+	# ANIM-R2 R1: remembered, so the next visit's city is baked ahead (`_prebake_grid`).
+	if panel_name == "grid" and RunManager.campaign != null:
+		wireframe.city.update_camera()
+		_grid_views[_grid_memory_key()] = wireframe.city.bake_region()
 	wireframe.ease_camera()
 
 
@@ -1863,6 +1910,12 @@ func _fit_steps(nav: HFlowContainer) -> void:
 			btn.custom_minimum_size.x = room
 func _fit_after_redraw() -> void:
 	var city := wireframe.city
+	if city.is_baked():
+		# ANIM-R2 R1: a baked city's placement follows the camera at once: the next pass
+		# measures now (each pass waited for a redraw, all of them in one long frame).
+		city.update_camera()
+		fit_grid_map()
+		return
 	if not city.rebuilt.is_connected(fit_grid_map):
 		city.rebuilt.connect(fit_grid_map, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 

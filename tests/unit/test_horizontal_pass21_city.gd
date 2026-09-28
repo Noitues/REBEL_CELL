@@ -222,7 +222,7 @@ func test_label_size_follows_the_text_scale_live() -> void:
 	assert_true(base * overlay.city.scale.x >= CityMapOverlay.TAG_FONT - 1, "labels read at %d px on screen" % CityMapOverlay.TAG_FONT)
 	Settings.set_text_scale(1.5)
 	assert_almost_eq(float(overlay.label_font_size()), base * 1.5, 1.0, "labels grow with the text size")
-	assert_true(Settings.changed.is_connected(overlay._top.queue_redraw), "and redraw when it changes")
+	assert_true(Settings.changed.is_connected(overlay._queue_top), "and redraw when it changes")
 	# H24 K1: a label may take two lines where one has no room, so compare the height of a
 	# line (the box over its line count).
 	var wide := {}
