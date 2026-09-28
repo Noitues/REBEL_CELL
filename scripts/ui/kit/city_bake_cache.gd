@@ -185,7 +185,7 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 		# ANIM-R1 M2: the seconds of GDScript that build the geometry run off the main
 		# thread; the frames go on (the old image, or a stand-in, shows until this lands).
 		var tree := Engine.get_main_loop() as SceneTree
-		var task := WorkerThreadPool.add_task(painter.prebuild, false, "city bake")
+		var task := WorkerThreadPool.add_task(painter.prebuild, true, "city bake")
 		while not WorkerThreadPool.is_task_completed(task):
 			await tree.process_frame
 		WorkerThreadPool.wait_for_task_completion(task)

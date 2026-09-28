@@ -497,6 +497,16 @@ func showing_current_look() -> bool:
 	return spreading() or (CityBakeCache.has(_baked_key) and String(CityBakeCache.entry(_baked_key).get("look", "")) == look_key())
 
 
+## ANIM-R1 M8: true when the whole view is drawn from a finished bake of the current look
+## (not a stand-in of another region, not the sky while one bakes), or the city draws
+## procedurally.
+func view_covered() -> bool:
+	if not is_baked():
+		return true
+	var key := CityBakeCache.find(look_key(), view_rect())
+	return key != "" and not CityBakeCache.entry(key).has("failed")
+
+
 ## The spread's eased progress: x = the front (0..1 of its reach), y = the cross-fade of
 ## the rest (0..1). (1, 1) when none runs (the end state).
 func spread_progress() -> Vector2:
@@ -1036,6 +1046,7 @@ func _note_seen() -> void:
 
 
 func _start_bake(key: String, region: Rect2, look: String) -> void:
+	print("SBDBG ", Engine.get_process_frames(), " ", region, " ", look.md5_text().left(6), " scale ", scale.x, " focus ", focus_grid)
 	if not is_inside_tree() or CityBakeCache.has(key):
 		_view.queue_redraw()
 		return
@@ -1263,6 +1274,10 @@ func submit_chunk(from: int) -> int:
 	var ci := RenderingServer.canvas_item_create()
 	RenderingServer.canvas_item_set_parent(ci, get_canvas_item())
 	RenderingServer.canvas_item_set_custom_rect(ci, true, painter_region)
+	# In order after the painter's own drawing, with its sketch material (a chunk drawn out of
+	# order, or without the material, lost the buildings or the look).
+	RenderingServer.canvas_item_set_draw_index(ci, _chunk_rids.size())
+	RenderingServer.canvas_item_set_use_parent_material(ci, true)
 	var n := to - from
 	var idx := _chunk_idx if n == _chunk_idx.size() else _chunk_idx.slice(0, n)
 	RenderingServer.canvas_item_add_triangle_array(ci, idx, _verts.slice(from, to), _cols.slice(from, to))

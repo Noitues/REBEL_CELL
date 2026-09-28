@@ -324,6 +324,119 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-27 — Animation pass — ANIM-R1 campaign and screens
+The first fix batch of the Animation pass review, campaign and screens half (items M1-M16
+of the four reviewers). Views only, but for one rule (M1). Every decision here was the
+implementer's (the designer's standing rule: nothing deferred). Tests:
+`tests/unit/test_anim_r1_campaign.gd` (24); strips: `docs/timeline/motion/` (README rows
+marked ANIM-5 / R1).
+- **M1: one jack, one run, one scene change.** `CampaignRules.launch_error` takes
+  `run_in_progress` and refuses ("A run is already in progress: finish it first.");
+  `RunManager.launch_error` passes `has_active_run()` (pure rule, tested). `Fx._transition`
+  ignores a jack asked for during one; while a jack runs its cover takes the mouse and
+  `Fx._input` swallows every press. `RunManager.scene_change_pending()` (= `Fx.transitioning()`)
+  guards `go_to_netrun` / `go_to_hq` / `go_to_title`, `hq_scene.launch` / `resume` and the
+  netrun's Save & quit and Go to HQ; `change_scene` asks once per frame. A run saved and left
+  (Save & quit goes to HQ) used to be overwritten by the next JACK IN; now the rule refuses
+  that and the HQ's JACK IN stamp goes back into the saved run instead of opening the Grid.
+- **Designer ruling (2026-09-27, "prefer select, then jack in"), applied:** a crew chip
+  dropped on a Site card's JACK IN picks that operative in the list (`pick_operative`, focus
+  on JACK IN); only the press launches. `test_anim4_drag_drop` changed on purpose (the drop
+  starts no run; the pick then the press starts the same run as the list and the button).
+- **M2: no bake freezes the raid flow.** A bake's geometry (seconds of GDScript) is built on a
+  `WorkerThreadPool` task before the painter enters the tree (`NeonCity.prebuild`), submitted
+  CHUNK_VERTS (240,000) vertices a frame (`submit_chunk`: one `canvas_item_add_triangle_array`
+  of 4M vertices took ~190 ms), rendered once, and copied on the GPU into a `BakedTexture`
+  (`Texture2DRD`; the readback and upload took ~60 ms; the Compatibility renderer falls back
+  to the readback). Each chunk draws in order under the painter with its sketch material; a multi-chunk bake is pixel-identical to the old path (compared on a 1536x1024 region, threaded + GPU copy vs the synchronous readback). The raid setup bakes the
+  playout's whole area behind itself (`_prebake_playout`, every node as the fight's focus at
+  the widest fight zoom) and START DEFENSE bakes the post-raid look while the raid plays (the
+  pre-raid one stays pinned), so the result spreads at once. `profile_frames.gd --timeline`
+  (1280x720, `--demo-raid --demo-playout-delay=300`): before, max 1894 ms at the playout's end
+  and 80-97 ms at its first frame; after, nothing over 50 ms but the scene's first two frames
+  and the START DEFENSE press itself (65-70 ms: the raid resolves and the page builds, before any
+  motion). Trade-off: a camera that leaves every baked region shows its stand-in (or the sky)
+  for the ~0.5 s the bake now takes in the background instead of freezing for it.
+- **M3: switched-off entries.** `Fx.jack_in` / `jack_out` (switch at once), `heat_pulse`,
+  the creep, `show_saved` (shown still for its hold and fade time, then gone at once) and the
+  map's selection ring gate on `Motion.live`. The inline halves became entries:
+  `jack_arrive` (the reveal, 0.4 s; `jack_in` / `jack_out` are now the 0.4 s push: 0.8 s in all
+  as before; its amplitude 0.15 replaces JACK_ARRIVE_SHARE), `net_creep_recede` (0.6 s; `net_creep`
+  0.6 s), `jack_fade_reduced`'s amplitude (0.5: the share spent going dark), the raid hit (it
+  lands when the trace arrives, M4) and `select_ring_pulse` (3 px over 1.571 s, the old 4 rad/s).
+- **M4: raids read at fight scale.** Each step first eases the camera to its fight
+  (`RaidBeats.focus_sites`: where threats enter and move, the guns firing and their targets,
+  the nodes hit; `WireframeBackground.frame_points` fits them into the map's free part beside
+  its key, zoom 1.2-1.9 at HQ, 0.85-1.6 in a run) and its beats wait for the ease; the camera
+  never cuts. A shot is strictly shot, hit, number: the trace flies to the threat over
+  `turret_trace` from a ringing gun, the hit lands on arrival, the damage rises after it, and
+  a threat breaks up only after its killing hit. Tokens 2.2x (was 1.5x), stamps 21 px (was
+  14), numbers 28 px, traces thicker; threat routes carry chevrons pointing home (the Cell's
+  links stay solid); placed defences stay on their node as map-icon-size markers. Each hit on
+  home flies its red number into the top bar's HOME (`home_number_fly` 0.55 s after 0.15 s),
+  which rolls down (the bar shows the value before the raid while it plays); the end is the
+  resolved raid (tests unchanged and green).
+- **M5: territory changes leave marks.** After a change spreads, each Site that changed hands
+  keeps an outline and a tint and a CLAIMED / CLEARED / SEIZED / DISABLED stamp on a leader
+  (`InfluenceSpread.marks`, `influence_mark` 0.3 s after 0.6 s, from 1.6x), on the city and over
+  the map (under nodes and labels), until the next change. The CELL STATUS gains a SITES n
+  badge (claimed Sites besides CORE): it bumps when a change lands (`territory_marked`).
+- **M6: the Heat crossing on the number.** `heat_pulse` 0.45 s at peak 0.25 (was 0.7 s at 0.5;
+  strip variants 0.5 / 0.25 / 0.15 now differ frame by frame). The poster's number rolls from
+  the Heat last seen (`number_roll`), grows and flashes white on a crossing (`heat_number_pop`
+  1.6x, 0.4 s), and a "HEAT 30 - NOTICED" banner stamps across the Heat block, holds 1.4 s and
+  fades (`heat_banner`); one per crossing, nothing stays on.
+- **M7: the route after a move.** When the pulse lands the map takes the run's new state (the
+  [1] / [2] labels on the new next nodes, the edges out of the new node live); a node passed
+  through is drawn at `visited_dim` with a tick, apart from the unreachable dim.
+- **M8: the jack lands on a built screen.** After the switch the cover stays opaque, its
+  scanlines rolling, until the new scene's `arrival_ready()` (a page on screen, the whole view
+  drawn from a finished bake of the current look, the camera settled, no fit, legend or map
+  framing pass waiting), at most `jack_arrival_wait` (4 s of game time; a bake of a whole
+  Grid takes ~3 s on its worker thread). Same for the reduced fade. The mid-run raid
+  interlude, a dark page of text before, is now a window beside the raid's map on the city
+  (the Grid and the threats' routes, framed into the free part): a jack into it lands on the
+  setup with its map.
+- **M9: the event's words first.** While the story types in, its choices are disabled (shown so)
+  and a press completes the typing (Typing's own rule: no skip handling of ours); the choices act
+  once the words are whole. Outcome rows wrap inside their choice (six items at 1.6 ran past it).
+- **M10: whole text.** Shop and loot cards (`ZineCard.fit_whole`) shrink the body, and chip tiles
+  their icon (to 0.3) and then the lettering (to 8 px), until the whole description shows; the
+  focus tip stays. A long refusal toast wraps inside the screen. (The raid dispatch's typing is
+  the input agent's.)
+- **M11: the Modem keeps its places.** A bought item stays as a SOLD stub (dimmed, stamped, no
+  button) in its place for the visit; the others keep their spots and colours (`shop_slots`).
+  The loot offers not taken fall away (`loot_reject` 0.45 s, 240 px) as one is picked. The loot
+  fans from inside its row (it crossed the Skip bar at 1.6) with a gap above Skip. Focus tips go
+  where they cover no button, tag or title (`FocusTip.spot`). The cyan band on loot_pick's first
+  frame was the page roll band spanning a page of windows: it now crosses the windows only
+  (`PageTransition.GLASS_META`, set by both scenes for pages over the city).
+- **M12: HQ at 1.6.** SAVED keeps off the top bar's tags; a compact dossier shows HP right under
+  the name; the Schematics icon sits right after "pay 25".
+- **M13:** see the resolved open question: a focus label searches round its node (16
+  directions out to LABEL_REACH), then takes a spot clear of other icons (one word a line, then
+  cut short with an ellipsis), else is left out (the Site card names it); only YOU ARE HERE and
+  threat tags may still cover an icon. The sweeps assert it in the late campaign and for every
+  selected Site.
+- **M15 (the full-suite hang):** not reproduced (20 runs of `test_horizontal_pass23_screens.gd`
+  and 3 full suites pass after the fix; before it, the loops were reviewed). Loops that
+  depend on measured geometry are bounded now: the raid map's framing per page
+  (RAID_PASSES_MAX, RAID_CHECKS_MAX: a free rect that kept changing reset the per-layout count,
+  each pass a new camera and city build), `LegendSpot.place` (maxf / minf with NaN never ended;
+  at most SPOTS_MAX spots an axis), route dashes and lure dashes (DASHES_MAX, finite lengths),
+  face hatching (HATCH_STEP_MIN) and the SAVED spot search (finite, SAVED_SCREEN_MAX).
+- **M16:** the Heat poster's ransom strips close up (to 14 px a letter) so the number and
+  "/100" stay on it with a long or pseudolocalised word. The SEND IT lettering's cut under
+  pseudolocalisation is the combat agent's (drip_button.gd).
+- **SAVED:** two saves in one frame each started a fade; the first one's now dies with the second.
+- **New ids (data only; REQUIRED_IDS and the lab):** `net_creep_recede`, `jack_arrive`,
+  `jack_arrival_wait` (4 s), `select_ring_pulse`, `loot_reject`, `home_number_fly`, `influence_mark`,
+  `heat_number_pop`, `heat_banner`. Retuned: `jack_in` / `jack_out` (0.4 s push), `net_creep`
+  (0.6 s, OUT), `jack_fade_reduced` (amplitude 0.5), `heat_pulse` (0.45 s, 0.25).
+- **Expectation changes:** `test_anim4_drag_drop` (the ruling), `test_anim6_screen_motion`
+  loot pick (two loot_reject falls beside the pick), `test_city_map_sweeps` (labels clear of
+  icons asserted in the late campaign and per selection).
+
 #### 2026-09-27 — Animation pass — ANIM-4b: drag and drop in the run
 The designer's "drag and drop anything", run side: every item a netrun moves between
 places now drags there as well, with ANIM-4's kit and feel. Views only: no rule changed.

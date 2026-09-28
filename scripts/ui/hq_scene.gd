@@ -304,7 +304,7 @@ func arrival_ready() -> bool:
 		return false
 	var city: NeonCity = background.city if background.visible else wireframe.city
 	if city != null and city.is_visible_in_tree():
-		if not city.showing_current_look() or not city.camera_settled():
+		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
 			return false
 		if city.rebuilt.is_connected(fit_grid_map) or get_tree().process_frame.is_connected(fit_grid_map) \
 				or get_tree().process_frame.is_connected(place_raid_legend):

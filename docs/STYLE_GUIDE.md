@@ -216,8 +216,18 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   nothing stays on.
 - **Netrun move**: a light pulse carries the "you are here" marker along the link, the
   new node pops, the old one dims; any input skips it.
-- Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5"); strips:
-  `docs/timeline/motion/`.
+- **Readable at fight scale (ANIM-R1)**: a raid step is framed before it plays (the camera
+  eases to its entries, moves, guns and targets); a shot reads shot, hit, number; big tokens,
+  stamps and numbers; enemy routes carry chevrons, the Cell's links stay solid; placed
+  defences stay on their nodes as markers; a hit on home flies its number into HOME, which
+  rolls down. A territory change ends in a lasting outline and a CLAIMED / SEIZED stamp on the
+  Site, and the SITES counter bumps. A Heat crossing lives on the number (it rolls, grows,
+  flashes) and a HEAT n - BAND banner; the screen distortion is small and short. The jack
+  lifts only onto a built screen. Visited route nodes carry a tick.
+- **No frame freezes for a bake**: the city is baked off the main thread, a chunk a frame,
+  and the raid's areas ahead of time.
+- Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5", "— ANIM-R1 campaign and
+  screens"); strips: `docs/timeline/motion/`.
 
 ### 5.4 Drag and drop, HQ side and in the run (the Animation pass, ANIM-4 / ANIM-4b)
 - **Anything that moves between places drags**, with the same feel as a combat card
@@ -269,6 +279,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   the deck monitor's hum, JACK IN breathing, the caret, a third of the HQ signs, sparse
   traffic dashes on the busiest streets. All stop under reduce effects.
 - **Settings changes animate nothing** (text size, language): the page just re-lays out.
+- **Words before choices, places kept (ANIM-R1)**: an event's choices wait (disabled) for its
+  typed words; shop and loot cards show their whole text; a bought Modem item stays as a SOLD
+  stub in its place; loot not taken falls away; tips keep off buttons and titles.
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

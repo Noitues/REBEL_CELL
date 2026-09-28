@@ -494,8 +494,10 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 ## ANIM-R1 M8: waits (calling `tick` each frame) until the scene now current says its
 ## arriving screen is ready (`ARRIVAL_READY_METHOD`), or `jack_arrival_wait` has passed.
 func _wait_arrival(tick: Callable = Callable()) -> void:
-	var limit := Time.get_ticks_msec() + int(Motion.seconds(ARRIVAL_WAIT_MOTION) * 1000.0)
-	while Time.get_ticks_msec() < limit:
+	# Game time (frame deltas), so a capture at a fixed frame rate waits as the game does.
+	var left := Motion.seconds(ARRIVAL_WAIT_MOTION)
+	while left > 0.0:
+		left -= get_process_delta_time()
 		var scene := get_tree().current_scene
 		if scene == null or not scene.has_method(ARRIVAL_READY_METHOD) or bool(scene.call(ARRIVAL_READY_METHOD)):
 			return

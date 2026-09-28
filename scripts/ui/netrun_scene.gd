@@ -544,9 +544,9 @@ func arrival_ready() -> bool:
 		return false
 	var city: NeonCity = background.city if background != null else null
 	if city != null and city.is_visible_in_tree():
-		if not city.showing_current_look() or not city.camera_settled():
+		if not city.showing_current_look() or not city.camera_settled() or not city.view_covered():
 			return false
-		if city.rebuilt.is_connected(fit_route_map) or get_tree().process_frame.is_connected(fit_route_map):
+		if city.rebuilt.is_connected(fit_route_map) or get_tree().process_frame.is_connected(fit_route_map) or _raid_map_framing:
 			return false
 	return true
 
@@ -1153,6 +1153,31 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
 	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
 	return background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+
+
+## ANIM-R1 M8: the raid interlude's map area, framed once laid out (every node of the Grid in
+## it), and whether that framing is still to come (arrival_ready waits for it).
+var _raid_map_area: Control = null
+var _raid_map_framing: bool = false
+## The interlude window's width at text scale 1.0 and how far it grows with the text (px, x).
+const RAID_WINDOW_WIDTH := 560.0
+const RAID_WINDOW_GROW := 1.3
+const RAID_MAP_ANCHOR := Vector2(0.7, 0.55)
+
+
+func _frame_raid_map() -> void:
+	_raid_map_framing = true
+	await get_tree().process_frame
+	_raid_map_framing = false
+	if _raid_map_area == null or not is_instance_valid(_raid_map_area) or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	var pts := PackedVector2Array()
+	for n in city_overlay.nodes:
+		pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
+	background.frame_points(pts, _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
+	background.settle_camera()
+
+
 
 
 ## The raid playout map's parts the fight frame keeps to: [the map's area, its key].
@@ -1895,7 +1920,31 @@ func _show_raid() -> void:
 	var run_btn := _button(tr(START_DEFENSE), raid_fight)
 	IconMark.attach(run_btn, StatIcon.RAIDS)
 	box.add_child(run_btn)
-	_set_panel(box)
+	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
+	# threats' routes to CORE), framed before the jack's cover lifts: a jack into a mid-run
+	# raid lands on the setup with its map, not on a dark page of text.
+	var root := HBoxContainer.new()
+	root.name = "RaidInterlude"
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var win := TerminalWindow.new(tr("RAID INTERLUDE"), Palette.corp_color(c.corporation_id))
+	win.name = "RaidWindow"
+	win.custom_minimum_size.x = RAID_WINDOW_WIDTH * minf(Settings.text_scale, RAID_WINDOW_GROW)
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	win.body.add_child(box)
+	root.add_child(win)
+	var area := Control.new()
+	area.name = "RaidMapArea"
+	area.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.add_child(area)
+	_set_panel(root, false)
+	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
+	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, RAID_MIN_ZOOM, RAID_MAP_ANCHOR, Vector2.INF)
+	city_overlay.avoid_controls([win])
+	_raid_map_area = area
+	_frame_raid_map.call_deferred()
 	_register_raid_drops(run_assets, armory_row)
 
 

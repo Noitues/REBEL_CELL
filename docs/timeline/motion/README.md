@@ -22,17 +22,21 @@ in its title, and the chosen one says CHOSEN. The chosen values are in
 | `drag_cancel_return` | a cancelled drag gliding back to its slot | 0.15 s, CUBIC out | a cancel should feel instant; 0.3 s read as a second action |
 | `enemy_break` | the enemy wheel cracking along slice borders and falling, then its dim ghost | 0.75 s, 160 px fall, QUAD in | the kill is the climax of the fight; the netrun waits for it |
 
-## Map, raid, jack and Heat (ANIM-5)
+## Map, raid, jack and Heat (ANIM-5; captured again in ANIM-R1)
+
+Recaptured after the ANIM-R1 fixes (raid framing and order, territory marks, the Heat
+number and banner, the arrival wait, route labels): three variants each, the picked one
+titled CHOSEN, frames every 2-18 frames at 30 fps (the ms label says when).
 
 | Strip | Slice | Motion | Variants (top to bottom) | Picked | Captured with |
 |---|---|---|---|---|---|
-| `influence_spread.png` | ANIM-5 | Territory tint spreads from a newly claimed Site (HQ backdrop) | `influence_spread` 0.7 / 1.0 / 1.4 s | 1.0 s (the front reads, done inside a second) | hq `--demo-hq --demo-anim=influence_spread` |
-| `raid_playout.png` | ANIM-5 | Threat travels the street route, turret trace, hit, damage number, HOLDS stamp | `raid_move` 0.35 / 0.5 / 0.7 s | 0.5 s | hq `--demo-raid --demo-anim=raid_playout` |
-| `heat_pulse.png` | ANIM-5 | Heat crosses 25: distortion pulse, corporate wireframe creeps in from the edges, letters shake, band stamps | `heat_pulse` peak 0.85 / 0.5 / 0.3 | 0.5 (the UI keeps its shapes) | hq `--demo-hq --demo-anim=heat_pulse` |
-| `jack_in.png` | ANIM-5 | Push into the JACK IN / deck CRT, dissolve to the wireframe city, scanlines roll, the net arrives | `jack_in` 0.6 / 0.8 / 0.9 s | 0.8 s (heavy, mid-range) | hq `--demo-grid --demo-anim=jack_in` |
-| `route_pulse.png` | ANIM-5 | Netrun move: light pulse carries the marker along the link, new node pops, old one dims | `route_pulse` 0.3 / 0.4 / 0.6 s | 0.4 s | netrun `--demo-run --demo-anim=route_pulse` |
-| `site_select.png` | ANIM-5 | Grid Site selected: roof outline draws on, ring eases in, camera leans and eases | `site_outline_draw` 0.25 / 0.4 / 0.6 s | 0.4 s | hq `--demo-grid --demo-anim=site_select` |
-| `asset_drop.png` | ANIM-5 | Raid asset deployed: drops onto its node with a stamp ring (the map holds still) | one (`asset_drop` 0.25 s BOUNCE 24 px) | as is | hq `--demo-raid --demo-anim=asset_drop` |
+| `influence_spread.png` | ANIM-5 / R1 | Territory tint spreads from a newly claimed Site on the Grid, then the lasting CLAIMED stamp and outline | `influence_spread` 0.7 / 1.0 / 1.4 s | 1.0 s (the front reads, done inside a second; the stamp lands as it passes) | hq `--demo-grid --demo-anim=influence_spread` |
+| `raid_playout.png` | ANIM-5 / R1 | Each step framed first (the camera eases), threat travels the street route, the trace flies, hit, number, HOLDS / BREACHED stamps, home's number flies to HOME | `raid_move` 0.35 / 0.5 / 0.7 s | 0.5 s | hq `--demo-raid --demo-anim=raid_playout` |
+| `heat_pulse.png` | ANIM-5 / R1 | Heat crosses 25: a smaller distortion, the creep, the number grows, flashes and rolls, HEAT 30 - NOTICED banner | `heat_pulse` 0.45 s at peak 0.5 / 0.25 / 0.15 | 0.25 (ANIM-5's 0.5 read as a screen glitch; the variants now differ frame by frame: the demo tunes the table the pulse reads) | hq `--demo-hq --demo-anim=heat_pulse` |
+| `jack_in.png` | ANIM-5 / R1 | Push into the JACK IN, dissolve, the cover waits (scanlines rolling) until the arriving screen is built (here a mid-run raid: the interlude beside its map, ~3.5 s of bake), then it arrives | `jack_in` push 0.3 / 0.4 / 0.45 s (`jack_arrive` 0.4 s after) | 0.4 s (0.8 s in all, as ANIM-5 picked) | hq `--demo-grid --demo-anim=jack_in` |
+| `route_pulse.png` | ANIM-5 / R1 | Netrun move: the pulse carries the marker, the new node pops, the old one dims with a tick, the choice labels move to the new next nodes | `route_pulse` 0.3 / 0.4 / 0.6 s | 0.4 s | netrun `--demo-run --demo-anim=route_pulse` |
+| `site_select.png` | ANIM-5 / R1 | Grid Site selected: roof outline draws on, ring eases in and breathes (`select_ring_pulse`), camera leans and eases | `site_outline_draw` 0.25 / 0.4 / 0.6 s | 0.4 s | hq `--demo-grid --demo-anim=site_select` |
+| `asset_drop.png` | ANIM-5 / R1 | Raid asset deployed: drops onto its node with a stamp ring and stays as a map-size marker | `asset_drop` 0.18 / 0.25 / 0.35 s | 0.25 s (0.18 lands before the eye finds it; 0.35 bounces twice) | hq `--demo-raid --demo-anim=asset_drop` |
 
 Variants: add `--demo-tune=<id>:<duration>[:<amplitude>]` (a duplicate of the table; the
 file never changes). Command: `godot --path . --resolution 1280x720 --write-movie

@@ -1411,7 +1411,7 @@ amplitude = 0.15
 [sub_resource type="Resource" id="m_jack_arrival_wait"]
 script = ExtResource("1_entry")
 id = &"jack_arrival_wait"
-duration = 3.0
+duration = 4.0
 delay = 0.0
 ease = 1
 trans = 0
