@@ -118,14 +118,14 @@ func test_core_resolution_stays_well_under_a_millisecond_per_turn() -> void:
 	for batch in TIMING_BATCHES:
 		var s := CombatSession.start(resolver, &"breaker", [&"claims_adjuster"], seed, &"rank:1")
 		var turns := 0
-		var start := Time.get_ticks_usec()
+		var start := Time.get_ticks_usec()  # fixed-wait-ok: a performance bound (TECH_SPEC 10), the best of many short batches
 		while turns < TIMING_TURNS:
 			if s.state.is_over():
 				seed += 1
 				s = CombatSession.start(resolver, &"breaker", [&"claims_adjuster"], seed, &"rank:1")
 			s.apply(CombatAction.end_turn())
 			turns += 1
-		best = minf(best, (Time.get_ticks_usec() - start) / 1000.0 / turns)
+		best = minf(best, (Time.get_ticks_usec() - start) / 1000.0 / turns)  # fixed-wait-ok: as above
 		seed += 1
 	assert_true(best < 1.0, "%.3f ms per turn in the fastest batch (apply incl. preview-grade duplication)" % best)
 

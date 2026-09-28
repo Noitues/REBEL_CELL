@@ -621,7 +621,9 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 	assert_eq(layer.flights.size(), 1, "the card's copy goes into the shredder")
 	assert_eq(RunManager.netrun.run.card_removals, 1, "the state is final at once")
 	assert_not_null(scene.get_node_or_null("DeckView"), "the viewer holds while the shred plays")
-	await get_tree().create_timer(Motion.seconds(&"loadout_swap") + Motion.seconds(&"shred_feed") * 0.5).timeout
+	# Wait for the strips themselves (they start once the feed is under way), not a fixed
+	# share of the feed: a slow frame could run past them (Test suite: bounded waits).
+	await BoundedWait.until(get_tree(), func() -> bool: return is_instance_valid(layer) and not layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "strips").is_empty(), BoundedWait.motion_limit([&"loadout_swap", &"shred_feed"]))
 	assert_false(layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "strips").is_empty(), "paper strips run out")
 	layer._input(key)
 	assert_false(layer.busy(), "a press completes it")
@@ -654,7 +656,7 @@ func test_views_never_change_game_state() -> void:
 	scene.modal_drops.start_carry(view.card(0))
 	scene.modal_drops.cancel()
 	view.close()
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3).timeout  # fixed-wait-ok: any point mid-motion; finish_all then shows the end state
 	scene.drops.finish_all()
 	assert_eq(_hash(), before, "picking up, aiming, checking and putting back left the run and the campaign as they were")
 	assert_eq(JSON.stringify(RunManager.profile.to_dict()), profile, "and the profile")

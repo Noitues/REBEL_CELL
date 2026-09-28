@@ -30,6 +30,82 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-28 — Test suite: bounded waits
+Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
+frame count, the wall clock) before asserting kept flaking under parallel shards (a few
+were fixed one by one in "Test suite optimization" and "Animation pass — bake crash").
+Audited every script under `tests/`; only the scripts that force live motion
+(`Motion.force_live`) and the netrun scene test wait on motion (headless, everything
+else shows its end state at once and waits frames only for layout). No game code changed.
+- **Helper** `tests/helpers/bounded_wait.gd` (`BoundedWait`; not `test_`-prefixed, so GUT
+  never collects it): `until(tree, cond, limit)` polls the real condition once a frame
+  and gives up only after `limit` seconds of **game time** (the frames' deltas, the clock
+  tweens and timers run on) **and** `MIN_FRAMES` (60) frames, so neither a few stalled
+  frames nor many fast ones cut a tween chain short; it returns at once when the
+  condition holds, so the generous `SLACK` (2 s over the Motion table's seconds,
+  `motion_limit`) costs nothing on a passing run. `timed` returns the game time less the
+  two longest frames (each link of a chain may end on an overshooting frame) for "ends in
+  its time" asserts. `frozen_frames(tree, n)` runs `n` frames at `Engine.time_scale` 0
+  for asserts that a motion is still under way after the layout's frames (the opposite
+  flake: one slow frame finishing the motion first); layout, redraws and deferred calls
+  still run. Existing view-side queries sufficed (`motion_busy()`, `_seq`,
+  `PageTransition.running()`, `FlightFx.active_count()`, `WheelView.tag_flips`,
+  `drop_t`, `banner_alpha`, `Fx.transitioning()` ...); no hook was added.
+- **Converted** (assertions kept; each waits on the state it then asserts):
+  anim2 `test_the_sequence_plays_out_by_itself` (both loops), `test_a_spin_ends_on_the_exact_core_tick`,
+  `test_the_nudge_queue_never_desyncs_under_rapid_input`, `test_intent_tags_flip_only_when_their_content_changes`
+  (counts `tag_flips`; was two frames then "flipping or mid-flip");
+  anim3 `test_a_cancelled_drag_returns_the_card_to_its_slot`, `test_ram_chips_drain_with_a_tick_and_settle_on_the_state`,
+  `test_the_hand_keeps_a_gap_while_a_card_flies` (frozen);
+  anim4b `test_motion_plays_live_and_input_completes_it` (waits for the shred strips, not half the feed);
+  anim5 `test_heat_pulse_fires_once_per_crossing_and_never_on_a_steady_value`, `test_a_netrun_move_ends_with_the_marker_on_the_chosen_node`,
+  `test_an_asset_drops_onto_its_node_with_a_stamp`, `test_the_folding_key_slides_and_frames_for_its_folded_line`,
+  `test_playout_ends_on_the_resolved_campaign_and_speed_scales_it` (frozen),
+  `test_jack_transitions_never_show_both_scenes` (the reduce-effects fade drops its four
+  overhead frames: two held frames and each fade's last);
+  anim6 `_until` (all five timed motions; game-time ceiling instead of 10 s of wall
+  clock), `test_end_state_layout_is_the_instant_layout_at_every_text_size`,
+  `test_a_press_mid_entrance_completes_it` (frozen), `test_hq_idle_runs_live_and_rests_headless` (frozen);
+  R1 campaign `test_a_second_press_during_the_jack_does_nothing` and
+  `test_netrun_leave_buttons_ask_once_during_the_jack` (were unbounded loops),
+  `test_saved_switched_off_shows_still_then_goes_at_once` (every alpha seen is 1 or 0,
+  then 0; was two fixed looks), `test_a_heat_crossing_rolls_the_number_and_stamps_a_banner_then_goes`,
+  `test_the_event_choices_wait_for_the_words` (frozen),
+  `test_placement_loops_end_on_geometry_that_is_not_finite` ("returns at once" = the same
+  frame, not under 500 wall ms);
+  R1 combat `test_the_forecast_and_the_turn_wait_for_the_replay`, `test_the_result_holds_under_this_turn`
+  (waits for THIS TURN itself), `test_a_number_travels_into_the_hp_counter_which_rolls_down`;
+  R2 city `_until` (game time), `test_a_threaded_bake_builds_in_slices_and_lets_the_slot_go`
+  (20 s of game time and 600 frames), `test_the_jack_says_where_it_connects_while_the_screen_builds`
+  (was 240 frames), `test_an_asset_drop_waits_for_the_camera_then_lands_with_its_name`;
+  R2 combat `_entrance` (both users), `test_held_choices_read_and_carry_a_typing_mark`,
+  `test_the_entering_plate_never_hides_the_forecast`, `test_the_crt_roll_waits_for_the_glass_to_show` (frozen);
+  netrun scene `test_a_whole_run_plays_through_the_scene_and_autosaves` (waits for the
+  page after the combat end hold instead of 1 s).
+- **Kept, marked `# fixed-wait-ok:`**: the 0.3 s / `SETTLE_WAIT` waits that only let
+  motion run before a skip, `finish_all` or settle (anim2, anim3, anim4, anim4b, anim6
+  game-state tests) and the resolver's performance bound (layout rules, best of 20
+  batches; TECH_SPEC 10).
+- **Suite rule** (`test_suite_integrity.gd`, `test_no_fixed_wait_gates_an_assertion`): a
+  `create_timer(`, `wait_seconds(` or `Time.get_ticks_msec/usec(` in a test script is
+  flagged when an assertion (`assert_*`, `pass_test`, `fail_test`, `pending`) follows it in
+  the same test, or when it sits in a helper function (its caller asserts after it),
+  unless the line or the comment line above carries `# fixed-wait-ok: <reason>`. Strings
+  and comments are not code. Fixed frame counts are not flagged (a frame count is right
+  for layout, and a rule could not tell the two apart); the review rule is in
+  `docs/TEST_SUITE.md` ("Waiting on motion").
+- **Left as is:** the R2 city multi-band Heat rise reads the banner at the first frame
+  after each pulse; one frame long enough to carry the roll over both 25 and 50 would
+  still miss the first banner (no flake seen). The combat scene's
+  `motion_seconds_left()` measures wall time (game code; tests only use it for a limit
+  plus slack).
+- **Evidence** (969 tests; other agents ran Godot on the machine meanwhile): 10
+  consecutive `python tools/run_tests.py -j 4` runs, all passing, 0 pending (176-305 s);
+  5 consecutive `-j 8` runs, all passing, 0 pending (158-199 s); one more `-j 4` run after
+  merging main; `tools/schema_smoke_test.gd` and `tools/validate_content.gd` pass. (Two
+  last mid-motion looks, anim3 hand gap and anim5 playout, were frozen while the first
+  `-j 4` run was under way; runs 2-10 and every `-j 8` run ran the final tests.)
+
 ### 2026-09-27 — Designer rulings on the open questions (resolved by the designer)
 Answered by the designer as a numbered list against the open-questions digest. Defaults
 accepted unless noted; the items that need work are scheduled in MILESTONES

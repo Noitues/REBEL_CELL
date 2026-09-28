@@ -202,19 +202,13 @@ func test_the_sequence_plays_out_by_itself() -> void:
 	scene.motion_settled.connect(func() -> void: settled[0] = true)
 	scene.end_turn()
 	var sig := _signature(scene)
-	var limit: float = scene.motion_seconds_left() + 0.5
-	var waited := 0.0
-	while scene._seq != null and waited < limit:
-		await get_tree().create_timer(0.1).timeout
-		waited += 0.1
+	var limit: float = scene.motion_seconds_left() + BoundedWait.SLACK
+	await BoundedWait.until(get_tree(), func() -> bool: return scene._seq == null, limit)
 	assert_null(scene._seq, "the sequence ends within its budget")
 	assert_true(settled[0], "motion_settled fires")
 	# The after-effects (tag flips, floats, the HP settle) finish on their own clocks; wait
 	# for the scene to say it is idle rather than a fixed time (it flaked under 4-shard load).
-	var idle_wait := 0.0
-	while scene.motion_busy() and idle_wait < limit:
-		await get_tree().create_timer(0.1).timeout
-		idle_wait += 0.1
+	await BoundedWait.until(get_tree(), func() -> bool: return not scene.motion_busy(), limit)
 	_assert_end_state(scene, "played out")
 	assert_eq(_signature(scene), sig, "the replay changed no game state")
 
@@ -238,7 +232,7 @@ func test_a_spin_ends_on_the_exact_core_tick() -> void:
 	pv.play_turn(&"wheel_respin", core - 70.0, float(pv.combatant.wheel.inner_rotation) - 70.0)
 	assert_true(pv.motion_busy(), "live: it turns")
 	assert_eq(pv.shown_rotation(), core - 70.0, "from the old rotation")
-	await get_tree().create_timer(WheelView.spin_seconds(&"wheel_respin", 70.0) + 0.2).timeout
+	await BoundedWait.until(get_tree(), func() -> bool: return not pv.motion_busy(), WheelView.spin_seconds(&"wheel_respin", 70.0) + BoundedWait.SLACK)
 	assert_false(pv.motion_busy(), "done")
 	assert_eq(pv.shown_rotation(), core, "on the core's tick")
 	assert_eq(pv.shown_inner_rotation(), float(pv.combatant.wheel.inner_rotation), "inner ring on its tick")
@@ -257,10 +251,7 @@ func test_the_nudge_queue_never_desyncs_under_rapid_input() -> void:
 		var shown := pv.shown_rotation()
 		assert_true(absf(shown - core) <= pv.queued_steps() + 1.0, "the shown wheel is at most the queue behind")
 	assert_true(sig_ram >= scene.engine.state().ram, "nudges went through the engine")
-	var waited := 0.0
-	while pv.motion_busy() and waited < 2.0:
-		await get_tree().create_timer(0.05).timeout
-		waited += 0.05
+	await BoundedWait.until(get_tree(), func() -> bool: return not pv.motion_busy(), 2.0 + BoundedWait.SLACK)
 	assert_false(pv.motion_busy(), "the queue drains")
 	assert_eq(pv.shown_rotation(), float(scene.engine.state().player.wheel.rotation), "and ends on the core")
 	assert_true(is_nan(pv.anim_rotation), "no override left")
@@ -346,17 +337,22 @@ func test_intent_tags_flip_only_when_their_content_changes() -> void:
 	scene.skip_motion()
 	await _frames(3)
 	ev._tweens.erase(&"tag")
+	var flips := ev.tag_flips
 	var same := ev.intent.duplicate(true)
 	ev.intent = same
 	ev.queue_redraw()
 	await _frames(2)
 	assert_false(ev.tag_flipping(), "the same chips re-set on hover: no flip, no jitter")
+	assert_eq(ev.tag_flips, flips, "no flip started")
 	var changed := ev.intent.duplicate(true)
 	changed["text"] = String(changed.get("text", "")) + " X"
 	ev.intent = changed
 	ev.queue_redraw()
-	await _frames(2)
-	assert_true(ev.tag_flipping() or ev.tag_flip < 1.0 or not Motion.live(&"intent_flip"), "new content flips the tag")
+	# Count the flips instead of catching one mid-way: a slow frame can finish the whole
+	# flip before a fixed frame count is up (Test suite: bounded waits).
+	if Motion.live(&"intent_flip"):
+		await BoundedWait.until(get_tree(), func() -> bool: return ev.tag_flips > flips, BoundedWait.motion_limit([&"intent_flip"]))
+	assert_true(ev.tag_flips > flips or not Motion.live(&"intent_flip"), "new content flips the tag")
 
 
 func test_precision_landings_are_distinct_marks() -> void:
@@ -401,7 +397,7 @@ func test_motion_never_changes_game_state() -> void:
 	pv.play_flip()
 	scene.fx_layer.number(pv.global_center(), "-9", Color.RED, &"number_float")
 	scene.demo_break(scene._enemy_views.keys()[0])
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3).timeout  # fixed-wait-ok: any point mid-motion; the skip then shows the end state
 	scene.skip_motion()
 	assert_eq(_signature(scene), sig, "motion left the state as it was")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/resolve_beats.gd") + FileAccess.get_file_as_string("res://scripts/ui/kit/combat_fx_layer.gd")
