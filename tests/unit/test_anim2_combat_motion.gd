@@ -296,7 +296,9 @@ func test_numbers_never_cover_the_next_resolving_needle() -> void:
 			var counts := {}
 			for k in beats.size():
 				var n: Dictionary = scene.number_for(beats[k], before, int(counts.get(beats[k]["target"], 0)))
-				if n.is_empty():
+				# ANIM-R2 E4b / ANIM-R3 A6e: a satellite's or drone's numbers sit at its token, not
+				# in the hub (expectation changed: its own guard now shows there too).
+				if n.is_empty() or not bool(n.get("hub", true)):
 					continue
 				counts[beats[k]["target"]] = int(counts.get(beats[k]["target"], 0)) + 1
 				var v: WheelView = n["view"]

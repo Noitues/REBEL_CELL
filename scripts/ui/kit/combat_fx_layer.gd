@@ -33,6 +33,10 @@ const LINE_DRAW_SHARE := 0.5
 ## offset from the projectile's head (share of that size).
 const RIDE_FONT_SHARE := 0.8
 const RIDE_OFFSET := 0.9
+## ANIM-R3 A6c: the slice's own value rides this share of the flight, shrinking to this
+## share of its size, before the dealt value takes its place.
+const RIDE_SWAP_SHARE := 0.45
+const RIDE_SHRINK_TO := 0.6
 ## Status stamp lettering (px at text scale 1.0) and its disc.
 const STAMP_FONT := 16
 const STAMP_DISC := 11.0
@@ -143,19 +147,31 @@ func _local(global: Vector2) -> Vector2:
 ## entry: amplitude = the drift unless `rise` >= 0). Crits grow by `number_crit` and get
 ## a star burst. Returns the rect it covers at its biggest (global), for layout checks.
 func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector2 = Vector2.UP, crit: bool = false, rise: float = -1.0,
-		font_size: int = -1, band: String = "", extra_delay: float = 0.0) -> Rect2:
+		font_size: int = -1, band: String = "", extra_delay: float = 0.0, icon: int = -1) -> Rect2:
 	var fs := number_font(crit) if font_size <= 0 else font_size
 	var drift := Motion.amplitude(id) if rise < 0.0 else rise
-	var rect := number_rect(at, text, crit, dir * drift, fs)
+	var rect := number_rect(at, text, crit, dir * drift, fs, icon)
 	if not Motion.live(id):
 		return rect
 	_hurry(band)
 	var e := Motion.entry(id)
 	_add({"kind": "number", "at": at, "text": text, "color": color, "dur": Motion.seconds(id), "delay": Motion.delay_of(id) + extra_delay,
-		"dir": dir, "rise": drift, "fs": fs, "crit": crit, "ease": e.ease, "trans": e.trans, "band": band})
+		"dir": dir, "rise": drift, "fs": fs, "crit": crit, "ease": e.ease, "trans": e.trans, "band": band, "icon": icon})
 	if crit and Motion.live(&"number_crit"):
 		burst(at, color, &"number_crit")
 	return rect
+
+
+## ANIM-R3 A6a: what a hit did, shown where it struck (`at`, global: the arrowhead on the
+## victim's HP ring or its token): a glyph (`icon`, a slice type: DEFEND for a hit soaked
+## whole, EVADE for one evaded) and `text` ("0"), popping from `impact_mark`'s amplitude
+## scale after `delay` (the impact), holding its duration and fading.
+func impact(at: Vector2, text: String, icon: int, color: Color, delay: float = 0.0) -> void:
+	if not Motion.live(&"impact_mark"):
+		return
+	var fs := roundi(NUMBER_FONT * Settings.text_scale * IMPACT_FONT_SHARE)
+	_add({"kind": "impact", "at": at, "text": text, "icon": icon, "color": color, "fs": fs, "delay": delay,
+		"dur": Motion.seconds(&"impact_mark"), "from": Motion.amplitude(&"impact_mark")})
 
 
 ## ANIM-R1: a number that pops at `at` (global), holds (`number_to_hp`'s delay), then
@@ -207,7 +223,7 @@ func resting_numbers() -> Array:
 		if a < 0.0:
 			continue
 		if k == "number" or (k == "travel" and a < float(s["hold"])):
-			out.append({"rect": number_rect(s["at"], String(s["text"]), bool(s["crit"]), Vector2.ZERO, int(s["fs"])), "band": String(s.get("band", ""))})
+			out.append({"rect": number_rect(s["at"], String(s["text"]), bool(s["crit"]), Vector2.ZERO, int(s["fs"]), int(s.get("icon", -1))), "band": String(s.get("band", ""))})
 	return out
 
 
@@ -220,11 +236,24 @@ static func number_font(crit: bool) -> int:
 
 
 ## Everything a number covers on its way (global): its start and end boxes merged.
-static func number_rect(at: Vector2, text: String, crit: bool, travel: Vector2, font_size: int = -1) -> Rect2:
+static func number_rect(at: Vector2, text: String, crit: bool, travel: Vector2, font_size: int = -1, icon: int = -1) -> Rect2:
 	var fs := number_font(crit) if font_size <= 0 else font_size
-	var w := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + NUMBER_OUTLINE
+	var w := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + NUMBER_OUTLINE + glyph_width(fs, icon)
 	var box := Rect2(at - Vector2(w * 0.5, fs * 0.5), Vector2(w, fs))
 	return box.merge(Rect2(box.position + travel, box.size))
+
+
+## The room a number's glyph takes before its text (0 without one): ANIM-R3 A6e, a block is
+## a shield glyph and its number, not a word.
+static func glyph_width(fs: int, icon: int) -> float:
+	return fs * (GLYPH_SHARE + GLYPH_GAP) if icon >= 0 else 0.0
+
+
+## ANIM-R3: a number's glyph (a slice icon) as a share of its font size and the gap after
+## it; an impact mark's lettering as a share of a floating number's.
+const GLYPH_SHARE := 0.9
+const GLYPH_GAP := 0.15
+const IMPACT_FONT_SHARE := 0.85
 
 
 ## A star burst at `at` (global) growing to `id`'s amplitude px (or x its scale when the
@@ -248,11 +277,37 @@ func ring(at: Vector2, radius: float, color: Color, id: StringName) -> void:
 ## thick trail in the attacker's `color`) flies over LINE_DRAW_SHARE of `hit_line`, `label`
 ## (the hit's raw number) riding beside it; the line then fades with the arrowhead at the
 ## victim. ANIM-R2: hits play one at a time (the schedule spaces them `hit_line` apart).
-func hit_line(from: Vector2, to: Vector2, color: Color, label: String = "") -> void:
+## ANIM-R3 A6c: the aim's multiplier rides too: with `from_label` (the slice's own value)
+## that value shows at launch and shrinks into `label` (the hit it deals: "12" becomes
+## "6 ½" at half power) over RIDE_SWAP_SHARE of the flight; `scale` > 1 draws the riding
+## number bigger (a PERFECT landing).
+func hit_line(from: Vector2, to: Vector2, color: Color, label: String = "", from_label: String = "", scale: float = 1.0) -> void:
 	if not Motion.live(&"hit_line") or from.distance_to(to) < 1.0:
 		return
 	_add({"kind": "line", "from": from, "to": to, "color": color, "dur": Motion.seconds(&"hit_line"), "width": Motion.amplitude(&"hit_line"),
-		"label": label})
+		"label": label, "from_label": from_label, "scale": scale})
+
+
+## Every number on its way into an HP counter arrives now (its `on_arrive` runs: the HP
+## rolls), and it leaves the layer (ANIM-R3 A5: THIS TURN never shows before a roll).
+func arrive_all() -> void:
+	var arrived: Array[Callable] = []
+	for s in sprites.duplicate():
+		if String(s["kind"]) == "travel":
+			sprites.erase(s)
+			if (s["on_arrive"] as Callable).is_valid():
+				arrived.append(s["on_arrive"])
+	for c in arrived:
+		c.call()
+	queue_redraw()
+
+
+## True while a number is still on its way into an HP counter.
+func travelling() -> bool:
+	for s in sprites:
+		if String(s["kind"]) == "travel":
+			return true
+	return false
 
 
 ## Seconds from a hit's launch to its impact at the victim (0 when hits don't fly).
@@ -272,26 +327,48 @@ func disc_flash(at: Vector2, radius: float, color: Color, id: StringName) -> voi
 ## ANIM-R1: a word stamped at `at` (global) in a tilted box (BLOCKED, EVADED, NO DAMAGE,
 ## PHASE 2...): lands from `result_stamp`'s amplitude scale, holds `hold` seconds, fades.
 ## Its lettering fits `max_w` px (the hub it sits in). Returns the box it covers (global).
-func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float, max_fs: int = -1, delay: float = 0.0) -> Rect2:
-	var fs := word_stamp_font(text, max_w, max_fs)
-	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0
+## ANIM-R3 A6a: with `icon` (GUARD_NULL) the word carries its drawn mark before it: a shield
+## over the empty-set sign (NO DAMAGE, ALL BLOCKED).
+func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: float, max_fs: int = -1, delay: float = 0.0, icon: String = "") -> Rect2:
+	var fs := word_stamp_font(text, max_w, max_fs, icon)
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0 + stamp_icon_width(fs, icon)
 	var box := Rect2(at - Vector2(w * 0.5, fs * WORD_BOX_H * 0.5), Vector2(w, fs * WORD_BOX_H))
 	if not Motion.live(&"result_stamp"):
 		return box
 	_add({"kind": "tag", "at": at, "text": text, "color": color, "fs": fs, "dur": Motion.seconds(&"result_stamp") + hold,
-		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp"), "delay": delay})
+		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp"), "delay": delay, "icon": icon})
 	return box
 
 
 ## The stamp's font size: WORD_STAMP_FONT at the text scale (at most `max_fs`), smaller
-## until it fits `max_w`.
-static func word_stamp_font(text: String, max_w: float, max_fs: int = -1) -> int:
+## until it (with its mark, when `icon`) fits `max_w`.
+static func word_stamp_font(text: String, max_w: float, max_fs: int = -1, icon: String = "") -> int:
 	var fs := roundi(WORD_STAMP_FONT * Settings.text_scale)
 	if max_fs > 0:
 		fs = maxi(WORD_STAMP_MIN, mini(fs, max_fs))
-	while fs > WORD_STAMP_MIN and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0 > max_w:
+	while fs > WORD_STAMP_MIN and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * WORD_BOX_PAD * 2.0 + stamp_icon_width(fs, icon) > max_w:
 		fs -= 1
 	return fs
+
+
+## The mark before a stamp's word: a shield over the empty-set sign (ANIM-R3 A6a).
+const GUARD_NULL := "guard_null"
+
+
+## The room a stamp's mark takes (0 without one).
+static func stamp_icon_width(fs: int, icon: String) -> float:
+	return fs * (GLYPH_SHARE + GLYPH_GAP) if icon != "" else 0.0
+
+
+## The shield-over-empty-set mark centred at `c`, `r` px in radius, in `col`: a shield
+## outline with a ring and slash inside (nothing got through).
+static func draw_guard_null(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+	SliceIcon.draw_icon(ci, c, r, RC.SliceType.DEFEND, col)
+	var ring := r * 0.42
+	ci.draw_arc(c + Vector2(0, r * 0.05), ring, 0.0, TAU, 16, Palette.NIGHT_SKY, maxf(2.0, r * 0.22), true)
+	ci.draw_arc(c + Vector2(0, r * 0.05), ring, 0.0, TAU, 16, Palette.PAPER, maxf(1.2, r * 0.12), true)
+	var d := Vector2(ring, -ring) * 0.8
+	ci.draw_line(c + Vector2(0, r * 0.05) - d, c + Vector2(0, r * 0.05) + d, Palette.PAPER, maxf(1.2, r * 0.12), true)
 
 
 ## Word stamps (ANIM-R1): lettering at text scale 1.0 and its floor (px), the box's side
@@ -303,6 +380,11 @@ const WORD_BOX_H := 1.4
 const WORD_TILT := -0.2
 ## A projectile's head: its radius as a share of the line's width.
 const PROJECTILE_HEAD := 1.3
+## ANIM-R3 A6g: the break's crack holds the pieces in place for this share of it; the
+## crack line's alpha and width (px).
+const CRACK_SHARE := 0.22
+const CRACK_ALPHA := 0.95
+const CRACK_WIDTH := 3.0
 
 
 ## A status glyph stamped at `at` (global): lands from `status_stamp`'s amplitude scale,
@@ -398,7 +480,7 @@ func hide_reticle() -> void:
 ## where the drag let go) to `to` (global, the zone's centre): `card_play` travel, a
 ## `card_stamp` landing, then it dissolves (`effect_burst`) or, when `exhaust`, burns
 ## (`card_exhaust`: curls up with embers). Returns the seconds until the effect may play
-## (travel + stamp). `on_done` runs when it lands or is skipped.
+## (travel + stamp + its dissolve: ANIM-R3 A6i). `on_done` runs when it lands or is skipped.
 func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, exhaust: bool, on_done: Callable = Callable()) -> float:
 	if not Motion.live(&"card_play"):
 		card.free()
@@ -430,7 +512,9 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 	tw.tween_callback(func() -> void: _end_flight(f))
 	flights.append(f)
 	set_process(true)
-	return fly + land
+	# ANIM-R3 A6i: the card is gone (dissolved or burnt) before its effect plays, so it never
+	# covers the wheel while that spins.
+	return fly + land + gone
 
 
 ## Flies `card` (a copy) from `from` to the discard pile at `to` (global) along an arc of
@@ -530,6 +614,8 @@ func _draw() -> void:
 				_draw_travel(s)
 			"tag":
 				_draw_tag(s)
+			"impact":
+				_draw_impact(s)
 			"burst":
 				_draw_burst(s)
 			"ring":
@@ -576,10 +662,39 @@ func _draw_number(s: Dictionary) -> void:
 	var alpha := 1.0 - clampf((p - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var text := String(s["text"])
 	var f := Palette.display()
-	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var base := at + Vector2(-w * 0.5, size * 0.35)
+	var icon := int(s.get("icon", -1))
+	var gw := glyph_width(size, icon)
+	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + gw
+	var base := at + Vector2(-w * 0.5 + gw, size * 0.35)
+	if icon >= 0:
+		# ANIM-R3 A6e: a guard is its glyph and its number (a shield and "5", not "5 BLOCKED").
+		var gc := at + Vector2(-w * 0.5 + size * GLYPH_SHARE * 0.5, 0.0)
+		draw_circle(gc, size * GLYPH_SHARE * 0.55, Color(Palette.NIGHT_SKY, 0.8 * alpha))
+		SliceIcon.draw_icon(self, gc, size * GLYPH_SHARE * 0.45, icon, Color(s["color"], alpha))
 	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, NUMBER_OUTLINE, Color(Palette.PAPER, alpha))
 	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
+
+
+## ANIM-R3 A6a: a hit's outcome where it struck: its glyph and "0", popping in and fading.
+func _draw_impact(s: Dictionary) -> void:
+	var a := float(s["age"]) - float(s.get("delay", 0.0))
+	var d := maxf(0.001, float(s["dur"]))
+	var q := clampf(a / (d * GROW_SHARE), 0.0, 1.0)
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var alpha := 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
+	var fs := maxi(1, roundi(float(s["fs"]) * sc))
+	var text := String(s["text"])
+	var f := Palette.display()
+	var gw := glyph_width(fs, int(s["icon"]))
+	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + gw
+	var c := _local(s["at"])
+	var col := Color(s["color"], alpha)
+	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), Color(Palette.NIGHT_SKY, 0.85 * alpha))
+	draw_rect(Rect2(c - Vector2(w * 0.5 + fs * 0.2, fs * 0.65), Vector2(w + fs * 0.4, fs * 1.3)), col, false, 2.0)
+	SliceIcon.draw_icon(self, c + Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.45, int(s["icon"]), col)
+	var base := c + Vector2(-w * 0.5 + gw, fs * 0.35)
+	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Color(Palette.NIGHT_SKY, alpha))
+	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 func _draw_travel(s: Dictionary) -> void:
@@ -615,20 +730,24 @@ func _draw_travel(s: Dictionary) -> void:
 
 func _draw_tag(s: Dictionary) -> void:
 	var land := float(s["land"])
-	var a := float(s["age"])
+	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
 	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
 	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
 	var fs := int(s["fs"])
 	var text := String(s["text"])
 	var font := Palette.marker()
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var icon := String(s.get("icon", ""))
+	var iw := stamp_icon_width(fs, icon)
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + iw
 	var box := Rect2(-w * 0.5 - fs * WORD_BOX_PAD, -fs * WORD_BOX_H * 0.5, w + fs * WORD_BOX_PAD * 2.0, fs * WORD_BOX_H)
 	var col: Color = s["color"]
 	draw_set_transform(_local(s["at"]), WORD_TILT, Vector2.ONE * sc)
 	draw_rect(box, Color(Palette.NIGHT_SKY, 0.88 * alpha))
 	draw_rect(box, Color(col, alpha), false, 3.0)
-	draw_string(font, Vector2(-w * 0.5, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
+	if icon == GUARD_NULL:
+		draw_guard_null(self, Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.5, Color(col, alpha))
+	draw_string(font, Vector2(-w * 0.5 + iw, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -667,17 +786,25 @@ func _draw_line(s: Dictionary) -> void:
 		draw_circle(head, hr + 2.0, Color(Palette.NIGHT_SKY, 0.7))
 		draw_circle(head, hr, col.lightened(0.35))
 		var label := String(s.get("label", ""))
+		var from_label := String(s.get("from_label", ""))
 		if label != "":
-			# ANIM-R2: the hit's number rides with it.
-			var fs := roundi(NUMBER_FONT * Settings.text_scale * RIDE_FONT_SHARE)
+			# ANIM-R2: the hit's number rides with it. ANIM-R3 A6c: its aim shows: the slice's own
+			# value first, shrinking into what the hit deals ("12" -> "6 ½" at half power);
+			# bigger on a PERFECT landing.
+			var fs := roundi(NUMBER_FONT * Settings.text_scale * RIDE_FONT_SHARE * float(s.get("scale", 1.0)))
+			var shown := label
+			var swap := clampf(flight / RIDE_SWAP_SHARE, 0.0, 1.0)
+			if from_label != "" and swap < 1.0:
+				shown = from_label
+				fs = maxi(1, roundi(fs * lerpf(1.0, RIDE_SHRINK_TO, swap)))
 			var f := Palette.display()
-			var w := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var w := f.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var off := d.orthogonal() * fs * RIDE_OFFSET
 			if off.y > 0.0:
 				off = -off
 			var base := head + off + Vector2(-w * 0.5, fs * 0.35)
-			draw_string_outline(f, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Palette.NIGHT_SKY)
-			draw_string(f, base, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lightened(0.2))
+			draw_string_outline(f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, NUMBER_OUTLINE, Palette.NIGHT_SKY)
+			draw_string(f, base, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col.lightened(0.2))
 
 
 func _draw_stamp(s: Dictionary) -> void:
@@ -695,7 +822,15 @@ func _draw_stamp(s: Dictionary) -> void:
 
 
 func _draw_shards(s: Dictionary) -> void:
-	var q := _ease(s)
+	# ANIM-R3 A6g: the real wheel cracks, then its pieces fall. For the first CRACK_SHARE of
+	# the break every piece holds its place (the wheel as it was, its slices' art and values)
+	# while white cracks run along the slice borders; then each piece drops and turns,
+	# keeping its art, and fades.
+	var p := _p(s)
+	var crack := clampf(p / CRACK_SHARE, 0.0, 1.0)
+	var q := 0.0
+	if p > CRACK_SHARE:
+		q = Tween.interpolate_value(0.0, 1.0, (p - CRACK_SHARE) / (1.0 - CRACK_SHARE), 1.0, int(s.get("trans", Tween.TRANS_LINEAR)), int(s.get("ease", Tween.EASE_OUT)))
 	var fall := float(s["fall"])
 	var origin := get_global_rect().position
 	var pieces: Array = s["pieces"]
@@ -712,14 +847,28 @@ func _draw_shards(s: Dictionary) -> void:
 		var spin := side * PI * 0.5 * q
 		var shift := Vector2(side * fall * 0.3, fall * (0.4 + 0.6 * _h(k, int(s["serial"]), 1))) * q
 		var xf := Transform2D(spin, centre + shift - origin) * Transform2D(0.0, -centre)
-		var out := PackedVector2Array()
-		for v in poly:
-			out.append(xf * v)
+		var fade := 1.0 - q
 		var col: Color = pieces[k][1]
-		draw_colored_polygon(out, Color(col, col.a * (1.0 - q)))
-		var closed := out.duplicate()
-		closed.append(out[0])
-		draw_polyline(closed, Color(Palette.PAPER, 0.8 * (1.0 - q)), 1.2)
+		var art: Dictionary = pieces[k][2] if (pieces[k] as Array).size() > 2 else {}
+		# Drawn in the piece's own frame (global points through its transform), so the art
+		# turns and falls with it.
+		draw_set_transform_matrix(xf)
+		draw_colored_polygon(poly, Color(col, col.a * fade))
+		var closed := poly.duplicate()
+		closed.append(poly[0])
+		var rim: Color = art.get("rim", Palette.PAPER)
+		draw_polyline(closed, Color(rim, 0.95 * fade), 1.8, true)
+		if art.has("type"):
+			SliceIcon.draw_on_slice(self, art["icon_at"], float(art["icon_r"]), int(art["type"]), Color(art["slice_col"], fade))
+		if String(art.get("value", "")) != "":
+			var vfs := int(art["value_fs"])
+			draw_string(Palette.display(), (art["value_at"] as Vector2) + Vector2(-vfs, vfs * 0.4), String(art["value"]), HORIZONTAL_ALIGNMENT_CENTER, vfs * 2, vfs,
+				Color(rim, fade))
+		# The crack: a white line along the piece's border, drawn on over the first frames.
+		if crack > 0.0 and fade > 0.0:
+			var n := maxi(2, roundi(closed.size() * crack))
+			draw_polyline(closed.slice(0, n), Color(Palette.PAPER, CRACK_ALPHA * fade), CRACK_WIDTH, true)
+		draw_set_transform(Vector2.ZERO)
 
 
 func _draw_glass(s: Dictionary) -> void:

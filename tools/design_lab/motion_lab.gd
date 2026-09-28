@@ -110,6 +110,9 @@ const DEMOS := {
 	&"hit_absorb": ["scene", "send_hit"], &"ram_spend_float": ["scene", "ram"], &"price_refusal": ["pulse", "sticker"],
 	# ANIM-R3 (city, raid, jack, heat and route; in context: hq_scene --demo-raid --demo-anim=asset_drop):
 	&"asset_drop_wait": ["blink", "sticker"], &"asset_drop_grow": ["pop", "sticker"], &"forecast_change": ["lift", "number"], &"jack_dissolve": ["jack_in", "stage"],
+	# ANIM-R3 (combat, input and screens): each plays in a live SEND IT.
+	&"impact_mark": ["scene", "send_block"], &"forecast_tick": ["scene", "send_hit"], &"forecast_fade": ["scene", "send_hit"],
+	&"status_mark": ["scene", "send_hit"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -134,6 +137,10 @@ const DEMO_HP_LOSS := 12
 ## kill capture starts from.
 const DEMO_NUDGE_TRIES := 12
 const DEMO_KILL_HP := 3
+## ANIM-R3 "send_block": fights tried until the enemy's forecast hits the operative, and
+## the guard the operative is given so the hit is soaked whole (lab only).
+const DEMO_BLOCK_SEEDS := 24
+const DEMO_BLOCK := 99
 ## Drag demo: the ghost's path (from, to) over DRAG_FRAMES frames, in 1280x720 space.
 const DRAG_FROM := Vector2(260, 620)
 const DRAG_TO := Vector2(820, 300)
@@ -704,6 +711,20 @@ func _play_scene(what: String) -> void:
 			_scene.skip_motion()
 			await get_tree().process_frame
 			_scene.end_turn()
+		"send_block":
+			# ANIM-R3: a SEND IT where the enemy's hit reaches the operative and is soaked whole
+			# (lab only: a fight whose enemy lands a hit, the operative given the guard for it):
+			# the red projectile, 0 with a shield where it struck, ALL BLOCKED on impact.
+			for s in DEMO_BLOCK_SEEDS:
+				if _enemy_hits_player():
+					break
+				_scene.start_fight(SCENE_ENEMY, SCENE_SEED + s + 1)
+				_scene.skip_motion()
+			_scene.engine.state().player.block = DEMO_BLOCK
+			_scene._refresh(_scene.engine.state())
+			_scene.skip_motion()
+			await get_tree().process_frame
+			_scene.end_turn()
 		"play":
 			_scene.select_card(0)
 			if _scene.selecting >= 0:
@@ -774,6 +795,17 @@ func _play_scene(what: String) -> void:
 			_scene.ram_note.hold(0)
 			_scene.ram_note.play_refill()
 
+
+
+## True when SEND IT would have the enemy hit the operative now (the engine's own preview).
+func _enemy_hits_player() -> bool:
+	var result: CombatResult = _scene.engine.preview_end_turn()
+	if result == null:
+		return false
+	for e in result.events:
+		if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == _scene.engine.state().player.id:
+			return true
+	return false
 
 
 ## True when SEND IT would take HP off `enemy` now (the engine's own preview).

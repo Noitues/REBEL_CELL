@@ -68,6 +68,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"hit_absorb", &"ram_spend_float", &"price_refusal",
 	# ANIM-R3 city, raid, jack, heat and route: the drop's camera wait moved into the table.
 	&"asset_drop_wait", &"asset_drop_grow", &"forecast_change", &"jack_dissolve",
+	# ANIM-R3 combat, input and screens: a hit's outcome where it struck, the forecast kept
+	# through the replay (its ticks and its fade), a status landing on its slice.
+	&"impact_mark", &"forecast_tick", &"forecast_fade", &"status_mark",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

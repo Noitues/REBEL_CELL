@@ -281,6 +281,10 @@ var _base_margins: Dictionary = {}
 var _fitted_h: float = -1.0
 ## Gap between the row's lines at text scale 1.0 (px).
 const LINE_GAP := 2.0
+## The empty-set mark: its ring's radius (share of the icon radius) and its slash's reach
+## along the diagonal (share of the ring: it ends on the ring).
+const NULL_RING := 0.72
+const NULL_SLASH := 0.7
 
 
 func _draw() -> void:
@@ -298,10 +302,13 @@ func _draw() -> void:
 			if bool(it.get("neutral", false)):
 				col = Palette.INK
 			if StringName(it["kind"]) == NO_CHANGE:
-				# The empty-set mark: a ring with a slash (no StatIcon means "nothing").
+				# The empty-set mark: a ring with a slash (no StatIcon means "nothing"). ANIM-R3 A7:
+				# the slash ends on the ring (it ran past the icon's box, over the note's border).
 				var c := Vector2(x + ICON_R * s, mid)
-				draw_arc(c, ICON_R * s * 0.8, 0.0, TAU, 18, Palette.INK, 1.6 * s, true)
-				draw_line(c + Vector2(-ICON_R, ICON_R) * s, c + Vector2(ICON_R, -ICON_R) * s, Palette.INK, 1.6 * s, true)
+				var ring := ICON_R * s * NULL_RING
+				draw_arc(c, ring, 0.0, TAU, 18, Palette.INK, 1.6 * s, true)
+				var arm := Vector2(ring, -ring) * NULL_SLASH
+				draw_line(c - arm, c + arm, Palette.INK, 1.6 * s, true)
 			else:
 				StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, StringName(it["kind"]), Palette.INK)
 			x += (ICON_R * 2.0 + ICON_GAP) * s

@@ -450,10 +450,14 @@ func _type_page(from: int) -> float:
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press shows the typing page whole and is consumed (it does
 	# nothing else). ANIM-R2: with every other word typing on screen (Typing.finish_all).
-	if typing() and MotionSkip.is_press(event):
+	# ANIM-R3 A3: a press that works the screen (MotionSkip.works_ui) shows the words and
+	# passes on to what it works; only a press aimed at the subtitle is consumed; an open
+	# PauseMenu keeps its presses.
+	if typing() and MotionSkip.is_press(event) and not MotionSkip.pause_open(self):
 		Typing.finish_all(get_tree())
 		finish_typing()
-		MotionSkip.consume(self)
+		if not MotionSkip.works_ui(event, self):
+			MotionSkip.consume(self, event)
 
 
 func is_showing() -> bool:

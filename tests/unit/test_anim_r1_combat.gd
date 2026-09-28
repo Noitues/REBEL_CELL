@@ -634,16 +634,21 @@ func test_hits_fly_to_the_hp_ring_and_hits_that_deal_nothing_stamp() -> void:
 	blocked.merge({"kind": "damage", "amount": 0, "soaked": 4, "hp_after": state.player.hp})
 	scene._play_beat(blocked, before, state)
 	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line").size(), 1, "ANIM-R2: a fully blocked hit still flies (who hit whom)")
-	var tags: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
-	assert_eq(tags.size(), 1)
-	assert_eq(tags[0]["text"], tr("%d BLOCKED") % 4, "it stamps BLOCKED at the victim")
+	# ANIM-R3 A6a (expectation changed): "0" with a shield where it struck, not a word stamp.
+	var marks: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
+	assert_eq(marks.size(), 1)
+	if not marks.is_empty():
+		assert_eq(String(marks[0]["text"]), "0", "it shows 0 at the victim")
+		assert_eq(marks[0]["at"], pv.hp_ring_spot(), "where the hit struck")
 	scene.skip_motion()
 	var evaded := base.duplicate()
 	evaded.merge({"kind": "evaded", "amount": 7, "soaked": 0, "hp_after": -1})
 	scene._play_beat(evaded, before, state)
 	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line").size(), 1, "ANIM-R2: an evaded hit still flies")
-	tags = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
-	assert_eq(tags[0]["text"], tr("EVADED %d") % 7, "it stamps EVADED")
+	marks = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
+	assert_eq(marks.size(), 1)
+	if not marks.is_empty():
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.EVADE, "an evaded hit shows 0 with the evade mark")
 	scene.skip_motion()
 	await _close(scene)
 
@@ -676,8 +681,10 @@ func test_numbers_stay_inside_the_hub_off_the_name_and_never_rest_on_each_other(
 			var beats := ResolveBeats.build(before, scene._last_events, scene.engine.resolver.lookup)
 			for b in beats:
 				for n in scene.numbers_for(b, before):
+					if not bool(n.get("hub", true)):
+						continue  # ANIM-R2 E4b / R3 A6e: a satellite's numbers sit at its token
 					var v: WheelView = n["view"]
-					var rect := CombatFxLayer.number_rect(n["at"], n["text"], n["crit"], Vector2.UP * float(n["rise"]), int(n["fs"]))
+					var rect := CombatFxLayer.number_rect(n["at"], n["text"], n["crit"], Vector2.UP * float(n["rise"]), int(n["fs"]), int(n.get("icon", -1)))
 					var c := v.global_center()
 					for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
 						assert_true(corner.distance_to(c) <= v.hub_radius() + 0.5, "%s %.1f: %s stays inside the hub" % [enemy, scale, n["text"]])
@@ -762,11 +769,11 @@ func test_a_ram_refusal_flashes_the_chips_and_pulses_the_cost() -> void:
 			break
 	scene.select_card(i)
 	assert_true(scene.ram_note.flashing(), "the RAM chips flash")
-	assert_eq(scene.ram_note.refusal_text(), "%d > %d" % [cost, 0], "COST > RAM beside them")
+	assert_eq(scene.ram_note.refusal_text(), tr("NEED %d · HAVE %d") % [cost, 0], "NEED COST · HAVE RAM beside them (ANIM-R3 A6j)")
 	assert_true((scene._card_node(i) as ZineCard).cost_alarm > 0.0, "the card's cost shows the refusal (static headless)")
 	assert_true(scene.toast.visible, "the toast stays")
 	scene.respin()
-	assert_eq(scene.ram_note.refusal_text(), "%d > %d" % [scene.engine.resolver.config.respin_ram_cost, 0], "a respin says its cost")
+	assert_eq(scene.ram_note.refusal_text(), tr("NEED %d · HAVE %d") % [scene.engine.resolver.config.respin_ram_cost, 0], "a respin says its cost")
 	await _close(scene)
 
 

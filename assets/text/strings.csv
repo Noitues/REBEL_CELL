@@ -203,6 +203,7 @@ CODEX,CODEX
 COMBATS,COMBATS
 CONNECTING,CONNECTING
 CONNECTING TO %s,CONNECTING TO %s
+CONTINUE,CONTINUE
 CORE,CORE
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
 CORPORATE,CORPORATE
@@ -755,6 +756,7 @@ HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s > %s %s,HP %s > %s %s
 HP is full,HP is full
+HP now: %d of %d.,HP now: %d of %d.
 HQ,HQ
 HUB,HUB
 HUB BREACH,HUB BREACH
@@ -860,6 +862,7 @@ LEFT,LEFT
 LINES HEARD,LINES HEARD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
+LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
 "LURES, PULL %d","LURES, PULL %d"
 Language,Language
@@ -1252,6 +1255,7 @@ Modem,Modem
 "Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Move it to %s.,Move it to %s.
 Music volume,Music volume
+NEED %d · HAVE %d,NEED %d · HAVE %d
 NETRUN,NETRUN
 NETRUN // JACK OUT,NETRUN // JACK OUT
 NETRUN // RAID,NETRUN // RAID
@@ -1265,6 +1269,8 @@ SLEEP"
 NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.,NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.
 NEW SLICES,NEW SLICES
 NEXT %d,NEXT %d
+"NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: its HP after SEND IT, if you press it now (the tag above says why)."
+"NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: your HP after SEND IT, if you press it now (the tag above says why)."
 NEXT OPERATIVE >,NEXT OPERATIVE >
 NEXT SITE >,NEXT SITE >
 NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: select the next Site on the Grid: %s (the map follows).
@@ -1351,7 +1357,6 @@ PIRATE RADIO,PIRATE RADIO
 "PLAY IT
 SAFE??","PLAY IT
 SAFE??"
-PLAYING %s,PLAYING %s
 PLAYOUT,PLAYOUT
 PREV SITE: select the previous Site on the Grid: %s (the map follows).,PREV SITE: select the previous Site on the Grid: %s (the map follows).
 PROFILE // RECORDS,PROFILE // RECORDS
@@ -2612,12 +2617,14 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WON,WON
+What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 Who runs it.,Who runs it.
 Window mode,Window mode
 Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
 YOU,YOU
+YOU PLAY %s,YOU PLAY %s
 YOU TAKE,YOU TAKE
 YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR WHEEL,YOUR WHEEL

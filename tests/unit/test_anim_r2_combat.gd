@@ -404,7 +404,7 @@ func test_every_hp_change_has_a_number_of_exactly_its_size() -> void:
 	var checked := [0]
 	for enemy in ENEMIES:
 		for combat_seed in [1, 2, 3, 5, 7, 9]:
-			await _turns(enemy, combat_seed, 4, func(scene: Control, before: CombatState, events: Array[Dictionary], _after: CombatState) -> void:
+			await _turns(enemy, combat_seed, 4, func(scene: Control, before: CombatState, events: Array[Dictionary], after: CombatState) -> void:
 				var beats := ResolveBeats.build(before, events, scene.engine.resolver.lookup)
 				var hp := {}
 				var shown := {}
@@ -417,7 +417,7 @@ func test_every_hp_change_has_a_number_of_exactly_its_size() -> void:
 					var id := StringName(String(b["target"]))
 					var change := int(b["hp_after"]) - int(hp.get(id, 0))
 					hp[id] = int(b["hp_after"])
-					var nums: Array = scene.numbers_for(b, before).filter(func(n: Dictionary) -> bool: return n.has("hp"))
+					var nums: Array = scene.numbers_for(b, before, after).filter(func(n: Dictionary) -> bool: return n.has("hp"))
 					if change == 0:
 						assert_true(nums.is_empty(), "%s: no HP number when the HP didn't move" % enemy)
 						continue
@@ -433,8 +433,9 @@ func test_every_hp_change_has_a_number_of_exactly_its_size() -> void:
 						assert_eq(String(n["raw"]), "-%d" % int(b["raw"]), "%s: the raw hit shows first" % enemy)
 						assert_true(int(b["raw"]) >= int(b["amount"]) + int(b["soaked"]),
 							"raw = what got through + what the guard took (more when it overkilled)")
-						var guard: Array = scene.numbers_for(b, before).filter(func(g: Dictionary) -> bool: return String(g["text"]) == tr("%d BLOCKED") % int(b["soaked"]))
-						assert_eq(guard.size(), 1, "%s: the guard's part shows as a chip" % enemy)
+						# ANIM-R3 A6e (expectation changed): the guard's part is a glyph and its number.
+						var guard: Array = scene.numbers_for(b, before, after).filter(func(g: Dictionary) -> bool: return int(g.get("icon", -1)) >= 0 and String(g["text"]) == str(int(b["soaked"])))
+						assert_eq(guard.size(), 1, "%s: the guard's part shows as a shield and its number" % enemy)
 					checked[0] += 1
 				# The floated total equals the HP roll for every wheel, satellites and drones too.
 				for id in hp:
@@ -463,19 +464,24 @@ func test_a_hit_flies_in_its_sides_colour_with_its_raw_number_and_its_guard_chip
 	assert_eq(String(travel[0]["raw"]), "-14", "the raw number lands first")
 	assert_eq(String(travel[0]["text"]), "-9", "then what gets through, which travels into the HP")
 	assert_almost_eq(float(travel[0]["delay"]), CombatFxLayer.impact_seconds(), 0.001, "on impact")
-	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "number" and String(s["text"]) == tr("%d BLOCKED") % 5).size(), 1,
-		"the guard's part comes off as a chip")
+	# ANIM-R3 A6e (expectation changed): the guard's part is the blocker's glyph and number.
+	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "number" and String(s["text"]) == "5" and int(s.get("icon", -1)) >= 0).size(), 1,
+		"the guard's part comes off as a shield and its number")
 	scene.skip_motion()
-	# The operative's hits in the operative's colour; a blocked hit still flies and stamps.
+	# The operative's hits in the operative's colour; a blocked hit still flies and shows it.
 	var mine := base.duplicate()
-	mine.merge({"kind": "damage", "source": state.player.id, "target": enemy.id, "amount": 0, "soaked": 4, "raw": 4, "hp_after": enemy.hp}, true)
+	mine.merge({"kind": "damage", "source": state.player.id, "target": enemy.id, "amount": 0, "soaked": 4, "raw": 4, "blocked": 4, "hp_after": enemy.hp}, true)
 	scene._play_beat(mine, before, state)
 	lines = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "line")
 	assert_eq(lines.size(), 1, "a fully blocked hit still flies (who hit whom)")
-	assert_eq(lines[0]["color"], scene.PLAYER_HIT_COLOR, "in the operative's colour")
-	var tags: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
-	assert_eq(tags.size(), 1)
-	assert_eq(tags[0]["text"], tr("%d BLOCKED") % 4, "and stamps BLOCKED on impact")
+	if not lines.is_empty():
+		assert_eq(lines[0]["color"], scene.PLAYER_HIT_COLOR, "in the operative's colour")
+	# ANIM-R3 A6a (expectation changed): "0" with a shield where it struck, on impact.
+	var marks: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
+	assert_eq(marks.size(), 1)
+	if not marks.is_empty():
+		assert_eq(String(marks[0]["text"]), "0", "and shows 0 with a shield on impact")
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFEND)
 	scene.skip_motion()
 	await _close(scene)
 
@@ -705,11 +711,23 @@ func test_the_crt_roll_waits_for_the_glass_to_show() -> void:
 	var page := Control.new()
 	page.size = Vector2(400, 300)
 	holder.add_child(page)
-	PageTransition.enter(page, PageTransition.Look.GLASS, Callable())
+	var pt := PageTransition.enter(page, PageTransition.Look.GLASS, Callable())
+	assert_not_null(pt, "the glass enters")
 	await BoundedWait.frozen_frames(get_tree(), 2)  # still the entrance's first frames
-	var roll := page.get_node_or_null(^"CrtRoll") as Control
-	assert_true(roll == null or not roll.visible,
+	var first := page.get_node_or_null(^"CrtRoll") as Control
+	assert_true(first == null or not first.visible,
 		"no roll band on the entrance's first frames (it read as a half-drawn screen on loot_pick's first frame)")
+	# ANIM-R3 A8: then, frame by frame on the transition's own clock, the roll shows only once
+	# the glass is fully shown (a fixed wait could outlast the fade under a loaded machine).
+	for i in 120:
+		await _frames(1)
+		if not is_instance_valid(pt) or not PageTransition.running(page):
+			break
+		var roll := page.get_node_or_null(^"CrtRoll") as Control
+		var k := pt.progress()
+		if roll != null and roll.visible:
+			assert_true(k >= PageTransition.FADE_SHARE - 0.0001,
+				"the roll band shows only once the glass is fully shown: at %.2f" % k)
 	PageTransition.settle(holder)
 
 
@@ -775,15 +793,15 @@ func test_spent_ram_floats_and_a_refused_buy_flashes_the_money() -> void:
 	scene._show_current()
 	await _frames(2)
 	scene.price_refused(69)
-	assert_eq(scene.hud.stats.refusal_text(), "69 > 10", "the CYCLES tag flashes PRICE > CYCLES")
+	assert_eq(scene.hud.stats.refusal_text(), tr("NEED %d · HAVE %d") % [69, 10], "the CYCLES tag flashes NEED PRICE · HAVE CYCLES (ANIM-R3 A6j)")
 	var wallet := scene._panel.find_child("Wallet", true, false) as HudStats
-	assert_eq(wallet.refusal_text(), "69 > 10", "and the wallet")
+	assert_eq(wallet.refusal_text(), tr("NEED %d · HAVE %d") % [69, 10], "and the wallet")
 	await _close(scene)
 
 
 func test_the_preview_chip_says_playing() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
-	assert_true(src.contains("tr(\"PLAYING %s\")"), "PLAYING JOLT, not IF JOLT")
+	assert_true(src.contains("tr(\"YOU PLAY %s\")"), "YOU PLAY JOLT (ANIM-R3 A6j), not IF JOLT or PLAYING JOLT")
 	assert_false(src.contains("tr(\"IF %s\")"))
 
 
@@ -802,5 +820,5 @@ func test_new_motion_ids_are_required_and_words_are_translated_once() -> void:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)
 		assert_true(Motion.has(id), "%s is in the table" % id)
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
-	for key in ["IF YOU SEND IT", "PLAYING %s", "-%d RAM", "TERMINAL EVENT"]:
+	for key in ["IF YOU SEND IT", "YOU PLAY %s", "-%d RAM", "TERMINAL EVENT"]:
 		assert_true(csv.contains(key), "%s is exported for translation" % key)

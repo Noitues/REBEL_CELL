@@ -761,7 +761,7 @@ func _input(event: InputEvent) -> void:
 	# consumed (a B that ends a viewer's landing never also leaves the page behind it).
 	if busy() and MotionSkip.is_press(event):
 		finish_all()
-		MotionSkip.consume(self)
+		MotionSkip.consume(self, event)
 		return
 	if retiring:
 		return
