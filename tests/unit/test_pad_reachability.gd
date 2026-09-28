@@ -211,3 +211,45 @@ func test_a_pad_scrolls_a_long_note_and_leaves_it_at_the_edge() -> void:
 			break
 	await _frames()
 	assert_eq(get_viewport().gui_get_focus_owner(), after, "at the bottom, down moves on")
+
+
+## ANIM-R4 H1: the HQ menu is a column: from the first focus the D-pad reaches every item
+## (City Grid, RAID PENDING, Scrub Heat, Codex, Settings, Save) when no operative is alive
+## (no crew orders to walk through) and with a raid pending, at every text size.
+func test_hq_menu_is_pad_reachable_with_no_crew_and_a_raid_pending() -> void:
+	var scale_before := Settings.text_scale
+	for raid in [false, true]:
+		for scale in [1.0, 1.3, 1.6]:
+			_begin("gut_test_pad_hq_menu")
+			Settings.set_text_scale(scale)
+			RunManager.new_campaign(1)
+			var c := RunManager.campaign
+			for op in c.roster:
+				op.alive = false
+			if raid:
+				CampaignRules.queue_raid(c, RunManager.corporation, RC.RaidTriggerSource.STORY, &"", "test")
+			var holder: Control = add_child_autofree(Control.new())
+			holder.size = Vector2(1280, 720)
+			var hq: Control = load("res://scenes/hq/hq_scene.tscn").instantiate()
+			holder.add_child(hq)
+			hq.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			hq.show_hq()
+			await _frames()
+			var label := "hq %s raid=%s" % [scale, raid]
+			_assert_all_reachable(hq._panel, label)
+			var names := ["CityGrid", "ScrubHeat", "SettingsButton", "SaveButton"]
+			if raid:
+				names.append("RaidPending")
+			var reach := _reachable(hq._panel)
+			for n in names:
+				var b: Node = hq._panel.find_child(n, true, false)
+				assert_not_null(b, "%s: %s shown" % [label, n])
+				assert_true(reach.has(b), "%s: %s reachable by pad" % [label, n])
+			# The menu walks down item by item.
+			var grid: Control = hq._panel.find_child("CityGrid", true, false)
+			var below := grid.find_valid_focus_neighbor(SIDE_BOTTOM)
+			assert_true(below != null and below.get_parent() == grid.get_parent(), "%s: down from City Grid is the next menu item (%s)" % [label, below.name if below != null else "none"])
+			holder.queue_free()
+			await _frames(1)
+			_end()
+	Settings.set_text_scale(scale_before)
