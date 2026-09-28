@@ -20,6 +20,11 @@ extends Control
 
 ## Emitted after the city geometry is rebuilt (overlays re-read roofs and positions).
 signal rebuilt
+## ANIM-R1 M5: a territory change landed and left its marks (InfluenceSpread.marks).
+signal territory_marked(marks: Array)
+## ANIM-R1 M5: the marks or their stamping changed (a map overlay over the city redraws
+## them above its dimming).
+signal marks_changed
 
 const SKETCH_SHADER := preload("res://shaders/city_sketch.gdshader")
 const LIVE_SHADER := preload("res://shaders/city_live.gdshader")
@@ -342,6 +347,13 @@ func _init() -> void:
 	_lights_layer = _blink_layer("CityLights", LIGHT_ON_SHARE, _draw_lights)
 	_beacons_layer = _blink_layer("CityBeacons", Motion.amplitude(BEACON_MOTION), _draw_beacons)
 	_front_layer = _reveal_layer("InfluenceFront", 1, _draw_front)
+	# ANIM-R1 M5: what the last territory change left on the city (outlines and stamps).
+	_marks_layer = Control.new()
+	_marks_layer.name = "TerritoryMarks"
+	_marks_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_marks_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_marks_layer.draw.connect(_draw_marks)
+	add_child(_marks_layer)
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -549,6 +561,77 @@ func _step_spread(delta: float) -> void:
 	var done := Motion.seconds(SPREAD_MOTION) <= _spread_elapsed and Motion.delay_of(FADE_MOTION) + Motion.seconds(FADE_MOTION) <= _spread_elapsed
 	if done or not Fx.effects_enabled():
 		finish_spread()
+
+
+## ANIM-R1 M5: the marks the last territory change left (InfluenceSpread.marks) and how far
+## their stamps have stamped on (0..1, `influence_mark`). They stay until the next change.
+var marks: Array[Dictionary] = []
+var mark_t: float = 1.0:
+	set(v):
+		mark_t = v
+		if _marks_layer != null:
+			_marks_layer.queue_redraw()
+		marks_changed.emit()
+var _marks_layer: Control
+## A mark's outline (lots round its Site) and its stamp's lettering and lift (screen px).
+const MARK_RADIUS := 2.2
+const MARK_FONT := 20
+const MARK_LIFT := 70.0
+const MARK_PAD := 6.0
+
+
+## ANIM-R1 M5: a territory change from `prev` to `now` ends in lasting marks: an outline
+## and a tint on each Site that changed hands and a CLAIMED / SEIZED stamp tied to it (it
+## reads as "this block is now mine / theirs"). The stamps stamp on as the spread's front
+## passes (`influence_mark`), at once when motion doesn't play. Emits territory_marked.
+func mark_changes(prev: Dictionary, now: Dictionary) -> void:
+	marks = InfluenceSpread.marks(prev, now)
+	if marks.is_empty():
+		return
+	mark_t = 0.0
+	if not Motion.run(&"influence_mark", self, ^"mark_t", 1.0):
+		mark_t = 1.0
+	_marks_layer.queue_redraw()
+	territory_marked.emit(marks)
+
+
+func _draw_marks() -> void:
+	draw_marks_on(_marks_layer)
+
+
+## Draws the marks on canvas item `ci` (in this city's local space: the city's own layer,
+## or a map overlay over it, which draws them above its dimming and under its nodes).
+func draw_marks_on(ci: CanvasItem) -> void:
+	if marks.is_empty() or ci == null:
+		return
+	var _marks_layer := ci
+	var k := 1.0 / maxf(0.001, scale.x)
+	var fs := maxi(1, roundi(MARK_FONT * Settings.text_scale * k))
+	var font := Palette.display()
+	for m: Dictionary in marks:
+		var at: Vector2 = m["at"]
+		var c := grid_to_local(at.x + 0.5, at.y + 0.5)
+		var col: Color = m["color"]
+		var ring := PackedVector2Array()
+		for q in 33:
+			var t := TAU * q / 32.0
+			ring.append(c + Vector2(cos(t) * TILE_A, sin(t) * TILE_B) * MARK_RADIUS)
+		_marks_layer.draw_colored_polygon(ring, Color(col, 0.12))
+		_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
+		_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
+		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
+		var word := CityMapOverlay.tr_word(String(m["word"]))
+		var size := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(MARK_PAD, MARK_PAD) * 2.0 * k
+		var top := c - Vector2(0, TILE_B * MARK_RADIUS + MARK_LIFT * k)
+		_marks_layer.draw_line(c - Vector2(0, TILE_B * MARK_RADIUS), top, Color(col, 0.9), 2.0 * k)
+		var grow := lerpf(Motion.amplitude(&"influence_mark"), 1.0, mark_t) if mark_t < 1.0 else 1.0
+		var alpha := clampf(mark_t * 2.0, 0.0, 1.0)
+		_marks_layer.draw_set_transform(top, deg_to_rad(-6.0), Vector2.ONE * grow)
+		var box := Rect2(Vector2(-size.x * 0.5, -size.y), size)
+		_marks_layer.draw_rect(box, Color(Palette.NIGHT_SKY, 0.9 * alpha))
+		_marks_layer.draw_rect(box, Color(col, alpha), false, 3.0 * k)
+		_marks_layer.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
+		_marks_layer.draw_set_transform(Vector2.ZERO)
 
 
 ## Jumps a running spread to its end (the new look alone).
@@ -945,6 +1028,7 @@ func _note_seen() -> void:
 	var prev: Variant = _seen.get(fam)
 	if prev != null and CityInfluence.signature(prev) != CityInfluence.signature(influence):
 		_start_spread(prev)
+		mark_changes(prev, influence)
 	_seen[fam] = influence
 	if _spread_elapsed >= 0.0:
 		_old_layer.queue_redraw()

@@ -187,6 +187,50 @@ func _apply_hold() -> void:
 	rig.position = b - a * k
 
 
+## ANIM-R1 M4: frames a raid step's fight: grid points `points` (the Sites' lot centres)
+## fitted inside `area` (screen px: the map's free part, clear of its key and columns),
+## as close as `max_zoom` and no further out than `min_zoom`, the camera easing there
+## from the frame it held (it never cuts). Returns the seconds the ease takes (0 when the
+## frame stays or motion doesn't play).
+func frame_points(points: PackedVector2Array, area: Rect2, max_zoom: float, min_zoom: float) -> float:
+	if points.is_empty() or not area.has_area():
+		return 0.0
+	var box := Rect2(NeonCity.world_of(points[0].x, points[0].y), Vector2.ZERO)
+	var centre := points[0]
+	for i in range(1, points.size()):
+		box = box.expand(NeonCity.world_of(points[i].x, points[i].y))
+		centre += points[i]
+	centre /= points.size()
+	var room := area.size * FIGHT_FIT_SHARE
+	var zoom := max_zoom
+	if box.size.x > 0.0:
+		zoom = minf(zoom, room.x / box.size.x)
+	if box.size.y > 0.0:
+		zoom = minf(zoom, room.y / box.size.y)
+	zoom = clampf(zoom, min_zoom, max_zoom)
+	var screen := get_global_rect()
+	var anchor := (area.get_center() - screen.position) / screen.size
+	if city.focus_grid.is_equal_approx(centre) and is_equal_approx(city.scale.x, zoom) and city.focus_anchor.is_equal_approx(anchor):
+		return 0.0
+	hold_camera()
+	city.scale = Vector2(zoom, zoom)
+	city.offset_left = 0
+	city.offset_top = 0
+	city.offset_right = size.x / zoom - size.x
+	city.offset_bottom = size.y / zoom - size.y
+	city.focus_grid = centre
+	city.focus_anchor = anchor
+	city.refresh()
+	sync_hold()
+	if not city.rebuilt.is_connected(ease_camera):
+		city.rebuilt.connect(ease_camera, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+	return Motion.delay_of(CAMERA_MOTION) + Motion.seconds(CAMERA_MOTION) if Motion.live(CAMERA_MOTION) else 0.0
+
+
+## ANIM-R1 M4: share of the free map a framed fight may span.
+const FIGHT_FIT_SHARE := 0.7
+
+
 func _rig_rest() -> void:
 	rig.position = Vector2.ZERO
 	rig.scale = Vector2.ONE

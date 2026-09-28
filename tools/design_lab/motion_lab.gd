@@ -95,7 +95,7 @@ const DEMOS := {
 	&"drop_buy": ["fly", "card"], &"shred_feed": ["drop", "sticker"],
 	# ANIM-R1 (the first fix batch; in context: hq_scene / netrun_scene --demo-anim=<id>):
 	&"net_creep_recede": ["fade_in", "panel"], &"jack_arrive": ["jack_in", "stage"], &"jack_arrival_wait": ["blink", "stage"],
-	&"select_ring_pulse": ["pulse", "sticker"], &"loot_reject": ["drop_away", "card"],
+	&"select_ring_pulse": ["pulse", "sticker"], &"loot_reject": ["drop_away", "card"], &"home_number_fly": ["fly", "number"], &"influence_mark": ["pop", "panel"], &"heat_number_pop": ["pop", "number"], &"heat_banner": ["pop", "panel"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

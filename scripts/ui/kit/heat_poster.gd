@@ -42,8 +42,26 @@ var stamp_scale: float = 1.0
 ## whether the band word still has to stamp.
 var pending_pulses: int = 0
 var _pending_stamp: bool = false
+## ANIM-R1 M6: the Heat number as shown (it rolls from the Heat last seen), its pop (1 = at
+## rest; it grows and flashes white on a crossing) and the crossing's banner ("HEAT 30 -
+## NOTICED", stamped over the poster, then gone): 0 hidden, 1 shown; its stamp scale.
+var shown_heat: float = 0.0
+var number_scale: float = 1.0
+var banner_alpha: float = 0.0
+var banner_scale: float = 1.0
+var _roll_from: int = -1
+## The number's lettering and the banner's (px), and the banner's tilt (degrees).
+const NUMBER_FONT := 30
+const BANNER_FONT := 18
+const BANNER_PAD := 6.0
+const BANNER_TILT := -7.0
 ## The ink box round the band word while it stamps (px).
 const STAMP_BOX_PAD := 3.0
+## A ransom letter's strip and the step between strips at rest, and the closest the
+## strips may close up (px; ANIM-R1 M16).
+const LETTER_WIDTH := 24.0
+const LETTER_STEP := 28.0
+const LETTER_STEP_MIN := 14.0
 
 
 func _init(p_poster: bool = false) -> void:
@@ -81,10 +99,12 @@ func set_heat(value: int, maximum: int, thresholds: Array[int] = [] as Array[int
 	var key := memory_key()
 	var prev: int = _seen_heat.get(key, -1)
 	_seen_heat[key] = value
+	shown_heat = value
 	if prev >= 0 and prev != value:
 		pending_pulses += crossings(prev, value, marks)
 		if band_of(prev, thresholds) != band:
 			_pending_stamp = true
+		_roll_from = prev
 		_play_pending()
 	queue_redraw()
 
@@ -123,10 +143,20 @@ func _play_pending() -> void:
 		set_process(true)
 		return
 	set_process(false)
+	# ANIM-R1 M6: the number rolls from the Heat last seen to the new one.
+	if _roll_from >= 0:
+		shown_heat = _roll_from
+		Motion.run(&"number_roll", self, ^"shown_heat", float(heat))
+		_roll_from = -1
 	if pending_pulses > 0:
 		_pulse_chain(pending_pulses)
 		pending_pulses = 0
 		Motion.shake(self, &"heat_letters_shake", ^"shake_offset")
+		# ANIM-R1 M6: the crossing reads on the number and a banner, not only as a screen
+		# glitch: the number grows and flashes white, the banner stamps on, holds, and goes.
+		number_scale = Motion.amplitude(&"heat_number_pop")
+		Motion.run(&"heat_number_pop", self, ^"number_scale", 1.0)
+		_stamp_banner()
 	if _pending_stamp:
 		_pending_stamp = false
 		stamp_scale = Motion.amplitude(&"poster_stamp")
@@ -139,6 +169,26 @@ func _pulse_chain(left: int) -> void:
 	Fx.heat_pulse(-1.0, hot_color)
 	if left > 1 and is_inside_tree():
 		get_tree().create_timer(Motion.seconds(&"heat_pulse")).timeout.connect(_pulse_chain.bind(left - 1))
+
+
+## The crossing's banner: stamps on (`poster_stamp`'s timing from `heat_banner`'s scale),
+## holds (`heat_banner`'s delay) and fades out (its duration); nothing when it is off.
+func _stamp_banner() -> void:
+	if not Motion.live(&"heat_banner"):
+		banner_alpha = 0.0
+		return
+	var e := Motion.entry(&"heat_banner")
+	banner_alpha = 1.0
+	banner_scale = Motion.amplitude(&"heat_banner")
+	Motion.run(&"poster_stamp", self, ^"banner_scale", 1.0)
+	var tw := create_tween()
+	tw.tween_property(self, "banner_alpha", 0.0, Motion.seconds(&"heat_banner")).set_delay(Motion.delay_of(&"heat_banner")).set_ease(e.ease).set_trans(e.trans)
+	tw.parallel().tween_method(func(_v: float) -> void: queue_redraw(), 0.0, 1.0, Motion.seconds(&"heat_banner") + Motion.delay_of(&"heat_banner"))
+
+
+## The banner's words ("HEAT 30 - NOTICED").
+func banner_text() -> String:
+	return tr("HEAT %d - %s") % [heat, tr(BAND_WORDS[mini(band, 3)]).to_upper()]
 
 
 func _process(_delta: float) -> void:
@@ -159,14 +209,34 @@ func _draw() -> void:
 	for ch in word.left(RANSOM_LETTERS_MAX):
 		letters.append(ch)
 	var fonts := [Palette.display(), Palette.marker(), Palette.mono(), Palette.display()]
+	# ANIM-R1 M16: the letters and the number fit the poster's width (a longer translated or
+	# pseudolocalised word ran the number and "/100" off its right edge): the strips close up
+	# to fit beside the widest the number and its maximum can be.
+	var num_w := maxf(Palette.display().get_string_size("%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT).x,
+		Palette.mono().get_string_size("/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
+	var room := size.x - 8.0 - 6.0 - num_w - 4.0
+	var step := clampf(room / maxf(1.0, letters.size()), LETTER_STEP_MIN, LETTER_STEP)
+	var strip_w := step - (LETTER_STEP - LETTER_WIDTH)
 	var x := 8.0
 	for i in letters.size():
-		var strip := Rect2(Vector2(x, y + 4 + (i % 2) * 4) + shake_offset * (1.0 if i % 2 == 0 else -1.0), Vector2(24, 28))
+		var strip := Rect2(Vector2(x, y + 4 + (i % 2) * 4) + shake_offset * (1.0 if i % 2 == 0 else -1.0), Vector2(strip_w, 28))
 		draw_rect(strip, Palette.PAPER if i % 2 == 0 else Palette.CELL_PINK)
 		draw_rect(strip, Palette.INK, false, 1.0)
-		draw_string(fonts[i % fonts.size()], strip.position + Vector2(5, 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Palette.INK)
-		x += 28
-	draw_string(Palette.display(), Vector2(x + 6, y + 30), "%d" % heat, HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.CELL_PINK if band < 2 else hot_color)
+		var lf: Font = fonts[i % fonts.size()]
+		var lfs := 18
+		while lfs > 8 and lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > strip_w - 4.0:
+			lfs -= 1
+		draw_string(lf, strip.position + Vector2(maxf(2.0, (strip_w - lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) * 0.5), 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.INK)
+		x += step
+	x = minf(x, size.x - 6.0 - num_w)
+	# ANIM-R1 M6: the number rolls, grows and flashes white on a crossing.
+	var num_col := Palette.CELL_PINK if band < 2 else hot_color
+	if number_scale > 1.0:
+		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
+	var num_at := Vector2(x + 6, y + 30)
+	draw_set_transform(num_at + Vector2(0, -NUMBER_FONT * 0.35), 0.0, Vector2.ONE * number_scale)
+	draw_string(Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, num_col)
+	draw_set_transform(Vector2.ZERO)
 	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))
@@ -186,3 +256,19 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO)
 	else:
 		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE), tr(BAND_WORDS[mini(band, 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
+	if banner_alpha > 0.0:
+		_draw_banner(y)
+
+
+## ANIM-R1 M6: the crossing's banner across the poster's Heat block ("HEAT 30 - NOTICED"),
+## in the corporation's colour, tilted like a stamp.
+func _draw_banner(y: float) -> void:
+	var f := Palette.display()
+	var text := banner_text()
+	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, BANNER_FONT).x
+	var box := Rect2(Vector2(-tw * 0.5 - BANNER_PAD, -BANNER_FONT * 0.8), Vector2(tw + BANNER_PAD * 2.0, BANNER_FONT * 1.5))
+	draw_set_transform(Vector2(size.x * 0.5, y + 34), deg_to_rad(BANNER_TILT), Vector2.ONE * banner_scale)
+	draw_rect(box, Color(Palette.NIGHT_SKY, 0.92 * banner_alpha))
+	draw_rect(box, Color(hot_color, banner_alpha), false, 3.0)
+	draw_string(f, Vector2(-tw * 0.5, BANNER_FONT * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, BANNER_FONT, Color(hot_color.lerp(Palette.PAPER, 0.3), banner_alpha))
+	draw_set_transform(Vector2.ZERO)

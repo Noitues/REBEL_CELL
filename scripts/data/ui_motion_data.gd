@@ -54,7 +54,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"drop_buy", &"shred_feed",
 	# Animation pass ANIM-R1 (the first fix batch): inline fractions moved into the table,
 	# the jack's arrival wait, and the campaign screens' readability motion.
-	&"net_creep_recede", &"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject",
+	&"net_creep_recede", &"jack_arrive", &"jack_arrival_wait", &"select_ring_pulse", &"loot_reject", &"home_number_fly", &"influence_mark", &"heat_number_pop", &"heat_banner",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

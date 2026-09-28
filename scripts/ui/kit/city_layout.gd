@@ -131,7 +131,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 			edges.append({"a": sd.id, "b": l, "color": Palette.CELL_PINK if ours else Color(Palette.NET_CYAN, 0.6), "width": 3.5 if ours else 2.0, "flow": ours})
 	for path in paths:
 		for i in path.size() - 1:
-			edges.append({"a": path[i], "b": path[i + 1], "color": corp_col, "width": 4.0, "dashed": true, "flow": true})
+			edges.append({"a": path[i], "b": path[i + 1], "color": corp_col, "width": 4.0, "dashed": true, "flow": true, "arrows": true})
 	return {"nodes": nodes, "edges": edges}
 
 

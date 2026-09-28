@@ -64,6 +64,11 @@ const CROSS_SIZE := 13.0
 ## Dash pattern (px) and flow speeds (px per second).
 const DASH_ON := 9.0
 const DASH_PERIOD := 16.0
+## ANIM-R1 M4: a placed defence's marker on its node (screen px radius), and the chevrons
+## on threat routes (edges with "arrows"): their spacing and half-size (screen px).
+const ASSET_ICON := 9.0
+const ARROW_STEP := 34.0
+const ARROW_SIZE := 6.0
 ## ANIM-R1 M15: the most dashes drawn along one route segment.
 const DASHES_MAX := 400
 ## ANIM-5: dashes crawl at `route_crawl`'s amplitude px per its duration (toward the
@@ -206,6 +211,8 @@ var dim_t: float = 1.0
 var _travel_tween: Tween = null
 ## The move's light trail: this many fading dots, each this share of the link behind.
 const TRAVEL_TRAIL := 6
+## ANIM-R1 M7: a visited route node's tick (screen px).
+const TICK := 11.0
 const TRAVEL_TRAIL_STEP := 0.04
 ## H24 K4: a node lit from outside the map (its row in a list is hovered or has the pad's
 ## focus): a paper ring with ticks round its icon, and its label shown first.
@@ -261,6 +268,7 @@ func _init(p_city: NeonCity = null) -> void:
 	_hi = _layer("Selection", _draw_hi)
 	if city != null:
 		city.rebuilt.connect(_relayout)
+		city.marks_changed.connect(queue_redraw)
 	# Labels follow the text size live (redrawn once per change, never per frame).
 	Settings.changed.connect(_top.queue_redraw)
 
@@ -412,7 +420,13 @@ func here_id() -> StringName:
 
 ## True when node `id` is on a route graph and can no longer be reached (drawn dimmed).
 func is_dimmed(id: StringName) -> bool:
-	return not _reach.is_empty() and not _reach.has(id)
+	return not _reach.is_empty() and not _reach.has(id) and not is_visited(id)
+
+
+## ANIM-R1 M7: a route node already passed through ("visited" on its node): drawn at the
+## `visited_dim` share with a tick, apart from the nodes that can no longer be reached.
+func is_visited(id: StringName) -> bool:
+	return bool(_node_dict(id).get("visited", false))
 
 
 ## Route graphs: every node reachable from "you are here" and the nodes open now, along
@@ -748,6 +762,9 @@ func _draw() -> void:
 			_spotlight()
 	for k in edges.size():
 		_edge_static(edges[k], _route_px(k))
+	# ANIM-R1 M5: a territory change's marks (outline, tint, CLAIMED / SEIZED stamp) show on
+	# the map too, over its dimming and under its nodes and labels.
+	city.draw_marks_on(self)
 
 
 ## Flowing dashes and packets (redrawn every frame unless reduce-effects).
@@ -889,6 +906,10 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 			for q in mini(DASHES_MAX, ceili(maxf(0.0, length - phase) / DASH_PERIOD)):
 				var t := phase + q * DASH_PERIOD
 				_c.draw_line(a + dir * t, a + dir * minf(t + DASH_ON, length), col, width)
+	if e.get("arrows", false):
+		_chevrons(e, pts)
+	if _is_dashed(e):
+		return
 	elif e.get("flow", false):
 		# A bright packet running along the route.
 		var total := 0.0
@@ -901,6 +922,35 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 				_c.draw_circle(pts[k].lerp(pts[k + 1], d / maxf(seg, 0.001)), width + 2.0, Palette.PAPER)
 				break
 			d -= seg
+
+
+## ANIM-R1 M4: chevrons along a threat route pointing the way the threats go (a -> b), in
+## a dark keyline, crawling with the dashes: an enemy path reads apart from the Cell's
+## solid links at any zoom.
+func _chevrons(e: Dictionary, pts: PackedVector2Array) -> void:
+	var k := _k()
+	var col: Color = e.get("color", Palette.NET_CYAN)
+	var step := ARROW_STEP * k
+	var s := ARROW_SIZE * k
+	var phase := fmod(anim_t * crawl_speed(), step) if e.get("flow", true) else 0.0
+	var carry := phase
+	for q in pts.size() - 1:
+		var a := pts[q]
+		var b := pts[q + 1]
+		var length := a.distance_to(b)
+		if not is_finite(length) or length <= 0.0:
+			continue
+		var dir := (b - a) / length
+		var side := dir.orthogonal()
+		var n := mini(DASHES_MAX, ceili(maxf(0.0, length - carry) / step))
+		for i in n:
+			var p := a + dir * (carry + i * step)
+			var tip := p + dir * s
+			var wing := PackedVector2Array([p - dir * s + side * s, tip, p - dir * s - side * s])
+			_c.draw_polyline(wing, Color(0, 0, 0, 0.8), 4.5 * k)
+			_c.draw_polyline(wing, col, 2.2 * k)
+		# Where the next chevron falls on the next segment (the spacing runs on round corners).
+		carry = maxf(0.0, carry + n * step - length)
 
 
 static func _centroid(pts: PackedVector2Array) -> Vector2:
@@ -918,9 +968,12 @@ func _node(n: Dictionary) -> void:
 	var col: Color = n.get("color", Palette.CELL_PINK)
 	if dim:
 		col = Color(col, col.a * DIM_ALPHA)
+	var visited := is_visited(n["id"])
 	if not _travel.is_empty() and n["id"] == _travel["from"]:
 		# ANIM-5 (4.16): the node left behind dims as a visited one.
 		col = Color(col, col.a * lerpf(1.0, Motion.amplitude(&"visited_dim"), dim_t))
+	elif visited:
+		col = Color(col, col.a * Motion.amplitude(&"visited_dim"))
 	var roof: PackedVector2Array = rec["roof"]
 	var base: Vector2 = rec["base"]
 	var top := _centroid(roof)
@@ -955,18 +1008,30 @@ func _node(n: Dictionary) -> void:
 		r *= lerpf(Motion.amplitude(&"node_pop"), 1.0, arrive_t)
 		_here(at, r)
 	draw_icon(_c, String(n.get("kind", "")), at, r, col, String(n.get("glyph", "")), DIM_ALPHA if dim else 1.0)
+	if visited or (not _travel.is_empty() and n["id"] == _travel["from"] and dim_t > 0.0):
+		# ANIM-R1 M7: a tick on a node passed through (it fades in as the node dims).
+		var ta := 1.0 if visited else dim_t
+		var tk := _k()
+		var t0 := at + Vector2(r * 0.55, r * 0.35)
+		var tick := PackedVector2Array([t0, t0 + Vector2(TICK * 0.35, TICK * 0.4) * tk, t0 + Vector2(TICK, -TICK * 0.55) * tk])
+		_c.draw_polyline(tick, Color(0, 0, 0, 0.9 * ta), 5.0 * tk)
+		_c.draw_polyline(tick, Color(Palette.PAPER, ta), 2.5 * tk)
 	if tier_of(n) > 0:
 		draw_tier(_c, tier_pips_centre(n), tier_of(n), col, _pip_scale(n), DIM_ALPHA if dim else 1.0)
 		drawn_tiers[n["id"]] = tier_of(n)
 	var assets: Array = n.get("assets", [])
 	for k in assets.size():
-		var a := TAU * k / maxf(1.0, assets.size()) - PI * 0.5
-		var slot := top + Vector2(cos(a) * 26.0, sin(a) * 14.0 - 6.0)
+		var slot := asset_slot(n, k, assets.size())
+		var ar := ASSET_ICON * _k()
 		if not _drop.is_empty() and _drop["site"] == n["id"] and int(_drop["index"]) == k and drop_t < 1.0:
 			# ANIM-5: falling onto its node, then a stamp ring as it lands.
 			slot.y -= (1.0 - drop_t) * Motion.amplitude(&"asset_drop") * _k()
-			_c.draw_arc(slot, (8.0 + 10.0 * drop_t) * _k(), 0, TAU, 20, Color(Palette.PAPER, sin(drop_t * PI) * 0.8), 2.0 * _k())
-		AssetIcon.draw_icon(_c, slot, 8.0, assets[k])
+			_c.draw_arc(slot, ar * (1.0 + 1.2 * drop_t), 0, TAU, 20, Color(Palette.PAPER, sin(drop_t * PI) * 0.8), 2.0 * _k())
+		# ANIM-R1 M4: the placed defence stays on its node as a marker the size of a map
+		# icon (a dark plate, a pink ring, the asset's own icon), readable at any zoom.
+		_c.draw_circle(slot, ar * 1.25, Color(0, 0, 0, 0.85))
+		_c.draw_arc(slot, ar * 1.25, 0, TAU, 20, Palette.CELL_PINK, 2.0 * _k())
+		AssetIcon.draw_icon(_c, slot, ar, assets[k])
 	if n["id"] == selected_id:
 		_stroke_on(closed, select_reveal, Palette.CELL_ACID, 1.5)
 	if draw_markers and markers.has(n["id"]):
@@ -978,6 +1043,14 @@ func _node(n: Dictionary) -> void:
 			var dia := PackedVector2Array([mp + Vector2(0, -s), mp + Vector2(s * 0.9, 0), mp + Vector2(0, s), mp + Vector2(-s * 0.9, 0)])
 			_c.draw_colored_polygon(dia, Palette.corp_color(StringName(n.get("threat_corp", "solace"))) if n.has("threat_corp") else Palette.CORP_SOLACE)
 			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, 1.2)
+
+
+## ANIM-R1 M4: where placed asset `k` of `count` on node `n` sits (local px): a row
+## beside the icon, on its right, screen-sized.
+func asset_slot(n: Dictionary, k: int, count: int) -> Vector2:
+	var step := ASSET_ICON * 2.8 * _k()
+	var at := icon_pos(n) + Vector2(icon_radius(n) + ASSET_ICON * 1.6 * _k(), 0)
+	return at + Vector2(step * k, 0)
 
 
 ## Node `n`'s Site tier for the difficulty pips (0: no pips, e.g. route nodes, CORE).
@@ -1122,12 +1195,14 @@ func drop_asset(site_id: StringName) -> void:
 ## ANIM-5 (4.16): the netrun moves from node `from` to node `to`: a light pulse runs the
 ## link with the "you are here" marker, the new node pops up, the old one dims. Returns
 ## the seconds it takes (0 when motion doesn't play: the end state at once).
-func travel(from: StringName, to: StringName) -> float:
+func travel(from: StringName, to: StringName, on_land: Callable = Callable()) -> float:
 	_travel = {"from": from, "to": to}
+	_on_land = on_land
 	travel_t = 1.0
 	arrive_t = 1.0
 	dim_t = 1.0
 	if not is_inside_tree() or not Motion.live(&"route_pulse") or icon_at(to).x == INF:
+		_land()
 		queue_redraw()
 		return 0.0
 	travel_t = 0.0 if icon_at(from).x != INF else 1.0
@@ -1138,6 +1213,7 @@ func travel(from: StringName, to: StringName) -> float:
 	var pop := create_tween()
 	pop.tween_interval(lead)
 	pop.tween_callback(func() -> void:
+		_land()
 		Motion.run(&"node_pop", self, ^"arrive_t", 1.0)
 		Motion.run(&"visited_dim", self, ^"dim_t", 1.0))
 	_travel_tween = pop
@@ -1145,8 +1221,21 @@ func travel(from: StringName, to: StringName) -> float:
 	return lead + maxf(Motion.seconds(&"node_pop") + Motion.delay_of(&"node_pop"), Motion.seconds(&"visited_dim") + Motion.delay_of(&"visited_dim"))
 
 
+## ANIM-R1 M7: what the screen does when the pulse lands (the route's new state: the choice
+## labels move to the new next nodes); once per move.
+var _on_land: Callable = Callable()
+
+
+func _land() -> void:
+	var cb := _on_land
+	_on_land = Callable()
+	if cb.is_valid():
+		cb.call()
+
+
 ## Jumps a running move to its end (input skips it).
 func finish_travel() -> void:
+	_land()
 	if _travel_tween != null and _travel_tween.is_valid():
 		_travel_tween.kill()
 	Motion.stop(self)

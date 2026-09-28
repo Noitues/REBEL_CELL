@@ -19,20 +19,27 @@ const STAMP_OUTCOMES: Array[String] = ["holds", "disabled", "seized", "passed", 
 const STAMP_TEXT: Array[String] = ["HOLDS", "DISABLED", "SEIZED", "PASSED", "BREACHED"] # TR
 ## Screen px (x screen_k): stamp lettering, its padding, tilt (degrees) and lift over
 ## the icon; damage numbers; traces; hit rings; the home bar and its gap under CORE.
-const STAMP_FONT := 14
-const STAMP_PAD := 4.0
+## ANIM-R1 M4: stamps, numbers, traces and tokens grew (the raid was unreadable at map
+## scale); the gun that fires rings itself (MUZZLE_RING) as its trace leaves.
+const STAMP_FONT := 21
+const STAMP_PAD := 6.0
 const STAMP_TILT := -6.0
-const STAMP_LIFT := 30.0
-const NUMBER_FONT := 22
-const TRACE_WIDTH := 2.5
-const HIT_RING := 10.0
+const STAMP_LIFT := 38.0
+const NUMBER_FONT := 28
+const TRACE_WIDTH := 3.5
+const HIT_RING := 14.0
+const MUZZLE_RING := 20.0
 const FROST_RING := 13.0
 const HOME_BAR := Vector2(64, 7)
 const HOME_BAR_GAP := 8.0
 const PULL_DASH := 6.0
 ## A threat token is the map's marker this much bigger, with a glow this much wider.
-const TOKEN_SCALE := 1.5
+const TOKEN_SCALE := 2.2
 const TOKEN_GLOW := 1.8
+
+## ANIM-R1 M4: a hit on the home server shows now (its number starts): `damage` from Site
+## `site` (the screen flies the number into its home counter).
+signal home_hit_shown(damage: int, site: StringName)
 ## Alpha of a Seized node's corporate tint disc (its reach is CityInfluence.RADIUS lots).
 const TINT_ALPHA := 0.24
 const TINT_RINGS := 24
@@ -54,6 +61,10 @@ var _tints: Array[Dictionary] = []
 var _tint_fade_t0: float = INF
 var _results: Dictionary = {}
 var _owner_done: bool = false
+## ANIM-R1 M4: hits on home still to show ({"t0", "damage", "site"}), in time order.
+var _home_due: Array[Dictionary] = []
+## Home integrity as shown now (the hits that have shown so far; the bar draws it).
+var home_shown: int = 0
 
 
 func _init(p_overlay: CityMapOverlay = null) -> void:
@@ -70,6 +81,8 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	home_id = p_home
 	home_max = maxi(1, p_home_max)
 	home_value = int(results.get("home_before", home_max))
+	home_shown = home_value
+	_home_due.clear()
 	_home_from = home_value
 	threat_color = color
 	clock = 0.0
@@ -88,6 +101,7 @@ func _process(delta: float) -> void:
 	# After the playout the layer keeps its own time (the tint fade, the last numbers).
 	if _owner_done:
 		clock += delta
+	_show_due_hits()
 	if _tint_fade_t0 == INF and not _tints.is_empty() and overlay != null and overlay.city != null and overlay.city.influence_pin == null \
 			and overlay.city.showing_current_look():
 		_tint_fade_t0 = clock
@@ -97,7 +111,17 @@ func _process(delta: float) -> void:
 ## Every beat at its end at once (Skip, reduce effects, headless).
 func finish_all() -> void:
 	clock = maxf(clock, _last_end())
+	_show_due_hits()
+	home_shown = home_value
 	queue_redraw()
+
+
+## ANIM-R1 M4: the hits on home whose time has come show (home_hit_shown each).
+func _show_due_hits() -> void:
+	while not _home_due.is_empty() and clock >= float(_home_due[0]["t0"]):
+		var h: Dictionary = _home_due.pop_front()
+		home_shown = maxi(0, home_shown - int(h["damage"]))
+		home_hit_shown.emit(int(h["damage"]), StringName(h["site"]))
 
 
 ## The playout has ended: from now on the layer runs its own clock (tint fade).
@@ -143,8 +167,15 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			if _tokens.has(String(e["threat"])):
 				_tokens[String(e["threat"])]["frozen"] = true
 		"shot":
-			_fx.append({"kind": "trace", "site": StringName(e["site"]), "threat": String(e["threat"]), "t0": t0, "dur": dur})
-			_fx.append({"kind": "hit", "threat": String(e["threat"]), "t0": t0 + dur * 0.5, "dur": RaidBeats.raw_seconds(&"raid_hit_effect")})
+			# ANIM-R1 M4: strictly shot, hit, number: the trace flies to the threat over
+			# `turret_trace`, the hit lands as it arrives, the damage rises after the hit.
+			var trace := RaidBeats.raw_seconds(&"turret_trace")
+			var hit := RaidBeats.raw_seconds(&"raid_hit_effect")
+			_fx.append({"kind": "trace", "site": StringName(e["site"]), "threat": String(e["threat"]), "t0": t0, "dur": trace, "hit": hit})
+			_fx.append({"kind": "hit", "threat": String(e["threat"]), "t0": t0 + trace, "dur": hit})
+			if int(e.get("damage", 0)) > 0:
+				_fx.append({"kind": "number", "threat": String(e["threat"]), "text": "-%d" % int(e["damage"]), "color": Palette.CELL_ACID,
+					"t0": t0 + trace + hit, "dur": RaidBeats.raw_seconds(&"node_damage_number")})
 		"threat_destroyed":
 			var tok: Dictionary = _tokens.get(String(e["threat"]), {})
 			if not tok.is_empty():
@@ -154,10 +185,10 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			var site := StringName(e["site"])
 			_number(site, "-%d" % int(e.get("damage", 0)), Palette.CELL_PINK, t0, dur)
 			if site == home_id:
-				_home_hit(int(e.get("damage", 0)), t0)
+				_home_hit(int(e.get("damage", 0)), t0, site)
 		"home_hit":
 			_number(home_id, "-%d" % int(e.get("damage", 0)), Palette.CELL_PINK, t0, dur)
-			_home_hit(int(e.get("damage", 0)), t0)
+			_home_hit(int(e.get("damage", 0)), t0, home_id)
 		"station_regen":
 			_number(StringName(e["site"]), "+%d" % int(e.get("amount", 0)), Palette.CELL_ACID, t0, dur)
 		"disabled":
@@ -184,7 +215,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			if _results.has("home_after"):
 				var after := int(_results["home_after"])
 				if after != home_value:
-					_home_hit(home_value - after, t0)
+					_home_hit(home_value - after, t0, home_id)
 	queue_redraw()
 
 
@@ -202,19 +233,22 @@ static func stamp_text(outcome: String) -> String:
 	return STAMP_TEXT[i] if i >= 0 else outcome.to_upper()
 
 
-func _home_hit(damage: int, t0: float) -> void:
+func _home_hit(damage: int, t0: float, site: StringName = &"") -> void:
 	_home_from = _home_lag_value()
 	home_value = maxi(0, home_value - damage)
 	_home_lag_t0 = t0
+	if damage != 0:
+		_home_due.append({"t0": t0, "damage": damage, "site": site if site != &"" else home_id})
+		_home_due.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["t0"]) < float(b["t0"]))
 
 
 ## The home bar's white lag segment now (it trails home_value by `home_lag`).
 func _home_lag_value() -> float:
 	var e := Motion.entry(&"home_lag")
 	if e == null or _home_lag_t0 == -INF:
-		return home_value
+		return home_shown
 	var u := clampf((clock - _home_lag_t0 - e.delay) / maxf(e.duration, 0.001), 0.0, 1.0)
-	return float(Tween.interpolate_value(float(_home_from), float(home_value - _home_from), u, 1.0, e.trans, e.ease))
+	return float(Tween.interpolate_value(float(_home_from), float(home_shown - _home_from), u, 1.0, e.trans, e.ease))
 
 
 # --- Checks (tests) ---------------------------------------------------------------------------
@@ -273,7 +307,7 @@ func _draw() -> void:
 			"hit":
 				_draw_hit(f, at, k)
 			"number":
-				_draw_number(f, k)
+				_draw_number(f, k, at)
 	for id in _stamps:
 		_draw_stamp(StringName(id), _stamps[id], k)
 	_draw_home(k)
@@ -379,18 +413,30 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 		draw_arc(p, FROST_RING * k, 0, TAU, 20, Color(Palette.NET_CYAN, 0.8 * alpha), 2.0 * k)
 
 
+## ANIM-R1 M4: the shot: the gun's node rings as it fires, the trace flies from the gun to
+## the threat over its duration (a bright head), then fades while the hit lands.
 func _draw_trace(f: Dictionary, at: Dictionary, k: float) -> void:
-	var u := _u(float(f["t0"]), float(f["dur"]))
-	if clock < float(f["t0"]) or u >= 1.0:
+	var t0 := float(f["t0"])
+	var fly := float(f["dur"])
+	var fade := float(f.get("hit", 0.0))
+	if clock < t0 or clock >= t0 + fly + fade:
 		return
 	var from := overlay.icon_at(f["site"])
 	var to: Vector2 = at.get(String(f["threat"]), Vector2(INF, INF))
 	if from.x == INF or to.x == INF:
 		return
-	var a := 1.0 - u
-	draw_line(from, to, Color(Palette.CELL_ACID, 0.35 * a), TRACE_WIDTH * 3.0 * k)
-	draw_line(from, to, Color(Palette.PAPER, a), TRACE_WIDTH * k)
-	draw_circle(from, 3.0 * k, Color(Palette.CELL_ACID, a))
+	var u := _u(t0, fly)
+	var a := 1.0 if u < 1.0 else 1.0 - _u(t0 + fly, fade)
+	var head := from.lerp(to, _eased(&"turret_trace", u))
+	var muzzle := 1.0 - u
+	if muzzle > 0.0:
+		draw_arc(from, MUZZLE_RING * k * (1.0 + 0.4 * u), 0, TAU, 24, Color(Palette.CELL_ACID, muzzle), 3.0 * k)
+	draw_line(from, head, Color(0, 0, 0, 0.6 * a), TRACE_WIDTH * 4.0 * k)
+	draw_line(from, head, Color(Palette.CELL_ACID, 0.45 * a), TRACE_WIDTH * 3.0 * k)
+	draw_line(from, head, Color(Palette.PAPER, a), TRACE_WIDTH * k)
+	if u < 1.0:
+		draw_circle(head, TRACE_WIDTH * 1.8 * k, Palette.PAPER)
+	draw_circle(from, 4.0 * k, Color(Palette.CELL_ACID, a))
 
 
 func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
@@ -429,11 +475,16 @@ func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
 		draw_line(p + d * r * 0.6, p + d * r * 1.2, Color(Palette.CELL_ACID, 1.0 - u), 2.0 * k)
 
 
-func _draw_number(f: Dictionary, k: float) -> void:
+func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 	var u := _u(float(f["t0"]), float(f["dur"]))
 	if clock < float(f["t0"]) or u >= 1.0:
 		return
-	var p := overlay.icon_at(f["site"])
+	# ANIM-R1 M4: a shot's damage rises off the threat it hit (where it stood when hit).
+	var p: Vector2 = where.get(String(f["threat"]), Vector2(INF, INF)) if f.has("threat") else overlay.icon_at(f["site"])
+	if f.has("threat") and p.x == INF:
+		p = f.get("last_at", Vector2(INF, INF))
+	elif f.has("threat"):
+		f["last_at"] = p
 	if p.x == INF:
 		return
 	var rise := Motion.amplitude(&"node_damage_number") * k * _eased(&"node_damage_number", u)
@@ -480,7 +531,7 @@ func _draw_home(k: float) -> void:
 	var r := Rect2(p + Vector2(-w * 0.5, CityMapOverlay.ICON_RADIUS_BIG * k + HOME_BAR_GAP * k), Vector2(w, h))
 	draw_rect(r.grow(1.5 * k), Color(0, 0, 0, 0.85))
 	var lag := clampf(_home_lag_value() / home_max, 0.0, 1.0)
-	var now := clampf(float(home_value) / home_max, 0.0, 1.0)
+	var now := clampf(float(home_shown) / home_max, 0.0, 1.0)
 	draw_rect(Rect2(r.position, Vector2(w * lag, h)), Palette.PAPER)
 	draw_rect(Rect2(r.position, Vector2(w * now, h)), Palette.CELL_ACID if now > 0.5 else Palette.CELL_PINK)
 

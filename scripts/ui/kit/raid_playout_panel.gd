@@ -38,6 +38,11 @@ var _instant: bool = false
 var _clock: float = 0.0
 var _next_at: float = 0.0
 var _set_speed: bool = false
+## ANIM-R1 M4: the screen's camera for each step: called with the step's focus Sites
+## (RaidBeats.focus_sites) as the step starts; it eases the map to them and returns the
+## seconds that takes, which the step's beats wait (the fight is framed before it plays).
+## Not called when the playout is instant.
+var framer: Callable = Callable()
 
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
@@ -178,6 +183,8 @@ func _show_step() -> void:
 		return
 	var start := _clock
 	var tl := RaidBeats.timeline(_steps[_index])
+	if framer.is_valid():
+		start += float(framer.call(RaidBeats.focus_sites(_steps[_index], _threat_sites)))
 	_apply_step(_steps[_index], start, tl)
 	_index += 1
 	_next_at = start + float(tl["seconds"])

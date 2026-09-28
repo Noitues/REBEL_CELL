@@ -231,7 +231,13 @@ func enter_node(node_id: StringName) -> void:
 	var secs := 0.0
 	if city_overlay != null and is_instance_valid(city_overlay) and not _grid_zoomed and RunManager.netrun != null \
 			and RunManager.netrun.run.current_node_id == node_id:
-		secs = city_overlay.travel(from, node_id)
+		# ANIM-R1 M7: when the pulse lands, the map shows the run's new state: the [1] / [2]
+		# labels on the new next nodes, the node left ticked and dimmed as visited.
+		var overlay := city_overlay
+		secs = city_overlay.travel(from, node_id, func() -> void:
+			if is_instance_valid(overlay) and overlay == city_overlay and not _grid_zoomed and RunManager.netrun != null:
+				var r := route_graph()
+				overlay.set_graph(r["nodes"], r["edges"]))
 	if secs <= 0.0:
 		_show_current()
 		return
@@ -1038,7 +1044,7 @@ func route_graph() -> Dictionary:
 		elif available.has(n["id"]):
 			col = ROUTE_NEXT_COLOR
 		elif s.run.visited.has(n["id"]):
-			col = Color(Palette.NET_CYAN, 0.5)
+			col = Palette.NET_CYAN  # ANIM-R1 M7: dimmed and ticked by the map (visited_dim)
 		elif n["elite"] or n["type"] == RC.InfilNodeType.SERVER_RACK:
 			col = Palette.corp_color(RunManager.campaign.corporation_id)
 		var idx := available.find(n["id"])
@@ -1051,7 +1057,8 @@ func route_graph() -> Dictionary:
 			# The map paints its own node icons (CityMapOverlay); the route buttons draw the same
 			# kind with the same painter (H22 #14).
 			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
-			"here": n["id"] == s.run.current_node_id, "next": idx >= 0})
+			"here": n["id"] == s.run.current_node_id, "next": idx >= 0,
+			"visited": s.run.visited.has(n["id"]) and n["id"] != s.run.current_node_id})
 	var edges: Array[Dictionary] = []
 	for n in map.all_nodes():
 		for nxt in n["next"]:
@@ -1102,7 +1109,8 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	MapLegend.pin_to(spacer, c.corporation_id)
+	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	_fight_parts = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
 	box.add_child(side)
@@ -1127,9 +1135,31 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	city_overlay.avoid_controls([side])
 	playout.grid_view = city_overlay
 	playout.attach_fx(c.last_raid, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
+	# ANIM-R1 M4: each step's fight is framed (the camera eases in to it) before it plays.
+	playout.framer = _frame_fight.bind(city_overlay)
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
 		_show_current()
+
+
+## ANIM-R1 M4: the mid-run raid's camera: each step eases to its fight (the guns firing
+## and their targets, else the nodes hit, else where threats go) at RAID_ZOOM; returns the
+## seconds the ease takes (0 when the frame stays).
+func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
+	if not is_instance_valid(overlay) or overlay != city_overlay or sites.is_empty():
+		return 0.0
+	var pts := PackedVector2Array()
+	for id in sites:
+		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
+	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
+	return background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+
+
+## The raid playout map's parts the fight frame keeps to: [the map's area, its key].
+var _fight_parts: Array = []
+## ANIM-R1 M4: the mid-run raid playout's fight camera: the closest and furthest zoom.
+const RAID_ZOOM := 1.6
+const RAID_MIN_ZOOM := 0.85
 
 
 func _instant_playout() -> bool:
