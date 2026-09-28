@@ -147,9 +147,11 @@ func _key(k: Key, pressed: bool = true) -> InputEventKey:
 
 
 ## Waits out a page entrance (PageTransition: under 0.25 s) without completing it: a
-## settle would also show the typing words whole.
-func _entrance() -> void:
-	await get_tree().create_timer(Motion.seconds(&"panel_in") + Motion.seconds(&"panel_drop") + 0.1).timeout
+## settle would also show the typing words whole. Test suite: bounded waits: until the
+## page says its entrance ended (bounded by its seconds), not a fixed time.
+func _entrance(scene: Control) -> void:
+	await BoundedWait.until(get_tree(), func() -> bool: return scene._panel != null and not PageTransition.running(scene._panel),
+		BoundedWait.motion_limit([&"panel_in", &"panel_drop"]))
 	await _frames(1)
 
 
@@ -166,7 +168,7 @@ func test_an_event_can_be_finished_with_the_pad_alone() -> void:
 	Settings.set_subtitle_typing(true)
 	Settings.set_pad_active(true)
 	_event(scene)
-	await _entrance()
+	await _entrance(scene)
 	assert_true(scene.choices_held(), "the story types in")
 	var owner := get_viewport().gui_get_focus_owner()
 	assert_not_null(owner, "a choice has focus while the words type (E1: nothing had focus)")
@@ -200,7 +202,7 @@ func test_held_choices_read_and_carry_a_typing_mark() -> void:
 	_live()
 	Settings.set_subtitle_typing(true)
 	_event(scene)
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)  # the story must still be typing after the frame
 	var c1 := scene._panel.find_child("Choice1", true, false) as Button
 	assert_true(scene.choices_held(), "the story types in")
 	assert_false(c1.disabled, "a held choice is not disabled (its paper stays readable)")
@@ -228,7 +230,7 @@ func test_one_press_shows_the_story_and_its_subtitle() -> void:
 	Settings.set_subtitle_typing(true)
 	scene._spoken_events.clear()
 	_event(scene)
-	await _entrance()
+	await _entrance(scene)
 	var text := scene._panel.find_child("EventPanel", true, false).find_children("*", "RichTextLabel", true, false)[0] as Control
 	assert_true(Typing.typing(text), "the story types")
 	assert_true(Dialogue.typing(), "and the subtitle")
@@ -581,7 +583,7 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 	_live()
 	var ev: WheelView = scene._enemy_views.values()[0]
 	ev.play_enter()
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)  # still entering after the frame
 	assert_true(ev.enter_slide > 0.0, "the enemy is entering")
 	assert_true(ev.intent_rect().has_area(), "its forecast tag is laid out")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
@@ -704,7 +706,7 @@ func test_the_crt_roll_waits_for_the_glass_to_show() -> void:
 	page.size = Vector2(400, 300)
 	holder.add_child(page)
 	PageTransition.enter(page, PageTransition.Look.GLASS, Callable())
-	await _frames(2)
+	await BoundedWait.frozen_frames(get_tree(), 2)  # still the entrance's first frames
 	var roll := page.get_node_or_null(^"CrtRoll") as Control
 	assert_true(roll == null or not roll.visible,
 		"no roll band on the entrance's first frames (it read as a half-drawn screen on loot_pick's first frame)")
