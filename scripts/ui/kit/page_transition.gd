@@ -180,12 +180,17 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if _done:
 		return
-	# ANIM-R1 (MotionSkip): a press completes the entrance and is consumed.
-	if MotionSkip.is_press(event):
+	# ANIM-R1 (MotionSkip): a press completes the entrance and is consumed. ANIM-R4 C2 (the
+	# one rule, MotionSkip.verdict): a press that works the screen completes it and passes
+	# on; an open pause menu keeps its presses (the entrance plays on).
+	var v := MotionSkip.verdict(event, self)
+	if v == MotionSkip.Verdict.IGNORE:
+		return
+	if v == MotionSkip.Verdict.CONSUME:
 		MotionSkip.consume(self, event)
-		var p := page
-		finish()
-		settle(p)
+	var p := page
+	finish()
+	settle(p)
 
 
 func _process(delta: float) -> void:

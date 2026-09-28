@@ -249,21 +249,36 @@ func _input(event: InputEvent) -> void:
 	# is consumed.
 	if not (typing() or sliding()) or not MotionSkip.is_press(event):
 		return
+	# ANIM-R4 C2: a menu behind an open pause menu leaves it the presses (the pause menu's own
+	# lines are this menu's).
+	if MotionSkip.pause_open(self) and not in_pause_menu():
+		return
 	finish()
 	if not works_menu(event):
 		MotionSkip.consume(self, event)
 
 
 ## True when `event` works this menu (ANIM-R2): a focus move, an accept, or a click on one
-## of its lines. Such a press completes the line's motion and passes on.
+## of its lines. Such a press completes the line's motion and passes on. ANIM-R4 C2: the
+## Settings key too (Esc while a pause menu's line types closes the menu at once).
 func works_menu(event: InputEvent) -> bool:
-	if _is_focus_move(event) or event.is_action(&"ui_accept"):
+	if _is_focus_move(event) or event.is_action(&"ui_accept") or event.is_action(&"open_settings"):
 		return true
 	if event is InputEventMouseButton and menu != null and is_instance_valid(menu):
 		var at := (event as InputEventMouseButton).global_position
 		for b in menu.get_children():
 			if b is Button and (b as Button).is_visible_in_tree() and (b as Button).get_global_rect().has_point(at):
 				return true
+	return false
+
+
+## True when this menu is (inside) an open PauseMenu.
+func in_pause_menu() -> bool:
+	var n: Node = self
+	while n != null:
+		if n.is_in_group(MotionSkip.PAUSE_GROUP):
+			return true
+		n = n.get_parent()
 	return false
 
 

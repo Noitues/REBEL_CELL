@@ -759,10 +759,16 @@ func _stamp(at: Vector2, r0: float) -> void:
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press during a flight, mark or stamp completes it and is
 	# consumed (a B that ends a viewer's landing never also leaves the page behind it).
-	if busy() and MotionSkip.is_press(event):
-		finish_all()
-		MotionSkip.consume(self, event)
-		return
+	# ANIM-R4 C2 (MotionSkip.verdict): a press that works the screen completes them and passes
+	# on; an open pause menu keeps its presses.
+	if busy():
+		var v := MotionSkip.verdict(event, self)
+		if v == MotionSkip.Verdict.CONSUME:
+			finish_all()
+			MotionSkip.consume(self, event)
+			return
+		if v == MotionSkip.Verdict.PASS:
+			finish_all()
 	if retiring:
 		return
 	if mode == Mode.CARRY:
