@@ -306,6 +306,12 @@ func _stamp(site: StringName, outcome: String, col: Color, t0: float, dur: float
 	_stamps[String(site)] = {"word": stamp_text(outcome), "color": col, "t0": t0, "dur": dur}
 
 
+## ANIM-R3 B5: an outcome's word, translated (the stamp's word; the rows and labels say the
+## same).
+static func tr_outcome(outcome: String) -> String:
+	return CityMapOverlay.tr_word(stamp_text(outcome)) if outcome != "" else "?"
+
+
 ## The stamp word for node outcome `outcome` (untranslated; drawn translated).
 static func stamp_text(outcome: String) -> String:
 	var i := STAMP_OUTCOMES.find(outcome)

@@ -550,7 +550,7 @@ func go_to_netrun() -> void:
 		return
 	AudioDirector.play_sfx("jack_in")
 	if scene_switching_enabled:
-		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE), -1.0, jack_destination())
+		Fx.jack_in(func() -> void: change_scene(NETRUN_SCENE), -1.0, jack_destination(), jack_note())
 	else:
 		change_scene(NETRUN_SCENE)
 
@@ -563,6 +563,14 @@ func jack_destination() -> String:
 		if sd != null:
 			return TextDb.t(sd, "display_name")
 	return tr("the net")
+
+
+## ANIM-R3 B5: the jack cover's second line: a run that opens on a raid interlude says so
+## ("CONNECTING TO SCRUB RECORDS" then "INTERRUPTED: RAID INCOMING"); "" otherwise.
+func jack_note() -> String:
+	if netrun != null and netrun.in_raid():
+		return tr("INTERRUPTED: RAID INCOMING")
+	return ""
 
 
 func _ensure_resolver() -> void:

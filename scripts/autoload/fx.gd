@@ -49,6 +49,10 @@ var connect_fill: ColorRect
 ## The place the running jack connects to (translated; "" = none named).
 var _destination: String = ""
 const CONNECT_MOTION := &"jack_connect"
+const DISSOLVE_MOTION := &"jack_dissolve"
+## ANIM-R3 B5: a second line under CONNECTING TO <place> ("INTERRUPTED: RAID INCOMING" when
+## the run opens on a raid interlude; "" for none), translated by the caller.
+var _note: String = ""
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
 const CONNECT_FONT := 20
 const CONNECT_BAR_H := 4.0
@@ -429,9 +433,10 @@ func freeze_frames(frames: int = -1) -> void:
 ## effects: one short fade (`jack_fade_reduced`); headless (tests): the switch at once.
 ## ANIM-R2 R5: `destination` (translated) is named on the cover while the arriving screen
 ## builds ("CONNECTING TO <place>").
-func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:
+func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "", note: String = "") -> void:
 	if not _jacking:
 		_destination = destination
+		_note = note
 	await _transition(on_switch, seconds, &"jack_in")
 
 
@@ -449,6 +454,8 @@ func _show_connect() -> void:
 	var fs := roundi(CONNECT_FONT * Settings.text_scale)
 	connect_label.add_theme_font_size_override("font_size", fs)
 	connect_label.text = tr("CONNECTING TO %s") % _destination.to_upper() if _destination != "" else tr("CONNECTING")
+	if _note != "":
+		connect_label.text += "\n" + _note.to_upper()
 	connect_label.size = Vector2(vp.x, 0.0)
 	connect_label.size = Vector2(vp.x, connect_label.get_combined_minimum_size().y)
 	connect_label.position = Vector2(0.0, vp.y * 0.5 - connect_label.size.y)
@@ -490,6 +497,7 @@ func _hide_connect() -> void:
 	connect_label.visible = false
 	connect_bar.visible = false
 	_destination = ""
+	_note = ""
 
 
 ## True while the CONNECTING line shows (tests).
@@ -542,6 +550,11 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	m.set_shader_parameter("tile", Vector2(NeonCity.TILE_A, NeonCity.TILE_B))
 	m.set_shader_parameter("scan", Motion.amplitude(SCANLINE_MOTION))
 	m.set_shader_parameter("lattice", Palette.NET_CYAN)
+	# ANIM-R3 B5: a calm wave from the CRT (`jack_dissolve`), not scattered hard cells.
+	var dissolve := Motion.entry(DISSOLVE_MOTION)
+	if dissolve != null:
+		m.set_shader_parameter("spread", clampf(dissolve.amplitude, 0.0, 1.0))
+		m.set_shader_parameter("feather", maxf(dissolve.duration, 0.001))
 	var old := get_tree().current_scene as Control
 	var focus := _jack_focus(old, vp)
 	m.set_shader_parameter("focus", focus)

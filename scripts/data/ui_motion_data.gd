@@ -67,7 +67,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ANIM-R2 combat, events and screens: a hit's absorb, the RAM spend float, the price refusal.
 	&"hit_absorb", &"ram_spend_float", &"price_refusal",
 	# ANIM-R3 city, raid, jack, heat and route: the drop's camera wait moved into the table.
-	&"asset_drop_wait", &"asset_drop_grow", &"forecast_change",
+	&"asset_drop_wait", &"asset_drop_grow", &"forecast_change", &"jack_dissolve",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
