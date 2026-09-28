@@ -285,7 +285,7 @@ func _demo_route_pulse() -> void:
 	for f in DEMO_SETTLE_FRAMES:
 		await get_tree().process_frame
 	for f in DEMO_BAKE_FRAMES:
-		if background.city.showing_current_look() and background.city.camera_settled():
+		if background.city.showing_current_look() and background.city.camera_settled() and background.city.bake_fade >= 1.0:
 			break
 		await get_tree().process_frame
 	print("anim5: route_pulse starts on frame %d" % Engine.get_frames_drawn())

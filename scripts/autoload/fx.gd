@@ -498,12 +498,24 @@ func _show_connect() -> void:
 	connect_fill.size = Vector2(0.0, CONNECT_BAR_H)
 	connect_label.visible = true
 	connect_bar.visible = effects_enabled()
-	connect_label.modulate.a = 0.0
-	connect_bar.modulate.a = 0.0
-	if Motion.run(CONNECT_MOTION, connect_label, ^"modulate:a", 1.0) == null:
-		connect_label.modulate.a = 1.0
-	if Motion.run(CONNECT_MOTION, connect_bar, ^"modulate:a", 1.0) == null:
-		connect_bar.modulate.a = 1.0
+	# Whole at once (words, not an effect); it fades with the cover's reveal (`_set_cover`)
+	# and stays up at least `jack_connect`'s duration so it can be read.
+	connect_label.modulate.a = 1.0
+	connect_bar.modulate.a = 1.0
+	_connect_since = Time.get_ticks_msec()
+
+
+## When the CONNECTING line came up (msec).
+var _connect_since: int = 0
+
+
+## ANIM-R2 R5: waits until the CONNECTING line has shown `jack_connect`'s duration (game
+## time is not needed: it is a reading time).
+func _hold_connect() -> void:
+	if not connect_label.visible or not Motion.live(CONNECT_MOTION):
+		return
+	while Time.get_ticks_msec() - _connect_since < Motion.seconds(CONNECT_MOTION) * 1000.0:
+		await get_tree().process_frame
 
 
 ## The bar's fill: `share` (0..1) of the arrival wait spent.
@@ -594,7 +606,7 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	for f in 2:
 		await get_tree().process_frame
 	await _wait_arrival(func() -> void: _set_cover(1.0, _roll(t0)))
-	_hide_connect()
+	await _hold_connect()
 	var fresh := get_tree().current_scene as Control
 	focus = _jack_focus(fresh, vp)
 	m.set_shader_parameter("focus", focus)
@@ -609,6 +621,7 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	if is_instance_valid(fresh):
 		fresh.scale = Vector2.ONE
 	jack_cover.visible = false
+	_hide_connect()
 	_set_jacking(false)
 
 
@@ -675,6 +688,10 @@ func _fade_switch(on_switch: Callable) -> void:
 
 
 func _set_cover(progress: float, roll: float) -> void:
+	if connect_label.visible and not _cover_opaque:
+		# ANIM-R2 R5: the CONNECTING line goes with the cover as it lifts.
+		connect_label.modulate.a = progress
+		connect_bar.modulate.a = progress
 	var m := jack_cover.material as ShaderMaterial
 	m.set_shader_parameter("progress", progress)
 	m.set_shader_parameter("roll", roll)

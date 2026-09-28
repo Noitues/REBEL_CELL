@@ -1673,11 +1673,11 @@ ease = 1
 trans = 1
 amplitude = 0.0
 
-; ANIM-R2 R5: CONNECTING TO <place> fades in on the jack cover while the arriving screen builds; amplitude = its progress bar's width (px); the bar fills over jack_arrival_wait
+; ANIM-R2 R5: CONNECTING TO <place> on the opaque jack cover while the arriving screen builds: duration = the least it shows (s, to be read), then it lifts with the cover; amplitude = its progress bar's width (px); the bar fills over jack_arrival_wait
 [sub_resource type="Resource" id="m_jack_connect"]
 script = ExtResource("1_entry")
 id = &"jack_connect"
-duration = 0.15
+duration = 0.35
 delay = 0.0
 ease = 1
 trans = 1

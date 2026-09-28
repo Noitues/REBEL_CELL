@@ -3126,7 +3126,7 @@ func _demo_anim(id: String) -> void:
 		await get_tree().process_frame
 	var city := (background.city if background.visible else wireframe.city)
 	for f in DEMO_BAKE_FRAMES:
-		if city.showing_current_look() and city.camera_settled():
+		if city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0:
 			break
 		await get_tree().process_frame
 	if id.begins_with("drag_"):
