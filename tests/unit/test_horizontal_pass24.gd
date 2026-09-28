@@ -57,6 +57,12 @@ func _combat(enemy: StringName = &"collections_agent", scale: float = 1.0) -> Co
 	return scene
 
 
+## Frees a fight a sweep is done with (Test suite optimization: open fights slow every
+## later frame).
+func _close(scene: Control) -> void:
+	scene.get_parent().queue_free()
+
+
 ## A throwaway catalogue in a locale of its own ("xx"): the English catalogue holds the
 ## same keys and would answer first.
 func _translate(pairs: Dictionary) -> void:
@@ -196,6 +202,7 @@ func test_the_nearest_arrow_or_satellite_takes_the_click() -> void:
 					assert_eq(int(z.get("direction", 0)), int(ar["direction"]), "and its own way")
 				for sat in wv.satellites:
 					assert_eq(String(wv.zone_at(wv._satellite_pos(sat)).get("kind", "")), "satellite", "a token's centre is the token")
+		_close(scene)
 
 
 func test_satellite_tokens_and_plates_keep_off_hp_next_and_last_turn() -> void:
@@ -216,6 +223,7 @@ func test_satellite_tokens_and_plates_keep_off_hp_next_and_last_turn() -> void:
 						for b in blocks:
 							assert_false(tr_.intersects(b), "%s rot %d %.1f: token off %s" % [enemy, rot, scale, b])
 							assert_false(plate.intersects(b), "%s rot %d %.1f: plate off %s" % [enemy, rot, scale, b])
+			_close(scene)
 
 
 func _token_rect(host: WheelView, sat: CombatantState) -> Rect2:
