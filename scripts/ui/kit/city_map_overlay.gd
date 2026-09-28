@@ -91,12 +91,25 @@ const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
 const KIND_HOME := "home"
 const KIND_TIER := "tier"
-## Plain names of the kinds (tooltips built here when a node has no tip).
-const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight",
-	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices",
-	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core",
-	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)",
-	KIND_TIER: "Site"}
+## Plain names of the kinds (tooltips built here when a node has no tip; translated where
+## the tip is built, ANIM-R4 H7).
+const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight", # TR
+	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
+	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core", # TR
+	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)", # TR
+	KIND_TIER: "Site"} # TR
+## ANIM-R4 H7: the hover text's own sentences, translated once where the tip is built (they
+## showed in English in every language). Each takes the words noted.
+const TIP_NAMED := "%s: %s." # TR
+const TIP_ONE := "%s." # TR
+const TIP_CLAIMED := "Claimed: part of your network." # TR
+const TIP_SEIZED := "Seized by the corporation." # TR
+const TIP_ELITE := "Elite: a harder fight." # TR
+const TIP_HERE := "You are here." # TR
+const TIP_NEXT := "You can move here now." # TR
+const TIP_OUT := "Out of reach from here." # TR
+const TIP_RAID := "Raid: %s." # TR
+const TIP_THREATS := "Threats here: %s." # TR
 ## H24 K5: each kind's icon is a silhouette and a symbol, and no two kinds share either
 ## silhouette or both (the Modem shop was the Exploit's diamond, the Heat reduction Site
 ## ICE's snowflake). A symbol named like a StatIcon is drawn by StatIcon, so a map icon
@@ -208,7 +221,7 @@ var ring_ease: float:
 	set(v):
 		_mv.put(&"ring_ease", v)
 ## ANIM-R2 R9: the values this map's motion tweens (a tween step redraws only its layer).
-var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0})
+var _mv := MotionValues.new({&"select_reveal": 1.0, &"ring_ease": 1.0, &"drop_t": 1.0, &"drop_stamp_t": 1.0, &"travel_t": 1.0, &"arrive_t": 1.0, &"dim_t": 1.0, &"change_t": 1.0, &"road_t": 1.0})
 ## ANIM-5: an asset landing on a node (`drop_asset`): {"site", "index"} and its fall (0..1).
 var _drop: Dictionary = {}
 var drop_t: float:
@@ -288,6 +301,8 @@ var _blocked_controls: Array[Control] = []
 
 
 func _init(p_city: NeonCity = null) -> void:
+	# ANIM-R4 H7: the hover text is translated where it is built (tip_of); shown as given.
+	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city = p_city
 	_c = self
 	mouse_filter = Control.MOUSE_FILTER_PASS
@@ -737,31 +752,33 @@ func tip_of(id: StringName) -> String:
 	var tip := String(n.get("tip", ""))
 	if tip == "":
 		var name_text := String(n.get("label", ""))
-		var kind_text := String(KIND_NAMES.get(String(n.get("kind", "")), ""))
+		var kind_key := String(KIND_NAMES.get(String(n.get("kind", "")), ""))
+		var kind_text := tr_word(kind_key) if kind_key != "" else ""
 		if name_text != "" and kind_text != "":
-			tip = "%s: %s." % [name_text, kind_text]
+			tip = tr_word(TIP_NAMED) % [name_text, kind_text]
 		elif name_text != "" or kind_text != "":
-			tip = "%s." % (name_text if name_text != "" else kind_text)
+			tip = tr_word(TIP_ONE) % (name_text if name_text != "" else kind_text)
 		else:
 			tip = String(n.get("glyph", String(id)))
 		match String(n.get("mark", "")):
 			MARK_SPRAY:
-				tip += " Claimed: part of your network."
+				tip += " " + tr_word(TIP_CLAIMED)
 			MARK_CROSS:
-				tip += " Seized by the corporation."
+				tip += " " + tr_word(TIP_SEIZED)
 	parts.append(tip)
-	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains("Elite"):
-		parts.append("Elite: a harder fight.")
+	var elite := tr_word(TIP_ELITE)
+	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains(elite.get_slice(":", 0)):
+		parts.append(elite)
 	if n.get("here", false):
-		parts.append("You are here.")
+		parts.append(tr_word(TIP_HERE))
 	elif n.get("next", false):
-		parts.append("You can move here now.")
+		parts.append(tr_word(TIP_NEXT))
 	elif is_dimmed(id):
-		parts.append("Out of reach from here.")
+		parts.append(tr_word(TIP_OUT))
 	if n.has("result"):
-		parts.append("Raid: %s." % String(n["result"]))
+		parts.append(tr_word(TIP_RAID) % String(n["result"]))
 	if markers.has(id):
-		parts.append("Threats here: %s." % ", ".join(markers[id]))
+		parts.append(tr_word(TIP_THREATS) % ", ".join(markers[id]))
 	return "\n".join(parts)
 
 
@@ -1032,9 +1049,14 @@ func _draw_tags() -> void:
 func _draw_hi() -> void:
 	if not _travel.is_empty() and travel_t < 1.0:
 		_draw_travel()
-	if change_t < 1.0 and drop_stamp_t > 0.0:
+	if road_t < 1.0 and drop_stamp_t > 0.0:
+		_draw_road()
+	elif change_t < 1.0 and drop_stamp_t > 0.0:
 		_draw_changes()
 	if city != null:
+		# ANIM-R4 H11d: the stamps keep off the labels and icons (the Site's name stays read).
+		if not city.marks.is_empty():
+			city.stamp_avoid = stamp_avoid_rects()
 		city.draw_marks_on(_hi, false, true)
 	# The selected node's roof outline, drawing on (ANIM-5; ANIM-R2 R9: on this layer).
 	if city != null and selected_id != &"" and _lots.has(selected_id):
@@ -1072,14 +1094,14 @@ func _draw_changes() -> void:
 	var u := change_t
 	var e := Motion.entry(CHANGE_MOTION)
 	var rise := Motion.amplitude(CHANGE_MOTION) * k * (float(Tween.interpolate_value(0.0, 1.0, u, 1.0, e.trans, e.ease)) if e != null else u)
-	var a := clampf((1.0 - u) / CHANGE_FADE_SHARE, 0.0, 1.0)
+	var a := clampf((1.0 - u) / change_fade_share(), 0.0, 1.0)
 	for ch: Dictionary in _drop.get("changes", []):
 		var p := icon_at(StringName(ch["site"]))
 		if p.x == INF:
 			continue
 		var better := int(ch["to"]) >= int(ch["from"])
 		var col := Palette.CELL_ACID if better else Palette.CELL_PINK
-		var text := "%d > %d" % [int(ch["from"]), int(ch["to"])]
+		var text := change_text(int(ch["from"]), int(ch["to"]))
 		var size := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * k
 		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
 		var box := Rect2(at, size)
@@ -1479,15 +1501,19 @@ func ease_rings() -> void:
 ## names the defence under its marker once it has landed (it stays).
 ## ANIM-R3 B5: `changes` ([{"site", "from", "to"}]) are the forecast numbers the drop
 ## changed: once it has landed each shows "25 > 30" rising off its node (`forecast_change`).
-func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "", changes: Array = []) -> void:
+## ANIM-R4 H11b: `road` (Site ids from the defence's node to CORE, the way threats come)
+## carries a pulse from the node to CORE once the defence lands; the forecast numbers it
+## changed rise when the pulse arrives (the drop and the forecast read as cause and effect).
+func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String = "", changes: Array = [], road: Array = []) -> void:
 	var n := _node_dict(site_id)
 	var count := (n.get("assets", []) as Array).size()
 	if n.is_empty() or count == 0:
 		return
-	_drop = {"site": site_id, "index": count - 1, "label": label, "changes": changes}
+	_drop = {"site": site_id, "index": count - 1, "label": label, "changes": changes, "road": road}
 	drop_t = 0.0
 	drop_stamp_t = 0.0
 	change_t = 1.0
+	road_t = 1.0
 	if not is_inside_tree() or not Motion.live(&"asset_drop"):
 		drop_t = 1.0
 		drop_stamp_t = 1.0
@@ -1495,6 +1521,8 @@ func drop_asset(site_id: StringName, ready: Callable = Callable(), label: String
 		return
 	if not changes.is_empty() and Motion.live(CHANGE_MOTION):
 		change_t = 0.0
+		if road.size() > 1 and Motion.live(ROAD_MOTION):
+			road_t = 0.0
 	if ready.is_valid() and not bool(ready.call()):
 		_drop["waiting"] = true
 		_drop["ready"] = ready
@@ -1511,8 +1539,68 @@ const CHANGE_MOTION := &"forecast_change"
 const GROW_MOTION := &"asset_drop_grow"
 ## The forecast change's lettering at text scale 1.0 (px).
 const CHANGE_FONT := 20
-## The share of its time the forecast change spends fading out (its last third).
-const CHANGE_FADE_SHARE := 1.0 / 3.0
+## ANIM-R4 H9: the share of its time the forecast change spends fading out, from the motion
+## table (`forecast_change_fade`'s amplitude; it was CHANGE_FADE_SHARE, 1/3 inline).
+const CHANGE_FADE_MOTION := &"forecast_change_fade"
+## ANIM-R4 H11b: the pulse along the threat road from the new defence to CORE, and its
+## lettering-free look: the dot's radius and the lit road's width (px x screen_k).
+const ROAD_MOTION := &"forecast_road_pulse"
+const ROAD_DOT := 7.0
+const ROAD_WIDTH := 4.0
+var road_t: float:
+	get:
+		return _mv.value(&"road_t")
+	set(v):
+		_mv.put(&"road_t", v)
+
+
+## ANIM-R4 H9: the share of the forecast change's time spent fading (0..1).
+static func change_fade_share() -> float:
+	return clampf(Motion.amplitude(CHANGE_FADE_MOTION), 0.01, 1.0)
+
+
+## ANIM-R4 H11b: a forecast change as the screens write it: "45 → 50 ▲" (a gain), "50 → 45 ▼"
+## (a loss), "45 → 45" (none).
+static func change_text(from: int, to: int) -> String:
+	return "%d → %d%s" % [from, to, " ▲" if to > from else (" ▼" if to < from else "")]
+
+
+## ANIM-R4 H11b: the drop's road to CORE in local px (the streets between its Sites).
+func road_points() -> PackedVector2Array:
+	var road: Array = _drop.get("road", [])
+	var pts := PackedVector2Array()
+	for i in road.size():
+		var at := icon_at(StringName(road[i]))
+		if at.x == INF:
+			return PackedVector2Array()
+		if i > 0:
+			for p in route_between(StringName(road[i - 1]), StringName(road[i])):
+				pts.append(_to_local(p))
+		pts.append(at)
+	return pts
+
+
+## ANIM-R4 H11b: the pulse on its way to CORE: the road lit behind it, the dot at its head.
+func _draw_road() -> void:
+	var pts := road_points()
+	if pts.size() < 2:
+		return
+	var k := _k()
+	var e := Motion.entry(ROAD_MOTION)
+	var u: float = float(Tween.interpolate_value(0.0, 1.0, clampf(road_t, 0.0, 1.0), 1.0, e.trans, e.ease)) if e != null else road_t
+	var tail := maxf(0.0, u - Motion.amplitude(ROAD_MOTION))
+	var lit := PackedVector2Array()
+	var steps := 16
+	for i in steps + 1:
+		lit.append(_along(pts, lerpf(tail, u, float(i) / steps)))
+	_hi.draw_polyline(lit, Color(0, 0, 0, 0.7), (ROAD_WIDTH + 3.0) * k, true)
+	_hi.draw_polyline(lit, Color(Palette.CELL_ACID, 0.9), ROAD_WIDTH * k, true)
+	var head := _along(pts, u)
+	_hi.draw_circle(head, (ROAD_DOT + 2.0) * k, Color(0, 0, 0, 0.8))
+	_hi.draw_circle(head, ROAD_DOT * k, Palette.CELL_ACID)
+	_hi.draw_circle(head, ROAD_DOT * 0.45 * k, Palette.PAPER)
+
+
 var change_t: float:
 	get:
 		return _mv.value(&"change_t")
@@ -1546,6 +1634,19 @@ func _on_dropped_down() -> void:
 		return
 	if Motion.run(&"asset_drop_stamp", _mv, ^"drop_stamp_t", 1.0) == null:
 		drop_stamp_t = 1.0
+	if road_t < 1.0:
+		# ANIM-R4 H11b: the pulse runs the road to CORE first, then the numbers rise.
+		var tw := Motion.run(ROAD_MOTION, _mv, ^"road_t", 1.0)
+		if tw != null:
+			tw.finished.connect(_start_change)
+			return
+		road_t = 1.0
+	_start_change()
+
+
+func _start_change() -> void:
+	if not is_instance_valid(_mv):
+		return
 	if change_t < 1.0 and Motion.run(CHANGE_MOTION, _mv, ^"change_t", 1.0) == null:
 		change_t = 1.0
 
@@ -1765,6 +1866,21 @@ func unplaced_with_room() -> Array[StringName]:
 
 
 ## The labels drawn now: node id -> Rect2 (local px). Threat tags are keyed "<id>#threats".
+## ANIM-R4 H11d: the rects a territory stamp keeps clear of, in the city's local px: every
+## node label and icon body.
+func stamp_avoid_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var xf := get_transform()
+	for r: Rect2 in label_rects().values():
+		out.append(xf * r)
+	var at := _icon_positions()
+	for n in nodes:
+		if at.has(n["id"]):
+			var r := icon_radius(n)
+			out.append(xf * Rect2(Vector2(at[n["id"]]) - Vector2(r, r), Vector2(r, r) * 2.0))
+	return out
+
+
 func label_rects() -> Dictionary:
 	var out := {}
 	for l: Dictionary in _layout_labels():
@@ -1927,7 +2043,7 @@ func _place_labels() -> Array[Dictionary]:
 static func _label_box(lines: PackedStringArray, f: Font, fs: int, pad: float, line_h: float) -> Vector2:
 	var w := 0.0
 	for line in lines:
-		w = maxf(w, f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		w = maxf(w, Palette.mono_for(line).get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
 	return Vector2(w + pad * 2.0, line_h * lines.size() + pad * 2.0)
 
 
@@ -2183,7 +2299,8 @@ func _tag_box(l: Dictionary) -> void:
 	_c.draw_rect(Rect2(rect.position, Vector2(2.0 * _k(), rect.size.y)), col)
 	var y := rect.position.y + pad + f.get_ascent(fs)
 	for line in l["lines"]:
-		_c.draw_string(f, Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+		# ANIM-R4 H11b: a result line "50 → 40 HOLDS" draws its arrow from the fallback face.
+		_c.draw_string(Palette.mono_for(line), Vector2(rect.position.x + pad, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
 		y += f.get_height(fs)
 
 

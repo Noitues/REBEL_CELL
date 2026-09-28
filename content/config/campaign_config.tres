@@ -65,103 +65,115 @@ value = 25.0
 
 [sub_resource type="Resource" id="ht_10"]
 script = ExtResource("2_ht")
+id = &"heat_10"
 heat = 10
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: the next Modem carries one less item."
+event_text = "The next netrun's Modem carries one item fewer."
 
 [sub_resource type="Resource" id="ht_20"]
 script = ExtResource("2_ht")
+id = &"heat_20"
 heat = 20
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: an extra elite patrols the next netrun."
+event_text = "An extra elite patrols the next netrun."
 
 [sub_resource type="Resource" id="ht_25"]
 script = ExtResource("2_ht")
+id = &"heat_25"
 heat = 25
 kind = 1
 event_raid = ExtResource("raid_25")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_elites")])
-event_text = "Raid. While Heat stays at 25 or above, elites are more frequent."
+event_text = "The corporation raids the Cell. While Heat stays at 25 or more, elites are more frequent."
 
 [sub_resource type="Resource" id="ht_30"]
 script = ExtResource("2_ht")
+id = &"heat_30"
 heat = 30
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: the next Modem carries one less item."
+event_text = "The next netrun's Modem carries one item fewer."
 
 [sub_resource type="Resource" id="ht_40"]
 script = ExtResource("2_ht")
+id = &"heat_40"
 heat = 40
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: an extra elite patrols the next netrun."
+event_text = "An extra elite patrols the next netrun."
 
 [sub_resource type="Resource" id="ht_50"]
 script = ExtResource("2_ht")
+id = &"heat_50"
 heat = 50
 kind = 1
 event_raid = ExtResource("raid_50")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_resistance")])
-event_text = "Raid. While Heat stays at 50 or above, all enemies gain +1 resistance."
+event_text = "The corporation raids the Cell. While Heat stays at 50 or more, every enemy gains +1 resistance."
 
 [sub_resource type="Resource" id="ht_60"]
 script = ExtResource("2_ht")
+id = &"heat_60"
 heat = 60
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: the next Modem carries one less item."
+event_text = "The next netrun's Modem carries one item fewer."
 
 [sub_resource type="Resource" id="ht_70"]
 script = ExtResource("2_ht")
+id = &"heat_70"
 heat = 70
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: an extra elite patrols the next netrun."
+event_text = "An extra elite patrols the next netrun."
 
 [sub_resource type="Resource" id="ht_75"]
 script = ExtResource("2_ht")
+id = &"heat_75"
 heat = 75
 kind = 1
 event_raid = ExtResource("raid_75")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_raid_strength")])
-event_text = "Raid. While Heat stays at 75 or above, raids are 25% stronger."
+event_text = "The corporation raids the Cell. While Heat stays at 75 or more, raids are 25% stronger."
 
 [sub_resource type="Resource" id="ht_80"]
 script = ExtResource("2_ht")
+id = &"heat_80"
 heat = 80
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: the next Modem carries one less item."
+event_text = "The next netrun's Modem carries one item fewer."
 
 [sub_resource type="Resource" id="ht_90"]
 script = ExtResource("2_ht")
+id = &"heat_90"
 heat = 90
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_extra_elite")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "Netrun complication: an extra elite patrols the next netrun."
+event_text = "An extra elite patrols the next netrun."
 
 [sub_resource type="Resource" id="ht_100"]
 script = ExtResource("2_ht")
+id = &"heat_100"
 heat = 100
 kind = 2
 event_raid = ExtResource("raid_purge")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "PURGE. The largest raid of the campaign."
+event_text = "PURGE: the corporation sends the largest raid of the campaign."
 
 ; ---- ICE ladder (GDD 11.9): 20 cumulative levels, one change per level ----
 

@@ -3,7 +3,7 @@ extends Control
 ## A forecast, not a result (H22 #9: the raid setup's solid BREACHED stamp read as if the
 ## raid had already run, beside rows such as "50 > 40 HOLDS"). Drawn like combat's dashed
 ## NEXT plate: a dashed ring, a small caption over the verdict ("IF THE RAID RUNS NOW:")
-## and the verdict ("HOME HIT"), the verdict's icon above it. The tooltip says it is a
+## and the verdict ("HOME -5", "ALL HOLD"), the verdict's icon above it. The tooltip says it is a
 ## projection and how to change it. Display only (no focus, clicks pass).
 ## H23 S18: icon, caption and verdict are stacked from their measured heights and centred
 ## in the ring (fixed shares of the radius let the icon sit on the caption at 1.6), the
@@ -60,9 +60,16 @@ func shown_caption() -> String:
 	return tr(caption)
 
 
-## The verdict as drawn: translated (H23 S16).
+## The verdict as drawn: translated (H23 S16). ANIM-R4 H3: a verdict built from its parts
+## (RaidVerdict: "HOME -5\n1 DISABLED") comes translated and is shown as given; a key a
+## catalogue has ("ALL HOLD") is translated here.
 func shown_verdict() -> String:
-	return tr(verdict)
+	return tr(verdict) if TextDb.has_message(verdict) else verdict
+
+
+## The verdict's lines (ANIM-R4 H3: one per loss).
+func verdict_lines() -> PackedStringArray:
+	return shown_verdict().split("\n")
 
 
 ## The caption's font size: the text scale's, shrunk to fit the ring's width.
@@ -73,9 +80,13 @@ func caption_size() -> int:
 	return fs
 
 
-## The verdict's font size: the text scale's, shrunk to fit the ring's width.
+## The verdict's font size: the text scale's, shrunk to fit the ring's width (its widest
+## line).
 func verdict_size() -> int:
-	return _fit(shown_verdict(), Palette.display(), VERDICT_SIZE)
+	var fs := roundi(VERDICT_SIZE * Settings.text_scale)
+	for l in verdict_lines():
+		fs = mini(fs, _fit(l, Palette.display(), VERDICT_SIZE))
+	return fs
 
 
 func _fit(text: String, font: Font, base: int) -> int:
@@ -104,7 +115,8 @@ func layout() -> Dictionary:
 	var ir := r * ICON_SHARE if icon_kind != &"" else 0.0
 	var gap := cf.get_height(cs) * STACK_GAP
 	var cap_h := cf.get_height(cs) * lines.size()
-	var ver_h := vf.get_height(vs)
+	var ver_lines := verdict_lines().size()
+	var ver_h := vf.get_height(vs) * ver_lines
 	var total := (ir * 2.0 + gap if ir > 0.0 else 0.0) + cap_h + gap + ver_h
 	var room := r * 2.0 * STACK_ROOM
 	if total > room and total > 0.0:
@@ -115,7 +127,7 @@ func layout() -> Dictionary:
 		ir *= k
 		gap = cf.get_height(cs) * STACK_GAP
 		cap_h = cf.get_height(cs) * lines.size()
-		ver_h = vf.get_height(vs)
+		ver_h = vf.get_height(vs) * ver_lines
 		total = (ir * 2.0 + gap if ir > 0.0 else 0.0) + cap_h + gap + ver_h
 	var y := c.y - total * 0.5
 	var width := r * 2.0 - INSET * 2.0
@@ -152,4 +164,7 @@ func _draw() -> void:
 		y += cf.get_height(cs)
 	var vs := int(l["verdict_size"])
 	var ver: Rect2 = l["verdict"]
-	draw_string(Palette.display(), Vector2(ver.position.x, ver.position.y + Palette.display().get_ascent(vs)), shown_verdict(), HORIZONTAL_ALIGNMENT_CENTER, ver.size.x, vs, color)
+	var vy := ver.position.y + Palette.display().get_ascent(vs)
+	for line in verdict_lines():
+		draw_string(Palette.display(), Vector2(ver.position.x, vy), line, HORIZONTAL_ALIGNMENT_CENTER, ver.size.x, vs, color)
+		vy += Palette.display().get_height(vs)

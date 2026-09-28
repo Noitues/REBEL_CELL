@@ -688,6 +688,14 @@ const MARK_PAD := 6.0
 const MARK_FILL := 0.2
 const MARK_HATCH := 9.0
 const MARK_HATCH_ALPHA := 0.5
+## ANIM-R4 H11d: what a map keeps clear for its words (its node labels and icons, this city's
+## local px): a CLAIMED / SEIZED stamp takes the first spot round its Site that covers none
+## of them (above, below, right, left; the least covered when all do), so it never hides the
+## Site's name. Set by the map before it draws the stamps; [] draws them above the Site.
+var stamp_avoid: Array[Rect2] = []
+## The stamp's tilt (degrees) and its gap from what it keeps clear of (screen px).
+const MARK_TILT := -6.0
+const MARK_GAP := 4.0
 
 
 ## ANIM-R1 M5: a territory change from `prev` to `now` ends in lasting marks: an outline
@@ -736,18 +744,63 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 		if not stamps:
 			continue
 		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
+		# ANIM-R4 H11d: at a spot clear of the map's labels (stamp_rect).
 		var word := CityMapOverlay.tr_word(String(m["word"]))
-		var size := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(MARK_PAD, MARK_PAD) * 2.0 * k
-		var top := c - Vector2(0, TILE_B * MARK_RADIUS + MARK_LIFT * k)
-		_marks_layer.draw_line(c - Vector2(0, TILE_B * MARK_RADIUS), top, Color(col, 0.9), 2.0 * k)
+		var spot := stamp_rect(m)
+		var anchor := spot.get_center()
+		var edge := c + (anchor - c).normalized() * Vector2(TILE_A, TILE_B).length() * MARK_RADIUS * 0.5 if anchor != c else c
+		_marks_layer.draw_line(edge, anchor, Color(col, 0.9), 2.0 * k)
 		var grow := lerpf(Motion.amplitude(&"influence_mark"), 1.0, mark_t) if mark_t < 1.0 else 1.0
 		var alpha := clampf(mark_t * 2.0, 0.0, 1.0)
-		_marks_layer.draw_set_transform(top, deg_to_rad(-6.0), Vector2.ONE * grow)
-		var box := Rect2(Vector2(-size.x * 0.5, -size.y), size)
+		_marks_layer.draw_set_transform(anchor, deg_to_rad(MARK_TILT), Vector2.ONE * grow)
+		var box := Rect2(-spot.size * 0.5, spot.size)
 		_marks_layer.draw_rect(box, Color(Palette.NIGHT_SKY, 0.9 * alpha))
 		_marks_layer.draw_rect(box, Color(col, alpha), false, 3.0 * k)
 		_marks_layer.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
 		_marks_layer.draw_set_transform(Vector2.ZERO)
+
+
+## ANIM-R4 H11d: where mark `m`'s stamp sits (this city's local px, unrotated): the first of
+## above, below, right and left of its Site whose box (tilted, grown by MARK_GAP) covers none
+## of `stamp_avoid`; the least covered one when every spot covers something.
+func stamp_rect(m: Dictionary) -> Rect2:
+	var k := 1.0 / maxf(0.001, scale.x)
+	var fs := maxi(1, roundi(MARK_FONT * Settings.text_scale * k))
+	var font := Palette.display()
+	var word := CityMapOverlay.tr_word(String(m["word"]))
+	var size := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(MARK_PAD, MARK_PAD) * 2.0 * k
+	var at: Vector2 = m["at"]
+	var c := grid_to_local(at.x + 0.5, at.y + 0.5)
+	var ry := TILE_B * MARK_RADIUS
+	var rx := TILE_A * MARK_RADIUS * 0.5
+	var lift := MARK_LIFT * k
+	var spots: Array[Rect2] = [
+		Rect2(Vector2(c.x - size.x * 0.5, c.y - ry - lift - size.y), size),
+		Rect2(Vector2(c.x - size.x * 0.5, c.y + ry * 0.5 + lift * 0.5), size),
+		Rect2(Vector2(c.x + rx + lift * 0.5, c.y - size.y * 0.5), size),
+		Rect2(Vector2(c.x - rx - lift * 0.5 - size.x, c.y - size.y * 0.5), size),
+	]
+	var best := spots[0]
+	var least := INF
+	for spot in spots:
+		var tilted := _tilted_bounds(spot, MARK_TILT).grow(MARK_GAP * k)
+		var covered := 0.0
+		for r in stamp_avoid:
+			if tilted.intersects(r):
+				covered += tilted.intersection(r).get_area()
+		if covered <= 0.0:
+			return spot
+		if covered < least:
+			least = covered
+			best = spot
+	return best
+
+
+## The bounding box of `r` turned by `degrees` round its centre.
+static func _tilted_bounds(r: Rect2, degrees: float) -> Rect2:
+	var a := deg_to_rad(absf(degrees))
+	var s := Vector2(r.size.x * cos(a) + r.size.y * sin(a), r.size.x * sin(a) + r.size.y * cos(a))
+	return Rect2(r.get_center() - s * 0.5, s)
 
 
 ## ANIM-R3 B6: diagonal hatch lines across the ellipse of radii `r` round `c` (a claimed

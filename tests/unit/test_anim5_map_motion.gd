@@ -180,7 +180,8 @@ func test_playout_ends_on_the_resolved_campaign_and_speed_scales_it() -> void:
 	var forecast := hq.find_child("PlayoutForecast", true, false) as ForecastStamp
 	assert_not_null(forecast)
 	assert_true(forecast.resolved, "the forecast resolved into the verdict")
-	assert_eq(forecast.verdict, hq.VERDICT_HOLDS if bool(r["won"]) else (hq.VERDICT_LOST if bool(r["campaign_lost"]) else hq.VERDICT_HIT))
+	# ANIM-R4 H3 (updated on purpose): the one verdict names the losses.
+	assert_eq(forecast.verdict, RaidVerdict.of_result(r))
 	assert_null(wireframe_pin(hq), "the result's tint is let through at the end")
 	assert_eq(c.to_dict(), resolved, "playing the raid changed no game state")
 
@@ -356,6 +357,14 @@ func test_a_netrun_move_ends_with_the_marker_on_the_chosen_node() -> void:
 
 # --- Jack in / out ------------------------------------------------------------------------------------
 
+## The frames' deltas while a jack plays (test_jack_transitions_never_show_both_scenes).
+var _deltas: Array[float] = []
+
+
+func _record_delta() -> void:
+	_deltas.append(get_process_delta_time())
+
+
 func test_jack_transitions_never_show_both_scenes() -> void:
 	var seen := []
 	await Fx.jack_in(func() -> void: seen.append(Fx.cover_opaque()))
@@ -378,11 +387,12 @@ func test_jack_transitions_never_show_both_scenes() -> void:
 	# The fade's length in game time (the frames' deltas), less its longest frame: wall time
 	# failed on a busy machine, where one stalled frame outlasts the margin (Test suite
 	# optimization).
-	var deltas: Array[float] = []
-	var tick := func() -> void: deltas.append(get_process_delta_time())
-	get_tree().process_frame.connect(tick)
+	# ANIM-R4 H8: a method on the frame signal, not a held lambda (the frame-lambda rule).
+	_deltas.clear()
+	get_tree().process_frame.connect(_record_delta)
 	await Fx.jack_in(func() -> void: seen.append([Fx.cover_opaque(), Fx.transition_rect.color.a]))
-	get_tree().process_frame.disconnect(tick)
+	get_tree().process_frame.disconnect(_record_delta)
+	var deltas := _deltas.duplicate()
 	# Less its FADE_OVERHEAD_FRAMES longest frames (Test suite: bounded waits): besides the
 	# two fades' own time the switch holds two frames and each fade ends on a frame that
 	# overshoots it; on a loaded machine those frames alone can outlast the margin.

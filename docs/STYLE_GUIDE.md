@@ -324,8 +324,23 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   first node) and the next choices; "(same as N)" means the same whole road, and other
   choices show the icons of what only they reach. The jack dissolves in a calm wave from the
   CRT and names the run (and a raid that interrupts it).
+- **One verdict, one notation (ANIM-R4)**: a raid has one verdict everywhere (the forecast
+  stamps, the playout's result, the report): ALL HOLD only when nothing is lost, else its
+  losses one per line (HOME -5, 1 DISABLED, 1 SEIZED), CAMPAIGN LOST when home falls; never
+  "HOME HIT". Home's banner uses the same words (HOME -5 · HOLDS). Every change of a number
+  reads `a → b` (forecast floats add ▲ green for a gain, ▼ pink for a loss); the feed says a
+  hit's HP before and after, Heat's from and to, and the top bar's Heat and RAIDS move only
+  with the line that moves them. A threat token stands on an opaque dark halo with a paper rim
+  (never its glow over a pink node). A dropped defence sends a pulse along the threat road to
+  CORE before the numbers it changed rise. A raid that interrupts a jack is a large amber
+  stamp naming the corporation, held at least a second. The Heat banner says the Heat, the band
+  and its threshold (HEAT 30 · NOTICED (25+)); the band word follows the number shown; the
+  whole tilted banner stays on its poster. A route move shows the new choices (map labels and
+  ROUTE window) as it starts; the walked route stays as a faint solid trail. A CLAIMED /
+  SEIZED stamp takes the first spot round its Site that covers no label.
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5", "— ANIM-R1 campaign and
-  screens", "— ANIM-R3 city, raid, jack, heat and route"); strips: `docs/timeline/motion/`.
+  screens", "— ANIM-R3 city, raid, jack, heat and route", "— ANIM-R4 city, raid, heat, route
+  and HQ"); strips: `docs/timeline/motion/`.
 
 ### 5.4 Drag and drop, HQ side and in the run (the Animation pass, ANIM-4 / ANIM-4b)
 - **Anything that moves between places drags**, with the same feel as a combat card

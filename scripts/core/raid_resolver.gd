@@ -65,7 +65,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		if waves.has(step):
 			for t in waves[step]:
 				threats.append(t)
-				result.events.append({"type": "threat_enters", "step": step, "threat": t["id"], "site": t["site"],
+				result.events.append({"type": "threat_enters", "step": step, "threat": t["id"], "threat_content": t["content_id"], "site": t["site"],
 					"text": "Step %d: %s enters at %s." % [step, t["name"], t["site"]]})
 		if _active(threats).is_empty():
 			if waves.is_empty() or step > _last_wave_step(waves):
@@ -223,11 +223,11 @@ static func _prepare_links(waves: Dictionary, grid: GridState, grid_data: CityGr
 						if not grid.is_link_open(entry, other):
 							grid.open_link(entry, other)
 							opened = true
-							result.events.append({"type": "link_altered", "step": 0, "threat": t["id"], "a": entry, "b": other,
+							result.events.append({"type": "link_altered", "step": 0, "threat": t["id"], "threat_content": t["content_id"], "a": entry, "b": other,
 								"text": "Setup: %s cuts a new route %s - %s." % [t["name"], entry, other]})
 							break
 				if not opened:
-					result.events.append({"type": "link_altered", "step": 0, "threat": t["id"], "a": entry, "b": &"",
+					result.events.append({"type": "link_altered", "step": 0, "threat": t["id"], "threat_content": t["content_id"], "a": entry, "b": &"",
 						"text": "Setup: %s finds no locked route to open near %s." % [t["name"], entry]})
 			if bool(t.get("freezes_edges", false)):
 				var best: StringName = &""
@@ -239,7 +239,7 @@ static func _prepare_links(waves: Dictionary, grid: GridState, grid_data: CityGr
 						best = n
 				if best != &"":
 					grid.freeze_link(grid.home_site_id, best)
-					result.events.append({"type": "link_frozen", "step": 0, "threat": t["id"], "a": grid.home_site_id, "b": best,
+					result.events.append({"type": "link_frozen", "step": 0, "threat": t["id"], "threat_content": t["content_id"], "a": grid.home_site_id, "b": best,
 						"text": "Setup: %s freezes the link %s - %s for this raid." % [t["name"], grid.home_site_id, best]})
 
 
@@ -313,7 +313,7 @@ static func _move_threats(threats: Array[Dictionary], grid: GridState, grid_data
 	for t in _active(threats):
 		if t["hold"] > 0:
 			t["hold"] -= 1
-			result.events.append({"type": "held", "step": step, "threat": t["id"], "site": t["site"],
+			result.events.append({"type": "held", "step": step, "threat": t["id"], "threat_content": t["content_id"], "site": t["site"],
 				"text": "Step %d: %s is held at %s (%d more)." % [step, t["name"], t["site"], t["hold"]]})
 			continue
 		var target := _target_of(t, grid, grid_data, lookup)
@@ -336,7 +336,7 @@ static func _move_threats(threats: Array[Dictionary], grid: GridState, grid_data
 		if moved > 0:
 			# ANIM-5: the playout reads where the threat is headed and whether a DECOY pulled it
 			# (the same facts the routing used; no rule reads them).
-			result.events.append({"type": "move", "step": step, "threat": t["id"], "from": from, "to": t["site"],
+			result.events.append({"type": "move", "step": step, "threat": t["id"], "threat_content": t["content_id"], "from": from, "to": t["site"],
 				"target": target, "decoy": decoyed,
 				"text": "Step %d: %s moves %s -> %s (toward %s)." % [step, t["name"], from, t["site"], target]})
 
@@ -353,7 +353,7 @@ static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: C
 			if hold > 0 and not t["held_by"].has(key):
 				t["held_by"].append(key)
 				t["hold"] = hold
-				result.events.append({"type": "station_hold", "step": step, "threat": t["id"], "site": site,
+				result.events.append({"type": "station_hold", "step": step, "threat": t["id"], "threat_content": t["content_id"], "site": site,
 					"text": "Step %d: the operative on %s ghosts %s for %d step(s)." % [step, site, t["name"], hold]})
 				continue
 		# Built-in assets (a home variant's lock, a node's own defence) hold too, then
@@ -369,7 +369,7 @@ static func _hold_threats(threats: Array[Dictionary], grid: GridState, lookup: C
 				continue
 			t["held_by"].append(key)
 			t["hold"] = asset.delay_steps
-			result.events.append({"type": "ice_lock", "step": step, "threat": t["id"], "site": site,
+			result.events.append({"type": "ice_lock", "step": step, "threat": t["id"], "threat_content": t["content_id"], "site": site,
 				"text": "Step %d: ICE Lock on %s holds %s for %d step(s)." % [step, site, t["name"], asset.delay_steps]})
 			break
 
@@ -421,10 +421,10 @@ static func _fire_assets(campaign: CampaignState, threats: Array[Dictionary], gr
 				if target.is_empty():
 					break
 				target["integrity"] -= damage
-				result.events.append({"type": "shot", "step": step, "site": site, "asset": gun.id, "threat": target["id"], "damage": damage,
+				result.events.append({"type": "shot", "step": step, "site": site, "asset": gun.id, "threat": target["id"], "threat_content": target["content_id"], "damage": damage,
 					"text": "Step %d: %s at %s hits %s for %d (%d left)." % [step, gun.display_name if gun.display_name != "" else String(gun.id), site, target["name"], damage, maxi(0, target["integrity"])]})
 				if target["integrity"] <= 0:
-					result.events.append({"type": "threat_destroyed", "step": step, "threat": target["id"], "text": "Step %d: %s destroyed." % [step, target["name"]]})
+					result.events.append({"type": "threat_destroyed", "step": step, "threat": target["id"], "threat_content": target["content_id"], "text": "Step %d: %s destroyed." % [step, target["name"]]})
 
 
 ## Every station bonus on `site` (GDD 5.2; a Firewall Relay also takes each adjacent
@@ -558,7 +558,7 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 		if site == grid.home_site_id:
 			grid.home_integrity = maxi(0, grid.home_integrity - damage)
 			t["reached_home"] = true
-			result.events.append({"type": "home_hit", "step": step, "threat": t["id"], "damage": damage,
+			result.events.append({"type": "home_hit", "step": step, "threat": t["id"], "threat_content": t["content_id"], "damage": damage,
 				"text": "Step %d: %s reaches the HOME SERVER: -%d integrity (%d left)." % [step, t["name"], damage, grid.home_integrity]})
 			continue
 		if not grid.is_claimed(site):

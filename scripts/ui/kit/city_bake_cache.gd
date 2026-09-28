@@ -340,6 +340,29 @@ static func _gpu_copy(vp: SubViewport) -> Texture2D:
 static var gpu_copy: bool = true
 
 
+## ANIM-R4 H10: the bake's picture as the viewport's own render target, the viewport kept
+## (never updated again; its painter and geometry go): no second texture is made or filled
+## in the landing frame. Null when the renderer has no RenderingDevice (the Compatibility
+## renderer) or with the GPU path off.
+static func _keep_viewport(vp: SubViewport) -> Texture2D:
+	if not gpu_copy or not keep_viewports:
+		return null
+	if RenderingServer.get_rendering_device() == null:
+		return null
+	var src := RenderingServer.texture_get_rd_texture(vp.get_texture().get_rid())
+	if not src.is_valid():
+		return null
+	vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	var tex := BakedTexture.new()
+	tex.texture_rd_rid = src
+	tex.held = vp
+	return tex
+
+
+## Off switch for keeping the viewports (the copy path then runs, as before ANIM-R4).
+static var keep_viewports: bool = true
+
+
 static func _holder() -> Node:
 	var tree := Engine.get_main_loop() as SceneTree
 	var holder := tree.root.get_node_or_null(HOLDER_NAME)
@@ -423,7 +446,10 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 		if not is_same(_live.get(key), rec):
 			return
 	var e := {"look": look, "region": painter.painter_region, "scale": painter.scale.x}
-	var tex: Texture2D = _gpu_copy(vp) if is_instance_valid(vp) else null
+	var tex: Texture2D = _keep_viewport(vp) if is_instance_valid(vp) else null
+	var kept := tex != null
+	if tex == null and is_instance_valid(vp):
+		tex = _gpu_copy(vp)
 	if tex == null and is_instance_valid(vp):
 		var img: Image = vp.get_texture().get_image()
 		if img != null and not img.is_empty():
@@ -434,7 +460,11 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 		e["texture"] = tex
 		e.merge(painter.overlay_data())
 	painter.free_chunks()
-	if is_instance_valid(vp):
+	if kept:
+		# The viewport stays (its target is the picture); the painter goes.
+		vp.remove_child(painter)
+		painter.queue_free()
+	elif is_instance_valid(vp):
 		vp.queue_free()
 	_live.erase(key)
 	store(key, e)

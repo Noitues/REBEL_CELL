@@ -33,14 +33,19 @@ const FROST_RING := 13.0
 const HOME_BAR := Vector2(64, 7)
 const HOME_BAR_GAP := 8.0
 const PULL_DASH := 6.0
-## A threat token is the map's marker this much bigger, with a glow this much wider.
+## A threat token is the map's marker this much bigger.
 ## ANIM-R2 R6: bigger again, and high-contrast whatever the corporation: a white diamond
 ## ringed in THREAT_RED on a dark keyline (Solace's green threats were green on a green
 ## city), the corporation's colour only as a dot at its heart; a moving token leaves a
 ## fading red trail of TRAIL_DOTS dots, TRAIL_STEP of the move apart.
 const TOKEN_SCALE := 3.0
-const TOKEN_GLOW := 1.8
 const THREAT_RED := Color("#FF2A3D")
+## ANIM-R4 H11a: the token stands on a dark halo ringed in paper, whatever the node under it
+## (its red glow over a pink node read pinkish on pink): the halo (radius x the token), its
+## colour and the rim's width (px x screen_k).
+const TOKEN_HALO := 1.45
+const TOKEN_HALO_COLOR := Color(0.02, 0.02, 0.05, 1.0)
+const TOKEN_RIM := 2.0
 const TRAIL_DOTS := 7
 const TRAIL_STEP := 0.05
 ## ANIM-R2 R6: the raid's result banner ("HOME -5", "HOME HOLDS"): lettering and padding
@@ -51,11 +56,12 @@ const BANNER_LIFT := 96.0
 const STAGGER_MOTION := &"raid_outcome_stagger"
 const BANNER_MOTION := &"raid_result_banner"
 ## The banner's words (translated when drawn). ANIM-R3 B5: the banner is home's one verdict
-## (home gets no stamp of its own): what it lost and the resolved outcome, or BREACHED when
-## the home server fell (the campaign is lost).
-const BANNER_HOME := "HOME %s - HOLDS" # TR
+## (home gets no stamp of its own): what it lost and the resolved outcome. ANIM-R4 H3: in
+## the raid verdict's words (RaidVerdict): "HOME -5 · HOLDS" (never "HOME HIT"), and
+## CAMPAIGN LOST, the verdict's own word, when the home server fell.
+const BANNER_HOME := "HOME %s · HOLDS" # TR
 const BANNER_HOLDS := "HOME HOLDS" # TR
-const BANNER_BREACHED := "HOME BREACHED" # TR
+const BANNER_BREACHED := RaidVerdict.LOST
 ## ANIM-R3 B5: gap between the banner and what it keeps clear of, and from the map's edge
 ## (screen px x screen_k); numbers on one node stack this many of their lines apart.
 const BANNER_CLEAR := 8.0
@@ -630,7 +636,9 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 				var fade := 1.0 - float(q) / (TRAIL_DOTS + 1)
 				draw_circle(tp, s * 0.45 * fade, Color(THREAT_RED, 0.75 * fade * alpha))
 	var dia := _diamond(p, s)
-	draw_circle(p, s * TOKEN_GLOW, Color(THREAT_RED, 0.3 * alpha))
+	# ANIM-R4 H11a: a dark halo with a paper rim under the diamond: high contrast on any node.
+	draw_circle(p, s * TOKEN_HALO, Color(TOKEN_HALO_COLOR, TOKEN_HALO_COLOR.a * alpha))
+	draw_arc(p, s * TOKEN_HALO, 0, TAU, 24, Color(Palette.PAPER, alpha), TOKEN_RIM * k)
 	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(0, 0, 0, 0.9 * alpha), 6.0 * k)
 	draw_colored_polygon(dia, Color(Palette.PAPER, alpha))
 	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(THREAT_RED, alpha), 3.0 * k)

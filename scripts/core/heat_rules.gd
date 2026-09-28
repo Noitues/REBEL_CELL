@@ -35,9 +35,9 @@ static func add_heat(campaign: CampaignState, delta: int, config: CampaignConfig
 	delta = scaled_delta(campaign, delta, config)
 	var applied := campaign.add_heat(delta, config)
 	if applied == 0 and delta != 0:
-		events.append({"type": "heat", "amount": 0, "reason": reason, "text": "Heat unchanged (%s) at %d." % [reason, campaign.heat]})
+		events.append({"type": "heat", "amount": 0, "reason": reason, "before": before, "after": campaign.heat, "text": "Heat unchanged (%s) at %d." % [reason, campaign.heat]})
 		return events
-	events.append({"type": "heat", "amount": applied, "reason": reason, "text": "Heat %+d (%s) -> %d." % [applied, reason, campaign.heat]})
+	events.append({"type": "heat", "amount": applied, "reason": reason, "before": before, "after": campaign.heat, "text": "Heat %+d (%s) -> %d." % [applied, reason, campaign.heat]})
 	if applied <= 0:
 		return events
 	for t in config.heat_thresholds:

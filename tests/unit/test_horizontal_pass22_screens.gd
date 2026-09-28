@@ -235,10 +235,11 @@ func test_the_raid_stamp_is_a_forecast() -> void:
 	assert_string_contains(fs.caption, "IF THE RAID")
 	assert_string_contains(fs.caption, "RUNS NOW")
 	assert_eq(fs.verdict, hq.raid_verdict(projection), "the verdict is the projection's")
-	assert_true(fs.verdict in [hq.VERDICT_HOLDS, hq.VERDICT_HIT, hq.VERDICT_LOST])
+	# ANIM-R4 H3 (updated on purpose): the verdict names the losses, never "HOME HIT".
+	assert_false(fs.verdict.contains("HOME HIT"))
 	assert_true(fs.tooltip_text.begins_with("Forecast, not a result"), "the tooltip says it is a projection")
-	if not projection.won and not projection.campaign_lost:
-		assert_eq(fs.verdict, "HOME HIT", "home damage reads as HOME HIT, beside rows such as 50 > 40 HOLDS")
+	if projection.home_after < projection.home_before and not projection.campaign_lost:
+		assert_string_contains(fs.verdict, "HOME -%d" % (projection.home_before - projection.home_after), "home damage reads as its number, beside rows such as 50 > 40 HOLDS")
 	for n in _all(hq._panel):
 		if n is ZineStamp:
 			assert_ne((n as ZineStamp).stamp_text, "BREACHED", "no result stamp before the raid runs")

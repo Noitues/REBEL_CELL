@@ -60,35 +60,84 @@ static func owner_of(node: Node) -> Control:
 	return node.get_viewport().gui_get_focus_owner()
 
 
-## D-pad neighbours for a whole panel: controls in a horizontal container form one row,
-## a lone control is a row of its own; left/right walk a row, up/down move to the same
-## column (clamped) of the row above/below. Tilted stickers, SpinBoxes and long lists
-## defeat Godot's geometric search, so panels link explicitly (horizontal pass 6).
+## D-pad neighbours for a whole panel. The panel is read as blocks stacked top to bottom:
+## a lone control is a block of one; controls in a horizontal container form one row;
+## and (ANIM-R4 H1) a horizontal container whose children hold several rows each (the HQ's
+## menu column beside the crew and the poster) is a block of columns: up/down walk a
+## column item by item, left/right cross to the same row (clamped) of the next column, and
+## a column's last item goes down to the block below (its first item up to the block
+## above). Tilted stickers, SpinBoxes and long lists defeat Godot's geometric search, so
+## panels link explicitly (horizontal pass 6).
 static func link_layout(root: Node) -> void:
-	var rows: Array = []
-	_collect_rows(root, rows)
+	var blocks: Array = []
+	_collect_blocks(root, blocks)
 	# Start clean: a relink (settings sections swap their controls) must not leave paths to
 	# controls that are no longer in the tree.
-	for row in rows:
-		for c in row:
-			c.focus_neighbor_left = NodePath()
-			c.focus_neighbor_right = NodePath()
-			c.focus_neighbor_top = NodePath()
-			c.focus_neighbor_bottom = NodePath()
-	for r in rows.size():
-		var row: Array = rows[r]
-		for i in row.size():
-			var c: Control = row[i]
-			if i > 0:
-				c.focus_neighbor_left = c.get_path_to(row[i - 1])
-			if i + 1 < row.size():
-				c.focus_neighbor_right = c.get_path_to(row[i + 1])
-			if r > 0:
-				var up: Array = rows[r - 1]
-				c.focus_neighbor_top = c.get_path_to(up[mini(i, up.size() - 1)])
-			if r + 1 < rows.size():
-				var down: Array = rows[r + 1]
-				c.focus_neighbor_bottom = c.get_path_to(down[mini(i, down.size() - 1)])
+	for c in _controls_of(blocks):
+		c.focus_neighbor_left = NodePath()
+		c.focus_neighbor_right = NodePath()
+		c.focus_neighbor_top = NodePath()
+		c.focus_neighbor_bottom = NodePath()
+	for b in blocks.size():
+		var cols: Array = blocks[b]
+		for j in cols.size():
+			var col: Array = cols[j]
+			for r in col.size():
+				var row: Array = col[r]
+				for i in row.size():
+					var c: Control = row[i]
+					# Left / right: along the row, then across to the next column's row.
+					if i > 0:
+						c.focus_neighbor_left = c.get_path_to(row[i - 1])
+					elif j > 0:
+						var lrow: Array = _row_at(cols[j - 1], r)
+						c.focus_neighbor_left = c.get_path_to(lrow[lrow.size() - 1])
+					if i + 1 < row.size():
+						c.focus_neighbor_right = c.get_path_to(row[i + 1])
+					elif j + 1 < cols.size():
+						var rrow: Array = _row_at(cols[j + 1], r)
+						c.focus_neighbor_right = c.get_path_to(rrow[0])
+					# Up / down: within the column, then out to the block above / below.
+					if r > 0:
+						var up: Array = col[r - 1]
+						c.focus_neighbor_top = c.get_path_to(up[mini(i, up.size() - 1)])
+					elif b > 0:
+						c.focus_neighbor_top = c.get_path_to(_edge(blocks[b - 1], j if cols.size() > 1 else i, i, false, cols.size() > 1))
+					if r + 1 < col.size():
+						var down: Array = col[r + 1]
+						c.focus_neighbor_bottom = c.get_path_to(down[mini(i, down.size() - 1)])
+					elif b + 1 < blocks.size():
+						c.focus_neighbor_bottom = c.get_path_to(_edge(blocks[b + 1], j if cols.size() > 1 else i, i, true, cols.size() > 1))
+
+
+## Row `r` of a column, clamped to its last row.
+static func _row_at(col: Array, r: int) -> Array:
+	return col[mini(r, col.size() - 1)]
+
+
+## The control of `block` a neighbour block reaches from position `p` (the column of a
+## block of columns, else the place in the row) and place `i` in its row: the top row when
+## entering from above (`top`), else the bottom row. A row takes place `p` (clamped); a
+## block of columns takes column `p`, and place `i` of its row only from another block of
+## columns (`from_cols`).
+static func _edge(block: Array, p: int, i: int, top: bool, from_cols: bool) -> Control:
+	if block.size() == 1:
+		var only: Array = block[0]
+		var line: Array = only[0] if top else only[only.size() - 1]
+		return line[mini(p, line.size() - 1)]
+	var col: Array = block[mini(p, block.size() - 1)]
+	var row: Array = col[0] if top else col[col.size() - 1]
+	return row[mini(i if from_cols else 0, row.size() - 1)]
+
+
+## Every control in `blocks`, in order.
+static func _controls_of(blocks: Array) -> Array:
+	var out: Array = []
+	for cols in blocks:
+		for col in cols:
+			for row in col:
+				out.append_array(row)
+	return out
 
 
 static func _usable(c: Node) -> bool:
@@ -106,31 +155,70 @@ static func _usable(c: Node) -> bool:
 	return ctl is LineEdit and not (ctl.get_parent() is SpinBox)
 
 
-static func _collect_rows(node: Node, rows: Array) -> void:
+## Collects `node`'s blocks (see link_layout): each block is an Array of columns, each
+## column an Array of rows, each row an Array of Controls.
+static func _collect_blocks(node: Node, blocks: Array) -> void:
 	for child in node.get_children():
 		if not (child is Control) or child.is_queued_for_deletion() or not (child as Control).is_visible_in_tree():
 			continue
 		if child is SpinBox:
 			continue  # use the -/+ buttons beside it
 		if _usable(child):
-			rows.append([child])
+			blocks.append([[[child]]])
 			continue
 		if child is HBoxContainer or child is HFlowContainer:
-			var row: Array = []
-			for g in child.get_children():
-				if g is SpinBox:
-					continue
-				if _usable(g):
-					row.append(g)
-				else:
-					var inner := _first_usable(g)
-					if inner != null:
-						row.append(inner)
-			if not row.is_empty():
-				rows.append(row)
+			var block := _horizontal_block(child)
+			if not block.is_empty():
+				blocks.append(block)
 			continue
-		_collect_rows(child, rows)
+		_collect_blocks(child, blocks)
 
+
+## A horizontal container's block: one row (a control per child: the child or the first
+## usable control inside it), or, when a child holds more than one row (a menu column), a
+## column per child.
+static func _horizontal_block(box: Node) -> Array:
+	var cols: Array = []
+	var tall := false
+	for g in box.get_children():
+		if g is SpinBox or not (g is Control) or g.is_queued_for_deletion() or not (g as Control).is_visible_in_tree():
+			continue
+		if _usable(g):
+			cols.append([[g]])
+			continue
+		var inner: Array = []
+		_collect_blocks(g, inner)
+		var col := _as_rows(inner)
+		if col.is_empty():
+			continue
+		tall = tall or col.size() > 1
+		cols.append(col)
+	if cols.is_empty():
+		return []
+	if tall:
+		return cols
+	# A plain row, as before ANIM-R4: a control per child (its first usable one).
+	var row: Array = []
+	for col in cols:
+		row.append(col[0][0])
+	return [[row]]
+
+
+## `blocks` read top to bottom as rows of one column: a block of columns gives its rows
+## side by side (row k of every column together).
+static func _as_rows(blocks: Array) -> Array:
+	var rows: Array = []
+	for cols in blocks:
+		var depth := 0
+		for col in cols:
+			depth = maxi(depth, (col as Array).size())
+		for k in depth:
+			var row: Array = []
+			for col in cols:
+				if k < (col as Array).size():
+					row.append_array(col[k])
+			rows.append(row)
+	return rows
 
 static func _first_usable(node: Node) -> Control:
 	for child in node.get_children():
@@ -194,11 +282,10 @@ static func trap(root) -> void:
 	if root == null or not is_instance_valid(root) or not (root is Node) or (root as Node).is_queued_for_deletion():
 		return  # deferred call after the modal closed
 	link_layout(root)
-	var rows: Array = []
-	_collect_rows(root, rows)
-	for row in rows:
-		for c in row:
-			var ctl: Control = c
-			for side in ["focus_neighbor_left", "focus_neighbor_right", "focus_neighbor_top", "focus_neighbor_bottom"]:
-				if (ctl.get(side) as NodePath).is_empty():
-					ctl.set(side, NodePath("."))
+	var blocks: Array = []
+	_collect_blocks(root, blocks)
+	for c in _controls_of(blocks):
+		var ctl: Control = c
+		for side in ["focus_neighbor_left", "focus_neighbor_right", "focus_neighbor_top", "focus_neighbor_bottom"]:
+			if (ctl.get(side) as NodePath).is_empty():
+				ctl.set(side, NodePath("."))

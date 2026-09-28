@@ -588,11 +588,12 @@ func jack_destination(site_id: StringName = &"") -> String:
 
 
 ## ANIM-R3 B5: the jack cover's second line: a run that opens on a raid interlude says so
-## ("CONNECTING TO SCRUB RECORDS" then "INTERRUPTED: RAID INCOMING"); "" otherwise.
+## ("CONNECTING TO SCRUB RECORDS" then the stamp); "" otherwise. ANIM-R4 H11a: the stamp names
+## the corporation that raids ("RAID INCOMING" over "SOLACE BIOSYSTEMS").
 func jack_note() -> String:
 	# Before the run is built (ANIM-R3 B1) a queued raid tells: a run opens on it.
 	if (netrun != null and netrun.in_raid()) or (_before_switch.is_valid() and campaign != null and not campaign.pending_raids.is_empty()):
-		return tr("INTERRUPTED: RAID INCOMING")
+		return tr("RAID INCOMING\n%s") % (TextDb.t(corporation, "display_name") if corporation != null else "")
 	return ""
 
 
