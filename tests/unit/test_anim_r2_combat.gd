@@ -703,11 +703,25 @@ func test_the_crt_roll_waits_for_the_glass_to_show() -> void:
 	var page := Control.new()
 	page.size = Vector2(400, 300)
 	holder.add_child(page)
-	PageTransition.enter(page, PageTransition.Look.GLASS, Callable())
-	await _frames(2)
-	var roll := page.get_node_or_null(^"CrtRoll") as Control
-	assert_true(roll == null or not roll.visible,
-		"no roll band on the entrance's first frames (it read as a half-drawn screen on loot_pick's first frame)")
+	var pt := PageTransition.enter(page, PageTransition.Look.GLASS, Callable())
+	assert_not_null(pt, "the glass enters")
+	# ANIM-R3 A8: judged on the transition's own clock, frame by frame (a fixed two frames
+	# could outlast the fade under a loaded machine, and the roll then rightly showed).
+	var saw_early := false
+	for i in 120:
+		await _frames(1)
+		if not is_instance_valid(pt) or not PageTransition.running(page):
+			break
+		var roll := page.get_node_or_null(^"CrtRoll") as Control
+		var k := pt.progress()
+		if k < PageTransition.FADE_SHARE:
+			saw_early = true
+		if roll != null and roll.visible:
+			assert_true(k >= PageTransition.FADE_SHARE - 0.0001,
+				"the roll band shows only once the glass is fully shown (it read as a half-drawn screen on loot_pick's first frame): at %.2f" % k)
+	if not saw_early:
+		# A frame long enough to pass the fade at once: the rule still held (asserted above).
+		pass_test("no frame fell inside the fade on this machine's clock")
 	PageTransition.settle(holder)
 
 
