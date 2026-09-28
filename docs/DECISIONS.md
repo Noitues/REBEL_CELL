@@ -552,6 +552,131 @@ quantized to 128 colours; raw frames never entered the repo): `resolve_sequence`
   the continue button carries the key), `test_horizontal_pass23` / `pass24` (the script's
   statics without an instance).
 
+#### 2026-09-28 — Animation pass — ANIM-R4 city, raid, heat, route and HQ
+The fourth fix batch of the Animation pass review, city, raid, Heat, route and HQ part
+(H1-H11). Every call below was the implementer's (the standing rule: nothing deferred).
+Views, save three small data additions named where they are (H4 the resolver's events carry
+the threat's content id; H5 `HeatThresholdData.id`; H11a Heat events carry `before` /
+`after`): no rule changed. Tests: `tests/unit/test_anim_r4_city.gd` (full tier, 14 tests), a
+no-crew / raid-pending HQ case in `test_pad_reachability` and the rules' new forms in
+`test_suite_integrity`; expectation changes at the end. Strips recaptured in
+`docs/timeline/motion/` (CHOSEN on top, a variant under it, the whole screen at 0.4,
+quantized to 128 colours, raw frames deleted): `raid_playout`, `influence_spread`,
+`heat_pulse`, `jack_in`, `route_pulse`, `asset_drop`.
+- **H1 the HQ menu by pad.** `UiFocus.link_layout` read a horizontal container as one row
+  (a control per child: the menu column gave only City Grid, whose down led to the Black
+  Market; RAID PENDING, Scrub Heat, Codex, Settings and Save were left to Godot's geometric
+  search, which found none of them with no crew alive). Now a horizontal container whose
+  children hold more than one row each is a block of columns: up / down walk a column item
+  by item, left / right cross to the same row (clamped) of the next column, a column's last
+  item goes down to the block below (its first up to the block above). A container whose
+  children are one row each links as before (every other panel's paths unchanged). Tested
+  with no operative alive, with and without a raid pending, at 1.0 / 1.3 / 1.6.
+- **H2** the feed names operatives (`operative_word`: the roster's name; "an operative" when
+  unknown), never "op_1 returns to the reserves"; tested with an operative stationed.
+- **H3 one raid verdict.** `RaidVerdict` holds the words: ALL HOLD only when the raid costs
+  nothing (home loses no integrity, no node Disabled or Seized), else the losses one per line
+  in the words the nodes' labels and stamps use ("HOME -5", "1 DISABLED", "1 SEIZED"), and
+  CAMPAIGN LOST when home falls. "HOME HIT" is gone (it sat beside home's "HOLDS" banner):
+  home's loss is its number everywhere, and the map's banner is "HOME -5 · HOLDS" / "HOME
+  HOLDS" / "CAMPAIGN LOST". The setup's and the interlude's forecast stamps, the playout's
+  resolved stamp, the report's stamp (it said BREACHED for a raid home never felt: now the
+  resolved verdict stamp) and the forecast's tooltip use it; `ForecastStamp` draws a verdict
+  of several lines (one per loss) and shows a composed verdict as given (translated once).
+  Swept over every corporation x every home variant x ICE 0 and 20 x three setups (150
+  raids): the forecast's verdict is the result's, ALL HOLD exactly when nothing is lost.
+- **H4 threat names translate.** Every resolver event naming a threat carries
+  `threat_content` (its ThreatData id; the names were parsed from the English log line and
+  run through tr, which had no key); the feed, the playout's markers and the node tooltips
+  read `TextDb.t(ThreatData, "display_name")`.
+- **H5 Heat consequences.** `HeatThresholdData` gains `id` ("heat_25"; schema change, logged
+  here, `validate` requires one, unique; the smoke test checks it): its `event_text` has the
+  key `HeatThresholdData.heat_25.event_text`, exported. The texts are whole sentences ("The
+  corporation raids the Cell. While Heat stays at 25 or more, elites are more frequent.", not
+  "Raid. While Heat stays at 25 or above..."); the poster reads them through TextDb.
+- **H6 the Heat banner.** It says the Heat now, the band and where the band starts: "HEAT
+  30 · NOTICED (25+)" ("HEAT 5 · COOL" below the first threshold). The band word under the
+  number follows the number shown (`shown_band`: it said NOTICED while the roll still showed
+  21). The banner is laid out in its room (`banner_layout`, worked out once per change): the
+  wanted poster's header, the small poster's paper under its bar (the combat poster is 170 x
+  134: its banner spilled 23-63 px over the Daemon row at 1.0-1.6); the words keep one line
+  down to 12 px, then wrap at " · " and at spaces, a word too long for a line broken between
+  letters, down to 8 px; the consequence shrinks with them and goes to the tooltip only when
+  even the floor would not fit; a short small poster takes its bar too. The whole tilted box
+  (sub-lines included) is tested inside its poster and its room, never over the number, with
+  a long German translation, at 1.0 / 1.3 / 1.6, and in a live fight above the Daemon row.
+- **H7** the map tooltips' sentences ("You are here.", "Raid: %s.", "Threats here: %s.", the
+  kind names...) are keys translated once where the tip is built; the overlay shows its tip
+  as given.
+- **H8 integrity rules.** Frame lambdas: tests/ and tools/ are scanned too (the anim5 test's
+  held lambda is a method now); a connect whose line ends open ("process_frame.connect(" with
+  the `func` on the next line) is read with the lines after it; `Signal(obj, "process_frame")
+  .connect(func` is caught; string literals are emptied first (a test's quoted example is not
+  code). Fixed waits: an awaited `tween_interval`, `Timer.new()` / `wait_time`, `OS.delay_msec`
+  / `delay_usec` and `get_unix_time` are caught; an interval nothing awaits (one that keeps a
+  sequence running) and a sleep inside a poll's lambda (load, not a wait) are not; an inner
+  class's methods are functions of their own. No false positive on the code base.
+- **H9** B6's colour claim corrected in place (acid is at least 40 degrees of hue from every
+  corporation, Meridian's orange the nearest; it said "furthest"), and in `Palette`.
+  `CHANGE_FADE_SHARE` (1/3 inline) is `forecast_change_fade`'s amplitude.
+- **H10 performance** (this machine's display, 1280x720, RX 6700 XT; min / median of 5 runs,
+  the baseline aa51ad2 measured in the same session, the machine busy with other test runs):
+  - the Grid opened from the HQ page (`--demo-grid-open=150`): 136-170 ms, median 149
+    (baseline 243-268, median 255; R2 measured 161). What its frame spent (instrumented): the
+    Grid's music built on the main thread 59 ms (now built ahead on the worker pool:
+    `AudioDirector.prewarm_music`, from the HQ page, the Grid and the route), the open runs'
+    clear previews 44 ms (`CampaignRules.clear_preview` copies the campaign per Site: now
+    cached by the campaign state's hash and worked out ahead on the HQ page, a Site a frame);
+    the re-open 94-109 ms, median 101 (baseline 129-146);
+  - the route after a jack at 1.6 (`--demo-grid --demo-anim=jack_in`): its 58-72 ms frame
+    was the route view's bake landing, ~14 ms of it a GPU texture made and filled to copy the
+    bake's viewport into; now the viewport is kept (never updated again) and shown as it is
+    (`BakedTexture.held`): the landing frame 54, 56, <50, <50, <50 ms over five runs (before
+    58-67 here, the baseline 54-89). No frame after the cover lifts over 50 ms in three runs of
+    five; the rest single frames of 51-85 ms not tied to the map (the machine's load: frames
+    before the jack showed the same). The jack itself is longer by design with a raid queued
+    (the RAID INCOMING stamp's 1.2 s).
+- **H11 a raid reads true.** The top bar's Heat and RAIDS change with the line that changes
+  them (`RaidPlayoutPanel.event_shown`: Heat at its "Heat +5 for the lost raid: 1 → 6." line,
+  RAIDS at the raid's end line and at a threshold's line that queues one); the Heat line says
+  from and to (it said "now" with the campaign's final Heat: "+5 ... now 5" from 1; the Heat
+  event carries `before` / `after`); a threshold crossed gets its own line with what it brings.
+  A hit's line says the HP it really took and where it left the node ("Wearable Telemetry
+  Farm takes 5 damage: HP 30 → 25."), the numbers the map's labels and floats show (a hit stops
+  at 0, as the map's numbers do). A threat token stands on an opaque dark halo with a paper rim
+  (its red glow over a pink node read pinkish): tested at WCAG's 3:1 for non-text on every node
+  colour. RAID INCOMING is a stamp of its own under CONNECTING: large amber Anton (34 px x the
+  text size) in a ruled box, tilted, naming the corporation ("RAID INCOMING" over "SOLACE
+  BIOSYSTEMS"), held `raid_incoming_hold` 1.2 s (a reading time: under reduce effects too).
+- **H11 b the drop and the forecast.** A landed defence sends a pulse along the threat road
+  from its node to CORE (`forecast_road_pulse` 0.55 s, the road as threats take it: the Grid's
+  next hops to home), then the forecast numbers it changed rise; CORE's label and its float
+  show the same number (tested). Every forecast change reads "45 → 50 ▲" (green, a gain) or
+  "50 → 45 ▼" (pink); the raid setup's, the interlude's and the report's HP badges and the map's
+  result tags read "a → b" too. Share Tech Mono has no arrows: text that writes one (a
+  badge, a map tag, the raid feed) uses `Palette.mono_arrows()`, a FontVariation over the file
+  with Anton as its fallback (the file is untouched). Only that text: a first try gave every
+  mono text the fallback, which raised the face's line height and broke 28 layout tests.
+- **H11 c the route.** A move shows the new choices as it starts (`view_choices`: while the
+  entered node plays, the nodes it leads to): the map's [1] / [2] labels and the ROUTE
+  window's buttons (rebuilt in place; the old ones hidden and freed, one of them is the button
+  pressed) at once, the marker travelling the link (never on a choice: tested along the move);
+  the walked route stays as a faint solid trail (the Cell's pink at 0.4, 2.2 px). The capture
+  demo is a real move now (the demo run stands on its first node, then moves on).
+- **H11 d territory.** A CLAIMED / SEIZED stamp takes the first spot round its Site (above,
+  below, right, left) whose tilted box covers no node label or icon (`NeonCity.stamp_rect`,
+  the map's `stamp_avoid_rects`), the least covered when all do: it hid "Patch Distribution
+  Node". The side panel's "RAID SETU" and "PRICING MEMO AR" were the ANIM-R3 strip's crop, not
+  the game: the strips now show the whole screen, and a test checks that no word of the Grid's
+  and the raid setup's side panels is cut at 1.0 / 1.3 / 1.6.
+- **New ids:** `forecast_change_fade`, `raid_incoming_hold`, `forecast_road_pulse` (the lab
+  plays each).
+- **Expectation changes:** `test_anim5_map_motion` (the verdict is RaidVerdict's; the held
+  lambda is a method), `test_horizontal_pass20_screens` (the verdict; "HP a → b"),
+  `test_horizontal_pass22_screens` (no HOME HIT: home's loss is "HOME -N"),
+  `test_anim_r3_city` (the jack note names the corporation), `test_pad_reachability` (the HQ
+  case added), `test_suite_integrity` (the new forms and false-alarm cases).
+
 #### 2026-09-28 — Animation pass — ANIM-R3 city, raid, jack, heat and route
 The third fix batch of the Animation pass review, city, raid, jack, Heat and route part
 (B1-B13). Views only (no rule or schema field changed). Every call below was the
