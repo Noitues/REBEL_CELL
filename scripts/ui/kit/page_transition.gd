@@ -149,13 +149,12 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if _done:
 		return
-	var press: bool = (event is InputEventKey and event.pressed and not event.echo) or (event is InputEventJoypadButton and event.pressed) \
-		or (event is InputEventMouseButton and event.pressed)
-	if press:
+	# ANIM-R1 (MotionSkip): a press completes the entrance and is consumed.
+	if MotionSkip.is_press(event):
+		MotionSkip.consume(self)
 		var p := page
 		finish()
 		settle(p)
-		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:

@@ -9,7 +9,12 @@ extends RefCounted
 ## A beat: {kind, event_index, phase ("act" / "resolve" / "turn_start"), pass
 ## ("defensive" / "offensive" / "statuses" / ""), source (id whose needle resolves, or
 ## &""), pointer_index, target, amount, crit, hp_after (target's HP once this beat lands,
-## -1 when it doesn't change), slot, status, tier, soaked}.
+## -1 when it doesn't change), slot, status, tier, soaked, source_slot (the slice the
+## resolving needle landed on, -1 when unknown)}. ANIM-R1: "spawn" beats (a satellite
+## launched or a drone deployed: target = the newcomer, host = where it docks, hp_after =
+## the HP it starts on, from the event) and "phase" beats (a boss enters a phase: spawned
+## = [{id, hp, slot}], ticks = its needles now); "died" sets HP 0 (satellites going down
+## with their host take no damage event).
 
 ## Event types that become a beat, and the beat kind each makes.
 const KINDS := {
@@ -18,6 +23,7 @@ const KINDS := {
 	"status_absorbed": "absorbed", "died": "died", "hub_breach": "breach", "respin": "spin",
 	"spin": "spin", "nudge": "nudge", "flip": "flip", "snap": "snap", "orbit": "orbit",
 	"boss_migrate": "migrate", "ram": "ram", "draw": "draw", "combat_end": "end",
+	"satellite_spawn": "spawn", "deploy": "spawn", "boss_phase": "phase",
 }
 ## Beat kinds that change HP (the tests check every one of their events has a beat).
 const HP_KINDS: Array[String] = ["damage", "heal", "corrupted"]
@@ -65,10 +71,16 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 			continue
 		var kind: String = KINDS[t]
 		var target := StringName(String(e.get("target", e.get("owner", ""))))
+		var host: StringName = &""
+		if kind == "spawn":
+			# The newcomer is the beat's target; the wheel it docks on is its host.
+			host = target
+			target = StringName(String(e.get("satellite", e.get("drone", ""))))
 		var b := {"kind": kind, "event_index": i, "phase": phase, "pass": pass_name, "source": &"",
 			"pointer_index": -1, "target": target, "amount": int(e.get("amount", 0)), "crit": false,
 			"hp_after": -1, "slot": int(e.get("slot", e.get("slice_index", -1))), "status": int(e.get("status", 0)),
-			"tier": int(e.get("tier", -1)), "soaked": int(e.get("blocked", 0)) + int(e.get("shielded", 0))}
+			"tier": int(e.get("tier", -1)), "soaked": int(e.get("blocked", 0)) + int(e.get("shielded", 0)),
+			"host": host, "source_slot": -1}
 		match kind:
 			"land":
 				b["source"] = target
@@ -89,6 +101,28 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 					b["source"] = target
 		if phase == "resolve" and KIND_SLICES.has(kind) and b["source"] != &"":
 			b["pointer_index"] = _pointer_for(before, landings, used, b["source"], kind, lookup)
+		if int(b["pointer_index"]) >= 0 and b["source"] != &"":
+			for l in landings.get(b["source"], []):
+				if int(l.get("pointer_index", 0)) == int(b["pointer_index"]):
+					b["source_slot"] = int(l.get("slice_index", -1))
+					break
+		if kind == "spawn":
+			hp[target] = int(e.get("hp", 0))
+			b["hp_after"] = hp[target]
+		elif kind == "phase":
+			var spawned: Array = e.get("spawned", [])
+			b["spawned"] = spawned
+			b["ticks"] = e.get("ticks", [])
+			b["behavior"] = int(e.get("behavior", -1))
+			b["phase_index"] = int(e.get("phase", 0))
+			for sp in spawned:
+				hp[StringName(String(sp.get("id", "")))] = int(sp.get("hp", 0))
+		elif kind == "died":
+			hp[target] = 0
+			b["hp_after"] = 0
+			# A whole wheel going down (not a satellite or drone): its HP is seen at 0 first.
+			var dc := before.get_combatant(target)
+			b["wheel"] = dc != null and not dc.is_satellite and not before.drones.has(dc)
 		if kind == "damage" or kind == "corrupted":
 			hp[target] = maxi(0, int(hp.get(target, 0)) - b["amount"])
 			b["hp_after"] = hp[target]
@@ -105,57 +139,82 @@ static func final_hp(before: CombatState, beats: Array[Dictionary]) -> Dictionar
 	for c in _everyone(before):
 		hp[c.id] = c.hp
 	for b in beats:
+		for sp in b.get("spawned", []):
+			hp[StringName(String(sp.get("id", "")))] = int(sp.get("hp", 0))
 		if int(b["hp_after"]) >= 0:
 			hp[b["target"]] = int(b["hp_after"])
 	return hp
 
 
 ## When each beat plays (seconds from the start), in beat order and never decreasing:
-## the landings together at 0; then the resolve beats one `gap` apart with a gap more at
-## each new pass; then the turn start (the spins together, then its other beats). The gap
-## is `beat_gap`, shrunk so everything before the spins fits in `budget` less `tail` (the
-## spin to the next landing and the LAST TURN reveal). Returns {times, spin_at, total}.
-static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, tail: float) -> Dictionary:
+## the landings together at 0; the landing hold (`lead`, only after landings); then the
+## resolve beats one `gap` apart with a gap more at each new pass (a whole wheel's death
+## waits `death_lead` more, so its HP is seen at 0 first); the result (`result_at`) holds
+## `hold` seconds; then the turn start (the spins together, then its other beats). The
+## gap is `beat_gap`, shrunk so everything fits in `budget` (the lead, the hold, the death
+## leads and, when a turn starts, `tail`: the spin to the next landing). Returns {times,
+## spin_at, result_at, total, gap}.
+static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, tail: float, lead: float = 0.0,
+		hold: float = 0.0, death_lead: float = 0.0) -> Dictionary:
 	var slots := 0
 	var passes := {}
+	var any_land := false
+	var has_turn := false
+	var deaths := 0
 	for b in beats:
-		if b["kind"] == "land" or b["kind"] == "spin" and b["phase"] == "turn_start":
+		if b["kind"] == "land":
+			any_land = true
 			continue
+		if b["phase"] == "turn_start":
+			has_turn = true
+			if b["kind"] == "spin":
+				continue
 		slots += 1
+		if b["kind"] == "died" and bool(b.get("wheel", false)):
+			deaths += 1
 		if String(b["pass"]) != "" and not passes.has(b["pass"]):
 			passes[b["pass"]] = true
 			slots += 1
+	var fixed := hold + death_lead * deaths + (lead if any_land else 0.0) + (tail if has_turn else 0.0)
 	var gap := beat_gap
 	if slots > 0:
-		gap = minf(beat_gap, maxf(0.0, budget - tail) / float(slots + 1))
+		gap = minf(beat_gap, maxf(0.0, budget - fixed) / float(slots + 1))
 	var times := PackedFloat32Array()
 	var t := 0.0
-	var any_land := false
+	var started := false
 	var last_pass := ""
 	var spin_at := -1.0
+	var result_at := -1.0
 	for b in beats:
 		if b["kind"] == "land":
 			times.append(0.0)
-			any_land = true
 			continue
 		if b["phase"] == "turn_start" and spin_at < 0.0:
-			t += gap
-			spin_at = t
+			result_at = t + gap if started else (lead if any_land else t)
+			spin_at = result_at + hold
+			t = spin_at
+			started = true
 		if b["kind"] == "spin" and b["phase"] == "turn_start":
 			# Spins start together; one listed after another turn-start beat waits for it.
 			times.append(t)
 			continue
-		if String(b["pass"]) != last_pass:
-			last_pass = String(b["pass"])
-			if last_pass != "":
+		if not started:
+			t = lead if any_land else 0.0
+		else:
+			if String(b["pass"]) != last_pass and String(b["pass"]) != "":
 				t += gap
-		if any_land or not times.is_empty():
 			t += gap
+		last_pass = String(b["pass"])
+		if b["kind"] == "died" and bool(b.get("wheel", false)):
+			t += death_lead
 		times.append(t)
-	var end := t
+		started = true
+	if result_at < 0.0:
+		result_at = t + gap if started else (lead if any_land else t)
+	var end := result_at + hold
 	if spin_at >= 0.0:
 		end = maxf(t, spin_at) + tail
-	return {"times": times, "spin_at": spin_at, "total": end, "gap": gap}
+	return {"times": times, "spin_at": spin_at, "result_at": result_at, "total": end, "gap": gap}
 
 
 static func _everyone(s: CombatState) -> Array[CombatantState]:

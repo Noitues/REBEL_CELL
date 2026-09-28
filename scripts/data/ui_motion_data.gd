@@ -52,6 +52,12 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"sold_stamp", &"caption_crossfade", &"city_sign_pick",
 	# Animation pass ANIM-4b (drag and drop in the run):
 	&"drop_buy", &"shred_feed",
+	# ANIM-R1 combat and input: the SEND IT replay's legibility, refusals, SEND IT's mark,
+	# and inline numbers moved into the table.
+	&"resolve_landing_hold", &"landing_pulse", &"resolve_result_hold", &"result_caption", &"result_stamp",
+	&"number_to_hp", &"hit_flash", &"hit_shake", &"enemy_enter", &"victory_flash", &"boss_phase_flash",
+	&"ram_refusal", &"ram_refusal_pop", &"send_it_ready", &"send_it_drips_share", &"drag_ghost_tilt_speed",
+	&"toast_note_hold", &"stamp_fade_in",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

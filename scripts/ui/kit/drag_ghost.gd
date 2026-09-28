@@ -6,8 +6,6 @@ extends Control
 ## (`drag_ghost_tilt`: duration = smoothing, amplitude = most degrees). Under reduce
 ## effects and headless it sits on the cursor, untilted. View only.
 
-## Cursor speed (px/s) that gives the full tilt.
-const TILT_SPEED := 1200.0
 
 ## The item shown (a ZineCard in combat; operatives, assets and chips since ANIM-4).
 var card: Control
@@ -49,7 +47,8 @@ func step(delta: float) -> void:
 	_lagged = _lagged.lerp(target, 1.0 - exp(-delta / tau))
 	var vx := (target.x - _last.x) / maxf(delta, 0.001)
 	_last = target
-	var want := clampf(vx / TILT_SPEED, -1.0, 1.0) * deg_to_rad(Motion.amplitude(&"drag_ghost_tilt"))
+	# The cursor speed (px/s) that gives the full tilt is `drag_ghost_tilt_speed`'s amplitude.
+	var want := clampf(vx / maxf(1.0, Motion.amplitude(&"drag_ghost_tilt_speed")), -1.0, 1.0) * deg_to_rad(Motion.amplitude(&"drag_ghost_tilt"))
 	var ttau := maxf(0.001, Motion.seconds(&"drag_ghost_tilt"))
 	_tilt = lerpf(_tilt, want, 1.0 - exp(-delta / ttau))
 	card.position = _lagged - target - card.size * 0.5

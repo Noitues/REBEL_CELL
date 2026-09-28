@@ -9,8 +9,12 @@ extends Control
 ##
 ## The caret and the sliding box are drawn by this control, a child of the focused line
 ## (it moves with focus; no container lays it out). The line's own focus box is hidden only
-## while the box slides. Typing shows the line's words a character at a time with the
-## line's size held, so nothing around it moves; a key press completes it. The first focus
+## while the box slides. Typing is drawn (ANIM-R1): the line's own words stay whole (its
+## `text` never changes, so screen readers and tests read it all and nothing re-lays out);
+## its font colours go clear while this control draws the typed part on top, a character
+## at a time. A press completes the motion and is consumed (MotionSkip), except a focus
+## move (arrows, D-pad, Tab): it moves the highlight on, which ends the line's motion, and
+## a menu must never drop a fast tap. The first focus
 ## after `attach` (a page opening or refreshing) shows at once: the page's own entrance is
 ## the motion then. Under reduce effects and headless nothing types or slides and the caret
 ## holds steady. View only.
@@ -34,8 +38,10 @@ var _had_focus_override: bool = false
 var _full_text: String = ""
 var _typed: int = -1
 var _type_tween: Tween = null
-var _held_min: Vector2 = Vector2.ZERO
-var _had_min: Vector2 = Vector2.ZERO
+## The line's font colour overrides while its words are drawn here ({name: colour or null}).
+var _saved_colors: Dictionary = {}
+var _type_color: Color = Color.WHITE
+var _type_outline: Color = Color(0, 0, 0, 0)
 var _blink_t: float = 0.0
 var _quiet: bool = true
 ## The last line that had focus (the highlight slides from it).
@@ -168,11 +174,9 @@ func _start_typing() -> void:
 	if not Motion.live(&"menu_type") or _line.text.length() < 2:
 		return
 	_full_text = _line.text
-	_had_min = _line.custom_minimum_size
-	_held_min = _line.get_combined_minimum_size()
-	_line.custom_minimum_size = _held_min
-	var n := _full_text.length()
+	var n := _shown_words().length()
 	var d := minf(Motion.seconds(&"menu_type") * n, Motion.amplitude(&"menu_type") / maxf(Motion.speed, Motion.SPEED_MIN))
+	_hide_words()
 	_set_typed(0)
 	var e := Motion.entry(&"menu_type")
 	_type_tween = create_tween()
@@ -180,36 +184,79 @@ func _start_typing() -> void:
 	_type_tween.tween_callback(_end_typing)
 
 
+## The line's words as it draws them (translated when it translates).
+func _shown_words() -> String:
+	return _line.atr(_line.text) if _line != null else ""
+
+
 func _set_typed(k: int) -> void:
 	if _line == null or not is_instance_valid(_line):
 		return
-	if _typed >= 0 and _line.text != _full_text.substr(0, _typed):
-		# Someone relabelled the line mid-typing (a key hint changed): it keeps their words.
-		_full_text = _line.text
-		_typed = -1
-		_line.custom_minimum_size = _had_min
+	if _typed >= 0 and _line.text != _full_text:
+		# Someone relabelled the line mid-typing (a key hint changed): its new words show.
+		_end_typing()
 		return
-	_typed = clampi(k, 0, _full_text.length())
-	_line.text = _full_text.substr(0, _typed)
+	_typed = clampi(k, 0, _shown_words().length())
 	queue_redraw()
+
+
+## Typed characters shown so far (-1 when the line isn't typing: its words are whole).
+func typed_count() -> int:
+	return _typed
+
+
+## The line's own lettering goes clear (this control draws the typed part on top).
+func _hide_words() -> void:
+	_saved_colors.clear()
+	_type_color = _line.get_theme_color(&"font_focus_color")
+	_type_outline = _line.get_theme_color(&"font_outline_color")
+	for c in FONT_COLORS:
+		_saved_colors[c] = _line.get_theme_color(c) if _line.has_theme_color_override(c) else null
+		_line.add_theme_color_override(c, Color(0, 0, 0, 0))
+
+
+func _show_words() -> void:
+	if _line == null or not is_instance_valid(_line):
+		_saved_colors.clear()
+		return
+	for c in _saved_colors:
+		if _saved_colors[c] == null:
+			_line.remove_theme_color_override(c)
+		else:
+			_line.add_theme_color_override(c, _saved_colors[c])
+	_saved_colors.clear()
+
+
+## The Button font colours cleared while a line types in.
+const FONT_COLORS: Array[StringName] = [&"font_color", &"font_focus_color", &"font_hover_color", &"font_pressed_color",
+	&"font_hover_pressed_color", &"font_disabled_color", &"font_outline_color"]
 
 
 func _end_typing() -> void:
 	if _type_tween != null and _type_tween.is_valid():
 		_type_tween.kill()
 	_type_tween = null
-	if _typed >= 0 and _line != null and is_instance_valid(_line):
-		if _line.text == _full_text.substr(0, _typed):
-			_line.text = _full_text
-		_line.custom_minimum_size = _had_min
+	if not _saved_colors.is_empty():
+		_show_words()
 	_typed = -1
 	queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
-	if (event is InputEventKey and event.pressed) or (event is InputEventJoypadButton and event.pressed):
-		if typing():
-			_end_typing()
+	# ANIM-R1 (MotionSkip): a press completes the typing and the slide and is consumed; a
+	# focus move is let through (it moves on, which ends this line's motion).
+	if not (typing() or sliding()) or not MotionSkip.is_press(event):
+		return
+	finish()
+	if not _is_focus_move(event):
+		MotionSkip.consume(self)
+
+
+static func _is_focus_move(event: InputEvent) -> bool:
+	for a in [&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"]:
+		if event.is_action(a):
+			return true
+	return false
 
 
 func _process(delta: float) -> void:
@@ -253,7 +300,7 @@ func caret_rect() -> Rect2:
 		return Rect2()
 	var font := _line.get_theme_font(&"font")
 	var fs := _line.get_theme_font_size(&"font_size")
-	var words := _line.text
+	var words := _shown_words() if _typed < 0 else _shown_words().substr(0, _typed)
 	var w := font.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var x := minf(_text_x() + w + CARET_GAP, _line.size.x - fs * CARET_W)
 	var h := fs * CARET_H
@@ -267,5 +314,22 @@ func _draw() -> void:
 		var to := _line.get_global_rect()
 		var r := Rect2(_from.position.lerp(to.position, _slide), _from.size.lerp(to.size, _slide))
 		draw_style_box(_hidden_focus, Rect2(r.position - to.position, r.size))
+	if _typed >= 0:
+		# The typed part, where the line draws its words (they are clear meanwhile).
+		var font := _line.get_theme_font(&"font")
+		var fs := _line.get_theme_font_size(&"font_size")
+		var full := _shown_words()
+		var x := _text_x()
+		if _line.alignment == HORIZONTAL_ALIGNMENT_CENTER:
+			x = (_line.size.x - font.get_string_size(full, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) * 0.5
+		elif _line.alignment == HORIZONTAL_ALIGNMENT_RIGHT:
+			var sb := _line.get_theme_stylebox(&"normal")
+			x = _line.size.x - (sb.get_margin(SIDE_RIGHT) if sb != null else 0.0) - font.get_string_size(full, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var base := Vector2(x, (_line.size.y - font.get_height(fs)) * 0.5 + font.get_ascent(fs))
+		var part := full.substr(0, _typed)
+		var outline := _line.get_theme_constant(&"outline_size")
+		if outline > 0 and _type_outline.a > 0.0:
+			draw_string_outline(font, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, outline, _type_outline)
+		draw_string(font, base, part, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _type_color)
 	if _line.has_focus() and _caret_on() and _line.text != "" and _line.alignment == HORIZONTAL_ALIGNMENT_LEFT:
 		draw_rect(caret_rect(), Color(_line.get_theme_color(&"font_focus_color"), 0.85))

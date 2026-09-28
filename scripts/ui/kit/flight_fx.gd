@@ -166,7 +166,7 @@ static func stamp_on(screen: Node, source: Control, word: String, id: StringName
 	var tw := holder.create_tween()
 	tw.tween_interval(Motion.delay_of(id))
 	tw.tween_property(holder, "scale", Vector2.ONE, d * STAMP_DOWN_SHARE).set_ease(e.ease).set_trans(e.trans)
-	tw.parallel().tween_property(holder, "modulate:a", 1.0, d * STAMP_DOWN_SHARE * 0.5)
+	tw.parallel().tween_property(holder, "modulate:a", 1.0, d * STAMP_DOWN_SHARE * Motion.amplitude(&"stamp_fade_in"))
 	tw.tween_interval(d * STAMP_HOLD_SHARE)
 	tw.tween_property(holder, "modulate:a", 0.0, d * (1.0 - STAMP_DOWN_SHARE - STAMP_HOLD_SHARE))
 	var f := {"node": holder, "tween": tw, "to": r.get_center(), "id": id}
@@ -217,8 +217,10 @@ func _end(f: Dictionary) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	# Any press ends the flights (they never wait on the player; nothing is consumed).
+	# ANIM-R1 (MotionSkip): a press (key, click or pad button) ends the flights and stamps
+	# and is consumed; it does nothing else.
 	if flights.is_empty():
 		return
-	if (event is InputEventKey and event.pressed and not event.echo) or (event is InputEventJoypadButton and event.pressed):
+	if MotionSkip.is_press(event):
 		finish()
+		MotionSkip.consume(self)

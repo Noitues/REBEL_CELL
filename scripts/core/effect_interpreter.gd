@@ -572,7 +572,7 @@ func deploy_drone(state: CombatState, owner: CombatantState, template: EnemyData
 		state.drones.append(drone)
 	else:
 		state.enemies.append(drone)
-	events.append({"type": "deploy", "owner": owner.id, "drone": drone.id, "slot": slot,
+	events.append({"type": "deploy", "owner": owner.id, "drone": drone.id, "slot": slot, "hp": drone.hp,
 		"text": "%s deploys %s on slot %d." % [owner.display_name, drone.display_name, slot]})
 	return drone
 
