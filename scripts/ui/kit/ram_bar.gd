@@ -8,6 +8,10 @@ extends Control
 const CHIP := 12.0
 const STEP := 16.0
 const FONT_SIZE := 12
+## The "-N RAM" float: its lettering as a share of the count's, and the share of its time
+## after which it fades (ANIM-R2 E9).
+const SPEND_FONT_SHARE := 1.4
+const SPEND_FADE_FROM := 0.6
 
 var ram: int = 0
 var max_ram: int = 0
@@ -32,12 +36,35 @@ func _init() -> void:
 func set_ram(value: int, maximum: int) -> void:
 	_flash = false
 	var from := shown_ram if max_ram > 0 else value
+	if max_ram > 0 and value < ram:
+		float_spend(ram - value)
 	ram = value
 	max_ram = maximum
 	_tick_to(from, value)
 	custom_minimum_size.y = (CHIP + 4.0) * Settings.text_scale
 	tooltip_text = "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn." % [value, maximum]
 	queue_redraw()
+
+
+## ANIM-R2 E9: what a respin, a card or an extra nudge just spent rises off the count as
+## "-N RAM" (`ram_spend_float`: its seconds, amplitude = px it rises), so RAM never drops
+## with nothing said. Nothing under reduce effects and headless (the count shows it).
+var spend_text: String = ""
+var spend_p: float = 1.0
+var _spend_tween: Tween = null
+
+
+func float_spend(amount: int) -> void:
+	if amount <= 0 or not Motion.live(&"ram_spend_float") or not is_inside_tree():
+		return
+	if _spend_tween != null and _spend_tween.is_valid():
+		_spend_tween.kill()
+	spend_text = tr("-%d RAM") % amount
+	spend_p = 0.0
+	var e := Motion.entry(&"ram_spend_float")
+	_spend_tween = create_tween()
+	_spend_tween.tween_method(func(v: float) -> void: spend_p = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"ram_spend_float")).set_ease(e.ease).set_trans(e.trans)
+	_spend_tween.tween_callback(func() -> void: spend_text = ""; spend_p = 1.0; queue_redraw())
 
 
 ## A refusal for want of RAM (ANIM-R1 C6): the chips flash red and "COST > RAM" shows
@@ -127,6 +154,10 @@ func play_refill() -> void:
 ## Ends the drain / refill at once (skip).
 func finish_motion() -> void:
 	_tick_to(ram, ram)
+	if _spend_tween != null and _spend_tween.is_valid():
+		_spend_tween.kill()
+	spend_text = ""
+	spend_p = 1.0
 	queue_redraw()
 
 
@@ -181,6 +212,14 @@ func _draw() -> void:
 		draw_rect(rc, col)
 		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= lit and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= lit and k < after) else 1.0)
 	draw_string(Palette.mono(), Vector2(x0 + max_ram * step + 6.0, chip), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.NET_CYAN)
+	if spend_text != "":
+		# "-N RAM" rising off the count and fading.
+		var sfs := roundi(fs * SPEND_FONT_SHARE)
+		var y := chip - Motion.amplitude(&"ram_spend_float") * spend_p
+		var a := 1.0 - clampf((spend_p - SPEND_FADE_FROM) / (1.0 - SPEND_FADE_FROM), 0.0, 1.0)
+		var at := Vector2(x0 + max_ram * step + 6.0, y)
+		draw_string_outline(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, 4, Color(Palette.NIGHT_SKY, a))
+		draw_string(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(Palette.CELL_PINK, a))
 	if refusal != "":
 		# A RAM chip, then "COST > RAM" in red.
 		var rx := x0 + max_ram * step + lw + 4.0

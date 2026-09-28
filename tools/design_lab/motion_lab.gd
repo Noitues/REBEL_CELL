@@ -104,6 +104,8 @@ const DEMOS := {
 	&"ram_refusal": ["scene", "refuse"], &"ram_refusal_pop": ["scene", "refuse"], &"send_it_ready": ["view", "ready"],
 	&"send_it_drips_share": ["view", "press"], &"drag_ghost_tilt_speed": ["scene", "drag"],
 	&"toast_note_hold": ["fade_out", "sticker"], &"stamp_fade_in": ["screen", "stamp"],
+	# ANIM-R2 (combat, events and screens):
+	&"hit_absorb": ["scene", "send_hit"], &"ram_spend_float": ["scene", "ram"], &"price_refusal": ["pulse", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -132,9 +134,10 @@ const DEMO_KILL_HP := 3
 const DRAG_FROM := Vector2(260, 620)
 const DRAG_TO := Vector2(820, 300)
 const DRAG_FRAMES := 18
-## Aim demo: frames between aim steps; the numbers demo's values [text, crit].
+## Aim demo: frames between aim steps.
 const AIM_STEP_FRAMES := 8
-const DEMO_NUMBERS := [["-7", false], ["-14", true], ["+5 BLOCK", false]]
+## ANIM-R2: the number demo's hits: [HP it takes, what its guard soaked].
+const DEMO_HITS := [[9, 5], [3, 0]]
 ## The cancel demo lets go here.
 const CANCEL_AT := Vector2(760, 330)
 ## A number rises at most this share of its hub (as in the combat scene).
@@ -726,19 +729,23 @@ func _play_scene(what: String) -> void:
 			else:
 				_scene._cancel_drag(i, CANCEL_AT)
 		"numbers":
-			# ANIM-R1: a guard number under the hub's lines, damage numbers above the name that
-			# travel into the HP counter (the HP rolls down as each arrives).
+			# ANIM-R2: two hits played as the replay plays them (ResolveBeats beats through the
+			# scene): a partly blocked one (the raw 14, the guard's "5 BLOCKED" chip, then 9
+			# travelling into the HP), then a plain 3, one projectile at a time.
+			var st: CombatState = _scene.engine.state()
+			var before := st.duplicate_state()
 			var hp := ev.combatant.hp
-			for n in DEMO_NUMBERS:
-				var text := String(n[0])
-				if text.contains("BLOCK"):
-					var g := ev.number_slot("guard", text, false)
-					_scene.fx_layer.number(g["at"], text, Palette.NET_CYAN, &"block_number", Vector2.UP, false, float(g["room"]), int(g["fs"]), "guard")
-				else:
-					var s := ev.number_slot("hp", text, bool(n[1]))
-					hp -= absi(int(text))
-					_scene.fx_layer.travel_number(s["at"], ev.hp_counter_spot(), text, WheelView.LOSS_COLOR, bool(n[1]), int(s["fs"]), "hp",
-						_scene._hp_arrives.bind(ev, hp))
+			var t := 0.0
+			for n in DEMO_HITS:
+				var through: int = n[0]
+				var soaked: int = n[1]
+				hp -= through
+				var b := {"kind": "damage", "event_index": 0, "phase": "resolve", "pass": "offensive", "source": st.player.id,
+					"pointer_index": 0, "target": ev.combatant.id, "amount": through, "crit": false, "hp_after": hp, "slot": -1,
+					"status": 0, "tier": -1, "soaked": soaked, "host": &"", "source_slot": -1, "raw": through + soaked,
+					"blocked": soaked, "shielded": 0}
+				_scene._after(t, _scene._play_beat.bind(b, before, st))
+				t += Motion.seconds(&"hit_line")
 		"enter":
 			ev.play_enter()
 		"refuse":

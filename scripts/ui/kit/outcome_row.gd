@@ -220,6 +220,11 @@ func lines_at(width: float) -> Array[Array]:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED:
+		# ANIM-R2 E2: the button's own boxes are read again under the new theme (read before
+		# the button was in the tree they were Godot's default grey boxes: the event's notes
+		# lost their paper).
+		_base_margins.clear()
+		_fitted_h = -1.0
 		update_minimum_size()
 		_fit_parent.call_deferred()
 		queue_redraw()
@@ -229,8 +234,8 @@ func _notification(what: int) -> void:
 ## again whenever the button's width changes); the row placed in it.
 func _fit_parent() -> void:
 	var b := get_parent() as Button
-	if b == null or items.is_empty():
-		return
+	if b == null or items.is_empty() or not b.is_inside_tree():
+		return  # its theme (and so its boxes) is known once it is in the tree
 	if not b.resized.is_connected(_on_parent_resized):
 		b.resized.connect(_on_parent_resized)
 	var left := 0.0

@@ -86,6 +86,8 @@ const SOLD_WORD := "SOLD" # TR
 const SOLD_FONT := 22
 const SOLD_TILT := -0.25
 const FIT_MIN_TEXT := 8
+## A sticker's largest rest tilt either way (degrees; a row keeps room for it, ANIM-R2 E8).
+const REST_TILT_MAX := 4
 const CHIP_ICON_FIT_SHRINK := 0.3
 
 
@@ -109,7 +111,7 @@ func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", in
 
 func _ready() -> void:
 	pivot_offset = size / 2.0
-	rest_tilt = float(((hash(card_title) % 9) - 4)) if look == Look.STICKER else 0.0
+	rest_tilt = float(((hash(card_title) % (REST_TILT_MAX * 2 + 1)) - REST_TILT_MAX)) if look == Look.STICKER else 0.0
 	rotation_degrees = 0.0 if _lifted and look == Look.STICKER else rest_tilt
 
 

@@ -439,7 +439,13 @@ func _let_go(t: Dictionary, at: Vector2) -> String:
 		return last_outcome
 	_restore_source(holder)
 	if bool(t.get("lands", true)):
-		_fly_land(p, holder, at, to.get_center() if to.has_area() else at)
+		var land_p := p
+		if LAND_BESIDE_KINDS.has(String(t.get("kind", ""))) and to.has_area():
+			# ANIM-R2 E9: a drop that only picks (a crew chip on JACK IN) lands beside the
+			# button, never on its words.
+			land_p = p.duplicate()
+			land_p["beside"] = to
+		_fly_land(land_p, holder, at, to.get_center() if to.has_area() else at)
 	last_outcome = "dropped"
 	dropped.emit(p, t)
 	return last_outcome
@@ -520,6 +526,9 @@ func _fly_land(p: Dictionary, holder: Control, from: Vector2, to: Vector2) -> Di
 	var e := Motion.entry(travel)
 	var land := String(p.get("land", ""))
 	var end := to - Vector2(0, copy.size.y * 0.5) if land == "shred" else to
+	if p.has("beside"):
+		end = beside_spot(p["beside"], copy.size, get_viewport_rect().size if is_inside_tree() else Vector2.INF)
+		f["to"] = end
 	tw.tween_method(_place.bind(copy, from, end), 0.0, 1.0, Motion.seconds(travel)).set_ease(e.ease).set_trans(e.trans)
 	if land == "buy":
 		tw.parallel().tween_property(copy, "scale", Vector2.ONE * Motion.amplitude(travel), Motion.seconds(travel)).set_ease(e.ease).set_trans(e.trans)
@@ -535,6 +544,23 @@ func _fly_land(p: Dictionary, holder: Control, from: Vector2, to: Vector2) -> Di
 		_settle_and_stamp(tw, copy, f)
 	tw.tween_callback(_end_flight.bind(f))
 	return f
+
+
+## Target kinds whose drop only picks something (the press acts): the item lands beside
+## the target, never over its words (ANIM-R2 E9).
+const LAND_BESIDE_KINDS: Array[String] = ["jack"]
+## The gap between such a target and the item landing beside it (px).
+const LAND_BESIDE_GAP := 8.0
+
+
+## Where an item of `item` size lands beside `rect` (global centre): to its left, else to
+## its right when the left runs off `screen`.
+static func beside_spot(rect: Rect2, item: Vector2, screen: Vector2 = Vector2.INF) -> Vector2:
+	var left := Vector2(rect.position.x - LAND_BESIDE_GAP - item.x * 0.5, rect.get_center().y)
+	if left.x - item.x * 0.5 >= 0.0:
+		return left
+	var right := Vector2(rect.end.x + LAND_BESIDE_GAP + item.x * 0.5, rect.get_center().y)
+	return right if screen == Vector2.INF or right.x + item.x * 0.5 <= screen.x else left
 
 
 ## Shredded (ANIM-4b): the copy, its foot on the target's middle (the shredder's mouth),

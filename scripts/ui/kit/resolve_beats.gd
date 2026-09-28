@@ -14,7 +14,8 @@ extends RefCounted
 ## launched or a drone deployed: target = the newcomer, host = where it docks, hp_after =
 ## the HP it starts on, from the event) and "phase" beats (a boss enters a phase: spawned
 ## = [{id, hp, slot}], ticks = its needles now); "died" sets HP 0 (satellites going down
-## with their host take no damage event).
+## with their host take no damage event). ANIM-R2: a damage beat also carries `raw` (the hit
+## before block and shield: amount + soaked), `blocked` and `shielded` (what each soaked).
 
 ## Event types that become a beat, and the beat kind each makes.
 const KINDS := {
@@ -80,7 +81,8 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 			"pointer_index": -1, "target": target, "amount": int(e.get("amount", 0)), "crit": false,
 			"hp_after": -1, "slot": int(e.get("slot", e.get("slice_index", -1))), "status": int(e.get("status", 0)),
 			"tier": int(e.get("tier", -1)), "soaked": int(e.get("blocked", 0)) + int(e.get("shielded", 0)),
-			"host": host, "source_slot": -1}
+			"host": host, "source_slot": -1, "raw": int(e.get("amount", 0)), "blocked": int(e.get("blocked", 0)),
+			"shielded": int(e.get("shielded", 0))}
 		match kind:
 			"land":
 				b["source"] = target
@@ -146,25 +148,72 @@ static func final_hp(before: CombatState, beats: Array[Dictionary]) -> Dictionar
 	return hp
 
 
+## True when `b` is a hit (ANIM-R2): a damage or evaded beat from another combatant. A hit
+## flies as a projectile from its attacker to its victim, one at a time.
+static func is_hit(b: Dictionary) -> bool:
+	var src := StringName(String(b.get("source", "")))
+	return String(b["kind"]) in ["damage", "evaded"] and src != &"" and src != StringName(String(b.get("target", "")))
+
+
+## True when `b` flies a projectile (a hit, or a status another combatant puts on a slice).
+static func flies(b: Dictionary) -> bool:
+	if is_hit(b):
+		return true
+	var src := StringName(String(b.get("source", "")))
+	return String(b["kind"]) in ["status", "absorbed"] and src != &"" and src != StringName(String(b.get("target", "")))
+
+
+## True when `b` changes an HP by a number the replay shows (damage, heal, corrupted).
+static func changes_hp(b: Dictionary) -> bool:
+	return String(b["kind"]) in HP_KINDS and int(b["amount"]) > 0 and int(b["hp_after"]) >= 0
+
+
+## Seconds from `b`'s beat until its HP change has settled on screen (ANIM-R2): the
+## projectile's flight to the victim (`impact`, hits only), the soaked part coming off
+## (`absorb`, a partly blocked hit) and the number travelling into the HP counter and the
+## HP rolling (`settle`). 0 for a beat that changes no HP.
+static func settle_after(b: Dictionary, timing: Dictionary) -> float:
+	if not changes_hp(b):
+		return 0.0
+	var t := float(timing.get("settle", 0.0))
+	if is_hit(b):
+		t += float(timing.get("impact", 0.0))
+		if int(b.get("soaked", 0)) > 0:
+			t += float(timing.get("absorb", 0.0))
+	return t
+
+
 ## When each beat plays (seconds from the start), in beat order and never decreasing:
 ## the landings together at 0; the landing hold (`lead`, only after landings); then the
-## resolve beats one `gap` apart with a gap more at each new pass (a whole wheel's death
-## waits `death_lead` more, so its HP is seen at 0 first); the result (`result_at`) holds
-## `hold` seconds; then the turn start (the spins together, then its other beats). The
-## gap is `beat_gap`, shrunk so everything fits in `budget` (the lead, the hold, the death
-## leads and, when a turn starts, `tail`: the spin to the next landing). Returns {times,
-## spin_at, result_at, total, gap}.
+## resolve beats one `gap` apart with a gap more at each new pass. ANIM-R2 (`timing`, all
+## optional): after a hit (or any beat that flies) the next beat waits `hit_gap`, so two
+## projectiles never fly at once; a whole wheel's death waits until the HP change before
+## it has settled (settle_after) plus `break_delay`, so its HP is seen at 0; the result
+## (`result_at`) comes once every HP change has settled, and holds `hold` seconds before
+## the turn start (the spins together, then its other beats). When the fight ends on a
+## wheel's death, the result shows `break_delay` before that break (THIS TURN and the
+## stamps read before the wheel falls). The gap is `beat_gap`, shrunk so the beats fit
+## `budget` beside the lead, the hold, the deaths' waits and, when a turn starts, `tail`
+## (the spin to the next landing); the hits' spacing and the HP settling are never
+## squeezed and come on top, so a turn with many hits runs longer. Without `timing` a death waits
+## `death_lead` after the beat before it (card effects). Returns {times, spin_at,
+## result_at, total, gap}.
 static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, tail: float, lead: float = 0.0,
-		hold: float = 0.0, death_lead: float = 0.0) -> Dictionary:
+		hold: float = 0.0, death_lead: float = 0.0, timing: Dictionary = {}) -> Dictionary:
+	var hit_gap := float(timing.get("hit_gap", 0.0))
+	var break_delay := float(timing.get("break_delay", death_lead))
 	var slots := 0
 	var passes := {}
 	var any_land := false
 	var has_turn := false
 	var deaths := 0
+	var ends := false
 	for b in beats:
 		if b["kind"] == "land":
 			any_land = true
 			continue
+		if b["kind"] == "end":
+			ends = true
 		if b["phase"] == "turn_start":
 			has_turn = true
 			if b["kind"] == "spin":
@@ -175,6 +224,8 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 		if String(b["pass"]) != "" and not passes.has(b["pass"]):
 			passes[b["pass"]] = true
 			slots += 1
+	# The squeezable gap fits the budget beside the lead, the hold, the deaths' waits and the
+	# tail, as before ANIM-R2; the hits' spacing and the HP settling come on top.
 	var fixed := hold + death_lead * deaths + (lead if any_land else 0.0) + (tail if has_turn else 0.0)
 	var gap := beat_gap
 	if slots > 0:
@@ -185,12 +236,17 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 	var last_pass := ""
 	var spin_at := -1.0
 	var result_at := -1.0
+	var settled_at := -1.0
+	var prev_flies := false
+	var kill_at := -1.0
+	var kill_settled := -1.0
+	var last_t := 0.0
 	for b in beats:
 		if b["kind"] == "land":
 			times.append(0.0)
 			continue
 		if b["phase"] == "turn_start" and spin_at < 0.0:
-			result_at = t + gap if started else (lead if any_land else t)
+			result_at = maxf(t + gap if started else (lead if any_land else t), settled_at)
 			spin_at = result_at + hold
 			t = spin_at
 			started = true
@@ -203,15 +259,31 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 		else:
 			if String(b["pass"]) != last_pass and String(b["pass"]) != "":
 				t += gap
-			t += gap
+			t += maxf(gap, hit_gap) if prev_flies else gap
 		last_pass = String(b["pass"])
 		if b["kind"] == "died" and bool(b.get("wheel", false)):
-			t += death_lead
+			if timing.is_empty():
+				t += death_lead
+			elif settled_at >= 0.0:
+				t = maxf(t, settled_at + break_delay)
+			if spin_at < 0.0:
+				# The last break before the fight ends (another enemy may fall earlier).
+				kill_settled = maxf(settled_at, last_t)
+				kill_at = t
 		times.append(t)
+		if spin_at < 0.0:
+			var s := settle_after(b, timing)
+			if s > 0.0:
+				settled_at = maxf(settled_at, t + s)
+		prev_flies = flies(b) and hit_gap > 0.0
+		last_t = t
 		started = true
 	if result_at < 0.0:
-		result_at = t + gap if started else (lead if any_land else t)
-	var end := result_at + hold
+		result_at = maxf(t + gap if started else (lead if any_land else t), settled_at)
+		if ends and kill_at >= 0.0 and not timing.is_empty():
+			# The fight ends on this break: the result reads just before the wheel falls.
+			result_at = maxf(kill_settled, kill_at - break_delay)
+	var end := maxf(result_at + hold, t)
 	if spin_at >= 0.0:
 		end = maxf(t, spin_at) + tail
 	return {"times": times, "spin_at": spin_at, "result_at": result_at, "total": end, "gap": gap}

@@ -449,8 +449,9 @@ func _type_page(from: int) -> float:
 
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press shows the typing page whole and is consumed (it does
-	# nothing else).
+	# nothing else). ANIM-R2: with every other word typing on screen (Typing.finish_all).
 	if typing() and MotionSkip.is_press(event):
+		Typing.finish_all(get_tree())
 		finish_typing()
 		MotionSkip.consume(self)
 
