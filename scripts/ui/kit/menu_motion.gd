@@ -12,9 +12,10 @@ extends Control
 ## while the box slides. Typing is drawn (ANIM-R1): the line's own words stay whole (its
 ## `text` never changes, so screen readers and tests read it all and nothing re-lays out);
 ## its font colours go clear while this control draws the typed part on top, a character
-## at a time. A press completes the motion and is consumed (MotionSkip), except a focus
-## move (arrows, D-pad, Tab): it moves the highlight on, which ends the line's motion, and
-## a menu must never drop a fast tap. The first focus
+## at a time. A press completes the motion; a press that works the menu passes on (ANIM-R2,
+## MotionSkip): a focus move (arrows, D-pad, Tab), an accept (Enter, Space, A) and a click
+## on one of the menu's lines, since a menu must never drop a fast tap (Down then Enter the
+## next frame activates the new line). Other presses are consumed. The first focus
 ## after `attach` (a page opening or refreshing) shows at once: the page's own entrance is
 ## the motion then. Under reduce effects and headless nothing types or slides and the caret
 ## holds steady. View only.
@@ -243,13 +244,27 @@ func _end_typing() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	# ANIM-R1 (MotionSkip): a press completes the typing and the slide and is consumed; a
-	# focus move is let through (it moves on, which ends this line's motion).
+	# ANIM-R1 / R2 (MotionSkip): a press completes the typing and the slide; a press that
+	# works the menu (a focus move, an accept, a click on a line) is let through, any other
+	# is consumed.
 	if not (typing() or sliding()) or not MotionSkip.is_press(event):
 		return
 	finish()
-	if not _is_focus_move(event):
+	if not works_menu(event):
 		MotionSkip.consume(self)
+
+
+## True when `event` works this menu (ANIM-R2): a focus move, an accept, or a click on one
+## of its lines. Such a press completes the line's motion and passes on.
+func works_menu(event: InputEvent) -> bool:
+	if _is_focus_move(event) or event.is_action(&"ui_accept"):
+		return true
+	if event is InputEventMouseButton and menu != null and is_instance_valid(menu):
+		var at := (event as InputEventMouseButton).global_position
+		for b in menu.get_children():
+			if b is Button and (b as Button).is_visible_in_tree() and (b as Button).get_global_rect().has_point(at):
+				return true
+	return false
 
 
 static func _is_focus_move(event: InputEvent) -> bool:
