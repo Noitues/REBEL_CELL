@@ -16,6 +16,10 @@ extends RefCounted
 ## = [{id, hp, slot}], ticks = its needles now); "died" sets HP 0 (satellites going down
 ## with their host take no damage event). ANIM-R2: a damage beat also carries `raw` (the hit
 ## before block and shield: amount + soaked), `blocked` and `shielded` (what each soaked).
+## ANIM-R4 C6: `side` ("player" for the operative and its drones, "enemy" for the enemies
+## and their satellites; "" when the source is unknown) and `wheel_source` (the source is a
+## whole wheel, not a drone or satellite) let the schedule play one side's hits after the
+## other's; `source_slot` is the slice the resolving needle's own resolution landed on.
 
 ## Event types that become a beat, and the beat kind each makes.
 const KINDS := {
@@ -53,6 +57,8 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 	var landings := {}
 	var used := {}
 	var actor: StringName = &""
+	# ANIM-R4 C6a: the side of a combatant spawned during the resolve (its host's).
+	var spawned_side := {}
 	for i in events.size():
 		var e: Dictionary = events[i]
 		var t := String(e.get("type", ""))
@@ -101,15 +107,31 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 			_:
 				if SELF_KINDS.has(kind):
 					b["source"] = target
+		var resolving := {}
 		if phase == "resolve" and KIND_SLICES.has(kind) and b["source"] != &"":
-			b["pointer_index"] = _pointer_for(before, landings, used, b["source"], kind, lookup)
-		if int(b["pointer_index"]) >= 0 and b["source"] != &"":
+			# ANIM-R4 C6b: the needle's own resolution (a SHUNT / MIRROR neighbour resolves as
+			# a second entry under the same needle): its slice is where the hit leaves from.
+			resolving = _landing_for(before, landings, used, b["source"], kind, lookup)
+			b["pointer_index"] = int(resolving.get("pointer_index", -1))
+		if resolving.is_empty() and int(b["pointer_index"]) >= 0 and b["source"] != &"":
 			for l in landings.get(b["source"], []):
 				if int(l.get("pointer_index", 0)) == int(b["pointer_index"]):
-					b["source_slot"] = int(l.get("slice_index", -1))
-					# ANIM-R3 A6c: how well that needle landed (the hit's aim multiplier shows).
-					b["source_tier"] = int(l.get("tier", -1))
+					resolving = l
 					break
+		if not resolving.is_empty():
+			b["source_slot"] = int(resolving.get("slice_index", -1))
+			# ANIM-R3 A6c: how well that needle landed (the hit's aim multiplier shows).
+			b["source_tier"] = int(resolving.get("tier", -1))
+		var src_id := StringName(String(b["source"]))
+		if kind == "spawn":
+			var hc := before.get_combatant(host)
+			spawned_side[target] = "player" if hc != null and hc.is_player else String(spawned_side.get(host, "enemy"))
+		elif kind == "phase":
+			for sp in e.get("spawned", []):
+				spawned_side[StringName(String(sp.get("id", "")))] = "enemy"
+		b["side"] = side_of(before, src_id, spawned_side)
+		var sc := before.get_combatant(src_id)
+		b["wheel_source"] = sc != null and not sc.is_satellite and not before.drones.has(sc)
 		if kind == "spawn":
 			hp[target] = int(e.get("hp", 0))
 			b["hp_after"] = hp[target]
@@ -213,7 +235,12 @@ static func arrive_after(b: Dictionary, timing: Dictionary) -> float:
 ## `budget` beside the lead, the hold, the deaths' waits and, when a turn starts, `tail`
 ## (the spin to the next landing); the hits' spacing and the HP settling are never
 ## squeezed and come on top, so a turn with many hits runs longer. Without `timing` a death waits
-## `death_lead` after the beat before it (card effects). Returns {times, spin_at,
+## `death_lead` after the beat before it (card effects). ANIM-R4 C6a (`timing`
+## "side_gap", "attacker_gap"): a projectile from the other side waits until every HP
+## change so far has settled (its roll done) and every hit so far has landed, plus
+## `side_gap` (the operative's hits land in full, then the enemies' come); a projectile
+## from another attacker on the same side (a drone after its wheel, a satellite after its
+## host) waits `attacker_gap` after the last one arrived. Returns {times, spin_at,
 ## result_at, total, gap}.
 static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, tail: float, lead: float = 0.0,
 		hold: float = 0.0, death_lead: float = 0.0, timing: Dictionary = {}) -> Dictionary:
@@ -261,6 +288,11 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 	# ANIM-R3 A6d: a projectile never launches before the last hit's number has entered its
 	# HP counter (never two numbers on their way at once; one HP roll per hit).
 	var fly_ready := -INF
+	var side_gap := float(timing.get("side_gap", 0.0))
+	var attacker_gap := float(timing.get("attacker_gap", 0.0))
+	var last_side := ""
+	var last_source := ""
+	var landed_at := -INF
 	for b in beats:
 		if b["kind"] == "land":
 			times.append(0.0)
@@ -292,7 +324,17 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 				kill_at = t
 		if flies(b) and hit_gap > 0.0:
 			t = maxf(t, fly_ready)
+			var side := String(b.get("side", ""))
+			var src := String(b.get("source", ""))
+			if last_side != "" and side != "" and side != last_side:
+				t = maxf(t, maxf(settled_at, landed_at) + side_gap)
+			elif last_source != "" and src != last_source:
+				t = maxf(t, fly_ready + attacker_gap)
 			fly_ready = maxf(fly_ready, t + maxf(hit_gap, arrive_after(b, timing)))
+			landed_at = maxf(landed_at, t + float(timing.get("impact", 0.0)))
+			if side != "":
+				last_side = side
+			last_source = src
 		times.append(t)
 		if spin_at < 0.0:
 			var s := settle_after(b, timing)
@@ -310,6 +352,17 @@ static func schedule(beats: Array[Dictionary], budget: float, beat_gap: float, t
 	if spin_at >= 0.0:
 		end = maxf(t, spin_at) + tail
 	return {"times": times, "spin_at": spin_at, "result_at": result_at, "total": end, "gap": gap}
+
+
+## ANIM-R4 C6a: the side `id` fights on: "player" (the operative, its drones), "enemy" (the
+## enemies, their satellites), "" when unknown; `spawned` names combatants spawned mid-way.
+static func side_of(before: CombatState, id: StringName, spawned: Dictionary = {}) -> String:
+	if id == &"":
+		return ""
+	var c := before.get_combatant(id)
+	if c == null:
+		return String(spawned.get(id, ""))
+	return "player" if c.is_player or before.drones.has(c) else "enemy"
 
 
 static func _everyone(s: CombatState) -> Array[CombatantState]:
@@ -334,19 +387,21 @@ static func _is_crit(e: Dictionary, before: CombatState, landings: Dictionary, l
 	return false
 
 
-## Which of `source`'s landing needles resolves a `kind` beat: the next one (in landing
-## order) on a slice of that kind, else the first.
-static func _pointer_for(before: CombatState, landings: Dictionary, used: Dictionary, source: StringName, kind: String, lookup: ContentLookup) -> int:
+## Which of `source`'s landings resolves a `kind` beat: the next one (in landing order) on a
+## slice of that kind, else the first; the landing's event ({pointer_index, slice_index,
+## tier}), {} when it has none. ANIM-R4 C6b: the landing itself, not only its needle (a
+## neighbour rule's second resolution under one needle has its own slice).
+static func _landing_for(before: CombatState, landings: Dictionary, used: Dictionary, source: StringName, kind: String, lookup: ContentLookup) -> Dictionary:
 	var list: Array = landings.get(source, [])
 	if list.is_empty():
-		return -1
+		return {}
 	var owner := before.get_combatant(source)
-	var fits: Array[int] = []
+	var fits: Array = []
 	for l in list:
 		if owner != null and _slice_type(owner, int(l.get("slice_index", 0)), lookup) in KIND_SLICES[kind]:
-			fits.append(int(l.get("pointer_index", 0)))
+			fits.append(l)
 	if fits.is_empty():
-		return int(list[0].get("pointer_index", 0))
+		return list[0]
 	var key := "%s:%s" % [source, kind]
 	var n := int(used.get(key, 0))
 	used[key] = n + 1

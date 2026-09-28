@@ -277,7 +277,8 @@ func _slice_label(i: int) -> String:
 	var parts := PackedStringArray([Codex.describe(slice) if slice != null else "?"])
 	var status: int = wheel.slice_statuses[i]
 	if status != RC.Status.NONE:
-		parts.append(Codex.status_text(status))
+		# ANIM-R4 C6f: whose win it is, as its colour says.
+		parts.append((tr("Good for you: %s") if status_good_for_you(status, combatant.is_player) else tr("Bad for you: %s")) % Codex.status_text(status))
 	if wheel.slot_firmware_ids[i] != &"":
 		parts.append(Codex.describe(lookup.get_content(wheel.slot_firmware_ids[i])))
 	return "\n".join(parts)
@@ -480,7 +481,8 @@ static func spin_curve(p: float, dist: float, over: float, trans: int, ease: int
 ## `inner_from`, when given) to the state's rotation with `id`'s timing (ANIM-2 spin:
 ## ease-out, overshoot of amplitude x OVERSHOOT_TICKS, settle), after `delay` seconds.
 ## Ends exactly on the core's tick; shows the end at once when motion doesn't play.
-func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: float = 0.0) -> void:
+## ANIM-R4 C6e: returns when it lands (s from now: its delay and its turn; 0 when none).
+func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: float = 0.0) -> float:
 	_nudge_queue.clear()
 	_queue_end.clear()
 	if combatant == null or not Motion.live(id):
@@ -488,7 +490,7 @@ func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: floa
 		anim_inner_rotation = NAN
 		_end(&"turn")
 		queue_redraw()
-		return
+		return 0.0
 	var to := float(combatant.wheel.rotation)
 	var inner_to := float(combatant.wheel.inner_rotation)
 	var dist := to - from
@@ -496,7 +498,7 @@ func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: floa
 	if is_zero_approx(dist) and is_zero_approx(inner_dist):
 		anim_rotation = NAN
 		anim_inner_rotation = NAN
-		return
+		return 0.0
 	var e := Motion.entry(id)
 	anim_rotation = from
 	anim_inner_rotation = inner_from if not is_nan(inner_from) else NAN
@@ -512,6 +514,7 @@ func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: floa
 		queue_redraw())
 	_blur_dir = signf(dist) if dist != 0.0 else 1.0
 	set_process(true)
+	return delay + secs
 
 
 func _turn_step(p: float, from: float, dist: float, inner_from: float, inner_dist: float, over: float, trans: int, ease: int) -> void:
@@ -633,13 +636,13 @@ func play_flip(delay: float = 0.0) -> void:
 
 ## Needles move from `from` ticks to the state's (`pointer_migrate`, or `pointer_orbit`
 ## with a fading trail arc when `trail`), after `delay`. Each takes the short way round.
-func play_pointers(from: Array, id: StringName, trail: bool = false, delay: float = 0.0) -> void:
+func play_pointers(from: Array, id: StringName, trail: bool = false, delay: float = 0.0) -> float:
 	var to := PackedInt32Array()
 	if combatant != null:
 		to = combatant.wheel.pointer_ticks
 	if not Motion.live(id) or from.size() != to.size() or from.is_empty():
 		anim_pointers = []
-		return
+		return 0.0
 	var starts: Array[float] = []
 	var ends: Array[float] = []
 	for k in to.size():
@@ -663,6 +666,7 @@ func play_pointers(from: Array, id: StringName, trail: bool = false, delay: floa
 		ttw.tween_interval(delay + secs)
 		ttw.tween_method(func(a: float) -> void: trail_alpha = a; queue_redraw(), trail_alpha, 0.0, Motion.seconds(&"orbit_trail")).set_ease(te.ease).set_trans(te.trans)
 		ttw.tween_callback(func() -> void: trails = []; _end(&"trail"))
+	return delay + secs
 
 
 func _pointer_step(p: float, starts: Array[float], ends: Array[float]) -> void:
@@ -1174,6 +1178,31 @@ func satellite_spot(id: StringName) -> Vector2:
 	return global_center()
 
 
+## ANIM-R4 C6b: where a hit leaves from: on slice `slot`'s band right under needle
+## `index` (the slice the needle landed on), or the slice's middle when the needle stands
+## elsewhere (a neighbour rule resolved the slice beside it), as shown.
+func needle_slot_spot(index: int, slot: int) -> Vector2:
+	var c := _shown()
+	var ps := shown_pointers()
+	if c == null or slot < 0 or index < 0 or index >= ps.size():
+		return slot_spot(slot)
+	var rot := shown_rotation()
+	var under := WheelMath.slice_at(roundi(ps[index] + rot), c.wheel.slice_count)
+	if under != slot:
+		return slot_spot(slot)
+	var a := _ang(ps[index])
+	return global_center() + Vector2(cos(a), sin(a)) * (_radius() - _band() * 0.5)
+
+
+## ANIM-R4 C6g: the room over the disc (global rect: from the view's top to the band's
+## outer edge less the tag's gap), where a beaten side's VICTORY stands clear of the wheel
+## and its crack (the tag is gone once the fight is over).
+func room_above_disc() -> Rect2:
+	var top := global_position.y
+	var bottom := global_position.y + _center().y - _radius() - VALUE_OUT - _fs(VALUE_FONT_SIZE)
+	return Rect2(Vector2(global_position.x, top), Vector2(size.x, maxf(0.0, bottom - top)))
+
+
 ## The middle of slice `slot` on screen (at its status mark), as shown.
 func slot_spot(slot: int) -> Vector2:
 	var c := _shown()
@@ -1661,17 +1690,21 @@ func _draw_view() -> void:
 		draw_colored_polygon(PackedVector2Array([tip, base + side, base - side]), _col(Palette.PAPER))
 		var status: int = wheel.slice_statuses[i]
 		var sp := center + dir * (inner + band * 0.5) + dir.orthogonal() * band * 0.42
+		# ANIM-R4 C6f: a status wears its good / bad colour for the operative (green: good for
+		# you, red: bad for you), on its mark, its ring and the slice's rim as it lands.
+		var scol := status_color(status, combatant.is_player)
 		if status != RC.Status.NONE:
 			draw_circle(sp, 7, Palette.NIGHT_SKY)
-			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(status, ""), HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
+			draw_arc(sp, 7, 0, TAU, 16, _col(scol), 1.5, true)
+			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(status, ""), HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(scol))
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
 			var fl := float(status_flash[i])
-			draw_arc(sp, STATUS_MARK_R + Motion.amplitude(&"status_mark") * (1.0 - fl), 0, TAU, 24, _col(Color(Palette.CELL_ACID, 0.35 + 0.65 * fl)), 3.0, true)
+			draw_arc(sp, STATUS_MARK_R + Motion.amplitude(&"status_mark") * (1.0 - fl), 0, TAU, 24, _col(Color(scol, 0.35 + 0.65 * fl)), 3.0, true)
 			var sclosed := wedge.duplicate()
 			sclosed.append(wedge[0])
-			draw_polyline(sclosed, _col(Color(Palette.CELL_ACID, fl)), 3.0, true)
+			draw_polyline(sclosed, _col(Color(scol, fl)), 3.0, true)
 		if status_ghosts.has(i):
 			# The status this turn will leave on the slice: a dashed acid ring (or a cross
 			# when it clears).
@@ -1867,14 +1900,40 @@ func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
 		fs -= 1
 		ww = font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var box := Rect2(-ww * 0.5 - fs * 0.3, -fs * 0.7, ww + fs * 0.6, fs * 1.4)
+	# ANIM-R4 C6g: in the beaten wheel's own colour, on its own side (red read as pink under
+	# VICTORY, and as the operative's loss).
+	var dcol := defeated_color()
 	draw_set_transform(center, STAMP_TILT, Vector2.ONE)
 	draw_rect(box, Color(Palette.NIGHT_SKY, 0.85))
-	draw_rect(box, _col(LOSS_COLOR), false, 3.0)
-	draw_string(font, Vector2(-ww * 0.5, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(LOSS_COLOR))
+	draw_rect(box, dcol, false, 3.0)
+	draw_string(font, Vector2(-ww * 0.5, fs * 0.35), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dcol)
 	draw_set_transform(Vector2.ZERO)
 	# ANIM-R3 A6g: a skull under the stamp marks the beaten side without words.
 	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
-	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, _col(LOSS_COLOR))
+	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, dcol)
+
+
+## ANIM-R4 C6g: the colour a beaten wheel's DEFEATED stamp and skull wear: its own.
+func defeated_color() -> Color:
+	return _col(wheel_color)
+
+
+## ANIM-R4 C6f: true when `status` on a slice is good for that slice's owner (OVERCLOCKED
+## boosts it, ENCRYPTED guards it); CORRUPTED and PARASITE are bad for it.
+static func status_good_for_owner(status: int) -> bool:
+	return status in [RC.Status.OVERCLOCKED, RC.Status.ENCRYPTED]
+
+
+## ANIM-R4 C6f: true when `status` on a wheel is good for the operative (on its own wheel:
+## good for the owner; on an enemy's: bad for the owner).
+static func status_good_for_you(status: int, on_player: bool) -> bool:
+	return status_good_for_owner(status) == on_player
+
+
+## The colour a status shows in (ANIM-R4 C6f): green when it is good for the operative, red
+## when bad (the glyph says which status; the colour says whose win it is).
+static func status_color(status: int, on_player: bool) -> Color:
+	return HP_COLOR if status_good_for_you(status, on_player) else LOSS_COLOR
 
 
 ## A skull mark centred at `c`, `r` px in radius, in `col` (ANIM-R3 A6g: the defeated side):
@@ -2076,11 +2135,51 @@ func _draw_arrows() -> void:
 		draw_colored_polygon(PackedVector2Array([tip + tangent * 7.0, tip - tangent * 3.0 + normal * 6.0, tip - tangent * 3.0 - normal * 6.0]), _col(col))
 		if ring == RC.RingScope.INNER:
 			draw_string(Palette.mono(), c + Vector2(-8, 18), "IN", HORIZONTAL_ALIGNMENT_CENTER, 16, _fs(HUB_FONT_SIZE), _col(col))
-		if ring == key_ring and arrow_hints.has(d):
-			var hint := String(arrow_hints[d])
+		var hr := arrow_hint_rect(ring, d)
+		if hr.has_area():
+			# ANIM-R4 C4: the key hint sits where it is clear of the tag (arrow_hint_rect).
 			var fs := _fs(HUB_FONT_SIZE + 1)
-			var w := Palette.mono().get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			draw_string(Palette.mono(), c + Vector2(-w * 0.5 + d * 22.0, -10), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.CELL_ACID))
+			draw_string(Palette.mono(), hr.position + Vector2(0.0, Palette.mono().get_ascent(fs)), String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.CELL_ACID))
+
+
+## ANIM-R4 C4: where the key hint of nudge arrow (`ring`, `d`) is drawn (local rect of its
+## words; empty when it has none). Above the arrow on its outer side as before, unless that
+## touches the tag (at 1.3 / 1.6 a tag with two chip rows reaches down past the arrows):
+## then beside the arrow on its outer side, then under it; the first spot clear of the tag
+## and inside the view wins (the first one when none is).
+func arrow_hint_rect(ring: int, d: int) -> Rect2:
+	if ring != key_ring or not arrow_hints.has(d) or String(arrow_hints[d]) == "":
+		return Rect2()
+	var fs := _fs(HUB_FONT_SIZE + 1)
+	var f := Palette.mono()
+	var sz := Vector2(f.get_string_size(String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs))
+	var c := arrow_center(ring, d) - global_position
+	var above := Rect2(c + Vector2(-sz.x * 0.5 + d * HINT_SIDE, -HINT_RISE - f.get_ascent(fs)), sz)
+	var beside := Rect2(Vector2(c.x + ARROW_HIT + HINT_GAP if d > 0 else c.x - ARROW_HIT - HINT_GAP - sz.x, c.y - sz.y * 0.5), sz)
+	var under := Rect2(c + Vector2(-sz.x * 0.5 + d * HINT_SIDE, ARROW_HIT + HINT_GAP), sz)
+	var tag := _intent_rect_local().grow(HINT_GAP)
+	var room := Rect2(Vector2.ZERO, size)
+	for r in [above, beside, under]:
+		if not (tag.has_area() and (r as Rect2).intersects(tag)) and room.encloses(r):
+			return r
+	return above
+
+
+## ANIM-R4 C4: a key hint's offsets from its arrow (px): sideways (outward), its baseline's
+## rise over the arrow's centre, and the gap it keeps from the arrow's circle and the tag.
+const HINT_SIDE := 22.0
+const HINT_RISE := 10.0
+const HINT_GAP := 3.0
+
+
+## ANIM-R4 C4: the key hints on screen now (global rects), for the layout rules.
+func arrow_hint_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for ar in arrows():
+		var r := arrow_hint_rect(int(ar["ring"]), int(ar["direction"]))
+		if r.has_area():
+			out.append(Rect2(global_position + r.position, r.size))
+	return out
 
 
 ## HP as a segmented arc under the wheel with the numbers in its gap; the preview shows
@@ -2213,8 +2312,12 @@ const ICON_ROW_GAP := 8.0
 const ICON_ROW_MIN_FONT := 8
 
 
-## The icon row's items: [{icon (a slice type, -1 = none), text, color, sep (a joining mark
-## before it: "→" drawn as an arrow, "=" as text)}]; empty when the turn did nothing to it.
+## The icon row's items: [{icon (a slice type, -1 = none), text, color, sep (a joining sign
+## before it)}]; empty when the turn did nothing to it. ANIM-R4 C6c: the one notation for a
+## hit meeting a guard (CombatFxLayer.draw_equation, as where a hit struck): sword and the
+## hits aimed at it, minus the shield and what its guard took (minus the evade mark and what
+## it evaded), = what got through; an HP change the hits don't explain (a heal, corruption)
+## follows after a dot. No arrow ("11 -> 11 = 0" read as a formula to decode).
 func icon_row_items() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var d := last_turn_icons
@@ -2226,56 +2329,37 @@ func icon_row_items() -> Array[Dictionary]:
 	var hp := int(d.get("hp", 0))
 	if hit <= 0 and hp == 0:
 		return out
+	var through := maxi(0, hit - soaked - evaded)
 	if hit > 0:
 		out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
-	if soaked > 0:
-		out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": "arrow"})
-	if evaded > 0:
-		out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": "arrow"})
-	var hp_text := ("+%d" % hp) if hp > 0 else ("-%d" % absi(hp))
-	out.append({"icon": RC.SliceType.HEAL if hp > 0 and hit <= 0 else -1, "text": hp_text, "color": HP_COLOR if hp > 0 else LOSS_COLOR,
-		"sep": "=" if hit > 0 else ""})
+		if soaked > 0:
+			out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+		if evaded > 0:
+			out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+		out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
+	# The rest of the HP change (a heal, corruption): what the hits took off is `dealt`.
+	var rest := hp + int(d.get("dealt", 0))
+	if hit <= 0 or rest != 0:
+		var hp_text := ("+%d" % rest) if rest > 0 else ("-%d" % absi(rest))
+		out.append({"icon": RC.SliceType.HEAL if rest > 0 else -1, "text": hp_text if hit <= 0 else hp_text + " " + tr("HP"),
+			"color": HP_COLOR if rest > 0 else LOSS_COLOR, "sep": "·" if hit > 0 else ""})
 	return out
 
 
+
 static func icon_row_width(items: Array[Dictionary], fs: int) -> float:
-	var w := 0.0
-	for it in items:
-		if String(it["sep"]) != "":
-			w += fs * ICON_SEP_SHARE
-		if int(it["icon"]) >= 0:
-			w += fs * 1.05
-		w += Palette.mono().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * 0.25
-	return w
-
-
-## A joining mark's room in the icon row, as a share of its lettering.
-const ICON_SEP_SHARE := 1.1
+	return CombatFxLayer.equation_width(items, fs, Palette.mono())
 
 
 func _draw_icon_row(r: Rect2, fs: int, alpha: float) -> void:
 	var items := icon_row_items()
 	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, 0.8 * alpha))
-	var x := r.position.x
-	var mid := r.position.y + r.size.y * 0.5
+	var shown: Array = []
 	for it in items:
-		var col := _col(Color(it["color"], alpha))
-		var sep := String(it["sep"])
-		if sep == "arrow":
-			var a0 := Vector2(x + fs * 0.15, mid)
-			var a1 := Vector2(x + fs * ICON_SEP_SHARE - fs * 0.2, mid)
-			draw_line(a0, a1, Color(Palette.PAPER, alpha), maxf(1.5, fs * 0.12))
-			draw_colored_polygon(PackedVector2Array([a1 + Vector2(fs * 0.12, 0), a1 + Vector2(-fs * 0.2, -fs * 0.22), a1 + Vector2(-fs * 0.2, fs * 0.22)]), Color(Palette.PAPER, alpha))
-			x += fs * ICON_SEP_SHARE
-		elif sep != "":
-			draw_string(Palette.mono(), Vector2(x, mid + fs * 0.35), sep, HORIZONTAL_ALIGNMENT_CENTER, fs * ICON_SEP_SHARE, fs, Color(Palette.PAPER, alpha))
-			x += fs * ICON_SEP_SHARE
-		if int(it["icon"]) >= 0:
-			SliceIcon.draw_icon(self, Vector2(x + fs * 0.5, mid), fs * 0.45, int(it["icon"]), col)
-			x += fs * 1.05
-		var t := String(it["text"])
-		draw_string(Palette.mono(), Vector2(x, mid + fs * 0.35), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-		x += Palette.mono().get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * 0.25
+		var c := (it as Dictionary).duplicate()
+		c["color"] = _col(Color(it["color"]))
+		shown.append(c)
+	CombatFxLayer.draw_equation(self, Vector2(r.position.x, r.position.y + r.size.y * 0.5), shown, fs, Palette.mono(), alpha)
 
 
 ## LAST TURN wrapped at its " · " breaks to `width` px at font size `fs`.
@@ -2676,7 +2760,7 @@ func _draw_tick(at: Vector2, chip_h: float, pop: float, alpha: float) -> void:
 
 
 ## A tick's radius as a share of a chip's height.
-const TICK_SHARE := 0.32
+const TICK_SHARE := 0.32  # drawing, not motion (ANIM-R4 C5): the tick disc's radius as a share of the chip height
 
 
 ## The forecast tag's tape caption (translated).

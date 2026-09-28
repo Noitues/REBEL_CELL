@@ -9,9 +9,11 @@ const CHIP := 12.0
 const STEP := 16.0
 const FONT_SIZE := 12
 ## The "-N RAM" float: its lettering as a share of the count's, and the share of its time
-## after which it fades (ANIM-R2 E9).
+## after which it fades (ANIM-R2 E9). ANIM-R4 C6h: it starts this far (px) above the
+## count's words and rises from there (it never sits on them, at any text size).
 const SPEND_FONT_SHARE := 1.4
 const SPEND_FADE_FROM := 0.6
+const SPEND_GAP := 2.0
 
 var ram: int = 0
 var max_ram: int = 0
@@ -51,20 +53,51 @@ func set_ram(value: int, maximum: int) -> void:
 ## with nothing said. Nothing under reduce effects and headless (the count shows it).
 var spend_text: String = ""
 var spend_p: float = 1.0
+## ANIM-R4 C6h: the float's colour (pink for a spend, cyan for the turn start's refill) and
+## the entry it runs on.
+var spend_color: Color = Palette.CELL_PINK
+var _spend_id: StringName = &"ram_spend_float"
 var _spend_tween: Tween = null
 
 
 func float_spend(amount: int) -> void:
-	if amount <= 0 or not Motion.live(&"ram_spend_float") or not is_inside_tree():
+	if amount <= 0:
+		return
+	_float(tr("-%d RAM") % amount, Palette.CELL_PINK, &"ram_spend_float")
+
+
+## ANIM-R4 C6h: the turn start's RAM comes back as "+N RAM" rising off the chips as they
+## tick back (`ram_refill_float`), so a refill is said where it happens.
+func float_refill(amount: int) -> void:
+	if amount <= 0:
+		return
+	_float(tr("+%d RAM") % amount, Palette.NET_CYAN, &"ram_refill_float")
+
+
+func _float(text: String, col: Color, id: StringName) -> void:
+	if not Motion.live(id) or not is_inside_tree():
 		return
 	if _spend_tween != null and _spend_tween.is_valid():
 		_spend_tween.kill()
-	spend_text = tr("-%d RAM") % amount
+	spend_text = text
+	spend_color = col
+	_spend_id = id
 	spend_p = 0.0
-	var e := Motion.entry(&"ram_spend_float")
+	var e := Motion.entry(id)
 	_spend_tween = create_tween()
-	_spend_tween.tween_method(func(v: float) -> void: spend_p = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"ram_spend_float")).set_ease(e.ease).set_trans(e.trans)
-	_spend_tween.tween_callback(func() -> void: spend_text = ""; spend_p = 1.0; queue_redraw())
+	_spend_tween.tween_method(_set_spend_p, 0.0, 1.0, Motion.seconds(id)).set_ease(e.ease).set_trans(e.trans)
+	_spend_tween.tween_callback(_end_float)
+
+
+func _set_spend_p(v: float) -> void:
+	spend_p = v
+	queue_redraw()
+
+
+func _end_float() -> void:
+	spend_text = ""
+	spend_p = 1.0
+	queue_redraw()
 
 
 ## A refusal for want of RAM (ANIM-R1 C6): the chips flash red and "COST > RAM" shows
@@ -82,6 +115,11 @@ var flash_alpha: float = 1.0
 ## Flashes the bar (a refusal for want of RAM; `need` = what it cost); static (shown until
 ## the next RAM change) under reduce effects and headless.
 func flash_short(need: int = 0) -> void:
+	# ANIM-R4 C6h: a refusal spent nothing: no "-N RAM" float with it (it read as a loss);
+	# the refusal says NEED / HAVE.
+	if _spend_tween != null and _spend_tween.is_valid():
+		_spend_tween.kill()
+	_end_float()
 	_flash = true
 	_need = need
 	flash_alpha = 1.0
@@ -147,8 +185,10 @@ func hold(value: int) -> void:
 	queue_redraw()
 
 
-## The held chips tick on to the real RAM (`ram_tick`).
+## The held chips tick on to the real RAM (`ram_tick`); the RAM they gain floats "+N RAM"
+## (ANIM-R4 C6h).
 func play_refill() -> void:
+	float_refill(ram - shown_ram)
 	_tick_to(shown_ram, ram)
 
 
@@ -178,6 +218,50 @@ func set_pending(delta: int) -> void:
 	if delta != pending:
 		pending = delta
 		queue_redraw()
+
+
+## ANIM-R4 C6h: the count's words ("RAM 6/10") as drawn (local rect).
+func label_rect() -> Rect2:
+	var s := Settings.text_scale
+	var fs := roundi(FONT_SIZE * s)
+	var f := Palette.mono()
+	var x := _label_x()
+	return Rect2(Vector2(x, CHIP * s - f.get_ascent(fs)), Vector2(f.get_string_size(_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs)))
+
+
+## ANIM-R4 C6h: where the RAM float is now (local rect; empty when none shows): it starts
+## SPEND_GAP above the count's words and rises its entry's amplitude px.
+func spend_rect() -> Rect2:
+	if spend_text == "":
+		return Rect2()
+	var fs := roundi(FONT_SIZE * Settings.text_scale)
+	var sfs := roundi(fs * SPEND_FONT_SHARE)
+	var f := Palette.display()
+	var sz := Vector2(f.get_string_size(spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x, f.get_height(sfs))
+	var lr := label_rect()
+	var bottom := lr.position.y - SPEND_GAP - Motion.amplitude(_spend_id) * spend_p
+	return Rect2(Vector2(lr.position.x, bottom - sz.y), sz)
+
+
+func _label() -> String:
+	var label := tr("RAM %d/%d") % [ram, max_ram]
+	if pending != 0:
+		label += " (%+d)" % pending
+	return label
+
+
+## Where the count's words start (local x).
+func _label_x() -> float:
+	var s := Settings.text_scale
+	var step := STEP * s
+	var chip := CHIP * s
+	var fs := roundi(FONT_SIZE * s)
+	var lw := Palette.mono().get_string_size(_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
+	var refusal := refusal_text()
+	var rw := 0.0
+	if refusal != "":
+		rw = chip + 4.0 + Palette.mono().get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
+	return (size.x - max_ram * step - lw - rw) * 0.5 + max_ram * step + 6.0
 
 
 func _draw() -> void:
@@ -214,13 +298,13 @@ func _draw() -> void:
 		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= lit and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= lit and k < after) else 1.0)
 	draw_string(Palette.mono(), Vector2(x0 + max_ram * step + 6.0, chip), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.NET_CYAN)
 	if spend_text != "":
-		# "-N RAM" rising off the count and fading.
-		var sfs := roundi(fs * SPEND_FONT_SHARE)
-		var y := chip - Motion.amplitude(&"ram_spend_float") * spend_p
+		# "-N RAM" (or "+N RAM") rising off the count and fading, from above its words.
+		var r := spend_rect()
 		var a := 1.0 - clampf((spend_p - SPEND_FADE_FROM) / (1.0 - SPEND_FADE_FROM), 0.0, 1.0)
-		var at := Vector2(x0 + max_ram * step + 6.0, y)
+		var sfs := roundi(fs * SPEND_FONT_SHARE)
+		var at := Vector2(r.position.x, r.position.y + Palette.display().get_ascent(sfs))
 		draw_string_outline(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, 4, Color(Palette.NIGHT_SKY, a))
-		draw_string(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(Palette.CELL_PINK, a))
+		draw_string(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(spend_color, a))
 	if refusal != "":
 		# A RAM chip, then "COST > RAM" in red.
 		var rx := x0 + max_ram * step + lw + 4.0
