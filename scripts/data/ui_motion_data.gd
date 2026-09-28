@@ -71,6 +71,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ANIM-R3 combat, input and screens: a hit's outcome where it struck, the forecast kept
 	# through the replay (its ticks and its fade), a status landing on its slice.
 	&"impact_mark", &"forecast_tick", &"forecast_fade", &"status_mark",
+	# ANIM-R4 city, raid, Heat, route and HQ.
+	&"forecast_change_fade", &"raid_incoming_hold", &"forecast_road_pulse",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

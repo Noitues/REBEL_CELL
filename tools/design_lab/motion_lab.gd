@@ -113,6 +113,8 @@ const DEMOS := {
 	# ANIM-R3 (combat, input and screens): each plays in a live SEND IT.
 	&"impact_mark": ["scene", "send_block"], &"forecast_tick": ["scene", "send_hit"], &"forecast_fade": ["scene", "send_hit"],
 	&"status_mark": ["scene", "send_hit"],
+	# ANIM-R4 (city, raid, Heat, route and HQ):
+	&"forecast_change_fade": ["lift", "number"], &"raid_incoming_hold": ["fade_in", "panel"], &"forecast_road_pulse": ["pulse", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
