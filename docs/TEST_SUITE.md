@@ -148,9 +148,10 @@ a minute. Pure-core sweeps (1,000 map seeds, 500 preview turns, every wheel tick
 fast and untouched.
 
 The merged sweep checks H21's "no label covers a node icon" wherever H21 did and more (the
-early campaign at every text size). Widened to the late campaign it fails at 1.3 and 1.6
-for four corporations; that state was never checked before, so it is not asserted and is
-logged for the designer (DECISIONS, open questions). H21 and H22 checked their Grids three
+early campaign at every text size). Widened to the late campaign it failed at 1.3 and 1.6
+for four corporations (the selected Site's long name over other nodes' icons); ANIM-R1 M13
+fixed the layout (a closer search round the node, then a spot clear of other icons, else
+the label is left out) and the late campaign is asserted too. H21 and H22 checked their Grids three
 frames after opening; the merged sweep checks settled Grids (twelve frames, as H23 and H24
 did).
 

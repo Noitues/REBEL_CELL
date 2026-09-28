@@ -64,6 +64,8 @@ const CROSS_SIZE := 13.0
 ## Dash pattern (px) and flow speeds (px per second).
 const DASH_ON := 9.0
 const DASH_PERIOD := 16.0
+## ANIM-R1 M15: the most dashes drawn along one route segment.
+const DASHES_MAX := 400
 ## ANIM-5: dashes crawl at `route_crawl`'s amplitude px per its duration (toward the
 ## edge's b end: threat routes run entry -> home); packets run PACKET_SHARE times faster.
 const CRAWL_MOTION := &"route_crawl"
@@ -153,6 +155,12 @@ const SHIFT_CLEARANCE := 1.0
 ## H23 #2: the furthest a label may sit from its node's centre (its nearest point, screen
 ## px); a label with no spot that near is left out (the node keeps its tooltip).
 const LABEL_REACH := 110.0
+## ANIM-R1 M13: the close search round a node with no free spot on the rings: directions
+## tried, and the step outwards (screen px) up to LABEL_REACH.
+const SEARCH_ANGLES := 16
+const SEARCH_STEP := 6.0
+## ANIM-R1 M13: a focus label with no room goes one word a line, at most this many lines.
+const WORD_LINES_MAX := 3
 ## H22 tier difficulty cue: a row of TIER_PIPS_MAX pips under a Site's icon, `tier` of
 ## them lit (SiteData.tier is 1-4). Pip radius and spacing (screen px, at text scale
 ## 1.0 on the legend and mini-map; the map's pips follow the icon size) and the gap
@@ -874,10 +882,13 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 			var b := pts[k + 1]
 			var length := a.distance_to(b)
 			var dir := (b - a) / maxf(length, 0.001)
-			var t := phase
-			while t < length:
+			# ANIM-R1 M15: a bounded count of dashes (a segment measured mid-layout can be
+			# huge or not finite).
+			if not is_finite(length):
+				continue
+			for q in mini(DASHES_MAX, ceili(maxf(0.0, length - phase) / DASH_PERIOD)):
+				var t := phase + q * DASH_PERIOD
 				_c.draw_line(a + dir * t, a + dir * minf(t + DASH_ON, length), col, width)
-				t += DASH_PERIOD
 	elif e.get("flow", false):
 		# A bright packet running along the route.
 		var total := 0.0
@@ -1391,10 +1402,35 @@ func _layout_labels() -> Array[Dictionary]:
 				continue
 			for lines: PackedStringArray in variants:
 				box = _label_box(lines, f, fs, pad, line_h)
-				spot = _inward_spot(t, box, obstacles, t["prio"] == PRIO_FOCUS)
+				spot = _inward_spot(t, box, obstacles, false)
+				if spot.size == Vector2.ZERO:
+					# ANIM-R1 M13: a closer look all round the node, within reach.
+					spot = _search_spot(t, box, obstacles)
 				if spot.size != Vector2.ZERO:
 					t["lines"] = lines
 					break
+			if spot.size == Vector2.ZERO and t["prio"] == PRIO_FOCUS:
+				# The last resort for a focus label: a spot clear of every label and every
+				# other node's icon (ANIM-R1 M13: the selected Site's long name lay over other
+				# nodes' icons in a late campaign at big text); only "you are here" may then
+				# cover an icon (the route's marker label always shows). Else the label is
+				# left out: the selected Site's card names it and its tooltip stays.
+				# Narrower first: one word a line, then the name cut short ("Warehouse…").
+				var tight: Array[PackedStringArray] = variants.duplicate()
+				for v in [word_lines(t["lines"]), short_lines(t["lines"])]:
+					if not tight.has(v):
+						tight.append(v)
+				for may_cover in [false, true]:
+					if may_cover and not (bool(_node_dict(t["id"]).get("here", false)) or String(t["key"]).ends_with("#threats")):
+						break
+					for lines: PackedStringArray in tight:
+						box = _label_box(lines, f, fs, pad, line_h)
+						spot = _loose_spot(t, box, obstacles, may_cover)
+						if spot.size != Vector2.ZERO:
+							t["lines"] = lines
+							break
+					if spot.size != Vector2.ZERO:
+						break
 			if spot.size == Vector2.ZERO:
 				continue
 		t["rect"] = spot
@@ -1425,6 +1461,37 @@ static func wrap_lines(lines: PackedStringArray) -> PackedStringArray:
 	if best < 0:
 		return lines
 	var out := PackedStringArray([text.substr(0, best), text.substr(best + 1)])
+	for k in range(1, lines.size()):
+		out.append(lines[k])
+	return out
+
+
+## ANIM-R1 M13: `lines` with its first line one word a line (at most WORD_LINES_MAX lines
+## for it; the rest stays on the last).
+static func word_lines(lines: PackedStringArray) -> PackedStringArray:
+	if lines.is_empty():
+		return lines
+	var words := lines[0].split(" ", false)
+	var out := PackedStringArray()
+	for i in words.size():
+		if out.size() < WORD_LINES_MAX:
+			out.append(words[i])
+		else:
+			out[out.size() - 1] += " " + words[i]
+	for k in range(1, lines.size()):
+		out.append(lines[k])
+	return out
+
+
+## ANIM-R1 M13: `lines` with its first line cut to its first word and an ellipsis (the
+## whole name stays in the node's tooltip).
+static func short_lines(lines: PackedStringArray) -> PackedStringArray:
+	if lines.is_empty():
+		return lines
+	var words := lines[0].split(" ", false)
+	if words.size() <= 1:
+		return lines
+	var out := PackedStringArray([words[0] + "…"])
 	for k in range(1, lines.size()):
 		out.append(lines[k])
 	return out
@@ -1479,6 +1546,61 @@ func _inward_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, always: bo
 		if always and loose.size == Vector2.ZERO and not _hits_label(moved, obstacles):
 			loose = moved
 	return loose
+
+
+## ANIM-R1 M13: a closer search for label `t`: SEARCH_ANGLES directions round its node at
+## every SEARCH_STEP of distance out to LABEL_REACH, each spot moved inside the label area;
+## the first clear of every obstacle (Rect2 with a zero size when none is).
+func _search_spot(t: Dictionary, box: Vector2, obstacles: Dictionary) -> Rect2:
+	var k := _k()
+	var reach := LABEL_REACH * k
+	var at: Vector2 = t["at"]
+	var d: float = t["r"] + LABEL_GAP * k
+	while d <= reach:
+		for q in SEARCH_ANGLES:
+			var dir := Vector2.from_angle(TAU * q / SEARCH_ANGLES)
+			# The box's corner so its nearest edge faces the node at distance d.
+			var c := at + dir * (d + (absf(dir.x) * box.x + absf(dir.y) * box.y) * 0.5)
+			var rect := _shift_inside(Rect2(c - box * 0.5, box), obstacles["area"], obstacles["blocks"])
+			if reach_of(rect, at) > reach or not _on_screen(rect, obstacles):
+				continue
+			if not _blocked(rect, obstacles):
+				return rect
+		d += SEARCH_STEP * k
+	return Rect2()
+
+
+## ANIM-R1 M13: a focus label's last resort: the first candidate (the near rings, then the
+## close search) clear of every placed label and of every other node's icon; with
+## `may_cover_icons`, clear of the labels only (H23 #4: never onto another label).
+func _loose_spot(t: Dictionary, box: Vector2, obstacles: Dictionary, may_cover_icons: bool) -> Rect2:
+	var k := _k()
+	var reach := LABEL_REACH * k
+	var at: Vector2 = t["at"]
+	var tries: Array[Rect2] = []
+	for rect in _candidates(t, box):
+		tries.append(_shift_inside(rect, obstacles["area"], obstacles["blocks"]))
+	var d: float = t["r"] + LABEL_GAP * k
+	while d <= reach:
+		for q in SEARCH_ANGLES:
+			var dir := Vector2.from_angle(TAU * q / SEARCH_ANGLES)
+			var c := at + dir * (d + (absf(dir.x) * box.x + absf(dir.y) * box.y) * 0.5)
+			tries.append(_shift_inside(Rect2(c - box * 0.5, box), obstacles["area"], obstacles["blocks"]))
+		d += SEARCH_STEP * k
+	for rect in tries:
+		if reach_of(rect, at) > reach or not _on_screen(rect, obstacles) or _hits_label(rect, obstacles):
+			continue
+		if may_cover_icons or not _hits_icon(rect, obstacles, t["id"]):
+			return rect
+	return Rect2()
+
+
+## True when `rect` covers the icon of a node other than `own`.
+static func _hits_icon(rect: Rect2, obstacles: Dictionary, own: StringName) -> bool:
+	for ic: Dictionary in obstacles["icons"]:
+		if ic["id"] != own and _rect_hits_disc(rect, ic["at"], ic["r"]):
+			return true
+	return false
 
 
 ## How far label `rect` lies from its node's centre `at` (its nearest point; local px).

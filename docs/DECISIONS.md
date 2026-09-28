@@ -2816,15 +2816,6 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
-- **Grid labels over other nodes' icons, late campaign at big text (Test suite
-  optimization, 2026-09-27):** found while merging the Grid sweeps. H21's "a label never
-  covers a node icon" held wherever it was checked (early campaign, text 1.0, and 1.5
-  live) and holds now for the early campaign at 1.0, 1.3 and 1.6. In the late campaign
-  (six runs done) at 1.3 and 1.6, one long label per corporation lies over a few other
-  node icons (Meridian m1_f, Halcyon's Blind the Cameras and Orbital o1_g at both sizes,
-  Solace t1_f at 1.6; none for REBEL_CELL). Labels still never overlap each other and every other H24 K1 check passes.
-  Not asserted, so the suite stays green; should a label also keep off other icons there
-  (a layout slice for the next pass), or is covering an icon acceptable at big text?
 - **Motion starting values (Animation pass ANIM-1, 2026-09-27):** the 105 entries in
   `content/config/ui_motion.tres` are guesses inside the handoff's ranges. None has been
   reviewed as a frame strip yet. Guesses that matter most: `wheel_spin` 0.45 s per half
