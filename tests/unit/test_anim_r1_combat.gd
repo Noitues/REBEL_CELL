@@ -367,10 +367,13 @@ func test_a_skip_stops_every_wheel_motion_and_lands_without_a_flip() -> void:
 
 # --- C4: beats for every combatant ------------------------------------------------------------
 
-func _enemy_ids() -> Array[StringName]:
+## Every enemy in content (a campaign's generated REBEL_CELL Mirrors, which another test may
+## have left in the run's lookup, are not content: the combat resolver doesn't know them).
+func _enemy_ids(lookup: ContentLookup) -> Array[StringName]:
 	var out: Array[StringName] = []
 	for id in RunManager.lookup().ids_of_class(&"EnemyData"):
-		out.append(id)
+		if lookup.has(id):
+			out.append(id)
 	out.sort()
 	return out
 
@@ -378,7 +381,7 @@ func _enemy_ids() -> Array[StringName]:
 func test_the_beats_end_on_every_combatants_hp() -> void:
 	var resolver := CombatEngine.make_resolver()
 	var kinds := {}
-	for enemy in _enemy_ids():
+	for enemy in _enemy_ids(resolver.lookup):
 		for combat_seed in [1, 7]:
 			var session := CombatSession.start(resolver, &"breaker", [enemy], combat_seed, &"rank:1")
 			for turn in 6:
