@@ -1641,12 +1641,11 @@ ease = 0
 trans = 1
 amplitude = 1.5
 
-; ---- ANIM-R2: city, maps and transitions ----
-; ANIM-R2 R1: a city bake that lands over the night sky (the map already drawn on it) fades in; amplitude unused
+; ANIM-R2 R1 / ANIM-R3 B4: a view's baked city fades in over its silhouette (the placement drawn dim while it baked) over `duration` (0.35 s read as a pop in mid-fight: 0.8)
 [sub_resource type="Resource" id="m_city_bake_fade"]
 script = ExtResource("1_entry")
 id = &"city_bake_fade"
-duration = 0.35
+duration = 0.8
 delay = 0.0
 ease = 1
 trans = 1
