@@ -1102,17 +1102,28 @@ func _draw_city() -> void:
 	_shift = Vector2.ZERO
 	_baked_key = ""
 	_camera()
-	var memo_key := _memo_key()
-	if memo_key != "" and _geometry_memo.has(memo_key):
-		_memo_restore(memo_key)
-	else:
-		_build_geometry()
-		if memo_key != "":
-			_memo_store(memo_key)
 	var idx := PackedInt32Array()
-	idx.resize(_verts.size())
-	for k in _verts.size():
-		idx[k] = k
+	if _prebuilt:
+		# ANIM-R1 M2: a painter whose geometry was built off the main thread: CityBakeCache
+		# submits it in chunks, a frame each (`submit_chunk`), so no frame copies millions of
+		# vertices at once.
+		_prebuilt = false
+		_live_for = []
+		_built_for = size
+		_drawn_camera = _camera_key()
+		rebuilt.emit()
+		return
+	else:
+		var memo_key := _memo_key()
+		if memo_key != "" and _geometry_memo.has(memo_key):
+			_memo_restore(memo_key)
+		else:
+			_build_geometry()
+			if memo_key != "":
+				_memo_store(memo_key)
+		idx.resize(_verts.size())
+		for k in _verts.size():
+			idx[k] = k
 	if not _verts.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, _verts, _cols)
 	_verts = PackedVector2Array()
@@ -1130,6 +1141,79 @@ func _draw_city() -> void:
 	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
 	rebuilt.emit()
+
+
+## ANIM-R1 M2: a painter's geometry built ahead of its first draw, the index list of one
+## chunk, and the canvas items its chunks were submitted as.
+var _prebuilt: bool = false
+var _chunk_idx := PackedInt32Array()
+var _chunk_rids: Array[RID] = []
+## Vertices submitted per frame (a multiple of 3: whole triangles).
+const CHUNK_VERTS := 240000
+
+
+## ANIM-R1 M2: builds a painter's whole geometry now, so its first draw only lays it out
+## for `submit_chunk`. CityBakeCache runs this on a worker thread before the painter enters
+## the tree (a node outside the tree, touching only its own data), so a bake never freezes
+## a frame for the seconds the GDScript build takes (the raid playout froze ~2-4 s).
+func prebuild() -> void:
+	_camera()
+	_build_geometry()
+	_chunk_idx = PackedInt32Array()
+	_chunk_idx.resize(mini(CHUNK_VERTS, _verts.size()))
+	for k in _chunk_idx.size():
+		_chunk_idx[k] = k
+	_prebuilt = true
+
+
+## ANIM-R1 M2: submits the prebuilt geometry's vertices from `from` (at most CHUNK_VERTS)
+## as a canvas item under the painter; returns where the next chunk starts (-1: done, the
+## vertex arrays let go).
+func submit_chunk(from: int) -> int:
+	if from >= _verts.size():
+		_verts = PackedVector2Array()
+		_cols = PackedColorArray()
+		_chunk_idx = PackedInt32Array()
+		return -1
+	var to := mini(_verts.size(), from + CHUNK_VERTS)
+	var ci := RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(ci, get_canvas_item())
+	RenderingServer.canvas_item_set_custom_rect(ci, true, painter_region)
+	var n := to - from
+	var idx := _chunk_idx if n == _chunk_idx.size() else _chunk_idx.slice(0, n)
+	RenderingServer.canvas_item_add_triangle_array(ci, idx, _verts.slice(from, to), _cols.slice(from, to))
+	_chunk_rids.append(ci)
+	return to
+
+
+## ANIM-R1 M2: frees the canvas items `submit_chunk` made (after the bake is read).
+func free_chunks() -> void:
+	for ci in _chunk_rids:
+		RenderingServer.free_rid(ci)
+	_chunk_rids.clear()
+
+
+## ANIM-R1 M2: bakes `region` (world px) of this city's look under influence `inf` (null:
+## the current one) ahead of need (a raid's playout area behind its setup, the post-raid
+## look while the raid plays), unless a finished or running bake of that look covers it.
+## Returns the cache key ("" when nothing was needed or the city does not bake).
+func prebake(region: Rect2, inf: Variant = null) -> String:
+	if not is_baked() or not is_inside_tree():
+		return ""
+	var saved := influence
+	if inf != null:
+		influence = inf
+	var look := look_key()
+	var key := ""
+	if CityBakeCache.find(look, region) == "":
+		var p := (region.position / REGION_SNAP).floor() * REGION_SNAP
+		var e := (region.end / REGION_SNAP).ceil() * REGION_SNAP
+		var r := Rect2(p, e - p)
+		key = look + "@" + var_to_str(Rect2i(r))
+		if not CityBakeCache.has(key) and not CityBakeCache.is_pending(key):
+			CityBakeCache.request(key, look, make_painter(r, bake_scale(r)), _view)
+	influence = saved
+	return key
 
 
 ## The procedural city's geometry for the current camera and look: streets, the fist,

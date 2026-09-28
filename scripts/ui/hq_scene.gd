@@ -212,6 +212,10 @@ func _ready() -> void:
 				show_raid()
 				if args.has("--demo-playout"):
 					fight_raid()
+				for a in args:
+					# ANIM-R1 M2 profiling: the setup shows, START DEFENSE is pressed N frames in.
+					if a.begins_with("--demo-playout-delay="):
+						MotionDemo.after_frames(self, int(a.trim_prefix("--demo-playout-delay=")), fight_raid)
 			else:
 				for sd in grid_data.sites:
 					if sd.objective == RC.SiteObjective.EXPLOIT:
@@ -452,6 +456,10 @@ func fight_raid() -> void:
 	if events.is_empty():
 		wireframe.city.release_influence()
 	show_raid_playout(events, before)
+	# ANIM-R1 M2: the post-raid look bakes while the raid plays (the pre-raid one stays
+	# pinned), so the result spreads at the end without the ~2 s freeze of a bake then.
+	if before != null and not events.is_empty():
+		_prebake_playout(before, CityInfluence.of(RunManager.campaign, RunManager.corporation))
 
 
 # --- Drag and drop (Animation pass ANIM-4) --------------------------------------------------
@@ -2258,6 +2266,9 @@ func show_raid() -> void:
 	city_overlay.avoid_controls([side, loadout, raid_legend])  # labels clear of the panels and the key
 	_register_raid_drops(claimed, loadout)
 	place_raid_legend.call_deferred()
+	# ANIM-R1 M2: the playout's zoomed map baked behind the setup (off the main thread), so
+	# START DEFENSE opens onto a city that is already there.
+	_prebake_playout.call_deferred(RunManager.campaign, null)
 	spacer.resized.connect(place_raid_legend)
 	raid_legend.minimum_size_changed.connect(_on_raid_legend_resized)
 	if not wireframe.city.rebuilt.is_connected(place_raid_legend):
@@ -2818,6 +2829,31 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	playout.play(events, instant)
 	if instant:
 		_after_playout()
+
+
+## ANIM-R1 M2: bakes (ahead, off the main thread) the stretch of city the raid playout's
+## camera can show for campaign `c`'s raid map: every node of it as the fight's focus at
+## PLAYOUT_ZOOM, under influence `inf` (null: the city's current one).
+func _prebake_playout(c: CampaignState, inf: Variant) -> void:
+	if c == null or not is_inside_tree() or wireframe == null:
+		return
+	var nodes: Array = raid_graph({}, {}, c)["nodes"]
+	var view := size / PLAYOUT_ZOOM
+	var region := Rect2()
+	var first := true
+	for n: Dictionary in nodes:
+		var at: Vector2 = n["at"]
+		var w := NeonCity.world_of(at.x + 0.5, at.y + 0.5)
+		var r := Rect2(w - PLAYOUT_ANCHOR * view, view)
+		region = r if first else region.merge(r)
+		first = false
+	if not first:
+		wireframe.city.prebake(region.grow(NeonCity.REGION_MARGIN), inf)
+
+
+## The raid playout's camera: zoom and where its focus sits on screen.
+const PLAYOUT_ZOOM := 1.9
+const PLAYOUT_ANCHOR := Vector2(0.36, 0.55)
 
 
 ## Keeps the zoomed camera on the threats (their first Site, else the network).

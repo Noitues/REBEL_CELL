@@ -25,6 +25,9 @@ const READBACK_FRAMES := 2
 
 ## Off switch (design tools that want the old per-frame procedural city).
 static var enabled: bool = true
+## ANIM-R1 M2: a painter's geometry is built on a worker thread (the frame keeps drawing
+## the old image meanwhile); off builds it in the painter's first draw, as before.
+static var threaded: bool = true
 ## key -> {"texture": Texture2D, "region": Rect2, "scale": float, "roofs", "beacons",
 ## "lights", "trails", "signs"} or {"failed": true}.
 static var _entries: Dictionary = {}
@@ -134,6 +137,39 @@ static func wait(key: String, waiter: Node) -> void:
 		(_pending[key] as Array).append(waiter.get_instance_id())
 
 
+## ANIM-R1 M2: the viewport's picture copied on the GPU into a texture of its own (no
+## readback to the CPU and upload back, ~60 ms for a big bake); null when the renderer
+## has no RenderingDevice (the Compatibility renderer) or the copy fails.
+static func _gpu_copy(vp: SubViewport) -> Texture2D:
+	if not gpu_copy:
+		return null
+	var rd := RenderingServer.get_rendering_device()
+	if rd == null:
+		return null
+	var src := RenderingServer.texture_get_rd_texture(vp.get_texture().get_rid())
+	if not src.is_valid():
+		return null
+	var src_fmt := rd.texture_get_format(src)
+	var fmt := RDTextureFormat.new()
+	fmt.width = src_fmt.width
+	fmt.height = src_fmt.height
+	fmt.format = src_fmt.format
+	fmt.usage_bits = RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT | RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT
+	var dst := rd.texture_create(fmt, RDTextureView.new())
+	if not dst.is_valid():
+		return null
+	if rd.texture_copy(src, dst, Vector3.ZERO, Vector3.ZERO, Vector3(fmt.width, fmt.height, 1), 0, 0, 0, 0) != OK:
+		rd.free_rid(dst)
+		return null
+	var tex := BakedTexture.new()
+	tex.texture_rd_rid = dst
+	return tex
+
+
+## Off switch for the GPU copy (tests and a renderer that shows it wrong).
+static var gpu_copy: bool = true
+
+
 static func _holder() -> Node:
 	var tree := Engine.get_main_loop() as SceneTree
 	var holder := tree.root.get_node_or_null(HOLDER_NAME)
@@ -145,26 +181,47 @@ static func _holder() -> Node:
 
 
 static func _bake(key: String, look: String, painter: NeonCity) -> void:
+	if threaded:
+		# ANIM-R1 M2: the seconds of GDScript that build the geometry run off the main
+		# thread; the frames go on (the old image, or a stand-in, shows until this lands).
+		var tree := Engine.get_main_loop() as SceneTree
+		var task := WorkerThreadPool.add_task(painter.prebuild, false, "city bake")
+		while not WorkerThreadPool.is_task_completed(task):
+			await tree.process_frame
+		WorkerThreadPool.wait_for_task_completion(task)
 	var vp := SubViewport.new()
 	vp.size = Vector2i(ceili(painter.size.x * painter.scale.x), ceili(painter.size.y * painter.scale.y))
 	vp.transparent_bg = false
 	vp.disable_3d = true
-	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	# ANIM-R1 M2: a threaded bake renders once, after its chunks are all in.
+	vp.render_target_update_mode = SubViewport.UPDATE_DISABLED if threaded else SubViewport.UPDATE_ALWAYS
 	vp.add_child(painter)
 	_holder().add_child(vp)
-	# The painter builds its geometry in its first draw; let the viewport render it
-	# (READBACK_FRAMES frames, so the render has surely landed), then read the pixels back
-	# and drop the viewport and its geometry.
+	# The painter builds its geometry in its first draw (threaded: before it, and it is
+	# submitted a chunk a frame); let the viewport render it (READBACK_FRAMES frames, so the
+	# render has surely landed), then take the picture and drop the viewport and geometry.
 	await painter.rebuilt
+	if threaded:
+		var at := 0
+		while at >= 0:
+			at = painter.submit_chunk(at)
+			if at >= 0:
+				await (Engine.get_main_loop() as SceneTree).process_frame
+		vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	for f in READBACK_FRAMES:
 		await RenderingServer.frame_post_draw
-	var img: Image = vp.get_texture().get_image() if is_instance_valid(vp) else null
 	var e := {"look": look, "region": painter.painter_region, "scale": painter.scale.x}
-	if img == null or img.is_empty():
+	var tex: Texture2D = _gpu_copy(vp) if is_instance_valid(vp) else null
+	if tex == null and is_instance_valid(vp):
+		var img: Image = vp.get_texture().get_image()
+		if img != null and not img.is_empty():
+			tex = ImageTexture.create_from_image(img)
+	if tex == null:
 		e["failed"] = true
 	else:
-		e["texture"] = ImageTexture.create_from_image(img)
+		e["texture"] = tex
 		e.merge(painter.overlay_data())
+	painter.free_chunks()
 	if is_instance_valid(vp):
 		vp.queue_free()
 	store(key, e)
