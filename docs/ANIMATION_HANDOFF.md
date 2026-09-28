@@ -54,7 +54,8 @@ Read first: `CLAUDE.md` (the rules), `docs/STYLE_GUIDE.md` §5 Motion & §6 Acce
 | `tools/design_lab/motion_lab.tscn` | Motion lab + `--demo-anim=<id>` capture | See sections 3 and 6. `--demo-set=<id>.<field>=<v>,...` tunes the lab's copy for variant strips; combat ids play on the lab wheel ("view") or in a live combat scene ("scene", starts 3 frames later: frame 9). |
 | Combat (ANIM-2) | `ResolveBeats`, `CombatFxLayer`, `WheelView` motion overrides, `combat_scene` replays | SEND IT sequence, spins, nudge queue, landings, pointers, tags, rewind, death / breach / VICTORY: 4.2-4.4, 4.6-4.11 done. Strips: `docs/timeline/motion/`. |
 | Cards (ANIM-3) | `ZineCard` lift / deal offsets, `DragGhost`, `RamBar` ticks, combat_scene flights | Hover, pick-up, drag ghost, zone pulse, aim draw-in, reticle, play fly/stamp/dissolve/burn, cancel return, draw / discard piles, RAM ticks: 4.5 done. |
-| HQ drag and drop (ANIM-4) | `DropLayer`, `CrewChip`, `hq_scene` drop targets, the loadout view's swap chips | Raid assets onto nodes and off them, crew onto posts / CORE / JACK IN, recruits and boosts onto the crew and the next run's kit (click flights too), Rank 3 ring swaps; target pulses, no-entry refusals, snap and stamp, glide home; pad and keys carry with a reticle. The Modem and loot drags are ANIM-4b. |
+| HQ drag and drop (ANIM-4) | `DropLayer`, `CrewChip`, `hq_scene` drop targets, the loadout view's swap chips | Raid assets onto nodes and off them, crew onto posts / CORE / JACK IN, recruits and boosts onto the crew and the next run's kit (click flights too), Rank 3 ring swaps; target pulses, no-entry refusals, snap and stamp, glide home; pad and keys carry with a reticle. |
+| Run drag and drop (ANIM-4b) | `netrun_scene` drop targets, `SpinnerMini`, `DeckView` / `SpinnerView` `enable_drops`, `DropLayer` buy / shred landings and `retire` | Modem purchases onto CARDS / DAEMONS / a slot of the small spinner, the UPGRADE viewer's slice onto a slot, deck cards onto SHRED, loot and event rewards onto where they go, raid interlude assets onto node rows; every button path stays. |
 | Screens (ANIM-6) | `PageTransition`, `MenuMotion`, `FlightFx`, `Typing`, `CrtHum`, `MotionDemo`; `HudStats` bumps, `DripButton` growth, `ModemSign` warm-up, `Dialogue` typing | Page entrances (glass / paper), menu cursor, Modem entry and purchase flights, loot fan and pick, subtitle type-in (Options: instant), drips, top bar bump / roll, HQ idle, event outcomes, city traffic and sign flicker: 4.13 (non-map panels), 4.17-4.24 done. `FlightFx` is the shared flight helper. `tools/design_lab/profile_frames.gd` profiles frame time. |
 
 ## 3. First task: the motion config and a motion lab
@@ -95,7 +96,8 @@ ANIM-2" / "— ANIM-3"; STYLE_GUIDE 5.2; strips in `docs/timeline/motion/`. 4.1,
 4.15 and 4.16 are built in ANIM-5 (DECISIONS "Animation pass — ANIM-5"; STYLE_GUIDE 5.3).
 The designer's "drag and drop anything", HQ side (loadout, crew, raid defences, Black
 Market), is built in ANIM-4 (DECISIONS "Animation pass — ANIM-4"; STYLE_GUIDE 5.4); the
-Modem and loot drags follow as ANIM-4b.
+run side (Modem, loot, events, the raid interlude) in ANIM-4b (DECISIONS "Animation pass
+— ANIM-4b"; STYLE_GUIDE 5.4).
 
 4.1 **Jack in / jack out.** *Done (ANIM-5).* Trigger: leaving HQ for a netrun and back. The camera pushes
 into the deck CRT, the screen dissolves to the wireframe city, scanlines roll. Feel:
