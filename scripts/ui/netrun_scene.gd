@@ -37,6 +37,8 @@ const LEAVE_ICON := 34.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
 const LOOT_CARD := Vector2(150, 170)
 const LOOT_ROW_MAX := 900.0
+## The least gap between loot stickers (px; their tilt's reach is added, ANIM-R2 E8).
+const LOOT_GAP := 14.0
 ## ANIM-R1 M11: the gap between the loot stickers and Skip at text scale 1.0 (px): a
 ## sticker's rest tilt and hover lift reach this far below its box.
 const LOOT_SKIP_GAP := 14.0
@@ -59,6 +61,15 @@ const ROUTE_MIN_ZOOM := 0.7
 const SLICE_TILE := Vector2(96, 130)
 ## Share of the text scale the lower row's tiles grow in height by.
 const TILE_GROW := 0.4
+## ANIM-R2 E6: a chip or Daemon tile at text scale 1.0 (px, as ZineCard.as_tile makes it),
+## the steps it grows by, and the effect lettering it grows for (px): it grows until its
+## whole text fits at this size or more, as far as its window holds it.
+const CHIP_TILE := Vector2(118, 150)
+const CHIP_FIT_STEP := 6.0
+const CHIP_READABLE := 10
+## The Daemon tile may widen by this share of the text scale's growth (the SLICES window
+## beside it keeps its row).
+const DAEMON_WIDEN := 0.25
 ## The raid setup's big button (H24 S14; as the HQ's).
 const START_DEFENSE := "START DEFENSE" # TR
 
@@ -116,6 +127,10 @@ func _ready() -> void:
 		elif a.begins_with("--demo-text-scale="):
 			# ANIM-R2 R13 captures: the screen at a text size (1.3, 1.6).
 			Settings.set_text_scale(float(a.trim_prefix("--demo-text-scale=")))
+		elif a.begins_with("--demo-scale="):
+			# Captures at a text size (ANIM-R2): this run only, never saved.
+			Settings.text_scale = float(a.trim_prefix("--demo-scale="))
+			Settings.changed.emit()
 	if args.has("--demo-shop"):
 		RunManager.save_slot = "demo"
 		new_campaign(1)
@@ -738,7 +753,9 @@ func _title_screen(s: NetrunSession) -> void:
 		RunState.Phase.REWARD:
 			hud.set_screen("", tr("BREACH PAYOUT"))
 		RunState.Phase.EVENT:
-			hud.set_screen("04", tr("TERMINAL EVENT & DISPATCH"))
+			# ANIM-R2 E2: a title as short as the Modem's, so the top bar keeps one row at 1.6
+			# (the long one wrapped the tags onto two rows and pushed the page down).
+			hud.set_screen("04", tr("TERMINAL EVENT"))
 		RunState.Phase.SHOP:
 			hud.set_screen("05", tr("MODEM CYBER SHOP"))
 		RunState.Phase.RAID:
@@ -1314,7 +1331,6 @@ func _show_reward() -> void:
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
 	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	stickers.add_theme_constant_override("separation", 14)
 	# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
 	var mini: SpinnerMini = null
 	var room := LOOT_ROW_MAX
@@ -1331,7 +1347,11 @@ func _show_reward() -> void:
 	else:
 		box.add_child(stickers)
 	var n: int = offer["options"].size()
-	var ls := clampf(minf(Settings.text_scale, (room - 14.0 * (n - 1)) / maxf(1.0, n * LOOT_CARD.x)), 1.0, Settings.TEXT_SCALE_MAX)
+	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (a tilted CACHE lay
+	# on JAM's cost badge at 1.0 and 1.6): the tilt's reach grows with the card.
+	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
+	var ls := clampf(minf(Settings.text_scale, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
+	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * ls * tilt))
 	for i in n:
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
@@ -1457,7 +1477,7 @@ func _show_event() -> void:
 		b.tooltip_text = UiTip.fold(tip)
 		var index := i
 		b.name = "Choice%d" % (i + 1)
-		b.pressed.connect(func() -> void: choose_event(index))
+		b.pressed.connect(func() -> void: _press_choice(index))
 		b.theme_type_variation = &"NoteButton"
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1484,15 +1504,25 @@ func _show_event() -> void:
 		_hold_choices(options, text)
 
 
-## ANIM-R1 M9: while the event's story types in, its choices wait (shown disabled) and take
-## no press: the first press completes the typing (Typing's own rule) and only the words
-## whole let the choices act (stills caught "A bricked i" with the choices live).
+## ANIM-R1 M9 / ANIM-R2 E1-E2: while the event's story types in, its choices wait. They stay
+## enabled, focusable and readable (normal paper, outcome icons shown) with a "typing" mark
+## (`EventHeldMark`: three dots in the corner, their words a little dimmer), so the page's
+## focus lands on the first choice at once and a pad can move between them; a press first
+## shows the words whole (the story and its subtitle together: Typing.finish_all, one press)
+## and only a press on a released choice chooses. The choices go live when the words are
+## whole; the first one takes focus then if nothing on the page has it (a pad-only player
+## was stuck with every choice disabled and no focus).
 func _hold_choices(options: Control, text: Control) -> void:
 	var held: Array[WeakRef] = []
 	for b in options.get_children():
 		if b is Button and not (b as Button).disabled:
-			(b as Button).disabled = true
-			held.append(weakref(b))
+			var btn := b as Button
+			btn.set_meta(HELD_META, true)
+			btn.add_theme_color_override(&"font_color", Color(Palette.INK, HELD_INK_ALPHA))
+			var mark := EventHeldMark.new()
+			mark.name = "EventHeldMark"
+			btn.add_child(mark)
+			held.append(weakref(btn))
 	if held.is_empty():
 		return
 	_held_choices = held
@@ -1501,23 +1531,47 @@ func _hold_choices(options: Control, text: Control) -> void:
 		get_tree().process_frame.connect(_poll_held_choices)
 
 
+## The meta a waiting choice carries, and how dim its words are meanwhile.
+const HELD_META := &"event_choice_held"
+const HELD_INK_ALPHA := 0.7
+
 ## The choices waiting for the event's words, and the words (weak: the page may go first).
 var _held_choices: Array[WeakRef] = []
 var _held_text: WeakRef = null
+
+
+## A choice's press: a waiting choice shows the words whole instead (never chooses).
+func _press_choice(index: int) -> void:
+	var b := _panel.find_child("Choice%d" % (index + 1), true, false) as Button if _panel != null else null
+	if b != null and b.has_meta(HELD_META):
+		Typing.finish_all(get_tree())
+		_poll_held_choices()
+		return
+	choose_event(index)
 
 
 func _poll_held_choices() -> void:
 	var text := _held_text.get_ref() as Control if _held_text != null else null
 	if text != null and Typing.typing(text):
 		return
+	var first: Button = null
 	for w in _held_choices:
 		var b := w.get_ref() as Button
 		if b != null:
-			b.disabled = false
+			b.remove_meta(HELD_META)
+			b.remove_theme_color_override(&"font_color")
+			var mark := b.get_node_or_null(^"EventHeldMark")
+			if mark != null:
+				mark.queue_free()
+			if first == null:
+				first = b
 	_held_choices.clear()
 	_held_text = null
 	if get_tree().process_frame.is_connected(_poll_held_choices):
 		get_tree().process_frame.disconnect(_poll_held_choices)
+	# E1: the pad has something to press once the choices act.
+	if first != null and first.is_inside_tree():
+		UiFocus.focus_first(first.get_parent(), true)
 
 
 ## True while the event's choices wait for its words (tests).
@@ -1659,9 +1713,18 @@ func _show_shop() -> void:
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			# H23 S8: a clear buy button on every item, and the whole text on focus.
 			sticker.with_buy(TextDb.mark("BUY"))
+			if kind != "cards":
+				# ANIM-R2 E6: the tile grows until its whole text reads (at 1.6 a third of the
+				# chips showed 1 of 2-3 lines at the 8 px floor).
+				fit_chip_tile(sticker, chip_tile_room(kind, (seen[kind] as Array).size(), ts))
 			FocusTip.attach(sticker)
 			var index: int = i
 			var k: String = kind
+			var price_i := int(prices[i])
+			# ANIM-R2 E9: pressing an item out of reach says why on the money itself.
+			sticker.gui_input.connect(func(ev: InputEvent) -> void:
+				if sticker.disabled and (ev.is_action_pressed(&"ui_accept") or (ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT)):
+					price_refused(price_i))
 			sticker.set_meta(STOCK_META, i)
 			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
 			match kind:
@@ -1715,9 +1778,11 @@ func _show_shop() -> void:
 		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
 		tile.hotkey = ""
 		if low >= 0:
-			tile.with_price(low, high > low)
-			tile.price_high = high
-		# H23 S8: the real prices ("100-150": the slot you overwrite sets it), said in words.
+			# ANIM-R2 E6: one price on the tile, what most slots cost ("BUY 100-150" wrapped
+			# onto three lines at 1.6); the UPGRADE viewer shows the exact price of the slot
+			# picked before anything is paid, and the tip names the pricier slot.
+			tile.with_price(low)
+		# H23 S8: the real prices (the slot you overwrite sets it), said in words.
 		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
 			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
 			+ "\n" + tr(String(DRAG_TIPS["slice"])))
@@ -1753,6 +1818,7 @@ func _show_shop() -> void:
 	wallet.name = "Wallet"
 	wallet.items = [[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.")]]
 	wallet.custom_minimum_size.x = wallet.full_width(ts)
+	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
 	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(wallet)
 	# ANIM-4b: the spinner in small beside the wallet: microchips and slice upgrades drag onto
@@ -1873,6 +1939,40 @@ static func slice_tile_size(count: int, ts: float) -> Vector2:
 ## the name, the icon and a two-line buy sticker did not fit 130 px).
 static func tile_growth(ts: float) -> float:
 	return 1.0 + (ts - 1.0) * TILE_GROW
+
+
+## ANIM-R2 E6: the most a chip ("firmware") or Daemon tile may grow to at text scale `ts`
+## with `count` in its row: a microchip shares its window's width (the socket list under
+## it), a Daemon widens a little (the SLICES window keeps its row); both may grow as tall
+## as the lower row's tiles.
+static func chip_tile_room(kind: String, count: int, ts: float) -> Vector2:
+	var h := CHIP_TILE.y * tile_growth(ts)
+	if kind == "firmware":
+		var w := (MODEM_QUAD.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
+		return Vector2(maxf(CHIP_TILE.x, minf(w, CHIP_TILE.x * ts)), h)
+	return Vector2(CHIP_TILE.x * (1.0 + (ts - 1.0) * DAEMON_WIDEN), h)
+
+
+## Grows `tile` (wider first, then taller, never past `most`) until its whole effect text
+## fits at CHIP_READABLE px or more; at `most` its own fit (ZineCard.fit_whole) takes the
+## text down as far as it must. Tiles already fitting stay as they are.
+static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
+	var sz := tile.custom_minimum_size
+	for i in 200:
+		tile.size = sz
+		if tile.buy_button != null:
+			tile.buy_button.refit()  # its height at this width (one line or two) is the foot
+		var parts := tile.tile_parts()
+		if int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size() and int(parts["dfs"]) >= CHIP_READABLE:
+			break
+		if sz.x < most.x:
+			sz.x = minf(sz.x + CHIP_FIT_STEP, most.x)
+		elif sz.y < most.y:
+			sz.y = minf(sz.y + CHIP_FIT_STEP, most.y)
+		else:
+			break
+	tile.size = sz
+	tile.custom_minimum_size = sz
 
 
 ## Opens a modal viewer over the netrun screen. The viewers hold focus themselves
@@ -2479,6 +2579,30 @@ func _on_dropped(payload: Dictionary, target: Dictionary, layer: DropLayer) -> v
 func _on_refused(_payload: Dictionary, _target: Dictionary, reason: String) -> void:
 	_log.append_text("[color=orange]%s[/color]\n" % reason)
 	ToastNote.show_on(self, reason, true)
+	_flash_if_short(reason)
+
+
+## ANIM-R2 E9: a purchase refused for want of Cycles flashes the money: the top bar's
+## CYCLES tag (and the Modem's wallet) go red with "PRICE > CYCLES" under them.
+func price_refused(price: int) -> void:
+	var s := RunManager.netrun
+	if s == null:
+		return
+	var text := "%d > %d" % [price, s.run.cycles]
+	hud.stats.flash_refusal(TextDb.mark("CYCLES"), text)
+	var wallet := _panel.find_child("Wallet", true, false) as HudStats if _panel != null else null
+	if wallet != null:
+		wallet.flash_refusal(TextDb.mark("CYCLES"), text)
+
+
+## A refusal's words name the price it wanted when Cycles fell short: flash the money.
+func _flash_if_short(reason: String) -> void:
+	if not reason.contains(tr("Cycles")) and not reason.contains("Cycles"):
+		return
+	var rx := RegEx.create_from_string("(\\d+)")
+	var m := rx.search(reason)
+	if m != null:
+		price_refused(m.get_string(1).to_int())
 
 
 # --- Helpers --------------------------------------------------------------------------
@@ -2537,6 +2661,7 @@ func _report(events: Array[Dictionary]) -> void:
 			_log.append_text(String(e["text"]) + "\n")
 			if String(e.get("type", "")) in TOAST_WARN_EVENTS:
 				ToastNote.show_on(self, String(e["text"]), true)
+				_flash_if_short(String(e["text"]))
 		if c == null:
 			continue
 		match String(e.get("type", "")):

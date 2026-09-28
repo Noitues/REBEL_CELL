@@ -362,6 +362,125 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R2 combat, events and screens
+The second fix batch of the Animation pass review (four reviewers), combat, events and
+screens part (E1-E10). Views only; every call below was the implementer's (the standing
+rule: nothing deferred). Tests: `tests/unit/test_anim_r2_combat.gd` (full tier, 28 tests);
+strips recaptured in `docs/timeline/motion/` (CHOSEN on top, one variant under it, quantized):
+`resolve_sequence`, `number_float`, `enemy_break`, `drag_ghost_follow`, `loot_pick`.
+- **One press rule, revised (MotionSkip, STYLE_GUIDE 5.1).** (a) *Menus pass their own
+  presses (E3):* in a MenuMotion menu a focus move, an accept (ui_accept: Enter, Space, pad A)
+  and a click on one of the menu's lines complete the line's motion **and pass on**; only
+  presses that don't work the menu are consumed (`MenuMotion.works_menu`). R1 consumed every
+  non-focus press while a line typed, so Down then Enter the next frame never activated and a
+  click on another line within 0.18 s was eaten. (b) *Words together (E2):* a press that
+  completes typing shows every word typing on screen at once — all `Typing` labels and the
+  Dialogue subtitle (`Typing.finish_all`, from both helpers) — so an event's story and its
+  subtitle take one press, not two. (c) *Under the jack:* `MotionSkip.is_press` is false while
+  `Fx.transitioning()` (looked up at run time: the kit compiles in `-s` tools), so no helper acts
+  under the jack's cover (the other agent's input blocker swallows the press itself).
+- **E1 pad-only events.** Held choices are no longer disabled: they stay enabled and
+  focusable, so the entrance's focus lands on the first choice; a press on a held choice only
+  shows the words (`_press_choice`), and when the words are whole the choices are released and
+  the first takes focus if nothing on the page has it. Tested with the pad alone: A shows the
+  words, the D-pad walks the choices, A takes one.
+- **E2 held choices read.** A held choice keeps its paper note and outcome icons, its words at
+  ink 0.7 and a "typing" mark (`EventHeldMark`: three paper dots just above the note's top-right
+  corner, in the gap between choices, so never on its words). Root cause found on the way:
+  `OutcomeRow` read the button's boxes before the button was in the tree, so it copied Godot's
+  default grey boxes and **every event note had lost its paper** since R1 (disabled or not); it
+  now reads them once the button is in the tree and again on a theme change. At 1.6 the top bar
+  wrapped onto two rows because of the event's long title: the event screen is now titled
+  "TERMINAL EVENT" (as short as the Modem's), so the bar keeps one row and the choices show.
+- **E4 SEND IT reads.**
+  - a. Hits play one at a time: after a beat that flies (a hit, a status put on a slice) the
+    next waits `hit_line` (0.3 s; never squeezed), so two projectiles never fly at once. Every
+    hit flies — a fully blocked or evaded one too (R1 drew none; the stamp now lands on impact),
+    since who hit whom is the point. The projectile is thick (`hit_line` 6 → 8 px, a dark
+    outline), leads with an arrowhead, is coloured by side (`PLAYER_HIT_COLOR` acid for the
+    operative and its drones, `ENEMY_HIT_COLOR` red for enemies and satellites; R1 used the
+    wheel colour, pink like the ATTACK slices), and the hit's raw number rides beside its head.
+    The impact is at half its time (`CombatFxLayer.LINE_DRAW_SHARE`); numbers, stamps and
+    satellite HP land then.
+  - b. Numbers add up: a partly blocked hit lands its raw number ("-14"), the guard's part comes
+    off as a chip under the hub's lines ("5 BLOCKED", existing words) and after `hit_absorb`
+    (new, 0.3 s) the number pops to what got through ("-9"), which is what travels into the HP
+    counter. A satellite's or drone's HP change now shows at its own token (in the hub it read as
+    the host's HP, which didn't move: the likely source of "−14 → 21 lost", a drone and the
+    wheel both hit). The "−6 with +3 block → 6 lost" still: the +3 BLOCK was the collections
+    drone's own guard (a satellite guards itself), not the agent's; the hit took 6 as shown. No
+    demo was wrong. Rule tested over 4 enemies × 6 seeds × 4 turns: every HP change has exactly
+    one number of exactly its size, and each wheel's (and satellite's) numbers sum to its HP roll.
+    Overkill: the raw number can exceed what got through plus the guard (the HP ran out); the
+    travelling number is still the HP lost.
+  - c. The result waits for every HP roll to finish (`ResolveBeats.settle_after`: impact,
+    absorb, the number's travel, `hp_drain`), then THIS TURN holds `resolve_result_hold`
+    (0.5 s) before the respin. The squeezable gap still fits `resolve_sequence` (2.0 s) beside
+    the lead, hold, deaths and tail; the hits' spacing and the settle come on top, so a turn with
+    hits runs about 2.5-3.5 s (any press skips). Test budgets changed on purpose (below).
+  - d. The forecast tag's tape reads "IF YOU SEND IT" (before and after a resolution: the
+    forecast always means what SEND IT does now); "NEXT TURN" read as "not this turn" and is
+    gone from the tag (the word is dropped from the export).
+  - e. The landing beats are at 0 with the discard alongside (checked in the capture: the
+    landed slices pulse from the first frames); unchanged.
+  - f. `result_stamps` stamps NO DAMAGE / ALL BLOCKED only on a wheel that took **no** HP-changing
+    beat: damage and an equal heal net to zero but no longer say NO DAMAGE.
+- **E5 the break.** The full-screen acid flash at VICTORY is gone: the breaking wheel gets a
+  short local white disc flash (`victory_flash` retuned: amplitude 0.3 → 0.8, now the disc's
+  alpha, 0.15 s) drawn by the fx layer (the wheel itself goes clear as it breaks). VICTORY lands
+  centred over the enemies' side (`end_word_spot`), DEFEAT over the operative. When the fight
+  ends on a break, the result (THIS TURN, NO DAMAGE on the operative) shows `enemy_break`'s
+  delay before the last break, then the break and VICTORY.
+- **E6 the Modem at big text.** Chip and Daemon tiles grow until their whole effect text fits
+  at 10 px or more (`fit_chip_tile`: wider first — a microchip up to its window's share, a
+  Daemon by a quarter of the text scale's growth — then taller, up to the lower row's tile
+  height), measuring with the BUY sticker refitted at each width (its second line was the
+  foot the old fit missed). Swept: seeds 1-6 × English and pseudolocalised × 1.0 / 1.3 / 1.6,
+  every tile whole (was 14 of 72 at 1.6). A slice tile shows one price, what most slots cost
+  ("BUY 100", not "BUY 100-150" wrapping onto three lines); the UPGRADE viewer shows the exact
+  price of the slot picked before anything is paid and the tip names the pricier slot.
+- **E7 big text combat.** The entering enemy's name plate shows only when it has no forecast
+  (the tag slides in with the wheel; the name is in its hub). At big text (one chip row) the
+  chips shrink down to their 1.3 size before any fold into "+N MORE" (`chip_font`); the fold
+  order stays R1's (damage to you, dealt, HP, the rest), so what folds is odds and statuses.
+  Satellite tokens dock past the slice value at their angle (the value's box is wider than
+  tall: `satellite_out(a)`, two digits, the token's radius, a 3 px gap) and turn round the rim
+  away from the top when they would sit on the tag (`SAT_TAG_STEP` 0.06 rad, at most 16).
+- **E8 loot.** The stickers keep their rest tilt's reach apart (`ZineCard.REST_TILT_MAX` 4°:
+  the gap is 14 px plus the card's height × sin 4°; CACHE lay on JAM's cost badge). A focus tip
+  shows only when a key or pad moves focus (or pad mode is on), never on the page's own first
+  focus for a mouse player; when every spot covers something the tip is folded narrower (0.7,
+  0.5, 0.35 of its columns, at least 16) and may go to the screen's side margins, the spot
+  covering least wins (at 1.6 a middle card's tip now sits clear of Skip and the other cards).
+  The half-drawn band on loot_pick's first frame was the glass entrance's CRT roll firing while
+  the page was still clear: the roll now comes once the glass is fully shown.
+- **E9.** A long refusal note takes its size again a frame later (a wrapped label reports its
+  height late: "…has no f"). A drop on a target that only picks (the crew chip on JACK IN) lands
+  beside the button, never on its words (`DropLayer.LAND_BESIDE_KINDS`, left of it, else right).
+  The drag ghost's alpha 0.6 → 0.92 (`drag_ghost_follow`). The Modem's wallet mirrors the top
+  bar's CYCLES and redraws on its roll steps (`HudStats.mirror`, `rolled`): a redraw asked from
+  _process drew the step before (the 119 vs 120). Spent RAM floats "-N RAM" off the count
+  (`ram_spend_float`, new: 0.8 s, 22 px) on respins, card plays and extra nudges. A purchase
+  refused for want of Cycles (a drag, the rules' refusal, or a click / A on an item out of
+  reach) flashes the top bar's CYCLES tag and the wallet red with "PRICE > CYCLES"
+  (`price_refusal`, new: 0.6 s, 2 pulses; static until the next change with motion off). The
+  preview chip reads "PLAYING JOLT" (was "IF JOLT").
+- **E10.** `combat_fx_layer.gd`'s inline fractions are named: `GROW_FROM` 0.6, `CRIT_POP_SCALE`
+  1.35, `TRAVEL_FADE_TO` 0.6, `LINE_DRAW_SHARE` 0.5, `RIDE_FONT_SHARE` / `RIDE_OFFSET`.
+- New ids (data only; REQUIRED_IDS in `scripts/data/ui_motion_data.gd` — a constant list, no
+  field changed, the schema smoke test reads it — and motion lab demos): `hit_absorb`,
+  `ram_spend_float`, `price_refusal` (164 entries). Retuned: `hit_line` width 8, `victory_flash`
+  0.8 (local), `drag_ghost_follow` alpha 0.92. The lab's `number_float` demo plays two real hit
+  beats (a partly blocked one), and `--demo-scale=<x>` on the netrun scene captures at a text
+  size.
+- Words (exported once, strings.csv): IF YOU SEND IT, PLAYING %s, -%d RAM, TERMINAL EVENT;
+  dropped: NEXT TURN, IF %s, TERMINAL EVENT & DISPATCH.
+- Test expectations changed on purpose: `test_anim_r1_combat` (a blocked or evaded hit flies;
+  hit colour by side; the budget allows the hits' spacing and the settle; a fight ending on a
+  break shows its result before the break), `test_anim2_combat_motion` (the same budget),
+  `test_anim_r1_campaign` (held choices are held, not disabled), `test_horizontal_pass24`
+  (PLAYING JOLT).
+
 #### 2026-09-28 — Animation pass — ANIM-R1 combat and input
 The first fix batch of the Animation pass review (four reviewers), combat and input part
 (C1-C10). Views only, except two facts added to engine events (C4). Tests:

@@ -8,6 +8,11 @@ extends PanelContainer
 
 ## Gap between the control and the tip (px).
 const GAP := 6.0
+## ANIM-R2 E8: when every spot covers something, the tip is folded narrower (these shares
+## of its columns, never under FOLD_MIN columns) and the spot covering least wins, so a
+## tall narrow tip can go beside the loot row instead of over Skip.
+const FOLD_SHARES: Array[float] = [0.7, 0.5, 0.35]
+const FOLD_MIN := 16
 
 
 ## Shows `control`'s tooltip while it has focus (not while the mouse is over it).
@@ -28,6 +33,11 @@ static func _show_for(control: Control) -> void:
 		return
 	if control.get_global_rect().has_point(control.get_global_mouse_position()) and not Settings.pad_active:
 		return
+	# ANIM-R2 E8: a page's own first focus (its entrance) shows no tip for a mouse player
+	# (the loot's first card showed its tip over Skip with nothing pressed); a key or pad
+	# moving focus does.
+	if not Settings.pad_active and not Input.is_anything_pressed():
+		return
 	_hide_for(control)
 	var tip := FocusTip.new()
 	tip.name = "FocusTip"
@@ -35,6 +45,7 @@ static func _show_for(control: Control) -> void:
 	tip.top_level = true
 	tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tip.z_index = 50
+	tip.text = control.tooltip_text
 	tip.add_child(UiTip.make(control.tooltip_text))
 	control.add_child(tip)
 	tip._place.call_deferred(control)
@@ -52,12 +63,58 @@ static func _hide_for(control: Control) -> void:
 		old.queue_free()
 
 
+## The tip's words (unfolded).
+var text: String = ""
+
+
 func _place(control: Control) -> void:
 	if not is_instance_valid(control):
 		return
 	size = get_combined_minimum_size()
 	var screen := control.get_viewport_rect()
-	global_position = spot(control.get_global_rect(), size, screen, avoid_rects(control))
+	var avoid := avoid_rects(control)
+	var r := control.get_global_rect()
+	var at := spot(r, size, screen, avoid)
+	var hits := covered(Rect2(at, size), r, avoid)
+	if hits > 0.0 and text != "":
+		# ANIM-R2 E8: narrower folds, the one covering least.
+		var cols := maxi(FOLD_MIN, roundi(UiTip.COLUMNS / maxf(1.0, Settings.text_scale)))
+		var best_cols := -1
+		var chrome: Vector2 = get_combined_minimum_size() - (get_child(0) as Control).get_combined_minimum_size()
+		for share in FOLD_SHARES:
+			var c := maxi(FOLD_MIN, roundi(cols * share))
+			var body := UiTip.make(UiTip.fold_to(text, c))
+			add_child(body)
+			var sz: Vector2 = body.get_combined_minimum_size() + chrome
+			remove_child(body)
+			body.free()
+			var p := spot(r, sz, screen, avoid)
+			var h := covered(Rect2(p, sz), r, avoid)
+			if h < hits:
+				hits = h
+				at = p
+				best_cols = c
+			if h == 0.0:
+				break
+		if best_cols > 0:
+			var old := get_child(0)
+			remove_child(old)
+			old.queue_free()
+			add_child(UiTip.make(UiTip.fold_to(text, best_cols)))
+			size = Vector2.ZERO
+			size = get_combined_minimum_size()
+	global_position = at
+
+
+## How much of `avoid` (and the control's own rect `own`) a tip at `box` covers (0: none).
+static func covered(box: Rect2, own: Rect2, avoid: Array[Rect2]) -> float:
+	var hits := 0.0
+	for a in avoid:
+		if box.intersects(a):
+			hits += box.intersection(a).get_area() + 1.0
+	if box.intersects(own):
+		hits += box.intersection(own).get_area() + 1.0
+	return hits
 
 
 ## ANIM-R1 M11: where a `tip`-sized tip for a control at `r` goes on `screen`: under it,
@@ -67,7 +124,10 @@ func _place(control: Control) -> void:
 static func spot(r: Rect2, tip: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Vector2:
 	var tries: Array[Vector2] = [Vector2(r.position.x, r.end.y + GAP), Vector2(r.end.x + GAP, r.position.y),
 		Vector2(r.position.x - GAP - tip.x, r.position.y), Vector2(r.position.x, r.position.y - GAP - tip.y),
-		Vector2(r.end.x + GAP, r.end.y - tip.y), Vector2(r.position.x - GAP - tip.x, r.end.y - tip.y)]
+		Vector2(r.end.x + GAP, r.end.y - tip.y), Vector2(r.position.x - GAP - tip.x, r.end.y - tip.y),
+		# ANIM-R2 E8: the screen's side margins, level with the control (a middle loot card's
+		# tip beside it covered its neighbour).
+		Vector2(screen.position.x + GAP, r.position.y), Vector2(screen.end.x - GAP - tip.x, r.position.y)]
 	var best := Vector2.INF
 	var best_hits := INF
 	for at in tries:

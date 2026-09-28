@@ -13,9 +13,14 @@ const COLUMNS := 56
 ## `text` with line breaks so no line runs past COLUMNS / text scale characters. Existing
 ## line breaks are kept.
 static func fold(text: String) -> String:
+	return fold_to(text, maxi(24, roundi(COLUMNS / maxf(1.0, Settings.text_scale))))
+
+
+## `text` folded to at most `cols` characters a line (a longer word stays whole); existing
+## line breaks are kept (ANIM-R2: FocusTip folds a tip narrower when it covers something).
+static func fold_to(text: String, cols: int) -> String:
 	if text == "":
 		return ""
-	var cols := maxi(24, roundi(COLUMNS / maxf(1.0, Settings.text_scale)))
 	var out := PackedStringArray()
 	for para in text.split("\n"):
 		var line := ""

@@ -61,4 +61,25 @@ func _place() -> void:
 		label.custom_minimum_size.x = room - (size.x - label.get_combined_minimum_size().x)
 		size = Vector2.ZERO
 		size = get_combined_minimum_size()
+		# ANIM-R2 E9: a wrapped label reports its height a frame late (a drag's refusal showed
+		# its first line only, "...has no f"): take the size again then.
+		_resize.call_deferred()
+	_put(host)
+
+
+func _resize() -> void:
+	var host := get_parent() as Control
+	if host == null:
+		return
+	size = Vector2.ZERO
+	size = get_combined_minimum_size()
+	_put(host)
+
+
+func _put(host: Control) -> void:
 	position = Vector2(clampf((host.size.x - size.x) * 0.5, 0.0, maxf(0.0, host.size.x - size.x)), host.size.y - size.y - BOTTOM_GAP)
+
+
+## True when every line of the note's words shows (tests).
+func whole() -> bool:
+	return label.get_line_count() <= label.get_visible_line_count() and size.y + 0.5 >= label.get_combined_minimum_size().y

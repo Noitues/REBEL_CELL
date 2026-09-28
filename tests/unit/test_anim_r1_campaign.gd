@@ -511,7 +511,9 @@ func test_the_event_choices_wait_for_the_words() -> void:
 	await _frames(1)
 	var c1 := scene._panel.find_child("Choice1", true, false) as Button
 	assert_true(scene.choices_held(), "the words are typing")
-	assert_true(c1.disabled, "a choice waits (shown disabled) while the words type")
+	# ANIM-R2 E1/E2 (on purpose): a held choice waits readable and focusable, not disabled.
+	assert_true(c1.has_meta(scene.HELD_META), "a choice waits while the words type")
+	assert_false(c1.disabled, "readable and focusable, not disabled")
 	for n in scene._panel.find_children("*", "RichTextLabel", true, false):
 		Typing.finish(n as Control)
 	await _frames(2)

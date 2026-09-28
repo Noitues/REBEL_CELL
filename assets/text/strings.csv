@@ -87,6 +87,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d NEEDLE,+%d NEEDLE
 +%d SHIELD,+%d SHIELD
 ", a run in progress",", a run in progress"
+-%d RAM,-%d RAM
 // %s // RANK %d,// %s // RANK %d
 1  Pick a node,1  Pick a node
 "1. BREACH
@@ -815,10 +816,10 @@ ICE,ICE
 ICE %d: %s,ICE %d: %s
 ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
-IF %s,IF %s
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
+IF YOU SEND IT,IF YOU SEND IT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
@@ -1245,7 +1246,6 @@ NEXT %d,NEXT %d
 NEXT OPERATIVE >,NEXT OPERATIVE >
 NEXT SITE >,NEXT SITE >
 NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: select the next Site on the Grid: %s (the map follows).
-NEXT TURN,NEXT TURN
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
 NUDGE,NUDGE
@@ -1329,6 +1329,7 @@ PIRATE RADIO,PIRATE RADIO
 "PLAY IT
 SAFE??","PLAY IT
 SAFE??"
+PLAYING %s,PLAYING %s
 PLAYOUT,PLAYOUT
 PREV SITE: select the previous Site on the Grid: %s (the map follows).,PREV SITE: select the previous Site on the Grid: %s (the map follows).
 PROFILE // RECORDS,PROFILE // RECORDS
@@ -2250,7 +2251,7 @@ Subtitles with speaker names,Subtitles with speaker names
 System log strip at the foot of the screen,System log strip at the foot of the screen
 TAKES,TAKES
 TARGET: %s,TARGET: %s
-TERMINAL EVENT & DISPATCH,TERMINAL EVENT & DISPATCH
+TERMINAL EVENT,TERMINAL EVENT
 THE TARGET,THE TARGET
 THIS RUN,THIS RUN
 THIS TURN,THIS TURN

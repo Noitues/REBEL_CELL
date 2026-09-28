@@ -120,9 +120,70 @@ func bumping() -> PackedStringArray:
 	return out
 
 
+## ANIM-R2 E9: a refused purchase flashes the money tag red with "PRICE > MONEY" under it
+## (`price_refusal`: its seconds, amplitude = pulses), as RAM does for a card; static until
+## the next change under reduce effects and headless.
+const REFUSED_COLOR := Color("#FF4D4D")
+const REFUSED_MIN_ALPHA := 0.45
+const REFUSED_FILL := 0.35
+const REFUSED_TEXT_SHARE := 0.7
+var _refused_tag: String = ""
+var _refused_text: String = ""
+var refusal_alpha: float = 1.0
+var _refusal_tween: Tween = null
+
+
+## Flashes tag `tag` (its name, e.g. "CYCLES") with `text` ("150 > 120") under it.
+func flash_refusal(tag: String, text: String) -> void:
+	_refused_tag = tag
+	_refused_text = text
+	refusal_alpha = 1.0
+	queue_redraw()
+	if _refusal_tween != null and _refusal_tween.is_valid():
+		_refusal_tween.kill()
+	if not Motion.live(&"price_refusal") or not is_inside_tree():
+		return
+	var pulses := maxf(1.0, Motion.amplitude(&"price_refusal"))
+	_refusal_tween = create_tween()
+	_refusal_tween.tween_method(func(p: float) -> void:
+		refusal_alpha = absf(cos(p * PI * pulses))
+		queue_redraw(), 0.0, 1.0, Motion.seconds(&"price_refusal"))
+	_refusal_tween.tween_callback(func() -> void:
+		_refused_tag = ""
+		_refused_text = ""
+		refusal_alpha = 1.0
+		queue_redraw())
+
+
+## The refusal shown on a tag now ("" when none; tests).
+func refusal_text() -> String:
+	return _refused_text
+
+
+## ANIM-R2 E9: another set of tags this one mirrors (the Modem's wallet mirrors the top
+## bar): a tag of the same name shows the mirror's number while it rolls, so the two never
+## disagree mid-roll (the top bar read 119 while the wallet read 120).
+## It redraws on the mirror's own roll steps (`rolled`), so both draw the same number in
+## the same frame (a redraw asked from _process drew the step before).
+var mirror: HudStats = null:
+	set(v):
+		if mirror != null and is_instance_valid(mirror) and mirror.rolled.is_connected(queue_redraw):
+			mirror.rolled.disconnect(queue_redraw)
+		mirror = v
+		if mirror != null:
+			mirror.rolled.connect(queue_redraw)
+
+## A tag's number stepped in its roll (or the roll ended): mirrors redraw with it.
+signal rolled
+
+
 ## The value tag `i` shows now (mid-roll: the rolling number).
 func shown_value(i: int) -> String:
 	var it: Array = items[i]
+	if mirror != null and is_instance_valid(mirror) and mirror._moving.has(String(it[0])):
+		for k in mirror.items.size():
+			if String(mirror.items[k][0]) == String(it[0]) and String(mirror.items[k][1]) == String(it[1]):
+				return mirror.shown_value(k)
 	var m: Dictionary = _moving.get(String(it[0]), {})
 	if m.is_empty() or not bool(m["rolls"]):
 		return String(it[1])
@@ -144,6 +205,9 @@ func settle() -> void:
 
 
 func _note_changes(old: Array, new: Array) -> void:
+	if not (_refusal_tween != null and _refusal_tween.is_valid()) and old != new:
+		_refused_tag = ""  # a static refusal (motion off) shows until the next change
+		_refused_text = ""
 	if old.is_empty() or not Motion.live(&"sticky_bump") or not is_inside_tree():
 		return
 	var before := {}
@@ -176,12 +240,14 @@ func _bump(key: String, from: String, to: String, kind: StringName) -> void:
 		var re := Motion.entry(roll_id)
 		tw.tween_method(func(v: float) -> void:
 			m["roll"] = v
+			rolled.emit()
 			queue_redraw(), 0.0, 1.0, Motion.seconds(roll_id)).set_delay(Motion.delay_of(roll_id)).set_ease(re.ease).set_trans(re.trans)
 	else:
 		m["roll"] = 1.0
 	tw.chain().tween_callback(func() -> void:
 		if is_same(_moving.get(key, null), m):
 			_moving.erase(key)
+		rolled.emit()
 		queue_redraw())
 	m["tween"] = tw
 	_moving[key] = m
@@ -459,4 +525,15 @@ func _draw() -> void:
 		if it.size() > 2 and String(it[2]) != "":
 			var vw := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x
 			draw_string(Palette.marker(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), Palette.INK)
+		if _refused_tag != "" and String(it[0]) == _refused_tag:
+			# ANIM-R2 E9: a refusal for want of this (Cycles): the tag flashes red and
+			# "PRICE > MONEY" shows under it.
+			var red := Color(REFUSED_COLOR, maxf(REFUSED_MIN_ALPHA, refusal_alpha))
+			draw_rect(r, Color(red, red.a * REFUSED_FILL), true)
+			draw_rect(r, red, false, 2.0)
+			var rfs := roundi(VALUE_SIZE * s * REFUSED_TEXT_SHARE)
+			var tw := Palette.display().get_string_size(_refused_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
+			var at := Vector2(-tw * 0.5, r.end.y + rfs)
+			draw_string_outline(Palette.display(), at, _refused_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, 4, Palette.NIGHT_SKY)
+			draw_string(Palette.display(), at, _refused_text, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, red)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

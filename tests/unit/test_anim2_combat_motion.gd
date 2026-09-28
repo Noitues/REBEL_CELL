@@ -147,8 +147,23 @@ func test_resolve_beats_match_the_engine_events() -> void:
 				var times: PackedFloat32Array = sch["times"]
 				for k in range(1, times.size()):
 					assert_true(times[k] >= times[k - 1] - 0.0001, "the schedule never goes back")
-				assert_true(float(sch["total"]) <= Motion.seconds(&"resolve_sequence") + 0.001, "%s: the sequence fits %.2f s (took %.2f)" % [enemy, Motion.seconds(&"resolve_sequence"), sch["total"]])
+				# ANIM-R2 (on purpose): projectiles one at a time and the HP settling are never squeezed.
+				var allowed := _allowed(scene, beats)
+				assert_true(float(sch["total"]) <= allowed, "%s: the sequence fits %.2f s (took %.2f)" % [enemy, allowed, sch["total"]])
 			_close(scene)
+
+
+## The replay's time: `resolve_sequence` for the squeezable gaps, plus what ANIM-R2 never
+## squeezes (each projectile's `hit_line` spacing and the last HP change settling).
+func _allowed(scene: Control, beats: Array[Dictionary]) -> float:
+	var timing: Dictionary = scene.beat_timing()
+	var extra := 0.0
+	var settle := 0.0
+	for b in beats:
+		if ResolveBeats.flies(b):
+			extra += float(timing["hit_gap"])
+		settle = maxf(settle, ResolveBeats.settle_after(b, timing))
+	return Motion.seconds(&"resolve_sequence") + extra + settle + 0.001
 
 
 func CombatScene_schedule(scene: Control, beats: Array[Dictionary]) -> Dictionary:
@@ -187,7 +202,7 @@ func test_the_sequence_plays_out_by_itself() -> void:
 	scene.motion_settled.connect(func() -> void: settled[0] = true)
 	scene.end_turn()
 	var sig := _signature(scene)
-	var limit := Motion.seconds(&"resolve_sequence") + 0.5
+	var limit: float = scene.motion_seconds_left() + 0.5
 	var waited := 0.0
 	while scene._seq != null and waited < limit:
 		await get_tree().create_timer(0.1).timeout

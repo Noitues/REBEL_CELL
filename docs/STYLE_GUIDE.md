@@ -184,9 +184,12 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   mouse button 1-3 going down (never the wheel) or a pad button going down. A press that
   completes a motion is consumed and does nothing else: the SEND IT replay, drops and
   landings, flights and stamps, typing words and subtitles, page entrances and the route
-  move all end at once and nothing behind them sees the press. One exception: in a menu a
-  focus move (arrows, D-pad, Tab) passes on, since moving on ends the line's motion and a
-  menu must never drop a fast tap.
+  move all end at once and nothing behind them sees the press. Exceptions (ANIM-R2): in a
+  menu a press that works the menu — a focus move (arrows, D-pad, Tab), an accept (Enter,
+  Space, A) or a click on one of its lines — completes the line's motion and passes on (a
+  menu never drops a fast tap: Down then Enter activates the new line); a press that
+  completes typing shows every word typing on screen at once (the page's text and the
+  subtitle); while the jack covers the screen nothing is a press.
 
 ### 5.2 Combat motion (the Animation pass, ANIM-2 / ANIM-3)
 - **Replay, never re-run.** The state is final at once; motion replays the engine's own
@@ -195,15 +198,21 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **SEND IT** reads as a sequence of about 2 s (ANIM-R1): needles latch and the landed
   slices pulse in their colour (a MISS slice gets a big grey X) and hold 0.3 s; each hit
   pulses its needle and flies as a thick projectile in the attacker's colour from its
-  landed slice to the victim's HP ring (no line when nothing is dealt: the victim stamps
-  BLOCKED or EVADED); damage and heal numbers pop in the hub above the name, then travel
-  into the HP counter, which rolls down with a white lag bar as the wheel flashes and
-  shakes; guard numbers sit under the hub's lines; statuses stamp on their slice; a wheel
+  landed slice to the victim's HP ring, one at a time (ANIM-R2: never two at once), acid
+  for the operative's side and red for the enemies', its raw number riding with it (a hit
+  soaked whole still flies and the victim stamps BLOCKED or EVADED on impact); a partly
+  blocked hit lands its raw number, the guard's part comes off as a chip, and what got
+  through pops and travels into the HP counter, which rolls down with a white lag bar as
+  the wheel flashes and shakes (every HP change has a number of exactly its size; a
+  satellite's shows at its token); guard numbers sit under the hub's lines; statuses stamp on their slice; a wheel
   whose HP didn't change stamps NO DAMAGE (ALL BLOCKED when every hit was soaked); a
-  dying enemy's HP is seen at 0 before it falls apart and leaves its empty spot marked
-  DEFEATED. The result holds 0.5 s under THIS TURN with LAST TURN, then the wheels spin to
-  the next landing and the forecast flips in, its tape reading NEXT TURN; the TURN counter
-  changes when the replay ends. A new fight's enemy enters from the edge with its name.
+  dying enemy's HP is seen at 0 before it falls apart (a short white flash on its own wheel,
+  never the screen) and leaves its empty spot marked DEFEATED; a fight ending on a break
+  shows its result first and VICTORY lands over the enemies' side. The result waits for
+  every HP roll, holds 0.5 s under THIS TURN with LAST TURN, then the wheels spin to the next
+  landing and the forecast flips in, its tape reading IF YOU SEND IT; the TURN counter
+  changes when the replay ends. A new fight's enemy enters from the edge (its forecast
+  shows as it comes).
   Any press skips (and does nothing else).
 - **Spins** run the exact ticks with ease-out, a 0.2-tick overshoot and settle; slices blur
   when fast. **Nudges** are 0.08 s steps with a 2 px recoil, queued and never out of step.
@@ -219,7 +228,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Refusals and SEND IT** (ANIM-R1): not enough RAM flashes the RAM chips red with "COST >
   RAM" beside them and pulses the card's cost (or the respin sticker); SEND IT carries a
   drawn ▶▶ that pulses gently when no RAM is left. Tag chips come in order of importance
-  (damage to you, damage dealt, HP, then the rest), so "+N MORE" never hides damage.
+  (damage to you, damage dealt, HP, then the rest), so "+N MORE" never hides damage; at big
+  text they shrink to their 1.3 size before any folds (ANIM-R2). Spent RAM floats "-N RAM"
+  off the count; a purchase short of Cycles flashes the CYCLES tag red with PRICE > CYCLES.
 
 ### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
 - **Territory tint never jumps.** The city bakes the new look once; the new image shows
@@ -303,8 +314,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   the deck monitor's hum, JACK IN breathing, the caret, a third of the HQ signs, sparse
   traffic dashes on the busiest streets. All stop under reduce effects.
 - **Settings changes animate nothing** (text size, language): the page just re-lays out.
-- **Words before choices, places kept (ANIM-R1)**: an event's choices wait (disabled) for its
-  typed words; shop and loot cards show their whole text; a bought Modem item stays as a SOLD
+- **Words before choices, places kept (ANIM-R1)**: an event's choices wait for its typed
+  words (ANIM-R2: readable and focusable on their paper with a typing mark; a press shows
+  the words, the first choice then has focus); shop and loot cards show their whole text; a bought Modem item stays as a SOLD
   stub in its place; loot not taken falls away; tips keep off buttons and titles.
 
 ## 6. Accessibility

@@ -64,6 +64,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ANIM-R2 city, maps and transitions: the bake fade-in, the jack's CONNECTING line, raid
 	# readability, the lasting territory tint, the route target's pulse.
 	&"city_bake_fade", &"jack_connect", &"raid_outcome_stagger", &"raid_result_banner", &"asset_drop_stamp", &"influence_tint", &"route_target_pulse",
+	# ANIM-R2 combat, events and screens: a hit's absorb, the RAM spend float, the price refusal.
+	&"hit_absorb", &"ram_spend_float", &"price_refusal",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

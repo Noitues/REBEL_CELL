@@ -1114,6 +1114,11 @@ func global_center() -> Vector2:
 
 ## Radius (px) within which everything drawn round the disc lies (values, satellites,
 ## the HP arc and its numbers).
+## The disc's radius with its needles' band (px): a break's local flash covers it.
+func disc_radius() -> float:
+	return _radius() + _band() * 0.55
+
+
 func extent_radius() -> float:
 	return _radius() + maxf(EXTENT, HP_TEXT_GAP + _fs(HP_FONT_SIZE) + LAST_TURN_GAP + _fs(HUB_FONT_SIZE))
 
@@ -1228,7 +1233,18 @@ func _satellite(id: StringName) -> CombatantState:
 func _satellite_pos(sat: CombatantState) -> Vector2:
 	var tps := combatant.wheel.ticks_per_slice()
 	var a := _ang(sat.dock_slot * tps - shown_rotation())
-	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + _satellite_out())
+	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + satellite_out(a))
+	# ANIM-R2 E7: a token under the tag turns round the rim, away from the top, until it is
+	# clear of it (at 1.6 a drone's hex sat on the tag's chips).
+	var tag := intent_rect()
+	if tag.has_area():
+		var tok0 := SATELLITE_TOKEN * _ts()
+		var turn := signf(cos(a)) if absf(cos(a)) > 0.001 else 1.0
+		for k in SAT_TAG_STEPS:
+			if not tag.intersects(Rect2(p - Vector2(tok0, tok0), Vector2(tok0, tok0) * 2.0)):
+				break
+			a += turn * SAT_TAG_STEP
+			p = global_center() + Vector2(cos(a), sin(a)) * (_radius() + satellite_out(a))
 	# In the bottom sector the HP number, NEXT plate and last-turn line sit under the disc:
 	# a token there moves to the side of them (H23: it covered "40/40").
 	# Beside the measured HP number, NEXT plate and LAST TURN plate whenever the token would
@@ -1245,9 +1261,23 @@ func _satellite_pos(sat: CombatantState) -> Vector2:
 	return p
 
 
-## How far outside the rim satellites dock: past the slice values (H22: they sat on them).
-static func _satellite_out() -> float:
-	return VALUE_OUT + _fs(VALUE_FONT_SIZE) * 0.5 + SATELLITE_GAP * _ts()
+## How far outside the rim a satellite at screen angle `a` docks: past the slice value
+## drawn at that angle (H22: they sat on them). ANIM-R2 E7: the value's box is wider than
+## tall, so the distance follows the angle (a token by a side value clears the widest value,
+## two digits, not only half its height: at 1.6 "8" met the drone's hex).
+static func satellite_out(a: float) -> float:
+	var vs := _fs(VALUE_FONT_SIZE)
+	var half := Vector2(Palette.display().get_string_size(VALUE_WIDEST, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x * 0.5, vs * 0.5)
+	var reach := absf(cos(a)) * half.x + absf(sin(a)) * half.y
+	return VALUE_OUT + reach + SATELLITE_TOKEN * _ts() + VALUE_TOKEN_GAP * _ts()
+
+
+## The widest slice value a satellite keeps clear of, and the gap between them (px at 1.0).
+const VALUE_WIDEST := "88"
+const VALUE_TOKEN_GAP := 3.0
+## A token under the tag turns round the rim by this much (rad) a step, at most this often.
+const SAT_TAG_STEP := 0.06
+const SAT_TAG_STEPS := 16
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -1554,10 +1584,12 @@ func _draw_view() -> void:
 	_check_tag_change(tag)
 	if replaying and caption != "" and caption_shown > 0.0:
 		_draw_caption(caption, caption_shown)
-	elif enter_slide > 0.0:
-		# An enemy entering: its own name on the plate where its tag will go.
+	elif enter_slide > 0.0 and not tag.has_area():
+		# An enemy entering with no forecast yet: its own name on the plate where its tag
+		# will go. ANIM-R2 E7: a forecast is never hidden by it (the tag slides in with the
+		# wheel; the name is in its hub).
 		_draw_caption(shown_name().to_upper(), 1.0)
-	if tag.has_area() and not replaying and enter_slide <= 0.0:
+	if tag.has_area() and not replaying:
 		if tag_flip < 1.0:
 			# Paper flip: the tag turns on its tape (top edge) as its content changes.
 			var s := cos(deg_to_rad((1.0 - tag_flip) * Motion.amplitude(&"intent_flip")))
@@ -2123,14 +2155,37 @@ static func _zone_is(zones: Array, zone: Dictionary) -> bool:
 
 # --- The tag ----------------------------------------------------------------------------------
 
-## Chip rows of the tag (wrapped to the view width).
+## Chip rows of the tag (wrapped to the view width), at chip_font().
 func _chip_rows() -> Array:
+	return _chip_rows_at(chip_font())
+
+
+## The chips' font size (ANIM-R2 E7): the text size's, but at big text (one chip row kept)
+## the chips shrink, down to their size at BIG_TEXT, before any folds into "+N MORE" (at
+## 1.6 "+3 MORE" hid the forecast's own results).
+func chip_font() -> int:
+	var fs := _fs(CHIP_FONT_SIZE)
+	if _ts() <= BIG_TEXT:
+		return fs
+	var floor_fs := roundi(CHIP_FONT_SIZE * BIG_TEXT)
+	while fs > floor_fs and _folds(_chip_rows_at(fs)):
+		fs -= 1
+	return fs
+
+
+static func _folds(rows: Array) -> bool:
+	if rows.is_empty():
+		return false
+	var last: Array = rows[rows.size() - 1]
+	return not last.is_empty() and bool((last[last.size() - 1] as Dictionary).get("more", false))
+
+
+func _chip_rows_at(fs: int) -> Array:
 	var rows: Array = []
 	var chips: Array = intent.get("chips", [])
 	if chips.is_empty():
 		return rows
 	var max_w := size.x * TAG_MAX_SHARE
-	var fs := _fs(CHIP_FONT_SIZE)
 	var cap := _chip_row_cap()
 	# ANIM-R1 C8: the chips come in order of importance (the scene sorts them: damage to
 	# you, damage dealt, HP, then the rest), and the fold keeps that order: the rows fill in
@@ -2174,7 +2229,7 @@ func _fold_rows(rows: Array, hidden: int, fs: int, max_w: float) -> Array:
 		var gone: Dictionary = last.pop_back()
 		w -= _chip_width(String(gone["text"]), fs)
 		hidden += 1
-	last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER})
+	last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER, "more": true})
 	return rows
 
 
@@ -2190,12 +2245,12 @@ func _intent_rect_local() -> Rect2:
 	var ts := _ts()
 	var title_h := INTENT_HEIGHT * ts
 	var chip_h := CHIP_HEIGHT * ts
-	var rows := _chip_rows()
+	var fs := chip_font()
+	var rows := _chip_rows_at(fs)
 	var h := title_h + rows.size() * (chip_h + 2.0)
 	var w := Palette.marker().get_string_size(String(intent["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(INTENT_FONT_SIZE)).x + (20.0 + 22.0 * ts if int(intent.get("type", -1)) >= 0 else 16.0)
 	if TIER_PIPS.has(int(intent.get("tier", -1))):
 		w += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
-	var fs := _fs(CHIP_FONT_SIZE)
 	for row in rows:
 		var rw := 8.0
 		for chip in row:
@@ -2222,10 +2277,11 @@ func _intent_tag(r: Rect2) -> void:
 	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Palette.SHADOW)
 	draw_rect(r, Palette.NOTE_PAPER)
 	draw_rect(r, Color(Palette.INK, 0.5), false, 1.0)
-	# ANIM-R1: the tape says what the tag is, a forecast (NEXT TURN), so it never reads as
-	# the result of the turn just played.
+	# ANIM-R1 / R2 E4d: the tape says what the tag is, a forecast of what SEND IT does now
+	# ("IF YOU SEND IT"; "NEXT TURN" read as "not this turn" before the first SEND IT), so
+	# it never reads as the result of the turn just played.
 	var cap_fs := _fs(HUB_FONT_SIZE)
-	var cap_text := tr("NEXT TURN")
+	var cap_text := forecast_caption()
 	var cap_w := minf(w - 4.0, Palette.mono().get_string_size(cap_text, HORIZONTAL_ALIGNMENT_LEFT, -1, cap_fs).x + 10.0)
 	var tape := Rect2(r.position + Vector2((w - cap_w) * 0.5, -(cap_fs + 3.0) * 0.5), Vector2(cap_w, cap_fs + 3.0))
 	draw_rect(tape, Palette.NOTE_TAPE)
@@ -2246,10 +2302,10 @@ func _intent_tag(r: Rect2) -> void:
 				draw_arc(pc, PIP_RADIUS * ts, 0, TAU, 10, Palette.INK, 1.2)
 		tx += PIP_RADIUS * 2.6 * ts * 3 + 4 * ts
 	draw_string(f, Vector2(tx, r.position.y + title_h * 0.7), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), Palette.INK)
-	var fs := _fs(CHIP_FONT_SIZE)
+	var fs := chip_font()
 	var chip_h := CHIP_HEIGHT * ts
 	var y := r.position.y + title_h
-	for row in _chip_rows():
+	for row in _chip_rows_at(fs):
 		var x := r.position.x + 4
 		for chip in row:
 			var cw := _chip_width(String(chip["text"]), fs)
@@ -2258,6 +2314,11 @@ func _intent_tag(r: Rect2) -> void:
 			draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(chip.get("ink", Palette.PAPER)))
 			x += cw
 		y += chip_h + 2.0
+
+
+## The forecast tag's tape caption (translated).
+static func forecast_caption() -> String:
+	return TranslationServer.translate("IF YOU SEND IT")
 
 
 func _draw_dashed_arc(center: Vector2, radius: float, start: float, end: float, color: Color, width: float) -> void:
