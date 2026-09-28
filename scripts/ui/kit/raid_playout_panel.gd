@@ -17,6 +17,9 @@ extends VBoxContainer
 signal finished
 ## Skip was pressed: the playout jumped to its end (screens show the summary).
 signal skipped
+## ANIM-R4 H11a: event `e` has been told (its feed line, if it has one, is in the feed): the
+## screens change a top-bar value (Heat, RAIDS) only then, never before its line shows.
+signal event_shown(e: Dictionary)
 
 ## The map the threats are shown on: a GridMapView or a CityMapOverlay (both expose
 ## `threat_markers`).
@@ -59,11 +62,11 @@ const FEED_GHOSTS := "The operative on %s ghosts %s for %d step(s)." # TR
 const FEED_ICE := "ICE Lock on %s holds %s for %d step(s)." # TR
 const FEED_SHOT := "%s on %s hits %s for %d." # TR
 const FEED_DESTROYED := "%s is destroyed." # TR
-const FEED_NODE_HIT := "%s takes %d damage." # TR
-const FEED_CASCADE := "Cascade: %s takes %d damage." # TR
+const FEED_NODE_HIT := "%s takes %d damage: HP %d → %d." # TR
+const FEED_CASCADE := "Cascade: %s takes %d damage: HP %d → %d." # TR
 const FEED_DISABLED := "%s is DISABLED." # TR
 const FEED_SEIZED := "%s is SEIZED." # TR
-const FEED_HOME_HIT := "%s reaches %s: %d damage." # TR
+const FEED_HOME_HIT := "%s reaches %s: %d damage, HP %d → %d." # TR
 const FEED_HOME_LOST := "%s is lost. The campaign is over." # TR
 const FEED_REGEN := "The operative on %s patches it: %s." # TR
 const FEED_CUTS := "%s cuts a new route: %s - %s." # TR
@@ -75,11 +78,17 @@ const FEED_ENDED := "Raid over after %d step(s)." # TR
 const FEED_TALLY := "Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d." # TR
 const FEED_WON := "Reward: %s Schematics." # TR
 const FEED_CAMPAIGN_LOST := "The home server is gone. Campaign lost." # TR
-const FEED_HEAT := "Heat %s: now %d." # TR
-const FEED_HEAT_RAID := "Heat %s for the lost raid: now %d." # TR
+const FEED_HEAT := "Heat %s: %d → %d." # TR
+const FEED_HEAT_RAID := "Heat %s for the lost raid: %d → %d." # TR
+## ANIM-R4 H11a: a Heat threshold the raid's Heat crossed, and what it brings.
+const FEED_THRESHOLD := "Heat %d crossed: %s" # TR
 const FEED_STEP := "Step %d" # TR
 ## The resolved raid (RaidResult.to_dict) the feed's end tally reads.
 var results: Dictionary = {}
+## ANIM-R4 H11a: each node's integrity as the feed has told it so far (site id -> HP; home
+## under its id), from the resolved raid's "before": a hit's line says the HP it really took
+## and where it left the node, the numbers the map's labels and floats show.
+var _hp: Dictionary = {}
 
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
@@ -108,6 +117,8 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 	skip.pressed.connect(skip_pressed)
 	controls.add_child(skip)
 	log_note = ZineNote.new(tr("PLAYOUT"), log_size)
+	# ANIM-R4 H11a: the feed writes changes as "HP 30 → 25": its lettering has the arrows.
+	log_note.label.add_theme_font_override("normal_font", Palette.mono_arrows())
 	log_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(log_note)
 
@@ -136,6 +147,7 @@ func attach_fx(p_results: Dictionary, home: StringName, home_max: int, color: Co
 func play(events: Array[Dictionary], instant: bool = false) -> void:
 	_threat_sites.clear()
 	_threat_names.clear()
+	_reset_hp()
 	_dead.clear()
 	_index = 0
 	_done = false
@@ -274,6 +286,7 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 		var line := feed_line(e)
 		if line != "":
 			_log(line)
+		event_shown.emit(e)
 		if t == "raid_end":
 			step_label.text = tr("Raid over")
 		elif e.has("step"):
@@ -316,19 +329,24 @@ func feed_line(e: Dictionary) -> String:
 			text = tr(FEED_SHOT) % [content_word(StringName(e.get("asset", &""))), site_word(e.get("site", &"")), threat_word(e), int(e.get("damage", 0))]
 		"threat_destroyed":
 			text = tr(FEED_DESTROYED) % threat_word(e)
-		"node_hit":
-			text = tr(FEED_NODE_HIT) % [site_word(e.get("site", &"")), int(e.get("damage", 0))]
-		"cascade":
-			text = tr(FEED_CASCADE) % [site_word(e.get("site", &"")), int(e.get("damage", 0))]
+		"node_hit", "cascade":
+			var hit := _take(StringName(String(e.get("site", ""))), int(e.get("damage", 0)))
+			text = tr(FEED_NODE_HIT if t == "node_hit" else FEED_CASCADE) % [site_word(e.get("site", &"")), hit[0], hit[1], hit[2]]
 		"disabled":
+			_hp[String(e.get("site", ""))] = 0
 			text = tr(FEED_DISABLED) % site_word(e.get("site", &""))
 		"seized":
+			_hp[String(e.get("site", ""))] = 0
 			text = tr(FEED_SEIZED) % site_word(e.get("site", &""))
 		"home_hit":
-			text = tr(FEED_HOME_HIT) % [threat_word(e), site_word(_home()), int(e.get("damage", 0))]
+			var home_hit := _take(_home(), int(e.get("damage", 0)))
+			text = tr(FEED_HOME_HIT) % [threat_word(e), site_word(_home()), home_hit[0], home_hit[1], home_hit[2]]
 		"home_lost":
 			text = tr(FEED_HOME_LOST) % site_word(_home())
 		"station_regen":
+			var sid := String(e.get("site", ""))
+			if _hp.has(sid):
+				_hp[sid] = int(_hp[sid]) + int(e.get("amount", 0))
 			text = tr(FEED_REGEN) % [site_word(e.get("site", &"")), TextDb.signed(int(e.get("amount", 0)))]
 		"link_altered":
 			if StringName(e.get("b", &"")) != &"":
@@ -352,12 +370,51 @@ func feed_line(e: Dictionary) -> String:
 			var amount := int(e.get("amount", 0))
 			if amount == 0:
 				return ""
-			text = (tr(FEED_HEAT_RAID) if String(e.get("reason", "")) == "lost raid" else tr(FEED_HEAT)) % [TextDb.signed(amount), RunManager.campaign.heat if RunManager.campaign != null else 0]
+			# ANIM-R4 H11a: from and to as the rules applied them (it said "now" with the campaign's
+			# final Heat: "+5 ... now 5" from 1).
+			var after := int(e.get("after", RunManager.campaign.heat if RunManager.campaign != null else 0))
+			var before := int(e.get("before", after - amount))
+			text = (tr(FEED_HEAT_RAID) if String(e.get("reason", "")) == "lost raid" else tr(FEED_HEAT)) % [TextDb.signed(amount), before, after]
+		"heat_threshold":
+			var brings := _threshold_text(int(e.get("heat", 0)))
+			text = tr(FEED_THRESHOLD) % [int(e.get("heat", 0)), brings]
 		_:
 			return ""
 	if e.has("step") and int(e["step"]) > 0 and t != "raid_end":
 		text = tr(FEED_STEP) % int(e["step"]) + ": " + text
 	return text
+
+
+## ANIM-R4 H11a: the feed's HP before the raid, from the resolved raid (home under its id).
+func _reset_hp() -> void:
+	_hp.clear()
+	var nodes: Dictionary = results.get("nodes", {})
+	for id in nodes:
+		_hp[String(id)] = int((nodes[id] as Dictionary).get("before", 0))
+	if results.has("home_before"):
+		_hp[String(_home())] = int(results["home_before"])
+
+
+## A hit of `damage` on `site` as the feed tells it: [taken, HP before, HP after]; what it
+## takes stops at 0 (the map's numbers do the same). A site with no HP known (no resolved
+## raid given) is taken to have just the damage left.
+func _take(site: StringName, damage: int) -> Array[int]:
+	var key := String(site)
+	var before := int(_hp.get(key, damage))
+	var took := mini(damage, before)
+	_hp[key] = before - took
+	return [took, before, before - took]
+
+
+## The text of the threshold at Heat `at` (any kind), through TextDb; "" when none.
+static func _threshold_text(at: int) -> String:
+	var cfg: CampaignConfigData = RunManager.config() if RunManager.campaign != null else null
+	if cfg == null:
+		return ""
+	for t in cfg.heat_thresholds:
+		if t != null and t.heat == at:
+			return TextDb.t(t, "event_text")
+	return ""
 
 
 ## A Site's display name (CORE for home; the Site's own name; its id only when the content

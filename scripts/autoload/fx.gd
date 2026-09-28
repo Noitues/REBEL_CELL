@@ -53,6 +53,16 @@ const DISSOLVE_MOTION := &"jack_dissolve"
 ## ANIM-R3 B5: a second line under CONNECTING TO <place> ("INTERRUPTED: RAID INCOMING" when
 ## the run opens on a raid interlude; "" for none), translated by the caller.
 var _note: String = ""
+## ANIM-R4 H11a: the note is a stamp of its own under the bar: large amber lettering in a
+## ruled box, tilted like a rubber stamp, held at least `raid_incoming_hold` (a raid naming
+## its corporation must be read, not glimpsed). Lettering at text scale 1.0, tilt (degrees),
+## ruling width and padding (px).
+var note_label: Label
+const NOTE_MOTION := &"raid_incoming_hold"
+const NOTE_FONT := 34
+const NOTE_TILT := -4.0
+const NOTE_RULE := 4
+const NOTE_PAD := 14
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
 const CONNECT_FONT := 20
 const CONNECT_BAR_H := 4.0
@@ -92,6 +102,23 @@ func _ready() -> void:
 	connect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	connect_label.visible = false
 	add_child(connect_label)
+	note_label = Label.new()
+	note_label.name = "JackRaidNote"
+	note_label.add_theme_font_override("font", Palette.display())
+	note_label.add_theme_color_override("font_color", Palette.CRT_AMBER)
+	note_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	note_label.add_theme_constant_override("outline_size", 6)
+	var ruled := StyleBoxFlat.new()
+	ruled.bg_color = Color(Palette.NIGHT_SKY, 0.9)
+	ruled.border_color = Palette.CRT_AMBER
+	ruled.set_border_width_all(NOTE_RULE)
+	ruled.set_content_margin_all(NOTE_PAD)
+	note_label.add_theme_stylebox_override("normal", ruled)
+	note_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	note_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	note_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note_label.visible = false
+	add_child(note_label)
 	connect_bar = ColorRect.new()
 	connect_bar.color = Color(Palette.NET_CYAN, 0.25)
 	connect_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -516,8 +543,7 @@ func _show_connect() -> void:
 	var fs := roundi(CONNECT_FONT * Settings.text_scale)
 	connect_label.add_theme_font_size_override("font_size", fs)
 	connect_label.text = tr("CONNECTING TO %s") % _destination.to_upper() if _destination != "" else tr("CONNECTING")
-	if _note != "":
-		connect_label.text += "\n" + _note.to_upper()
+	_show_note(vp)
 	connect_label.size = Vector2(vp.x, 0.0)
 	connect_label.size = Vector2(vp.x, connect_label.get_combined_minimum_size().y)
 	connect_label.position = Vector2(0.0, vp.y * 0.5 - connect_label.size.y)
@@ -534,6 +560,22 @@ func _show_connect() -> void:
 	_connect_since = Time.get_ticks_msec()
 
 
+## ANIM-R4 H11a: the note's stamp (RAID INCOMING and the corporation) under the bar,
+## centred, tilted; hidden when there is no note.
+func _show_note(vp: Vector2) -> void:
+	note_label.visible = _note != ""
+	if _note == "":
+		return
+	note_label.add_theme_font_size_override("font_size", roundi(NOTE_FONT * Settings.text_scale))
+	note_label.text = _note.to_upper()
+	note_label.size = Vector2.ZERO
+	note_label.size = note_label.get_combined_minimum_size()
+	note_label.pivot_offset = note_label.size * 0.5
+	note_label.rotation_degrees = NOTE_TILT
+	note_label.position = Vector2((vp.x - note_label.size.x) * 0.5, vp.y * 0.5 + CONNECT_GAP * 2.0 + CONNECT_BAR_H)
+	note_label.modulate.a = 1.0
+
+
 ## When the CONNECTING line came up (msec).
 var _connect_since: int = 0
 
@@ -546,7 +588,11 @@ func _hold_connect() -> void:
 	var e := Motion.entry(CONNECT_MOTION)
 	if not connect_label.visible or e == null or not e.enabled:
 		return
-	while Time.get_ticks_msec() - _connect_since < Motion.seconds(CONNECT_MOTION) * 1000.0:
+	# ANIM-R4 H11a: a raid's stamp holds its own reading time (at least a second).
+	var hold := Motion.seconds(CONNECT_MOTION)
+	if note_label.visible:
+		hold = maxf(hold, note_hold())
+	while Time.get_ticks_msec() - _connect_since < hold * 1000.0:
 		await get_tree().process_frame
 
 
@@ -555,7 +601,15 @@ func _connect_progress(share: float) -> void:
 	connect_fill.size = Vector2(connect_bar.size.x * clampf(share, 0.0, 1.0), CONNECT_BAR_H)
 
 
+## ANIM-R4 H11a: the RAID INCOMING stamp's reading time (s): `raid_incoming_hold`, a
+## reading time like CONNECTING's (it holds under reduce effects too; 0 only switched off).
+func note_hold() -> float:
+	var e := Motion.entry(NOTE_MOTION)
+	return e.duration if e != null and e.enabled else 0.0
+
+
 func _hide_connect() -> void:
+	note_label.visible = false
 	connect_label.visible = false
 	connect_bar.visible = false
 	_destination = ""
@@ -731,6 +785,7 @@ func _set_cover(progress: float, roll: float) -> void:
 		# ANIM-R2 R5: the CONNECTING line goes with the cover as it lifts.
 		connect_label.modulate.a = progress
 		connect_bar.modulate.a = progress
+		note_label.modulate.a = progress
 	var m := jack_cover.material as ShaderMaterial
 	m.set_shader_parameter("progress", progress)
 	m.set_shader_parameter("roll", roll)
