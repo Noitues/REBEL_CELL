@@ -238,7 +238,7 @@ func test_influence_spread_ends_on_city_influence_colours() -> void:
 	var from := InfluenceSpread.origins(old, new)
 	assert_eq(from.size(), 1)
 	assert_eq(from[0], CityLayout.site_points(corp)[first], "the spread starts at that Site")
-	assert_eq(InfluenceSpread.front_color(old, new), Palette.CELL_PINK, "toward the Cell: the Cell's pink")
+	assert_eq(InfluenceSpread.front_color(old, new), Palette.CELL_TURF, "toward the Cell: the Cell's territory colour (ANIM-R3 B6)")
 	var reach := Motion.amplitude(&"influence_spread")
 	var feather := Motion.amplitude(&"influence_crossfade")
 	for dx in [-6, -2, 0, 3, 7]:

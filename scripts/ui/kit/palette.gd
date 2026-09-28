@@ -4,6 +4,11 @@ extends RefCounted
 
 const CELL_PINK := Color("#FF3DA8")
 const CELL_ACID := Color("#D4FF00")
+## ANIM-R3 B6: the Cell's territory (claimed Sites, its network links, the district tint and
+## the CLAIMED marks): the Cell's acid, never `cell_pink` (pink is damage on every map and
+## in every fight, so a pink claim read as a hit). Furthest from every corporation's hue
+## (Solace's mint is 70 degrees away) and carried with a non-colour mark (spray ring, hatch).
+const CELL_TURF := Color("#D4FF00")
 const PAPER := Color("#F2EEE4")
 const PAPER_ALT := Color("#E9E4D6")
 const INK := Color("#111111")

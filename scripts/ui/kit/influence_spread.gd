@@ -68,13 +68,13 @@ static func front_color(old_inf: Dictionary, new_inf: Dictionary) -> Color:
 		delta = float(after.get(sites[0], 0.0)) - float(before.get(sites[0], 0.0))
 	else:
 		delta = float(new_inf.get("sway", 0.0)) - float(old_inf.get("sway", 0.0))
-	return Palette.CELL_PINK if delta >= 0.0 else Palette.corp_color(corp)
+	return Palette.CELL_TURF if delta >= 0.0 else Palette.corp_color(corp)
 
 
 ## ANIM-R1 M5: what a territory change leaves on the city once it has spread: one mark per
 ## Site whose pull changed (id order, at most MAX_ORIGINS): {"id", "at" (grid lots),
 ## "word" (untranslated: CLAIMED / CLEARED toward the Cell, SEIZED / DISABLED away from
-## it), "color" (the Cell's pink, or the corporation's)}. Empty for a sway-only change.
+## it), "color" (the Cell's territory colour, or the corporation's)}. Empty for a sway-only change.
 static func marks(old_inf: Dictionary, new_inf: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var corp: StringName = new_inf.get("corp", old_inf.get("corp", &""))
@@ -91,7 +91,7 @@ static func marks(old_inf: Dictionary, new_inf: Dictionary) -> Array[Dictionary]
 		else:
 			word = MARK_SEIZED if w1 <= CityInfluence.WEIGHT_SEIZED + WEIGHT_EPSILON else MARK_DISABLED
 		var at := _site_point(new_inf, id) if _has_source(new_inf, id) else _site_point(old_inf, id)
-		out.append({"id": id, "at": at, "word": word, "color": Palette.CELL_PINK if w1 > w0 else Palette.corp_color(corp)})
+		out.append({"id": id, "at": at, "word": word, "color": Palette.CELL_TURF if w1 > w0 else Palette.corp_color(corp)})
 	return out
 
 

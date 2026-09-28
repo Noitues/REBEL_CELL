@@ -323,7 +323,7 @@ var influence_pin: Variant = null
 ## origins (grid lots), front colour and elapsed seconds (< 0: none).
 var _spread_old: Dictionary = {}
 var _spread_origins := PackedVector2Array()
-var _spread_color: Color = Palette.CELL_PINK
+var _spread_color: Color = Palette.CELL_TURF
 var _spread_elapsed: float = -1.0
 var _old_layer: Control
 var _front_layer: Control
@@ -670,10 +670,16 @@ var mark_t: float = 1.0:
 		marks_changed.emit()
 var _marks_layer: Control
 ## A mark's outline (lots round its Site) and its stamp's lettering and lift (screen px).
+## ANIM-R3 B6: the stamp sits right over its Site (it hung 70 px up a leader, under the
+## labels); the district inside the outline is hatched (MARK_HATCH px apart, its lines at
+## MARK_HATCH_ALPHA) over a MARK_FILL wash, so a claim reads without its colour.
 const MARK_RADIUS := 2.2
 const MARK_FONT := 20
-const MARK_LIFT := 70.0
+const MARK_LIFT := 26.0
 const MARK_PAD := 6.0
+const MARK_FILL := 0.2
+const MARK_HATCH := 9.0
+const MARK_HATCH_ALPHA := 0.5
 
 
 ## ANIM-R1 M5: a territory change from `prev` to `now` ends in lasting marks: an outline
@@ -697,7 +703,9 @@ func _draw_marks() -> void:
 
 ## Draws the marks on canvas item `ci` (in this city's local space: the city's own layer,
 ## or a map overlay over it, which draws them above its dimming and under its nodes).
-func draw_marks_on(ci: CanvasItem) -> void:
+## ANIM-R3 B6: `rings` (the outline, wash and hatch) and `stamps` (the CLAIMED / SEIZED
+## stamps) can go on different layers: a map puts its stamps over its labels.
+func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> void:
 	if marks.is_empty() or ci == null:
 		return
 	var _marks_layer := ci
@@ -712,9 +720,13 @@ func draw_marks_on(ci: CanvasItem) -> void:
 		for q in 33:
 			var t := TAU * q / 32.0
 			ring.append(c + Vector2(cos(t) * TILE_A, sin(t) * TILE_B) * MARK_RADIUS)
-		_marks_layer.draw_colored_polygon(ring, Color(col, 0.12))
-		_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
-		_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
+		if rings:
+			_marks_layer.draw_colored_polygon(ring, Color(col, MARK_FILL))
+			_hatch(_marks_layer, c, Vector2(TILE_A, TILE_B) * MARK_RADIUS, Color(col, MARK_HATCH_ALPHA), k)
+			_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
+			_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
+		if not stamps:
+			continue
 		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
 		var word := CityMapOverlay.tr_word(String(m["word"]))
 		var size := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(MARK_PAD, MARK_PAD) * 2.0 * k
@@ -728,6 +740,25 @@ func draw_marks_on(ci: CanvasItem) -> void:
 		_marks_layer.draw_rect(box, Color(col, alpha), false, 3.0 * k)
 		_marks_layer.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
 		_marks_layer.draw_set_transform(Vector2.ZERO)
+
+
+## ANIM-R3 B6: diagonal hatch lines across the ellipse of radii `r` round `c` (a claimed
+## district reads without its colour).
+func _hatch(ci: CanvasItem, c: Vector2, r: Vector2, col: Color, k: float) -> void:
+	var step := MARK_HATCH * k
+	var n := ceili(2.0 * (r.x + r.y) / maxf(step, 0.001))
+	for i in range(-n, n + 1):
+		# The line x - y = d (a 45 degree stroke) inside the ellipse (x/rx)^2 + (y/ry)^2 = 1.
+		var d := i * step
+		var a := 1.0 / (r.x * r.x) + 1.0 / (r.y * r.y)
+		var b := 2.0 * d / (r.x * r.x)
+		var cc := d * d / (r.x * r.x) - 1.0
+		var disc := b * b - 4.0 * a * cc
+		if disc <= 0.0:
+			continue
+		var y0 := (-b - sqrt(disc)) / (2.0 * a)
+		var y1 := (-b + sqrt(disc)) / (2.0 * a)
+		ci.draw_line(c + Vector2(y0 + d, y0), c + Vector2(y1 + d, y1), col, 1.5 * k)
 
 
 ## Jumps a running spread to its end (the new look alone).

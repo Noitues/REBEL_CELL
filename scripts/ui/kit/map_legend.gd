@@ -24,8 +24,8 @@ extends TerminalWindow
 ## H24 K1: the key was folded or opened.
 signal fold_changed
 
-const ROWS := [["○", "#FF3DA8", "claimed (yours): spray ring"], ["■", "#5CE1FF", "cleared"], ["■", "", "corporate"], ["✕", "#FFD24D", "seized: crossed out"],
-	["━", "#FF3DA8", "your network link"], ["- -", "", "threat route"]]
+const ROWS := [["○", "#D4FF00", "claimed (yours): spray ring"], ["■", "#5CE1FF", "cleared"], ["■", "", "corporate"], ["✕", "#FFD24D", "seized: crossed out"],
+	["━", "#D4FF00", "your network link"], ["- -", "", "threat route"]]
 ## The node icons (H21 #14), drawn by CityMapOverlay.draw_icon exactly as on the map:
 ## [kind, text shown in the icon, meaning].
 const ICON_ROWS := [[CityMapOverlay.KIND_EXPLOIT, "", "exploit"], [CityMapOverlay.KIND_HEAT, "", "heat reduction"],

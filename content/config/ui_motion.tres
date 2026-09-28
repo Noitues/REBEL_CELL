@@ -1692,7 +1692,7 @@ ease = 1
 trans = 10
 amplitude = 2.4
 
-; ANIM-R2 R7: the lasting tint over a claimed or lost district fades in behind the spread's front; amplitude = its alpha
+; ANIM-R2 R7 / ANIM-R3 B6: the lasting tint over a district that changed hands: amplitude = its alpha (0.3 was nearly invisible; 0.45), faded in over `duration` after `delay`
 [sub_resource type="Resource" id="m_influence_tint"]
 script = ExtResource("1_entry")
 id = &"influence_tint"
@@ -1700,7 +1700,7 @@ duration = 0.6
 delay = 0.2
 ease = 1
 trans = 1
-amplitude = 0.3
+amplitude = 0.45
 
 ; ANIM-R2 R12: the node a route move heads for pulses while the marker travels: duration = one pulse, amplitude = its ring's swell (px)
 [sub_resource type="Resource" id="m_route_target_pulse"]

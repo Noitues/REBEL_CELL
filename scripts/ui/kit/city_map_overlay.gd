@@ -302,9 +302,17 @@ func _init(p_city: NeonCity = null) -> void:
 	_mv.changed.connect(_on_motion_value)
 	if city != null:
 		city.rebuilt.connect(_relayout)
-		city.marks_changed.connect(queue_redraw)
+		city.marks_changed.connect(_on_marks_changed)
 	# Labels follow the text size live (redrawn once per change, never per frame).
 	Settings.changed.connect(_queue_top)
+
+
+## ANIM-R3 B6: the city's territory marks changed: their rings (this layer) and their
+## stamps (the top layer) redraw.
+func _on_marks_changed() -> void:
+	queue_redraw()
+	if _hi != null:
+		_hi.queue_redraw()
 
 
 ## ANIM-R2 R9: a motion value changed: only the layer that draws it redraws (the selection's
@@ -882,8 +890,9 @@ func _draw() -> void:
 	for k in edges.size():
 		_edge_static(edges[k], _route_px(k))
 	# ANIM-R1 M5: a territory change's marks (outline, tint, CLAIMED / SEIZED stamp) show on
-	# the map too, over its dimming and under its nodes and labels.
-	city.draw_marks_on(self)
+	# the map too, over its dimming and under its nodes. ANIM-R3 B6: their stamps draw on the
+	# top layer, over the labels (a label hid CLAIMED).
+	city.draw_marks_on(self, true, false)
 
 
 ## Flowing dashes and packets (redrawn every frame unless reduce-effects).
@@ -979,6 +988,8 @@ func _draw_hi() -> void:
 		_draw_travel()
 	if change_t < 1.0 and drop_stamp_t > 0.0:
 		_draw_changes()
+	if city != null:
+		city.draw_marks_on(_hi, false, true)
 	# The selected node's roof outline, drawing on (ANIM-5; ANIM-R2 R9: on this layer).
 	if city != null and selected_id != &"" and _lots.has(selected_id):
 		var rec := _roof(selected_id)
@@ -2142,13 +2153,13 @@ func _mark(n: Dictionary, at: Vector2, col: Color) -> void:
 				var wob := sin(t * 3.0 + float(seed_v % 97)) * SPRAY_WOBBLE
 				ring.append(at + Vector2(cos(t), sin(t) * 0.55) * (SPRAY_RADIUS + wob))
 			_c.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0, true)
-			_c.draw_polyline(ring, Color(Palette.CELL_PINK, 0.95), 3.0, true)
+			_c.draw_polyline(ring, Color(Palette.CELL_TURF, 0.95), 3.0, true)
 			for d in SPRAY_DRIPS:
 				var t := TAU * (0.15 + 0.2 * d) + float((seed_v >> (d * 4)) % 7) * 0.05
 				var p := at + Vector2(cos(t), sin(t) * 0.55) * SPRAY_RADIUS
 				var drip := SPRAY_DRIP_LEN * (0.6 + 0.4 * float((seed_v >> (d * 3)) % 5) / 4.0)
-				_c.draw_line(p, p + Vector2(0, drip), Color(Palette.CELL_PINK, 0.85), 2.0)
-				_c.draw_circle(p + Vector2(0, drip), 1.6, Color(Palette.CELL_PINK, 0.85))
+				_c.draw_line(p, p + Vector2(0, drip), Color(Palette.CELL_TURF, 0.85), 2.0)
+				_c.draw_circle(p + Vector2(0, drip), 1.6, Color(Palette.CELL_TURF, 0.85))
 		MARK_CROSS:
 			var s := CROSS_SIZE
 			for pair in [[Vector2(-s, -s * 0.6), Vector2(s, s * 0.6)], [Vector2(-s, s * 0.6), Vector2(s, -s * 0.6)]]:

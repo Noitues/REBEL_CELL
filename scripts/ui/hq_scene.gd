@@ -1897,7 +1897,7 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 		out.append(Badge.new(CityMapOverlay.tr_word("OPENS %d") % opens.size(), Palette.NET_CYAN, "",
 			CityMapOverlay.tr_word("Clearing it opens %d more Sites to runs: %s.") % [opens.size(), "; ".join(named)]).with_icon(StatIcon.LINKS))
 	if bool(preview.get("claimable", false)):
-		out.append(Badge.new(CityMapOverlay.tr_word("CLAIM"), Palette.CELL_PINK, "", CityMapOverlay.tr_word("Once cleared you can claim it: a node of your network.")).with_icon(StatIcon.CLAIM))
+		out.append(Badge.new(CityMapOverlay.tr_word("CLAIM"), Palette.CELL_TURF, "", CityMapOverlay.tr_word("Once cleared you can claim it: a node of your network.")).with_icon(StatIcon.CLAIM))
 	if out.is_empty():
 		out.append(Badge.new(CityMapOverlay.tr_word("NO GAIN"), Color(Palette.PAPER, 0.6), "", CityMapOverlay.tr_word("A patrol: loot, Heat and Rank from the run, no objective.")).with_icon(StatIcon.RUNS))
 	for b in out:
@@ -2136,7 +2136,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var lookup := RunManager.lookup()
 	var s := c.grid.site(site.id)
 	var status := int(s["status"])
-	var accent := Palette.CELL_PINK if status == GridState.SiteStatus.CLAIMED else (Palette.NET_CYAN if status == GridState.SiteStatus.CLEARED else Palette.corp_color(c.corporation_id))
+	var accent := Palette.CELL_TURF if status == GridState.SiteStatus.CLAIMED else (Palette.NET_CYAN if status == GridState.SiteStatus.CLEARED else Palette.corp_color(c.corporation_id))
 	var card := TerminalWindow.new(site_name(site.id), accent)
 	card.name = "SelectedSite"
 	# H24 K7: tier and status words translated here, once.
@@ -2149,7 +2149,12 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	card.body.add_child(facts)
 	var status_badge := Badge.new(CityMapOverlay.tr_word(String(STATUS_NAMES.get(status, "?"))), accent, _site_glyph(site), tr(String(STATUS_TIPS.get(status, ""))))
 	status_badge.name = "StatusBadge"
-	if CityLayout.site_kind(c, site) == CityMapOverlay.KIND_HEAT:
+	if status == GridState.SiteStatus.CLAIMED:
+		# ANIM-R3 B6: a claimed Site says so plainly (CLAIMED with the claim mark), and offers
+		# no CLAIM.
+		status_badge.text = CityMapOverlay.tr_word(String(STATUS_NAMES[status])).to_upper()
+		status_badge.with_icon(StatIcon.CLAIM)
+	elif CityLayout.site_kind(c, site) == CityMapOverlay.KIND_HEAT:
 		status_badge.with_icon(StatIcon.COOLING)  # H24 K5: the Heat reduction Site's own icon
 	facts.add_child(status_badge)
 	var objective := CampaignRules.site_objective(c, site)
@@ -2164,7 +2169,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
 		facts.add_child(Badge.new(CityMapOverlay.tr_word("off"), Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, tr("This Site's Heat objective is switched off at this ICE level.")).with_icon(StatIcon.COOLING))
 	if c.grid.is_claimed(site.id):
-		var node_col := Palette.CELL_PINK if int(s["condition"]) != GridState.Condition.DISABLED else Palette.RESIST_GOLD
+		var node_col := Palette.CELL_TURF if int(s["condition"]) != GridState.Condition.DISABLED else Palette.RESIST_GOLD
 		var node_text := "%s %d/%d" % [_display(c.grid.node_type_of(site.id)), int(s["integrity"]), int(s["max_integrity"])]
 		if int(s["condition"]) == GridState.Condition.DISABLED:
 			node_text += tr(" DISABLED")
@@ -3492,6 +3497,30 @@ func _on_territory_marked(_marks: Array) -> void:
 	var badge := _panel.find_child("NetworkBadge", true, false) as Control if _panel != null else null
 	if badge != null and badge.is_visible_in_tree():
 		Motion.pop(badge, &"sticky_bump")
+	refresh_site_card()
+
+
+## ANIM-R3 B6: the Grid's Site card rebuilt in place for the campaign as it is now (a claim
+## seen on the map while the card still offered CLAIM); nothing off the Grid.
+func refresh_site_card() -> void:
+	if panel_name != "grid" or _panel == null or RunManager.campaign == null:
+		return
+	var old := _panel.find_child("SelectedSite", true, false) as Control
+	var site := CampaignRules.site_data(RunManager.corporation, selected_site)
+	if old == null or site == null:
+		return
+	var launchable := RunManager.launchable_sites()
+	launchable.append_array(RunManager.patrol_sites())
+	var card := _site_card(site, launchable, RunManager.campaign.living_operatives(), _node_choices())
+	card.size_flags_horizontal = old.size_flags_horizontal
+	card.size_flags_vertical = old.size_flags_vertical
+	var parent := old.get_parent()
+	var at := old.get_index()
+	parent.remove_child(old)
+	old.queue_free()
+	parent.add_child(card)
+	parent.move_child(card, at)
+	TextDb.shown_as_given(card)
 
 
 ## Refusals, saves and unlocks the player must see (the log strip is optional): a toast.
