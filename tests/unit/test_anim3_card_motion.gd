@@ -131,7 +131,7 @@ func test_a_cancelled_drag_returns_the_card_to_its_slot() -> void:
 	assert_false(f.is_empty(), "a copy glides home")
 	assert_eq(f["to"], slot.get_center(), "to the card's own slot")
 	assert_eq(node.modulate.a, 0.0, "the slot waits for it")
-	await get_tree().create_timer(Motion.seconds(&"drag_cancel_return") + 0.15).timeout
+	await BoundedWait.until(get_tree(), func() -> bool: return scene.fx_layer.last_flight("return").is_empty() and node.modulate.a == 1.0, BoundedWait.motion_limit([&"drag_cancel_return"]))
 	assert_true(scene.fx_layer.last_flight("return").is_empty(), "it has landed")
 	assert_eq(node.modulate.a, 1.0, "the card shows in its slot again")
 	assert_eq(node.get_index(), index, "at the same place in the hand")
@@ -249,7 +249,7 @@ func test_ram_chips_drain_with_a_tick_and_settle_on_the_state() -> void:
 	assert_eq(bar.ram, after, "the number is the state at once")
 	if after != before:
 		assert_eq(bar.shown_ram, before, "the chips tick from where they were")
-	await get_tree().create_timer(Motion.seconds(&"ram_tick") * (absi(before - after) + 2)).timeout
+	await BoundedWait.until(get_tree(), func() -> bool: return bar.shown_ram == after, Motion.seconds(&"ram_tick") * (absi(before - after) + 2) + BoundedWait.SLACK)
 	assert_eq(bar.shown_ram, after, "and settle on the state")
 
 
@@ -290,6 +290,6 @@ func test_card_motion_never_changes_game_state() -> void:
 	scene._deal_hand(0)
 	scene.ram_note.hold(0)
 	scene.ram_note.play_refill()
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.3).timeout  # fixed-wait-ok: any point mid-motion; the skip then shows the end state
 	scene.skip_motion()
 	assert_eq(_signature(scene), sig, "targeting and card motion left the state as it was")
