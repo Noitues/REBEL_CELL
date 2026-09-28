@@ -2146,6 +2146,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	var accent := Palette.CELL_TURF if status == GridState.SiteStatus.CLAIMED else (Palette.NET_CYAN if status == GridState.SiteStatus.CLEARED else Palette.corp_color(c.corporation_id))
 	var card := TerminalWindow.new(site_name(site.id), accent)
 	card.name = "SelectedSite"
+	card.set_meta(&"shows", [site.id, int(status)])  # ANIM-R3 B6: what refresh_site_card compares
 	# H24 K7: tier and status words translated here, once.
 	card.tag_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	card.tag_label.text = "%s // %s" % [CityMapOverlay.tier_text(site.tier), CityMapOverlay.tr_word(String(STATUS_NAMES.get(status, "?"))).to_upper()]
@@ -3515,6 +3516,11 @@ func refresh_site_card() -> void:
 	var old := _panel.find_child("SelectedSite", true, false) as Control
 	var site := CampaignRules.site_data(RunManager.corporation, selected_site)
 	if old == null or site == null:
+		return
+	# Only when what the card shows changed (the city marks its territory on redraws too: a
+	# rebuild for nothing re-laid the page, which redrew the city, which marked again...).
+	var shows := [selected_site, int(RunManager.campaign.grid.status_of(selected_site))]
+	if old.get_meta(&"shows", []) == shows:
 		return
 	var launchable := RunManager.launchable_sites()
 	launchable.append_array(RunManager.patrol_sites())

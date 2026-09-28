@@ -91,13 +91,33 @@ func refresh() -> void:
 
 
 var _refreshing: bool = false
+## What the snap reserve was worked out for, how often and when last (see _refresh).
+var _snap_key: Array = []
+var _snap_passes: int = 0
+var _snap_frame: int = -1
+## The most times a content's snap is worked out (its layout settles in a pass or two).
+const SNAP_PASSES := 3
 
 
 func _refresh() -> void:
 	size = get_combined_minimum_size()
 	if room != null and is_instance_valid(room):
-		if snap_rows and scroll.scroll_vertical == 0 and is_equal_approx(room.size.y, room.custom_minimum_size.y):
-			snap_reserve = cut_row_reserve()
+		# ANIM-R3 B13: the snap is worked out at most once a frame and SNAP_PASSES times per
+		# content (a new page's content, or the text size), never while the room is still
+		# being laid out: the room it sets can move the rows it measured (a scroll bar coming
+		# and going rewraps them), and an unbounded snap made the layout chase itself through
+		# the deferred calls until the message queue ran out (the sweep tests crashed).
+		if snap_rows and scroll.scroll_vertical == 0 and scroll.get_child_count() > 0:
+			var content := scroll.get_child(0)
+			var key := [content.get_instance_id(), Settings.text_scale]
+			if key != _snap_key:
+				_snap_key = key
+				_snap_passes = 0
+			var frame := Engine.get_process_frames()
+			if _snap_passes < SNAP_PASSES and frame != _snap_frame and is_equal_approx(room.size.y, room.custom_minimum_size.y):
+				_snap_frame = frame
+				_snap_passes += 1
+				snap_reserve = cut_row_reserve()
 		var want := size.y + MARGIN.y * 2.0 + snap_reserve if overflows() else 0.0
 		if not is_equal_approx(room.custom_minimum_size.y, want):
 			room.custom_minimum_size.y = want
@@ -116,9 +136,11 @@ func cut_row_reserve() -> float:
 	if scroll.get_child_count() == 0:
 		return 0.0
 	var view := scroll.get_global_rect()
-	# The view's foot as it would be with no snap reserve (the reserve itself moves it; the
-	# room is laid out: the caller checks).
-	var foot := view.end.y + (snap_reserve if room.custom_minimum_size.y > 0.0 else 0.0)
+	# The view's foot as it would be with no snap reserve: the view and its room share a
+	# fixed height, so the foot is their bottom less the tag's own room (whatever reserve the
+	# room holds now).
+	var tag_room := size.y + MARGIN.y * 2.0 if room.custom_minimum_size.y > 0.0 else 0.0
+	var foot := view.end.y + room.size.y - tag_room
 	var best := 0.0
 	var best_h := INF
 	for n in scroll.get_child(0).find_children("*", "Control", true, false):
