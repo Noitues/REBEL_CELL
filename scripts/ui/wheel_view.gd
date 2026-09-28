@@ -110,6 +110,8 @@ var flip_squash: float = 1.0
 var zone_pulse: float = 1.0
 ## Paper flip of the tag when its content changes (1 = flat on the wall).
 var tag_flip: float = 1.0
+## Tag flips started so far (tests read it: a flip can finish between two slow frames).
+var tag_flips: int = 0
 ## A SEND IT replays: the tag, the NEXT plate and the forecast marks hide until it ends.
 var replaying: bool = false
 ## LAST TURN plate reveal (0 hidden .. 1 in place).
@@ -1593,6 +1595,7 @@ func _flip_tag() -> void:
 		return
 	var e := Motion.entry(&"intent_flip")
 	tag_flip = 0.0
+	tag_flips += 1
 	var tw := _tw(&"tag")
 	tw.tween_method(func(v: float) -> void: tag_flip = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"intent_flip")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: tag_flip = 1.0; _end(&"tag"))

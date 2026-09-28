@@ -534,6 +534,9 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 	var scene := await _combat()
 	_live()
 	var turn: int = scene.engine.state().turn
+	var flips_before := 0
+	for v in scene._views():
+		flips_before += (v as WheelView).tag_flips
 	scene.end_turn()
 	assert_not_null(scene._seq)
 	assert_true(scene._status.text.contains(str(turn)), "the status line still shows the turn played")
@@ -549,13 +552,14 @@ func test_the_forecast_and_the_turn_wait_for_the_replay() -> void:
 	assert_null(scene._seq, "the replay ends by itself")
 	assert_true(scene._status.text.contains(str(scene.engine.state().turn)), "the TURN counter changes when the replay ends")
 	await _frames(2)
-	var flipped := false
+	# Counted, not caught mid-flip: under load one frame can outlast the whole flip.
+	var flips_after := 0
 	for v in scene._views():
 		var wv: WheelView = v
+		flips_after += wv.tag_flips
 		if not wv.intent.is_empty():
 			assert_false(wv.replaying)
-			flipped = flipped or wv.tag_flipping() or wv.tag_flip < 1.0
-	assert_true(flipped, "the NEXT TURN tags flip in")
+	assert_gt(flips_after, flips_before, "the NEXT TURN tags flip in")
 	await _close(scene)
 
 
@@ -830,3 +834,21 @@ func test_menu_typing_keeps_the_words_whole() -> void:
 	assert_eq(line.get_theme_color(&"font_focus_color").a, 0.0, "the line's own lettering is clear meanwhile")
 	mm.finish()
 	assert_ne(line.get_theme_color(&"font_focus_color").a, 0.0, "and back when it ends")
+
+
+func test_a_longer_translation_of_send_it_shrinks_to_its_room() -> void:
+	var before := TranslationServer.get_locale()
+	var t := Translation.new()
+	t.locale = "xx"
+	t.add_message("SEND IT", "SEND IT RIGHT NOW PLEASE")
+	TranslationServer.add_translation(t)
+	TranslationServer.set_locale("xx")
+	var b := DripButton.new("SEND IT")
+	var lettering := b.shown_lettering()
+	var room := Palette.marker().get_string_size("SEND IT", HORIZONTAL_ALIGNMENT_LEFT, -1, b.font_size).x
+	var width := Palette.marker().get_string_size(String(lettering[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(lettering[1])).x
+	TranslationServer.remove_translation(t)
+	TranslationServer.set_locale(before)
+	b.free()
+	assert_eq(String(lettering[0]), "SEND IT RIGHT NOW PLEASE", "the translated word")
+	assert_true(width <= room + 0.5 or int(lettering[1]) <= roundi(44 * DripButton.FIT_MIN_SHARE), "fits the source word's room: %.0f in %.0f" % [width, room])

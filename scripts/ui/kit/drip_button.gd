@@ -271,7 +271,28 @@ static func auto_drips(text: String, count: int = 3) -> Array:
 	return out
 
 
+## The lettering as shown (translated) and the font size it is drawn at: the button is
+## laid out for the source word, so a longer translation shrinks to that width instead of
+## running off the screen's edge (ANIM-R1: SEND IT was cut under pseudolocalisation).
+func shown_lettering() -> Array:
+	var shown := String(TranslationServer.translate(tag_text))
+	var f := Palette.marker()
+	var room := f.get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var fs := font_size
+	var floor_size := maxi(1, roundi(font_size * FIT_MIN_SHARE))
+	while fs > floor_size and f.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		fs -= 1
+	return [shown, fs]
+
+
+## The smallest a translated lettering shrinks to, as a share of its font size.
+const FIT_MIN_SHARE := 0.5
+
+
 func _draw() -> void:
+	var lettering := shown_lettering()
+	var shown: String = lettering[0]
+	var fs: int = lettering[1]
 	var col := paint if not disabled else Color(paint, 0.35)
 	if _hot and not disabled:
 		col = paint.lightened(0.2)
@@ -284,7 +305,7 @@ func _draw() -> void:
 		var j := Motion.amplitude(HALO_MOTION) / (HALO_COPIES * 0.5) * swell
 		for k in HALO_COPIES:
 			var o := Vector2(k - HALO_COPIES * 0.5, (k * 7) % 5 - 2) * j
-			draw_string(Palette.marker(), base + o, tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(Palette.CELL_ACID, HALO_ALPHA * swell))
+			draw_string(Palette.marker(), base + o, shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.CELL_ACID, HALO_ALPHA * swell))
 	if squash != 1.0:
 		# Squash about the baseline: shorter and a little wider.
 		var sx := 1.0 / maxf(0.01, squash)
@@ -294,13 +315,13 @@ func _draw() -> void:
 		run = []
 		for dr in drips:
 			run.append([dr[0], (float(dr[1]) + drip_run * 44.0 / font_size) * grow, dr[2]])
-	DripButton.draw_drip_text(self, base, tag_text, font_size, col, run)
+	DripButton.draw_drip_text(self, base, tag_text, fs, col, run)
 	draw_set_transform(Vector2.ZERO)
 	if key_hint != "":
 		# The key sits centred under the lettering, big enough to find (H22: "[X]" at 13 px in
 		# the corner was barely visible on the most important button).
 		var hs := roundi(HINT_SIZE * Settings.text_scale)
-		var tw := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		var tw := Palette.marker().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var hw := Palette.mono().get_string_size(key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 		var hp := Vector2(12 + (tw - hw) * 0.5, size.y - 6)
 		draw_rect(Rect2(hp + Vector2(-6, -hs), Vector2(hw + 12, hs + 6)), Color(Palette.NIGHT_SKY, 0.8))
@@ -309,7 +330,7 @@ func _draw() -> void:
 			_draw_glyph(Vector2(hp.x - 6.0 - GLYPH_GAP, hp.y - hs * 0.5 + 3.0), hs, col)
 	elif glyph:
 		var hs := roundi(HINT_SIZE * Settings.text_scale)
-		var tw := Palette.marker().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		var tw := Palette.marker().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_draw_glyph(Vector2(12 + tw * 0.5 + hs * GLYPH_W, size.y - 6 - hs * 0.5), hs, col)
 
 
