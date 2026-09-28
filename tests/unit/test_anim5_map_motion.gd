@@ -150,7 +150,7 @@ func test_playout_ends_on_the_resolved_campaign_and_speed_scales_it() -> void:
 		Settings.set_reduce_effects(false)
 	hq.fight_raid()  # the rule, then the playout from the Grid as it stood
 	var resolved := c.to_dict()
-	await _frames()
+	await BoundedWait.frozen_frames(get_tree(), 3)  # the playout must still be under way after the layout frames
 	var p: RaidPlayoutPanel = hq.playout
 	assert_false(p.is_done(), "live, the raid plays over time")
 	assert_not_null(p.fx, "on the city map it plays as motion")

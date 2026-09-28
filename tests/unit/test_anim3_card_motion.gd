@@ -173,7 +173,7 @@ func test_the_hand_keeps_a_gap_while_a_card_flies() -> void:
 	scene.select_card(i)
 	if scene.selecting >= 0:
 		scene.confirm_selection()
-	await _frames(2)
+	await BoundedWait.frozen_frames(get_tree(), 2)  # the card must still be flying after the layout frames
 	assert_not_null(scene._gap, "the played card's slot stays open")
 	var moved: ZineCard = scene._card_node(i)  # the old i + 1 took index i
 	assert_not_null(moved, "the next card")
