@@ -267,7 +267,31 @@ static func saved_spot(stamp: Vector2, screen: Rect2, avoid: Array[Rect2]) -> Ve
 			best = at
 			if hits == 0.0:
 				break
+	# ANIM-R3 B13: when every spot along the edges covers something, a grid over the whole
+	# screen (SAVED_INNER_STEP apart) is tried too: at 1.0 the least covered edge spot was
+	# over UNDO.
+	if best_hits > 0.0:
+		var gy := bottom
+		while gy >= inner.position.y and best_hits > 0.0:
+			var gx := right
+			while gx >= inner.position.x:
+				var r := Rect2(Vector2(gx, gy), stamp)
+				var hits := 0.0
+				for a in avoid:
+					if r.intersects(a):
+						hits += r.intersection(a).get_area() + 1.0
+				if hits < best_hits:
+					best_hits = hits
+					best = Vector2(gx, gy)
+					if hits == 0.0:
+						break
+				gx -= SAVED_INNER_STEP
+			gy -= SAVED_INNER_STEP
 	return best
+
+
+## ANIM-R3 B13: the step of the whole-screen grid tried after the edges (px).
+const SAVED_INNER_STEP := 40.0
 
 
 ## Screen rects of the controls on screen under `root` the stamp must not cover: usable
@@ -287,6 +311,14 @@ func _collect_avoid(node: Node, out: Array[Rect2]) -> void:
 		if child is Control:
 			var c := child as Control
 			var usable := (c is BaseButton and c.mouse_filter != Control.MOUSE_FILTER_IGNORE) or c is LineEdit or (c is Range and not (c is ScrollBar))
+			if c is HudBar:
+				# ANIM-R3 B13: the screen's title (at 1.6 SAVED landed on "CITY GRID").
+				var tb: Control = (c as HudBar).title_box
+				if tb != null and tb.is_visible_in_tree():
+					out.append(tb.get_global_rect())
+			if c is Label and c.name == &"TerminalTitle":
+				# ANIM-R3 B13: and the windows' titles.
+				out.append(_shown_rect(c.get_parent() as Control))
 			if c is HudStats:
 				# ANIM-R1 M12: the top bar's tags carry numbers (at 1.6 the stamp sat on CREW).
 				var xf := c.get_global_transform()

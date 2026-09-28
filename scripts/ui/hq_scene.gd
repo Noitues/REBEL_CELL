@@ -1747,6 +1747,7 @@ func show_grid() -> void:
 	_fit_steps(nav)
 	# More below in the column (the runs at big text): the same tag as the HQ page's.
 	side_hint = ScrollHint.new(side_scroll)
+	side_hint.snap_rows = true  # ANIM-R3 B13: the runs list never ends in a half row
 	side_hint.name = "SideHint"
 	add_child(side_hint)
 	UiFocus.link_layout(column)  # the side column row by row (nav, card actions, runs)
