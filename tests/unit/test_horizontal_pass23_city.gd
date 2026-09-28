@@ -5,6 +5,8 @@ extends GutTest
 ## tooltips name the kind (#6); the runs open now and the Site steps carry their Site's
 ## map icon (#7). At text scale 1.0 and 1.6, for every corporation. The Grid checks share
 ## one Grid per corporation and text size (a headless city draw is slow).
+## The #2-#5 and #7 Grid checks run in test_city_map_sweeps.gd, on one Grid per
+## corporation, text size and stage (Test suite optimization, docs/TEST_SUITE.md).
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
@@ -163,105 +165,7 @@ func test_the_hq_mini_map_on_the_hq_page_keeps_labels_apart() -> void:
 
 # --- #2-#5 and #7 The Grid screen -------------------------------------------------------------
 
-func test_the_grid_at_every_corporation_and_text_size() -> void:
-	Settings.set_map_legend(true)
-	for corp in CORPS:
-		for scale in SCALES:
-			var hq: Control = await _hq_grid(corp, scale)
-			var what := "%s x%.1f" % [corp, scale]
-			_check_legend(hq, what, scale)
-			_check_nodes_beside_the_column(hq, what)
-			_check_labels(hq, what)
-			if corp == &"solace":
-				_check_run_rows_and_steps(hq, what)
-			await _close(hq)
-
-
-## #3: the key is on screen, over the map, clear of the column and of every node, and its
-## text follows the text size.
-func _check_legend(hq: Control, what: String, scale: float) -> void:
-	var legend: MapLegend = hq.grid_legend
-	assert_not_null(legend, "%s: the Grid has its key" % what)
-	assert_true(legend.is_visible_in_tree(), what)
-	var lr := _legend_rect(legend)
-	assert_true(SCREEN.encloses(lr), "%s: the key %s is on screen" % [what, lr])
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
-	assert_true(area.grow(0.5).encloses(lr), "%s: over the map %s" % [what, area])
-	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
-	assert_false(lr.intersects(column), "%s: clear of the side column" % what)
-	assert_eq(legend.font_size(), roundi(MapLegend.COMPACT_FONT * scale), "%s: its text follows the scale" % what)
-	var labels := legend.body.find_children("*", "Label", true, false)
-	assert_false(labels.is_empty())
-	for l in labels:
-		assert_eq((l as Label).get_theme_font_size("font_size"), legend.font_size(), "%s: row text at the scale" % what)
-	assert_eq(LegendSpot.covered(lr, LegendSpot.node_rects(hq.city_overlay, false)), 0.0, "%s: the key covers no node" % what)
-
-
-## #5: every node's icon centre and tier pips on the map area, none under the column.
-func _check_nodes_beside_the_column(hq: Control, what: String) -> void:
-	var overlay: CityMapOverlay = hq.city_overlay
-	var area := (hq.find_child("GridMapArea", true, false) as Control).get_global_rect()
-	var column := (hq.find_child("GridColumn", true, false) as Control).get_global_rect()
-	var xf := overlay.get_global_transform()
-	for n in overlay.nodes:
-		var at := _screen_at(overlay, n)
-		var where := "%s %s at %s" % [what, n["id"], at]
-		assert_true(area.has_point(at), "%s: on the map %s" % [where, area])
-		assert_false(column.has_point(at), "%s: not under the column" % where)
-		var pips := overlay.tier_pips_rect(n)
-		if pips.has_area():
-			assert_true(area.grow(0.5).encloses(Rect2(xf * pips.position, pips.size * xf.get_scale())), "%s: its tier pips too" % where)
-
-
-## #2 and #4: with each node selected in turn, the selected one is labelled, no two labels
-## overlap, and each lies on the map within LABEL_REACH of its node.
-func _check_labels(hq: Control, what: String) -> void:
-	var overlay: CityMapOverlay = hq.city_overlay
-	var c := RunManager.campaign
-	var paths := CityLayout.threat_paths(c, RunManager.corporation)
-	var ids: Array[StringName] = []
-	for n in overlay.nodes:
-		ids.append(n["id"])
-	var reach := CityMapOverlay.LABEL_REACH * overlay._k()
-	for id in ids:
-		var g := CityLayout.grid_graph(c, RunManager.corporation, paths, id)
-		overlay.set_graph(g["nodes"], g["edges"])
-		overlay.selected_id = id
-		var sel := "%s selected %s" % [what, id]
-		var rects := overlay.label_rects()
-		assert_true(rects.has(String(id)), "%s: the selected Site is labelled" % sel)
-		_assert_apart(rects, sel)
-		var area := overlay.label_area()
-		for key in rects:
-			var n := overlay._node_dict(StringName(String(key).get_slice("#", 0)))
-			var r: Rect2 = rects[key]
-			assert_true(area.grow(0.01).encloses(r), "%s: %s inside the map" % [sel, key])
-			assert_true(CityMapOverlay.reach_of(r, overlay.icon_pos(n)) <= reach + 0.01, "%s: %s within reach of its node" % [sel, key])
-
-
-## #7: each run row and each Site step carries its Site's map icon and names its kind.
-func _check_run_rows_and_steps(hq: Control, what: String) -> void:
-	var nodes := {}
-	for n in hq.grid_graph()["nodes"]:
-		nodes[n["id"]] = n
-	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
-	assert_not_null(rows, "%s: one run a row" % what)
-	var checked := 0
-	for b in rows.get_children():
-		if b is Button and String(b.name).begins_with("Run_"):
-			var id := StringName(String(b.name).trim_prefix("Run_"))
-			var kind := String(nodes[id]["kind"])
-			assert_eq(IconMark.map_kind_of(b), kind, "%s %s: the map icon of its kind" % [what, id])
-			assert_string_contains((b as Button).tooltip_text.replace("\n", " "), CityMapOverlay.kind_word(kind), "%s %s: the tip names the kind" % [what, id])
-			if kind != CityMapOverlay.KIND_TIER:
-				assert_string_contains((b as Button).text, CityMapOverlay.kind_word(kind).to_upper(), "%s %s: the row says its kind" % [what, id])
-			checked += 1
-	assert_gt(checked, 0, "%s: runs checked" % what)
-	for pair in [["PrevSite", -1], ["NextSite", 1]]:
-		var b := hq.find_child(pair[0], true, false) as Button
-		var to: StringName = hq.stepped_site(pair[1])
-		assert_eq(IconMark.map_kind_of(b), String(nodes[to]["kind"]), "%s: %s shows the icon of the Site it goes to" % [what, pair[0]])
-		assert_string_contains(b.tooltip_text.replace("\n", " "), CityMapOverlay.kind_word(String(nodes[to]["kind"])), "%s: %s names it" % [what, pair[0]])
+# (#2-#5 and #7 on every corporation's Grid: test_city_map_sweeps.gd.)
 
 
 func test_a_hidden_node_has_no_floating_label_and_the_fit_is_measured() -> void:

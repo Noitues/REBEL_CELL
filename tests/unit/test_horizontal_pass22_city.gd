@@ -4,6 +4,8 @@ extends GutTest
 ## route's YOU ARE HERE too); map labels and tips use translated Site names (TextDb); the
 ## map legend and the HQ mini-map follow the text size; the tier difficulty pips are on
 ## the map, the mini-map and in the legend.
+## The every-node, every-corporation Grid label sweep and the route's YOU ARE HERE sweep are
+## in test_city_map_sweeps.gd (Test suite optimization, docs/TEST_SUITE.md).
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
@@ -111,39 +113,6 @@ func test_the_overlay_covers_the_screen_and_reads_the_side_column() -> void:
 	assert_true(overlay.label_area().end.x <= (overlay.get_global_transform_with_canvas().affine_inverse() * Rect2(0, 0, 640, 720)).end.x + 0.01)
 
 
-func test_grid_labels_stay_on_screen_for_every_node_of_every_corporation() -> void:
-	for corp in CORPS:
-		RunManager.reset()
-		var hq: Control = await _hq_grid(corp)
-		var overlay: CityMapOverlay = hq.city_overlay
-		overlay.avoid_controls([hq.find_child("GridColumn", true, false) as Control])
-		var c := RunManager.campaign
-		var paths := CityLayout.threat_paths(c, RunManager.corporation)
-		var ids: Array[StringName] = []
-		for n in overlay.nodes:
-			ids.append(n["id"])
-		for scale in SCALES:
-			Settings.set_text_scale(scale)
-			for id in ids:
-				var g := CityLayout.grid_graph(c, RunManager.corporation, paths, id)
-				overlay.set_graph(g["nodes"], g["edges"])
-				overlay.selected_id = id
-				var rects := overlay.label_rects()
-				assert_true(rects.has(String(id)), "%s x%.1f: the selected %s has its label" % [corp, scale, id])
-				_assert_on_screen(overlay, "%s x%.1f selected %s" % [corp, scale, id])
-			# The landmarks keep their labels too (the boss Site was clipped for four
-			# corporations).
-			var g0 := CityLayout.grid_graph(c, RunManager.corporation, paths, c.grid.home_site_id)
-			overlay.set_graph(g0["nodes"], g0["edges"])
-			overlay.selected_id = c.grid.home_site_id
-			for n in overlay.nodes:
-				if n.get("big", false):
-					assert_true(overlay.label_rects().has(String(n["id"])), "%s x%.1f: landmark %s labelled" % [corp, scale, n["id"]])
-		Settings.set_text_scale(1.0)
-		hq.get_parent().queue_free()
-		await _frames(1)
-
-
 func test_a_focus_label_moves_inward_when_its_node_is_at_the_edge() -> void:
 	var hq: Control = await _hq_grid(&"solace")
 	var overlay: CityMapOverlay = hq.city_overlay
@@ -168,33 +137,6 @@ func test_a_focus_label_moves_inward_when_its_node_is_at_the_edge() -> void:
 	var rects := overlay.label_rects()
 	assert_true(rects.has(String(id)), "the selected label shows")
 	_assert_on_screen(overlay, "left strip")
-
-
-func test_route_you_are_here_stays_on_screen_for_every_corporation() -> void:
-	for corp in CORPS:
-		RunManager.reset()
-		_open_all()
-		RunManager.new_campaign(1, corp)
-		var scene := _scene(NETRUN)
-		scene.start_run(1)
-		var s := RunManager.netrun
-		s.run.current_node_id = s.run.map.first_layer_ids()[0]
-		scene._show_map()
-		await _frames()
-		var win := (scene.find_child("RouteNodes", true, false) as Control)
-		while win != null and not (win is TerminalWindow):
-			win = win.get_parent() as Control
-		assert_not_null(win, "the route window")
-		for scale in SCALES:
-			Settings.set_text_scale(scale)
-			var overlay: CityMapOverlay = scene.city_overlay
-			overlay.avoid_controls([win])
-			var here := overlay.here_id()
-			assert_true(overlay.label_rects().has(String(here)), "%s x%.1f: YOU ARE HERE shows" % [corp, scale])
-			_assert_on_screen(overlay, "route %s x%.1f" % [corp, scale])
-		Settings.set_text_scale(1.0)
-		scene.get_parent().queue_free()
-		await _frames(1)
 
 
 # --- Translated names -----------------------------------------------------------------------
