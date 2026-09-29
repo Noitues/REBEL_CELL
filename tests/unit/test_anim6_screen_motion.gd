@@ -251,7 +251,7 @@ func test_paper_drops_and_a_refresh_does_not_reenter() -> void:
 	var scene := await _netrun()
 	_live()
 	_to_event(scene)
-	assert_eq(PageTransition.look_of(scene._panel), PageTransition.Look.PAPER, "the event's note is paper")
+	assert_eq(scene.page_look(scene._panel), PageTransition.Look.PAPER, "the event's note is paper")  # art pass W8c: in its margin frame
 	assert_true(PageTransition.running(scene._panel))
 	PageTransition.settle(scene)
 	# The same screen rebuilt (as the Modem after a purchase) just shows.

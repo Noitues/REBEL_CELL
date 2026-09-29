@@ -181,9 +181,14 @@ func test_every_stat_tag_has_its_icon_on_every_screen() -> void:
 	RunManager.netrun.run.phase = RunState.Phase.ENDED
 	scene._show_end()
 	await _frames()
-	var end_tags := scene._panel.find_child("RunTags", true, false) as HudStats
-	for i in end_tags.items.size():
-		assert_true(StatIcon.ALL.has(end_tags.icon_of(i)), "run end tag %s has an icon" % end_tags.items[i][0])
+	# Art pass W8c: the run's numbers on a taped receipt, each after its icon (StatField).
+	var receipt := scene._panel.find_child("RunReceipt", true, false) as RunReceipt
+	assert_not_null(receipt)
+	var fields := 0
+	for n in receipt.find_children("*", "StatField", true, false):
+		fields += 1
+		assert_true(StatIcon.ALL.has((n as StatField).kind), "run end field %s has an icon" % n.name)
+	assert_true(fields >= 5, "the run in numbers")
 	var title := _open(TITLE)
 	await _frames()
 	# Art pass W8a: the profile is a GLASS uplink of icon + number fields (one PAPER note).

@@ -148,6 +148,9 @@ const DEMOS := {
 	&"hologram_idle": ["hologram", "idle"], &"hologram_intro": ["hologram", "intro"], &"hologram_intro_fade": ["hologram", "intro"],
 	# Art pass W8a (ART_BIBLE 10): a modal opens and closes; the logo's idle drip.
 	&"modal_in": ["pop", "panel"], &"modal_out": ["fade_out", "panel"], &"logo_drip": ["drop", "sticker"],
+	# Art pass W8c (ART_BIBLE 11 Run failed): the run's end (the full sequence runs on the
+	# netrun page, `--demo-end=died`; the lab shows its stamp's slam).
+	&"run_end_flatline": ["pop", "sticker"],
 }
 ## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
 ## step between shapes (px, 1280x720), and the names' lettering.

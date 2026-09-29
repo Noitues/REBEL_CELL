@@ -189,6 +189,12 @@ func _ready() -> void:
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_event(0))
 		_demo_drag_arg(args)
 		return
+	for a in args:
+		if a.begins_with("--demo-w8c-end="):
+			# Art pass W8c captures (dev flag only): the run's end (died, completed, aborted)
+			# reached through the session's own ending, its T4 sequence playing.
+			_demo_w8c_end(a.trim_prefix("--demo-w8c-end="))
+			return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
@@ -279,6 +285,29 @@ func enter_node(node_id: StringName) -> void:
 		return
 	_travelling = true
 	get_tree().create_timer(secs).timeout.connect(_end_travel)
+
+
+## Art pass W8c capture (dev flag only): the demo run ends through the session's own ending
+## (`died`: the flatline, `completed`: the clean exit, `aborted`: the home server lost) and
+## the run-end stage plays; prints the frame it starts on.
+func _demo_w8c_end(kind: String) -> void:
+	RunManager.save_slot = "demo"
+	new_campaign(1)
+	start_run(1)
+	var s := RunManager.netrun
+	match kind:
+		"completed":
+			s.call(&"_complete_run")
+		"aborted":
+			s.run.outcome = RunState.Outcome.ABORTED
+			s.run.phase = RunState.Phase.ENDED
+		_:
+			s.call(&"_die")
+	_report(s.last_events)
+	for f in DEMO_SETTLE_FRAMES:
+		await get_tree().process_frame
+	print("MotionDemo: w8c run end (%s) starts on frame %d" % [kind, Engine.get_frames_drawn()])
+	_show_current()
 
 
 ## ANIM-R2 R2 profiling: enters the first open Router (a fight), else the first open node.
@@ -785,7 +814,7 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 				# the CRT roll's band crosses them, never the whole screen (on the loot pick's
 				# first frame it ran across half the screen over the bare city).
 				PageTransition.glass_is_windows(p)
-			PageTransition.enter(p, PageTransition.look_of(p), _focus_page.bind(p))
+			PageTransition.enter(p, page_look(p), _focus_page.bind(p))
 		else:
 			_focus_page(p)
 	_title_screen(s)
@@ -837,6 +866,14 @@ func _focus_now(page, first) -> void:
 
 ## The meta naming a page's first focus.
 const FIRST_FOCUS_META := &"first_focus"
+## Art pass W8c: the meta naming a page's material when it sits deeper than look_of reads
+## (the event's paper inside its safe-margin frame).
+const PAGE_LOOK_META := &"page_look"
+
+
+## The page's look for its entrance (PageTransition: paper drops, glass slides).
+static func page_look(p: Control) -> int:
+	return int(p.get_meta(PAGE_LOOK_META)) if p.has_meta(PAGE_LOOK_META) else PageTransition.look_of(p)
 
 
 ## The pad prompts of the screen for the run's phase (H23 S11): A presses the focused
@@ -2235,6 +2272,7 @@ func _show_event() -> void:
 	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_theme_constant_override("margin_left", UiTheme.SAFE_MARGIN)
 	page.add_child(box)
+	page.set_meta(PAGE_LOOK_META, PageTransition.Look.PAPER if not dispatch else PageTransition.Look.GLASS)
 	_set_panel(page, false)
 	var calm: Array[Control] = [holder]
 	_city_page(false, calm)
@@ -3160,39 +3198,38 @@ func _site_name(site_id: StringName) -> String:
 	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
 
 
+## Art pass W8c (ART_BIBLE §11 Run failed, §8 T4, critique 51): the run's end staged over
+## the city (RunEndStage): the operative's Polaroid flatlines, the city grades to grey, the
+## verdict slams in at `hero` size, the run in numbers on a taped receipt with what the end
+## means, then Back to HQ (the primary). FLATLINED, JACKED OUT and HOME FELL share the
+## template. (Overlaps ANIM-R5 B3, which also moves the end over the city and adds the
+## permadeath line and the Heat reason: on merge, keep this staging and put B3's words in
+## the stage's fate line.)
 func _show_end() -> void:
 	var s := RunManager.netrun
-	var box := VBoxContainer.new()
-	var won := s.run.outcome == RunState.Outcome.COMPLETED
-	var aborted := s.run.outcome == RunState.Outcome.ABORTED
-	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 18)
-	# The result stamp only shows the outcome: no focus, no clicks (H20).
-	var stamp := ZineStamp.new(tr("CLEAN EXIT") if won else (tr("ABORTED") if aborted else tr("FLATLINED")), Palette.CELL_ACID if won else Palette.CELL_PINK).display_only()
-	stamp.name = "ResultStamp"
-	head.add_child(stamp)
+	var o := s.run.outcome
+	var won := o == RunState.Outcome.COMPLETED
+	var aborted := o == RunState.Outcome.ABORTED
 	var title := tr("NETRUN COMPLETE") if won else (tr("NETRUN ABORTED - the home server fell") if aborted else tr("NETRUN FAILED - operative lost"))
-	var report := TerminalWindow.new(title, Palette.CELL_ACID if won else Palette.CELL_PINK)
-	report.name = "RunReport"
-	head.add_child(report)
-	# The run in numbers as the top bar's paper tags (H20: no text summary).
-	var tags := HudStats.new()
-	tags.name = "RunTags"
-	tags.items = [[TextDb.mark("COMBATS"), str(s.run.combats_won), "", tr("Fights won this run.")],
-		[TextDb.mark("ELITES"), str(s.run.elites_defeated), "", tr("Elite fights won.")],
-		[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles in hand when the run ended.")],
-		[TextDb.mark("BANKED"), str(s.run.banked_schematics), "", tr("Schematics the run banked for the campaign.")],
-		[TextDb.mark("HEAT"), TextDb.signed(s.run.heat_gained), "", tr("Heat the run added (campaign Heat is now %d).") % s.campaign.heat]]
-	# The least room the tags need; they grow with the text size where the window allows.
-	tags.custom_minimum_size.x = tags.compact_width(1.0)
-	report.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	report.body.add_child(tags)
-	box.add_child(head)
-	var back := _button(tr("Back to HQ"), finish_run)
+	var op := s.run.operative
+	var stats := [[StatIcon.COMBATS, str(s.run.combats_won)], [StatIcon.ELITES, str(s.run.elites_defeated)], [StatIcon.CYCLES, str(s.run.cycles)],
+		[StatIcon.BANKED, str(s.run.banked_schematics)], [StatIcon.HEAT, TextDb.signed(s.run.heat_gained)]]
+	var stage := RunEndStage.new(o, tr(RunEndStage.verdict_of(o)), RunEndStage.color_of(o), op.class_id, op.id, op.name,
+		tr("NETRUN"), stats, title)
+	stage.receipt.tooltip_text = UiTip.fold(tr("Heat the run added (campaign Heat is now %d).") % s.campaign.heat)
+	var back := stage.back_button
+	back.text = tr("Back to HQ")
+	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	IconMark.attach(back, StatIcon.BACK)
-	box.add_child(back)
-	_set_panel(box)
+	stage.set_meta(FIRST_FOCUS_META, back)
+	# Never a black void: the city shows behind the end (a fight hid it).
+	background.visible = true
+	_set_panel(stage, false)
+	if entering:
+		stage.play()
+	else:
+		stage.finish_now()
 
 
 # --- Drag and drop (Animation pass ANIM-4b) --------------------------------------------------

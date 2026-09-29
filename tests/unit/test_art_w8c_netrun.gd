@@ -522,3 +522,95 @@ func test_no_native_controls_are_built_on_netrun_pages() -> void:
 	assert_not_null(scene._panel.find_child("SeedField", true, false) as CodeField, "the seed is a code field")
 	assert_eq(scene.seed_digits("12a3"), "123")
 	await _close(scene)
+
+
+# --- 6. FLATLINED run end -------------------------------------------------------------------------
+
+func _end(scene: Control, outcome: int) -> void:
+	RunManager.netrun.run.outcome = outcome
+	RunManager.netrun.run.phase = RunState.Phase.ENDED
+	scene._show_current()
+
+
+func test_flatlined_is_a_hero_stamp_over_a_grey_city_with_a_flatlined_portrait() -> void:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var scene := _netrun()
+		await _frames(2)
+		_end(scene, RunState.Outcome.DIED)
+		await _frames(4)
+		var stage := scene._panel as RunEndStage
+		assert_not_null(stage, "the run's end is staged")
+		stage.finish_now()
+		await _frames(2)
+		var stamp := stage.stamp
+		assert_eq(stamp.shown_word(), tr("FLATLINED"))
+		assert_eq(stamp.font_px, VerdictStamp.hero_px(), "the stamp at hero size at %.1f" % scale)
+		assert_true(stamp.font_px >= mini(UiTheme.font_px(UiTheme.HERO), UiTheme.HERO_MAX), "hero step")
+		assert_eq(stage.polaroid.expression, PortraitArt.Expr.FLATLINED, "the portrait flatlines")
+		assert_almost_eq(stage.grade_amount(), RunEndStage.GREY_AMOUNT, 0.01, "the city is graded grey")
+		assert_true(scene.background.visible and scene.background.city.is_visible_in_tree(), "the city shows: never a black void")
+		var screen := Rect2(Vector2.ZERO, CANVAS).grow(1.0)
+		var page_scroll := scene._panel_host.get_parent() as ScrollContainer
+		for c in [stamp, stage.receipt, stage.fate_label, stage.back_button]:
+			var r := (c as Control).get_global_rect()
+			assert_true(r.position.x >= -1.0 and r.end.x <= CANVAS.x + 1.0, "%s within the screen's width at %.1f: %s" % [(c as Control).name, scale, r])
+		page_scroll.ensure_control_visible(stage.back_button)
+		await _frames(2)
+		assert_true(screen.encloses(stage.back_button.get_global_rect()), "Back to HQ reachable at %.1f" % scale)
+		var fate := stage.fate_label
+		assert_true(fate.get_line_count() <= fate.get_visible_line_count() or fate.get_visible_line_count() < 0, "the fate line is whole (never 'Recruit, regr')")
+		await _close(scene)
+
+
+func test_run_end_verdicts_share_the_template() -> void:
+	for o in [RunState.Outcome.COMPLETED, RunState.Outcome.ABORTED, RunState.Outcome.DIED]:
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var scene := _netrun()
+		await _frames(2)
+		_end(scene, o)
+		await _frames(3)
+		var stage := scene._panel as RunEndStage
+		stage.finish_now()
+		assert_eq(stage.stamp.shown_word(), tr(RunEndStage.verdict_of(o)))
+		if o == RunState.Outcome.COMPLETED:
+			assert_eq(stage.grade_amount(), 0.0, "a clean exit keeps the city's colour")
+			assert_eq(stage.polaroid.expression, PortraitArt.Expr.TRIUMPHANT)
+		else:
+			assert_true(stage.grade_amount() > 0.9, "a loss greys the city")
+		await _close(scene)
+	for w in ["FLATLINED", "JACKED OUT", "HOME FELL"]:
+		assert_true(ZineStamp.word_count(w) <= ZineStamp.MAX_WORDS, "a stamp says one thing (§6.6)")
+
+
+func test_flatlined_is_a_skippable_t4_and_ends_at_once_under_reduce_effects() -> void:
+	var e := Motion.entry(RunEndStage.MOTION)
+	assert_eq(e.tier, 4, "a T4 moment")
+	assert_lte(e.duration, 2.5, "within T4's 2.5 s")
+	var scene := _netrun()
+	await _frames(2)
+	Motion.force_live = true
+	_end(scene, RunState.Outcome.DIED)
+	var stage := scene._panel as RunEndStage
+	stage.play()
+	assert_true(stage.running(), "the sequence plays")
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_SPACE
+	ev.pressed = true
+	stage._input(ev)
+	assert_false(stage.running(), "a press skips it")
+	assert_eq(stage.polaroid.expression, PortraitArt.Expr.FLATLINED, "to its end state")
+	stage.play()
+	PageTransition.settle(stage)
+	await _frames(2)
+	assert_false(stage.running(), "a page settle ends it too")
+	Motion.force_live = false
+	Settings.set_reduce_effects(true)
+	stage.play()
+	assert_false(stage.running(), "reduce effects: the end state at once (the page cross-fades in)")
+	assert_eq(stage.stamp.modulate.a, 1.0)
+	Settings.set_reduce_effects(false)
+	await _close(scene)

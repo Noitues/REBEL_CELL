@@ -263,11 +263,12 @@ func test_the_netrun_end_is_tags_and_a_stamp_that_takes_no_focus() -> void:
 	RunManager.netrun.run.phase = RunState.Phase.ENDED
 	scene._show_end()
 	await _frames()
-	var stamp := scene._panel.find_child("ResultStamp", true, false) as ZineStamp
+	# Art pass W8c: the verdict is a hero-size stamp (VerdictStamp), the numbers a receipt.
+	var stamp := scene._panel.find_child("ResultStamp", true, false) as VerdictStamp
 	assert_eq(stamp.focus_mode, Control.FOCUS_NONE)
 	assert_eq(stamp.mouse_filter, Control.MOUSE_FILTER_IGNORE)
-	assert_eq(stamp.hint, "", "no key hint on a result")
-	assert_true(scene._panel.find_child("RunTags", true, false) is HudStats, "the run in numbers as tags")
+	assert_eq(stamp.shown_word(), tr("JACKED OUT"), "the verdict, no key hint")
+	assert_true(scene._panel.find_child("RunReceipt", true, false) is RunReceipt, "the run in numbers on a receipt")
 	for n in _all(scene._panel):
 		assert_false(n is ZineNote, "no summary note")
 	var owner := get_viewport().gui_get_focus_owner()
