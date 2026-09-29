@@ -227,3 +227,47 @@ func test_ring_fill_keeps_marks_inside_the_annulus() -> void:
 		if dist >= 30.0 and dist <= 60.0:
 			kept += 1
 	assert_gt(kept, 20, "a bezel-sized ring holds a readable number of dots")
+
+
+# --- §4.2 type scale ------------------------------------------------------------------------
+
+func test_type_steps_have_the_bible_sizes_and_line_heights() -> void:
+	assert_eq(UiTheme.CAPTION, 12)
+	assert_eq(UiTheme.BODY, 15)
+	assert_eq(UiTheme.BODY, UiTheme.BASE_SIZE)
+	assert_eq(UiTheme.LABEL, 18)
+	assert_eq(UiTheme.TITLE, 22)
+	assert_eq(UiTheme.HEADING, 30)
+	assert_eq(UiTheme.DISPLAY, 44)
+	assert_eq(UiTheme.HERO, 64)
+	assert_eq(UiTheme.HERO_MAX, 96)
+	var want := {12: 1.3, 15: 1.4, 18: 1.25, 22: 1.2, 30: 1.1, 44: 1.0, 64: 1.0}
+	for step in UiTheme.STEPS:
+		assert_almost_eq(UiTheme.line_height(step), want[step], 0.001, "line height of %d" % step)
+	assert_almost_eq(UiTheme.TRACKING_DISPLAY, 0.02, 0.0001, "Anton +2%")
+	assert_almost_eq(UiTheme.TRACKING_MONO_CAPS, 0.08, 0.0001, "mono CAPS +8%")
+	assert_eq(UiTheme.tracking_px(UiTheme.TRACKING_MONO_CAPS, 25), 2)
+
+
+func test_font_px_scales_every_step_at_every_text_scale() -> void:
+	for scale in [0.8, 1.0, 1.6, 2.0]:
+		for step in UiTheme.STEPS:
+			assert_eq(UiTheme.font_px_at(step, scale), roundi(step * scale), "%d at %.1f" % [step, scale])
+	assert_eq(UiTheme.font_px_at(UiTheme.CAPTION, 2.0), 24)
+	assert_eq(UiTheme.font_px_at(UiTheme.HERO, 2.0), 128)
+	assert_eq(UiTheme.font_px_at(UiTheme.BODY, 1.6), 24)
+	assert_eq(UiTheme.font_px_at(UiTheme.TITLE, 0.8), 18)
+	for step in UiTheme.STEPS:
+		assert_true(UiTheme.font_px_at(step, 1.0) >= UiTheme.CAPTION, "no step under 12 at 1.0 (%d)" % step)
+	var saved := Settings.text_scale
+	Settings.text_scale = 1.6
+	assert_eq(UiTheme.font_px(UiTheme.LABEL), UiTheme.font_px_at(UiTheme.LABEL, 1.6), "font_px reads the setting")
+	Settings.text_scale = saved
+
+
+func test_hot_button_and_header_scale_with_the_text() -> void:
+	for scale in [0.8, 1.0, 1.6, 2.0]:
+		var t := UiTheme.build(scale)
+		assert_eq(t.get_font_size(&"font_size", &"HotButton"), UiTheme.font_px_at(UiTheme.TITLE, scale), "HotButton at %.1f" % scale)
+		assert_eq(t.get_font_size(&"font_size", &"HeaderLabel"), UiTheme.font_px_at(UiTheme.TITLE, scale), "HeaderLabel at %.1f" % scale)
+	assert_eq(UiTheme.build(1.0).get_font_size(&"font_size", &"HotButton"), 22, "unchanged at 1.0")
