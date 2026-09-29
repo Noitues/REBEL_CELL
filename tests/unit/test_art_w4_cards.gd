@@ -344,3 +344,39 @@ func test_a_dragged_card_shows_at_60_percent_centred_on_the_cursor() -> void:
 	var g2 := DragGhost.new(tile)
 	add_child_autofree(g2)
 	assert_eq(tile.scale, Vector2.ONE, "shop tiles keep their size")
+
+
+# --- 7. The card-side hover API (6.3, for W3) --------------------------------------------------------
+
+func test_set_hovered_lifts_scales_and_straightens_without_reflow() -> void:
+	var row := HBoxContainer.new()
+	add_child_autofree(row)
+	var cards: Array[ZineCard] = []
+	for id in [&"jolt", &"whirl", &"flick"]:
+		var z := ZineCard.new(TextDb.t(_card(id), "display_name"), 1, "", 0).with_card(_card(id))
+		z.auto_hover = false
+		row.add_child(z)
+		cards.append(z)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var before: Array[Rect2] = []
+	for z in cards:
+		before.append(Rect2(z.position, z.size))
+	var mid := cards[1]
+	mid.mouse_entered.emit()
+	assert_eq(mid.lift, 0.0, "auto_hover off: the scene decides")
+	mid.set_hovered(true)
+	assert_eq(mid.lift, Motion.amplitude(&"card_hover"), "lift 12 px (card_hover)")
+	assert_eq(Motion.amplitude(&"card_hover"), 12.0)
+	assert_almost_eq(mid.hover_scale, 1.12, 0.001, "scale 1.12")
+	assert_eq(mid.rotation_degrees, 0.0, "straightened")
+	assert_true(mid.is_hovered_card())
+	await get_tree().process_frame
+	await get_tree().process_frame
+	for i in cards.size():
+		assert_eq(Rect2(cards[i].position, cards[i].size), before[i], "card %d kept its place and size (no reflow)" % i)
+	assert_eq(mid.custom_minimum_size, ZineCard.STICKER_SIZE, "its minimum size is untouched")
+	mid.set_hovered(false)
+	assert_eq(mid.lift, 0.0)
+	assert_almost_eq(mid.hover_scale, 1.0, 0.001)
+	assert_almost_eq(mid.rotation_degrees, mid.rest_tilt, 0.001, "back to its resting tilt")
