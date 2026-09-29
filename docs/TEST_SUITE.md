@@ -99,10 +99,14 @@ never posts a frame) and never touches a RenderingDevice.
 
 GUT's `add_child_autofree` frees with `free()` while the tree's `process_frame` emission
 is still running (a test resumes from `await get_tree().process_frame`). A lambda using
-self connected to a frame signal would then run on freed memory: game scripts connect
-methods to `process_frame` / `physics_frame` / `frame_pre_draw` / `frame_post_draw`,
-never lambdas (`test_suite_integrity.gd` guards it; `test_bake_crash.gd` reproduces the
-crash on the old code). See DECISIONS "Animation pass — bake crash".
+self connected to a frame signal would then run on freed memory: scripts connect methods
+to `process_frame` / `physics_frame` / `frame_pre_draw` / `frame_post_draw`, never
+lambdas. `test_suite_integrity.gd` guards it in `scripts/`, `tests/` and `tools/` (a
+test's or a lab's lambda outlives a freed node the same way; ANIM-R4 H8), in every form:
+`<sig>.connect(func`, any spacing, `connect("<sig>", func`, `Signal(obj, "<sig>").connect(`,
+`Callable(func`, a lambda held in a variable, a `func` on the line after an open call.
+`test_bake_crash.gd` reproduces the crash on the old code. See DECISIONS "Animation pass —
+bake crash".
 
 ### Waiting on motion (bounded waits)
 
@@ -123,11 +127,37 @@ late or a timer firing before the tween it waits for lands the assert early. Use
 - Count events instead of catching a state mid-way (`WheelView.tag_flips`), and poll
   view-side queries (`motion_busy()`, `PageTransition.running()`, `FlightFx.active_count()`).
 
-`test_suite_integrity.gd` fails on a `create_timer(`, `wait_seconds(` or
-`Time.get_ticks_msec/usec(` in a test script that an assertion follows in the same test
-(or in any helper function), unless the line or the comment line above it carries
-`# fixed-wait-ok: <reason>` (a wait that only lets motion run before a skip or settle, or
-the resolver's performance bound). See DECISIONS "Test suite: bounded waits".
+`test_suite_integrity.gd` fails on a fixed wait or a wall-clock read in a test script that
+an assertion follows in the same test (or in any helper function, whose caller asserts):
+`create_timer(`, `wait_seconds(`, `Time.get_ticks_msec/usec(`, a `tween_interval(` that is
+awaited (on its line, or a later `await ... .finished` in the function; an interval that
+only keeps a sequence running is no wait), a Timer made in the test (`Timer.new()`, its
+`wait_time`), a blocking sleep (`OS.delay_msec(` / `OS.delay_usec(`) and the wall clock's
+other reads (`get_unix_time`). A sleep inside a lambda (a poll's condition standing in for
+a loaded machine's slow frames) is load, not a wait. Inner classes' methods are functions
+of their own. The shared helpers in `tests/helpers/` are scanned too (ANIM-R5): every
+function there is a helper, so any fixed wait in one is flagged; `BoundedWait`'s own polls
+(a frame at a time, counting game time) are no fixed wait and carry no marker. A line (or
+the comment line above it) carrying `# fixed-wait-ok: <reason>` is let through (a wait that
+only lets motion run before a skip or settle, or the resolver's performance bound). See
+DECISIONS "Test suite: bounded waits".
+
+### Headless has no RenderingDevice
+
+Tests run `--headless`: the dummy renderer never posts a frame and there is no
+RenderingDevice, so GPU and rendering paths (the city bake's GPU copy, viewport readbacks,
+shaders' look) never run in the suite. Three green runs shipped a grey city once (ANIM-R4).
+A change to a rendering path is verified in a windowed run as well (the windowed render
+check tool, or a Movie Maker capture of the scene: `--write-movie <dir>/f.png`, the folder
+made first, and the frames read).
+
+### The integrity rules stay fast
+
+`test_suite_integrity.gd` reads each source once and compiles each pattern once, and reads
+a line further only when it names a frame signal or a fixed-wait call: well under a second
+of tests (ANIM-R5; it had grown to 40 s). That every test script compiles is
+`test_suite_compiles.gd` (full tier): loading every script loads the whole game behind it,
+most of a minute on its own. The parallel runner also reports any script that did not run.
 
 ## The 2026-09-27 optimization pass
 
