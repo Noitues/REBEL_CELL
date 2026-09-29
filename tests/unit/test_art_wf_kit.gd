@@ -145,3 +145,62 @@ func test_wrap_words_never_breaks_a_word() -> void:
 	var f := Palette.mono()
 	var lines := TilePicker.wrap_words("Solace Root Certificate Store", f, 18, 10.0)
 	assert_eq(lines, PackedStringArray(["Solace", "Root", "Certificate", "Store"]), "a word too wide sits alone, whole")
+
+
+# --- 3. StickerButton growth cap -------------------------------------------------------------
+
+func _sticker(h: Control, words: String, icon: String) -> StickerButton:
+	var b := StickerButton.new(words, Palette.STICKER_PINK, 3.0)
+	b.pre_translated = true
+	b.drawn_icon = icon
+	b.container_width = SCREEN.size.x
+	b.max_share = StickerButton.MAX_SHARE
+	h.add_child(b)
+	b.refit()
+	return b
+
+
+func test_a_sticker_yields_its_type_step_before_passing_its_share() -> void:
+	for scale: float in [1.0, 1.6, 2.0]:
+		Settings.set_text_scale(scale)
+		var h := _holder()
+		for words in ["RESPIN 2 RAM R", "RESPIN 2 RAM RS", "UNDO Z", "RESPIN"]:
+			var b := _sticker(h, words, "respin")
+			var cap := SCREEN.size.x * StickerButton.MAX_SHARE
+			assert_true(b.size.x <= cap + 0.5 or b.lettering_px() == UiTheme.font_px_at(UiTheme.CAPTION, 1.0),
+				"%s at %s: %s px wide, within %s of the page" % [words, scale, b.size.x, StickerButton.MAX_SHARE])
+			assert_true(b.lettering_px() >= UiTheme.CAPTION, "%s at %s: never under caption" % [words, scale])
+			if b.width_at(StickerButton.font_px(), scale) <= cap:
+				assert_eq(b.lettering_px(), StickerButton.font_px(), "%s at %s: grows with the text while it fits" % [words, scale])
+			# The words sit on the paper, clear of the icon (they never overrun).
+			var lr := b.lettering_rect()
+			assert_true(lr.position.x >= StickerButton.ICON_ROOM * b.sticker_scale() - 0.5, "%s at %s: clear of the icon" % [words, scale])
+			assert_true(lr.end.x <= b.size.x + 0.5 and lr.position.y >= -0.5 and lr.end.y <= b.size.y + 0.5, "%s at %s: the words on the paper" % [words, scale])
+		h.free()
+	Settings.set_text_scale(1.0)
+
+
+func test_without_a_cap_a_sticker_grows_as_before() -> void:
+	Settings.set_text_scale(2.0)
+	var h := _holder()
+	var b := StickerButton.new("RESPIN 2 RAM R")
+	b.drawn_icon = "respin"
+	h.add_child(b)
+	b.refit()
+	assert_eq(b.lettering_px(), StickerButton.font_px(), "opt-in: no max_share, full growth")
+	Settings.set_text_scale(1.0)
+
+
+func test_respin_at_2_is_capped_and_1_0_is_unchanged() -> void:
+	var h := _holder()
+	var b := _sticker(h, "RESPIN 2 RAM R", "respin")
+	assert_eq(b.lettering_px(), StickerButton.FONT_SIZE, "1.0 draws as before")
+	assert_almost_eq(b.size.y, StickerButton.HEIGHT, 0.01)
+	h.free()
+	Settings.set_text_scale(2.0)
+	h = _holder()
+	b = _sticker(h, "RESPIN 2 RAM R", "respin")
+	var grown := b.width_at(StickerButton.font_px(), 2.0)
+	assert_lt(b.size.x, grown, "at 2.0 it no longer grows to %s px" % grown)
+	assert_lt(b.lettering_px(), StickerButton.font_px(), "the lettering yielded")
+	Settings.set_text_scale(1.0)

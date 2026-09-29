@@ -14,6 +14,19 @@ var _hot: bool = false
 ## A drawn mark before the lettering ("respin": a circular arrow, "undo": a hooked arrow),
 ## so the sticker reads without words (H22). "" = none.
 var drawn_icon: String = ""
+## Art pass WF: the width the share is taken of (px); 0 = the page's (viewport's) width.
+var container_width: float = 0.0
+## Art pass WF: the growth cap in use, a share of `container_width` (MAX_SHARE is the one to
+## use); 0 = no cap, the sticker grows with the text scale as before. Opt-in: combat sizes
+## its hand from the room the stickers leave, so it switches this on together with a
+## ceiling on the hand's scale (the wheels keep 70%, §12).
+var max_share: float = 0.0:
+	set(v):
+		max_share = maxf(0.0, v)
+		_fit()
+## The lettering size and the sticker's own scale (lettering / FONT_SIZE) chosen by _fit.
+var _px: int = FONT_SIZE
+var _k: float = 1.0
 const ICON_ROOM := 22.0
 
 ## Marker lettering size and sticker height at text scale 1.0 (px).
@@ -27,6 +40,21 @@ const HOT_GROW := 3.0
 const HOT_ALPHA := 0.5
 const SHADOW_OFFSET := Vector2(3, 4)
 const EDGE_ALPHA := 0.45
+## Art pass WF: the recommended cap (see `max_share`): the most of its container's width a
+## sticker takes (the page's width when no `container_width` is given). Past it the lettering yields a type step (to caption at the
+## text scale), then stops growing with the text scale (never under caption at 1.0), and
+## the whole sticker (height, padding, icon) follows the lettering.
+const MAX_SHARE := 0.2
+## The width the share is taken of when the sticker isn't on a page yet (the reference
+## viewport, px).
+const REFERENCE_WIDTH := 1280.0
+## The text scale is walked down by this step while the sticker is still too wide.
+const YIELD_STEP := 0.1
+## The drawn icon's radius and its inset from the sticker's left edge (px at 1.0).
+const ICON_R := 7.0
+const ICON_INSET := 4.0
+## The tape strip across the top (px at 1.0).
+const TAPE_SIZE := Vector2(24, 9)
 
 
 func _init(p_text: String = "", p_paper: Color = Palette.NOTE_YELLOW, p_tilt: float = 0.0) -> void:
@@ -72,11 +100,79 @@ func shown_text() -> String:
 var pre_translated := false
 
 
+## Art pass WF: the lettering size in use (px): font_px() while the sticker keeps under
+## MAX_SHARE of its container, else a step smaller (see MAX_SHARE).
+func lettering_px() -> int:
+	return _px
+
+
+## The sticker's own scale (the lettering over FONT_SIZE): its height, padding and icon.
+func sticker_scale() -> float:
+	return _k
+
+
+## The width MAX_SHARE is taken of (px).
+func share_of() -> float:
+	if container_width > 0.0:
+		return container_width
+	if is_inside_tree():
+		return get_viewport_rect().size.x
+	return REFERENCE_WIDTH
+
+
+## The sticker's width with lettering `px` at sticker scale `k` (px).
+func width_at(px: int, k: float) -> float:
+	var w := Palette.marker().get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x + PADDING * k + (ICON_ROOM * k if drawn_icon != "" else 0.0)
+	return maxf(MIN_WIDTH * k, w)
+
+
 func _fit() -> void:
-	var scale := Settings.text_scale
-	var w := Palette.marker().get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PADDING * scale + (ICON_ROOM * scale if drawn_icon != "" else 0.0)
-	custom_minimum_size = Vector2(maxf(MIN_WIDTH * scale, w), HEIGHT * scale)
+	var cap := share_of() * max_share if max_share > 0.0 else INF
+	_px = yield_px(cap)
+	_k = _scale_for(_px)
+	custom_minimum_size = Vector2(width_at(_px, _k), HEIGHT * _k)
 	size = get_combined_minimum_size()
+
+
+## The lettering size that keeps the sticker under `cap` px wide: font_px() (the text
+## scale's), else one type step down (caption at the scale), else caption with the scale
+## walked down by YIELD_STEP, the 1.0 lettering and last caption at 1.0 (the floor).
+func yield_px(cap: float) -> int:
+	var scale := Settings.text_scale
+	var tries: Array[int] = [font_px(), FONT_SIZE]
+	var k := scale
+	while k > 1.0 - 0.001:
+		tries.append(UiTheme.font_px_at(UiTheme.CAPTION, k))
+		k -= YIELD_STEP
+	tries.append(UiTheme.font_px_at(UiTheme.CAPTION, 1.0))
+	tries.sort()
+	tries.reverse()
+	for px in tries:
+		if width_at(px, _scale_for(px)) <= cap:
+			return px
+	return tries[tries.size() - 1]
+
+
+## The sticker scale that goes with lettering `px` (never under 1.0's sticker unless the text
+## scale is under 1.0).
+func _scale_for(px: int) -> float:
+	return minf(Settings.text_scale, maxf(float(px) / FONT_SIZE, minf(1.0, Settings.text_scale)))
+
+
+## Art pass WF: where the lettering is drawn inside the (untilted) sticker, local: the paper
+## less the icon's room, the words centred in it at lettering_px().
+func lettering_rect() -> Rect2:
+	var f := Palette.marker()
+	var w := f.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, _px).x
+	var x0 := ICON_ROOM * _k if drawn_icon != "" else 0.0
+	var room := size.x - x0
+	var h := f.get_ascent(_px) + f.get_descent(_px)
+	return Rect2(Vector2(x0 + (room - w) * 0.5, (size.y - h) * 0.5), Vector2(w, h))
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_ENTER_TREE:
+		_fit()  # the page's width is known now (MAX_SHARE)
 
 
 ## Re-measures after a text-scale change.
@@ -117,18 +213,12 @@ func _draw() -> void:
 	draw_rect(Rect2(rr.position + SHADOW_OFFSET, rr.size), Palette.SHADOW)
 	draw_rect(rr, paper)
 	draw_rect(rr, Palette.DISABLED if st == KitState.DISABLED else Color(Palette.INK, EDGE_ALPHA), false, 1.0)
-	draw_rect(Rect2(Vector2(-12, rr.position.y - 5), Vector2(24, 9)), Palette.NOTE_TAPE)
-	var fs := font_px()
-	var baseline := rr.position.y + (rr.size.y + Palette.marker().get_ascent(fs) - Palette.marker().get_descent(fs)) * 0.5
+	draw_rect(Rect2(Vector2(-TAPE_SIZE.x * 0.5, rr.position.y - TAPE_SIZE.y * 0.55), TAPE_SIZE), Palette.NOTE_TAPE)
 	var ink := Palette.INK
-	var text_x := rr.position.x
-	var text_w := rr.size.x
 	if drawn_icon != "":
-		var s := Settings.text_scale
-		var ic := Vector2(rr.position.x + ICON_ROOM * 0.5 * s + 4.0, rr.position.y + rr.size.y * 0.5)
-		_draw_icon(ic, 7.0 * s, ink)
-		text_x += ICON_ROOM * s
-		text_w -= ICON_ROOM * s
-	draw_string(Palette.marker(), Vector2(text_x, baseline), shown_text(), HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
+		var ic := Vector2(rr.position.x + ICON_ROOM * 0.5 * _k + ICON_INSET, rr.position.y + rr.size.y * 0.5)
+		_draw_icon(ic, ICON_R * _k, ink)
+	var lr := lettering_rect()
+	draw_string(Palette.marker(), rr.position + Vector2(lr.position.x, lr.position.y + Palette.marker().get_ascent(_px)), shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, _px, ink)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	KitState.draw_frame(self, r.grow(-1.0), st)
