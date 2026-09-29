@@ -353,4 +353,4 @@ They are listed here so none is silently lost. Raise them as a later pass if you
 | 2 | W2, W4, W6, W9s | — | **all merged** |
 | 3 | W3, W5, W7 | — | **all merged** (1290 tests green) |
 | 4 | W8a–d | `art/w8d-campaign-end` | W8a, W8b, W8c and WF **merged** (1379 tests green); W8d running |
-| 5 | W9 sweep, W10 full | — | not started |
+| 5 | W9 sweep, W10 full | `art/w9f-sweep` | W9F (final accessibility sweep + all handed-off items) running; W10 full-matrix run after W8d and W9F merge |
