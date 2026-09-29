@@ -386,6 +386,39 @@ Review folder: `docs/art_review/W8c/` (28 before/after sheets, a FLATLINED T4 st
 - DeckView's "Left click / Right click" wording, and it running off the canvas at 2.0.
 - The top bar is two rows at 2.0 (W8b).
 
+### 2026-09-29 — Art pass W8b: HQ, new campaign, Grid, raid, maps, top bar (merged into `art-pass`)
+Review folder: `docs/art_review/W8b/`. It holds 64 before/after sheets, strips of the ring swap and the crew stamp, and the README with the §14 checklist.
+
+**Top bar and subtitles (§6.9, §5.2)**
+- The top bar is always one row. Its height depends only on the text scale. Values step down instead of wrapping.
+- From text scale 1.3, the tag labels, the page title and VIEW LOADOUT fold into tooltips.
+- CARDS and DAEMONS show `FOCUS` brackets while a matching item is dragged (`HudBar.watch_drops`).
+- The subtitle band is two lines above 1.0.
+
+**Screens (§2, ruling Q4, §5.3)**
+- The HQ gets the full DECK frame (`DeckFrame`, `DeckMonitor`). Other pages don't; they use the city's map mode.
+- The raid setup re-lays out at text scale 1.3 and again at 1.8, so START DEFENSE is the one primary on its first screen.
+
+**Words, maps and raid (§4.3 rule 3, §11, §10.2)**
+- Wrapping is whole-word only (`AUTOWRAP_WORD`, including UiWrap). A chip grows rather than breaking a word.
+- The raid map shows no tier pips. Its zoom floor is 0.36, or 0.2 at big text.
+- Home hits that land together fly as one summed number.
+
+**Edits outside W8b's files (minimal):** `raid_fx_layer.gd` and `ui_wrap.gd`.
+
+**Handed to the final sweep (W9F)**
+- Calls to add in `netrun_scene.gd`:
+  - `hud.watch_drops(drops)`;
+  - `route_legend.set_opened(...)` in `cycle_target`;
+  - interlude START DEFENSE as `UiTheme.PRIMARY` with PLAY;
+  - `city_overlay.corp_id` in the grid-zoom view.
+- `crew_card.gd:107/126` uses WORD_SMART, which splits "BREAKE/R" at 2.0.
+- The Polaroid's "R0" caption overlaps.
+- The `spinner_view` hub name clips ("BREAKER COR").
+- `dialogue.gd` `_fit_page` can shrink text below caption.
+- The W10 runtime lint should measure scaled subtrees on screen and not measure contrast through modal scrims.
+- The empty subtitle band is tall at 2.0.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
