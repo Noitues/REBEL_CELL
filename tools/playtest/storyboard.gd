@@ -6,9 +6,13 @@ extends Node
 ## slot so the designer's profile is never touched.
 ##
 ##   godot --path . --resolution 1280x720 res://tools/playtest/storyboard.tscn -- --out=<dir> [--scramble] [--pad] [--scale=1.6]
+##       [--reduce-effects] [--filter=grey|deutan]
 ##
 ## --scramble turns on Godot's pseudolocalisation (accented, stretched, mirrored text) for
 ## everything drawn by Controls, for the "cannot read English" review. --pad shows pad hints.
+## W10: --reduce-effects turns Settings.reduce_effects on for the run (not saved); --filter
+## puts the review pack's colour-vision post filter (tools/visual_qa/cvd_filter.gdshader) over
+## the screen. The full screen list and axes are in tools/visual_qa/capture_pack.py.
 
 const SLOT := "gut_storyboard"
 const TITLE := preload("res://scenes/menu/title_scene.tscn")
@@ -16,6 +20,10 @@ const HQ := preload("res://scenes/hq/hq_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
 ## Frames to let a screen settle before its picture.
 const SETTLE_FRAMES := 12
+const FILTER_SHADER := preload("res://tools/visual_qa/cvd_filter.gdshader")
+## cvd_filter.gdshader modes and the layer it draws on (above everything).
+const FILTER_MODES := {"grey": 1, "deutan": 2}
+const FILTER_LAYER := 128
 
 var out_dir: String = "user://storyboard"
 var _step: int = 0
@@ -31,6 +39,8 @@ func _ready() -> void:
 	var scramble := false
 	var pad := false
 	var scale := 1.0
+	var reduce := false
+	var filter := ""
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			out_dir = a.trim_prefix("--out=")
@@ -40,6 +50,10 @@ func _ready() -> void:
 			pad = true
 		elif a.begins_with("--scale="):
 			scale = float(a.trim_prefix("--scale="))
+		elif a == "--reduce-effects":
+			reduce = true
+		elif a.begins_with("--filter="):
+			filter = a.trim_prefix("--filter=")
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	if scramble:
 		ProjectSettings.set_setting("internationalization/pseudolocalization/replace_with_accents", true)
@@ -55,6 +69,22 @@ func _ready() -> void:
 		Settings.text_scale = scale  # this run only: not saved
 		Settings.changed.emit()
 	Settings.pad_active = pad
+	var reduce_before := Settings.reduce_effects
+	if reduce != reduce_before:
+		Settings.reduce_effects = reduce  # this run only: not saved
+		Settings.changed.emit()
+	if FILTER_MODES.has(filter):
+		var layer := CanvasLayer.new()
+		layer.layer = FILTER_LAYER
+		var rect := ColorRect.new()
+		rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var mat := ShaderMaterial.new()
+		mat.shader = FILTER_SHADER
+		mat.set_shader_parameter("mode", FILTER_MODES[filter])
+		rect.material = mat
+		layer.add_child(rect)
+		add_child(layer)
 	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()
@@ -64,6 +94,7 @@ func _ready() -> void:
 	DirAccess.remove_absolute(RunManager.profile_path())
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	Settings.text_scale = _scale_before
+	Settings.reduce_effects = reduce_before
 	var f := FileAccess.open(out_dir.path_join("index.txt"), FileAccess.WRITE)
 	if f != null:
 		f.store_string("\n".join(_shots))
@@ -79,6 +110,11 @@ func _settle(frames: int = SETTLE_FRAMES) -> void:
 
 func _shot(label: String, what: String) -> void:
 	await _settle()
+	# W10: the city's bake lands before the picture (a stand-in city is not the screen).
+	for i in FIGHT_WAIT_FRAMES:
+		if CityBakeCache.busy() == 0:
+			break
+		await get_tree().process_frame
 	_step += 1
 	var name := "%02d_%s.png" % [_step, label]
 	var img := get_viewport().get_texture().get_image()
