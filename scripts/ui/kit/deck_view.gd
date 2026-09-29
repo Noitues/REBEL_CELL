@@ -145,7 +145,7 @@ func enable_drops(layer: DropLayer) -> void:
 	shred_tile.hotkey = ""
 	shred_tile.focus_mode = Control.FOCUS_NONE
 	shred_tile.custom_minimum_size = SHRED_TILE * clampf(Settings.text_scale, 1.0, SHRED_GROW_MAX)
-	shred_tile.tooltip_text = UiTip.fold(tr("Drag a card here to shred it (or select it and press REMOVE)."))
+	shred_tile.tooltip_text = UiTip.fold(UiTip.for_input(tr("Drag a card here to shred it (or select it and press REMOVE)."), tr("Pick a card up and move it here to shred it (or select it and press REMOVE).")))
 	shred_tile.pressed.connect(confirm)
 	_bottom.add_child(shred_tile)
 	# The window keeps its height: the card grid gives the tile its room.

@@ -1133,10 +1133,9 @@ func _show_aim_hint() -> void:
 	if _aim_hint == null:
 		return
 	_aim_hint.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	if Settings.pad_active:
-		_aim_hint.text = tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]
-	else:
-		_aim_hint.text = tr("Drop or click on a glowing target  ·  right-click cancels")
+	# Art pass W9F (§6.8, §12): input-aware words, one call (a pad never reads "click").
+	_aim_hint.text = UiTip.for_input(tr("Drop or click on a glowing target  ·  right-click cancels"),
+		tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")])
 	# Over the enemy side, above both the hand and the RAM row, shrunk to the room to the
 	# screen's edge (H24: at 1.6 it ran over "RAM 6/12" and off the screen).
 	var hand := _hand_box.get_global_rect()
@@ -2162,7 +2161,7 @@ func _build_hand(state: CombatState) -> void:
 		var c := _make_card(card, i, s)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
-		shown_tip(c, "%s\n%s" % [Codex.describe(card), tr("Drag it onto a glowing target, or click it and then the target.") if several else tr("Click to play.")])
+		shown_tip(c, "%s\n%s" % [Codex.describe(card), (UiTip.for_input(tr("Drag it onto a glowing target, or click it and then the target."), tr("Press it, then pick a glowing target.")) if several else UiTip.for_input(tr("Click to play."), tr("Press to play.")))])
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
