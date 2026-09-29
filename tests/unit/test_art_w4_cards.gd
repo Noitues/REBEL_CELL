@@ -78,6 +78,13 @@ func test_the_title_starts_at_label_and_rules_at_body_when_they_fit() -> void:
 	z.free()
 
 
+func test_hack_stock_is_hatched_so_it_reads_in_greyscale() -> void:
+	# Orchestrator ruling (ART_BIBLE 3.1): pink and paper stock look alike in greyscale.
+	assert_true(ZineCard.type_hatched(ZineCard.Variant.PINK), "HACK stock is hatched")
+	assert_false(ZineCard.type_hatched(ZineCard.Variant.PAPER), "WHEEL stock is plain")
+	assert_false(ZineCard.type_hatched(ZineCard.Variant.BLACK), "SYSTEM stock is plain")
+
+
 func test_card_colour_means_card_type() -> void:
 	var expect := {&"jolt": CardArt.Type.WHEEL, &"feather_touch": CardArt.Type.WHEEL, &"freeze": CardArt.Type.WHEEL,
 		&"firewall": CardArt.Type.SYSTEM, &"patch_up": CardArt.Type.SYSTEM, &"cache": CardArt.Type.SYSTEM, &"overdrive": CardArt.Type.SYSTEM,

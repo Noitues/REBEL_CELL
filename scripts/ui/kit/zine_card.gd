@@ -144,6 +144,10 @@ const PIP_R := 4.0
 const PIP_TAB := 1.9
 const DIECUT := 3.0
 const FOIL_HATCH := 5.0
+## HACK (pink) stock's type hatch (ART_BIBLE 3.1): spacing and stroke (px at scale 1.0) and alpha.
+const TYPE_HATCH_STEP := 7.0
+const TYPE_HATCH_W := 1.0
+const TYPE_HATCH_ALPHA := 0.14
 const GRAIN_ALPHA := 0.22
 const GLOSS_ALPHA := 0.16
 const SPECULAR_ALPHA := 0.75
@@ -875,6 +879,8 @@ func _draw_sticker() -> void:
 	draw_rect(rect, bg)
 	if bool(marks["grain"]):
 		draw_texture_rect(CardArt.grain_texture(), rect, true, Color(fg, GRAIN_ALPHA))
+	if type_hatched(variant):
+		_draw_type_hatch(rect, fg, s)
 	var art: Rect2 = L["art"]
 	_draw_art(art, bg, fg)
 	draw_rect(art, fg, false, WINDOW_LINE * s)
@@ -899,6 +905,27 @@ func _draw_sticker() -> void:
 	if has_focus():
 		_draw_focus(rect.grow(FOCUS_OFFSET * s))
 	_update_foil(L, stock == Stock.FOIL)
+
+
+## Whether a card colour carries the type hatch: HACK (pink) stock only (ART_BIBLE 3.1).
+static func type_hatched(p_variant: int) -> bool:
+	return p_variant == Variant.PINK
+
+
+## ART_BIBLE 3.1 (never colour alone): HACK (pink) stock carries a light 45 degree hatch, so
+## it reads apart from paper stock in greyscale. The art window is drawn over it.
+func _draw_type_hatch(rect: Rect2, fg: Color, s: float) -> void:
+	var step := TYPE_HATCH_STEP * s
+	var col := Color(fg, TYPE_HATCH_ALPHA)
+	var w := rect.size.x
+	var h := rect.size.y
+	var x := -h
+	while x < w:
+		var t0 := maxf(0.0, -x)
+		var t1 := minf(h, w - x)
+		if t1 > t0:
+			draw_line(rect.position + Vector2(x + t0, t0), rect.position + Vector2(x + t1, t1), col, TYPE_HATCH_W * s)
+		x += step
 
 
 ## The rarity pip: a dot (common), a diamond (uncommon) or a star (rare and up).
