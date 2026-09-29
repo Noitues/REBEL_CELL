@@ -2091,12 +2091,12 @@ const NET_GAP_SHARE := 0.3
 
 
 func _draw_net_line(r: Rect2, fs: int) -> void:
-	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, NET_PLATE_ALPHA))
+	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, plate_alpha(NET_PLATE_ALPHA)))
 	var x := r.position.x
 	var mid := r.position.y + r.size.y * 0.5
 	var f := Palette.mono()
 	for t in net_tokens():
-		var col := _col(Color(t["color"]))
+		var col := _col(hc_ink(Color(t["color"])))
 		if t.has("icon"):
 			StatIcon.draw(self, Vector2(x + fs * NET_ICON_SHARE * 0.5, mid), fs * 0.45, StringName(t["icon"]), col, true)
 			x += fs * NET_ICON_SHARE
@@ -2211,7 +2211,7 @@ func _draw_view() -> void:
 	var tps := wheel.ticks_per_slice()
 	var rot := shown_rotation()
 	# Platform so the wheel reads over the city.
-	draw_circle(center, radius + WheelBezel.BEZEL_W + PLATFORM_PAD, Color(Palette.NIGHT_SKY, 0.55))
+	draw_circle(center, radius + WheelBezel.BEZEL_W + PLATFORM_PAD, Color(Palette.NIGHT_SKY, plate_alpha(PLATFORM_ALPHA)))
 	if defeated():
 		# ANIM-R1: a beaten enemy leaves its empty spot with a DEFEATED stamp (a new enemy
 		# can never read as this one coming back).
@@ -3014,14 +3014,14 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var after := int(outcome.get("hp_after", combatant.hp)) if not replaying and is_nan(anim_hp) else roundi(shown_hp())
 	var hp_at := Vector2(hp_rect.position.x, hp_rect.end.y)
 	draw_string_outline(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HP_OUTLINE, Palette.NIGHT_SKY)
-	draw_string(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
+	draw_string(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hc_ink(hp_col))
 	if not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
 		var fs := _fs(NEXT_FONT_SIZE)
 		var ftext := String(lay["next_text"])
 		var fr: Rect2 = lay["next"]
-		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
+		var fcol := _col(hc_ink(LOSS_COLOR)) if after < combatant.hp else _col(hc_ink(HP_COLOR))
 		var lethal := bool(lay.get("lethal", false))
-		draw_rect(fr, _col(LOSS_COLOR) if lethal else Color(Palette.NIGHT_SKY, 0.8))
+		draw_rect(fr, _col(LOSS_COLOR) if lethal else Color(Palette.NIGHT_SKY, plate_alpha(NET_PLATE_ALPHA)))
 		if lethal:
 			draw_rect(fr, _col(Palette.PAPER), false, 1.5)
 			fcol = _col(Palette.PAPER)
@@ -3048,7 +3048,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		# ANIM-2: it slides up into place and fades in once a SEND IT has played out.
 		var reveal := clampf(last_turn_shown, 0.0, 1.0)
 		lr.position.y += (1.0 - last_turn_shown) * Motion.amplitude(&"last_turn_reveal")
-		draw_rect(lr, Color(Palette.NIGHT_SKY, 0.8 * reveal))
+		draw_rect(lr, Color(Palette.NIGHT_SKY, plate_alpha(NET_PLATE_ALPHA) * reveal))
 		var lines: PackedStringArray = lay["last_lines"]
 		for i in lines.size():
 			draw_string(Palette.mono(), Vector2(lr.position.x, lr.position.y + LAST_TURN_PAD * 0.5 + ls * (i + 1)), lines[i], HORIZONTAL_ALIGNMENT_CENTER, lr.size.x, ls, _col(Color(Palette.PAPER, 0.92 * reveal)))
@@ -3190,7 +3190,7 @@ static func icon_row_width(items: Array[Dictionary], fs: int) -> float:
 
 func _draw_icon_row(r: Rect2, fs: int, alpha: float) -> void:
 	var items := icon_row_items()
-	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, 0.8 * alpha))
+	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, plate_alpha(NET_PLATE_ALPHA) * alpha))
 	var shown: Array = []
 	for it in items:
 		var c := (it as Dictionary).duplicate()
@@ -3701,13 +3701,21 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 	for bx in boxes:
 		var chip: Dictionary = bx["chip"]
 		var cr: Rect2 = bx["rect"]
-		draw_rect(cr, fade.call(Color(chip.get("color", Palette.INK))))
+		var chip_fill := Color(chip.get("color", Palette.INK))
+		var chip_ink := Color(chip.get("ink", Palette.PAPER))
+		if Settings.high_contrast:
+			# §12 high contrast: a dark chip with its colour as a 2 px edge and TEXT_HI words (>= 7:1).
+			draw_rect(cr, fade.call(Palette.NIGHT_SKY))
+			draw_rect(cr, fade.call(chip_fill), false, HC_CHIP_EDGE)
+			chip_ink = Palette.TEXT_HI
+		else:
+			draw_rect(cr, fade.call(chip_fill))
 		var tx0 := cr.position.x + 4
 		if chip.has("glyph"):
 			StatIcon.draw_status(self, Vector2(tx0 + fs * CHIP_GLYPH_ROOM * 0.45, cr.position.y + chip_h * 0.5), fs * 0.45, int(chip["glyph"]),
-				fade.call(Color(chip.get("ink", Palette.PAPER))), bool(chip.get("glyph_on", true)))
+				fade.call(chip_ink), bool(chip.get("glyph_on", true)))
 			tx0 += fs * CHIP_GLYPH_ROOM
-		draw_string(Palette.mono(), Vector2(tx0, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
+		draw_string(Palette.mono(), Vector2(tx0, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(chip_ink))
 		var tick := _chip_tick(chip, shown)
 		if tick >= 0.0 and (bx["tick"] as Rect2).has_area():
 			_draw_tick((bx["tick"] as Rect2).get_center(), chip_h, tick, alpha)
@@ -3775,3 +3783,27 @@ static func title_row_h() -> float:
 
 ## The title row's height as a share of its lettering.
 const TITLE_ROW_SHARE := 1.35
+
+
+## §12 high contrast: the plates under the wheel's words turn opaque; otherwise `alpha`.
+static func plate_alpha(alpha: float) -> float:
+	return 1.0 if Settings.high_contrast else alpha
+
+
+## §12 high contrast: a number's colour lightened until it reads at 7:1 on the night plate.
+static func hc_ink(c: Color) -> Color:
+	if not Settings.high_contrast:
+		return c
+	var out := c
+	for k in HC_STEPS:
+		if Palette.contrast(out, Palette.NIGHT_SKY) >= HighContrast.HC_MIN_CONTRAST:
+			break
+		out = out.lightened(HC_STEP)
+	return out
+
+
+## The platform's alpha, a high-contrast chip's edge (px), and the lightening steps.
+const PLATFORM_ALPHA := 0.55
+const HC_CHIP_EDGE := 2.0
+const HC_STEPS := 10
+const HC_STEP := 0.15

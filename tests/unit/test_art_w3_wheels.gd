@@ -711,3 +711,35 @@ func test_heat_is_never_the_corp_colour_and_paper_amounts_read() -> void:
 	assert_true(src.contains("var num_col := Palette.heat_color(roundi(shown_heat), marks)"), "the number wears the Heat scale")
 	assert_gte(Palette.contrast(OutcomeRow.GOOD, Palette.NOTE_PAPER), 4.5, "a gain reads as ink on paper")
 	assert_gte(Palette.contrast(OutcomeRow.BAD, Palette.NOTE_PAPER), 4.5, "a cost reads as ink on paper")
+
+
+func test_the_polaroid_and_heat_poster_stay_compact() -> void:
+	var scene := await _combat()
+	var screen := Vector2(1280, 720)
+	for c in [scene.portrait, scene.heat_poster]:
+		var r := (c as Control).get_global_rect()
+		assert_lte(r.size.x * r.size.y, screen.x * screen.y * 0.12, "%s takes at most 12%% of the screen" % (c as Control).name)
+
+
+func test_high_contrast_makes_the_wheel_opaque_and_its_numbers_read() -> void:
+	var was := Settings.high_contrast
+	Settings.high_contrast = true
+	assert_eq(WheelView.plate_alpha(0.55), 1.0, "opaque plates")
+	for c in [Palette.HARM, Palette.GAIN, Palette.WARN]:
+		assert_gte(Palette.contrast(WheelView.hc_ink(c), Palette.NIGHT_SKY), HighContrast.HC_MIN_CONTRAST, "7:1 numbers")
+	Settings.high_contrast = was
+	assert_eq(WheelView.hc_ink(Palette.HARM), Palette.HARM, "unchanged without high contrast")
+	assert_lt(WheelView.plate_alpha(0.55), 1.0)
+
+
+func test_combat_fits_at_2() -> void:
+	var small := await _combat(&"compliance_officer", 1.0)
+	var r1: Array[float] = []
+	for v in small._views():
+		r1.append((v as WheelView)._radius())
+	var big := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
+	var k := 0
+	for v in big._views():
+		assert_gte((v as WheelView)._radius(), r1[k] * 0.7 - 0.5, "the wheel keeps 70% of its 1.0 size at 2.0")
+		k += 1
+	assert_eq(big.layout_violations(), [] as Array[String], "nothing over a wheel, no hint on a tag at 2.0")
