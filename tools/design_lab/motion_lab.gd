@@ -135,8 +135,9 @@ const DEMOS := {
 	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp (a SEND IT the operative does not survive).
 	&"defeat_stamp": ["scene", "send_lose"],
-	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy):
-	&"flight_land_pulse": ["pop", "sticker"],
+	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy): the top bar
+	# CARDS tag a flight lands on (HudStats.land_pulse).
+	&"flight_land_pulse": ["screen", "land_pulse"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -640,6 +641,10 @@ func _play_screen(what: String) -> void:
 					first.visible = false
 					_hud.items = HUD_AFTER.duplicate(true)
 			length = 1.0
+		"land_pulse":
+			await get_tree().process_frame
+			_hud.land_pulse(StatIcon.CARDS)
+			length = Motion.seconds(&"flight_land_pulse")
 		"stamp":
 			var b := Button.new()
 			b.text = "Pay them off (-20 Cycles)"
