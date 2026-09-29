@@ -122,6 +122,8 @@ const DEMOS := {
 	&"ride_perfect": ["scene", "send_hit"], &"break_crack": ["scene", "send_kill"], &"modem_sign_strike": ["screen", "modem"],
 	&"modem_sign_flicker": ["screen", "modem"], &"resolve_side_gap": ["scene", "send_both"], &"resolve_attacker_gap": ["scene", "send_both"],
 	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
+	# ANIM-R5 combat: the lost fight's DEFEAT stamp (a SEND IT the operative does not survive).
+	&"defeat_stamp": ["scene", "send_lose"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -717,6 +719,19 @@ func _play_scene(what: String) -> void:
 			if what == "send_kill":
 				_scene.engine.state().get_combatant(enemy).hp = DEMO_KILL_HP
 				_scene._refresh(_scene.engine.state())
+			_scene.skip_motion()
+			await get_tree().process_frame
+			_scene.end_turn()
+		"send_lose":
+			# ANIM-R5 combat: a SEND IT the operative does not survive (lab only: fights tried
+			# until the enemy hits, the operative's HP set to 1): DEFEAT lands on its wheel and stays.
+			for s in DEMO_BLOCK_SEEDS:
+				if _enemy_hits_player():
+					break
+				_scene.start_fight(SCENE_ENEMY, SCENE_SEED + s + 1)
+				_scene.skip_motion()
+			_scene.engine.state().player.hp = 1
+			_scene._refresh(_scene.engine.state())
 			_scene.skip_motion()
 			await get_tree().process_frame
 			_scene.end_turn()
