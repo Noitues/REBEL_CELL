@@ -8,6 +8,9 @@ extends CanvasLayer
 ## game state.
 
 signal line_spoken(speaker: int, text: String)
+## Art pass W9F: the player moved to another screen (`enter_screen`); a subtitle band that
+## held no line on the old screen folds back to one line.
+signal screen_entered(p_screen: String)
 
 const SPEAKER_NAMES := {RC.Voice.NARRATOR: "", RC.Voice.STREET_MERC: "OPERATIVE", RC.Voice.CORPO: "CORPORATE", # TR
 	RC.Voice.AI_OBSERVER: "OBSERVER", RC.Voice.DISPATCH: "DISPATCH"} # TR
@@ -348,6 +351,7 @@ func enter_screen(p_screen: String) -> void:
 	if p_screen == screen:
 		return
 	screen = p_screen
+	screen_entered.emit(p_screen)
 	# The new screen's own lines first, then the lines with no scope; other screens' end.
 	var own: Array[Dictionary] = []
 	var kept: Array[Dictionary] = []
@@ -553,10 +557,22 @@ func _fit_page(page: String) -> void:
 	if h > room + 0.5:
 		# Before clipping: this page a size smaller (accents stacked by pseudolocalisation, a
 		# taller fallback font); the next page starts at the text size again.
+		# Art pass W9F (§4.3 rule 2): never under `caption` x the text scale; a page still too
+		# tall there scrolls inside the label (following the typing) rather than shrink more.
 		var fs := text_label.get_theme_font_size("normal_font_size")
-		text_label.add_theme_font_size_override("normal_font_size", maxi(1, floori(fs * room / h)))
+		text_label.add_theme_font_size_override("normal_font_size", maxi(caption_px(), floori(fs * room / h)))
 		h = _page_height(page)
+	text_label.scroll_active = h > room + 0.5
+	text_label.scroll_following = text_label.scroll_active
 	text_label.custom_minimum_size.y = minf(h, room)
+
+
+## Art pass W9F (§4.2): the smallest subtitle size: `caption` x the text scale.
+func caption_px() -> int:
+	var scale := 1.0
+	if has_node("/root/Settings"):
+		scale = float(get_node("/root/Settings").text_scale)
+	return roundi(UiTheme.CAPTION * scale)
 
 
 func _subtitles_on() -> bool:
