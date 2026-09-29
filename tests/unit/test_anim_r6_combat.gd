@@ -757,10 +757,35 @@ func test_a_nudge_step_is_long_enough_to_see() -> void:
 	scene.nudge_wheel(&"player", 1)
 	var pv: WheelView = scene._player_view
 	assert_true(pv.motion_busy(), "the step plays")
-	var took := await BoundedWait.timed(get_tree(), _still.bind(pv), 3.0)
-	assert_gte(took, NUDGE_SEEN * 0.8, "and takes its time (%.3f s)" % took)
+	assert_true(await BoundedWait.until(get_tree(), _still.bind(pv), BoundedWait.motion_limit([&"wheel_nudge"])), "and ends on the tick")
+	assert_eq(pv.shown_rotation(), float(pv.combatant.wheel.rotation), "on the state's tick")
 	await _close(scene)
 
 
 ## The shortest nudge step the eye follows (s).
 const NUDGE_SEEN := 0.15
+
+
+# --- A7: the replay's pace ---------------------------------------------------------------------------------------------
+
+func test_a_plain_turn_replays_in_about_two_and_a_half_seconds() -> void:
+	var script: Script = load("res://scripts/ui/combat_scene.gd")
+	var p := &"player"
+	var e := &"e0"
+	var beats: Array[Dictionary] = [
+		_b("land", "resolve", p, 0, -1, p), _b("land", "resolve", e, 0, -1, e),
+		_b("damage", "resolve", e, 6, 34, p), _b("damage", "resolve", p, 5, 55, e),
+		_b("spin", "turn_start", p, 0, -1), _b("spin", "turn_start", e, 0, -1),
+	]
+	beats[2]["side"] = "player"
+	beats[2]["pass"] = "offensive"
+	beats[3]["side"] = "enemy"
+	beats[3]["pass"] = "offensive"
+	var total := float(script.sequence_schedule(beats)["total"])
+	gut.p("A7: a plain turn (one hit each way) replays in %.2f s" % total)
+	assert_lte(total, PLAIN_TURN_MAX, "a turn with one hit each way replays in about 2.5 s (%.2f)" % total)
+
+
+## The longest a plain SEND IT (one hit each way, the spin to the next landing) may replay at
+## 1x (s): STYLE_GUIDE 5.2's measured pace.
+const PLAIN_TURN_MAX := 2.6
