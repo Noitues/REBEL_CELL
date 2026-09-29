@@ -331,7 +331,7 @@ func ring(at: Vector2, radius: float, color: Color, id: StringName) -> void:
 ## victim. ANIM-R2: hits play one at a time (the schedule spaces them `hit_line` apart).
 ## ANIM-R3 A6c: the aim's multiplier rides too: with `from_label` (the slice's own value)
 ## that value shows at launch and shrinks into `label` (the hit it deals: "12" becomes
-## "6 ½" at half power) over `ride_swap` of the flight; `scale` > 1 draws the riding
+## "6" at half power) over `ride_swap` of the flight; `scale` > 1 draws the riding
 ## number bigger (a PERFECT landing).
 func hit_line(from: Vector2, to: Vector2, color: Color, label: String = "", from_label: String = "", scale: float = 1.0) -> void:
 	if not Motion.live(&"hit_line") or from.distance_to(to) < 1.0:
@@ -871,7 +871,7 @@ func _draw_line(s: Dictionary) -> void:
 		var from_label := String(s.get("from_label", ""))
 		if label != "":
 			# ANIM-R2: the hit's number rides with it. ANIM-R3 A6c: its aim shows: the slice's own
-			# value first, shrinking into what the hit deals ("12" -> "6 ½" at half power);
+			# value first, shrinking into what the hit deals ("12" -> "6" at half power; ANIM-R6 A4: never a fraction);
 			# bigger on a PERFECT landing.
 			var fs := roundi(NUMBER_FONT * Settings.text_scale * RIDE_FONT_SHARE * float(s.get("scale", 1.0)))
 			var shown := label

@@ -177,7 +177,9 @@ func test_the_tags_show_every_change_the_turn_brings() -> void:
 					texts.append(String(chip["text"]))
 				var all := " ".join(texts)
 				if not c.is_satellite and int(d["hp_after"]) != int(d["hp_before"]):
-					assert_string_contains(all, "HP", "%s HP change shown" % c.display_name)
+					# ANIM-R6 A4: a wheel's own HP change shows on its NEXT plate (the total), the
+					# hits that cause it on the attacker's tag.
+					assert_string_contains(all + " " + String(view.hp_layout()["next_text"]), "NEXT", "%s HP change shown" % c.display_name)
 				if not c.is_satellite and int(d["block_after"]) != int(d["block_before"]):
 					assert_string_contains(all, "BLOCK")
 				if not (d["statuses"] as Array).is_empty():

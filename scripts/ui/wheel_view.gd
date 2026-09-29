@@ -2351,7 +2351,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var hp_rect: Rect2 = lay["hp"]
 	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
-		var fs := _fs(HUB_FONT_SIZE + 3)
+		var fs := int(lay.get("next_fs", _fs(HUB_FONT_SIZE + 3)))
 		var ftext := String(lay["next_text"])
 		var fr: Rect2 = lay["next"]
 		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
@@ -2367,7 +2367,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 		if lethal:
 			# The skull sits in the gap before LETHAL.
-			var head := tr("NEXT %d") % maxi(0, after)
+			var head := String(lay.get("next_head", next_head(after)))
 			var gx := fr.position.x + 17 + Palette.mono().get_string_size(head + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			draw_skull(self, Vector2(gx, ay), fs * LETHAL_SKULL_SHARE, fcol)
 	if (lay["icons"] as Rect2).has_area():
@@ -2414,7 +2414,8 @@ func hp_layout() -> Dictionary:
 	out["lethal"] = lethal_forecast()
 	if after != combatant.hp or bool(out["lethal"]):
 		var fs := _fs(HUB_FONT_SIZE + 3)
-		var ftext := tr("NEXT %d") % maxi(0, after)
+		var ftext := next_head(after)
+		out["next_head"] = ftext
 		if bool(out["lethal"]):
 			# ANIM-R5 combat 3: the turn that takes this wheel to 0 says so by its HP (a skull
 			# and LETHAL on a solid red plate; the red cross over the hub struck through its
@@ -2422,10 +2423,15 @@ func hp_layout() -> Dictionary:
 			ftext += "    " + tr("LETHAL")
 		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
 		out["next_text"] = ftext
-		var x := center.x + tw * 0.5 + 8.0
-		# Kept inside the view (a long translation shifts it left, never off the edge).
-		x = minf(x, size.x - fw - 2.0)
+		var x0 := center.x + tw * 0.5 + 8.0
+		# Kept inside the view (a long translation shifts it left, never off the edge); ANIM-R6
+		# A4: it shrinks rather than slide onto the HP number (the turn's change made it longer).
+		while fs > ICON_ROW_MIN_FONT and x0 + fw + 2.0 > size.x:
+			fs -= 1
+			fw = Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
+		var x := minf(x0, size.x - fw - 2.0)
 		out["next"] = Rect2(Vector2(x, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		out["next_fs"] = fs
 	if last_turn != "":
 		var box := 2.0 * minf(center.x - left_reserve, size.x - center.x) - LAST_TURN_PAD * 2.0
 		var font := Palette.mono()
@@ -2451,6 +2457,14 @@ func hp_layout() -> Dictionary:
 		out["last_lines"] = lines
 		out["last_fs"] = ls
 	return out
+
+
+## ANIM-R6 A4: the NEXT plate's words for HP `after` SEND IT: the HP and, in brackets, the
+## turn's whole change to it ("NEXT 49 (-11)"): the one place the combined total shows (the
+## tags say each hit's own number and who deals it).
+func next_head(after: int) -> String:
+	var shown := maxi(0, after)
+	return tr("NEXT %d (%s)") % [shown, TextDb.signed(shown - combatant.hp)]
 
 
 ## ANIM-R3 A6f: what the last SEND IT did to this wheel as numbers (the scene's
@@ -2483,21 +2497,36 @@ func icon_row_items() -> Array[Dictionary]:
 	var hp := int(d.get("hp", 0))
 	if hit <= 0 and hp == 0:
 		return out
+	# ANIM-R6 A4: a turn no guard touched is its HP change, said as one ("-1 HP"; "sword 8 = 8"
+	# beside LAST TURN -1 HP read as two different numbers). A guard keeps the equation, and a
+	# hit that took the last HP says so ("→ 1 LEFT").
+	if soaked <= 0 and evaded <= 0:
+		if hp == 0:
+			return out
+		out.append({"icon": RC.SliceType.HEAL if hp > 0 else -1, "text": ("+%d " % hp if hp > 0 else "-%d " % absi(hp)) + tr("HP"),
+			"color": HP_COLOR if hp > 0 else LOSS_COLOR, "sep": ""})
+		return out
 	var through := maxi(0, hit - soaked - evaded)
-	if hit > 0:
-		out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
-		if soaked > 0:
-			out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
-		if evaded > 0:
-			out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
-		out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
+	var dealt := int(d.get("dealt", 0))
+	out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
+	if soaked > 0:
+		out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+	if evaded > 0:
+		out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+	out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
+	if dealt < through:
+		out.append({"icon": -1, "text": tr("%d LEFT") % dealt, "color": LOSS_COLOR, "sep": CLAMP_ARROW})
 	# The rest of the HP change (a heal, corruption): what the hits took off is `dealt`.
-	var rest := hp + int(d.get("dealt", 0))
-	if hit <= 0 or rest != 0:
+	var rest := hp + dealt
+	if rest != 0:
 		var hp_text := ("+%d" % rest) if rest > 0 else ("-%d" % absi(rest))
-		out.append({"icon": RC.SliceType.HEAL if rest > 0 else -1, "text": hp_text if hit <= 0 else hp_text + " " + tr("HP"),
-			"color": HP_COLOR if rest > 0 else LOSS_COLOR, "sep": "·" if hit > 0 else ""})
+		out.append({"icon": RC.SliceType.HEAL if rest > 0 else -1, "text": hp_text + " " + tr("HP"),
+			"color": HP_COLOR if rest > 0 else LOSS_COLOR, "sep": "·"})
 	return out
+
+
+## The sign before a hit's "N LEFT" when the wheel had fewer HP left than got through.
+const CLAMP_ARROW := "→"
 
 
 

@@ -681,7 +681,7 @@ func test_the_hit_shows_its_aim() -> void:
 		"source_slot": slot, "source_tier": RC.PrecisionTier.PARTIAL, "hp_after": enemy.hp - base / 2}, true)
 	var ride: Dictionary = scene.ride_for(hit, state)
 	assert_eq(String(ride["from"]), str(base), "the slice's own value first (%d)" % base)
-	assert_eq(String(ride["label"]), "%d %s" % [base / 2, scene.HALF_MARK], "then what it deals, marked half power")
+	assert_eq(String(ride["label"]), str(base / 2), "then what it deals, a whole number (ANIM-R6 A4: never a fraction)")
 	hit["source_tier"] = RC.PrecisionTier.PERFECT
 	hit["raw"] = base + base / 2
 	ride = scene.ride_for(hit, state)
@@ -690,7 +690,6 @@ func test_the_hit_shows_its_aim() -> void:
 	hit["raw"] = base
 	ride = scene.ride_for(hit, state)
 	assert_eq(String(ride["from"]), "", "a GOOD hit rides its plain number")
-	assert_true(Palette.display().has_char(scene.HALF_MARK.unicode_at(0)) or Palette.mono().has_char(scene.HALF_MARK.unicode_at(0)), "the half mark has a glyph")
 	await _close(scene)
 
 

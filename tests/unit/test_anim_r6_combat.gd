@@ -245,6 +245,132 @@ func test_a_turn_start_kill_lands_its_outcome_after_the_hp_roll() -> void:
 	assert_almost_eq(float(script.beat_delay(no_end, PackedFloat32Array([0.2]), 0, -1.0)), 0.2, 0.0001, "a fight that goes on: the beat's own time")
 
 
+# --- A4: every shown number is the applied one ------------------------------------------------------
+
+## The (through, applied) pairs the wheel-own hit chips of `chips` say: "HITS X 8" = (8, 8),
+## "HITS X 8 → 1 LEFT" = (8, 1). Sorted.
+static func _chip_hits(chips: Array) -> Array:
+	var re := RegEx.create_from_string("^HITS .* (\\d+)(?: → (\\d+) LEFT)?$")
+	var out: Array = []
+	for c in chips:
+		var m := re.search(String(c["text"]))
+		if m == null:
+			continue
+		var through := m.get_string(1).to_int()
+		out.append([through, m.get_string(2).to_int() if m.get_string(2) != "" else through])
+	out.sort()
+	return out
+
+
+## The same pairs from the resolve's own events for attacker `id`.
+static func _event_hits(events: Array[Dictionary], id: StringName) -> Array:
+	var per := {}
+	for e in events:
+		if String(e.get("type", "")) != "damage" or StringName(String(e.get("attacker", ""))) != id:
+			continue
+		var t := String(e.get("target", ""))
+		var p: Array = per.get(t, [0, 0])
+		p[0] += maxi(0, int(e["amount"]) - int(e.get("blocked", 0)) - int(e.get("shielded", 0)))
+		p[1] += int(e.get("hp_damage", 0))
+		per[t] = p
+	var out: Array = per.values()
+	out.sort()
+	return out
+
+
+## Checks every number the forecast now shows on `scene` against `events` / `resolved` (the
+## preview the forecast came from). Returns how many hit chips it checked.
+func _check_forecast(scene: Control, events: Array[Dictionary], resolved: CombatState, label: String) -> int:
+	var checked := 0
+	for v in scene._views():
+		var wv := v as WheelView
+		if wv.combatant == null or wv.intent.is_empty():
+			continue
+		var chips: Array = wv.intent.get("chips", [])
+		for c in chips:
+			var t := String(c["text"])
+			assert_false(t.contains("½"), "%s: no fraction on a chip (%s)" % [label, t])
+			assert_false(t.begins_with(tr("YOU TAKE")) or t.begins_with(tr("TAKES")), "%s: no second sum of the loss on a tag (%s)" % [label, t])
+		var shown := _chip_hits(chips)
+		assert_eq(shown, _event_hits(events, wv.combatant.id), "%s: %s's hit numbers are the applied ones (%s)" % [label, wv.combatant.id, chips.map(func(c: Dictionary) -> String: return String(c["text"]))])
+		checked += shown.size()
+		var rc := resolved.get_combatant(wv.combatant.id)
+		if rc != null and rc.hp != wv.combatant.hp:
+			var lay := wv.hp_layout()
+			assert_string_contains(String(lay["next_text"]), tr("NEXT %d (%s)") % [rc.hp, TextDb.signed(rc.hp - wv.combatant.hp)],
+				"%s: the NEXT plate carries the total (%s)" % [label, wv.combatant.id])
+	return checked
+
+
+func test_every_number_on_the_forecast_is_the_applied_one() -> void:
+	var checked := 0
+	for combat_seed in [1, 5, 9, 13]:
+		for enemy in [&"collections_agent", &"compliance_officer", &"dosage_dispenser"]:
+			var scene := await _combat(1.0, enemy, combat_seed)
+			var eng: CombatEngine = scene.engine
+			var st: CombatState = eng.state()
+			# The End Turn forecast.
+			var res: CombatResult = eng.preview_end_turn()
+			checked += _check_forecast(scene, res.events, res.state, "seed %d %s send" % [combat_seed, enemy])
+			# Each card's hover.
+			for i in st.hand.size():
+				scene._preview_card(i)
+				var action: CombatAction = null
+				for a in CardTargeting.options(eng.resolver, st, i):
+					if a.wheel_id == st.target_id and a.direction == 1:
+						action = a
+						break
+				if action == null:
+					var opts := CardTargeting.options(eng.resolver, st, i)
+					if opts.is_empty():
+						continue
+					action = opts[0]
+				var pr: CombatResult = eng.preview(action)
+				var turn: CombatResult = eng.preview_turn_after(action)
+				if pr == null or not pr.ok() or turn == null:
+					continue
+				var card := eng.content(st.hand[i]) as CardData
+				if card != null and CardTargeting.is_random(card):
+					continue
+				var all: Array[Dictionary] = pr.events.duplicate()
+				all.append_array(turn.events)
+				checked += _check_forecast(scene, all, turn.state, "seed %d %s card %d" % [combat_seed, enemy, i])
+			# A lethal turn: the clamped hit says what it really takes.
+			if _ending(scene, CombatState.Outcome.DEFEAT):
+				var lr: CombatResult = eng.preview_end_turn()
+				checked += _check_forecast(scene, lr.events, lr.state, "seed %d %s lethal" % [combat_seed, enemy])
+			await _close(scene)
+	assert_gt(checked, 10, "hit chips were checked (%d)" % checked)
+
+
+func test_a_clamped_hit_says_so_and_the_ride_is_whole() -> void:
+	var script: Script = load("res://scripts/ui/combat_scene.gd")
+	assert_eq(script.hit_chip_text("YOU", 8, 8), tr("HITS %s %d") % ["YOU", 8])
+	assert_eq(script.hit_chip_text("YOU", 8, 1), tr("HITS %s %d → %d LEFT") % ["YOU", 8, 1], "8 → 1 left")
+	var events: Array[Dictionary] = [{"type": "damage", "attacker": &"e0", "target": &"player", "amount": 10, "blocked": 2, "shielded": 0, "hp_damage": 1}]
+	var totals: Dictionary = script.hit_totals(events)
+	assert_eq(totals[&"e0"][&"player"], {"through": 8, "applied": 1}, "after the guard, and what it really took")
+	# The equation where it struck: sword 10 − shield 2 = 8 → 1 LEFT.
+	var b := {"kind": "damage", "source": &"e0", "target": &"player", "amount": 1, "raw": 10, "soaked": 2}
+	var eq: Array = script.hit_equation(b)
+	assert_eq(eq.map(func(it: Dictionary) -> String: return String(it["text"])), ["10", "2", "8", tr("%d LEFT") % 1])
+	# The icon row: no guard = one "-N HP"; a guard keeps the equation and its clamp.
+	var scene := await _combat()
+	var pv: WheelView = scene._player_view
+	pv.last_turn = "LAST TURN: -1 HP"
+	pv.last_turn_icons = {"hit": 8, "soaked": 0, "evaded": 0, "hp": -1, "dealt": 1}
+	assert_eq(pv.icon_row_items().map(func(it: Dictionary) -> String: return String(it["text"])), ["-1 " + tr("HP")], "'↓8 = 8' is now '-1 HP'")
+	pv.last_turn_icons = {"hit": 10, "soaked": 2, "evaded": 0, "hp": -1, "dealt": 1}
+	assert_eq(pv.icon_row_items().map(func(it: Dictionary) -> String: return String(it["text"])), ["10", "2", "8", tr("%d LEFT") % 1])
+	# A hit at half power rides a whole number.
+	var st: CombatState = scene.engine.state()
+	var hit := {"kind": "damage", "source": st.player.id, "target": st.enemies[0].id, "amount": 3, "raw": 3, "soaked": 0,
+		"source_slot": 0, "source_tier": RC.PrecisionTier.PARTIAL}
+	var ride: Dictionary = scene.ride_for(hit, st)
+	assert_eq(String(ride["label"]), "3", "no '3 ½'")
+	await _close(scene)
+
+
 # --- A5: the top bar's HP follows the fight -----------------------------------------------------------
 
 func _has_combat(net: Control) -> bool:

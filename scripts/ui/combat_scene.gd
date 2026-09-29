@@ -2451,7 +2451,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			continue
 		var lc := landing.get_combatant(id)
 		var title := _landing_title(landing, lc if lc != null else c)
-		var chips := _chips_for(o, id, state)
+		var chips := _chips_for(o, id, state, events)
 		var sats := {}
 		var landings := {}
 		for sat in state.satellites_of(id):
@@ -2563,34 +2563,47 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 ## Result chips for one combatant (and, on the operative, the run-wide results).
 ## ANIM-R3 A6b: each chip names the beats that make it happen ("beats": ForecastTicks
 ## filter), so a held forecast ticks each line as the replay does it.
-func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
+## ANIM-R6 A4: `events` (the resolve's) give each hit's applied number and where HP losses
+## no hit names come from.
+func _chips_for(o: CombatOutcome, id: StringName, state: CombatState, events: Array[Dictionary] = []) -> Array:
+	var hits := hit_totals(events)
+	var self_hp := hp_sources(events)
 	var chips: Array = []
 	var d := o.of(id)
 	if d.is_empty():
 		return chips
+	var me := state.get_combatant(id)
+	var mine_is_player := me != null and me.is_player
 	# Who takes the hits: "HITS YOU 14" on an enemy's tag, "HITS <NAME> 12" on yours.
-	var to: Dictionary = d.get("dealt_to", {})
-	for tgt in to:
+	# ANIM-R6 A4: the number is what the hits take off (after block and shield: the victim's
+	# "N BLOCKED" says the rest), and a hit that takes the last HP says so ("HITS YOU 8 → 1
+	# LEFT"): every number shown is the one the resolve applies.
+	var mine_hits: Dictionary = hits.get(id, {})
+	for tgt in mine_hits:
 		var victim := state.get_combatant(StringName(String(tgt)))
 		var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
-		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK,
+		var h: Dictionary = mine_hits[tgt]
+		chips.append({"text": hit_chip_text(who, int(h["through"]), int(h["applied"])), "color": CHIP_HIT, "ink": Palette.INK,
 			"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT,
+			"tooltip": clamp_tip(int(h["through"]), int(h["applied"])),
 			"beats": ForecastTicks.filter(["damage", "evaded"], id, StringName(String(tgt)))})
-	if to.is_empty() and int(d["dealt"]) > 0:
-		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK, "rank": CHIP_RANK_DEALT,
-			"beats": ForecastTicks.filter(["damage", "evaded"], id)})
-	var dhp := int(d["hp_after"]) - int(d["hp_before"])
-	if dhp < 0:
-		# Said as damage taken (H23: "−11 HP" under the player's DEFEND read as DEFEND costing
-		# 11 HP).
-		var victim_self := state.get_combatant(id)
-		var taker := tr("YOU TAKE") if victim_self != null and victim_self.is_player else tr("TAKES")
-		chips.append({"text": tr("%s %d HP") % [taker, -dhp], "color": CHIP_LOSS, "ink": Palette.PAPER,
-			"rank": CHIP_RANK_HURTS_YOU if victim_self != null and victim_self.is_player else CHIP_RANK_HP,
-			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
-	elif dhp > 0:
-		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
-			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
+	# ANIM-R6 A4: this wheel's own HP loss is never summed again on its own tag ("YOU TAKE 11"
+	# beside "HITS YOU 8" disagreed; the NEXT plate under its HP carries the total): only the
+	# losses no hit names say where they come from (a CORRUPTED slice's bite), and heals.
+	var bite := int(self_hp.get(id, {}).get("corrupted", 0))
+	if bite > 0:
+		var word := "%s %s" % [Palette.STATUS_GLYPHS.get(RC.Status.CORRUPTED, "?"), tr(String(Palette.STATUS_WORDS.get(RC.Status.CORRUPTED, "")))]
+		chips.append({"text": (tr("%s BITES YOU %d") if mine_is_player else tr("%s BITES IT %d")) % [word, bite], "color": CHIP_LOSS, "ink": Palette.PAPER,
+			"rank": CHIP_RANK_HURTS_YOU if mine_is_player else CHIP_RANK_HP, "beats": ForecastTicks.filter(["corrupted"], &"", id, true)})
+	var healed := int(self_hp.get(id, {}).get("heal", 0))
+	if healed > 0:
+		chips.append({"text": tr("+%d HP") % healed, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
+			"beats": ForecastTicks.filter(["heal"], &"", id, true)})
+	# Anything else that moves its HP (a boss phase's refill): said as an HP change.
+	var rest := int(d["hp_after"]) - int(d["hp_before"]) + int(self_hp.get(id, {}).get("hit", 0)) + bite - healed
+	if rest != 0:
+		chips.append({"text": tr("HP %s") % signed(rest), "color": CHIP_GAIN if rest > 0 else CHIP_LOSS, "ink": Palette.INK if rest > 0 else Palette.PAPER,
+			"rank": CHIP_RANK_HP})
 	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do).
 	if int(d.get("soaked", 0)) > 0:
 		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK,
@@ -2635,9 +2648,15 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		if sd.is_empty():
 			continue
 		var name := _name_of(sat).to_lower()
-		if int(sd["dealt"]) > 0:
-			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK,
-				"rank": CHIP_RANK_DEALT if sat.is_player else CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["damage", "evaded"], sat.id)})
+		var sat_hits: Dictionary = hits.get(sat.id, {})
+		for tgt in sat_hits:
+			# ANIM-R6 A4: whom it hits and what that takes off, as its host's hits say it.
+			var victim := state.get_combatant(StringName(String(tgt)))
+			var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
+			var h: Dictionary = sat_hits[tgt]
+			chips.append({"text": "%s %s" % [name, hit_chip_text(who, int(h["through"]), int(h["applied"]))], "color": CHIP_HIT, "ink": Palette.INK,
+				"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT, "tooltip": clamp_tip(int(h["through"]), int(h["applied"])),
+				"beats": ForecastTicks.filter(["damage", "evaded"], sat.id, StringName(String(tgt)))})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
 			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", sat.id)})
 		elif int(sd["hp_after"]) != int(sd["hp_before"]):
@@ -2683,6 +2702,69 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		elif o.outcome == CombatState.Outcome.DEFEAT:
 			chips.append({"text": tr("DEFEAT"), "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["end"])})
 	return ranked_chips(chips)
+
+
+## ANIM-R6 A4: per attacker, per victim, what its hits in `events` take off: {src: {tgt:
+## {through (after block and shield), applied (the HP it really took: less when the victim
+## had fewer HP left)}}}. Evaded hits take nothing and are left out.
+static func hit_totals(events: Array[Dictionary]) -> Dictionary:
+	var out := {}
+	for e in events:
+		if String(e.get("type", "")) != "damage":
+			continue
+		var src := StringName(String(e.get("attacker", "")))
+		var tgt := StringName(String(e.get("target", "")))
+		if src == &"" or tgt == &"":
+			continue
+		var per: Dictionary = out.get(src, {})
+		var h: Dictionary = per.get(tgt, {"through": 0, "applied": 0})
+		h["through"] = int(h["through"]) + maxi(0, int(e.get("amount", 0)) - int(e.get("blocked", 0)) - int(e.get("shielded", 0)))
+		h["applied"] = int(h["applied"]) + int(e.get("hp_damage", 0))
+		per[tgt] = h
+		out[src] = per
+	return out
+
+
+## ANIM-R6 A4: per combatant, what moves its HP in `events`: {id: {hit (HP its hits took),
+## corrupted (its CORRUPTED slices' bites), heal}}.
+static func hp_sources(events: Array[Dictionary]) -> Dictionary:
+	var out := {}
+	for e in events:
+		var t := String(e.get("type", ""))
+		var key := ""
+		var amount := 0
+		match t:
+			"damage":
+				key = "hit"
+				amount = int(e.get("hp_damage", 0))
+			"corrupted":
+				key = "corrupted"
+				amount = int(e.get("amount", 0))
+			"heal":
+				key = "heal"
+				amount = int(e.get("amount", 0))
+		if key == "":
+			continue
+		var id := StringName(String(e.get("target", "")))
+		var d: Dictionary = out.get(id, {"hit": 0, "corrupted": 0, "heal": 0})
+		d[key] = int(d[key]) + amount
+		out[id] = d
+	return out
+
+
+## ANIM-R6 A4: a hit chip's words: "HITS YOU 8", or, when the victim had fewer HP left than it
+## gets through, "HITS YOU 8 → 1 LEFT" (the HP it really takes; never a sum to do).
+static func hit_chip_text(who: String, through: int, applied: int) -> String:
+	if applied < through:
+		return String(TranslationServer.translate("HITS %s %d → %d LEFT")) % [who, through, applied]
+	return String(TranslationServer.translate("HITS %s %d")) % [who, through]
+
+
+## ANIM-R6 A4: the note a clamped hit's chip carries ("" when it isn't clamped).
+static func clamp_tip(through: int, applied: int) -> String:
+	if applied >= through:
+		return ""
+	return String(TranslationServer.translate("It gets %d through, but only %d HP are left to take.")) % [through, applied]
 
 
 ## ANIM-R1 C8: chips in order of importance, stable within a rank: damage to you, damage
@@ -3728,12 +3810,28 @@ static func hit_equation(b: Dictionary) -> Array:
 	var through := maxi(0, raw - soaked)
 	items.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
 	items.append({"icon": -1, "text": str(through), "color": WheelView.LOSS_COLOR if through > 0 else CHIP_GUARD, "sep": "="})
+	# ANIM-R6 A4: a victim with fewer HP left than gets through says so (the HP number that
+	# follows is what it really takes).
+	var applied := int(b["amount"])
+	if kind == "damage" and applied < through:
+		items.append(clamp_item(applied))
 	return items
 
 
-## ANIM-R3 A6c: what rides with a hit: {label (what it deals, "6 ½" at half power), from
-## (the slice's own value when the aim changed it, "" otherwise), scale (bigger on a
-## PERFECT landing)}.
+## ANIM-R6 A4: the "→ N LEFT" part of a hit that takes a victim's last HP (fewer than it gets
+## through), for an equation (CombatFxLayer.draw_equation).
+static func clamp_item(applied: int) -> Dictionary:
+	return {"icon": -1, "text": String(TranslationServer.translate("%d LEFT")) % applied, "color": WheelView.LOSS_COLOR, "sep": CLAMP_ARROW}
+
+
+## The sign before a clamped hit's "N LEFT" (drawing).
+const CLAMP_ARROW := "→"
+
+
+## ANIM-R3 A6c: what rides with a hit: {label (what it deals), from (the slice's own value
+## when the aim changed it, "" otherwise: "12" shrinks into "6" at half power), scale (bigger
+## on a PERFECT landing)}. ANIM-R6 A4: never a fraction ("6 ½" rode, then 6 came off): the
+## label is the whole number the hit deals.
 func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 	var kind := String(b["kind"])
 	var raw := int(b.get("raw", b["amount"])) if kind == "damage" else int(b["amount"])
@@ -3746,18 +3844,12 @@ func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
 		if slice != null and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
 			base = slice.base_output
-	if tier == RC.PrecisionTier.PARTIAL:
-		out["label"] = "%d %s" % [raw, HALF_MARK]
-	elif tier == RC.PrecisionTier.PERFECT:
+	if tier == RC.PrecisionTier.PERFECT:
+		# ANIM-R4 C5: a PERFECT hit's riding size is `ride_perfect`'s amplitude.
 		out["scale"] = Motion.amplitude(&"ride_perfect")
 	if base > 0 and base != raw and tier in [RC.PrecisionTier.PARTIAL, RC.PrecisionTier.PERFECT]:
 		out["from"] = str(base)
 	return out
-
-
-## ANIM-R3 A6c: the half-power mark after a hit's number (ANIM-R4 C5: a PERFECT hit's
-## riding size is `ride_perfect`'s amplitude, in the motion table).
-const HALF_MARK := "½"
 
 
 func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
