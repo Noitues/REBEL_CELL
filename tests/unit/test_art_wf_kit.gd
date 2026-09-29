@@ -17,6 +17,7 @@ func before_each() -> void:
 func after_each() -> void:
 	Settings.set_text_scale(1.0)
 	Settings.high_contrast = false
+	Motion.force_live = false
 
 
 func _holder() -> Control:
@@ -255,3 +256,33 @@ func test_a_polaroid_caption_abbreviates_by_w5s_rule() -> void:
 	assert_eq(String(p.caption_layout()["text"]), tr("R%d") % 12)
 	p.free()
 	Settings.set_text_scale(1.0)
+
+
+# --- 5. CombatFxLayer.stamp with an icon ------------------------------------------------------
+
+func _fx_layer() -> CombatFxLayer:
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var layer := CombatFxLayer.new()
+	holder.add_child(layer)
+	return layer
+
+
+func test_a_status_stamp_carries_its_stat_icon() -> void:
+	Motion.force_live = true
+	var layer := _fx_layer()
+	layer.stamp(Vector2(200, 200), "", Palette.HARM, 0.5, 0.0, StatIcon.for_status(RC.Status.CORRUPTED))
+	var s: Array = layer.sprites.filter(func(x: Dictionary) -> bool: return String(x["kind"]) == "stamp")
+	assert_eq(s.size(), 1, "one stamp")
+	assert_eq(s[0]["icon"], StatIcon.CORRUPTED, "the status's StatIcon rides the stamp")
+	# The old five-argument call still works (no icon: the bare disc or a glyph).
+	layer.stamp(Vector2(300, 200), "", Palette.GAIN, 0.5, 0.1)
+	s = layer.sprites.filter(func(x: Dictionary) -> bool: return String(x["kind"]) == "stamp")
+	assert_eq(s.size(), 2)
+	assert_eq(s[1]["icon"], &"", "no icon by default")
+	# Both draw (a frame past their delay) without an error.
+	await wait_frames(3)
+	layer.queue_redraw()
+	await wait_frames(1)
+	assert_true(StatIcon.ALL.has(StatIcon.for_status(RC.Status.CORRUPTED)), "a drawn kit icon")
+	Motion.force_live = false
