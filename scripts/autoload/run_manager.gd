@@ -83,7 +83,24 @@ func has_save() -> bool:
 func reset() -> void:
 	campaign = null
 	netrun = null
+	_restore_lookup()
 	load_profile()
+
+
+## ANIM-R5 (the coordinator's P18): a built REBEL_CELL corporation (build_generated) replaces
+## its template in the lookup and adds its generated elites, threats and raids; that belongs
+## to its campaign only. Forgetting the campaign (reset), starting another or resuming one
+## gives the lookup back its shipped content: a test that built the mirror left the built
+## corporation to every later test (its raids read differently: a node Disabled then Seized),
+## and a second REBEL_CELL campaign found the first one's build instead of the template.
+func _restore_lookup() -> void:
+	if _generated_in_lookup:
+		_generated_in_lookup = false
+		resolver = CombatEngine.make_resolver()
+
+
+## True while the lookup holds a built corporation (build_generated).
+var _generated_in_lookup: bool = false
 
 
 func config() -> CampaignConfigData:
@@ -128,6 +145,7 @@ func build_generated(corporation_id: StringName, snap: Dictionary) -> Corporatio
 	var template := ContentRegistry.get_content(corporation_id) as CorporationData
 	var built := RebelCellBuilder.build(template, snap, lookup(), config())
 	lookup().add(built)
+	_generated_in_lookup = true
 	return built
 
 
@@ -151,6 +169,7 @@ func recruit(class_id: StringName = DEFAULT_CLASS) -> Array[Dictionary]:
 
 func new_campaign(campaign_seed: int, corporation_id: StringName = DEFAULT_CORPORATION, ice_level: int = 0, home_variant_id: StringName = DEFAULT_HOME, class_id: StringName = DEFAULT_CLASS) -> CampaignState:
 	_ensure_resolver()
+	_restore_lookup()
 	corporation = lookup().get_content(corporation_id) as CorporationData
 	if not CampaignRules.corporation_available(profile, lookup(), corporation):
 		corporation = lookup().get_content(DEFAULT_CORPORATION) as CorporationData
@@ -471,6 +490,7 @@ func resume() -> bool:
 	var data := SaveService.load_dict(save_path())
 	if data.is_empty() or not data.has("campaign"):
 		return false
+	_restore_lookup()
 	campaign = CampaignState.from_dict(data["campaign"])
 	corporation = lookup().get_content(StringName(String(data.get("corporation_id", DEFAULT_CORPORATION)))) as CorporationData
 	if corporation != null and corporation.generated_from_profile and not campaign.generated.is_empty():

@@ -401,8 +401,11 @@ func feed_line(e: Dictionary) -> String:
 		"raid_end":
 			text = (tr(FEED_REPELLED) if bool(e.get("won", false)) else tr(FEED_ENDED)) % int(e.get("steps", 0))
 			if not results.is_empty():
+				# ANIM-R5 P18: the nodes counted by their outcome, as the verdict counts them (a node
+				# Disabled then Seized is one Seized node).
+				var l := RaidVerdict.losses(results)
 				text += " " + tr(FEED_TALLY) % [int(results.get("threats_destroyed", 0)), int(results.get("threats_reached_home", 0)),
-					(results.get("disabled", []) as Array).size(), (results.get("seized", []) as Array).size()]
+					int(l["disabled"]), int(l["seized"])]
 		"raid_won":
 			text = tr(FEED_WON) % TextDb.signed(int(e.get("schematics", 0)))
 		"campaign_lost":

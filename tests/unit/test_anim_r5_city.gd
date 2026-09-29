@@ -344,6 +344,57 @@ func test_the_raids_heat_line_agrees_with_its_verdict_across_the_sweep() -> void
 	assert_false(FileAccess.get_file_as_string("res://assets/text/strings.csv").contains("for the lost raid"), "the old line is gone from the catalogue")
 
 
+# --- P18: a built REBEL_CELL stays with its campaign; one outcome per fallen node -----------------
+
+func test_a_built_rebel_cell_leaves_the_lookup_with_its_campaign() -> void:
+	for u in [&"unlock_halcyon", &"unlock_meridian", &"unlock_orbital"]:
+		RunManager.profile.add_unlock(u)
+	for id in ["solace", "meridian", "halcyon", "orbital"]:
+		RunManager.profile.best_ice_by_corp[id] = 10
+	var template := RunManager.lookup().get_content(&"rebel_cell") as CorporationData
+	assert_true(template.generated_from_profile, "the shipped REBEL_CELL is the template")
+	var count := RunManager.lookup().ids().size()
+	# The sweeps' path: a REBEL_CELL campaign builds the mirror into the lookup.
+	RunManager.new_campaign(1, &"rebel_cell")
+	if RunManager.corporation.id == &"rebel_cell":
+		assert_ne(RunManager.lookup().get_content(&"rebel_cell"), template, "its campaign reads the built corporation")
+	RunManager.reset()
+	assert_eq(RunManager.lookup().get_content(&"rebel_cell"), template, "forgetting the campaign gives the lookup its template back")
+	assert_eq(RunManager.lookup().ids().size(), count, "and drops what the build added")
+	# A second campaign builds from the template, never from the first one's build.
+	RunManager.new_campaign(2, &"rebel_cell")
+	RunManager.new_campaign(3, &"solace")
+	assert_eq(RunManager.lookup().get_content(&"rebel_cell"), template, "another campaign starts on the shipped content")
+
+
+func test_a_node_disabled_then_seized_is_one_seized_node_everywhere() -> void:
+	_raid_campaign(&"solace", true)
+	var c := RunManager.campaign
+	var site: StringName = c.grid.claimed_ids()[0] if c.grid.claimed_ids()[0] != c.grid.home_site_id else c.grid.claimed_ids()[1]
+	var r := {"raid_id": "test", "steps_run": 3, "won": false, "campaign_lost": false, "home_before": 50, "home_after": 50,
+		"threats_destroyed": 0, "threats_reached_home": 0, "nodes": {String(site): {"before": 30, "after": 0, "outcome": "seized"}},
+		"disabled": [String(site)], "seized": [String(site)]}
+	assert_eq(RaidVerdict.of_result(r), CityMapOverlay.tr_word(RaidVerdict.SEIZED) % 1, "the verdict names the stronger loss once")
+	var panel := RaidPlayoutPanel.new(null)
+	add_child_autofree(panel)
+	panel.results = r
+	var tally := panel.feed_line({"type": "raid_end", "won": false, "steps": 3})
+	assert_string_contains(tally, tr(RaidPlayoutPanel.FEED_TALLY) % [0, 0, 0, 1], "the feed's tally counts it once, as Seized")
+	c.last_raid = r
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid_summary()
+	await _frames(2)
+	var site_label: String = hq.site_name(site)
+	var badges := 0
+	for b in hq._panel.find_children("*", "Badge", true, false):
+		var t := (b as Badge).text
+		if t.begins_with(site_label):
+			badges += 1
+			assert_string_contains(t, tr("SEIZED"), "the report says SEIZED")
+	assert_eq(badges, 1, "the report lists the node once")
+
+
 # --- P4: the campaign's end and the pause menu ---------------------------------------------------
 
 func test_the_campaign_end_is_a_see_through_page_with_a_verdict_stamp() -> void:

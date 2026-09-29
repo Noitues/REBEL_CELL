@@ -3081,7 +3081,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
-	city_overlay.avoid_controls([side])
+	# ANIM-R5 P6: the key too (a label and home's banner went under the MAP LEGEND at 1.6).
+	city_overlay.avoid_controls([side, legend])
 	var overlay := city_overlay
 	playout = RaidPlayoutPanel.new(overlay, PLAYOUT_LOG_SIZE)
 	feed.body.add_child(playout)
@@ -3090,6 +3091,11 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# every hit on home flies its number into the top bar's HOME, which rolls down.
 	playout.framer = _frame_fight.bind(overlay)
 	playout.event_shown.connect(_on_raid_event_shown)
+	# ANIM-R5 P8: the forecast stamp in the side column never hides a node of the raid: it
+	# turns see-through while one sits under it (it covered Scrub Records at 1.6).
+	_playout_stamp = forecast
+	if not wireframe.city.rebuilt.is_connected(_clear_stamp_of_nodes):
+		wireframe.city.rebuilt.connect(_clear_stamp_of_nodes)
 	if fx != null and Motion.animating():
 		hud_home_shown = int(r.get("home_before", c.grid.home_integrity))
 		_refresh_status()
@@ -3119,6 +3125,35 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	playout.play(events, instant)
 	if instant:
 		_after_playout()
+
+
+## ANIM-R5 P8: the playout's forecast stamp (null off the playout).
+var _playout_stamp: ForecastStamp = null
+## Its alpha while a node of the raid sits under it.
+const STAMP_OVER_NODE_ALPHA := 0.3
+
+
+## ANIM-R5 P8: the playout's forecast stamp goes see-through while any node of the raid is
+## under it (the camera moved: the city redrew), and back when none is.
+func _clear_stamp_of_nodes() -> void:
+	if _playout_stamp == null or not is_instance_valid(_playout_stamp) or not _playout_stamp.is_inside_tree() \
+			or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	_playout_stamp.modulate.a = STAMP_OVER_NODE_ALPHA if stamp_over_node(_playout_stamp, city_overlay) else 1.0
+
+
+## True when a node icon of `overlay` sits under `stamp` (global px).
+static func stamp_over_node(stamp: Control, overlay: CityMapOverlay) -> bool:
+	var box := stamp.get_global_rect()
+	var xf := overlay.get_global_transform()
+	for n: Dictionary in overlay.nodes:
+		var p := overlay.icon_at(n["id"])
+		if p.x == INF:
+			continue
+		var r := overlay.icon_radius(n) * xf.get_scale().x
+		if box.grow(r).has_point(xf * p):
+			return true
+	return false
 
 
 ## ANIM-R5 P2: the Heat band the Grid's corporate creep shows while a raid's playout holds
@@ -3200,6 +3235,7 @@ var hud_raids_shown: int = -1
 
 ## ANIM-R4 H11a: a raid event the feed has just told (RaidPlayoutPanel.event_shown).
 func _on_raid_event_shown(e: Dictionary) -> void:
+	_clear_stamp_of_nodes()
 	match String(e.get("type", "")):
 		"heat":
 			if hud_heat_shown >= 0 and e.has("after"):
@@ -3270,6 +3306,7 @@ const HOME_NUMBER_FONT := 30
 
 
 func _after_playout() -> void:
+	_playout_stamp = null
 	hud_home_shown = -1
 	hud_heat_shown = -1
 	hud_raids_shown = -1
@@ -3335,8 +3372,12 @@ func show_raid_summary() -> void:
 		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
 			tr("Integrity before and after, and whether the node held.")))
 		box.add_child(node_row)
+	# ANIM-R5 P18: each fallen node once, by its outcome (a node Disabled and then Seized in
+	# the same raid is SEIZED, as the verdict, its row and its stamp say; it was listed twice).
 	for key in ["seized", "disabled"]:
-		for id in r.get(key, []):
+		for id in ids:
+			if String(r["nodes"][id].get("outcome", "")) != key:
+				continue
 			box.add_child(Badge.new("%s %s" % [site_name(StringName(String(id))), tr(key.to_upper())], Palette.RESIST_GOLD, GLYPH_RULE,
 				tr("Seized: the corporation took the Site back.") if key == "seized" else tr("Disabled: repair the node on the Grid.")))
 	box.add_child(_icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK))

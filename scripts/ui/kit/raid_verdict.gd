@@ -35,7 +35,10 @@ static func words(lost: bool, home_lost: int, disabled: int, seized: int) -> Str
 
 ## The losses of a resolved raid (`RaidResult.to_dict`, campaign.last_raid, or a projection's
 ## fields): {"lost", "home", "disabled", "seized"}, counted from the nodes' own outcomes (the
-## words their labels and stamps show).
+## words their labels and stamps show). ANIM-R5 P18: each node counts once, by its outcome: a
+## node Disabled and then Seized in the same raid (it sits in both of the result's lists) is
+## one SEIZED node, the stronger loss, everywhere (the forecast, the result, the report, the
+## feed's tally); the feed still tells both of its lines as they happen.
 static func losses(r: Dictionary) -> Dictionary:
 	var disabled := 0
 	var seized := 0
