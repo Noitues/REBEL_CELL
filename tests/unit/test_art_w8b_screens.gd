@@ -511,3 +511,54 @@ func test_grid_labels_never_touch_for_every_corporation() -> void:
 				for j in range(i + 1, labels.size()):
 					assert_false((labels[i] as Rect2).intersects(labels[j]), "%s at %.1f: labels %d and %d overlap" % [corp, scale, i, j])
 			await _close(hq)
+
+
+# --- Item 7: raid setup and playout (§11 Raid; critique 22-26, 28, scr/10, gifs/15) -------------
+
+func test_the_raid_stamp_reads_live_then_result_and_continue_is_locked() -> void:
+	_raid_campaign()
+	var hq := _open(HQ)
+	await _frames(2)
+	hq.show_raid()
+	await _frames(4)
+	var before := Motion.force_live
+	Motion.force_live = true  # play the raid (headless would jump to the summary)
+	hq.fight_raid()
+	await _frames(2)
+	var stamp := hq._panel.find_child("PlayoutForecast", true, false) as ForecastStamp
+	assert_not_null(stamp)
+	assert_eq(stamp.caption, tr(hq.LIVE_CAPTION), "LIVE while the raid plays")
+	assert_false(stamp.caption.contains(tr("IF THE RAID\nRUNS NOW:")), "never the setup's forecast wording")
+	var cont := hq._panel.find_child("PlayoutContinue", true, false) as Button
+	assert_true(cont.disabled, "Continue waits")
+	assert_true(cont.get_theme_stylebox(&"disabled") is StyleBoxLocked, "in the theme's locked state, not a faded primary")
+	assert_eq(cont.modulate.a, 1.0)
+	hq.playout.finished.emit()
+	assert_eq(stamp.caption, tr(hq.RESULT_CAPTION), "RESULT the moment it ends")
+	Motion.force_live = before
+	await _close(hq)
+
+
+func test_the_raid_result_reads_without_colour() -> void:
+	assert_ne(RaidVerdict.color_of(false), Palette.CELL_PINK, "a loss is never the Cell's pink (§3.3)")
+	assert_eq(RaidVerdict.color_of(false), Palette.HARM)
+	assert_ne(RaidVerdict.icon_of(true), RaidVerdict.icon_of(false), "the verdict's glyph says it")
+	assert_ne(RaidVerdict.outcome_icon(true), RaidVerdict.outcome_icon(false), "each node's outcome has its glyph")
+	assert_ne(RaidVerdict.words(false, 5, 0, 0), RaidVerdict.words(false, 0, 0, 0), "and its words")
+
+
+func test_start_defense_is_the_raid_setups_primary_on_the_first_screen() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		_raid_campaign()
+		var hq := _open(HQ)
+		await _frames(2)
+		hq.show_raid()
+		await _frames(8)
+		var prim := _primaries(hq._panel)
+		assert_eq(prim.size(), 1, "one primary at %.1f" % scale)
+		assert_eq(prim[0].name, &"RunRaid", "START DEFENSE")
+		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(prim[0].get_global_rect()), "on the first screen at %.1f" % scale)
+		await _close(hq)

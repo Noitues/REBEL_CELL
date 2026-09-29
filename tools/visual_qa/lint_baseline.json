@@ -41,9 +41,6 @@
 		"res://scripts/ui/kit/raid_fx_layer.gd": {
 			"color": 8
 		},
-		"res://scripts/ui/kit/raid_playout_panel.gd": {
-			"font_override": 1
-		},
 		"res://scripts/ui/kit/terminal_window.gd": {
 			"font_override": 2
 		},

@@ -48,6 +48,9 @@ const PROJECTION_FOLLOW := 0.3
 const FORECAST_CAPTION := "IF THE RAID\nRUNS NOW:" # TR
 ## ANIM-5: the playout's forecast stamp, resolved: the caption over the real verdict.
 const RESULT_CAPTION := "RAID\nRESULT:" # TR
+## Art pass W8b (ART_BIBLE §11 Raid): the playout's stamp says LIVE while the raid plays
+## (never the setup's "IF THE RAID RUNS NOW"), and RESULT the moment it ends.
+const LIVE_CAPTION := "RAID\nLIVE:" # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
 ## Words the screens translate that sit in the core's data (H24 S1: exported by the "# TR"
@@ -2857,6 +2860,8 @@ func show_raid() -> void:
 	go.name = "RaidGo"
 	go.add_theme_constant_override("separation", 10)
 	side.add_child(go)
+	# W8b (§5.3 one primary, on the first screen at big text): START DEFENSE heads the column.
+	side.move_child(go, 0)
 	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends.
 	var run_btn := _icon(_button(tr(START_DEFENSE), fight_raid), StatIcon.PLAY)
 	run_btn.name = "RunRaid"
@@ -2978,7 +2983,7 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	facts.add_theme_constant_override("h_separation", 10)
 	facts.add_theme_constant_override("v_separation", 4)
 	row.add_child(facts)
-	var home_col := Palette.CELL_ACID if projection.home_after >= projection.home_before else Palette.CELL_PINK
+	var home_col := RaidVerdict.color_of(projection.home_after >= projection.home_before)
 	# H23 S5: every number says what it counts ("HOME 50 > 40", "STOPPED 0/2", "STRENGTH
 	# +0%"), and its tooltip says what it means.
 	var home_badge := Badge.new(tr("HOME %d → %d") % [projection.home_before, projection.home_after], home_col, GLYPH_HOME,
@@ -3324,7 +3329,7 @@ func _node_order_row(site_id: StringName, projection: RaidResolver.RaidResult, c
 	if not n.is_empty():
 		# H23 S5: the numbers are the node's integrity (HP); HOLDS / BREACHED said in the tip.
 		row.add_child(Badge.new(tr("HP %s → %s %s") % [n.get("before", "?"), n.get("after", "?"), outcome_word(String(n.get("outcome", "")))],
-			Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE, tr("%s's integrity (HP) now and after the raid: %s → %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
+			RaidVerdict.color_of(holds), GLYPH_NODE, tr("%s's integrity (HP) now and after the raid: %s → %s. %s") % [site_name(site_id), n.get("before", "?"), n.get("after", "?"), outcome_tip(String(n.get("outcome", "")))]))
 	var assets := c.grid.assets_on(site_id)
 	for i in assets.size():
 		var badge := Badge.new("", Palette.CELL_PINK, "", _display(assets[i]), assets[i])
@@ -3382,7 +3387,7 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 			continue
 		var res: Dictionary = nodes_res.get(String(n["id"]), {})
 		if not res.is_empty():
-			n["color"] = Palette.CELL_ACID if String(res["outcome"]) == "holds" else Palette.CELL_PINK
+			n["color"] = RaidVerdict.color_of(String(res["outcome"]) == "holds")
 			n["result"] = "%s → %s %s" % [res["before"], res["after"], outcome_word(String(res["outcome"]))]
 			n["label"] = site_name(n["id"])  # never the raw id (H20)
 			# H23 S5: the tag's numbers and word explained on hover.
@@ -3450,7 +3455,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# ANIM-R4 H3: the one verdict (RaidVerdict), the same words as the setup's forecast.
 	var verdict := RaidVerdict.of_result(r)
 	var clean := RaidVerdict.clean(r)
-	var forecast := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
+	var forecast := ForecastStamp.new(LIVE_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
 	forecast.name = "PlayoutForecast"
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -3458,8 +3463,12 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var feed := TerminalWindow.new(tr("RAID FEED // LIVE"), Palette.corp_color(c.corporation_id))
 	side.add_child(feed)
 	var cont := _button(tr("Continue"), _after_playout)
-	cont.theme_type_variation = &"HotButton"
+	cont.name = "PlayoutContinue"
+	# W8b (§6 Disabled, critique 25): while the raid plays Continue is the theme's locked
+	# state (DISABLED outline, a lock, the label 4.5:1), never a faded primary.
+	cont.theme_type_variation = UiTheme.PRIMARY
 	cont.disabled = true
+	cont.tooltip_text = UiTip.fold(tr("Skip"))
 	_set_panel(box, "raid_playout")
 	# The map as it stood before the raid (Seized nodes still yours until they flip).
 	var pre := before if before != null else c
@@ -3486,6 +3495,8 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		hud_raids_shown = -1
 		_refresh_status()
 		forecast.resolve(RESULT_CAPTION, verdict)
+		# W8b (§11 Raid): the end frames the verdict banner and home, not the last fight.
+		_frame_fight([RunManager.campaign.grid.home_site_id], overlay)
 		# The result's tint spreads from the nodes that flipped (NeonCity, one bake).
 		wireframe.city.release_influence()
 		if is_instance_valid(overlay):
@@ -3690,7 +3701,7 @@ func show_raid_summary() -> void:
 		tr("Home integrity before and after the raid.")).with_meter(int(r.get("home_after", 0)), c.grid.home_max_integrity).with_icon(StatIcon.HOME))
 	facts.add_child(Badge.new(tr("%d destroyed") % int(r.get("threats_destroyed", 0)), Palette.CELL_ACID, GLYPH_THREAT, tr("Threats your network destroyed.")))
 	if int(r.get("threats_reached_home", 0)) > 0:
-		facts.add_child(Badge.new(tr("%d reached home") % int(r.get("threats_reached_home", 0)), Palette.CELL_PINK, GLYPH_THREAT, tr("Threats that hit the home server.")))
+		facts.add_child(Badge.new(tr("%d reached home") % int(r.get("threats_reached_home", 0)), Palette.HARM, GLYPH_THREAT, tr("Threats that hit the home server.")))
 	var ids: Array = r.get("nodes", {}).keys()
 	ids.sort()
 	for id in ids:
@@ -3698,8 +3709,8 @@ func show_raid_summary() -> void:
 		var holds := String(n["outcome"]) == "holds"
 		var node_row := HFlowContainer.new()
 		node_row.add_child(_label(site_name(StringName(String(id)))))
-		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
-			tr("Integrity before and after, and whether the node held.")))
+		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], RaidVerdict.color_of(holds), GLYPH_NODE,
+			tr("Integrity before and after, and whether the node held.")).with_icon(RaidVerdict.outcome_icon(holds)))
 		box.add_child(node_row)
 	for key in ["seized", "disabled"]:
 		for id in r.get(key, []):

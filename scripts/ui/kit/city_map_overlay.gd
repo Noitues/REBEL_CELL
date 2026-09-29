@@ -1249,7 +1249,7 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 			var length := pts[k].distance_to(pts[k + 1])
 			if not is_finite(length) or length <= 0.0:
 				continue
-			CorpPattern.dashed_line(_c, pts[k], pts[k + 1], kind, col, width, _k(), march - run)
+			CorpPattern.dashed_line(_c, pts[k], pts[k + 1], kind, col, width * _k(), _k(), march - run)
 			run += length
 	elif _is_dashed(e):
 		var phase := fmod(anim_t * crawl_speed(), DASH_PERIOD) if e.get("flow", true) else 0.0
