@@ -104,9 +104,22 @@ static func any_typing(tree: SceneTree) -> bool:
 ## click on a button: the first click on City Grid or JACK IN while the pirate radio types)
 ## passes on to what it works. Only a press aimed at the words (a click on them, a key or
 ## pad button that works nothing) is consumed. While a PauseMenu is open presses are its.
+## ANIM-R5: by the one rule (MotionSkip.handle), which completes every running motion
+## (every typing label and the subtitle among them: this skip node is registered).
 func _input(event: InputEvent) -> void:
-	if not MotionSkip.is_press(event) or not typing(label) or MotionSkip.pause_open(self):
-		return
-	finish_all(get_tree())
-	if not MotionSkip.works_ui(event, self):
-		MotionSkip.consume(self, event)
+	if typing(label):
+		MotionSkip.handle(event, self)
+
+
+func _ready() -> void:
+	MotionSkip.register(self)
+
+
+## MotionSkip (ANIM-R5): the label is still typing.
+func motion_running() -> bool:
+	return typing(label)
+
+
+## MotionSkip (ANIM-R5): the label's words whole.
+func complete_motion() -> void:
+	finish(label)

@@ -248,9 +248,19 @@ func _input(event: InputEvent) -> void:
 		return
 	# ANIM-R4 C2 (MotionSkip.verdict): a press that works the screen ends them and passes on;
 	# an open pause menu keeps its presses.
-	var v := MotionSkip.verdict(event, self)
-	if v == MotionSkip.Verdict.IGNORE:
-		return
+	# ANIM-R5 (MotionSkip.handle): the press completes every running motion, not only these.
+	MotionSkip.handle(event, self)
+
+
+func _init() -> void:
+	MotionSkip.register(self)
+
+
+## MotionSkip (ANIM-R5): a flight or stamp plays.
+func motion_running() -> bool:
+	return not flights.is_empty()
+
+
+## MotionSkip (ANIM-R5): every flight and stamp at its end.
+func complete_motion() -> void:
 	finish()
-	if v == MotionSkip.Verdict.CONSUME:
-		MotionSkip.consume(self, event)

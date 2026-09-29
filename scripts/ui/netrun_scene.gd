@@ -115,6 +115,7 @@ const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_fa
 
 func _ready() -> void:
 	UiTheme.apply(self)
+	MotionSkip.register(self)  # ANIM-R5: the route move completes with every other motion
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
@@ -3530,17 +3531,27 @@ func _input(event: InputEvent) -> void:
 	# and is consumed before any control sees it.
 	# ANIM-R4 C2 (MotionSkip.verdict): a press that works the screen ends it and passes on; an
 	# open pause menu keeps its presses.
-	if not _travelling:
-		return
-	# ANIM-R5 B6: the route page's own controls are kept: a press on a choice, GRID VIEW or
-	# Save & quit ends the move and does nothing else (a choice pressed now reached the
-	# session after the move had opened the node, and was refused).
-	var v := MotionSkip.verdict(event, self, route_keep())
-	if v == MotionSkip.Verdict.IGNORE:
-		return
+	# ANIM-R5 B6: the route page's own controls are kept (`motion_keeps`): a press on a
+	# choice, GRID VIEW or Save & quit ends the move and does nothing else (a choice pressed
+	# now reached the session after the move had opened the node, and was refused).
+	# ANIM-R5 (MotionSkip.handle): the press completes every running motion, the move too.
+	if _travelling:
+		MotionSkip.handle(event, self)
+
+
+## MotionSkip (ANIM-R5): a route move plays.
+func motion_running() -> bool:
+	return _travelling
+
+
+## MotionSkip (ANIM-R5 B6): the route page's controls a press during the move never works.
+func motion_keeps() -> Array:
+	return route_keep()
+
+
+## MotionSkip (ANIM-R5): the move ends and the node's screen opens.
+func complete_motion() -> void:
 	_end_travel()
-	if v == MotionSkip.Verdict.CONSUME:
-		MotionSkip.consume(self, event)
 
 
 func _unhandled_input(event: InputEvent) -> void:

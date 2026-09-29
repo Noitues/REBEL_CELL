@@ -154,8 +154,8 @@ func test_the_press_predicate() -> void:
 			"res://scripts/ui/kit/menu_motion.gd", "res://scripts/ui/kit/typing.gd", "res://scripts/ui/kit/page_transition.gd",
 			"res://scripts/autoload/dialogue.gd", "res://scripts/ui/netrun_scene.gd"]:
 		var src := FileAccess.get_file_as_string(path)
-		assert_true(src.contains("MotionSkip.is_press(event)") or src.contains("MotionSkip.verdict(event"), "%s uses the shared predicate (ANIM-R4 C2: or the verdict built on it)" % path)
-		assert_true(src.contains("MotionSkip.consume("), "%s applies the consume rule" % path)
+		assert_true(src.contains("MotionSkip.is_press(event)") or src.contains("MotionSkip.verdict(event") or src.contains("MotionSkip.handle(event"), "%s uses the shared predicate (ANIM-R4 C2: or the verdict built on it; ANIM-R5: or handle)" % path)
+		assert_true(src.contains("MotionSkip.consume(") or src.contains("MotionSkip.handle(event"), "%s applies the consume rule (ANIM-R5: handle consumes)" % path)
 		assert_false(src.contains("InputEventJoypadButton and event.pressed"), "%s has no press test of its own" % path)
 
 
