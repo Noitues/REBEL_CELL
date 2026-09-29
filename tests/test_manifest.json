@@ -206,7 +206,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_hit_vfx.gd": {
-			"seconds": 1.0,
+			"seconds": 0.6,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass1.gd": {
@@ -414,7 +414,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_shader_library.gd": {
-			"seconds": 0.3,
+			"seconds": 0.1,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_simulation.gd": {
@@ -442,7 +442,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_vfx_tiers.gd": {
-			"seconds": 1.0,
+			"seconds": 0.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_wheel_math.gd": {
