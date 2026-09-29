@@ -57,9 +57,10 @@ errors), `<out>/lint.json` and `<out>/lint_report.md`, and with `--sheets` `<out
 crashed screen is recorded in the manifest and the run carries on with the next one (a crash relaunches Godot
 on the remaining screens). A full 43-screen combo takes about 65 s; the full baseline matrix took 17 min with `-j 3`.
 
-**Noise floor.** Two captures of the same build differ by at most 1.8% changed pixels (title, idle city
-lights), under 0.1% on most screens (`--fixed-fps 60`, and the harness waits for city bakes). Treat changes
-under 2% on title/grid screens as noise.
+**Noise floor.** Two captures of the same build differ by under 0.1% changed pixels on most screens
+(`--fixed-fps 60`, and the harness waits for city bakes). The title pages (title, codex) reach 2–5%,
+because the city pans behind the menu, and the grids and raid setup reach up to 1.5% (idle lights). Treat
+changes under those levels on those screens as noise.
 
 ## What changed (files)
 

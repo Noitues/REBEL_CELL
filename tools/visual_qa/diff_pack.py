@@ -23,6 +23,8 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 LABEL_H = 28
+## Pictures only one pack has are listed one by one up to this many, else counted per combo.
+ONLY_LISTED = 60
 BG = (18, 18, 24)
 FG = (235, 235, 235)
 
@@ -106,10 +108,18 @@ def main() -> int:
         L.append("| %.2f | %s | [%s](%s) | %s |" % (pct, rel, img, img, note))
     only_b = sorted(pb - pa)
     only_a = sorted(pa - pb)
-    if only_b:
-        L += ["", "## Only in before (%d)" % len(only_b), ""] + ["- %s" % r for r in only_b]
-    if only_a:
-        L += ["", "## Only in after (%d)" % len(only_a), ""] + ["- %s" % r for r in only_a]
+    for title, only in (("Only in before", only_b), ("Only in after", only_a)):
+        if not only:
+            continue
+        L += ["", "## %s (%d)" % (title, len(only)), ""]
+        if len(only) <= ONLY_LISTED:
+            L += ["- %s" % r for r in only]
+        else:
+            # A subset pack against the full baseline: count per combo folder instead.
+            per: dict[str, int] = {}
+            for r in only:
+                per[r.split("/")[0]] = per.get(r.split("/")[0], 0) + 1
+            L += ["- %s: %d pictures" % (k, per[k]) for k in sorted(per)]
     (out / "diff_report.md").write_text("\n".join(L) + "\n", encoding="utf-8", newline="\n")
     (out / "diff.json").write_text(json.dumps([{"changed_pct": round(p, 4), "picture": r, "image": i, "note": n}
                                                for p, r, i, n in rows], indent=1), encoding="utf-8")
