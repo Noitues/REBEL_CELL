@@ -152,7 +152,7 @@ const PRIO_FOCUS := 0
 const PRIO_KEY := 1
 const PRIO_REST := 2
 ## The label of the "you are here" node when it has none of its own.
-const HERE_LABEL := "YOU ARE HERE"
+const HERE_LABEL := "YOU ARE HERE" # TR
 ## Unreachable route nodes are drawn at this opacity.
 const DIM_ALPHA := 0.3
 ## The "you are here" pin: size (screen px) and the ring around the icon (px beyond it).
@@ -296,6 +296,12 @@ var screen_rect: Rect2 = Rect2():
 var drawn_tiers: Dictionary = {}
 ## ANIM-5: false while a RaidFxLayer draws the threats itself (moving along the streets).
 var draw_markers: bool = true
+## ANIM-R5 P8: the radius (screen px at scale 1) of the raid's threat tokens standing on the
+## marker rows (RaidFxLayer sets it; 0: the map's own small markers): labels keep off them.
+var token_radius: float = 0.0
+## ANIM-R5 P7: the bright packets running along the Cell's links; off once a raid's verdict
+## is in (they kept running toward CORE after "Raid over" and on the report).
+var packets: bool = true
 var _blocked_rects: Array[Rect2] = []
 var _blocked_controls: Array[Control] = []
 
@@ -1095,6 +1101,11 @@ func _draw_changes() -> void:
 	var e := Motion.entry(CHANGE_MOTION)
 	var rise := Motion.amplitude(CHANGE_MOTION) * k * (float(Tween.interpolate_value(0.0, 1.0, u, 1.0, e.trans, e.ease)) if e != null else u)
 	var a := clampf((1.0 - u) / change_fade_share(), 0.0, 1.0)
+	# ANIM-R5 P8: a caption over the numbers says they are the raid forecast changing ("45 →
+	# 50 ▲" over CORE read as its HP).
+	var cf := Palette.mono()
+	var cfs := maxi(1, roundi(CHANGE_CAPTION_FONT * Settings.text_scale * k))
+	var caption := tr_word(CHANGE_CAPTION)
 	for ch: Dictionary in _drop.get("changes", []):
 		var p := icon_at(StringName(ch["site"]))
 		if p.x == INF:
@@ -1102,13 +1113,26 @@ func _draw_changes() -> void:
 		var better := int(ch["to"]) >= int(ch["from"])
 		var col := Palette.CELL_ACID if better else Palette.CELL_PINK
 		var text := change_text(int(ch["from"]), int(ch["to"]))
-		var size := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * k
+		var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs)
+		var cw := cf.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs)
+		var size := Vector2(maxf(tw.x, cw.x), tw.y + cf.get_height(cfs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * k
 		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
 		var box := Rect2(at, size)
 		_hi.draw_rect(box.grow(2.0 * k), Color(0, 0, 0, 0.85 * a))
 		_hi.draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
 		_hi.draw_rect(box, Color(col, a), false, 2.0 * k)
-		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+		_hi.draw_string(cf, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_ascent(cfs)), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, Color(Palette.PAPER, 0.85 * a))
+		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + cf.get_height(cfs) + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+
+
+## ANIM-R5 P8: the forecast change's caption and its lettering (px at text scale 1.0).
+const CHANGE_CAPTION := "RAID FORECAST" # TR
+const CHANGE_CAPTION_FONT := 11
+
+
+## ANIM-R5 P8: the forecast change's caption as drawn (translated; tests).
+func change_caption() -> String:
+	return tr_word(CHANGE_CAPTION)
 
 
 ## The selection ring's breathing (screen px): `select_ring_pulse`'s amplitude, 0 when that
@@ -1209,7 +1233,7 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 		_chevrons(e, pts)
 	if _is_dashed(e):
 		return
-	elif e.get("flow", false):
+	elif e.get("flow", false) and packets:
 		# A bright packet running along the route.
 		var total := 0.0
 		for k in pts.size() - 1:
@@ -1896,7 +1920,8 @@ func label_lines(id: StringName) -> PackedStringArray:
 		return lines
 	var text := String(n.get("label", ""))
 	if text == "" and n.get("here", false):
-		text = HERE_LABEL
+		# ANIM-R5 P12: translated once here (the lines are drawn as given).
+		text = tr_word(HERE_LABEL)
 	# H24 K4: a node lit from its list row shows its name even where the map shows none.
 	if text == "" and id == hover_id:
 		text = String(n.get("name", ""))
@@ -1930,7 +1955,7 @@ func _layout_labels() -> Array[Dictionary]:
 	var sig := []
 	for n in nodes:
 		sig.append([n["id"], label_lines(n["id"]), _prio(n)])
-	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius()]
+	var key := [Settings.text_scale, selected_id, hover_id, hash(sig), var_to_str(markers), label_area(), label_blocks(), ring_radius(), token_radius]
 	if key == _labels_key:
 		return _labels_now
 	_labels_now = _place_labels()
@@ -1947,11 +1972,20 @@ func _place_labels() -> Array[Dictionary]:
 	var line_h := f.get_height(fs)
 	var icons: Array[Dictionary] = []
 	var marks: Array[Rect2] = []
+	var tok := token_radius * k
 	for n in nodes:
 		if not _roof(n["id"]).is_empty():
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+			# ANIM-R5 P8: a raid's threat tokens (RaidFxLayer: much bigger than the map's
+			# markers) are obstacles too: no label (CORE's included) is placed under one.
+			if tok > 0.0 and markers.has(n["id"]):
+				var count := (markers[n["id"]] as Array).size()
+				for i in count:
+					var slot := marker_slot(n["id"], i, count)
+					if slot.x != INF:
+						marks.append(Rect2(slot - Vector2(tok, tok), Vector2(tok, tok) * 2.0))
 	var area := label_area()
 	var blocks := label_blocks()
 	var ring_c := ring_centre()
@@ -1967,7 +2001,7 @@ func _place_labels() -> Array[Dictionary]:
 			var names := PackedStringArray()
 			for m in markers[n["id"]]:
 				names.append(String(m))
-			var half := MARKER_SIZE * k
+			var half := maxf(MARKER_SIZE * k, tok)
 			todo.append({"key": "%s#threats" % n["id"], "id": n["id"], "lines": PackedStringArray([", ".join(names)]), "col": Palette.PAPER, "prio": PRIO_FOCUS,
 				"at": _marker_row(n), "r": half + MARKER_STEP * k * 0.5 * (names.size() - 1)})
 	todo.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:

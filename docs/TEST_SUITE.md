@@ -118,6 +118,23 @@ A test that needs the triangles sets `NeonCity.emit_triangles = true` and puts i
 
 ### What bakes or threads run headless
 
+**The real bake is checked on a real renderer (ANIM-R5 P1)**, never headless (no
+RenderingDevice there: ANIM-R4's kept-viewport path drew nothing and no test saw it):
+
+```
+python tools/run_windowed.py --log <file> -- -s tools/design_lab/bake_smoke.gd
+```
+
+opens the HQ's City Grid, waits (bounded) until its city is covered by a finished bake, and
+checks every baked entry, first on the kept viewports (the game's path), then on the GPU
+copy: the texture is usable (valid RID, non-empty size, its viewport or copy alive), its
+picture read back is not empty and not one flat colour, and a Logger counts every engine or
+script error meanwhile (any fails the run). It prints `bake_smoke: PASS ...` and exits 0;
+then grep the log for ERROR (what prints at exit lands only there). Run it after any change
+to `CityBakeCache`, `BakedTexture` or NeonCity's baked drawing. `tools/design_lab/page_bake_probe.gd`
+(the same way; `-- --leave=20` for a quick player) prints how long each page of a run, the
+HQ, the Grid, a claim and a raid interlude show the city uncovered.
+
 `CityBakeCache.can_bake()` is false headless, so no city asks for a bake. With
 `CityBakeCache.simulate` (test_anim_r2_city) the cities take the baked path but
 `request` frees each painter at once: nothing builds, no worker task starts. Only two

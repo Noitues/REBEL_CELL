@@ -106,6 +106,7 @@ var _node_left: Dictionary = {}
 
 func _init(p_overlay: CityMapOverlay = null) -> void:
 	overlay = p_overlay
+	_ci = self
 	name = "RaidFx"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -134,7 +135,41 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	var nodes: Dictionary = results.get("nodes", {})
 	for id in nodes:
 		_node_left[String(id)] = int(nodes[id].get("before", 0))
+	# ANIM-R5 P8: the map's labels keep off the tokens standing on its nodes, and the moving
+	# parts (tints, traces, tokens, locks, hits) draw under the labels: a token passing a node
+	# never hides its name (CORE's label went under the token on it mid-raid).
+	if overlay != null:
+		overlay.token_radius = CityMapOverlay.MARKER_SIZE * TOKEN_SCALE * TOKEN_HALO
+		_ensure_under()
 	queue_redraw()
+
+
+## ANIM-R5 P8: the layer under the map's labels the moving parts draw on (the stamps, home's
+## bar, the numbers and the banner stay on this one, over the labels).
+var _under: Control = null
+## The canvas item the moving parts draw on (`_under`, else this layer).
+var _ci: CanvasItem = null
+
+
+func _ensure_under() -> void:
+	if _under != null and is_instance_valid(_under):
+		return
+	var labels: Control = overlay._tags if overlay != null else null
+	if labels == null or not is_instance_valid(labels):
+		return
+	_under = Control.new()
+	_under.name = "RaidFxUnder"
+	_under.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_under.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_under.draw.connect(_draw_under)
+	overlay.add_child(_under)
+	overlay.move_child(_under, labels.get_index())
+
+
+func _exit_tree() -> void:
+	if _under != null and is_instance_valid(_under):
+		_under.queue_free()
+	_under = null
 
 
 func _process(delta: float) -> void:
@@ -148,6 +183,8 @@ func _process(delta: float) -> void:
 			and overlay.city.showing_current_look():
 		_tint_fade_t0 = clock
 	queue_redraw()
+	if _under != null and is_instance_valid(_under):
+		_under.queue_redraw()
 
 
 ## Every beat at its end at once (Skip, reduce effects, headless).
@@ -400,8 +437,22 @@ func _draw() -> void:
 	if overlay == null or overlay.city == null:
 		return
 	var k := overlay.screen_k()
-	_draw_tints(k)
 	var at := _token_positions()
+	if _under == null or not is_instance_valid(_under):
+		_draw_moving(k, at)
+	for id in _stamps:
+		_draw_stamp(StringName(id), _stamps[id], k)
+	_draw_home(k)
+	# ANIM-R3 B5: numbers over the stamps (a stamp hid the hit on home under it).
+	for f in _fx:
+		if f["kind"] == "number":
+			_draw_number(f, k, at)
+	_draw_banner(k)
+
+
+## The moving parts (tints, traces, tokens, ICE locks, hits) on `_ci`.
+func _draw_moving(k: float, at: Dictionary) -> void:
+	_draw_tints(k)
 	for f in _fx:
 		if f["kind"] == "trace":
 			_draw_trace(f, at, k)
@@ -413,14 +464,14 @@ func _draw() -> void:
 				_draw_lock(f, at, k)
 			"hit":
 				_draw_hit(f, at, k)
-	for id in _stamps:
-		_draw_stamp(StringName(id), _stamps[id], k)
-	_draw_home(k)
-	# ANIM-R3 B5: numbers over the stamps (a stamp hid the hit on home under it).
-	for f in _fx:
-		if f["kind"] == "number":
-			_draw_number(f, k, at)
-	_draw_banner(k)
+
+
+func _draw_under() -> void:
+	if overlay == null or overlay.city == null or not is_visible_in_tree():
+		return
+	_ci = _under
+	_draw_moving(overlay.screen_k(), _token_positions())
+	_ci = self
 
 
 ## ANIM-R2 R6: the result banner over home: stamps on from `raid_result_banner`'s amplitude
@@ -471,32 +522,69 @@ func banner_rect() -> Rect2:
 	var clear := BANNER_CLEAR * k
 	var r_icon := CityMapOverlay.ICON_RADIUS_BIG * k
 	var bar_bottom := r_icon + (HOME_BAR_GAP + HOME_BAR.y) * k
-	var spots: Array[Vector2] = [
-		p + Vector2(0, -r_icon - clear - size.y * 0.5),
-		p + Vector2(0, -BANNER_LIFT * k - r_icon),
-		p + Vector2(0, bar_bottom + clear + size.y * 0.5),
-		p + Vector2(-r_icon - clear - size.x * 0.5, 0),
-		p + Vector2(r_icon + clear + size.x * 0.5, 0),
-	]
+	# ANIM-R5 P6: the stamp_rect spot search (NeonCity.stamp_rect): the spots round home,
+	# then the same ring of spots further out (BANNER_RINGS steps of the banner's height), the
+	# tilted box tested against every stamp, label, icon, home's bar and threat token; the first
+	# clear spot wins, else the least covered (at 1.6 the first ring's spots all touched CORE's
+	# label or the token standing on it).
+	var spots: Array[Vector2] = []
+	for ring in BANNER_RINGS:
+		var out := ring * (size.y + clear)
+		spots.append_array([
+			p + Vector2(0, -r_icon - clear - size.y * 0.5 - out),
+			p + Vector2(0, bar_bottom + clear + size.y * 0.5 + out),
+			p + Vector2(r_icon + clear + size.x * 0.5 + out, 0),
+			p + Vector2(-r_icon - clear - size.x * 0.5 - out, 0),
+			p + Vector2(r_icon + size.x * 0.5 + out, -r_icon - clear - size.y * 0.5 - out),
+			p + Vector2(-r_icon - size.x * 0.5 - out, -r_icon - clear - size.y * 0.5 - out),
+			p + Vector2(r_icon + size.x * 0.5 + out, bar_bottom + clear + size.y * 0.5 + out),
+			p + Vector2(-r_icon - size.x * 0.5 - out, bar_bottom + clear + size.y * 0.5 + out),
+		])
 	var avoid := banner_avoid()
-	var area := get_rect().grow(-clear)
+	# The map's own visible area, clear of the panels and the key over it (labels keep to it).
+	var area := overlay.label_area().grow(-clear)
+	avoid.append_array(overlay.label_blocks())
 	var best := Rect2()
 	var best_hits := INF
 	for c in spots:
 		var r := Rect2(c - size * 0.5, size)
 		# Kept inside the map (slid in from an edge).
 		r.position = r.position.clamp(area.position, (area.end - r.size).max(area.position))
+		var tilted := NeonCity._tilted_bounds(r, STAMP_TILT)
 		var hits := 0.0
 		for a in avoid:
 			var g := a.grow(clear * 0.5)
-			if r.intersects(g):
-				hits += r.intersection(g).get_area() + 1.0
+			if tilted.intersects(g):
+				hits += tilted.intersection(g).get_area() + 1.0
 		if hits < best_hits:
 			best_hits = hits
 			best = r
 			if hits == 0.0:
 				break
 	return best
+
+
+## ANIM-R5 P6: rings of spots the banner tries round home (the first at its edge).
+const BANNER_RINGS := 3
+
+
+## ANIM-R5 P6: the threat tokens standing now (local px: each token's halo box).
+func token_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if overlay == null:
+		return out
+	var k := overlay.screen_k()
+	var s := CityMapOverlay.MARKER_SIZE * k * TOKEN_SCALE * TOKEN_HALO
+	var at := _token_positions()
+	for id in at:
+		var t: Dictionary = _tokens[id]
+		var p: Vector2 = at[id]
+		if p.x == INF or clock < float(t.get("enter_at", -INF)):
+			continue
+		if t.has("dead_at") and clock >= float(t["dead_at"]) + float(t.get("dead_at_dur", 0.0)):
+			continue
+		out.append(Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0))
+	return out
 
 
 ## ANIM-R3 B5: what the banner keeps clear of: every stamp, node label and node icon (local
@@ -517,6 +605,7 @@ func banner_avoid() -> Array[Rect2]:
 	if p.x != INF:
 		var w := HOME_BAR.x * k
 		out.append(Rect2(p + Vector2(-w * 0.5, CityMapOverlay.ICON_RADIUS_BIG * k + HOME_BAR_GAP * k), Vector2(w, HOME_BAR.y * k)))
+	out.append_array(token_rects())
 	return out
 
 
@@ -634,18 +723,18 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 			var tp := _along_move(mv, _eased(&"raid_move", maxf(0.0, u - q * TRAIL_STEP)))
 			if tp.x != INF:
 				var fade := 1.0 - float(q) / (TRAIL_DOTS + 1)
-				draw_circle(tp, s * 0.45 * fade, Color(THREAT_RED, 0.75 * fade * alpha))
+				_ci.draw_circle(tp, s * 0.45 * fade, Color(THREAT_RED, 0.75 * fade * alpha))
 	var dia := _diamond(p, s)
 	# ANIM-R4 H11a: a dark halo with a paper rim under the diamond: high contrast on any node.
-	draw_circle(p, s * TOKEN_HALO, Color(TOKEN_HALO_COLOR, TOKEN_HALO_COLOR.a * alpha))
-	draw_arc(p, s * TOKEN_HALO, 0, TAU, 24, Color(Palette.PAPER, alpha), TOKEN_RIM * k)
-	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(0, 0, 0, 0.9 * alpha), 6.0 * k)
-	draw_colored_polygon(dia, Color(Palette.PAPER, alpha))
-	draw_polyline(dia + PackedVector2Array([dia[0]]), Color(THREAT_RED, alpha), 3.0 * k)
-	draw_circle(p, s * 0.28, Color(threat_color, alpha))
-	draw_arc(p, s * 0.28, 0, TAU, 12, Color(0, 0, 0, 0.8 * alpha), 1.0 * k)
+	_ci.draw_circle(p, s * TOKEN_HALO, Color(TOKEN_HALO_COLOR, TOKEN_HALO_COLOR.a * alpha))
+	_ci.draw_arc(p, s * TOKEN_HALO, 0, TAU, 24, Color(Palette.PAPER, alpha), TOKEN_RIM * k)
+	_ci.draw_polyline(dia + PackedVector2Array([dia[0]]), Color(0, 0, 0, 0.9 * alpha), 6.0 * k)
+	_ci.draw_colored_polygon(dia, Color(Palette.PAPER, alpha))
+	_ci.draw_polyline(dia + PackedVector2Array([dia[0]]), Color(THREAT_RED, alpha), 3.0 * k)
+	_ci.draw_circle(p, s * 0.28, Color(threat_color, alpha))
+	_ci.draw_arc(p, s * 0.28, 0, TAU, 12, Color(0, 0, 0, 0.8 * alpha), 1.0 * k)
 	if t.get("frozen", false):
-		draw_arc(p, FROST_RING * k, 0, TAU, 20, Color(Palette.NET_CYAN, 0.8 * alpha), 2.0 * k)
+		_ci.draw_arc(p, FROST_RING * k, 0, TAU, 20, Color(Palette.NET_CYAN, 0.8 * alpha), 2.0 * k)
 
 
 ## ANIM-R1 M4: the shot: the gun's node rings as it fires, the trace flies from the gun to
@@ -665,13 +754,13 @@ func _draw_trace(f: Dictionary, at: Dictionary, k: float) -> void:
 	var head := from.lerp(to, _eased(&"turret_trace", u))
 	var muzzle := 1.0 - u
 	if muzzle > 0.0:
-		draw_arc(from, MUZZLE_RING * k * (1.0 + 0.4 * u), 0, TAU, 24, Color(Palette.CELL_ACID, muzzle), 3.0 * k)
-	draw_line(from, head, Color(0, 0, 0, 0.6 * a), TRACE_WIDTH * 4.0 * k)
-	draw_line(from, head, Color(Palette.CELL_ACID, 0.45 * a), TRACE_WIDTH * 3.0 * k)
-	draw_line(from, head, Color(Palette.PAPER, a), TRACE_WIDTH * k)
+		_ci.draw_arc(from, MUZZLE_RING * k * (1.0 + 0.4 * u), 0, TAU, 24, Color(Palette.CELL_ACID, muzzle), 3.0 * k)
+	_ci.draw_line(from, head, Color(0, 0, 0, 0.6 * a), TRACE_WIDTH * 4.0 * k)
+	_ci.draw_line(from, head, Color(Palette.CELL_ACID, 0.45 * a), TRACE_WIDTH * 3.0 * k)
+	_ci.draw_line(from, head, Color(Palette.PAPER, a), TRACE_WIDTH * k)
 	if u < 1.0:
-		draw_circle(head, TRACE_WIDTH * 1.8 * k, Palette.PAPER)
-	draw_circle(from, 4.0 * k, Color(Palette.CELL_ACID, a))
+		_ci.draw_circle(head, TRACE_WIDTH * 1.8 * k, Palette.PAPER)
+	_ci.draw_circle(from, 4.0 * k, Color(Palette.CELL_ACID, a))
 
 
 func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
@@ -688,12 +777,12 @@ func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
 		if u >= 1.0:
 			return
 		var r := lerpf(rest * Motion.amplitude(&"ice_lock_ring"), rest, _eased(&"ice_lock_ring", u))
-		draw_arc(p, r, 0, TAU, 28, Color(Palette.NET_CYAN, 0.35 + 0.65 * u), 3.0 * k)
+		_ci.draw_arc(p, r, 0, TAU, 28, Color(Palette.NET_CYAN, 0.35 + 0.65 * u), 3.0 * k)
 		for q in 6:
 			var d := Vector2.from_angle(TAU * q / 6.0)
-			draw_line(p + d * r, p + d * (r + 4.0 * k), Palette.NET_CYAN, 1.5 * k)
+			_ci.draw_line(p + d * r, p + d * (r + 4.0 * k), Palette.NET_CYAN, 1.5 * k)
 	else:
-		draw_arc(p, rest * (1.0 + 0.3 * (1.0 - u)), 0, TAU, 20, Color(Palette.NET_CYAN, 1.0 - u), 2.0 * k)
+		_ci.draw_arc(p, rest * (1.0 + 0.3 * (1.0 - u)), 0, TAU, 20, Color(Palette.NET_CYAN, 1.0 - u), 2.0 * k)
 
 
 func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
@@ -704,10 +793,10 @@ func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
 	if p.x == INF:
 		return
 	var r := HIT_RING * k * lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), _eased(&"raid_hit_effect", u))
-	draw_arc(p, r, 0, TAU, 20, Color(Palette.PAPER, 1.0 - u), 2.5 * k)
+	_ci.draw_arc(p, r, 0, TAU, 20, Color(Palette.PAPER, 1.0 - u), 2.5 * k)
 	for q in 4:
 		var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
-		draw_line(p + d * r * 0.6, p + d * r * 1.2, Color(Palette.CELL_ACID, 1.0 - u), 2.0 * k)
+		_ci.draw_line(p + d * r * 0.6, p + d * r * 1.2, Color(Palette.CELL_ACID, 1.0 - u), 2.0 * k)
 
 
 func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
@@ -822,4 +911,4 @@ func _dashed(a: Vector2, b: Vector2, col: Color, width: float, dash: float) -> v
 	var dir := (b - a) / maxf(length, 0.001)
 	for q in mini(CityMapOverlay.DASHES_MAX, ceili(length / (dash * 2.0))):
 		var t := q * dash * 2.0
-		draw_line(a + dir * t, a + dir * minf(t + dash, length), col, width)
+		_ci.draw_line(a + dir * t, a + dir * minf(t + dash, length), col, width)

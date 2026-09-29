@@ -188,9 +188,13 @@ func _warm_step() -> void:
 ## Lets the Motion kit's table go before the engine checks for leaked resources at exit.
 ## ANIM-R2 R10: the city bakes too (running builds stopped and joined, their painters and
 ## viewports freed, every baked texture let go while the renderer still runs).
+## ANIM-R5 P17: and every resource a script's static variable caches (fonts, the terminal
+## material, the chevron), so none is freed with its script after the servers are gone.
 func _exit_tree() -> void:
 	CityBakeCache.shutdown()
 	Motion.use_config(null)
+	Palette.release_fonts()
+	UiTheme.release()
 
 
 func _notification(what: int) -> void:
@@ -562,18 +566,51 @@ func _show_connect() -> void:
 
 ## ANIM-R4 H11a: the note's stamp (RAID INCOMING and the corporation) under the bar,
 ## centred, tilted; hidden when there is no note.
+## ANIM-R5 P15: fitted to the screen: the tilted box never spans more than the screen less
+## NOTE_MARGIN a side; the lettering steps down to NOTE_FONT_MIN (x the text size), then a
+## line too long wraps between words (a long translation at 1.6 ran off both edges).
 func _show_note(vp: Vector2) -> void:
 	note_label.visible = _note != ""
 	if _note == "":
 		return
-	note_label.add_theme_font_size_override("font_size", roundi(NOTE_FONT * Settings.text_scale))
 	note_label.text = _note.to_upper()
-	note_label.size = Vector2.ZERO
-	note_label.size = note_label.get_combined_minimum_size()
+	var room := vp.x - NOTE_MARGIN * 2.0
+	var top := roundi(NOTE_FONT * Settings.text_scale)
+	var low := mini(top, roundi(NOTE_FONT_MIN * Settings.text_scale))
+	note_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	var fs := top
+	while true:
+		note_label.add_theme_font_size_override("font_size", fs)
+		note_label.custom_minimum_size = Vector2.ZERO
+		note_label.size = Vector2.ZERO
+		note_label.size = note_label.get_combined_minimum_size()
+		if note_span(note_label.size) <= room or fs <= low:
+			break
+		fs -= 1
+	if note_span(note_label.size) > room:
+		# Still too wide at the smallest lettering: the words wrap inside the room.
+		var a := deg_to_rad(absf(NOTE_TILT))
+		note_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var w := floorf((room - note_label.size.y * sin(a)) / cos(a))
+		note_label.custom_minimum_size = Vector2(w, 0.0)
+		note_label.size = Vector2(w, 0.0)
+		note_label.size = Vector2(w, note_label.get_combined_minimum_size().y)
 	note_label.pivot_offset = note_label.size * 0.5
 	note_label.rotation_degrees = NOTE_TILT
 	note_label.position = Vector2((vp.x - note_label.size.x) * 0.5, vp.y * 0.5 + CONNECT_GAP * 2.0 + CONNECT_BAR_H)
 	note_label.modulate.a = 1.0
+
+
+## ANIM-R5 P15: the smallest the stamp's lettering gets before it wraps (px at text scale
+## 1.0), and the screen edge it keeps clear of (px).
+const NOTE_FONT_MIN := 22
+const NOTE_MARGIN := 16.0
+
+
+## The width a note box of size `s` spans tilted by NOTE_TILT (px).
+static func note_span(s: Vector2) -> float:
+	var a := deg_to_rad(absf(NOTE_TILT))
+	return s.x * cos(a) + s.y * sin(a)
 
 
 ## When the CONNECTING line came up (msec).

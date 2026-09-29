@@ -205,6 +205,13 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   holds it. The SEND IT replay keeps presses on the fight's own controls (SEND IT, RESPIN,
   UNDO, the hand): they end the replay and do nothing else, so a turn is never played blind.
   In a menu the Settings key passes too (Esc while a pause-menu line types closes it).
+  ANIM-R5: the raid playout follows `MotionSkip.verdict` too and joins `MotionSkip.GROUP` (its
+  step ends with every other running motion): a press that works the screen ends the current
+  step and passes on (it used to pass without ending it). **One exception:**
+  a press that drives the playout itself (a focus move, which is how keys and the pad reach
+  1x / 2x / 4x and Skip, and a press on those buttons) passes without ending the step:
+  stepping onto 2x or pressing it speeds the raid up, it never skips the step being watched
+  (Skip makes its own jump).
   ANIM-R5: one press completes every skippable motion running on screen, not only the one
   whose helper saw it first: a stray key during a flight and a drop, or a page entrance and
   a flight, ends them all (it used to end one; a focus move already ended all). Every helper
@@ -378,9 +385,23 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   whole tilted banner stays on its poster. A route move shows the new choices (map labels and
   ROUTE window) as it starts; the walked route stays as a faint solid trail. A CLAIMED /
   SEIZED stamp takes the first spot round its Site that covers no label.
+- **Pages open on their city, words that agree (ANIM-R5)**: a bake is the viewport it was
+  rendered in, kept and drawn as it is; a bake that failed shows the silhouette, never an
+  empty map. The next page's city is baked behind the current one (the route's pages, the
+  route itself kept, a raid interlude's fights and the route after it, the HQ from a run's
+  end); a raid's playout keeps the pre-raid look (tint and Heat creep) until its verdict. A
+  claim stamps CLAIMED at once; the tint follows its bake. The raid's Heat line says why in
+  the verdict's terms (never "lost raid" beside HOME -5 · HOLDS); a node Disabled then Seized
+  is one SEIZED node everywhere. Home's banner and every label keep off the threat tokens;
+  the network's packets stop at the verdict. The forecast float over a node says RAID
+  FORECAST; the Grid's run rows open with IF CLEARED: and say OPENS 1 SITE, CLAIMABLE. The
+  Heat banner's consequence is a flat note beside the poster (mono, 12 px x the text size at
+  least), held `heat_banner`'s 3.6 s; the banner itself keeps off WANTED. The campaign's end
+  is a see-through page with a WON / LOST stamp landing; the pause menu is as tall as its
+  lines. A Polaroid caption is never cut (smaller, then two lines over a smaller picture).
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5", "— ANIM-R1 campaign and
   screens", "— ANIM-R3 city, raid, jack, heat and route", "— ANIM-R4 city, raid, heat, route
-  and HQ"); strips: `docs/timeline/motion/`.
+  and HQ", "— ANIM-R5 city, raid, HQ and bake"); strips: `docs/timeline/motion/`.
 
 ### 5.4 Drag and drop, HQ side and in the run (the Animation pass, ANIM-4 / ANIM-4b)
 - **Anything that moves between places drags**, with the same feel as a combat card

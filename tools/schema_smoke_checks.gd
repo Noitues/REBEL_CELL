@@ -1,0 +1,436 @@
+extends RefCounted
+## The schema smoke test's checks (every `scripts/data/` schema: validation, defaults, save
+## round trips). Run by tools/schema_smoke_test.gd, which loads this file only after the
+## content is loaded (ANIM-R5 P17: see that file). A schema change adds its check here.
+
+
+## Runs every check; returns the number that failed (each prints what it saw).
+func run() -> int:
+	return _batch1() + _batch2() + _batch3()
+
+
+func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:
+	var e := EffectData.new()
+	e.type = t; e.target = target; e.amount = amount; e.ring_scope = scope; e.multiplier = mult
+	return e
+
+func _batch1() -> int:
+	var fails := 0
+	# Slices
+	var atk := SliceData.new(); atk.id = &"attack"; atk.slice_type = RC.SliceType.ATTACK; atk.base_output = 6
+	var crit := SliceData.new(); crit.id = &"crit"; crit.slice_type = RC.SliceType.CRIT; crit.base_output = 12
+	var def := SliceData.new(); def.id = &"defend"; def.slice_type = RC.SliceType.DEFEND; def.target_rule = RC.TargetRule.SELF; def.base_output = 5
+	var miss := SliceData.new(); miss.id = &"miss"; miss.slice_type = RC.SliceType.MISS
+	# Mirror firmware
+	var mirror := FirmwareData.new(); mirror.id = &"mirror"; mirror.neighbor_rule = RC.NeighborRule.MIRROR
+	var leech := FirmwareData.new(); leech.id = &"leech"
+	leech.allowed_slice_types = [RC.SliceType.ATTACK]
+	var t := TriggeredEffectData.new(); t.min_tier = RC.PrecisionTier.GOOD
+	t.effects = [_mk_effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 1)]
+	leech.triggered_effects = [t]
+	# Breaker hub
+	var hub := HubCoreData.new(); hub.id = &"breaker_core"
+	var hook := TriggeredEffectData.new(); hook.trigger = RC.Trigger.ON_PERFECT
+	hook.effects = [_mk_effect(RC.EffectType.RETRIGGER, RC.EffectTarget.SELF)]
+	hub.perfect_hook = hook
+	# Wheel
+	var w := WheelData.new(); w.hub = hub
+	var layout = [crit, atk, atk, atk, def, miss]
+	var slots: Array[WheelSlotData] = []
+	for s in layout:
+		var sl := WheelSlotData.new(); sl.slice = s; slots.append(sl)
+	slots[1].firmware = leech
+	slots[4].firmware = leech   # should fail: leech only fits ATTACK
+	w.slots = slots
+	var errs := w.validate()
+	print("Breaker wheel errors (expect 1): ", errs)
+	if errs.size() != 1: fails += 1
+	# Satellite wheel with 3 slices
+	var sat := WheelData.new(); sat.slice_count = 3
+	var sslots: Array[WheelSlotData] = []
+	for s in [atk, def, atk]:
+		var sl := WheelSlotData.new(); sl.slice = s; sslots.append(sl)
+	sat.slots = sslots
+	print("Satellite errors (expect 0): ", sat.validate(), " ticks/slice=", sat.ticks_per_slice())
+	if sat.validate().size() != 0: fails += 1
+	# Boss with 3 pointers, bad 4-slice
+	var bad := WheelData.new(); bad.slice_count = 4
+	print("4-slice errors (expect >=1): ", bad.validate())
+	# Clean Signal daemon
+	var cs := DaemonData.new(); cs.id = &"clean_signal"
+	var ct := TriggeredEffectData.new(); ct.trigger = RC.Trigger.ON_PERFECT; ct.consecutive_required = 3
+	ct.effects = [_mk_effect(RC.EffectType.MODIFY_HEAT, RC.EffectTarget.CAMPAIGN, -2)]
+	cs.triggered_effects = [ct]
+	print("Clean Signal errors (expect 0): ", ct.validate())
+	# Bad effects
+	var spin_bad := _mk_effect(RC.EffectType.SPIN, RC.EffectTarget.TARGET_WHEEL, 4)
+	print("Spin on outer ring (expect 1): ", spin_bad.validate())
+	if spin_bad.validate().size() != 1: fails += 1
+	# Card
+	var nudge := CardData.new(); nudge.id = &"nudge"
+	nudge.effects = [_mk_effect(RC.EffectType.NUDGE, RC.EffectTarget.TARGET_WHEEL, 1, RC.RingScope.INNER)]
+	print("Card errors (expect 0): ", nudge.validate())
+	# Site
+	var site := SiteData.new(); site.id = &"t2_a"; site.objective = RC.SiteObjective.HEAT_REDUCTION; site.heat_change = 5
+	print("Site errors (expect 1): ", site.validate())
+	# Save round trip
+	var err := ResourceSaver.save(w, "user://smoke_breaker_wheel.tres")
+	var loaded: WheelData = load("user://smoke_breaker_wheel.tres")
+	print("Save=", err, " reload slots=", loaded.slots.size(), " slot1 fw=", loaded.slots[1].firmware.id)
+	# Instantiate every schema
+	for c in [NetworkNodeData, DefenseAssetData, ThreatData, InfiltrationNodeData, AdjacencyBonusData, RingSegmentData, InnerRingData]:
+		c.new()
+	return fails
+
+
+func _slice(id, t, out, rule := RC.TargetRule.POINTER) -> SliceData:
+	var s := SliceData.new(); s.id = id; s.slice_type = t; s.base_output = out; s.target_rule = rule
+	return s
+
+func _wheel(slices: Array, ptrs := PackedInt32Array([0])) -> WheelData:
+	var w := WheelData.new(); w.slice_count = slices.size(); w.pointer_ticks = ptrs
+	var slots: Array[WheelSlotData] = []
+	for s in slices:
+		var sl := WheelSlotData.new(); sl.slice = s; slots.append(sl)
+	w.slots = slots
+	return w
+
+func _site(id, tier, links: Array[StringName], obj := RC.SiteObjective.NONE, ex := RC.ExploitType.NONE) -> SiteData:
+	var s := SiteData.new(); s.id = id; s.tier = tier; s.links = links; s.objective = obj; s.exploit_type = ex
+	return s
+
+func _batch2() -> int:
+	var fails := 0
+	var atk := _slice(&"atk", RC.SliceType.ATTACK, 6)
+	var def := _slice(&"def", RC.SliceType.DEFEND, 5, RC.TargetRule.SELF)
+	var miss := _slice(&"miss", RC.SliceType.MISS, 0)
+	var crit := _slice(&"crit", RC.SliceType.CRIT, 12)
+
+	# Class
+	var hub := HubCoreData.new(); hub.id = &"breaker_core"
+	var hook := TriggeredEffectData.new(); hook.trigger = RC.Trigger.ON_PERFECT
+	var re := EffectData.new(); re.type = RC.EffectType.RETRIGGER; re.target = RC.EffectTarget.SELF
+	hook.effects = [re]; hub.perfect_hook = hook
+	var cls := ClassData.new(); cls.id = &"breaker"
+	cls.starting_wheel = _wheel([crit, atk, atk, atk, def, miss]); cls.starting_wheel.hub = hub
+	var card := CardData.new(); card.id = &"spin"; cls.starting_deck = [card]
+	var r1 := RankRewardData.new(); r1.rank = 1
+	var r1b := RankRewardData.new(); r1b.rank = 1
+	cls.rank_rewards = [r1, r1b]
+	var ce := cls.validate(); print("Class (expect 1 dup rank): ", ce)
+	if ce.size() != 1: fails += 1
+
+	# Boss with satellites + phases (cyclic EnemyData <-> SatelliteSpawnData)
+	var sat := EnemyData.new(); sat.id = &"drone"; sat.wheel = _wheel([atk, def, atk])
+	var sp := SatelliteSpawnData.new(); sp.satellite = sat
+	var p1 := BossPhaseData.new(); p1.hp_threshold_pct = 0.66; p1.pointer_behavior = RC.PointerBehavior.MULTIPLY; p1.pointer_ticks = PackedInt32Array([0, 15])
+	var p2 := BossPhaseData.new(); p2.hp_threshold_pct = 0.33; p2.pointer_behavior = RC.PointerBehavior.ORBIT; p2.orbit_ticks_per_turn = 2
+	var boss := EnemyData.new(); boss.id = &"renewal_engine"; boss.is_boss = true
+	boss.wheel = _wheel([atk, atk, def, def, crit, miss]); boss.spawns = [sp]; boss.phases = [p1, p2]
+	var be := boss.validate(); print("Boss (expect 0): ", be)
+	if be.size() != 0: fails += 1
+	boss.phases = [p2, p1]
+	print("Boss wrong order (expect 1): ", boss.validate())
+
+	# Grid: home, 3 chains, T3, boss. Also a bad T1 with two T2s.
+	var sites: Array[SiteData] = [
+		_site(&"home", 1, [&"a1", &"b1", &"c1"]),
+		_site(&"a1", 1, [&"a2"]), _site(&"a2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.INTEL),
+		_site(&"b1", 1, [&"b2"]), _site(&"b2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.BREACH),
+		_site(&"c1", 1, [&"c2"]), _site(&"c2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.VIRUS),
+		_site(&"t3", 3, [&"boss"]), _site(&"boss", 4, [], RC.SiteObjective.BOSS),
+	]
+	var grid := CityGridData.new(); grid.sites = sites; grid.home_site_id = &"home"; grid.boss_site_id = &"boss"
+	var ge := grid.validate(); print("Grid (expect 0): ", ge, " warnings: ", grid.size_warnings())
+	if ge.size() != 0: fails += 1
+	sites[1].links = [&"a2", &"b2"]
+	print("Grid T1 double (expect 1): ", grid.validate())
+	sites[1].links = [&"a2"]
+	sites[7].links = []  # cut t3 -> boss
+	print("Grid unreachable (expect 1): ", grid.validate())
+	sites[7].links = [&"boss"]
+
+	# Story + corp
+	var beat := StoryBeatData.new(); beat.id = &"b"
+	var paths: Array[StoryPathData] = []
+	for i in 5:
+		var p := StoryPathData.new(); p.id = StringName("p%d" % i); p.beats = [beat, beat, beat]; p.finale = beat
+		paths.append(p)
+	var corp := CorporationData.new(); corp.id = &"solace"; corp.city_grid = grid; corp.final_boss = boss; corp.story_paths = paths
+	boss.phases = [p1, p2]
+	var coe := corp.validate(); print("Corp (expect 0): ", coe)
+	if coe.size() != 0: fails += 1
+
+	# Config
+	var cfg := CampaignConfigData.new()
+	var h1 := HeatThresholdData.new(); h1.heat = 25; h1.kind = RC.ThresholdKind.MAJOR; h1.id = &"heat_25"
+	var h2 := HeatThresholdData.new(); h2.heat = 10; h2.id = &"heat_10"
+	cfg.heat_thresholds = [h1, h2]
+	print("Config wrong order (expect 1): ", cfg.validate())
+	# ANIM-R4 H5: a threshold's id keys its text for translation.
+	var h3 := HeatThresholdData.new(); h3.heat = 50
+	cfg.heat_thresholds = [h2, h1, h3]
+	print("Config threshold without id (expect 1): ", cfg.validate())
+	if cfg.validate().size() != 1: fails += 1
+
+	# Home server
+	var core := NetworkNodeData.new(); core.node_type = RC.NetworkNodeType.HOME_SERVER
+	var hs := HomeServerVariantData.new(); hs.id = &"std"; hs.core = core; hs.internal_nodes = [NetworkNodeData.new()]
+	hs.internal_links = [Vector2i(0, 1), Vector2i(0, 5)]
+	print("Home server (expect 1 bad link): ", hs.validate())
+
+	# Save/load the whole corp graph
+	var err := ResourceSaver.save(corp, "user://smoke_solace.tres")
+	var loaded: CorporationData = load("user://smoke_solace.tres")
+	print("Save=", err, " boss phases=", loaded.final_boss.phases.size(), " sat=", loaded.final_boss.spawns[0].satellite.id, " sites=", loaded.city_grid.sites.size())
+	for c in [ExploitData, TerminalEventData, EventChoiceData, RaidData, RaidWaveData, RuleModifierData, IceLevelData, ProfileUnlockData, HeatGatedEffectData]:
+		c.new()
+	return fails
+
+
+## M0: CampaignConfigData carries the whole of GDD Section 11 (shop, costs, RAM ranges).
+func _batch3() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	var ce := cfg.validate(); print("Config defaults (expect 0): ", ce)
+	if ce.size() != 0: fails += 1
+	cfg.card_price_range = Vector2i(75, 50)
+	cfg.node_upgrade_costs = PackedInt32Array()
+	ce = cfg.validate(); print("Config bad range + empty upgrades (expect 2): ", ce)
+	if ce.size() != 2: fails += 1
+	var err := ResourceSaver.save(cfg, "user://smoke_config.tres")
+	var loaded: CampaignConfigData = load("user://smoke_config.tres")
+	print("Save=", err, " reload card_price_range=", loaded.card_price_range, " respin=", loaded.respin_ram_cost)
+	if loaded.card_price_range != Vector2i(75, 50) or loaded.respin_ram_cost != 4: fails += 1
+	return fails + _batch4()
+
+
+## Vertical-slice fixes (2026-09-24): CardData.offered (Bug card), HubCoreData.drone
+## (DEPLOY template), RankRewardData.ring_segment_options, WheelState migrations.
+func _batch4() -> int:
+	var fails := 0
+	var bug := CardData.new(); bug.id = &"bug"; bug.offered = false; bug.exhaust = true
+	bug.effects = [_mk_effect(RC.EffectType.DRAIN_RAM, RC.EffectTarget.SELF, 1)]
+	print("Bug card (expect 0 errors, offered=false): ", bug.validate(), " ", bug.offered)
+	if bug.validate().size() != 0 or bug.offered: fails += 1
+	var atk := _slice(&"atk", RC.SliceType.ATTACK, 3)
+	var def := _slice(&"def", RC.SliceType.DEFEND, 3, RC.TargetRule.SELF)
+	var drone := EnemyData.new(); drone.id = &"drone"; drone.hp = 5; drone.wheel = _wheel([atk, def])
+	var hub := HubCoreData.new(); hub.id = &"botnet_core"; hub.max_drones = 3; hub.drone = drone
+	var seg := RingSegmentData.new(); seg.id = &"seg_echo"
+	var r3 := RankRewardData.new(); r3.rank = 3; r3.ring_segment_options = [seg]
+	var err := ResourceSaver.save(hub, "user://smoke_hub.tres")
+	var loaded: HubCoreData = load("user://smoke_hub.tres")
+	print("Hub save=", err, " drone=", loaded.drone.id, " max=", loaded.max_drones, " rank3 options=", r3.ring_segment_options.size())
+	if err != OK or loaded.drone == null or loaded.max_drones != 3: fails += 1
+	var w := WheelState.from_wheel_data(drone.wheel)
+	w.pending_pointer_ticks = PackedInt32Array([5, 20])
+	var back := WheelState.from_dict(w.to_dict())
+	print("WheelState pending pointers round trip: ", back.pending_pointer_ticks)
+	if back.pending_pointer_ticks != PackedInt32Array([5, 20]): fails += 1
+	if not back.apply_pending_pointers() or back.pointer_ticks != PackedInt32Array([5, 20]): fails += 1
+	return fails + _batch5()
+
+
+## Vertical-slice fixes batch 2: NetrunBoostData, StoryBeatData.triggers_raid, GridState
+## home-variant capacity and frozen links, CampaignState boosts/objectives/home variant.
+func _batch5() -> int:
+	var fails := 0
+	var empty := NetrunBoostData.new(); empty.id = &"nothing"
+	print("Empty boost (expect 1): ", empty.validate())
+	if empty.validate().size() != 1: fails += 1
+	var boost := NetrunBoostData.new(); boost.id = &"cache"; boost.cost = 10; boost.cycles = 40
+	var cfg := CampaignConfigData.new(); cfg.netrun_boosts = [boost]
+	print("Config with a 10-Schematic boost (expect 0): ", cfg.validate())
+	if cfg.validate().size() != 0: fails += 1
+	boost.cost = 99
+	print("Config with a 99-Schematic boost (expect 1): ", cfg.validate())
+	if cfg.validate().size() != 1: fails += 1
+	var beat := StoryBeatData.new(); beat.id = &"b"; beat.triggers_raid = true
+	var err := ResourceSaver.save(beat, "user://smoke_beat.tres")
+	var loaded: StoryBeatData = load("user://smoke_beat.tres")
+	print("Beat save=", err, " triggers_raid=", loaded.triggers_raid)
+	if err != OK or not loaded.triggers_raid: fails += 1
+	var g := GridState.new(); g.home_site_id = &"home"; g.home_asset_slots = 3; g.home_built_in = ["turret"]
+	g.freeze_link(&"home", &"c1")
+	var back := GridState.from_dict(g.to_dict())
+	print("GridState round trip: slots=", back.home_asset_slots, " built_in=", back.home_built_in, " frozen=", back.is_link_frozen(&"c1", &"home"))
+	if back.home_asset_slots != 3 or back.home_built_in != ["turret"] or not back.is_link_frozen(&"c1", &"home"): fails += 1
+	var c := CampaignState.new(); c.pending_boosts = [&"cache"]; c.disabled_objectives = [&"scrub"]; c.home_variant_id = &"home_bunker"
+	var cb := CampaignState.from_dict(c.to_dict())
+	print("CampaignState round trip: ", cb.pending_boosts, cb.disabled_objectives, cb.home_variant_id)
+	if cb.pending_boosts != [&"cache"] or cb.disabled_objectives != [&"scrub"] or cb.home_variant_id != &"home_bunker": fails += 1
+	var cfg2 := CampaignConfigData.new()
+	print("Config home repair / retaliation defaults: ", cfg2.home_repair_cost_per_point, " ", cfg2.retaliation_min_heat)
+	if cfg2.home_repair_cost_per_point != 1.0 or cfg2.retaliation_min_heat != 50: fails += 1
+	print("Config damage scale default: ", cfg2.enemy_damage_scale_per_tier)
+	if cfg2.enemy_damage_scale_per_tier != 1.6: fails += 1
+	return fails + _m6()
+
+
+## M6 class roster: HubCoreData drones_persist / max_ram_bonus / free_resistance_nudges,
+## Status.PARASITE, config parasite_multiplier / station_deploy_asset, RunState.drones and
+## WheelState.respin_skipped (freeze cooldown).
+func _m6() -> int:
+	var fails := 0
+	var hub := HubCoreData.new(); hub.id = &"rig"; hub.drones_persist = true; hub.max_ram_bonus = 1; hub.free_resistance_nudges = 2
+	var err := ResourceSaver.save(hub, "user://smoke_hub_m6.tres")
+	var loaded: HubCoreData = load("user://smoke_hub_m6.tres")
+	print("M6 hub save=", err, " persist=", loaded.drones_persist, " ram=", loaded.max_ram_bonus, " nudges=", loaded.free_resistance_nudges)
+	if err != OK or not loaded.drones_persist or loaded.max_ram_bonus != 1 or loaded.free_resistance_nudges != 2: fails += 1
+	print("Status.PARASITE = ", RC.Status.PARASITE)
+	if RC.Status.PARASITE != 4: fails += 1
+	var cfg := CampaignConfigData.new()
+	print("Config parasite multiplier default: ", cfg.parasite_multiplier, " station asset: ", cfg.station_deploy_asset)
+	if cfg.parasite_multiplier != 0.5 or cfg.station_deploy_asset != null: fails += 1
+	var r := RunState.new(); r.drones = [{"source_id": "botnet_drone", "hp": 4, "dock_slot": 1}]
+	var rb := RunState.from_dict(r.to_dict())
+	print("RunState drones round trip: ", rb.drones)
+	if rb.drones.size() != 1 or int(rb.drones[0]["hp"]) != 4: fails += 1
+	var w := WheelState.new(); w.respin_skipped = true
+	var wb := WheelState.from_dict(w.to_dict())
+	print("WheelState respin_skipped round trip: ", wb.respin_skipped)
+	if not wb.respin_skipped: fails += 1
+	return fails + _m8()
+
+
+## M8 corporations: RaidData.corporation_id / replaces (a corporation's raid standing in
+## for a shared Heat-threshold raid).
+func _m8() -> int:
+	var fails := 0
+	var raid := RaidData.new(); raid.id = &"raid_x"; raid.corporation_id = &"meridian"; raid.replaces = &"raid_heat_25"
+	var err := ResourceSaver.save(raid, "user://smoke_raid_m8.tres")
+	var loaded: RaidData = load("user://smoke_raid_m8.tres")
+	print("M8 raid save=", err, " corp=", loaded.corporation_id, " replaces=", loaded.replaces)
+	if err != OK or loaded.corporation_id != &"meridian" or loaded.replaces != &"raid_heat_25": fails += 1
+	var plain := RaidData.new()
+	print("Raid defaults: corp='", plain.corporation_id, "' replaces='", plain.replaces, "'")
+	if plain.corporation_id != &"" or plain.replaces != &"": fails += 1
+	return fails + _m11()
+
+
+## M11 REBEL_CELL: CampaignState.generated (usage snapshot) and ProfileState usage stats.
+func _m11() -> int:
+	var fails := 0
+	var c := CampaignState.new(); c.generated = {"classes": ["ghost"], "daemons": [], "nodes": ["relay"], "assets": ["turret"]}
+	var back := CampaignState.from_dict(c.to_dict())
+	print("CampaignState.generated round trip: ", back.generated)
+	if back.generated.get("classes", []) != ["ghost"]: fails += 1
+	var p := ProfileState.new(); p.record_usage("class", &"rigger", 3)
+	var pb := ProfileState.from_dict(p.to_dict())
+	print("Profile usage round trip: ", pb.top_used("class", 1))
+	if pb.top_used("class", 1) != [&"rigger"]: fails += 1
+	return fails + _m12()
+
+
+## M12: config assist_free_nudges / assist_hp_multiplier, CampaignState.assist.
+func _m12() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	print("Config assist defaults: ", cfg.assist_free_nudges, " ", cfg.assist_hp_multiplier)
+	if cfg.assist_free_nudges != 1 or cfg.assist_hp_multiplier != 1.25: fails += 1
+	var c := CampaignState.new(); c.enable_assist(1, 1.25)
+	var back := CampaignState.from_dict(c.to_dict())
+	print("CampaignState.assist round trip: ", back.assist)
+	if not back.is_assisted(): fails += 1
+	return fails + _h2()
+
+
+## Horizontal pass 2: config mirror_* / final_final_ice / major_heat_levels(),
+## CampaignState.start_class_id.
+func _h2() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	print("Config mirror defaults: ", cfg.mirror_output_factor, " ", cfg.mirror_threat_integrity, " ", cfg.mirror_threat_damage_bonus, " final ", cfg.final_final_ice)
+	if cfg.mirror_output_factor != 1.5 or cfg.mirror_threat_integrity != 1.5 or cfg.mirror_threat_damage_bonus != 2 or cfg.final_final_ice != 20: fails += 1
+	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("Major Heat levels: ", loaded.major_heat_levels())
+	if loaded.major_heat_levels().is_empty(): fails += 1
+	print("Mirror extras: ", cfg.mirror_resistance, " ", cfg.mirror_deploy_base, " ", cfg.mirror_threat_min_integrity, " ", cfg.mirror_threat_min_damage, " ", cfg.mirror_decoy_speed)
+	if cfg.mirror_resistance != 1 or cfg.mirror_deploy_base != 6 or cfg.mirror_threat_min_integrity != 10 or cfg.mirror_threat_min_damage != 4 or cfg.mirror_decoy_speed != 2: fails += 1
+	var c := CampaignState.new(); c.start_class_id = &"rigger"
+	if CampaignState.from_dict(c.to_dict()).start_class_id != &"rigger": fails += 1
+	return fails + _h11()
+
+
+## Horizontal pass 11: config ICE caps, Modem stock, emergency rookie, max_ice_level().
+func _h11() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	print("H11 config: ICE ", cfg.ice_base_cap, " +", cfg.ice_unlock_step, " shop ", cfg.shop_card_stock, "/", cfg.shop_firmware_stock, "/", cfg.shop_daemon_stock, " rookie ", cfg.emergency_rookie_cost)
+	if cfg.ice_base_cap != 3 or cfg.ice_unlock_step != 3 or cfg.shop_card_stock != 3 or cfg.shop_firmware_stock != 2 or cfg.shop_daemon_stock != 1 or cfg.emergency_rookie_cost != 0: fails += 1
+	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("Top ICE level: ", loaded.max_ice_level())
+	if loaded.max_ice_level() != 20: fails += 1
+	return fails + _h12()
+
+
+## Horizontal pass 12: DaemonData.amount, config raid pacing and drift stages,
+## RunState.racks_captured / patrol.
+func _h12() -> int:
+	var fails := 0
+	var d := DaemonData.new()
+	var cfg := CampaignConfigData.new()
+	print("H12: daemon amount ", d.amount, " raid ", cfg.raid_wave_interval, "/", cfg.raid_heat_scaling_step, " drift ", cfg.dispatch_drift_mid, "/", cfg.dispatch_drift_late)
+	if d.amount != 0 or cfg.raid_wave_interval != 5 or cfg.raid_heat_scaling_step != 10 or cfg.dispatch_drift_mid != 3 or cfg.dispatch_drift_late != 6: fails += 1
+	var cold: DaemonData = load("res://content/daemons/cold_exit.tres")
+	if cold.amount != 3: fails += 1
+	var r := RunState.new()
+	r.racks_captured = 2
+	r.patrol = true
+	var back := RunState.from_dict(r.to_dict())
+	if back.racks_captured != 2 or not back.patrol: fails += 1
+	return fails + _h14()
+
+
+## Horizontal pass 14: HeatGatedEffectData.offensive_slices_only, achievement thresholds.
+func _h14() -> int:
+	var fails := 0
+	var hg := HeatGatedEffectData.new()
+	var cfg := CampaignConfigData.new()
+	print("H14: offensive_slices_only ", hg.offensive_slices_only, " achievements ", cfg.achievement_racks, "/", cfg.achievement_raids, "/", cfg.achievement_perfects)
+	if hg.offensive_slices_only or cfg.achievement_racks != 10 or cfg.achievement_raids != 20 or cfg.achievement_perfects != 500: fails += 1
+	var officer: EnemyData = load("res://content/enemies/compliance_officer.tres")
+	if not officer.heat_effects[0].offensive_slices_only: fails += 1
+	print("H15: achievement ICE ", cfg.achievement_ice_low, "/", cfg.achievement_ice_high)
+	if cfg.achievement_ice_low != 5 or cfg.achievement_ice_high != 10: fails += 1
+	return fails + _anim1()
+
+
+## Animation pass ANIM-1: UiMotionData / UiMotionEntryData (the UI motion table) round-trip, and
+## content/config/ui_motion.tres carries every required id.
+func _anim1() -> int:
+	var fails := 0
+	var e := UiMotionEntryData.new()
+	print("ANIM-1: entry defaults ", e.duration, "/", e.delay, "/", e.ease, "/", e.trans, "/", e.amplitude, "/", e.enabled, " errors ", e.validate())
+	if e.validate().size() != 1 or not e.enabled: fails += 1  # no id
+	e.id = &"smoke_pop"
+	e.duration = 0.3
+	e.ease = Tween.EASE_IN_OUT
+	e.trans = Tween.TRANS_BACK
+	e.amplitude = 1.2
+	var table := UiMotionData.new()
+	table.entries = [e]
+	if table.validate().size() != 0 or e.validate().size() != 0: fails += 1
+	var err := ResourceSaver.save(table, "user://smoke_motion.tres")
+	var back: UiMotionData = load("user://smoke_motion.tres")
+	var be := back.find(&"smoke_pop")
+	print("Save=", err, " reload ", be.duration if be != null else -1.0, " ease ", be.ease if be != null else -1, " trans ", be.trans if be != null else -1)
+	if be == null or be.ease != Tween.EASE_IN_OUT or be.trans != Tween.TRANS_BACK or not is_equal_approx(be.amplitude, 1.2): fails += 1
+	table.entries = [e, e]
+	if table.validate().size() != 1: fails += 1  # repeated id
+	# ANIM-R5: a tuning of another entry (UiMotionData.ALWAYS_ON) is refused switched off.
+	var tuning := UiMotionEntryData.new()
+	tuning.id = UiMotionData.ALWAYS_ON[0]
+	tuning.enabled = false
+	table.entries = [tuning]
+	print("ANIM-R5: ", tuning.id, " off -> ", table.validate())
+	if table.validate().size() != 1: fails += 1
+	var shipped: UiMotionData = load("res://content/config/ui_motion.tres")
+	var missing := 0
+	for id in UiMotionData.REQUIRED_IDS:
+		if shipped == null or shipped.find(id) == null:
+			missing += 1
+	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
+	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
+	return fails

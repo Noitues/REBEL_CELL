@@ -121,13 +121,11 @@ func test_the_verdict_is_all_hold_only_when_nothing_is_lost_for_every_corporatio
 					assert_eq(verdict == CityMapOverlay.tr_word(RaidVerdict.ALL_HOLD), not any_lost, "%s: ALL HOLD only when nothing is lost (%s)" % [tag, verdict.replace("\n", " / ")])
 					if bool(r["won"]) and any_lost:
 						lossy_but_won += 1
+					# ANIM-R5 P18: a node counts once, by its outcome (Disabled then Seized is SEIZED).
 					for sid in (r.get("disabled", []) if not bool(r["campaign_lost"]) else []):
-						# ANIM-R5: a node Disabled and then Seized in the same raid ends Seized (its
-						# outcome; RaidVerdict counts each node once), so only a node whose outcome is
-						# Disabled must be named Disabled (order-dependent flake under the runner).
-						if String((r.get("nodes", {}) as Dictionary).get(sid, {}).get("outcome", "")) != "disabled":
-							continue
-						assert_string_contains(verdict, CityMapOverlay.tr_word(RaidVerdict.DISABLED).get_slice(" ", 1), "%s: a Disabled node is named" % tag)
+						var outcome := String((r["nodes"] as Dictionary).get(sid, {}).get("outcome", ""))
+						var word := RaidVerdict.SEIZED if outcome == "seized" else RaidVerdict.DISABLED
+						assert_string_contains(verdict, CityMapOverlay.tr_word(word).get_slice(" ", 1), "%s: a fallen node is named by its outcome (%s)" % [tag, outcome])
 					if bool(r["campaign_lost"]):
 						assert_eq(verdict, CityMapOverlay.tr_word(RaidVerdict.LOST))
 					# The map's banner speaks the same words: HOLDS only when home held.
@@ -333,7 +331,8 @@ func test_the_combat_heat_banner_never_spills_over_the_daemon_row() -> void:
 		var xf := p.get_global_transform()
 		for c in p.banner_corners():
 			assert_true((xf * c).y <= row.position.y + 0.5, "%.1f: the banner ends above the Daemons (%.0f > %.0f)" % [scale, (xf * c).y, row.position.y])
-		assert_false(p.sub_lines().is_empty(), "%.1f: the consequence still shows under the banner" % scale)
+		# ANIM-R5 P9: the consequence is the flat note beside the poster now.
+		assert_false(p.note_lines().is_empty(), "%.1f: the consequence still shows, in the note" % scale)
 		combat.get_parent().queue_free()
 		await _frames(1)
 

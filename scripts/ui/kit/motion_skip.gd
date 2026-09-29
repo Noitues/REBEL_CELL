@@ -39,7 +39,11 @@ extends RefCounted
 ##   point (a click pushed without a mouse move first). A helper may name buttons whose
 ##   press it keeps (`keep`: the combat replay keeps SEND IT, RESPIN, UNDO and the hand, so
 ##   a press that ends the replay never also plays the next turn blind).
-
+## - **The raid playout's own controls (ANIM-R5, the one exception)**: the playout asks
+##   `verdict` like every helper, but a PASS that drives the playout itself (a focus move,
+##   which walks to 1x / 2x / 4x and Skip, or a press on one of them:
+##   `RaidPlayoutPanel.drives_playout`) does not end the current step: speeding the raid up
+##   never skips the step being watched. STYLE_GUIDE 5.1 says so. It joins GROUP too.
 ## - **One press, every motion (ANIM-R5, `handle`)**: a press completes every skippable
 ##   motion running on screen, not only the one whose helper saw it first (a stray key used
 ##   to end a flight and leave the drop under it running, as the consumed press reached no

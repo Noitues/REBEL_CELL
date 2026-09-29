@@ -110,6 +110,13 @@ static func slice_color(type: int) -> Color:
 static var _fonts: Dictionary = {}
 
 
+## ANIM-R5 P17: lets the cached fonts go (Fx at exit): a Font held by a script's static
+## variable is otherwise freed when the script is, after the text server has shut down,
+## which crashed the process at exit now and then.
+static func release_fonts() -> void:
+	_fonts.clear()
+
+
 ## Loads a style-guide font once (falls back to the theme default when missing).
 static func font(path: String) -> Font:
 	if _fonts.has(path):

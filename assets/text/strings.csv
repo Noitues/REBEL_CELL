@@ -29,7 +29,9 @@ Stationed on %s."
 %d SEIZED,%d SEIZED
 %d SLICES,%d SLICES
 %d destroyed,%d destroyed
+%d lost,%d lost
 %d reached home,%d reached home
+%d won,%d won
 "%s
 %d CYCLES","%s
 %d CYCLES"
@@ -82,6 +84,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is at HQ already.,%s is at HQ already.
 "%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics.","%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics."
 %s is destroyed.,%s is destroyed.
+%s is down.,%s is down.
 %s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
@@ -203,8 +206,6 @@ Buy,Buy
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
 CAMPAIGN LOST,CAMPAIGN LOST
-CAMPAIGN LOST - home server destroyed,CAMPAIGN LOST - home server destroyed
-CAMPAIGN WON - %s is down,CAMPAIGN WON - %s is down
 CAMPAIGNS,CAMPAIGNS
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
@@ -212,6 +213,7 @@ CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL STATUS,CELL STATUS
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
+CLAIMABLE,CLAIMABLE
 CLAIMED,CLAIMED
 CLEANSE,CLEANSE
 CLEARED,CLEARED
@@ -239,7 +241,9 @@ Campaign seed:,Campaign seed:
 Campaign slots,Campaign slots
 "Campaign: Heat %d, Schematics %d, roster %d living.","Campaign: Heat %d, Schematics %d, roster %d living."
 Campaigns,Campaigns
+Campaigns lost on this profile.,Campaigns lost on this profile.
 Campaigns started on this profile.,Campaigns started on this profile.
+Campaigns won on this profile.,Campaigns won on this profile.
 Campaigns won.,Campaigns won.
 "Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
 Cancel,Cancel
@@ -803,12 +807,14 @@ HUB CORE,HUB CORE
 Heat,Heat
 Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
-Heat %s for the lost raid: %d → %d.,Heat %s for the lost raid: %d → %d.
 Heat %s: %d → %d.,Heat %s: %d → %d.
 "Heat %s: %s for flatlining on a run, %s from the route's nodes and events.","Heat %s: %s for flatlining on a run, %s from the route's nodes and events."
+Heat %s: %s not destroyed: %d → %d.,Heat %s: %s not destroyed: %d → %d.
+Heat %s: %s reached %s: %d → %d.,Heat %s: %s reached %s: %d → %d.
 Heat %s: flatlined on a run (and the route before it).,Heat %s: flatlined on a run (and the route before it).
 Heat %s: flatlined on a run.,Heat %s: flatlined on a run.
 Heat %s: from the route's nodes and events.,Heat %s: from the route's nodes and events.
+Heat %s: not every threat was destroyed: %d → %d.,Heat %s: not every threat was destroyed: %d → %d.
 Heat +0: this run added no Heat.,Heat +0: this run added no Heat.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
@@ -899,6 +905,7 @@ ICE %d: %s,ICE %d: %s
 ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
 ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
+IF CLEARED:,IF CLEARED:
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
@@ -930,6 +937,7 @@ LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
+LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
 "Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}","Land dead centre for PERFECT (full output plus your class hook), 1 tick off for GOOD AIM, 2 off for HALF POWER. The curved arrows over a wheel turn it one tick: the right one clockwise, the left one back. {nudge_how}"
 Language,Language
@@ -1405,6 +1413,8 @@ Nudge wheel (mine / target),Nudge wheel (mine / target)
 OBSERVER,OBSERVER
 ON %s,ON %s
 ON A RANDOM SLICE:,ON A RANDOM SLICE:
+OPENS %d SITE,OPENS %d SITE
+OPENS %d SITES,OPENS %d SITES
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
 OUTER,OUTER
@@ -1434,6 +1444,7 @@ SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
 PREV SITE: select the previous Site on the Grid: %s (the map follows).,PREV SITE: select the previous Site on the Grid: %s (the map follows).
+PROFILE,PROFILE
 PROFILE // RECORDS,PROFILE // RECORDS
 PUTS %s ON %s,PUTS %s ON %s
 PUTS %s ON YOU,PUTS %s ON YOU
@@ -1451,7 +1462,6 @@ Press %s on,Press %s on
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
 Profile unlocks:,Profile unlocks:
 "Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.","Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s."
-"Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d.","Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d."
 ProfileUnlockData.unlock_botnet.description,Recruit Botnet operatives in every campaign.
 ProfileUnlockData.unlock_botnet.display_name,Class: Botnet
 ProfileUnlockData.unlock_compiler_rack.description,Unlocks the Compiler Rack node for every campaign.
@@ -1499,6 +1509,7 @@ RESULT:","RAID
 RESULT:"
 RAID // %s,RAID // %s
 RAID FEED // LIVE,RAID FEED // LIVE
+RAID FORECAST,RAID FORECAST
 RAID IN PROGRESS,RAID IN PROGRESS
 RAID INBOUND,RAID INBOUND
 "RAID INCOMING
@@ -1698,6 +1709,7 @@ START DEFENSE,START DEFENSE
 STATS,STATS
 STATUS: %s,STATUS: %s
 STOPPED %d/%d,STOPPED %d/%d
+STORY UNCOVERED,STORY UNCOVERED
 STRENGTH %s%%,STRENGTH %s%%
 SYSTEM ONLINE,SYSTEM ONLINE
 Save,Save
@@ -2648,9 +2660,12 @@ The campaign's numbers: they stay between runs.,The campaign's numbers: they sta
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 "The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre).","The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
+The highest ICE level cleared.,The highest ICE level cleared.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
+The home server is destroyed.,The home server is destroyed.
 The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
+The next %s campaign may start up to ICE %d.,The next %s campaign may start up to ICE %d.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
@@ -2728,6 +2743,7 @@ Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
 YOU,YOU
+YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s
 YOU PLAY %s,YOU PLAY %s
 YOU TAKE,YOU TAKE
@@ -2750,6 +2766,7 @@ an Elite fight,an Elite fight
 an Event,an Event
 an operative,an operative
 armory: %s,armory: %s
+best ICE %s,best ICE %s
 boss,boss
 calibrate_handler,calibrate_handler
 card,card

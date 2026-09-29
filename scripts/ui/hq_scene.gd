@@ -460,11 +460,18 @@ func deploy_asset(armory_index: int, site_id: StringName) -> void:
 var _previews: Dictionary = {}
 var _previews_key: int = 0
 var _warm_sites: Array[StringName] = []
+## The cache key the running warm pass started from (ANIM-R5 P14).
+var _warm_key: int = 0
+## Campaign hashes worked out (`campaign_key`), for tests (ANIM-R5 P14).
+static var campaign_hashes: int = 0
 
 
 ## The campaign state's key for the preview cache (its serialised form's hash).
 static func campaign_key(c: CampaignState) -> int:
-	return var_to_str(c.to_dict()).hash() if c != null else 0
+	if c == null:
+		return 0
+	campaign_hashes += 1
+	return var_to_str(c.to_dict()).hash()
 
 
 ## Drops the cached previews when the campaign changed since they were worked out.
@@ -488,6 +495,7 @@ func _warm_previews() -> void:
 	if RunManager.campaign == null:
 		return
 	_sync_previews()
+	_warm_key = _previews_key
 	_warm_sites.clear()
 	var sites := RunManager.launchable_sites()
 	sites.append_array(RunManager.patrol_sites())
@@ -498,10 +506,16 @@ func _warm_previews() -> void:
 		get_tree().process_frame.connect(_warm_preview_step, CONNECT_ONE_SHOT)
 
 
+## ANIM-R5 P14: the campaign is hashed once per warm pass (`_warm_previews`), not every frame
+## (var_to_str of the whole campaign each frame). A step stops when the cache has been re-keyed
+## since (the Grid's `_sync_previews` found the campaign changed); a preview worked out after
+## a change the pass did not see is keyed to the old state, which the next sync drops.
 func _warm_preview_step() -> void:
 	if panel_name != "hq" or RunManager.campaign == null or _warm_sites.is_empty() or not is_inside_tree():
 		return
-	_sync_previews()
+	if _previews_key != _warm_key:
+		_warm_sites.clear()
+		return
 	var sd := CampaignRules.site_data(RunManager.corporation, _warm_sites.pop_front())
 	if sd != null:
 		clear_preview_of(sd)
@@ -952,7 +966,8 @@ func _set_panel(p: Control, name: String) -> void:
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
 	# Screens built from terminal windows let the city show between them.
-	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city") else &"GlassPanel"
+	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
+	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end"] or name.begins_with("city") else &"GlassPanel"
 	hud.set_screen(String(SCREEN_NUMBERS.get(name, "")), screen_title(name))
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(name)
@@ -977,7 +992,9 @@ func _set_panel(p: Control, name: String) -> void:
 	if RunManager.campaign != null:
 		var band := RunManager.campaign.heat_majors_crossed(RunManager.config())
 		background.heat_band = band
-		wireframe.corp_creep = band / 3.0
+		# ANIM-R5 P2: a raid's playout holds the Heat band of before the raid (as it holds the
+		# pre-raid tint): a band crossed by the raid is a new look, rebaked mid-raid.
+		wireframe.corp_creep = (_creep_band if _creep_band >= 0 else band) / 3.0
 		wireframe.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 		background.set_district(RunManager.campaign.corporation_id)
 		wireframe.set_district(RunManager.campaign.corporation_id)
@@ -1825,6 +1842,14 @@ func show_grid() -> void:
 			gain_row.name = "Gains_%s" % s.id
 			gain_row.add_theme_constant_override("h_separation", 10)
 			gain_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var cap := Label.new()
+			cap.name = "GainsCaption"
+			cap.text = tr(GAIN_CAPTION)
+			cap.add_theme_font_override("font", Palette.mono())
+			cap.add_theme_font_size_override("font_size", roundi(GAIN_CAPTION_FONT * Settings.text_scale))
+			cap.add_theme_color_override("font_color", Color(Palette.PAPER, 0.6))
+			cap.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			gain_row.add_child(cap)
 			for g: Badge in gains:
 				gain_row.add_child(g)
 			rows.add_child(gain_row)
@@ -1960,6 +1985,17 @@ func grid_lean(free: Rect2) -> Vector2:
 	return out.limit_length(Motion.amplitude(&"map_camera_ease"))
 
 
+## ANIM-R5 P8: the run rows' gains read as what clearing gives, never as buttons: a caption
+## before them ("IF CLEARED:"), the Sites a clear opens named as Sites, CLAIMABLE for a Site
+## that can be claimed.
+const GAIN_CAPTION := "IF CLEARED:" # TR
+const GAIN_OPENS_ONE := "OPENS %d SITE" # TR
+const GAIN_OPENS := "OPENS %d SITES" # TR
+const GAIN_CLAIMABLE := "CLAIMABLE" # TR
+## The caption's lettering (px at text scale 1.0).
+const GAIN_CAPTION_FONT := 12
+
+
 ## H24 K4: what clearing Site `s` gives and risks (`preview` = CampaignRules.clear_preview),
 ## one Badge each with its icon and a tooltip: the Exploit, the Heat change (a drop:
 ## the cooling icon), a raid it brings, the win, Schematics, the Sites it opens (names
@@ -1986,10 +2022,12 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 		var named := PackedStringArray()
 		for id in opens:
 			named.append(_site_kind_name(id))
-		out.append(Badge.new(CityMapOverlay.tr_word("OPENS %d") % opens.size(), Palette.NET_CYAN, "",
+		# ANIM-R5 P8: says what opens ("OPENS 1" read as a count of nothing).
+		out.append(Badge.new(CityMapOverlay.tr_word(GAIN_OPENS_ONE if opens.size() == 1 else GAIN_OPENS) % opens.size(), Palette.NET_CYAN, "",
 			CityMapOverlay.tr_word("Clearing it opens %d more Sites to runs: %s.") % [opens.size(), "; ".join(named)]).with_icon(StatIcon.LINKS))
 	if bool(preview.get("claimable", false)):
-		out.append(Badge.new(CityMapOverlay.tr_word("CLAIM"), Palette.CELL_TURF, "", CityMapOverlay.tr_word("Once cleared you can claim it: a node of your network.")).with_icon(StatIcon.CLAIM))
+		# ANIM-R5 P8: a quality, not a verb (CLAIM read as a button on the row).
+		out.append(Badge.new(CityMapOverlay.tr_word(GAIN_CLAIMABLE), Palette.CELL_TURF, "", CityMapOverlay.tr_word("Once cleared you can claim it: a node of your network.")).with_icon(StatIcon.CLAIM))
 	if out.is_empty():
 		out.append(Badge.new(CityMapOverlay.tr_word("NO GAIN"), Color(Palette.PAPER, 0.6), "", CityMapOverlay.tr_word("A patrol: loot, Heat and Rank from the run, no objective.")).with_icon(StatIcon.RUNS))
 	for b in out:
@@ -2477,6 +2515,12 @@ func show_raid() -> void:
 	if c.armory.is_empty():
 		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
 	_set_panel(outer, "raid")
+	# ANIM-R5 P8: YOUR NODES never ends in a cut row (its last node's "HP 30 → 25 HOLDS" sat
+	# half under the window's foot): the Grid's snap, and MORE BELOW when more nodes follow.
+	side_hint = ScrollHint.new(orders_scroll)
+	side_hint.snap_rows = true
+	side_hint.name = "OrdersHint"
+	add_child(side_hint)
 	if raid_legend.foldable():
 		set_page_prompts(prompts_for("raid") + [[&"cycle_target", "Key"]])  # ANIM-R2 R13: as the Grid
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.42))
@@ -3029,13 +3073,16 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var cont := _button(tr("Continue"), _after_playout)
 	cont.theme_type_variation = &"HotButton"
 	cont.disabled = true
+	if before != null and Motion.animating():
+		_creep_band = before.heat_majors_crossed(RunManager.config())
 	_set_panel(box, "raid_playout")
 	# The map as it stood before the raid (Seized nodes still yours until they flip).
 	var pre := before if before != null else c
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
-	city_overlay.avoid_controls([side])
+	# ANIM-R5 P6: the key too (a label and home's banner went under the MAP LEGEND at 1.6).
+	city_overlay.avoid_controls([side, legend])
 	var overlay := city_overlay
 	playout = RaidPlayoutPanel.new(overlay, PLAYOUT_LOG_SIZE)
 	feed.body.add_child(playout)
@@ -3044,6 +3091,11 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# every hit on home flies its number into the top bar's HOME, which rolls down.
 	playout.framer = _frame_fight.bind(overlay)
 	playout.event_shown.connect(_on_raid_event_shown)
+	# ANIM-R5 P8: the forecast stamp in the side column never hides a node of the raid: it
+	# turns see-through while one sits under it (it covered Scrub Records at 1.6).
+	_playout_stamp = forecast
+	if not wireframe.city.rebuilt.is_connected(_clear_stamp_of_nodes):
+		wireframe.city.rebuilt.connect(_clear_stamp_of_nodes)
 	if fx != null and Motion.animating():
 		hud_home_shown = int(r.get("home_before", c.grid.home_integrity))
 		_refresh_status()
@@ -3055,11 +3107,17 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		hud_raids_shown = -1
 		_refresh_status()
 		forecast.resolve(RESULT_CAPTION, verdict)
+		# ANIM-R5 P2: the raid's Heat band reaches the city's look with its tint.
+		_creep_band = -1
+		wireframe.corp_creep = RunManager.campaign.heat_majors_crossed(RunManager.config()) / 3.0
 		# The result's tint spreads from the nodes that flipped (NeonCity, one bake).
 		wireframe.city.release_influence()
 		if is_instance_valid(overlay):
 			var done := raid_graph(RunManager.campaign.last_raid.get("nodes", {}), overlay.markers, null, kept)
-			overlay.set_graph(done["nodes"], done["edges"]))
+			overlay.set_graph(done["nodes"], done["edges"])
+			# ANIM-R5 P7: the verdict is in: the network's packets stop (one kept running to
+			# CORE for 10+ s after "Raid over").
+			overlay.packets = false)
 	# Skip jumps straight to the summary (ANIM-5).
 	playout.skipped.connect(_after_playout)
 	side.add_child(cont)
@@ -3067,6 +3125,40 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	playout.play(events, instant)
 	if instant:
 		_after_playout()
+
+
+## ANIM-R5 P8: the playout's forecast stamp (null off the playout).
+var _playout_stamp: ForecastStamp = null
+## Its alpha while a node of the raid sits under it.
+const STAMP_OVER_NODE_ALPHA := 0.3
+
+
+## ANIM-R5 P8: the playout's forecast stamp goes see-through while any node of the raid is
+## under it (the camera moved: the city redrew), and back when none is.
+func _clear_stamp_of_nodes() -> void:
+	if _playout_stamp == null or not is_instance_valid(_playout_stamp) or not _playout_stamp.is_inside_tree() \
+			or city_overlay == null or not is_instance_valid(city_overlay):
+		return
+	_playout_stamp.modulate.a = STAMP_OVER_NODE_ALPHA if stamp_over_node(_playout_stamp, city_overlay) else 1.0
+
+
+## True when a node icon of `overlay` sits under `stamp` (global px).
+static func stamp_over_node(stamp: Control, overlay: CityMapOverlay) -> bool:
+	var box := stamp.get_global_rect()
+	var xf := overlay.get_global_transform()
+	for n: Dictionary in overlay.nodes:
+		var p := overlay.icon_at(n["id"])
+		if p.x == INF:
+			continue
+		var r := overlay.icon_radius(n) * xf.get_scale().x
+		if box.grow(r).has_point(xf * p):
+			return true
+	return false
+
+
+## ANIM-R5 P2: the Heat band the Grid's corporate creep shows while a raid's playout holds
+## the pre-raid look (-1: the campaign's).
+var _creep_band: int = -1
 
 
 ## ANIM-R1 M2: bakes (ahead, off the main thread) the stretch of city the raid playout's
@@ -3086,7 +3178,9 @@ func _prebake_playout(c: CampaignState, inf: Variant) -> void:
 		region = r if first else region.merge(r)
 		first = false
 	if not first:
-		wireframe.city.prebake(region.grow(NeonCity.REGION_MARGIN), inf)
+		# ANIM-R5 P2: the post-raid look carries the raid's Heat band too (the playout holds the old).
+		var creep := RunManager.campaign.heat_majors_crossed(RunManager.config()) / 3.0 if inf != null and RunManager.campaign != null else -1.0
+		wireframe.city.prebake(region.grow(NeonCity.REGION_MARGIN), inf, false, creep)
 
 
 ## The raid playout's camera: zoom and where its focus sits on screen.
@@ -3133,7 +3227,7 @@ static func fight_area(parts: Array) -> Rect2:
 var hud_home_shown: int = -1
 ## ANIM-R4 H11a: the top bar's HEAT and RAIDS during a raid's playout: what the feed has told
 ## so far (-1: the campaign's own). They change with the line that changes them: Heat with
-## its "Heat +5 for the lost raid: 1 → 6." line, RAIDS going down with the raid's end line
+## its "Heat +5: Collector reached CORE: 1 → 6." line, RAIDS going down with the raid's end line
 ## and up with a threshold's line that queues a raid.
 var hud_heat_shown: int = -1
 var hud_raids_shown: int = -1
@@ -3141,6 +3235,7 @@ var hud_raids_shown: int = -1
 
 ## ANIM-R4 H11a: a raid event the feed has just told (RaidPlayoutPanel.event_shown).
 func _on_raid_event_shown(e: Dictionary) -> void:
+	_clear_stamp_of_nodes()
 	match String(e.get("type", "")):
 		"heat":
 			if hud_heat_shown >= 0 and e.has("after"):
@@ -3211,6 +3306,7 @@ const HOME_NUMBER_FONT := 30
 
 
 func _after_playout() -> void:
+	_playout_stamp = null
 	hud_home_shown = -1
 	hud_heat_shown = -1
 	hud_raids_shown = -1
@@ -3265,13 +3361,23 @@ func show_raid_summary() -> void:
 	for id in ids:
 		var n: Dictionary = r["nodes"][id]
 		var holds := String(n["outcome"]) == "holds"
-		var node_row := HFlowContainer.new()
-		node_row.add_child(_label(site_name(StringName(String(id)))))
+		# ANIM-R5 P8: the name and its HP on one row, as home's (a long name wrapped the HP
+		# badge onto a line of its own: "Continuum Billing Farm"); the name wraps instead.
+		var node_row := HBoxContainer.new()
+		node_row.name = "ReportRow_%s" % String(id)
+		node_row.add_theme_constant_override("separation", 8)
+		var node_name := _para(site_name(StringName(String(id))))
+		node_name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		node_row.add_child(node_name)
 		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
 			tr("Integrity before and after, and whether the node held.")))
 		box.add_child(node_row)
+	# ANIM-R5 P18: each fallen node once, by its outcome (a node Disabled and then Seized in
+	# the same raid is SEIZED, as the verdict, its row and its stamp say; it was listed twice).
 	for key in ["seized", "disabled"]:
-		for id in r.get(key, []):
+		for id in ids:
+			if String(r["nodes"][id].get("outcome", "")) != key:
+				continue
 			box.add_child(Badge.new("%s %s" % [site_name(StringName(String(id))), tr(key.to_upper())], Palette.RESIST_GOLD, GLYPH_RULE,
 				tr("Seized: the corporation took the Site back.") if key == "seized" else tr("Disabled: repair the node on the Grid.")))
 	box.add_child(_icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK))
@@ -3279,21 +3385,109 @@ func show_raid_summary() -> void:
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
 	city_overlay.avoid_controls([report])
+	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)
+
+
+## ANIM-R5 P4: the campaign's end reads like the other city pages, not a debug page of
+## terminal lines on a near-opaque panel: the city shows round terminal windows (the page is
+## one of the see-through ones), a WON / LOST verdict stamp lands on the table beside them
+## (ForecastStamp, resolved with `forecast_stamp_resolve`'s pop; the end state at once under
+## reduce effects), and the words have a hierarchy: the headline in display lettering with
+## the next steps under it, the story beats uncovered (each title over its text), then the
+## profile as badges and the ICE records.
+const END_CAPTION := "CAMPAIGN" # TR
+const END_WON := "WON" # TR
+const END_LOST := "LOST" # TR
+const END_HEADLINE_WON := "%s is down." # TR
+const END_HEADLINE_LOST := "The home server is destroyed." # TR
+## The verdict stamp's side, its tilt and its spot on the table (px at text scale 1.0), the
+## windows' width (px x the text size, capped by the screen) and the headline's lettering.
+const END_STAMP := 190.0
+const END_STAMP_TILT := -8.0
+const END_STAMP_AT := Vector2(28, 24)
+const END_WINDOW_W := 520.0
+const END_HEADLINE_FONT := 30
+const END_BEAT_TITLE_FONT := 20
 
 
 func show_end() -> void:
 	var c := RunManager.campaign
-	Dialogue.speak("win" if c.outcome == CampaignState.Outcome.WON else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
-	var box := VBoxContainer.new()
-	box.add_child(_label((tr("CAMPAIGN WON - %s is down") % TextDb.t(RunManager.corporation.final_boss, "display_name")) if c.outcome == CampaignState.Outcome.WON else tr("CAMPAIGN LOST - home server destroyed")))
-	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
-		box.add_child(_label("  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]))
+	var won := c.outcome == CampaignState.Outcome.WON
+	Dialogue.speak("win" if won else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
+	var colour := RaidVerdict.color_of(won)
+	var outer := HBoxContainer.new()
+	outer.name = "CampaignEnd"
+	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var table := Control.new()
+	table.name = "EndTable"
+	table.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var side := END_STAMP * Settings.text_scale
+	table.custom_minimum_size = Vector2(side + END_STAMP_AT.x * 2.0, side + END_STAMP_AT.y * 2.0)
+	var stamp := ForecastStamp.new(END_CAPTION, "", colour, StatIcon.RAIDS if won else StatIcon.HOME)
+	stamp.name = "CampaignVerdict"
+	stamp.custom_minimum_size = Vector2(side, side)
+	stamp.size = stamp.custom_minimum_size
+	stamp.position = END_STAMP_AT
+	stamp.rotation_degrees = END_STAMP_TILT
+	table.add_child(stamp)
+	outer.add_child(table)
+	var column := VBoxContainer.new()
+	column.name = "EndColumn"
+	column.custom_minimum_size.x = minf(END_WINDOW_W * Settings.text_scale, size.x - table.custom_minimum_size.x if size.x > 0.0 else END_WINDOW_W * Settings.text_scale)
+	column.add_theme_constant_override("separation", 10)
+	outer.add_child(column)
+	# The headline and what to do next.
+	var head := TerminalWindow.new(tr("CAMPAIGN END"), colour)
+	head.name = "EndHeadline"
+	var line := _para(tr(END_HEADLINE_WON) % TextDb.t(RunManager.corporation.final_boss, "display_name") if won else tr(END_HEADLINE_LOST))
+	line.name = "Headline"
+	line.add_theme_font_override("font", Palette.display())
+	line.add_theme_font_size_override("font_size", roundi(END_HEADLINE_FONT * Settings.text_scale))
+	line.add_theme_color_override("font_color", colour)
+	head.body.add_child(line)
+	var buttons := HFlowContainer.new()
+	buttons.add_theme_constant_override("h_separation", 10)
+	buttons.add_child(_icon(_button(tr("New campaign"), func() -> void: RunManager.campaign = null; show_start()), StatIcon.PLAY))
+	buttons.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
+	head.body.add_child(buttons)
+	column.add_child(head)
+	# The story uncovered: each beat's title over its text.
+	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
+	if not beats.is_empty():
+		var story := TerminalWindow.new(tr("STORY UNCOVERED"), Palette.NET_CYAN)
+		story.name = "EndStory"
+		for b in beats:
+			var t := _para(TextDb.t(b, "title"))
+			t.add_theme_font_override("font", Palette.display())
+			t.add_theme_font_size_override("font_size", roundi(END_BEAT_TITLE_FONT * Settings.text_scale))
+			t.add_theme_color_override("font_color", Palette.PAPER)
+			story.body.add_child(t)
+			story.body.add_child(_para(TextDb.t(b, "text")))
+		column.add_child(story)
+	# The profile: badges, then the next campaign's ICE and the records.
 	var p := RunManager.profile
-	box.add_child(_para(tr("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d.") % [p.campaigns_won, p.campaigns_lost, HudStats.ice_value(p.best_ice), TextDb.t(RunManager.corporation, "display_name"), RunManager.ice_cap(c.corporation_id)]))
-	box.add_child(_para(ice_records_text()))
-	box.add_child(_icon(_button(tr("New campaign"), func() -> void: RunManager.campaign = null; show_start()), StatIcon.PLAY))
-	box.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
-	_set_panel(box, "end")
+	var prof := TerminalWindow.new(tr("PROFILE"), Palette.RESIST_GOLD)
+	prof.name = "EndProfile"
+	var facts := HFlowContainer.new()
+	facts.name = "ProfileFacts"
+	facts.add_theme_constant_override("h_separation", 10)
+	facts.add_theme_constant_override("v_separation", 4)
+	facts.add_child(Badge.new(tr("%d won") % p.campaigns_won, Palette.CELL_ACID, "", tr("Campaigns won on this profile.")))
+	facts.add_child(Badge.new(tr("%d lost") % p.campaigns_lost, Palette.CELL_PINK, "", tr("Campaigns lost on this profile.")))
+	facts.add_child(Badge.new(tr("best ICE %s") % HudStats.ice_value(p.best_ice), Palette.NET_CYAN, "", tr("The highest ICE level cleared.")))
+	prof.body.add_child(facts)
+	prof.body.add_child(_para(tr("The next %s campaign may start up to ICE %d.") % [TextDb.t(RunManager.corporation, "display_name"), RunManager.ice_cap(c.corporation_id)]))
+	prof.body.add_child(_para(ice_records_text()))
+	column.add_child(prof)
+	_set_panel(outer, "end")
+	_land_end_stamp.call_deferred(stamp, won)
+
+
+## ANIM-R5 P4: the end page's verdict lands (WON / LOST) once the page is laid out.
+func _land_end_stamp(stamp: ForecastStamp, won: bool) -> void:
+	if is_instance_valid(stamp) and stamp.is_inside_tree():
+		stamp.resolve(END_CAPTION, END_WON if won else END_LOST)
 
 
 # --- Helpers ----------------------------------------------------------------------------------

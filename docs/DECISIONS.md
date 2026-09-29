@@ -438,6 +438,141 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
+The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
+the coordinator's lookup leak and Disabled-then-Seized ruling). Views only, save RunManager's
+lookup reset (P18, an autoload, no rule) and no schema field. Every call below was the
+implementer's (nothing deferred). Tests: `tests/unit/test_anim_r5_city.gd` (full tier), the
+real renderer's bake in `tools/design_lab/bake_smoke.gd` (docs/TEST_SUITE.md), page timings in
+`tools/design_lab/page_bake_probe.gd`. Measured on this machine (1280x720, RX 6700 XT, Vulkan
+Forward+), other agents' runs sharing it.
+- **P1 the bake draws.** ANIM-R4 H10 wrapped the kept bake viewport's render target in a
+  Texture2DRD; Godot refuses one over a viewport's shared texture ("Please create the texture
+  object using the original texture"), so every kept bake drew nothing (the hotfix d89ddc2 went
+  back to the copy). Now `BakedTexture` (a Texture2D) draws the kept viewport through its
+  ViewportTexture (`_get_rid`), owns the viewport (freed with the last reference: the cache's
+  entry or a spread's old image, so nothing draws a freed target), or owns a GPU copy (the
+  fallback: `keep_viewports` off). `CityBakeCache.usable` checks a picture (valid RID,
+  non-empty, its viewport or copy alive); an unusable one marks the entry `failed` and the view
+  shows the silhouette (it used to fall back to the seconds-long procedural build on the main
+  thread) and never asks again. The "Parameter t is null at baked_texture.gd:16" and the RID
+  leaks came from the Texture2DRD path and are gone (windowed runs: no ERROR; the only exit
+  warning left is 2 audio objects Movie Maker keeps). **Picked the kept viewport** (no texture
+  made or filled in the landing frame); measurements below. `bake_smoke.gd` passes on both paths
+  (3264x2304 bakes, 545 distinct colours sampled, no error logged, no viewport left after
+  shutdown).
+- **P1 H10 re-measured with the city drawing** (numbers under "Measurements"; ANIM-R4's
+  H10 figures are corrected there).
+- **P2 pages open on their city.** Measured (`page_bake_probe.gd`) before any change on the
+  copy path by the designer: loot / event ~2 s, fight ~3 s, Modem ~2 s, HQ ~3.5 s, interlude
+  playout ~5 s, route after an interlude raid 6.5 s, claim 3.6 s with no feedback. Found: a
+  raid's Heat changes the city's look (the corporate creep), so the playout rebaked mid-raid and
+  the route after it baked twice; the route's bake fell out of the LRU behind the pages'.
+  Changes: the route's bake is kept (`CityBakeCache.keep`, a named slot the LRU skips); a raid
+  playout holds the pre-raid creep (netrun `_creep_heat`, HQ `_creep_band`) with its tint until
+  the verdict; the interlude bakes its playout's fights and the route ahead (`_prebake_raid_playout`,
+  `_prebake_route` via `NeonCity.region_for`), START DEFENSE bakes the route after the raid first
+  (post-raid look, `prebake(..., creep)`) then the post-raid fights; the run's end page warms the
+  HQ's city with a hidden backdrop twin, a bake that outlives the scene (`request(..., outlive)`:
+  the cache's holder waits on it, so the jack out's stale drop keeps it); a claim stamps CLAIMED
+  (the marks) at once over the old image and the tint spreads when the new look lands
+  (`_mark_early`). Results under "Measurements"; the headless test lands the simulated bakes and
+  checks each page is covered on its first frames.
+- **P3** the raid's Heat line says why in the verdict's terms: "Heat +5: Collector reached
+  CORE: 0 → 5." (threats that hit CORE), "Heat +5: Collector not destroyed: 0 → 5." (still
+  standing), never "for the lost raid" beside HOME -5 · HOLDS. Swept over every corporation x
+  home x ICE 0 / 20 x three setups.
+- **P4** the campaign's end is a see-through page (no GlassPanel): a WON / LOST ForecastStamp
+  lands on the table (`forecast_stamp_resolve`), the headline in display lettering with the next
+  steps, STORY UNCOVERED (each beat's title over its text), PROFILE as badges and the ICE lines.
+  The pause menu is as tall as its lines (`_fit_height`: its glass plus what it holds, up to
+  MENU_SIZE and the screen's foot; Options and the Codex grow it), so the city shows round it.
+- **P5** the interlude frames CORE and the raid's entries (`raid_frame_points`) in the area
+  beside the RAID window, not the whole Grid.
+- **P6** home's banner: the stamp_rect spot search (8 spots round home, three rings out, its
+  tilted box against every stamp, label, icon, home's bar, threat token, and the map's panels and
+  key; the map's visible area); the playout's labels keep off the key too.
+- **P7** the network's packets stop at the verdict (`CityMapOverlay.packets`) and on the report.
+- **P8** labels keep off the raid's tokens (`token_radius`: obstacles in the label layout), and
+  the moving parts (tints, traces, tokens, locks, hits) draw on a layer under the labels
+  (`RaidFxUnder`); stamps, numbers and the banner stay over them. The playout's forecast stamp
+  turns see-through (0.3) while a raid node sits under it. The report's node row keeps its HP
+  beside its name (an HBox; the name wraps). YOUR NODES snaps like the Grid's list (a ScrollHint,
+  MORE BELOW). The forecast float says RAID FORECAST over its "45 → 50 ▲". The Grid's gains rows
+  open with "IF CLEARED:" and read OPENS 1 SITE / OPENS 2 SITES and CLAIMABLE.
+- **P9** the Heat banner's consequence is a flat note beside the poster (mono, never under
+  12 px x the text size, 260 px x the text size wide, placed below / above / right / left where
+  it covers no button), held `heat_banner`'s delay, **retuned 1.4 → 3.6 s** (the longest
+  consequence is 17 words); the banner keeps the band line on the poster, under WANTED.
+- **P10** a Polaroid caption shrinks to fit, then takes two lines over a smaller picture (never
+  under 60 % of its side); Continue after the interlude's raid lets the fight camera go first
+  (`_leave_raid_playout`).
+- **P11** the playout asks `MotionSkip.verdict`; the one exception (presses that drive the
+  playout: focus moves, 1x / 2x / 4x, Skip) is in STYLE_GUIDE 5.1 and MotionSkip's notes.
+- **P12** YOU ARE HERE is a key, translated once in `label_lines`.
+- **P13** tests for the preview cache, the music prewarm and reduce effects' end states.
+- **P14** a warm pass hashes the campaign once (`_warm_key`; it was once a frame).
+- **P15** RAID INCOMING fits the screen (the lettering steps down to 22 px x the text size,
+  then wraps).
+- **P16** heat_poster's notes name the banner as it reads.
+- **P17 the schema smoke test's exit crash.** `tools/schema_smoke_test.gd` printed PASS and then
+  crashed at shutdown about one exit in ten (exit 139). Found: an access violation inside the
+  engine's GDScript clean-up at shutdown (the .NET runtime's event log gives the same fault
+  address every time, in godot.exe's `GDScript::clear`, after every node, autoload and our
+  static caches were already freed, so not a thread of ours: freeing each autoload by hand
+  first, then quitting, still crashed after the last one). What decides it is the order the
+  class scripts were loaded in: the checks, compiled as part of the `-s` script, loaded their
+  dozens of data classes as that script's dependencies before any content; the same script
+  with its checks left uncalled crashed as often, while a script instancing all 46 classes,
+  `tools/validate_content.gd` (content first, 0 of 100) and the game never did. Fix: the tool is
+  now a runner that loads the content first (the registry's scan, as validate_content does)
+  and only then loads and runs the checks, now in `tools/schema_smoke_checks.gd` (a schema
+  change adds its check there; CLAUDE.md's command is unchanged). The Fx exit hygiene (fonts,
+  the terminal material, the chevron let go) stays but was not the cause.
+- **P18 (coordinator).** a) `RunManager.build_generated` put the built REBEL_CELL (and its
+  generated content) into the lookup for good; a test that built it left it to every later
+  script (test_anim_r4_city then read raids of the built corporation). The lookup is rebuilt
+  from the registry when the campaign is forgotten, a new one starts or one resumes
+  (`_restore_lookup`). b) A node Disabled then Seized in one raid is one SEIZED node everywhere:
+  the verdict (RaidVerdict counts outcomes), the report (each fallen node once, by outcome; it
+  listed both), the feed's tally (by outcome); the feed still tells both lines as they happen
+  (the ruling main adopted in c93fac9).
+- **Words** (exported once): the Heat lines, IF CLEARED:, OPENS %d SITE(S), CLAIMABLE, RAID
+  FORECAST, YOU ARE HERE, the end page's words; dropped: "Heat %s for the lost raid", "CAMPAIGN
+  WON/LOST - ...", the one-line profile sentence.
+- **Expectation changes:** `test_horizontal_pass24_city` (the gains row opens with its caption),
+  `test_anim_r4_city` (a fallen node is named by its outcome).
+- **Measurements** (this machine, 1280x720, RX 6700 XT, Vulkan Forward+, other agents' test
+  runs sharing it; windowed runs through `tools/run_windowed.py`; no ERROR in any log):
+  - **H10 corrected** (ANIM-R4's numbers were taken while every kept bake drew nothing, so the
+    city cost nothing to show; min / median / max of 5 runs, `profile_frames.gd --timeline`,
+    kept viewports vs `--bake-copy`): the Grid's first open from the HQ page 102 / 106 / 128 ms
+    (copy 116 / 131 / 138; R4 said 136-170, median 149), the re-open 67 / 71 / 86 ms (copy
+    75 / 87 / 89; R4 said 94-109). The route after a jack at 1.6 (`--demo-grid
+    --demo-anim=jack_in`): its bake lands 0-6 frames before the jack's cover lifts (unseen), in
+    a frame under 50 ms in 4 runs of 5 (53 ms once; copy: under 50 in 3 of 5, 50-51 twice);
+    after the cover lifts no frame over 66 ms (51-66, copy 53-61, single frames the machine's
+    load shows before the jack too). R4's "landing frame 54, 56, <50, <50, <50" was measured
+    with nothing drawn. The kept viewport is faster on the open and re-open (about 15-25 ms)
+    and ties on the landing; it stays the default.
+  - **P2 page timings** (`page_bake_probe.gd`, three runs; the designer's copy-path numbers
+    before in brackets): event, loot, Modem, fight, the route back after each and the run's
+    end page each covered on their first frame (22-66 ms) [loot / event ~2 s, fight ~3 s,
+    Modem ~2 s]; the HQ after the run covered on its first frame (the jack out's 1.6-1.7 s
+    before it) [~3.5 s black behind the panels]; the interlude's playout 0 frames of 123
+    uncovered [the whole raid over the silhouette, ~5 s]; the route after the interlude's raid
+    covered on its first frame (55-68 ms) [6.5 s]; a claim stamps CLAIMED at once and the tint
+    follows its bake 1.46-1.56 s later [3.6 s with no feedback]. Not changed: the Grid's very
+    first open in a campaign (1.72-1.84 s: nothing remembered yet to bake ahead, ANIM-R2 R1),
+    the raid interlude's own page (1.45-1.48 s, most of it under the jack's RAID INCOMING hold)
+    and the first route of a run (4.7-5.4 s from the press, under the jack). A quick player
+    (`--leave=20`, each page left 20 frames after it is covered) sees the event 0.48 s and the
+    route after the interlude's raid 1.49 s on their silhouette (the prebakes still running).
+  - **P17 proof:** before, 12 crashes in 100 runs, 10 in 70, 5 in 50, 3 in 20 (on the same
+    machine the same day); after, 240 consecutive runs of
+    `godot --headless --path . -s tools/schema_smoke_test.gd` (4 x 60, run 4 at a time) exit 0,
+    every one printing SCHEMA SMOKE TEST: PASS; the runner layout in a scratch copy, 0 in 490.
+
 #### 2026-09-28 — Animation pass — ANIM-R5 motion rules and tests
 The fifth fix batch of the Animation pass review, motion rules, test infrastructure and docs
 (fix agent D, R1-R8). Every call below was the implementer's (the standing rule: nothing
@@ -867,7 +1002,8 @@ quantized to 128 colours, raw frames deleted): `raid_playout`, `influence_spread
 - **H9** B6's colour claim corrected in place (acid is at least 40 degrees of hue from every
   corporation, Meridian's orange the nearest; it said "furthest"), and in `Palette`.
   `CHANGE_FADE_SHARE` (1/3 inline) is `forecast_change_fade`'s amplitude.
-- **H10 performance** (this machine's display, 1280x720, RX 6700 XT; min / median of 5 runs,
+- **H10 performance** (corrected by ANIM-R5 city, "Measurements": these were taken while every
+  kept bake drew nothing) (this machine's display, 1280x720, RX 6700 XT; min / median of 5 runs,
   the baseline aa51ad2 measured in the same session, the machine busy with other test runs):
   - the Grid opened from the HQ page (`--demo-grid-open=150`): 136-170 ms, median 149
     (baseline 243-268, median 255; R2 measured 161). What its frame spent (instrumented): the

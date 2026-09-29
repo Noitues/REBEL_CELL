@@ -278,6 +278,15 @@ static var _roots: Array[WeakRef] = []
 static var _listening: bool = false
 
 
+## ANIM-R5 P17: lets the shared material and texture go (Fx at exit): resources held by a
+## script's static variables are otherwise freed with the script, after the renderer has
+## shut down (a crash at exit now and then).
+static func release() -> void:
+	_crt = null
+	_chevron = null
+	_roots.clear()
+
+
 ## Applies the theme to `root` and re-applies it while `root` lives and Settings change.
 ## One static listener serves every root (bound callables are not distinct connections).
 static func apply(root: Control) -> void:

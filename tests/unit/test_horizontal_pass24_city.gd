@@ -260,6 +260,10 @@ func test_run_rows_say_what_clearing_gives_and_light_their_node() -> void:
 		assert_not_null(gains, "%s: its gains under it" % id)
 		var icons := PackedStringArray()
 		for g in gains.get_children():
+			if g.name == &"GainsCaption":
+				# ANIM-R5 P8: the row opens with its caption (IF CLEARED:), then the badges.
+				assert_eq(gains.get_child(0), g, "%s: the caption comes first" % id)
+				continue
 			assert_true(g is Badge, "%s: gains are badges" % id)
 			assert_ne((g as Badge).icon_kind, &"", "%s: each gain has its icon" % id)
 			assert_ne((g as Badge).tooltip_text, "", "%s: and says it in words" % id)
