@@ -48,7 +48,12 @@ func test_the_combat_pause_menu_follows_the_text_scale() -> void:
 	await _frames()
 	var menu: Control = scene._settings_panel
 	assert_not_null(menu.theme, "the menu has the game theme")
-	var b := menu.find_children("*", "Button", true, false)[0] as Button
+	# Art pass W8a: Resume is the primary (its own step); the menu lines are at body.
+	var b: Button = null
+	for n in menu.find_children("*", "Button", true, false):
+		if (n as Button).theme_type_variation == &"MenuItem":
+			b = n
+			break
 	assert_eq(b.get_theme_font_size("font_size"), scene._end_turn_button.get_theme_font_size("font_size"), "same scaled size as the combat screen")
 	scene.open_settings()
 	RunManager.delete_save()
