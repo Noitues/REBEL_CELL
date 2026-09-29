@@ -190,3 +190,57 @@ func test_a_flight_and_a_stamp_take_their_shares_from_the_table() -> void:
 		assert_true(reads.has(id) and (reads[id] as Dictionary).has("res://scripts/ui/kit/flight_fx.gd"), "FlightFx reads %s" % id)
 		assert_true(UiMotionData.ALWAYS_ON.has(id), "%s tunes its flight or stamp (never switched off)" % id)
 	FlightFx.finish_all(holder)
+
+
+func _table_with_off(id: StringName) -> UiMotionData:
+	var dup := (load(Motion.CONFIG_PATH) as UiMotionData).duplicate(true)
+	dup.find(id).enabled = false
+	Motion.use_config(dup)
+	return dup
+
+
+func test_a_view_asks_whether_its_motion_plays_through_the_kit() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	assert_almost_eq(Motion.seconds_live(&"drop_settle"), Motion.seconds(&"drop_settle"), 0.0001, "on: its seconds")
+	assert_true(Motion.switched_on(&"jack_fade_reduced"), "on")
+	_table_with_off(&"drop_settle")
+	assert_eq(Motion.seconds_live(&"drop_settle"), 0.0, "off: no time (the end state at once)")
+	assert_gt(Motion.seconds(&"drop_settle"), 0.0, "while its time stays for a hold (R5's kind rule)")
+	Motion.use_config(null)
+	Settings.set_reduce_effects(true)
+	assert_eq(Motion.seconds_live(&"drop_settle"), 0.0, "reduce effects: no time")
+	assert_true(Motion.switched_on(&"jack_fade_reduced"), "switched on whatever reduce effects say (the reduced jack plays)")
+	_table_with_off(&"jack_fade_reduced")
+	assert_false(Motion.switched_on(&"jack_fade_reduced"), "off")
+	Motion.start_recording()
+	Motion.seconds_live(&"drop_settle")
+	Motion.switched_on(&"jack_fade_reduced")
+	var asks := Motion.asks.duplicate(true)
+	Motion.stop_recording()
+	var me: String = (get_script() as Script).resource_path
+	assert_true((asks.get(&"drop_settle", {}) as Dictionary).has(me), "seconds_live notes its caller's ask")
+	assert_true((asks.get(&"jack_fade_reduced", {}) as Dictionary).has(me), "switched_on too")
+
+
+func test_fx_pieces_honour_their_switch() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	var was := Fx.limiter.enabled
+	Fx.limiter.enabled = false
+	assert_true(Fx.flash(), "a flash with screen_flash's numbers")
+	_table_with_off(&"screen_flash")
+	assert_false(Fx.flash(), "screen_flash off: no flash on its numbers")
+	assert_true(Fx.flash(Color.WHITE, 0.3, 0.1), "a caller's own numbers (its own entry gates it)")
+	Motion.use_config(null)
+	Settings.set_reduce_effects(true)
+	assert_false(Fx.flash(Color.WHITE, 0.3, 0.1), "reduce effects: never a flash (D8)")
+	Settings.set_reduce_effects(false)
+	Fx.limiter.enabled = was
+	Fx.flash_rect.color.a = 0.0
+	# Two start times 100 ms apart (under one roll period) roll to different phases.
+	assert_ne(Fx._roll(0), Fx._roll(100), "the scanlines roll")
+	_table_with_off(&"jack_scanlines")
+	assert_eq([Fx._roll(0), Fx._roll(100)], [0.0, 0.0], "jack_scanlines off: they hold still")

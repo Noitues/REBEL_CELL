@@ -477,6 +477,40 @@ unless named.
   export default or a dictionary fallback, naming offenders; the dev-only demo drags are
   exempt), `test_the_reduced_jack_fade_runs_at_the_speed`,
   `test_a_flight_and_a_stamp_take_their_shares_from_the_table`.
+- **D3 a view-level switch check.** R5's off-by-kind test checked only the kit's answers
+  (`Motion.live` / `seconds` / `amplitude`), so a view that reads an entry's time and draws
+  or tweens without asking whether it plays (the raid layer, the combat layer, the route
+  crawl) passed. `Motion.recording` now also notes every `live` question (`Motion.asks`,
+  the kit's helpers ask for their caller); two kit calls let a view ask in one step:
+  `Motion.seconds_live(id)` (the seconds when it plays, else 0) and `Motion.switched_on(id)`
+  (enabled, whatever reduce effects say: the reduced jack, reading times).
+  `test_motion_lab_demos` plays every demo, keeps every entry read and every question, and
+  fails on an entry with a motion of its own (not a part, a tuning or a hold) that a game
+  script read but that no game script asks about, neither while the demos ran nor in its
+  source (`live`, `seconds_live`, `switched_on`, or a helper that asks: `run`, `fade`,
+  `pop`, ...), naming the entry and its readers ("switch ignored" lines). Holds (a time that
+  is how long an end state or a word shows: `resolve_landing_hold`, `resolve_result_hold`,
+  `combat_end_hold`, `toast_note_hold`, `jack_arrival_wait`, `asset_drop_wait`,
+  `raid_incoming_hold`, `jack_connect`, `raid_step_gap`, `resolve_sequence`, `resolve_beat`,
+  `resolve_pass`) are listed in the test and in STYLE_GUIDE 5.5. A runtime check was chosen
+  over a pure source scan: most of the misses are drawn motions (a clock and an entry's
+  seconds, no tween), which a scan for tweens does not see.
+  Fixed here (this agent's files): the jack's reveal (`jack_arrive`), its dissolve wave
+  (`jack_dissolve`: off, no wave), its scanlines' roll (`jack_scanlines`: off, still), the
+  reduced jack's switch (asked through the kit), the screen flash on its default numbers
+  (`screen_flash`), the drop's settle, stamp fade and shredder feed.
+  **Found in other agents' files this round** (the test's `AWAITING_FIX`, which only shrinks:
+  once a view asks, the test says to remove its id): fix agent A: `card_stamp`
+  (combat_fx_layer), `dead_wheel_fade` and `hp_lag` (wheel_view), `heal_number`,
+  `hit_absorb` and `number_float` (combat_scene); fix agent C: `asset_drop_grow`,
+  `route_crawl`, `route_target_pulse`, `select_ring_pulse` (city_map_overlay),
+  `beacon_blink`, `city_sign_pick` (neon_city), `decoy_fire`, `home_lag`, `ice_lock_ring`,
+  `node_damage_number`, `raid_flip`, `raid_hit_effect`, `raid_move`,
+  `raid_outcome_stagger`, `raid_result_banner`, `turret_trace` (raid_fx_layer /
+  raid_beats). Tests: `test_every_lab_demo_exercises_its_own_entry` (the switch check),
+  `test_the_switch_check_names_a_view_that_never_asks`,
+  `test_a_view_asks_whether_its_motion_plays_through_the_kit`,
+  `test_fx_pieces_honour_their_switch`.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is

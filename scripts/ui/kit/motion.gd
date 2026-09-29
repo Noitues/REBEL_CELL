@@ -41,6 +41,10 @@ static var _index: Dictionary = {}
 static var recording: bool = false
 ## Entry reads while `recording`: {id: {script path: true}}.
 static var reads: Dictionary = {}
+## ANIM-R6 D3: `live` questions while `recording`, {id: {script path: true}}: which script
+## asked whether the entry plays (the kit's helpers ask for their caller). A view that
+## reads an entry's time to animate but never asks is a view that ignores the switch.
+static var asks: Dictionary = {}
 
 
 ## The motion table in use (loaded from CONFIG_PATH on first use).
@@ -81,6 +85,7 @@ static func entry(id: StringName) -> UiMotionEntryData:
 ## ANIM-R5: starts noting entry reads afresh (see `recording`).
 static func start_recording() -> void:
 	reads.clear()
+	asks.clear()
 	recording = true
 
 
@@ -99,14 +104,28 @@ static func readers(id: StringName) -> Array[String]:
 	return out
 
 
+## ANIM-R6 D3: the scripts that asked `live(id)` while recording (paths), sorted.
+static func askers(id: StringName) -> Array[String]:
+	var out: Array[String] = []
+	for p in asks.get(id, {}):
+		out.append(String(p))
+	out.sort()
+	return out
+
+
 static func _note_read(id: StringName) -> void:
+	_note(reads, id)
+
+
+## Notes `id` in `into` for the first caller outside this kit.
+static func _note(into: Dictionary, id: StringName) -> void:
 	var own := (Motion as Script).resource_path
 	for frame in get_stack():
 		var src := String(frame.get("source", ""))
 		if src != own:
-			if not reads.has(id):
-				reads[id] = {}
-			reads[id][src] = true
+			if not into.has(id):
+				into[id] = {}
+			into[id][src] = true
 			return
 
 
@@ -161,8 +180,29 @@ static func animating() -> bool:
 
 ## True when `id` animates now (animating() and its entry is enabled).
 static func live(id: StringName) -> bool:
+	if recording:
+		_note(asks, id)
 	var e := entry(id)
 	return e != null and e.enabled and animating()
+
+
+## ANIM-R6 D3: seconds of `id`'s motion when it plays now (`live`), else 0: for a view
+## that builds a timed motion of its own (a drawn motion, a part of a tween chain) and must
+## show its end state at once when the entry is switched off, under reduce effects or
+## headless.
+static func seconds_live(id: StringName) -> float:
+	return seconds(id) if live(id) else 0.0
+
+
+## ANIM-R6 D3: true when `id`'s entry is switched on (`enabled`), whatever reduce effects
+## or the display say: for a piece that plays its own reduced form under reduce effects
+## (the reduced jack) or a reading time that holds anyway. Noted as an ask while
+## recording, as `live` is.
+static func switched_on(id: StringName) -> bool:
+	if recording:
+		_note(asks, id)
+	var e := entry(id)
+	return e != null and e.enabled
 
 
 ## Tweens `property` of `node` to `to` with `id`'s timing. Returns the tween, or null

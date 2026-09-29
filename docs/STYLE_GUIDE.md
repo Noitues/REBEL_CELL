@@ -235,6 +235,12 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   (`Motion.seconds` / `delay_of` 0, `amplitude` 0 for a share, px or frames, 1 for a
   scale); a tuning of another entry (`UiMotionData.ALWAYS_ON`: the ghost's full-tilt speed,
   SEND IT's drip split) has nothing of its own and validation refuses it off.
+  ANIM-R6: every view that plays an entry with a motion of its own asks whether it plays
+  (`Motion.live`, `Motion.seconds_live` for a drawn motion's time, `Motion.switched_on` for a
+  piece with its own reduced form; the helpers ask for their caller); reading its seconds
+  alone is not enough (off, they stay: they are a hold). `test_motion_lab_demos` records
+  every read and every question while the demos play and names any view that never asks.
+  Holds (a time that is how long an end state or a word shows, 5.5) are exempt.
 - **The lab shows the real motion (ANIM-R5).** Each id's demo plays on the real piece (a
   live combat scene, the screen, the city map, the raid, Fx) or, for a motion the game
   plays with a Motion helper, that same helper on a lab piece. `test_motion_lab_demos.gd`
@@ -479,6 +485,13 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   and why Heat rose. Flights take 0.7 s, arrive at x0.55 and pulse the tag they land on. A
   route move keeps its page's presses (they end the move, nothing else); "then:" icons carry
   their words; the Modem's socket list says "Chips go into:".
+- **Holds (ANIM-R6)**: some entries are a time, not a motion: how long an end state or a
+  word shows (`resolve_landing_hold`, `resolve_result_hold`, `combat_end_hold`,
+  `toast_note_hold`, `raid_incoming_hold`, `jack_connect`), a bounded wait
+  (`jack_arrival_wait`, `asset_drop_wait`) or the replay's and the raid's pacing
+  (`resolve_sequence`, `resolve_beat`, `resolve_pass`, `raid_step_gap`). Switched off they keep
+  their time (there is no motion to leave out); every other entry's view asks whether it
+  plays (5.1).
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
