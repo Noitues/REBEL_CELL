@@ -467,11 +467,12 @@ func test_a_hit_flies_in_its_sides_colour_with_its_raw_number_and_its_guard_chip
 	assert_eq(String(travel[0].get("raw", "")), "", "no raw number morphs in the hub")
 	assert_eq(String(travel[0]["text"]), "-9", "what gets through travels into the HP")
 	assert_almost_eq(float(travel[0]["delay"]), CombatFxLayer.impact_seconds() + Motion.seconds(&"hit_absorb"), 0.001, "after the impact's equation")
-	var eq: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
-	assert_eq(eq.size(), 1, "the equation shows where it struck")
-	if not eq.is_empty():
-		var texts: Array = (eq[0]["items"] as Array).map(func(it: Dictionary) -> String: return String(it["text"]))
-		assert_eq(texts, ["14", "5", "9"], "sword 14 − shield 5 = 9")
+	# Art pass W3 (critique 3.4, expectation changed): one number per hit: what got through, in
+	# WARN (a guard took part), with its guard's part beside it ("14 − 5"), no second mark.
+	assert_eq(travel[0]["color"], Palette.WARN, "a partly guarded hit's number is amber")
+	var subs: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "number" and String(s["text"]) == "14 %s 5" % CombatFxLayer.EQ_MINUS)
+	assert_eq(subs.size(), 1, "the guard's part beside it")
+	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact").size(), 0, "no second number where it struck")
 	scene.skip_motion()
 	# The operative's hits in the operative's colour; a blocked hit still flies and shows it.
 	var mine := base.duplicate()

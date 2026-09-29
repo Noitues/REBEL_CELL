@@ -437,3 +437,46 @@ func test_tags_sit_clear_of_the_arrows_and_their_hints() -> void:
 			for hr in wv.arrow_hint_rects():
 				assert_false(tag.intersects(hr), "x%.1f: never over a key hint" % scale)
 		assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f" % scale)
+
+
+# --- 7. Net damage numbers (critique §3.4) ----------------------------------------------------------
+
+func _beat(src: StringName, tgt: StringName, amount: int, raw: int, soaked: int, hp_after: int) -> Dictionary:
+	return {"kind": "damage", "phase": "resolve", "pass": "offensive", "source": src, "target": tgt, "amount": amount, "raw": raw,
+		"soaked": soaked, "blocked": soaked, "shielded": 0, "crit": false, "hp_after": hp_after, "slot": -1, "pointer_index": 0,
+		"source_slot": -1, "source_tier": -1, "status": 0, "side": "enemy", "wheel_source": true, "event_index": 0, "host": &""}
+
+
+func test_one_number_per_hit_in_its_result_colour() -> void:
+	var scene := await _combat()
+	var s: CombatState = scene.engine.state()
+	var e := s.enemies[0].id
+	var p := s.player.id
+	var full := _beat(e, p, 7, 7, 0, s.player.hp - 7)
+	var part := _beat(e, p, 3, 7, 4, s.player.hp - 3)
+	var capped := _beat(p, e, 3, 12, 0, 0)
+	assert_eq(scene.numbers_for(full, s)[0]["color"], Palette.HARM, "a full hit in HARM")
+	assert_eq(scene.numbers_for(part, s)[0]["color"], Palette.WARN, "a partly blocked hit in amber")
+	assert_eq(scene.numbers_for(full, s).size(), 1, "one number per hit")
+	assert_eq(scene.number_sub(full), "", "a full hit needs nothing beside it")
+	assert_eq(scene.number_sub(part), "7 %s 4" % CombatFxLayer.EQ_MINUS, "the guard's part: 7 − 4")
+	assert_eq(scene.number_sub(capped), tr("(%d capped)") % 12, "an overkill reads as capped")
+
+
+func test_numbers_never_sit_on_the_hp_text() -> void:
+	var scene := await _combat()
+	var s: CombatState = scene.engine.state()
+	for v in scene._views():
+		var wv := v as WheelView
+		var hp: Rect2 = wv.hp_layout()["hp"]
+		hp.position += wv.global_position
+		var tgt := wv.combatant.id
+		var src := s.player.id if not wv.combatant.is_player else s.enemies[0].id
+		for n in scene.numbers_for(_beat(src, tgt, 12, 16, 4, wv.combatant.hp - 12), s):
+			var r := CombatFxLayer.number_rect(n["at"], String(n["text"]), bool(n["crit"]), Vector2.ZERO, int(n["fs"]))
+			assert_false(r.intersects(hp), "%s: the number starts off the HP text" % wv.combatant.display_name)
+		# An impact mark near the bottom of the arc moves off the HP number.
+		var bottom := wv.global_center() + Vector2(0, wv._radius() + (WheelView.HP_ARC_IN + WheelView.HP_ARC_OUT) * 0.5)
+		var eq: Array = scene.hit_equation(_beat(src, tgt, 0, 12, 12, wv.combatant.hp))
+		var spot: Vector2 = scene.impact_spot(wv, bottom, "0", RC.SliceType.DEFEND, eq)
+		assert_false(CombatFxLayer.impact_rect(spot, "0", RC.SliceType.DEFEND, eq).intersects(hp), "%s: the impact mark is off the HP number" % wv.combatant.display_name)

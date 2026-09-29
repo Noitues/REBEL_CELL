@@ -3572,8 +3572,14 @@ func numbers_for(b: Dictionary, s: CombatState, after: CombatState = null) -> Ar
 	match kind:
 		"damage", "corrupted":
 			if amount > 0:
-				var n := _number(v, "hp", "-%d" % amount, WheelView.LOSS_COLOR, &"number_float", crit, true)
+				# Art pass W3 (critique 3.4): one number per hit, in its result's colour: WARN when a
+				# guard took part of it (with a small "7 − 4" beside it), HARM for a full hit; a hit
+				# the HP ran out under says so ("−3 (12 capped)").
+				var hit := ResolveBeats.is_hit(b)
+				var partial := hit and int(b["soaked"]) > 0
+				var n := _number(v, "hp", "-%d" % amount, Palette.WARN if partial else WheelView.LOSS_COLOR, &"number_float", crit, true)
 				n["hp"] = amount
+				n["sub"] = number_sub(b)
 				if int(b["soaked"]) > 0 and ResolveBeats.is_hit(b):
 					# ANIM-R4 C6c: the hit meets its guard where it struck (the equation, sword
 					# raw − shield soaked = through); what gets through then pops fresh in the
@@ -3589,6 +3595,46 @@ func numbers_for(b: Dictionary, s: CombatState, after: CombatState = null) -> Ar
 		n["hp"] = amount
 		out.append(n)
 	return out
+
+
+## Art pass W3 (critique 3.4): the small words beside a hit's number: its guard's part
+## ("7 − 4": the hit, less what the guard took) or, when the HP ran out under it, what it
+## would have dealt ("(12 capped)"); "" for a full hit that fit.
+static func number_sub(b: Dictionary) -> String:
+	if not ResolveBeats.is_hit(b) or String(b["kind"]) != "damage":
+		return ""
+	var raw := int(b.get("raw", b["amount"]))
+	var soaked := int(b["soaked"])
+	var through := maxi(0, raw - soaked)
+	if int(b["amount"]) < through:
+		return String(TranslationServer.translate("(%d capped)")) % through
+	if soaked > 0:
+		return "%d %s %d" % [raw, CombatFxLayer.EQ_MINUS, soaked]
+	return ""
+
+
+## Art pass W3 (critique 3.4, "42⁶42"): where a hit's impact mark shows on view `v`: where it
+## struck (`at`, global), moved in toward the wheel's centre until it is clear of the HP
+## number.
+func impact_spot(v: WheelView, at: Vector2, text: String, icon: int, items: Array) -> Vector2:
+	var lay := v.hp_layout()
+	var hp: Rect2 = lay["hp"]
+	hp.position += v.global_position
+	var dir := (v.global_center() - at).normalized()
+	var spot := at
+	for k in IMPACT_NUDGES:
+		if not CombatFxLayer.impact_rect(spot, text, icon, items).intersects(hp):
+			break
+		spot += dir * IMPACT_NUDGE_PX
+	return spot
+
+
+## How far (px a step) and how often an impact mark moves off the HP number.
+const IMPACT_NUDGE_PX := 2.0
+const IMPACT_NUDGES := 60
+## A number's small words: their size (share of the number's) and gap after it (share).
+const SUB_SHARE := 0.5
+const SUB_GAP := 0.25
 
 
 ## The guard a beat shows as a glyph and a number (ANIM-R3 A6e): a block, shield or evade
@@ -3789,10 +3835,15 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	# ALL BLOCKED (with its mark) on its last hit's impact.
 	var zero := zero_mark(b)
 	var eq := hit_equation(b)
-	if not eq.is_empty():
-		# ANIM-R4 C6c: the hit meets its guard where it struck, in the one notation (sword 8 −
-		# shield 8 = 0; sword 14 − shield 5 = 9).
-		fx_layer.impact(victim_at, String(zero.get("text", "")), int(zero.get("icon", -1)), CHIP_GUARD, impact, eq)
+	if not eq.is_empty() and not (kind == "damage" and int(b["amount"]) > 0):
+		# ANIM-R4 C6c: a hit that got nothing through meets its guard where it struck, in the
+		# one notation (sword 8 − shield 8 = 0), off the HP number (art pass W3). A hit that got
+		# through says its guard's part beside its one number instead ("−9" and "14 − 5").
+		var mark_at := impact_spot(tv, victim_at, String(zero.get("text", "")), int(zero.get("icon", -1)), eq) if on_host else victim_at
+		fx_layer.impact(mark_at, String(zero.get("text", "")), int(zero.get("icon", -1)), CHIP_GUARD, impact, eq)
+	elif not eq.is_empty():
+		# The guard's shape where the hit struck (W6: hex plates, an evade's smear).
+		fx_layer.hit_vfx(victim_at, CombatFxLayer.HIT_SHIELD, Palette.AUTO, impact)
 	if b.has("final_stamp") and on_host:
 		var spot := tv.stamp_slot(String(b["final_stamp"]), CombatFxLayer.GUARD_NULL)
 		_hub_stamp(tv, spot, String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))), impact, CombatFxLayer.GUARD_NULL)
@@ -3816,6 +3867,12 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 			# hit's equation has been read), fresh, then travels.
 			fx_layer.travel_number(n["at"], tv.hp_counter_spot(), n["text"], n["color"], n["crit"], int(n["fs"]), String(n["band"]),
 				_hp_arrives.bind(tv, hp_after), impact + float(n.get("after", 0.0)))
+			if String(n.get("sub", "")) != "":
+				var sfs := maxi(UiTheme.CAPTION, roundi(int(n["fs"]) * SUB_SHARE))
+				var nw := Palette.display().get_string_size(String(n["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(n["fs"])).x
+				var sw := Palette.display().get_string_size(String(n["sub"]), HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x
+				var sat: Vector2 = n["at"] + Vector2((nw + sw) * 0.5 + int(n["fs"]) * SUB_GAP, int(n["fs"]) * SUB_GAP)
+				fx_layer.number(sat, String(n["sub"]), n["color"], &"hit_absorb", Vector2.UP, false, 0.0, sfs, "", impact + float(n.get("after", 0.0)))
 			hp_waits = true
 		else:
 			fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"], int(n["fs"]), String(n["band"]), impact, int(n.get("icon", -1)))
