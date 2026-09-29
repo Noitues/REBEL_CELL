@@ -203,6 +203,31 @@ Review folder: `docs/art_review/W5/`. Briefs are in `docs/art_briefs/characters/
 
 **Orchestrator merge:** W2's and W5's appended motion entries were combined, and `ui_motion.tres` was rebuilt from W2's version plus W5's three hologram entries.
 
+### 2026-09-29 — Art pass W4: cards (merged into `art-pass`)
+Review folder: `docs/art_review/W4/`. Briefs are in `docs/art_briefs/cards/`: 35 effect families and 12 unique cards. Concepts are pixel art, in `W4/concepts/`.
+- **§6.3 faces.** Hand-size cards (112×148, unchanged) show a compact face: gem, title, 60% art and the band, with no rules text. Screens that must show every word (Modem, loot, deck view, detail at 288×320) show the full face.
+- **No ellipsis anywhere (§4.3).** When text doesn't fit, the full face steps down in this order:
+  1. the text shrinks one step;
+  2. the art shrinks (floor 15%);
+  3. the band is dropped;
+  4. the card grows taller.
+
+  Tested on all 71 cards at 1.0, 1.6 and 2.0.
+- **Card type drives the card colour.** It comes from the first effect:
+  - WHEEL (paper): moves wheels.
+  - SYSTEM (black): defence, resources and buffs.
+  - HACK (pink): damage, corrupt/parasite, breach, resistance strip and RAM drain.
+
+  The colour no longer depends on hand position.
+- **Riso stand-ins (§7.3).** Two inks, INK + `CELL_PINK`: key screen at 45°, spot at 15°, about 1.4% off register. Rares and class cards vary by a hash of the card id. Renders are cached, 2 per frame.
+- **Art override.** `CardData.art`, an existing field that wasn't used, is now the final-art override. **No schema change.**
+- **Rarity (§6.3).** Common is photocopy grain, uncommon a glossy die-cut sticker, rare/boss holographic foil (`shaders/foil.gdshader`, static under reduce effects). In greyscale, rarity also reads by pip (dot/diamond/star) and edge.
+- **Cost gem** is `NOTE_YELLOW` (`CELL_ACID` is reserved for focus). A RAM refusal pulses `HARM`.
+- **Motion constants.** Hover is 12 px + ×1.12 on `card_hover` timing. The ghost scale is 0.6. Both are named constants; there are no new motion ids.
+- **Detail view (§2).** The paper card is taped *beside* a glass notes panel, never inside it. The notes never repeat the face text.
+- **Orchestrator decision on W4's open gap.** In greyscale, paper and pink stock are hard to tell apart. Because §3.1 says colour is never alone, HACK stock gets a light diagonal hatch. This goes to W3/W8 as a follow-up: `zine_card.gd` is W4's file, and W4 has finished, so the orchestrator will apply it.
+- **Orchestrator test fix.** `test_horizontal_pass19` now sets keyboard input itself. Earlier scripts in its shard leave the pad active, and the new shard layout exposed that (the hint showed "[LB]").
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
