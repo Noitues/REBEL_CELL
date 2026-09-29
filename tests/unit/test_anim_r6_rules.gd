@@ -301,6 +301,7 @@ const NOT_SKIPPABLE := {
 	"res://scripts/ui/kit/pad_prompts.gd": "the prompts fade in when a device is used: the answer to that press",
 	"res://scripts/ui/kit/ram_bar.gd": "RAM ticks and refusals answer the card played or refused",
 	"res://scripts/ui/kit/toast.gd": "a toast is a reading time",
+	"res://scripts/ui/kit/tutorial_overlay.gd": "the tutorial's Next pulses in a loop while it waits: nothing to complete",
 	"res://scripts/ui/kit/wireframe_background.gd": "an ambient loop: nothing to complete",
 	"res://scripts/ui/kit/zine_stamp.gd": "JACK IN's breathing is an ambient loop",
 }

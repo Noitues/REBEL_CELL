@@ -58,7 +58,6 @@ const ASKING_HELPERS: Array[String] = ["live", "seconds_live", "switched_on", "r
 ## owns (DECISIONS "Animation pass — ANIM-R6 rules", D3). Each must still be caught: once
 ## its view asks, the test says to remove it here (the list only shrinks).
 const AWAITING_FIX := {
-	&"card_stamp": "combat_fx_layer.play_card (fix agent A combat)",
 	&"dead_wheel_fade": "wheel_view.play_break (fix agent A combat)",
 	&"heal_number": "combat_scene (fix agent A combat)",
 	&"hit_absorb": "combat_scene (fix agent A combat)",

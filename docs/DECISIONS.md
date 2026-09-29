@@ -501,7 +501,7 @@ unless named.
   (`screen_flash`), the drop's settle, stamp fade and shredder feed.
   **Found in other agents' files this round** (the test's `AWAITING_FIX`, which only shrinks:
   once a view asks, the test says to remove its id): fix agent A: `card_stamp`
-  (combat_fx_layer), `dead_wheel_fade` and `hp_lag` (wheel_view), `heal_number`,
+  (combat_fx_layer; fixed by A's batch and taken off the list at the merge), `dead_wheel_fade` and `hp_lag` (wheel_view), `heal_number`,
   `hit_absorb` and `number_float` (combat_scene); fix agent C: `asset_drop_grow`,
   `route_crawl`, `route_target_pulse`, `select_ring_pulse` (city_map_overlay),
   `beacon_blink`, `city_sign_pick` (neon_city), `decoy_fire`, `home_lag`, `ice_lock_ring`,
