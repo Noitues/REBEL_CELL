@@ -897,9 +897,8 @@ func _play_context(scene: String, what: String) -> void:
 	match what:
 		"fight_won":
 			# The fight is won by SEND IT; VICTORY stands until the netrun opens the loot after
-			# `combat_end_hold`.
-			if hq.combat_scene != null:
-				hq._demo_combat_end("win")
+			# `combat_end_hold`. The scene waits for its fight itself (the jack may still run).
+			hq._demo_combat_end("win")
 		"route":
 			hq.enter_node(RunManager.netrun.available_nodes()[0])
 		"select":
