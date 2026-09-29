@@ -3,9 +3,9 @@ extends PanelContainer
 ## A short-lived note at the foot of the screen for what the player must see once (H20:
 ## the system log is an optional record, so refusals, saves and unlocks can't live only
 ## there): pink edge for a refusal, acid for news. One per screen (a new one replaces
-## it); ignores the mouse and focus; gone after `toast_note_hold`'s duration (read raw:
-## it is how long words stay to be read, so reduce effects and a raid's speed never
-## shorten it). View only.
+## it); ignores the mouse and focus; gone after `toast_note_hold`'s duration (a reading
+## time: reduce effects and a faster speed never shorten it; ANIM-R6 B7: a slower speed
+## lengthens it, `hold_seconds`). View only.
 
 const HOLD_MOTION := &"toast_note_hold"
 ## Gap to the screen's bottom edge (px).
@@ -44,8 +44,19 @@ static func show_on(host: Control, text: String, warn: bool = false) -> ToastNot
 	t._place.call_deferred()
 	if host.is_inside_tree():
 		# Bound to the note itself: a note already replaced or freed drops the call.
-		host.get_tree().create_timer(Motion.entry(HOLD_MOTION).duration).timeout.connect(t.queue_free)
+		host.get_tree().create_timer(hold_seconds()).timeout.connect(t.queue_free)
 	return t
+
+
+## ANIM-R6 B7: how long a note stays (s): `toast_note_hold` at the motion speed when that is
+## slower (a slowed-down capture or a slow speed setting holds the words longer, as every
+## other motion), never shorter than its raw duration (a raid at 4x never cuts the reading
+## time; reduce effects neither).
+static func hold_seconds() -> float:
+	var e := Motion.entry(HOLD_MOTION)
+	if e == null:
+		return 0.0
+	return maxf(e.duration, Motion.seconds(HOLD_MOTION))
 
 
 func _place() -> void:
