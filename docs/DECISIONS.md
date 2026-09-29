@@ -438,6 +438,81 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R5 netrun screens
+The fifth fix batch of the Animation pass review, netrun screens part (B1-B11). Views only
+(no rule, no schema field; the one new motion id is data). Every call below was the
+implementer's (the standing rule: nothing deferred). Tests: `tests/unit/test_anim_r5_netrun.gd`
+(full tier, 14 tests). Checked in windowed Movie Maker captures (no ERROR in the logs); strips
+recaptured in `docs/timeline/motion/` (CHOSEN on top, a variant under it, the whole screen,
+quantized to 128 colours, raw frames never entered the repo): `buy_fly`, `loot_pick`,
+`dispatch_type`, `route_pulse`, and new `event_page`, `run_end`.
+- **B1 the event's paper (P1).** R4 C7's "as tall as its words" gave the ZinePanel no height
+  at all: a ZinePanel is a plain Control with no minimum of its own, and the RichTextLabel,
+  typing from `visible_characters = 0`, measured (fit_content) only the characters shown, so
+  the paper was a sliver and the title and story drew in dark ink over the city. Now
+  `ZinePanel.fit_to_content()` (opt-in; other panels size themselves) makes the paper's minimum
+  its content's, and a typing label is shaped whole (`VC_CHARS_AFTER_SHAPING`, set by
+  `Typing.type_in` for every typing label, and on the event's text and the subtitle): the words
+  keep their full height from the first frame. Tested with typing ON at 1.0 / 1.3 / 1.6: the
+  paper holds its title and every line while they type, and the height does not change when
+  they finish.
+- **B2 the subtitle.** The event's line was paged for the fallback band (two lines at 964 px)
+  before the page's own one-line strip registered; the re-dock then fitted that two-line page
+  into one line by shrinking the font (to 7 px), and nothing grew it back. A dock of another
+  shape now pages the line on screen again (`Dialogue._repage_shown`: the page shown and the
+  rest of its line, at the text size's font), and a page never shrinks below
+  `Dialogue.MIN_FONT_SIZE` (12 px x the text size; past it the page clips). The event's and the
+  run end's bands hold two lines (`SubtitleStrip.set_lines`, `SUBTITLE_LINES`): long lines wrap
+  instead of paging with a "…" (the run end's "do not let it be for …").
+- **B3 the run's end.** It was the glass sheet (solid over the city, which a flatline in a
+  fight had also hidden: `background.visible` is now set for every page but a fight) with its
+  words in the top 250 px. Now a window centred over the city: a verdict stamp (a resolved
+  `ForecastStamp`, landing with `forecast_stamp_resolve`: FLATLINED / JACKED OUT / HOME FELL),
+  the operative's fate in words (**a flatline is permanent**, GDD 4.2 / 5.1 permadeath: "X is
+  gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are
+  kept; Cycles and unbanked loot are lost."), the run's tags, and a Heat line beside the HEAT
+  tag's number ("Heat +11: flatlined on a run."; with Heat from the route too, "+11 for
+  flatlining on a run, +2 from the route's nodes and events", the flatline's share read from
+  the session's own Heat event). Translated once. **Decided:** a completed run's verdict is
+  JACKED OUT (the title bar already said "NETRUN // JACK OUT"), an aborted one's HOME FELL.
+- **B4 words whole before the page settles.** A subtitle page now types within
+  `dispatch_type`'s amplitude (new: 0.8 s, the event story's cap), and a netrun page's first
+  focus lands once its entrance has ended and the words typing on it and in the subtitle are
+  whole (`_settle_page`; the one-press rule completes them and the focus lands at once). The
+  event page keeps its own rule (focus on the first choice at once, the choices held until the
+  words are whole: ANIM-R2 E1).
+- **B5 flights.** `buy_fly` 0.7 s to x0.55 (was 0.4 s to x0.35), `loot_pick` 0.7 s (was 0.35 s),
+  and a flight's landing pulses the tag it went to (`flight_land_pulse`, new: 0.4 s to x1.3,
+  bigger than a value's x1.08 bump; CARDS for a card, the DAEMONS icon or VIEW LOADOUT for the
+  rest; `FlightFx.fly(..., on_land)`). Within the readability rule: nothing waits on it (any
+  press ends a flight and the pulse still plays).
+- **B6 the route move.** The move's new choices were live and focused, and the "a choice
+  pressed while travelling skips the move" guard in `enter_node` was dead: `_input` ended the
+  move and passed the press on, and the choice then reached `NetrunSession.enter_node` after the
+  move had opened the node (refused). Now the route page is the move's keep list
+  (`MotionSkip.verdict(..., route_keep())`: a press on a choice, GRID VIEW or Save & quit ends the
+  move and does nothing else) and nothing on the page takes focus during the move (the node's
+  screen takes it). The guard stays as a defence.
+- **B7 the route demo** reaches its first node through the session (`demo_first_node`:
+  `enter_node`, the fight's SEND ITs, `skip_reward`); the view no longer sets the run's node or
+  visited list.
+- **B8** the mid-run raid playout is a screen of its own (`RAID_PLAYOUT_SCREEN`): its title is
+  NETRUN // RAID (it said NETRUN // ROUTE, the run's phase being the route again), and the route
+  after it enters as a new screen.
+- **B9** a route choice's "then:" icons carry their words ("then: [bag] Shop", the route's own
+  node words, translated), in a flow that wraps in the ROUTE window.
+- **B10** `_frame_raid_map` stops when the scene left the tree during its frame's wait, and the
+  demos' frame waits go through `_frames_in_tree` (never `get_tree()` on nothing).
+- **B11** the Modem's socket list says what it is for: "Chips go into: [Slot 1: CRIT 12]" with a
+  tooltip on both (what a chip does, that BUY sockets it there, that a drag picks the slot too).
+  Presentation only.
+- New id: `flight_land_pulse` (REQUIRED_IDS, lab demo). Retuned: `buy_fly`, `loot_pick`,
+  `dispatch_type` (amplitude). Words (exported once): the fate lines, the Heat reasons, JACKED
+  OUT, HOME FELL, Chips go into:, the socket tip; dropped: CLEAN EXIT, ABORTED, "Socket into
+  %s", the old socket tip.
+- Expectation changed on purpose: `test_horizontal_pass20_screens` (the result stamp is a
+  resolved ForecastStamp saying JACKED OUT).
+
 #### 2026-09-28 — Animation pass — ANIM-R4 combat, input and screens
 The fourth fix batch of the Animation pass review, combat, input and screens part (C1-C7).
 Views only (no rule, no schema field changed; new motion ids are data). Every call below was

@@ -405,6 +405,15 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   focus tip never folds under 26 columns and goes beside (off the MODEM sign); a flapping BUY
   keeps off its card's text; a price refusal under a narrow tag wraps at its dot; an event's
   story types within 0.8 s on paper as tall as its words.
+- **ANIM-R5 netrun screens**: typing never changes a layout (words are shaped whole while
+  they type; paper is at least as tall as its content); a subtitle page types within 0.8 s,
+  is paged again when its band changes shape, never shrinks under 12 px x the text size, and
+  the event's and the run end's bands hold two lines; a page's focus lands once its words
+  are whole (a press completes them). The run's end is a window over the city with a verdict
+  stamp (FLATLINED / JACKED OUT / HOME FELL), the operative's fate (a flatline is for good)
+  and why Heat rose. Flights take 0.7 s, arrive at x0.55 and pulse the tag they land on. A
+  route move keeps its page's presses (they end the move, nothing else); "then:" icons carry
+  their words; the Modem's socket list says "Chips go into:".
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every
