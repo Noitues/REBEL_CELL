@@ -56,11 +56,12 @@ func _init() -> void:
 	focus_mode = Control.FOCUS_NONE
 	visible = false
 	_panel = note_style()
+	_contrast_edge()
 	add_theme_stylebox_override(&"panel", _panel)
 	label = Label.new()
 	# Callers pass translated text (H24: the respin note was translated twice).
 	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	label.add_theme_color_override(&"font_color", Palette.INK)
+	label.add_theme_color_override(&"font_color", PaperInk.text(Palette.INK))
 	label.add_theme_color_override(&"font_shadow_color", Color.TRANSPARENT)
 	label.add_theme_font_override(&"font", Palette.marker())
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -162,6 +163,8 @@ func _show(text: String, anchor: Vector2, is_refusal: bool, max_width: float) ->
 func _set_words(text: String, is_refusal: bool, room: float) -> void:
 	refusal = is_refusal
 	var s := Settings.text_scale
+	_contrast_edge()
+	label.add_theme_color_override(&"font_color", PaperInk.text(Palette.INK))
 	_panel.content_margin_left = GLYPH_ROOM * s
 	_panel.content_margin_right = PAD_H * s
 	_panel.content_margin_top = PAD_V * s
@@ -177,6 +180,23 @@ func _set_words(text: String, is_refusal: bool, room: float) -> void:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.custom_minimum_size.x = maxf(1.0, room - chrome)
 	queue_redraw()
+
+
+## Art pass WF (§12): in high contrast the sticky keeps its paper and its edge goes opaque
+## INK at PaperInk.EDGE_PX (read again each time it shows).
+func _contrast_edge() -> void:
+	var base := note_style()
+	_panel.border_color = PaperInk.edge(base.border_color)
+	_panel.set_border_width_all(roundi(PaperInk.edge_width(base.border_width_left)))
+
+
+## The sticky's edge colour and width now (px).
+func edge_color() -> Color:
+	return _panel.border_color
+
+
+func edge_width() -> float:
+	return float(_panel.border_width_left)
 
 
 ## In (`toast_in`: fade up and a small drop), held, out (`toast_out`); at once under reduce
@@ -209,11 +229,11 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	# The tape across the top edge, tilted (paper is never square).
 	draw_set_transform(Vector2(size.x * 0.5, 0.0), deg_to_rad(TAPE_TILT), Vector2.ONE)
-	draw_rect(Rect2(-TAPE_SIZE * s * 0.5, TAPE_SIZE * s), Palette.NOTE_TAPE)
+	draw_rect(Rect2(-TAPE_SIZE * s * 0.5, TAPE_SIZE * s), PaperInk.opaque(Palette.NOTE_TAPE, Palette.NOTE_YELLOW))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var c := Vector2(GLYPH_ROOM * s * 0.5 + 2.0, size.y * 0.5)
 	if refusal:
-		StatIcon.draw(self, c, GLYPH_R * s, StatIcon.NO_ENTRY, Palette.HARM, true)
+		StatIcon.draw(self, c, GLYPH_R * s, StatIcon.NO_ENTRY, Palette.HARM_INK, true)  # ink on the sticky (§3.3)
 	else:
 		StatIcon.draw(self, c, GLYPH_R * s, StatIcon.INFO, Palette.INK, true)
 

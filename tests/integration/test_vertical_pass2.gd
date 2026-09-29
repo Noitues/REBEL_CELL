@@ -104,7 +104,7 @@ func test_netrun_panels_are_zine_styled() -> void:
 	scene._show_current()
 	var stamp := false
 	for n in _descendants(scene._panel):
-		stamp = stamp or (n is ZineStamp and n.stamp_text == "CLEAN EXIT")
+		stamp = stamp or (n is VerdictStamp and (n as VerdictStamp).shown_word() == "JACKED OUT")  # art pass W8c
 	assert_true(stamp)
 
 

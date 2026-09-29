@@ -776,11 +776,16 @@ func _s_modem() -> void:
 func _s_modem_socket() -> void:
 	for seed in range(7, 7 + SOCKET_SEEDS):
 		var net: Node = await _modem(seed)
-		var pick := net._panel.find_child("SocketPick", true, false) as OptionButton if net._panel != null else null
-		if pick != null:
+		# Art pass W8c: the socket list became slot tiles (SlotPicker, a TilePicker): the shot
+		# focuses them (an OptionButton still pops its list).
+		var pick := net._panel.find_child("SocketPick", true, false) as Control if net._panel != null else null
+		if pick != null and pick.is_visible_in_tree():
 			if seed != 7:
 				_warnings.append("campaign seed %d (the first with Firmware in stock)" % seed)
-			pick.show_popup()
+			if pick.has_method("show_popup"):
+				pick.call("show_popup")
+			else:
+				pick.grab_focus()
 			await _frames(SETTLE_FRAMES)
 			return
 		net.queue_free()

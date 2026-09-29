@@ -39,6 +39,15 @@ const LINE_HEIGHT := {CAPTION: 1.3, BODY: 1.4, LABEL: 1.25, TITLE: 1.2, HEADING:
 const TRACKING_DISPLAY := 0.02
 const TRACKING_MONO_CAPS := 0.08
 const TRACKING_DEFAULT := 0.0
+## Art pass WF (§4.2): tracking in px per type step at text scale 1.0 (the fractions above
+## round to 0 px below `heading`). Faces: TRACK_DISPLAY (Anton) and TRACK_MONO_CAPS (Share
+## Tech Mono labels in CAPS); any other face, or a step not listed, tracks 0.
+const TRACK_DISPLAY := &"display"
+const TRACK_MONO_CAPS := &"mono_caps"
+const TRACKING_PX := {
+	TRACK_DISPLAY: {CAPTION: 1, BODY: 1, LABEL: 1, TITLE: 1, HEADING: 2, DISPLAY: 2, HERO: 3},
+	TRACK_MONO_CAPS: {CAPTION: 1, BODY: 1, LABEL: 1, TITLE: 2, HEADING: 2, DISPLAY: 3, HERO: 4},
+}
 
 # --- ART_BIBLE §5.1 spacing ------------------------------------------------------------------
 # An 8 px grid with a 4 px half-step; reference pixels at 1280x720 (they scale with the
@@ -85,6 +94,33 @@ static func line_spacing_px(font: Font, step: int, px: int) -> int:
 ## FontVariation.spacing_glyph.
 static func tracking_px(tracking: float, px: int) -> int:
 	return roundi(px * tracking)
+
+
+## Art pass WF (§4.2): the tracking (px) of `face` (TRACK_DISPLAY / TRACK_MONO_CAPS) at type
+## step `step`, at the player's text scale (or `scale` when given): TRACKING_PX's value
+## times the scale, rounded, never under the 1.0 value.
+static func tracking_step_px(face: StringName, step: int, scale: float = -1.0) -> int:
+	var base: int = (TRACKING_PX.get(face, {}) as Dictionary).get(step, 0)
+	var s := Settings.text_scale if scale < 0.0 else scale
+	return maxi(base, roundi(base * s)) if s >= 1.0 else roundi(base * s)
+
+
+static var _tracked: Dictionary = {}
+
+
+## Art pass WF (§4.2): `font` with the tracking of `face` at `step` (a cached FontVariation
+## whose spacing_glyph is tracking_step_px), for a Label's font override or draw_string.
+static func tracked(font: Font, face: StringName, step: int) -> Font:
+	var px := tracking_step_px(face, step)
+	if px == 0 or font == null:
+		return font
+	var key := "%d|%d" % [font.get_instance_id(), px]
+	if not _tracked.has(key):
+		var v := FontVariation.new()
+		v.base_font = font
+		v.spacing_glyph = px
+		_tracked[key] = v
+	return _tracked[key]
 
 
 static func build(text_scale: float = 1.0) -> Theme:

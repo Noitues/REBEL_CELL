@@ -93,6 +93,7 @@ The STYLE_GUIDE's "three worlds" map onto these materials: Physical = DECK (with
 |---|---|---|---|
 | `HARM` | #FF4433 | Damage taken, losses, costs, LETHAL, enemy projectiles, refusals. | ▼ or "−", the sword/skull glyph, the word. |
 | `GAIN` | #7BE07B | Healing, gains, a positive outcome, "good for you" status. | ▲ or "+", the heart glyph. |
+| `HARM_INK` / `GAIN_INK` | #AB2E22 / #396739 | `HARM` and `GAIN` as **ink on paper** (PAPER, PAPER_ALT, NOTE_PAPER, NOTE_YELLOW, all ≥ 4.5:1). Paper surfaces use these; they never darken the screen hues locally. | As `HARM` / `GAIN`. |
 | `PROTECT` | = `NET_CYAN` | Block, shield, evade, guards. | Shield glyph. |
 | `WARN` | = `CRT_AMBER` | Caution: low HP (<50%), NOTICED Heat, a pending raid. | An eye or "!" glyph. |
 | `FOCUS` | = `CELL_ACID` | Keyboard/pad focus, aim, legal drop zones, current target. | Corner brackets (4 marks). |
@@ -164,7 +165,7 @@ Sizes are in reference pixels of the 1280×720 base viewport, **before** `Settin
 
 - Numbers in the combat hub fit the hub at every text scale (STYLE_GUIDE 5.2); use `heading` and shrink to `label` before overlapping anything.
 - Line length: ≤ 70 characters for body text; wider panels use two columns.
-- Tracking: Anton +2%, Share Tech Mono labels in CAPS +8%, everything else default.
+- Tracking, in px per step at text scale 1.0 (× `text_scale`, rounded, never below the 1.0 value; `UiTheme.TRACKING_PX`): Anton +1 at `caption`–`title`, +2 at `heading` and `display`, +3 at `hero`; Share Tech Mono labels in CAPS +1 at `caption`–`label`, +2 at `title` and `heading`, +3 at `display`, +4 at `hero`; everything else default (0). (A percentage rounded to 0 px below `heading`.)
 
 ### 4.3 Hard type rules
 1. **Every** font size comes from the scale via `UiTheme` and is multiplied by `text_scale`. A literal size in a view is a bug. Example: `ui_theme.gd` sets a fixed 22 on one button variant; that must become `roundi(22 * text_scale)`.
@@ -482,6 +483,7 @@ Each blueprint gives the **focal order** (what the eye hits first to last), the 
 - **Colour-blind modes** (deutan, protan, tritan) remap corp and semantic hues. Patterns and glyphs (§3.6, §8) make every state readable in greyscale. Test every screen in greyscale.
 - **Reduce effects** and **flash limiter** per §8. Plus a separate **reduce motion** toggle (no camera moves, no parallax, cross-fades only).
 - **High-contrast mode:** opaque panels (no blur), `TEXT_HI` on #000, 7:1 minimum.
+  - **PAPER in high contrast:** PAPER keeps its stock colour, but text goes `INK` at 7:1 and edges 2 px `INK`; nothing on paper is translucent (tape, fills). `PaperInk` in the kit applies it.
 - **Pad:** face-button glyph sets for Xbox, PlayStation, Switch and Steam Deck, switched automatically. Prompts use glyphs, never letters in brackets. The focus treatment per §6. Every drag has its button path (STYLE_GUIDE 5.4).
 - **Localisation:** see §4.3 rule 5. Glyphs and numbers stand alone from words (never embed a number inside a translatable sentence where it can't be read without the words).
 

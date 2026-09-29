@@ -395,7 +395,7 @@ func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void
 # --- S8 the Modem -------------------------------------------------------------------------------------
 
 func test_every_shop_item_has_a_price_words_and_a_buy_button() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -437,7 +437,10 @@ func test_the_buy_button_presses_its_item_and_shows_the_pad_button() -> void:
 	Settings.set_pad_active(true)
 	card.grab_focus()
 	await _frames()
-	assert_string_contains(card.buy_button.label_text(), Settings.key_text(&"ui_accept"), "the pad button while focused")
+	# Art pass W8c: the pad button is a glyph of its own beside the price, never in its words.
+	assert_true(card.buy_button.glyph.visible, "the pad button while focused")
+	assert_eq(card.buy_button.pad_key(), Settings.key_text(&"ui_accept"))
+	assert_false(card.buy_button.label_text().ends_with(Settings.key_text(&"ui_accept")), "not inside the price's words")
 	var tip := FocusTip.tip_of(card)
 	assert_not_null(tip, "the whole text shows on focus")
 	if tip != null:
@@ -488,7 +491,7 @@ func test_a_change_that_is_none_shows_no_number() -> void:
 # --- S10 the event title and the subtitle band --------------------------------------------------------------
 
 func test_the_event_title_is_clear_of_the_subtitle_band_and_an_empty_band_hides() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -639,10 +642,11 @@ func test_event_subtitles_are_translated_once() -> void:
 	await _frames(2)
 	var ev := RunManager.netrun.current_event()
 	var once := TextDb.t(ev, "text")
-	var shown := Dialogue.current_text().strip_edges()
-	assert_ne(shown, "", "the event speaks")
-	assert_true(once.begins_with(shown), "the page is the text translated once: '%s' vs '%s'" % [shown, once])
-	assert_eq(Dialogue.history[-1]["text"], once)
+	# Art pass W8c (ART_BIBLE 11 Events): the story is on the page, translated once; the
+	# subtitle band does not say it again.
+	var page := scene._panel.find_child("EventText", true, false) as RichTextLabel
+	assert_true(once.ends_with(page.text), "the page is the text translated once: '%s' vs '%s'" % [page.text, once])
+	assert_false(Dialogue.is_showing() and once.begins_with(Dialogue.current_text().strip_edges()), "the band doesn't repeat it")
 	TranslationServer.pseudolocalization_enabled = false
 	await _close(scene)
 

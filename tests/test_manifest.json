@@ -153,6 +153,14 @@
 			"seconds": 20.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art_w8c_netrun.gd": {
+			"seconds": 27.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art_wf_kit.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.1,
 			"tier": "fast"

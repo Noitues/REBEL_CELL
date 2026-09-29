@@ -263,11 +263,12 @@ func test_the_netrun_end_is_tags_and_a_stamp_that_takes_no_focus() -> void:
 	RunManager.netrun.run.phase = RunState.Phase.ENDED
 	scene._show_end()
 	await _frames()
-	var stamp := scene._panel.find_child("ResultStamp", true, false) as ZineStamp
+	# Art pass W8c: the verdict is a hero-size stamp (VerdictStamp), the numbers a receipt.
+	var stamp := scene._panel.find_child("ResultStamp", true, false) as VerdictStamp
 	assert_eq(stamp.focus_mode, Control.FOCUS_NONE)
 	assert_eq(stamp.mouse_filter, Control.MOUSE_FILTER_IGNORE)
-	assert_eq(stamp.hint, "", "no key hint on a result")
-	assert_true(scene._panel.find_child("RunTags", true, false) is HudStats, "the run in numbers as tags")
+	assert_eq(stamp.shown_word(), tr("JACKED OUT"), "the verdict, no key hint")
+	assert_true(scene._panel.find_child("RunReceipt", true, false) is RunReceipt, "the run in numbers on a receipt")
 	for n in _all(scene._panel):
 		assert_false(n is ZineNote, "no summary note")
 	var owner := get_viewport().gui_get_focus_owner()
@@ -301,9 +302,22 @@ func _assert_clear(root: Node, label: String) -> void:
 	assert_true(Dialogue.is_showing(), "%s: a subtitle is up" % label)
 	var bar := _bar_rect()
 	for c in _controls(root):
-		var r := c.get_global_rect()
+		var r := _shown_rect(c)
+		if not r.has_area():
+			continue  # art pass W8c: scrolled out of its page's view (the Modem at big text)
 		assert_false(bar.intersects(r), "%s: the subtitle (%s) covers %s '%s' at %s (text %.1f)" % [label, bar, c.get_class(), c.get("text"), r, Settings.text_scale])
 	Dialogue.clear()
+
+
+## The part of `c` its scroll views show (global; empty when scrolled out of sight).
+func _shown_rect(c: Control) -> Rect2:
+	var r := c.get_global_rect()
+	var n := c.get_parent()
+	while n != null:
+		if n is ScrollContainer:
+			r = r.intersection((n as Control).get_global_rect())
+		n = n.get_parent()
+	return r
 
 
 func test_subtitles_never_cover_controls_on_any_screen() -> void:

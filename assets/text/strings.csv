@@ -2874,7 +2874,6 @@ won,won
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.
-Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
 RECRUIT,RECRUIT
 BOOSTS,BOOSTS
 UNLOCKS,UNLOCKS
@@ -2886,3 +2885,31 @@ RING SWAPS,RING SWAPS
 "RAID
 LIVE:","RAID
 LIVE:"
+CHOSEN,CHOSEN
+TAKEN,TAKEN
+The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.
+ARMORY,ARMORY
+Deploy here,Deploy here
+Deploy the asset picked above on %s.,Deploy the asset picked above on %s.
+Deploy:,Deploy:
+No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.,No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.
+RUN ASSET,RUN ASSET
+The asset a row's Deploy here puts on its node.,The asset a row's Deploy here puts on its node.
+empty: drop a placed asset here,empty: drop a placed asset here
+HOME FELL,HOME FELL
+JACKED OUT,JACKED OUT
+Drag a microchip or a slice onto a slot to put it there.,Drag a microchip or a slice onto a slot to put it there.
+Move a microchip or a slice onto a slot to put it there.,Move a microchip or a slice onto a slot to put it there.
+Or drag it onto another node's row to move it there.,Or drag it onto another node's row to move it there.
+Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.,Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.
+Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.,Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.
+Or pick it up and move it onto another node's row to move it there.,Or pick it up and move it onto another node's row to move it there.
+Or pick it up and move it onto the CARDS tag: the card goes into your deck.,Or pick it up and move it onto the CARDS tag: the card goes into your deck.
+Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.,Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.
+"Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
+"Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
+Your spinner.,Your spinner.
+asset,asset
+install,install
+spinner,spinner
+withdraw,withdraw

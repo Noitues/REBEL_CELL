@@ -30,9 +30,7 @@ const HOME_LABEL := "CORE" # TR
 const MODEM_QUAD := Vector2(490, 250)
 const QUAD_FRAME := Vector2(24, 56)
 const QUAD_GAP := 12.0
-## LEAVE THE MODEM (in the free corner of the REMOVE A CARD quadrant, so the Modem ends
-## on screen at text scale 1.6) and its exit icon beside it (px).
-const LEAVE_AT := Vector2(900, 440)
+## LEAVE THE MODEM's exit icon beside it (px; art pass W8c: the tag sits at the page's foot).
 const LEAVE_ICON := 34.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
 const LOOT_CARD := Vector2(150, 170)
@@ -101,6 +99,8 @@ var _route_buttons: Array[Button] = []
 var route_legend: RouteLegend = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
+## Art pass W8c: "MORE BELOW" at the foot of a page that scrolls on (§5.3).
+var more_hint: ScrollHint = null
 ## The screen on show (screen_name) and whether the last page entered a new screen (its
 ## entrance plays) or refreshed the same one (Animation pass ANIM-6).
 var _shown_screen: String = ""
@@ -118,6 +118,7 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	Settings.hints_changed.connect(_reword_tips)  # art pass W8c: tips follow the device
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	_build_ui()
@@ -189,6 +190,12 @@ func _ready() -> void:
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_event(0))
 		_demo_drag_arg(args)
 		return
+	for a in args:
+		if a.begins_with("--demo-w8c-end="):
+			# Art pass W8c captures (dev flag only): the run's end (died, completed, aborted)
+			# reached through the session's own ending, its T4 sequence playing.
+			_demo_w8c_end(a.trim_prefix("--demo-w8c-end="))
+			return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
@@ -279,6 +286,29 @@ func enter_node(node_id: StringName) -> void:
 		return
 	_travelling = true
 	get_tree().create_timer(secs).timeout.connect(_end_travel)
+
+
+## Art pass W8c capture (dev flag only): the demo run ends through the session's own ending
+## (`died`: the flatline, `completed`: the clean exit, `aborted`: the home server lost) and
+## the run-end stage plays; prints the frame it starts on.
+func _demo_w8c_end(kind: String) -> void:
+	RunManager.save_slot = "demo"
+	new_campaign(1)
+	start_run(1)
+	var s := RunManager.netrun
+	match kind:
+		"completed":
+			s.call(&"_complete_run")
+		"aborted":
+			s.run.outcome = RunState.Outcome.ABORTED
+			s.run.phase = RunState.Phase.ENDED
+		_:
+			s.call(&"_die")
+	_report(s.last_events)
+	for f in DEMO_SETTLE_FRAMES:
+		await get_tree().process_frame
+	print("MotionDemo: w8c run end (%s) starts on frame %d" % [kind, Engine.get_frames_drawn()])
+	_show_current()
 
 
 ## ANIM-R2 R2 profiling: enters the first open Router (a fight), else the first open node.
@@ -463,7 +493,9 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
 		if fly:
-			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+			# Art pass W8c (§11 Loot, critique gifs/23: the pick wasn't celebrated): the picked
+			# offer is stamped TAKEN (T2) as it lifts, then flies to CARDS.
+			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", tr(LOOT_PICK_STAMP), Motion.amplitude(&"loot_pick"))
 		# ANIM-R1 M11: the offers not taken fall away (`loot_reject`), picked by click or drag.
 		# ANIM-R3 A7: within the loot's window (they fell across the route coming in under it).
 		var fell := false
@@ -505,7 +537,12 @@ func _hold_loot_page() -> void:
 	if _loot_hold != null and _loot_hold.is_valid():
 		_loot_hold.kill()
 	_loot_hold = create_tween()
-	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"))
+	# Art pass W8c (overlaps ANIM-R5 B5, which bounds the hold by the picked card's flight
+	# too): the pick's TAKEN stamp and its flight to CARDS land before the page goes; the
+	# page still leaves as soon as nothing flies (`_loot_hold_step`).
+	var hold := maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"),
+		Motion.delay_of(&"loot_pick") + Motion.seconds(&"sold_stamp") + Motion.seconds(&"loot_pick") * (1.0 + FlightFx.LIFT_SHARE))
+	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, hold + Motion.seconds(&"loot_reject"))
 	_loot_hold.tween_callback(_end_loot_hold)
 
 
@@ -550,10 +587,15 @@ func choose_event(index: int) -> void:
 	_report(s.choose_event_option(index))
 	# The chosen outcome stamps (ANIM-6) over the next screen as it comes in.
 	if phase == RunState.Phase.EVENT and s.run.phase != RunState.Phase.EVENT and chosen != null:
-		var row := chosen.get_node_or_null(^"OutcomeRow") as Control
-		FlightFx.stamp_on(self, row if row != null else chosen, "")
+		# Art pass W8c (critique gifs/24: the note's picture stayed as a white bar over the
+		# route): the stamp is the word CHOSEN over where the choice was, no picture of it.
+		FlightFx.stamp_on(self, chosen, tr(EVENT_CHOSEN_STAMP), &"event_choice_stamp", false)
 	RunManager.after_step()
 	_show_current()
+
+
+## Art pass W8c: the stamp a chosen event choice leaves (§6.6: ≤ 3 words).
+const EVENT_CHOSEN_STAMP := "CHOSEN" # TR
 
 
 func buy(kind: String, index: int, slot: int = -1) -> void:
@@ -706,6 +748,12 @@ func _show_current() -> void:
 	if s == null:
 		_show_start()
 		return
+	# Art pass W8c (ART_BIBLE §10 rule 6, W8a's after_modals): a modal never outlives a page
+	# change: the page changes once the open viewers have closed (a rebuild of the same
+	# page under a viewer, the Modem after a shred, goes on at once).
+	if screen_name(s) != _shown_screen and PageTransition.modal_open(self):
+		PageTransition.after_modals(self, _show_current)
+		return
 	_refresh_status()
 	match s.run.phase:
 		RunState.Phase.MAP:
@@ -743,6 +791,11 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 	hud.stats.max_height = HudBar.BAND_HEIGHT if p.has_method("attach_netrun") else 0.0
 	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
 	_clear_route()
+	# Art pass W8c (W7 hookup, ART_BIBLE §9.5, §2 CITY): a page starts with the city as a
+	# backdrop (no map dim, no calm zones); the map pages (route, raid) and the paper pages
+	# (event) set theirs after this.
+	var no_calm: Array[Control] = []
+	_city_page(false, no_calm)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
 	var s := RunManager.netrun
@@ -762,7 +815,7 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 				# the CRT roll's band crosses them, never the whole screen (on the loot pick's
 				# first frame it ran across half the screen over the bare city).
 				PageTransition.glass_is_windows(p)
-			PageTransition.enter(p, PageTransition.look_of(p), _focus_page.bind(p))
+			PageTransition.enter(p, page_look(p), _focus_page.bind(p))
 		else:
 			_focus_page(p)
 	_title_screen(s)
@@ -779,6 +832,15 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## Art pass W8c (W7 hookup): the city behind the page: map mode (§9.5: dimmed 40% and
+## blurred under the Route and Raid maps) and the calm zones (§2 CITY: text panels over it).
+func _city_page(map_mode: bool, calm: Array[Control]) -> void:
+	if background == null or background.city == null:
+		return
+	background.set_map_mode(map_mode)
+	background.set_calm_controls(calm)
 
 
 ## A page's first focus: the control it names (FIRST_FOCUS_META: the Modem's first item,
@@ -805,6 +867,14 @@ func _focus_now(page, first) -> void:
 
 ## The meta naming a page's first focus.
 const FIRST_FOCUS_META := &"first_focus"
+## Art pass W8c: the meta naming a page's material when it sits deeper than look_of reads
+## (the event's paper inside its safe-margin frame).
+const PAGE_LOOK_META := &"page_look"
+
+
+## The page's look for its entrance (PageTransition: paper drops, glass slides).
+static func page_look(p: Control) -> int:
+	return int(p.get_meta(PAGE_LOOK_META)) if p.has_meta(PAGE_LOOK_META) else PageTransition.look_of(p)
 
 
 ## The pad prompts of the screen for the run's phase (H23 S11): A presses the focused
@@ -887,6 +957,21 @@ func _title_screen(s: NetrunSession) -> void:
 			hud.set_screen("", tr("NETRUN // JACK OUT"))
 
 
+## Art pass W8c: the start page's seed field: its first value and its most digits (the old
+## spin box's 0-999999).
+const START_SEED := 1
+const SEED_DIGITS := 6
+
+
+## The digits of `t` (a typed seed), in order.
+static func seed_digits(t: String) -> String:
+	var out := ""
+	for ch in t:
+		if ch >= "0" and ch <= "9":
+			out += ch
+	return out
+
+
 func _show_start() -> void:
 	_refresh_status()
 	var box := VBoxContainer.new()
@@ -894,12 +979,18 @@ func _show_start() -> void:
 	var row := HBoxContainer.new()
 	box.add_child(row)
 	row.add_child(_label(tr("Campaign seed:")))
-	var seed_spin := SpinBox.new()
-	seed_spin.min_value = 0
-	seed_spin.max_value = 999999
-	seed_spin.value = 1
-	row.add_child(seed_spin)
-	row.add_child(_button(tr("New campaign"), func() -> void: new_campaign(int(seed_spin.value))))
+	# Art pass W8c (ART_BIBLE §6.5: seeds and codes in a mono text field, never a native
+	# spin box): digits only; an empty field is seed 0.
+	var seed_field := CodeField.new(str(START_SEED))
+	seed_field.name = "SeedField"
+	seed_field.field.max_length = SEED_DIGITS
+	seed_field.text_changed.connect(func(t: String) -> void:
+		var digits := seed_digits(t)
+		if digits != t:
+			seed_field.value = digits
+			seed_field.field.caret_column = digits.length())
+	row.add_child(seed_field)
+	row.add_child(_button(tr("New campaign"), func() -> void: new_campaign(int(seed_digits(seed_field.value)))))
 	if RunManager.has_save():
 		box.add_child(_icon_button(tr("Resume saved game"), resume, StatIcon.CONTINUE))
 	if RunManager.campaign != null:
@@ -962,11 +1053,15 @@ func _show_map() -> void:
 		_grid_zoomed = not _grid_zoomed
 		_show_map())
 	zoom_btn.name = "GridZoom"
+	# Art pass W8c (ART_BIBLE §11 Route, §6.4): the choices lead; the view switch and Save &
+	# quit are tertiary (words and icon, no box), so the compact list reads first.
+	zoom_btn.theme_type_variation = UiTheme.TERTIARY
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid.") if not _grid_zoomed else tr("Back to this run's route."))
 	IconMark.attach(zoom_btn, StatIcon.MAP)
 	win.body.add_child(zoom_btn)
 	var quit_btn := _button(tr("Save & quit to start screen"), save_and_quit)
 	quit_btn.name = "SaveQuit"
+	quit_btn.theme_type_variation = UiTheme.TERTIARY  # art pass W8c: see GridZoom
 	quit_btn.tooltip_text = UiTip.fold(tr("Save the run and leave it; Continue picks it up here."))
 	IconMark.attach(quit_btn, StatIcon.SAVE)
 	win.body.add_child(quit_btn)
@@ -988,6 +1083,9 @@ func _show_map() -> void:
 		spacer.name = "RouteMapArea"
 		_route_area = spacer
 	_set_panel(panel, false)
+	# Art pass W8c (W7 hookup, ART_BIBLE §9.5): the map leads; the city under it dims and blurs.
+	var calm: Array[Control] = [win]
+	_city_page(true, calm)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _grid_zoomed:
@@ -1036,27 +1134,21 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		var node := s.run.map.get_node(available[i])
 		# H21 #14: what the node is (word + icon), its index on every device (the map's
 		# label carries the same index), Heat when entering changes it.
+		# Art pass W8c (ART_BIBLE §11 Route, critique 27): the button says what the node is
+		# ("1 Fight"); its Heat, where it leads (H24 S12), whether it is the same as an earlier
+		# choice (ANIM-R2 R12) and what only it reaches (ANIM-R3 B3) sit in one compact row
+		# of icons and short words under it (the old "[2] Fight > Fight (same as 1)" / "then:"
+		# line read harder than the map). The map labels and tooltips keep their words.
 		var text := node_word(node)
 		var heat := s.node_heat(available[i])
-		if heat != 0:
-			text += tr(" %s Heat") % TextDb.signed(heat)
-		# H24 S12: what lies beyond each choice ("> Event · Shop"): two "Fight" buttons read
-		# the same; where they lead is what differs (the enemy is rolled on entry).
-		var ahead := ahead_words(s.run.map, node)
-		if ahead != "":
-			text += "  > %s" % ahead
 		var id: StringName = available[i]
-		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
-		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
-		if twins.has(id):
-			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
-		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
-		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
 		var marks := differs.get(id, []) as Array
-		if not twins.has(id) and (not marks.is_empty() or heat != 0):
-			ahead_rows[i] = _ahead_row(i, marks, heat)
+		var twin := int(twins.get(id, -1))
+		var next := next_kinds(s.run.map, node)
+		if twin >= 0 or not marks.is_empty() or heat != 0 or not next.is_empty():
+			ahead_rows[i] = _ahead_row(i, marks if twin < 0 else [], heat, next, twin)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
@@ -1145,6 +1237,7 @@ func fit_route_map() -> void:
 	city.offset_bottom = size.y / city.scale.y - size.y
 	city.focus_anchor = anchor
 	city.refresh()
+	_cut_camera_if_still()  # art pass W8c: reduce motion
 	_fit_route_after_redraw()
 
 
@@ -1367,36 +1460,101 @@ static func choice_differences(s: NetrunSession) -> Dictionary:
 ## ANIM-R3 B3: the row under choice `i`'s button: its own Heat on entering (a Heat icon and
 ## the number, it was in words only) and the icons of what lies further on that the other
 ## choices do not reach, each with its word as a tooltip.
-func _ahead_row(i: int, kinds: Array, heat: int) -> Control:
-	var row := HBoxContainer.new()
+##
+## Art pass W8c (ART_BIBLE §11 Route, critique 27): one compact row, icons with short words
+## and no emoji: the Heat on entering ([flame] +2), where the choice leads next ([>] [x]
+## Fight · [?] Event), then "(same as 1)" for a twin or, after a thin rule, what only this
+## way reaches further on ([crown] Elite). An icon and its word stay together (a flow
+## wraps between pairs, never inside one). `next` is next_kinds(); `twin` the index of
+## the earlier choice this one equals (-1: none).
+func _ahead_row(i: int, kinds: Array, heat: int, next: Array = [], twin: int = -1) -> Control:
+	var row := HFlowContainer.new()
 	row.name = "Ahead%d" % (i + 1)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
-	row.add_theme_constant_override("separation", 4)
+	row.add_theme_constant_override("h_separation", UiTheme.SP_XS)
 	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
 	var pad := Control.new()
 	pad.custom_minimum_size.x = side
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(pad)
 	if heat != 0:
-		var hm := IconMark.standalone(StatIcon.HEAT, side, StatIcon.color_of(StatIcon.HEAT))
-		hm.name = "EnterHeat"
-		hm.tooltip_text = UiTip.fold(tr("Entering it changes Heat by %s.") % TextDb.signed(heat))
-		hm.mouse_filter = Control.MOUSE_FILTER_PASS
-		row.add_child(hm)
-		var hl := _label(TextDb.signed(heat))
-		hl.name = "EnterHeatValue"
-		row.add_child(hl)
-	if not kinds.is_empty():
-		var lead := _label(tr("then:"))
-		lead.name = "AheadWord"
+		var hp := _icon_word("EnterHeat", StatIcon.HEAT, TextDb.signed(heat), side, tr("Entering it changes Heat by %s.") % TextDb.signed(heat))
+		hp.get_node(^"Word").name = "EnterHeatValue"
+		row.add_child(hp)
+	if not next.is_empty():
+		var lead := IconMark.standalone(StatIcon.NEXT, side, Palette.TEXT_MID)
+		lead.name = "AheadNext"
+		lead.mouse_filter = Control.MOUSE_FILTER_PASS
+		var words := PackedStringArray()
+		for k: StringName in next:
+			words.append(tr(String(ROUTE_SHORT.get(k, ""))))
+		lead.tooltip_text = UiTip.fold(tr("Then you can go to: %s.") % " · ".join(words))
 		row.add_child(lead)
+		for k: StringName in next:
+			row.add_child(_icon_word("Next_%s" % k, k, tr(String(ROUTE_SHORT.get(k, ""))), side, lead.tooltip_text))
+	if twin >= 0:
+		var same := _label(tr("(same as %d)") % (twin + 1))
+		same.name = "TwinOf"
+		same.add_theme_color_override("font_color", Palette.TEXT_MID)
+		same.tooltip_text = UiTip.fold(tr("The same road as choice %d: the same kinds of node and Heat all the way on.") % (twin + 1))
+		same.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(same)
+	elif not kinds.is_empty():
+		var rule := ColorRect.new()
+		rule.name = "AheadRule"
+		rule.color = Palette.TERMINAL_EDGE
+		rule.custom_minimum_size = Vector2(1.0, side)
+		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(rule)
 		for k: StringName in kinds:
-			var m := IconMark.standalone(k, side, StatIcon.color_of(k))
-			m.name = "Ahead_%s" % k
-			m.tooltip_text = UiTip.fold(tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, ""))))
-			m.mouse_filter = Control.MOUSE_FILTER_PASS
-			row.add_child(m)
+			row.add_child(_icon_word("Ahead_%s" % k, k, tr(String(ROUTE_SHORT.get(k, ""))), side,
+				tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, "")))))
 	return row
+
+
+## Art pass W8c: an icon and its short word kept together (a route row's item): a box
+## named `id` holding "Icon" and "Word" (the word in the icon's colour), with `tip`.
+func _icon_word(id: String, kind: StringName, word: String, side: float, tip: String) -> Control:
+	var pair := HBoxContainer.new()
+	pair.name = id
+	pair.mouse_filter = Control.MOUSE_FILTER_PASS
+	pair.add_theme_constant_override("separation", UiTheme.SP_XS / 2)
+	pair.tooltip_text = UiTip.fold(tip)
+	var m := IconMark.standalone(kind, side, StatIcon.color_of(kind))
+	m.name = "Icon"
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pair.add_child(m)
+	var l := _label(word)
+	l.name = "Word"
+	l.add_theme_color_override("font_color", StatIcon.color_of(kind).lerp(Palette.TEXT_HI, ROUTE_WORD_LIGHTEN))
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pair.add_child(l)
+	return pair
+
+
+## Art pass W8c: the short word beside each route icon (keys: the route's own node words, so
+## the button, the map and the row name a node alike).
+const ROUTE_SHORT := {StatIcon.FIGHT: "Fight", StatIcon.ELITE: ELITE_WORD, StatIcon.SHOP: "Shop", # TR
+	StatIcon.TERMINAL: "Event", StatIcon.RACK: "Rack", StatIcon.HEAT: "Heat"} # TR
+## How far a row's word is lightened from its icon's colour toward TEXT_HI (contrast §3.7 on glass).
+const ROUTE_WORD_LIGHTEN := 0.35
+## The order of the kinds a choice leads to next.
+const NEXT_ORDER: Array[StringName] = [StatIcon.FIGHT, StatIcon.ELITE, StatIcon.TERMINAL, StatIcon.SHOP, StatIcon.RACK]
+
+
+## Art pass W8c: the kinds of node a route node leads to next (its "next" nodes' icons, each
+## once, in NEXT_ORDER). Pure.
+static func next_kinds(map: MapGraph, node: Dictionary) -> Array[StringName]:
+	var found := {}
+	for nxt in node.get("next", []):
+		var n := map.get_node(nxt)
+		if not n.is_empty():
+			found[node_icon(n)] = true
+	var out: Array[StringName] = []
+	for k in NEXT_ORDER:
+		if found.has(k):
+			out.append(k)
+	return out
 
 
 ## The words of the reward and risk icons (translated where shown).
@@ -1508,6 +1666,14 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 	city.focus_grid = city_overlay.centre() if focus == Vector2.INF else focus
 	city.focus_anchor = anchor
 	city.refresh()
+	_cut_camera_if_still()
+
+
+## Art pass W8c (W9 reduce motion, ART_BIBLE §12): with camera moves off, a map page cuts to
+## its end framing: any held frame or ease is dropped (the fit passes then land at once).
+func _cut_camera_if_still() -> void:
+	if not Motion.camera_moves_allowed() and background != null:
+		background.settle_camera()
 
 
 func _clear_route() -> void:
@@ -1551,6 +1717,8 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	playout.skipped.connect(_show_current)
 	side.add_child(cont)
 	_set_panel(box, false)
+	var calm_feed: Array[Control] = [side]
+	_city_page(true, calm_feed)  # art pass W8c (W7 hookup, §9.5)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var pre := before if before != null else c
@@ -1600,7 +1768,12 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 	for id in sites:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
 	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
-	return background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+	var secs := background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+	# Art pass W8c (W9 reduce motion, ART_BIBLE §12): no camera move: the fight's frame cuts in.
+	if not Motion.camera_moves_allowed():
+		background.settle_camera()
+		return 0.0
+	return secs
 
 
 ## ANIM-R3 B5: the interlude's forecast words (the raid setup's, translated once) and its
@@ -1629,6 +1802,8 @@ func _frame_raid_map() -> void:
 	var pts := PackedVector2Array()
 	for n in city_overlay.nodes:
 		pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
+	# (Art pass W8c, W9 reduce motion: the interlude's frame always cuts in; settle_camera
+	# drops any hold, so no camera move plays with or without reduce motion.)
 	background.frame_points(pts, _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
 	background.settle_camera()
 
@@ -1780,22 +1955,28 @@ func _show_reward() -> void:
 	var offer := s.current_reward()
 	var kind_word := tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"]))))
 	var win := TerminalWindow.new(tr("RACK BREACHED // LOOT: pick a %s") % kind_word, Palette.CELL_ACID)
+	win.name = "LootWindow"
 	win.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# Art pass W8c (ART_BIBLE §11 Loot, critique 48/61): the modal is 70% of the screen's
+	# width; the offers fill its row at hover size or more.
+	var modal_w := loot_modal_width()
+	win.custom_minimum_size.x = modal_w
+	var inner := modal_w - _window_frame_x(win)
 	var box := win.body
 	# ANIM-R4 C7: the tag fits the loot's row (its words shrink rather than run out of the
-	# window under a long translation).
-	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(LOOT_ROW_MAX))
-	var slot_option: OptionButton = null
-	if offer["kind"] == "firmware":
-		var row := HBoxContainer.new()
-		row.add_child(_label(tr("Socket into slot:")))
-		slot_option = OptionButton.new()
-		slot_option.name = "SlotPick"
-		for i in s.run.operative.slot_slice_ids.size():
-			slot_option.add_item(slot_name(s.run.operative, i))
-		slot_option.tooltip_text = tr("The spinner slot the Firmware chip goes into.")
-		row.add_child(slot_option)
-		box.add_child(row)
+	# window under a long translation). Art pass W8c (§4.3 rule 5): with 140% of its width
+	# to spare, so a longer translation still fits inside the modal.
+	var tag := GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(inner / LOOT_TAG_SLACK)
+	tag.name = "LootTag"
+	box.add_child(tag)
+	# Art pass W8c (critique 48/61: the LOOT drips lay on card 1's top edge): room for the
+	# drips under the tag's words before the offers.
+	var drip_gap := Control.new()
+	drip_gap.name = "LootTagGap"
+	drip_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	drip_gap.custom_minimum_size.y = LOOT_TAG_GAP  # a card's hover lift (W4: 12 px, unscaled)
+	box.add_child(drip_gap)
+	var slot_option: SlotPicker = null
 	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost and what they do as
 	# pictograms, others none. They grow with the text size as far as the row allows (H21).
 	var stickers := HBoxContainer.new()
@@ -1803,30 +1984,52 @@ func _show_reward() -> void:
 	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
 	var mini: SpinnerMini = null
-	var room := LOOT_ROW_MAX
+	var room := inner  # art pass W8c: the modal's own width (was LOOT_ROW_MAX)
+	# Art pass W8c (§6.4: a standalone action is sized to its label): Skip is a secondary
+	# button at the foot's right, or, beside a Firmware offer, under the small spinner (the
+	# slot tiles take the foot; the page keeps on screen at 1.6).
+	var skip_home: BoxContainer = null
 	if offer["kind"] == "firmware":
 		var loot_row := HBoxContainer.new()
 		loot_row.name = "LootRow"
 		loot_row.add_theme_constant_override("separation", 14)
 		box.add_child(loot_row)
 		loot_row.add_child(stickers)
+		var side := VBoxContainer.new()
+		side.name = "LootSide"
+		side.alignment = BoxContainer.ALIGNMENT_END
+		side.add_theme_constant_override("separation", UiTheme.SP_S)
+		loot_row.add_child(side)
 		mini = _spinner_mini()
-		mini.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		loot_row.add_child(mini)
+		mini.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		side.add_child(mini)
+		skip_home = side
 		room -= mini.custom_minimum_size.x + 14.0
+		# Art pass W8c (§2, §6.5): the slot is picked on a row of slot tiles under the offers
+		# (never a native dropdown); the small spinner beside them is where they drag.
+		var slot_row := VBoxContainer.new()
+		slot_row.name = "SlotRow"
+		box.add_child(slot_row)
+		slot_row.add_child(_label(tr("Socket into slot:")))
+		slot_option = _slot_picker(s.run.operative, inner)
+		slot_option.name = "SlotPick"
+		slot_row.add_child(slot_option)
 	else:
 		box.add_child(stickers)
 	var n: int = offer["options"].size()
 	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (a tilted CACHE lay
 	# on JAM's cost badge at 1.0 and 1.6): the tilt's reach grows with the card.
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
-	var ls := clampf(minf(Settings.text_scale, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
+	# Art pass W8c (§11 Loot: cards at hover size): the offers fill the modal's row, never
+	# smaller than a hovered card (HOVER_SCALE) nor larger than LOOT_FILL_MAX; their lettering
+	# is the text size (the card grows taller for its words, W4).
+	var ls := clampf((room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt)), ZineCard.HOVER_SCALE, LOOT_FILL_MAX)
 	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * ls * tilt))
 	for i in n:
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
 		var cost := int(res.get("ram_cost")) if res is CardData else -1
-		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
+		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(maxf(ls, Settings.text_scale))
 		if res is CardData:
 			sticker.with_card(res as CardData)
 		sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the card
@@ -1834,10 +2037,10 @@ func _show_reward() -> void:
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		# H24 S17: the whole text on hover and, for a pad or keyboard, on focus (FocusTip).
 		var drag_kind := String({"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer["kind"]), ""))
-		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + tr(String(DRAG_TIPS[drag_kind])) if drag_kind != "" else ""))
+		_input_tip(sticker, loot_tip(res), drag_kind)
 		FocusTip.attach(sticker)
 		var index: int = i
-		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
+		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected() if slot_option != null else -1))
 		stickers.add_child(sticker)
 	# ANIM-R1 M11: room under the stickers for their tilt and lift (at 1.6 the CACHE card's
 	# corner lay on the Skip bar).
@@ -1845,18 +2048,60 @@ func _show_reward() -> void:
 	gap.name = "SkipGap"
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gap.custom_minimum_size.y = LOOT_SKIP_GAP * ls
-	box.add_child(gap)
 	var skip := _button(tr("Skip"), skip_reward)
 	skip.name = "Skip"
+	skip.theme_type_variation = UiTheme.SECONDARY
 	skip.tooltip_text = tr("Take nothing from this payout.")
 	IconMark.attach(skip, StatIcon.SKIP)
-	box.add_child(skip)
+	if skip_home != null:
+		skip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		skip_home.add_child(skip)
+		box.move_child(box.get_node(^"SlotRow"), box.get_child_count() - 1)
+	else:
+		box.add_child(gap)
+		skip.size_flags_horizontal = Control.SIZE_SHRINK_END
+		box.add_child(skip)
 	var wrap := CenterContainer.new()
 	wrap.add_child(win)
 	_set_panel(wrap, false)
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
+
+
+## Art pass W8c (ART_BIBLE §11 Loot): the modal's share of the screen's width, the room the
+## graffiti title keeps for a longer translation (§4.3 rule 5: 140%), the gap under its
+## drips (px at 1.0) and the most the offers grow by (their row filled).
+const LOOT_MODAL_SHARE := 0.7
+const LOOT_TAG_SLACK := 1.4
+const LOOT_TAG_GAP := 12.0
+const LOOT_FILL_MAX := 1.4
+## The stamp word the picked offer takes before it flies to the deck (§6.6: ≤ 3 words; T2).
+const LOOT_PICK_STAMP := "TAKEN" # TR
+
+
+## Art pass W8c: the loot modal's width (px): LOOT_MODAL_SHARE of the page.
+func loot_modal_width() -> float:
+	var w := size.x if size.x > 0.0 else get_viewport_rect().size.x
+	return roundf(w * LOOT_MODAL_SHARE)
+
+
+## The horizontal room a terminal window's frame takes round its body (px; read from the
+## screen's theme: the window is not in the tree yet).
+func _window_frame_x(_win: TerminalWindow) -> float:
+	var box := get_theme_stylebox(&"panel", &"TerminalPanel")
+	return box.get_minimum_size().x if box != null else float(UiTheme.PANEL_PAD_H * 2)
+
+
+## Art pass W8c (§6.5): a slot picker for operative `op`'s spinner, as many columns as
+## `width` px holds; each tile tells the slot's whole name (slot_name) as its tip.
+func _slot_picker(op: OperativeState, width: float) -> SlotPicker:
+	var tiles := SlotPicker.tiles_for(op)
+	for k in tiles.size():
+		tiles[k]["tip"] = slot_name(op, k)
+	var pick := SlotPicker.new(tiles)
+	pick.fit_columns(width)
+	return pick
 
 
 ## The loot fans in from the foot of its row, one after another (ANIM-6, `loot_fan`).
@@ -1878,60 +2123,102 @@ func _fan_loot(row: Control) -> void:
 
 ## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
 ## clean system text on a dark strip (STYLE_GUIDE 3), never zined.
+##
+## Art pass W8c (ART_BIBLE §11 Events, §4.1, §4.2, §3.1, critique 59/60, gifs/24):
+## - The story sits on PAPER sized to its words (the paper is as tall as its text and as
+##   wide as a ≤ 70-character line of the Plex body face, `BodyText`); DISPATCH keeps Share
+##   Tech Mono on its dark strip, wrapped at ≤ 64 columns.
+## - The speaker's plate appears once (the title is the paper's heading; the plate never
+##   repeats the speaker or the title).
+## - The subtitle band never repeats the story on the page (the story isn't said again).
+## - Each choice's numbers show once, as glyph + number chips under its words (the "(+25
+##   Cycles, +2 Heat)" words are gone); good and bad carry ▲ / ▼ as well as colour.
+## - The chosen choice stamps CHOSEN as the next page comes in, with no picture of the
+##   note (a white bar stayed over the route).
+## - W7 hookup: the city is not a map here; the story's paper is a calm zone.
 func _show_event() -> void:
 	var s := RunManager.netrun
 	var ev := s.current_event()
 	var box := VBoxContainer.new()
 	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", UiTheme.SP_XS)
 	var dispatch := ev.speaker == RC.Voice.DISPATCH
+	var ts := Settings.text_scale
+	var page_w := (size.x if size.x > 0.0 else get_viewport_rect().size.x) - UiTheme.SAFE_MARGIN * 2.0
+	var text_w := event_text_width(dispatch)
+	# Side by side when the story and the choices both fit; else the choices go under it.
+	var stacked := text_w + EVENT_PAPER_PAD * ts + EVENT_OPTIONS_MIN * ts + EVENT_SPLIT_GAP > page_w
+	text_w = minf(text_w, page_w - EVENT_PAPER_PAD * ts)
 	var holder: Control
+	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
+	var title := event_title(TextDb.t(ev, "title"), who)
 	if dispatch:
 		var strip := PanelContainer.new()
-		var style := UiTheme.box(Color(0.02, 0.03, 0.07, 0.96), Palette.CRT_AMBER, 1, 16, 14)
-		style.border_width_left = 4
-		style.shadow_color = Color(0, 0, 0, 0.5)
-		style.shadow_size = 8
+		var style := UiTheme.box(Palette.TERMINAL_BG, Palette.CRT_AMBER, 1, UiTheme.SP_M, UiTheme.PANEL_PAD_V)
+		style.border_width_left = UiTheme.SP_XS
+		style.shadow_color = Palette.SHADOW
+		style.shadow_size = UiTheme.SP_S
+		if Settings.high_contrast:
+			style.bg_color = HighContrast.BG
 		strip.add_theme_stylebox_override("panel", style)
 		strip.material = UiTheme.crt_material()
-		strip.custom_minimum_size = Vector2(700, 0)  # ANIM-R4 C7: as tall as its words
 		strip.add_child(body)
 		holder = strip
 	else:
-		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0).scale_title(Settings.text_scale)
-		panel.custom_minimum_size = Vector2(760, 0)  # ANIM-R4 C7: as tall as its words
+		var panel := ZinePanel.new(title.to_upper(), -1.0).scale_title(ts)
 		panel.content.add_child(body)
 		holder = panel
+		# The paper is as tall as its words (a ZinePanel has no size of its own; overlaps
+		# ANIM-R5 B1's ZinePanel.fit_to_content: keep one on merge).
+		body.minimum_size_changed.connect(_fit_paper.bind(panel))
+		_fit_paper.call_deferred(panel)
 	holder.name = "EventPanel"
 	# H23 S10: room above the paper for its tape and title, clear of the subtitle band.
 	var gap := Control.new()
 	gap.name = "EventTopGap"
-	gap.custom_minimum_size.y = EVENT_TOP_GAP * Settings.text_scale
+	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(gap)
-	var split := HBoxContainer.new()
-	split.add_theme_constant_override("separation", 22)
+	var split: BoxContainer = VBoxContainer.new() if stacked else HBoxContainer.new()
+	split.name = "EventSplit"
+	split.add_theme_constant_override("separation", roundi(EVENT_SPLIT_GAP))
 	box.add_child(split)
 	split.add_child(holder)
 	holder.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var options := VBoxContainer.new()
+	options.name = "EventChoices"
 	options.add_theme_constant_override("separation", 14)
 	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	split.add_child(options)
-	# H24 S4: the speaker's name comes translated (once).
-	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
-	var speaker := _label(who + ((" - " + TextDb.t(ev, "title")) if dispatch else ""))
+	# H24 S4: the speaker's name comes translated (once). Art pass W8c: the plate says it
+	# once; DISPATCH's strip heads its title on a line of its own (the paper's title is its
+	# heading).
+	var speaker := _label(who)
+	speaker.name = "SpeakerPlate"
 	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
 	body.add_child(speaker)
+	if dispatch and title != "":
+		var head := _label(title)
+		head.name = "EventTitle"
+		head.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
+		head.add_theme_color_override("font_color", Palette.CRT_AMBER)
+		body.add_child(head)
 	var text := RichTextLabel.new()
+	text.name = "EventText"
 	text.fit_content = true
-	text.custom_minimum_size = Vector2(720, 0)
-	text.text = TextDb.t(ev, "text")
+	# ANIM-R5 B1 (the same line): the words are laid out whole while they type in.
+	text.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
+	if not dispatch:
+		text.theme_type_variation = UiTheme.BODY_TEXT  # §4.1: Plex for a text block
+	text.custom_minimum_size = Vector2(text_w, 0)
+	text.text = event_story(TextDb.t(ev, "text"), who)
 	text.add_theme_color_override("default_color", Palette.CRT_AMBER if dispatch else Palette.INK)
 	body.add_child(text)
-	if not _spoken_events.has(ev.id):
-		_spoken_events[ev.id] = true
-		# TextDb text is already translated: said once, not translated again (H23 S17).
-		Dialogue.say(ev.speaker, TextDb.t(ev, "text"), 0.0, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id, true, "event")
+	# Art pass W8c (§11 Events, critique 59/60): the story is on the page, so the subtitle
+	# band does not say it again (it repeated the page at ~7 px). The band keeps the run's
+	# other lines.
+	_spoken_events[ev.id] = true
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
@@ -1939,7 +2226,8 @@ func _show_event() -> void:
 		# H22 #12: the amounts it will really apply (a heal at full HP, Heat at 0).
 		var outcome := OutcomeRow.of_choice(s, c)
 		var costs := OutcomeRow.words(outcome)
-		b.text = _choice_text(TextDb.t(c, "label"), costs)
+		# Art pass W8c: the numbers once, as the chips under the words (not "(+25 Cycles)").
+		b.text = _choice_text(TextDb.t(c, "label"), "")
 		var err := s.choice_error(c)
 		b.disabled = err != ""
 		var tip := err if err != "" else ((tr("Costs: %s.") % costs) if costs != "" else "")
@@ -1953,27 +2241,91 @@ func _show_event() -> void:
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		options.add_child(b)
 		# H23 S9: no numbers for a change that is none; H24 S9: a choice that changes nothing
-		# says so with the neutral "no change" mark (it showed nothing at all).
+		# says so with the neutral "no change" mark (it showed nothing at all). Art pass W8c:
+		# ▲ / ▼ beside each amount (EventOutcomeRow).
 		var numbers := OutcomeRow.shown(outcome)
-		var row := OutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
+		var row := EventOutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
 		OutcomeRow.attach(b, row)
 		# ANIM-6: the outcome's icons pop when the choice is hovered or focused.
 		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
 		b.focus_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
-	options.add_child(GraffitiScrawl.new(tr("PLAY IT\nSAFE??"), -6.0, 24))
+	options.add_child(GraffitiScrawl.new(tr("PLAY IT\nSAFE??"), -6.0, UiTheme.font_px(UiTheme.TITLE)))  # art pass W8c: §4.3 rule 1
 	# H24 S9: the choices keep clear of the screen's right edge (their border was cut).
 	options.custom_minimum_size.x = 0.0
 	var right_gap := Control.new()
 	right_gap.name = "EventRightGap"
-	right_gap.custom_minimum_size.x = EVENT_RIGHT_GAP * Settings.text_scale
+	right_gap.custom_minimum_size.x = EVENT_RIGHT_GAP * ts
 	right_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	split.add_child(right_gap)
-	_set_panel(box, false)
+	if stacked:
+		# Art pass W8c: under the story, the choices keep the same gap from the right edge.
+		var row := HBoxContainer.new()
+		row.name = "EventChoiceRow"
+		split.remove_child(options)
+		split.add_child(row)
+		row.add_child(options)
+		row.add_child(right_gap)
+	else:
+		split.add_child(right_gap)
+	# Art pass W8c (§5.1): the page keeps the screen's safe margin on the left (the paper sat
+	# on the screen's edge).
+	var page := MarginContainer.new()
+	page.name = "EventPage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_theme_constant_override("margin_left", UiTheme.SAFE_MARGIN)
+	page.add_child(box)
+	page.set_meta(PAGE_LOOK_META, PageTransition.Look.PAPER if not dispatch else PageTransition.Look.GLASS)
+	_set_panel(page, false)
+	var calm: Array[Control] = [holder]
+	_city_page(false, calm)
 	_register_event_drops(ev, options)
 	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s), not a char at a time
 	# for 8 s under an empty panel.
 	if entering and Typing.type_in(text, &"event_type") > 0.0:
 		_hold_choices(options, text)
+
+
+## Art pass W8c (ART_BIBLE §4.2: ≤ 70 characters a line of body text; §4.1: DISPATCH ≤ 64
+## columns of mono): the event story's width at the player's text size (px).
+static func event_text_width(dispatch: bool) -> float:
+	var f := Palette.mono() if dispatch else Palette.body()
+	var cols := EVENT_DISPATCH_COLUMNS if dispatch else EVENT_BODY_COLUMNS
+	return ceilf(f.get_string_size(UiTip.COLUMN_SAMPLE.repeat(cols), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.BODY)).x)
+
+
+## Art pass W8c: an event's title without a leading speaker ("DISPATCH: Early Reply" under
+## the DISPATCH plate reads "Early Reply"): the plate says who, once.
+static func event_title(title: String, who: String) -> String:
+	var t := title.strip_edges()
+	for sep: String in [":", " -", " —"]:
+		var lead: String = who + sep
+		if who != "" and t.to_lower().begins_with(lead.to_lower()):
+			return t.substr(lead.length()).strip_edges()
+	return "" if t.to_lower() == who.to_lower() else t
+
+
+## Art pass W8c: an event's story without a leading "SPEAKER: " (the plate above says who,
+## once; "DISPATCH: Good work at the Rack." reads "Good work at the Rack.").
+static func event_story(text: String, who: String) -> String:
+	var lead := who + ":"
+	if who != "" and text.to_lower().begins_with(lead.to_lower()):
+		return text.substr(lead.length()).strip_edges()
+	return text
+
+
+## The paper's height: its words' (a ZinePanel is a plain Control round its content).
+func _fit_paper(panel: ZinePanel) -> void:
+	if not is_instance_valid(panel):
+		return
+	panel.custom_minimum_size = panel.content.get_combined_minimum_size()
+
+
+## Art pass W8c: the story's columns (§4.2, §4.1), the paper's padding round its words, the
+## least width the choices keep beside it and the gap between (px at text scale 1.0).
+const EVENT_BODY_COLUMNS := 70
+const EVENT_DISPATCH_COLUMNS := 64
+const EVENT_PAPER_PAD := 32.0
+const EVENT_OPTIONS_MIN := 300.0
+const EVENT_SPLIT_GAP := 22.0
 
 
 ## ANIM-R1 M9 / ANIM-R2 E1-E2: while the event's story types in, its choices wait. They stay
@@ -2088,27 +2440,36 @@ func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
 	var op := s.run.operative
-	var root := Control.new()
+	# Art pass W8c (ART_BIBLE §5.3, §11 Modem): the page is laid out by containers, not
+	# fixed positions: the baked sign in its column, the four windows in a grid of two
+	# columns (one at big text sizes, where the page scrolls inside its window with a hint),
+	# LEAVE THE MODEM at the foot. Every window keeps its colour-coding.
+	var root := HBoxContainer.new()
 	root.name = "ModemRoot"
-	root.custom_minimum_size = Vector2(1240, 540)
+	root.add_theme_constant_override("separation", UiTheme.GUTTER)
 	var sign := ModemSign.new()
 	sign.name = "ModemSign"
-	sign.position = Vector2(0, -6)
-	sign.size = Vector2(230, 560)
+	sign.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	root.add_child(sign)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 12)
-	grid.position = Vector2(236, 0)
-	root.add_child(grid)
-	var q_size := MODEM_QUAD
+	var main := VBoxContainer.new()
+	main.name = "ModemMain"
+	main.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main.add_theme_constant_override("separation", roundi(QUAD_GAP))
+	root.add_child(main)
 	var ts := Settings.text_scale
-	# Top left: microchips (Firmware). The socket list names each slot by its slice.
-	var fw_slot := OptionButton.new()
-	fw_slot.name = "SocketPick"
-	for k in op.slot_slice_ids.size():
-		fw_slot.add_item(tr("Socket into %s") % slot_name(op, k))
+	var grid := GridContainer.new()
+	grid.name = "ModemGrid"
+	grid.columns = modem_columns(ts)
+	grid.add_theme_constant_override("h_separation", roundi(QUAD_GAP))
+	grid.add_theme_constant_override("v_separation", roundi(QUAD_GAP))
+	main.add_child(grid)
+	var q_size := modem_quad(ts)
+	# Top left: microchips (Firmware). Art pass W8c (§2, §6.5): the slot a bought chip goes
+	# into is picked on slot tiles (SlotPicker), never a native dropdown.
+	var fw_slot: SlotPicker = null
+	if not shop.get("firmware", []).is_empty():
+		fw_slot = _slot_picker(op, q_size.x - QUAD_FRAME.x)
+		fw_slot.name = "SocketPick"
 	var chips_win := TerminalWindow.new(tr("MICROCHIPS"))
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
@@ -2124,6 +2485,12 @@ func _show_shop() -> void:
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
 	stickers.add_theme_constant_override("separation", 12)
+	# Art pass W8c: room above the cards for their hover lift (a focused card lay on the
+	# CARDS title).
+	var lift_room := Control.new()
+	lift_room.name = "CardsLiftRoom"
+	lift_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cards_win.body.add_child(lift_room)
 	cards_win.body.add_child(stickers)
 	# Bottom left: slices (overwrite) and daemons side by side.
 	# A 2-column grid (not an HBox) so pad focus walks every tile in both windows.
@@ -2147,8 +2514,13 @@ func _show_shop() -> void:
 	# Cards grow with the text size as far as their quadrant holds them (H21 #15).
 	var card_count: int = (seen["cards"] as Array).size()
 	var card_fit := minf((q_size.x - QUAD_FRAME.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
-		(q_size.y - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
+		# Art pass W8c: in one column (big text; the page scrolls) the cards may grow with the text.
+		(q_size.y * (ts if grid.columns == 1 else 1.0) - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
+	# Art pass W8c: the lift room is a card's hover lift, the half of its hover growth and the
+	# focus brackets' offset.
+	lift_room.custom_minimum_size.y = roundf(Motion.amplitude(&"card_hover") + (ZineCard.HOVER_SCALE - 1.0) * 0.5 * ZineCard.STICKER_SIZE.y * cs
+		+ UiTheme.SP_XS * ts)
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
 		for slot: Array in shop_slots(seen[kind], shop.get(kind, [])):
@@ -2177,18 +2549,24 @@ func _show_shop() -> void:
 			if kind == "cards":
 				sticker.scaled(cs).with_card(res as CardData)
 			elif kind == "firmware":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(chip_text_scale(ts))
 			elif kind == "daemons":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
-			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
-				+ "\n" + tr(String(DRAG_TIPS[{"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]])))
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(chip_text_scale(ts))
+			_input_tip(sticker, tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles],
+				String({"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]))
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			# H23 S8: a clear buy button on every item, and the whole text on focus.
 			sticker.with_buy(TextDb.mark("BUY"))
+			sticker.buy_button.have = s.run.cycles  # art pass W8c: NEED n · HAVE m when out of reach
 			if kind != "cards":
 				# ANIM-R2 E6: the tile grows until its whole text reads (at 1.6 a third of the
-				# chips showed 1 of 2-3 lines at the 8 px floor).
-				fit_chip_tile(sticker, chip_tile_room(kind, (seen[kind] as Array).size(), ts))
+				# chips showed 1 of 2-3 lines at the 8 px floor). Art pass W8c: at `body`.
+				var most := chip_tile_room(kind, (seen[kind] as Array).size(), ts, q_size)
+				if kind == "firmware":
+					# Art pass W8c: a microchip takes its share of the window's width first (its
+					# body-size words take fewer lines), then grows taller as it must.
+					sticker.custom_minimum_size = Vector2(most.x, CHIP_TILE.y * ts)
+				fit_chip_tile(sticker, most)
 			FocusTip.attach(sticker)
 			var index: int = i
 			var k: String = kind
@@ -2198,7 +2576,7 @@ func _show_shop() -> void:
 				if sticker.disabled and (ev.is_action_pressed(&"ui_accept") or (ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT)):
 					price_refused(price_i))
 			sticker.set_meta(STOCK_META, i)
-			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
+			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected() if k == "firmware" else -1))
 			match kind:
 				"cards":
 					stickers.add_child(sticker)
@@ -2208,8 +2586,17 @@ func _show_shop() -> void:
 					daemon_row.add_child(sticker)
 			n += 1
 	if not shop.get("firmware", []).is_empty():
-		fw_slot.tooltip_text = tr("The spinner slot a bought Firmware chip goes into.")
-		chips_win.body.add_child(fw_slot)
+		# Art pass W8c: the slot tiles under a caption saying what they are for (overlaps
+		# ANIM-R5 B11's "Chips go into:" socket row; keep one caption on merge).
+		var socket_row := VBoxContainer.new()
+		socket_row.name = "SocketRow"
+		var socket_word := _label(tr("Socket into slot:"))
+		socket_word.name = "SocketWord"
+		socket_word.tooltip_text = UiTip.fold(tr("The spinner slot a bought Firmware chip goes into."))
+		socket_word.mouse_filter = Control.MOUSE_FILTER_PASS
+		socket_row.add_child(socket_word)
+		socket_row.add_child(fw_slot)
+		chips_win.body.add_child(socket_row)
 	if daemon_row.get_child_count() == 0:
 		daemons_win.body.add_child(_label(tr("sold out")))
 	var slice_row := HBoxContainer.new()
@@ -2234,7 +2621,7 @@ func _show_shop() -> void:
 		var slice_word := tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?")))
 		if i < 0:
 			var stub := _sold_stub("%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word, -1, (seen["slices"] as Array).size(), "slices", 1.0, ts)
-			stub.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
+			stub.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts, q_size.x)
 			stub.slice_type = sd.slice_type
 			stub.slice_output = sd.base_output
 			stub.accent = Palette.slice_color(sd.slice_type)
@@ -2247,7 +2634,7 @@ func _show_shop() -> void:
 		tile.slice_output = sd.base_output
 		# H24 S10: the tile widens with the text size as far as the SLICES window holds the
 		# row (its buy sticker "BUY 100-150" shrank to fit a fixed 96 px at 1.6).
-		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
+		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts, q_size.x)
 		tile.hotkey = ""
 		if low >= 0:
 			# ANIM-R2 E6: one price on the tile, what most slots cost ("BUY 100-150" wrapped
@@ -2255,10 +2642,11 @@ func _show_shop() -> void:
 			# picked before anything is paid, and the tip names the pricier slot.
 			tile.with_price(low)
 		# H23 S8: the real prices (the slot you overwrite sets it), said in words.
-		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
-			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
-			+ "\n" + tr(String(DRAG_TIPS["slice"])))
+		_input_tip(tile, tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
+			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd),
+			"slice")
 		tile.with_buy(TextDb.mark("BUY"))
+		tile.buy_button.have = s.run.cycles  # art pass W8c
 		FocusTip.attach(tile)
 		var si := i
 		tile.pressed.connect(func() -> void: open_overwrite(si))
@@ -2282,46 +2670,35 @@ func _show_shop() -> void:
 	shred.tooltip_text = UiTip.fold(tr("Remove a card from your deck: %d Cycles (you have %d).") % [s.card_removal_price(), s.run.cycles])
 	shred.pressed.connect(open_remove)
 	shred.with_buy(TextDb.mark("SHRED"))
+	shred.buy_button.have = s.run.cycles if not op.deck.is_empty() else -1  # art pass W8c
 	FocusTip.attach(shred)
 	remove_row.add_child(shred)
-	# The wallet (H21 #11): the Cycles to spend, beside the shredder, in sight whatever
-	# covers the top bar.
-	var wallet := HudStats.new()
-	wallet.name = "Wallet"
-	wallet.items = [[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.")]]
-	wallet.custom_minimum_size.x = wallet.full_width(ts)
-	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
-	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	remove_row.add_child(wallet)
+	# Art pass W8c (ART_BIBLE §11 Modem, critique 52): one Cycles readout, the top bar's
+	# CYCLES tag (the wallet here said it twice). Refusals flash that tag (price_refused).
 	# ANIM-4b: the spinner in small beside the wallet: microchips and slice upgrades drag onto
 	# its slots (the socket list and the UPGRADE viewer stay).
 	var mini := _spinner_mini()
 	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(mini)
-	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
+	# Art pass W8c: LEAVE THE MODEM taped at the REMOVE window's free right (it sat at a
+	# fixed spot and overlapped the window as the windows grew with the text).
+	var foot := HBoxContainer.new()
+	foot.name = "ModemFoot"
+	foot.alignment = BoxContainer.ALIGNMENT_END
+	foot.size_flags_vertical = Control.SIZE_SHRINK_END
+	foot.add_theme_constant_override("separation", UiTheme.SP_XS)
+	remove_win.body.add_child(foot)
+	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, UiTheme.font_px(UiTheme.HEADING), DripButton.LEAVE_MODEM_DRIPS)  # art pass W8c: §4.3 rule 1
 	leave.name = "LeaveModem"
-	leave.position = LEAVE_AT
 	leave.pressed.connect(leave_shop)
 	leave.tooltip_text = tr("Leave the Modem and go back to the route.")
-	root.add_child(leave)
 	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON, DripButton.DRIP_PINK)
 	leave_icon.name = "LeaveIcon"
-	leave_icon.position = LEAVE_AT + Vector2(-LEAVE_ICON - 4.0, 4.0)
+	leave_icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	leave_icon.tooltip_text = leave.tooltip_text
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
-	root.add_child(leave_icon)
-	# Art pass W8a (orchestrator grant): LEAVE THE MODEM sits SP_M under the spinner in the
-	# REMOVE A CARD window (never on it as the glass grows with the text), not at LEAVE_AT's y.
-	var place_leave := func() -> void:
-		if not is_instance_valid(leave) or not is_instance_valid(mini) or not mini.is_inside_tree():
-			return
-		var y := mini.get_global_rect().end.y - root.get_global_rect().position.y + UiTheme.SP_M
-		leave.position = Vector2(LEAVE_AT.x, maxf(LEAVE_AT.y, y))
-		leave_icon.position = leave.position + Vector2(-LEAVE_ICON - 4.0, 4.0)
-	# Placed once the frame's sorts are done (mid-sort the row's rect is stale).
-	remove_row.item_rect_changed.connect(func() -> void: place_leave.call_deferred())
-	remove_win.item_rect_changed.connect(func() -> void: place_leave.call_deferred())
-	place_leave.call_deferred()
+	foot.add_child(leave_icon)
+	foot.add_child(leave)
 	# ANIM-R3 A7: the first focus is the first item (one the Cycles reach, else the first),
 	# never the socket list: the pad prompt says "A Buy".
 	var first_item: ZineCard = null
@@ -2430,8 +2807,8 @@ static func loot_tip(res: Resource) -> String:
 
 ## A slice tile's size in the Modem's SLICES window for `count` tiles at text scale `ts`
 ## (H24 S10): SLICE_TILE grown with the text as far as the window's width holds the row.
-static func slice_tile_size(count: int, ts: float) -> Vector2:
-	var room := MODEM_QUAD.x * 0.5 - QUAD_FRAME.x - 8.0 * maxi(0, count - 1)
+static func slice_tile_size(count: int, ts: float, quad_w: float = MODEM_QUAD.x) -> Vector2:
+	var room := quad_w * 0.5 - QUAD_FRAME.x - 8.0 * maxi(0, count - 1)
 	var k := clampf(minf(ts, room / maxf(1.0, count * SLICE_TILE.x)), 1.0, Settings.TEXT_SCALE_MAX)
 	return Vector2(SLICE_TILE.x * k, SLICE_TILE.y * tile_growth(ts))
 
@@ -2446,12 +2823,42 @@ static func tile_growth(ts: float) -> float:
 ## with `count` in its row: a microchip shares its window's width (the socket list under
 ## it), a Daemon widens a little (the SLICES window keeps its row); both may grow as tall
 ## as the lower row's tiles.
-static func chip_tile_room(kind: String, count: int, ts: float) -> Vector2:
-	var h := CHIP_TILE.y * tile_growth(ts)
+static func chip_tile_room(kind: String, count: int, ts: float, quad: Vector2 = MODEM_QUAD) -> Vector2:
+	# Art pass W8c: chip text at `body` needs taller tiles (their window grows with them).
+	var h := CHIP_TILE.y * maxf(tile_growth(ts), chip_text_scale(ts)) * CHIP_ROOM_TALL
 	if kind == "firmware":
-		var w := (MODEM_QUAD.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
-		return Vector2(maxf(CHIP_TILE.x, minf(w, CHIP_TILE.x * ts)), h)
-	return Vector2(CHIP_TILE.x * (1.0 + (ts - 1.0) * DAEMON_WIDEN), h)
+		var w := (quad.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
+		return Vector2(maxf(CHIP_TILE.x, w), h)  # art pass W8c: its share of the window
+	return Vector2(maxf(CHIP_TILE.x, minf(quad.x * 0.5 - QUAD_FRAME.x, CHIP_TILE.x * chip_text_scale(ts))), h)
+
+
+## Art pass W8c (ART_BIBLE §11 Modem, critique 52: microchip text was ~7 px): the lettering
+## scale a Modem chip or Daemon tile draws at, so its words (ZineCard's caption step) come
+## out at the `body` step times the text size.
+static func chip_text_scale(ts: float) -> float:
+	return ts * float(UiTheme.BODY) / float(UiTheme.CAPTION)
+
+
+## Art pass W8c: how many columns the Modem's windows take at text scale `ts` (two, one at
+## big sizes: the page then scrolls inside its window).
+static func modem_columns(ts: float) -> int:
+	return 2 if ts <= MODEM_TWO_COLUMNS_MAX else 1
+
+
+## Art pass W8c: a Modem window's least size at text scale `ts`: its share of the page's
+## width beside the sign (MODEM_QUAD at 1.0 is the least), as tall as MODEM_QUAD.
+func modem_quad(ts: float) -> Vector2:
+	var page := (size.x if size.x > 0.0 else get_viewport_rect().size.x) - ModemSign.ART_SIZE.x - UiTheme.GUTTER - MODEM_PAGE_PAD
+	var cols := modem_columns(ts)
+	var w := (page - QUAD_GAP * (cols - 1)) / cols
+	return Vector2(maxf(MODEM_QUAD.x, floorf(w)), MODEM_QUAD.y)
+
+
+## Art pass W8c: the largest text scale the Modem keeps two columns at, the room the page's
+## own frame takes (px), and how much taller than CHIP_TILE a chip may grow for body text.
+const MODEM_TWO_COLUMNS_MAX := 1.15
+const MODEM_PAGE_PAD := 24.0
+const CHIP_ROOM_TALL := 1.6
 
 
 ## Grows `tile` (wider first, then taller, never past `most`) until its whole effect text
@@ -2464,7 +2871,7 @@ static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
 		if tile.buy_button != null:
 			tile.buy_button.refit()  # its height at this width (one line or two) is the foot
 		var parts := tile.tile_parts()
-		if int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size() and int(parts["dfs"]) >= CHIP_READABLE:
+		if int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size() and int(parts["dfs"]) >= chip_readable(tile):
 			break
 		if sz.x < most.x:
 			sz.x = minf(sz.x + CHIP_FIT_STEP, most.x)
@@ -2476,11 +2883,20 @@ static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
 	tile.custom_minimum_size = sz
 
 
+## Art pass W8c: the lettering a Modem chip's effect text must keep (px): the `body` step at
+## the tile's own text size (chip_text_scale), never under CHIP_READABLE.
+static func chip_readable(tile: ZineCard) -> int:
+	return maxi(CHIP_READABLE, roundi(UiTheme.CAPTION * tile.text_scale))
+
+
 ## Opens a modal viewer over the netrun screen. The viewers hold focus themselves
 ## (UiFocus.hold: the D-pad and A can't reach the Modem behind them; focus returns to the
 ## tile that opened them on close).
 func _open_modal(view: Control) -> void:
 	add_child(view)
+	# Art pass W8a/W8c (ART_BIBLE §10 rules 3, 6): the modal opens with W8a's motion and
+	# counts as open, so a page change waits for it to close (`_show_current`).
+	PageTransition.open_modal(view)
 
 
 ## Deck viewer in pick mode: the chosen card is removed for the shop's price.
@@ -2515,7 +2931,7 @@ func open_overwrite(stock_index: int) -> void:
 		chip.slice_output = sd.base_output
 		chip.hotkey = ""
 		chip.custom_minimum_size = Vector2(SpinnerView.SIDE_W, SLICE_TILE.y * tile_growth(Settings.text_scale))
-		chip.tooltip_text = UiTip.fold(tr("Drag it onto a slot to overwrite that slot (or press it, then pick the slot)."))
+		_input_tip(chip, "", "install")
 		view.enable_drops(_modal_layer(view), chip, _item_payload("slice", "modal", stock_index, sd.id))
 
 
@@ -2557,6 +2973,36 @@ func _show_raid() -> void:
 	armory_row.add_child(_label(tr("ARMORY:")))
 	for i in c.armory.size():
 		armory_row.add_child(_asset_chip("Armory_%d" % i, c.armory[i]))
+	# Art pass W8c (critique 28): never an empty "RUN ASSETS:" / "ARMORY:" label: an empty
+	# list hides its row (the ARMORY row stays, hidden, as the drop target a placed asset
+	# goes back to), and with nothing at all to deploy one designed note says so.
+	run_row.visible = not run_assets.is_empty()
+	var placed := false
+	for sid in c.grid.claimed_ids():
+		placed = placed or not c.grid.assets_on(sid).is_empty()
+	armory_row.visible = not c.armory.is_empty() or placed
+	if c.armory.is_empty() and placed:
+		# Empty but a place a deployed asset can go back to: it says so.
+		var back := _label(tr("empty: drop a placed asset here"))
+		back.name = "ArmoryEmpty"
+		back.add_theme_color_override("font_color", Palette.TEXT_MID)
+		armory_row.add_child(back)
+	if run_assets.is_empty() and c.armory.is_empty():
+		chips.add_child(_empty_assets_note())
+	# Art pass W8c (§2, §6.5: never a native dropdown): the asset to deploy is picked once, on
+	# tiles (the run's assets, then the Armory's); each node's row deploys it there. The
+	# chips above still drag onto a row.
+	var deploy_pick: TilePicker = null
+	if not run_assets.is_empty() or not c.armory.is_empty():
+		deploy_pick = TilePicker.new(deploy_tiles(run_assets, c.armory))
+		deploy_pick.name = "DeployPick"
+		deploy_pick.columns = maxi(1, floori(RAID_WINDOW_WIDTH * minf(Settings.text_scale, RAID_WINDOW_GROW) / ((TilePicker.TILE_W + TilePicker.TILE_GAP) * Settings.text_scale)))
+		deploy_pick.tooltip_text = UiTip.fold(tr("The asset a row's Deploy here puts on its node."))
+		var pick_row := VBoxContainer.new()
+		pick_row.name = "DeployRow"
+		pick_row.add_child(_label(tr("Deploy:")))
+		pick_row.add_child(deploy_pick)
+		chips.add_child(pick_row)
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
 		row.name = "RaidRow_%s" % site_id
@@ -2568,25 +3014,29 @@ func _show_raid() -> void:
 			var sid := site_id
 			var withdraw := _button(tr("Withdraw %s") % _content_name(deployed[i]), func() -> void: raid_move(sid, idx, &""))
 			withdraw.name = "Withdraw_%s_%d" % [sid, idx]
-			withdraw.tooltip_text = UiTip.fold(tr("Back to the Armory. Or drag it onto another node's row to move it there."))
+			_input_tip(withdraw, tr("Back to the Armory."), "withdraw")
 			row.add_child(withdraw)
-		if c.grid.is_active_node(site_id):
-			if not run_assets.is_empty():
-				var pick := OptionButton.new()
-				for a in run_assets:
-					pick.add_item(tr("run: %s") % _content_name(a))
-				row.add_child(pick)
-				var sid2 := site_id
-				row.add_child(_button(tr("Deploy run asset"), func() -> void: raid_deploy_run_asset(pick.selected, sid2)))
-			if not c.armory.is_empty():
-				var pick2 := OptionButton.new()
-				for a in c.armory:
-					pick2.add_item(tr("armory: %s") % _content_name(a))
-				row.add_child(pick2)
-				var sid3 := site_id
-				row.add_child(_button(tr("Deploy armory asset"), func() -> void: raid_deploy_armory(pick2.selected, sid3)))
+		if c.grid.is_active_node(site_id) and deploy_pick != null:
+			# Art pass W8c: one button per row deploys the picked asset (DeployPick).
+			var sid2 := site_id
+			var n_run := run_assets.size()
+			var deploy := _icon_button(tr("Deploy here"), func() -> void:
+				var k := deploy_pick.selected()
+				if k < n_run:
+					raid_deploy_run_asset(k, sid2)
+				else:
+					raid_deploy_armory(k - n_run, sid2), StatIcon.ARMORY)
+			deploy.name = "Deploy_%s" % site_id
+			deploy.theme_type_variation = UiTheme.SECONDARY
+			deploy.tooltip_text = UiTip.fold(tr("Deploy the asset picked above on %s.") % _site_name(site_id))
+			row.add_child(deploy)
 		box.add_child(row)
 	var run_btn := _button(tr(START_DEFENSE), raid_fight)
+	run_btn.name = "StartDefense"
+	# Art pass W8c (§6.4, critique 28): the one primary, as in the HQ's raid setup; sized
+	# to its label.
+	run_btn.theme_type_variation = UiTheme.PRIMARY
+	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	IconMark.attach(run_btn, StatIcon.RAIDS)
 	box.add_child(run_btn)
 	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
@@ -2607,6 +3057,9 @@ func _show_raid() -> void:
 	area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(area)
 	_set_panel(root, false)
+	# Art pass W8c (W7 hookup, §9.5): the raid's map over a dimmed, blurred city.
+	var calm: Array[Control] = [win]
+	_city_page(true, calm)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
@@ -2666,6 +3119,34 @@ func _raid_node_badge(site_id: StringName, n: Dictionary) -> Control:
 	return b
 
 
+## Art pass W8c: the deploy picker's tiles: the run's assets, then the Armory's (name, where
+## it comes from as the meta line, the Armory icon).
+func deploy_tiles(run_assets: Array[StringName], armory: Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for a in run_assets:
+		out.append({"name": _content_name(a), "meta": tr("RUN ASSET"), "icon": StatIcon.ARMORY})
+	for a in armory:
+		out.append({"name": _content_name(a), "meta": tr("ARMORY"), "icon": StatIcon.ARMORY})
+	return out
+
+
+## Art pass W8c (critique 28): the designed empty state when there is nothing to deploy: the
+## Armory icon and one caption line, never bare "RUN ASSETS:" / "ARMORY:" labels.
+func _empty_assets_note() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "NoAssets"
+	row.add_theme_constant_override("separation", UiTheme.SP_S)
+	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
+	row.add_child(IconMark.standalone(StatIcon.ARMORY, side, Palette.TEXT_MID))
+	var l := _label(tr("No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them."))
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.add_theme_color_override("font_color", Palette.TEXT_MID)
+	l.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.CAPTION))
+	row.add_child(l)
+	return row
+
+
 ## A raid interlude's asset chip (ANIM-4b): a taped note with the asset's name that only
 ## moves (a press picks it up, as the HQ's crew chips).
 func _asset_chip(chip_name: String, asset: StringName) -> Button:
@@ -2674,7 +3155,7 @@ func _asset_chip(chip_name: String, asset: StringName) -> Button:
 	b.theme_type_variation = &"NoteButton"
 	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	b.text = _content_name(asset)
-	b.tooltip_text = UiTip.fold(tr("Drag it onto a node's row to deploy it there (or press it, then pick the row)."))
+	_input_tip(b, "", "asset")
 	return b
 
 
@@ -2718,39 +3199,38 @@ func _site_name(site_id: StringName) -> String:
 	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
 
 
+## Art pass W8c (ART_BIBLE §11 Run failed, §8 T4, critique 51): the run's end staged over
+## the city (RunEndStage): the operative's Polaroid flatlines, the city grades to grey, the
+## verdict slams in at `hero` size, the run in numbers on a taped receipt with what the end
+## means, then Back to HQ (the primary). FLATLINED, JACKED OUT and HOME FELL share the
+## template. (Overlaps ANIM-R5 B3, which also moves the end over the city and adds the
+## permadeath line and the Heat reason: on merge, keep this staging and put B3's words in
+## the stage's fate line.)
 func _show_end() -> void:
 	var s := RunManager.netrun
-	var box := VBoxContainer.new()
-	var won := s.run.outcome == RunState.Outcome.COMPLETED
-	var aborted := s.run.outcome == RunState.Outcome.ABORTED
-	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 18)
-	# The result stamp only shows the outcome: no focus, no clicks (H20).
-	var stamp := ZineStamp.new(tr("CLEAN EXIT") if won else (tr("ABORTED") if aborted else tr("FLATLINED")), Palette.CELL_ACID if won else Palette.CELL_PINK).display_only()
-	stamp.name = "ResultStamp"
-	head.add_child(stamp)
+	var o := s.run.outcome
+	var won := o == RunState.Outcome.COMPLETED
+	var aborted := o == RunState.Outcome.ABORTED
 	var title := tr("NETRUN COMPLETE") if won else (tr("NETRUN ABORTED - the home server fell") if aborted else tr("NETRUN FAILED - operative lost"))
-	var report := TerminalWindow.new(title, Palette.CELL_ACID if won else Palette.CELL_PINK)
-	report.name = "RunReport"
-	head.add_child(report)
-	# The run in numbers as the top bar's paper tags (H20: no text summary).
-	var tags := HudStats.new()
-	tags.name = "RunTags"
-	tags.items = [[TextDb.mark("COMBATS"), str(s.run.combats_won), "", tr("Fights won this run.")],
-		[TextDb.mark("ELITES"), str(s.run.elites_defeated), "", tr("Elite fights won.")],
-		[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles in hand when the run ended.")],
-		[TextDb.mark("BANKED"), str(s.run.banked_schematics), "", tr("Schematics the run banked for the campaign.")],
-		[TextDb.mark("HEAT"), TextDb.signed(s.run.heat_gained), "", tr("Heat the run added (campaign Heat is now %d).") % s.campaign.heat]]
-	# The least room the tags need; they grow with the text size where the window allows.
-	tags.custom_minimum_size.x = tags.compact_width(1.0)
-	report.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	report.body.add_child(tags)
-	box.add_child(head)
-	var back := _button(tr("Back to HQ"), finish_run)
+	var op := s.run.operative
+	var stats := [[StatIcon.COMBATS, str(s.run.combats_won)], [StatIcon.ELITES, str(s.run.elites_defeated)], [StatIcon.CYCLES, str(s.run.cycles)],
+		[StatIcon.BANKED, str(s.run.banked_schematics)], [StatIcon.HEAT, TextDb.signed(s.run.heat_gained)]]
+	var stage := RunEndStage.new(o, tr(RunEndStage.verdict_of(o)), RunEndStage.color_of(o), op.class_id, op.id, op.name,
+		tr("NETRUN"), stats, title)
+	stage.receipt.tooltip_text = UiTip.fold(tr("Heat the run added (campaign Heat is now %d).") % s.campaign.heat)
+	var back := stage.back_button
+	back.text = tr("Back to HQ")
+	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	IconMark.attach(back, StatIcon.BACK)
-	box.add_child(back)
-	_set_panel(box)
+	stage.set_meta(FIRST_FOCUS_META, back)
+	# Never a black void: the city shows behind the end (a fight hid it).
+	background.visible = true
+	_set_panel(stage, false)
+	if entering:
+		stage.play()
+	else:
+		stage.finish_now()
 
 
 # --- Drag and drop (Animation pass ANIM-4b) --------------------------------------------------
@@ -2766,6 +3246,56 @@ const DRAG_TIPS := {"card": "Or drag it onto the CARDS tag: the card goes into y
 	"chip": "Or drag it onto a slot of your spinner: the chip goes into that slot.", # TR
 	"daemon": "Or drag it onto the DAEMONS icon: the Daemon is installed.", # TR
 	"slice": "Or drag it onto a slot of your spinner: the slice overwrites that slot."} # TR
+
+## Art pass W8c (ART_BIBLE 6.8, 12; W9's audit, netrun_scene "Or drag it..."): the same tips
+## for a pad player (never "click" or "drag": the pick-up button carries the item, the
+## D-pad aims, A drops), and the tips the other drag items carry, both ways.
+const DRAG_TIPS_PAD := {"card": "Or pick it up and move it onto the CARDS tag: the card goes into your deck.", # TR
+	"chip": "Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.", # TR
+	"daemon": "Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.", # TR
+	"slice": "Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.", # TR
+	"install": "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).", # TR
+	"withdraw": "Or pick it up and move it onto another node's row to move it there.", # TR
+	"asset": "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).", # TR
+	"spinner": "Move a microchip or a slice onto a slot to put it there."} # TR
+const DRAG_TIPS_MORE := {"install": "Drag it onto a slot to overwrite that slot (or press it, then pick the slot).", # TR
+	"withdraw": "Or drag it onto another node's row to move it there.", # TR
+	"asset": "Drag it onto a node's row to deploy it there (or press it, then pick the row).", # TR
+	"spinner": "Drag a microchip or a slice onto a slot to put it there."} # TR
+## The metas an input-aware tip keeps (its words before the drag line, the drag kind).
+const TIP_BASE_META := &"tip_base"
+const TIP_KIND_META := &"tip_drag_kind"
+
+
+## Art pass W8c: `c`'s tooltip: `base` then the drag line of `kind` in the device's words
+## (UiTip.for_input), folded; kept on `c` so a device change rewords it.
+func _input_tip(c: Control, base: String, kind: String) -> void:
+	c.set_meta(TIP_BASE_META, base)
+	c.set_meta(TIP_KIND_META, kind)
+	c.tooltip_text = input_tip_text(base, kind)
+
+
+## The words of an input-aware tip for the device in use.
+func input_tip_text(base: String, kind: String) -> String:
+	var line := ""
+	if kind != "":
+		var mouse := String(DRAG_TIPS.get(kind, DRAG_TIPS_MORE.get(kind, "")))
+		line = UiTip.for_input(tr(mouse), tr(String(DRAG_TIPS_PAD.get(kind, ""))))
+	var parts := PackedStringArray()
+	for w in [base, line]:
+		if w != "":
+			parts.append(w)
+	return UiTip.fold("\n".join(parts))
+
+
+## Rewords every input-aware tip on the page (the device changed).
+func _reword_tips() -> void:
+	if _panel == null or not is_instance_valid(_panel):
+		return
+	for n in _panel.find_children("*", "Control", true, false):
+		if n.has_meta(TIP_KIND_META):
+			(n as Control).tooltip_text = input_tip_text(String(n.get_meta(TIP_BASE_META)), String(n.get_meta(TIP_KIND_META)))
+
 
 ## The run's drop layer (over every page) and the pad prompts of the page on show (kept, so
 ## a carry can swap them and put them back).
@@ -2879,7 +3409,7 @@ func _spinner_mini() -> SpinnerMini:
 	for k in op.slot_slice_ids.size():
 		tips.append(slot_name(op, k))
 	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
-	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag a microchip or a slice onto a slot to put it there."))
+	_input_tip(mini, tr("Your spinner."), "spinner")
 	return mini
 
 
@@ -2895,7 +3425,7 @@ func _item_payload(kind: String, src: String, index: int, item: StringName) -> D
 
 ## Modem: cards drag onto the deck, microchips onto a slot of the small spinner, Daemons
 ## onto the DAEMONS icon, slice upgrades onto the slot they overwrite.
-func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
+func _register_shop_drops(mini: SpinnerMini, fw_slot: SlotPicker) -> void:
 	var shop := RunManager.netrun.run.shop
 	for pair in [["Stickers", "cards", "card"], ["Chips", "firmware", "chip"], ["Daemons", "daemons", "daemon"], ["Slices", "slices", "slice"]]:
 		var row := _panel.find_child(String(pair[0]), true, false) if _panel != null else null
@@ -2909,7 +3439,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 				continue
 			var p := _item_payload(String(pair[2]), "shop", i, StringName(String(stock[i])))
 			if pair[2] == "chip" and fw_slot != null:
-				p["prefer"] = fw_slot.selected
+				p["prefer"] = fw_slot.selected()
 			drops.add_source(c, p)
 	_add_bar_targets(["card"], ["daemon"])
 	if mini != null:
@@ -2918,7 +3448,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 
 ## Loot: the offer drags onto where it goes (a card to the deck, a Firmware chip onto a slot,
 ## a Daemon onto the DAEMONS icon).
-func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionButton) -> void:
+func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: SlotPicker) -> void:
 	var offer := RunManager.netrun.current_reward()
 	var kind := {"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer.get("kind", "")), "") as String
 	if kind == "" or row == null:
@@ -2927,7 +3457,7 @@ func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionBu
 	for i in mini(row.get_child_count(), options.size()):
 		var p := _item_payload(kind, "loot", i, StringName(String(options[i])))
 		if slot_option != null:
-			p["prefer"] = slot_option.selected
+			p["prefer"] = slot_option.selected()
 		drops.add_source(row.get_child(i) as Control, p)
 	_add_bar_targets(["card"], ["daemon"])
 	if mini != null:
@@ -2945,7 +3475,7 @@ func _register_event_drops(ev: TerminalEventData, options: Control) -> void:
 			continue
 		var p := _item_payload(kind, "event", i, (ev.choices[i].reward as Resource).get("id"))
 		drops.add_source(b, p)
-		b.tooltip_text += "\n" + tr(String(DRAG_TIPS.get(kind, "")))
+		_input_tip(b, b.tooltip_text, kind)
 		any = true
 	if any:
 		_add_bar_targets(["card"], ["daemon"])
@@ -3322,6 +3852,10 @@ func _build_ui() -> void:
 	# Shown only when the player turns it on in Options.
 	_log.visible = Settings.system_log
 	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
+	# Art pass W8c (ART_BIBLE §5.3): a page taller than the screen (the Modem at 2.0) scrolls
+	# inside its window with a visible MORE BELOW hint.
+	more_hint = ScrollHint.new(scroll)
+	add_child(more_hint)
 	# ANIM-4b: drag and drop over every page (targets pulse, the pad's reticle, flights).
 	drops = DropLayer.new()
 	_wire_drops(drops)

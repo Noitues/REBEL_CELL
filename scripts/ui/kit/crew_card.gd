@@ -150,11 +150,10 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	mouse_exited.connect(tilt_polaroid.bind(false))
 
 
-## The paper panel, or opaque black with a TEXT_HI edge under high contrast (§12).
+## The paper panel; under high contrast it keeps its paper with a solid INK edge (§12, PaperInk).
 func _panel_style() -> StyleBoxFlat:
-	var hc := Settings.high_contrast
-	var style := UiTheme.box(HighContrast.BG if hc else Palette.NOTE_PAPER, Palette.TEXT_HI if hc else Color(Palette.INK, EDGE_ALPHA),
-		HighContrast.HC_TINT_BORDER if hc else 1, MARGIN_H, MARGIN_V)
+	var style := UiTheme.box(Palette.NOTE_PAPER, PaperInk.edge(Color(Palette.INK, EDGE_ALPHA)),
+		int(PaperInk.edge_width(1.0)), MARGIN_H, MARGIN_V)
 	style.content_margin_left += STRIPE_WIDTH * Settings.text_scale
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = SHADOW_SIZE
@@ -162,9 +161,9 @@ func _panel_style() -> StyleBoxFlat:
 	return style
 
 
-## The dossier's text colour: INK on paper, TEXT_HI on black under high contrast.
+## The dossier's text colour: INK on paper (7:1 INK under high contrast, §12 PaperInk).
 static func text_color() -> Color:
-	return Palette.TEXT_HI if Settings.high_contrast else Palette.INK
+	return PaperInk.text(Palette.INK)
 
 
 func _label(text: String, step: int, font: Font) -> Label:
@@ -283,7 +282,7 @@ func _draw() -> void:
 	if dead or stamp_text != "":
 		var t := stamp_text if stamp_text != "" else tr("FLATLINED")
 		# FLATLINED is harm (§3.3); a posting stamp is plain ink.
-		var col := Palette.HARM if stamp_text == "" else text_color()
+		var col := Palette.HARM_INK if stamp_text == "" else text_color()
 		draw_set_transform(Vector2(size.x * 0.5, polaroid.position.y + polaroid.size.y * 0.55), STAMP_TURN, Vector2.ONE)
 		draw_rect(Rect2(-STAMP_WIDTH * 0.5, -STAMP_HEIGHT * 0.5, STAMP_WIDTH, STAMP_HEIGHT), col, false, STAMP_EDGE)
 		# Long Site names shrink to fit the stamp.

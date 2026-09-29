@@ -62,6 +62,12 @@ func _notification(what: int) -> void:
 		_name.size = Vector2(size.x, size.y - _side() - NAME_GAP)
 
 
+## The unearned outline's colour: DISABLED, or TEXT_MID in high contrast (the disabled
+## colour HighContrast gives the theme: DISABLED is under 7:1 on black, §12).
+static func outline_color() -> Color:
+	return Palette.TEXT_MID if PaperInk.on() else Palette.DISABLED
+
+
 ## The badge's disc (local).
 func disc() -> Rect2:
 	var s := _side()
@@ -78,6 +84,9 @@ func _draw() -> void:
 		draw_circle(Vector2(3, 4), r, Palette.SHADOW)
 		draw_circle(Vector2.ZERO, r, Palette.STICKER_PINK)
 		draw_arc(Vector2.ZERO, r - 3.0, 0, TAU, 40, Palette.INK, 2.0, true)
+		if PaperInk.on():
+			# Art pass WF (§12): the sticker's own edge, opaque INK.
+			draw_arc(Vector2.ZERO, r - PaperInk.EDGE_PX * 0.5, 0, TAU, 40, Palette.INK, PaperInk.EDGE_PX, true)
 		StatIcon.draw(self, Vector2.ZERO, r * 0.5, kind, Palette.INK, true)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
@@ -85,10 +94,10 @@ func _draw() -> void:
 	var n := 32
 	for i in n:
 		if i % 2 == 0:
-			draw_arc(c, r - 2.0, TAU * i / n, TAU * (i + 1) / n, 4, Palette.DISABLED, 2.0, true)
+			draw_arc(c, r - 2.0, TAU * i / n, TAU * (i + 1) / n, 4, outline_color(), 2.0, true)
 	StatIcon.draw(self, c, r * 0.45, kind, Palette.TEXT_MID)
 	var lock_c := c + Vector2(r * 0.7, r * 0.7)
 	var lr := LOCK_R * Settings.text_scale
-	draw_circle(lock_c, lr, Palette.TERMINAL_BG)
-	draw_arc(lock_c, lr, 0, TAU, 20, Palette.DISABLED, 1.5, true)
+	draw_circle(lock_c, lr, HighContrast.BG if PaperInk.on() else Palette.TERMINAL_BG)
+	draw_arc(lock_c, lr, 0, TAU, 20, outline_color(), PaperInk.edge_width(1.5), true)
 	StatIcon.draw(self, lock_c, lr * 0.7, StatIcon.LOCK, Palette.TEXT_HI)

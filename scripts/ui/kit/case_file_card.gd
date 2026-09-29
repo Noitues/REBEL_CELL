@@ -30,6 +30,8 @@ const HEAT_FULL := 100
 ## The folder's tilt (degrees; paper carries a slight rotation, §2).
 const TILT := -1.0
 const DASH := 8.0
+## The folder's ink edge alpha (opaque in high contrast).
+const EDGE_ALPHA := 0.6
 
 var slot: String = ""
 ## The slot's summary (RunManager.slot_summary) or {} when empty.
@@ -126,7 +128,9 @@ func _label(words: String, step: int, font: Font, col: Color = Palette.INK) -> L
 	l.text = words
 	l.add_theme_font_override("font", font)
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
-	l.add_theme_color_override("font_color", col)
+	# Art pass WF (§12): words filed on the paper go INK in high contrast (the empty
+	# folder's words sit on the glass and keep theirs).
+	l.add_theme_color_override("font_color", col if summary.is_empty() else PaperInk.text(col))
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# A wrapped line knows its height only at its width: set it now, so the folder is never
 	# measured at width 0 (a transient 2600 px page made the scrolling slot page chase itself).
@@ -181,7 +185,7 @@ func _fill() -> void:
 	_content.add_child(facts)
 	var state := state_word()
 	if state != "":
-		var st := _label(state, UiTheme.BODY, Palette.display(), Palette.HARM if String(summary.get("state", "")) == "lost" else Palette.INK)
+		var st := _label(state, UiTheme.BODY, Palette.display(), Palette.HARM_INK if String(summary.get("state", "")) == "lost" else Palette.INK)
 		st.name = "State"
 	var photos := HBoxContainer.new()
 	photos.name = "Crew"
@@ -231,10 +235,10 @@ static func last_played(unix: float) -> String:
 
 func _draw_heat(bar: Control, heat: int) -> void:
 	var r := Rect2(Vector2.ZERO, bar.size)
-	bar.draw_rect(r, Color(Palette.INK, 0.12))
+	bar.draw_rect(r, PaperInk.opaque(Color(Palette.INK, 0.12)))
 	var k := clampf(float(heat) / HEAT_FULL, 0.0, 1.0)
 	bar.draw_rect(Rect2(r.position, Vector2(r.size.x * k, r.size.y)), Palette.heat_color(heat))
-	bar.draw_rect(r, Palette.INK, false, 1.0)
+	bar.draw_rect(r, Palette.INK, false, PaperInk.edge_width(1.0))
 
 
 func _draw_folder() -> void:
@@ -259,8 +263,8 @@ func _draw_folder() -> void:
 	folder.draw_rect(Rect2(body.position + shadow, body.size), Palette.SHADOW)
 	folder.draw_colored_polygon(tab, Palette.NOTE_PAPER)
 	folder.draw_rect(body, Palette.PAPER)
-	folder.draw_polyline(tab, Color(Palette.INK, 0.6), 1.0)
-	folder.draw_rect(body, Color(Palette.INK, 0.6), false, 1.0)
+	folder.draw_polyline(tab, edge_color(), edge_width())
+	folder.draw_rect(body, edge_color(), false, edge_width())
 	folder.draw_string(Palette.mono(), Vector2(UiTheme.SP_S, tab_h * 0.72), tr("SLOT %s") % slot, HORIZONTAL_ALIGNMENT_LEFT, tab_w, UiTheme.font_px(UiTheme.CAPTION), Palette.INK)
 	# The corporation: hue stripe with its pattern, and its landmark glyph.
 	var corp := _corp_id()
@@ -276,6 +280,16 @@ func _draw_folder() -> void:
 		folder.draw_circle(at.get_center(), side * 0.56, Palette.INK)
 		if tex != null:
 			folder.draw_texture_rect(tex, at, false, col)
+
+
+## The folder's edge (§12: opaque INK, PaperInk.EDGE_PX, in high contrast).
+func edge_color() -> Color:
+	return PaperInk.edge(Color(Palette.INK, EDGE_ALPHA))
+
+
+## The folder's edge width (px).
+func edge_width() -> float:
+	return PaperInk.edge_width(1.0)
 
 
 func _dashed(r: Rect2, col: Color) -> void:

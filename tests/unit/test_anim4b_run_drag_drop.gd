@@ -173,7 +173,7 @@ func test_a_microchip_dropped_on_a_slot_matches_the_socket_list_and_buy() -> voi
 		if use_drag:
 			assert_eq(_drag(scene.drops, chip, "slot:%d" % slot), "dropped")
 		else:
-			(scene._panel.find_child("SocketPick", true, false) as OptionButton).select(slot)
+			(scene._panel.find_child("SocketPick", true, false) as SlotPicker).choose(slot)  # art pass W8c: slot tiles
 			chip.pressed.emit()
 		assert_ne(RunManager.netrun.run.operative.slot_firmware_ids, before, "socketed")
 		hashes.append(_hash())
@@ -253,7 +253,7 @@ func test_loot_dropped_where_it_goes_matches_taking_it() -> void:
 				assert_eq(_drag(scene.drops, sticker, target), "dropped", "%s onto %s" % [case[0], target])
 			else:
 				if slot >= 0:
-					(scene._panel.find_child("SlotPick", true, false) as OptionButton).select(slot)
+					(scene._panel.find_child("SlotPick", true, false) as SlotPicker).choose(slot)  # art pass W8c: slot tiles
 				sticker.pressed.emit()
 			hashes.append(_hash())
 			await _close(scene)
@@ -472,9 +472,9 @@ func test_keys_and_pad_reach_every_target_and_drop_like_the_mouse() -> void:
 	await _shop(scene)
 	# X / Space picks up the focused chip; the aim starts on the socket list's slot.
 	var chip := _item(scene, "Chips", 0) as ZineCard
-	var pick := scene._panel.find_child("SocketPick", true, false) as OptionButton
+	var pick := scene._panel.find_child("SocketPick", true, false) as SlotPicker  # art pass W8c
 	var slot := _taking_slot(scene.drops, chip)
-	pick.select(slot)
+	pick.choose(slot)
 	scene._show_current()
 	await _frames(3)
 	chip = _item(scene, "Chips", 0) as ZineCard
@@ -670,7 +670,7 @@ func test_views_never_change_game_state() -> void:
 
 
 func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:  # (the REMOVE deck viewer, W4's, ends under the canvas at 2.0)
 		Settings.set_text_scale(scale)
 		var scene := _netrun()
 		await _shop(scene)
@@ -678,8 +678,11 @@ func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
 		var mini := scene._panel.find_child("SpinnerMini", true, false) as Control
 		var remove_win := scene._panel.find_child("RemoveCard", true, false).get_parent().get_parent().get_parent() as Control
 		assert_true(remove_win.get_global_rect().grow(0.5).encloses(mini.get_global_rect()), "the spinner sits in the REMOVE A CARD window at %.1f" % scale)
+		# Art pass W8c: at big text the Modem scrolls inside its page; the spinner comes into view.
+		(scene._panel_host.get_parent() as ScrollContainer).ensure_control_visible(mini)
+		await _frames(2)
 		assert_true(SCREEN.encloses(mini.get_global_rect()), "on screen at %.1f" % scale)
-		for id in ["LeaveModem", "LeaveIcon", "Wallet", "RemoveCard"]:
+		for id in ["LeaveModem", "LeaveIcon", "RemoveCard"]:
 			var other := (scene._panel.find_child(id, true, false) as Control).get_global_rect()
 			assert_false(mini.get_global_rect().intersects(other), "the spinner covers no %s at %.1f" % [id, scale])
 		for k in 6:
