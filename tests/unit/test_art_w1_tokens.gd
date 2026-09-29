@@ -284,3 +284,13 @@ func test_spacing_tokens_sit_on_the_4px_grid() -> void:
 	assert_eq(UiTheme.GUTTER, 16)
 	for v in UiTheme.SPACING + [UiTheme.SAFE_MARGIN, UiTheme.PANEL_PAD_H, UiTheme.PANEL_PAD_V, UiTheme.GUTTER]:
 		assert_eq(v % 4, 0, "%d is a multiple of 4" % v)
+
+
+# --- §4.1 / §13 MSDF --------------------------------------------------------------------------
+
+func test_every_face_is_imported_with_msdf() -> void:
+	for path in [Palette.FONT_DISPLAY, Palette.FONT_MARKER, Palette.FONT_MONO]:
+		var f := load(path) as FontFile
+		assert_not_null(f, path)
+		assert_true(f.multichannel_signed_distance_field, "%s renders as MSDF" % path)
+		assert_true(f.msdf_pixel_range >= 16, "%s field range covers 6-8 px outlines" % path)
