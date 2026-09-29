@@ -523,10 +523,7 @@ func here_point() -> Vector2:
 		return Vector2(INF, INF)
 	# ANIM-R6 C15: on the street itself (the nearest street lot to `here_at`: the marker stood
 	# on a block beside the road).
-	var lot := Vector2i(floori(here_at.x), floori(here_at.y))
-	if not city.is_street(lot.x, lot.y):
-		lot = _door(lot)
-	return grid_point_local(Vector2(lot) + Vector2(0.5, 0.5))
+	return grid_point_local(Vector2(here_lot()) + Vector2(0.5, 0.5))
 
 
 ## ANIM-R3 B8: the street marker's box (screen px, for fitting the route); [] when the
@@ -1038,6 +1035,7 @@ func _draw_top() -> void:
 	if here_id() == &"" and here_at.x != INF and _travel.is_empty():
 		var p := here_point()
 		if p.x != INF:
+			_entry_roads()
 			_here(p, ICON_RADIUS * _k())
 			var f := Palette.mono()
 			var fs := label_font_size()
@@ -1047,6 +1045,44 @@ func _draw_top() -> void:
 			_c.draw_rect(Rect2(at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
 			_c.draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
 	_c = self
+
+
+## ANIM-R6 C15: the street marker's roads: a dashed line along the streets from where the
+## Cell stands to each choice ahead (the marker read as off the road, nothing joining it to
+## the route).
+func _entry_roads() -> void:
+	var lot := here_lot()
+	var k := _k()
+	for n in nodes:
+		if not bool(n.get("next", false)) or not _lots.has(n["id"]):
+			continue
+		var pts := PackedVector2Array()
+		for q in _route(lot, _lots[n["id"]]):
+			pts.append(_to_local(q))
+		for i in pts.size() - 1:
+			var a := pts[i]
+			var b := pts[i + 1]
+			var length := a.distance_to(b)
+			if not is_finite(length) or length <= 0.0:
+				continue
+			var dir := (b - a) / length
+			for q in mini(DASHES_MAX, ceili(length / DASH_PERIOD)):
+				var t := q * DASH_PERIOD
+				_c.draw_line(a + dir * t, a + dir * minf(t + DASH_ON, length), Color(Palette.CELL_ACID, ENTRY_ROAD_ALPHA), ENTRY_ROAD_WIDTH * k)
+
+
+## ANIM-R6 C15: the entry roads' strength and width (screen px).
+const ENTRY_ROAD_ALPHA := 0.7
+const ENTRY_ROAD_WIDTH := 2.0
+
+
+## ANIM-R6 C15: the street lot the "you are here" marker stands on (here_at, else its nearest
+## street lot).
+func here_lot() -> Vector2i:
+	var lot := Vector2i(floori(here_at.x), floori(here_at.y))
+	if city != null and not city.is_street(lot.x, lot.y):
+		lot = _door(lot)
+	return lot
 
 
 ## The labels (ANIM-R2 R9: a layer of their own over the nodes).
