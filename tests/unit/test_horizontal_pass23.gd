@@ -129,14 +129,27 @@ func test_a_hit_on_your_wheel_reads_as_damage_taken() -> void:
 		var res: CombatResult = scene.engine.preview_end_turn()
 		var after: CombatState = res.resolved_state if res.resolved_state != null else res.state
 		var o := CombatOutcome.between(scene.engine.state(), after, res.events)
-		var chips: Array = scene._chips_for(o, &"player", scene.engine.state())
+		var chips: Array = scene._chips_for(o, &"player", scene.engine.state(), res.events)
 		for chip in chips:
 			var t := String(chip["text"])
 			assert_false(RegEx.create_from_string("^-\\d+ HP$").search(t) != null, "no bare '-N HP' chip: %s" % t)
+		# ANIM-R6 A4: the loss is said by the hits that deal it ("HITS YOU N" on the enemy's tag),
+		# never summed again on your own tag (the NEXT plate carries the total).
 		var d := o.of(&"player")
 		if not d.is_empty() and int(d["hp_after"]) < int(d["hp_before"]):
 			var texts: Array = chips.map(func(c: Dictionary) -> String: return String(c["text"]))
-			assert_true(texts.has("YOU TAKE %d HP" % (int(d["hp_before"]) - int(d["hp_after"]))), "%s: %s" % [enemy, texts])
+			assert_false(texts.any(func(t: String) -> bool: return t.begins_with("YOU TAKE")), "%s: %s" % [enemy, texts])
+			var from_enemy := 0
+			for e in scene.engine.state().enemies:
+				for c in scene._chips_for(o, e.id, scene.engine.state(), res.events):
+					if String(c["text"]).begins_with("HITS YOU"):
+						from_enemy += 1
+			var hit_you := 0
+			for e in res.events:
+				if String(e.get("type", "")) == "damage" and StringName(String(e.get("target", ""))) == &"player":
+					hit_you += int(e.get("hp_damage", 0))
+			if hit_you > 0:
+				assert_gt(from_enemy, 0, "%s: an enemy's tag says it hits you" % enemy)
 
 
 func test_the_folded_chip_says_more() -> void:

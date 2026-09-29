@@ -318,11 +318,12 @@ func test_a_hovered_card_names_itself_on_the_wheel_it_acts_on() -> void:
 	scene._preview_card(0)
 	var found := false
 	for v in scene._views():
-		var chips: Array = (v as WheelView).intent.get("chips", [])
-		if not chips.is_empty() and String(chips[0]["text"]).begins_with(tr("YOU PLAY %s") % ""):
+		var wv := v as WheelView
+		if wv.play_note != "":
 			found = true
-			assert_string_contains(String(chips[0]["text"]), "JOLT")
-	assert_true(found, "one wheel's tag starts with YOU PLAY JOLT (ANIM-R3 A6j: was PLAYING JOLT, before that IF JOLT)")
+			assert_string_contains(wv.play_note, "JOLT")
+			assert_true(wv.was_shown(), "on the tag's tape")
+	assert_true(found, "one wheel's tag names YOUR JOLT (ANIM-R6 A13: on the tape; was the YOU PLAY JOLT chip, PLAYING JOLT, IF JOLT)")
 
 
 func test_last_turn_shows_the_ram_a_turn_brings_back() -> void:

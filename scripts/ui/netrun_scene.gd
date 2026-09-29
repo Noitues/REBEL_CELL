@@ -2023,6 +2023,16 @@ func _show_combat() -> void:
 	scene.engine.state_changed.connect(_on_combat_state_changed)
 	if scene.has_signal(&"continue_requested"):
 		scene.connect(&"continue_requested", _leave_fight)
+	if scene.has_signal(&"shown_hp_changed"):
+		scene.connect(&"shown_hp_changed", _on_combat_hp_shown)
+
+
+## ANIM-R6 A5 (combat, a minimal change here): a SEND IT replay landed its turn: the top bar's
+## HP follows the fight (never before an outcome that still waits for its beat).
+func _on_combat_hp_shown() -> void:
+	if combat_scene != null and combat_scene.has_method(&"outcome_pending") and bool(combat_scene.call(&"outcome_pending")):
+		return
+	_refresh_status()
 
 
 func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) -> void:
@@ -2055,6 +2065,10 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 		# Leave the final combat state visible for a moment, then move on: once the combat
 		# replay (the last hits, the break, VICTORY) has played out or been skipped.
 		_leave_generation += 1
+		if state.outcome == CombatState.Outcome.DEFEAT and combat_scene != null and combat_scene.has_method(&"show_continue"):
+			# ANIM-R6 A6 (combat, a minimal change here): a lost fight stays until JACK OUT is
+			# pressed (DEFEAT and its stamp "stay until JACK OUT"; the hold left it ~0.7 s).
+			return
 		if combat_scene != null and combat_scene.has_method("motion_seconds_left") and float(combat_scene.call("motion_seconds_left")) > 0.0:
 			combat_scene.connect("motion_settled", _hold_then_show.bind(_leave_generation), CONNECT_ONE_SHOT)
 		else:
@@ -3755,7 +3769,7 @@ func _refresh_status() -> void:
 	var text := "Heat %d/%d | Schematics %d | Armory %d" % [c.heat, RunManager.resolver.config.heat_max, c.schematics, c.armory.size()]
 	if s != null and not s.run.is_over():
 		var op := s.run.operative
-		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, op.hp, op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
+		text += " || Run T%d seed %d | %s HP %d/%d Rank %d | Cycles %d | banked %d | node %s" % [s.run.tier, s.run.run_seed, op.name, _shown_operative_hp(op.hp), op.max_hp, op.rank, s.run.cycles, s.run.banked_schematics, s.run.current_node_id]
 	_status.text = text
 	# Every tag says what it means on hover (H21 #9); its icon is the resource's own.
 	var stats := [[TextDb.mark("HEAT"), str(c.heat if hud_heat_shown < 0 else hud_heat_shown), "/%d" % RunManager.resolver.config.heat_max, tr("Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.")],
@@ -3765,7 +3779,7 @@ func _refresh_status() -> void:
 	if s != null and not s.run.is_over():
 		var op := s.run.operative
 		captions.append([stats.size(), tr("THIS RUN"), tr("This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.")])
-		stats.append_array([[TextDb.mark("HP"), str(op.hp), "/%d" % op.max_hp, tr("%s's HP. At 0 the operative flatlines.") % op.name],
+		stats.append_array([[TextDb.mark("HP"), str(_shown_operative_hp(op.hp)), "/%d" % op.max_hp, tr("%s's HP. At 0 the operative flatlines.") % op.name],
 			[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles: this run's money, spent in the Modem.")],
 			[TextDb.mark("CARDS"), str(op.deck.size()), "", tr("Cards in %s's deck (VIEW LOADOUT shows them).") % op.name],
 			[TextDb.mark("RANK"), str(op.rank), "", tr("Rank: runs survived. It brings wheel upgrades and higher netrun tiers.")],
@@ -3774,6 +3788,16 @@ func _refresh_status() -> void:
 	hud.loadout_button.visible = s != null and not s.run.is_over()
 	if s != null and not s.run.is_over():
 		hud.set_daemons(s.run.operative.daemon_ids)
+
+
+## ANIM-R6 A5 (combat, a minimal change here): the operative's HP for the top bar: during a
+## fight, the fight's (the run's is written only when it ends), as its replay has landed it.
+func _shown_operative_hp(run_hp: int) -> int:
+	if combat_scene != null and is_instance_valid(combat_scene) and combat_scene.has_method(&"top_bar_hp"):
+		var hp := int(combat_scene.call(&"top_bar_hp"))
+		if hp >= 0:
+			return hp
+	return run_hp
 
 
 ## The top bar's DAEMONS icon: the running operative's Daemons as a tray of sigils.

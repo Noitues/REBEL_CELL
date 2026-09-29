@@ -681,7 +681,7 @@ func test_the_hit_shows_its_aim() -> void:
 		"source_slot": slot, "source_tier": RC.PrecisionTier.PARTIAL, "hp_after": enemy.hp - base / 2}, true)
 	var ride: Dictionary = scene.ride_for(hit, state)
 	assert_eq(String(ride["from"]), str(base), "the slice's own value first (%d)" % base)
-	assert_eq(String(ride["label"]), "%d %s" % [base / 2, scene.HALF_MARK], "then what it deals, marked half power")
+	assert_eq(String(ride["label"]), str(base / 2), "then what it deals, a whole number (ANIM-R6 A4: never a fraction)")
 	hit["source_tier"] = RC.PrecisionTier.PERFECT
 	hit["raw"] = base + base / 2
 	ride = scene.ride_for(hit, state)
@@ -690,7 +690,6 @@ func test_the_hit_shows_its_aim() -> void:
 	hit["raw"] = base
 	ride = scene.ride_for(hit, state)
 	assert_eq(String(ride["from"]), "", "a GOOD hit rides its plain number")
-	assert_true(Palette.display().has_char(scene.HALF_MARK.unicode_at(0)) or Palette.mono().has_char(scene.HALF_MARK.unicode_at(0)), "the half mark has a glyph")
 	await _close(scene)
 
 
@@ -866,7 +865,7 @@ func test_a_played_card_is_gone_before_its_effect() -> void:
 
 func test_the_words_say_who_plays_and_what_is_missing() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
-	assert_true(src.contains("tr(\"YOU PLAY %s\")"), "YOU PLAY JOLT on the tag (PLAYING read as the enemy playing it)")
+	assert_true(FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd").contains("tr(\"YOUR %s\")"), "YOUR JOLT on the tape (ANIM-R6 A13; PLAYING read as the enemy playing it)")
 	assert_false(src.contains("tr(\"PLAYING %s\")"))
 	var bar := RamBar.new()
 	add_child_autofree(bar)
@@ -1057,7 +1056,7 @@ func test_new_motion_ids_are_required_and_words_are_translated_once() -> void:
 	for id in ["impact_mark", "forecast_tick", "forecast_fade", "status_mark"]:
 		assert_true(lab.contains("&\"%s\":" % id), "%s has a lab demo" % id)
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
-	for key in ["YOU PLAY %s", "NEED %d · HAVE %d", "LOOT", "HP now: %d of %d."]:
+	for key in ["YOUR %s", "NEED %d · HAVE %d", "LOOT", "HP now: %d of %d."]:
 		assert_true(csv.contains(key), "%s is exported for translation" % key)
 
 

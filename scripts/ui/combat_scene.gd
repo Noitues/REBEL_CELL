@@ -128,6 +128,12 @@ var _hand_scale: float = 0.0
 
 
 func _exit_tree() -> void:
+	# ANIM-R6 A9: a fight left while its outcome waits for the replay lands it now (the netrun's
+	# top bar and its DISPATCH line wait for `outcome_landed`). Nothing of this scene is
+	# redrawn: it is leaving.
+	if _outcome_held:
+		_outcome_held = false
+		outcome_landed.emit()
 	Dialogue.dock_bottom()
 
 
@@ -568,6 +574,7 @@ func start_tutorial() -> void:
 	tutorial.position = TUTORIAL_RECT.position  # the right column: never on a wheel (GDD 9.2)
 	add_child(tutorial)
 	_relayout.call_deferred()
+	tutorial.step_changed.connect(_relayout.call_deferred)  # ANIM-R6 A16: the box follows its step's text
 	tutorial.finished.connect(func() -> void: tutorial = null; _relayout.call_deferred())
 
 
@@ -735,18 +742,8 @@ func _input(event: InputEvent) -> void:
 	# open pause menu keeps its presses; the fight's own controls (SEND IT, RESPIN, UNDO, the
 	# hand) keep theirs: a press on them only ends the replay, so the next turn is never
 	# played blind.
-	if _skippable():
-		var verdict := MotionSkip.verdict(event, self, replay_keeps())
-		if verdict != MotionSkip.Verdict.IGNORE:
-			# ANIM-R5: every running motion completes with the replay (MotionSkip.complete_all).
-			MotionSkip.complete_all(self)
-			# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press
-			# ends the replay and goes on to it).
-			if continue_shown() and _for_continue(event):
-				return
-			if verdict == MotionSkip.Verdict.CONSUME:
-				MotionSkip.consume(self, event)
-			return
+	if replay_press(event) != MotionSkip.Verdict.IGNORE:
+		return
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		_nav_focus = false
 	elif event.is_pressed() and not event.is_echo():
@@ -767,6 +764,31 @@ func _input(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+## What a press does while the SEND IT replay plays (the scene's _input asks first): IGNORE
+## (no replay, or not a press: the input goes on as usual), PASS (it ended the replay and
+## passes on to what it works) or CONSUME (it ended the replay and nothing else sees it).
+func replay_press(event: InputEvent) -> MotionSkip.Verdict:
+	if not _skippable():
+		return MotionSkip.Verdict.IGNORE
+	var verdict := MotionSkip.verdict(event, self, replay_keeps())
+	if verdict == MotionSkip.Verdict.IGNORE:
+		return verdict
+	# ANIM-R6 A1: whether the next step was on screen before this press (the skip below lands
+	# a held outcome, which shows it).
+	var was_shown := continue_shown()
+	# ANIM-R5: every running motion completes with the replay (MotionSkip.complete_all).
+	MotionSkip.complete_all(self)
+	# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press ends
+	# the replay and goes on to it). ANIM-R6 A1: only when it was already shown; a press that
+	# lands the outcome (and so shows the next step) only skips (STYLE_GUIDE 5.2: any press
+	# skips and does nothing else), never also leaves the fight.
+	if was_shown and _for_continue(event):
+		return MotionSkip.Verdict.PASS
+	if verdict == MotionSkip.Verdict.CONSUME:
+		MotionSkip.consume(self, event)
+	return verdict
 
 
 ## ANIM-R4 C2: the controls whose presses the SEND IT replay keeps (a press on them ends the
@@ -1178,6 +1200,11 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	# next-step button, Heat, the run's top bar) until the replay lands it (`_land_outcome`).
 	_outcome_held = sequence and state.is_over() and Motion.live(&"resolve_sequence")
 	_shown_turn = before_turn.turn if sequence else -1
+	# ANIM-R6 A5 / A8: while the replay plays, the portrait follows its HP rolls and the run's top
+	# bar keeps the HP the turn started with until it lands.
+	var replays := sequence and Motion.live(&"resolve_sequence")
+	_replay_hp = before_turn.player.hp if replays else -1
+	_replay_start_hp = _replay_hp
 	# ANIM-R4 C6e: a card or respin that spins a wheel holds the forecast until it lands.
 	_card_hold = live and not sequence and rewind_from == null and before_action != null and _spins(events)
 	_refresh(state)
@@ -1275,9 +1302,14 @@ func _play_log(events: Array[Dictionary]) -> void:
 		if delay <= 0.0:
 			log_note.append(text)
 		else:
-			get_tree().create_timer(delay).timeout.connect(func() -> void:
-				if generation == _log_generation and is_instance_valid(log_note):
-					log_note.append(text))
+			# ANIM-R6 A10: a bound method of this scene (dropped with it), no lambda holding it.
+			get_tree().create_timer(delay).timeout.connect(_append_log.bind(generation, text))
+
+
+## One line of the log playback, unless a newer playback started since (`generation`).
+func _append_log(generation: int, text: String) -> void:
+	if generation == _log_generation and is_instance_valid(log_note):
+		log_note.append(text)
 
 
 func _instant_playback() -> bool:
@@ -1347,7 +1379,9 @@ const BARK_SCOPE := "combat"
 
 func _bark(trigger: String, state: CombatState) -> void:
 	var key := "%s:%d" % [trigger, state.turn]
-	if _barked_turn.has(key) or _instant_playback():
+	# ANIM-R6 A2: barks play with motion (Motion.animating: the same as not _instant_playback
+	# in the game; the tests' forced motion hears them too).
+	if _barked_turn.has(key) or not Motion.animating():
 		return
 	_barked_turn[key] = true
 	# ANIM-R6 B5: the fight's own lines end with the fight (Dialogue scope): the defeat bark
@@ -1499,7 +1533,8 @@ func _build_ui() -> void:
 	_status.mouse_filter = Control.MOUSE_FILTER_PASS
 	shown_tip(_status, tr("The turn, and the free nudges left this turn (each extra nudge costs RAM)."))
 	top.add_child(_status)
-	_settings_button = _button("Settings", open_settings)
+	_settings_button = _button(tr("Settings"), open_settings)
+	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
 	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
 	top.add_child(_settings_button)
 
@@ -1557,11 +1592,11 @@ func _build_ui() -> void:
 	_right.add_child(_notes_area)
 	_zine_elements.append_array([portrait, heat_poster])
 	# Hidden text records.
-	preview_note = ZineNote.new("WHAT WILL RESOLVE", Vector2(RIGHT_WIDTH, 150))
+	preview_note = ZineNote.new(tr("WHAT WILL RESOLVE"), Vector2(RIGHT_WIDTH, 150))
 	preview_note.name = "PreviewNote"
 	preview_note.visible = false
 	_right.add_child(preview_note)
-	log_note = ZineNote.new("LOG", Vector2(RIGHT_WIDTH, 150))
+	log_note = ZineNote.new(tr("LOG"), Vector2(RIGHT_WIDTH, 150))
 	log_note.name = "LogStrip"
 	log_note.visible = false
 	_right.add_child(log_note)
@@ -1715,7 +1750,10 @@ func _relayout() -> void:
 	# Shorter subtitle pages while the tutorial needs the room under them.
 	var lines := SUBTITLE_LINES
 	var dock_h := (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
-	while tutoring and lines > 1 and area.size.y - dock_h - NOTE_GAP < TUTORIAL_MIN_HEIGHT:
+	# ANIM-R6 A16: the tutorial wants the height its step's text needs (the box is sized to
+	# its text; a longer one shows in pages).
+	var want := maxf(TUTORIAL_MIN_HEIGHT, tutorial.needed_height(area.size.x)) if tutoring else TUTORIAL_MIN_HEIGHT
+	while tutoring and lines > 1 and area.size.y - dock_h - NOTE_GAP < want:
 		lines -= 1
 		dock_h = (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
 	Dialogue.dock_at(Rect2(area.position, Vector2(area.size.x, dock_h)), lines)
@@ -1736,7 +1774,7 @@ func _relayout() -> void:
 	if bottom - top < TUTORIAL_MIN_HEIGHT:
 		return
 	tutorial.position = Vector2(area.position.x, top) - origin
-	tutorial.fit(Vector2(area.size.x, bottom - top))
+	tutorial.fit(Vector2(area.size.x, minf(bottom - top, want)))
 
 
 ## The wheel cards aim at under the hidden card-target toggle (play_card's default).
@@ -1761,7 +1799,8 @@ func _refresh_key_hints() -> void:
 		focused = owner.get_index()
 	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
 	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
-	_settings_button.text = "Settings %s" % Settings.hint(&"open_settings")
+	# ANIM-R6 A12: its word translated once here (the button shows it as given).
+	_settings_button.text = ("%s %s" % [tr("Settings"), Settings.hint(&"open_settings")]).strip_edges()
 	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	_sync_stickers()
@@ -1801,9 +1840,10 @@ func _refresh(state: CombatState) -> void:
 	if engine.netrun != null and engine.netrun.run != null and engine.netrun.run.operative != null:
 		# The same face as the operative's dossier (H20 #23).
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
-	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
-	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [operative_name, _name_of(state.player), state.player.hp, state.player.max_hp])
-	portrait.queue_redraw()
+	_portrait_name = [operative_name, _name_of(state.player)]
+	# ANIM-R6 A8: while a SEND IT replays, the portrait (its glitch, its HP tooltip) shows the
+	# HP the replay has reached, not the turn's end.
+	_sync_portrait(state.player.hp if _replay_hp < 0 else _replay_hp, state.player.max_hp)
 	ram_note.set_ram(state.ram, state.max_ram)
 	daemon_row.set_daemons(state.daemon_ids, lookup)
 	if not _outcome_held:
@@ -1859,6 +1899,12 @@ func _refresh(state: CombatState) -> void:
 	_build_hand(state)
 	_end_turn_button.disabled = state.is_over()
 	_sync_over(state.is_over() and not _outcome_held)
+	# ANIM-R6 A15: VICTORY stands once it has landed (at once without a replay); a fight that
+	# goes on (a new one) shows none.
+	if state.outcome != CombatState.Outcome.VICTORY:
+		fx_layer.release_word()
+	elif not _outcome_held and fx_layer.held_word.is_empty():
+		_hold_victory.call_deferred(true)  # the views lay out first (it stands above the enemy's disc)
 	_player_view.flatlined = state.outcome == CombatState.Outcome.DEFEAT and not _outcome_held
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
@@ -1872,10 +1918,10 @@ func _refresh(state: CombatState) -> void:
 	selecting = -1
 	_options.clear()
 	_option_index = -1
+	_sync_arrows(state)
 	for v in _views():
 		v.valid_zones.clear()
 		v.hover_zone = {}
-		v.show_arrows = not state.is_over()
 		v.last_turn = String(_last_turn.get(v.combatant.id, "")) if v.combatant != null else ""
 		v.last_turn_icons = _last_icons.get(v.combatant.id, {}) if v.combatant != null else {}
 		v.last_turn_tip = String(_last_tips.get(v.combatant.id, "")) if v.combatant != null else ""
@@ -1914,6 +1960,48 @@ func _style_continue() -> void:
 const JACK_OUT_PAINT := Palette.PAPER
 
 
+## ANIM-R6 A8: the nudge arrows stay while a fight's outcome waits for its replay (they went
+## the moment SEND IT ended the fight) and go when it lands.
+func _sync_arrows(state: CombatState) -> void:
+	var over := state.is_over() and not _outcome_held
+	for v in _views():
+		if v.show_arrows == over:
+			v.show_arrows = not over
+			v.queue_redraw()
+
+
+## ANIM-R6 A8: the operative's portrait at `hp`: it glitches at a quarter HP or less and its
+## tooltip says the HP (during a replay, the HP the replay has reached).
+func _sync_portrait(hp: int, max_hp: int) -> void:
+	if portrait == null:
+		return
+	portrait.glitch = hp * 4 <= max_hp
+	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [_portrait_name[0], _portrait_name[1], hp, max_hp])
+	portrait.queue_redraw()
+
+
+## The portrait's caption for its tooltip ("Kez (Breaker)"), and the operative's HP the SEND IT
+## replay has reached (-1 when none plays: the state's).
+var _portrait_name: Array = ["", ""]
+var _replay_hp: int = -1
+## The operative's HP when the SEND IT replaying now was pressed (-1 = none plays): the top
+## bar keeps it until the replay lands its turn.
+var _replay_start_hp: int = -1
+
+
+## The HP the run's top bar shows during a fight (ANIM-R6 A5): the operative's HP in the fight
+## (the run's is written when the fight ends), as far as the SEND IT replay has landed it.
+func top_bar_hp() -> int:
+	if not engine.has_fight():
+		return -1
+	return engine.state().player.hp if _replay_start_hp < 0 else _replay_start_hp
+
+
+## Emitted when the HP the top bar shows during a fight changes on screen (a replay lands its
+## turn, or an action changes it at once).
+signal shown_hp_changed
+
+
 ## The Heat poster and the arena's corporate creep show the campaign's Heat now.
 func _sync_heat() -> void:
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
@@ -1926,7 +2014,10 @@ func _sync_heat() -> void:
 ## replay's end): the status line says it, the next-step button replaces SEND IT, the Heat
 ## poster rolls, a lost fight keeps its DEFEAT stamp, and the netrun is told
 ## (`outcome_landed`: its top bar moves on).
-func _land_outcome() -> void:
+## ANIM-R6 A2: `instant` (a skip, the next step pressed): the DEFEAT stamp shows whole at
+## once (no pop after the press that skipped), and the VICTORY / DEFEAT bark the skipped end
+## beat would have said is said here (`_bark` says it once).
+func _land_outcome(instant: bool = false) -> void:
 	if not _outcome_held:
 		return
 	_outcome_held = false
@@ -1937,9 +2028,18 @@ func _land_outcome() -> void:
 	_refresh_status()
 	_sync_heat()
 	_sync_over(state.is_over())
+	_sync_arrows(state)
+	_sync_portrait(state.player.hp, state.player.max_hp)
 	var lost := state.outcome == CombatState.Outcome.DEFEAT
-	if lost and not _player_view.flatlined:
-		_player_view.play_flatline()
+	if lost and (instant or not _player_view.flatlined):
+		if instant:
+			_player_view.show_flatline()
+		else:
+			_player_view.play_flatline()
+	if state.outcome == CombatState.Outcome.VICTORY and fx_layer != null and fx_layer.held_word.is_empty():
+		_hold_victory(true)  # ANIM-R6 A15: a skipped end beat still leaves VICTORY standing
+	if state.is_over():
+		_bark("victory" if state.outcome == CombatState.Outcome.VICTORY else "defeat", state)
 	outcome_landed.emit()
 
 
@@ -2269,12 +2369,11 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 	if v == null or v.intent.is_empty():
 		return
 	var what := TextDb.t(card, "display_name").to_upper() if card != null else tr("NUDGE")
-	var chips: Array = (v.intent.get("chips", []) as Array).duplicate()
-	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic). ANIM-R3 A6j: says who plays it
-	# ("PLAYING JOLT" on the enemy's tag read as the enemy playing it).
-	chips.push_front({"text": tr("YOU PLAY %s") % what, "color": CHIP_RUN, "ink": Palette.INK, "play": true})
-	v.intent["chips"] = chips
-	v.intent["tooltip"] = _chips_tooltip(chips)
+	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic). ANIM-R3 A6j: says who plays it.
+	# ANIM-R6 A13: on the tag's tape with a card mark ("YOUR JOLT", beside WAS), not as a chip
+	# among the enemy's own results ("YOU PLAY JOLT" there read as the enemy playing it).
+	v.play_note = what
+	v.intent["tooltip"] = tr("Your %s, if you play it:") % what + "\n" + String(v.intent.get("tooltip", ""))
 	v.queue_redraw()
 
 
@@ -2304,6 +2403,7 @@ func _show_end_turn_preview() -> void:
 	preview_note.clear()
 	for v in _views():
 		v.was_tag = {}  # ANIM-R5 combat 7: the forecast itself has no "before"
+		v.play_note = ""  # ANIM-R6 A13: nor a card being previewed
 	if _card_hold and not state.is_over() and not _hold_forecast:
 		# ANIM-R4 C6e: the tags wait for the card's spin to land (the notes still read now).
 		var held := engine.preview_end_turn()
@@ -2369,7 +2469,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			continue
 		var lc := landing.get_combatant(id)
 		var title := _landing_title(landing, lc if lc != null else c)
-		var chips := _chips_for(o, id, state)
+		var chips := _chips_for(o, id, state, events)
 		var sats := {}
 		var landings := {}
 		for sat in state.satellites_of(id):
@@ -2481,34 +2581,47 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 ## Result chips for one combatant (and, on the operative, the run-wide results).
 ## ANIM-R3 A6b: each chip names the beats that make it happen ("beats": ForecastTicks
 ## filter), so a held forecast ticks each line as the replay does it.
-func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
+## ANIM-R6 A4: `events` (the resolve's) give each hit's applied number and where HP losses
+## no hit names come from.
+func _chips_for(o: CombatOutcome, id: StringName, state: CombatState, events: Array[Dictionary] = []) -> Array:
+	var hits := hit_totals(events)
+	var self_hp := hp_sources(events)
 	var chips: Array = []
 	var d := o.of(id)
 	if d.is_empty():
 		return chips
+	var me := state.get_combatant(id)
+	var mine_is_player := me != null and me.is_player
 	# Who takes the hits: "HITS YOU 14" on an enemy's tag, "HITS <NAME> 12" on yours.
-	var to: Dictionary = d.get("dealt_to", {})
-	for tgt in to:
+	# ANIM-R6 A4: the number is what the hits take off (after block and shield: the victim's
+	# "N BLOCKED" says the rest), and a hit that takes the last HP says so ("HITS YOU 8 → 1
+	# LEFT"): every number shown is the one the resolve applies.
+	var mine_hits: Dictionary = hits.get(id, {})
+	for tgt in mine_hits:
 		var victim := state.get_combatant(StringName(String(tgt)))
 		var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
-		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK,
+		var h: Dictionary = mine_hits[tgt]
+		chips.append({"text": hit_chip_text(who, int(h["through"]), int(h["applied"])), "color": CHIP_HIT, "ink": Palette.INK,
 			"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT,
+			"tooltip": clamp_tip(int(h["through"]), int(h["applied"])),
 			"beats": ForecastTicks.filter(["damage", "evaded"], id, StringName(String(tgt)))})
-	if to.is_empty() and int(d["dealt"]) > 0:
-		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK, "rank": CHIP_RANK_DEALT,
-			"beats": ForecastTicks.filter(["damage", "evaded"], id)})
-	var dhp := int(d["hp_after"]) - int(d["hp_before"])
-	if dhp < 0:
-		# Said as damage taken (H23: "−11 HP" under the player's DEFEND read as DEFEND costing
-		# 11 HP).
-		var victim_self := state.get_combatant(id)
-		var taker := tr("YOU TAKE") if victim_self != null and victim_self.is_player else tr("TAKES")
-		chips.append({"text": tr("%s %d HP") % [taker, -dhp], "color": CHIP_LOSS, "ink": Palette.PAPER,
-			"rank": CHIP_RANK_HURTS_YOU if victim_self != null and victim_self.is_player else CHIP_RANK_HP,
-			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
-	elif dhp > 0:
-		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
-			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
+	# ANIM-R6 A4: this wheel's own HP loss is never summed again on its own tag ("YOU TAKE 11"
+	# beside "HITS YOU 8" disagreed; the NEXT plate under its HP carries the total): only the
+	# losses no hit names say where they come from (a CORRUPTED slice's bite), and heals.
+	var bite := int(self_hp.get(id, {}).get("corrupted", 0))
+	if bite > 0:
+		var word := "%s %s" % [Palette.STATUS_GLYPHS.get(RC.Status.CORRUPTED, "?"), tr(String(Palette.STATUS_WORDS.get(RC.Status.CORRUPTED, "")))]
+		chips.append({"text": (tr("%s BITES YOU %d") if mine_is_player else tr("%s BITES IT %d")) % [word, bite], "color": CHIP_LOSS, "ink": Palette.PAPER,
+			"rank": CHIP_RANK_HURTS_YOU if mine_is_player else CHIP_RANK_HP, "beats": ForecastTicks.filter(["corrupted"], &"", id, true)})
+	var healed := int(self_hp.get(id, {}).get("heal", 0))
+	if healed > 0:
+		chips.append({"text": tr("+%d HP") % healed, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
+			"beats": ForecastTicks.filter(["heal"], &"", id, true)})
+	# Anything else that moves its HP (a boss phase's refill): said as an HP change.
+	var rest := int(d["hp_after"]) - int(d["hp_before"]) + int(self_hp.get(id, {}).get("hit", 0)) + bite - healed
+	if rest != 0:
+		chips.append({"text": tr("HP %s") % signed(rest), "color": CHIP_GAIN if rest > 0 else CHIP_LOSS, "ink": Palette.INK if rest > 0 else Palette.PAPER,
+			"rank": CHIP_RANK_HP})
 	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do).
 	if int(d.get("soaked", 0)) > 0:
 		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK,
@@ -2553,9 +2666,15 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		if sd.is_empty():
 			continue
 		var name := _name_of(sat).to_lower()
-		if int(sd["dealt"]) > 0:
-			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK,
-				"rank": CHIP_RANK_DEALT if sat.is_player else CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["damage", "evaded"], sat.id)})
+		var sat_hits: Dictionary = hits.get(sat.id, {})
+		for tgt in sat_hits:
+			# ANIM-R6 A4: whom it hits and what that takes off, as its host's hits say it.
+			var victim := state.get_combatant(StringName(String(tgt)))
+			var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
+			var h: Dictionary = sat_hits[tgt]
+			chips.append({"text": "%s %s" % [name, hit_chip_text(who, int(h["through"]), int(h["applied"]))], "color": CHIP_HIT, "ink": Palette.INK,
+				"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT, "tooltip": clamp_tip(int(h["through"]), int(h["applied"])),
+				"beats": ForecastTicks.filter(["damage", "evaded"], sat.id, StringName(String(tgt)))})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
 			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", sat.id)})
 		elif int(sd["hp_after"]) != int(sd["hp_before"]):
@@ -2601,6 +2720,69 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		elif o.outcome == CombatState.Outcome.DEFEAT:
 			chips.append({"text": tr("DEFEAT"), "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["end"])})
 	return ranked_chips(chips)
+
+
+## ANIM-R6 A4: per attacker, per victim, what its hits in `events` take off: {src: {tgt:
+## {through (after block and shield), applied (the HP it really took: less when the victim
+## had fewer HP left)}}}. Evaded hits take nothing and are left out.
+static func hit_totals(events: Array[Dictionary]) -> Dictionary:
+	var out := {}
+	for e in events:
+		if String(e.get("type", "")) != "damage":
+			continue
+		var src := StringName(String(e.get("attacker", "")))
+		var tgt := StringName(String(e.get("target", "")))
+		if src == &"" or tgt == &"":
+			continue
+		var per: Dictionary = out.get(src, {})
+		var h: Dictionary = per.get(tgt, {"through": 0, "applied": 0})
+		h["through"] = int(h["through"]) + maxi(0, int(e.get("amount", 0)) - int(e.get("blocked", 0)) - int(e.get("shielded", 0)))
+		h["applied"] = int(h["applied"]) + int(e.get("hp_damage", 0))
+		per[tgt] = h
+		out[src] = per
+	return out
+
+
+## ANIM-R6 A4: per combatant, what moves its HP in `events`: {id: {hit (HP its hits took),
+## corrupted (its CORRUPTED slices' bites), heal}}.
+static func hp_sources(events: Array[Dictionary]) -> Dictionary:
+	var out := {}
+	for e in events:
+		var t := String(e.get("type", ""))
+		var key := ""
+		var amount := 0
+		match t:
+			"damage":
+				key = "hit"
+				amount = int(e.get("hp_damage", 0))
+			"corrupted":
+				key = "corrupted"
+				amount = int(e.get("amount", 0))
+			"heal":
+				key = "heal"
+				amount = int(e.get("amount", 0))
+		if key == "":
+			continue
+		var id := StringName(String(e.get("target", "")))
+		var d: Dictionary = out.get(id, {"hit": 0, "corrupted": 0, "heal": 0})
+		d[key] = int(d[key]) + amount
+		out[id] = d
+	return out
+
+
+## ANIM-R6 A4: a hit chip's words: "HITS YOU 8", or, when the victim had fewer HP left than it
+## gets through, "HITS YOU 8 → 1 LEFT" (the HP it really takes; never a sum to do).
+static func hit_chip_text(who: String, through: int, applied: int) -> String:
+	if applied < through:
+		return String(TranslationServer.translate("HITS %s %d → %d LEFT")) % [who, through, applied]
+	return String(TranslationServer.translate("HITS %s %d")) % [who, through]
+
+
+## ANIM-R6 A4: the note a clamped hit's chip carries ("" when it isn't clamped).
+static func clamp_tip(through: int, applied: int) -> String:
+	if applied >= through:
+		return ""
+	return String(TranslationServer.translate("It gets %d through, but only %d HP are left to take.")) % [through, applied]
 
 
 ## ANIM-R1 C8: chips in order of importance, stable within a rank: damage to you, damage
@@ -2663,7 +2845,7 @@ func _build_stickers() -> void:
 		["undo", "UNDO", Palette.NOTE_PAPER, -3.0, rewind],
 	]
 	for sp in specs:
-		var b := StickerButton.new(sp[1], sp[2], sp[3])
+		var b := StickerButton.new(tr(String(sp[1])), sp[2], sp[3])  # ANIM-R6 A12: translated from the first frame
 		b.pre_translated = true  # labels come from _sticker_text (translated there)
 		b.drawn_icon = String(sp[0])
 		b.name = "Sticker_" + String(sp[0])
@@ -2796,6 +2978,7 @@ func skip_motion() -> void:
 	if _seq != null and _seq.is_valid():
 		_seq.kill()
 	_seq = null
+	_hold_city(false)
 	for tw in _motion_tweens:
 		if tw != null and tw.is_valid():
 			tw.kill()
@@ -2821,11 +3004,23 @@ func skip_motion() -> void:
 	if ram_note != null:
 		ram_note.finish_motion()
 	_release_card_hold()
-	_land_outcome()
+	_land_outcome(true)
 	if had:
 		_dim_hand()
 		_show_end_turn_preview()
 		motion_settled.emit()
+
+
+## ANIM-R6 A14: while a SEND IT replays, the arena's city waits to land its bake (the
+## wireframe switched to the full city mid-turn); it lands between turns.
+func _hold_city(on: bool) -> void:
+	if background != null and background.city != null:
+		background.city.hold_landing = on
+
+
+## True while the arena's city waits for the replay to land its bake (tests).
+func city_held() -> bool:
+	return background != null and background.city != null and background.city.hold_landing
 
 
 func _skippable() -> bool:
@@ -2876,12 +3071,20 @@ func card_forecast_held() -> bool:
 ## The replay is over (played out or skipped): the next turn's forecast goes on the
 ## views and the status line shows the state's turn. True when anything was held.
 func _release_forecast() -> bool:
-	if not _hold_forecast and _shown_turn < 0:
+	if not _hold_forecast and _shown_turn < 0 and _replay_start_hp < 0:
 		return false
 	_hold_forecast = false
 	_shown_turn = -1
+	# ANIM-R6 A5 / A8: the turn has landed: the portrait and the run's top bar show its HP.
+	var hp_held := _replay_start_hp >= 0
+	_replay_hp = -1
+	_replay_start_hp = -1
+	if engine.has_fight():
+		_sync_portrait(engine.state().player.hp, engine.state().player.max_hp)
 	_refresh_status()
 	_show_end_turn_preview()
+	if hp_held:
+		shown_hp_changed.emit()
 	return true
 
 
@@ -2993,7 +3196,10 @@ func _after(delay: float, c: Callable) -> void:
 ## Where the deck and discard piles sit: the two ends of the hand row.
 func _deck_spot() -> Vector2:
 	var r := _hand_box.get_global_rect()
-	var half := CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5
+	# ANIM-R6 A17: far enough in that a card dealt from it, at the hand's size, starts whole on
+	# screen (the first card clipped at the left edge as it dealt in).
+	var card := ZineCard.STICKER_SIZE * (_hand_scale if _hand_scale > 0.0 else Settings.text_scale) * 0.5
+	var half := (CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5).max(card)
 	return Vector2(r.position.x + half.x + STICKER_EDGE, r.end.y - half.y - STICKER_EDGE)
 
 
@@ -3273,11 +3479,12 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 		fx_layer.discard_card(discard[k]["copy"], discard[k]["rect"], float(discard[k]["rot"]), discard_spot, stagger * k)
 	_numbers_on.clear()
 	_seq = create_tween().set_parallel(true)
+	_hold_city(true)  # ANIM-R6 A14: the city never switches in mid-replay
 	_seq_started = Time.get_ticks_msec() / 1000.0
-	_seq_total = maxf(float(sch["total"]), outcome_time(beats, times))
 	var end_at := outcome_time(beats, times)
+	_seq_total = maxf(float(sch["total"]), end_at)
 	for k in beats.size():
-		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(end_at if beats[k]["kind"] == "end" else times[k])
+		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(beat_delay(beats, times, k, end_at))
 	_seq.tween_callback(_show_result.bind(beats, before, after)).set_delay(result_at)
 	for c in _seq_calls:
 		_seq.tween_callback(c[1]).set_delay(float(c[0]))
@@ -3332,17 +3539,31 @@ static func death_lead() -> float:
 ## ANIM-R5 combat 1: when the outcome (VICTORY / DEFEAT) lands: at its own beat, but never
 ## before every HP roll of the resolve has ended (DEFEAT stamped while the HP still read 1).
 ## -1 when the beats end no fight.
+## ANIM-R6 A3: the end beat counts in any phase (a fight that ends at the turn's start, its
+## ON_TURN_START trigger's kill, landed its outcome at 0 s), and waits for every HP roll before
+## it, whatever its phase.
 static func outcome_time(beats: Array[Dictionary], times: PackedFloat32Array) -> float:
 	var timing := beat_timing()
-	var at := -1.0
-	var settled := 0.0
-	for k in beats.size():
-		if k >= times.size() or beats[k]["phase"] == "turn_start":
-			continue
-		settled = maxf(settled, times[k] + ResolveBeats.settle_after(beats[k], timing))
+	var end := -1
+	for k in mini(beats.size(), times.size()):
 		if beats[k]["kind"] == "end":
-			at = times[k]
-	return maxf(at, settled) if at >= 0.0 else -1.0
+			end = k
+	if end < 0:
+		return -1.0
+	var settled := 0.0
+	for k in end + 1:
+		settled = maxf(settled, times[k] + ResolveBeats.settle_after(beats[k], timing))
+	return maxf(times[end], settled)
+
+
+## ANIM-R6 A3: when beat `k` of `beats` plays in the replay (`times` from sequence_schedule,
+## `end_at` from outcome_time): the end beat at the outcome's time, every other at its own;
+## never negative.
+static func beat_delay(beats: Array[Dictionary], times: PackedFloat32Array, k: int, end_at: float) -> float:
+	var t := times[k] if k < times.size() else 0.0
+	if beats[k]["kind"] == "end":
+		t = maxf(t, end_at)
+	return maxf(0.0, t)
 
 
 ## A turn-start respin runs two to three turns (the core adds two full turns and a roll):
@@ -3416,6 +3637,7 @@ func result_stamps(beats: Array[Dictionary], before: CombatState) -> Dictionary:
 
 func _finish_sequence() -> void:
 	_seq = null
+	_hold_city(false)
 	# The forecast goes on first, so the tags flip in with it (C5e).
 	_release_forecast()
 	for v in _views():
@@ -3624,12 +3846,28 @@ static func hit_equation(b: Dictionary) -> Array:
 	var through := maxi(0, raw - soaked)
 	items.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
 	items.append({"icon": -1, "text": str(through), "color": WheelView.LOSS_COLOR if through > 0 else CHIP_GUARD, "sep": "="})
+	# ANIM-R6 A4: a victim with fewer HP left than gets through says so (the HP number that
+	# follows is what it really takes).
+	var applied := int(b["amount"])
+	if kind == "damage" and applied < through:
+		items.append(clamp_item(applied))
 	return items
 
 
-## ANIM-R3 A6c: what rides with a hit: {label (what it deals, "6 ½" at half power), from
-## (the slice's own value when the aim changed it, "" otherwise), scale (bigger on a
-## PERFECT landing)}.
+## ANIM-R6 A4: the "→ N LEFT" part of a hit that takes a victim's last HP (fewer than it gets
+## through), for an equation (CombatFxLayer.draw_equation).
+static func clamp_item(applied: int) -> Dictionary:
+	return {"icon": -1, "text": String(TranslationServer.translate("%d LEFT")) % applied, "color": WheelView.LOSS_COLOR, "sep": CLAMP_ARROW}
+
+
+## The sign before a clamped hit's "N LEFT" (drawing).
+const CLAMP_ARROW := "→"
+
+
+## ANIM-R3 A6c: what rides with a hit: {label (what it deals), from (the slice's own value
+## when the aim changed it, "" otherwise: "12" shrinks into "6" at half power), scale (bigger
+## on a PERFECT landing)}. ANIM-R6 A4: never a fraction ("6 ½" rode, then 6 came off): the
+## label is the whole number the hit deals.
 func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 	var kind := String(b["kind"])
 	var raw := int(b.get("raw", b["amount"])) if kind == "damage" else int(b["amount"])
@@ -3642,18 +3880,12 @@ func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
 		if slice != null and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
 			base = slice.base_output
-	if tier == RC.PrecisionTier.PARTIAL:
-		out["label"] = "%d %s" % [raw, HALF_MARK]
-	elif tier == RC.PrecisionTier.PERFECT:
+	if tier == RC.PrecisionTier.PERFECT:
+		# ANIM-R4 C5: a PERFECT hit's riding size is `ride_perfect`'s amplitude.
 		out["scale"] = Motion.amplitude(&"ride_perfect")
 	if base > 0 and base != raw and tier in [RC.PrecisionTier.PARTIAL, RC.PrecisionTier.PERFECT]:
 		out["from"] = str(base)
 	return out
-
-
-## ANIM-R3 A6c: the half-power mark after a hit's number (ANIM-R4 C5: a PERFECT hit's
-## riding size is `ride_perfect`'s amplitude, in the motion table).
-const HALF_MARK := "½"
 
 
 func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
@@ -3781,6 +4013,10 @@ func _hp_arrives(v: WheelView, hp: int) -> void:
 	v.play_hp(float(hp))
 	if lost:
 		v.play_hit()
+	if v == _player_view and _replay_hp >= 0 and engine.has_fight():
+		# ANIM-R6 A8: the portrait follows the replay's HP.
+		_replay_hp = hp
+		_sync_portrait(hp, engine.state().player.max_hp)
 
 
 ## A satellite launched or a drone deployed during the replay: its token docks (with the
@@ -3877,11 +4113,18 @@ func _death_beat(id: StringName, before: CombatState, after: CombatState = null)
 func _end_beat(outcome: int) -> void:
 	var won := outcome == CombatState.Outcome.VICTORY
 	if won:
-		var word := tr("VICTORY")
-		fx_layer.word(end_word_spot(won), word, Palette.CELL_ACID, Motion.seconds(&"combat_end_hold"), end_word_size(won, word))
-	if engine.has_fight():
-		_bark("victory" if won else "defeat", engine.state())
-	_land_outcome()
+		_hold_victory(false)
+	_land_outcome()  # ANIM-R6 A2: the bark comes with the outcome (a skip barks there too)
+
+
+## ANIM-R6 A15: VICTORY lands over the enemies' side and stays at full strength until the
+## fight is left for its loot (it read for ~1 s, then faded to a ghost); `instant` (a skip,
+## no replay) shows it landed at once.
+func _hold_victory(instant: bool) -> void:
+	if fx_layer == null:
+		return
+	var word := tr("VICTORY")
+	fx_layer.hold_word(end_word_spot(true), word, Palette.CELL_ACID, end_word_size(true, word), instant)
 
 
 ## Where VICTORY (the enemies' side) or DEFEAT (the operative's wheel) lands (global).

@@ -110,7 +110,7 @@ above a speed threshold. Feel: mechanical, snappy, 0.25-0.6 s by distance. Accep
 ends on the exact tick the core computed; the preview is correct the moment it settles.
 
 4.3 **Nudge.** Trigger: nudge left/right. One-tick step with a click and a 1-2 px recoil.
-Feel: crisp, under 0.12 s. Acceptance: repeated fast presses queue and never desync.
+Feel: crisp, under 0.12 s (ANIM-R6: 0.16 s; 0.08 s was too fast to see). Acceptance: repeated fast presses queue and never desync.
 
 4.4 **Precision landing.** Perfect: latch snap + wheel-local inversion + 2-frame freeze +
 limited flash (exists: polish it); Good: clean click and a small ring pulse; Partial:
