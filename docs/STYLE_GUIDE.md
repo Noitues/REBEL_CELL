@@ -493,6 +493,24 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   (`resolve_sequence`, `resolve_beat`, `resolve_pass`, `raid_step_gap`). Switched off they keep
   their time (there is no motion to leave out); every other entry's view asks whether it
   plays (5.1).
+- **Which motions a press completes (ANIM-R6)**: every helper that ends its motion on a press
+  (5.1) takes presses. The short motions that answer the player join the same group
+  passively (`MotionSkip.register_passive`): the top bar's bumps, rolls and landing pulses
+  (`hud_stats`), the MODEM sign's warm-up (`modem_sign`), SEND IT's drips, halo and squash
+  (`drip_button`), a card dealing or fanning in (`zine_card`) and a wheel's spin after a card
+  (`wheel_view`). They complete with any press another helper takes (one press, every
+  motion) but take none on their own: a key pressed while a tag bumps still does what it
+  does (a helper of their own would eat it for a fraction of a second). Left out, each for
+  its reason (`test_anim_r6_rules` keeps this list and the code in step): hover and focus
+  states that hold while hovered or focused (`buy_button`'s flap, `crew_card`'s tilt,
+  `focus_tip`), answers to the press itself (`map_legend`'s fold, `pad_prompts`, `ram_bar`'s
+  ticks and refusals), ambient loops with nothing to complete (`neon_city`,
+  `wireframe_background`, `zine_stamp`'s breathing), reading moments (`heat_poster`'s
+  threshold stamp, `hq_scene`'s home number and SITES badge after a raid, `toast`), pieces
+  a registered helper ends (`combat_fx_layer` under the SEND IT replay, `forecast_stamp`
+  in the raid playout's step, `city_map_overlay`'s drop and raid through DropLayer and the
+  playout; its selection and route pulses answer the pointer, as `grid_map_view`'s do),
+  and `fx` (the jack swallows every press itself; a flash is a tenth of a second).
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

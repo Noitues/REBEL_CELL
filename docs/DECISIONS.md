@@ -534,6 +534,24 @@ unless named.
   outcome lands (the replay's end beat, after every HP roll; a press lands it at once). The
   wording names no replay length, so fix agent A's retune of the replay (A7) leaves it true.
   Test: `test_the_docs_say_what_the_motion_does_now`.
+- **D7 short motions join the one press.** The MODEM sign's warm-up, the top bar's bumps,
+  rolls and landing pulses, SEND IT's drips, halo and squash, a card dealing or fanning in,
+  and a wheel's spin after a card (outside the replay) joined no MotionSkip group: a press
+  that ended a page entrance or a flight left them playing. Registering them as full
+  helpers was rejected: each would take presses on its own, and a key pressed while a tag
+  bumps would be consumed for a flourish of a fraction of a second (worse for the player).
+  They join passively (`MotionSkip.register_passive`: `motion_running` /
+  `complete_motion`, no `_input`): they complete with any press another helper takes, and
+  a press when only they play passes on untouched. The WheelView completes only when still
+  busy, so the replay's own skip (which stops its wheels first) is never redone
+  (`wheel_view.gd` is fix agent A's file: registration and the two methods). Every other
+  script that animates is listed with why a press does not complete it (hover and focus
+  states, answers to the press itself, ambient loops, reading moments, pieces a registered
+  helper ends, the jack) in STYLE_GUIDE 5.5 and the test's `NOT_SKIPPABLE`. Tests:
+  `test_every_script_that_animates_registers_or_says_why_not` (a script that animates and
+  joins no group fails unless listed; a listed script that registers or stops animating
+  fails too; the guide names each),
+  `test_a_short_motion_completes_with_a_press_another_helper_takes_and_takes_none_itself`.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is

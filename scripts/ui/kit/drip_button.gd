@@ -86,6 +86,24 @@ func settle_motion() -> void:
 	queue_redraw()
 
 
+## MotionSkip (ANIM-R6 D7): the drips grow, the halo pulses or the press squashes.
+func motion_running() -> bool:
+	for tw in [_grow_tween, _halo_tween, _press_tween]:
+		if tw != null and (tw as Tween).is_valid() and (tw as Tween).is_running():
+			return true
+	return false
+
+
+## MotionSkip (ANIM-R6 D7): the drips grown, the halo and the press at rest.
+func complete_motion() -> void:
+	settle_motion()
+	if _press_tween != null and _press_tween.is_valid():
+		_press_tween.kill()
+	squash = 1.0
+	drip_run = 0.0
+	queue_redraw()
+
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY or (what == NOTIFICATION_VISIBILITY_CHANGED and is_inside_tree()):
 		grow_in.call_deferred()
@@ -142,6 +160,7 @@ func _set_run(v: float) -> void:
 
 
 func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRIP_PINK, p_size: int = 44, p_drips: Array = []) -> void:
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: the drips end with any press that ends a motion
 	tag_text = p_text
 	key_hint = p_hint
 	paint = p_color

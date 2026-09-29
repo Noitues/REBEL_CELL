@@ -278,3 +278,106 @@ func test_the_docs_say_what_the_motion_does_now() -> void:
 	var skip := FileAccess.get_file_as_string("res://scripts/ui/kit/motion_skip.gd")
 	var list := skip.substr(skip.find("Every helper that ends its motion on a press"), 400)
 	assert_true(list.contains("RaidPlayoutPanel"), "MotionSkip's helper list names the raid playout")
+
+
+## ANIM-R6 D7: the game scripts that animate (a tween of their own or a Motion helper) and
+## join no MotionSkip group, each with why a press does not complete its motion.
+## STYLE_GUIDE 5.5 lists the same.
+const NOT_SKIPPABLE := {
+	"res://scripts/autoload/fx.gd": "the jack swallows every press itself; a flash and the Heat pulse are feedback of a tenth of a second",
+	"res://scripts/ui/hq_scene.gd": "the raid's home number flying home and the SITES badge's bump: the raid verdict's reading moment",
+	"res://scripts/ui/kit/buy_button.gd": "BUY's flap is a hover state (it holds while hovered)",
+	"res://scripts/ui/kit/city_map_overlay.gd": "selection, outline and route pulses answer the pointer; the drop and the raid are DropLayer's and the playout's (both registered)",
+	"res://scripts/ui/kit/combat_fx_layer.gd": "plays under the SEND IT replay, whose skip ends the layer",
+	"res://scripts/ui/kit/crew_card.gd": "the Polaroid's tilt is a hover state",
+	"res://scripts/ui/kit/focus_tip.gd": "a tip fades in on focus: the answer to the focus move itself",
+	"res://scripts/ui/kit/forecast_stamp.gd": "the forecast stamp resolves inside the raid playout's step (registered)",
+	"res://scripts/ui/kit/grid_map_view.gd": "the selection ring and the minimap pulse answer the pointer",
+	"res://scripts/ui/kit/heat_poster.gd": "a threshold's stamp and roll are a reading moment (as RAID INCOMING holds)",
+	"res://scripts/ui/kit/map_legend.gd": "the key folds on its own press: the answer to that press",
+	"res://scripts/ui/kit/motion.gd": "the kit itself (its callers register)",
+	"res://scripts/ui/kit/motion_values.gd": "the kit itself (its callers register)",
+	"res://scripts/ui/kit/neon_city.gd": "ambient loops (traffic, signs, beacons): nothing to complete",
+	"res://scripts/ui/kit/pad_prompts.gd": "the prompts fade in when a device is used: the answer to that press",
+	"res://scripts/ui/kit/ram_bar.gd": "RAM ticks and refusals answer the card played or refused",
+	"res://scripts/ui/kit/toast.gd": "a toast is a reading time",
+	"res://scripts/ui/kit/wireframe_background.gd": "an ambient loop: nothing to complete",
+	"res://scripts/ui/kit/zine_stamp.gd": "JACK IN's breathing is an ambient loop",
+}
+
+
+## The game scripts that animate and never join MotionSkip's group, as paths.
+static func animating_unregistered() -> Array[String]:
+	var out: Array[String] = []
+	var anim := RegEx.create_from_string("create_tween\\(|Motion\\.(run|fade|pop|slide_in|shake|blink|loop_pulse|number_roll)\\(")
+	var stack: Array[String] = ["res://scripts"]
+	while not stack.is_empty():
+		var dir: String = stack.pop_back()
+		for f in DirAccess.get_files_at(dir):
+			if not f.ends_with(".gd"):
+				continue
+			var path := dir.path_join(f)
+			var src := FileAccess.get_file_as_string(path)
+			if anim.search(src) != null and not src.contains("MotionSkip.register"):
+				out.append(path)
+		for d in DirAccess.get_directories_at(dir):
+			stack.append(dir.path_join(d))
+	out.sort()
+	return out
+
+
+func test_every_script_that_animates_registers_or_says_why_not() -> void:
+	var found := animating_unregistered()
+	for p in found:
+		assert_true(NOT_SKIPPABLE.has(p), "%s animates and joins no MotionSkip group: register it (register_passive for a short motion) or list it with why" % p)
+	for p: String in NOT_SKIPPABLE:
+		assert_true(found.has(p), "%s is listed as not skippable but registers or no longer animates: take it off the list" % p)
+	var style := FileAccess.get_file_as_string("res://docs/STYLE_GUIDE.md")
+	for p: String in NOT_SKIPPABLE:
+		if not p.contains("/motion"):
+			assert_true(style.contains("`%s`" % p.get_file().get_basename()), "STYLE_GUIDE 5.5 names %s" % p.get_file())
+	for p in ["res://scripts/ui/kit/modem_sign.gd", "res://scripts/ui/kit/hud_stats.gd", "res://scripts/ui/kit/drip_button.gd",
+			"res://scripts/ui/kit/zine_card.gd", "res://scripts/ui/wheel_view.gd"]:
+		assert_true(FileAccess.get_file_as_string(p).contains("MotionSkip.register_passive("), "%s's short motion joins the group" % p)
+
+
+func test_a_short_motion_completes_with_a_press_another_helper_takes_and_takes_none_itself() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	if not Settings.subtitle_typing:
+		Settings.set_subtitle_typing(true)
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var stats := HudStats.new()
+	holder.add_child(stats)
+	stats.items = [["CYCLES", "10", ""]]
+	stats.items = [["CYCLES", "25", ""]]
+	var sign := ModemSign.new()
+	holder.add_child(sign)
+	sign.warm_up()
+	var drips := DripButton.new("SEND IT")
+	holder.add_child(drips)
+	drips.press_motion()
+	assert_true(stats.motion_running(), "a tag bumps")
+	assert_true(sign.motion_running(), "the sign warms up")
+	assert_true(drips.motion_running(), "SEND IT squashes")
+	# Alone, a press is no one's: it passes on untouched and the short motions play on.
+	assert_eq(MotionSkip.running(holder).size(), 3, "all three joined the group")
+	var key := _key(KEY_SEMICOLON)
+	for n: Node in [stats, sign, drips]:
+		var script := n.get_script() as Script
+		assert_false(script.source_code.contains("func _input("), "%s takes no press of its own" % script.resource_path.get_file())
+	get_viewport().push_input(key)
+	assert_true(stats.motion_running() and sign.motion_running() and drips.motion_running(), "a press no helper takes leaves them playing")
+	# A press another helper takes completes them too.
+	var label := Label.new()
+	label.text = "Words typing in beside the short motions."
+	holder.add_child(label)
+	Typing.type_in(label)
+	(label.get_node(NodePath(Typing.NODE_NAME)) as Typing)._input(key)
+	assert_false(stats.motion_running(), "the bump ends with the press the typing took")
+	assert_false(sign.motion_running(), "the sign is lit")
+	assert_false(drips.motion_running(), "SEND IT at rest")
+	assert_eq(sign.warm, 1.0, "whole")
+	assert_eq(drips.squash, 1.0, "unsquashed")

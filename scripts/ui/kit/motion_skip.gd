@@ -55,8 +55,15 @@ extends RefCounted
 ##   `complete_motion()` (and `motion_keeps()` when it keeps presses); `handle` gives one
 ##   verdict for all of them (the keeps of every running helper count) and then completes
 ##   them all, for a press that passes on (PASS) as for one it consumes (CONSUME).
-##   `consume` completes them all too, so a helper that consumes by hand still does. A
+##   helper that consumes by hand still does. A
 ##   helper a PauseMenu covers is left alone (its motion plays on).
+## - **Short motions join too (ANIM-R6 D7, `register_passive`)**: a short motion that
+##   answers the player (the top bar's bumps and rolls, the MODEM sign's warm-up, SEND IT's
+##   drips and squash, a card dealing or fanning in, a wheel's spin after a card) joins GROUP
+##   and completes with any press another helper takes, but takes no press of its own: a
+##   key pressed while a tag bumps must still do what it does (a helper of its own would
+##   consume it for a flourish of a fraction of a second). STYLE_GUIDE 5.5 lists them and
+##   the motions left out (loops, hover and focus states, feedback to the press itself).
 
 ## The group of every helper whose motion one press completes (ANIM-R5).
 const GROUP := &"motion_skip_helpers"
@@ -100,6 +107,12 @@ static func handle(event: InputEvent, node: Node, keep: Array = []) -> Verdict:
 static func register(node: Node) -> void:
 	if node != null and not node.is_in_group(GROUP):
 		node.add_to_group(GROUP)
+
+
+## ANIM-R6 D7: adds a short motion that completes with any press another helper takes but
+## has no `_input` of its own (see the class notes). The same contract as `register`.
+static func register_passive(node: Node) -> void:
+	register(node)
 
 
 ## ANIM-R5: the registered helpers under `node`'s tree whose motion runs now, in tree order,
