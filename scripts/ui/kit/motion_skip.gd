@@ -66,6 +66,10 @@ static func is_press(event: InputEvent) -> bool:
 		return false
 	if jacking():
 		return false
+	# Art pass W3 (W9s): holding fast-forward speeds the SEND IT replay up; it never
+	# completes a motion (Motion.FAST_FORWARD_ACTION: Shift, the right stick).
+	if InputMap.has_action(Motion.FAST_FORWARD_ACTION) and event.is_action(Motion.FAST_FORWARD_ACTION):
+		return false
 	if event is InputEventKey or event is InputEventJoypadButton:
 		return true
 	if event is InputEventMouseButton:

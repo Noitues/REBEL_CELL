@@ -524,3 +524,72 @@ func test_the_aim_line_starts_at_the_card_centre() -> void:
 	await _frames(1)
 	var card: ZineCard = scene._card_node(0)
 	assert_eq(scene.aim_origin(), card.get_global_rect().get_center(), "from the card's centre, not its top edge")
+
+
+# --- 9. Resolve speed (§10 with W9s) ---------------------------------------------------------------
+
+func _with_speed(speed: StringName) -> StringName:
+	var was: StringName = Settings.resolve_speed
+	Settings.resolve_speed = speed
+	return was
+
+
+func test_the_resolve_speed_scales_the_replay_clock() -> void:
+	var scene := await _combat()
+	Motion.force_live = true
+	var was := _with_speed(&"x2")
+	var before := Engine.time_scale
+	scene.end_turn()
+	assert_not_null(scene._seq, "a replay plays at 2x")
+	scene._apply_resolve_speed()
+	assert_almost_eq(Engine.time_scale, before * 2.0, 0.001, "the replay's clock runs twice as fast")
+	scene.skip_motion()
+	assert_almost_eq(Engine.time_scale, before, 0.001, "a skip puts the clock back")
+	Settings.resolve_speed = was
+	Motion.force_live = false
+
+
+func test_instant_is_the_end_state_at_once() -> void:
+	var scene := await _combat()
+	Motion.force_live = true
+	var was := _with_speed(&"instant")
+	var hp_before: int = scene.engine.state().player.hp
+	scene.end_turn()
+	assert_null(scene._seq, "no replay at instant")
+	assert_false(scene.outcome_pending(), "nothing held")
+	assert_eq(scene._player_view.shown_hp(), float(scene.engine.state().player.hp), "the end state shows at once")
+	assert_eq(scene._player_view.shown_state, null, "no snapshot of the old state")
+	Settings.resolve_speed = was
+	Motion.force_live = false
+	assert_true(hp_before > 0)
+
+
+func test_fast_forward_is_not_a_skip() -> void:
+	var ev: InputEventKey = null
+	for e in InputMap.action_get_events(Motion.FAST_FORWARD_ACTION):
+		if e is InputEventKey:
+			ev = (e as InputEventKey).duplicate()
+	assert_not_null(ev, "fast-forward has a key")
+	ev.pressed = true
+	assert_false(MotionSkip.is_press(ev), "holding fast-forward never completes a motion")
+	var other := InputEventKey.new()
+	other.keycode = KEY_A
+	other.pressed = true
+	assert_true(MotionSkip.is_press(other), "any other key still skips")
+
+
+func test_a_respin_settles_and_the_turn_start_moves_one_thing_at_a_time() -> void:
+	var scene := await _combat()
+	Motion.force_live = true
+	assert_eq(VfxTier.of(&"wheel_respin_settle"), VfxTier.T1, "T1")
+	assert_almost_eq(WheelView.turn_seconds(&"wheel_respin", 30.0) - WheelView.spin_seconds(&"wheel_respin", 30.0), Motion.seconds(&"wheel_respin_settle"), 0.001, "about 150 ms of rock and settle")
+	var before: CombatState = scene.engine.state().duplicate_state()
+	scene.end_turn()
+	var beats := ResolveBeats.doomed_first(before, ResolveBeats.build(before, scene._last_events, scene.engine.resolver.lookup))
+	var sch: Dictionary = scene.sequence_schedule(beats)
+	if float(sch["spin_at"]) >= 0.0:
+		assert_lt(float(sch["fade_at"]), float(sch["spin_start"]), "the forecast clears, then the wheels respin")
+		if float(sch["deal_at"]) >= 0.0:
+			assert_gte(float(sch["deal_at"]), float(sch["spin_start"]) + WheelView.turn_seconds(&"wheel_respin", RC.TICKS * scene.SPIN_TICKS_TYPICAL) - 0.001, "then the hand redeals")
+	scene.skip_motion()
+	Motion.force_live = false

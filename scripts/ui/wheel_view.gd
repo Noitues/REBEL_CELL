@@ -227,6 +227,9 @@ const TAG_MAX_SHARE := 0.96
 const HP_COLOR := Palette.GAIN
 const LOSS_COLOR := Palette.HARM
 const TARGET_COLOR := Palette.CELL_ACID
+## The rim's tick marks: their length (px) and strength.
+const RIM_TICK := 5.0
+const RIM_TICK_ALPHA := 0.45
 ## The dark platform round the bezel (px past the bezel's rim).
 const PLATFORM_PAD := 14.0
 ## The ink outline round a slice value on the bezel (px).
@@ -811,6 +814,12 @@ func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: floa
 	var tw := _tw(&"turn")
 	tw.tween_interval(delay)
 	tw.tween_method(_turn_step.bind(from, dist, inner_from, inner_dist, over, e.trans, e.ease), 0.0, 1.0, secs)
+	var settle := settle_seconds(id)
+	if settle > 0.0:
+		# Art pass W3 (critique gifs/03): a respin has weight: it rocks past its tick and back
+		# (`<id>_settle`: its amplitude in ticks) before it rests.
+		var rock := signf(dist if dist != 0.0 else inner_dist) * Motion.amplitude(StringName(String(id) + SETTLE_SUFFIX))
+		tw.tween_method(_settle_step.bind(to, inner_to if not is_nan(inner_from) else NAN, rock), 0.0, 1.0, settle)
 	tw.tween_callback(func() -> void:
 		anim_rotation = NAN
 		anim_inner_rotation = NAN
@@ -818,7 +827,32 @@ func play_turn(id: StringName, from: float, inner_from: float = NAN, delay: floa
 		queue_redraw())
 	_blur_dir = signf(dist) if dist != 0.0 else 1.0
 	set_process(true)
-	return delay + secs
+	return delay + secs + settle
+
+
+## A spin's settle entry: `<id>` + this (e.g. wheel_respin_settle).
+const SETTLE_SUFFIX := "_settle"
+
+
+## Seconds a turn under `id` rocks and settles after it lands (its `_settle` entry; 0 when
+## it has none or it doesn't play).
+static func settle_seconds(id: StringName) -> float:
+	var sid := StringName(String(id) + SETTLE_SUFFIX)
+	return Motion.seconds(sid) if Motion.has(sid) and Motion.live(sid) else 0.0
+
+
+## Seconds a whole turn of `ticks` under `id` takes: its spin and its settle.
+static func turn_seconds(id: StringName, ticks: float) -> float:
+	return spin_seconds(id, ticks) + settle_seconds(id)
+
+
+func _settle_step(p: float, to: float, inner_to: float, rock: float) -> void:
+	# One damped swing past the tick and back: out, back through, home.
+	var swing := rock * sin(TAU * p) * (1.0 - p)
+	anim_rotation = to + swing
+	if not is_nan(inner_to):
+		anim_inner_rotation = inner_to + swing
+	queue_redraw()
 
 
 func _turn_step(p: float, from: float, dist: float, inner_from: float, inner_dist: float, over: float, trans: int, ease: int) -> void:
@@ -2242,6 +2276,12 @@ func _draw_view() -> void:
 		if wheel.slot_firmware_ids[i] != &"":
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
+	# Art pass W3 (critique gifs/03): tick marks round the rim turn with the wheel, so a spin's
+	# ticks are seen passing the needle.
+	for t in RC.TICKS:
+		var ta := _tick_angle(float(t), rot)
+		var td := Vector2(cos(ta), sin(ta))
+		draw_line(center + td * (radius - RIM_TICK), center + td * radius, _col(Color(Palette.PAPER, RIM_TICK_ALPHA)), 1.0, true)
 	_draw_landed(center, radius, inner, tps, rot)
 	draw_arc(center, radius, 0, TAU, 96, Color(line, 0.9), 1.5)
 	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
