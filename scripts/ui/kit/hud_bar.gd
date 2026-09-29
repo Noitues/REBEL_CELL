@@ -38,6 +38,21 @@ func _init() -> void:
 	band.content_margin_right = 10
 	add_theme_stylebox_override("panel", band)
 	material = UiTheme.crt_material()
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: a landing pop ends with any press that ends a motion
+
+
+## MotionSkip (ANIM-R6 D7): DAEMONS or VIEW LOADOUT pops for a landing.
+func motion_running() -> bool:
+	for b in [daemon_button, loadout_button]:
+		if b != null and Motion.held(b, ^"scale"):
+			return true
+	return false
+
+
+## MotionSkip (ANIM-R6 D7): the pops at rest.
+func complete_motion() -> void:
+	for b in [daemon_button, loadout_button]:
+		Motion.settle(b, ^"scale")
 	custom_minimum_size.y = BAND_HEIGHT
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)

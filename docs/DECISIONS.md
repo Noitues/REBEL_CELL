@@ -604,6 +604,12 @@ unless named.
   coordinator has this as a finding for the screens that show them. Test:
   `test_the_system_log_translates_its_words` (no English literal outside `tr` in a log
   line; the keys are in strings.csv).
+- **After merging the netrun batch (B7):** HudBar's landing pops on DAEMONS and VIEW LOADOUT
+  join the one press passively too (`Motion.held` / `Motion.settle`, new kit calls for a
+  helper's tween on a property), and `MotionDemo.after_frames` (the coordinator's leftover)
+  waits with one-shot connections (a `Waiter` per call, checking its node each frame and
+  freeing itself), never an `await` that resumed on a scene freed meanwhile. Test:
+  `test_a_demo_step_waits_its_frames_and_never_runs_on_a_freed_node`.
 
 #### 2026-09-29 — Animation pass — ANIM-R6 netrun screens
 The sixth fix batch of the Animation pass review, netrun screens part (B1-B14, from the R6

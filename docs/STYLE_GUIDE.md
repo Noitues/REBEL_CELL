@@ -497,7 +497,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Which motions a press completes (ANIM-R6)**: every helper that ends its motion on a press
   (5.1) takes presses. The short motions that answer the player join the same group
   passively (`MotionSkip.register_passive`): the top bar's bumps, rolls and landing pulses
-  (`hud_stats`), the MODEM sign's warm-up (`modem_sign`), SEND IT's drips, halo and squash
+  (`hud_stats`; DAEMONS' and VIEW LOADOUT's landing pops, `hud_bar`), the MODEM sign's warm-up (`modem_sign`), SEND IT's drips, halo and squash
   (`drip_button`), a card dealing or fanning in (`zine_card`) and a wheel's spin after a card
   (`wheel_view`). They complete with any press another helper takes (one press, every
   motion) but take none on their own: a key pressed while a tag bumps still does what it

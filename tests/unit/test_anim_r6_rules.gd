@@ -336,7 +336,7 @@ func test_every_script_that_animates_registers_or_says_why_not() -> void:
 	for p: String in NOT_SKIPPABLE:
 		if not p.contains("/motion"):
 			assert_true(style.contains("`%s`" % p.get_file().get_basename()), "STYLE_GUIDE 5.5 names %s" % p.get_file())
-	for p in ["res://scripts/ui/kit/modem_sign.gd", "res://scripts/ui/kit/hud_stats.gd", "res://scripts/ui/kit/drip_button.gd",
+	for p in ["res://scripts/ui/kit/modem_sign.gd", "res://scripts/ui/kit/hud_stats.gd", "res://scripts/ui/kit/hud_bar.gd", "res://scripts/ui/kit/drip_button.gd",
 			"res://scripts/ui/kit/zine_card.gd", "res://scripts/ui/wheel_view.gd"]:
 		assert_true(FileAccess.get_file_as_string(p).contains("MotionSkip.register_passive("), "%s's short motion joins the group" % p)
 

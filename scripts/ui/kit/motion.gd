@@ -369,6 +369,23 @@ static func _redraw(node: Node) -> void:
 
 ## Stops a helper tween still running on `node`'s `property` and returns the value that
 ## motion rests at (the property's current value when none runs).
+## ANIM-R6 D7: true while a helper's tween on `node`'s `property` runs (a pop's scale, a
+## shake's position...), for a piece that answers MotionSkip's `motion_running`.
+static func held(node: Node, property: NodePath) -> bool:
+	var key := META_PREFIX + String(property).replace(":", "_")
+	if node == null or not is_instance_valid(node) or not node.has_meta(key):
+		return false
+	var tw: Tween = (node.get_meta(key) as Array)[0]
+	return tw != null and tw.is_valid() and tw.is_running()
+
+
+## ANIM-R6 D7: ends a helper's tween on `node`'s `property` at once (its rest value), for a
+## piece's `complete_motion`.
+static func settle(node: Node, property: NodePath) -> void:
+	if node != null and is_instance_valid(node):
+		_settle(node, property)
+
+
 static func _settle(node: Node, property: NodePath) -> Variant:
 	var key := META_PREFIX + String(property).replace(":", "_")
 	if node.has_meta(key):
