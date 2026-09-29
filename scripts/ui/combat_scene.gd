@@ -128,6 +128,12 @@ var _hand_scale: float = 0.0
 
 
 func _exit_tree() -> void:
+	# ANIM-R6 A9: a fight left while its outcome waits for the replay lands it now (the netrun's
+	# top bar and its DISPATCH line wait for `outcome_landed`). Nothing of this scene is
+	# redrawn: it is leaving.
+	if _outcome_held:
+		_outcome_held = false
+		outcome_landed.emit()
 	Dialogue.dock_bottom()
 
 
@@ -735,18 +741,8 @@ func _input(event: InputEvent) -> void:
 	# open pause menu keeps its presses; the fight's own controls (SEND IT, RESPIN, UNDO, the
 	# hand) keep theirs: a press on them only ends the replay, so the next turn is never
 	# played blind.
-	if _skippable():
-		var verdict := MotionSkip.verdict(event, self, replay_keeps())
-		if verdict != MotionSkip.Verdict.IGNORE:
-			# ANIM-R5: every running motion completes with the replay (MotionSkip.complete_all).
-			MotionSkip.complete_all(self)
-			# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press
-			# ends the replay and goes on to it).
-			if continue_shown() and _for_continue(event):
-				return
-			if verdict == MotionSkip.Verdict.CONSUME:
-				MotionSkip.consume(self, event)
-			return
+	if replay_press(event) != MotionSkip.Verdict.IGNORE:
+		return
 	if event is InputEventMouseMotion or event is InputEventMouseButton:
 		_nav_focus = false
 	elif event.is_pressed() and not event.is_echo():
@@ -767,6 +763,31 @@ func _input(event: InputEvent) -> void:
 	else:
 		return
 	get_viewport().set_input_as_handled()
+
+
+## What a press does while the SEND IT replay plays (the scene's _input asks first): IGNORE
+## (no replay, or not a press: the input goes on as usual), PASS (it ended the replay and
+## passes on to what it works) or CONSUME (it ended the replay and nothing else sees it).
+func replay_press(event: InputEvent) -> MotionSkip.Verdict:
+	if not _skippable():
+		return MotionSkip.Verdict.IGNORE
+	var verdict := MotionSkip.verdict(event, self, replay_keeps())
+	if verdict == MotionSkip.Verdict.IGNORE:
+		return verdict
+	# ANIM-R6 A1: whether the next step was on screen before this press (the skip below lands
+	# a held outcome, which shows it).
+	var was_shown := continue_shown()
+	# ANIM-R5: every running motion completes with the replay (MotionSkip.complete_all).
+	MotionSkip.complete_all(self)
+	# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press ends
+	# the replay and goes on to it). ANIM-R6 A1: only when it was already shown; a press that
+	# lands the outcome (and so shows the next step) only skips (STYLE_GUIDE 5.2: any press
+	# skips and does nothing else), never also leaves the fight.
+	if was_shown and _for_continue(event):
+		return MotionSkip.Verdict.PASS
+	if verdict == MotionSkip.Verdict.CONSUME:
+		MotionSkip.consume(self, event)
+	return verdict
 
 
 ## ANIM-R4 C2: the controls whose presses the SEND IT replay keeps (a press on them ends the
@@ -1178,6 +1199,11 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	# next-step button, Heat, the run's top bar) until the replay lands it (`_land_outcome`).
 	_outcome_held = sequence and state.is_over() and Motion.live(&"resolve_sequence")
 	_shown_turn = before_turn.turn if sequence else -1
+	# ANIM-R6 A5 / A8: while the replay plays, the portrait follows its HP rolls and the run's top
+	# bar keeps the HP the turn started with until it lands.
+	var replays := sequence and Motion.live(&"resolve_sequence")
+	_replay_hp = before_turn.player.hp if replays else -1
+	_replay_start_hp = _replay_hp
 	# ANIM-R4 C6e: a card or respin that spins a wheel holds the forecast until it lands.
 	_card_hold = live and not sequence and rewind_from == null and before_action != null and _spins(events)
 	_refresh(state)
@@ -1275,9 +1301,14 @@ func _play_log(events: Array[Dictionary]) -> void:
 		if delay <= 0.0:
 			log_note.append(text)
 		else:
-			get_tree().create_timer(delay).timeout.connect(func() -> void:
-				if generation == _log_generation and is_instance_valid(log_note):
-					log_note.append(text))
+			# ANIM-R6 A10: a bound method of this scene (dropped with it), no lambda holding it.
+			get_tree().create_timer(delay).timeout.connect(_append_log.bind(generation, text))
+
+
+## One line of the log playback, unless a newer playback started since (`generation`).
+func _append_log(generation: int, text: String) -> void:
+	if generation == _log_generation and is_instance_valid(log_note):
+		log_note.append(text)
 
 
 func _instant_playback() -> bool:
@@ -1345,7 +1376,9 @@ var _barked_turn: Dictionary = {}
 
 func _bark(trigger: String, state: CombatState) -> void:
 	var key := "%s:%d" % [trigger, state.turn]
-	if _barked_turn.has(key) or _instant_playback():
+	# ANIM-R6 A2: barks play with motion (Motion.animating: the same as not _instant_playback
+	# in the game; the tests' forced motion hears them too).
+	if _barked_turn.has(key) or not Motion.animating():
 		return
 	_barked_turn[key] = true
 	Dialogue.bark(state.player.source_id, trigger, state.turn + hash(engine.session.combat_seed))
@@ -1797,9 +1830,10 @@ func _refresh(state: CombatState) -> void:
 	if engine.netrun != null and engine.netrun.run != null and engine.netrun.run.operative != null:
 		# The same face as the operative's dossier (H20 #23).
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
-	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
-	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [operative_name, _name_of(state.player), state.player.hp, state.player.max_hp])
-	portrait.queue_redraw()
+	_portrait_name = [operative_name, _name_of(state.player)]
+	# ANIM-R6 A8: while a SEND IT replays, the portrait (its glitch, its HP tooltip) shows the
+	# HP the replay has reached, not the turn's end.
+	_sync_portrait(state.player.hp if _replay_hp < 0 else _replay_hp, state.player.max_hp)
 	ram_note.set_ram(state.ram, state.max_ram)
 	daemon_row.set_daemons(state.daemon_ids, lookup)
 	if not _outcome_held:
@@ -1868,10 +1902,10 @@ func _refresh(state: CombatState) -> void:
 	selecting = -1
 	_options.clear()
 	_option_index = -1
+	_sync_arrows(state)
 	for v in _views():
 		v.valid_zones.clear()
 		v.hover_zone = {}
-		v.show_arrows = not state.is_over()
 		v.last_turn = String(_last_turn.get(v.combatant.id, "")) if v.combatant != null else ""
 		v.last_turn_icons = _last_icons.get(v.combatant.id, {}) if v.combatant != null else {}
 		v.last_turn_tip = String(_last_tips.get(v.combatant.id, "")) if v.combatant != null else ""
@@ -1910,6 +1944,48 @@ func _style_continue() -> void:
 const JACK_OUT_PAINT := Palette.PAPER
 
 
+## ANIM-R6 A8: the nudge arrows stay while a fight's outcome waits for its replay (they went
+## the moment SEND IT ended the fight) and go when it lands.
+func _sync_arrows(state: CombatState) -> void:
+	var over := state.is_over() and not _outcome_held
+	for v in _views():
+		if v.show_arrows == over:
+			v.show_arrows = not over
+			v.queue_redraw()
+
+
+## ANIM-R6 A8: the operative's portrait at `hp`: it glitches at a quarter HP or less and its
+## tooltip says the HP (during a replay, the HP the replay has reached).
+func _sync_portrait(hp: int, max_hp: int) -> void:
+	if portrait == null:
+		return
+	portrait.glitch = hp * 4 <= max_hp
+	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [_portrait_name[0], _portrait_name[1], hp, max_hp])
+	portrait.queue_redraw()
+
+
+## The portrait's caption for its tooltip ("Kez (Breaker)"), and the operative's HP the SEND IT
+## replay has reached (-1 when none plays: the state's).
+var _portrait_name: Array = ["", ""]
+var _replay_hp: int = -1
+## The operative's HP when the SEND IT replaying now was pressed (-1 = none plays): the top
+## bar keeps it until the replay lands its turn.
+var _replay_start_hp: int = -1
+
+
+## The HP the run's top bar shows during a fight (ANIM-R6 A5): the operative's HP in the fight
+## (the run's is written when the fight ends), as far as the SEND IT replay has landed it.
+func top_bar_hp() -> int:
+	if not engine.has_fight():
+		return -1
+	return engine.state().player.hp if _replay_start_hp < 0 else _replay_start_hp
+
+
+## Emitted when the HP the top bar shows during a fight changes on screen (a replay lands its
+## turn, or an action changes it at once).
+signal shown_hp_changed
+
+
 ## The Heat poster and the arena's corporate creep show the campaign's Heat now.
 func _sync_heat() -> void:
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
@@ -1922,7 +1998,10 @@ func _sync_heat() -> void:
 ## replay's end): the status line says it, the next-step button replaces SEND IT, the Heat
 ## poster rolls, a lost fight keeps its DEFEAT stamp, and the netrun is told
 ## (`outcome_landed`: its top bar moves on).
-func _land_outcome() -> void:
+## ANIM-R6 A2: `instant` (a skip, the next step pressed): the DEFEAT stamp shows whole at
+## once (no pop after the press that skipped), and the VICTORY / DEFEAT bark the skipped end
+## beat would have said is said here (`_bark` says it once).
+func _land_outcome(instant: bool = false) -> void:
 	if not _outcome_held:
 		return
 	_outcome_held = false
@@ -1933,9 +2012,16 @@ func _land_outcome() -> void:
 	_refresh_status()
 	_sync_heat()
 	_sync_over(state.is_over())
+	_sync_arrows(state)
+	_sync_portrait(state.player.hp, state.player.max_hp)
 	var lost := state.outcome == CombatState.Outcome.DEFEAT
-	if lost and not _player_view.flatlined:
-		_player_view.play_flatline()
+	if lost and (instant or not _player_view.flatlined):
+		if instant:
+			_player_view.show_flatline()
+		else:
+			_player_view.play_flatline()
+	if state.is_over():
+		_bark("victory" if state.outcome == CombatState.Outcome.VICTORY else "defeat", state)
 	outcome_landed.emit()
 
 
@@ -2817,7 +2903,7 @@ func skip_motion() -> void:
 	if ram_note != null:
 		ram_note.finish_motion()
 	_release_card_hold()
-	_land_outcome()
+	_land_outcome(true)
 	if had:
 		_dim_hand()
 		_show_end_turn_preview()
@@ -2872,12 +2958,20 @@ func card_forecast_held() -> bool:
 ## The replay is over (played out or skipped): the next turn's forecast goes on the
 ## views and the status line shows the state's turn. True when anything was held.
 func _release_forecast() -> bool:
-	if not _hold_forecast and _shown_turn < 0:
+	if not _hold_forecast and _shown_turn < 0 and _replay_start_hp < 0:
 		return false
 	_hold_forecast = false
 	_shown_turn = -1
+	# ANIM-R6 A5 / A8: the turn has landed: the portrait and the run's top bar show its HP.
+	var hp_held := _replay_start_hp >= 0
+	_replay_hp = -1
+	_replay_start_hp = -1
+	if engine.has_fight():
+		_sync_portrait(engine.state().player.hp, engine.state().player.max_hp)
 	_refresh_status()
 	_show_end_turn_preview()
+	if hp_held:
+		shown_hp_changed.emit()
 	return true
 
 
@@ -3270,10 +3364,10 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	_numbers_on.clear()
 	_seq = create_tween().set_parallel(true)
 	_seq_started = Time.get_ticks_msec() / 1000.0
-	_seq_total = maxf(float(sch["total"]), outcome_time(beats, times))
 	var end_at := outcome_time(beats, times)
+	_seq_total = maxf(float(sch["total"]), end_at)
 	for k in beats.size():
-		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(end_at if beats[k]["kind"] == "end" else times[k])
+		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(beat_delay(beats, times, k, end_at))
 	_seq.tween_callback(_show_result.bind(beats, before, after)).set_delay(result_at)
 	for c in _seq_calls:
 		_seq.tween_callback(c[1]).set_delay(float(c[0]))
@@ -3328,17 +3422,31 @@ static func death_lead() -> float:
 ## ANIM-R5 combat 1: when the outcome (VICTORY / DEFEAT) lands: at its own beat, but never
 ## before every HP roll of the resolve has ended (DEFEAT stamped while the HP still read 1).
 ## -1 when the beats end no fight.
+## ANIM-R6 A3: the end beat counts in any phase (a fight that ends at the turn's start, its
+## ON_TURN_START trigger's kill, landed its outcome at 0 s), and waits for every HP roll before
+## it, whatever its phase.
 static func outcome_time(beats: Array[Dictionary], times: PackedFloat32Array) -> float:
 	var timing := beat_timing()
-	var at := -1.0
-	var settled := 0.0
-	for k in beats.size():
-		if k >= times.size() or beats[k]["phase"] == "turn_start":
-			continue
-		settled = maxf(settled, times[k] + ResolveBeats.settle_after(beats[k], timing))
+	var end := -1
+	for k in mini(beats.size(), times.size()):
 		if beats[k]["kind"] == "end":
-			at = times[k]
-	return maxf(at, settled) if at >= 0.0 else -1.0
+			end = k
+	if end < 0:
+		return -1.0
+	var settled := 0.0
+	for k in end + 1:
+		settled = maxf(settled, times[k] + ResolveBeats.settle_after(beats[k], timing))
+	return maxf(times[end], settled)
+
+
+## ANIM-R6 A3: when beat `k` of `beats` plays in the replay (`times` from sequence_schedule,
+## `end_at` from outcome_time): the end beat at the outcome's time, every other at its own;
+## never negative.
+static func beat_delay(beats: Array[Dictionary], times: PackedFloat32Array, k: int, end_at: float) -> float:
+	var t := times[k] if k < times.size() else 0.0
+	if beats[k]["kind"] == "end":
+		t = maxf(t, end_at)
+	return maxf(0.0, t)
 
 
 ## A turn-start respin runs two to three turns (the core adds two full turns and a roll):
@@ -3777,6 +3885,10 @@ func _hp_arrives(v: WheelView, hp: int) -> void:
 	v.play_hp(float(hp))
 	if lost:
 		v.play_hit()
+	if v == _player_view and _replay_hp >= 0 and engine.has_fight():
+		# ANIM-R6 A8: the portrait follows the replay's HP.
+		_replay_hp = hp
+		_sync_portrait(hp, engine.state().player.max_hp)
 
 
 ## A satellite launched or a drone deployed during the replay: its token docks (with the
@@ -3875,9 +3987,7 @@ func _end_beat(outcome: int) -> void:
 	if won:
 		var word := tr("VICTORY")
 		fx_layer.word(end_word_spot(won), word, Palette.CELL_ACID, Motion.seconds(&"combat_end_hold"), end_word_size(won, word))
-	if engine.has_fight():
-		_bark("victory" if won else "defeat", engine.state())
-	_land_outcome()
+	_land_outcome()  # ANIM-R6 A2: the bark comes with the outcome (a skip barks there too)
 
 
 ## Where VICTORY (the enemies' side) or DEFEAT (the operative's wheel) lands (global).

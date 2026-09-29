@@ -1995,6 +1995,18 @@ func play_flatline() -> void:
 	tw.tween_callback(func() -> void: flatline_pop = 1.0; _end(&"flatline"))
 
 
+## ANIM-R6 A2: the DEFEAT stamp whole at once (a skip lands the outcome: no pop starts after
+## the press that ended the replay).
+func show_flatline() -> void:
+	flatlined = true
+	var old: Tween = _tweens.get(&"flatline")
+	if old != null and old.is_valid():
+		old.kill()
+	_tweens.erase(&"flatline")
+	flatline_pop = 1.0
+	queue_redraw()
+
+
 ## The DEFEAT stamp's box (local, unrotated, at full size) and its font size.
 func flatline_box() -> Dictionary:
 	var center := _center()
