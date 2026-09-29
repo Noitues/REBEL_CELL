@@ -1801,6 +1801,9 @@ func _refresh(state: CombatState) -> void:
 	if engine.netrun != null and engine.netrun.run != null and engine.netrun.run.operative != null:
 		# The same face as the operative's dossier (H20 #23).
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
+		# Art pass W3 (§6.1, §7.1): the bezel wears the class; the hub's inset shows this face.
+		_player_view.class_id = engine.netrun.run.operative.class_id
+		_player_view.portrait_subject = PortraitArt.operative_subject(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id, operative_name)
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
 	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [operative_name, _name_of(state.player), state.player.hp, state.player.max_hp])
 	portrait.queue_redraw()

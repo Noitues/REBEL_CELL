@@ -35,6 +35,17 @@ var targeted_satellite: StringName = &""
 ## What each docked satellite's needle lands on: id -> {type, tier, text} (from the scene).
 var satellite_landings: Dictionary = {}
 var wheel_color: Color = Palette.CELL_PINK
+## Art pass W3 (ART_BIBLE §6.1): the wheel's hardware, WheelBezel's look for its owner
+## (show_combatant sets it: the operative's stickered bezel, an enemy's notched corp bezel).
+var look: Dictionary = {}
+## The operative's class (its bezel ornament, hub pattern and glyph); "" = read from the
+## combatant's source id.
+var class_id: StringName = &""
+## W5 seams: who the portrait shows (PortraitArt subject: the operative's Polaroid inset at
+## the hub's top, an enemy's badge above its bezel) and final art that replaces the drawn
+## face (null = PortraitArt draws it).
+var portrait_subject: Dictionary = {}
+var portrait_texture: Texture2D = null
 ## Ghost preview (GDD 9.2): predicted outer/inner rotation after a hovered card, or null.
 var ghost_rotation: Variant = null
 var ghost_inner_rotation: Variant = null
@@ -205,6 +216,13 @@ const TAG_MAX_SHARE := 0.96
 const HP_COLOR := Color("#3DFF8B")
 const LOSS_COLOR := Color("#FF4D4D")
 const TARGET_COLOR := Palette.CELL_ACID
+## The dark platform round the bezel (px past the bezel's rim).
+const PLATFORM_PAD := 14.0
+## The ink outline round a slice value on the bezel (px).
+const VALUE_OUTLINE := 4
+## A needle's hub: where it stands out from the rim (share of the slice band) and its radius (px).
+const NEEDLE_HUB_OUT := 0.55
+const NEEDLE_HUB_R := 9.0
 
 
 func _init() -> void:
@@ -304,7 +322,77 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	readouts = p_readouts
 	lookup = p_lookup
 	wheel_color = Palette.CELL_PINK if c.is_player else Palette.corp_color(_corporation_of(c))
+	look = WheelBezel.operative_look(operative_class()) if c.is_player else WheelBezel.enemy_look(_corporation_of(c), is_boss())
 	queue_redraw()
+
+
+## The operative's class id (its bezel's ornament): `class_id`, else the combatant's source
+## id when that names a class.
+func operative_class() -> StringName:
+	if class_id != &"":
+		return class_id
+	return combatant.source_id if combatant != null else &""
+
+
+## True when this wheel is a boss's (EnemyData.is_boss): 120% of normal, a nameplate, phase
+## pips on its HP arc (§6.1).
+func is_boss() -> bool:
+	if combatant == null or combatant.is_player or lookup == null or not lookup.has(combatant.source_id):
+		return false
+	var data := lookup.get_content(combatant.source_id) as EnemyData
+	return data != null and data.is_boss
+
+
+## Who the wheel's portrait shows: `portrait_subject`, else the operative's class face or the
+## enemy's own (PortraitArt).
+func shown_subject() -> Dictionary:
+	if not portrait_subject.is_empty():
+		return portrait_subject
+	var c := _shown()
+	if c == null:
+		return {}
+	if c.is_player:
+		return PortraitArt.operative_subject(operative_class())
+	return PortraitArt.enemy_subject(c.source_id, shown_name(), _corporation_of(c), is_boss())
+
+
+## Where the operative's Polaroid inset sits (local, unrotated); empty for an enemy.
+func inset_rect() -> Rect2:
+	var c := _shown()
+	if c == null or not c.is_player:
+		return Rect2()
+	return WheelBezel.inset_rect(_center(), hub_radius())
+
+
+## The bezel's outer radius (px): the slices' rim plus WheelBezel.BEZEL_W.
+func bezel_radius() -> float:
+	return _radius() + WheelBezel.BEZEL_W
+
+
+## How far out from the centre a needle's hub reaches (px, its pulse included).
+func needle_reach() -> float:
+	return _radius() + _band() * NEEDLE_HUB_OUT + NEEDLE_HUB_R * maxf(1.0, Motion.amplitude(&"resolve_pulse"))
+
+
+## Where an enemy's portrait badge hangs above its bezel (local): between the needle reach
+## and the tag, clear of the nudge arrows and their hints; empty when there is no room (or
+## for the operative, whose portrait is inset in its hub).
+func badge_rect() -> Rect2:
+	var c := _shown()
+	if c == null or c.is_player or defeated():
+		return Rect2()
+	var side := WheelBezel.BADGE_SIDE
+	var bottom := _center().y - needle_reach() - WheelBezel.BADGE_GAP
+	var r := Rect2(Vector2(_center().x - side * 0.5, bottom - side), Vector2(side, side))
+	var tag := _intent_rect_local()
+	if tag.has_area() and r.grow(WheelBezel.BADGE_GAP).intersects(tag):
+		return Rect2()
+	for ar in arrows():
+		var ac := arrow_center(int(ar["ring"]), int(ar["direction"])) - global_position
+		var hit := ARROW_HIT * maxf(1.0, _ts())
+		if r.intersects(Rect2(ac - Vector2(hit, hit), Vector2(hit, hit) * 2.0)):
+			return Rect2()
+	return r
 
 
 func set_ghost(outer: Variant, inner: Variant = null) -> void:
@@ -1162,18 +1250,50 @@ const STAMP_HP_SHARE := 0.8
 ## The hub's words from the top of the name to the foot of its last line (local y, from
 ## the centre): numbers keep off them.
 func hub_text_extent() -> Vector2:
+	var lay := hub_layout()
+	var top: float = lay["top"]
+	var ns := int(lay["name_size"])
+	var n := int(lay["count"])
+	var y0 := top - (int(lay["name_count"]) - 1) * (ns + 1) - ns * 0.8
+	var y1 := top + 16.0 + (n - 1) * float(lay["step"]) + float(lay["fs"]) * 0.3 if n > 0 else top + ns * 0.3
+	return Vector2(y0, y1)
+
+
+## The hub's words as laid out (local y from the centre): {top (the last name line's
+## baseline), step, fs, width, name (hub_name_lines), name_size, name_count, lines, count,
+## inset_alpha}. Art pass W3 (§6.1): under the operative's Polaroid inset when the words fit
+## below it; a crowded hub (many lines) keeps its words where they were and fades the inset.
+func hub_layout() -> Dictionary:
 	var c := _shown()
-	var hw := (hub_radius() - 10) * 2.0
-	var n := _hub_lines(c).size()
+	var hr := hub_radius()
+	var hw := (hr - 10) * 2.0
+	var lines := _hub_lines(c)
+	var n := lines.size()
 	var fs := _fs(HUB_FONT_SIZE)
 	var step := fs + 2
-	var top := -6.0 - n * step * 0.5
 	var name_lines := hub_name_lines(hw)
-	var name_size := int(name_lines[0])
+	var ns := int(name_lines[0])
 	var name_count := name_lines.size() - 1
-	var y0 := top - (name_count - 1) * (name_size + 1) - name_size * 0.8
-	var y1 := top + 16.0 + (n - 1) * step + fs * 0.3 if n > 0 else top + name_size * 0.3
-	return Vector2(y0, y1)
+	var top := -6.0 - n * step * 0.5
+	var inset_alpha := 0.0
+	var ir := inset_rect()
+	if ir.has_area():
+		inset_alpha = 1.0
+		var need := ir.end.y - _center().y + HUB_INSET_GAP + (name_count - 1) * (ns + 1) + ns * 0.8
+		var foot := maxf(top, need) + (16.0 + (n - 1) * step + fs * 0.3 if n > 0 else ns * 0.3)
+		if foot <= hr * HUB_TEXT_SHARE:
+			top = maxf(top, need)
+		else:
+			inset_alpha = INSET_CROWDED_ALPHA
+	return {"top": top, "step": step, "fs": fs, "width": hw, "name": name_lines, "name_size": ns, "name_count": name_count,
+		"lines": lines, "count": n, "inset_alpha": inset_alpha}
+
+
+## The gap under the Polaroid inset before the name (px), how far down the hub its words
+## may reach (share of the hub radius), and the inset's alpha when the words need its room.
+const HUB_INSET_GAP := 3.0
+const HUB_TEXT_SHARE := 0.92
+const INSET_CROWDED_ALPHA := 0.35
 
 
 ## Where the HP number sits (global): a damage number travels into it.
@@ -1219,7 +1339,7 @@ func pointer_spot(index: int) -> Vector2:
 	if ps.is_empty():
 		return global_center()
 	var a := _ang(ps[clampi(index, 0, ps.size() - 1)])
-	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + _band() * 0.55)
+	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + _band() * NEEDLE_HUB_OUT)
 
 
 ## Where docked satellite `id` stands on screen (its token), the centre when it's gone.
@@ -1367,7 +1487,7 @@ func global_center() -> Vector2:
 ## the HP arc and its numbers).
 ## The disc's radius with its needles' band (px): a break's local flash covers it.
 func disc_radius() -> float:
-	return _radius() + _band() * 0.55
+	return _radius() + _band() * NEEDLE_HUB_OUT
 
 
 func extent_radius() -> float:
@@ -1687,19 +1807,22 @@ func _draw_view() -> void:
 	var tps := wheel.ticks_per_slice()
 	var rot := shown_rotation()
 	# Platform so the wheel reads over the city.
-	draw_circle(center, radius + 40, Color(Palette.NIGHT_SKY, 0.55))
+	draw_circle(center, radius + WheelBezel.BEZEL_W + PLATFORM_PAD, Color(Palette.NIGHT_SKY, 0.55))
 	if defeated():
 		# ANIM-R1: a beaten enemy leaves its empty spot with a DEFEATED stamp (a new enemy
 		# can never read as this one coming back).
 		_draw_defeated(center, radius, inner)
 		_draw_hp(center, radius)
 		return
+	# Art pass W3 (§6.1): the bezel says whose wheel it is (it never flips with the disc).
+	WheelBezel.draw_bezel(self, center, radius, bezel_radius(), look, Settings.high_contrast)
 	if flip_squash < 1.0:
 		# FLIP: the disc squashes to a line about its centre and opens mirrored.
 		draw_set_transform(Vector2(center.x * (1.0 - flip_squash), 0.0), 0.0, Vector2(flip_squash, 1.0))
 	if inverted:
 		draw_circle(center, radius + 24, Color(Palette.PAPER, 0.9))
-	draw_circle(center, inner - 3, Color("#07080F"))
+	draw_circle(center, inner - 3, HUB_FILL)
+	WheelBezel.draw_hub_pattern(self, center, inner - 3, look)
 	var status_ghosts := {}
 	if not replaying:
 		for st in outcome.get("statuses", []):
@@ -1738,7 +1861,10 @@ func _draw_view() -> void:
 		SliceIcon.draw_on_slice(self, center + dir * (inner + band * 0.42), band * 0.36, slice.slice_type, sc)
 		if slice.base_output > 0:
 			var vs := _fs(VALUE_FONT_SIZE)
-			draw_string(Palette.display(), center + dir * (radius + VALUE_OUT) + Vector2(-vs, vs * 0.4), str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, vs * 2, vs, _col(sc.lightened(0.35)))
+			var vat := center + dir * (radius + VALUE_OUT) + Vector2(-vs, vs * 0.4)
+			# On the bezel (paper stickers or corp metal): an ink outline keeps it readable.
+			draw_string_outline(Palette.display(), vat, str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, vs * 2, vs, VALUE_OUTLINE, _col(Palette.NIGHT_SKY))
+			draw_string(Palette.display(), vat, str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, vs * 2, vs, _col(sc.lightened(0.35)))
 		var tip := center + dir * (radius - 3)
 		var base := center + dir * (radius - 10)
 		var side := dir.orthogonal() * 4.0
@@ -1792,7 +1918,7 @@ func _draw_view() -> void:
 		# Orbit trail: the arc a needle just swept, fading.
 		var ta := _ang(float(t[0]))
 		var tb := _ang(float(t[1]))
-		_draw_dashed_arc(center, radius + band * 0.55, minf(ta, tb), maxf(ta, tb), Color(_col(Palette.PAPER), trail_alpha), 3.0)
+		_draw_dashed_arc(center, radius + band * NEEDLE_HUB_OUT, minf(ta, tb), maxf(ta, tb), Color(_col(Palette.PAPER), trail_alpha), 3.0)
 	# Pointers: short white gauge needles, hub just outside the rim, tip just past its edge.
 	var pcol := Color(_col(Palette.PAPER), pointer_alpha)
 	var ps := shown_pointers()
@@ -1800,9 +1926,9 @@ func _draw_view() -> void:
 		var p: float = ps[pk]
 		var a := _ang(p)
 		var dir := Vector2(cos(a), sin(a))
-		var hub := center + dir * (radius + band * 0.55)
+		var hub := center + dir * (radius + band * NEEDLE_HUB_OUT)
 		var ntip := center + dir * (radius - band * 0.2)
-		var hub_r := 9.0 * (pulse_scale if pk == pulse_pointer else 1.0)
+		var hub_r := NEEDLE_HUB_R * (pulse_scale if pk == pulse_pointer else 1.0)
 		if pk == pulse_pointer:
 			# The needle resolving now: its hub swells and glows.
 			draw_circle(hub, hub_r + 5.0, Color(_col(Palette.CELL_ACID), 0.35))
@@ -1813,12 +1939,12 @@ func _draw_view() -> void:
 		if wheel.pointer_orbit != 0:
 			for k in range(1, 4):
 				var oa := _ang(fposmod(p + wheel.pointer_orbit * k, RC.TICKS))
-				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - k * 0.12))
+				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * NEEDLE_HUB_OUT), 3, Color(Palette.PAPER, 0.5 - k * 0.12))
 	# Telegraphed migration (GDD 2.11, 9.2): next turn's needles, dashed and flickering.
 	for p in wheel.pending_pointer_ticks:
 		var a := _ang(p)
 		var ntip := center + Vector2(cos(a), sin(a)) * (radius - band * 0.2)
-		var hub := center + Vector2(cos(a), sin(a)) * (radius + band * 0.55)
+		var hub := center + Vector2(cos(a), sin(a)) * (radius + band * NEEDLE_HUB_OUT)
 		var mcol := Color(_col(Palette.CELL_ACID), 1.2 - pointer_alpha)
 		var n := 6
 		for k in n:
@@ -1832,6 +1958,10 @@ func _draw_view() -> void:
 		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
+	var badge := badge_rect()
+	if badge.has_area():
+		# Art pass W3 (§6.1, §7.2): the enemy's portrait hangs above its bezel (W5 seam).
+		WheelBezel.draw_badge(self, badge, shown_subject(), look, portrait_texture)
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
 	if highlighted and combatant.is_alive():
@@ -2614,18 +2744,22 @@ func _hub_lines(c: CombatantState) -> Array[String]:
 	return hub_lines
 
 
-func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
-	var hub_lines := _hub_lines(combatant)
+func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
+	var lay := hub_layout()
+	var hub_lines: Array[String] = lay["lines"]
 	var resist_line := -1
 	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
 		resist_line = (1 if combatant.block > 0 else 0) + (1 if combatant.shield > 0 else 0)
-	var hw := (inner - 10) * 2.0
-	var fs := _fs(HUB_FONT_SIZE)
-	var step := fs + 2
-	var top := -6.0 - hub_lines.size() * step * 0.5
-	var name_lines := hub_name_lines(hw)
-	var name_size := int(name_lines[0])
-	var name_count := name_lines.size() - 1
+	var hw: float = lay["width"]
+	var fs := int(lay["fs"])
+	var step: float = lay["step"]
+	var top: float = lay["top"]
+	var name_lines: Array = lay["name"]
+	var name_size := int(lay["name_size"])
+	var name_count := int(lay["name_count"])
+	if float(lay["inset_alpha"]) > 0.0:
+		# Art pass W3 (§6.1): the operative's Polaroid mini-portrait at the hub's top.
+		WheelBezel.draw_inset(self, inset_rect(), shown_subject(), portrait_texture, float(lay["inset_alpha"]))
 	for k in name_count:
 		# The last line sits where a one-line name does; a first line goes above it.
 		var ny := top - (name_count - 1 - k) * (name_size + 1)
