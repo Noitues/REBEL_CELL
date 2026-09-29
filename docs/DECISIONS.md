@@ -438,6 +438,104 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-28 — Animation pass — ANIM-R5 motion rules and tests
+The fifth fix batch of the Animation pass review, motion rules, test infrastructure and docs
+(fix agent D, R1-R8). Every call below was the implementer's (the standing rule: nothing
+deferred). Views, tools, tests and docs only; `scripts/data/` gains two consts (below), no
+field. Tests: `tests/unit/test_anim_r5_rules.gd` (full tier), `tests/unit/test_motion_lab_demos.gd`
+(full tier), `tests/unit/test_suite_compiles.gd` (full tier, split out of the integrity
+test); R4 / R1 tests adjusted where they pinned the old behaviour (below).
+
+- **R1 one rule in every helper.** Typing, the Dialogue subtitle and MenuMotion hand-rolled
+  the press test and the verdict (`is_press`, `pause_open`, `works_ui`); they now call
+  `MotionSkip.handle` like the others. `MenuMotion.works_menu` is `MotionSkip.works_ui`, so
+  a click on a menu line trusts the hovered control (a line under a panel isn't clicked)
+  and the line's `button_mask` (a right-click works nothing), as `button_at` does. Menus
+  lose two looser passes: an accept while focus is on no usable button and a click on a
+  disabled line are now consumed (they worked nothing either way). `pause_open(node)` is
+  false for a node inside the open PauseMenu (its lines' MenuMotion owns the menu's presses
+  with it; MenuMotion's own check moved into MotionSkip as `in_pause_menu`).
+- **R2 one press completes every running motion.** A consumed press reached only the first
+  helper in `_input` order, so a stray key during a flight and a drop (or a page entrance and
+  a flight) ended one of them; a focus move (passed on) ended all. Now defined once in
+  MotionSkip: every helper joins `MotionSkip.GROUP` (`register`) and answers
+  `motion_running()` / `complete_motion()` (and `motion_keeps()` when it keeps presses);
+  `handle` gives one verdict (the keeps of every running helper count: a click on SEND IT
+  seen first by a flight is kept, never played blind), then completes every running helper
+  (PASS and CONSUME alike), then consumes on CONSUME; `consume` completes them all too, so a
+  helper that consumes by hand still does. Helpers a PauseMenu covers are left alone.
+  Registered: Typing's skip nodes, Dialogue, MenuMotion, DropLayer, FlightFx, PageTransition,
+  the combat replay (keeps SEND IT, RESPIN, UNDO, the hand) and the netrun route move. The
+  raid playout panel (fix agent C's file this round) still ends only its own step; its
+  one-press fix should register it the same way (a `motion_running` / `complete_motion`
+  pair and `MotionSkip.handle`). `test_anim_r4_combat` pushed two presses to end a flight
+  and a drop ("one press each"); it now pushes one.
+- **R3 switching an entry off, by kind.** `enabled` was honoured only through
+  `Motion.live`; entries a view reads as numbers ignored it. Three kinds, decided in one
+  place (`Motion.seconds` / `delay_of` / `amplitude` and `UiMotionData`): an entry with a
+  motion of its own (the default) never plays when off and keeps its time and size (they
+  are the end state's hold and look: the saved stamp's and a toast's hold, a dim's alpha);
+  a part of another motion (`UiMotionData.OFF_PARTS`: `hit_line_flight`, `ride_swap`,
+  `ride_shrink`, `ride_perfect`, `break_crack`, `modem_sign_strike`, `modem_sign_flicker`,
+  `forecast_change_fade`, `resolve_side_gap`, `resolve_attacker_gap`, `drag_ghost_tilt`,
+  `hit_freeze`, `stamp_fade_in`) takes no time and shows no motion when off (seconds and
+  delay 0, amplitude 0 for a share / px / frames, 1 for a scale); a tuning of another entry
+  with nothing of its own (`UiMotionData.ALWAYS_ON`: `drag_ghost_tilt_speed`,
+  `send_it_drips_share`) is refused off by `UiMotionData.validate` (content validation and
+  the schema smoke test check it). A blanket "amplitude 0 when off" was rejected: many
+  amplitudes are sizes the rest state keeps (a line's width, the ghost's alpha, a traffic
+  threshold). The test switches every table entry off in turn and checks its kind, and the
+  views' own shares (the projectile's floor 0.05, the forecast fade's floor 0.01, the
+  combat's beat gaps).
+- **R4 the lab shows the real motion.** 73 demos played a generic helper on a lab piece
+  for a motion the game draws otherwise (a 0 s lift of 0.33 px for `forecast_change_fade`,
+  an alpha loop on a sticker for `forecast_road_pulse`, a 1.2 s panel fade for
+  `raid_incoming_hold`), or passed the numbers to Fx itself so the piece never read its id.
+  Each now plays on the real piece: Fx's own flash and jack (with its CONNECTING line and
+  the RAID INCOMING stamp; the reduced jack with reduce effects on for that jack only, the
+  setting's value never saved), the real DropLayer (landing, purchase, shred, refusal,
+  carry, market flight), the Heat poster crossing a threshold, Toast / ToastNote, the top
+  bar's refusal, FlightFx's reject, the HQ scene on a demo campaign in the lab's own save
+  slot `motion_lab` (never the player's; deleted when the demo ends) for the selection, the
+  drop and its forecast road, the raid (turret and decoy; an ICE-lock raid for the lock and
+  home's number fly), the minimap pulse, the key's fold and the influence spread; the
+  netrun scene for the route move; the combat scene's own calls (`_perfect_feedback`,
+  `_boss_phase_feedback`, `_victory_flash`, `_play_beat` with a made beat for a guard, a
+  heal, a status landing and a PERFECT hit, `fx_layer.play_card`, a card that plays, the
+  RAM spend float). A demo may stay a stand-in (the lab's Motion helper on a lab piece) only
+  when the game plays that id with the same helper (a pop is a pop). `Motion.recording`
+  notes, per entry read, the first script outside the kit that asked; `test_motion_lab_demos`
+  plays every demo and fails any whose id no real piece read (or whose stand-in helper the
+  game doesn't use). Eight ids are gated by the headless display inside their piece (Toast,
+  the combat log, the hand's gap under the pointer) or need the GPU's bake (the influence
+  spread and the bake fade): the test checks they play on a real piece and the windowed
+  `--demo-check=<frames>` run confirmed each is read. Also fixed in the lab: a menu demo's
+  timers held a window that the next demo freed (now a weak reference) and the city demo set
+  a size on a full-rect control. Captured windowed: `forecast_road_pulse` (the pulse runs
+  the real threat road to CORE) and `raid_incoming_hold` (the stamp under CONNECTING).
+- **R5 a fast integrity test.** `test_suite_integrity` took 40 s alone (47 s in a shard; the
+  manifest said 0.4 s): 31 s loaded every test script (and the whole game behind them) and
+  8 s compiled three RegExes per line several times over. The compile check is now
+  `test_suite_compiles.gd` (full tier, its measured time; the parallel runner also reports
+  a script that did not run); the rules read each file once (`source`), compile each
+  pattern once (`_re`) and read a line further only when it names a frame signal or a
+  fixed-wait call. The integrity tests now take under a second. The manifest's times were
+  refreshed from measured runs (`run_tests.py --update-times`).
+- **R6 the fixed-wait rule scans `tests/helpers/`.** Every function there is a helper (its
+  caller asserts), so any fixed wait in one is flagged. BoundedWait's polls (a frame at a
+  time, counting game time) are no fixed wait: it needs no marker and the test asserts it
+  carries none.
+- **R7 docs.** STYLE_GUIDE: the focus tip never folds under 20 columns (`FocusTip.FOLD_MIN`,
+  ANIM-R4 C7; it said 26), 5.1 gains the one-press-completes-all rule, switching entries
+  off and the lab's real pieces. TEST_SUITE: frame lambdas are guarded in `scripts/`,
+  `tests/` and `tools/` in every form; every fixed-wait form the rule knows (awaited
+  `tween_interval`, `Timer.new` / `wait_time`, `OS.delay_*`, `get_unix_time`, the sleep in a
+  poll's lambda, the helpers scan); headless has no RenderingDevice, so rendering paths get
+  a windowed check; the integrity test's speed and the compile test.
+- **R8** `docs/timeline/motion/README.md`: no combat or generic row changed (their strips
+  were captured from scenes and demos this batch didn't change); the city rows are fix
+  agent C's.
+
 #### 2026-09-28 — Animation pass — ANIM-R4 combat, input and screens
 The fourth fix batch of the Animation pass review, combat, input and screens part (C1-C7).
 Views only (no rule, no schema field changed; new motion ids are data). Every call below was
