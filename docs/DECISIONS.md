@@ -333,6 +333,24 @@ Review folder: `docs/art_review/W8a/`. It includes a 43-screen regression sheet 
 
 **Known gap:** high contrast doesn't restyle the custom-drawn paper pieces (case files, receipts, badges). This goes to the W9 sweep.
 
+### 2026-09-29 — Art pass WF: kit follow-ups (merged into `art-pass`)
+Review folder: `docs/art_review/WF/`. This pass closes the open requests that W1, W2, W3, W5, W6, W8a and W9s logged against the shared kit.
+- **FitScroll / ScrollHint:** a content height above 4096 px × text scale is treated as a pre-layout measure. It is waited out for up to 3 frames, then clamped. The crash itself still needs a windowed confirmation.
+- **TilePicker:** names wrap at word boundaries onto up to 2 lines, stepping label → body → caption. After that the tiles grow, keeping one tile size per picker.
+- **StickerButton:** the words yield before the sticker takes more than 0.2 of the page width. This is opt-in via `max_share`, and combat opts in.
+- **Hand size (orchestrator):** `combat_scene.HAND_SCALE_MAX` is 1.15. Once the stickers were capped, the hand grew into their room at 2.0 and pushed the wheels under their 70% floor (§12).
+- **Polaroid caption:** it steps down to caption, then abbreviates ("R n"; a name becomes first word + initials), then condenses to 70%. It never goes under 12 px and never clips.
+- **Combat stamps:** `CombatFxLayer.stamp(..., icon)` now draws a StatIcon, and combat status stamps pass theirs.
+- **New tokens (ART_BIBLE §3.3 row added):** `HARM_INK` #AB2E22 and `GAIN_INK` #396739. Both reach ≥ 4.8:1 on PAPER, PAPER_ALT, NOTE_PAPER and NOTE_YELLOW. They don't cover STICKER_PINK or NOTE_PINK. OutcomeRow, the CrewCard FLATLINED stamp, CaseFileCard's LOST and the toast's refusal mark use them.
+- **High contrast on PAPER (ART_BIBLE §12 line added):** paper keeps its stock, words go INK at 7:1, edges are 2 px opaque INK, and tape and fills are opaque (`PaperInk`). This is applied to CaseFileCard, RunReceipt, AchievementBadge, Polaroid, Toast and CrewCard. CrewCard used to turn black; the orchestrator applied the change.
+- **Steam Deck:** first run sets `Settings.city_quality` to 1 (additive setting; −1 means the look's default).
+- **Tracking (ART_BIBLE §4.2 line updated):** tracking is now px per type step, via `UiTheme.TRACKING_PX`.
+  - Anton: +1 at caption–title, +2 at heading/display, +3 at hero.
+  - Mono caps: +1 at caption–label, +2 at title/heading, +3 at display, +4 at hero.
+
+  No view calls `tracked()` yet; the W9 sweep does that.
+- **Bug fixed on the way:** `RunReceipt.fields` raised a script error on the Stats page's run history.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few

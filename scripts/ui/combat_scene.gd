@@ -51,6 +51,9 @@ const ENEMY_HIT_COLOR := CHIP_LOSS
 const SEED_MAX := 999999
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
+## Art pass WF (ART_BIBLE 12: text yields before the wheels, which keep >= 70%): the hand's
+## card scale stops growing here even at big text, now that the stickers cap their own size.
+const HAND_SCALE_MAX := 1.15
 
 @export var auto_start: bool = true
 
@@ -2161,7 +2164,7 @@ func _card_scale_for(count: int) -> float:
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
 	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
-	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)
+	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, HAND_SCALE_MAX)
 
 
 func _selected_nudge_wheel() -> StringName:
@@ -2750,6 +2753,7 @@ func _build_stickers() -> void:
 	]
 	for sp in specs:
 		var b := StickerButton.new(sp[1], sp[2], sp[3])
+		b.max_share = StickerButton.MAX_SHARE  # art pass WF: the words yield before the sticker grows
 		b.pre_translated = true  # labels come from _sticker_text (translated there)
 		b.drawn_icon = String(sp[0])
 		b.name = "Sticker_" + String(sp[0])
@@ -3983,7 +3987,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		var scol := WheelView.status_color(int(b["status"]), tv.combatant != null and tv.combatant.is_player)
 		# Art pass W3 with W2 (§7.4): the stamp pops on the slice; the status's drawn StatIcon is
 		# the slice's own mark from the landing on (show_slice_status), no font glyph.
-		fx_layer.stamp(tv.slot_spot(int(b["slot"])), "", scol, motion_seconds_left(), impact)
+		fx_layer.stamp(tv.slot_spot(int(b["slot"])), "", scol, motion_seconds_left(), impact, StatIcon.for_status(int(b["status"])))
 		# ANIM-R3 A6j: the slice keeps the status's mark from the moment it lands.
 		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"])))
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
