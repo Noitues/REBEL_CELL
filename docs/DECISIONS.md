@@ -351,6 +351,41 @@ Review folder: `docs/art_review/WF/`. This pass closes the open requests that W1
   No view calls `tracked()` yet; the W9 sweep does that.
 - **Bug fixed on the way:** `RunReceipt.fields` raised a script error on the Stats page's run history.
 
+### 2026-09-29 — Art pass W8c: netrun pages and run end (merged into `art-pass`)
+Review folder: `docs/art_review/W8c/` (28 before/after sheets, a FLATLINED T4 strip, a shred no-reflow strip). Its README lists 24 decisions; the main ones follow.
+
+**Loot (§11)**
+- "Hover size" means at least `HOVER_SCALE`, filling the modal's row up to 1.4×.
+- The picked card is stamped TAKEN (T2) before it flies.
+
+**Modem (§4.2, §5.3, §6.7)**
+- Chip tiles letter at text scale × 15/12, so W4's caption step draws at `body`.
+- Two columns up to text scale 1.15, then one scrolling column. Known gap: its CARDS window is more than 25% empty at 1.6/2.0 (W9 sweep).
+- BUY/SHRED stickers are always buttons, and the sign carries no decorative notes.
+- Unaffordable means the paper is kept, with a DISABLED edge, a lock and "NEED n · HAVE m".
+
+**Raid interlude (critique 28):** the asset is picked once per interlude, and each node row has its own "Deploy here".
+
+**Events (§11):** a leading "SPEAKER:" is dropped from the event title and story, so the speaker plate is the only mention.
+
+**Run failed (§11, §8 T4)**
+- The grey is a desaturate-and-dim shader inside the run-end page, because W7 has no grey context. W9 sweep: add a `flatline` context to CityAtmosphere so it also covers the subtitle band.
+- The sequence is `run_end_flatline` (2.4 s, skippable). Under reduce effects the end state shows at once.
+
+**Overlaps with the unmerged ANIM-R5 netrun branch, to resolve at its merge**
+- B1: shares `EventText` and `VC_CHARS_AFTER_SHAPING`.
+- B3: keep `RunEndStage` and feed its `end_fate()`/`heat_reason()` into `stage.fate_label`.
+- B5: the loot hold is extended by the stamp.
+- B9: `_ahead_row` keeps its node names.
+- B11: keep `SlotPicker` and take its SOCKET_TIP words.
+- B4: `words_typing()` must ignore `RunEndStage`'s `Typing.META` tween.
+
+**Open requests, for W8b or the W9 sweep**
+- A generic `PageTransition.settle` hook: today the run end rides `Typing.META`.
+- The price on UPGRADE and the marker circle reveal in `spinner_view.gd`.
+- DeckView's "Left click / Right click" wording, and it running off the canvas at 2.0.
+- The top bar is two rows at 2.0 (W8b).
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
