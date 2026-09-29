@@ -152,14 +152,16 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 		if corp.generated_from_profile and profile != null and profile.best_ice_for(corp.id) < 0 and not profile.stats.has("use_seen:%s" % corp.final_boss.id):
 			out["Corporations"].append({"title": "???", "text": "Something is waiting behind the other four."})
 			continue
-		out["Corporations"].append({"title": corp.display_name, "text": corp.description})
+		out["Corporations"].append({"title": corp.display_name, "text": corp.description, "corporation": corp.id})
 	for id in lookup.ids_of_class(&"HomeServerVariantData"):
 		var v := lookup.get_content(id) as HomeServerVariantData
 		out["Home servers"].append({"title": v.display_name, "text": v.description})
+	# Art pass W8a (ART_BIBLE 7.4: no font glyphs as icons): a slice or status entry names its
+	# kind ("slice" / "status"), and the view draws its SliceIcon / StatIcon beside it.
 	for t in SLICE_TYPE_TEXT:
-		out["Slices"].append({"title": "%s %s" % [Palette.SLICE_GLYPHS.get(t, ""), Palette.SLICE_NAMES.get(t, "")], "text": SLICE_TYPE_TEXT[t]})
+		out["Slices"].append({"title": String(Palette.SLICE_NAMES.get(t, "")), "text": SLICE_TYPE_TEXT[t], "slice": t})
 	for st in STATUS_TEXT:
-		out["Statuses & precision"].append({"title": "%s %s" % [Palette.STATUS_GLYPHS.get(st, ""), RC.Status.keys()[st]], "text": STATUS_TEXT[st]})
+		out["Statuses & precision"].append({"title": String(RC.Status.keys()[st]), "text": STATUS_TEXT[st], "status": st})
 	for tier in TIER_TEXT:
 		out["Statuses & precision"].append({"title": RC.PrecisionTier.keys()[tier], "text": TIER_TEXT[tier]})
 	var sections := {"Cards": &"CardData", "Firmware": &"FirmwareData", "Daemons": &"DaemonData", "Ring segments": &"RingSegmentData",

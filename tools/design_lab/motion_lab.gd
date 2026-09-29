@@ -146,6 +146,8 @@ const DEMOS := {
 	# Art pass W5 (ART_BIBLE 7.2): the boss hologram on the stage: its idle drift, its intro
 	# reveal and (--demo-reduce) the reduce-effects cross-fade.
 	&"hologram_idle": ["hologram", "idle"], &"hologram_intro": ["hologram", "intro"], &"hologram_intro_fade": ["hologram", "intro"],
+	# Art pass W8a (ART_BIBLE 10): a modal opens and closes; the logo's idle drip.
+	&"modal_in": ["pop", "panel"], &"modal_out": ["fade_out", "panel"], &"logo_drip": ["drop", "sticker"],
 }
 ## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
 ## step between shapes (px, 1280x720), and the names' lettering.

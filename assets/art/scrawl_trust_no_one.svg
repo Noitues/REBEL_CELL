@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="414" height="226" viewBox="0 0 414 226">
+  <!-- TRUST NO ONE (art pass W8a, ART_BIBLE 1, 2 PAPER, 4.1, 4.3 rule 5): an original solid marker /
+       spray scrawl in the logo's drip-graffiti idiom - CELL_PINK letterforms at marker width
+       with an INK keyline, a hard INK shadow, drips with bulbs and the Cell's crown. Generated
+       by tools/art/w8a_svgs.py; do not edit by hand. -->
+  <g transform="skewX(-7.0)  translate(27.7 0)" stroke-linecap="round" stroke-linejoin="round">
+   <g stroke="#111111" fill="none" stroke-width="15.0" transform="translate(5 5)">
+    <polyline transform="rotate(0.51 36.4 49.6)" points="17.3,16.3 59.7,16.9"/>
+    <polyline transform="rotate(0.51 36.4 49.6)" points="38.9,16.3 38.1,84.1"/>
+    <polyline transform="rotate(1.72 99.8 49.6)" points="77.9,82.0 80.8,17.1 107.1,16.0 118.1,26.8 117.2,39.9 109.6,50.3 78.7,49.9"/>
+    <polyline transform="rotate(1.72 99.8 49.6)" points="94.7,48.4 121.6,84.3"/>
+    <polyline transform="rotate(2.84 163.2 49.6)" points="141.5,16.4 142.6,70.1 153.3,83.7 173.1,83.8 183.8,72.3 182.6,15.0"/>
+    <polyline transform="rotate(1.47 226.6 49.6)" points="245.0,20.1 234.3,15.8 214.6,16.2 207.5,24.7 206.8,38.7 216.8,50.0 238.0,51.0 246.7,59.9 247.4,73.0 237.5,82.5 215.5,84.0 207.5,76.1"/>
+    <polyline transform="rotate(-0.22 290.0 49.6)" points="269.2,15.2 313.4,14.8"/>
+    <polyline transform="rotate(-0.22 290.0 49.6)" points="290.8,15.2 291.8,82.0"/>
+    <polyline transform="rotate(-2.99 56.4 138.4)" points="35.9,173.4 35.5,104.6 75.4,172.7 78.1,103.9"/>
+    <polyline transform="rotate(-3.51 119.8 138.4)" points="107.5,103.5 130.6,103.7 140.4,116.9 140.7,159.8 131.2,172.4 109.4,172.7 100.9,161.1 100.5,116.9 109.6,104.6"/>
+    <polyline transform="rotate(-3.81 214.2 138.4)" points="203.5,104.4 224.8,105.7 233.4,116.9 235.3,161.2 225.2,170.8 203.6,173.1 193.2,159.2 192.9,117.1 204.1,105.3"/>
+    <polyline transform="rotate(1.10 277.6 138.4)" points="257.1,170.7 258.5,104.8 299.1,171.7 297.3,106.0"/>
+    <polyline transform="rotate(-0.67 341.0 138.4)" points="358.6,105.5 320.4,103.5 321.7,172.1 358.9,171.8"/>
+    <polyline transform="rotate(-0.67 341.0 138.4)" points="320.2,139.1 349.2,137.1"/>
+    <path d="M43.2 168.0 v36.0"/>
+    <circle cx="43.2" cy="204.0" r="5.5" fill="#111111"/>
+    <path d="M128.2 168.0 v21.6"/>
+    <circle cx="128.2" cy="189.6" r="5.5" fill="#111111"/>
+    <path d="M201.0 168.0 v28.8"/>
+    <circle cx="201.0" cy="196.8" r="5.5" fill="#111111"/>
+    <polygon fill="#111111" points="364.0,196.0 366.0,182.0 373.0,190.0 379.0,179.0 385.0,190.0 392.0,182.0 394.0,196.0"/>
+   </g>
+   <g stroke="#111111" fill="none" stroke-width="15.0">
+    <polyline transform="rotate(0.51 36.4 49.6)" points="17.3,16.3 59.7,16.9"/>
+    <polyline transform="rotate(0.51 36.4 49.6)" points="38.9,16.3 38.1,84.1"/>
+    <polyline transform="rotate(1.72 99.8 49.6)" points="77.9,82.0 80.8,17.1 107.1,16.0 118.1,26.8 117.2,39.9 109.6,50.3 78.7,49.9"/>
+    <polyline transform="rotate(1.72 99.8 49.6)" points="94.7,48.4 121.6,84.3"/>
+    <polyline transform="rotate(2.84 163.2 49.6)" points="141.5,16.4 142.6,70.1 153.3,83.7 173.1,83.8 183.8,72.3 182.6,15.0"/>
+    <polyline transform="rotate(1.47 226.6 49.6)" points="245.0,20.1 234.3,15.8 214.6,16.2 207.5,24.7 206.8,38.7 216.8,50.0 238.0,51.0 246.7,59.9 247.4,73.0 237.5,82.5 215.5,84.0 207.5,76.1"/>
+    <polyline transform="rotate(-0.22 290.0 49.6)" points="269.2,15.2 313.4,14.8"/>
+    <polyline transform="rotate(-0.22 290.0 49.6)" points="290.8,15.2 291.8,82.0"/>
+    <polyline transform="rotate(-2.99 56.4 138.4)" points="35.9,173.4 35.5,104.6 75.4,172.7 78.1,103.9"/>
+    <polyline transform="rotate(-3.51 119.8 138.4)" points="107.5,103.5 130.6,103.7 140.4,116.9 140.7,159.8 131.2,172.4 109.4,172.7 100.9,161.1 100.5,116.9 109.6,104.6"/>
+    <polyline transform="rotate(-3.81 214.2 138.4)" points="203.5,104.4 224.8,105.7 233.4,116.9 235.3,161.2 225.2,170.8 203.6,173.1 193.2,159.2 192.9,117.1 204.1,105.3"/>
+    <polyline transform="rotate(1.10 277.6 138.4)" points="257.1,170.7 258.5,104.8 299.1,171.7 297.3,106.0"/>
+    <polyline transform="rotate(-0.67 341.0 138.4)" points="358.6,105.5 320.4,103.5 321.7,172.1 358.9,171.8"/>
+    <polyline transform="rotate(-0.67 341.0 138.4)" points="320.2,139.1 349.2,137.1"/>
+    <path d="M43.2 168.0 v36.0"/>
+    <circle cx="43.2" cy="204.0" r="5.5" fill="#111111"/>
+    <path d="M128.2 168.0 v21.6"/>
+    <circle cx="128.2" cy="189.6" r="5.5" fill="#111111"/>
+    <path d="M201.0 168.0 v28.8"/>
+    <circle cx="201.0" cy="196.8" r="5.5" fill="#111111"/>
+    <polygon fill="#111111" points="364.0,196.0 366.0,182.0 373.0,190.0 379.0,179.0 385.0,190.0 392.0,182.0 394.0,196.0"/>
+   </g>
+   <g stroke="#FF3DA8" fill="none" stroke-width="9.0">
+    <polyline transform="rotate(0.51 36.4 49.6)" points="17.3,16.3 59.7,16.9"/>
+    <polyline transform="rotate(0.51 36.4 49.6)" points="38.9,16.3 38.1,84.1"/>
+    <polyline transform="rotate(1.72 99.8 49.6)" points="77.9,82.0 80.8,17.1 107.1,16.0 118.1,26.8 117.2,39.9 109.6,50.3 78.7,49.9"/>
+    <polyline transform="rotate(1.72 99.8 49.6)" points="94.7,48.4 121.6,84.3"/>
+    <polyline transform="rotate(2.84 163.2 49.6)" points="141.5,16.4 142.6,70.1 153.3,83.7 173.1,83.8 183.8,72.3 182.6,15.0"/>
+    <polyline transform="rotate(1.47 226.6 49.6)" points="245.0,20.1 234.3,15.8 214.6,16.2 207.5,24.7 206.8,38.7 216.8,50.0 238.0,51.0 246.7,59.9 247.4,73.0 237.5,82.5 215.5,84.0 207.5,76.1"/>
+    <polyline transform="rotate(-0.22 290.0 49.6)" points="269.2,15.2 313.4,14.8"/>
+    <polyline transform="rotate(-0.22 290.0 49.6)" points="290.8,15.2 291.8,82.0"/>
+    <polyline transform="rotate(-2.99 56.4 138.4)" points="35.9,173.4 35.5,104.6 75.4,172.7 78.1,103.9"/>
+    <polyline transform="rotate(-3.51 119.8 138.4)" points="107.5,103.5 130.6,103.7 140.4,116.9 140.7,159.8 131.2,172.4 109.4,172.7 100.9,161.1 100.5,116.9 109.6,104.6"/>
+    <polyline transform="rotate(-3.81 214.2 138.4)" points="203.5,104.4 224.8,105.7 233.4,116.9 235.3,161.2 225.2,170.8 203.6,173.1 193.2,159.2 192.9,117.1 204.1,105.3"/>
+    <polyline transform="rotate(1.10 277.6 138.4)" points="257.1,170.7 258.5,104.8 299.1,171.7 297.3,106.0"/>
+    <polyline transform="rotate(-0.67 341.0 138.4)" points="358.6,105.5 320.4,103.5 321.7,172.1 358.9,171.8"/>
+    <polyline transform="rotate(-0.67 341.0 138.4)" points="320.2,139.1 349.2,137.1"/>
+    <path d="M43.2 168.0 v36.0"/>
+    <circle cx="43.2" cy="204.0" r="5.5" fill="#FF3DA8"/>
+    <path d="M128.2 168.0 v21.6"/>
+    <circle cx="128.2" cy="189.6" r="5.5" fill="#FF3DA8"/>
+    <path d="M201.0 168.0 v28.8"/>
+    <circle cx="201.0" cy="196.8" r="5.5" fill="#FF3DA8"/>
+    <polygon fill="#FF3DA8" points="364.0,196.0 366.0,182.0 373.0,190.0 379.0,179.0 385.0,190.0 392.0,182.0 394.0,196.0"/>
+   </g>
+   <g stroke="#F2EEE4" stroke-width="3" opacity="0.8" fill="none">
+    <line x1="20.0" y1="19.0" x2="34.4" y2="19.0"/>
+    <line x1="83.4" y1="19.0" x2="97.8" y2="19.0"/>
+    <line x1="146.8" y1="19.0" x2="161.2" y2="19.0"/>
+    <line x1="210.2" y1="19.0" x2="224.6" y2="19.0"/>
+    <line x1="273.6" y1="19.0" x2="288.0" y2="19.0"/>
+   </g>
+  </g>
+</svg>

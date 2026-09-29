@@ -831,9 +831,10 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 		assert_string_contains(radio.tooltip_text, "RC1-", "it is in the note's tooltip")
 		hq.open_settings()
 		await _frames()
-		var seed_line := hq._settings_panel.find_child("SeedLine", true, false) as Label
+		# Art pass W8a (ART_BIBLE 6.5): the code sits in a CodeField with a copy button.
+		var seed_line := hq._settings_panel.find_child("SeedLine", true, false) as CodeField
 		assert_not_null(seed_line, "Settings has the seed line")
-		assert_string_contains(seed_line.text, CampaignCode.of(RunManager.campaign, RunManager.campaign.start_class_id))
+		assert_string_contains(seed_line.value, CampaignCode.of(RunManager.campaign, RunManager.campaign.start_class_id))
 		hq.open_settings()
 		await _close(hq)
 
@@ -875,7 +876,7 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 func test_the_continue_line_reads_as_a_line_of_icons() -> void:
 	RunManager.campaign.heat = 14
 	RunManager.autosave()
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:  # art pass W8a: the title fits 2.0
 		Settings.set_text_scale(scale)
 		var title := _open(TITLE)
 		title.continue_slot = SLOT
