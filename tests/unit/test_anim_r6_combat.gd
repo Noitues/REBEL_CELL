@@ -789,3 +789,38 @@ func test_a_plain_turn_replays_in_about_two_and_a_half_seconds() -> void:
 ## The longest a plain SEND IT (one hit each way, the spin to the next landing) may replay at
 ## 1x (s): STYLE_GUIDE 5.2's measured pace.
 const PLAIN_TURN_MAX := 2.6
+
+
+# --- A14: the city lands between turns ---------------------------------------------------------------------------------
+
+func test_the_city_waits_to_land_until_the_replay_ends() -> void:
+	var scene := await _combat()
+	_live()
+	assert_false(scene.city_held(), "before SEND IT the city may land")
+	scene.end_turn()
+	assert_true(scene.city_held(), "during the replay a bake waits (the silhouette stays)")
+	scene.skip_motion()
+	assert_false(scene.city_held(), "it lands once the turn has")
+	scene.end_turn()
+	await BoundedWait.until(get_tree(), _settled.bind(scene), BoundedWait.motion_limit([&"resolve_sequence"], 6.0))
+	assert_false(scene.city_held(), "and when the replay plays out")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/neon_city.gd")
+	assert_true(src.contains("if key != \"\" and hold_landing and _sky_shown and key != _baked_key:"), "the city keeps its silhouette while held")
+	await _close(scene)
+
+
+func test_a_card_dealt_in_starts_whole_on_screen() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		var half: float = ZineCard.STICKER_SIZE.x * scene._hand_scale * 0.5
+		var spot: Vector2 = scene._deck_spot()
+		assert_gte(spot.x - half, scene.get_global_rect().position.x, "x%.1f: the dealt card's left edge is on screen" % scale)
+		await _close(scene)
+
+
+func test_victory_reads_before_the_loot_opens() -> void:
+	assert_gte(Motion.seconds(&"combat_end_hold"), VICTORY_READ, "the netrun holds a won fight long enough to read VICTORY")
+
+
+## The shortest hold on a won fight before its loot (s): VICTORY reads (it read ~1 s before).
+const VICTORY_READ := 1.2

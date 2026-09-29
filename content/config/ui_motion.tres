@@ -1172,11 +1172,11 @@ ease = 1
 trans = 10
 amplitude = 1.6
 
-; the netrun holds the final combat state this long once motion settles
+; the netrun holds the final combat state this long once motion settles (ANIM-R6 A15: 1.4 s, was 0.8: VICTORY, which now stays at full strength, reads before the loot opens)
 [sub_resource type="Resource" id="m_combat_end_hold"]
 script = ExtResource("1_entry")
 id = &"combat_end_hold"
-duration = 0.8
+duration = 1.4
 delay = 0.0
 ease = 1
 trans = 0

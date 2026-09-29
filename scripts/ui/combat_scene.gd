@@ -2974,6 +2974,7 @@ func skip_motion() -> void:
 	if _seq != null and _seq.is_valid():
 		_seq.kill()
 	_seq = null
+	_hold_city(false)
 	for tw in _motion_tweens:
 		if tw != null and tw.is_valid():
 			tw.kill()
@@ -3004,6 +3005,18 @@ func skip_motion() -> void:
 		_dim_hand()
 		_show_end_turn_preview()
 		motion_settled.emit()
+
+
+## ANIM-R6 A14: while a SEND IT replays, the arena's city waits to land its bake (the
+## wireframe switched to the full city mid-turn); it lands between turns.
+func _hold_city(on: bool) -> void:
+	if background != null and background.city != null:
+		background.city.hold_landing = on
+
+
+## True while the arena's city waits for the replay to land its bake (tests).
+func city_held() -> bool:
+	return background != null and background.city != null and background.city.hold_landing
 
 
 func _skippable() -> bool:
@@ -3179,7 +3192,10 @@ func _after(delay: float, c: Callable) -> void:
 ## Where the deck and discard piles sit: the two ends of the hand row.
 func _deck_spot() -> Vector2:
 	var r := _hand_box.get_global_rect()
-	var half := CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5
+	# ANIM-R6 A17: far enough in that a card dealt from it, at the hand's size, starts whole on
+	# screen (the first card clipped at the left edge as it dealt in).
+	var card := ZineCard.STICKER_SIZE * (_hand_scale if _hand_scale > 0.0 else Settings.text_scale) * 0.5
+	var half := (CombatFxLayer.PILE_SIZE * Settings.text_scale * 0.5).max(card)
 	return Vector2(r.position.x + half.x + STICKER_EDGE, r.end.y - half.y - STICKER_EDGE)
 
 
@@ -3459,6 +3475,7 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 		fx_layer.discard_card(discard[k]["copy"], discard[k]["rect"], float(discard[k]["rot"]), discard_spot, stagger * k)
 	_numbers_on.clear()
 	_seq = create_tween().set_parallel(true)
+	_hold_city(true)  # ANIM-R6 A14: the city never switches in mid-replay
 	_seq_started = Time.get_ticks_msec() / 1000.0
 	var end_at := outcome_time(beats, times)
 	_seq_total = maxf(float(sch["total"]), end_at)
@@ -3616,6 +3633,7 @@ func result_stamps(beats: Array[Dictionary], before: CombatState) -> Dictionary:
 
 func _finish_sequence() -> void:
 	_seq = null
+	_hold_city(false)
 	# The forecast goes on first, so the tags flip in with it (C5e).
 	_release_forecast()
 	for v in _views():

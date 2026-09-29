@@ -191,7 +191,7 @@ func _ready() -> void:
 		_demo_drag_arg(args)
 		return
 	for a in args:
-		if a.begins_with("--demo-end="):
+		if a.begins_with("--demo-end=") and not args.has("--demo-combat"):  # ANIM-R6: with --demo-combat it ends the fight
 			# ANIM-R5 captures: the run-end page (died, completed, aborted), reached through the
 			# session's own ending (dev flag only).
 			_demo_run_end(a.trim_prefix("--demo-end="))

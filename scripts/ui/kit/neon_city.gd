@@ -340,6 +340,16 @@ var _fronts: Dictionary = {}
 var _covers: Dictionary = {}
 var _want: Dictionary = {}
 var _sky_shown: bool = false
+## ANIM-R6 A14 (combat, a minimal change here): while true, a bake that would land over the
+## silhouette waits (the silhouette stays); set back to false, it lands and fades in. The
+## fight holds it while a SEND IT replays, so the city never switches in mid-turn.
+var hold_landing: bool = false:
+	set(v):
+		if v == hold_landing:
+			return
+		hold_landing = v
+		if not v and _view != null:
+			_view.queue_redraw()
 var _veil: Control
 const NO_LOT := Vector2i(-1073741824, -1073741824)
 ## Frames the camera must hold still before its bake is asked for (a fit moves it every
@@ -1229,6 +1239,8 @@ func _draw_view() -> void:
 		_want_bake(look)
 		_mark_early()
 		key = _stand_in(look, view)
+	if key != "" and hold_landing and _sky_shown and key != _baked_key:
+		key = ""  # ANIM-R6 A14: it lands once the hold ends (between turns)
 	if key == "":
 		_sky_shown = true
 		# ANIM-R3 B4: the city's shape, dim, from its placement while the image bakes (its own
