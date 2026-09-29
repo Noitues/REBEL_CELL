@@ -38,6 +38,13 @@ func _ready() -> void:
 	_register.call_deferred()
 
 
+## ANIM-R5 B2: a screen whose lines run long (an event's story, the run's end) gives its
+## band `n` lines; the dock pages the line on screen again for them.
+func set_lines(n: int) -> void:
+	lines = maxi(1, n)
+	_fit()
+
+
 ## Height for `lines` lines at the text size in force.
 func _fit() -> void:
 	var h := Dialogue.band_height(lines)

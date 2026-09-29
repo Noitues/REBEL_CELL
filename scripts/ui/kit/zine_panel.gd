@@ -48,6 +48,24 @@ func _ready() -> void:
 	pivot_offset = size / 2.0
 
 
+## ANIM-R5 B1: the paper is as tall (and as wide) as its content at least, so a panel given
+## no height of its own (the event's story, ANIM-R4 C7) never collapses to a sliver under
+## its words. Off by default: other panels size themselves.
+var fits_content: bool = false
+
+
+func fit_to_content() -> ZinePanel:
+	fits_content = true
+	if not content.minimum_size_changed.is_connected(update_minimum_size):
+		content.minimum_size_changed.connect(update_minimum_size)
+	update_minimum_size()
+	return self
+
+
+func _get_minimum_size() -> Vector2:
+	return content.get_combined_minimum_size() if fits_content and content != null else Vector2.ZERO
+
+
 ## The paper title's lettering at scale 1.0 (px), and the size in use.
 const TITLE_SIZE := 16
 var title_size: int = TITLE_SIZE
