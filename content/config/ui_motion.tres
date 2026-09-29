@@ -1631,12 +1631,12 @@ ease = 1
 trans = 10
 amplitude = 1.6
 
-; ANIM-R1 M6: the crossing's banner (HEAT 30 - NOTICED) stamps on (poster_stamp) from amplitude x, holds `delay` s and fades over `duration` (nothing stays on)
+; ANIM-R1 M6: the crossing's banner (HEAT 30 · NOTICED (25+)) stamps on (poster_stamp) from amplitude x, holds `delay` s and fades over `duration` (nothing stays on). ANIM-R5 P9: the hold is a reading time for the consequence note beside the poster (17 words: 1.4 s -> 3.6 s)
 [sub_resource type="Resource" id="m_heat_banner"]
 script = ExtResource("1_entry")
 id = &"heat_banner"
 duration = 0.4
-delay = 1.4
+delay = 3.6
 ease = 0
 trans = 1
 amplitude = 1.5

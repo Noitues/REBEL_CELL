@@ -83,6 +83,29 @@ func _init() -> void:
 		_menu.add_child(seed_line)
 	# Focus moves slide the highlight and type the line in (Animation pass ANIM-6).
 	MenuMotion.attach(_menu)
+	# ANIM-R5 P4: as tall as what it shows (the box stood 520 px tall round ~200 px of lines,
+	# hiding the city behind it); Options and the Codex grow it up to MENU_SIZE.
+	_host.minimum_size_changed.connect(_fit_height)
+	_fit_height()
+
+
+## ANIM-R5 P4: the menu's height: its glass's own (title, margins) plus what it holds, never
+## over MENU_SIZE.y nor past the screen's bottom less FIT_MARGIN (it scrolls inside then).
+func _fit_height() -> void:
+	if _panel == null or _host == null:
+		return
+	var want := _panel.get_combined_minimum_size().y + _host.get_combined_minimum_size().y
+	var most := MENU_SIZE.y
+	if is_inside_tree():
+		most = minf(most, get_viewport_rect().size.y - global_position.y - FIT_MARGIN)
+	var h := clampf(ceilf(want), minf(FIT_MIN_H, most), most)
+	custom_minimum_size = Vector2(MENU_SIZE.x, h)
+	size = custom_minimum_size
+
+
+## The least the menu is tall and the screen edge it keeps clear of (px).
+const FIT_MIN_H := 120.0
+const FIT_MARGIN := 12.0
 
 
 ## The campaign's share code as a line (H24 S11), in the player's language; "" without a
@@ -101,6 +124,7 @@ var _panel: ZinePanel = null
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY and _panel != null:
+		_fit_height()
 		PageTransition.enter(_panel, PageTransition.Look.PAPER)
 	if what == NOTIFICATION_VISIBILITY_CHANGED or what == NOTIFICATION_READY:
 		if is_visible_in_tree():

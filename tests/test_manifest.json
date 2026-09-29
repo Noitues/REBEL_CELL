@@ -89,6 +89,10 @@
 			"seconds": 30.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_r5_city.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r3_city.gd": {
 			"seconds": 25.0,
 			"tier": "full"

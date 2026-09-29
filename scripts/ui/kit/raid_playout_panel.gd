@@ -79,7 +79,13 @@ const FEED_TALLY := "Threats destroyed: %d. Reached home: %d. Disabled: %d. Seiz
 const FEED_WON := "Reward: %s Schematics." # TR
 const FEED_CAMPAIGN_LOST := "The home server is gone. Campaign lost." # TR
 const FEED_HEAT := "Heat %s: %d → %d." # TR
-const FEED_HEAT_RAID := "Heat %s for the lost raid: %d → %d." # TR
+## ANIM-R5 P3: the raid's Heat says why, in words that agree with its verdict (RaidVerdict):
+## the rules add it whenever a threat was not destroyed ("lost raid"), even when home holds,
+## so it never says the raid was lost. Threats that hit CORE are named first, else the
+## threats still standing; the last form when the feed has not seen the threats.
+const FEED_HEAT_REACHED := "Heat %s: %s reached %s: %d → %d." # TR
+const FEED_HEAT_STANDING := "Heat %s: %s not destroyed: %d → %d." # TR
+const FEED_HEAT_UNSTOPPED := "Heat %s: not every threat was destroyed: %d → %d." # TR
 ## ANIM-R4 H11a: a Heat threshold the raid's Heat crossed, and what it brings.
 const FEED_THRESHOLD := "Heat %d crossed: %s" # TR
 const FEED_STEP := "Step %d" # TR
@@ -89,6 +95,11 @@ var results: Dictionary = {}
 ## under its id), from the resolved raid's "before": a hit's line says the HP it really took
 ## and where it left the node, the numbers the map's labels and floats show.
 var _hp: Dictionary = {}
+## ANIM-R5 P3: the threats the feed has told of, for the raid's Heat line: threat id -> its
+## name (entered), and the ids destroyed and the ids that hit CORE (with damage).
+var _told_threats: Dictionary = {}
+var _told_gone: Dictionary = {}
+var _told_reached: Dictionary = {}
 
 
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
@@ -148,6 +159,9 @@ func play(events: Array[Dictionary], instant: bool = false) -> void:
 	_threat_sites.clear()
 	_threat_names.clear()
 	_reset_hp()
+	_told_threats.clear()
+	_told_gone.clear()
+	_told_reached.clear()
 	_dead.clear()
 	_index = 0
 	_done = false
@@ -223,13 +237,39 @@ func _process(delta: float) -> void:
 ## a focus move, so the keys and the pad reach Skip and 2x / 4x; the Settings key; accept
 ## on the focused usable button; a click on a usable button), and while a PauseMenu is
 ## open every press is the menu's. Any other press skips one step.
+## ANIM-R5 P11: the one rule (`MotionSkip.verdict`) like every other helper: IGNORE while a
+## pause menu is open (the raid plays on), CONSUME ends the step and eats the press, PASS
+## ends the step and lets the press through (a click on the screen's Back to HQ, accept on
+## a focused button elsewhere). The one exception (STYLE_GUIDE 5.1, MotionSkip's notes):
+## a press that drives the playout itself (`drives_playout`: a focus move, which is how keys
+## and the pad walk to 1x / 2x / 4x and Skip, and a press on those buttons) passes without
+## ending the step: stepping onto 2x or pressing it speeds the raid up, it doesn't skip a
+## step the player wanted to watch faster (Skip does its own jump).
 func _input(event: InputEvent) -> void:
-	if _done or _instant or not is_visible_in_tree() or not MotionSkip.is_press(event):
+	if _done or _instant or not is_visible_in_tree():
 		return
-	if MotionSkip.pause_open(self) or MotionSkip.works_ui(event, self):
+	var v := MotionSkip.verdict(event, self)
+	if v == MotionSkip.Verdict.IGNORE:
+		return
+	if v == MotionSkip.Verdict.PASS and drives_playout(event):
 		return
 	skip_step()
-	MotionSkip.consume(self, event)
+	if v == MotionSkip.Verdict.CONSUME:
+		MotionSkip.consume(self, event)
+
+
+## ANIM-R5 P11: true when `event` drives the playout itself: a focus move, or a press (a
+## click, accept on the focused button) on the panel's own Skip or 1x / 2x / 4x.
+func drives_playout(event: InputEvent) -> bool:
+	if MotionSkip.is_focus_move(event):
+		return true
+	var b: BaseButton = null
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		b = MotionSkip.button_at(get_viewport(), mb.global_position, mb.button_index)
+	elif event.is_action(&"ui_accept"):
+		b = MotionSkip.usable_button(get_viewport().gui_get_focus_owner())
+	return b != null and is_ancestor_of(b)
 
 
 ## Ends the current step's motion at once (its beats at their ends).
@@ -314,6 +354,7 @@ func _log(line: String) -> void:
 func feed_line(e: Dictionary) -> String:
 	var text := ""
 	var t := String(e.get("type", ""))
+	_note_threat(t, e)
 	match t:
 		"threat_enters":
 			text = tr(FEED_ENTERS) % [threat_word(e), site_word(e.get("site", &""))]
@@ -374,7 +415,7 @@ func feed_line(e: Dictionary) -> String:
 			# final Heat: "+5 ... now 5" from 1).
 			var after := int(e.get("after", RunManager.campaign.heat if RunManager.campaign != null else 0))
 			var before := int(e.get("before", after - amount))
-			text = (tr(FEED_HEAT_RAID) if String(e.get("reason", "")) == "lost raid" else tr(FEED_HEAT)) % [TextDb.signed(amount), before, after]
+			text = raid_heat_line(amount, before, after) if String(e.get("reason", "")) == "lost raid" else tr(FEED_HEAT) % [TextDb.signed(amount), before, after]
 		"heat_threshold":
 			var brings := _threshold_text(int(e.get("heat", 0)))
 			text = tr(FEED_THRESHOLD) % [int(e.get("heat", 0)), brings]
@@ -383,6 +424,57 @@ func feed_line(e: Dictionary) -> String:
 	if e.has("step") and int(e["step"]) > 0 and t != "raid_end":
 		text = tr(FEED_STEP) % int(e["step"]) + ": " + text
 	return text
+
+
+## ANIM-R5 P3: notes a threat entering, destroyed or hitting CORE (with damage) as the feed
+## tells it (for `raid_heat_line`).
+func _note_threat(t: String, e: Dictionary) -> void:
+	if not e.has("threat"):
+		return
+	var id := String(e["threat"])
+	match t:
+		"threat_enters":
+			_told_threats[id] = threat_word(e)
+		"threat_destroyed":
+			_told_gone[id] = true
+		"home_hit":
+			_told_gone[id] = true
+			if int(e.get("damage", 0)) > 0:
+				_told_reached[id] = true
+	if not _told_threats.has(id):
+		_told_threats[id] = threat_word(e)
+
+
+## ANIM-R5 P3: the raid's Heat line (the rules' "lost raid": not every threat was destroyed),
+## saying why in the verdict's terms: the threats that hit CORE ("Heat +5: Collector reached
+## CORE: 0 → 5."), else those still standing ("Heat +5: Collector not destroyed: 0 → 5."),
+## else, with no threats told, that not every threat was destroyed. Never "lost": home may
+## well hold (the verdict HOME -5 · HOLDS or ALL HOLD).
+func raid_heat_line(amount: int, before: int, after: int) -> String:
+	var reached := _told_names(_told_reached.keys())
+	if not reached.is_empty():
+		return tr(FEED_HEAT_REACHED) % [TextDb.signed(amount), ", ".join(reached), site_word(_home()), before, after]
+	var standing: Array = []
+	for id in _told_threats:
+		if not _told_gone.has(id):
+			standing.append(id)
+	var names := _told_names(standing)
+	if not names.is_empty():
+		return tr(FEED_HEAT_STANDING) % [TextDb.signed(amount), ", ".join(names), before, after]
+	return tr(FEED_HEAT_UNSTOPPED) % [TextDb.signed(amount), before, after]
+
+
+## The names of threats `ids`, each once, in id order (a wave of three Collectors reads
+## "Collector" once).
+func _told_names(ids: Array) -> PackedStringArray:
+	var sorted := ids.duplicate()
+	sorted.sort_custom(func(a: Variant, b: Variant) -> bool: return String(a) < String(b))
+	var out := PackedStringArray()
+	for id in sorted:
+		var w := String(_told_threats.get(id, tr("a threat")))
+		if not out.has(w):
+			out.append(w)
+	return out
 
 
 ## ANIM-R4 H11a: the feed's HP before the raid, from the resolved raid (home under its id).

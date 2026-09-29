@@ -45,7 +45,7 @@ const BAND_WORDS: Array[String] = ["cool", "noticed", "flagged", "hunted"] # TR
 ## ANIM-5 (4.12): the Heat each campaign's posters last showed (view memory, not game
 ## state), so a threshold crossed anywhere (a run, a lost raid) plays once where the Heat
 ## shows next. ANIM-R2 R8, in this order per threshold crossed going up: the number rolls
-## up to the threshold, the "HEAT 25 - NOTICED" banner stamps, the poster distorts briefly
+## up to the threshold, the "HEAT 30 · NOTICED (25+)" banner stamps, the poster distorts briefly
 ## (Fx.heat_pulse_at: local, `heat_pulse` <= 0.3 s; the full-screen corporate wireframe no
 ## longer creeps in: it lingered and read as a display fault), the letters shake; then the
 ## next threshold, one banner per band crossed; then the number rolls on to the Heat. A
@@ -65,8 +65,8 @@ var _crossings: Array[int] = []
 var _banner_at: int = 0
 var _banner_tween: Tween = null
 ## ANIM-R1 M6: the Heat number as shown (it rolls from the Heat last seen), its pop (1 = at
-## rest; it grows and flashes white on a crossing) and the crossing's banner ("HEAT 30 -
-## NOTICED", stamped over the poster, then gone): 0 hidden, 1 shown; its stamp scale.
+## rest; it grows and flashes white on a crossing) and the crossing's banner ("HEAT 30 ·
+## NOTICED (25+)", stamped over the poster, then gone): 0 hidden, 1 shown; its stamp scale.
 var shown_heat: float = 0.0
 var number_scale: float = 1.0
 var banner_alpha: float = 0.0
@@ -273,7 +273,142 @@ func _stamp_banner() -> void:
 	var tw := create_tween()
 	_banner_tween = tw
 	tw.tween_property(self, "banner_alpha", 0.0, Motion.seconds(&"heat_banner")).set_delay(Motion.delay_of(&"heat_banner")).set_ease(e.ease).set_trans(e.trans)
-	tw.parallel().tween_method(func(_v: float) -> void: queue_redraw(), 0.0, 1.0, Motion.seconds(&"heat_banner") + Motion.delay_of(&"heat_banner"))
+	tw.parallel().tween_method(_banner_frame, 0.0, 1.0, Motion.seconds(&"heat_banner") + Motion.delay_of(&"heat_banner"))
+	tw.finished.connect(_update_note)
+	_note_at = Rect2()
+	_banner_frame(0.0)
+
+
+## A frame of the banner's hold and fade: the poster redraws, the note follows it.
+func _banner_frame(_v: float) -> void:
+	queue_redraw()
+	_update_note()
+
+
+# --- ANIM-R5 P9: the consequence note ---------------------------------------------------------
+
+## The band's consequence as a flat note beside the poster while the banner shows (on the
+## tilted sticker it was ~9 px for ~1.6 s and covered the WANTED title): mono lettering never
+## under NOTE_FONT px, x the text size; NOTE_WIDTH wide (x the text size, never wider than
+## the screen less NOTE_MARGIN a side); held as long as the banner (`heat_banner`'s delay, a
+## reading time) and fading with it. It stands below the poster, else above, right, left:
+## the first spot on the screen that covers no usable button, else the least covered.
+const NOTE_FONT := 12
+const NOTE_WIDTH := 260.0
+const NOTE_PAD := 8.0
+const NOTE_GAP := 6.0
+const NOTE_MARGIN := 8.0
+const NOTE_BORDER := 2.0
+var _note: Control = null
+var _note_at: Rect2 = Rect2()
+var _note_from: Rect2 = Rect2()
+
+
+## The note's lettering (px).
+func note_font_size() -> int:
+	return maxi(NOTE_FONT, roundi(NOTE_FONT * Settings.text_scale))
+
+
+## The note's words: what the band the banner names brings ("" when nothing).
+func note_text() -> String:
+	return consequence(_banner_at if _banner_at > 0 else heat)
+
+
+## The note's width (px).
+func note_width() -> float:
+	var w := NOTE_WIDTH * Settings.text_scale
+	if is_inside_tree():
+		w = minf(w, get_viewport_rect().size.x - NOTE_MARGIN * 2.0)
+	return w
+
+
+## The note's lines, wrapped to its width.
+func note_lines() -> PackedStringArray:
+	return wrap_words(Palette.mono(), note_text(), note_font_size(), note_width() - NOTE_PAD * 2.0)
+
+
+func note_size() -> Vector2:
+	var fs := note_font_size()
+	return Vector2(note_width(), note_lines().size() * fs * BANNER_LINE + NOTE_PAD * 2.0)
+
+
+## Where the note stands (global px; see the notes above).
+func note_rect() -> Rect2:
+	var s := note_size()
+	var p := get_global_rect()
+	var screen := get_viewport_rect().grow(-NOTE_MARGIN) if is_inside_tree() else Rect2(Vector2.ZERO, s)
+	var spots: Array[Rect2] = [Rect2(Vector2(p.position.x, p.end.y + NOTE_GAP), s), Rect2(Vector2(p.position.x, p.position.y - NOTE_GAP - s.y), s),
+		Rect2(Vector2(p.end.x + NOTE_GAP, p.position.y), s), Rect2(Vector2(p.position.x - NOTE_GAP - s.x, p.position.y), s)]
+	var buttons: Array[Rect2] = []
+	if is_inside_tree():
+		for n in get_tree().root.find_children("*", "BaseButton", true, false):
+			var b := n as BaseButton
+			if b.is_visible_in_tree() and not b.disabled and b.get_viewport() == get_viewport():
+				buttons.append(b.get_global_rect())
+	var best := Rect2()
+	var best_cover := INF
+	for r in spots:
+		# Kept on the screen (slid along its edge), never over the poster itself.
+		r.position = r.position.clamp(screen.position, screen.end - r.size)
+		if r.intersects(p.grow(-1.0)):
+			continue
+		var cover := 0.0
+		for b in buttons:
+			if b.intersects(r):
+				cover += b.intersection(r).get_area()
+		if cover <= 0.0:
+			return r
+		if cover < best_cover:
+			best_cover = cover
+			best = r
+	return best if best_cover < INF else spots[0]
+
+
+func _update_note() -> void:
+	var show := banner_alpha > 0.0 and note_text() != "" and is_visible_in_tree()
+	if not show:
+		if _note != null:
+			_note.visible = false
+		return
+	if _note == null:
+		_note = Control.new()
+		_note.name = "HeatNote"
+		_note.top_level = true
+		_note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_note.z_index = NOTE_Z
+		_note.draw.connect(_draw_note)
+		add_child(_note, false, Node.INTERNAL_MODE_BACK)
+	var at := get_global_rect()
+	if _note_at == Rect2() or at != _note_from:
+		_note_from = at
+		_note_at = note_rect()
+	_note.position = _note_at.position
+	_note.size = _note_at.size
+	_note.modulate.a = banner_alpha
+	_note.visible = true
+	_note.queue_redraw()
+
+
+## The note's draw order over the page (it is read over whatever it passes).
+const NOTE_Z := 50
+
+
+func _draw_note() -> void:
+	var r := Rect2(Vector2.ZERO, _note.size)
+	var col := banner_color()
+	_note.draw_rect(r.grow(NOTE_BORDER), Color(0, 0, 0, 0.8))
+	_note.draw_rect(r, Palette.NIGHT_SKY)
+	_note.draw_rect(r, col, false, NOTE_BORDER)
+	var f := Palette.mono()
+	var fs := note_font_size()
+	var lines := note_lines()
+	for i in lines.size():
+		_note.draw_string(f, Vector2(NOTE_PAD, NOTE_PAD + fs * BANNER_LINE * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.PAPER)
+
+
+## True while the consequence note shows (tests).
+func note_showing() -> bool:
+	return _note != null and _note.visible
 
 
 ## ANIM-R4 H6: the banner's words: the Heat now, the band it is in and the threshold that
@@ -331,18 +466,19 @@ static func consequence(at: int) -> String:
 ## fit the room even at the floor. The whole tilted box, sub-lines included, stays inside
 ## the room ("room" in the result: banner_room, or on a short small poster whose room under
 ## the bar holds nothing at the floor, banner_room_wide, which takes the bar too).
+## ANIM-R5 P9: the consequence is the flat note beside the poster now (note_lines); the
+## banner carries the band line alone ("subs" stays empty).
 func banner_layout() -> Dictionary:
 	var room := banner_room()
 	var text := banner_text()
-	var sub := consequence(_banner_at if _banner_at > 0 else heat)
-	var key := "%s|%s|%s|%.2f|%s" % [text, sub, room, Settings.text_scale, TranslationServer.get_locale()]
+	var key := "%s|%s|%.2f|%s" % [text, room, Settings.text_scale, TranslationServer.get_locale()]
 	if key == _layout_key:
 		return _layout
 	_layout_key = key
-	_layout = _fit_banner(text, sub, room)
+	_layout = _fit_banner(text, "", room)
 	if _layout.is_empty():
 		var wide := banner_room_wide()
-		_layout = _fit_banner(text, sub, wide)
+		_layout = _fit_banner(text, "", wide)
 		if _layout.is_empty():
 			_layout = _floor_banner(text, wide)
 	return _layout
@@ -352,14 +488,14 @@ var _layout_key: String = ""
 var _layout: Dictionary = {}
 
 
-## The room the banner may cover (local px): the wanted poster's header (WANTED and the
-## mugshot, above the Heat block); the small poster's paper under its Heat bar. Never the
-## number.
+## The room the banner may cover (local px): the wanted poster's mugshot band, under its
+## WANTED title (ANIM-R5 P9: it covered the title), above the Heat block; the small poster's
+## paper under its Heat bar. Never the number.
 func banner_room() -> Rect2:
 	var width := size.x if size.x > 0.0 else custom_minimum_size.x
 	var height := size.y if size.y > 0.0 else custom_minimum_size.y
 	if poster:
-		return Rect2(BANNER_MARGIN, BANNER_GAP, width - BANNER_MARGIN * 2.0, POSTER_BLOCK_TOP - BANNER_GAP * 2.0)
+		return Rect2(BANNER_MARGIN, TITLE_BOTTOM + BANNER_GAP, width - BANNER_MARGIN * 2.0, POSTER_BLOCK_TOP - TITLE_BOTTOM - BANNER_GAP * 2.0)
 	var top := BAR_BOTTOM + BANNER_GAP
 	return Rect2(BANNER_MARGIN, top, width - BANNER_MARGIN * 2.0, maxf(0.0, height - top - BANNER_GAP))
 
@@ -377,6 +513,17 @@ func banner_room_wide() -> Rect2:
 
 ## The top of the Heat bar below the block's top (px).
 const BAR_TOP := 44.0
+## ANIM-R5 P9: the wanted poster's WANTED title: its baseline, lettering and the bottom of
+## its line (px); the banner keeps under it.
+const TITLE_BASELINE := 30.0
+const TITLE_FONT := 26
+const TITLE_BOTTOM := 36.0
+
+
+## ANIM-R5 P9: the WANTED title's box (local px; the wanted poster only).
+func title_rect() -> Rect2:
+	var f := Palette.display()
+	return Rect2(10, TITLE_BASELINE - f.get_ascent(TITLE_FONT), f.get_string_size(tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, TITLE_FONT).x, f.get_height(TITLE_FONT))
 
 
 func _fit_banner(text: String, sub: String, room: Rect2) -> Dictionary:
@@ -622,9 +769,11 @@ func _draw() -> void:
 		_draw_banner(y)
 
 
-## ANIM-R1 M6 / ANIM-R3 B7: the crossing's banner ("HEAT 30 - NOTICED"), tilted like a
-## stamp, in the band's warning colour with an eye glyph, the band's consequence under it;
-## beside the Heat number, never over it (banner_rect), and it fades after its hold.
+## ANIM-R1 M6 / ANIM-R3 B7: the crossing's banner ("HEAT 30 · NOTICED (25+)"), tilted like
+## a stamp, in the band's warning colour with an eye glyph; beside the Heat number, never
+## over it (banner_rect), and it fades after its hold. ANIM-R5 P9: the band's consequence is
+## no longer on the sticker (9 px, tilted): it is the flat note beside the poster
+## (`note_lines`, `_draw_note`).
 func _draw_banner(y: float) -> void:
 	var f := Palette.display()
 	var lay := banner_lines()

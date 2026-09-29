@@ -134,6 +134,9 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	var nodes: Dictionary = results.get("nodes", {})
 	for id in nodes:
 		_node_left[String(id)] = int(nodes[id].get("before", 0))
+	# ANIM-R5 P8: the map's labels keep off the tokens standing on its nodes.
+	if overlay != null:
+		overlay.token_radius = CityMapOverlay.MARKER_SIZE * TOKEN_SCALE * TOKEN_HALO
 	queue_redraw()
 
 
@@ -471,13 +474,24 @@ func banner_rect() -> Rect2:
 	var clear := BANNER_CLEAR * k
 	var r_icon := CityMapOverlay.ICON_RADIUS_BIG * k
 	var bar_bottom := r_icon + (HOME_BAR_GAP + HOME_BAR.y) * k
-	var spots: Array[Vector2] = [
-		p + Vector2(0, -r_icon - clear - size.y * 0.5),
-		p + Vector2(0, -BANNER_LIFT * k - r_icon),
-		p + Vector2(0, bar_bottom + clear + size.y * 0.5),
-		p + Vector2(-r_icon - clear - size.x * 0.5, 0),
-		p + Vector2(r_icon + clear + size.x * 0.5, 0),
-	]
+	# ANIM-R5 P6: the stamp_rect spot search (NeonCity.stamp_rect): the spots round home,
+	# then the same ring of spots further out (BANNER_RINGS steps of the banner's height), the
+	# tilted box tested against every stamp, label, icon, home's bar and threat token; the first
+	# clear spot wins, else the least covered (at 1.6 the first ring's spots all touched CORE's
+	# label or the token standing on it).
+	var spots: Array[Vector2] = []
+	for ring in BANNER_RINGS:
+		var out := ring * (size.y + clear)
+		spots.append_array([
+			p + Vector2(0, -r_icon - clear - size.y * 0.5 - out),
+			p + Vector2(0, bar_bottom + clear + size.y * 0.5 + out),
+			p + Vector2(r_icon + clear + size.x * 0.5 + out, 0),
+			p + Vector2(-r_icon - clear - size.x * 0.5 - out, 0),
+			p + Vector2(r_icon + size.x * 0.5 + out, -r_icon - clear - size.y * 0.5 - out),
+			p + Vector2(-r_icon - size.x * 0.5 - out, -r_icon - clear - size.y * 0.5 - out),
+			p + Vector2(r_icon + size.x * 0.5 + out, bar_bottom + clear + size.y * 0.5 + out),
+			p + Vector2(-r_icon - size.x * 0.5 - out, bar_bottom + clear + size.y * 0.5 + out),
+		])
 	var avoid := banner_avoid()
 	var area := get_rect().grow(-clear)
 	var best := Rect2()
@@ -486,17 +500,41 @@ func banner_rect() -> Rect2:
 		var r := Rect2(c - size * 0.5, size)
 		# Kept inside the map (slid in from an edge).
 		r.position = r.position.clamp(area.position, (area.end - r.size).max(area.position))
+		var tilted := NeonCity._tilted_bounds(r, STAMP_TILT)
 		var hits := 0.0
 		for a in avoid:
 			var g := a.grow(clear * 0.5)
-			if r.intersects(g):
-				hits += r.intersection(g).get_area() + 1.0
+			if tilted.intersects(g):
+				hits += tilted.intersection(g).get_area() + 1.0
 		if hits < best_hits:
 			best_hits = hits
 			best = r
 			if hits == 0.0:
 				break
 	return best
+
+
+## ANIM-R5 P6: rings of spots the banner tries round home (the first at its edge).
+const BANNER_RINGS := 3
+
+
+## ANIM-R5 P6: the threat tokens standing now (local px: each token's halo box).
+func token_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if overlay == null:
+		return out
+	var k := overlay.screen_k()
+	var s := CityMapOverlay.MARKER_SIZE * k * TOKEN_SCALE * TOKEN_HALO
+	var at := _token_positions()
+	for id in at:
+		var t: Dictionary = _tokens[id]
+		var p: Vector2 = at[id]
+		if p.x == INF or clock < float(t.get("enter_at", -INF)):
+			continue
+		if t.has("dead_at") and clock >= float(t["dead_at"]) + float(t.get("dead_at_dur", 0.0)):
+			continue
+		out.append(Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0))
+	return out
 
 
 ## ANIM-R3 B5: what the banner keeps clear of: every stamp, node label and node icon (local
@@ -517,6 +555,7 @@ func banner_avoid() -> Array[Rect2]:
 	if p.x != INF:
 		var w := HOME_BAR.x * k
 		out.append(Rect2(p + Vector2(-w * 0.5, CityMapOverlay.ICON_RADIUS_BIG * k + HOME_BAR_GAP * k), Vector2(w, HOME_BAR.y * k)))
+	out.append_array(token_rects())
 	return out
 
 
