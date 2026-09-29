@@ -78,6 +78,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# tubes' strike and flicker), the two sides' hits one after the other, the RAM refill.
 	&"hit_line_flight", &"ride_swap", &"ride_shrink", &"ride_perfect", &"break_crack", &"modem_sign_strike", &"modem_sign_flicker",
 	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
+	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
+	&"flight_land_pulse",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

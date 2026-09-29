@@ -83,11 +83,12 @@ static func snapshot(c: Control) -> Texture2D:
 
 ## Flies a picture of `source` to `to` (global) with motion `id` (its duration and ease): it lifts `lift` px,
 ## (after a `stamp` word lands on it, when given) travels, shrinks to ARRIVE_MOTION's
-## amplitude and fades into its target. Returns the flying node, or null.
-static func fly(screen: Node, source: Control, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0, clip: Rect2 = Rect2()) -> Control:
+## amplitude and fades into its target. Returns the flying node, or null. ANIM-R5 B5:
+## `on_land` runs when the flight ends (it arrived, or a press ended it): the target pulses.
+static func fly(screen: Node, source: Control, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0, clip: Rect2 = Rect2(), on_land: Callable = Callable()) -> Control:
 	if not Motion.live(id) or source == null or not source.is_inside_tree():
 		return null
-	return fly_node(screen, picture_of(source), source.get_global_rect(), to, id, stamp, lift, clip)
+	return fly_node(screen, picture_of(source), source.get_global_rect(), to, id, stamp, lift, clip, on_land)
 
 
 ## A copy of how `source` looks now: a card draws a fresh copy of itself (ANIM-R3 A7: a
@@ -115,7 +116,7 @@ static func picture_of(source: Control) -> Control:
 ## (global) on `screen`; see `fly`. Returns the node, or null (then freed). ANIM-R3 A7:
 ## with `clip` (global) the flight shows inside that rect only (loot not taken falls within
 ## its window, never across the page that comes in under it).
-static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0, clip: Rect2 = Rect2()) -> Control:
+static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: StringName, stamp: String = "", lift: float = 0.0, clip: Rect2 = Rect2(), on_land: Callable = Callable()) -> Control:
 	var l := layer_for(screen)
 	if not Motion.live(id) or l == null:
 		node.free()
@@ -151,7 +152,7 @@ static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: 
 	tw.tween_property(node, "position", end_pos, d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(node, "scale", Vector2.ONE * Motion.amplitude(ARRIVE_MOTION), d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(node, "modulate:a", 0.0, d * FADE_SHARE).set_delay(d * (1.0 - FADE_SHARE))
-	var f := {"node": holder if holder != null else node, "tween": tw, "to": to + (clip.position if holder != null else Vector2.ZERO), "id": id}
+	var f := {"node": holder if holder != null else node, "tween": tw, "to": to + (clip.position if holder != null else Vector2.ZERO), "id": id, "on_land": on_land}
 	tw.tween_callback(l._end.bind(f))
 	l.flights.append(f)
 	return node
@@ -235,6 +236,9 @@ func _end(f: Dictionary) -> void:
 	if is_instance_valid(n):
 		n.queue_free()
 	flights.erase(f)
+	var land: Callable = f.get("on_land", Callable())
+	if land.is_valid():
+		land.call()
 
 
 func _input(event: InputEvent) -> void:

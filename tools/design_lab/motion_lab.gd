@@ -122,6 +122,8 @@ const DEMOS := {
 	&"ride_perfect": ["scene", "send_hit"], &"break_crack": ["scene", "send_kill"], &"modem_sign_strike": ["screen", "modem"],
 	&"modem_sign_flicker": ["screen", "modem"], &"resolve_side_gap": ["scene", "send_both"], &"resolve_attacker_gap": ["scene", "send_both"],
 	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
+	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy):
+	&"flight_land_pulse": ["pop", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
