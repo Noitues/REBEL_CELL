@@ -176,9 +176,6 @@ func play() -> void:
 	_tween.parallel().tween_property(fate_label, ^"modulate:a", 1.0, d * RECEIPT_SHARE)
 	_tween.parallel().tween_property(back_button, ^"modulate:a", 1.0, d * RECEIPT_SHARE)
 	_tween.tween_callback(finish_now)
-	# PageTransition.settle / Typing.finish_all end a page's motions through this meta (the
-	# stage holds its tween there, as a typing label does): the stage then shows its end.
-	set_meta(Typing.META, _tween)
 
 
 ## True while the sequence plays.
@@ -191,8 +188,6 @@ func finish_now() -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_tween = null
-	if has_meta(Typing.META):
-		remove_meta(Typing.META)
 	_flatline()
 	_set_grade(_grade_to)
 	stamp.scale = Vector2.ONE
@@ -205,19 +200,46 @@ func _flatline() -> void:
 		polaroid.set_expression(PortraitArt.Expr.FLATLINED)
 
 
+## Art pass W9F (ART_BIBLE §11, §9): the city whose grade greys (its &"flatline" context,
+## CityAtmosphere.blend_context), so the grey covers the whole city, behind the subtitle band
+## and the prompt strip too. The screen sets it; without one (tests, a bare stage) the stage
+## greys the backdrop under its own rect as before (GRADE_CODE).
+var atmosphere: CityAtmosphere = null:
+	set(v):
+		atmosphere = v
+		_set_grade(_grade_v)
+var _grade_v: float = 0.0
+
+
+## The city context the grey grades to.
+const FLATLINE_CONTEXT := &"flatline"
+
+
 func _set_grade(v: float) -> void:
-	(grade.material as ShaderMaterial).set_shader_parameter(&"amount", v)
-	grade.visible = v > 0.0
+	_grade_v = v
+	var city_grades := atmosphere != null and is_instance_valid(atmosphere)
+	if city_grades:
+		atmosphere.blend_context(FLATLINE_CONTEXT, v)
+	(grade.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0 if city_grades else v)
+	grade.visible = v > 0.0 and not city_grades
 
 
 ## The grade's amount now (0 colour, 1 grey; tests).
 func grade_amount() -> float:
-	return float((grade.material as ShaderMaterial).get_shader_parameter(&"amount"))
+	return _grade_v
 
 
-func _process(_delta: float) -> void:
-	# A settle took the meta (PageTransition.settle, Typing.finish_all): end now.
-	if _tween != null and not has_meta(Typing.META):
+func _exit_tree() -> void:
+	# The city gets its colour back when the stage goes (a new campaign, the HQ).
+	if atmosphere != null and is_instance_valid(atmosphere) and _grade_v > 0.0:
+		atmosphere.blend_context(FLATLINE_CONTEXT, 0.0)
+
+
+## Art pass W9F: PageTransition.settle's hook (a press during the page's entrance, the
+## review harness): the sequence shows its end. (It rode Typing.META before, which made a
+## "words still typing" check see a stage as typing.)
+func settle_motion() -> void:
+	if running():
 		finish_now()
 
 

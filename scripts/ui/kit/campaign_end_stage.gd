@@ -235,7 +235,7 @@ func _paper_label(words: String, step: int, font: Font) -> Label:
 		l.add_theme_font_override("font", font)
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
 	l.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size.x = story_width()
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	story_labels.append(l)
@@ -408,9 +408,6 @@ func play() -> void:
 	_tween = create_tween()
 	_tween.tween_method(_apply, 0.0, 1.0, Motion.seconds(id))
 	_tween.tween_callback(finish_now)
-	# PageTransition.settle / Typing.finish_all end a page's motions through this meta (as
-	# RunEndStage): the stage then shows its end.
-	set_meta(Typing.META, _tween)
 
 
 ## True while the sequence plays.
@@ -423,8 +420,6 @@ func finish_now() -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_tween = null
-	if has_meta(Typing.META):
-		remove_meta(Typing.META)
 	_apply(1.0)
 
 
@@ -465,14 +460,39 @@ func _apply(u: float) -> void:
 		story.fit.hint.modulate.a = f
 
 
+## Art pass W9F (ART_BIBLE §11, §9): the city whose grade greys (its &"flatline" context,
+## CityAtmosphere.blend_context), so the grey covers the whole city, behind the subtitle band
+## and the prompt strip too. The screen sets it; without one (tests, a bare stage) the stage
+## greys the backdrop under its own rect as before (GRADE_CODE).
+var atmosphere: CityAtmosphere = null:
+	set(v):
+		atmosphere = v
+		_set_grade(_grade_v)
+var _grade_v: float = 0.0
+
+
+## The city context the grey grades to.
+const FLATLINE_CONTEXT := &"flatline"
+
+
 func _set_grade(v: float) -> void:
-	(grade.material as ShaderMaterial).set_shader_parameter(&"amount", v)
-	grade.visible = v > 0.0
+	_grade_v = v
+	var city_grades := atmosphere != null and is_instance_valid(atmosphere)
+	if city_grades:
+		atmosphere.blend_context(FLATLINE_CONTEXT, v)
+	(grade.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0 if city_grades else v)
+	grade.visible = v > 0.0 and not city_grades
 
 
 ## The grade's amount now (0 colour, 1 grey; tests).
 func grade_amount() -> float:
-	return float((grade.material as ShaderMaterial).get_shader_parameter(&"amount"))
+	return _grade_v
+
+
+func _exit_tree_grade() -> void:
+	# The city gets its colour back when the stage goes (a new campaign, the HQ).
+	if atmosphere != null and is_instance_valid(atmosphere) and _grade_v > 0.0:
+		atmosphere.blend_context(FLATLINE_CONTEXT, 0.0)
 
 
 ## The sequence's time now (0..1; 1 = the end state).
@@ -480,10 +500,29 @@ func progress() -> float:
 	return _u
 
 
-func _process(_delta: float) -> void:
-	# A settle took the meta (PageTransition.settle, Typing.finish_all): end now.
-	if _tween != null and not has_meta(Typing.META):
+## Art pass W9F: PageTransition.settle's hook: the sequence shows its end.
+func settle_motion() -> void:
+	if running():
 		finish_now()
+
+
+func _ready() -> void:
+	# Art pass W9F (W8d request): the scrim covers the whole screen, behind the subtitle band
+	# and the prompt strip too (they draw above it), never only the page's rect.
+	scrim.top_level = true
+	scrim.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_fit_scrim()
+	get_viewport().size_changed.connect(_fit_scrim)
+
+
+func _fit_scrim() -> void:
+	if is_inside_tree() and scrim != null:
+		scrim.position = Vector2.ZERO
+		scrim.size = get_viewport_rect().size
+
+
+func _exit_tree() -> void:
+	_exit_tree_grade()
 
 
 func _input(event: InputEvent) -> void:

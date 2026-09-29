@@ -324,6 +324,11 @@ func start_from_code(code: String) -> bool:
 
 func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS, corporation_id: StringName = RunManager.DEFAULT_CORPORATION) -> void:
 	RunManager.new_campaign(seed, corporation_id, ice, home_variant_id, class_id)
+	# Art pass W9F (W8d request): a new campaign starts from no corp lean; the cities read
+	# the new campaign's own progress again.
+	for bg in [background, wireframe]:
+		if bg != null and bg.city != null:
+			bg.city.atmosphere().clear_campaign_progress()
 	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
 		RunManager.campaign.home_variant_id, TextDb.t(RunManager.corporation, "display_name"), RunManager.campaign.story_path_id])
 	show_hq()
@@ -3852,11 +3857,14 @@ func show_end() -> void:
 	var stage := CampaignEndStage.new(won, c.corporation_id, TextDb.t(corp, "display_name"), headline, CrewWall.crew_of(c.roster), beats, records)
 	stage.receipt.tooltip_text = UiTip.fold(ice_records_text())
 	stage.foot_bar = pad_prompts
+	# Art pass W9F: the LOST grey is the city's own flatline context (whole screen).
+	if background != null and background.city != null:
+		stage.atmosphere = background.city.atmosphere()
 	var city := background.city.atmosphere() if background != null and background.city != null else null
 	stage.new_button.text = tr("New campaign")
 	stage.new_button.pressed.connect(func() -> void:
 		if city != null:
-			city.set_campaign_progress(0.0, &"")  # the next campaign starts from no lean
+			city.clear_campaign_progress()  # the next campaign starts from no lean (art pass W9F)
 		RunManager.campaign = null
 		show_start())
 	_icon(stage.new_button, StatIcon.PLAY)

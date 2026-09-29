@@ -116,6 +116,54 @@ func set_context(context: StringName) -> void:
 		_mark()
 
 
+## Art pass W9F: grades toward `context` by `mix` (0..1) from the context in force when the
+## blend began (the run end's and campaign end's grey, &"flatline", over T4). `mix` 0 ends
+## the blend and gives the city back its own context (and, if no screen had named one, its
+## default). Additive to set_context: a screen's own context is kept under the blend.
+func blend_context(context: StringName, mix: float) -> void:
+	mix = clampf(mix, 0.0, 1.0)
+	if mix <= 0.0:
+		if _blend_base == &"":
+			return
+		state.context = _blend_base
+		state.context_from = &""
+		state.context_mix = 1.0
+		if not _blend_had_set:
+			_set.erase("context")
+		_blend_base = &""
+		_mark()
+		return
+	if not CityLookData.CONTEXTS.has(context):
+		return
+	if _blend_base == &"":
+		_blend_base = state.context
+		_blend_had_set = _set.has("context")
+	_set["context"] = true
+	state.context_from = _blend_base
+	state.context = context
+	state.context_mix = mix
+	_mark()
+
+
+## The blend's amount now (0 when none runs).
+func blend_amount() -> float:
+	return state.context_mix if _blend_base != &"" else 0.0
+
+
+var _blend_base: StringName = &""
+var _blend_had_set: bool = false
+
+
+## Art pass W9F (W8d request): forgets the campaign lean a screen set (a new campaign starts
+## from none); a followed city reads the campaign's own progress again.
+func clear_campaign_progress() -> void:
+	_set.erase("progress")
+	if state.progress != 0.0 or state.corp_id != &"":
+		state.progress = 0.0
+		state.corp_id = &""
+		_mark()
+
+
 ## Heat (the band follows Palette.heat_band, from the config's MAJOR levels).
 func set_heat(heat: int) -> void:
 	_set["heat"] = true

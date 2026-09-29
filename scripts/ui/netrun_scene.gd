@@ -3237,6 +3237,10 @@ func _show_end() -> void:
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	IconMark.attach(back, StatIcon.BACK)
 	stage.set_meta(FIRST_FOCUS_META, back)
+	# Art pass W9F: the grey is the city's own flatline context, so it covers the whole city
+	# (behind the subtitle band and the prompt strip too), not only the page's rect.
+	if background != null and background.city != null:
+		stage.atmosphere = background.city.atmosphere()
 	# Never a black void: the city shows behind the end (a fight hid it).
 	background.visible = true
 	_set_panel(stage, false)
