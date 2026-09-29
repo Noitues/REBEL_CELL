@@ -438,14 +438,24 @@ func note_width() -> float:
 	return w
 
 
-## The note's lines, wrapped to its width.
-func note_lines() -> PackedStringArray:
-	return wrap_words(Palette.mono(), note_text(), note_font_size(), note_width() - NOTE_PAD * 2.0)
+## The note's lines, wrapped to its width (`w`: another width to try; the width placed).
+func note_lines(w: float = -1.0) -> PackedStringArray:
+	if w <= 0.0:
+		w = _note_w if _note_w > 0.0 else note_width()
+	return wrap_words(Palette.mono(), note_text(), note_font_size(), w - NOTE_PAD * 2.0)
 
 
-func note_size() -> Vector2:
-	var fs := note_font_size()
-	return Vector2(note_width(), note_lines().size() * fs * BANNER_LINE + NOTE_PAD * 2.0)
+func note_size(w: float = -1.0) -> Vector2:
+	if w <= 0.0:
+		w = _note_w if _note_w > 0.0 else note_width()
+	return Vector2(w, note_lines(w).size() * note_font_size() * BANNER_LINE + NOTE_PAD * 2.0)
+
+
+## ANIM-R6 C5: the width the note was placed at (0: its full width), and the narrower shares
+## of it it tries when no spot at its full width is free of words (at 1.6 the HQ has room for
+## a narrow note under PIRATE RADIO only).
+var _note_w: float = 0.0
+const NOTE_SHARES: Array[float] = [1.0, 0.8, 0.65]
 
 
 ## Where the note stands (global px; see the notes above). ANIM-R6 C5: it covers no text
@@ -454,13 +464,31 @@ func note_size() -> Vector2:
 ## (at most NOTE_SLIDE_STEPS), the nearest spot on the screen that covers no usable button and
 ## no words; else the least covered one.
 func note_rect() -> Rect2:
-	var s := note_size()
+	var avoid := note_avoid()
+	var best := Rect2()
+	var best_cover := INF
+	var best_w := 0.0
+	for share in NOTE_SHARES:
+		var w := note_width() * share
+		var found := _note_spot(note_size(w), avoid)
+		if float(found[1]) <= 0.0:
+			_note_w = w
+			return found[0]
+		if float(found[1]) < best_cover:
+			best_cover = float(found[1])
+			best = found[0]
+			best_w = w
+	_note_w = best_w
+	return best
+
+
+## The spot for a note of size `s` covering the least of `avoid`: [rect, covered area].
+func _note_spot(s: Vector2, avoid: Array[Rect2]) -> Array:
 	var p := get_global_rect()
 	var screen := get_viewport_rect().grow(-NOTE_MARGIN) if is_inside_tree() else Rect2(Vector2.ZERO, s)
 	var starts: Array[Rect2] = [Rect2(Vector2(p.position.x, p.end.y + NOTE_GAP), s), Rect2(Vector2(p.position.x, p.position.y - NOTE_GAP - s.y), s),
 		Rect2(Vector2(p.end.x + NOTE_GAP, p.position.y), s), Rect2(Vector2(p.position.x - NOTE_GAP - s.x, p.position.y), s)]
 	var steps: Array[Vector2] = [Vector2(0, NOTE_SLIDE), Vector2(0, -NOTE_SLIDE), Vector2(NOTE_SLIDE, 0), Vector2(-NOTE_SLIDE, 0)]
-	var avoid := note_avoid()
 	var best := Rect2()
 	var best_cover := INF
 	for i in NOTE_SLIDE_STEPS + 1:
@@ -476,11 +504,11 @@ func note_rect() -> Rect2:
 				if o.intersects(r):
 					cover += o.intersection(r).get_area()
 			if cover <= 0.0:
-				return r
+				return [r, 0.0]
 			if cover < best_cover:
 				best_cover = cover
 				best = r
-	return best if best_cover < INF else starts[0]
+	return [best, best_cover] if best_cover < INF else [starts[0], INF]
 
 
 ## ANIM-R6 C5: how far a note spot slides a step (px) and the most steps it slides.
@@ -501,7 +529,10 @@ func note_avoid() -> Array[Rect2]:
 		if c is BaseButton:
 			if not (c as BaseButton).disabled:
 				out.append(c.get_global_rect())
-		elif (c is Label and (c as Label).text != "") or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text() != ""):
+		elif (c is Label and (c as Label).text != "") or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text() != "") \
+				or c is HudStats or c is PadPrompts or c is SubtitleStrip:
+			# Drawn words too: the top bar's tags, the pad prompts, the subtitles (at 1.6 the note
+			# went up over the CREW tag).
 			out.append(c.get_global_rect())
 	return out
 

@@ -1667,7 +1667,11 @@ func _prebake_grid() -> void:
 		return
 	# ANIM-R6 C9: behind the HQ page's own city (the Grid's bake took the one build slot first
 	# and the HQ waited on the silhouette): asked for once the HQ's view is covered.
-	if panel_name == "hq" and background != null and background.visible and background.city.is_baked() and not background.city.view_covered():
+	# ANIM-R6 C9: only while the HQ page shows (a page left at once must not queue the Grid's
+	# bake ahead of its own: the campaign end sat on the silhouette behind it).
+	if panel_name != "hq":
+		return
+	if background != null and background.visible and background.city.is_baked() and not background.city.view_covered():
 		if not background.city.rebuilt.is_connected(_prebake_grid):
 			background.city.rebuilt.connect(_prebake_grid, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
 		return
@@ -3368,14 +3372,12 @@ const PLAYOUT_MIN_ZOOM := 1.2
 func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 	if not is_instance_valid(overlay) or overlay != city_overlay or sites.is_empty():
 		return 0.0
-	if not _playout_open.is_empty():
-		# ANIM-R6 C10: the first framed step opens on CORE and the entries fitted to the laid-out
-		# map (the frame the mount could only guess), and eases to its fight from there.
-		wireframe.frame_points(_playout_open, fight_area(_fight_area), PLAYOUT_ZOOM, PLAYOUT_MIN_ZOOM)
-		wireframe.settle_camera()
-		wireframe.city.update_camera()  # the fight's frame eases from this one
-		_playout_open = PackedVector2Array()
 	var pts := PackedVector2Array()
+	if not _playout_open.is_empty():
+		# ANIM-R6 C10: the first framed step keeps CORE and the entries in its frame with its
+		# fight (the raid opened on the far Site with CORE at the screen's edge).
+		pts.append_array(_playout_open)
+		_playout_open = PackedVector2Array()
 	for id in sites:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
 	return wireframe.frame_points(pts, fight_area(_fight_area), PLAYOUT_ZOOM, PLAYOUT_MIN_ZOOM)

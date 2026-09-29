@@ -89,6 +89,19 @@ func caption_layout() -> Dictionary:
 	return {"lines": last, "fs": low, "image": maxf(0.0, minf(room, _image_room(last.size(), low)))}
 
 
+## ANIM-R6 C6: never narrower than the caption's longest word at its floor (plus the insets),
+## as tall in proportion: a word is never broken between letters (the dossier's compact
+## Polaroid at 1.6 is 60 px wide and "Breaker" at 19 px needs about 70).
+func _get_minimum_size() -> Vector2:
+	var f := Palette.marker()
+	var widest := 0.0
+	for word in caption.split(" ", false):
+		widest = maxf(widest, f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, caption_floor()).x)
+	var w := ceilf(widest + CAPTION_INSET * 2.0)
+	var base := custom_minimum_size if custom_minimum_size.x > 0.0 else Vector2(110, 134)
+	return Vector2(w, ceilf(w * base.y / base.x)) if w > base.x else Vector2.ZERO
+
+
 ## The picture's side that leaves room under it for `count` caption lines at `fs` (px).
 func _image_room(count: int, fs: int) -> float:
 	return size.y - CAPTION_INSET - Palette.marker().get_height(fs) * count - CAPTION_BOTTOM
