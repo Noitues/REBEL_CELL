@@ -45,6 +45,9 @@ func _ready() -> void:
 	if Engine.has_singleton("Settings") or has_node("/root/Settings"):
 		get_node("/root/Settings").changed.connect(_apply_volumes)
 	_apply_volumes()
+	# A quiet windowed run (tools/run_windowed.py) makes no sound; `played` still logs.
+	if Settings.quiet_window():
+		AudioServer.set_bus_mute(AudioServer.get_bus_index(&"Master"), true)
 
 
 # --- Public ----------------------------------------------------------------------------------

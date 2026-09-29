@@ -143,7 +143,8 @@ def main() -> int:
             shutil.rmtree(shard_dir)
         shard_dir.mkdir(parents=True)
         xml = shard_dir / "results.xml"
-        cmd = [args.godot, "--headless", "--path", str(ROOT), "-s", "addons/gut/gut_cmdln.gd",
+        # Headless already means no window and the Dummy audio driver; the flag says so.
+        cmd = [args.godot, "--headless", "--audio-driver", "Dummy", "--path", str(ROOT), "-s", "addons/gut/gut_cmdln.gd",
                "-gconfig=", "-gexit", "-glog=1", "-gtest=" + ",".join(sh),
                "-gjunit_xml_file=" + str(xml)] + args.gut_arg
         log = open(shard_dir / "gut.log", "w", encoding="utf-8", errors="replace")

@@ -224,8 +224,11 @@ repeatable. Verified on this Windows machine (Godot 4.7.2; it needs a real displ
 not `--headless`):
 
 ```
-godot --path . --resolution 1280x720 --write-movie <dir>/f.png --fixed-fps 30   --quit-after 40 res://tools/design_lab/motion_lab.tscn -- --demo-anim=card_hover
+python tools/run_windowed.py --log <dir>/godot.log -- --resolution 1280x720 --write-movie <dir>/f.png --fixed-fps 30 --quit-after 40 res://tools/design_lab/motion_lab.tscn -- --demo-anim=card_hover
 ```
+
+(Always through `tools/run_windowed.py`, from a worktree or a copy: the window never
+takes focus and makes no sound. See TEST_SUITE.md "Windowed checks".)
 
 It writes `<dir>/f00000000.png` ... `f00000039.png` (and an `f.wav`). The log prints
 `motion_lab: card_hover starts on frame 6`. Redirect the output to a file; never pipe
