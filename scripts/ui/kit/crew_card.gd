@@ -60,7 +60,7 @@ const SHADOW_OFFSET := Vector2(4, 5)
 const HP_STRIP_H := 16.0
 const HP_BAR_H := 8.0
 const HP_BAR_Y := 4.0
-const STAT_GAP := UiTheme.SP_S + 2
+const STAT_GAP := UiTheme.SP_S
 
 var _stats: HFlowContainer
 var _info: Label
@@ -101,7 +101,8 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	_glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_glyph.draw.connect(_draw_glyph)
 	tags_row.add_child(_glyph)
-	var tags := _label(tr("// %s") % p_class.to_upper(), DETAIL_SIZE, Palette.mono())
+	# Compact, the class sits in a narrow column beside the Polaroid: its name alone.
+	var tags := _label(p_class.to_upper() if compact else tr("// %s") % p_class.to_upper(), DETAIL_SIZE, Palette.mono())
 	tags.name = "ClassTag"
 	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tags.size_flags_horizontal = Control.SIZE_EXPAND_FILL
