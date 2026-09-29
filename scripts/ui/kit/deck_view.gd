@@ -24,8 +24,6 @@ var hint_label: Label
 const GRID_WIDTH := 860.0
 const GRID_GAP := 14.0
 const CARDS_PER_ROW := 4
-## Card rarities in words (keys).
-const RARITY_WORDS: Array[String] = ["Common", "Uncommon", "Rare", "Boss"] # TR
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -248,38 +246,38 @@ func close() -> void:
 	UiFocus.release(self)
 
 
-## The card detail popup for deck index `index`: the card, its text, and Close.
+## The card detail for deck index `index` (W4, ART_BIBLE 6.3): the card at detail size with
+## its whole art and rules, beside a glass notes panel that never repeats the face's text
+## (InspectPopup.card_detail), centred over the viewer. Esc or Close closes it.
 func open_card(index: int) -> void:
 	if _popup != null and is_instance_valid(_popup):
 		_popup.queue_free()
 	var card := lookup.get_content(deck[index]) as CardData
-	var pop := TerminalWindow.new(tr("CARD DETAIL"), Palette.CELL_ACID)
-	pop.name = "CardDetail"
-	pop.position = Vector2(360, 130)
-	pop.custom_minimum_size = Vector2(560, 0)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
-	pop.body.add_child(row)
-	var big := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[index]), card.ram_cost if card != null else 0, TextDb.t(card, "description") if card != null else "", index).with_card(card)
-	big.hotkey = ""
-	big.custom_minimum_size = Vector2(170, 224)
-	big.focus_mode = Control.FOCUS_NONE
-	row.add_child(big)
-	var info := VBoxContainer.new()
-	info.custom_minimum_size.x = 320
-	row.add_child(info)
-	if card != null:
-		for line in [tr("%s  //  %d RAM") % [TextDb.t(card, "display_name").to_upper(), card.ram_cost],
-				tr(RARITY_WORDS[clampi(card.rarity, 0, 3)]) + (tr(" // exhausts") if card.exhaust else ""), Codex.describe(card)]:
-			var l := Label.new()
-			l.text = line
-			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			l.custom_minimum_size.x = 320
-			info.add_child(l)
-	var close_btn := Button.new()
-	close_btn.text = tr("Close")
-	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
-	pop.body.add_child(close_btn)
-	add_child(pop)
-	_popup = pop
-	UiFocus.focus_first.call_deferred(pop)
+	var s := Settings.text_scale
+	var view := get_viewport_rect().size if is_inside_tree() else Vector2(DETAIL_VIEW)
+	var room := view - Vector2.ONE * (UiTheme.SAFE_MARGIN * 2.0)
+	var holder := Control.new()
+	holder.name = "CardDetailHolder"
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	holder.mouse_filter = Control.MOUSE_FILTER_STOP
+	var dim := ColorRect.new()
+	dim.color = Palette.SCRIM
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(dim)
+	var close_it := func() -> void:
+		if is_instance_valid(holder):
+			holder.queue_free()
+		_popup = null
+	var row := InspectPopup.card_detail(card, TextDb.t(card, "display_name") if card != null else String(deck[index]),
+		TextDb.t(card, "description") if card != null else "", s, room, close_it)
+	holder.add_child(row)
+	add_child(holder)
+	_popup = holder
+	# Centred once laid out.
+	row.reset_size()
+	row.position = ((view - row.get_combined_minimum_size()) * 0.5).floor()
+	UiFocus.focus_first.call_deferred(holder)
+
+
+## The viewport the detail is laid out for when the viewer is not in a tree (px).
+const DETAIL_VIEW := Vector2i(1280, 720)

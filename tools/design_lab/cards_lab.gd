@@ -201,4 +201,14 @@ func _foil_strip() -> void:
 
 
 func _detail() -> void:
-	sheet.add_child(_heading("CARD DETAIL  //  text scale %.1f" % scale_k))
+	sheet.add_child(_heading("CARD DETAIL  //  text scale %.1f  //  the card taped beside its glass notes" % scale_k))
+	var row := _row()
+	for id in [&"hot_patch", &"short_circuit"]:
+		var card := _card(id)
+		row.add_child(InspectPopup.card_detail(card, TextDb.t(card, "display_name"), TextDb.t(card, "description"), scale_k,
+			Vector2(DETAIL_ROOM), func() -> void: pass))
+	sheet.add_child(row)
+
+
+## The room one detail gets in the lab: the game's 1280x720 less its safe margins (px).
+const DETAIL_ROOM := Vector2i(1232, 672)

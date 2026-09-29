@@ -280,3 +280,48 @@ func test_the_deck_view_shows_whole_cards() -> void:
 			assert_true(z.fit_whole, "the deck view shows the full face")
 			assert_true(z.text_whole(), "%s x%.1f: the whole text shows" % [deck[i], s])
 	Settings.set_text_scale(1.0)
+
+
+# --- 5. The detail view (6.3; critique 54) -------------------------------------------------------
+
+func test_the_detail_notes_never_repeat_the_face() -> void:
+	for card in _cards():
+		var title := TextDb.t(card, "display_name")
+		var rules := TextDb.t(card, "description").strip_edges()
+		var notes := InspectPopup.card_notes(card)
+		assert_gt(notes.size(), 2, "%s: type, stock and rarity at least" % card.id)
+		for n in notes:
+			assert_false(n.contains(rules), "%s: a note repeats the rules text" % card.id)
+			assert_false(rules.contains(n), "%s: note '%s' is on the face already" % [card.id, n])
+			assert_ne(n.to_upper(), title.to_upper(), "%s: a note repeats the title" % card.id)
+		assert_true(notes[0].contains(TranslationServer.translate(String(CardArt.TYPE_WORDS[CardArt.type_of(card)]))), "%s: the notes say its type" % card.id)
+
+
+func test_the_deck_detail_shows_the_card_at_detail_size_with_whole_art() -> void:
+	var deck: Array[StringName] = [&"hot_patch", &"leech_worm"]
+	var lookup := ContentLookup.new()
+	for id in deck:
+		lookup.add(_card(id))
+	for s in [1.0, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(s)
+		var view := DeckView.new(deck, lookup)
+		add_child_autofree(view)
+		await get_tree().process_frame
+		view.open_card(0)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var row := view.find_child("CardDetail", true, false) as Control
+		assert_not_null(row, "the detail opens")
+		var big := InspectPopup.detail_card(row)
+		assert_eq(big.size_mode, ZineCard.SizeMode.DETAIL, "the card at detail size")
+		assert_true(big.text_whole(), "x%.1f: every word of its rules" % s)
+		var art: Rect2 = big.face_layout()["art"]
+		assert_gt(art.size.x / art.size.y, ZineCard.ART_ASPECT - 0.35, "x%.1f: the art shown wide (3:2 at 1.0)" % s)
+		var labels: Array[String] = []
+		for n in row.find_children("*", "Label", true, false):
+			labels.append((n as Label).text)
+		for l in labels:
+			assert_false(l.contains(TextDb.t(_card(&"hot_patch"), "description")), "no second copy of the rules text")
+		assert_true(Rect2(Vector2.ZERO, Vector2(1280, 720)).encloses(row.get_global_rect()), "x%.1f: the detail on screen" % s)
+		assert_false(big.get_parent() is TerminalWindow, "the paper card is not inside the glass (ART_BIBLE 2)")
+	Settings.set_text_scale(1.0)
