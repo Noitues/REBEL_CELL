@@ -2430,6 +2430,7 @@ func show_raid() -> void:
 	for site_id in claimed:
 		orders.add_child(_node_order_row(site_id, projection, claimed))
 	var go := HBoxContainer.new()
+	go.name = "RaidGo"
 	go.add_theme_constant_override("separation", 10)
 	side.add_child(go)
 	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends.
@@ -2437,7 +2438,13 @@ func show_raid() -> void:
 	run_btn.name = "RunRaid"
 	run_btn.theme_type_variation = &"HotButton"
 	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
-	_add_tip(go, _icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK), tr("Back to the HQ; the raid waits until you start the defence."))
+	var back := _add_tip(go, _icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK), tr("Back to the HQ; the raid waits until you start the defence.")) as Button
+	back.name = "RaidBack"
+	# Art pass W1: the HotButton now scales with the text (ART_BIBLE §4.3.1). At big text
+	# the secondary Back shows its icon only (its words stay in the tooltip), like the
+	# Grid's step buttons (STEP_ICONS_SCALE), so the row keeps the column on screen.
+	if Settings.text_scale >= STEP_ICONS_SCALE - 0.001:
+		back.text = ""
 	# H24 S14: the same words and tooltip as the HQ's ARMORY badge (assets banked, not
 	# deployed, of the Armory's room).
 	var loadout := TerminalWindow.new(tr("DEFENSE LOADOUT // %s") % armory_words(), Palette.CELL_PINK)

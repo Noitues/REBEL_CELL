@@ -137,14 +137,7 @@ func test_raid_setup_end_and_title_panels_fit_at_every_text_scale() -> void:
 		if not c.pending_raids.is_empty():
 			hq.show_raid()
 			await _frames()
-			# Art pass W1: the HotButton (RUN THE RAID) now scales with the text (ART_BIBLE
-			# §4.3.1), which widens the raid setup's button row past 1280 px at 1.6. The row's
-			# reflow belongs to the raid setup layout (W8b, hq_scene.gd); until then the 1.6
-			# overflow is reported as pending, not hidden. At 1.0 it must still fit.
-			if scale > 1.0 and _width(hq._panel) > 1280.0:
-				pending("W8b: raid setup %d px at %.1f after the HotButton scales (W1)" % [_width(hq._panel), scale])
-			else:
-				assert_true(_width(hq._panel) <= 1280.0, "raid setup %d px at %.1f" % [_width(hq._panel), scale])
+			assert_true(_width(hq._panel) <= 1280.0, "raid setup %d px at %.1f" % [_width(hq._panel), scale])
 		c.story_beats_revealed = 99
 		c.outcome = CampaignState.Outcome.WON
 		hq.show_end()
