@@ -26,6 +26,10 @@ const MENU_W_SCALE_MAX := 1.3
 const NOTE_OVERLAP := UiTheme.SP_L
 ## Stats grid columns (§11: 3), and the rows of section tabs the codex allows for.
 const STAT_COLUMNS := 3
+## A stats cell's width at text scale 1.0 (px): its longest word fits whole.
+const STAT_CELL_W := 150.0
+## Seconds before a --demo-page-after page opens (review captures only).
+const DEMO_PAGE_DELAY := 1.0
 ## Frames a new page checks that it fits under the logo (see _trim_page).
 const TRIM_PASSES := 3
 ## The uplink panel's field columns.
@@ -136,6 +140,13 @@ func _ready() -> void:
 		show_stats()
 	else:
 		show_main()
+	# Review captures (W8a): --demo-page-after=slots opens that page DEMO_PAGE_DELAY s after
+	# the main menu, so a Movie Maker run records the page transition.
+	for a in args:
+		if a.begins_with("--demo-page-after="):
+			var page := "show_" + a.trim_prefix("--demo-page-after=")
+			if has_method(page):
+				get_tree().create_timer(DEMO_PAGE_DELAY).timeout.connect(Callable(self, page))
 
 
 ## Esc / B on a title page goes back to the main menu (Options and the confirm answer it
@@ -174,7 +185,9 @@ func _set_panel(p: Control, name: String) -> void:
 	var calm: Array[Control] = [p]
 	background.set_calm_controls(calm)
 	_trim_left = TRIM_PASSES
-	_trim_page()
+	# From the next frame: the page's views fit themselves as it is laid out first.
+	if is_inside_tree() and not get_tree().process_frame.is_connected(_trim_page):
+		get_tree().process_frame.connect(_trim_page, CONNECT_ONE_SHOT)
 
 
 ## §5.3: a page whose rows outside its scrolling view took more room than reserved (the
@@ -255,6 +268,7 @@ func show_main() -> void:
 			var line := slot_line(latest, summary)
 			# On the pink primary the line is ink (§3.7: 4.5:1 and more).
 			line.color = Palette.INK
+			line.icon_color = Palette.INK
 			IconLine.attach(cont, line)
 	_item(box, tr("Campaigns"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."))
 	_item(box, tr("Tutorial"), start_tutorial, StatIcon.TUTORIAL, tr("A guided first fight."))
@@ -300,7 +314,8 @@ func show_main() -> void:
 	plan.label.add_theme_font_override("normal_font", Palette.marker())
 	plan.label.add_theme_font_size_override("normal_font_size", UiTheme.font_px(UiTheme.BODY))
 	plan.label.scroll_following = false
-	plan.append(tr("1. BREACH\n2. DISABLE\n3. EXFIL"))
+	# Three lines and no trailing break (append adds one: a fourth, empty line was cut, W10 lint).
+	plan.label.append_text(tr("1. BREACH\n2. DISABLE\n3. EXFIL"))
 	plan.rotation_degrees = PLAN_TILT
 	plan.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plan.label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -433,6 +448,8 @@ func show_stats() -> void:
 	# Stats: a 3-column grid of icon + number fields, each named under it (GLASS data).
 	var stats := TerminalWindow.new(tr("STATS"), Palette.NET_CYAN)
 	stats.name = "Stats"
+	# As wide as its grid (§5.3: no empty glass).
+	stats.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var grid := GridContainer.new()
 	grid.name = "StatGrid"
 	grid.columns = STAT_COLUMNS
@@ -528,6 +545,9 @@ func _stat_cell(cell: Array) -> Control:
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	l.add_theme_color_override("font_color", Palette.TEXT_MID)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Wraps at word boundaries at the cell's width, never inside a word (§4.3 rule 3).
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = STAT_CELL_W * Settings.text_scale
 	v.add_child(l)
 	return v
 
@@ -536,6 +556,8 @@ func show_options() -> void:
 	var box := VBoxContainer.new()
 	box.name = "OptionsPage"
 	var panel := SettingsPanel.new()
+	# Its own width (PANEL_W at the text scale), not the page's: no empty glass (§5.3).
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	panel.fit_room(page_room())
 	panel.closed.connect(show_main)
 	box.add_child(panel)

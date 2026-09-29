@@ -482,7 +482,9 @@ func test_key_hints_follow_the_device_outside_combat() -> void:
 	var menu := PauseMenu.new()
 	add_child_autofree(menu)
 	await _frames()
-	assert_eq(menu.resume_button.text, ("Resume %s" % Settings.hint(&"open_settings")).strip_edges())
+	# Art pass W8a (ART_BIBLE 12): with a pad the prompt bar names the button, not "[Menu]".
+	assert_eq(menu.resume_button.text, "Resume")
+	assert_true(menu.prompts.visible, "the pause menu's prompt bar")
 	menu.show_options()
 	await _frames()
 	# Art pass W8a (ART_BIBLE 12): with a pad the prompt bar names the button; the words

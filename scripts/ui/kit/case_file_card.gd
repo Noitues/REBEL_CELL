@@ -137,9 +137,10 @@ func _label(words: String, step: int, font: Font, col: Color = Palette.INK) -> L
 
 
 func _fill_empty() -> void:
-	var l := _label(tr("EMPTY SLOT"), UiTheme.LABEL, Palette.display())
+	# An empty folder is only its dashed outline on the glass: glass words (§3.7: 4.5:1 there).
+	var l := _label(tr("EMPTY SLOT"), UiTheme.LABEL, Palette.display(), Palette.TEXT_HI)
 	l.name = "Empty"
-	var hint := _label(tr("No campaign filed here yet."), UiTheme.BODY, Palette.mono())
+	var hint := _label(tr("No campaign filed here yet."), UiTheme.BODY, Palette.mono(), Palette.TEXT_HI)
 	hint.name = "EmptyHint"
 
 

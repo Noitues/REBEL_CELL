@@ -150,13 +150,20 @@ func _init() -> void:
 		b.toggle_mode = true
 		b.button_group = _tab_group
 		b.theme_type_variation = UiTheme.SECONDARY
+		CodexSpread.tab_marker(b)
 		var sn: String = n
 		b.pressed.connect(func() -> void: show_section(sn))
 		_tabs.add_child(b)
 		tab_buttons[n] = b
 	_body = VBoxContainer.new()
 	_body.name = "Sections"
-	_fit = FitScroll.new(_body, 0.0)
+	# Room at the sides for a focused control's pad scale (1.03) inside the scrolling view.
+	var pad_room := MarginContainer.new()
+	pad_room.name = "PadRoom"
+	for side in ["margin_left", "margin_right"]:
+		pad_room.add_theme_constant_override(side, UiTheme.SP_S)
+	pad_room.add_child(_body)
+	_fit = FitScroll.new(pad_room, 0.0)
 	_fit.name = "SectionScroll"
 	box.add_child(_fit)
 	_build_widgets()
@@ -310,6 +317,7 @@ func show_section(name_key: String) -> void:
 	for n in sections:
 		(sections[n] as Control).visible = n == name_key
 		(tab_buttons[n] as Button).set_pressed_no_signal(n == name_key)
+		CodexSpread.show_tab(tab_buttons[n] as Button, n == name_key)
 	if _bind_note != null:
 		_bind_note.text = ""
 	UiWrap.fit(self)
@@ -340,7 +348,7 @@ func panel_width() -> float:
 
 ## The width inside the glass the sections lay out in (px).
 func content_width() -> float:
-	return panel_width() - UiTheme.PANEL_PAD_H * 2 - SCROLL_ROOM
+	return panel_width() - UiTheme.PANEL_PAD_H * 2 - SCROLL_ROOM - UiTheme.SP_S * 2
 
 
 ## The size every tab shows at (the largest section's, px).

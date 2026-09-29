@@ -15,6 +15,8 @@ extends VBoxContainer
 const COLUMN_CHARS := 64
 const MAX_LINE_CHARS := 70
 const SAMPLE := "the cell runs quiet nets through the corporate city at night, "
+## The chosen tab's rule (px).
+const TAB_MARK_H := 3.0
 ## The glyph's side at text scale 1.0 (px, §11: 24).
 const GLYPH := 24.0
 ## Section StatIcons (a section without one uses CODEX).
@@ -56,11 +58,14 @@ func _init(p_entries: Dictionary, max_height: float = 420.0, p_max_width: float 
 		b.button_group = _group
 		b.theme_type_variation = UiTheme.SECONDARY
 		IconMark.attach(b, SECTION_ICONS.get(name_key, StatIcon.CODEX))
+		tab_marker(b)
 		var n: String = name_key
 		b.pressed.connect(func() -> void: show_section(n))
 		tabs.add_child(b)
 	spread = ZinePanel.new(tr("CODEX"), 0.0)
 	spread.name = "Spread"
+	# As wide as its columns (§5.3: no empty paper beside them).
+	spread.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var page := VBoxContainer.new()
 	page.name = "Page"
 	page.add_theme_constant_override("separation", UiTheme.SP_S)
@@ -103,6 +108,7 @@ func show_section(name_key: String) -> void:
 	section = name_key
 	for b in tabs.get_children():
 		(b as Button).set_pressed_no_signal((b as Button).text == tr(name_key))
+		show_tab(b as Button, (b as Button).text == tr(name_key))
 	heading.text = tr(name_key).to_upper()
 	for c in columns.get_children():
 		columns.remove_child(c)
@@ -174,6 +180,30 @@ func _draw_glyph(g: Control, name_key: String, item: Dictionary) -> void:
 				g.draw_texture_rect(tex, Rect2(c - Vector2.ONE * r * 0.75, Vector2.ONE * r * 1.5), false, Palette.corp_color(corp))
 	else:
 		StatIcon.draw(g, c, r * 0.9, SECTION_ICONS.get(name_key, StatIcon.CODEX), Palette.INK)
+
+
+## A glass tab's "chosen" mark: a CELL_PINK rule along its foot (the glass title rule's
+## colour), shown by `show_tab`. Shared by the Options tabs.
+static func tab_marker(b: Button) -> void:
+	var mark := ColorRect.new()
+	mark.name = "TabMark"
+	mark.color = Palette.CELL_PINK
+	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mark.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	mark.offset_top = -TAB_MARK_H
+	mark.visible = false
+	b.add_child(mark)
+
+
+## Shows or hides tab `b`'s chosen mark (and its label in TEXT_HI when chosen).
+static func show_tab(b: Button, chosen: bool) -> void:
+	var mark := b.get_node_or_null("TabMark") as Control
+	if mark != null:
+		mark.visible = chosen
+	if chosen:
+		b.add_theme_color_override(&"font_color", Palette.TEXT_HI)
+	else:
+		b.remove_theme_color_override(&"font_color")
 
 
 ## Every word on the spread now (tests: "Lexicon" is a tab, entries are searchable).

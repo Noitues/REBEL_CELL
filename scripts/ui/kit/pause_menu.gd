@@ -18,6 +18,8 @@ var settings_panel: SettingsPanel = null
 var codex_note: CodexSpread = null
 ## The campaign code field (null without a campaign).
 var code_field: CodeField = null
+## The pad's prompt bar (shown only while a pad is in use).
+var prompts: PadPrompts = null
 var _menu: VBoxContainer
 var _host: VBoxContainer
 var resume_button: Button
@@ -104,6 +106,11 @@ func _init() -> void:
 		code_field.field.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		row.add_child(code_field)
 		_menu.add_child(row)
+	# §5.2: the prompt bar at the menu's foot while a pad is in use.
+	prompts = PadPrompts.new()
+	prompts.name = "PadPrompts"
+	_menu.add_child(prompts)
+	_relabel()
 	# Focus moves slide the highlight and type the line in (Animation pass ANIM-6).
 	MenuMotion.attach(_menu)
 	# ANIM-R5 P4: as tall as what it shows; Options and the Codex grow it up to MENU_SIZE.
@@ -170,6 +177,10 @@ var _panel: ZinePanel = null
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY and _panel != null:
+		if code_field != null:
+			# The whole code shows in its field (the field's own least width is a seed's).
+			var px := UiTheme.font_px(UiTheme.BODY)
+			code_field.field.custom_minimum_size.x = ceilf(Palette.mono().get_string_size(code_field.value + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x) + UiTheme.SP_M
 		_fit_height()
 		# A wrapped line (the code heading at 1.6) knows its height only once laid out at its
 		# width: fitted again after the first layout.
@@ -229,7 +240,11 @@ func _confirm_quit() -> void:
 
 ## "Resume [Esc]" / "Resume [Start]": the hint follows the device and the binds (H20).
 func _relabel() -> void:
-	resume_button.text = ("%s %s" % [tr("Resume"), Settings.hint(&"open_settings")]).strip_edges()
+	# §12: with a pad the prompt bar names the buttons; the words carry no "[Menu]".
+	var hint := "" if Settings.pad_active else Settings.hint(&"open_settings")
+	resume_button.text = ("%s %s" % [tr("Resume"), hint]).strip_edges()
+	if prompts != null:
+		prompts.set_prompts([["ui_accept", "Select"], ["ui_cancel", "Resume"]])
 
 
 func show_options() -> void:
