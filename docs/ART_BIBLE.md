@@ -165,7 +165,7 @@ Sizes are in reference pixels of the 1280×720 base viewport, **before** `Settin
 
 - Numbers in the combat hub fit the hub at every text scale (STYLE_GUIDE 5.2); use `heading` and shrink to `label` before overlapping anything.
 - Line length: ≤ 70 characters for body text; wider panels use two columns.
-- Tracking: Anton +2%, Share Tech Mono labels in CAPS +8%, everything else default.
+- Tracking, in px per step at text scale 1.0 (× `text_scale`, rounded, never below the 1.0 value; `UiTheme.TRACKING_PX`): Anton +1 at `caption`–`title`, +2 at `heading` and `display`, +3 at `hero`; Share Tech Mono labels in CAPS +1 at `caption`–`label`, +2 at `title` and `heading`, +3 at `display`, +4 at `hero`; everything else default (0). (A percentage rounded to 0 px below `heading`.)
 
 ### 4.3 Hard type rules
 1. **Every** font size comes from the scale via `UiTheme` and is multiplied by `text_scale`. A literal size in a view is a bug. Example: `ui_theme.gd` sets a fixed 22 on one button variant; that must become `roundi(22 * text_scale)`.

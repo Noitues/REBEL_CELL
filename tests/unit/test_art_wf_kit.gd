@@ -421,3 +421,37 @@ func test_the_city_reads_the_deck_tier() -> void:
 	CityAtmosphere.quality = -1
 	Settings.city_quality = was
 	atm.free()
+
+
+# --- 9. Tracking in px per type step (§4.2) ------------------------------------------------------
+
+func test_tracking_is_px_per_type_step_and_never_rounds_away() -> void:
+	for face in [UiTheme.TRACK_DISPLAY, UiTheme.TRACK_MONO_CAPS]:
+		for step in UiTheme.STEPS:
+			assert_true((UiTheme.TRACKING_PX[face] as Dictionary).has(step), "%s has a value at %d" % [face, step])
+			assert_gte(UiTheme.tracking_step_px(face, step, 1.0), 1, "%s at %d px tracks at least 1 px (a %% rounded to 0)" % [face, step])
+			var prev := 0
+			for scale: float in [1.0, 1.6, 2.0]:
+				var px := UiTheme.tracking_step_px(face, step, scale)
+				assert_gte(px, prev, "grows with the text scale")
+				prev = px
+	# The bible's table (§4.2).
+	assert_eq(UiTheme.tracking_step_px(UiTheme.TRACK_DISPLAY, UiTheme.LABEL, 1.0), 1, "Anton +1 at label")
+	assert_eq(UiTheme.tracking_step_px(UiTheme.TRACK_DISPLAY, UiTheme.TITLE, 1.0), 1, "Anton +1 at title")
+	assert_eq(UiTheme.tracking_step_px(UiTheme.TRACK_DISPLAY, UiTheme.HEADING, 1.0), 2, "Anton +2 at heading")
+	assert_eq(UiTheme.tracking_step_px(UiTheme.TRACK_MONO_CAPS, UiTheme.CAPTION, 1.0), 1, "mono caps +1 at caption")
+	assert_eq(UiTheme.tracking_step_px(UiTheme.TRACK_MONO_CAPS, UiTheme.BODY, 1.0), 1, "mono caps +1 at body")
+	assert_eq(UiTheme.tracking_step_px(UiTheme.TRACK_DISPLAY, UiTheme.HEADING, 2.0), 4, "x the text scale")
+	assert_eq(UiTheme.tracking_step_px(&"body_plex", UiTheme.BODY, 1.0), 0, "everything else: default")
+	# The old fraction rounded to 0 below heading (why the table exists).
+	assert_eq(UiTheme.tracking_px(UiTheme.TRACKING_DISPLAY, UiTheme.TITLE), 0)
+
+
+func test_a_tracked_font_carries_the_step_spacing() -> void:
+	Settings.set_text_scale(1.6)
+	var f := UiTheme.tracked(Palette.display(), UiTheme.TRACK_DISPLAY, UiTheme.HEADING)
+	assert_true(f is FontVariation, "a FontVariation")
+	assert_eq((f as FontVariation).spacing_glyph, UiTheme.tracking_step_px(UiTheme.TRACK_DISPLAY, UiTheme.HEADING))
+	assert_eq(UiTheme.tracked(Palette.display(), UiTheme.TRACK_DISPLAY, UiTheme.HEADING), f, "cached")
+	assert_eq(UiTheme.tracked(Palette.mono(), &"none", UiTheme.BODY), Palette.mono(), "no tracking: the font itself")
+	Settings.set_text_scale(1.0)
