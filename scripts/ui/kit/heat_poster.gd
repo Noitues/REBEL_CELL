@@ -114,6 +114,8 @@ func _init(p_poster: bool = false) -> void:
 	# PASS: the scene's tooltip (what the thresholds do) shows on hover. ANIM-R3 B9: set here
 	# (it sat after a return in band_label_rect and never ran).
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	# ANIM-R6 C1: one press completes the Heat's motion with every other (MotionSkip).
+	MotionSkip.register(self)
 
 
 ## Where the band word ("cool", "hunted") is drawn (local px).
@@ -211,28 +213,110 @@ func _play_pending() -> void:
 
 
 ## ANIM-R2 R8: the rise, threshold by threshold: the number rolls to each and its crossing
-## plays there (banner, local distortion, letters), then it rolls on to the Heat.
+## plays there (banner, local distortion, letters), then it rolls on to the Heat. ANIM-R6 C1:
+## a chain of one-shot steps (it was an await loop no press could end): `_rise_ups` holds the
+## thresholds still to reach, and `complete_motion` plays them out at once.
 func _play_rise(from: int, ups: Array[int]) -> void:
 	shown_heat = from
-	for t in ups:
-		var tw := Motion.run(&"number_roll", self, ^"shown_heat", float(t))
-		if tw != null:
-			await tw.finished
-		if not is_inside_tree():
-			return
-		_cross(t, t == ups[ups.size() - 1])
-	Motion.run(&"number_roll", self, ^"shown_heat", float(heat))
+	_rise_ups.assign(ups)
+	_rise_next()
+
+
+## The thresholds the rise has still to reach (lowest first).
+var _rise_ups: Array[int] = []
+
+
+func _rise_next() -> void:
+	if _rise_ups.is_empty():
+		Motion.run(&"number_roll", self, ^"shown_heat", float(heat))
+		return
+	var tw := Motion.run(&"number_roll", self, ^"shown_heat", float(_rise_ups[0]))
+	if tw == null:
+		_rise_reached()
+	else:
+		tw.finished.connect(_rise_reached, CONNECT_ONE_SHOT)
+
+
+func _rise_reached() -> void:
+	if _rise_ups.is_empty() or not is_inside_tree():
+		return
+	var t: int = _rise_ups.pop_front()
+	_cross(t, _rise_ups.is_empty())
+	_rise_next()
 
 
 ## Crossings `ups` (thresholds) played a pulse apart, the first now (no roll plays).
+## ANIM-R6 C1: the ones still to play wait in `_chain_rest` (a press plays them at once).
 func _cross_chain(ups: Array[int]) -> void:
 	if ups.is_empty():
 		return
 	_cross(ups[0], ups.size() == 1)
-	if ups.size() > 1 and is_inside_tree():
-		var rest: Array[int] = []
-		rest.assign(ups.slice(1))
-		get_tree().create_timer(Motion.seconds(&"heat_pulse")).timeout.connect(_cross_chain.bind(rest))
+	_chain_rest.assign(ups.slice(1))
+	if not _chain_rest.is_empty() and is_inside_tree():
+		get_tree().create_timer(Motion.seconds(&"heat_pulse")).timeout.connect(_chain_on)
+
+
+## Crossings the chain has still to play, and the timer's step to the next one.
+var _chain_rest: Array[int] = []
+
+
+func _chain_on() -> void:
+	if _chain_rest.is_empty():
+		return
+	var rest: Array[int] = []
+	rest.assign(_chain_rest)
+	_chain_rest.clear()
+	_cross_chain(rest)
+
+
+# --- ANIM-R6 C1: MotionSkip ------------------------------------------------------------------
+
+## A press while the Heat's motion plays (the number's roll, a crossing's pop, shake and band
+## stamp, the banner stamping on or fading) completes it with every other running motion
+## (MotionSkip.handle; a press that drives the raid playout passes, MotionSkip notes). The
+## banner's reading hold is not motion: once stamped, the banner and its consequence note stay
+## their hold (`heat_banner`'s delay) whatever is pressed, then fade (STYLE_GUIDE 5.1).
+func _input(event: InputEvent) -> void:
+	if motion_running():
+		MotionSkip.handle(event, self)
+
+
+## MotionSkip: true while the Heat moves (a roll, a crossing still to play, a pop, the band
+## stamp, the banner stamping on or fading out); false during the banner's reading hold.
+func motion_running() -> bool:
+	if not is_visible_in_tree():
+		return false
+	if not _rise_ups.is_empty() or not _chain_rest.is_empty() or _banner_phase == BannerPhase.FADE:
+		return true
+	for key in get_meta_list():
+		if String(key).begins_with(Motion.META_PREFIX):
+			return true
+	return false
+
+
+## MotionSkip: the Heat at its end state at once: the number on the Heat, every crossing
+## still to play played (its banner, the last one's, stamped and held to be read), the pops,
+## shake and band stamp at rest; a banner fading out is gone.
+func complete_motion() -> void:
+	var ups: Array[int] = []
+	ups.assign(_rise_ups + _chain_rest)
+	_rise_ups.clear()
+	_chain_rest.clear()
+	Motion.stop(self)
+	shown_heat = heat
+	number_scale = 1.0
+	stamp_scale = 1.0
+	shake_offset = Vector2.ZERO
+	banner_scale = 1.0
+	if not ups.is_empty():
+		_banner_at = ups[ups.size() - 1]
+		_stamp_banner()
+		banner_scale = 1.0
+		Motion.stop(self)
+	elif _banner_phase == BannerPhase.FADE:
+		_end_banner()
+	_pending_stamp = false
+	queue_redraw()
 
 
 ## ANIM-R2 R8: threshold `t` crossed going up: its banner stamps, the poster distorts
@@ -259,24 +343,56 @@ func _stamp_band() -> void:
 
 ## The crossing's banner: stamps on (`poster_stamp`'s timing from `heat_banner`'s scale),
 ## holds (`heat_banner`'s delay) and fades out (its duration); nothing when it is off.
+## ANIM-R6 C5: under reduce effects (no motion, the entry on) the banner and its consequence
+## note show at once, static, for the hold (a reading time, like RAID INCOMING), then go.
+## ANIM-R6 C1: its phases (`_banner_phase`): the hold is a reading time, the fade is motion.
 func _stamp_banner() -> void:
-	if not Motion.live(&"heat_banner"):
+	var e := Motion.entry(&"heat_banner")
+	if e == null or not e.enabled or not is_inside_tree():
 		banner_alpha = 0.0
 		return
-	var e := Motion.entry(&"heat_banner")
 	banner_alpha = 1.0
-	banner_scale = Motion.amplitude(&"heat_banner")
+	banner_scale = Motion.amplitude(&"heat_banner") if Motion.live(&"heat_banner") else 1.0
 	Motion.run(&"poster_stamp", self, ^"banner_scale", 1.0)
 	# ANIM-R2 R8: the next crossing's banner replaces this one (its fade must not dim it).
 	if _banner_tween != null and _banner_tween.is_valid():
 		_banner_tween.kill()
+	_banner_phase = BannerPhase.HOLD
 	var tw := create_tween()
 	_banner_tween = tw
-	tw.tween_property(self, "banner_alpha", 0.0, Motion.seconds(&"heat_banner")).set_delay(Motion.delay_of(&"heat_banner")).set_ease(e.ease).set_trans(e.trans)
-	tw.parallel().tween_method(_banner_frame, 0.0, 1.0, Motion.seconds(&"heat_banner") + Motion.delay_of(&"heat_banner"))
-	tw.finished.connect(_update_note)
+	tw.tween_method(_banner_frame, 0.0, 1.0, Motion.delay_of(&"heat_banner"))
+	tw.tween_callback(_start_fade)
+	if Motion.live(&"heat_banner"):
+		tw.tween_property(self, "banner_alpha", 0.0, Motion.seconds(&"heat_banner")).set_ease(e.ease).set_trans(e.trans)
+		tw.parallel().tween_method(_banner_frame, 0.0, 1.0, Motion.seconds(&"heat_banner"))
+	tw.tween_callback(_end_banner)
 	_note_at = Rect2()
 	_banner_frame(0.0)
+
+
+## ANIM-R6 C1: where the banner is: none, its reading hold, or its fade.
+enum BannerPhase { NONE, HOLD, FADE }
+var _banner_phase: BannerPhase = BannerPhase.NONE
+
+
+func _start_fade() -> void:
+	_banner_phase = BannerPhase.FADE
+
+
+## The banner (and its note) gone.
+func _end_banner() -> void:
+	if _banner_tween != null and _banner_tween.is_valid():
+		_banner_tween.kill()
+	_banner_tween = null
+	_banner_phase = BannerPhase.NONE
+	banner_alpha = 0.0
+	_update_note()
+	queue_redraw()
+
+
+## ANIM-R6 C1: true during the banner's reading hold (tests).
+func banner_holding() -> bool:
+	return _banner_phase == BannerPhase.HOLD
 
 
 ## A frame of the banner's hold and fade: the poster redraws, the note follows it.
@@ -322,46 +438,103 @@ func note_width() -> float:
 	return w
 
 
-## The note's lines, wrapped to its width.
-func note_lines() -> PackedStringArray:
-	return wrap_words(Palette.mono(), note_text(), note_font_size(), note_width() - NOTE_PAD * 2.0)
+## The note's lines, wrapped to its width (`w`: another width to try; the width placed).
+func note_lines(w: float = -1.0) -> PackedStringArray:
+	if w <= 0.0:
+		w = _note_w if _note_w > 0.0 else note_width()
+	return wrap_words(Palette.mono(), note_text(), note_font_size(), w - NOTE_PAD * 2.0)
 
 
-func note_size() -> Vector2:
-	var fs := note_font_size()
-	return Vector2(note_width(), note_lines().size() * fs * BANNER_LINE + NOTE_PAD * 2.0)
+func note_size(w: float = -1.0) -> Vector2:
+	if w <= 0.0:
+		w = _note_w if _note_w > 0.0 else note_width()
+	return Vector2(w, note_lines(w).size() * note_font_size() * BANNER_LINE + NOTE_PAD * 2.0)
 
 
-## Where the note stands (global px; see the notes above).
+## ANIM-R6 C5: the width the note was placed at (0: its full width), and the narrower shares
+## of it it tries when no spot at its full width is free of words (at 1.6 the HQ has room for
+## a narrow note under PIRATE RADIO only).
+var _note_w: float = 0.0
+const NOTE_SHARES: Array[float] = [1.0, 0.8, 0.65]
+
+
+## Where the note stands (global px; see the notes above). ANIM-R6 C5: it covers no text
+## either (at 1.0 and 1.6 it stood on the PIRATE RADIO card's title and words for its whole
+## hold): from below the poster, above, right and left, each slid on by NOTE_SLIDE px a step
+## (at most NOTE_SLIDE_STEPS), the nearest spot on the screen that covers no usable button and
+## no words; else the least covered one.
 func note_rect() -> Rect2:
-	var s := note_size()
-	var p := get_global_rect()
-	var screen := get_viewport_rect().grow(-NOTE_MARGIN) if is_inside_tree() else Rect2(Vector2.ZERO, s)
-	var spots: Array[Rect2] = [Rect2(Vector2(p.position.x, p.end.y + NOTE_GAP), s), Rect2(Vector2(p.position.x, p.position.y - NOTE_GAP - s.y), s),
-		Rect2(Vector2(p.end.x + NOTE_GAP, p.position.y), s), Rect2(Vector2(p.position.x - NOTE_GAP - s.x, p.position.y), s)]
-	var buttons: Array[Rect2] = []
-	if is_inside_tree():
-		for n in get_tree().root.find_children("*", "BaseButton", true, false):
-			var b := n as BaseButton
-			if b.is_visible_in_tree() and not b.disabled and b.get_viewport() == get_viewport():
-				buttons.append(b.get_global_rect())
+	var avoid := note_avoid()
 	var best := Rect2()
 	var best_cover := INF
-	for r in spots:
-		# Kept on the screen (slid along its edge), never over the poster itself.
-		r.position = r.position.clamp(screen.position, screen.end - r.size)
-		if r.intersects(p.grow(-1.0)):
+	var best_w := 0.0
+	for share in NOTE_SHARES:
+		var w := note_width() * share
+		var found := _note_spot(note_size(w), avoid)
+		if float(found[1]) <= 0.0:
+			_note_w = w
+			return found[0]
+		if float(found[1]) < best_cover:
+			best_cover = float(found[1])
+			best = found[0]
+			best_w = w
+	_note_w = best_w
+	return best
+
+
+## The spot for a note of size `s` covering the least of `avoid`: [rect, covered area].
+func _note_spot(s: Vector2, avoid: Array[Rect2]) -> Array:
+	var p := get_global_rect()
+	var screen := get_viewport_rect().grow(-NOTE_MARGIN) if is_inside_tree() else Rect2(Vector2.ZERO, s)
+	var starts: Array[Rect2] = [Rect2(Vector2(p.position.x, p.end.y + NOTE_GAP), s), Rect2(Vector2(p.position.x, p.position.y - NOTE_GAP - s.y), s),
+		Rect2(Vector2(p.end.x + NOTE_GAP, p.position.y), s), Rect2(Vector2(p.position.x - NOTE_GAP - s.x, p.position.y), s)]
+	var steps: Array[Vector2] = [Vector2(0, NOTE_SLIDE), Vector2(0, -NOTE_SLIDE), Vector2(NOTE_SLIDE, 0), Vector2(-NOTE_SLIDE, 0)]
+	var best := Rect2()
+	var best_cover := INF
+	for i in NOTE_SLIDE_STEPS + 1:
+		for d in starts.size():
+			var r := starts[d]
+			r.position += steps[d] * i
+			# Kept on the screen (slid along its edge), never over the poster itself.
+			r.position = r.position.clamp(screen.position, (screen.end - r.size).max(screen.position))
+			if r.intersects(p.grow(-1.0)):
+				continue
+			var cover := 0.0
+			for o in avoid:
+				if o.intersects(r):
+					cover += o.intersection(r).get_area()
+			if cover <= 0.0:
+				return [r, 0.0]
+			if cover < best_cover:
+				best_cover = cover
+				best = r
+	return [best, best_cover] if best_cover < INF else [starts[0], INF]
+
+
+## ANIM-R6 C5: how far a note spot slides a step (px) and the most steps it slides.
+const NOTE_SLIDE := 24.0
+const NOTE_SLIDE_STEPS := 16
+
+
+## ANIM-R6 C5: what the note keeps off (global px): every usable button and every shown line
+## of words (a Label or RichTextLabel with text) on this poster's screen, but its own.
+func note_avoid() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if not is_inside_tree():
+		return out
+	for n in get_tree().root.find_children("*", "Control", true, false):
+		var c := n as Control
+		if c.get_viewport() != get_viewport() or not c.is_visible_in_tree() or is_ancestor_of(c) or c == self:
 			continue
-		var cover := 0.0
-		for b in buttons:
-			if b.intersects(r):
-				cover += b.intersection(r).get_area()
-		if cover <= 0.0:
-			return r
-		if cover < best_cover:
-			best_cover = cover
-			best = r
-	return best if best_cover < INF else spots[0]
+		if c is BaseButton:
+			if not (c as BaseButton).disabled:
+				out.append(c.get_global_rect())
+		elif (c is Label and (c as Label).text != "") or (c is RichTextLabel and (c as RichTextLabel).get_parsed_text() != "") \
+				or c is HudStats or c is PadPrompts or c is SubtitleStrip:
+			# Drawn words too: the top bar's tags, the pad prompts, the subtitles (at 1.6 the note
+			# went up over the CREW tag).
+			out.append(c.get_global_rect())
+	return out
 
 
 func _update_note() -> void:
@@ -444,7 +617,7 @@ func banner_color() -> Color:
 
 
 ## ANIM-R3 B7 / ANIM-R4 H5: what threshold `at` brings (its content text, translated through
-## its TextDb key: "The corporation raids the Cell. While Heat stays at 25 or more, elites
+## its TextDb key: "A raid is queued. While Heat stays at 25 or more, elites
 ## are more frequent."); "" when no campaign or no such threshold.
 static func consequence(at: int) -> String:
 	var cfg: CampaignConfigData = RunManager.config() if RunManager.campaign != null else null

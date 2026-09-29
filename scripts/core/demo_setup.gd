@@ -89,3 +89,42 @@ static func one_hit_from_end(st: CombatState, win: bool) -> void:
 			st.enemies[0].hp = 1
 	elif st.player != null:
 		st.player.hp = 1
+
+
+# --- ANIM-R6 C16 (the HQ's dev flags) ---------------------------------------------------------
+
+## The campaign's roster becomes one operative of each of `classes` (`--demo-classes`).
+static func roster_of(c: CampaignState, classes: Array[ClassData]) -> void:
+	if c == null:
+		return
+	c.roster.clear()
+	for cls in classes:
+		if cls != null:
+			c.recruit(cls)
+
+
+## Sets the campaign's Schematics (the Grid and raid demos' budget).
+static func set_schematics(c: CampaignState, amount: int) -> void:
+	if c != null:
+		c.schematics = amount
+
+
+## Sets the campaign's Armory to `ids` (the raid demos' defences).
+static func set_armory(c: CampaignState, ids: Array[StringName]) -> void:
+	if c != null:
+		c.armory.assign(ids)
+
+
+## Sets the campaign's Heat (the Heat poster demo; the crossing plays where it shows).
+static func set_heat(c: CampaignState, heat: int) -> void:
+	if c != null:
+		c.heat = heat
+
+
+## Ends the campaign with `outcome` (`--demo-campaign-end=won|lost`); a lost one's home is at 0.
+static func end_campaign(c: CampaignState, outcome: int) -> void:
+	if c == null:
+		return
+	c.outcome = outcome
+	if outcome == CampaignState.Outcome.LOST:
+		c.grid.home_integrity = 0

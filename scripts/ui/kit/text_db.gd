@@ -100,7 +100,7 @@ static func translates_itself(node: Node) -> void:
 ## `# TR` (words kept in constants, translated where they are shown), unescaped, sorted,
 ## no duplicates.
 static func code_keys(dirs: PackedStringArray) -> PackedStringArray:
-	var re := RegEx.create_from_string("(?<![A-Za-z0-9_])(?:tr|atr|TranslationServer\\.translate|TextDb\\.mark)\\(\\s*\"((?:[^\"\\\\]|\\\\.)*)\"")
+	var re := RegEx.create_from_string(CODE_CALLS)
 	var any := RegEx.create_from_string("(?<![&A-Za-z0-9_])\"((?:[^\"\\\\]|\\\\.)*)\"")
 	var seen := {}
 	for dir in dirs:
@@ -121,6 +121,10 @@ static func code_keys(dirs: PackedStringArray) -> PackedStringArray:
 
 ## The end-of-line marker for lines whose string literals are all translation keys.
 const CODE_MARK := "# TR"
+## The calls whose first string literal is a translation key: tr, atr,
+## TranslationServer.translate, TextDb.mark and (ANIM-R6 C7) CityMapOverlay.tr_word, the
+## maps' drawn words (their literals were never exported: "WIN", "MAP KEY", "T%d"...).
+const CODE_CALLS := "(?<![A-Za-z0-9_])(?:tr|atr|tr_word|TranslationServer\\.translate|TextDb\\.mark)\\(\\s*\"((?:[^\"\\\\]|\\\\.)*)\""
 
 
 ## A GDScript string literal's body as the string it makes (\n, \t, \", \', \\).

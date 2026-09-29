@@ -89,7 +89,7 @@ kind = 1
 event_raid = ExtResource("raid_25")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_elites")])
-event_text = "The corporation raids the Cell. While Heat stays at 25 or more, elites are more frequent."
+event_text = "A raid is queued. While Heat stays at 25 or more, elites are more frequent."
 
 [sub_resource type="Resource" id="ht_30"]
 script = ExtResource("2_ht")
@@ -117,7 +117,7 @@ kind = 1
 event_raid = ExtResource("raid_50")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_resistance")])
-event_text = "The corporation raids the Cell. While Heat stays at 50 or more, every enemy gains +1 resistance."
+event_text = "A raid is queued. While Heat stays at 50 or more, every enemy gains +1 resistance."
 
 [sub_resource type="Resource" id="ht_60"]
 script = ExtResource("2_ht")
@@ -145,7 +145,7 @@ kind = 1
 event_raid = ExtResource("raid_75")
 event_complications = Array[ExtResource("3_rm")]([])
 ongoing_modifiers = Array[ExtResource("3_rm")]([SubResource("rm_major_raid_strength")])
-event_text = "The corporation raids the Cell. While Heat stays at 75 or more, raids are 25% stronger."
+event_text = "A raid is queued. While Heat stays at 75 or more, raids are 25% stronger."
 
 [sub_resource type="Resource" id="ht_80"]
 script = ExtResource("2_ht")

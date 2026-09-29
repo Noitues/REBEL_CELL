@@ -50,7 +50,7 @@ var connect_fill: ColorRect
 var _destination: String = ""
 const CONNECT_MOTION := &"jack_connect"
 const DISSOLVE_MOTION := &"jack_dissolve"
-## ANIM-R3 B5: a second line under CONNECTING TO <place> ("INTERRUPTED: RAID INCOMING" when
+## ANIM-R3 B5: a second line under CONNECTING TO <place> ("RAID INCOMING" over the corporation when
 ## the run opens on a raid interlude; "" for none), translated by the caller.
 var _note: String = ""
 ## ANIM-R4 H11a: the note is a stamp of its own under the bar: large amber lettering in a
@@ -480,7 +480,7 @@ func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = 
 
 
 ## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on. Rises for
-## HEAT_PULSE_RISE of the time to the `heat_pulse` entry's amplitude, then falls; a
+## `heat_pulse_rise`'s share of the time to the `heat_pulse` entry's amplitude, then falls; a
 ## negative `seconds` takes the entry's duration. ANIM-5 (4.12): one per threshold
 ## crossing (HeatPoster calls it through `heat_pulse_at`). Counted in `heat_pulses` even
 ## under reduce effects (nothing shows then). ANIM-R3 B9: the corporate wireframe creep
@@ -495,13 +495,14 @@ func heat_pulse(seconds: float = -1.0) -> void:
 	if seconds < 0.0:
 		seconds = Motion.seconds(&"heat_pulse")
 	var peak := Motion.amplitude(&"heat_pulse")
+	var rise := Motion.amplitude(PULSE_RISE_MOTION)
 	distortion.visible = true
 	distortion.material.set_shader_parameter("intensity", 0.0)
 	if _pulse_tween != null and _pulse_tween.is_valid():
 		_pulse_tween.kill()
 	_pulse_tween = create_tween()
-	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.0, peak, seconds * HEAT_PULSE_RISE)
-	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), peak, 0.0, seconds * (1.0 - HEAT_PULSE_RISE))
+	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), 0.0, peak, seconds * rise)
+	_pulse_tween.tween_method(func(v: float) -> void: distortion.material.set_shader_parameter("intensity", v), peak, 0.0, seconds * (1.0 - rise))
 	_pulse_tween.tween_callback(func() -> void:
 		distortion.visible = false
 		distortion.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT))
@@ -695,15 +696,25 @@ var _connect_since: int = 0
 ## it holds under reduce effects too (the fade's line showed ~2 frames); only the entry
 ## switched off skips it. Never reached headless (the jack switches at once there).
 func _hold_connect() -> void:
-	var e := Motion.entry(CONNECT_MOTION)
-	if not connect_label.visible or e == null or not e.enabled:
+	if not connect_label.visible:
 		return
-	# ANIM-R4 H11a: a raid's stamp holds its own reading time (at least a second).
-	var hold := Motion.seconds(CONNECT_MOTION)
-	if note_label.visible:
-		hold = maxf(hold, note_hold())
+	var hold := connect_hold()
+	if hold <= 0.0:
+		return
 	while Time.get_ticks_msec() - _connect_since < hold * 1000.0:
 		await get_tree().process_frame
+
+
+## The seconds the CONNECTING cover holds for reading: `jack_connect`'s, and while a note
+## shows (RAID INCOMING) at least its own (ANIM-R4 H11a: a raid's stamp holds at least a
+## second). ANIM-R6 C14: each reading time by its own switch (switching `jack_connect` off
+## skipped the RAID INCOMING hold too).
+func connect_hold() -> float:
+	var e := Motion.entry(CONNECT_MOTION)
+	var hold := Motion.seconds(CONNECT_MOTION) if e != null and e.enabled else 0.0
+	if note_label.visible:
+		hold = maxf(hold, note_hold())
+	return hold
 
 
 ## The bar's fill: `share` (0..1) of the arrival wait spent.
@@ -713,9 +724,10 @@ func _connect_progress(share: float) -> void:
 
 ## ANIM-R4 H11a: the RAID INCOMING stamp's reading time (s): `raid_incoming_hold`, a
 ## reading time like CONNECTING's (it holds under reduce effects too; 0 only switched off).
+## ANIM-R6 C14: read through the kit (Motion.seconds, as every other time), not raw.
 func note_hold() -> float:
 	var e := Motion.entry(NOTE_MOTION)
-	return e.duration if e != null and e.enabled else 0.0
+	return Motion.seconds(NOTE_MOTION) if e != null and e.enabled else 0.0
 
 
 func _hide_connect() -> void:
@@ -734,8 +746,9 @@ func connecting() -> bool:
 	return connect_label.visible
 
 
-## Share of a Heat pulse spent rising (the rest falls).
-const HEAT_PULSE_RISE := 0.3
+## ANIM-R6 C4: the share of a Heat pulse spent rising (the rest falls): the table's
+## `heat_pulse_rise` (it was the inline HEAT_PULSE_RISE 0.3).
+const PULSE_RISE_MOTION := &"heat_pulse_rise"
 
 
 ## True while a jack transition runs (views hold their own effects till it ends).
