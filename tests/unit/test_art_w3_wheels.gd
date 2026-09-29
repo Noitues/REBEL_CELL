@@ -168,3 +168,89 @@ func test_the_ghost_flicker_is_ambient_and_rests_under_reduce_effects() -> void:
 	v.free()
 	Settings.reduce_effects = was
 	assert_false(WheelBezel.is_ambient(WheelBezel.operative_look(&"breaker")), "rivets don't move")
+
+
+# --- 3. The HP arc (§6.1, §3.5) -------------------------------------------------------------------
+
+func test_hp_colour_follows_the_fraction() -> void:
+	var scene := await _combat()
+	var pv: WheelView = scene._player_view
+	var mx := float(pv.combatant.max_hp)
+	for pair in [[1.0, Palette.GAIN], [0.5, Palette.GAIN], [0.49, Palette.WARN], [0.25, Palette.WARN], [0.2, Palette.HARM], [1.0 / mx, Palette.HARM]]:
+		pv.anim_hp = roundf(float(pair[0]) * mx) if float(pair[0]) * mx >= 1.0 else 1.0
+		assert_eq(pv.hp_color_now(), Palette.hp_color(pv.anim_hp / mx), "HP %d/%d" % [pv.anim_hp, mx])
+	pv.anim_hp = 1.0
+	assert_eq(pv.hp_color_now(), Palette.HARM, "1/60 is red, never green")
+	pv.anim_hp = NAN
+	assert_ne(WheelView.HP_COLOR, Color("#3DFF8B"), "the hard-coded green is gone")
+
+
+func test_the_arc_is_thick_and_shows_the_forecast_loss_as_a_ghost() -> void:
+	var scene := await _combat()
+	var pv: WheelView = scene._player_view
+	assert_gte(WheelView.HP_ARC_OUT - WheelView.HP_ARC_IN, 10.0, "at least 10 px")
+	var hp := pv.combatant.hp
+	pv.outcome = {"hp_after": hp - pv.combatant.max_hp / 4, "alive_after": true, "statuses": [], "satellites": {}}
+	var ghosts := 0
+	var full := 0
+	for s in pv.hp_segments():
+		ghosts += 1 if s["state"] == "ghost" else 0
+		full += 1 if s["state"] == "full" else 0
+	assert_gt(ghosts, 0, "a hatched ghost for the forecast loss")
+	assert_gt(full, 0, "the HP that stays")
+	pv.outcome = {}
+	for s in pv.hp_segments():
+		assert_ne(s["state"], "ghost", "no forecast, no ghost")
+
+
+func test_the_drain_is_two_stage() -> void:
+	var scene := await _combat()
+	var pv: WheelView = scene._player_view
+	pv.anim_hp = 20.0
+	pv.lag_hp = 40.0
+	var lag := 0
+	for s in pv.hp_segments():
+		lag += 1 if s["state"] == "lag" else 0
+	assert_gt(lag, 0, "the white lag trails the fill")
+
+
+func test_hp_is_never_under_a_needle_sweep() -> void:
+	var scene := await _combat()
+	for v in scene._views():
+		var wv := v as WheelView
+		var st := wv.combatant.duplicate_state()
+		st.wheel.pointer_ticks = PackedInt32Array([0, 8, 15, 22])
+		wv.shown_state = st
+		var hp: Rect2 = wv.hp_layout()["hp"]
+		for p in wv.shown_pointers():
+			var a := WheelView._ang(p)
+			var hub := wv._center() + Vector2(cos(a), sin(a)) * (wv._radius() + wv._band() * WheelView.NEEDLE_HUB_OUT)
+			var reach := WheelView.NEEDLE_HUB_R * maxf(1.0, Motion.amplitude(&"resolve_pulse"))
+			var nearest := Vector2(clampf(hub.x, hp.position.x, hp.end.x), clampf(hub.y, hp.position.y, hp.end.y))
+			assert_gt(nearest.distance_to(hub), reach, "%s: the HP number is off the needle at tick %d" % [wv.combatant.display_name, p])
+		wv.shown_state = null
+
+
+func test_the_heartbeat_beats_under_a_quarter_and_rests_under_reduce_effects() -> void:
+	var scene := await _combat()
+	var pv: WheelView = scene._player_view
+	assert_eq(VfxTier.of(&"hp_heartbeat"), VfxTier.T1, "T1")
+	Motion.force_live = true
+	pv.anim_hp = 1.0
+	assert_true(pv.heartbeat_on(), "under 25% it beats")
+	pv.heart_t = Motion.seconds(&"hp_heartbeat") * 0.5
+	assert_gt(pv.heartbeat_swell(), 0.0, "the arc swells mid-beat")
+	pv.anim_hp = float(pv.combatant.max_hp)
+	assert_false(pv.heartbeat_on(), "healthy: no beat")
+	var was := Settings.reduce_effects
+	Settings.reduce_effects = true
+	pv.anim_hp = 1.0
+	assert_false(pv.heartbeat_on(), "static under reduce effects")
+	Settings.reduce_effects = was
+	Motion.force_live = false
+	pv.anim_hp = NAN
+
+
+func test_a_beaten_wheel_dims_to_thirty_percent() -> void:
+	assert_almost_eq(WheelView.DEFEATED_DIM, 0.3, 0.001, "30%")
+	assert_almost_eq(WheelView.FLATLINE_VEIL, 0.7, 0.001, "the operative's disc under DEFEAT")

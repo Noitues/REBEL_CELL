@@ -194,8 +194,18 @@ const PIP_RADIUS := 3.0
 ## a "+N" chip; the tooltip lists them all).
 const TAG_CHIP_ROWS := 2
 ## HP arc and number below the rim (px): the arc's outer edge, then the number's offset.
-const HP_ARC_OUT := 40.0
-const HP_TEXT_GAP := 44.0
+## Art pass W3 (§6.1, §3.5): the HP arc is a thick segmented band just outside the bezel,
+## from HP_ARC_IN to HP_ARC_OUT past the rim (>= 10 px), in HP_SEGMENTS; the HP number sits
+## HP_NUMBER_GAP under it (and under every needle's reach).
+const HP_ARC_IN := 30.0
+const HP_ARC_OUT := 42.0
+const HP_SEGMENTS := 20
+const HP_NUMBER_GAP := 4.0
+## Kept for the layout rules' reach (the arc's outer edge and the number under it).
+const HP_TEXT_GAP := HP_ARC_OUT + HP_NUMBER_GAP
+## The HP number's outline (px) and the arc's hatch for a forecast loss (lines per segment).
+const HP_OUTLINE := 5
+const HP_HATCH := 2
 ## Gap between the HP number and the last-turn line (px).
 const LAST_TURN_GAP := 4.0
 ## Padding round the LAST TURN plate (px).
@@ -208,13 +218,14 @@ const CHIP_FONT_SIZE := 13
 const HUB_FONT_SIZE := 10
 const NAME_FONT_SIZE := 13
 const VALUE_FONT_SIZE := 20
-const HP_FONT_SIZE := 22
+const HP_FONT_SIZE := UiTheme.HEADING
 const INTENT_HEIGHT := 30.0
 const CHIP_HEIGHT := 20.0
 ## The widest a tag may get before its chips wrap (fraction of the view width).
 const TAG_MAX_SHARE := 0.96
-const HP_COLOR := Color("#3DFF8B")
-const LOSS_COLOR := Color("#FF4D4D")
+## Gain and harm (§3.3): heals and good statuses, damage and bad ones (the HP itself reads Palette.hp_color).
+const HP_COLOR := Palette.GAIN
+const LOSS_COLOR := Palette.HARM
 const TARGET_COLOR := Palette.CELL_ACID
 ## The dark platform round the bezel (px past the bezel's rim).
 const PLATFORM_PAD := 14.0
@@ -235,8 +246,17 @@ func _init() -> void:
 	set_process(false)
 
 
+## The text scale the wheel's own lettering follows: the player's, up to WHEEL_TEXT_MAX.
+## Art pass W3 (ART_BIBLE §12: "text yields before the wheels do"): the arena's height is
+## fixed, so past WHEEL_TEXT_MAX the wheel's tag, hub, HP and LAST TURN stop growing and the
+## wheels keep at least 70% of their 1.0 size; every word they carry is also in a tooltip,
+## which follows the full text scale.
 static func _ts() -> float:
-	return Settings.text_scale
+	return minf(Settings.text_scale, WHEEL_TEXT_MAX)
+
+
+## The largest text scale the wheel's lettering follows (see _ts).
+const WHEEL_TEXT_MAX := 1.6
 
 
 static func _fs(base: int) -> int:
@@ -340,10 +360,12 @@ func ambient_on() -> bool:
 
 ## Starts the ambient clock when it is needed; at rest otherwise.
 func _sync_ambient() -> void:
-	if ambient_on():
-		set_process(true)
-	else:
+	if not ambient_on():
 		ambient_phase = 0.0
+	if not heartbeat_on():
+		heart_t = 0.0
+	if ambient_on() or heartbeat_on():
+		set_process(true)
 
 
 ## The operative's class id (its bezel's ornament): `class_id`, else the combatant's source
@@ -456,6 +478,8 @@ const MISS_X_SHARE := 0.32
 const MISS_X_WIDTH := 5.0
 ## The DEFEATED stamp's lettering (px at text scale 1.0) and tilt (rad).
 const DEFEATED_FONT := 22
+## §3.5: at 0 HP the wheel's own colour dims to this share under its DEFEATED / DEFEAT stamp.
+const DEFEATED_DIM := 0.3
 const STAMP_TILT := -0.2
 ## ANIM-R3 A6g: the skull under DEFEATED, its radius as a share of the stamp's lettering.
 const SKULL_SHARE := 0.75
@@ -832,6 +856,7 @@ func play_hp(to: float) -> void:
 
 func _set_anim_hp(v: float) -> void:
 	anim_hp = v
+	_sync_ambient()
 	queue_redraw()
 
 
@@ -1328,7 +1353,7 @@ func hp_ring_spot() -> Vector2:
 	var c := _shown()
 	var frac := clampf(shown_hp() / maxf(1.0, c.max_hp), 0.0, 1.0)
 	var a := PI * 0.1 + PI * 0.8 * frac
-	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + (32.0 + HP_ARC_OUT) * 0.5)
+	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + (HP_ARC_IN + HP_ARC_OUT) * 0.5)
 
 
 ## Valid drop zones pulse while a card is aimed (`drop_zone_pulse`); the hovered one stays
@@ -1463,7 +1488,7 @@ func slice_pieces() -> Array:
 
 
 ## The hub disc's fill (the break's hub pieces too).
-const HUB_FILL := Color("#07080F")
+const HUB_FILL := Palette.NIGHT_SKY
 
 
 ## The hub's radius on screen.
@@ -1485,11 +1510,20 @@ func _process(delta: float) -> void:
 	blur = move_toward(blur, want, rate)
 	if blur != was:
 		queue_redraw()
+	var looping := false
 	if ambient_on():
 		ambient_phase = fposmod(ambient_phase + delta / maxf(0.001, Motion.seconds(&"bezel_ambient")), 1.0)
+		looping = true
+	else:
+		ambient_phase = 0.0
+	if heartbeat_on():
+		heart_t = fposmod(heart_t + delta, maxf(0.001, Motion.seconds(&"hp_heartbeat") + Motion.delay_of(&"hp_heartbeat")))
+		looping = true
+	else:
+		heart_t = 0.0
+	if looping:
 		queue_redraw()
 		return
-	ambient_phase = 0.0
 	if not _tweens.has(&"turn") and blur <= 0.0:
 		_last_shown_rot = NAN
 		set_process(false)
@@ -1734,13 +1768,28 @@ const BAND_SHARE := 0.34
 func _center() -> Vector2:
 	# The centre sits at CENTER_Y, raised when the HP number and the last-turn line need
 	# the room below (H23: the fixed centre left 210 px above and pinned the wheel small).
-	var cy := minf(size.y * CENTER_Y, size.y - _bottom_need() - _radius())
+	var cy := minf(size.y * CENTER_Y, size.y - bottom_need() - _radius())
 	return Vector2(left_reserve + (size.x - left_reserve) * center_x + enter_slide, cy) + shake
 
 
 ## Room kept under the disc for the HP number and the last-turn line (px).
 static func _bottom_need() -> float:
 	return HP_TEXT_GAP + _fs(HP_FONT_SIZE) + _fs(HUB_FONT_SIZE) + LAST_TURN_GAP + DISC_MARGIN * 0.2
+
+
+## This wheel's room under its disc: _bottom_need, plus the operative's net line (§6.2: what
+## it receives, once, under its HP).
+func bottom_need() -> float:
+	return _bottom_need() + (net_line_height() if combatant != null and combatant.is_player else 0.0)
+
+
+## The net line's row height (px): its lettering and a gap.
+static func net_line_height() -> float:
+	return _fs(NET_FONT_SIZE) + LAST_TURN_GAP
+
+
+## The net line's lettering (§4.2 `body`).
+const NET_FONT_SIZE := UiTheme.BODY
 
 
 func _radius() -> float:
@@ -1753,8 +1802,8 @@ func _radius() -> float:
 	# Everything fits at r_full; below that the tag may clamp under the arrows down to
 	# RADIUS_FLOOR of the unconstrained size, as long as its title row still fits (H23).
 	var span := 2.0 + BAND_SHARE
-	var r_full := (size.y - _bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
-	var r_title := (size.y - _bottom_need() - INTENT_HEIGHT * _ts()) / span
+	var r_full := (size.y - bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
+	var r_title := (size.y - bottom_need() - INTENT_HEIGHT * _ts()) / span
 	r = minf(r, maxf(r_full, minf(r_title, r * RADIUS_FLOOR)))
 	return maxf(MIN_RADIUS, r)
 
@@ -2100,7 +2149,7 @@ func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot:
 
 ## A beaten enemy's empty spot: a dashed ring where the disc was, its name and DEFEATED.
 func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
-	_draw_dashed_arc(center, radius, 0.0, TAU, _col(Color(wheel_color, 0.45)), 2.0)
+	_draw_dashed_arc(center, radius, 0.0, TAU, _col(Color(wheel_color, DEFEATED_DIM)), 2.0)
 	_draw_dashed_arc(center, inner, 0.0, TAU, _col(Color(wheel_color, 0.3)), 1.5)
 	var hw := (inner - 10) * 2.0
 	var name_lines := hub_name_lines(hw)
@@ -2137,7 +2186,7 @@ var flatlined: bool = false
 var flatline_pop: float = 1.0
 ## The DEFEAT stamp's lettering at text scale 1.0 (px) and the veil over the disc (alpha).
 const FLATLINE_FONT := 34
-const FLATLINE_VEIL := 0.6
+const FLATLINE_VEIL := 1.0 - DEFEATED_DIM
 
 
 ## The DEFEAT stamp lands on the operative's wheel (and stays).
@@ -2464,39 +2513,150 @@ func arrow_hint_rects() -> Array[Rect2]:
 	return out
 
 
-## HP as a segmented arc under the wheel with the numbers in its gap; the preview shows
-## the HP the end of the turn leaves: lost segments in red, healed ones bright.
-func _draw_hp(center: Vector2, radius: float) -> void:
-	var hp_col := _col(HP_COLOR)
-	var segs := 20
+## A forecast loss segment's HARM fill alpha, and an empty segment's.
+const HP_GHOST_ALPHA := 0.35
+const HP_EMPTY_ALPHA := 0.1
+## The share of its step a segment fills (the rest is the gap between segments).
+const HP_SEG_FILL := 0.8
+
+
+## §3.5: the HP colour for the HP shown now (GAIN, WARN under half, HARM under a quarter).
+func hp_color_now() -> Color:
+	var c := _shown()
+	if c == null:
+		return HP_COLOR
+	return Palette.hp_color(shown_hp() / maxf(1.0, c.max_hp))
+
+
+## The HP arc's segments as drawn now: [{a0, a1 (rad), state}], state "full" (HP now and
+## after), "ghost" (lost if SEND IT is pressed now: hatched HARM), "heal" (gained), "lag"
+## (just lost: the white lag draining) or "empty".
+func hp_segments() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := _shown()
+	if c == null:
+		return out
+	var mx := maxf(1.0, c.max_hp)
 	var hp_now := shown_hp()
-	var frac := hp_now / maxf(1.0, combatant.max_hp)
-	var after := int(outcome.get("hp_after", combatant.hp)) if not replaying and is_nan(anim_hp) else roundi(hp_now)
-	var frac_after := float(after) / maxf(1.0, combatant.max_hp)
-	# The white lag bar: HP just lost, draining after the arc (ANIM-2).
-	var frac_lag := (lag_hp / maxf(1.0, combatant.max_hp)) if not is_nan(lag_hp) else frac
-	for k in segs:
-		var a0 := PI * 0.1 + PI * 0.8 * k / segs
-		var a1 := a0 + PI * 0.8 / segs * 0.8
-		if absf((a0 + a1) * 0.5 - PI * 0.5) < 0.34:
-			continue
-		var f := float(k) / segs
-		var col := Color(1, 1, 1, 0.1)
+	var frac := hp_now / mx
+	var after := int(outcome.get("hp_after", c.hp)) if not replaying and is_nan(anim_hp) else roundi(hp_now)
+	var frac_after := float(after) / mx
+	var frac_lag := (lag_hp / mx) if not is_nan(lag_hp) else frac
+	for k in HP_SEGMENTS:
+		var a0 := PI * 0.1 + PI * 0.8 * k / HP_SEGMENTS
+		var a1 := a0 + PI * 0.8 / HP_SEGMENTS * HP_SEG_FILL
+		var f := float(k) / HP_SEGMENTS
+		var state := "empty"
 		if f < minf(frac, frac_after):
-			col = hp_col
+			state = "full"
 		elif f < frac:
-			col = _col(LOSS_COLOR)
+			state = "ghost"
 		elif f < frac_after:
-			col = _col(HP_COLOR.lightened(0.5))
+			state = "heal"
 		elif f < frac_lag:
-			col = _col(Palette.PAPER)
-		draw_colored_polygon(_wedge(center, radius + 32, radius + HP_ARC_OUT, a0, a1), col)
+			state = "lag"
+		out.append({"a0": a0, "a1": a1, "state": state})
+	return out
+
+
+## The heartbeat's clock (s into its period) and whether it beats (§3.5: under a quarter HP,
+## T1 `hp_heartbeat`; static under reduce effects).
+var heart_t: float = 0.0
+
+
+func heartbeat_on() -> bool:
+	var c := combatant
+	if c == null or not c.is_alive() or defeated() or not Motion.live(&"hp_heartbeat"):
+		return false
+	return shown_hp() / maxf(1.0, c.max_hp) < Palette.HP_HARM_BELOW
+
+
+## How much the HP arc swells now (px): `hp_heartbeat`'s amplitude at the top of a beat (its
+## duration), still for the rest of the period (its delay); 0 when it doesn't beat.
+func heartbeat_swell() -> float:
+	if not heartbeat_on():
+		return 0.0
+	var beat := Motion.seconds(&"hp_heartbeat")
+	if heart_t >= beat or beat <= 0.0:
+		return 0.0
+	return Motion.amplitude(&"hp_heartbeat") * sin(PI * heart_t / beat)
+
+
+## A boss's phase pips on its HP arc (§6.1): one per phase threshold, filled once passed.
+func _draw_phase_pips(center: Vector2, r0: float, r1: float) -> void:
+	for pip in phase_pips():
+		var a: float = pip["a"]
+		var at := center + Vector2.from_angle(a) * (r0 + r1) * 0.5
+		var s := (r1 - r0) * PIP_SHARE
+		var diamond := PackedVector2Array([at + Vector2(0, -s), at + Vector2(s, 0), at + Vector2(0, s), at + Vector2(-s, 0)])
+		draw_colored_polygon(diamond, Palette.RESIST_GOLD if bool(pip["passed"]) else Palette.NIGHT_SKY)
+		diamond.append(diamond[0])
+		draw_polyline(diamond, Palette.RESIST_GOLD, 2.0, true)
+
+
+## A phase pip's half size as a share of the arc's width.
+const PIP_SHARE := 0.75
+
+
+## A boss's phase pips: [{a (rad on the arc), pct (the threshold), passed}]; empty for any
+## other wheel.
+func phase_pips() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := _shown()
+	if c == null or c.is_player or lookup == null or not lookup.has(c.source_id):
+		return out
+	var data := lookup.get_content(c.source_id) as EnemyData
+	if data == null or not data.is_boss:
+		return out
+	for i in data.phases.size():
+		var p := data.phases[i]
+		if p == null:
+			continue
+		out.append({"a": PI * 0.1 + PI * 0.8 * p.hp_threshold_pct, "pct": p.hp_threshold_pct, "passed": c.phase_index > i})
+	return out
+
+
+## HP as a segmented arc under the wheel with the number under it; the preview shows the HP
+## the end of the turn leaves: lost segments hatched in HARM, healed ones bright.
+func _draw_hp(center: Vector2, radius: float) -> void:
+	var hp_col := _col(hp_color_now())
+	var beat := heartbeat_swell()
+	var r0 := radius + HP_ARC_IN - beat * 0.5
+	var r1 := radius + HP_ARC_OUT + beat * 0.5
+	for seg in hp_segments():
+		var a0: float = seg["a0"]
+		var a1: float = seg["a1"]
+		var wedge := _wedge(center, r0, r1, a0, a1)
+		match String(seg["state"]):
+			"full":
+				draw_colored_polygon(wedge, hp_col)
+			"ghost":
+				# §3.5: a forecast loss is a hatched ghost segment in HARM.
+				draw_colored_polygon(wedge, _col(Color(LOSS_COLOR, HP_GHOST_ALPHA)))
+				for h in HP_HATCH:
+					var t := (h + 1.0) / (HP_HATCH + 1.0)
+					var aa := lerpf(a0, a1, t)
+					draw_line(center + Vector2.from_angle(aa - (a1 - a0) * 0.3) * r0, center + Vector2.from_angle(aa + (a1 - a0) * 0.3) * r1, _col(LOSS_COLOR), 2.0, true)
+				var closed := wedge.duplicate()
+				closed.append(wedge[0])
+				draw_polyline(closed, _col(LOSS_COLOR), 1.0, true)
+			"heal":
+				draw_colored_polygon(wedge, _col(HP_COLOR.lightened(0.5)))
+			"lag":
+				# The two-stage drain: the white lag drains after the fill (ANIM-2).
+				draw_colored_polygon(wedge, _col(Palette.PAPER))
+			_:
+				draw_colored_polygon(wedge, Color(Palette.TEXT_HI, HP_EMPTY_ALPHA))
+	_draw_phase_pips(center, r0, r1)
 	# The number is the HP now (it agrees with the top bar); the forecast after SEND IT is a
 	# separate dashed plate with an arrow (H22: "60→49" read as a result).
 	var lay := hp_layout()
 	var hs := _fs(HP_FONT_SIZE)
 	var hp_rect: Rect2 = lay["hp"]
-	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
+	var after := int(outcome.get("hp_after", combatant.hp)) if not replaying and is_nan(anim_hp) else roundi(shown_hp())
+	var hp_at := Vector2(hp_rect.position.x, hp_rect.end.y)
+	draw_string_outline(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HP_OUTLINE, Palette.NIGHT_SKY)
+	draw_string(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
 		var fs := _fs(HUB_FONT_SIZE + 3)
 		var ftext := String(lay["next_text"])
@@ -2540,11 +2700,14 @@ func hp_layout() -> Dictionary:
 	var center := _center()
 	var radius := _radius()
 	var hs := _fs(HP_FONT_SIZE)
-	var base_y := center.y + radius + HP_TEXT_GAP + hs - HP_FONT_SIZE
+	# Art pass W3 (§6.1): under the arc and under every needle's reach (a multi-needle boss
+	# never sweeps a needle over its HP).
+	var base_y := center.y + maxf(radius + HP_ARC_OUT, needle_reach()) + HP_NUMBER_GAP + hs * 0.8
 	var text := "%d/%d" % [roundi(shown_hp()), combatant.max_hp]
 	var tw := Palette.display().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, hs).x
 	var out := {"hp_text": text, "hp": Rect2(center.x - tw * 0.5, base_y - hs * 0.8, tw, hs * 0.8), "next": Rect2(), "next_text": "",
 		"last": Rect2(), "last_lines": PackedStringArray(), "last_fs": 0, "icons": Rect2(), "icons_fs": 0}
+	var row_y := base_y + LAST_TURN_GAP
 	var items := icon_row_items()
 	if not items.is_empty():
 		# ANIM-R3 A6f: the last turn as icons left of the HP number (ANIM-R4 notation: sword 6 − shield 5 = 1),
@@ -2570,16 +2733,21 @@ func hp_layout() -> Dictionary:
 		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
 		out["next_text"] = ftext
 		var x := center.x + tw * 0.5 + 8.0
-		# Kept inside the view (a long translation shifts it left, never off the edge).
-		x = minf(x, size.x - fw - 2.0)
-		out["next"] = Rect2(Vector2(x, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		if x + fw <= size.x - 2.0:
+			out["next"] = Rect2(Vector2(x, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		else:
+			# Art pass W3: no room beside the (heading) HP number: the plate takes its own row
+			# under it, never on the number.
+			out["next"] = Rect2(Vector2(clampf(center.x - fw * 0.5, 0.0, maxf(0.0, size.x - fw)), row_y), Vector2(fw, fs + 6.0))
+			row_y += fs + 6.0 + LAST_TURN_GAP
+	out["row_y"] = row_y
 	if last_turn != "":
 		var box := 2.0 * minf(center.x - left_reserve, size.x - center.x) - LAST_TURN_PAD * 2.0
 		var font := Palette.mono()
 		# One line, shrinking to the text-scale-1.0 size; then a second line where the view
 		# has the room under it; only then smaller (the wheel keeps its size for the rare
 		# long line).
-		var top_y := base_y + LAST_TURN_GAP
+		var top_y := row_y
 		var ls := _fs(HUB_FONT_SIZE)
 		var room_lines := clampi(floori((size.y - top_y - LAST_TURN_PAD) / maxf(1.0, HUB_FONT_SIZE)), 1, LAST_TURN_LINES)
 		var lines := _wrap_last_turn(last_turn, box, ls)
@@ -2593,7 +2761,7 @@ func hp_layout() -> Dictionary:
 		var lw := 0.0
 		for l in lines:
 			lw = maxf(lw, minf(box, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, ls).x))
-		var top := base_y + LAST_TURN_GAP
+		var top := row_y
 		out["last"] = Rect2(center.x - lw * 0.5 - LAST_TURN_PAD, top, lw + LAST_TURN_PAD * 2.0, ls * lines.size() + LAST_TURN_PAD)
 		out["last_lines"] = lines
 		out["last_fs"] = ls

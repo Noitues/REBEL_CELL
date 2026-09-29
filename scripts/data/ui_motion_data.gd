@@ -89,6 +89,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"focus_scale", &"button_refused", &"toast_in", &"toast_hold", &"toast_out", &"stamp_hold", &"zine_stamp_in",
 	&"banner_gap", &"toggle_slide",
 	&"bezel_ambient",  # art pass W3
+	&"hp_heartbeat",  # art pass W3
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

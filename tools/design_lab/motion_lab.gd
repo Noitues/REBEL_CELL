@@ -137,6 +137,7 @@ const DEMOS := {
 	&"focus_scale": ["pop", "sticker"], &"button_refused": ["blink", "sticker"], &"toast_in": ["drop", "sticker"],
 	&"toast_hold": ["fade_out", "sticker"], &"toast_out": ["fade_out", "sticker"], &"stamp_hold": ["screen", "stamp"],
 	&"zine_stamp_in": ["pop", "sticker"], &"banner_gap": ["fade_in", "panel"], &"toggle_slide": ["slide_x", "sticker"],
+	&"hp_heartbeat": ["scene", "send"],  # art pass W3
 	&"bezel_ambient": ["scene", "enter"],  # art pass W3
 }
 ## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
