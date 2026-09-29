@@ -144,13 +144,16 @@ func test_raid_setup_end_and_title_panels_fit_at_every_text_scale() -> void:
 		await _frames()
 		assert_true(_width(hq._panel) <= 1280.0, "end screen %d px at %.1f" % [_width(hq._panel), scale])
 		hq.queue_free()
+		RunManager.campaign = null
+	# Art pass W8a: the title family fits the whole text-scale range.
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
 		var title: Control = add_child_autofree(load("res://scenes/menu/title_scene.tscn").instantiate())
-		for show in ["show_main", "show_slots", "show_stats", "show_codex"]:
+		for show in ["show_main", "show_slots", "show_stats", "show_codex", "show_options"]:
 			title.call(show)
 			await _frames()
 			assert_true(_width(title._panel) <= 1280.0, "title %s %d px at %.1f" % [show, _width(title._panel), scale])
 		title.queue_free()
-		RunManager.campaign = null
 	Settings.set_text_scale(before)
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- inverted Cell hexagon: the landmark glyph of rebel_cell (art pass W8a, ART_BIBLE 3.6, 7.4 grammar:
+       24 px grid x2, round caps). White, tinted in the corp hue at runtime. -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="24,44 8,35 8,17 24,8 40,17 40,35"/><polyline points="16,20 24,34 32,20"/>
+  </g>
+</svg>
