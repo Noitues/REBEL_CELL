@@ -419,6 +419,21 @@ func _anim1() -> int:
 	if be == null or be.ease != Tween.EASE_IN_OUT or be.trans != Tween.TRANS_BACK or not is_equal_approx(be.amplitude, 1.2): fails += 1
 	table.entries = [e, e]
 	if table.validate().size() != 1: fails += 1  # repeated id
+	# Art pass W6 (ART_BIBLE 8): every entry carries a VFX tier (T0..T4, default T1) that
+	# round-trips; an out-of-range tier is an error.
+	var te := UiMotionEntryData.new()
+	te.id = &"smoke_tier"
+	var tier_default := te.tier
+	te.tier = UiMotionEntryData.Tier.T3_MOMENT
+	var tier_table := UiMotionData.new()
+	tier_table.entries = [te]
+	var tier_err := ResourceSaver.save(tier_table, "user://smoke_motion_tier.tres")
+	var tier_back: UiMotionData = load("user://smoke_motion_tier.tres")
+	var tb := tier_back.find(&"smoke_tier") if tier_back != null else null
+	print("W6: tier default ", tier_default, " save=", tier_err, " reload ", tb.tier if tb != null else -1)
+	if tier_default != UiMotionEntryData.Tier.T1_FEEDBACK or tb == null or tb.tier != UiMotionEntryData.Tier.T3_MOMENT: fails += 1
+	te.set("tier", 7)
+	if te.validate().size() != 1: fails += 1  # tier out of range
 	var shipped: UiMotionData = load("res://content/config/ui_motion.tres")
 	var missing := 0
 	for id in UiMotionData.REQUIRED_IDS:
@@ -426,4 +441,11 @@ func _anim1() -> int:
 			missing += 1
 	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
 	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
+	var bad_tier := 0
+	if shipped != null:
+		for se in shipped.entries:
+			if se == null or se.validate().size() != 0:
+				bad_tier += 1
+	print("W6: ui_motion.tres entries with a bad tier ", bad_tier)
+	if bad_tier != 0: fails += 1
 	return fails

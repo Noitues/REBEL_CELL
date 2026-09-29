@@ -447,9 +447,21 @@ func effects_enabled() -> bool:
 	return not Settings.reduce_effects
 
 
-## Screen flash (Perfect latch, threshold events). Returns whether it was shown. A
-## negative strength or seconds takes the `screen_flash` motion entry's amplitude/duration.
-func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = -1.0) -> bool:
+## A full-screen flash: T4 only (ART_BIBLE 8, art pass W6). No full-screen colour flash
+## below T4: a call with a lower `tier` (the default, so a caller must say T4) is refused,
+## with a warning in debug builds; a moment below T4 flashes its own region instead
+## (CombatFxLayer.wheel_burst, request_flash). Nothing at all under reduce effects. The
+## global limiter (<= 3/s) governs it. Strength and seconds are held to T4's limits (a
+## white flash at most 40%); a negative strength or seconds takes the `screen_flash` motion
+## entry's amplitude/duration. Returns whether it was shown.
+func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = -1.0, tier: int = VfxTier.T3) -> bool:
+	if not VfxTier.allows_full_screen(tier):
+		refused_flashes += 1
+		if OS.is_debug_build():
+			push_warning("Fx.flash: a full-screen flash needs tier T4 (ART_BIBLE 8); refused at %s." % VfxTier.NAMES[clampi(tier, 0, VfxTier.COUNT - 1)])
+		return false
+	if not effects_enabled():
+		return false
 	var now := Time.get_ticks_msec() / 1000.0
 	if not limiter.request(now):
 		return false
@@ -457,11 +469,39 @@ func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = 
 		strength = Motion.amplitude(&"screen_flash")
 	if seconds < 0.0:
 		seconds = Motion.seconds(&"screen_flash")
+	strength = VfxTier.clamp_alpha(tier, strength)
+	seconds = VfxTier.clamp_seconds(tier, seconds)
 	flashes_shown.append(now)
 	flash_rect.color = Color(color, strength)
 	var tw := create_tween()
 	tw.tween_property(flash_rect, "color:a", 0.0, seconds)
 	return true
+
+
+## Full-screen flashes refused for their tier (tests read this).
+var refused_flashes: int = 0
+
+
+## A local flash (a wheel's burst, a disc on a breaking wheel) asks here before it draws
+## (ART_BIBLE 8, art pass W6): nothing under reduce effects, and the one global limiter
+## (<= 3 flashes a second) governs local and full-screen flashes alike. Records it in
+## `flashes_shown` when it may show. Returns whether it may.
+func request_flash() -> bool:
+	if not effects_enabled():
+		return false
+	var now := Time.get_ticks_msec() / 1000.0
+	if not limiter.request(now):
+		return false
+	flashes_shown.append(now)
+	return true
+
+
+## The shake (px) motion entry `id` may use: its amplitude held to its tier's limit
+## (ART_BIBLE 8: none below T2, 2 px at T2, 4 px at T3, none at T4); 0 under reduce effects.
+func shake_px(id: StringName) -> float:
+	if not effects_enabled():
+		return 0.0
+	return VfxTier.clamp_shake(VfxTier.of(id), Motion.amplitude(id))
 
 
 ## Heat threshold distortion pulse (GDD 9.4): pulses, never stays on. Rises for
@@ -516,6 +556,8 @@ const HEAT_PULSE_MARGIN := 24.0
 func freeze_frames(frames: int = -1) -> void:
 	if frames < 0:
 		frames = roundi(Motion.amplitude(&"hit_freeze"))
+	# ART_BIBLE 8: the hit-stop is held to the entry's tier (T3: 3 frames at most).
+	frames = VfxTier.clamp_hit_stop(VfxTier.of(&"hit_freeze"), frames)
 	if not effects_enabled() or _frozen or frames <= 0:
 		return
 	_frozen = true

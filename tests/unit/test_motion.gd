@@ -119,8 +119,10 @@ func test_moved_inline_numbers_read_the_config() -> void:
 func test_fx_defaults_come_from_the_config() -> void:
 	var was := Fx.limiter.enabled
 	Fx.limiter.enabled = false
-	assert_true(Fx.flash())
-	assert_almost_eq(Fx.flash_rect.color.a, Motion.amplitude(&"screen_flash"), 0.001, "flash strength = screen_flash amplitude")
+	# Art pass W6: a full-screen flash is T4 only, held to T4's alpha (ART_BIBLE 8).
+	assert_true(Fx.flash(Color.WHITE, -1.0, -1.0, VfxTier.T4))
+	assert_almost_eq(Fx.flash_rect.color.a, VfxTier.clamp_alpha(VfxTier.T4, Motion.amplitude(&"screen_flash")), 0.001,
+		"flash strength = screen_flash amplitude, held to T4")
 	Fx.limiter.enabled = was
 	Fx.flash_rect.color.a = 0.0
 
