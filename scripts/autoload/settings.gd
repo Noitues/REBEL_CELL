@@ -58,6 +58,9 @@ var tutorial_done: bool = false
 ## and glyphs stay the main cue.
 var colorblind_mode: StringName = &"off"
 const COLORBLIND_MODES: Array[StringName] = [&"off", &"deutan", &"protan", &"tritan"]
+## High contrast (ART_BIBLE §12): opaque panels, TEXT_HI on #000 at 7:1, solid thick
+## button and focus edges (HighContrast.apply, hooked at the end of UiTheme.build).
+var high_contrast: bool = false
 ## Assist mode (GAP_ANALYSIS P2 13): new campaigns get config.assist_free_nudges extra free
 ## nudges a turn and config.assist_hp_multiplier operative HP; they set no ICE records and
 ## earn no campaign achievements.
@@ -196,6 +199,12 @@ func set_colorblind_mode(value: StringName) -> void:
 	if not COLORBLIND_MODES.has(value):
 		return
 	colorblind_mode = value
+	_apply()
+
+
+## Turns high contrast on or off (the UI theme rebuilds through `changed`).
+func set_high_contrast(value: bool) -> void:
+	high_contrast = value
 	_apply()
 
 
@@ -417,7 +426,7 @@ func to_dict() -> Dictionary:
 		"subtitles": subtitles, "subtitle_typing": subtitle_typing, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
 		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode,
-		"colorblind_mode": String(colorblind_mode)}
+		"colorblind_mode": String(colorblind_mode), "high_contrast": high_contrast}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -449,6 +458,7 @@ func from_dict(d: Dictionary) -> void:
 	# Art pass W9: additive keys; a file without them (or with an unknown value) gets the
 	# default.
 	colorblind_mode = _pick(d.get("colorblind_mode", ""), COLORBLIND_MODES)
+	high_contrast = bool(d.get("high_contrast", false))
 
 
 ## `value` as one of `allowed` (a StringName), or `allowed[0]` (the default) when it isn't.

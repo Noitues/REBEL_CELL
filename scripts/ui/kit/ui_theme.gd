@@ -113,6 +113,7 @@ static func build(text_scale: float = 1.0) -> Theme:
 	t.set_font_size(&"font_size", header, font_px_at(TITLE, text_scale))
 	t.set_color(&"font_color", header, Palette.PAPER)
 	_body_text(t, text_scale)
+	if Settings.high_contrast: HighContrast.apply(t)  # W9 hook (ART_BIBLE §12)
 	return t
 
 
