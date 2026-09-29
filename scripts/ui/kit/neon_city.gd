@@ -1353,18 +1353,11 @@ func _draw_veil() -> void:
 
 
 ## ANIM-R3 B4: while a view's bake runs, the city is drawn as its silhouette from the known
-## placement (every building's lot footprint in view as a dim block with a faint outline and
-## a low lift) so a map, the route or a fight's arena never shows an empty sky: the lots are
-## the bake's own (the placement's `_front_of`, cheap: the buildings themselves are not
-## built), worked out SILHOUETTE_BUDGET_USEC a frame (the layer redraws until all are known),
-## and kept per look.
-const SILHOUETTE_BUDGET_USEC := 8000
-const SILHOUETTE_FILL := 0.9
-const SILHOUETTE_EDGE := 0.4
-## The block's lift (px, its top face drawn this far above its footprint).
-const SILHOUETTE_LIFT := 10.0
-## Lots beyond the view's corners the silhouette also covers (a tall roof leans in).
-const SILHOUETTE_MARGIN := 3
+## placement so a map, the route or a fight's arena never shows an empty sky: the lots are
+## the bake's own (the placement's `_front_of`), worked out within a frame budget (the layer
+## redraws until all are known), and kept per look. Art pass W7 (ART_BIBLE §9.4): skyline
+## masses at the placement's real heights with lit windows, in the context grade, never flat
+## blocks (CitySilhouette).
 var _silhouette: Dictionary = {}  # lot (Vector2i) -> the building's front lot (NO_LOT: none)
 var _silhouette_look: String = ""
 ## Roofs drawn by the last silhouette pass, and whether it knew every lot in view (tests).
@@ -1387,63 +1380,7 @@ func _step_silhouette() -> void:
 func _draw_silhouette(ci: CanvasItem) -> void:
 	if not is_baked() or size.x < 2.0 or size.y < 2.0:
 		return
-	var look := look_key()
-	if look != _silhouette_look:
-		_silhouette.clear()
-		_silhouette_look = look
-	var corners: Array[Vector2] = [_grid_of(Vector2.ZERO), _grid_of(Vector2(size.x, 0)), _grid_of(Vector2(0, size.y)), _grid_of(size)]
-	var lo := corners[0]
-	var hi := corners[0]
-	for c in corners:
-		lo = lo.min(c)
-		hi = hi.max(c)
-	var i0 := floori(lo.x) - SILHOUETTE_MARGIN
-	var i1 := ceili(hi.x) + SILHOUETTE_MARGIN
-	var j0 := floori(lo.y) - SILHOUETTE_MARGIN
-	var j1 := ceili(hi.y) + SILHOUETTE_MARGIN
-	var t0 := Time.get_ticks_usec()
-	var place := _placement()
-	var fill := Color(Palette.NIGHT_BLOCK_LIT, SILHOUETTE_FILL)
-	var side := Color(Palette.NIGHT_BLOCK, SILHOUETTE_FILL)
-	var edge := Color(Palette.NET_CYAN, SILHOUETTE_EDGE)
-	var seen := {}
-	var done := true
-	silhouette_roofs = 0
-	var view := Rect2(Vector2.ZERO, size).grow(TILE_A * 2.0)
-	var up := Vector2(0, -SILHOUETTE_LIFT)
-	# From the view's middle outward (the part a map frames is known first), ring by ring.
-	var mid := _grid_of(size * 0.5)
-	var ci0 := clampi(roundi(mid.x), i0, i1)
-	var cj0 := clampi(roundi(mid.y), j0, j1)
-	var reach := maxi(maxi(ci0 - i0, i1 - ci0), maxi(cj0 - j0, j1 - cj0))
-	for ring in reach + 1:
-		for l: Vector2i in _ring_lots(Vector2i(ci0, cj0), ring, Rect2i(i0, j0, i1 - i0 + 1, j1 - j0 + 1)):
-			if not _silhouette.has(l):
-				if Time.get_ticks_usec() - t0 > SILHOUETTE_BUDGET_USEC:
-					done = false
-					continue
-				_silhouette[l] = place._front_of(l)
-			var f: Vector2i = _silhouette[l]
-			if f == NO_LOT or seen.has(f):
-				continue
-			seen[f] = true
-			var cell := place._cell_of(f.x, f.y)
-			var a := _iso(cell.position.x, cell.position.y)
-			if not view.has_point(a):
-				continue
-			var b := _iso(cell.end.x, cell.position.y)
-			var c := _iso(cell.end.x, cell.end.y)
-			var d := _iso(cell.position.x, cell.end.y)
-			# The two lit sides, then the top face lifted, then its outline.
-			ci.draw_colored_polygon(PackedVector2Array([d, c, c + up, d + up]), side)
-			ci.draw_colored_polygon(PackedVector2Array([c, b, b + up, c + up]), side)
-			var top := PackedVector2Array([a + up, b + up, c + up, d + up])
-			ci.draw_colored_polygon(top, fill)
-			ci.draw_polyline(top + PackedVector2Array([a + up]), edge, 1.0)
-			silhouette_roofs += 1
-	if ci == _sil:
-		# The rest next frame when the budget ran out (_step_silhouette).
-		silhouette_done = done
+	CitySilhouette.draw(self, ci)  # art pass W7 hook
 
 
 ## The lots `r` steps (Chebyshev) round `c` inside `box` (r = 0: `c` itself).
