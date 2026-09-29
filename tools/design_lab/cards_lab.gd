@@ -17,7 +17,7 @@ const MARGIN := 32.0
 const GAP := 18.0
 const LABEL_GAP := 6.0
 ## Frames to wait before saving (the SubViewport and the art queue draw over a few frames).
-const SAVE_AFTER_FRAMES := 12
+const SAVE_AFTER_FRAMES := 90
 ## Types x rarities: [type word, [common, uncommon, rare]].
 const TYPE_ROWS := [
 	["WHEEL (paper)", [&"jolt", &"spin_cycle", &"overclock_nudges"]],
@@ -149,9 +149,44 @@ func _sheet() -> void:
 	_families()
 
 
-## One card per illustration family (item 3 fills this in).
+## One card per illustration family (the base art, tinted by its type), then every card
+## with unique art (rares and class cards, Q1).
 func _families() -> void:
-	pass
+	var by_family := {}
+	var unique: Array[CardData] = []
+	var names := DirAccess.get_files_at("res://content/cards")
+	names.sort()
+	for f in names:
+		if not f.ends_with(".tres"):
+			continue
+		var card := load("res://content/cards/" + f) as CardData
+		var fam := CardArt.family_of(card)
+		if not by_family.has(fam):
+			by_family[fam] = []
+		(by_family[fam] as Array).append(card)
+		if CardArt.is_unique(card):
+			unique.append(card)
+	sheet.add_child(_heading("FAMILIES  //  base illustration per effect family (compact face)"))
+	var row := _row()
+	for fam in CardArt.FAMILIES:
+		if by_family.has(fam):
+			var cards: Array = by_family[fam]
+			var base: CardData = null
+			for c: CardData in cards:
+				if not CardArt.is_unique(c):
+					base = c
+					break
+			row.add_child(_cell(_zine(base if base != null else cards[0], false), "%s (%d)" % [fam, cards.size()]))
+		else:
+			var z := ZineCard.new("OVERCLOCK CHIP", -1, "Firmware: your ATTACK slices deal +1.", 0).scaled(scale_k)
+			z.focus_mode = Control.FOCUS_NONE
+			row.add_child(_cell(z, "%s (no card)" % fam))
+	sheet.add_child(row)
+	sheet.add_child(_heading("UNIQUE ART  //  rares and class cards (seeded by the card id)"))
+	var urow := _row()
+	for c in unique:
+		urow.add_child(_cell(_zine(c, false), String(c.id)))
+	sheet.add_child(urow)
 
 
 func _foil_strip() -> void:

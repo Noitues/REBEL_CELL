@@ -957,9 +957,32 @@ func _update_foil(L: Dictionary, on: bool) -> void:
 	RenderingServer.canvas_item_add_rect(_foil_ci, art, Color(full, FOIL_ART_STRENGTH))
 
 
-## The illustration in the window (item 3 paints it; W4 frame: the photocopy panel).
+## The illustration this card shows in a window `window_h` px tall: CardData.art when set
+## (the final art, no code change), else CardArt's cached risograph stand-in (null while
+## the frame's render budget is spent; the card asks again next frame).
+func art_texture(window_h: float) -> Texture2D:
+	return CardArt.texture_for(card_data, variant, window_h, card_title)
+
+
+## The part of `tex` a window of `win` shows: the 3:2 art centre-cropped to its aspect.
+static func art_region(tex_size: Vector2, win: Vector2) -> Rect2:
+	var wa := win.x / maxf(1.0, win.y)
+	if wa < tex_size.x / tex_size.y:
+		var w := tex_size.y * wa
+		return Rect2((tex_size.x - w) * 0.5, 0.0, w, tex_size.y)
+	var h := tex_size.x / wa
+	return Rect2(0.0, (tex_size.y - h) * 0.5, tex_size.x, h)
+
+
+## The illustration in the window (ART_BIBLE 7.3): the art, centre-cropped to the window.
 func _draw_art(art: Rect2, bg: Color, _fg: Color) -> void:
-	draw_rect(art, bg.lerp(Palette.PAPER_ALT, 0.5))
+	var tex := art_texture(art.size.y)
+	if tex == null:
+		draw_rect(art, bg.lerp(Palette.PAPER_ALT, 0.5))
+		if is_inside_tree() and not get_tree().process_frame.is_connected(queue_redraw):
+			get_tree().process_frame.connect(queue_redraw, CONNECT_ONE_SHOT)
+		return
+	draw_texture_rect_region(tex, art, art_region(tex.get_size(), art.size))
 
 
 func _draw_title(L: Dictionary, fg: Color) -> void:

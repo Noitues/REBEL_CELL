@@ -148,3 +148,69 @@ func test_foil_is_static_under_reduce_effects() -> void:
 	var src := FileAccess.get_file_as_string("res://shaders/foil.gdshader")
 	assert_true(src.contains("#include \"res://shaders/lib/rc_common.gdshaderinc\""), "the library include (W6)")
 	assert_true(src.contains("rc_live()") and src.contains("rc_time(TIME)"), "the shader goes static under the global reduce_effects")
+
+
+# --- 3. Illustration stand-ins (7.3, Q1) --------------------------------------------------------
+
+func test_every_card_maps_to_an_effect_family() -> void:
+	var used := {}
+	for card in _cards():
+		var fam := CardArt.family_of(card)
+		assert_true(fam in CardArt.FAMILIES, "%s: family %s is listed" % [card.id, fam])
+		assert_ne(fam, &"chip", "%s maps to an effect family, not the fallback" % card.id)
+		used[fam] = true
+	assert_between(CardArt.FAMILIES.size(), 25, 40, "about 30 base illustrations (Q1)")
+	assert_eq(used.size(), CardArt.FAMILIES.size() - 1, "every family but the chip fallback has a card")
+
+
+func test_unique_art_for_rares_and_class_cards_only() -> void:
+	for card in _cards():
+		var unique := card.rarity >= RC.Rarity.RARE or card.class_id != &""
+		assert_eq(CardArt.is_unique(card), unique, "%s unique art" % card.id)
+		assert_eq(CardArt.art_key(card).begins_with("id:"), unique, "%s keyed by %s" % [card.id, "its id" if unique else "its family"])
+
+
+func test_card_art_is_deterministic() -> void:
+	for id in [&"jolt", &"short_circuit", &"ghost_step"]:
+		var card := _card(id)
+		var key := CardArt.art_key(card)
+		var a := CardArt.render_image(CardArt.family_of(card), key, 0, 96)
+		var b := CardArt.render_image(CardArt.family_of(card), key, 0, 96)
+		assert_eq(hash(a.get_data()), hash(b.get_data()), "%s: same id, same image" % id)
+		assert_eq(a.get_size(), Vector2i(144, 96), "3:2 master aspect")
+	var x := CardArt.render_image(&"ghost_step", CardArt.art_key(_card(&"ghost_step")), 0, 96)
+	var y := CardArt.render_image(&"jam", CardArt.art_key(_card(&"jam")), 0, 96)
+	assert_ne(hash(x.get_data()), hash(y.get_data()), "a class card's art differs from its family's base")
+
+
+func test_shared_family_art_is_tinted_per_type() -> void:
+	var p := CardArt.render_image(&"spin", "family:spin", 0, 96)
+	var k := CardArt.render_image(&"spin", "family:spin", 1, 96)
+	assert_ne(hash(p.get_data()), hash(k.get_data()), "paper and black prints of one base differ")
+	assert_eq(CardArt.inks(0)[1], Palette.INK, "the key ink is INK on paper")
+	assert_eq(CardArt.inks(1)[1], Palette.PAPER, "and paper-white on black stock")
+
+
+func test_an_illustration_texture_replaces_the_stand_in() -> void:
+	var card := _card(&"jolt").duplicate() as CardData
+	var img := Image.create(768, 512, false, Image.FORMAT_RGB8)
+	var tex := ImageTexture.create_from_image(img)
+	card.art = tex
+	var z := _sticker(card)
+	assert_eq(z.art_texture(88.0), tex, "CardData.art is drawn instead of the stand-in")
+	z.free()
+	var plain := _sticker(_card(&"jolt"))
+	var t2 := plain.art_texture(88.0)
+	assert_ne(t2, tex, "no art: the stand-in")
+	plain.free()
+
+
+func test_stand_ins_are_cached() -> void:
+	CardArt.clear_cache()
+	var card := _card(&"heavy_spin")
+	await get_tree().process_frame
+	var a := CardArt.texture_for(card, 0, 88.0)
+	var b := CardArt.texture_for(card, 0, 90.0)
+	assert_not_null(a)
+	assert_eq(a, b, "one render per card key and height bucket")
+	assert_eq(CardArt.texture_for(_card(&"whirl"), 0, 88.0), a, "cards of a family share the base print")
