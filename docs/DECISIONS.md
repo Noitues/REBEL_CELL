@@ -520,7 +520,11 @@ test); R4 / R1 tests adjusted where they pinned the old behaviour (below).
   a script that did not run); the rules read each file once (`source`), compile each
   pattern once (`_re`) and read a line further only when it names a frame signal or a
   fixed-wait call. The integrity tests now take under a second. The manifest's times were
-  refreshed from measured runs (`run_tests.py --update-times`).
+  refreshed from measured runs (`run_tests.py --update-times`). The runner now reruns a
+  script that failed in its shard alone and reports it ORDER-DEPENDENT when it passes alone
+  (the first full run here failed `test_anim_r4_city`'s verdict sweep in its shard only:
+  the RunManager lookup kept a Mirror corporation built by an earlier script, which fix
+  agent C is fixing); the run still fails.
 - **R6 the fixed-wait rule scans `tests/helpers/`.** Every function there is a helper (its
   caller asserts), so any fixed wait in one is flagged. BoundedWait's polls (a frame at a
   time, counting game time) are no fixed wait: it needs no marker and the test asserts it
