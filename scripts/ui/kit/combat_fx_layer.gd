@@ -155,8 +155,15 @@ func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector
 	var e := Motion.entry(id)
 	_add({"kind": "number", "at": at, "text": text, "color": color, "dur": Motion.seconds(id), "delay": Motion.delay_of(id) + extra_delay,
 		"dir": dir, "rise": drift, "fs": fs, "crit": crit, "ease": e.ease, "trans": e.trans, "band": band, "icon": icon})
-	if crit and Motion.live(&"number_crit"):
-		burst(at, color, &"number_crit")
+	# Art pass W6 (ART_BIBLE 8): the slice's own hit shape where the number lands: a crit
+	# shatters (it was a star burst), a guard's shield / evade number its plates / smear, a
+	# heal its plus signs.
+	if crit:
+		hit_vfx(at, HIT_CRIT, Color(0, 0, 0, 0), extra_delay + Motion.delay_of(id))
+	elif _guard_icon(icon, []) >= 0:
+		hit_vfx(at, hit_kind(_guard_icon(icon, [])), Color(0, 0, 0, 0), extra_delay + Motion.delay_of(id))
+	elif id == &"heal_number":
+		hit_vfx(at, HIT_HEAL, Color(0, 0, 0, 0), extra_delay + Motion.delay_of(id))
 	return rect
 
 
@@ -173,6 +180,11 @@ func impact(at: Vector2, text: String, icon: int, color: Color, delay: float = 0
 	var fs := roundi(NUMBER_FONT * Settings.text_scale * IMPACT_FONT_SHARE)
 	_add({"kind": "impact", "at": at, "text": text, "icon": icon, "color": color, "fs": fs, "delay": delay,
 		"dur": Motion.seconds(&"impact_mark"), "from": Motion.amplitude(&"impact_mark"), "items": items})
+	# Art pass W6 (ART_BIBLE 8): the guard that met the hit shows its shape where it struck
+	# (hex plates for a shield or a block, an afterimage smear for an evade).
+	var guard := _guard_icon(icon, items)
+	if guard >= 0:
+		hit_vfx(at, hit_kind(guard), Color(0, 0, 0, 0), delay)
 
 
 ## The box an impact mark covers at rest (global), for the layout checks.
@@ -247,8 +259,14 @@ func travel_number(at: Vector2, to: Vector2, text: String, color: Color, crit: b
 	_add({"kind": "travel", "at": at, "to": to, "text": text, "raw": raw, "swap": swap, "color": color, "fs": font_size, "crit": crit,
 		"delay": delay, "hold": hold, "dur": hold + Motion.seconds(&"number_to_hp"),
 		"shrink": Motion.amplitude(&"number_to_hp"), "ease": e.ease, "trans": e.trans, "band": band, "on_arrive": on_arrive})
-	if crit and Motion.live(&"number_crit"):
-		burst(at, color, &"number_crit", delay)
+	# Art pass W6 (ART_BIBLE 8): what got through lands with its slice's hit shape: a crit
+	# shatters, a hit slashes, a heal ("+N") rises in plus signs.
+	if crit:
+		hit_vfx(at, HIT_CRIT, Color(0, 0, 0, 0), delay)
+	elif text.begins_with("+"):
+		hit_vfx(at, HIT_HEAL, Color(0, 0, 0, 0), delay)
+	else:
+		hit_vfx(at, HIT_ATTACK, Color(0, 0, 0, 0), delay)
 
 
 ## The numbers resting in `band` move on: a travelling one sets off now, a floating one
@@ -465,6 +483,211 @@ func _draw_wheel_burst(s: Dictionary) -> void:
 	draw_arc(c, lerpf(r, ring_r, 0.6), 0.0, TAU, BURST_SEGMENTS, Color(Palette.PAPER, a * 0.8), BURST_RING_W1, true)
 
 
+# --- Per-slice hit shapes (art pass W6, ART_BIBLE 8) --------------------------------------------
+
+## Each slice type has its own hit shape, so an outcome reads without colour: crit =
+## shattered glass, attack = a slash streak, shield / defend = hex plates, evade = an
+## afterimage smear, afflict = a glitch crawl, heal = rising plus signs, miss = static.
+const HIT_CRIT := &"crit"
+const HIT_ATTACK := &"attack"
+const HIT_SHIELD := &"shield"
+const HIT_EVADE := &"evade"
+const HIT_AFFLICT := &"afflict"
+const HIT_HEAL := &"heal"
+const HIT_MISS := &"miss"
+const HIT_KINDS: Array[StringName] = [&"crit", &"attack", &"shield", &"evade", &"afflict", &"heal", &"miss"]
+## Each shape's motion entry (duration, reach in px, tier: T3 for a crit, T2 the rest).
+const HIT_MOTION := {&"crit": &"hit_vfx_crit", &"attack": &"hit_vfx_attack", &"shield": &"hit_vfx_shield", &"evade": &"hit_vfx_evade",
+	&"afflict": &"hit_vfx_afflict", &"heal": &"hit_vfx_heal", &"miss": &"hit_vfx_miss"}
+## Slice type -> its hit shape. DEPLOY launches a drone whose own hits are attacks.
+const HIT_BY_SLICE := {RC.SliceType.ATTACK: &"attack", RC.SliceType.CRIT: &"crit", RC.SliceType.DEFEND: &"shield",
+	RC.SliceType.SHIELD: &"shield", RC.SliceType.EVADE: &"evade", RC.SliceType.HEAL: &"heal", RC.SliceType.AFFLICT: &"afflict",
+	RC.SliceType.MISS: &"miss", RC.SliceType.DEPLOY: &"attack"}
+## Hit shape -> the slice type whose colour it wears by default (ART_BIBLE 3.4).
+const HIT_COLOR_SLICE := {&"crit": RC.SliceType.CRIT, &"attack": RC.SliceType.ATTACK, &"shield": RC.SliceType.DEFEND,
+	&"evade": RC.SliceType.EVADE, &"afflict": RC.SliceType.AFFLICT, &"heal": RC.SliceType.HEAL, &"miss": RC.SliceType.MISS}
+## Shape drawing (shares of the reach unless named px): glass shards and cracks; the slash's
+## angle (rad), width and its speed lines; hex plates' size and stagger; evade ghosts and
+## their spacing; glitch rows, bar height and jump rate (steps a second); plus signs, their
+## size and stagger; static cells (px) and the share lit; outline widths (px).
+const SHARDS := 9
+const CRACKS := 7
+const SLASH_ANGLE := -0.6
+const SLASH_WIDTH := 0.28
+const SLASH_LINES := 2
+const HEX_SIZE := 0.38
+const HEX_STAGGER := 0.07
+const EVADE_GHOSTS := 4
+const EVADE_RING := 0.42
+const GLITCH_ROWS := 6
+const GLITCH_BAR := 0.13
+const GLITCH_RATE := 20.0
+const PLUSES := 4
+const PLUS_SIZE := 0.3
+const PLUS_STAGGER := 0.12
+const STATIC_CELL := 4.0
+const STATIC_LIT := 0.5
+const HIT_LINE_W := 2.5
+const HIT_FILL_ALPHA := 0.35
+
+
+## The hit shape of a `slice_type` (RC.SliceType); a crit landing (`crit`) is a crit.
+static func hit_kind(slice_type: int, crit: bool = false) -> StringName:
+	if crit:
+		return HIT_CRIT
+	return HIT_BY_SLICE.get(slice_type, HIT_ATTACK)
+
+
+## Plays hit shape `kind` (HIT_KINDS) at `at` (global) after `delay` s, in `color` (default:
+## its slice colour), `size` x its entry's reach. Its duration comes from the entry held to
+## the entry's tier (T2; T3 for a crit). Reduce effects, headless or the entry off: nothing
+## (the end state at once). Returns whether it plays.
+func hit_vfx(at: Vector2, kind: StringName, color: Color = Color(0, 0, 0, 0), delay: float = 0.0, size: float = 1.0) -> bool:
+	var id: StringName = HIT_MOTION.get(kind, &"")
+	if id == &"" or not Motion.live(id):
+		return false
+	var tier := VfxTier.of(id)
+	var e := Motion.entry(id)
+	var col := color if color.a > 0.0 else Palette.slice_color(int(HIT_COLOR_SLICE[kind]))
+	_add({"kind": "hitfx", "hit": kind, "at": at, "color": col, "delay": delay, "dur": VfxTier.clamp_seconds(tier, Motion.seconds(id)),
+		"reach": Motion.amplitude(id) * maxf(size, 0.0), "fill": VfxTier.clamp_alpha(tier, HIT_FILL_ALPHA), "ease": e.ease, "trans": e.trans})
+	return true
+
+
+## Plays the hit shape of a `slice_type` landing (see hit_kind) at `at` (global).
+func slice_hit(at: Vector2, slice_type: int, crit: bool = false, delay: float = 0.0) -> bool:
+	return hit_vfx(at, hit_kind(slice_type, crit), Color(0, 0, 0, 0), delay)
+
+
+## The hit shapes playing now (tests): their kinds.
+func hit_kinds_playing() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for s in sprites:
+		if String(s["kind"]) == "hitfx":
+			out.append(StringName(s["hit"]))
+	return out
+
+
+## The guard's slice type in an impact (its icon, or the guard glyph among an equation's
+## items), -1 when none.
+static func _guard_icon(icon: int, items: Array) -> int:
+	var guards := [RC.SliceType.DEFEND, RC.SliceType.SHIELD, RC.SliceType.EVADE]
+	if icon in guards:
+		return icon
+	for it in items:
+		if int(it.get("icon", -1)) in guards:
+			return int(it["icon"])
+	return -1
+
+
+func _draw_hitfx(s: Dictionary) -> void:
+	var p := _p(s)
+	var q := _ease(s)
+	var c := _local(s["at"])
+	var reach := float(s["reach"])
+	var col: Color = s["color"]
+	var fade := 1.0 - p
+	var serial := int(s["serial"])
+	match StringName(s["hit"]):
+		HIT_CRIT:
+			# Cracks run out first, then glass shards fly and turn.
+			var crack := clampf(q * 2.5, 0.0, 1.0)
+			for k in CRACKS:
+				var a := TAU * (k + _h(serial, k)) / CRACKS
+				var d := Vector2(cos(a), sin(a))
+				var bend := d.orthogonal() * reach * 0.12 * (_h(k, serial, 2) - 0.5)
+				var mid := c + d * reach * 0.45 * crack + bend
+				draw_polyline(PackedVector2Array([c, mid, c + d * reach * 0.8 * crack]), Color(Palette.PAPER, fade), HIT_LINE_W, true)
+			for k in SHARDS:
+				var a := TAU * (k + 0.5 + _h(k, serial, 3)) / SHARDS
+				var d := Vector2(cos(a), sin(a))
+				var at := c + d * reach * (0.3 + 0.7 * q)
+				var sz := reach * (0.14 + 0.1 * _h(k, serial, 4))
+				var turn := (_h(serial, k, 5) - 0.5) * PI * q
+				var tri := PackedVector2Array([at + d.rotated(turn) * sz, at + d.orthogonal().rotated(turn) * sz * 0.55, at - d.orthogonal().rotated(turn) * sz * 0.55])
+				draw_colored_polygon(tri, Color(Palette.PAPER, float(s["fill"]) * 2.0 * fade))
+				draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color(col, fade), HIT_LINE_W * 0.6, true)
+		HIT_ATTACK:
+			# A tapered slash sweeps across, two thin speed lines beside it.
+			var d := Vector2.from_angle(SLASH_ANGLE)
+			var n := d.orthogonal()
+			var from := c - d * reach * 0.5
+			var head := from + d * reach * clampf(q * 1.4, 0.0, 1.0)
+			var tail := from + d * reach * clampf((q - 0.3) * 1.4, 0.0, 1.0)
+			var mid := (head + tail) * 0.5
+			var w := reach * SLASH_WIDTH * fade
+			draw_colored_polygon(PackedVector2Array([tail, mid + n * w, head, mid - n * w]), Color(col, fade))
+			draw_polyline(PackedVector2Array([tail, mid + n * w, head, mid - n * w, tail]), Color(Palette.PAPER, fade), 1.5, true)
+			for k in SLASH_LINES:
+				var off := n * w * (1.8 + k * 0.9) * (1.0 if k % 2 == 0 else -1.0)
+				draw_line(tail.lerp(head, 0.2) + off, tail.lerp(head, 0.8) + off, Color(Palette.PAPER, fade * 0.8), 1.5, true)
+		HIT_SHIELD:
+			# Seven hex plates snap together (centre, then its six neighbours).
+			var hr := reach * HEX_SIZE
+			var spots := [Vector2.ZERO]
+			for k in 6:
+				spots.append(Vector2.from_angle(PI / 6.0 + k * PI / 3.0) * hr * sqrt(3.0))
+			for k in spots.size():
+				var pop := clampf((p - k * HEX_STAGGER) / 0.35, 0.0, 1.0)
+				if pop <= 0.0:
+					continue
+				var sc := Tween.interpolate_value(0.6, 0.4, pop, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT) as float
+				var hex := PackedVector2Array()
+				for v in 6:
+					hex.append(c + spots[k] * sc + Vector2.from_angle(v * PI / 3.0) * hr * sc * 0.92)
+				draw_colored_polygon(hex, Color(col, float(s["fill"]) * fade))
+				hex.append(hex[0])
+				draw_polyline(hex, Color(col, fade), HIT_LINE_W, true)
+		HIT_EVADE:
+			# Ghost rings trail aside, fainter each, with speed lines behind.
+			var r := reach * EVADE_RING
+			for k in EVADE_GHOSTS:
+				var at := c + Vector2(reach * q * (1.0 - float(k) / EVADE_GHOSTS), 0.0)
+				var a := fade * (1.0 - float(k) / EVADE_GHOSTS)
+				draw_arc(at, r, 0.0, TAU, 24, Color(col, a), HIT_LINE_W if k == 0 else 1.5, true)
+			for k in 3:
+				var y := (k - 1) * r * 0.6
+				draw_line(c + Vector2(-reach * 0.6, y), c + Vector2(-reach * 0.6 + reach * 0.5 * q, y), Color(Palette.PAPER, fade * 0.7), 1.5, true)
+		HIT_AFFLICT:
+			# Broken bars crawl down, jumping sideways GLITCH_RATE times a second.
+			var step := floori(float(s["age"]) * GLITCH_RATE)
+			var bar := reach * GLITCH_BAR
+			for row in GLITCH_ROWS:
+				if float(row) / GLITCH_ROWS > q * 1.3:
+					break
+				var y := c.y - reach * 0.5 + row * bar * 1.6
+				var w := reach * (0.4 + 0.8 * _h(row, serial, 6))
+				var x := c.x - w * 0.5 + (_h(row, step, serial) - 0.5) * reach * 0.5
+				draw_rect(Rect2(x + 2.0, y, w, bar), Color(Palette.NET_CYAN, fade * 0.5))
+				draw_rect(Rect2(x, y, w, bar), Color(col, fade))
+		HIT_HEAL:
+			# Plus signs rise one after another.
+			for k in PLUSES:
+				var t := clampf((p - k * PLUS_STAGGER) / (1.0 - PLUS_STAGGER * (PLUSES - 1)), 0.0, 1.0)
+				if t <= 0.0 or t >= 1.0:
+					continue
+				var at := c + Vector2((float(k) / (PLUSES - 1) - 0.5) * reach * 1.2, -reach * t)
+				var arm := reach * PLUS_SIZE * (0.7 + 0.3 * _h(k, serial, 7))
+				var a := 1.0 - t
+				for d in [Vector2.RIGHT, Vector2.DOWN]:
+					draw_line(at - d * arm, at + d * arm, Color(Palette.NIGHT_SKY, a * 0.8), arm * 0.55 + 2.0)
+					draw_line(at - d * arm, at + d * arm, Color(col, a), arm * 0.55)
+		HIT_MISS:
+			# A disc of static in a dashed ring (the MISS slice's dashes).
+			var step := floori(float(s["age"]) * GLITCH_RATE)
+			var cells := ceili(reach * 2.0 / STATIC_CELL)
+			for i in cells:
+				for j in cells:
+					var o := Vector2(i + 0.5, j + 0.5) * STATIC_CELL - Vector2(reach, reach)
+					if o.length() > reach or _h(i * 131 + j, step, serial) > STATIC_LIT:
+						continue
+					var lit := Palette.PAPER if _h(j, i, step) > 0.5 else col
+					draw_rect(Rect2(c + o - Vector2.ONE * STATIC_CELL * 0.5, Vector2.ONE * STATIC_CELL), Color(lit, fade * 0.85))
+			for k in 12:
+				var a0 := TAU * k / 12.0
+				draw_arc(c, reach, a0, a0 + TAU / 24.0, 4, Color(col, fade), HIT_LINE_W, true)
+
+
 ## A radial glow: `col` at the centre fading to nothing at `r`.
 func _draw_glow(c: Vector2, r: float, col: Color) -> void:
 	var edge := Color(col, 0.0)
@@ -547,6 +770,8 @@ func stamp(at: Vector2, glyph: String, color: Color, hold: float, delay: float =
 		return
 	_add({"kind": "stamp", "at": at, "glyph": glyph, "color": color, "dur": Motion.seconds(&"status_stamp") + hold,
 		"land": Motion.seconds(&"status_stamp"), "from": Motion.amplitude(&"status_stamp"), "delay": delay})
+	# Art pass W6 (ART_BIBLE 8): an afflict lands as a glitch crawl on its slice.
+	hit_vfx(at, HIT_AFFLICT, Color(0, 0, 0, 0), delay)
 
 
 ## A broken wheel: `pieces` ([polygon (global), colour]) fall `enemy_break`'s amplitude px
@@ -812,6 +1037,8 @@ func _draw() -> void:
 				_draw_embers(s)
 			"wheel_burst":
 				_draw_wheel_burst(s)
+			"hitfx":
+				_draw_hitfx(s)
 	if reticle_visible:
 		var c := _local(reticle_pos)
 		var r := RETICLE_RADIUS + Motion.amplitude(&"target_snap") * reticle_pop

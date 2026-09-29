@@ -127,7 +127,18 @@ const DEMOS := {
 	# Art pass W6 (ART_BIBLE 8): the wheel-local T3 bursts (Perfect and a boss phase: the
 	# full-screen flashes are retired) play on the lab's wheel through a CombatFxLayer.
 	&"wheel_burst_perfect": ["burst", "perfect"], &"wheel_burst_phase": ["burst", "phase"],
+	# Art pass W6: each slice type's hit shape on the lab's wheel (--demo-hits-row plays all
+	# seven side by side, named, for the greyscale sheet).
+	&"hit_vfx_crit": ["hit_vfx", "crit"], &"hit_vfx_attack": ["hit_vfx", "attack"], &"hit_vfx_shield": ["hit_vfx", "shield"],
+	&"hit_vfx_evade": ["hit_vfx", "evade"], &"hit_vfx_afflict": ["hit_vfx", "afflict"], &"hit_vfx_heal": ["hit_vfx", "heal"],
+	&"hit_vfx_miss": ["hit_vfx", "miss"],
 }
+## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
+## step between shapes (px, 1280x720), and the names' lettering.
+const HITS_ROW_Y := 360.0
+const HITS_ROW_X := 440.0
+const HITS_ROW_STEP := 120.0
+const HITS_ROW_FONT := 15
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -192,6 +203,7 @@ var _typed: Label
 var _stage: Control
 ## Art pass W6: the lab's own combat effects layer over the stage (bursts, hit shapes).
 var _lab_fx: CombatFxLayer
+var _hits_row := false
 
 var _ids: OptionButton
 var _dur: HSlider
@@ -227,6 +239,8 @@ func _ready() -> void:
 			_loop = false
 		elif arg.begins_with("--demo-speed="):
 			Motion.set_speed(float(arg.trim_prefix("--demo-speed=")))
+		elif arg == "--demo-hits-row":
+			_hits_row = true
 		elif arg.begins_with("--demo-set="):
 			_apply_sets(arg.trim_prefix("--demo-set="))
 	if not Motion.has(_id):
@@ -437,6 +451,21 @@ func _play() -> void:
 		"flash":
 			# Art pass W6: a full-screen flash is T4 only (screen_flash).
 			Fx.flash(Color.WHITE, amp, Motion.seconds(_id), VfxTier.T4)
+		"hit_vfx":
+			# Art pass W6: the hit shape on the wheel's hub (or the whole row, named).
+			if _hits_row:
+				_stage.visible = false
+				for k in CombatFxLayer.HIT_KINDS.size():
+					var at := Vector2(HITS_ROW_X + k * HITS_ROW_STEP, HITS_ROW_Y)
+					_lab_fx.hit_vfx(at, CombatFxLayer.HIT_KINDS[k])
+					var name_tag := Label.new()
+					name_tag.text = String(CombatFxLayer.HIT_KINDS[k]).to_upper()
+					name_tag.add_theme_font_override("font", Palette.mono())
+					name_tag.add_theme_font_size_override("font_size", HITS_ROW_FONT)
+					name_tag.position = at + Vector2(-HITS_ROW_STEP * 0.3, HITS_ROW_STEP * 0.45)
+					_lab_fx.add_child(name_tag)
+			else:
+				_lab_fx.hit_vfx(_wheel.global_center(), StringName(demo[1]))
 		"burst":
 			# Art pass W6: the wheel-local T3 burst on the lab's wheel (the phase in a corp hue).
 			var hue := Palette.CORP_SOLACE if demo[1] == "phase" else Color(0, 0, 0, 0)

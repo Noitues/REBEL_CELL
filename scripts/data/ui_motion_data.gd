@@ -82,6 +82,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"defeat_stamp",
 	# Art pass W6 (ART_BIBLE 8): the wheel-local T3 bursts that retire the full-screen flashes.
 	&"wheel_burst_perfect", &"wheel_burst_phase",
+	# Art pass W6 (ART_BIBLE 8): each slice type's own hit shape.
+	&"hit_vfx_crit", &"hit_vfx_attack", &"hit_vfx_shield", &"hit_vfx_evade", &"hit_vfx_afflict", &"hit_vfx_heal", &"hit_vfx_miss",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
