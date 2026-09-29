@@ -524,6 +524,25 @@ func test_the_aim_line_starts_at_the_card_centre() -> void:
 	await _frames(1)
 	var card: ZineCard = scene._card_node(0)
 	assert_eq(scene.aim_origin(), card.get_global_rect().get_center(), "from the card's centre, not its top edge")
+	# W4: while dragged, from the drag ghost's own centre.
+	var ghost := DragGhost.new(ZineCard.new("JOLT", 1, "", 0))
+	get_tree().root.add_child(ghost)
+	ghost.global_position = Vector2(300, 400)
+	scene._dragging = true
+	assert_almost_eq(scene.aim_origin(), ghost.center_global(), Vector2.ONE * 0.01, "the ghost's centre")
+	scene._dragging = false
+	ghost.free()
+
+
+func test_the_hand_drives_w4s_hover() -> void:
+	var scene := await _combat()
+	var card: ZineCard = scene._card_node(0)
+	assert_false(card.auto_hover, "the hand drives the hover")
+	card.release_focus()
+	card.mouse_entered.emit()
+	assert_true(card.is_hovered_card(), "lifted, 1.12, straight on hover")
+	card.mouse_exited.emit()
+	assert_false(card.is_hovered_card(), "settles back")
 
 
 # --- 9. Resolve speed (§10 with W9s) ---------------------------------------------------------------

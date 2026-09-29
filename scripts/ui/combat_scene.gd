@@ -900,6 +900,7 @@ func _notification(what: int) -> void:
 		var data: Variant = get_viewport().gui_get_drag_data()
 		if data is Dictionary and (data as Dictionary).has("hand_index") and engine != null and engine.has_fight():
 			_dragging = true
+			set_process(true)
 			var i := int(data["hand_index"])
 			# ANIM-3 pick-up: the card pops as it leaves the hand.
 			var picked := _card_node(i)
@@ -1096,9 +1097,21 @@ func _draw_aim_line() -> void:
 ## dragged card's while it is dragged: W4's drag ghost centre follows the pointer).
 func aim_origin() -> Vector2:
 	if _dragging:
-		return get_global_mouse_position()
+		# W4: the drag ghost's own centre (its lag, tilt and 60% scale included).
+		var ghost := _drag_ghost()
+		return ghost.center_global() if ghost != null else get_global_mouse_position()
 	var card_node := _card_node(selecting)
 	return card_node.get_global_rect().get_center() if card_node != null else Vector2.ZERO
+
+
+## The card's drag ghost on screen now (W4's DragGhost, the drag preview), or null.
+func _drag_ghost() -> DragGhost:
+	if not is_inside_tree():
+		return null
+	for n in get_tree().root.find_children("*", "Control", true, false):
+		if n is DragGhost:
+			return n as DragGhost
+	return null
 
 
 ## Fades the cards not being aimed (and restores them).
@@ -1489,7 +1502,9 @@ func _start_music() -> void:
 
 func _build_ui() -> void:
 	background = WireframeBackground.new()
-	background.city.dim = 0.55  # the arena: wheels first, city second
+	# W7 (§9.1): the combat grade (contrast up, the city dimmed behind the wheels) is the
+	# city's own context; it includes the arena's veil.
+	background.set_context(&"combat")
 	add_child(background)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -2094,12 +2109,19 @@ func _build_hand(state: CombatState) -> void:
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
+			c.set_hovered(true)
 			if selecting < 0:
 				_preview_card(index))
 		c.focus_entered.connect(func() -> void:
+			c.set_hovered(true)
 			if _nav_focus and selecting < 0:
 				_preview_card(index))
+		c.focus_exited.connect(func() -> void:
+			if not c.get_global_rect().has_point(c.get_global_mouse_position()):
+				c.set_hovered(false))
 		c.mouse_exited.connect(func() -> void:
+			if not c.has_focus():
+				c.set_hovered(false)
 			if selecting < 0:
 				_clear_ghost()
 				_show_end_turn_preview())
@@ -2123,6 +2145,8 @@ func _card_pressed(index: int) -> void:
 ## connects its own; flights use the bare copy).
 func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
+	# W4 (§6.3): the hand drives the hover itself (lift 12 px, 1.12, straighten; card_hover).
+	c.auto_hover = false
 	if Settings.pad_active:
 		c.hotkey = ""
 		c.pad_hint = Settings.key_text(&"ui_accept")
@@ -2863,8 +2887,10 @@ func _process(delta: float) -> void:
 	if _gap_waiting and is_instance_valid(_gap):
 		if not _hand_box.get_global_rect().has_point(get_global_mouse_position()):
 			_close_gap()
-	elif not _gap_waiting and _seq == null:
+	elif not _gap_waiting and _seq == null and not _dragging:
 		set_process(false)
+	if _dragging and selecting >= 0 and _option_index >= 0:
+		_aim_line.queue_redraw()  # the aim line follows the dragged card (W4's ghost)
 
 
 ## Art pass W3 (ART_BIBLE §10 with W9s): the game seconds the replay has played, and whether
