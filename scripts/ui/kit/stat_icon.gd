@@ -60,11 +60,36 @@ const COOLING := &"cooling"
 const CLAIM := &"claim"
 const LINKS := &"links"
 
+# Art pass W2 (ART_BIBLE §7.4): the status glyphs (skull, bolt, hash, burst) redrawn as icons
+# (24 px grid, 2 px stroke, round caps, filled when active), and the kit's own marks (locks,
+# refusals, info, danger X / trash, copy, stepper +/-, the toggle's tick).
+const CORRUPTED := &"corrupted"
+const OVERCLOCKED := &"overclocked"
+const ENCRYPTED := &"encrypted"
+const PARASITE := &"parasite"
+const LOCK := &"lock"
+const NO_ENTRY := &"no_entry"
+const INFO := &"info"
+const CLOSE := &"close"
+const TRASH := &"trash"
+const COPY := &"copy"
+const PLUS := &"plus"
+const MINUS := &"minus"
+const CHECK := &"check"
+## The four status icons, by RC.Status (they replace Palette.STATUS_GLYPHS' font glyphs).
+const STATUS_KINDS := {RC.Status.CORRUPTED: CORRUPTED, RC.Status.OVERCLOCKED: OVERCLOCKED, RC.Status.ENCRYPTED: ENCRYPTED,
+	RC.Status.PARASITE: PARASITE}
+## The kit's marks (§6 states, §6.4 danger, §6.5 inputs, §6.7 toasts).
+const KIT_KINDS: Array[StringName] = [LOCK, NO_ENTRY, INFO, CLOSE, TRASH, COPY, PLUS, MINUS, CHECK]
+## §7.4 icon grammar: the grid the icons are drawn on and their stroke at that size (px).
+const GRID_PX := 24.0
+const STROKE_PX := 2.0
+
 ## Every icon kind (tests draw each one).
 const ALL: Array[StringName] = [HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW, HP, CYCLES, CARDS, RANK, BANKED,
 	ARMORY, COMBATS, ELITES, CAMPAIGNS, WON, RUNS, BADGES, FIRMWARE, DAEMON, OPERATIVE, PLAY, CONTINUE, MAP, CODEX,
 	SETTINGS, SAVE, EXIT, BACK, NEXT, SKIP, SLOTS, STATS, TUTORIAL, QUIT, JACK_IN, MORE, FIGHT, ELITE, SHOP, TERMINAL, RACK,
-	COOLING, CLAIM, LINKS]
+	COOLING, CLAIM, LINKS, CORRUPTED, OVERCLOCKED, ENCRYPTED, PARASITE, LOCK, NO_ENTRY, INFO, CLOSE, TRASH, COPY, PLUS, MINUS, CHECK]
 
 ## Tag names (as the tags spell them) -> icon.
 const TAG_KINDS := {"HEAT": HEAT, "SCHEMATICS": SCHEMATICS, "HOME": HOME, "EXPLOITS": EXPLOITS, "RAIDS": RAIDS,
@@ -89,7 +114,7 @@ static func kind_for(tag_name: String) -> StringName:
 static func color_of(kind: StringName) -> Color:
 	match String(kind):
 		"heat":
-			return Color("#FF7A2F")
+			return Palette.HEAT_FLAGGED
 		"schematics", "banked", "firmware", "cooling", "links":
 			return Palette.NET_CYAN
 		"home", "exploits", "cycles", "won":
@@ -97,7 +122,7 @@ static func color_of(kind: StringName) -> Color:
 		"raids", "hp", "armory", "elites", "elite", "fight", "rack", "claim":
 			return Palette.CELL_PINK
 		"ice":
-			return Color("#8FE8FF")
+			return Palette.NET_CYAN.lightened(ICE_LIGHTEN)
 		"rank", "badges":
 			return Palette.RESIST_GOLD
 		"daemon":
@@ -106,13 +131,24 @@ static func color_of(kind: StringName) -> Color:
 			return Palette.CELL_ACID
 		"terminal":
 			return Palette.CRT_AMBER
+		"corrupted", "no_entry", "close", "trash":
+			return Palette.HARM
+		"overclocked":
+			return Palette.WARN
+		"encrypted":
+			return Palette.PROTECT
+		"parasite":
+			return Palette.SLICE_AFFLICT
+		"lock":
+			return Palette.TEXT_MID
 	return Palette.TERMINAL_TEXT
 
 
 ## Draws icon `kind` centred on `c` within radius `r` in `col` on `ci` (call it from a draw
-## pass). Unknown kinds draw a small ring.
-static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Color) -> void:
-	var w := maxf(1.2, r * 0.17)
+## pass). Unknown kinds draw a small ring. `filled` draws the active (solid) form of the icons
+## that have one (§7.4: the status icons, lock, no-entry, info, copy).
+static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Color, filled: bool = false) -> void:
+	var w := stroke_for(r)
 	match String(kind):
 		"heat":
 			_line(ci, c, r, [[0, -1.0], [0.38, -0.45], [0.62, 0.05], [0.58, 0.5], [0.3, 0.85], [0, 0.95], [-0.3, 0.85], [-0.58, 0.5], [-0.55, 0.0], [-0.3, -0.32], [-0.12, 0.02], [0, -1.0]], col, w)
@@ -315,6 +351,99 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Co
 			ci.draw_arc(c + Vector2(-0.6, 0.45) * r, 0.28 * r, 0, TAU, 12, col, w)
 			ci.draw_line(c + Vector2(-0.4, 0.25) * r, c + Vector2(0.4, -0.45) * r, col, w)
 			_fill(ci, c, r, [[0.88, -0.88], [0.62, -0.18], [0.18, -0.62]], col)
+		"corrupted":
+			# The skull redrawn: a round crown, a jaw, eye sockets, crossed bones under it.
+			var sk := c + Vector2(0, -0.12) * r
+			if filled:
+				ci.draw_circle(sk, 0.58 * r, col)
+				_fill(ci, c, r, [[-0.36, 0.2], [0.36, 0.2], [0.3, 0.58], [-0.3, 0.58]], col)
+				for side: float in [-1.0, 1.0]:
+					ci.draw_circle(sk + Vector2(0.24 * side, 0.02) * r, 0.16 * r, _cut(col))
+			else:
+				ci.draw_arc(sk, 0.58 * r, PI * 0.72, PI * 2.28, 18, col, w)
+				_round_line(ci, c, r, [[-0.36, 0.26], [-0.3, 0.58], [0.3, 0.58], [0.36, 0.26]], col, w)
+				for side: float in [-1.0, 1.0]:
+					ci.draw_circle(sk + Vector2(0.24 * side, 0.02) * r, 0.13 * r, col)
+			for side: float in [-1.0, 1.0]:
+				_round_line(ci, c, r, [[-0.85 * side, 0.62], [0.85 * side, 0.95]], col, w)
+		"overclocked":
+			# The bolt redrawn.
+			if filled:
+				_fill(ci, c, r, [[0.2, -0.95], [-0.5, 0.1], [-0.02, 0.1], [0.04, -0.18]], col)
+				_fill(ci, c, r, [[0.04, -0.18], [0.52, -0.18], [-0.22, 0.95], [-0.02, 0.1]], col)
+			_round_line(ci, c, r, [[0.2, -0.95], [-0.5, 0.1], [-0.02, 0.1], [-0.22, 0.95], [0.52, -0.18], [0.04, -0.18], [0.2, -0.95]], col, w)
+		"encrypted":
+			# The hash redrawn: a hash grid inside a padlock's body.
+			ci.draw_arc(c + Vector2(0, -0.35) * r, 0.36 * r, PI, TAU, 12, col, w)
+			var body := Rect2(c + Vector2(-0.72, -0.35) * r, Vector2(1.44, 1.25) * r)
+			if filled:
+				ci.draw_rect(body, col)
+			else:
+				ci.draw_rect(body, col, false, w)
+			var ink := _cut(col) if filled else col
+			for k: float in [-0.25, 0.25]:
+				ci.draw_line(c + Vector2(k, -0.12) * r, c + Vector2(k, 0.72) * r, ink, w * 0.8)
+				ci.draw_line(c + Vector2(-0.5, 0.3 + k * 0.9) * r, c + Vector2(0.5, 0.3 + k * 0.9) * r, ink, w * 0.8)
+		"parasite":
+			# The burst redrawn as a tick-like parasite: a body with eight legs.
+			for k in 8:
+				var a := PI * 0.125 + k * TAU / 8.0
+				var d := Vector2(cos(a), sin(a))
+				_round_line(ci, c, r, [[d.x * 0.4, d.y * 0.4], [d.x * 0.92, d.y * 0.92]], col, w)
+			if filled:
+				ci.draw_circle(c, 0.44 * r, col)
+			else:
+				ci.draw_arc(c, 0.42 * r, 0, TAU, 16, col, w)
+				ci.draw_circle(c, 0.14 * r, col)
+		"lock":
+			ci.draw_arc(c + Vector2(0, -0.2) * r, 0.38 * r, PI, TAU, 12, col, w)
+			ci.draw_line(c + Vector2(-0.38, -0.2) * r, c + Vector2(-0.38, 0.0) * r, col, w)
+			ci.draw_line(c + Vector2(0.38, -0.2) * r, c + Vector2(0.38, 0.0) * r, col, w)
+			var lb := Rect2(c + Vector2(-0.68, 0.0) * r, Vector2(1.36, 0.9) * r)
+			if filled:
+				ci.draw_rect(lb, col)
+			else:
+				ci.draw_rect(lb, col, false, w)
+				ci.draw_circle(c + Vector2(0, 0.42) * r, w * 0.8, col)
+		"no_entry":
+			# STYLE_GUIDE 5.4 / ART_BIBLE §6 refused: a ring with a slash.
+			if filled:
+				ci.draw_circle(c, 0.9 * r, col)
+				_round_line(ci, c, r, [[-0.5, 0.5], [0.5, -0.5]], _cut(col), w * 1.4)
+			else:
+				ci.draw_arc(c, 0.82 * r, 0, TAU, 24, col, w * 1.3)
+				_round_line(ci, c, r, [[-0.58, 0.58], [0.58, -0.58]], col, w * 1.3)
+		"info":
+			if filled:
+				ci.draw_circle(c, 0.9 * r, col)
+				ci.draw_circle(c + Vector2(0, -0.45) * r, w * 0.9, _cut(col))
+				_round_line(ci, c, r, [[0, -0.12], [0, 0.55]], _cut(col), w * 1.2)
+			else:
+				ci.draw_arc(c, 0.85 * r, 0, TAU, 24, col, w)
+				ci.draw_circle(c + Vector2(0, -0.42) * r, w * 0.85, col)
+				_round_line(ci, c, r, [[0, -0.1], [0, 0.5]], col, w * 1.1)
+		"close":
+			_round_line(ci, c, r, [[-0.62, -0.62], [0.62, 0.62]], col, w * 1.2)
+			_round_line(ci, c, r, [[0.62, -0.62], [-0.62, 0.62]], col, w * 1.2)
+		"trash":
+			_round_line(ci, c, r, [[-0.78, -0.55], [0.78, -0.55]], col, w)
+			_round_line(ci, c, r, [[-0.25, -0.55], [-0.2, -0.82], [0.2, -0.82], [0.25, -0.55]], col, w)
+			_round_line(ci, c, r, [[-0.58, -0.55], [-0.48, 0.88], [0.48, 0.88], [0.58, -0.55]], col, w)
+			for k: float in [-0.2, 0.2]:
+				_round_line(ci, c, r, [[k, -0.3], [k, 0.62]], col, w * 0.8)
+		"copy":
+			if filled:
+				ci.draw_rect(Rect2(c + Vector2(-0.35, -0.35) * r, Vector2(1.15, 1.2) * r), col)
+			else:
+				ci.draw_rect(Rect2(c + Vector2(-0.35, -0.35) * r, Vector2(1.15, 1.2) * r), col, false, w)
+			_round_line(ci, c, r, [[-0.55, 0.55], [-0.8, 0.55], [-0.8, -0.85], [0.35, -0.85], [0.35, -0.6]], col, w)
+		"plus":
+			_round_line(ci, c, r, [[-0.7, 0], [0.7, 0]], col, w * 1.3)
+			_round_line(ci, c, r, [[0, -0.7], [0, 0.7]], col, w * 1.3)
+		"minus":
+			_round_line(ci, c, r, [[-0.7, 0], [0.7, 0]], col, w * 1.3)
+		"check":
+			_round_line(ci, c, r, [[-0.7, 0.02], [-0.22, 0.52], [0.72, -0.55]], col, w * 1.3)
 		_:
 			ci.draw_arc(c, r * 0.6, 0, TAU, 16, col, w)
 
@@ -347,3 +476,36 @@ static func _box(ci: CanvasItem, c: Vector2, r: float, at: Vector2, sz: Vector2,
 static func _person(ci: CanvasItem, c: Vector2, r: float, col: Color, w: float) -> void:
 	ci.draw_arc(c + Vector2(0, -0.42) * r, 0.3 * r, 0, TAU, 14, col, w)
 	ci.draw_arc(c + Vector2(0, 0.75) * r, 0.58 * r, PI, TAU, 14, col, w)
+
+
+## ICE's pale cyan: NET_CYAN lightened by this share.
+const ICE_LIGHTEN := 0.25
+
+
+## An open polyline through `pts` (units of r around c) with round caps and joins (§7.4).
+static func _round_line(ci: CanvasItem, c: Vector2, r: float, pts: Array, col: Color, w: float) -> void:
+	_line(ci, c, r, pts, col, w)
+	for p in pts:
+		ci.draw_circle(c + Vector2(float(p[0]), float(p[1])) * r, w * 0.5, col)
+
+
+## The colour cut out of a filled icon (eye sockets, a slash): paper on ink, else ink.
+static func _cut(col: Color) -> Color:
+	return Palette.PAPER if Palette.luminance(col) < 0.2 else Palette.INK
+
+
+## The status icon kind for RC.Status `status` (&"" for NONE).
+static func for_status(status: int) -> StringName:
+	return StringName(STATUS_KINDS.get(status, &""))
+
+
+## Draws status `status`'s icon (§7.4: filled when the status is active).
+static func draw_status(ci: CanvasItem, c: Vector2, r: float, status: int, col: Color, active: bool = true) -> void:
+	var k := for_status(status)
+	if k != &"":
+		draw(ci, c, r, k, col, active)
+
+
+## The stroke width an icon of radius `r` draws with (§7.4: 2 px on the 24 px grid).
+static func stroke_for(r: float) -> float:
+	return maxf(1.2, r * 0.17)
