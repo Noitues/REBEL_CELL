@@ -2874,46 +2874,6 @@ won,won
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.
-%s %d HP,%s %d HP
-%s R%d,%s R%d
-// %s // RANK %d,// %s // RANK %d
-"Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)","Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)"
-BADGES,BADGES
-BEST ICE,BEST ICE
-Best ICE by corporation: %s.,Best ICE by corporation: %s.
-Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.,Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.
-CAMPAIGNS,CAMPAIGNS
-"Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
-"Click a key, then press the new one. Cards stay on 1-9.","Click a key, then press the new one. Cards stay on 1-9."
-Flash limiter (max 3 flashes per second),Flash limiter (max 3 flashes per second)
-Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
-Map legend on the city views,Map legend on the city views
-"NEVER
-SLEEP","NEVER
-SLEEP"
-NEXT %d,NEXT %d
-"NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: its HP after SEND IT, if you press it now (the tag above says why)."
-"NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: your HP after SEND IT, if you press it now (the tag above says why)."
-RUNS,RUNS
-"Reduce effects (no scanlines, flicker, chromatic, distortion)","Reduce effects (no scanlines, flicker, chromatic, distortion)"
-SYSTEM ONLINE,SYSTEM ONLINE
-Show frame rate,Show frame rate
-Slot %s: %s,Slot %s: %s
-Subtitles type in (off: each line shows at once),Subtitles type in (off: each line shows at once)
-Subtitles with speaker names,Subtitles with speaker names
-System log strip at the foot of the screen,System log strip at the foot of the screen
-TAKES,TAKES
-YOU TAKE,YOU TAKE
-no runs yet,no runs yet
-Deuteranopia (green-weak),Deuteranopia (green-weak)
-Protanopia (red-weak),Protanopia (red-weak)
-Tritanopia (blue-weak),Tritanopia (blue-weak)
-Automatic (match the pad in use),Automatic (match the pad in use)
-Nintendo Switch,Nintendo Switch
-Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
-"High contrast (opaque panels, 7:1 text, thick edges)","High contrast (opaque panels, 7:1 text, thick edges)"
-Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
-Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
-The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.
-TAKEN,TAKEN
 CHOSEN,CHOSEN
+TAKEN,TAKEN
+The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.
