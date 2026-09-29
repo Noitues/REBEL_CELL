@@ -588,7 +588,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 
 
 func test_grid_side_column_scrolls_and_the_hq_says_there_is_more_below() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()

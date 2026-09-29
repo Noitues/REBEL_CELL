@@ -394,6 +394,27 @@ func test_swap_chips_break_at_words_and_a_swap_fills_its_segment() -> void:
 	await _close(hq)
 
 
+func test_swap_chips_read_at_the_caption_floor_inside_the_modal_at_every_scale() -> void:
+	var op := RunManager.campaign.roster[0]
+	op.rank = 3
+	for s in SCALES:
+		Settings.set_text_scale(s)
+		var hq := _open(HQ)
+		await _frames(3)
+		hq.open_loadout(op, true)
+		await _frames(4)
+		var view := hq.get_node("LoadoutView") as LoadoutView
+		var box := view.modal_rect()
+		var chips := view.find_children("Swap_*", "Button", true, false)
+		assert_gt(chips.size(), 1, "the swap chips show at %.1f" % s)
+		for n in chips:
+			var chip := n as Button
+			var shown := chip.get_theme_font_size("font_size") * chip.get_global_transform().get_scale().y
+			assert_true(shown >= UiTheme.font_px(UiTheme.CAPTION) - 0.5, "%s reads at %.1f px on screen at %.1f (floor %d)" % [chip.name, shown, s, UiTheme.font_px(UiTheme.CAPTION)])
+			assert_true(box.grow(1.0).encloses(chip.get_global_rect()), "%s stays inside the modal at %.1f (%s in %s)" % [chip.name, s, chip.get_global_rect(), box])
+		await _close(hq)
+
+
 func test_the_operative_picked_for_jack_in_is_stamped_and_rides_beside_it() -> void:
 	var c := RunManager.campaign
 	c.recruit(RunManager.lookup().get_content(&"ghost") as ClassData)
@@ -613,3 +634,45 @@ func test_the_route_key_folds_at_big_text_and_never_shrinks() -> void:
 			assert_true(key.rows_box.visible, "opens")
 			key.set_opened(false)
 		await _close(scene)
+
+
+# --- Item 9: every W8b screen fits at 1.0, 1.6 and 2.0 (§12, §4.3) --------------------------------
+
+func test_every_w8b_screen_fits_at_every_text_scale() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		_raid_campaign()
+		var hq := _open(HQ)
+		await _frames(2)
+		for page in ["start", "hq", "grid", "raid"]:
+			match page:
+				"start":
+					hq.show_start()
+				"hq":
+					hq.show_hq()
+				"grid":
+					hq.selected_site = RunManager.launchable_sites()[0].id
+					hq.show_grid()
+				"raid":
+					hq.show_raid()
+			await _frames(4)
+			assert_true(hq._panel.get_combined_minimum_size().x <= CANVAS.x + 0.5, "%s at %.1f: %d px wide" % [page, scale, hq._panel.get_combined_minimum_size().x])
+			var floor_px := roundi(UiTheme.CAPTION * scale)
+			for n in _all(hq._panel):
+				if not (n is Control) or not (n as Control).is_visible_in_tree():
+					continue
+				if n is Label and (n as Label).text != "":
+					var l := n as Label
+					assert_true(l.get_theme_font_size(&"font_size") >= floor_px, "%s at %.1f: '%s' at %d px (floor %d)" % [page, scale, l.text.left(24), l.get_theme_font_size(&"font_size"), floor_px])
+					assert_false(l.text.contains("…") and l.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING, "%s: '%s' never trimmed" % [page, l.text.left(24)])
+					assert_ne(l.text_overrun_behavior, TextServer.OVERRUN_TRIM_ELLIPSIS, "%s: '%s' never ellipsised" % [page, l.text.left(24)])
+				if n is Button and (n as Button).text != "":
+					assert_true((n as Button).get_theme_font_size(&"font_size") >= floor_px, "%s at %.1f: button '%s' at caption or larger" % [page, scale, (n as Button).text.left(24)])
+					assert_ne((n as Button).autowrap_mode, TextServer.AUTOWRAP_WORD_SMART, "%s: button '%s' never breaks mid-word" % [page, (n as Button).text.left(24)])
+		hq.open_loadout()
+		await _frames(3)
+		var view := hq.get_node("LoadoutView") as LoadoutView
+		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses((view._view.get("window") as Control).get_global_rect()), "the loadout fits at %.1f" % scale)
+		await _close(hq)

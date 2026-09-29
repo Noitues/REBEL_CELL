@@ -2450,7 +2450,7 @@ func _fit_steps(nav: HFlowContainer) -> void:
 		if Settings.text_scale >= STEP_ICONS_SCALE - 0.001 or btn.get_combined_minimum_size().x > room:
 			btn.text = String(btn.get_meta(&"short_text"))
 		if btn.get_combined_minimum_size().x > room:
-			btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			btn.autowrap_mode = TextServer.AUTOWRAP_WORD
 			btn.custom_minimum_size.x = room
 func _fit_after_redraw() -> void:
 	var city := wireframe.city
@@ -3706,9 +3706,9 @@ static func _threshold_raids(at: int) -> bool:
 ## ANIM-R1 M4: a hit on home: its red number flies from the node on the map into the top
 ## bar's HOME (`home_number_fly`), which then shows the lower value (the tag bumps and rolls).
 func _fly_home_number(damage: int, site: StringName) -> void:
-	var land := func() -> void:
+	var land := func(total: int = damage) -> void:
 		if hud_home_shown >= 0:
-			hud_home_shown = maxi(0, hud_home_shown - damage)
+			hud_home_shown = maxi(0, hud_home_shown - total)
 			_refresh_status()
 	var to := hud.stats.icon_point(StatIcon.HOME)
 	if not Motion.live(&"home_number_fly") or city_overlay == null or not is_instance_valid(city_overlay) or to == Vector2.INF:
@@ -3719,8 +3719,21 @@ func _fly_home_number(damage: int, site: StringName) -> void:
 		land.call()
 		return
 	var from := city_overlay.get_global_transform() * p
+	# W8b (lint, 2.0): hits that land together (a skipped playout finishes every step at
+	# once) fly as one number with their sum, never two numbers stacked on the map.
+	for other in find_children("HomeHitNumber", "Label", false, false):
+		var flying := other as Label
+		if flying.is_queued_for_deletion():
+			continue
+		var sum := int(flying.get_meta(&"damage", 0)) + damage
+		flying.set_meta(&"damage", sum)
+		flying.text = "-%d" % sum
+		flying.size = flying.get_combined_minimum_size()
+		flying.pivot_offset = flying.size * 0.5
+		return
 	var num := Label.new()
 	num.name = "HomeHitNumber"
+	num.set_meta(&"damage", damage)
 	num.top_level = true
 	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	num.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -3741,7 +3754,7 @@ func _fly_home_number(damage: int, site: StringName) -> void:
 	tw.tween_property(num, "global_position", to - num.size * 0.5, Motion.seconds(&"home_number_fly")).set_delay(Motion.delay_of(&"home_number_fly")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_property(num, "scale", Vector2.ONE, Motion.seconds(&"home_number_fly")).set_delay(Motion.delay_of(&"home_number_fly")).set_ease(e.ease).set_trans(e.trans)
 	tw.chain().tween_callback(func() -> void:
-		land.call()
+		land.call(int(num.get_meta(&"damage", damage)))
 		num.queue_free())
 
 
@@ -4340,7 +4353,7 @@ func _as_menu(box: Control) -> void:
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).
 func _para(text: String) -> Label:
 	var l := _label(text)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
 

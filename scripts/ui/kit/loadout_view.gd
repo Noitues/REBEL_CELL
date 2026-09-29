@@ -164,6 +164,8 @@ func _fit_wheel(view: SpinnerView, r: Rect2) -> void:
 	wheel.scale = Vector2.ONE * wheel_scale
 	wheel.position = Vector2(maxf(0.0, (r.size.x - WHEEL_MARGIN - WHEEL_AREA.x * wheel_scale) * 0.5), 0.0)
 	holder.custom_minimum_size = WHEEL_AREA * wheel_scale
+	for chip in view.find_children("Swap_*", "Button", true, false):
+		_size_chip(chip as Button)
 
 
 ## The deck's card grid grows to the frame's height (its columns already fill the width).
@@ -198,10 +200,7 @@ func _add_swaps(view: SpinnerView, ring: Array) -> void:
 		chip.text = TextDb.t(seg, "display_name") if seg != null else tr("Class default")
 		# W8b (§4.3.3): whole words only; a name wider than the chip steps down one size.
 		chip.autowrap_mode = TextServer.AUTOWRAP_WORD
-		var px := chip_font_px(chip.text, SpinnerView.SIDE_W)
-		chip.add_theme_font_size_override("font_size", px)
-		# §4.3.3: a word that still doesn't fit grows the chip (never cut, never broken).
-		chip.custom_minimum_size.x = maxf(SpinnerView.SIDE_W, longest_word(chip.text, px) + CHIP_PAD)
+		_size_chip(chip)
 		chip.tooltip_text = UiTip.fold((Codex.describe(seg) + "\n" if seg != null else "") + tr("Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."))
 		# ANIM-R3 A7: a ring pictogram on each chip (they were words only): the segment it
 		# swaps in lit on a small ring, the class default with its hub lit.
@@ -212,6 +211,18 @@ func _add_swaps(view: SpinnerView, ring: Array) -> void:
 		var pad := view.ring_pad(k)
 		if pad != null:
 			drops.add_target("ring:%d" % k, ["segment"], "ring", k, DropLayer.rect_of(pad))
+
+
+## Sizes a swap chip for the wheel's scale: the chips sit in the scaled wheel area, so
+## their type is set at the step's size divided by `wheel_scale` and reads on screen at
+## that step, never under the caption floor (W8b lint, 1.6 and 2.0).
+func _size_chip(chip: Button) -> void:
+	var k := maxf(0.01, wheel_scale)
+	var screen_px := chip_font_px(chip.text, SpinnerView.SIDE_W * k)
+	var px := ceili(screen_px / k)
+	chip.add_theme_font_size_override("font_size", px)
+	# §4.3.3: a word that still doesn't fit grows the chip (never cut, never broken).
+	chip.custom_minimum_size.x = maxf(SpinnerView.SIDE_W, longest_word(chip.text, px) + CHIP_PAD)
 
 
 ## The swap chip's font size for `text` in a chip `width` px wide: the first step whose

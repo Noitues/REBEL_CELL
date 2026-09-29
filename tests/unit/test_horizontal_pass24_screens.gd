@@ -801,7 +801,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 	var c := RunManager.campaign
 	while c.roster.size() < 3:
 		c.recruit(RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData)
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames(6)

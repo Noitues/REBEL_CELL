@@ -243,7 +243,7 @@ func test_a_long_subtitle_pages_and_says_it_goes_on() -> void:
 # --- S4 / S14 the raid map ----------------------------------------------------------------------
 
 func test_one_raid_legend_listing_what_the_map_shows_clear_of_the_tags() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
 		var legends := 0
 		for n in _all(hq):
@@ -294,7 +294,7 @@ func test_raid_nodes_sit_inside_the_map_for_every_corporation() -> void:
 # --- S5 raid words ---------------------------------------------------------------------------------
 
 func test_every_raid_number_says_what_it_is() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
 		var intro := hq._panel.find_child("RaidIntro", true, false) as Label
 		assert_not_null(intro, "one plain sentence opens the setup")
@@ -325,7 +325,7 @@ func test_every_raid_number_says_what_it_is() -> void:
 # --- S6 / S13 HQ ------------------------------------------------------------------------------------
 
 func test_the_poster_word_shows_and_the_radio_note_is_whole() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames(6)
@@ -363,7 +363,7 @@ func test_scrub_heat_says_its_price_is_schematics() -> void:
 # --- S7 the route key -------------------------------------------------------------------------------
 
 func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -654,7 +654,7 @@ func test_event_subtitles_are_translated_once() -> void:
 # --- S18 the forecast stamp ----------------------------------------------------------------------------------------
 
 func test_the_forecast_stamps_parts_never_overlap() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var stamp: ForecastStamp = add_child_autofree(ForecastStamp.new("IF THE RAID\nRUNS NOW:", "HOME HIT", Palette.CELL_PINK, StatIcon.HOME))
 		stamp.size = Vector2(124, 124) * (1.0 + (scale - 1.0) * 0.3)

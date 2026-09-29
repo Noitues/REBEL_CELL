@@ -530,7 +530,7 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 
 
 func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _scene()
 		_campaign(hq)
