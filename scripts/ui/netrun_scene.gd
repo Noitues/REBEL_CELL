@@ -189,6 +189,12 @@ func _ready() -> void:
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_event(0))
 		_demo_drag_arg(args)
 		return
+	for a in args:
+		if a.begins_with("--demo-end="):
+			# ANIM-R5 captures: the run-end page (died, completed, aborted), reached through the
+			# session's own ending (dev flag only).
+			_demo_run_end(a.trim_prefix("--demo-end="))
+			return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
@@ -251,7 +257,8 @@ func resume() -> void:
 
 func enter_node(node_id: StringName) -> void:
 	if _travelling:
-		# A choice pressed while the last move still plays skips it (input skips to the end).
+		# Defensive: while a move plays no press reaches a choice (ANIM-R5 B6: `_input` keeps
+		# the route page's presses and ends the move); a call that still comes ends it.
 		_end_travel()
 		return
 	var s := RunManager.netrun
@@ -296,18 +303,53 @@ func _demo_enter_fight() -> void:
 func _demo_route_pulse() -> void:
 	demo_tune(OS.get_cmdline_user_args())
 	var s := RunManager.netrun
-	var first: StringName = s.available_nodes()[0]
-	s.run.current_node_id = first
-	s.run.visited.append(first)
-	_show_map()
-	for f in DEMO_SETTLE_FRAMES:
-		await get_tree().process_frame
+	# ANIM-R5 B7: the demo reaches its first node through the session's own rules (the view
+	# set the run's node and visited list itself): it enters the first Router, plays the fight
+	# out with SEND IT, and skips the loot, so the run stands on that node with the map open.
+	if not demo_first_node(s):
+		print("anim5: route_pulse has no move to show")
+		return
+	_show_current()
+	if not await _frames_in_tree(DEMO_SETTLE_FRAMES):
+		return
 	for f in DEMO_BAKE_FRAMES:
 		if background.city.showing_current_look() and background.city.camera_settled() and background.city.bake_fade >= 1.0:
 			break
-		await get_tree().process_frame
+		if not await _frames_in_tree(1):
+			return
 	print("anim5: route_pulse starts on frame %d" % Engine.get_frames_drawn())
 	enter_node(s.available_nodes()[0])
+
+
+## ANIM-R5 capture (dev flag only): the demo run ends through the session's own ending
+## (`died`: the flatline, `completed`: the clean exit) and the run-end page shows.
+func _demo_run_end(kind: String) -> void:
+	RunManager.save_slot = "demo"
+	new_campaign(1)
+	start_run(1)
+	var s := RunManager.netrun
+	s.call(&"_complete_run" if kind == "completed" else &"_die")
+	_report(s.last_events)
+	_show_current()
+
+
+## ANIM-R5 B7 (dev flag only): the most SEND ITs the route demo's first fight may take.
+const DEMO_FIGHT_TURNS := 60
+
+
+## ANIM-R5 B7: moves the demo run onto its first node through NetrunSession only (enter_node,
+## the fight's SEND ITs, skip_reward); true when it stands there with the map open.
+static func demo_first_node(s: NetrunSession) -> bool:
+	if s == null or s.available_nodes().is_empty():
+		return false
+	s.enter_node(s.available_nodes()[0])
+	var turns := 0
+	while s.in_combat() and turns < DEMO_FIGHT_TURNS:
+		turns += 1
+		s.combat_action(CombatAction.end_turn())
+	while s.run.phase == RunState.Phase.REWARD:
+		s.skip_reward()
+	return s.run.phase == RunState.Phase.MAP and not s.available_nodes().is_empty()
 
 
 ## ANIM-4b frame capture: frames a scripted pointer takes from the item to where it lets go,
@@ -350,15 +392,15 @@ func _demo_drag(id: String) -> void:
 		"drag_buy_refuse":
 			s.run.cycles = DEMO_POOR_CYCLES
 			_show_current()
-			for f in DEMO_LAYOUT_FRAMES:
-				await get_tree().process_frame
+			if not await _frames_in_tree(DEMO_LAYOUT_FRAMES):
+				return
 			src = _page_item("Stickers", 0)
 		"drag_buy_chip":
 			# Enough Cycles for any chip (the demo shows a purchase, not a refusal).
 			s.run.cycles = DEMO_RICH_CYCLES
 			_show_current()
-			for f in DEMO_LAYOUT_FRAMES:
-				await get_tree().process_frame
+			if not await _frames_in_tree(DEMO_LAYOUT_FRAMES):
+				return
 			src = _page_item("Chips", 0)
 			target_id = "slot:0"
 			if src != null:
@@ -371,8 +413,8 @@ func _demo_drag(id: String) -> void:
 				drops.finish_all()
 		"drag_shred":
 			open_remove()
-			for f in DEMO_LAYOUT_FRAMES:
-				await get_tree().process_frame
+			if not await _frames_in_tree(DEMO_LAYOUT_FRAMES):
+				return
 			layer = modal_drops
 			var view := get_node_or_null("DeckView") as DeckView
 			src = view.card(0) if view != null else null
@@ -388,13 +430,24 @@ func _demo_drag(id: String) -> void:
 	var end := r.get_center() + DEMO_RELEASE_OFFSET.min(r.size * DEMO_RELEASE_SHARE)
 	print("anim4b: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
 	for i in DEMO_DRAG_FRAMES:
-		await get_tree().process_frame
+		if not await _frames_in_tree(1):
+			return
 		var q := Tween.interpolate_value(0.0, 1.0, float(i + 1) / DEMO_DRAG_FRAMES, 1.0, Tween.TRANS_SINE, Tween.EASE_IN_OUT) as float
 		layer.point_at(from.lerp(end, q) - Vector2(0, DEMO_DRAG_ARC * sin(PI * q)))
-	for i in DEMO_DRAG_HOLD:
-		await get_tree().process_frame
+	if not await _frames_in_tree(DEMO_DRAG_HOLD):
+		return
 	print("anim4b: %s lets go on frame %d" % [id, Engine.get_frames_drawn()])
 	layer.release_at(end)
+
+
+## ANIM-R5 B10: awaits `n` frames while the scene stays in the tree; false when it left
+## (freed or taken out mid-wait: the caller stops, never calling get_tree() on nothing).
+func _frames_in_tree(n: int) -> bool:
+	for i in n:
+		if not is_inside_tree():
+			return false
+		await get_tree().process_frame
+	return is_inside_tree()
 
 
 ## Frames the ANIM-5 demo waits for the page to settle, and the most it waits for the
@@ -424,17 +477,28 @@ static func demo_tune(args: PackedStringArray) -> void:
 
 
 ## ANIM-R4 H11c: the ROUTE window shows the view's choices now (a move has started).
+## ANIM-R5 B6: shown, not live: nothing on the route page takes focus while the move plays
+## (a second A on the focused choice reached the session mid-move and was refused), and
+## `_input` keeps the page's presses (they end the move and do nothing else). The node's
+## screen comes next and takes the focus.
 func _refresh_route_choices() -> void:
 	var row := _panel.find_child("RouteNodes", true, false) as VBoxContainer if _panel != null and is_instance_valid(_panel) else null
 	if row == null:
 		return
 	_fill_route_choices(row)
 	UiFocus.link_layout(_panel)
-	UiFocus.focus_first(row)
+	var owner := get_viewport().gui_get_focus_owner() if get_viewport() != null else null
+	if owner != null and _panel.is_ancestor_of(owner):
+		owner.release_focus()
 
 
 ## ANIM-5: a netrun move is playing on the route map (the node's screen opens after it).
 var _travelling: bool = false
+
+
+## ANIM-R5 B6: the controls whose presses a route move keeps (the route page).
+func route_keep() -> Array:
+	return [_panel] if _panel != null and is_instance_valid(_panel) else []
 
 
 ## Ends the move (its time is up, or input skipped it) and opens the node's screen.
@@ -503,7 +567,10 @@ func _hold_loot_page() -> void:
 	if _loot_hold != null and _loot_hold.is_valid():
 		_loot_hold.kill()
 	_loot_hold = create_tween()
-	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"))
+	# ANIM-R5 B5: the picked card's flight (`loot_pick`, now the longer) lands before the page
+	# goes too, so its landing pulse shows with the loot page still up.
+	var hold := maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"), Motion.seconds(&"loot_pick") + Motion.delay_of(&"loot_pick"))
+	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, hold)
 	_loot_hold.tween_callback(_end_loot_hold)
 
 
@@ -607,7 +674,23 @@ func item_target(kind: String) -> Vector2:
 
 func _fly_item(item: Control, kind: String, id: StringName, stamp: String = "", lift: float = 0.0) -> void:
 	if item != null:
-		FlightFx.fly(self, item, item_target(kind), id, stamp, lift)
+		FlightFx.fly(self, item, item_target(kind), id, stamp, lift, Rect2(), _land_on.bind(kind))
+
+
+## ANIM-R5 B5: a bought or picked item has landed: the top bar tag it went to pulses
+## (`flight_land_pulse`: CARDS for a card; the DAEMONS icon or VIEW LOADOUT otherwise pop).
+func _land_on(kind: String) -> void:
+	if hud == null or not is_instance_valid(hud):
+		return
+	match kind:
+		"card":
+			hud.stats.land_pulse(StatIcon.CARDS)
+		"daemon":
+			if hud.daemon_button.is_visible_in_tree():
+				Motion.pop(hud.daemon_button, HudStats.LAND_PULSE)
+		_:
+			if hud.loadout_button.is_visible_in_tree():
+				Motion.pop(hud.loadout_button, HudStats.LAND_PULSE)
 
 
 func remove_card(deck_index: int) -> void:
@@ -724,7 +807,7 @@ func _show_current() -> void:
 
 ## `glass` = false for screens built from their own terminal windows (the city shows
 ## between them).
-func _set_panel(p: Control, glass: bool = true) -> void:
+func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	if _panel != null:
 		_panel.queue_free()
 	_panel = p
@@ -746,9 +829,11 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 	var s := RunManager.netrun
 	# ANIM-6: a new screen enters (glass slides in, paper drops); a page rebuilt on the same
 	# screen (the Modem after a purchase) just shows. Focus lands when it ends.
-	var screen := screen_name(s)
+	var screen := screen_name(s) if screen_as == "" else screen_as
 	entering = screen != _shown_screen
 	_shown_screen = screen
+	# ANIM-R5 B2: an event's story and the run's end say long lines: their band holds two.
+	subtitle_strip.set_lines(int(SUBTITLE_LINES.get(screen, 1)))
 	if p.has_method("focus_hand"):
 		p.focus_hand()  # the combat scene links and focuses its own hand
 	else:
@@ -760,23 +845,70 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 				# the CRT roll's band crosses them, never the whole screen (on the loot pick's
 				# first frame it ran across half the screen over the bare city).
 				PageTransition.glass_is_windows(p)
-			PageTransition.enter(p, PageTransition.look_of(p), _focus_page.bind(p))
+			PageTransition.enter(p, PageTransition.look_of(p), _settle_page.bind(p))
 		else:
-			_focus_page(p)
-	_title_screen(s)
+			_settle_page(p)
+	_title_screen(s, screen)
 	set_page_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
 	# H24 S15: lines tied to the screen being left end here.
-	Dialogue.enter_screen(screen_name(s))
+	Dialogue.enter_screen(screen)
 	if s != null and not s.run.is_over():
 		AudioDirector.play_music("raid" if s.run.phase == RunState.Phase.RAID else "netrun", s.campaign.corporation_id)
-		if s.run.phase != RunState.Phase.COMBAT:
-			background.visible = true
+	# ANIM-R5 B3: every page but a fight shows the city behind it (the run's end after a
+	# flatline came up black: the fight had hidden it).
+	if s == null or s.run.phase != RunState.Phase.COMBAT:
+		background.visible = true
 	if RunManager.campaign != null:
 		background.corp_creep = clampf(RunManager.campaign.heat / float(RunManager.config().heat_max), 0.0, 1.0)
 		background.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## ANIM-R5 B4: a page settles (its first focus lands) once its entrance has ended AND the
+## words typing on it and in the subtitle are whole, each within its cap (`dispatch_type`,
+## `event_type`): a route or raid line typed on after the page had settled and fast players
+## moved on without reading it. A press shows every typing word whole (the one-press rule),
+## so the focus lands at once then. The event page gives focus at once (its choices wait for
+## the words themselves: ANIM-R2 E1).
+func _settle_page(p: Control) -> void:
+	_stop_settle_poll()
+	if words_typing() and _held_choices.is_empty():
+		_settling = weakref(p)
+		get_tree().process_frame.connect(_poll_settle)
+		return
+	_focus_page(p)
+
+
+## True while words type on screen (a page's or the subtitle's).
+func words_typing() -> bool:
+	return is_inside_tree() and (Typing.any_typing(get_tree()) or Dialogue.typing())
+
+
+## True while a page waits for its words before its focus lands (tests).
+func page_settling() -> bool:
+	return _settling != null
+
+
+var _settling: WeakRef = null
+
+
+func _poll_settle() -> void:
+	var p := _settling.get_ref() as Control if _settling != null else null
+	if p == null or p != _panel:
+		_stop_settle_poll()
+		return
+	if words_typing():
+		return
+	_stop_settle_poll()
+	_focus_page(p)
+
+
+func _stop_settle_poll() -> void:
+	_settling = null
+	if is_inside_tree() and get_tree().process_frame.is_connected(_poll_settle):
+		get_tree().process_frame.disconnect(_poll_settle)
 
 
 ## A page's first focus: the control it names (FIRST_FOCUS_META: the Modem's first item,
@@ -803,6 +935,10 @@ func _focus_now(page, first) -> void:
 
 ## The meta naming a page's first focus.
 const FIRST_FOCUS_META := &"first_focus"
+## ANIM-R5 B2: subtitle lines the band holds on a screen (1 elsewhere).
+const SUBTITLE_LINES := {"event": 2, "run_end": 2}
+## ANIM-R5 B8: the mid-run raid's playout, a screen of its own (its title, its lines).
+const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
 
 
 ## The pad prompts of the screen for the run's phase (H23 S11): A presses the focused
@@ -862,9 +998,13 @@ func _modal_open() -> bool:
 
 
 ## Names the screen on the HUD strip from the run phase (STYLE_GUIDE 4, "Neon city").
-func _title_screen(s: NetrunSession) -> void:
+func _title_screen(s: NetrunSession, screen: String = "") -> void:
 	if s == null:
 		hud.set_screen("", tr("NETRUN"))
+		return
+	if screen == RAID_PLAYOUT_SCREEN:
+		# ANIM-R5 B8: the raid plays out (the run's phase is the route again already).
+		hud.set_screen("", tr("NETRUN // RAID"))
 		return
 	match s.run.phase:
 		RunState.Phase.MAP:
@@ -1366,10 +1506,11 @@ static func choice_differences(s: NetrunSession) -> Dictionary:
 ## the number, it was in words only) and the icons of what lies further on that the other
 ## choices do not reach, each with its word as a tooltip.
 func _ahead_row(i: int, kinds: Array, heat: int) -> Control:
-	var row := HBoxContainer.new()
+	# ANIM-R5 B9: a flow (an icon and its word stay together; a long row wraps in the window).
+	var row := HFlowContainer.new()
 	row.name = "Ahead%d" % (i + 1)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
-	row.add_theme_constant_override("separation", 4)
+	row.add_theme_constant_override("h_separation", 4)
 	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
 	var pad := Control.new()
 	pad.custom_minimum_size.x = side
@@ -1389,12 +1530,30 @@ func _ahead_row(i: int, kinds: Array, heat: int) -> Control:
 		lead.name = "AheadWord"
 		row.add_child(lead)
 		for k: StringName in kinds:
+			# ANIM-R5 B9: the icon and its word ("then: [bag] Shop"): the bare icon lost a
+			# beginner (was it a price? a lock?).
+			var pair := HBoxContainer.new()
+			pair.name = "Ahead_%s" % k
+			pair.mouse_filter = Control.MOUSE_FILTER_PASS
+			pair.add_theme_constant_override("separation", 2)
+			pair.tooltip_text = UiTip.fold(tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, ""))))
 			var m := IconMark.standalone(k, side, StatIcon.color_of(k))
-			m.name = "Ahead_%s" % k
-			m.tooltip_text = UiTip.fold(tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, ""))))
-			m.mouse_filter = Control.MOUSE_FILTER_PASS
-			row.add_child(m)
+			m.name = "Icon"
+			m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			pair.add_child(m)
+			var word := _label(tr(String(AHEAD_SHORT.get(k, ""))))
+			word.name = "Word"
+			word.add_theme_color_override("font_color", StatIcon.color_of(k))
+			word.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			pair.add_child(word)
+			row.add_child(pair)
 	return row
+
+
+## ANIM-R5 B9: the word beside each reward and risk icon under a route choice (keys: the
+## route's own node words, so the button, the map and this row name a node alike).
+const AHEAD_SHORT := {StatIcon.ELITE: ELITE_WORD, StatIcon.SHOP: "Shop", StatIcon.TERMINAL: "Event", # TR
+	StatIcon.RACK: "Rack", StatIcon.HEAT: "Heat"} # TR
 
 
 ## The words of the reward and risk icons (translated where shown).
@@ -1548,7 +1707,7 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	# ANIM-5: Skip goes straight on (the raid's result).
 	playout.skipped.connect(_show_current)
 	side.add_child(cont)
-	_set_panel(box, false)
+	_set_panel(box, false, RAID_PLAYOUT_SCREEN)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var pre := before if before != null else c
@@ -1622,6 +1781,10 @@ func _frame_raid_map() -> void:
 	_raid_map_framing = true
 	await get_tree().process_frame
 	_raid_map_framing = false
+	# ANIM-R5 B10: the scene may have left the tree (a jack out, the scene freed) while it
+	# waited a frame: nothing to frame then.
+	if not is_inside_tree() or background == null or not is_instance_valid(background):
+		return
 	if _raid_map_area == null or not is_instance_valid(_raid_map_area) or city_overlay == null or not is_instance_valid(city_overlay):
 		return
 	var pts := PackedVector2Array()
@@ -1826,6 +1989,9 @@ func _show_event() -> void:
 	else:
 		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0).scale_title(Settings.text_scale)
 		panel.custom_minimum_size = Vector2(760, 0)  # ANIM-R4 C7: as tall as its words
+		# ANIM-R5 B1: and never shorter: the paper takes its content's height (a ZinePanel had
+		# no minimum of its own, so "as tall as its words" was a sliver under dark ink).
+		panel.fit_to_content()
 		panel.content.add_child(body)
 		holder = panel
 	holder.name = "EventPanel"
@@ -1850,7 +2016,11 @@ func _show_event() -> void:
 	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
 	body.add_child(speaker)
 	var text := RichTextLabel.new()
+	text.name = "EventText"
 	text.fit_content = true
+	# ANIM-R5 B1: the words are laid out whole while they type in (the height fit_content
+	# measures is all of them, not the characters shown so far).
+	text.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
 	text.custom_minimum_size = Vector2(720, 0)
 	text.text = TextDb.t(ev, "text")
 	text.add_theme_color_override("default_color", Palette.CRT_AMBER if dispatch else Palette.INK)
@@ -1984,6 +2154,10 @@ func choices_held() -> bool:
 	return false
 
 
+## ANIM-R5 B11: what the Modem's socket list is for (a key).
+const SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too)." # TR
+
+
 ## A spinner slot by what is in it, never by ids (H21 #12: "crit_12" in the socket list):
 ## "Slot 2: ATK 10 + Barbed Wire".
 static func slot_name(op: OperativeState, k: int) -> String:
@@ -2035,7 +2209,7 @@ func _show_shop() -> void:
 	var fw_slot := OptionButton.new()
 	fw_slot.name = "SocketPick"
 	for k in op.slot_slice_ids.size():
-		fw_slot.add_item(tr("Socket into %s") % slot_name(op, k))
+		fw_slot.add_item(slot_name(op, k))
 	var chips_win := TerminalWindow.new(tr("MICROCHIPS"))
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
@@ -2135,8 +2309,19 @@ func _show_shop() -> void:
 					daemon_row.add_child(sticker)
 			n += 1
 	if not shop.get("firmware", []).is_empty():
-		fw_slot.tooltip_text = tr("The spinner slot a bought Firmware chip goes into.")
-		chips_win.body.add_child(fw_slot)
+		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: CRIT 12"); a bare
+		# "Socket into Slot 1: CRIT 12" lost a beginner. Presentation only.
+		var socket_row := HFlowContainer.new()
+		socket_row.name = "SocketRow"
+		socket_row.add_theme_constant_override("h_separation", 6)
+		var socket_word := _label(tr("Chips go into:"))
+		socket_word.name = "SocketWord"
+		socket_word.tooltip_text = UiTip.fold(tr(SOCKET_TIP))
+		socket_word.mouse_filter = Control.MOUSE_FILTER_PASS
+		socket_row.add_child(socket_word)
+		fw_slot.tooltip_text = UiTip.fold(tr(SOCKET_TIP))
+		socket_row.add_child(fw_slot)
+		chips_win.body.add_child(socket_row)
 	if daemon_row.get_child_count() == 0:
 		daemons_win.body.add_child(_label(tr("sold out")))
 	var slice_row := HBoxContainer.new()
@@ -2633,21 +2818,48 @@ func _site_name(site_id: StringName) -> String:
 	return TextDb.t(sd, "display_name") if sd != null else String(site_id)
 
 
+## ANIM-R5 B3: the run's end over the city (it was a black page, its words in the top
+## 250 px): a window in the middle of the screen with the verdict stamp (FLATLINED, JACKED
+## OUT, HOME FELL: the ForecastStamp's ring, solid, landing like a resolved forecast), what
+## happened to the operative (a flatline is for good: GDD 4.2 permadeath), the run in numbers
+## and why Heat rose, then Back to HQ.
+const END_WIDTH := 760.0
+const END_GROW := 1.3
+const END_STAMP := 132.0
+## The stamp's small words over its verdict (a key).
+const END_CAPTION := "NETRUN" # TR
+
+
 func _show_end() -> void:
 	var s := RunManager.netrun
-	var box := VBoxContainer.new()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
 	var aborted := s.run.outcome == RunState.Outcome.ABORTED
+	var col := Palette.CELL_ACID if won else Palette.CELL_PINK
+	var title := tr("NETRUN COMPLETE") if won else (tr("NETRUN ABORTED - the home server fell") if aborted else tr("NETRUN FAILED - operative lost"))
+	var report := TerminalWindow.new(title, col)
+	report.name = "RunReport"
+	report.custom_minimum_size.x = END_WIDTH * minf(Settings.text_scale, END_GROW)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 18)
-	# The result stamp only shows the outcome: no focus, no clicks (H20).
-	var stamp := ZineStamp.new(tr("CLEAN EXIT") if won else (tr("ABORTED") if aborted else tr("FLATLINED")), Palette.CELL_ACID if won else Palette.CELL_PINK).display_only()
+	report.body.add_child(head)
+	# The verdict: display only (no focus; its tooltip says what it means).
+	var stamp := ForecastStamp.new(END_CAPTION, end_verdict(s.run.outcome), col, end_icon(s.run.outcome))
 	stamp.name = "ResultStamp"
+	stamp.resolved = true
+	stamp.custom_minimum_size = Vector2(END_STAMP, END_STAMP) * (1.0 + (Settings.text_scale - 1.0) * RAID_STAMP_FOLLOW)
+	stamp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	stamp.tooltip_text = UiTip.fold(end_fate(s))
 	head.add_child(stamp)
-	var title := tr("NETRUN COMPLETE") if won else (tr("NETRUN ABORTED - the home server fell") if aborted else tr("NETRUN FAILED - operative lost"))
-	var report := TerminalWindow.new(title, Palette.CELL_ACID if won else Palette.CELL_PINK)
-	report.name = "RunReport"
-	head.add_child(report)
+	var col_box := VBoxContainer.new()
+	col_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col_box.add_theme_constant_override("separation", 10)
+	head.add_child(col_box)
+	# What happened to the operative, in words (a flatline is permanent).
+	var fate := _label(end_fate(s))
+	fate.name = "RunFate"
+	fate.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fate.add_theme_color_override("font_color", Palette.PAPER)
+	col_box.add_child(fate)
 	# The run in numbers as the top bar's paper tags (H20: no text summary).
 	var tags := HudStats.new()
 	tags.name = "RunTags"
@@ -2658,14 +2870,88 @@ func _show_end() -> void:
 		[TextDb.mark("HEAT"), TextDb.signed(s.run.heat_gained), "", tr("Heat the run added (campaign Heat is now %d).") % s.campaign.heat]]
 	# The least room the tags need; they grow with the text size where the window allows.
 	tags.custom_minimum_size.x = tags.compact_width(1.0)
-	report.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	report.body.add_child(tags)
-	box.add_child(head)
+	col_box.add_child(tags)
+	# Why Heat rose, beside the HEAT tag's number.
+	var why := HBoxContainer.new()
+	why.name = "HeatReason"
+	why.add_theme_constant_override("separation", 6)
+	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
+	why.add_child(IconMark.standalone(StatIcon.HEAT, side, StatIcon.color_of(StatIcon.HEAT)))
+	var why_text := _label(heat_reason(s))
+	why_text.name = "HeatReasonText"
+	why_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	why_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	why.add_child(why_text)
+	col_box.add_child(why)
 	var back := _button(tr("Back to HQ"), finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	IconMark.attach(back, StatIcon.BACK)
-	box.add_child(back)
-	_set_panel(box)
+	report.body.add_child(back)
+	# In the middle of the screen, the city round it (a page of windows, not a glass sheet).
+	var wrap := CenterContainer.new()
+	wrap.name = "RunEnd"
+	wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	wrap.add_child(report)
+	_set_panel(wrap, false)
+	if entering:
+		# The verdict lands as a resolved forecast does (`forecast_stamp_resolve`).
+		stamp.resolve.call_deferred(END_CAPTION, end_verdict(s.run.outcome))
+
+
+## ANIM-R5 B3: the run's verdict as its stamp says it (a key).
+static func end_verdict(outcome: int) -> String:
+	match outcome:
+		RunState.Outcome.COMPLETED:
+			return "JACKED OUT" # TR
+		RunState.Outcome.ABORTED:
+			return "HOME FELL" # TR
+	return "FLATLINED" # TR
+
+
+## The verdict stamp's icon.
+static func end_icon(outcome: int) -> StringName:
+	match outcome:
+		RunState.Outcome.COMPLETED:
+			return StatIcon.JACK_IN
+		RunState.Outcome.ABORTED:
+			return StatIcon.HOME
+	return StatIcon.OPERATIVE
+
+
+## ANIM-R5 B3: what the run's end means for the operative, in words (translated): a
+## flatline is for good (GDD 4.2: permadeath, unbanked loot lost, banked Schematics kept).
+static func end_fate(s: NetrunSession) -> String:
+	var who := s.run.operative.name
+	match s.run.outcome:
+		RunState.Outcome.COMPLETED:
+			return TranslationServer.translate("%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics.") % who
+		RunState.Outcome.ABORTED:
+			return TranslationServer.translate("The home server fell: the campaign is lost.")
+	return TranslationServer.translate("%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.") % who
+
+
+## ANIM-R5 B3: why the run added its Heat, one line (translated): the flatline's share (the
+## session's own Heat event for it) and the rest from the route and its events.
+static func heat_reason(s: NetrunSession) -> String:
+	var total := s.run.heat_gained
+	if total == 0:
+		return TranslationServer.translate("Heat +0: this run added no Heat.")
+	var death := -1
+	for e in s.last_events:
+		if String(e.get("type", "")) == "heat" and String(e.get("reason", "")) == DEATH_HEAT_REASON:
+			death = int(e.get("amount", 0))
+	var signed := TextDb.signed(total)
+	if s.run.outcome != RunState.Outcome.DIED:
+		return TranslationServer.translate("Heat %s: from the route's nodes and events.") % signed
+	if death < 0:
+		return TranslationServer.translate("Heat %s: flatlined on a run (and the route before it).") % signed
+	if death >= total:
+		return TranslationServer.translate("Heat %s: flatlined on a run.") % signed
+	return TranslationServer.translate("Heat %s: %s for flatlining on a run, %s from the route's nodes and events.") % [signed, TextDb.signed(death), TextDb.signed(total - death)]
+
+
+## The reason the session gives the Heat a flatline adds (NetrunSession._die).
+const DEATH_HEAT_REASON := "operative death"
 
 
 # --- Drag and drop (Animation pass ANIM-4b) --------------------------------------------------
@@ -3169,7 +3455,10 @@ func _input(event: InputEvent) -> void:
 	# open pause menu keeps its presses.
 	if not _travelling:
 		return
-	var v := MotionSkip.verdict(event, self)
+	# ANIM-R5 B6: the route page's own controls are kept: a press on a choice, GRID VIEW or
+	# Save & quit ends the move and does nothing else (a choice pressed now reached the
+	# session after the move had opened the node, and was refused).
+	var v := MotionSkip.verdict(event, self, route_keep())
 	if v == MotionSkip.Verdict.IGNORE:
 		return
 	_end_travel()
