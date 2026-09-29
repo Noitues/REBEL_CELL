@@ -195,6 +195,13 @@ var _pending_last_turn: CombatState = null
 ## ANIM-R1: the forecast waits while a SEND IT replays, and the status line shows the
 ## turn that was played (-1 = the state's turn).
 var _hold_forecast: bool = false
+## ANIM-R5 combat 1: the fight is over but its replay has not landed the outcome yet (VICTORY
+## / DEFEAT): the status word, the next-step button, the Heat poster and the run's top bar
+## (`outcome_landed`) wait for it.
+var _outcome_held: bool = false
+## Emitted when the fight's outcome lands on screen (the replay's end beat, a skip, or at
+## once without motion); the netrun then moves its top bar on.
+signal outcome_landed
 var _shown_turn: int = -1
 ## Last-turn line per combatant id (kept until the player acts).
 var _last_turn: Dictionary = {}
@@ -625,7 +632,14 @@ func odds_text(c: CombatantState, non_miss_only: bool = false) -> String:
 	var parts := PackedStringArray()
 	for chip in _odds_chips(c, non_miss_only):
 		parts.append(String(chip["text"]))
-	return "odds: " + " / ".join(parts)
+	return tr("odds: %s") % " / ".join(parts)
+
+
+## ANIM-R5 combat 9: sets `c`'s tooltip to `text`, translated where it was built, and shows it
+## as given (translate once; several were never translated at all).
+static func shown_tip(c: Control, text: String) -> void:
+	c.tooltip_text = text
+	c.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 
 
 func _odds_chips(c: CombatantState, non_miss_only: bool = false) -> Array[Dictionary]:
@@ -760,12 +774,17 @@ func replay_keeps() -> Array:
 
 
 ## True when `event` is meant for the next-step action: a click on it, accept while it has
-## focus, or SEND IT's key.
+## focus, or SEND IT's key. ANIM-R5 combat 10: a click only when it would press the button
+## (MotionSkip.button_at: shown, not covered, the clicking mouse button in its mask), so a
+## right-click on JACK OUT / CONTINUE during the replay is consumed like any other press.
 func _for_continue(event: InputEvent) -> bool:
+	if not continue_shown():
+		return false
 	if event.is_action(&"end_turn"):
 		return true
 	if event is InputEventMouseButton:
-		return _continue_button.get_global_rect().has_point((event as InputEventMouseButton).global_position)
+		var mb := event as InputEventMouseButton
+		return MotionSkip.button_at(get_viewport(), mb.global_position, mb.button_index) == _continue_button
 	return event.is_action(&"ui_accept") and _continue_button.has_focus()
 
 
@@ -1153,6 +1172,9 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	# its TURN number wait for the replay's end, so nothing of the new turn reads as the
 	# result (and no forecast from before SEND IT lingers into it).
 	_hold_forecast = sequence
+	# ANIM-R5 combat 1: a SEND IT that ends the fight keeps its outcome (the status word, the
+	# next-step button, Heat, the run's top bar) until the replay lands it (`_land_outcome`).
+	_outcome_held = sequence and state.is_over() and Motion.live(&"resolve_sequence")
 	_shown_turn = before_turn.turn if sequence else -1
 	# ANIM-R4 C6e: a card or respin that spins a wheel holds the forecast until it lands.
 	_card_hold = live and not sequence and rewind_from == null and before_action != null and _spins(events)
@@ -1292,17 +1314,27 @@ func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = f
 			"boss_phase":
 				_boss_phase_feedback(state)
 			"damage":
-				if e.get("target") == state.player.id and int(e.get("hp_damage", 0)) > 0 and state.player.hp * 2 <= state.player.max_hp:
+				if hurt_bark_due(e, state):
 					_bark("hurt", state)
 			"deploy":
 				_bark("deploy", state)
 			"combat_end":
+				if replayed and _outcome_held:
+					continue  # ANIM-R5 combat 1: the replay barks when VICTORY / DEFEAT lands
 				_bark("victory" if int(e.get("outcome", 0)) == CombatState.Outcome.VICTORY else "defeat", state)
 			"boss_migrate_telegraph":
 				if _enemy_views.has(e.get("target")):
 					_start_migrate_flicker(_enemy_views[e["target"]])
 			"deploy", "botnet_seed":
 				AudioDirector.play_sfx("click")
+
+
+## True when damage event `e` in `state` calls for the operative's "hurt" bark: it took HP
+## and is at half or below. ANIM-R5 combat 2: never on the hit that flatlines it (a "Keep
+## going" under DEFEAT).
+static func hurt_bark_due(e: Dictionary, state: CombatState) -> bool:
+	return e.get("target") == state.player.id and int(e.get("hp_damage", 0)) > 0 and state.player.hp * 2 <= state.player.max_hp \
+		and state.player.is_alive() and state.outcome != CombatState.Outcome.DEFEAT
 
 
 ## Operative barks (GDD 8.6): at most one per turn per trigger, chosen by class and turn.
@@ -1354,8 +1386,21 @@ func _perfect_feedback(view: WheelView) -> void:
 	view.queue_redraw()
 	Fx.flash(Palette.CELL_PINK, Motion.amplitude(&"precision_perfect"), Motion.seconds(&"precision_perfect"))
 	Fx.freeze_frames()
-	await get_tree().process_frame
-	await get_tree().process_frame
+	# ANIM-R5 combat 11: the scene may leave the tree between the frames (a fight left
+	# mid-freeze): no await that resumes on a freed scene; each frame is a one-shot connection
+	# to this scene's method (dropped with the scene), checked in the tree before the next.
+	get_tree().process_frame.connect(_perfect_frame.bind(view, PERFECT_INVERT_FRAMES), CONNECT_ONE_SHOT)
+
+
+## Frames the Perfect inversion shows (drawing, as the 2-frame freeze).
+const PERFECT_INVERT_FRAMES := 2
+
+
+## One frame of the Perfect inversion has passed; `left` more to go.
+func _perfect_frame(view: WheelView, left: int) -> void:
+	if left > 1 and is_inside_tree():
+		get_tree().process_frame.connect(_perfect_frame.bind(view, left - 1), CONNECT_ONE_SHOT)
+		return
 	if is_instance_valid(view):
 		view.inverted = false
 		view.queue_redraw()
@@ -1446,10 +1491,10 @@ func _build_ui() -> void:
 	_status.resized.connect(_fit_status)
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.mouse_filter = Control.MOUSE_FILTER_PASS
-	_status.tooltip_text = "The turn, and the free nudges left this turn (each extra nudge costs RAM)."
+	shown_tip(_status, tr("The turn, and the free nudges left this turn (each extra nudge costs RAM)."))
 	top.add_child(_status)
 	_settings_button = _button("Settings", open_settings)
-	_settings_button.tooltip_text = "Pause: options, codex, save and quit." 
+	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
 	top.add_child(_settings_button)
 
 	var middle := HBoxContainer.new()
@@ -1492,7 +1537,7 @@ func _build_ui() -> void:
 	side_top.add_child(portrait)
 	heat_poster = HeatPoster.new(false)
 	heat_poster.name = "HeatPoster"
-	heat_poster.tooltip_text = "Heat: the corporation's attention. Thresholds bring raids and harder rules."
+	shown_tip(heat_poster, tr("Heat: the corporation's attention. Thresholds bring raids and harder rules."))
 	if RunManager.campaign != null:
 		heat_poster.hot_color = Palette.corp_color(RunManager.campaign.corporation_id)
 	side_top.add_child(heat_poster)
@@ -1565,7 +1610,7 @@ func _build_ui() -> void:
 	_end_turn_button = DripButton.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), DripButton.DRIP_PINK, 50, DripButton.SEND_IT_DRIPS)
 	_end_turn_button.name = "SendIt"
 	(_end_turn_button as DripButton).glyph = true  # ANIM-R1 C7: the drawn ▶▶ end-turn mark
-	_end_turn_button.tooltip_text = "End the turn: every needle resolves at once (defensive, then offensive, then statuses). The tags show the outcome."
+	shown_tip(_end_turn_button, tr("End the turn: every needle resolves at once (defensive, then offensive, then statuses). The tags show the outcome."))
 	_end_turn_button.pressed.connect(end_turn)
 	bottom.add_child(_end_turn_button)
 	_zine_elements.append(_end_turn_button)
@@ -1751,14 +1796,12 @@ func _refresh(state: CombatState) -> void:
 		# The same face as the operative's dossier (H20 #23).
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
-	portrait.tooltip_text = "%s (%s): %d/%d HP." % [operative_name, state.player.display_name, state.player.hp, state.player.max_hp]
+	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [operative_name, _name_of(state.player), state.player.hp, state.player.max_hp])
 	portrait.queue_redraw()
 	ram_note.set_ram(state.ram, state.max_ram)
 	daemon_row.set_daemons(state.daemon_ids, lookup)
-	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
-	var heat_max := engine.resolver.config.heat_max
-	heat_poster.set_heat(heat, heat_max, engine.resolver.config.major_heat_levels())
-	background.corp_creep = clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0)
+	if not _outcome_held:
+		_sync_heat()  # ANIM-R5 combat 1: a fight's Heat moves once its outcome has landed
 	_player_view.show_combatant(state.player, state.satellites_of(state.player.id), engine.readouts(state.player), lookup)
 	var reveal := int(state.flags.get("reveal_phases", 0)) > 0
 	var wanted: Array[StringName] = []
@@ -1809,7 +1852,8 @@ func _refresh(state: CombatState) -> void:
 	_rebuild_slot_option()
 	_build_hand(state)
 	_end_turn_button.disabled = state.is_over()
-	_sync_over(state.is_over())
+	_sync_over(state.is_over() and not _outcome_held)
+	_player_view.flatlined = state.outcome == CombatState.Outcome.DEFEAT and not _outcome_held
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
 	_rewind_button.disabled = not engine.can_rewind()
@@ -1846,7 +1890,57 @@ func show_continue(label: String) -> void:
 		return
 	(_continue_button as DripButton).set_tag_text(label)
 	_continue_button.tooltip_text = tr(label)
-	_sync_over(engine.has_fight() and engine.state().is_over())
+	_style_continue()
+	_sync_over(engine.has_fight() and engine.state().is_over() and not _outcome_held)
+
+
+## ANIM-R5 combat 2: the next step after a defeat (JACK OUT) wears its own look, never
+## SEND IT's pink drips (a lost fight read as one that goes on); a win keeps the drips.
+func _style_continue() -> void:
+	var b := _continue_button as DripButton
+	var lost := engine.has_fight() and engine.state().outcome == CombatState.Outcome.DEFEAT
+	b.paint = JACK_OUT_PAINT if lost else DripButton.DRIP_PINK
+	b.drips = [] if lost else DripButton.SEND_IT_DRIPS
+	b.queue_redraw()
+
+
+## ANIM-R5 combat 2: JACK OUT's lettering (paper, no drips).
+const JACK_OUT_PAINT := Palette.PAPER
+
+
+## The Heat poster and the arena's corporate creep show the campaign's Heat now.
+func _sync_heat() -> void:
+	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
+	var heat_max := engine.resolver.config.heat_max
+	heat_poster.set_heat(heat, heat_max, engine.resolver.config.major_heat_levels())
+	background.corp_creep = clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0)
+
+
+## ANIM-R5 combat 1: the outcome lands (the replay's VICTORY / DEFEAT beat, a skip, the
+## replay's end): the status line says it, the next-step button replaces SEND IT, the Heat
+## poster rolls, a lost fight keeps its DEFEAT stamp, and the netrun is told
+## (`outcome_landed`: its top bar moves on).
+func _land_outcome() -> void:
+	if not _outcome_held:
+		return
+	_outcome_held = false
+	if not engine.has_fight():
+		outcome_landed.emit()
+		return
+	var state := engine.state()
+	_refresh_status()
+	_sync_heat()
+	_sync_over(state.is_over())
+	var lost := state.outcome == CombatState.Outcome.DEFEAT
+	if lost and not _player_view.flatlined:
+		_player_view.play_flatline()
+	outcome_landed.emit()
+
+
+## True while a fight's outcome waits for its replay to land it (the netrun holds its top
+## bar until `outcome_landed`).
+func outcome_pending() -> bool:
+	return _outcome_held
 
 
 func _sync_over(over: bool) -> void:
@@ -1880,7 +1974,9 @@ func _refresh_status() -> void:
 		return
 	var state := engine.state()
 	var text := tr("TURN %d · FREE NUDGE %d") % [state.turn if _shown_turn < 0 else _shown_turn, state.free_nudges]
-	if state.outcome == CombatState.Outcome.VICTORY:
+	if _outcome_held:
+		pass  # ANIM-R5 combat 1: the outcome's word waits for its beat (no key hints: SEND IT is spent)
+	elif state.outcome == CombatState.Outcome.VICTORY:
 		text += " · " + tr("VICTORY")
 	elif state.outcome == CombatState.Outcome.DEFEAT:
 		text += " · " + tr("DEFEAT")
@@ -1942,7 +2038,7 @@ func _build_hand(state: CombatState) -> void:
 		var c := _make_card(card, i, s)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
-		c.tooltip_text = "%s\n%s" % [Codex.describe(card), "Drag it onto a glowing target, or click it and then the target." if several else "Click to play."]
+		shown_tip(c, "%s\n%s" % [Codex.describe(card), tr("Drag it onto a glowing target, or click it and then the target.") if several else tr("Click to play.")])
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
@@ -2026,7 +2122,7 @@ func _describe_slot(c: CombatantState, slot: int) -> String:
 		lines.append(Codex.status_text(status))
 	var guard := engine.state().satellite_at(c.id, slot)
 	if guard != null:
-		lines.append("Guarded by %s (%d HP): it takes hits aimed at this slice." % [guard.display_name, guard.hp])
+		lines.append(tr("Guarded by %s (%d HP): it takes hits aimed at this slice.") % [_name_of(guard), guard.hp])
 	return "\n".join(lines)
 
 
@@ -2074,6 +2170,49 @@ func _preview_action(action: CombatAction) -> void:
 		preview_note.append("[color=#c05000]%s[/color]" % reason)
 		_show_end_turn_preview()
 		return
+	var was := _forecast_tags()
+	_preview_result(action, state, result)
+	_mark_was(was)
+
+
+## ANIM-R5 combat 7: the tags as the End Turn forecast shows them now (view -> its tag), so a
+## preview can show what each tag said before it.
+func _forecast_tags() -> Dictionary:
+	_show_end_turn_preview()
+	var out := {}
+	for v in _views():
+		out[v] = v.intent.duplicate(true)
+	preview_note.clear()  # the hidden note keeps the preview's own lines
+	return out
+
+
+## ANIM-R5 combat 7: each tag a preview changed keeps what it said before (`was`), shown
+## struck through under a WAS row; an unchanged tag shows none.
+func _mark_was(was: Dictionary) -> void:
+	for v in _views():
+		var old: Dictionary = was.get(v, {})
+		v.was_tag = old if tag_changed(old, v.intent) else {}
+		v.queue_redraw()
+
+
+## True when tag `now` says something other than `old` (its title or a chip; the "YOU PLAY
+## X" chip a preview adds doesn't count). Two empty tags are the same.
+static func tag_changed(old: Dictionary, now: Dictionary) -> bool:
+	if old.is_empty() or String(old.get("text", "")) == "":
+		return false
+	return _tag_words(old) != _tag_words(now)
+
+
+static func _tag_words(tag: Dictionary) -> PackedStringArray:
+	var out := PackedStringArray([String(tag.get("text", ""))])
+	for c in tag.get("chips", []):
+		if not bool((c as Dictionary).get("play", false)):
+			out.append(String(c.get("text", "")))
+	return out
+
+
+## The preview of `action` (its result `result` from `state`) on the tags, arcs and RAM.
+func _preview_result(action: CombatAction, state: CombatState, result: CombatResult) -> void:
 	for e in result.events:
 		if e.has("text"):
 			preview_note.append(String(e["text"]))
@@ -2093,7 +2232,7 @@ func _preview_action(action: CombatAction) -> void:
 			var chips: Array = [{"text": tr("RANDOM: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
 			chips.append_array(_odds_chips(target, non_miss))
 			v.intent = {"type": -1, "text": tr("%s rolls") % TextDb.t(card, "display_name"), "chips": chips,
-				"tooltip": "A random effect: the roll is hidden until you play it. %s" % odds_text(target, non_miss)}
+				"tooltip": tr("A random effect: the roll is hidden until you play it. %s") % odds_text(target, non_miss)}
 			v.queue_redraw()
 		preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
 		return
@@ -2127,7 +2266,7 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 	var chips: Array = (v.intent.get("chips", []) as Array).duplicate()
 	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic). ANIM-R3 A6j: says who plays it
 	# ("PLAYING JOLT" on the enemy's tag read as the enemy playing it).
-	chips.push_front({"text": tr("YOU PLAY %s") % what, "color": CHIP_RUN, "ink": Palette.INK})
+	chips.push_front({"text": tr("YOU PLAY %s") % what, "color": CHIP_RUN, "ink": Palette.INK, "play": true})
 	v.intent["chips"] = chips
 	v.intent["tooltip"] = _chips_tooltip(chips)
 	v.queue_redraw()
@@ -2136,14 +2275,15 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 func _show_respin_odds() -> void:
 	if not engine.has_fight():
 		return
-	_show_end_turn_preview()
+	var was := _forecast_tags()
 	var cost := engine.resolver.config.respin_ram_cost
 	ram_note.set_pending(-cost)
 	var chips: Array = [{"text": tr("RESPIN: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
 	chips.append_array(_odds_chips(engine.state().player))
 	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": chips,
-		"tooltip": "Respin your wheel for %d RAM: a random result (sets a checkpoint). %s" % [cost, odds_text(engine.state().player)]}
+		"tooltip": tr("Respin your wheel for %d RAM: a random result (sets a checkpoint). %s") % [cost, odds_text(engine.state().player)]}
 	_player_view.queue_redraw()
+	_mark_was(was)
 	preview_note.clear()
 	preview_note.append("Respin your wheel for %d RAM (a random event: sets a checkpoint)." % cost)
 	preview_note.append(odds_text(engine.state().player))
@@ -2156,6 +2296,8 @@ func _show_end_turn_preview() -> void:
 		return
 	var state := engine.state()
 	preview_note.clear()
+	for v in _views():
+		v.was_tag = {}  # ANIM-R5 combat 7: the forecast itself has no "before"
 	if _card_hold and not state.is_over() and not _hold_forecast:
 		# ANIM-R4 C6e: the tags wait for the card's spin to land (the notes still read now).
 		var held := engine.preview_end_turn()
@@ -2205,6 +2347,9 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 	for e in events:
 		if String(e.get("type", "")) == "status" and bool(e.get("random", false)):
 			random_picks[StringName(String(e.get("target", "")))] = int(e.get("status", RC.Status.NONE))
+	# ANIM-R5 combat 8: an AFFLICT names what it puts on whom on its own tag ("PUTS ☠
+	# CORRUPTED ON YOU"), from the replay's own beats (who acted).
+	var afflicts := afflict_chips(state, events)
 	var views := {state.player.id: _player_view}
 	for id in _enemy_views:
 		views[id] = _enemy_views[id]
@@ -2236,7 +2381,12 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			shown_statuses = []
 			chips = chips.filter(func(ch: Dictionary) -> bool: return not bool(ch.get("status", false)))
 			chips.append(random_status_chip(int(random_picks[id]), id == state.player.id))
+			chips.append(odds_lead_chip())
 			chips.append_array(_odds_chips(c, true))
+			chips = ranked_chips(chips)
+		if afflicts.has(id):
+			chips.append_array(afflicts[id])
+			chips = ranked_chips(chips)
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
 			"statuses": shown_statuses, "satellites": sats}
 		view.intent = {"type": title["type"], "tier": title.get("tier", -1), "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
@@ -2247,12 +2397,59 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 ## ANIM-R4 C6f: the chip for a status a random slice will get: which status (its glyph and
 ## word) on a random slice, in green when that is good for you and red when bad ("? RANDOM
 ## STATUS" said neither whose nor which).
+## ANIM-R5 combat 8: it says who gets it ("☠ YOU GET CORRUPTED"; "CORRUPTED · RANDOM SLICE"
+## with odds after it read as a list to decode), and the odds after it follow a lead chip
+## that says what they are (odds_lead_chip).
 static func random_status_chip(status: int, on_player: bool) -> Dictionary:
 	var good := WheelView.status_good_for_you(status, on_player)
 	var word := String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(status, ""))))
-	return {"text": "%s %s · %s" % [Palette.STATUS_GLYPHS.get(status, "?"), word, TranslationServer.translate("RANDOM SLICE")],
+	var who := String(TranslationServer.translate("YOU GET %s") if on_player else TranslationServer.translate("GETS %s")) % word
+	return {"text": "%s %s" % [Palette.STATUS_GLYPHS.get(status, "?"), who],
 		"color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
+		"rank": CHIP_RANK_HP if good else CHIP_RANK_HURTS_YOU,
 		"tooltip": String(TranslationServer.translate("Good for you: %s") if good else TranslationServer.translate("Bad for you: %s")) % Codex.status_text(status)}
+
+
+## ANIM-R5 combat 8: the chip before a random status's odds, saying what they are.
+static func odds_lead_chip() -> Dictionary:
+	return {"text": String(TranslationServer.translate("ON A RANDOM SLICE:")), "color": Palette.INK, "ink": Palette.PAPER,
+		"tooltip": String(TranslationServer.translate("It lands on one slice at random; the odds by slice type follow."))}
+
+
+## ANIM-R5 combat 8: per acting wheel (id), a chip for each status it puts on another wheel
+## in `events` (from `state`): "PUTS ☠ CORRUPTED ON YOU" / "... ON <NAME>", in the colour of
+## whose win it is. Who acts comes from the replay's beats (ResolveBeats: the AFFLICT's
+## attacker), so the tag says what the replay shows.
+func afflict_chips(state: CombatState, events: Array[Dictionary]) -> Dictionary:
+	var out := {}
+	var seen := {}
+	for b in ResolveBeats.build(state, events, engine.resolver.lookup):
+		if b["kind"] != "status" or b["phase"] == "act":
+			continue
+		var src := StringName(String(b["source"]))
+		var tgt := StringName(String(b["target"]))
+		if src == &"" or src == tgt:
+			continue
+		var host := state.get_combatant(src)
+		if host != null and host.is_satellite:
+			src = host.host_id
+		var status := int(b["status"])
+		var key := "%s>%s>%d" % [src, tgt, status]
+		if seen.has(key):
+			continue
+		seen[key] = true
+		var victim := state.get_combatant(tgt)
+		var on_player := victim != null and victim.is_player
+		var good := WheelView.status_good_for_you(status, on_player)
+		var word := "%s %s" % [Palette.STATUS_GLYPHS.get(status, "?"), tr(String(Palette.STATUS_WORDS.get(status, "")))]
+		var text := tr("PUTS %s ON YOU") % word if on_player else tr("PUTS %s ON %s") % [word, _name_of(victim).to_upper() if victim != null else "?"]
+		var list: Array = out.get(src, [])
+		list.append({"text": text, "color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
+			"rank": CHIP_RANK_HURTS_YOU if on_player and not good else CHIP_RANK_DEALT,
+			"beats": ForecastTicks.filter(["status", "absorbed"], StringName(String(b["source"])), tgt),
+			"tooltip": String(tr("Good for you: %s") if good else tr("Bad for you: %s")) % Codex.status_text(status)})
+		out[src] = list
+	return out
 
 
 ## The tag's title: the slice each needle lands on and how well.
@@ -2332,7 +2529,10 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		var good := WheelView.status_good_for_you(after, mine) if after != RC.Status.NONE else not WheelView.status_good_for_you(int(st["before"]), mine)
 		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_GAIN if good else CHIP_LOSS,
 			"ink": Palette.INK if good else Palette.PAPER, "status": true, "beats": ForecastTicks.filter(["status", "absorbed"], &"", id)})
-	if bool(d["alive_before"]) and not bool(d["alive_after"]):
+	# ANIM-R5 combat 3: the operative going down is the fight's DEFEAT: one chip says it (DOWN
+	# and DEFEAT side by side said it twice).
+	var lost_here := id == state.player.id and o.outcome == CombatState.Outcome.DEFEAT
+	if bool(d["alive_before"]) and not bool(d["alive_after"]) and not lost_here:
 		chips.append({"text": tr("DOWN"), "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", id)})
 	if int(d.get("phase_after", 0)) != int(d.get("phase_before", 0)):
 		chips.append({"text": tr("PHASE %d") % (int(d["phase_after"]) + 1), "color": CHIP_RESIST, "ink": Palette.INK, "beats": ForecastTicks.filter(["phase"], &"", id)})
@@ -2393,7 +2593,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		if o.outcome == CombatState.Outcome.VICTORY:
 			chips.append({"text": tr("VICTORY"), "color": CHIP_GAIN, "ink": Palette.INK, "beats": ForecastTicks.filter(["end"])})
 		elif o.outcome == CombatState.Outcome.DEFEAT:
-			chips.append({"text": tr("DEFEAT"), "color": CHIP_LOSS, "ink": Palette.PAPER, "beats": ForecastTicks.filter(["end"])})
+			chips.append({"text": tr("DEFEAT"), "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["end"])})
 	return ranked_chips(chips)
 
 
@@ -2432,7 +2632,7 @@ static func signed(n: int) -> String:
 
 static func _chips_tooltip(chips: Array) -> String:
 	if chips.is_empty():
-		return "What this wheel's needles land on. Nothing else changes this turn."
+		return TranslationServer.translate("What this wheel's needles land on. Nothing else changes this turn.")
 	var parts := PackedStringArray()
 	for c in chips:
 		parts.append(String(c["text"]))
@@ -2442,7 +2642,9 @@ static func _chips_tooltip(chips: Array) -> String:
 		if String(c.get("tooltip", "")) != "":
 			notes.append(String(c["tooltip"]))
 	var extra := ("\n" + "\n".join(notes)) if not notes.is_empty() else ""
-	return "When you SEND IT: " + ", ".join(parts) + "." + extra + "\nHITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).\nThe dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."
+	return String(TranslationServer.translate("When you SEND IT: %s.")) % ", ".join(parts) + extra + "\n" \
+		+ String(TranslationServer.translate("HITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).")) + "\n" \
+		+ String(TranslationServer.translate("The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."))
 
 
 # --- Stickers and hints ---------------------------------------------------------------
@@ -2469,7 +2671,7 @@ func _build_stickers() -> void:
 		if _nav_focus:
 			_show_respin_odds())
 	_respin_button.mouse_exited.connect(_show_end_turn_preview)
-	_rewind_button.tooltip_text = "Undo back to the last random event (free, unlimited this turn)."
+	shown_tip(_rewind_button, tr("Undo back to the last random event (free, unlimited this turn)."))
 
 
 ## Sticker label with its bound key (the action each sticker runs).
@@ -2492,7 +2694,7 @@ func _sync_stickers() -> void:
 	var cost := engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else 0
 	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", tr("RESPIN %d RAM") % cost if cost > 0 else tr("RESPIN")))
 	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", tr("UNDO")))
-	_respin_button.tooltip_text = "Respin your wheel for %d RAM: a random result (sets a checkpoint)." % cost
+	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (sets a checkpoint).") % cost)
 	for key in _stickers:
 		(_stickers[key] as StickerButton).refit()
 	_place_stickers()
@@ -2613,6 +2815,7 @@ func skip_motion() -> void:
 	if ram_note != null:
 		ram_note.finish_motion()
 	_release_card_hold()
+	_land_outcome()
 	if had:
 		_dim_hand()
 		_show_end_turn_preview()
@@ -2994,7 +3197,8 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 		_free_captures({}, discard)
 		_release_forecast()
 		return
-	var beats := ResolveBeats.build(before, events, engine.resolver.lookup)
+	# ANIM-R5 combat 5: a wheel going down acts before its HP reaches 0 (same moment).
+	var beats := ResolveBeats.doomed_first(before, ResolveBeats.build(before, events, engine.resolver.lookup))
 	var sch := sequence_schedule(beats)
 	var times: PackedFloat32Array = sch["times"]
 	var result_at := float(sch["result_at"])
@@ -3049,9 +3253,10 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	_numbers_on.clear()
 	_seq = create_tween().set_parallel(true)
 	_seq_started = Time.get_ticks_msec() / 1000.0
-	_seq_total = float(sch["total"])
+	_seq_total = maxf(float(sch["total"]), outcome_time(beats, times))
+	var end_at := outcome_time(beats, times)
 	for k in beats.size():
-		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(times[k])
+		_seq.tween_callback(_play_beat.bind(beats[k], before, after)).set_delay(end_at if beats[k]["kind"] == "end" else times[k])
 	_seq.tween_callback(_show_result.bind(beats, before, after)).set_delay(result_at)
 	for c in _seq_calls:
 		_seq.tween_callback(c[1]).set_delay(float(c[0]))
@@ -3103,6 +3308,22 @@ static func death_lead() -> float:
 	return Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + Motion.seconds(&"hp_drain") + Motion.delay_of(&"enemy_break")
 
 
+## ANIM-R5 combat 1: when the outcome (VICTORY / DEFEAT) lands: at its own beat, but never
+## before every HP roll of the resolve has ended (DEFEAT stamped while the HP still read 1).
+## -1 when the beats end no fight.
+static func outcome_time(beats: Array[Dictionary], times: PackedFloat32Array) -> float:
+	var timing := beat_timing()
+	var at := -1.0
+	var settled := 0.0
+	for k in beats.size():
+		if k >= times.size() or beats[k]["phase"] == "turn_start":
+			continue
+		settled = maxf(settled, times[k] + ResolveBeats.settle_after(beats[k], timing))
+		if beats[k]["kind"] == "end":
+			at = times[k]
+	return maxf(at, settled) if at >= 0.0 else -1.0
+
+
 ## A turn-start respin runs two to three turns (the core adds two full turns and a roll):
 ## the sequence keeps room for the longest.
 const SPIN_TICKS_TYPICAL := 3.0
@@ -3128,7 +3349,7 @@ func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatS
 		if not v.defeated():
 			v.show_caption(tr("THIS TURN"))
 		if stamps.has(v.combatant.id) and not v.defeated() and not _impact_stamped.has(v.combatant.id):
-			var spot := v.stamp_slot()
+			var spot := v.stamp_slot(String(stamps[v.combatant.id]), CombatFxLayer.GUARD_NULL)
 			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]),
 				int(spot["max_fs"]), 0.0, CombatFxLayer.GUARD_NULL)
 
@@ -3186,6 +3407,7 @@ func _finish_sequence() -> void:
 		_deal_waiting = false
 	ram_note.finish_motion()
 	_show_end_turn_preview()
+	_land_outcome()
 	motion_settled.emit()
 
 
@@ -3500,7 +3722,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		# shield 8 = 0; sword 14 − shield 5 = 9).
 		fx_layer.impact(victim_at, String(zero.get("text", "")), int(zero.get("icon", -1)), CHIP_GUARD, impact, eq)
 	if b.has("final_stamp") and on_host:
-		var spot := tv.stamp_slot()
+		var spot := tv.stamp_slot(String(b["final_stamp"]), CombatFxLayer.GUARD_NULL)
 		fx_layer.word_stamp(spot["at"], String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))),
 			float(spot["max_w"]), int(spot["max_fs"]), impact, CombatFxLayer.GUARD_NULL)
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
@@ -3627,12 +3849,18 @@ func _death_beat(id: StringName, before: CombatState, after: CombatState = null)
 
 ## VICTORY / DEFEAT lands once the last hit has (ANIM-R2 E5): VICTORY centred over the
 ## enemies' side (never on the operative's wheel), DEFEAT over the operative's. The break
-## flashed its own wheel already (no full-screen flash).
+## flashed its own wheel already (no full-screen flash). ANIM-R5 combat 1-2: the outcome
+## lands here (the status word, the next step, Heat, the top bar, the bark); DEFEAT is the
+## operative's wheel's own stamp, which stays while the fight waits (it faded after 1 s and
+## left a fight that looked as if it went on).
 func _end_beat(outcome: int) -> void:
 	var won := outcome == CombatState.Outcome.VICTORY
-	var word := tr("VICTORY") if won else tr("DEFEAT")
-	fx_layer.word(end_word_spot(won), word, Palette.CELL_ACID if won else WheelView.LOSS_COLOR, Motion.seconds(&"combat_end_hold"),
-		end_word_size(won, word))
+	if won:
+		var word := tr("VICTORY")
+		fx_layer.word(end_word_spot(won), word, Palette.CELL_ACID, Motion.seconds(&"combat_end_hold"), end_word_size(won, word))
+	if engine.has_fight():
+		_bark("victory" if won else "defeat", engine.state())
+	_land_outcome()
 
 
 ## Where VICTORY (the enemies' side) or DEFEAT (the operative's wheel) lands (global).

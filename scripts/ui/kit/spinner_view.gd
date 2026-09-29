@@ -149,7 +149,9 @@ func set_prices(p_price_of: Callable, p_budget: int) -> void:
 	price_of = p_price_of
 	budget = p_budget
 	for i in _pads.size():
-		_pads[i].tooltip_text = UiTip.fold("%s\n%d CYCLES" % [_slice_text(i), int(price_of.call(i))])
+		# ANIM-R5 combat 9 (the tooltip scan): translated once, shown as given.
+		_pads[i].tooltip_text = UiTip.fold(tr("%s\n%d CYCLES") % [_slice_text(i), int(price_of.call(i))])
+		_pads[i].tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_update_price()
 
 

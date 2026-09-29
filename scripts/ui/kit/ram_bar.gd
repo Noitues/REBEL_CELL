@@ -44,7 +44,9 @@ func set_ram(value: int, maximum: int) -> void:
 	max_ram = maximum
 	_tick_to(from, value)
 	custom_minimum_size.y = (CHIP + 4.0) * Settings.text_scale
-	tooltip_text = "RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn." % [value, maximum]
+	# ANIM-R5 combat 9: translated here, shown as given.
+	tooltip_text = tr("RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.") % [value, maximum]
+	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	queue_redraw()
 
 

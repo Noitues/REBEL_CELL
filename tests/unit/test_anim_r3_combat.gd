@@ -837,7 +837,10 @@ func test_after_a_win_the_next_step_replaces_send_it_at_once() -> void:
 			combat.skip_motion()
 	assert_true(combat.engine.state().is_over(), "the fight is won")
 	assert_eq(combat.engine.state().outcome, CombatState.Outcome.VICTORY)
-	assert_false(send.visible, "SEND IT is gone at once (A6h)")
+	# ANIM-R5 combat 1: the next step waits for the replay to land VICTORY (it no longer shows
+	# before the killing hit); then it replaces SEND IT, and pressing it moves on at once.
+	await BoundedWait.until(get_tree(), _outcome_landed.bind(combat), BoundedWait.motion_limit([&"resolve_sequence"], 6.0))
+	assert_false(send.visible, "SEND IT is gone once VICTORY lands (A6h, R5)")
 	assert_false(combat._sticker_box.visible, "and RESPIN / UNDO")
 	assert_true(combat.continue_shown(), "the next step's action shows in its place, replay or not")
 	assert_eq((combat._continue_button as DripButton).tag_text, "LOOT" if RunManager.netrun.run.phase == RunState.Phase.REWARD else "CONTINUE", "named for the next step")
@@ -1056,3 +1059,8 @@ func test_new_motion_ids_are_required_and_words_are_translated_once() -> void:
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
 	for key in ["YOU PLAY %s", "NEED %d · HAVE %d", "LOOT", "HP now: %d of %d."]:
 		assert_true(csv.contains(key), "%s is exported for translation" % key)
+
+
+## ANIM-R5 combat 1: the fight's outcome has landed on screen.
+func _outcome_landed(combat: Control) -> bool:
+	return not combat.outcome_pending()

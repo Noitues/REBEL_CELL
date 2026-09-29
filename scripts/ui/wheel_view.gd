@@ -212,6 +212,8 @@ func _init() -> void:
 	# PASS: hover tooltips on slices; clicks still reach the scene.
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	tooltip_text = " "
+	# ANIM-R5 combat 9: _get_tooltip translates its words where it builds them (once).
+	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	set_process(false)
 
 
@@ -228,11 +230,17 @@ func _get_tooltip(at_position: Vector2) -> String:
 	if combatant == null:
 		return ""
 	if _intent_rect_local().has_point(at_position):
-		return String(intent.get("tooltip", ""))
+		var tip := String(intent.get("tooltip", ""))
+		if was_text() != "":
+			tip += "\n" + tr("Before this play: %s") % was_text()
+		return tip
 	# ANIM-R3 A6j: the plates under the disc say what they are.
 	var lay := hp_layout()
 	if (lay["next"] as Rect2).has_point(at_position):
 		var next_hp := int(outcome.get("hp_after", combatant.hp))
+		if lethal_forecast():
+			# ANIM-R5 combat 3: the LETHAL plate says what it means.
+			return tr("LETHAL: this turn takes you to 0 HP.") if combatant.is_player else tr("LETHAL: this turn takes it to 0 HP.")
 		if combatant.is_player:
 			return tr("NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).") % next_hp
 		return tr("NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).") % next_hp
@@ -243,16 +251,21 @@ func _get_tooltip(at_position: Vector2) -> String:
 	var z := zone_at(global_position + at_position)
 	match String(z.get("kind", "")):
 		"arrow":
-			var which := "clockwise" if int(z["direction"]) > 0 else "anticlockwise"
-			var ring := " the inner ring" if int(z["ring"]) == RC.RingScope.INNER else ""
-			return "Nudge %s%s one tick %s.\nDrop a nudge card here to aim it this way." % [combatant.display_name, ring, which]
+			# ANIM-R5 combat 9: translated, and the wheel named in the player's language.
+			var clockwise := int(z["direction"]) > 0
+			var line := ""
+			if int(z["ring"]) == RC.RingScope.INNER:
+				line = tr("Nudge %s's inner ring one tick clockwise.") if clockwise else tr("Nudge %s's inner ring one tick anticlockwise.")
+			else:
+				line = tr("Nudge %s one tick clockwise.") if clockwise else tr("Nudge %s one tick anticlockwise.")
+			return (line % shown_name()) + "\n" + tr("Drop a nudge card here to aim it this way.")
 		"satellite":
 			var sat := _satellite(StringName(z["id"]))
 			if sat == null:
 				return ""
 			var land: Dictionary = satellite_landings.get(sat.id, {})
-			return "%s (%d HP): takes hits aimed at the slice it guards.%s" % [sat.display_name, sat.hp,
-				("\nIts needle lands on %s." % String(land["text"])) if not land.is_empty() else ""]
+			return tr("%s (%d HP): takes hits aimed at the slice it guards.") % [name_of(sat), sat.hp] \
+				+ (("\n" + tr("Its needle lands on %s.") % String(land["text"])) if not land.is_empty() else "")
 		"slot":
 			return _slice_label(int(z["slot"]))
 		"hub":
@@ -260,11 +273,11 @@ func _get_tooltip(at_position: Vector2) -> String:
 			# How the fight is won and lost (H24: never stated).
 			lines.append(tr("Bring its HP to 0 to win the fight.") if not combatant.is_player else tr("At 0 HP you lose the fight."))
 			if combatant.block > 0:
-				lines.append("Block %d: soaks damage this turn." % combatant.block)
+				lines.append(tr("Block %d: soaks damage this turn.") % combatant.block)
 			if combatant.shield > 0:
-				lines.append("Shield %d: soaks damage, lasts." % combatant.shield)
+				lines.append(tr("Shield %d: soaks damage, lasts.") % combatant.shield)
 			if combatant.resistance > 0:
-				lines.append("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked." % combatant.resistance)
+				lines.append(tr("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.") % combatant.resistance)
 			if combatant.wheel.hub_id != &"" and lookup != null:
 				lines.append(Codex.describe(lookup.get_content(combatant.wheel.hub_id)))
 			return "\n".join(lines)
@@ -438,6 +451,7 @@ func stop_motion(sync_tag: bool = true) -> void:
 	tag_ticks = {}
 	replay_tag_alpha = 1.0
 	status_flash = {}
+	flatline_pop = 1.0  # the DEFEAT stamp itself stays (ANIM-R5 combat 2)
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
 	set_process(false)
@@ -1091,8 +1105,12 @@ func number_slot(band: String, text: String, crit: bool, icon: int = -1) -> Dict
 
 ## Where a word stamp goes (BLOCKED, EVADED, NO DAMAGE...): in the HP band above the name,
 ## where the hit's number would have been, and the width it may take there so its box stays
-## inside the hub. Returns {at (global), max_w}.
-func stamp_slot() -> Dictionary:
+## inside the hub. Returns {at (global), max_w, max_fs}. ANIM-R5 combat 6: with `text` (and
+## its mark `icon`), the stamp as drawn (tilted) must fit above the name inside the hub; when
+## it can't (a hub with BLOCK / SHIELD lines pushes the name up: NO DAMAGE sat on the name
+## after a turn both sides defended) it goes beside the HP number, in the NEXT plate's place
+## (empty while a replay plays), where it also says what it is about.
+func stamp_slot(text: String = "", icon: String = "") -> Dictionary:
 	var r := hub_radius() * NUMBER_HUB_SHARE
 	var edge := hub_text_extent().x - NUMBER_GAP
 	# As tall as the room over the name allows (never over the name), down to the floor.
@@ -1100,8 +1118,45 @@ func stamp_slot() -> Dictionary:
 	edge = maxf(edge, -r + h)
 	var mid := edge - h * 0.5
 	var far := absf(mid) + h * 0.5
-	return {"at": global_center() + Vector2(0.0, mid), "max_w": 2.0 * sqrt(maxf(r * r - far * far, NUMBER_MIN_FONT * NUMBER_MIN_FONT)),
+	var hub := {"at": global_center() + Vector2(0.0, mid), "max_w": 2.0 * sqrt(maxf(r * r - far * far, NUMBER_MIN_FONT * NUMBER_MIN_FONT)),
 		"max_fs": int(h / CombatFxLayer.WORD_BOX_H)}
+	if text == "" or _stamp_fits_hub(hub, text, icon):
+		return hub
+	var lay := hp_layout()
+	var hp: Rect2 = lay["hp"]
+	var left := hp.end.x + STAMP_HP_GAP
+	var room := maxf(size.x - left - STAMP_HP_GAP, CombatFxLayer.WORD_STAMP_MIN * 4.0)
+	var fs := CombatFxLayer.word_stamp_font(text, room, roundi(CombatFxLayer.WORD_STAMP_FONT * _ts() * STAMP_HP_SHARE), icon)
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * CombatFxLayer.WORD_BOX_PAD * 2.0 + CombatFxLayer.stamp_icon_width(fs, icon)
+	return {"at": global_position + Vector2(left + w * 0.5, hp.get_center().y), "max_w": room, "max_fs": fs, "beside_hp": true}
+
+
+## Whether stamp `text` at `spot` (a stamp_slot) stays inside the hub and above the name as
+## drawn (tilted by CombatFxLayer.WORD_TILT).
+func _stamp_fits_hub(spot: Dictionary, text: String, icon: String) -> bool:
+	var box := stamp_bounds(spot, text, icon)
+	var c := global_center()
+	var r := hub_radius() * NUMBER_HUB_SHARE
+	for p in [box.position, Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y)]:
+		if (p as Vector2).distance_to(c) > r:
+			return false
+	return box.end.y <= c.y + hub_text_extent().x
+
+
+## The screen bounds (global) of stamp `text` drawn at `spot` (a stamp_slot), tilt included.
+static func stamp_bounds(spot: Dictionary, text: String, icon: String = "") -> Rect2:
+	var fs := CombatFxLayer.word_stamp_font(text, float(spot["max_w"]), int(spot["max_fs"]), icon)
+	var w := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * CombatFxLayer.WORD_BOX_PAD * 2.0 + CombatFxLayer.stamp_icon_width(fs, icon)
+	var h := fs * CombatFxLayer.WORD_BOX_H
+	var t := absf(CombatFxLayer.WORD_TILT)
+	var ext := Vector2(w * cos(t) + h * sin(t), w * sin(t) + h * cos(t))
+	return Rect2(Vector2(spot["at"]) - ext * 0.5, ext)
+
+
+## A stamp beside the HP number: the gap from it (px) and its lettering's share of a hub
+## stamp's size.
+const STAMP_HP_GAP := 8.0
+const STAMP_HP_SHARE := 0.8
 
 
 ## The hub's words from the top of the name to the foot of its last line (local y, from
@@ -1777,6 +1832,8 @@ func _draw_view() -> void:
 		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
+	if flatlined and combatant.is_player:
+		_draw_flatlined(center, radius, inner)
 	if highlighted and combatant.is_alive():
 		_draw_crosshair(center, radius + 56)
 		# A crosshair mark by the top-right bracket names the reticle without words.
@@ -1911,6 +1968,72 @@ func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
 	# ANIM-R3 A6g: a skull under the stamp marks the beaten side without words.
 	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
 	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, dcol)
+
+
+## ANIM-R5 combat 2: the operative's wheel once the fight is lost: the disc goes dark and a
+## DEFEAT stamp with a skull stays on it while the fight waits for JACK OUT (the replay's
+## DEFEAT faded after a second and left a wheel that looked as if the fight went on). It
+## pops in (`defeat_stamp`: from amplitude x its size).
+var flatlined: bool = false
+var flatline_pop: float = 1.0
+## The DEFEAT stamp's lettering at text scale 1.0 (px) and the veil over the disc (alpha).
+const FLATLINE_FONT := 34
+const FLATLINE_VEIL := 0.6
+
+
+## The DEFEAT stamp lands on the operative's wheel (and stays).
+func play_flatline() -> void:
+	flatlined = true
+	if not Motion.live(&"defeat_stamp"):
+		flatline_pop = 1.0
+		queue_redraw()
+		return
+	var e := Motion.entry(&"defeat_stamp")
+	flatline_pop = 0.0
+	var tw := _tw(&"flatline")
+	tw.tween_method(func(v: float) -> void: flatline_pop = v; queue_redraw(), 0.0, 1.0, Motion.seconds(&"defeat_stamp")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: flatline_pop = 1.0; _end(&"flatline"))
+
+
+## The DEFEAT stamp's box (local, unrotated, at full size) and its font size.
+func flatline_box() -> Dictionary:
+	var center := _center()
+	var radius := _radius()
+	var word := tr("DEFEAT")
+	var font := Palette.marker()
+	var fs := _fs(FLATLINE_FONT)
+	var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	while fs > NUMBER_MIN_FONT and ww + fs > radius * 1.8:
+		fs -= 1
+		ww = font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return {"word": word, "fs": fs, "box": Rect2(center + Vector2(-ww * 0.5 - fs * 0.3, -fs * 0.7), Vector2(ww + fs * 0.6, fs * 1.4))}
+
+
+func _draw_flatlined(center: Vector2, radius: float, inner: float) -> void:
+	var p := clampf(flatline_pop, 0.0, 1.0)
+	draw_circle(center, radius + 2.0, Color(Palette.NIGHT_SKY, FLATLINE_VEIL * p))
+	var fb := flatline_box()
+	var fs := int(fb["fs"])
+	var box: Rect2 = fb["box"]
+	var col := _col(LOSS_COLOR)
+	var sc := lerpf(Motion.amplitude(&"defeat_stamp"), 1.0, p) if Motion.live(&"defeat_stamp") else 1.0
+	draw_set_transform(center, STAMP_TILT, Vector2.ONE * sc)
+	var local := Rect2(box.position - center, box.size)
+	draw_rect(local, Color(Palette.NIGHT_SKY, 0.9 * p))
+	draw_rect(local, Color(col, p), false, 4.0)
+	draw_string(Palette.marker(), Vector2(local.position.x + fs * 0.3, fs * 0.35), String(fb["word"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, p))
+	draw_set_transform(Vector2.ZERO)
+	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
+	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, Color(col, p))
+
+
+## ANIM-R5 combat 3: true when the forecast has this (living) wheel at 0 after SEND IT.
+func lethal_forecast() -> bool:
+	return combatant != null and not replaying and combatant.is_alive() and not outcome.is_empty() and not bool(outcome.get("alive_after", true))
+
+
+## The LETHAL plate's skull: its radius as a share of the plate's lettering.
+const LETHAL_SKULL_SHARE := 0.42
 
 
 ## ANIM-R4 C6g: the colour a beaten wheel's DEFEATED stamp and skull wear: its own.
@@ -2215,16 +2338,26 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	var hs := _fs(HP_FONT_SIZE)
 	var hp_rect: Rect2 = lay["hp"]
 	draw_string(Palette.display(), Vector2(hp_rect.position.x, hp_rect.end.y), String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
-	if not replaying and is_nan(anim_hp) and after != combatant.hp:
+	if not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
 		var fs := _fs(HUB_FONT_SIZE + 3)
 		var ftext := String(lay["next_text"])
 		var fr: Rect2 = lay["next"]
 		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
-		draw_rect(fr, Color(Palette.NIGHT_SKY, 0.8))
-		_draw_dashed_rect(fr, fcol)
+		var lethal := bool(lay.get("lethal", false))
+		draw_rect(fr, _col(LOSS_COLOR) if lethal else Color(Palette.NIGHT_SKY, 0.8))
+		if lethal:
+			draw_rect(fr, _col(Palette.PAPER), false, 1.5)
+			fcol = _col(Palette.PAPER)
+		else:
+			_draw_dashed_rect(fr, fcol)
 		var ay := fr.position.y + fr.size.y * 0.5
 		draw_colored_polygon(PackedVector2Array([Vector2(fr.position.x + 5, ay - 5), Vector2(fr.position.x + 13, ay), Vector2(fr.position.x + 5, ay + 5)]), fcol)
 		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
+		if lethal:
+			# The skull sits in the gap before LETHAL.
+			var head := tr("NEXT %d") % maxi(0, after)
+			var gx := fr.position.x + 17 + Palette.mono().get_string_size(head + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			draw_skull(self, Vector2(gx, ay), fs * LETHAL_SKULL_SHARE, fcol)
 	if (lay["icons"] as Rect2).has_area():
 		_draw_icon_row(lay["icons"], int(lay["icons_fs"]), clampf(last_turn_shown, 0.0, 1.0))
 	if last_turn != "":
@@ -2255,7 +2388,7 @@ func hp_layout() -> Dictionary:
 		"last": Rect2(), "last_lines": PackedStringArray(), "last_fs": 0, "icons": Rect2(), "icons_fs": 0}
 	var items := icon_row_items()
 	if not items.is_empty():
-		# ANIM-R3 A6f: the last turn as icons left of the HP number (sword 6 -> shield 5 = -1),
+		# ANIM-R3 A6f: the last turn as icons left of the HP number (ANIM-R4 notation: sword 6 − shield 5 = 1),
 		# shrinking to fit the room there.
 		var ifs := _fs(HUB_FONT_SIZE + 3)
 		var room := center.x - tw * 0.5 - ICON_ROW_GAP - left_reserve
@@ -2266,12 +2399,21 @@ func hp_layout() -> Dictionary:
 		out["icons"] = Rect2(Vector2(maxf(left_reserve, center.x - tw * 0.5 - ICON_ROW_GAP - iw), base_y - hs * 0.75), Vector2(iw, ifs + 6.0))
 		out["icons_fs"] = ifs
 	var after := int(outcome.get("hp_after", combatant.hp))
-	if after != combatant.hp:
+	out["lethal"] = lethal_forecast()
+	if after != combatant.hp or bool(out["lethal"]):
 		var fs := _fs(HUB_FONT_SIZE + 3)
 		var ftext := tr("NEXT %d") % maxi(0, after)
+		if bool(out["lethal"]):
+			# ANIM-R5 combat 3: the turn that takes this wheel to 0 says so by its HP (a skull
+			# and LETHAL on a solid red plate; the red cross over the hub struck through its
+			# name and read as "disabled").
+			ftext += "    " + tr("LETHAL")
 		var fw := Palette.mono().get_string_size(ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 22.0
 		out["next_text"] = ftext
-		out["next"] = Rect2(Vector2(center.x + tw * 0.5 + 8.0, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
+		var x := center.x + tw * 0.5 + 8.0
+		# Kept inside the view (a long translation shifts it left, never off the edge).
+		x = minf(x, size.x - fw - 2.0)
+		out["next"] = Rect2(Vector2(x, base_y - hs * 0.75), Vector2(fw, fs + 6.0))
 	if last_turn != "":
 		var box := 2.0 * minf(center.x - left_reserve, size.x - center.x) - LAST_TURN_PAD * 2.0
 		var font := Palette.mono()
@@ -2435,11 +2577,16 @@ func hub_name_lines(width: float) -> Array:
 
 ## The combatant's name in the player's language (generated Mirrors keep runtime names).
 func shown_name() -> String:
+	return name_of(combatant)
+
+
+## `c`'s name in the player's language (a satellite's too; ANIM-R5 combat 9).
+func name_of(c: CombatantState) -> String:
 	var data: Resource = null
-	if lookup != null and combatant.source_id != &"" and lookup.has(combatant.source_id):
-		data = lookup.get_content(combatant.source_id)
-	if data == null or not ("display_name" in data) or String(data.display_name) != combatant.display_name:
-		return combatant.display_name
+	if lookup != null and c.source_id != &"" and lookup.has(c.source_id):
+		data = lookup.get_content(c.source_id)
+	if data == null or not ("display_name" in data) or String(data.display_name) != c.display_name:
+		return c.display_name
 	return TextDb.t(data, "display_name")
 
 
@@ -2492,11 +2639,6 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
 			line_text = line_text.substr(0, line_text.length() - 2) + "…"
 		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, col)
-	if not replaying and not bool(outcome.get("alive_after", true)) and combatant.is_alive():
-		# This turn takes it down: a red cross over the hub.
-		var r := inner * 0.55
-		draw_line(center + Vector2(-r, -r), center + Vector2(r, r), _col(LOSS_COLOR), 6.0)
-		draw_line(center + Vector2(-r, r), center + Vector2(r, -r), _col(LOSS_COLOR), 6.0)
 
 
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP
@@ -2568,7 +2710,7 @@ func _chip_rows_at(fs: int) -> Array:
 	var w := 0.0
 	for i in chips.size():
 		var chip: Dictionary = chips[i]
-		var cw := _chip_width(String(chip["text"]), fs)
+		var cw := _chip_w(String(chip["text"]), fs)
 		if not row.is_empty() and w + cw > max_w:
 			rows.append(row)
 			row = []
@@ -2577,7 +2719,7 @@ func _chip_rows_at(fs: int) -> Array:
 			return _fold_rows(rows, chips.size() - i, fs, max_w)
 		var more := 0.0
 		if rows.size() == cap - 1 and i < chips.size() - 1:
-			more = _chip_width(tr("+%d MORE") % (chips.size() - i - 1), fs)
+			more = _chip_w(tr("+%d MORE") % (chips.size() - i - 1), fs)
 		if rows.size() == cap - 1 and not row.is_empty() and w + cw + more > max_w and i < chips.size() - 1:
 			# This chip would leave no room to say what else there is.
 			rows.append(row)
@@ -2597,10 +2739,10 @@ func _fold_rows(rows: Array, hidden: int, fs: int, max_w: float) -> Array:
 	var last: Array = rows[rows.size() - 1]
 	var w := 0.0
 	for c in last:
-		w += _chip_width(String(c["text"]), fs)
-	while last.size() > 1 and w + _chip_width(tr("+%d MORE") % hidden, fs) > max_w:
+		w += _chip_w(String(c["text"]), fs)
+	while last.size() > 1 and w + _chip_w(tr("+%d MORE") % hidden, fs) > max_w:
 		var gone: Dictionary = last.pop_back()
-		w -= _chip_width(String(gone["text"]), fs)
+		w -= _chip_w(String(gone["text"]), fs)
 		hidden += 1
 	last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER, "more": true})
 	return rows
@@ -2610,12 +2752,62 @@ static func _chip_width(text: String, fs: int) -> float:
 	return Palette.mono().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
 
 
+## ANIM-R5 combat 4: a chip's width on this tag: a held forecast (its lines get ticks) keeps
+## room at each chip's end for its tick, so a tick never sits on the chip's words ("YOU
+## TAKE 3 H✓", DOWN hidden).
+func _chip_w(text: String, fs: int) -> float:
+	return _chip_width(text, fs) + (tick_room() if _ticking() else 0.0)
+
+
+## True while the tag drawn is a held forecast whose lines tick.
+func _ticking() -> bool:
+	return replaying and not replay_tag.is_empty()
+
+
+## The room a tick takes at a chip's end (px).
+func tick_room() -> float:
+	return CHIP_HEIGHT * _ts() * TICK_SHARE * 2.0 + TICK_GAP * 2.0
+
+
+## The tag's chips as drawn in tag rect `r` (local): [{chip, rect (the chip), text (its
+## words), tick (its tick's disc bounds; empty when it has no room for one)}].
+func chip_layout(r: Rect2) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var ts := _ts()
+	var fs := chip_font()
+	var chip_h := CHIP_HEIGHT * ts
+	var y := r.position.y + INTENT_HEIGHT * ts
+	var font := Palette.mono()
+	var room := tick_room() if _ticking() else 0.0
+	for row in _chip_rows_at(fs):
+		var x := r.position.x + 4
+		for chip in row:
+			var cw := _chip_w(String(chip["text"]), fs)
+			var cr := Rect2(Vector2(x, y), Vector2(cw - 4, chip_h))
+			var tw := font.get_string_size(String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var text := Rect2(Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75 - font.get_ascent(fs)), Vector2(tw, font.get_height(fs)))
+			var tick := Rect2()
+			if room > 0.0:
+				var rr := chip_h * TICK_SHARE
+				var c := Vector2(cr.end.x - TICK_GAP - rr, cr.position.y + chip_h * 0.5)
+				tick = Rect2(c - Vector2(rr + 1.5, rr + 1.5), Vector2(rr + 1.5, rr + 1.5) * 2.0)
+			out.append({"chip": chip, "rect": cr, "text": text, "tick": tick})
+			x += cw
+		y += chip_h + 2.0
+	return out
+
+
 ## The intent tag's rect in view space (empty without an intent): a title row and one row
 ## per line of result chips, grown upwards from just above the pointer hub.
 func _intent_rect_local() -> Rect2:
+	return _tag_geometry()["rect"]
+
+
+## The tag's rect (local) and its WAS row (ANIM-R5 combat 7; empty when none or no room).
+func _tag_geometry() -> Dictionary:
 	var it := tag_intent()
 	if combatant == null or it.is_empty() or String(it.get("text", "")) == "":
-		return Rect2()
+		return {"rect": Rect2(), "was": Rect2()}
 	var ts := _ts()
 	var title_h := INTENT_HEIGHT * ts
 	var chip_h := CHIP_HEIGHT * ts
@@ -2628,7 +2820,7 @@ func _intent_rect_local() -> Rect2:
 	for row in rows:
 		var rw := 8.0
 		for chip in row:
-			rw += _chip_width(String(chip["text"]), fs)
+			rw += _chip_w(String(chip["text"]), fs)
 		w = maxf(w, rw)
 	# ANIM-R3 A6j: the tape's words never run past the tag (IF YOU SEND IT spilled over a
 	# short tag's title).
@@ -2636,8 +2828,62 @@ func _intent_rect_local() -> Rect2:
 	w = minf(w, size.x * TAG_MAX_SHARE)
 	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
 	var x := clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w))
+	var top_min := tape_height() - TAPE_INSET * ts
 	# The tape stands above the tag (off its title): the tag keeps room for it in the view.
-	return Rect2(Vector2(x, maxf(tape_height() - TAPE_INSET * ts, bottom - h)), Vector2(w, h))
+	var rect := Rect2(Vector2(x, maxf(top_min, bottom - h)), Vector2(w, h))
+	# ANIM-R5 combat 7: a preview that changed this tag says what it said before on its tape
+	# (WAS, struck through), where IF YOU SEND IT stood: the tag keeps its size, so it fits
+	# at every text size (a row of its own had no room under the screen's top).
+	var was := Rect2()
+	if was_text() != "":
+		var th := tape_height()
+		was = Rect2(Vector2(rect.position.x, rect.position.y - th + TAPE_INSET * ts), Vector2(w, th))
+	return {"rect": rect, "was": was}
+
+
+## ANIM-R5 combat 7: the tag before the play or nudge being previewed (the scene sets it
+## when a hover changes this tag; {} = unchanged). The tag shows it struck through under a
+## WAS row, so a flip reads as a change ("CRITICAL · HITS YOU 14" was "ATTACK · HITS YOU 6").
+var was_tag: Dictionary = {}
+## What the tag said before the preview, as one line ("" = nothing to show).
+func was_text() -> String:
+	if replaying or was_tag.is_empty() or String(was_tag.get("text", "")) == "":
+		return ""
+	var parts := PackedStringArray([String(was_tag["text"])])
+	for chip in was_tag.get("chips", []):
+		if not bool((chip as Dictionary).get("play", false)):
+			parts.append(String(chip["text"]))
+	return " · ".join(parts)
+
+
+## The WAS tape's rect (global), empty when it doesn't show.
+func was_rect() -> Rect2:
+	var r: Rect2 = _tag_geometry()["was"]
+	return Rect2(global_position + r.position, r.size) if r.has_area() else r
+
+
+func _draw_was(r: Rect2, alpha: float) -> void:
+	var fs := _fs(HUB_FONT_SIZE)
+	var font := Palette.mono()
+	var head := tr("WAS") + " "
+	var hw := font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var x := r.position.x + TAPE_PAD
+	var base := r.position.y + fs
+	draw_rect(r, Color(Palette.NOTE_TAPE, alpha))
+	draw_string(font, Vector2(x, base), head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
+	var room := r.end.x - x - hw - TAPE_PAD
+	var line := was_text()
+	while line.length() > 3 and font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+		line = line.substr(0, line.length() - 2) + "…"
+	var lw := font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var ink := Color(Palette.INK, WAS_INK * alpha)
+	draw_string(font, Vector2(x + hw, base), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	var sy := base - fs * 0.32
+	draw_line(Vector2(x + hw, sy), Vector2(x + hw + lw, sy), ink, 1.5)
+
+
+## The WAS row's words' strength (alpha): a ghost of the tag before.
+const WAS_INK := 0.6
 
 
 ## The tape on a tag (ANIM-R3 A6j): its height, and its width for the widest words it
@@ -2685,8 +2931,12 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 	var cap_w := minf(w, Palette.mono().get_string_size(cap_text, HORIZONTAL_ALIGNMENT_LEFT, -1, cap_fs).x + TAPE_PAD * 2.0)
 	var th := tape_height()
 	var tape := Rect2(r.position + Vector2((w - cap_w) * 0.5, -th + TAPE_INSET * ts), Vector2(cap_w, th))
-	draw_rect(tape, fade.call(Palette.NOTE_TAPE))
-	draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, fade.call(Palette.INK))
+	var was_tape: Rect2 = _tag_geometry()["was"]
+	if was_tape.has_area() and not replaying:
+		_draw_was(was_tape, alpha)
+	else:
+		draw_rect(tape, fade.call(Palette.NOTE_TAPE))
+		draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, fade.call(Palette.INK))
 	var tx := r.position.x + 8
 	var title_h := INTENT_HEIGHT * ts
 	if type >= 0:
@@ -2705,25 +2955,19 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 	draw_string(f, Vector2(tx, r.position.y + title_h * 0.7 + TAPE_INSET * ts * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 4, _fs(INTENT_FONT_SIZE), fade.call(Palette.INK))
 	var fs := chip_font()
 	var chip_h := CHIP_HEIGHT * ts
-	var y := r.position.y + title_h
-	var rows := _chip_rows_at(fs)
+	var boxes := chip_layout(r)
 	var shown := {}
-	for row in rows:
-		for chip in row:
-			if (chip as Dictionary).has("tick_i"):
-				shown[int(chip["tick_i"])] = true
-	for row in rows:
-		var x := r.position.x + 4
-		for chip in row:
-			var cw := _chip_width(String(chip["text"]), fs)
-			var cr := Rect2(Vector2(x, y), Vector2(cw - 4, chip_h))
-			draw_rect(cr, fade.call(Color(chip.get("color", Palette.INK))))
-			draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
-			var tick := _chip_tick(chip, shown)
-			if tick >= 0.0:
-				_draw_tick(Vector2(cr.end.x, cr.position.y), chip_h, tick, alpha)
-			x += cw
-		y += chip_h + 2.0
+	for bx in boxes:
+		if (bx["chip"] as Dictionary).has("tick_i"):
+			shown[int(bx["chip"]["tick_i"])] = true
+	for bx in boxes:
+		var chip: Dictionary = bx["chip"]
+		var cr: Rect2 = bx["rect"]
+		draw_rect(cr, fade.call(Color(chip.get("color", Palette.INK))))
+		draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
+		var tick := _chip_tick(chip, shown)
+		if tick >= 0.0 and (bx["tick"] as Rect2).has_area():
+			_draw_tick((bx["tick"] as Rect2).get_center(), chip_h, tick, alpha)
 
 
 ## A held forecast chip's tick (ANIM-R3 A6b): its pop 0..1, or -1 when not ticked. The fold
@@ -2746,13 +2990,11 @@ func _chip_tick(chip: Dictionary, shown: Dictionary) -> float:
 	return -1.0
 
 
-## A tick on a chip's top-right corner `at` (local): an acid disc with a check, popping in
-## from `forecast_tick`'s amplitude scale.
-func _draw_tick(at: Vector2, chip_h: float, pop: float, alpha: float) -> void:
+## A tick centred on `c` (local; ANIM-R5 combat 4: in the room kept at its chip's end): an
+## acid disc with a check, popping in from `forecast_tick`'s amplitude scale.
+func _draw_tick(c: Vector2, chip_h: float, pop: float, alpha: float) -> void:
 	var sc := lerpf(Motion.amplitude(&"forecast_tick"), 1.0, clampf(pop, 0.0, 1.0)) if Motion.live(&"forecast_tick") else 1.0
 	var rr := chip_h * TICK_SHARE * sc
-	# On the chip's top-right corner, half above it: clear of the chip's own words.
-	var c := at + Vector2(0.0, -chip_h * TICK_SHARE * 0.35)
 	draw_circle(c, rr + 1.5, Color(Palette.INK, alpha))
 	draw_circle(c, rr, Color(Palette.CELL_ACID, alpha))
 	draw_polyline(PackedVector2Array([c + Vector2(-rr * 0.5, 0.0), c + Vector2(-rr * 0.12, rr * 0.4), c + Vector2(rr * 0.55, -rr * 0.45)]),
@@ -2761,6 +3003,8 @@ func _draw_tick(at: Vector2, chip_h: float, pop: float, alpha: float) -> void:
 
 ## A tick's radius as a share of a chip's height.
 const TICK_SHARE := 0.32  # drawing, not motion (ANIM-R4 C5): the tick disc's radius as a share of the chip height
+## The gap either side of a tick in its chip's end room (px).
+const TICK_GAP := 2.0
 
 
 ## The forecast tag's tape caption (translated).
