@@ -45,8 +45,15 @@ const RING_OUTER := 90.0
 const RING_INNER := 56.0
 const HUB_RADIUS := 50.0
 ## The hub name's font size and the smallest it shrinks to.
-const HUB_FONT_SIZE := 13
-const HUB_MIN_FONT_SIZE := 8
+const HUB_FONT_SIZE := UiTheme.BODY
+const HUB_MIN_FONT_SIZE := UiTheme.CAPTION
+## The wheel's lettering (art pass W3, §4.2 steps): slice values, the slice count, a slice's
+## popup title, ring segment tags and the HUB word.
+const VALUE_FONT := UiTheme.TITLE
+const COUNT_FONT := UiTheme.LABEL
+const POPUP_FONT := UiTheme.HEADING
+const RING_FONT := UiTheme.CAPTION
+const HUB_WORD_FONT := UiTheme.CAPTION
 
 
 func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup: ContentLookup, p_title: String = "SPINNER",
@@ -60,7 +67,7 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(Palette.INK, 0.72)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	# H24 S4: the viewer shows its words as given: the title comes translated, the action
@@ -258,7 +265,7 @@ func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	# reverse video (light block, dark text) without one.
 	var fg := Palette.TERMINAL_TEXT
 	var bg := Palette.TERMINAL_BG
-	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
+	var style := UiTheme.box(bg if active else fg, fg if active else Color(Palette.INK, 0.0), 2 if active else 0, 12, 4)
 	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 		b.add_theme_stylebox_override(st, style)
 	var ink := fg if active else bg
@@ -357,7 +364,7 @@ func _draw_wheel() -> void:
 	var n := slices.size()
 	var r0 := 100.0
 	var r1 := 180.0
-	_wheel.draw_circle(c, r1 + 44, Color(0, 0, 0, 0.6))
+	_wheel.draw_circle(c, r1 + 44, Color(Palette.INK, 0.6))
 	for i in n:
 		var s := _slice(i)
 		var type := s.slice_type if s != null else RC.SliceType.MISS
@@ -377,13 +384,13 @@ func _draw_wheel() -> void:
 		var am := _angle(i)
 		SliceIcon.draw_on_slice(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, col)
 		if s != null and s.base_output > 0:
-			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, 26, col.lightened(0.35))
+			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, VALUE_FONT, col.lightened(0.35))
 		if i < firmware.size() and firmware[i] != &"":
 			_wheel.draw_rect(Rect2(c + Vector2(cos(am), sin(am)) * 116.0 - Vector2(5, 5), Vector2(10, 10)), Palette.NET_CYAN)
-	_wheel.draw_circle(c, r0 - 6, Color("#07080F"))
+	_wheel.draw_circle(c, r0 - 6, Palette.NIGHT_SKY)
 	_wheel.draw_arc(c, r1, 0, TAU, 64, wheel_color, 2.5)
 	if hub == null and ring.is_empty():
-		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, 18, wheel_color)
+		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, COUNT_FONT, wheel_color)
 	_draw_core(c)
 	if selected >= 0:
 		var am := _angle(selected)
@@ -404,7 +411,7 @@ func open_slot(index: int) -> void:
 	var type := s.slice_type if s != null else RC.SliceType.MISS
 	icon.draw.connect(func() -> void:
 		SliceIcon.draw_icon(icon, Vector2(34, 32), 24, type, Palette.slice_color(type))
-		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Palette.PAPER))
+		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, POPUP_FONT, Palette.PAPER))
 	pop.body.add_child(icon)
 	var desc := Label.new()
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -449,12 +456,12 @@ func _draw_core(c: Vector2) -> void:
 		_wheel.draw_polyline(pts, Palette.CELL_ACID if hot else Palette.NEON_VIOLET, 1.5)
 		var label := ring[k].display_name.left(3).to_upper() if ring[k] != null else "?"
 		var at := c + Vector2(cos(mid), sin(mid)) * (RING_INNER + RING_OUTER) * 0.5
-		_wheel.draw_string(Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, 13, Palette.PAPER)
+		_wheel.draw_string(Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, RING_FONT, Palette.PAPER)
 	if hub != null:
 		var hot_hub := not _core_pads.is_empty() and _core_pads[0].has_focus()
 		_wheel.draw_circle(c, HUB_RADIUS, Color(Palette.NIGHT_SKY, 0.95))
 		_wheel.draw_arc(c, HUB_RADIUS, 0, TAU, 48, Palette.CELL_ACID if hot_hub else wheel_color, 2.0)
-		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, 11, Color(Palette.PAPER, 0.7))
+		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, HUB_WORD_FONT, Color(Palette.PAPER, 0.7))
 		# The hub's name shrinks to fit the disc.
 		var hub_name := TextDb.t(hub, "display_name").to_upper()
 		var fs := HUB_FONT_SIZE

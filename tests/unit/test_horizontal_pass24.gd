@@ -157,8 +157,10 @@ func test_soaked_damage_is_counted_and_shown() -> void:
 			soaked += int(e.get("blocked", 0)) + int(e.get("shielded", 0))
 	assert_eq(int(o.of(s.player.id)["soaked"]), soaked, "the outcome sums block and shield soak")
 	var texts: Array = scene._chips_for(o, s.player.id, s).map(func(c: Dictionary) -> String: return String(c["text"]))
+	# Art pass W3 (§6.2): the operative's soak is in the net line under its HP ("(7 − 4)").
 	if soaked > 0:
-		assert_true(texts.has("%d BLOCKED" % soaked), "shown beside the loss: %s" % [texts])
+		scene._show_end_turn_preview()
+		assert_eq(int(scene._player_view.net_line.get("soaked", 0)), soaked, "shown in the net line: %s" % [scene._player_view.net_line])
 	else:
 		assert_false(texts.any(func(t: String) -> bool: return t.ends_with(" BLOCKED")), "nothing soaked, nothing shown")
 

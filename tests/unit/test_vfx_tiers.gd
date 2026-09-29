@@ -229,7 +229,7 @@ func test_the_combat_scene_flashes_its_wheels_not_the_screen() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
 	assert_false(src.contains("Fx.flash("), "no full-screen flash left in combat")
 	assert_true(src.contains("wheel_burst(view.global_center(), view.disc_radius(), CombatFxLayer.BURST_PERFECT)"), "Perfect bursts on its wheel")
-	assert_true(src.contains("CombatFxLayer.BURST_PHASE, hue)"), "a phase bursts on the boss's wheel in its corp hue")
+	assert_true(src.contains("CombatFxLayer.BURST_PHASE, bv.wheel_color,"), "a phase bursts on the boss's wheel in its corp hue (art pass W3: and its pattern)")
 
 
 # --- Raid FX ------------------------------------------------------------------------------------
