@@ -211,7 +211,10 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   a press that drives the playout itself (a focus move, which is how keys and the pad reach
   1x / 2x / 4x and Skip, and a press on those buttons) passes without ending the step:
   stepping onto 2x or pressing it speeds the raid up, it never skips the step being watched
-  (Skip makes its own jump).
+  (Skip makes its own jump). ANIM-R6: the exception holds whichever helper sees the press
+  first (a Typing label, a subtitle, a page entrance or a flight running beside the
+  playout): a helper may answer `motion_passes(event)` and `MotionSkip.complete_all(node,
+  event)` leaves it running; the playout answers it with its own-controls test.
   ANIM-R5: one press completes every skippable motion running on screen, not only the one
   whose helper saw it first: a stray key during a flight and a drop, or a page entrance and
   a flight, ends them all (it used to end one; a focus move already ended all). Every helper

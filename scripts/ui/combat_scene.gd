@@ -739,7 +739,7 @@ func _input(event: InputEvent) -> void:
 		var verdict := MotionSkip.verdict(event, self, replay_keeps())
 		if verdict != MotionSkip.Verdict.IGNORE:
 			# ANIM-R5: every running motion completes with the replay (MotionSkip.complete_all).
-			MotionSkip.complete_all(self)
+			MotionSkip.complete_all(self, event)
 			# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press
 			# ends the replay and goes on to it).
 			if continue_shown() and _for_continue(event):

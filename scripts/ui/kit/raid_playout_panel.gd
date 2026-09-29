@@ -246,20 +246,12 @@ func _process(delta: float) -> void:
 ## and the pad walk to 1x / 2x / 4x and Skip, and a press on those buttons) passes without
 ## ending the step: stepping onto 2x or pressing it speeds the raid up, it doesn't skip a
 ## step the player wanted to watch faster (Skip does its own jump).
+## ANIM-R6 D1: the exception lives in `motion_passes`, so it holds whichever helper sees the
+## press first (MotionSkip.handle completes every running motion but this one).
 func _input(event: InputEvent) -> void:
 	if _done or _instant or not is_visible_in_tree():
 		return
-	var v := MotionSkip.verdict(event, self)
-	if v == MotionSkip.Verdict.IGNORE:
-		return
-	if v == MotionSkip.Verdict.PASS and drives_playout(event):
-		return
-	# ANIM-R5 (MotionSkip.handle): the step ends with every other running motion.
-	skip_step()
-	if v == MotionSkip.Verdict.CONSUME:
-		MotionSkip.consume(self, event)
-	else:
-		MotionSkip.complete_all(self)
+	MotionSkip.handle(event, self)
 
 
 ## MotionSkip (ANIM-R5): a step is playing (a press ends it with every other motion).
@@ -270,6 +262,12 @@ func motion_running() -> bool:
 ## MotionSkip (ANIM-R5): the current step's beats at their ends.
 func complete_motion() -> void:
 	skip_step()
+
+
+## MotionSkip (ANIM-R6 D1): a press that drives the playout (`drives_playout`) passes
+## without ending the step, whichever helper saw it first.
+func motion_passes(event: InputEvent) -> bool:
+	return drives_playout(event)
 
 
 ## ANIM-R5 P11: true when `event` drives the playout itself: a focus move, or a press (a

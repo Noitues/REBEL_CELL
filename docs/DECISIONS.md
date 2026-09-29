@@ -438,6 +438,25 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-29 — Animation pass — ANIM-R6 rules
+The sixth fix batch of the Animation pass review, motion rules, kit, test infrastructure and
+docs (fix agent D, D1-D11). Every call below was the implementer's (nothing deferred).
+Views, tools, tests and docs only. Tests: `tests/unit/test_anim_r6_rules.gd` (full tier)
+unless named.
+
+- **D1 the playout's own controls hold whichever helper sees the press.** The exception
+  (a focus move, or a press on 1x / 2x / 4x / Skip, passes without ending the watched step)
+  lived in the panel's own `_input`; when another running helper (a Typing label, the
+  subtitle, a page entrance, a flight) saw the press first, `MotionSkip.handle` gave PASS
+  and `complete_all` ended the panel's step anyway. Helpers may now answer
+  `motion_passes(event)`; `complete_all(node, event)` (and so `handle` and `consume`) leaves
+  a helper that lets the press pass running, and the playout answers it with
+  `drives_playout`. Its `_input` is now plain `MotionSkip.handle` (fix agent C's file:
+  the smallest change). The combat replay passes its press to `complete_all` too (fix agent
+  A's file, one argument). A skip by hand (`complete_all` with no press) still completes
+  every helper. Tests: a focus move and accept on 2x handled first by a typing label leave
+  the step playing and complete the typing; a stray key handled by the label ends both.
+
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
 the coordinator's lookup leak and Disabled-then-Seized ruling). Views only, save RunManager's
