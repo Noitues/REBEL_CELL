@@ -139,6 +139,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > TARGET   %s,> TARGET   %s
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).
 A guided first fight.,A guided first fight.
+"A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
 AFFLICT,AFFLICT
@@ -207,13 +208,13 @@ CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
 CAMPAIGN LOST,CAMPAIGN LOST
 CAMPAIGNS,CAMPAIGNS
+CAN BE YOUR NODE,CAN BE YOUR NODE
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL STATUS,CELL STATUS
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
-CLAIMABLE,CLAIMABLE
 CLAIMED,CLAIMED
 CLEANSE,CLEANSE
 CLEARED,CLEARED
@@ -420,6 +421,12 @@ ClassData.wrecker.display_name,Wrecker
 Classes,Classes
 Clear this Site for the %s Exploit (%d/%d for the breach).,Clear this Site for the %s Exploit (%d/%d for the breach).
 Cleared: claim it to build a node of your network.,Cleared: claim it to build a node of your network.
+Clearing it changes Heat by %s.,Clearing it changes Heat by %s.
+Clearing it gives %s Schematics.,Clearing it gives %s Schematics.
+Clearing it gives the %s Exploit for the boss breach.,Clearing it gives the %s Exploit for the boss breach.
+Clearing it now brings a raid on your network.,Clearing it now brings a raid on your network.
+Clearing it opens %d more Sites to runs: %s.,Clearing it opens %d more Sites to runs: %s.
+Clearing it wins the campaign.,Clearing it wins the campaign.
 Clearing this Site changes Heat by %d.,Clearing this Site changes Heat by %d.
 Click,Click
 Click a Site to open it on the City Grid.,Click a Site to open it on the City Grid.
@@ -567,6 +574,7 @@ ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
 EVADE,EVADE
 EVADED %d,EVADED %d
 EVD,EVD
+EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
 "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it."
@@ -807,6 +815,7 @@ HUB CORE,HUB CORE
 Heat,Heat
 Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
+Heat %s,Heat %s
 Heat %s: %d → %d.,Heat %s: %d → %d.
 "Heat %s: %s for flatlining on a run, %s from the route's nodes and events.","Heat %s: %s for flatlining on a run, %s from the route's nodes and events."
 Heat %s: %s not destroyed: %d → %d.,Heat %s: %s not destroyed: %d → %d.
@@ -829,13 +838,13 @@ Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat
 HeatThresholdData.heat_10.event_text,The next netrun's Modem carries one item fewer.
 HeatThresholdData.heat_100.event_text,PURGE: the corporation sends the largest raid of the campaign.
 HeatThresholdData.heat_20.event_text,An extra elite patrols the next netrun.
-HeatThresholdData.heat_25.event_text,"The corporation raids the Cell. While Heat stays at 25 or more, elites are more frequent."
+HeatThresholdData.heat_25.event_text,"A raid is queued. While Heat stays at 25 or more, elites are more frequent."
 HeatThresholdData.heat_30.event_text,The next netrun's Modem carries one item fewer.
 HeatThresholdData.heat_40.event_text,An extra elite patrols the next netrun.
-HeatThresholdData.heat_50.event_text,"The corporation raids the Cell. While Heat stays at 50 or more, every enemy gains +1 resistance."
+HeatThresholdData.heat_50.event_text,"A raid is queued. While Heat stays at 50 or more, every enemy gains +1 resistance."
 HeatThresholdData.heat_60.event_text,The next netrun's Modem carries one item fewer.
 HeatThresholdData.heat_70.event_text,An extra elite patrols the next netrun.
-HeatThresholdData.heat_75.event_text,"The corporation raids the Cell. While Heat stays at 75 or more, raids are 25% stronger."
+HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 or more, raids are 25% stronger."
 HeatThresholdData.heat_80.event_text,The next netrun's Modem carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 Home integrity before and after the raid.,Home integrity before and after the raid.
@@ -926,6 +935,7 @@ JACK IN: back into the run you left.,JACK IN: back into the run you left.
 "JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun.","JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."
 JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
+Key,Key
 LAST TURN: ,LAST TURN: 
 LEAVE THE MODEM,LEAVE THE MODEM
 LEFT,LEFT
@@ -1319,6 +1329,7 @@ Living operatives in the Cell.,Living operatives in the Cell.
 Load,Load
 Load the campaign in slot %s.,Load the campaign in slot %s.
 Loadout,Loadout
+MAP KEY,MAP KEY
 MICROCHIPS,MICROCHIPS
 MISS,MISS
 MODEM,MODEM
@@ -1352,6 +1363,7 @@ NEXT SITE >,NEXT SITE >
 NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: select the next Site on the Grid: %s (the map follows).
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
+NO GAIN,NO GAIN
 NUDGE,NUDGE
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
 NetrunBoostData.boost_field_kit.display_name,Field Kit
@@ -1419,6 +1431,7 @@ OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
+"Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Operative,Operative
 Options,Options
 "Options: text size, sound, controls, subtitles.","Options: text size, sound, controls, subtitles."
@@ -1504,6 +1517,7 @@ Quit REBEL_CELL?,Quit REBEL_CELL?
 Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
 Quit to desktop,Quit to desktop
 RACK BREACHED // LOOT: pick a %s,RACK BREACHED // LOOT: pick a %s
+RAID,RAID
 "RAID
 RESULT:","RAID
 RESULT:"
@@ -2382,6 +2396,7 @@ StoryPathData.sp_your_own_hands.title,Your Own Hands
 Subtitles type in (off: each line shows at once),Subtitles type in (off: each line shows at once)
 Subtitles with speaker names,Subtitles with speaker names
 System log strip at the foot of the screen,System log strip at the foot of the screen
+T%d,T%d
 TAKES,TAKES
 TARGET: %s,TARGET: %s
 TERMINAL EVENT,TERMINAL EVENT
@@ -2665,6 +2680,7 @@ The home server fell: the campaign is lost.,The home server fell: the campaign i
 The home server is destroyed.,The home server is destroyed.
 The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
+"The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."
 The next %s campaign may start up to ICE %d.,The next %s campaign may start up to ICE %d.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
@@ -2733,6 +2749,7 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
+WIN,WIN
 WON,WON
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.
@@ -2776,6 +2793,7 @@ cleared,cleared
 cool,cool
 corporate,corporate
 daemon,daemon
+difficulty %d of %d,difficulty %d of %d
 elite or the Rack (the corporation's colour),elite or the Rack (the corporation's colour)
 empty,empty
 everything unlocked,everything unlocked
@@ -2797,11 +2815,13 @@ next,next
 next: pick one (numbered),next: pick one (numbered)
 no change,no change
 no runs yet,no runs yet
+none,none
 none (%d needed for the breach),none (%d needed for the breach)
 none yet (buy them at HQ with campaign Schematics),none yet (buy them at HQ with campaign Schematics)
 nothing yet,nothing yet
 noticed,noticed
 odds: %s,odds: %s
+off,off
 patrol,patrol
 perfect aim,perfect aim
 press a key...,press a key...

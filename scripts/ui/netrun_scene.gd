@@ -2859,6 +2859,8 @@ func _show_raid() -> void:
 	run_row.add_child(_label(tr("RUN ASSETS:")))
 	for i in run_assets.size():
 		run_row.add_child(_asset_chip("RunAsset_%d" % i, run_assets[i]))
+	if run_assets.is_empty():
+		run_row.add_child(_none_label())  # ANIM-R6 C15: never an empty caption
 	var armory_row := HFlowContainer.new()
 	armory_row.name = "ArmoryChips"
 	armory_row.add_theme_constant_override("h_separation", 8)
@@ -2866,6 +2868,8 @@ func _show_raid() -> void:
 	armory_row.add_child(_label(tr("ARMORY:")))
 	for i in c.armory.size():
 		armory_row.add_child(_asset_chip("Armory_%d" % i, c.armory[i]))
+	if c.armory.is_empty():
+		armory_row.add_child(_none_label())
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
 		row.name = "RaidRow_%s" % site_id
@@ -2928,6 +2932,18 @@ func _show_raid() -> void:
 	_prebake_raid_playout.call_deferred(c, null)
 	_prebake_route.call_deferred()
 	_register_raid_drops(run_assets, armory_row)
+
+
+## ANIM-R6 C15 (city agent, a small change here): what an empty RUN ASSETS: / ARMORY: row
+## says (a naive player read the bare captions as a list that failed to load).
+func _none_label() -> Label:
+	var l := _label(tr(NONE_WORD))
+	l.name = "NoAssets"
+	l.add_theme_color_override("font_color", Color(Palette.PAPER, 0.6))
+	return l
+
+
+const NONE_WORD := "none" # TR
 
 
 ## ANIM-R3 B5: the interlude's forecast as the raid setup shows it: the dashed stamp ("IF
