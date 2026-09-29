@@ -127,7 +127,7 @@ func _draw() -> void:
 				glyph = "◇"
 			RC.InfilNodeType.SERVER_RACK:
 				glyph = "⬢"
-		draw_string(Palette.display(), p + Vector2(-7, 7), glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Palette.PAPER)
+		draw_string(Palette.display(), p + Vector2(-7, 7), glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.BODY), Palette.PAPER)
 		var label: String = TYPE_NAMES.get(int(node["type"]), "?")
 		if node["elite"] and node["type"] == RC.InfilNodeType.ROUTER:
 			label = "Elite " + label
@@ -136,10 +136,10 @@ func _draw() -> void:
 			label += " %+d Heat" % heat
 		if visited.has(id) and id != current_id:
 			label = "done"
-		var lw := minf(Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x, 80.0)
+		var lw := minf(Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.CAPTION)).x, 80.0)
 		draw_rect(Rect2(p.x - lw * 0.5 - 3, p.y + NODE_RADIUS + 6, lw + 6, 13), Color(Palette.NIGHT_SKY, 0.75))
-		draw_string(Palette.mono(), p + Vector2(-40, NODE_RADIUS + 16), label, HORIZONTAL_ALIGNMENT_CENTER, 80, 10, Color(Palette.PAPER, 0.5 if visited.has(id) and id != current_id else 1.0))
+		draw_string(Palette.mono(), p + Vector2(-40, NODE_RADIUS + 16), label, HORIZONTAL_ALIGNMENT_CENTER, 80, UiTheme.font_px(UiTheme.CAPTION), Color(Palette.PAPER, 0.5 if visited.has(id) and id != current_id else 1.0))
 	# Layer labels.
 	for li in map.layer_count():
 		var x := 50.0 + (size.x - 100.0) * float(li) / maxf(1.0, map.layer_count() - 1)
-		draw_string(Palette.mono(), Vector2(x - 20, 14), "L%d" % (li + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(Palette.NET_CYAN, 0.6))
+		draw_string(Palette.mono(), Vector2(x - 20, 14), "L%d" % (li + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.CAPTION), Color(Palette.NET_CYAN, 0.6))

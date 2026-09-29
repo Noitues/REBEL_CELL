@@ -556,6 +556,8 @@ func here_marker_rects() -> Array[Rect2]:
 	var xf := get_global_transform()
 	var r := (ICON_RADIUS + HERE_RING + HERE_PIN * 2.0) * _k()
 	out.append(Rect2(xf * (p - Vector2(r, r)), Vector2(r, r) * 2.0 * xf.get_scale()))
+	var tab := here_tab_rect()
+	out.append(Rect2(xf * tab.position, tab.size * xf.get_scale()))
 	return out
 
 
@@ -1066,18 +1068,17 @@ func _draw_top() -> void:
 	drawn_tiers.clear()
 	for n in nodes:
 		_node(n)
-	# ANIM-R3 B8: before the route's first node the marker stands at the street, with its words.
+	# ANIM-R3 B8: before the route's first node the marker stands at the street.
 	if here_id() == &"" and here_at.x != INF and _travel.is_empty():
 		var p := here_point()
 		if p.x != INF:
 			_here(p, ICON_RADIUS * _k())
-			var f := Palette.mono()
-			var fs := label_font_size()
-			var word := tr_word(HERE_LABEL)
-			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var at := p + Vector2(-w * 0.5, (ICON_RADIUS + HERE_RING + LABEL_GAP) * _k() + f.get_ascent(fs))
-			_c.draw_rect(Rect2(at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
-			_c.draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
+	# W8b (§6.10, critique 27): YOU ARE HERE is a tab on the pin itself, on the node (or the
+	# street stub before the first node), never a label floating in empty space.
+	if _travel.is_empty():
+		var tab := here_tab_rect()
+		if tab.has_area():
+			_here_tab(tab)
 	_c = self
 
 
@@ -1868,6 +1869,33 @@ func _stroke_on(pts: PackedVector2Array, share: float, col: Color, width: float)
 		_c.draw_circle(drawn[drawn.size() - 1], width * 2.5, Palette.PAPER)
 
 
+## W8b (§6.10): the YOU ARE HERE tab's rect (local px): on top of the pin over the node that
+## is "here" (or the street marker before the first node); empty when there is none.
+func here_tab_rect() -> Rect2:
+	var p := here_point()
+	if p.x == INF or city == null:
+		return Rect2()
+	var k := _k()
+	var id := here_id()
+	var r := icon_radius(_node_dict(id)) if id != &"" else ICON_RADIUS * k
+	var f := Palette.mono()
+	var fs := label_font_size()
+	var w := f.get_string_size(tr_word(HERE_LABEL), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + TAG_PAD * 2.0 * k
+	var h := f.get_height(fs) + TAG_PAD * 2.0 * k
+	var pin_top := p.y - (r + HERE_RING * k + 2.0 * k + HERE_PIN * k * 1.4)
+	return Rect2(Vector2(p.x - w * 0.5, pin_top - h), Vector2(w, h))
+
+
+## Draws the YOU ARE HERE tab (pink, INK words) at `tab`, joined to the pin under it.
+func _here_tab(tab: Rect2) -> void:
+	var k := _k()
+	var f := Palette.mono()
+	var fs := label_font_size()
+	_c.draw_rect(tab.grow(1.0 * k), Color(Palette.INK, INK_KEY))
+	_c.draw_rect(tab, Palette.CELL_PINK)
+	_c.draw_string(f, tab.position + Vector2(TAG_PAD * k, TAG_PAD * k + f.get_ascent(fs)), tr_word(HERE_LABEL), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
+
+
 ## The "you are here" mark: a pink ring round the icon and a pin pointing down at it.
 func _here(at: Vector2, r: float) -> void:
 	var k := _k()
@@ -1910,6 +1938,8 @@ func unplaced_with_room() -> Array[StringName]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+	if here_tab_rect().has_area():
+		marks.append(here_tab_rect())
 	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius(),
 		"area": label_area(), "blocks": label_blocks(), "gap": LABEL_CLEAR * _k()}
 	for n in nodes:
@@ -1956,8 +1986,7 @@ func label_lines(id: StringName) -> PackedStringArray:
 	if n.is_empty() or is_dimmed(id):
 		return lines
 	var text := String(n.get("label", ""))
-	if text == "" and n.get("here", false):
-		text = HERE_LABEL
+	# W8b: the "here" node's YOU ARE HERE is its pin's tab (here_tab_rect), not a label.
 	# H24 K4: a node lit from its list row shows its name even where the map shows none.
 	if text == "" and id == hover_id:
 		text = String(n.get("name", ""))
@@ -2013,6 +2042,9 @@ func _place_labels() -> Array[Dictionary]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+	var here_tab := here_tab_rect()
+	if here_tab.has_area():
+		marks.append(here_tab)
 	var area := label_area()
 	var blocks := label_blocks()
 	var ring_c := ring_centre()

@@ -562,3 +562,54 @@ func test_start_defense_is_the_raid_setups_primary_on_the_first_screen() -> void
 		assert_eq(prim[0].name, &"RunRaid", "START DEFENSE")
 		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(prim[0].get_global_rect()), "on the first screen at %.1f" % scale)
 		await _close(hq)
+
+
+# --- Item 8: the route's map pieces (§6.10, §11 Route; critique 27, 1.6/09) ----------------------
+
+func test_you_are_here_sits_on_the_node_or_the_street_stub() -> void:
+	var scene := _open(NETRUN)
+	scene.start_run(1)
+	await _frames(12)
+	var overlay: CityMapOverlay = scene.city_overlay
+	assert_eq(overlay.here_id(), &"", "the run starts at the street")
+	var street := overlay.here_point()
+	var tab := overlay.here_tab_rect()
+	assert_true(tab.has_area(), "YOU ARE HERE shows at the street stub")
+	assert_almost_eq(tab.get_center().x, street.x, 0.5, "on the stub's pin")
+	assert_true(tab.end.y <= street.y, "above its marker")
+	var s := RunManager.netrun
+	s.run.current_node_id = s.run.map.first_layer_ids()[0]
+	scene._show_map()
+	await _frames(8)
+	overlay = scene.city_overlay
+	var node := overlay.icon_at(overlay.here_id())
+	tab = overlay.here_tab_rect()
+	assert_almost_eq(tab.get_center().x, node.x, 0.5, "YOU ARE HERE on the current node")
+	assert_true(node.y - tab.end.y < (CityMapOverlay.ICON_RADIUS + CityMapOverlay.HERE_RING + CityMapOverlay.HERE_PIN * 2.0) * overlay.screen_k() + 1.0, "right on its pin, not floating away")
+	for r: Rect2 in overlay.label_rects().values():
+		assert_false(r.intersects(tab), "no label over the tab")
+	await _close(scene)
+
+
+func test_the_route_key_folds_at_big_text_and_never_shrinks() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var scene := _open(NETRUN)
+		scene.start_run(1)
+		await _frames(10)
+		var key: RouteLegend = scene.route_legend
+		if scale >= MapLegend.FOLD_SCALE:
+			assert_true(key.foldable(), "folds from 1.3 up (%.1f)" % scale)
+		assert_eq(key.scale, Vector2.ONE, "never scaled down to fit (%.1f): it folds instead" % scale)
+		for l in key.find_children("*", "Label", true, false):
+			if (l as Label).text == "" or not (l as Label).is_visible_in_tree():
+				continue
+			assert_true((l as Label).get_theme_font_size(&"font_size") * key.scale.y >= roundi(UiTheme.CAPTION * scale) - 0.5, "key text %s at caption or larger at %.1f (%d x %.2f)" % [l.name, scale, (l as Label).get_theme_font_size(&"font_size"), key.scale.y])
+		if key.foldable():
+			assert_true(key.is_folded(), "starts folded")
+			key.set_opened(true)
+			assert_true(key.rows_box.visible, "opens")
+			key.set_opened(false)
+		await _close(scene)

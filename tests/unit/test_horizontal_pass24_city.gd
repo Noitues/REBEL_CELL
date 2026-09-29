@@ -329,7 +329,7 @@ func test_no_two_kinds_share_an_icon_and_the_keys_draw_the_map_icons() -> void:
 	var route: RouteLegend = add_child_autofree(RouteLegend.new(RouteLegend.ORDER))
 	await _frames(4)
 	for kind in RouteLegend.ORDER:
-		var sw := route.body.get_node("Kind_%s/Swatch" % kind) as Control
+		var sw := route.body.find_child("Kind_%s" % kind, true, false).get_node("Swatch") as Control
 		assert_eq(String(sw.get_meta(&"icon_id", "")), CityMapOverlay.icon_id(kind), "route key %s draws the map's icon" % kind)
 	# The mini-map floats the map's icons over objective Sites and CORE.
 	var mini: GridMapView = add_child_autofree(GridMapView.new())

@@ -493,6 +493,8 @@ func test_the_route_view_has_its_legend() -> void:
 			var lr := legend.get_global_rect()
 			assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(lr), "the legend is on screen at %.1f: %s" % [scale, lr])
 			for c in _controls(scene._panel):
+				if legend.is_ancestor_of(c):
+					continue  # W8b: its own ROUTE KEY fold button
 				assert_false(lr.intersects(c.get_global_rect()), "the legend covers '%s'" % c.get("text"))
 		scene.get_parent().queue_free()
 		await _frames(2)
