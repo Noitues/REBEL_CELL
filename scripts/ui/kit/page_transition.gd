@@ -12,6 +12,16 @@ extends Node
 ## caller's `on_done`); any key, button or click during it completes it at once and does
 ## nothing else, like a SEND IT skip. Under reduce effects, headless (tests) and for a
 ## disabled entry nothing moves: `on_done` runs at once. View only: never game state.
+##
+## Art pass W8a (ART_BIBLE §10): **one direction per material** (glass always slides in
+## from the right, paper always drops from above; the `direction` argument is kept for old
+## callers and ignored), within the 0.35 s page budget. Under reduce motion
+## (`Motion.page_transition_style() == &"fade"`) the page cross-fades in place instead. The
+## page holds still (clear) until its size has settled for a frame, so nothing reflows
+## during the slide. Modals open and close in `modal_in` / `modal_out` (<= 0.22 s, a fade
+## and a slight scale, never a cut; `open_modal`, `close_modal`), and a page never changes
+## under an open modal: `after_modals(node, action)` closes every open modal first, then
+## runs the page change.
 
 enum Look { GLASS, PAPER }
 
@@ -23,6 +33,15 @@ const NODE_NAME := "PageTransition"
 ## ANIM-R1 M11: a page whose glass is only some of its controls (windows over the city)
 ## names them in this meta (Array of Controls); the roll band crosses each of them only.
 const GLASS_META := &"page_glass"
+## Open modals are in this group (open_modal); a closing one leaves it at once.
+const MODAL_GROUP := &"rc_modal"
+## A modal's scale when it starts to open (it grows to 1 while it fades in), and the most
+## frames a page waits for its size to settle before it moves.
+const MODAL_FROM_SCALE := 0.96
+const SETTLE_FRAMES := 3
+## The page budget (§10: a page transition takes at most this, s).
+const PAGE_BUDGET := 0.35
+const MODAL_BUDGET := 0.22
 
 var page: Control = null
 var look: int = Look.GLASS
@@ -38,6 +57,10 @@ var _roll: Control = null
 var _roll_left: float = 0.0
 var _alpha: float = 1.0
 var _done: bool = false
+## Reduce motion: a cross-fade in place (no slide, no drop, no roll).
+var fade_only: bool = false
+var _last_size: Vector2 = -Vector2.ONE
+var _settle_left: int = SETTLE_FRAMES
 
 
 ## Plays `p_look`'s entrance on `p_page` and runs `on_done` when it ends (at once when the
@@ -55,7 +78,9 @@ static func enter(p_page: Control, p_look: int = Look.GLASS, on_done: Callable =
 	tr_node.name = NODE_NAME
 	tr_node.page = p_page
 	tr_node.look = p_look
-	tr_node.direction = -1 if p_direction < 0 else 1
+	# §10: one direction per material; glass always comes from the right.
+	tr_node.direction = 1
+	tr_node.fade_only = Motion.page_transition_style() == Motion.PAGE_FADE
 	tr_node._on_done = on_done
 	tr_node._alpha = p_page.modulate.a
 	# Clear until the first frame lays the page out (its rest position is known then).
@@ -197,10 +222,16 @@ func _process(delta: float) -> void:
 	if _done or not is_instance_valid(page):
 		return
 	if not _started:
+		# W8a (§10 rule 5, critique gifs/21): the page waits, clear, until its size has held
+		# for a frame (wrapping text and fitted panels settle), so it never reflows mid-slide.
+		if page.size != _last_size and _settle_left > 0:
+			_last_size = page.size
+			_settle_left -= 1
+			return
 		# The container has sorted the page by now: that is where it rests.
 		_started = true
 		_rest = page.position
-		if look == Look.GLASS:
+		if look == Look.GLASS and not fade_only:
 			_add_roll()
 			_roll_left = Motion.seconds(&"panel_crt_roll")
 	elif page.position != _last_set:
@@ -218,7 +249,7 @@ func _process(delta: float) -> void:
 	var eased := Tween.interpolate_value(0.0, 1.0, k, 1.0, e.trans, e.ease) as float
 	var amp := Motion.amplitude(id)
 	var from := Vector2(0.0, -amp) if look == Look.PAPER else Vector2(amp * direction, 0.0)
-	var offset := from * (1.0 - eased)
+	var offset := Vector2.ZERO if fade_only else from * (1.0 - eased)
 	# ANIM-R2 E8: the CRT roll comes once the glass is fully shown (the fade's end), not on the
 	# entrance's first frame: over the still-clear page the band read as a half-drawn screen.
 	if look == Look.GLASS and k >= FADE_SHARE and _roll_left > 0.0 and Motion.live(&"panel_crt_roll"):
@@ -231,7 +262,7 @@ func _process(delta: float) -> void:
 		_roll.visible = false
 	page.position = _rest + offset
 	_last_set = page.position
-	page.modulate.a = _alpha * clampf(k / FADE_SHARE, 0.0, 1.0)
+	page.modulate.a = _alpha * (eased if fade_only else clampf(k / FADE_SHARE, 0.0, 1.0))
 
 
 ## The roll band: a bright scan band across the glass, drawn over the page (top level, so
@@ -269,3 +300,86 @@ func _add_roll() -> void:
 func _exit_tree() -> void:
 	if not _done and is_instance_valid(page) and page.is_queued_for_deletion():
 		_done = true
+
+
+# --- Modals (W8a, ART_BIBLE §10) ------------------------------------------------------------
+
+## Opens modal `m` (already in the tree): it joins MODAL_GROUP and fades in while growing
+## from MODAL_FROM_SCALE (`modal_in`, <= 0.22 s; at once where motion doesn't play).
+static func open_modal(m: Control) -> void:
+	if m == null or not is_instance_valid(m):
+		return
+	m.add_to_group(MODAL_GROUP)
+	m.set_meta(&"modal_closing", false)
+	if not Motion.live(&"modal_in") or not m.is_inside_tree():
+		return
+	m.pivot_offset = m.size * 0.5
+	m.modulate.a = 0.0
+	m.scale = Vector2.ONE * MODAL_FROM_SCALE
+	var e := Motion.entry(&"modal_in")
+	var tw := m.create_tween().set_parallel(true)
+	tw.tween_property(m, ^"modulate:a", 1.0, Motion.seconds(&"modal_in")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_property(m, ^"scale", Vector2.ONE, Motion.seconds(&"modal_in")).set_ease(e.ease).set_trans(e.trans)
+
+
+## Closes modal `m`: it leaves MODAL_GROUP at once (a page may change after it), fades out
+## (`modal_out`, <= 0.22 s, never a cut), frees itself and then runs `on_done`. Where motion
+## doesn't play it frees at once and `on_done` runs at once.
+static func close_modal(m: Control, on_done: Callable = Callable()) -> void:
+	if m == null or not is_instance_valid(m) or m.is_queued_for_deletion():
+		if on_done.is_valid():
+			on_done.call()
+		return
+	if m.is_in_group(MODAL_GROUP):
+		m.remove_from_group(MODAL_GROUP)
+	m.set_meta(&"modal_closing", true)
+	if not Motion.live(&"modal_out") or not m.is_inside_tree():
+		m.queue_free()
+		if on_done.is_valid():
+			on_done.call()
+		return
+	# Input stops at once: the fade is the only thing left of it.
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	m.process_mode = Node.PROCESS_MODE_DISABLED
+	var e := Motion.entry(&"modal_out")
+	var tw := m.get_tree().create_tween().set_parallel(true)
+	tw.tween_property(m, ^"modulate:a", 0.0, Motion.seconds(&"modal_out")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_property(m, ^"scale", Vector2.ONE * MODAL_FROM_SCALE, Motion.seconds(&"modal_out")).set_ease(e.ease).set_trans(e.trans)
+	tw.chain().tween_callback(func() -> void:
+		if is_instance_valid(m):
+			m.queue_free()
+		if on_done.is_valid():
+			on_done.call())
+
+
+## The open modals in `node`'s tree (in tree order; a closing one is not open).
+static func open_modals(node: Node) -> Array[Control]:
+	var out: Array[Control] = []
+	if node == null or not node.is_inside_tree():
+		return out
+	for n in node.get_tree().get_nodes_in_group(MODAL_GROUP):
+		if n is Control and is_instance_valid(n) and n.is_inside_tree() and not n.is_queued_for_deletion() 				and not bool(n.get_meta(&"modal_closing", false)):
+			out.append(n as Control)
+	return out
+
+
+## True while a modal is open in `node`'s tree.
+static func modal_open(node: Node) -> bool:
+	return not open_modals(node).is_empty()
+
+
+## §10 rule 6: a modal never outlives a page change. Closes every open modal in `node`'s
+## tree, then runs `action` (the page change) once the last one has closed; at once when
+## none is open.
+static func after_modals(node: Node, action: Callable) -> void:
+	var open := open_modals(node)
+	if open.is_empty():
+		if action.is_valid():
+			action.call()
+		return
+	var left := [open.size()]
+	for m in open:
+		close_modal(m, func() -> void:
+			left[0] -= 1
+			if left[0] == 0 and action.is_valid():
+				action.call())

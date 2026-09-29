@@ -303,6 +303,36 @@ Review folder: `docs/art_review/W3/` (40 before/after sheets, class and corp bez
 
 These go to the final sweep (W9/W10) unless a screen wave takes them first.
 
+### 2026-09-29 — Art pass W8a: title family and shared glass (merged into `art-pass`)
+Review folder: `docs/art_review/W8a/`. It includes a 43-screen regression sheet at 1.0 mouse.
+
+**Baked art (§4.3 rule 5)**
+- The logo and the NEVER SLEEP / TRUST NO ONE scrawls are original path-drawn SVGs (`tools/art/w8a_svgs.py`), rasterised at the size they're drawn.
+- The scrawls are solid marker graffiti. They were sent back once because the first version was a hollow outline.
+- The NEVER SLEEP subtitle shows in every locale except English.
+
+**Title (§11)**
+- The profile readout stays, but as a GLASS "UPLINK" of icon + number fields, so the page keeps exactly one PAPER note.
+- The Continue glyphs are ink on the pink primary.
+
+**Options (§6.5, §5.3)**
+- A picker tile is a short name plus a meta line. A toggle has a short label with its description as a caption underneath.
+- Every section is built once and shown at the largest section's size, capped by the room available. Its scroll view keeps side room for the pad focus scale and brackets. It was sent back once for clipping at 1.6, and a test now covers every row, tab, scale and input.
+
+**Pause (§5.3):** narrow around its lines, and `MENU_SIZE` wide only while Options or the Codex are open.
+
+**Shared APIs**
+- `PageTransition.enter`, `open_modal`, `close_modal` and `after_modals`.
+- `TerminalWindow.scroll_body` and `ZinePanel.scroll_content` (FitScroll + ScrollHint), and `empty_share()`.
+
+**Orchestrator grant.** In `netrun_scene.gd` (W8c's file), LEAVE THE MODEM now sits `SP_M` under the REMOVE A CARD spinner instead of at the fixed `LEAVE_AT` y. Placing it under the window put it off screen at 1.6. W8c keeps this rule.
+
+**Open items for W2 (final sweep)**
+- `FitScroll`/`ScrollHint` can crash when content measures thousands of px tall for one frame.
+- `TilePicker` should wrap long tile names.
+
+**Known gap:** high contrast doesn't restyle the custom-drawn paper pieces (case files, receipts, badges). This goes to the W9 sweep.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few

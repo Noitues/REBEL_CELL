@@ -2310,6 +2310,18 @@ func _show_shop() -> void:
 	leave_icon.tooltip_text = leave.tooltip_text
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
 	root.add_child(leave_icon)
+	# Art pass W8a (orchestrator grant): LEAVE THE MODEM sits SP_M under the spinner in the
+	# REMOVE A CARD window (never on it as the glass grows with the text), not at LEAVE_AT's y.
+	var place_leave := func() -> void:
+		if not is_instance_valid(leave) or not is_instance_valid(mini) or not mini.is_inside_tree():
+			return
+		var y := mini.get_global_rect().end.y - root.get_global_rect().position.y + UiTheme.SP_M
+		leave.position = Vector2(LEAVE_AT.x, maxf(LEAVE_AT.y, y))
+		leave_icon.position = leave.position + Vector2(-LEAVE_ICON - 4.0, 4.0)
+	# Placed once the frame's sorts are done (mid-sort the row's rect is stale).
+	remove_row.item_rect_changed.connect(func() -> void: place_leave.call_deferred())
+	remove_win.item_rect_changed.connect(func() -> void: place_leave.call_deferred())
+	place_leave.call_deferred()
 	# ANIM-R3 A7: the first focus is the first item (one the Cycles reach, else the first),
 	# never the socket list: the pad prompt says "A Buy".
 	var first_item: ZineCard = null

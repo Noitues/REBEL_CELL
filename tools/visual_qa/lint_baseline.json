@@ -32,19 +32,10 @@
 		"res://scripts/ui/kit/modem_sign.gd": {
 			"color": 1
 		},
-		"res://scripts/ui/kit/pause_menu.gd": {
-			"color": 1
-		},
 		"res://scripts/ui/kit/raid_fx_layer.gd": {
 			"color": 8
 		},
-		"res://scripts/ui/kit/terminal_window.gd": {
-			"font_override": 2
-		},
 		"res://scripts/ui/kit/zine_note.gd": {
-			"draw_size": 1
-		},
-		"res://scripts/ui/kit/zine_panel.gd": {
 			"draw_size": 1
 		},
 		"res://scripts/ui/netrun_scene.gd": {

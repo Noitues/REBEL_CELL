@@ -186,9 +186,11 @@ func test_every_stat_tag_has_its_icon_on_every_screen() -> void:
 		assert_true(StatIcon.ALL.has(end_tags.icon_of(i)), "run end tag %s has an icon" % end_tags.items[i][0])
 	var title := _open(TITLE)
 	await _frames()
-	var profile := title._panel.find_child("Tags", true, false) as HudStats
-	for i in profile.items.size():
-		assert_true(StatIcon.ALL.has(profile.icon_of(i)), "profile tag %s has an icon" % profile.items[i][0])
+	# Art pass W8a: the profile is a GLASS uplink of icon + number fields (one PAPER note).
+	var profile: Node = title._panel.find_child("ProfileFields", true, false)
+	assert_not_null(profile)
+	for f in profile.get_children():
+		assert_true(StatIcon.ALL.has((f as StatField).kind), "profile field %s has an icon" % f.name)
 
 
 func test_every_icon_draws() -> void:
@@ -663,8 +665,7 @@ func test_one_name_for_jack_in_and_names_on_the_title() -> void:
 	var corp := RunManager.lookup().get_content(RunManager.DEFAULT_CORPORATION) as CorporationData
 	var line: String = title._describe({"corporation": String(corp.id), "heat": 14, "ice": 0, "runs": 0, "state": "active", "in_run": false})
 	assert_true(line.begins_with(TextDb.t(corp, "display_name")), "the Continue line names the corporation: %s" % line)
-	var tags := title._panel.find_child("Tags", true, false) as HudStats
-	for it in tags.items:
+	for it in title.uplink_fields(RunManager.profile):
 		assert_ne(String(it[1]), "none", "a number or a dash, never 'none'")
 	assert_eq(HudStats.ice_value(-1), HudStats.NO_VALUE)
 	assert_eq(HudStats.ice_value(3), "3")
