@@ -601,7 +601,7 @@ func test_every_operative_has_its_own_face() -> void:
 	for i in 8:
 		var s := PortraitArt.operative_subject(&"breaker", StringName("op_%d" % i))
 		keys[s["key"]] = true
-		var shapes := PortraitArt._shapes(Rect2(0, 0, 100, 100), s)
+		var shapes := PortraitArt.shapes(Rect2(0, 0, 100, 100), s)
 		looks[str(shapes["hair"]) + str(s["tint"])] = true
 	assert_eq(keys.size(), 8, "one key per operative")
 	assert_true(looks.size() > 1, "operatives of one class don't all share a face")
