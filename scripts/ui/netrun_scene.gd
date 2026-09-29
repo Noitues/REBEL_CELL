@@ -919,6 +919,21 @@ func _title_screen(s: NetrunSession) -> void:
 			hud.set_screen("", tr("NETRUN // JACK OUT"))
 
 
+## Art pass W8c: the start page's seed field: its first value and its most digits (the old
+## spin box's 0-999999).
+const START_SEED := 1
+const SEED_DIGITS := 6
+
+
+## The digits of `t` (a typed seed), in order.
+static func seed_digits(t: String) -> String:
+	var out := ""
+	for ch in t:
+		if ch >= "0" and ch <= "9":
+			out += ch
+	return out
+
+
 func _show_start() -> void:
 	_refresh_status()
 	var box := VBoxContainer.new()
@@ -926,12 +941,18 @@ func _show_start() -> void:
 	var row := HBoxContainer.new()
 	box.add_child(row)
 	row.add_child(_label(tr("Campaign seed:")))
-	var seed_spin := SpinBox.new()
-	seed_spin.min_value = 0
-	seed_spin.max_value = 999999
-	seed_spin.value = 1
-	row.add_child(seed_spin)
-	row.add_child(_button(tr("New campaign"), func() -> void: new_campaign(int(seed_spin.value))))
+	# Art pass W8c (ART_BIBLE §6.5: seeds and codes in a mono text field, never a native
+	# spin box): digits only; an empty field is seed 0.
+	var seed_field := CodeField.new(str(START_SEED))
+	seed_field.name = "SeedField"
+	seed_field.field.max_length = SEED_DIGITS
+	seed_field.text_changed.connect(func(t: String) -> void:
+		var digits := seed_digits(t)
+		if digits != t:
+			seed_field.value = digits
+			seed_field.field.caret_column = digits.length())
+	row.add_child(seed_field)
+	row.add_child(_button(tr("New campaign"), func() -> void: new_campaign(int(seed_digits(seed_field.value)))))
 	if RunManager.has_save():
 		box.add_child(_icon_button(tr("Resume saved game"), resume, StatIcon.CONTINUE))
 	if RunManager.campaign != null:
@@ -1658,6 +1679,8 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	playout.skipped.connect(_show_current)
 	side.add_child(cont)
 	_set_panel(box, false)
+	var calm_feed: Array[Control] = [side]
+	_city_page(true, calm_feed)  # art pass W8c (W7 hookup, §9.5)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var pre := before if before != null else c
@@ -1707,7 +1730,12 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 	for id in sites:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
 	var hq_script: GDScript = load("res://scripts/ui/hq_scene.gd")
-	return background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+	var secs := background.frame_points(pts, hq_script.fight_area(_fight_parts), RAID_ZOOM, RAID_MIN_ZOOM)
+	# Art pass W8c (W9 reduce motion, ART_BIBLE §12): no camera move: the fight's frame cuts in.
+	if not Motion.camera_moves_allowed():
+		background.settle_camera()
+		return 0.0
+	return secs
 
 
 ## ANIM-R3 B5: the interlude's forecast words (the raid setup's, translated once) and its
@@ -1736,6 +1764,8 @@ func _frame_raid_map() -> void:
 	var pts := PackedVector2Array()
 	for n in city_overlay.nodes:
 		pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
+	# (Art pass W8c, W9 reduce motion: the interlude's frame always cuts in; settle_camera
+	# drops any hold, so no camera move plays with or without reduce motion.)
 	background.frame_points(pts, _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
 	background.settle_camera()
 
@@ -2198,7 +2228,14 @@ func _show_event() -> void:
 		row.add_child(right_gap)
 	else:
 		split.add_child(right_gap)
-	_set_panel(box, false)
+	# Art pass W8c (§5.1): the page keeps the screen's safe margin on the left (the paper sat
+	# on the screen's edge).
+	var page := MarginContainer.new()
+	page.name = "EventPage"
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_theme_constant_override("margin_left", UiTheme.SAFE_MARGIN)
+	page.add_child(box)
+	_set_panel(page, false)
 	var calm: Array[Control] = [holder]
 	_city_page(false, calm)
 	_register_event_drops(ev, options)
@@ -2897,6 +2934,36 @@ func _show_raid() -> void:
 	armory_row.add_child(_label(tr("ARMORY:")))
 	for i in c.armory.size():
 		armory_row.add_child(_asset_chip("Armory_%d" % i, c.armory[i]))
+	# Art pass W8c (critique 28): never an empty "RUN ASSETS:" / "ARMORY:" label: an empty
+	# list hides its row (the ARMORY row stays, hidden, as the drop target a placed asset
+	# goes back to), and with nothing at all to deploy one designed note says so.
+	run_row.visible = not run_assets.is_empty()
+	var placed := false
+	for sid in c.grid.claimed_ids():
+		placed = placed or not c.grid.assets_on(sid).is_empty()
+	armory_row.visible = not c.armory.is_empty() or placed
+	if c.armory.is_empty() and placed:
+		# Empty but a place a deployed asset can go back to: it says so.
+		var back := _label(tr("empty: drop a placed asset here"))
+		back.name = "ArmoryEmpty"
+		back.add_theme_color_override("font_color", Palette.TEXT_MID)
+		armory_row.add_child(back)
+	if run_assets.is_empty() and c.armory.is_empty():
+		chips.add_child(_empty_assets_note())
+	# Art pass W8c (§2, §6.5: never a native dropdown): the asset to deploy is picked once, on
+	# tiles (the run's assets, then the Armory's); each node's row deploys it there. The
+	# chips above still drag onto a row.
+	var deploy_pick: TilePicker = null
+	if not run_assets.is_empty() or not c.armory.is_empty():
+		deploy_pick = TilePicker.new(deploy_tiles(run_assets, c.armory))
+		deploy_pick.name = "DeployPick"
+		deploy_pick.columns = maxi(1, floori(RAID_WINDOW_WIDTH * minf(Settings.text_scale, RAID_WINDOW_GROW) / ((TilePicker.TILE_W + TilePicker.TILE_GAP) * Settings.text_scale)))
+		deploy_pick.tooltip_text = UiTip.fold(tr("The asset a row's Deploy here puts on its node."))
+		var pick_row := VBoxContainer.new()
+		pick_row.name = "DeployRow"
+		pick_row.add_child(_label(tr("Deploy:")))
+		pick_row.add_child(deploy_pick)
+		chips.add_child(pick_row)
 	for site_id in c.grid.claimed_ids():
 		var row := HFlowContainer.new()  # wraps inside the 1280 screen (horizontal pass 10)
 		row.name = "RaidRow_%s" % site_id
@@ -2910,23 +2977,27 @@ func _show_raid() -> void:
 			withdraw.name = "Withdraw_%s_%d" % [sid, idx]
 			withdraw.tooltip_text = UiTip.fold(tr("Back to the Armory. Or drag it onto another node's row to move it there."))
 			row.add_child(withdraw)
-		if c.grid.is_active_node(site_id):
-			if not run_assets.is_empty():
-				var pick := OptionButton.new()
-				for a in run_assets:
-					pick.add_item(tr("run: %s") % _content_name(a))
-				row.add_child(pick)
-				var sid2 := site_id
-				row.add_child(_button(tr("Deploy run asset"), func() -> void: raid_deploy_run_asset(pick.selected, sid2)))
-			if not c.armory.is_empty():
-				var pick2 := OptionButton.new()
-				for a in c.armory:
-					pick2.add_item(tr("armory: %s") % _content_name(a))
-				row.add_child(pick2)
-				var sid3 := site_id
-				row.add_child(_button(tr("Deploy armory asset"), func() -> void: raid_deploy_armory(pick2.selected, sid3)))
+		if c.grid.is_active_node(site_id) and deploy_pick != null:
+			# Art pass W8c: one button per row deploys the picked asset (DeployPick).
+			var sid2 := site_id
+			var n_run := run_assets.size()
+			var deploy := _icon_button(tr("Deploy here"), func() -> void:
+				var k := deploy_pick.selected()
+				if k < n_run:
+					raid_deploy_run_asset(k, sid2)
+				else:
+					raid_deploy_armory(k - n_run, sid2), StatIcon.ARMORY)
+			deploy.name = "Deploy_%s" % site_id
+			deploy.theme_type_variation = UiTheme.SECONDARY
+			deploy.tooltip_text = UiTip.fold(tr("Deploy the asset picked above on %s.") % _site_name(site_id))
+			row.add_child(deploy)
 		box.add_child(row)
 	var run_btn := _button(tr(START_DEFENSE), raid_fight)
+	run_btn.name = "StartDefense"
+	# Art pass W8c (§6.4, critique 28): the one primary, as in the HQ's raid setup; sized
+	# to its label.
+	run_btn.theme_type_variation = UiTheme.PRIMARY
+	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
 	IconMark.attach(run_btn, StatIcon.RAIDS)
 	box.add_child(run_btn)
 	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
@@ -2947,6 +3018,9 @@ func _show_raid() -> void:
 	area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_child(area)
 	_set_panel(root, false)
+	# Art pass W8c (W7 hookup, §9.5): the raid's map over a dimmed, blurred city.
+	var calm: Array[Control] = [win]
+	_city_page(true, calm)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
@@ -3004,6 +3078,34 @@ func _raid_node_badge(site_id: StringName, n: Dictionary) -> Control:
 	var b := Badge.new(text, col, "", tip)
 	b.name = "RaidNode_%s" % site_id
 	return b
+
+
+## Art pass W8c: the deploy picker's tiles: the run's assets, then the Armory's (name, where
+## it comes from as the meta line, the Armory icon).
+func deploy_tiles(run_assets: Array[StringName], armory: Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for a in run_assets:
+		out.append({"name": _content_name(a), "meta": tr("RUN ASSET"), "icon": StatIcon.ARMORY})
+	for a in armory:
+		out.append({"name": _content_name(a), "meta": tr("ARMORY"), "icon": StatIcon.ARMORY})
+	return out
+
+
+## Art pass W8c (critique 28): the designed empty state when there is nothing to deploy: the
+## Armory icon and one caption line, never bare "RUN ASSETS:" / "ARMORY:" labels.
+func _empty_assets_note() -> Control:
+	var row := HBoxContainer.new()
+	row.name = "NoAssets"
+	row.add_theme_constant_override("separation", UiTheme.SP_S)
+	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
+	row.add_child(IconMark.standalone(StatIcon.ARMORY, side, Palette.TEXT_MID))
+	var l := _label(tr("No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them."))
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.add_theme_color_override("font_color", Palette.TEXT_MID)
+	l.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.CAPTION))
+	row.add_child(l)
+	return row
 
 
 ## A raid interlude's asset chip (ANIM-4b): a taped note with the asset's name that only

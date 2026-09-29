@@ -449,3 +449,76 @@ func test_event_paper_is_a_calm_zone_and_not_a_map() -> void:
 	assert_false(atmo.state.map_mode, "the event is not a map")
 	assert_true(atmo._calm_controls.has(scene._panel.find_child("EventPanel", true, false)), "the story's paper is a calm zone")
 	await _close(scene)
+
+
+# --- 5. Raid interlude ----------------------------------------------------------------------------
+
+func _raid(scene: Control) -> void:
+	HeatRules.add_heat(RunManager.campaign, RunManager.config().major_heat_levels()[0] + 1, RunManager.config(), "test")
+	RunManager.netrun._maybe_raid_interlude()
+	scene._show_current()
+
+
+func test_raid_interlude_has_tile_pickers_no_empty_labels_and_a_primary() -> void:
+	var scene := _netrun()
+	await _frames(2)
+	_raid(scene)
+	await _frames(4)
+	assert_eq(RunManager.netrun.run.phase, RunState.Phase.RAID, "the interlude is up")
+	for n in _all(scene._panel):
+		assert_false(n is OptionButton or n is SpinBox, "no native control on the interlude (%s)" % n.name)
+		if n is Label and (n as Label).is_visible_in_tree():
+			assert_false((n as Label).text in [tr("RUN ASSETS:"), tr("ARMORY:")] and (n.get_parent().get_child_count() <= 1), "no empty '%s' label" % (n as Label).text)
+	var start: Node = scene._panel.find_child("StartDefense", true, false)
+	assert_eq((start as Button).theme_type_variation, UiTheme.PRIMARY, "START DEFENSE is the primary")
+	var s := RunManager.netrun
+	if s.run_assets().is_empty() and RunManager.campaign.armory.is_empty():
+		assert_not_null(scene._panel.find_child("NoAssets", true, false), "a designed empty state")
+	else:
+		assert_true(scene._panel.find_child("DeployPick", true, false) is TilePicker, "the asset is picked on tiles")
+	assert_true(scene.background.city.atmosphere().state.map_mode, "the raid's map dims the city (§9.5)")
+	await _close(scene)
+
+
+func test_raid_interlude_deploys_the_picked_asset_like_the_old_lists() -> void:
+	var scene := _netrun()
+	await _frames(2)
+	RunManager.campaign.armory.append(RunManager.lookup().ids_of_class(&"DefenseAssetData")[0])
+	_raid(scene)
+	await _frames(4)
+	var pick: Node = scene._panel.find_child("DeployPick", true, false)
+	assert_true(pick is TilePicker)
+	var home := RunManager.campaign.grid.home_site_id
+	var before := RunManager.campaign.grid.assets_on(home).size()
+	(pick as TilePicker).choose((pick as TilePicker).tiles.size() - 1)
+	var deploy: Node = scene._panel.find_child("Deploy_%s" % home, true, false)
+	assert_not_null(deploy, "the home row deploys")
+	(deploy as Button).pressed.emit()
+	await _frames(2)
+	assert_eq(RunManager.campaign.grid.assets_on(home).size(), before + 1, "the picked Armory asset is on the node")
+	await _close(scene)
+
+
+func test_raid_cameras_cut_under_reduce_motion() -> void:
+	Settings.set_reduce_motion(true)
+	var scene := _netrun()
+	await _frames(2)
+	_raid(scene)
+	await _frames(6)
+	assert_false(scene.background.camera_easing(), "the interlude's map frames without a camera move")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
+	assert_true(src.contains("if not Motion.camera_moves_allowed():\n\t\tbackground.settle_camera()\n\t\treturn 0.0"), "the playout's fight frame cuts in")
+	await _close(scene)
+
+
+func test_no_native_controls_are_built_on_netrun_pages() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
+	assert_false(src.contains("OptionButton.new()"), "netrun_scene builds no OptionButton")
+	assert_false(src.contains("SpinBox.new()"), "netrun_scene builds no SpinBox")
+	var scene := _open()
+	await _frames(2)
+	scene._show_start()
+	await _frames(2)
+	assert_not_null(scene._panel.find_child("SeedField", true, false) as CodeField, "the seed is a code field")
+	assert_eq(scene.seed_digits("12a3"), "123")
+	await _close(scene)

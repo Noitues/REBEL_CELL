@@ -2877,3 +2877,11 @@ your network holds every threat,your network holds every threat
 CHOSEN,CHOSEN
 TAKEN,TAKEN
 The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.
+ARMORY,ARMORY
+Deploy here,Deploy here
+Deploy the asset picked above on %s.,Deploy the asset picked above on %s.
+Deploy:,Deploy:
+No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.,No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them.
+RUN ASSET,RUN ASSET
+The asset a row's Deploy here puts on its node.,The asset a row's Deploy here puts on its node.
+empty: drop a placed asset here,empty: drop a placed asset here
