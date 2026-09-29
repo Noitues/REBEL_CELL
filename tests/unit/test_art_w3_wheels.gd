@@ -732,14 +732,15 @@ func test_high_contrast_makes_the_wheel_opaque_and_its_numbers_read() -> void:
 	assert_lt(WheelView.plate_alpha(0.55), 1.0)
 
 
-func test_combat_fits_at_2() -> void:
+func test_combat_fits_at_16_and_2() -> void:
 	var small := await _combat(&"compliance_officer", 1.0)
 	var r1: Array[float] = []
 	for v in small._views():
 		r1.append((v as WheelView)._radius())
-	var big := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
-	var k := 0
-	for v in big._views():
-		assert_gte((v as WheelView)._radius(), r1[k] * 0.7 - 0.5, "the wheel keeps 70% of its 1.0 size at 2.0")
-		k += 1
-	assert_eq(big.layout_violations(), [] as Array[String], "nothing over a wheel, no hint on a tag at 2.0")
+	for scale in [1.6, Settings.TEXT_SCALE_MAX]:
+		var big := await _combat(&"compliance_officer", scale)
+		var k := 0
+		for v in big._views():
+			assert_gte((v as WheelView)._radius(), r1[k] * 0.7 - 0.5, "x%.1f: the wheel keeps 70%% of its 1.0 size" % scale)
+			k += 1
+		assert_eq(big.layout_violations(), [] as Array[String], "x%.1f: nothing over a wheel, no hint on a tag" % scale)

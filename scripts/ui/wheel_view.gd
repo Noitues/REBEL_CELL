@@ -1787,7 +1787,7 @@ func disc_radius() -> float:
 
 
 func extent_radius() -> float:
-	return _radius() + maxf(EXTENT, HP_TEXT_GAP + _fs(HP_FONT_SIZE) + LAST_TURN_GAP + _fs(HUB_FONT_SIZE))
+	return _radius() + maxf(EXTENT, HP_TEXT_GAP + hp_font() + LAST_TURN_GAP + _fs(HUB_FONT_SIZE))
 
 
 ## Whether `r` (global) covers any of the wheel's drawing (a circle test, not a box).
@@ -2012,7 +2012,7 @@ func _center() -> Vector2:
 
 ## Room kept under the disc for the HP number and the last-turn line (px).
 static func _bottom_need() -> float:
-	return HP_TEXT_GAP + _fs(HP_FONT_SIZE) + _fs(HUB_FONT_SIZE) + LAST_TURN_GAP + DISC_MARGIN * 0.2
+	return HP_TEXT_GAP + hp_font() + _fs(HUB_FONT_SIZE) + LAST_TURN_GAP + DISC_MARGIN * 0.2
 
 
 ## This wheel's room under its disc: _bottom_need, plus the operative's net line (§6.2: what
@@ -3009,7 +3009,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	# The number is the HP now (it agrees with the top bar); the forecast after SEND IT is a
 	# separate dashed plate with an arrow (H22: "60→49" read as a result).
 	var lay := hp_layout()
-	var hs := _fs(HP_FONT_SIZE)
+	var hs := hp_font()
 	var hp_rect: Rect2 = lay["hp"]
 	var after := int(outcome.get("hp_after", combatant.hp)) if not replaying and is_nan(anim_hp) else roundi(shown_hp())
 	var hp_at := Vector2(hp_rect.position.x, hp_rect.end.y)
@@ -3059,7 +3059,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 func hp_layout() -> Dictionary:
 	var center := _center()
 	var radius := _radius()
-	var hs := _fs(HP_FONT_SIZE)
+	var hs := hp_font()
 	# Art pass W3 (§6.1): under the arc and under every needle's reach (a multi-needle boss
 	# never sweeps a needle over its HP).
 	var base_y := center.y + maxf(radius + HP_ARC_OUT, needle_reach()) + HP_NUMBER_GAP + hs * 0.8
@@ -3807,3 +3807,10 @@ const PLATFORM_ALPHA := 0.55
 const HC_CHIP_EDGE := 2.0
 const HC_STEPS := 10
 const HC_STEP := 0.15
+
+
+## The HP number's lettering (px): `heading` (§6.1). It is already the wheel's biggest
+## number, so past text scale 1.0 it stays at `heading` (§12: text yields before the
+## wheels; its tooltip grows with the text).
+static func hp_font() -> int:
+	return UiTheme.font_px_at(HP_FONT_SIZE, minf(_ts(), 1.0))
