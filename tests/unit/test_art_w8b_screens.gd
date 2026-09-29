@@ -413,3 +413,101 @@ func test_the_operative_picked_for_jack_in_is_stamped_and_rides_beside_it() -> v
 	assert_eq(rider.operative_id, second.id, "JACK IN shows the picked operative")
 	assert_false(RunManager.has_active_run(), "a pick starts nothing")
 	await _close(hq)
+
+
+# --- Item 6: the City Grid (§11 City Grid, §6.10; critique 19/20, 22, 64-68) -----------------------
+
+func test_one_primary_per_grid_state() -> void:
+	var hq := _open(HQ)
+	await _frames(2)
+	hq.selected_site = RunManager.launchable_sites()[0].id
+	hq.show_grid()
+	await _frames(4)
+	var prim := _primaries(hq._panel)
+	assert_eq(prim.size(), 1, "a Site picked, no raid: one primary")
+	assert_eq(prim[0].name, &"Launch", "JACK IN")
+	await _close(hq)
+	_raid_campaign()
+	hq = _open(HQ)
+	await _frames(2)
+	hq.selected_site = RunManager.launchable_sites()[0].id
+	hq.show_grid()
+	await _frames(4)
+	prim = _primaries(hq._panel)
+	assert_eq(prim.size(), 1, "a raid pending: one primary")
+	assert_eq(prim[0].name, &"RaidSetup", "RAID SETUP")
+	assert_eq((hq._panel.find_child("Launch", true, false) as Button).theme_type_variation, UiTheme.SECONDARY, "JACK IN steps down to secondary")
+	await _close(hq)
+
+
+func test_run_rows_hold_their_chips_and_the_card_and_key_never_move() -> void:
+	for scale in [1.0, 1.6]:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var hq := _open(HQ)
+		await _frames(2)
+		var sites := RunManager.launchable_sites()
+		hq.selected_site = sites[0].id
+		hq.show_grid()
+		await _frames(12)
+		var rows := hq._panel.find_child("RunRows", true, false) as Control
+		for b in rows.find_children("Run_*", "Button", true, false):
+			var id := String(b.name).trim_prefix("Run_")
+			var row := rows.find_child("Row_%s" % id, true, false) as Control
+			var gains := rows.find_child("Gains_%s" % id, true, false) as Control
+			assert_true(row.get_global_rect().grow(0.5).encloses((b as Control).get_global_rect()), "%s: the button in its row" % id)
+			assert_true(row.get_global_rect().grow(0.5).encloses(gains.get_global_rect()), "%s: the chips in its row" % id)
+		var card_h := (hq._panel.find_child("SelectedSite", true, false) as Control).size.y
+		var key_rect: Rect2 = hq.grid_legend.get_global_rect()
+		for other in [sites[1].id, RunManager.campaign.grid.home_site_id]:
+			hq.select_site(other)
+			await _frames(1)
+			assert_eq(hq.grid_legend.get_global_rect(), key_rect, "the key stays put on the rebuild's first frame at %.1f" % scale)
+			await _frames(10)
+			assert_almost_eq((hq._panel.find_child("SelectedSite", true, false) as Control).size.y, card_h, 0.5, "the Site card keeps its height at %.1f" % scale)
+			assert_eq(hq.grid_legend.get_global_rect(), key_rect, "the key keeps its place at %.1f" % scale)
+		await _close(hq)
+
+
+func test_map_nodes_and_placed_defences_are_at_least_28_px() -> void:
+	_raid_campaign()
+	var hq := _open(HQ)
+	await _frames(2)
+	hq.show_raid()
+	await _frames(20)
+	var ov: CityMapOverlay = hq.city_overlay
+	var k := ov.get_global_transform().get_scale().x
+	for n in ov.nodes:
+		assert_true(ov.icon_radius(n) * k * 2.0 >= 28.0 - 0.01, "node %s at least 28 px" % n["id"])
+	assert_true(CityMapOverlay.ASSET_ICON * CityMapOverlay.ASSET_PLATE * 2.0 >= 28.0 - 0.01, "a placed defence's plate at least 28 px")
+	assert_eq(ov.threat_corp(), RunManager.campaign.corporation_id, "threat routes carry the corporation's pattern")
+	await _close(hq)
+
+
+func test_grid_labels_never_touch_for_every_corporation() -> void:
+	for corp in [&"solace", &"meridian", &"halcyon", &"orbital"]:
+		for scale in [1.0, 1.6]:
+			Settings.set_text_scale(scale)
+			RunManager.reset()
+			var p := RunManager.profile
+			for id in RunManager.lookup().ids_of_class(&"ProfileUnlockData"):
+				p.add_unlock(id)
+			RunManager.new_campaign(1, corp)
+			var hq := _open(HQ)
+			await _frames(2)
+			hq.show_grid()
+			await _frames(16)
+			var ov: CityMapOverlay = hq.city_overlay
+			var labels: Array = ov.label_rects().values()
+			var icons: Array[Rect2] = []
+			for n in ov.nodes:
+				var at := ov.icon_at(n["id"])
+				if at.x != INF:
+					var r := ov.icon_radius(n)
+					icons.append(Rect2(at - Vector2(r, r), Vector2(r, r) * 2.0))
+			for i in labels.size():
+				assert_true((labels[i] as Rect2).size.y * ov.get_global_transform().get_scale().y >= roundi(UiTheme.CAPTION * scale), "a label at caption or larger")
+				for j in range(i + 1, labels.size()):
+					assert_false((labels[i] as Rect2).intersects(labels[j]), "%s at %.1f: labels %d and %d overlap" % [corp, scale, i, j])
+			await _close(hq)

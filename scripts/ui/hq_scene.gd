@@ -102,6 +102,8 @@ const CREW_COLUMNS := 3
 const CREW_COLUMNS_BIG := 2
 ## The Grid Site card's node tiles (the node to build) at text scale 1.0 (px).
 const NODE_TILE := Vector2(132, 60)
+## W8b: the Site card's fixed body height at text scale 1.0 (px; its content scrolls inside).
+const SITE_CARD_BODY := 210.0
 ## W8b: a Rank 3 dossier's button to its ring swaps (the loadout's SPINNER tab).
 const RING_SWAPS := "RING SWAPS" # TR
 const RING_SWAPS_TIP := "Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel." # TR
@@ -2040,6 +2042,9 @@ func show_grid() -> void:
 	# H23 #3: the map key sits on the map (in the side column's foot it fell below the fold),
 	# a strip along the map's foot; the map is framed above it (`fit_grid_map`).
 	grid_legend = MapLegend.pin_to(spacer, c.corporation_id, true)
+	# W8b (§6.10, §10.5; critique gifs/07, gifs/20): a rebuilt Grid puts its key where the
+	# last one stood (a new key laid out at its corner first popped mid-map for a frame).
+	_restore_grid_legend()
 	grid_view = GridMapView.new()
 	grid_view.visible = false
 	grid_view.show_grid(c, corp, _threat_paths())
@@ -2084,6 +2089,7 @@ func show_grid() -> void:
 		var card := _site_card(site, launchable, c.living_operatives(), _node_choices())
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		card.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		_fix_card_height(card)
 		top.add_child(card)
 	# Every Site stays reachable without the mouse: step through them, or jump to a run.
 	# First in the column: the city screens don't scroll by mouse wheel, so Back to HQ
@@ -2122,7 +2128,7 @@ func show_grid() -> void:
 	if not c.pending_raids.is_empty():
 		var raid_btn := _icon(_step_button(tr("RAID SETUP"), "", show_raid), StatIcon.RAIDS)
 		raid_btn.name = "RaidSetup"
-		raid_btn.theme_type_variation = &"HotButton"
+		raid_btn.theme_type_variation = UiTheme.PRIMARY  # W8b §11: the primary while a raid is pending
 		_add_tip(nav, raid_btn, tr("RAID SETUP: a raid is coming along the dashed routes: set up the defence."))
 	if not launchable.is_empty():
 		var runs := TerminalWindow.new(tr("RUNS OPEN NOW"), Palette.CELL_ACID)
@@ -2147,7 +2153,7 @@ func show_grid() -> void:
 			b.name = "Run_%s" % s.id
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long name wraps in the column
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD  # a long name wraps in the column, at words
 			# H22 #14: the Site's own map icon (objective or tier, the map's colour) and its tier
 			# as pips (the harder the run, the more bars).
 			_site_mark(b, mn)
@@ -2160,7 +2166,19 @@ func show_grid() -> void:
 			var said := PackedStringArray()
 			for g: Badge in gains:
 				said.append(g.tooltip_text.replace("\n", " "))
-			_add_tip(rows, b, tr("%s %s: %s. %s %s Select it, then %s on its card.") % [CityMapOverlay.tier_text(s.tier), site_name(s.id), tr(CampaignRules.run_kind_for(c, s)),
+			# W8b (§11 City Grid, critique 19): a run is one framed row holding its button and its
+			# chips (they floated between rows).
+			var run_row := PanelContainer.new()
+			run_row.name = "Row_%s" % s.id
+			run_row.add_theme_stylebox_override("panel", UiTheme.box(Palette.TERMINAL_BG, Palette.TERMINAL_EDGE, 1, UiTheme.SP_XS, UiTheme.SP_XS))
+			rows.add_child(run_row)
+			# A one-column grid, not a box: the column's row snap (ScrollHint) sees the framed row as
+			# the row, never its button alone.
+			var row_box := GridContainer.new()
+			row_box.columns = 1
+			row_box.add_theme_constant_override("v_separation", UiTheme.SP_XS)
+			run_row.add_child(row_box)
+			_add_tip(row_box, b, tr("%s %s: %s. %s %s Select it, then %s on its card.") % [CityMapOverlay.tier_text(s.tier), site_name(s.id), tr(CampaignRules.run_kind_for(c, s)),
 				CityMapOverlay.tr_word(String(CityLayout.KIND_TIPS.get(kind, ""))), " ".join(said), tr(JACK_IN)])
 			var gain_row := HFlowContainer.new()
 			gain_row.name = "Gains_%s" % s.id
@@ -2168,7 +2186,7 @@ func show_grid() -> void:
 			gain_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			for g: Badge in gains:
 				gain_row.add_child(g)
-			rows.add_child(gain_row)
+			row_box.add_child(gain_row)
 			b.set_meta(&"site_id", s.id)
 			b.mouse_entered.connect(_light_site.bind(s.id))
 			b.focus_entered.connect(_light_site.bind(s.id))
@@ -2375,9 +2393,27 @@ func _place_grid_legend() -> void:
 	if grid_legend == null or not is_instance_valid(grid_legend):
 		return
 	var area_ctl := grid_legend.get_parent() as Control
+	if area_ctl.size.y <= LegendSpot.MARGIN * 2.0:
+		return  # not laid out yet: the key stays where it was put (never mid-map)
 	var own := grid_legend.get_combined_minimum_size()
 	grid_legend.size = own
 	grid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
+	_grid_legend_last = {"scale": Settings.text_scale, "width": grid_legend.strip_width, "position": grid_legend.position, "size": own, "opened": grid_legend.opened}
+
+
+## W8b: where the Grid's key last stood ({scale, width, position, size, opened}; view memory).
+var _grid_legend_last: Dictionary = {}
+
+
+## W8b (§6.10): a new Grid key takes the last key's width and place at once (the same text
+## size), so a rebuilt page never moves it; the fit then confirms it.
+func _restore_grid_legend() -> void:
+	if _grid_legend_last.is_empty() or not is_equal_approx(float(_grid_legend_last["scale"]), Settings.text_scale):
+		return
+	grid_legend.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	grid_legend.set_strip_width(float(_grid_legend_last["width"]))
+	grid_legend.size = _grid_legend_last["size"]
+	grid_legend.position = _grid_legend_last["position"]
 
 
 ## H24 K1 / K2: a Grid step button that carries its full words and its short form (icon
@@ -2453,6 +2489,8 @@ func _mount_city_map(nodes: Array[Dictionary], edges: Array[Dictionary], look: i
 	city_overlay.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city.add_child(city_overlay)
 	city_overlay.set_look(look)
+	if RunManager.campaign != null:
+		city_overlay.corp_id = RunManager.campaign.corporation_id  # W8b §3.6: threat routes in its pattern
 	city_overlay.set_graph(nodes, edges)
 	_frame_city(zoom, city_overlay.centre() if focus == Vector2.INF else focus, anchor)
 
@@ -2561,6 +2599,26 @@ func _site_glyph(site: SiteData) -> String:
 	return CityMapOverlay.tier_text(site.tier)
 
 
+## W8b (§10.5, §11 City Grid; critique gifs/20): the Site card keeps one height whatever Site
+## is picked: its content scrolls inside a fixed SITE_CARD_BODY (x the text scale) under the
+## card's title, so the column never jumps when the selection changes.
+func _fix_card_height(card: TerminalWindow) -> void:
+	var inner := VBoxContainer.new()
+	inner.name = "CardContent"
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_theme_constant_override("separation", card.body.get_theme_constant("separation"))
+	for child in card.body.get_children():
+		card.body.remove_child(child)
+		inner.add_child(child)
+	var sc := ScrollContainer.new()
+	sc.name = "CardScroll"
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.follow_focus = true
+	sc.custom_minimum_size.y = SITE_CARD_BODY * Settings.text_scale
+	sc.add_child(inner)
+	card.body.add_child(sc)
+
+
 ## The picked Site as a card (H20, replacing the Site list): its facts as badges (status,
 ## objective, node and integrity, upgrades, assets, station) and the actions it allows now
 ## (launch, claim, repair, upgrade). Named "SelectedSite".
@@ -2643,7 +2701,9 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		var go := _icon(_button(tr(JACK_IN), func() -> void: launch(sid, launch_operative())), StatIcon.JACK_IN)
 		go.add_to_group(Fx.JACK_FOCUS_GROUP)  # ANIM-5: jack in pushes into this JACK IN
 		go.name = "Launch"
-		go.theme_type_variation = UiTheme.PRIMARY
+		# W8b (§11 City Grid): one primary per state: JACK IN, unless a raid is pending (then
+		# RAID SETUP is the primary and JACK IN a secondary).
+		go.theme_type_variation = UiTheme.PRIMARY if c.pending_raids.is_empty() else UiTheme.SECONDARY
 		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
 		_jack_button = go
 		# The picked operative beside JACK IN: their Polaroid, stamped.
@@ -4033,6 +4093,7 @@ func refresh_site_card() -> void:
 	old.queue_free()
 	parent.add_child(card)
 	parent.move_child(card, at)
+	_fix_card_height(card)
 	TextDb.shown_as_given(card)
 
 

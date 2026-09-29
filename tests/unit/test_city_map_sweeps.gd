@@ -379,7 +379,7 @@ func _check_run_rows_and_steps(hq: Control, what: String) -> void:
 	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
 	assert_not_null(rows, "%s: one run a row" % what)
 	var checked := 0
-	for b in rows.get_children():
+	for b in rows.find_children("Run_*", "Button", true, false):  # W8b: each run in its framed row
 		if b is Button and String(b.name).begins_with("Run_"):
 			var id := StringName(String(b.name).trim_prefix("Run_"))
 			var kind := String(nodes[id]["kind"])

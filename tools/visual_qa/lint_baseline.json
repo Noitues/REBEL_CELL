@@ -17,9 +17,6 @@
 		"res://scripts/ui/kit/buy_button.gd": {
 			"font_const": 1
 		},
-		"res://scripts/ui/kit/city_map_overlay.gd": {
-			"color": 23
-		},
 		"res://scripts/ui/kit/city_palette.gd": {
 			"color": 22
 		},
