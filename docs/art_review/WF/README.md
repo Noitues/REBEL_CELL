@@ -63,7 +63,7 @@ The "before" receipt has no Cycles/banked row. That was a real bug: `RunReceipt.
 4. **Polaroid (§4.3, W5):** the caption steps from label to body to caption, then abbreviates.
    - Abbreviation: `RANK n` becomes the W5 `tr("R%d")` form, and a name becomes its first word plus initials. One word stays whole.
    - If it still doesn't fit, it is condensed to 70% width, then scaled to the band, never below 12 px.
-5. **Paper inks (§3.3):** `HARM_INK` #AB2E22 and `GAIN_INK` #396739 are the screen hues at 67% and 46%. They meet ≥ 4.8:1 on PAPER, PAPER_ALT, NOTE_PAPER and NOTE_YELLOW. STICKER_PINK is not covered (4.2:1).
+5. **Paper inks (§3.3):** `HARM_INK` #AB2E22 and `GAIN_INK` #396739 are the screen hues at 67% and 46%. They meet ≥ 4.8:1 on PAPER, PAPER_ALT, NOTE_PAPER and NOTE_YELLOW. STICKER_PINK (3.8:1) and NOTE_PINK (4.3:1) are not covered.
 6. **High contrast on paper (§12):** the new bible line says PAPER keeps its stock colour.
    - Words go INK. Edges are 2 px opaque INK. Tape and fills are made opaque over their stock.
    - The unearned badge's outline is `TEXT_MID`, as HighContrast does for disabled items, and its lock disc is opaque black.
@@ -78,5 +78,5 @@ The "before" receipt has no Cycles/banked row. That was a real bug: `RunReceipt.
 
 ## Bible rules to revisit (not changed)
 
-- §3.3: STICKER_PINK is too dark for the paper inks at 4.5:1. If a sticker ever carries harm/gain text, it needs `INK`.
+- §3.3: the paper inks miss 4.5:1 on STICKER_PINK and NOTE_PINK. If a sticker ever carries harm/gain text, it needs `INK`.
 - §12: "TEXT_HI on #000" applies to glass only. The PAPER line added here should be read as its exception.
