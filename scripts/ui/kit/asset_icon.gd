@@ -4,9 +4,11 @@ extends RefCounted
 ## any CanvasItem so the raid board and the loadout cards share them. Unknown assets get
 ## a plain square.
 
-const COLORS := {&"turret": Color("#5CE1FF"), &"sentry": Color("#3DFF8B"), &"railgun": Color("#FF3DA8"),
-	&"flak_array": Color("#FFB000"), &"ice_lock": Color("#8FE8FF"), &"tar_pit": Color("#B04DFF"),
-	&"decoy": Color("#FFD24D"), &"honeypot_node": Color("#FF8C1A")}
+## Art pass W2 (ART_BIBLE 3): tokens only; no corp hue on an asset (sentry was Solace's green,
+## the honeypot Meridian's orange).
+const COLORS := {&"turret": Palette.NET_CYAN, &"sentry": Palette.GAIN, &"railgun": Palette.CELL_PINK,
+	&"flak_array": Palette.CRT_AMBER, &"ice_lock": Palette.TERMINAL_TEXT, &"tar_pit": Palette.NEON_VIOLET,
+	&"decoy": Palette.RESIST_GOLD, &"honeypot_node": Palette.HEAT_FLAGGED}
 
 
 static func color_of(asset_id: StringName) -> Color:

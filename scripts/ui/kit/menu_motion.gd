@@ -42,7 +42,7 @@ var _type_tween: Tween = null
 ## The line's font colour overrides while its words are drawn here ({name: colour or null}).
 var _saved_colors: Dictionary = {}
 var _type_color: Color = Color.WHITE
-var _type_outline: Color = Color(0, 0, 0, 0)
+var _type_outline: Color = Color.TRANSPARENT
 var _blink_t: float = 0.0
 var _quiet: bool = true
 ## The last line that had focus (the highlight slides from it).
@@ -213,7 +213,7 @@ func _hide_words() -> void:
 	_type_outline = _line.get_theme_color(&"font_outline_color")
 	for c in FONT_COLORS:
 		_saved_colors[c] = _line.get_theme_color(c) if _line.has_theme_color_override(c) else null
-		_line.add_theme_color_override(c, Color(0, 0, 0, 0))
+		_line.add_theme_color_override(c, Color.TRANSPARENT)
 
 
 func _show_words() -> void:

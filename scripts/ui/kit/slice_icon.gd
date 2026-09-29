@@ -20,15 +20,15 @@ const STYLE_NAMES: Array[String] = ["BLACK & WHITE", "BADGE", "INVERSE BADGE", "
 
 ## A slice's icon on its wedge, in the current `style` (`slice_col` = the wedge colour).
 static func draw_on_slice(ci: CanvasItem, c: Vector2, r: float, type: int, slice_col: Color) -> void:
-	var black := Color(0.02, 0.02, 0.03)
-	var white := Color(1, 1, 1)
+	var black := Palette.INK
+	var white := Palette.TEXT_HI
 	match style:
 		1:
-			ci.draw_circle(c, r * 1.25, Color(0.03, 0.03, 0.05, 0.9))
+			ci.draw_circle(c, r * 1.25, Color(Palette.NET_BG_OUTER, 0.9))
 			ci.draw_arc(c, r * 1.25, 0, TAU, 32, white, maxf(1.5, r * 0.12), true)
 			draw_icon(ci, c, r * 0.85, type, black, white)
 		2:
-			ci.draw_circle(c, r * 1.25, Color(0.03, 0.03, 0.05, 0.9))
+			ci.draw_circle(c, r * 1.25, Color(Palette.NET_BG_OUTER, 0.9))
 			ci.draw_arc(c, r * 1.25, 0, TAU, 32, Color(slice_col, 0.9), maxf(1.5, r * 0.1), true)
 			draw_icon(ci, c, r * 0.85, type, white, black)
 		3:
@@ -44,7 +44,7 @@ static func draw_on_slice(ci: CanvasItem, c: Vector2, r: float, type: int, slice
 
 
 ## Draws the icon for `type` centred on `c`, `r` = half size, ink `col`.
-static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Color, outline: Color = Color(0, 0, 0, 0.85)) -> void:
+static func draw_icon(ci: CanvasItem, c: Vector2, r: float, type: int, col: Color, outline: Color = Color(Palette.INK, 0.85)) -> void:
 	var w := maxf(1.5, r * 0.18)
 	_outline_w = r * (0.3 if _bold else 0.16)
 	match type:
