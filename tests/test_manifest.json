@@ -101,6 +101,10 @@
 			"seconds": 24.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_r5_netrun.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r4_combat.gd": {
 			"seconds": 90.0,
 			"tier": "full"
