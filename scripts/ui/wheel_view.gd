@@ -323,7 +323,27 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	lookup = p_lookup
 	wheel_color = Palette.CELL_PINK if c.is_player else Palette.corp_color(_corporation_of(c))
 	look = WheelBezel.operative_look(operative_class()) if c.is_player else WheelBezel.enemy_look(_corporation_of(c), is_boss())
+	look["flicker_depth"] = Motion.amplitude(&"bezel_ambient")
+	_sync_ambient()
 	queue_redraw()
+
+
+## The ambient clock (T0, `bezel_ambient`: 0..1 over its period) the class ornaments that
+## move read (the Ghost's flicker, the Botnet's orbit); 0 at rest (reduce effects, headless).
+var ambient_phase: float = 0.0
+
+
+## True while something on this wheel loops on the ambient clock.
+func ambient_on() -> bool:
+	return WheelBezel.is_ambient(look) and Motion.live(&"bezel_ambient")
+
+
+## Starts the ambient clock when it is needed; at rest otherwise.
+func _sync_ambient() -> void:
+	if ambient_on():
+		set_process(true)
+	else:
+		ambient_phase = 0.0
 
 
 ## The operative's class id (its bezel's ornament): `class_id`, else the combatant's source
@@ -543,6 +563,7 @@ func stop_motion(sync_tag: bool = true) -> void:
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
 	set_process(false)
+	_sync_ambient()
 	queue_redraw()
 
 
@@ -1464,6 +1485,11 @@ func _process(delta: float) -> void:
 	blur = move_toward(blur, want, rate)
 	if blur != was:
 		queue_redraw()
+	if ambient_on():
+		ambient_phase = fposmod(ambient_phase + delta / maxf(0.001, Motion.seconds(&"bezel_ambient")), 1.0)
+		queue_redraw()
+		return
+	ambient_phase = 0.0
 	if not _tweens.has(&"turn") and blur <= 0.0:
 		_last_shown_rot = NAN
 		set_process(false)
@@ -1816,6 +1842,8 @@ func _draw_view() -> void:
 		return
 	# Art pass W3 (§6.1): the bezel says whose wheel it is (it never flips with the disc).
 	WheelBezel.draw_bezel(self, center, radius, bezel_radius(), look, Settings.high_contrast)
+	# §7.1: the operative's class ornament on its bezel (T0 ambient where it moves).
+	WheelBezel.draw_ornament(self, center, radius, bezel_radius(), look, ambient_phase)
 	if flip_squash < 1.0:
 		# FLIP: the disc squashes to a line about its centre and opens mirrored.
 		draw_set_transform(Vector2(center.x * (1.0 - flip_squash), 0.0), 0.0, Vector2(flip_squash, 1.0))
@@ -1823,6 +1851,7 @@ func _draw_view() -> void:
 		draw_circle(center, radius + 24, Color(Palette.PAPER, 0.9))
 	draw_circle(center, inner - 3, HUB_FILL)
 	WheelBezel.draw_hub_pattern(self, center, inner - 3, look)
+	WheelBezel.draw_class_hub(self, center, inner - 3, look)
 	var status_ghosts := {}
 	if not replaying:
 		for st in outcome.get("statuses", []):
@@ -2760,6 +2789,7 @@ func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
 	if float(lay["inset_alpha"]) > 0.0:
 		# Art pass W3 (§6.1): the operative's Polaroid mini-portrait at the hub's top.
 		WheelBezel.draw_inset(self, inset_rect(), shown_subject(), portrait_texture, float(lay["inset_alpha"]))
+		WheelBezel.draw_glyph_badge(self, inset_rect(), look, float(lay["inset_alpha"]))
 	for k in name_count:
 		# The last line sits where a one-line name does; a first line goes above it.
 		var ny := top - (name_count - 1 - k) * (name_size + 1)

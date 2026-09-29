@@ -111,3 +111,60 @@ func test_focus_brackets_only_mark_the_target() -> void:
 			targeted += 1
 			assert_eq((v as WheelView).combatant.id, scene.engine.state().target_id, "the bracketed wheel is the target")
 	assert_eq(targeted, 1, "one target")
+
+
+# --- 2. Class identity (§6.1, §7.1) -------------------------------------------------------------
+
+const CLASSES: Array[StringName] = [&"breaker", &"wrecker", &"ghost", &"phantom", &"rigger", &"overclocker", &"botnet", &"hivemind"]
+
+
+func test_every_class_has_its_own_ornament_pattern_and_glyph() -> void:
+	assert_eq(Palette.CLASS_ACCENTS.keys().size(), CLASSES.size(), "the eight §7.1 classes")
+	for key in ["ornament", "hub_pattern", "hub_glyph"]:
+		var seen := {}
+		for c in CLASSES:
+			var look := WheelBezel.operative_look(c)
+			assert_ne(look[key], WheelBezel.PLAIN, "%s has a %s" % [c, key])
+			assert_false(seen.has(look[key]), "%s: no two classes share a %s" % [c, key])
+			seen[look[key]] = c
+	for c in CLASSES:
+		assert_eq(WheelBezel.operative_look(c)["accent"], Palette.class_accent(c), "%s's accent" % c)
+
+
+func test_class_bezels_differ_pairwise_in_shape() -> void:
+	var at := Vector2(200, 200)
+	var keys := {}
+	for c in CLASSES:
+		var look := WheelBezel.operative_look(c)
+		var k := "%s|%s|%s" % [WheelBezel.marks_key(WheelBezel.ornament_marks(look, at, 100.0, 126.0)),
+			WheelBezel.marks_key(WheelBezel.hub_marks(look, at, 60.0)), WheelBezel.marks_key(WheelBezel.glyph_marks(look["hub_glyph"], at, 10.0))]
+		assert_false((WheelBezel.ornament_marks(look, at, 100.0, 126.0).lines as Array).is_empty() and (WheelBezel.ornament_marks(look, at, 100.0, 126.0).dots as Array).is_empty()
+			and (WheelBezel.ornament_marks(look, at, 100.0, 126.0).polys as Array).is_empty(), "%s draws an ornament" % c)
+		for other in keys:
+			assert_ne(k, keys[other], "%s and %s never share a bezel" % [c, other])
+		keys[c] = k
+	# Pairwise per part too: the critique's pairs (Botnet/Hivemind, Rigger/Overclocker) apart.
+	for part in ["ornament", "hub"]:
+		var seen := {}
+		for c in CLASSES:
+			var look := WheelBezel.operative_look(c)
+			var m := WheelBezel.ornament_marks(look, at, 100.0, 126.0) if part == "ornament" else WheelBezel.hub_marks(look, at, 60.0)
+			var key := WheelBezel.marks_key(m)
+			assert_false(seen.has(key), "%s %s is unique" % [c, part])
+			seen[key] = true
+
+
+func test_the_ghost_flicker_is_ambient_and_rests_under_reduce_effects() -> void:
+	var look := WheelBezel.operative_look(&"ghost")
+	assert_true(WheelBezel.is_ambient(look), "the Ghost's rim flickers (T0)")
+	assert_eq(VfxTier.of(&"bezel_ambient"), VfxTier.T0, "a T0 loop")
+	assert_gte(Motion.seconds(&"bezel_ambient"), VfxTier.T0_MIN_PERIOD, "slow: at least the T0 period")
+	assert_eq(float(WheelBezel.ornament_marks(look, Vector2.ZERO, 100.0, 126.0, 0.0).alpha), 1.0, "at rest the rim is whole")
+	var was := Settings.reduce_effects
+	Settings.reduce_effects = true
+	var v := WheelView.new()
+	v.look = look
+	assert_false(v.ambient_on(), "static under reduce effects")
+	v.free()
+	Settings.reduce_effects = was
+	assert_false(WheelBezel.is_ambient(WheelBezel.operative_look(&"breaker")), "rivets don't move")
