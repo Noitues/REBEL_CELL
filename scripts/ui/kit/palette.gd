@@ -44,6 +44,33 @@ const STICKER_PINK := Color("#F5AFCB")
 const NOTE_TAPE := Color(0.93, 0.89, 0.78, 0.7)
 const SHADOW := Color(0, 0, 0, 0.45)
 
+# --- ART_BIBLE §3.3 semantic tokens -------------------------------------------------------
+# A semantic hue means one thing everywhere and is always paired with a glyph, shape or word.
+## Harm: damage taken, losses, costs, LETHAL, enemy projectiles, refusals (never CELL_PINK).
+const HARM := Color("#FF4433")
+## Gain: healing, gains, a positive outcome.
+const GAIN := Color("#7BE07B")
+## Protect: block, shield, evade, guards (the net's neutral cyan).
+const PROTECT := NET_CYAN
+## Warn: caution (low HP, NOTICED Heat, a pending raid).
+const WARN := CRT_AMBER
+## Focus: keyboard/pad focus, aim, legal drop zones, the current target.
+const FOCUS := CELL_ACID
+## Disabled: the outline and label of an unavailable control (never a faded active colour).
+const DISABLED := Color("#6A7080")
+## Text on dark: primary.
+const TEXT_HI := Color("#F2F6FF")
+## Text on dark: secondary.
+const TEXT_MID := Color("#AFC0D6")
+## Text on dark: tertiary (never for information the player needs).
+const TEXT_LO := Color("#7A889C")
+## The dim laid behind every glass panel and modal over the city (with SCRIM_BLUR_PX blur).
+const SCRIM := Color(0.00784314, 0.0117647, 0.0392157, 0.55)
+## The scrim's blur radius in reference pixels (§3.3).
+const SCRIM_BLUR_PX := 6
+## Heat FLAGGED band (§3.5): between WARN and HARM.
+const HEAT_FLAGGED := Color("#FF7A1A")
+
 const FONT_MARKER := "res://assets/fonts/PermanentMarker-Regular.ttf"
 const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
 const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
