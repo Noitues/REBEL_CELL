@@ -257,8 +257,12 @@ func test_pad_players_see_pad_buttons() -> void:
 	var scene := await _combat()
 	Settings.set_pad_active(true)
 	await _frames()
-	assert_eq(scene._end_turn_button.key_hint, "[X]", "SEND IT names the pad button")
-	assert_string_contains(scene._stickers["respin"].text, "[R3]")
+	# Art pass W9F (ART_BIBLE §12): a pad reads glyphs, never letters in brackets: SEND IT
+	# draws its button's glyph, RESPIN's button is on the fight's prompt bar.
+	assert_eq(scene._end_turn_button.key_hint, "", "no [X] on SEND IT")
+	assert_eq(scene._end_turn_button.pad_glyph(), PadGlyph.button_for_action(&"end_turn"), "SEND IT draws its pad glyph")
+	assert_false(scene._stickers["respin"].text.contains("["), "no bracketed key on RESPIN")
+	assert_true(scene.pad_prompts.visible and scene.pad_prompts.texts().size() >= 4, "the fight's prompt bar names the pad's buttons")
 	assert_string_contains(TutorialOverlay.step_text(3), "D-pad", "the tutorial speaks pad")
 	Settings.set_pad_active(false)
 	await _frames()

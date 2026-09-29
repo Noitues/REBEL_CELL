@@ -83,7 +83,12 @@ func test_the_pad_triggers_choose_the_nudge_wheel_and_ring() -> void:
 	assert_eq(scene._nudge_ring_option.selected, 1, "RT switches the ring")
 	Settings.set_pad_active(true)
 	await _frames()
-	assert_string_contains(scene._status.text, Settings.key_text(&"toggle_nudge_wheel"), "the status line names the triggers on a pad")
+	# Art pass W9F (ART_BIBLE §5.2.4, §12): on a pad the triggers are glyphs on the fight's
+	# prompt bar (never "LT:" letters in the status line).
+	var named := false
+	for t in scene.pad_prompts.texts():
+		named = named or t.begins_with(PadGlyph.name_of(PadGlyph.button_for_action(&"toggle_nudge_wheel")))
+	assert_true(named, "the prompt bar names the wheel switch on a pad")
 
 
 func test_switching_to_the_pad_keeps_focus_on_the_hand() -> void:

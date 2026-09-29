@@ -1549,6 +1549,9 @@ func _build_ui() -> void:
 	_status.mouse_filter = Control.MOUSE_FILTER_PASS
 	shown_tip(_status, tr("The turn, and the free nudges left this turn (each extra nudge costs RAM)."))
 	top.add_child(_status)
+	pad_prompts = PadPrompts.new()
+	pad_prompts.name = "FightPrompts"
+	top.add_child(pad_prompts)
 	_settings_button = _button("Settings", open_settings)
 	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
 	top.add_child(_settings_button)
@@ -1815,11 +1818,14 @@ func _refresh_key_hints() -> void:
 	var owner := UiFocus.owner_of(self) if is_inside_tree() else null
 	if owner != null and owner.get_parent() == _hand_box:
 		focused = owner.get_index()
-	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
-	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
-	_settings_button.text = "Settings %s" % Settings.hint(&"open_settings")
-	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
-	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
+	# Art pass W9F (ART_BIBLE §12, §5.2.4): with a pad, glyphs (SEND IT's drawn under it, the
+	# rest on the fight's prompt bar), never letters in brackets; with keys, "[key]" hints.
+	var pad := Settings.pad_active
+	_nudge_minus_button.text = "-1" if pad else "-1 %s" % Settings.hint(&"nudge_left")
+	_nudge_plus_button.text = "+1" if pad else "+1 %s" % Settings.hint(&"nudge_right")
+	_settings_button.text = tr("Settings") if pad else "Settings %s" % Settings.hint(&"open_settings")
+	(_end_turn_button as DripButton).set_key_action(&"end_turn")
+	(_continue_button as DripButton).set_key_action(&"end_turn")
 	_sync_stickers()
 	_sync_arrow_hints()
 	if engine != null and engine.has_fight() and is_inside_tree():
@@ -2050,18 +2056,52 @@ func _refresh_status() -> void:
 		text += " · " + tr("VICTORY")
 	elif state.outcome == CombatState.Outcome.DEFEAT:
 		text += " · " + tr("DEFEAT")
+	elif Settings.pad_active:
+		pass  # art pass W9F (§5.2.4, §12): with a pad the keys are glyphs on the prompt bar
 	else:
 		# One key pair nudges; the switches say what they switch to (H23: "YOURS [W] OUTER
 		# [R]" read as a second nudge pair, and OUTER showed on wheels with one ring).
 		var mine := _nudge_wheel_option.selected == 0
 		var inner := _nudge_ring_option.selected == 1
-		text += tr(" · %s/%s NUDGE %s%s") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right"), tr("YOUR WHEEL") if mine else tr("THE TARGET"), tr(" (INNER RING)") if inner else ""]
-		text += tr(" · %s: NUDGE %s") % [Settings.key_text(&"toggle_nudge_wheel"), tr("THE TARGET") if mine else tr("YOUR WHEEL")]
+		var extra: Array[String] = []
+		extra.append(tr(" · %s/%s NUDGE %s%s") % [Settings.key_text(&"nudge_left"), Settings.key_text(&"nudge_right"), tr("YOUR WHEEL") if mine else tr("THE TARGET"), tr(" (INNER RING)") if inner else ""])
+		extra.append(tr(" · %s: NUDGE %s") % [Settings.key_text(&"toggle_nudge_wheel"), tr("THE TARGET") if mine else tr("YOUR WHEEL")])
 		var wheel := state.get_combatant(_selected_nudge_wheel())
 		if wheel != null and wheel.wheel.has_inner_ring():
-			text += tr(" · %s: %s RING") % [Settings.key_text(&"toggle_ring"), tr("OUTER") if inner else tr("INNER")]
+			extra.append(tr(" · %s: %s RING") % [Settings.key_text(&"toggle_ring"), tr("OUTER") if inner else tr("INNER")])
+		_status_parts = [text] + extra
+		_status.text = "".join(_status_parts)
+		_fit_status()
+		_refresh_pad_prompts()
+		return
+	_status_parts = [text]
 	_status.text = text
 	_fit_status()
+	_refresh_pad_prompts()
+
+
+## Art pass W9F (ART_BIBLE §5.2.4, §12): the fight's prompt bar while a pad is in use, in
+## the status row: the nudge pair, the wheel and ring switches (named by what they switch
+## to), RESPIN and UNDO, each its pad glyph and verb. SEND IT carries its own glyph.
+var pad_prompts: PadPrompts = null
+
+
+func _refresh_pad_prompts() -> void:
+	if pad_prompts == null or not engine.has_fight():
+		return
+	var state := engine.state()
+	var list: Array = []
+	if state.outcome == CombatState.Outcome.NONE and not _outcome_held:
+		var mine := _nudge_wheel_option.selected == 0
+		var inner := _nudge_ring_option.selected == 1
+		list = [[&"nudge_left", "-1"], [&"nudge_right", "+1"], [&"toggle_nudge_wheel", "THE TARGET" if mine else "YOUR WHEEL"]] # TR
+		var wheel := state.get_combatant(_selected_nudge_wheel())
+		if wheel != null and wheel.wheel.has_inner_ring():
+			list.append([&"toggle_ring", "OUTER" if inner else "INNER"]) # TR
+		list.append([&"respin", "Respin"]) # TR
+		list.append([&"rewind", "Undo"]) # TR
+	list.append([&"open_settings", "Settings"]) # TR
+	pad_prompts.set_prompts(list)
 
 
 ## The status line's font: its themed size, smaller until the line fits its width.
@@ -2073,14 +2113,28 @@ func _fit_status() -> void:
 	_status.remove_theme_font_size_override("font_size")
 	var fs := _status.get_theme_font_size("font_size")
 	var font := _status.get_theme_font("font")
-	while fs > STATUS_MIN_FONT and font.get_string_size(_status.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > _status.size.x:
-		fs -= 1
+	# Art pass W9F (§4.3 rules 2-3): never under caption x the text scale, and never cut:
+	# at the floor the key hints drop from the end, whole (the turn line always stays).
+	var floor_px := UiTheme.font_px(STATUS_MIN_FONT)
+	var parts := _status_parts.duplicate() if not _status_parts.is_empty() else [_status.text]
+	var text := "".join(parts)
+	while true:
+		while fs > floor_px and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > _status.size.x:
+			fs -= 1
+		if parts.size() <= 1 or font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= _status.size.x:
+			break
+		parts.pop_back()
+		text = "".join(parts)
+		fs = _status.get_theme_font_size("font_size")
+	_status.text = text
 	_status.add_theme_font_size_override("font_size", fs)
 	_fitting_status = false
 
 
-## The smallest the status line's font shrinks to (px).
+## The smallest step the status line's font shrinks to (× the text scale).
 const STATUS_MIN_FONT := UiTheme.CAPTION
+## Art pass W9F: the status line's pieces (the turn line, then each key hint).
+var _status_parts: Array = []
 var _fitting_status := false
 
 
@@ -2775,7 +2829,8 @@ const STICKER_ACTIONS := {"respin": &"respin", "undo": &"rewind"}
 
 
 func _sticker_text(key: String, label: String) -> String:
-	var h := Settings.hint(STICKER_ACTIONS[key])
+	# Art pass W9F: a pad reads the sticker's button on the prompt bar (a glyph).
+	var h := "" if Settings.pad_active else Settings.hint(STICKER_ACTIONS[key])
 	return label if h == "" else "%s %s" % [label, h]
 
 
@@ -2805,7 +2860,8 @@ func _sync_arrow_hints() -> void:
 	var ring := RC.RingScope.INNER if _nudge_ring_option.selected == 1 else RC.RingScope.OUTER
 	for v in _views():
 		var mine := v.combatant != null and ((driven == &"player" and v == _player_view) or v.combatant.id == driven)
-		v.arrow_hints = {-1: Settings.hint(&"nudge_left"), 1: Settings.hint(&"nudge_right")} if mine else {}
+		# Art pass W9F: with a pad the nudge buttons are on the prompt bar as glyphs.
+		v.arrow_hints = {-1: Settings.hint(&"nudge_left"), 1: Settings.hint(&"nudge_right")} if mine and not Settings.pad_active else {}
 		v.key_ring = ring
 		v.queue_redraw()
 
