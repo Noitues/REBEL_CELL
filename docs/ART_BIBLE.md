@@ -93,6 +93,7 @@ The STYLE_GUIDE's "three worlds" map onto these materials: Physical = DECK (with
 |---|---|---|---|
 | `HARM` | #FF4433 | Damage taken, losses, costs, LETHAL, enemy projectiles, refusals. | ▼ or "−", the sword/skull glyph, the word. |
 | `GAIN` | #7BE07B | Healing, gains, a positive outcome, "good for you" status. | ▲ or "+", the heart glyph. |
+| `HARM_INK` / `GAIN_INK` | #AB2E22 / #396739 | `HARM` and `GAIN` as **ink on paper** (PAPER, PAPER_ALT, NOTE_PAPER, NOTE_YELLOW, all ≥ 4.5:1). Paper surfaces use these; they never darken the screen hues locally. | As `HARM` / `GAIN`. |
 | `PROTECT` | = `NET_CYAN` | Block, shield, evade, guards. | Shield glyph. |
 | `WARN` | = `CRT_AMBER` | Caution: low HP (<50%), NOTICED Heat, a pending raid. | An eye or "!" glyph. |
 | `FOCUS` | = `CELL_ACID` | Keyboard/pad focus, aim, legal drop zones, current target. | Corner brackets (4 marks). |

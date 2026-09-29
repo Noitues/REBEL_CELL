@@ -181,7 +181,7 @@ func _fill() -> void:
 	_content.add_child(facts)
 	var state := state_word()
 	if state != "":
-		var st := _label(state, UiTheme.BODY, Palette.display(), Palette.HARM if String(summary.get("state", "")) == "lost" else Palette.INK)
+		var st := _label(state, UiTheme.BODY, Palette.display(), Palette.HARM_INK if String(summary.get("state", "")) == "lost" else Palette.INK)
 		st.name = "State"
 	var photos := HBoxContainer.new()
 	photos.name = "Crew"

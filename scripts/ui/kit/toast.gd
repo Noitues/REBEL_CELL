@@ -213,7 +213,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var c := Vector2(GLYPH_ROOM * s * 0.5 + 2.0, size.y * 0.5)
 	if refusal:
-		StatIcon.draw(self, c, GLYPH_R * s, StatIcon.NO_ENTRY, Palette.HARM, true)
+		StatIcon.draw(self, c, GLYPH_R * s, StatIcon.NO_ENTRY, Palette.HARM_INK, true)  # ink on the sticky (§3.3)
 	else:
 		StatIcon.draw(self, c, GLYPH_R * s, StatIcon.INFO, Palette.INK, true)
 

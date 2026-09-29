@@ -286,3 +286,25 @@ func test_a_status_stamp_carries_its_stat_icon() -> void:
 	await wait_frames(1)
 	assert_true(StatIcon.ALL.has(StatIcon.for_status(RC.Status.CORRUPTED)), "a drawn kit icon")
 	Motion.force_live = false
+
+
+# --- 6. Paper-ink semantic tokens (§3.3, §3.7) ----------------------------------------------
+
+func test_paper_inks_meet_4_5_to_1_on_every_paper_stock() -> void:
+	for ink in [Palette.HARM_INK, Palette.GAIN_INK]:
+		for stock in Palette.PAPER_STOCKS:
+			assert_gte(Palette.contrast(ink, stock), 4.5, "%s on %s" % [ink.to_html(false), stock.to_html(false)])
+	# The screen hues don't (that is why the inks exist), and the inks keep their hue.
+	assert_lt(Palette.contrast(Palette.HARM, Palette.PAPER), 4.5)
+	assert_lt(Palette.contrast(Palette.GAIN, Palette.PAPER), 4.5)
+	assert_almost_eq(Palette.HARM_INK.h, Palette.HARM.h, 0.02, "HARM_INK is HARM's hue")
+	assert_almost_eq(Palette.GAIN_INK.h, Palette.GAIN.h, 0.02, "GAIN_INK is GAIN's hue")
+	assert_ne(Palette.HARM_INK, Palette.GAIN_INK)
+
+
+func test_paper_pieces_use_the_paper_inks() -> void:
+	var lost := CaseFileCard.new("2", {"corporation": "solace", "heat": 80, "runs": 3, "ice": 2, "saved_at": 0.0, "state": "lost"})
+	add_child_autofree(lost)
+	var st := lost.find_child("State", true, false) as Label
+	assert_eq(st.get_theme_color(&"font_color"), Palette.HARM_INK, "LOST on the folder is HARM ink")
+	assert_gte(Palette.contrast(st.get_theme_color(&"font_color"), Palette.PAPER), 4.5)
