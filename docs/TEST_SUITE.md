@@ -220,9 +220,10 @@ carries `# fixed-wait-ok: <reason>`.
 the suite (`.gutconfig.json` for the single process, `-gpre_run_script` /
 `-gpost_run_script` on every shard of `tools/run_tests.py`). ANIM-R6:
 
-- **Every test script leaves Settings as it found it.** The guard takes
+- **Every test script leaves Settings (and the run's clocks) as it found it.** The guard takes
   `Settings.snapshot()` (every saved value plus the session's `pad_active`, which
-  `to_dict` leaves out) as each script starts and compares it as it ends. A change left
+  `to_dict` leaves out; with `Engine.time_scale`, `Motion.speed` and `Motion.force_live`)
+  as each script starts and compares it as it ends. A change left
   behind prints `SETTINGS LEAK <script>: <keys>`, the snapshot is put back
   (`Settings.restore`, the InputMap's keys too) so no later script runs on it, and the run
   exits 1. A test that changes Settings takes a snapshot first and restores it

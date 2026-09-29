@@ -695,6 +695,10 @@ static func note_span(s: Vector2) -> float:
 
 ## When the CONNECTING line came up (msec).
 var _connect_since: int = 0
+## ANIM-R6: how long (s, wall time) the CONNECTING line last stayed up, measured by the line
+## itself from when it showed to when it went (tests read it: a test measuring from when it
+## first saw the line lost whatever a slow frame took before that).
+var last_connect_shown: float = 0.0
 
 
 ## ANIM-R2 R5: waits until the CONNECTING line has shown `jack_connect`'s duration (game
@@ -726,6 +730,8 @@ func note_hold() -> float:
 
 
 func _hide_connect() -> void:
+	if connect_label.visible:
+		last_connect_shown = (Time.get_ticks_msec() - _connect_since) / 1000.0
 	note_label.visible = false
 	connect_label.visible = false
 	connect_bar.visible = false

@@ -41,21 +41,35 @@ func _settings() -> Node:
 func _on_start_script(coll_script: Variant) -> void:
 	var s := _settings()
 	_script = String(coll_script.get_full_name()) if coll_script != null and coll_script.has_method(&"get_full_name") else ""
-	_snap = s.call(&"snapshot") if s != null else {}
+	_snap = _state(s)
 
 
 func _on_end_script() -> void:
 	var s := _settings()
-	if s == null or _snap.is_empty():
+	if _snap.is_empty():
 		return
-	var now: Dictionary = s.call(&"snapshot")
+	var now := _state(s)
 	var changed := changed_keys(_snap, now)
 	if changed.is_empty():
 		return
 	var line := "SETTINGS LEAK %s: %s" % [_script, ", ".join(changed)]
 	leaks.append(line)
 	print(line)
-	s.call(&"restore", _snap)
+	if s != null:
+		s.call(&"restore", _snap)
+	Engine.time_scale = float(_snap["engine.time_scale"])
+	Motion.set_speed(float(_snap["motion.speed"]))
+	Motion.force_live = bool(_snap["motion.force_live"])
+
+
+## Settings' snapshot plus the run-wide clocks a test may change: Engine.time_scale (a
+## frozen frame left at 0 slows every later motion), Motion.speed and Motion.force_live.
+static func _state(s: Node) -> Dictionary:
+	var d: Dictionary = s.call(&"snapshot") if s != null else {}
+	d["engine.time_scale"] = Engine.time_scale
+	d["motion.speed"] = Motion.speed
+	d["motion.force_live"] = Motion.force_live
+	return d
 
 
 ## The keys whose values differ between two snapshots, sorted.

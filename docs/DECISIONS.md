@@ -610,6 +610,15 @@ unless named.
   waits with one-shot connections (a `Waiter` per call, checking its node each frame and
   freeing itself), never an `await` that resumed on a scene freed meanwhile. Test:
   `test_a_demo_step_waits_its_frames_and_never_runs_on_a_freed_node`.
+- **The guard watches the run's clocks too; one load flake fixed.** A full run failed
+  `test_anim_r3_city`'s CONNECTING hold in its shard only (0.16 s measured, 0.35 wanted),
+  passing alone. The guard now also compares `Engine.time_scale`, `Motion.speed` and
+  `Motion.force_live` per script (a frozen frame or a 2x left behind would slow or speed
+  every later motion): the next full run found no leak of any, so the cause was the test's
+  measure: it timed the line from when it first saw it, and a slow frame before that under
+  a loaded shard ate the hold. Fx now measures the line itself (`last_connect_shown`, wall
+  time from showing to going) and the test reads that (fix agent C's test file: that
+  assertion only).
 
 #### 2026-09-29 — Animation pass — ANIM-R6 netrun screens
 The sixth fix batch of the Animation pass review, netrun screens part (B1-B14, from the R6
