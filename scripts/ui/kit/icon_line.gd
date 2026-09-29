@@ -17,8 +17,11 @@ const FONT_SHARE := 0.85
 var lead: String = ""
 ## [{kind: StringName, text: String}] drawn in order after the lead.
 var items: Array[Dictionary] = []
-## The colour of the words and icons.
+## The colour of the words.
 var color: Color = Palette.TERMINAL_TEXT
+## The icons' colour (art pass W8a: on a filled primary they take the words' ink, 3:1 and
+## more, ART_BIBLE 3.7); Palette.AUTO = each icon's own colour.
+var icon_color: Color = Palette.AUTO
 
 
 func _init(p_lead: String = "", p_items: Array[Dictionary] = []) -> void:
@@ -123,7 +126,7 @@ func _draw() -> void:
 	for it in items:
 		x += ITEM_GAP * s
 		var kind := StringName(it["kind"])
-		StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, kind, StatIcon.color_of(kind))
+		StatIcon.draw(self, Vector2(x + ICON_R * s, mid), ICON_R * s, kind, icon_color if icon_color.a > 0.0 else StatIcon.color_of(kind))
 		x += (ICON_R * 2.0 + ICON_GAP) * s
 		var t := String(it["text"])
 		draw_string(font, Vector2(x, base), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)

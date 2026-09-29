@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- container crane: the landmark glyph of meridian (art pass W8a, ART_BIBLE 3.6, 7.4 grammar:
+       24 px grid x2, round caps). White, tinted in the corp hue at runtime. -->
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="10,44 10,6 40,6"/><polyline points="10,14 18,6"/><polyline points="4,44 20,44"/><polyline points="34,6 34,20"/><rect x="26" y="20" width="16" height="10"/><polyline points="30,20 30,30 M34,20"/><line x1="38" y1="20" x2="38" y2="30"/>
+  </g>
+</svg>

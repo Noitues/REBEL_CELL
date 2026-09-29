@@ -1,8 +1,10 @@
 extends Control
-## Title / main menu (gap analysis 2.5): Continue, Campaigns (three save slots with a
-## summary, new / load / delete with confirmation), Tutorial, Codex, Stats &
-## achievements, Options, Quit. Cyberdeck world with the graffiti tag. Every action goes
-## through RunManager; the scene only displays state.
+## Title / main menu (gap analysis 2.5; ART_BIBLE §11 Title, Campaign slots, Codex, Options,
+## Stats and achievements; art pass W8a): Continue, Campaigns (three case-file slots, new /
+## load / delete with confirmation), Tutorial, Codex, Stats & achievements, Options, Quit.
+## Focal order: the baked logo, then Continue (the one primary), then the city. The menu is
+## GLASS over a SCRIM with one PAPER note and one scrawl taped to it; a prompt bar with a
+## pad. Every action goes through RunManager; the scene only displays state.
 
 const SLOTS: Array[String] = ["1", "2", "3"]
 ## Subtitle lines the header band holds.
@@ -12,6 +14,28 @@ const PLAN_NOTE := Vector2(150, 96)
 ## The plan note's text box: its side and top margins (ZineNote) and the lines it holds.
 const PLAN_PAD := Vector2(20, 16)
 const PLAN_LINES := 3
+const PLAN_TILT := -4.0
+## Screen margins (§5.1: the 24 px safe margin; the top a half step under it).
+const MARGIN_X := UiTheme.SAFE_MARGIN
+const MARGIN_TOP := UiTheme.SP_M
+const MARGIN_BOTTOM := UiTheme.SAFE_MARGIN
+## The main menu's least width at text scale 1.0 (px), grown with the text up to this scale.
+const MENU_W := 380.0
+const MENU_W_SCALE_MAX := 1.3
+## How far the plan note is taped over the menu's right edge (px): its frame only, never the
+## Continue line's glyphs under it.
+const NOTE_OVERLAP := UiTheme.SP_S
+## Stats grid columns (§11: 3), and the rows of section tabs the codex allows for.
+const STAT_COLUMNS := 3
+## A stats cell's width at text scale 1.0 (px): its longest word fits whole.
+const STAT_CELL_W := 150.0
+## Seconds before a --demo-page-after page opens (review captures only).
+const DEMO_PAGE_DELAY := 1.0
+## Frames a new page checks that it fits under the logo (see _trim_page).
+const TRIM_PASSES := 3
+## The uplink panel's field columns.
+const UPLINK_COLUMNS := 2
+const CODEX_TAB_ROWS := 2
 
 var background: CyberdeckBackground
 ## The subtitles' band in the header (H21 #11).
@@ -24,6 +48,9 @@ var _confirm: ConfirmDialog = null
 ## The slot the Continue line offers ("" = the newest numbered slot, RunManager.latest_slot).
 ## H24 S13: the storyboard shows its own private slot, so its title matches its HQ.
 var continue_slot: String = ""
+## The baked logo (W8a) and the pad's prompt bar (§5.2).
+var logo: LogoArt
+var prompts: PadPrompts
 
 
 func _ready() -> void:
@@ -38,28 +65,31 @@ func _ready() -> void:
 	margin = MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["margin_left", "margin_right"]:
-		margin.add_theme_constant_override(side, 36)
-	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_bottom", 30)
+		margin.add_theme_constant_override(side, MARGIN_X)
+	margin.add_theme_constant_override("margin_top", MARGIN_TOP)
+	margin.add_theme_constant_override("margin_bottom", MARGIN_BOTTOM)
 	add_child(margin)
 	var root := VBoxContainer.new()
-	root.add_theme_constant_override("separation", 10)
+	root.add_theme_constant_override("separation", UiTheme.SP_S)
 	margin.add_child(root)
 	var header := HBoxContainer.new()
-	header.add_child(GraffitiTag.new("REBEL_CELL"))
-	var v := Label.new()
-	v.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	v.text = tr("v%s // cell uplink") % ProjectSettings.get_setting("application/config/version", "dev")
-	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	v.add_theme_color_override("font_color", Color(Palette.NET_CYAN, 0.7))
-	header.add_child(v)
-	# The subtitles' band beside the tag (H21 #11): no menu, no tag under it.
+	header.name = "Header"
+	header.add_theme_constant_override("separation", UiTheme.SP_L)
+	# W8a (ART_BIBLE §11 Title, §4.3 rule 5): the logo is baked art, first in the focal order.
+	logo = LogoArt.new()
+	logo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(logo)
+	# The subtitles' band beside the logo (H21 #11): no menu, no tag under it.
 	subtitle_strip = SubtitleStrip.new(HEADER_LINES)
 	header.add_child(subtitle_strip)
 	root.add_child(header)
 	_panel_host = VBoxContainer.new()
+	_panel_host.name = "PanelHost"
 	_panel_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(_panel_host)
+	# §5.2: the prompt bar at the foot of every page while a pad is in use.
+	prompts = PadPrompts.new()
+	root.add_child(prompts)
 	AudioDirector.play_music("hq")
 	var args := OS.get_cmdline_user_args()
 	# The main menu drifts slowly over the whole city.
@@ -111,17 +141,37 @@ func _ready() -> void:
 		show_stats()
 	else:
 		show_main()
+	# Review captures (W8a): --demo-page-after=slots opens that page DEMO_PAGE_DELAY s after
+	# the main menu, so a Movie Maker run records the page transition.
+	for a in args:
+		if a.begins_with("--demo-page-after="):
+			var page := "show_" + a.trim_prefix("--demo-page-after=")
+			if has_method(page):
+				get_tree().create_timer(DEMO_PAGE_DELAY).timeout.connect(Callable(self, page))
+
+
+## Esc / B on a title page goes back to the main menu (Options and the confirm answer it
+## themselves first).
+func _unhandled_input(event: InputEvent) -> void:
+	if panel_name in ["slots", "codex", "stats"] and event.is_action_pressed("ui_cancel") and not PageTransition.modal_open(self):
+		get_viewport().set_input_as_handled()
+		show_main()
 
 
 # --- Panels -----------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# ART_BIBLE §10 rule 6: an open modal (a confirm) closes before the page changes.
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, _set_panel.bind(p, name))
+		return
 	if _panel != null:
+		# Out of the host at once: the new page is laid out alone, where it rests, and never
+		# reflows under the old one mid-slide (critique gifs/21).
+		if _panel.get_parent() != null:
+			_panel.get_parent().remove_child(_panel)
 		_panel.queue_free()
 	_panel = p
-	# ANIM-6: each page enters (glass slides in, back to the main menu from the left; paper
-	# drops); focus lands when it ends.
-	var back := name == "main" and panel_name != ""
 	panel_name = name
 	# H24 S4: the page shows its words as given (translated once where built).
 	TextDb.shown_as_given(p)
@@ -129,28 +179,98 @@ func _set_panel(p: Control, name: String) -> void:
 	Dialogue.enter_screen("title")
 	UiWrap.fit(p)
 	UiFocus.link_layout(p)
-	PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p), -1 if back else 1)
+	prompts.set_prompts([["ui_accept", "Select"]] if name == "main" else [["ui_accept", "Select"], ["ui_cancel", "Back"]])
+	# §10: glass slides in from the right, paper drops; focus lands when it ends.
+	PageTransition.enter(p, PageTransition.look_of(p), UiFocus.focus_first.bind(p))
+	# W7: the city calms behind the page (the main menu names its two panels instead).
+	var calm: Array[Control] = [p]
+	background.set_calm_controls(calm)
+	_trim_left = TRIM_PASSES
+	# From the next frame: the page's views fit themselves as it is laid out first.
+	if is_inside_tree() and not get_tree().process_frame.is_connected(_trim_page):
+		get_tree().process_frame.connect(_trim_page, CONNECT_ONE_SHOT)
+
+
+## §5.3: a page whose rows outside its scrolling view took more room than reserved (the
+## tabs wrapping to a third row at big text) gives the excess back from its scrolling view,
+## over its first frames (before its entrance moves it; the view only ever shrinks).
+func _trim_page() -> void:
+	var p := _panel
+	if p == null or not is_instance_valid(p) or not is_inside_tree():
+		return
+	var foot := get_viewport_rect().size.y - MARGIN_BOTTOM
+	if prompts.visible:
+		foot -= prompts.get_combined_minimum_size().y + UiTheme.SP_S
+	var over := _panel_host.global_position.y + p.get_combined_minimum_size().y - foot
+	if over > 0.5:
+		var best: FitScroll = null
+		for n in p.find_children("*", "FitScroll", true, false):
+			var f := n as FitScroll
+			if f.max_height > 0.0 and (best == null or f.max_height > best.max_height):
+				best = f
+		if best != null:
+			best.max_height = maxf(FitScroll.MIN_VIEW * Settings.text_scale, best.max_height - ceilf(over))
+	_trim_left -= 1
+	if _trim_left > 0 and not get_tree().process_frame.is_connected(_trim_page):
+		get_tree().process_frame.connect(_trim_page, CONNECT_ONE_SHOT)
+
+
+## Frames the current page still checks its fit (see _trim_page).
+var _trim_left: int = 0
+
+
+## The height a page may take under the logo (px): the screen less its margins, the header
+## and the prompt bar, and `reserve` for the page's own rows outside its scrolling view.
+func page_room(reserve: float = 0.0) -> float:
+	var h := get_viewport_rect().size.y - MARGIN_TOP - MARGIN_BOTTOM - logo.get_combined_minimum_size().y - UiTheme.SP_S * 2
+	if prompts.visible:
+		h -= prompts.get_combined_minimum_size().y + UiTheme.SP_S
+	return maxf(FitScroll.MIN_VIEW * Settings.text_scale, h - reserve)
+
+
+## The Back line at the foot of a page (a menu line with its icon).
+func _back_row(box: Control) -> Button:
+	var b := _item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
+	b.name = "Back"
+	b.theme_type_variation = UiTheme.SECONDARY
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	b.custom_minimum_size.x = 0
+	return b
 
 
 func show_main() -> void:
+	var page := HBoxContainer.new()
+	page.name = "MainPage"
+	page.add_theme_constant_override("separation", UiTheme.GUTTER)
+	page.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 28)
+	row.name = "Main"
+	# The note is taped over the menu's right edge (critique 01: anchored, not floating).
+	row.add_theme_constant_override("separation", -NOTE_OVERLAP)
+	row.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	page.add_child(row)
 	# The REBEL_CELL name stays as the brand mark (H24 S3).
 	var menu := TerminalWindow.new(tr("REBEL_CELL // MAIN MENU"))
-	menu.custom_minimum_size = Vector2(420, 0)
+	menu.name = "Menu"
+	menu.custom_minimum_size = Vector2(MENU_W * minf(Settings.text_scale, MENU_W_SCALE_MAX), 0)
 	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var box := menu.body
 	var latest := continue_slot if continue_slot != "" else RunManager.latest_slot()
+	var cont: Button = null
 	# Each item carries an icon (H21 #13) and says what it does on hover.
 	if latest != "":
 		var summary := RunManager.slot_summary(latest)
 		if not summary.is_empty():
 			# H24 S13: "Continue" on its own line and the saved campaign under it as a line of
 			# stat icons (it read like debug output); the tooltip says it in words.
-			var cont := _item(box, tr("Continue"), func() -> void: load_slot(latest), StatIcon.CONTINUE,
+			cont = _item(box, tr("Continue"), func() -> void: load_slot(latest), StatIcon.CONTINUE,
 				"%s\n%s" % [tr("Pick up the campaign saved most recently."), slot_words(latest, summary)])
 			cont.name = "Continue"
-			IconLine.attach(cont, slot_line(latest, summary))
+			var line := slot_line(latest, summary)
+			# On the pink primary the line is ink (§3.7: 4.5:1 and more).
+			line.color = Palette.INK
+			line.icon_color = Palette.INK
+			IconLine.attach(cont, line)
 	_item(box, tr("Campaigns"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."))
 	_item(box, tr("Tutorial"), start_tutorial, StatIcon.TUTORIAL, tr("A guided first fight."))
 	_item(box, tr("Codex"), show_codex, StatIcon.CODEX, tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."))
@@ -160,119 +280,286 @@ func show_main() -> void:
 	for b in box.get_children():
 		b.theme_type_variation = &"MenuItem"
 		(b as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+	# §11 Title focal order: logo, then Continue, the one primary (filled CELL_PINK).
+	if cont != null:
+		cont.theme_type_variation = UiTheme.PRIMARY
 	# ANIM-6: the highlight slides, the line types in, the caret blinks.
 	MenuMotion.attach(box)
+	# The build's version, readable (critique 01: caption size, 4.5:1 on the glass).
+	var v := Label.new()
+	v.name = "Version"
+	v.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	v.text = tr("v%s // cell uplink") % ProjectSettings.get_setting("application/config/version", "dev")
+	v.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	v.add_theme_color_override("font_color", Palette.TEXT_MID)
+	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	menu.body.add_child(v)
 	row.add_child(menu)
-	# Right column: system readout, the plan on a taped note and a scrawl.
-	var side := VBoxContainer.new()
-	side.add_theme_constant_override("separation", 22)
-	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var p := RunManager.profile
-	# The profile at a glance as paper tags (H20: no text readout); Stats has the rest.
-	var sys := TerminalWindow.new(tr("SYSTEM ONLINE"), Palette.NET_CYAN)
-	sys.name = "ProfileTags"
-	sys.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var tags := HudStats.new()
-	tags.name = "Tags"
-	# A number or "—", never "none" (H21 #21).
-	tags.items = [[TextDb.mark("CAMPAIGNS"), str(p.campaigns_started), "", tr("Campaigns started on this profile.")],
-		[TextDb.mark("WON"), str(p.campaigns_won), "", tr("Campaigns won.")],
-		[TextDb.mark("BEST ICE"), HudStats.ice_value(p.best_ice), "", tr("The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.")],
-		[TextDb.mark("RUNS"), str(p.runs_completed), "", tr("Netruns completed.")],
-		[TextDb.mark("RAIDS"), "%d/%d" % [p.raids_won, p.raids_lost], "", tr("Raids repelled / lost.")],
-		[TextDb.mark("BADGES"), str(p.achievements.size()), "", tr("Achievements earned (Stats & achievements lists them).")]]
-	# The least room the tags need; they grow with the text where the column allows.
-	tags.custom_minimum_size.x = tags.compact_width(1.0)
-	sys.body.add_child(tags)
-	side.add_child(sys)
-	var notes := HBoxContainer.new()
-	notes.add_theme_constant_override("separation", 30)
+	# The Cell's voice, taped to the menu: one PAPER note (the plan) and one scrawl.
+	var deco := VBoxContainer.new()
+	deco.name = "Deco"
+	deco.add_theme_constant_override("separation", UiTheme.SP_S)
+	deco.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	deco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var drop := Control.new()
+	drop.custom_minimum_size.y = UiTheme.SP_XL
+	drop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	deco.add_child(drop)
 	# The plan note holds its three lines at any text size (H21 #15: at 1.6 it showed only
 	# the last two and scrolled "1. BREACH" away).
 	var ts := Settings.text_scale
-	var plan_h := PLAN_PAD.y + Palette.marker().get_height(roundi(UiTheme.BASE_SIZE * ts)) * PLAN_LINES
+	var plan_h := PLAN_PAD.y + Palette.marker().get_height(UiTheme.font_px(UiTheme.BODY)) * PLAN_LINES
 	var plan := ZineNote.new("", Vector2(PLAN_NOTE.x * maxf(1.0, ts), maxf(PLAN_NOTE.y, plan_h)))
 	plan.name = "PlanNote"
 	plan.paper_color = Palette.NOTE_YELLOW
 	plan.label.add_theme_font_override("normal_font", Palette.marker())
+	plan.label.add_theme_font_size_override("normal_font_size", UiTheme.font_px(UiTheme.BODY))
 	plan.label.scroll_following = false
-	plan.append(tr("1. BREACH\n2. DISABLE\n3. EXFIL"))
-	plan.rotation_degrees = -4.0
+	# Three lines and no trailing break (append adds one: a fourth, empty line was cut, W10 lint).
+	plan.label.append_text(tr("1. BREACH\n2. DISABLE\n3. EXFIL"))
+	plan.rotation_degrees = PLAN_TILT
 	plan.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plan.label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	notes.add_child(plan)
-	notes.add_child(GraffitiScrawl.new(tr("NEVER\nSLEEP"), -10.0, 34))
-	side.add_child(notes)
-	row.add_child(side)
-	_set_panel(row, "main")
+	plan.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	deco.add_child(plan)
+	var scrawl := ScrawlArt.new(SvgArt.SCRAWL_NEVER_SLEEP, "Never sleep")
+	scrawl.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	deco.add_child(scrawl)
+	row.add_child(deco)
+	# The profile at a glance on its own glass, right-aligned and quiet (after Continue and
+	# the city in the focal order): icon + number fields, never paper tags (one PAPER note).
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(gap)
+	var up := uplink(RunManager.profile)
+	page.add_child(up)
+	_set_panel(page, "main")
+	# W7 (ART_BIBLE 2 CITY: calm behind text): the city dims and settles behind both panels.
+	var calm: Array[Control] = [menu, up]
+	background.set_calm_controls(calm)
+
+
+## The profile's uplink panel: a GLASS window of icon + number fields (campaigns, won, best
+## ICE, runs, raids, badges), each named in its tooltip; a number or a dash, never "none".
+func uplink(p: ProfileState) -> TerminalWindow:
+	var up := TerminalWindow.new(tr("UPLINK"), Palette.NET_CYAN)
+	up.name = "Uplink"
+	up.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var grid := GridContainer.new()
+	grid.name = "ProfileFields"
+	grid.columns = UPLINK_COLUMNS
+	grid.add_theme_constant_override("h_separation", UiTheme.SP_M)
+	grid.add_theme_constant_override("v_separation", UiTheme.SP_XS)
+	for f in uplink_fields(p):
+		var sf := StatField.new(f[0], String(f[1]), UiTheme.font_px(UiTheme.LABEL), Palette.TEXT_HI)
+		sf.tooltip_text = UiTip.fold(tr(String(f[2])))
+		sf.mouse_filter = Control.MOUSE_FILTER_PASS
+		grid.add_child(sf)
+	up.body.add_child(grid)
+	return up
+
+
+## The uplink's fields as [kind, value, words].
+static func uplink_fields(p: ProfileState) -> Array:
+	return [[StatIcon.CAMPAIGNS, str(p.campaigns_started), "Campaigns started on this profile."], # TR
+		[StatIcon.WON, str(p.campaigns_won), "Campaigns won."], # TR
+		[StatIcon.ICE, HudStats.ice_value(p.best_ice), "The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder."], # TR
+		[StatIcon.RUNS, str(p.runs_completed), "Netruns completed."], # TR
+		[StatIcon.RAIDS, raid_value(p), "Raids repelled / lost."], # TR
+		[StatIcon.BADGES, str(p.achievements.size()), "Achievements earned (Stats & achievements lists them)."]] # TR
+
+
+## The crew of the campaign in `slot` ([{id, name, class_id, alive}]; [] when unreadable).
+## Read-only: the save file is read, never written.
+static func slot_crew(slot: String) -> Array:
+	var data := SaveService.load_dict(SaveService.campaign_path(slot))
+	var out := []
+	for od in (data.get("campaign", {}) as Dictionary).get("roster", []):
+		if od is Dictionary:
+			out.append({"id": String(od.get("id", "")), "name": String(od.get("name", "")), "class_id": String(od.get("class_id", "")),
+				"alive": bool(od.get("alive", true))})
+	return out
 
 
 func show_slots() -> void:
 	var win := TerminalWindow.new(tr("Campaign slots"))
+	win.name = "Slots"
 	# A compact window, not the full width.
 	win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	win.custom_minimum_size.x = 560
-	var box := win.body
+	win.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var latest := RunManager.latest_slot()
+	var any := false
 	for slot in SLOTS:
-		var row := HFlowContainer.new()
+		any = any or not RunManager.slot_summary(slot).is_empty()
+	# §5.3: the case files fill their columns, 3 at 1.0, fewer as the text grows.
+	var grid := GridContainer.new()
+	grid.name = "Cards"
+	grid.columns = slot_columns()
+	grid.add_theme_constant_override("h_separation", UiTheme.GUTTER)
+	grid.add_theme_constant_override("v_separation", UiTheme.GUTTER)
+	for slot in SLOTS:
 		var summary := RunManager.slot_summary(slot)
-		row.add_child(_label(tr("Slot %s: %s") % [slot, _describe(summary)]))
-		var s := slot
-		if summary.is_empty():
-			_item(row, tr("New campaign"), func() -> void: new_in_slot(s), StatIcon.PLAY, tr("Start a new campaign in slot %s.") % s)
-		else:
-			_item(row, tr("Load"), func() -> void: load_slot(s), StatIcon.CONTINUE, tr("Load the campaign in slot %s.") % s)
-			_item(row, tr("Delete"), func() -> void: confirm_delete(s), StatIcon.QUIT, tr("Delete the campaign in slot %s (asks first).") % s)
-		box.add_child(row)
-	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
-	_set_panel(win, "slots")
+		# §5.3 one primary: Load on the newest campaign, or New in the first slot when none.
+		var primary := (slot == latest) if any else (slot == SLOTS[0])
+		var card := CaseFileCard.new(slot, summary, slot_crew(slot) if not summary.is_empty() else [], primary)
+		card.load_pressed.connect(load_slot)
+		card.delete_pressed.connect(confirm_delete)
+		card.new_pressed.connect(new_in_slot)
+		grid.add_child(card)
+	win.body.add_child(grid)
+	var back_room := UiTheme.font_px(UiTheme.BODY) * 3.0
+	win.scroll_body(page_room(back_room + UiTheme.font_px(UiTheme.BODY) * 3.0))
+	var page := VBoxContainer.new()
+	page.name = "SlotsPage"
+	page.add_theme_constant_override("separation", UiTheme.SP_S)
+	page.add_child(win)
+	_back_row(page)
+	_set_panel(page, "slots")
+
+
+## Case files per row: 3 while three fit the screen, then 2, then 1 (§5.3).
+func slot_columns() -> int:
+	var room := get_viewport_rect().size.x - MARGIN_X * 2 - UiTheme.PANEL_PAD_H * 4
+	var w := CaseFileCard.FOLDER.x * Settings.text_scale + UiTheme.GUTTER
+	return clampi(int(room / w), 1, SLOTS.size())
 
 
 func show_codex() -> void:
-	var box := VBoxContainer.new()
-	var note := ZineNote.new(tr("CODEX"), Vector2(900, 420)).make_reference()
-	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
-	for section in entries:
-		note.append("[b]%s[/b]" % tr(section))
-		for item in entries[section]:
-			note.append("  %s - %s" % [item["title"], String(item["text"]).split("\n")[0]])
-	box.add_child(note)
-	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
-	_set_panel(box, "codex")
+	var page := VBoxContainer.new()
+	page.name = "CodexPage"
+	page.add_theme_constant_override("separation", UiTheme.SP_S)
+	var width := get_viewport_rect().size.x - MARGIN_X * 2
+	# The tabs take one or more rows above the spread; the Back line sits under it.
+	var tabs_room := UiTheme.font_px(UiTheme.BODY) * CODEX_TAB_ROWS * 2.2
+	var spread := CodexSpread.new(Codex.entries(RunManager.lookup(), RunManager.profile), page_room(tabs_room + UiTheme.font_px(UiTheme.BODY) * 5.0), width)
+	page.add_child(spread)
+	_back_row(page)
+	_set_panel(page, "codex")
 
 
 func show_stats() -> void:
 	var p := RunManager.profile
-	var box := VBoxContainer.new()
-	var note := ZineNote.new(tr("STATS"), Vector2(900, 200)).make_reference()
-	note.append(tr("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.") % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost])
-	note.append(tr("Best ICE: %s. Perfects: %d. Racks captured: %d. Cycles earned: %d. Assisted wins: %d.") % [HudStats.ice_value(p.best_ice), int(p.stats.get("perfects", 0)), int(p.stats.get("racks", 0)), int(p.stats.get("cycles", 0)), int(p.stats.get("assisted_wins", 0))])
+	var page := VBoxContainer.new()
+	page.name = "StatsPage"
+	page.add_theme_constant_override("separation", UiTheme.SP_S)
+	var sheet := VBoxContainer.new()
+	sheet.name = "Sheet"
+	sheet.add_theme_constant_override("separation", UiTheme.GUTTER)
+	# Stats: a 3-column grid of icon + number fields, each named under it (GLASS data).
+	var stats := TerminalWindow.new(tr("STATS"), Palette.NET_CYAN)
+	stats.name = "Stats"
+	# As wide as its grid (§5.3: no empty glass).
+	stats.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var grid := GridContainer.new()
+	grid.name = "StatGrid"
+	grid.columns = STAT_COLUMNS
+	grid.add_theme_constant_override("h_separation", UiTheme.SP_XL)
+	grid.add_theme_constant_override("v_separation", UiTheme.SP_S)
+	for cell in stat_cells(p):
+		grid.add_child(_stat_cell(cell))
+	stats.body.add_child(grid)
+	sheet.add_child(stats)
+	# Achievements: sticker badges, earned in full colour, the rest outlined with a lock.
+	var ach := TerminalWindow.new(tr("Achievements"), Palette.CELL_PINK)
+	ach.name = "Achievements"
+	var got := 0
+	for d in Achievements.DEFS:
+		got += 1 if p.achievements.has(d["id"]) else 0
+	ach.tag_label.text = "%d/%d" % [got, Achievements.DEFS.size()]
+	var badges := HFlowContainer.new()
+	badges.name = "Badges"
+	badges.add_theme_constant_override("h_separation", UiTheme.SP_S)
+	badges.add_theme_constant_override("v_separation", UiTheme.SP_S)
+	for d in Achievements.DEFS:
+		badges.add_child(AchievementBadge.new(d["id"], tr(String(d["title"])), tr(String(d["text"])), p.achievements.has(d["id"])))
+	ach.body.add_child(badges)
+	sheet.add_child(ach)
+	# Run history: taped receipts, or the designed empty slip.
+	var hist := TerminalWindow.new(tr("RUN HISTORY"), Palette.CELL_ACID)
+	hist.name = "History"
+	var receipts := HFlowContainer.new()
+	receipts.name = "Receipts"
+	receipts.add_theme_constant_override("h_separation", UiTheme.SP_M)
+	receipts.add_theme_constant_override("v_separation", UiTheme.SP_M)
+	if p.run_history.is_empty():
+		receipts.add_child(RunReceipt.empty())
+	var i := 0
+	for r in p.run_history:
+		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
+		receipts.add_child(RunReceipt.of_run(r, TextDb.t(corp, "display_name") if corp != null else String(r.get("corporation", "?")), i))
+		i += 1
+	hist.body.add_child(receipts)
+	sheet.add_child(hist)
+	var fit := FitScroll.new(sheet, page_room(UiTheme.font_px(UiTheme.BODY) * 3.0))
+	fit.name = "StatsScroll"
+	page.add_child(fit)
+	_back_row(page)
+	_set_panel(page, "stats")
+
+
+## The profile's numbers as [kind, value, words] for the stats grid (a number or "—", never
+## "none").
+static func stat_cells(p: ProfileState) -> Array:
 	var per_corp := PackedStringArray()
 	for cid in RunManager.lookup().ids_of_class(&"CorporationData"):
 		var corp := RunManager.lookup().get_content(cid) as CorporationData
 		if corp != null and (not corp.generated_from_profile or CampaignRules.corporation_available(p, RunManager.lookup(), corp)):
 			per_corp.append("%s %s" % [TextDb.t(corp, "display_name"), HudStats.ice_value(p.best_ice_for(corp.id))])
-	note.append(tr("Best ICE by corporation: %s.") % ", ".join(per_corp))
-	note.append("[b]%s[/b]" % tr("Achievements"))
-	for d in Achievements.DEFS:
-		var have := p.achievements.has(d["id"])
-		note.append("%s %s - %s" % ["[x]" if have else "[ ]", d["title"], d["text"]])
-	box.add_child(note)
-	var history := ZineNote.new(tr("RUN HISTORY"), Vector2(900, 160)).make_reference()
-	if p.run_history.is_empty():
-		history.append(tr("no runs yet"))
-	for r in p.run_history:
-		var corp := RunManager.lookup().get_content(StringName(String(r.get("corporation", "")))) as CorporationData
-		history.append("%s T%d %s: %s, %d Cycles, %d banked" % [TextDb.t(corp, "display_name") if corp != null else r.get("corporation", "?"), int(r.get("tier", 1)), r.get("site", "?"), r.get("outcome", "?"), int(r.get("cycles", 0)), int(r.get("banked", 0))])
-	box.add_child(history)
-	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
-	_set_panel(box, "stats")
+	var raids := raid_value(p)
+	var perfects := str(int(p.stats.get(STAT_PERFECTS, 0)))
+	var racks := str(int(p.stats.get(STAT_RACKS, 0)))
+	var cycles := str(int(p.stats.get(STAT_CYCLES, 0)))
+	var assisted := str(int(p.stats.get(STAT_ASSISTED, 0)))
+	var badges := str(p.achievements.size())
+	return [[StatIcon.CAMPAIGNS, str(p.campaigns_started), "Campaigns started"], [StatIcon.WON, str(p.campaigns_won), "Campaigns won"], # TR
+		[StatIcon.CLOSE, str(p.campaigns_lost), "Campaigns lost"], [StatIcon.RUNS, str(p.runs_completed), "Runs completed"], # TR
+		[StatIcon.CREW, str(p.operatives_lost), "Operatives lost"], [StatIcon.RAIDS, raids, "Raids won / lost"], # TR
+		[StatIcon.ICE, HudStats.ice_value(p.best_ice), "Best ICE", ", ".join(per_corp)], [StatIcon.CHECK, perfects, "Perfects"], # TR
+		[StatIcon.RACK, racks, "Racks captured"], [StatIcon.CYCLES, cycles, "Cycles earned"], # TR
+		[StatIcon.PLUS, assisted, "Assisted wins"], [StatIcon.BADGES, badges, "Achievements"]] # TR
+
+
+## Raids won / lost as "2/1".
+static func raid_value(p: ProfileState) -> String:
+	return "%d/%d" % [p.raids_won, p.raids_lost]
+
+
+## The profile stats' keys the grid reads.
+const STAT_PERFECTS := "perfects"
+const STAT_RACKS := "racks"
+const STAT_CYCLES := "cycles"
+const STAT_ASSISTED := "assisted_wins"
+
+
+func _stat_cell(cell: Array) -> Control:
+	var v := VBoxContainer.new()
+	v.name = "Stat_%s" % String(cell[0])
+	v.add_theme_constant_override("separation", 0)
+	v.tooltip_text = UiTip.fold(tr(String(cell[2])) + ("\n" + String(cell[3]) if cell.size() > 3 else ""))
+	v.mouse_filter = Control.MOUSE_FILTER_PASS
+	var f := StatField.new(cell[0], String(cell[1]), UiTheme.font_px(UiTheme.TITLE), Palette.TEXT_HI)
+	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(f)
+	var l := Label.new()
+	l.text = tr(String(cell[2]))
+	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	l.add_theme_color_override("font_color", Palette.TEXT_MID)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Wraps at word boundaries at the cell's width, never inside a word (§4.3 rule 3).
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = STAT_CELL_W * Settings.text_scale
+	v.add_child(l)
+	return v
 
 
 func show_options() -> void:
 	var box := VBoxContainer.new()
+	box.name = "OptionsPage"
 	var panel := SettingsPanel.new()
+	# Its own width (PANEL_W at the text scale), not the page's: no empty glass (§5.3).
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	panel.fit_room(page_room())
 	panel.closed.connect(show_main)
 	box.add_child(panel)
 	_set_panel(box, "options")
@@ -281,12 +568,18 @@ func show_options() -> void:
 # --- Actions ---------------------------------------------------------------------------------
 
 func new_in_slot(slot: String) -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, new_in_slot.bind(slot))
+		return
 	RunManager.save_slot = slot
 	RunManager.reset()
 	RunManager.change_scene(RunManager.HQ_SCENE)
 
 
 func load_slot(slot: String) -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, load_slot.bind(slot))
+		return
 	RunManager.save_slot = slot
 	RunManager.reset()
 	if RunManager.resume():
@@ -309,6 +602,9 @@ func confirm_quit() -> void:
 
 
 func start_tutorial() -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, start_tutorial)
+		return
 	RunManager.pending_tutorial = true
 	RunManager.change_scene(RunManager.COMBAT_SCENE)
 
@@ -319,7 +615,17 @@ func _ask(question: String, on_yes: Callable) -> void:
 	_confirm = ConfirmDialog.new(question)
 	_confirm.position = Vector2(size.x / 2.0 - 210, 200)
 	_confirm.confirmed.connect(on_yes)
+	# §3.3 / §5.3: a modal sits over a SCRIM (the page behind blurred and dimmed; it takes
+	# the clicks meant for the page), and opens as a modal (§10: <= 0.22 s, never a cut).
+	var scrim := GlassScrim.new()
+	scrim.name = "ModalScrim"
+	scrim.top_level = true
+	scrim.show_behind_parent = true
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	scrim.size = get_viewport_rect().size
+	_confirm.add_child(scrim)
 	add_child(_confirm)
+	PageTransition.open_modal(_confirm)
 
 
 func confirm_visible() -> bool:
