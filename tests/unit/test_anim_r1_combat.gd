@@ -19,6 +19,7 @@ const OFF_SCREEN := Vector2(-200, -200)
 var _scale: float = 1.0
 var _reduce: bool = false
 var _typing: bool = true
+var _pad: bool
 
 
 class Counter extends Node:
@@ -35,6 +36,7 @@ func before_all() -> void:
 	_scale = Settings.text_scale
 	_reduce = Settings.reduce_effects
 	_typing = Settings.subtitle_typing
+	_pad = Settings.pad_active
 
 
 func before_each() -> void:
@@ -56,6 +58,9 @@ func after_each() -> void:
 		Settings.set_text_scale(_scale)
 	if Settings.subtitle_typing != _typing:
 		Settings.set_subtitle_typing(_typing)
+	# A simulated pad press switches the hints to the pad; the next script's pages must not keep
+	# the pad prompt row (it took the raid page's room in test_horizontal_pass22_screens).
+	Settings.set_pad_active(_pad)
 	Engine.time_scale = 1.0
 	Dialogue.clear()
 	AudioDirector.muted = false
