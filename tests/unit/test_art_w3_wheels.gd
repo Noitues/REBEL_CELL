@@ -744,3 +744,76 @@ func test_combat_fits_at_16_and_2() -> void:
 			assert_gte((v as WheelView)._radius(), r1[k] * 0.7 - 0.5, "x%.1f: the wheel keeps 70%% of its 1.0 size" % scale)
 			k += 1
 		assert_eq(big.layout_violations(), [] as Array[String], "x%.1f: nothing over a wheel, no hint on a tag" % scale)
+
+
+# --- Review fix: the hub's words never overlap (§4.3 rule 4, §6.1) ---------------------------------
+
+## A wheel for `who` (a class id: the operative; an enemy id: that enemy) with `block` and
+## `shield` in its hub, drawn in a `cell` px view.
+func _hub_view(who: StringName, enemy: bool, cell: Vector2, block: int = 0, shield: int = 0) -> WheelView:
+	var engine: Node = add_child_autofree(CombatEngine.new())
+	var foes: Array[StringName] = [who if enemy else &"compliance_officer"]
+	engine.start_fight(&"breaker" if enemy else who, foes, 1, &"rank:1")
+	var s: CombatState = engine.state()
+	var c: CombatantState = s.enemies[0] if enemy else s.player
+	c.block = block
+	c.shield = shield
+	var v: WheelView = add_child_autofree(WheelView.new())
+	v.size = cell
+	v.show_arrows = false
+	v.show_combatant(c, s.satellites_of(c.id), engine.readouts(c), engine.resolver.lookup)
+	return v
+
+
+func _assert_hub_clear(v: WheelView, tag: String) -> void:
+	var rects := v.hub_text_rects()
+	var foot := v.inset_footprint()
+	if foot.has_area():
+		rects.append(foot)
+		assert_true(v.inset_rect().has_area() and foot.encloses(v.inset_rect()), "%s: the inset inside its footprint" % tag)
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			assert_false(rects[i].intersects(rects[j]), "%s: hub rows %d and %d overlap (%s, %s)" % [tag, i, j, rects[i], rects[j]])
+	var c := v._center()
+	var R := v.hub_text_radius()
+	for r in rects:
+		for p in [r.position, r.end, Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y)]:
+			assert_lte((p as Vector2).distance_to(c), R + 0.5, "%s: inside the hub's text circle" % tag)
+	if v.combatant.wheel.has_inner_ring():
+		assert_gt(v.inner_ring_radius() - v.inner_ring_band() * 0.5, R, "%s: the ring's names sit outside the hub's words" % tag)
+	# The name comes first; nothing is lost (what has no room is in the tooltip).
+	var items: Array = v.hub_layout()["items"]
+	var folded: PackedStringArray = v.hub_layout()["folded"]
+	if not items.is_empty() and not folded.has(v.shown_name()):
+		assert_eq(items[0]["kind"], &"name", "%s: the name first" % tag)
+	if folded.has(v.shown_name()):
+		assert_true(v.hub_tooltip_extra().has(v.shown_name()), "%s: a folded name is in the tooltip" % tag)
+	var kinds: Array = []
+	for it in items:
+		kinds.append(it["kind"])
+	var ci := kinds.find(&"core")
+	var si := kinds.find(&"status")
+	if ci >= 0 and si >= 0:
+		assert_lt(ci, si, "%s: core before status words" % tag)
+
+
+func test_the_hub_rows_never_overlap_for_every_class_and_a_boss() -> void:
+	var boss: StringName = &"civic_core"
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		for cell in [Vector2(420, 330), Vector2(320, 340)]:
+			for k in CLASSES:
+				var v := _hub_view(k, false, cell)
+				_assert_hub_clear(v, "%s x%.1f %s" % [k, scale, cell])
+				v.free()
+			var b := _hub_view(boss, true, cell, 6, 4)
+			b.extra_lines = ["@50%: MULTIPLY [0, 10, 20]"] as Array[String]
+			b.queue_redraw()
+			_assert_hub_clear(b, "boss x%.1f %s" % [scale, cell])
+			var shown := PackedStringArray()
+			for it in b.hub_layout()["items"]:
+				shown.append(String(it["text"]))
+			for word in [tr("BLOCK %d") % 6, tr("SHIELD %d") % 4]:
+				assert_true(shown.has(word) or b.hub_tooltip_extra().has(word), "boss x%.1f: %s drawn or in the tooltip" % [scale, word])
+			b.free()
+	Settings.set_text_scale(1.0)

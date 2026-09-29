@@ -64,13 +64,14 @@ Reproduce: `tools/visual_qa/capture_pack.py` (screens above), `before_after.py` 
 13. §7.4: the replay's status stamp on a slice pops without a font glyph (CombatFxLayer draws text); the slice's StatIcon mark shows it.
 14. Dev fight picker: TilePicker + Stepper, shown only when the combat scene runs on its own.
 15. §3.5: Heat COOL on the paper wanted poster is INK (TEXT_MID on paper is ~1.4:1); warm bands get an INK outline there.
+17. Review fix (§4.3 rule 4, §6.1): the hub lays out rows inside its text circle: Polaroid inset, then the name, the hub core, the status words and the extra lines. Every rect is disjoint, which is tested for the 8 classes and a boss with BLOCK, SHIELD and a phase line at 1.0, 1.6 and 2.0, at combat and lab sizes. A row that has no room steps down to `caption`; after that it folds into the hub's tooltip in this order: extra lines, inset shrink, core line, inset, status words, name. The inner ring's segment names now sit on the ring's band (tangential; the first 3 letters when the full name would bow off the band), never among the hub's words, with the full names in the tooltip.
 16. `OutcomeRow` amounts: GAIN/HARM darkened for ink on paper (≥ 4.5:1, tested) until W1 adds paper inks.
 
 ## Couldn't do / known gaps
 
 - The Polaroid's caption is cut at 2.0 ("BREAKE") — `polaroid.gd` is W5's.
 - The DISPATCH box "We lost o" in the defeat captures is the subtitle still typing when the frame is taken (same in the baseline), not a clip.
-- On very small wheels (three enemies stacked, the bezel lab's cells) a long hub name can be cut at the caption floor.
+- On very small wheels (three stacked enemies, the bezel lab's cells), a hub without room at `caption` folds its core line and inset, and on the smallest its name too, into the hub's tooltip. `classes_bezels.jpg` shows that: its cells are smaller than any combat wheel. In live combat at 1.0 the operative's hub shows inset → BREAKER → Breaker Core, and at 1.6 and 2.0 the name.
 - The top bar at 2.0 is W8's.
 - The RESPIN sticker's lettering is W2's `StickerButton._fit`; in combat it fits at 1.6 and 2.0 in the captures (it grows large at 2.0).
 

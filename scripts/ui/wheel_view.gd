@@ -329,6 +329,8 @@ func _get_tooltip(at_position: Vector2) -> String:
 				lines.append(tr("Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.") % combatant.resistance)
 			if combatant.wheel.hub_id != &"" and lookup != null:
 				lines.append(Codex.describe(lookup.get_content(combatant.wheel.hub_id)))
+			# Art pass W3 review: what the hub folded, and the inner ring's names in full.
+			lines.append_array(hub_tooltip_extra())
 			return "\n".join(lines)
 	return ""
 
@@ -500,12 +502,11 @@ func shown_subject() -> Dictionary:
 	return PortraitArt.enemy_data_subject(data) if data != null else PortraitArt.enemy_subject(c.source_id, shown_name(), _corporation_of(c), is_boss())
 
 
-## Where the operative's Polaroid inset sits (local, unrotated); empty for an enemy.
+## Where the operative's Polaroid inset sits (local, unrotated); empty for an enemy, and
+## when the hub's words need its room (hub_layout).
 func inset_rect() -> Rect2:
-	var c := _shown()
-	if c == null or not c.is_player:
-		return Rect2()
-	return WheelBezel.inset_rect(_center(), hub_radius())
+	var r: Rect2 = hub_layout()["inset"]
+	return Rect2(r.position + _center(), r.size) if r.has_area() else Rect2()
 
 
 ## The bezel's outer radius (px): the slices' rim plus WheelBezel.BEZEL_W.
@@ -1551,49 +1552,255 @@ const STAMP_HP_SHARE := 0.8
 ## the centre): numbers keep off them.
 func hub_text_extent() -> Vector2:
 	var lay := hub_layout()
-	var top: float = lay["top"]
-	var ns := int(lay["name_size"])
-	var n := int(lay["count"])
-	var y0 := top - (int(lay["name_count"]) - 1) * (ns + 1) - ns * 0.8
-	var y1 := top + 16.0 + (n - 1) * float(lay["step"]) + float(lay["fs"]) * 0.3 if n > 0 else top + ns * 0.3
-	return Vector2(y0, y1)
+	return Vector2(float(lay["top"]), float(lay["foot"]))
 
 
-## The hub's words as laid out (local y from the centre): {top (the last name line's
-## baseline), step, fs, width, name (hub_name_lines), name_size, name_count, lines, count,
-## inset_alpha}. Art pass W3 (§6.1): under the operative's Polaroid inset when the words fit
-## below it; a crowded hub (many lines) keeps its words where they were and fades the inset.
+## Art pass W3 review (§4.3 rule 4, §6.1): the hub's contents, each in its own row inside
+## the hub's text circle (hub_text_radius; inside the inner ring when there is one), top
+## to bottom: the operative's Polaroid inset, the name, the hub core, the status words,
+## the extra lines. A row shrinks to `caption`, a name splits in two; what still has no
+## room folds into the hub's tooltip (the extra lines first, then the inset shrinks, the
+## core line, the inset, the status words; the name last). Nothing overlaps: every rect is
+## disjoint (tested). Returns {radius, inset (rect from the centre, or empty), inset_foot
+## (the inset with its tilt and glyph badge), items [{text, font (&"marker" / &"mono"), fs,
+## kind (&"name" / &"core" / &"status" / &"resist" / &"extra"), rect (from the centre),
+## baseline (from the centre)}], folded (words not drawn), top and foot (the words' first
+## and last y, from the centre)}.
 func hub_layout() -> Dictionary:
 	var c := _shown()
-	var hr := hub_radius()
-	var hw := (hr - 10) * 2.0
-	var lines := _hub_lines(c)
-	var n := lines.size()
-	var fs := _fs(HUB_FONT_SIZE)
-	var step := fs + 2
-	var name_lines := hub_name_lines(hw)
-	var ns := int(name_lines[0])
-	var name_count := name_lines.size() - 1
-	var top := -6.0 - n * step * 0.5
-	var inset_alpha := 0.0
-	var ir := inset_rect()
-	if ir.has_area():
-		inset_alpha = 1.0
-		var need := ir.end.y - _center().y + HUB_INSET_GAP + (name_count - 1) * (ns + 1) + ns * 0.8
-		var foot := maxf(top, need) + (16.0 + (n - 1) * step + fs * 0.3 if n > 0 else ns * 0.3)
-		if foot <= hr * HUB_TEXT_SHARE:
-			top = maxf(top, need)
+	var key := "%s|%s|%s|%.2f|%.2f|%.2f" % [shown_name(), str(_hub_lines(c)), str(c.is_player if c != null else false), hub_text_radius(), _ts(), hub_radius()]
+	if key == _hub_cache_key:
+		return _hub_cache
+	var out := _layout_hub(c)
+	_hub_cache_key = key
+	_hub_cache = out
+	return out
+
+
+var _hub_cache_key: String = ""
+var _hub_cache: Dictionary = {}
+
+
+## The radius (px) the hub's words and inset stay inside: the hub less HUB_TEXT_MARGIN, or
+## inside the inner ring's band when the wheel has one.
+func hub_text_radius() -> float:
+	var hr := hub_radius() - HUB_TEXT_MARGIN
+	var c := _shown()
+	if c != null and c.wheel != null and c.wheel.has_inner_ring():
+		hr = inner_ring_radius() - inner_ring_band() * 0.5 - HUB_TEXT_MARGIN
+	return maxf(0.0, hr)
+
+
+## The inner ring's centre line radius (px): its segment names sit on its band, never among
+## the hub's words (art pass W3 review).
+func inner_ring_radius() -> float:
+	return hub_radius() - INNER_RING_GAP - inner_ring_band() * 0.5
+
+
+## The inner ring's band width (px): a caption name and its padding.
+func inner_ring_band() -> float:
+	return _fs(HUB_FONT_SIZE) + INNER_RING_PAD * 2.0
+
+
+func _layout_hub(c: CombatantState) -> Dictionary:
+	var entries := _hub_entries(c)
+	var core: Array = []
+	var status: Array = []
+	var extra: Array = []
+	for e in entries:
+		match e["kind"]:
+			&"core":
+				core.append(e)
+			&"extra":
+				extra.append(e)
+			_:
+				status.append(e)
+	var has_inset := c != null and c.is_player
+	# Degrade steps: [entries kept, inset scale (0 = none)].
+	var steps: Array = []
+	for k in range(extra.size(), -1, -1):
+		steps.append([core + status + extra.slice(0, k), 1.0 if has_inset else 0.0])
+	if has_inset:
+		steps.append([core + status, INSET_SHRINK_1])
+		steps.append([core + status, INSET_SHRINK_2])
+		steps.append([status, INSET_SHRINK_2])
+	steps.append([status, 0.0])
+	for k in range(status.size() - 1, -1, -1):
+		steps.append([status.slice(0, k), 0.0])
+	var name := shown_name().to_upper()
+	var name_opts: Array = [[name]]
+	var words := name.split(" ")
+	if words.size() > 1:
+		var nfs := _fs(NAME_FONT_SIZE)
+		var best := 1
+		var best_w := INF
+		for cut in range(1, words.size()):
+			var w := maxf(_mw(Palette.marker(), " ".join(words.slice(0, cut)), nfs), _mw(Palette.marker(), " ".join(words.slice(cut)), nfs))
+			if w < best_w:
+				best_w = w
+				best = cut
+		name_opts.append([" ".join(words.slice(0, best)), " ".join(words.slice(best))])
+	name_opts.append([])  # last resort: the name folds too
+	for nm in name_opts:
+		for st in steps:
+			var kept: Array = st[0]
+			var got := _try_hub(nm, kept, float(st[1]))
+			if got.is_empty():
+				continue
+			var folded := PackedStringArray()
+			if (nm as Array).is_empty():
+				folded.append(shown_name())
+			for e in entries:
+				if not kept.has(e):
+					folded.append(String(e["text"]))
+			got["folded"] = folded
+			return got
+	var all := PackedStringArray([shown_name()])
+	for e in entries:
+		all.append(String(e["text"]))
+	return {"radius": hub_text_radius(), "inset": Rect2(), "inset_foot": Rect2(), "items": [], "folded": all, "top": 0.0, "foot": 0.0}
+
+
+static func _mw(font: Font, text: String, fs: int) -> float:
+	return font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+
+
+## One try at the hub's rows: `name_lines`, `kept` entries, the inset at `inset_scale` of its
+## size (0: none). {} when a row has no room even at `caption`.
+func _try_hub(name_lines: Array, kept: Array, inset_scale: float) -> Dictionary:
+	var R := hub_text_radius()
+	# Rows: [kind, text, font, start fs, height].
+	var rows: Array = []
+	var inset_side := hub_radius() * WheelBezel.INSET_SIZE * inset_scale
+	if inset_scale > 0.0:
+		rows.append([&"inset", "", null, 0, inset_foot_size(inset_side).y])
+	var nfs := _fs(NAME_FONT_SIZE)
+	for l in name_lines:
+		rows.append([&"name", String(l), Palette.marker(), nfs, Palette.marker().get_height(nfs)])
+	var lfs := _fs(HUB_FONT_SIZE)
+	for e in kept:
+		rows.append([e["kind"], String(e["text"]), Palette.mono(), lfs, Palette.mono().get_height(lfs)])
+	if rows.is_empty():
+		return {"radius": R, "inset": Rect2(), "inset_foot": Rect2(), "items": [], "top": 0.0, "foot": 0.0}
+	var total := 0.0
+	for i in rows.size():
+		total += float(rows[i][4]) + (HUB_ROW_GAP if i > 0 else 0.0)
+	var y := -total * 0.5
+	var items: Array = []
+	var inset := Rect2()
+	var foot_rect := Rect2()
+	var top := INF
+	var foot := -INF
+	for row in rows:
+		var h := float(row[4])
+		var far := maxf(absf(y), absf(y + h))
+		if far >= R:
+			return {}
+		var half := sqrt(R * R - far * far)
+		if row[0] == &"inset":
+			var fsz := inset_foot_size(inset_side)
+			if fsz.x * 0.5 > half:
+				return {}
+			foot_rect = Rect2(Vector2(-fsz.x * 0.5, y), fsz)
+			# The square in its footprint: its tilt's room round it, the glyph badge hanging
+			# off its bottom-right corner.
+			var m := inset_side * INSET_TILT_ROOM
+			inset = Rect2(foot_rect.position + Vector2(m, m), Vector2(inset_side, inset_side))
 		else:
-			inset_alpha = INSET_CROWDED_ALPHA
-	return {"top": top, "step": step, "fs": fs, "width": hw, "name": name_lines, "name_size": ns, "name_count": name_count,
-		"lines": lines, "count": n, "inset_alpha": inset_alpha}
+			var font: Font = row[2]
+			var fs := int(row[3])
+			var text := String(row[1])
+			while fs > UiTheme.CAPTION and _mw(font, text, fs) > half * 2.0:
+				fs -= 1
+			var w := _mw(font, text, fs)
+			if w > half * 2.0:
+				return {}
+			var th := font.get_height(fs)
+			var ty := y + (h - th) * 0.5
+			items.append({"text": text, "font": &"marker" if row[0] == &"name" else &"mono", "fs": fs, "kind": row[0],
+				"rect": Rect2(Vector2(-w * 0.5, ty), Vector2(w, th)), "baseline": Vector2(-w * 0.5, ty + font.get_ascent(fs))})
+			top = minf(top, ty)
+			foot = maxf(foot, ty + th)
+		y += h + HUB_ROW_GAP
+	# A two-line name keeps one size (its smaller line's), each line centred in its row.
+	var name_fs := 1 << 20
+	for it in items:
+		if it["kind"] == &"name":
+			name_fs = mini(name_fs, int(it["fs"]))
+	for it in items:
+		if it["kind"] == &"name" and int(it["fs"]) != name_fs:
+			var f := Palette.marker()
+			var old_r: Rect2 = it["rect"]
+			var w := _mw(f, String(it["text"]), name_fs)
+			var th := f.get_height(name_fs)
+			var ty := old_r.get_center().y - th * 0.5
+			it["fs"] = name_fs
+			it["rect"] = Rect2(Vector2(-w * 0.5, ty), Vector2(w, th))
+			it["baseline"] = Vector2(-w * 0.5, ty + f.get_ascent(name_fs))
+	if items.is_empty():
+		top = 0.0
+		foot = 0.0
+	return {"radius": R, "inset": inset, "inset_foot": foot_rect, "items": items, "top": top, "foot": foot}
 
 
-## The gap under the Polaroid inset before the name (px), how far down the hub its words
-## may reach (share of the hub radius), and the inset's alpha when the words need its room.
-const HUB_INSET_GAP := 3.0
-const HUB_TEXT_SHARE := 0.92
-const INSET_CROWDED_ALPHA := 0.35
+## The inset's footprint for a `side` px square: its tilt's room round it and the glyph
+## badge hanging off its bottom-right corner.
+static func inset_foot_size(side: float) -> Vector2:
+	var m := side * INSET_TILT_ROOM
+	var badge_out := side * (WheelBezel.GLYPH_BADGE - INSET_BADGE_IN)
+	return Vector2(side + m * 2.0 + badge_out, side + m * 2.0 + badge_out)
+
+
+## The inset's footprint (local): what the hub's words keep clear of (tests).
+func inset_footprint() -> Rect2:
+	var r: Rect2 = hub_layout()["inset_foot"]
+	return Rect2(r.position + _center(), r.size) if r.has_area() else Rect2()
+
+
+## The hub's words as drawn (local rects): the name lines, the core, the status and extra
+## lines (tests: pairwise disjoint and clear of the inset).
+func hub_text_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for it in hub_layout()["items"]:
+		var r: Rect2 = it["rect"]
+		out.append(Rect2(r.position + _center(), r.size))
+	return out
+
+
+## The hub's contents in order (§6.1): its core, the status words, the extra lines.
+func _hub_entries(c: CombatantState) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if c == null:
+		return out
+	if c.wheel.hub_id != &"":
+		var hub_data := lookup.get_content(c.wheel.hub_id) if lookup != null else null
+		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(c.wheel.hub_id)
+		out.append({"text": hub_name + (tr(" (BREACHED)") if c.is_hub_breached() else ""), "kind": &"core"})
+	if c.block > 0:
+		out.append({"text": tr("BLOCK %d") % c.block, "kind": &"status"})
+	if c.shield > 0:
+		out.append({"text": tr("SHIELD %d") % c.shield, "kind": &"status"})
+	if c.resistance > 0 or c.hub_resistance > 0 or c.wheel.passive_resistance > 0:
+		out.append({"text": tr("RESIST %d") % c.resistance, "kind": &"resist"})
+	if c.wheel.frozen:
+		out.append({"text": tr("FROZEN"), "kind": &"status"})
+	for l in extra_lines:
+		out.append({"text": l, "kind": &"extra"})
+	return out
+
+
+## The hub's rows: the gap between rows, the margin inside the hub (or the inner ring), the
+## inset's tilt room and how far into it the glyph badge sits (shares of its side), and its
+## smaller sizes when the words need room.
+const HUB_ROW_GAP := 2.0
+const HUB_TEXT_MARGIN := 4.0
+const INSET_TILT_ROOM := 0.05
+const INSET_BADGE_IN := 0.08
+const INSET_SHRINK_1 := 0.75
+const INSET_SHRINK_2 := 0.55
+## The inner ring: its gap inside the slices, the padding round its segment names.
+const INNER_RING_GAP := 3.0
+const INNER_RING_PAD := 2.0
 
 
 ## Where the HP number sits (global): a damage number travels into it.
@@ -2339,15 +2546,24 @@ func _draw_view() -> void:
 		# A hit landed in the HP counter: the disc flashes.
 		draw_circle(center, radius, _col(Color(LOSS_COLOR, hit_flash * hit_flash_alpha)))
 	if wheel.has_inner_ring():
-		var ring_r := inner - 12
+		# Art pass W3 review (§4.3 rule 4): each segment's name runs along the ring's band
+		# (tangential, upright), never among the hub's words; the full names are in the
+		# hub's tooltip.
+		var ring_r := inner_ring_radius()
+		var bw := inner_ring_band()
 		var irot := shown_inner_rotation()
 		for k in RC.RING_SEGMENTS:
-			var seg := lookup.get_content(wheel.ring_segment_ids[k]) as RingSegmentData
 			var s0 := _tick_angle(k * 10 - 5, irot)
 			var e0 := _tick_angle(k * 10 + 5, irot)
-			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
-			var m := _tick_angle(k * 10, irot)
-			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), TextDb.t(seg, "display_name") if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), _col(Palette.PAPER))
+			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), bw)
+		for lab in ring_labels(irot):
+			var m: float = lab["angle"]
+			var turn := m - PI * 0.5 if sin(m) > 0.0 else m + PI * 0.5
+			draw_set_transform(center + Vector2(cos(m), sin(m)) * ring_r, turn, Vector2.ONE)
+			var fs := int(lab["fs"])
+			var f := Palette.mono()
+			draw_string(f, Vector2(-float(lab["width"]) * 0.5, f.get_ascent(fs) - f.get_height(fs) * 0.5), String(lab["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.PAPER))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if ring_pulse > 0.0:
 		# Good landing: a clean ring grows off the rim and fades.
 		draw_arc(center, radius + Motion.amplitude(&"precision_good_ring") * ring_pulse, 0, TAU, 64, _col(Color(Palette.PAPER, 1.0 - ring_pulse)), 3.0, true)
@@ -3303,28 +3519,12 @@ func name_of(c: CombatantState) -> String:
 	return TextDb.t(data, "display_name")
 
 
-## The hub's lines under the name for `c` (block, shield, resistance, frozen, its hub
-## core, extra lines), and which one is the resistance line (-1 for none).
+## The hub's lines under the name for `c` (its core, the status words, the extra lines).
 func _hub_lines(c: CombatantState) -> Array[String]:
-	# Drawn words go through tr() (H23: drawn text never translated; the scrambled
-	# storyboard still showed them in English).
-	var hub_lines: Array[String] = []
-	if c == null:
-		return hub_lines
-	if c.block > 0:
-		hub_lines.append(tr("BLOCK %d") % c.block)
-	if c.shield > 0:
-		hub_lines.append(tr("SHIELD %d") % c.shield)
-	if c.resistance > 0 or c.hub_resistance > 0 or c.wheel.passive_resistance > 0:
-		hub_lines.append(tr("RESIST %d") % c.resistance)
-	if c.wheel.frozen:
-		hub_lines.append(tr("FROZEN"))
-	if c.wheel.hub_id != &"":
-		var hub_data := lookup.get_content(c.wheel.hub_id) if lookup != null else null
-		var hub_name: String = TextDb.t(hub_data, "display_name") if hub_data != null and "display_name" in hub_data else String(c.wheel.hub_id)
-		hub_lines.append(hub_name + (tr(" (BREACHED)") if c.is_hub_breached() else ""))
-	hub_lines.append_array(extra_lines)
-	return hub_lines
+	var out: Array[String] = []
+	for e in _hub_entries(c):
+		out.append(String(e["text"]))
+	return out
 
 
 ## Art pass W3 (§6.1): the hub's words and inset (1 shown .. 0 cleared) while a stamp holds
@@ -3358,37 +3558,23 @@ func _hub_fade(c: Color) -> Color:
 
 
 func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
-	var lay := hub_layout()
-	var hub_lines: Array[String] = lay["lines"]
-	var resist_line := -1
-	if combatant.resistance > 0 or combatant.hub_resistance > 0 or combatant.wheel.passive_resistance > 0:
-		resist_line = (1 if combatant.block > 0 else 0) + (1 if combatant.shield > 0 else 0)
-	var hw: float = lay["width"]
-	var fs := int(lay["fs"])
-	var step: float = lay["step"]
-	var top: float = lay["top"]
-	var name_lines: Array = lay["name"]
-	var name_size := int(lay["name_size"])
-	var name_count := int(lay["name_count"])
 	if hub_alpha <= 0.0:
 		return  # §6.1: the hub is cleared for its stamp
-	if float(lay["inset_alpha"]) > 0.0:
-		# Art pass W3 (§6.1): the operative's Polaroid mini-portrait at the hub's top.
-		WheelBezel.draw_inset(self, inset_rect(), shown_subject(), portrait_texture, float(lay["inset_alpha"]) * hub_alpha)
-		WheelBezel.draw_glyph_badge(self, inset_rect(), look, float(lay["inset_alpha"]) * hub_alpha)
-	for k in name_count:
-		# The last line sits where a one-line name does; a first line goes above it.
-		var ny := top - (name_count - 1 - k) * (name_size + 1)
-		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _hub_fade(_col(line.lightened(0.2))))
-	for i in hub_lines.size():
-		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
-		var lfs := fs
-		while lfs > UiTheme.CAPTION and Palette.mono().get_string_size(hub_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
-			lfs -= 1  # shrink to the hub (H23: "Breaker Core" was cut to "Breake")
-		var line_text: String = hub_lines[i]
-		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
-			line_text = line_text.substr(0, line_text.length() - 2) + "…"
-		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, _hub_fade(col))
+	var lay := hub_layout()
+	var inset: Rect2 = lay["inset"]
+	if inset.has_area():
+		# Art pass W3 (§6.1): the operative's Polaroid mini-portrait above the name.
+		var ir := Rect2(inset.position + center, inset.size)
+		WheelBezel.draw_inset(self, ir, shown_subject(), portrait_texture, hub_alpha)
+		WheelBezel.draw_glyph_badge(self, ir, look, hub_alpha)
+	for it in lay["items"]:
+		var font := Palette.marker() if it["font"] == &"marker" else Palette.mono()
+		var col := _col(Palette.PAPER)
+		if it["kind"] == &"resist":
+			col = _col(Palette.RESIST_GOLD)
+		elif it["kind"] == &"name":
+			col = _col(line.lightened(0.2))
+		draw_string(font, center + (it["baseline"] as Vector2), String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(it["fs"]), _hub_fade(col))
 
 
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP
@@ -3832,3 +4018,47 @@ const HC_STEP := 0.15
 ## wheels; its tooltip grows with the text).
 static func hp_font() -> int:
 	return UiTheme.font_px_at(HP_FONT_SIZE, minf(_ts(), 1.0))
+
+
+
+## The inner ring's segment names as drawn on its band: [{text, full, fs, angle, width}]
+## (the full name when it lies flat enough along the band, else its first RING_TAG_LETTERS
+## letters; the full names are in the hub's tooltip).
+func ring_labels(irot: float) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var c := _shown()
+	if c == null or not c.wheel.has_inner_ring() or lookup == null:
+		return out
+	var r := inner_ring_radius()
+	var fs := _fs(HUB_FONT_SIZE)
+	for k in RC.RING_SEGMENTS:
+		var seg := lookup.get_content(c.wheel.ring_segment_ids[k]) as RingSegmentData
+		var full := TextDb.t(seg, "display_name") if seg != null else "?"
+		var text := full
+		var w := _mw(Palette.mono(), text, fs)
+		# A straight word along a curved band bows off it; at most RING_BOW px.
+		if r - sqrt(maxf(0.0, r * r - w * w * 0.25)) > RING_BOW:
+			text = full.left(RING_TAG_LETTERS).to_upper()
+			w = _mw(Palette.mono(), text, fs)
+		out.append({"text": text, "full": full, "fs": fs, "angle": _tick_angle(k * 10, irot), "width": w})
+	return out
+
+
+## A ring name's bow off the band (px), and its tag's letters when the name bows further.
+const RING_BOW := 2.0
+const RING_TAG_LETTERS := 3
+
+
+## Everything the hub has no room to draw, and the inner ring's names in full (the hub's
+## tooltip adds these).
+func hub_tooltip_extra() -> PackedStringArray:
+	var out := PackedStringArray()
+	for t in hub_layout()["folded"]:
+		out.append(String(t))
+	var c := _shown()
+	if c != null and c.wheel.has_inner_ring():
+		var names := PackedStringArray()
+		for lab in ring_labels(0.0):
+			names.append(String(lab["full"]))
+		out.append(tr("Inner ring: %s") % ", ".join(names))
+	return out
