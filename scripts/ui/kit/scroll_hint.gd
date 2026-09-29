@@ -27,6 +27,9 @@ var snap_rows: bool = false
 ## scrolls so the view never jumps).
 var snap_reserve: float = 0.0
 const ROW_SHARE := 1.0 / 3.0
+## Art pass WF: a view taller than this (px at text scale 1.0) is a pre-layout measure, not a
+## page (FitScroll.MAX_VIEW_PX).
+const DEGENERATE_PX := 4096.0
 
 
 func _init(p_scroll: ScrollContainer) -> void:
@@ -85,6 +88,11 @@ func refresh() -> void:
 	# time (the snap measures the laid-out view on the next call).
 	if _refreshing or not is_instance_valid(scroll) or not scroll.is_inside_tree():
 		return
+	# Art pass WF: a view not laid out yet (a pre-layout height past any real page) says
+	# nothing about what is below; its resize calls back in here once it is.
+	if degenerate_view():
+		visible = false
+		return
 	_refreshing = true
 	_refresh()
 	_refreshing = false
@@ -117,7 +125,8 @@ func _refresh() -> void:
 			if _snap_passes < SNAP_PASSES and frame != _snap_frame and is_equal_approx(room.size.y, room.custom_minimum_size.y):
 				_snap_frame = frame
 				_snap_passes += 1
-				snap_reserve = cut_row_reserve()
+				# Never more than a row's share of the view (a row is no taller).
+				snap_reserve = clampf(cut_row_reserve(), 0.0, scroll.size.y * ROW_SHARE)
 		var want := size.y + MARGIN.y * 2.0 + snap_reserve if overflows() else 0.0
 		if not is_equal_approx(room.custom_minimum_size.y, want):
 			room.custom_minimum_size.y = want
@@ -154,6 +163,15 @@ func cut_row_reserve() -> float:
 			best_h = r.size.y
 			best = foot - r.position.y
 	return best
+
+
+## Art pass WF: true while the view has no real layout: a height or scroll range that isn't
+## finite or is past DEGENERATE_PX at the text scale (a wrapped label at width 0 measures
+## thousands of px tall for a frame).
+func degenerate_view() -> bool:
+	var bar := scroll.get_v_scroll_bar()
+	var limit := DEGENERATE_PX * Settings.text_scale
+	return not is_finite(scroll.size.y) or scroll.size.y > limit or not is_finite(bar.max_value)
 
 
 ## Scrolls the page on by most of a view.

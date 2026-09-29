@@ -58,6 +58,13 @@ const AUTO := Color(0, 0, 0, 0)
 const HARM := Color("#FF4433")
 ## Gain: healing, gains, a positive outcome.
 const GAIN := Color("#7BE07B")
+## Art pass WF (§3.3 paper-ink row): HARM and GAIN as ink on paper. The screen hues are
+## too light on paper stock (HARM 3.1:1 on PAPER); these meet 4.5:1 on PAPER, PAPER_ALT,
+## NOTE_PAPER and NOTE_YELLOW, so paper surfaces use them instead of darkening locally.
+const HARM_INK := Color("#AB2E22")
+const GAIN_INK := Color("#396739")
+## The paper stocks the paper inks are checked against (4.5:1, §3.7).
+const PAPER_STOCKS: Array[Color] = [PAPER, PAPER_ALT, NOTE_PAPER, NOTE_YELLOW]
 ## Protect: block, shield, evade, guards (the net's neutral cyan).
 const PROTECT := NET_CYAN
 ## Warn: caution (low HP, NOTICED Heat, a pending raid).

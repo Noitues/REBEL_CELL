@@ -27,7 +27,8 @@ extends Node
 ##   follow_campaign(on)                  # heat / progress / territory from RunManager when not set
 
 ## Quality tier (ART_BIBLE §13: 0 low (no glow, no reflections), 1 medium, 2 high); -1 uses
-## city_look.tres's default. A design tool or an options row may set it.
+## the player's setting (Settings.city_quality: a Steam Deck starts at 1), else
+## city_look.tres's default. A design tool may set it.
 static var quality: int = -1
 ## Off switch: the pre-W7 look (the review's "before" captures); never off in the game.
 static var enabled: bool = true
@@ -294,7 +295,8 @@ func _frac_canvas(r: Rect2) -> Vector4:
 
 ## The quality tier in use.
 func tier() -> int:
-	return clampi(cfg.quality_default if quality < 0 else quality, 0, 2)
+	var q := quality if quality >= 0 else Settings.city_quality
+	return clampi(cfg.quality_default if q < 0 else q, 0, 2)
 
 
 ## Hands the state to the shaders and layers.

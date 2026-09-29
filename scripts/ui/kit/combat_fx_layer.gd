@@ -38,6 +38,8 @@ const RIDE_OFFSET := 0.9
 ## Status stamp lettering (px at text scale 1.0) and its disc.
 const STAMP_FONT := 16
 const STAMP_DISC := 11.0
+## Art pass WF: a stamp's StatIcon radius as a share of its disc's.
+const STAMP_ICON_SHARE := 0.7
 ## Glass shards of a breached hub, and ember flecks of an exhausted card.
 const GLASS_SHARDS := 12
 const EMBERS := 9
@@ -788,11 +790,14 @@ const CRACK_WIDTH := 3.0
 
 ## A status glyph stamped at `at` (global): lands from `status_stamp`'s amplitude scale,
 ## holds `hold` seconds (the wheel then shows the status itself) and fades.
-func stamp(at: Vector2, glyph: String, color: Color, hold: float, delay: float = 0.0) -> void:
+## Art pass WF (§7.4): `icon`, a StatIcon kind (e.g. `StatIcon.for_status(status)`), draws
+## that icon in the disc instead of a font glyph; `glyph` stays for old callers ("" and no
+## icon = the bare disc, as before).
+func stamp(at: Vector2, glyph: String, color: Color, hold: float, delay: float = 0.0, icon: StringName = &"") -> void:
 	if not Motion.live(&"status_stamp"):
 		return
 	_add({"kind": "stamp", "at": at, "glyph": glyph, "color": color, "dur": Motion.seconds(&"status_stamp") + hold,
-		"land": Motion.seconds(&"status_stamp"), "from": Motion.amplitude(&"status_stamp"), "delay": delay})
+		"land": Motion.seconds(&"status_stamp"), "from": Motion.amplitude(&"status_stamp"), "delay": delay, "icon": icon})
 	# Art pass W6 (ART_BIBLE 8): an afflict lands as a glitch crawl on its slice.
 	hit_vfx(at, HIT_AFFLICT, Palette.AUTO, delay)
 
@@ -1245,6 +1250,11 @@ func _draw_stamp(s: Dictionary) -> void:
 	var fs := roundi(STAMP_FONT * Settings.text_scale * sc)
 	draw_circle(c, STAMP_DISC * Settings.text_scale * sc, Color(Palette.NIGHT_SKY, 0.9 * alpha))
 	draw_arc(c, STAMP_DISC * Settings.text_scale * sc, 0, TAU, 20, Color(s["color"], alpha), 2.0)
+	var icon: StringName = s.get("icon", &"")
+	if icon != &"":
+		# Art pass WF: the status's own drawn icon, filled (it is active), in the disc.
+		StatIcon.draw(self, c, STAMP_DISC * Settings.text_scale * sc * STAMP_ICON_SHARE, icon, Color(s["color"], alpha), true)
+		return
 	var w := Palette.mono().get_string_size(String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	draw_string(Palette.mono(), c + Vector2(-w * 0.5, fs * 0.35), String(s["glyph"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(s["color"], alpha))
 

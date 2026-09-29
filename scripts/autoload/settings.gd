@@ -74,6 +74,12 @@ var pad_glyph_set: StringName = &"auto"
 const PAD_GLYPH_SETS: Array[StringName] = [&"auto", &"xbox", &"playstation", &"switch", &"deck"]
 ## ART_BIBLE §5.4: the text scale a first run on a Steam Deck starts at.
 const TEXT_SCALE_STEAM_DECK := 1.2
+## Art pass WF (W7, ART_BIBLE §13): the city quality tier a first run on a Steam Deck starts
+## at (1 = medium: glow taps cut, reflections kept; CityAtmosphere.tier).
+const CITY_QUALITY_STEAM_DECK := 1
+## The city's quality tier (CityAtmosphere: 0 low, 1 medium, 2 high); -1 = city_look.tres's
+## default. A Deck's first run sets it (apply_first_run_defaults); an additive settings key.
+var city_quality: int = -1
 ## The Deck's screen (a 1280x800 Linux screen with a Deck pad counts as a Deck).
 const STEAM_DECK_SCREEN := Vector2i(1280, 800)
 ## The environment variable Steam sets to 1 on a Deck.
@@ -330,10 +336,12 @@ static func is_steam_deck_from(probe: Dictionary) -> bool:
 	return false
 
 
-## First run (no settings file yet): device defaults, today the Deck's text scale (§5.4).
+## First run (no settings file yet): device defaults, today the Deck's text scale (§5.4)
+## and its city quality tier (§13, W7).
 func apply_first_run_defaults(probe: Dictionary) -> void:
 	if is_steam_deck_from(probe):
 		text_scale = TEXT_SCALE_STEAM_DECK
+		city_quality = CITY_QUALITY_STEAM_DECK
 
 
 func set_subtitles(value: bool) -> void:
@@ -570,7 +578,8 @@ func to_dict() -> Dictionary:
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
 		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode,
 		"colorblind_mode": String(colorblind_mode), "high_contrast": high_contrast,
-		"reduce_motion": reduce_motion, "resolve_speed": String(resolve_speed), "pad_glyph_set": String(pad_glyph_set)}
+		"reduce_motion": reduce_motion, "resolve_speed": String(resolve_speed), "pad_glyph_set": String(pad_glyph_set),
+		"city_quality": city_quality}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -606,6 +615,8 @@ func from_dict(d: Dictionary) -> void:
 	reduce_motion = bool(d.get("reduce_motion", false))
 	resolve_speed = _pick(d.get("resolve_speed", ""), RESOLVE_SPEEDS)
 	pad_glyph_set = _pick(d.get("pad_glyph_set", ""), PAD_GLYPH_SETS)
+	# Art pass WF: additive too (a file without it keeps the look's default tier).
+	city_quality = clampi(int(d.get("city_quality", -1)), -1, 2)
 
 
 ## `value` as one of `allowed` (a StringName), or `allowed[0]` (the default) when it isn't.

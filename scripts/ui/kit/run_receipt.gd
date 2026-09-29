@@ -11,6 +11,8 @@ const WIDTH := 190.0
 const TOOTH := 6.0
 const TAPE := Vector2(46, 12)
 const TILT_STEP := 1.5
+## The slip's ink edge alpha (opaque in high contrast).
+const EDGE_ALPHA := 0.35
 
 var lines: VBoxContainer
 var tilt: float = 0.0
@@ -44,7 +46,7 @@ func line(words: String, step: int = UiTheme.BODY, font: Font = null) -> Label:
 	l.text = words if words != "-" else "- - - - - - - - - -"
 	l.add_theme_font_override("font", font if font != null else Palette.mono())
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
-	l.add_theme_color_override("font_color", Palette.INK)
+	l.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	# Wrapped at the slip's width from the start (never measured at width 0).
 	l.custom_minimum_size.x = WIDTH * Settings.text_scale - UiTheme.SP_S * 2
@@ -59,7 +61,7 @@ func fields(items: Array) -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("h_separation", UiTheme.SP_M)
 	for it in items:
-		row.add_child(StatField.new(it[0], String(it[1]), UiTheme.font_px(UiTheme.BODY), Palette.INK))
+		row.add_child(StatField.new(it[0], str(it[1]), UiTheme.font_px(UiTheme.BODY), Palette.INK))
 	lines.add_child(row)
 
 
@@ -85,6 +87,16 @@ static func empty() -> RunReceipt:
 	return slip
 
 
+## The slip's edge (§12: opaque INK, PaperInk.EDGE_PX, in high contrast).
+func edge_color() -> Color:
+	return PaperInk.edge(Color(Palette.INK, EDGE_ALPHA))
+
+
+## The slip's edge width (px).
+func edge_width() -> float:
+	return PaperInk.edge_width(1.0)
+
+
 func _draw() -> void:
 	var w := size.x
 	var h := size.y - TOOTH
@@ -97,7 +109,7 @@ func _draw() -> void:
 		shadow.append(p + Vector2(3, 4))
 	draw_colored_polygon(shadow, Palette.SHADOW)
 	draw_colored_polygon(pts, Palette.PAPER)
-	draw_polyline(pts + PackedVector2Array([pts[0]]), Color(Palette.INK, 0.35), 1.0)
+	draw_polyline(pts + PackedVector2Array([pts[0]]), edge_color(), edge_width())
 	draw_set_transform(Vector2(w * 0.5 - TAPE.x * 0.5, -TAPE.y * 0.5), -0.06, Vector2.ONE)
-	draw_rect(Rect2(Vector2.ZERO, TAPE), Palette.NOTE_TAPE)
+	draw_rect(Rect2(Vector2.ZERO, TAPE), PaperInk.opaque(Palette.NOTE_TAPE))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
