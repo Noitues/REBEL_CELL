@@ -2,39 +2,39 @@
 	"about": "Measured seconds per test script (median of runs) for tools/run_tests.py shard balancing, and each script's tier: fast = the iteration tier, full = only in the full suite. Every test script is listed exactly once (test_suite_integrity.gd). See docs/TEST_SUITE.md.",
 	"scripts": {
 		"res://tests/integration/test_campaign_flow.gd": {
-			"seconds": 4.4,
+			"seconds": 11.4,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_combat_scene.gd": {
-			"seconds": 1.0,
+			"seconds": 1.8,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_combat_ui_pickers.gd": {
-			"seconds": 0.9,
+			"seconds": 1.4,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_keyboard_combat.gd": {
-			"seconds": 0.3,
+			"seconds": 0.4,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_layout_rules.gd": {
-			"seconds": 1.9,
+			"seconds": 2.8,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_m3_answers.gd": {
-			"seconds": 1.0,
+			"seconds": 3.3,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_netrun.gd": {
-			"seconds": 2.9,
+			"seconds": 4.6,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_netrun_extras.gd": {
-			"seconds": 2.9,
+			"seconds": 6.4,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_netrun_scene.gd": {
-			"seconds": 11.1,
+			"seconds": 21.4,
 			"tier": "full"
 		},
 		"res://tests/integration/test_raid_playout.gd": {
@@ -46,15 +46,15 @@
 			"tier": "fast"
 		},
 		"res://tests/integration/test_title_and_menus.gd": {
-			"seconds": 1.5,
+			"seconds": 3.0,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_vertical_pass2.gd": {
-			"seconds": 1.0,
+			"seconds": 1.9,
 			"tier": "fast"
 		},
 		"res://tests/integration/test_visual_merge.gd": {
-			"seconds": 4.1,
+			"seconds": 4.3,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_accessibility.gd": {
@@ -62,63 +62,63 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_anim2_combat_motion.gd": {
-			"seconds": 12.9,
+			"seconds": 22.4,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim3_card_motion.gd": {
-			"seconds": 7.5,
+			"seconds": 8.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_anim4_drag_drop.gd": {
-			"seconds": 20.5,
+			"seconds": 47.2,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim4b_run_drag_drop.gd": {
-			"seconds": 41.0,
+			"seconds": 103.9,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim5_map_motion.gd": {
-			"seconds": 15.3,
+			"seconds": 21.7,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim6_screen_motion.gd": {
-			"seconds": 14.8,
+			"seconds": 38.4,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r1_campaign.gd": {
-			"seconds": 17.0,
+			"seconds": 24.1,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r1_combat.gd": {
-			"seconds": 13.3,
+			"seconds": 25.8,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r2_city.gd": {
-			"seconds": 9.5,
+			"seconds": 16.6,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r2_combat.gd": {
-			"seconds": 129.9,
+			"seconds": 183.5,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r3_city.gd": {
-			"seconds": 19.1,
+			"seconds": 28.1,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r3_combat.gd": {
-			"seconds": 46.6,
+			"seconds": 51.2,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r4_city.gd": {
-			"seconds": 28.5,
+			"seconds": 78.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r4_combat.gd": {
-			"seconds": 17.5,
+			"seconds": 21.5,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r5_rules.gd": {
-			"seconds": 0.5,
+			"seconds": 2.3,
 			"tier": "full"
 		},
 		"res://tests/unit/test_audio_director.gd": {
@@ -126,7 +126,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_bake_crash.gd": {
-			"seconds": 5.1,
+			"seconds": 13.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_boss.gd": {
@@ -150,19 +150,19 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_cards.gd": {
-			"seconds": 0.3,
+			"seconds": 0.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_city_geometry_memo.gd": {
-			"seconds": 18.3,
+			"seconds": 19.5,
 			"tier": "full"
 		},
 		"res://tests/unit/test_city_map_sweeps.gd": {
-			"seconds": 77.3,
+			"seconds": 94.2,
 			"tier": "full"
 		},
 		"res://tests/unit/test_classes.gd": {
-			"seconds": 0.3,
+			"seconds": 0.4,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_combat_content.gd": {
@@ -170,11 +170,11 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_content_registry.gd": {
-			"seconds": 0.5,
+			"seconds": 0.8,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_corporations.gd": {
-			"seconds": 1.0,
+			"seconds": 1.3,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_daemons.gd": {
@@ -190,7 +190,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_enemies_m2.gd": {
-			"seconds": 0.1,
+			"seconds": 0.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_firmware.gd": {
@@ -206,31 +206,31 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass1.gd": {
-			"seconds": 19.7,
+			"seconds": 21.1,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass11.gd": {
-			"seconds": 0.5,
+			"seconds": 0.9,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass12.gd": {
-			"seconds": 3.2,
+			"seconds": 9.2,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass13.gd": {
-			"seconds": 0.8,
-			"tier": "fast"
-		},
-		"res://tests/unit/test_horizontal_pass14.gd": {
 			"seconds": 1.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_horizontal_pass14.gd": {
+			"seconds": 2.2,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_horizontal_pass15.gd": {
-			"seconds": 0.5,
+			"seconds": 1.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass16.gd": {
-			"seconds": 0.9,
+			"seconds": 2.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass17.gd": {
@@ -238,7 +238,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass18.gd": {
-			"seconds": 0.3,
+			"seconds": 0.7,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass19.gd": {
@@ -246,87 +246,87 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass2.gd": {
-			"seconds": 1.4,
+			"seconds": 2.6,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass20.gd": {
-			"seconds": 3.6,
+			"seconds": 14.7,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass20_city.gd": {
-			"seconds": 4.4,
+			"seconds": 8.7,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass20_screens.gd": {
-			"seconds": 29.6,
+			"seconds": 63.2,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass21.gd": {
-			"seconds": 4.0,
+			"seconds": 9.4,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass21_city.gd": {
-			"seconds": 6.0,
+			"seconds": 18.5,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass21_screens.gd": {
-			"seconds": 29.9,
+			"seconds": 47.1,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass22.gd": {
-			"seconds": 1.8,
+			"seconds": 4.7,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass22_city.gd": {
-			"seconds": 3.2,
+			"seconds": 5.1,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_horizontal_pass22_screens.gd": {
-			"seconds": 22.4,
+			"seconds": 55.4,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass23.gd": {
-			"seconds": 5.0,
+			"seconds": 10.9,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass23_city.gd": {
-			"seconds": 3.7,
+			"seconds": 11.6,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass23_screens.gd": {
-			"seconds": 46.4,
+			"seconds": 75.7,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass24.gd": {
-			"seconds": 13.0,
+			"seconds": 21.1,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass24_city.gd": {
-			"seconds": 7.5,
+			"seconds": 31.7,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass24_screens.gd": {
-			"seconds": 94.7,
+			"seconds": 111.2,
 			"tier": "full"
 		},
 		"res://tests/unit/test_horizontal_pass3.gd": {
-			"seconds": 1.0,
-			"tier": "fast"
-		},
-		"res://tests/unit/test_horizontal_pass4.gd": {
-			"seconds": 1.1,
-			"tier": "fast"
-		},
-		"res://tests/unit/test_horizontal_pass5.gd": {
 			"seconds": 1.5,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_horizontal_pass4.gd": {
+			"seconds": 2.4,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_horizontal_pass5.gd": {
+			"seconds": 3.5,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_ice_campaign.gd": {
-			"seconds": 0.3,
+			"seconds": 0.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_ice_combat.gd": {
-			"seconds": 0.3,
+			"seconds": 0.6,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_input_map.gd": {
@@ -334,7 +334,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_map_generator.gd": {
-			"seconds": 1.4,
+			"seconds": 2.3,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_motion.gd": {
@@ -342,31 +342,35 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_motion_lab_demos.gd": {
-			"seconds": 70.6,
+			"seconds": 80.9,
 			"tier": "full"
 		},
 		"res://tests/unit/test_nodes.gd": {
-			"seconds": 0.3,
+			"seconds": 1.3,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_pad_reachability.gd": {
-			"seconds": 4.8,
+			"seconds": 11.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_panel_widths.gd": {
-			"seconds": 4.6,
+			"seconds": 6.8,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_polish.gd": {
-			"seconds": 0.7,
+			"seconds": 1.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_pools.gd": {
-			"seconds": 22.6,
+			"seconds": 25.4,
 			"tier": "full"
 		},
 		"res://tests/unit/test_preview.gd": {
-			"seconds": 3.2,
+			"seconds": 1.7,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_quiet_window.gd": {
+			"seconds": 0.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_raid_extras.gd": {
@@ -378,7 +382,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_rebel_cell.gd": {
-			"seconds": 1.4,
+			"seconds": 0.9,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_replay.gd": {
@@ -398,11 +402,11 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_rewind.gd": {
-			"seconds": 0.1,
+			"seconds": 0.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_ring_segments.gd": {
-			"seconds": 0.2,
+			"seconds": 0.1,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_rng_service.gd": {
@@ -414,11 +418,11 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_simulation.gd": {
-			"seconds": 1.6,
+			"seconds": 2.2,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_solace_content.gd": {
-			"seconds": 2.7,
+			"seconds": 2.6,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_statuses.gd": {
@@ -426,15 +430,15 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_story_and_text.gd": {
-			"seconds": 0.4,
+			"seconds": 0.9,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_suite_compiles.gd": {
-			"seconds": 18.6,
+			"seconds": 49.3,
 			"tier": "full"
 		},
 		"res://tests/unit/test_suite_integrity.gd": {
-			"seconds": 1.5,
+			"seconds": 1.6,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_targeting.gd": {
@@ -442,11 +446,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_wheel_math.gd": {
-			"seconds": 0.1,
-			"tier": "fast"
-		},
-		"res://tests/unit/test_quiet_window.gd": {
-			"seconds": 0.3,
+			"seconds": 0.0,
 			"tier": "fast"
 		}
 	}
