@@ -292,3 +292,72 @@ static func _hold(node: Node, property: NodePath, tw: Tween, rest: Variant) -> v
 			var held: Array = node.get_meta(key)
 			if held[0] != null and (held[0] as Tween).get_instance_id() == tw_id:
 				node.remove_meta(key))
+
+
+# --- Art pass W9: reduce motion and resolve speed (ART_BIBLE §12, §10) ----------------
+# Settings-only questions; the helpers above are unchanged. Reduce motion is separate
+# from reduce effects: a caller that also animates checks `live(id)` as before.
+
+## page_transition_style(): pages slide in (the material's direction, §10).
+const PAGE_SLIDE := &"slide"
+## page_transition_style(): pages cross-fade (reduce motion).
+const PAGE_FADE := &"fade"
+## Settings.resolve_speed -> the factor on the SEND IT resolve's seconds (0 = instant:
+## the end state at once, as the headless path shows it).
+const RESOLVE_TIME_SCALES := {&"x1": 1.0, &"x2": 0.5, &"instant": 0.0}
+## The input action held to fast-forward the resolve (project.godot, rebindable).
+const FAST_FORWARD_ACTION := &"resolve_fast_forward"
+## The resolve's time factor while fast-forward is held (4x, the kit's SPEED_MAX).
+const FAST_FORWARD_TIME_SCALE := 1.0 / SPEED_MAX
+
+
+## False under reduce motion: city and map cameras cut to their end framing (no pans,
+## leans, zoom travels or jack pushes).
+static func camera_moves_allowed() -> bool:
+	return not _reduce_motion()
+
+
+## False under reduce motion: no parallax layers or pointer leans.
+static func parallax_allowed() -> bool:
+	return not _reduce_motion()
+
+
+## How pages change: PAGE_SLIDE, or PAGE_FADE (cross-fades only) under reduce motion.
+static func page_transition_style() -> StringName:
+	return PAGE_FADE if _reduce_motion() else PAGE_SLIDE
+
+
+## The factor on the SEND IT resolve's durations from Settings.resolve_speed: 1.0 (1x),
+## 0.5 (2x) or 0.0 (instant). Multiply seconds by it; 0 means show the end state at once.
+static func resolve_time_scale() -> float:
+	return float(RESOLVE_TIME_SCALES.get(_setting(&"resolve_speed", &"x1"), 1.0))
+
+
+## True when the resolve speed is instant (the end state at once, no tween).
+static func resolve_instant() -> bool:
+	return resolve_time_scale() <= 0.0
+
+
+## True while the player holds the fast-forward action (key or pad).
+static func fast_forward_held() -> bool:
+	return InputMap.has_action(FAST_FORWARD_ACTION) and Input.is_action_pressed(FAST_FORWARD_ACTION)
+
+
+## The resolve's time factor this frame: resolve_time_scale(), cut to at most
+## FAST_FORWARD_TIME_SCALE while fast-forward is held (instant stays 0).
+static func resolve_time_scale_now() -> float:
+	var k := resolve_time_scale()
+	return minf(k, FAST_FORWARD_TIME_SCALE) if fast_forward_held() else k
+
+
+static func _reduce_motion() -> bool:
+	return bool(_setting(&"reduce_motion", false))
+
+
+## A Settings value read defensively (tools that run without the autoload get `fallback`).
+static func _setting(key: StringName, fallback: Variant) -> Variant:
+	var loop := Engine.get_main_loop() as SceneTree
+	if loop == null or not loop.root.has_node(^"Settings"):
+		return fallback
+	var v: Variant = loop.root.get_node(^"Settings").get(key)
+	return fallback if v == null else v
