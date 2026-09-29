@@ -183,7 +183,7 @@ func test_the_route_frames_the_marker_and_the_next_choices_at_every_text_size() 
 		var area: Rect2 = nr._route_area.get_global_rect().intersection(SCREEN)
 		var rects := LegendSpot.node_rects(overlay, false, nr.route_focus_ids())
 		rects.append_array(overlay.here_marker_rects())
-		assert_eq(rects.size(), nr.route_focus_ids().size() * 2 + 1 - _pipless(overlay, nr.route_focus_ids()), "the choices and the marker are measured (%.1f)" % scale)
+		assert_eq(rects.size(), nr.route_focus_ids().size() * 2 + 2 - _pipless(overlay, nr.route_focus_ids()), "the choices, the marker and its YOU ARE HERE tab are measured (%.1f)" % scale)
 		for r in rects:
 			assert_true(area.grow(1.0).encloses(r), "%s inside the map area %s at %.1f" % [r, area, scale])
 			assert_true(r.position.x >= area.position.x + NetrunScript.ROUTE_MARGIN * 0.5, "off the screen's left edge with a margin at %.1f" % scale)

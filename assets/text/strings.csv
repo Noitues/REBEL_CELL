@@ -2874,6 +2874,17 @@ won,won
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.
+RECRUIT,RECRUIT
+BOOSTS,BOOSTS
+UNLOCKS,UNLOCKS
+Needs %s,Needs %s
+START,START
+Best ICE: %s,Best ICE: %s
+RING SWAPS,RING SWAPS
+"Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel.","Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel."
+"RAID
+LIVE:","RAID
+LIVE:"
 CHOSEN,CHOSEN
 TAKEN,TAKEN
 The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.

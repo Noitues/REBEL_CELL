@@ -639,7 +639,7 @@ func test_a_long_refusal_toast_wraps_on_screen() -> void:
 # --- M12: the HQ at big text ----------------------------------------------------------------------------------
 
 func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	var hq := _scene(HQ)
 	hq.new_campaign(1)
 	await _frames(4)

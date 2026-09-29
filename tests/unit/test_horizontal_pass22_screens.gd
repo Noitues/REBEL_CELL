@@ -246,7 +246,7 @@ func test_the_raid_stamp_is_a_forecast() -> void:
 
 
 func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
 		var legend: MapLegend = hq.raid_legend
 		assert_not_null(legend)
@@ -264,14 +264,14 @@ func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
 
 
 func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
 		var cards: Node = hq._panel.find_child("AssetCards", true, false)
 		assert_eq(cards.get_child_count(), 3)
 		for card in cards.get_children():
 			var r := _shown_rect(card as Control)
 			assert_true(r.is_equal_approx((card as Control).get_global_rect()) and Rect2(Vector2.ZERO, CANVAS).encloses(r),
-				"the %s card is whole on screen at %.1f: %s" % [(card as AssetCard).display_name, scale, (card as Control).get_global_rect()])
+				"the %s card is whole on screen at %.1f: %s shown %s" % [(card as AssetCard).display_name, scale, (card as Control).get_global_rect(), r])
 			if hq.more_hint.visible:
 				assert_false(hq.more_hint.get_global_rect().intersects(r), "MORE BELOW covers no card")
 		var steps: Node = hq._panel.find_child("DeploySteps", true, false)
@@ -298,7 +298,7 @@ func _assert_hint_clear(hint: ScrollHint, root: Node, label: String) -> void:
 
 
 func test_more_below_covers_no_control() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -337,7 +337,7 @@ func _dpad_reachable() -> Dictionary:
 func test_every_dossier_loadout_is_pad_reachable_and_has_its_icon() -> void:
 	var c := RunManager.campaign
 	assert_true(c.living_operatives().size() >= 2, "two rookies")
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		Settings.set_pad_active(true)
 		var hq := _open(HQ)
@@ -434,7 +434,7 @@ func test_outcomes_name_no_rescued_class_and_show_capped_amounts() -> void:
 # --- #14 words that stay, legends and map icons ------------------------------------------------
 
 func test_stat_tags_keep_their_words_at_big_text() -> void:
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	RunManager.new_campaign(1)
 	_raid_campaign()
 	var hq := _open(HQ)
@@ -447,8 +447,11 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 				hq.show_raid()
 		await _frames()
 		var st: HudStats = hq.hud.stats
-		assert_false(st.compact, "%s: the tags keep their names at 1.6" % screen)
-		assert_true(st.tag_scale >= LayoutScales.VERIFIED_MAX * HudStats.FULL_MIN_FIT - 0.01, "%s: the names stay big (%.2f)" % [screen, st.tag_scale])
+		# Art pass W8b (ART_BIBLE §6.9): from HudStats.FOLD_SCALE up the labels fold into the
+		# tooltip; the values stay at the text size and the words stay on hover.
+		assert_eq(st.compact, Settings.TEXT_SCALE_MAX >= HudStats.FOLD_SCALE, "%s: the labels fold at big text only" % screen)
+		assert_ne(st._get_tooltip(st.tag_rects()[0].get_center()), "", "%s: the words stay in the tooltip" % screen)
+		assert_true(st.tag_scale >= Settings.TEXT_SCALE_MAX - 0.01, "%s: the tags follow the text size (%.2f)" % [screen, st.tag_scale])
 		for r in st.tag_rects():
 			assert_true(r.end.x <= st.size.x + 0.5, "%s: a tag stays in the row" % screen)
 	hq.get_parent().queue_free()
@@ -463,7 +466,7 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 				_event(scene)
 		await _frames()
 		var st: HudStats = scene.hud.stats
-		assert_false(st.compact, "%s: the tags keep their names at 1.6" % screen)
+		assert_eq(st.compact, Settings.TEXT_SCALE_MAX >= HudStats.FOLD_SCALE, "%s: the labels fold at big text only" % screen)
 		for r in st.tag_rects():
 			assert_true(r.end.x <= st.size.x + 0.5, "%s: a tag stays in the row" % screen)
 	# A fight keeps its height (compact tags are still allowed there).
@@ -476,7 +479,7 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 
 
 func test_the_route_view_has_its_legend() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -492,6 +495,8 @@ func test_the_route_view_has_its_legend() -> void:
 			var lr := legend.get_global_rect()
 			assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(lr), "the legend is on screen at %.1f: %s" % [scale, lr])
 			for c in _controls(scene._panel):
+				if legend.is_ancestor_of(c):
+					continue  # W8b: its own ROUTE KEY fold button
 				assert_false(lr.intersects(c.get_global_rect()), "the legend covers '%s'" % c.get("text"))
 		scene.get_parent().queue_free()
 		await _frames(2)

@@ -108,7 +108,7 @@ func test_the_mid_run_raid_screen_fits_the_screen() -> void:
 ## the Grid list.
 func test_the_largest_text_scale_still_fits() -> void:
 	var before := Settings.text_scale
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	RunManager.save_slot = "gut_test_widths_scale"
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()

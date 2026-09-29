@@ -255,7 +255,7 @@ func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() 
 		await _frames(4)
 		var living := c.living_operatives()
 		var who := living[living.size() - 1]
-		var pick := hq._panel.find_child("OperativePick", true, false) as OptionButton
+		# Art pass W8b: the pick is on the crew's Polaroids (the native list is gone).
 		if use_drag:
 			var chip := hq._panel.find_child("Chip_%s" % who.id, true, false) as Control
 			assert_not_null(chip, "the Site card shows the crew as chips")
@@ -263,9 +263,10 @@ func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() 
 			assert_eq(_drag(hq.drops, chip, "jack"), "dropped")
 			assert_false(RunManager.has_active_run(), "the drop alone starts no run")
 			assert_eq(_hash(), before, "and changes nothing in the campaign")
-			assert_eq(pick.selected, living.size() - 1, "it picks the operative in the list")
+			assert_eq(hq.launch_operative(), who.id, "it picks the operative")
+			assert_true((hq._panel.find_child("Chip_%s" % who.id, true, false) as CrewChip).picked, "the picked chip is stamped")
 		else:
-			pick.select(living.size() - 1)
+			(hq._panel.find_child("Chip_%s" % who.id, true, false) as CrewChip).pressed.emit()
 		(hq._panel.find_child("Launch", true, false) as Button).pressed.emit()
 		assert_true(RunManager.has_active_run(), "the press on JACK IN starts the run")
 		results.append([_hash(), RunManager.netrun.run.operative.id if RunManager.netrun != null else &""])
@@ -285,7 +286,7 @@ func test_recruit_and_boost_drops_match_their_buttons() -> void:
 			var cfg := RunManager.config()
 			var button: Button
 			if kind == "recruit":
-				button = hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+				button = hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 			else:
 				button = hq._panel.find_child("Boost_%s" % cfg.netrun_boosts[0].id, true, false) as Button
 			if use_drag:
@@ -452,7 +453,13 @@ func test_a_click_picks_up_a_chip_and_a_click_on_the_target_drops_it() -> void:
 	hq.show_grid()
 	await _frames(4)
 	var chip: CrewChip = hq._grid_chips[0]
-	chip.pressed.emit()  # a click (or A) on an item that only moves picks it up
+	# Art pass W8b (§10.2, ANIM-R1 ruling "select, then jack in"): a click on a chip picks the
+	# operative at once (stamped); carrying it is the drag or the pick-up key.
+	chip.pressed.emit()
+	assert_eq(hq.drops.mode, DropLayer.Mode.IDLE, "a click picks, it doesn't carry")
+	assert_true(chip.picked, "the chip is stamped")
+	assert_eq(hq.launch_operative(), chip.operative_id)
+	hq.drops.start_carry(chip)
 	assert_eq(hq.drops.mode, DropLayer.Mode.CARRY)
 	assert_eq(hq.drops.aimed().get("id", ""), "jack", "JACK IN is aimed")
 	var jack: Rect2 = hq.drops.locate(hq.drops.target("jack"))
@@ -490,7 +497,7 @@ func test_reduce_effects_and_headless_show_the_end_state_at_once() -> void:
 		# A click purchase: bought and shown at once.
 		hq.show_hq()
 		await _frames(3)
-		var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+		var rb := hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 		rb.pressed.emit()
 		assert_true(hq.drops.flights.is_empty(), "no purchase flight")
 		var c := RunManager.campaign
@@ -507,7 +514,7 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 	hq.show_hq()
 	await _frames(4)
 	_live()
-	var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+	var rb := hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 	rb.pressed.emit()
 	assert_eq(hq.drops.flights.size(), 1, "the new operative flies from the Black Market to the crew")
 	var c := RunManager.campaign
@@ -523,7 +530,7 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 
 
 func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _scene()
 		_campaign(hq)
@@ -594,7 +601,7 @@ func test_views_never_change_game_state() -> void:
 	hq.drops.start_carry(dossier)
 	assert_true(hq.drops.offered("station:%s" % safe), "the safehouse is checked (a dry run)")
 	hq.drops.cancel()
-	var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+	var rb := hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 	hq.drops.begin_drag(rb, rb.get_meta(DropLayer.SOURCE_META))
 	hq.drops.cancel()
 	hq.drops.finish_all()

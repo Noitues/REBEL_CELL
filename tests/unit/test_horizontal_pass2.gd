@@ -115,7 +115,7 @@ func test_ice_records_and_the_start_panel_cap() -> void:
 	assert_true(text.contains("Solace Biosystems 6"), text)
 	assert_false(text.contains("REBEL_CELL"), "no spoiler while it is locked")
 	hq.show_start()
-	var spin := hq.find_child("IceSpin", true, false) as SpinBox
+	var spin := hq.find_child("IceSpin", true, false) as Range
 	assert_eq(int(spin.max_value), RunManager.ice_cap(&"solace"), "the cap follows the first Target")
 	RunManager.delete_save()
 	DirAccess.remove_absolute(RunManager.profile_path())
