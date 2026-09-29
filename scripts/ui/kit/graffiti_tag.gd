@@ -7,7 +7,7 @@ var text: String = "REBEL_CELL"
 
 
 ## Lettering (px), the words' left edge and the room the mascot takes at the right (px).
-const FONT_SIZE := 44
+const FONT_SIZE := UiTheme.DISPLAY
 const LEFT := 12.0
 const MASCOT_ROOM := 80.0
 const MIN_WIDTH := 340.0
@@ -16,7 +16,7 @@ const MIN_WIDTH := 340.0
 ## The lettering drawn now (FONT_SIZE, or smaller when `fit_width` shrank it).
 var font_size: int = FONT_SIZE
 ## ANIM-R4 C7: the smallest the lettering shrinks to fit a window.
-const MIN_FONT := 22
+const MIN_FONT := UiTheme.TITLE
 
 
 ## `p_text` is shown as given (the caller translates it; H24 S3); the tag is as wide as its

@@ -18,9 +18,6 @@
 		"res://scripts/ui/kit/asset_card.gd": {
 			"color": 1
 		},
-		"res://scripts/ui/kit/asset_icon.gd": {
-			"color": 3
-		},
 		"res://scripts/ui/kit/buy_button.gd": {
 			"font_const": 1
 		},
@@ -31,18 +28,11 @@
 			"color": 4,
 			"font_const": 1
 		},
-		"res://scripts/ui/kit/daemon_sigil.gd": {
-			"color": 2
-		},
 		"res://scripts/ui/kit/daemon_tray.gd": {
 			"draw_size": 1
 		},
 		"res://scripts/ui/kit/deck_view.gd": {
 			"color": 2
-		},
-		"res://scripts/ui/kit/drip_button.gd": {
-			"color": 5,
-			"font_size_assign": 1
 		},
 		"res://scripts/ui/kit/graffiti_scrawl.gd": {
 			"font_size_assign": 1
@@ -62,14 +52,8 @@
 		"res://scripts/ui/kit/hud_stats.gd": {
 			"color": 2
 		},
-		"res://scripts/ui/kit/icon_mark.gd": {
-			"color": 5
-		},
 		"res://scripts/ui/kit/map_legend.gd": {
 			"color": 1
-		},
-		"res://scripts/ui/kit/menu_motion.gd": {
-			"color": 2
 		},
 		"res://scripts/ui/kit/modem_sign.gd": {
 			"color": 1
@@ -102,9 +86,6 @@
 		"res://scripts/ui/kit/ram_bar.gd": {
 			"color": 2
 		},
-		"res://scripts/ui/kit/slice_icon.gd": {
-			"color": 5
-		},
 		"res://scripts/ui/kit/spinner_mini.gd": {
 			"color": 1
 		},
@@ -113,20 +94,8 @@
 			"draw_size": 5,
 			"font_const": 1
 		},
-		"res://scripts/ui/kit/stat_icon.gd": {
-			"color": 2
-		},
-		"res://scripts/ui/kit/sticker_button.gd": {
-			"color": 1
-		},
 		"res://scripts/ui/kit/terminal_window.gd": {
 			"font_override": 2
-		},
-		"res://scripts/ui/kit/toast_note.gd": {
-			"color": 1
-		},
-		"res://scripts/ui/kit/ui_theme.gd": {
-			"color": 24
 		},
 		"res://scripts/ui/kit/zine_card.gd": {
 			"color": 9,

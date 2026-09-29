@@ -138,8 +138,18 @@ func _ready() -> void:
 	add_child(fps_label)
 	saved_label = Label.new()
 	saved_label.add_theme_font_override("font", Palette.marker())
-	saved_label.add_theme_font_size_override("font_size", 14)
-	saved_label.add_theme_color_override("font_color", Palette.CELL_PINK)
+	# Art pass W2 (ART_BIBLE 6.7, 3.7; W10 lint): SAVED is lettered on the one toast's sticky
+	# paper, INK on NOTE_YELLOW (well over 4.5:1 on any backdrop), at the `label` type step
+	# (was a fixed 14 px pink marker on the bare city, 1.6-2.9:1).
+	saved_label.add_theme_font_size_override("font_size", UiTheme.font_px(SAVED_STEP_TYPE))
+	saved_label.add_theme_color_override("font_color", Palette.INK)
+	saved_label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	var paper := Toast.note_style()
+	paper.content_margin_left = SAVED_PAD_H
+	paper.content_margin_right = SAVED_PAD_H
+	paper.content_margin_top = SAVED_PAD_V
+	paper.content_margin_bottom = SAVED_PAD_V
+	saved_label.add_theme_stylebox_override("normal", paper)
 	# H24 S4: translated when shown (show_saved), shown as given.
 	saved_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	saved_label.text = tr("SAVED")
@@ -261,8 +271,11 @@ func saved_showing() -> bool:
 	return saved_label.modulate.a > 0.0
 
 
-## The SAVED stamp's lettering at text scale 1.0 and its margin from the screen edge (px).
-const SAVED_FONT := 14
+## The SAVED stamp's lettering: a §4.2 type step (x text scale), and its paper's padding (px).
+const SAVED_STEP_TYPE := UiTheme.LABEL
+const SAVED_PAD_H := 8.0
+const SAVED_PAD_V := 2.0
+## The SAVED stamp's margin from the screen edge (px).
 const SAVED_MARGIN := 8.0
 ## Step between the spots tried along the screen's edges (px).
 const SAVED_STEP := 24.0
@@ -277,7 +290,7 @@ const SAVED_SCREEN_MAX := 16384.0
 func place_saved(screen: Rect2 = Rect2()) -> Rect2:
 	if not screen.has_area():
 		screen = get_viewport().get_visible_rect()
-	var fs := roundi(SAVED_FONT * Settings.text_scale)
+	var fs := UiTheme.font_px(SAVED_STEP_TYPE)
 	saved_label.add_theme_font_size_override("font_size", fs)
 	saved_label.size = Vector2.ZERO
 	var own := saved_label.get_combined_minimum_size()

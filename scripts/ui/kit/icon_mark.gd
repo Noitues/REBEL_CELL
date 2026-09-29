@@ -24,7 +24,7 @@ const PIP_GAP := 0.25
 
 var kind: StringName = &""
 ## Transparent = the button's font colour.
-var color: Color = Color(0, 0, 0, 0)
+var color: Color = Palette.AUTO
 ## The button's empty icon slot: a transparent texture sized to the icon (a
 ## PlaceholderTexture2D would draw Godot's checkerboard).
 var _slot: ImageTexture = null
@@ -35,7 +35,7 @@ var map_text: String = ""
 var pips: int = 0
 
 
-func _init(p_kind: StringName = &"", p_color: Color = Color(0, 0, 0, 0)) -> void:
+func _init(p_kind: StringName = &"", p_color: Color = Palette.AUTO) -> void:
 	name = "IconMark"
 	kind = p_kind
 	color = p_color
@@ -44,7 +44,7 @@ func _init(p_kind: StringName = &"", p_color: Color = Color(0, 0, 0, 0)) -> void
 
 
 ## Puts icon `p_kind` on button `b` (replacing an earlier mark's kind); returns the mark.
-static func attach(b: Button, p_kind: StringName, p_color: Color = Color(0, 0, 0, 0)) -> IconMark:
+static func attach(b: Button, p_kind: StringName, p_color: Color = Palette.AUTO) -> IconMark:
 	b.set_meta(&"icon_kind", p_kind)
 	var old := b.get_node_or_null(^"IconMark") as IconMark
 	if old != null:
@@ -54,7 +54,7 @@ static func attach(b: Button, p_kind: StringName, p_color: Color = Color(0, 0, 0
 		return old
 	var m := IconMark.new(p_kind, p_color)
 	var clear := Image.create_empty(1, 1, false, Image.FORMAT_RGBA8)
-	clear.fill(Color(0, 0, 0, 0))
+	clear.fill(Color.TRANSPARENT)
 	m._slot = ImageTexture.create_from_image(clear)
 	b.icon = m._slot
 	b.add_child(m)
@@ -83,7 +83,7 @@ static func map_kind_of(b: Control) -> String:
 
 
 ## A mark of its own, `side` px square (beside a control that draws its own label).
-static func standalone(p_kind: StringName, side: float, p_color: Color = Color(0, 0, 0, 0)) -> IconMark:
+static func standalone(p_kind: StringName, side: float, p_color: Color = Palette.AUTO) -> IconMark:
 	var m := IconMark.new(p_kind, p_color)
 	m.custom_minimum_size = Vector2(side, side)
 	m.size = m.custom_minimum_size

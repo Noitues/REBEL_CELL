@@ -7,15 +7,17 @@ extends Button
 ## Hover/focus brighten the paint and add a halo so pad and mouse players see it.
 
 ## Hot pink of the combat concepts (DECK & TONEARM).
-const DRIP_PINK := Color("#FF3DA8")
+const DRIP_PINK := Palette.CELL_PINK
 ## Drip presets: long -> short, left to right.
 const SEND_IT_DRIPS := [[0, 44, 0.3], [2, 28, 0.88], [6, 14, 0.5]]
 const LEAVE_MODEM_DRIPS := [[0, 42, 0.25], [7, 26, 0.85], [10, 14, 0.2]]
 ## Key hint lettering under the tag (px at text scale 1.0).
-const HINT_SIZE := 18
+const HINT_SIZE := UiTheme.LABEL
 ## The white outline round drip lettering (px each side) and its opacity.
 const OUTLINE_PX := 2.0
 const OUTLINE_ALPHA := 0.95
+## The shine on a drip's raindrop (alpha).
+const DROP_SHINE_ALPHA := 0.35
 ## Hover halo: HALO_COPIES faint copies jittered by the `drip_halo` motion amplitude (px).
 const HALO_MOTION := &"drip_halo"
 const HALO_COPIES := 6
@@ -24,7 +26,7 @@ const HALO_ALPHA := 0.12
 var tag_text: String = ""
 var key_hint: String = ""
 var paint: Color = DRIP_PINK
-var font_size: int = 44
+var font_size: int = UiTheme.DISPLAY
 ## Each drip: [letter index, length (px at size 44, scales with size), anchor 0-1 across
 ## the letter's width].
 var drips: Array = []
@@ -155,6 +157,7 @@ func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRI
 	mouse_exited.connect(_set_hot.bind(false))
 	focus_entered.connect(_set_hot.bind(true))
 	focus_exited.connect(_set_hot.bind(false))
+	KitState.track(self)
 
 
 func _fit_size() -> void:
@@ -193,7 +196,7 @@ static func draw_drip_text(ci: CanvasItem, base: Vector2, raw_text: String, size
 	var text := String(TranslationServer.translate(raw_text)) if translate else raw_text
 	var f := Palette.marker()
 	if shadow:
-		ci.draw_string(f, base + Vector2(3, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7))
+		ci.draw_string(f, base + Vector2(3, 3), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(Palette.INK, 0.7))
 	var scale := size / 44.0
 	var edge := OUTLINE_PX * (1.0 if size >= 30 else 0.75)
 	var drops := []
@@ -207,7 +210,7 @@ static func draw_drip_text(ci: CanvasItem, base: Vector2, raw_text: String, size
 		# Start inside the letter's bottom stroke so the drip is attached to it.
 		drops.append([Vector2(x, base.y - size * 0.12), float(d[1]) * scale + size * 0.12, maxf(3.5, 9.5 * scale)])
 	if outline:
-		var white := Color(1, 1, 1, OUTLINE_ALPHA)
+		var white := Color(Palette.TEXT_HI, OUTLINE_ALPHA)
 		# Stamped round the letters (12 directions), so it works with any font import.
 		for k in 12:
 			var o := Vector2(cos(TAU * k / 12.0), sin(TAU * k / 12.0)) * edge
@@ -259,7 +262,7 @@ static func _teardrop(ci: CanvasItem, tip: Vector2, w: float, h: float, col: Col
 		var y := (1.0 - cos(t)) * 0.5 * h
 		pts.append(tip + Vector2(x, y))
 	ci.draw_colored_polygon(pts, col)
-	ci.draw_circle(tip + Vector2(-w * 0.18, h * 0.62), w * 0.12, Color(1, 1, 1, 0.35))
+	ci.draw_circle(tip + Vector2(-w * 0.18, h * 0.62), w * 0.12, Color(Palette.TEXT_HI, DROP_SHINE_ALPHA))
 
 
 ## Automatic drips for any text: up to `count` letters with a stroke at the baseline,
@@ -336,7 +339,14 @@ func _draw() -> void:
 	var lettering := shown_lettering()
 	var shown: String = lettering[0]
 	var fs: int = lettering[1]
-	var col := paint if not disabled else Color(paint, 0.35)
+	# Art pass W2 (ART_BIBLE 6): disabled paints in DISABLED (never a faded paint; large
+	# lettering at 3:1), refused in HARM; focus adds the brackets (below).
+	var st := KitState.of(self)
+	var col := paint
+	if st == KitState.DISABLED:
+		col = Palette.DISABLED
+	elif st == KitState.REFUSED:
+		col = Palette.HARM
 	if _hot and not disabled:
 		col = paint.lightened(0.2)
 	var base := Vector2(12, font_size * 1.0)
@@ -376,6 +386,8 @@ func _draw() -> void:
 		var hs := roundi(HINT_SIZE * Settings.text_scale)
 		var tw := Palette.marker().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_draw_glyph(Vector2(12 + tw * 0.5 + hs * GLYPH_W, size.y - 6 - hs * 0.5), hs, col)
+	if st == KitState.FOCUS or st == KitState.REFUSED or st == KitState.DISABLED:
+		KitState.draw_frame(self, Rect2(Vector2.ZERO, size), st)
 
 
 ## ANIM-R1 C7: a drawn "▶▶" (the end-turn mark, readable in any language), right edge at
@@ -386,7 +398,7 @@ func _draw_glyph(right: Vector2, h: float, col: Color) -> void:
 	for k in 2:
 		var x1 := right.x - k * w
 		var tri := PackedVector2Array([Vector2(x1, right.y), Vector2(x1 - w, right.y - s * 0.5), Vector2(x1 - w, right.y + s * 0.5)])
-		draw_colored_polygon(tri, Color(1, 1, 1, OUTLINE_ALPHA))
+		draw_colored_polygon(tri, Color(Palette.TEXT_HI, OUTLINE_ALPHA))
 		draw_colored_polygon(PackedVector2Array([tri[0] + Vector2(-OUTLINE_PX, 0), tri[1] + Vector2(OUTLINE_PX * 0.5, OUTLINE_PX), tri[2] + Vector2(OUTLINE_PX * 0.5, -OUTLINE_PX)]), col)
 
 

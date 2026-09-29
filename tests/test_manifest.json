@@ -97,6 +97,10 @@
 			"seconds": 1.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art_w2_components.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_anim_r1_campaign.gd": {
 			"seconds": 20.0,
 			"tier": "full"

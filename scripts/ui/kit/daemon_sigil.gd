@@ -7,7 +7,8 @@ extends RefCounted
 
 const FRAMES := 4
 const MOTIFS := 6
-const HUES: Array[Color] = [Color("#B04DFF"), Color("#FF3DA8"), Color("#5CE1FF"), Color("#3DFF8B"), Color("#FFB000"), Color("#FF5A5A")]
+## Art pass W2 (ART_BIBLE 3): tokens only (no corp hue: the green was Solace's).
+const HUES: Array[Color] = [Palette.NEON_VIOLET, Palette.CELL_PINK, Palette.NET_CYAN, Palette.GAIN, Palette.CRT_AMBER, Palette.HARM]
 
 
 static func _code(id: StringName) -> int:
@@ -43,7 +44,7 @@ static func draw_sigil(ci: CanvasItem, c: Vector2, r: float, id: StringName, rar
 	fill.remove_at(fill.size() - 1)
 	ci.draw_colored_polygon(fill, Color(Palette.NIGHT_SKY, 0.95))
 	ci.draw_colored_polygon(fill, Color(col, 0.15))
-	var rim: Color = [Color("#C9CED8"), col, Palette.RESIST_GOLD, Palette.CELL_PINK][clampi(rarity, 0, 3)]
+	var rim: Color = [Palette.TEXT_MID, col, Palette.RESIST_GOLD, Palette.CELL_PINK][clampi(rarity, 0, 3)]
 	ci.draw_polyline(pts, Color(rim, 0.3), 5.0, true)
 	ci.draw_polyline(pts, rim, 1.8, true)
 	var m := r * 0.55
