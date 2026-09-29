@@ -360,7 +360,10 @@ static func _keep_viewport(vp: SubViewport) -> Texture2D:
 
 
 ## Off switch for keeping the viewports (the copy path then runs, as before ANIM-R4).
-static var keep_viewports: bool = true
+## Off (R5 hotfix): Godot refuses a Texture2DRD over a viewport's shared render target
+## ("Please create the texture object using the original texture"), so every kept bake drew
+## nothing and the city went grey everywhere. The copy path is back until R5 replaces this.
+static var keep_viewports: bool = false
 
 
 static func _holder() -> Node:
