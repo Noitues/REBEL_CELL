@@ -89,6 +89,10 @@
 			"seconds": 40.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_r6_netrun.gd": {
+			"seconds": 30.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim6_screen_motion.gd": {
 			"seconds": 30.9,
 			"tier": "full"

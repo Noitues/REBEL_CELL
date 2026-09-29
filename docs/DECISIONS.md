@@ -438,6 +438,92 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-29 — Animation pass — ANIM-R6 netrun screens
+The sixth fix batch of the Animation pass review, netrun screens part (B1-B14, from the R6
+vertical, horizontal and naive-player audits). Views only (no rule, no schema field, no new
+motion id). Every call below was the implementer's (the standing rule: nothing deferred).
+Tests: `tests/unit/test_anim_r6_netrun.gd` (full tier). Checked in windowed Movie Maker
+captures (no ERROR in the logs).
+- **B1 the loot's deal.** The fan-in (~0.42 s for three stickers) outlasted the page's
+  entrance, and nothing took a press after the entrance: the deal is now a motion of the netrun
+  screen on MotionSkip (`motion_running` / `complete_motion` land every sticker), and while it
+  plays its row is kept (`motion_keeps`): a press on a sticker still fanning in lands the deal
+  and picks nothing. A sticker invisible in its delay ignores the mouse until it shows
+  (`ZineCard.fan_in`): an invisible offer could be picked.
+- **B2 views never write game state.** The dev flags (`--demo-shop`, `--demo-daemons`,
+  `--demo-loot`, `--demo-event`, `--demo-class`, `--demo-interlude`, `--demo-end`, the drag
+  demos' Cycles, the combat end demo's HP) set the run, the campaign or the fight up through
+  `DemoSetup` (`scripts/core/demo_setup.gd`, pure; the session's own steps where there is
+  one); the netrun view calls it and writes nothing itself. A test scans `netrun_scene.gd`
+  for state writes. `hq_scene.gd`'s loadout demo (`op.rank = 3`) calls `DemoSetup.set_rank`
+  (one line in the city/HQ agent's file). **Left to that agent:** `hq_scene.gd`'s other dev
+  flag writes (`--demo-classes` roster, `c.schematics = 100`, the Heat pulse demo's
+  `c.heat = 20 / 30`) can move to DemoSetup the same way.
+- **B3 frame waits.** `_frame_raid_map` and the combat end demo wait on one-shot connections to
+  the scene's own methods (`_frame_raid_map_now`, `_when_ready`, `_after_frames_here`): freed
+  mid-wait, the connection goes with the scene (no await resumes on it); out of the tree, the
+  step stops. Tested: freeing the scene mid-wait logs no error.
+- **B4 the flatline's run end.** It opened on the silhouette: a flatline adds Heat (the city's
+  corporate creep, a new look when it crosses a step) and a fight can be a session's first page
+  (a resumed run, the captures), with nothing of the city baked. Now the city's view with no
+  route on it bakes behind the fight when it begins, and again under the new Heat when a SEND
+  IT ends the run (the rules ran; the replay, DEFEAT and the hold still to play;
+  `prebake_run_end`: the camera brought up to date first, hidden behind the fight the city's
+  last camera was the route's). And a city that was hidden no longer fades a bake in over the
+  sky it showed before it hid (`NeonCity`, one line in the city agent's file: the bake was
+  ready, yet faded in over the silhouette for 20 frames). **Measured** (windowed Movie Maker,
+  `--demo-combat --demo-end=lose`, the page switch on frame 115): before, frames 116-136 the
+  silhouette fading to the city (brightness 8 -> 52); after, the city whole on the page's
+  first frame. `page_bake_probe.gd` has the flatline path ("run end (flatline)": the next fight
+  lost for real through the combat end demo): covered on its first frame (1 frame, 15 ms); in
+  its flow the flatline's Heat stayed within the route's look step (it says so).
+- **B5 the run end agrees with its verdict.** The top bar's title follows the stamp:
+  NETRUN // FLATLINED, NETRUN // JACK OUT, NETRUN // HOME FELL (it said JACK OUT beside
+  FLATLINED). The operative's barks are scoped to the fight (`CombatScene.BARK_SCOPE`, one line
+  in the combat agent's file): the defeat bark shows in the fight and ends with it, so the run
+  end's DISPATCH line ("Operative lost") is the last word, not the dead operative repeating
+  the fight's line after it.
+- **B6** the route's kept bake (`CityBakeCache.keep(ROUTE_KEEP)`) is let go at the run's end and
+  when the scene leaves the tree (it pinned up to ~48 MB for the session).
+- **B7** a toast holds `toast_note_hold` at the motion speed when that is slower, never shorter
+  than its raw duration (a reading time: a raid at 4x or reduce effects never cut it; a slowed
+  capture holds it as long as every other motion). **Decided** over "always at speed": the
+  words must stay readable at any speed. `flight_land_pulse` waits its entry's delay. The
+  landing's pops on DAEMONS and VIEW LOADOUT moved into `HudBar.land_pulse` (the netrun calls
+  it); the motion lab's `flight_land_pulse` demo plays it on a real HudBar (CARDS pulses,
+  DAEMONS and VIEW LOADOUT pop).
+- **B8** the loot's socket list says "Chips go into:" as the Modem's does, with its own tip
+  (dropped: "Socket into slot:").
+- **B9** `netrun_scene --demo-combat --demo-end=win|lose` plays the fight's ending in context
+  (the run end check took it first and showed FLATLINED): `run_end_demo(args)`.
+- **B10** the loot window names what paid out, by the node the run stands on: FIGHT WON, ELITE
+  DOWN, RACK BREACHED, EVENT PAYOUT (PAYOUT with no node); it said RACK BREACHED after every
+  fight. RAM on a card's pictograms carries a RAM icon (a memory chip, new `StatIcon.RAM`)
+  before its words ("RAM+3").
+- **B11** the Modem under a language the player can't read: a neon shop bag heads the sign (the
+  letters step down to make room), its BUY note wears a cart and its SHRED note a shredder (new
+  `StatIcon.CART`, `StatIcon.SHRED`). LEAVE THE MODEM already had its exit glyph beside it.
+- **B12 the event.** The subtitle bar no longer says the event's story (it repeated the paper
+  word for word); the line still reaches the history and voice-over (`Dialogue.log_line`).
+  **Decided:** the events have no operative line of their own (no content), so the bar is left
+  to the lines that are not on the page. The chosen outcome stamps on the event page, which
+  stays inert until the stamp has played (`event_choice_stamp`, 0.6 s; a press ends it), then
+  the next page shows: the "no change" outcome popped over the route menu's option [2].
+- **B13 the jack.** CONNECTING TO stays a small teal line; the destination has a line of its
+  own under it, large (44 px x the text size, stepping down to fit) and bright (paper), with
+  the Site's tier icon as the City Grid draws it (`JackSiteIcon`: the T hexagon and its pips;
+  `RunManager.jack_tier`).
+- **B14** a twin route choice says "(same road as choice 1)" (it said "(same as 1)", which
+  puzzled a beginner), on its button and its map label, and its tip explains it (same kind,
+  Heat and road ahead; the enemy is picked on entry).
+- Words (exported once): the loot sources, the loot socket tip, the run end titles, the twin
+  words and tip, CONNECTING TO; dropped: "RACK BREACHED // LOOT: pick a %s", "Socket into
+  slot:", "The spinner slot the Firmware chip goes into.", "(same as %d)", "CONNECTING TO %s".
+- Expectations changed on purpose: `test_anim_r5_netrun` (the event's band is checked with a
+  line said on the event screen), `test_horizontal_pass23_screens` (the event's story is in
+  the history, not the bar), `test_anim_r2_city` (the twin words; the jack's words read
+  through `Fx.connect_words`).
+
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
 the coordinator's lookup leak and Disabled-then-Seized ruling). Views only, save RunManager's

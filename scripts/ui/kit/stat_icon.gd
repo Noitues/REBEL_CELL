@@ -59,12 +59,18 @@ const RACK := &"rack"
 const COOLING := &"cooling"
 const CLAIM := &"claim"
 const LINKS := &"links"
+# ANIM-R6 B10 / B11 (the naive player's pass): RAM on a card's pictograms (a memory chip, as
+# the RAM bar's chips), and the Modem's two verbs on its sign (a cart for BUY, a shredder for
+# SHRED), readable whatever the language.
+const RAM := &"ram"
+const CART := &"cart"
+const SHRED := &"shred"
 
 ## Every icon kind (tests draw each one).
 const ALL: Array[StringName] = [HEAT, SCHEMATICS, HOME, EXPLOITS, RAIDS, ICE, CREW, HP, CYCLES, CARDS, RANK, BANKED,
 	ARMORY, COMBATS, ELITES, CAMPAIGNS, WON, RUNS, BADGES, FIRMWARE, DAEMON, OPERATIVE, PLAY, CONTINUE, MAP, CODEX,
 	SETTINGS, SAVE, EXIT, BACK, NEXT, SKIP, SLOTS, STATS, TUTORIAL, QUIT, JACK_IN, MORE, FIGHT, ELITE, SHOP, TERMINAL, RACK,
-	COOLING, CLAIM, LINKS]
+	COOLING, CLAIM, LINKS, RAM, CART, SHRED]
 
 ## Tag names (as the tags spell them) -> icon.
 const TAG_KINDS := {"HEAT": HEAT, "SCHEMATICS": SCHEMATICS, "HOME": HOME, "EXPLOITS": EXPLOITS, "RAIDS": RAIDS,
@@ -104,6 +110,8 @@ static func color_of(kind: StringName) -> Color:
 			return Palette.NEON_VIOLET
 		"shop":
 			return Palette.CELL_ACID
+		"ram":
+			return Palette.NET_CYAN
 		"terminal":
 			return Palette.CRT_AMBER
 	return Palette.TERMINAL_TEXT
@@ -315,6 +323,26 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, kind: StringName, col: Co
 			ci.draw_arc(c + Vector2(-0.6, 0.45) * r, 0.28 * r, 0, TAU, 12, col, w)
 			ci.draw_line(c + Vector2(-0.4, 0.25) * r, c + Vector2(0.4, -0.45) * r, col, w)
 			_fill(ci, c, r, [[0.88, -0.88], [0.62, -0.18], [0.18, -0.62]], col)
+		"ram":
+			# A memory stick: the board, three chips on it (the RAM bar's squares), its pins.
+			ci.draw_rect(Rect2(c + Vector2(-0.92, -0.5) * r, Vector2(1.84, 0.82) * r), col, false, w)
+			for k in 3:
+				ci.draw_rect(Rect2(c + Vector2(-0.7 + k * 0.52, -0.32) * r, Vector2(0.36, 0.46) * r), col)
+			for k in 5:
+				var x := -0.72 + k * 0.36
+				ci.draw_line(c + Vector2(x, 0.32) * r, c + Vector2(x, 0.62) * r, col, w * 0.7)
+		"cart":
+			# A shopping cart: the handle, the basket, two wheels.
+			_line(ci, c, r, [[-0.95, -0.72], [-0.62, -0.72], [-0.38, 0.35], [0.66, 0.35], [0.88, -0.42], [-0.52, -0.42]], col, w)
+			ci.draw_arc(c + Vector2(-0.25, 0.7) * r, 0.16 * r, 0, TAU, 10, col, w)
+			ci.draw_arc(c + Vector2(0.52, 0.7) * r, 0.16 * r, 0, TAU, 10, col, w)
+		"shred":
+			# A shredder: the machine's mouth, a card going in, strips coming out.
+			ci.draw_rect(Rect2(c + Vector2(-0.4, -0.95) * r, Vector2(0.8, 0.5) * r), col, false, w * 0.8)
+			ci.draw_rect(Rect2(c + Vector2(-0.9, -0.42) * r, Vector2(1.8, 0.42) * r), col)
+			for k in 5:
+				var x := -0.64 + k * 0.32
+				ci.draw_line(c + Vector2(x, 0.1) * r, c + Vector2(x, 0.9 - (k % 2) * 0.2) * r, col, w * 0.8)
 		_:
 			ci.draw_arc(c, r * 0.6, 0, TAU, 16, col, w)
 

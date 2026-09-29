@@ -136,7 +136,11 @@ func test_the_event_subtitle_has_two_lines_at_a_readable_size() -> void:
 		await _frames(4)
 		assert_eq(scene.subtitle_strip.lines, 2, "%.1f: the event's band holds two lines" % scale)
 		assert_eq(Dialogue.dock_lines, 2, "%.1f: the dock pages two lines" % scale)
-		assert_true(Dialogue.is_showing(), "%.1f: the story is said" % scale)
+		# ANIM-R6 B12: the story stays on its paper (the bar repeated it); a long line said on
+		# the event's screen pages in its two-line band.
+		Dialogue.say(RC.Voice.DISPATCH, LONG_LINE, 0.0, &"", false, "event")
+		await _frames(2)
+		assert_true(Dialogue.is_showing(), "%.1f: a line is said" % scale)
 		var fs := Dialogue.text_label.get_theme_font_size("normal_font_size")
 		assert_gte(fs, Dialogue.min_font_size(), "%.1f: the subtitle is readable (%d px; it shrank to 7)" % [scale, fs])
 		assert_eq(fs, roundi(Dialogue.TEXT_FONT_SIZE * scale), "%.1f: at the text size's own font" % scale)
