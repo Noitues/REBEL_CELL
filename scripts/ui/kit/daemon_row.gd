@@ -15,6 +15,7 @@ var lookup: ContentLookup = null
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	tooltip_text = " "
+	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R5 combat 9: _get_tooltip translates once
 	custom_minimum_size = Vector2(0, HEIGHT)
 
 
@@ -47,7 +48,7 @@ func describe_all() -> String:
 func _get_tooltip(at_position: Vector2) -> String:
 	var id := daemon_at(at_position)
 	if id == &"":
-		return "Daemons: permanent programs of this operative (none installed)." if daemon_ids.is_empty() else ""
+		return tr("Daemons: permanent programs of this operative (none installed).") if daemon_ids.is_empty() else ""
 	var d := lookup.get_content(id) as DaemonData if lookup != null else null
 	return Codex.describe(d) if d != null else String(id)
 

@@ -218,6 +218,8 @@ func _ready() -> void:
 			# ANIM-R2 R2 profiling: the route shows, then N frames in the first fight on it opens.
 			if a.begins_with("--demo-run-fight="):
 				MotionDemo.after_frames(self, int(a.trim_prefix("--demo-run-fight=")), _demo_enter_fight)
+			elif a.begins_with("--demo-end="):
+				_demo_combat_end(a.trim_prefix("--demo-end="))  # ANIM-R5 combat: win / lose
 		return
 	if RunManager.has_active_run():
 		_show_current()
@@ -1660,15 +1662,27 @@ func _show_combat() -> void:
 
 
 func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) -> void:
-	_refresh_status()
+	# ANIM-R5 combat 1: a SEND IT that ends the fight keeps the top bar (HP, CYCLES, Heat...)
+	# and the run's report (its DISPATCH line) until the replay lands VICTORY / DEFEAT.
+	var held := state.is_over() and combat_scene != null and combat_scene.has_method(&"outcome_pending") and bool(combat_scene.call(&"outcome_pending"))
+	if not held:
+		_refresh_status()
 	if state.is_over():
 		RunManager.after_step()
-		_report(RunManager.netrun.last_events)
-		# ANIM-R3 A6h: the fight's next step shows in SEND IT's place at once (LOOT when a
-		# payout waits, else CONTINUE); pressing it moves on now.
+		var report: Array[Dictionary] = RunManager.netrun.last_events.duplicate()
+		if held:
+			combat_scene.connect(&"outcome_landed", _on_combat_outcome_landed.bind(report), CONNECT_ONE_SHOT)
+		else:
+			_report(report)
+		# ANIM-R3 A6h: the fight's next step shows in SEND IT's place (LOOT when a payout
+		# waits, else CONTINUE; ANIM-R5 combat 2: JACK OUT when the operative flatlined);
+		# pressing it moves on now. The fight shows it once its outcome lands.
 		if combat_scene != null and combat_scene.has_method(&"show_continue"):
 			var phase := RunManager.netrun.run.phase if RunManager.netrun != null else RunState.Phase.MAP
-			combat_scene.call(&"show_continue", TextDb.mark("LOOT") if phase == RunState.Phase.REWARD else TextDb.mark("CONTINUE"))
+			var next := TextDb.mark("LOOT") if phase == RunState.Phase.REWARD else TextDb.mark("CONTINUE")
+			if state.outcome == CombatState.Outcome.DEFEAT:
+				next = TextDb.mark("JACK OUT")
+			combat_scene.call(&"show_continue", next)
 		# Leave the final combat state visible for a moment, then move on: once the combat
 		# replay (the last hits, the break, VICTORY) has played out or been skipped.
 		_leave_generation += 1
@@ -1676,6 +1690,13 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 			combat_scene.connect("motion_settled", _hold_then_show.bind(_leave_generation), CONNECT_ONE_SHOT)
 		else:
 			_hold_then_show(_leave_generation)
+
+
+## ANIM-R5 combat 1: the fight's outcome has landed: the top bar moves on and the run's
+## report (a flatline's DISPATCH line) plays.
+func _on_combat_outcome_landed(report: Array[Dictionary]) -> void:
+	_refresh_status()
+	_report(report)
 
 
 ## The pause on the final combat state (`combat_end_hold`) before the netrun moves on.
@@ -1688,6 +1709,58 @@ func _hold_then_show(generation: int = -1) -> void:
 func _leave_after_hold(generation: int) -> void:
 	if generation == _leave_generation and combat_scene != null:
 		_show_current()
+
+
+## ANIM-R5 combat captures (dev shortcut, `--demo-combat --demo-end=win|lose`): once the
+## fight's page has settled, the enemy (win) or the operative (lose) is set one hit from 0
+## (demo run only) and the wheels nudged until the forecast ends the fight; then SEND IT.
+func _demo_combat_end(kind: String) -> void:
+	while combat_scene == null or PageTransition.running(self):
+		await get_tree().process_frame
+	for f in DEMO_SETTLE_FRAMES:
+		await get_tree().process_frame
+	var scene := combat_scene
+	var eng: CombatEngine = scene.get(&"engine")
+	var st := eng.state()
+	if kind == "hover":
+		# ANIM-R5 combat 7: a card hover that changes a tag (its WAS row shows).
+		for i in st.hand.size():
+			scene.call(&"_preview_card", i)
+			for v in scene.call(&"_views"):
+				if not (v as WheelView).was_tag.is_empty():
+					print("MotionDemo: r5 combat hover card %d on frame %d" % [i, Engine.get_frames_drawn()])
+					return
+		return
+	var want := CombatState.Outcome.VICTORY if kind == "win" else CombatState.Outcome.DEFEAT
+	if kind == "win":
+		st.enemies[0].hp = 1
+	else:
+		st.player.hp = 1
+	for k in DEMO_END_TRIES:
+		if eng.preview_end_turn().state.outcome == want:
+			break
+		if k % DEMO_END_NUDGES == DEMO_END_NUDGES - 1:
+			# Nudges didn't do it: a turn passes (at once) and the fight is set up again.
+			scene.call(&"end_turn")
+			scene.call(&"skip_motion")
+			st = eng.state()
+			if kind == "win":
+				st.enemies[0].hp = 1
+			else:
+				st.player.hp = 1
+		else:
+			scene.call(&"nudge_wheel", &"player" if kind == "win" or k % 2 == 0 else st.enemies[0].id, 1)
+	scene.call(&"skip_motion")
+	scene.call(&"_refresh", eng.state())
+	for f in MotionDemo.START_FRAME:
+		await get_tree().process_frame
+	print("MotionDemo: r5 combat SEND IT (%s) on frame %d" % [kind, Engine.get_frames_drawn()])
+	scene.call(&"end_turn")
+
+
+## Nudges the combat end demo tries before sending anyway.
+const DEMO_END_TRIES := 24
+const DEMO_END_NUDGES := 4
 
 
 ## ANIM-R3 A6h: the fight's next-step action was pressed: on now (the hold is dropped).

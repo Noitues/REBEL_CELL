@@ -833,5 +833,5 @@ func test_an_event_types_its_story_quickly_on_a_panel_its_size() -> void:
 
 func test_new_words_are_exported_once() -> void:
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
-	for key in ["RANDOM SLICE", "Good for you: %s", "Bad for you: %s", "+%d RAM", "CONTINUE"]:
+	for key in ["ON A RANDOM SLICE:", "Good for you: %s", "Bad for you: %s", "+%d RAM", "CONTINUE"]:
 		assert_true(csv.contains(key), "%s is exported for translation" % key)

@@ -539,6 +539,77 @@ test); R4 / R1 tests adjusted where they pinned the old behaviour (below).
 - **R8** `docs/timeline/motion/README.md`: no combat or generic row changed (their strips
   were captured from scenes and demos this batch didn't change); the city rows are fix
   agent C's.
+#### 2026-09-28 — Animation pass — ANIM-R5 combat
+The fifth fix batch of the Animation pass review, combat part (items 1-13 of fix agent A).
+Views only: no rule, no schema field changed (one new motion id is data). Every call below was
+the implementer's (the standing rule: nothing deferred). Tests: `tests/unit/test_anim_r5_combat.gd`
+(full tier). Strips recaptured in `docs/timeline/motion/` (CHOSEN on top, a variant under it,
+quantized to 128 colours; raw frames never entered the repo): `combat_outcome` (new),
+`resolve_sequence`, `enemy_break`. Every visual change was checked in windowed Movie Maker
+captures (`netrun_scene --demo-combat --demo-end=lose|win|hover`, new dev flag; the lab's
+`send_lose` for `defeat_stamp`), logs free of ERRORs.
+- **1 the outcome at its beat.** The state is final at once, but a SEND IT that ends the fight
+  now holds its outcome (`_outcome_held`) until the replay lands it: the status line's VICTORY /
+  DEFEAT, the next-step button (SEND IT stays, spent, until then), the Heat poster, and in the
+  netrun the top bar (HP, CYCLES, CARDS, RANK, BANKED, VIEW LOADOUT) and the run's report (its
+  DISPATCH line) wait for `outcome_landed` (as the raid feed gates Heat, H11). The outcome lands
+  at the end beat but never before every HP roll of the resolve has ended (`outcome_time`: DEFEAT
+  stamped while the HP still read 1); a skip or the replay's end lands it too; reduce effects and
+  headless show it at once. The VICTORY / DEFEAT bark moves to that beat.
+- **2 a lost fight looks lost.** The operative's disc goes dark under a DEFEAT stamp with a
+  skull that stays until the fight is left (`WheelView.flatlined`; `defeat_stamp`, new: 0.3 s
+  BACK out from 1.6x; it replaces the transient DEFEAT word). The next step after a loss says
+  JACK OUT (the netrun names it; `TextDb.mark("JACK OUT")`) in paper lettering without drips
+  (SEND IT's pink drips read as the fight going on). No "hurt" bark on the hit that flatlines
+  (`hurt_bark_due`). The FLATLINED summary page's words are the netrun screens' (agent B).
+- **3 LETHAL by the HP.** The 6 px red cross over the hub (it struck through the name and read
+  as "disabled") is gone. A turn that takes a living wheel (the operative's or an enemy's) to 0
+  turns its NEXT plate solid red with a skull and LETHAL (tooltip "LETHAL: this turn takes you /
+  it to 0 HP."), readable without colour; the plate shifts left rather than leave its view. The
+  operative's tag says DEFEAT once (the DOWN chip beside it is merged into it, ranked first).
+- **4 ticks off the words.** A held forecast keeps `tick_room` at each chip's end and the tick
+  sits there (`chip_layout`); tested at 1.0 / 1.3 / 1.6 that no tick meets its chip's words.
+- **5 a dead enemy never acts.** The engine resolves simultaneously (GDD 2.2) and is unchanged;
+  the replay reorders its beats (`ResolveBeats.doomed_first`): a wheel that goes down in the
+  resolve plays its own actions (and its satellites') before the hit that takes its HP to 0,
+  keeping their order, each marked `same_moment`; every `hp_after` is recounted in the new
+  order (the end HP is the engine's; tested). **Decided:** reorder rather than mark "same
+  moment" with a badge: the replay then reads cause before effect with no new words.
+- **6 NO DAMAGE off the name.** `stamp_slot(text, icon)` checks the stamp as drawn (tilted) fits
+  above the name inside the hub; when it can't (BLOCK / SHIELD lines push the name up) it stands
+  beside the HP number, in the NEXT plate's place, which is empty while a replay plays.
+- **7 was → now.** A hover (card, nudge arrow, RESPIN) that changes a tag shows what it said
+  before on the tag's tape, "WAS" and the old title and chips struck through (where IF YOU SEND IT
+  stood), and in the tag's tooltip ("Before this play: ..."). **Decided:** the tape, not a row of
+  its own: the tag keeps its size (a new row had no room under the screen's top at 1280x720).
+  The "YOU PLAY X" chip isn't a change (`play`).
+- **8 tags that say who gets what.** A random status chip says who gets it ("☠ YOU GET
+  CORRUPTED" / "☠ GETS CORRUPTED"), and its odds follow a lead chip "ON A RANDOM SLICE:"; an
+  AFFLICT names what it puts on whom on its own tag ("PUTS ☠ CORRUPTED ON YOU", from the
+  replay's beats, in the colour of whose win it is; `afflict_chips`).
+- **9 translated once.** Every combat tooltip is translated where it is built and shown as given
+  (`shown_tip`: the status line, Settings, the Heat poster, SEND IT, the portrait, the cards,
+  UNDO, RESPIN, the RAM bar, the wheels' `_get_tooltip` with TextDb names, the tag tooltip's
+  lines, the random / respin chips, "Guarded by"). The tutorial's titles and texts are keys
+  (`# TR`), filled in and then pseudolocalised once (its {placeholders} survive the scramble);
+  Next / Skip tutorial / Finish and its title translate. A scan test flags any `tooltip_text = "`
+  or `_get_tooltip` `return "..."` literal under `scripts/ui/` that isn't tr'd or `# TR`; it
+  found two outside combat, fixed minimally: the Daemon row's empty tooltip and the spinner
+  pads' "%s\n%d CYCLES". strings.csv re-exported (RANDOM SLICE dropped).
+- **10** `_for_continue` asks `MotionSkip.button_at` (shown, not covered, the clicking button
+  in its mask): a right-click on the next step during the replay is consumed like any press.
+- **11** The Perfect inversion's two frames are one-shot connections to the scene's own method
+  (dropped with the scene; the tree is checked before the next), no `await` on a freed scene.
+- **12** STYLE_GUIDE 5.2's icon row uses the ANIM-R4 notation (sword 6 − shield 5 = 1); 5.2 gains
+  "The outcome at its beat (ANIM-R5)".
+- **13** Reduce effects for the R4 combat motions tested: no replay (so no side / attacker gaps),
+  nothing busy, no card forecast hold, the RAM refill at once without a float, loot taken with no
+  hold.
+- New id (data; REQUIRED_IDS and the lab's `send_lose` demo): `defeat_stamp`. New dev flag:
+  `netrun_scene --demo-combat --demo-end=win|lose|hover` (demo run only).
+- Test expectations changed on purpose: `test_anim_r3_combat`
+  `test_after_a_win_the_next_step_replaces_send_it_at_once` (the next step shows once VICTORY
+  lands, not at the press); `test_anim_r4_combat` exports "ON A RANDOM SLICE:" (RANDOM SLICE gone).
 
 #### 2026-09-28 — Animation pass — ANIM-R4 combat, input and screens
 The fourth fix batch of the Animation pass review, combat, input and screens part (C1-C7).
