@@ -19,6 +19,9 @@ const SHAKE_STEPS := 4
 const BLINK_DIP_SHARE := 1.0 / 3.0
 ## A pop spends this share of its duration growing and the rest settling.
 const POP_GROW_SHARE := 0.4
+## A pop grows easing out (it springs up) and settles with its entry's ease and trans
+## (ANIM-R6 D2: one named shape for every pop-like motion drawn by hand).
+const POP_GROW_EASE := Tween.EASE_OUT
 ## Node meta holding a running helper tween and the value it returns to (so a helper
 ## started again mid-motion settles on the true rest value, not a mid-way one).
 const META_PREFIX := "motion_"
@@ -38,6 +41,10 @@ static var _index: Dictionary = {}
 static var recording: bool = false
 ## Entry reads while `recording`: {id: {script path: true}}.
 static var reads: Dictionary = {}
+## ANIM-R6 D3: `live` questions while `recording`, {id: {script path: true}}: which script
+## asked whether the entry plays (the kit's helpers ask for their caller). A view that
+## reads an entry's time to animate but never asks is a view that ignores the switch.
+static var asks: Dictionary = {}
 
 
 ## The motion table in use (loaded from CONFIG_PATH on first use).
@@ -78,6 +85,7 @@ static func entry(id: StringName) -> UiMotionEntryData:
 ## ANIM-R5: starts noting entry reads afresh (see `recording`).
 static func start_recording() -> void:
 	reads.clear()
+	asks.clear()
 	recording = true
 
 
@@ -96,14 +104,28 @@ static func readers(id: StringName) -> Array[String]:
 	return out
 
 
+## ANIM-R6 D3: the scripts that asked `live(id)` while recording (paths), sorted.
+static func askers(id: StringName) -> Array[String]:
+	var out: Array[String] = []
+	for p in asks.get(id, {}):
+		out.append(String(p))
+	out.sort()
+	return out
+
+
 static func _note_read(id: StringName) -> void:
+	_note(reads, id)
+
+
+## Notes `id` in `into` for the first caller outside this kit.
+static func _note(into: Dictionary, id: StringName) -> void:
 	var own := (Motion as Script).resource_path
 	for frame in get_stack():
 		var src := String(frame.get("source", ""))
 		if src != own:
-			if not reads.has(id):
-				reads[id] = {}
-			reads[id][src] = true
+			if not into.has(id):
+				into[id] = {}
+			into[id][src] = true
 			return
 
 
@@ -158,8 +180,29 @@ static func animating() -> bool:
 
 ## True when `id` animates now (animating() and its entry is enabled).
 static func live(id: StringName) -> bool:
+	if recording:
+		_note(asks, id)
 	var e := entry(id)
 	return e != null and e.enabled and animating()
+
+
+## ANIM-R6 D3: seconds of `id`'s motion when it plays now (`live`), else 0: for a view
+## that builds a timed motion of its own (a drawn motion, a part of a tween chain) and must
+## show its end state at once when the entry is switched off, under reduce effects or
+## headless.
+static func seconds_live(id: StringName) -> float:
+	return seconds(id) if live(id) else 0.0
+
+
+## ANIM-R6 D3: true when `id`'s entry is switched on (`enabled`), whatever reduce effects
+## or the display say: for a piece that plays its own reduced form under reduce effects
+## (the reduced jack) or a reading time that holds anyway. Noted as an ask while
+## recording, as `live` is.
+static func switched_on(id: StringName) -> bool:
+	if recording:
+		_note(asks, id)
+	var e := entry(id)
+	return e != null and e.enabled
 
 
 ## Tweens `property` of `node` to `to` with `id`'s timing. Returns the tween, or null
@@ -196,7 +239,7 @@ static func pop(node: CanvasItem, id: StringName) -> Tween:
 	var d := seconds(id)
 	var tw := node.create_tween()
 	tw.tween_interval(delay_of(id))
-	tw.tween_method(_setter(node, ^"scale"), base, base * amplitude(id), d * POP_GROW_SHARE).set_ease(Tween.EASE_OUT).set_trans(e.trans)
+	tw.tween_method(_setter(node, ^"scale"), base, base * amplitude(id), d * POP_GROW_SHARE).set_ease(POP_GROW_EASE).set_trans(e.trans)
 	tw.tween_method(_setter(node, ^"scale"), base * amplitude(id), base, d * (1.0 - POP_GROW_SHARE)).set_ease(e.ease).set_trans(e.trans)
 	_hold(node, ^"scale", tw, base)
 	return tw
@@ -326,6 +369,23 @@ static func _redraw(node: Node) -> void:
 
 ## Stops a helper tween still running on `node`'s `property` and returns the value that
 ## motion rests at (the property's current value when none runs).
+## ANIM-R6 D7: true while a helper's tween on `node`'s `property` runs (a pop's scale, a
+## shake's position...), for a piece that answers MotionSkip's `motion_running`.
+static func held(node: Node, property: NodePath) -> bool:
+	var key := META_PREFIX + String(property).replace(":", "_")
+	if node == null or not is_instance_valid(node) or not node.has_meta(key):
+		return false
+	var tw: Tween = (node.get_meta(key) as Array)[0]
+	return tw != null and tw.is_valid() and tw.is_running()
+
+
+## ANIM-R6 D7: ends a helper's tween on `node`'s `property` at once (its rest value), for a
+## piece's `complete_motion`.
+static func settle(node: Node, property: NodePath) -> void:
+	if node != null and is_instance_valid(node):
+		_settle(node, property)
+
+
 static func _settle(node: Node, property: NodePath) -> Variant:
 	var key := META_PREFIX + String(property).replace(":", "_")
 	if node.has_meta(key):

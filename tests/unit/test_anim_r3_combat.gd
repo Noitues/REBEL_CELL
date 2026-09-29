@@ -386,7 +386,7 @@ func test_typing_passes_presses_that_work_a_button_and_eats_those_at_its_words()
 	var before_press: int = pressed[0]
 	get_viewport().push_input(_key(KEY_ENTER))
 	get_viewport().push_input(_key(KEY_ENTER, false))
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)  # ANIM-R6 D9: the press ended it, not the clock
 	assert_false(Typing.typing(label))
 	assert_eq(pressed[0], before_press + 1, "accept on the focused button works while the words type")
 	# A press aimed at the words (a click on them) shows them and is consumed.

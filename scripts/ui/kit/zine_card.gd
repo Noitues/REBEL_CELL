@@ -248,6 +248,7 @@ func _set_lift(on: bool) -> void:
 func deal_from(pile: Vector2, fan: float, delay: float) -> void:
 	if not Motion.live(&"card_draw"):
 		return
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: a deal ends with any press that ends a motion
 	var e := Motion.entry(&"card_draw")
 	draw_offset = pile - get_global_rect().get_center()
 	draw_tilt = deg_to_rad(fan)
@@ -268,6 +269,7 @@ var _deal_tween: Tween = null
 func fan_in(from: Vector2, fan: float, delay: float) -> void:
 	if not Motion.live(&"loot_fan"):
 		return
+	MotionSkip.register_passive(self)  # ANIM-R6 D7
 	var e := Motion.entry(&"loot_fan")
 	draw_offset = from - get_global_rect().get_center()
 	draw_tilt = deg_to_rad(fan)
@@ -332,6 +334,16 @@ func pulse_cost() -> void:
 ## True while the card is still being dealt in.
 func dealing() -> bool:
 	return _deal_tween != null and _deal_tween.is_valid() and _deal_tween.is_running()
+
+
+## MotionSkip (ANIM-R6 D7): the card deals or fans in.
+func motion_running() -> bool:
+	return dealing()
+
+
+## MotionSkip (ANIM-R6 D7): the card in its slot at once.
+func complete_motion() -> void:
+	finish_deal()
 
 
 func _draw() -> void:

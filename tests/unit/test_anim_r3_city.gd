@@ -561,10 +561,11 @@ func test_reduce_effects_holds_the_connecting_line_its_reading_time() -> void:
 	Fx.jack_in(func() -> void: pass, -1.0, "Test Site")
 	var saw := await BoundedWait.until(get_tree(), Fx.connecting, limit)
 	assert_true(saw, "CONNECTING shows on the reduced fade")
-	# Every frame counts (the hold is wall time; dropping the longest frames under load
-	# measured it short).
-	var shown := await BoundedWait.timed(get_tree(), func() -> bool: return not Fx.connecting(), limit, 0)
-	assert_true(shown >= Motion.seconds(Fx.CONNECT_MOTION) * 0.5, "it stays up its reading time, not ~2 frames (%.2f s, want %.2f)" % [shown, Motion.seconds(Fx.CONNECT_MOTION)])
+	# ANIM-R6: the line's own measure (wall time from showing to going); measured from when
+	# the test first saw it, a slow frame before that under a loaded shard read it short.
+	var gone := await BoundedWait.until(get_tree(), func() -> bool: return not Fx.connecting(), limit)
+	assert_true(gone, "the line goes")
+	assert_true(Fx.last_connect_shown >= Motion.seconds(Fx.CONNECT_MOTION) * 0.99, "it stays up its reading time, not ~2 frames (%.2f s, want %.2f)" % [Fx.last_connect_shown, Motion.seconds(Fx.CONNECT_MOTION)])
 	await BoundedWait.until(get_tree(), func() -> bool: return not Fx.transitioning(), limit)
 
 

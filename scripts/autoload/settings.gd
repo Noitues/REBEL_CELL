@@ -433,6 +433,28 @@ func from_dict(d: Dictionary) -> void:
 	assist_mode = bool(d.get("assist_mode", false))
 
 
+## ANIM-R6 D9: every value of this autoload a test may change: what is saved (`to_dict`)
+## and what lives only this session (`pad_active`, which device named the hints). Tests
+## take one before they change anything and `restore` it after; the suite guard
+## (tests/helpers/suite_guard.gd) compares one per test script.
+func snapshot() -> Dictionary:
+	var d := to_dict()
+	d["pad_active"] = pad_active
+	return d
+
+
+## ANIM-R6 D9: puts back a `snapshot` (the key bindings in the InputMap too) and tells
+## the views, as a setting changed from Options would.
+func restore(snap: Dictionary) -> void:
+	from_dict(snap)
+	reset_keybinds()
+	for action in snap.get("keybinds", {}):
+		keybinds[String(action)] = int(snap["keybinds"][action])
+	apply_keybinds()
+	pad_active = bool(snap.get("pad_active", false))
+	_apply()
+
+
 ## Whether this process runs the GUT test suite.
 static func is_test_run() -> bool:
 	for a in OS.get_cmdline_args():

@@ -517,3 +517,67 @@ func test_no_fixed_wait_gates_an_assertion() -> void:
 		for w in fixed_waits(source(p)):
 			found.append("%s:%s" % [p, w])
 	assert_eq(found, [] as Array[String], "no fixed wait or wall-clock read gates an assertion (use BoundedWait; see DECISIONS \"Test suite: bounded waits\")")
+
+
+## ANIM-R6 D9: a frame-count wait is a fixed wait too when motion is live. In a test that
+## makes motion live (`Motion.force_live = true`, or a `_live()` helper), an awaited frame
+## count (`_frames(n)`, `wait_frames`, a bare `process_frame` / `physics_frame`) whose very
+## next statement asserts on a motion's progress (running, typing, dealing, bumping, a
+## clock, an alpha, a scale, a tween...) races the clock: a slow frame ends the motion
+## first (or hides one that started). Use `BoundedWait.frozen_frames` (time stopped) or
+## `BoundedWait.until`; a wait that is fine carries the `# fixed-wait-ok:` marker and why.
+## Frame waits for layout before a motion starts are not flagged (the next statement is
+## not an assertion on progress).
+const FRAME_WAIT_RE := "await\\s+(self\\.)?(_frames\\(|_frame\\(|wait_frames\\(|wait_physics_frames\\(|get_tree\\(\\)\\.process_frame|get_tree\\(\\)\\.physics_frame)"
+const LIVE_RE := "Motion\\.force_live\\s*=\\s*true|\\b_live\\(\\)"
+const PROGRESS_RE := "running|busy|playing|active_count|typing\\(|dealing|bumping|warming|transitioning|modulate\\.a|\\.scale|visible_characters|_clock|tween|is_running|pulsing|landing\\(|progress|anim_"
+
+
+## The frame-count waits in `src` that gate an assertion on live motion (see above), as
+## "line: code".
+static func frame_waits(src: String) -> Array[String]:
+	var out: Array[String] = []
+	var frame := _re(FRAME_WAIT_RE)
+	var live_re := _re(LIVE_RE)
+	var progress := _re(PROGRESS_RE)
+	var lines := src.split("\n")
+	var in_test := false
+	var live := false
+	var pending := -1
+	for n in lines.size():
+		var raw := lines[n]
+		if _is_func_line(raw):
+			in_test = raw.begins_with("func test_")
+			live = false
+			pending = -1
+			continue
+		if not in_test:
+			continue
+		var code := _code_of(raw)
+		if live_re.search(code) != null:
+			live = true
+		if live and frame.search(code) != null:
+			var marked := raw.contains(FIXED_WAIT_OK) or (n > 0 and lines[n - 1].strip_edges().begins_with(FIXED_WAIT_OK))
+			pending = -1 if marked else n
+		elif pending >= 0 and code.strip_edges() != "":
+			if code.contains("assert_") and progress.search(code) != null:
+				out.append("%d: %s" % [pending + 1, lines[pending].strip_edges()])
+			pending = -1
+	return out
+
+
+func test_no_frame_count_wait_gates_a_motion_assertion() -> void:
+	var gated := "func test_x() -> void:\n\tMotion.force_live = true\n\tstart()\n\tawait _frames(2)\n\tassert_true(panel.running())\n"
+	assert_eq(frame_waits(gated).size(), 1, "a frame count before a progress assertion with motion live is caught")
+	assert_eq(frame_waits(gated.replace("Motion.force_live = true", "_live()")).size(), 1, "a _live() helper counts as live")
+	assert_eq(frame_waits(gated.replace("await _frames(2)", "await get_tree().process_frame")).size(), 1, "a bare process_frame too")
+	assert_eq(frame_waits(gated.replace("\tMotion.force_live = true\n", "")).size(), 0, "motion not live: a frame is layout")
+	assert_eq(frame_waits(gated.replace("await _frames(2)", "await BoundedWait.frozen_frames(get_tree(), 2)")).size(), 0, "frozen frames pass")
+	assert_eq(frame_waits(gated.replace("\tawait _frames(2)", "\t# fixed-wait-ok: why\n\tawait _frames(2)")).size(), 0, "the marker lets it through")
+	assert_eq(frame_waits(gated.replace("assert_true(panel.running())", "assert_eq(label.text, \"x\")")).size(), 0, "an assertion on no progress passes")
+	assert_eq(frame_waits(gated.replace("\tassert_true(panel.running())", "\tpanel.start()\n\tassert_true(panel.running())")).size(), 0, "a statement between (the motion starts after the wait) passes")
+	var found: Array[String] = []
+	for p in _test_scripts():
+		for w in frame_waits(source(p)):
+			found.append("%s:%s" % [p, w])
+	assert_eq(found, [] as Array[String], "no frame-count wait gates an assertion on live motion (BoundedWait.frozen_frames or until; TEST_SUITE)")

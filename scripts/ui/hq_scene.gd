@@ -295,8 +295,9 @@ func start_from_code(code: String) -> bool:
 
 func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS, corporation_id: StringName = RunManager.DEFAULT_CORPORATION) -> void:
 	RunManager.new_campaign(seed, corporation_id, ice, home_variant_id, class_id)
-	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
-		RunManager.campaign.home_variant_id, TextDb.t(RunManager.corporation, "display_name"), RunManager.campaign.story_path_id])
+	# ANIM-R6 D11: the log strip (an Options switch) translates its words.
+	_log.append_text("[b]%s[/b] %s\n" % [tr("New campaign"), tr("(seed %d, ICE %d, %s) against %s. Story path: %s.") % [seed, RunManager.campaign.ice_level,
+		RunManager.campaign.home_variant_id, TextDb.t(RunManager.corporation, "display_name"), RunManager.campaign.story_path_id]])
 	show_hq()
 
 
@@ -304,13 +305,13 @@ func resume() -> void:
 	if RunManager.scene_change_pending():
 		return
 	if RunManager.resume():
-		_log.append_text("[b]Resumed.[/b]\n")
+		_log.append_text("[b]%s[/b]\n" % tr("Resumed."))
 		if RunManager.has_active_run():
 			RunManager.go_to_netrun()
 		else:
 			show_hq()
 	else:
-		_log.append_text("[color=orange]Nothing to resume.[/color]\n")
+		_log.append_text("[color=orange]%s[/color]\n" % tr("Nothing to resume."))
 		notify(tr("Nothing to resume."), true)
 
 
@@ -1462,7 +1463,7 @@ func show_hq() -> void:
 	var settings_btn := _hint_button(tr("Settings"), &"open_settings", open_settings)
 	settings_btn.name = "SettingsButton"
 	_add_tip(actions, _icon(settings_btn, StatIcon.SETTINGS), tr("Options: text size, sound, controls, subtitles."))
-	var save_btn := _icon(_button(tr("Save"), func() -> void: RunManager.autosave(); _log.append_text("Saved.\n"); notify(tr("Saved."))), StatIcon.SAVE)
+	var save_btn := _icon(_button(tr("Save"), func() -> void: RunManager.autosave(); _log.append_text(tr("Saved.") + "\n"); notify(tr("Saved."))), StatIcon.SAVE)
 	save_btn.name = "SaveButton"
 	_add_tip(actions, save_btn, tr("Save the campaign now (it also saves after every action)."))
 	_as_menu(actions)

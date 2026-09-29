@@ -211,7 +211,10 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   a press that drives the playout itself (a focus move, which is how keys and the pad reach
   1x / 2x / 4x and Skip, and a press on those buttons) passes without ending the step:
   stepping onto 2x or pressing it speeds the raid up, it never skips the step being watched
-  (Skip makes its own jump).
+  (Skip makes its own jump). ANIM-R6: the exception holds whichever helper sees the press
+  first (a Typing label, a subtitle, a page entrance or a flight running beside the
+  playout): a helper may answer `motion_passes(event)` and `MotionSkip.complete_all(node,
+  event)` leaves it running; the playout answers it with its own-controls test.
   ANIM-R5: one press completes every skippable motion running on screen, not only the one
   whose helper saw it first: a stray key during a flight and a drop, or a page entrance and
   a flight, ends them all (it used to end one; a focus move already ended all). Every helper
@@ -237,6 +240,12 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   (`Motion.seconds` / `delay_of` 0, `amplitude` 0 for a share, px or frames, 1 for a
   scale); a tuning of another entry (`UiMotionData.ALWAYS_ON`: the ghost's full-tilt speed,
   SEND IT's drip split) has nothing of its own and validation refuses it off.
+  ANIM-R6: every view that plays an entry with a motion of its own asks whether it plays
+  (`Motion.live`, `Motion.seconds_live` for a drawn motion's time, `Motion.switched_on` for a
+  piece with its own reduced form; the helpers ask for their caller); reading its seconds
+  alone is not enough (off, they stay: they are a hold). `test_motion_lab_demos` records
+  every read and every question while the demos play and names any view that never asks.
+  Holds (a time that is how long an end state or a word shows, 5.5) are exempt.
   ANIM-R6 city: views on their own clock honour it too: the raid layer shows each beat's end
   state from its start when its entry is off (a token on its new node, a flat stamp, an
   unrisen number, a closed lock, no lag on home's bar; the beat keeps its time), the routes'
@@ -296,7 +305,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   guards are a glyph and a number from the blocker, never a word badge; an icon row beside
   each HP (sword 6 − shield 5 = 1 since ANIM-R4) stays with LAST TURN; a breaking wheel cracks with its own
   art and falls, a skull on the beaten side; a won fight swaps SEND IT, RESPIN and UNDO for the
-  next step (LOOT / CONTINUE) at once; a played card is gone before its wheel spins; a status
+  next step (LOOT / CONTINUE) as its outcome lands (ANIM-R5: at the replay's end beat, once
+  every HP roll has ended; a press, reduce effects or headless land it at once, and that press
+  only lands it, ANIM-R6 A1); a played card is gone before its wheel spins; a status
   marks its slice as it lands; YOU PLAY X; NEXT and LAST TURN explain themselves on hover.
 - **SEND IT for a beginner (ANIM-R4)**: the operative's hits (then its drones', staggered)
   land in full, their HP rolls done, then a gap (`resolve_side_gap`), then the enemies' (then
@@ -515,6 +526,33 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   and why Heat rose. Flights take 0.7 s, arrive at x0.55 and pulse the tag they land on. A
   route move keeps its page's presses (they end the move, nothing else); "then:" icons carry
   their words; the Modem's socket list says "Chips go into:".
+- **Holds (ANIM-R6)**: some entries are a time, not a motion: how long an end state or a
+  word shows (`resolve_landing_hold`, `resolve_result_hold`, `combat_end_hold`,
+  `toast_note_hold`, `raid_incoming_hold`, `jack_connect`), a bounded wait
+  (`jack_arrival_wait`, `asset_drop_wait`) or the replay's pacing
+  (`resolve_sequence`, `resolve_beat`, `resolve_pass`; the raid's step gap is a part since
+  ANIM-R6 city: off, the steps follow on at once). Switched off they keep
+  their time (there is no motion to leave out); every other entry's view asks whether it
+  plays (5.1).
+- **Which motions a press completes (ANIM-R6)**: every helper that ends its motion on a press
+  (5.1) takes presses. The short motions that answer the player join the same group
+  passively (`MotionSkip.register_passive`): the top bar's bumps, rolls and landing pulses
+  (`hud_stats`; DAEMONS' and VIEW LOADOUT's landing pops, `hud_bar`), the MODEM sign's warm-up (`modem_sign`), SEND IT's drips, halo and squash
+  (`drip_button`), a card dealing or fanning in (`zine_card`) and a wheel's spin after a card
+  (`wheel_view`). They complete with any press another helper takes (one press, every
+  motion) but take none on their own: a key pressed while a tag bumps still does what it
+  does (a helper of their own would eat it for a fraction of a second). Left out, each for
+  its reason (`test_anim_r6_rules` keeps this list and the code in step): hover and focus
+  states that hold while hovered or focused (`buy_button`'s flap, `crew_card`'s tilt,
+  `focus_tip`), answers to the press itself (`map_legend`'s fold, `pad_prompts`, `ram_bar`'s
+  ticks and refusals), ambient loops with nothing to complete (`neon_city`,
+  `wireframe_background`, `zine_stamp`'s breathing, `tutorial_overlay`'s Next pulse), a
+  reading time (`toast`; the Heat poster and the HQ's raid numbers joined the rule in
+  ANIM-R6 city), pieces
+  a registered helper ends (`combat_fx_layer` under the SEND IT replay, `forecast_stamp`
+  in the raid playout's step, `city_map_overlay`'s drop and raid through DropLayer and the
+  playout; its selection and route pulses answer the pointer, as `grid_map_view`'s do),
+  and `fx` (the jack swallows every press itself; a flash is a tenth of a second).
 - **ANIM-R6 netrun screens**: the loot's deal is a screen motion (one press lands every
   sticker, and a sticker still fanning in takes no click: its press lands the deal and picks
   nothing). The chosen event outcome stamps on the event page, which stays (inert) until it

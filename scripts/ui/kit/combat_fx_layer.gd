@@ -26,6 +26,10 @@ const FADE_SHARE := 0.35
 const GROW_FROM := 0.6
 const CRIT_POP_SCALE := 1.35
 const TRAVEL_FADE_TO := 0.6
+## ANIM-R6 D2 (were inline): a drawn mark that grows in from a smaller size (an impact's
+## glyph, a status mark, a block or heal number) settles with this overshooting shape.
+const POP_SETTLE_TRANS := Tween.TRANS_BACK
+const POP_SETTLE_EASE := Tween.EASE_OUT
 ## ANIM-R4 C5: a hit's projectile flies over `hit_line_flight`'s share of `hit_line` (the
 ## impact), and its line fades over the rest (the table's, see line_share()).
 ## The number riding with a projectile: its size as a share of a floating number's, and its
@@ -808,7 +812,7 @@ func _draw_impact(s: Dictionary) -> void:
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var d := maxf(0.001, float(s["dur"]))
 	var q := clampf(a / (d * GROW_SHARE), 0.0, 1.0)
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var fs := maxi(1, roundi(float(s["fs"]) * sc))
 	var text := String(s["text"])
@@ -865,7 +869,7 @@ func _draw_tag(s: Dictionary) -> void:
 	var land := float(s["land"])
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
 	var fs := int(s["fs"])
 	var text := String(s["text"])
@@ -945,7 +949,7 @@ func _draw_stamp(s: Dictionary) -> void:
 	var land := float(s["land"])
 	var a := float(s["age"])
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var c := _local(s["at"])
 	var fs := roundi(STAMP_FONT * Settings.text_scale * sc)
@@ -1045,7 +1049,7 @@ func _draw_word(s: Dictionary) -> void:
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var land := float(s["land"])
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
 	var fs := roundi(float(s.get("fs", WORD_FONT * Settings.text_scale)) * sc)
 	var text := String(s["text"])

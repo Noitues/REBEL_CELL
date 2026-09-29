@@ -13,8 +13,8 @@ extends RefCounted
 ##   ends a second turn). A press when no motion plays is untouched.
 ##
 ## Every helper that ends its motion on a press uses this: the combat replay skip, DropLayer,
-## FlightFx, MenuMotion, Typing, the Dialogue subtitles, PageTransition and the netrun's
-## route travel. View only.
+## FlightFx, MenuMotion, Typing, the Dialogue subtitles, PageTransition, the netrun's route
+## travel and the raid playout (RaidPlayoutPanel). View only.
 ##
 ## - **Menus pass presses on (ANIM-R2)**: in a menu (MenuMotion) a focus move and a press
 ##   that works the menu (ui_accept, a click on one of its lines) complete the line's motion
@@ -44,6 +44,10 @@ extends RefCounted
 ##   which walks to 1x / 2x / 4x and Skip, or a press on one of them:
 ##   `RaidPlayoutPanel.drives_playout`) does not end the current step: speeding the raid up
 ##   never skips the step being watched. STYLE_GUIDE 5.1 says so. It joins GROUP too.
+##   ANIM-R6 D1: the exception holds whichever helper sees the press first: a helper may
+##   answer `motion_passes(event)`, and `complete_all` (given the press) leaves a helper
+##   that lets that press pass running. The playout answers it with `drives_playout`, so a
+##   Typing label or a flight running beside it can't end the watched step on a 2x press.
 ## - **One press, every motion (ANIM-R5, `handle`)**: a press completes every skippable
 ##   motion running on screen, not only the one whose helper saw it first (a stray key used
 ##   to end a flight and leave the drop under it running, as the consumed press reached no
@@ -51,8 +55,15 @@ extends RefCounted
 ##   `complete_motion()` (and `motion_keeps()` when it keeps presses); `handle` gives one
 ##   verdict for all of them (the keeps of every running helper count) and then completes
 ##   them all, for a press that passes on (PASS) as for one it consumes (CONSUME).
-##   `consume` completes them all too, so a helper that consumes by hand still does. A
+##   helper that consumes by hand still does. A
 ##   helper a PauseMenu covers is left alone (its motion plays on).
+## - **Short motions join too (ANIM-R6 D7, `register_passive`)**: a short motion that
+##   answers the player (the top bar's bumps and rolls, the MODEM sign's warm-up, SEND IT's
+##   drips and squash, a card dealing or fanning in, a wheel's spin after a card) joins GROUP
+##   and completes with any press another helper takes, but takes no press of its own: a
+##   key pressed while a tag bumps must still do what it does (a helper of its own would
+##   consume it for a flourish of a fraction of a second). STYLE_GUIDE 5.5 lists them and
+##   the motions left out (loops, hover and focus states, feedback to the press itself).
 ## - **Reading holds are not motion (ANIM-R6 C1)**: a hold that is there to be read (the Heat
 ##   banner and its consequence note, `heat_banner`'s delay, like RAID INCOMING's) is not
 ##   `motion_running`: a press completes what moves (HeatPoster: the number's roll, the
@@ -90,15 +101,22 @@ static func handle(event: InputEvent, node: Node, keep: Array = []) -> Verdict:
 	if v == Verdict.CONSUME:
 		consume(node, event)
 	elif v == Verdict.PASS:
-		complete_all(node)
+		complete_all(node, event)
 	return v
 
 
 ## ANIM-R5: adds `node` to the helpers one press completes together (it answers
-## `motion_running()` and `complete_motion()`, and may answer `motion_keeps()`).
+## `motion_running()` and `complete_motion()`, and may answer `motion_keeps()` and, ANIM-R6
+## D1, `motion_passes(event)`).
 static func register(node: Node) -> void:
 	if node != null and not node.is_in_group(GROUP):
 		node.add_to_group(GROUP)
+
+
+## ANIM-R6 D7: adds a short motion that completes with any press another helper takes but
+## has no `_input` of its own (see the class notes). The same contract as `register`.
+static func register_passive(node: Node) -> void:
+	register(node)
 
 
 ## ANIM-R5: the registered helpers under `node`'s tree whose motion runs now, in tree order,
@@ -124,10 +142,21 @@ static func running_keeps(node: Node) -> Array:
 
 
 ## ANIM-R5: completes every running registered motion (the end state of each at once).
-static func complete_all(node: Node) -> void:
+## ANIM-R6 D1: given the press (`event`), a helper whose `motion_passes(event)` is true is
+## left running (the press drives it rather than ends it: the raid playout's 1x / 2x / 4x).
+static func complete_all(node: Node, event: InputEvent = null) -> void:
 	for h in running(node):
-		if is_instance_valid(h) and h.has_method(&"complete_motion"):
-			h.call(&"complete_motion")
+		if not is_instance_valid(h) or not h.has_method(&"complete_motion"):
+			continue
+		if lets_pass(h, event):
+			continue
+		h.call(&"complete_motion")
+
+
+## ANIM-R6 D1: true when helper `h` lets `event` pass without completing its motion
+## (`motion_passes`). No event (a skip by hand): false.
+static func lets_pass(h: Node, event: InputEvent) -> bool:
+	return event != null and h.has_method(&"motion_passes") and bool(h.call(&"motion_passes", event))
 
 
 ## True when `event` is a press that completes a motion (see the class notes).
@@ -151,7 +180,7 @@ static func consume(node: Node, event: InputEvent = null) -> void:
 	if node == null or not node.is_inside_tree():
 		return
 	# ANIM-R5: the press completes every running motion, not only the one that took it.
-	complete_all(node)
+	complete_all(node, event)
 	if event != null:
 		var settings := node.get_tree().root.get_node_or_null(^"Settings")
 		if settings != null and settings.has_method(&"observe_device"):

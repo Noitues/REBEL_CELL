@@ -8,11 +8,12 @@ extends GutTest
 
 const SCENE := "res://scenes/combat/combat_scene.tscn"
 
-var _text_scale_before: float = 1.0
+## ANIM-R6 D9: every Settings value as found (the tutorial test sets tutorial_done).
+var _settings: Dictionary = {}
 
 
 func before_all() -> void:
-	_text_scale_before = Settings.text_scale
+	_settings = Settings.snapshot()
 
 
 func before_each() -> void:
@@ -25,10 +26,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
-	if not is_equal_approx(Settings.text_scale, _text_scale_before):
-		Settings.set_text_scale(_text_scale_before)
-	Settings.set_pad_active(false)
-	Settings.reset_keybinds()
+	Settings.restore(_settings)
 	Dialogue.clear()
 	AudioDirector.muted = false
 	RunManager.delete_save()

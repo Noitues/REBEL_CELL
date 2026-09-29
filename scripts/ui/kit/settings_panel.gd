@@ -125,10 +125,14 @@ func show_section(name: String) -> void:
 	# ANIM-R4 C3: the built widgets wait off the tree for their section; everything else a
 	# section made (its labels, the Controls grid, the note, Reset) goes (they leaked: 49
 	# Controls per Options opened). Queued: Reset calls this from its own press.
+	# ANIM-R6 D10: what goes stays in the tree, hidden, until its free (taken out and only
+	# queued, it was an orphan node until the frame ended: 74 counted after one test).
 	var keep := _persistent()
 	for c in _body.get_children():
-		_body.remove_child(c)
-		if not keep.has(c):
+		if keep.has(c):
+			_body.remove_child(c)
+		elif not c.is_queued_for_deletion():
+			(c as CanvasItem).hide()
 			c.queue_free()
 	_key_buttons.clear()
 	match name:

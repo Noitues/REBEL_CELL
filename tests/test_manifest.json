@@ -145,6 +145,10 @@
 			"seconds": 1.3,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_r6_rules.gd": {
+			"seconds": 4.7,
+			"tier": "full"
+		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.4,
 			"tier": "fast"

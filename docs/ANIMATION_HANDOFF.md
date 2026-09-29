@@ -73,7 +73,8 @@ Before building effects, make motion tunable so the owner can react to numbers, 
 1. **`content/config/ui_motion.tres`** (schema `scripts/data/ui_motion_data.gd`,
    read-only at runtime): one entry per animation id with `duration`, `delay`, `ease`
    (Tween.EaseType), `trans` (Tween.TransitionType), `amplitude` (px or scale), `enabled`.
-   Keep the schema change minimal, update `tools/schema_smoke_test.gd`, log it in
+   Keep the schema change minimal, add its check to `tools/schema_smoke_checks.gd` (the
+   runner `tools/schema_smoke_test.gd` gains no checks: ANIM-R5 P17), log it in
    `docs/DECISIONS.md` (CLAUDE.md rule 8).
 2. **`scripts/ui/kit/motion.gd`** (`class_name Motion`): small helpers that read the config
    by id and build tweens (`Motion.pop(node, &"card_hover")`, `Motion.slide_in(...)`), and

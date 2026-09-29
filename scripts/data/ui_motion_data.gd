@@ -82,6 +82,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"defeat_stamp",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
+	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
+	# (were inline in FlightFx).
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share",
 	# ANIM-R6 city: inline shares moved into the table (the raid volley's stagger, the Heat
 	# pulse's rise).
 	&"raid_shot_stagger", &"heat_pulse_rise",
@@ -109,7 +112,8 @@ const OFF_PARTS: Dictionary = {
 	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
-const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise"]
+const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share"]
 
 @export var entries: Array[UiMotionEntryData] = []
 

@@ -56,6 +56,17 @@ var _flicker: float = 0.0
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = Vector2(210, 540)
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: the warm-up ends with any press that ends a motion
+
+
+## MotionSkip (ANIM-R6 D7): the sign is warming up.
+func motion_running() -> bool:
+	return warming()
+
+
+## MotionSkip (ANIM-R6 D7): the sign lit at once.
+func complete_motion() -> void:
+	settle()
 
 
 ## Warms the sign up from dark (entering the Modem).

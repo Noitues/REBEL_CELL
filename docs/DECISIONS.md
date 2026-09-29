@@ -438,6 +438,210 @@ only: no rule, content number or balance changed.
 Motion choices (ANIMATION_HANDOFF 5), newest first. Timings live in
 `content/config/ui_motion.tres`; each entry below says what was picked and why.
 
+#### 2026-09-29 — Animation pass — ANIM-R6 rules
+The sixth fix batch of the Animation pass review, motion rules, kit, test infrastructure and
+docs (fix agent D, D1-D11). Every call below was the implementer's (nothing deferred).
+Views, tools, tests and docs only. Tests: `tests/unit/test_anim_r6_rules.gd` (full tier)
+unless named.
+
+- **D1 the playout's own controls hold whichever helper sees the press.** The exception
+  (a focus move, or a press on 1x / 2x / 4x / Skip, passes without ending the watched step)
+  lived in the panel's own `_input`; when another running helper (a Typing label, the
+  subtitle, a page entrance, a flight) saw the press first, `MotionSkip.handle` gave PASS
+  and `complete_all` ended the panel's step anyway. Helpers may now answer
+  `motion_passes(event)`; `complete_all(node, event)` (and so `handle` and `consume`) leaves
+  a helper that lets the press pass running, and the playout answers it with
+  `drives_playout`. Its `_input` is now plain `MotionSkip.handle` (fix agent C's file:
+  the smallest change). The combat replay passes its press to `complete_all` too (fix agent
+  A's file, one argument). A skip by hand (`complete_all` with no press) still completes
+  every helper. Tests: a focus move and accept on 2x handled first by a typing label leave
+  the step playing and complete the typing; a stray key handled by the label ends both.
+- **D2 no inline motion numbers in the kit.** FlightFx's lift and fade shares and the
+  choice stamp's down and hold shares move into the table (`flight_lift_share`,
+  `flight_fade_share`, `choice_stamp_down_share`, `choice_stamp_hold_share`: tunings of the
+  flight or stamp, `UiMotionData.ALWAYS_ON`, same values; the lift and the fade take their
+  shape from their entry: the lift was an inline EASE_OUT); `FlightFx.lift_share()` replaces
+  the netrun's read of the old const (fix agent B's file, one line). The jack's push eased in
+  by an inline EASE_IN over the table's IN_OUT: it now takes the entry's ease and `jack_in`
+  / `jack_out` say IN (the look kept). The reduced jack read the raw duration (it ignored
+  1x / 2x / 4x): `Fx.reduced_fade_times()` reads `Motion.seconds` / `amplitude`, and the
+  fades take the entry's shape. The shredder's fade takes `shred_feed`'s shape, the drop
+  stamp's fade `drop_stamp`'s, the SEND IT drips' draw-back `send_it_drips`'s (it was an
+  inline IN_OUT). A pop's grow ease is one named kit constant (`Motion.POP_GROW_EASE`),
+  used by `Motion.pop`, SEND IT's squash and the wheel's resolve pulse (fix agent A's
+  `wheel_view.gd`, one line). `combat_fx_layer.gd` (fix agent A's file) names its inline
+  shapes: the played card's grow share (`PLAY_GROW_SHARE`), the dissolve's eases and the
+  drawn marks' overshoot settle (`POP_SETTLE_TRANS` / `POP_SETTLE_EASE`). New entries play
+  in the lab on the real flight and stamp. Tests: `test_no_tween_shape_is_written_inline`
+  (scans every game script for a `Tween.EASE_*` / `TRANS_*` literal outside a const, an
+  export default or a dictionary fallback, naming offenders; the dev-only demo drags are
+  exempt), `test_the_reduced_jack_fade_runs_at_the_speed`,
+  `test_a_flight_and_a_stamp_take_their_shares_from_the_table`.
+- **D3 a view-level switch check.** R5's off-by-kind test checked only the kit's answers
+  (`Motion.live` / `seconds` / `amplitude`), so a view that reads an entry's time and draws
+  or tweens without asking whether it plays (the raid layer, the combat layer, the route
+  crawl) passed. `Motion.recording` now also notes every `live` question (`Motion.asks`,
+  the kit's helpers ask for their caller); two kit calls let a view ask in one step:
+  `Motion.seconds_live(id)` (the seconds when it plays, else 0) and `Motion.switched_on(id)`
+  (enabled, whatever reduce effects say: the reduced jack, reading times).
+  `test_motion_lab_demos` plays every demo, keeps every entry read and every question, and
+  fails on an entry with a motion of its own (not a part, a tuning or a hold) that a game
+  script read but that no game script asks about, neither while the demos ran nor in its
+  source (`live`, `seconds_live`, `switched_on`, or a helper that asks: `run`, `fade`,
+  `pop`, ...), naming the entry and its readers ("switch ignored" lines). Holds (a time that
+  is how long an end state or a word shows: `resolve_landing_hold`, `resolve_result_hold`,
+  `combat_end_hold`, `toast_note_hold`, `jack_arrival_wait`, `asset_drop_wait`,
+  `raid_incoming_hold`, `jack_connect`, `resolve_sequence`, `resolve_beat`,
+  `resolve_pass`) are listed in the test and in STYLE_GUIDE 5.5. A runtime check was chosen
+  over a pure source scan: most of the misses are drawn motions (a clock and an entry's
+  seconds, no tween), which a scan for tweens does not see.
+  Fixed here (this agent's files): the jack's reveal (`jack_arrive`), its dissolve wave
+  (`jack_dissolve`: off, no wave), its scanlines' roll (`jack_scanlines`: off, still), the
+  reduced jack's switch (asked through the kit), the screen flash on its default numbers
+  (`screen_flash`), the drop's settle, stamp fade and shredder feed.
+  **Found in other agents' files this round** (the test's `AWAITING_FIX`, which only shrinks:
+  once a view asks, the test says to remove its id): fix agent A: `card_stamp`
+  (combat_fx_layer; fixed by A's batch and taken off the list at the merge), `dead_wheel_fade` and `hp_lag` (wheel_view), `heal_number`,
+  `hit_absorb` and `number_float` (combat_scene); fix agent C: `asset_drop_grow`,
+  `route_crawl`, `route_target_pulse`, `select_ring_pulse` (city_map_overlay),
+  `beacon_blink`, `city_sign_pick` (neon_city), `decoy_fire`, `home_lag`, `ice_lock_ring`,
+  `node_damage_number`, `raid_flip`, `raid_hit_effect`, `raid_move`,
+  `raid_outcome_stagger`, `raid_result_banner`, `turret_trace` (raid_fx_layer /
+  raid_beats). Tests: `test_every_lab_demo_exercises_its_own_entry` (the switch check),
+  `test_the_switch_check_names_a_view_that_never_asks`,
+  `test_a_view_asks_whether_its_motion_plays_through_the_kit`,
+  `test_fx_pieces_honour_their_switch`.
+- **D4 the runner survives a broken results file.** `parse_junit` raised on an empty or
+  cut-short `results.xml` (it happened under a full disk) and the uncaught error lost
+  every shard's results. `read_results` never raises: a missing, empty or unparseable file
+  is that shard's problem (with the free space left), the other shards count, and its
+  scripts join the scripts that did not run in the alone-rerun (which now runs failing and
+  not-run scripts). A free-disk check runs before the shards start: under 1 GB
+  (`--min-free-gb`) the run stops with a clear message (exit 2), under 5 GB
+  (`--warn-free-gb`) it warns. Tested by `tools/test_run_tests.py` (Python `unittest`: the
+  runner is Python, so its tests are too; TEST_SUITE documents it), which
+  `test_the_runners_own_tests_pass` runs inside the suite.
+- **D5 where a schema check goes.** CLAUDE.md rule 8 and ANIMATION_HANDOFF said to update
+  `tools/schema_smoke_test.gd` for a schema change; since ANIM-R5 P17 that file is a runner
+  that must gain no checks (they live in `tools/schema_smoke_checks.gd`). Both now name the
+  checks file (in CLAUDE.md only that reference changed). This batch's `scripts/data/`
+  change is four ids in `REQUIRED_IDS` and `ALWAYS_ON` (D2), no field; the smoke checks
+  already cover both lists. Test: `test_the_docs_send_a_schema_check_to_the_checks_file`.
+- **D6 stale words.** The ANIM-R5 rules entry (R2) said the raid panel "still ends only its
+  own step": a bracketed note now points to ANIM-R5 city P11 and D1 above (the entry itself
+  is history). MotionSkip's helper list names RaidPlayoutPanel (D1). STYLE_GUIDE 5.2 said a
+  won fight swaps SEND IT for LOOT / CONTINUE "at once"; since ANIM-R5 it swaps as the
+  outcome lands (the replay's end beat, after every HP roll; a press lands it at once). The
+  wording names no replay length, so fix agent A's retune of the replay (A7) leaves it true.
+  Test: `test_the_docs_say_what_the_motion_does_now`.
+- **D7 short motions join the one press.** The MODEM sign's warm-up, the top bar's bumps,
+  rolls and landing pulses, SEND IT's drips, halo and squash, a card dealing or fanning in,
+  and a wheel's spin after a card (outside the replay) joined no MotionSkip group: a press
+  that ended a page entrance or a flight left them playing. Registering them as full
+  helpers was rejected: each would take presses on its own, and a key pressed while a tag
+  bumps would be consumed for a flourish of a fraction of a second (worse for the player).
+  They join passively (`MotionSkip.register_passive`: `motion_running` /
+  `complete_motion`, no `_input`): they complete with any press another helper takes, and
+  a press when only they play passes on untouched. The WheelView completes only when still
+  busy, so the replay's own skip (which stops its wheels first) is never redone
+  (`wheel_view.gd` is fix agent A's file: registration and the two methods). Every other
+  script that animates is listed with why a press does not complete it (hover and focus
+  states, answers to the press itself, ambient loops, reading moments, pieces a registered
+  helper ends, the jack) in STYLE_GUIDE 5.5 and the test's `NOT_SKIPPABLE`. Tests:
+  `test_every_script_that_animates_registers_or_says_why_not` (a script that animates and
+  joins no group fails unless listed; a listed script that registers or stops animating
+  fails too; the guide names each),
+  `test_a_short_motion_completes_with_a_press_another_helper_takes_and_takes_none_itself`.
+- **D9 Settings as found, and frame counts under live motion.** `test_horizontal_pass20`
+  left `tutorial_done` on; `pad_active` is not in `Settings.to_dict` (it is session state,
+  not saved: kept out of the file on purpose), so tests restoring through
+  `to_dict` / `from_dict` missed it. `Settings.snapshot()` (to_dict plus `pad_active`) and
+  `Settings.restore()` (the InputMap's keys too) give tests one call for every field
+  (a test fails when a new field is missing from the snapshot), and the suite guard
+  (`tests/helpers/suite_guard.gd`, GUT's pre- and post-run hook, in `.gutconfig.json` and on
+  every runner shard) compares a snapshot per test script: a change left behind is named
+  (`SETTINGS LEAK`), put back, and fails the run. Its first full run found two more:
+  `test_horizontal_pass16` and `test_polish` rebound a key back to its old key, which leaves
+  it saved as a keybind; both restore their snapshot now. The fixed-wait rule now also
+  flags a frame-count wait whose next statement asserts on live motion's progress
+  (`frame_waits`, see TEST_SUITE); four sites: two now wait frozen frames, one frozen
+  frame, one is marked (the bounded wait above it saw the entrance end). The manifest's
+  times were refreshed from a green run (`--update-times`; the ANIM-R5 city and netrun
+  scripts had placeholder times). Tests: `test_a_settings_snapshot_covers_every_field_and_restores_it`,
+  `test_the_suite_guard_is_wired_into_every_run`,
+  `test_no_frame_count_wait_gates_a_motion_assertion`,
+  `test_the_suite_guards_findings_are_read_from_the_log` (tools/test_run_tests.py).
+- **D10 no leaks at exit.** The exit leaks of a passing run (shard 1: 213 ObjectDB
+  instances, 31 dummy textures, 68 shaped texts, 3 CanvasItems, 2 resources; shard 3: 19
+  instances) were two orphaned node trees a test built and never freed: a reference
+  ZineNote in `test_pad_reachability` (with its RichTextLabel, scroll bar and timer) and a
+  tooltip body from `UiTip.make` in `test_horizontal_pass20_screens`; both are freed now
+  and no shard prints a leak at exit. GUT's per-test orphan counts after
+  `test_settings_extras` (74) and `test_horizontal_pass17` (22) were SettingsPanel's
+  section swap: it took the old section's labels out of the tree and queued them, so they
+  were orphans until the frame ended; now they are hidden and queued in place (no orphan at
+  any time). The suite guard fails a run that leaves any node outside the tree at its end
+  (`ORPHAN LEFT`); it found none after these fixes.
+- **D8 one cap, one arrival, a flash that minds the setting.** Dialogue copied Typing's
+  typing cap by hand: `Typing.seconds_for(chars, id)` is the one (seconds per character,
+  at most the entry's amplitude, both at the speed), used by both. `beat_timing` counted
+  the hit number's travel (`number_to_hp`) in "arrive" only while it plays, but always in
+  "settle" and in the death's lead: `number_arrive()` is the one answer (0 when it does not
+  play) for all three (fix agent A's `combat_scene.gd`: the three reads and the new
+  static). `Fx.flash` had no reduce-effects check (its callers gate on their own entry, but
+  the default flash did not): it never flashes under reduce effects, and on
+  `screen_flash`'s numbers not when that entry is off (D3). Tests:
+  `test_the_subtitle_types_under_typings_one_cap`,
+  `test_a_number_that_does_not_travel_takes_no_time_anywhere`,
+  `test_fx_pieces_honour_their_switch`.
+- **D11 the system log speaks the player's language.** The log strip at the foot of the
+  HQ and the run is an Options switch, so a player can read it: it is not dev-only. Its
+  words ("New campaign", the seed line, "Resumed.", "Nothing to resume.", "No living
+  operative or open Site: go to HQ.", "Saved.") go through `tr` now (the bbcode stays
+  outside the key); strings.csv re-exported (fix agents B's and C's scene files: the
+  log lines only). The lines the rules write into it (a raid's event text, a refused
+  launch's reason) are the rules' English, as the toasts that show the same text are; the
+  coordinator has this as a finding for the screens that show them. Test:
+  `test_the_system_log_translates_its_words` (no English literal outside `tr` in a log
+  line; the keys are in strings.csv).
+- **After merging the netrun batch (B7):** HudBar's landing pops on DAEMONS and VIEW LOADOUT
+  join the one press passively too (`Motion.held` / `Motion.settle`, new kit calls for a
+  helper's tween on a property), and `MotionDemo.after_frames` (the coordinator's leftover)
+  waits with one-shot connections (a `Waiter` per call, checking its node each frame and
+  freeing itself), never an `await` that resumed on a scene freed meanwhile. Test:
+  `test_a_demo_step_waits_its_frames_and_never_runs_on_a_freed_node`.
+- **The guard watches the run's clocks too; one load flake fixed.** A full run failed
+  `test_anim_r3_city`'s CONNECTING hold in its shard only (0.16 s measured, 0.35 wanted),
+  passing alone. The guard now also compares `Engine.time_scale`, `Motion.speed` and
+  `Motion.force_live` per script (a frozen frame or a 2x left behind would slow or speed
+  every later motion): the next full run found no leak of any, so the cause was the test's
+  measure: it timed the line from when it first saw it, and a slow frame before that under
+  a loaded shard ate the hold. Fx now measures the line itself (`last_connect_shown`, wall
+  time from showing to going) and the test reads that (fix agent C's test file: that
+  assertion only).
+- **The lab-demo check under load.** After the combat merge, `combat_end_hold`'s new netrun
+  demo (fight_won: a netrun, its city's settle frames, a whole SEND IT) missed its read in
+  2 of 3 full runs (passing alone once): its wait counted game time only, and a loaded
+  shard's slow frames used the 12 s up before the lab's frame-counted context settle
+  (`CONTEXT_SETTLE` + `CONTEXT_BAKE_FRAMES`) had run. The wait now also allows those frames
+  plus 240 (`DEMO_EXTRA_FRAMES`); it still returns as soon as the entry is read.
+- **After merging the city batch.** The switch check's `AWAITING_FIX` lost the ten entries fix
+  agent C's raid layer and route now ask about (`decoy_fire`, `home_lag`, `ice_lock_ring`,
+  `node_damage_number`, `raid_flip`, `raid_hit_effect`, `raid_move`, `raid_result_banner`,
+  `route_crawl`, `turret_trace`); C's new `raid_threat_withdraw` is asked through the raid
+  layer's own `beat_u` (a demo never reaches a withdrawal; the banner's ask came too late in
+  one run of three): the check now also reads a view's own asking functions (`func f(id:
+  StringName` whose body asks the kit, or another such function, about `id`, called with the
+  id or a const naming it). Still awaiting after all three merges: fix agent
+  A's `dead_wheel_fade`, `heal_number`, `hit_absorb`, `hp_lag`, `number_float` and fix agent
+  C's `asset_drop_grow`, `beacon_blink`, `city_sign_pick`, `raid_outcome_stagger`,
+  `route_target_pulse`, `select_ring_pulse` (the coordinator has the list). The Heat poster and
+  the HQ's raid numbers joined the one press in C's batch, so the not-skippable list lost
+  them; `raid_step_gap` is a part since C's batch, no longer a hold. C's new
+  `test_anim_r6_city` asserted a roll still running after a plain frame (now a frozen frame),
+  and A's new `test_anim_r6_combat` left `tutorial_done` on (it restores a snapshot now):
+  both caught by the rules above.
+
 #### 2026-09-29 — Animation pass — ANIM-R6 city, raid, HQ and bake
 The sixth fix batch of the Animation pass review, city, raid, HQ and bake part (C1-C16, from the
 R6 vertical, horizontal and naive-player audits). Views, tools and docs; content: the three
@@ -882,8 +1086,11 @@ test); R4 / R1 tests adjusted where they pinned the old behaviour (below).
   the combat replay (keeps SEND IT, RESPIN, UNDO, the hand) and the netrun route move. The
   raid playout panel (fix agent C's file this round) still ends only its own step; its
   one-press fix should register it the same way (a `motion_running` / `complete_motion`
-  pair and `MotionSkip.handle`). `test_anim_r4_combat` pushed two presses to end a flight
-  and a drop ("one press each"); it now pushes one.
+  pair and `MotionSkip.handle`). [Superseded: ANIM-R5 city P11 registered the panel (its
+  step ends with every other motion, save a press that drives the playout), and ANIM-R6 D1
+  made that exception hold whichever helper sees the press (`motion_passes`).]
+  `test_anim_r4_combat` pushed two presses to end a flight and a drop ("one press each");
+  it now pushes one.
 - **R3 switching an entry off, by kind.** `enabled` was honoured only through
   `Motion.live`; entries a view reads as numbers ignored it. Three kinds, decided in one
   place (`Motion.seconds` / `delay_of` / `amplitude` and `UiMotionData`): an entry with a

@@ -138,6 +138,9 @@ const DEMOS := {
 	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy): the top bar
 	# CARDS tag a flight lands on (HudStats.land_pulse).
 	&"flight_land_pulse": ["screen", "land_pulse"],
+	# ANIM-R6 rules: the flight's and the stamp's shares, on the real flight and stamp.
+	&"flight_lift_share": ["screen", "pick"], &"flight_fade_share": ["screen", "buy"],
+	&"choice_stamp_down_share": ["screen", "stamp"], &"choice_stamp_hold_share": ["screen", "stamp"],
 	# ANIM-R6 city: the raid volley's stagger (a raid with two guns) and the Heat pulse's rise.
 	&"raid_shot_stagger": ["hq", "raid"], &"heat_pulse_rise": ["heat", "stage"], &"raid_threat_withdraw": ["hq", "raid"],
 	# ANIM-R6 combat: the tutorial's Next (TutorialOverlay plays it with Motion.loop_pulse).

@@ -464,7 +464,14 @@ func effects_enabled() -> bool:
 
 ## Screen flash (Perfect latch, threshold events). Returns whether it was shown. A
 ## negative strength or seconds takes the `screen_flash` motion entry's amplitude/duration.
+## ANIM-R6 D8: never under reduce effects (a full-screen flash is what the setting is for;
+## callers that gate on their own entry already skip it), and not when it takes
+## `screen_flash`'s numbers and that entry is switched off.
 func flash(color: Color = Color.WHITE, strength: float = -1.0, seconds: float = -1.0) -> bool:
+	if not effects_enabled():
+		return false
+	if (strength < 0.0 or seconds < 0.0) and not Motion.switched_on(&"screen_flash"):
+		return false
 	var now := Time.get_ticks_msec() / 1000.0
 	if not limiter.request(now):
 		return false
@@ -689,6 +696,10 @@ static func note_span(s: Vector2) -> float:
 
 ## When the CONNECTING line came up (msec).
 var _connect_since: int = 0
+## ANIM-R6: how long (s, wall time) the CONNECTING line last stayed up, measured by the line
+## itself from when it showed to when it went (tests read it: a test measuring from when it
+## first saw the line lost whatever a slow frame took before that).
+var last_connect_shown: float = 0.0
 
 
 ## ANIM-R2 R5: waits until the CONNECTING line has shown `jack_connect`'s duration (game
@@ -731,6 +742,8 @@ func note_hold() -> float:
 
 
 func _hide_connect() -> void:
+	if connect_label.visible:
+		last_connect_shown = (Time.get_ticks_msec() - _connect_since) / 1000.0
 	note_label.visible = false
 	connect_label.visible = false
 	connect_bar.visible = false
@@ -781,7 +794,8 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	var inward := id == &"jack_in"
 	# The push takes the entry's duration, the reveal `jack_arrive`'s (ANIM-R1 M3).
 	var push := Motion.seconds(id) if seconds < 0.0 else seconds
-	var reveal := Motion.seconds(ARRIVE_MOTION)
+	# ANIM-R6 D3: `jack_arrive` switched off: the new screen shows at once (no reveal).
+	var reveal := Motion.seconds_live(ARRIVE_MOTION)
 	var e := Motion.entry(id)
 	var ae := Motion.entry(ARRIVE_MOTION)
 	var zoom := maxf(1.0, Motion.amplitude(id))
@@ -793,10 +807,12 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	m.set_shader_parameter("scan", Motion.amplitude(SCANLINE_MOTION))
 	m.set_shader_parameter("lattice", Palette.NET_CYAN)
 	# ANIM-R3 B5: a calm wave from the CRT (`jack_dissolve`), not scattered hard cells.
+	# ANIM-R6 D3: switched off, no wave (the cover comes in whole). The entry's duration is
+	# the wave's feather (a width in the shader, not a time).
 	var dissolve := Motion.entry(DISSOLVE_MOTION)
-	if dissolve != null:
-		m.set_shader_parameter("spread", clampf(dissolve.amplitude, 0.0, 1.0))
-		m.set_shader_parameter("feather", maxf(dissolve.duration, 0.001))
+	var waves := Motion.live(DISSOLVE_MOTION)
+	m.set_shader_parameter("spread", clampf(dissolve.amplitude, 0.0, 1.0) if waves else 0.0)
+	m.set_shader_parameter("feather", maxf(dissolve.duration if waves else 0.0, 0.001))
 	var old := get_tree().current_scene as Control
 	var focus := _jack_focus(old, vp)
 	m.set_shader_parameter("focus", focus)
@@ -804,12 +820,12 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 	_set_cover(0.0, 0.0)
 	var t0 := Time.get_ticks_msec()
 	var tw := create_tween().set_parallel(true)
-	tw.tween_method(func(v: float) -> void: _set_cover(v, _roll(t0)), 0.0, 1.0, push).set_ease(Tween.EASE_IN).set_trans(e.trans)
+	tw.tween_method(func(v: float) -> void: _set_cover(v, _roll(t0)), 0.0, 1.0, push).set_ease(e.ease).set_trans(e.trans)
 	var old_scale := Vector2.ONE
 	if old != null:
 		old_scale = old.scale
 		old.pivot_offset = focus - old.global_position
-		tw.tween_property(old, "scale", Vector2.ONE * (zoom if inward else 1.0 / arrive), push).set_ease(Tween.EASE_IN).set_trans(e.trans)
+		tw.tween_property(old, "scale", Vector2.ONE * (zoom if inward else 1.0 / arrive), push).set_ease(e.ease).set_trans(e.trans)
 	await tw.finished
 	_set_cover(1.0, _roll(t0))
 	_cover_opaque = true
@@ -885,12 +901,13 @@ func _input(event: InputEvent) -> void:
 ## arriving screen is ready (ANIM-R1 M8). Off: the switch at once.
 func _fade_switch(on_switch: Callable) -> void:
 	var e := Motion.entry(&"jack_fade_reduced")
-	if e == null or not e.enabled:
+	if e == null or not Motion.switched_on(&"jack_fade_reduced"):
 		on_switch.call()
 		return
-	var dark := e.duration * clampf(e.amplitude, 0.0, 1.0)
+	# ANIM-R6 D2: at Motion.speed (it read the raw duration) and with the entry's shape.
+	var times := reduced_fade_times()
 	var tw := create_tween()
-	tw.tween_property(transition_rect, "color:a", 1.0, dark)
+	tw.tween_property(transition_rect, "color:a", 1.0, times.x).set_ease(e.ease).set_trans(e.trans)
 	await tw.finished
 	_cover_opaque = true
 	on_switch.call()
@@ -902,8 +919,16 @@ func _fade_switch(on_switch: Callable) -> void:
 	_hide_connect()
 	_cover_opaque = false
 	var tw2 := create_tween()
-	tw2.tween_property(transition_rect, "color:a", 0.0, e.duration - dark)
+	tw2.tween_property(transition_rect, "color:a", 0.0, times.y).set_ease(e.ease).set_trans(e.trans)
 	await tw2.finished
+
+
+## ANIM-R6 D2: the reduced jack's seconds at the current speed: x going dark
+## (`jack_fade_reduced`'s amplitude share of it), y coming back.
+func reduced_fade_times() -> Vector2:
+	var total := Motion.seconds(&"jack_fade_reduced")
+	var dark := total * clampf(Motion.amplitude(&"jack_fade_reduced"), 0.0, 1.0)
+	return Vector2(dark, total - dark)
 
 
 func _set_cover(progress: float, roll: float) -> void:
@@ -921,6 +946,9 @@ func _set_cover(progress: float, roll: float) -> void:
 
 ## The scanlines' phase: one roll every `jack_scanlines` seconds since `t0` (msec).
 func _roll(t0: int) -> float:
+	# ANIM-R6 D3: switched off, the scanlines hold still.
+	if not Motion.live(SCANLINE_MOTION):
+		return 0.0
 	var period := maxf(Motion.seconds(SCANLINE_MOTION), 0.001)
 	return fmod((Time.get_ticks_msec() - t0) / 1000.0 / period, 1.0)
 

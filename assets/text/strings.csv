@@ -112,6 +112,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
 (same road as choice %d),(same road as choice %d)
+"(seed %d): %d Schematics, %d rookies.","(seed %d): %d Schematics, %d rookies."
+"(seed %d, ICE %d, %s) against %s. Story path: %s.","(seed %d, ICE %d, %s) against %s. Story path: %s."
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
 +%d HP,+%d HP
@@ -1423,6 +1425,7 @@ No Daemons installed.,No Daemons installed.
 No First Turn Free Nudge,No First Turn Free Nudge
 No campaign.,No campaign.
 No change to your numbers.,No change to your numbers.
+No living operative or open Site: go to HQ.,No living operative or open Site: go to HQ.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes
 Nothing to resume.,Nothing to resume.
@@ -1687,6 +1690,7 @@ Respin your wheel for %d RAM: a random result (sets a checkpoint). %s,Respin you
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
+Resumed.,Resumed.
 Reward: %s Schematics.,Reward: %s Schematics.
 Rewind,Rewind
 Right click,Right click

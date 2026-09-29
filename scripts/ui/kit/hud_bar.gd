@@ -75,6 +75,21 @@ func _init() -> void:
 	label = Label.new()
 	label.visible = false
 	row.add_child(label)
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: a landing pop ends with any press that ends a motion
+
+
+## MotionSkip (ANIM-R6 D7): DAEMONS or VIEW LOADOUT pops for a landing.
+func motion_running() -> bool:
+	for b in [daemon_button, loadout_button]:
+		if b != null and Motion.held(b, ^"scale"):
+			return true
+	return false
+
+
+## MotionSkip (ANIM-R6 D7): the pops at rest.
+func complete_motion() -> void:
+	for b in [daemon_button, loadout_button]:
+		Motion.settle(b, ^"scale")
 
 
 ## Names the current screen ("01", "CYBERDECK HQ"; the title translated by the caller); an

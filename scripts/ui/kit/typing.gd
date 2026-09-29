@@ -28,11 +28,7 @@ static func type_in(p_label: Control, id: StringName = &"dispatch_type") -> floa
 	var total: int = p_label.get_total_character_count()
 	if total <= 0:
 		return 0.0
-	var seconds := total * Motion.seconds(id)
-	# ANIM-R4 C7: an entry with an amplitude types the whole text within that many seconds
-	# (an event's story took 8 s, its panel empty meanwhile).
-	if Motion.amplitude(id) > 0.0:
-		seconds = minf(seconds, Motion.amplitude(id) / maxf(Motion.speed, Motion.SPEED_MIN))
+	var seconds := seconds_for(total, id)
 	# ANIM-R5 B1: the words are shaped whole while they type, so a label that sizes to its
 	# text (fit_content, autowrap) keeps its full height from the first frame (by default
 	# only the shown characters were laid out: the event's paper collapsed to a sliver).
@@ -48,6 +44,17 @@ static func type_in(p_label: Control, id: StringName = &"dispatch_type") -> floa
 	skip.label = p_label
 	p_label.add_child(skip)
 	skip.add_to_group(GROUP)
+	return seconds
+
+
+## Seconds `chars` characters take to type with `id`: its seconds per character, at most its
+## amplitude (s) when it has one (ANIM-R4 C7: an event's story took 8 s, its panel empty
+## meanwhile), both at Motion.speed. ANIM-R6 D8: the one cap, shared with the Dialogue
+## subtitle (it copied it by hand).
+static func seconds_for(chars: int, id: StringName) -> float:
+	var seconds := maxi(chars, 0) * Motion.seconds(id)
+	if Motion.amplitude(id) > 0.0:
+		seconds = minf(seconds, Motion.amplitude(id) / maxf(Motion.speed, Motion.SPEED_MIN))
 	return seconds
 
 

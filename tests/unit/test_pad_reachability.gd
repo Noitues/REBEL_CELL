@@ -169,7 +169,7 @@ func test_combat_inside_a_netrun_is_pad_reachable() -> void:
 
 
 func test_reference_notes_start_at_the_top_and_take_focus() -> void:
-	var note := ZineNote.new("CODEX").make_reference()
+	var note: ZineNote = autofree(ZineNote.new("CODEX").make_reference())  # ANIM-R6 D10: it was left an orphan
 	assert_false(note.label.scroll_following)
 	assert_eq(note.label.focus_mode, Control.FOCUS_ALL)
 

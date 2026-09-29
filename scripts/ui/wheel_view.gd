@@ -214,6 +214,7 @@ func _init() -> void:
 	tooltip_text = " "
 	# ANIM-R5 combat 9: _get_tooltip translates its words where it builds them (once).
 	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: a spin ends with any press that ends a motion
 	set_process(false)
 
 
@@ -398,6 +399,19 @@ func motion_busy() -> bool:
 			if htw != null and htw.is_valid() and htw.is_running():
 				return true
 	return not _nudge_queue.is_empty()
+
+
+## MotionSkip (ANIM-R6 D7, passive): a spin, nudge or pulse of this view runs (a card's
+## spin outside the replay; the replay completes its wheels itself).
+func motion_running() -> bool:
+	return motion_busy()
+
+
+## MotionSkip (ANIM-R6 D7): every motion of this view at its end (a view the replay's skip
+## already stopped is left as it is).
+func complete_motion() -> void:
+	if motion_busy():
+		stop_motion()
 
 
 ## Ends every motion of this view at once: the view shows the state as it is (skip,
@@ -764,7 +778,7 @@ func play_pulse(index: int, sat: StringName = &"") -> void:
 	var d := Motion.seconds(&"resolve_pulse")
 	var e := Motion.entry(&"resolve_pulse")
 	var tw := _tw(&"pulse")
-	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), 1.0, amp, d * Motion.POP_GROW_SHARE).set_ease(Tween.EASE_OUT)
+	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), 1.0, amp, d * Motion.POP_GROW_SHARE).set_ease(Motion.POP_GROW_EASE).set_trans(e.trans)
 	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), amp, 1.0, d * (1.0 - Motion.POP_GROW_SHARE)).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: pulse_pointer = -1; pulse_satellite = &""; pulse_scale = 1.0; _end(&"pulse"))
 

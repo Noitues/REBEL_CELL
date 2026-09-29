@@ -79,6 +79,19 @@ python tools/run_windowed.py --log <file> -- res://tools/design_lab/motion_lab.t
   its shard is run again alone; `ORDER-DEPENDENT <script>: passes alone` means its result
   depends on what ran before it (state leaking between scripts; ANIM-R5 found one in
   `test_anim_r4_city`'s verdict sweep). The run still fails. `--no-isolate` skips the rerun.
+  ANIM-R6: a script that did not run in its shard is run alone too (`ALONE ...: runs and
+  passes alone; it did not run in its shard` when it does).
+- **Broken results and a full disk (ANIM-R6).** A shard whose `results.xml` is missing,
+  empty or cut short (a crash while writing; the disk filled up once and every shard's
+  results were lost to one unreadable file) is reported as that shard's problem, with the
+  free space left; the other shards' results still count and its scripts are run alone.
+  Before starting, the runner checks the free space where the logs go: under
+  `--min-free-gb` (1 GB) it stops at once and says so (exit 2), under `--warn-free-gb`
+  (5 GB) it warns.
+- **The runner's own tests.** `python tools/test_run_tests.py` (Python's `unittest`, no
+  other package): good, missing, empty and truncated results, the rerun list, the disk
+  check. `test_anim_r6_rules.gd` runs it, so the full suite covers the runner (pending when
+  Python isn't on PATH).
 
 ## Tiers and the manifest
 
@@ -190,6 +203,42 @@ function there is a helper, so any fixed wait in one is flagged; `BoundedWait`'s
 the comment line above it) carrying `# fixed-wait-ok: <reason>` is let through (a wait that
 only lets motion run before a skip or settle, or the resolver's performance bound). See
 DECISIONS "Test suite: bounded waits".
+
+ANIM-R6: a frame count is a fixed wait too when motion is live. In a test that makes motion
+live (`Motion.force_live = true`, or a `_live()` helper), an awaited frame count
+(`_frames(n)`, `_frame(`, `wait_frames(`, a bare `get_tree().process_frame` /
+`physics_frame`) whose very next statement asserts on a motion's progress (running,
+typing, dealing, bumping, a clock, an alpha, a scale, a tween, ...) is flagged
+(`frame_waits`): use `BoundedWait.frozen_frames` (time stopped: a motion that started is
+still there) or `BoundedWait.until`. Frame waits for layout before a motion starts are not
+flagged (a statement comes between), nor are tests where motion is not live; a fine one
+carries `# fixed-wait-ok: <reason>`.
+
+### The suite guard (Settings as found, no orphans left)
+
+`tests/helpers/suite_guard.gd` is GUT's pre-run and post-run hook in both ways of running
+the suite (`.gutconfig.json` for the single process, `-gpre_run_script` /
+`-gpost_run_script` on every shard of `tools/run_tests.py`). ANIM-R6:
+
+- **Every test script leaves Settings (and the run's clocks) as it found it.** The guard takes
+  `Settings.snapshot()` (every saved value plus the session's `pad_active`, which
+  `to_dict` leaves out; with `Engine.time_scale`, `Motion.speed` and `Motion.force_live`)
+  as each script starts and compares it as it ends. A change left
+  behind prints `SETTINGS LEAK <script>: <keys>`, the snapshot is put back
+  (`Settings.restore`, the InputMap's keys too) so no later script runs on it, and the run
+  exits 1. A test that changes Settings takes a snapshot first and restores it
+  (`test_a_settings_snapshot_covers_every_field_and_restores_it` fails when a new Settings
+  field is missing from the snapshot). Rebinding a key back to its old key is not a
+  restore: it leaves the key saved as a keybind.
+- **No node is left outside the tree.** When the run ends (after a few frames, so every
+  queued free has happened) each orphan node prints `ORPHAN LEFT <node> (<script>)` and
+  the run exits 1. GUT's own per-test "N Orphans" lines also count nodes only queued for
+  deletion when the test ended; the guard counts only what is never freed. Free what a
+  test builds outside the tree (`autofree(...)`); a view that swaps children out hides and
+  queues them in place rather than taking them out first (SettingsPanel, ANIM-R6).
+- The parallel runner reports each guard line as an ERROR of its shard, and so the
+  engine's exit-leak lines (`... leaked at exit`, `RIDs ... were leaked.`, `resources still
+  in use at exit`: what a shard left allocated when it quit): the run fails on them.
 
 ### Headless has no RenderingDevice
 

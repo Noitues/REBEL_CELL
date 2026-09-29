@@ -70,7 +70,7 @@ func test_commons_array_locks_on_in_its_last_phase() -> void:
 
 
 func test_arrow_keys_can_be_rebound() -> void:
-	var before := Settings.key_for(&"nudge_left")
+	var snap := Settings.snapshot()  # ANIM-R6 D9: rebinding back left the key saved as a keybind
 	var panel := SettingsPanel.new()
 	add_child_autofree(panel)
 	panel.show_section("Controls")
@@ -84,7 +84,7 @@ func test_arrow_keys_can_be_rebound() -> void:
 	await _frames()
 	assert_eq(Settings.key_for(&"nudge_left"), KEY_LEFT, "Left is the new nudge -1")
 	assert_eq(panel.rebinding, &"", "the rebind finished")
-	Settings.rebind(&"nudge_left", before)
+	Settings.restore(snap)
 
 
 func test_the_netrun_fight_pause_menu_is_not_clipped() -> void:

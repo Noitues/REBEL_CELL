@@ -40,7 +40,7 @@ spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid d
 6. **Every rule gets a test.** Preview must equal the real result; rewind must not cross a
    checkpoint; seeded replays must match.
 7. Break ties deterministically (content id, then node id), never by dictionary order.
-8. Keep `scripts/data/` schema changes minimal; update `tools/schema_smoke_test.gd` and
+8. Keep `scripts/data/` schema changes minimal; add its check to `tools/schema_smoke_checks.gd` and
    log the change in `docs/DECISIONS.md`.
 
 ## When the docs don't answer something

@@ -91,6 +91,17 @@ var _caption_tween: Tween = null
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	custom_minimum_size = Vector2(0, TOP_ROOM + TAG_SIZE.y + BOTTOM_ROOM)
+	MotionSkip.register_passive(self)  # ANIM-R6 D7: bumps end with any press that ends a motion
+
+
+## MotionSkip (ANIM-R6 D7): a tag bumps, rolls, pulses for a landing or its caption fades.
+func motion_running() -> bool:
+	return not _moving.is_empty() or not _landing.is_empty() or (_caption_tween != null and _caption_tween.is_valid())
+
+
+## MotionSkip (ANIM-R6 D7): every bump, roll, landing pulse and cross-fade at its end.
+func complete_motion() -> void:
+	settle()
 
 
 func _ready() -> void:

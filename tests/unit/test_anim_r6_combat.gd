@@ -22,9 +22,19 @@ var _landed: int = 0
 var _continued: int = 0
 
 
+## ANIM-R6 D9 (the suite guard): every Settings value as found (the tutorial test sets
+## tutorial_done).
+var _settings: Dictionary = {}
+
+
 func before_all() -> void:
 	_scale = Settings.text_scale
 	_reduce = Settings.reduce_effects
+	_settings = Settings.snapshot()
+
+
+func after_all() -> void:
+	Settings.restore(_settings)
 
 
 func before_each() -> void:

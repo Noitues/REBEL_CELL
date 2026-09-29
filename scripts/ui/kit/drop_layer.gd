@@ -569,7 +569,8 @@ static func beside_spot(rect: Rect2, item: Vector2, screen: Vector2 = Vector2.IN
 ## (the entry's amplitude = the strips' length, px).
 func _feed(tw: Tween, copy: Control, f: Dictionary) -> void:
 	var fe := Motion.entry(&"shred_feed")
-	var d := Motion.seconds(&"shred_feed")
+	# ANIM-R6 D3: switched off, the copy is fed at once.
+	var d := Motion.seconds_live(&"shred_feed")
 	tw.tween_callback(func() -> void:
 		if is_instance_valid(copy):
 			var at := copy.global_position + copy.size * 0.5
@@ -577,7 +578,7 @@ func _feed(tw: Tween, copy: Control, f: Dictionary) -> void:
 			copy.global_position = at - copy.size * 0.5
 			_strips(f["to"], copy.size.x))
 	tw.tween_property(copy, "scale:y", 0.0, d).set_ease(fe.ease).set_trans(fe.trans)
-	tw.parallel().tween_property(copy, "modulate:a", 0.0, d).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(copy, "modulate:a", 0.0, d).set_ease(fe.ease).set_trans(fe.trans)
 	tw.tween_callback(_reveal.bind(f))
 
 
@@ -648,16 +649,18 @@ func _fly_home(p: Dictionary, holder: Control, from: Vector2, home: Rect2) -> vo
 ## (`drop_stamp`).
 func _settle_and_stamp(tw: Tween, copy: Control, f: Dictionary) -> void:
 	var se := Motion.entry(&"drop_settle")
-	var dip := Motion.amplitude(&"drop_settle")
+	# ANIM-R6 D3: switched off, no dip (the copy is on its spot at once).
+	var dip := Motion.amplitude(&"drop_settle") if Motion.live(&"drop_settle") else 0.0
 	tw.tween_method(func(q: float) -> void:
 		if is_instance_valid(copy):
 			var to: Vector2 = f["to"]
-			copy.global_position = to - copy.size * 0.5 + Vector2(0, dip * sin(PI * q)), 0.0, 1.0, Motion.seconds(&"drop_settle")).set_ease(se.ease).set_trans(se.trans)
+			copy.global_position = to - copy.size * 0.5 + Vector2(0, dip * sin(PI * q)), 0.0, 1.0, Motion.seconds_live(&"drop_settle")).set_ease(se.ease).set_trans(se.trans)
 	tw.tween_callback(func() -> void:
 		if is_instance_valid(copy):
 			_stamp(f["to"], maxf(copy.size.x, copy.size.y) * copy.scale.x * STAMP_START)
 		_reveal(f))
-	tw.tween_property(copy, "modulate:a", 0.0, Motion.seconds(&"drop_stamp")).set_ease(Tween.EASE_OUT)
+	var ste := Motion.entry(&"drop_stamp")
+	tw.tween_property(copy, "modulate:a", 0.0, Motion.seconds_live(&"drop_stamp")).set_ease(ste.ease).set_trans(ste.trans)
 
 
 func _place(q: float, copy: Control, from: Vector2, to: Vector2) -> void:
