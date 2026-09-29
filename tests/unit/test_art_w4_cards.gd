@@ -312,6 +312,9 @@ func test_the_deck_detail_shows_the_card_at_detail_size_with_whole_art() -> void
 		await get_tree().process_frame
 		var row := view.find_child("CardDetail", true, false) as Control
 		assert_not_null(row, "the detail opens")
+		var holder := view.find_child("CardDetailHolder", true, false) as Control
+		var dim := holder.get_child(0) as ColorRect
+		assert_eq(dim.get_global_rect().size, view.size, "a scrim over the whole viewer")
 		var big := InspectPopup.detail_card(row)
 		assert_eq(big.size_mode, ZineCard.SizeMode.DETAIL, "the card at detail size")
 		assert_true(big.text_whole(), "x%.1f: every word of its rules" % s)

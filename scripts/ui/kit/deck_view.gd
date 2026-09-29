@@ -60,7 +60,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	# W4: the cards' tape and shadow reach past their rect; the grid keeps room for them
 	# (the first row's titles were clipped by the header, critique 11).
 	var pad := MarginContainer.new()
-	pad.add_theme_constant_override("margin_top", UiTheme.SP_S)
+	pad.add_theme_constant_override("margin_top", UiTheme.SP_L)
 	pad.add_theme_constant_override("margin_left", UiTheme.SP_XS)
 	pad.add_theme_constant_override("margin_bottom", UiTheme.SP_S)
 	scroll.add_child(pad)
@@ -258,12 +258,13 @@ func open_card(index: int) -> void:
 	var room := view - Vector2.ONE * (UiTheme.SAFE_MARGIN * 2.0)
 	var holder := Control.new()
 	holder.name = "CardDetailHolder"
-	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	holder.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(holder)
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var dim := ColorRect.new()
 	dim.color = Palette.SCRIM
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	holder.add_child(dim)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var close_it := func() -> void:
 		if is_instance_valid(holder):
 			holder.queue_free()
@@ -271,7 +272,6 @@ func open_card(index: int) -> void:
 	var row := InspectPopup.card_detail(card, TextDb.t(card, "display_name") if card != null else String(deck[index]),
 		TextDb.t(card, "description") if card != null else "", s, room, close_it)
 	holder.add_child(row)
-	add_child(holder)
 	_popup = holder
 	# Centred once laid out.
 	row.reset_size()
