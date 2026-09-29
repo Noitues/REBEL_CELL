@@ -259,3 +259,22 @@ func test_the_runners_own_tests_pass() -> void:
 	var text := "\n".join(out)
 	assert_eq(code, 0, "tools/test_run_tests.py passes:\n%s" % text)
 	assert_true(text.contains("OK"), "unittest says OK")
+
+
+## ANIM-R6 D5: a schema change adds its check to tools/schema_smoke_checks.gd (the runner
+## gains none since ANIM-R5 P17); the docs that say where send it there.
+func test_the_docs_send_a_schema_check_to_the_checks_file() -> void:
+	for path in ["res://CLAUDE.md", "res://docs/ANIMATION_HANDOFF.md"]:
+		var src := FileAccess.get_file_as_string(path)
+		assert_false(src.contains("update `tools/schema_smoke_test.gd`"), "%s no longer says to update the runner" % path)
+		assert_true(src.contains("tools/schema_smoke_checks.gd"), "%s names the checks file" % path)
+
+
+## ANIM-R6 D6: the docs say what the motion does now.
+func test_the_docs_say_what_the_motion_does_now() -> void:
+	var style := FileAccess.get_file_as_string("res://docs/STYLE_GUIDE.md")
+	assert_false(style.contains("next step (LOOT / CONTINUE) at once"), "a won fight's next step waits for its outcome to land (ANIM-R5)")
+	assert_true(style.contains("as its outcome lands"), "and the guide says so")
+	var skip := FileAccess.get_file_as_string("res://scripts/ui/kit/motion_skip.gd")
+	var list := skip.substr(skip.find("Every helper that ends its motion on a press"), 400)
+	assert_true(list.contains("RaidPlayoutPanel"), "MotionSkip's helper list names the raid playout")

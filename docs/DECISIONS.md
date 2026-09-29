@@ -521,6 +521,19 @@ unless named.
   (`--warn-free-gb`) it warns. Tested by `tools/test_run_tests.py` (Python `unittest`: the
   runner is Python, so its tests are too; TEST_SUITE documents it), which
   `test_the_runners_own_tests_pass` runs inside the suite.
+- **D5 where a schema check goes.** CLAUDE.md rule 8 and ANIMATION_HANDOFF said to update
+  `tools/schema_smoke_test.gd` for a schema change; since ANIM-R5 P17 that file is a runner
+  that must gain no checks (they live in `tools/schema_smoke_checks.gd`). Both now name the
+  checks file (in CLAUDE.md only that reference changed). This batch's `scripts/data/`
+  change is four ids in `REQUIRED_IDS` and `ALWAYS_ON` (D2), no field; the smoke checks
+  already cover both lists. Test: `test_the_docs_send_a_schema_check_to_the_checks_file`.
+- **D6 stale words.** The ANIM-R5 rules entry (R2) said the raid panel "still ends only its
+  own step": a bracketed note now points to ANIM-R5 city P11 and D1 above (the entry itself
+  is history). MotionSkip's helper list names RaidPlayoutPanel (D1). STYLE_GUIDE 5.2 said a
+  won fight swaps SEND IT for LOOT / CONTINUE "at once"; since ANIM-R5 it swaps as the
+  outcome lands (the replay's end beat, after every HP roll; a press lands it at once). The
+  wording names no replay length, so fix agent A's retune of the replay (A7) leaves it true.
+  Test: `test_the_docs_say_what_the_motion_does_now`.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
@@ -687,8 +700,11 @@ test); R4 / R1 tests adjusted where they pinned the old behaviour (below).
   the combat replay (keeps SEND IT, RESPIN, UNDO, the hand) and the netrun route move. The
   raid playout panel (fix agent C's file this round) still ends only its own step; its
   one-press fix should register it the same way (a `motion_running` / `complete_motion`
-  pair and `MotionSkip.handle`). `test_anim_r4_combat` pushed two presses to end a flight
-  and a drop ("one press each"); it now pushes one.
+  pair and `MotionSkip.handle`). [Superseded: ANIM-R5 city P11 registered the panel (its
+  step ends with every other motion, save a press that drives the playout), and ANIM-R6 D1
+  made that exception hold whichever helper sees the press (`motion_passes`).]
+  `test_anim_r4_combat` pushed two presses to end a flight and a drop ("one press each");
+  it now pushes one.
 - **R3 switching an entry off, by kind.** `enabled` was honoured only through
   `Motion.live`; entries a view reads as numbers ignored it. Three kinds, decided in one
   place (`Motion.seconds` / `delay_of` / `amplitude` and `UiMotionData`): an entry with a

@@ -295,7 +295,8 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   guards are a glyph and a number from the blocker, never a word badge; an icon row beside
   each HP (sword 6 − shield 5 = 1 since ANIM-R4) stays with LAST TURN; a breaking wheel cracks with its own
   art and falls, a skull on the beaten side; a won fight swaps SEND IT, RESPIN and UNDO for the
-  next step (LOOT / CONTINUE) at once; a played card is gone before its wheel spins; a status
+  next step (LOOT / CONTINUE) as its outcome lands (ANIM-R5: at the replay's end beat, once
+  every HP roll has ended; a press, reduce effects or headless land it at once); a played card is gone before its wheel spins; a status
   marks its slice as it lands; YOU PLAY X; NEXT and LAST TURN explain themselves on hover.
 - **SEND IT for a beginner (ANIM-R4)**: the operative's hits (then its drones', staggered)
   land in full, their HP rolls done, then a gap (`resolve_side_gap`), then the enemies' (then
