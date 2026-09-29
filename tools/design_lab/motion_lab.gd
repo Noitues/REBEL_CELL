@@ -335,7 +335,7 @@ func _build_stage() -> void:
 	panel.position = Vector2(40, 140)
 	panel.size = Vector2(260, 150)
 	_typed = Label.new()
-	_typed.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_typed.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_typed.text = TYPE_TEXT
 	panel.content.add_child(_typed)
 	_add_piece("panel", panel)
@@ -583,7 +583,7 @@ func _play_screen(what: String) -> void:
 			page.size = Vector2(560, 300)
 			var words := Label.new()
 			words.text = "%s\n%s\n> JACK IN" % [TYPE_TEXT, SUBTITLE_TEXT]
-			words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			words.autowrap_mode = TextServer.AUTOWRAP_WORD
 			words.add_theme_color_override("font_color", Palette.TERMINAL_TEXT if what == "glass" else Palette.INK)
 			(page.body if page is TerminalWindow else (page as ZinePanel).content).add_child(words)
 			_screen_host.add_child(page)
