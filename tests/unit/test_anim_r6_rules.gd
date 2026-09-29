@@ -483,3 +483,26 @@ func test_the_system_log_translates_its_words() -> void:
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
 	for key in ["New campaign", "Resumed.", "Nothing to resume.", "No living operative or open Site: go to HQ.", "Saved."]:
 		assert_true(csv.contains(key), "%s is in the strings the translators get" % key)
+
+
+class StepCounter extends Node:
+	var steps: int = 0
+
+	func step() -> void:
+		steps += 1
+
+
+## ANIM-R6 (coordinator): a demo step `n` frames on runs while its node stays, and never
+## resumes on a node freed meanwhile (it awaited the tree, then called into a freed scene).
+func test_a_demo_step_waits_its_frames_and_never_runs_on_a_freed_node() -> void:
+	assert_false(FileAccess.get_file_as_string("res://scripts/ui/kit/motion_demo.gd").contains("await "), "MotionDemo awaits nothing")
+	var kept: StepCounter = add_child_autofree(StepCounter.new())
+	var gone := StepCounter.new()
+	add_child(gone)
+	MotionDemo.after_frames(kept, 2, kept.step)
+	MotionDemo.after_frames(gone, 2, gone.step)
+	MotionDemo.after_frames(kept, 0, kept.step)
+	assert_eq(kept.steps, 1, "0 frames: at once")
+	gone.free()
+	var ok := await BoundedWait.until(get_tree(), func() -> bool: return kept.steps == 2, 1.0)
+	assert_true(ok, "the kept node's step ran after its frames")

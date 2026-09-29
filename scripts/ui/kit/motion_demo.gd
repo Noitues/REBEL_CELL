@@ -41,10 +41,34 @@ static func apply_args() -> bool:
 	return any
 
 
-## Runs `step` `frames` process frames from now (a demo's action).
+## Runs `step` `frames` process frames from now (a demo's action), while `node` stays in
+## the tree. ANIM-R6: one-shot connections checked each frame, never an `await` (a
+## coroutine awaiting the tree resumed on a node freed meanwhile: a scene left mid-demo).
 static func after_frames(node: Node, frames: int, step: Callable) -> void:
-	for k in frames:
-		await node.get_tree().process_frame
-	if is_instance_valid(node):
+	var w := Waiter.new()
+	w.ref = weakref(node)
+	w.left = frames
+	w.step = step
+	w.tick()
+
+
+## One demo step's wait: a one-shot connection per frame (its own, so two waits never share
+## a connection), checking its node each frame; it frees itself when done or when the node
+## has gone.
+class Waiter extends Object:
+	var ref: WeakRef
+	var left: int = 0
+	var step: Callable
+
+	func tick() -> void:
+		var node := ref.get_ref() as Node
+		if node == null or not node.is_inside_tree() or node.is_queued_for_deletion():
+			call_deferred(&"free")
+			return
+		if left > 0:
+			left -= 1
+			node.get_tree().process_frame.connect(tick, CONNECT_ONE_SHOT)
+			return
 		print("MotionDemo: step on frame %d" % Engine.get_process_frames())
 		step.call()
+		call_deferred(&"free")
