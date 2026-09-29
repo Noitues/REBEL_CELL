@@ -452,3 +452,44 @@ func test_title_pages_fit_at_every_text_scale() -> void:
 			_check_page(title, "%s at %.1f" % [page, scale])
 		title.queue_free()
 		await _frames()
+
+
+# --- Review fix: Options never clip a row (§5.3, §14) --------------------------------------------
+
+func test_every_option_row_stays_inside_the_view_focused_with_pad_or_mouse() -> void:
+	Motion.force_live = true
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		for pad in [false, true]:
+			Settings.set_pad_active(pad)
+			var title: Control = add_child_autofree(load(TITLE).instantiate())
+			title.show_options()
+			await _frames(4)
+			var panel := title._panel.find_children("*", "SettingsPanel", true, false)[0] as SettingsPanel
+			var view := panel._fit.scroll.get_global_rect()
+			for s in SettingsPanel.SECTIONS:
+				panel.show_section(s)
+				await _frames(2)
+				for n in (panel.sections[s] as Node).find_children("*", "Control", true, false):
+					var c := n as Control
+					if not c.is_visible_in_tree() or c.focus_mode == Control.FOCUS_NONE:
+						continue
+					c.grab_focus()
+					var k := UiFocus.focus_scale()
+					await BoundedWait.until(get_tree(), func() -> bool: return is_equal_approx(c.scale.x, k), 1.0)
+					# The drawn rect (scaled about its centre) and its focus brackets.
+					view = panel._fit.scroll.get_global_rect()
+					var r := (c.get_global_transform() * Rect2(Vector2.ZERO, c.size)).grow(StyleBoxBrackets.OFFSET + StyleBoxBrackets.THICKNESS)
+					var what := "%s %s at %.1f (%s): %s in %s" % [s, c.name, scale, "pad" if pad else "mouse", r, view]
+					assert_true(r.position.x >= view.position.x - 0.5, "left edge inside the view: " + what)
+					assert_true(r.end.x <= view.end.x + 0.5, "right edge inside the view: " + what)
+				view = panel._fit.scroll.get_global_rect()
+				for n in (panel.sections[s] as Node).find_children("*", "Label", true, false):
+					var l := n as Label
+					if l.is_visible_in_tree() and l.text != "":
+						var lr := l.get_global_rect()
+						assert_true(lr.position.x >= view.position.x - 0.5 and lr.end.x <= view.end.x + 0.5,
+							"%s '%s' at %.1f lies inside the view: %s in %s" % [s, l.text, scale, lr, view])
+			title.queue_free()
+			await _frames()
+	Settings.set_pad_active(false)

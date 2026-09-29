@@ -109,6 +109,7 @@ var rebinding: StringName = &""
 var sections: Dictionary = {}
 var tab_buttons: Dictionary = {}
 var _body: VBoxContainer
+var _pad_room: MarginContainer
 var _fit: FitScroll
 var _tabs: HFlowContainer
 var _tab_group: ButtonGroup
@@ -158,10 +159,9 @@ func _init() -> void:
 	_body = VBoxContainer.new()
 	_body.name = "Sections"
 	# Room at the sides for a focused control's pad scale (1.03) inside the scrolling view.
-	var pad_room := MarginContainer.new()
-	pad_room.name = "PadRoom"
-	for side in ["margin_left", "margin_right"]:
-		pad_room.add_theme_constant_override(side, UiTheme.SP_S)
+	_pad_room = MarginContainer.new()
+	_pad_room.name = "PadRoom"
+	var pad_room := _pad_room
 	pad_room.add_child(_body)
 	_fit = FitScroll.new(pad_room, 0.0)
 	_fit.name = "SectionScroll"
@@ -348,7 +348,15 @@ func panel_width() -> float:
 
 ## The width inside the glass the sections lay out in (px).
 func content_width() -> float:
-	return panel_width() - UiTheme.PANEL_PAD_H * 2 - SCROLL_ROOM - UiTheme.SP_S * 2
+	return panel_width() - UiTheme.PANEL_PAD_H * 2 - SCROLL_ROOM - side_room() * 2
+
+
+## The room each side of the sections inside the scrolling view (px): the panel padding, or
+## more when a control as wide as the view, grown by the pad focus scale about its centre,
+## plus its focus brackets, would reach past it (§5.3: never clipped).
+func side_room() -> float:
+	var grow := panel_width() * (Motion.amplitude(UiFocus.SCALE_MOTION) - 1.0) * 0.5 + StyleBoxBrackets.OFFSET + StyleBoxBrackets.THICKNESS
+	return ceilf(maxf(UiTheme.PANEL_PAD_H, grow))
 
 
 ## The size every tab shows at (the largest section's, px).
@@ -377,6 +385,8 @@ func _relayout() -> void:
 	if not is_inside_tree():
 		return
 	_built_scale = Settings.text_scale
+	for side in ["margin_left", "margin_right"]:
+		_pad_room.add_theme_constant_override(side, roundi(side_room()))
 	var w := content_width()
 	# A wrapped line knows its height only at its width: every wrapped label takes the
 	# content width now (a section not shown yet is measured at it, never at width 0).
@@ -500,6 +510,9 @@ func _toggle(key: StringName, node_name: String, value: bool, setter: Callable, 
 	if not args.is_empty():
 		desc = desc % args
 	t.set_meta(&"description", desc)
+	# As wide as its label and pill: the pad focus scale (1.03, about its centre) then moves
+	# its edge by a few px, inside the view's side padding (never clipped).
+	t.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	t.tooltip_text = UiTip.fold(desc)
 	t.toggled.connect(func(on: bool) -> void: setter.call(on))
 	return t
@@ -526,6 +539,7 @@ func _choice(node_name: String, pairs: Array, values: Array[StringName], current
 func _picker(node_name: String, tiles: Array[Dictionary], current: int, on_choose: Callable) -> TilePicker:
 	var p := TilePicker.new(tiles)
 	p.name = node_name
+	p.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	p.value = current
 	p.cursor = current
 	p.tile_chosen.connect(on_choose)
