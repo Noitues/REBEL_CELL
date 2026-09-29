@@ -253,7 +253,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   HP (one roll per hit); a hit soaked or evaded whole shows its glyph and 0 where it struck, and
   ALL BLOCKED / NO DAMAGE carry a shield-over-empty-set mark (ALL BLOCKED on the last impact);
   guards are a glyph and a number from the blocker, never a word badge; an icon row beside
-  each HP (sword 6 -> shield 5 = -1) stays with LAST TURN; a breaking wheel cracks with its own
+  each HP (sword 6 − shield 5 = 1 since ANIM-R4) stays with LAST TURN; a breaking wheel cracks with its own
   art and falls, a skull on the beaten side; a won fight swaps SEND IT, RESPIN and UNDO for the
   next step (LOOT / CONTINUE) at once; a played card is gone before its wheel spins; a status
   marks its slice as it lands; YOU PLAY X; NEXT and LAST TURN explain themselves on hover.
@@ -271,6 +271,22 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   and its skull wear the beaten wheel's own colour, and VICTORY stands in the room above its
   disc, never over the crack; RAM floats "-N RAM" above its count when spent (never on a
   refusal, which says NEED / HAVE) and "+N RAM" when the turn refills it.
+- **The outcome at its beat (ANIM-R5)**: a SEND IT that ends the fight tells nothing of it
+  before the hit that does it: the status word (VICTORY / DEFEAT), the next-step button, the
+  Heat poster and the run's top bar (and its DISPATCH line) change when the replay lands the
+  outcome, never before an HP roll has ended; reduce effects show it at once. A lost fight
+  looks lost: the operative's disc goes dark under a DEFEAT stamp with a skull that stays
+  (`defeat_stamp` pops it in), no "keep going" bark on the hit that flatlines, and the next
+  step says JACK OUT in paper lettering without drips (never SEND IT's pink). A turn that
+  takes a wheel to 0 says so by its HP: its NEXT plate turns solid red with a skull and
+  LETHAL (tooltip: this turn takes you / it to 0 HP), no cross over the hub; the operative's
+  tag says DEFEAT once (no DOWN beside it). A held forecast keeps room at each chip's end
+  for its tick, never on its words. A wheel that goes down plays its own actions of the turn
+  before its HP reaches 0 (the resolve is simultaneous; a dead enemy never acts). NO DAMAGE /
+  ALL BLOCKED stand in the hub only when they fit above its name, else beside the HP number.
+  A hover that changes a tag shows what it said before under WAS, struck through (and in its
+  tooltip). A status chip says who gets it ("☠ YOU GET CORRUPTED", "ON A RANDOM SLICE:" before
+  its odds) and an AFFLICT names it on its own tag ("PUTS ☠ CORRUPTED ON YOU").
 
 ### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
 - **Territory tint never jumps.** The city bakes the new look once; the new image shows

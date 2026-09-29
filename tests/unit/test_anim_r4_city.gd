@@ -122,6 +122,11 @@ func test_the_verdict_is_all_hold_only_when_nothing_is_lost_for_every_corporatio
 					if bool(r["won"]) and any_lost:
 						lossy_but_won += 1
 					for sid in (r.get("disabled", []) if not bool(r["campaign_lost"]) else []):
+						# ANIM-R5: a node Disabled and then Seized in the same raid ends Seized (its
+						# outcome; RaidVerdict counts each node once), so only a node whose outcome is
+						# Disabled must be named Disabled (order-dependent flake under the runner).
+						if String((r.get("nodes", {}) as Dictionary).get(sid, {}).get("outcome", "")) != "disabled":
+							continue
 						assert_string_contains(verdict, CityMapOverlay.tr_word(RaidVerdict.DISABLED).get_slice(" ", 1), "%s: a Disabled node is named" % tag)
 					if bool(r["campaign_lost"]):
 						assert_eq(verdict, CityMapOverlay.tr_word(RaidVerdict.LOST))

@@ -159,6 +159,80 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 	return beats
 
 
+## ANIM-R5 combat 5: the resolve is simultaneous (GDD 2.2): a wheel that goes down this
+## SEND IT still acts in it. In the engine's order its HP could reach 0 on screen and then
+## its AFFLICT fly, a dead enemy acting. The replay plays a doomed wheel's own actions (and
+## its satellites') of the resolve before the hit that takes its HP to 0, keeping their
+## order (each moved beat is marked `same_moment`), and recounts every beat's `hp_after`
+## from `before` in the new order. Presentation only: the events and the result are the
+## engine's.
+static func doomed_first(before: CombatState, beats: Array[Dictionary]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = beats.duplicate()
+	for b in beats:
+		if b["kind"] != "died" or b["phase"] != "resolve" or not bool(b.get("wheel", false)):
+			continue
+		var w := StringName(String(b["target"]))
+		var fatal := -1
+		for k in out.size():
+			var f := out[k]
+			if f["phase"] == "resolve" and StringName(String(f["target"])) == w and String(f["kind"]) in HP_KINDS and int(f["hp_after"]) == 0:
+				fatal = k
+				break
+		if fatal < 0:
+			continue
+		var moved: Array[Dictionary] = []
+		var kept: Array[Dictionary] = []
+		for k in range(fatal + 1, out.size()):
+			var m := out[k]
+			if m["phase"] == "resolve" and _acts_for(before, StringName(String(m["source"])), w) and not (String(m["kind"]) in ["died", "end", "land", "spawn", "phase"]):
+				m["same_moment"] = true
+				moved.append(m)
+			else:
+				kept.append(m)
+		if moved.is_empty():
+			continue
+		var head: Array[Dictionary] = out.slice(0, fatal)
+		head.append_array(moved)
+		head.append(out[fatal])
+		head.append_array(kept)
+		out = head
+	_recount_hp(before, out)
+	return out
+
+
+## True when `source` is wheel `w` or one of its satellites.
+static func _acts_for(before: CombatState, source: StringName, w: StringName) -> bool:
+	if source == &"":
+		return false
+	if source == w:
+		return true
+	var c := before.get_combatant(source)
+	return c != null and c.is_satellite and c.host_id == w
+
+
+## Sets every beat's `hp_after` again from `before`, in the beats' order (as `build`).
+static func _recount_hp(before: CombatState, beats: Array[Dictionary]) -> void:
+	var hp := {}
+	for c in _everyone(before):
+		hp[c.id] = c.hp
+	for b in beats:
+		var t := StringName(String(b["target"]))
+		match String(b["kind"]):
+			"damage", "corrupted":
+				hp[t] = maxi(0, int(hp.get(t, 0)) - int(b["amount"]))
+				b["hp_after"] = hp[t]
+			"heal":
+				hp[t] = int(hp.get(t, 0)) + int(b["amount"])
+				b["hp_after"] = hp[t]
+			"died":
+				hp[t] = 0
+			"spawn":
+				hp[t] = int(b["hp_after"])
+			"phase":
+				for sp in b.get("spawned", []):
+					hp[StringName(String(sp.get("id", "")))] = int(sp.get("hp", 0))
+
+
 ## HP each combatant ends on once every beat has landed (id -> HP), from `before`.
 static func final_hp(before: CombatState, beats: Array[Dictionary]) -> Dictionary:
 	var hp := {}
