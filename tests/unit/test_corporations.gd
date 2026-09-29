@@ -137,9 +137,9 @@ func test_hq_start_panel_offers_a_corporation_picker() -> void:
 	RunManager.reset()
 	var hq: Control = add_child_autofree(load("res://scenes/hq/hq_scene.tscn").instantiate())
 	hq.show_start()
-	var picker := hq.find_child("CorporationPicker", true, false) as OptionButton
+	var picker := hq.find_child("CorporationPicker", true, false) as TilePicker
 	assert_not_null(picker)
-	assert_true(picker.item_count >= 1)
+	assert_true(picker.tiles.size() >= 1)
 	RunManager.save_slot = RunManager.DEFAULT_SLOT
 	RunManager.scene_switching_enabled = true
 

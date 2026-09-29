@@ -100,6 +100,16 @@ const MONITOR_GROW_MAX := 1.3
 const MONITOR_MAP_LOW := 110.0
 const CREW_COLUMNS := 3
 const CREW_COLUMNS_BIG := 2
+## Art pass W8b (§11 New campaign): the planning table's width the pickers fill (px), the
+## corporation dossier and small tiles at text scale 1.0, the ICE line's and the profile
+## records' widths, the share code field's, and the highest seed.
+const PLAN_WIDTH := 1200.0
+const PLAN_CORP_TILE := Vector2(208, 84)
+const PLAN_SMALL_TILE := Vector2(172, 76)
+const PLAN_ICE_TEXT := 420.0
+const PLAN_RECORDS_WIDTH := 360.0
+const PLAN_CODE_WIDTH := 300.0
+const SEED_MAX := 999999
 ## Gap round a price's currency icon at a button's right end (px).
 const PRICE_ICON_GAP := 8.0
 ## What each Site status means (the selected Site card's status badge).
@@ -1145,7 +1155,9 @@ static func prompts_for(p_name: String) -> Array:
 
 
 func show_start() -> void:
-	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var profile := RunManager.profile
+	var ts := Settings.text_scale
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	var head := HBoxContainer.new()
@@ -1153,124 +1165,194 @@ func show_start() -> void:
 	head.add_child(GraffitiTag.new("REBEL_CELL"))
 	head.add_child(GraffitiScrawl.new(tr("TRUST\nNO ONE"), -7.0, 26))
 	box.add_child(head)
+	# Art pass W8b (ART_BIBLE §11 New campaign, §6.5; critique 03, 04): a planning table:
+	# the target as corporation dossiers (the locked ones greyed with their lock and unlock),
+	# ICE as a stepper, the home server as tiles, the crew as Polaroids, the seed and share
+	# codes in a folded drawer, and one primary: START.
 	var setup := TerminalWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
+	setup.name = "PlanningTable"
 	box.add_child(setup)
-	var row := HFlowContainer.new()
-	setup.body.add_child(row)
-	row.add_child(_label(tr("Campaign seed:")))
-	var seed_spin := SpinBox.new()
-	seed_spin.min_value = 0
-	seed_spin.max_value = 999999
-	seed_spin.value = 1
-	seed_spin.name = "SeedSpin"
-	row.add_child(seed_spin)
-	var next_seed := _button("+1", func() -> void: seed_spin.value = int(seed_spin.value) + 1)
-	next_seed.name = "SeedNext"
-	row.add_child(next_seed)
-	row.add_child(_label(tr("Target:")))
-	var corp_pick := OptionButton.new()
+	var cols := func(tile_w: float, n: int) -> int:
+		return clampi(floori((PLAN_WIDTH + TilePicker.TILE_GAP) / (tile_w * minf(ts, PlanningPicker.WIDTH_GROW_MAX) + TilePicker.TILE_GAP)), 1, maxi(1, n))
+	# TARGET: every corporation the profile can see (REBEL_CELL stays a secret while locked).
+	var corps: Array[CorporationData] = []
+	var corp_tiles: Array[Dictionary] = []
+	var locked_corps: Array[Dictionary] = []
+	var available := RunManager.available_corporations()
+	for corp in available:
+		corps.append(corp)
+		corp_tiles.append({"name": TextDb.t(corp, "display_name"), "meta": tr("Best ICE: %s") % HudStats.ice_value(profile.best_ice_for(corp.id)), "corp": corp.id})
+	for id in lookup.ids_of_class(&"CorporationData"):
+		var corp := lookup.get_content(id) as CorporationData
+		if corp == null or available.has(corp) or corp.generated_from_profile:
+			continue
+		locked_corps.append({"name": TextDb.t(corp, "display_name"), "corp": corp.id, "locked": true, "unlock": _unlock_words(corp)})
+	corp_tiles.append_array(locked_corps)
+	setup.body.add_child(_plan_header(tr("Target:"), StatIcon.MAP))
+	var corp_pick := PlanningPicker.new(corp_tiles, 0, PLAN_CORP_TILE)
+	corp_pick.columns = cols.call(PLAN_CORP_TILE.x, corp_tiles.size())
 	corp_pick.name = "CorporationPicker"
-	var corps := RunManager.available_corporations()
-	for corp in corps:
-		corp_pick.add_item(TextDb.t(corp, "display_name"))
-	row.add_child(corp_pick)
+	setup.body.add_child(corp_pick)
+	# ICE (a stepper; each corporation has its own ICE ladder, GDD 3.4) beside the home server.
+	var mid := HFlowContainer.new()
+	mid.add_theme_constant_override("h_separation", roundi(UiTheme.SP_L * ts))
+	mid.add_theme_constant_override("v_separation", roundi(UiTheme.SP_S * ts))
+	setup.body.add_child(mid)
+	var ice_col := VBoxContainer.new()
+	mid.add_child(ice_col)
 	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
-	var ice_label := _label(tr("ICE (0-%d):") % cap)
-	row.add_child(ice_label)
-	var ice_spin := SpinBox.new()
+	var ice_head := _plan_header(tr("ICE (0-%d):") % cap, StatIcon.ICE)
+	ice_col.add_child(ice_head)
+	var ice_spin := Stepper.new(0, cap, 1, 0)
 	ice_spin.name = "IceSpin"
-	ice_spin.min_value = 0
-	ice_spin.max_value = cap
-	ice_spin.value = 0
-	row.add_child(ice_spin)
-	# SpinBoxes ignore the D-pad: explicit buttons make ICE and seed pad-reachable.
-	var ice_down := _button("-", func() -> void: ice_spin.value = maxf(ice_spin.min_value, ice_spin.value - 1))
-	ice_down.name = "IceDown"
-	row.add_child(ice_down)
-	var ice_up := _button("+", func() -> void: ice_spin.value = minf(ice_spin.max_value, ice_spin.value + 1))
-	ice_up.name = "IceUp"
-	row.add_child(ice_up)
-	# Each corporation has its own ICE ladder (GDD 3.4).
-	corp_pick.item_selected.connect(func(i: int) -> void:
+	ice_spin.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	ice_col.add_child(ice_spin)
+	var ice_text := _para(_ice_description(0))
+	ice_text.name = "IceText"
+	ice_text.custom_minimum_size.x = PLAN_ICE_TEXT * ts
+	ice_col.add_child(ice_text)
+	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
+	corp_pick.tile_chosen.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
 		ice_spin.max_value = corp_cap
-		ice_label.text = tr("ICE (0-%d):") % corp_cap)
-	var ice_text := _label(_ice_description(0))
-	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
-	row.add_child(_label(tr("Home server:")))
-	var home_pick := OptionButton.new()
+		(ice_head.get_child(1) as Label).text = tr("ICE (0-%d):") % corp_cap)
+	var home_col := VBoxContainer.new()
+	mid.add_child(home_col)
+	home_col.add_child(_plan_header(tr("Home server:"), StatIcon.HOME))
 	var variants := RunManager.available_home_variants()
+	var home_tiles: Array[Dictionary] = []
 	for v in variants:
-		home_pick.add_item(TextDb.t(v, "display_name"))
-	row.add_child(home_pick)
-	row.add_child(_label(tr("Crew:")))
-	var class_pick := OptionButton.new()
+		home_tiles.append({"name": TextDb.t(v, "display_name"), "icon": StatIcon.HOME})
+	for id in lookup.ids_of_class(&"HomeServerVariantData"):
+		var v := lookup.get_content(id) as HomeServerVariantData
+		if v != null and not variants.has(v):
+			home_tiles.append({"name": TextDb.t(v, "display_name"), "icon": StatIcon.HOME, "locked": true, "unlock": _unlock_words(v)})
+	var home_pick := PlanningPicker.new(home_tiles, 0, PLAN_SMALL_TILE)
+	home_pick.columns = cols.call(PLAN_SMALL_TILE.x, home_tiles.size())
+	home_pick.name = "HomePicker"
+	home_col.add_child(home_pick)
+	# CREW: the first operative's class, as Polaroids.
+	setup.body.add_child(_plan_header(tr("Crew:"), StatIcon.OPERATIVE))
 	var classes := RunManager.available_classes()
+	var class_tiles: Array[Dictionary] = []
 	for cls in classes:
-		class_pick.add_item(TextDb.t(cls, "display_name"))
-	row.add_child(class_pick)
-	var start_btn := _button(tr("New campaign"), func() -> void:
-		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
-			classes[class_pick.selected].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
-			corps[corp_pick.selected].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION))
-	start_btn.theme_type_variation = &"HotButton"
+		class_tiles.append({"name": TextDb.t(cls, "display_name"), "class": cls.id})
+	for id in lookup.ids_of_class(&"ClassData"):
+		var cls := lookup.get_content(id) as ClassData
+		if cls != null and not classes.has(cls):
+			class_tiles.append({"name": TextDb.t(cls, "display_name"), "class": cls.id, "locked": true, "unlock": _unlock_words(cls)})
+	var class_pick := PlanningPicker.new(class_tiles, 0, PLAN_SMALL_TILE)
+	class_pick.columns = cols.call(PLAN_SMALL_TILE.x, class_tiles.size())
+	class_pick.name = "ClassPicker"
+	setup.body.add_child(class_pick)
+	# START, the one primary; the drawer of seed and codes beside it, folded.
+	var go := HBoxContainer.new()
+	go.add_theme_constant_override("separation", roundi(UiTheme.SP_M * ts))
+	# START sits up top beside the graffiti: the one primary, always on the first screen.
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(gap)
+	go.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(go)
+	var seed_spin := Stepper.new(0, SEED_MAX, 1, 1)
+	seed_spin.name = "SeedSpin"
+	seed_spin.value_sample = str(SEED_MAX)
+	var start_btn := _button(tr("START"), func() -> void:
+		new_campaign(int(seed_spin.value), int(ice_spin.value), variants[home_pick.selected()].id if not variants.is_empty() else RunManager.DEFAULT_HOME,
+			classes[class_pick.selected()].id if not classes.is_empty() else RunManager.DEFAULT_CLASS,
+			corps[corp_pick.selected()].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION))
+	start_btn.name = "StartCampaign"
+	start_btn.theme_type_variation = UiTheme.PRIMARY
 	start_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	start_btn.tooltip_text = UiTip.fold(tr("New campaign"))
 	_icon(start_btn, StatIcon.PLAY)
-	setup.body.add_child(ice_text)
-	setup.body.add_child(start_btn)
-	# Daily run and share codes side by side; the daily panel lists today's setup and
-	# has room for the day's modifiers.
-	var code_split := HBoxContainer.new()
-	code_split.add_theme_constant_override("separation", 14)
-	box.add_child(code_split)
-	var daily := TerminalWindow.new(tr("TODAY'S RUN"), Palette.CELL_ACID)
-	daily.name = "DailyRun"
-	daily.custom_minimum_size.x = 420
-	code_split.add_child(daily)
-	var today := Time.get_date_dict_from_system()
-	var daily_seed := CampaignCode.daily_seed(today["year"], today["month"], today["day"])
-	daily.tag_label.text = "%04d-%02d-%02d" % [today["year"], today["month"], today["day"]]
-	for line in daily_lines(daily_seed):
-		daily.body.add_child(_label(line))
-	daily.body.add_child(_icon(_button(tr("Daily run"), func() -> void: new_campaign(daily_seed)), StatIcon.PLAY))
+	go.add_child(start_btn)
+	var drawer_btn := _button(tr("SHARE CODES"), func() -> void: set_codes_open(not codes_open()))
+	drawer_btn.name = "CodesToggle"
+	drawer_btn.theme_type_variation = UiTheme.TERTIARY
+	drawer_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_icon(drawer_btn, StatIcon.MORE)
+	go.add_child(drawer_btn)
+	# The drawer (GLASS): the seed (a stepper and a field to type it) and the share code.
 	var codes := TerminalWindow.new(tr("SHARE CODES"), Palette.CELL_ACID)
-	codes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	code_split.add_child(codes)
+	codes.name = "CodesDrawer"
+	codes.visible = false
+	codes.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	setup.body.add_child(codes)
+	var seed_row := HFlowContainer.new()
+	seed_row.add_theme_constant_override("h_separation", roundi(UiTheme.SP_S * ts))
+	codes.body.add_child(seed_row)
+	seed_row.add_child(_label(tr("Campaign seed:")))
+	seed_row.add_child(seed_spin)
+	var seed_field := CodeField.new("1")
+	seed_field.name = "SeedField"
+	seed_field.text_changed.connect(func(t: String) -> void:
+		if t.strip_edges().is_valid_int():
+			seed_spin.value = clampi(t.strip_edges().to_int(), 0, SEED_MAX))
+	seed_spin.value_changed.connect(func(v: float) -> void:
+		if seed_field.value.strip_edges() != str(int(v)):
+			seed_field.value = str(int(v)))
+	seed_row.add_child(seed_field)
 	var code_row := HFlowContainer.new()
-	var code_edit := LineEdit.new()
+	code_row.add_theme_constant_override("h_separation", roundi(UiTheme.SP_S * ts))
+	codes.body.add_child(code_row)
+	var code_field := CodeField.new("")
+	code_field.name = "CodeField"
+	var code_edit := code_field.field
 	code_edit.name = "CodeEdit"
 	code_edit.placeholder_text = tr("RC1-corporation-ice-seed-home-class")
-	code_edit.custom_minimum_size.x = 360
+	code_edit.custom_minimum_size.x = PLAN_CODE_WIDTH * ts
 	# Esc leaves the field (a focused LineEdit would otherwise swallow it).
 	code_edit.gui_input.connect(func(ev: InputEvent) -> void:
 		if ev.is_action_pressed("ui_cancel") or ev.is_action_pressed("open_settings"):
 			code_edit.release_focus()
 			code_edit.accept_event()
 			UiFocus.focus_first(_panel))
-	code_row.add_child(code_edit)
-	code_row.add_child(_icon(_button(tr("Start from code"), func() -> void: start_from_code(code_edit.text)), StatIcon.PLAY))
-	codes.body.add_child(code_row)
-	var lower := HBoxContainer.new()
-	lower.add_theme_constant_override("separation", 14)
+	code_row.add_child(code_field)
+	var from_code := _icon(_button(tr("Start from code"), func() -> void: start_from_code(code_edit.text)), StatIcon.PLAY)
+	from_code.theme_type_variation = UiTheme.SECONDARY
+	code_row.add_child(from_code)
+	# The day's run, the deck menu and the profile's records, each as big as its words.
+	var lower := HFlowContainer.new()
+	lower.add_theme_constant_override("h_separation", 14)
+	lower.add_theme_constant_override("v_separation", 12)
 	box.add_child(lower)
 	var menu := TerminalWindow.new(tr("CYBERDECK"))
-	menu.custom_minimum_size.x = 300
+	menu.custom_minimum_size.x = HQ_LEFT_WIDTH
 	menu.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	lower.add_child(menu)
-	var profile := TerminalWindow.new(tr("PROFILE // RECORDS"), Palette.CELL_PINK)
-	profile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lower.add_child(profile)
+	var daily := TerminalWindow.new(tr("TODAY'S RUN"), Palette.CELL_ACID)
+	daily.name = "DailyRun"
+	daily.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	lower.add_child(daily)
+	var today := Time.get_date_dict_from_system()
+	var daily_seed := CampaignCode.daily_seed(today["year"], today["month"], today["day"])
+	daily.tag_label.text = "%04d-%02d-%02d" % [today["year"], today["month"], today["day"]]
+	for line in daily_lines(daily_seed):
+		daily.body.add_child(_label(line))
+	var daily_btn := _icon(_button(tr("Daily run"), func() -> void: new_campaign(daily_seed)), StatIcon.PLAY)
+	daily_btn.theme_type_variation = UiTheme.SECONDARY
+	daily_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	daily.body.add_child(daily_btn)
+	var records := TerminalWindow.new(tr("PROFILE // RECORDS"), Palette.CELL_PINK)
+	records.name = "ProfileRecords"
+	records.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	lower.add_child(records)
 	if RunManager.has_save():
 		menu.body.add_child(_icon(_button(tr("Resume saved campaign"), resume), StatIcon.CONTINUE))
-	var p := RunManager.profile
-	profile.body.add_child(_para(tr("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.") % [
-		p.campaigns_started, p.campaigns_won, p.campaigns_lost, p.runs_completed, p.operatives_lost, p.raids_won, p.raids_lost, HudStats.ice_value(p.best_ice)]))
-	profile.body.add_child(_para(ice_records_text()))
+	for text in [tr("Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.") % [
+			profile.campaigns_started, profile.campaigns_won, profile.campaigns_lost, profile.runs_completed, profile.operatives_lost, profile.raids_won, profile.raids_lost, HudStats.ice_value(profile.best_ice)],
+			ice_records_text()]:
+		var p := _para(text)
+		p.custom_minimum_size.x = PLAN_RECORDS_WIDTH * ts
+		records.body.add_child(p)
 	var unlock_names := PackedStringArray()
-	for uid in p.unlocks:
-		var ud := RunManager.lookup().get_content(uid) as ProfileUnlockData
+	for uid in profile.unlocks:
+		var ud := lookup.get_content(uid) as ProfileUnlockData
 		unlock_names.append(TextDb.t(ud, "display_name") if ud != null else String(uid))
-	profile.body.add_child(_para(tr("Unlocks: %s") % (", ".join(unlock_names) if not unlock_names.is_empty() else tr("none yet (buy them at HQ with campaign Schematics)"))))
+	var unlocked := _para(tr("Unlocks: %s") % (", ".join(unlock_names) if not unlock_names.is_empty() else tr("none yet (buy them at HQ with campaign Schematics)")))
+	unlocked.custom_minimum_size.x = PLAN_RECORDS_WIDTH * ts
+	records.body.add_child(unlocked)
 	var options_btn := _hint_button(tr("Options"), &"open_settings", open_settings)
 	options_btn.name = "OptionsButton"
 	menu.body.add_child(_icon(options_btn, StatIcon.SETTINGS))
@@ -1278,6 +1360,49 @@ func show_start() -> void:
 	menu.body.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
 	_as_menu(menu.body)
 	_set_panel(box, "start")
+
+
+## W8b: the words of what unlocks `res` (a class, home server or corporation): the Black
+## Market group and its price ("UNLOCKS · 80"), or "Needs ..." for a free, earned one.
+func _unlock_words(res: Resource) -> String:
+	var u := CampaignRules.unlock_for(RunManager.lookup(), res)
+	if u == null:
+		return tr(MARKET_UNLOCKS)
+	if u.schematic_cost > 0:
+		return "%s · %d" % [tr(MARKET_UNLOCKS), u.schematic_cost]
+	return tr(MARKET_CLASS_LOCKED) % TextDb.t(u, "display_name")
+
+
+## A planning-table header: the group's icon and words.
+func _plan_header(words: String, icon: StringName) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", roundi(UiTheme.SP_S * Settings.text_scale))
+	row.add_child(IconMark.standalone(icon, UiTheme.font_px(UiTheme.LABEL), Palette.CELL_ACID))
+	var l := _label(words)
+	l.add_theme_color_override("font_color", Palette.CELL_ACID)
+	row.add_child(l)
+	return row
+
+
+## True when the new campaign's seed and codes drawer is open.
+func codes_open() -> bool:
+	var d := _panel.find_child("CodesDrawer", true, false) as Control if _panel != null else null
+	return d != null and d.visible
+
+
+## Opens (or folds) the new campaign's seed and codes drawer.
+func set_codes_open(open: bool) -> void:
+	var d := _panel.find_child("CodesDrawer", true, false) as Control if _panel != null else null
+	if d == null:
+		return
+	d.visible = open
+	var toggle := _panel.find_child("CodesToggle", true, false) as Button
+	if toggle != null:
+		IconMark.attach(toggle, StatIcon.CLOSE if open else StatIcon.MORE)
+	if open:
+		var field := d.find_child("SeedField", true, false) as CodeField
+		if field != null:
+			field.field.grab_focus.call_deferred()
 
 
 ## Today's daily run as display lines: the fixed setup, then the day's modifiers (the

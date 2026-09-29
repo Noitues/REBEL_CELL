@@ -252,3 +252,71 @@ func test_the_black_market_is_grouped_with_icons_prices_and_readable_locks() -> 
 			locked += 1
 	assert_true(locked > 0, "a fresh profile has locked classes")
 	await _close(hq)
+
+
+# --- Item 4: the new campaign's planning table (§11 New campaign, §6.5; critique 03, 04) ----------
+
+## The primary (HotButton) buttons visible under `root`.
+func _primaries(root: Node) -> Array[Button]:
+	var out: Array[Button] = []
+	for n in _all(root):
+		if n is Button and (n as Button).is_visible_in_tree() and (n as Button).theme_type_variation == UiTheme.PRIMARY:
+			out.append(n)
+	return out
+
+
+func test_the_new_campaign_is_a_planning_table_with_one_primary() -> void:
+	RunManager.reset()
+	var hq := _open(HQ)
+	hq.show_start()
+	await _frames(4)
+	var corp := hq._panel.find_child("CorporationPicker", true, false) as PlanningPicker
+	assert_not_null(corp, "the target is a row of dossier tiles")
+	var locked := 0
+	for i in corp.tiles.size():
+		assert_true(corp.tiles[i].has("corp"), "each tile is a corporation dossier")
+		if corp.is_locked(i):
+			locked += 1
+			assert_ne(String(corp.tiles[i].get("unlock", "")), "", "a locked corp says how it unlocks")
+	assert_true(locked > 0, "a fresh profile sees its locked corporations")
+	assert_true(hq._panel.find_child("IceSpin", true, false) is Stepper, "ICE is a stepper")
+	assert_true(hq._panel.find_child("HomePicker", true, false) is TilePicker, "the home server as tiles")
+	var classes := hq._panel.find_child("ClassPicker", true, false) as PlanningPicker
+	assert_true(classes.tiles[0].has("class"), "the crew as Polaroids")
+	assert_false(hq.codes_open(), "the seed and codes drawer starts folded")
+	assert_true(hq._panel.find_child("CodeEdit", true, false).get_parent() is CodeField, "the share code in a CodeField")
+	var prim := _primaries(hq._panel)
+	assert_eq(prim.size(), 1, "one primary: START")
+	assert_eq(prim[0].name, &"StartCampaign")
+	assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(prim[0].get_global_rect()), "START on the first screen")
+	for n in _all(hq._panel):
+		assert_false(n is OptionButton or n is SpinBox, "no native dropdown or spin box: %s" % n.name)
+	var records := hq._panel.find_child("ProfileRecords", true, false) as Control
+	assert_eq(records.size_flags_horizontal & Control.SIZE_EXPAND, 0, "the records panel sizes to its words")
+	# A pick flows through to the campaign.
+	classes.choose(0)
+	corp.choose(0)
+	(hq._panel.find_child("SeedSpin", true, false) as Stepper).value = 77
+	prim[0].pressed.emit()
+	assert_eq(RunManager.campaign.campaign_seed, 77, "START starts the planned campaign")
+	await _close(hq)
+
+
+func test_planning_tiles_fit_their_words_at_every_scale() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		var hq := _open(HQ)
+		hq.show_start()
+		await _frames(3)
+		for pick_name in ["CorporationPicker", "HomePicker", "ClassPicker"]:
+			var p := hq._panel.find_child(pick_name, true, false) as PlanningPicker
+			var px := p.common_name_px()
+			assert_true(px >= roundi(UiTheme.CAPTION * scale), "%s names at caption or larger (%d at %.1f)" % [pick_name, px, scale])
+			for i in p.tiles.size():
+				var lay: Array = p.name_layout(i, p.name_width(i), px)
+				assert_true((lay[0] as PackedStringArray).size() <= PlanningPicker.NAME_LINES, "%s tile %d in two lines at %.1f" % [pick_name, i, scale])
+				for line in (lay[0] as PackedStringArray):
+					assert_true(Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= p.name_width(i) + 0.5, "%s: '%s' fits" % [pick_name, line])
+			assert_true(p.get_combined_minimum_size().x <= CANVAS.x, "%s fits the screen at %.1f" % [pick_name, scale])
+		await _close(hq)

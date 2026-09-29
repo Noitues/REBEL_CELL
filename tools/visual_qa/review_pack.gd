@@ -479,11 +479,21 @@ func _s_new_campaign() -> void:
 
 func _s_new_campaign_picker() -> void:
 	var hq: Node = await _new_campaign_page()
-	var pick := hq.find_child("CorporationPicker", true, false) as OptionButton
+	var pick := hq.find_child("CorporationPicker", true, false) as Control
 	if pick == null:
 		push_error("review_pack: no CorporationPicker")
 		return
-	pick.show_popup()
+	# Art pass W8b: the target is a row of dossier tiles (no popup): the drawer of seed and
+	# codes open, then the picker focused on its second tile.
+	if pick.has_method("show_popup"):
+		pick.call("show_popup")
+	else:
+		if hq.has_method("set_codes_open"):
+			hq.call("set_codes_open", true)
+		await _frames(2)
+		pick.grab_focus()
+		pick.set("cursor", 1)
+		pick.queue_redraw()
 	await _frames(SETTLE_FRAMES)
 
 
