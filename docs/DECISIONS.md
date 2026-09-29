@@ -131,6 +131,47 @@ Review folder: `docs/art_review/W9/`. The text-scale 2.0 breakage table there is
 - **Steam Deck:** the first-run default is `text_scale` 1.2 (`TEXT_SCALE_STEAM_DECK`). Test runs skip the device probe unless one is injected.
 - **Deviation:** items 4–7 share one commit, because they share Settings' declarations.
 
+### 2026-09-29 — Art pass W2: component library (merged into `art-pass`)
+Review folder: `docs/art_review/W2/`. The component lab is `tools/design_lab/components_lab.tscn`.
+
+**Focus (§6, §12)**
+- `FOCUS` corner brackets (`StyleBoxBrackets`) replace the acid ring theme-wide.
+- The 1.03 scale plays for **pad focus only**; mouse and keys get the brackets. Headless stays at 1.0.
+- A focused plain row or menu line also colours its words `FOCUS`.
+- High contrast thickens the brackets to 4 px. Orchestrator integration fix: `HighContrast.apply` now handles `StyleBoxBrackets`.
+
+**Buttons (§6.4, §3.7, §4.2)**
+- Only the named variants (Primary/`HotButton`, Secondary, Tertiary, Danger) size to label + 32 px. A plain `Button` keeps its 10 px row padding, because widening every button broke the HQ crew at 1.6.
+- `MenuItem` text is at `body`, not `label`: at `label` the HQ menu pushed past the crew's two columns at 1.6.
+- Disabled labels use `TEXT_MID`, because `DISABLED` is 3.9:1 on glass. The lock is a corner badge, so the button size doesn't change.
+- `ConfirmDialog`: Yes is Danger, No is Secondary.
+
+**Toast (§6.7)**
+- The hold is the longer of 2.5 s and the stamp reading rule. `toast_note_hold` is retired but kept, because tests name it.
+- The toast's tape is tilted; the note itself stays square.
+- `Toast.spot` keeps the toast off usable controls and the prompt bar.
+
+**Tooltips (§6.8):** 36 columns at every scale. `UiTip.for_input` replaces stray "click"/"drag" in pad text.
+
+**Pad glyphs and colours (§12, §3.6)**
+- Glyph auto-detect uses the first pad's name and falls back to Xbox.
+- Glyph colours come from the §3.3 tokens.
+- Asset and Daemon hues no longer use corp hues.
+
+**Proposals for the bible (not applied):**
+- Say "pad focus" for the 1.03 scale.
+- Name `TEXT_MID` as the disabled label colour.
+
+**To do for owners:**
+- W3/W4/W8: switch `Palette.STATUS_GLYPHS` users to `StatIcon.draw_status`:
+  - `combat_scene.gd` 2413, 2450, 2536, 2572, 3737
+  - `wheel_view.gd` 1754, 1768
+  - `zine_card.gd` 631
+  - `codex.gd` 162
+- W8/W3: replace the native controls with kit components. The call-site list is in `docs/art_review/W2/README.md`.
+- W8: use `IconMark.attach(b, StatIcon.TRASH)` on real Delete buttons (the Danger X texture doesn't scale).
+- W3: the RESPIN sticker's words overrun at 1.6.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
