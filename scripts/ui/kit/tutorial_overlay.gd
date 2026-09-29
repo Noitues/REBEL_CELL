@@ -103,8 +103,14 @@ func fit(p_size: Vector2) -> void:
 	# Art pass W9F (§12: nothing clips at 2.0): the buttons stack when side by side they'd run
 	# past the column ("Skip tutorial" ran off the screen), and their row takes its real height.
 	var sep := float(row.get_theme_constant(&"separation"))
+	var room := p_size.x - ROW_INSET * 2.0
+	skip_button.text = tr("Skip tutorial")
 	var both := next_button.get_combined_minimum_size().x + sep + skip_button.get_combined_minimum_size().x
-	row.vertical = both > p_size.x - ROW_INSET * 2.0
+	if both > room:
+		# The short word first (the note keeps its height); stacked only if even that is too wide.
+		skip_button.text = tr("Skip")
+		both = next_button.get_combined_minimum_size().x + sep + skip_button.get_combined_minimum_size().x
+	row.vertical = both > room
 	row.reset_size()
 	var row_h := maxf(BUTTON_ROW_HEIGHT, row.get_combined_minimum_size().y + ROW_INSET)
 	note.custom_minimum_size = Vector2(p_size.x, maxf(0.0, p_size.y - row_h))

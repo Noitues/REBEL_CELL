@@ -15,6 +15,9 @@ const GLYPH_GAP := 6.0
 
 ## [[action, verb], ...] in the order shown.
 var prompts: Array = []
+## Art pass W9F: a compact bar (a fight's status row): verbs at `caption` and the gaps kept
+## at their 1.0 size, so the row fits beside the turn line at 2.0.
+var compact: bool = false
 ## What each shown prompt says ("A  Buy": the glyph's name, two spaces, the verb), in order.
 var _texts := PackedStringArray()
 
@@ -55,14 +58,16 @@ func glyphs() -> Array[PadGlyph]:
 
 ## One prompt: the glyph for pad button `button` and the verb `verb` (translated) beside it,
 ## as separate elements (W8: a price with a button beside it uses the glyph on its own).
-static func make_pair(button: int, verb: String) -> HBoxContainer:
+static func make_pair(button: int, verb: String, p_compact: bool = false) -> HBoxContainer:
 	var pair := HBoxContainer.new()
 	pair.name = "Prompt"
 	pair.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pair.add_theme_constant_override("separation", roundi(GLYPH_GAP * Settings.text_scale))
+	pair.add_theme_constant_override("separation", roundi(GLYPH_GAP * (1.0 if p_compact else Settings.text_scale)))
 	var g := PadGlyph.new(button)
 	g.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pair.add_child(g)
+	if verb == "":
+		return pair  # art pass W9F: a glyph that says it all (the Menu glyph's three lines)
 	var l := Label.new()
 	l.name = "Verb"
 	# H24 S4: the verb is the key, translated by the caller once; shown as given here.
@@ -70,6 +75,8 @@ static func make_pair(button: int, verb: String) -> HBoxContainer:
 	l.text = verb
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_color_override("font_color", Palette.TEXT_HI)
+	if p_compact:
+		l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	pair.add_child(l)
 	return pair
@@ -82,7 +89,7 @@ func _relabel() -> void:
 		remove_child(child)
 		child.free()
 	_texts = PackedStringArray()
-	add_theme_constant_override("separation", roundi(GAP * Settings.text_scale))
+	add_theme_constant_override("separation", roundi(GAP * (1.0 if compact else Settings.text_scale)))
 	var any := false
 	for p in prompts:
 		var action := StringName(p[0])
@@ -90,7 +97,7 @@ func _relabel() -> void:
 		if button < 0:
 			continue  # no pad button for this action: no prompt
 		var verb := tr(String(p[1]))
-		add_child(make_pair(button, verb))
+		add_child(make_pair(button, verb, compact))
 		_texts.append("%s  %s" % [PadGlyph.name_of(button), verb])
 		any = true
 	var was := visible

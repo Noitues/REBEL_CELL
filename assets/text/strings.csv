@@ -2934,3 +2934,5 @@ Or pick it up and move it onto any of your nodes.,Or pick it up and move it onto
 "Pick the target: press a node of yours on the map, or its button in YOUR NODES.","Pick the target: press a node of yours on the map, or its button in YOUR NODES."
 "Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
+TARGET,TARGET
+YOURS,YOURS

@@ -1550,6 +1550,7 @@ func _build_ui() -> void:
 	top.add_child(_status)
 	pad_prompts = PadPrompts.new()
 	pad_prompts.name = "FightPrompts"
+	pad_prompts.compact = true
 	top.add_child(pad_prompts)
 	_settings_button = _button("Settings", open_settings)
 	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
@@ -2097,6 +2098,8 @@ func _hold_status_width(turn_line: String) -> void:
 ## the status row: the nudge pair, the wheel and ring switches (named by what they switch
 ## to), RESPIN and UNDO, each its pad glyph and verb. SEND IT carries its own glyph.
 var pad_prompts: PadPrompts = null
+## Art pass W9F: the largest text scale the fight's Settings prompt keeps its word at.
+const FIGHT_PROMPT_WORDS_MAX := 1.3
 
 
 func _refresh_pad_prompts() -> void:
@@ -2107,13 +2110,14 @@ func _refresh_pad_prompts() -> void:
 	if state.outcome == CombatState.Outcome.NONE and not _outcome_held:
 		var mine := _nudge_wheel_option.selected == 0
 		var inner := _nudge_ring_option.selected == 1
-		list = [[&"nudge_left", "-1"], [&"nudge_right", "+1"], [&"toggle_nudge_wheel", "THE TARGET" if mine else "YOUR WHEEL"]] # TR
+		list = [[&"nudge_left", "-1"], [&"nudge_right", "+1"], [&"toggle_nudge_wheel", "TARGET" if mine else "YOURS"]] # TR
 		var wheel := state.get_combatant(_selected_nudge_wheel())
 		if wheel != null and wheel.wheel.has_inner_ring():
 			list.append([&"toggle_ring", "OUTER" if inner else "INNER"]) # TR
 		list.append([&"respin", "Respin"]) # TR
 		list.append([&"rewind", "Undo"]) # TR
-	list.append([&"open_settings", "Settings"]) # TR
+	# The Menu glyph (three lines) is the settings mark itself: no word beside it in the row.
+	list.append([&"open_settings", "" if Settings.text_scale > FIGHT_PROMPT_WORDS_MAX else "Settings"]) # TR
 	pad_prompts.set_prompts(list)
 
 
