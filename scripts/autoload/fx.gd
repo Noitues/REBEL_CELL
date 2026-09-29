@@ -59,12 +59,12 @@ var _note: String = ""
 ## ruling width and padding (px).
 var note_label: Label
 const NOTE_MOTION := &"raid_incoming_hold"
-const NOTE_FONT := 34
+const NOTE_FONT := UiTheme.HEADING  # art pass W9F (§4.2): a step, not 34
 const NOTE_TILT := -4.0
 const NOTE_RULE := 4
 const NOTE_PAD := 14
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
-const CONNECT_FONT := 20
+const CONNECT_FONT := UiTheme.TITLE  # art pass W9F (§4.2): a step, not 20
 const CONNECT_BAR_H := 4.0
 const CONNECT_GAP := 12.0
 
@@ -104,7 +104,7 @@ func _ready() -> void:
 	add_child(connect_label)
 	note_label = Label.new()
 	note_label.name = "JackRaidNote"
-	note_label.add_theme_font_override("font", Palette.display())
+	note_label.add_theme_font_override("font", UiTheme.tracked(Palette.display(), UiTheme.TRACK_DISPLAY, UiTheme.HEADING))  # art pass W9F (§4.2)
 	note_label.add_theme_color_override("font_color", Palette.CRT_AMBER)
 	note_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	note_label.add_theme_constant_override("outline_size", 6)
@@ -512,7 +512,8 @@ func request_flash() -> bool:
 ## The shake (px) motion entry `id` may use: its amplitude held to its tier's limit
 ## (ART_BIBLE 8: none below T2, 2 px at T2, 4 px at T3, none at T4); 0 under reduce effects.
 func shake_px(id: StringName) -> float:
-	if not effects_enabled():
+	# Art pass W9F (ART_BIBLE §12): reduce motion shakes nothing either.
+	if not effects_enabled() or not Motion.camera_moves_allowed():
 		return 0.0
 	return VfxTier.clamp_shake(VfxTier.of(id), Motion.amplitude(id))
 
@@ -718,7 +719,9 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 		on_switch.call()
 		return
 	_set_jacking(true)
-	if not effects_enabled():
+	# Art pass W9F (ART_BIBLE §12: reduce motion is cross-fades only, no camera move): the
+	# jack's zoom through the screen becomes the same cross-fade reduce effects gets.
+	if not effects_enabled() or not Motion.camera_moves_allowed():
 		await _fade_switch(on_switch)
 		_set_jacking(false)
 		return

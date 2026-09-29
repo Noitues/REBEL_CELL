@@ -16,8 +16,8 @@ extends Control
 ## when long), the profile and ICE records on a taped receipt as icon + number fields, then
 ## the actions (§6.4: New campaign Primary, Back to title Secondary).
 ##
-## The sequence is skippable with any press, and a page settle ends it (`Typing.META`, as
-## RunEndStage). Under reduce effects nothing moves: the end state shows at once and the
+## The sequence is skippable with any press, and a page settle ends it (its
+## `settle_motion`, as RunEndStage). Under reduce effects nothing moves: the end state shows at once and the
 ## page's own entrance (a cross-fade) brings it in. View only: the screen passes the words,
 ## the crew and the records; the city is the screen's (Signal Up, Call Down).
 
@@ -234,8 +234,9 @@ func _paper_label(words: String, step: int, font: Font) -> Label:
 	if font != null:
 		l.add_theme_font_override("font", font)
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
+	UiTheme.track_label(l)  # art pass W9F (§4.2): Anton and mono CAPS tracked
 	l.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size.x = story_width()
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	story_labels.append(l)
@@ -408,9 +409,6 @@ func play() -> void:
 	_tween = create_tween()
 	_tween.tween_method(_apply, 0.0, 1.0, Motion.seconds(id))
 	_tween.tween_callback(finish_now)
-	# PageTransition.settle / Typing.finish_all end a page's motions through this meta (as
-	# RunEndStage): the stage then shows its end.
-	set_meta(Typing.META, _tween)
 
 
 ## True while the sequence plays.
@@ -423,8 +421,6 @@ func finish_now() -> void:
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_tween = null
-	if has_meta(Typing.META):
-		remove_meta(Typing.META)
 	_apply(1.0)
 
 
@@ -465,14 +461,39 @@ func _apply(u: float) -> void:
 		story.fit.hint.modulate.a = f
 
 
+## Art pass W9F (ART_BIBLE §11, §9): the city whose grade greys (its &"flatline" context,
+## CityAtmosphere.blend_context), so the grey covers the whole city, behind the subtitle band
+## and the prompt strip too. The screen sets it; without one (tests, a bare stage) the stage
+## greys the backdrop under its own rect as before (GRADE_CODE).
+var atmosphere: CityAtmosphere = null:
+	set(v):
+		atmosphere = v
+		_set_grade(_grade_v)
+var _grade_v: float = 0.0
+
+
+## The city context the grey grades to.
+const FLATLINE_CONTEXT := &"flatline"
+
+
 func _set_grade(v: float) -> void:
-	(grade.material as ShaderMaterial).set_shader_parameter(&"amount", v)
-	grade.visible = v > 0.0
+	_grade_v = v
+	var city_grades := atmosphere != null and is_instance_valid(atmosphere)
+	if city_grades:
+		atmosphere.blend_context(FLATLINE_CONTEXT, v)
+	(grade.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0 if city_grades else v)
+	grade.visible = v > 0.0 and not city_grades
 
 
 ## The grade's amount now (0 colour, 1 grey; tests).
 func grade_amount() -> float:
-	return float((grade.material as ShaderMaterial).get_shader_parameter(&"amount"))
+	return _grade_v
+
+
+func _exit_tree_grade() -> void:
+	# The city gets its colour back when the stage goes (a new campaign, the HQ).
+	if atmosphere != null and is_instance_valid(atmosphere) and _grade_v > 0.0:
+		atmosphere.blend_context(FLATLINE_CONTEXT, 0.0)
 
 
 ## The sequence's time now (0..1; 1 = the end state).
@@ -480,10 +501,21 @@ func progress() -> float:
 	return _u
 
 
-func _process(_delta: float) -> void:
-	# A settle took the meta (PageTransition.settle, Typing.finish_all): end now.
-	if _tween != null and not has_meta(Typing.META):
+## Art pass W9F: PageTransition.settle's hook: the sequence shows its end.
+func settle_motion() -> void:
+	if running():
 		finish_now()
+
+
+## Art pass W9F (W8d request): the screen gives the stage a scrim over the whole screen
+## (behind the top bar, the subtitle band, the page and the prompt strip alike: HqScene's
+## EndScrim): the stage's own, which covered only the page's rect, stands down.
+func use_screen_scrim() -> void:
+	scrim.visible = false
+
+
+func _exit_tree() -> void:
+	_exit_tree_grade()
 
 
 func _input(event: InputEvent) -> void:

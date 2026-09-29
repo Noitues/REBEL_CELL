@@ -819,7 +819,11 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		else:
 			_focus_page(p)
 	_title_screen(s)
-	set_page_prompts([] if p.has_method("attach_netrun") else prompts_for(s))
+	var prompts: Array = [] if p.has_method("attach_netrun") else prompts_for(s)
+	# Art pass W9F (§5.2.4): the route's folding key has its pad prompt, as the Grid's.
+	if route_legend != null and is_instance_valid(route_legend) and p.is_ancestor_of(route_legend) and route_legend.foldable():
+		prompts.append([&"cycle_target", "Key"]) # TR
+	set_page_prompts(prompts)
 	# H24 S15: lines tied to the screen being left end here.
 	Dialogue.enter_screen(screen_name(s))
 	if s != null and not s.run.is_over():
@@ -923,6 +927,11 @@ static func screen_name(s: NetrunSession) -> String:
 		RunState.Phase.RAID:
 			return "netrun_raid"
 	return "run_end"
+
+
+## True when the route page shows a key that folds (big text): cycle_target opens it.
+func route_key_foldable() -> bool:
+	return route_legend != null and is_instance_valid(route_legend) and route_legend.is_visible_in_tree() 		and route_legend.foldable() and combat_scene == null and not _modal_open()
 
 
 ## A viewer, the Daemon tray or the pause menu is open over the screen (it takes B).
@@ -1657,6 +1666,10 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 	city_overlay.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city.add_child(city_overlay)
 	city_overlay.set_look(look)
+	# Art pass W9F (§3.6): threat routes carry the campaign corp's pattern here too (the
+	# grid-zoom view), as on the HQ's Grid.
+	if RunManager.campaign != null:
+		city_overlay.corp_id = RunManager.campaign.corporation_id
 	city_overlay.set_graph(nodes, edges)
 	city.scale = Vector2(zoom, zoom)
 	city.offset_left = 0
@@ -2238,7 +2251,7 @@ func _show_event() -> void:
 		b.pressed.connect(func() -> void: _press_choice(index))
 		b.theme_type_variation = &"NoteButton"
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD
 		options.add_child(b)
 		# H23 S9: no numbers for a change that is none; H24 S9: a choice that changes nothing
 		# says so with the neutral "no change" mark (it showed nothing at all). Art pass W8c:
@@ -2517,6 +2530,11 @@ func _show_shop() -> void:
 		# Art pass W8c: in one column (big text; the page scrolls) the cards may grow with the text.
 		(q_size.y * (ts if grid.columns == 1 else 1.0) - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
+	if grid.columns == 1:
+		# Art pass W9F (§5.3: never more than 25% empty): in one column the CARDS window holds
+		# its cards, not the column's width (at 1.6 and 2.0 over a third of it was empty).
+		cards_win.custom_minimum_size = Vector2.ZERO
+		cards_win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	# Art pass W8c: the lift room is a card's hover lift, the half of its hover growth and the
 	# focus brackets' offset.
 	lift_room.custom_minimum_size.y = roundf(Motion.amplitude(&"card_hover") + (ZineCard.HOVER_SCALE - 1.0) * 0.5 * ZineCard.STICKER_SIZE.y * cs
@@ -2949,7 +2967,7 @@ func _show_raid() -> void:
 	# warning, a forecast stamp and the facts as badges, then a row per node.
 	var warn := _label(TextDb.t(raid, "warning_text"))
 	warn.name = "RaidWarning"
-	warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(warn)  # art pass W9F §4.3.3: whole words, never mid-word
 	box.add_child(warn)
 	box.add_child(_raid_forecast(projection))
 	var run_assets := s.run_assets()
@@ -3037,7 +3055,7 @@ func _show_raid() -> void:
 	# to its label.
 	run_btn.theme_type_variation = UiTheme.PRIMARY
 	run_btn.size_flags_horizontal = Control.SIZE_SHRINK_END
-	IconMark.attach(run_btn, StatIcon.RAIDS)
+	IconMark.attach(run_btn, StatIcon.PLAY)  # art pass W9F: the verb's PLAY glyph, as every START
 	box.add_child(run_btn)
 	# ANIM-R1 M8: the interlude is a window beside the raid's map on the city (the Grid, the
 	# threats' routes to CORE), framed before the jack's cover lifts: a jack into a mid-run
@@ -3139,7 +3157,7 @@ func _empty_assets_note() -> Control:
 	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
 	row.add_child(IconMark.standalone(StatIcon.ARMORY, side, Palette.TEXT_MID))
 	var l := _label(tr("No assets to deploy: this run carries none and the Armory is empty. Your nodes hold with what is on them."))
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.add_theme_color_override("font_color", Palette.TEXT_MID)
 	l.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.CAPTION))
@@ -3224,6 +3242,10 @@ func _show_end() -> void:
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
 	IconMark.attach(back, StatIcon.BACK)
 	stage.set_meta(FIRST_FOCUS_META, back)
+	# Art pass W9F: the grey is the city's own flatline context, so it covers the whole city
+	# (behind the subtitle band and the prompt strip too), not only the page's rect.
+	if background != null and background.city != null:
+		stage.atmosphere = background.city.atmosphere()
 	# Never a black void: the city shows behind the end (a fight hid it).
 	background.visible = true
 	_set_panel(stage, false)
@@ -3804,6 +3826,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		leave_shop()
 		get_viewport().set_input_as_handled()
 		return
+	# Art pass W9F (§6.10, as the HQ's Grid): the pad's key button (Y) opens and folds the
+	# route's key at big text.
+	if event.is_action_pressed("cycle_target") and route_key_foldable():
+		route_legend.set_opened(not route_legend.opened)
+		get_viewport().set_input_as_handled()
+		return
 	if map_view != null and is_instance_valid(map_view) and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.MAP:
 		var available := RunManager.netrun.available_nodes()
 		for i in mini(9, available.size()):
@@ -3860,6 +3888,7 @@ func _build_ui() -> void:
 	drops = DropLayer.new()
 	_wire_drops(drops)
 	add_child(drops)
+	hud.watch_drops(drops)  # art pass W9F (§6.9): CARDS / DAEMONS show their brackets while a match is carried
 
 
 func _label(text: String) -> Label:

@@ -270,6 +270,8 @@ func show_main() -> void:
 			# On the pink primary the line is ink (§3.7: 4.5:1 and more).
 			line.color = Palette.INK
 			line.icon_color = Palette.INK
+			# Art pass W9F: never wider than the menu (its items fold under the lead at big text).
+			line.max_button_width = menu.custom_minimum_size.x - UiTheme.PANEL_PAD_H * 2.0
 			IconLine.attach(cont, line)
 	_item(box, tr("Campaigns"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."))
 	_item(box, tr("Tutorial"), start_tutorial, StatIcon.TUTORIAL, tr("A guided first fight."))
@@ -547,7 +549,7 @@ func _stat_cell(cell: Array) -> Control:
 	l.add_theme_color_override("font_color", Palette.TEXT_MID)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Wraps at word boundaries at the cell's width, never inside a word (§4.3 rule 3).
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size.x = STAT_CELL_W * Settings.text_scale
 	v.add_child(l)
 	return v

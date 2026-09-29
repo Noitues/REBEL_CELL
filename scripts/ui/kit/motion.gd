@@ -163,7 +163,8 @@ static func slide_in(node: CanvasItem, from: Vector2, id: StringName) -> Tween:
 ## own `shake` offset) in SHAKE_STEPS steps, ending where it started.
 static func shake(node: CanvasItem, id: StringName, property: NodePath = ^"position") -> Tween:
 	var base: Vector2 = _settle(node, property)
-	if not live(id):
+	# Art pass W9F (ART_BIBLE §12): reduce motion shakes nothing (the refusal keeps its flash).
+	if not live(id) or not camera_moves_allowed():
 		node.set_indexed(property, base)
 		_redraw(node)
 		return null

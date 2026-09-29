@@ -104,7 +104,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	# Compact, the class sits in a narrow column beside the Polaroid: its name alone.
 	var tags := _label(p_class.to_upper() if compact else tr("// %s") % p_class.to_upper(), DETAIL_SIZE, Palette.mono())
 	tags.name = "ClassTag"
-	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(tags)  # art pass W9F §4.3.3: whole words, never mid-word
 	tags.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tags.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	tags_row.add_child(tags)
@@ -123,7 +123,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	_add_field(StatIcon.HP, "%d/%d" % [hp, max_hp])
 	_info = _label(detail, DETAIL_SIZE, Palette.mono())
 	_info.name = "Detail"
-	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(_info)  # art pass W9F §4.3.3: whole words, never mid-word
 	_info.custom_minimum_size.x = custom_minimum_size.x - 20.0 * s
 	box.add_child(_info)
 	if compact:
@@ -173,6 +173,7 @@ func _label(text: String, step: int, font: Font) -> Label:
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
 	l.add_theme_color_override("font_color", text_color())
 	l.add_theme_color_override("font_shadow_color", Color(text_color(), 0.0))
+	UiTheme.track_label(l)  # art pass W9F (§4.2)
 	_labels.append(l)
 	return l
 

@@ -39,12 +39,12 @@ const PULL_DASH := 6.0
 ## city), the corporation's colour only as a dot at its heart; a moving token leaves a
 ## fading red trail of TRAIL_DOTS dots, TRAIL_STEP of the move apart.
 const TOKEN_SCALE := 3.0
-const THREAT_RED := Color("#FF2A3D")
+const THREAT_RED := Palette.HARM  # art pass W9F (§3.3): the threat's harm is HARM
 ## ANIM-R4 H11a: the token stands on a dark halo ringed in paper, whatever the node under it
 ## (its red glow over a pink node read pinkish on pink): the halo (radius x the token), its
 ## colour and the rim's width (px x screen_k).
 const TOKEN_HALO := 1.45
-const TOKEN_HALO_COLOR := Color(0.02, 0.02, 0.05, 1.0)
+const TOKEN_HALO_COLOR := Palette.NET_BG_OUTER  # art pass W9F: a token (not a literal)
 const TOKEN_RIM := 2.0
 const TRAIL_DOTS := 7
 const TRAIL_STEP := 0.05

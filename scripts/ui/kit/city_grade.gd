@@ -17,7 +17,7 @@ extends RefCounted
 ## screens set): a context's `dim` is the total darkening it asks for, so only what the veil
 ## doesn't already give is added. `high_contrast` deepens the calm zones (§12).
 static func params(state: CityState, cfg: CityLookData, base_dim: float = 0.0, high_contrast: bool = false) -> Dictionary:
-	var g := cfg.grade_of(state.context)
+	var g := blended(state, cfg)
 	var sat: float = g["saturation"]
 	var haze := 1.0
 	if state.hunted():
@@ -31,7 +31,7 @@ static func params(state: CityState, cfg: CityLookData, base_dim: float = 0.0, h
 	var tint := Palette.NET_CYAN
 	if state.corp_id != &"":
 		tint = Palette.corp_color(state.corp_id)
-		tint_amount = clampf(state.progress, 0.0, 1.0) * cfg.progress_max_shift
+		tint_amount = clampf(state.progress, 0.0, 1.0) * cfg.progress_max_shift * float(g[CityLookData.LEAN_KEY])
 	return {
 		"contrast": float(g["contrast"]),
 		"saturation": sat,
@@ -46,6 +46,19 @@ static func params(state: CityState, cfg: CityLookData, base_dim: float = 0.0, h
 		"calm_dim": clampf(cfg.calm_dim + (cfg.high_contrast_calm_dim if high_contrast else 0.0), 0.0, 1.0),
 		"calm_desaturate": cfg.calm_desaturate,
 	}
+
+
+## Art pass W9F: the context's grade values, blended from `context_from`'s while a blend
+## runs (CityAtmosphere.blend_context: the flatline's grey grading in over T4).
+static func blended(state: CityState, cfg: CityLookData) -> Dictionary:
+	var g := cfg.grade_of(state.context)
+	if state.context_from == &"" or state.context_mix >= 1.0:
+		return g
+	var a := cfg.grade_of(state.context_from)
+	var t := clampf(state.context_mix, 0.0, 1.0)
+	for k in g.keys():
+		g[k] = lerpf(float(a[k]), float(g[k]), t)
+	return g
 
 
 ## The factor the city's light layers (window lights, beacons, traffic, life) are multiplied

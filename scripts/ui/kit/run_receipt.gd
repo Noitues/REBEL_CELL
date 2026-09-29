@@ -46,8 +46,9 @@ func line(words: String, step: int = UiTheme.BODY, font: Font = null) -> Label:
 	l.text = words if words != "-" else "- - - - - - - - - -"
 	l.add_theme_font_override("font", font if font != null else Palette.mono())
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
+	UiTheme.track_label(l)  # art pass W9F (§4.2): Anton and mono CAPS tracked
 	l.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	# Wrapped at the slip's width from the start (never measured at width 0).
 	l.custom_minimum_size.x = WIDTH * Settings.text_scale - UiTheme.SP_S * 2
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -45,9 +45,22 @@ func _ready() -> void:
 	rotation_degrees = tilt
 
 
-## The photo's square inside the frame.
+## The photo's square inside the frame. Art pass W9F: a frame too short for its caption at
+## the floor (`caption` at 1.0: the compact dossier's "R0" at 2.0 ran over the photo) gives the
+## caption band that room and the photo shrinks, centred.
 func image_rect() -> Rect2:
-	return Rect2(BORDER, BORDER, size.x - BORDER * 2.0, size.x - BORDER * 2.0)
+	var side := size.x - BORDER * 2.0
+	if caption != "":
+		var need := caption_floor_height()
+		if size.y - BORDER - side < need:
+			side = maxf(0.0, size.y - BORDER - need)
+	return Rect2((size.x - side) * 0.5, BORDER, side, side)
+
+
+## Art pass W9F: the least height the caption band keeps: the shortened caption's ink at the
+## floor (`caption` at text scale 1.0).
+func caption_floor_height() -> float:
+	return _ink_size(short_caption(caption), UiTheme.CAPTION).y
 
 
 func _draw() -> void:

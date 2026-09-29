@@ -148,6 +148,8 @@ static func card_detail(card: CardData, title: String, rules: String, s: float, 
 	close_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	close_btn.pressed.connect(on_close)
 	win.body.add_child(close_btn)
+	# Art pass W9F (§5.3): notes taller than the room (2.0) scroll inside the window.
+	win.scroll_body(maxf(0.0, room.y - UiTheme.font_px(UiTheme.TITLE) * 2.0 - UiTheme.PANEL_PAD_V * 2.0))
 	row.add_child(win)
 	return row
 

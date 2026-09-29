@@ -321,7 +321,7 @@ func _shown_rect(c: Control) -> Rect2:
 
 
 func test_subtitles_never_cover_controls_on_any_screen() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -373,7 +373,7 @@ func test_the_default_dock_pages_and_names_the_speaker_inline() -> void:
 	assert_false(Dialogue.speaker_label.visible, "the name leads the line instead of its own row")
 	assert_string_contains(Dialogue.text_label.get_parsed_text(), "DISPATCH:")
 	Dialogue.clear()
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	assert_eq(Dialogue.dock_lines, Dialogue.lines_fitting(Dialogue.default_rect), "the page size follows the text scale")
 
 
@@ -463,9 +463,10 @@ func test_upgrade_a_slice_shows_the_picked_slots_own_price() -> void:
 	var view := scene.get_node("SpinnerView") as SpinnerView
 	assert_false(view.window.title.contains("CYCLES"), "no single price in the title")
 	view.select(miss)
-	assert_eq(view.price_label.text, "%d CYCLES" % s.slice_overwrite_price(miss), "the Miss slot's own price")
+	# Art pass W9F (critique 55): the price is on the UPGRADE button itself.
+	assert_true(view._action_button.tag_text.contains(str(s.slice_overwrite_price(miss))), "the Miss slot's own price on UPGRADE")
 	view.select(plain)
-	assert_eq(view.price_label.text, "%d CYCLES" % s.slice_overwrite_price(plain))
+	assert_true(view._action_button.tag_text.contains(str(s.slice_overwrite_price(plain))))
 	assert_ne(s.slice_overwrite_price(miss), s.slice_overwrite_price(plain), "the Miss slot costs more (config)")
 	view.close()
 	await _frames()
@@ -475,7 +476,8 @@ func test_upgrade_a_slice_shows_the_picked_slots_own_price() -> void:
 	view = scene.get_node("SpinnerView") as SpinnerView
 	watch_signals(view)
 	view.select(miss)
-	assert_eq(view.price_label.get_theme_color("font_color"), Palette.CELL_PINK, "unaffordable in pink")
+	assert_eq(view.price_label.get_theme_color("font_color"), Palette.HARM, "unaffordable: NEED · HAVE in HARM (§6.7)")
+	assert_eq(view.price_label.text, "NEED %d · HAVE %d" % [s.slice_overwrite_price(miss), s.run.cycles])
 	assert_true(view._action_button.disabled, "UPGRADE is off")
 	view.confirm()
 	assert_signal_not_emitted(view, "slot_picked")
@@ -529,7 +531,9 @@ func test_viewer_close_and_route_hints_follow_the_device() -> void:
 	scene.open_loadout()
 	await _frames()
 	var deck := (scene.get_node("LoadoutView") as LoadoutView)._view as DeckView
-	assert_eq(deck.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())
+	# Art pass W9F (§12): a pad reads the viewer's prompt bar (glyphs), never "Close [B]".
+	assert_eq(deck.close_button.text, "Close")
+	assert_true(deck.prompts.visible and not deck.prompts.glyphs().is_empty(), "the viewer's pad prompt bar")
 	Settings.set_pad_active(false)
 	await _frames()
 	assert_eq(deck.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())

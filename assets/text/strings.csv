@@ -2913,8 +2913,26 @@ asset,asset
 install,install
 spinner,spinner
 withdraw,withdraw
+Key,Key
 BEST ICE,BEST ICE
 CELL BURNED,CELL BURNED
 CORP DOWN,CORP DOWN
 NEXT CAMPAIGN: UP TO ICE %d,NEXT CAMPAIGN: UP TO ICE %d
 STORY UNCOVERED,STORY UNCOVERED
+%s · %d CYCLES,%s · %d CYCLES
+Details,Details
+Undo,Undo
+-1,-1
++1,+1
+"Press it, then pick a glowing target.","Press it, then pick a glowing target."
+Press to play.,Press to play.
+Press a Site to open it on the City Grid.,Press a Site to open it on the City Grid.
+"Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.","Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."
+The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
+"%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
+Or pick it up and move it onto any of your nodes.,Or pick it up and move it onto any of your nodes.
+"Pick the target: press a node of yours on the map, or its button in YOUR NODES.","Pick the target: press a node of yours on the map, or its button in YOUR NODES."
+"Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
+Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
+TARGET,TARGET
+YOURS,YOURS

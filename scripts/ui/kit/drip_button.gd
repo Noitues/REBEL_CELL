@@ -25,6 +25,10 @@ const HALO_ALPHA := 0.12
 
 var tag_text: String = ""
 var key_hint: String = ""
+## Art pass W9F (ART_BIBLE §12: glyphs, never letters in brackets): the action whose key the
+## button names. With a pad in use its hint is the pad button's drawn glyph (PadGlyph), not
+## "[X]"; with keys, the bracketed key as before. Set with `set_key_action`.
+var key_action: StringName = &""
 var paint: Color = DRIP_PINK
 var font_size: int = UiTheme.DISPLAY
 ## Each drip: [letter index, length (px at size 44, scales with size), anchor 0-1 across
@@ -165,7 +169,8 @@ func _fit_size() -> void:
 	for d in drips:
 		longest = maxf(longest, float(d[1]))
 	var w := lettering_room()
-	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + (HINT_SIZE * Settings.text_scale + 6.0 if key_hint != "" else 0.0))
+	var hint_h := HINT_SIZE * Settings.text_scale + 6.0 if key_hint != "" else (PadGlyph.glyph_height() + 6.0 if pad_glyph() >= 0 else 0.0)
+	custom_minimum_size = Vector2(w + 24, font_size * 1.05 + longest * font_size / 44.0 + 14 + hint_h)
 
 
 ## Replaces the lettering (ANIM-R3 A6h: the fight's next-step action is named by the
@@ -176,6 +181,22 @@ func set_tag_text(text: String) -> void:
 	tag_text = text
 	_fit_size()
 	queue_redraw()
+
+
+## Art pass W9F: names the button's key by action: the pad's glyph while a pad is in use,
+## else "[key]" (call again when the device or binds change).
+func set_key_action(action: StringName) -> void:
+	key_action = action
+	key_hint = "" if Settings.pad_active and PadGlyph.button_for_action(action) >= 0 else Settings.hint(action)
+	_fit_size()
+	queue_redraw()
+
+
+## The pad button whose glyph stands for the key now (-1: none; keys, or no action).
+func pad_glyph() -> int:
+	if key_action == &"" or not Settings.pad_active:
+		return -1
+	return PadGlyph.button_for_action(key_action)
 
 
 ## Replaces the key hint under the tag (rebinds, pad glyphs).
@@ -382,6 +403,15 @@ func _draw() -> void:
 		draw_string(Palette.mono(), hp, key_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, hs, Palette.PAPER)
 		if glyph:
 			_draw_glyph(Vector2(hp.x - 6.0 - GLYPH_GAP, hp.y - hs * 0.5 + 3.0), hs, col)
+	elif pad_glyph() >= 0:
+		# Art pass W9F: the pad button's glyph centred under the lettering (never "[X]").
+		var b := pad_glyph()
+		var gs := PadGlyph.glyph_size(b)
+		var tw := Palette.marker().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var at := Vector2(12 + (tw - gs.x) * 0.5, size.y - 6 - gs.y)
+		PadGlyph.draw_glyph(self, Rect2(at, gs), b, PadGlyph.current_set())
+		if glyph:
+			_draw_glyph(Vector2(at.x - GLYPH_GAP, at.y + gs.y * 0.5), gs.y * 0.6, col)
 	elif glyph:
 		var hs := roundi(HINT_SIZE * Settings.text_scale)
 		var tw := Palette.marker().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

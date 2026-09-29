@@ -13,6 +13,10 @@ const BAND_NAMES: Array[String] = ["COOL", "NOTICED", "FLAGGED", "HUNTED"]
 
 ## &"title", &"hq", &"net" or &"combat" (CityLookData.CONTEXTS).
 var context: StringName = &"title"
+## Art pass W9F: a context blend (CityAtmosphere.blend_context): the grade runs from
+## `context_from`'s to `context`'s by `context_mix` (0..1; 1 = `context` alone).
+var context_from: StringName = &""
+var context_mix: float = 1.0
 var heat: int = 0
 ## Heat band (Band); set with `set_heat`.
 var band: int = Band.COOL
@@ -57,6 +61,8 @@ func hunted() -> bool:
 func duplicate_state() -> CityState:
 	var s := CityState.new()
 	s.context = context
+	s.context_from = context_from
+	s.context_mix = context_mix
 	s.heat = heat
 	s.band = band
 	s.progress = progress

@@ -53,6 +53,11 @@ func set_heat(heat: int) -> void:
 
 
 ## Campaign progress 0..1 toward the target corporation (the grade leans to its hue).
+## Art pass W9F: forgets the campaign lean (CityAtmosphere.clear_campaign_progress).
+func clear_campaign_progress() -> void:
+	city.atmosphere().clear_campaign_progress()
+
+
 func set_campaign_progress(progress: float, corp_id: StringName) -> void:
 	city.atmosphere().set_campaign_progress(progress, corp_id)
 

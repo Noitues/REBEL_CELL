@@ -154,6 +154,9 @@ const DEMOS := {
 	# Art pass W8d (ART_BIBLE 11 Campaign end): the campaign's end (the full sequences run on the
 	# HQ page, tools/design_lab/campaign_end_lab.tscn; the lab shows the stamp's slam).
 	&"campaign_end_won": ["pop", "sticker"], &"campaign_end_lost": ["pop", "sticker"],
+	# Art pass W9F (ART_BIBLE 6.6): the UPGRADE viewer's marker circle drawing on (the lab
+	# shows its timing as a pop; the stroke itself runs in SpinnerView).
+	&"upgrade_circle_draw": ["pop", "sticker"],
 }
 ## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
 ## step between shapes (px, 1280x720), and the names' lettering.
@@ -335,7 +338,7 @@ func _build_stage() -> void:
 	panel.position = Vector2(40, 140)
 	panel.size = Vector2(260, 150)
 	_typed = Label.new()
-	_typed.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_typed.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_typed.text = TYPE_TEXT
 	panel.content.add_child(_typed)
 	_add_piece("panel", panel)
@@ -583,7 +586,7 @@ func _play_screen(what: String) -> void:
 			page.size = Vector2(560, 300)
 			var words := Label.new()
 			words.text = "%s\n%s\n> JACK IN" % [TYPE_TEXT, SUBTITLE_TEXT]
-			words.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			words.autowrap_mode = TextServer.AUTOWRAP_WORD
 			words.add_theme_color_override("font_color", Palette.TERMINAL_TEXT if what == "glass" else Palette.INK)
 			(page.body if page is TerminalWindow else (page as ZinePanel).content).add_child(words)
 			_screen_host.add_child(page)

@@ -97,7 +97,7 @@ func show_card(id: StringName, pinned: bool) -> void:
 	_card.body.add_child(head)
 	var desc := Label.new()
 	desc.name = "DaemonText"
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(desc)  # art pass W9F §4.3.3: whole words, never mid-word
 	desc.custom_minimum_size.x = CARD_W * s - UiTheme.SP_M
 	# Art pass W8c (critique 56): the card's words never repeat its title ("TWIN POINTER" /
 	# "Daemon Twin Pointer").

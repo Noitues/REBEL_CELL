@@ -68,7 +68,8 @@ var step: int = 0
 var note: ZineNote
 var next_button: Button
 var skip_button: Button
-var row: HBoxContainer
+## Art pass W9F: a row, or a column when both buttons don't fit the width (2.0).
+var row: BoxContainer
 
 
 func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
@@ -76,7 +77,7 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	size = p_size
 	note = ZineNote.new(tr("TUTORIAL"), Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)).make_reference()
 	add_child(note)
-	row = HBoxContainer.new()
+	row = BoxContainer.new()
 	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
 	add_child(row)
 	next_button = Button.new()
@@ -99,9 +100,26 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 func fit(p_size: Vector2) -> void:
 	custom_minimum_size = p_size
 	size = p_size
-	note.custom_minimum_size = Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)
+	# Art pass W9F (§12: nothing clips at 2.0): the buttons stack when side by side they'd run
+	# past the column ("Skip tutorial" ran off the screen), and their row takes its real height.
+	var sep := float(row.get_theme_constant(&"separation"))
+	var room := p_size.x - ROW_INSET * 2.0
+	skip_button.text = tr("Skip tutorial")
+	var both := next_button.get_combined_minimum_size().x + sep + skip_button.get_combined_minimum_size().x
+	if both > room:
+		# The short word first (the note keeps its height); stacked only if even that is too wide.
+		skip_button.text = tr("Skip")
+		both = next_button.get_combined_minimum_size().x + sep + skip_button.get_combined_minimum_size().x
+	row.vertical = both > room
+	row.reset_size()
+	var row_h := maxf(BUTTON_ROW_HEIGHT, row.get_combined_minimum_size().y + ROW_INSET)
+	note.custom_minimum_size = Vector2(p_size.x, maxf(0.0, p_size.y - row_h))
 	note.size = note.custom_minimum_size
-	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
+	row.position = Vector2(ROW_INSET, p_size.y - row_h + 2)
+
+
+## The button row's inset from the note's edges (px).
+const ROW_INSET := 10.0
 
 
 func _show() -> void:

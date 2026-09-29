@@ -35,6 +35,14 @@ grades = {
 "saturation": 0.82,
 "warmth": 0.45
 },
+&"flatline": {
+"contrast": 1.0,
+"dim": 0.35,
+"lean": 0.0,
+"lift": 0.0,
+"saturation": 0.0,
+"warmth": 0.0
+},
 &"net": {
 "contrast": 1.22,
 "dim": 0.0,

@@ -20,6 +20,7 @@ extends Node
 
 const TITLE := preload("res://scenes/menu/title_scene.tscn")
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
+const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
 const FILTER_SHADER := preload("res://tools/visual_qa/cvd_filter.gdshader")
 const ErrorLog := preload("res://tools/visual_qa/review_pack_log.gd")
@@ -97,6 +98,17 @@ const SCREENS := [
 	["run_end", "_s_run_end", "Run end: FLATLINED."],
 	["campaign_won", "_s_campaign_won", "Campaign end: WON."],
 	["campaign_lost", "_s_campaign_lost", "Campaign end: LOST."],
+	# Art pass W9F: the screens W10 didn't list.
+	["event_dispatch", "_s_event_dispatch", "A DISPATCH (terminal) event."],
+	["deck_view", "_s_deck_view", "VIEW LOADOUT in a netrun: the deck viewer."],
+	["card_detail", "_s_card_detail", "A card's detail over the deck viewer."],
+	["daemon_tray", "_s_daemon_tray", "The Daemon tray with an installed Daemon."],
+	["modem_remove", "_s_modem_remove", "The Modem's REMOVE A CARD viewer."],
+	["modem_overwrite", "_s_modem_overwrite", "The Modem's UPGRADE A SLICE viewer, a slot picked."],
+	["tutorial", "_s_tutorial", "The tutorial's first step over its fight."],
+	["jack_in", "_s_jack_in", "The jack-in transition, its cover up."],
+	["pause_netrun", "_s_pause_netrun", "The pause menu over a netrun's route."],
+	["pause_fight", "_s_pause_fight", "The pause menu over a fight."],
 ]
 
 var out_dir := ""
@@ -105,6 +117,9 @@ var pad := false
 var reduce_effects := false
 var filter := "none"
 var scramble := false
+## Art pass W9F: the §12 settings as axes (captured into their own packs).
+var high_contrast := false
+var reduce_motion := false
 var screen_timeout := DEFAULT_TIMEOUT_S
 var _keep: Array[Node] = []
 var _log: RefCounted = null
@@ -113,6 +128,8 @@ var _done := false
 var _filter_layer: CanvasLayer = null
 var _custom_draw: Array = []
 var _draw_cache := {}
+## Art pass W9F: run once the picture is taken (the jack's switch lets its cover lift).
+var _after_capture: Callable = Callable()
 
 
 func _ready() -> void:
@@ -133,6 +150,10 @@ func _ready() -> void:
 			filter = a.trim_prefix("--filter=")
 		elif a == "--scramble":
 			scramble = true
+		elif a == "--high-contrast":
+			high_contrast = true
+		elif a == "--reduce-motion":
+			reduce_motion = true
 		elif a.begins_with("--screen-timeout="):
 			screen_timeout = float(a.trim_prefix("--screen-timeout="))
 		elif a.begins_with("--list="):
@@ -180,6 +201,8 @@ func _setup_settings() -> void:
 		TranslationServer.reload_pseudolocalization()
 	Settings.text_scale = text_scale  # past the clamp on purpose (W9 raises it)
 	Settings.reduce_effects = reduce_effects
+	Settings.high_contrast = high_contrast
+	Settings.reduce_motion = reduce_motion
 	Settings.changed.emit()
 	Settings.pad_active = pad
 	Settings.hints_changed.emit()
@@ -258,6 +281,11 @@ func _capture(screen: String, method: String, what: String) -> void:
 		"seconds": (Time.get_ticks_msec() - started) / 1000.0, "frames": frames,
 	})
 	print("review_pack: %s %s (%d frames)" % [screen, status, frames])
+	if _after_capture.is_valid():
+		var after := _after_capture
+		_after_capture = Callable()
+		await after.call()
+		await _frames(SETTLE_FRAMES)
 
 
 func _run_screen(method: String) -> void:
@@ -741,6 +769,10 @@ func _combat_end(kind: String) -> void:
 	combat.skip_motion()
 	await _until(func() -> bool: return not is_instance_valid(combat) or combat.continue_shown(), "the outcome to land")
 	await _frames(SETTLE_FRAMES)
+	# Art pass W9F: the DISPATCH line the outcome brings is shown whole (the picture caught it
+	# typing, "We lost o").
+	Typing.finish_all(get_tree())
+	await _frames(2)
 
 
 func _s_combat_victory() -> void:
@@ -862,6 +894,113 @@ func _s_campaign_lost() -> void:
 	await _campaign_end(CampaignState.Outcome.LOST)
 
 
+# --- Art pass W9F: the screens W10 didn't list -------------------------------------------
+
+func _s_event_dispatch() -> void:
+	var net: Node = await _netrun()
+	var run := RunManager.netrun.run
+	run.event_id = &"ev_dispatch_early_reply"
+	run.phase = RunState.Phase.EVENT
+	net._show_current()
+	await _settle(net)
+
+
+func _route_page() -> Node:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	return net
+
+
+func _s_deck_view() -> void:
+	var net: Node = await _route_page()
+	net.open_loadout()
+	await _settle(net)
+
+
+func _s_card_detail() -> void:
+	var net: Node = await _route_page()
+	net.open_loadout()
+	await _frames(4)
+	var lv := net.get_node_or_null("LoadoutView")
+	var deck: Variant = lv.get("_view") if lv != null else null
+	if not (deck is DeckView):
+		push_error("review_pack: no deck viewer")
+		return
+	(deck as DeckView).open_card(0)
+	await _settle(net)
+
+
+func _s_daemon_tray() -> void:
+	var net: Node = await _netrun()
+	var ids: Array = RunManager.lookup().ids_of_class(&"DaemonData")
+	ids.sort()
+	if not ids.is_empty():
+		RunManager.netrun.run.operative.daemon_ids.append(StringName(ids[0]))
+	net._show_current()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	net.open_daemons()
+	await _settle(net)
+
+
+func _s_modem_remove() -> void:
+	var net: Node = await _modem(7)
+	net.open_remove()
+	await _settle(net)
+
+
+func _s_modem_overwrite() -> void:
+	for seed in range(7, 7 + SOCKET_SEEDS):
+		var net: Node = await _modem(seed)
+		if not (RunManager.netrun.run.shop.get("slices", []) as Array).is_empty():
+			net.open_overwrite(0)
+			await _frames(4)
+			var view := net.get_node_or_null("SpinnerView") as SpinnerView
+			if view != null:
+				view.select(0)
+			await _settle(net)
+			return
+		net.queue_free()
+		await _frames(2)
+		RunManager.reset()
+	push_error("review_pack: no Modem with slices in %d seeds" % SOCKET_SEEDS)
+
+
+func _s_tutorial() -> void:
+	RunManager.new_campaign(7)
+	Settings.tutorial_done = false
+	RunManager.pending_tutorial = true
+	var combat: Node = _open(COMBAT)
+	await _frames(4)
+	await _settle(combat)
+	Settings.tutorial_done = true
+
+
+func _s_jack_in() -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	Fx.jack_in(func() -> void: pass, -1.0, "Solace Biosystems")
+	await _until(func() -> bool: return Fx.connect_label.visible or not bool(Fx.get(&"_jacking")), "the jack's cover")
+	await _frames(4)
+	# The picture is taken with the cover up; the next screen waits for it to lift.
+	_after_capture = func() -> void: await _until(func() -> bool: return not bool(Fx.get(&"_jacking")), "the jack to end")
+
+
+func _s_pause_netrun() -> void:
+	var net: Node = await _route_page()
+	net.open_settings()
+	await _settle(net)
+
+
+func _s_pause_fight() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_settings()
+	await _settle(combat.get_parent())
+
+
 # --- Runtime lint export -----------------------------------------------------------------
 
 ## Every visible text Control on screen with its screen rect, the rect its text covers,
@@ -871,6 +1010,7 @@ func _lint_export(screen: String, size: Vector2i) -> Dictionary:
 	var out: Array = []
 	_custom_draw = []
 	var screen_rect := Rect2(Vector2.ZERO, Vector2(size))
+	_modals = _open_modals()
 	_walk(get_tree().root, out, screen_rect)
 	return {"screen": screen, "text_scale": text_scale, "viewport": [size.x, size.y],
 		"floor_px": roundi(12 * text_scale), "controls": out, "custom_draw": _custom_draw}
@@ -913,6 +1053,84 @@ func _draws_text(n: Node) -> bool:
 	return _draw_cache[s.resource_path]
 
 
+## Art pass W9F: the modals open now (the kit's MODAL_GROUP, the pause menu, Options, the
+## Daemon tray, inspect popups, confirm dialogs and full-screen scrims): text under one is
+## behind its scrim, so the lint leaves its contrast and overlaps out (it isn't read there).
+var _modals: Array[Control] = []
+const MODAL_CLASSES: Array[String] = ["PauseMenu", "SettingsPanel", "DaemonTray", "InspectPopup", "ConfirmDialog", "DeckView", "SpinnerView", "LoadoutView"]
+## A scrim this share of the screen (or more) is a modal's backdrop.
+const MODAL_SCRIM_SHARE := 0.9
+
+
+func _open_modals() -> Array[Control]:
+	var out: Array[Control] = []
+	for n in get_tree().get_nodes_in_group(PageTransition.MODAL_GROUP):
+		if n is Control and (n as Control).is_visible_in_tree():
+			out.append(n as Control)
+	# The jack's cover hides the whole game while it is up.
+	if Fx.jack_cover != null and Fx.jack_cover.is_visible_in_tree():
+		out.append(Fx.jack_cover)
+	var view := Vector2(CAPTURE_SIZE)
+	for n in get_tree().root.find_children("*", "Control", true, false):
+		var c := n as Control
+		if out.has(c) or not c.is_visible_in_tree():
+			continue
+		var s := c.get_script() as Script
+		var cls: String = s.get_global_name() if s != null else ""
+		if MODAL_CLASSES.has(cls) or c.name == &"CardDetailHolder":
+			out.append(c)
+		elif c is GlassScrim and c.get_global_rect().size.x * c.get_global_rect().size.y >= view.x * view.y * MODAL_SCRIM_SHARE:
+			# A full-screen scrim is its parent's backdrop: the parent is the modal (a page
+			# stage's own scrim sits behind the page's text, so only a scrim over others counts).
+			var p := c.get_parent() as Control
+			if p != null and not out.has(p) and _has_later_sibling_text(c):
+				out.append(p)
+	return out
+
+
+func _has_later_sibling_text(scrim: Control) -> bool:
+	return scrim.get_index() < scrim.get_parent().get_child_count() - 1
+
+
+## The CanvasLayer order of `n` (0 when on the root canvas).
+func _layer_of(n: Node) -> int:
+	var p := n
+	while p != null:
+		if p is CanvasLayer:
+			return (p as CanvasLayer).layer
+		p = p.get_parent()
+	return 0
+
+
+## True when an open modal draws over `c` (it isn't part of one, and the modal is on a
+## higher layer, or the same layer later in the tree).
+func _under_modal(c: Control) -> bool:
+	for m in _modals:
+		if not is_instance_valid(m) or m == c or m.is_ancestor_of(c):
+			continue
+		var lm := _layer_of(m)
+		var lc := _layer_of(c)
+		if lm > lc or (lm == lc and m.is_greater_than(c)):
+			return true
+	return false
+
+
+## Art pass W9F: the screen rect `c` is visible in: its rect cut by every ancestor that clips
+## its children (a ScrollContainer's view, clip_contents panels). Empty when scrolled out.
+func _visible_rect(c: Control, rect: Rect2) -> Rect2:
+	var r := rect
+	var p := c.get_parent()
+	# A CanvasLayer or a Window starts its own drawing: nothing above it clips this text.
+	while p != null and not (p is CanvasLayer) and not (p is Window):
+		if p is Control and ((p as Control).clip_contents or p is ScrollContainer):
+			var pr := _screen_rect_of(p as Control, Rect2(Vector2.ZERO, (p as Control).size))
+			r = r.intersection(pr)
+			if r.size.x <= 0.0 or r.size.y <= 0.0:
+				return Rect2()
+		p = p.get_parent()
+	return r
+
+
 func _is_text(c: Control) -> bool:
 	for cls in TEXT_CLASSES:
 		if c.is_class(cls):
@@ -939,7 +1157,7 @@ func _screen_rect_of(c: Control, local: Rect2) -> Rect2:
 	var r := Rect2(a, Vector2.ZERO).expand(b)
 	# Controls in an embedded popup window draw at the window's offset.
 	var w := c.get_window()
-	if w != null and w != get_tree().root:
+	if w != null and w != c.get_tree().root:
 		r.position += Vector2(w.position)
 	return r
 
@@ -994,6 +1212,8 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 			in_scroll = true
 			break
 		p = p.get_parent()
+	# Art pass W9F: the on-screen size is the font size times every ancestor's scale (a
+	# legend scaled down to its room, the pad's 1.03 focus scale).
 	var scale := c.get_global_transform_with_canvas().get_scale()
 	if c is Label:
 		var l := c as Label
@@ -1009,20 +1229,26 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 				widest = maxf(widest, font.get_string_size(part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px).x)
 			if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
 				fits = widest <= l.size.x + 1.0
-			var w := minf(widest, l.size.x)
-			var h := minf(line_h * maxi(visible_lines, 1), l.size.y)
-			var x := 0.0
+			# Art pass W9F: the text sits inside the label's own box (a sticker's paper, SAVED):
+			# the ink is measured inside its content margins, so the ring round it reads the box.
+			var sb := l.get_theme_stylebox(&"normal")
+			var ml := sb.get_margin(SIDE_LEFT) if sb != null else 0.0
+			var mt := sb.get_margin(SIDE_TOP) if sb != null else 0.0
+			var inner := l.size - (sb.get_minimum_size() if sb != null else Vector2.ZERO)
+			var w := minf(widest, inner.x)
+			var h := minf(line_h * maxi(visible_lines, 1), inner.y)
+			var x := ml
 			match l.horizontal_alignment:
 				HORIZONTAL_ALIGNMENT_CENTER:
-					x = (l.size.x - w) * 0.5
+					x = ml + (inner.x - w) * 0.5
 				HORIZONTAL_ALIGNMENT_RIGHT:
-					x = l.size.x - w
-			var y := 0.0
+					x = ml + inner.x - w
+			var y := mt
 			match l.vertical_alignment:
 				VERTICAL_ALIGNMENT_CENTER:
-					y = (l.size.y - h) * 0.5
+					y = mt + (inner.y - h) * 0.5
 				VERTICAL_ALIGNMENT_BOTTOM:
-					y = l.size.y - h
+					y = mt + inner.y - h
 			ink = _screen_rect_of(c, Rect2(x, y, w, h))
 	elif c is Button:
 		var b := c as Button
@@ -1063,6 +1289,10 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 		"ink": [ink.position.x, ink.position.y, ink.size.x, ink.size.y],
 		"font_px": font_px,
 		"screen_px": font_px * absf(scale.y),
+		"scale": absf(scale.y),
+		"under_modal": _under_modal(c),
+		"box_color": _box_color(c),
+		"visible_rect": _vr(c, rect),
 		"override": override,
 		"color": [col.r, col.g, col.b, col.a],
 		"alpha": _alpha_of(c),
@@ -1074,6 +1304,22 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 		"in_scroll": in_scroll,
 		"ellipsis": text.contains("…"),
 	}
+
+
+## Art pass W9F: the colour of the opaque box a Label draws behind its own words (a
+## sticker's paper: SAVED), or [] when it has none: the text's real background.
+func _box_color(c: Control) -> Array:
+	if not (c is Label):
+		return []
+	var sb := c.get_theme_stylebox(&"normal") as StyleBoxFlat
+	if sb == null or not sb.draw_center or sb.bg_color.a < 0.9:
+		return []
+	return [sb.bg_color.r, sb.bg_color.g, sb.bg_color.b]
+
+
+func _vr(c: Control, rect: Rect2) -> Array:
+	var v := _visible_rect(c, rect)
+	return [v.position.x, v.position.y, v.size.x, v.size.y]
 
 
 # --- Files -----------------------------------------------------------------------------

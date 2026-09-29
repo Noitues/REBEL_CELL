@@ -215,7 +215,7 @@ func _build_widgets() -> void:
 	text_preview.name = "TextPreview"
 	text_preview.text = tr("The Cell never sleeps. Every word on every page grows with this.")
 	text_preview.add_theme_color_override("font_color", Palette.TEXT_HI)
-	text_preview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(text_preview)  # art pass W9F §4.3.3: whole words, never mid-word
 	_preview_scale(Settings.text_scale)
 	var modes: Array[Dictionary] = []
 	for m in MODE_WORDS:
@@ -565,7 +565,7 @@ func _heading(text: String, note: String = "") -> Control:
 	l.text = text
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.LABEL))
 	l.add_theme_color_override("font_color", Palette.TEXT_HI)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	_descriptions.append(l)
 	box.add_child(l)
 	if note != "":
@@ -579,7 +579,7 @@ func _description(text: String) -> Label:
 	l.name = "Description"
 	l.text = text
 	l.add_theme_color_override("font_color", Palette.TEXT_MID)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size.x = PANEL_W - UiTheme.PANEL_PAD_H * 2 - SCROLL_ROOM
 	_descriptions.append(l)
 	return l

@@ -101,7 +101,7 @@ func _fit_title() -> void:
 	# A subclass that sizes its own title (the map keys) keeps its size.
 	if _title_px > 0 and title_label.get_theme_font_size(&"font_size") != _title_px:
 		return
-	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	var font := title_label.get_theme_font(&"font")
 	var px := UiTheme.font_px(TITLE_STEP)
 	var room := title_label.size.x
@@ -110,6 +110,7 @@ func _fit_title() -> void:
 	if px != _title_px:
 		_title_px = px
 		title_label.add_theme_font_size_override("font_size", px)
+		UiTheme.track_label(title_label)  # art pass W9F (§4.2): mono CAPS tracked
 
 
 ## Caps the body at `max_height` px: taller content scrolls inside the window with a scroll

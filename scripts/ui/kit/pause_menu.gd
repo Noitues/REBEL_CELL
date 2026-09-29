@@ -96,7 +96,7 @@ func _init() -> void:
 		var head := Label.new()
 		head.name = "CodeHeading"
 		head.text = code_heading()
-		head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(head)  # art pass W9F §4.3.3: whole words, never mid-word
 		head.add_theme_color_override("font_color", Palette.TEXT_MID)
 		head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 		row.add_child(head)

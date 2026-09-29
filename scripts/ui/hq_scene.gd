@@ -55,6 +55,8 @@ const RESULT_CAPTION := "RAID\nRESULT:" # TR
 const LIVE_CAPTION := "RAID\nLIVE:" # TR
 ## The raid setup's big button (H24 S14: "RUN THE RAID" read like attacking).
 const START_DEFENSE := "START DEFENSE" # TR
+## Art pass W9F: the text scale from which the new campaign's START and SHARE CODES stack.
+const START_STACK_SCALE := 1.8
 ## Words the screens translate that sit in the core's data (H24 S1: exported by the "# TR"
 ## marker): run kinds, raid outcomes, Exploit types and rule modifier names.
 const RUN_KIND_WORDS := ["netrun", "patrol", "reclaim", "boss"] # TR
@@ -88,7 +90,7 @@ const MAX_ENTRY_BADGES := 3
 ## Height of the raid's node orders list (px); more nodes scroll inside it.
 ## PIRATE RADIO: width, room for its title and foot (px) and the lines it shows at once.
 const RADIO_WIDTH := 230.0
-const RADIO_TOP := 24.0
+## (The note's title room is ZineNote.title_room(): it follows the text scale, art pass W9F.)
 const RADIO_BOTTOM := 8.0
 const RADIO_LINES := 4
 ## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
@@ -324,6 +326,11 @@ func start_from_code(code: String) -> bool:
 
 func new_campaign(seed: int, ice: int = 0, home_variant_id: StringName = RunManager.DEFAULT_HOME, class_id: StringName = RunManager.DEFAULT_CLASS, corporation_id: StringName = RunManager.DEFAULT_CORPORATION) -> void:
 	RunManager.new_campaign(seed, corporation_id, ice, home_variant_id, class_id)
+	# Art pass W9F (W8d request): a new campaign starts from no corp lean; the cities read
+	# the new campaign's own progress again.
+	for bg in [background, wireframe]:
+		if bg != null and bg.city != null:
+			bg.city.atmosphere().clear_campaign_progress()
 	_log.append_text("[b]New campaign[/b] (seed %d, ICE %d, %s) against %s. Story path: %s.\n" % [seed, RunManager.campaign.ice_level,
 		RunManager.campaign.home_variant_id, TextDb.t(RunManager.corporation, "display_name"), RunManager.campaign.story_path_id])
 	show_hq()
@@ -1288,8 +1295,11 @@ func show_start() -> void:
 	class_pick.name = "ClassPicker"
 	setup.body.add_child(class_pick)
 	# START, the one primary; the drawer of seed and codes beside it, folded.
-	var go := HBoxContainer.new()
-	go.add_theme_constant_override("separation", roundi(UiTheme.SP_M * ts))
+	var go := BoxContainer.new()
+	# Art pass W9F (§12): at the biggest text START and SHARE CODES stack (side by side, with
+	# the tracked lettering, the head ran 1 px past the screen at 2.0).
+	go.vertical = ts >= START_STACK_SCALE - 0.001
+	go.add_theme_constant_override("separation", roundi(UiTheme.SP_M * ts) if not go.vertical else UiTheme.SP_XS)
 	# START sits up top beside the graffiti: the one primary, always on the first screen.
 	var gap := Control.new()
 	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1505,7 +1515,7 @@ func show_hq() -> void:
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
 	# half); the rest scrolls. W1: the line height rounded up (MSDF heights are fractional).
 	var line_h := ceilf(Palette.mono().get_height(UiTheme.font_px(UiTheme.BODY)))
-	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
+	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, ZineNote.title_room() + RADIO_BOTTOM + line_h * RADIO_LINES))
 	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	# H24 S3: the DJ's words in the player's language (the voice line's TextDb key).
@@ -1605,7 +1615,7 @@ func show_hq() -> void:
 	mini.track_seen = true  # ANIM-5: a Site whose status changed since last seen pulses once
 	mini.show_grid(c, RunManager.corporation, _threat_paths())
 	mini.site_clicked.connect(func(id: StringName) -> void: selected_site = id; show_grid())
-	mini.tooltip_text = tr("Click a Site to open it on the City Grid.")
+	mini.tooltip_text = UiTip.for_input(tr("Click a Site to open it on the City Grid."), tr("Press a Site to open it on the City Grid."))
 	monitor.set_content(mini)
 	# The crew (W8b, §5.3 / §11 HQ): the dossiers fill a grid of CREW_COLUMNS columns (fewer
 	# at big text), the window as wide as its dossiers (critique 05: 40% of it was empty).
@@ -1654,7 +1664,8 @@ func show_hq() -> void:
 		row.name = "Crew_%s" % op.id
 		row.set_operative(op.class_id, op.id)
 		row.tooltip_text = UiTip.fold("%s%s%s" % [TextDb.t(cls_data, "description") if cls_data != null else "", (tr("\nStationed on %s.") % site_name(where)) if where != &"" else "",
-			("\n" + tr("Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.")) if op.alive else ""])
+			("\n" + UiTip.for_input(tr("Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."),
+				tr("Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."))) if op.alive else ""])
 		row.polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
 		row.dead = not op.alive
 		if op.alive:
@@ -1815,7 +1826,7 @@ func _market_sections(body: VBoxContainer) -> Label:
 	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	queue.mouse_filter = Control.MOUSE_FILTER_PASS
 	queue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	queue.tooltip_text = UiTip.fold(tr("The boosts bought for the next run. Drag a boost here to buy it."))
+	queue.tooltip_text = UiTip.fold(UiTip.for_input(tr("The boosts bought for the next run. Drag a boost here to buy it."), tr("The boosts bought for the next run. Pick a boost up and move it here to buy it.")))
 	boosts.add_child(queue)
 	# UNLOCKS: Profile unlocks for sale; one waiting on another unlock shows its lock.
 	var unlocks := _market_section(body, "Unlocks", MARKET_UNLOCKS, StatIcon.LOCK)
@@ -1967,7 +1978,7 @@ func _fit_radio(note: Variant, line_h: float) -> void:
 	if not is_instance_valid(note) or not (note is ZineNote):
 		return
 	var radio := note as ZineNote
-	var h := RADIO_TOP + RADIO_BOTTOM + maxf(line_h * RADIO_LINES, radio.label.get_combined_minimum_size().y)
+	var h := ZineNote.title_room() + RADIO_BOTTOM + maxf(line_h * RADIO_LINES, radio.label.get_combined_minimum_size().y)
 	if not is_equal_approx(radio.custom_minimum_size.y, h):
 		radio.custom_minimum_size.y = h
 
@@ -2743,7 +2754,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 			chip.picked = op.id == who_runs
 			var post := CampaignRules.stationed_site(c, op.id)
 			chip.tooltip_text = UiTip.fold("%s\n%s" % [tr("%s R%d%s") % [op.name, op.rank, (tr(" (leaves %s)") % site_name(post)) if post != &"" else ""],
-				tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.") % [op.name, site_name(site.id)]])
+				UiTip.for_input(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."),
+					tr("%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.")) % [op.name, site_name(site.id)]])
 			var oid := op.id
 			chip.pressed.connect(func() -> void: pick_operative(oid))
 			chips.add_child(chip)
@@ -2963,7 +2975,7 @@ func show_raid() -> void:
 		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
 		card.set_effect(data)  # H24 S14: what it does, in a line and a pictogram
 		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)]
-			+ " " + tr("Or drag it onto any of your nodes."))
+			+ " " + UiTip.for_input(tr("Or drag it onto any of your nodes."), tr("Or pick it up and move it onto any of your nodes.")))
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
@@ -3378,7 +3390,7 @@ func _deploy_steps() -> VBoxContainer:
 	steps.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR * DEPLOY_ICON_GROW
 	var target := site_name(selected_site) if selected_site != &"" else "?"
-	for step in [[StatIcon.MAP, tr("1  Pick a node"), tr("Pick the target: click a node of yours on the map, or its button in YOUR NODES.")],
+	for step in [[StatIcon.MAP, tr("1  Pick a node"), UiTip.for_input(tr("Pick the target: click a node of yours on the map, or its button in YOUR NODES."), tr("Pick the target: press a node of yours on the map, or its button in YOUR NODES."))],
 			[StatIcon.ARMORY, tr("2  Press a card"), tr("Press an asset card: it deploys to the target (%s now).") % target]]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
@@ -3541,7 +3553,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	# Art pass W9F (§6.10: legends fold to MAP KEY above 1.3): at 2.0 the open key covered
+	# the playout's verdict stamp.
+	var legend := MapLegend.pin_to(spacer, c.corporation_id, Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001)
 	_fight_area = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
@@ -3739,6 +3753,7 @@ func _fly_home_number(damage: int, site: StringName) -> void:
 	num.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	num.text = "-%d" % damage
 	num.add_theme_font_override("font", Palette.display())
+	num.ready.connect(UiTheme.track_label.bind(num))  # art pass W9F (§4.2)
 	num.add_theme_font_size_override("font_size", roundi(HOME_NUMBER_FONT * Settings.text_scale))
 	num.add_theme_color_override("font_color", Palette.CELL_PINK)
 	num.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
@@ -3796,7 +3811,7 @@ func show_raid_summary() -> void:
 	stamp.rotation_degrees = -8.0
 	table.add_child(stamp)
 	outer.add_child(table)
-	MapLegend.pin_to(table, c.corporation_id)
+	MapLegend.pin_to(table, c.corporation_id, Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001)  # art pass W9F (§6.10)
 	var report := TerminalWindow.new(tr("RAID REPORT"), RaidVerdict.color_of(clean))
 	report.custom_minimum_size.x = 340
 	outer.add_child(report)
@@ -3852,11 +3867,14 @@ func show_end() -> void:
 	var stage := CampaignEndStage.new(won, c.corporation_id, TextDb.t(corp, "display_name"), headline, CrewWall.crew_of(c.roster), beats, records)
 	stage.receipt.tooltip_text = UiTip.fold(ice_records_text())
 	stage.foot_bar = pad_prompts
+	# Art pass W9F: the LOST grey is the city's own flatline context (whole screen).
+	if background != null and background.city != null:
+		stage.atmosphere = background.city.atmosphere()
 	var city := background.city.atmosphere() if background != null and background.city != null else null
 	stage.new_button.text = tr("New campaign")
 	stage.new_button.pressed.connect(func() -> void:
 		if city != null:
-			city.set_campaign_progress(0.0, &"")  # the next campaign starts from no lean
+			city.clear_campaign_progress()  # the next campaign starts from no lean (art pass W9F)
 		RunManager.campaign = null
 		show_start())
 	_icon(stage.new_button, StatIcon.PLAY)
@@ -3867,6 +3885,15 @@ func show_end() -> void:
 		stage.lean_from = city.state.progress
 		stage.city_lean.connect(func(f: float) -> void: city.set_campaign_progress(f, c.corporation_id))
 	_set_panel(stage, "end")
+	# Art pass W9F (W8d request): one scrim over the whole city behind every piece of the
+	# screen (the top bar, the subtitle band and the prompt strip too), not the page's rect;
+	# it goes with the stage.
+	var end_scrim := GlassScrim.full_screen()
+	end_scrim.name = "EndScrim"
+	add_child(end_scrim)
+	move_child(end_scrim, maxi(background.get_index(), wireframe.get_index()) + 1)
+	stage.use_screen_scrim()
+	stage.tree_exiting.connect(end_scrim.queue_free)
 	# The city shows behind the stage (never a glass box over it).
 	_panel_host.theme_type_variation = &""
 	if entering:

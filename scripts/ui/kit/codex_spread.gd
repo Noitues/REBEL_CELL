@@ -72,6 +72,7 @@ func _init(p_entries: Dictionary, max_height: float = 420.0, p_max_width: float 
 	heading = Label.new()
 	heading.name = "Heading"
 	heading.add_theme_font_override("font", Palette.display())
+	heading.ready.connect(UiTheme.track_label.bind(heading))  # art pass W9F (§4.2)
 	heading.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.HEADING))
 	heading.add_theme_color_override("font_color", Palette.INK)
 	page.add_child(heading)
@@ -146,9 +147,10 @@ func _entry(name_key: String, item: Dictionary) -> Control:
 	t.name = "Title"
 	t.text = String(item.get("title", ""))
 	t.add_theme_font_override("font", Palette.display())
+	t.ready.connect(UiTheme.track_label.bind(t))  # art pass W9F (§4.2)
 	t.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.LABEL))
 	t.add_theme_color_override("font_color", Palette.INK)
-	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(t)  # art pass W9F §4.3.3: whole words, never mid-word
 	t.custom_minimum_size.x = column_width()
 	words.add_child(t)
 	var body := Label.new()
@@ -156,7 +158,7 @@ func _entry(name_key: String, item: Dictionary) -> Control:
 	body.text = String(item.get("text", ""))
 	body.theme_type_variation = UiTheme.BODY_TEXT
 	body.add_theme_color_override("font_color", Palette.INK)
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(body)  # art pass W9F §4.3.3: whole words, never mid-word
 	body.custom_minimum_size.x = column_width()
 	words.add_child(body)
 	row.add_child(words)

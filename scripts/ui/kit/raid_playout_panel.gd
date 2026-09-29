@@ -102,6 +102,7 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 	step_label.text = tr("Setup")
 	step_label.custom_minimum_size.x = STEP_LABEL_W * Settings.text_scale
 	step_label.add_theme_font_override("font", Palette.display())
+	step_label.ready.connect(UiTheme.track_label.bind(step_label))  # art pass W9F (§4.2)
 	step_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.TITLE))  # W8b §4.3.1: a type step
 	step_label.add_theme_color_override("font_color", Palette.CELL_ACID)
 	controls.add_child(step_label)

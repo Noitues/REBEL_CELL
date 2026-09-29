@@ -144,7 +144,8 @@ static func seconds_for(p_look: int) -> float:
 	return Motion.delay_of(id_for(p_look)) + Motion.seconds(id_for(p_look))
 
 
-## Ends every screen motion under `root` at once (a press during an entrance): the
+## Ends every screen motion under `root` at once (a press during an entrance; any node with
+## a `settle_motion()` method ends its own motion here, art pass W9F): the
 ## entrance itself, cards fanning or dealing in, drips growing, the Modem sign warming up,
 ## menu lines typing, top bar bumps.
 static func settle(root: Node) -> void:
@@ -155,8 +156,10 @@ static func settle(root: Node) -> void:
 	elif root is ZineCard:
 		if (root as ZineCard).dealing():
 			(root as ZineCard).finish_deal()
-	elif root is DripButton:
-		(root as DripButton).settle_motion()
+	elif root.has_method(&"settle_motion"):
+		# Art pass W9F: the generic hook: any node with settle_motion() ends its own motion
+		# here (DripButton's drips, the run end and campaign end sequences).
+		root.call(&"settle_motion")
 	elif root is ModemSign:
 		(root as ModemSign).settle()
 	elif root is HudStats:

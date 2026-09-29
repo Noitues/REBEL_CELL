@@ -14,6 +14,10 @@ const SIDE_GAP := 8.0
 const MODAL_GAP := 6.0
 
 var lines: int = 1
+## Art pass W9F: true once a line is shown on this screen. An empty band holds `lines` (one
+## line); it grows to `lines_at` when the first line comes and stays so until the screen
+## changes (one grow per screen at most, never a jump per line; ART_BIBLE §5.2, §10 rule 5).
+var in_use: bool = false
 
 
 ## The first y under the subtitle band in use, at least `min_y`: modal viewers (deck,
@@ -34,6 +38,9 @@ func _ready() -> void:
 	item_rect_changed.connect(_on_moved)  # moved (the top bar grew) or resized
 	visibility_changed.connect(_register)
 	Settings.changed.connect(_fit)
+	Dialogue.line_spoken.connect(_on_line)
+	Dialogue.screen_entered.connect(_on_screen)
+	in_use = Dialogue.is_showing()
 	_fit()
 	_register.call_deferred()
 
@@ -63,9 +70,27 @@ func set_big_lines(n: int) -> void:
 		_fit()
 
 
-## Height for `lines_at` lines at the text size in force.
+func _on_line(_speaker: int, _text: String) -> void:
+	if not in_use:
+		in_use = true
+		_fit()
+
+
+func _on_screen(_screen: String) -> void:
+	var now := Dialogue.is_showing()
+	if now != in_use:
+		in_use = now
+		_fit()
+
+
+## The lines the band holds now: `lines_at` while in use, else `lines` (art pass W9F).
+func shown_lines() -> int:
+	return lines_at(Settings.text_scale) if in_use else lines
+
+
+## Height for `shown_lines` lines at the text size in force.
 func _fit() -> void:
-	var h := Dialogue.band_height(lines_at(Settings.text_scale))
+	var h := Dialogue.band_height(shown_lines())
 	if not is_equal_approx(custom_minimum_size.y, h):
 		custom_minimum_size.y = h
 
@@ -73,7 +98,8 @@ func _fit() -> void:
 ## The rect the subtitle bar takes (screen coordinates).
 func dock_rect() -> Rect2:
 	var r := get_global_rect()
-	return Rect2(r.position.x + SIDE_GAP, r.position.y, maxf(0.0, r.size.x - SIDE_GAP * 2.0), r.size.y)
+	# The dock keeps the band's full height (Dialogue pages to it) while the empty band is folded.
+	return Rect2(r.position.x + SIDE_GAP, r.position.y, maxf(0.0, r.size.x - SIDE_GAP * 2.0), maxf(r.size.y, Dialogue.band_height(lines_at(Settings.text_scale))))
 
 
 ## A strip that moved keeps the dock only if it holds it (H22: a screen left behind under

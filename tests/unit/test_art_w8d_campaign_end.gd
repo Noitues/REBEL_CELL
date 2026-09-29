@@ -153,7 +153,11 @@ func test_won_leans_the_city_to_the_corp_and_lost_greys_it() -> void:
 	var lost := _stage(hq)
 	lost.finish_now()
 	assert_almost_eq(lost.grade_amount(), RunEndStage.GREY_AMOUNT, 0.01, "a loss greys the city")
-	assert_true(lost.grade.visible)
+	# Art pass W9F: the grey is the city's own flatline context (whole screen, behind the
+	# subtitle band and the prompt strip too); the stage's own grade is only the fallback.
+	assert_almost_eq(hq.background.city.atmosphere().blend_amount(), RunEndStage.GREY_AMOUNT, 0.01, "the city itself greys")
+	assert_eq(hq.background.city.atmosphere().state.context, &"flatline")
+	assert_false(lost.grade.visible, "no second grade over the page")
 	await _close(hq)
 
 

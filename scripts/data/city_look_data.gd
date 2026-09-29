@@ -8,7 +8,12 @@ extends Resource
 
 const PATH := "res://content/config/city_look.tres"
 ## The contexts a screen names (`CityAtmosphere.set_context`).
-const CONTEXTS: Array[StringName] = [&"title", &"hq", &"net", &"combat"]
+## Art pass W9F: &"flatline" is the grey of a lost run or campaign (ART_BIBLE §11 "Run
+## failed", "Campaign end" LOST): the whole city desaturated and dimmed, the corp lean gone.
+const CONTEXTS: Array[StringName] = [&"title", &"hq", &"net", &"combat", &"flatline"]
+## Art pass W9F: an optional grade key: the share of the campaign's corp lean a context
+## keeps (1 when absent; the flatline keeps none, so the grey is grey).
+const LEAN_KEY := "lean"
 ## The grade keys each context carries (see `grades`).
 const GRADE_KEYS: Array[String] = ["contrast", "saturation", "warmth", "lift", "dim"]
 ## Neon inks the glow is tuned for (CityPalette.INKS order).
@@ -55,6 +60,7 @@ const T0_MIN_PERIOD := 3.0
 	&"hq": {"contrast": 0.94, "saturation": 0.82, "warmth": 0.45, "lift": 0.035, "dim": 0.0},
 	&"net": {"contrast": 1.22, "saturation": 1.08, "warmth": -0.4, "lift": 0.0, "dim": 0.0},
 	&"combat": {"contrast": 1.3, "saturation": 0.92, "warmth": -0.25, "lift": 0.0, "dim": 0.35},
+	&"flatline": {"contrast": 1.0, "saturation": 0.0, "warmth": 0.0, "lift": 0.0, "dim": 0.35, "lean": 0.0},
 }
 ## Campaign progress: the grade leans this far (at progress 1) toward the target corp's hue.
 @export var progress_max_shift: float = 0.2
@@ -156,10 +162,12 @@ static func shipped() -> CityLookData:
 ## The grade values of `context` (the title's when unknown), each GRADE_KEYS key present.
 func grade_of(context: StringName) -> Dictionary:
 	var g: Dictionary = grades.get(context, grades.get(&"title", {}))
-	var out := {"contrast": 1.0, "saturation": 1.0, "warmth": 0.0, "lift": 0.0, "dim": 0.0}
+	var out := {"contrast": 1.0, "saturation": 1.0, "warmth": 0.0, "lift": 0.0, "dim": 0.0, LEAN_KEY: 1.0}
 	for k in GRADE_KEYS:
 		if g.has(k):
 			out[k] = float(g[k])
+	if g.has(LEAN_KEY):
+		out[LEAN_KEY] = clampf(float(g[LEAN_KEY]), 0.0, 1.0)
 	return out
 
 

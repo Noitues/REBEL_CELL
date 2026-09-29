@@ -8,6 +8,9 @@ extends CanvasLayer
 ## game state.
 
 signal line_spoken(speaker: int, text: String)
+## Art pass W9F: the player moved to another screen (`enter_screen`); a subtitle band that
+## held no line on the old screen folds back to one line.
+signal screen_entered(p_screen: String)
 
 const SPEAKER_NAMES := {RC.Voice.NARRATOR: "", RC.Voice.STREET_MERC: "OPERATIVE", RC.Voice.CORPO: "CORPORATE", # TR
 	RC.Voice.AI_OBSERVER: "OBSERVER", RC.Voice.DISPATCH: "DISPATCH"} # TR
@@ -197,7 +200,24 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 	# A line on screen when the dock moves is fitted to its new rect (H23: moving from the
 	# top band into combat's column left the label 0 px tall, an empty framed box).
 	if text_label != null and bar.visible and text_label.get_parsed_text() != "":
+		# Art pass W9F (§5.2: never clipped mid-sentence): a page that no longer fits the new
+		# dock (a fight's narrow column) is paged again for it, from the line's start.
+		if dock_lines > 0 and not _shown_line.is_empty() and _page_height(text_label.get_parsed_text()) > _dock_text_room() + 0.5:
+			_repage_shown()
+			return
 		_fit_page(text_label.get_parsed_text())
+
+
+## Art pass W9F: shows the line on screen again, paged for the dock in force (its queued
+## continuation pages are dropped: the new paging makes its own).
+func _repage_shown() -> void:
+	while not _queue.is_empty() and bool((_queue[0] as Dictionary).get("continued", false)):
+		_queue.pop_front()
+	var line := _shown_line.duplicate()
+	line.erase("more")
+	_queue.push_front(line)
+	_timer = null
+	_next()
 
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and
@@ -348,6 +368,7 @@ func enter_screen(p_screen: String) -> void:
 	if p_screen == screen:
 		return
 	screen = p_screen
+	screen_entered.emit(p_screen)
 	# The new screen's own lines first, then the lines with no scope; other screens' end.
 	var own: Array[Dictionary] = []
 	var kept: Array[Dictionary] = []
@@ -546,6 +567,7 @@ func _next() -> void:
 func _fit_page(page: String) -> void:
 	if dock_lines <= 0:
 		text_label.fit_content = true
+		text_label.scroll_active = false
 		return
 	text_label.fit_content = false
 	var room := _dock_text_room()
@@ -553,10 +575,35 @@ func _fit_page(page: String) -> void:
 	if h > room + 0.5:
 		# Before clipping: this page a size smaller (accents stacked by pseudolocalisation, a
 		# taller fallback font); the next page starts at the text size again.
+		# Art pass W9F (§4.3 rule 2): never under `caption` x the text scale; a page still too
+		# tall there scrolls inside the label (following the typing) rather than shrink more.
 		var fs := text_label.get_theme_font_size("normal_font_size")
-		text_label.add_theme_font_size_override("normal_font_size", maxi(1, floori(fs * room / h)))
+		text_label.add_theme_font_size_override("normal_font_size", maxi(caption_px(), floori(fs * room / h)))
 		h = _page_height(page)
+	# A page the label wraps taller than measured (an unbreakable word) scrolls, following the
+	# typing, rather than clip (no bar shows while it fits).
+	text_label.scroll_active = true
+	text_label.scroll_following = true
 	text_label.custom_minimum_size.y = minf(h, room)
+	_refit_page.call_deferred(room)
+
+
+## Art pass W9F: once laid out, the label holds the lines it really wraps to (a narrow dock
+## wraps more than measured), up to the dock's room; past that it scrolls.
+func _refit_page(room: float) -> void:
+	if text_label == null or text_label.fit_content:
+		return
+	var h := float(text_label.get_content_height())
+	if h > text_label.custom_minimum_size.y + 0.5:
+		text_label.custom_minimum_size.y = minf(h, room)
+
+
+## Art pass W9F (§4.2): the smallest subtitle size: `caption` x the text scale.
+func caption_px() -> int:
+	var scale := 1.0
+	if has_node("/root/Settings"):
+		scale = float(get_node("/root/Settings").text_scale)
+	return roundi(UiTheme.CAPTION * scale)
 
 
 func _subtitles_on() -> bool:
@@ -622,8 +669,10 @@ func _style(speaker: int, corporation_id: StringName = &"") -> void:
 		style.border_color = Palette.CELL_PINK
 		style.shadow_color = Color(0, 0, 0, 0.5)
 		style.shadow_size = 8
-		speaker_label.add_theme_color_override("font_color", Palette.CELL_PINK)
-		text_label.add_theme_color_override("default_color", Palette.INK)
+		# Art pass W9F (§3.7): the name on the paper is ink (pink read 2.3:1 there); the pink
+		# edge keeps the Cell's mark.
+		speaker_label.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
+		text_label.add_theme_color_override("default_color", PaperInk.text(Palette.INK))
 	bar.add_theme_stylebox_override("panel", style)
 
 

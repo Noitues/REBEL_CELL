@@ -35,7 +35,7 @@ func _init(p_id: StringName, p_title: String, p_text: String, p_earned: bool) ->
 	_name.name = "Name"
 	_name.text = p_title
 	_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(_name)  # art pass W9F §4.3.3: whole words, never mid-word
 	_name.add_theme_color_override("font_color", Palette.TEXT_HI)
 	_name.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	_name.mouse_filter = Control.MOUSE_FILTER_IGNORE

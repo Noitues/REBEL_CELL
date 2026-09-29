@@ -460,7 +460,7 @@ func _w7() -> int:
 	print("W7: city look defaults errors ", d.validate())
 	if d.validate().size() != 0: fails += 1
 	d.map_dim = 0.37
-	d.grades = {&"title": {"contrast": 1.1}, &"hq": {}, &"net": {}, &"combat": {"dim": 0.35}}
+	d.grades = {&"title": {"contrast": 1.1}, &"hq": {}, &"net": {}, &"combat": {"dim": 0.35}, &"flatline": {"saturation": 0.0, "lean": 0.0}}
 	var err := ResourceSaver.save(d, "user://smoke_city_look.tres")
 	var back: CityLookData = load("user://smoke_city_look.tres")
 	print("W7: save=", err, " reload map_dim ", back.map_dim if back != null else -1.0, " combat dim ", back.grade_of(&"combat")["dim"] if back != null else -1.0)
@@ -472,4 +472,13 @@ func _w7() -> int:
 	var shipped: CityLookData = load(CityLookData.PATH)
 	print("W7: city_look.tres errors ", shipped.validate() if shipped != null else ["missing"])
 	if shipped == null or shipped.validate().size() != 0: fails += 1
+	# Art pass W9F: the &"flatline" context (a lost run or campaign greys the whole city) and
+	# its optional "lean" key (the share of the corp lean it keeps) round-trip and ship.
+	var flat := back.grade_of(&"flatline") if back != null else {}
+	print("W9F: flatline round-trip ", flat)
+	if flat.is_empty() or not is_zero_approx(float(flat["saturation"])) or not is_zero_approx(float(flat[CityLookData.LEAN_KEY])): fails += 1
+	var shipped_flat := shipped.grade_of(&"flatline") if shipped != null else {}
+	print("W9F: shipped flatline ", shipped_flat)
+	if not CityLookData.CONTEXTS.has(&"flatline") or shipped_flat.is_empty() or float(shipped_flat["saturation"]) > 0.0 or float(shipped_flat[CityLookData.LEAN_KEY]) > 0.0: fails += 1
+	if not is_equal_approx(float(shipped.grade_of(&"hq")[CityLookData.LEAN_KEY]), 1.0): fails += 1
 	return fails

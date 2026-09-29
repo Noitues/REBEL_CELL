@@ -20,6 +20,11 @@ var _action_button: DripButton = null
 var _popup: Control = null
 var close_button: Button
 var hint_label: Label
+## Art pass W9F: the viewer's pad prompt bar (glyphs), shown while a pad is in use.
+var prompts: PadPrompts
+## The window's least size at text scale 1.0 (px; art pass W9F: its height gives way at big
+## text so the window stays on the canvas).
+const WINDOW_SIZE := Vector2(900, 540)
 ## The card grid's width, gap, and the fewest cards a row keeps at big text (px).
 const GRID_WIDTH := 860.0
 const GRID_GAP := 14.0
@@ -41,7 +46,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	# is a key ("REMOVE") translated where shown.
 	TextDb.shown_as_given(self)
 	window = TerminalWindow.new(tr("%s // %d CARDS") % [p_title, deck.size()], Palette.CELL_PINK)
-	window.custom_minimum_size = Vector2(900, 540)
+	window.custom_minimum_size = WINDOW_SIZE
 	window.position = Vector2(190, SubtitleStrip.top_below(70.0))  # under the subtitles (H21)
 	add_child(window)
 	tab_row = HBoxContainer.new()
@@ -50,7 +55,14 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	hint.name = "Hint"
 	hint_label = hint
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
+	# Art pass W9F (§12): at big text the hint wraps inside the window.
+	UiWrap.whole_words(hint)
+	hint.custom_minimum_size.x = GRID_WIDTH
 	window.body.add_child(hint)
+	# Art pass W9F (§5.2.4): the modal's own prompt bar while a pad is in use.
+	prompts = PadPrompts.new()
+	prompts.alignment = BoxContainer.ALIGNMENT_BEGIN
+	window.body.add_child(prompts)
 	var scroll := ScrollContainer.new()
 	_scroll = scroll
 	scroll.custom_minimum_size = Vector2(880, 380)
@@ -72,7 +84,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	pad.add_child(grid)
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
 	# show what they do as pictograms.
-	var ds := clampf(minf(Settings.text_scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
+	var ds := card_scale(Settings.text_scale)
 	for i in deck.size():
 		var card := lookup.get_content(deck[i]) as CardData
 		var sticker := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[i]), card.ram_cost if card != null else 0,
@@ -133,11 +145,12 @@ func enable_drops(layer: DropLayer) -> void:
 	shred_tile.hotkey = ""
 	shred_tile.focus_mode = Control.FOCUS_NONE
 	shred_tile.custom_minimum_size = SHRED_TILE * clampf(Settings.text_scale, 1.0, SHRED_GROW_MAX)
-	shred_tile.tooltip_text = UiTip.fold(tr("Drag a card here to shred it (or select it and press REMOVE)."))
+	shred_tile.tooltip_text = UiTip.fold(UiTip.for_input(tr("Drag a card here to shred it (or select it and press REMOVE)."), tr("Pick a card up and move it here to shred it (or select it and press REMOVE).")))
 	shred_tile.pressed.connect(confirm)
 	_bottom.add_child(shred_tile)
 	# The window keeps its height: the card grid gives the tile its room.
 	_scroll.custom_minimum_size.y = maxf(SCROLL_MIN, _scroll.custom_minimum_size.y - maxf(0.0, shred_tile.custom_minimum_size.y - BOTTOM_ROOM))
+	_fit_canvas.call_deferred()
 	for i in _cards.size():
 		drops.add_source(_cards[i], {"kind": "deck_card", "index": i, "card": deck[i], "land": "shred", "motion": &"loadout_swap"})
 	drops.add_target("shred", ["deck_card"], "shred", null, DropLayer.rect_of(shred_tile))
@@ -154,6 +167,35 @@ var _bottom: HBoxContainer = null
 var _scroll: ScrollContainer = null
 
 
+## The canvas's bottom less a margin (px): the window never runs off it (art pass W9F:
+## at text scale 2.0 the viewer ended 20 px under the 720 canvas).
+const CANVAS_BOTTOM := 718.0
+
+
+## Art pass W9F (§5.3, §12): keeps the window on the canvas: the card grid (which scrolls)
+## gives up height down to SCROLL_MIN, then the window moves up (under the subtitles when it
+## can).
+func _fit_canvas() -> void:
+	if not is_inside_tree() or window == null:
+		return
+	# The window's own least height gives way first (it was a fixed 540 px).
+	window.custom_minimum_size.y = minf(WINDOW_SIZE.y, maxf(0.0, CANVAS_BOTTOM - window.position.y))
+	var h := window.get_combined_minimum_size().y
+	var over := window.position.y + h - CANVAS_BOTTOM
+	if over > 0.0 and _scroll != null:
+		var give := minf(over, maxf(0.0, _scroll.custom_minimum_size.y - SCROLL_MIN))
+		_scroll.custom_minimum_size.y -= give
+		h -= give
+	window.size = Vector2.ZERO
+	window.position.y = maxf(float(UiTheme.SP_S), minf(window.position.y, CANVAS_BOTTOM - h))
+
+
+## The scale the deck's cards letter at for text scale `scale`: the text scale while a row
+## still holds CARDS_PER_ROW of them (never under 1.0).
+static func card_scale(scale: float) -> float:
+	return clampf(minf(scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
+
+
 ## Deck card `i`'s sticker (null when there is none).
 func card(i: int) -> ZineCard:
 	return _cards[i] if i >= 0 and i < _cards.size() else null
@@ -166,6 +208,7 @@ func _ready() -> void:
 		UiFocus.hold(self)
 	Settings.hints_changed.connect(_relabel)
 	_relabel()
+	_fit_canvas.call_deferred()
 	# Start on the first card (not the header tabs).
 	if not _cards.is_empty():
 		_cards[0].grab_focus.call_deferred()
@@ -175,10 +218,12 @@ func _ready() -> void:
 
 ## Key hints follow the device in use and the binds (H20).
 func _relabel() -> void:
-	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
-	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else tr("Left click")
-	var more := Settings.key_text(&"inspect") if Settings.pad_active else tr("Right click")
-	hint_label.text = (tr("%s: select a card to %s. %s: details.") % [pick, tr(action).to_lower(), more]) if action != "" else tr("%s a card for details.") % (tr("Press") if Settings.pad_active else tr("Click"))
+	# Art pass W9F (§6.8, §12): the mouse reads its words (UiTip.for_input), a pad player
+	# the viewer's own prompt bar (glyphs), never "click" and never "[B]".
+	close_button.text = tr("Close") if Settings.pad_active else ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
+	hint_label.text = UiTip.for_input((tr("%s: select a card to %s. %s: details.") % [tr("Left click"), tr(action).to_lower(), tr("Right click")]) if action != "" else tr("%s a card for details.") % tr("Click"), "")
+	hint_label.visible = hint_label.text != ""
+	prompts.set_prompts(([[&"ui_accept", "Select"], [&"inspect", "Details"]] if action != "" else [[&"ui_accept", "Details"]]) + [[&"ui_cancel", "Close"]]) # TR
 
 
 ## A header tab (the loadout view's DECK / SPINNER switch).
@@ -255,7 +300,9 @@ func open_card(index: int) -> void:
 	var card := lookup.get_content(deck[index]) as CardData
 	var s := Settings.text_scale
 	var view := get_viewport_rect().size if is_inside_tree() else Vector2(DETAIL_VIEW)
-	var room := view - Vector2.ONE * (UiTheme.SAFE_MARGIN * 2.0)
+	# Art pass W9F (§5.2): under the subtitle band (a DISPATCH line lay over the card at 2.0).
+	var top := SubtitleStrip.top_below(UiTheme.SAFE_MARGIN) if is_inside_tree() else float(UiTheme.SAFE_MARGIN)
+	var room := Vector2(view.x - UiTheme.SAFE_MARGIN * 2.0, view.y - top - UiTheme.SAFE_MARGIN)
 	var holder := Control.new()
 	holder.name = "CardDetailHolder"
 	holder.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -275,7 +322,8 @@ func open_card(index: int) -> void:
 	_popup = holder
 	# Centred once laid out.
 	row.reset_size()
-	row.position = ((view - row.get_combined_minimum_size()) * 0.5).floor()
+	var want := row.get_combined_minimum_size()
+	row.position = Vector2(floorf((view.x - want.x) * 0.5), floorf(maxf(top, top + (room.y - want.y) * 0.5)))
 	UiFocus.focus_first.call_deferred(holder)
 
 
