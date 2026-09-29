@@ -648,7 +648,7 @@ func _assert_saved_clear(root: Node, what: String) -> void:
 
 func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 	for pad in [false, true]:
-		for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 			Settings.set_text_scale(scale)
 			Settings.set_pad_active(pad)
 			var hq := _open(HQ)
@@ -679,7 +679,7 @@ func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 func test_the_first_page_always_carries_words() -> void:
 	var hq := _open(HQ)
 	await _frames()
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		await _frames(2)
 		var width := Dialogue.default_rect.size.x

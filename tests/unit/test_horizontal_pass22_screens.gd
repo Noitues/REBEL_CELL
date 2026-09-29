@@ -168,7 +168,7 @@ func _assert_pages_fit(line: String, band: Rect2, label: String) -> void:
 
 
 func test_subtitles_page_cjk_and_pseudolocalised_text_inside_the_band() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames()
@@ -185,7 +185,7 @@ func test_subtitles_page_cjk_and_pseudolocalised_text_inside_the_band() -> void:
 
 func test_a_narrow_paged_dock_holds_cjk_and_long_words() -> void:
 	# The combat dock (dock_at(rect, lines)): a narrow column, three lines a page.
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var rect := Rect2(900, 90, 300, (20.0 + 3 * 20.0) * scale)
 		Dialogue.dock_at(rect, 3)

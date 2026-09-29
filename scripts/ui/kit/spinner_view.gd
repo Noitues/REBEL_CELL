@@ -414,7 +414,7 @@ func open_slot(index: int) -> void:
 		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, POPUP_FONT, Palette.PAPER))
 	pop.body.add_child(icon)
 	var desc := Label.new()
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(desc)  # art pass W9F §4.3.3: whole words, never mid-word
 	desc.custom_minimum_size.x = 440
 	desc.text = Codex.describe(s) if s != null else String(slices[index])
 	pop.body.add_child(desc)
@@ -480,7 +480,7 @@ func open_part(part: Resource) -> void:
 	pop.position = Vector2(400, 180)
 	pop.custom_minimum_size = Vector2(480, 0)
 	var desc := Label.new()
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(desc)  # art pass W9F §4.3.3: whole words, never mid-word
 	desc.custom_minimum_size.x = 440
 	desc.text = Codex.describe(part)
 	pop.body.add_child(desc)

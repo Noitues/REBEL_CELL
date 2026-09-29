@@ -263,7 +263,7 @@ func _assert_clear(root: Node, label: String) -> void:
 
 
 func test_subtitles_cover_no_control_and_no_stat_tag_on_any_screen() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -528,7 +528,7 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 # --- #15 big text ----------------------------------------------------------------------------
 
 func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	_raid_campaign()
 	var hq := _open(HQ)
 	await _frames()
@@ -539,7 +539,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	for n in _all(crew):
 		if n is Label and (n as Label).text == RunManager.campaign.roster[0].name.to_upper():
 			name_label = n
-	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * LayoutScales.VERIFIED_MAX), "the dossier's name grows")
+	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * Settings.TEXT_SCALE_MAX), "the dossier's name grows")
 	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
 	# Art pass W1: MSDF faces report fractional heights (no hinting); a RichTextLabel lays
 	# each line on whole pixels, so one shown line is the height rounded up.
@@ -551,7 +551,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
 	for n in _all(deck):
 		if n is ZineCard and (n as ZineCard).focus_mode != Control.FOCUS_NONE:
-			assert_almost_eq((n as ZineCard).text_scale, LayoutScales.VERIFIED_MAX, 0.01, "deck view cards grow")
+			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "deck view cards grow")
 			assert_false((n as ZineCard).pictos.is_empty(), "deck view cards show pictograms")
 			break
 	var scene := _netrun()
@@ -565,7 +565,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	for n in _all(scene._panel):
 		if n is ZineCard and (n as ZineCard).look != ZineCard.Look.STICKER:
 			# Art pass W8c: chips and Daemons letter at `body` (their caption step x 15/12).
-			var want: float = scene.chip_text_scale(LayoutScales.VERIFIED_MAX) if (n as ZineCard).look == ZineCard.Look.CHIP else LayoutScales.VERIFIED_MAX
+			var want: float = scene.chip_text_scale(Settings.TEXT_SCALE_MAX) if (n as ZineCard).look == ZineCard.Look.CHIP else Settings.TEXT_SCALE_MAX
 			assert_almost_eq((n as ZineCard).text_scale, want, 0.01, "tile lettering grows")
 	# Art pass W8c: at big text the Modem is one column and scrolls inside its page (MORE
 	# BELOW); LEAVE THE MODEM comes into view by scrolling (and the pad's B leaves).

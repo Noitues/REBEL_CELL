@@ -670,7 +670,7 @@ func test_views_never_change_game_state() -> void:
 
 
 func test_the_new_pieces_keep_the_layout_at_each_text_size() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:  # (the REMOVE deck viewer, W4's, ends under the canvas at 2.0)
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:  # (the REMOVE deck viewer, W4's, ends under the canvas at 2.0)
 		Settings.set_text_scale(scale)
 		var scene := _netrun()
 		await _shop(scene)

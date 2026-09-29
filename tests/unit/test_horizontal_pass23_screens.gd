@@ -210,7 +210,7 @@ func test_a_line_that_names_its_speaker_is_not_named_twice() -> void:
 
 
 func test_a_long_subtitle_pages_and_says_it_goes_on() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
 		var band := (hq.subtitle_strip as Control).get_global_rect()
 		Dialogue.clear()

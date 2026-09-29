@@ -243,7 +243,7 @@ func test_one_press_shows_the_story_and_its_subtitle() -> void:
 
 
 func test_the_event_top_bar_keeps_one_row_and_the_choices_show_at_big_text() -> void:
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)  # the event page's top bar is W8's (HudBar at 2.0)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)  # the event page's top bar is W8's (HudBar at 2.0)
 	var scene := await _netrun()
 	_event(scene)
 	await _frames(4)
