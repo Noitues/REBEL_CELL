@@ -301,6 +301,23 @@ func test_it_fits_at_every_text_scale() -> void:
 			await _close(hq)
 
 
+func test_at_one_the_page_fits_the_screen_without_a_page_scroll() -> void:
+	Settings.set_text_scale(1.0)
+	for pad in [false, true]:
+		Settings.set_pad_active(pad)
+		var hq := await _end(true)
+		var stage := _stage(hq)
+		stage.finish_now()
+		await _frames(6)
+		var page := (hq._panel_host.get_parent() as ScrollContainer).get_global_rect()
+		if hq.pad_prompts.is_visible_in_tree():
+			page.size.y = minf(page.size.y, hq.pad_prompts.get_global_rect().position.y - page.position.y)
+		var need := stage.get_combined_minimum_size().y
+		assert_true(need <= page.size.y + 0.5, "pad %s: the page needs %.0f px of %.0f (story view %.0f)" % [pad, need, page.size.y, stage.story.fit.scroll.size.y if stage.story.fit != null else -1.0])
+		assert_true(stage.story.get_global_rect().end.y <= page.end.y + 0.5, "pad %s: the story's paper ends on the page (%s / %s)" % [pad, stage.story.get_global_rect(), page])
+		await _close(hq)
+
+
 func test_high_contrast_paper_is_ink_at_seven_to_one() -> void:
 	Settings.set_high_contrast(true)
 	var hq := await _end(true)

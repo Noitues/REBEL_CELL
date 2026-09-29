@@ -49,11 +49,13 @@ const STAMP_MAX_WIDTH := 900.0
 ## The story's columns (§4.2: ≤ 70 characters a line), its least scrolling height (px at
 ## 1.0) and, when the page stacks (large text), the share of the page it may take.
 const STORY_COLUMNS := 70
-const STORY_MIN_H := 120.0
+const STORY_MIN_H := FitScroll.MIN_VIEW
 const STORY_STACKED_SHARE := 0.55
 ## The gaps (§5.1).
 const GAP := UiTheme.SP_M
-const ROW_GAP := UiTheme.SP_L
+const ROW_GAP := UiTheme.SP_M
+## The page's margin above and below the column (px at 1.0).
+const PAGE_MARGIN := UiTheme.SP_M
 
 var won: bool = true
 var corp_id: StringName = &""
@@ -72,7 +74,7 @@ var story_labels: Array[Label] = []
 ## The story's line width in use (px; its longest folded line).
 var story_w: float = 0.0
 var receipt: RunReceipt
-var actions: VBoxContainer
+var actions: BoxContainer
 var new_button: Button
 var title_button: Button
 ## The city's campaign progress when the sequence starts (the lean runs from it to 1.0).
@@ -153,7 +155,8 @@ func _init(p_won: bool = true, p_corp_id: StringName = &"", corp_name: String = 
 	foot_row.add_child(story)
 	receipt = _receipt(corp_name, records)
 	foot_row.add_child(receipt)
-	actions = VBoxContainer.new()
+	actions = BoxContainer.new()
+	actions.vertical = true
 	actions.name = "EndActions"
 	actions.add_theme_constant_override("separation", roundi(GAP * Settings.text_scale))
 	actions.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -312,13 +315,31 @@ func grade_to() -> float:
 
 # --- Layout ------------------------------------------------------------------------------
 
+## The screen's prompt bar (§5.2), when it lies over the page's foot: the page keeps clear
+## of it while it shows. Set by the screen (call down).
+var foot_bar: Control = null:
+	set(v):
+		foot_bar = v
+		if foot_bar != null and not foot_bar.visibility_changed.is_connected(_relayout_soon):
+			foot_bar.visibility_changed.connect(_relayout_soon)
+
+
+func _relayout_soon() -> void:
+	_relayout.call_deferred()
+
+
 func _page_size() -> Vector2:
+	var out := get_viewport_rect().size if is_inside_tree() else Vector2(size)
+	var page := Rect2(Vector2.ZERO, out)
 	var n := get_parent()
 	while n != null:
 		if n is ScrollContainer:
-			return (n as ScrollContainer).size
+			page = (n as ScrollContainer).get_global_rect()
+			break
 		n = n.get_parent()
-	return get_viewport_rect().size if is_inside_tree() else Vector2(size)
+	if is_instance_valid(foot_bar) and foot_bar.is_visible_in_tree():
+		page.size.y = minf(page.size.y, foot_bar.get_global_rect().position.y - page.position.y)
+	return page.size
 
 
 ## Lays the rows out for the room: side by side when they fit the page's width, stacked
@@ -345,13 +366,14 @@ func _relayout() -> void:
 	# Stacked, the actions come first under the hero (the focus starts on the primary, and a
 	# pad player lands next to the verdict, not at the page's foot); side by side, last.
 	foot_row.move_child(actions, 0 if foot_row.vertical else foot_row.get_child_count() - 1)
+	actions.vertical = not foot_row.vertical
 	# One page, one scroll (§5.3): side by side the page fits the screen and a long story
 	# scrolls inside its paper; stacked (large text) the page scrolls and the paper shows
 	# all its words (a scroll inside a scroll would leave its MORE BELOW tag behind).
 	if not foot_row.vertical and not hero_row.vertical:
 		var page := _page_size()
 		var hero_h := maxf(hero.get_combined_minimum_size().y, wall.get_combined_minimum_size().y)
-		var room_h := page.y - hero_h - gap - UiTheme.SAFE_MARGIN * 2.0
+		var room_h := page.y - hero_h - gap - PAGE_MARGIN * 2.0
 		# The paper's own height round its view (title, padding, the MORE BELOW tag's room),
 		# measured once the view exists.
 		story.scroll_content(maxf(STORY_MIN_H * s, room_h - story.content.get_theme_constant(&"margin_top") - UiTheme.PANEL_PAD_V))
@@ -359,7 +381,8 @@ func _relayout() -> void:
 		var chrome := story.get_combined_minimum_size().y - view
 		if story.fit.hint.room == null or story.fit.hint.room.custom_minimum_size.y <= 0.0:
 			chrome += story.fit.hint.get_combined_minimum_size().y + ScrollHint.MARGIN.y * 2.0
-		story.fit.max_height = maxf(STORY_MIN_H * s, room_h - chrome)
+		# floor - 1: FitScroll rounds its view up (ceil).
+		story.fit.max_height = maxf(STORY_MIN_H * s, floorf(room_h - chrome) - 1.0)
 	elif story.fit != null:
 		story.fit.max_height = 0.0
 	_laying_out = false
@@ -478,4 +501,4 @@ func _input(event: InputEvent) -> void:
 ## At least as tall as its column (a page taller than the screen scrolls; its top never
 ## centres off the screen).
 func _get_minimum_size() -> Vector2:
-	return column.get_combined_minimum_size() + Vector2(0, UiTheme.SAFE_MARGIN * 2.0) if column != null else Vector2.ZERO
+	return column.get_combined_minimum_size() + Vector2(0, PAGE_MARGIN * 2.0) if column != null else Vector2.ZERO

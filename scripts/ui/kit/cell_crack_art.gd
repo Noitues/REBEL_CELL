@@ -12,7 +12,7 @@ const LEFT := "res://assets/art/campaign_end/cell_hex_left.svg"
 const RIGHT := "res://assets/art/campaign_end/cell_hex_right.svg"
 const CRACK := "res://assets/art/campaign_end/cell_hex_crack.svg"
 ## The art's size at text scale 1.0 (px; the SVGs' 240:260) and the most it grows.
-const BASE_SIZE := Vector2(216, 234)
+const BASE_SIZE := Vector2(192, 208)
 const GROW_MAX := 1.3
 ## The halves' parting at the end: the gap each side opens (px at 1.0), their tilt away from
 ## the crack (degrees) and their drop (px at 1.0).

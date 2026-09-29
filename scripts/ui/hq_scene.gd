@@ -3306,6 +3306,7 @@ func show_end() -> void:
 	var headline := (tr("CAMPAIGN WON - %s is down") % TextDb.t(corp.final_boss, "display_name")) if won else tr("CAMPAIGN LOST - home server destroyed")
 	var stage := CampaignEndStage.new(won, c.corporation_id, TextDb.t(corp, "display_name"), headline, CrewWall.crew_of(c.roster), beats, records)
 	stage.receipt.tooltip_text = UiTip.fold(ice_records_text())
+	stage.foot_bar = pad_prompts
 	var city := background.city.atmosphere() if background != null and background.city != null else null
 	stage.new_button.text = tr("New campaign")
 	stage.new_button.pressed.connect(func() -> void:

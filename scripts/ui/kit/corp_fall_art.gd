@@ -17,7 +17,7 @@ const LANDMARK_DIR := "res://assets/art/campaign_end/"
 const SPRAY := "res://assets/art/campaign_end/spray_x.svg"
 const MARKER_SHADER := preload("res://shaders/marker_stroke.gdshader")
 ## The panel's size at text scale 1.0 (px) and the most it grows with the text.
-const BASE_SIZE := Vector2(232, 240)
+const BASE_SIZE := Vector2(208, 216)
 const GROW_MAX := 1.3
 ## The landmark's height as a share of the panel's, and the ground line's inset (px at 1.0).
 const LANDMARK_SHARE := 0.8
