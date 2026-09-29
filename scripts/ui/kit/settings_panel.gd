@@ -13,9 +13,21 @@ const SECTIONS := ["Accessibility", "Display", "Audio", "Controls", "Language"] 
 const ACTION_LABELS := {&"nudge_left": "Nudge anticlockwise", &"nudge_right": "Nudge clockwise", &"cycle_target": "Cycle target", # TR
 	&"end_turn": "End turn", &"rewind": "Rewind", &"toggle_ring": "Nudge ring (outer / inner)", # TR
 	&"toggle_nudge_wheel": "Nudge wheel (mine / target)", # TR
-	&"respin": "Respin", &"open_settings": "Pause / options"} # TR
+	&"respin": "Respin", &"open_settings": "Pause / options", # TR
+	&"resolve_fast_forward": "Fast-forward the resolve (hold)"} # TR
 ## The window modes in words (keys).
 const MODE_WORDS := ["Windowed", "Fullscreen", "Borderless"] # TR
+## Art pass W9 (ART_BIBLE §12, §10): the words of the new rows, in Settings' list orders
+## (COLORBLIND_MODES, RESOLVE_SPEEDS, PAD_GLYPH_SETS). Keys in assets/text/strings.csv.
+const COLORBLIND_WORDS := ["Off", "Deuteranopia (green-weak)", "Protanopia (red-weak)", "Tritanopia (blue-weak)"] # TR
+const RESOLVE_SPEED_WORDS := ["1x", "2x", "Instant"] # TR
+const GLYPH_WORDS := ["Automatic (match the pad in use)", "Xbox", "PlayStation", "Nintendo Switch", "Steam Deck"] # TR
+const W9_LABELS := ["Colour-blind correction (patterns and glyphs stay the main cue)", # TR
+	"High contrast (opaque panels, 7:1 text, thick edges)", # TR
+	"Reduce motion (no camera moves or parallax; pages cross-fade)", # TR
+	"Resolve speed after SEND IT (hold Fast-forward to speed it up)", "Pad button glyphs"] # TR
+## Every W9 word (tests check each has a strings.csv key).
+const W9_WORDS := COLORBLIND_WORDS + RESOLVE_SPEED_WORDS + GLYPH_WORDS + W9_LABELS + ["Fast-forward the resolve (hold)"]
 
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
 ## Why the last key pressed while rebinding was refused (Controls section).
@@ -41,6 +53,13 @@ var fps_check: CheckButton
 var legend_check: CheckButton
 var log_check: CheckButton
 var language_option: OptionButton
+## W9 rows: colour-blind correction, high contrast, reduce motion, resolve speed (all in
+## Accessibility) and the pad glyph set (Controls).
+var colorblind_option: OptionButton
+var high_contrast_check: CheckButton
+var reduce_motion_check: CheckButton
+var resolve_speed_option: OptionButton
+var glyph_option: OptionButton
 var close_button: Button
 var section: String = "Accessibility"
 ## Action waiting for a key press (Controls section), or empty.
@@ -111,6 +130,13 @@ func _init() -> void:
 		if langs[i] == Settings.language:
 			language_option.select(i)
 	language_option.item_selected.connect(func(i: int) -> void: Settings.set_language(langs[i]))
+	colorblind_option = _choice("ColorblindOption", COLORBLIND_WORDS, Settings.COLORBLIND_MODES, Settings.colorblind_mode, Settings.set_colorblind_mode)
+	high_contrast_check = _check(tr(W9_LABELS[1]), Settings.high_contrast, Settings.set_high_contrast)
+	high_contrast_check.name = "HighContrastCheck"
+	reduce_motion_check = _check(tr(W9_LABELS[2]), Settings.reduce_motion, Settings.set_reduce_motion)
+	reduce_motion_check.name = "ReduceMotionCheck"
+	resolve_speed_option = _choice("ResolveSpeedOption", RESOLVE_SPEED_WORDS, Settings.RESOLVE_SPEEDS, Settings.resolve_speed, Settings.set_resolve_speed)
+	glyph_option = _choice("GlyphOption", GLYPH_WORDS, Settings.PAD_GLYPH_SETS, Settings.pad_glyph_set, Settings.set_pad_glyph_set)
 	var close := Button.new()
 	close.name = "Close"
 	close_button = close
@@ -133,7 +159,9 @@ func show_section(name: String) -> void:
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, flash_check, subtitles_check, typing_check, assist_check, _labelled(tr("Text scale")), scale_slider]:
+			for w in [reduce_check, reduce_motion_check, flash_check, high_contrast_check, subtitles_check, typing_check, assist_check,
+					_labelled(tr("Text scale")), scale_slider, _labelled(tr(W9_LABELS[0])), colorblind_option,
+					_labelled(tr(W9_LABELS[3])), resolve_speed_option]:
 				_body.add_child(w)
 		"Display":
 			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, log_check]:
@@ -160,6 +188,8 @@ func show_section(name: String) -> void:
 			_bind_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			_bind_note.custom_minimum_size.x = BIND_NOTE_WIDTH
 			_body.add_child(_bind_note)
+			_body.add_child(_labelled(tr(W9_LABELS[4])))
+			_body.add_child(glyph_option)
 			var reset := Button.new()
 			reset.text = tr("Reset to defaults")
 			reset.pressed.connect(func() -> void: Settings.reset_keybinds(); show_section("Controls"))
@@ -178,7 +208,8 @@ func show_section(name: String) -> void:
 ## The widgets built once in _init (they move between the body and off the tree).
 func _persistent() -> Array[Control]:
 	return [reduce_check, flash_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
-		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option]
+		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option,
+		colorblind_option, high_contrast_check, reduce_motion_check, resolve_speed_option, glyph_option]
 
 
 ## ANIM-R4 C3: the built widgets of the sections not showing are off the tree, so the
@@ -247,6 +278,18 @@ func _check(text: String, value: bool, setter: Callable) -> CheckButton:
 	c.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
 	c.toggled.connect(func(on: bool) -> void: setter.call(on))
 	return c
+
+
+## A picker row (an OptionButton, as the window mode's): `words` (keys) shown for `values`
+## (StringNames), `current` selected; choosing one calls `setter` with its value.
+func _choice(node_name: String, words: Array, values: Array[StringName], current: StringName, setter: Callable) -> OptionButton:
+	var o := OptionButton.new()
+	o.name = node_name
+	for w in words:
+		o.add_item(tr(w))
+	o.select(maxi(0, values.find(current)))
+	o.item_selected.connect(func(i: int) -> void: setter.call(values[i]))
+	return o
 
 
 func _slider(text: String, lo: float, hi: float, step: float, value: float, setter: Callable) -> HSlider:
