@@ -396,6 +396,9 @@ func _init() -> void:
 	_marks_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_marks_layer.draw.connect(_draw_marks)
 	add_child(_marks_layer)
+	# ANIM-R6 C12: a map mounted or taken off redraws the city's marks (marks_on_map).
+	child_entered_tree.connect(_on_child_changed)
+	child_exiting_tree.connect(_on_child_changed)
 	_fx = Control.new()
 	_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -671,9 +674,14 @@ var marks: Array[Dictionary] = []
 var mark_t: float = 1.0:
 	set(v):
 		mark_t = v
+		if mark_t >= 1.0:
+			fading_marks = []
 		if _marks_layer != null:
 			_marks_layer.queue_redraw()
 		marks_changed.emit()
+## ANIM-R6 C12: the stamps of the change before, fading out as the new ones stamp on
+## (1 - `mark_t`'s stamp alpha); gone once they have landed.
+var fading_marks: Array[Dictionary] = []
 var _marks_layer: Control
 ## A mark's outline (lots round its Site) and its stamp's lettering and lift (screen px).
 ## ANIM-R3 B6: the stamp sits right over its Site (it hung 70 px up a leader, under the
@@ -701,9 +709,16 @@ const MARK_GAP := 4.0
 ## reads as "this block is now mine / theirs"). The stamps stamp on as the spread's front
 ## passes (`influence_mark`), at once when motion doesn't play. Emits territory_marked.
 func mark_changes(prev: Dictionary, now: Dictionary) -> void:
+	var before := marks
 	marks = InfluenceSpread.marks(prev, now)
 	if marks.is_empty():
+		fading_marks = []
 		return
+	# ANIM-R6 C12: the stamps the last change left stay until the new ones land and fade out
+	# as they stamp on (a claim's CLEARED vanished at once and CLAIMED came ~24 frames later
+	# with nothing between): a cross-stamp. A stamp still landing lands first (its tween only).
+	Motion._settle(self, ^"mark_t")
+	fading_marks = before
 	mark_t = 0.0
 	if not Motion.run(&"influence_mark", self, ^"mark_t", 1.0):
 		mark_t = 1.0
@@ -712,7 +727,25 @@ func mark_changes(prev: Dictionary, now: Dictionary) -> void:
 
 
 func _draw_marks() -> void:
-	draw_marks_on(_marks_layer)
+	# ANIM-R6 C12: a map over the city draws the marks itself (over its dimming, stamps over its
+	# labels): the city's own layer then draws none, so a stamp never shows twice (at 1.6 a
+	# claim showed two CLEARED stamps: this layer's, placed before the map's labels, and the
+	# map's).
+	if not marks_on_map():
+		draw_marks_on(_marks_layer)
+
+
+## ANIM-R6 C12: true while a map overlay on this city draws its territory marks.
+func marks_on_map() -> bool:
+	for ch in get_children():
+		if ch is CityMapOverlay and (ch as CanvasItem).visible and not ch.is_queued_for_deletion():
+			return true
+	return false
+
+
+func _on_child_changed(_n: Node) -> void:
+	if _marks_layer != null:
+		_marks_layer.queue_redraw()
 
 
 ## Draws the marks on canvas item `ci` (in this city's local space: the city's own layer,
@@ -726,6 +759,12 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 	var k := 1.0 / maxf(0.001, scale.x)
 	var fs := maxi(1, roundi(MARK_FONT * Settings.text_scale * k))
 	var font := Palette.display()
+	# ANIM-R6 C12: the old stamps fade out as the new ones stamp on (a site stamped anew shows
+	# the old word under the new one's landing, then the new word alone).
+	var landed := _mark_alpha()
+	if stamps and landed < 1.0:
+		for m: Dictionary in fading_marks:
+			_draw_mark_stamp(ci, m, 1.0, 1.0 - landed, k, fs, font)
 	for m: Dictionary in marks:
 		var at: Vector2 = m["at"]
 		var c := grid_to_local(at.x + 0.5, at.y + 0.5)
@@ -742,20 +781,33 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 		if not stamps:
 			continue
 		# The stamp, tied to its Site by a leader, stamping on from its amplitude's scale.
-		# ANIM-R4 H11d: at a spot clear of the map's labels (stamp_rect).
-		var word := CityMapOverlay.tr_word(String(m["word"]))
-		var spot := stamp_rect(m)
-		var anchor := spot.get_center()
-		var edge := c + (anchor - c).normalized() * Vector2(TILE_A, TILE_B).length() * MARK_RADIUS * 0.5 if anchor != c else c
-		_marks_layer.draw_line(edge, anchor, Color(col, 0.9), 2.0 * k)
 		var grow := lerpf(Motion.amplitude(&"influence_mark"), 1.0, mark_t) if mark_t < 1.0 else 1.0
-		var alpha := clampf(mark_t * 2.0, 0.0, 1.0)
-		_marks_layer.draw_set_transform(anchor, deg_to_rad(MARK_TILT), Vector2.ONE * grow)
-		var box := Rect2(-spot.size * 0.5, spot.size)
-		_marks_layer.draw_rect(box, Color(Palette.NIGHT_SKY, 0.9 * alpha))
-		_marks_layer.draw_rect(box, Color(col, alpha), false, 3.0 * k)
-		_marks_layer.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
-		_marks_layer.draw_set_transform(Vector2.ZERO)
+		_draw_mark_stamp(ci, m, grow, landed, k, fs, font)
+
+
+## ANIM-R6 C4: a new stamp's alpha: it fades in over `stamp_fade_in`'s share of its stamp-on
+## (the inline x 2.0 was that share, 0.5), as the raid's stamps do.
+func _mark_alpha() -> float:
+	return clampf(mark_t / maxf(Motion.amplitude(&"stamp_fade_in"), 0.001), 0.0, 1.0)
+
+
+## Mark `m`'s stamp on `ci` at scale `grow` and `alpha`, tied to its Site by a leader.
+## ANIM-R4 H11d: at a spot clear of the map's labels (stamp_rect).
+func _draw_mark_stamp(ci: CanvasItem, m: Dictionary, grow: float, alpha: float, k: float, fs: int, font: Font) -> void:
+	var at: Vector2 = m["at"]
+	var c := grid_to_local(at.x + 0.5, at.y + 0.5)
+	var col: Color = m["color"]
+	var word := CityMapOverlay.tr_word(String(m["word"]))
+	var spot := stamp_rect(m)
+	var anchor := spot.get_center()
+	var edge := c + (anchor - c).normalized() * Vector2(TILE_A, TILE_B).length() * MARK_RADIUS * 0.5 if anchor != c else c
+	ci.draw_line(edge, anchor, Color(col, 0.9 * alpha), 2.0 * k)
+	ci.draw_set_transform(anchor, deg_to_rad(MARK_TILT), Vector2.ONE * grow)
+	var box := Rect2(-spot.size * 0.5, spot.size)
+	ci.draw_rect(box, Color(Palette.NIGHT_SKY, 0.9 * alpha))
+	ci.draw_rect(box, Color(col, alpha), false, 3.0 * k)
+	ci.draw_string(font, box.position + Vector2(MARK_PAD * k, MARK_PAD * k + font.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
+	ci.draw_set_transform(Vector2.ZERO)
 
 
 ## ANIM-R4 H11d: where mark `m`'s stamp sits (this city's local px, unrotated): the first of
@@ -1247,7 +1299,11 @@ func _draw_view() -> void:
 		_sil.visible = false
 		var e := CityBakeCache.entry(key)
 		var region: Rect2 = e["region"]
-		_view.draw_texture_rect(e["texture"], Rect2(region.position + _shift, region.size), false)
+		# ANIM-R6 C3: the view holds the picture it draws until it draws another: the cache may
+		# drop the entry (LRU, byte budget) while this canvas still points at its texture, and a
+		# kept bake's viewport goes with its last reference.
+		drawn_texture = e["texture"]
+		_view.draw_texture_rect(drawn_texture, Rect2(region.position + _shift, region.size), false)
 		if key != _baked_key:
 			_baked_key = key
 			_beacons = e.get("beacons", [] as Array[Dictionary])
@@ -1269,6 +1325,11 @@ func _draw_view() -> void:
 	_drawn_camera = _camera_key()
 	_fx.queue_redraw()
 	rebuilt.emit()
+
+
+## ANIM-R6 C3: the baked picture this view last drew (held until it draws another, so an
+## entry evicted from CityBakeCache never frees a viewport this canvas still draws).
+var drawn_texture: Texture2D = null
 
 
 ## ANIM-R2 R1: what shows while this view's bake runs: a finished bake of this look that

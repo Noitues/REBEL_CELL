@@ -484,6 +484,11 @@ func lot_of(id: StringName) -> Vector2i:
 	return _lots.get(id, Vector2i.ZERO)
 
 
+## ANIM-R6 C10: true when node `id` is on this map (it has a lot).
+func has_site(id: StringName) -> bool:
+	return _lots.has(id)
+
+
 ## The non-colour mark drawn on node `id` ("spray", "cross" or "").
 func mark_of(id: StringName) -> String:
 	for n in nodes:
@@ -516,7 +521,12 @@ func here_point() -> Vector2:
 		return icon_at(id)
 	if here_at.x == INF or city == null:
 		return Vector2(INF, INF)
-	return grid_point_local(here_at + Vector2(0.5, 0.5))
+	# ANIM-R6 C15: on the street itself (the nearest street lot to `here_at`: the marker stood
+	# on a block beside the road).
+	var lot := Vector2i(floori(here_at.x), floori(here_at.y))
+	if not city.is_street(lot.x, lot.y):
+		lot = _door(lot)
+	return grid_point_local(Vector2(lot) + Vector2(0.5, 0.5))
 
 
 ## ANIM-R3 B8: the street marker's box (screen px, for fitting the route); [] when the
@@ -1233,7 +1243,7 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 		_chevrons(e, pts)
 	if _is_dashed(e):
 		return
-	elif e.get("flow", false) and packets:
+	elif e.get("flow", false) and packets and crawl_speed() > 0.0:
 		# A bright packet running along the route.
 		var total := 0.0
 		for k in pts.size() - 1:
@@ -1492,9 +1502,13 @@ func screen_k() -> float:
 
 
 ## ANIM-5: dash crawl speed (local px per second): `route_crawl`'s amplitude per duration.
+## ANIM-R6 C4: 0 when the crawl doesn't play (switched off, reduce effects): the dashes and
+## chevrons stand still and no packet runs.
 func crawl_speed() -> float:
 	var e := Motion.entry(CRAWL_MOTION)
-	return e.amplitude / maxf(e.duration, 0.001) if e != null else 0.0
+	if e == null or not Motion.live(CRAWL_MOTION):
+		return 0.0
+	return e.amplitude / maxf(e.duration, 0.001)
 
 
 ## ANIM-5 (4.14): the selected node's roof outline draws on and its ring eases in (the

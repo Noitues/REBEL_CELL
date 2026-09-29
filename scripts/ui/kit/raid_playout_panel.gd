@@ -120,6 +120,9 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 		b.name = "Speed%dx" % int(s)
 		b.focus_mode = Control.FOCUS_ALL
 		b.text = "%dx" % int(s)
+		# ANIM-R6 C10: the speed playing is lit (a toggle), 1x at the start and after the end.
+		b.toggle_mode = true
+		b.button_pressed = is_equal_approx(s, 1.0)
 		var value: float = s
 		b.pressed.connect(func() -> void: set_speed(value))
 		controls.add_child(b)
@@ -156,7 +159,9 @@ func attach_fx(p_results: Dictionary, home: StringName, home_max: int, color: Co
 
 
 ## Loads a raid's events and starts playing. `instant` (tests, reduce-effects) shows all.
-func play(events: Array[Dictionary], instant: bool = false) -> void:
+## ANIM-R6 C10: `start_now` false leaves the first step to the panel's first frame (the
+## screen frames the map once its page is laid out; the steps are loaded, so a skip works).
+func play(events: Array[Dictionary], instant: bool = false, start_now: bool = true) -> void:
 	_threat_sites.clear()
 	_threat_names.clear()
 	_reset_hp()
@@ -173,7 +178,7 @@ func play(events: Array[Dictionary], instant: bool = false) -> void:
 	log_note.clear()
 	if _instant:
 		skip_to_end()
-	else:
+	elif start_now:
 		_show_step()
 
 
@@ -182,6 +187,22 @@ func set_speed(value: float) -> void:
 	speed = maxf(Motion.SPEED_MIN, value)
 	Motion.set_speed(speed)
 	_set_speed = true
+	_light_speed()
+
+
+## ANIM-R6 C10: lights the button of the speed playing (and only it).
+func _light_speed() -> void:
+	for b in speed_buttons():
+		b.set_pressed_no_signal(is_equal_approx(float(String(b.name).trim_prefix("Speed").trim_suffix("x")), speed))
+
+
+## ANIM-R6 C10: the 1x / 2x / 4x buttons.
+func speed_buttons() -> Array[Button]:
+	var out: Array[Button] = []
+	for b in controls():
+		if String(b.name).begins_with("Speed"):
+			out.append(b)
+	return out
 
 
 func steps_total() -> int:
@@ -335,8 +356,12 @@ func _apply_step(events: Array, start: float = 0.0, tl: Dictionary = {}) -> void
 				_threat_sites[e["threat"]] = e["to"]
 			"threat_destroyed":
 				_dead[e["threat"]] = true
-			"home_hit":
-				_dead[e["threat"]] = true
+			"raid_end":
+				# ANIM-R6 C11: a threat that hit home stays on the map, named, until the verdict,
+				# where every threat still standing withdraws (RaidFxLayer): it was named at its
+				# first step only and its token stayed nameless on CORE.
+				for id in _threat_sites:
+					_dead[id] = true
 		var line := feed_line(e)
 		if line != "":
 			_log(line)
@@ -613,6 +638,14 @@ func _finish() -> void:
 		return
 	_done = true
 	_restore_speed()
+	# ANIM-R6 C10: the raid is over: 1x / 2x / 4x and Skip have nothing left to drive (they
+	# stayed live with 2x lit after the speed went back to 1x).
+	speed = 1.0
+	_light_speed()
+	for b in controls():
+		if b.has_focus():
+			b.release_focus()
+		b.disabled = true
 	if fx != null and is_instance_valid(fx):
 		fx.release()
 	finished.emit()

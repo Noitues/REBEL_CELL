@@ -138,6 +138,8 @@ const DEMOS := {
 	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy): the top bar
 	# CARDS tag a flight lands on (HudStats.land_pulse).
 	&"flight_land_pulse": ["screen", "land_pulse"],
+	# ANIM-R6 city: the raid volley's stagger (a raid with two guns) and the Heat pulse's rise.
+	&"raid_shot_stagger": ["hq", "raid"], &"heat_pulse_rise": ["heat", "stage"], &"raid_threat_withdraw": ["hq", "raid"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -160,7 +162,17 @@ const CONTEXT_LOOP := 6.0
 const DEMO_CAMPAIGN_SEED := 1
 ## The jack demos' destination line and the raid interlude's stamp (translated).
 const JACK_DESTINATION := "SOLACE // THE RACK"
-const RAID_NOTE := "INTERRUPTED: RAID INCOMING"
+## ANIM-R6 C14: the words the game stamps (RunManager.jack_note: "RAID INCOMING" over the
+## raiding corporation), for the demo campaign's corporation.
+const RAID_NOTE := "RAID INCOMING\n%s"
+const RAID_CORP := &"solace"
+
+
+## ANIM-R6 C14: the RAID INCOMING stamp as the game words it (translated, the corporation's
+## name from its content).
+static func _raid_note() -> String:
+	var corp := RunManager.lookup().get_content(RAID_CORP)
+	return TranslationServer.translate(RAID_NOTE) % (TextDb.t(corp, "display_name") if corp != null else "")
 ## Screen demos: the RAM a spend float shows, the Heat before and after a crossing and its
 ## thresholds, the refusal's words, the toast's words.
 const DEMO_RAM_SPEND := 2
@@ -514,7 +526,7 @@ func _play() -> void:
 			length = LOOP_HOLD
 		"jack_in":
 			# ANIM-R5: with its CONNECTING line (and the raid interlude's stamp for its id).
-			Fx.jack_in(func() -> void: pass, -1.0, JACK_DESTINATION, tr(RAID_NOTE) if _id == &"raid_incoming_hold" else "")
+			Fx.jack_in(func() -> void: pass, -1.0, JACK_DESTINATION, _raid_note() if _id == &"raid_incoming_hold" else "")
 		"jack_out":
 			Fx.jack_out(func() -> void: pass, -1.0, JACK_DESTINATION)
 		"jack_reduced":

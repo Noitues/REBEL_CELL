@@ -82,6 +82,11 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"defeat_stamp",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
+	# ANIM-R6 city: inline shares moved into the table (the raid volley's stagger, the Heat
+	# pulse's rise).
+	&"raid_shot_stagger", &"heat_pulse_rise",
+	# ANIM-R6 city: the threats still standing withdraw at a raid's verdict.
+	&"raid_threat_withdraw",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.
@@ -98,9 +103,11 @@ const OFF_PARTS: Dictionary = {
 	&"break_crack": 0.0, &"modem_sign_strike": 0.0, &"modem_sign_flicker": 0.0,
 	&"forecast_change_fade": 0.0, &"resolve_side_gap": 0.0, &"resolve_attacker_gap": 0.0,
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
+	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).
+	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
-const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share"]
+const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise"]
 
 @export var entries: Array[UiMotionEntryData] = []
 

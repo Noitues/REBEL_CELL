@@ -48,45 +48,54 @@ func _draw() -> void:
 		draw_string(f, Vector2(CAPTION_INSET, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - CAPTION_INSET * 2.0, fs, Palette.INK)
 
 
-## The caption's lettering (px) at rest, the least it shrinks to, its side inset and its
-## baseline's height over the frame's foot (px).
+## The caption's lettering (px at text scale 1.0) at rest, the least it shrinks to (ANIM-R6
+## C6: 12 px x the text size, the kit's floor for words; it was 8 px whatever the text size),
+## its side inset and its baseline's height over the frame's foot (px).
 const CAPTION_FONT := 13
-const CAPTION_MIN := 8
+const CAPTION_MIN := 12
 const CAPTION_INSET := 8.0
 const CAPTION_BOTTOM := 10.0
 
 
-## ANIM-R5 P10: the caption as drawn, never cut (at 1.6 the dossier's smaller Polaroid cut
-## "BREAKER 1" to "BREAK"): one line at CAPTION_FONT, stepped down while it does not fit;
-## then two lines (split at the space that balances them), the picture made smaller (never
-## under IMAGE_MIN_SHARE of its side) so both fit under it; the one line at CAPTION_MIN as
-## the last resort. {"lines", "fs", "image" (the picture's side, px)}.
+## ANIM-R6 C6: the caption's lettering at rest and its floor at the text size now (px).
+static func caption_top() -> int:
+	return roundi(CAPTION_FONT * Settings.text_scale)
+
+
+static func caption_floor() -> int:
+	return roundi(CAPTION_MIN * Settings.text_scale)
+
+
+## ANIM-R5 P10 / ANIM-R6 C6: the caption as drawn, never cut and never under its floor, both
+## at the text size: one line from `caption_top` stepped down to `caption_floor` while it does
+## not fit; then two lines and more (split at spaces, a word too long for a line between its
+## letters), the picture made smaller (never under IMAGE_MIN_SHARE of its side) so they fit
+## under it; the last resort is the lines at the floor over a picture as small as they need.
+## {"lines", "fs", "image" (the picture's side, px)}.
 func caption_layout() -> Dictionary:
 	var f := Palette.marker()
-	var room := size.x - CAPTION_INSET * 2.0
-	for fs in range(CAPTION_FONT, CAPTION_MIN - 1, -1):
+	var room := maxf(1.0, size.x - CAPTION_INSET * 2.0)
+	var top := caption_top()
+	var low := mini(top, caption_floor())
+	for fs in range(top, low - 1, -1):
 		if f.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= room:
-			return {"lines": PackedStringArray([caption]), "fs": fs, "image": room}
-	var words := caption.split(" ", false)
-	for fs in range(CAPTION_FONT, CAPTION_MIN - 1, -1):
-		var side := minf(room, size.y - CAPTION_INSET - f.get_height(fs) * 2.0 - CAPTION_BOTTOM)
-		if side < room * IMAGE_MIN_SHARE:
-			continue
-		var best := PackedStringArray()
-		var best_w := INF
-		for cut in range(1, words.size()):
-			var a := " ".join(words.slice(0, cut))
-			var b := " ".join(words.slice(cut))
-			var w := maxf(f.get_string_size(a, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_string_size(b, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
-			if w <= room and w < best_w:
-				best_w = w
-				best = PackedStringArray([a, b])
-		if not best.is_empty():
-			return {"lines": best, "fs": fs, "image": side}
-	return {"lines": PackedStringArray([caption]), "fs": CAPTION_MIN, "image": room}
+			return {"lines": PackedStringArray([caption]), "fs": fs, "image": minf(room, _image_room(1, fs))}
+	for fs in range(top, low - 1, -1):
+		var lines := HeatPoster.wrap_words(f, caption, fs, room)
+		var side := minf(room, _image_room(lines.size(), fs))
+		if side >= room * IMAGE_MIN_SHARE:
+			return {"lines": lines, "fs": fs, "image": side}
+	var last := HeatPoster.wrap_words(f, caption, low, room)
+	return {"lines": last, "fs": low, "image": maxf(0.0, minf(room, _image_room(last.size(), low)))}
 
 
-## The least share of its side the picture keeps to make room for a two-line caption.
+## The picture's side that leaves room under it for `count` caption lines at `fs` (px).
+func _image_room(count: int, fs: int) -> float:
+	return size.y - CAPTION_INSET - Palette.marker().get_height(fs) * count - CAPTION_BOTTOM
+
+
+## The least share of its side the picture keeps to make room for a caption of more lines
+## (the last resort goes under it rather than cut a word or letter under the floor).
 const IMAGE_MIN_SHARE := 0.6
 
 
