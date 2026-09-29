@@ -2718,7 +2718,7 @@ func place_raid_legend() -> void:
 ## furthest the raid map zooms out (H24 S5: 0.6 left a late campaign's nodes outside the
 ## map at text scale 1.6).
 const RAID_FIT_SHARE := 0.9
-const RAID_MIN_ZOOM := 0.45
+const RAID_MIN_ZOOM := 0.36
 ## The column key gives way to the strip when the nodes would need a zoom under this share
 ## of RAID_MIN_ZOOM to fit beside it (1: as soon as the floor would be passed).
 const RAID_STRIP_BELOW := 1.0
@@ -3766,6 +3766,7 @@ func _build_ui() -> void:
 	drops = DropLayer.new()
 	_wire_drops(drops)
 	add_child(drops)
+	hud.watch_drops(drops)  # W8b §6.9: a tag that takes the carried item shows its brackets
 
 
 ## ANIM-4: a drop layer's questions and intents come to this screen: whether a target

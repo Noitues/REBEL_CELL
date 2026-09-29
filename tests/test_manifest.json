@@ -141,6 +141,10 @@
 			"seconds": 15.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art_w8b_screens.gd": {
+			"seconds": 20.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.1,
 			"tier": "fast"

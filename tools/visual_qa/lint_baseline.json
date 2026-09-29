@@ -41,13 +41,6 @@
 			"draw_size": 2,
 			"font_const": 2
 		},
-		"res://scripts/ui/kit/hud_bar.gd": {
-			"color": 1,
-			"draw_size": 2
-		},
-		"res://scripts/ui/kit/hud_stats.gd": {
-			"color": 2
-		},
 		"res://scripts/ui/kit/map_legend.gd": {
 			"color": 1
 		},

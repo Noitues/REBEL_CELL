@@ -38,9 +38,20 @@ func _ready() -> void:
 	_register.call_deferred()
 
 
-## Height for `lines` lines at the text size in force.
+## Art pass W8b (ART_BIBLE §5.2): one line at text scale 1.0 and up to BIG_LINES lines
+## above it, so a line at big text pages whole sentences instead of a clipped half line
+## (critique 1.6/08, 1.6/15). The subtitle text itself is Dialogue's (`body` x the scale).
+const BIG_LINES := 2
+
+
+## The lines the band holds at text scale `s`: `lines` at 1.0, at least BIG_LINES above.
+func lines_at(s: float) -> int:
+	return maxi(lines, BIG_LINES) if s > 1.0 + 0.001 else lines
+
+
+## Height for `lines_at` lines at the text size in force.
 func _fit() -> void:
-	var h := Dialogue.band_height(lines)
+	var h := Dialogue.band_height(lines_at(Settings.text_scale))
 	if not is_equal_approx(custom_minimum_size.y, h):
 		custom_minimum_size.y = h
 
