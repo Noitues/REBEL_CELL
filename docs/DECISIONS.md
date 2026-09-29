@@ -451,6 +451,40 @@ Review folder: `docs/art_review/W8d/`. It has 8 before/after sheets, the WON and
 - The grey and the scrim don't cover the subtitle band or the prompt strip (the same as W8c).
 - The runtime lint should clip by scroll view.
 
+### 2026-09-29 — Art pass W9F: final accessibility sweep (merged into `art-pass`)
+Review folder: `docs/art_review/W9F/`. It holds contact sheets of all 53 screens at 2.0 mouse, 2.0 pad, 1.0, grey, deutan, high contrast, reduce effects and reduce motion, plus the final runtime lint and the §12/§14 table (every item passes, with evidence).
+
+**Text scale 2.0 is the verified maximum.** `LayoutScales` is gone, so every layout test now runs at `Settings.TEXT_SCALE_MAX`.
+
+**Runtime lint findings at 2.0, mouse / pad:**
+
+| Finding | Before | After |
+|---|---|---|
+| Font | 33 / 36 | 0 / 0 |
+| Overlap | 34 / 71 | 0 / 4 |
+| Clipped | 2 / 2 | 3 / 3 |
+| Contrast | 76 / 101 | 7 / 5 |
+
+Before covers 43 screens; after covers 53. The remaining findings are low-confidence (a mid-fade sticker, high-contrast button edges) or by design (the codex MORE BELOW tag).
+
+**Decisions made in the sweep:**
+- **§4.3.3:** a word that can't fit makes its label grow to the longest word. A width-driven font step-down was tried first and dropped: it looped the layout, and once filled the disk.
+- **§5.2 / §10.5:** an empty subtitle band holds one line and grows once per screen, when the first line arrives.
+- **§9 / §11:** `flatline` is an additive `CityLookData` context with an optional `lean` grade key. This is a schema change, covered by the smoke test. `CityAtmosphere.blend_context(ctx, mix)` and `clear_campaign_progress()` are new; a new campaign clears the lean. FLATLINED and campaign LOST both grey the whole city. The campaign end's scrim is HQ-level, full screen.
+- **Motion settling:** `PageTransition.settle` calls `settle_motion()`, and the end stages no longer ride `Typing.META`.
+- **Critique `55`:** the button reads "UPGRADE · n CYCLES", with NEED/HAVE in `HARM` when short. The marker circle draws on (`upgrade_circle_draw`).
+- **§5.2.4 / §12 in fights:** the pad prompt bar sits in the status row with caption-size verbs. The Settings button hides on pad, and SEND IT draws its button glyph.
+- **§12:** reduce motion also removes shake and turns the jack zoom into a cross-fade.
+- **§6.10:** the raid playout and report map keys fold above 1.3.
+- **§3.7:** the subtitle paper's speaker name is ink (pink read 2.3:1), and the pad prompt bar gets glass behind it.
+- **Whole-word wrapping:** no `WORD_SMART` or `ARBITRARY` remains anywhere in `scripts/**` (tested). All mouse-worded strings have pad variants, and FocusTip filters out mouse words on pad.
+- **Tracking:** `UiTheme.track_label` is applied to Anton and to mono caps labels.
+
+**Open for the designer:**
+- On a pad at 2.0, the SAVED toast can sit over an event's story for 2.5 s.
+- Text drawn in `_draw` isn't linted, only checked by eye.
+- Colour-blind support stays a daltonize correction (ART_BIBLE §12 says "remap").
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
