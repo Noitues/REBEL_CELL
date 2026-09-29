@@ -91,6 +91,8 @@ func _ready() -> void:
 	_init_drops()
 	if _view == null:
 		show_deck()
+	# W8a (§10): the modal fades and grows in (<= 0.22 s, never a cut) and counts as open.
+	PageTransition.open_modal(self)
 
 
 func show_deck() -> void:
@@ -317,4 +319,5 @@ func _swap(view: Control) -> void:
 
 func _on_closed() -> void:
 	closed.emit()
-	UiFocus.release(self)
+	# W8a (§10): it fades out (never a cut), then frees itself.
+	PageTransition.close_modal(self)

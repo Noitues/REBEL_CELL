@@ -476,7 +476,9 @@ func test_key_hints_follow_the_device_outside_combat() -> void:
 	assert_eq(settings_btn.text, ("Settings %s" % Settings.hint(&"open_settings")).strip_edges())
 	Settings.set_pad_active(true)
 	await _frames()
-	assert_eq(settings_btn.text, ("Settings %s" % Settings.hint(&"open_settings")).strip_edges(), "relabelled for the pad")
+	# Art pass W8a/W8b: with a pad the prompt bar names the button; the line keeps its words.
+	assert_eq(settings_btn.text, "Settings", "relabelled for the pad (the bracketed key dropped)")
+	assert_string_contains(" | ".join(hq.pad_prompts.texts()), "Settings", "the prompt bar says it")
 	var jack := hq._panel.find_child("JackIn", true, false) as ZineStamp
 	assert_eq(jack.hint, "", "JACK IN names no key (Space does nothing at HQ)")
 	var menu := PauseMenu.new()

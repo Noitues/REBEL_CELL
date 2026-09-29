@@ -52,6 +52,13 @@ static func landmark_icon(_corp_id: StringName) -> StringName:
 	return StatIcon.MAP
 
 
+## The corporation's baked landmark glyph (W8a, assets/art/landmarks/) at `height` px, or
+## null when there is none (the StatIcon seam then).
+static func landmark_texture(corp_id: StringName, height: float) -> Texture2D:
+	var path := SvgArt.landmark_path(corp_id)
+	return SvgArt.texture(path, height) if path != "" else null
+
+
 ## Tile `i`'s name as drawn: its lines and their size (px) for `width` px, never larger
 ## than `max_px` (0: no cap).
 func name_layout(i: int, width: float, max_px: int = 0) -> Array:
@@ -155,7 +162,12 @@ func _draw_swatch(t: Dictionary, sw: Rect2, st: StringName) -> void:
 		var c := block.get_center()
 		var mr := block.size.x * MARK_SHARE * 1.6
 		draw_circle(c, mr, Palette.NIGHT_SKY)
-		StatIcon.draw(self, c, mr * 0.8, landmark_icon(corp), hue)
+		var tex := landmark_texture(corp, mr * 1.6)
+		if tex != null:
+			var sz := tex.get_size() * (mr * 1.6 / maxf(1.0, tex.get_size().y))
+			draw_texture_rect(tex, Rect2(c - sz * 0.5, sz), false, hue)
+		else:
+			StatIcon.draw(self, c, mr * 0.8, landmark_icon(corp), hue)
 	elif t.has("class"):
 		var side := minf(sw.size.x, sw.size.y)
 		var photo := Rect2(sw.position + Vector2(0, (sw.size.y - side) * 0.5), Vector2(side, side))

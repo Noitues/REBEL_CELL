@@ -44,9 +44,23 @@ func _ready() -> void:
 const BIG_LINES := 2
 
 
-## The lines the band holds at text scale `s`: `lines` at 1.0, at least BIG_LINES above.
+## The most lines the band grows to above 1.0 on the page shown now (a map page that needs
+## its height sets 1: a long line then pages whole, never clipped).
+var big_lines: int = BIG_LINES
+
+
+## The lines the band holds at text scale `s`: `lines` at 1.0, up to `big_lines` above.
 func lines_at(s: float) -> int:
-	return maxi(lines, BIG_LINES) if s > 1.0 + 0.001 else lines
+	return maxi(lines, big_lines) if s > 1.0 + 0.001 else lines
+
+
+## Sets `big_lines` and refits the band.
+func set_big_lines(n: int) -> void:
+	if n == big_lines:
+		return
+	big_lines = maxi(1, n)
+	if is_inside_tree():
+		_fit()
 
 
 ## Height for `lines_at` lines at the text size in force.

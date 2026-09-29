@@ -106,7 +106,8 @@ const CREW_COLUMNS_BIG := 2
 ## The Grid Site card's node tiles (the node to build) at text scale 1.0 (px).
 const NODE_TILE := Vector2(132, 60)
 ## W8b: the Site card's fixed body height at text scale 1.0 (px; its content scrolls inside).
-const SITE_CARD_BODY := 210.0
+const SITE_CARD_HEIGHT := 240.0
+const SITE_CARD_BODY_MIN := 140.0
 ## W8b: a Rank 3 dossier's button to its ring swaps (the loadout's SPINNER tab).
 const RING_SWAPS := "RING SWAPS" # TR
 const RING_SWAPS_TIP := "Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel." # TR
@@ -1035,6 +1036,9 @@ func _set_panel(p: Control, name: String) -> void:
 	wireframe.set_context(&"net")
 	wireframe.set_map_mode(net)
 	deck_frame.visible = name == "hq"
+	# §5.2: the raid map pages keep one subtitle line at big text (the map needs the height;
+	# a long line pages whole instead).
+	subtitle_strip.set_big_lines(1 if name.begins_with("raid") else SubtitleStrip.BIG_LINES)
 	deck_frame.keys_row.visible = name == "hq"
 	if name != "hq":
 		var none: Array[Control] = []
@@ -1141,7 +1145,7 @@ func open_settings() -> void:
 	_settings_panel = PauseMenu.new()
 	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, SubtitleStrip.top_below(PAUSE_TOP))  # under the subtitle band (H22: the top bar grows with its words)
 	_settings_panel.resumed.connect(open_settings)
-	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
+	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); PageTransition.after_modals(self, RunManager.go_to_title))
 	add_child(_settings_panel)
 	get_tree().paused = false
 
@@ -1168,7 +1172,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# elsewhere.
 	if event is InputEventJoypadButton and event.is_action_pressed("ui_cancel") and not event.is_action("open_settings") and panel_name in BACK_PANELS \
 			and _settings_panel == null and not has_node("LoadoutView") and not has_node("DaemonTray"):
-		show_hq()
+		PageTransition.after_modals(self, show_hq)
 		get_viewport().set_input_as_handled()
 
 
@@ -1197,8 +1201,9 @@ func show_start() -> void:
 	box.add_theme_constant_override("separation", 12)
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 24)
-	head.add_child(GraffitiTag.new("REBEL_CELL"))
-	head.add_child(GraffitiScrawl.new(tr("TRUST\nNO ONE"), -7.0, 26))
+	# W8a baked art (§4.3.5): the logo and the TRUST NO ONE scrawl, never live text.
+	head.add_child(LogoArt.new())
+	head.add_child(ScrawlArt.new(SvgArt.SCRAWL_TRUST_NO_ONE, "TRUST\nNO ONE"))
 	box.add_child(head)
 	# Art pass W8b (ART_BIBLE §11 New campaign, §6.5; critique 03, 04): a planning table:
 	# the target as corporation dossiers (the locked ones greyed with their lock and unlock),
@@ -2603,8 +2608,9 @@ func _site_glyph(site: SiteData) -> String:
 
 
 ## W8b (§10.5, §11 City Grid; critique gifs/20): the Site card keeps one height whatever Site
-## is picked: its content scrolls inside a fixed SITE_CARD_BODY (x the text scale) under the
-## card's title, so the column never jumps when the selection changes.
+## is picked: its content scrolls inside the card body (at least SITE_CARD_BODY_MIN) under the
+## card's title (the card SITE_CARD_HEIGHT tall), so the column never jumps when the
+## selection changes.
 func _fix_card_height(card: TerminalWindow) -> void:
 	var inner := VBoxContainer.new()
 	inner.name = "CardContent"
@@ -2617,9 +2623,13 @@ func _fix_card_height(card: TerminalWindow) -> void:
 	sc.name = "CardScroll"
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	sc.follow_focus = true
-	sc.custom_minimum_size.y = SITE_CARD_BODY * Settings.text_scale
+	sc.custom_minimum_size.y = SITE_CARD_BODY_MIN * Settings.text_scale
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sc.add_child(inner)
 	card.body.add_child(sc)
+	card.body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# The whole card holds one height: a Site name on two title lines takes it from the body.
+	card.custom_minimum_size.y = SITE_CARD_HEIGHT * Settings.text_scale
 
 
 ## The picked Site as a card (H20, replacing the Site list): its facts as badges (status,
@@ -3104,7 +3114,10 @@ func place_raid_legend() -> void:
 	var screen := get_global_rect()
 	var k := 1.0
 	if box.size.x > free.size.x or box.size.y > free.size.y:
-		k = minf(1.0, minf(free.size.x / box.size.x, free.size.y / box.size.y) * RAID_FIT_SHARE)
+		# W8b: aimed RAID_AIM_INSET inside the free part, so icons floating up to clear each other
+		# as the map zooms out still land inside it.
+		var aim := (free.size - Vector2.ONE * RAID_AIM_INSET * 2.0).max(Vector2.ONE)
+		k = minf(1.0, minf(aim.x / box.size.x, aim.y / box.size.y) * RAID_FIT_SHARE)
 	# H24 S5: nodes that cannot fit beside the key's column even at the zoom floor (a late
 	# campaign at text scale 1.6: the column took 368 px and the icons sat under it) get the
 	# strip key along the map's foot instead, as the Grid has.
@@ -3148,6 +3161,8 @@ func place_raid_legend() -> void:
 ## map at text scale 1.6).
 const RAID_FIT_SHARE := 0.9
 const RAID_MIN_ZOOM := 0.36
+## W8b: how far inside the free part the raid map is aimed (px).
+const RAID_AIM_INSET := 16.0
 ## The column key gives way to the strip when the nodes would need a zoom under this share
 ## of RAID_MIN_ZOOM to fit beside it (1: as soon as the floor would be passed).
 const RAID_STRIP_BELOW := 1.0
@@ -4137,7 +4152,9 @@ func _hint_button(text: String, action: StringName, on_pressed: Callable) -> But
 
 
 func _hint_label(b: Button) -> void:
-	b.text = ("%s %s" % [String(b.get_meta(&"hint_base")), Settings.hint(StringName(b.get_meta(&"hint_action")))]).strip_edges()
+	# W8a: with a pad the prompt bar names the button; the line keeps its words only.
+	var key := "" if Settings.pad_active else Settings.hint(StringName(b.get_meta(&"hint_action")))
+	b.text = ("%s %s" % [String(b.get_meta(&"hint_base")), key]).strip_edges()
 
 
 func _relabel_hints() -> void:
