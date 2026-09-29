@@ -241,6 +241,10 @@ func _ready() -> void:
 			Motion.set_speed(float(arg.trim_prefix("--demo-speed=")))
 		elif arg == "--demo-hits-row":
 			_hits_row = true
+		elif arg == "--demo-reduce":
+			# Art pass W6 captures: reduce effects for this run only (never saved).
+			Settings.reduce_effects = true
+			Settings.changed.emit()
 		elif arg.begins_with("--demo-set="):
 			_apply_sets(arg.trim_prefix("--demo-set="))
 	if not Motion.has(_id):

@@ -2185,7 +2185,7 @@ duration = 0.9
 delay = 0.0
 ease = 1
 trans = 1
-amplitude = 0.55
+amplitude = 0.7
 tier = 3
 
 ; W6 (ART_BIBLE 8): a crit's hit shape, a shattered-glass burst (cracks, then shards flying out) where it lands; T3; amplitude = its reach (px)
