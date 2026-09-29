@@ -718,6 +718,12 @@ func _show_current() -> void:
 	if s == null:
 		_show_start()
 		return
+	# Art pass W8c (ART_BIBLE §10 rule 6, W8a's after_modals): a modal never outlives a page
+	# change: the page changes once the open viewers have closed (a rebuild of the same
+	# page under a viewer, the Modem after a shred, goes on at once).
+	if screen_name(s) != _shown_screen and PageTransition.modal_open(self):
+		PageTransition.after_modals(self, _show_current)
+		return
 	_refresh_status()
 	match s.run.phase:
 		RunState.Phase.MAP:
@@ -2812,6 +2818,9 @@ static func chip_readable(tile: ZineCard) -> int:
 ## tile that opened them on close).
 func _open_modal(view: Control) -> void:
 	add_child(view)
+	# Art pass W8a/W8c (ART_BIBLE §10 rules 3, 6): the modal opens with W8a's motion and
+	# counts as open, so a page change waits for it to close (`_show_current`).
+	PageTransition.open_modal(view)
 
 
 ## Deck viewer in pick mode: the chosen card is removed for the shop's price.
