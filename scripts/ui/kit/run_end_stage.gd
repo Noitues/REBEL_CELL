@@ -217,7 +217,7 @@ func grade_amount() -> float:
 
 func _process(_delta: float) -> void:
 	# A settle took the meta (PageTransition.settle, Typing.finish_all): end now.
-	if _tween != null and _tween.is_valid() and not has_meta(Typing.META):
+	if _tween != null and not has_meta(Typing.META):
 		finish_now()
 
 

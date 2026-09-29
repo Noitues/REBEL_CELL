@@ -607,6 +607,8 @@ func test_flatlined_is_a_skippable_t4_and_ends_at_once_under_reduce_effects() ->
 	PageTransition.settle(stage)
 	await _frames(2)
 	assert_false(stage.running(), "a page settle ends it too")
+	assert_eq(stage.stamp.modulate.a, 1.0, "at its end state (the stamp shows)")
+	assert_almost_eq(stage.grade_amount(), RunEndStage.GREY_AMOUNT, 0.01, "the city grey")
 	Motion.force_live = false
 	Settings.set_reduce_effects(true)
 	stage.play()
