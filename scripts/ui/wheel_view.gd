@@ -344,8 +344,52 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	wheel_color = Palette.CELL_PINK if c.is_player else Palette.corp_color(_corporation_of(c))
 	look = WheelBezel.operative_look(operative_class()) if c.is_player else WheelBezel.enemy_look(_corporation_of(c), is_boss())
 	look["flicker_depth"] = Motion.amplitude(&"bezel_ambient")
+	size_scale = BOSS_SCALE if is_boss() else 1.0
+	if is_boss() and backdrop == null:
+		set_backdrop(BossBackdrop.new())
+	if backdrop != null and backdrop.has_method(&"show_subject"):
+		backdrop.call(&"show_subject", shown_subject(), wheel_color)
 	_sync_ambient()
 	queue_redraw()
+
+
+## §6.1: a boss's wheel is this much bigger than a normal one (as far as its view allows).
+const BOSS_SCALE := 1.2
+## The wheel's size against a normal wheel's (BOSS_SCALE for a boss).
+var size_scale: float = 1.0
+## §7.2: what stands behind a boss's wheel (a BossBackdrop until W5's Hologram plugs in
+## through set_backdrop); null for any other wheel.
+var backdrop: Control = null
+
+
+## W5 seam: puts `node` (a hologram, ≈40% of the screen high) behind this wheel, centred on
+## it (it draws behind the wheel: show_behind_parent). The one before it goes.
+func set_backdrop(node: Control) -> void:
+	if backdrop != null and is_instance_valid(backdrop):
+		backdrop.queue_free()
+	backdrop = node
+	if node == null:
+		return
+	node.show_behind_parent = true
+	node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(node)
+	_place_backdrop()
+
+
+## Centres the backdrop on the wheel (its top at the bezel's top half: the head above).
+func _place_backdrop() -> void:
+	if backdrop == null or not is_instance_valid(backdrop):
+		return
+	var vh := get_viewport_rect().size.y if is_inside_tree() else size.y
+	var side := maxf(vh * BACKDROP_SCREEN_SHARE, 2.0 * bezel_radius())
+	backdrop.size = Vector2(side, side)
+	backdrop.position = _center() - Vector2(side * 0.5, side * 0.5 + _radius() * BACKDROP_LIFT)
+
+
+## The backdrop's side as a share of the screen's height (§7.2 "≈ 40%") and how far above
+## the wheel's centre it sits (share of the radius).
+const BACKDROP_SCREEN_SHARE := 0.4
+const BACKDROP_LIFT := 0.35
 
 
 ## The ambient clock (T0, `bezel_ambient`: 0..1 over its period) the class ornaments that
@@ -414,6 +458,66 @@ func bezel_radius() -> float:
 ## How far out from the centre a needle's hub reaches (px, its pulse included).
 func needle_reach() -> float:
 	return _radius() + _band() * NEEDLE_HUB_OUT + NEEDLE_HUB_R * maxf(1.0, Motion.amplitude(&"resolve_pulse"))
+
+
+## §6.1: a boss's taped PAPER nameplate above its bezel (its portrait badge and its name in
+## Anton), between the needles' reach and the tag, clear of the nudge arrows: {rect, badge,
+## text, fs} (local), {} for any other wheel or when it has no room.
+func nameplate() -> Dictionary:
+	var c := _shown()
+	if c == null or not is_boss() or defeated():
+		return {}
+	var text := shown_name().to_upper()
+	var font := Palette.display()
+	var side := WheelBezel.BADGE_SIDE
+	var pad := NAMEPLATE_PAD
+	# The room between the arrows' inner edges (they stand at ±ARROW_ANGLE off the top).
+	var arrow_in := (_radius() + ARROW_RADIUS) * sin(deg_to_rad(ARROW_ANGLE)) - ARROW_HIT * maxf(1.0, _ts())
+	var max_w := maxf(side, 2.0 * arrow_in - pad * 2.0)
+	var fs := _fs(UiTheme.LABEL)
+	while fs > UiTheme.CAPTION and side + pad * 4.0 + font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > max_w:
+		fs -= 1
+	var w := minf(max_w, side + pad * 4.0 + font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	var h := maxf(side, fs * NAMEPLATE_LINE) + pad
+	var bottom := _center().y - needle_reach() - WheelBezel.BADGE_GAP
+	var r := Rect2(Vector2(_center().x - w * 0.5, bottom - h), Vector2(w, h))
+	var tag := _intent_rect_local()
+	if tag.has_area() and r.intersects(tag):
+		return {}
+	var badge := Rect2(r.position + Vector2(pad, (h - side) * 0.5), Vector2(side, side))
+	return {"rect": r, "badge": badge, "text": text, "fs": fs}
+
+
+## The nameplate's padding (px) and its lettering's line height (x its size).
+const NAMEPLATE_PAD := 4.0
+const NAMEPLATE_LINE := 1.3
+
+
+func _draw_nameplate(plate: Dictionary) -> void:
+	var r: Rect2 = plate["rect"]
+	var fs := int(plate["fs"])
+	draw_set_transform(r.get_center(), NAMEPLATE_TILT, Vector2.ONE)
+	var local := Rect2(-r.size * 0.5, r.size)
+	draw_rect(Rect2(local.position + Vector2(3, 4), local.size), Palette.SHADOW)
+	draw_rect(local, Palette.PAPER)
+	draw_rect(local, Color(Palette.INK, 0.5), false, 1.0)
+	var tape := Vector2(local.size.y * 0.9, WheelBezel.BADGE_SIDE * 0.35)
+	for sx: float in [-1.0, 1.0]:
+		var at := Vector2(sx * (local.size.x * 0.5 - tape.x * 0.3), local.position.y)
+		draw_set_transform(r.get_center() + at.rotated(NAMEPLATE_TILT), NAMEPLATE_TILT + sx * 0.5, Vector2.ONE)
+		draw_rect(Rect2(-tape * 0.5, tape), Palette.NOTE_TAPE)
+		draw_set_transform(r.get_center(), NAMEPLATE_TILT, Vector2.ONE)
+	var badge: Rect2 = plate["badge"]
+	var b := Rect2(badge.position - r.get_center(), badge.size)
+	WheelBezel.draw_badge(self, b, shown_subject(), look, portrait_texture)
+	var font := Palette.display()
+	var x := b.end.x + NAMEPLATE_PAD * 2.0
+	draw_string(font, Vector2(x, fs * 0.36), String(plate["text"]), HORIZONTAL_ALIGNMENT_LEFT, local.end.x - x - NAMEPLATE_PAD, fs, Palette.INK)
+	draw_set_transform(Vector2.ZERO)
+
+
+## The nameplate's tilt (rad): paper is never square (§2).
+const NAMEPLATE_TILT := -0.03
 
 
 ## Where an enemy's portrait badge hangs above its bezel (local): between the needle reach
@@ -583,6 +687,7 @@ func stop_motion(sync_tag: bool = true) -> void:
 	tag_ticks = {}
 	replay_tag_alpha = 1.0
 	status_flash = {}
+	needle_grow = {}
 	flatline_pop = 1.0  # the DEFEAT stamp itself stays (ANIM-R5 combat 2)
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
@@ -1209,6 +1314,25 @@ func play_phase_needles(ticks: Array) -> void:
 	var tw := _tw(&"pointers")
 	tw.tween_method(_pointer_step.bind(starts, ends), 0.0, 1.0, Motion.seconds(&"pointer_migrate")).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: _end(&"pointers"))
+	# Art pass W3 (§6.1, critique gifs/06): a needle the phase adds draws itself on (from its
+	# hub outward, a ring closing on it) rather than just appearing (`needle_draw`).
+	if Motion.live(&"needle_draw"):
+		var de := Motion.entry(&"needle_draw")
+		for k in range(old.size(), ticks.size()):
+			needle_grow[k] = 0.0
+		var gw := _tw(&"needle_draw")
+		gw.tween_method(_set_needle_grow.bind(old.size(), ticks.size()), 0.0, 1.0, Motion.seconds(&"needle_draw")).set_delay(Motion.delay_of(&"needle_draw")).set_ease(de.ease).set_trans(de.trans)
+		gw.tween_callback(func() -> void: needle_grow = {}; _end(&"needle_draw"); queue_redraw())
+
+
+## A phase's new needles drawing on: needle index -> its growth (0 hub only .. 1 whole).
+var needle_grow: Dictionary = {}
+
+
+func _set_needle_grow(v: float, from: int, to: int) -> void:
+	for k in range(from, to):
+		needle_grow[k] = v
+	queue_redraw()
 
 
 ## Where a replay number of `band` ("hp": damage and heals, above the name; "guard": block,
@@ -1745,6 +1869,8 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_place_backdrop()
 	if what == NOTIFICATION_MOUSE_EXIT:
 		if not _mouse_zone.is_empty():
 			_mouse_zone = {}
@@ -1793,7 +1919,7 @@ const NET_FONT_SIZE := UiTheme.BODY
 
 
 func _radius() -> float:
-	var r := minf(size.x, size.y) * RADIUS_SHARE
+	var r := minf(size.x, size.y) * RADIUS_SHARE * size_scale
 	if left_reserve > 0.0:
 		var avail := size.x - left_reserve
 		r = minf(r, minf(avail * center_x, avail * (1.0 - center_x)) - DISC_MARGIN)
@@ -2007,6 +2133,10 @@ func _draw_view() -> void:
 		var hub := center + dir * (radius + band * NEEDLE_HUB_OUT)
 		var ntip := center + dir * (radius - band * 0.2)
 		var hub_r := NEEDLE_HUB_R * (pulse_scale if pk == pulse_pointer else 1.0)
+		if needle_grow.has(pk):
+			var g := clampf(float(needle_grow[pk]), 0.0, 1.0)
+			ntip = hub.lerp(ntip, g)
+			draw_arc(hub, hub_r + Motion.amplitude(&"needle_draw") * (1.0 - g), 0, TAU, 24, Color(_col(Palette.CELL_ACID), 1.0 - g), 3.0, true)
 		if pk == pulse_pointer:
 			# The needle resolving now: its hub swells and glows.
 			draw_circle(hub, hub_r + 5.0, Color(_col(Palette.CELL_ACID), 0.35))
@@ -2036,10 +2166,14 @@ func _draw_view() -> void:
 		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
-	var badge := badge_rect()
-	if badge.has_area():
-		# Art pass W3 (§6.1, §7.2): the enemy's portrait hangs above its bezel (W5 seam).
-		WheelBezel.draw_badge(self, badge, shown_subject(), look, portrait_texture)
+	var plate := nameplate()
+	if not plate.is_empty():
+		_draw_nameplate(plate)
+	else:
+		var badge := badge_rect()
+		if badge.has_area():
+			# Art pass W3 (§6.1, §7.2): the enemy's portrait hangs above its bezel (W5 seam).
+			WheelBezel.draw_badge(self, badge, shown_subject(), look, portrait_texture)
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
 	if highlighted and combatant.is_alive():

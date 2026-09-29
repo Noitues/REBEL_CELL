@@ -734,6 +734,11 @@ func _input(event: InputEvent) -> void:
 	# open pause menu keeps its presses; the fight's own controls (SEND IT, RESPIN, UNDO, the
 	# hand) keep theirs: a press on them only ends the replay, so the next turn is never
 	# played blind.
+	if boss_intro != null and boss_intro.playing() and MotionSkip.is_press(event):
+		# Art pass W3 (§8 T4): the boss's sting is skippable; the press only ends it.
+		boss_intro.skip()
+		MotionSkip.consume(self, event)
+		return
 	if _skippable():
 		var verdict := MotionSkip.verdict(event, self, replay_keeps())
 		if verdict != MotionSkip.Verdict.IGNORE:
@@ -1184,6 +1189,8 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 		# ANIM-R1 C5f: a new fight's enemies enter from the edge with their names.
 		for v in _enemy_views.values():
 			(v as WheelView).play_enter()
+	if _has_event(events, "combat_start"):
+		_play_boss_intro(state)
 	if sequence:
 		_play_resolve_sequence(before_turn, state, events, discard)
 	elif live and rewind_from != null:
@@ -1634,6 +1641,10 @@ func _build_ui() -> void:
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
 	add_child(fx_layer)
+	# Art pass W3 (§7.2, §8 T4): a boss fight's intro sting, over the arena and the hand.
+	boss_intro = BossIntro.new()
+	boss_intro.name = "BossIntro"
+	add_child(boss_intro)
 	toast = Toast.new()
 	toast.name = "Toast"
 	add_child(toast)
@@ -2735,6 +2746,20 @@ signal motion_settled
 
 ## The overlay the replay draws on (numbers, hit lines, stamps, flights, piles).
 var fx_layer: CombatFxLayer
+## Art pass W3: the boss's intro sting (T4).
+var boss_intro: BossIntro
+
+
+## Art pass W3 (§7.2): a fight with a boss opens with its name slamming in on a taped banner.
+## Returns whether the sting plays.
+func _play_boss_intro(state: CombatState) -> bool:
+	if boss_intro == null:
+		return false
+	for e in state.enemies:
+		var v := _view_of(e.id)
+		if v != null and v.is_boss():
+			return boss_intro.play(v.shown_name().to_upper(), v.wheel_color)
+	return false
 ## Captured before an action goes to the engine (only while motion plays).
 var _before_action: CombatState = null
 var _pending_play: Dictionary = {}
@@ -3792,7 +3817,8 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 	if v == null:
 		return
 	var word := tr("PHASE %d") % (int(b.get("phase_index", 0)) + 1)
-	fx_layer.word_stamp(v.global_center(), word, CHIP_RESIST, Motion.seconds(&"number_float"), v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
+	# Art pass W3 (§6.1, §6.6): held long enough to read (W2's stamp rule).
+	fx_layer.word_stamp(v.global_center(), word, CHIP_RESIST, ZineStamp.hold_seconds(word), v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
 	if int(b.get("behavior", -1)) == RC.PointerBehavior.MULTIPLY:
 		v.play_phase_needles(b.get("ticks", []))
 	for sp in b.get("spawned", []):

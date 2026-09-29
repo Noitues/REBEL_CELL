@@ -90,6 +90,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"banner_gap", &"toggle_slide",
 	&"bezel_ambient",  # art pass W3
 	&"hp_heartbeat",  # art pass W3
+	&"needle_draw",  # art pass W3
+	&"boss_intro",  # art pass W3
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

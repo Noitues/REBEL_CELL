@@ -254,3 +254,77 @@ func test_the_heartbeat_beats_under_a_quarter_and_rests_under_reduce_effects() -
 func test_a_beaten_wheel_dims_to_thirty_percent() -> void:
 	assert_almost_eq(WheelView.DEFEATED_DIM, 0.3, 0.001, "30%")
 	assert_almost_eq(WheelView.FLATLINE_VEIL, 0.7, 0.001, "the operative's disc under DEFEAT")
+
+
+# --- 4. Boss wheels (§6.1, §7.2) -------------------------------------------------------------------
+
+const BOSS := &"civic_core"
+
+
+func test_a_boss_wheel_is_a_fifth_bigger() -> void:
+	var scene := await _combat()
+	var lookup: ContentLookup = scene.engine.resolver.lookup
+	var normal := WheelView.new()
+	var boss := WheelView.new()
+	var holder: Control = add_child_autofree(Control.new())
+	for v in [normal, boss]:
+		holder.add_child(v)
+		(v as WheelView).size = Vector2(700, 900)
+	var s: CombatState = scene.engine.state()
+	normal.show_combatant(s.enemies[0], [] as Array[CombatantState], [] as Array[Dictionary], lookup)
+	var bc := s.enemies[0].duplicate_state()
+	bc.source_id = BOSS
+	bc.display_name = "Civic Core"
+	boss.show_combatant(bc, [] as Array[CombatantState], [] as Array[Dictionary], lookup)
+	assert_true(boss.is_boss(), "the boss is a boss")
+	assert_false(normal.is_boss(), "the agent is not")
+	assert_eq(WheelView.BOSS_SCALE, 1.2, "120%")
+	assert_almost_eq(boss._radius() / normal._radius(), 1.2, 0.001, "120% of a normal wheel in the same room")
+	assert_not_null(boss.backdrop, "a hologram stands behind the boss (W5 seam)")
+	assert_true(boss.backdrop.show_behind_parent, "behind the wheel")
+	assert_null(normal.backdrop, "no hologram behind a normal wheel")
+	var plate := boss.nameplate()
+	assert_false(plate.is_empty(), "a taped nameplate")
+	assert_false((plate["rect"] as Rect2).intersects(boss._intent_rect_local()), "clear of the tag")
+	assert_gte(int(plate["fs"]), UiTheme.CAPTION, "its name at caption or larger")
+	assert_true(normal.nameplate().is_empty(), "no nameplate on a normal wheel")
+	var data := lookup.get_content(BOSS) as EnemyData
+	assert_eq(boss.phase_pips().size(), data.phases.size(), "a pip per phase on the HP arc")
+
+
+func test_the_boss_intro_is_t4_skippable_and_quiet_headless() -> void:
+	assert_eq(VfxTier.of(&"boss_intro"), VfxTier.T4, "T4")
+	assert_lte(Motion.seconds(&"boss_intro"), VfxTier.MAX_SECONDS[VfxTier.T4], "within T4's 2.5 s")
+	var intro: BossIntro = add_child_autofree(BossIntro.new())
+	assert_false(intro.play("CIVIC CORE", Palette.CORP_HALCYON), "headless: nothing plays")
+	assert_false(intro.playing())
+	Motion.force_live = true
+	assert_true(intro.play("CIVIC CORE", Palette.CORP_HALCYON), "it plays with motion")
+	assert_true(intro.playing())
+	intro._step(0.5)
+	assert_gte(intro.font_size(), UiTheme.CAPTION, "its name is display, shrunk only to fit")
+	intro.skip()
+	assert_false(intro.playing(), "a press ends it")
+	var was := Settings.reduce_effects
+	Settings.reduce_effects = true
+	assert_true(intro.play("CIVIC CORE", Palette.CORP_HALCYON), "under reduce effects: a cross-fade")
+	intro._step(0.5)
+	assert_eq(intro.slam, 1.0, "no slam under reduce effects")
+	intro.skip()
+	Settings.reduce_effects = was
+	Motion.force_live = false
+
+
+func test_a_phase_needle_draws_on_and_the_stamp_holds_to_read() -> void:
+	var scene := await _combat()
+	var ev := _enemy_view(scene)
+	Motion.force_live = true
+	ev.play_phase_needles([0, 15])
+	assert_true(ev.needle_grow.has(1), "the new needle draws on")
+	assert_almost_eq(float(ev.needle_grow[1]), 0.0, 0.001, "from its hub")
+	ev.stop_motion()
+	assert_true(ev.needle_grow.is_empty(), "a skip shows it whole")
+	Motion.force_live = false
+	assert_gte(ZineStamp.hold_seconds(tr("PHASE %d") % 2), Motion.seconds(&"stamp_hold"), "the PHASE stamp holds per the stamp rule")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
+	assert_true(src.contains("ZineStamp.hold_seconds(word)"), "the phase stamp's hold is the stamp rule's")
