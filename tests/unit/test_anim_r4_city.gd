@@ -409,7 +409,8 @@ func test_the_raids_top_bar_changes_with_the_line_that_changes_it() -> void:
 			assert_eq(int(e["before"]) + int(e["amount"]), int(e["after"]), "the line's arithmetic holds")
 			assert_string_contains(line, "%d → %d" % [int(e["before"]), int(e["after"])], "it says from and to")
 		if t == "raid_end":
-			assert_eq(_hud_value(hq, "RAIDS"), str(maxi(0, raids_before - 1)), "RAIDS drops with the raid's end line")
+			# ANIM-R6 C11: it drops with the verdict (the playout's end), not the "Raid over" line.
+			assert_eq(_hud_value(hq, "RAIDS"), str(raids_before), "RAIDS holds through the raid's end line")
 	assert_ne(heat_line, "", "a lost raid tells its Heat")
 	assert_string_contains(heat_line, "1 → ", "from Heat 1")
 
