@@ -11,6 +11,81 @@ extends RefCounted
 
 const BASE_SIZE := 15
 
+# --- ART_BIBLE §4.2 type scale ---------------------------------------------------------------
+# Reference pixels at the 1280x720 base viewport, before Settings.text_scale. Every size a
+# view uses comes from a step through font_px() (§4.3 rule 1: a literal size is a bug).
+## Legend rows, keybind hints, tertiary meta. The floor: nothing the player reads is smaller.
+const CAPTION := 12
+## Default glass text, list rows, card rules text.
+const BODY := BASE_SIZE
+## Emphasised rows, chip text, button labels, forecast lines.
+const LABEL := 18
+## Panel titles, section headings.
+const TITLE := 22
+## Screen titles, stamp words, HP numbers.
+const HEADING := 30
+## Big numbers (Heat on the poster), verdict banners.
+const DISPLAY := 44
+## Verb graffiti (SEND IT), VICTORY, FLATLINED, campaign verdicts (the hero range runs to
+## HERO_MAX).
+const HERO := 64
+const HERO_MAX := 96
+## Every step, smallest first.
+const STEPS: Array[int] = [CAPTION, BODY, LABEL, TITLE, HEADING, DISPLAY, HERO]
+## Line height per step, as a multiple of the font size (§4.2).
+const LINE_HEIGHT := {CAPTION: 1.3, BODY: 1.4, LABEL: 1.25, TITLE: 1.2, HEADING: 1.1, DISPLAY: 1.0, HERO: 1.0}
+## Tracking (§4.2), as a fraction of the font size: Anton +2%, Share Tech Mono CAPS labels
+## +8%, everything else default (0).
+const TRACKING_DISPLAY := 0.02
+const TRACKING_MONO_CAPS := 0.08
+const TRACKING_DEFAULT := 0.0
+
+# --- ART_BIBLE §5.1 spacing ------------------------------------------------------------------
+# An 8 px grid with a 4 px half-step; reference pixels at 1280x720 (they scale with the
+# viewport through the stretch mode, not with text_scale).
+const SP_XS := 4
+const SP_S := 8
+const SP_M := 16
+const SP_L := 24
+const SP_XL := 32
+const SP_XXL := 48
+## The screen safe margin at 1280x720 (TV-safe mode is 5% of the viewport, W9).
+const SAFE_MARGIN := 24
+## Panel content padding, horizontal and vertical.
+const PANEL_PAD_H := 16
+const PANEL_PAD_V := 12
+## The gutter between panels.
+const GUTTER := 16
+## Every spacing token, smallest first.
+const SPACING: Array[int] = [SP_XS, SP_S, SP_M, SP_L, SP_XL, SP_XXL]
+
+
+## The pixel size of type step `step` (e.g. UiTheme.TITLE) at the player's text scale.
+static func font_px(step: int) -> int:
+	return font_px_at(step, Settings.text_scale)
+
+
+## The pixel size of type step `step` at text scale `scale` (pure; any scale up to 2.0).
+static func font_px_at(step: int, scale: float) -> int:
+	return roundi(step * scale)
+
+
+## The line height multiple for type step `step` (§4.2); 1.0 for a size off the scale.
+static func line_height(step: int) -> float:
+	return LINE_HEIGHT.get(step, 1.0)
+
+
+## Extra line spacing (px) that brings `font` at `px` to the step's line height, for
+## Label/RichTextLabel `line_spacing` (negative when the face's own height is taller).
+static func line_spacing_px(font: Font, step: int, px: int) -> int:
+	return roundi(px * line_height(step) - font.get_height(px))
+
+
+## Tracking in pixels for a tracking fraction (TRACKING_*) at `px`, for
+## FontVariation.spacing_glyph.
+static func tracking_px(tracking: float, px: int) -> int:
+	return roundi(px * tracking)
+
 
 static func build(text_scale: float = 1.0) -> Theme:
 	var t := Theme.new()
@@ -27,7 +102,7 @@ static func build(text_scale: float = 1.0) -> Theme:
 	t.set_color("font_shadow_color", "Label", Color(0, 0, 0, 0.6))
 	t.set_constant("shadow_offset_x", "Label", 1)
 	t.set_constant("shadow_offset_y", "Label", 1)
-	_buttons(t)
+	_buttons(t, text_scale)
 	_menu_item(t, size)
 	_fields(t)
 	_panels(t)
@@ -35,9 +110,37 @@ static func build(text_scale: float = 1.0) -> Theme:
 	var header := "HeaderLabel"
 	t.set_type_variation(header, "Label")
 	t.set_font(&"font", header, Palette.mono())
-	t.set_font_size(&"font_size", header, roundi(22 * text_scale))
+	t.set_font_size(&"font_size", header, font_px_at(TITLE, text_scale))
 	t.set_color(&"font_color", header, Palette.PAPER)
+	_body_text(t, text_scale)
 	return t
+
+
+## The theme type variation for body text (ART_BIBLE §4.1/§4.2): set
+## `theme_type_variation = UiTheme.BODY_TEXT` on a Label or a RichTextLabel.
+const BODY_TEXT := &"BodyText"
+
+
+## "BodyText": Plex Sans Condensed at font_px(BODY) with the body line height (1.4), TEXT_HI
+## on dark. One variation serves Label (font, font_size, font_color, line_spacing) and
+## RichTextLabel (normal/bold fonts and sizes, default_color, line_separation); its own
+## empty "normal" box keeps either from inheriting the other's.
+static func _body_text(t: Theme, text_scale: float) -> void:
+	var v := BODY_TEXT
+	t.set_type_variation(v, &"Label")
+	var px := font_px_at(BODY, text_scale)
+	var spacing := line_spacing_px(Palette.body(), BODY, px)
+	t.set_stylebox(&"normal", v, StyleBoxEmpty.new())
+	t.set_font(&"font", v, Palette.body())
+	t.set_font_size(&"font_size", v, px)
+	t.set_color(&"font_color", v, Palette.TEXT_HI)
+	t.set_constant(&"line_spacing", v, spacing)
+	t.set_font(&"normal_font", v, Palette.body())
+	t.set_font(&"bold_font", v, Palette.body_medium())
+	for key in [&"normal_font_size", &"bold_font_size", &"italics_font_size", &"bold_italics_font_size"]:
+		t.set_font_size(key, v, px)
+	t.set_color(&"default_color", v, Palette.TEXT_HI)
+	t.set_constant(&"line_separation", v, spacing)
 
 
 ## A terminal box: deep glass, thin edge, square corners.
@@ -55,7 +158,7 @@ static func box(bg: Color, edge: Color, border: int = 1, margin_h: float = 10, m
 	return s
 
 
-static func _buttons(t: Theme) -> void:
+static func _buttons(t: Theme, text_scale: float) -> void:
 	var normal := box(Palette.TERMINAL_BG, Palette.TERMINAL_EDGE)
 	var hover := box(Palette.TERMINAL_BG_HOT, Palette.CELL_PINK)
 	hover.shadow_color = Color(Palette.CELL_PINK, 0.35)
@@ -103,7 +206,8 @@ static func _buttons(t: Theme) -> void:
 	t.set_color("font_focus_color", hv, Palette.INK)
 	t.set_color("font_pressed_color", hv, Palette.INK)
 	t.set_font("font", hv, Palette.display())
-	t.set_font_size("font_size", hv, 22)
+	# §4.3.1: the HotButton's title size scales with the text like every other size.
+	t.set_font_size("font_size", hv, font_px_at(TITLE, text_scale))
 	# "NoteButton": a choice on a taped paper note (Terminal event options).
 	var nv := "NoteButton"
 	t.set_type_variation(nv, "Button")

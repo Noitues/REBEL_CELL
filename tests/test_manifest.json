@@ -93,6 +93,10 @@
 			"seconds": 25.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art_w1_tokens.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_anim_r1_campaign.gd": {
 			"seconds": 20.0,
 			"tier": "full"
