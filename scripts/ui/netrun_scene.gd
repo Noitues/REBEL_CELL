@@ -118,6 +118,7 @@ func _ready() -> void:
 	# Subtitles sit in the top band, clear of every control (H20); combat docks its own.
 	Dialogue.dock_default()
 	Settings.hints_changed.connect(_relabel_route)
+	Settings.hints_changed.connect(_reword_tips)  # art pass W8c: tips follow the device
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	_build_ui()
@@ -2036,7 +2037,7 @@ func _show_reward() -> void:
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		# H24 S17: the whole text on hover and, for a pad or keyboard, on focus (FocusTip).
 		var drag_kind := String({"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer["kind"]), ""))
-		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + tr(String(DRAG_TIPS[drag_kind])) if drag_kind != "" else ""))
+		_input_tip(sticker, loot_tip(res), drag_kind)
 		FocusTip.attach(sticker)
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected() if slot_option != null else -1))
@@ -2551,8 +2552,8 @@ func _show_shop() -> void:
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(chip_text_scale(ts))
 			elif kind == "daemons":
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(chip_text_scale(ts))
-			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
-				+ "\n" + tr(String(DRAG_TIPS[{"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]])))
+			_input_tip(sticker, tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles],
+				String({"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]))
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			# H23 S8: a clear buy button on every item, and the whole text on focus.
 			sticker.with_buy(TextDb.mark("BUY"))
@@ -2641,9 +2642,9 @@ func _show_shop() -> void:
 			# picked before anything is paid, and the tip names the pricier slot.
 			tile.with_price(low)
 		# H23 S8: the real prices (the slot you overwrite sets it), said in words.
-		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
-			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
-			+ "\n" + tr(String(DRAG_TIPS["slice"])))
+		_input_tip(tile, tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
+			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd),
+			"slice")
 		tile.with_buy(TextDb.mark("BUY"))
 		tile.buy_button.have = s.run.cycles  # art pass W8c
 		FocusTip.attach(tile)
@@ -2930,7 +2931,7 @@ func open_overwrite(stock_index: int) -> void:
 		chip.slice_output = sd.base_output
 		chip.hotkey = ""
 		chip.custom_minimum_size = Vector2(SpinnerView.SIDE_W, SLICE_TILE.y * tile_growth(Settings.text_scale))
-		chip.tooltip_text = UiTip.fold(tr("Drag it onto a slot to overwrite that slot (or press it, then pick the slot)."))
+		_input_tip(chip, "", "install")
 		view.enable_drops(_modal_layer(view), chip, _item_payload("slice", "modal", stock_index, sd.id))
 
 
@@ -3013,7 +3014,7 @@ func _show_raid() -> void:
 			var sid := site_id
 			var withdraw := _button(tr("Withdraw %s") % _content_name(deployed[i]), func() -> void: raid_move(sid, idx, &""))
 			withdraw.name = "Withdraw_%s_%d" % [sid, idx]
-			withdraw.tooltip_text = UiTip.fold(tr("Back to the Armory. Or drag it onto another node's row to move it there."))
+			_input_tip(withdraw, tr("Back to the Armory."), "withdraw")
 			row.add_child(withdraw)
 		if c.grid.is_active_node(site_id) and deploy_pick != null:
 			# Art pass W8c: one button per row deploys the picked asset (DeployPick).
@@ -3154,7 +3155,7 @@ func _asset_chip(chip_name: String, asset: StringName) -> Button:
 	b.theme_type_variation = &"NoteButton"
 	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	b.text = _content_name(asset)
-	b.tooltip_text = UiTip.fold(tr("Drag it onto a node's row to deploy it there (or press it, then pick the row)."))
+	_input_tip(b, "", "asset")
 	return b
 
 
@@ -3245,6 +3246,56 @@ const DRAG_TIPS := {"card": "Or drag it onto the CARDS tag: the card goes into y
 	"chip": "Or drag it onto a slot of your spinner: the chip goes into that slot.", # TR
 	"daemon": "Or drag it onto the DAEMONS icon: the Daemon is installed.", # TR
 	"slice": "Or drag it onto a slot of your spinner: the slice overwrites that slot."} # TR
+
+## Art pass W8c (ART_BIBLE 6.8, 12; W9's audit, netrun_scene "Or drag it..."): the same tips
+## for a pad player (never "click" or "drag": the pick-up button carries the item, the
+## D-pad aims, A drops), and the tips the other drag items carry, both ways.
+const DRAG_TIPS_PAD := {"card": "Or pick it up and move it onto the CARDS tag: the card goes into your deck.", # TR
+	"chip": "Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.", # TR
+	"daemon": "Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.", # TR
+	"slice": "Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.", # TR
+	"install": "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).", # TR
+	"withdraw": "Or pick it up and move it onto another node's row to move it there.", # TR
+	"asset": "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).", # TR
+	"spinner": "Move a microchip or a slice onto a slot to put it there."} # TR
+const DRAG_TIPS_MORE := {"install": "Drag it onto a slot to overwrite that slot (or press it, then pick the slot).", # TR
+	"withdraw": "Or drag it onto another node's row to move it there.", # TR
+	"asset": "Drag it onto a node's row to deploy it there (or press it, then pick the row).", # TR
+	"spinner": "Drag a microchip or a slice onto a slot to put it there."} # TR
+## The metas an input-aware tip keeps (its words before the drag line, the drag kind).
+const TIP_BASE_META := &"tip_base"
+const TIP_KIND_META := &"tip_drag_kind"
+
+
+## Art pass W8c: `c`'s tooltip: `base` then the drag line of `kind` in the device's words
+## (UiTip.for_input), folded; kept on `c` so a device change rewords it.
+func _input_tip(c: Control, base: String, kind: String) -> void:
+	c.set_meta(TIP_BASE_META, base)
+	c.set_meta(TIP_KIND_META, kind)
+	c.tooltip_text = input_tip_text(base, kind)
+
+
+## The words of an input-aware tip for the device in use.
+func input_tip_text(base: String, kind: String) -> String:
+	var line := ""
+	if kind != "":
+		var mouse := String(DRAG_TIPS.get(kind, DRAG_TIPS_MORE.get(kind, "")))
+		line = UiTip.for_input(tr(mouse), tr(String(DRAG_TIPS_PAD.get(kind, ""))))
+	var parts := PackedStringArray()
+	for w in [base, line]:
+		if w != "":
+			parts.append(w)
+	return UiTip.fold("\n".join(parts))
+
+
+## Rewords every input-aware tip on the page (the device changed).
+func _reword_tips() -> void:
+	if _panel == null or not is_instance_valid(_panel):
+		return
+	for n in _panel.find_children("*", "Control", true, false):
+		if n.has_meta(TIP_KIND_META):
+			(n as Control).tooltip_text = input_tip_text(String(n.get_meta(TIP_BASE_META)), String(n.get_meta(TIP_KIND_META)))
+
 
 ## The run's drop layer (over every page) and the pad prompts of the page on show (kept, so
 ## a carry can swap them and put them back).
@@ -3358,7 +3409,7 @@ func _spinner_mini() -> SpinnerMini:
 	for k in op.slot_slice_ids.size():
 		tips.append(slot_name(op, k))
 	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
-	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag a microchip or a slice onto a slot to put it there."))
+	_input_tip(mini, tr("Your spinner."), "spinner")
 	return mini
 
 
@@ -3424,7 +3475,7 @@ func _register_event_drops(ev: TerminalEventData, options: Control) -> void:
 			continue
 		var p := _item_payload(kind, "event", i, (ev.choices[i].reward as Resource).get("id"))
 		drops.add_source(b, p)
-		b.tooltip_text += "\n" + tr(String(DRAG_TIPS.get(kind, "")))
+		_input_tip(b, b.tooltip_text, kind)
 		any = true
 	if any:
 		_add_bar_targets(["card"], ["daemon"])

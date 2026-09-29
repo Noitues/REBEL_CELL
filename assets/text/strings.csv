@@ -2887,3 +2887,18 @@ The asset a row's Deploy here puts on its node.,The asset a row's Deploy here pu
 empty: drop a placed asset here,empty: drop a placed asset here
 HOME FELL,HOME FELL
 JACKED OUT,JACKED OUT
+Drag a microchip or a slice onto a slot to put it there.,Drag a microchip or a slice onto a slot to put it there.
+Move a microchip or a slice onto a slot to put it there.,Move a microchip or a slice onto a slot to put it there.
+Or drag it onto another node's row to move it there.,Or drag it onto another node's row to move it there.
+Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.,Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.
+Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.,Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.
+Or pick it up and move it onto another node's row to move it there.,Or pick it up and move it onto another node's row to move it there.
+Or pick it up and move it onto the CARDS tag: the card goes into your deck.,Or pick it up and move it onto the CARDS tag: the card goes into your deck.
+Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.,Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.
+"Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
+"Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
+Your spinner.,Your spinner.
+asset,asset
+install,install
+spinner,spinner
+withdraw,withdraw

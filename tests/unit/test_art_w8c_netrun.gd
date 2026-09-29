@@ -614,3 +614,59 @@ func test_flatlined_is_a_skippable_t4_and_ends_at_once_under_reduce_effects() ->
 	assert_eq(stage.stamp.modulate.a, 1.0)
 	Settings.set_reduce_effects(false)
 	await _close(scene)
+
+
+# --- 7. Words and input ---------------------------------------------------------------------------
+
+func _tips(root: Node) -> PackedStringArray:
+	var out := PackedStringArray()
+	for n in _all(root):
+		if n is Control and (n as Control).tooltip_text != "":
+			out.append((n as Control).tooltip_text)
+	return out
+
+
+func test_tips_never_say_click_or_drag_to_a_pad_player() -> void:
+	var scene := _netrun()
+	_shop(scene, 999)
+	await _frames(3)
+	var mouse_said := false
+	for t in _tips(scene._panel):
+		mouse_said = mouse_said or UiTip.has_mouse_words(t)
+	assert_true(mouse_said, "a mouse player reads the drag line")
+	Settings.set_pad_active(true)
+	await _frames(2)
+	for t in _tips(scene._panel):
+		assert_false(UiTip.has_mouse_words(t), "no mouse words for a pad: '%s'" % t.replace("\n", " "))
+	_loot(scene)
+	await _frames(3)
+	for t in _tips(scene._panel):
+		assert_false(UiTip.has_mouse_words(t), "loot, pad: '%s'" % t.replace("\n", " "))
+	for k in scene.DRAG_TIPS_PAD:
+		assert_false(UiTip.has_mouse_words(String(scene.DRAG_TIPS_PAD[k])), "the pad words for %s" % k)
+	await _close(scene)
+
+
+func test_the_daemon_tray_card_never_repeats_its_title() -> void:
+	var scene := _netrun()
+	await _frames(2)
+	var op := RunManager.netrun.run.operative
+	op.daemon_ids.append(&"twin_pointer")
+	scene._refresh_status()
+	scene.open_daemons()
+	await _frames(2)
+	var tray := scene.get_node("DaemonTray") as DaemonTray
+	tray.show_card(&"twin_pointer", true)
+	await _frames(1)
+	var d := RunManager.lookup().get_content(&"twin_pointer") as DaemonData
+	var text := (tray.find_child("DaemonText", true, false) as Label).text
+	assert_false(text.to_lower().contains(TextDb.t(d, "display_name").to_lower()), "the card's words don't repeat the title: '%s'" % text)
+	tray.close()
+	await _close(scene)
+
+
+func test_no_status_glyph_fonts_in_w8c_files() -> void:
+	for p in ["res://scripts/ui/netrun_scene.gd", "res://scripts/ui/kit/buy_button.gd", "res://scripts/ui/kit/modem_sign.gd",
+			"res://scripts/ui/kit/daemon_row.gd", "res://scripts/ui/kit/daemon_tray.gd", "res://scripts/ui/kit/event_held_mark.gd",
+			"res://scripts/ui/kit/flight_fx.gd"]:
+		assert_false(FileAccess.get_file_as_string(p).contains("STATUS_GLYPHS"), "%s draws status icons with StatIcon" % p)
