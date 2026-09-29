@@ -1380,11 +1380,13 @@ func _boss_phase_feedback(state: CombatState) -> void:
 	AudioDirector.play_sfx("alarm")
 	if Motion.live(&"boss_phase_flash") and fx_layer != null:
 		# Art pass W6 (ART_BIBLE 8): a T3 ring on the boss's own wheel, never the screen.
-		var hue := Palette.corp_color(RunManager.campaign.corporation_id) if RunManager.campaign != null else Palette.CORP_SOLACE
 		for boss in state.enemies:
 			var bv: WheelView = _view_of(boss.id) if boss.phase_index > 0 else null
 			if bv != null:
-				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, hue)
+				# Art pass W3 with W6 (§3.6): the boss's own corp hue and pattern, so the phase
+				# burst reads without colour.
+				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, bv.wheel_color,
+					int(bv.look.get("pattern", CorpPattern.Kind.NONE)))
 	_bark("boss", state)
 
 
@@ -3963,6 +3965,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 			# hit's equation has been read), fresh, then travels.
 			fx_layer.travel_number(n["at"], tv.hp_counter_spot(), n["text"], n["color"], n["crit"], int(n["fs"]), String(n["band"]),
 				_hp_arrives.bind(tv, hp_after), impact + float(n.get("after", 0.0)))
+			_retag_hit_vfx(b, before, n, impact + float(n.get("after", 0.0)))
 			if String(n.get("sub", "")) != "":
 				var sfs := maxi(UiTheme.CAPTION, roundi(int(n["fs"]) * SUB_SHARE))
 				var nw := Palette.display().get_string_size(String(n["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(n["fs"])).x
@@ -3977,6 +3980,49 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 			_after(impact, tv.set_sat_hp.bind(target, hp_after))
 		elif not hp_waits:
 			_after(impact, tv.play_hp.bind(float(hp_after)))
+
+
+## Art pass W3 with W6 (§8): the hit shape where a travelling number lands is the attacker's
+## own slice's (slice_hit's kind: a CRIT shatters, an ATTACK slashes, a corruption crawls),
+## sized by the damage (HIT_SIZE_*), in place of the plain slash the travelling number gets.
+func _retag_hit_vfx(b: Dictionary, before: CombatState, n: Dictionary, delay: float) -> void:
+	var kind := hit_kind_for(b, before)
+	var at: Vector2 = n["at"]
+	for i in range(fx_layer.sprites.size() - 1, -1, -1):
+		var s: Dictionary = fx_layer.sprites[i]
+		if String(s["kind"]) == "hitfx" and (s["at"] as Vector2).is_equal_approx(at) and is_equal_approx(float(s.get("delay", 0.0)), delay):
+			fx_layer.sprites.remove_at(i)
+			break
+	fx_layer.hit_vfx(at, kind, Palette.AUTO, delay, hit_size(int(b["amount"])))
+
+
+## The hit shape of beat `b` (CombatFxLayer HIT_*): its attacker's landed slice's, a crit's
+## glass, a corruption's glitch, a heal's plus signs.
+func hit_kind_for(b: Dictionary, before: CombatState) -> StringName:
+	match String(b["kind"]):
+		"corrupted":
+			return CombatFxLayer.HIT_AFFLICT
+		"heal":
+			return CombatFxLayer.HIT_HEAL
+	var src := before.get_combatant(StringName(String(b["source"]))) if before != null else null
+	var slot := int(b.get("source_slot", -1))
+	var type := RC.SliceType.ATTACK
+	if src != null and slot >= 0 and slot < src.wheel.slot_slice_ids.size():
+		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
+		if slice != null:
+			type = slice.slice_type
+	return CombatFxLayer.hit_kind(type, bool(b.get("crit", false)))
+
+
+## A hit shape's size for `amount` damage: HIT_SIZE_MIN .. HIT_SIZE_MAX of its reach, full size
+## at HIT_SIZE_REF (the attack slash was thin at its peak for a big hit).
+static func hit_size(amount: int) -> float:
+	return clampf(HIT_SIZE_MIN + float(amount) / HIT_SIZE_REF, HIT_SIZE_MIN, HIT_SIZE_MAX)
+
+
+const HIT_SIZE_MIN := 0.8
+const HIT_SIZE_MAX := 1.8
+const HIT_SIZE_REF := 20.0
 
 
 ## A number reached `v`'s HP counter: the HP rolls to `hp` with the white lag bar, and a
@@ -4042,6 +4088,8 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	AudioDirector.play_precision(tier, is_miss)
 	if is_miss:
 		v.play_miss_static(slot)
+		# Art pass W3 with W6 (§8): a Miss lands as static on its slice.
+		fx_layer.hit_vfx(v.slot_spot(slot), CombatFxLayer.HIT_MISS)
 		_bark("miss", s)
 	elif tier == RC.PrecisionTier.PERFECT:
 		_perfect_feedback(v)

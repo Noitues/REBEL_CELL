@@ -593,3 +593,40 @@ func test_a_respin_settles_and_the_turn_start_moves_one_thing_at_a_time() -> voi
 			assert_gte(float(sch["deal_at"]), float(sch["spin_start"]) + WheelView.turn_seconds(&"wheel_respin", RC.TICKS * scene.SPIN_TICKS_TYPICAL) - 0.001, "then the hand redeals")
 	scene.skip_motion()
 	Motion.force_live = false
+
+
+# --- 10. W6 wiring ----------------------------------------------------------------------------------
+
+func test_a_miss_lands_as_static_and_hits_wear_their_slice() -> void:
+	var scene := await _combat()
+	Motion.force_live = true
+	var s: CombatState = scene.engine.state()
+	var miss := -1
+	for i in s.player.wheel.slot_slice_ids.size():
+		var sl := scene.engine.content(s.player.wheel.slot_slice_ids[i]) as SliceData
+		if sl != null and sl.slice_type == RC.SliceType.MISS:
+			miss = i
+	assert_gte(miss, 0, "the Breaker has a MISS slice")
+	scene._land({"source": s.player.id, "pointer_index": 0, "slot": miss, "tier": RC.PrecisionTier.GOOD}, s)
+	assert_true(scene.fx_layer.hit_kinds_playing().has(CombatFxLayer.HIT_MISS), "Miss static fires")
+	scene.skip_motion()
+	var corrupt := _beat(s.player.id, s.player.id, 3, 3, 0, s.player.hp - 3)
+	corrupt["kind"] = "corrupted"
+	assert_eq(scene.hit_kind_for(corrupt, s), CombatFxLayer.HIT_AFFLICT, "a corruption's self-damage crawls, never a slash")
+	assert_gt(scene.hit_size(24), scene.hit_size(3), "a bigger hit, a bigger shape")
+	Motion.force_live = false
+
+
+func test_the_hit_shake_and_flash_keep_to_t2() -> void:
+	var scene := await _combat()
+	Motion.force_live = true
+	var pv: WheelView = scene._player_view
+	pv.play_hit()
+	assert_lte(pv.hit_flash_alpha, VfxTier.MAX_FLASH_ALPHA[VfxTier.T2] + 0.0001, "a local flash within T2")
+	assert_lte(Fx.shake_px(&"hit_shake"), VfxTier.MAX_SHAKE_PX[VfxTier.T2] + 0.0001, "a shake within T2")
+	pv.stop_motion()
+	var src := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
+	assert_false(src.contains("Motion.shake(self, &\"hit_shake\""), "the shake goes through Fx.shake_px")
+	var cs := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
+	assert_true(cs.contains("int(bv.look.get(\"pattern\", CorpPattern.Kind.NONE)))"), "the phase burst carries the boss corp's pattern")
+	Motion.force_live = false

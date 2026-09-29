@@ -1368,14 +1368,34 @@ func play_enter() -> void:
 
 ## A hit arrives in the HP counter: the disc flashes (`hit_flash`) and shakes (`hit_shake`;
 ## no shake under reduce effects: Motion shows the rest state then).
+## Art pass W3 with W6 (§8 T2): the flash asks the one flash limiter (Fx.request_flash) and
+## is held to T2's alpha; the shake is Fx.shake_px's (T2: at most 2 px; none under reduce
+## effects).
 func play_hit() -> void:
 	if not Motion.live(&"hit_flash"):
 		return
-	var e := Motion.entry(&"hit_flash")
-	var tw := _tw(&"hit")
-	tw.tween_method(func(v: float) -> void: hit_flash = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"hit_flash")).set_ease(e.ease).set_trans(e.trans)
-	tw.tween_callback(func() -> void: hit_flash = 0.0; _end(&"hit"))
-	Motion.shake(self, &"hit_shake", ^"shake")
+	if Fx.request_flash():
+		hit_flash_alpha = VfxTier.clamp_alpha(VfxTier.of(&"hit_flash"), Motion.amplitude(&"hit_flash"))
+		var e := Motion.entry(&"hit_flash")
+		var tw := _tw(&"hit")
+		tw.tween_method(func(v: float) -> void: hit_flash = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"hit_flash")).set_ease(e.ease).set_trans(e.trans)
+		tw.tween_callback(func() -> void: hit_flash = 0.0; _end(&"hit"))
+	var px := Fx.shake_px(&"hit_shake")
+	if px <= 0.0 or not Motion.live(&"hit_shake"):
+		return
+	var se := Motion.entry(&"hit_shake")
+	var step := Motion.seconds(&"hit_shake") / Motion.SHAKE_STEPS
+	var sw := _tw(&"hit_shake")
+	var at := Vector2.ZERO
+	for i in Motion.SHAKE_STEPS:
+		var to := Vector2.ZERO if i == Motion.SHAKE_STEPS - 1 else Vector2(px if i % 2 == 0 else -px, 0.0)
+		sw.tween_method(func(v: Vector2) -> void: shake = v; queue_redraw(), at, to, step).set_ease(se.ease).set_trans(se.trans)
+		at = to
+	sw.tween_callback(func() -> void: shake = Vector2.ZERO; _end(&"hit_shake"))
+
+
+## The hit flash's peak alpha (its entry's amplitude held to its tier).
+var hit_flash_alpha: float = 0.0
 
 
 ## A boss phase set new needles (MULTIPLY): they fan out from the first old needle to
@@ -2287,7 +2307,7 @@ func _draw_view() -> void:
 	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
 	if hit_flash > 0.0:
 		# A hit landed in the HP counter: the disc flashes.
-		draw_circle(center, radius, _col(Color(LOSS_COLOR, hit_flash * Motion.amplitude(&"hit_flash"))))
+		draw_circle(center, radius, _col(Color(LOSS_COLOR, hit_flash * hit_flash_alpha)))
 	if wheel.has_inner_ring():
 		var ring_r := inner - 12
 		var irot := shown_inner_rotation()
