@@ -350,7 +350,7 @@ They are listed here so none is silently lost. Raise them as a later pass if you
 |---|---|---|---|
 | 0 | Branch + baseline | `art-pass` | done: the baseline is green (1094 tests) at 8ddfa86 + docs |
 | 1 | W1, W10 | `art/w1-foundation`, `art/w10-visual-qa` | **merged** into art-pass (1146 tests green); review folders W1/ and W10/ |
-| 2 | W2, W4, W6, W9s | `art/w6-vfx` | W6 **merged** (started early, alongside wave 1); W2, W4 and W9s next |
+| 2 | W2, W4, W6, W9s | `art/w6-vfx` | W6 **merged** (started early, alongside wave 1); W2 (`art/w2-components`), W4 (`art/w4-cards`) and W9s (`art/w9-settings`) running |
 | 3 | W3, W5, W7 | — | not started |
 | 4 | W8a–d | — | not started |
 | 5 | W9 sweep, W10 full | — | not started |
