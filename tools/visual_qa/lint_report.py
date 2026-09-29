@@ -119,7 +119,7 @@ def derived_sizes(ts: float) -> set[int]:
 
 def lint_screen(data: dict, png: Path) -> dict:
     ts = float(data.get("text_scale", 1.0))
-    floor = FLOOR * ts
+    floor = round(FLOOR * ts)  # the caption step as UiTheme rounds it (19 at 1.6)
     img = Image.open(png).convert("RGB") if png.exists() else None
     ok_sizes = derived_sizes(ts)
     items = [c for c in data.get("controls", [])
@@ -141,7 +141,7 @@ def lint_screen(data: dict, png: Path) -> dict:
         where = {"path": c["path"], "text": c["text"][:60], "owner": c.get("owner_script", "")}
         px = min(float(c["font_px"]), float(c.get("screen_px", c["font_px"])))
         if px < floor - 0.01:
-            found["font"].append(dict(where, why="%.1f px < %.1f floor" % (px, floor)))
+            found["font"].append(dict(where, why="%.1f px < %d px floor" % (px, floor)))
         if c.get("override", -1) >= 0 and c["override"] not in ok_sizes:
             found["font"].append(dict(where, why="font_size override %d is not a §4.2 step x %.1f" % (c["override"], ts)))
         whys = []
