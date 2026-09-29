@@ -82,6 +82,12 @@ const AWAITING_FIX := {
 }
 ## Game time a demo gets to read its entry (at SPEED), s.
 const DEMO_LIMIT := 12.0
+## ANIM-R6: frames a demo gets at least, beyond the lab's own context settle (a netrun or
+## HQ demo waits CONTEXT_SETTLE + CONTEXT_BAKE_FRAMES frames before it acts, and the
+## fight_won demo then plays a whole SEND IT): under a loaded shard those frames' game time
+## ran past DEMO_LIMIT first (combat_end_hold's demo failed 2 runs in 3). The wait returns as
+## soon as the entry is read, so only a demo that misses pays for them.
+const DEMO_EXTRA_FRAMES := 240
 ## Demos play at this speed (the lab's own speed control).
 const SPEED := Motion.SPEED_MAX
 
@@ -157,7 +163,9 @@ func test_every_lab_demo_exercises_its_own_entry() -> void:
 	await get_tree().process_frame
 	Motion.set_speed(SPEED)
 	var sources := _game_sources()
-	var demos: Dictionary = (load(LAB_SCRIPT) as GDScript).get_script_constant_map()["DEMOS"]
+	var lab_consts := (load(LAB_SCRIPT) as GDScript).get_script_constant_map()
+	var demos: Dictionary = lab_consts["DEMOS"]
+	var min_frames := int(lab_consts["CONTEXT_SETTLE"]) + int(lab_consts["CONTEXT_BAKE_FRAMES"]) + DEMO_EXTRA_FRAMES
 	var bad: Array[String] = []
 	var cfg := Motion.config()
 	# ANIM-R6 D3: every entry read and every `live` asked across all the demos.
@@ -179,7 +187,7 @@ func test_every_lab_demo_exercises_its_own_entry() -> void:
 		Motion.reads.clear()
 		lab.set("_id", id)
 		lab.call("_play")
-		var ok := await BoundedWait.until(get_tree(), func() -> bool: return _exercised(id, stand_in), DEMO_LIMIT)
+		var ok := await BoundedWait.until(get_tree(), func() -> bool: return _exercised(id, stand_in), DEMO_LIMIT, min_frames)
 		var readers := Motion.readers(id)
 		if not ok:
 			bad.append("%s (%s %s): read by %s" % [id, kind, demo[1], readers])

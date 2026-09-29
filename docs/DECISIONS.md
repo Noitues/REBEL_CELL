@@ -619,6 +619,12 @@ unless named.
   a loaded shard ate the hold. Fx now measures the line itself (`last_connect_shown`, wall
   time from showing to going) and the test reads that (fix agent C's test file: that
   assertion only).
+- **The lab-demo check under load.** After the combat merge, `combat_end_hold`'s new netrun
+  demo (fight_won: a netrun, its city's settle frames, a whole SEND IT) missed its read in
+  2 of 3 full runs (passing alone once): its wait counted game time only, and a loaded
+  shard's slow frames used the 12 s up before the lab's frame-counted context settle
+  (`CONTEXT_SETTLE` + `CONTEXT_BAKE_FRAMES`) had run. The wait now also allows those frames
+  plus 240 (`DEMO_EXTRA_FRAMES`); it still returns as soon as the entry is read.
 
 #### 2026-09-29 — Animation pass — ANIM-R6 combat
 The sixth fix batch of the Animation pass review, combat part (A1-A19 of fix agent A, from the
