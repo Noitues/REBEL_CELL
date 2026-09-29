@@ -3095,7 +3095,7 @@ func icon_row_items() -> Array[Dictionary]:
 	if hit <= 0 and hp == 0:
 		return out
 	var through := maxi(0, hit - soaked - evaded)
-	if hit > 0 and (soaked > 0 or evaded > 0):
+	if hit > 0:
 		out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
 		if soaked > 0:
 			out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
