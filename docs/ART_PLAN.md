@@ -297,34 +297,34 @@ Every brief uses the template in `docs/ART_ORCHESTRATOR_PROMPT.md`, plus these s
 
 | # | Finding (VISUAL_CRITIQUE ref) | Status now | Workstream |
 |---|---|---|---|
-| 1 | Full-screen Perfect / P3 flashes (`gifs/02`, `gifs/25`) | Open | W6 + W3 |
-| 2 | Preview lost on mouse drag; hover lift (`31`, strip 04) | Open | W3 (+ W4 API) |
-| 3 | Net numbers, "42⁶42", overkill (`37`, `38`, `47`) | Partial | W3 |
-| 4 | HP colour scale, ghost, top-bar mismatch (`47`, `49`, `50`) | Partial | W3 (+ W1 helper) |
-| 5 | Forecast split: "YOU TAKE" on own tag (`35`) | Open | W3 |
-| 6 | Boss framing, stacked hub stamps, needle over HP (`43–46`) | Partial | W3 + W5 |
-| 7 | Ownership bezels; class identity pairs (`69–76`) | Open | W3 + W5 |
-| 8 | Raid LIVE/RESULT, disabled Continue, end camera, numbers on labels (`22–26`) | Partial | W8b (+ W2 disabled) |
-| 9 | Legend jump, site card height, shred reflow, event bar (`gifs/07`, `14`, `20`, `24`) | Open | W8b / W8c |
-| 10 | Loot fly to CARDS, LOOT overlap, modal size (`48`, `61`, `gifs/23`) | Partial | W8c |
-| 11 | One toast style (`gifs/08`, `13`) | Open | W2 |
-| 12 | Typing speed / skip (`gifs/24`) | Fixed | — (verify in W10) |
-| 13 | One slide direction; modal animation; modal before page (`gifs/21`, `22`) | Open | W8a (`page_transition`, menu motion) |
-| 14 | Placeholder flat city (`gifs/18`, `23`) | Partial | P0.2 + W7 |
-| 15 | < 12 px text; fixed labels at 1.6 (`1.6/01`, `14`) | Open | W1 + W10 lint + each owner |
-| 16 | Native dropdowns (`03`, `28`, `52`, `gifs/09`) | Open | W2 widgets → W8 |
-| 17 | Slots as cards; Delete glyph (`02`) | Open | W8a |
-| 18 | Pause sized; raw code → copy (`10`, `40`) | Partial | P0.2 + W8a |
-| 19 | Loadout width, "Accelera/tor", ring swap (`11–13`, `57–58`, `gifs/10`) | Open | W8b (+ W4 deck cards) |
-| 20 | Codex, Options toggles/slider, Stats badges (`16–18`) | Open | W8a |
-| 21 | FLATLINED staging; WON vs LOST (`51`, `62`, `63`) | Partial | W8d (+ W5, W7) |
-| 22 | Prompt bar everywhere, glyphs, focus, pad wording (`1.6/*`) | Open | W2 + W9 + W8 |
-| 23 | Corp hues/patterns; Heat never green (`21`, `64–68`) | Partial | W1 + W7 + W3/W8b (Heat poster) |
-| 24 | Black Market grouping, icons, contrast (`06`, `09`, `scr/05`) | Open | W8b |
-| 25 | Card illustrations / rarity stock (`54`) | Open | W4 |
-| 26 | Baked logo and signature graffiti (`scr/*`) | Open | W8 (SVG) |
-| 27 | Resolve speed; respin overshoot (`gifs/01`, `03`) | Open | W3 + W9 |
-| 28 | Grid one primary; chips in rows; label overlap; you-are-here on node (`19`, `20`, `27`) | Partial | W8b |
+| 1 | Full-screen Perfect / P3 flashes (`gifs/02`, `gifs/25`) | **Done** | W6 + W3 |
+| 2 | Preview lost on mouse drag; hover lift (`31`, strip 04) | **Done** | W3 (+ W4 API) |
+| 3 | Net numbers, "42⁶42", overkill (`37`, `38`, `47`) | **Done** | W3 |
+| 4 | HP colour scale, ghost, top-bar mismatch (`47`, `49`, `50`) | **Done** | W3 (+ W1 helper) |
+| 5 | Forecast split: "YOU TAKE" on own tag (`35`) | **Done** | W3 |
+| 6 | Boss framing, stacked hub stamps, needle over HP (`43–46`) | **Done** | W3 + W5 |
+| 7 | Ownership bezels; class identity pairs (`69–76`) | **Done** | W3 + W5 |
+| 8 | Raid LIVE/RESULT, disabled Continue, end camera, numbers on labels (`22–26`) | **Done** | W8b (+ W2 disabled) |
+| 9 | Legend jump, site card height, shred reflow, event bar (`gifs/07`, `14`, `20`, `24`) | **Done** | W8b / W8c |
+| 10 | Loot fly to CARDS, LOOT overlap, modal size (`48`, `61`, `gifs/23`) | **Done** | W8c |
+| 11 | One toast style (`gifs/08`, `13`) | **Done** | W2 |
+| 12 | Typing speed / skip (`gifs/24`) | **Done** (verified) | — |
+| 13 | One slide direction; modal animation; modal before page (`gifs/21`, `22`) | **Done** | W8a (`page_transition`, menu motion) |
+| 14 | Placeholder flat city (`gifs/18`, `23`) | **Done** | P0.2 + W7 |
+| 15 | < 12 px text; fixed labels at 1.6 (`1.6/01`, `14`) | **Done** | W1 + W10 lint + each owner |
+| 16 | Native dropdowns (`03`, `28`, `52`, `gifs/09`) | **Done** | W2 widgets → W8 |
+| 17 | Slots as cards; Delete glyph (`02`) | **Done** | W8a |
+| 18 | Pause sized; raw code → copy (`10`, `40`) | **Done** | P0.2 + W8a |
+| 19 | Loadout width, "Accelera/tor", ring swap (`11–13`, `57–58`, `gifs/10`) | **Done** | W8b (+ W4 deck cards) |
+| 20 | Codex, Options toggles/slider, Stats badges (`16–18`) | **Done** | W8a |
+| 21 | FLATLINED staging; WON vs LOST (`51`, `62`, `63`) | **Done** | W8d (+ W5, W7) |
+| 22 | Prompt bar everywhere, glyphs, focus, pad wording (`1.6/*`) | **Done** | W2 + W9 + W8 |
+| 23 | Corp hues/patterns; Heat never green (`21`, `64–68`) | **Done** | W1 + W7 + W3/W8b (Heat poster) |
+| 24 | Black Market grouping, icons, contrast (`06`, `09`, `scr/05`) | **Done** | W8b |
+| 25 | Card illustrations / rarity stock (`54`) | **Done** | W4 |
+| 26 | Baked logo and signature graffiti (`scr/*`) | **Done** | W8 (SVG) |
+| 27 | Resolve speed; respin overshoot (`gifs/01`, `03`) | **Done** | W3 + W9 |
+| 28 | Grid one primary; chips in rows; label overlap; you-are-here on node (`19`, `20`, `27`) | **Done** | W8b |
 
 Also tracked (from the audit and DECISIONS open questions):
 - the Heat banner's 8 px floor (`heat_poster.gd:86`), W3/W8b;
@@ -353,4 +353,4 @@ They are listed here so none is silently lost. Raise them as a later pass if you
 | 2 | W2, W4, W6, W9s | — | **all merged** |
 | 3 | W3, W5, W7 | — | **all merged** (1290 tests green) |
 | 4 | W8a–d | — | **all merged** (1391 tests green) |
-| 5 | W9 sweep, W10 full | `art/w9f-sweep` | W9F (final accessibility sweep + all handed-off items) running; W10 full-matrix run after W8d and W9F merge |
+| 5 | W9 sweep, W10 full | — | W9F **merged** (1414 tests green); final full-matrix pack and diff vs the baseline in `docs/art_review/FINAL/` |

@@ -546,4 +546,13 @@ These rulings override the STYLE_GUIDE. Update it to point here.
 3. Body face: IBM Plex Sans Condensed vs keeping Share Tech Mono with better line length. Plex is the recommendation.
 4. Whether HQ gets the full DECK frame (monitor bezel, keyboard edge) or keeps the current window-over-city composition.
 
+Open after the art pass (2026-09-29; see DECISIONS "Art pass …"):
+5. §12 says colour-blind modes "remap" hues; they're built as a daltonize **correction** (Palette colours are compile-time constants). Accept "correct" as the wording, or ask for true per-token remaps.
+6. §8's duration column: bind it to drawn effects only (UI motion keeps §10's budgets)? 30 UI motions run past their tier's VFX duration.
+7. §8 T0 (≥ 3 s periods) vs §9.3 FLAGGED rim flicker (≤ 1 Hz): the flicker is kept as a state signal, off under reduce effects.
+8. §9.1's 35% combat dim vs combat's 0.55 veil: the context's total dim rules today.
+9. §4.1 "handwriting never under 16 px" can't hold on the 60 px compact Polaroid; suggest "16 px where the frame allows".
+10. §6 focus scale: say "pad focus" (mouse and keys get brackets only); name `TEXT_MID` as the disabled label colour (`DISABLED` is 3.9:1 on glass).
+11. §13 performance: the lit city costs +12–23% frame time (0.2–0.8 ms, about 200 fps worst at 1080p); Steam Deck not yet measured (quality tier 1 by default there).
+
 Add new questions here rather than improvising.
