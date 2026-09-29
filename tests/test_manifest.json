@@ -161,6 +161,10 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art_w9f_sweep.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_art_wf_kit.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
