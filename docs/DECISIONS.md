@@ -419,6 +419,38 @@ Review folder: `docs/art_review/W8b/`. It holds 64 before/after sheets, strips o
 - The W10 runtime lint should measure scaled subtrees on screen and not measure contrast through modal scrims.
 - The empty subtitle band is tall at 2.0.
 
+### 2026-09-29 — Art pass W8d: campaign end (merged into `art-pass`)
+Review folder: `docs/art_review/W8d/`. It has 8 before/after sheets, the WON and LOST T4 strips, and the landmark art sheet.
+
+**WON (§11)**
+- The target corp's landmark (a new 200×300 SVG per corp) tips 20° and sinks 10%, so its shape still reads.
+- It is then crossed out by two `CELL_PINK` `marker_stroke` strikes at ±48°, followed by baked overspray.
+- CORP DOWN appears in `GAIN` at hero size.
+- The crew wall shows survivors TRIUMPHANT and the dead FLATLINED. The cards are taped, with fixed tilts within ±4°.
+- The city leans from its current campaign progress to 1.0 (`city_lean` signal). A new campaign resets it to 0.
+
+**LOST (§11)**
+- The Cell's hexagon (a ring with an upward chevron) cracks in `INK` from the top, then the halves part.
+- CELL BURNED appears in `HARM`.
+- The grey reuses W8c's run-end grade.
+- Survivors on the wall are HURT and the dead FLATLINED.
+
+**Contrast (§2):** a full-stage GlassScrim sits behind the stage, because the stamp met the lit city at under 3:1.
+
+**Story text (§4.2, §5.3)**
+- Story text is folded at word boundaries to 70 characters. Plex is narrow, so a width limit alone let about 85 characters through.
+- At 1.0 a long story scrolls inside its paper. At 1.6 and 2.0 the page stacks and scrolls; never a scroll inside a scroll.
+- The full ICE records sentence is the receipt's tooltip.
+
+**Motion:** `campaign_end_won` and `campaign_end_lost` (T4, 2.4 s, skippable).
+
+**Merge note for main:** `main` has its own ANIM-R5 `show_end` (`81f1a5f`). When art-pass merges into main, keep `CampaignEndStage`.
+
+**Open, for the W9F sweep**
+- `CityAtmosphere.clear_campaign_progress()` is missing.
+- The grey and the scrim don't cover the subtitle band or the prompt strip (the same as W8c).
+- The runtime lint should clip by scroll view.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few

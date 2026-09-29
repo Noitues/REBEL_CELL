@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+  <!-- Orbital Commons: the satellite dish (art pass W8d, ART_BIBLE 3.6, 11 Campaign end). White and greys, tinted in the corp hue at runtime. -->
+  <rect x="40.0" y="286" width="120.0" height="10" fill="#FFFFFF"/>
+  <rect x="52.0" y="276" width="96.0" height="10" fill="#D2D2D2"/>
+  <polygon points="82.0,276.0 118.0,276.0 108.0,196.0 92.0,196.0" fill="#FFFFFF"/>
+  <rect x="96" y="210" width="8" height="54" fill="#9C9C9C"/>
+  <circle cx="100" cy="192" r="14" fill="#FFFFFF"/>
+  <circle cx="100" cy="192" r="6" fill="#9C9C9C"/>
+  <line x1="100" y1="192" x2="86" y2="138" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
+  <line x1="100" y1="192" x2="120" y2="150" stroke="#D2D2D2" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="94" cy="112" rx="84" ry="40" transform="rotate(-32 94 112)" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="104" rx="70" ry="28" transform="rotate(-32 100 104)" fill="#9C9C9C"/>
+  <ellipse cx="104" cy="99" rx="46" ry="16" transform="rotate(-32 104 99)" fill="none" stroke="#D2D2D2" stroke-width="2"/>
+  <line x1="100" y1="104" x2="154" y2="40" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  <line x1="62" y1="126" x2="154" y2="40" stroke="#D2D2D2" stroke-width="3"/>
+  <line x1="140" y1="78" x2="154" y2="40" stroke="#D2D2D2" stroke-width="3"/>
+  <circle cx="156" cy="38" r="10" fill="#FFFFFF"/>
+  <circle cx="156" cy="38" r="4" fill="#5A5A5A"/>
+  <path d="M 162.3 19.0 A 20 20 0 0 1 175.8 41.0" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 165.5 9.5 A 30 30 0 0 1 185.7 42.5" fill="none" stroke="#D2D2D2" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 168.6 0.0 A 40 40 0 0 1 195.6 44.0" fill="none" stroke="#D2D2D2" stroke-width="4" stroke-linecap="round"/>
+</svg>
