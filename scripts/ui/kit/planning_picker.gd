@@ -22,8 +22,8 @@ const SWATCH_GROW_MAX := 1.3
 const STRIPE_W := 6.0
 const PORTRAIT_PAD := 4.0
 ## The name's type steps (§4.2), largest first, and the most lines it may take.
-const NAME_STEPS: Array[int] = [UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]
-const NAME_LINES := 2
+const PLAN_NAME_STEPS: Array[int] = [UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]
+const PLAN_NAME_LINES := 2
 ## The landmark mark's radius as a share of the swatch width.
 const MARK_SHARE := 0.28
 ## A tile's width grows with the text only up to this scale (its words wrap and step down
@@ -61,23 +61,23 @@ static func landmark_texture(corp_id: StringName, height: float) -> Texture2D:
 
 ## Tile `i`'s name as drawn: its lines and their size (px) for `width` px, never larger
 ## than `max_px` (0: no cap).
-func name_layout(i: int, width: float, max_px: int = 0) -> Array:
+func plan_name_layout(i: int, width: float, max_px: int = 0) -> Array:
 	var f := Palette.mono()
 	var text := String(tiles[i].get("name", ""))
-	var px := UiTheme.font_px(NAME_STEPS[NAME_STEPS.size() - 1])
+	var px := UiTheme.font_px(PLAN_NAME_STEPS[PLAN_NAME_STEPS.size() - 1])
 	var lines := PackedStringArray([text])
-	for step in NAME_STEPS:
+	for step in PLAN_NAME_STEPS:
 		px = UiTheme.font_px(step)
 		if max_px > 0 and px > max_px:
 			continue
-		lines = _wrap(text, f, px, width)
-		if lines.size() <= NAME_LINES:
+		lines = _plan_wrap(text, f, px, width)
+		if lines.size() <= PLAN_NAME_LINES:
 			break
 	return [lines, px]
 
 
 ## The room tile `i`'s name has (px): beside the swatch, clear of a locked tile's lock.
-func name_width(i: int) -> float:
+func plan_name_width(i: int) -> float:
 	var s := Settings.text_scale
 	var r := tile_rect(i)
 	return r.size.x - PAD * 3.0 - SWATCH_W * minf(s, SWATCH_GROW_MAX) - (ICON_R * s * 1.4 + PAD if is_locked(i) else 0.0)
@@ -86,15 +86,15 @@ func name_width(i: int) -> float:
 ## The one name size every tile of the picker uses (px): the largest step at which each
 ## name fits its two lines, so the row reads as a set.
 func common_name_px() -> int:
-	var px := UiTheme.font_px(NAME_STEPS[0])
+	var px := UiTheme.font_px(PLAN_NAME_STEPS[0])
 	for i in tiles.size():
-		px = mini(px, int(name_layout(i, name_width(i))[1]))
+		px = mini(px, int(plan_name_layout(i, plan_name_width(i))[1]))
 	return px
 
 
 ## `text` broken at spaces into lines no wider than `width` at `px` (a word wider than a
 ## line stays whole on its own line: the caller steps the size down).
-static func _wrap(text: String, f: Font, px: int, width: float) -> PackedStringArray:
+static func _plan_wrap(text: String, f: Font, px: int, width: float) -> PackedStringArray:
 	var out := PackedStringArray()
 	var cur := ""
 	for word in text.split(" ", false):
@@ -131,8 +131,8 @@ func _draw() -> void:
 		_draw_swatch(t, sw, st)
 		var x := sw.end.x + PAD
 		# The name keeps clear of a locked tile's lock in the top right corner.
-		var w := name_width(i)
-		var lay := name_layout(i, w, name_px)
+		var w := plan_name_width(i)
+		var lay := plan_name_layout(i, w, name_px)
 		var y := r.position.y + PAD
 		for line in (lay[0] as PackedStringArray):
 			draw_string(f, Vector2(x, y + f.get_ascent(int(lay[1]))), line, HORIZONTAL_ALIGNMENT_LEFT, -1, int(lay[1]), ink)

@@ -314,10 +314,10 @@ func test_planning_tiles_fit_their_words_at_every_scale() -> void:
 			var px := p.common_name_px()
 			assert_true(px >= roundi(UiTheme.CAPTION * scale), "%s names at caption or larger (%d at %.1f)" % [pick_name, px, scale])
 			for i in p.tiles.size():
-				var lay: Array = p.name_layout(i, p.name_width(i), px)
-				assert_true((lay[0] as PackedStringArray).size() <= PlanningPicker.NAME_LINES, "%s tile %d in two lines at %.1f" % [pick_name, i, scale])
+				var lay: Array = p.plan_name_layout(i, p.plan_name_width(i), px)
+				assert_true((lay[0] as PackedStringArray).size() <= PlanningPicker.PLAN_NAME_LINES, "%s tile %d in two lines at %.1f" % [pick_name, i, scale])
 				for line in (lay[0] as PackedStringArray):
-					assert_true(Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= p.name_width(i) + 0.5, "%s: '%s' fits" % [pick_name, line])
+					assert_true(Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= p.plan_name_width(i) + 0.5, "%s: '%s' fits" % [pick_name, line])
 			assert_true(p.get_combined_minimum_size().x <= CANVAS.x, "%s fits the screen at %.1f" % [pick_name, scale])
 		await _close(hq)
 
