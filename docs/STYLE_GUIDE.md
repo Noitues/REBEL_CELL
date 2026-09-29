@@ -241,8 +241,8 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Replay, never re-run.** The state is final at once; motion replays the engine's own
   events on top (`ResolveBeats`, `CombatFxLayer`, `WheelView` overrides). Skips and
   reduce effects show the end state.
-- **SEND IT** reads as a sequence of about 2 s (ANIM-R1): needles latch and the landed
-  slices pulse in their colour (a MISS slice gets a big grey X) and hold 0.3 s; each hit
+- **SEND IT** reads as a sequence of about 2.5 s for a plain turn (ANIM-R1; ANIM-R6 measured: a turn with one hit each way 2.3 s, first turns 1.6-4.2 s, median 2.7; each further hit adds about 0.6 s, one projectile at a time): needles latch and the landed
+  slices pulse in their colour (a MISS slice gets a big grey X) and hold 0.25 s; each hit
   pulses its needle and flies as a thick projectile in the attacker's colour from its
   landed slice to the victim's HP ring, one at a time (ANIM-R2: never two at once), acid
   for the operative's side and red for the enemies', its raw number riding with it (a hit
@@ -256,13 +256,13 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   dying enemy's HP is seen at 0 before it falls apart (a short white flash on its own wheel,
   never the screen) and leaves its empty spot marked DEFEATED; a fight ending on a break
   shows its result first and VICTORY lands over the enemies' side. The result waits for
-  every HP roll, holds 0.5 s under THIS TURN with LAST TURN, then the wheels spin to the next
+  every HP roll, holds 0.35 s under THIS TURN with LAST TURN, then the wheels spin to the next
   landing and the forecast flips in, its tape reading IF YOU SEND IT; the TURN counter
   changes when the replay ends. A new fight's enemy enters from the edge (its forecast
   shows as it comes).
   Any press skips (and does nothing else).
 - **Spins** run the exact ticks with ease-out, a 0.2-tick overshoot and settle; slices blur
-  when fast. **Nudges** are 0.08 s steps with a 2 px recoil, queued and never out of step.
+  when fast. **Nudges** are 0.16 s steps with a 3 px recoil (ANIM-R6: 0.08 s was too fast to see), queued and never out of step.
 - **Landings** differ in shape, not only colour: inversion (Perfect), ring (Good), stutter
   (Partial), static in the slice (Miss).
 - **Cards** lift 12 px and straighten on hover; drag ghosts trail and tilt; zones pulse and
@@ -274,13 +274,13 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   decides.
 - **Refusals and SEND IT** (ANIM-R1): not enough RAM flashes the RAM chips red with "COST >
   RAM" beside them and pulses the card's cost (or the respin sticker); SEND IT carries a
-  drawn ▶▶ that pulses gently when no RAM is left. Tag chips come in order of importance
+  drawn play mark (ANIM-R6: a disc with a ▶, was ▶▶) that pulses gently when no RAM is left. Tag chips come in order of importance
   (damage to you, damage dealt, HP, then the rest), so "+N MORE" never hides damage; at big
   text they shrink to their 1.3 size before any folds (ANIM-R2). Spent RAM floats "-N RAM"
   off the count; a purchase short of Cycles flashes the CYCLES tag red (NEED N · HAVE M).
 - **SEND IT reads to a newcomer (ANIM-R3)**: the forecast tag stays up through the replay and
   ticks each line as it happens, its tape then reads THIS TURN and it fades; a hit rides its aim
-  (12 -> 6 ½ at half power, bigger on PERFECT) and waits until the last number has entered its
+  (12 -> 6 at half power, never a fraction, bigger on PERFECT) and waits until the last number has entered its
   HP (one roll per hit); a hit soaked or evaded whole shows its glyph and 0 where it struck, and
   ALL BLOCKED / NO DAMAGE carry a shield-over-empty-set mark (ALL BLOCKED on the last impact);
   guards are a glyph and a number from the blocker, never a word badge; an icon row beside
@@ -318,6 +318,21 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   A hover that changes a tag shows what it said before under WAS, struck through (and in its
   tooltip). A status chip says who gets it ("☠ YOU GET CORRUPTED", "ON A RANDOM SLICE:" before
   its odds) and an AFFLICT names it on its own tag ("PUTS ☠ CORRUPTED ON YOU").
+- **Numbers that agree (ANIM-R6)**: every number shown is the one the resolve applies. A hit chip
+  says who hits whom and what gets through the guard ("HITS YOU 8"); a victim with fewer HP left
+  says so ("HITS YOU 8 → 1 LEFT", the same "→ N LEFT" where it struck and in the icon row); a
+  wheel's own loss is never summed again on its own tag: the NEXT plate carries the turn's total
+  ("NEXT 49 (-11)"); losses no hit names say their source ("☠ CORRUPTED BITES YOU 3"); no
+  fractions; the icon row with no guard is one "-N HP". A hovered card names itself on the tag's
+  tape with a card mark ("YOUR JOLT · WAS ..."), never as a chip; the WAS words are readable.
+  The press that lands a fight's outcome only skips (the next step takes the next press); a skip
+  still barks and shows DEFEAT whole; VICTORY stays at full strength until the fight is left; a
+  lost fight waits for JACK OUT. The portrait, the arrows and the run's top bar HP follow the
+  replay (the top bar moves when it lands). The arena's city never switches in mid-replay (it
+  lands between turns). Tags never cover the nudge arrows (the arrows turn down the sides);
+  inner-ring arrows carry a ring mark; SEND IT carries a play button's ▶. The tutorial box fits
+  its text (pages, never cut), Next pulses when it moves the tutorial on, and a step no play
+  ends moves on with the turn.
 
 ### 5.3 Map, raid, jack and Heat motion (the Animation pass, ANIM-5)
 - **Territory tint never jumps.** The city bakes the new look once; the new image shows
