@@ -15,6 +15,7 @@ any order while the work goes on.
 | `W7/` | City | Lighting, Heat states, territory, grade |
 | `W8a`–`W8d/` | Screens | Per-screen before/after |
 | `W9/` | Accessibility | 2.0 text, colour-blind remaps, high contrast, pad |
+| `W9F/` | Final accessibility sweep | Every screen at 2.0 mouse and pad, grey, deutan, high contrast, reduce effects, reduce motion; the final runtime lint; the §12/§14 table |
 
 Each folder has a `README.md` with:
 - what changed (files);
