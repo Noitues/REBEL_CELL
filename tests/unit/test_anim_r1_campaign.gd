@@ -541,7 +541,7 @@ func test_the_event_choices_wait_for_the_words() -> void:
 
 
 func test_outcome_rows_wrap_inside_their_choice_at_big_text() -> void:
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	var scene := _scene(NETRUN)
 	scene.new_campaign(1)
 	scene.start_run(1)
@@ -568,7 +568,7 @@ func test_outcome_rows_wrap_inside_their_choice_at_big_text() -> void:
 # --- M10 / M11: the Modem and loot -----------------------------------------------------------------------------
 
 func test_modem_items_show_their_whole_text_and_keep_their_places_after_a_buy() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		var scene := _scene(NETRUN)
 		scene.new_campaign(1)
@@ -605,7 +605,7 @@ func test_modem_items_show_their_whole_text_and_keep_their_places_after_a_buy() 
 
 
 func test_loot_rejects_fall_the_tip_keeps_off_skip_and_cards_off_the_bar() -> void:
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	var scene := _scene(NETRUN)
 	scene.new_campaign(1)
 	scene.start_run(1)
@@ -639,7 +639,7 @@ func test_a_long_refusal_toast_wraps_on_screen() -> void:
 # --- M12: the HQ at big text ----------------------------------------------------------------------------------
 
 func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	var hq := _scene(HQ)
 	hq.new_campaign(1)
 	await _frames(4)

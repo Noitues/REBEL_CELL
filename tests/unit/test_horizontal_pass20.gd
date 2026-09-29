@@ -266,7 +266,7 @@ func test_pad_players_see_pad_buttons() -> void:
 func test_the_text_scale_reaches_tags_chips_and_cards() -> void:
 	var small := await _combat(&"compliance_officer", 1.0)
 	var tag_small: float = small._player_view.intent_rect().size.y
-	var big := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
+	var big := await _combat(&"compliance_officer", LayoutScales.VERIFIED_MAX)
 	assert_true(big._player_view.intent_rect().size.y > tag_small, "the tag grows with the text scale")
 	var card: ZineCard = big._hand_box.get_child(0)
 	assert_true(card.text_scale > 1.0, "hand cards scale their lettering")
@@ -282,7 +282,7 @@ func test_combat_controls_have_tooltips() -> void:
 
 
 func test_the_tutorial_and_subtitles_share_the_right_column() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		var scene := await _combat(&"compliance_officer", scale)
 		scene.start_tutorial()
 		Dialogue.say(RC.Voice.DISPATCH, "Runner, keep the needle off the Miss slice and bank the Rack before the audit lands.")
@@ -307,7 +307,7 @@ func test_pad_inspect_on_a_card_says_what_it_does() -> void:
 func test_a_netrun_fight_shows_the_whole_hand_and_send_it_at_1_6() -> void:
 	# Pass-20 P1 (a height test): at the largest text scale the fight inside a netrun keeps
 	# every card and SEND IT on the 720-px canvas.
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	var holder: Control = add_child_autofree(Control.new())
 	holder.size = Vector2(1280, 720)
 	var scene: Control = load("res://scenes/netrun_map/netrun_scene.tscn").instantiate()

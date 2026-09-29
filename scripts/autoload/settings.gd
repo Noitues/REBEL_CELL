@@ -14,14 +14,15 @@ const PATH := "user://settings.json"
 ## runs never leak text scale or keybinds into each other (H24).
 var path: String = PATH
 const TEXT_SCALE_MIN := 0.8
-const TEXT_SCALE_MAX := 1.6
+## ART_BIBLE §12 (Q5): text scale runs 0.8-2.0.
+const TEXT_SCALE_MAX := 2.0
 enum WindowMode { WINDOWED, FULLSCREEN, BORDERLESS }
 const RESOLUTIONS: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440)]
 ## Actions the player may rebind (GDD 9.5); the card keys stay 1-9. H20: cards are aimed
 ## by dragging or by picking a target, so toggle_card_target, toggle_direction and
 ## cycle_slot no longer do anything (their input-map entries stay in project.godot).
 const REBINDABLE: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_target", &"end_turn", &"rewind",
-	&"toggle_ring", &"toggle_nudge_wheel", &"respin", &"open_settings"]
+	&"toggle_ring", &"toggle_nudge_wheel", &"respin", &"open_settings", &"resolve_fast_forward"]
 
 ## Disables scanlines, flicker, chromatic aberration and the distortion pulse everywhere.
 var reduce_effects: bool = false
@@ -52,6 +53,40 @@ var system_log: bool = false
 var keybinds: Dictionary = {}
 ## The guided first netrun has been completed or skipped.
 var tutorial_done: bool = false
+## Colour-blind correction (ART_BIBLE §12, art pass W9): one of COLORBLIND_MODES. Not off
+## puts a full-screen daltonize pass on top (the ColorblindFilter autoload); the patterns
+## and glyphs stay the main cue.
+var colorblind_mode: StringName = &"off"
+const COLORBLIND_MODES: Array[StringName] = [&"off", &"deutan", &"protan", &"tritan"]
+## High contrast (ART_BIBLE §12): opaque panels, TEXT_HI on #000 at 7:1, solid thick
+## button and focus edges (HighContrast.apply, hooked at the end of UiTheme.build).
+var high_contrast: bool = false
+## Reduce motion (ART_BIBLE §12), separate from reduce effects: no camera moves, no
+## parallax, pages cross-fade (read through Motion.camera_moves_allowed / parallax_allowed
+## / page_transition_style).
+var reduce_motion: bool = false
+## SEND IT resolve speed (ART_BIBLE §10): one of RESOLVE_SPEEDS (Motion.resolve_time_scale).
+var resolve_speed: StringName = &"x1"
+const RESOLVE_SPEEDS: Array[StringName] = [&"x1", &"x2", &"instant"]
+## Pad prompt glyphs (ART_BIBLE §12): one of PAD_GLYPH_SETS; auto detects the pad in use
+## (effective_glyph_set). W2 draws the glyphs.
+var pad_glyph_set: StringName = &"auto"
+const PAD_GLYPH_SETS: Array[StringName] = [&"auto", &"xbox", &"playstation", &"switch", &"deck"]
+## ART_BIBLE §5.4: the text scale a first run on a Steam Deck starts at.
+const TEXT_SCALE_STEAM_DECK := 1.2
+## The Deck's screen (a 1280x800 Linux screen with a Deck pad counts as a Deck).
+const STEAM_DECK_SCREEN := Vector2i(1280, 800)
+## The environment variable Steam sets to 1 on a Deck.
+const STEAM_DECK_ENV := "SteamDeck"
+## Tests inject a device probe here (see device_probe); empty = the real device.
+var device_probe_override: Dictionary = {}
+## Joy-name substrings (lower case) per glyph set, checked in this order; no match = xbox.
+const GLYPH_NAME_RULES: Array = [
+	[&"deck", ["steam deck"]],
+	[&"switch", ["nintendo", "switch", "joy-con", "joycon"]],
+	[&"playstation", ["playstation", "dualsense", "dualshock", "sony"]],
+	[&"xbox", ["xbox", "xinput"]],
+]
 ## Assist mode (GAP_ANALYSIS P2 13): new campaigns get config.assist_free_nudges extra free
 ## nudges a turn and config.assist_hp_multiplier operative HP; they set no ICE records and
 ## earn no campaign achievements.
@@ -68,7 +103,11 @@ const CONTROLLER_BINDS := {
 ## the on-screen pickers are gone since cards are aimed by dragging; the nudge arrows are
 ## mouse targets).
 const CONTROLLER_AXIS_BINDS := {&"toggle_nudge_wheel": JOY_AXIS_TRIGGER_LEFT, &"toggle_ring": JOY_AXIS_TRIGGER_RIGHT}
-const PAD_AXIS_NAMES := {JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT"}
+const PAD_AXIS_NAMES := {JOY_AXIS_TRIGGER_LEFT: "LT", JOY_AXIS_TRIGGER_RIGHT: "RT", JOY_AXIS_RIGHT_X: "RS", JOY_AXIS_RIGHT_Y: "RS"}
+## Art pass W9 (§10): hold the right stick in any direction to fast-forward the SEND IT
+## resolve (every face button, shoulder, trigger and stick click already has a job; the
+## right stick has none). One event per axis direction.
+const CONTROLLER_STICK_BINDS := {&"resolve_fast_forward": [JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]}
 ## Menu and focus navigation on the pad (the D-pad moves focus, A presses, B backs out).
 const UI_PAD_BINDS := {
 	&"ui_accept": JOY_BUTTON_A, &"ui_cancel": JOY_BUTTON_B,
@@ -99,6 +138,8 @@ func set_flash_limiter(value: bool) -> void:
 
 ## Whether the last input came from a pad: hints then name pad buttons (H20).
 var pad_active: bool = false
+## The device id of the last pad that sent input (-1 before any): auto glyphs follow it.
+var pad_device: int = -1
 ## Stick motion below this doesn't count as switching to the pad.
 const PAD_SWITCH_DEADZONE := 0.5
 ## Xbox-layout button names for hints (Godot maps other pads onto this layout).
@@ -122,13 +163,20 @@ func _input(event: InputEvent) -> void:
 ## a pad press that ends a motion (and never reaches this node) still switches the prompts.
 func observe_device(event: InputEvent) -> void:
 	var pad := pad_active
+	var device := pad_device
 	if event is InputEventJoypadButton:
 		pad = true
+		device = event.device
 	elif event is InputEventJoypadMotion:
 		if absf((event as InputEventJoypadMotion).axis_value) >= PAD_SWITCH_DEADZONE:
 			pad = true
+			device = event.device
 	elif event is InputEventKey or event is InputEventMouseButton:
 		pad = false
+	if device != pad_device:
+		pad_device = device
+		if pad == pad_active and pad and pad_glyph_set == &"auto":
+			hints_changed.emit()  # another pad: its glyphs
 	if pad != pad_active:
 		set_pad_active(pad)
 
@@ -183,6 +231,109 @@ const MOUSE_NAMES := {MOUSE_BUTTON_LEFT: "Click", MOUSE_BUTTON_RIGHT: "Right-cli
 func set_text_scale(value: float) -> void:
 	text_scale = clampf(value, TEXT_SCALE_MIN, TEXT_SCALE_MAX)
 	_apply()
+
+
+## Sets the colour-blind correction (one of COLORBLIND_MODES; anything else is ignored).
+func set_colorblind_mode(value: StringName) -> void:
+	if not COLORBLIND_MODES.has(value):
+		return
+	colorblind_mode = value
+	_apply()
+
+
+## Turns high contrast on or off (the UI theme rebuilds through `changed`).
+func set_high_contrast(value: bool) -> void:
+	high_contrast = value
+	_apply()
+
+
+## Turns reduce motion on or off (reduce effects is unchanged).
+func set_reduce_motion(value: bool) -> void:
+	reduce_motion = value
+	_apply()
+
+
+## Sets the resolve speed (one of RESOLVE_SPEEDS; anything else is ignored).
+func set_resolve_speed(value: StringName) -> void:
+	if not RESOLVE_SPEEDS.has(value):
+		return
+	resolve_speed = value
+	_apply()
+
+
+## Sets the pad glyph set (one of PAD_GLYPH_SETS; anything else is ignored).
+func set_pad_glyph_set(value: StringName) -> void:
+	if not PAD_GLYPH_SETS.has(value):
+		return
+	pad_glyph_set = value
+	_apply()
+
+
+## The glyph set prompts draw now: the chosen set, or under auto the one detected from
+## the pad in use (glyph_set_for_joy_name of active_joy_name; xbox with no pad).
+func effective_glyph_set() -> StringName:
+	if pad_glyph_set != &"auto":
+		return pad_glyph_set
+	return glyph_set_for_joy_name(active_joy_name())
+
+
+## The name of the pad in use: the last pad that sent input, else the first connected
+## one ("" with none).
+func active_joy_name() -> String:
+	var pads := Input.get_connected_joypads()
+	if pad_device >= 0 and pads.has(pad_device):
+		return Input.get_joy_name(pad_device)
+	return Input.get_joy_name(pads[0]) if not pads.is_empty() else ""
+
+
+## The glyph set for a pad called `joy_name` (Input.get_joy_name): Steam Deck -> deck;
+## Nintendo / Switch / Joy-Con -> switch; PlayStation / DualSense / DualShock / Sony or a
+## "PS<n>" word -> playstation; anything else (Xbox, XInput, unknown) -> xbox.
+static func glyph_set_for_joy_name(joy_name: String) -> StringName:
+	var n := joy_name.to_lower()
+	for rule in GLYPH_NAME_RULES:
+		for part in rule[1]:
+			if n.contains(part):
+				return rule[0]
+		if rule[0] == &"playstation":
+			# "PS4 Controller", "PS5": a word "ps" or "ps<digit>" (never "gamepads").
+			for word in n.replace("-", " ").replace("_", " ").split(" ", false):
+				if word == "ps" or (word.length() == 3 and word.begins_with("ps") and word[2].is_valid_int()):
+					return &"playstation"
+	return &"xbox"
+
+
+## The device facts the Steam Deck check reads (the injected override in tests).
+func device_probe() -> Dictionary:
+	if not device_probe_override.is_empty():
+		return device_probe_override
+	var names := PackedStringArray()
+	for d in Input.get_connected_joypads():
+		names.append(Input.get_joy_name(d))
+	var screen := Vector2i.ZERO
+	if DisplayServer.get_name() != "headless":
+		screen = DisplayServer.screen_get_size()
+	return {"feature": OS.has_feature("steamdeck"), "env": OS.get_environment(STEAM_DECK_ENV),
+		"os": OS.get_name(), "screen": screen, "joy_names": names}
+
+
+## Whether `probe` (device_probe's keys) describes a Steam Deck: the steamdeck feature
+## tag, SteamDeck=1, or a 1280x800 Linux screen with a Steam Deck pad.
+static func is_steam_deck_from(probe: Dictionary) -> bool:
+	if bool(probe.get("feature", false)) or String(probe.get("env", "")) == "1":
+		return true
+	if String(probe.get("os", "")) != "Linux" or probe.get("screen", Vector2i.ZERO) != STEAM_DECK_SCREEN:
+		return false
+	for joy in probe.get("joy_names", PackedStringArray()):
+		if glyph_set_for_joy_name(String(joy)) == &"deck":
+			return true
+	return false
+
+
+## First run (no settings file yet): device defaults, today the Deck's text scale (§5.4).
+func apply_first_run_defaults(probe: Dictionary) -> void:
+	if is_steam_deck_from(probe):
+		text_scale = TEXT_SCALE_STEAM_DECK
 
 
 func set_subtitles(value: bool) -> void:
@@ -330,6 +481,21 @@ func apply_controller_bindings() -> void:
 				pad.button_index = binds[action]
 				pad.device = -1
 				InputMap.action_add_event(action, pad)
+	for action in CONTROLLER_STICK_BINDS:
+		if not InputMap.has_action(action):
+			continue
+		for axis in CONTROLLER_STICK_BINDS[action]:
+			for dir in [-1.0, 1.0]:
+				var found := false
+				for ev in InputMap.action_get_events(action):
+					if ev is InputEventJoypadMotion and (ev as InputEventJoypadMotion).axis == axis and signf((ev as InputEventJoypadMotion).axis_value) == dir:
+						found = true
+				if not found:
+					var stick := InputEventJoypadMotion.new()
+					stick.axis = axis
+					stick.axis_value = dir
+					stick.device = -1
+					InputMap.action_add_event(action, stick)
 	for action in CONTROLLER_AXIS_BINDS:
 		if not InputMap.has_action(action):
 			continue
@@ -402,7 +568,9 @@ func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
 		"subtitles": subtitles, "subtitle_typing": subtitle_typing, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
-		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
+		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode,
+		"colorblind_mode": String(colorblind_mode), "high_contrast": high_contrast,
+		"reduce_motion": reduce_motion, "resolve_speed": String(resolve_speed), "pad_glyph_set": String(pad_glyph_set)}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -431,6 +599,19 @@ func from_dict(d: Dictionary) -> void:
 			keybinds[String(k)] = int(d["keybinds"][k])
 	tutorial_done = bool(d.get("tutorial_done", false))
 	assist_mode = bool(d.get("assist_mode", false))
+	# Art pass W9: additive keys; a file without them (or with an unknown value) gets the
+	# default.
+	colorblind_mode = _pick(d.get("colorblind_mode", ""), COLORBLIND_MODES)
+	high_contrast = bool(d.get("high_contrast", false))
+	reduce_motion = bool(d.get("reduce_motion", false))
+	resolve_speed = _pick(d.get("resolve_speed", ""), RESOLVE_SPEEDS)
+	pad_glyph_set = _pick(d.get("pad_glyph_set", ""), PAD_GLYPH_SETS)
+
+
+## `value` as one of `allowed` (a StringName), or `allowed[0]` (the default) when it isn't.
+static func _pick(value: Variant, allowed: Array[StringName]) -> StringName:
+	var v := StringName(str(value))
+	return v if allowed.has(v) else allowed[0]
 
 
 ## Whether this process runs the GUT test suite.
@@ -478,6 +659,10 @@ func save_settings() -> Error:
 
 func load_settings() -> void:
 	if not FileAccess.file_exists(path):
+		# A first run (W9, §5.4). Test runs keep the plain defaults unless a probe is
+		# injected, so the suite never depends on the machine it runs on.
+		if not is_test_run() or not device_probe_override.is_empty():
+			apply_first_run_defaults(device_probe())
 		return
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary:

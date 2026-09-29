@@ -2801,3 +2801,21 @@ won,won
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.
+Off,Off
+Deuteranopia (green-weak),Deuteranopia (green-weak)
+Protanopia (red-weak),Protanopia (red-weak)
+Tritanopia (blue-weak),Tritanopia (blue-weak)
+1x,1x
+2x,2x
+Instant,Instant
+Automatic (match the pad in use),Automatic (match the pad in use)
+Xbox,Xbox
+PlayStation,PlayStation
+Nintendo Switch,Nintendo Switch
+Steam Deck,Steam Deck
+Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
+"High contrast (opaque panels, 7:1 text, thick edges)","High contrast (opaque panels, 7:1 text, thick edges)"
+"Reduce motion (no camera moves or parallax; pages cross-fade)","Reduce motion (no camera moves or parallax; pages cross-fade)"
+Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
+Pad button glyphs,Pad button glyphs
+Fast-forward the resolve (hold),Fast-forward the resolve (hold)

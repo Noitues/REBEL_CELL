@@ -256,7 +256,7 @@ func _assert_clear(root: Node, label: String) -> void:
 
 
 func test_subtitles_cover_no_control_and_no_stat_tag_on_any_screen() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -305,7 +305,7 @@ func test_a_fight_gets_its_height_back_and_its_own_dock() -> void:
 
 
 func test_the_modem_shows_the_wallet() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -515,7 +515,7 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 # --- #15 big text ----------------------------------------------------------------------------
 
 func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	_raid_campaign()
 	var hq := _open(HQ)
 	await _frames()
@@ -526,7 +526,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	for n in _all(crew):
 		if n is Label and (n as Label).text == RunManager.campaign.roster[0].name.to_upper():
 			name_label = n
-	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * Settings.TEXT_SCALE_MAX), "the dossier's name grows")
+	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * LayoutScales.VERIFIED_MAX), "the dossier's name grows")
 	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
 	# Art pass W1: MSDF faces report fractional heights (no hinting); a RichTextLabel lays
 	# each line on whole pixels, so one shown line is the height rounded up.
@@ -538,7 +538,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
 	for n in _all(deck):
 		if n is ZineCard and (n as ZineCard).focus_mode != Control.FOCUS_NONE:
-			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "deck view cards grow")
+			assert_almost_eq((n as ZineCard).text_scale, LayoutScales.VERIFIED_MAX, 0.01, "deck view cards grow")
 			assert_false((n as ZineCard).pictos.is_empty(), "deck view cards show pictograms")
 			break
 	var scene := _netrun()
@@ -551,7 +551,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	assert_true(cards_win.get_global_rect().grow(1.0).encloses(card.get_global_rect()), "and stay in their quadrant")
 	for n in _all(scene._panel):
 		if n is ZineCard and (n as ZineCard).look != ZineCard.Look.STICKER:
-			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "tile lettering grows")
+			assert_almost_eq((n as ZineCard).text_scale, LayoutScales.VERIFIED_MAX, 0.01, "tile lettering grows")
 	for id in ["LeaveModem", "Wallet"]:
 		var r := (scene._panel.find_child(id, true, false) as Control).get_global_rect()
 		assert_true(r.end.y <= CANVAS.y, "%s on screen at 1.6: %s" % [id, r])
@@ -569,7 +569,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 
 
 func test_grid_side_column_scrolls_and_the_hq_says_there_is_more_below() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()

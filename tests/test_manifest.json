@@ -460,6 +460,10 @@
 		"res://tests/unit/test_quiet_window.gd": {
 			"seconds": 0.3,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_w9_accessibility_settings.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
 		}
 	}
 }
