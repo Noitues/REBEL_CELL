@@ -91,12 +91,12 @@ const BLOCK_MIN := 3
 const BLOCK_MAX := 6
 const GRID_RANGE := 260
 ## Neon ink colours (every district uses all five, weighted to its corporation).
-const INKS: Array[Color] = [Color("#FFB000"), Color("#B04DFF"), Color("#FF3DA8"), Color("#5CE1FF"), Color("#3DFF8B")]
+const INKS: Array[Color] = CityPalette.INKS
 ## Building masses: black, dark grey-blue, dark grey.
-const FILLS: Array[Color] = [Color("#06070B"), Color("#141B2C"), Color("#1D2027")]
-const GROUND := Color("#0A0C14")
-const STREET := Color("#050609")
-const FACE_LIGHT := Color("#2A3350")
+const FILLS: Array[Color] = CityPalette.FILLS
+const GROUND := CityPalette.GROUND
+const STREET := CityPalette.STREET
+const FACE_LIGHT := CityPalette.FACE_LIGHT
 
 ## District profiles: building mix weights [box, stepped, cylinder, hex, taper, needle,
 ## warehouse], height scale, share of lines in the corporation colour, layout seed.
@@ -142,8 +142,8 @@ const BORDER_BLEND := 7.0
 const INK_SETS: Array[Dictionary] = [
 	{"name": "NEON", "tint": Color.WHITE, "amount": 0.0},
 	{"name": "PASTEL NEON", "tint": Color.WHITE, "amount": 0.3},
-	{"name": "FADED PRINT", "tint": Color("#C9BFD9"), "amount": 0.38},
-	{"name": "COOL HAZE", "tint": Color("#D6F2FF"), "amount": 0.32},
+	{"name": "FADED PRINT", "tint": CityPalette.INK_TINT_FADED, "amount": 0.38},
+	{"name": "COOL HAZE", "tint": CityPalette.INK_TINT_COOL, "amount": 0.32},
 ]
 ## The Cell has no tower: its territory is ordinary city, and its roads etch a raised
 ## fist (traced from the reference icon; polygons in 0-1 image space, y down) that reads
@@ -182,8 +182,8 @@ const TEXTURE_SHADER_MODE: Array[int] = [0, 0, 0, 0, 1, 2, 3, 2, 3, 4, 4, 5, 5]
 const SLATE_TINT: Array[float] = [0.3, 0.5]
 ## Painted slate: the base tone of the walls (light, dark) and the cool light they catch
 ## at the top.
-const SLATE_TONES: Array[Color] = [Color("#4A556F"), Color("#232A3A")]
-const SLATE_LIGHT := Color("#B8C4DE")
+const SLATE_TONES: Array[Color] = CityPalette.SLATE_TONES
+const SLATE_LIGHT := CityPalette.SLATE_LIGHT
 ## Pan margin (px beyond the screen on every side) and speed.
 const PAN_MARGIN := 360.0
 
@@ -661,7 +661,7 @@ func _show_tint(wash: float) -> void:
 
 ## ANIM-R2 R7: the lasting tint's colour and strength now (a = 0 when none shows; tests).
 func lasting_tint() -> Color:
-	return Color(_spread_color, tint_wash) if _front_layer.visible else Color(0, 0, 0, 0)
+	return Color(_spread_color, tint_wash) if _front_layer.visible else Color(CityPalette.SHADE, 0)
 
 
 ## Advances the spread by `delta` seconds and updates the mask; ends it when both the
@@ -753,7 +753,7 @@ func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> v
 		if rings:
 			_marks_layer.draw_colored_polygon(ring, Color(col, MARK_FILL))
 			_hatch(_marks_layer, c, Vector2(TILE_A, TILE_B) * MARK_RADIUS, Color(col, MARK_HATCH_ALPHA), k)
-			_marks_layer.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0 * k, true)
+			_marks_layer.draw_polyline(ring, Color(CityPalette.SHADE, 0.8), 6.0 * k, true)
 			_marks_layer.draw_polyline(ring, col, 3.0 * k, true)
 		if not stamps:
 			continue
@@ -1540,8 +1540,8 @@ func _draw_shade(ci: CanvasItem) -> void:
 		var top := Color(Palette.NIGHT_SKY, 0.7)
 		var clear := Color(Palette.NIGHT_SKY, 0.0)
 		ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x, size.y * 0.28), Vector2(0, size.y * 0.28)]), PackedColorArray([top, top, clear, clear]))
-		var v := Color(0, 0, 0, 0.5)
-		var c0 := Color(0, 0, 0, 0)
+		var v := Color(CityPalette.SHADE, 0.5)
+		var c0 := Color(CityPalette.SHADE, 0)
 		ci.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(size.x * 0.16, 0), Vector2(size.x * 0.16, size.y), Vector2(0, size.y)]), PackedColorArray([v, c0, c0, v]))
 		ci.draw_polygon(PackedVector2Array([Vector2(size.x * 0.84, 0), Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(size.x * 0.84, size.y)]), PackedColorArray([c0, v, v, c0]))
 	if dim > 0.0:
@@ -2521,7 +2521,7 @@ func _extrude(base: PackedVector2Array, z0: float, h: float, top_scale: float, f
 			_poly(inner, roof_col.darkened(0.3))
 			for q in n:
 				_hair(inner[q], inner[(q + 1) % n], Color(SLATE_LIGHT, 0.35 if inner[q].y > tc.y else 0.15), 1.0)
-				_hair(inner[q] + Vector2(0, 1.2), inner[(q + 1) % n] + Vector2(0, 1.2), Color(0, 0, 0, 0.4), 1.0)
+				_hair(inner[q] + Vector2(0, 1.2), inner[(q + 1) % n] + Vector2(0, 1.2), Color(CityPalette.SHADE, 0.4), 1.0)
 			if h > 14.0 and _h(key, n, 96) < 0.45 and top[0].distance_to(top[2 % n]) > 24.0:
 				_extrude(_roof_box(tc + Vector2(0, z0 + h), key), z0 + h, 5.0 + _h(key, 2, 97) * 7.0, 1.0, fill, Color(SLATE_LIGHT, 0.5), 0.0, key + 7)
 		else:
@@ -2575,7 +2575,7 @@ func _greeble_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, light: float,
 	if wpx < 6.0 or hpx < 8.0:
 		return
 	var hi := Color(SLATE_LIGHT, 0.3 + light * 0.4)
-	var lo := Color(0, 0, 0, 0.6)
+	var lo := Color(CityPalette.SHADE, 0.6)
 	var at := func(u: float, v: float) -> Vector2: return a.lerp(b, u).lerp(d.lerp(c, u), v)
 	# Top lip: a bright bevel just under the roof edge.
 	_hair(at.call(0.0, 1.0 - 2.0 / hpx), at.call(1.0, 1.0 - 2.0 / hpx), Color(SLATE_LIGHT, 0.25 + light * 0.35), 1.2)
@@ -2593,7 +2593,7 @@ func _greeble_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, light: float,
 				# Recessed panel: darker inset, shadow along its top, lit lip along its foot.
 				var u0 := 0.1 + _h(key, band, 102) * 0.08
 				var u1 := 0.9 - _h(key, band, 103) * 0.08
-				var shade := Color(0, 0, 0, 0.32)
+				var shade := Color(CityPalette.SHADE, 0.32)
 				_quad(at.call(u0, v0), at.call(u1, v0), at.call(u1, v1), at.call(u0, v1), shade, shade, shade, shade)
 				_hair(at.call(u0, v1), at.call(u1, v1), lo, 1.1)
 				_hair(at.call(u0, v0), at.call(u1, v0), hi, 1.0)
@@ -2604,13 +2604,13 @@ func _greeble_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, light: float,
 				for q in ribs:
 					var u := (q + 0.5) / ribs
 					_hair(at.call(u, v0), at.call(u, v1), hi, 1.0)
-					_hair(at.call(u + 1.4 / wpx, v0), at.call(u + 1.4 / wpx, v1), Color(0, 0, 0, 0.35), 1.0)
+					_hair(at.call(u + 1.4 / wpx, v0), at.call(u + 1.4 / wpx, v1), Color(CityPalette.SHADE, 0.35), 1.0)
 			3:
 				# Vent grille: a small block of slats.
 				var gu := 0.2 + _h(key, band, 104) * 0.4
 				var gw := minf(0.35, 22.0 / wpx)
 				var slats := maxi(2, int((y1 - y) / 3.5))
-				var box := Color(0, 0, 0, 0.3)
+				var box := Color(CityPalette.SHADE, 0.3)
 				_quad(at.call(gu, v0), at.call(gu + gw, v0), at.call(gu + gw, v1), at.call(gu, v1), box, box, box, box)
 				for q in slats:
 					var v := lerpf(v0, v1, (q + 0.5) / slats)
@@ -2638,7 +2638,7 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 	var hpx := a.distance_to(d)
 	if wpx < 3.0 or hpx < 3.0:
 		return
-	var tone := Color("#8A97C8")
+	var tone := CityPalette.SLATE_GRAIN
 	match 2 if face_texture >= 7 else face_texture:
 		1:
 			# Panel seams: a floor line every two storeys, a joint every ~24 px.
@@ -2665,7 +2665,7 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 				if v_hi > v_lo:
 					var p0 := a.lerp(b, u0 + rise * v_lo).lerp(d.lerp(c, u0 + rise * v_lo), v_lo)
 					var p1 := a.lerp(b, u0 + rise * v_hi).lerp(d.lerp(c, u0 + rise * v_hi), v_hi)
-					_hair(p0, p1, Color(0.01, 0.01, 0.02, 0.7 if shaded else 0.55), 1.1)
+					_hair(p0, p1, Color(CityPalette.HAIR_DARK, 0.7 if shaded else 0.55), 1.1)
 				u0 += gap / wpx
 		3:
 			# Grime: specks gathering toward the street, lighter and darker.
@@ -2674,7 +2674,7 @@ func _texture_face(a: Vector2, b: Vector2, c: Vector2, d: Vector2, shaded: bool,
 				var u := _h(key, q, 90)
 				var v := pow(_h(key, q, 91), 2.2)
 				var p := a.lerp(b, u).lerp(d.lerp(c, u), v)
-				var sc := Color(tone, 0.55) if q % 3 else Color(0, 0, 0, 0.55)
+				var sc := Color(tone, 0.55) if q % 3 else Color(CityPalette.SHADE, 0.55)
 				var s := 0.7 + _h(q, key, 92) * 1.1
 				_quad(p + Vector2(-s, 0), p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), sc, sc, sc, sc)
 
@@ -3446,7 +3446,12 @@ func _hq_big_ben(cx: float, cy: float, k: float, col: Color, base: Vector2) -> v
 	_beacons.append({"pos": base + Vector2(0, -(th + ch + 118.0 * k)), "color": col, "phase": 0.2})
 
 
-## A neon name plate floating over an HQ (drawn by the overlay).
+## A neon name plate floating over an HQ (drawn by the overlay). Its lettering is part of the
+## city (baked-art scale, ART_BIBLE §4.3 rule 5), SIGN_FONT_PX at the city's own scale.
+const SIGN_FONT_PX := 14
+
+
+## Records a name plate at `at` (the live layer draws it).
 func _sign(at: Vector2, text: String, col: Color) -> void:
 	_signs.append({"pos": at, "text": text, "color": col})
 
@@ -3466,7 +3471,7 @@ func _draw_fx() -> void:
 			if t["id"] == FIST_TERRITORY:
 				p.y -= FIST_SIZE.y * 0.56  # above the fist, not over it
 			var col := Palette.PAPER if t["id"] == &"" else Palette.corp_color(t["id"])
-			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(0, 0, 0, 0.75))
+			_fx.draw_rect(Rect2(p - Vector2(8, 30) * k, Vector2(260, 40) * k), Color(CityPalette.SHADE, 0.75))
 			_fx.draw_string(Palette.display(), p, name, HORIZONTAL_ALIGNMENT_LEFT, -1, int(30 * k), col)
 	# Everything below was recorded in the image's space (baked) or the city's (not).
 	_fx.draw_set_transform(_shift)
@@ -3483,11 +3488,11 @@ func _draw_fx() -> void:
 			var ph := fmod(anim_t / period + _hv(p), 1.0)
 			if ph < dip:
 				col = Color(col, Motion.amplitude(SIGN_MOTION))
-		var w := Palette.mono().get_string_size(sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 14
+		var w := Palette.mono().get_string_size(sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, SIGN_FONT_PX).x + SIGN_FONT_PX
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(Palette.NIGHT_SKY, 0.85))
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), Color(col, 0.2 * col.a), false, 5.0)
 		_fx.draw_rect(Rect2(p, Vector2(w, 22)), col, false, 1.2)
-		_fx.draw_string(Palette.mono(), p + Vector2(7, 16), sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, col.lightened(0.3))
+		_fx.draw_string(Palette.mono(), p + Vector2(7, 16), sg["text"], HORIZONTAL_ALIGNMENT_LEFT, -1, SIGN_FONT_PX, col.lightened(0.3))
 	# Traffic: small bright dashes sliding along the busiest lanes. (Window lights and
 	# beacons blink on the GPU: _draw_lights / _draw_beacons.)
 	if Motion.live(TRAFFIC_MOTION):
@@ -3500,7 +3505,7 @@ func _draw_fx() -> void:
 			var col: Color = t["color"]
 			var w := float(t.get("width", 2.0))
 			_fx.draw_line(p, p + (b - a) * SPARK_LENGTH, Color(col.lightened(0.3), 0.9), w)
-			_fx.draw_line(p + (b - a) * SPARK_LENGTH * 0.3, p + (b - a) * SPARK_LENGTH * 0.8, Color(1, 1, 1, SPARK_CORE), w * 0.5)
+			_fx.draw_line(p + (b - a) * SPARK_LENGTH * 0.3, p + (b - a) * SPARK_LENGTH * 0.8, Color(CityPalette.HOT_CORE, SPARK_CORE), w * 0.5)
 	_fx.draw_set_transform(Vector2.ZERO)
 	if rain:
 		var off := fmod(anim_t * 480.0, 80.0)
