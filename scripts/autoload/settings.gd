@@ -370,9 +370,18 @@ func _apply_bind(action: StringName, physical_keycode: int) -> void:
 		InputMap.action_add_event(action, ev)
 
 
-## Applies window mode, size and vsync (no-op headless).
+## Applies window mode, size and vsync (no-op headless). A quiet window (tools/run_windowed.py)
+## stays windowed at `resolution`, off the screen and without focus.
 func apply_display() -> void:
 	if DisplayServer.get_name() == "headless":
+		return
+	if quiet_window():
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
+		DisplayServer.window_set_size(resolution)
+		DisplayServer.window_set_position(QUIET_WINDOW_POSITION)
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
 		return
 	match window_mode:
 		WindowMode.FULLSCREEN:
@@ -430,6 +439,23 @@ static func is_test_run() -> bool:
 		if a.ends_with("gut_cmdln.gd"):
 			return true
 	return false
+
+
+## Whether this process is a quiet windowed run (tools/run_windowed.py): no focus taken, no
+## sound, the window off the screen. Set by the environment or a `--quiet-window` user arg.
+static func quiet_window() -> bool:
+	return quiet_window_from(OS.get_cmdline_user_args(), OS.get_environment(QUIET_WINDOW_ENV))
+
+
+## `quiet_window` from given user args and environment value (testable).
+static func quiet_window_from(user_args: PackedStringArray, env_value: String) -> bool:
+	return user_args.has(QUIET_WINDOW_ARG) or env_value == "1"
+
+
+const QUIET_WINDOW_ENV := "REBEL_CELL_QUIET_WINDOW"
+const QUIET_WINDOW_ARG := "--quiet-window"
+## Far off every screen: Godot keeps drawing a window there (a minimized one stops).
+const QUIET_WINDOW_POSITION := Vector2i(-30000, -30000)
 
 
 ## A test run's own settings file (by process id).
