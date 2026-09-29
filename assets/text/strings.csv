@@ -2855,3 +2855,5 @@ NEXT TURN %d,NEXT TURN %d
 "NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why)."
 "NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why)."
 Inner ring: %s,Inner ring: %s
+RING SWAPS,RING SWAPS
+"Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel.","Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel."

@@ -255,7 +255,7 @@ func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() 
 		await _frames(4)
 		var living := c.living_operatives()
 		var who := living[living.size() - 1]
-		var pick := hq._panel.find_child("OperativePick", true, false) as OptionButton
+		# Art pass W8b: the pick is on the crew's Polaroids (the native list is gone).
 		if use_drag:
 			var chip := hq._panel.find_child("Chip_%s" % who.id, true, false) as Control
 			assert_not_null(chip, "the Site card shows the crew as chips")
@@ -263,9 +263,10 @@ func test_a_crew_chip_on_jack_in_picks_them_and_only_the_press_starts_the_run() 
 			assert_eq(_drag(hq.drops, chip, "jack"), "dropped")
 			assert_false(RunManager.has_active_run(), "the drop alone starts no run")
 			assert_eq(_hash(), before, "and changes nothing in the campaign")
-			assert_eq(pick.selected, living.size() - 1, "it picks the operative in the list")
+			assert_eq(hq.launch_operative(), who.id, "it picks the operative")
+			assert_true((hq._panel.find_child("Chip_%s" % who.id, true, false) as CrewChip).picked, "the picked chip is stamped")
 		else:
-			pick.select(living.size() - 1)
+			(hq._panel.find_child("Chip_%s" % who.id, true, false) as CrewChip).pressed.emit()
 		(hq._panel.find_child("Launch", true, false) as Button).pressed.emit()
 		assert_true(RunManager.has_active_run(), "the press on JACK IN starts the run")
 		results.append([_hash(), RunManager.netrun.run.operative.id if RunManager.netrun != null else &""])
@@ -452,7 +453,13 @@ func test_a_click_picks_up_a_chip_and_a_click_on_the_target_drops_it() -> void:
 	hq.show_grid()
 	await _frames(4)
 	var chip: CrewChip = hq._grid_chips[0]
-	chip.pressed.emit()  # a click (or A) on an item that only moves picks it up
+	# Art pass W8b (§10.2, ANIM-R1 ruling "select, then jack in"): a click on a chip picks the
+	# operative at once (stamped); carrying it is the drag or the pick-up key.
+	chip.pressed.emit()
+	assert_eq(hq.drops.mode, DropLayer.Mode.IDLE, "a click picks, it doesn't carry")
+	assert_true(chip.picked, "the chip is stamped")
+	assert_eq(hq.launch_operative(), chip.operative_id)
+	hq.drops.start_carry(chip)
 	assert_eq(hq.drops.mode, DropLayer.Mode.CARRY)
 	assert_eq(hq.drops.aimed().get("id", ""), "jack", "JACK IN is aimed")
 	var jack: Rect2 = hq.drops.locate(hq.drops.target("jack"))

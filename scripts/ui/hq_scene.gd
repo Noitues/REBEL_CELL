@@ -100,6 +100,11 @@ const MONITOR_GROW_MAX := 1.3
 const MONITOR_MAP_LOW := 110.0
 const CREW_COLUMNS := 3
 const CREW_COLUMNS_BIG := 2
+## The Grid Site card's node tiles (the node to build) at text scale 1.0 (px).
+const NODE_TILE := Vector2(132, 60)
+## W8b: a Rank 3 dossier's button to its ring swaps (the loadout's SPINNER tab).
+const RING_SWAPS := "RING SWAPS" # TR
+const RING_SWAPS_TIP := "Rank 3: swap the inner ring's segments on the SPINNER tab, beside the wheel." # TR
 ## Art pass W8b (§11 New campaign): the planning table's width the pickers fill (px), the
 ## corporation dossier and small tiles at text scale 1.0, the ICE line's and the profile
 ## records' widths, the share code field's, and the highest seed.
@@ -665,7 +670,7 @@ func _register_grid_drops(site: SiteData) -> void:
 	if _jack_button == null or site == null:
 		return
 	for chip in _grid_chips:
-		drops.add_source(chip, {"kind": "crew", "op": chip.operative_id, "motion": &"crew_assign", "prefer": site.id}, true)
+		drops.add_source(chip, {"kind": "crew", "op": chip.operative_id, "motion": &"crew_assign", "prefer": site.id})  # W8b: a press picks (pick_operative)
 	drops.add_target("jack", ["crew"], "jack", site.id, DropLayer.rect_of(_jack_button))
 
 
@@ -754,16 +759,39 @@ func drop_error(payload: Dictionary, target: Dictionary) -> String:
 ## ANIM-R1 (designer ruling): picks operative `operative_id` in the Site card's list (a
 ## crew chip dropped on JACK IN) and puts focus on JACK IN; nothing starts.
 func pick_operative(operative_id: StringName) -> void:
-	var pick := _panel.find_child("OperativePick", true, false) as OptionButton if _panel != null else null
-	if pick == null:
+	var c := RunManager.campaign
+	var op := c.get_operative(operative_id) if c != null else null
+	if op == null or not op.alive:
 		return
-	var living := RunManager.campaign.living_operatives()
-	for i in living.size():
-		if living[i].id == operative_id and i < pick.item_count:
-			pick.select(i)
-	var go := _panel.find_child("Launch", true, false) as Control
+	_launch_op = operative_id
+	# W8b (§10.2): the pick shows: the chip is stamped, the Polaroid beside JACK IN changes.
+	for chip in _grid_chips:
+		if is_instance_valid(chip):
+			chip.picked = chip.operative_id == operative_id
+	var rider := _panel.find_child("JackOperative", true, false) as CrewChip if _panel != null else null
+	if rider != null:
+		rider.show_operative(op.class_id, op.id, op.name)
+		Motion.pop(rider, &"sticky_bump")
+	var go := _panel.find_child("Launch", true, false) as Control if _panel != null else null
 	if go != null and go.is_visible_in_tree():
 		go.grab_focus.call_deferred()
+
+
+## The operative JACK IN on the Grid's Site card launches: the one picked (a chip pressed or
+## dropped on JACK IN), else the first living operative.
+func launch_operative() -> StringName:
+	var c := RunManager.campaign
+	if c == null:
+		return &""
+	var living := c.living_operatives()
+	for op in living:
+		if op.id == _launch_op:
+			return op.id
+	return living[0].id if not living.is_empty() else &""
+
+
+## W8b: the operative picked to run from the Grid (see launch_operative).
+var _launch_op: StringName = &""
 
 
 ## Why operative `operative_id` can't run Site `site_id` ("" when they can), whatever
@@ -1069,7 +1097,7 @@ func _reset_scroll() -> void:
 ## VIEW LOADOUT: an operative's deck and spinner. A dossier's Loadout button opens its
 ## operative (and selects them); the top bar opens the selected one, and NEXT OPERATIVE
 ## in the view cycles through the living crew (H20).
-func open_loadout(op: OperativeState = null) -> void:
+func open_loadout(op: OperativeState = null, spinner: bool = false) -> void:
 	var c := RunManager.campaign
 	if c == null or has_node("LoadoutView"):
 		return
@@ -1082,6 +1110,8 @@ func open_loadout(op: OperativeState = null) -> void:
 	view.operative_changed.connect(select_operative)
 	add_child(view)
 	_wire_drops(view.drops)  # ANIM-4: ring segment swaps dropped in the view come here
+	if spinner:
+		view.show_spinner()  # W8b: a dossier's RING SWAPS opens on the wheel
 
 
 ## The Daemon tray of the selected operative (top bar DAEMONS icon).
@@ -1641,26 +1671,18 @@ func show_hq() -> void:
 						var sid := site_id
 						_add_tip(orders, _icon(_button(tr("Station on %s") % site_name(site_id), func() -> void: station(oid, sid)), StatIcon.RAIDS),
 							tr("%s guards %s (%s): the class's station bonus helps it hold in raids.") % [op.name, site_name(site_id), TextDb.t(node, "display_name")])
-			# Rank 3 Inner Ring segment swaps (GDD 6.4).
+			# Rank 3 Inner Ring segment swaps (GDD 6.4). Art pass W8b (§6.5, critique 13): the
+			# three native lists are gone: RING SWAPS opens the loadout's SPINNER tab, where the
+			# swaps sit beside the wheel (press one, pick the segment; or drag it) and a swap
+			# fills and pulses its segment (§10.2).
 			var cls := lookup.get_content(op.class_id) as ClassData
 			var options := CampaignRules.ring_segment_options(op, cls)
 			if not options.is_empty():
-				for k in RC.RING_SEGMENTS:
-					var pick := OptionButton.new()
-					pick.add_item(tr("seg %d: default") % k)
-					pick.set_item_metadata(0, &"")
-					var current: StringName = op.ring_segment_ids[k] if k < op.ring_segment_ids.size() else &""
-					for i in options.size():
-						var seg := lookup.get_content(options[i]) as RingSegmentData
-						pick.add_item(tr("seg %d: %s") % [k, TextDb.t(seg, "display_name") if seg != null else String(options[i])])
-						pick.set_item_metadata(i + 1, options[i])
-						if options[i] == current:
-							pick.select(i + 1)
-					var oid2 := op.id
-					var index := k
-					pick.item_selected.connect(func(i: int) -> void: swap_segment(oid2, index, pick.get_item_metadata(i)))
-					pick.tooltip_text = UiTip.fold(tr("Inner ring segment %d: Rank 3 lets you swap it for another.") % k)
-					orders.add_child(pick)
+				var op_ring := op
+				var ring_btn := _icon(_button(tr(RING_SWAPS), func() -> void: open_loadout(op_ring, true)), StatIcon.SLOTS)
+				ring_btn.name = "RingSwaps"
+				ring_btn.tooltip_text = UiTip.fold(tr(RING_SWAPS_TIP))
+				orders.add_child(ring_btn)
 		roster_box.add_child(row)
 	roster_box.name = "Roster"
 	# The market (W8b, §11 HQ, critique 06/09): recruits, next-run boosts (GDD 11.4) and
@@ -2606,30 +2628,36 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		if l.id == site.id:
 			launchable_here = true
 	if launchable_here and not living.is_empty():
-		var op_pick := OptionButton.new()
-		op_pick.name = "OperativePick"
-		for op in living:
-			var post := CampaignRules.stationed_site(c, op.id)
-			op_pick.add_item(tr("%s R%d%s") % [op.name, op.rank, (tr(" (leaves %s)") % site_name(post)) if post != &"" else ""])
-		op_pick.tooltip_text = tr("Who runs it.")
-		# H22 #14: the dropdown carries the operative icon beside it.
-		var who := IconMark.standalone(StatIcon.OPERATIVE, UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR, Palette.CELL_PINK)
+		# Art pass W8b (§10.2, critique gifs/09): who runs it is picked on the crew's own
+		# Polaroids (a press, or a drop on JACK IN; the native list is gone); the picked one
+		# is stamped and rides beside JACK IN, so the choice is seen, not only listed.
+		var who_runs := launch_operative()
+		var who := IconMark.standalone(StatIcon.OPERATIVE, UiTheme.font_px(UiTheme.BODY) * IconMark.SIZE_FACTOR, Palette.CELL_PINK)
 		who.name = "OperativeIcon"
+		who.tooltip_text = tr("Who runs it.")
 		who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(who)
-		row.add_child(op_pick)
 		var sid := site.id
 		var kind := CampaignRules.run_kind_for(c, site)
 		# One name for one idea (H21 #21): JACK IN, as on the HQ's stamp.
-		var go := _icon(_button(tr(JACK_IN), func() -> void: launch(sid, living[op_pick.selected].id)), StatIcon.JACK_IN)
+		var go := _icon(_button(tr(JACK_IN), func() -> void: launch(sid, launch_operative())), StatIcon.JACK_IN)
 		go.add_to_group(Fx.JACK_FOCUS_GROUP)  # ANIM-5: jack in pushes into this JACK IN
 		go.name = "Launch"
-		go.theme_type_variation = &"HotButton"
+		go.theme_type_variation = UiTheme.PRIMARY
 		_add_tip(row, go, tr("JACK IN to %s: start a %s here with the picked operative.") % [site_name(site.id), tr(kind)])
 		_jack_button = go
-		# ANIM-4: the crew as small Polaroids: drag one onto JACK IN (or pick it up with a
-		# press) to choose who runs it (ANIM-R1: it picks; the press on JACK IN launches).
-		# The list above stays the button path.
+		# The picked operative beside JACK IN: their Polaroid, stamped.
+		var chosen_op := c.get_operative(who_runs)
+		var rider := CrewChip.new(chosen_op.class_id if chosen_op != null else &"", who_runs, chosen_op.name if chosen_op != null else "")
+		rider.name = "JackOperative"
+		rider.picked = true
+		rider.disabled = true
+		rider.focus_mode = Control.FOCUS_NONE
+		rider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		rider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(rider)
+		# ANIM-4: the crew as small Polaroids: press one to pick them, or drag one onto JACK IN
+		# (ANIM-R1: a drop picks; only the press on JACK IN launches).
 		var chips := HFlowContainer.new()
 		chips.name = "CrewChips"
 		chips.add_theme_constant_override("h_separation", 6)
@@ -2637,23 +2665,39 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		for op in living:
 			var chip := CrewChip.new(op.class_id, op.id, op.name)
 			chip.name = "Chip_%s" % op.id
-			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.") % [op.name, site_name(site.id)])
+			chip.picked = op.id == who_runs
+			var post := CampaignRules.stationed_site(c, op.id)
+			chip.tooltip_text = UiTip.fold("%s\n%s" % [tr("%s R%d%s") % [op.name, op.rank, (tr(" (leaves %s)") % site_name(post)) if post != &"" else ""],
+				tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.") % [op.name, site_name(site.id)]])
+			var oid := op.id
+			chip.pressed.connect(func() -> void: pick_operative(oid))
 			chips.add_child(chip)
 			_grid_chips.append(chip)
 		card.body.add_child(chips)
 		card.body.move_child(chips, row.get_index())
 	if c.grid.is_cleared(site.id) and site.claimable:
-		var node_pick := OptionButton.new()
+		# W8b (§6.5): the node to build as tiles (a locked one greyed with its lock and unlock).
+		var node_list: Array[NetworkNodeData] = []
+		var node_tiles: Array[Dictionary] = []
+		for locked_pass in [false, true]:
+			for node in choices:
+				var available := CampaignRules.node_available(RunManager.profile, lookup, node)
+				if available == locked_pass:
+					continue
+				node_list.append(node)
+				var tile := {"name": TextDb.t(node, "display_name"), "meta": "%d" % node.install_cost, "icon": StatIcon.LINKS}
+				if not available:
+					tile["locked"] = true
+					tile["unlock"] = _unlock_words(node)
+				node_tiles.append(tile)
+		var node_pick := PlanningPicker.new(node_tiles, 0, NODE_TILE)
 		node_pick.name = "NodePick"
-		for i in choices.size():
-			var node := choices[i]
-			var available := CampaignRules.node_available(RunManager.profile, lookup, node)
-			node_pick.add_item("%s (%d)%s" % [TextDb.t(node, "display_name"), node.install_cost, "" if available else tr(" [locked]")])
-			node_pick.set_item_disabled(i, not available)
-			node_pick.set_item_tooltip(i, UiTip.fold(TextDb.t(node, "description")))
-		row.add_child(node_pick)
+		node_pick.columns = clampi(floori((GRID_SIDE_WIDTH - UiTheme.SP_L) / (NODE_TILE.x * minf(Settings.text_scale, PlanningPicker.WIDTH_GROW_MAX) + TilePicker.TILE_GAP)), 1, maxi(1, node_tiles.size()))
+		node_pick.tooltip_text = UiTip.fold(tr("Build the picked node here: it joins your network and defends in raids."))
+		card.body.add_child(node_pick)
+		card.body.move_child(node_pick, row.get_index())
 		var sid2 := site.id
-		_add_tip(row, _button(tr("Claim"), func() -> void: claim(sid2, choices[node_pick.selected].id)), tr("Build the picked node here: it joins your network and defends in raids."))
+		_add_tip(row, _icon(_button(tr("Claim"), func() -> void: claim(sid2, node_list[node_pick.selected()].id)), StatIcon.CLAIM), tr("Build the picked node here: it joins your network and defends in raids."))
 	if c.grid.is_claimed(site.id) and int(s["condition"]) == GridState.Condition.DISABLED:
 		var sid3 := site.id
 		_add_tip(row, _button(tr("Repair (%d)") % CampaignRules.repair_cost(c, cfg, lookup, sid3), func() -> void: repair(sid3)), tr("Bring the disabled node back online."))

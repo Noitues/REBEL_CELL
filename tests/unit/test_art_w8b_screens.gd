@@ -320,3 +320,96 @@ func test_planning_tiles_fit_their_words_at_every_scale() -> void:
 					assert_true(Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= p.name_width(i) + 0.5, "%s: '%s' fits" % [pick_name, line])
 			assert_true(p.get_combined_minimum_size().x <= CANVAS.x, "%s fits the screen at %.1f" % [pick_name, scale])
 		await _close(hq)
+
+
+# --- Item 5: crew, loadout and pickers (§5.3, §10.2, §4.3; critique 11-13, 57/58, gifs/09-10) --
+
+func test_no_native_dropdown_spin_box_or_code_edit_in_hq_scene() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/hq_scene.gd")
+	for native in ["OptionButton.new(", "SpinBox.new(", "CodeEdit.new(", "LineEdit.new("]:
+		assert_false(src.contains(native), "hq_scene builds no %s" % native.trim_suffix("("))
+	var c := _raid_campaign()
+	c.roster[0].rank = 3
+	var hq := _open(HQ)
+	await _frames(3)
+	for page in ["hq", "grid", "raid", "start"]:
+		match page:
+			"grid":
+				hq.selected_site = RunManager.launchable_sites()[0].id
+				hq.show_grid()
+			"raid":
+				hq.show_raid()
+			"start":
+				hq.show_start()
+		await _frames(2)
+		for n in _all(hq._panel):
+			assert_false(n is OptionButton or n is SpinBox or n is CodeEdit, "%s: no native %s" % [page, n.name])
+	await _close(hq)
+
+
+func test_the_loadout_keeps_one_size_across_tabs_over_a_full_scrim() -> void:
+	for scale in SCALES:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var hq := _open(HQ)
+		await _frames(3)
+		hq.open_loadout()
+		await _frames(3)
+		var view := hq.get_node("LoadoutView") as LoadoutView
+		assert_eq(view.scrim.get_global_rect(), Rect2(Vector2.ZERO, CANVAS), "a full-screen scrim at %.1f" % scale)
+		var deck_rect := (view._view.get("window") as Control).get_global_rect()
+		view.show_spinner()
+		await _frames(3)
+		var spin_rect := (view._view.get("window") as Control).get_global_rect()
+		assert_eq(spin_rect, deck_rect, "the frame keeps its size and place across DECK / SPINNER at %.1f" % scale)
+		assert_true(Rect2(Vector2.ZERO, CANVAS).encloses(spin_rect), "the modal on screen at %.1f (%s)" % [scale, spin_rect])
+		assert_true(view.wheel_scale >= LoadoutView.WHEEL_SCALE_MIN, "the wheel scaled to its room")
+		await _close(hq)
+
+
+func test_swap_chips_break_at_words_and_a_swap_fills_its_segment() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/loadout_view.gd")
+	assert_false(src.contains("AUTOWRAP_WORD_SMART"), "no mid-word break mode in the loadout (Accelera/tor)")
+	var px := LoadoutView.chip_font_px("Accelerator", SpinnerView.SIDE_W)
+	assert_true(Palette.marker().get_string_size("Accelerator", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= SpinnerView.SIDE_W - LoadoutView.CHIP_PAD or px == UiTheme.font_px(UiTheme.CAPTION), "the chip's word fits or steps down")
+	var c := RunManager.campaign
+	var op := c.roster[0]
+	op.rank = 3
+	var hq := _open(HQ)
+	await _frames(3)
+	hq.open_loadout(op, true)
+	await _frames(3)
+	var view := hq.get_node("LoadoutView") as LoadoutView
+	var options := CampaignRules.ring_segment_options(op, RunManager.lookup().get_content(op.class_id) as ClassData)
+	hq.swap_segment(op.id, 1, options[0])
+	view.show_spinner()
+	view.focus_ring(1)
+	await _frames(3)
+	var mark := (view._view as SpinnerView).ring_pad(1).get_parent().get_node_or_null(^"RingSwapMark") as RingSwapMark
+	assert_not_null(mark, "the swapped segment is marked")
+	assert_eq(mark.index, 1)
+	assert_true(mark.fill_alpha() >= RingSwapMark.REST_ALPHA, "it is filled (%.2f)" % mark.fill_alpha())
+	assert_ne(mark.label, "", "and names the new segment")
+	await _close(hq)
+
+
+func test_the_operative_picked_for_jack_in_is_stamped_and_rides_beside_it() -> void:
+	var c := RunManager.campaign
+	c.recruit(RunManager.lookup().get_content(&"ghost") as ClassData)
+	var hq := _open(HQ)
+	hq.selected_site = RunManager.launchable_sites()[0].id
+	hq.show_grid()
+	await _frames(4)
+	var second := c.living_operatives()[1]
+	(hq._panel.find_child("Chip_%s" % second.id, true, false) as CrewChip).pressed.emit()
+	await _frames(1)
+	assert_eq(hq.launch_operative(), second.id)
+	var stamped := 0
+	for chip in hq._grid_chips:
+		stamped += 1 if chip.picked else 0
+	assert_eq(stamped, 1, "one chip is stamped")
+	var rider := hq._panel.find_child("JackOperative", true, false) as CrewChip
+	assert_eq(rider.operative_id, second.id, "JACK IN shows the picked operative")
+	assert_false(RunManager.has_active_run(), "a pick starts nothing")
+	await _close(hq)
