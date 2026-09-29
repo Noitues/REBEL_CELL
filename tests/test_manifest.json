@@ -149,6 +149,10 @@
 			"seconds": 8.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art_wf_kit.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.1,
 			"tier": "fast"
