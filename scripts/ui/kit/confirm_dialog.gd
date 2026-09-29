@@ -1,7 +1,9 @@
 class_name ConfirmDialog
 extends Control
 ## A zine confirm strip: a question, YES / NO. Emits confirmed or cancelled and frees
-## itself. Used for quitting, deleting saves and abandoning campaigns.
+## itself. Used for quitting, deleting saves and abandoning campaigns, so YES is the §6.4
+## Danger button (HARM outline, X glyph) and NO the Secondary one, which takes focus first
+## (the safe answer). Art pass W2 (ART_BIBLE §6.4).
 
 signal confirmed
 signal cancelled
@@ -24,16 +26,19 @@ func _init(question: String, yes_text: String = "Yes", no_text: String = "No") -
 	l.text = question
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size = Vector2(380, 0)
-	l.add_theme_color_override("font_color", Palette.TERMINAL_TEXT)
+	l.add_theme_color_override("font_color", Palette.TEXT_HI)
 	box.add_child(l)
 	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", UiTheme.SP_M)
 	box.add_child(row)
 	yes_button = Button.new()
 	yes_button.text = tr(yes_text)
+	yes_button.theme_type_variation = UiTheme.DANGER
 	yes_button.pressed.connect(func() -> void: confirmed.emit(); queue_free())
 	row.add_child(yes_button)
 	no_button = Button.new()
 	no_button.text = tr(no_text)
+	no_button.theme_type_variation = UiTheme.SECONDARY
 	no_button.pressed.connect(func() -> void: cancelled.emit(); queue_free())
 	row.add_child(no_button)
 

@@ -84,6 +84,10 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"wheel_burst_perfect", &"wheel_burst_phase",
 	# Art pass W6 (ART_BIBLE 8): each slice type's own hit shape.
 	&"hit_vfx_crit", &"hit_vfx_attack", &"hit_vfx_shield", &"hit_vfx_evade", &"hit_vfx_afflict", &"hit_vfx_heal", &"hit_vfx_miss",
+	# Art pass W2 (ART_BIBLE 6, 6.5-6.7, 10): the component kit (focus scale, refusal flash, the
+	# one toast, stamp reading time and its reveal, the banner queue, the toggle).
+	&"focus_scale", &"button_refused", &"toast_in", &"toast_hold", &"toast_out", &"stamp_hold", &"zine_stamp_in",
+	&"banner_gap", &"toggle_slide",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

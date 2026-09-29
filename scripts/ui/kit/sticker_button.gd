@@ -3,6 +3,10 @@ extends Button
 ## A taped paper sticker that presses like a button (combat actions around the spinner:
 ## NUDGE, RESPIN, UNDO and the toggles). Marker text on note paper, a tilt, tape; hover or
 ## focus lifts it with an acid glow. The scene decides what a press means.
+## Art pass W2 (ART_BIBLE §6): all six states from KitState: hover lifts 2 px and glows,
+## focus adds the FOCUS brackets, pressed drops 1 px, disabled keeps its paper and ink (the
+## words at full contrast) with a DISABLED edge and a lock, refused flashes HARM with the
+## no-entry mark (`refuse`).
 
 var paper: Color = Palette.NOTE_YELLOW
 var tilt: float = 0.0
@@ -17,6 +21,12 @@ const FONT_SIZE := 14
 const HEIGHT := 30.0
 const MIN_WIDTH := 64.0
 const PADDING := 22.0
+## The hover / focus glow round the sticker (px, alpha x the §6 glow), its paper shadow
+## offset and its edge's ink alpha.
+const HOT_GROW := 3.0
+const HOT_ALPHA := 0.5
+const SHADOW_OFFSET := Vector2(3, 4)
+const EDGE_ALPHA := 0.45
 
 
 func _init(p_text: String = "", p_paper: Color = Palette.NOTE_YELLOW, p_tilt: float = 0.0) -> void:
@@ -28,12 +38,23 @@ func _init(p_text: String = "", p_paper: Color = Palette.NOTE_YELLOW, p_tilt: fl
 	focus_mode = Control.FOCUS_ALL
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_disabled_color"]:
-		add_theme_color_override(key, Color(0, 0, 0, 0))  # the sticker draws its own text
+		add_theme_color_override(key, Color.TRANSPARENT)  # the sticker draws its own text
 	mouse_entered.connect(func() -> void: _hot = true; queue_redraw())
 	mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
 	focus_entered.connect(func() -> void: _hot = true; queue_redraw())
 	focus_exited.connect(func() -> void: _hot = false; queue_redraw())
+	KitState.track(self)
 	_fit()
+
+
+## Shows the §6 refused state (HARM flash, no-entry mark) on the sticker.
+func refuse() -> void:
+	KitState.refuse(self)
+
+
+## The state drawn now (KitState).
+func state() -> StringName:
+	return KitState.of(self)
 
 
 ## The lettering size: Settings.text_scale reaches the stickers too (GDD 9.6).
@@ -87,18 +108,19 @@ func set_label(t: String) -> void:
 
 
 func _draw() -> void:
+	var st := state()
 	var r := Rect2(Vector2.ZERO, size)
-	draw_set_transform(size * 0.5, deg_to_rad(tilt), Vector2.ONE)
+	draw_set_transform(size * 0.5 + Vector2(0, KitState.lift(st)), deg_to_rad(tilt), Vector2.ONE)
 	var rr := Rect2(-size * 0.5, size)
-	if _hot and not disabled:
-		draw_rect(rr.grow(3), Color(Palette.CELL_ACID, 0.5))
-	draw_rect(Rect2(rr.position + Vector2(3, 4), rr.size), Palette.SHADOW)
-	draw_rect(rr, paper if not disabled else paper.darkened(0.45))
-	draw_rect(rr, Color(Palette.INK, 0.45), false, 1.0)
+	if st == KitState.HOVER or st == KitState.FOCUS or st == KitState.PRESSED:
+		draw_rect(rr.grow(HOT_GROW), Color(Palette.CELL_ACID, HOT_ALPHA * KitState.glow(st)))
+	draw_rect(Rect2(rr.position + SHADOW_OFFSET, rr.size), Palette.SHADOW)
+	draw_rect(rr, paper)
+	draw_rect(rr, Palette.DISABLED if st == KitState.DISABLED else Color(Palette.INK, EDGE_ALPHA), false, 1.0)
 	draw_rect(Rect2(Vector2(-12, rr.position.y - 5), Vector2(24, 9)), Palette.NOTE_TAPE)
 	var fs := font_px()
 	var baseline := rr.position.y + (rr.size.y + Palette.marker().get_ascent(fs) - Palette.marker().get_descent(fs)) * 0.5
-	var ink := Palette.INK if not disabled else Color(Palette.INK, 0.5)
+	var ink := Palette.INK
 	var text_x := rr.position.x
 	var text_w := rr.size.x
 	if drawn_icon != "":
@@ -109,4 +131,4 @@ func _draw() -> void:
 		text_w -= ICON_ROOM * s
 	draw_string(Palette.marker(), Vector2(text_x, baseline), shown_text(), HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	r = r
+	KitState.draw_frame(self, r.grow(-1.0), st)
