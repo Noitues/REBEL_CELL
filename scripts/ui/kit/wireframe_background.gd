@@ -109,7 +109,9 @@ func camera_points() -> Array:
 ## Keeps the picture on the current frame while the camera changes (a page rebuilds and
 ## refits its map), until `ease_camera`. Nothing happens when motion doesn't play.
 func hold_camera() -> void:
-	if not Motion.live(CAMERA_MOTION) or not city.camera_settled():
+	# Art pass W7 (reduce motion, ART_BIBLE §12): no camera moves: nothing is held, every
+	# change cuts to its end framing.
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed() or not city.camera_settled():
 		return
 	if _ease_tween != null and _ease_tween.is_valid():
 		_ease_tween.kill()
@@ -128,7 +130,7 @@ func ease_camera() -> void:
 		return
 	_apply_hold()
 	_held = []
-	if not Motion.live(CAMERA_MOTION):
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed():
 		_rig_rest()
 		return
 	var e := Motion.entry(CAMERA_MOTION)
@@ -224,7 +226,9 @@ func frame_points(points: PackedVector2Array, area: Rect2, max_zoom: float, min_
 	sync_hold()
 	if not city.rebuilt.is_connected(ease_camera):
 		city.rebuilt.connect(ease_camera, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
-	return Motion.delay_of(CAMERA_MOTION) + Motion.seconds(CAMERA_MOTION) if Motion.live(CAMERA_MOTION) else 0.0
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed():
+		return 0.0  # art pass W7: reduce motion cuts to the framed fight
+	return Motion.delay_of(CAMERA_MOTION) + Motion.seconds(CAMERA_MOTION)
 
 
 ## ANIM-R1 M4: share of the free map a framed fight may span.
