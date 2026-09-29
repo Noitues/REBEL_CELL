@@ -47,6 +47,10 @@ const TUBE_OFF_ALPHA := 0.12
 const FLICKER_ON := 0.6
 ## Tube ids for the warm-up hash: the border, then each letter.
 const TUBE_BORDER := 0
+## The strike and flicker shares of the warm-up that plays (read once as it starts, so a
+## warm-up shorter than a frame still reads its entries; `tube` uses these).
+var _strike: float = 0.0
+var _flicker: float = 0.0
 
 
 func _init() -> void:
@@ -57,6 +61,8 @@ func _init() -> void:
 ## Warms the sign up from dark (entering the Modem).
 func warm_up() -> void:
 	settle()
+	_strike = strike_share()
+	_flicker = flicker_share()
 	if Motion.live(&"modem_sign_warmup"):
 		var e := Motion.entry(&"modem_sign_warmup")
 		warm = 0.0
@@ -100,10 +106,10 @@ func warming() -> bool:
 func tube(id: int) -> float:
 	if warm >= 1.0:
 		return 1.0
-	var strike := float(absi(hash([id, 41])) % 1000) / 1000.0 * strike_share()
+	var strike := float(absi(hash([id, 41])) % 1000) / 1000.0 * _strike
 	if warm < strike:
 		return TUBE_OFF_ALPHA
-	if warm >= strike + flicker_share():
+	if warm >= strike + _flicker:
 		return 1.0
 	var step := floori(warm * WARM_STEPS)
 	var h := float(absi(hash([id, step, 43])) % 1000) / 1000.0
