@@ -83,17 +83,50 @@ func busy() -> bool:
 
 
 ## Ends every effect at once (skip): sprites vanish, flying cards land where they were
-## going (their `on_done` runs) and are freed.
+## going (their `on_done` runs) and are freed. A held word stays, landed (ANIM-R6 A15).
 func clear() -> void:
 	sprites.clear()
 	for f in flights.duplicate():
 		_end_flight(f)
 	flights.clear()
+	if not held_word.is_empty():
+		held_word["age"] = _word_landed_at(held_word)
 	set_process(false)
 	queue_redraw()
 
 
+## ANIM-R6 A15: the word that stays (VICTORY once a fight is won): it lands like `word` (the
+## `victory_stamp` pop) and then holds at full strength until `release_word` (the fight is
+## left for its loot), never fading to a ghost. Not an effect that plays: `busy` ignores it.
+var held_word: Dictionary = {}
+
+
+## Lands `text` at `at` (global) and keeps it (see `held_word`); `instant` (a skip, reduce
+## effects) shows it landed at once.
+func hold_word(at: Vector2, text: String, color: Color, font_size: int = -1, instant: bool = false) -> void:
+	var live := Motion.live(&"victory_stamp") and not instant
+	held_word = {"kind": "word", "at": at, "text": text, "color": color, "delay": Motion.delay_of(&"victory_stamp") if live else 0.0,
+		"dur": INF, "land": Motion.seconds(&"victory_stamp") if live else 0.0, "from": Motion.amplitude(&"victory_stamp") if live else 1.0,
+		"fs": font_size if font_size > 0 else roundi(WORD_FONT * Settings.text_scale), "age": 0.0}
+	if live:
+		set_process(true)
+	queue_redraw()
+
+
+## The held word goes (the fight it said is over and left, or a new one starts).
+func release_word() -> void:
+	held_word = {}
+	queue_redraw()
+
+
+static func _word_landed_at(w: Dictionary) -> float:
+	return float(w.get("delay", 0.0)) + float(w.get("land", 0.0))
+
+
 func _process(delta: float) -> void:
+	var landing := not held_word.is_empty() and float(held_word["age"]) < _word_landed_at(held_word)
+	if landing:
+		held_word["age"] = minf(float(held_word["age"]) + delta, _word_landed_at(held_word))
 	var keep: Array[Dictionary] = []
 	var arrived: Array[Callable] = []
 	for s in sprites:
@@ -106,7 +139,7 @@ func _process(delta: float) -> void:
 	for c in arrived:
 		c.call()
 	queue_redraw()
-	if sprites.is_empty() and flights.is_empty():
+	if sprites.is_empty() and flights.is_empty() and (held_word.is_empty() or float(held_word["age"]) >= _word_landed_at(held_word)):
 		set_process(false)
 
 
@@ -564,33 +597,50 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 			on_done.call()
 		return 0.0
 	_adopt(card, from, from_rotation)
+	# ANIM-R6 A11: each part plays only when its own entry is on (a switched-off stamp or burn
+	# takes no time: the card lands, then goes at once).
+	var stamps := Motion.live(&"card_stamp")
+	var gone_id := &"card_exhaust" if exhaust else &"effect_burst"
+	var goes := Motion.live(gone_id)
 	var fly := Motion.seconds(&"card_play")
-	var land := Motion.seconds(&"card_stamp")
-	var gone := Motion.seconds(&"card_exhaust") if exhaust else Motion.seconds(&"effect_burst")
+	var land := Motion.seconds(&"card_stamp") if stamps else 0.0
+	var gone := Motion.seconds(gone_id) if goes else 0.0
 	var fe := Motion.entry(&"card_play")
 	var se := Motion.entry(&"card_stamp")
 	var end_pos := to - card.size * 0.5
 	var tw := card.create_tween()
 	tw.tween_property(card, "position", end_pos, fly).set_ease(fe.ease).set_trans(fe.trans)
 	tw.parallel().tween_property(card, "rotation", 0.0, fly).set_ease(fe.ease).set_trans(fe.trans)
-	tw.parallel().tween_property(card, "scale", Vector2.ONE * Motion.amplitude(&"card_play"), fly * 0.5).set_ease(Tween.EASE_OUT)
-	# The stamp: from a size up, down onto the target.
-	tw.tween_property(card, "scale", Vector2.ONE * (1.0 / maxf(0.01, Motion.amplitude(&"card_stamp"))), land).set_ease(se.ease).set_trans(se.trans)
+	tw.parallel().tween_property(card, "scale", Vector2.ONE * Motion.amplitude(&"card_play"), fly * CARD_GROW_SHARE).set_ease(CARD_GROW_EASE)
+	if stamps:
+		# The stamp: from a size up, down onto the target.
+		tw.tween_property(card, "scale", Vector2.ONE * (1.0 / maxf(0.01, Motion.amplitude(&"card_stamp"))), land).set_ease(se.ease).set_trans(se.trans)
 	var f := {"node": card, "tween": tw, "to": to, "kind": "exhaust" if exhaust else "play", "on_done": on_done}
-	if exhaust:
+	if goes and exhaust:
+		var xe := Motion.entry(&"card_exhaust")
 		tw.tween_callback(func() -> void: embers(Rect2(card.global_position, card.size)))
-		tw.tween_property(card, "scale:y", 0.0, gone).set_ease(Motion.entry(&"card_exhaust").ease).set_trans(Motion.entry(&"card_exhaust").trans)
+		tw.tween_property(card, "scale:y", 0.0, gone).set_ease(xe.ease).set_trans(xe.trans)
 		tw.parallel().tween_property(card, "modulate", Color(Palette.CELL_PINK.darkened(0.6), 0.0), gone)
-	else:
+	elif goes:
 		tw.tween_callback(func() -> void: burst(to, Palette.CELL_ACID, &"effect_burst"))
-		tw.tween_property(card, "modulate:a", 0.0, gone).set_ease(Tween.EASE_OUT)
-		tw.parallel().tween_property(card, "scale", Vector2.ZERO, gone).set_ease(Tween.EASE_IN)
+		tw.tween_property(card, "modulate:a", 0.0, gone).set_ease(DISSOLVE_FADE_EASE)
+		tw.parallel().tween_property(card, "scale", Vector2.ZERO, gone).set_ease(DISSOLVE_SHRINK_EASE)
 	tw.tween_callback(func() -> void: _end_flight(f))
 	flights.append(f)
 	set_process(true)
 	# ANIM-R3 A6i: the card is gone (dissolved or burnt) before its effect plays, so it never
 	# covers the wheel while that spins.
 	return fly + land + gone
+
+
+## ANIM-R6 A11 (drawing shapes of the card's flight, not timings: those are `card_play`,
+## `card_stamp`, `card_exhaust` and `effect_burst` in the table): the card grows to
+## `card_play`'s size over this share of the flight, easing out; the dissolve fades easing
+## out while it shrinks easing in (it thins away before it vanishes).
+const CARD_GROW_SHARE := 0.5
+const CARD_GROW_EASE := Tween.EASE_OUT
+const DISSOLVE_FADE_EASE := Tween.EASE_OUT
+const DISSOLVE_SHRINK_EASE := Tween.EASE_IN
 
 
 ## Flies `card` (a copy) from `from` to the discard pile at `to` (global) along an arc of
@@ -673,7 +723,7 @@ func _end_flight(f: Dictionary) -> void:
 	var done: Callable = f.get("on_done", Callable())
 	if done.is_valid():
 		done.call()
-	if sprites.is_empty() and flights.is_empty():
+	if sprites.is_empty() and flights.is_empty() and (held_word.is_empty() or float(held_word["age"]) >= _word_landed_at(held_word)):
 		set_process(false)
 
 
@@ -716,6 +766,8 @@ func _draw() -> void:
 				_draw_pile(s)
 			"embers":
 				_draw_embers(s)
+	if not held_word.is_empty() and float(held_word["age"]) >= float(held_word.get("delay", 0.0)):
+		_draw_word(held_word)  # ANIM-R6 A15: VICTORY holds at full strength
 	if reticle_visible:
 		var c := _local(reticle_pos)
 		var r := RETICLE_RADIUS + Motion.amplitude(&"target_snap") * reticle_pop

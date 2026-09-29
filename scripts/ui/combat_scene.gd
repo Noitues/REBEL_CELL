@@ -574,6 +574,7 @@ func start_tutorial() -> void:
 	tutorial.position = TUTORIAL_RECT.position  # the right column: never on a wheel (GDD 9.2)
 	add_child(tutorial)
 	_relayout.call_deferred()
+	tutorial.step_changed.connect(_relayout.call_deferred)  # ANIM-R6 A16: the box follows its step's text
 	tutorial.finished.connect(func() -> void: tutorial = null; _relayout.call_deferred())
 
 
@@ -1528,7 +1529,8 @@ func _build_ui() -> void:
 	_status.mouse_filter = Control.MOUSE_FILTER_PASS
 	shown_tip(_status, tr("The turn, and the free nudges left this turn (each extra nudge costs RAM)."))
 	top.add_child(_status)
-	_settings_button = _button("Settings", open_settings)
+	_settings_button = _button(tr("Settings"), open_settings)
+	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
 	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
 	top.add_child(_settings_button)
 
@@ -1586,11 +1588,11 @@ func _build_ui() -> void:
 	_right.add_child(_notes_area)
 	_zine_elements.append_array([portrait, heat_poster])
 	# Hidden text records.
-	preview_note = ZineNote.new("WHAT WILL RESOLVE", Vector2(RIGHT_WIDTH, 150))
+	preview_note = ZineNote.new(tr("WHAT WILL RESOLVE"), Vector2(RIGHT_WIDTH, 150))
 	preview_note.name = "PreviewNote"
 	preview_note.visible = false
 	_right.add_child(preview_note)
-	log_note = ZineNote.new("LOG", Vector2(RIGHT_WIDTH, 150))
+	log_note = ZineNote.new(tr("LOG"), Vector2(RIGHT_WIDTH, 150))
 	log_note.name = "LogStrip"
 	log_note.visible = false
 	_right.add_child(log_note)
@@ -1744,7 +1746,10 @@ func _relayout() -> void:
 	# Shorter subtitle pages while the tutorial needs the room under them.
 	var lines := SUBTITLE_LINES
 	var dock_h := (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
-	while tutoring and lines > 1 and area.size.y - dock_h - NOTE_GAP < TUTORIAL_MIN_HEIGHT:
+	# ANIM-R6 A16: the tutorial wants the height its step's text needs (the box is sized to
+	# its text; a longer one shows in pages).
+	var want := maxf(TUTORIAL_MIN_HEIGHT, tutorial.needed_height(area.size.x)) if tutoring else TUTORIAL_MIN_HEIGHT
+	while tutoring and lines > 1 and area.size.y - dock_h - NOTE_GAP < want:
 		lines -= 1
 		dock_h = (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
 	Dialogue.dock_at(Rect2(area.position, Vector2(area.size.x, dock_h)), lines)
@@ -1765,7 +1770,7 @@ func _relayout() -> void:
 	if bottom - top < TUTORIAL_MIN_HEIGHT:
 		return
 	tutorial.position = Vector2(area.position.x, top) - origin
-	tutorial.fit(Vector2(area.size.x, bottom - top))
+	tutorial.fit(Vector2(area.size.x, minf(bottom - top, want)))
 
 
 ## The wheel cards aim at under the hidden card-target toggle (play_card's default).
@@ -1790,7 +1795,8 @@ func _refresh_key_hints() -> void:
 		focused = owner.get_index()
 	_nudge_minus_button.text = "-1 %s" % Settings.hint(&"nudge_left")
 	_nudge_plus_button.text = "+1 %s" % Settings.hint(&"nudge_right")
-	_settings_button.text = "Settings %s" % Settings.hint(&"open_settings")
+	# ANIM-R6 A12: its word translated once here (the button shows it as given).
+	_settings_button.text = ("%s %s" % [tr("Settings"), Settings.hint(&"open_settings")]).strip_edges()
 	(_end_turn_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	(_continue_button as DripButton).set_key_hint(Settings.hint(&"end_turn"))
 	_sync_stickers()
@@ -1889,6 +1895,12 @@ func _refresh(state: CombatState) -> void:
 	_build_hand(state)
 	_end_turn_button.disabled = state.is_over()
 	_sync_over(state.is_over() and not _outcome_held)
+	# ANIM-R6 A15: VICTORY stands once it has landed (at once without a replay); a fight that
+	# goes on (a new one) shows none.
+	if state.outcome != CombatState.Outcome.VICTORY:
+		fx_layer.release_word()
+	elif not _outcome_held and fx_layer.held_word.is_empty():
+		_hold_victory.call_deferred(true)  # the views lay out first (it stands above the enemy's disc)
 	_player_view.flatlined = state.outcome == CombatState.Outcome.DEFEAT and not _outcome_held
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
@@ -2020,6 +2032,8 @@ func _land_outcome(instant: bool = false) -> void:
 			_player_view.show_flatline()
 		else:
 			_player_view.play_flatline()
+	if state.outcome == CombatState.Outcome.VICTORY and fx_layer != null and fx_layer.held_word.is_empty():
+		_hold_victory(true)  # ANIM-R6 A15: a skipped end beat still leaves VICTORY standing
 	if state.is_over():
 		_bark("victory" if state.outcome == CombatState.Outcome.VICTORY else "defeat", state)
 	outcome_landed.emit()
@@ -2351,12 +2365,11 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 	if v == null or v.intent.is_empty():
 		return
 	var what := TextDb.t(card, "display_name").to_upper() if card != null else tr("NUDGE")
-	var chips: Array = (v.intent.get("chips", []) as Array).duplicate()
-	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic). ANIM-R3 A6j: says who plays it
-	# ("PLAYING JOLT" on the enemy's tag read as the enemy playing it).
-	chips.push_front({"text": tr("YOU PLAY %s") % what, "color": CHIP_RUN, "ink": Palette.INK, "play": true})
-	v.intent["chips"] = chips
-	v.intent["tooltip"] = _chips_tooltip(chips)
+	# ANIM-R2 E9: plain words ("IF JOLT" was cryptic). ANIM-R3 A6j: says who plays it.
+	# ANIM-R6 A13: on the tag's tape with a card mark ("YOUR JOLT", beside WAS), not as a chip
+	# among the enemy's own results ("YOU PLAY JOLT" there read as the enemy playing it).
+	v.play_note = what
+	v.intent["tooltip"] = tr("Your %s, if you play it:") % what + "\n" + String(v.intent.get("tooltip", ""))
 	v.queue_redraw()
 
 
@@ -2386,6 +2399,7 @@ func _show_end_turn_preview() -> void:
 	preview_note.clear()
 	for v in _views():
 		v.was_tag = {}  # ANIM-R5 combat 7: the forecast itself has no "before"
+		v.play_note = ""  # ANIM-R6 A13: nor a card being previewed
 	if _card_hold and not state.is_over() and not _hold_forecast:
 		# ANIM-R4 C6e: the tags wait for the card's spin to land (the notes still read now).
 		var held := engine.preview_end_turn()
@@ -2827,7 +2841,7 @@ func _build_stickers() -> void:
 		["undo", "UNDO", Palette.NOTE_PAPER, -3.0, rewind],
 	]
 	for sp in specs:
-		var b := StickerButton.new(sp[1], sp[2], sp[3])
+		var b := StickerButton.new(tr(String(sp[1])), sp[2], sp[3])  # ANIM-R6 A12: translated from the first frame
 		b.pre_translated = true  # labels come from _sticker_text (translated there)
 		b.drawn_icon = String(sp[0])
 		b.name = "Sticker_" + String(sp[0])
@@ -4077,9 +4091,18 @@ func _death_beat(id: StringName, before: CombatState, after: CombatState = null)
 func _end_beat(outcome: int) -> void:
 	var won := outcome == CombatState.Outcome.VICTORY
 	if won:
-		var word := tr("VICTORY")
-		fx_layer.word(end_word_spot(won), word, Palette.CELL_ACID, Motion.seconds(&"combat_end_hold"), end_word_size(won, word))
+		_hold_victory(false)
 	_land_outcome()  # ANIM-R6 A2: the bark comes with the outcome (a skip barks there too)
+
+
+## ANIM-R6 A15: VICTORY lands over the enemies' side and stays at full strength until the
+## fight is left for its loot (it read for ~1 s, then faded to a ghost); `instant` (a skip,
+## no replay) shows it landed at once.
+func _hold_victory(instant: bool) -> void:
+	if fx_layer == null:
+		return
+	var word := tr("VICTORY")
+	fx_layer.hold_word(end_word_spot(true), word, Palette.CELL_ACID, end_word_size(true, word), instant)
 
 
 ## Where VICTORY (the enemies' side) or DEFEAT (the operative's wheel) lands (global).

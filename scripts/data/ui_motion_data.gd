@@ -82,6 +82,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"defeat_stamp",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
+	# ANIM-R6 combat: the tutorial's Next pulses while it waits for it.
+	&"tutorial_next_pulse",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

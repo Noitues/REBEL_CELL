@@ -72,14 +72,12 @@ func _reduced() -> void:
 	Motion.force_live = false
 
 
+## ANIM-R6 A18: on, then the project's own pseudolocalisation values back (PseudoLoc).
 func _pseudo(on: bool) -> void:
-	if TranslationServer.pseudolocalization_enabled == on:
-		return
-	ProjectSettings.set_setting("internationalization/pseudolocalization/replace_with_accents", on)
-	ProjectSettings.set_setting("internationalization/pseudolocalization/double_vowels", on)
-	ProjectSettings.set_setting("internationalization/pseudolocalization/override", false)
-	TranslationServer.pseudolocalization_enabled = on
-	TranslationServer.reload_pseudolocalization()
+	if on:
+		PseudoLoc.on()
+	else:
+		PseudoLoc.off()
 
 
 func _combat(scale: float = 1.0, enemy: StringName = &"collections_agent", combat_seed: int = 5) -> Control:
@@ -610,10 +608,23 @@ func test_the_perfect_inversion_never_resumes_on_a_freed_scene() -> void:
 	await _frames(PERFECT_WAIT)
 	assert_false(v.inverted, "and ends after its frames")
 	scene._perfect_feedback(v)
+	assert_true(_perfect_waiting(), "the next inversion frame waits on the tree's frame")
 	scene.get_parent().remove_child(scene)
 	scene.free()
+	# ANIM-R6 A18: a real check (it asserted nothing): the freed scene's frame step is
+	# dropped with it, so nothing is left to resume on it.
+	assert_false(_perfect_waiting(), "a scene freed mid-inversion leaves nothing to resume")
 	await _frames(PERFECT_WAIT)
-	assert_true(true, "a scene freed mid-inversion leaves nothing to resume")
+	assert_false(_perfect_waiting(), "and nothing comes back")
+
+
+## True while a combat scene's Perfect inversion frame step is connected to the tree's frame.
+func _perfect_waiting() -> bool:
+	for c in get_tree().process_frame.get_connections():
+		var cb: Callable = c["callable"]
+		if cb.get_method() == &"_perfect_frame":
+			return true
+	return false
 
 
 const PERFECT_WAIT := 4

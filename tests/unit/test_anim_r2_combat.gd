@@ -84,14 +84,12 @@ func _live() -> void:
 	Motion.force_live = true
 
 
+## ANIM-R6 A18: on, then the project's own pseudolocalisation values back (PseudoLoc).
 func _pseudo(on: bool) -> void:
-	if TranslationServer.pseudolocalization_enabled == on:
-		return
-	ProjectSettings.set_setting("internationalization/pseudolocalization/replace_with_accents", on)
-	ProjectSettings.set_setting("internationalization/pseudolocalization/double_vowels", on)
-	ProjectSettings.set_setting("internationalization/pseudolocalization/override", false)
-	TranslationServer.pseudolocalization_enabled = on
-	TranslationServer.reload_pseudolocalization()
+	if on:
+		PseudoLoc.on()
+	else:
+		PseudoLoc.off()
 
 
 func _combat(enemy: StringName = &"collections_agent", scale: float = 1.0, combat_seed: int = 5) -> Control:
@@ -540,8 +538,9 @@ func test_the_result_reads_before_the_break_which_flashes_its_own_wheel() -> voi
 	scene._end_beat(CombatState.Outcome.VICTORY)
 	if flashes >= 0:
 		assert_eq(Fx.limiter.count(), flashes, "no full-screen flash")
-	var words: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "word")
-	assert_eq(words.size(), 1)
+	# ANIM-R6 A15: VICTORY is the layer's held word (it stays until the fight is left).
+	var words: Array = [scene.fx_layer.held_word]
+	assert_false(scene.fx_layer.held_word.is_empty(), "VICTORY lands")
 	var pv: WheelView = scene._player_view
 	assert_false(pv.get_global_rect().has_point(words[0]["at"]), "VICTORY never lands on the operative's wheel")
 	assert_false(FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd").contains("Fx.flash(Palette.CELL_ACID"), "the olive full-screen flash is gone")
@@ -806,7 +805,7 @@ func test_spent_ram_floats_and_a_refused_buy_flashes_the_money() -> void:
 
 func test_the_preview_chip_says_playing() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
-	assert_true(src.contains("tr(\"YOU PLAY %s\")"), "YOU PLAY JOLT (ANIM-R3 A6j), not IF JOLT or PLAYING JOLT")
+	assert_true(FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd").contains("tr(\"YOUR %s\")"), "YOUR JOLT on the tape (ANIM-R6 A13), not IF JOLT, PLAYING JOLT or YOU PLAY JOLT")
 	assert_false(src.contains("tr(\"IF %s\")"))
 
 
@@ -825,5 +824,5 @@ func test_new_motion_ids_are_required_and_words_are_translated_once() -> void:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)
 		assert_true(Motion.has(id), "%s is in the table" % id)
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
-	for key in ["IF YOU SEND IT", "YOU PLAY %s", "-%d RAM", "TERMINAL EVENT"]:
+	for key in ["IF YOU SEND IT", "YOUR %s", "-%d RAM", "TERMINAL EVENT"]:
 		assert_true(csv.contains(key), "%s is exported for translation" % key)

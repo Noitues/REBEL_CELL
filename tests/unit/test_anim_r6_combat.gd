@@ -39,6 +39,7 @@ func before_each() -> void:
 
 
 func after_each() -> void:
+	Motion.use_config(null)  # the loaded table (a test may switch entries off in a copy)
 	Motion.force_live = false
 	Motion.set_speed(1.0)
 	Engine.time_scale = 1.0
@@ -488,3 +489,278 @@ func test_the_log_playback_binds_a_method() -> void:
 	body = body.substr(0, body.find("\nfunc ", 10))
 	assert_false(body.contains("func()"), "no lambda in the log playback")
 	assert_true(body.contains("_append_log.bind("), "a bound method instead")
+
+
+# --- A11: switched-off card motions don't play -------------------------------------------------------------
+
+## The table in use with `ids` switched off (a duplicate: the loaded one is never changed).
+func _table_with_off(ids: Array[StringName]) -> void:
+	var dup := (load(Motion.CONFIG_PATH) as UiMotionData).duplicate(true)
+	for id in ids:
+		dup.find(id).enabled = false
+	Motion.use_config(dup)
+
+
+func _flown_card(scene: Control, exhaust: bool) -> Array:
+	var card := ZineCard.new("TEST", 1, "test", 0)
+	var fx: CombatFxLayer = scene.fx_layer
+	var seconds := fx.play_card(card, Rect2(Vector2(100, 500), Vector2(80, 110)), 0.0, Vector2(400, 300), exhaust)
+	var embers := fx.sprites.filter(func(s: Dictionary) -> bool: return String(s["kind"]) == "embers").size()
+	return [seconds, embers]
+
+
+func test_switched_off_card_stamp_and_burn_do_not_play() -> void:
+	var scene := await _combat()
+	_live()
+	var fly := Motion.seconds(&"card_play")
+	var stamp := Motion.seconds(&"card_stamp")
+	var burn := Motion.seconds(&"card_exhaust")
+	var burst := Motion.seconds(&"effect_burst")
+	assert_almost_eq(float(_flown_card(scene, true)[0]), fly + stamp + burn, 0.001, "on: the flight, the stamp, the burn")
+	scene.fx_layer.clear()
+	_table_with_off([&"card_stamp", &"card_exhaust"])
+	var off := _flown_card(scene, true)
+	assert_almost_eq(float(off[0]), fly, 0.001, "switched off: no stamp and no burn take time")
+	await _frames(1)
+	var fx: CombatFxLayer = scene.fx_layer
+	assert_eq(fx.sprites.filter(func(s: Dictionary) -> bool: return String(s["kind"]) == "embers").size(), 0, "no embers")
+	fx.clear()
+	_table_with_off([&"effect_burst"])
+	assert_almost_eq(float(_flown_card(scene, false)[0]), fly + stamp, 0.001, "a switched-off dissolve takes no time")
+	assert_eq(fx.sprites.filter(func(s: Dictionary) -> bool: return String(s["kind"]) == "burst").size(), 0, "and bursts nothing")
+	fx.clear()
+	Motion.use_config(null)
+	assert_almost_eq(burst, Motion.seconds(&"effect_burst"), 0.001, "the table is back")
+	await _close(scene)
+
+
+func test_the_card_flight_has_no_inline_motion_numbers() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/combat_fx_layer.gd")
+	var body := src.substr(src.find("func play_card("))
+	body = body.substr(0, body.find("\nfunc ", 10))
+	assert_false(body.contains("fly * 0.5"), "the grow share is a named drawing constant")
+	assert_false(body.contains("set_ease(Tween.EASE_"), "no inline eases")
+
+
+
+# --- A12: translated once ------------------------------------------------------------------------------------
+
+func test_the_settings_button_stickers_and_notes_translate() -> void:
+	PseudoLoc.on()
+	var scene := await _combat()
+	var settings: Button = scene._settings_button
+	assert_true(settings.text.begins_with(tr("Settings")), "Settings is translated (%s)" % settings.text)
+	assert_ne(tr("Settings"), "Settings", "(the scramble is on)")
+	assert_eq(settings.auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED, "and shown as given")
+	assert_eq(scene.preview_note.title, tr("WHAT WILL RESOLVE"))
+	assert_eq(scene.log_note.title, tr("LOG"))
+	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
+	assert_true(src.contains("StickerButton.new(tr(String(sp[1]))"), "the stickers are built translated")
+	PseudoLoc.off()
+	await _close(scene)
+
+
+# --- A13: the play marker on the tape ------------------------------------------------------------------------
+
+func test_a_hovered_card_names_itself_on_the_tape_not_as_a_chip() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		var seen := 0
+		for i in scene.engine.state().hand.size():
+			scene._preview_card(i)
+			for v in scene._views():
+				var wv := v as WheelView
+				for c in wv.intent.get("chips", []):
+					assert_false(bool((c as Dictionary).get("play", false)), "x%.1f: no play chip among the results" % scale)
+				if wv.play_note == "":
+					continue
+				seen += 1
+				assert_true(wv.was_shown(), "x%.1f: the tape names the card" % scale)
+				var lay := wv.was_layout(wv._tag_geometry()["was"])
+				assert_eq(String(lay["play"]), tr("YOUR %s") % wv.play_note, "x%.1f: YOUR <CARD>" % scale)
+				assert_gte(int(lay["fs"]), roundi(WheelView.WAS_FONT_SIZE * scale), "x%.1f: at a readable size" % scale)
+				var r: Rect2 = wv.was_rect()
+				assert_true(wv.get_global_rect().grow(0.5).encloses(r), "x%.1f: the tape stays in its view" % scale)
+			assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f card %d: no layout rule broken" % [scale, i])
+			scene._show_end_turn_preview()
+			for v in scene._views():
+				assert_eq((v as WheelView).play_note, "", "the forecast itself names no card")
+		assert_gt(seen, 0, "x%.1f: a card named itself" % scale)
+		await _close(scene)
+	assert_gt(WheelView.WAS_INK, 0.8, "the WAS words are readable, not a ghost")
+
+
+# --- A15: VICTORY holds ---------------------------------------------------------------------------------------
+
+func _settled(scene: Control) -> bool:
+	return not scene.motion_busy()
+
+
+func test_victory_stays_at_full_strength_until_the_fight_is_left() -> void:
+	var scene := await _combat()
+	assert_true(_ending(scene, CombatState.Outcome.VICTORY), "a winning SEND IT was found")
+	scene.show_continue(TextDb.mark("LOOT"))
+	_live()
+	scene.end_turn()
+	await BoundedWait.until(get_tree(), _outcome_done.bind(scene), BoundedWait.motion_limit([&"resolve_sequence"], 6.0))
+	var fx: CombatFxLayer = scene.fx_layer
+	assert_false(fx.held_word.is_empty(), "VICTORY stands")
+	assert_eq(String(fx.held_word["text"]), tr("VICTORY"))
+	await BoundedWait.until(get_tree(), _settled.bind(scene), BoundedWait.motion_limit([&"resolve_sequence"], 6.0))
+	assert_false(fx.held_word.is_empty(), "and stays once everything has settled (it faded after ~1 s)")
+	assert_false(fx.busy(), "it is not an effect anything waits for")
+	scene.start_fight(&"collections_agent", 3)
+	assert_true(fx.held_word.is_empty(), "a new fight shows none")
+	await _close(scene)
+
+
+func test_a_skipped_win_still_shows_victory() -> void:
+	var scene := await _combat()
+	assert_true(_ending(scene, CombatState.Outcome.VICTORY))
+	_live()
+	scene.end_turn()
+	scene.skip_motion()
+	var fx: CombatFxLayer = scene.fx_layer
+	assert_false(fx.held_word.is_empty(), "VICTORY lands with the skip")
+	assert_almost_eq(float(fx.held_word["age"]), float(fx.held_word["delay"]) + float(fx.held_word["land"]), 0.001, "landed at once")
+	await _close(scene)
+
+
+# --- A16: the tutorial box ---------------------------------------------------------------------------------------
+
+func test_the_tutorial_box_fits_its_text_and_moves_on() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		scene.start_tutorial()
+		await _frames(3)
+		var t: TutorialOverlay = scene.tutorial
+		assert_not_null(t)
+		# Every page of every step fits the box (no scrolling).
+		for i in TutorialOverlay.STEPS.size():
+			t.step = i
+			t.page = 0
+			t.fit(t.size)
+			var r: Dictionary = t._room(t.size)
+			for p in t.pages():
+				var lines := TutorialOverlay.wrap_words(p, r["font"], int(r["fs"]), float(r["w"]))
+				assert_lte(lines.size(), int(r["lines"]), "x%.1f step %d: a page fits the box" % [scale, i])
+		t.step = 0
+		t.page = 0
+		t.fit(t.size)
+		# A new turn moves the wheel's step on.
+		var events: Array[Dictionary] = [{"type": "turn_start"}]
+		t.on_events(events)
+		assert_eq(t.current_title(), "NUDGE", "x%.1f: the turn moves THE WHEEL on" % scale)
+		await _frames(2)
+		assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f: the box breaks no layout rule" % scale)
+		t.skip()
+		Settings.set_tutorial_done(true)
+		await _close(scene)
+
+
+func test_next_pulses_when_it_moves_the_tutorial_on() -> void:
+	_live()
+	var t := TutorialOverlay.new(Vector2(300, 400))
+	add_child_autofree(t)
+	t.step = 1  # NUDGE: a nudge ends it
+	t.page = 0
+	t.fit(Vector2(300, 400))
+	assert_false(t.next_pulsing(), "a step a play ends: Next stays still")
+	t.step = 2  # RESISTANCE: only Next (or the turn) ends it
+	t.fit(Vector2(300, 400))
+	assert_true(t.next_pulsing(), "Next pulses")
+	assert_true(Motion.has(&"tutorial_next_pulse") and UiMotionData.REQUIRED_IDS.has(&"tutorial_next_pulse"), "its timing is in the table")
+
+
+# --- A17: the arrows clear of the tag, the inner ring's mark, the play mark ------------------------------------
+
+func test_the_tags_never_cover_the_nudge_arrows() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		for i in [-1] + range(scene.engine.state().hand.size()):
+			if i >= 0:
+				scene._preview_card(i)
+			for v in scene._views():
+				var wv := v as WheelView
+				var tag := wv.intent_rect()
+				if not tag.has_area():
+					continue
+				for ar in wv.arrows():
+					var c := wv.arrow_center(int(ar["ring"]), int(ar["direction"]))
+					var disc := WheelView.ARROW_HIT * 0.9
+					assert_false(tag.intersects(Rect2(c - Vector2(disc, disc), Vector2(disc, disc) * 2.0)),
+						"x%.1f preview %d: %s's tag covers its %s arrow" % [scale, i, wv.combatant.id, ar])
+		await _close(scene)
+	var src := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
+	assert_false(src.contains("\"IN\", HORIZONTAL_ALIGNMENT_CENTER"), "the inner ring's arrows carry a mark, not \"IN\"")
+
+
+func test_send_it_carries_a_play_mark() -> void:
+	var scene := await _combat()
+	var b := scene._end_turn_button as DripButton
+	assert_true(b.glyph, "SEND IT draws its mark")
+	var h := roundi(DripButton.HINT_SIZE * Settings.text_scale)
+	var r := b.play_mark_rect(Vector2(b.size.x * 0.5, b.size.y * 0.5), h)
+	assert_gte(r.size.y, h * 1.2, "a play button's mark, bigger than the key hint")
+	await _close(scene)
+
+
+# --- A18: the lab's lost fight, the scramble's settings ----------------------------------------------------------
+
+func test_pseudolocalisation_restores_the_project_values() -> void:
+	var before := {}
+	for k in PseudoLoc.KEYS:
+		before[k] = ProjectSettings.get_setting(k)
+	var was := TranslationServer.pseudolocalization_enabled
+	PseudoLoc.on()
+	assert_true(TranslationServer.pseudolocalization_enabled)
+	PseudoLoc.off()
+	for k in PseudoLoc.KEYS:
+		assert_eq(ProjectSettings.get_setting(k), before[k], "%s is back to its own value" % k)
+	assert_eq(TranslationServer.pseudolocalization_enabled, was)
+	for f in ["test_anim_r4_combat.gd", "test_anim_r5_combat.gd"]:
+		var src := FileAccess.get_file_as_string("res://tests/unit/" + f)
+		assert_false(src.contains("set_setting(\"internationalization/pseudolocalization/replace_with_accents\", on)"), "%s restores the prior values" % f)
+	assert_false(FileAccess.get_file_as_string("res://tests/unit/test_anim_r5_combat.gd").contains("assert_true(true"), "no empty assert")
+
+
+func _lab_lost(lab: Control) -> bool:
+	var sc: Variant = lab.get("_scene")
+	if sc == null or not is_instance_valid(sc):
+		return false
+	var eng := (sc as Control).get(&"engine") as CombatEngine
+	return eng != null and eng.has_fight() and eng.state().outcome == CombatState.Outcome.DEFEAT
+
+
+func test_the_lab_lost_fight_always_loses() -> void:
+	_live()
+	var lab: Control = load("res://tools/design_lab/motion_lab.tscn").instantiate()
+	lab.set("_loop", false)
+	add_child_autofree(lab)
+	await get_tree().process_frame
+	lab.set("_id", &"defeat_stamp")
+	lab.call("_play")
+	var lost := await BoundedWait.until(get_tree(), _lab_lost.bind(lab), 10.0)
+	assert_true(lost, "send_lose ends in DEFEAT")
+
+
+# --- A19: the nudge is seen ----------------------------------------------------------------------------------------
+
+func _still(v: WheelView) -> bool:
+	return not v.motion_busy()
+
+
+func test_a_nudge_step_is_long_enough_to_see() -> void:
+	assert_gte(Motion.seconds(&"wheel_nudge"), NUDGE_SEEN, "a nudge step lasts long enough to watch the wheel turn")
+	var scene := await _combat()
+	_live()
+	scene.nudge_wheel(&"player", 1)
+	var pv: WheelView = scene._player_view
+	assert_true(pv.motion_busy(), "the step plays")
+	var took := await BoundedWait.timed(get_tree(), _still.bind(pv), 3.0)
+	assert_gte(took, NUDGE_SEEN * 0.8, "and takes its time (%.3f s)" % took)
+	await _close(scene)
+
+
+## The shortest nudge step the eye follows (s).
+const NUDGE_SEEN := 0.15

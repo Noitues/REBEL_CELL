@@ -939,6 +939,7 @@ LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
 LINES HEARD,LINES HEARD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
+LOG,LOG
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
 LOST,LOST
@@ -2736,6 +2737,7 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
+WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WON,WON
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.
@@ -2748,12 +2750,13 @@ Won,Won
 YOU,YOU
 YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s
-YOU PLAY %s,YOU PLAY %s
+YOUR %s,YOUR %s
 YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR WHEEL,YOUR WHEEL
 Yes,Yes
 You are here.,You are here.
 You can move here now.,You can move here now.
+"Your %s, if you play it:","Your %s, if you play it:"
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."

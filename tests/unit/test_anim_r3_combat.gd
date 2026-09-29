@@ -865,7 +865,7 @@ func test_a_played_card_is_gone_before_its_effect() -> void:
 
 func test_the_words_say_who_plays_and_what_is_missing() -> void:
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
-	assert_true(src.contains("tr(\"YOU PLAY %s\")"), "YOU PLAY JOLT on the tag (PLAYING read as the enemy playing it)")
+	assert_true(FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd").contains("tr(\"YOUR %s\")"), "YOUR JOLT on the tape (ANIM-R6 A13; PLAYING read as the enemy playing it)")
 	assert_false(src.contains("tr(\"PLAYING %s\")"))
 	var bar := RamBar.new()
 	add_child_autofree(bar)
@@ -1056,7 +1056,7 @@ func test_new_motion_ids_are_required_and_words_are_translated_once() -> void:
 	for id in ["impact_mark", "forecast_tick", "forecast_fade", "status_mark"]:
 		assert_true(lab.contains("&\"%s\":" % id), "%s has a lab demo" % id)
 	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
-	for key in ["YOU PLAY %s", "NEED %d · HAVE %d", "LOOT", "HP now: %d of %d."]:
+	for key in ["YOUR %s", "NEED %d · HAVE %d", "LOOT", "HP now: %d of %d."]:
 		assert_true(csv.contains(key), "%s is exported for translation" % key)
 
 

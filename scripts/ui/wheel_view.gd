@@ -1406,8 +1406,50 @@ func contains_global(point: Vector2) -> bool:
 ## Centre of a nudge arrow on screen.
 func arrow_center(ring: int, direction: int) -> Vector2:
 	var r := _radius() + (ARROW_INNER_RADIUS if ring == RC.RingScope.INNER else ARROW_RADIUS)
-	var a := deg_to_rad(-90.0 + ARROW_ANGLE * signf(direction))
+	var a := deg_to_rad(-90.0 + arrow_angle(ring) * signf(direction))
 	return global_position + _center() + Vector2(cos(a), sin(a)) * r
+
+
+## ANIM-R6 A17: the arrows' angle off the top (degrees): ARROW_ANGLE, turned further down the
+## sides (ARROW_ANGLE_STEP at a time, at most ARROW_ANGLE_MAX) while the tag above the wheel
+## would cover an arrow (at 1.6 a two-row tag reached down over them).
+func arrow_angle(ring: int) -> float:
+	var tag := _intent_rect_local()
+	if not tag.has_area():
+		return ARROW_ANGLE
+	tag = tag.grow(HINT_GAP)
+	var r := _radius() + (ARROW_INNER_RADIUS if ring == RC.RingScope.INNER else ARROW_RADIUS)
+	var a := ARROW_ANGLE
+	while a < ARROW_ANGLE_MAX and _arrow_meets(tag, r, a):
+		a += ARROW_ANGLE_STEP
+	return a
+
+
+## True when the arrow at `a` degrees off the top, radius `r` (either side), meets `tag`
+## (local): its disc or its arc.
+func _arrow_meets(tag: Rect2, r: float, a: float) -> bool:
+	var c := _center()
+	for d in [-1.0, 1.0]:
+		var at := c + Vector2(sin(deg_to_rad(a)) * d, -cos(deg_to_rad(a))) * r
+		var disc := ARROW_HIT * 0.9
+		if tag.intersects(Rect2(at - Vector2(disc, disc), Vector2(disc, disc) * 2.0)):
+			return true
+		for t in [a - ARROW_SPAN, a + ARROW_SPAN]:
+			if tag.has_point(c + Vector2(sin(deg_to_rad(t)) * d, -cos(deg_to_rad(t))) * r):
+				return true
+	return false
+
+
+## ANIM-R6 A17: the inner ring arrow's mark: its drop under the arrow, its radius (px) and its
+## core's share of that radius (drawing).
+const INNER_MARK_DROP := 14.0
+const INNER_MARK_R := 5.0
+const INNER_MARK_CORE := 0.45
+
+
+## ANIM-R6 A17: how far the arrows may turn down the sides, and the step (degrees).
+const ARROW_ANGLE_MAX := 70.0
+const ARROW_ANGLE_STEP := 5.0
 
 
 ## Where a zone sits on screen (the aim line from a card ends there).
@@ -2259,7 +2301,7 @@ func _draw_arrows() -> void:
 			col = TARGET_COLOR
 		var width := 4.0 if hot else 2.5
 		var r := _radius() + (ARROW_INNER_RADIUS if ring == RC.RingScope.INNER else ARROW_RADIUS)
-		var mid := -90.0 + ARROW_ANGLE * d
+		var mid := -90.0 + arrow_angle(ring) * d
 		var from := deg_to_rad(mid - ARROW_SPAN * d)
 		var to := deg_to_rad(mid + ARROW_SPAN * d)
 		draw_circle(c, ARROW_HIT * 0.9, Color(Palette.NIGHT_SKY, 0.75 if hot else 0.55))
@@ -2269,7 +2311,11 @@ func _draw_arrows() -> void:
 		var normal := tangent.orthogonal()
 		draw_colored_polygon(PackedVector2Array([tip + tangent * 7.0, tip - tangent * 3.0 + normal * 6.0, tip - tangent * 3.0 - normal * 6.0]), _col(col))
 		if ring == RC.RingScope.INNER:
-			draw_string(Palette.mono(), c + Vector2(-8, 18), "IN", HORIZONTAL_ALIGNMENT_CENTER, 16, _fs(HUB_FONT_SIZE), _col(col))
+			# ANIM-R6 A17: the inner ring's mark (a ring with its filled core), readable without
+			# words ("IN" meant nothing to a newcomer).
+			var mc := c + Vector2(0.0, INNER_MARK_DROP)
+			draw_arc(mc, INNER_MARK_R, 0.0, TAU, 16, _col(col), 1.5, true)
+			draw_circle(mc, INNER_MARK_R * INNER_MARK_CORE, _col(col))
 		var hr := arrow_hint_rect(ring, d)
 		if hr.has_area():
 			# ANIM-R4 C4: the key hint sits where it is clear of the tag (arrow_hint_rect).
@@ -2876,10 +2922,30 @@ func _tag_geometry() -> Dictionary:
 	# (WAS, struck through), where IF YOU SEND IT stood: the tag keeps its size, so it fits
 	# at every text size (a row of its own had no room under the screen's top).
 	var was := Rect2()
-	if was_text() != "":
-		var th := tape_height()
+	if was_shown():
+		# ANIM-R6 A13: the row is as tall as its (bigger) words, and the tag keeps room for it.
+		var th := was_height()
+		rect.position.y = maxf(rect.position.y, th - TAPE_INSET * ts)
 		was = Rect2(Vector2(rect.position.x, rect.position.y - th + TAPE_INSET * ts), Vector2(w, th))
 	return {"rect": rect, "was": was}
+
+
+## ANIM-R6 A13: the card a hover previews on this wheel (its name, "" = none): the tag's tape
+## says "YOUR JOLT" beside a card mark (a "YOU PLAY JOLT" chip on the enemy's tag read as the
+## enemy playing your card).
+var play_note: String = ""
+
+
+## True when the tag's tape shows the preview row (the card played, what the tag was).
+func was_shown() -> bool:
+	return not replaying and (was_text() != "" or (play_note != "" and not tag_intent().is_empty()))
+
+
+## ANIM-R6 A13: the preview row's lettering (px at text scale 1.0; the tape's was 10 and hard
+## to read) and its height.
+const WAS_FONT_SIZE := 13
+static func was_height() -> float:
+	return _fs(WAS_FONT_SIZE) + 5.0
 
 
 ## ANIM-R5 combat 7: the tag before the play or nudge being previewed (the scene sets it
@@ -2904,27 +2970,61 @@ func was_rect() -> Rect2:
 
 
 func _draw_was(r: Rect2, alpha: float) -> void:
-	var fs := _fs(HUB_FONT_SIZE)
+	var lay := was_layout(r)
+	var fs := int(lay["fs"])
 	var font := Palette.mono()
-	var head := tr("WAS") + " "
-	var hw := font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var x := r.position.x + TAPE_PAD
-	var base := r.position.y + fs
+	var base := r.position.y + (r.size.y + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 	draw_rect(r, Color(Palette.NOTE_TAPE, alpha))
+	var x := r.position.x + TAPE_PAD
+	if String(lay["play"]) != "":
+		# ANIM-R6 A13: a card mark, then YOUR <CARD>: the hovered card is the player's.
+		var ch := fs * CARD_MARK_H
+		var cw := ch * CARD_MARK_W
+		var cr := Rect2(Vector2(x, r.position.y + (r.size.y - ch) * 0.5), Vector2(cw, ch))
+		draw_rect(cr, Color(Palette.PAPER, alpha))
+		draw_rect(cr, Color(Palette.INK, alpha), false, 1.5)
+		x += cw + TAPE_PAD * 0.5
+		draw_string(font, Vector2(x, base), String(lay["play"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
+		x += font.get_string_size(String(lay["play"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	if String(lay["was"]) == "":
+		return
+	var head := String(lay["head"])
 	draw_string(font, Vector2(x, base), head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(Palette.INK, alpha))
-	var room := r.end.x - x - hw - TAPE_PAD
-	var line := was_text()
-	while line.length() > 3 and font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
-		line = line.substr(0, line.length() - 2) + "…"
+	x += font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var line := String(lay["was"])
 	var lw := font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var ink := Color(Palette.INK, WAS_INK * alpha)
-	draw_string(font, Vector2(x + hw, base), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	draw_string(font, Vector2(x, base), line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	# A thin strike, lighter than the words, so they stay readable.
 	var sy := base - fs * 0.32
-	draw_line(Vector2(x + hw, sy), Vector2(x + hw + lw, sy), ink, 1.5)
+	draw_line(Vector2(x, sy), Vector2(x + lw, sy), Color(Palette.INK, WAS_STRIKE * alpha), 1.0)
 
 
-## The WAS row's words' strength (alpha): a ghost of the tag before.
-const WAS_INK := 0.6
+## ANIM-R6 A13: the preview row's words in rect `r`: {fs, play ("YOUR JOLT" or ""), head
+## (" · WAS " / "WAS "), was (the old words, cut with "…" to the room)}.
+func was_layout(r: Rect2) -> Dictionary:
+	var fs := _fs(WAS_FONT_SIZE)
+	var font := Palette.mono()
+	var play := tr("YOUR %s") % play_note if play_note != "" else ""
+	var room := r.size.x - TAPE_PAD * 2.0
+	if play != "":
+		room -= fs * CARD_MARK_H * CARD_MARK_W + TAPE_PAD * 0.5 + font.get_string_size(play, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var old := was_text()
+	var head := ""
+	if old != "":
+		head = (" · " if play != "" else "") + tr("WAS") + " "
+		room -= font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		while old.length() > 3 and font.get_string_size(old, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+			old = old.substr(0, old.length() - 2) + "…"
+	return {"fs": fs, "play": play, "head": head, "was": old}
+
+
+## The WAS words' strength (alpha, ANIM-R6 A13: readable, 0.6 was a ghost) and the strike's.
+const WAS_INK := 0.85
+const WAS_STRIKE := 0.45
+## The card mark's height as a share of the lettering, and its width as a share of its height.
+const CARD_MARK_H := 0.9
+const CARD_MARK_W := 0.7
 
 
 ## The tape on a tag (ANIM-R3 A6j): its height, and its width for the widest words it
