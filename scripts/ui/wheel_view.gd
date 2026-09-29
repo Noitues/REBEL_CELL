@@ -533,17 +533,32 @@ func nameplate() -> Dictionary:
 	var arrow_in := (_radius() + ARROW_RADIUS) * sin(deg_to_rad(ARROW_ANGLE)) - ARROW_HIT * maxf(1.0, _ts())
 	var max_w := maxf(side, 2.0 * arrow_in - pad * 2.0)
 	var fs := _fs(UiTheme.LABEL)
+	var lines := PackedStringArray([text])
 	while fs > UiTheme.CAPTION and side + pad * 4.0 + font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > max_w:
 		fs -= 1
-	var w := minf(max_w, side + pad * 4.0 + font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
-	var h := maxf(side, fs * NAMEPLATE_LINE) + pad
+	if side + pad * 4.0 + font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > max_w:
+		# Still too long at caption: two lines, never cut (§4.3 rule 3).
+		fs = _fs(UiTheme.LABEL)
+		lines = HeatPoster.split_banner(text)
+		var widest := func(f: int) -> float:
+			var m := 0.0
+			for l in lines:
+				m = maxf(m, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, f).x)
+			return m
+		while fs > UiTheme.CAPTION and side + pad * 4.0 + float(widest.call(fs)) > max_w:
+			fs -= 1
+	var text_w := 0.0
+	for l in lines:
+		text_w = maxf(text_w, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	var w := side + pad * 4.0 + text_w
+	var h := maxf(side, fs * NAMEPLATE_LINE * lines.size()) + pad
 	var bottom := _center().y - needle_reach() - WheelBezel.BADGE_GAP
 	var r := Rect2(Vector2(_center().x - w * 0.5, bottom - h), Vector2(w, h))
 	var tag := _intent_rect_local()
 	if tag.has_area() and r.intersects(tag):
 		return {}
 	var badge := Rect2(r.position + Vector2(pad, (h - side) * 0.5), Vector2(side, side))
-	return {"rect": r, "badge": badge, "text": text, "fs": fs}
+	return {"rect": r, "badge": badge, "text": text, "lines": lines, "fs": fs}
 
 
 ## The nameplate's padding (px) and its lettering's line height (x its size).
@@ -570,7 +585,10 @@ func _draw_nameplate(plate: Dictionary) -> void:
 	WheelBezel.draw_badge(self, b, shown_subject(), look, portrait_texture)
 	var font := Palette.display()
 	var x := b.end.x + NAMEPLATE_PAD * 2.0
-	draw_string(font, Vector2(x, fs * 0.36), String(plate["text"]), HORIZONTAL_ALIGNMENT_LEFT, local.end.x - x - NAMEPLATE_PAD, fs, Palette.INK)
+	var lines: PackedStringArray = plate["lines"]
+	for i in lines.size():
+		var y := (i - (lines.size() - 1) * 0.5) * fs * NAMEPLATE_LINE + fs * 0.36
+		draw_string(font, Vector2(x, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
 	draw_set_transform(Vector2.ZERO)
 
 

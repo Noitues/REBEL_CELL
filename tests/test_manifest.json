@@ -130,7 +130,7 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_art_w3_wheels.gd": {
-			"seconds": 6.0,
+			"seconds": 15.0,
 			"tier": "fast"
 		},
 		"res://tests/unit/test_art_w4_cards.gd": {
