@@ -642,10 +642,11 @@ func test_event_subtitles_are_translated_once() -> void:
 	await _frames(2)
 	var ev := RunManager.netrun.current_event()
 	var once := TextDb.t(ev, "text")
-	var shown := Dialogue.current_text().strip_edges()
-	assert_ne(shown, "", "the event speaks")
-	assert_true(once.begins_with(shown), "the page is the text translated once: '%s' vs '%s'" % [shown, once])
-	assert_eq(Dialogue.history[-1]["text"], once)
+	# Art pass W8c (ART_BIBLE 11 Events): the story is on the page, translated once; the
+	# subtitle band does not say it again.
+	var page := scene._panel.find_child("EventText", true, false) as RichTextLabel
+	assert_true(once.ends_with(page.text), "the page is the text translated once: '%s' vs '%s'" % [page.text, once])
+	assert_false(Dialogue.is_showing() and once.begins_with(Dialogue.current_text().strip_edges()), "the band doesn't repeat it")
 	TranslationServer.pseudolocalization_enabled = false
 	await _close(scene)
 

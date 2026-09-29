@@ -2851,3 +2851,4 @@ NEXT TURN %d,NEXT TURN %d
 Inner ring: %s,Inner ring: %s
 The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.
 TAKEN,TAKEN
+CHOSEN,CHOSEN

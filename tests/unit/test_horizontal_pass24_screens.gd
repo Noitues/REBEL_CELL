@@ -951,7 +951,9 @@ func test_a_screen_line_ends_when_its_screen_is_left() -> void:
 	assert_string_contains(Dialogue.current_text(), "Heat went up.", "the news line plays on")
 	_event(scene)
 	await _frames(2)
-	assert_eq(Dialogue.shown_scope(), "event", "the event's own line takes the bar")
+	# Art pass W8c: the event's story is on its page (the band doesn't repeat it): the
+	# route's line is gone from the bar.
+	assert_ne(Dialogue.shown_scope(), "route", "the route's line ends on the event")
 	await _close(scene)
 	# The briefing said at HQ belongs to the route.
 	Dialogue.clear()

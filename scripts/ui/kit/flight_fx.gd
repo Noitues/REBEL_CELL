@@ -159,7 +159,9 @@ static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: 
 
 ## A stamp landing on `rect` (global): a picture of `source` (or a `word` in a stamp box)
 ## stamps down from the entry's amplitude scale, holds and fades (`event_choice_stamp`).
-static func stamp_on(screen: Node, source: Control, word: String, id: StringName = &"event_choice_stamp") -> Control:
+## Art pass W8c: `picture` false stamps the word alone (no picture of `source`: an event
+## choice's note left a white bar over the page that came in).
+static func stamp_on(screen: Node, source: Control, word: String, id: StringName = &"event_choice_stamp", picture: bool = true) -> Control:
 	if not Motion.live(id) or source == null or not source.is_inside_tree():
 		return null
 	var l := layer_for(screen)
@@ -172,7 +174,7 @@ static func stamp_on(screen: Node, source: Control, word: String, id: StringName
 	holder.position = r.position
 	holder.size = r.size
 	holder.pivot_offset = r.size * 0.5
-	var tex := snapshot(source)
+	var tex := snapshot(source) if picture else null
 	if tex != null:
 		var pic := TextureRect.new()
 		pic.texture = tex

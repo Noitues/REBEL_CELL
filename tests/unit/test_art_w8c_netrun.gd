@@ -350,3 +350,102 @@ func test_shred_keeps_a_ghost_gap_until_the_drop() -> void:
 	scene.modal_drops.cancel()
 	scene.modal_drops.finish_all()
 	await _close(scene)
+
+
+# --- 4. Events ------------------------------------------------------------------------------------
+
+func test_event_story_on_paper_sized_to_its_words_in_plex() -> void:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var scene := _netrun()
+		_event(scene)
+		await _frames(5)
+		Typing.finish_all(get_tree())
+		await _frames(3)
+		var paper := scene._panel.find_child("EventPanel", true, false) as ZinePanel
+		assert_not_null(paper, "a street event is paper")
+		var text := paper.find_child("EventText", true, false) as RichTextLabel
+		assert_eq(text.theme_type_variation, UiTheme.BODY_TEXT, "the story is Plex body text")
+		var body_w := Palette.body().get_string_size("n".repeat(scene.EVENT_BODY_COLUMNS), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.BODY)).x
+		assert_true(text.size.x <= body_w + 1.0, "≤ 70 characters a line at %.1f (%.0f > %.0f)" % [scale, text.size.x, body_w])
+		assert_true(paper.size.y >= paper.content.get_combined_minimum_size().y - 1.0, "the paper holds its words at %.1f" % scale)
+		assert_true(paper.size.y <= paper.content.get_combined_minimum_size().y + 2.0, "and is no taller at %.1f" % scale)
+		assert_true(paper.get_global_rect().end.x <= CANVAS.x, "on screen at %.1f" % scale)
+		await _close(scene)
+
+
+func test_event_speaker_once_and_no_subtitle_repeat() -> void:
+	for id in [&"ev_leash_on_the_floor", &"ev_dispatch_early_reply"]:
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		Dialogue.clear()
+		var scene := _netrun()
+		_event(scene, id)
+		await _frames(4)
+		var ev := RunManager.netrun.current_event()
+		var who: String = Dialogue.speaker_name(ev.speaker, RunManager.campaign.corporation_id)
+		var seen := 0
+		for c in _texts(scene._panel):
+			var t := String(c.get("text"))
+			if t.to_lower().begins_with(who.to_lower()):  # a plate or a "WHO:" prefix
+				seen += 1
+		var paper: Node = scene._panel.find_child("EventPanel", true, false)
+		if paper is ZinePanel and (paper as ZinePanel).title.to_lower().contains(who.to_lower()):
+			seen += 1
+		assert_eq(seen, 1, "%s: the speaker is named once on the page" % id)
+		var story := TextDb.t(ev, "text")
+		assert_false(Dialogue.is_showing() and story.begins_with(Dialogue.current_text().trim_suffix("…").strip_edges().left(20)), "%s: the subtitle band doesn't repeat the story" % id)
+		await _close(scene)
+	assert_eq(load("res://scripts/ui/netrun_scene.gd").event_title("DISPATCH: Early Reply", "DISPATCH"), "Early Reply")
+
+
+func test_event_choices_show_numbers_once_with_good_and_bad_glyphs() -> void:
+	var scene := _netrun()
+	_event(scene)
+	await _frames(4)
+	var ev := RunManager.netrun.current_event()
+	for i in ev.choices.size():
+		var b := scene._panel.find_child("Choice%d" % (i + 1), true, false) as Button
+		var row := b.get_node(^"OutcomeRow") as OutcomeRow
+		assert_true(row is EventOutcomeRow, "choice %d's outcome carries ▲ / ▼" % (i + 1))
+		for it in row.items:
+			if int(it.get("amount", 0)) != 0:
+				assert_false(b.text.contains(String(it["text"])), "choice %d: the number %s shows once (in its chip)" % [i + 1, it["text"]])
+	var good := EventOutcomeRow.new([{"kind": StatIcon.CYCLES, "amount": 5, "text": "+5", "good": true, "name": ""}])
+	var bad := EventOutcomeRow.new([{"kind": StatIcon.HEAT, "amount": 2, "text": "+2", "good": false, "name": ""}])
+	assert_true(EventOutcomeRow.is_good(good.items[0]) and not EventOutcomeRow.is_good(bad.items[0]), "the shape follows good and bad")
+	good.free()
+	bad.free()
+	await _close(scene)
+
+
+func test_a_chosen_event_leaves_no_bar_over_the_next_page() -> void:
+	var scene := _netrun()
+	_event(scene)
+	await _frames(4)
+	Typing.finish_all(get_tree())
+	await _frames(2)
+	Motion.force_live = true
+	scene.choose_event(0)
+	var layer := FlightFx.existing(scene)
+	if layer != null:
+		for f in layer.flights:
+			for n in _all(f["node"]):
+				assert_false(n is TextureRect, "the stamp carries no picture of the note")
+		layer.finish()
+	Motion.force_live = false
+	await _frames(2)
+	assert_eq(FlightFx.active_count(scene), 0, "nothing left over the next page")
+	await _close(scene)
+
+
+func test_event_paper_is_a_calm_zone_and_not_a_map() -> void:
+	var scene := _netrun()
+	_event(scene)
+	await _frames(3)
+	var atmo: CityAtmosphere = scene.background.city.atmosphere()
+	assert_false(atmo.state.map_mode, "the event is not a map")
+	assert_true(atmo._calm_controls.has(scene._panel.find_child("EventPanel", true, false)), "the story's paper is a calm zone")
+	await _close(scene)

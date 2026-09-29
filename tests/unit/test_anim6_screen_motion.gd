@@ -431,9 +431,13 @@ func test_an_event_choice_stamps_its_outcome() -> void:
 	var took := await _until(func() -> bool: return row.scale == Vector2.ONE)
 	_assert_in_time(took, Motion.seconds(&"event_outcome_pop"), "the pop")
 	assert_eq(row.scale, Vector2.ONE, "and they settle")
+	# Art pass W8c (critique gifs/24): the stamp is CHOSEN over the whole choice, with no
+	# picture of the note (it left a white bar over the route).
+	var choice_size := (scene._panel.find_child("Choice1", true, false) as Control).size
+	assert_true(rest_size.x > 0.0)
 	scene.choose_event(0)
 	assert_eq(FlightFx.active_count(scene), 1, "the chosen outcome stamps")
-	assert_almost_eq((FlightFx.existing(scene).flights[0]["node"] as Control).size, rest_size, Vector2.ONE, "over the chosen outcome")
+	assert_almost_eq((FlightFx.existing(scene).flights[0]["node"] as Control).size, choice_size, Vector2.ONE, "over the chosen choice")
 	FlightFx.finish_all(scene)
 	assert_eq(FlightFx.active_count(scene), 0)
 
@@ -466,6 +470,10 @@ func test_screen_motion_never_changes_game_state() -> void:
 func _button_rects(page: Control) -> Array:
 	var out := []
 	for b in page.find_children("*", "BaseButton", true, false):
+		# Art pass W8c: a BUY sticker is its item's (compared there); its tape flap on focus
+		# rotates it about its top edge, which moves its global rect a pixel.
+		if b is BuyButton:
+			continue
 		if (b as Control).is_visible_in_tree():
 			out.append([String((b as BaseButton).get("text")), (b as Control).get_global_rect()])
 	return out
@@ -484,6 +492,9 @@ func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
 					_to_event(scene)
 			await _frames(4)
 			var instant := _button_rects(scene._panel)
+			# Art pass W8c: positions are compared in the page's own space (a page taller than the
+			# screen scrolls; where the view rests is not the layout).
+			var instant_host: Vector2 = scene._panel_host.global_position
 			_live()
 			scene._shown_screen = ""
 			scene._show_current()
@@ -493,13 +504,14 @@ func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
 			PageTransition.settle(scene)
 			await _frames(2)
 			var live := _button_rects(scene._panel)
+			var live_host: Vector2 = scene._panel_host.global_position
 			assert_eq(live.size(), instant.size(), "%s at %.1f: the same controls" % [screen, scale])
 			var screen_rect := Rect2(Vector2.ZERO, Vector2(1280, 720)).grow(1.0)
 			for i in mini(live.size(), instant.size()):
 				var want: Rect2 = instant[i][1]
 				var got: Rect2 = live[i][1]
 				assert_eq(live[i][0], instant[i][0], "%s at %.1f: control %d" % [screen, scale, i])
-				assert_almost_eq(got.position, want.position, Vector2.ONE, "%s at %.1f: '%s' rests where it would at once" % [screen, scale, instant[i][0]])
+				assert_almost_eq(got.position - live_host, want.position - instant_host, Vector2.ONE, "%s at %.1f: '%s' rests where it would at once" % [screen, scale, instant[i][0]])
 				# Art pass W8c: a page taller than the screen (the Modem at big text) scrolls
 				# inside its window: its controls keep within the screen's width.
 				var page_scroll := scene._panel_host.get_parent() as ScrollContainer

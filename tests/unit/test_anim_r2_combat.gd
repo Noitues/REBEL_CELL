@@ -233,11 +233,11 @@ func test_one_press_shows_the_story_and_its_subtitle() -> void:
 	await _entrance(scene)
 	var text := scene._panel.find_child("EventPanel", true, false).find_children("*", "RichTextLabel", true, false)[0] as Control
 	assert_true(Typing.typing(text), "the story types")
-	assert_true(Dialogue.typing(), "and the subtitle")
+	# Art pass W8c (ART_BIBLE 11 Events): the subtitle band doesn't repeat the story.
 	var key := _key(KEY_SEMICOLON)
 	get_viewport().push_input(key)
 	assert_false(Typing.typing(text), "one press shows the story")
-	assert_false(Dialogue.typing(), "and the subtitle with it")
+	assert_false(Dialogue.typing(), "and nothing types in the band")
 	assert_true(get_viewport().is_input_handled(), "and does nothing else")
 	await _close(scene)
 

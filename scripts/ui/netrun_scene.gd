@@ -557,10 +557,15 @@ func choose_event(index: int) -> void:
 	_report(s.choose_event_option(index))
 	# The chosen outcome stamps (ANIM-6) over the next screen as it comes in.
 	if phase == RunState.Phase.EVENT and s.run.phase != RunState.Phase.EVENT and chosen != null:
-		var row := chosen.get_node_or_null(^"OutcomeRow") as Control
-		FlightFx.stamp_on(self, row if row != null else chosen, "")
+		# Art pass W8c (critique gifs/24: the note's picture stayed as a white bar over the
+		# route): the stamp is the word CHOSEN over where the choice was, no picture of it.
+		FlightFx.stamp_on(self, chosen, tr(EVENT_CHOSEN_STAMP), &"event_choice_stamp", false)
 	RunManager.after_step()
 	_show_current()
+
+
+## Art pass W8c: the stamp a chosen event choice leaves (§6.6: ≤ 3 words).
+const EVENT_CHOSEN_STAMP := "CHOSEN" # TR
 
 
 func buy(kind: String, index: int, slot: int = -1) -> void:
@@ -2044,60 +2049,102 @@ func _fan_loot(row: Control) -> void:
 
 ## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
 ## clean system text on a dark strip (STYLE_GUIDE 3), never zined.
+##
+## Art pass W8c (ART_BIBLE §11 Events, §4.1, §4.2, §3.1, critique 59/60, gifs/24):
+## - The story sits on PAPER sized to its words (the paper is as tall as its text and as
+##   wide as a ≤ 70-character line of the Plex body face, `BodyText`); DISPATCH keeps Share
+##   Tech Mono on its dark strip, wrapped at ≤ 64 columns.
+## - The speaker's plate appears once (the title is the paper's heading; the plate never
+##   repeats the speaker or the title).
+## - The subtitle band never repeats the story on the page (the story isn't said again).
+## - Each choice's numbers show once, as glyph + number chips under its words (the "(+25
+##   Cycles, +2 Heat)" words are gone); good and bad carry ▲ / ▼ as well as colour.
+## - The chosen choice stamps CHOSEN as the next page comes in, with no picture of the
+##   note (a white bar stayed over the route).
+## - W7 hookup: the city is not a map here; the story's paper is a calm zone.
 func _show_event() -> void:
 	var s := RunManager.netrun
 	var ev := s.current_event()
 	var box := VBoxContainer.new()
 	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", UiTheme.SP_XS)
 	var dispatch := ev.speaker == RC.Voice.DISPATCH
+	var ts := Settings.text_scale
+	var page_w := (size.x if size.x > 0.0 else get_viewport_rect().size.x) - UiTheme.SAFE_MARGIN * 2.0
+	var text_w := event_text_width(dispatch)
+	# Side by side when the story and the choices both fit; else the choices go under it.
+	var stacked := text_w + EVENT_PAPER_PAD * ts + EVENT_OPTIONS_MIN * ts + EVENT_SPLIT_GAP > page_w
+	text_w = minf(text_w, page_w - EVENT_PAPER_PAD * ts)
 	var holder: Control
+	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
+	var title := event_title(TextDb.t(ev, "title"), who)
 	if dispatch:
 		var strip := PanelContainer.new()
-		var style := UiTheme.box(Color(0.02, 0.03, 0.07, 0.96), Palette.CRT_AMBER, 1, 16, 14)
-		style.border_width_left = 4
-		style.shadow_color = Color(0, 0, 0, 0.5)
-		style.shadow_size = 8
+		var style := UiTheme.box(Palette.TERMINAL_BG, Palette.CRT_AMBER, 1, UiTheme.SP_M, UiTheme.PANEL_PAD_V)
+		style.border_width_left = UiTheme.SP_XS
+		style.shadow_color = Palette.SHADOW
+		style.shadow_size = UiTheme.SP_S
+		if Settings.high_contrast:
+			style.bg_color = HighContrast.BG
 		strip.add_theme_stylebox_override("panel", style)
 		strip.material = UiTheme.crt_material()
-		strip.custom_minimum_size = Vector2(700, 0)  # ANIM-R4 C7: as tall as its words
 		strip.add_child(body)
 		holder = strip
 	else:
-		var panel := ZinePanel.new(TextDb.t(ev, "title").to_upper(), -1.0).scale_title(Settings.text_scale)
-		panel.custom_minimum_size = Vector2(760, 0)  # ANIM-R4 C7: as tall as its words
+		var panel := ZinePanel.new(title.to_upper(), -1.0).scale_title(ts)
 		panel.content.add_child(body)
 		holder = panel
+		# The paper is as tall as its words (a ZinePanel has no size of its own; overlaps
+		# ANIM-R5 B1's ZinePanel.fit_to_content: keep one on merge).
+		body.minimum_size_changed.connect(_fit_paper.bind(panel))
+		_fit_paper.call_deferred(panel)
 	holder.name = "EventPanel"
 	# H23 S10: room above the paper for its tape and title, clear of the subtitle band.
 	var gap := Control.new()
 	gap.name = "EventTopGap"
-	gap.custom_minimum_size.y = EVENT_TOP_GAP * Settings.text_scale
+	gap.custom_minimum_size.y = EVENT_TOP_GAP * ts
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(gap)
-	var split := HBoxContainer.new()
-	split.add_theme_constant_override("separation", 22)
+	var split: BoxContainer = VBoxContainer.new() if stacked else HBoxContainer.new()
+	split.name = "EventSplit"
+	split.add_theme_constant_override("separation", roundi(EVENT_SPLIT_GAP))
 	box.add_child(split)
 	split.add_child(holder)
 	holder.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	var options := VBoxContainer.new()
+	options.name = "EventChoices"
 	options.add_theme_constant_override("separation", 14)
 	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	split.add_child(options)
-	# H24 S4: the speaker's name comes translated (once).
-	var who: String = Dialogue.speaker_name(ev.speaker, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
-	var speaker := _label(who + ((" - " + TextDb.t(ev, "title")) if dispatch else ""))
+	# H24 S4: the speaker's name comes translated (once). Art pass W8c: the plate says it
+	# once; DISPATCH's strip heads its title on a line of its own (the paper's title is its
+	# heading).
+	var speaker := _label(who)
+	speaker.name = "SpeakerPlate"
 	speaker.add_theme_color_override("font_color", Palette.CRT_AMBER if dispatch else Palette.CELL_PINK)
 	body.add_child(speaker)
+	if dispatch and title != "":
+		var head := _label(title)
+		head.name = "EventTitle"
+		head.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.LABEL))
+		head.add_theme_color_override("font_color", Palette.CRT_AMBER)
+		body.add_child(head)
 	var text := RichTextLabel.new()
+	text.name = "EventText"
 	text.fit_content = true
-	text.custom_minimum_size = Vector2(720, 0)
-	text.text = TextDb.t(ev, "text")
+	# ANIM-R5 B1 (the same line): the words are laid out whole while they type in.
+	text.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
+	if not dispatch:
+		text.theme_type_variation = UiTheme.BODY_TEXT  # §4.1: Plex for a text block
+	text.custom_minimum_size = Vector2(text_w, 0)
+	text.text = event_story(TextDb.t(ev, "text"), who)
 	text.add_theme_color_override("default_color", Palette.CRT_AMBER if dispatch else Palette.INK)
 	body.add_child(text)
-	if not _spoken_events.has(ev.id):
-		_spoken_events[ev.id] = true
-		# TextDb text is already translated: said once, not translated again (H23 S17).
-		Dialogue.say(ev.speaker, TextDb.t(ev, "text"), 0.0, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id, true, "event")
+	# Art pass W8c (§11 Events, critique 59/60): the story is on the page, so the subtitle
+	# band does not say it again (it repeated the page at ~7 px). The band keeps the run's
+	# other lines.
+	_spoken_events[ev.id] = true
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
@@ -2105,7 +2152,8 @@ func _show_event() -> void:
 		# H22 #12: the amounts it will really apply (a heal at full HP, Heat at 0).
 		var outcome := OutcomeRow.of_choice(s, c)
 		var costs := OutcomeRow.words(outcome)
-		b.text = _choice_text(TextDb.t(c, "label"), costs)
+		# Art pass W8c: the numbers once, as the chips under the words (not "(+25 Cycles)").
+		b.text = _choice_text(TextDb.t(c, "label"), "")
 		var err := s.choice_error(c)
 		b.disabled = err != ""
 		var tip := err if err != "" else ((tr("Costs: %s.") % costs) if costs != "" else "")
@@ -2119,9 +2167,10 @@ func _show_event() -> void:
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		options.add_child(b)
 		# H23 S9: no numbers for a change that is none; H24 S9: a choice that changes nothing
-		# says so with the neutral "no change" mark (it showed nothing at all).
+		# says so with the neutral "no change" mark (it showed nothing at all). Art pass W8c:
+		# ▲ / ▼ beside each amount (EventOutcomeRow).
 		var numbers := OutcomeRow.shown(outcome)
-		var row := OutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
+		var row := EventOutcomeRow.new(numbers if not numbers.is_empty() else OutcomeRow.no_change())
 		OutcomeRow.attach(b, row)
 		# ANIM-6: the outcome's icons pop when the choice is hovered or focused.
 		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
@@ -2131,15 +2180,70 @@ func _show_event() -> void:
 	options.custom_minimum_size.x = 0.0
 	var right_gap := Control.new()
 	right_gap.name = "EventRightGap"
-	right_gap.custom_minimum_size.x = EVENT_RIGHT_GAP * Settings.text_scale
+	right_gap.custom_minimum_size.x = EVENT_RIGHT_GAP * ts
 	right_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	split.add_child(right_gap)
+	if stacked:
+		# Art pass W8c: under the story, the choices keep the same gap from the right edge.
+		var row := HBoxContainer.new()
+		row.name = "EventChoiceRow"
+		split.remove_child(options)
+		split.add_child(row)
+		row.add_child(options)
+		row.add_child(right_gap)
+	else:
+		split.add_child(right_gap)
 	_set_panel(box, false)
+	var calm: Array[Control] = [holder]
+	_city_page(false, calm)
 	_register_event_drops(ev, options)
 	# ANIM-R4 C7: the story types within `event_type`'s cap (0.8 s), not a char at a time
 	# for 8 s under an empty panel.
 	if entering and Typing.type_in(text, &"event_type") > 0.0:
 		_hold_choices(options, text)
+
+
+## Art pass W8c (ART_BIBLE §4.2: ≤ 70 characters a line of body text; §4.1: DISPATCH ≤ 64
+## columns of mono): the event story's width at the player's text size (px).
+static func event_text_width(dispatch: bool) -> float:
+	var f := Palette.mono() if dispatch else Palette.body()
+	var cols := EVENT_DISPATCH_COLUMNS if dispatch else EVENT_BODY_COLUMNS
+	return ceilf(f.get_string_size(UiTip.COLUMN_SAMPLE.repeat(cols), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.BODY)).x)
+
+
+## Art pass W8c: an event's title without a leading speaker ("DISPATCH: Early Reply" under
+## the DISPATCH plate reads "Early Reply"): the plate says who, once.
+static func event_title(title: String, who: String) -> String:
+	var t := title.strip_edges()
+	for sep: String in [":", " -", " —"]:
+		var lead: String = who + sep
+		if who != "" and t.to_lower().begins_with(lead.to_lower()):
+			return t.substr(lead.length()).strip_edges()
+	return "" if t.to_lower() == who.to_lower() else t
+
+
+## Art pass W8c: an event's story without a leading "SPEAKER: " (the plate above says who,
+## once; "DISPATCH: Good work at the Rack." reads "Good work at the Rack.").
+static func event_story(text: String, who: String) -> String:
+	var lead := who + ":"
+	if who != "" and text.to_lower().begins_with(lead.to_lower()):
+		return text.substr(lead.length()).strip_edges()
+	return text
+
+
+## The paper's height: its words' (a ZinePanel is a plain Control round its content).
+func _fit_paper(panel: ZinePanel) -> void:
+	if not is_instance_valid(panel):
+		return
+	panel.custom_minimum_size = panel.content.get_combined_minimum_size()
+
+
+## Art pass W8c: the story's columns (§4.2, §4.1), the paper's padding round its words, the
+## least width the choices keep beside it and the gap between (px at text scale 1.0).
+const EVENT_BODY_COLUMNS := 70
+const EVENT_DISPATCH_COLUMNS := 64
+const EVENT_PAPER_PAD := 32.0
+const EVENT_OPTIONS_MIN := 300.0
+const EVENT_SPLIT_GAP := 22.0
 
 
 ## ANIM-R1 M9 / ANIM-R2 E1-E2: while the event's story types in, its choices wait. They stay

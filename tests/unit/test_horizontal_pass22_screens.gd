@@ -424,9 +424,11 @@ func test_outcomes_name_no_rescued_class_and_show_capped_amounts() -> void:
 	var shown := s.current_event()
 	for i in shown.choices.size():
 		var b := scene._panel.find_child("Choice%d" % (i + 1), true, false) as Button
-		var want := OutcomeRow.words(OutcomeRow.of_choice(s, shown.choices[i]))
-		if want != "":
-			assert_string_contains(b.text, want, "choice %d's words are the capped outcome" % i)
+		# Art pass W8c: the numbers show once, as the chips under the words.
+		var want := OutcomeRow.shown(OutcomeRow.of_choice(s, shown.choices[i]))
+		var row := b.get_node(^"OutcomeRow") as OutcomeRow
+		for k in want.size():
+			assert_eq(String(row.items[k]["text"]), String(want[k]["text"]), "choice %d's chips are the capped outcome" % i)
 
 
 # --- #14 words that stay, legends and map icons ------------------------------------------------
