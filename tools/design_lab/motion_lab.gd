@@ -141,6 +141,9 @@ const DEMOS := {
 	&"needle_draw": ["scene", "send"],  # art pass W3
 	&"hp_heartbeat": ["scene", "send"],  # art pass W3
 	&"bezel_ambient": ["scene", "enter"],  # art pass W3
+	# Art pass W5 (ART_BIBLE 7.2): the boss hologram on the stage: its idle drift, its intro
+	# reveal and (--demo-reduce) the reduce-effects cross-fade.
+	&"hologram_idle": ["hologram", "idle"], &"hologram_intro": ["hologram", "intro"], &"hologram_intro_fade": ["hologram", "intro"],
 }
 ## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
 ## step between shapes (px, 1280x720), and the names' lettering.
@@ -479,6 +482,9 @@ func _play() -> void:
 					_lab_fx.add_child(name_tag)
 			else:
 				_lab_fx.hit_vfx(_wheel.global_center(), StringName(demo[1]))
+		"hologram":
+			# Art pass W5: a boss hologram over the stage (the lab's pieces hide).
+			length = _play_hologram(String(demo[1]))
 		"burst":
 			# Art pass W6: the wheel-local T3 burst on the lab's wheel (the phase in a corp hue).
 			var hue := Palette.CORP_SOLACE if demo[1] == "phase" else Color(0, 0, 0, 0)
@@ -505,6 +511,27 @@ func _play() -> void:
 	_show_values()
 	if _loop:
 		_replay_later(maxf(length, 0.0) + LOOP_GAP)
+
+
+## Art pass W5: a fresh boss Hologram centred on the stage; "intro" plays its reveal (a
+## cross-fade under reduce effects), "idle" shows its T0 drift. Returns its length (s).
+func _play_hologram(what: String) -> float:
+	_show_scene(false)
+	var holo := Hologram.new(PortraitArt.enemy_subject(&"the_manifest", "The Manifest", &"meridian", true), Hologram.Mode.BOSS)
+	holo.name = "LabHologram"
+	holo.size = holo.custom_minimum_size
+	_clear_screen()
+	_screen_host = Control.new()
+	_screen_host.name = "ScreenDemo"
+	_screen_host.position = Vector2(PANEL_W, 0)
+	_screen_host.size = Vector2(1280 - PANEL_W, 720)
+	add_child(_screen_host)
+	holo.position = (_screen_host.size - holo.size) * 0.5
+	_screen_host.add_child(holo)
+	if what == "intro":
+		holo.play_intro()
+		return Motion.seconds(_id)
+	return LOOP_HOLD * 2.0
 
 
 func _replay_later(seconds: float) -> void:

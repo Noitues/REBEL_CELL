@@ -350,7 +350,7 @@ They are listed here so none is silently lost. Raise them as a later pass if you
 |---|---|---|---|
 | 0 | Branch + baseline | `art-pass` | done: the baseline is green (1094 tests) at 8ddfa86 + docs |
 | 1 | W1, W10 | `art/w1-foundation`, `art/w10-visual-qa` | **merged** into art-pass (1146 tests green); review folders W1/ and W10/ |
-| 2 | W2, W4, W6, W9s | `art/w2-components`, `art/w4-cards` | W6 and W9s **merged** (1165 tests green); W2 and W4 running |
-| 3 | W3, W5, W7 | `art/w5-characters`, `art/w7-city` | W5 and W7 running (their deps have merged); W3 waits for W2 |
-| 4 | W8a–d | — | not started |
+| 2 | W2, W4, W6, W9s | `art/w4-cards` | W6, W9s, W2 **merged** (1196 tests green); W4 running |
+| 3 | W3, W5, W7 | `art/w3-combat`, `art/w7-city` | W5 **merged** (1214 tests green); W3 and W7 running |
+| 4 | W8a–d | `art/w8a-menus` | W8a running (title, slots, options, codex, stats, pause, shared panels, page transitions); new campaign moved to W8b (it lives in hq_scene.gd) |
 | 5 | W9 sweep, W10 full | — | not started |
