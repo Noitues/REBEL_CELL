@@ -2819,3 +2819,6 @@ Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind cor
 Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
 Pad button glyphs,Pad button glyphs
 Fast-forward the resolve (hold),Fast-forward the resolve (hold)
+RANK %d,RANK %d
+R%d,R%d
+// %s,// %s
