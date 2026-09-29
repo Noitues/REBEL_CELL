@@ -87,6 +87,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"raid_shot_stagger", &"heat_pulse_rise",
 	# ANIM-R6 city: the threats still standing withdraw at a raid's verdict.
 	&"raid_threat_withdraw",
+	# ANIM-R6 combat: the tutorial's Next pulses while it waits for it.
+	&"tutorial_next_pulse",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

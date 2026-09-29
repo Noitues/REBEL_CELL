@@ -545,6 +545,92 @@ route; page timings with `tools/design_lab/page_bake_probe.gd` (three runs).
 - **Words** (exported once): the tr_word literals above, Key, none, CAN BE YOUR NODE and its
   tip; dropped: CLAIMABLE, "Once cleared you can claim it: a node of your network.".
 
+#### 2026-09-29 — Animation pass — ANIM-R6 combat
+The sixth fix batch of the Animation pass review, combat part (A1-A19 of fix agent A, from the
+R6 vertical, horizontal and naive-player audits). Views only: no rule changed (the numbers the
+tags show come from the resolve's own events; preview = result). One new motion id (data):
+`tutorial_next_pulse`. Every call below was the implementer's (the standing rule: nothing
+deferred). Tests: `tests/unit/test_anim_r6_combat.gd` (full tier); new helper
+`tests/helpers/pseudo_loc.gd`. Checked in windowed Movie Maker captures (`netrun_scene
+--demo-combat --demo-end=lose|win|hover`, at 1.0 and 1.6; the lab's `wheel_nudge`), logs free of
+ERRORs.
+- **A1 one press, one job.** A press during a fight-ending replay landed the outcome (showing the
+  next step) and then went on to it: the SEND IT key or a click on its spot also left the fight.
+  The replay's press handling (`replay_press`) now notes whether the next step was on screen
+  *before* the press; only then does it pass to it. Tested with a key and a click.
+- **A2 a skip keeps the bark and the stamp whole.** The VICTORY / DEFEAT bark is said where the
+  outcome lands (`_land_outcome`, once per turn), so a skipped end beat still barks; a skip lands
+  the DEFEAT stamp whole (`WheelView.show_flatline`: no fresh 0.3 s pop after the press). Barks
+  follow `Motion.animating()` (the same as before in the game; forced motion in tests hears them).
+- **A3 a turn-start kill.** `outcome_time` counts the end beat in any phase and waits for every
+  HP roll before it (a fight ended by an ON_TURN_START trigger landed its outcome at 0 s);
+  `beat_delay` never gives a negative delay.
+- **A4 every number is the applied one (presentation only).** Hit chips say who hits whom and
+  what gets through the guard ("HITS YOU 8"; the victim's "N BLOCKED" says the rest); a hit on a
+  wheel with fewer HP left says so honestly ("HITS YOU 8 → 1 LEFT", the same "→ N LEFT" in the
+  equation where it struck and in the icon row). A wheel's own loss is never summed again on its
+  own tag ("YOU TAKE 11" beside "HITS YOU 8"): the NEXT plate carries the total ("NEXT 49 (-11)",
+  shrinking rather than running onto the HP number). Losses no hit names say their source
+  ("☠ CORRUPTED BITES YOU 3"), heals are "+N HP", anything else (a boss refill) "HP +N". No
+  fractions: the riding number is the whole hit ("12" shrinking into "6" at half power; the "6 ½"
+  mark is gone). The icon row with no guard is one "-N HP" ("↓8 = 8" beside LAST TURN -1 HP).
+  **Decided:** "→ N LEFT" for the clamp (the designer's "8 → 1 left"), and a fully blocked hit's
+  chip says "HITS YOU 0" (applied) beside the victim's "N BLOCKED". Tested over 4 seeds x 3
+  enemies x every hand card, the End Turn forecast and a lethal turn: each hit chip's numbers
+  equal the events' applied damage, and the NEXT plate the resolved HP.
+- **A5 the top bar's HP in a fight** (netrun_scene.gd, agent B's file, a minimal change): during a
+  fight it reads the fight's HP (`combat_scene.top_bar_hp`; the run's is written at the end),
+  keeping the turn's start HP while a replay plays and moving when it lands
+  (`shown_hp_changed`), still held for the outcome beat.
+- **A6 a lost fight waits for JACK OUT** (netrun_scene.gd, a minimal change): no auto-advance after
+  DEFEAT (JACK OUT showed ~0.7 s). A win still moves on after `combat_end_hold`.
+- **A7 the replay's pace.** Measured headless from the schedule (first turns of 15 fights; third
+  turns): before, first turns 1.8-5.2 s (median 3.2), third turns 2.2-5.9 s (median 3.9). Retuned
+  toward the documented feel where readability holds (the projectile's 0.27 s flight and one hit
+  at a time kept): landing hold 0.3→0.25, number to HP delay 0.22→0.12 and travel 0.22→0.18, HP
+  drain 0.3→0.2, side gap 0.35→0.2, result hold 0.5→0.35, absorb 0.3→0.25, turn spins 0.4→0.34,
+  enemy spin delay 0.15→0.05. After: first turns 1.6-4.2 s (median 2.7), third turns 2.1-4.7 s
+  (median 3.3), a plain turn (one hit each way) 2.3 s (tested ≤ 2.6). **Decided:** retune and
+  write the measured numbers in STYLE_GUIDE 5.2 ("about 2 s" can't hold with one projectile at a
+  time and each number entering its HP, rules the designer asked for in R2-R4; each further hit
+  adds ~0.6 s).
+- **A8** The portrait's glitch and HP tooltip follow the replay's HP (they read the end at SEND
+  IT); the nudge arrows stay until the outcome lands.
+- **A9** A fight left while its outcome waits lands it on the way out (`outcome_landed`: the
+  flatline's DISPATCH line was dropped).
+- **A10** The log playback's timers call a bound method (`_append_log`), no lambda holding the scene.
+- **A11** Switched-off `card_stamp`, `card_exhaust` and `effect_burst` don't play and take no
+  time; the card flight's grow share and eases are named drawing constants.
+- **A12** Settings, RESPIN / UNDO from their first frame and the hidden notes' titles translate once.
+- **A13** A hovered card names itself on the tag's tape with a card mark ("YOUR JOLT · WAS ..."),
+  not as a chip among the enemy's results; the WAS words are bigger (13 px at 1.0) and firmer
+  (ink 0.85, a thin lighter strike). **Decided:** a nudge hover says "YOUR NUDGE" the same way.
+- **A14** The arena's city never switches in mid-replay: `NeonCity.hold_landing` (agent C's file,
+  a minimal change) keeps the silhouette while a SEND IT replays; the bake lands and fades in
+  between turns. **Decided** over prebaking the fight's look (the arena's look differs from the
+  route's and the bake still raced the first turn).
+- **A15** VICTORY stays at full strength until the fight is left (`CombatFxLayer.hold_word`; it
+  faded to a ghost after ~1 s), a skip shows it too, and `combat_end_hold` is 1.4 s (was 0.8) so it
+  reads before the loot opens. The lab's `combat_end_hold` demo is a won fight in the netrun
+  (the scene no longer reads it).
+- **A16** The tutorial box is sized to its step's text (the subtitle dock gives up lines for it);
+  a step longer than the column shows in pages "(1/2)" that fit, never cut; Next pulses
+  (`tutorial_next_pulse`, new) when it is what moves the tutorial on; the steps no play ends (the
+  wheel, resistance, Heat) move on with the next turn.
+- **A17** The nudge arrows turn down the wheel's sides (5° steps, at most 70°) while the tag
+  would cover them (1.6); the inner ring's arrows carry a ring mark instead of "IN"; SEND IT's
+  mark is a play button (a disc with a ▶) instead of the small ▶▶; the deck pile a card deals from
+  sits far enough in that the first card starts whole on screen.
+- **A18** `PseudoLoc` (test helper) turns pseudolocalisation on and puts the project's own values
+  back (r2 / r4 / r5 set them to false); the empty assert in r5's Perfect test is a real check;
+  the lab's `send_lose` turns the enemy's wheel until SEND IT loses when no fight tried does.
+- **A19** `wheel_nudge` 0.16 s (was 0.08, too fast to see) with a 3 px recoil; a queue still
+  catches up in the time of one step.
+- Test expectations changed on purpose: r3's half mark (a whole number now), pass23's
+  "YOU TAKE" (the enemy's tag says HITS YOU), pass20's HP chip (the NEXT plate), pass24's
+  YOU PLAY chip and the r2 / r3 key checks (YOUR %s), r2's VICTORY word (the held word), the
+  tutorial integration test (Next turns pages first).
+
 #### 2026-09-29 — Animation pass — ANIM-R6 netrun screens
 The sixth fix batch of the Animation pass review, netrun screens part (B1-B14, from the R6
 vertical, horizontal and naive-player audits). Views only (no rule, no schema field, no new

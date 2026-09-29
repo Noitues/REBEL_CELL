@@ -26,6 +26,7 @@ Stationed on %s."
 %d DISABLED,%d DISABLED
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
+%d LEFT,%d LEFT
 %d SEIZED,%d SEIZED
 %d SLICES,%d SLICES
 %d destroyed,%d destroyed
@@ -50,7 +51,6 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
 %s  //  %d RAM,%s  //  %d RAM
 %s  HP %s → %s  %s,%s  HP %s → %s  %s
-%s %d HP,%s %d HP
 %s %s HP,%s %s HP
 "%s %s: %s. %s %s Select it, then %s on its card.","%s %s: %s. %s %s Select it, then %s on its card."
 %s (%d HP): takes hits aimed at the slice it guards.,%s (%d HP): takes hits aimed at the slice it guards.
@@ -65,9 +65,10 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s // %d CARDS,%s // %d CARDS
 %s // LOOT: pick a %s,%s // LOOT: pick a %s
 %s AT TURN START,%s AT TURN START
+%s BITES IT %d,%s BITES IT %d
+%s BITES YOU %d,%s BITES YOU %d
 %s DOWN,%s DOWN
 %s EVADE,%s EVADE
-%s HITS %d,%s HITS %d
 %s MOVES,%s MOVES
 %s R%d,%s R%d
 %s R%d%s,%s R%d%s
@@ -796,6 +797,7 @@ HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
+HITS %s %d → %d LEFT,HITS %s %d → %d LEFT
 HITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).,HITS = damage this wheel deals and to whom; HP = health change; BLOCK / SHIELD soak damage; glyphs = statuses on a slice (dashed ring on the wheel).
 HOLDS,HOLDS
 HOLDS %d STEPS,HOLDS %d STEPS
@@ -810,6 +812,7 @@ HOME HOLDS,HOME HOLDS
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
+HP %s,HP %s
 HP %s → %s %s,HP %s → %s %s
 HP is full,HP is full
 HP now: %d of %d.,HP now: %d of %d.
@@ -931,6 +934,7 @@ In force: %s.,In force: %s.
 Inner ring segment %d: Rank 3 lets you swap it for another.,Inner ring segment %d: Rank 3 lets you swap it for another.
 "Integrity before and after, and whether the node held.","Integrity before and after, and whether the node held."
 Intel,Intel
+"It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
 It lands on one slice at random; the odds by slice type follow.,It lands on one slice at random; the odds by slice type follow.
 Its needle lands on %s.,Its needle lands on %s.
 JACK A CAMPAIGN IN,JACK A CAMPAIGN IN
@@ -950,6 +954,7 @@ LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
 LINES HEARD,LINES HEARD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
+LOG,LOG
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
 LOST,LOST
@@ -1362,7 +1367,7 @@ SLEEP","NEVER
 SLEEP"
 NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.,NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in.
 NEW SLICES,NEW SLICES
-NEXT %d,NEXT %d
+NEXT %d (%s),NEXT %d (%s)
 "NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: its HP after SEND IT, if you press it now (the tag above says why)."
 "NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT %d: your HP after SEND IT, if you press it now (the tag above says why)."
 NEXT OPERATIVE >,NEXT OPERATIVE >
@@ -2405,7 +2410,6 @@ Subtitles type in (off: each line shows at once),Subtitles type in (off: each li
 Subtitles with speaker names,Subtitles with speaker names
 System log strip at the foot of the screen,System log strip at the foot of the screen
 T%d,T%d
-TAKES,TAKES
 TARGET: %s,TARGET: %s
 TERMINAL EVENT,TERMINAL EVENT
 THE TARGET,THE TARGET
@@ -2756,6 +2760,7 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
+WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
@@ -2769,13 +2774,13 @@ Won,Won
 YOU,YOU
 YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s
-YOU PLAY %s,YOU PLAY %s
-YOU TAKE,YOU TAKE
+YOUR %s,YOUR %s
 YOUR NODES // pick the target,YOUR NODES // pick the target
 YOUR WHEEL,YOUR WHEEL
 Yes,Yes
 You are here.,You are here.
 You can move here now.,You can move here now.
+"Your %s, if you play it:","Your %s, if you play it:"
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
