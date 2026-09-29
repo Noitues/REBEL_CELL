@@ -176,9 +176,12 @@ DECISIONS "Test suite: bounded waits".
 Tests run `--headless`: the dummy renderer never posts a frame and there is no
 RenderingDevice, so GPU and rendering paths (the city bake's GPU copy, viewport readbacks,
 shaders' look) never run in the suite. Three green runs shipped a grey city once (ANIM-R4).
-A change to a rendering path is verified in a windowed run as well (the windowed render
-check tool, or a Movie Maker capture of the scene: `--write-movie <dir>/f.png`, the folder
-made first, and the frames read).
+A change to a rendering path is verified in a windowed run as well, through
+`tools/run_windowed.py` ("Windowed checks" above): a Movie Maker capture of the scene
+(`--write-movie <dir>/f.png`, the folder made first, and the frames read). The motion lab's
+`--demo-check=<frames>` prints which scripts read a demo's entry, for the demos
+`test_motion_lab_demos.gd` can't check headless (a piece gated by the headless display
+itself, or the GPU's bake).
 
 ### The integrity rules stay fast
 
