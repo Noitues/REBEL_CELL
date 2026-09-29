@@ -4,6 +4,11 @@ Approved mockups (private canvas; ask the project owner for access):
 https://claude.ai/artifact/EyiLTRaqVVwdhSQox1yufP — see the "Blended direction: three
 worlds" row (HQ, City Grid, Netrun combat).
 
+> **Superseded in part by `docs/ART_BIBLE.md`** (v1.0, 2026-09-28), the visual source of
+> truth. ART_BIBLE §15 lists every ruling that overrides this guide; the notes marked
+> "Superseded by ART_BIBLE" below point at them. Everything else here stays binding
+> (motion rulings 5.1-5.5, the icon tables 4.1). The history below is kept as written.
+
 ## 1. Three Worlds
 | World | Style | Used for |
 |---|---|---|
@@ -58,6 +63,21 @@ stamps, marker scrawls). CRT scanlines appear only on the city and terminal glas
 
 Each corporation gets its own `corp_*` glow colour. Never use colour as the only signal.
 
+Superseded by ART_BIBLE (§15 rows; code form in `Palette`):
+- **Damage colour:** superseded by ART_BIBLE §3.3. All harm is `HARM` #FF4433; `cell_pink`
+  is the brand and primary action only (the "pink is damage" rulings above are retired).
+  Semantic tokens `GAIN`, `PROTECT`, `WARN`, `FOCUS`, `DISABLED`, `TEXT_*` and `SCRIM` are
+  also in §3.3.
+- **`corp_orbital`:** superseded by ART_BIBLE §3.6: #7FA8FF plus the star-dot pattern
+  (#DDE3FF read as UI text).
+- **`corp_rebel_cell`:** superseded by ART_BIBLE §3.6: #E8141E is kept, but its
+  scan-glitch pattern is mandatory (the hue sits near `HARM`). Every corp now owns a hue
+  *and* a pattern (`CorpPattern`) *and* a landmark.
+- **HP colour:** superseded by ART_BIBLE §3.5: green / amber / red by HP fraction
+  (`Palette.hp_color`), not a green arc.
+- **Heat colour:** superseded by ART_BIBLE §3.5: COOL / NOTICED / FLAGGED / HUNTED, never
+  green (`Palette.heat_color`).
+
 ## 3. Typography
 | Role | Font | Notes |
 |---|---|---|
@@ -67,6 +87,11 @@ Each corporation gets its own `corp_*` glow colour. Never use colour as the only
 
 All three are on Google Fonts under open licences; confirm each licence before release.
 DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-styled.
+
+- **Fonts:** superseded by ART_BIBLE §4.1: a fourth face, IBM Plex Sans Condensed (OFL),
+  for any text block over 3 lines (`Palette.FONT_BODY`, `UiTheme.BODY_TEXT`). All faces
+  render as MSDF (§13). Sizes come from the ART_BIBLE §4.2 type scale (`UiTheme.font_px`),
+  never literals (§4.3).
 
 ## 4. Component Rules
 - **Wheels:** neon gauge rings; translucent slices (attack/crit `cell_pink`,
@@ -156,6 +181,15 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - Heat: effects pulse on threshold events; they do not stay on. Physical world adds wanted
   posters and searchlights; the net shows corporate wireframe creeping over zine elements.
 - REBEL_CELL campaign: the net itself renders in zine style.
+
+Superseded by ART_BIBLE (§15 rows):
+- **Precision Perfect:** the "wheel-local inversion" above is kept; ART_BIBLE §8 adds that
+  there is **no full-screen flash** below tier T4.
+- **Ownership:** superseded by ART_BIBLE §6.1: wheel ownership reads from bezel hardware,
+  not slice colour or position.
+- **Class look:** superseded by ART_BIBLE §7.1: a unique accent, silhouette and bezel per
+  class (`Palette.class_accent`).
+- **Toasts:** superseded by ART_BIBLE §6.7: one sticky-note toast style.
 
 ### 5.1 Motion config (the Animation pass, ANIM-1)
 - **One table.** Every UI animation's duration, delay, ease, transition, amplitude and
