@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="260" viewBox="0 0 240 260">
+  <!-- The Cell's hexagon, left half along its crack (art pass W8d, ART_BIBLE 11 Campaign end LOST). White and greys, tinted CELL_PINK at runtime. -->
+  <defs><clipPath id="half"><polygon points="0.0,-10.0 120.0,-8.0 120.0,22.0 111.0,50.0 128.0,78.0 113.0,104.0 127.0,132.0 108.0,160.0 125.0,188.0 112.0,214.0 122.0,240.0 121.0,270.0 0.0,270.0"/></clipPath></defs>
+  <g clip-path="url(#half)">
+    <polygon points="120.0,22.0 213.5,76.0 213.5,184.0 120.0,238.0 26.5,184.0 26.5,76.0" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linejoin="round"/>
+    <polygon points="120.0,46.0 192.7,88.0 192.7,172.0 120.0,214.0 47.3,172.0 47.3,88.0" fill="none" stroke="#9C9C9C" stroke-width="4" stroke-linejoin="round"/>
+    <polyline points="76.0,168.0 120.0,92.0 164.0,168.0" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

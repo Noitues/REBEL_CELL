@@ -3289,18 +3289,44 @@ func show_raid_summary() -> void:
 
 
 func show_end() -> void:
+	# Art pass W8d (ART_BIBLE §11 Campaign end, §8 T4, critique 62/63): the end staged over
+	# the city as two templates (CampaignEndStage): WON = the corp's landmark falls and is
+	# sprayed out, CORP DOWN, the crew wall; LOST = the Cell's hexagon cracks, the city greys,
+	# CELL BURNED. The same words and records as before: the beats, the profile, the ICE
+	# records (the receipt's tooltip keeps ice_records_text() whole), the two actions.
 	var c := RunManager.campaign
-	Dialogue.speak("win" if c.outcome == CampaignState.Outcome.WON else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
-	var box := VBoxContainer.new()
-	box.add_child(_label((tr("CAMPAIGN WON - %s is down") % TextDb.t(RunManager.corporation.final_boss, "display_name")) if c.outcome == CampaignState.Outcome.WON else tr("CAMPAIGN LOST - home server destroyed")))
-	for b in CampaignRules.revealed_beats(c, RunManager.corporation):
-		box.add_child(_label("  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]))
+	var won := c.outcome == CampaignState.Outcome.WON
+	Dialogue.speak("win" if won else "loss", RC.Voice.DISPATCH, c.corporation_id, &"", c.campaign_seed)
+	var corp := RunManager.corporation
+	var beats: Array = []
+	for b in CampaignRules.revealed_beats(c, corp):
+		beats.append([TextDb.t(b, "title"), TextDb.t(b, "text")])
 	var p := RunManager.profile
-	box.add_child(_para(tr("Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d.") % [p.campaigns_won, p.campaigns_lost, HudStats.ice_value(p.best_ice), TextDb.t(RunManager.corporation, "display_name"), RunManager.ice_cap(c.corporation_id)]))
-	box.add_child(_para(ice_records_text()))
-	box.add_child(_icon(_button(tr("New campaign"), func() -> void: RunManager.campaign = null; show_start()), StatIcon.PLAY))
-	box.add_child(_icon(_button(tr("Back to title"), RunManager.go_to_title), StatIcon.EXIT))
-	_set_panel(box, "end")
+	var records := CampaignEndStage.records_of(p, RunManager.lookup(), RunManager.config().rebel_cell_unlock_ice, RunManager.ice_cap(c.corporation_id))
+	var headline := (tr("CAMPAIGN WON - %s is down") % TextDb.t(corp.final_boss, "display_name")) if won else tr("CAMPAIGN LOST - home server destroyed")
+	var stage := CampaignEndStage.new(won, c.corporation_id, TextDb.t(corp, "display_name"), headline, CrewWall.crew_of(c.roster), beats, records)
+	stage.receipt.tooltip_text = UiTip.fold(ice_records_text())
+	var city := background.city.atmosphere() if background != null and background.city != null else null
+	stage.new_button.text = tr("New campaign")
+	stage.new_button.pressed.connect(func() -> void:
+		if city != null:
+			city.set_campaign_progress(0.0, &"")  # the next campaign starts from no lean
+		RunManager.campaign = null
+		show_start())
+	_icon(stage.new_button, StatIcon.PLAY)
+	stage.title_button.text = tr("Back to title")
+	stage.title_button.pressed.connect(RunManager.go_to_title)
+	_icon(stage.title_button, StatIcon.EXIT)
+	if city != null:
+		stage.lean_from = city.state.progress
+		stage.city_lean.connect(func(f: float) -> void: city.set_campaign_progress(f, c.corporation_id))
+	_set_panel(stage, "end")
+	# The city shows behind the stage (never a glass box over it).
+	_panel_host.theme_type_variation = &""
+	if entering:
+		stage.play()
+	else:
+		stage.finish_now()
 
 
 # --- Helpers ----------------------------------------------------------------------------------

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+  <!-- REBEL_CELL (handler AI): the inverted Cell hexagon (art pass W8d, ART_BIBLE 3.6, 11 Campaign end). White and greys, tinted in the corp hue at runtime. -->
+  <rect x="44.0" y="286" width="112.0" height="10" fill="#FFFFFF"/>
+  <rect x="56.0" y="276" width="88.0" height="10" fill="#D2D2D2"/>
+  <rect x="80" y="210" width="40" height="70" fill="#FFFFFF"/>
+  <rect x="92" y="222" width="16" height="48" fill="#9C9C9C"/>
+  <polygon points="100.0,32.0 179.7,78.0 179.7,170.0 100.0,216.0 20.3,170.0 20.3,78.0" fill="#FFFFFF"/>
+  <polygon points="100.0,54.0 160.6,89.0 160.6,159.0 100.0,194.0 39.4,159.0 39.4,89.0" fill="#5A5A5A"/>
+  <polyline points="62.0,92.0 100.0,166.0 138.0,92.0" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="miter"/>
+  <rect x="56" y="116" width="32" height="3" fill="#5A5A5A"/>
+  <rect x="108" y="130" width="38" height="3" fill="#5A5A5A"/>
+  <rect x="70" y="144" width="60" height="3" fill="#5A5A5A"/>
+</svg>

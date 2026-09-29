@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="260" viewBox="0 0 240 260">
+  <!-- The crack through the Cell's hexagon (art pass W8d, ART_BIBLE 11 Campaign end LOST). White, tinted INK at runtime, revealed from the top. -->
+  <polyline points="120.0,22.0 111.0,50.0 128.0,78.0 113.0,104.0 127.0,132.0 108.0,160.0 125.0,188.0 112.0,214.0 122.0,240.0" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="miter" stroke-linecap="round"/>
+  <polyline points="111.0,50.0 92.0,40.0 78.0,44.0" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="128.0,78.0 150.0,70.0 166.0,76.0" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="127.0,132.0 152.0,140.0 170.0,134.0" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="108.0,160.0 86.0,170.0 70.0,164.0" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="125.0,188.0 146.0,200.0" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="113.0,104.0 94.0,98.0" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
