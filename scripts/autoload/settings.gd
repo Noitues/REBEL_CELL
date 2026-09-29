@@ -53,6 +53,11 @@ var system_log: bool = false
 var keybinds: Dictionary = {}
 ## The guided first netrun has been completed or skipped.
 var tutorial_done: bool = false
+## Colour-blind correction (ART_BIBLE §12, art pass W9): one of COLORBLIND_MODES. Not off
+## puts a full-screen daltonize pass on top (the ColorblindFilter autoload); the patterns
+## and glyphs stay the main cue.
+var colorblind_mode: StringName = &"off"
+const COLORBLIND_MODES: Array[StringName] = [&"off", &"deutan", &"protan", &"tritan"]
 ## Assist mode (GAP_ANALYSIS P2 13): new campaigns get config.assist_free_nudges extra free
 ## nudges a turn and config.assist_hp_multiplier operative HP; they set no ICE records and
 ## earn no campaign achievements.
@@ -183,6 +188,14 @@ const MOUSE_NAMES := {MOUSE_BUTTON_LEFT: "Click", MOUSE_BUTTON_RIGHT: "Right-cli
 
 func set_text_scale(value: float) -> void:
 	text_scale = clampf(value, TEXT_SCALE_MIN, TEXT_SCALE_MAX)
+	_apply()
+
+
+## Sets the colour-blind correction (one of COLORBLIND_MODES; anything else is ignored).
+func set_colorblind_mode(value: StringName) -> void:
+	if not COLORBLIND_MODES.has(value):
+		return
+	colorblind_mode = value
 	_apply()
 
 
@@ -403,7 +416,8 @@ func to_dict() -> Dictionary:
 	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
 		"subtitles": subtitles, "subtitle_typing": subtitle_typing, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
-		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
+		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode,
+		"colorblind_mode": String(colorblind_mode)}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -432,6 +446,15 @@ func from_dict(d: Dictionary) -> void:
 			keybinds[String(k)] = int(d["keybinds"][k])
 	tutorial_done = bool(d.get("tutorial_done", false))
 	assist_mode = bool(d.get("assist_mode", false))
+	# Art pass W9: additive keys; a file without them (or with an unknown value) gets the
+	# default.
+	colorblind_mode = _pick(d.get("colorblind_mode", ""), COLORBLIND_MODES)
+
+
+## `value` as one of `allowed` (a StringName), or `allowed[0]` (the default) when it isn't.
+static func _pick(value: Variant, allowed: Array[StringName]) -> StringName:
+	var v := StringName(str(value))
+	return v if allowed.has(v) else allowed[0]
 
 
 ## Whether this process runs the GUT test suite.
