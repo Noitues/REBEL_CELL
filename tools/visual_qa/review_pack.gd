@@ -769,6 +769,10 @@ func _combat_end(kind: String) -> void:
 	combat.skip_motion()
 	await _until(func() -> bool: return not is_instance_valid(combat) or combat.continue_shown(), "the outcome to land")
 	await _frames(SETTLE_FRAMES)
+	# Art pass W9F: the DISPATCH line the outcome brings is shown whole (the picture caught it
+	# typing, "We lost o").
+	Typing.finish_all(get_tree())
+	await _frames(2)
 
 
 func _s_combat_victory() -> void:
