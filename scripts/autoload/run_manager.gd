@@ -588,7 +588,7 @@ func go_to_netrun(before_switch: Callable = Callable(), site_id: StringName = &"
 	AudioDirector.play_sfx("jack_in")
 	_before_switch = before_switch
 	if scene_switching_enabled:
-		Fx.jack_in(_switch_to_netrun, -1.0, jack_destination(site_id), jack_note())
+		Fx.jack_in(_switch_to_netrun, -1.0, jack_destination(site_id), jack_note(), jack_tier(site_id))
 	else:
 		_switch_to_netrun()
 
@@ -605,6 +605,16 @@ func jack_destination(site_id: StringName = &"") -> String:
 		if sd != null:
 			return TextDb.t(sd, "display_name")
 	return tr("the net")
+
+
+## ANIM-R6 B13: the tier (1-4) of the Site a jack in connects to (its icon on the cover), 0
+## when no Site is named.
+func jack_tier(site_id: StringName = &"") -> int:
+	if corporation == null:
+		return 0
+	var id := site_id if site_id != &"" else (netrun.run.site_id if netrun != null else &"")
+	var sd := CampaignRules.site_data(corporation, id) if id != &"" else null
+	return sd.tier if sd != null else 0
 
 
 ## ANIM-R3 B5: the jack cover's second line: a run that opens on a raid interlude says so
