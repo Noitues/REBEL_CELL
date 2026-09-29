@@ -102,7 +102,7 @@ const DETAIL_SIZE := Vector2(288, 320)
 ## The illustration window's share of the card height, the least share it yields to when
 ## the words need the room, and the art's aspect (the 768x512 master, ART_BIBLE 7.3).
 const ART_SHARE := 0.6
-const ART_FLOOR := 0.25
+const ART_FLOOR := 0.15
 const ART_ASPECT := 1.5
 ## The effect band's height as a share of the card, between the label and heading steps.
 const BAND_SHARE := 0.18
@@ -125,6 +125,10 @@ const BAND_SECONDARY := 0.72
 const FOCUS_ARM := 12.0
 const FOCUS_STROKE := 2.0
 const FOCUS_OFFSET := 4.0
+## The draw order a hovered card rises to over its row, and its hover scale (ART_BIBLE
+## 6.3: lift 12 px = `card_hover`'s amplitude, scale 1.12, straighten; `card_hover`'s timing).
+const HOVER_Z := 1
+const HOVER_SCALE := 1.12
 
 # --- W4 rarity by stock (ART_BIBLE 6.3) -------------------------------------------------------
 ## The stock a rarity is printed on: COMMON photocopy paper (grain and toner), UNCOMMON a
@@ -153,6 +157,9 @@ const GLOSS_WIDTH := 0.16
 const FOIL_ART_STRENGTH := 0.35
 const FOIL_STATIC := Vector2(0.35, -0.2)
 const STICK_DEADZONE := 0.2
+## How far one unit of pointer tilt slides the foil (the shader's `tilt`); the foil eases
+## to the pointer with `card_hover`'s duration as its time constant.
+const FOIL_REACH := 1.0
 const FOIL_SHADER := preload("res://shaders/foil.gdshader")
 ## The foil's tilt now (-1..1 per axis; the shader's `tilt`), and a hold that stops it
 ## following the pointer (the cards lab shows fixed tilts).
@@ -170,6 +177,7 @@ var _layout_key: String = ""
 var _layout: Dictionary = {}
 ## The height the full face added to the caller's minimum (the tall mode; 0 = none).
 var _tall_extra: float = 0.0
+var _tall_min: float = -1.0
 
 
 func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", index: int = 0) -> void:
@@ -251,10 +259,10 @@ func _process(delta: float) -> void:
 	if not is_foil() or foil_hold or not is_visible_in_tree():
 		return
 	var target := foil_target(_pointer_tilt())
-	var tau := maxf(0.001, Motion.seconds(&"card_foil_tilt"))
+	var tau := maxf(0.001, Motion.seconds(&"card_hover"))
 	foil_tilt = target if Settings.reduce_effects else foil_tilt.lerp(target, 1.0 - exp(-delta / tau))
 	if _foil_mat != null:
-		_foil_mat.set_shader_parameter(&"tilt", foil_tilt * Motion.amplitude(&"card_foil_tilt") * 2.0)
+		_foil_mat.set_shader_parameter(&"tilt", foil_tilt * FOIL_REACH)
 
 
 func _pointer_tilt() -> Vector2:
@@ -416,7 +424,7 @@ func _gui_input(event: InputEvent) -> void:
 
 
 ## W4 (ART_BIBLE 6.3, for W3's hand): hover on or off. The card lifts `card_hover` px (12),
-## scales to `card_hover_scale` (1.12) and straightens to 0 degrees; off, it settles back
+## scales to HOVER_SCALE (1.12) and straightens to 0 degrees; off, it settles back
 ## to its resting tilt. Drawn only: its rect, minimum size and the hand never reflow.
 func set_hovered(on: bool) -> void:
 	_set_lift(on)
@@ -439,8 +447,10 @@ func _set_lift(on: bool) -> void:
 	if look == Look.STICKER and is_inside_tree():
 		pivot_offset = size / 2.0
 		var up := on and not disabled
+		# Drawn over its neighbours while it grows (a draw order, never a reflow).
+		z_index = HOVER_Z if up else 0
 		Motion.run(&"card_hover", self, ^"lift", Motion.amplitude(&"card_hover") if up else 0.0)
-		Motion.run(&"card_hover_scale", self, ^"hover_scale", Motion.amplitude(&"card_hover_scale") if up else 1.0)
+		Motion.run(&"card_hover", self, ^"hover_scale", HOVER_SCALE if up else 1.0)
 		Motion.run(&"card_hover", self, ^"rotation_degrees", 0.0 if on else rest_tilt)
 	queue_redraw()
 
@@ -718,15 +728,20 @@ func _compute_layout() -> Dictionary:
 			r_lines = wrap_words(body, description, r_w, r_fs)
 			var need := step_line(r_step, r_fs) * r_lines.size()
 			band_over = true
-			# The art keeps at least its floor clear of the band that lies on its foot.
+			# The art keeps at least its floor clear of the band that lies on its foot; then
+			# the band gives way (the rules say what it says); then the card grows.
 			var room := bottom - art_top - need - gap
 			if room >= floor_h + band_h:
 				art_h = room
+			elif room >= floor_h - 0.5:
+				art_h = room
+				band_h = 0.0
 			else:
-				art_h = floor_h + band_h
+				art_h = floor_h
+				band_h = 0.0
 				fits = false
 				# H = fixed + art: the art's floor grows with the card, so solve for H.
-				var fixed := art_top + need + gap + m + _foot_room() + band_h
+				var fixed := art_top + need + gap + m + _foot_room()
 				needed = ceilf(fixed / (1.0 - ART_FLOOR))
 		r_line = step_line(r_step, r_fs)
 	var art := Rect2(m, art_top, inner_w, art_h)
@@ -750,6 +765,8 @@ func _compute_layout() -> Dictionary:
 ## The band's key-number size: the largest step from `heading` down whose capitals fit the
 ## band's height and whose pictograms fit its width (never under caption).
 func _band_font(band: Rect2) -> int:
+	if band.size.y <= 0.0:
+		return UiTheme.font_px_at(UiTheme.CAPTION, text_scale)
 	var pad := UiTheme.SP_XS * text_scale
 	for step in BAND_STEPS:
 		var fs := UiTheme.font_px_at(step, text_scale)
@@ -828,11 +845,15 @@ func _refit_tall() -> void:
 		need = float(face_layout()["needed_h"])
 	elif look == Look.CHIP:
 		need = size.y + float(tile_parts()["short_by"])
+	# A caller that set the minimum again since the last growth owns the new base.
+	if not is_equal_approx(custom_minimum_size.y, _tall_min):
+		_tall_extra = 0.0
 	var base := custom_minimum_size.y - _tall_extra
-	var extra := maxf(0.0, ceilf(need) - base) if need > size.y + 0.5 else _tall_extra
+	var extra := maxf(0.0, ceilf(need) - base) if need > size.y + 0.01 else _tall_extra
 	if not is_equal_approx(extra, _tall_extra):
 		_tall_extra = extra
 		custom_minimum_size.y = base + extra
+	_tall_min = custom_minimum_size.y
 
 
 func _draw_sticker() -> void:
@@ -868,7 +889,8 @@ func _draw_sticker() -> void:
 		draw_circle(L["pip_c"], PIP_R * PIP_TAB * s, bg)
 		draw_arc(L["pip_c"], PIP_R * PIP_TAB * s, 0, TAU, 16, fg, WINDOW_LINE * s, true)
 		_draw_pip(L["pip_c"], PIP_R * s, String(marks["pip"]), fg)
-	_draw_band(L["band"], int(L["band_fs"]), fg, bg)
+	if (L["band"] as Rect2).size.y > 0.0:
+		_draw_band(L["band"], int(L["band_fs"]), fg, bg)
 	if bool(L["rules_on_face"]):
 		_draw_rules(L, fg)
 	_draw_gem(L)
@@ -943,7 +965,7 @@ func _update_foil(L: Dictionary, on: bool) -> void:
 		RenderingServer.canvas_item_set_material(_foil_ci, _foil_mat.get_rid())
 	_foil_mat.set_shader_parameter(&"card_size", size)
 	_foil_mat.set_shader_parameter(&"static_tilt", FOIL_STATIC)
-	_foil_mat.set_shader_parameter(&"tilt", foil_tilt * Motion.amplitude(&"card_foil_tilt") * 2.0)
+	_foil_mat.set_shader_parameter(&"tilt", foil_tilt * FOIL_REACH)
 	RenderingServer.canvas_item_clear(_foil_ci)
 	var moved := lift != 0.0 or hover_scale != 1.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0
 	RenderingServer.canvas_item_set_transform(_foil_ci, draw_transform() if moved else Transform2D.IDENTITY)
@@ -1389,6 +1411,13 @@ func tile_parts() -> Dictionary:
 			icon_floor = CHIP_ICON_FIT_SHRINK
 		var spare := size.y - foot - line_h * shown - icon_h * icon_floor - TILE_GAP * 2.0 * s
 		desc_rows = clampi(floori(spare / dline), 0, desc_lines.size())
+		# ANIM-R1 M10 in the Modem's fixed quads: the effect text steps down toward the
+		# caption step at scale 1.0 (never smaller: ART_BIBLE 4.3.2), then the tile grows.
+		while fit_whole and desc_rows < desc_lines.size() and dfs > UiTheme.CAPTION:
+			dfs -= 1
+			dline = mono.get_height(dfs)
+			desc_lines = wrap_px(tile_description(), size.x - 8.0, dfs)
+			desc_rows = clampi(floori(spare / dline), 0, desc_lines.size())
 		short_by = maxf(0.0, desc_lines.size() * dline - maxf(0.0, spare))
 	var text_top := size.y - foot - desc_rows * dline
 	var name_top := text_top - line_h * shown

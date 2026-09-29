@@ -214,3 +214,69 @@ func test_stand_ins_are_cached() -> void:
 	assert_not_null(a)
 	assert_eq(a, b, "one render per card key and height bucket")
 	assert_eq(CardArt.texture_for(_card(&"whirl"), 0, 88.0), a, "cards of a family share the base print")
+
+
+# --- 4. No truncation (6.3, 4.3.3) ----------------------------------------------------------------
+
+## The words of `text` in order (a line break is a space).
+func _words(text: String) -> PackedStringArray:
+	return text.replace("\n", " ").split(" ", false)
+
+
+## Asserts `lines` hold exactly `text`'s words, whole, with no ellipsis.
+func _whole(lines: PackedStringArray, text: String, what: String) -> void:
+	for l in lines:
+		assert_false(l.contains("…"), "%s: no ellipsis in '%s'" % [what, l])
+	assert_eq(" ".join(lines).split(" ", false), _words(text), "%s: every word, whole (no mid-word break)" % what)
+
+
+func test_no_ellipsis_and_no_mid_word_break_on_any_card_at_any_scale() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/zine_card.gd")
+	assert_false(src.contains("\"…\""), "no ellipsis path left in zine_card.gd")
+	for s in SCALES:
+		for card in _cards():
+			for full in [false, true]:
+				var z := _sticker(card, s, full)
+				z.size.y = z.needed_height()  # the tall mode, as _refit_tall grows it
+				var L := z.face_layout()
+				var what := "%s x%.1f %s" % [card.id, s, "full" if full else "compact"]
+				_whole(L["title_lines"], TextDb.t(card, "display_name").to_upper(), what + " title")
+				assert_true(ZineCard.lines_fit(Palette.display(), L["title_lines"], (L["title"] as Rect2).size.x, int(L["title_fs"])), what + ": title inside the card")
+				assert_true(int(L["title_fs"]) >= UiTheme.font_px_at(UiTheme.CAPTION, s), what + ": title never under caption")
+				if full:
+					assert_true(bool(L["fits"]), what + ": the whole face fits")
+					_whole(L["rules_lines"], TextDb.t(card, "description"), what + " rules")
+					assert_true(int(L["rules_fs"]) >= UiTheme.font_px_at(UiTheme.CAPTION, s), what + ": rules never under caption")
+					assert_true((L["rules"] as Rect2).end.y <= z.size.y + 0.5, what + ": rules inside the card")
+					assert_true(z.text_whole(), what + ": text_whole")
+				z.free()
+
+
+func test_the_detail_card_fits_every_card_without_growing_at_1_0() -> void:
+	for card in _cards():
+		var z := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), 0).with_card(card).as_detail(1.0)
+		z.size = z.custom_minimum_size
+		var L := z.face_layout()
+		assert_true(bool(L["fits"]), "%s: the detail card holds every word" % card.id)
+		assert_eq(int(L["rules_step"]), UiTheme.BODY, "%s: detail rules at body" % card.id)
+		assert_almost_eq((L["art"] as Rect2).size.x / (L["art"] as Rect2).size.y, ZineCard.ART_ASPECT, 0.02, "%s: the whole 3:2 art" % card.id)
+		z.free()
+
+
+func test_the_deck_view_shows_whole_cards() -> void:
+	var deck: Array[StringName] = [&"hot_patch", &"mirror_flip", &"overdrive", &"jolt"]
+	var lookup := ContentLookup.new()
+	for id in deck:
+		lookup.add(_card(id))
+	for s in [1.0, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(s)
+		var view := DeckView.new(deck, lookup)
+		add_child_autofree(view)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		await get_tree().process_frame
+		for i in deck.size():
+			var z := view.card(i)
+			assert_true(z.fit_whole, "the deck view shows the full face")
+			assert_true(z.text_whole(), "%s x%.1f: the whole text shows" % [deck[i], s])
+	Settings.set_text_scale(1.0)

@@ -36,7 +36,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Palette.SCRIM
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	# H24 S4: the viewer shows its words as given: the title comes translated, the action
@@ -59,12 +59,19 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	window.body.add_child(scroll)
+	# W4: the cards' tape and shadow reach past their rect; the grid keeps room for them
+	# (the first row's titles were clipped by the header, critique 11).
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_top", UiTheme.SP_S)
+	pad.add_theme_constant_override("margin_left", UiTheme.SP_XS)
+	pad.add_theme_constant_override("margin_bottom", UiTheme.SP_S)
+	scroll.add_child(pad)
 	var grid := HFlowContainer.new()
 	grid.name = "DeckGrid"
-	grid.custom_minimum_size.x = 860
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
-	scroll.add_child(grid)
+	grid.custom_minimum_size.x = GRID_WIDTH
+	grid.add_theme_constant_override("h_separation", roundi(GRID_GAP))
+	grid.add_theme_constant_override("v_separation", roundi(GRID_GAP))
+	pad.add_child(grid)
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
 	# show what they do as pictograms.
 	var ds := clampf(minf(Settings.text_scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
@@ -73,6 +80,8 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 		var sticker := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[i]), card.ram_cost if card != null else 0,
 			TextDb.t(card, "description") if card != null else "", i).scaled(ds).with_card(card)
 		sticker.hotkey = ""
+		# W4 (ART_BIBLE 6.3): the full face, every word; a long text grows the card.
+		sticker.fit_whole = true
 		var index := i
 		sticker.pressed.connect(func() -> void: _on_left(index))
 		sticker.inspected.connect(func() -> void: open_card(index))
@@ -183,7 +192,7 @@ func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	# reverse video (light block, dark text) without one.
 	var fg := Palette.TERMINAL_TEXT
 	var bg := Palette.TERMINAL_BG
-	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
+	var style := UiTheme.box(bg if active else fg, fg if active else Color.TRANSPARENT, 2 if active else 0, 12, 4)
 	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 		b.add_theme_stylebox_override(st, style)
 	var ink := fg if active else bg
