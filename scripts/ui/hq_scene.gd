@@ -974,7 +974,10 @@ func _set_panel(p: Control, name: String) -> void:
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
 	if more_hint != null and is_instance_valid(more_hint):
-		more_hint.reset_snap()  # ANIM-R6 C15: the page's own snap
+		# ANIM-R6 C15: the HQ page's own snap (the others keep theirs: the raid setup's card row
+		# is taller than any snap would keep whole).
+		more_hint.snap_rows = name == "hq"
+		more_hint.reset_snap()
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
 	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end"] or name.begins_with("city") else &"GlassPanel"
@@ -4205,9 +4208,8 @@ func _build_ui() -> void:
 	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
 	# More below (the HQ's BLACK MARKET): a tag at the foot of the page while it scrolls on.
 	more_hint = ScrollHint.new(scroll)
-	# ANIM-R6 C15: the page never ends in a half-cut row (at 1.6 the crew cards' Loadout
+	# ANIM-R6 C15: the HQ page never ends in a half-cut row (at 1.6 the crew cards' Loadout
 	# buttons were cut under MORE BELOW); worked out afresh for each page (_set_panel).
-	more_hint.snap_rows = true
 	add_child(more_hint)
 	# ANIM-4: drag and drop over every page (targets pulse, the pad's reticle, flights).
 	drops = DropLayer.new()

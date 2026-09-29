@@ -667,7 +667,19 @@ func test_newcomer_words_and_places() -> void:
 	await _frames(2)
 	var stamp := hq._panel.find_child("CampaignVerdict", true, false) as ForecastStamp
 	assert_eq(stamp.icon_kind, StatIcon.WON, "the WON stamp wears the win's icon")
+	hq.show_hq()
+	await _frames(1)
 	assert_true(hq.more_hint.snap_rows, "the HQ page never ends in a half-cut row (the crew's Loadout at 1.6)")
+	Settings.set_text_scale(1.6)
+	hq.show_hq()
+	await _frames(8)
+	var hint: ScrollHint = hq.more_hint
+	if hint.overflows():
+		var foot := hint.scroll.get_global_rect().end.y
+		for b in hq._panel.find_children("*", "Button", true, false):
+			var r := (b as Control).get_global_rect()
+			if (b as Control).is_visible_in_tree():
+				assert_false(r.position.y < foot - 0.5 and r.end.y > foot + 0.5, "1.6: '%s' is not cut by MORE BELOW" % (b as Button).text)
 
 
 # --- C16: the campaign end in context, and demo waits that never resume on a freed scene ---------------
