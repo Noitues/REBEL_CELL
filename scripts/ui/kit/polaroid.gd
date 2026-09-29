@@ -28,6 +28,8 @@ const GLITCH_ALPHA := 0.6
 ## Art pass WF: the least horizontal squeeze a caption takes before it shrinks as a whole
 ## (handwriting reads condensed; a clipped glyph never does).
 const CONDENSE_MIN := 0.7
+## The frame's ink edge alpha (opaque in high contrast).
+const EDGE_ALPHA := 0.4
 
 
 func _init(p_caption: String = "", p_label: String = "[PORTRAIT]", p_tilt: float = -3.0) -> void:
@@ -50,7 +52,7 @@ func image_rect() -> Rect2:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER)
-	draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.INK, 0.4), false, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, size), edge_color(), false, edge_width())
 	var image := image_rect()
 	if portrait != null:
 		draw_texture_rect(portrait, image, false)
@@ -147,7 +149,17 @@ static func short_caption(text: String) -> String:
 ## The caption's ink: INK on the paper frame (high contrast too: PAPER keeps its stock, its
 ## ink is INK at well over 7:1, §12).
 func caption_ink() -> Color:
-	return Palette.INK
+	return PaperInk.text(Palette.INK)
+
+
+## The frame's edge (§12: opaque INK, PaperInk.EDGE_PX, in high contrast).
+func edge_color() -> Color:
+	return PaperInk.edge(Color(Palette.INK, EDGE_ALPHA))
+
+
+## The frame's edge width (px).
+func edge_width() -> float:
+	return PaperInk.edge_width(1.0)
 
 
 ## The drawn portrait's subject: `subject` if set, else an operative whose class is read

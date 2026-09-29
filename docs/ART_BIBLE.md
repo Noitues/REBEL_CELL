@@ -483,6 +483,7 @@ Each blueprint gives the **focal order** (what the eye hits first to last), the 
 - **Colour-blind modes** (deutan, protan, tritan) remap corp and semantic hues. Patterns and glyphs (§3.6, §8) make every state readable in greyscale. Test every screen in greyscale.
 - **Reduce effects** and **flash limiter** per §8. Plus a separate **reduce motion** toggle (no camera moves, no parallax, cross-fades only).
 - **High-contrast mode:** opaque panels (no blur), `TEXT_HI` on #000, 7:1 minimum.
+  - **PAPER in high contrast:** PAPER keeps its stock colour, but text goes `INK` at 7:1 and edges 2 px `INK`; nothing on paper is translucent (tape, fills). `PaperInk` in the kit applies it.
 - **Pad:** face-button glyph sets for Xbox, PlayStation, Switch and Steam Deck, switched automatically. Prompts use glyphs, never letters in brackets. The focus treatment per §6. Every drag has its button path (STYLE_GUIDE 5.4).
 - **Localisation:** see §4.3 rule 5. Glyphs and numbers stand alone from words (never embed a number inside a translatable sentence where it can't be read without the words).
 

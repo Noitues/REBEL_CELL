@@ -308,3 +308,73 @@ func test_paper_pieces_use_the_paper_inks() -> void:
 	var st := lost.find_child("State", true, false) as Label
 	assert_eq(st.get_theme_color(&"font_color"), Palette.HARM_INK, "LOST on the folder is HARM ink")
 	assert_gte(Palette.contrast(st.get_theme_color(&"font_color"), Palette.PAPER), 4.5)
+
+
+# --- 7. High contrast on the custom-drawn paper pieces (§12) -----------------------------------
+
+func _paper_pieces() -> Dictionary:
+	var h := _holder()
+	var folder := CaseFileCard.new("1", {"corporation": "solace", "heat": 62, "runs": 4, "ice": 3, "saved_at": 0.0, "state": "lost"})
+	h.add_child(folder)
+	var slip := RunReceipt.of_run({"tier": 2, "site": "Patient Records Vault", "outcome": "cleared", "cycles": 34, "banked": 12}, "Solace Biosystems", 0)
+	h.add_child(slip)
+	var photo := Polaroid.new("RANK 3", "[PHANTOM PORTRAIT]")
+	photo.size = Vector2(110, 134)
+	h.add_child(photo)
+	var toast := Toast.new()
+	h.add_child(toast)
+	toast.show_note("Respin landed on BLOCK.", Vector2(400, 400))
+	var earned := AchievementBadge.new(&"first_blood", "First Blood", "Finish a run.", true)
+	var locked := AchievementBadge.new(&"wall", "The Wall", "Hold a raid.", false)
+	h.add_child(earned)
+	h.add_child(locked)
+	return {"folder": folder, "slip": slip, "photo": photo, "toast": toast, "earned": earned, "locked": locked}
+
+
+func _labels_under(n: Node) -> Array[Label]:
+	var out: Array[Label] = []
+	for c in n.find_children("*", "Label", true, false):
+		out.append(c as Label)
+	return out
+
+
+func test_paper_pieces_in_high_contrast_keep_their_paper_with_ink_words_and_edges() -> void:
+	Settings.high_contrast = true
+	var p := _paper_pieces()
+	await wait_frames(2)
+	# Words on paper: INK, 7:1 on every stock.
+	for key in ["folder", "slip"]:
+		for l in _labels_under(p[key]):
+			if l.get_parent() is StatField:
+				continue
+			var col := l.get_theme_color(&"font_color")
+			assert_gte(Palette.contrast(col, Palette.PAPER), PaperInk.MIN_CONTRAST, "%s '%s' at 7:1" % [key, l.text])
+	var toast: Toast = p["toast"]
+	assert_gte(Palette.contrast(toast.label.get_theme_color(&"font_color"), Palette.NOTE_YELLOW), PaperInk.MIN_CONTRAST, "the toast's words")
+	assert_gte(Palette.contrast((p["photo"] as Polaroid).caption_ink(), Palette.PAPER), PaperInk.MIN_CONTRAST, "the caption")
+	# Edges: opaque INK, 2 px.
+	for key in ["folder", "slip", "photo", "toast"]:
+		var piece: Object = p[key]
+		var ec: Color = piece.call(&"edge_color")
+		assert_eq(ec, Palette.INK, "%s edge is opaque INK" % key)
+		assert_gte(float(piece.call(&"edge_width")), PaperInk.EDGE_PX, "%s edge is %s px" % [key, PaperInk.EDGE_PX])
+	# Nothing translucent on the paper.
+	assert_eq(PaperInk.opaque(Palette.NOTE_TAPE).a, 1.0, "tape is opaque")
+	# Badges sit on the glass: their name and unearned outline at 7:1 on high contrast's black.
+	var locked: AchievementBadge = p["locked"]
+	assert_gte(Palette.contrast(AchievementBadge.outline_color(), HighContrast.BG), PaperInk.MIN_CONTRAST, "the unearned outline")
+	for l in _labels_under(locked):
+		assert_gte(Palette.contrast(l.get_theme_color(&"font_color"), HighContrast.BG), PaperInk.MIN_CONTRAST, "badge name")
+	Settings.high_contrast = false
+
+
+func test_out_of_high_contrast_the_paper_pieces_look_as_before() -> void:
+	var p := _paper_pieces()
+	await wait_frames(1)
+	for key in ["folder", "slip", "photo", "toast"]:
+		var piece: Object = p[key]
+		var ec: Color = piece.call(&"edge_color")
+		assert_lt(ec.a, 1.0, "%s keeps its soft ink edge" % key)
+		assert_almost_eq(float(piece.call(&"edge_width")), 1.0, 0.01)
+	assert_eq(AchievementBadge.outline_color(), Palette.DISABLED)
+	assert_eq(PaperInk.text(Palette.HARM_INK), Palette.HARM_INK)

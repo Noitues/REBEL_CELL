@@ -131,8 +131,8 @@ func _stickers() -> void:
 		b.pre_translated = true
 		b.drawn_icon = sp[3]
 		# The cap as combat will use it (opt-in; the page is the 1280 px reference viewport).
-		b.container_width = StickerButton.REFERENCE_WIDTH
-		b.max_share = StickerButton.MAX_SHARE
+		b.set(&"container_width", 1280.0)  # set(): the lab also draws the pre-WF sticker (before shots)
+		b.set(&"max_share", 0.2)  # StickerButton.MAX_SHARE
 		row.add_child(b)
 		b.refit()
 
