@@ -117,6 +117,17 @@ def derived_sizes(ts: float) -> set[int]:
     return out
 
 
+def _clip(r, v):
+    """Rect r ([x, y, w, h]) cut by the visible rect v (None: no clip); [] when nothing shows."""
+    if v is None:
+        return r
+    x0, y0 = max(r[0], v[0]), max(r[1], v[1])
+    x1, y1 = min(r[0] + r[2], v[0] + v[2]), min(r[1] + r[3], v[1] + v[3])
+    if x1 - x0 < 1 or y1 - y0 < 1:
+        return []
+    return [x0, y0, x1 - x0, y1 - y0]
+
+
 def lint_screen(data: dict, png: Path) -> dict:
     ts = float(data.get("text_scale", 1.0))
     floor = round(FLOOR * ts)  # the caption step as UiTheme rounds it (19 at 1.6)
@@ -126,6 +137,23 @@ def lint_screen(data: dict, png: Path) -> dict:
              if c.get("alpha", 1.0) >= MIN_ALPHA and c["color"][3] >= MIN_ALPHA and not c.get("self_draws")]
     found = {r: [] for r in RULES}
     hidden = []
+    # Art pass W9F: text scrolled out of its scroll view (or clipped by a panel) isn't in the
+    # picture: its ink is cut to what shows, and text with nothing showing is left out. Text
+    # under an open modal's scrim is behind it: no contrast or overlap is judged for it.
+    kept = []
+    for c in items:
+        v = c.get("visible_rect")
+        ink = _clip(c["ink"], v if v and v[2] > 0 and v[3] > 0 else ([0, 0, 0, 0] if v is not None else None))
+        if not ink:
+            hidden.append({"path": c["path"], "text": c["text"][:60], "why": "scrolled out or clipped"})
+            continue
+        c = dict(c, ink=ink)
+        kept.append(c)
+    items = kept
+    under = [c for c in items if c.get("under_modal")]
+    for c in under:
+        hidden.append({"path": c["path"], "text": c["text"][:60], "why": "under an open modal"})
+    items = [c for c in items if not c.get("under_modal")]
     if img is not None:
         # Text with no glyph pixel standing out of its surroundings isn't in the picture:
         # a modal covers it (the walk can't see occlusion). It is left out of every rule.
@@ -139,10 +167,13 @@ def lint_screen(data: dict, png: Path) -> dict:
         items = seen
     for c in items:
         where = {"path": c["path"], "text": c["text"][:60], "owner": c.get("owner_script", "")}
-        px = min(float(c["font_px"]), float(c.get("screen_px", c["font_px"])))
+        # Art pass W9F: the on-screen size (font size x every ancestor's scale) is what the
+        # player reads; a scaled subtree's own override is judged by that size, not its steps.
+        px = float(c.get("screen_px", c["font_px"]))
+        scaled = abs(float(c.get("scale", 1.0)) - 1.0) > 0.035
         if px < floor - 0.01:
             found["font"].append(dict(where, why="%.1f px < %d px floor" % (px, floor)))
-        if c.get("override", -1) >= 0 and c["override"] not in ok_sizes:
+        if c.get("override", -1) >= 0 and c["override"] not in ok_sizes and not scaled:
             found["font"].append(dict(where, why="font_size override %d is not a §4.2 step x %.1f" % (c["override"], ts)))
         whys = []
         if c.get("ellipsis"):

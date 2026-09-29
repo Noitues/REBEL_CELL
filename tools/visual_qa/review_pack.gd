@@ -871,6 +871,7 @@ func _lint_export(screen: String, size: Vector2i) -> Dictionary:
 	var out: Array = []
 	_custom_draw = []
 	var screen_rect := Rect2(Vector2.ZERO, Vector2(size))
+	_modals = _open_modals()
 	_walk(get_tree().root, out, screen_rect)
 	return {"screen": screen, "text_scale": text_scale, "viewport": [size.x, size.y],
 		"floor_px": roundi(12 * text_scale), "controls": out, "custom_draw": _custom_draw}
@@ -911,6 +912,80 @@ func _draws_text(n: Node) -> bool:
 		var src := FileAccess.get_file_as_string(s.resource_path)
 		_draw_cache[s.resource_path] = src.contains("draw_string(") or src.contains("draw_multiline_string(")
 	return _draw_cache[s.resource_path]
+
+
+## Art pass W9F: the modals open now (the kit's MODAL_GROUP, the pause menu, Options, the
+## Daemon tray, inspect popups, confirm dialogs and full-screen scrims): text under one is
+## behind its scrim, so the lint leaves its contrast and overlaps out (it isn't read there).
+var _modals: Array[Control] = []
+const MODAL_CLASSES: Array[String] = ["PauseMenu", "SettingsPanel", "DaemonTray", "InspectPopup", "ConfirmDialog", "DeckView", "SpinnerView", "LoadoutView"]
+## A scrim this share of the screen (or more) is a modal's backdrop.
+const MODAL_SCRIM_SHARE := 0.9
+
+
+func _open_modals() -> Array[Control]:
+	var out: Array[Control] = []
+	for n in get_tree().get_nodes_in_group(PageTransition.MODAL_GROUP):
+		if n is Control and (n as Control).is_visible_in_tree():
+			out.append(n as Control)
+	var view := Vector2(CAPTURE_SIZE)
+	for n in get_tree().root.find_children("*", "Control", true, false):
+		var c := n as Control
+		if out.has(c) or not c.is_visible_in_tree():
+			continue
+		var s := c.get_script() as Script
+		var cls: String = s.get_global_name() if s != null else ""
+		if MODAL_CLASSES.has(cls):
+			out.append(c)
+		elif c is GlassScrim and c.get_global_rect().size.x * c.get_global_rect().size.y >= view.x * view.y * MODAL_SCRIM_SHARE:
+			# A full-screen scrim is its parent's backdrop: the parent is the modal (a page
+			# stage's own scrim sits behind the page's text, so only a scrim over others counts).
+			var p := c.get_parent() as Control
+			if p != null and not out.has(p) and _has_later_sibling_text(c):
+				out.append(p)
+	return out
+
+
+func _has_later_sibling_text(scrim: Control) -> bool:
+	return scrim.get_index() < scrim.get_parent().get_child_count() - 1
+
+
+## The CanvasLayer order of `n` (0 when on the root canvas).
+func _layer_of(n: Node) -> int:
+	var p := n
+	while p != null:
+		if p is CanvasLayer:
+			return (p as CanvasLayer).layer
+		p = p.get_parent()
+	return 0
+
+
+## True when an open modal draws over `c` (it isn't part of one, and the modal is on a
+## higher layer, or the same layer later in the tree).
+func _under_modal(c: Control) -> bool:
+	for m in _modals:
+		if not is_instance_valid(m) or m == c or m.is_ancestor_of(c):
+			continue
+		var lm := _layer_of(m)
+		var lc := _layer_of(c)
+		if lm > lc or (lm == lc and m.is_greater_than(c)):
+			return true
+	return false
+
+
+## Art pass W9F: the screen rect `c` is visible in: its rect cut by every ancestor that clips
+## its children (a ScrollContainer's view, clip_contents panels). Empty when scrolled out.
+func _visible_rect(c: Control, rect: Rect2) -> Rect2:
+	var r := rect
+	var p := c.get_parent()
+	while p != null:
+		if p is Control and ((p as Control).clip_contents or p is ScrollContainer):
+			var pr := _screen_rect_of(p as Control, Rect2(Vector2.ZERO, (p as Control).size))
+			r = r.intersection(pr)
+			if r.size.x <= 0.0 or r.size.y <= 0.0:
+				return Rect2()
+		p = p.get_parent()
+	return r
 
 
 func _is_text(c: Control) -> bool:
@@ -994,6 +1069,8 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 			in_scroll = true
 			break
 		p = p.get_parent()
+	# Art pass W9F: the on-screen size is the font size times every ancestor's scale (a
+	# legend scaled down to its room, the pad's 1.03 focus scale).
 	var scale := c.get_global_transform_with_canvas().get_scale()
 	if c is Label:
 		var l := c as Label
@@ -1063,6 +1140,9 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 		"ink": [ink.position.x, ink.position.y, ink.size.x, ink.size.y],
 		"font_px": font_px,
 		"screen_px": font_px * absf(scale.y),
+		"scale": absf(scale.y),
+		"under_modal": _under_modal(c),
+		"visible_rect": _vr(c, rect),
 		"override": override,
 		"color": [col.r, col.g, col.b, col.a],
 		"alpha": _alpha_of(c),
@@ -1074,6 +1154,11 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 		"in_scroll": in_scroll,
 		"ellipsis": text.contains("…"),
 	}
+
+
+func _vr(c: Control, rect: Rect2) -> Array:
+	var v := _visible_rect(c, rect)
+	return [v.position.x, v.position.y, v.size.x, v.size.y]
 
 
 # --- Files -----------------------------------------------------------------------------
