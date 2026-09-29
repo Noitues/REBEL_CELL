@@ -155,6 +155,7 @@ Armory empty: runs bank assets from their drops.,Armory empty: runs bank assets 
 Asset,Asset
 "Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)","Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)"
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
+"Attacks the target: damage, statuses, breaches and stripped resistance.","Attacks the target: damage, statuses, breaches and stripped resistance."
 Audio,Audio
 BADGES,BADGES
 BANKED,BANKED
@@ -769,6 +770,7 @@ Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
+HACK CARD,HACK CARD
 HEAL,HEAL
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
@@ -1313,6 +1315,7 @@ Modem,Modem
 Modem: the cyber shop,Modem: the cyber shop
 "Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Move it to %s.,Move it to %s.
+"Moves wheels: spins, nudges, flips, snaps and freezes.","Moves wheels: spins, nudges, flips, snaps and freezes."
 Music volume,Music volume
 NEED %d · HAVE %d,NEED %d · HAVE %d
 NETRUN,NETRUN
@@ -1662,6 +1665,7 @@ Router,Router
 Router: a fight,Router: a fight
 Router: a fight. Win it for Cycles and loot.,Router: a fight. Win it for Cycles and loot.
 Runs,Runs
+"Runs your rig: block, shield, healing, RAM and cards.","Runs your rig: block, shield, healing, RAM and cards."
 SAVED,SAVED
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
@@ -1690,6 +1694,7 @@ STATS,STATS
 STATUS: %s,STATUS: %s
 STOPPED %d/%d,STOPPED %d/%d
 STRENGTH %s%%,STRENGTH %s%%
+SYSTEM CARD,SYSTEM CARD
 SYSTEM ONLINE,SYSTEM ONLINE
 Save,Save
 Save & quit to start screen,Save & quit to start screen
@@ -2710,6 +2715,7 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
+WHEEL CARD,WHEEL CARD
 WON,WON
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.
@@ -2742,6 +2748,7 @@ an Elite fight,an Elite fight
 an Event,an Event
 an operative,an operative
 armory: %s,armory: %s
+black,black
 boss,boss
 calibrate_handler,calibrate_handler
 card,card
@@ -2777,8 +2784,10 @@ none yet (buy them at HQ with campaign Schematics),none yet (buy them at HQ with
 nothing yet,nothing yet
 noticed,noticed
 odds: %s,odds: %s
+paper,paper
 patrol,patrol
 perfect aim,perfect aim
+pink,pink
 press a key...,press a key...
 queued: %s,queued: %s
 reclaim,reclaim
