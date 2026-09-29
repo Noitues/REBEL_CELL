@@ -86,13 +86,16 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	hint.name = "Hint"
 	hint_label = hint
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
+	# Art pass W9F (§12): at big text the hint wraps inside the window (it ran off it at 2.0).
+	UiWrap.whole_words(hint)
+	hint.custom_minimum_size.x = _wheel_width()
 	window.body.add_child(hint)
 	# Art pass W9F (§5.2.4): the modal's own prompt bar while a pad is in use.
 	prompts = PadPrompts.new()
 	prompts.alignment = BoxContainer.ALIGNMENT_BEGIN
 	window.body.add_child(prompts)
 	_wheel = Control.new()
-	_wheel.custom_minimum_size = Vector2(670, 440)
+	_wheel.custom_minimum_size = Vector2(_wheel_width(), 440)
 	_wheel.draw.connect(_draw_wheel)
 	window.body.add_child(_wheel)
 	for i in slices.size():
@@ -381,6 +384,11 @@ func confirm() -> void:
 	var picked := selected
 	close()
 	slot_picked.emit(picked)
+
+
+## The wheel area's width (px): the window's body is this wide.
+static func _wheel_width() -> float:
+	return 670.0
 
 
 func _centre() -> Vector2:

@@ -55,6 +55,9 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	hint.name = "Hint"
 	hint_label = hint
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
+	# Art pass W9F (§12): at big text the hint wraps inside the window.
+	UiWrap.whole_words(hint)
+	hint.custom_minimum_size.x = GRID_WIDTH
 	window.body.add_child(hint)
 	# Art pass W9F (§5.2.4): the modal's own prompt bar while a pad is in use.
 	prompts = PadPrompts.new()
@@ -297,7 +300,9 @@ func open_card(index: int) -> void:
 	var card := lookup.get_content(deck[index]) as CardData
 	var s := Settings.text_scale
 	var view := get_viewport_rect().size if is_inside_tree() else Vector2(DETAIL_VIEW)
-	var room := view - Vector2.ONE * (UiTheme.SAFE_MARGIN * 2.0)
+	# Art pass W9F (§5.2): under the subtitle band (a DISPATCH line lay over the card at 2.0).
+	var top := SubtitleStrip.top_below(UiTheme.SAFE_MARGIN) if is_inside_tree() else float(UiTheme.SAFE_MARGIN)
+	var room := Vector2(view.x - UiTheme.SAFE_MARGIN * 2.0, view.y - top - UiTheme.SAFE_MARGIN)
 	var holder := Control.new()
 	holder.name = "CardDetailHolder"
 	holder.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -317,7 +322,8 @@ func open_card(index: int) -> void:
 	_popup = holder
 	# Centred once laid out.
 	row.reset_size()
-	row.position = ((view - row.get_combined_minimum_size()) * 0.5).floor()
+	var want := row.get_combined_minimum_size()
+	row.position = Vector2(floorf((view.x - want.x) * 0.5), floorf(maxf(top, top + (room.y - want.y) * 0.5)))
 	UiFocus.focus_first.call_deferred(holder)
 
 
