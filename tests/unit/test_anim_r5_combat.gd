@@ -200,7 +200,9 @@ func test_the_netrun_top_bar_and_report_wait_for_the_outcome() -> void:
 	await BoundedWait.until(get_tree(), _has_combat.bind(net), 5.0)
 	assert_not_null(net.combat_scene, "a fight shows")
 	_live()
-	await net._demo_combat_end("lose")
+	# ANIM-R6 B3: the demo steps on frame callbacks (it awaited frames): wait for its SEND IT.
+	net._demo_combat_end("lose")
+	await BoundedWait.until(get_tree(), func() -> bool: return net.combat_scene != null and net.combat_scene.engine.state().is_over(), 5.0)
 	var combat: Control = net.combat_scene
 	assert_eq(combat.engine.state().outcome, CombatState.Outcome.DEFEAT, "the fight is lost")
 	assert_true(combat.outcome_pending(), "its outcome waits")

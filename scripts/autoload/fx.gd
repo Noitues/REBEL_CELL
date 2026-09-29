@@ -67,6 +67,18 @@ const NOTE_PAD := 14
 const CONNECT_FONT := 20
 const CONNECT_BAR_H := 4.0
 const CONNECT_GAP := 12.0
+## ANIM-R6 B13: the destination's own line under CONNECTING TO: large, bright, with the
+## Site's tier icon (it was the end of a small dim teal line): its lettering at text scale
+## 1.0 (px), the icon's side as a share of the lettering, the gap between them (px), and
+## the least room it keeps off the screen's sides (px).
+var connect_dest: Label
+var connect_site: JackSiteIcon
+const CONNECT_DEST_FONT := 44
+const CONNECT_ICON_SHARE := 1.5
+const CONNECT_ICON_GAP := 14.0
+const CONNECT_DEST_MARGIN := 24.0
+## The Site's tier the running jack connects to (0: none shown).
+var _destination_tier: int = 0
 
 
 func _ready() -> void:
@@ -102,6 +114,20 @@ func _ready() -> void:
 	connect_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	connect_label.visible = false
 	add_child(connect_label)
+	connect_dest = Label.new()
+	connect_dest.name = "JackDestination"
+	connect_dest.add_theme_font_override("font", Palette.display())
+	connect_dest.add_theme_color_override("font_color", Palette.PAPER)
+	connect_dest.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	connect_dest.add_theme_constant_override("outline_size", 8)
+	connect_dest.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	connect_dest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	connect_dest.visible = false
+	add_child(connect_dest)
+	connect_site = JackSiteIcon.new()
+	connect_site.name = "JackSiteIcon"
+	connect_site.visible = false
+	add_child(connect_site)
 	note_label = Label.new()
 	note_label.name = "JackRaidNote"
 	note_label.add_theme_font_override("font", Palette.display())
@@ -527,16 +553,19 @@ func freeze_frames(frames: int = -1) -> void:
 ## effects: one short fade (`jack_fade_reduced`); headless (tests): the switch at once.
 ## ANIM-R2 R5: `destination` (translated) is named on the cover while the arriving screen
 ## builds ("CONNECTING TO <place>").
-func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "", note: String = "") -> void:
+## ANIM-R6 B13: `tier` (1-4) shows the Site's tier icon beside its name (0: none).
+func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "", note: String = "", tier: int = 0) -> void:
 	if not _jacking:
 		_destination = destination
 		_note = note
+		_destination_tier = tier
 	await _transition(on_switch, seconds, &"jack_in")
 
 
 func jack_out(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:
 	if not _jacking:
 		_destination = destination
+		_destination_tier = 0
 	await _transition(on_switch, seconds, &"jack_out")
 
 
@@ -547,11 +576,14 @@ func _show_connect() -> void:
 	var vp := get_viewport().get_visible_rect().size
 	var fs := roundi(CONNECT_FONT * Settings.text_scale)
 	connect_label.add_theme_font_size_override("font_size", fs)
-	connect_label.text = tr("CONNECTING TO %s") % _destination.to_upper() if _destination != "" else tr("CONNECTING")
+	connect_label.text = tr("CONNECTING TO") if _destination != "" else tr("CONNECTING")
 	_show_note(vp)
 	connect_label.size = Vector2(vp.x, 0.0)
 	connect_label.size = Vector2(vp.x, connect_label.get_combined_minimum_size().y)
-	connect_label.position = Vector2(0.0, vp.y * 0.5 - connect_label.size.y)
+	# ANIM-R6 B13: the destination on a line of its own under it, large and bright, with the
+	# Site's tier icon; the line keeps its bottom at the screen's middle (the bar under it).
+	var row_h := _show_destination(vp)
+	connect_label.position = Vector2(0.0, vp.y * 0.5 - row_h - connect_label.size.y)
 	var w := minf(Motion.amplitude(CONNECT_MOTION), vp.x * 0.8)
 	connect_bar.size = Vector2(w, CONNECT_BAR_H)
 	connect_bar.position = Vector2((vp.x - w) * 0.5, vp.y * 0.5 + CONNECT_GAP)
@@ -562,7 +594,48 @@ func _show_connect() -> void:
 	# and stays up at least `jack_connect`'s duration so it can be read.
 	connect_label.modulate.a = 1.0
 	connect_bar.modulate.a = 1.0
+	connect_dest.modulate.a = 1.0
+	connect_site.modulate.a = 1.0
 	_connect_since = Time.get_ticks_msec()
+
+
+## ANIM-R6 B13: lays the destination's line out (its name large, the tier icon before it)
+## centred with its bottom at the screen's middle; returns its height (0 when none). A long
+## name steps its lettering down to fit the screen less its margins.
+func _show_destination(vp: Vector2) -> float:
+	connect_dest.visible = _destination != ""
+	connect_site.visible = false
+	if _destination == "":
+		return 0.0
+	connect_dest.text = _destination.to_upper()
+	var fs := roundi(CONNECT_DEST_FONT * Settings.text_scale)
+	var low := roundi(CONNECT_FONT * Settings.text_scale)
+	var room := vp.x - CONNECT_DEST_MARGIN * 2.0
+	var side := 0.0
+	var width := 0.0
+	while true:
+		connect_dest.add_theme_font_size_override("font_size", fs)
+		connect_dest.size = Vector2.ZERO
+		connect_dest.size = connect_dest.get_combined_minimum_size()
+		side = fs * CONNECT_ICON_SHARE if _destination_tier > 0 else 0.0
+		width = connect_dest.size.x + (side + CONNECT_ICON_GAP if side > 0.0 else 0.0)
+		if width <= room or fs <= low:
+			break
+		fs -= 1
+	var h := maxf(connect_dest.size.y, side)
+	var x := (vp.x - width) * 0.5
+	var top := vp.y * 0.5 - h
+	if side > 0.0:
+		connect_site.show_tier(_destination_tier, side, Palette.NET_CYAN)
+		connect_site.position = Vector2(x, top + (h - side) * 0.5)
+		x += side + CONNECT_ICON_GAP
+	connect_dest.position = Vector2(x, top + (h - connect_dest.size.y) * 0.5)
+	return h
+
+
+## The words the jack's cover says now ("CONNECTING TO SCRUB RECORDS"; tests).
+func connect_words() -> String:
+	return ("%s %s" % [connect_label.text, connect_dest.text]).strip_edges() if connect_dest.visible else connect_label.text
 
 
 ## ANIM-R4 H11a: the note's stamp (RAID INCOMING and the corporation) under the bar,
@@ -661,7 +734,10 @@ func _hide_connect() -> void:
 	note_label.visible = false
 	connect_label.visible = false
 	connect_bar.visible = false
+	connect_dest.visible = false
+	connect_site.visible = false
 	_destination = ""
+	_destination_tier = 0
 	_note = ""
 
 
@@ -835,6 +911,8 @@ func _set_cover(progress: float, roll: float) -> void:
 		# ANIM-R2 R5: the CONNECTING line goes with the cover as it lifts.
 		connect_label.modulate.a = progress
 		connect_bar.modulate.a = progress
+		connect_dest.modulate.a = progress
+		connect_site.modulate.a = progress
 		note_label.modulate.a = progress
 	var m := jack_cover.material as ShaderMaterial
 	m.set_shader_parameter("progress", progress)

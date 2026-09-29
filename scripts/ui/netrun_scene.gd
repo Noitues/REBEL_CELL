@@ -108,6 +108,8 @@ var entering: bool = false
 ## Capture demos (--demo-buy / --demo-pick / --demo-choose) act this many frames in, once
 ## the screen has come in.
 const DEMO_ACTION_FRAMES := 30
+## The loot `--demo-loot` offers (content ids).
+const DEMO_LOOT := ["twist", "jam", "cache"]
 
 ## Event types that pop a toast (H20: the log strip is optional).
 const TOAST_WARN_EVENTS: Array[String] = ["refused", "deploy_failed", "undock_failed"]
@@ -142,8 +144,8 @@ func _ready() -> void:
 		RunManager.save_slot = "demo"
 		new_campaign(1)
 		start_run(1)
-		RunManager.netrun.run.cycles = 120
-		RunManager.netrun._open_shop()
+		# ANIM-R6 B2: dev flags set the run up through DemoSetup (views never write state).
+		DemoSetup.open_shop(RunManager.netrun)
 		_show_current()
 		if args.has("--demo-deckview"):
 			open_remove()
@@ -157,7 +159,7 @@ func _ready() -> void:
 		elif args.has("--demo-loadout"):
 			open_loadout()
 		elif args.has("--demo-daemons"):
-			RunManager.netrun.run.operative.daemon_ids.append_array([&"twin_pointer", &"shield_cache", &"zero_day", &"feedback_loop"])
+			DemoSetup.add_daemons(RunManager.netrun, [&"twin_pointer", &"shield_cache", &"zero_day", &"feedback_loop"] as Array[StringName])
 			_refresh_status()
 			open_daemons()
 			(get_node("DaemonTray") as DaemonTray).show_card(&"shield_cache", false)
@@ -175,13 +177,10 @@ func _ready() -> void:
 		RunManager.save_slot = "demo"
 		new_campaign(1)
 		start_run(1)
-		var run := RunManager.netrun.run
 		if args.has("--demo-loot"):
-			run.pending_rewards.append({"kind": "card", "options": ["twist", "jam", "cache"]})
-			run.phase = RunState.Phase.REWARD
+			DemoSetup.offer_loot(RunManager.netrun, DEMO_LOOT)
 		else:
-			run.event_id = &"ev_dispatch_early_reply" if args.has("--demo-dispatch") else &"ev_leash_on_the_floor"
-			run.phase = RunState.Phase.EVENT
+			DemoSetup.open_event(RunManager.netrun, &"ev_dispatch_early_reply" if args.has("--demo-dispatch") else &"ev_leash_on_the_floor")
 		_show_current()
 		# Capture (ANIM-6): the loot's second card is picked / the first choice is taken.
 		if args.has("--demo-pick"):
@@ -190,12 +189,12 @@ func _ready() -> void:
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: choose_event(0))
 		_demo_drag_arg(args)
 		return
-	for a in args:
-		if a.begins_with("--demo-end="):
-			# ANIM-R5 captures: the run-end page (died, completed, aborted), reached through the
-			# session's own ending (dev flag only).
-			_demo_run_end(a.trim_prefix("--demo-end="))
-			return
+	# ANIM-R5 captures: the run-end page (died, completed, aborted), reached through the
+	# session's own ending (dev flag only). ANIM-R6 B9: with --demo-combat the flag is the
+	# fight's own ending (win / lose), played below in context.
+	if run_end_demo(args) != "":
+		_demo_run_end(run_end_demo(args))
+		return
 	if args.has("--demo-gridzoom"):
 		_grid_zoomed = true
 	if args.has("--demo-run") or args.has("--demo-combat") or args.has("--demo-tutorial"):
@@ -205,10 +204,7 @@ func _ready() -> void:
 		for a in args:
 			if a.begins_with("--demo-class="):
 				# Screenshot operative of another class (campaign-only, bypasses Profile unlocks).
-				var cls := RunManager.lookup().get_content(StringName(a.trim_prefix("--demo-class="))) as ClassData
-				if cls != null:
-					RunManager.campaign.roster.clear()
-					RunManager.campaign.recruit(cls)
+				DemoSetup.only_class(RunManager.campaign, RunManager.lookup().get_content(StringName(a.trim_prefix("--demo-class="))) as ClassData)
 		start_run(1)
 		if args.has("--demo-combat") or args.has("--demo-tutorial"):
 			RunManager.pending_tutorial = args.has("--demo-tutorial")
@@ -217,8 +213,7 @@ func _ready() -> void:
 			_demo_route_pulse.call_deferred()
 		elif args.has("--demo-interlude"):
 			# ANIM-R3 B5 captures: the run opens on a raid interlude (Heat past 25 queues one).
-			HeatRules.add_heat(RunManager.campaign, RunManager.config().major_heat_levels()[0] + 1, RunManager.config(), "demo")
-			RunManager.netrun._maybe_raid_interlude()
+			DemoSetup.queue_raid_interlude(RunManager.netrun, RunManager.config())
 			_show_current()
 		for a in args:
 			# ANIM-R2 R2 profiling: the route shows, then N frames in the first fight on it opens.
@@ -324,6 +319,18 @@ func _demo_route_pulse() -> void:
 	enter_node(s.available_nodes()[0])
 
 
+## ANIM-R6 B9: the run-end page a capture asks for (`--demo-end=<kind>` without
+## `--demo-combat`: with it, the kind is the fight's ending, win or lose, played in context);
+## "" for none.
+static func run_end_demo(args: PackedStringArray) -> String:
+	if args.has("--demo-combat"):
+		return ""
+	for a in args:
+		if a.begins_with("--demo-end="):
+			return a.trim_prefix("--demo-end=")
+	return ""
+
+
 ## ANIM-R5 capture (dev flag only): the demo run ends through the session's own ending
 ## (`died`: the flatline, `completed`: the clean exit) and the run-end page shows.
 func _demo_run_end(kind: String) -> void:
@@ -331,7 +338,7 @@ func _demo_run_end(kind: String) -> void:
 	new_campaign(1)
 	start_run(1)
 	var s := RunManager.netrun
-	s.call(&"_complete_run" if kind == "completed" else &"_die")
+	DemoSetup.end_run(s, kind)
 	_report(s.last_events)
 	_show_current()
 
@@ -393,14 +400,14 @@ func _demo_drag(id: String) -> void:
 		"drag_buy_card", "drag_loot":
 			src = _page_item("Stickers", 1 if id == "drag_loot" else 0)
 		"drag_buy_refuse":
-			s.run.cycles = DEMO_POOR_CYCLES
+			DemoSetup.set_cycles(s, DEMO_POOR_CYCLES)
 			_show_current()
 			if not await _frames_in_tree(DEMO_LAYOUT_FRAMES):
 				return
 			src = _page_item("Stickers", 0)
 		"drag_buy_chip":
 			# Enough Cycles for any chip (the demo shows a purchase, not a refusal).
-			s.run.cycles = DEMO_RICH_CYCLES
+			DemoSetup.set_cycles(s, DEMO_RICH_CYCLES)
 			_show_current()
 			if not await _frames_in_tree(DEMO_LAYOUT_FRAMES):
 				return
@@ -558,6 +565,17 @@ var _loot_hold: Tween = null
 
 
 func _hold_loot_page() -> void:
+	# ANIM-R5 B5: the picked card's flight (`loot_pick`, now the longer) lands before the page
+	# goes too, so its landing pulse shows with the loot page still up.
+	# (its lift takes FlightFx.LIFT_SHARE of its time on top of the travel).
+	_hold_page(maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"),
+		Motion.seconds(&"loot_pick") * (1.0 + FlightFx.LIFT_SHARE) + Motion.delay_of(&"loot_pick")))
+
+
+## ANIM-R4 C7 / ANIM-R6 B12: the page on show stays, inert (no input, no focus), while its
+## flights and stamps play (the loot not taken falling, the event's outcome stamp), at most
+## `hold` s (and one `loot_reject` more as grace), then the next page shows.
+func _hold_page(hold: float) -> void:
 	if _panel != null and is_instance_valid(_panel):
 		var block := Control.new()
 		block.name = "LootLeaving"
@@ -570,11 +588,6 @@ func _hold_loot_page() -> void:
 	if _loot_hold != null and _loot_hold.is_valid():
 		_loot_hold.kill()
 	_loot_hold = create_tween()
-	# ANIM-R5 B5: the picked card's flight (`loot_pick`, now the longer) lands before the page
-	# goes too, so its landing pulse shows with the loot page still up.
-	# (its lift takes FlightFx.LIFT_SHARE of its time on top of the travel).
-	var hold := maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"),
-		Motion.seconds(&"loot_pick") * (1.0 + FlightFx.LIFT_SHARE) + Motion.delay_of(&"loot_pick"))
 	# The page leaves as soon as nothing flies (`_loot_hold_step`); the hold's time is only its
 	# bound, with one `loot_reject` more as grace for a flight ending on the same frame.
 	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, hold + Motion.seconds(&"loot_reject"))
@@ -620,10 +633,15 @@ func choose_event(index: int) -> void:
 	var phase := s.run.phase
 	var chosen := _panel.find_child("Choice%d" % (index + 1), true, false) as Control if _panel != null else null
 	_report(s.choose_event_option(index))
-	# The chosen outcome stamps (ANIM-6) over the next screen as it comes in.
+	# The chosen outcome stamps (ANIM-6). ANIM-R6 B12: on the event page, which stays (inert)
+	# until the stamp has played and then leaves (it popped over the next page's route menu,
+	# over its option [2]); a press ends the stamp and the page goes at once.
 	if phase == RunState.Phase.EVENT and s.run.phase != RunState.Phase.EVENT and chosen != null:
 		var row := chosen.get_node_or_null(^"OutcomeRow") as Control
-		FlightFx.stamp_on(self, row if row != null else chosen, "")
+		if FlightFx.stamp_on(self, row if row != null else chosen, "") != null:
+			RunManager.after_step()
+			_hold_page(Motion.seconds(&"event_choice_stamp") + Motion.delay_of(&"event_choice_stamp"))
+			return
 	RunManager.after_step()
 	_show_current()
 
@@ -689,15 +707,8 @@ func _fly_item(item: Control, kind: String, id: StringName, stamp: String = "", 
 func _land_on(kind: String) -> void:
 	if hud == null or not is_instance_valid(hud):
 		return
-	match kind:
-		"card":
-			hud.stats.land_pulse(StatIcon.CARDS)
-		"daemon":
-			if hud.daemon_button.is_visible_in_tree():
-				Motion.pop(hud.daemon_button, HudStats.LAND_PULSE)
-		_:
-			if hud.loadout_button.is_visible_in_tree():
-				Motion.pop(hud.loadout_button, HudStats.LAND_PULSE)
+	# ANIM-R6 B7: the bar's own (the motion lab plays the same on its pieces).
+	hud.land_pulse(kind)
 
 
 func remove_card(deck_index: int) -> void:
@@ -805,6 +816,28 @@ func _prebake_route() -> void:
 		creep_of(RunManager.campaign.heat))
 
 
+## ANIM-R6 B4: the run end page's look baked ahead (off the main thread) from the fight that
+## ended the run: the city's default frame at this screen's size under the campaign's Heat as
+## it stands after the fight (a flatline adds Heat: a new look the fight's own bake never
+## was). Returns the bake's key ("" when nothing was asked for: headless, or already baked).
+## The run end's bake asked for when a fight ended the run, and the default frame's asked for
+## when the fight began ("" when none: already baked, or headless).
+var run_end_prebake: String = ""
+var fight_prebake: String = ""
+
+
+func prebake_run_end() -> String:
+	if background == null or not is_inside_tree() or RunManager.campaign == null:
+		return ""
+	var city := background.city
+	# The view the city shows with no route on it (a fight leaves the camera there, and the
+	# run's end shows the same): measured, not worked out (frame_region is the HQ's frame).
+	# The camera is brought up to date first: hidden behind the fight the city draws nothing,
+	# so its last camera is the route's.
+	city.update_camera()
+	return city.prebake(city.view_rect(), null, false, creep_of(RunManager.campaign.heat))
+
+
 ## ANIM-R5 P2: the route's own bake is kept in the cache (CityBakeCache.keep) while the run's
 ## other pages come and go, so coming back to the route is never the silhouette again.
 func _keep_route_bake() -> void:
@@ -816,6 +849,16 @@ func _keep_route_bake() -> void:
 
 
 const ROUTE_KEEP := &"route"
+
+
+## ANIM-R6 B6: the route's kept bake goes back to the cache's LRU (the run ended, or the scene
+## left: a jack out, save and quit).
+func release_route_bake() -> void:
+	CityBakeCache.keep(ROUTE_KEEP, "")
+
+
+func _exit_tree() -> void:
+	release_route_bake()
 ## The hidden HQ backdrop twin warming the HQ's bake (`_warm_hq`).
 var _hq_warm: CyberdeckBackground = null
 
@@ -1122,7 +1165,8 @@ func _title_screen(s: NetrunSession, screen: String = "") -> void:
 		RunState.Phase.RAID:
 			hud.set_screen("", tr("NETRUN // RAID"))
 		_:
-			hud.set_screen("", tr("NETRUN // JACK OUT"))
+			# ANIM-R6 B5: the title agrees with the verdict (it said JACK OUT beside FLATLINED).
+			hud.set_screen("", tr(end_title(s.run.outcome)))
 
 
 func _show_start() -> void:
@@ -1290,7 +1334,7 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
 		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
 		if twins.has(id):
-			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
+			text += "  " + tr(TWIN_WORDS) % (int(twins[id]) + 1)
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
 		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
@@ -1305,7 +1349,7 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		# H22 #14: the node's own map icon (the map's painter, its colour for a next node),
 		# so the same node looks the same on the button and on the map.
 		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
-		b.tooltip_text = UiTip.fold(route_tip(s, node, heat))
+		b.tooltip_text = UiTip.fold(route_tip(s, node, heat) + ((" " + tr(TWIN_TIP) % (int(twins[id]) + 1)) if twins.has(id) else ""))
 		_route_buttons.append(b)
 		row.add_child(b)
 		if ahead_rows.has(i):
@@ -1575,6 +1619,13 @@ static func ahead_kinds(map: MapGraph, node: Dictionary, heat_of: Callable) -> A
 	return out
 
 
+## ANIM-R6 B14: a choice the same as an earlier one says what that means (keys): "(same as
+## 1)" puzzled a beginner (the same what?). The road ahead is the same; the enemy is picked
+## on entry, so the two are one choice.
+const TWIN_WORDS := "(same road as choice %d)" # TR
+const TWIN_TIP := "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick." # TR
+
+
 ## The reward and risk icons a route choice can show, in order.
 const AHEAD_ORDER: Array[StringName] = [StatIcon.ELITE, StatIcon.SHOP, StatIcon.TERMINAL, StatIcon.RACK, StatIcon.HEAT]
 
@@ -1717,7 +1768,7 @@ func route_graph() -> Dictionary:
 		if nh != 0:
 			label += tr(" %s Heat") % TextDb.signed(nh)
 		if twins.has(n["id"]):
-			label += " " + tr("(same as %d)") % (int(twins[n["id"]]) + 1)
+			label += " " + tr(TWIN_WORDS) % (int(twins[n["id"]]) + 1)
 		# The reachable nodes carry their route button's index and word (H21 #14); "kind"
 		# is the StatIcon the button shows.
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
@@ -1897,9 +1948,19 @@ const RAID_WINDOW_GROW := 1.3
 const RAID_MAP_ANCHOR := Vector2(0.7, 0.55)
 
 
+## ANIM-R6 B3: the frame's wait is a one-shot connection to a method of this scene (an await
+## resumed on the freed scene): freed, the connection goes with it; out of the tree, the
+## framing stops.
 func _frame_raid_map() -> void:
 	_raid_map_framing = true
-	await get_tree().process_frame
+	if not is_inside_tree():
+		_raid_map_framing = false
+		return
+	if not get_tree().process_frame.is_connected(_frame_raid_map_now):
+		get_tree().process_frame.connect(_frame_raid_map_now, CONNECT_ONE_SHOT)
+
+
+func _frame_raid_map_now() -> void:
 	_raid_map_framing = false
 	# ANIM-R5 B10: the scene may have left the tree (a jack out, the scene freed) while it
 	# waited a frame: nothing to frame then.
@@ -1952,6 +2013,11 @@ func _show_combat() -> void:
 	scene.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_set_panel(scene)
 	background.visible = false  # the arena draws its own wireframe world
+	# ANIM-R6 B4: the city's default frame bakes behind the fight (a fight can be the first page
+	# of a session: a resumed run, a capture), so the page after it, the run's end after a
+	# flatline included, never waits for the session's first bake; a flatline's own look is
+	# asked for again when the fight is lost (`_on_combat_state_changed`).
+	fight_prebake = prebake_run_end()
 	combat_scene = scene
 	scene.attach_netrun(s)
 	scene.engine.state_changed.connect(_on_combat_state_changed)
@@ -1967,6 +2033,11 @@ func _on_combat_state_changed(state: CombatState, _events: Array[Dictionary]) ->
 		_refresh_status()
 	if state.is_over():
 		RunManager.after_step()
+		# ANIM-R6 B4: a lost fight's run end is known now (the rules ran at SEND IT), seconds
+		# before its page: its look (the flatline's Heat) bakes behind the replay and the hold
+		# (the page opened on the silhouette, 24+ frames).
+		if RunManager.netrun != null and RunManager.netrun.run.is_over():
+			run_end_prebake = prebake_run_end()
 		var report: Array[Dictionary] = RunManager.netrun.last_events.duplicate()
 		if held:
 			combat_scene.connect(&"outcome_landed", _on_combat_outcome_landed.bind(report), CONNECT_ONE_SHOT)
@@ -2012,12 +2083,40 @@ func _leave_after_hold(generation: int) -> void:
 ## ANIM-R5 combat captures (dev shortcut, `--demo-combat --demo-end=win|lose`): once the
 ## fight's page has settled, the enemy (win) or the operative (lose) is set one hit from 0
 ## (demo run only) and the wheels nudged until the forecast ends the fight; then SEND IT.
+## ANIM-R6 B3: every wait is a one-shot frame connection to this scene's own methods (it
+## awaited frames and resumed on a freed scene); ANIM-R6 B2: the fight is set one hit from its
+## end by DemoSetup (the view wrote the live fight's HP itself).
 func _demo_combat_end(kind: String) -> void:
-	while combat_scene == null or PageTransition.running(self):
-		await get_tree().process_frame
-	for f in DEMO_SETTLE_FRAMES:
-		await get_tree().process_frame
+	_when_ready(func() -> bool: return combat_scene != null and is_instance_valid(combat_scene) and not PageTransition.running(self),
+		_after_frames_here.bind(DEMO_SETTLE_FRAMES, _demo_combat_end_now.bind(kind)))
+
+
+## ANIM-R6 B3: calls `step` once `ready_now` is true, checking once a frame through a one-shot
+## connection to this scene (gone with the scene; stops when it leaves the tree).
+func _when_ready(ready_now: Callable, step: Callable) -> void:
+	if not is_inside_tree():
+		return
+	if ready_now.call():
+		step.call()
+		return
+	get_tree().process_frame.connect(_when_ready.bind(ready_now, step), CONNECT_ONE_SHOT)
+
+
+## ANIM-R6 B3: calls `step` `n` frames from now while the scene stays in the tree (one-shot
+## connections to this scene: freed mid-wait, nothing resumes).
+func _after_frames_here(n: int, step: Callable) -> void:
+	if not is_inside_tree():
+		return
+	if n <= 0:
+		step.call()
+		return
+	get_tree().process_frame.connect(_after_frames_here.bind(n - 1, step), CONNECT_ONE_SHOT)
+
+
+func _demo_combat_end_now(kind: String) -> void:
 	var scene := combat_scene
+	if scene == null or not is_instance_valid(scene):
+		return
 	var eng: CombatEngine = scene.get(&"engine")
 	var st := eng.state()
 	if kind == "hover":
@@ -2030,10 +2129,7 @@ func _demo_combat_end(kind: String) -> void:
 					return
 		return
 	var want := CombatState.Outcome.VICTORY if kind == "win" else CombatState.Outcome.DEFEAT
-	if kind == "win":
-		st.enemies[0].hp = 1
-	else:
-		st.player.hp = 1
+	DemoSetup.one_hit_from_end(st, kind == "win")
 	for k in DEMO_END_TRIES:
 		if eng.preview_end_turn().state.outcome == want:
 			break
@@ -2042,18 +2138,19 @@ func _demo_combat_end(kind: String) -> void:
 			scene.call(&"end_turn")
 			scene.call(&"skip_motion")
 			st = eng.state()
-			if kind == "win":
-				st.enemies[0].hp = 1
-			else:
-				st.player.hp = 1
+			DemoSetup.one_hit_from_end(st, kind == "win")
 		else:
 			scene.call(&"nudge_wheel", &"player" if kind == "win" or k % 2 == 0 else st.enemies[0].id, 1)
 	scene.call(&"skip_motion")
 	scene.call(&"_refresh", eng.state())
-	for f in MotionDemo.START_FRAME:
-		await get_tree().process_frame
+	_after_frames_here(MotionDemo.START_FRAME, _demo_combat_send.bind(kind))
+
+
+func _demo_combat_send(kind: String) -> void:
+	if combat_scene == null or not is_instance_valid(combat_scene):
+		return
 	print("MotionDemo: r5 combat SEND IT (%s) on frame %d" % [kind, Engine.get_frames_drawn()])
-	scene.call(&"end_turn")
+	combat_scene.call(&"end_turn")
 
 
 ## Nudges the combat end demo tries before sending anyway.
@@ -2078,7 +2175,9 @@ func _show_reward() -> void:
 	var s := RunManager.netrun
 	var offer := s.current_reward()
 	var kind_word := tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"]))))
-	var win := TerminalWindow.new(tr("RACK BREACHED // LOOT: pick a %s") % kind_word, Palette.CELL_ACID)
+	# ANIM-R6 B10: the window names what paid out (it said RACK BREACHED after every fight).
+	var win := TerminalWindow.new(tr("%s // LOOT: pick a %s") % [tr(loot_source(s)), kind_word], Palette.CELL_ACID)
+	win.name = "LootWindow"
 	win.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var box := win.body
 	# ANIM-R4 C7: the tag fits the loot's row (its words shrink rather than run out of the
@@ -2086,13 +2185,21 @@ func _show_reward() -> void:
 	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(LOOT_ROW_MAX))
 	var slot_option: OptionButton = null
 	if offer["kind"] == "firmware":
-		var row := HBoxContainer.new()
-		row.add_child(_label(tr("Socket into slot:")))
+		# ANIM-R6 B8: the Modem's words for the same list ("Chips go into:"; it said "Socket
+		# into slot:" here).
+		var row := HFlowContainer.new()
+		row.name = "SocketRow"
+		row.add_theme_constant_override("h_separation", 6)
+		var word := _label(tr("Chips go into:"))
+		word.name = "SocketWord"
+		word.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP))
+		word.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(word)
 		slot_option = OptionButton.new()
 		slot_option.name = "SlotPick"
 		for i in s.run.operative.slot_slice_ids.size():
 			slot_option.add_item(slot_name(s.run.operative, i))
-		slot_option.tooltip_text = tr("The spinner slot the Firmware chip goes into.")
+		slot_option.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP))
 		row.add_child(slot_option)
 		box.add_child(row)
 	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost and what they do as
@@ -2158,12 +2265,34 @@ func _show_reward() -> void:
 		_fan_loot.call_deferred(stickers)
 
 
+## ANIM-R6 B8: what the loot's socket list is for (a key; the Modem's SOCKET_TIP without
+## buying).
+const LOOT_SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too)." # TR
+## ANIM-R6 B10: what paid the loot out, by the node the run stands on (keys): a fight, an
+## Elite, the Server Rack, an event.
+const LOOT_SOURCES := {RC.InfilNodeType.ROUTER: "FIGHT WON", RC.InfilNodeType.SERVER_RACK: "RACK BREACHED", # TR
+	RC.InfilNodeType.TERMINAL: "EVENT PAYOUT", RC.InfilNodeType.MODEM: "PAYOUT"} # TR
+const LOOT_ELITE := "ELITE DOWN" # TR
+
+
+## ANIM-R6 B10: what paid out the loot on show, as its window names it (a key): the node the
+## run stands on (an Elite fight has its own words).
+static func loot_source(s: NetrunSession) -> String:
+	var node := s.run.current_node() if s != null and s.run.current_node_id != &"" else {}
+	if node.is_empty():
+		return "PAYOUT" # TR
+	if _is_elite(node):
+		return LOOT_ELITE
+	return String(LOOT_SOURCES.get(int(node["type"]), "PAYOUT"))
+
+
 ## The loot fans in from the foot of its row, one after another (ANIM-6, `loot_fan`).
 func _fan_loot(row: Control) -> void:
 	if not is_instance_valid(row) or not row.is_inside_tree():
 		return
 	var r := row.get_global_rect()
 	var n := row.get_child_count()
+	_fan_row = weakref(row)
 	for i in n:
 		var card := row.get_child(i) as ZineCard
 		if card == null:
@@ -2173,6 +2302,35 @@ func _fan_loot(row: Control) -> void:
 		var from := Vector2(r.get_center().x, r.end.y - card.size.y * 0.5)
 		var fan := Motion.amplitude(&"loot_fan") * (float(i) - (n - 1) * 0.5)
 		card.fan_in(from, fan, Motion.delay_of(&"loot_fan") * i)
+
+
+## ANIM-R6 B1: the loot row whose stickers fan in (weak: the page may go first). The deal is
+## a motion of this screen (MotionSkip: one press lands every sticker at once), and the row
+## is kept while it plays: a press on a sticker still fanning in (invisible in its delay, or
+## on its way) lands the deal and picks nothing.
+var _fan_row: WeakRef = null
+
+
+## The loot row while its stickers still fan in (else null).
+func fanning_row() -> Control:
+	var row := _fan_row.get_ref() as Control if _fan_row != null else null
+	if row == null or not row.is_inside_tree():
+		return null
+	for c in row.get_children():
+		if c is ZineCard and (c as ZineCard).dealing():
+			return row
+	return null
+
+
+## Lands every loot sticker still fanning in (the deal's end state).
+func finish_fan() -> void:
+	var row := _fan_row.get_ref() as Control if _fan_row != null else null
+	_fan_row = null
+	if row == null:
+		return
+	for c in row.get_children():
+		if c is ZineCard:
+			(c as ZineCard).finish_deal()
 
 
 ## Terminal event (GDD 4.2): zine paper for street and corporate voices; DISPATCH stays
@@ -2236,8 +2394,9 @@ func _show_event() -> void:
 	body.add_child(text)
 	if not _spoken_events.has(ev.id):
 		_spoken_events[ev.id] = true
-		# TextDb text is already translated: said once, not translated again (H23 S17).
-		Dialogue.say(ev.speaker, TextDb.t(ev, "text"), 0.0, ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id, true, "event")
+		# ANIM-R6 B12: the story is on the paper; the subtitle bar no longer repeats it word for
+		# word (kept for the history and voice-over). TextDb text is already translated.
+		Dialogue.log_line(ev.speaker, TextDb.t(ev, "text"), ev.corporation_id if ev.corporation_id != &"" else RunManager.campaign.corporation_id)
 	for i in ev.choices.size():
 		var c := ev.choices[i]
 		var b := Button.new()
@@ -3061,6 +3220,9 @@ const END_CAPTION := "NETRUN" # TR
 
 func _show_end() -> void:
 	var s := RunManager.netrun
+	# ANIM-R6 B6: the run's route is over: its bake is no longer kept past the cache's LRU
+	# (the slot pinned up to ~48 MB for the rest of the session).
+	release_route_bake()
 	# ANIM-R5 P2: the HQ's city bakes while the run's report shows.
 	_warm_hq.call_deferred()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
@@ -3137,6 +3299,16 @@ static func end_verdict(outcome: int) -> String:
 		RunState.Outcome.ABORTED:
 			return "HOME FELL" # TR
 	return "FLATLINED" # TR
+
+
+## ANIM-R6 B5: the run end's top bar title, as its verdict says it (a key).
+static func end_title(outcome: int) -> String:
+	match outcome:
+		RunState.Outcome.COMPLETED:
+			return "NETRUN // JACK OUT" # TR
+		RunState.Outcome.ABORTED:
+			return "NETRUN // HOME FELL" # TR
+	return "NETRUN // FLATLINED" # TR
 
 
 ## The verdict stamp's icon.
@@ -3688,22 +3860,32 @@ func _input(event: InputEvent) -> void:
 	# choice, GRID VIEW or Save & quit ends the move and does nothing else (a choice pressed
 	# now reached the session after the move had opened the node, and was refused).
 	# ANIM-R5 (MotionSkip.handle): the press completes every running motion, the move too.
-	if _travelling:
+	# ANIM-R6 B1: and the loot's deal (it outlasted the page's entrance, which took the press
+	# before, and nothing took one after).
+	if _travelling or fanning_row() != null:
 		MotionSkip.handle(event, self)
 
 
-## MotionSkip (ANIM-R5): a route move plays.
+## MotionSkip (ANIM-R5): a route move plays; ANIM-R6 B1: or the loot fans in.
 func motion_running() -> bool:
-	return _travelling
+	return _travelling or fanning_row() != null
 
 
-## MotionSkip (ANIM-R5 B6): the route page's controls a press during the move never works.
+## MotionSkip (ANIM-R5 B6): the route page's controls a press during the move never works;
+## ANIM-R6 B1: nor a loot sticker's while the deal plays (a sticker still in its delay is
+## invisible: a click there picked an offer the player never saw).
 func motion_keeps() -> Array:
-	return route_keep()
+	var keep := route_keep() if _travelling else []
+	var row := fanning_row()
+	if row != null:
+		keep.append(row)
+	return keep
 
 
-## MotionSkip (ANIM-R5): the move ends and the node's screen opens.
+## MotionSkip (ANIM-R5): the move ends and the node's screen opens; ANIM-R6 B1: the loot
+## lands in its slots.
 func complete_motion() -> void:
+	finish_fan()
 	_end_travel()
 
 

@@ -143,8 +143,9 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 				out.append({"kind": "respin", "amount": 0})
 			RC.EffectType.GAIN_RAM:
 				# H24 S2/S3: the tags' words translated, the sign from TextDb.signed.
+				# ANIM-R6 B10: with the RAM icon before it (a memory chip: "RAM+3" was words only).
 				if e.amount != 0:
-					out.append({"kind": "tag", "text": TranslationServer.translate("RAM%s") % TextDb.signed(e.amount)})
+					out.append({"kind": "tag", "text": TranslationServer.translate("RAM%s") % TextDb.signed(e.amount), "icon": StatIcon.RAM})
 			RC.EffectType.DRAW_CARDS:
 				out.append({"kind": "tag", "text": TranslationServer.translate("DRAW %d") % e.amount})
 			RC.EffectType.FREEZE:
@@ -156,7 +157,7 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 			RC.EffectType.CLEANSE:
 				out.append({"kind": "tag", "text": TranslationServer.translate("CLEANSE")})
 			RC.EffectType.DRAIN_RAM:
-				out.append({"kind": "tag", "text": TranslationServer.translate("RAM%s") % TextDb.signed(-absi(e.amount))})
+				out.append({"kind": "tag", "text": TranslationServer.translate("RAM%s") % TextDb.signed(-absi(e.amount)), "icon": StatIcon.RAM})
 			RC.EffectType.SNAP_TO_CENTER:
 				out.append({"kind": "tag", "text": TranslationServer.translate("SNAP")})
 			RC.EffectType.DOUBLE_NUDGE_CARDS:
@@ -271,11 +272,26 @@ func fan_in(from: Vector2, fan: float, delay: float) -> void:
 	draw_offset = from - get_global_rect().get_center()
 	draw_tilt = deg_to_rad(fan)
 	modulate.a = 0.0
+	# ANIM-R6 B1: an invisible sticker (in its delay) takes no click: the mouse passes it by
+	# until it shows (a click there picked an offer the player never saw).
+	_hidden_mouse = mouse_filter
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tw := create_tween()
 	tw.tween_interval(delay)
 	tw.tween_property(self, "modulate:a", 1.0, 0.0)
+	tw.tween_callback(_show_to_mouse)
 	tw.tween_method(_deal_step.bind(draw_offset, draw_tilt), 0.0, 1.0, Motion.seconds(&"loot_fan")).set_ease(e.ease).set_trans(e.trans)
 	_deal_tween = tw
+
+
+## ANIM-R6 B1: the mouse filter a fanning sticker had before it hid (-1: not hidden).
+var _hidden_mouse: int = -1
+
+
+func _show_to_mouse() -> void:
+	if _hidden_mouse >= 0:
+		mouse_filter = _hidden_mouse as Control.MouseFilter
+		_hidden_mouse = -1
 
 
 func _deal_step(p: float, from: Vector2, tilt: float) -> void:
@@ -292,6 +308,7 @@ func finish_deal() -> void:
 	draw_offset = Vector2.ZERO
 	draw_tilt = 0.0
 	modulate.a = 1.0
+	_show_to_mouse()
 	queue_redraw()
 
 
@@ -630,8 +647,13 @@ func _draw_pictos(at: Vector2, s: float, fg: Color) -> void:
 				var st := int(p.get("status", RC.Status.NONE))
 				label = String(Palette.STATUS_GLYPHS.get(st, "")) if st != RC.Status.NONE else (str(int(p["amount"])) if int(p["amount"]) > 0 else "")
 			"tag":
-				draw_string(Palette.mono(), Vector2(c.x - r, c.y + fs * 0.35), String(p["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fg)
-				x += Palette.mono().get_string_size(String(p["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0 * s
+				var tx := c.x - r
+				if p.has("icon"):
+					# ANIM-R6 B10: the tag's icon first (RAM's chip), its words after it.
+					StatIcon.draw(self, c, r, StringName(p["icon"]), fg)
+					tx = c.x + r + 2.0 * s
+				draw_string(Palette.mono(), Vector2(tx, c.y + fs * 0.35), String(p["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fg)
+				x = tx + Palette.mono().get_string_size(String(p["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0 * s + r
 				continue
 		if label != "":
 			draw_string(Palette.mono(), Vector2(c.x + r + 2.0 * s, c.y + fs * 0.35), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fg)

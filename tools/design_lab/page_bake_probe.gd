@@ -59,6 +59,7 @@ func _initialize() -> void:
 		["route (back)", _page.bind("map")],
 		["fight", _page.bind("fight")],
 		["route (back)", _page.bind("map")],
+		["run end (flatline)", _flatline],
 		["run end", _page.bind("end")],
 		["hq (from the run)", _open_hq.bind("")],
 		["grid", _open_hq.bind("grid")],
@@ -106,7 +107,18 @@ func _tick() -> void:
 			_uncovered = 0
 			(_steps[_at][1] as Callable).call()
 			_at += 1
-			_mode = "cover"
+			_mode = "wait_end" if _name == "run end (flatline)" else "cover"
+		"wait_end":
+			# ANIM-R6 B4: a fight lost for real (the scene's own combat end demo), its replay and
+			# hold; the page's time starts when the run's end page shows.
+			if String(_scene.get("_shown_screen")) == "run_end" or _frames - _f0 > MAX_FRAMES:
+				var cities := _cities()
+				if not cities.is_empty():
+					_log("probe %s: the run end's look %s the route's (the flatline's Heat), prebaked %s" % [_name,
+						"differs from" if String(cities[0].call("look_key")) != _look_before else "is", _scene.get("run_end_prebake") != ""])
+				_t0 = Time.get_ticks_msec()
+				_f0 = _frames
+				_mode = "cover"
 		"cover":
 			if _name == "interlude playout":
 				# The playout moves its camera: count the frames it showed uncovered until the end.
@@ -195,6 +207,21 @@ func _page(page: String) -> void:
 			_scene.call("enter_node", (s.call("available_nodes") as Array)[0])
 		"end":
 			_scene.call("_show_end")
+
+
+## ANIM-R6 B4: the run ends in a flatline in a real fight: the next fight on the route, set
+## one hit from the operative's end and sent (netrun_scene's `--demo-combat --demo-end=lose`
+## path); the fight's replay, DEFEAT and its hold play, then the run's end page opens.
+func _flatline() -> void:
+	var s: Object = _rm.get("netrun")
+	var cities := _cities()
+	_look_before = String(cities[0].call("look_key")) if not cities.is_empty() else ""
+	_scene.call("enter_node", (s.call("available_nodes") as Array)[0])
+	_scene.call("_demo_combat_end", "lose")
+
+
+## The route's look before the flatline (the run end's differs by the Heat it adds).
+var _look_before := ""
 
 
 func _open_hq(page: String) -> void:

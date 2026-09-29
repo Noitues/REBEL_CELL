@@ -204,9 +204,10 @@ func _ready() -> void:
 		if args.has("--demo-classes"):
 			# Screenshot roster: one operative of every class (bypasses Profile unlocks,
 			# campaign-only, never saved to the profile).
-			RunManager.campaign.roster.clear()
+			var classes: Array[ClassData] = []
 			for id in [&"ghost", &"rigger", &"botnet", &"wrecker", &"phantom", &"overclocker", &"hivemind"]:
-				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
+				classes.append(RunManager.lookup().get_content(id) as ClassData)
+			DemoSetup.roster_of(RunManager.campaign, classes)  # ANIM-R6 C16: views write no state
 			show_hq()
 		for a in args:
 			# ANIM-R2 R1 / R9 profiling: from the HQ page the Grid opens N frames in, the HQ comes
@@ -218,12 +219,12 @@ func _ready() -> void:
 				MotionDemo.after_frames(self, n * 3, show_grid)
 		if args.has("--demo-grid") or args.has("--demo-raid") or args.has("--demo-playout"):
 			var c := RunManager.campaign
-			c.schematics = 100
+			DemoSetup.set_schematics(c, DEMO_SCHEMATICS)
 			var grid_data := RunManager.corporation.city_grid
 			var first: StringName = grid_data.get_site(grid_data.home_site_id).links[0]
 			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), _demo_run(first))
 			CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
-			c.armory = [&"turret", &"ice_lock", &"decoy"]
+			DemoSetup.set_armory(c, DEMO_ARMORY)
 			if args.has("--demo-raid") or args.has("--demo-playout"):
 				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
 				show_raid()
@@ -3680,7 +3681,7 @@ func _demo_anim(id: String) -> void:
 	tune_script.demo_tune(OS.get_cmdline_user_args())
 	var c := RunManager.campaign
 	if id == "heat_pulse":
-		c.heat = 20
+		DemoSetup.set_heat(c, DEMO_HEAT_FROM)
 		show_hq()
 	# ANIM-R6 C16: the waits are one-shot connections to the frame signal (a freed HQ drops
 	# them), never an await a freed scene would resume on.
@@ -3716,7 +3717,7 @@ func _demo_play(id: String) -> void:
 			if not c.armory.is_empty():
 				deploy_asset(0, selected_site)
 		"heat_pulse":
-			c.heat = 30
+			DemoSetup.set_heat(c, DEMO_HEAT_TO)
 			show_hq()
 		"jack_in":
 			RunManager.scene_switching_enabled = true
@@ -3776,16 +3777,19 @@ static func demo_end_of(arg: String) -> int:
 
 
 const DEMO_END_FLAG := "--demo-campaign-end="
+## The HQ demos' campaign: its Schematics, the raid demos' Armory, and the Heat poster demo's
+## Heat before and after its crossing.
+const DEMO_SCHEMATICS := 100
+const DEMO_ARMORY: Array[StringName] = [&"turret", &"ice_lock", &"decoy"]
+const DEMO_HEAT_FROM := 20
+const DEMO_HEAT_TO := 30
 
 
 ## ANIM-R6 C16: shows the campaign's end page on a fresh demo campaign with `outcome`.
 func demo_campaign_end(outcome: int) -> void:
 	RunManager.save_slot = "demo"
 	new_campaign(1)
-	var c := RunManager.campaign
-	c.outcome = outcome
-	if outcome == CampaignState.Outcome.LOST:
-		c.grid.home_integrity = 0
+	DemoSetup.end_campaign(RunManager.campaign, outcome)
 	show_end()
 
 
@@ -3826,7 +3830,7 @@ func _demo_drag(id: String) -> void:
 		show_grid()
 	elif id.begins_with("drag_loadout"):
 		var op := c.living_operatives()[0]
-		op.rank = 3
+		DemoSetup.set_rank(op, 3)  # ANIM-R6 B2: dev flag only; views never write state
 		open_loadout(op)
 		(get_node("LoadoutView") as LoadoutView).show_spinner()
 	# ANIM-R6 C16: one-shot waits (see _demo_wait).
