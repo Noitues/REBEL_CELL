@@ -395,7 +395,7 @@ func test_the_route_key_lists_the_routes_node_kinds_clear_of_the_nodes() -> void
 # --- S8 the Modem -------------------------------------------------------------------------------------
 
 func test_every_shop_item_has_a_price_words_and_a_buy_button() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -491,7 +491,7 @@ func test_a_change_that_is_none_shows_no_number() -> void:
 # --- S10 the event title and the subtitle band --------------------------------------------------------------
 
 func test_the_event_title_is_clear_of_the_subtitle_band_and_an_empty_band_hides() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()

@@ -2249,7 +2249,7 @@ func _show_event() -> void:
 		# ANIM-6: the outcome's icons pop when the choice is hovered or focused.
 		b.mouse_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
 		b.focus_entered.connect(func() -> void: Motion.pop(row, &"event_outcome_pop"))
-	options.add_child(GraffitiScrawl.new(tr("PLAY IT\nSAFE??"), -6.0, 24))
+	options.add_child(GraffitiScrawl.new(tr("PLAY IT\nSAFE??"), -6.0, UiTheme.font_px(UiTheme.TITLE)))  # art pass W8c: §4.3 rule 1
 	# H24 S9: the choices keep clear of the screen's right edge (their border was cut).
 	options.custom_minimum_size.x = 0.0
 	var right_gap := Control.new()
@@ -2688,7 +2688,7 @@ func _show_shop() -> void:
 	foot.size_flags_vertical = Control.SIZE_SHRINK_END
 	foot.add_theme_constant_override("separation", UiTheme.SP_XS)
 	remove_win.body.add_child(foot)
-	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
+	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, UiTheme.font_px(UiTheme.HEADING), DripButton.LEAVE_MODEM_DRIPS)  # art pass W8c: §4.3 rule 1
 	leave.name = "LeaveModem"
 	leave.pressed.connect(leave_shop)
 	leave.tooltip_text = tr("Leave the Modem and go back to the route.")

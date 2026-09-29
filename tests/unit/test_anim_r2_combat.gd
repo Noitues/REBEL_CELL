@@ -557,7 +557,7 @@ func test_modem_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> 
 	var tiles := 0
 	for pseudo in [false, true]:
 		_pseudo(pseudo)
-		for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+		for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 			Settings.set_text_scale(scale)
 			for seed in range(1, 7):
 				var scene := await _netrun(seed)

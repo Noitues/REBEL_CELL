@@ -706,7 +706,7 @@ func test_the_first_page_always_carries_words() -> void:
 # --- S9 the event's choices ----------------------------------------------------------------------------
 
 func test_event_choices_stay_on_screen_and_no_change_shows_a_mark() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()

@@ -312,7 +312,7 @@ func test_a_fight_gets_its_height_back_and_its_own_dock() -> void:
 
 
 func test_the_modem_shows_the_wallet() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()

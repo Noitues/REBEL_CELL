@@ -670,3 +670,63 @@ func test_no_status_glyph_fonts_in_w8c_files() -> void:
 			"res://scripts/ui/kit/daemon_row.gd", "res://scripts/ui/kit/daemon_tray.gd", "res://scripts/ui/kit/event_held_mark.gd",
 			"res://scripts/ui/kit/flight_fx.gd"]:
 		assert_false(FileAccess.get_file_as_string(p).contains("STATUS_GLYPHS"), "%s draws status icons with StatIcon" % p)
+
+
+# --- 8. Every page fits at text scale 2.0 ---------------------------------------------------------
+
+## Opens `page` on a fresh run at the current text size.
+func _page(page: String) -> Control:
+	RunManager.reset()
+	RunManager.new_campaign(1)
+	var scene := _netrun()
+	await _frames(2)
+	match page:
+		"loot":
+			_loot(scene)
+		"loot_firmware":
+			_loot(scene, "firmware", RunManager.lookup().ids_of_class(&"FirmwareData").slice(0, 3).map(func(x: Variant) -> String: return String(x)))
+		"modem":
+			_shop(scene)
+		"event":
+			_event(scene)
+		"dispatch":
+			_event(scene, &"ev_dispatch_early_reply")
+		"raid":
+			_raid(scene)
+		"run_end":
+			_end(scene, RunState.Outcome.DIED)
+	await _frames(5)
+	Typing.finish_all(get_tree())
+	if scene._panel is RunEndStage:
+		(scene._panel as RunEndStage).finish_now()
+	await _frames(3)
+	return scene
+
+
+func test_every_page_fits_at_every_text_scale() -> void:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		for page in ["route", "loot", "loot_firmware", "modem", "event", "dispatch", "raid", "run_end"]:
+			var scene: Control = await _page(page)
+			var tag := "%s at %.1f" % [page, scale]
+			assert_true(scene._panel.get_combined_minimum_size().x <= CANVAS.x + 0.5, "%s: the page fits the screen's width (%.0f)" % [tag, scene._panel.get_combined_minimum_size().x])
+			var texts := _texts(scene._panel)
+			for c in texts:
+				var r := c.get_global_rect()
+				assert_true(r.position.x >= -0.5 and r.end.x <= CANVAS.x + 0.5, "%s: '%s' within the width %s" % [tag, String(c.get("text")).left(24), r])
+				if c is Label:
+					var fs := (c as Label).get_theme_font_size(&"font_size")
+					assert_true(fs >= UiTheme.font_px(UiTheme.CAPTION), "%s: '%s' at %d px >= caption" % [tag, (c as Label).text.left(24), fs])
+					var l := c as Label
+					if l.autowrap_mode != TextServer.AUTOWRAP_OFF and l.text != "":
+						assert_true(l.get_line_count() <= maxi(1, l.get_visible_line_count()) or l.max_lines_visible < 0, "%s: '%s' shows every line" % [tag, l.text.left(24)])
+			# No two text controls overlap (a control inside another is its part).
+			for i in texts.size():
+				for j in range(i + 1, texts.size()):
+					var a := texts[i]
+					var b := texts[j]
+					if a.is_ancestor_of(b) or b.is_ancestor_of(a) or a.get_parent() is Button or b.get_parent() is Button:
+						continue
+					var ov := a.get_global_rect().intersection(b.get_global_rect())
+					assert_false(ov.size.x > 3.0 and ov.size.y > 3.0, "%s: '%s' overlaps '%s'" % [tag, String(a.get("text")).left(20), String(b.get("text")).left(20)])
+			await _close(scene)

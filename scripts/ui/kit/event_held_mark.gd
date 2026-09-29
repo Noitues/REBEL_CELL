@@ -40,4 +40,5 @@ func dot_centres() -> PackedVector2Array:
 func _draw() -> void:
 	var r := DOT_R * Settings.text_scale
 	for c in dot_centres():
-		draw_circle(c, r, Color(Palette.NOTE_PAPER, DOT_ALPHA))
+		# Art pass W8c (§12): high contrast draws the dots opaque in TEXT_HI.
+		draw_circle(c, r, Palette.TEXT_HI if Settings.high_contrast else Color(Palette.NOTE_PAPER, DOT_ALPHA))
