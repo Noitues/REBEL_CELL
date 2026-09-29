@@ -41,7 +41,7 @@ const DEMOS := {
 	&"saved_stamp": ["fade_out", "number"], &"toast": ["fade_out", "sticker"],
 	&"jack_in": ["jack_in", "stage"], &"jack_out": ["jack_out", "stage"], &"jack_fade_reduced": ["fade_out", "panel"],
 	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
-	&"precision_perfect": ["flash", "wheel"], &"precision_good_ring": ["view", "good"],
+	&"precision_perfect": ["burst", "perfect"], &"precision_good_ring": ["view", "good"],
 	&"precision_partial": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
 	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
 	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send"], &"resolve_pulse": ["view", "pulse"],
@@ -100,7 +100,7 @@ const DEMOS := {
 	&"resolve_landing_hold": ["scene", "send"], &"landing_pulse": ["scene", "send"], &"resolve_result_hold": ["scene", "send"],
 	&"result_caption": ["scene", "send"], &"result_stamp": ["scene", "send"], &"number_to_hp": ["scene", "numbers"],
 	&"hit_flash": ["scene", "send"], &"hit_shake": ["scene", "send"], &"enemy_enter": ["scene", "enter"],
-	&"victory_flash": ["scene", "victory"], &"boss_phase_flash": ["flash", "stage"],
+	&"victory_flash": ["scene", "victory"], &"boss_phase_flash": ["burst", "phase"],
 	&"ram_refusal": ["scene", "refuse"], &"ram_refusal_pop": ["scene", "refuse"], &"send_it_ready": ["view", "ready"],
 	&"send_it_drips_share": ["view", "press"], &"drag_ghost_tilt_speed": ["scene", "drag"],
 	&"toast_note_hold": ["fade_out", "sticker"], &"stamp_fade_in": ["screen", "stamp"],
@@ -124,7 +124,21 @@ const DEMOS := {
 	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp (a SEND IT the operative does not survive).
 	&"defeat_stamp": ["scene", "send_lose"],
+	# Art pass W6 (ART_BIBLE 8): the wheel-local T3 bursts (Perfect and a boss phase: the
+	# full-screen flashes are retired) play on the lab's wheel through a CombatFxLayer.
+	&"wheel_burst_perfect": ["burst", "perfect"], &"wheel_burst_phase": ["burst", "phase"],
+	# Art pass W6: each slice type's hit shape on the lab's wheel (--demo-hits-row plays all
+	# seven side by side, named, for the greyscale sheet).
+	&"hit_vfx_crit": ["hit_vfx", "crit"], &"hit_vfx_attack": ["hit_vfx", "attack"], &"hit_vfx_shield": ["hit_vfx", "shield"],
+	&"hit_vfx_evade": ["hit_vfx", "evade"], &"hit_vfx_afflict": ["hit_vfx", "afflict"], &"hit_vfx_heal": ["hit_vfx", "heal"],
+	&"hit_vfx_miss": ["hit_vfx", "miss"],
 }
+## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
+## step between shapes (px, 1280x720), and the names' lettering.
+const HITS_ROW_Y := 360.0
+const HITS_ROW_X := 440.0
+const HITS_ROW_STEP := 120.0
+const HITS_ROW_FONT := 15
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -187,6 +201,9 @@ var _wheel: WheelView
 var _number: Label
 var _typed: Label
 var _stage: Control
+## Art pass W6: the lab's own combat effects layer over the stage (bursts, hit shapes).
+var _lab_fx: CombatFxLayer
+var _hits_row := false
 
 var _ids: OptionButton
 var _dur: HSlider
@@ -211,6 +228,8 @@ func _ready() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	_build_stage()
+	_lab_fx = CombatFxLayer.new()
+	add_child(_lab_fx)
 	_record_rest()
 	_build_panel()
 	for arg in OS.get_cmdline_user_args():
@@ -220,6 +239,12 @@ func _ready() -> void:
 			_loop = false
 		elif arg.begins_with("--demo-speed="):
 			Motion.set_speed(float(arg.trim_prefix("--demo-speed=")))
+		elif arg == "--demo-hits-row":
+			_hits_row = true
+		elif arg == "--demo-reduce":
+			# Art pass W6 captures: reduce effects for this run only (never saved).
+			Settings.reduce_effects = true
+			Settings.changed.emit()
 		elif arg.begins_with("--demo-set="):
 			_apply_sets(arg.trim_prefix("--demo-set="))
 	if not Motion.has(_id):
@@ -353,6 +378,8 @@ func _reset_stage() -> void:
 			c.modulate = r["modulate"]
 		c.pivot_offset = c.size * 0.5
 	_wheel.stop_motion()
+	if _lab_fx != null:
+		_lab_fx.clear()
 	_wheel.shake = Vector2.ZERO
 	_wheel.pointer_alpha = 1.0
 	_drag_frame = -1
@@ -426,7 +453,28 @@ func _play() -> void:
 			else:
 				_typed.visible_ratio = 1.0
 		"flash":
-			Fx.flash(Palette.CELL_PINK if _id == &"precision_perfect" else Color.WHITE, amp, Motion.seconds(_id))
+			# Art pass W6: a full-screen flash is T4 only (screen_flash).
+			Fx.flash(Color.WHITE, amp, Motion.seconds(_id), VfxTier.T4)
+		"hit_vfx":
+			# Art pass W6: the hit shape on the wheel's hub (or the whole row, named).
+			if _hits_row:
+				_stage.visible = false
+				for k in CombatFxLayer.HIT_KINDS.size():
+					var at := Vector2(HITS_ROW_X + k * HITS_ROW_STEP, HITS_ROW_Y)
+					_lab_fx.hit_vfx(at, CombatFxLayer.HIT_KINDS[k])
+					var name_tag := Label.new()
+					name_tag.text = String(CombatFxLayer.HIT_KINDS[k]).to_upper()
+					name_tag.add_theme_font_override("font", Palette.mono())
+					name_tag.add_theme_font_size_override("font_size", HITS_ROW_FONT)
+					name_tag.position = at + Vector2(-HITS_ROW_STEP * 0.3, HITS_ROW_STEP * 0.45)
+					_lab_fx.add_child(name_tag)
+			else:
+				_lab_fx.hit_vfx(_wheel.global_center(), StringName(demo[1]))
+		"burst":
+			# Art pass W6: the wheel-local T3 burst on the lab's wheel (the phase in a corp hue).
+			var hue := Palette.CORP_SOLACE if demo[1] == "phase" else Color(0, 0, 0, 0)
+			_lab_fx.wheel_burst(_wheel.global_center(), _wheel.disc_radius(), StringName(demo[1]), hue)
+			length = maxf(length, Motion.seconds(CombatFxLayer.BURST_MOTION[StringName(demo[1])]))
 		"heat":
 			# ANIM-R2 R8 / ANIM-R3 B9: a Heat crossing distorts round the poster only.
 			Fx.heat_pulse_at(target.get_global_rect())

@@ -1,4 +1,6 @@
 shader_type canvas_item;
+// Reduce effects (rc_common): the scanlines stop rolling.
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // Jack in / jack out (Animation pass ANIM-5, handoff 4.1): the cover between the HQ and the
 // net. As `progress` runs 0 -> 1 the screen dissolves cell by cell, from the deck CRT
 // (`focus`) outward, into the wireframe city (the net's iso lattice on night blue), with
@@ -37,9 +39,11 @@ void fragment() {
 	float gy = abs(fract((px.x / tile.x - px.y / tile.y) / 6.0) - 0.5);
 	float line = smoothstep(0.46, 0.5, max(gx, gy));
 	vec3 col = mix(base.rgb, lattice.rgb, line * 0.55);
-	float lines = 0.5 + 0.5 * sin(px.y * 2.0944 + roll * 6.28318);
+	// Reduce effects: the scanlines and the bright band hold still (Fx fades instead anyway).
+	float r = roll * rc_live();
+	float lines = 0.5 + 0.5 * sin(px.y * 2.0944 + r * 6.28318);
 	col *= 1.0 - scan * lines;
-	float band = 1.0 - smoothstep(0.0, 0.06, abs(fract(UV.y - roll) - 0.5));
+	float band = 1.0 - smoothstep(0.0, 0.06, abs(fract(UV.y - r) - 0.5));
 	col += lattice.rgb * 0.18 * band;
 	COLOR = vec4(col, a);
 }

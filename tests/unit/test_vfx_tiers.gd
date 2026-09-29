@@ -1,0 +1,249 @@
+extends GutTest
+## Art pass W6 (ART_BIBLE 8, 12): VFX tiers. Every motion entry declares a valid tier (T0-T4)
+## in ui_motion.tres; the tier limits live in one place (VfxTier) and clamp; Fx.flash is
+## full screen and T4 only (refused below T4, nothing under reduce effects) and the one
+## limiter governs every flash; no code path asks for a full-screen flash below T4.
+
+const MOTION_TRES := "res://content/config/ui_motion.tres"
+
+var _reduce: bool
+var _limiter_on: bool
+
+
+func before_each() -> void:
+	_reduce = Settings.reduce_effects
+	_limiter_on = Fx.limiter.enabled
+	Motion.use_config(null)
+
+
+func after_each() -> void:
+	if Settings.reduce_effects != _reduce:
+		Settings.set_reduce_effects(_reduce)
+	Fx.apply_settings()
+	Fx.limiter.enabled = _limiter_on
+	Fx.limiter.reset()
+	Fx.flash_rect.color.a = 0.0
+	Motion.force_live = false
+
+
+# --- Every entry has a valid tier -----------------------------------------------------------
+
+func test_every_motion_entry_declares_a_valid_tier() -> void:
+	var table := load(MOTION_TRES) as UiMotionData
+	assert_gt(table.entries.size(), 100)
+	for e in table.entries:
+		assert_true(VfxTier.valid(int(e.tier)), "%s has a tier T0..T4" % e.id)
+		assert_eq(e.validate().size(), 0, "%s validates" % e.id)
+	# Written out, not left to the default: one `tier =` line per entry in the file.
+	var src := FileAccess.get_file_as_string(MOTION_TRES)
+	assert_eq(src.count("\ntier = "), src.count("[sub_resource type=\"Resource\""), "every entry names its tier")
+
+
+func test_tiers_follow_the_bibles_examples() -> void:
+	# ART_BIBLE 8's examples, one or two per tier.
+	var expect := {&"city_traffic": VfxTier.T0, &"beacon_blink": VfxTier.T0, &"menu_cursor_blink": VfxTier.T0,
+		&"card_hover": VfxTier.T1, &"wheel_nudge": VfxTier.T1, &"sticky_bump": VfxTier.T1,
+		&"hit_line": VfxTier.T2, &"card_stamp": VfxTier.T2, &"drop_stamp": VfxTier.T2, &"buy_fly": VfxTier.T2,
+		&"precision_perfect": VfxTier.T3, &"enemy_break": VfxTier.T3, &"boss_phase_flash": VfxTier.T3, &"heat_banner": VfxTier.T3, &"influence_mark": VfxTier.T3,
+		&"jack_in": VfxTier.T4, &"jack_out": VfxTier.T4, &"screen_flash": VfxTier.T4}
+	for id in expect:
+		assert_eq(VfxTier.of(id), expect[id], "%s is %s" % [id, VfxTier.NAMES[expect[id]]])
+
+
+func test_the_fx_layers_effects_fit_their_tier() -> void:
+	# The effects W6 owns (flashes, bursts, hit shapes) run within their tier's duration.
+	for id in [&"wheel_burst_perfect", &"wheel_burst_phase", &"victory_flash", &"hit_vfx_crit", &"hit_vfx_attack", &"hit_vfx_shield",
+			&"hit_vfx_evade", &"hit_vfx_afflict", &"hit_vfx_heal", &"hit_vfx_miss", &"raid_hit_effect", &"turret_trace",
+			&"ice_lock_ring", &"node_damage_number", &"raid_flip", &"raid_result_banner"]:
+		if not Motion.has(id):
+			continue
+		assert_true(VfxTier.fits(Motion.entry(id)), "%s runs within its tier" % id)
+		assert_lt(VfxTier.of(id), VfxTier.T4, "%s is below T4 (local)" % id)
+
+
+# --- The limits clamp ------------------------------------------------------------------------
+
+func test_the_tier_limits_clamp() -> void:
+	assert_eq(VfxTier.clamp_alpha(VfxTier.T0, 0.5), 0.0, "T0: no flashes")
+	assert_almost_eq(VfxTier.clamp_alpha(VfxTier.T1, 0.9), 0.2, 0.0001, "T1: a +20% glow")
+	assert_almost_eq(VfxTier.clamp_alpha(VfxTier.T2, 0.9), 0.6, 0.0001, "T2: 60%")
+	assert_almost_eq(VfxTier.clamp_alpha(VfxTier.T3, 0.9), 0.7, 0.0001, "T3: 70%")
+	assert_almost_eq(VfxTier.clamp_alpha(VfxTier.T4, 0.9), 0.4, 0.0001, "T4: white at 40%")
+	assert_almost_eq(VfxTier.clamp_alpha(VfxTier.T3, 0.3), 0.3, 0.0001, "under the limit: unchanged")
+	assert_almost_eq(VfxTier.clamp_seconds(VfxTier.T1, 1.0), 0.25, 0.0001)
+	assert_almost_eq(VfxTier.clamp_seconds(VfxTier.T2, 1.0), 0.6, 0.0001)
+	assert_almost_eq(VfxTier.clamp_seconds(VfxTier.T3, 2.0), 1.2, 0.0001)
+	assert_almost_eq(VfxTier.clamp_seconds(VfxTier.T4, 9.0), 2.5, 0.0001)
+	assert_eq(VfxTier.clamp_shake(VfxTier.T1, 3.0), 0.0, "no shake below T2")
+	assert_eq(VfxTier.clamp_shake(VfxTier.T2, 3.0), 2.0)
+	assert_eq(VfxTier.clamp_shake(VfxTier.T3, 9.0), 4.0)
+	assert_eq(VfxTier.clamp_shake(VfxTier.T4, 9.0), 0.0, "T4 moves the camera instead")
+	assert_eq(VfxTier.clamp_hit_stop(VfxTier.T2, 5), 2)
+	assert_eq(VfxTier.clamp_hit_stop(VfxTier.T3, 5), 3)
+	assert_eq(VfxTier.clamp_radius(VfxTier.T1, 500.0, 40.0, 100.0), 56.0, "T1: element + 16 px")
+	assert_eq(VfxTier.clamp_radius(VfxTier.T2, 500.0, 40.0, 100.0), 65.0, "T2: element + 25% of the region")
+	assert_eq(VfxTier.clamp_radius(VfxTier.T3, 500.0, 40.0, 100.0), 100.0, "T3: the region")
+	assert_eq(VfxTier.clamp_radius(VfxTier.T4, 500.0, 40.0, 100.0), 500.0, "T4: the screen")
+	assert_false(VfxTier.allows_full_screen(VfxTier.T3))
+	assert_true(VfxTier.allows_full_screen(VfxTier.T4))
+	assert_false(VfxTier.valid(5))
+
+
+func test_fx_caps_shake_and_hit_stop_by_tier() -> void:
+	assert_true(Fx.shake_px(&"hit_shake") <= VfxTier.MAX_SHAKE_PX[VfxTier.of(&"hit_shake")], "a hit's shake held to its tier")
+	Settings.set_reduce_effects(true)
+	assert_eq(Fx.shake_px(&"hit_shake"), 0.0, "no shake under reduce effects")
+
+
+# --- Fx.flash -------------------------------------------------------------------------------
+
+func test_fx_flash_refuses_full_screen_below_t4() -> void:
+	Fx.limiter.enabled = false
+	for tier in [VfxTier.T0, VfxTier.T1, VfxTier.T2, VfxTier.T3]:
+		var refused := Fx.refused_flashes
+		var shown := Fx.flashes_shown.size()
+		assert_false(Fx.flash(Color.WHITE, 0.3, 0.1, tier), "%s may not flash the screen" % VfxTier.NAMES[tier])
+		assert_eq(Fx.refused_flashes, refused + 1, "counted as refused")
+		assert_eq(Fx.flashes_shown.size(), shown, "nothing shown")
+		assert_eq(Fx.flash_rect.color.a, 0.0, "the screen stays clear")
+	assert_false(Fx.flash(Color.WHITE), "no tier given: refused (a caller must say T4)")
+	assert_true(Fx.flash(Color.WHITE, 0.9, 0.1, VfxTier.T4), "T4 may")
+	assert_almost_eq(Fx.flash_rect.color.a, VfxTier.MAX_FLASH_ALPHA[VfxTier.T4], 0.0001, "held to T4's 40%")
+
+
+func test_fx_flash_does_nothing_under_reduce_effects() -> void:
+	Fx.limiter.enabled = false
+	Settings.set_reduce_effects(true)
+	var shown := Fx.flashes_shown.size()
+	assert_false(Fx.flash(Color.WHITE, 0.3, 0.1, VfxTier.T4), "no flash at all")
+	assert_eq(Fx.flash_rect.color.a, 0.0)
+	assert_false(Fx.request_flash(), "no local flash either")
+	assert_eq(Fx.flashes_shown.size(), shown)
+
+
+func test_one_limiter_governs_local_and_full_screen_flashes() -> void:
+	Fx.limiter.enabled = true
+	Fx.limiter.reset()
+	var granted := 0
+	for k in 3:
+		if Fx.request_flash():
+			granted += 1
+	assert_eq(granted, 3, "three local flashes in a second")
+	assert_false(Fx.request_flash(), "a fourth waits")
+	assert_false(Fx.flash(Color.WHITE, 0.3, 0.1, VfxTier.T4), "and a full-screen one counts against the same limit")
+	assert_true(FlashLimiter.stream_is_safe(Fx.flashes_shown.slice(-3)))
+
+
+# --- No full-screen flash below T4 anywhere (grep) ---------------------------------------------
+
+func _gd_files(dir: String, out: PackedStringArray) -> void:
+	for f in DirAccess.get_files_at(dir):
+		if f.ends_with(".gd"):
+			out.append(dir.path_join(f))
+	for d in DirAccess.get_directories_at(dir):
+		_gd_files(dir.path_join(d), out)
+
+
+func test_no_code_path_calls_a_full_screen_flash_below_t4() -> void:
+	# Every `Fx.flash(` call under scripts/ (and the design lab) must pass VfxTier.T4.
+	var files := PackedStringArray()
+	_gd_files("res://scripts", files)
+	_gd_files("res://tools", files)
+	var calls := 0
+	for path in files:
+		var lines := FileAccess.get_file_as_string(path).split("\n")
+		for i in lines.size():
+			var code := lines[i].split("#")[0]
+			if not code.contains("Fx.flash("):
+				continue
+			calls += 1
+			# The call may run over the next lines: read to its closing parenthesis.
+			var call := code.substr(code.find("Fx.flash("))
+			var j := i
+			while call.count("(") > call.count(")") and j + 1 < lines.size():
+				j += 1
+				call += lines[j].split("#")[0]
+			assert_true(call.contains("VfxTier.T4"), "%s:%d asks for a full-screen flash without T4: %s" % [path, i + 1, call.strip_edges()])
+	gut.p("Fx.flash calls checked: %d" % calls)
+
+
+# --- Wheel-local T3 bursts ----------------------------------------------------------------------
+
+func _layer() -> CombatFxLayer:
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = Vector2(1280, 720)
+	var layer := CombatFxLayer.new()
+	holder.add_child(layer)
+	return layer
+
+
+func _bursts(layer: CombatFxLayer) -> Array:
+	return layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "wheel_burst")
+
+
+func test_wheel_burst_is_the_end_state_at_once_headless_and_under_reduce_effects() -> void:
+	var layer := _layer()
+	var shown := Fx.flashes_shown.size()
+	assert_false(layer.wheel_burst(Vector2(400, 300), 120.0, CombatFxLayer.BURST_PERFECT), "headless: nothing plays")
+	assert_true(_bursts(layer).is_empty())
+	Motion.force_live = true
+	Settings.set_reduce_effects(true)
+	assert_false(layer.wheel_burst(Vector2(400, 300), 120.0, CombatFxLayer.BURST_PHASE, Palette.CORP_SOLACE), "reduce effects: nothing")
+	assert_true(_bursts(layer).is_empty())
+	assert_false(layer.busy(), "nothing left running")
+	assert_eq(Fx.flashes_shown.size(), shown, "no flash counted")
+
+
+func test_wheel_burst_stays_on_its_wheel_within_t3() -> void:
+	var layer := _layer()
+	Motion.force_live = true
+	Fx.limiter.enabled = false
+	for kind in [CombatFxLayer.BURST_PERFECT, CombatFxLayer.BURST_PHASE]:
+		assert_true(layer.wheel_burst(Vector2(400, 300), 120.0, kind, Palette.CORP_SOLACE if kind == CombatFxLayer.BURST_PHASE else Color(0, 0, 0, 0)), "%s plays" % kind)
+	var bursts := _bursts(layer)
+	assert_eq(bursts.size(), 2)
+	for s in bursts:
+		assert_true(float(s["alpha"]) <= VfxTier.MAX_FLASH_ALPHA[VfxTier.T3] + 0.0001, "<= 70% alpha")
+		assert_true(float(s["dur"]) <= VfxTier.MAX_SECONDS[VfxTier.T3] + 0.0001, "<= 1.2 s")
+		assert_true(float(s["reach"]) <= 120.0 * CombatFxLayer.WHEEL_REGION + 0.001, "inside the wheel's region, never the screen")
+	assert_eq(bursts[0]["color"], Palette.CELL_PINK, "Perfect in the Cell's pink")
+	assert_eq(bursts[1]["color"], Palette.CORP_SOLACE, "a phase in the boss's corp hue")
+	assert_false(layer.wheel_burst(Vector2(400, 300), 120.0, &"nope"), "an unknown kind plays nothing")
+	layer.clear()
+
+
+func test_wheel_bursts_go_through_the_one_limiter() -> void:
+	var layer := _layer()
+	Motion.force_live = true
+	Fx.limiter.enabled = true
+	Fx.limiter.reset()
+	var played := 0
+	for k in 5:
+		if layer.wheel_burst(Vector2(400, 300), 120.0, CombatFxLayer.BURST_PERFECT):
+			played += 1
+	assert_eq(played, 3, "at most 3 flashes a second, local ones too")
+	layer.clear()
+
+
+func test_the_combat_scene_flashes_its_wheels_not_the_screen() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
+	assert_false(src.contains("Fx.flash("), "no full-screen flash left in combat")
+	assert_true(src.contains("wheel_burst(view.global_center(), view.disc_radius(), CombatFxLayer.BURST_PERFECT)"), "Perfect bursts on its wheel")
+	assert_true(src.contains("CombatFxLayer.BURST_PHASE, hue)"), "a phase bursts on the boss's wheel in its corp hue")
+
+
+# --- Raid FX ------------------------------------------------------------------------------------
+
+func test_raid_effects_have_tiers_and_none_covers_the_screen() -> void:
+	for kind in RaidFxLayer.FX_MOTION:
+		var id: StringName = RaidFxLayer.FX_MOTION[kind]
+		assert_true(Motion.has(id), "raid %s has its entry %s" % [kind, id])
+		var tier := RaidFxLayer.fx_tier(kind)
+		assert_true(VfxTier.valid(tier), "raid %s has a tier" % kind)
+		assert_lt(tier, VfxTier.T4, "raid %s is local, never cinematic" % kind)
+		assert_true(VfxTier.fits(Motion.entry(id)), "raid %s runs within its tier" % kind)
+	assert_true(VfxTier.clamp_alpha(RaidFxLayer.fx_tier("tint"), RaidFxLayer.TINT_ALPHA) == RaidFxLayer.TINT_ALPHA, "the district wash is within T3")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/raid_fx_layer.gd")
+	assert_false(src.contains("Fx.flash("), "no full-screen flash in the raid")
+	for full in ["draw_rect(get_rect()", "draw_rect(Rect2(Vector2.ZERO, size)"]:
+		assert_false(src.contains(full), "nothing drawn over the whole map (%s)" % full)

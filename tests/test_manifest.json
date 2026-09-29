@@ -209,6 +209,10 @@
 			"seconds": 0.1,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_hit_vfx.gd": {
+			"seconds": 0.6,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_horizontal_pass1.gd": {
 			"seconds": 23.7,
 			"tier": "full"
@@ -413,6 +417,10 @@
 			"seconds": 0.2,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_shader_library.gd": {
+			"seconds": 0.1,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_simulation.gd": {
 			"seconds": 2.2,
 			"tier": "fast"
@@ -434,6 +442,10 @@
 			"tier": "fast"
 		},
 		"res://tests/unit/test_targeting.gd": {
+			"seconds": 0.2,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_vfx_tiers.gd": {
 			"seconds": 0.2,
 			"tier": "fast"
 		},
