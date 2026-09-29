@@ -154,7 +154,7 @@ func test_the_heat_poster_is_one_press_motion_and_its_reading_hold_is_not() -> v
 	var marks: Array[int] = [25, 50, 75]
 	p.set_heat(10, 100, marks)
 	p.set_heat(60, 100, marks)
-	await _frames(1)
+	await BoundedWait.frozen_frames(get_tree(), 1)  # ANIM-R6 D9: a slow frame must not end the roll first
 	assert_true(p.motion_running(), "the number rolls to its thresholds")
 	var got := counter.got
 	get_viewport().push_input(_key(KEY_SEMICOLON))

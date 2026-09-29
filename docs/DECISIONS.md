@@ -625,6 +625,20 @@ unless named.
   shard's slow frames used the 12 s up before the lab's frame-counted context settle
   (`CONTEXT_SETTLE` + `CONTEXT_BAKE_FRAMES`) had run. The wait now also allows those frames
   plus 240 (`DEMO_EXTRA_FRAMES`); it still returns as soon as the entry is read.
+- **After merging the city batch.** The switch check's `AWAITING_FIX` lost the ten entries fix
+  agent C's raid layer and route now ask about (`decoy_fire`, `home_lag`, `ice_lock_ring`,
+  `node_damage_number`, `raid_flip`, `raid_hit_effect`, `raid_move`, `raid_result_banner`,
+  `route_crawl`, `turret_trace`); C's new `raid_threat_withdraw` is asked through the raid
+  layer's own `beat_u` (a demo never reaches a withdrawal), listed in the test's
+  `ASKS_THROUGH` and checked in its source. Still awaiting after all three merges: fix agent
+  A's `dead_wheel_fade`, `heal_number`, `hit_absorb`, `hp_lag`, `number_float` and fix agent
+  C's `asset_drop_grow`, `beacon_blink`, `city_sign_pick`, `raid_outcome_stagger`,
+  `route_target_pulse`, `select_ring_pulse` (the coordinator has the list). The Heat poster and
+  the HQ's raid numbers joined the one press in C's batch, so the not-skippable list lost
+  them; `raid_step_gap` is a part since C's batch, no longer a hold. C's new
+  `test_anim_r6_city` asserted a roll still running after a plain frame (now a frozen frame),
+  and A's new `test_anim_r6_combat` left `tutorial_done` on (it restores a snapshot now):
+  both caught by the rules above.
 
 #### 2026-09-29 — Animation pass — ANIM-R6 city, raid, HQ and bake
 The sixth fix batch of the Animation pass review, city, raid, HQ and bake part (C1-C16, from the

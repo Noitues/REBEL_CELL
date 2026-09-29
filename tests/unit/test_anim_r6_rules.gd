@@ -285,7 +285,6 @@ func test_the_docs_say_what_the_motion_does_now() -> void:
 ## STYLE_GUIDE 5.5 lists the same.
 const NOT_SKIPPABLE := {
 	"res://scripts/autoload/fx.gd": "the jack swallows every press itself; a flash and the Heat pulse are feedback of a tenth of a second",
-	"res://scripts/ui/hq_scene.gd": "the raid's home number flying home and the SITES badge's bump: the raid verdict's reading moment",
 	"res://scripts/ui/kit/buy_button.gd": "BUY's flap is a hover state (it holds while hovered)",
 	"res://scripts/ui/kit/city_map_overlay.gd": "selection, outline and route pulses answer the pointer; the drop and the raid are DropLayer's and the playout's (both registered)",
 	"res://scripts/ui/kit/combat_fx_layer.gd": "plays under the SEND IT replay, whose skip ends the layer",
@@ -293,7 +292,6 @@ const NOT_SKIPPABLE := {
 	"res://scripts/ui/kit/focus_tip.gd": "a tip fades in on focus: the answer to the focus move itself",
 	"res://scripts/ui/kit/forecast_stamp.gd": "the forecast stamp resolves inside the raid playout's step (registered)",
 	"res://scripts/ui/kit/grid_map_view.gd": "the selection ring and the minimap pulse answer the pointer",
-	"res://scripts/ui/kit/heat_poster.gd": "a threshold's stamp and roll are a reading moment (as RAID INCOMING holds)",
 	"res://scripts/ui/kit/map_legend.gd": "the key folds on its own press: the answer to that press",
 	"res://scripts/ui/kit/motion.gd": "the kit itself (its callers register)",
 	"res://scripts/ui/kit/motion_values.gd": "the kit itself (its callers register)",

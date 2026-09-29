@@ -65,19 +65,15 @@ const AWAITING_FIX := {
 	&"asset_drop_grow": "city_map_overlay (fix agent C city/raid)",
 	&"beacon_blink": "neon_city (fix agent C city/raid)",
 	&"city_sign_pick": "neon_city (fix agent C city/raid)",
-	&"decoy_fire": "raid_fx_layer (fix agent C city/raid)",
-	&"home_lag": "raid_fx_layer (fix agent C city/raid)",
-	&"ice_lock_ring": "raid_beats / raid_fx_layer (fix agent C city/raid)",
-	&"node_damage_number": "raid_beats / raid_fx_layer (fix agent C city/raid)",
-	&"raid_flip": "raid_fx_layer (fix agent C city/raid)",
-	&"raid_hit_effect": "raid_beats / raid_fx_layer (fix agent C city/raid)",
-	&"raid_move": "raid_beats / raid_fx_layer (fix agent C city/raid)",
 	&"raid_outcome_stagger": "raid_fx_layer (fix agent C city/raid)",
-	&"raid_result_banner": "raid_fx_layer (fix agent C city/raid)",
-	&"route_crawl": "city_map_overlay (fix agent C city/raid)",
 	&"route_target_pulse": "city_map_overlay (fix agent C city/raid)",
 	&"select_ring_pulse": "city_map_overlay (fix agent C city/raid)",
-	&"turret_trace": "raid_beats / raid_fx_layer (fix agent C city/raid)",
+}
+## ANIM-R6 D3: entries a view asks about through a function of its own that asks
+## `Motion.live` for the id it is given (not reached by every demo): {id: [script, function]}.
+## Checked: the script has the function, it asks `Motion.live(id)`, and it names the id.
+const ASKS_THROUGH := {
+	&"raid_threat_withdraw": ["res://scripts/ui/kit/raid_fx_layer.gd", "beat_u"],
 }
 ## Game time a demo gets to read its entry (at SPEED), s.
 const DEMO_LIMIT := 12.0
@@ -234,7 +230,7 @@ func unswitched(reads: Dictionary, asks: Dictionary, sources: Dictionary) -> Arr
 	var ids := reads.keys()
 	ids.sort()
 	for id: StringName in ids:
-		if UiMotionData.OFF_PARTS.has(id) or UiMotionData.ALWAYS_ON.has(id) or HOLDS.has(id):
+		if UiMotionData.OFF_PARTS.has(id) or UiMotionData.ALWAYS_ON.has(id) or HOLDS.has(id) or ASKS_THROUGH.has(id):
 			continue
 		var game_readers: Array[String] = []
 		for p: String in reads[id]:
@@ -294,3 +290,11 @@ func test_the_switch_check_names_a_view_that_never_asks() -> void:
 		assert_true(Motion.has(id), "%s (a hold) is a table id" % id)
 	for id: StringName in AWAITING_FIX:
 		assert_true(Motion.has(id), "%s (awaiting its fix) is a table id" % id)
+	for id: StringName in ASKS_THROUGH:
+		var path: String = ASKS_THROUGH[id][0]
+		var fn: String = ASKS_THROUGH[id][1]
+		var src := FileAccess.get_file_as_string(path)
+		assert_true(src.contains("func %s(" % fn) and src.contains("Motion.live(id)"), "%s asks Motion.live through %s" % [path, fn])
+		var const_re := RegEx.create_from_string("const\\s+([A-Z_][A-Z0-9_]*)\\s*:?=\\s*&\"%s\"" % id)
+		var m := const_re.search(src)
+		assert_true(m != null and src.contains("%s(%s" % [fn, m.get_string(1)]), "%s asks about %s through %s" % [path, id, fn])

@@ -546,8 +546,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   states that hold while hovered or focused (`buy_button`'s flap, `crew_card`'s tilt,
   `focus_tip`), answers to the press itself (`map_legend`'s fold, `pad_prompts`, `ram_bar`'s
   ticks and refusals), ambient loops with nothing to complete (`neon_city`,
-  `wireframe_background`, `zine_stamp`'s breathing, `tutorial_overlay`'s Next pulse), reading moments (`heat_poster`'s
-  threshold stamp, `hq_scene`'s home number and SITES badge after a raid, `toast`), pieces
+  `wireframe_background`, `zine_stamp`'s breathing, `tutorial_overlay`'s Next pulse), a
+  reading time (`toast`; the Heat poster and the HQ's raid numbers joined the rule in
+  ANIM-R6 city), pieces
   a registered helper ends (`combat_fx_layer` under the SEND IT replay, `forecast_stamp`
   in the raid playout's step, `city_map_overlay`'s drop and raid through DropLayer and the
   playout; its selection and route pulses answer the pointer, as `grid_map_view`'s do),
