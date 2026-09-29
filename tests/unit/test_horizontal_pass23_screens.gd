@@ -437,7 +437,10 @@ func test_the_buy_button_presses_its_item_and_shows_the_pad_button() -> void:
 	Settings.set_pad_active(true)
 	card.grab_focus()
 	await _frames()
-	assert_string_contains(card.buy_button.label_text(), Settings.key_text(&"ui_accept"), "the pad button while focused")
+	# Art pass W8c: the pad button is a glyph of its own beside the price, never in its words.
+	assert_true(card.buy_button.glyph.visible, "the pad button while focused")
+	assert_eq(card.buy_button.pad_key(), Settings.key_text(&"ui_accept"))
+	assert_false(card.buy_button.label_text().ends_with(Settings.key_text(&"ui_accept")), "not inside the price's words")
 	var tip := FocusTip.tip_of(card)
 	assert_not_null(tip, "the whole text shows on focus")
 	if tip != null:

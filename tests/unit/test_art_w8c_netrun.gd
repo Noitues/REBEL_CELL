@@ -210,3 +210,143 @@ func test_the_picked_loot_is_stamped_before_it_flies() -> void:
 	assert_true(src.contains("&\"loot_pick\", tr(LOOT_PICK_STAMP)"), "the pick flies with its TAKEN stamp (T2)")
 	assert_true(ZineStamp.word_count(tr("TAKEN")) <= ZineStamp.MAX_WORDS)
 
+
+
+# --- 3. Modem -------------------------------------------------------------------------------------
+
+func test_modem_sign_is_baked_art_not_live_text() -> void:
+	var scene := _netrun()
+	_shop(scene)
+	await _frames(3)
+	var sign := scene._panel.find_child("ModemSign", true, false) as ModemSign
+	assert_true(sign.is_baked(), "the sign is a texture")
+	assert_true(ModemSign.ART is Texture2D)
+	assert_eq(ModemSign.ART.resource_path, "res://assets/art/netrun/modem_sign.svg")
+	assert_eq(sign.subtitle(), "", "no subtitle in English (the art says it)")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/modem_sign.gd")
+	assert_false(src.contains("CyberType.draw_text"), "no drawn letters")
+	assert_false(src.contains("_sticky("), "no decorative BUY / SHRED notes on the sign")
+	# The warm-up flicker stays (T0), and holds lit under reduce effects / headless.
+	sign.warm = 0.0
+	var dark := 0
+	for i in ModemSign.BANDS.size():
+		if sign.band_light(i) < 1.0:
+			dark += 1
+	assert_true(dark > 0, "a tube is dark at the warm-up's start")
+	sign.settle()
+	assert_false(sign.warming())
+	await _close(scene)
+
+
+func test_modem_has_no_native_dropdown_and_slot_tiles_for_sockets() -> void:
+	var seeds_with_firmware := 0
+	for seed in range(1, 12):
+		RunManager.reset()
+		RunManager.new_campaign(seed)
+		var scene := _netrun()
+		_shop(scene)
+		await _frames(2)
+		for n in _all(scene._panel):
+			assert_false(n is OptionButton or n is SpinBox, "no native control on the Modem (%s)" % n.name)
+		var pick: Node = scene._panel.find_child("SocketPick", true, false)
+		if not RunManager.netrun.run.shop.get("firmware", []).is_empty():
+			seeds_with_firmware += 1
+			assert_true(pick is SlotPicker, "the socket is picked on slot tiles")
+			assert_true(pick.is_visible_in_tree())
+		await _close(scene)
+		if seeds_with_firmware > 0:
+			break
+	assert_true(seeds_with_firmware > 0, "a seed stocks Firmware")
+
+
+func test_microchip_text_is_body_at_every_text_size() -> void:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(7)
+		var scene := _netrun()
+		_shop(scene)
+		await _frames(3)
+		var chips := 0
+		for n in _all(scene._panel):
+			var t := n as ZineCard
+			if t == null or t.look != ZineCard.Look.CHIP or t.sold_stub:
+				continue
+			chips += 1
+			var parts := t.tile_parts()
+			assert_true(int(parts["dfs"]) >= UiTheme.font_px(UiTheme.BODY), "%s: effect text %d px >= body %d at %.1f" % [t.card_title, parts["dfs"], UiTheme.font_px(UiTheme.BODY), scale])
+			assert_true(int(parts["fs"]) >= UiTheme.font_px(UiTheme.BODY), "%s: name at body at %.1f" % [t.card_title, scale])
+			assert_true(int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size(), "%s: every line of its effect shows at %.1f" % [t.card_title, scale])
+		assert_true(chips > 0, "chips or Daemons in stock at %.1f" % scale)
+		await _close(scene)
+
+
+func test_one_cycles_readout_the_top_bar() -> void:
+	var scene := _netrun()
+	_shop(scene)
+	await _frames(3)
+	assert_null(scene._panel.find_child("Wallet", true, false), "no wallet in the REMOVE window")
+	for n in _all(scene._panel):
+		if n is HudStats:
+			for i in (n as HudStats).items.size():
+				assert_ne((n as HudStats).icon_of(i), StatIcon.CYCLES, "no second CYCLES readout on the page")
+	assert_ne(scene.hud.stats.icon_point(StatIcon.CYCLES), Vector2.INF, "the top bar says the Cycles")
+	await _close(scene)
+
+
+func test_out_of_reach_items_are_locked_with_need_and_have() -> void:
+	var scene := _netrun()
+	_shop(scene, 5)
+	await _frames(3)
+	var locked := 0
+	for n in _all(scene._panel):
+		var t := n as ZineCard
+		if t == null or t.sold_stub or t.buy_button == null or not t.disabled:
+			continue
+		locked += 1
+		var b := t.buy_button
+		if b.short_of_money():
+			assert_eq(b.label_text(), tr("NEED %d · HAVE %d") % [t.price, 5], "%s says why" % t.card_title)
+	assert_true(locked > 0, "items out of reach")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/buy_button.gd")
+	assert_false(src.contains("NOTE_PINK"), "never a paler pink")
+	assert_true(src.contains("draw_lock_badge"), "W2's lock badge")
+	await _close(scene)
+
+
+func test_the_pad_glyph_is_its_own_element_not_in_the_price() -> void:
+	var scene := _netrun()
+	_shop(scene, 999)
+	await _frames(3)
+	var card := scene._panel.find_child("Stickers", true, false).get_child(0) as ZineCard
+	Settings.set_pad_active(true)
+	card.grab_focus()
+	await _frames(2)
+	var b := card.buy_button
+	assert_false(b.label_text().contains(Settings.key_text(&"ui_accept") + " ") or b.label_text().ends_with(" " + Settings.key_text(&"ui_accept")), "no pad letter in '%s'" % b.label_text())
+	assert_true(b.glyph.visible, "the pad glyph shows beside the sticker")
+	assert_false(Rect2(Vector2.ZERO, b.size).intersects(Rect2(b.glyph.position, b.glyph.size)), "beside, not on, the price")
+	card.release_focus()
+	await _frames(1)
+	assert_false(b.glyph.visible, "gone when the item loses focus")
+	await _close(scene)
+
+
+func test_shred_keeps_a_ghost_gap_until_the_drop() -> void:
+	var scene := _netrun()
+	_shop(scene, 999)
+	await _frames(3)
+	scene.open_remove()
+	await _frames(3)
+	var view := scene.get_node("DeckView") as DeckView
+	var before: Array[Rect2] = []
+	for i in 4:
+		before.append(view.card(i).get_global_rect())
+	scene.modal_drops.start_carry(view.card(0), false)
+	await _frames(2)
+	for i in 4:
+		assert_eq(view.card(i).get_global_rect(), before[i], "card %d stays put while one is carried (no reflow)" % i)
+	assert_true(view.card(0).modulate.a < 1.0 and view.card(0).visible, "the carried card leaves a ghost in its place")
+	scene.modal_drops.cancel()
+	scene.modal_drops.finish_all()
+	await _close(scene)

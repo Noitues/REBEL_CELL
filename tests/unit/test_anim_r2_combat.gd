@@ -773,14 +773,15 @@ func test_the_wallet_rolls_with_the_top_bar() -> void:
 	RunManager.netrun.run.cycles = 140
 	scene._show_current()
 	await _frames(2)
-	var wallet := scene._panel.find_child("Wallet", true, false) as HudStats
+	# Art pass W8c (ART_BIBLE 11 Modem): one Cycles readout, the top bar's; it rolls.
+	assert_null(scene._panel.find_child("Wallet", true, false), "no wallet: the top bar says the Cycles")
 	var bar: HudStats = scene.hud.stats
 	var k := -1
 	for i in bar.items.size():
 		if String(bar.items[i][0]) == TextDb.mark("CYCLES"):
 			k = i
 	assert_true(k >= 0)
-	assert_eq(wallet.shown_value(0), bar.shown_value(k), "the wallet shows what the top bar shows mid-roll (119 vs 120)")
+	assert_ne(bar.shown_value(k), "", "the top bar's CYCLES shows its value mid-roll")
 	await _close(scene)
 
 
@@ -800,8 +801,7 @@ func test_spent_ram_floats_and_a_refused_buy_flashes_the_money() -> void:
 	await _frames(2)
 	scene.price_refused(69)
 	assert_eq(scene.hud.stats.refusal_text(), tr("NEED %d · HAVE %d") % [69, 10], "the CYCLES tag flashes NEED PRICE · HAVE CYCLES (ANIM-R3 A6j)")
-	var wallet := scene._panel.find_child("Wallet", true, false) as HudStats
-	assert_eq(wallet.refusal_text(), tr("NEED %d · HAVE %d") % [69, 10], "and the wallet")
+	assert_null(scene._panel.find_child("Wallet", true, false), "one Cycles readout (art pass W8c)")
 	await _close(scene)
 
 

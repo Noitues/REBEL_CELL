@@ -301,9 +301,22 @@ func _assert_clear(root: Node, label: String) -> void:
 	assert_true(Dialogue.is_showing(), "%s: a subtitle is up" % label)
 	var bar := _bar_rect()
 	for c in _controls(root):
-		var r := c.get_global_rect()
+		var r := _shown_rect(c)
+		if not r.has_area():
+			continue  # art pass W8c: scrolled out of its page's view (the Modem at big text)
 		assert_false(bar.intersects(r), "%s: the subtitle (%s) covers %s '%s' at %s (text %.1f)" % [label, bar, c.get_class(), c.get("text"), r, Settings.text_scale])
 	Dialogue.clear()
+
+
+## The part of `c` its scroll views show (global; empty when scrolled out of sight).
+func _shown_rect(c: Control) -> Rect2:
+	var r := c.get_global_rect()
+	var n := c.get_parent()
+	while n != null:
+		if n is ScrollContainer:
+			r = r.intersection((n as Control).get_global_rect())
+		n = n.get_parent()
+	return r
 
 
 func test_subtitles_never_cover_controls_on_any_screen() -> void:

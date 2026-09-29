@@ -500,7 +500,12 @@ func test_end_state_layout_is_the_instant_layout_at_every_text_size() -> void:
 				var got: Rect2 = live[i][1]
 				assert_eq(live[i][0], instant[i][0], "%s at %.1f: control %d" % [screen, scale, i])
 				assert_almost_eq(got.position, want.position, Vector2.ONE, "%s at %.1f: '%s' rests where it would at once" % [screen, scale, instant[i][0]])
-				assert_true(screen_rect.encloses(got), "%s at %.1f: '%s' on screen" % [screen, scale, instant[i][0]])
+				# Art pass W8c: a page taller than the screen (the Modem at big text) scrolls
+				# inside its window: its controls keep within the screen's width.
+				var page_scroll := scene._panel_host.get_parent() as ScrollContainer
+				var scrolls := page_scroll.get_v_scroll_bar().max_value > page_scroll.size.y + 1.0
+				assert_true(screen_rect.encloses(got) or (scrolls and got.position.x >= screen_rect.position.x and got.end.x <= screen_rect.end.x),
+					"%s at %.1f: '%s' on screen" % [screen, scale, instant[i][0]])
 			Motion.force_live = false
 			scene.get_parent().queue_free()
 			await _frames()

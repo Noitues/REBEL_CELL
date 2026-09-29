@@ -30,9 +30,7 @@ const HOME_LABEL := "CORE" # TR
 const MODEM_QUAD := Vector2(490, 250)
 const QUAD_FRAME := Vector2(24, 56)
 const QUAD_GAP := 12.0
-## LEAVE THE MODEM (in the free corner of the REMOVE A CARD quadrant, so the Modem ends
-## on screen at text scale 1.6) and its exit icon beside it (px).
-const LEAVE_AT := Vector2(900, 440)
+## LEAVE THE MODEM's exit icon beside it (px; art pass W8c: the tag sits at the page's foot).
 const LEAVE_ICON := 34.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
 const LOOT_CARD := Vector2(150, 170)
@@ -101,6 +99,8 @@ var _route_buttons: Array[Button] = []
 var route_legend: RouteLegend = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
+## Art pass W8c: "MORE BELOW" at the foot of a page that scrolls on (§5.3).
+var more_hint: ScrollHint = null
 ## The screen on show (screen_name) and whether the last page entered a new screen (its
 ## entrance plays) or refreshed the same one (Animation pass ANIM-6).
 var _shown_screen: String = ""
@@ -2254,27 +2254,36 @@ func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
 	var op := s.run.operative
-	var root := Control.new()
+	# Art pass W8c (ART_BIBLE §5.3, §11 Modem): the page is laid out by containers, not
+	# fixed positions: the baked sign in its column, the four windows in a grid of two
+	# columns (one at big text sizes, where the page scrolls inside its window with a hint),
+	# LEAVE THE MODEM at the foot. Every window keeps its colour-coding.
+	var root := HBoxContainer.new()
 	root.name = "ModemRoot"
-	root.custom_minimum_size = Vector2(1240, 540)
+	root.add_theme_constant_override("separation", UiTheme.GUTTER)
 	var sign := ModemSign.new()
 	sign.name = "ModemSign"
-	sign.position = Vector2(0, -6)
-	sign.size = Vector2(230, 560)
+	sign.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	root.add_child(sign)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 12)
-	grid.position = Vector2(236, 0)
-	root.add_child(grid)
-	var q_size := MODEM_QUAD
+	var main := VBoxContainer.new()
+	main.name = "ModemMain"
+	main.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main.add_theme_constant_override("separation", roundi(QUAD_GAP))
+	root.add_child(main)
 	var ts := Settings.text_scale
-	# Top left: microchips (Firmware). The socket list names each slot by its slice.
-	var fw_slot := OptionButton.new()
-	fw_slot.name = "SocketPick"
-	for k in op.slot_slice_ids.size():
-		fw_slot.add_item(tr("Socket into %s") % slot_name(op, k))
+	var grid := GridContainer.new()
+	grid.name = "ModemGrid"
+	grid.columns = modem_columns(ts)
+	grid.add_theme_constant_override("h_separation", roundi(QUAD_GAP))
+	grid.add_theme_constant_override("v_separation", roundi(QUAD_GAP))
+	main.add_child(grid)
+	var q_size := modem_quad(ts)
+	# Top left: microchips (Firmware). Art pass W8c (§2, §6.5): the slot a bought chip goes
+	# into is picked on slot tiles (SlotPicker), never a native dropdown.
+	var fw_slot: SlotPicker = null
+	if not shop.get("firmware", []).is_empty():
+		fw_slot = _slot_picker(op, q_size.x - QUAD_FRAME.x)
+		fw_slot.name = "SocketPick"
 	var chips_win := TerminalWindow.new(tr("MICROCHIPS"))
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
@@ -2290,6 +2299,12 @@ func _show_shop() -> void:
 	var stickers := HBoxContainer.new()
 	stickers.name = "Stickers"
 	stickers.add_theme_constant_override("separation", 12)
+	# Art pass W8c: room above the cards for their hover lift (a focused card lay on the
+	# CARDS title).
+	var lift_room := Control.new()
+	lift_room.name = "CardsLiftRoom"
+	lift_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cards_win.body.add_child(lift_room)
 	cards_win.body.add_child(stickers)
 	# Bottom left: slices (overwrite) and daemons side by side.
 	# A 2-column grid (not an HBox) so pad focus walks every tile in both windows.
@@ -2313,8 +2328,13 @@ func _show_shop() -> void:
 	# Cards grow with the text size as far as their quadrant holds them (H21 #15).
 	var card_count: int = (seen["cards"] as Array).size()
 	var card_fit := minf((q_size.x - QUAD_FRAME.x - QUAD_GAP * maxi(0, card_count - 1)) / maxf(1.0, card_count * ZineCard.STICKER_SIZE.x),
-		(q_size.y - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
+		# Art pass W8c: in one column (big text; the page scrolls) the cards may grow with the text.
+		(q_size.y * (ts if grid.columns == 1 else 1.0) - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
+	# Art pass W8c: the lift room is a card's hover lift, the half of its hover growth and the
+	# focus brackets' offset.
+	lift_room.custom_minimum_size.y = roundf(Motion.amplitude(&"card_hover") + (ZineCard.HOVER_SCALE - 1.0) * 0.5 * ZineCard.STICKER_SIZE.y * cs
+		+ UiTheme.SP_XS * ts)
 	for kind in ["cards", "firmware", "daemons"]:
 		var prices: Array = shop.get(kind.trim_suffix("s") + "_prices", [])
 		for slot: Array in shop_slots(seen[kind], shop.get(kind, [])):
@@ -2343,18 +2363,24 @@ func _show_shop() -> void:
 			if kind == "cards":
 				sticker.scaled(cs).with_card(res as CardData)
 			elif kind == "firmware":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(ts)
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN).tile_text(chip_text_scale(ts))
 			elif kind == "daemons":
-				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
+				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(chip_text_scale(ts))
 			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
 				+ "\n" + tr(String(DRAG_TIPS[{"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]])))
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			# H23 S8: a clear buy button on every item, and the whole text on focus.
 			sticker.with_buy(TextDb.mark("BUY"))
+			sticker.buy_button.have = s.run.cycles  # art pass W8c: NEED n · HAVE m when out of reach
 			if kind != "cards":
 				# ANIM-R2 E6: the tile grows until its whole text reads (at 1.6 a third of the
-				# chips showed 1 of 2-3 lines at the 8 px floor).
-				fit_chip_tile(sticker, chip_tile_room(kind, (seen[kind] as Array).size(), ts))
+				# chips showed 1 of 2-3 lines at the 8 px floor). Art pass W8c: at `body`.
+				var most := chip_tile_room(kind, (seen[kind] as Array).size(), ts, q_size)
+				if kind == "firmware":
+					# Art pass W8c: a microchip takes its share of the window's width first (its
+					# body-size words take fewer lines), then grows taller as it must.
+					sticker.custom_minimum_size = Vector2(most.x, CHIP_TILE.y * ts)
+				fit_chip_tile(sticker, most)
 			FocusTip.attach(sticker)
 			var index: int = i
 			var k: String = kind
@@ -2364,7 +2390,7 @@ func _show_shop() -> void:
 				if sticker.disabled and (ev.is_action_pressed(&"ui_accept") or (ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT)):
 					price_refused(price_i))
 			sticker.set_meta(STOCK_META, i)
-			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected if k == "firmware" else -1))
+			sticker.pressed.connect(func() -> void: buy(k, index, fw_slot.selected() if k == "firmware" else -1))
 			match kind:
 				"cards":
 					stickers.add_child(sticker)
@@ -2374,8 +2400,17 @@ func _show_shop() -> void:
 					daemon_row.add_child(sticker)
 			n += 1
 	if not shop.get("firmware", []).is_empty():
-		fw_slot.tooltip_text = tr("The spinner slot a bought Firmware chip goes into.")
-		chips_win.body.add_child(fw_slot)
+		# Art pass W8c: the slot tiles under a caption saying what they are for (overlaps
+		# ANIM-R5 B11's "Chips go into:" socket row; keep one caption on merge).
+		var socket_row := VBoxContainer.new()
+		socket_row.name = "SocketRow"
+		var socket_word := _label(tr("Socket into slot:"))
+		socket_word.name = "SocketWord"
+		socket_word.tooltip_text = UiTip.fold(tr("The spinner slot a bought Firmware chip goes into."))
+		socket_word.mouse_filter = Control.MOUSE_FILTER_PASS
+		socket_row.add_child(socket_word)
+		socket_row.add_child(fw_slot)
+		chips_win.body.add_child(socket_row)
 	if daemon_row.get_child_count() == 0:
 		daemons_win.body.add_child(_label(tr("sold out")))
 	var slice_row := HBoxContainer.new()
@@ -2400,7 +2435,7 @@ func _show_shop() -> void:
 		var slice_word := tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?")))
 		if i < 0:
 			var stub := _sold_stub("%s %d" % [slice_word, sd.base_output] if sd.base_output > 0 else slice_word, -1, (seen["slices"] as Array).size(), "slices", 1.0, ts)
-			stub.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
+			stub.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts, q_size.x)
 			stub.slice_type = sd.slice_type
 			stub.slice_output = sd.base_output
 			stub.accent = Palette.slice_color(sd.slice_type)
@@ -2413,7 +2448,7 @@ func _show_shop() -> void:
 		tile.slice_output = sd.base_output
 		# H24 S10: the tile widens with the text size as far as the SLICES window holds the
 		# row (its buy sticker "BUY 100-150" shrank to fit a fixed 96 px at 1.6).
-		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts)
+		tile.custom_minimum_size = slice_tile_size((seen["slices"] as Array).size(), ts, q_size.x)
 		tile.hotkey = ""
 		if low >= 0:
 			# ANIM-R2 E6: one price on the tile, what most slots cost ("BUY 100-150" wrapped
@@ -2425,6 +2460,7 @@ func _show_shop() -> void:
 			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
 			+ "\n" + tr(String(DRAG_TIPS["slice"])))
 		tile.with_buy(TextDb.mark("BUY"))
+		tile.buy_button.have = s.run.cycles  # art pass W8c
 		FocusTip.attach(tile)
 		var si := i
 		tile.pressed.connect(func() -> void: open_overwrite(si))
@@ -2448,34 +2484,35 @@ func _show_shop() -> void:
 	shred.tooltip_text = UiTip.fold(tr("Remove a card from your deck: %d Cycles (you have %d).") % [s.card_removal_price(), s.run.cycles])
 	shred.pressed.connect(open_remove)
 	shred.with_buy(TextDb.mark("SHRED"))
+	shred.buy_button.have = s.run.cycles if not op.deck.is_empty() else -1  # art pass W8c
 	FocusTip.attach(shred)
 	remove_row.add_child(shred)
-	# The wallet (H21 #11): the Cycles to spend, beside the shredder, in sight whatever
-	# covers the top bar.
-	var wallet := HudStats.new()
-	wallet.name = "Wallet"
-	wallet.items = [[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.")]]
-	wallet.custom_minimum_size.x = wallet.full_width(ts)
-	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
-	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	remove_row.add_child(wallet)
+	# Art pass W8c (ART_BIBLE §11 Modem, critique 52): one Cycles readout, the top bar's
+	# CYCLES tag (the wallet here said it twice). Refusals flash that tag (price_refused).
 	# ANIM-4b: the spinner in small beside the wallet: microchips and slice upgrades drag onto
 	# its slots (the socket list and the UPGRADE viewer stay).
 	var mini := _spinner_mini()
 	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(mini)
+	# Art pass W8c: LEAVE THE MODEM taped at the REMOVE window's free right (it sat at a
+	# fixed spot and overlapped the window as the windows grew with the text).
+	var foot := HBoxContainer.new()
+	foot.name = "ModemFoot"
+	foot.alignment = BoxContainer.ALIGNMENT_END
+	foot.size_flags_vertical = Control.SIZE_SHRINK_END
+	foot.add_theme_constant_override("separation", UiTheme.SP_XS)
+	remove_win.body.add_child(foot)
 	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
 	leave.name = "LeaveModem"
-	leave.position = LEAVE_AT
 	leave.pressed.connect(leave_shop)
 	leave.tooltip_text = tr("Leave the Modem and go back to the route.")
-	root.add_child(leave)
 	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON, DripButton.DRIP_PINK)
 	leave_icon.name = "LeaveIcon"
-	leave_icon.position = LEAVE_AT + Vector2(-LEAVE_ICON - 4.0, 4.0)
+	leave_icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	leave_icon.tooltip_text = leave.tooltip_text
 	leave_icon.mouse_filter = Control.MOUSE_FILTER_PASS
-	root.add_child(leave_icon)
+	foot.add_child(leave_icon)
+	foot.add_child(leave)
 	# ANIM-R3 A7: the first focus is the first item (one the Cycles reach, else the first),
 	# never the socket list: the pad prompt says "A Buy".
 	var first_item: ZineCard = null
@@ -2584,8 +2621,8 @@ static func loot_tip(res: Resource) -> String:
 
 ## A slice tile's size in the Modem's SLICES window for `count` tiles at text scale `ts`
 ## (H24 S10): SLICE_TILE grown with the text as far as the window's width holds the row.
-static func slice_tile_size(count: int, ts: float) -> Vector2:
-	var room := MODEM_QUAD.x * 0.5 - QUAD_FRAME.x - 8.0 * maxi(0, count - 1)
+static func slice_tile_size(count: int, ts: float, quad_w: float = MODEM_QUAD.x) -> Vector2:
+	var room := quad_w * 0.5 - QUAD_FRAME.x - 8.0 * maxi(0, count - 1)
 	var k := clampf(minf(ts, room / maxf(1.0, count * SLICE_TILE.x)), 1.0, Settings.TEXT_SCALE_MAX)
 	return Vector2(SLICE_TILE.x * k, SLICE_TILE.y * tile_growth(ts))
 
@@ -2600,12 +2637,42 @@ static func tile_growth(ts: float) -> float:
 ## with `count` in its row: a microchip shares its window's width (the socket list under
 ## it), a Daemon widens a little (the SLICES window keeps its row); both may grow as tall
 ## as the lower row's tiles.
-static func chip_tile_room(kind: String, count: int, ts: float) -> Vector2:
-	var h := CHIP_TILE.y * tile_growth(ts)
+static func chip_tile_room(kind: String, count: int, ts: float, quad: Vector2 = MODEM_QUAD) -> Vector2:
+	# Art pass W8c: chip text at `body` needs taller tiles (their window grows with them).
+	var h := CHIP_TILE.y * maxf(tile_growth(ts), chip_text_scale(ts)) * CHIP_ROOM_TALL
 	if kind == "firmware":
-		var w := (MODEM_QUAD.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
-		return Vector2(maxf(CHIP_TILE.x, minf(w, CHIP_TILE.x * ts)), h)
-	return Vector2(CHIP_TILE.x * (1.0 + (ts - 1.0) * DAEMON_WIDEN), h)
+		var w := (quad.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
+		return Vector2(maxf(CHIP_TILE.x, w), h)  # art pass W8c: its share of the window
+	return Vector2(maxf(CHIP_TILE.x, minf(quad.x * 0.5 - QUAD_FRAME.x, CHIP_TILE.x * chip_text_scale(ts))), h)
+
+
+## Art pass W8c (ART_BIBLE §11 Modem, critique 52: microchip text was ~7 px): the lettering
+## scale a Modem chip or Daemon tile draws at, so its words (ZineCard's caption step) come
+## out at the `body` step times the text size.
+static func chip_text_scale(ts: float) -> float:
+	return ts * float(UiTheme.BODY) / float(UiTheme.CAPTION)
+
+
+## Art pass W8c: how many columns the Modem's windows take at text scale `ts` (two, one at
+## big sizes: the page then scrolls inside its window).
+static func modem_columns(ts: float) -> int:
+	return 2 if ts <= MODEM_TWO_COLUMNS_MAX else 1
+
+
+## Art pass W8c: a Modem window's least size at text scale `ts`: its share of the page's
+## width beside the sign (MODEM_QUAD at 1.0 is the least), as tall as MODEM_QUAD.
+func modem_quad(ts: float) -> Vector2:
+	var page := (size.x if size.x > 0.0 else get_viewport_rect().size.x) - ModemSign.ART_SIZE.x - UiTheme.GUTTER - MODEM_PAGE_PAD
+	var cols := modem_columns(ts)
+	var w := (page - QUAD_GAP * (cols - 1)) / cols
+	return Vector2(maxf(MODEM_QUAD.x, floorf(w)), MODEM_QUAD.y)
+
+
+## Art pass W8c: the largest text scale the Modem keeps two columns at, the room the page's
+## own frame takes (px), and how much taller than CHIP_TILE a chip may grow for body text.
+const MODEM_TWO_COLUMNS_MAX := 1.15
+const MODEM_PAGE_PAD := 24.0
+const CHIP_ROOM_TALL := 1.6
 
 
 ## Grows `tile` (wider first, then taller, never past `most`) until its whole effect text
@@ -2618,7 +2685,7 @@ static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
 		if tile.buy_button != null:
 			tile.buy_button.refit()  # its height at this width (one line or two) is the foot
 		var parts := tile.tile_parts()
-		if int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size() and int(parts["dfs"]) >= CHIP_READABLE:
+		if int(parts["rows"]) >= (parts["desc_lines"] as PackedStringArray).size() and int(parts["dfs"]) >= chip_readable(tile):
 			break
 		if sz.x < most.x:
 			sz.x = minf(sz.x + CHIP_FIT_STEP, most.x)
@@ -2628,6 +2695,12 @@ static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
 			break
 	tile.size = sz
 	tile.custom_minimum_size = sz
+
+
+## Art pass W8c: the lettering a Modem chip's effect text must keep (px): the `body` step at
+## the tile's own text size (chip_text_scale), never under CHIP_READABLE.
+static func chip_readable(tile: ZineCard) -> int:
+	return maxi(CHIP_READABLE, roundi(UiTheme.CAPTION * tile.text_scale))
 
 
 ## Opens a modal viewer over the netrun screen. The viewers hold focus themselves
@@ -3049,7 +3122,7 @@ func _item_payload(kind: String, src: String, index: int, item: StringName) -> D
 
 ## Modem: cards drag onto the deck, microchips onto a slot of the small spinner, Daemons
 ## onto the DAEMONS icon, slice upgrades onto the slot they overwrite.
-func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
+func _register_shop_drops(mini: SpinnerMini, fw_slot: SlotPicker) -> void:
 	var shop := RunManager.netrun.run.shop
 	for pair in [["Stickers", "cards", "card"], ["Chips", "firmware", "chip"], ["Daemons", "daemons", "daemon"], ["Slices", "slices", "slice"]]:
 		var row := _panel.find_child(String(pair[0]), true, false) if _panel != null else null
@@ -3063,7 +3136,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 				continue
 			var p := _item_payload(String(pair[2]), "shop", i, StringName(String(stock[i])))
 			if pair[2] == "chip" and fw_slot != null:
-				p["prefer"] = fw_slot.selected
+				p["prefer"] = fw_slot.selected()
 			drops.add_source(c, p)
 	_add_bar_targets(["card"], ["daemon"])
 	if mini != null:
@@ -3476,6 +3549,10 @@ func _build_ui() -> void:
 	# Shown only when the player turns it on in Options.
 	_log.visible = Settings.system_log
 	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
+	# Art pass W8c (ART_BIBLE §5.3): a page taller than the screen (the Modem at 2.0) scrolls
+	# inside its window with a visible MORE BELOW hint.
+	more_hint = ScrollHint.new(scroll)
+	add_child(more_hint)
 	# ANIM-4b: drag and drop over every page (targets pulse, the pad's reticle, flights).
 	drops = DropLayer.new()
 	_wire_drops(drops)

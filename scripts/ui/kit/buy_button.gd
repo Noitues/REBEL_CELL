@@ -3,16 +3,23 @@ extends StickerButton
 ## A shop item's buy button (H23 S8: the Modem's price tags and the BUY / SHRED notes on
 ## its sign did not read as buttons): a taped yellow sticker at the foot of the item's
 ## card or tile reading "BUY ⊙45" (the coin drawn), "BUY ⊙100-150" when the price depends
-## on the slot, and the pad button that presses it ("A") while its item has focus and a
-## pad is in use. The item stays the focus stop (pad focus walks the items as before);
+## on the slot. The item stays the focus stop (pad focus walks the items as before);
 ## pressing the sticker presses the item. Its lettering follows the item's text size and
 ## shrinks to the item's width. View only.
+##
+## Art pass W8c (ART_BIBLE §6.4, §6.7, §3.7, critique 52/55, §5 "BUY 76 A"):
+## - In the Modem a sticker is always a button: every BUY / SHRED sticker lifts and flaps
+##   on hover and focus, and presses its item (the sign's decorative notes are gone).
+## - Out of reach: W2's locked state (the paper kept, a `DISABLED` edge and the lock badge)
+##   and the reason on the sticker, "NEED 141 · HAVE 120", never a paler pink.
+## - The pad's button is its own element (a PadGlyph beside the sticker while the item has
+##   focus and a pad is in use), never letters inside the price ("BUY 76 A").
 
-## Lettering and height at the item's text scale 1.0 (px), the least lettering (px), and
-## the margin kept from the item's sides and foot (px).
+## Lettering and height at the item's text scale 1.0 (px), the least lettering (§4.2: the
+## caption step), and the margin kept from the item's sides and foot (px).
 const BUY_FONT := 13
 const BUY_HEIGHT := 22.0
-const MIN_FONT := 8
+const MIN_FONT := UiTheme.CAPTION
 const EDGE := 4.0
 ## The coin's radius and the gap after it at scale 1.0 (px).
 const COIN_R := 5.5
@@ -21,9 +28,19 @@ const COIN_GAP := 3.0
 const LINE_SHARE := 0.8
 ## One line may shrink to this share of the text size before the words go on two lines.
 const TWO_LINES_BELOW := 0.85
+## The pad glyph's gap from the sticker (px at 1.0), and the locked edge's width (px).
+const GLYPH_GAP := 4.0
+const LOCKED_EDGE := 1.5
+## The separator of NEED and HAVE (the refusal's own words, ART_BIBLE 6.7).
+const NEED_SEP := " · "
 
 var host: ZineCard = null
 var verb: String = "BUY"
+## The Cycles in hand (the screen sets it): an item out of reach says NEED n · HAVE m.
+## -1: unknown (the sticker only shows the lock).
+var have: int = -1
+## The pad button beside the sticker (shown while its item has pad focus).
+var glyph: PadGlyph = null
 var _font_px: int = BUY_FONT
 ## H24 S10: the words on two lines (the verb over the price) when one line would have to
 ## shrink below the text size to fit the item ("BUY 100-150" on a slice tile at 1.6).
@@ -38,6 +55,10 @@ func _init(p_host: ZineCard = null, p_verb: String = "BUY") -> void:
 	focus_mode = Control.FOCUS_NONE
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	pressed.connect(_press_host)
+	glyph = PadGlyph.new(maxi(0, PadGlyph.button_for_action(&"ui_accept")))
+	glyph.name = "PadGlyph"
+	glyph.visible = false
+	add_child(glyph)
 	if host != null:
 		host.resized.connect(refit)
 		host.focus_entered.connect(refit)
@@ -62,15 +83,21 @@ func _ready() -> void:
 	refit()
 
 
-## The words on the sticker: "BUY 45", and the pad button while its item has focus
-## ("BUY 45  A").
+## True when the item is out of reach for want of Cycles (its price over `have`).
+func short_of_money() -> bool:
+	return host != null and host.disabled and have >= 0 and host.price > have
+
+
+## The words on the sticker: "BUY 45", or "NEED 45 · HAVE 12" when the Cycles don't reach
+## (art pass W8c: the pad button is a glyph of its own, never in these words).
 func label_text() -> String:
-	var t := ("%s %s" % [tr(verb), host.price_words() if host != null else ""]).strip_edges()
-	var key := pad_key()
-	return ("%s  %s" % [t, key]) if key != "" else t
+	if short_of_money():
+		return tr("NEED %d · HAVE %d") % [host.price, have]
+	return ("%s %s" % [tr(verb), host.price_words() if host != null else ""]).strip_edges()
 
 
-## The pad button that buys (shown while the item has focus and a pad is in use).
+## The pad button that buys (shown while the item has focus and a pad is in use), as its
+## glyph's name ("A"; "" when none shows).
 func pad_key() -> String:
 	if not Settings.pad_active or host == null or not host.has_focus():
 		return ""
@@ -79,6 +106,24 @@ func pad_key() -> String:
 
 func _scale() -> float:
 	return host.text_scale if host != null else Settings.text_scale
+
+
+## The line sets the words may take, in the order tried: one line, then the verb over the
+## price (or NEED over HAVE), then a price range split after its dash ("100-" over "150").
+func _options(t: String) -> Array[PackedStringArray]:
+	var options: Array[PackedStringArray] = []
+	var sep := t.find(NEED_SEP.strip_edges())
+	if short_of_money() and sep > 0:
+		options.append(PackedStringArray([t.substr(0, sep).strip_edges(), t.substr(sep + 1).strip_edges()]))
+		return options
+	var gap := t.find(" ")
+	if gap > 0:
+		var rest := t.substr(gap + 1).strip_edges()
+		options.append(PackedStringArray([t.substr(0, gap), rest]))
+		var dash := rest.find("-")
+		if dash > 0:
+			options.append(PackedStringArray([t.substr(0, gap), rest.substr(0, dash + 1), rest.substr(dash + 1).strip_edges()]))
+	return options
 
 
 func _fit() -> void:
@@ -90,23 +135,13 @@ func _fit() -> void:
 	_font_px = full
 	while _font_px > MIN_FONT and _needed(_font_px, s) > room:
 		_font_px -= 1
-	# More lines at a bigger size than one line allows: the verb, then the price (and key);
-	# then a price range split after its dash ("100-" over "150").
-	var gap := text.find(" ")
-	var options: Array[PackedStringArray] = []
-	if gap > 0:
-		var rest := text.substr(gap + 1).strip_edges()
-		options.append(PackedStringArray([text.substr(0, gap), rest]))
-		var dash := rest.find("-")
-		if dash > 0:
-			options.append(PackedStringArray([text.substr(0, gap), rest.substr(0, dash + 1), rest.substr(dash + 1).strip_edges()]))
-	for lines in options:
+	for lines in _options(text):
 		if _font_px >= roundi(full * TWO_LINES_BELOW):
 			break
 		var fs2 := full
 		while fs2 > MIN_FONT and _needed_lines(lines, fs2, s) > room:
 			fs2 -= 1
-		if fs2 > _font_px:
+		if fs2 > _font_px or (fs2 == _font_px and _needed_lines(lines, fs2, s) < _needed(_font_px, s)):
 			_lines = lines
 			_font_px = fs2
 	var h := BUY_HEIGHT * s + Palette.marker().get_height(_font_px) * LINE_SHARE * (_lines.size() - 1)
@@ -117,6 +152,18 @@ func _fit() -> void:
 		position = Vector2((host.size.x - size.x) * 0.5, host.size.y - size.y - EDGE * s)
 		disabled = host.disabled
 		tooltip_text = host.tooltip_text
+	_place_glyph()
+
+
+## The pad glyph beside the sticker while its item has pad focus (never inside the price).
+func _place_glyph() -> void:
+	if glyph == null:
+		return
+	glyph.visible = pad_key() != ""
+	if glyph.visible:
+		glyph.button = maxi(0, PadGlyph.button_for_action(&"ui_accept"))
+		glyph.size = glyph.custom_minimum_size
+		glyph.position = Vector2(size.x + GLYPH_GAP * _scale(), (size.y - glyph.size.y) * 0.5)
 
 
 ## The width the sticker needs at lettering `fs`.
@@ -160,11 +207,19 @@ func _draw() -> void:
 	var rr := Rect2(Vector2.ZERO, size)
 	var off := disabled or (host != null and host.disabled)
 	if _hot and not off:
-		draw_rect(rr.grow(3), Color(Palette.CELL_ACID, 0.5))
-	draw_rect(Rect2(rr.position + Vector2(2, 3), rr.size), Palette.SHADOW)
-	draw_rect(rr, Palette.NOTE_PINK if off else paper)
-	draw_rect(rr, Color(Palette.INK, 0.6), false, 1.0)
-	var ink := Palette.INK if not off else Color(Palette.INK, 0.6)
+		draw_rect(rr.grow(HOT_GROW), Color(Palette.FOCUS, HOT_ALPHA))
+	draw_rect(Rect2(rr.position + SHADOW_OFFSET * 0.7, rr.size), Palette.SHADOW)
+	# W2's locked state (§6, §3.7): the paper kept (lighter stock), a DISABLED edge and the
+	# lock badge; the words stay INK at full contrast.
+	draw_rect(rr, Palette.PAPER_ALT if off else paper)
+	if off:
+		draw_rect(rr, Palette.DISABLED, false, LOCKED_EDGE)
+		StyleBoxLocked.draw_lock_badge(get_canvas_item(), Vector2(rr.end.x, rr.position.y), StyleBoxLocked.BADGE_R * s)
+	else:
+		draw_rect(rr, Color(Palette.INK, EDGE_ALPHA), false, 1.0)
+	if Settings.high_contrast:
+		draw_rect(rr, Palette.INK, false, LOCKED_EDGE)
+	var ink := Palette.INK
 	var coin := Vector2(PADDING * 0.3 * s + COIN_R * s, rr.size.y * 0.5)
 	StatIcon.draw(self, coin, COIN_R * s, StatIcon.CYCLES, ink)
 	var fs := _font_px
