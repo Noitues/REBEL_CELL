@@ -228,6 +228,9 @@ func test_one_press_shows_the_story_and_its_subtitle() -> void:
 	Settings.set_subtitle_typing(true)
 	scene._spoken_events.clear()
 	_event(scene)
+	# ANIM-R6 B12: the story is no longer repeated in the bar: a line said on the event's
+	# screen types there.
+	Dialogue.say(RC.Voice.DISPATCH, "Keep the Heat down and bank at the first Rack.", 0.0, &"", false, "event")
 	await _entrance(scene)
 	var text := scene._panel.find_child("EventPanel", true, false).find_children("*", "RichTextLabel", true, false)[0] as Control
 	assert_true(Typing.typing(text), "the story types")

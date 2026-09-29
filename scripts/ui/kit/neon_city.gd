@@ -451,6 +451,11 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		_free_placement()
 		free_slices()
+	elif what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+		# ANIM-R6 B4 (netrun): hidden, the sky it showed is gone from the screen: a bake that
+		# lands meanwhile shows at once when it comes back (the run's end after a fight that
+		# was a session's first page faded in over the silhouette for 20 frames).
+		_sky_shown = false
 
 
 func _ready() -> void:

@@ -948,8 +948,10 @@ func test_a_screen_line_ends_when_its_screen_is_left() -> void:
 	await _frames(2)
 	assert_ne(Dialogue.shown_scope(), "route", "gone on the Modem")
 	assert_string_contains(Dialogue.current_text(), "Heat went up.", "the news line plays on")
+	Dialogue.say(RC.Voice.DISPATCH, "On the event.", 0.0, &"", false, "event")
 	_event(scene)
 	await _frames(2)
+	# ANIM-R6 B12: the event's story stays on its paper; a line of the event's screen takes the bar.
 	assert_eq(Dialogue.shown_scope(), "event", "the event's own line takes the bar")
 	await _close(scene)
 	# The briefing said at HQ belongs to the route.

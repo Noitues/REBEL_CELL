@@ -1373,6 +1373,8 @@ static func hurt_bark_due(e: Dictionary, state: CombatState) -> bool:
 
 ## Operative barks (GDD 8.6): at most one per turn per trigger, chosen by class and turn.
 var _barked_turn: Dictionary = {}
+## ANIM-R6 B5: the screen a bark belongs to (Dialogue scope: the netrun's fight screen).
+const BARK_SCOPE := "combat"
 
 
 func _bark(trigger: String, state: CombatState) -> void:
@@ -1382,7 +1384,9 @@ func _bark(trigger: String, state: CombatState) -> void:
 	if _barked_turn.has(key) or not Motion.animating():
 		return
 	_barked_turn[key] = true
-	Dialogue.bark(state.player.source_id, trigger, state.turn + hash(engine.session.combat_seed))
+	# ANIM-R6 B5: the fight's own lines end with the fight (Dialogue scope): the defeat bark
+	# replayed after DISPATCH's "Operative lost" on the run's end, a dead operative speaking last.
+	Dialogue.bark(state.player.source_id, trigger, state.turn + hash(engine.session.combat_seed), BARK_SCOPE)
 
 
 ## A boss enters a phase: the alarm, a limited flash in its corporation's colour

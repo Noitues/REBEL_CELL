@@ -639,10 +639,10 @@ func test_event_subtitles_are_translated_once() -> void:
 	await _frames(2)
 	var ev := RunManager.netrun.current_event()
 	var once := TextDb.t(ev, "text")
-	var shown := Dialogue.current_text().strip_edges()
-	assert_ne(shown, "", "the event speaks")
-	assert_true(once.begins_with(shown), "the page is the text translated once: '%s' vs '%s'" % [shown, once])
-	assert_eq(Dialogue.history[-1]["text"], once)
+	# ANIM-R6 B12: the story is on its paper only (the bar repeated it word for word); the
+	# history (voice-over) keeps it, translated once.
+	assert_false(Dialogue.is_showing() and Dialogue.current_text().strip_edges() != "" and once.begins_with(Dialogue.current_text().strip_edges()), "the bar doesn't repeat the story")
+	assert_eq(Dialogue.history[-1]["text"], once, "the history has it translated once")
 	TranslationServer.pseudolocalization_enabled = false
 	await _close(scene)
 

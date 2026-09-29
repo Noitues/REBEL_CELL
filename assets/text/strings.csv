@@ -63,6 +63,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s - press another key.,%s - press another key.
 %s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel,%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel
 %s // %d CARDS,%s // %d CARDS
+%s // LOOT: pick a %s,%s // LOOT: pick a %s
 %s AT TURN START,%s AT TURN START
 %s BITES IT %d,%s BITES IT %d
 %s BITES YOU %d,%s BITES YOU %d
@@ -110,7 +111,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
-(same as %d),(same as %d)
+(same road as choice %d),(same road as choice %d)
 +%d BLOCK,+%d BLOCK
 +%d DRONE,+%d DRONE
 +%d HP,+%d HP
@@ -139,6 +140,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > SEED     %d,> SEED     %d
 > TARGET   %s,> TARGET   %s
 A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).
+A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too).,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too).
 A guided first fight.,A guided first fight.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
@@ -222,7 +224,7 @@ CLEARS %s,CLEARS %s
 CODEX,CODEX
 COMBATS,COMBATS
 CONNECTING,CONNECTING
-CONNECTING TO %s,CONNECTING TO %s
+CONNECTING TO,CONNECTING TO
 CONTINUE,CONTINUE
 CORE,CORE
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
@@ -562,12 +564,14 @@ Drag a card here to shred it (or select it and press REMOVE).,Drag a card here t
 Drop,Drop
 Drop a nudge card here to aim it this way.,Drop a nudge card here to aim it this way.
 Drop or click on a glowing target  ·  right-click cancels,Drop or click on a glowing target  ·  right-click cancels
+ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
 EVADE,EVADE
 EVADED %d,EVADED %d
 EVD,EVD
+EVENT PAYOUT,EVENT PAYOUT
 EXPLOITS,EXPLOITS
 EXPLOITS %d/%d,EXPLOITS %d/%d
 "Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it.","Each white needle reads the slice under it: that slice is what the wheel does when you SEND IT. The tag above each wheel shows it (the dots: how well the needle sits) and its chips show every result: HITS, BLOCK, statuses, RAM, HEAT. The dashed NEXT plate by the HP is the forecast; the grey LAST TURN line under it is what the last SEND IT did. {inspect_how} anything to read it."
@@ -714,6 +718,7 @@ Exploit Site (diamond): clearing it gives an Exploit for the boss breach.,Exploi
 Exploits,Exploits
 Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.,Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
+FIGHT WON,FIGHT WON
 FLATLINED,FLATLINED
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
@@ -1338,6 +1343,8 @@ Move it to %s.,Move it to %s.
 Music volume,Music volume
 NEED %d · HAVE %d,NEED %d · HAVE %d
 NETRUN,NETRUN
+NETRUN // FLATLINED,NETRUN // FLATLINED
+NETRUN // HOME FELL,NETRUN // HOME FELL
 NETRUN // JACK OUT,NETRUN // JACK OUT
 NETRUN // RAID,NETRUN // RAID
 NETRUN // ROUTE,NETRUN // ROUTE
@@ -1440,6 +1447,7 @@ PARASITE,PARASITE
 PARTIAL,PARTIAL
 PASSED,PASSED
 PAUSED,PAUSED
+PAYOUT,PAYOUT
 PERFECT,PERFECT
 PERFECT: RAM+,PERFECT: RAM+
 PHASE %d,PHASE %d
@@ -1508,7 +1516,7 @@ Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
 Quit REBEL_CELL? Progress is autosaved.,Quit REBEL_CELL? Progress is autosaved.
 Quit to desktop,Quit to desktop
-RACK BREACHED // LOOT: pick a %s,RACK BREACHED // LOOT: pick a %s
+RACK BREACHED,RACK BREACHED
 "RAID
 RESULT:","RAID
 RESULT:"
@@ -1717,6 +1725,7 @@ STOPPED %d/%d,STOPPED %d/%d
 STORY UNCOVERED,STORY UNCOVERED
 STRENGTH %s%%,STRENGTH %s%%
 SYSTEM ONLINE,SYSTEM ONLINE
+"Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
 Save & quit to start screen,Save & quit to start screen
 Save & quit to title,Save & quit to title
@@ -1952,7 +1961,6 @@ Slices,Slices
 Slot %d: %s%s,Slot %d: %s%s
 Slot %s: %s,Slot %s: %s
 "Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s.","Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s."
-Socket into slot:,Socket into slot:
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
 Start a new campaign in slot %s.,Start a new campaign in slot %s.
@@ -2673,7 +2681,6 @@ The next %s campaign may start up to ICE %d.,The next %s campaign may start up t
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
-The spinner slot the Firmware chip goes into.,The spinner slot the Firmware chip goes into.
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
 Then you can go to: %s.,Then you can go to: %s.

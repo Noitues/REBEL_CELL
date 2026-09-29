@@ -346,7 +346,7 @@ func test_the_jack_says_where_it_connects_while_the_screen_builds() -> void:
 	# waits: fast frames could end a frame-count wait before the push did).
 	var jack_limit := BoundedWait.motion_limit([&"jack_in", &"jack_arrive", Fx.ARRIVAL_WAIT_MOTION, Fx.CONNECT_MOTION])
 	var saw := await BoundedWait.until(get_tree(), Fx.connecting, jack_limit)
-	var words := Fx.connect_label.text if saw else ""
+	var words := Fx.connect_words() if saw else ""  # ANIM-R6 B13: the name has a line of its own
 	assert_true(switched[0], "the switch happened under the cover")
 	assert_true(saw, "CONNECTING shows on the opaque cover")
 	assert_string_contains(words, "TEST SITE", "naming the place")
@@ -571,12 +571,12 @@ func test_equal_route_choices_say_they_are_the_same() -> void:
 	for i in open.size():
 		var b := nr.find_child("Node%d" % (i + 1), true, false) as Button
 		if twins.has(open[i]):
-			assert_string_contains(b.text, tr("(same as %d)") % (int(twins[open[i]]) + 1), "a twin choice says which it equals")
+			assert_string_contains(b.text, tr(nr.TWIN_WORDS) % (int(twins[open[i]]) + 1), "a twin choice says which it equals (ANIM-R6 B14: the same road)")
 		else:
-			assert_false(b.text.contains("(same as"), "a choice unlike the others says nothing")
+			assert_false(b.text.contains("(same road"), "a choice unlike the others says nothing")
 	for n: Dictionary in nr.city_overlay.nodes:
 		if twins.has(n["id"]):
-			assert_string_contains(String(n["label"]), "(same as", "and so does its map label")
+			assert_string_contains(String(n["label"]), "(same road", "and so does its map label")
 
 
 # --- R13: big text -------------------------------------------------------------------------------------

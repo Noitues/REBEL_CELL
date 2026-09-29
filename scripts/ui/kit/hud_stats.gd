@@ -303,6 +303,8 @@ func land_pulse(kind: StringName) -> bool:
 		var p := {"t": 0.0, "tween": null}
 		var e := Motion.entry(LAND_PULSE)
 		var tw := create_tween()
+		# ANIM-R6 B7: after the entry's delay, as every Motion helper plays it.
+		tw.tween_interval(Motion.delay_of(LAND_PULSE))
 		tw.tween_method(func(v: float) -> void:
 			p["t"] = v
 			queue_redraw(), 0.0, 1.0, Motion.seconds(LAND_PULSE)).set_ease(e.ease).set_trans(e.trans)
