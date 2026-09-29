@@ -232,6 +232,10 @@ const RIM_TICK := 5.0
 const RIM_TICK_ALPHA := 0.45
 ## The dark platform round the bezel (px past the bezel's rim).
 const PLATFORM_PAD := 14.0
+## A slice's status mark: its StatIcon's radius (px; W2 §7.4, no font glyph).
+const STATUS_ICON_R := 5.5
+## A chip's status glyph: its room before the words (share of the chip's lettering).
+const CHIP_GLYPH_ROOM := 1.1
 ## The ink outline round a slice value on the bezel (px).
 const VALUE_OUTLINE := 4
 ## A needle's hub: where it stands out from the rim (share of the slice band) and its radius (px).
@@ -2278,7 +2282,7 @@ func _draw_view() -> void:
 		if status != RC.Status.NONE:
 			draw_circle(sp, 7, Palette.NIGHT_SKY)
 			draw_arc(sp, 7, 0, TAU, 16, _col(scol), 1.5, true)
-			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(status, ""), HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(scol))
+			StatIcon.draw_status(self, sp, STATUS_ICON_R, status, _col(scol))
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
@@ -2292,7 +2296,13 @@ func _draw_view() -> void:
 			# when it clears).
 			_draw_dashed_arc(sp, 10, 0, TAU, _col(Palette.CELL_ACID), 1.5)
 			var g: int = status_ghosts[i]
-			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(g, "×") if g != RC.Status.NONE else "×", HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
+			if g != RC.Status.NONE:
+				StatIcon.draw_status(self, sp, STATUS_ICON_R, g, _col(Palette.CELL_ACID), false)
+			else:
+				# It clears: a cross in the ring.
+				var x := STATUS_ICON_R * 0.7
+				draw_line(sp + Vector2(-x, -x), sp + Vector2(x, x), _col(Palette.CELL_ACID), 1.5, true)
+				draw_line(sp + Vector2(-x, x), sp + Vector2(x, -x), _col(Palette.CELL_ACID), 1.5, true)
 		if wheel.slot_firmware_ids[i] != &"":
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
@@ -3430,7 +3440,7 @@ func _chip_rows_at(fs: int) -> Array:
 	var w := 0.0
 	for i in chips.size():
 		var chip: Dictionary = chips[i]
-		var cw := _chip_w(String(chip["text"]), fs)
+		var cw := _chip_wd(chip, fs)
 		if not row.is_empty() and w + cw > max_w:
 			rows.append(row)
 			row = []
@@ -3459,10 +3469,10 @@ func _fold_rows(rows: Array, hidden: int, fs: int, max_w: float) -> Array:
 	var last: Array = rows[rows.size() - 1]
 	var w := 0.0
 	for c in last:
-		w += _chip_w(String(c["text"]), fs)
+		w += _chip_wd(c, fs)
 	while last.size() > 1 and w + _chip_w(tr("+%d MORE") % hidden, fs) > max_w:
 		var gone: Dictionary = last.pop_back()
-		w -= _chip_w(String(gone["text"]), fs)
+		w -= _chip_wd(gone, fs)
 		hidden += 1
 	last.append({"text": tr("+%d MORE") % hidden, "color": Palette.INK, "ink": Palette.PAPER, "more": true})
 	return rows
@@ -3477,6 +3487,11 @@ static func _chip_width(text: String, fs: int) -> float:
 ## TAKE 3 H✓", DOWN hidden).
 func _chip_w(text: String, fs: int) -> float:
 	return _chip_width(text, fs) + (tick_room() if _ticking() else 0.0)
+
+
+## A chip's width with its status glyph's room (art pass W3: glyphs are drawn StatIcons).
+func _chip_wd(chip: Dictionary, fs: int) -> float:
+	return _chip_w(String(chip["text"]), fs) + (fs * CHIP_GLYPH_ROOM if chip.has("glyph") else 0.0)
 
 
 ## True while the tag drawn is a held forecast whose lines tick.
@@ -3502,10 +3517,11 @@ func chip_layout(r: Rect2) -> Array[Dictionary]:
 	for row in _chip_rows_at(fs):
 		var x := r.position.x + 4
 		for chip in row:
-			var cw := _chip_w(String(chip["text"]), fs)
+			var cw := _chip_wd(chip, fs)
 			var cr := Rect2(Vector2(x, y), Vector2(cw - 4, chip_h))
 			var tw := font.get_string_size(String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var text := Rect2(Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75 - font.get_ascent(fs)), Vector2(tw, font.get_height(fs)))
+			var gx := fs * CHIP_GLYPH_ROOM if (chip as Dictionary).has("glyph") else 0.0
+			var text := Rect2(Vector2(cr.position.x + 4 + gx, cr.position.y + chip_h * 0.75 - font.get_ascent(fs)), Vector2(tw, font.get_height(fs)))
 			var tick := Rect2()
 			if room > 0.0:
 				var rr := chip_h * TICK_SHARE
@@ -3540,7 +3556,7 @@ func _tag_geometry() -> Dictionary:
 	for row in rows:
 		var rw := 8.0
 		for chip in row:
-			rw += _chip_w(String(chip["text"]), fs)
+			rw += _chip_wd(chip, fs)
 		w = maxf(w, rw)
 	# ANIM-R3 A6j: the tape's words never run past the tag (IF YOU SEND IT spilled over a
 	# short tag's title).
@@ -3684,7 +3700,12 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 		var chip: Dictionary = bx["chip"]
 		var cr: Rect2 = bx["rect"]
 		draw_rect(cr, fade.call(Color(chip.get("color", Palette.INK))))
-		draw_string(Palette.mono(), Vector2(cr.position.x + 4, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
+		var tx0 := cr.position.x + 4
+		if chip.has("glyph"):
+			StatIcon.draw_status(self, Vector2(tx0 + fs * CHIP_GLYPH_ROOM * 0.45, cr.position.y + chip_h * 0.5), fs * 0.45, int(chip["glyph"]),
+				fade.call(Color(chip.get("ink", Palette.PAPER))), bool(chip.get("glyph_on", true)))
+			tx0 += fs * CHIP_GLYPH_ROOM
+		draw_string(Palette.mono(), Vector2(tx0, cr.position.y + chip_h * 0.75), String(chip["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fade.call(Color(chip.get("ink", Palette.PAPER))))
 		var tick := _chip_tick(chip, shown)
 		if tick >= 0.0 and (bx["tick"] as Rect2).has_area():
 			_draw_tick((bx["tick"] as Rect2).get_center(), chip_h, tick, alpha)

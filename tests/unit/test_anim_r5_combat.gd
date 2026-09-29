@@ -418,7 +418,8 @@ func test_status_chips_say_who_gets_what() -> void:
 	var chips: Dictionary = scene.afflict_chips(st, events)
 	assert_true(chips.has(e0), "the enemy's tag gets a chip")
 	var text := String(chips[e0][0]["text"])
-	assert_eq(text, tr("PUTS %s ON YOU") % ("%s %s" % [Palette.STATUS_GLYPHS[RC.Status.CORRUPTED], tr("CORRUPTED")]), "AFFLICT names the status and the victim")
+	assert_eq(text, tr("PUTS %s ON YOU") % tr("CORRUPTED"), "AFFLICT names the status and the victim")
+	assert_eq(int(chips[e0][0]["glyph"]), RC.Status.CORRUPTED, "with its drawn glyph (art pass W3)")
 	assert_eq(chips[e0][0]["color"], script.CHIP_LOSS, "bad for you: red")
 	await _close(scene)
 

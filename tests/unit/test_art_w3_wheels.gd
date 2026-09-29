@@ -630,3 +630,19 @@ func test_the_hit_shake_and_flash_keep_to_t2() -> void:
 	var cs := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
 	assert_true(cs.contains("int(bv.look.get(\"pattern\", CorpPattern.Kind.NONE)))"), "the phase burst carries the boss corp's pattern")
 	Motion.force_live = false
+
+
+# --- 11. W2 wiring ----------------------------------------------------------------------------------
+
+func test_status_glyphs_are_drawn_icons_and_the_dev_picker_is_kit() -> void:
+	for path in ["res://scripts/ui/wheel_view.gd", "res://scripts/ui/combat_scene.gd"]:
+		var src := FileAccess.get_file_as_string(path)
+		assert_false(src.contains("STATUS_GLYPHS"), "%s draws status glyphs as StatIcons" % path.get_file())
+	var cs := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
+	assert_false(cs.contains("SpinBox.new()"), "the seed is a Stepper")
+	assert_true(cs.contains("TilePicker.new("), "the fight picker is a TilePicker")
+	var chip: Dictionary = load("res://scripts/ui/combat_scene.gd").random_status_chip(RC.Status.CORRUPTED, true)
+	assert_eq(int(chip["glyph"]), RC.Status.CORRUPTED, "a status chip carries its glyph as a status id")
+	var scene := await _combat()
+	assert_false(scene._seed_spin.visible, "the dev picker never shows in a test or a run")
+	assert_true(scene.toast is Toast, "combat keeps the one sticky toast")

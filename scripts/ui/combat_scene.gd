@@ -47,6 +47,8 @@ const CHIP_RUN := Palette.NOTE_YELLOW
 ## operative's (and its drones') hits in acid, the enemies' (and their satellites') in red.
 const PLAYER_HIT_COLOR := Palette.CELL_ACID
 const ENEMY_HIT_COLOR := CHIP_LOSS
+## The dev picker's largest seed.
+const SEED_MAX := 999999
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
 
@@ -65,7 +67,7 @@ var toast: Toast
 var preview_note: ZineNote
 var log_note: ZineNote
 var _status: Label
-var _seed_spin: SpinBox
+var _seed_spin: Stepper
 var _player_view: WheelView
 var _enemy_views_box: VBoxContainer
 var _enemy_views: Dictionary = {}
@@ -1499,23 +1501,26 @@ func _build_ui() -> void:
 	var fight_label := _label("Fight:")
 	top.add_child(fight_label)
 	_picker_controls.append(fight_label)
-	# One dropdown (H24: a button per enemy left the status line ~100 px at 1.6).
-	var pick := OptionButton.new()
-	pick.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # content ids, dev only
+	# Art pass W3 with W2 (§6.5): the dev fight picker is a row of tiles and the seed a
+	# stepper (no native dropdown or spin box). A dev tool: shown only when the scene runs on
+	# its own (auto_start), never in a run or a test.
+	var tiles: Array[Dictionary] = []
 	for enemy_id in ENEMY_CHOICES:
-		pick.add_item(String(enemy_id))
-	pick.item_selected.connect(func(i: int) -> void: start_fight(ENEMY_CHOICES[i], int(_seed_spin.value)))
+		tiles.append({"name": String(enemy_id), "meta": "", "icon": StatIcon.FIGHT, "locked": false, "unlock": ""})
+	var pick := TilePicker.new(tiles)
+	pick.name = "FightPick"
+	pick.tile_chosen.connect(func(i: int) -> void: start_fight(ENEMY_CHOICES[i], int(_seed_spin.value)))
 	top.add_child(pick)
 	_picker_controls.append(pick)
 	var seed_label := _label("Seed:")
 	top.add_child(seed_label)
 	_picker_controls.append(seed_label)
-	_seed_spin = SpinBox.new()
-	_seed_spin.min_value = 0
-	_seed_spin.max_value = 999999
-	_seed_spin.value = 1
+	_seed_spin = Stepper.new(0, SEED_MAX, 1, 1)
+	_seed_spin.name = "SeedStep"
 	top.add_child(_seed_spin)
 	_picker_controls.append(_seed_spin)
+	for c in _picker_controls:
+		c.visible = auto_start
 	_status = _label("")
 	_status.clip_text = true
 	# Its text is built from translated parts (not translated again), and shrinks to its
@@ -2469,7 +2474,8 @@ static func random_status_chip(status: int, on_player: bool) -> Dictionary:
 	var good := WheelView.status_good_for_you(status, on_player)
 	var word := String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(status, ""))))
 	var who := String(TranslationServer.translate("YOU GET %s") if on_player else TranslationServer.translate("GETS %s")) % word
-	return {"text": "%s %s" % [Palette.STATUS_GLYPHS.get(status, "?"), who],
+	# Art pass W3 with W2 (§7.4): the status's glyph is a drawn StatIcon ("glyph"), not a font glyph.
+	return {"text": who, "glyph": status,
 		"color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
 		"rank": CHIP_RANK_HP if good else CHIP_RANK_HURTS_YOU,
 		"tooltip": String(TranslationServer.translate("Good for you: %s") if good else TranslationServer.translate("Bad for you: %s")) % Codex.status_text(status)}
@@ -2506,10 +2512,10 @@ func afflict_chips(state: CombatState, events: Array[Dictionary]) -> Dictionary:
 		var victim := state.get_combatant(tgt)
 		var on_player := victim != null and victim.is_player
 		var good := WheelView.status_good_for_you(status, on_player)
-		var word := "%s %s" % [Palette.STATUS_GLYPHS.get(status, "?"), tr(String(Palette.STATUS_WORDS.get(status, "")))]
+		var word := tr(String(Palette.STATUS_WORDS.get(status, "")))
 		var text := tr("PUTS %s ON YOU") % word if on_player else tr("PUTS %s ON %s") % [word, _name_of(victim).to_upper() if victim != null else "?"]
 		var list: Array = out.get(src, [])
-		list.append({"text": text, "color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
+		list.append({"text": text, "glyph": status, "color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
 			"rank": CHIP_RANK_HURTS_YOU if on_player and not good else CHIP_RANK_DEALT,
 			"beats": ForecastTicks.filter(["status", "absorbed"], StringName(String(b["source"])), tgt),
 			"tooltip": String(tr("Good for you: %s") if good else tr("Bad for you: %s")) % Codex.status_text(status)})
@@ -2588,7 +2594,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		# ANIM-R4 C6f: green when it is good for you, red when bad (a status landing on your
 		# wheel, a clear of a bad one...).
 		var good := WheelView.status_good_for_you(after, mine) if after != RC.Status.NONE else not WheelView.status_good_for_you(int(st["before"]), mine)
-		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_GAIN if good else CHIP_LOSS,
+		chips.append({"text": tag, "glyph": after if after != RC.Status.NONE else int(st["before"]), "glyph_on": after != RC.Status.NONE, "color": CHIP_GAIN if good else CHIP_LOSS,
 			"ink": Palette.INK if good else Palette.PAPER, "status": true, "beats": ForecastTicks.filter(["status", "absorbed"], &"", id)})
 	# ANIM-R5 combat 3: the operative going down is the fight's DEFEAT: one chip says it (DOWN
 	# and DEFEAT side by side said it twice).
@@ -2624,7 +2630,8 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 					"beats": ForecastTicks.filter([key, "damage"], &"", sat.id)})
 		for st in sd["statuses"]:
 			var sw: String = tr(String(Palette.STATUS_WORDS.get(int(st["after"]), ""))) if int(st["after"]) != RC.Status.NONE else tr("CLEARED")
-			chips.append({"text": "%s %s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×"), sw], "color": CHIP_STATUS, "ink": Palette.INK, "status": true,
+			chips.append({"text": "%s %s" % [name, sw], "glyph": int(st["after"]) if int(st["after"]) != RC.Status.NONE else int(st["before"]),
+				"glyph_on": int(st["after"]) != RC.Status.NONE, "color": CHIP_STATUS, "ink": Palette.INK, "status": true,
 				"beats": ForecastTicks.filter(["status", "absorbed"], &"", sat.id)})
 		if int(sd.get("dock_after", -1)) != int(sd.get("dock_before", -1)):
 			chips.append({"text": tr("%s MOVES") % name, "color": CHIP_RESIST, "ink": Palette.INK})
@@ -3948,7 +3955,9 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
 		# ANIM-R4 C6f: its glyph lands on the slice in its good / bad colour for you.
 		var scol := WheelView.status_color(int(b["status"]), tv.combatant != null and tv.combatant.is_player)
-		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), scol, motion_seconds_left(), impact)
+		# Art pass W3 with W2 (§7.4): the stamp pops on the slice; the status's drawn StatIcon is
+		# the slice's own mark from the landing on (show_slice_status), no font glyph.
+		fx_layer.stamp(tv.slot_spot(int(b["slot"])), "", scol, motion_seconds_left(), impact)
 		# ANIM-R3 A6j: the slice keeps the status's mark from the moment it lands.
 		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"])))
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
