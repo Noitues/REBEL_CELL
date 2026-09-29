@@ -17,7 +17,8 @@ func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
 	label.scroll_following = true
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	label.offset_left = 10
-	label.offset_top = 24 if p_title != "" else 8
+	# Art pass W9F (§4.3 rule 1): the title's room follows its size (`caption` x text scale).
+	label.offset_top = title_room() if p_title != "" else 8
 	label.offset_right = -10
 	label.offset_bottom = -8
 	label.add_theme_color_override("default_color", Palette.INK)
@@ -87,7 +88,17 @@ func _draw() -> void:
 	_tape(Vector2(14, -6), -0.12)
 	_tape(Vector2(size.x - 50, -5), 0.1)
 	if title != "":
-		draw_string(Palette.marker(), Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.INK)
+		var fs := UiTheme.font_px(UiTheme.CAPTION)
+		draw_string(Palette.marker(), Vector2(10, TITLE_TOP + Palette.marker().get_ascent(fs)), title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, PaperInk.text(Palette.INK))
+
+
+## Art pass W9F: the title's top margin (px) and the room it takes above the words: its
+## marker lettering at `caption` x the text scale.
+const TITLE_TOP := 4.0
+
+
+static func title_room() -> float:
+	return ceilf(TITLE_TOP * 2.0 + Palette.marker().get_height(UiTheme.font_px(UiTheme.CAPTION)))
 
 
 func _tape(at: Vector2, angle: float) -> void:

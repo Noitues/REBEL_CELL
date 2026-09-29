@@ -90,7 +90,7 @@ const MAX_ENTRY_BADGES := 3
 ## Height of the raid's node orders list (px); more nodes scroll inside it.
 ## PIRATE RADIO: width, room for its title and foot (px) and the lines it shows at once.
 const RADIO_WIDTH := 230.0
-const RADIO_TOP := 24.0
+## (The note's title room is ZineNote.title_room(): it follows the text scale, art pass W9F.)
 const RADIO_BOTTOM := 8.0
 const RADIO_LINES := 4
 ## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
@@ -1515,7 +1515,7 @@ func show_hq() -> void:
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
 	# half); the rest scrolls. W1: the line height rounded up (MSDF heights are fractional).
 	var line_h := ceilf(Palette.mono().get_height(UiTheme.font_px(UiTheme.BODY)))
-	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
+	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, ZineNote.title_room() + RADIO_BOTTOM + line_h * RADIO_LINES))
 	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
 	# H24 S3: the DJ's words in the player's language (the voice line's TextDb key).
@@ -1978,7 +1978,7 @@ func _fit_radio(note: Variant, line_h: float) -> void:
 	if not is_instance_valid(note) or not (note is ZineNote):
 		return
 	var radio := note as ZineNote
-	var h := RADIO_TOP + RADIO_BOTTOM + maxf(line_h * RADIO_LINES, radio.label.get_combined_minimum_size().y)
+	var h := ZineNote.title_room() + RADIO_BOTTOM + maxf(line_h * RADIO_LINES, radio.label.get_combined_minimum_size().y)
 	if not is_equal_approx(radio.custom_minimum_size.y, h):
 		radio.custom_minimum_size.y = h
 
