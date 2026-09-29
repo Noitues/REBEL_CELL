@@ -69,12 +69,6 @@ const AWAITING_FIX := {
 	&"route_target_pulse": "city_map_overlay (fix agent C city/raid)",
 	&"select_ring_pulse": "city_map_overlay (fix agent C city/raid)",
 }
-## ANIM-R6 D3: entries a view asks about through a function of its own that asks
-## `Motion.live` for the id it is given (not reached by every demo): {id: [script, function]}.
-## Checked: the script has the function, it asks `Motion.live(id)`, and it names the id.
-const ASKS_THROUGH := {
-	&"raid_threat_withdraw": ["res://scripts/ui/kit/raid_fx_layer.gd", "beat_u"],
-}
 ## Game time a demo gets to read its entry (at SPEED), s.
 const DEMO_LIMIT := 12.0
 ## ANIM-R6: frames a demo gets at least, beyond the lab's own context settle (a netrun or
@@ -230,7 +224,7 @@ func unswitched(reads: Dictionary, asks: Dictionary, sources: Dictionary) -> Arr
 	var ids := reads.keys()
 	ids.sort()
 	for id: StringName in ids:
-		if UiMotionData.OFF_PARTS.has(id) or UiMotionData.ALWAYS_ON.has(id) or HOLDS.has(id) or ASKS_THROUGH.has(id):
+		if UiMotionData.OFF_PARTS.has(id) or UiMotionData.ALWAYS_ON.has(id) or HOLDS.has(id):
 			continue
 		var game_readers: Array[String] = []
 		for p: String in reads[id]:
@@ -245,10 +239,63 @@ func unswitched(reads: Dictionary, asks: Dictionary, sources: Dictionary) -> Arr
 		for helper in ASKING_HELPERS:
 			if not asked and _game_plays_with(sources, id, helper):
 				asked = true
+		if not asked and _asked_through(sources, id):
+			asked = true
 		if not asked:
 			game_readers.sort()
 			out.append("%s: read by %s" % [id, ", ".join(game_readers)])
 	return out
+
+
+## ANIM-R6 D3: true when a game script asks about `id` through a function of its own that
+## asks for the id it is given (`func f(id: StringName, ...)` whose body asks one of
+## ASKING_HELPERS about `id`, or calls another such function with it: the raid layer's
+## `beat_u` -> `motion_len` -> `Motion.live(id)`), called with `id` written out or a const
+## naming it. A demo does not always reach the moment the view asks (a threat withdrawing
+## at the verdict, the result banner at the raid's end).
+func _asked_through(sources: Dictionary, id: StringName) -> bool:
+	var fn_re := RegEx.create_from_string("^(static )?func ([a-z_0-9]+)\\(id: StringName")
+	var const_re := RegEx.create_from_string("const\\s+([A-Z_][A-Z0-9_]*)\\s*:?=\\s*&\"%s\"" % id)
+	for p: String in sources:
+		var src: String = sources[p]
+		var names: Array[String] = ["&\"%s\"" % id]
+		for m in const_re.search_all(src):
+			names.append(m.get_string(1))
+		# The functions of this script that take an id, and their bodies.
+		var bodies := {}
+		var current := ""
+		for line in src.split("\n"):
+			var m := fn_re.search(line)
+			if m != null:
+				current = m.get_string(2)
+				bodies[current] = ""
+			elif line.begins_with("func ") or line.begins_with("static func "):
+				current = ""
+			elif current != "":
+				bodies[current] += line + "\n"
+		var asking: Array[String] = []
+		var grew := true
+		while grew:
+			grew = false
+			for fn: String in bodies:
+				if asking.has(fn):
+					continue
+				var body: String = bodies[fn]
+				var asks := false
+				for helper in ASKING_HELPERS:
+					if body.contains("Motion.%s(id" % helper):
+						asks = true
+				for other in asking:
+					if body.contains("%s(id" % other):
+						asks = true
+				if asks:
+					asking.append(fn)
+					grew = true
+		for fn in asking:
+			for n in names:
+				if src.contains("%s(%s" % [fn, n]):
+					return true
+	return false
 
 
 ## True when the demo now running has read `id`: from a real piece (a script other than the
@@ -290,11 +337,8 @@ func test_the_switch_check_names_a_view_that_never_asks() -> void:
 		assert_true(Motion.has(id), "%s (a hold) is a table id" % id)
 	for id: StringName in AWAITING_FIX:
 		assert_true(Motion.has(id), "%s (awaiting its fix) is a table id" % id)
-	for id: StringName in ASKS_THROUGH:
-		var path: String = ASKS_THROUGH[id][0]
-		var fn: String = ASKS_THROUGH[id][1]
-		var src := FileAccess.get_file_as_string(path)
-		assert_true(src.contains("func %s(" % fn) and src.contains("Motion.live(id)"), "%s asks Motion.live through %s" % [path, fn])
-		var const_re := RegEx.create_from_string("const\\s+([A-Z_][A-Z0-9_]*)\\s*:?=\\s*&\"%s\"" % id)
-		var m := const_re.search(src)
-		assert_true(m != null and src.contains("%s(%s" % [fn, m.get_string(1)]), "%s asks about %s through %s" % [path, id, fn])
+	# A view that asks through a function of its own counts (the raid layer's beat_u).
+	var through := {"res://scripts/ui/kit/a_layer.gd": "const MOVE := &\"raid_move\"\n\nfunc len_of(id: StringName, d: float) -> float:\n\treturn d if Motion.live(id) else 0.0\n\nfunc u_of(id: StringName, t: float) -> float:\n\treturn t / len_of(id, 1.0)\n\nfunc _draw() -> void:\n\tvar u := u_of(MOVE, 0.5)\n"}
+	assert_true(_asked_through(through, &"raid_move"), "an ask through the layer's own functions counts")
+	assert_false(_asked_through(through, &"raid_flip"), "an id it never passes does not")
+	assert_true(_asked_through(_game_sources(), &"raid_threat_withdraw"), "the raid layer asks about a withdrawal through beat_u")
