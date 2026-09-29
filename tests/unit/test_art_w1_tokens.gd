@@ -294,3 +294,42 @@ func test_every_face_is_imported_with_msdf() -> void:
 		assert_not_null(f, path)
 		assert_true(f.multichannel_signed_distance_field, "%s renders as MSDF" % path)
 		assert_true(f.msdf_pixel_range >= 16, "%s field range covers 6-8 px outlines" % path)
+
+
+# --- §4.1 body face -----------------------------------------------------------------------------
+
+func test_body_face_is_plex_with_msdf_and_its_licence() -> void:
+	for path in [Palette.FONT_BODY, Palette.FONT_BODY_MEDIUM]:
+		var f := load(path) as FontFile
+		assert_not_null(f, path)
+		assert_true(f.multichannel_signed_distance_field, "%s renders as MSDF" % path)
+		assert_string_contains(f.get_font_name(), "Plex", path)
+	assert_true(FileAccess.file_exists("res://assets/fonts/OFL_IBMPlexSansCondensed.txt"), "OFL shipped with the face")
+	assert_ne(Palette.body(), ThemeDB.fallback_font, "the body face loads")
+
+
+func test_body_text_variation_serves_label_and_rich_text() -> void:
+	for scale in [1.0, 1.6, 2.0]:
+		var t := UiTheme.build(scale)
+		var px := UiTheme.font_px_at(UiTheme.BODY, scale)
+		var v := UiTheme.BODY_TEXT
+		assert_eq(t.get_type_variation_base(v), &"Label")
+		assert_eq(t.get_font(&"font", v), Palette.body())
+		assert_eq(t.get_font(&"normal_font", v), Palette.body())
+		assert_eq(t.get_font(&"bold_font", v), Palette.body_medium())
+		assert_eq(t.get_font_size(&"font_size", v), px, "Label size at %.1f" % scale)
+		assert_eq(t.get_font_size(&"normal_font_size", v), px, "RichTextLabel size at %.1f" % scale)
+		# Line height 1.4 (§4.2): the face's own height plus the spacing.
+		var line := Palette.body().get_height(px) + t.get_constant(&"line_spacing", v)
+		assert_almost_eq(float(line), px * 1.4, 1.0, "body line height at %.1f" % scale)
+		assert_eq(t.get_constant(&"line_separation", v), t.get_constant(&"line_spacing", v))
+		assert_eq(t.get_color(&"font_color", v), Palette.TEXT_HI)
+	var lbl: Label = add_child_autofree(Label.new())
+	lbl.theme = UiTheme.build(1.0)
+	lbl.theme_type_variation = UiTheme.BODY_TEXT
+	assert_eq(lbl.get_theme_font(&"font"), Palette.body(), "a Label picks the variation up")
+	var rtl: RichTextLabel = add_child_autofree(RichTextLabel.new())
+	rtl.theme = UiTheme.build(1.0)
+	rtl.theme_type_variation = UiTheme.BODY_TEXT
+	assert_eq(rtl.get_theme_font(&"normal_font"), Palette.body(), "a RichTextLabel picks the variation up")
+	assert_eq(rtl.get_theme_font_size(&"normal_font_size"), UiTheme.BODY)

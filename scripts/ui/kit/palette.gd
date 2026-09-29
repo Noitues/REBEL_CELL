@@ -80,6 +80,10 @@ const HEAT_FLAGGED := Color("#FF7A1A")
 const FONT_MARKER := "res://assets/fonts/PermanentMarker-Regular.ttf"
 const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
 const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
+## ART_BIBLE §4.1 body face (Q3 ruling): IBM Plex Sans Condensed (OFL) for any text block
+## over 3 lines; the Medium weight for emphasis (RichTextLabel bold).
+const FONT_BODY := "res://assets/fonts/IBMPlexSansCondensed-Regular.ttf"
+const FONT_BODY_MEDIUM := "res://assets/fonts/IBMPlexSansCondensed-Medium.ttf"
 
 ## A glyph for every slice type (STYLE_GUIDE 4): readable without colour.
 const SLICE_GLYPHS := {
@@ -290,6 +294,16 @@ static func display() -> Font:
 
 static func mono() -> Font:
 	return font(FONT_MONO)
+
+
+## The body face (§4.1): long text, never headings or labels.
+static func body() -> Font:
+	return font(FONT_BODY)
+
+
+## The body face's Medium weight (emphasis inside body text).
+static func body_medium() -> Font:
+	return font(FONT_BODY_MEDIUM)
 
 
 ## ANIM-R4 H11b: the mono lettering with the display face as its fallback for the glyphs

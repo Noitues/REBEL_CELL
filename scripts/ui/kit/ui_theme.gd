@@ -112,7 +112,35 @@ static func build(text_scale: float = 1.0) -> Theme:
 	t.set_font(&"font", header, Palette.mono())
 	t.set_font_size(&"font_size", header, font_px_at(TITLE, text_scale))
 	t.set_color(&"font_color", header, Palette.PAPER)
+	_body_text(t, text_scale)
 	return t
+
+
+## The theme type variation for body text (ART_BIBLE §4.1/§4.2): set
+## `theme_type_variation = UiTheme.BODY_TEXT` on a Label or a RichTextLabel.
+const BODY_TEXT := &"BodyText"
+
+
+## "BodyText": Plex Sans Condensed at font_px(BODY) with the body line height (1.4), TEXT_HI
+## on dark. One variation serves Label (font, font_size, font_color, line_spacing) and
+## RichTextLabel (normal/bold fonts and sizes, default_color, line_separation); its own
+## empty "normal" box keeps either from inheriting the other's.
+static func _body_text(t: Theme, text_scale: float) -> void:
+	var v := BODY_TEXT
+	t.set_type_variation(v, &"Label")
+	var px := font_px_at(BODY, text_scale)
+	var spacing := line_spacing_px(Palette.body(), BODY, px)
+	t.set_stylebox(&"normal", v, StyleBoxEmpty.new())
+	t.set_font(&"font", v, Palette.body())
+	t.set_font_size(&"font_size", v, px)
+	t.set_color(&"font_color", v, Palette.TEXT_HI)
+	t.set_constant(&"line_spacing", v, spacing)
+	t.set_font(&"normal_font", v, Palette.body())
+	t.set_font(&"bold_font", v, Palette.body_medium())
+	for key in [&"normal_font_size", &"bold_font_size", &"italics_font_size", &"bold_italics_font_size"]:
+		t.set_font_size(key, v, px)
+	t.set_color(&"default_color", v, Palette.TEXT_HI)
+	t.set_constant(&"line_separation", v, spacing)
 
 
 ## A terminal box: deep glass, thin edge, square corners.
