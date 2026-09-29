@@ -116,7 +116,15 @@ func _ready() -> void:
 # --- Panels -----------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# ART_BIBLE §10 rule 6: an open modal (a confirm) closes before the page changes.
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, _set_panel.bind(p, name))
+		return
 	if _panel != null:
+		# Out of the host at once: the new page is laid out alone, where it rests, and never
+		# reflows under the old one mid-slide (critique gifs/21).
+		if _panel.get_parent() != null:
+			_panel.get_parent().remove_child(_panel)
 		_panel.queue_free()
 	_panel = p
 	# ANIM-6: each page enters (glass slides in, back to the main menu from the left; paper
@@ -281,12 +289,18 @@ func show_options() -> void:
 # --- Actions ---------------------------------------------------------------------------------
 
 func new_in_slot(slot: String) -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, new_in_slot.bind(slot))
+		return
 	RunManager.save_slot = slot
 	RunManager.reset()
 	RunManager.change_scene(RunManager.HQ_SCENE)
 
 
 func load_slot(slot: String) -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, load_slot.bind(slot))
+		return
 	RunManager.save_slot = slot
 	RunManager.reset()
 	if RunManager.resume():
@@ -309,6 +323,9 @@ func confirm_quit() -> void:
 
 
 func start_tutorial() -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, start_tutorial)
+		return
 	RunManager.pending_tutorial = true
 	RunManager.change_scene(RunManager.COMBAT_SCENE)
 
@@ -319,7 +336,17 @@ func _ask(question: String, on_yes: Callable) -> void:
 	_confirm = ConfirmDialog.new(question)
 	_confirm.position = Vector2(size.x / 2.0 - 210, 200)
 	_confirm.confirmed.connect(on_yes)
+	# §3.3 / §5.3: a modal sits over a SCRIM (the page behind blurred and dimmed; it takes
+	# the clicks meant for the page), and opens as a modal (§10: <= 0.22 s, never a cut).
+	var scrim := GlassScrim.new()
+	scrim.name = "ModalScrim"
+	scrim.top_level = true
+	scrim.show_behind_parent = true
+	scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	scrim.size = get_viewport_rect().size
+	_confirm.add_child(scrim)
 	add_child(_confirm)
+	PageTransition.open_modal(_confirm)
 
 
 func confirm_visible() -> bool:

@@ -36,6 +36,13 @@ func _init(p_content: Control, p_max_height: float = 0.0) -> void:
 	content.minimum_size_changed.connect(_fit)
 	hint = ScrollHint.new(scroll)
 	hint.snap_rows = true
+	# The hint's room under the view, made here (the hint would add it while this box is
+	# still setting up its children).
+	var room := Control.new()
+	room.name = "ScrollHintRoom"
+	room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(room)
+	hint.room = room
 	# Top level: no container lays the tag out (it places itself in its room).
 	hint.top_level = true
 	add_child(hint)
