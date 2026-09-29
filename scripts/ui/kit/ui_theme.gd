@@ -279,6 +279,8 @@ static func _buttons(t: Theme, text_scale: float) -> void:
 		t.set_color(&"icon_normal_color", kind, Palette.NET_CYAN)
 		t.set_color(&"icon_hover_color", kind, Palette.CELL_PINK)
 		t.set_color(&"icon_focus_color", kind, Palette.FOCUS)
+		# §6 Focus: a full-width row's brackets sit far apart, so its words take FOCUS too.
+		t.set_color(&"font_focus_color", kind, Palette.FOCUS)
 	t.set_type_variation(SECONDARY, &"Button")
 	# Primary (§6.4, "HotButton"): filled CELL_PINK, INK label in Anton, icon left.
 	var hv := PRIMARY
@@ -353,7 +355,7 @@ static func _menu_item(t: Theme, text_scale: float) -> void:
 	# 1.6 (W8 can step it up when it reflows those pages).
 	t.set_font_size(&"font_size", v, font_px_at(BODY, text_scale))
 	t.set_color(&"font_color", v, Palette.TERMINAL_TEXT)
-	t.set_color(&"font_focus_color", v, Palette.TEXT_HI)
+	t.set_color(&"font_focus_color", v, Palette.FOCUS)
 	t.set_color(&"font_disabled_color", v, Palette.TEXT_MID)
 
 
