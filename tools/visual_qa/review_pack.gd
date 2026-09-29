@@ -1063,6 +1063,9 @@ func _open_modals() -> Array[Control]:
 	for n in get_tree().get_nodes_in_group(PageTransition.MODAL_GROUP):
 		if n is Control and (n as Control).is_visible_in_tree():
 			out.append(n as Control)
+	# The jack's cover hides the whole game while it is up.
+	if Fx.jack_cover != null and Fx.jack_cover.is_visible_in_tree():
+		out.append(Fx.jack_cover)
 	var view := Vector2(CAPTURE_SIZE)
 	for n in get_tree().root.find_children("*", "Control", true, false):
 		var c := n as Control

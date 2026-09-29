@@ -524,3 +524,20 @@ func test_lint_report_uses_on_screen_size_and_leaves_out_hidden_text() -> void:
 	assert_true(src.contains("visible_rect"), "text is cut to its scroll view")
 	var harness := FileAccess.get_file_as_string(REVIEW_PACK)
 	assert_true(harness.contains("\"under_modal\": _under_modal(c)") and harness.contains("\"visible_rect\""), "the harness exports both")
+
+
+# --- §12 reduce motion: no shake, no camera move ------------------------------------------------
+
+func test_reduce_motion_shakes_nothing() -> void:
+	var was := Settings.reduce_motion
+	Settings.set_reduce_motion(true)
+	assert_eq(Fx.shake_px(&"hit_shake"), 0.0, "no hit shake")
+	var n: Control = add_child_autofree(Control.new())
+	n.position = Vector2(10, 10)
+	Motion.force_live = true
+	var tw := Motion.shake(n, &"button_refused")
+	Motion.force_live = false
+	assert_null(tw, "no refusal shake")
+	assert_eq(n.position, Vector2(10, 10), "it rests where it was")
+	assert_false(Motion.camera_moves_allowed(), "and the camera holds (the jack cross-fades)")
+	Settings.set_reduce_motion(was)

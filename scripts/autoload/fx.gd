@@ -512,7 +512,8 @@ func request_flash() -> bool:
 ## The shake (px) motion entry `id` may use: its amplitude held to its tier's limit
 ## (ART_BIBLE 8: none below T2, 2 px at T2, 4 px at T3, none at T4); 0 under reduce effects.
 func shake_px(id: StringName) -> float:
-	if not effects_enabled():
+	# Art pass W9F (ART_BIBLE §12): reduce motion shakes nothing either.
+	if not effects_enabled() or not Motion.camera_moves_allowed():
 		return 0.0
 	return VfxTier.clamp_shake(VfxTier.of(id), Motion.amplitude(id))
 
@@ -718,7 +719,9 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 		on_switch.call()
 		return
 	_set_jacking(true)
-	if not effects_enabled():
+	# Art pass W9F (ART_BIBLE §12: reduce motion is cross-fades only, no camera move): the
+	# jack's zoom through the screen becomes the same cross-fade reduce effects gets.
+	if not effects_enabled() or not Motion.camera_moves_allowed():
 		await _fade_switch(on_switch)
 		_set_jacking(false)
 		return
