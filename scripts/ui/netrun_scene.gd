@@ -1657,8 +1657,9 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var pre := before if before != null else c
 	var g := CityLayout.grid_graph(pre, RunManager.corporation, CityLayout.threat_paths(pre, RunManager.corporation))
-	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, Vector2(0.4, 0.56), Vector2.INF)
-	city_overlay.avoid_controls([side])
+	_mount_route(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, 0.85, PLAYOUT_ANCHOR, Vector2.INF)
+	# ANIM-R5 P6: labels and home's banner keep off the key too.
+	city_overlay.avoid_controls([side, legend])
 	playout.grid_view = city_overlay
 	playout.attach_fx(c.last_raid, c.grid.home_site_id, c.grid.home_max_integrity, Palette.corp_color(c.corporation_id))
 	# ANIM-R1 M4: each step's fight is framed (the camera eases in to it) before it plays.

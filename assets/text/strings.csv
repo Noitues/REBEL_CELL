@@ -29,7 +29,9 @@ Stationed on %s."
 %d SEIZED,%d SEIZED
 %d SLICES,%d SLICES
 %d destroyed,%d destroyed
+%d lost,%d lost
 %d reached home,%d reached home
+%d won,%d won
 "%s
 %s
 Buy: %d Cycles (you have %d).","%s
@@ -75,6 +77,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is SEIZED.,%s is SEIZED.
 %s is at HQ already.,%s is at HQ already.
 %s is destroyed.,%s is destroyed.
+%s is down.,%s is down.
 %s is held at %s (%d more).,%s is held at %s (%d more).
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s moves from %s to %s.,%s moves from %s to %s.
@@ -192,8 +195,6 @@ Buy,Buy
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
 CAMPAIGN LOST,CAMPAIGN LOST
-CAMPAIGN LOST - home server destroyed,CAMPAIGN LOST - home server destroyed
-CAMPAIGN WON - %s is down,CAMPAIGN WON - %s is down
 CAMPAIGNS,CAMPAIGNS
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
@@ -201,6 +202,7 @@ CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL STATUS,CELL STATUS
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
+CLAIMABLE,CLAIMABLE
 CLAIMED,CLAIMED
 CLEAN EXIT,CLEAN EXIT
 CLEANSE,CLEANSE
@@ -229,7 +231,9 @@ Campaign seed:,Campaign seed:
 Campaign slots,Campaign slots
 "Campaign: Heat %d, Schematics %d, roster %d living.","Campaign: Heat %d, Schematics %d, roster %d living."
 Campaigns,Campaigns
+Campaigns lost on this profile.,Campaigns lost on this profile.
 Campaigns started on this profile.,Campaigns started on this profile.
+Campaigns won on this profile.,Campaigns won on this profile.
 Campaigns won.,Campaigns won.
 "Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.","Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost."
 Cancel,Cancel
@@ -776,8 +780,10 @@ HUB CORE,HUB CORE
 Heat,Heat
 Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
-Heat %s for the lost raid: %d → %d.,Heat %s for the lost raid: %d → %d.
 Heat %s: %d → %d.,Heat %s: %d → %d.
+Heat %s: %s not destroyed: %d → %d.,Heat %s: %s not destroyed: %d → %d.
+Heat %s: %s reached %s: %d → %d.,Heat %s: %s reached %s: %d → %d.
+Heat %s: not every threat was destroyed: %d → %d.,Heat %s: not every threat was destroyed: %d → %d.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
@@ -865,6 +871,7 @@ ICE %d: %s,ICE %d: %s
 ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
 ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
+IF CLEARED:,IF CLEARED:
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
@@ -889,6 +896,7 @@ LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
+LOST,LOST
 "LURES, PULL %d","LURES, PULL %d"
 Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
@@ -1357,6 +1365,8 @@ Nudge ring (outer / inner),Nudge ring (outer / inner)
 Nudge wheel (mine / target),Nudge wheel (mine / target)
 OBSERVER,OBSERVER
 ON %s,ON %s
+OPENS %d SITE,OPENS %d SITE
+OPENS %d SITES,OPENS %d SITES
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
 OUTER,OUTER
@@ -1386,6 +1396,7 @@ SAFE??","PLAY IT
 SAFE??"
 PLAYOUT,PLAYOUT
 PREV SITE: select the previous Site on the Grid: %s (the map follows).,PREV SITE: select the previous Site on the Grid: %s (the map follows).
+PROFILE,PROFILE
 PROFILE // RECORDS,PROFILE // RECORDS
 Patch home %s (%d),Patch home %s (%d)
 Pause / options,Pause / options
@@ -1398,7 +1409,6 @@ Press,Press
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
 Profile unlocks:,Profile unlocks:
 "Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.","Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s."
-"Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d.","Profile: %d won / %d lost, best ICE %s; next %s campaign may start up to ICE %d."
 ProfileUnlockData.unlock_botnet.description,Recruit Botnet operatives in every campaign.
 ProfileUnlockData.unlock_botnet.display_name,Class: Botnet
 ProfileUnlockData.unlock_compiler_rack.description,Unlocks the Compiler Rack node for every campaign.
@@ -1446,6 +1456,7 @@ RESULT:","RAID
 RESULT:"
 RAID // %s,RAID // %s
 RAID FEED // LIVE,RAID FEED // LIVE
+RAID FORECAST,RAID FORECAST
 RAID IN PROGRESS,RAID IN PROGRESS
 RAID INBOUND,RAID INBOUND
 "RAID INCOMING
@@ -1639,6 +1650,7 @@ START DEFENSE,START DEFENSE
 STATS,STATS
 STATUS: %s,STATUS: %s
 STOPPED %d/%d,STOPPED %d/%d
+STORY UNCOVERED,STORY UNCOVERED
 STRENGTH %s%%,STRENGTH %s%%
 SYSTEM ONLINE,SYSTEM ONLINE
 Save,Save
@@ -2585,8 +2597,11 @@ The boosts bought for the next run. Drag a boost here to buy it.,The boosts boug
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
+The highest ICE level cleared.,The highest ICE level cleared.
+The home server is destroyed.,The home server is destroyed.
 The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
+The next %s campaign may start up to ICE %d.,The next %s campaign may start up to ICE %d.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
@@ -2659,6 +2674,7 @@ Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
 YOU,YOU
+YOU ARE HERE,YOU ARE HERE
 YOU PLAY %s,YOU PLAY %s
 YOU TAKE,YOU TAKE
 YOUR NODES // pick the target,YOUR NODES // pick the target
@@ -2680,6 +2696,7 @@ an Elite fight,an Elite fight
 an Event,an Event
 an operative,an operative
 armory: %s,armory: %s
+best ICE %s,best ICE %s
 boss,boss
 calibrate_handler,calibrate_handler
 card,card

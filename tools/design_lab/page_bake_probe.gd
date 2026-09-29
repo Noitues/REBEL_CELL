@@ -11,7 +11,10 @@ extends SceneTree
 ## counted) and the route after it. `--leave=F` leaves each page F frames after it is covered
 ## (a quick player: its prebakes may still run) instead of waiting until no bake runs.
 ##
-##   godot --path . -s tools/design_lab/page_bake_probe.gd [-- --leave=20]
+##   python tools/run_windowed.py --log <log> -- -s tools/design_lab/page_bake_probe.gd [-- --leave=20] [--why]
+##
+## (a quiet window: docs/TEST_SUITE.md "Windowed checks"). `--why` prints, at the playout's
+## first uncovered frame, its view and look against every bake held or running.
 ##
 ## Autoload-touching classes load at run time (a -s script compiles before the autoloads).
 

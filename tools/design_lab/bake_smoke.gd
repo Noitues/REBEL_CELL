@@ -6,9 +6,10 @@ extends SceneTree
 ## RID, non-empty size, its viewport or copy alive), its picture read back is not empty and
 ## not one flat colour, and the map view shows it. Runs once with the kept viewports (the
 ## game's path) and once with the GPU copy (`CityBakeCache.keep_viewports` off). A Logger
-## counts every engine or script error meanwhile; any error fails the run. Needs a display:
+## counts every engine or script error meanwhile; any error fails the run. Needs a display
+## (a quiet window: docs/TEST_SUITE.md "Windowed checks"):
 ##
-##   godot --path . -s tools/design_lab/bake_smoke.gd > <log> 2>&1
+##   python tools/run_windowed.py --log <log> -- -s tools/design_lab/bake_smoke.gd
 ##
 ## Prints "bake_smoke: PASS ..." and exits 0, else "bake_smoke: FAIL ..." and exits 1. Then
 ## grep the log for ERROR (errors printed at exit, after the script, land only in the log).

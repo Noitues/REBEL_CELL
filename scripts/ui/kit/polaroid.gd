@@ -30,7 +30,9 @@ func _ready() -> void:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER)
 	draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.INK, 0.4), false, 1.0)
-	var image := Rect2(8, 8, size.x - 16, size.x - 16)
+	var lay := caption_layout()
+	var side: float = lay["image"]
+	var image := Rect2((size.x - side) * 0.5, CAPTION_INSET, side, side)
 	if portrait != null:
 		draw_texture_rect(portrait, image, false)
 	else:
@@ -38,7 +40,6 @@ func _draw() -> void:
 	if glitch:
 		for i in 4:
 			draw_rect(Rect2(image.position.x, image.position.y + i * image.size.y / 4.0 + 3, image.size.x, 3), Color(Palette.CELL_PINK, 0.6))
-	var lay := caption_layout()
 	var lines: PackedStringArray = lay["lines"]
 	var fs: int = lay["fs"]
 	var f := Palette.marker()
@@ -57,18 +58,19 @@ const CAPTION_BOTTOM := 10.0
 
 ## ANIM-R5 P10: the caption as drawn, never cut (at 1.6 the dossier's smaller Polaroid cut
 ## "BREAKER 1" to "BREAK"): one line at CAPTION_FONT, stepped down while it does not fit;
-## then two lines (split at the space that balances them) that fit the strip under the
-## picture; the one line at CAPTION_MIN as the last resort. {"lines", "fs"}.
+## then two lines (split at the space that balances them), the picture made smaller (never
+## under IMAGE_MIN_SHARE of its side) so both fit under it; the one line at CAPTION_MIN as
+## the last resort. {"lines", "fs", "image" (the picture's side, px)}.
 func caption_layout() -> Dictionary:
 	var f := Palette.marker()
 	var room := size.x - CAPTION_INSET * 2.0
 	for fs in range(CAPTION_FONT, CAPTION_MIN - 1, -1):
 		if f.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= room:
-			return {"lines": PackedStringArray([caption]), "fs": fs}
-	var strip := size.y - (size.x - CAPTION_INSET) - CAPTION_BOTTOM * 0.5
+			return {"lines": PackedStringArray([caption]), "fs": fs, "image": room}
 	var words := caption.split(" ", false)
 	for fs in range(CAPTION_FONT, CAPTION_MIN - 1, -1):
-		if f.get_height(fs) * 2.0 > strip:
+		var side := minf(room, size.y - CAPTION_INSET - f.get_height(fs) * 2.0 - CAPTION_BOTTOM)
+		if side < room * IMAGE_MIN_SHARE:
 			continue
 		var best := PackedStringArray()
 		var best_w := INF
@@ -80,8 +82,12 @@ func caption_layout() -> Dictionary:
 				best_w = w
 				best = PackedStringArray([a, b])
 		if not best.is_empty():
-			return {"lines": best, "fs": fs}
-	return {"lines": PackedStringArray([caption]), "fs": CAPTION_MIN}
+			return {"lines": best, "fs": fs, "image": side}
+	return {"lines": PackedStringArray([caption]), "fs": CAPTION_MIN, "image": room}
+
+
+## The least share of its side the picture keeps to make room for a two-line caption.
+const IMAGE_MIN_SHARE := 0.6
 
 
 ## The caption's lettering (px) as drawn.

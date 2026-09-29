@@ -505,7 +505,10 @@ func banner_room() -> Rect2:
 ## poster's room is its header either way.
 func banner_room_wide() -> Rect2:
 	if poster:
-		return banner_room()
+		# ANIM-R5 P9: a banner too long for the band under WANTED (a long translation) takes the
+		# whole header, the title too, rather than lettering under the floor.
+		var width := size.x if size.x > 0.0 else custom_minimum_size.x
+		return Rect2(BANNER_MARGIN, BANNER_GAP, width - BANNER_MARGIN * 2.0, POSTER_BLOCK_TOP - BANNER_GAP * 2.0)
 	var width := size.x if size.x > 0.0 else custom_minimum_size.x
 	var height := size.y if size.y > 0.0 else custom_minimum_size.y
 	return Rect2(BANNER_MARGIN, BAR_TOP, width - BANNER_MARGIN * 2.0, maxf(0.0, height - BAR_TOP - BANNER_GAP))

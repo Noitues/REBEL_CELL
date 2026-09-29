@@ -39,6 +39,11 @@ extends RefCounted
 ##   point (a click pushed without a mouse move first). A helper may name buttons whose
 ##   press it keeps (`keep`: the combat replay keeps SEND IT, RESPIN, UNDO and the hand, so
 ##   a press that ends the replay never also plays the next turn blind).
+## - **The raid playout's own controls (ANIM-R5, the one exception)**: the playout asks
+##   `verdict` like every helper, but a PASS that drives the playout itself (a focus move,
+##   which walks to 1x / 2x / 4x and Skip, or a press on one of them:
+##   `RaidPlayoutPanel.drives_playout`) does not end the current step: speeding the raid up
+##   never skips the step being watched. STYLE_GUIDE 5.1 says so.
 
 ## Focus-move actions (a menu's D-pad / arrows / Tab).
 const FOCUS_ACTIONS: Array[StringName] = [&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"]
