@@ -162,6 +162,7 @@ func _fit_wheel(view: SpinnerView, r: Rect2) -> void:
 	var k := minf((r.size.x - WHEEL_MARGIN * 2.0) / WHEEL_AREA.x, (r.size.y - chrome - WHEEL_MARGIN) / WHEEL_AREA.y)
 	wheel_scale = clampf(k, WHEEL_SCALE_MIN, WHEEL_SCALE_MAX)
 	wheel.scale = Vector2.ONE * wheel_scale
+	view.draw_scale = wheel_scale  # art pass W9F: its lettering reads at its step on screen
 	wheel.position = Vector2(maxf(0.0, (r.size.x - WHEEL_MARGIN - WHEEL_AREA.x * wheel_scale) * 0.5), 0.0)
 	holder.custom_minimum_size = WHEEL_AREA * wheel_scale
 	for chip in view.find_children("Swap_*", "Button", true, false):

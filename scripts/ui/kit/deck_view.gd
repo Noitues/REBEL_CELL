@@ -22,6 +22,9 @@ var close_button: Button
 var hint_label: Label
 ## Art pass W9F: the viewer's pad prompt bar (glyphs), shown while a pad is in use.
 var prompts: PadPrompts
+## The window's least size at text scale 1.0 (px; art pass W9F: its height gives way at big
+## text so the window stays on the canvas).
+const WINDOW_SIZE := Vector2(900, 540)
 ## The card grid's width, gap, and the fewest cards a row keeps at big text (px).
 const GRID_WIDTH := 860.0
 const GRID_GAP := 14.0
@@ -43,7 +46,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	# is a key ("REMOVE") translated where shown.
 	TextDb.shown_as_given(self)
 	window = TerminalWindow.new(tr("%s // %d CARDS") % [p_title, deck.size()], Palette.CELL_PINK)
-	window.custom_minimum_size = Vector2(900, 540)
+	window.custom_minimum_size = WINDOW_SIZE
 	window.position = Vector2(190, SubtitleStrip.top_below(70.0))  # under the subtitles (H21)
 	add_child(window)
 	tab_row = HBoxContainer.new()
@@ -172,6 +175,8 @@ const CANVAS_BOTTOM := 718.0
 func _fit_canvas() -> void:
 	if not is_inside_tree() or window == null:
 		return
+	# The window's own least height gives way first (it was a fixed 540 px).
+	window.custom_minimum_size.y = minf(WINDOW_SIZE.y, maxf(0.0, CANVAS_BOTTOM - window.position.y))
 	var h := window.get_combined_minimum_size().y
 	var over := window.position.y + h - CANVAS_BOTTOM
 	if over > 0.0 and _scroll != null:

@@ -154,6 +154,9 @@ const DEMOS := {
 	# Art pass W8d (ART_BIBLE 11 Campaign end): the campaign's end (the full sequences run on the
 	# HQ page, tools/design_lab/campaign_end_lab.tscn; the lab shows the stamp's slam).
 	&"campaign_end_won": ["pop", "sticker"], &"campaign_end_lost": ["pop", "sticker"],
+	# Art pass W9F (ART_BIBLE 6.6): the UPGRADE viewer's marker circle drawing on (the lab
+	# shows its timing as a pop; the stroke itself runs in SpinnerView).
+	&"upgrade_circle_draw": ["pop", "sticker"],
 }
 ## Art pass W6: the hit shapes' row (--demo-hits-row): its height and first spot and the
 ## step between shapes (px, 1280x720), and the names' lettering.

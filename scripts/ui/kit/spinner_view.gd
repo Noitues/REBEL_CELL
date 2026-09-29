@@ -29,6 +29,8 @@ var _popup: Control = null
 var _hot: int = -1
 var close_button: Button
 var hint_label: Label
+## Art pass W9F: the viewer's pad prompt bar (glyphs), shown while a pad is in use.
+var prompts: PadPrompts
 ## The selected slot's price in pick mode ("150 CYCLES"; pink when unaffordable).
 var price_label: Label
 ## slot -> price (Callable) and the Cycles to spend; unset = no prices shown.
@@ -85,6 +87,10 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	hint_label = hint
 	hint.add_theme_color_override("font_color", Palette.CELL_ACID)
 	window.body.add_child(hint)
+	# Art pass W9F (§5.2.4): the modal's own prompt bar while a pad is in use.
+	prompts = PadPrompts.new()
+	prompts.alignment = BoxContainer.ALIGNMENT_BEGIN
+	window.body.add_child(prompts)
 	_wheel = Control.new()
 	_wheel.custom_minimum_size = Vector2(670, 440)
 	_wheel.draw.connect(_draw_wheel)
@@ -143,10 +149,12 @@ func _ready() -> void:
 
 ## Key hints follow the device in use and the binds (H20).
 func _relabel() -> void:
-	close_button.text = ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
-	var pick := Settings.key_text(&"ui_accept") if Settings.pad_active else tr("Left click")
-	var more := Settings.key_text(&"inspect") if Settings.pad_active else tr("Right click")
-	hint_label.text = (tr("%s: select the slot to %s. %s: details.") % [pick, tr(action).to_lower(), more]) if action != "" else tr("%s a slice for details.") % (tr("Press") if Settings.pad_active else tr("Click"))
+	# Art pass W9F (§6.8, §12): the mouse reads its words (UiTip.for_input), a pad player
+	# the viewer's own prompt bar (glyphs), never "click" and never "[B]".
+	close_button.text = tr("Close") if Settings.pad_active else ("%s %s" % [tr("Close"), Settings.hint(&"ui_cancel")]).strip_edges()
+	hint_label.text = UiTip.for_input((tr("%s: select the slot to %s. %s: details.") % [tr("Left click"), tr(action).to_lower(), tr("Right click")]) if action != "" else tr("%s a slice for details.") % tr("Click"), "")
+	hint_label.visible = hint_label.text != ""
+	prompts.set_prompts(([[&"ui_accept", "Select"], [&"inspect", "Details"]] if action != "" else [[&"ui_accept", "Details"]]) + [[&"ui_cancel", "Close"]]) # TR
 
 
 ## Pick mode prices (H20: the Miss slot costs more): `p_price_of(slot) -> int` and the
@@ -170,12 +178,22 @@ func selected_price() -> int:
 func _update_price() -> void:
 	if price_label == null:
 		return
+	# Art pass W9F (critique 55, §6.7): the price is on the action itself ("UPGRADE · 150
+	# CYCLES"); short of Cycles, the line beside it says NEED n · HAVE m in HARM.
 	var price := selected_price()
-	price_label.text = (tr("%d CYCLES") % price) if price >= 0 else ""
 	var short := price >= 0 and budget >= 0 and price > budget
-	price_label.add_theme_color_override("font_color", Palette.CELL_PINK if short else Palette.CELL_ACID)
+	price_label.text = (tr("NEED %d · HAVE %d") % [price, budget]) if short else ""
+	price_label.visible = short
+	price_label.add_theme_color_override("font_color", Palette.HARM)
 	if _action_button != null:
+		_action_button.set_tag_text(action_text())
 		_action_button.disabled = short
+
+
+## The action's words: the action, with the selected slot's price when prices are shown.
+func action_text() -> String:
+	var price := selected_price()
+	return tr(action) if price < 0 else tr("%s · %d CYCLES") % [tr(action), price]
 
 
 ## Shows the hub core and the inner ring in the middle of the wheel (the loadout view),
@@ -291,7 +309,69 @@ func select(index: int) -> void:
 	if _action_button != null:
 		_action_button.visible = selected >= 0
 	_update_price()
+	_draw_circle_on()
 	_wheel.queue_redraw()
+
+
+## Art pass W9F (ART_BIBLE §6.6, §13 `marker_stroke`): the marker circle round the picked slot
+## draws itself on (CIRCLE_MOTION, T2); the drippy circle lands when the stroke closes.
+## Reduce effects or headless: the circle at once (its end state).
+const CIRCLE_MOTION := &"upgrade_circle_draw"
+const STROKE_SHADER := "res://shaders/marker_stroke.gdshader"
+## The circle's radii round a slot (px) and the stroke's width.
+const CIRCLE_RADII := Vector2(62, 56)
+const CIRCLE_STROKE_W := 8.0
+## True once the circle round `selected` is drawn whole.
+var circle_drawn: bool = true
+var _stroke: ColorRect = null
+
+
+func _draw_circle_on() -> void:
+	if _stroke != null and is_instance_valid(_stroke):
+		_stroke.queue_free()
+	_stroke = null
+	circle_drawn = true
+	if selected < 0 or not Motion.live(CIRCLE_MOTION) or not is_inside_tree():
+		return
+	circle_drawn = false
+	var am := _angle(selected)
+	var at := _centre() + Vector2(cos(am), sin(am)) * 140.0
+	var box := CIRCLE_RADII * 2.0 + Vector2.ONE * CIRCLE_STROKE_W * 2.0
+	_stroke = ColorRect.new()
+	_stroke.name = "CircleStroke"
+	_stroke.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = load(STROKE_SHADER)
+	mat.set_shader_parameter(&"shape", 0)
+	mat.set_shader_parameter(&"size_px", box)
+	mat.set_shader_parameter(&"width_px", CIRCLE_STROKE_W)
+	mat.set_shader_parameter(&"ink", DripButton.DRIP_PINK)
+	mat.set_shader_parameter(&"progress", 0.0)
+	_stroke.material = mat
+	_stroke.position = at - box * 0.5
+	_stroke.size = box
+	_wheel.add_child(_stroke)
+	var e := Motion.entry(CIRCLE_MOTION)
+	var tw := _stroke.create_tween()
+	tw.tween_method(func(k: float) -> void: mat.set_shader_parameter(&"progress", k), 0.0, 1.0, Motion.seconds(CIRCLE_MOTION)).set_ease(e.ease).set_trans(e.trans)
+	var stroke := _stroke
+	tw.tween_callback(func() -> void:
+		circle_drawn = true
+		if is_instance_valid(stroke):
+			stroke.queue_free()
+		if _stroke == stroke:
+			_stroke = null
+		_wheel.queue_redraw())
+
+
+## Ends the circle's stroke now (PageTransition.settle, a press).
+func settle_motion() -> void:
+	if not circle_drawn:
+		if _stroke != null and is_instance_valid(_stroke):
+			_stroke.queue_free()
+		_stroke = null
+		circle_drawn = true
+		_wheel.queue_redraw()
 
 
 func confirm() -> void:
@@ -384,15 +464,15 @@ func _draw_wheel() -> void:
 		var am := _angle(i)
 		SliceIcon.draw_on_slice(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, 16, type, col)
 		if s != null and s.base_output > 0:
-			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, VALUE_FONT, col.lightened(0.35))
+			_wheel.draw_string(Palette.display(), c + Vector2(cos(am), sin(am)) * 208.0 + Vector2(-20, 10), str(s.base_output), HORIZONTAL_ALIGNMENT_CENTER, 40, letter_px(VALUE_FONT), col.lightened(0.35))
 		if i < firmware.size() and firmware[i] != &"":
 			_wheel.draw_rect(Rect2(c + Vector2(cos(am), sin(am)) * 116.0 - Vector2(5, 5), Vector2(10, 10)), Palette.NET_CYAN)
 	_wheel.draw_circle(c, r0 - 6, Palette.NIGHT_SKY)
 	_wheel.draw_arc(c, r1, 0, TAU, 64, wheel_color, 2.5)
 	if hub == null and ring.is_empty():
-		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, COUNT_FONT, wheel_color)
+		_wheel.draw_string(Palette.marker(), c + Vector2(-60, 8), tr("%d SLICES") % n, HORIZONTAL_ALIGNMENT_CENTER, 120, letter_px(COUNT_FONT), wheel_color)
 	_draw_core(c)
-	if selected >= 0:
+	if selected >= 0 and circle_drawn:
 		var am := _angle(selected)
 		HandMarks.draw_drip_circle(_wheel, c + Vector2(cos(am), sin(am)) * 140.0, Vector2(62, 56), DripButton.DRIP_PINK)
 
@@ -411,7 +491,7 @@ func open_slot(index: int) -> void:
 	var type := s.slice_type if s != null else RC.SliceType.MISS
 	icon.draw.connect(func() -> void:
 		SliceIcon.draw_icon(icon, Vector2(34, 32), 24, type, Palette.slice_color(type))
-		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, POPUP_FONT, Palette.PAPER))
+		icon.draw_string(Palette.display(), Vector2(76, 44), _slice_text(index), HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(POPUP_FONT), Palette.PAPER))
 	pop.body.add_child(icon)
 	var desc := Label.new()
 	UiWrap.whole_words(desc)  # art pass W9F §4.3.3: whole words, never mid-word
@@ -456,19 +536,65 @@ func _draw_core(c: Vector2) -> void:
 		_wheel.draw_polyline(pts, Palette.CELL_ACID if hot else Palette.NEON_VIOLET, 1.5)
 		var label := ring[k].display_name.left(3).to_upper() if ring[k] != null else "?"
 		var at := c + Vector2(cos(mid), sin(mid)) * (RING_INNER + RING_OUTER) * 0.5
-		_wheel.draw_string(Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, RING_FONT, Palette.PAPER)
+		_wheel.draw_string(Palette.mono(), at + Vector2(-20, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 40, letter_px(RING_FONT), Palette.PAPER)
 	if hub != null:
 		var hot_hub := not _core_pads.is_empty() and _core_pads[0].has_focus()
 		_wheel.draw_circle(c, HUB_RADIUS, Color(Palette.NIGHT_SKY, 0.95))
 		_wheel.draw_arc(c, HUB_RADIUS, 0, TAU, 48, Palette.CELL_ACID if hot_hub else wheel_color, 2.0)
-		_wheel.draw_string(Palette.mono(), c + Vector2(-HUB_RADIUS, -4), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, HUB_WORD_FONT, Color(Palette.PAPER, 0.7))
-		# The hub's name shrinks to fit the disc.
-		var hub_name := TextDb.t(hub, "display_name").to_upper()
-		var fs := HUB_FONT_SIZE
-		var w := Palette.marker().get_string_size(hub_name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		if w > HUB_RADIUS * 2.0 - 8.0:
-			fs = maxi(HUB_MIN_FONT_SIZE, floori(fs * (HUB_RADIUS * 2.0 - 8.0) / w))
-		_wheel.draw_string(Palette.marker(), c + Vector2(-HUB_RADIUS + 4, 14), hub_name, HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0 - 8, fs, wheel_color)
+		# Art pass W9F (§4.3 rules 2-4): the hub's name fits the disc whole ("BREAKER COR"
+		# clipped): one line at `body`, else `caption`, else folded onto two lines at a word
+		# break, else its first word (the pad's tooltip keeps the whole name).
+		var lay := hub_name_layout(TextDb.t(hub, "display_name").to_upper(), letter_px(HUB_FONT_SIZE), letter_px(HUB_MIN_FONT_SIZE))
+		var lines: PackedStringArray = lay["lines"]
+		var fs: int = lay["px"]
+		var f := Palette.marker()
+		var lh := f.get_height(fs)
+		var top := c.y + HUB_TEXT_TOP - lh * (lines.size() - 1) * 0.5
+		_wheel.draw_string(Palette.mono(), Vector2(c.x - HUB_RADIUS, top - lh * 0.5 - HUB_WORD_GAP), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, letter_px(HUB_WORD_FONT), Color(Palette.PAPER, 0.7))
+		for k in lines.size():
+			_wheel.draw_string(f, Vector2(c.x - HUB_TEXT_W * 0.5, top + lh * k + f.get_ascent(fs) - lh * 0.5), lines[k], HORIZONTAL_ALIGNMENT_CENTER, HUB_TEXT_W, fs, wheel_color)
+
+
+## Art pass W9F: the hub name's room (px, the disc's chord a little inside it), where its
+## first line sits below the centre, and the gap under the HUB word.
+const HUB_TEXT_W := HUB_RADIUS * 2.0 - 12.0
+const HUB_TEXT_TOP := 12.0
+const HUB_WORD_GAP := 2.0
+## Art pass W9F (§4.2, §12, as the combat wheels): the wheel's lettering follows the text
+## scale up to LETTER_GROW_MAX, and never reads smaller on screen than its step however far
+## the loadout scales the wheel down (`draw_scale`).
+const LETTER_GROW_MAX := 1.3
+## The scale the wheel is drawn at on screen (LoadoutView sets it; 1 in its own window).
+var draw_scale: float = 1.0:
+	set(v):
+		draw_scale = maxf(0.01, v)
+		if _wheel != null:
+			_wheel.queue_redraw()
+
+
+## The wheel-local size of type step `step`: step x the text scale (up to LETTER_GROW_MAX),
+## divided by `draw_scale`, so it reads at that size on screen.
+func letter_px(step: int) -> int:
+	return ceili(step * minf(Settings.text_scale, LETTER_GROW_MAX) / draw_scale)
+
+
+## Art pass W9F: how the hub's `name` fits the disc: {lines, px}. One line at `big`, then at
+## `small`; then two lines at a word break at `small`; else the first word (never a clipped
+## or broken word, never under `small`, the caption step).
+static func hub_name_layout(hub_name: String, big: int = HUB_FONT_SIZE, small: int = HUB_MIN_FONT_SIZE) -> Dictionary:
+	var f := Palette.marker()
+	for fs in [big, small]:
+		if f.get_string_size(hub_name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= HUB_TEXT_W:
+			return {"lines": PackedStringArray([hub_name]), "px": fs}
+	var words := hub_name.split(" ", false)
+	for cut in range(words.size() - 1, 0, -1):
+		var a := " ".join(words.slice(0, cut))
+		var b := " ".join(words.slice(cut))
+		var fits_a := f.get_string_size(a, HORIZONTAL_ALIGNMENT_LEFT, -1, small).x <= HUB_TEXT_W
+		var fits_b := f.get_string_size(b, HORIZONTAL_ALIGNMENT_LEFT, -1, small).x <= HUB_TEXT_W
+		if fits_a and fits_b:
+			return {"lines": PackedStringArray([a, b]), "px": small}
+	return {"lines": PackedStringArray([words[0] if not words.is_empty() else hub_name]), "px": small}
 
 
 ## The detail popup of the hub core or an inner ring segment.

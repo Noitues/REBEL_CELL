@@ -99,6 +99,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"campaign_end_won", &"campaign_end_lost",  # art pass W8d (ART_BIBLE 11 Campaign end, 8 T4)
 	&"hub_clear",  # art pass W3
 	&"wheel_respin_settle",  # art pass W3
+	&"upgrade_circle_draw",  # art pass W9F (ART_BIBLE 6.6: the UPGRADE circle draws on)
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
