@@ -24,6 +24,8 @@ const TOAST_NEWS_EVENTS: Array[String] = ["unlocked"]
 ## The Grid's side column and the raid setup column (px).
 const GRID_SIDE_WIDTH := 440.0
 const RAID_SIDE_WIDTH := 380.0
+## W8b: the raid setup's side column at big text (it holds the loadout, px).
+const RAID_SIDE_BIG := 650.0
 ## Room for the Grid side column's scroll bar (px).
 const SIDE_SCROLLBAR := 14.0
 ## Glyphs for Site objectives and facts on badges (the map uses the same).
@@ -63,7 +65,7 @@ const MODIFIER_WORDS := ["Heat Gain", "Heat Sink", "Heat Objective Sites", "Elit
 	"Boss Extra Pointer", "Starting Bug Card", "No First Turn Free Nudge", "Repair Cost", "Seized Raid Strength", # TR
 	"Purge Threshold", "Boss Strength"] # TR
 ## Passes framing the raid map beside its legend (each on the positions the last one gave).
-const RAID_REFRAMES_MAX := 6
+const RAID_REFRAMES_MAX := 10
 ## Passes fitting the Grid map into the screen beside its column and legend (H23 #5).
 const GRID_FITS_MAX := 4
 ## The Grid map's own framing (the city's zoom, and where the graph's centre lands as a
@@ -1036,9 +1038,9 @@ func _set_panel(p: Control, name: String) -> void:
 	wireframe.set_context(&"net")
 	wireframe.set_map_mode(net)
 	deck_frame.visible = name == "hq"
-	# §5.2: the raid map pages keep one subtitle line at big text (the map needs the height;
-	# a long line pages whole instead).
-	subtitle_strip.set_big_lines(1 if name.begins_with("raid") else SubtitleStrip.BIG_LINES)
+	# §5.2: two subtitle lines at big text on every page (with one, a speaker's name on its own
+	# row left the line no room and Dialogue shrank it under caption).
+	subtitle_strip.set_big_lines(SubtitleStrip.BIG_LINES)
 	deck_frame.keys_row.visible = name == "hq"
 	if name != "hq":
 		var none: Array[Control] = []
@@ -2835,8 +2837,9 @@ func show_raid() -> void:
 	_raid_same = 0
 	var side := VBoxContainer.new()
 	side.name = "RaidSide"
-	side.custom_minimum_size.x = RAID_SIDE_WIDTH
-	side.add_theme_constant_override("separation", 8)
+	# W8b: at big text the side column holds the three defence cards in a row (RAID_SIDE_BIG).
+	side.custom_minimum_size.x = RAID_SIDE_WIDTH if Settings.text_scale < RAID_BIG_SCALE - 0.001 else RAID_SIDE_BIG
+	side.add_theme_constant_override("separation", UiTheme.SP_S if Settings.text_scale < RAID_HUGE_SCALE - 0.001 else UiTheme.SP_XS)
 	outer.add_child(side)
 	# H23 S5: what the raid is and what to do, in one plain sentence.
 	var intro := _para(TextDb.ui_text("ui.raid_intro"))
@@ -2844,7 +2847,14 @@ func show_raid() -> void:
 	intro.custom_minimum_size.x = RAID_SIDE_WIDTH  # wrapped at the column's width from the start
 	intro.add_theme_color_override("font_color", Palette.PAPER)
 	side.add_child(intro)
-	side.add_child(_raid_card(raid, pending, projection))
+	# W8b (§5.3): at big text the sentence moves into the raid card's tooltip, so the column
+	# (and the defence cards under the map) stay on the first screen.
+	intro.visible = Settings.text_scale < RAID_BIG_SCALE - 0.001
+	var raid_card := _raid_card(raid, pending, projection)
+	if not intro.visible:
+		raid_card.tooltip_text = UiTip.fold("%s
+%s" % [intro.text, TextDb.t(raid, "warning_text")])
+	side.add_child(raid_card)
 	var orders_win := TerminalWindow.new(tr("YOUR NODES // pick the target"), Palette.CELL_PINK)
 	orders_win.name = "NodeOrders"
 	side.add_child(orders_win)
@@ -2872,6 +2882,24 @@ func show_raid() -> void:
 	side.add_child(go)
 	# W8b (§5.3 one primary, on the first screen at big text): START DEFENSE heads the column.
 	side.move_child(go, 0)
+	if Settings.text_scale >= RAID_HUGE_SCALE - 0.001:
+		# At the largest text the row sits in the raid card under its facts, beside the stamp
+		# (the room the stamp leaves there), so the card, the loadout and every node stay on
+		# the first screen.
+		var facts_box := raid_card.find_child("RaidFacts", true, false) as Control
+		if facts_box != null:
+			var holder := facts_box.get_parent()
+			var col := VBoxContainer.new()
+			col.name = "FactsAndGo"
+			col.add_theme_constant_override("separation", 0)
+			col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var at := facts_box.get_index()
+			holder.remove_child(facts_box)
+			col.add_child(facts_box)
+			side.remove_child(go)
+			col.add_child(go)
+			holder.add_child(col)
+			holder.move_child(col, at)
 	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends.
 	var run_btn := _icon(_button(tr(START_DEFENSE), fight_raid), StatIcon.PLAY)
 	run_btn.name = "RunRaid"
@@ -2889,15 +2917,37 @@ func show_raid() -> void:
 	var loadout := TerminalWindow.new(tr("DEFENSE LOADOUT // %s") % armory_words(), Palette.CELL_PINK)
 	loadout.name = "DefenseLoadout"
 	loadout.tooltip_text = UiTip.fold(armory_tip())
-	loadout.tag_label.text = tr("TARGET: %s") % site_name(selected_site)
-	map_col.add_child(loadout)
+	# W8b: at big text the target is named in the deploy steps only (the tag wrapped the title bar).
+	loadout.tag_label.text = tr("TARGET: %s") % site_name(selected_site) if Settings.text_scale < STEP_ICONS_SCALE - 0.001 else ""
+	if Settings.text_scale >= RAID_BIG_SCALE - 0.001:
+		# W8b (§5.3, big text): the map keeps the column's height: the defence loadout sits in
+		# the side column under the raid card and YOUR NODES moves under the map as a short
+		# strip (it scrolls inside), so every node, card and START DEFENSE is on the first
+		# screen at 2.0.
+		side.add_child(loadout)
+		side.remove_child(orders_win)
+		map_col.add_child(orders_win)
+		orders_win.size_flags_vertical = Control.SIZE_SHRINK_END
+		orders_scroll.size_flags_vertical = Control.SIZE_FILL
+	else:
+		map_col.add_child(loadout)
+	_raid_foot = null
 	# How to deploy, in pictures (H22 #9): 1 pick a node (map or YOUR NODES), 2 press a
 	# card: it goes to the target. The cards sit beside the steps.
 	var deploy_row := HBoxContainer.new()
 	deploy_row.add_theme_constant_override("separation", 14)
 	loadout.body.add_child(deploy_row)
 	deploy_row.add_child(_deploy_steps())
-	var cards := HFlowContainer.new()
+	# W8b: at big text the cards are one grid row (a flow reported its narrowest height, 355 px
+	# for one row of 180 px cards, and pushed the column off the screen).
+	var cards: Container = HFlowContainer.new()
+	if Settings.text_scale >= RAID_BIG_SCALE - 0.001:
+		var unique := {}
+		for aid in c.armory:
+			unique[aid] = true
+		var grid := GridContainer.new()
+		grid.columns = maxi(1, unique.size())
+		cards = grid
 	cards.name = "AssetCards"
 	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cards.add_theme_constant_override("h_separation", 14)
@@ -2921,7 +2971,9 @@ func show_raid() -> void:
 		drops.add_source(card, {"kind": "asset", "index": index, "asset": aid, "prefer": selected_site})
 		cards.add_child(card)
 	if c.armory.is_empty():
-		cards.add_child(_label(tr("Armory empty: runs bank assets from their drops.")))
+		var empty := _para(tr("Armory empty: runs bank assets from their drops."))
+		empty.custom_minimum_size.x = RAID_SIDE_WIDTH * 0.5  # W8b: it wraps (at 2.0 one line was 1373 px)
+		cards.add_child(empty)
 	_set_panel(outer, "raid")
 	if raid_legend.foldable():
 		set_page_prompts(prompts_for("raid") + [[&"cycle_target", "Key"]])  # ANIM-R2 R13: as the Grid
@@ -2987,7 +3039,12 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
 	row.add_child(stamp)
-	var facts := HFlowContainer.new()
+	# W8b: at big text the facts are a two-column grid (a flow reported a four-row height).
+	var facts: Container = HFlowContainer.new()
+	if Settings.text_scale >= RAID_BIG_SCALE - 0.001:
+		var fgrid := GridContainer.new()
+		fgrid.columns = 2
+		facts = fgrid
 	facts.name = "RaidFacts"
 	facts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	facts.add_theme_constant_override("h_separation", 10)
@@ -3121,13 +3178,14 @@ func place_raid_legend() -> void:
 	# H24 S5: nodes that cannot fit beside the key's column even at the zoom floor (a late
 	# campaign at text scale 1.6: the column took 368 px and the icons sat under it) get the
 	# strip key along the map's foot instead, as the Grid has.
-	if not _raid_strip and raid_legend.is_visible_in_tree() and city.scale.x * k < RAID_MIN_ZOOM * RAID_STRIP_BELOW:
+	if not _raid_strip and raid_legend.is_visible_in_tree() and city.scale.x * k < raid_min_zoom() * RAID_STRIP_BELOW:
 		_use_raid_strip()
 		return
 	_raid_reframes += 1
 	_raid_passes += 1
 	# Never further out than RAID_MIN_ZOOM (a far camera bakes a huge stretch of city).
-	k = clampf(k, RAID_MIN_ZOOM / maxf(RAID_MIN_ZOOM, city.scale.x), 1.0)
+	var floor_zoom := raid_min_zoom()
+	k = clampf(k, floor_zoom / maxf(floor_zoom, city.scale.x), 1.0)
 	var anchor := city.focus_anchor
 	if k < 1.0:
 		# Zooming by k about the focus point moves the box centre to focus + (from - focus)
@@ -3161,6 +3219,17 @@ func place_raid_legend() -> void:
 ## map at text scale 1.6).
 const RAID_FIT_SHARE := 0.9
 const RAID_MIN_ZOOM := 0.36
+## W8b: at big text (RAID_BIG_SCALE up) the map's area is short: its floor goes lower.
+const RAID_MIN_ZOOM_BIG := 0.2
+const RAID_BIG_SCALE := 1.3
+## W8b: from this text scale START DEFENSE heads the map column.
+const RAID_HUGE_SCALE := 1.8
+
+
+## The furthest the raid map zooms out at the current text size.
+func raid_min_zoom() -> float:
+	return RAID_MIN_ZOOM_BIG if Settings.text_scale >= RAID_BIG_SCALE - 0.001 else RAID_MIN_ZOOM
+
 ## W8b: how far inside the free part the raid map is aimed (px).
 const RAID_AIM_INSET := 16.0
 ## The column key gives way to the strip when the nodes would need a zoom under this share
@@ -3171,6 +3240,8 @@ const RAID_STRIP_BELOW := 1.0
 var _raid_strip: bool = false
 var _raid_strip_key: String = ""
 var _raid_avoid: Array[Control] = []
+## W8b: the loadout lying along the map's foot at big text (null: under the map).
+var _raid_foot: Control = null
 ## Bounds of a camera move's measured gain (anchor px per px the nodes moved).
 const RAID_GAIN_MIN := 0.25
 const RAID_GAIN_MAX := 4.0
@@ -3200,6 +3271,8 @@ func raid_free_rect() -> Rect2:
 		return Rect2()
 	# The area as far as it is on screen (a page taller than the screen scrolls).
 	var area := area_ctl.get_global_rect().intersection(get_global_rect()).grow(-LegendSpot.MARGIN)
+	if _raid_foot != null and is_instance_valid(_raid_foot) and _raid_foot.is_visible_in_tree():
+		area.size.y = maxf(0.0, minf(area.end.y, _raid_foot.get_global_rect().position.y - LegendSpot.MARGIN) - area.position.y)
 	if not raid_legend.is_visible_in_tree():
 		return area
 	if _raid_strip:
@@ -3286,7 +3359,10 @@ func _place_raid_strip() -> void:
 	raid_legend.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	raid_legend.scale = Vector2.ONE
 	raid_legend.size = own
-	var bottom := shown.end.y - area_ctl.global_position.y
+	var foot := shown.end.y
+	if _raid_foot != null and is_instance_valid(_raid_foot) and _raid_foot.is_visible_in_tree():
+		foot = minf(foot, _raid_foot.get_global_rect().position.y)  # W8b: above the loadout
+	var bottom := foot - area_ctl.global_position.y
 	raid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, bottom - own.y - LegendSpot.MARGIN))
 
 
@@ -3309,7 +3385,10 @@ func _deploy_steps() -> VBoxContainer:
 		row.tooltip_text = UiTip.fold(String(step[2]))
 		row.mouse_filter = Control.MOUSE_FILTER_PASS
 		row.add_child(IconMark.standalone(step[0], side, Palette.CELL_ACID))
-		var l := _label(String(step[1]))
+		# W8b (§5.3): at big text a step is its number and icon (its words in the tooltip), so the
+		# three defence cards keep one row beside it.
+		var words := String(step[1]) if Settings.text_scale < STEP_ICONS_SCALE - 0.001 else String(step[1]).substr(0, 1)
+		var l := _label(words)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(l)
 		steps.add_child(row)
@@ -3408,6 +3487,9 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 			# H23 S5: the tag's numbers and word explained on hover.
 			n["tip"] = tr("%s: integrity (HP) %s → %s in the raid. %s") % [site_name(n["id"]), res["before"], res["after"], outcome_tip(String(res["outcome"]))]
 		n["assets"] = c.grid.assets_on(n["id"])
+		# W8b: a raid map shows no run-difficulty pips (a raid is not a run; the pips stacked the
+		# crowded raid map taller than its area at big text).
+		n["tier"] = 0
 		n["threat_corp"] = String(c.corporation_id)
 		nodes.append(n)
 	var edges: Array[Dictionary] = []

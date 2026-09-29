@@ -273,7 +273,7 @@ func test_raid_nodes_sit_inside_the_map_for_every_corporation() -> void:
 	for id in ["solace", "meridian", "halcyon", "orbital"]:
 		RunManager.profile.best_ice_by_corp[id] = 10
 	for corp in CORPS:
-		for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 			Settings.set_text_scale(scale)
 			RunManager.new_campaign(1, corp)
 			assert_eq(RunManager.campaign.corporation_id, corp, "%s opens" % corp)

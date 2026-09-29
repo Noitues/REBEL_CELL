@@ -264,14 +264,14 @@ func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
 
 
 func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var hq: Control = await _raid(scale)
 		var cards: Node = hq._panel.find_child("AssetCards", true, false)
 		assert_eq(cards.get_child_count(), 3)
 		for card in cards.get_children():
 			var r := _shown_rect(card as Control)
 			assert_true(r.is_equal_approx((card as Control).get_global_rect()) and Rect2(Vector2.ZERO, CANVAS).encloses(r),
-				"the %s card is whole on screen at %.1f: %s" % [(card as AssetCard).display_name, scale, (card as Control).get_global_rect()])
+				"the %s card is whole on screen at %.1f: %s shown %s" % [(card as AssetCard).display_name, scale, (card as Control).get_global_rect(), r])
 			if hq.more_hint.visible:
 				assert_false(hq.more_hint.get_global_rect().intersects(r), "MORE BELOW covers no card")
 		var steps: Node = hq._panel.find_child("DeploySteps", true, false)
