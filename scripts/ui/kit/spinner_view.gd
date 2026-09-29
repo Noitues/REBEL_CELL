@@ -559,8 +559,13 @@ func _draw_core(c: Vector2) -> void:
 		var lh := f.get_height(fs)
 		var top := c.y + HUB_TEXT_TOP - lh * (lines.size() - 1) * 0.5
 		_wheel.draw_string(Palette.mono(), Vector2(c.x - HUB_RADIUS, top - lh * 0.5 - HUB_WORD_GAP), tr("HUB"), HORIZONTAL_ALIGNMENT_CENTER, HUB_RADIUS * 2.0, letter_px(HUB_WORD_FONT), Color(Palette.PAPER, 0.7))
+		var squeeze: float = lay.get("squeeze", 1.0)
 		for k in lines.size():
-			_wheel.draw_string(f, Vector2(c.x - HUB_TEXT_W * 0.5, top + lh * k + f.get_ascent(fs) - lh * 0.5), lines[k], HORIZONTAL_ALIGNMENT_CENTER, HUB_TEXT_W, fs, wheel_color)
+			var at := Vector2(c.x, top + lh * k + f.get_ascent(fs) - lh * 0.5)
+			# A word too wide for the disc even at the floor reads condensed (never clipped).
+			_wheel.draw_set_transform(at, 0.0, Vector2(squeeze, 1.0))
+			_wheel.draw_string(f, Vector2(-HUB_TEXT_W * 0.5 / squeeze, 0.0), lines[k], HORIZONTAL_ALIGNMENT_CENTER, HUB_TEXT_W / squeeze, fs, wheel_color)
+		_wheel.draw_set_transform(Vector2.ZERO)
 
 
 ## Art pass W9F: the hub name's room (px, the disc's chord a little inside it), where its
@@ -602,7 +607,9 @@ static func hub_name_layout(hub_name: String, big: int = HUB_FONT_SIZE, small: i
 		var fits_b := f.get_string_size(b, HORIZONTAL_ALIGNMENT_LEFT, -1, small).x <= HUB_TEXT_W
 		if fits_a and fits_b:
 			return {"lines": PackedStringArray([a, b]), "px": small}
-	return {"lines": PackedStringArray([words[0] if not words.is_empty() else hub_name]), "px": small}
+	var first := words[0] if not words.is_empty() else hub_name
+	var w := f.get_string_size(first, HORIZONTAL_ALIGNMENT_LEFT, -1, small).x
+	return {"lines": PackedStringArray([first]), "px": small, "squeeze": minf(1.0, HUB_TEXT_W / maxf(1.0, w))}
 
 
 ## The detail popup of the hub core or an inner ring segment.

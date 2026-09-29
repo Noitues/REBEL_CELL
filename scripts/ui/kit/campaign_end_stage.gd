@@ -16,8 +16,8 @@ extends Control
 ## when long), the profile and ICE records on a taped receipt as icon + number fields, then
 ## the actions (§6.4: New campaign Primary, Back to title Secondary).
 ##
-## The sequence is skippable with any press, and a page settle ends it (`Typing.META`, as
-## RunEndStage). Under reduce effects nothing moves: the end state shows at once and the
+## The sequence is skippable with any press, and a page settle ends it (its
+## `settle_motion`, as RunEndStage). Under reduce effects nothing moves: the end state shows at once and the
 ## page's own entrance (a cross-fade) brings it in. View only: the screen passes the words,
 ## the crew and the records; the city is the screen's (Signal Up, Call Down).
 

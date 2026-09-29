@@ -236,7 +236,7 @@ func _exit_tree() -> void:
 
 
 ## Art pass W9F: PageTransition.settle's hook (a press during the page's entrance, the
-## review harness): the sequence shows its end. (It rode Typing.META before, which made a
+## review harness): the sequence shows its end. (It rode the typing meta before, which made a
 ## "words still typing" check see a stage as typing.)
 func settle_motion() -> void:
 	if running():

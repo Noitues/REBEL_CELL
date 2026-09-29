@@ -1113,7 +1113,8 @@ func _under_modal(c: Control) -> bool:
 func _visible_rect(c: Control, rect: Rect2) -> Rect2:
 	var r := rect
 	var p := c.get_parent()
-	while p != null:
+	# A CanvasLayer or a Window starts its own drawing: nothing above it clips this text.
+	while p != null and not (p is CanvasLayer) and not (p is Window):
 		if p is Control and ((p as Control).clip_contents or p is ScrollContainer):
 			var pr := _screen_rect_of(p as Control, Rect2(Vector2.ZERO, (p as Control).size))
 			r = r.intersection(pr)
@@ -1149,7 +1150,7 @@ func _screen_rect_of(c: Control, local: Rect2) -> Rect2:
 	var r := Rect2(a, Vector2.ZERO).expand(b)
 	# Controls in an embedded popup window draw at the window's offset.
 	var w := c.get_window()
-	if w != null and w != get_tree().root:
+	if w != null and w != c.get_tree().root:
 		r.position += Vector2(w.position)
 	return r
 
