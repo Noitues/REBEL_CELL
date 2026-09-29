@@ -7,7 +7,7 @@ extends VBoxContainer
 ## ignores the mouse, never takes focus. View only.
 
 ## The art's height at text scale 1.0 (px) and its tilt (degrees).
-const HEIGHT := 64.0
+const HEIGHT := 76.0
 const TILT := -6.0
 
 var art: TextureRect

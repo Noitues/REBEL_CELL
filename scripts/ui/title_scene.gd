@@ -22,8 +22,9 @@ const MARGIN_BOTTOM := UiTheme.SAFE_MARGIN
 ## The main menu's least width at text scale 1.0 (px), grown with the text up to this scale.
 const MENU_W := 380.0
 const MENU_W_SCALE_MAX := 1.3
-## How far the plan note is taped over the menu's right edge (px).
-const NOTE_OVERLAP := UiTheme.SP_L
+## How far the plan note is taped over the menu's right edge (px): its frame only, never the
+## Continue line's glyphs under it.
+const NOTE_OVERLAP := UiTheme.SP_S
 ## Stats grid columns (§11: 3), and the rows of section tabs the codex allows for.
 const STAT_COLUMNS := 3
 ## A stats cell's width at text scale 1.0 (px): its longest word fits whole.
