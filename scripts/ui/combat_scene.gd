@@ -37,8 +37,8 @@ const STICKER_GAP := 6.0
 const STICKER_EDGE := 4.0
 ## Chip colours on the tags (the text says what they are; colour is a second cue).
 const CHIP_HIT := Palette.CELL_PINK
-const CHIP_LOSS := Color("#FF4D4D")
-const CHIP_GAIN := Color("#3DFF8B")
+const CHIP_LOSS := Palette.HARM
+const CHIP_GAIN := Palette.GAIN
 const CHIP_GUARD := Palette.NET_CYAN
 const CHIP_STATUS := Palette.CELL_ACID
 const CHIP_RESIST := Palette.RESIST_GOLD
@@ -47,6 +47,8 @@ const CHIP_RUN := Palette.NOTE_YELLOW
 ## operative's (and its drones') hits in acid, the enemies' (and their satellites') in red.
 const PLAYER_HIT_COLOR := Palette.CELL_ACID
 const ENEMY_HIT_COLOR := CHIP_LOSS
+## The dev picker's largest seed.
+const SEED_MAX := 999999
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
 
@@ -65,7 +67,7 @@ var toast: Toast
 var preview_note: ZineNote
 var log_note: ZineNote
 var _status: Label
-var _seed_spin: SpinBox
+var _seed_spin: Stepper
 var _player_view: WheelView
 var _enemy_views_box: VBoxContainer
 var _enemy_views: Dictionary = {}
@@ -117,7 +119,7 @@ var _dragging: bool = false
 var _aim_line: Control
 ## The aiming instruction over the hand.
 var _aim_hint: Label
-const AIM_HINT_FONT := 14
+const AIM_HINT_FONT := UiTheme.BODY
 ## Other cards fade while one is aimed.
 const AIM_DIM := 0.45
 const AIM_LINE_WIDTH := 3.0
@@ -129,6 +131,7 @@ var _hand_scale: float = 0.0
 
 func _exit_tree() -> void:
 	Dialogue.dock_bottom()
+	_restore_time_scale()
 
 
 func _ready() -> void:
@@ -176,9 +179,10 @@ func end_turn() -> void:
 	var before := engine.state().duplicate_state() if engine.has_fight() else null
 	_pending_last_turn = before
 	_hold_slot = -1
-	_pending_discard = _capture_hand() if Motion.animating() and engine.has_fight() else []
+	var replays := Motion.animating() and engine.has_fight() and not Motion.resolve_instant()
+	_pending_discard = _capture_hand() if replays else []
 	_held_tags.clear()
-	if Motion.animating() and engine.has_fight():
+	if replays:
 		# ANIM-R3 A6b: the forecast SEND IT carries out (never a hovered card's) stays up
 		# through the replay, its lines ticked as they happen.
 		_show_end_turn_preview()
@@ -734,6 +738,11 @@ func _input(event: InputEvent) -> void:
 	# open pause menu keeps its presses; the fight's own controls (SEND IT, RESPIN, UNDO, the
 	# hand) keep theirs: a press on them only ends the replay, so the next turn is never
 	# played blind.
+	if boss_intro != null and boss_intro.playing() and MotionSkip.is_press(event):
+		# Art pass W3 (§8 T4): the boss's sting is skippable; the press only ends it.
+		boss_intro.skip()
+		MotionSkip.consume(self, event)
+		return
 	if _skippable():
 		var verdict := MotionSkip.verdict(event, self, replay_keeps())
 		if verdict != MotionSkip.Verdict.IGNORE:
@@ -891,6 +900,7 @@ func _notification(what: int) -> void:
 		var data: Variant = get_viewport().gui_get_drag_data()
 		if data is Dictionary and (data as Dictionary).has("hand_index") and engine != null and engine.has_fight():
 			_dragging = true
+			set_process(true)
 			var i := int(data["hand_index"])
 			# ANIM-3 pick-up: the card pops as it leaves the hand.
 			var picked := _card_node(i)
@@ -956,7 +966,9 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 		aimed_card.grab_focus()
 	if _dragging:
 		_option_index = -1  # nothing aimed until the card is over a zone
-		_show_end_turn_preview()
+		# Art pass W3 (§6.3, critique 3): the card's preview stays on the tags through the whole
+		# drag (it vanished at pick-up with the mouse).
+		_preview_card(hand_index)
 		_dim_hand()
 		for v in _views():
 			v.queue_redraw()
@@ -1037,7 +1049,12 @@ func _on_view_drag_hover(view_id: StringName, zone: Dictionary) -> void:
 			v.hover_zone = {}
 			v.queue_redraw()
 		_clear_ghost()
-		_show_end_turn_preview()
+		# Art pass W3 (§6.3): off every zone the dragged card still previews its default play;
+		# only a drop or a cancel ends it.
+		if _dragging:
+			_preview_card(selecting)
+		else:
+			_show_end_turn_preview()
 		_aim_line.queue_redraw()
 		return
 	_show_selection()
@@ -1066,8 +1083,7 @@ func _draw_aim_line() -> void:
 	if v == null:
 		return
 	var origin := _aim_line.get_global_rect().position
-	var card := card_node.get_global_rect()
-	var from := Vector2(card.get_center().x, card.position.y) - origin
+	var from := aim_origin() - origin
 	# ANIM-3: the line draws in from the card each time the aim moves.
 	var to := from.lerp(v.zone_center(z[1]) - origin, _aim_draw)
 	var n := maxi(2, int(from.distance_to(to) / 14.0))
@@ -1075,6 +1091,27 @@ func _draw_aim_line() -> void:
 		if k % 2 == 0:
 			_aim_line.draw_line(from.lerp(to, float(k) / n), from.lerp(to, float(k + 1) / n), Palette.CELL_ACID, AIM_LINE_WIDTH)
 	_aim_line.draw_arc(to, 12.0, 0, TAU, 20, Palette.CELL_ACID, AIM_LINE_WIDTH)
+
+
+## Art pass W3 (§6.3, critique 3): where the aim line starts (global): the card's centre (the
+## dragged card's while it is dragged: W4's drag ghost centre follows the pointer).
+func aim_origin() -> Vector2:
+	if _dragging:
+		# W4: the drag ghost's own centre (its lag, tilt and 60% scale included).
+		var ghost := _drag_ghost()
+		return ghost.center_global() if ghost != null else get_global_mouse_position()
+	var card_node := _card_node(selecting)
+	return card_node.get_global_rect().get_center() if card_node != null else Vector2.ZERO
+
+
+## The card's drag ghost on screen now (W4's DragGhost, the drag preview), or null.
+func _drag_ghost() -> DragGhost:
+	if not is_inside_tree():
+		return null
+	for n in get_tree().root.find_children("*", "Control", true, false):
+		if n is DragGhost:
+			return n as DragGhost
+	return null
 
 
 ## Fades the cards not being aimed (and restores them).
@@ -1165,7 +1202,8 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 	# ANIM-2 / ANIM-3: the state is final now; motion replays it on top. A replay still
 	# running ends first, except queued nudge steps, which a new nudge joins.
 	var live := Motion.animating() and not events.is_empty()
-	var sequence := live and before_turn != null and _has_event(events, "resolve_start")
+	# Art pass W3 (W9s resolve speed): instant shows the end state at once, as headless does.
+	var sequence := live and before_turn != null and _has_event(events, "resolve_start") and not Motion.resolve_instant()
 	if not (live and _only_nudges(events)):
 		skip_motion()
 	# ANIM-R1 C5e: while a SEND IT replays, the next turn's forecast (tags, NEXT plates) and
@@ -1184,6 +1222,8 @@ func _on_state_changed(state: CombatState, events: Array[Dictionary]) -> void:
 		# ANIM-R1 C5f: a new fight's enemies enter from the edge with their names.
 		for v in _enemy_views.values():
 			(v as WheelView).play_enter()
+	if _has_event(events, "combat_start"):
+		_play_boss_intro(state)
 	if sequence:
 		_play_resolve_sequence(before_turn, state, events, discard)
 	elif live and rewind_from != null:
@@ -1355,11 +1395,13 @@ func _boss_phase_feedback(state: CombatState) -> void:
 	AudioDirector.play_sfx("alarm")
 	if Motion.live(&"boss_phase_flash") and fx_layer != null:
 		# Art pass W6 (ART_BIBLE 8): a T3 ring on the boss's own wheel, never the screen.
-		var hue := Palette.corp_color(RunManager.campaign.corporation_id) if RunManager.campaign != null else Palette.CORP_SOLACE
 		for boss in state.enemies:
 			var bv: WheelView = _view_of(boss.id) if boss.phase_index > 0 else null
 			if bv != null:
-				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, hue)
+				# Art pass W3 with W6 (§3.6): the boss's own corp hue and pattern, so the phase
+				# burst reads without colour.
+				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, bv.wheel_color,
+					int(bv.look.get("pattern", CorpPattern.Kind.NONE)))
 	_bark("boss", state)
 
 
@@ -1460,7 +1502,9 @@ func _start_music() -> void:
 
 func _build_ui() -> void:
 	background = WireframeBackground.new()
-	background.city.dim = 0.55  # the arena: wheels first, city second
+	# W7 (§9.1): the combat grade (contrast up, the city dimmed behind the wheels) is the
+	# city's own context; it includes the arena's veil.
+	background.set_context(&"combat")
 	add_child(background)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1472,23 +1516,26 @@ func _build_ui() -> void:
 	var fight_label := _label("Fight:")
 	top.add_child(fight_label)
 	_picker_controls.append(fight_label)
-	# One dropdown (H24: a button per enemy left the status line ~100 px at 1.6).
-	var pick := OptionButton.new()
-	pick.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # content ids, dev only
+	# Art pass W3 with W2 (§6.5): the dev fight picker is a row of tiles and the seed a
+	# stepper (no native dropdown or spin box). A dev tool: shown only when the scene runs on
+	# its own (auto_start), never in a run or a test.
+	var tiles: Array[Dictionary] = []
 	for enemy_id in ENEMY_CHOICES:
-		pick.add_item(String(enemy_id))
-	pick.item_selected.connect(func(i: int) -> void: start_fight(ENEMY_CHOICES[i], int(_seed_spin.value)))
+		tiles.append({"name": String(enemy_id), "meta": "", "icon": StatIcon.FIGHT, "locked": false, "unlock": ""})
+	var pick := TilePicker.new(tiles)
+	pick.name = "FightPick"
+	pick.tile_chosen.connect(func(i: int) -> void: start_fight(ENEMY_CHOICES[i], int(_seed_spin.value)))
 	top.add_child(pick)
 	_picker_controls.append(pick)
 	var seed_label := _label("Seed:")
 	top.add_child(seed_label)
 	_picker_controls.append(seed_label)
-	_seed_spin = SpinBox.new()
-	_seed_spin.min_value = 0
-	_seed_spin.max_value = 999999
-	_seed_spin.value = 1
+	_seed_spin = Stepper.new(0, SEED_MAX, 1, 1)
+	_seed_spin.name = "SeedStep"
 	top.add_child(_seed_spin)
 	_picker_controls.append(_seed_spin)
+	for c in _picker_controls:
+		c.visible = auto_start
 	_status = _label("")
 	_status.clip_text = true
 	# Its text is built from translated parts (not translated again), and shrinks to its
@@ -1634,6 +1681,12 @@ func _build_ui() -> void:
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
 	add_child(fx_layer)
+	hub_queue = HubQueue.new()
+	add_child(hub_queue)
+	# Art pass W3 (§7.2, §8 T4): a boss fight's intro sting, over the arena and the hand.
+	boss_intro = BossIntro.new()
+	boss_intro.name = "BossIntro"
+	add_child(boss_intro)
 	toast = Toast.new()
 	toast.name = "Toast"
 	add_child(toast)
@@ -1801,6 +1854,9 @@ func _refresh(state: CombatState) -> void:
 	if engine.netrun != null and engine.netrun.run != null and engine.netrun.run.operative != null:
 		# The same face as the operative's dossier (H20 #23).
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
+		# Art pass W3 (§6.1, §7.1): the bezel wears the class; the hub's inset shows this face.
+		_player_view.class_id = engine.netrun.run.operative.class_id
+		_player_view.portrait_subject = PortraitArt.operative_subject(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id, operative_name)
 	portrait.glitch = state.player.hp * 4 <= state.player.max_hp
 	shown_tip(portrait, tr("%s (%s): %d/%d HP.") % [operative_name, _name_of(state.player), state.player.hp, state.player.max_hp])
 	portrait.queue_redraw()
@@ -1860,6 +1916,9 @@ func _refresh(state: CombatState) -> void:
 	_end_turn_button.disabled = state.is_over()
 	_sync_over(state.is_over() and not _outcome_held)
 	_player_view.flatlined = state.outcome == CombatState.Outcome.DEFEAT and not _outcome_held
+	_player_view.triumphant = state.outcome == CombatState.Outcome.VICTORY and not _outcome_held
+	# W5: the column's Polaroid wears the same face as the hub's inset.
+	portrait.set_expression(_player_view.expression())
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
 	_rewind_button.disabled = not engine.can_rewind()
@@ -1938,8 +1997,10 @@ func _land_outcome() -> void:
 	_sync_heat()
 	_sync_over(state.is_over())
 	var lost := state.outcome == CombatState.Outcome.DEFEAT
+	_player_view.triumphant = state.outcome == CombatState.Outcome.VICTORY
 	if lost and not _player_view.flatlined:
 		_player_view.play_flatline()
+	portrait.set_expression(_player_view.expression())
 	outcome_landed.emit()
 
 
@@ -2016,7 +2077,7 @@ func _fit_status() -> void:
 
 
 ## The smallest the status line's font shrinks to (px).
-const STATUS_MIN_FONT := 10
+const STATUS_MIN_FONT := UiTheme.CAPTION
 var _fitting_status := false
 
 
@@ -2048,12 +2109,19 @@ func _build_hand(state: CombatState) -> void:
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
+			c.set_hovered(true)
 			if selecting < 0:
 				_preview_card(index))
 		c.focus_entered.connect(func() -> void:
+			c.set_hovered(true)
 			if _nav_focus and selecting < 0:
 				_preview_card(index))
+		c.focus_exited.connect(func() -> void:
+			if not c.get_global_rect().has_point(c.get_global_mouse_position()):
+				c.set_hovered(false))
 		c.mouse_exited.connect(func() -> void:
+			if not c.has_focus():
+				c.set_hovered(false)
 			if selecting < 0:
 				_clear_ghost()
 				_show_end_turn_preview())
@@ -2077,6 +2145,8 @@ func _card_pressed(index: int) -> void:
 ## connects its own; flights use the bare copy).
 func _make_card(card: CardData, i: int, s: float) -> ZineCard:
 	var c := ZineCard.new(TextDb.t(card, "display_name"), card.ram_cost, TextDb.t(card, "description"), i).scaled(s).with_card(card)
+	# W4 (§6.3): the hand drives the hover itself (lift 12 px, 1.12, straighten; card_hover).
+	c.auto_hover = false
 	if Settings.pad_active:
 		c.hotkey = ""
 		c.pad_hint = Settings.key_text(&"ui_accept")
@@ -2313,6 +2383,7 @@ func _show_end_turn_preview() -> void:
 		for v in _views():
 			v.intent = {}
 			v.outcome = {}
+			v.net_line = {}
 			v.queue_redraw()
 		ram_note.set_pending(0)
 		return
@@ -2321,6 +2392,7 @@ func _show_end_turn_preview() -> void:
 		for v in _views():
 			v.intent = {}
 			v.outcome = {}
+			v.net_line = {}
 			v.queue_redraw()
 		ram_note.set_pending(0)
 		return
@@ -2365,6 +2437,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		if c == null or not c.is_alive():
 			view.intent = {}
 			view.outcome = {}
+			view.net_line = {}
 			view.queue_redraw()
 			continue
 		var lc := landing.get_combatant(id)
@@ -2396,8 +2469,23 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
 			"statuses": shown_statuses, "satellites": sats}
 		view.intent = {"type": title["type"], "tier": title.get("tier", -1), "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
+		view.net_line = net_line_for(state, resolved, events) if c.is_player else {}
 		view.queue_redraw()
 	ram_note.set_pending(o.ram_delta)
+
+
+## Art pass W3 (§6.2): what the operative receives if SEND IT is pressed now, once, under its
+## HP: {net (its HP change, the NEXT plate's), hit (the raw hits aimed at it), soaked (what
+## block and shield take), evaded}; {} when nothing reaches it. From the preview's own events
+## and state (preview = result).
+static func net_line_for(state: CombatState, resolved: CombatState, events: Array[Dictionary]) -> Dictionary:
+	var now := resolved.get_combatant(state.player.id) if resolved != null else null
+	var net := (now.hp if now != null else 0) - state.player.hp
+	var d: Dictionary = last_turn_icons(state, events).get(state.player.id, {})
+	var hit := int(d.get("hit", 0))
+	if net == 0 and hit <= 0:
+		return {}
+	return {"net": net, "hit": hit, "soaked": int(d.get("soaked", 0)), "evaded": int(d.get("evaded", 0))}
 
 
 ## ANIM-R4 C6f: the chip for a status a random slice will get: which status (its glyph and
@@ -2410,7 +2498,8 @@ static func random_status_chip(status: int, on_player: bool) -> Dictionary:
 	var good := WheelView.status_good_for_you(status, on_player)
 	var word := String(TranslationServer.translate(String(Palette.STATUS_WORDS.get(status, ""))))
 	var who := String(TranslationServer.translate("YOU GET %s") if on_player else TranslationServer.translate("GETS %s")) % word
-	return {"text": "%s %s" % [Palette.STATUS_GLYPHS.get(status, "?"), who],
+	# Art pass W3 with W2 (§7.4): the status's glyph is a drawn StatIcon ("glyph"), not a font glyph.
+	return {"text": who, "glyph": status,
 		"color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
 		"rank": CHIP_RANK_HP if good else CHIP_RANK_HURTS_YOU,
 		"tooltip": String(TranslationServer.translate("Good for you: %s") if good else TranslationServer.translate("Bad for you: %s")) % Codex.status_text(status)}
@@ -2447,10 +2536,10 @@ func afflict_chips(state: CombatState, events: Array[Dictionary]) -> Dictionary:
 		var victim := state.get_combatant(tgt)
 		var on_player := victim != null and victim.is_player
 		var good := WheelView.status_good_for_you(status, on_player)
-		var word := "%s %s" % [Palette.STATUS_GLYPHS.get(status, "?"), tr(String(Palette.STATUS_WORDS.get(status, "")))]
+		var word := tr(String(Palette.STATUS_WORDS.get(status, "")))
 		var text := tr("PUTS %s ON YOU") % word if on_player else tr("PUTS %s ON %s") % [word, _name_of(victim).to_upper() if victim != null else "?"]
 		var list: Array = out.get(src, [])
-		list.append({"text": text, "color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
+		list.append({"text": text, "glyph": status, "color": CHIP_GAIN if good else CHIP_LOSS, "ink": Palette.INK if good else Palette.PAPER, "status": true,
 			"rank": CHIP_RANK_HURTS_YOU if on_player and not good else CHIP_RANK_DEALT,
 			"beats": ForecastTicks.filter(["status", "absorbed"], StringName(String(b["source"])), tgt),
 			"tooltip": String(tr("Good for you: %s") if good else tr("Bad for you: %s")) % Codex.status_text(status)})
@@ -2491,26 +2580,22 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	for tgt in to:
 		var victim := state.get_combatant(StringName(String(tgt)))
 		var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
-		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK,
+		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_LOSS if victim != null and victim.is_player else CHIP_HIT, "ink": Palette.INK,
 			"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT,
 			"beats": ForecastTicks.filter(["damage", "evaded"], id, StringName(String(tgt)))})
 	if to.is_empty() and int(d["dealt"]) > 0:
 		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK, "rank": CHIP_RANK_DEALT,
 			"beats": ForecastTicks.filter(["damage", "evaded"], id)})
 	var dhp := int(d["hp_after"]) - int(d["hp_before"])
-	if dhp < 0:
-		# Said as damage taken (H23: "−11 HP" under the player's DEFEND read as DEFEND costing
-		# 11 HP).
-		var victim_self := state.get_combatant(id)
-		var taker := tr("YOU TAKE") if victim_self != null and victim_self.is_player else tr("TAKES")
-		chips.append({"text": tr("%s %d HP") % [taker, -dhp], "color": CHIP_LOSS, "ink": Palette.PAPER,
-			"rank": CHIP_RANK_HURTS_YOU if victim_self != null and victim_self.is_player else CHIP_RANK_HP,
-			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
-	elif dhp > 0:
+	# Art pass W3 (§6.2): a tag says what its wheel does. The HP a wheel loses is not its own
+	# chip: the attacker's HITS chip says it, the HP arc's ghost and NEXT plate show it, and
+	# what the operative receives is one net line under its HP ("−3 ♥ (7 − 4)", net_line).
+	if dhp > 0:
 		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
 			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
-	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do).
-	if int(d.get("soaked", 0)) > 0:
+	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do);
+	# the operative's is in its net line ("(7 − 4)").
+	if int(d.get("soaked", 0)) > 0 and id != state.player.id:
 		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK,
 			"beats": ForecastTicks.filter(["damage"], &"", id)})
 	for key in ["block", "shield"]:
@@ -2533,7 +2618,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		# ANIM-R4 C6f: green when it is good for you, red when bad (a status landing on your
 		# wheel, a clear of a bad one...).
 		var good := WheelView.status_good_for_you(after, mine) if after != RC.Status.NONE else not WheelView.status_good_for_you(int(st["before"]), mine)
-		chips.append({"text": "%s %s" % [Palette.STATUS_GLYPHS.get(after, "×"), tag], "color": CHIP_GAIN if good else CHIP_LOSS,
+		chips.append({"text": tag, "glyph": after if after != RC.Status.NONE else int(st["before"]), "glyph_on": after != RC.Status.NONE, "color": CHIP_GAIN if good else CHIP_LOSS,
 			"ink": Palette.INK if good else Palette.PAPER, "status": true, "beats": ForecastTicks.filter(["status", "absorbed"], &"", id)})
 	# ANIM-R5 combat 3: the operative going down is the fight's DEFEAT: one chip says it (DOWN
 	# and DEFEAT side by side said it twice).
@@ -2554,7 +2639,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			continue
 		var name := _name_of(sat).to_lower()
 		if int(sd["dealt"]) > 0:
-			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK,
+			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT if sat.is_player else CHIP_LOSS, "ink": Palette.INK,
 				"rank": CHIP_RANK_DEALT if sat.is_player else CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["damage", "evaded"], sat.id)})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
 			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", sat.id)})
@@ -2569,7 +2654,8 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 					"beats": ForecastTicks.filter([key, "damage"], &"", sat.id)})
 		for st in sd["statuses"]:
 			var sw: String = tr(String(Palette.STATUS_WORDS.get(int(st["after"]), ""))) if int(st["after"]) != RC.Status.NONE else tr("CLEARED")
-			chips.append({"text": "%s %s %s" % [name, Palette.STATUS_GLYPHS.get(int(st["after"]), "×"), sw], "color": CHIP_STATUS, "ink": Palette.INK, "status": true,
+			chips.append({"text": "%s %s" % [name, sw], "glyph": int(st["after"]) if int(st["after"]) != RC.Status.NONE else int(st["before"]),
+				"glyph_on": int(st["after"]) != RC.Status.NONE, "color": CHIP_STATUS, "ink": Palette.INK, "status": true,
 				"beats": ForecastTicks.filter(["status", "absorbed"], &"", sat.id)})
 		if int(sd.get("dock_after", -1)) != int(sd.get("dock_before", -1)):
 			chips.append({"text": tr("%s MOVES") % name, "color": CHIP_RESIST, "ink": Palette.INK})
@@ -2583,7 +2669,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			var heat := 0
 			for h in o.heat_events:
 				heat += HeatRules.scaled_delta(RunManager.campaign, h, RunManager.config()) if RunManager.campaign != null else h
-			chips.append({"text": tr("HEAT %s") % signed(heat), "color": heat_poster.hot_color, "ink": Palette.INK})
+			chips.append({"text": tr("HEAT %s") % signed(heat), "color": Palette.WARN, "ink": Palette.INK})  # §3.5: Heat is a warning, never a corp hue
 		if o.cycles != 0:
 			chips.append({"text": tr("CYCLES %s") % signed(o.cycles), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.schematics != 0:
@@ -2732,6 +2818,34 @@ signal motion_settled
 
 ## The overlay the replay draws on (numbers, hit lines, stamps, flights, piles).
 var fx_layer: CombatFxLayer
+## Art pass W3: the boss's intro sting (T4).
+var boss_intro: BossIntro
+## Art pass W3 (§6.1): one stamp at a time in a hub.
+var hub_queue: HubQueue
+
+
+## Art pass W3 (§6.1, §6.6): stamps `text` at `spot` (a WheelView stamp slot) on view `v`: in
+## its hub it waits its turn (HubQueue: after the stamp before it and any number resting
+## there) and clears the hub while it shows; beside the HP number it shows at once.
+func _hub_stamp(v: WheelView, spot: Dictionary, text: String, color: Color, hold: float, delay: float = 0.0, icon: String = "") -> void:
+	var d := delay
+	if not bool(spot.get("beside_hp", false)) and Motion.live(&"result_stamp"):
+		var total := Motion.seconds(&"result_stamp") + hold
+		d = hub_queue.book(v.get_instance_id(), delay, total)
+		v.clear_hub(d, total)
+	fx_layer.word_stamp(spot["at"], text, color, hold, float(spot["max_w"]), int(spot.get("max_fs", -1)), d, icon)
+
+
+## Art pass W3 (§7.2): a fight with a boss opens with its name slamming in on a taped banner.
+## Returns whether the sting plays.
+func _play_boss_intro(state: CombatState) -> bool:
+	if boss_intro == null:
+		return false
+	for e in state.enemies:
+		var v := _view_of(e.id)
+		if v != null and v.is_boss():
+			return boss_intro.play(v.shown_name().to_upper(), v.wheel_color, v.backdrop as Hologram)
+	return false
 ## Captured before an action goes to the engine (only while motion plays).
 var _before_action: CombatState = null
 var _pending_play: Dictionary = {}
@@ -2763,13 +2877,55 @@ var _deal_waiting: bool = false
 const NUMBER_RISE_SHARE := 0.7
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if _seq != null:
+		# Art pass W3 (§10, W9): the replay runs at the resolve speed; holding fast-forward
+		# speeds it further, frame by frame.
+		_seq_elapsed += delta
+		_apply_resolve_speed()
 	# A gap closes once the cursor is off the hand (the hand never moves under it).
 	if _gap_waiting and is_instance_valid(_gap):
 		if not _hand_box.get_global_rect().has_point(get_global_mouse_position()):
 			_close_gap()
-	elif not _gap_waiting:
+	elif not _gap_waiting and _seq == null and not _dragging:
 		set_process(false)
+	if _dragging and selecting >= 0 and _option_index >= 0:
+		_aim_line.queue_redraw()  # the aim line follows the dragged card (W4's ghost)
+
+
+## Art pass W3 (ART_BIBLE §10 with W9s): the game seconds the replay has played, and whether
+## this scene has changed the engine's clock (and what it was).
+var _seq_elapsed: float = 0.0
+var _speeding: bool = false
+var _base_time_scale: float = 1.0
+
+
+## The SEND IT replay's clock factor now: Motion.resolve_time_scale_now() (1 at 1×, 0.5 at
+## 2×, at most FAST_FORWARD_TIME_SCALE while fast-forward is held). The replay's schedule stays
+## in 1× seconds (one hit at a time holds at every speed); the engine's clock runs it faster,
+## so every tween, sprite and timer of the replay keeps its place. Instant never plays one.
+static func resolve_clock() -> float:
+	return Motion.resolve_time_scale_now()
+
+
+func _apply_resolve_speed() -> void:
+	var k := resolve_clock()
+	if k <= 0.0:
+		return
+	if not _speeding:
+		if is_equal_approx(k, 1.0):
+			return
+		_base_time_scale = Engine.time_scale
+		_speeding = true
+	Engine.time_scale = _base_time_scale / k
+
+
+## The engine's clock back to what it was (the replay ended, was skipped, or the scene left).
+func _restore_time_scale() -> void:
+	if not _speeding:
+		return
+	Engine.time_scale = _base_time_scale
+	_speeding = false
 
 
 ## True while any combat motion still plays (the SEND IT sequence, flights, wheels).
@@ -2786,13 +2942,14 @@ func motion_busy() -> bool:
 func motion_seconds_left() -> float:
 	if _seq == null:
 		return 0.0
-	return maxf(0.0, _seq_total - (Time.get_ticks_msec() / 1000.0 - _seq_started))
+	return maxf(0.0, _seq_total - _seq_elapsed)
 
 
 ## Brings every motion to its end state at once (a skip): the sequence, flights, wheels,
 ## the hand's deal and the RAM chips. The state was final all along.
 func skip_motion() -> void:
 	var had := _seq != null
+	_restore_time_scale()
 	if _seq != null and _seq.is_valid():
 		_seq.kill()
 	_seq = null
@@ -2802,6 +2959,10 @@ func skip_motion() -> void:
 	_motion_tweens.clear()
 	if fx_layer != null:
 		fx_layer.clear()
+	if boss_intro != null:
+		boss_intro.skip()
+	if hub_queue != null:
+		hub_queue.clear()
 	_release_forecast()
 	for v in _views():
 		# A skip lands: the forecast is already on the tags, which don't flip (C3).
@@ -3259,6 +3420,9 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 	_numbers_on.clear()
 	_seq = create_tween().set_parallel(true)
 	_seq_started = Time.get_ticks_msec() / 1000.0
+	_seq_elapsed = 0.0
+	_apply_resolve_speed()
+	set_process(true)
 	_seq_total = maxf(float(sch["total"]), outcome_time(beats, times))
 	var end_at := outcome_time(beats, times)
 	for k in beats.size():
@@ -3287,11 +3451,44 @@ func _after_seq(seconds: float, c: Callable) -> void:
 ## When each beat of a SEND IT plays (ResolveBeats.schedule with the sequence's budget,
 ## the beat gap, the landing hold, the result hold, a wheel death's wait for its HP at 0,
 ## and a tail for the spin to the next landing).
+## Art pass W3 (§10 rule 4, critique gifs/01): one thing moves at a time per region at the
+## turn start: the held forecast fades (`forecast_fade`, from spin_at), *then* the wheels
+## respin (spin_start), *then* the hand redeals once they have landed (deal_at). Adds
+## {fade_at, spin_start, deal_at} (-1 without a turn start).
 static func sequence_schedule(beats: Array[Dictionary]) -> Dictionary:
-	var spin_time := maxf(WheelView.spin_seconds(&"wheel_respin", RC.TICKS * SPIN_TICKS_TYPICAL),
-		Motion.delay_of(&"enemy_turn_spin") + WheelView.spin_seconds(&"enemy_turn_spin", RC.TICKS * SPIN_TICKS_TYPICAL))
-	return ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), spin_time,
+	var spin_time := maxf(WheelView.turn_seconds(&"wheel_respin", RC.TICKS * SPIN_TICKS_TYPICAL),
+		Motion.delay_of(&"enemy_turn_spin") + WheelView.turn_seconds(&"enemy_turn_spin", RC.TICKS * SPIN_TICKS_TYPICAL))
+	var fade := Motion.seconds(&"forecast_fade") if Motion.live(&"forecast_fade") else 0.0
+	var sch := ResolveBeats.schedule(beats, Motion.seconds(&"resolve_sequence"), Motion.seconds(&"resolve_beat"), spin_time + fade,
 		Motion.seconds(&"resolve_landing_hold"), Motion.seconds(&"resolve_result_hold"), death_lead(), beat_timing())
+	sch["fade_at"] = -1.0
+	sch["spin_start"] = -1.0
+	sch["deal_at"] = -1.0
+	var spin_at := float(sch["spin_at"])
+	if spin_at < 0.0:
+		return sch
+	var times: PackedFloat32Array = sch["times"]
+	var spin_start := spin_at + fade
+	var landed := spin_start + spin_time
+	var prev := 0.0
+	for k in beats.size():
+		if k >= times.size():
+			break
+		if beats[k]["phase"] == "turn_start":
+			if beats[k]["kind"] == "spin":
+				times[k] = spin_start
+			elif beats[k]["kind"] == "draw":
+				times[k] = maxf(times[k] + fade, landed)
+				sch["deal_at"] = times[k]
+			else:
+				times[k] += fade
+			times[k] = maxf(times[k], prev)
+		prev = times[k]
+	sch["times"] = times
+	sch["fade_at"] = spin_at
+	sch["spin_start"] = spin_start
+	sch["total"] = maxf(float(sch["total"]), prev)
+	return sch
 
 
 ## The replay's timing (ANIM-R2, ResolveBeats.schedule): hits `hit_line` apart (never two
@@ -3356,8 +3553,7 @@ func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatS
 			v.show_caption(tr("THIS TURN"))
 		if stamps.has(v.combatant.id) and not v.defeated() and not _impact_stamped.has(v.combatant.id):
 			var spot := v.stamp_slot(String(stamps[v.combatant.id]), CombatFxLayer.GUARD_NULL)
-			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]),
-				int(spot["max_fs"]), 0.0, CombatFxLayer.GUARD_NULL)
+			_hub_stamp(v, spot, String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), 0.0, CombatFxLayer.GUARD_NULL)
 
 
 ## The HP `id` ends the resolve on (before the next turn starts): the last resolve-phase HP
@@ -3401,6 +3597,7 @@ func result_stamps(beats: Array[Dictionary], before: CombatState) -> Dictionary:
 
 func _finish_sequence() -> void:
 	_seq = null
+	_restore_time_scale()
 	# The forecast goes on first, so the tags flip in with it (C5e).
 	_release_forecast()
 	for v in _views():
@@ -3506,8 +3703,14 @@ func numbers_for(b: Dictionary, s: CombatState, after: CombatState = null) -> Ar
 	match kind:
 		"damage", "corrupted":
 			if amount > 0:
-				var n := _number(v, "hp", "-%d" % amount, WheelView.LOSS_COLOR, &"number_float", crit, true)
+				# Art pass W3 (critique 3.4): one number per hit, in its result's colour: WARN when a
+				# guard took part of it (with a small "7 − 4" beside it), HARM for a full hit; a hit
+				# the HP ran out under says so ("−3 (12 capped)").
+				var hit := ResolveBeats.is_hit(b)
+				var partial := hit and int(b["soaked"]) > 0
+				var n := _number(v, "hp", "-%d" % amount, Palette.WARN if partial else WheelView.LOSS_COLOR, &"number_float", crit, true)
 				n["hp"] = amount
+				n["sub"] = number_sub(b)
 				if int(b["soaked"]) > 0 and ResolveBeats.is_hit(b):
 					# ANIM-R4 C6c: the hit meets its guard where it struck (the equation, sword
 					# raw − shield soaked = through); what gets through then pops fresh in the
@@ -3523,6 +3726,46 @@ func numbers_for(b: Dictionary, s: CombatState, after: CombatState = null) -> Ar
 		n["hp"] = amount
 		out.append(n)
 	return out
+
+
+## Art pass W3 (critique 3.4): the small words beside a hit's number: its guard's part
+## ("7 − 4": the hit, less what the guard took) or, when the HP ran out under it, what it
+## would have dealt ("(12 capped)"); "" for a full hit that fit.
+static func number_sub(b: Dictionary) -> String:
+	if not ResolveBeats.is_hit(b) or String(b["kind"]) != "damage":
+		return ""
+	var raw := int(b.get("raw", b["amount"]))
+	var soaked := int(b["soaked"])
+	var through := maxi(0, raw - soaked)
+	if int(b["amount"]) < through:
+		return String(TranslationServer.translate("(%d capped)")) % through
+	if soaked > 0:
+		return "%d %s %d" % [raw, CombatFxLayer.EQ_MINUS, soaked]
+	return ""
+
+
+## Art pass W3 (critique 3.4, "42⁶42"): where a hit's impact mark shows on view `v`: where it
+## struck (`at`, global), moved in toward the wheel's centre until it is clear of the HP
+## number.
+func impact_spot(v: WheelView, at: Vector2, text: String, icon: int, items: Array) -> Vector2:
+	var lay := v.hp_layout()
+	var hp: Rect2 = lay["hp"]
+	hp.position += v.global_position
+	var dir := (v.global_center() - at).normalized()
+	var spot := at
+	for k in IMPACT_NUDGES:
+		if not CombatFxLayer.impact_rect(spot, text, icon, items).intersects(hp):
+			break
+		spot += dir * IMPACT_NUDGE_PX
+	return spot
+
+
+## How far (px a step) and how often an impact mark moves off the HP number.
+const IMPACT_NUDGE_PX := 2.0
+const IMPACT_NUDGES := 60
+## A number's small words: their size (share of the number's) and gap after it (share).
+const SUB_SHARE := 0.5
+const SUB_GAP := 0.25
 
 
 ## The guard a beat shows as a glyph and a number (ANIM-R3 A6e): a block, shield or evade
@@ -3723,18 +3966,24 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	# ALL BLOCKED (with its mark) on its last hit's impact.
 	var zero := zero_mark(b)
 	var eq := hit_equation(b)
-	if not eq.is_empty():
-		# ANIM-R4 C6c: the hit meets its guard where it struck, in the one notation (sword 8 −
-		# shield 8 = 0; sword 14 − shield 5 = 9).
-		fx_layer.impact(victim_at, String(zero.get("text", "")), int(zero.get("icon", -1)), CHIP_GUARD, impact, eq)
+	if not eq.is_empty() and not (kind == "damage" and int(b["amount"]) > 0):
+		# ANIM-R4 C6c: a hit that got nothing through meets its guard where it struck, in the
+		# one notation (sword 8 − shield 8 = 0), off the HP number (art pass W3). A hit that got
+		# through says its guard's part beside its one number instead ("−9" and "14 − 5").
+		var mark_at := impact_spot(tv, victim_at, String(zero.get("text", "")), int(zero.get("icon", -1)), eq) if on_host else victim_at
+		fx_layer.impact(mark_at, String(zero.get("text", "")), int(zero.get("icon", -1)), CHIP_GUARD, impact, eq)
+	elif not eq.is_empty():
+		# The guard's shape where the hit struck (W6: hex plates, an evade's smear).
+		fx_layer.hit_vfx(victim_at, CombatFxLayer.HIT_SHIELD, Palette.AUTO, impact)
 	if b.has("final_stamp") and on_host:
 		var spot := tv.stamp_slot(String(b["final_stamp"]), CombatFxLayer.GUARD_NULL)
-		fx_layer.word_stamp(spot["at"], String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))),
-			float(spot["max_w"]), int(spot["max_fs"]), impact, CombatFxLayer.GUARD_NULL)
+		_hub_stamp(tv, spot, String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))), impact, CombatFxLayer.GUARD_NULL)
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
 		# ANIM-R4 C6f: its glyph lands on the slice in its good / bad colour for you.
 		var scol := WheelView.status_color(int(b["status"]), tv.combatant != null and tv.combatant.is_player)
-		fx_layer.stamp(tv.slot_spot(int(b["slot"])), String(Palette.STATUS_GLYPHS.get(int(b["status"]), "?")), scol, motion_seconds_left(), impact)
+		# Art pass W3 with W2 (§7.4): the stamp pops on the slice; the status's drawn StatIcon is
+		# the slice's own mark from the landing on (show_slice_status), no font glyph.
+		fx_layer.stamp(tv.slot_spot(int(b["slot"])), "", scol, motion_seconds_left(), impact)
 		# ANIM-R3 A6j: the slice keeps the status's mark from the moment it lands.
 		_after(impact, tv.show_slice_status.bind(int(b["slot"]), int(b["status"])))
 	elif kind == "absorbed" and int(b["slot"]) >= 0 and on_host:
@@ -3742,11 +3991,22 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	var hp_after := int(b["hp_after"])
 	var hp_waits := false
 	for n in numbers_for(b, before, after):
+		if bool(n.get("hub", false)):
+			# A number resting in the hub keeps its time; a stamp waits for it (HubQueue).
+			var rest := Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") if bool(n["travel"]) else Motion.seconds(StringName(n["id"]))
+			hub_queue.note((n["view"] as WheelView).get_instance_id(), impact + float(n.get("after", 0.0)), rest)
 		if bool(n["travel"]) and on_host and hp_after >= 0:
 			# ANIM-R4 C6b/c: the number appears when its projectile has arrived (and a guarded
 			# hit's equation has been read), fresh, then travels.
 			fx_layer.travel_number(n["at"], tv.hp_counter_spot(), n["text"], n["color"], n["crit"], int(n["fs"]), String(n["band"]),
 				_hp_arrives.bind(tv, hp_after), impact + float(n.get("after", 0.0)))
+			_retag_hit_vfx(b, before, n, impact + float(n.get("after", 0.0)))
+			if String(n.get("sub", "")) != "":
+				var sfs := maxi(UiTheme.CAPTION, roundi(int(n["fs"]) * SUB_SHARE))
+				var nw := Palette.display().get_string_size(String(n["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(n["fs"])).x
+				var sw := Palette.display().get_string_size(String(n["sub"]), HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x
+				var sat: Vector2 = n["at"] + Vector2((nw + sw) * 0.5 + int(n["fs"]) * SUB_GAP, int(n["fs"]) * SUB_GAP)
+				fx_layer.number(sat, String(n["sub"]), n["color"], &"hit_absorb", Vector2.UP, false, 0.0, sfs, "", impact + float(n.get("after", 0.0)))
 			hp_waits = true
 		else:
 			fx_layer.number(n["at"], n["text"], n["color"], n["id"], Vector2.UP, n["crit"], n["rise"], int(n["fs"]), String(n["band"]), impact, int(n.get("icon", -1)))
@@ -3755,6 +4015,49 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 			_after(impact, tv.set_sat_hp.bind(target, hp_after))
 		elif not hp_waits:
 			_after(impact, tv.play_hp.bind(float(hp_after)))
+
+
+## Art pass W3 with W6 (§8): the hit shape where a travelling number lands is the attacker's
+## own slice's (slice_hit's kind: a CRIT shatters, an ATTACK slashes, a corruption crawls),
+## sized by the damage (HIT_SIZE_*), in place of the plain slash the travelling number gets.
+func _retag_hit_vfx(b: Dictionary, before: CombatState, n: Dictionary, delay: float) -> void:
+	var kind := hit_kind_for(b, before)
+	var at: Vector2 = n["at"]
+	for i in range(fx_layer.sprites.size() - 1, -1, -1):
+		var s: Dictionary = fx_layer.sprites[i]
+		if String(s["kind"]) == "hitfx" and (s["at"] as Vector2).is_equal_approx(at) and is_equal_approx(float(s.get("delay", 0.0)), delay):
+			fx_layer.sprites.remove_at(i)
+			break
+	fx_layer.hit_vfx(at, kind, Palette.AUTO, delay, hit_size(int(b["amount"])))
+
+
+## The hit shape of beat `b` (CombatFxLayer HIT_*): its attacker's landed slice's, a crit's
+## glass, a corruption's glitch, a heal's plus signs.
+func hit_kind_for(b: Dictionary, before: CombatState) -> StringName:
+	match String(b["kind"]):
+		"corrupted":
+			return CombatFxLayer.HIT_AFFLICT
+		"heal":
+			return CombatFxLayer.HIT_HEAL
+	var src := before.get_combatant(StringName(String(b["source"]))) if before != null else null
+	var slot := int(b.get("source_slot", -1))
+	var type := RC.SliceType.ATTACK
+	if src != null and slot >= 0 and slot < src.wheel.slot_slice_ids.size():
+		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
+		if slice != null:
+			type = slice.slice_type
+	return CombatFxLayer.hit_kind(type, bool(b.get("crit", false)))
+
+
+## A hit shape's size for `amount` damage: HIT_SIZE_MIN .. HIT_SIZE_MAX of its reach, full size
+## at HIT_SIZE_REF (the attack slash was thin at its peak for a big hit).
+static func hit_size(amount: int) -> float:
+	return clampf(HIT_SIZE_MIN + float(amount) / HIT_SIZE_REF, HIT_SIZE_MIN, HIT_SIZE_MAX)
+
+
+const HIT_SIZE_MIN := 0.8
+const HIT_SIZE_MAX := 1.8
+const HIT_SIZE_REF := 20.0
 
 
 ## A number reached `v`'s HP counter: the HP rolls to `hp` with the white lag bar, and a
@@ -3789,7 +4092,8 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 	if v == null:
 		return
 	var word := tr("PHASE %d") % (int(b.get("phase_index", 0)) + 1)
-	fx_layer.word_stamp(v.global_center(), word, CHIP_RESIST, Motion.seconds(&"number_float"), v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
+	# Art pass W3 (§6.1, §6.6): held long enough to read (W2's stamp rule).
+	_hub_stamp(v, {"at": v.global_center(), "max_w": v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE}, word, CHIP_RESIST, ZineStamp.hold_seconds(word))
 	if int(b.get("behavior", -1)) == RC.PointerBehavior.MULTIPLY:
 		v.play_phase_needles(b.get("ticks", []))
 	for sp in b.get("spawned", []):
@@ -3819,6 +4123,8 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	AudioDirector.play_precision(tier, is_miss)
 	if is_miss:
 		v.play_miss_static(slot)
+		# Art pass W3 with W6 (§8): a Miss lands as static on its slice.
+		fx_layer.hit_vfx(v.slot_spot(slot), CombatFxLayer.HIT_MISS)
 		_bark("miss", s)
 	elif tier == RC.PrecisionTier.PERFECT:
 		_perfect_feedback(v)

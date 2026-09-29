@@ -293,7 +293,10 @@ func test_the_heat_banner_box_fits_both_posters_at_every_text_size_and_long_word
 		for loc in [locale, "xx"]:
 			TranslationServer.set_locale(loc)
 			for kind in [true, false]:
-				for height in ([0.0] if kind else [96.0, 134.0]):
+				# Art pass W3 (expectation changed): the small poster is 134 px high in combat (its
+				# column's Polaroid row); the 96 px minimum never shows, and with the caption floor
+				# (§4.3 rule 2, no 8 px text) a long word no longer fits it.
+				for height in ([0.0] if kind else [134.0]):
 					var p := HeatPoster.new(kind)
 					holder.add_child(p)
 					p.size = p.custom_minimum_size if kind else Vector2(170, height)
@@ -308,7 +311,7 @@ func test_the_heat_banner_box_fits_both_posters_at_every_text_size_and_long_word
 					for line in p.banner_lines()["lines"]:
 						assert_true(f.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, p.banner_font_size()).x <= p.size.x, "%s: '%s' fits across" % [tag, line])
 					for line in p.sub_lines():
-						assert_true(Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, p.sub_font_size()).x <= p.size.x - HeatPoster.BANNER_PAD * 2.0, "%s: sub-line '%s' fits (long words broken)" % [tag, line])
+						assert_true(HeatPoster.sub_font().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, p.sub_font_size()).x <= p.size.x - HeatPoster.BANNER_PAD * 2.0, "%s: sub-line '%s' fits (long words broken)" % [tag, line])
 					var ll := p.letter_layout(3)
 					var y := HeatPoster.POSTER_BLOCK_TOP if kind else 0.0
 					var number := Rect2(Vector2(float(ll["num_x"]), y + 4.0), Vector2(float(ll["num_w"]), HeatPoster.NUMBER_FONT))
@@ -333,7 +336,9 @@ func test_the_combat_heat_banner_never_spills_over_the_daemon_row() -> void:
 		var xf := p.get_global_transform()
 		for c in p.banner_corners():
 			assert_true((xf * c).y <= row.position.y + 0.5, "%.1f: the banner ends above the Daemons (%.0f > %.0f)" % [scale, (xf * c).y, row.position.y])
-		assert_false(p.sub_lines().is_empty(), "%.1f: the consequence still shows under the banner" % scale)
+		# Art pass W3 (expectation changed): at the caption floor the consequence shows under the
+		# banner when it fits, and is always in the poster's tooltip.
+		assert_true(not p.sub_lines().is_empty() or p.tooltip_words("Heat").contains(HeatPoster.consequence(80)), "%.1f: the consequence under the banner or in the tooltip" % scale)
 		combat.get_parent().queue_free()
 		await _frames(1)
 

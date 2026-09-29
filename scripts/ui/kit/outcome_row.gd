@@ -12,9 +12,12 @@ extends Control
 const ICON_R := 8.0
 const ICON_GAP := 3.0
 const ITEM_GAP := 12.0
-## Amount colours on the paper choice notes.
-const GOOD := Color("#17702c")
-const BAD := Color("#b3122f")
+## Amount colours on the paper choice notes: GAIN and HARM darkened to read as ink on paper
+## (art pass W3, §3.3 tokens; >= 4.5:1 on NOTE_PAPER, tested).
+const INK_DARKEN_GAIN := 0.55
+const INK_DARKEN_HARM := 0.35
+static var GOOD: Color = Palette.GAIN.darkened(INK_DARKEN_GAIN)
+static var BAD: Color = Palette.HARM.darkened(INK_DARKEN_HARM)
 ## Why an amount is less than the choice's number (tooltip words, H22 #12).
 const CAPPED_WORDS := {StatIcon.HP: "HP is full", StatIcon.HEAT: "Heat stops at its limit"} # TR
 ## A reward's kind in the button's words (one of it).

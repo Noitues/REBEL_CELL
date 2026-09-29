@@ -243,7 +243,7 @@ func test_one_press_shows_the_story_and_its_subtitle() -> void:
 
 
 func test_the_event_top_bar_keeps_one_row_and_the_choices_show_at_big_text() -> void:
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)  # the event page's top bar is W8's (HudBar at 2.0)
 	var scene := await _netrun()
 	_event(scene)
 	await _frames(4)
@@ -467,11 +467,12 @@ func test_a_hit_flies_in_its_sides_colour_with_its_raw_number_and_its_guard_chip
 	assert_eq(String(travel[0].get("raw", "")), "", "no raw number morphs in the hub")
 	assert_eq(String(travel[0]["text"]), "-9", "what gets through travels into the HP")
 	assert_almost_eq(float(travel[0]["delay"]), CombatFxLayer.impact_seconds() + Motion.seconds(&"hit_absorb"), 0.001, "after the impact's equation")
-	var eq: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
-	assert_eq(eq.size(), 1, "the equation shows where it struck")
-	if not eq.is_empty():
-		var texts: Array = (eq[0]["items"] as Array).map(func(it: Dictionary) -> String: return String(it["text"]))
-		assert_eq(texts, ["14", "5", "9"], "sword 14 − shield 5 = 9")
+	# Art pass W3 (critique 3.4, expectation changed): one number per hit: what got through, in
+	# WARN (a guard took part), with its guard's part beside it ("14 − 5"), no second mark.
+	assert_eq(travel[0]["color"], Palette.WARN, "a partly guarded hit's number is amber")
+	var subs: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "number" and String(s["text"]) == "14 %s 5" % CombatFxLayer.EQ_MINUS)
+	assert_eq(subs.size(), 1, "the guard's part beside it")
+	assert_eq(scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact").size(), 0, "no second number where it struck")
 	scene.skip_motion()
 	# The operative's hits in the operative's colour; a blocked hit still flies and shows it.
 	var mine := base.duplicate()
@@ -590,7 +591,7 @@ func test_modem_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> 
 # --- E7: big text combat -----------------------------------------------------------------------------
 
 func test_the_entering_plate_never_hides_the_forecast() -> void:
-	var scene := await _combat(&"collections_agent", LayoutScales.VERIFIED_MAX)
+	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	_live()
 	var ev: WheelView = scene._enemy_views.values()[0]
 	ev.play_enter()
@@ -604,7 +605,7 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 
 
 func test_chips_shrink_before_they_fold_at_big_text() -> void:
-	var scene := await _combat(&"collections_agent", LayoutScales.VERIFIED_MAX)
+	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
 	v.intent = {"text": "DEFEND", "type": RC.SliceType.DEFEND, "chips": [
 		{"text": "+3 BLOCK", "color": Palette.NET_CYAN}, {"text": "? RANDOM STATUS", "color": Palette.CELL_ACID},
@@ -625,7 +626,7 @@ func test_chips_shrink_before_they_fold_at_big_text() -> void:
 
 
 func test_satellites_keep_off_the_slice_values_and_the_tag() -> void:
-	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
 		for enemy in [&"collections_agent", &"geostationary_guard"]:
 			var scene := await _combat(enemy, scale)
 			for turn in 3:
@@ -669,7 +670,7 @@ func _loot(scene: Control) -> void:
 
 
 func test_loot_cards_keep_apart_and_the_first_focus_shows_no_tip() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var scene := await _netrun()
 		_loot(scene)
@@ -688,7 +689,7 @@ func test_loot_cards_keep_apart_and_the_first_focus_shows_no_tip() -> void:
 
 
 func test_a_focus_tip_folds_narrower_to_keep_off_skip_at_big_text() -> void:
-	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
 	Settings.set_pad_active(true)
 	var scene := await _netrun()
 	_loot(scene)
