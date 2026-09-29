@@ -137,11 +137,14 @@ def rerun_list(failures: list, not_run: list[str]) -> list[str]:
 
 
 GUARD_MARKS = ("SETTINGS LEAK ", "ORPHAN LEFT ")
+# ANIM-R6 D10: the engine's own report of what a run left allocated when it quit.
+EXIT_LEAK_MARKS = ("leaked at exit", "were leaked.", "still in use at exit")
 
 
 def guard_lines(log: Path) -> list[str]:
     """ANIM-R6: the suite guard's findings in a shard's log (a script that left Settings
-    changed, a node left outside the tree), without the log's colour codes."""
+    changed, a node left outside the tree) and the engine's exit-leak lines (objects,
+    RIDs or resources still allocated when the run quit), without the log's colour codes."""
     out: list[str] = []
     try:
         text = log.read_text(encoding="utf-8", errors="replace")
@@ -153,6 +156,8 @@ def guard_lines(log: Path) -> list[str]:
             k = clean.find(mark)
             if k >= 0:
                 out.append(clean[k:])
+        if any(m in clean for m in EXIT_LEAK_MARKS):
+            out.append("EXIT LEAK " + clean)
     return out
 
 

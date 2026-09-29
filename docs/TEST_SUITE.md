@@ -235,7 +235,9 @@ the suite (`.gutconfig.json` for the single process, `-gpre_run_script` /
   deletion when the test ended; the guard counts only what is never freed. Free what a
   test builds outside the tree (`autofree(...)`); a view that swaps children out hides and
   queues them in place rather than taking them out first (SettingsPanel, ANIM-R6).
-- The parallel runner reports each guard line as an ERROR of its shard.
+- The parallel runner reports each guard line as an ERROR of its shard, and so the
+  engine's exit-leak lines (`... leaked at exit`, `RIDs ... were leaked.`, `resources still
+  in use at exit`: what a shard left allocated when it quit): the run fails on them.
 
 ### Headless has no RenderingDevice
 

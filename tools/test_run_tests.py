@@ -85,6 +85,9 @@ class RerunAndDisk(unittest.TestCase):
             self.assertEqual(run_tests.guard_lines(log), ["SETTINGS LEAK res://tests/unit/test_a.gd: tutorial_done",
                                                           "ORPHAN LEFT <Control#1> (Label)"])
             self.assertEqual(run_tests.guard_lines(Path(d) / "missing.log"), [])
+            log.write_text("WARNING: 213 ObjectDB instances were leaked at exit (run with `--verbose` for details).\n"
+                           "WARNING: 3 RIDs of type \"CanvasItem\" were leaked.\nfine\n", encoding="utf-8")
+            self.assertEqual(len(run_tests.guard_lines(log)), 2, "the engine's exit leaks are problems too")
 
     def test_free_space_is_read_for_a_folder_not_made_yet(self) -> None:
         self.assertGreater(run_tests.free_gb(Path(tempfile.gettempdir()) / "not" / "made" / "yet"), 0.0)
