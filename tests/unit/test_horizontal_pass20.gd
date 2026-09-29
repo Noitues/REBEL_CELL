@@ -177,7 +177,9 @@ func test_the_tags_show_every_change_the_turn_brings() -> void:
 					texts.append(String(chip["text"]))
 				var all := " ".join(texts)
 				if not c.is_satellite and int(d["hp_after"]) != int(d["hp_before"]):
-					assert_string_contains(all, "HP", "%s HP change shown" % c.display_name)
+					# Art pass W3 (§6.2): an HP change shows on the wheel's arc (NEXT, the ghost),
+					# as a heal chip, or in the operative's net line; no "TAKES" chip.
+					assert_true(all.contains("HP") or int(view.outcome.get("hp_after", -1)) == int(d["hp_after"]), "%s HP change shown" % c.display_name)
 				if not c.is_satellite and int(d["block_after"]) != int(d["block_before"]):
 					assert_string_contains(all, "BLOCK")
 				if not (d["statuses"] as Array).is_empty():

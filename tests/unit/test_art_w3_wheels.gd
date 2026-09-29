@@ -373,3 +373,67 @@ func test_a_phase_turn_never_stacks_words_in_the_boss_hub() -> void:
 	scene.skip_motion()
 	assert_eq(ev.hub_alpha, 1.0, "a skip shows the hub whole")
 	Motion.force_live = false
+
+
+# --- 6. The forecast split (§6.2) -------------------------------------------------------------------
+
+func test_your_tag_says_what_your_wheel_does_and_the_net_line_what_you_get() -> void:
+	for enemy in [&"collections_agent", &"compliance_officer", &"claims_adjuster"]:
+		var scene := await _combat(enemy)
+		var pv: WheelView = scene._player_view
+		for chip in pv.intent.get("chips", []):
+			assert_false(String(chip["text"]).begins_with(tr("YOU TAKE")), "%s: no YOU TAKE on your own tag" % enemy)
+		assert_true(int(pv.intent.get("type", -1)) >= 0, "the title carries its slice glyph")
+		var before: int = scene.engine.state().player.hp
+		var predicted := int(pv.net_line.get("net", 0))
+		scene.end_turn()
+		await _frames(1)
+		assert_eq(scene.engine.state().player.hp - before, predicted, "%s: the net line equals the real result" % enemy)
+
+
+func test_the_net_line_keeps_glyph_and_numbers_apart() -> void:
+	var scene := await _combat()
+	var pv: WheelView = scene._player_view
+	pv.net_line = {"net": -3, "hit": 7, "soaked": 4, "evaded": 0}
+	var toks := pv.net_tokens()
+	assert_eq(String(toks[0]["text"]), WheelView.MINUS + "3", "the net number alone")
+	assert_eq(StringName(toks[1]["icon"]), StatIcon.HP, "the heart, a glyph of its own")
+	assert_eq(String(toks[2]["text"]), "(7 " + WheelView.MINUS + " 4)", "what came in and what the guard took")
+	assert_eq(toks.size(), 3, "nothing else when the hits explain it")
+	var lay := pv.hp_layout()
+	assert_true((lay["net"] as Rect2).has_area(), "on its own row")
+	assert_gt((lay["net"] as Rect2).position.y, (lay["hp"] as Rect2).end.y, "under the HP")
+	assert_false((lay["net"] as Rect2).intersects(lay["hp"]), "off the HP number")
+	assert_true(_enemy_view(scene).net_tokens().is_empty(), "only the operative has one")
+
+
+func test_one_chip_row_and_the_fold_never_hides_damage() -> void:
+	var scene := await _combat()
+	var v := _enemy_view(scene)
+	var chips: Array = [{"text": "HITS YOU 14", "color": Palette.HARM, "rank": 0}]
+	for i in 12:
+		chips.append({"text": "+%d BLOCK" % (i + 1), "color": Palette.NET_CYAN})
+	v.intent = {"type": RC.SliceType.ATTACK, "text": "ATTACK · GOOD AIM", "chips": chips}
+	var rows := v._chip_rows()
+	assert_eq(rows.size(), 1, "one chip row at 1.0")
+	assert_eq(String(rows[0][0]["text"]), "HITS YOU 14", "damage to you shows first")
+	assert_true(bool((rows[0][rows[0].size() - 1] as Dictionary).get("more", false)), "the rest folds into +N MORE")
+
+
+func test_tags_sit_clear_of_the_arrows_and_their_hints() -> void:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		var scene := await _combat(&"collections_agent", scale)
+		for v in scene._views():
+			var wv := v as WheelView
+			var tag := wv.intent_rect()
+			if not tag.has_area():
+				continue
+			var local := Rect2(tag.position - wv.global_position, tag.size)
+			assert_lte(local.end.y, wv._center().y - wv._radius() - WheelView.TAG_CLEAR + 0.5, "x%.1f: at radius + 66 or wider" % scale)
+			for ar in wv.arrows():
+				var c := wv.arrow_center(int(ar["ring"]), int(ar["direction"]))
+				var hit := WheelView.ARROW_HIT * maxf(1.0, WheelView._ts())
+				assert_false(tag.intersects(Rect2(c - Vector2(hit, hit), Vector2(hit, hit) * 2.0)), "x%.1f: never over a nudge arrow" % scale)
+			for hr in wv.arrow_hint_rects():
+				assert_false(tag.intersects(hr), "x%.1f: never over a key hint" % scale)
+		assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f" % scale)

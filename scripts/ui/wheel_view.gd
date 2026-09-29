@@ -178,9 +178,9 @@ const SATELLITE_GAP := 12.0
 ## At big text the wheel never shrinks below this share of its unconstrained size (H22:
 ## at 1.6 it went from 126 to 62 px and names were cut).
 const RADIUS_FLOOR := 0.8
-## At the biggest text the wheel keeps at least this share of its 1.0-scale radius: the
-## title row and the HP block grow with the text and the view's height is fixed (H23).
-const BIG_TEXT_RADIUS_KEEP := 0.75
+## At the biggest text the wheel keeps at least this share of its 1.0-scale radius (ART_BIBLE
+## §12: text yields before the wheels do; the lettering stops at WHEEL_TEXT_MAX).
+const BIG_TEXT_RADIUS_KEEP := 0.7
 ## A satellite's hex token radius (px at text scale 1.0).
 const SATELLITE_TOKEN := 11.0
 ## Tokens below this sine of their angle (the bottom sector) keep to the side of the HP
@@ -192,7 +192,7 @@ const TIER_PIPS := {RC.PrecisionTier.PARTIAL: 1, RC.PrecisionTier.GOOD: 2, RC.Pr
 const PIP_RADIUS := 3.0
 ## Tag rows kept on screen: the title and at most this many chip rows (the rest fold into
 ## a "+N" chip; the tooltip lists them all).
-const TAG_CHIP_ROWS := 2
+const TAG_CHIP_ROWS := 1
 ## HP arc and number below the rim (px): the arc's outer edge, then the number's offset.
 ## Art pass W3 (§6.1, §3.5): the HP arc is a thick segmented band just outside the bezel,
 ## from HP_ARC_IN to HP_ARC_OUT past the rim (>= 10 px), in HP_SEGMENTS; the HP number sits
@@ -256,7 +256,7 @@ static func _ts() -> float:
 
 
 ## The largest text scale the wheel's lettering follows (see _ts).
-const WHEEL_TEXT_MAX := 1.6
+const WHEEL_TEXT_MAX := BIG_TEXT
 
 
 static func _fs(base: int) -> int:
@@ -284,6 +284,8 @@ func _get_tooltip(at_position: Vector2) -> String:
 		return tr("NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).") % next_hp
 	if ((lay["last"] as Rect2).has_point(at_position) or (lay["icons"] as Rect2).has_point(at_position)) and last_turn != "":
 		return last_turn_tip if last_turn_tip != "" else last_turn
+	if (lay["net"] as Rect2).has_point(at_position):
+		return net_tooltip()
 	if (lay["hp"] as Rect2).has_point(at_position):
 		return tr("HP now: %d of %d.") % [combatant.hp, combatant.max_hp]
 	var z := zone_at(global_position + at_position)
@@ -577,7 +579,7 @@ func badge_rect() -> Rect2:
 	var bottom := _center().y - needle_reach() - WheelBezel.BADGE_GAP
 	var tag := _intent_rect_local()
 	# As big as the room up to the tag allows, from BADGE_SIDE to W5's bust size.
-	var room := bottom - (_center().y - _radius() - _band() - INTENT_HEIGHT) - WheelBezel.BADGE_GAP * 2.0 - 1.0
+	var room := bottom - tag_bottom() - WheelBezel.BADGE_GAP * 2.0 - 1.0
 	var side := clampf(room, WheelBezel.BADGE_SIDE, Hologram.BUST_SIDE * _ts())
 	var r := Rect2(Vector2(_center().x - side * 0.5, bottom - side), Vector2(side, side))
 	if tag.has_area() and r.grow(WheelBezel.BADGE_GAP).intersects(tag):
@@ -1961,11 +1963,92 @@ func bottom_need() -> float:
 
 ## The net line's row height (px): its lettering and a gap.
 static func net_line_height() -> float:
-	return _fs(NET_FONT_SIZE) + LAST_TURN_GAP
+	return _fs(NET_FONT_SIZE) * NET_LINE_SHARE + LAST_TURN_GAP
 
 
-## The net line's lettering (§4.2 `body`).
+## The net line's lettering (§4.2 `body`) and its row's height (x its size).
 const NET_FONT_SIZE := UiTheme.BODY
+const NET_LINE_SHARE := 1.3
+## The minus the net line writes (the typographic one, as the equations).
+const MINUS := "−"
+
+
+## Art pass W3 (§6.2): what the operative receives if SEND IT is pressed now, set by the scene
+## (CombatScene.net_line_for): {net, hit, soaked, evaded}; {} = nothing (or not the operative).
+var net_line: Dictionary = {}
+
+
+## The net line as tokens: [{text} or {icon (a StatIcon kind)}, color], e.g. "−3", the heart,
+## "(7 − 4)": the glyph and the numbers stand apart (§12). Empty while a replay plays.
+func net_tokens() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if net_line.is_empty() or replaying or combatant == null or not combatant.is_player:
+		return out
+	var net := int(net_line.get("net", 0))
+	var hit := int(net_line.get("hit", 0))
+	var soaked := int(net_line.get("soaked", 0))
+	var evaded := int(net_line.get("evaded", 0))
+	var col := LOSS_COLOR if net < 0 else (HP_COLOR if net > 0 else Palette.TEXT_MID)
+	out.append({"text": (MINUS + str(-net)) if net < 0 else ("+%d" % net if net > 0 else "0"), "color": col})
+	out.append({"icon": StatIcon.HP, "color": col})
+	if hit > 0 and (soaked > 0 or evaded > 0):
+		var parts := "(" + str(hit)
+		if soaked > 0:
+			parts += " " + MINUS + " " + str(soaked)
+		if evaded > 0:
+			parts += " " + MINUS + " " + str(evaded)
+		out.append({"text": parts + ")", "color": Palette.TEXT_HI})
+		var rest := net + maxi(0, hit - soaked - evaded)
+		if rest != 0:
+			out.append({"text": "· " + (("+%d" % rest) if rest > 0 else MINUS + str(-rest)), "color": HP_COLOR if rest > 0 else LOSS_COLOR})
+	return out
+
+
+## The net line as plain words (tests, tooltip): its tokens, the heart as "♥".
+func net_text() -> String:
+	var parts := PackedStringArray()
+	for t in net_tokens():
+		parts.append(String(t["text"]) if t.has("text") else "♥")
+	return " ".join(parts)
+
+
+func net_tooltip() -> String:
+	return tr("If you SEND IT now: your HP changes by %s (hits aimed at you, less what your guard takes).") % net_text()
+
+
+## The net line's width at `fs` (px).
+func net_width(fs: int) -> float:
+	var w := 0.0
+	for t in net_tokens():
+		w += fs * NET_ICON_SHARE if t.has("icon") else Palette.mono().get_string_size(String(t["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		w += fs * NET_GAP_SHARE
+	return maxf(0.0, w - fs * NET_GAP_SHARE)
+
+
+## The heart's room and the gap between tokens (shares of the lettering).
+const NET_ICON_SHARE := 1.1
+const NET_GAP_SHARE := 0.3
+
+
+func _draw_net_line(r: Rect2, fs: int) -> void:
+	draw_rect(r.grow_individual(3.0, 0.0, 3.0, 0.0), Color(Palette.NIGHT_SKY, NET_PLATE_ALPHA))
+	var x := r.position.x
+	var mid := r.position.y + r.size.y * 0.5
+	var f := Palette.mono()
+	for t in net_tokens():
+		var col := _col(Color(t["color"]))
+		if t.has("icon"):
+			StatIcon.draw(self, Vector2(x + fs * NET_ICON_SHARE * 0.5, mid), fs * 0.45, StringName(t["icon"]), col, true)
+			x += fs * NET_ICON_SHARE
+		else:
+			var s := String(t["text"])
+			draw_string(f, Vector2(x, mid + f.get_ascent(fs) * 0.5 - f.get_descent(fs) * 0.25), s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+			x += f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		x += fs * NET_GAP_SHARE
+
+
+## The plate under the net line (alpha of the night ink).
+const NET_PLATE_ALPHA := 0.8
 
 
 func _radius() -> float:
@@ -1973,15 +2056,25 @@ func _radius() -> float:
 	if left_reserve > 0.0:
 		var avail := size.x - left_reserve
 		r = minf(r, minf(avail * center_x, avail * (1.0 - center_x)) - DISC_MARGIN)
-	# Vertically the disc (r above with its band, r below), the tag above and the HP number
-	# and last-turn line below share the view's height; the centre moves to fit (_center).
-	# Everything fits at r_full; below that the tag may clamp under the arrows down to
-	# RADIUS_FLOOR of the unconstrained size, as long as its title row still fits (H23).
-	var span := 2.0 + BAND_SHARE
-	var r_full := (size.y - bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
-	var r_title := (size.y - bottom_need() - INTENT_HEIGHT * _ts()) / span
-	r = minf(r, maxf(r_full, minf(r_title, r * RADIUS_FLOOR)))
+	# Vertically the disc (r above, r below), the tag above it (its bottom tag_bottom(): past
+	# the band and the tag's gap, and never nearer than TAG_CLEAR, so it never covers the
+	# nudge arrows or their key hints; art pass W3, §6.2) with its tape, and the HP number,
+	# the net line and LAST TURN below share the view's height; the centre moves to fit.
+	var avail := size.y - bottom_need() - _tag_reserve() - tape_height()
+	var r_full := minf((avail - INTENT_HEIGHT) / (2.0 + BAND_SHARE), (avail - TAG_CLEAR) / 2.0)
+	r = minf(r, r_full)
 	return maxf(MIN_RADIUS, r)
+
+
+## §6.2: a tag's bottom edge (local y): past the slice band and the tag's gap, at radius +
+## TAG_CLEAR or wider (the nudge arrows and their key hints sit under it).
+func tag_bottom() -> float:
+	return _center().y - _radius() - maxf(_band() + INTENT_HEIGHT, TAG_CLEAR)
+
+
+## §6.2 / STYLE_GUIDE 4: a tag sits at radius + this or wider (the arrows, their hints and the
+## values stay clear under it).
+const TAG_CLEAR := EXTENT
 
 
 ## Height kept for the tag at the current text scale (title and TAG_CHIP_ROWS rows).
@@ -1991,7 +2084,7 @@ static func _tag_reserve() -> float:
 
 ## Chip rows kept: fewer at big text so the wheel doesn't shrink away (H22).
 static func _chip_row_cap() -> int:
-	return 1 if _ts() > BIG_TEXT else TAG_CHIP_ROWS
+	return TAG_CHIP_ROWS  # §6.2: one chip row at every text size; the rest folds into "+N MORE"
 
 
 ## Above this text scale the tag keeps one chip row.
@@ -2231,6 +2324,7 @@ func _draw_view() -> void:
 		if bust != null:
 			bust.visible = badge.has_area()
 			bust.position = badge.position
+			bust.custom_minimum_size = badge.size
 			bust.size = badge.size
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
@@ -2478,7 +2572,7 @@ func _draw_caption(text: String, shown: float) -> void:
 	var font := Palette.marker()
 	var w := minf(size.x * TAG_MAX_SHARE, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 16.0)
 	var h := INTENT_HEIGHT * _ts()
-	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
+	var bottom := tag_bottom()
 	var r := Rect2(Vector2(clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w)), maxf(0.0, bottom - h)), Vector2(w, h))
 	var a := clampf(shown, 0.0, 1.0)
 	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(Palette.SHADOW, Palette.SHADOW.a * a))
@@ -2871,6 +2965,8 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 			draw_skull(self, Vector2(gx, ay), fs * LETHAL_SKULL_SHARE, fcol)
 	if (lay["icons"] as Rect2).has_area():
 		_draw_icon_row(lay["icons"], int(lay["icons_fs"]), clampf(last_turn_shown, 0.0, 1.0))
+	if (lay["net"] as Rect2).has_area():
+		_draw_net_line(lay["net"], int(lay["net_fs"]))
 	if last_turn != "":
 		# What the last SEND IT did, on a dark plate across the view's width, on up to two
 		# lines, never smaller than at text scale 1.0 unless it can't fit (H24: tiny grey text
@@ -2932,6 +3028,14 @@ func hp_layout() -> Dictionary:
 			# under it, never on the number.
 			out["next"] = Rect2(Vector2(clampf(center.x - fw * 0.5, 0.0, maxf(0.0, size.x - fw)), row_y), Vector2(fw, fs + 6.0))
 			row_y += fs + 6.0 + LAST_TURN_GAP
+	out["net"] = Rect2()
+	if not net_tokens().is_empty():
+		# §6.2: what the operative receives, once, on its own row under its HP.
+		var nfs := _fs(NET_FONT_SIZE)
+		var nw := net_width(nfs)
+		out["net"] = Rect2(Vector2(clampf(center.x - nw * 0.5, 0.0, maxf(0.0, size.x - nw)), row_y), Vector2(nw, nfs * NET_LINE_SHARE))
+		out["net_fs"] = nfs
+		row_y += nfs * NET_LINE_SHARE + LAST_TURN_GAP
 	out["row_y"] = row_y
 	if last_turn != "":
 		var box := 2.0 * minf(center.x - left_reserve, size.x - center.x) - LAST_TURN_PAD * 2.0
@@ -2991,7 +3095,7 @@ func icon_row_items() -> Array[Dictionary]:
 	if hit <= 0 and hp == 0:
 		return out
 	var through := maxi(0, hit - soaked - evaded)
-	if hit > 0:
+	if hit > 0 and (soaked > 0 or evaded > 0):
 		out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
 		if soaked > 0:
 			out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
@@ -3382,7 +3486,7 @@ func _tag_geometry() -> Dictionary:
 	# short tag's title).
 	w = maxf(w, tape_width())
 	w = minf(w, size.x * TAG_MAX_SHARE)
-	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
+	var bottom := tag_bottom()
 	var x := clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w))
 	var top_min := tape_height() - TAPE_INSET * ts
 	# The tape stands above the tag (off its title): the tag keeps room for it in the view.

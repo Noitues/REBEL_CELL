@@ -2334,6 +2334,7 @@ func _show_end_turn_preview() -> void:
 		for v in _views():
 			v.intent = {}
 			v.outcome = {}
+			v.net_line = {}
 			v.queue_redraw()
 		ram_note.set_pending(0)
 		return
@@ -2342,6 +2343,7 @@ func _show_end_turn_preview() -> void:
 		for v in _views():
 			v.intent = {}
 			v.outcome = {}
+			v.net_line = {}
 			v.queue_redraw()
 		ram_note.set_pending(0)
 		return
@@ -2386,6 +2388,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		if c == null or not c.is_alive():
 			view.intent = {}
 			view.outcome = {}
+			view.net_line = {}
 			view.queue_redraw()
 			continue
 		var lc := landing.get_combatant(id)
@@ -2417,8 +2420,23 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 		view.outcome = {"hp_after": int(d.get("hp_after", c.hp)), "alive_after": bool(d.get("alive_after", true)),
 			"statuses": shown_statuses, "satellites": sats}
 		view.intent = {"type": title["type"], "tier": title.get("tier", -1), "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
+		view.net_line = net_line_for(state, resolved, events) if c.is_player else {}
 		view.queue_redraw()
 	ram_note.set_pending(o.ram_delta)
+
+
+## Art pass W3 (§6.2): what the operative receives if SEND IT is pressed now, once, under its
+## HP: {net (its HP change, the NEXT plate's), hit (the raw hits aimed at it), soaked (what
+## block and shield take), evaded}; {} when nothing reaches it. From the preview's own events
+## and state (preview = result).
+static func net_line_for(state: CombatState, resolved: CombatState, events: Array[Dictionary]) -> Dictionary:
+	var now := resolved.get_combatant(state.player.id) if resolved != null else null
+	var net := (now.hp if now != null else 0) - state.player.hp
+	var d: Dictionary = last_turn_icons(state, events).get(state.player.id, {})
+	var hit := int(d.get("hit", 0))
+	if net == 0 and hit <= 0:
+		return {}
+	return {"net": net, "hit": hit, "soaked": int(d.get("soaked", 0)), "evaded": int(d.get("evaded", 0))}
 
 
 ## ANIM-R4 C6f: the chip for a status a random slice will get: which status (its glyph and
@@ -2519,19 +2537,15 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 		chips.append({"text": tr("HITS %d") % int(d["dealt"]), "color": CHIP_HIT, "ink": Palette.INK, "rank": CHIP_RANK_DEALT,
 			"beats": ForecastTicks.filter(["damage", "evaded"], id)})
 	var dhp := int(d["hp_after"]) - int(d["hp_before"])
-	if dhp < 0:
-		# Said as damage taken (H23: "−11 HP" under the player's DEFEND read as DEFEND costing
-		# 11 HP).
-		var victim_self := state.get_combatant(id)
-		var taker := tr("YOU TAKE") if victim_self != null and victim_self.is_player else tr("TAKES")
-		chips.append({"text": tr("%s %d HP") % [taker, -dhp], "color": CHIP_LOSS, "ink": Palette.PAPER,
-			"rank": CHIP_RANK_HURTS_YOU if victim_self != null and victim_self.is_player else CHIP_RANK_HP,
-			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
-	elif dhp > 0:
+	# Art pass W3 (§6.2): a tag says what its wheel does. The HP a wheel loses is not its own
+	# chip: the attacker's HITS chip says it, the HP arc's ghost and NEXT plate show it, and
+	# what the operative receives is one net line under its HP ("−3 ♥ (7 − 4)", net_line).
+	if dhp > 0:
 		chips.append({"text": tr("+%d HP") % dhp, "color": CHIP_GAIN, "ink": Palette.INK, "rank": CHIP_RANK_HP,
 			"beats": ForecastTicks.filter(ResolveBeats.HP_KINDS, &"", id, true)})
-	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do).
-	if int(d.get("soaked", 0)) > 0:
+	# What block and shield soak, beside the loss (H24: 14 hit, 11 taken read as a sum to do);
+	# the operative's is in its net line ("(7 − 4)").
+	if int(d.get("soaked", 0)) > 0 and id != state.player.id:
 		chips.append({"text": tr("%d BLOCKED") % int(d["soaked"]), "color": CHIP_GUARD, "ink": Palette.INK,
 			"beats": ForecastTicks.filter(["damage"], &"", id)})
 	for key in ["block", "shield"]:

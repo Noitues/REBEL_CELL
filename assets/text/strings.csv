@@ -2823,3 +2823,4 @@ Fast-forward the resolve (hold),Fast-forward the resolve (hold)
 RANK %d,RANK %d
 R%d,R%d
 // %s,// %s
+"If you SEND IT now: your HP changes by %s (hits aimed at you, less what your guard takes).","If you SEND IT now: your HP changes by %s (hits aimed at you, less what your guard takes)."
