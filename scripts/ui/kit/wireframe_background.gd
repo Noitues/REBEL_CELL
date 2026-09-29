@@ -109,7 +109,9 @@ func camera_points() -> Array:
 ## Keeps the picture on the current frame while the camera changes (a page rebuilds and
 ## refits its map), until `ease_camera`. Nothing happens when motion doesn't play.
 func hold_camera() -> void:
-	if not Motion.live(CAMERA_MOTION) or not city.camera_settled():
+	# Art pass W7 (reduce motion, ART_BIBLE §12): no camera moves: nothing is held, every
+	# change cuts to its end framing.
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed() or not city.camera_settled():
 		return
 	if _ease_tween != null and _ease_tween.is_valid():
 		_ease_tween.kill()
@@ -128,7 +130,7 @@ func ease_camera() -> void:
 		return
 	_apply_hold()
 	_held = []
-	if not Motion.live(CAMERA_MOTION):
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed():
 		_rig_rest()
 		return
 	var e := Motion.entry(CAMERA_MOTION)
@@ -224,7 +226,9 @@ func frame_points(points: PackedVector2Array, area: Rect2, max_zoom: float, min_
 	sync_hold()
 	if not city.rebuilt.is_connected(ease_camera):
 		city.rebuilt.connect(ease_camera, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
-	return Motion.delay_of(CAMERA_MOTION) + Motion.seconds(CAMERA_MOTION) if Motion.live(CAMERA_MOTION) else 0.0
+	if not Motion.live(CAMERA_MOTION) or not Motion.camera_moves_allowed():
+		return 0.0  # art pass W7: reduce motion cuts to the framed fight
+	return Motion.delay_of(CAMERA_MOTION) + Motion.seconds(CAMERA_MOTION)
 
 
 ## ANIM-R1 M4: share of the free map a framed fight may span.
@@ -236,3 +240,35 @@ func _rig_rest() -> void:
 	rig.scale = Vector2.ONE
 	if city != null:
 		city.refresh()
+
+
+# --- Art pass W7: the city's state, passed down (see CityAtmosphere) --------------------------
+
+## The screen's context: &"net" (the default here) or &"combat" (the city's grade).
+func set_context(context: StringName) -> void:
+	city.atmosphere().set_context(context)
+
+
+## Heat (its band from Palette.heat_band).
+func set_heat(heat: int) -> void:
+	city.atmosphere().set_heat(heat)
+
+
+## Campaign progress 0..1 toward the target corporation (the grade leans to its hue).
+func set_campaign_progress(progress: float, corp_id: StringName) -> void:
+	city.atmosphere().set_campaign_progress(progress, corp_id)
+
+
+## The Cell's claimed Sites (grid lots).
+func set_territory(claims: PackedVector2Array) -> void:
+	city.atmosphere().set_territory(claims)
+
+
+## Maps over the city (§9.5): the Grid, Route and Raid maps dim it 40% and blur it slightly.
+func set_map_mode(on: bool) -> void:
+	city.atmosphere().set_map_mode(on)
+
+
+## UI calm zones: the text panels over the city (followed as they move).
+func set_calm_controls(controls: Array[Control]) -> void:
+	city.atmosphere().set_calm_controls(controls)

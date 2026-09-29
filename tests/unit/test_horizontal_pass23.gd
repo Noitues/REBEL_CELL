@@ -136,7 +136,9 @@ func test_a_hit_on_your_wheel_reads_as_damage_taken() -> void:
 		var d := o.of(&"player")
 		if not d.is_empty() and int(d["hp_after"]) < int(d["hp_before"]):
 			var texts: Array = chips.map(func(c: Dictionary) -> String: return String(c["text"]))
-			assert_true(texts.has("YOU TAKE %d HP" % (int(d["hp_before"]) - int(d["hp_after"]))), "%s: %s" % [enemy, texts])
+			# Art pass W3 (§6.2): no "YOU TAKE" chip on your own tag: the net line under your HP says it.
+			assert_false(texts.any(func(t: String) -> bool: return t.begins_with("YOU TAKE")), "%s: %s" % [enemy, texts])
+			assert_eq(int(scene._player_view.net_line.get("net", 0)), int(d["hp_after"]) - int(d["hp_before"]), "%s: the net line says the loss" % enemy)
 
 
 func test_the_folded_chip_says_more() -> void:

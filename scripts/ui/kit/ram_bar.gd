@@ -7,7 +7,7 @@ extends Control
 ## Chip size and spacing at text scale 1.0 (px).
 const CHIP := 12.0
 const STEP := 16.0
-const FONT_SIZE := 12
+const FONT_SIZE := UiTheme.CAPTION
 ## The "-N RAM" float: its lettering as a share of the count's, and the share of its time
 ## after which it fades (ANIM-R2 E9). ANIM-R4 C6h: it starts this far (px) above the
 ## count's words and rises from there (it never sits on them, at any text size).
@@ -106,7 +106,7 @@ func _end_float() -> void:
 ## beside the count with a chip for RAM, pulsing for `ram_refusal`'s duration (amplitude =
 ## pulses). The words need no reading: the numbers and the red say it.
 var _flash: bool = false
-const REFUSED_COLOR := Color("#FF4D4D")
+const REFUSED_COLOR := Palette.HARM
 ## The missing chips (and the refusal at its faintest) keep this alpha.
 const MISSING_ALPHA := 0.45
 ## The RAM the refused action needed (0 = unknown) and the pulse's strength (0..1).
@@ -284,7 +284,7 @@ func _draw() -> void:
 	var after := clampi(lit + pending, 0, max_ram)
 	for k in max_ram:
 		var rc := Rect2(x0 + k * step, 1, chip, chip)
-		var col := Color(1, 1, 1, 0.1)
+		var col := Color(Palette.TEXT_HI, 0.1)
 		if k < mini(lit, after):
 			col = Palette.NET_CYAN
 		elif k < lit:

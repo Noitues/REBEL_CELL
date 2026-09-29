@@ -137,6 +137,12 @@ const DEMOS := {
 	&"focus_scale": ["pop", "sticker"], &"button_refused": ["blink", "sticker"], &"toast_in": ["drop", "sticker"],
 	&"toast_hold": ["fade_out", "sticker"], &"toast_out": ["fade_out", "sticker"], &"stamp_hold": ["screen", "stamp"],
 	&"zine_stamp_in": ["pop", "sticker"], &"banner_gap": ["fade_in", "panel"], &"toggle_slide": ["slide_x", "sticker"],
+	&"wheel_respin_settle": ["scene", "send"],  # art pass W3
+	&"hub_clear": ["scene", "send"],  # art pass W3
+	&"boss_intro": ["scene", "enter"],  # art pass W3
+	&"needle_draw": ["scene", "send"],  # art pass W3
+	&"hp_heartbeat": ["scene", "send"],  # art pass W3
+	&"bezel_ambient": ["scene", "enter"],  # art pass W3
 	# Art pass W5 (ART_BIBLE 7.2): the boss hologram on the stage: its idle drift, its intro
 	# reveal and (--demo-reduce) the reduce-effects cross-fade.
 	&"hologram_idle": ["hologram", "idle"], &"hologram_intro": ["hologram", "intro"], &"hologram_intro_fade": ["hologram", "intro"],

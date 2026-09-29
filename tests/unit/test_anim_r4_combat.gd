@@ -688,7 +688,7 @@ func test_statuses_show_whose_win_they_are() -> void:
 	assert_eq(WheelView.status_color(RC.Status.ENCRYPTED, true), WheelView.HP_COLOR, "in green")
 	var script: Script = load("res://scripts/ui/combat_scene.gd")
 	var chip: Dictionary = script.random_status_chip(RC.Status.CORRUPTED, true)
-	assert_string_contains(String(chip["text"]), String(Palette.STATUS_GLYPHS[RC.Status.CORRUPTED]), "which status")
+	assert_eq(int(chip["glyph"]), RC.Status.CORRUPTED, "which status (a drawn StatIcon since art pass W3)")
 	assert_string_contains(String(chip["text"]), tr("CORRUPTED"))
 	assert_eq(chip["color"], script.CHIP_LOSS, "bad for you: red")
 	assert_string_contains(String(chip["tooltip"]), "Bad for you")

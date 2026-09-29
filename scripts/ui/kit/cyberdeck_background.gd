@@ -2,16 +2,17 @@ class_name CyberdeckBackground
 extends Control
 ## The physical world (STYLE_GUIDE 1): the Cell's room at night, looking down through
 ## rain on the isometric neon city (NeonCity); a worn metal deck edge sits at the bottom. Rain animates unless reduce-effects.
-## Searchlights sweep past the window as Heat rises (GDD 9.4).
+## Heat (GDD 9.4) reaches the city itself (art pass W7, ART_BIBLE §9.3): searchlights over the
+## corp's district from NOTICED, patrols and rim flicker from FLAGGED, a HUNTED grade.
 
+## The Heat band (0 COOL .. 3 HUNTED), passed down to the city (CityAtmosphere).
 var heat_band: int = 0:
 	set(v):
 		heat_band = v
-		if _frame != null:
-			_frame.queue_redraw()
+		if city != null:
+			city.atmosphere().set_heat_band(v)
 var city: NeonCity
 var _frame: Control
-var _search_t: float = 0.0
 
 
 func _init() -> void:
@@ -39,19 +40,40 @@ func set_district(corporation_id: StringName) -> void:
 	city.district = corporation_id
 
 
-func _process(delta: float) -> void:
-	if Settings.reduce_effects or heat_band <= 0:
-		return
-	_search_t += delta
-	_frame.queue_redraw()
+# --- Art pass W7: the city's state, passed down (see CityAtmosphere) --------------------------
+
+## The screen's context: &"title", &"hq", &"net" or &"combat" (the city's grade).
+func set_context(context: StringName) -> void:
+	city.atmosphere().set_context(context)
+
+
+## Heat (its band from Palette.heat_band).
+func set_heat(heat: int) -> void:
+	city.atmosphere().set_heat(heat)
+
+
+## Campaign progress 0..1 toward the target corporation (the grade leans to its hue).
+func set_campaign_progress(progress: float, corp_id: StringName) -> void:
+	city.atmosphere().set_campaign_progress(progress, corp_id)
+
+
+## The Cell's claimed Sites (grid lots).
+func set_territory(claims: PackedVector2Array) -> void:
+	city.atmosphere().set_territory(claims)
+
+
+## Maps over the city (§9.5): dim 40% and a slight blur.
+func set_map_mode(on: bool) -> void:
+	city.atmosphere().set_map_mode(on)
+
+
+## UI calm zones: the text panels over the city (followed as they move).
+func set_calm_controls(controls: Array[Control]) -> void:
+	city.atmosphere().set_calm_controls(controls)
 
 
 func _draw_frame() -> void:
 	var s := size
-	# Heat searchlights sweep across the glass.
-	if heat_band > 0:
-		var sx := fmod(_search_t * 120.0 * heat_band, s.x + 400.0) - 200.0
-		_frame.draw_colored_polygon(PackedVector2Array([Vector2(sx, s.y), Vector2(sx + 90, s.y), Vector2(sx + 320, 0), Vector2(sx + 160, 0)]), Color(Palette.PAPER, 0.05 * heat_band))
 	# The deck edge: worn metal lip with screws and a pink under-glow.
 	var deck_y := s.y - 18.0
 	_frame.draw_rect(Rect2(0, deck_y, s.x, 18), Palette.DESK_DARK)

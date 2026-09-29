@@ -15,8 +15,8 @@ const DASHES := 28
 const DASH_FILL := 0.6
 const RING_W := 3.0
 ## Caption and verdict lettering at text scale 1.0 (they grow with it, fitted to the ring).
-const CAPTION_SIZE := 10
-const VERDICT_SIZE := 20
+const CAPTION_SIZE := UiTheme.CAPTION
+const VERDICT_SIZE := UiTheme.LABEL
 ## Inner padding of the lettering from the ring (px) and the icon's radius share.
 const INSET := 12.0
 const ICON_SHARE := 0.17

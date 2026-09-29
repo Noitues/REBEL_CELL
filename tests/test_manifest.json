@@ -81,16 +81,44 @@
 			"seconds": 16.2,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim6_screen_motion.gd": {
+			"seconds": 24.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_anim_r1_campaign.gd": {
+			"seconds": 20.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_anim_r1_combat.gd": {
+			"seconds": 13.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r2_city.gd": {
 			"seconds": 20.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_anim_r2_combat.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_anim_r3_city.gd": {
+			"seconds": 25.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_anim_r3_combat.gd": {
+			"seconds": 90.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_anim_r4_city.gd": {
 			"seconds": 30.0,
 			"tier": "full"
 		},
-		"res://tests/unit/test_anim_r3_city.gd": {
-			"seconds": 25.0,
+		"res://tests/unit/test_anim_r4_combat.gd": {
+			"seconds": 90.0,
+			"tier": "full"
+		},
+		"res://tests/unit/test_anim_r5_combat.gd": {
+			"seconds": 60.0,
 			"tier": "full"
 		},
 		"res://tests/unit/test_art_w1_tokens.gd": {
@@ -101,37 +129,25 @@
 			"seconds": 3.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art_w3_wheels.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art_w4_cards.gd": {
+			"seconds": 5.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art_w5_characters.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_anim_r1_campaign.gd": {
-			"seconds": 20.0,
+		"res://tests/unit/test_art_w7_city.gd": {
+			"seconds": 15.0,
 			"tier": "full"
 		},
-		"res://tests/unit/test_anim6_screen_motion.gd": {
-			"seconds": 24.0,
-			"tier": "full"
-		},
-		"res://tests/unit/test_anim_r5_combat.gd": {
-			"seconds": 60.0,
-			"tier": "full"
-		},
-		"res://tests/unit/test_anim_r4_combat.gd": {
-			"seconds": 90.0,
-			"tier": "full"
-		},
-		"res://tests/unit/test_anim_r3_combat.gd": {
-			"seconds": 90.0,
-			"tier": "full"
-		},
-		"res://tests/unit/test_anim_r2_combat.gd": {
-			"seconds": 40.0,
-			"tier": "full"
-		},
-		"res://tests/unit/test_anim_r1_combat.gd": {
-			"seconds": 13.0,
-			"tier": "full"
+		"res://tests/unit/test_art_w8a_menus.gd": {
+			"seconds": 8.0,
+			"tier": "fast"
 		},
 		"res://tests/unit/test_audio_director.gd": {
 			"seconds": 1.1,
@@ -381,6 +397,10 @@
 			"seconds": 2.7,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_quiet_window.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_raid_extras.gd": {
 			"seconds": 0.1,
 			"tier": "fast"
@@ -461,20 +481,12 @@
 			"seconds": 0.3,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_wheel_math.gd": {
-			"seconds": 0.2,
-			"tier": "fast"
-		},
-		"res://tests/unit/test_quiet_window.gd": {
-			"seconds": 0.3,
-			"tier": "fast"
-		},
 		"res://tests/unit/test_w9_accessibility_settings.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
 		},
-		"res://tests/unit/test_art_w8a_menus.gd": {
-			"seconds": 8.0,
+		"res://tests/unit/test_wheel_math.gd": {
+			"seconds": 0.2,
 			"tier": "fast"
 		}
 	}
