@@ -16,7 +16,13 @@ const INK := Color("#111111")
 const NET_CYAN := Color("#5CE1FF")
 const NET_BG_INNER := Color("#0D1440")
 const NET_BG_OUTER := Color("#02030A")
+## ART_BIBLE §3.6: each corporation owns a hue, a pattern (CorpPattern) and a landmark.
+## A corp hue is never used for a §3.3 UI role.
 const CORP_SOLACE := Color("#3DFF8B")
+const CORP_MERIDIAN := Color("#FF8C1A")
+const CORP_HALCYON := Color("#8C7BFF")
+## Orbital Commons: #7FA8FF (ART_BIBLE §3.6/§15; was #DDE3FF, indistinguishable from UI text).
+const CORP_ORBITAL := Color("#7FA8FF")
 ## REBEL_CELL (the handler AI): a deep blood red, clearly apart from the Cell pink in hue
 ## and lightness (H20 #14; was #FF2A6D, nearly the Cell pink).
 const CORP_REBEL_CELL := Color("#E8141E")
@@ -107,17 +113,26 @@ static func corp_color(corporation_id: StringName) -> Color:
 		&"solace":
 			return CORP_SOLACE
 		&"meridian":
-			return Color("#FF8C1A")
+			return CORP_MERIDIAN
 		&"halcyon":
-			return Color("#8C7BFF")
+			return CORP_HALCYON
 		&"orbital":
-			return Color("#DDE3FF")
+			return CORP_ORBITAL
 		&"rebel_cell":
 			return CORP_REBEL_CELL
 		_:
 			return NET_CYAN
 
 
+## ART_BIBLE §3.4 slice colours: the colour means slice type on any wheel, not its owner.
+const SLICE_HEAL := Color("#7BE07B")
+const SLICE_AFFLICT := Color("#C85AFF")
+const SLICE_DEPLOY := Color("#B08CFF")
+const SLICE_MISS := Color("#6A6A6A")
+
+
+## The colour of a slice type (§3.4): attack/crit pink, defend/shield cyan, evade/heal
+## green, afflict violet, deploy lilac, miss grey.
 static func slice_color(type: int) -> Color:
 	match type:
 		RC.SliceType.ATTACK, RC.SliceType.CRIT:
@@ -125,13 +140,34 @@ static func slice_color(type: int) -> Color:
 		RC.SliceType.DEFEND, RC.SliceType.SHIELD:
 			return NET_CYAN
 		RC.SliceType.EVADE, RC.SliceType.HEAL:
-			return Color("#7BE07B")
+			return SLICE_HEAL
 		RC.SliceType.AFFLICT:
-			return Color("#C85AFF")
+			return SLICE_AFFLICT
 		RC.SliceType.DEPLOY:
-			return Color("#B08CFF")
+			return SLICE_DEPLOY
 		_:
-			return Color("#6A6A6A")
+			return SLICE_MISS
+
+
+## ART_BIBLE §7.1 class accents, keyed by the class content id (content/classes/*.tres).
+## Accents sit only on the class's portrait, bezel ornament and dossier stripe.
+const CLASS_ACCENTS := {
+	&"breaker": CELL_PINK,
+	&"wrecker": Color("#FF7A1A"),
+	&"ghost": Color("#9FE8FF"),
+	&"phantom": Color("#C8B6FF"),
+	&"rigger": Color("#FFD24D"),
+	&"overclocker": Color("#FF4FD8"),
+	&"botnet": Color("#7BE07B"),
+	&"hivemind": Color("#B04DFF"),
+}
+## The accent for a class id nobody listed (a new or modded class): the neutral text tone.
+const CLASS_ACCENT_FALLBACK := TEXT_MID
+
+
+## The §7.1 accent colour of a class (CLASS_ACCENT_FALLBACK for an unknown id).
+static func class_accent(class_id: StringName) -> Color:
+	return CLASS_ACCENTS.get(class_id, CLASS_ACCENT_FALLBACK)
 
 
 static var _fonts: Dictionary = {}
