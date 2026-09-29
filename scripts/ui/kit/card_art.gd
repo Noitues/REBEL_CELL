@@ -56,3 +56,43 @@ static func _type_of_effect(e: EffectData) -> int:
 ## The ZineCard.Variant (stock colour) a card is printed on.
 static func variant_of(card: CardData) -> int:
 	return int(TYPE_VARIANT[type_of(card)])
+
+
+# --- Photocopy grain (COMMON stock, ART_BIBLE 6.3) ---------------------------------------------
+
+## The tileable grain tile's side (px), how many of its pixels carry a toner speck (per
+## 1024), and the grain's and specks' opacity (0..255; the card tints it with its ink).
+const GRAIN_SIDE := 96
+const SPECK_PER_1024 := 9
+const GRAIN_MAX := 70
+const SPECK_ALPHA := 255
+static var _grain: ImageTexture = null
+
+
+## A tileable photocopy grain (white with alpha; drawn modulated by the card's ink): fine
+## noise plus a few toner specks. Built once from an integer hash (deterministic).
+static func grain_texture() -> Texture2D:
+	if _grain == null:
+		_grain = ImageTexture.create_from_image(grain_image())
+	return _grain
+
+
+## The grain tile as an Image (FORMAT_LA8).
+static func grain_image() -> Image:
+	var data := PackedByteArray()
+	data.resize(GRAIN_SIDE * GRAIN_SIDE * 2)
+	for y in GRAIN_SIDE:
+		for x in GRAIN_SIDE:
+			var h := ihash(x * 73 + y * 9151 + 17)
+			var i := (y * GRAIN_SIDE + x) * 2
+			data[i] = 255
+			data[i + 1] = SPECK_ALPHA if (h & 1023) < SPECK_PER_1024 else ((h >> 10) & 255) * GRAIN_MAX / 255
+	return Image.create_from_data(GRAIN_SIDE, GRAIN_SIDE, false, Image.FORMAT_LA8, data)
+
+
+## A 31-bit integer hash (deterministic decoration noise; never an RNG).
+static func ihash(v: int) -> int:
+	var h := (v ^ 0x5bd1e995) & 0x7fffffff
+	h = ((h ^ (h >> 15)) * 0x2c1b3c6d) & 0x7fffffff
+	h = ((h ^ (h >> 12)) * 0x297a2d39) & 0x7fffffff
+	return (h ^ (h >> 15)) & 0x7fffffff

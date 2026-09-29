@@ -155,11 +155,12 @@ func _families() -> void:
 
 
 func _foil_strip() -> void:
-	sheet.add_child(_heading("FOIL  //  one rare card across pointer tilts (reduce effects: %s)" % Settings.reduce_effects))
+	sheet.add_child(_heading("FOIL  //  tilts (reduce effects %s)" % Settings.reduce_effects))
 	var row := _row()
 	for t in FOIL_TILTS:
 		var z := _zine(_card(&"short_circuit"), false)
-		z.set_meta(&"lab_foil_tilt", t)
+		z.foil_hold = true
+		z.foil_tilt = t
 		row.add_child(_cell(z, "tilt %.1f, %.1f" % [t.x, t.y]))
 	sheet.add_child(row)
 

@@ -98,3 +98,53 @@ func test_the_other_looks_still_draw_their_parts() -> void:
 		assert_false((p["names"] as Array).is_empty(), "look %d shows its name" % lk)
 		assert_true(int(p["fs"]) >= UiTheme.CAPTION, "look %d: the name is caption or larger" % lk)
 		z.free()
+
+
+# --- 2. Rarity by stock (6.3) -------------------------------------------------------------------
+
+func test_each_rarity_has_a_distinct_stock_readable_in_greyscale() -> void:
+	var seen := {}
+	var pips := {}
+	var edges := {}
+	for r in [RC.Rarity.COMMON, RC.Rarity.UNCOMMON, RC.Rarity.RARE]:
+		var st := ZineCard.stock_of(r)
+		seen[st] = true
+		var marks := ZineCard.stock_marks(st)
+		pips[marks["pip"]] = true
+		edges[marks["edge"]] = true
+	assert_eq(seen.size(), 3, "photocopy, glossy and foil")
+	assert_eq(pips.size(), 3, "a distinct pip glyph per rarity (greyscale)")
+	assert_eq(edges.size(), 3, "a distinct edge per rarity (greyscale)")
+	assert_eq(ZineCard.stock_of(RC.Rarity.COMMON), ZineCard.Stock.PHOTOCOPY)
+	assert_eq(ZineCard.stock_of(RC.Rarity.UNCOMMON), ZineCard.Stock.GLOSSY)
+	assert_eq(ZineCard.stock_of(RC.Rarity.RARE), ZineCard.Stock.FOIL)
+	assert_eq(ZineCard.stock_of(RC.Rarity.BOSS), ZineCard.Stock.FOIL, "boss rarity is foil too")
+	assert_true(bool(ZineCard.stock_marks(ZineCard.Stock.PHOTOCOPY)["grain"]), "common is photocopy grain")
+	assert_true(bool(ZineCard.stock_marks(ZineCard.Stock.GLOSSY)["gloss"]), "uncommon is a glossy sticker")
+	assert_true(bool(ZineCard.stock_marks(ZineCard.Stock.FOIL)["foil"]), "rare is foil")
+
+
+func test_only_rare_cards_run_the_foil() -> void:
+	var rare := _sticker(_card(&"short_circuit"))
+	var common := _sticker(_card(&"jolt"))
+	assert_true(rare.is_foil())
+	assert_false(common.is_foil())
+	rare.free()
+	common.free()
+
+
+func test_foil_is_static_under_reduce_effects() -> void:
+	var was := Settings.reduce_effects
+	Settings.reduce_effects = true
+	for p in [Vector2(-1, -1), Vector2(0.3, 0.9), Vector2(1, 0)]:
+		assert_eq(ZineCard.foil_target(p), ZineCard.FOIL_STATIC, "the foil ignores the pointer (%s)" % p)
+	var z := _sticker(_card(&"short_circuit"))
+	add_child_autofree(z)
+	z.foil_tilt = Vector2(0.9, 0.9)
+	z._process(0.1)
+	assert_eq(z.foil_tilt, ZineCard.FOIL_STATIC, "a static sheen at once")
+	Settings.reduce_effects = was
+	assert_ne(ZineCard.foil_target(Vector2(0.3, 0.9)), ZineCard.FOIL_STATIC, "with effects on it follows the pointer")
+	var src := FileAccess.get_file_as_string("res://shaders/foil.gdshader")
+	assert_true(src.contains("#include \"res://shaders/lib/rc_common.gdshaderinc\""), "the library include (W6)")
+	assert_true(src.contains("rc_live()") and src.contains("rc_time(TIME)"), "the shader goes static under the global reduce_effects")

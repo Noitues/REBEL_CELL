@@ -125,6 +125,41 @@ const BAND_SECONDARY := 0.72
 const FOCUS_ARM := 12.0
 const FOCUS_STROKE := 2.0
 const FOCUS_OFFSET := 4.0
+
+# --- W4 rarity by stock (ART_BIBLE 6.3) -------------------------------------------------------
+## The stock a rarity is printed on: COMMON photocopy paper (grain and toner), UNCOMMON a
+## glossy sticker (a white die-cut margin, a specular edge and a sheen), RARE and BOSS
+## holographic foil (foil.gdshader on the border band and art window, tilting with the
+## pointer or stick; a static sheen under reduce effects). In greyscale each also reads
+## by its edge (plain / die-cut / hatched) and its pip glyph (dot / diamond / star).
+enum Stock { PHOTOCOPY, GLOSSY, FOIL }
+## The rarity pip's radius, the die-cut margin, the hatch spacing on a foil edge (px at
+## scale 1.0), and the alphas of the grain, the sheen, the specular edge and the hatch.
+const PIP_R := 4.0
+## The pip's tab radius as a multiple of the pip's.
+const PIP_TAB := 1.9
+const DIECUT := 3.0
+const FOIL_HATCH := 5.0
+const GRAIN_ALPHA := 0.22
+const GLOSS_ALPHA := 0.16
+const SPECULAR_ALPHA := 0.75
+const EDGE_SHADE := 0.3
+const HATCH_ALPHA := 0.45
+## The glossy sheen band: where it crosses the card (share of the width) and its width.
+const GLOSS_AT := 0.62
+const GLOSS_WIDTH := 0.16
+## The foil's strength over the art window (the border band is at full strength), the
+## tilt shown under reduce effects, and the stick's dead zone.
+const FOIL_ART_STRENGTH := 0.35
+const FOIL_STATIC := Vector2(0.35, -0.2)
+const STICK_DEADZONE := 0.2
+const FOIL_SHADER := preload("res://shaders/foil.gdshader")
+## The foil's tilt now (-1..1 per axis; the shader's `tilt`), and a hold that stops it
+## following the pointer (the cards lab shows fixed tilts).
+var foil_tilt: Vector2 = Vector2.ZERO
+var foil_hold: bool = false
+var _foil_ci: RID = RID()
+var _foil_mat: ShaderMaterial = null
 ## Type steps tried, largest first: the title, the rules text (one step down, never under
 ## caption; ART_BIBLE 4.3) and the band's key number.
 const TITLE_STEPS: Array[int] = [UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]
@@ -160,12 +195,79 @@ func _ready() -> void:
 	rest_tilt = float(((hash(card_title) % (REST_TILT_MAX * 2 + 1)) - REST_TILT_MAX)) if look == Look.STICKER and size_mode == SizeMode.HAND else 0.0
 	rotation_degrees = 0.0 if _lifted and look == Look.STICKER else rest_tilt
 	_refit_tall.call_deferred()
+	set_process(is_foil())
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		pivot_offset = size / 2.0
 		_refit_tall.call_deferred()
+	elif what == NOTIFICATION_PREDELETE and _foil_ci.is_valid():
+		RenderingServer.free_rid(_foil_ci)
+
+
+## The card's rarity (RC.Rarity), or -1 for a sticker without card data.
+func rarity() -> int:
+	return card_data.rarity if card_data != null else -1
+
+
+## The stock `rarity` is printed on (Stock); no card data prints on photocopy paper.
+static func stock_of(p_rarity: int) -> int:
+	match p_rarity:
+		RC.Rarity.UNCOMMON:
+			return Stock.GLOSSY
+		RC.Rarity.RARE, RC.Rarity.BOSS:
+			return Stock.FOIL
+	return Stock.PHOTOCOPY
+
+
+## What a stock looks like, colour aside (tests: each rarity distinct and readable in
+## greyscale): its pip glyph, its edge, grain, gloss and foil.
+static func stock_marks(stock: int) -> Dictionary:
+	match stock:
+		Stock.GLOSSY:
+			return {"pip": "diamond", "edge": "diecut", "grain": false, "gloss": true, "foil": false}
+		Stock.FOIL:
+			return {"pip": "star", "edge": "hatch", "grain": false, "gloss": false, "foil": true}
+	return {"pip": "dot", "edge": "plain", "grain": true, "gloss": false, "foil": false}
+
+
+## True when this is a card Look on foil stock.
+func is_foil() -> bool:
+	return look == Look.STICKER and stock_of(rarity()) == Stock.FOIL
+
+
+## Where the foil points for a pointer or stick at `p` (-1..1 per axis): `p` itself, or the
+## fixed FOIL_STATIC under reduce effects (a static sheen, ART_BIBLE 8, 12).
+static func foil_target(p: Vector2) -> Vector2:
+	if Settings.reduce_effects:
+		return FOIL_STATIC
+	return p.clamp(-Vector2.ONE, Vector2.ONE)
+
+
+## The foil follows the pointer (over the card, or from across the screen), or under a pad
+## the right stick, else the card's place on screen (a focused card tilts as focus moves).
+func _process(delta: float) -> void:
+	if not is_foil() or foil_hold or not is_visible_in_tree():
+		return
+	var target := foil_target(_pointer_tilt())
+	var tau := maxf(0.001, Motion.seconds(&"card_foil_tilt"))
+	foil_tilt = target if Settings.reduce_effects else foil_tilt.lerp(target, 1.0 - exp(-delta / tau))
+	if _foil_mat != null:
+		_foil_mat.set_shader_parameter(&"tilt", foil_tilt * Motion.amplitude(&"card_foil_tilt") * 2.0)
+
+
+func _pointer_tilt() -> Vector2:
+	var vp := get_viewport_rect().size
+	var centre := get_global_rect().get_center()
+	if Settings.pad_active:
+		var stick := Vector2(Input.get_joy_axis(0, JOY_AXIS_RIGHT_X), Input.get_joy_axis(0, JOY_AXIS_RIGHT_Y))
+		if stick.length() > STICK_DEADZONE:
+			return stick
+		return (centre / vp) * 2.0 - Vector2.ONE if vp.x > 0.0 else Vector2.ZERO
+	if _lifted and size.x > 0.0:
+		return (get_local_mouse_position() / size) * 2.0 - Vector2.ONE
+	return (get_global_mouse_position() - centre) / vp * 2.0 if vp.x > 0.0 else Vector2.ZERO
 
 
 ## Turns this into a shop tile (chip or card builder) in `p_accent`.
@@ -236,6 +338,7 @@ func with_card(card: CardData) -> ZineCard:
 	pictos = pictos_of(card)
 	if card != null:
 		variant = CardArt.variant_of(card)
+	set_process(is_foil())
 	queue_redraw()
 	return self
 
@@ -628,6 +731,8 @@ func _compute_layout() -> Dictionary:
 		r_line = step_line(r_step, r_fs)
 	var art := Rect2(m, art_top, inner_w, art_h)
 	out["art"] = art
+	# The rarity pip on a stock-coloured tab in the art window's top-right corner.
+	out["pip_c"] = art.position + Vector2(art.size.x - PIP_R * PIP_TAB * s, PIP_R * PIP_TAB * s)
 	var band := Rect2(m, art.end.y - band_h, inner_w, band_h) if band_over else Rect2(m, art.end.y + gap, inner_w, band_h)
 	out["band"] = band
 	out["band_over"] = band_over
@@ -737,15 +842,32 @@ func _draw_sticker() -> void:
 	var bg: Color = cols[0]
 	var fg: Color = cols[1]
 	var rect := Rect2(Vector2.ZERO, size)
-	# PAPER: a hard shadow under the stock, tape over the top edge (ART_BIBLE 2).
-	draw_rect(Rect2(Vector2.ONE * SHADOW_OFFSET * s, size), Palette.SHADOW)
+	var stock := stock_of(rarity())
+	var marks := stock_marks(stock)
+	# PAPER: a hard shadow under the stock, tape over the top edge (ART_BIBLE 2). A glossy
+	# sticker sits on its white die-cut margin.
+	var outline := rect.grow(DIECUT * s) if stock == Stock.GLOSSY else rect
+	draw_rect(Rect2(outline.position + Vector2.ONE * SHADOW_OFFSET * s, outline.size), Palette.SHADOW)
+	if stock == Stock.GLOSSY:
+		draw_rect(outline, Palette.PAPER)
+		draw_rect(outline, Palette.INK, false, WINDOW_LINE * s)
 	draw_rect(rect, bg)
+	if bool(marks["grain"]):
+		draw_texture_rect(CardArt.grain_texture(), rect, true, Color(fg, GRAIN_ALPHA))
 	var art: Rect2 = L["art"]
 	_draw_art(art, bg, fg)
 	draw_rect(art, fg, false, WINDOW_LINE * s)
+	if stock == Stock.FOIL:
+		_draw_foil_edge(rect, fg, L)
 	draw_rect(rect, fg, false, FRAME_LINE * s)
+	if bool(marks["gloss"]):
+		_draw_gloss(rect)
 	draw_rect(Rect2(size.x * TAPE_AT, -TAPE_SIZE.y * 0.6 * s, TAPE_SIZE.x * s, TAPE_SIZE.y * s), Palette.TAPE)
 	_draw_title(L, fg)
+	if card_data != null:
+		draw_circle(L["pip_c"], PIP_R * PIP_TAB * s, bg)
+		draw_arc(L["pip_c"], PIP_R * PIP_TAB * s, 0, TAU, 16, fg, WINDOW_LINE * s, true)
+		_draw_pip(L["pip_c"], PIP_R * s, String(marks["pip"]), fg)
 	_draw_band(L["band"], int(L["band_fs"]), fg, bg)
 	if bool(L["rules_on_face"]):
 		_draw_rules(L, fg)
@@ -754,6 +876,85 @@ func _draw_sticker() -> void:
 		draw_rect(rect, Color(Palette.INK, DISABLED_SHADE))
 	if has_focus():
 		_draw_focus(rect.grow(FOCUS_OFFSET * s))
+	_update_foil(L, stock == Stock.FOIL)
+
+
+## The rarity pip: a dot (common), a diamond (uncommon) or a star (rare and up).
+func _draw_pip(c: Vector2, r: float, kind: String, col: Color) -> void:
+	match kind:
+		"diamond":
+			draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r * 1.25), c + Vector2(r, 0), c + Vector2(0, r * 1.25), c + Vector2(-r, 0)]), col)
+		"star":
+			var pts := PackedVector2Array()
+			for k in 10:
+				var a := -PI * 0.5 + k * PI / 5.0
+				pts.append(c + Vector2(cos(a), sin(a)) * (r * 1.4 if k % 2 == 0 else r * 0.6))
+			draw_colored_polygon(pts, col)
+		_:
+			draw_circle(c, r * 0.8, col)
+
+
+## The glossy sticker: a sheen band across the card and a specular top-left edge with a
+## shaded bottom-right edge (the sticker's thickness).
+func _draw_gloss(rect: Rect2) -> void:
+	var s := text_scale
+	var x := rect.size.x * GLOSS_AT
+	var w := rect.size.x * GLOSS_WIDTH
+	var slant := rect.size.y * 0.35
+	draw_colored_polygon(PackedVector2Array([Vector2(x, 0), Vector2(x + w, 0), Vector2(x + w - slant, rect.size.y), Vector2(x - slant, rect.size.y)]), Color(Palette.TEXT_HI, GLOSS_ALPHA))
+	var e := FRAME_LINE * s
+	draw_line(Vector2(e, e), Vector2(rect.size.x - e, e), Color(Palette.TEXT_HI, SPECULAR_ALPHA), e)
+	draw_line(Vector2(e, e), Vector2(e, rect.size.y - e), Color(Palette.TEXT_HI, SPECULAR_ALPHA), e)
+	draw_line(Vector2(e, rect.size.y + e), Vector2(rect.size.x + e, rect.size.y + e), Color(Palette.INK, EDGE_SHADE), e)
+	draw_line(Vector2(rect.size.x + e, e), Vector2(rect.size.x + e, rect.size.y + e), Color(Palette.INK, EDGE_SHADE), e)
+
+
+## A foil card's edge reads in greyscale too: diagonal hatch in its border band.
+func _draw_foil_edge(rect: Rect2, fg: Color, _L: Dictionary) -> void:
+	var s := text_scale
+	var m := UiTheme.SP_XS * s
+	var step := FOIL_HATCH * s
+	var col := Color(fg, HATCH_ALPHA)
+	var x := 0.0
+	while x < rect.size.x:
+		draw_line(Vector2(x, m), Vector2(x + m, 0.0), col, 1.0)
+		draw_line(Vector2(x, rect.size.y), Vector2(x + m, rect.size.y - m), col, 1.0)
+		x += step
+	var y := 0.0
+	while y < rect.size.y:
+		draw_line(Vector2(0.0, y + m), Vector2(m, y), col, 1.0)
+		draw_line(Vector2(rect.size.x - m, y + m), Vector2(rect.size.x, y), col, 1.0)
+		y += step
+
+
+## The foil layer (a child canvas item with foil.gdshader, added over the stock): the
+## border band at full strength and the art window at FOIL_ART_STRENGTH, never over the
+## title, band or rules text. Follows the drawn-only transform (lift, hover, deal-in).
+func _update_foil(L: Dictionary, on: bool) -> void:
+	if not on:
+		if _foil_ci.is_valid():
+			RenderingServer.canvas_item_clear(_foil_ci)
+		return
+	if not _foil_ci.is_valid():
+		_foil_ci = RenderingServer.canvas_item_create()
+		RenderingServer.canvas_item_set_parent(_foil_ci, get_canvas_item())
+		_foil_mat = ShaderMaterial.new()
+		_foil_mat.shader = FOIL_SHADER
+		RenderingServer.canvas_item_set_material(_foil_ci, _foil_mat.get_rid())
+	_foil_mat.set_shader_parameter(&"card_size", size)
+	_foil_mat.set_shader_parameter(&"static_tilt", FOIL_STATIC)
+	_foil_mat.set_shader_parameter(&"tilt", foil_tilt * Motion.amplitude(&"card_foil_tilt") * 2.0)
+	RenderingServer.canvas_item_clear(_foil_ci)
+	var moved := lift != 0.0 or hover_scale != 1.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0
+	RenderingServer.canvas_item_set_transform(_foil_ci, draw_transform() if moved else Transform2D.IDENTITY)
+	var m := UiTheme.SP_XS * text_scale
+	var full := Color.WHITE
+	for r in [Rect2(0, 0, size.x, m), Rect2(0, size.y - m, size.x, m), Rect2(0, m, m, size.y - m * 2.0), Rect2(size.x - m, m, m, size.y - m * 2.0)]:
+		RenderingServer.canvas_item_add_rect(_foil_ci, r, full)
+	var art: Rect2 = L["art"]
+	if bool(L["band_over"]):
+		art.size.y -= (L["band"] as Rect2).size.y
+	RenderingServer.canvas_item_add_rect(_foil_ci, art, Color(full, FOIL_ART_STRENGTH))
 
 
 ## The illustration in the window (item 3 paints it; W4 frame: the photocopy panel).
