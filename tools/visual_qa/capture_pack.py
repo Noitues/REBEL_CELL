@@ -274,7 +274,7 @@ def main() -> int:
         "godot_errors": combo_errors,
         "entries": entries,
     }
-    (out / pack_axes.MANIFEST).write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+    (out / pack_axes.MANIFEST).write_text(json.dumps(manifest, indent=1), encoding="utf-8", newline="\n")
     bad = [e for e in entries if e["status"] != "ok" and e["screen"] in screens]
     print("capture_pack: %d pictures, %d not captured, %.0f s -> %s" % (len(entries) - len(bad), len(bad), time.time() - t0, out))
     for e in bad:

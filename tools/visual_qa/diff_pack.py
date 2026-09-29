@@ -110,7 +110,7 @@ def main() -> int:
         L += ["", "## Only in before (%d)" % len(only_b), ""] + ["- %s" % r for r in only_b]
     if only_a:
         L += ["", "## Only in after (%d)" % len(only_a), ""] + ["- %s" % r for r in only_a]
-    (out / "diff_report.md").write_text("\n".join(L) + "\n", encoding="utf-8")
+    (out / "diff_report.md").write_text("\n".join(L) + "\n", encoding="utf-8", newline="\n")
     (out / "diff.json").write_text(json.dumps([{"changed_pct": round(p, 4), "picture": r, "image": i, "note": n}
                                                for p, r, i, n in rows], indent=1), encoding="utf-8")
     print("diff_pack: %d pairs, %d only before, %d only after -> %s" % (len(rows), len(only_b), len(only_a), out / "diff_report.md"))
