@@ -452,7 +452,8 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   a block caret blinks after the focused line's words.
 - **Things you get fly to where they live** (`FlightFx`): a bought item stamps SOLD and
   flies to its top bar icon, a picked loot card lifts and flies to CARDS, the chosen event
-  outcome stamps over the next screen. The state is already final; the flight replays it.
+  outcome stamps on the event page before it leaves (ANIM-R6; it stamped over the next
+  screen). The state is already final; the flight replays it.
 - **Numbers**: a top bar tag whose value changed bumps (x1.08) and rolls to it; Cycles and
   Schematics count up when they rise; CAMPAIGN / THIS RUN cross-fade.
 - **Words type in**: subtitles (the page's time starts once it is all shown), the event's
@@ -511,6 +512,16 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   in the raid playout's step, `city_map_overlay`'s drop and raid through DropLayer and the
   playout; its selection and route pulses answer the pointer, as `grid_map_view`'s do),
   and `fx` (the jack swallows every press itself; a flash is a tenth of a second).
+- **ANIM-R6 netrun screens**: the loot's deal is a screen motion (one press lands every
+  sticker, and a sticker still fanning in takes no click: its press lands the deal and picks
+  nothing). The chosen event outcome stamps on the event page, which stays (inert) until it
+  has played; the event's story is on its paper only (the subtitle bar no longer repeats it).
+  The run end's title agrees with its verdict (NETRUN // FLATLINED / JACK OUT / HOME FELL) and
+  the fight's barks end with the fight. The loot window names what paid out (FIGHT WON, ELITE
+  DOWN, RACK BREACHED, EVENT PAYOUT); RAM on a card carries its chip icon; the Modem's sign
+  wears a shop bag, its BUY / SHRED notes a cart and a shredder. The jack names its
+  destination large and bright under CONNECTING TO, with the Site's tier icon. A landing
+  pulse waits its entry's delay; a toast holds longer at a slower speed, never shorter.
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

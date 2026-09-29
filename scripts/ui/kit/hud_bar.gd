@@ -99,6 +99,25 @@ func set_stats(items: Array, captions: Array = []) -> void:
 	label.tooltip_text = label.text
 
 
+## ANIM-R5 B5 / ANIM-R6 B7: a bought or picked item of `kind` ("card", "daemon", else a chip
+## or slice) has landed on the bar: where it went pulses (`flight_land_pulse`): the CARDS tag
+## for a card, the DAEMONS icon for a Daemon, VIEW LOADOUT for the rest (a pop). Returns the
+## control that pulses (null when none shows).
+func land_pulse(kind: String) -> Control:
+	match kind:
+		"card":
+			return stats if stats.land_pulse(StatIcon.CARDS) else null
+		"daemon":
+			if daemon_button.is_visible_in_tree():
+				Motion.pop(daemon_button, HudStats.LAND_PULSE)
+				return daemon_button
+			return null
+	if loadout_button.is_visible_in_tree():
+		Motion.pop(loadout_button, HudStats.LAND_PULSE)
+		return loadout_button
+	return null
+
+
 ## The Daemons installed on the current operative (the icon shows the first and a count).
 func set_daemons(ids: Array[StringName]) -> void:
 	daemon_ids = ids

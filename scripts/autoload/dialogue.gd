@@ -365,6 +365,16 @@ func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: Strin
 		_next()
 
 
+## ANIM-R6 B12: a line already on the page itself (an event's story on its paper): kept in
+## the history and sent to voice-over (`line_spoken`) as `say` does, but never shown in the
+## bar (it repeated the page word for word).
+func log_line(speaker: int, text: String, corporation_id: StringName = &"") -> void:
+	if text == "":
+		return
+	history.append({"speaker": speaker, "text": text, "corporation": corporation_id})
+	line_spoken.emit(speaker, text)
+
+
 ## The screen on show now (the scenes report it) and the scope of the line on screen.
 var screen: String = ""
 var _shown_scope: String = ""

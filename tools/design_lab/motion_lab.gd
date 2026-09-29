@@ -645,9 +645,23 @@ func _play_screen(what: String) -> void:
 					_hud.items = HUD_AFTER.duplicate(true)
 			length = 1.0
 		"land_pulse":
+			# ANIM-R6 B7: the real top bar (HudBar.land_pulse, as the netrun plays it): a card's
+			# landing pulses CARDS, a Daemon's pops the DAEMONS icon, a chip's pops VIEW LOADOUT.
+			_hud.visible = false
+			var bar := HudBar.new()
+			bar.name = "LandBar"
+			bar.position = Vector2(20, 12)
+			bar.size = Vector2(1280 - PANEL_W - 40, HudBar.BAND_HEIGHT)
+			_screen_host.add_child(bar)
+			bar.set_stats(HUD_BEFORE.duplicate(true))
+			bar.set_daemons([&"twin_pointer"] as Array[StringName])
+			bar.loadout_button.visible = true
 			await get_tree().process_frame
-			_hud.land_pulse(StatIcon.CARDS)
-			length = Motion.seconds(&"flight_land_pulse")
+			if not is_instance_valid(bar):
+				return
+			for kind in ["card", "daemon", "chip"]:
+				bar.land_pulse(kind)
+			length = Motion.delay_of(&"flight_land_pulse") + Motion.seconds(&"flight_land_pulse")
 		"stamp":
 			var b := Button.new()
 			b.text = "Pay them off (-20 Cycles)"

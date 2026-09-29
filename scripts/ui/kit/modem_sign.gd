@@ -11,6 +11,19 @@ const PINK := Palette.CELL_PINK
 const STICKY_FONT := 24
 ## The sticky notes: what the Modem does (keys, translated when drawn).
 const NOTES: Array[String] = ["BUY", "SHRED"] # TR
+## ANIM-R6 B11: a sticky note's width and its glyph's radius (px), the sign's bag (its radius,
+## its top inside the border, its glow's size and alpha), and the bag's tube id (warm-up).
+const STICKY_W := 104.0
+const STICKY_GLYPH := 12.0
+const BAG_R := 22.0
+const BAG_TOP := 22.0
+const GLOW_GROW := 1.25
+const GLOW_ALPHA := 0.35
+const TUBE_BAG := 99
+## ANIM-R6 B11: the sign's glyph (a shop bag) and each sticky note's (a cart for BUY, a
+## shredder for SHRED), readable whatever the language.
+const SIGN_GLYPH := StatIcon.SHOP
+const NOTE_GLYPHS: Array[StringName] = [StatIcon.CART, StatIcon.SHRED]
 ## The sign's words (keys; H24 S3: drawn in the player's language, in the cybernetic face
 ## when it has every letter, else in the display font).
 const WORD_MODEM := "MODEM" # TR
@@ -119,14 +132,22 @@ func _draw() -> void:
 	_rounded_border(r, 26, _tube_color(PINK, tube(TUBE_BORDER)))
 	_board_traces(r.grow(-12), PINK, 80)
 	_border_traces(r, PINK)
-	# The name stacked letter by letter down the sign (as many rows as it has letters).
+	# ANIM-R6 B11: a shop bag in neon at the head of the sign (the sign said what it was in
+	# words only: under a language the player can't read it was a column of letters).
+	var bag_at := r.position + Vector2(r.size.x * 0.5, BAG_TOP + BAG_R)
+	var bag_col := _tube_color(Palette.CELL_ACID, tube(TUBE_BAG))
+	StatIcon.draw(self, bag_at, BAG_R * GLOW_GROW, SIGN_GLYPH, Color(bag_col, GLOW_ALPHA))
+	StatIcon.draw(self, bag_at, BAG_R, SIGN_GLYPH, bag_col)
+	# The name stacked letter by letter down the sign (as many rows as it has letters), under
+	# the bag.
 	var name_word := tr(WORD_MODEM).to_upper()
 	var n := maxi(1, name_word.length())
-	var step := (r.size.y - 160.0) / float(maxi(5, n))
+	var head := BAG_TOP + BAG_R * 2.0
+	var step := (r.size.y - 160.0 - head) / float(maxi(5, n))
 	var u := minf(11.0, step / 8.2)
 	var cyber := CyberType.can_draw(name_word)
 	for i in name_word.length():
-		var at := r.position + Vector2((r.size.x - 4.0 * u) * 0.5, 26 + i * step)
+		var at := r.position + Vector2((r.size.x - 4.0 * u) * 0.5, head + 10 + i * step)
 		var lit := _tube_color(PINK, tube(i + 1))
 		if cyber:
 			CyberType.draw_text(self, at, name_word[i], u, lit, 3.2, i == 0 or i == name_word.length() - 1, 0.7)
@@ -142,8 +163,8 @@ func _draw() -> void:
 			CyberType.draw_text(self, Vector2(r.position.x + (r.size.x - CyberType.width(word, cu)) * 0.5, row.position.y), word, cu, cyan, 2.0, false, 0.8)
 		else:
 			_plain(row, word, cyan)
-	_sticky(r.end + Vector2(-8, -54), tr(NOTES[0]), Palette.NOTE_YELLOW, 0.1)
-	_sticky(r.end + Vector2(14, 4), tr(NOTES[1]), Palette.STICKER_PINK, -0.07)
+	_sticky(r.end + Vector2(-8, -54), tr(NOTES[0]), Palette.NOTE_YELLOW, 0.1, NOTE_GLYPHS[0])
+	_sticky(r.end + Vector2(14, 4), tr(NOTES[1]), Palette.STICKER_PINK, -0.07, NOTE_GLYPHS[1])
 
 
 ## `text` in the display font, centred in `box` and as large as fits it (a translated sign
@@ -215,15 +236,22 @@ func _border_traces(r: Rect2, col: Color) -> void:
 			draw_circle(c, 1.6, Palette.NIGHT_SKY)
 
 
-func _sticky(at: Vector2, text: String, paper: Color, tilt: float) -> void:
+## ANIM-R6 B11: a sticky note with its verb's glyph (`glyph`: a StatIcon kind) before its
+## word, so the note reads with the words scrambled.
+func _sticky(at: Vector2, text: String, paper: Color, tilt: float, glyph: StringName = &"") -> void:
 	draw_set_transform(at, tilt, Vector2.ONE)
-	draw_rect(Rect2(Vector2(-44 + 4, -26 + 5), Vector2(88, 52)), Palette.SHADOW)
-	draw_rect(Rect2(Vector2(-44, -26), Vector2(88, 52)), paper)
+	draw_rect(Rect2(Vector2(-STICKY_W * 0.5 + 4, -26 + 5), Vector2(STICKY_W, 52)), Palette.SHADOW)
+	draw_rect(Rect2(Vector2(-STICKY_W * 0.5, -26), Vector2(STICKY_W, 52)), paper)
 	draw_rect(Rect2(Vector2(-18, -31), Vector2(36, 11)), Palette.NOTE_TAPE)
+	var left := -STICKY_W * 0.5
+	if glyph != &"":
+		StatIcon.draw(self, Vector2(left + 4.0 + STICKY_GLYPH, 0.0), STICKY_GLYPH, glyph, Palette.INK)
+		left += STICKY_GLYPH * 2.0 + 6.0
+	var room := STICKY_W * 0.5 - left - 4.0
 	var fs := STICKY_FONT
-	while fs > 8 and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > 84.0:
+	while fs > 8 and Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
 		fs -= 1
-	draw_string(Palette.marker(), Vector2(-44, 10), text, HORIZONTAL_ALIGNMENT_CENTER, 88, fs, Palette.INK)
+	draw_string(Palette.marker(), Vector2(left, 10), text, HORIZONTAL_ALIGNMENT_CENTER, room, fs, Palette.INK)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 

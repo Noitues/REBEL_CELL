@@ -3610,7 +3610,7 @@ func _demo_drag(id: String) -> void:
 			end = Vector2(size.x * 0.3, size.y * 0.45)
 	elif id.begins_with("drag_loadout"):
 		var op := c.living_operatives()[0]
-		op.rank = 3
+		DemoSetup.set_rank(op, 3)  # ANIM-R6 B2: dev flag only; views never write state
 		open_loadout(op)
 		var view := get_node("LoadoutView") as LoadoutView
 		view.show_spinner()
