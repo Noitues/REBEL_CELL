@@ -124,6 +124,25 @@ static func corp_color(corporation_id: StringName) -> Color:
 			return NET_CYAN
 
 
+## The corporation's pattern (ART_BIBLE §3.6), a `CorpPattern.Kind`: Solace helix dots,
+## Meridian container stripes, Halcyon civic rings, Orbital star-dot grid, REBEL_CELL
+## scan-glitch bars (mandatory: its hue sits near HARM). NONE for any other id.
+static func corp_pattern_id(corporation_id: StringName) -> int:
+	match corporation_id:
+		&"solace":
+			return CorpPattern.Kind.HELIX_DOTS
+		&"meridian":
+			return CorpPattern.Kind.CONTAINER_STRIPES
+		&"halcyon":
+			return CorpPattern.Kind.CIVIC_RINGS
+		&"orbital":
+			return CorpPattern.Kind.STAR_GRID
+		&"rebel_cell":
+			return CorpPattern.Kind.SCAN_GLITCH
+		_:
+			return CorpPattern.Kind.NONE
+
+
 ## ART_BIBLE §3.4 slice colours: the colour means slice type on any wheel, not its owner.
 const SLICE_HEAL := Color("#7BE07B")
 const SLICE_AFFLICT := Color("#C85AFF")

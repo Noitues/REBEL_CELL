@@ -150,3 +150,80 @@ func test_text_tokens_read_on_glass_and_over_the_scrim() -> void:
 	assert_lt(Palette.luminance(bright), Palette.luminance(Color.WHITE), "the scrim dims")
 	assert_eq(Palette.over(Color.RED, Color(0, 0, 1, 1)), Color(0, 0, 1, 1), "an opaque fg covers")
 	assert_eq(Palette.over(Color.RED, Color(0, 0, 1, 0)), Color.RED, "a clear fg leaves the ground")
+
+
+# --- §3.6 corp patterns --------------------------------------------------------------------
+
+## Calls `paint` from its own _draw (painters may only draw there) and counts the calls.
+class Painter extends Node2D:
+	var paint: Callable
+	var drawn: int = 0
+
+	func _draw() -> void:
+		paint.call(self)
+		drawn += 1
+
+
+func test_every_corporation_in_content_has_a_pattern() -> void:
+	var kinds := {}
+	for corp in [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]:
+		var k := Palette.corp_pattern_id(corp)
+		assert_ne(k, CorpPattern.Kind.NONE, "%s has a pattern" % corp)
+		assert_false(kinds.has(k), "%s's pattern is its own" % corp)
+		kinds[k] = true
+	assert_eq(Palette.corp_pattern_id(&"solace"), CorpPattern.Kind.HELIX_DOTS)
+	assert_eq(Palette.corp_pattern_id(&"meridian"), CorpPattern.Kind.CONTAINER_STRIPES)
+	assert_eq(Palette.corp_pattern_id(&"halcyon"), CorpPattern.Kind.CIVIC_RINGS)
+	assert_eq(Palette.corp_pattern_id(&"orbital"), CorpPattern.Kind.STAR_GRID)
+	assert_eq(Palette.corp_pattern_id(&"rebel_cell"), CorpPattern.Kind.SCAN_GLITCH)
+	assert_eq(Palette.corp_pattern_id(&"nobody"), CorpPattern.Kind.NONE)
+	var dir := DirAccess.open("res://content/corporations")
+	for f in dir.get_files():
+		if f.ends_with(".tres"):
+			var corp := load("res://content/corporations/" + f) as CorporationData
+			assert_ne(Palette.corp_pattern_id(corp.id), CorpPattern.Kind.NONE, "%s has a pattern" % corp.id)
+
+
+func test_patterns_are_deterministic_and_distinct() -> void:
+	var r := Rect2(13, 7, 120, 80)
+	var signatures := {}
+	for k in CorpPattern.KINDS:
+		var a := CorpPattern.marks(k, r)
+		var b := CorpPattern.marks(k, r)
+		assert_eq(str(a), str(b), "%s draws the same marks every time" % CorpPattern.KIND_NAMES[k])
+		assert_gt(a.dots.size() + a.lines.size(), 0, "%s draws something" % CorpPattern.KIND_NAMES[k])
+		var sig := "%d dots/%d lines" % [a.dots.size(), a.lines.size()]
+		assert_false(signatures.has(sig), "%s differs in structure" % CorpPattern.KIND_NAMES[k])
+		signatures[sig] = true
+	var d1 := CorpPattern.dash_marks(Vector2.ZERO, Vector2(200, 50), CorpPattern.Kind.SCAN_GLITCH, 2.0, 1.0, 3.0)
+	var d2 := CorpPattern.dash_marks(Vector2.ZERO, Vector2(200, 50), CorpPattern.Kind.SCAN_GLITCH, 2.0, 1.0, 3.0)
+	assert_eq(str(d1), str(d2), "dashed glitch line is deterministic")
+	assert_true(CorpPattern.marks(CorpPattern.Kind.NONE, r).dots.is_empty(), "NONE fills nothing")
+
+
+func test_every_pattern_paints_each_variant_on_a_canvas_item() -> void:
+	var calls := {"n": 0}
+	var node: Painter = add_child_autofree(Painter.new())
+	node.paint = func(ci: CanvasItem) -> void:
+		for k in CorpPattern.KINDS + [CorpPattern.Kind.NONE]:
+			CorpPattern.fill_rect(ci, Rect2(0, 0, 90, 60), k, Palette.CORP_ORBITAL)
+			CorpPattern.fill_polygon(ci, PackedVector2Array([Vector2(0, 0), Vector2(80, 10), Vector2(40, 70)]), k, Palette.CORP_SOLACE, 1.5)
+			CorpPattern.fill_ring(ci, Vector2(100, 100), 40, 60, k, Palette.CORP_HALCYON)
+			CorpPattern.dashed_line(ci, Vector2(0, 0), Vector2(300, 120), k, Palette.CORP_MERIDIAN, 2.0, 1.0, 5.0)
+			calls.n += 1
+	node.queue_redraw()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_gt(node.drawn, 0, "the painter ran inside _draw")
+	assert_eq(calls.n, (CorpPattern.KINDS.size() + 1) * node.drawn, "every kind and variant painted")
+
+
+func test_ring_fill_keeps_marks_inside_the_annulus() -> void:
+	var c := Vector2(50, 50)
+	var m := CorpPattern.marks(CorpPattern.Kind.HELIX_DOTS, Rect2(c - Vector2(60, 60), Vector2(120, 120)))
+	var kept := 0
+	for d in m.dots:
+		var dist: float = d.p.distance_to(c)
+		if dist >= 30.0 and dist <= 60.0:
+			kept += 1
+	assert_gt(kept, 20, "a bezel-sized ring holds a readable number of dots")
