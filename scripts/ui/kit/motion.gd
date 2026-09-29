@@ -32,6 +32,12 @@ static var force_live: bool = false
 
 static var _config: UiMotionData = null
 static var _index: Dictionary = {}
+## ANIM-R5 (the motion lab's check that each demo exercises its own entry): while true,
+## every entry read is noted in `reads` with the script that asked for it (the first
+## caller outside this kit). Dev and test only; off in play.
+static var recording: bool = false
+## Entry reads while `recording`: {id: {script path: true}}.
+static var reads: Dictionary = {}
 
 
 ## The motion table in use (loaded from CONFIG_PATH on first use).
@@ -61,10 +67,44 @@ static func set_speed(value: float) -> void:
 ## The entry for `id`, or null (with an error) when the table has none.
 static func entry(id: StringName) -> UiMotionEntryData:
 	config()
+	if recording:
+		_note_read(id)
 	if not _index.has(id):
 		push_error("Motion: no entry '%s' in %s." % [id, CONFIG_PATH])
 		return null
 	return _index[id]
+
+
+## ANIM-R5: starts noting entry reads afresh (see `recording`).
+static func start_recording() -> void:
+	reads.clear()
+	recording = true
+
+
+## ANIM-R5: stops noting entry reads; returns what was read ({id: {script path: true}}).
+static func stop_recording() -> Dictionary:
+	recording = false
+	return reads.duplicate(true)
+
+
+## The scripts that read `id` while recording (paths), sorted.
+static func readers(id: StringName) -> Array[String]:
+	var out: Array[String] = []
+	for p in reads.get(id, {}):
+		out.append(String(p))
+	out.sort()
+	return out
+
+
+static func _note_read(id: StringName) -> void:
+	var own := (Motion as Script).resource_path
+	for frame in get_stack():
+		var src := String(frame.get("source", ""))
+		if src != own:
+			if not reads.has(id):
+				reads[id] = {}
+			reads[id][src] = true
+			return
 
 
 ## True when `id` has an entry.

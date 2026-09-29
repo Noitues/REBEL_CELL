@@ -341,6 +341,10 @@
 			"seconds": 0.5,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_motion_lab_demos.gd": {
+			"seconds": 60.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_nodes.gd": {
 			"seconds": 0.5,
 			"tier": "fast"
