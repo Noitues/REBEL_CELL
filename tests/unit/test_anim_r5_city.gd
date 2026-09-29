@@ -878,8 +878,10 @@ func test_under_reduce_effects_the_end_states_show_at_once_and_raid_incoming_hol
 	p.set_heat(10, 100, marks)
 	p.set_heat(30, 100, marks)
 	await _frames(1)
-	assert_eq(p.banner_alpha, 0.0, "no banner stamps under reduce effects")
-	assert_false(p.note_showing(), "nor its note")
+	# ANIM-R6 C5: the banner and its consequence show at once, static, for their reading hold.
+	assert_eq(p.banner_alpha, 1.0, "the banner shows static under reduce effects (ANIM-R6 C5)")
+	assert_eq(p.banner_scale, 1.0, "with no stamp-on")
+	assert_true(p.note_showing(), "and its note, to be read")
 	assert_eq(roundi(p.shown_heat), 30, "the number at once")
 	assert_eq(p.shown_band(), 1, "the band word at once")
 

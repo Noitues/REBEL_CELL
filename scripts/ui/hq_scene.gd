@@ -157,6 +157,7 @@ var entering: bool = false
 
 func _ready() -> void:
 	UiTheme.apply(self)
+	MotionSkip.register(self)  # ANIM-R6 C13: the page's pops complete with every other motion
 	# Capture variants (ANIM-6): --demo-set / --demo-speed tune a copy of the motion table.
 	MotionDemo.apply_args()
 	# Subtitles sit in the top band, clear of every control on these screens (H20).
@@ -175,6 +176,12 @@ func _ready() -> void:
 			# only, never saved to the player's settings (like --demo-scale).
 			Settings.text_scale = float(a.trim_prefix("--demo-text-scale="))
 			Settings.changed.emit()
+	# ANIM-R6 C16: the campaign's end page in context (--demo-campaign-end=won|lost).
+	for a in args:
+		var outcome := demo_end_of(a)
+		if outcome >= 0:
+			demo_campaign_end(outcome)
+			return
 	if args.has("--demo-start"):
 		RunManager.save_slot = "demo"
 		show_start()
@@ -197,9 +204,10 @@ func _ready() -> void:
 		if args.has("--demo-classes"):
 			# Screenshot roster: one operative of every class (bypasses Profile unlocks,
 			# campaign-only, never saved to the profile).
-			RunManager.campaign.roster.clear()
+			var classes: Array[ClassData] = []
 			for id in [&"ghost", &"rigger", &"botnet", &"wrecker", &"phantom", &"overclocker", &"hivemind"]:
-				RunManager.campaign.recruit(RunManager.lookup().get_content(id) as ClassData)
+				classes.append(RunManager.lookup().get_content(id) as ClassData)
+			DemoSetup.roster_of(RunManager.campaign, classes)  # ANIM-R6 C16: views write no state
 			show_hq()
 		for a in args:
 			# ANIM-R2 R1 / R9 profiling: from the HQ page the Grid opens N frames in, the HQ comes
@@ -211,12 +219,12 @@ func _ready() -> void:
 				MotionDemo.after_frames(self, n * 3, show_grid)
 		if args.has("--demo-grid") or args.has("--demo-raid") or args.has("--demo-playout"):
 			var c := RunManager.campaign
-			c.schematics = 100
+			DemoSetup.set_schematics(c, DEMO_SCHEMATICS)
 			var grid_data := RunManager.corporation.city_grid
 			var first: StringName = grid_data.get_site(grid_data.home_site_id).links[0]
 			CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), _demo_run(first))
 			CampaignRules.claim(c, RunManager.corporation, RunManager.config(), RunManager.lookup(), first, &"firewall_relay")
-			c.armory = [&"turret", &"ice_lock", &"decoy"]
+			DemoSetup.set_armory(c, DEMO_ARMORY)
 			if args.has("--demo-raid") or args.has("--demo-playout"):
 				CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, first)
 				show_raid()
@@ -966,6 +974,11 @@ func _set_panel(p: Control, name: String) -> void:
 	# H24 S4: the page shows its words as given (translated once, where they are built).
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
+	if more_hint != null and is_instance_valid(more_hint):
+		# ANIM-R6 C15: the HQ page's own snap (the others keep theirs: the raid setup's card row
+		# is taller than any snap would keep whole).
+		more_hint.snap_rows = name == "hq"
+		more_hint.reset_snap()
 	# Screens built from terminal windows let the city show between them.
 	# ANIM-R5 P4: the campaign's end too (it was a near-opaque glass page of terminal lines).
 	_panel_host.theme_type_variation = &"" if name in ["hq", "start", "grid", "raid", "raid_playout", "raid_summary", "end"] or name.begins_with("city") else &"GlassPanel"
@@ -1123,6 +1136,44 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Panels B leaves for the HQ (their "Back to HQ" button).
 const BACK_PANELS: Array[String] = ["grid", "raid"]
+## ANIM-R6 C7: the pad prompt of the maps' folding key (exported for the translators).
+const KEY_PROMPT := "Key" # TR
+
+
+# --- ANIM-R6 C13: the page's short pops complete with every other motion ----------------------
+
+## The page's pops (Motion.pop on a piece of the page: a verdict stamp landing, the SITES
+## badge's bump, a crew card popping as a drop lands) are motion like any other: a press
+## while one plays completes it (and every other running motion) by the one rule
+## (MotionSkip.handle). The HQ answers for them (MotionSkip.GROUP).
+func _input(event: InputEvent) -> void:
+	if MotionSkip.is_press(event) and motion_running():
+		MotionSkip.handle(event, self)
+
+
+## MotionSkip: a pop plays on a piece of the page.
+func motion_running() -> bool:
+	return not popping().is_empty()
+
+
+## MotionSkip: every pop at its rest.
+func complete_motion() -> void:
+	for n in popping():
+		Motion.stop(n)
+
+
+## ANIM-R6 C13: the page's pieces whose pop plays now (tests).
+func popping() -> Array[Node]:
+	var out: Array[Node] = []
+	if _panel == null or not is_instance_valid(_panel) or not is_inside_tree():
+		return out
+	var key := StringName(Motion.META_PREFIX + "scale")
+	if _panel.has_meta(key):
+		out.append(_panel)
+	for n in _panel.find_children("*", "CanvasItem", true, false):
+		if n.has_meta(key):
+			out.append(n)
+	return out
 
 
 ## The pad prompts of panel `p_name` (H23 S11): A presses the focused control, B goes back
@@ -1188,7 +1239,11 @@ func show_start() -> void:
 	corp_pick.item_selected.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
 		ice_spin.max_value = corp_cap
-		ice_label.text = tr("ICE (0-%d):") % corp_cap)
+		ice_label.text = tr("ICE (0-%d):") % corp_cap
+		warm_start_hq(corps[i]))
+	# ANIM-R6 C9: the HQ the picked corporation's campaign opens on bakes while this page is open.
+	if not corps.is_empty():
+		warm_start_hq.call_deferred(corps[0])
 	var ice_text := _label(_ice_description(0))
 	ice_spin.value_changed.connect(func(v: float) -> void: ice_text.text = _ice_description(int(v)))
 	row.add_child(_label(tr("Home server:")))
@@ -1615,8 +1670,23 @@ func _grid_memory_key() -> String:
 func _prebake_grid() -> void:
 	if wireframe == null or not is_inside_tree() or RunManager.campaign == null:
 		return
+	# ANIM-R6 C9: behind the HQ page's own city (the Grid's bake took the one build slot first
+	# and the HQ waited on the silhouette): asked for once the HQ's view is covered.
+	# ANIM-R6 C9: only while the HQ page shows (a page left at once must not queue the Grid's
+	# bake ahead of its own: the campaign end sat on the silhouette behind it).
+	if panel_name != "hq":
+		return
+	if background != null and background.visible and background.city.is_baked() and not background.city.view_covered():
+		if not background.city.rebuilt.is_connected(_prebake_grid):
+			background.city.rebuilt.connect(_prebake_grid, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+		return
 	var region: Variant = _grid_views.get(_grid_memory_key())
-	if region is Rect2:
+	if not (region is Rect2):
+		# ANIM-R6 C9: the first open in a campaign too (it sat ~1.8 s on the silhouette): the
+		# frame the Grid mounts at (its nodes' middle at GRID_ANCHOR, GRID_ZOOM) and every node
+		# with a margin, the fit's frame lying inside that.
+		region = first_grid_region()
+	if region is Rect2 and (region as Rect2).has_area():
 		wireframe.city.prebake(region)
 	# The Grid's placement (its buildings and street routes) worked out now too: the Grid's
 	# first frame then only draws (~35 ms less in it).
@@ -1625,6 +1695,60 @@ func _prebake_grid() -> void:
 		var g := grid_graph()
 		warm.set_graph(g["nodes"], g["edges"])
 		warm.free()
+
+
+## ANIM-R6 C9: the hidden HQ backdrop twin warming, from the start page, the HQ a new campaign
+## opens on (it sat ~1.9 s on the silhouette after "New campaign").
+var _start_warm: CyberdeckBackground = null
+
+
+## ANIM-R6 C9: bakes, ahead, the HQ page's city for a new campaign against `corp` (its district
+## and a new campaign's territory, the default frame at this screen's size), behind the start
+## page's own city. A twin of the backdrop asks for it; picking another corporation asks again.
+func warm_start_hq(corp: CorporationData) -> void:
+	if corp == null or not is_inside_tree() or panel_name != "start" or corp.generated_from_profile:
+		return
+	if background != null and background.visible and background.city.is_baked() and not background.city.view_covered():
+		var again := warm_start_hq.bind(corp)
+		if not background.city.rebuilt.is_connected(again):
+			background.city.rebuilt.connect(again, CONNECT_ONE_SHOT | CONNECT_DEFERRED)
+		return
+	if _start_warm != null and is_instance_valid(_start_warm):
+		_start_warm.queue_free()
+	var home := RunManager.lookup().get_content(RunManager.DEFAULT_HOME) as HomeServerVariantData
+	var cls := RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData
+	if home == null or cls == null:
+		return
+	# A new campaign's state, for its territory only (a view copy, never kept).
+	var fresh := CampaignRules.new_campaign(corp, RunManager.config(), RunManager.lookup(), 1, cls, home.core, 0, home)
+	_start_warm = CyberdeckBackground.new()
+	_start_warm.name = "StartWarm"
+	_start_warm.visible = false
+	add_child(_start_warm)
+	_start_warm.set_district(corp.id)
+	_start_warm.city.pin_influence(CityInfluence.of(fresh, corp))
+	_start_warm.city.prebake_frames([size])
+
+
+## ANIM-R6 C9: the bake region (world px) of the Grid's first open in a campaign, worked out
+## from the HQ page: its mount frame (the nodes' middle at GRID_ANCHOR, GRID_ZOOM, this
+## screen) merged with every node's point grown by NeonCity.REGION_MARGIN. Empty when unknown.
+func first_grid_region() -> Rect2:
+	if RunManager.campaign == null or size.x < 2.0 or size.y < 2.0:
+		return Rect2()
+	var nodes: Array = grid_graph()["nodes"]
+	if nodes.is_empty():
+		return Rect2()
+	var centre := Vector2.ZERO
+	var first: Vector2 = nodes[0]["at"]
+	var box := Rect2(NeonCity.world_of(first.x + 0.5, first.y + 0.5), Vector2.ZERO)
+	for n: Dictionary in nodes:
+		var at: Vector2 = n["at"]
+		centre += at
+		box = box.expand(NeonCity.world_of(at.x + 0.5, at.y + 0.5))
+	centre /= nodes.size()
+	var frame := wireframe.city.region_for(centre, GRID_ANCHOR, GRID_ZOOM, size)
+	return NeonCity.snap_region(frame.merge(box.grow(NeonCity.REGION_MARGIN)))
 
 
 ## PIRATE RADIO as tall as its words (at least RADIO_LINES lines of `line_h`).
@@ -1883,7 +2007,7 @@ func show_grid() -> void:
 	# H24 K1: the folded key opens over the map (no refit) and folds back.
 	grid_legend.fold_changed.connect(_place_grid_legend)
 	if grid_legend.foldable():
-		set_page_prompts(prompts_for("grid") + [[&"cycle_target", "Key"]])
+		set_page_prompts(prompts_for("grid") + [[&"cycle_target", KEY_PROMPT]])
 	_register_grid_drops(site)
 
 
@@ -1992,7 +2116,8 @@ func grid_lean(free: Rect2) -> Vector2:
 const GAIN_CAPTION := "IF CLEARED:" # TR
 const GAIN_OPENS_ONE := "OPENS %d SITE" # TR
 const GAIN_OPENS := "OPENS %d SITES" # TR
-const GAIN_CLAIMABLE := "CLAIMABLE" # TR
+## ANIM-R6 C15: what claiming means, in the badge's own words (CLAIMABLE left a beginner asking).
+const GAIN_CLAIMABLE := "CAN BE YOUR NODE" # TR
 ## The caption's lettering (px at text scale 1.0).
 const GAIN_CAPTION_FONT := 12
 
@@ -2011,13 +2136,13 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 		out.append(Badge.new(CityMapOverlay.tr_word("EXPLOIT"), Palette.CELL_ACID, "", CityMapOverlay.tr_word("Clearing it gives the %s Exploit for the boss breach.") % ename).with_icon(StatIcon.EXPLOITS))
 	var heat := int(preview.get("heat", 0))
 	if heat != 0:
-		out.append(Badge.new(CityMapOverlay.tr_word("HEAT %+d") % heat, Palette.NET_CYAN if heat < 0 else StatIcon.color_of(StatIcon.HEAT), "",
-			CityMapOverlay.tr_word("Clearing it changes Heat by %+d.") % heat).with_icon(StatIcon.COOLING if heat < 0 else StatIcon.HEAT))
+		out.append(Badge.new(CityMapOverlay.tr_word("HEAT %s") % TextDb.signed(heat), Palette.NET_CYAN if heat < 0 else StatIcon.color_of(StatIcon.HEAT), "",
+			CityMapOverlay.tr_word("Clearing it changes Heat by %s.") % TextDb.signed(heat)).with_icon(StatIcon.COOLING if heat < 0 else StatIcon.HEAT))
 	if bool(preview.get("raid", false)):
 		out.append(Badge.new(CityMapOverlay.tr_word("RAID"), Palette.CELL_PINK, "", CityMapOverlay.tr_word("Clearing it now brings a raid on your network.")).with_icon(StatIcon.RAIDS))
 	var sch := int(preview.get("schematics", 0))
 	if sch != 0:
-		out.append(Badge.new("%+d" % sch, Palette.NET_CYAN, "", CityMapOverlay.tr_word("Clearing it gives %+d Schematics.") % sch).with_icon(StatIcon.SCHEMATICS))
+		out.append(Badge.new(TextDb.signed(sch), Palette.NET_CYAN, "", CityMapOverlay.tr_word("Clearing it gives %s Schematics.") % TextDb.signed(sch)).with_icon(StatIcon.SCHEMATICS))
 	var opens: Array = preview.get("opens", [])
 	if not opens.is_empty():
 		var named := PackedStringArray()
@@ -2028,7 +2153,7 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 			CityMapOverlay.tr_word("Clearing it opens %d more Sites to runs: %s.") % [opens.size(), "; ".join(named)]).with_icon(StatIcon.LINKS))
 	if bool(preview.get("claimable", false)):
 		# ANIM-R5 P8: a quality, not a verb (CLAIM read as a button on the row).
-		out.append(Badge.new(CityMapOverlay.tr_word(GAIN_CLAIMABLE), Palette.CELL_TURF, "", CityMapOverlay.tr_word("Once cleared you can claim it: a node of your network.")).with_icon(StatIcon.CLAIM))
+		out.append(Badge.new(CityMapOverlay.tr_word(GAIN_CLAIMABLE), Palette.CELL_TURF, "", CityMapOverlay.tr_word("Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.")).with_icon(StatIcon.CLAIM))
 	if out.is_empty():
 		out.append(Badge.new(CityMapOverlay.tr_word("NO GAIN"), Color(Palette.PAPER, 0.6), "", CityMapOverlay.tr_word("A patrol: loot, Heat and Rank from the run, no objective.")).with_icon(StatIcon.RUNS))
 	for b in out:
@@ -2458,6 +2583,9 @@ func show_raid() -> void:
 	orders_scroll.custom_minimum_size = Vector2(0, ORDERS_MIN_HEIGHT * Settings.text_scale)
 	orders_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	orders_win.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# ANIM-R6 C8: the window's body takes its height too, so the list fills the window (it
+	# scrolled in a ~100 px strip over empty window at 1.0).
+	orders_win.body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	orders_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	orders_scroll.follow_focus = true
 	orders_win.body.add_child(orders_scroll)
@@ -2523,7 +2651,8 @@ func show_raid() -> void:
 	side_hint.name = "OrdersHint"
 	add_child(side_hint)
 	if raid_legend.foldable():
-		set_page_prompts(prompts_for("raid") + [[&"cycle_target", "Key"]])  # ANIM-R2 R13: as the Grid
+		# ANIM-R2 R13: as the Grid.
+		set_page_prompts(prompts_for("raid") + [[&"cycle_target", KEY_PROMPT]])
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.42))
 	city_overlay.selected_id = selected_site
 	city_overlay.node_clicked.connect(func(id: StringName) -> void:
@@ -3082,6 +3211,11 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
+	# ANIM-R6 C10: the playout opens framed on CORE and the Sites the raid enters at (it opened
+	# on the middle of the whole network, CORE at the screen's edge, and eased from there).
+	_playout_open = playout_frame_points(events)
+	if not _playout_open.is_empty():
+		_frame_city(PLAYOUT_ZOOM, _centre_of(_playout_open), PLAYOUT_ANCHOR)
 	# ANIM-R5 P6: the key too (a label and home's banner went under the MAP LEGEND at 1.6).
 	city_overlay.avoid_controls([side, legend])
 	var overlay := city_overlay
@@ -3103,10 +3237,18 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		fx.home_hit_shown.connect(_fly_home_number)
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
+		# ANIM-R6 C10: the speed buttons are off now: the focus goes on to Continue.
+		if cont.is_inside_tree():
+			cont.grab_focus()
 		hud_home_shown = -1
 		hud_heat_shown = -1
+		# ANIM-R6 C11: RAIDS drops with the verdict (the raid is dealt with), its tag pulsing,
+		# never mid-feed with the "Raid over" line (read as "I lost a raid").
+		var dealt := hud_raids_shown >= 0 and hud_raids_shown > RunManager.campaign.pending_raids.size()
 		hud_raids_shown = -1
 		_refresh_status()
+		if dealt:
+			hud.stats.land_pulse(StatIcon.RAIDS)
 		forecast.resolve(RESULT_CAPTION, verdict)
 		# ANIM-R5 P2: the raid's Heat band reaches the city's look with its tint.
 		_creep_band = -1
@@ -3123,9 +3265,44 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	playout.skipped.connect(_after_playout)
 	side.add_child(cont)
 	var instant := not Motion.animating()
-	playout.play(events, instant)
 	if instant:
+		playout.play(events, true)
 		_after_playout()
+		return
+	# ANIM-R6 C10: the first step starts on the panel's first frame, once the page is laid out:
+	# the camera first fits CORE and the entries into the map's free part (the fight area has
+	# no size before), then step 1 frames its fight from there.
+	playout.play(events, false, false)
+
+
+## ANIM-R6 C10: what the playout opens on (grid points; emptied once it has opened there).
+var _playout_open: PackedVector2Array = PackedVector2Array()
+
+
+## ANIM-R6 C10: CORE and the Sites the raid's threats enter at, as grid points (the lot
+## centres) on the playout's map; empty off the map.
+func playout_frame_points(events: Array[Dictionary]) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var c := RunManager.campaign
+	if c == null or city_overlay == null or not is_instance_valid(city_overlay):
+		return pts
+	var ids: Array[StringName] = [c.grid.home_site_id]
+	for e in events:
+		if String(e.get("type", "")) == "threat_enters":
+			var sid := StringName(String(e.get("site", "")))
+			if sid != &"" and not ids.has(sid):
+				ids.append(sid)
+	for id in ids:
+		if city_overlay.has_site(id):
+			pts.append(Vector2(city_overlay.lot_of(id)) + Vector2(0.5, 0.5))
+	return pts
+
+
+static func _centre_of(pts: PackedVector2Array) -> Vector2:
+	var c := Vector2.ZERO
+	for p in pts:
+		c += p
+	return c / maxf(1.0, pts.size())
 
 
 ## ANIM-R5 P8: the playout's forecast stamp (null off the playout).
@@ -3201,6 +3378,11 @@ func _frame_fight(sites: Array[StringName], overlay: CityMapOverlay) -> float:
 	if not is_instance_valid(overlay) or overlay != city_overlay or sites.is_empty():
 		return 0.0
 	var pts := PackedVector2Array()
+	if not _playout_open.is_empty():
+		# ANIM-R6 C10: the first framed step keeps CORE and the entries in its frame with its
+		# fight (the raid opened on the far Site with CORE at the screen's edge).
+		pts.append_array(_playout_open)
+		_playout_open = PackedVector2Array()
 	for id in sites:
 		pts.append(Vector2(overlay.lot_of(id)) + Vector2(0.5, 0.5))
 	return wireframe.frame_points(pts, fight_area(_fight_area), PLAYOUT_ZOOM, PLAYOUT_MIN_ZOOM)
@@ -3228,8 +3410,9 @@ static func fight_area(parts: Array) -> Rect2:
 var hud_home_shown: int = -1
 ## ANIM-R4 H11a: the top bar's HEAT and RAIDS during a raid's playout: what the feed has told
 ## so far (-1: the campaign's own). They change with the line that changes them: Heat with
-## its "Heat +5: Collector reached CORE: 1 → 6." line, RAIDS going down with the raid's end line
-## and up with a threshold's line that queues a raid.
+## its "Heat +5: Collector reached CORE: 1 → 6." line, RAIDS up with a threshold's line that
+## queues a raid; ANIM-R6 C11: RAIDS goes down with the verdict, its tag pulsing (the raid
+## dealt with; with the "Raid over" line mid-feed it read as a raid lost).
 var hud_heat_shown: int = -1
 var hud_raids_shown: int = -1
 
@@ -3241,9 +3424,6 @@ func _on_raid_event_shown(e: Dictionary) -> void:
 		"heat":
 			if hud_heat_shown >= 0 and e.has("after"):
 				hud_heat_shown = int(e["after"])
-		"raid_end":
-			if hud_raids_shown >= 0:
-				hud_raids_shown = maxi(0, hud_raids_shown - 1)
 		"heat_threshold":
 			if hud_raids_shown >= 0 and _threshold_raids(int(e.get("heat", 0))):
 				hud_raids_shown += 1
@@ -3262,23 +3442,20 @@ static func _threshold_raids(at: int) -> bool:
 
 ## ANIM-R1 M4: a hit on home: its red number flies from the node on the map into the top
 ## bar's HOME (`home_number_fly`), which then shows the lower value (the tag bumps and rolls).
+## ANIM-R6 C2: a FlightFx flight (it was a tween of its own no press completed): it lands on
+## HOME when it arrives or when a press completes it (MotionSkip), and HOME drops then.
 func _fly_home_number(damage: int, site: StringName) -> void:
-	var land := func() -> void:
-		if hud_home_shown >= 0:
-			hud_home_shown = maxi(0, hud_home_shown - damage)
-			_refresh_status()
 	var to := hud.stats.icon_point(StatIcon.HOME)
 	if not Motion.live(&"home_number_fly") or city_overlay == null or not is_instance_valid(city_overlay) or to == Vector2.INF:
-		land.call()
+		_home_number_landed(damage)
 		return
 	var p := city_overlay.icon_at(site)
 	if p.x == INF:
-		land.call()
+		_home_number_landed(damage)
 		return
 	var from := city_overlay.get_global_transform() * p
 	var num := Label.new()
 	num.name = "HomeHitNumber"
-	num.top_level = true
 	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	num.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	num.text = "-%d" % damage
@@ -3287,19 +3464,20 @@ func _fly_home_number(damage: int, site: StringName) -> void:
 	num.add_theme_color_override("font_color", Palette.CELL_PINK)
 	num.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	num.add_theme_constant_override("outline_size", 6)
-	num.z_index = 60
-	add_child(num)
-	num.size = num.get_combined_minimum_size()
-	num.pivot_offset = num.size * 0.5
-	num.global_position = from - num.size * 0.5
+	var sz := num.get_combined_minimum_size()
+	# It leaves the node big (`home_number_fly`'s amplitude) and shrinks into HOME.
 	num.scale = Vector2.ONE * Motion.amplitude(&"home_number_fly")
-	var e := Motion.entry(&"home_number_fly")
-	var tw := num.create_tween().set_parallel(true)
-	tw.tween_property(num, "global_position", to - num.size * 0.5, Motion.seconds(&"home_number_fly")).set_delay(Motion.delay_of(&"home_number_fly")).set_ease(e.ease).set_trans(e.trans)
-	tw.tween_property(num, "scale", Vector2.ONE, Motion.seconds(&"home_number_fly")).set_delay(Motion.delay_of(&"home_number_fly")).set_ease(e.ease).set_trans(e.trans)
-	tw.chain().tween_callback(func() -> void:
-		land.call()
-		num.queue_free())
+	var flown := FlightFx.fly_node(self, num, Rect2(from - sz * 0.5, sz), to, &"home_number_fly", "", 0.0, Rect2(), _home_number_landed.bind(damage))
+	if flown == null:
+		_home_number_landed(damage)
+
+
+## ANIM-R6 C2: a home-hit number has reached HOME (or a press completed its flight): HOME
+## shows the value the hits shown so far leave.
+func _home_number_landed(damage: int) -> void:
+	if hud_home_shown >= 0:
+		hud_home_shown = maxi(0, hud_home_shown - damage)
+		_refresh_status()
 
 
 ## The flying home-hit number's lettering at text scale 1.0 (px).
@@ -3311,8 +3489,8 @@ func _after_playout() -> void:
 	hud_home_shown = -1
 	hud_heat_shown = -1
 	hud_raids_shown = -1
-	for n in find_children("HomeHitNumber", "Label", false, false):
-		n.queue_free()
+	# ANIM-R6 C2: a home-hit number still flying lands now (FlightFx).
+	FlightFx.finish_all(self)
 	wireframe.city.release_influence()
 	if RunManager.campaign.is_over():
 		show_end()
@@ -3425,7 +3603,7 @@ func show_end() -> void:
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var side := END_STAMP * Settings.text_scale
 	table.custom_minimum_size = Vector2(side + END_STAMP_AT.x * 2.0, side + END_STAMP_AT.y * 2.0)
-	var stamp := ForecastStamp.new(END_CAPTION, "", colour, StatIcon.RAIDS if won else StatIcon.HOME)
+	var stamp := ForecastStamp.new(END_CAPTION, "", colour, StatIcon.WON if won else StatIcon.HOME)  # ANIM-R6 C15: the win's own icon (a shield with "!" said nothing)
 	stamp.name = "CampaignVerdict"
 	stamp.custom_minimum_size = Vector2(side, side)
 	stamp.size = stamp.custom_minimum_size
@@ -3507,17 +3685,31 @@ func _demo_anim(id: String) -> void:
 	tune_script.demo_tune(OS.get_cmdline_user_args())
 	var c := RunManager.campaign
 	if id == "heat_pulse":
-		c.heat = 20
+		DemoSetup.set_heat(c, DEMO_HEAT_FROM)
 		show_hq()
-	for f in DEMO_SETTLE_FRAMES:
-		await get_tree().process_frame
-	var city := (background.city if background.visible else wireframe.city)
-	for f in DEMO_BAKE_FRAMES:
-		if city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0:
-			break
-		await get_tree().process_frame
+	# ANIM-R6 C16: the waits are one-shot connections to the frame signal (a freed HQ drops
+	# them), never an await a freed scene would resume on.
+	_demo_wait(DEMO_SETTLE_FRAMES, _demo_settled.bind(id))
+
+
+func _demo_settled(id: String) -> void:
+	_demo_wait(DEMO_BAKE_FRAMES, _demo_play.bind(id), _demo_city_ready)
+
+
+## The demo's city has baked, eased and faded in.
+func _demo_city_ready() -> bool:
+	var city := _demo_city()
+	return city.showing_current_look() and city.camera_settled() and city.bake_fade >= 1.0
+
+
+func _demo_city() -> NeonCity:
+	return background.city if background.visible else wireframe.city
+
+
+func _demo_play(id: String) -> void:
+	var c := RunManager.campaign
 	if id.begins_with("drag_"):
-		await _demo_drag(id)
+		_demo_drag(id)
 		return
 	print("anim5: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
 	match id:
@@ -3529,7 +3721,7 @@ func _demo_anim(id: String) -> void:
 			if not c.armory.is_empty():
 				deploy_asset(0, selected_site)
 		"heat_pulse":
-			c.heat = 30
+			DemoSetup.set_heat(c, DEMO_HEAT_TO)
 			show_hq()
 		"jack_in":
 			RunManager.scene_switching_enabled = true
@@ -3546,12 +3738,63 @@ func _demo_anim(id: String) -> void:
 					CampaignRules.on_run_completed(c, corp, RunManager.config(), _demo_run(sd.id))
 					CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), sd.id, &"firewall_relay")
 					break
-			city.sync_influence()
-			for f in DEMO_BAKE_FRAMES:
-				if city.spreading():
-					print("anim5: influence_spread spreads from frame %d" % Engine.get_frames_drawn())
-					break
-				await get_tree().process_frame
+			_demo_city().sync_influence()
+			_demo_wait(DEMO_BAKE_FRAMES, _demo_spread_seen, _demo_spreading)
+
+
+func _demo_spreading() -> bool:
+	return _demo_city().spreading()
+
+
+func _demo_spread_seen() -> void:
+	if _demo_spreading():
+		print("anim5: influence_spread spreads from frame %d" % Engine.get_frames_drawn())
+
+
+## ANIM-R6 C16: calls `then` after `frames` process frames, or sooner once `until` (when given)
+## holds; by one-shot connections to the tree's frame signal, bound to this scene (a freed
+## HQ drops them: an await resumed on a freed HQ logged "class instance is gone").
+func _demo_wait(frames: int, then: Callable, until: Callable = Callable()) -> void:
+	if not is_inside_tree():
+		return
+	get_tree().process_frame.connect(_demo_tick.bind(frames, then, until), CONNECT_ONE_SHOT)
+
+
+func _demo_tick(left: int, then: Callable, until: Callable) -> void:
+	if left <= 0 or (until.is_valid() and bool(until.call())):
+		then.call()
+		return
+	_demo_wait(left - 1, then, until)
+
+
+## ANIM-R6 C16: `--demo-campaign-end=won|lost`: the campaign's end page in context (a demo
+## campaign in its own slot, its outcome set): WON / LOST, or -1 for another argument.
+static func demo_end_of(arg: String) -> int:
+	if not arg.begins_with(DEMO_END_FLAG):
+		return -1
+	match arg.trim_prefix(DEMO_END_FLAG):
+		"won":
+			return CampaignState.Outcome.WON
+		"lost":
+			return CampaignState.Outcome.LOST
+	return -1
+
+
+const DEMO_END_FLAG := "--demo-campaign-end="
+## The HQ demos' campaign: its Schematics, the raid demos' Armory, and the Heat poster demo's
+## Heat before and after its crossing.
+const DEMO_SCHEMATICS := 100
+const DEMO_ARMORY: Array[StringName] = [&"turret", &"ice_lock", &"decoy"]
+const DEMO_HEAT_FROM := 20
+const DEMO_HEAT_TO := 30
+
+
+## ANIM-R6 C16: shows the campaign's end page on a fresh demo campaign with `outcome`.
+func demo_campaign_end(outcome: int) -> void:
+	RunManager.save_slot = "demo"
+	new_campaign(1)
+	DemoSetup.end_campaign(RunManager.campaign, outcome)
+	show_end()
 
 
 ## ANIM-4 frame capture: frames a scripted pointer takes from the item to where it lets go,
@@ -3576,48 +3819,52 @@ func _demo_drag(id: String) -> void:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
-	var layer := drops
-	var src: Control = null
-	var target_id := ""
-	var end := Vector2.INF
 	if id.begins_with("drag_asset"):
 		if id == "drag_asset_refuse":
 			# The relay's second slot filled: the last asset has nowhere to go there.
 			CampaignRules.deploy_asset(c, cfg, lookup, 0, selected_site)
 		show_raid()
-		for f in DEMO_LAYOUT_FRAMES:
-			await get_tree().process_frame
-		var cards := _panel.find_child("AssetCards", true, false)
-		src = cards.get_child(cards.get_child_count() - 1) as Control
-		target_id = "node:%s" % (selected_site if id == "drag_asset_refuse" else c.grid.home_site_id)
 	elif id == "drag_crew_refuse":
 		show_hq()
-		for f in DEMO_LAYOUT_FRAMES:
-			await get_tree().process_frame
-		src = _panel.find_child("Crew_%s" % c.living_operatives()[0].id, true, false) as Control
-		target_id = "station:%s" % c.grid.claimed_ids()[c.grid.claimed_ids().size() - 1]
 	elif id.begins_with("drag_crew"):
 		RunManager.scene_switching_enabled = false  # the capture holds on the drop, not the jack
 		var sites := RunManager.launchable_sites()
 		if not sites.is_empty():
 			selected_site = sites[0].id
 		show_grid()
-		for f in DEMO_LAYOUT_FRAMES:
-			await get_tree().process_frame
+	elif id.begins_with("drag_loadout"):
+		var op := c.living_operatives()[0]
+		DemoSetup.set_rank(op, 3)  # ANIM-R6 B2: dev flag only; views never write state
+		open_loadout(op)
+		(get_node("LoadoutView") as LoadoutView).show_spinner()
+	# ANIM-R6 C16: one-shot waits (see _demo_wait).
+	_demo_wait(DEMO_LAYOUT_FRAMES, _demo_drag_pick.bind(id))
+
+
+## The item picked up once the page has laid out (ANIM-4 capture; see _demo_drag).
+func _demo_drag_pick(id: String) -> void:
+	var c := RunManager.campaign
+	var layer := drops
+	var src: Control = null
+	var target_id := ""
+	var end := Vector2.INF
+	if id.begins_with("drag_asset"):
+		var cards := _panel.find_child("AssetCards", true, false)
+		src = cards.get_child(cards.get_child_count() - 1) as Control
+		target_id = "node:%s" % (selected_site if id == "drag_asset_refuse" else c.grid.home_site_id)
+	elif id == "drag_crew_refuse":
+		src = _panel.find_child("Crew_%s" % c.living_operatives()[0].id, true, false) as Control
+		target_id = "station:%s" % c.grid.claimed_ids()[c.grid.claimed_ids().size() - 1]
+	elif id.begins_with("drag_crew"):
 		src = _grid_chips[0] if not _grid_chips.is_empty() else null
 		target_id = "jack"
 		if id == "drag_crew_cancel":
 			end = Vector2(size.x * 0.3, size.y * 0.45)
 	elif id.begins_with("drag_loadout"):
 		var op := c.living_operatives()[0]
-		DemoSetup.set_rank(op, 3)  # ANIM-R6 B2: dev flag only; views never write state
-		open_loadout(op)
 		var view := get_node("LoadoutView") as LoadoutView
-		view.show_spinner()
-		for f in DEMO_LAYOUT_FRAMES:
-			await get_tree().process_frame
 		layer = view.drops
-		var options := CampaignRules.ring_segment_options(op, lookup.get_content(op.class_id) as ClassData)
+		var options := CampaignRules.ring_segment_options(op, RunManager.lookup().get_content(op.class_id) as ClassData)
 		src = view.find_child("Swap_%s" % options[0], true, false) as Control if not options.is_empty() else null
 		target_id = "ring:1"
 		if id == "drag_loadout_cancel":
@@ -3633,12 +3880,25 @@ func _demo_drag(id: String) -> void:
 		var r := layer.locate(layer.target(target_id))
 		end = r.get_center() + DEMO_RELEASE_OFFSET.min(r.size * DEMO_RELEASE_SHARE)
 	print("anim4: %s starts on frame %d" % [id, Engine.get_frames_drawn()])
-	for i in DEMO_DRAG_FRAMES:
-		await get_tree().process_frame
+	_demo_wait(0, _demo_drag_step.bind(id, layer, from, end, 0))
+
+
+## One frame of the scripted pointer's path (step `i` of DEMO_DRAG_FRAMES), then the rest
+## there, then the release.
+func _demo_drag_step(id: String, layer: DropLayer, from: Vector2, end: Vector2, i: int) -> void:
+	if not is_instance_valid(layer):
+		return
+	if i < DEMO_DRAG_FRAMES:
 		var q := Tween.interpolate_value(0.0, 1.0, float(i + 1) / DEMO_DRAG_FRAMES, 1.0, Tween.TRANS_SINE, Tween.EASE_IN_OUT) as float
 		layer.point_at(from.lerp(end, q) - Vector2(0, DEMO_DRAG_ARC * sin(PI * q)))
-	for i in DEMO_DRAG_HOLD:
-		await get_tree().process_frame
+		_demo_wait(0, _demo_drag_step.bind(id, layer, from, end, i + 1))
+		return
+	_demo_wait(DEMO_DRAG_HOLD - 1, _demo_drag_release.bind(id, layer, end))
+
+
+func _demo_drag_release(id: String, layer: DropLayer, end: Vector2) -> void:
+	if not is_instance_valid(layer):
+		return
 	print("anim4: %s lets go on frame %d" % [id, Engine.get_frames_drawn()])
 	layer.release_at(end)
 
@@ -3949,6 +4209,8 @@ func _build_ui() -> void:
 	Settings.changed.connect(func() -> void: _log.visible = Settings.system_log)
 	# More below (the HQ's BLACK MARKET): a tag at the foot of the page while it scrolls on.
 	more_hint = ScrollHint.new(scroll)
+	# ANIM-R6 C15: the HQ page never ends in a half-cut row (at 1.6 the crew cards' Loadout
+	# buttons were cut under MORE BELOW); worked out afresh for each page (_set_panel).
 	add_child(more_hint)
 	# ANIM-4: drag and drop over every page (targets pulse, the pad's reticle, flights).
 	drops = DropLayer.new()

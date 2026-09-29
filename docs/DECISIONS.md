@@ -491,7 +491,7 @@ unless named.
   `pop`, ...), naming the entry and its readers ("switch ignored" lines). Holds (a time that
   is how long an end state or a word shows: `resolve_landing_hold`, `resolve_result_hold`,
   `combat_end_hold`, `toast_note_hold`, `jack_arrival_wait`, `asset_drop_wait`,
-  `raid_incoming_hold`, `jack_connect`, `raid_step_gap`, `resolve_sequence`, `resolve_beat`,
+  `raid_incoming_hold`, `jack_connect`, `resolve_sequence`, `resolve_beat`,
   `resolve_pass`) are listed in the test and in STYLE_GUIDE 5.5. A runtime check was chosen
   over a pure source scan: most of the misses are drawn motions (a clock and an entry's
   seconds, no tween), which a scan for tweens does not see.
@@ -625,6 +625,113 @@ unless named.
   shard's slow frames used the 12 s up before the lab's frame-counted context settle
   (`CONTEXT_SETTLE` + `CONTEXT_BAKE_FRAMES`) had run. The wait now also allows those frames
   plus 240 (`DEMO_EXTRA_FRAMES`); it still returns as soon as the entry is read.
+
+#### 2026-09-29 — Animation pass — ANIM-R6 city, raid, HQ and bake
+The sixth fix batch of the Animation pass review, city, raid, HQ and bake part (C1-C16, from the
+R6 vertical, horizontal and naive-player audits). Views, tools and docs; content: the three
+MAJOR Heat thresholds' `event_text` reworded (rules unchanged); `scripts/data/`: three table ids
+(REQUIRED_IDS), `raid_step_gap` and `raid_shot_stagger` in OFF_PARTS, `heat_pulse_rise` in
+ALWAYS_ON (consts only, no schema field; the smoke checks read the lists). Every call below was
+the implementer's (nothing deferred). Tests: `tests/unit/test_anim_r6_city.gd` (full tier);
+expectation changes in `test_anim_r4_city` (RAIDS holds through the raid's end line) and
+`test_anim_r5_city` (the Heat note shows under reduce effects). Windowed captures through
+`tools/run_windowed.py` (1280x720, no ERROR in any log): the HQ playout, the Heat crossing at
+1.0 and 1.6, the raid setup at 1.0 and 1.6, the campaign end won / lost, the Grid's claim, the
+route; page timings with `tools/design_lab/page_bake_probe.gd` (three runs).
+- **C1 the Heat poster is a MotionSkip helper.** Its rise is a chain of one-shot steps (it was
+  an await loop), the crossings still to play are known (`_rise_ups`, `_chain_rest`), and a
+  press completes the roll, the crossings (the last one's banner stamped), the pops, the shake,
+  the band stamp and the banner's fade. **Picked: the reading hold survives a press** (the
+  item's alternative, with the note readable): the banner and its consequence note hold
+  `heat_banner`'s delay whatever is pressed (a reading time like RAID INCOMING's), and the hold is
+  not `motion_running`, so a press during it passes. STYLE_GUIDE 5.1 and MotionSkip's notes say
+  so. In the raid feed a press that drives the playout (2x) is spared by D's `motion_passes`
+  (ANIM-R6 D1) once it is on main.
+- **C2** the raid's home-hit "-N" is a FlightFx flight (`fly_node` with `on_land`): it leaves the
+  node at `home_number_fly`'s amplitude and shrinks into HOME; a press lands it and HOME drops
+  then; the page's end lands any still flying.
+- **C3** NeonCity holds the texture it draws (`drawn_texture`) until it draws another, so an
+  LRU or byte-budget eviction never frees a kept bake viewport under the canvas.
+- **C4 switched-off entries on views with their own clock.** RaidFxLayer reads `Motion.live` per
+  beat (`motion_len` / `beat_u`): off (or under reduce effects and headless, where the playout is
+  instant anyway), a beat keeps its time and shows its end state from its start (node_pop,
+  raid_move, decoy_fire, ice_lock_ring, raid_hit_effect, turret_trace, node_damage_number,
+  raid_flip, raid_result_banner, home_lag, influence_spread / influence_crossfade on the tints).
+  `route_crawl` off: dashes and chevrons stand, no packet. `raid_step_gap` and the new
+  `raid_shot_stagger` are OFF_PARTS (RaidBeats.raw_seconds gives 0 for a switched-off part).
+  Inline numbers moved: SHOT_STAGGER 0.5 -> `raid_shot_stagger` (amplitude, a share),
+  HEAT_PULSE_RISE 0.3 -> `heat_pulse_rise` (ALWAYS_ON: a tuning of heat_pulse), a mark's
+  `mark_t * 2.0` -> `stamp_fade_in`'s share (0.5, as the raid's stamps), the raid number's
+  0.66 hold -> NUMBER_HOLD_SHARE (a documented drawing constant). Lab demos for the new ids.
+  (D owns ui_motion_data.gd: the three ids and the two lists were added minimally.)
+- **C5** the Heat banner and its note show static for the hold under reduce effects (they never
+  showed). The note keeps off every usable button and every word (Labels, rich text, the top
+  bar's drawn tags, the pad prompts, the subtitles): spots below / above / right / left of the
+  poster, each slid on in NOTE_SLIDE steps, at the full width, then 0.8 and 0.65 of it; the
+  least covered one when none is free. At 1.0 and 1.6 it stands under PIRATE RADIO's words,
+  covering none (at 1.6 a first try went up over the CREW tag: the drawn top bar is now
+  avoided). The consequence reads "A raid is queued. While Heat stays at 25 or more, elites
+  are more frequent." ("The corporation raids the Cell" read as a raid happening now); the
+  first sentence is short so the longest (16 words) still reads in the 3.6 s hold.
+- **C6** a Polaroid caption at `CAPTION_FONT` x the text size, never under `CAPTION_MIN` 12 x the
+  text size (it went to 8 px), wrapped over as many lines as it needs (never cut), and the
+  Polaroid is never narrower than its caption's longest word at that floor
+  (`_get_minimum_size`): the dossier's compact 60 px Polaroid at 1.6 grows to fit "Breaker"
+  rather than breaking it between letters.
+- **C7** `CityMapOverlay.tr_word` literals are exported (TextDb.CODE_CALLS): WIN, EXPLOIT, NO
+  GAIN, RAID, MAP KEY and its tip, T%d, difficulty %d of %d, the Clearing it ... tooltips, off,
+  Heat %s. No `%+d` inside a translated format (TextDb.signed). The maps' pad prompt "Key" is a
+  marked constant.
+- **C8** YOUR NODES: the window's body takes its height (the list scrolled in a strip over empty
+  window). ScrollHint's snap is keyed by its content's height too (it ran out of passes on the
+  first layout; bounded by SNAP_PASSES_MAX in all), a skipped pass runs on the next frame, a
+  flow's lines count as rows (the Withdraw buttons), a row's share is of the view with no snap,
+  and a view held at its least height gives the snap's room out of that height (at 1.6 the
+  list could not shrink, so the row stayed cut). ScrollHint is kit (D): changed minimally.
+- **C9 measured** (`page_bake_probe.gd`, three runs; before: the audit's 1.9 s and R5's
+  1.72-1.84 s): the HQ that New campaign opens is covered on its first frame (163-173 ms, the
+  page's build) — the start page warms it with a hidden backdrop twin pinned to a new
+  campaign's territory (`warm_start_hq`, re-asked when another corporation is picked, behind
+  the start page's own city); the Grid's first open in that campaign is covered on its first
+  frame (93-97 ms), and after a run 101-104 ms — the HQ page prebakes the Grid's mount frame and
+  every node (`first_grid_region`), behind the HQ page's own city and only while the HQ page
+  shows (a page left at once, the demo's campaign end, waited on the silhouette behind it).
+  Unchanged: the claim's tint 1.62-1.74 s after its stamp, the start page itself 1.5-2.4 s on a
+  cold start.
+- **C10** a finished playout disables 1x / 2x / 4x and Skip and lights 1x (the speed buttons
+  are toggles showing the speed playing); Continue takes the focus. The playout mounts on CORE
+  and the entries (`playout_frame_points`), its first step starts on the panel's first frame
+  (`play(..., start_now = false)`, once the page is laid out) and frames CORE and the entries
+  with its fight, so no first frame clips CORE.
+- **C11** at the verdict every threat still on the map is struck out (a red X) and withdraws
+  (`raid_threat_withdraw`); a threat that hit CORE keeps its name on the map until then (it was
+  named at its first step only). HOME -5 · HOLDS: the damage pink, HOLDS acid. **RAIDS drops
+  with the verdict**, its tag pulsing (`land_pulse`), not with the "Raid over" line mid-feed
+  (it read as a raid lost); the tag's word is unchanged.
+- **C12** a claim cross-stamps: the change before's stamps (`fading_marks`) stay and fade as the
+  new ones land. A map over the city draws the marks itself, so the city's own layer draws none
+  (the "two CLEARED stamps" at 1.6: the city layer's, placed before the map's labels, and the
+  map's). The green blob over the LOST end page was not reproduced (captured won and lost via
+  the new flag: the only green is the claimed district's lasting tint, fixed in place).
+- **C13** the HQ is a MotionSkip helper for the page's pops (`popping()`: any piece with a
+  `Motion.pop` running: the verdict stamps' landings, the SITES bump, a crew card's pop as a
+  drop lands). Kit-wide pops (ModemSign, HudStats, drips) are D's.
+- **C14** `Fx.note_hold()` reads through the kit (`Motion.seconds`); `connect_hold()` takes each
+  reading time by its own switch (switching `jack_connect` off skipped RAID INCOMING's hold).
+  The lab's stamp says what the game says ("RAID INCOMING" over the corporation).
+- **C15** an empty RUN ASSETS: / ARMORY: row says "none"; CLAIMABLE is CAN BE YOUR NODE (its tip
+  says a claimed Site becomes a node raids come for); the WON stamp wears the win's star; the HQ
+  page snaps its rows (the crew's Loadout was cut under MORE BELOW at 1.6; the other pages keep
+  their own: the raid setup's card row is taller than any snap keeps whole); YOU ARE HERE
+  stands on the street, joined by dashed roads to the choices ahead. The Solace subtitle cut
+  ("Collecto") is the subtitle typing mid-line in the audit's frame; the page is whole once
+  typed (Dialogue, not changed). "Unable to create shader cache" is disk-only (ignored).
+- **C16** `--demo-campaign-end=won|lost` shows the campaign's end on a demo campaign in its own
+  slot; the HQ's demos wait by one-shot connections (`_demo_wait`: a freed HQ drops them, no
+  await resumes on it) and write state only through DemoSetup (roster, Schematics, Armory,
+  Heat, the campaign's end; B's `set_rank`).
+- **Words** (exported once): the tr_word literals above, Key, none, CAN BE YOUR NODE and its
+  tip; dropped: CLAIMABLE, "Once cleared you can claim it: a node of your network.".
 
 #### 2026-09-29 — Animation pass — ANIM-R6 combat
 The sixth fix batch of the Animation pass review, combat part (A1-A19 of fix agent A, from the

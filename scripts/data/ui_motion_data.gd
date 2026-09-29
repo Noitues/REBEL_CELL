@@ -85,6 +85,11 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
 	# (were inline in FlightFx).
 	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share",
+	# ANIM-R6 city: inline shares moved into the table (the raid volley's stagger, the Heat
+	# pulse's rise).
+	&"raid_shot_stagger", &"heat_pulse_rise",
+	# ANIM-R6 city: the threats still standing withdraw at a raid's verdict.
+	&"raid_threat_withdraw",
 	# ANIM-R6 combat: the tutorial's Next pulses while it waits for it.
 	&"tutorial_next_pulse",
 ]
@@ -103,9 +108,11 @@ const OFF_PARTS: Dictionary = {
 	&"break_crack": 0.0, &"modem_sign_strike": 0.0, &"modem_sign_flicker": 0.0,
 	&"forecast_change_fade": 0.0, &"resolve_side_gap": 0.0, &"resolve_attacker_gap": 0.0,
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
+	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).
+	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
-const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share",
+const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",
 	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share"]
 
 @export var entries: Array[UiMotionEntryData] = []

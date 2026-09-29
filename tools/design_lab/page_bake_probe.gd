@@ -8,7 +8,8 @@ extends SceneTree
 ## The flows: a run's route, then an event, the loot page, the Modem and a fight, back to the
 ## route after each; the run's end page, then the HQ; the Grid and a claim; a run that opens
 ## on a raid interlude, its playout (the frames the fight camera showed uncovered are
-## counted) and the route after it. `--leave=F` leaves each page F frames after it is covered
+## counted) and the route after it; ANIM-R6 C9: the start page, the HQ New campaign opens and
+## that campaign's first Grid. `--leave=F` leaves each page F frames after it is covered
 ## (a quick player: its prebakes may still run) instead of waiting until no bake runs.
 ##
 ##   python tools/run_windowed.py --log <log> -- -s tools/design_lab/page_bake_probe.gd [-- --leave=20] [--why]
@@ -67,6 +68,10 @@ func _initialize() -> void:
 		["raid interlude", _open_interlude],
 		["interlude playout", _fight_interlude],
 		["route (after the raid)", _after_interlude],
+		# ANIM-R6 C9: the start page, New campaign's HQ and that campaign's first Grid.
+		["start", _open_start],
+		["hq (new campaign)", _new_from_start],
+		["grid (first, new campaign)", _open_hq.bind("grid")],
 	]
 	_mode = "act"
 	process_frame.connect(_tick)
@@ -250,6 +255,18 @@ func _open_interlude() -> void:
 	(load("res://scripts/core/heat_rules.gd") as GDScript).call("add_heat", _rm.get("campaign"), int((cfg.call("major_heat_levels") as Array)[0]) + 1, cfg, "probe")
 	_rm.get("netrun").call("_maybe_raid_interlude")
 	_scene.call("_show_current")
+
+
+## ANIM-R6 C9: the HQ with no campaign opens on its start page (it warms the new campaign's HQ).
+func _open_start() -> void:
+	_rm.call("delete_save")
+	_rm.call("reset")
+	_swap(HQ)
+
+
+## ANIM-R6 C9: New campaign on the start page (the HQ it opens on).
+func _new_from_start() -> void:
+	_scene.call("new_campaign", 1)
 
 
 func _fight_interlude() -> void:

@@ -64,6 +64,10 @@ extends RefCounted
 ##   key pressed while a tag bumps must still do what it does (a helper of its own would
 ##   consume it for a flourish of a fraction of a second). STYLE_GUIDE 5.5 lists them and
 ##   the motions left out (loops, hover and focus states, feedback to the press itself).
+## - **Reading holds are not motion (ANIM-R6 C1)**: a hold that is there to be read (the Heat
+##   banner and its consequence note, `heat_banner`'s delay, like RAID INCOMING's) is not
+##   `motion_running`: a press completes what moves (HeatPoster: the number's roll, the
+##   crossings, the pops and stamps, the banner's fade) and the banner then stays its hold.
 
 ## The group of every helper whose motion one press completes (ANIM-R5).
 const GROUP := &"motion_skip_helpers"

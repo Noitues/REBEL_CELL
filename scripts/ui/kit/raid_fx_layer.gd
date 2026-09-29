@@ -67,6 +67,9 @@ const BANNER_BREACHED := RaidVerdict.LOST
 const BANNER_CLEAR := 8.0
 const NUMBER_STACK := 1.05
 const NUMBER_GAP := 6.0
+## A number's drawing: it holds whole for this share of its time, then fades out (ANIM-R6 C4:
+## the inline 0.66 / 0.34, named; the time is `node_damage_number`'s).
+const NUMBER_HOLD_SHARE := 0.66
 
 ## ANIM-R1 M4: a hit on the home server shows now (its number starts): `damage` from Site
 ## `site` (the screen flies the number into its home counter).
@@ -132,6 +135,7 @@ func setup(results: Dictionary, p_home: StringName, p_home_max: int, color: Colo
 	_owner_done = false
 	_banner = {}
 	_node_left.clear()
+	_withdraw_len = RaidBeats.raw_seconds(WITHDRAW_MOTION)
 	var nodes: Dictionary = results.get("nodes", {})
 	for id in nodes:
 		_node_left[String(id)] = int(nodes[id].get("before", 0))
@@ -305,6 +309,10 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			# then the result banner stamps over home. ANIM-R3 B5: every node's stamp is its
 			# resolved outcome (one verdict word per node, the word its label says), home's
 			# verdict is the banner alone.
+			# ANIM-R6 C11: every threat still on the map withdraws at the verdict (a red X strikes
+			# it as it fades): the Collector stood on CORE through HOME -5 · HOLDS and read as
+			# "the enemy is still in my home".
+			_withdraw_all(t0)
 			var flip := Motion.seconds(STAGGER_MOTION)
 			var gap := Motion.delay_of(STAGGER_MOTION)
 			var at := t0
@@ -330,10 +338,27 @@ func play_beat(b: Dictionary, t0: float) -> void:
 					_home_hit(home_value - after, t0, home_id)
 			if _banner.is_empty():
 				var lost := int(_results.get("home_before", home_value)) - int(_results.get("home_after", home_value))
-				_banner = {"text": CityMapOverlay.tr_word(BANNER_HOME) % TextDb.signed(-lost) if lost > 0 else CityMapOverlay.tr_word(BANNER_HOLDS),
+				_banner = {"text": CityMapOverlay.tr_word(BANNER_HOME) % TextDb.signed(-lost) if lost > 0 else CityMapOverlay.tr_word(BANNER_HOLDS), "holds": lost > 0,
 					"color": Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID,
 					"t0": maxf(t0, last + flip) + Motion.delay_of(BANNER_MOTION)}
 	queue_redraw()
+
+
+## ANIM-R6 C11: the threats still standing at clock time `t0` withdraw from it
+## (`raid_threat_withdraw`: faded out under a red X; gone at once when it is off).
+func _withdraw_all(t0: float) -> void:
+	for id in _tokens:
+		var t: Dictionary = _tokens[id]
+		if t.has("dead_at") and float(t["dead_at"]) <= t0:
+			continue
+		t["dead_at"] = t0
+		t["dead_at_dur"] = _withdraw_len
+		t["withdrawn"] = true
+
+
+const WITHDRAW_MOTION := &"raid_threat_withdraw"
+## The withdrawal's time (s at 1x), read as the playout is set up.
+var _withdraw_len: float = 0.0
 
 
 ## ANIM-R3 B5: a stamp's colour by outcome (acid holds, gold seized, pink the rest).
@@ -380,7 +405,7 @@ func _home_hit(damage: int, t0: float, site: StringName = &"") -> void:
 ## The home bar's white lag segment now (it trails home_value by `home_lag`).
 func _home_lag_value() -> float:
 	var e := Motion.entry(&"home_lag")
-	if e == null or _home_lag_t0 == -INF:
+	if e == null or _home_lag_t0 == -INF or not Motion.live(&"home_lag"):
 		return home_shown
 	var u := clampf((clock - _home_lag_t0 - e.delay) / maxf(e.duration, 0.001), 0.0, 1.0)
 	return float(Tween.interpolate_value(float(_home_from), float(home_shown - _home_from), u, 1.0, e.trans, e.ease))
@@ -482,7 +507,7 @@ func _draw_banner(k: float) -> void:
 	var place := banner_rect()
 	if not place.has_area():
 		return
-	var u := _u(float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
+	var u := beat_u(BANNER_MOTION, float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
 	var grow := lerpf(Motion.amplitude(BANNER_MOTION), 1.0, _eased(BANNER_MOTION, u))
 	var fs := maxi(1, roundi(BANNER_FONT * Settings.text_scale * k))
 	var font := Palette.display()
@@ -496,8 +521,29 @@ func _draw_banner(k: float) -> void:
 	draw_rect(box.grow(3.0 * k), Color(0, 0, 0, 0.85 * a))
 	draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
 	draw_rect(box, Color(col, a), false, 3.0 * k)
-	draw_string(font, box.position + Vector2(BANNER_PAD * k, BANNER_PAD * k + font.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+	# ANIM-R6 C11: HOME -5 · HOLDS says the damage in pink and HOLDS in the Cell's acid, as every
+	# other HOLDS reads (all pink, it read as a loss).
+	var at := box.position + Vector2(BANNER_PAD * k, BANNER_PAD * k + font.get_ascent(fs))
+	for part: Array in banner_parts():
+		draw_string(font, at, String(part[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(part[1] as Color, a))
+		at.x += font.get_string_size(String(part[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	draw_set_transform(Vector2.ZERO)
+
+
+## ANIM-R6 C11: the banner's words in their colours: [[words, colour], ...]. HOME -5 · HOLDS
+## is its damage (pink, to the last " · ") then HOLDS (acid); any other banner is one colour.
+func banner_parts() -> Array:
+	var text := banner_text()
+	var col: Color = _banner.get("color", Palette.CELL_PINK)
+	var cut := text.rfind(HOLDS_BREAK)
+	if not bool(_banner.get("holds", false)) or cut < 0:
+		return [[text, col]]
+	cut += HOLDS_BREAK.length()
+	return [[text.left(cut), col], [text.substr(cut), Palette.CELL_ACID]]
+
+
+## Where HOME -5 · HOLDS changes colour (after its dot).
+const HOLDS_BREAK := " · "
 
 
 ## The result banner's words ("" before the raid's end; tests).
@@ -583,6 +629,10 @@ func token_rects() -> Array[Rect2]:
 			continue
 		if t.has("dead_at") and clock >= float(t["dead_at"]) + float(t.get("dead_at_dur", 0.0)):
 			continue
+		# ANIM-R6 C11: a threat withdrawing at the verdict is leaving: home's banner (placed at
+		# the verdict) does not dodge it, so the banner never jumps as it goes.
+		if bool(t.get("withdrawn", false)) and clock >= float(t["dead_at"]):
+			continue
 		out.append(Rect2(p - Vector2(s, s), Vector2(s, s) * 2.0))
 	return out
 
@@ -624,7 +674,24 @@ func stamp_rect(site: StringName) -> Rect2:
 
 
 func _u(t0: float, dur: float) -> float:
-	return clampf((clock - t0) / maxf(dur, 0.001), 0.0, 1.0)
+	if dur <= 0.0:
+		return 1.0 if clock >= t0 else 0.0
+	return clampf((clock - t0) / dur, 0.0, 1.0)
+
+
+## ANIM-R6 C4: the length motion `id` takes of a beat's `dur`: all of it while `id` plays
+## (Motion.live), 0 when it is switched off (reduce effects and headless too: the playout is
+## instant then): the beat keeps its time on the clock and shows its end state from its
+## start, with no motion (a token stands on its new node, a stamp lies flat, a number stands
+## unrisen, home's bar has no lag).
+static func motion_len(id: StringName, dur: float) -> float:
+	return dur if Motion.live(id) else 0.0
+
+
+## ANIM-R6 C4: how far (0..1) a beat of motion `id` from `t0` over `dur` has got now: 1 from
+## its start when `id` doesn't play (tests read it too).
+func beat_u(id: StringName, t0: float, dur: float) -> float:
+	return _u(t0, motion_len(id, dur))
 
 
 func _eased(id: StringName, u: float) -> float:
@@ -641,7 +708,7 @@ func _token_positions() -> Dictionary:
 	for id in ids:
 		var t: Dictionary = _tokens[id]
 		var mv: Dictionary = t.get("move", {})
-		var moving: bool = not mv.is_empty() and clock < float(mv["t0"]) + float(mv["dur"])
+		var moving: bool = not mv.is_empty() and clock < float(mv["t0"]) + _move_len(mv)
 		var site: StringName = mv["from"] if moving and clock <= float(mv["t0"]) else t["site"]
 		if not moving or clock <= float(mv["t0"]):
 			(resting.get_or_add(site, []) as Array).append(id)
@@ -652,10 +719,16 @@ func _token_positions() -> Dictionary:
 	for id in ids:
 		var t: Dictionary = _tokens[id]
 		var mv: Dictionary = t.get("move", {})
-		if mv.is_empty() or clock <= float(mv["t0"]) or clock >= float(mv["t0"]) + float(mv["dur"]):
+		if mv.is_empty() or clock <= float(mv["t0"]) or clock >= float(mv["t0"]) + _move_len(mv):
 			continue
-		out[id] = _along_move(mv, _eased(&"raid_move", _u(float(mv["t0"]), float(mv["dur"]))))
+		out[id] = _along_move(mv, _eased(&"raid_move", _u(float(mv["t0"]), _move_len(mv))))
 	return out
+
+
+## ANIM-R6 C4: the time a move's token travels (0 when `raid_move` is off: it stands on its
+## new node from the move's start).
+func _move_len(mv: Dictionary) -> float:
+	return motion_len(&"raid_move", float(mv["dur"]))
 
 
 ## A point `u` (0..1) along a move: from the threat's slot over its node, down the street
@@ -682,7 +755,7 @@ func _along_move(mv: Dictionary, u: float) -> Vector2:
 		d -= seg
 	if mv["decoy"] != &"":
 		var side := (b - a).orthogonal().normalized()
-		at += side * sin(u * PI) * Motion.amplitude(&"decoy_fire") * overlay.screen_k()
+		at += side * sin(u * PI) * (Motion.amplitude(&"decoy_fire") if Motion.live(&"decoy_fire") else 0.0) * overlay.screen_k()
 	return at
 
 
@@ -701,24 +774,29 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 	var s := CityMapOverlay.MARKER_SIZE * k * TOKEN_SCALE
 	var alpha := 1.0
 	if enter > -INF:
-		var pop := _u(enter, float(t.get("enter_at_dur", 0.0)))
+		var pop := beat_u(&"node_pop", enter, float(t.get("enter_at_dur", 0.0)))
 		s *= lerpf(Motion.amplitude(&"node_pop"), 1.0, _eased(&"node_pop", pop)) if pop < 1.0 else 1.0
 		alpha = pop if pop < 1.0 else 1.0
+	var struck := -1.0
 	if t.has("dead_at"):
-		var du := _u(float(t["dead_at"]), float(t.get("dead_at_dur", 0.0)))
+		var withdrawn := bool(t.get("withdrawn", false))
+		var du := beat_u(WITHDRAW_MOTION if withdrawn else &"raid_hit_effect", float(t["dead_at"]), float(t.get("dead_at_dur", 0.0)))
 		if du >= 1.0:
 			return
-		s *= lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), du)
+		if withdrawn:
+			struck = du
+		else:
+			s *= lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), du)
 		alpha *= 1.0 - du
 	var mv: Dictionary = t.get("move", {})
-	var moving: bool = not mv.is_empty() and clock > float(mv["t0"]) and clock < float(mv["t0"]) + float(mv["dur"])
+	var moving: bool = not mv.is_empty() and clock > float(mv["t0"]) and clock < float(mv["t0"]) + _move_len(mv)
 	if moving and mv["decoy"] != &"":
 		var lure := overlay.icon_at(mv["decoy"])
 		if lure.x != INF:
 			_dashed(lure, p, Color(Palette.RESIST_GOLD, 0.8), 1.5 * k, PULL_DASH * k)
 	if moving:
 		# ANIM-R2 R6: a fading red trail behind it along its street.
-		var u := _u(float(mv["t0"]), float(mv["dur"]))
+		var u := _u(float(mv["t0"]), _move_len(mv))
 		for q in range(1, TRAIL_DOTS + 1):
 			var tp := _along_move(mv, _eased(&"raid_move", maxf(0.0, u - q * TRAIL_STEP)))
 			if tp.x != INF:
@@ -735,6 +813,13 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 	_ci.draw_arc(p, s * 0.28, 0, TAU, 12, Color(0, 0, 0, 0.8 * alpha), 1.0 * k)
 	if t.get("frozen", false):
 		_ci.draw_arc(p, FROST_RING * k, 0, TAU, 20, Color(Palette.NET_CYAN, 0.8 * alpha), 2.0 * k)
+	if struck >= 0.0 and clock >= float(t["dead_at"]):
+		# ANIM-R6 C11: the withdrawing threat is struck out (a red X on a dark keyline).
+		var arm := s * Motion.amplitude(WITHDRAW_MOTION)
+		var xa := 1.0 - struck
+		for d in [Vector2(1, 1), Vector2(1, -1)]:
+			_ci.draw_line(p - d * arm, p + d * arm, Color(0, 0, 0, 0.9 * xa), 7.0 * k)
+			_ci.draw_line(p - d * arm, p + d * arm, Color(THREAT_RED, xa), 4.0 * k)
 
 
 ## ANIM-R1 M4: the shot: the gun's node rings as it fires, the trace flies from the gun to
@@ -749,8 +834,9 @@ func _draw_trace(f: Dictionary, at: Dictionary, k: float) -> void:
 	var to: Vector2 = at.get(String(f["threat"]), Vector2(INF, INF))
 	if from.x == INF or to.x == INF:
 		return
-	var u := _u(t0, fly)
-	var a := 1.0 if u < 1.0 else 1.0 - _u(t0 + fly, fade)
+	var u := beat_u(&"turret_trace", t0, fly)
+	# ANIM-R6 C4: off, the whole trace stands for its time (no flight, no fade).
+	var a := 1.0 if u < 1.0 or not Motion.live(&"turret_trace") else 1.0 - _u(t0 + fly, fade)
 	var head := from.lerp(to, _eased(&"turret_trace", u))
 	var muzzle := 1.0 - u
 	if muzzle > 0.0:
@@ -767,7 +853,7 @@ func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
 	if clock < float(f["t0"]):
 		return
 	var u := _u(float(f["t0"]), float(f["dur"]))
-	if f["kind"] == "frost" and u >= 1.0:
+	if f["kind"] == "frost" and (u >= 1.0 or not Motion.live(&"ice_lock_ring")):
 		return
 	var p: Vector2 = at.get(String(f["threat"]), Vector2(INF, INF))
 	if p.x == INF:
@@ -776,8 +862,10 @@ func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
 	if f["kind"] == "lock":
 		if u >= 1.0:
 			return
-		var r := lerpf(rest * Motion.amplitude(&"ice_lock_ring"), rest, _eased(&"ice_lock_ring", u))
-		_ci.draw_arc(p, r, 0, TAU, 28, Color(Palette.NET_CYAN, 0.35 + 0.65 * u), 3.0 * k)
+		# ANIM-R6 C4: off, the ring stands closed for its time (no closing).
+		var shut := u if Motion.live(&"ice_lock_ring") else 1.0
+		var r := lerpf(rest * Motion.amplitude(&"ice_lock_ring"), rest, _eased(&"ice_lock_ring", shut))
+		_ci.draw_arc(p, r, 0, TAU, 28, Color(Palette.NET_CYAN, 0.35 + 0.65 * shut), 3.0 * k)
 		for q in 6:
 			var d := Vector2.from_angle(TAU * q / 6.0)
 			_ci.draw_line(p + d * r, p + d * (r + 4.0 * k), Palette.NET_CYAN, 1.5 * k)
@@ -787,7 +875,7 @@ func _draw_lock(f: Dictionary, at: Dictionary, k: float) -> void:
 
 func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
 	var u := _u(float(f["t0"]), float(f["dur"]))
-	if clock < float(f["t0"]) or u >= 1.0:
+	if clock < float(f["t0"]) or u >= 1.0 or not Motion.live(&"raid_hit_effect"):
 		return
 	var p: Vector2 = at.get(String(f["threat"]), Vector2(INF, INF))
 	if p.x == INF:
@@ -811,7 +899,9 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 		f["last_at"] = p
 	if p.x == INF:
 		return
-	var rise := Motion.amplitude(&"node_damage_number") * k * _eased(&"node_damage_number", u)
+	# ANIM-R6 C4: off, the number stands where it rises from, whole, for its time.
+	var live := Motion.live(&"node_damage_number")
+	var rise := Motion.amplitude(&"node_damage_number") * k * _eased(&"node_damage_number", u) if live else 0.0
 	var fs := maxi(1, roundi(NUMBER_FONT * Settings.text_scale * k))
 	var font := Palette.display()
 	var text := String(f["text"])
@@ -823,7 +913,7 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 		at = p + Vector2(-w - CityMapOverlay.MARKER_SIZE * TOKEN_SCALE * k - NUMBER_GAP * k, -rise)
 	else:
 		at = p + Vector2(CityMapOverlay.ICON_RADIUS_BIG * k + NUMBER_GAP * k, font.get_ascent(fs) * 0.5 - rise - _stack_of(f) * fs * NUMBER_STACK)
-	var a := 1.0 if u < 0.66 else (1.0 - u) / 0.34
+	var a := 1.0 if u < NUMBER_HOLD_SHARE or not live else (1.0 - u) / (1.0 - NUMBER_HOLD_SHARE)
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(4.0 * k)), Color(0, 0, 0, 0.9 * a))
 	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
 
@@ -845,7 +935,7 @@ func _draw_stamp(site: StringName, s: Dictionary, k: float) -> void:
 	var p := overlay.icon_at(site)
 	if p.x == INF:
 		return
-	var u := _u(float(s["t0"]), float(s["dur"]))
+	var u := beat_u(&"raid_flip", float(s["t0"]), float(s["dur"]))
 	var angle := lerpf(Motion.amplitude(&"raid_flip"), 0.0, _eased(&"raid_flip", u))
 	var sx := maxf(0.05, cos(deg_to_rad(angle)))
 	var word := CityMapOverlay.tr_word(String(s["word"]))
@@ -882,7 +972,7 @@ func _draw_home(k: float) -> void:
 func _draw_tints(_k: float) -> void:
 	var fade := 1.0
 	if _tint_fade_t0 != INF:
-		fade = 1.0 - _u(_tint_fade_t0, RaidBeats.raw_seconds(&"influence_crossfade"))
+		fade = 1.0 - beat_u(&"influence_crossfade", _tint_fade_t0, RaidBeats.raw_seconds(&"influence_crossfade"))
 		if fade <= 0.0:
 			return
 	var reach := CityInfluence.RADIUS * NeonCity.TILE_A
@@ -892,7 +982,7 @@ func _draw_tints(_k: float) -> void:
 		var c := overlay.icon_at(t["site"])
 		if c.x == INF:
 			continue
-		var r := reach * _eased(&"influence_spread", _u(float(t["t0"]), float(t["dur"])))
+		var r := reach * _eased(&"influence_spread", beat_u(&"influence_spread", float(t["t0"]), float(t["dur"])))
 		var mid := Color(threat_color, TINT_ALPHA * fade)
 		var edge := Color(threat_color, 0.0)
 		for q in TINT_RINGS:

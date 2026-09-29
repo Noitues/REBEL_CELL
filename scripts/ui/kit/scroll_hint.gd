@@ -43,6 +43,7 @@ func _init(p_scroll: ScrollContainer) -> void:
 
 
 func _ready() -> void:
+	_base_min = scroll.custom_minimum_size.y
 	var box := scroll.get_parent() as BoxContainer
 	if box != null and room == null:
 		room = Control.new()
@@ -97,6 +98,11 @@ var _snap_passes: int = 0
 var _snap_frame: int = -1
 ## The most times a content's snap is worked out (its layout settles in a pass or two).
 const SNAP_PASSES := 3
+## ANIM-R6 C8: the view's own least height (its custom minimum when the tag came).
+var _base_min: float = 0.0
+## ANIM-R6 C8: the most times one content's snap is worked out in all (its height changes).
+const SNAP_PASSES_MAX := 12
+var _snap_total: int = 0
 
 
 func _refresh() -> void:
@@ -109,18 +115,37 @@ func _refresh() -> void:
 		# the deferred calls until the message queue ran out (the sweep tests crashed).
 		if snap_rows and scroll.scroll_vertical == 0 and scroll.get_child_count() > 0:
 			var content := scroll.get_child(0)
-			var key := [content.get_instance_id(), Settings.text_scale]
+			# ANIM-R6 C8: the content's height is part of the key (a row that wraps later, a
+			# withdraw row that comes, re-lays it out: the snap ran out on the first layout and
+			# YOUR NODES cut its last row at 1.6), and the content resizing refreshes the tag;
+			# SNAP_PASSES_MAX in all per content keeps it bounded.
+			if content is Control and not (content as Control).resized.is_connected(refresh):
+				(content as Control).resized.connect(refresh)
+			var key := [content.get_instance_id(), Settings.text_scale, roundi((content as Control).size.y) if content is Control else 0]
 			if key != _snap_key:
+				if _snap_key.is_empty() or _snap_key[0] != key[0] or _snap_key[1] != key[1]:
+					_snap_total = 0
 				_snap_key = key
 				_snap_passes = 0
 			var frame := Engine.get_process_frames()
-			if _snap_passes < SNAP_PASSES and frame != _snap_frame and is_equal_approx(room.size.y, room.custom_minimum_size.y):
+			if _snap_passes < SNAP_PASSES and _snap_total < SNAP_PASSES_MAX and frame != _snap_frame and is_equal_approx(room.size.y, room.custom_minimum_size.y):
 				_snap_frame = frame
 				_snap_passes += 1
+				_snap_total += 1
 				snap_reserve = cut_row_reserve()
+			elif _snap_passes < SNAP_PASSES and _snap_total < SNAP_PASSES_MAX and is_inside_tree() \
+					and not get_tree().process_frame.is_connected(refresh):
+				# Not worked out now (this frame's done, or the room is still laying out): on the
+				# next frame (never a deferred call in this one: the layout would chase itself).
+				get_tree().process_frame.connect(refresh, CONNECT_ONE_SHOT)
 		var want := size.y + MARGIN.y * 2.0 + snap_reserve if overflows() else 0.0
 		if not is_equal_approx(room.custom_minimum_size.y, want):
 			room.custom_minimum_size.y = want
+		# ANIM-R6 C8: a view held at its least height (YOUR NODES at 1.6) gives the snap's room
+		# out of that height, so it ends above the row it would cut instead of growing its window.
+		var least := maxf(0.0, _base_min - (snap_reserve if want > 0.0 else 0.0))
+		if not is_equal_approx(scroll.custom_minimum_size.y, least):
+			scroll.custom_minimum_size.y = least
 	visible = more_below()
 	var r := scroll.get_global_rect()
 	if room != null and is_instance_valid(room) and room.custom_minimum_size.y > 0.0:
@@ -145,15 +170,28 @@ func cut_row_reserve() -> float:
 	var best_h := INF
 	for n in scroll.get_child(0).find_children("*", "Control", true, false):
 		var c := n as Control
-		if not c.is_visible_in_tree() or not (c.get_parent() is BoxContainer):
+		# ANIM-R6 C8: a flow's lines count too (a node's "Withdraw Turret | Withdraw ICE Lock"
+		# buttons in YOUR NODES were cut in half: their flow, taller than a row, was skipped).
+		if not c.is_visible_in_tree() or not (c.get_parent() is BoxContainer or c.get_parent() is FlowContainer):
 			continue
 		var r := c.get_global_rect()
-		if r.size.y <= 0.0 or r.size.y > view.size.y * ROW_SHARE:
+		# ANIM-R6 C8: a row's share of the view as it is with no snap (the snap shrinks the view:
+		# its rows then read as too tall, the next pass found no cut and the view grew back).
+		if r.size.y <= 0.0 or r.size.y > (foot - view.position.y) * ROW_SHARE:
 			continue
 		if r.position.y < foot and r.end.y > foot + 0.5 and r.position.y > view.position.y and r.size.y < best_h:
 			best_h = r.size.y
 			best = foot - r.position.y
 	return best
+
+
+## ANIM-R6 C15: the view's content changed in place (a page scroll whose host stays while its
+## pages come and go): the snap is worked out afresh for it.
+func reset_snap() -> void:
+	_snap_key = []
+	_snap_total = 0
+	snap_reserve = 0.0
+	refresh.call_deferred()
 
 
 ## Scrolls the page on by most of a view.

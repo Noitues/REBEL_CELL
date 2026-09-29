@@ -225,6 +225,11 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   sees it first). A helper an open pause menu covers is left alone; helpers inside the pause
   menu (its lines' typing) own its presses with it. Menus ask the same rule: a click on a
   line trusts the hovered control and the line's button mask like any other click.
+  ANIM-R6 city: the Heat poster, the HQ page's pops (verdict stamps, the SITES bump, a crew
+  card's pop) and the raid's home-hit number (a FlightFx flight) are helpers too. **A reading
+  hold is not motion**: the Heat banner and its consequence note hold `heat_banner`'s delay to
+  be read (like RAID INCOMING); a press completes what moves (the roll, the crossings, the
+  pops, the fade) and the banner then stays its hold.
 - **Switching an entry off (ANIM-R5).** `enabled = false` shows the end state at once, by
   kind of entry: an entry with a motion of its own never plays (`Motion.live` is false; its
   time and size stay, the hold and look of the end state); a part of another motion that a
@@ -241,6 +246,11 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   alone is not enough (off, they stay: they are a hold). `test_motion_lab_demos` records
   every read and every question while the demos play and names any view that never asks.
   Holds (a time that is how long an end state or a word shows, 5.5) are exempt.
+  ANIM-R6 city: views on their own clock honour it too: the raid layer shows each beat's end
+  state from its start when its entry is off (a token on its new node, a flat stamp, an
+  unrisen number, a closed lock, no lag on home's bar; the beat keeps its time), the routes'
+  crawl stands still; the gap between raid steps and a volley's stagger are parts
+  (`raid_step_gap`, `raid_shot_stagger`), the Heat pulse's rise a tuning (`heat_pulse_rise`).
 - **The lab shows the real motion (ANIM-R5).** Each id's demo plays on the real piece (a
   live combat scene, the screen, the city map, the raid, Fx) or, for a motion the game
   plays with a Motion helper, that same helper on a lab piece. `test_motion_lab_demos.gd`
@@ -420,11 +430,24 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   the verdict's terms (never "lost raid" beside HOME -5 · HOLDS); a node Disabled then Seized
   is one SEIZED node everywhere. Home's banner and every label keep off the threat tokens;
   the network's packets stop at the verdict. The forecast float over a node says RAID
-  FORECAST; the Grid's run rows open with IF CLEARED: and say OPENS 1 SITE, CLAIMABLE. The
+  FORECAST; the Grid's run rows open with IF CLEARED: and say OPENS 1 SITE, CLAIMABLE (CAN BE YOUR NODE since ANIM-R6). The
   Heat banner's consequence is a flat note beside the poster (mono, 12 px x the text size at
   least), held `heat_banner`'s 3.6 s; the banner itself keeps off WANTED. The campaign's end
   is a see-through page with a WON / LOST stamp landing; the pause menu is as tall as its
   lines. A Polaroid caption is never cut (smaller, then two lines over a smaller picture).
+- **ANIM-R6 city, raid, HQ and bake**: the Heat note shows under reduce effects too (static,
+  for its hold) and keeps off every word and button (narrower when it must); its first
+  sentence says a raid is queued. A Polaroid caption follows the text size, never under 12 px
+  x the text size, and the Polaroid is never narrower than its longest word. The raid opens
+  framed on CORE and its entries; at the verdict the threats still standing are struck out
+  and withdraw, HOME -5 · HOLDS says HOLDS in acid, RAIDS drops with the verdict (its tag
+  pulses), 1x / 2x / 4x and Skip turn off on 1x and Continue takes the focus. A claim
+  cross-stamps (CLEARED fades as CLAIMED lands) and a map draws one stamp per mark. YOUR
+  NODES fills its window and ends above the row it would cut; the HQ page does too. YOU ARE
+  HERE stands on the street, joined to the choices ahead by dashed roads. The claim badge
+  says CAN BE YOUR NODE; the WON stamp wears the win's star. The HQ a new campaign opens and
+  the Grid's first open are baked ahead (from the start page, from the HQ page); a view holds
+  the bake it draws until it draws another.
 - Values: `ui_motion.tres` (DECISIONS "Animation pass — ANIM-5", "— ANIM-R1 campaign and
   screens", "— ANIM-R3 city, raid, jack, heat and route", "— ANIM-R4 city, raid, heat, route
   and HQ", "— ANIM-R5 city, raid, HQ and bake"); strips: `docs/timeline/motion/`.
@@ -506,8 +529,9 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Holds (ANIM-R6)**: some entries are a time, not a motion: how long an end state or a
   word shows (`resolve_landing_hold`, `resolve_result_hold`, `combat_end_hold`,
   `toast_note_hold`, `raid_incoming_hold`, `jack_connect`), a bounded wait
-  (`jack_arrival_wait`, `asset_drop_wait`) or the replay's and the raid's pacing
-  (`resolve_sequence`, `resolve_beat`, `resolve_pass`, `raid_step_gap`). Switched off they keep
+  (`jack_arrival_wait`, `asset_drop_wait`) or the replay's pacing
+  (`resolve_sequence`, `resolve_beat`, `resolve_pass`; the raid's step gap is a part since
+  ANIM-R6 city: off, the steps follow on at once). Switched off they keep
   their time (there is no motion to leave out); every other entry's view asks whether it
   plays (5.1).
 - **Which motions a press completes (ANIM-R6)**: every helper that ends its motion on a press

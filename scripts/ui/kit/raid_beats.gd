@@ -32,8 +32,9 @@ const MOTION_OF := {
 	"station_regen": &"node_damage_number", "disabled": &"raid_flip", "seized": &"raid_flip", "home_lost": &"raid_flip",
 	"raid_end": &"forecast_stamp_resolve",
 }
-## Shots in one step start this share of a trace apart (a volley reads one by one).
-const SHOT_STAGGER := 0.5
+## Shots in one step start `raid_shot_stagger`'s amplitude (a share) of a trace apart (a
+## volley reads one by one; ANIM-R6 C4: it was the inline SHOT_STAGGER 0.5). Off, together.
+const STAGGER_MOTION := &"raid_shot_stagger"
 const GAP_MOTION := &"raid_step_gap"
 
 
@@ -84,6 +85,7 @@ static func timeline(group_events: Array) -> Dictionary:
 		# the hit lands when it arrives (`raid_hit_effect`), the number rises after the hit;
 		# a threat breaks up only once the shot that kills it has hit.
 		var hit := raw_seconds(&"raid_hit_effect")
+		var stagger := Motion.amplitude(STAGGER_MOTION)
 		var shot_end := {}
 		for e: Dictionary in by_phase[phase]:
 			var t := String(e["type"])
@@ -92,11 +94,11 @@ static func timeline(group_events: Array) -> Dictionary:
 			var t0 := cursor
 			if t == "shot":
 				t0 = shot_at
-				shot_at += trace * SHOT_STAGGER
+				shot_at += trace * stagger
 				dur = trace + hit
 				shot_end[String(e.get("threat", ""))] = t0 + dur
 			elif t == "threat_destroyed":
-				t0 = maxf(cursor, float(shot_end.get(String(e.get("threat", "")), shot_at - trace * SHOT_STAGGER + trace + hit)))
+				t0 = maxf(cursor, float(shot_end.get(String(e.get("threat", "")), shot_at - trace * stagger + trace + hit)))
 			beats.append({"event": e, "type": t, "phase": phase, "motion": motion, "t0": t0, "dur": dur})
 			length = maxf(length, t0 - cursor + dur)
 		cursor += length
@@ -149,10 +151,13 @@ static func _add(list: Array[StringName], id: StringName) -> void:
 		list.append(id)
 
 
-## Seconds of `id` at 1x: its delay plus its duration from the motion table.
+## Seconds of `id` at 1x: its delay plus its duration from the motion table. ANIM-R6 C4: a
+## switched-off part (UiMotionData.OFF_PARTS: the gap between steps) takes no time.
 static func raw_seconds(id: StringName) -> float:
 	var e := Motion.entry(id)
-	return (e.delay + e.duration) if e != null else 0.0
+	if e == null or Motion.part_off(e):
+		return 0.0
+	return e.delay + e.duration
 
 
 ## True when an event of type `type` plays as a beat (not only in the log).

@@ -45,7 +45,6 @@ const HOLDS := {
 	&"asset_drop_wait": "the drop waits for the camera",
 	&"raid_incoming_hold": "RAID INCOMING's reading time",
 	&"jack_connect": "CONNECTING's reading time",
-	&"raid_step_gap": "the pause between raid steps",
 	&"resolve_sequence": "the replay's pacing between beats",
 	&"resolve_beat": "the replay's pacing between beats",
 	&"resolve_pass": "the log's pacing between passes",
