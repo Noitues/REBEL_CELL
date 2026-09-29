@@ -125,6 +125,10 @@ var _panel: ZinePanel = null
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_READY and _panel != null:
 		_fit_height()
+		# A wrapped line (the campaign code at 1.6) knows its height only once laid out at its
+		# width: fitted again after the first layout.
+		if not get_tree().process_frame.is_connected(_fit_height):
+			get_tree().process_frame.connect(_fit_height, CONNECT_ONE_SHOT)
 		PageTransition.enter(_panel, PageTransition.Look.PAPER)
 	if what == NOTIFICATION_VISIBILITY_CHANGED or what == NOTIFICATION_READY:
 		if is_visible_in_tree():
