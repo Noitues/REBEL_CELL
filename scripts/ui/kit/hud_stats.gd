@@ -26,6 +26,8 @@ extends Control
 ## a folded tag's height (px).
 const TAG_W := 100.0
 const TAG_H := 44.0
+## The widest a tag grows while the tags fill the row evenly (px at scale 1.0).
+const TAG_W_MAX := 132.0
 const TAG_H_FOLDED := 34.0
 ## The gap between tags (px at scale 1.0).
 const TAG_GAP := UiTheme.SP_S
@@ -41,6 +43,9 @@ const PAD := 6.0
 const PAD_V := 4.0
 const ICON_GAP := 5.0
 const DIGIT_HALF := 0.36
+## The icon, padding and gap grow with the text only up to this scale (a 36 px icon at 2.0
+## left a tag no room for its number); the value keeps the whole text scale.
+const CHROME_GROW_MAX := 1.3
 ## The value's type steps, largest first (§6.9: `title`, stepping down to fit).
 const VALUE_STEPS: Array[int] = [UiTheme.TITLE, UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]
 ## The tape's size and the drop shadow's offset (px at scale 1.0), the tags' tilt (degrees,
@@ -89,6 +94,7 @@ var _tip_title: String = ""
 ## The value's font size in use (px; the same on every tag) and the label's.
 var _value_px: int = UiTheme.TITLE
 var _label_px: int = UiTheme.CAPTION
+var _suffix_on: bool = true
 ## H24 S16: small captions over groups of tags ([[first tag index, words, tooltip], ...],
 ## the words translated by the caller), drawn before their group's first tag outside a
 ## fight ("CAMPAIGN", "THIS RUN": the top bar's set changes between the HQ and a run).
@@ -367,7 +373,7 @@ func full_width(s: float = 1.0) -> float:
 func compact_width(s: float = 1.0) -> float:
 	var total := 0.0
 	for it in items:
-		total += _value_width(it, s, UiTheme.font_px_at(UiTheme.TITLE, s)) + (PAD * 2.0 + TAG_GAP) * s
+		total += _value_width(it, s, UiTheme.font_px_at(UiTheme.TITLE, s)) + PAD * 2.0 * _chrome(s) + TAG_GAP * s
 	return total
 
 
@@ -386,12 +392,25 @@ func label_font_size() -> int:
 	return _label_px
 
 
-## Width of tag `it`'s icon, value and suffix at scale `s` with the value at `vfs` px.
-func _value_width(it: Array, s: float, vfs: int) -> float:
-	var w := ICON_R * 2.0 * s + ICON_GAP * s + Palette.display().get_string_size(String(it[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, vfs).x
-	if it.size() > 2 and String(it[2]) != "":
+## Width of tag `it`'s icon, value and (with `suffix`) its suffix at scale `s` with the
+## value at `vfs` px.
+func _value_width(it: Array, s: float, vfs: int, suffix: bool = true) -> float:
+	var c := _chrome(s)
+	var w := (ICON_R * 2.0 + ICON_GAP) * c + Palette.display().get_string_size(String(it[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, vfs).x
+	if suffix and it.size() > 2 and String(it[2]) != "":
 		w += Palette.display().get_string_size(String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, _suffix_px(s)).x
 	return w
+
+
+## The scale the tag's icon, padding and gap are drawn at (see CHROME_GROW_MAX).
+static func _chrome(s: float) -> float:
+	return minf(s, CHROME_GROW_MAX)
+
+
+## True when the suffixes ("/100") are drawn; a tag too narrow for one keeps it in its
+## tooltip.
+func suffixes_shown() -> bool:
+	return _suffix_on
 
 
 ## The suffix ("/100") size at scale `s`: the caption step (§4.2).
@@ -448,7 +467,7 @@ func _relayout() -> void:
 	_captions_folded = folded
 	var caps_w := _caption_width(s, _captions_folded) if with_captions else 0.0
 	var gap := TAG_GAP * s
-	var tag_w := minf(TAG_W * s, (room - caps_w - gap * maxf(0.0, n - 1)) / maxf(1.0, n)) if n > 0 else 0.0
+	var tag_w := minf(TAG_W_MAX * s, (room - caps_w - gap * maxf(0.0, n - 1)) / maxf(1.0, n)) if n > 0 else 0.0
 	tag_w = maxf(1.0, tag_w)
 	if not folded:
 		for i in n:
@@ -460,20 +479,29 @@ func _relayout() -> void:
 	var room_v := TOP_ROOM * s + BOTTOM_ROOM * s
 	if fight:
 		tag_h = minf(tag_h, maxf(1.0, max_height - room_v))
-	# The value's step: the largest that fits every tag's width (and a fight's height).
+	# The value's step: the largest that fits every tag's width (and a fight's height), with
+	# the suffixes down to `body`, then without them (their words stay in the tooltip).
 	_value_px = UiTheme.font_px_at(VALUE_STEPS[VALUE_STEPS.size() - 1], s)
+	_suffix_on = false
+	var tries: Array = []
 	for step in VALUE_STEPS:
-		var px := UiTheme.font_px_at(step, s)
+		if step != UiTheme.CAPTION:
+			tries.append([step, true])
+	for step in VALUE_STEPS:
+		tries.append([step, false])
+	for t in tries:
+		var px := UiTheme.font_px_at(int(t[0]), s)
 		var fits := true
 		if fight and Palette.display().get_height(px) > tag_h - PAD_V * 2.0 * s:
 			fits = false
 		for it in items:
 			if not fits:
 				break
-			if _value_width(it, s, px) + PAD * 2.0 * s > tag_w:
+			if _value_width(it, s, px, bool(t[1])) + PAD * 2.0 * _chrome(s) > tag_w:
 				fits = false
 		if fits:
 			_value_px = px
+			_suffix_on = bool(t[1])
 			break
 	for i in n:
 		_rects.append(Rect2(i * (tag_w + gap), TOP_ROOM * s, tag_w, tag_h))
@@ -530,6 +558,9 @@ func _get_tooltip(at_position: Vector2) -> String:
 	var it: Array = items[i]
 	# §6.9: the tag's words stay in its tooltip's title when its label is folded away.
 	_tip_title = tr(String(it[0]))
+	if compact or not _suffix_on:
+		# Folded: the title carries the words and the whole number ("HEAT 12/100").
+		_tip_title = "%s %s%s" % [_tip_title, String(it[1]), String(it[2]) if it.size() > 2 else ""]
 	var tip := String(it[3]) if it.size() > 3 else ""
 	if tip == "":
 		tip = "%s: %s%s" % [String(StatIcon.NAMES.get(icon_of(i), String(it[0]).capitalize())), String(it[1]), String(it[2]) if it.size() > 2 else ""]
@@ -566,12 +597,13 @@ func _draw() -> void:
 			draw_string(mono, Vector2(r.position.x + PAD * s, label_base), tag_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD * 2.0 * s, _label_px, Palette.INK)
 			value_mid = (label_base + mono.get_descent(_label_px) + r.end.y - PAD_V * s) * 0.5
 		# Icon and value centred together in the tag (the value never grows the tag).
-		var vw := _value_width(it, s, _value_px)
-		var x0 := r.position.x + maxf(PAD * s, (r.size.x - vw) * 0.5)
-		StatIcon.draw(self, Vector2(x0 + ICON_R * s, value_mid), ICON_R * s, icon_of(i), Palette.INK)
-		var value_at := Vector2(x0 + (ICON_R * 2.0 + ICON_GAP) * s, value_mid + _value_px * DIGIT_HALF)
+		var c := _chrome(s)
+		var vw := _value_width(it, s, _value_px, _suffix_on)
+		var x0 := r.position.x + maxf(PAD * c, (r.size.x - vw) * 0.5)
+		StatIcon.draw(self, Vector2(x0 + ICON_R * c, value_mid), ICON_R * c, icon_of(i), Palette.INK)
+		var value_at := Vector2(x0 + (ICON_R * 2.0 + ICON_GAP) * c, value_mid + _value_px * DIGIT_HALF)
 		draw_string(anton, value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, _value_px, Palette.INK)
-		if it.size() > 2 and String(it[2]) != "":
+		if _suffix_on and it.size() > 2 and String(it[2]) != "":
 			var w := anton.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, _value_px).x
 			draw_string(anton, value_at + Vector2(w, 0), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, _suffix_px(s), Palette.INK)
 		if _refused_tag != "" and String(it[0]) == _refused_tag:
