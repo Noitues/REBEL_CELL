@@ -485,7 +485,8 @@ quantized to 128 colours, raw frames never entered the repo): `buy_fly`, `loot_p
   and a flight's landing pulses the tag it went to (`flight_land_pulse`, new: 0.4 s to x1.3,
   bigger than a value's x1.08 bump; CARDS for a card, the DAEMONS icon or VIEW LOADOUT for the
   rest; `FlightFx.fly(..., on_land)`). Within the readability rule: nothing waits on it (any
-  press ends a flight and the pulse still plays).
+  press ends a flight and the pulse still plays). The loot page (R4 C7) now waits for the picked
+  card's flight too (its lift included), so no loot flies over the route that comes in.
 - **B6 the route move.** The move's new choices were live and focused, and the "a choice
   pressed while travelling skips the move" guard in `enter_node` was dead: `_input` ended the
   move and passed the press on, and the choice then reached `NetrunSession.enter_node` after the
