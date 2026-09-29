@@ -37,9 +37,6 @@
 		"res://scripts/ui/kit/daemon_tray.gd": {
 			"draw_size": 1
 		},
-		"res://scripts/ui/kit/deck_view.gd": {
-			"color": 2
-		},
 		"res://scripts/ui/kit/drip_button.gd": {
 			"color": 5,
 			"font_size_assign": 1
@@ -127,10 +124,6 @@
 		},
 		"res://scripts/ui/kit/ui_theme.gd": {
 			"color": 24
-		},
-		"res://scripts/ui/kit/zine_card.gd": {
-			"color": 9,
-			"draw_size": 4
 		},
 		"res://scripts/ui/kit/zine_note.gd": {
 			"draw_size": 1
