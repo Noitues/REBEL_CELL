@@ -22,6 +22,12 @@ var color: Color = Palette.TERMINAL_TEXT
 ## The icons' colour (art pass W8a: on a filled primary they take the words' ink, 3:1 and
 ## more, ART_BIBLE 3.7); Palette.AUTO = each icon's own colour.
 var icon_color: Color = Palette.AUTO
+## Art pass W9F (§12: nothing runs off the screen at 2.0): the widest the parent button may
+## grow for the line (px; 0 = no limit). When one line would pass it, the items fold onto
+## a second line under the lead (the title's Continue ran 55 px off the screen at 2.0).
+var max_button_width: float = 0.0
+## True while the items sit on their own line under the lead.
+var folded: bool = false
 
 
 func _init(p_lead: String = "", p_items: Array[Dictionary] = []) -> void:
@@ -50,14 +56,29 @@ func _font() -> Font:
 	return get_theme_font(&"font", &"Label")
 
 
-## The line's width and height as drawn.
+## The line's width and height as drawn (two rows when folded).
 func _get_minimum_size() -> Vector2:
+	var row := _row_height()
+	if folded:
+		return Vector2(maxf(_lead_width(), _items_width() - ITEM_GAP * _scale()), row * 2.0)
+	return Vector2(_lead_width() + _items_width(), row)
+
+
+func _row_height() -> float:
+	return maxf(ICON_R * 2.0 * _scale(), _font().get_height(_fs()))
+
+
+func _lead_width() -> float:
+	return _font().get_string_size(lead, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs()).x
+
+
+## The items' width on one row, each after its ITEM_GAP.
+func _items_width() -> float:
 	var s := _scale()
-	var fs := _fs()
-	var w := _font().get_string_size(lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var w := 0.0
 	for it in items:
-		w += ITEM_GAP * s + (ICON_R * 2.0 + ICON_GAP) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	return Vector2(w, maxf(ICON_R * 2.0 * s, _font().get_height(fs)))
+		w += ITEM_GAP * s + (ICON_R * 2.0 + ICON_GAP) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs()).x
+	return w
 
 
 ## The rects of the lead words and of each item (icon and text), local (tests: nothing
@@ -66,15 +87,19 @@ func part_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var s := _scale()
 	var fs := _fs()
-	var h := size.y
+	var h := _row_height()
 	var x := 0.0
 	var lw := _font().get_string_size(lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	out.append(Rect2(0, 0, lw, h))
 	x += lw
+	var y := 0.0
+	if folded:
+		x = -ITEM_GAP * s
+		y = h
 	for it in items:
 		x += ITEM_GAP * s
 		var w := (ICON_R * 2.0 + ICON_GAP) * s + _font().get_string_size(String(it["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		out.append(Rect2(x, 0, w, h))
+		out.append(Rect2(x, y, w, h))
 		x += w
 	return out
 
@@ -91,8 +116,16 @@ func _fit_parent() -> void:
 	var b := get_parent() as Button
 	if b == null:
 		return
-	var h := get_combined_minimum_size().y
 	var left := 0.0
+	var icon_room := (b.icon.get_width() + b.get_theme_constant(&"h_separation")) if b.icon != null else 0
+	var normal := b.get_theme_stylebox(&"normal")
+	var margin := normal.get_margin(SIDE_LEFT) if normal != null else 0.0
+	var fold := max_button_width > 0.0 and icon_room + margin * 2.0 + _lead_width() + _items_width() > max_button_width
+	if fold != folded:
+		folded = fold
+		update_minimum_size()
+		queue_redraw()
+	var h := get_combined_minimum_size().y
 	var bottom := 0.0
 	for st in [&"normal", &"hover", &"pressed", &"hover_pressed", &"focus", &"disabled"]:
 		b.remove_theme_stylebox_override(st)
@@ -107,7 +140,6 @@ func _fit_parent() -> void:
 		b.add_theme_stylebox_override(st, room)
 	set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	# Under the words: past the button's icon slot (IconMark) when it has one.
-	var icon_room := (b.icon.get_width() + b.get_theme_constant(&"h_separation")) if b.icon != null else 0
 	offset_left = left + icon_room
 	offset_right = -left
 	offset_bottom = -bottom
@@ -119,10 +151,15 @@ func _draw() -> void:
 	var s := _scale()
 	var fs := _fs()
 	var font := _font()
-	var mid := size.y * 0.5
+	var row := _row_height()
+	var mid := row * 0.5
 	var base := mid + font.get_ascent(fs) * 0.5 - font.get_descent(fs) * 0.25
 	draw_string(font, Vector2(0, base), lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 	var x := font.get_string_size(lead, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	if folded:
+		x = -ITEM_GAP * s
+		mid += row
+		base += row
 	for it in items:
 		x += ITEM_GAP * s
 		var kind := StringName(it["kind"])

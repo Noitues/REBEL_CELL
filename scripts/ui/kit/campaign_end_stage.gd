@@ -506,19 +506,11 @@ func settle_motion() -> void:
 		finish_now()
 
 
-func _ready() -> void:
-	# Art pass W9F (W8d request): the scrim covers the whole screen, behind the subtitle band
-	# and the prompt strip too (they draw above it), never only the page's rect.
-	scrim.top_level = true
-	scrim.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_fit_scrim()
-	get_viewport().size_changed.connect(_fit_scrim)
-
-
-func _fit_scrim() -> void:
-	if is_inside_tree() and scrim != null:
-		scrim.position = Vector2.ZERO
-		scrim.size = get_viewport_rect().size
+## Art pass W9F (W8d request): the screen gives the stage a scrim over the whole screen
+## (behind the top bar, the subtitle band, the page and the prompt strip alike: HqScene's
+## EndScrim): the stage's own, which covered only the page's rect, stands down.
+func use_screen_scrim() -> void:
+	scrim.visible = false
 
 
 func _exit_tree() -> void:

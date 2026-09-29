@@ -270,6 +270,8 @@ func show_main() -> void:
 			# On the pink primary the line is ink (§3.7: 4.5:1 and more).
 			line.color = Palette.INK
 			line.icon_color = Palette.INK
+			# Art pass W9F: never wider than the menu (its items fold under the lead at big text).
+			line.max_button_width = menu.custom_minimum_size.x - UiTheme.PANEL_PAD_H * 2.0
 			IconLine.attach(cont, line)
 	_item(box, tr("Campaigns"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."))
 	_item(box, tr("Tutorial"), start_tutorial, StatIcon.TUTORIAL, tr("A guided first fight."))

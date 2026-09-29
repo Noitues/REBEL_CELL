@@ -550,6 +550,7 @@ func _next() -> void:
 func _fit_page(page: String) -> void:
 	if dock_lines <= 0:
 		text_label.fit_content = true
+		text_label.scroll_active = false
 		return
 	text_label.fit_content = false
 	var room := _dock_text_room()
@@ -562,8 +563,10 @@ func _fit_page(page: String) -> void:
 		var fs := text_label.get_theme_font_size("normal_font_size")
 		text_label.add_theme_font_size_override("normal_font_size", maxi(caption_px(), floori(fs * room / h)))
 		h = _page_height(page)
-	text_label.scroll_active = h > room + 0.5
-	text_label.scroll_following = text_label.scroll_active
+	# A page the label wraps taller than measured (an unbreakable word) scrolls, following the
+	# typing, rather than clip (no bar shows while it fits).
+	text_label.scroll_active = true
+	text_label.scroll_following = true
 	text_label.custom_minimum_size.y = minf(h, room)
 
 

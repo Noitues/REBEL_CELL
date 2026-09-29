@@ -157,7 +157,10 @@ func _assert_pages_fit(line: String, band: Rect2, label: String) -> void:
 		assert_true(bar.position.y >= band.position.y - 0.5 and bar.end.y <= band.end.y + 0.5,
 			"%s page %d: the bar %s stays in its band %s (text %.1f)" % [label, pages, bar, band, Settings.text_scale])
 		var tl := Dialogue.text_label
-		assert_true(tl.get_content_height() <= tl.size.y + 1.0,
+		# Art pass W9F (§4.3 rule 2): a page never shrinks under caption x the text scale; a page
+		# still taller there (an unbreakable 80-letter word at 2.0) scrolls in its label.
+		assert_true(tl.get_theme_font_size(&"normal_font_size") >= roundi(UiTheme.CAPTION * Settings.text_scale), "%s page %d: never under caption" % [label, pages])
+		assert_true(tl.get_content_height() <= tl.size.y + 1.0 or tl.scroll_active,
 			"%s page %d: its words fit (content %.1f in %.1f px, text %.1f): '%s'" % [label, pages, tl.get_content_height(), tl.size.y, Settings.text_scale, Dialogue.current_text()])
 		pages += 1
 		if Dialogue._queue.is_empty():
@@ -172,7 +175,9 @@ func test_subtitles_page_cjk_and_pseudolocalised_text_inside_the_band() -> void:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames()
-		var band := (hq.subtitle_strip as Control).get_global_rect()
+		# Art pass W9F: the band folds to one line while empty and grows when a line comes; the
+		# dock it hands Dialogue (the page's room) is its full height.
+		var band: Rect2 = (hq.subtitle_strip as SubtitleStrip).dock_rect().grow_individual(SubtitleStrip.SIDE_GAP, 0, SubtitleStrip.SIDE_GAP, 0)
 		await _assert_pages_fit(CJK_LINE, band, "CJK")
 		await _assert_pages_fit(LONG_WORD, band, "a long word")
 		TranslationServer.pseudolocalization_enabled = true

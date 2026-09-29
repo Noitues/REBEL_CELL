@@ -551,7 +551,9 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	var deck := (hq.get_node("LoadoutView") as LoadoutView)._view as DeckView
 	for n in _all(deck):
 		if n is ZineCard and (n as ZineCard).focus_mode != Control.FOCUS_NONE:
-			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "deck view cards grow")
+			# Art pass W9F: they grow with the text while a row still holds four (DeckView.card_scale).
+			assert_almost_eq((n as ZineCard).text_scale, DeckView.card_scale(Settings.TEXT_SCALE_MAX), 0.01, "deck view cards grow")
+			assert_true((n as ZineCard).text_scale > 1.6, "and read big at 2.0")
 			assert_false((n as ZineCard).pictos.is_empty(), "deck view cards show pictograms")
 			break
 	var scene := _netrun()

@@ -3875,6 +3875,15 @@ func show_end() -> void:
 		stage.lean_from = city.state.progress
 		stage.city_lean.connect(func(f: float) -> void: city.set_campaign_progress(f, c.corporation_id))
 	_set_panel(stage, "end")
+	# Art pass W9F (W8d request): one scrim over the whole city behind every piece of the
+	# screen (the top bar, the subtitle band and the prompt strip too), not the page's rect;
+	# it goes with the stage.
+	var end_scrim := GlassScrim.full_screen()
+	end_scrim.name = "EndScrim"
+	add_child(end_scrim)
+	move_child(end_scrim, maxi(background.get_index(), wireframe.get_index()) + 1)
+	stage.use_screen_scrim()
+	stage.tree_exiting.connect(end_scrim.queue_free)
 	# The city shows behind the stage (never a glass box over it).
 	_panel_host.theme_type_variation = &""
 	if entering:
