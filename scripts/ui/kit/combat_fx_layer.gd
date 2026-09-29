@@ -375,10 +375,104 @@ static func line_share() -> float:
 ## ANIM-R2 E5: a short local flash (a disc of `radius` at `at`, global) in `color`, `id`'s
 ## amplitude its alpha, fading over its duration: a wheel's break flashes here, never the
 ## whole screen.
+## Art pass W6 (ART_BIBLE 8): a local flash like any other: through the one flash limiter
+## (Fx.request_flash), its alpha and duration held to `id`'s tier.
 func disc_flash(at: Vector2, radius: float, color: Color, id: StringName) -> void:
-	if not Motion.live(id):
+	if not Motion.live(id) or not Fx.request_flash():
 		return
-	_add({"kind": "disc", "at": at, "r": radius, "color": color, "alpha": Motion.amplitude(id), "dur": Motion.seconds(id)})
+	var tier := VfxTier.of(id)
+	_add({"kind": "disc", "at": at, "r": radius, "color": color, "alpha": VfxTier.clamp_alpha(tier, Motion.amplitude(id)),
+		"dur": VfxTier.clamp_seconds(tier, Motion.seconds(id))})
+
+
+# --- Wheel-local T3 bursts (art pass W6, ART_BIBLE 8) ---------------------------------------
+
+## The kinds of wheel_burst: a Perfect landing and a boss's phase change.
+const BURST_PERFECT := &"perfect"
+const BURST_PHASE := &"phase"
+## Each kind's motion entry (T3: duration, peak alpha).
+const BURST_MOTION := {&"perfect": &"wheel_burst_perfect", &"phase": &"wheel_burst_phase"}
+## A burst's region is its wheel: the disc and its rim, HP arc and bezel, this many disc
+## radii out; its ring grows from the rim by RING_GROW radii (held inside the region).
+const WHEEL_REGION := 1.35
+const BURST_RING_GROW := 0.3
+## Ring widths (px at its start and end) and the glow's rim share of the disc.
+const BURST_RING_W0 := 10.0
+const BURST_RING_W1 := 2.0
+const BURST_GLOW_EDGE := 1.0
+## The phase ring: dashes round it, the share of each step a dash fills, and its turn over
+## the burst (rad). W1-CORPPATTERN: a CorpPattern-like broken ring until W1's CorpPattern lands.
+const PHASE_DASHES := 16
+const PHASE_DASH_FILL := 0.6
+const PHASE_TURN := 0.35
+const BURST_SEGMENTS := 48
+
+
+## ART_BIBLE 8 T3: a burst on one wheel only, never the screen (it retires the full-screen
+## Perfect and boss-phase flashes). `wheel_center` (global) and `radius` (the disc's) name
+## the wheel; `kind` is BURST_PERFECT (a radial glow and a ring pulse in `color`, default
+## CELL_PINK: the wheel-local inversion's light) or BURST_PHASE (a broken ring in `color`,
+## the boss's corp hue, over a faint glow). Peak alpha and duration come from the kind's
+## entry held to T3 (<= 70%, <= 1.2 s); the ring stays inside the wheel's region. Through
+## the one flash limiter. Reduce effects, headless or the entry off: nothing (the end
+## state at once). Returns whether it plays.
+func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: Color = Color(0, 0, 0, 0)) -> bool:
+	var id: StringName = BURST_MOTION.get(kind, &"")
+	if id == &"" or radius <= 0.0 or not Motion.live(id):
+		return false
+	if not Fx.request_flash():
+		return false
+	var tier := VfxTier.of(id)
+	var col := color
+	if col.a <= 0.0:
+		col = Palette.CELL_PINK if kind == BURST_PERFECT else Palette.NET_CYAN
+	var e := Motion.entry(id)
+	_add({"kind": "wheel_burst", "burst": kind, "at": wheel_center, "r": radius, "color": col,
+		"alpha": VfxTier.clamp_alpha(tier, Motion.amplitude(id)), "dur": VfxTier.clamp_seconds(tier, Motion.seconds(id)),
+		"reach": VfxTier.clamp_radius(tier, radius * (1.0 + BURST_RING_GROW), radius, radius * WHEEL_REGION),
+		"ease": e.ease, "trans": e.trans})
+	return true
+
+
+## The farthest a wheel burst at `radius` reaches (px from its centre), for layout checks.
+static func wheel_burst_reach(radius: float) -> float:
+	return VfxTier.clamp_radius(VfxTier.T3, radius * (1.0 + BURST_RING_GROW), radius, radius * WHEEL_REGION)
+
+
+func _draw_wheel_burst(s: Dictionary) -> void:
+	var q := _ease(s)
+	var fade := 1.0 - q
+	var c := _local(s["at"])
+	var r := float(s["r"])
+	var a := float(s["alpha"]) * fade
+	var col: Color = s["color"]
+	var ring_r := lerpf(r, float(s["reach"]), q)
+	if String(s["burst"]) == String(BURST_PHASE):
+		_draw_glow(c, r, Color(col, a * 0.5))
+		var step := TAU / PHASE_DASHES
+		var turn := PHASE_TURN * q
+		var w := lerpf(BURST_RING_W0, BURST_RING_W1, q) * 0.7
+		for k in PHASE_DASHES:
+			# Long and short dashes alternate: a pattern, not only a colour.
+			var fill := PHASE_DASH_FILL * (1.0 if k % 2 == 0 else 0.45)
+			var a0 := turn + k * step
+			draw_arc(c, ring_r, a0, a0 + step * fill, 6, Color(col, a), w, true)
+		draw_arc(c, r * BURST_GLOW_EDGE, 0.0, TAU, BURST_SEGMENTS, Color(col, a * 0.6), 2.0, true)
+		return
+	_draw_glow(c, r, Color(col, a))
+	draw_arc(c, ring_r, 0.0, TAU, BURST_SEGMENTS, Color(col, a), lerpf(BURST_RING_W0, BURST_RING_W1, q), true)
+	# A thin paper ring lags the pink one: the latch's click, readable without colour.
+	draw_arc(c, lerpf(r, ring_r, 0.6), 0.0, TAU, BURST_SEGMENTS, Color(Palette.PAPER, a * 0.8), BURST_RING_W1, true)
+
+
+## A radial glow: `col` at the centre fading to nothing at `r`.
+func _draw_glow(c: Vector2, r: float, col: Color) -> void:
+	var edge := Color(col, 0.0)
+	var cols := PackedColorArray([col, edge, edge])
+	for k in BURST_SEGMENTS:
+		var a0 := TAU * k / BURST_SEGMENTS
+		var a1 := TAU * (k + 1) / BURST_SEGMENTS
+		draw_polygon(PackedVector2Array([c, c + Vector2(cos(a0), sin(a0)) * r * BURST_GLOW_EDGE, c + Vector2(cos(a1), sin(a1)) * r * BURST_GLOW_EDGE]), cols)
 
 
 ## ANIM-R1: a word stamped at `at` (global) in a tilted box (BLOCKED, EVADED, NO DAMAGE,
@@ -716,6 +810,8 @@ func _draw() -> void:
 				_draw_pile(s)
 			"embers":
 				_draw_embers(s)
+			"wheel_burst":
+				_draw_wheel_burst(s)
 	if reticle_visible:
 		var c := _local(reticle_pos)
 		var r := RETICLE_RADIUS + Motion.amplitude(&"target_snap") * reticle_pop

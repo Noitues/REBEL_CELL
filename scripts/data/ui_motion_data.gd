@@ -80,6 +80,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp that stays.
 	&"defeat_stamp",
+	# Art pass W6 (ART_BIBLE 8): the wheel-local T3 bursts that retire the full-screen flashes.
+	&"wheel_burst_perfect", &"wheel_burst_phase",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
