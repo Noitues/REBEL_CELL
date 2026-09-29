@@ -49,6 +49,8 @@ const NOTE_YELLOW := Color("#F2DC7A")
 const STICKER_PINK := Color("#F5AFCB")
 const NOTE_TAPE := Color(0.93, 0.89, 0.78, 0.7)
 const SHADOW := Color(0, 0, 0, 0.45)
+## "No colour given": a default parameter meaning "use the element's own colour" (never drawn).
+const AUTO := Color(0, 0, 0, 0)
 
 # --- ART_BIBLE §3.3 semantic tokens -------------------------------------------------------
 # A semantic hue means one thing everywhere and is always paired with a glyph, shape or word.

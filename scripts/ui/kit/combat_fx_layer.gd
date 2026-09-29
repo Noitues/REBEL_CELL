@@ -159,11 +159,11 @@ func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector
 	# shatters (it was a star burst), a guard's shield / evade number its plates / smear, a
 	# heal its plus signs.
 	if crit:
-		hit_vfx(at, HIT_CRIT, Color(0, 0, 0, 0), extra_delay + Motion.delay_of(id))
+		hit_vfx(at, HIT_CRIT, Palette.AUTO, extra_delay + Motion.delay_of(id))
 	elif _guard_icon(icon, []) >= 0:
-		hit_vfx(at, hit_kind(_guard_icon(icon, [])), Color(0, 0, 0, 0), extra_delay + Motion.delay_of(id))
+		hit_vfx(at, hit_kind(_guard_icon(icon, [])), Palette.AUTO, extra_delay + Motion.delay_of(id))
 	elif id == &"heal_number":
-		hit_vfx(at, HIT_HEAL, Color(0, 0, 0, 0), extra_delay + Motion.delay_of(id))
+		hit_vfx(at, HIT_HEAL, Palette.AUTO, extra_delay + Motion.delay_of(id))
 	return rect
 
 
@@ -184,7 +184,7 @@ func impact(at: Vector2, text: String, icon: int, color: Color, delay: float = 0
 	# (hex plates for a shield or a block, an afterimage smear for an evade).
 	var guard := _guard_icon(icon, items)
 	if guard >= 0:
-		hit_vfx(at, hit_kind(guard), Color(0, 0, 0, 0), delay)
+		hit_vfx(at, hit_kind(guard), Palette.AUTO, delay)
 
 
 ## The box an impact mark covers at rest (global), for the layout checks.
@@ -262,11 +262,11 @@ func travel_number(at: Vector2, to: Vector2, text: String, color: Color, crit: b
 	# Art pass W6 (ART_BIBLE 8): what got through lands with its slice's hit shape: a crit
 	# shatters, a hit slashes, a heal ("+N") rises in plus signs.
 	if crit:
-		hit_vfx(at, HIT_CRIT, Color(0, 0, 0, 0), delay)
+		hit_vfx(at, HIT_CRIT, Palette.AUTO, delay)
 	elif text.begins_with("+"):
-		hit_vfx(at, HIT_HEAL, Color(0, 0, 0, 0), delay)
+		hit_vfx(at, HIT_HEAL, Palette.AUTO, delay)
 	else:
-		hit_vfx(at, HIT_ATTACK, Color(0, 0, 0, 0), delay)
+		hit_vfx(at, HIT_ATTACK, Palette.AUTO, delay)
 
 
 ## The numbers resting in `band` move on: a travelling one sets off now, a floating one
@@ -419,11 +419,17 @@ const BURST_RING_W0 := 10.0
 const BURST_RING_W1 := 2.0
 const BURST_GLOW_EDGE := 1.0
 ## The phase ring: dashes round it, the share of each step a dash fills, and its turn over
-## the burst (rad). W1-CORPPATTERN: a CorpPattern-like broken ring until W1's CorpPattern lands.
+## the burst (rad). With a corp pattern (ART_BIBLE §3.6) the ring band is filled with it too.
 const PHASE_DASHES := 16
 const PHASE_DASH_FILL := 0.6
 const PHASE_TURN := 0.35
+## The corp pattern band around the phase ring (in ring widths each side) and its share of the ring's alpha.
+const PHASE_PATTERN_BAND := 2.5
+const PHASE_PATTERN_ALPHA := 0.8
 const BURST_SEGMENTS := 48
+## Below these (px^2 / px) a filled shape is degenerate and is not drawn.
+const POLY_MIN_AREA := 0.5
+const POLY_MIN_SPAN := 0.5
 
 
 ## ART_BIBLE 8 T3: a burst on one wheel only, never the screen (it retires the full-screen
@@ -433,8 +439,9 @@ const BURST_SEGMENTS := 48
 ## the boss's corp hue, over a faint glow). Peak alpha and duration come from the kind's
 ## entry held to T3 (<= 70%, <= 1.2 s); the ring stays inside the wheel's region. Through
 ## the one flash limiter. Reduce effects, headless or the entry off: nothing (the end
-## state at once). Returns whether it plays.
-func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: Color = Color(0, 0, 0, 0)) -> bool:
+## state at once). `pattern` (a `CorpPattern.Kind`, BURST_PHASE only) fills the ring band
+## with the boss corp's pattern, so the phase reads without colour. Returns whether it plays.
+func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: Color = Palette.AUTO, pattern: int = CorpPattern.Kind.NONE) -> bool:
 	var id: StringName = BURST_MOTION.get(kind, &"")
 	if id == &"" or radius <= 0.0 or not Motion.live(id):
 		return false
@@ -448,7 +455,7 @@ func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: 
 	_add({"kind": "wheel_burst", "burst": kind, "at": wheel_center, "r": radius, "color": col,
 		"alpha": VfxTier.clamp_alpha(tier, Motion.amplitude(id)), "dur": VfxTier.clamp_seconds(tier, Motion.seconds(id)),
 		"reach": VfxTier.clamp_radius(tier, radius * (1.0 + BURST_RING_GROW), radius, radius * WHEEL_REGION),
-		"ease": e.ease, "trans": e.trans})
+		"ease": e.ease, "trans": e.trans, "pattern": pattern})
 	return true
 
 
@@ -475,6 +482,9 @@ func _draw_wheel_burst(s: Dictionary) -> void:
 			var fill := PHASE_DASH_FILL * (1.0 if k % 2 == 0 else 0.45)
 			var a0 := turn + k * step
 			draw_arc(c, ring_r, a0, a0 + step * fill, 6, Color(col, a), w, true)
+		var pattern := int(s.get("pattern", CorpPattern.Kind.NONE))
+		if pattern != CorpPattern.Kind.NONE:
+			CorpPattern.fill_ring(self, c, ring_r - w * PHASE_PATTERN_BAND, ring_r + w * PHASE_PATTERN_BAND, pattern, Color(col, a * PHASE_PATTERN_ALPHA))
 		draw_arc(c, r * BURST_GLOW_EDGE, 0.0, TAU, BURST_SEGMENTS, Color(col, a * 0.6), 2.0, true)
 		return
 	_draw_glow(c, r, Color(col, a))
@@ -542,7 +552,7 @@ static func hit_kind(slice_type: int, crit: bool = false) -> StringName:
 ## its slice colour), `size` x its entry's reach. Its duration comes from the entry held to
 ## the entry's tier (T2; T3 for a crit). Reduce effects, headless or the entry off: nothing
 ## (the end state at once). Returns whether it plays.
-func hit_vfx(at: Vector2, kind: StringName, color: Color = Color(0, 0, 0, 0), delay: float = 0.0, size: float = 1.0) -> bool:
+func hit_vfx(at: Vector2, kind: StringName, color: Color = Palette.AUTO, delay: float = 0.0, size: float = 1.0) -> bool:
 	var id: StringName = HIT_MOTION.get(kind, &"")
 	if id == &"" or not Motion.live(id):
 		return false
@@ -556,7 +566,7 @@ func hit_vfx(at: Vector2, kind: StringName, color: Color = Color(0, 0, 0, 0), de
 
 ## Plays the hit shape of a `slice_type` landing (see hit_kind) at `at` (global).
 func slice_hit(at: Vector2, slice_type: int, crit: bool = false, delay: float = 0.0) -> bool:
-	return hit_vfx(at, hit_kind(slice_type, crit), Color(0, 0, 0, 0), delay)
+	return hit_vfx(at, hit_kind(slice_type, crit), Palette.AUTO, delay)
 
 
 ## The hit shapes playing now (tests): their kinds.
@@ -605,7 +615,7 @@ func _draw_hitfx(s: Dictionary) -> void:
 				var sz := reach * (0.14 + 0.1 * _h(k, serial, 4))
 				var turn := (_h(serial, k, 5) - 0.5) * PI * q
 				var tri := PackedVector2Array([at + d.rotated(turn) * sz, at + d.orthogonal().rotated(turn) * sz * 0.55, at - d.orthogonal().rotated(turn) * sz * 0.55])
-				draw_colored_polygon(tri, Color(Palette.PAPER, float(s["fill"]) * 2.0 * fade))
+				_fill_poly(tri, Color(Palette.PAPER, float(s["fill"]) * 2.0 * fade))
 				draw_polyline(PackedVector2Array([tri[0], tri[1], tri[2], tri[0]]), Color(col, fade), HIT_LINE_W * 0.6, true)
 		HIT_ATTACK:
 			# A tapered slash sweeps across, two thin speed lines beside it.
@@ -616,7 +626,7 @@ func _draw_hitfx(s: Dictionary) -> void:
 			var tail := from + d * reach * clampf((q - 0.3) * 1.4, 0.0, 1.0)
 			var mid := (head + tail) * 0.5
 			var w := reach * SLASH_WIDTH * fade
-			draw_colored_polygon(PackedVector2Array([tail, mid + n * w, head, mid - n * w]), Color(col, fade))
+			_fill_poly(PackedVector2Array([tail, mid + n * w, head, mid - n * w]), Color(col, fade))
 			draw_polyline(PackedVector2Array([tail, mid + n * w, head, mid - n * w, tail]), Color(Palette.PAPER, fade), 1.5, true)
 			for k in SLASH_LINES:
 				var off := n * w * (1.8 + k * 0.9) * (1.0 if k % 2 == 0 else -1.0)
@@ -635,7 +645,7 @@ func _draw_hitfx(s: Dictionary) -> void:
 				var hex := PackedVector2Array()
 				for v in 6:
 					hex.append(c + spots[k] * sc + Vector2.from_angle(v * PI / 3.0) * hr * sc * 0.92)
-				draw_colored_polygon(hex, Color(col, float(s["fill"]) * fade))
+				_fill_poly(hex, Color(col, float(s["fill"]) * fade))
 				hex.append(hex[0])
 				draw_polyline(hex, Color(col, fade), HIT_LINE_W, true)
 		HIT_EVADE:
@@ -688,8 +698,21 @@ func _draw_hitfx(s: Dictionary) -> void:
 				draw_arc(c, reach, a0, a0 + TAU / 24.0, 4, Color(col, fade), HIT_LINE_W, true)
 
 
+## A filled polygon, skipped while it is degenerate (its first or last frame: a slash whose
+## head meets its tail, a shard or plate at no size), which the renderer can't triangulate.
+func _fill_poly(points: PackedVector2Array, col: Color) -> void:
+	var area := 0.0
+	for k in points.size():
+		area += points[k].cross(points[(k + 1) % points.size()])
+	if absf(area) * 0.5 < POLY_MIN_AREA:
+		return
+	draw_colored_polygon(points, col)
+
+
 ## A radial glow: `col` at the centre fading to nothing at `r`.
 func _draw_glow(c: Vector2, r: float, col: Color) -> void:
+	if r * BURST_GLOW_EDGE < POLY_MIN_SPAN:
+		return
 	var edge := Color(col, 0.0)
 	var cols := PackedColorArray([col, edge, edge])
 	for k in BURST_SEGMENTS:
@@ -771,7 +794,7 @@ func stamp(at: Vector2, glyph: String, color: Color, hold: float, delay: float =
 	_add({"kind": "stamp", "at": at, "glyph": glyph, "color": color, "dur": Motion.seconds(&"status_stamp") + hold,
 		"land": Motion.seconds(&"status_stamp"), "from": Motion.amplitude(&"status_stamp"), "delay": delay})
 	# Art pass W6 (ART_BIBLE 8): an afflict lands as a glitch crawl on its slice.
-	hit_vfx(at, HIT_AFFLICT, Color(0, 0, 0, 0), delay)
+	hit_vfx(at, HIT_AFFLICT, Palette.AUTO, delay)
 
 
 ## A broken wheel: `pieces` ([polygon (global), colour]) fall `enemy_break`'s amplitude px

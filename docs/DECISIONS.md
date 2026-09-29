@@ -54,6 +54,64 @@ Governed by `docs/ART_BIBLE.md` v1.0; plan in `docs/ART_PLAN.md`. Presentation o
    and a `README.md` (what changed, the §14 checklist, decisions, known gaps) to
    `docs/art_review/W<n>/`.
 
+### 2026-09-28 — Art pass wave 1: W1 foundation, W6 VFX, W10 visual QA (merged into `art-pass`)
+Review folders: `docs/art_review/W1/`, `W6/` and `W10/`. The baseline "before" pack is `W10/baseline/`; its full matrix is only local (git-ignored).
+
+**W1 foundation (§3–§5, §15).**
+- **Tokens and helpers:** the semantic, corp and class tokens, `hp_color`/`heat_color`/`contrast`/`over`, `CorpPattern`, `UiTheme.font_px` with the type scale and spacing tokens, and the IBM Plex body face with a `BodyText` variation. Views migrate their own call sites later.
+- **MSDF:** on for every face, with `msdf_pixel_range` 16 so that 6–8 px outlines stay inside the field. The font `.import` files are force-tracked (`*.import` is git-ignored), and a test fails if MSDF is lost.
+- **Numbers:**
+  - Heat bands come from the config's MAJOR Heat levels; no copied numbers.
+  - HP at exactly 50% is GAIN, and at exactly 25% it is WARN.
+  - An unknown class gets the `TEXT_MID` accent.
+  - Tracking is stored as a fraction of the font size.
+- **Proposal for the bible (not applied):** +2% tracking rounds to 0 px below `heading`. §4.2's tracking could be given in px per step instead.
+- **Orchestrator follow-up:**
+  - The now-scaled HotButton pushed raid setup past 1280 px at 1.6. At `STEP_ICONS_SCALE` and above, Back to HQ now shows its icon only, with its words in the tooltip (the same pattern as the Grid's step buttons). The pass-12 width check asserts again instead of pending.
+  - A wrapping row was tried first. It pushed the defence cards 1 px off screen, so it was rejected.
+
+**W6 VFX (§8, §13).**
+- **Reduce effects:** one `reduce_effects` global shader uniform, set by `Fx` from Settings, is read by every shader. The script-side zeroing stays too.
+- **Removed and added:** `glow.gdshader` was unused and is removed. The new library shaders (`glass_blur`, `crt_overlay`, `paper_burn`, `glitch_dissolve`, `marker_stroke`, `halftone`) aren't yet wired into screens; W2, W7 and W8 do that.
+- **Tier schema:** `UiMotionEntryData.tier` (T0–T4, default T1) is a schema change, logged here and covered by the smoke test. The limits live in `VfxTier`.
+- **Flashes:**
+  - `Fx.flash` defaults to T3, so a full-screen flash must pass T4 explicitly. It does nothing under reduce effects.
+  - The stored `screen_flash` 0.45 and `victory_flash` 0.8 are clamped at runtime to 0.4 (T4) and 0.7 (T3).
+  - Perfect and boss phase are now wheel-local bursts (`wheel_burst_perfect` 0.5 s, `wheel_burst_phase` 0.9 s, 70% peak).
+- **Tier assignment:**
+  - T0: loops and ambience.
+  - T1: hover, focus and UI moves.
+  - T2: hits, stamps, drops, buys, refusals and `raid_move`.
+  - T3: Perfect, kill, phase, Heat band, claim, influence and VICTORY/DEFEAT.
+  - T4: jack transitions and `screen_flash`.
+- **Tier duration caps:** these bind only effects the FX layers draw. UI motion keeps §10's budgets; the 30 entries longer than their tier's VFX duration are listed in `W6/README.md`.
+- **Proposal for the bible (not applied):** state in §8 that the duration column is for drawn effects only.
+- **Hit shapes:** DEPLOY uses the attack slash. DEFEND and SHIELD share the hex plates. The crit's shattered glass replaces the star burst.
+- **Orchestrator follow-ups:**
+  - `Palette.AUTO` names the "use the element's own colour" default, so the static lint stays at zero for `combat_fx_layer.gd`.
+  - `wheel_burst(..., pattern)` fills the phase ring with the boss corp's `CorpPattern`. W3 passes the pattern from `combat_scene`.
+  - The shader lab's glass tint uses `Palette.SCRIM`.
+  - Degenerate hit polygons (a slash on its first frame, a zero-size glow) are skipped. They raised a timing-dependent `indices.is_empty()` engine error in `test_anim_r3_combat`.
+- **Open for W3:**
+  - Miss static isn't triggered yet (`_land` needs `hit_vfx(..., HIT_MISS)`).
+  - `slice_hit` should be called with the attacker's slice type.
+  - `hit_shake` 3 px is over T2's 2 px; route it through `Fx.shake_px`.
+  - `WheelView`'s hit flash goes through `Fx.request_flash`.
+  - The attack slash is thin at its peak; scale hit size with damage.
+
+**W10 visual QA (§13, §14).**
+- **Harness:** `tools/visual_qa/` has 43 screens reached through clean states. Grey and deutan filters are made with Pillow by default (`--filter-mode shader` renders in-engine). Text scale is written straight into Settings, past the 1.6 clamp, until W9 raises the range.
+- **Lint gate:** the static lint (`test_visual_lint_static.gd`, baseline `tools/visual_qa/lint_baseline.json`) fails when any file gains literal colours or font sizes. It never rises unless given `--reset`.
+- **Runtime lint:** a report, not a gate, because it needs a renderer. It treats "from UiTheme" as a §4.2 step × text scale.
+- **Top runtime lint offenders** (each owner's to-do list):
+  - `terminal_window` fixed 14/15 px (W8);
+  - the `fx.gd` "SAVED" label (fixed 14 px, contrast 1.6–2.9:1; W2);
+  - `route_legend` shrinking to 9.8 px (W8b);
+  - `crew_card` (W5);
+  - clipped dialogue and `zine_note` text (W8).
+- **Harness dependencies:** the harness calls some private members (`_panel`, `_show_current`, `_preview_card`, …). Screen owners keep them, or add public capture hooks.
+- **City bake bug:** freeing a scene mid-bake raised a script error at `city_bake_cache.gd:183` (`_stop`). This goes to W7. It's likely also fixed by the ANIM-R5 city branch.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few

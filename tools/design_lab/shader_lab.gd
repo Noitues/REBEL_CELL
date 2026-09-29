@@ -178,8 +178,8 @@ func _glass_blur_demo() -> Control:
 	glass.anchor_left = 0.4
 	glass.anchor_right = 1.0
 	glass.anchor_bottom = 1.0
-	# W1-TOKEN: SCRIM (the bible's #02030A @ 55%): the shader's own default until W1 lands.
-	glass.material = _material("glass_blur", {"blur_px": 6.0, "tint_alpha": 0.55})
+	# ART_BIBLE §3.3 SCRIM: the tint and its alpha from Palette.
+	glass.material = _material("glass_blur", {"blur_px": float(Palette.SCRIM_BLUR_PX), "tint": Color(Palette.SCRIM, 1.0), "tint_alpha": Palette.SCRIM.a})
 	host.add_child(glass)
 	var words := _label("GLASS\nover the city", LABEL_FONT, Palette.TERMINAL_TEXT)
 	words.anchor_left = 0.45
