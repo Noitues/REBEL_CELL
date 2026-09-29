@@ -25,6 +25,9 @@ const BORDER := 8.0
 const GLITCH_BARS := 4
 const GLITCH_BAR_H := 3.0
 const GLITCH_ALPHA := 0.6
+## Art pass WF: the least horizontal squeeze a caption takes before it shrinks as a whole
+## (handwriting reads condensed; a clipped glyph never does).
+const CONDENSE_MIN := 0.7
 
 
 func _init(p_caption: String = "", p_label: String = "[PORTRAIT]", p_tilt: float = -3.0) -> void:
@@ -57,22 +60,94 @@ func _draw() -> void:
 		for i in GLITCH_BARS:
 			draw_rect(Rect2(image.position.x, image.position.y + i * image.size.y / GLITCH_BARS + GLITCH_BAR_H, image.size.x, GLITCH_BAR_H), Color(Palette.HARM, GLITCH_ALPHA))
 	if caption != "":
-		var fs := caption_font_size()
-		var band := size.y - image.end.y
-		draw_string(Palette.marker(), Vector2(BORDER, image.end.y + band * 0.5 + fs * 0.35), caption, HORIZONTAL_ALIGNMENT_LEFT, size.x - BORDER * 2.0, fs, Palette.INK)
+		# Art pass WF: the caption always fits its band whole (caption_layout): never a
+		# clipped glyph.
+		var cl := caption_layout()
+		var f := Palette.marker()
+		var fs: int = cl["px"]
+		var k: Vector2 = cl["scale"]
+		var band := Rect2(BORDER, image.end.y, size.x - BORDER * 2.0, size.y - image.end.y)
+		var h := (f.get_ascent(fs) + f.get_descent(fs)) * k.y
+		var base := Vector2(band.position.x, band.position.y + (band.size.y - h) * 0.5 + f.get_ascent(fs) * k.y)
+		draw_set_transform(base, 0.0, k)
+		draw_string(f, Vector2.ZERO, String(cl["text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, caption_ink())
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## The caption's handwriting size: `label` at the text scale (ART_BIBLE 4.1: handwriting
 ## is never under 16 px), a step smaller while it doesn't fit the frame, never under
 ## `caption`.
 func caption_font_size() -> int:
-	var f := Palette.marker()
-	var room := Vector2(size.x - BORDER * 2.0, size.y - image_rect().end.y)
+	return int(caption_layout()["px"])
+
+
+## The caption band's room (px): the frame under the photo, inside the border.
+func caption_room() -> Vector2:
+	return Vector2(size.x - BORDER * 2.0, size.y - image_rect().end.y)
+
+
+## Art pass WF (ART_BIBLE 4.3, §7 W5's rank rule): how the caption is drawn so it always
+## fits its band whole: {text, px, scale (x, y draw scale), size (drawn px)}.
+## 1. `label`, then `body`, then `caption` at the text scale while it doesn't fit.
+## 2. At caption: abbreviated (short_caption: "RANK n" to "R n", a name to its first word and
+##    initials).
+## 3. Still too wide: condensed sideways down to CONDENSE_MIN, then shrunk as a whole to the
+##    band (never under `caption` at 1.0); too tall: shrunk to the band's height.
+func caption_layout() -> Dictionary:
+	var room := caption_room()
 	for step in [UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]:
 		var fs := UiTheme.font_px(step)
-		if f.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= room.x and f.get_height(fs) <= room.y:
-			return fs
-	return UiTheme.font_px(UiTheme.CAPTION)
+		var sz := _ink_size(caption, fs)
+		if sz.x <= room.x and sz.y <= room.y:
+			return {"text": caption, "px": fs, "scale": Vector2.ONE, "size": sz}
+	var px := UiTheme.font_px(UiTheme.CAPTION)
+	var text := short_caption(caption)
+	var sz := _ink_size(text, px)
+	var k := Vector2.ONE
+	if sz.x > room.x:
+		k.x = maxf(CONDENSE_MIN, room.x / sz.x)
+	if sz.x * k.x > room.x:
+		var u := room.x / (sz.x * k.x)
+		k *= u
+	if sz.y * k.y > room.y:
+		var v := room.y / (sz.y * k.y)
+		k *= v
+	# The floor: never smaller than `caption` at text scale 1.0 (§4.3 rule 2).
+	var floor_k := float(UiTheme.CAPTION) / px
+	if k.y < floor_k:
+		k *= floor_k / k.y
+	return {"text": text, "px": px, "scale": k, "size": Vector2(sz.x * k.x, sz.y * k.y)}
+
+
+## The drawn size of `text` at `px` in the handwriting (its advance and ascent + descent).
+func _ink_size(text: String, px: int) -> Vector2:
+	var f := Palette.marker()
+	return Vector2(f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x, f.get_ascent(px) + f.get_descent(px))
+
+
+## Art pass WF: the caption shortened for a small frame: the rank "RANK n" as W5's compact "R n"
+## (the translated forms), a name of several words as its first word and the initials of
+## the rest ("Mara Voss-Okonkwo" -> "Mara V."); one word stays whole.
+static func short_caption(text: String) -> String:
+	var rank_word := String(TranslationServer.translate("RANK %d")).split("%d")[0].strip_edges()
+	var t := text.strip_edges()
+	if rank_word != "" and t.to_upper().begins_with(rank_word.to_upper() + " "):
+		var n := t.substr(rank_word.length()).strip_edges()
+		if n.is_valid_int():
+			return String(TranslationServer.translate("R%d")) % int(n)
+	var words := t.split(" ", false)
+	if words.size() > 1:
+		var out := words[0]
+		for i in range(1, words.size()):
+			out += " " + words[i].left(1) + "."
+		return out
+	return t
+
+
+## The caption's ink: INK on the paper frame (high contrast too: PAPER keeps its stock, its
+## ink is INK at well over 7:1, §12).
+func caption_ink() -> Color:
+	return Palette.INK
 
 
 ## The drawn portrait's subject: `subject` if set, else an operative whose class is read

@@ -204,3 +204,54 @@ func test_respin_at_2_is_capped_and_1_0_is_unchanged() -> void:
 	assert_lt(b.size.x, grown, "at 2.0 it no longer grows to %s px" % grown)
 	assert_lt(b.lettering_px(), StickerButton.font_px(), "the lettering yielded")
 	Settings.set_text_scale(1.0)
+
+
+# --- 4. Polaroid caption fits at every scale ------------------------------------------------
+
+func test_the_polaroid_caption_always_fits_whole() -> void:
+	var captions: Array[String] = ["RANK 3", "RANK 12", "Mara Voss-Okonkwo", "Jin"]
+	for c in DirAccess.get_files_at("res://content/classes"):
+		if c.ends_with(".tres"):
+			var cls := load("res://content/classes/" + c) as ClassData
+			captions.append(String(cls.display_name))
+			captions.append(String(cls.display_name).to_upper())
+	# Combat's Polaroid, the crew card's (full and compact) and the case file's mini one.
+	var frames: Array[Vector2] = [Vector2(110, 134), CrewCard.POLAROID_SIZE, CrewCard.POLAROID_SIZE * CrewCard.COMPACT_POLAROID]
+	for scale: float in [1.0, 1.6, 2.0]:
+		Settings.set_text_scale(scale)
+		var sizes := frames.duplicate()
+		sizes.append(CaseFileCard.POLAROID * scale)
+		for sz: Vector2 in sizes:
+			for cap in captions:
+				var p := Polaroid.new(cap)
+				p.size = sz
+				var cl := p.caption_layout()
+				var room := p.caption_room()
+				var drawn: Vector2 = cl["size"]
+				var k: Vector2 = cl["scale"]
+				var what := "'%s' in %s at %s" % [cap, sz, scale]
+				assert_true(drawn.x <= room.x + 0.5, "%s: the whole caption across (%s of %s)" % [what, drawn.x, room.x])
+				assert_true(drawn.y <= room.y + 0.5, "%s: the whole caption in the band (%s of %s)" % [what, drawn.y, room.y])
+				assert_true(int(cl["px"]) * k.y >= UiTheme.CAPTION - 0.01, "%s: never under caption at 1.0" % what)
+				assert_true(k.x >= k.y * Polaroid.CONDENSE_MIN - 0.001, "%s: condensed no further than %s" % [what, Polaroid.CONDENSE_MIN])
+				var words := String(cl["text"])
+				assert_true(words.length() >= 1, "%s: never empty" % what)
+				p.free()
+	Settings.set_text_scale(1.0)
+
+
+func test_a_polaroid_caption_abbreviates_by_w5s_rule() -> void:
+	assert_eq(Polaroid.short_caption("RANK 12"), tr("R%d") % 12, "the rank as W5's compact R n")
+	assert_eq(Polaroid.short_caption("Mara Voss-Okonkwo"), "Mara V.")
+	assert_eq(Polaroid.short_caption("BREAKER"), "BREAKER", "one word stays whole (condensed, never clipped)")
+	Settings.set_text_scale(2.0)
+	var p := Polaroid.new("BREAKER")
+	p.size = Vector2(110, 134)
+	var cl := p.caption_layout()
+	assert_eq(String(cl["text"]), "BREAKER", "combat's 2.0 caption keeps every letter (was BREAKE)")
+	p.free()
+	p = Polaroid.new("RANK 12")
+	p.size = CrewCard.POLAROID_SIZE * CrewCard.COMPACT_POLAROID
+	assert_eq(String(p.caption_layout()["text"]), tr("R%d") % 12)
+	p.free()
+	Settings.set_text_scale(1.0)
