@@ -13,7 +13,7 @@ It is presentation only: no rule, content value or save format changed.
 | `lint_report_after.md` | The W10 runtime lint over the after pack (all 6 combos, grey included). The only W8d findings are story lines scrolled out of the paper's view. The lint doesn't clip by scroll view, so they are false positives. The rest belong to `fx.gd` ("SAVED") and `dialogue.gd` (the band's "…"). |
 | `campaign_end_art.jpg` | The baked art. The five landmark silhouettes in their corp hues, then in greyscale (the shape names the corp), then the Cell hexagon whole, cracked and cracked in grey, then the spray overspray. |
 
-At 1.6 and 2.0 the page stacks and scrolls, and the actions sit right under the hero, so pad focus lands beside the verdict. The top bar takes about 200 px at 2.0, which is W8b's to fix.
+At 1.6 and 2.0 the page stacks and scrolls, and the actions sit right under the hero, so pad focus lands beside the verdict. The sheets are captured after merging W8b, with its one-row top bar.
 
 ## What changed (files)
 
