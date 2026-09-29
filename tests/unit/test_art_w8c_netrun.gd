@@ -159,3 +159,54 @@ func test_route_cuts_to_its_framing_under_reduce_motion() -> void:
 	await _frames(6)
 	assert_false(scene.background.camera_easing(), "no held frame or camera ease under reduce motion")
 	await _close(scene)
+
+
+# --- 2. Loot --------------------------------------------------------------------------------------
+
+func test_loot_modal_is_seventy_percent_wide_with_cards_at_hover_size() -> void:
+	for scale in [1.0, 1.6, Settings.TEXT_SCALE_MAX]:
+		Settings.set_text_scale(scale)
+		RunManager.reset()
+		RunManager.new_campaign(1)
+		var scene := _netrun()
+		_loot(scene)
+		await _frames(4)
+		var win := scene._panel.find_child("LootWindow", true, false) as Control
+		assert_almost_eq(win.size.x, CANVAS.x * scene.LOOT_MODAL_SHARE, 2.0, "the loot modal is 70%% of the screen at %.1f" % scale)
+		var tag := scene._panel.find_child("LootTag", true, false) as GraffitiTag
+		assert_true(win.get_global_rect().encloses(tag.get_global_rect()), "the LOOT graffiti fits inside the modal at %.1f" % scale)
+		var slack: float = tag.words_width() * scene.LOOT_TAG_SLACK + GraffitiTag.LEFT + GraffitiTag.MASCOT_ROOM
+		assert_true(slack <= win.size.x, "the graffiti keeps 140%% width slack at %.1f (%.0f > %.0f)" % [scale, slack, win.size.x])
+		var stickers: Node = scene._panel.find_child("Stickers", true, false)
+		for c in stickers.get_children():
+			var card := c as ZineCard
+			assert_true(card.size.x >= scene.LOOT_CARD.x * ZineCard.HOVER_SCALE - 0.5, "offers at hover size or more (%.0f)" % card.size.x)
+			assert_true(win.get_global_rect().grow(1.0).encloses(card.get_global_rect()), "an offer inside the modal at %.1f" % scale)
+			assert_false(card.get_global_rect().intersects(tag.get_global_rect()), "the LOOT drips keep off the cards at %.1f" % scale)
+			# Tooltips never fold one word per line (§6.8: 26-36 columns).
+			var lines := card.tooltip_text.split("\n")
+			var widest := 0
+			for l in lines:
+				widest = maxi(widest, l.length())
+			assert_true(widest <= UiTip.COLUMNS, "the tip keeps within 36 columns")
+			assert_true(lines.size() <= 2 or widest >= UiTip.MIN_COLUMNS - 10, "the tip is not a one-word column")
+		await _close(scene)
+
+
+func test_firmware_loot_picks_its_slot_on_tiles_not_a_dropdown() -> void:
+	var scene := _netrun()
+	_loot(scene, "firmware", [String(RunManager.lookup().ids_of_class(&"FirmwareData")[0])])
+	await _frames(3)
+	var pick: Node = scene._panel.find_child("SlotPick", true, false)
+	assert_true(pick is SlotPicker, "the slot is picked on tiles")
+	assert_eq((pick as SlotPicker).tiles.size(), RunManager.netrun.run.operative.slot_slice_ids.size(), "one tile per slot")
+	for n in _all(scene._panel):
+		assert_false(n is OptionButton, "no native dropdown on the loot page")
+	await _close(scene)
+
+
+func test_the_picked_loot_is_stamped_before_it_flies() -> void:
+	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
+	assert_true(src.contains("&\"loot_pick\", tr(LOOT_PICK_STAMP)"), "the pick flies with its TAKEN stamp (T2)")
+	assert_true(ZineStamp.word_count(tr("TAKEN")) <= ZineStamp.MAX_WORDS)
+

@@ -368,11 +368,12 @@ func test_socket_lists_name_slots_not_ids() -> void:
 			assert_false(t.contains(id), "slot name without '%s': %s" % [id, t])
 	_loot(scene, "firmware", [String(RunManager.lookup().ids_of_class(&"FirmwareData")[0])])
 	await _frames()
-	var slot_pick := scene._panel.find_child("SlotPick", true, false) as OptionButton
-	assert_not_null(slot_pick, "the loot's socket list")
-	for i in slot_pick.item_count:
+	# Art pass W8c: the loot's slots are tiles (SlotPicker); each tile's words and tip.
+	var slot_pick := scene._panel.find_child("SlotPick", true, false) as SlotPicker
+	assert_not_null(slot_pick, "the loot's socket tiles")
+	for t in slot_pick.tiles:
 		for id in raw:
-			assert_false(slot_pick.get_item_text(i).contains(id), "loot socket list without '%s'" % id)
+			assert_false(String(t["meta"]).contains(id) or String(t["tip"]).contains(id), "loot socket tile without '%s'" % id)
 
 
 # --- #13 event outcomes as icons; icons on menus ---------------------------------------------

@@ -463,7 +463,9 @@ func _choose_reward(index: int, slot: int, fly: bool) -> void:
 	# The picked card lifts and flies to the deck (ANIM-6); the page is rebuilt under it.
 	if s.run.pending_rewards.size() < left and not offer.is_empty():
 		if fly:
-			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", "", Motion.amplitude(&"loot_pick"))
+			# Art pass W8c (§11 Loot, critique gifs/23: the pick wasn't celebrated): the picked
+			# offer is stamped TAKEN (T2) as it lifts, then flies to CARDS.
+			_fly_item(_page_item("Stickers", index), String(offer["kind"]), &"loot_pick", tr(LOOT_PICK_STAMP), Motion.amplitude(&"loot_pick"))
 		# ANIM-R1 M11: the offers not taken fall away (`loot_reject`), picked by click or drag.
 		# ANIM-R3 A7: within the loot's window (they fell across the route coming in under it).
 		var fell := false
@@ -505,7 +507,12 @@ func _hold_loot_page() -> void:
 	if _loot_hold != null and _loot_hold.is_valid():
 		_loot_hold.kill()
 	_loot_hold = create_tween()
-	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"))
+	# Art pass W8c (overlaps ANIM-R5 B5, which bounds the hold by the picked card's flight
+	# too): the pick's TAKEN stamp and its flight to CARDS land before the page goes; the
+	# page still leaves as soon as nothing flies (`_loot_hold_step`).
+	var hold := maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"),
+		Motion.delay_of(&"loot_pick") + Motion.seconds(&"sold_stamp") + Motion.seconds(&"loot_pick") * (1.0 + FlightFx.LIFT_SHARE))
+	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, hold + Motion.seconds(&"loot_reject"))
 	_loot_hold.tween_callback(_end_loot_hold)
 
 
@@ -1869,22 +1876,28 @@ func _show_reward() -> void:
 	var offer := s.current_reward()
 	var kind_word := tr(String(LOOT_WORDS.get(String(offer["kind"]), String(offer["kind"]))))
 	var win := TerminalWindow.new(tr("RACK BREACHED // LOOT: pick a %s") % kind_word, Palette.CELL_ACID)
+	win.name = "LootWindow"
 	win.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# Art pass W8c (ART_BIBLE §11 Loot, critique 48/61): the modal is 70% of the screen's
+	# width; the offers fill its row at hover size or more.
+	var modal_w := loot_modal_width()
+	win.custom_minimum_size.x = modal_w
+	var inner := modal_w - _window_frame_x(win)
 	var box := win.body
 	# ANIM-R4 C7: the tag fits the loot's row (its words shrink rather than run out of the
-	# window under a long translation).
-	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(LOOT_ROW_MAX))
-	var slot_option: OptionButton = null
-	if offer["kind"] == "firmware":
-		var row := HBoxContainer.new()
-		row.add_child(_label(tr("Socket into slot:")))
-		slot_option = OptionButton.new()
-		slot_option.name = "SlotPick"
-		for i in s.run.operative.slot_slice_ids.size():
-			slot_option.add_item(slot_name(s.run.operative, i))
-		slot_option.tooltip_text = tr("The spinner slot the Firmware chip goes into.")
-		row.add_child(slot_option)
-		box.add_child(row)
+	# window under a long translation). Art pass W8c (§4.3 rule 5): with 140% of its width
+	# to spare, so a longer translation still fits inside the modal.
+	var tag := GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(inner / LOOT_TAG_SLACK)
+	tag.name = "LootTag"
+	box.add_child(tag)
+	# Art pass W8c (critique 48/61: the LOOT drips lay on card 1's top edge): room for the
+	# drips under the tag's words before the offers.
+	var drip_gap := Control.new()
+	drip_gap.name = "LootTagGap"
+	drip_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	drip_gap.custom_minimum_size.y = LOOT_TAG_GAP  # a card's hover lift (W4: 12 px, unscaled)
+	box.add_child(drip_gap)
+	var slot_option: SlotPicker = null
 	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost and what they do as
 	# pictograms, others none. They grow with the text size as far as the row allows (H21).
 	var stickers := HBoxContainer.new()
@@ -1892,30 +1905,52 @@ func _show_reward() -> void:
 	stickers.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	# ANIM-4b: a Firmware chip drags onto a slot of the spinner shown beside the offer.
 	var mini: SpinnerMini = null
-	var room := LOOT_ROW_MAX
+	var room := inner  # art pass W8c: the modal's own width (was LOOT_ROW_MAX)
+	# Art pass W8c (§6.4: a standalone action is sized to its label): Skip is a secondary
+	# button at the foot's right, or, beside a Firmware offer, under the small spinner (the
+	# slot tiles take the foot; the page keeps on screen at 1.6).
+	var skip_home: BoxContainer = null
 	if offer["kind"] == "firmware":
 		var loot_row := HBoxContainer.new()
 		loot_row.name = "LootRow"
 		loot_row.add_theme_constant_override("separation", 14)
 		box.add_child(loot_row)
 		loot_row.add_child(stickers)
+		var side := VBoxContainer.new()
+		side.name = "LootSide"
+		side.alignment = BoxContainer.ALIGNMENT_END
+		side.add_theme_constant_override("separation", UiTheme.SP_S)
+		loot_row.add_child(side)
 		mini = _spinner_mini()
-		mini.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		loot_row.add_child(mini)
+		mini.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		side.add_child(mini)
+		skip_home = side
 		room -= mini.custom_minimum_size.x + 14.0
+		# Art pass W8c (§2, §6.5): the slot is picked on a row of slot tiles under the offers
+		# (never a native dropdown); the small spinner beside them is where they drag.
+		var slot_row := VBoxContainer.new()
+		slot_row.name = "SlotRow"
+		box.add_child(slot_row)
+		slot_row.add_child(_label(tr("Socket into slot:")))
+		slot_option = _slot_picker(s.run.operative, inner)
+		slot_option.name = "SlotPick"
+		slot_row.add_child(slot_option)
 	else:
 		box.add_child(stickers)
 	var n: int = offer["options"].size()
 	# ANIM-R2 E8: the gap between stickers keeps room for their rest tilt (a tilted CACHE lay
 	# on JAM's cost badge at 1.0 and 1.6): the tilt's reach grows with the card.
 	var tilt := sin(deg_to_rad(ZineCard.REST_TILT_MAX))
-	var ls := clampf(minf(Settings.text_scale, (room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt))), 1.0, Settings.TEXT_SCALE_MAX)
+	# Art pass W8c (§11 Loot: cards at hover size): the offers fill the modal's row, never
+	# smaller than a hovered card (HOVER_SCALE) nor larger than LOOT_FILL_MAX; their lettering
+	# is the text size (the card grows taller for its words, W4).
+	var ls := clampf((room - LOOT_GAP * (n - 1)) / maxf(1.0, n * (LOOT_CARD.x + LOOT_CARD.y * tilt)), ZineCard.HOVER_SCALE, LOOT_FILL_MAX)
 	stickers.add_theme_constant_override("separation", roundi(LOOT_GAP + LOOT_CARD.y * ls * tilt))
 	for i in n:
 		var id := StringName(String(offer["options"][i]))
 		var res := s.lookup.get_content(id)
 		var cost := int(res.get("ram_cost")) if res is CardData else -1
-		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(ls)
+		var sticker := ZineCard.new(TextDb.t(res, "display_name"), cost, TextDb.t(res, "description"), i).scaled(maxf(ls, Settings.text_scale))
 		if res is CardData:
 			sticker.with_card(res as CardData)
 		sticker.fit_whole = true  # ANIM-R1 M10: the whole text on the card
@@ -1926,7 +1961,7 @@ func _show_reward() -> void:
 		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + tr(String(DRAG_TIPS[drag_kind])) if drag_kind != "" else ""))
 		FocusTip.attach(sticker)
 		var index: int = i
-		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
+		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected() if slot_option != null else -1))
 		stickers.add_child(sticker)
 	# ANIM-R1 M11: room under the stickers for their tilt and lift (at 1.6 the CACHE card's
 	# corner lay on the Skip bar).
@@ -1934,18 +1969,60 @@ func _show_reward() -> void:
 	gap.name = "SkipGap"
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	gap.custom_minimum_size.y = LOOT_SKIP_GAP * ls
-	box.add_child(gap)
 	var skip := _button(tr("Skip"), skip_reward)
 	skip.name = "Skip"
+	skip.theme_type_variation = UiTheme.SECONDARY
 	skip.tooltip_text = tr("Take nothing from this payout.")
 	IconMark.attach(skip, StatIcon.SKIP)
-	box.add_child(skip)
+	if skip_home != null:
+		skip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		skip_home.add_child(skip)
+		box.move_child(box.get_node(^"SlotRow"), box.get_child_count() - 1)
+	else:
+		box.add_child(gap)
+		skip.size_flags_horizontal = Control.SIZE_SHRINK_END
+		box.add_child(skip)
 	var wrap := CenterContainer.new()
 	wrap.add_child(win)
 	_set_panel(wrap, false)
 	_register_loot_drops(stickers, mini, slot_option)
 	if entering:
 		_fan_loot.call_deferred(stickers)
+
+
+## Art pass W8c (ART_BIBLE §11 Loot): the modal's share of the screen's width, the room the
+## graffiti title keeps for a longer translation (§4.3 rule 5: 140%), the gap under its
+## drips (px at 1.0) and the most the offers grow by (their row filled).
+const LOOT_MODAL_SHARE := 0.7
+const LOOT_TAG_SLACK := 1.4
+const LOOT_TAG_GAP := 12.0
+const LOOT_FILL_MAX := 1.4
+## The stamp word the picked offer takes before it flies to the deck (§6.6: ≤ 3 words; T2).
+const LOOT_PICK_STAMP := "TAKEN" # TR
+
+
+## Art pass W8c: the loot modal's width (px): LOOT_MODAL_SHARE of the page.
+func loot_modal_width() -> float:
+	var w := size.x if size.x > 0.0 else get_viewport_rect().size.x
+	return roundf(w * LOOT_MODAL_SHARE)
+
+
+## The horizontal room a terminal window's frame takes round its body (px; read from the
+## screen's theme: the window is not in the tree yet).
+func _window_frame_x(_win: TerminalWindow) -> float:
+	var box := get_theme_stylebox(&"panel", &"TerminalPanel")
+	return box.get_minimum_size().x if box != null else float(UiTheme.PANEL_PAD_H * 2)
+
+
+## Art pass W8c (§6.5): a slot picker for operative `op`'s spinner, as many columns as
+## `width` px holds; each tile tells the slot's whole name (slot_name) as its tip.
+func _slot_picker(op: OperativeState, width: float) -> SlotPicker:
+	var tiles := SlotPicker.tiles_for(op)
+	for k in tiles.size():
+		tiles[k]["tip"] = slot_name(op, k)
+	var pick := SlotPicker.new(tiles)
+	pick.fit_columns(width)
+	return pick
 
 
 ## The loot fans in from the foot of its row, one after another (ANIM-6, `loot_fan`).
@@ -2995,7 +3072,7 @@ func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 
 ## Loot: the offer drags onto where it goes (a card to the deck, a Firmware chip onto a slot,
 ## a Daemon onto the DAEMONS icon).
-func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionButton) -> void:
+func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: SlotPicker) -> void:
 	var offer := RunManager.netrun.current_reward()
 	var kind := {"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer.get("kind", "")), "") as String
 	if kind == "" or row == null:
@@ -3004,7 +3081,7 @@ func _register_loot_drops(row: Control, mini: SpinnerMini, slot_option: OptionBu
 	for i in mini(row.get_child_count(), options.size()):
 		var p := _item_payload(kind, "loot", i, StringName(String(options[i])))
 		if slot_option != null:
-			p["prefer"] = slot_option.selected
+			p["prefer"] = slot_option.selected()
 		drops.add_source(row.get_child(i) as Control, p)
 	_add_bar_targets(["card"], ["daemon"])
 	if mini != null:

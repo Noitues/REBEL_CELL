@@ -253,7 +253,7 @@ func test_loot_dropped_where_it_goes_matches_taking_it() -> void:
 				assert_eq(_drag(scene.drops, sticker, target), "dropped", "%s onto %s" % [case[0], target])
 			else:
 				if slot >= 0:
-					(scene._panel.find_child("SlotPick", true, false) as OptionButton).select(slot)
+					(scene._panel.find_child("SlotPick", true, false) as SlotPicker).choose(slot)  # art pass W8c: slot tiles
 				sticker.pressed.emit()
 			hashes.append(_hash())
 			await _close(scene)
