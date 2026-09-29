@@ -1144,7 +1144,7 @@ func _show_aim_hint() -> void:
 	var room := get_global_rect().end.x - x - AIM_HINT_MARGIN
 	var fs := roundi(AIM_HINT_FONT * Settings.text_scale)
 	var font := _aim_hint.get_theme_font("font")
-	while fs > STATUS_MIN_FONT and font.get_string_size(_aim_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
+	while fs > UiTheme.font_px(STATUS_MIN_FONT) and font.get_string_size(_aim_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > room:
 		fs -= 1
 	_aim_hint.add_theme_font_size_override("font_size", fs)
 	# Sized from the font itself: the label's minimum lags a font change by a frame.
@@ -1822,7 +1822,9 @@ func _refresh_key_hints() -> void:
 	var pad := Settings.pad_active
 	_nudge_minus_button.text = "-1" if pad else "-1 %s" % Settings.hint(&"nudge_left")
 	_nudge_plus_button.text = "+1" if pad else "+1 %s" % Settings.hint(&"nudge_right")
-	_settings_button.text = tr("Settings") if pad else "Settings %s" % Settings.hint(&"open_settings")
+	_settings_button.text = "Settings %s" % Settings.hint(&"open_settings")
+	# With a pad the prompt bar names Settings with its glyph (the button would say it twice).
+	_settings_button.visible = not pad
 	(_end_turn_button as DripButton).set_key_action(&"end_turn")
 	(_continue_button as DripButton).set_key_action(&"end_turn")
 	_sync_stickers()
@@ -2071,12 +2073,24 @@ func _refresh_status() -> void:
 		_status_parts = [text] + extra
 		_status.text = "".join(_status_parts)
 		_fit_status()
+		_hold_status_width(text)
 		_refresh_pad_prompts()
 		return
 	_status_parts = [text]
 	_status.text = text
 	_fit_status()
+	_hold_status_width(text)
 	_refresh_pad_prompts()
+
+
+## Art pass W9F (§4.3 rule 4): the turn line keeps its own width in the wrapping top row, so
+## the prompt bar (or anything after it) wraps under it instead of squeezing it to "TURN".
+func _hold_status_width(turn_line: String) -> void:
+	var font := _status.get_theme_font("font")
+	var fs := UiTheme.font_px(STATUS_MIN_FONT)
+	var w := ceilf(font.get_string_size(turn_line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) if font != null else 0.0
+	if not is_equal_approx(_status.custom_minimum_size.x, w):
+		_status.custom_minimum_size.x = w
 
 
 ## Art pass W9F (ART_BIBLE §5.2.4, §12): the fight's prompt bar while a pad is in use, in

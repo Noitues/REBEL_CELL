@@ -568,6 +568,17 @@ func _fit_page(page: String) -> void:
 	text_label.scroll_active = true
 	text_label.scroll_following = true
 	text_label.custom_minimum_size.y = minf(h, room)
+	_refit_page.call_deferred(room)
+
+
+## Art pass W9F: once laid out, the label holds the lines it really wraps to (a narrow dock
+## wraps more than measured), up to the dock's room; past that it scrolls.
+func _refit_page(room: float) -> void:
+	if text_label == null or text_label.fit_content:
+		return
+	var h := float(text_label.get_content_height())
+	if h > text_label.custom_minimum_size.y + 0.5:
+		text_label.custom_minimum_size.y = minf(h, room)
 
 
 ## Art pass W9F (§4.2): the smallest subtitle size: `caption` x the text scale.
@@ -641,8 +652,10 @@ func _style(speaker: int, corporation_id: StringName = &"") -> void:
 		style.border_color = Palette.CELL_PINK
 		style.shadow_color = Color(0, 0, 0, 0.5)
 		style.shadow_size = 8
-		speaker_label.add_theme_color_override("font_color", Palette.CELL_PINK)
-		text_label.add_theme_color_override("default_color", Palette.INK)
+		# Art pass W9F (§3.7): the name on the paper is ink (pink read 2.3:1 there); the pink
+		# edge keeps the Cell's mark.
+		speaker_label.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
+		text_label.add_theme_color_override("default_color", PaperInk.text(Palette.INK))
 	bar.add_theme_stylebox_override("panel", style)
 
 
