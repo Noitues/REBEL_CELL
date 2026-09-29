@@ -2530,6 +2530,11 @@ func _show_shop() -> void:
 		# Art pass W8c: in one column (big text; the page scrolls) the cards may grow with the text.
 		(q_size.y * (ts if grid.columns == 1 else 1.0) - QUAD_FRAME.y) / ZineCard.STICKER_SIZE.y)
 	var cs := clampf(minf(ts, card_fit), 1.0, Settings.TEXT_SCALE_MAX)
+	if grid.columns == 1:
+		# Art pass W9F (§5.3: never more than 25% empty): in one column the CARDS window holds
+		# its cards, not the column's width (at 1.6 and 2.0 over a third of it was empty).
+		cards_win.custom_minimum_size = Vector2.ZERO
+		cards_win.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	# Art pass W8c: the lift room is a card's hover lift, the half of its hover growth and the
 	# focus brackets' offset.
 	lift_room.custom_minimum_size.y = roundf(Motion.amplitude(&"card_hover") + (ZineCard.HOVER_SCALE - 1.0) * 0.5 * ZineCard.STICKER_SIZE.y * cs
