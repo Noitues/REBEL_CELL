@@ -233,3 +233,22 @@ DECISIONS "Designer rulings on the open questions".
       the start screen, and a test that each modifier works.
 - [ ] **Skins** (M12's open box): a skin system with procedural palette skins now; art later.
 
+## M13 — Art pass (branch `art-pass`, added 2026-09-28)
+
+Presentation only, governed by `docs/ART_BIBLE.md`; plan and workstreams in
+`docs/ART_PLAN.md`. Lives on branch `art-pass`; merged into `main` when the designer
+chooses. Review output per workstream in `docs/art_review/W<n>/`.
+
+**Acceptance**
+- [ ] W1 Foundation tokens, type scale, spacing, MSDF, Plex body face.
+- [ ] W10 Visual QA harness (every screen x text scale x input x reduce effects x greyscale) and lint.
+- [ ] W2 Component library, all six states, one toast, focus brackets, pad glyphs.
+- [ ] W4 Cards: frame, rarity stock, foil, illustration stand-ins, briefs.
+- [ ] W6 VFX tiers and shader library; no full-screen flash below T4.
+- [ ] W9 Accessibility settings (text scale 2.0, colour-blind, high contrast, reduce motion, resolve speed, glyph sets).
+- [ ] W3 Wheels and combat presentation.
+- [ ] W5 Characters: class silhouettes, expressions, enemy and boss holograms, briefs.
+- [ ] W7 City lighting, life, state reactivity, no placeholders.
+- [ ] W8 Screens per the §11 blueprints (8a-8d).
+- [ ] W9 final accessibility sweep; W10 full-matrix run clean.
+- [ ] Tests, schema smoke test and content validation green.

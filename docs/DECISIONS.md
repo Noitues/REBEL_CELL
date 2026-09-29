@@ -30,6 +30,30 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-09-28 — Art pass (branch `art-pass`): designer rulings and orchestration
+Governed by `docs/ART_BIBLE.md` v1.0; plan in `docs/ART_PLAN.md`. Presentation only.
+1. **Branch:** the whole art effort lives on `art-pass` (from `8ddfa86`), merged into `main`
+   at a date the designer picks. Workstreams branch from it as `art/w<n>-<slug>`; only the
+   orchestrator merges them back. Commit and push `art-pass` regularly.
+2. **Q1 card art (§16.1):** about 30 base illustrations tinted per type, plus unique art for
+   rares and class cards. Briefs are written per effect family first.
+3. **Q2 class accents (§16.2):** the §7.1 proposals are accepted as the token values.
+4. **Q3 body face (§16.3):** IBM Plex Sans Condensed (OFL) is added for text blocks over 3 lines.
+5. **Q4 HQ (§16.4):** the full DECK frame (monitor bezel, keyboard edge, cables).
+6. **Q5 text scale:** the `Settings.text_scale` range goes up to 2.0 (an additive settings
+   change; old settings files load unchanged).
+7. **Q6 vector and concept art:** agents author SVG for baked art (logo, signs, badges,
+   landmark glyphs). Concept images for painted-art briefs are made as **pixel art and vector
+   concepts drawn by script** (Pillow/SVG, deterministic). They live under
+   `docs/art_review/<W>/concepts/` and are never shipped as game assets without the
+   designer's approval.
+8. **Autonomy:** the designer reviews in parallel and asked not to be asked. The
+   orchestrator answers open questions itself, logs each here citing the bible section, and
+   keeps the bible's §16 list current.
+9. **Review output:** every workstream writes its before/after stills, strips, contact sheets
+   and a `README.md` (what changed, the §14 checklist, decisions, known gaps) to
+   `docs/art_review/W<n>/`.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few

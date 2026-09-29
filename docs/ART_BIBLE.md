@@ -537,6 +537,8 @@ These rulings override the STYLE_GUIDE. Update it to point here.
 
 ## 16. Open questions (owner to decide; do not implement until resolved)
 
+**Resolved 2026-09-28** (DECISIONS "Art pass (branch `art-pass`)"): 1 = ~30 tinted bases + unique rares and class cards; 2 = §7.1 accents accepted; 3 = IBM Plex Sans Condensed; 4 = full DECK frame. Items below stay for the record.
+
 1. Final card illustration budget: unique per card or the ~30-base tinted set (§7.3)?
 2. Class accents in §7.1 are proposals; confirm them against the portrait painter's concepts.
 3. Body face: IBM Plex Sans Condensed vs keeping Share Tech Mono with better line length. Plex is the recommendation.

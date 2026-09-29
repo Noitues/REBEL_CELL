@@ -87,6 +87,7 @@ Every brief uses the template in `docs/ART_ORCHESTRATOR_PROMPT.md`, plus these s
      - contrast < 4.5:1 against the panel token.
      - Also a static grep lint for literal `Color(`/hex and literal font sizes in `scripts/ui/**`, with a shrinking allowlist (a baseline count that may only go down).
 - **Runs:** first against the art baseline (P0.4), which gives the "before" stills. After that, on every workstream branch before review.
+- **Review folders:** each workstream writes its before/after stills, strips, contact sheets and a `README.md` (changes, the §14 checklist, decisions, gaps) to `docs/art_review/W<n>/` (designer ruling 2026-09-28).
 - **Closes:** the §13 harness and the lint (VISUAL_IMPROVEMENT §11 capture and lint).
 
 ### W2 — Component library
@@ -242,18 +243,18 @@ Every brief uses the template in `docs/ART_ORCHESTRATOR_PROMPT.md`, plus these s
 
 ---
 
-## 5. Open questions (need your answer; the bible §16 items are not implemented until answered)
+## 5. Questions and rulings (all answered 2026-09-28; see DECISIONS "Art pass (branch `art-pass`)")
 
 | Id | Question | Blocks | Proposal |
 |---|---|---|---|
 | **Q-A** | When `art-pass` merges into `main`, where does it sit relative to the MILESTONES "Queued passes"? (Decided at merge time.) | Merge only | Log it as "M13 Art pass" at merge. It also covers M12's open Skins box ("deferred to art integration (M13)"). |
 | **Q-B** | ~~Who resolves the in-progress `main` merge?~~ **Answered 2026-09-28:** the art pass works on its own `art-pass` branch and leaves `main` alone (§0). | — | — |
-| **Q1** (§16.1) | Card illustration budget: unique per card, or ~30 tinted bases? | W4 brief scale | Start on the ~30 bases plus unique rares and class cards (briefs per effect family); upgrade later. |
-| **Q2** (§16.2) | Confirm the class accents in §7.1. | W5 final values, W3 bezels | Accept the §7.1 proposals for the procedural stand-ins. The painter can revise them via tokens. |
-| **Q3** (§16.3) | Body face: IBM Plex Sans Condensed (OFL)? This is also a **licence decision**, so it needs your OK. | W1 item 6, W8 Codex/events | Yes, Plex (OFL, same licence family as the current fonts). |
-| **Q4** (§16.4) | HQ: full DECK frame, or keep the window-over-city composition? | W8b HQ | The full DECK frame, per §11 HQ's focal order. |
-| **Q5** (new) | Text scale ceiling is 1.6 in `Settings`, but the bible says 2.0. OK to raise the setting's range (an additive settings change)? | W9 | Yes. |
-| **Q6** (new) | May agents author SVG vector art (logo, signs, badges) themselves, and may I generate *concept* images for the painted-art briefs if an image tool is available? (Nothing generated ships without your approval.) | W8, W4/W5 briefs | SVG yes. No image tool is connected in this session, so the briefs are text only. |
+| **Q1** (§16.1) | Card illustration budget: unique per card, or ~30 tinted bases? | W4 brief scale | Start on the ~30 bases plus unique rares and class cards (briefs per effect family); upgrade later. **Ruled: agreed.** |
+| **Q2** (§16.2) | Confirm the class accents in §7.1. | W5 final values, W3 bezels | Accept the §7.1 proposals for the procedural stand-ins. The painter can revise them via tokens. **Ruled: agreed.** |
+| **Q3** (§16.3) | Body face: IBM Plex Sans Condensed (OFL)? This is also a **licence decision**, so it needs your OK. | W1 item 6, W8 Codex/events | Yes, Plex (OFL, same licence family as the current fonts). **Ruled: agreed.** |
+| **Q4** (§16.4) | HQ: full DECK frame, or keep the window-over-city composition? | W8b HQ | The full DECK frame, per §11 HQ's focal order. **Ruled: agreed.** |
+| **Q5** (new) | Text scale ceiling is 1.6 in `Settings`, but the bible says 2.0. OK to raise the setting's range (an additive settings change)? | W9 | Yes. **Ruled: agreed.** |
+| **Q6** (new) | May agents author SVG vector art (logo, signs, badges) themselves, and may I generate *concept* images for the painted-art briefs if an image tool is available? (Nothing generated ships without your approval.) | W8, W4/W5 briefs | SVG yes. No image tool is connected in this session, so the briefs are text only. **Ruled:** SVG yes; concept images as script-drawn pixel art/vector under `docs/art_review/<W>/concepts/`, never shipped without approval. |
 
 ---
 
