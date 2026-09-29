@@ -861,9 +861,10 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 		for i in s.available_nodes().size():
 			var b := scene._panel.find_child("Node%d" % (i + 1), true, false) as Button
 			var node := s.run.map.get_node(s.available_nodes()[i])
-			var ahead: String = scene.ahead_words(s.run.map, node)
-			if ahead != "":
-				assert_string_contains(b.text, ahead, "choice %d says where it leads" % (i + 1))
+			# Art pass W8c: where it leads is the compact row under the button (icon + word).
+			for k in scene.next_kinds(s.run.map, node):
+				var pair: Node = scene._panel.find_child("Ahead%d" % (i + 1), true, false).find_child("Next_%s" % k, true, false)
+				assert_not_null(pair, "choice %d says where it leads (%s)" % [i + 1, k])
 			assert_string_contains(b.tooltip_text, "Cycles" if int(node["type"]) == RC.InfilNodeType.ROUTER else "", "what it pays")
 			tips[b.tooltip_text] = true
 		await _close(scene)

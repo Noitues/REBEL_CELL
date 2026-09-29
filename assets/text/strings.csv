@@ -2849,3 +2849,4 @@ NEXT TURN %d,NEXT TURN %d
 "NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why)."
 "NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why)."
 Inner ring: %s,Inner ring: %s
+The same road as choice %d: the same kinds of node and Heat all the way on.,The same road as choice %d: the same kinds of node and Heat all the way on.

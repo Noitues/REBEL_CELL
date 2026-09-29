@@ -743,6 +743,11 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 	hud.stats.max_height = HudBar.BAND_HEIGHT if p.has_method("attach_netrun") else 0.0
 	_panel_host.theme_type_variation = &"GlassPanel" if glass else &""
 	_clear_route()
+	# Art pass W8c (W7 hookup, ART_BIBLE §9.5, §2 CITY): a page starts with the city as a
+	# backdrop (no map dim, no calm zones); the map pages (route, raid) and the paper pages
+	# (event) set theirs after this.
+	var no_calm: Array[Control] = []
+	_city_page(false, no_calm)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_STOP
 	_panel_host.add_child(p)
 	var s := RunManager.netrun
@@ -779,6 +784,15 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
 	_log.custom_minimum_size = Vector2(0, 50 if p.get_script() == COMBAT_SCENE.get_script() or p.has_method("attach_netrun") else 110)
+
+
+## Art pass W8c (W7 hookup): the city behind the page: map mode (§9.5: dimmed 40% and
+## blurred under the Route and Raid maps) and the calm zones (§2 CITY: text panels over it).
+func _city_page(map_mode: bool, calm: Array[Control]) -> void:
+	if background == null or background.city == null:
+		return
+	background.set_map_mode(map_mode)
+	background.set_calm_controls(calm)
 
 
 ## A page's first focus: the control it names (FIRST_FOCUS_META: the Modem's first item,
@@ -962,11 +976,15 @@ func _show_map() -> void:
 		_grid_zoomed = not _grid_zoomed
 		_show_map())
 	zoom_btn.name = "GridZoom"
+	# Art pass W8c (ART_BIBLE §11 Route, §6.4): the choices lead; the view switch and Save &
+	# quit are tertiary (words and icon, no box), so the compact list reads first.
+	zoom_btn.theme_type_variation = UiTheme.TERTIARY
 	zoom_btn.tooltip_text = UiTip.fold(tr("Zoom out to the whole City Grid.") if not _grid_zoomed else tr("Back to this run's route."))
 	IconMark.attach(zoom_btn, StatIcon.MAP)
 	win.body.add_child(zoom_btn)
 	var quit_btn := _button(tr("Save & quit to start screen"), save_and_quit)
 	quit_btn.name = "SaveQuit"
+	quit_btn.theme_type_variation = UiTheme.TERTIARY  # art pass W8c: see GridZoom
 	quit_btn.tooltip_text = UiTip.fold(tr("Save the run and leave it; Continue picks it up here."))
 	IconMark.attach(quit_btn, StatIcon.SAVE)
 	win.body.add_child(quit_btn)
@@ -988,6 +1006,9 @@ func _show_map() -> void:
 		spacer.name = "RouteMapArea"
 		_route_area = spacer
 	_set_panel(panel, false)
+	# Art pass W8c (W7 hookup, ART_BIBLE §9.5): the map leads; the city under it dims and blurs.
+	var calm: Array[Control] = [win]
+	_city_page(true, calm)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _grid_zoomed:
@@ -1036,27 +1057,21 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		var node := s.run.map.get_node(available[i])
 		# H21 #14: what the node is (word + icon), its index on every device (the map's
 		# label carries the same index), Heat when entering changes it.
+		# Art pass W8c (ART_BIBLE §11 Route, critique 27): the button says what the node is
+		# ("1 Fight"); its Heat, where it leads (H24 S12), whether it is the same as an earlier
+		# choice (ANIM-R2 R12) and what only it reaches (ANIM-R3 B3) sit in one compact row
+		# of icons and short words under it (the old "[2] Fight > Fight (same as 1)" / "then:"
+		# line read harder than the map). The map labels and tooltips keep their words.
 		var text := node_word(node)
 		var heat := s.node_heat(available[i])
-		if heat != 0:
-			text += tr(" %s Heat") % TextDb.signed(heat)
-		# H24 S12: what lies beyond each choice ("> Event · Shop"): two "Fight" buttons read
-		# the same; where they lead is what differs (the enemy is rolled on entry).
-		var ahead := ahead_words(s.run.map, node)
-		if ahead != "":
-			text += "  > %s" % ahead
 		var id: StringName = available[i]
-		# ANIM-R2 R12: a choice that is the same as an earlier one (kind, Heat and what lies
-		# beyond: the enemy is rolled on entry) says so, on the button and on the map.
-		if twins.has(id):
-			text += "  " + tr("(same as %d)") % (int(twins[id]) + 1)
 		var b := _button(text, func() -> void: enter_node(id))
 		b.name = "Node%d" % (i + 1)
-		# ANIM-R3 B3: what this choice leads to that the others do not (reward and risk
-		# icons: Elite, Shop, Event, Rack, Heat further on); twins lead to the same.
 		var marks := differs.get(id, []) as Array
-		if not twins.has(id) and (not marks.is_empty() or heat != 0):
-			ahead_rows[i] = _ahead_row(i, marks, heat)
+		var twin := int(twins.get(id, -1))
+		var next := next_kinds(s.run.map, node)
+		if twin >= 0 or not marks.is_empty() or heat != 0 or not next.is_empty():
+			ahead_rows[i] = _ahead_row(i, marks if twin < 0 else [], heat, next, twin)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.set_meta(&"route_base", text)
 		b.set_meta(&"route_index", i)
@@ -1145,6 +1160,7 @@ func fit_route_map() -> void:
 	city.offset_bottom = size.y / city.scale.y - size.y
 	city.focus_anchor = anchor
 	city.refresh()
+	_cut_camera_if_still()  # art pass W8c: reduce motion
 	_fit_route_after_redraw()
 
 
@@ -1367,36 +1383,101 @@ static func choice_differences(s: NetrunSession) -> Dictionary:
 ## ANIM-R3 B3: the row under choice `i`'s button: its own Heat on entering (a Heat icon and
 ## the number, it was in words only) and the icons of what lies further on that the other
 ## choices do not reach, each with its word as a tooltip.
-func _ahead_row(i: int, kinds: Array, heat: int) -> Control:
-	var row := HBoxContainer.new()
+##
+## Art pass W8c (ART_BIBLE §11 Route, critique 27): one compact row, icons with short words
+## and no emoji: the Heat on entering ([flame] +2), where the choice leads next ([>] [x]
+## Fight · [?] Event), then "(same as 1)" for a twin or, after a thin rule, what only this
+## way reaches further on ([crown] Elite). An icon and its word stay together (a flow
+## wraps between pairs, never inside one). `next` is next_kinds(); `twin` the index of
+## the earlier choice this one equals (-1: none).
+func _ahead_row(i: int, kinds: Array, heat: int, next: Array = [], twin: int = -1) -> Control:
+	var row := HFlowContainer.new()
 	row.name = "Ahead%d" % (i + 1)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
-	row.add_theme_constant_override("separation", 4)
+	row.add_theme_constant_override("h_separation", UiTheme.SP_XS)
 	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR
 	var pad := Control.new()
 	pad.custom_minimum_size.x = side
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(pad)
 	if heat != 0:
-		var hm := IconMark.standalone(StatIcon.HEAT, side, StatIcon.color_of(StatIcon.HEAT))
-		hm.name = "EnterHeat"
-		hm.tooltip_text = UiTip.fold(tr("Entering it changes Heat by %s.") % TextDb.signed(heat))
-		hm.mouse_filter = Control.MOUSE_FILTER_PASS
-		row.add_child(hm)
-		var hl := _label(TextDb.signed(heat))
-		hl.name = "EnterHeatValue"
-		row.add_child(hl)
-	if not kinds.is_empty():
-		var lead := _label(tr("then:"))
-		lead.name = "AheadWord"
+		var hp := _icon_word("EnterHeat", StatIcon.HEAT, TextDb.signed(heat), side, tr("Entering it changes Heat by %s.") % TextDb.signed(heat))
+		hp.get_node(^"Word").name = "EnterHeatValue"
+		row.add_child(hp)
+	if not next.is_empty():
+		var lead := IconMark.standalone(StatIcon.NEXT, side, Palette.TEXT_MID)
+		lead.name = "AheadNext"
+		lead.mouse_filter = Control.MOUSE_FILTER_PASS
+		var words := PackedStringArray()
+		for k: StringName in next:
+			words.append(tr(String(ROUTE_SHORT.get(k, ""))))
+		lead.tooltip_text = UiTip.fold(tr("Then you can go to: %s.") % " · ".join(words))
 		row.add_child(lead)
+		for k: StringName in next:
+			row.add_child(_icon_word("Next_%s" % k, k, tr(String(ROUTE_SHORT.get(k, ""))), side, lead.tooltip_text))
+	if twin >= 0:
+		var same := _label(tr("(same as %d)") % (twin + 1))
+		same.name = "TwinOf"
+		same.add_theme_color_override("font_color", Palette.TEXT_MID)
+		same.tooltip_text = UiTip.fold(tr("The same road as choice %d: the same kinds of node and Heat all the way on.") % (twin + 1))
+		same.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(same)
+	elif not kinds.is_empty():
+		var rule := ColorRect.new()
+		rule.name = "AheadRule"
+		rule.color = Palette.TERMINAL_EDGE
+		rule.custom_minimum_size = Vector2(1.0, side)
+		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(rule)
 		for k: StringName in kinds:
-			var m := IconMark.standalone(k, side, StatIcon.color_of(k))
-			m.name = "Ahead_%s" % k
-			m.tooltip_text = UiTip.fold(tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, ""))))
-			m.mouse_filter = Control.MOUSE_FILTER_PASS
-			row.add_child(m)
+			row.add_child(_icon_word("Ahead_%s" % k, k, tr(String(ROUTE_SHORT.get(k, ""))), side,
+				tr("Further on: %s (only this way).") % tr(String(AHEAD_WORDS.get(k, "")))))
 	return row
+
+
+## Art pass W8c: an icon and its short word kept together (a route row's item): a box
+## named `id` holding "Icon" and "Word" (the word in the icon's colour), with `tip`.
+func _icon_word(id: String, kind: StringName, word: String, side: float, tip: String) -> Control:
+	var pair := HBoxContainer.new()
+	pair.name = id
+	pair.mouse_filter = Control.MOUSE_FILTER_PASS
+	pair.add_theme_constant_override("separation", UiTheme.SP_XS / 2)
+	pair.tooltip_text = UiTip.fold(tip)
+	var m := IconMark.standalone(kind, side, StatIcon.color_of(kind))
+	m.name = "Icon"
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pair.add_child(m)
+	var l := _label(word)
+	l.name = "Word"
+	l.add_theme_color_override("font_color", StatIcon.color_of(kind).lerp(Palette.TEXT_HI, ROUTE_WORD_LIGHTEN))
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pair.add_child(l)
+	return pair
+
+
+## Art pass W8c: the short word beside each route icon (keys: the route's own node words, so
+## the button, the map and the row name a node alike).
+const ROUTE_SHORT := {StatIcon.FIGHT: "Fight", StatIcon.ELITE: ELITE_WORD, StatIcon.SHOP: "Shop", # TR
+	StatIcon.TERMINAL: "Event", StatIcon.RACK: "Rack", StatIcon.HEAT: "Heat"} # TR
+## How far a row's word is lightened from its icon's colour toward TEXT_HI (contrast §3.7 on glass).
+const ROUTE_WORD_LIGHTEN := 0.35
+## The order of the kinds a choice leads to next.
+const NEXT_ORDER: Array[StringName] = [StatIcon.FIGHT, StatIcon.ELITE, StatIcon.TERMINAL, StatIcon.SHOP, StatIcon.RACK]
+
+
+## Art pass W8c: the kinds of node a route node leads to next (its "next" nodes' icons, each
+## once, in NEXT_ORDER). Pure.
+static func next_kinds(map: MapGraph, node: Dictionary) -> Array[StringName]:
+	var found := {}
+	for nxt in node.get("next", []):
+		var n := map.get_node(nxt)
+		if not n.is_empty():
+			found[node_icon(n)] = true
+	var out: Array[StringName] = []
+	for k in NEXT_ORDER:
+		if found.has(k):
+			out.append(k)
+	return out
 
 
 ## The words of the reward and risk icons (translated where shown).
@@ -1508,6 +1589,14 @@ func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int,
 	city.focus_grid = city_overlay.centre() if focus == Vector2.INF else focus
 	city.focus_anchor = anchor
 	city.refresh()
+	_cut_camera_if_still()
+
+
+## Art pass W8c (W9 reduce motion, ART_BIBLE §12): with camera moves off, a map page cuts to
+## its end framing: any held frame or ease is dropped (the fit passes then land at once).
+func _cut_camera_if_still() -> void:
+	if not Motion.camera_moves_allowed() and background != null:
+		background.settle_camera()
 
 
 func _clear_route() -> void:

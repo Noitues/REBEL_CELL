@@ -569,11 +569,13 @@ func test_equal_route_choices_say_they_are_the_same() -> void:
 	assert_false(twins.is_empty(), "seed 1's first choices are three plain fights")
 	var open := s.available_nodes()
 	for i in open.size():
-		var b := nr.find_child("Node%d" % (i + 1), true, false) as Button
+		# Art pass W8c: the twin mark sits in the choice's compact row, under its button.
+		var twin_of := nr.find_child("Ahead%d" % (i + 1), true, false).find_child("TwinOf", true, false) as Label if nr.find_child("Ahead%d" % (i + 1), true, false) != null else null
 		if twins.has(open[i]):
-			assert_string_contains(b.text, tr("(same as %d)") % (int(twins[open[i]]) + 1), "a twin choice says which it equals")
+			assert_not_null(twin_of, "a twin choice says which it equals")
+			assert_eq(twin_of.text, tr("(same as %d)") % (int(twins[open[i]]) + 1), "a twin choice says which it equals")
 		else:
-			assert_false(b.text.contains("(same as"), "a choice unlike the others says nothing")
+			assert_null(twin_of, "a choice unlike the others says nothing")
 	for n: Dictionary in nr.city_overlay.nodes:
 		if twins.has(n["id"]):
 			assert_string_contains(String(n["label"]), "(same as", "and so does its map label")
