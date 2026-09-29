@@ -645,10 +645,8 @@ func test_the_hq_at_big_text_shows_hp_and_keeps_saved_off_the_tags() -> void:
 	await _frames(4)
 	var op := RunManager.campaign.roster[0]
 	var dossier := hq._panel.find_child("Crew_%s" % op.id, true, false) as CrewCard
-	var hp_line: Label = null
-	for l in dossier.find_children("*", "Label", true, false):
-		if (l as Label).text.begins_with("HP"):
-			hp_line = l
+	# Art pass W5: the HP is an icon + number field (StatField), no longer a sentence.
+	var hp_line: Label = dossier.stat_field(StatIcon.HP).value_label
 	assert_not_null(hp_line)
 	assert_true(hp_line.get_global_rect().end.y <= SCREEN.size.y, "the dossier's HP shows on the first screen")
 	var avoid := Fx.avoid_rects(hq)

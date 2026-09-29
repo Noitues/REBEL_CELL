@@ -88,6 +88,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# one toast, stamp reading time and its reveal, the banner queue, the toggle).
 	&"focus_scale", &"button_refused", &"toast_in", &"toast_hold", &"toast_out", &"stamp_hold", &"zine_stamp_in",
 	&"banner_gap", &"toggle_slide",
+	# Art pass W5 (ART_BIBLE 7.2, 8): the enemy/boss hologram idle (T0), intro (T4) and its reduce-effects cross-fade.
+	&"hologram_idle", &"hologram_intro", &"hologram_intro_fade",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

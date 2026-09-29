@@ -24,10 +24,6 @@
 		"res://scripts/ui/kit/city_map_overlay.gd": {
 			"color": 23
 		},
-		"res://scripts/ui/kit/crew_card.gd": {
-			"color": 4,
-			"font_const": 1
-		},
 		"res://scripts/ui/kit/daemon_tray.gd": {
 			"draw_size": 1
 		},
@@ -70,12 +66,6 @@
 		},
 		"res://scripts/ui/kit/pause_menu.gd": {
 			"color": 1
-		},
-		"res://scripts/ui/kit/polaroid.gd": {
-			"draw_size": 1
-		},
-		"res://scripts/ui/kit/portrait_art.gd": {
-			"color": 16
 		},
 		"res://scripts/ui/kit/raid_fx_layer.gd": {
 			"color": 8
