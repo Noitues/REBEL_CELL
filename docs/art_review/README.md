@@ -16,6 +16,7 @@ any order while the work goes on.
 | `W8a`–`W8d/` | Screens | Per-screen before/after |
 | `W9/` | Accessibility | 2.0 text, colour-blind remaps, high contrast, pad |
 | `W9F/` | Final accessibility sweep | Every screen at 2.0 mouse and pad, grey, deutan, high contrast, reduce effects, reduce motion; the final runtime lint; the §12/§14 table |
+| `FINAL/` | Final report | Before/after gallery of 22 key screens, final contact sheets of all 53 screens, final lint and diff reports, and the summary README |
 
 Each folder has a `README.md` with:
 - what changed (files);
