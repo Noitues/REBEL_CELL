@@ -333,3 +333,43 @@ func test_a_phase_needle_draws_on_and_the_stamp_holds_to_read() -> void:
 	assert_gte(ZineStamp.hold_seconds(tr("PHASE %d") % 2), Motion.seconds(&"stamp_hold"), "the PHASE stamp holds per the stamp rule")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
 	assert_true(src.contains("ZineStamp.hold_seconds(word)"), "the phase stamp's hold is the stamp rule's")
+
+
+# --- 5. One stamp at a time in a hub (§6.1) ------------------------------------------------------
+
+func test_hub_stamps_queue_instead_of_stacking() -> void:
+	var q: HubQueue = add_child_autofree(HubQueue.new())
+	var a := q.book(1, 0.0, 1.0)
+	var b := q.book(1, 0.2, 0.8)
+	var c := q.book(2, 0.2, 0.8)
+	assert_eq(a, 0.0, "a free hub stamps at once")
+	assert_almost_eq(b, 1.0 + HubQueue.gap(), 0.001, "the next waits for the first and the gap")
+	assert_eq(c, 0.2, "another hub is its own queue")
+	q.note(3, 0.0, 0.5)
+	assert_almost_eq(q.book(3, 0.1, 0.4), 0.5 + HubQueue.gap(), 0.001, "a stamp waits for a number resting in its hub")
+	q.clear()
+	assert_eq(q.free_in(1), 0.0, "a skip frees every hub")
+
+
+func test_a_phase_turn_never_stacks_words_in_the_boss_hub() -> void:
+	var scene := await _combat()
+	var ev := _enemy_view(scene)
+	Motion.force_live = true
+	# A phase stamp, a result stamp and an impact stamp, all asked for at once in one hub.
+	var spot := ev.stamp_slot(tr("NO DAMAGE"), CombatFxLayer.GUARD_NULL)
+	spot.erase("beside_hp")
+	scene._hub_stamp(ev, {"at": ev.global_center(), "max_w": ev.hub_radius()}, tr("PHASE %d") % 2, Palette.RESIST_GOLD, ZineStamp.hold_seconds(tr("PHASE %d") % 2))
+	scene._hub_stamp(ev, spot, tr("NO DAMAGE"), Palette.NET_CYAN, 0.5)
+	scene._hub_stamp(ev, spot, tr("ALL BLOCKED"), Palette.NET_CYAN, 0.5)
+	var windows: Array = []
+	for s in scene.fx_layer.sprites:
+		if String(s["kind"]) == "tag":
+			windows.append(Vector2(float(s.get("delay", 0.0)), float(s.get("delay", 0.0)) + float(s["dur"])))
+	assert_eq(windows.size(), 3, "three stamps asked for")
+	windows.sort_custom(func(x: Vector2, y: Vector2) -> bool: return x.x < y.x)
+	for i in range(1, windows.size()):
+		assert_gte(windows[i].x, windows[i - 1].y, "stamp %d starts after the one before it has gone" % i)
+	assert_true(ev._tweens.has(&"hub_clear"), "the hub clears for its stamps")
+	scene.skip_motion()
+	assert_eq(ev.hub_alpha, 1.0, "a skip shows the hub whole")
+	Motion.force_live = false

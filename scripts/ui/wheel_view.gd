@@ -737,6 +737,7 @@ func stop_motion(sync_tag: bool = true) -> void:
 	replay_tag_alpha = 1.0
 	status_flash = {}
 	needle_grow = {}
+	hub_alpha = 1.0
 	flatline_pop = 1.0  # the DEFEAT stamp itself stays (ANIM-R5 combat 2)
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
@@ -3132,6 +3133,36 @@ func _hub_lines(c: CombatantState) -> Array[String]:
 	return hub_lines
 
 
+## Art pass W3 (§6.1): the hub's words and inset (1 shown .. 0 cleared) while a stamp holds
+## there (`clear_hub`).
+var hub_alpha: float = 1.0
+
+
+## Clears the hub for a stamp that starts in `delay` s and shows for `seconds`: its words and
+## inset fade out (`hub_clear`), and come back once it is done. Nothing when motion doesn't
+## play (the end state is a hub with its words).
+func clear_hub(delay: float, seconds: float) -> void:
+	if not Motion.live(&"hub_clear"):
+		hub_alpha = 1.0
+		return
+	var fade := Motion.seconds(&"hub_clear")
+	var tw := _tw(&"hub_clear")
+	tw.tween_interval(maxf(0.0, delay))
+	tw.tween_method(_set_hub_alpha, hub_alpha, 0.0, fade)
+	tw.tween_interval(maxf(0.0, seconds - fade * 2.0))
+	tw.tween_method(_set_hub_alpha, 0.0, 1.0, fade)
+	tw.tween_callback(func() -> void: hub_alpha = 1.0; _end(&"hub_clear"))
+
+
+func _set_hub_alpha(v: float) -> void:
+	hub_alpha = v
+	queue_redraw()
+
+
+func _hub_fade(c: Color) -> Color:
+	return Color(c, c.a * hub_alpha)
+
+
 func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
 	var lay := hub_layout()
 	var hub_lines: Array[String] = lay["lines"]
@@ -3145,14 +3176,16 @@ func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
 	var name_lines: Array = lay["name"]
 	var name_size := int(lay["name_size"])
 	var name_count := int(lay["name_count"])
+	if hub_alpha <= 0.0:
+		return  # §6.1: the hub is cleared for its stamp
 	if float(lay["inset_alpha"]) > 0.0:
 		# Art pass W3 (§6.1): the operative's Polaroid mini-portrait at the hub's top.
-		WheelBezel.draw_inset(self, inset_rect(), shown_subject(), portrait_texture, float(lay["inset_alpha"]))
-		WheelBezel.draw_glyph_badge(self, inset_rect(), look, float(lay["inset_alpha"]))
+		WheelBezel.draw_inset(self, inset_rect(), shown_subject(), portrait_texture, float(lay["inset_alpha"]) * hub_alpha)
+		WheelBezel.draw_glyph_badge(self, inset_rect(), look, float(lay["inset_alpha"]) * hub_alpha)
 	for k in name_count:
 		# The last line sits where a one-line name does; a first line goes above it.
 		var ny := top - (name_count - 1 - k) * (name_size + 1)
-		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
+		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _hub_fade(_col(line.lightened(0.2))))
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
 		var lfs := fs
@@ -3161,7 +3194,7 @@ func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
 		var line_text: String = hub_lines[i]
 		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
 			line_text = line_text.substr(0, line_text.length() - 2) + "…"
-		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, col)
+		draw_string(Palette.mono(), center + Vector2(-hw * 0.5, top + 16 + i * step), line_text, HORIZONTAL_ALIGNMENT_CENTER, hw, lfs, _hub_fade(col))
 
 
 ## Target reticle: four bracket arcs on the diagonals with a tick at each (clear of the HP

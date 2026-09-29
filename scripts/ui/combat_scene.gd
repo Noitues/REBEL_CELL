@@ -1641,6 +1641,8 @@ func _build_ui() -> void:
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
 	add_child(fx_layer)
+	hub_queue = HubQueue.new()
+	add_child(hub_queue)
 	# Art pass W3 (§7.2, §8 T4): a boss fight's intro sting, over the arena and the hand.
 	boss_intro = BossIntro.new()
 	boss_intro.name = "BossIntro"
@@ -2753,6 +2755,20 @@ signal motion_settled
 var fx_layer: CombatFxLayer
 ## Art pass W3: the boss's intro sting (T4).
 var boss_intro: BossIntro
+## Art pass W3 (§6.1): one stamp at a time in a hub.
+var hub_queue: HubQueue
+
+
+## Art pass W3 (§6.1, §6.6): stamps `text` at `spot` (a WheelView stamp slot) on view `v`: in
+## its hub it waits its turn (HubQueue: after the stamp before it and any number resting
+## there) and clears the hub while it shows; beside the HP number it shows at once.
+func _hub_stamp(v: WheelView, spot: Dictionary, text: String, color: Color, hold: float, delay: float = 0.0, icon: String = "") -> void:
+	var d := delay
+	if not bool(spot.get("beside_hp", false)) and Motion.live(&"result_stamp"):
+		var total := Motion.seconds(&"result_stamp") + hold
+		d = hub_queue.book(v.get_instance_id(), delay, total)
+		v.clear_hub(d, total)
+	fx_layer.word_stamp(spot["at"], text, color, hold, float(spot["max_w"]), int(spot.get("max_fs", -1)), d, icon)
 
 
 ## Art pass W3 (§7.2): a fight with a boss opens with its name slamming in on a taped banner.
@@ -2837,6 +2853,8 @@ func skip_motion() -> void:
 		fx_layer.clear()
 	if boss_intro != null:
 		boss_intro.skip()
+	if hub_queue != null:
+		hub_queue.clear()
 	_release_forecast()
 	for v in _views():
 		# A skip lands: the forecast is already on the tags, which don't flip (C3).
@@ -3391,8 +3409,7 @@ func _show_result(beats: Array[Dictionary], before: CombatState, _after: CombatS
 			v.show_caption(tr("THIS TURN"))
 		if stamps.has(v.combatant.id) and not v.defeated() and not _impact_stamped.has(v.combatant.id):
 			var spot := v.stamp_slot(String(stamps[v.combatant.id]), CombatFxLayer.GUARD_NULL)
-			fx_layer.word_stamp(spot["at"], String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), float(spot["max_w"]),
-				int(spot["max_fs"]), 0.0, CombatFxLayer.GUARD_NULL)
+			_hub_stamp(v, spot, String(stamps[v.combatant.id]), CHIP_GUARD, Motion.seconds(&"resolve_result_hold"), 0.0, CombatFxLayer.GUARD_NULL)
 
 
 ## The HP `id` ends the resolve on (before the next turn starts): the last resolve-phase HP
@@ -3764,8 +3781,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		fx_layer.impact(victim_at, String(zero.get("text", "")), int(zero.get("icon", -1)), CHIP_GUARD, impact, eq)
 	if b.has("final_stamp") and on_host:
 		var spot := tv.stamp_slot(String(b["final_stamp"]), CombatFxLayer.GUARD_NULL)
-		fx_layer.word_stamp(spot["at"], String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))),
-			float(spot["max_w"]), int(spot["max_fs"]), impact, CombatFxLayer.GUARD_NULL)
+		_hub_stamp(tv, spot, String(b["final_stamp"]), CHIP_GUARD, float(b.get("final_hold", Motion.seconds(&"number_float"))), impact, CombatFxLayer.GUARD_NULL)
 	if kind == "status" and int(b["slot"]) >= 0 and on_host:
 		# ANIM-R4 C6f: its glyph lands on the slice in its good / bad colour for you.
 		var scol := WheelView.status_color(int(b["status"]), tv.combatant != null and tv.combatant.is_player)
@@ -3777,6 +3793,10 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 	var hp_after := int(b["hp_after"])
 	var hp_waits := false
 	for n in numbers_for(b, before, after):
+		if bool(n.get("hub", false)):
+			# A number resting in the hub keeps its time; a stamp waits for it (HubQueue).
+			var rest := Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") if bool(n["travel"]) else Motion.seconds(StringName(n["id"]))
+			hub_queue.note((n["view"] as WheelView).get_instance_id(), impact + float(n.get("after", 0.0)), rest)
 		if bool(n["travel"]) and on_host and hp_after >= 0:
 			# ANIM-R4 C6b/c: the number appears when its projectile has arrived (and a guarded
 			# hit's equation has been read), fresh, then travels.
@@ -3825,7 +3845,7 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 		return
 	var word := tr("PHASE %d") % (int(b.get("phase_index", 0)) + 1)
 	# Art pass W3 (§6.1, §6.6): held long enough to read (W2's stamp rule).
-	fx_layer.word_stamp(v.global_center(), word, CHIP_RESIST, ZineStamp.hold_seconds(word), v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
+	_hub_stamp(v, {"at": v.global_center(), "max_w": v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE}, word, CHIP_RESIST, ZineStamp.hold_seconds(word))
 	if int(b.get("behavior", -1)) == RC.PointerBehavior.MULTIPLY:
 		v.play_phase_needles(b.get("ticks", []))
 	for sp in b.get("spawned", []):

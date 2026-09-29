@@ -94,6 +94,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"boss_intro",  # art pass W3
 	# Art pass W5 (ART_BIBLE 7.2, 8): the enemy/boss hologram idle (T0), intro (T4) and its reduce-effects cross-fade.
 	&"hologram_idle", &"hologram_intro", &"hologram_intro_fade",
+	&"hub_clear",  # art pass W3
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
