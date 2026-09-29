@@ -26,6 +26,35 @@ CLAUDE.md (rule 6) and TECH_SPEC 9; this page is about running the tests.
   a file, never through `python -` (a stdin Python hangs the shell on this machine).
 - The runner prints where it keeps each shard's log (`shard<i>/gut.log`) and JUnit
   results (`shard<i>/results.xml`); `--out <folder>` picks the folder.
+- The suite always runs headless (`--headless --audio-driver Dummy`): no window, no
+  sound, nothing that can take focus.
+
+## Windowed checks (quiet)
+
+Headless has no renderer, so anything that must draw (Movie Maker captures, the
+storyboard, the motion lab, frame profiling, GPU bake checks) runs in a real window.
+Launch every such run through `tools/run_windowed.py`, never `godot` directly, so it
+never takes keyboard or mouse focus from whoever is using the machine and makes no sound:
+
+```
+python tools/run_windowed.py --log <file> -- res://tools/design_lab/motion_lab.tscn --write-movie <dir>/f.png --fixed-fps 30 --quit-after 60 -- --demo-anim=card_hover
+```
+
+- It writes `override.cfg` in the project folder (`display/window/size/no_focus`, the
+  Dummy audio driver) for the run and removes it when the last quiet run there ends
+  (ignored by git). The window is created without focus, so Windows never makes it the
+  foreground window, even when the machine has been idle.
+- It sets `REBEL_CELL_QUIET_WINDOW=1`: Settings keeps the window windowed at its
+  resolution and moves it to (-30000, -30000) on its first frame; AudioDirector mutes
+  Master (`played` still logs). Godot keeps a window's start position on a screen and a
+  minimized window stops drawing, so the window can show, without focus, for its first
+  frame. `--quiet-window` as a user argument does the same in-game part.
+- It refuses the main checkout, because `override.cfg` would also apply to anyone
+  launching the game there meanwhile: run it in a git worktree or a copy (agents already
+  work in worktrees), or pass `--allow-main-checkout` knowingly.
+- Godot's output goes to `--log`; `--timeout` (default 600 s) stops a hung run. Make the
+  Movie Maker folder first (Godot writes nothing into a missing one). Checked on this
+  machine with a foreground-window watcher: focus never left the active window.
 
 ## How the runner works
 
