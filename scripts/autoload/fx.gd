@@ -426,6 +426,21 @@ func apply_settings() -> void:
 			_pulse_tween.kill()
 	limiter.enabled = Settings.flash_limiter
 	fps_label.visible = Settings.show_fps
+	_apply_shader_globals()
+
+
+## ART_BIBLE 13 (W6): the shader library's one reduce-effects control, the global shader
+## uniform every shader reads through `shaders/lib/rc_common.gdshaderinc` (registered in
+## project.godot [shader_globals]): 1.0 under reduce effects, 0.0 otherwise. Set on start
+## and on every Settings change; the scripts' own zeroing of shader strengths stays too.
+const REDUCE_GLOBAL := &"reduce_effects"
+## The value last sent to REDUCE_GLOBAL (tests read it; the headless renderer keeps none).
+var shader_reduce: float = -1.0
+
+
+func _apply_shader_globals() -> void:
+	shader_reduce = 1.0 if Settings.reduce_effects else 0.0
+	RenderingServer.global_shader_parameter_set(REDUCE_GLOBAL, shader_reduce)
 
 
 func effects_enabled() -> bool:

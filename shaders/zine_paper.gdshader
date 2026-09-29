@@ -1,6 +1,8 @@
 // Zine paper: paper colour with halftone dots and faint fibre noise (STYLE_GUIDE 1).
 // Static (no time), so it is unaffected by reduce-effects.
 shader_type canvas_item;
+// Reduce effects (rc_common): static already (no TIME).
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform vec4 paper : source_color = vec4(0.949, 0.933, 0.894, 1.0);
 uniform vec4 ink : source_color = vec4(0.067, 0.067, 0.067, 1.0);
