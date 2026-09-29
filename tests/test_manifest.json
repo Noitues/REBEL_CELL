@@ -444,6 +444,10 @@
 		"res://tests/unit/test_wheel_math.gd": {
 			"seconds": 0.1,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_quiet_window.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
 		}
 	}
 }

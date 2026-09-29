@@ -19,6 +19,10 @@ spinning 30-tick wheels; a campaign layer adds a City Grid map, Heat, and raid d
   couple of minutes): `python tools/run_tests.py --tier fast`. See `docs/TEST_SUITE.md`.
 - Schema smoke test: `godot --headless --path . -s tools/schema_smoke_test.gd`
 - Content validation (from M0): `godot --headless --path . -s tools/validate_content.gd`
+- Anything that must render in a real window (Movie Maker captures, storyboard, motion
+  lab, profiling): `python tools/run_windowed.py --log <file> -- <godot args>`, from a
+  worktree or a copy. Never launch a windowed `godot` directly: it can take the user's
+  keyboard and mouse focus and play sound. See `docs/TEST_SUITE.md` "Windowed checks".
 - Run all three before declaring any task done, with the **full** suite (single process or
   the parallel runner; the fast tier alone never counts). A new test script goes into
   `tests/test_manifest.json` with its tier (`test_suite_integrity.gd` checks it).
