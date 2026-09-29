@@ -84,6 +84,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"wheel_burst_perfect", &"wheel_burst_phase",
 	# Art pass W6 (ART_BIBLE 8): each slice type's own hit shape.
 	&"hit_vfx_crit", &"hit_vfx_attack", &"hit_vfx_shield", &"hit_vfx_evade", &"hit_vfx_afflict", &"hit_vfx_heal", &"hit_vfx_miss",
+	# Art pass W5 (ART_BIBLE 7.2, 8): the enemy/boss hologram idle (T0), intro (T4) and its reduce-effects cross-fade.
+	&"hologram_idle", &"hologram_intro", &"hologram_intro_fade",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []
