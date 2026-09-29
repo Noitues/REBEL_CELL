@@ -543,6 +543,17 @@ static func _hex(c: Vector2, r: float) -> PackedVector2Array:
 	return pts
 
 
+## The badge's frame alone (a dark ground, the hue rim, the notches): W5's hologram bust
+## draws in it.
+static func draw_badge_frame(ci: CanvasItem, rect: Rect2, look: Dictionary) -> void:
+	var rim: Color = look.get("rim", Palette.TEXT_MID)
+	ci.draw_rect(rect.grow(2.0), Palette.NIGHT_SKY)
+	ci.draw_rect(rect.grow(1.0), rim, false, 2.0)
+	for sx: float in [-0.25, 0.25]:
+		var x: float = rect.get_center().x + rect.size.x * sx
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(x - 3.0, rect.end.y + 2.0), Vector2(x, rect.end.y - 2.0), Vector2(x + 3.0, rect.end.y + 2.0)]), Palette.NIGHT_SKY)
+
+
 ## Hash noise 0..1 (decoration only).
 static func _h(a: int, b: int, c: int = 0) -> float:
 	return float(hash(Vector3i(a, b, c)) & 0xFFFF) / 65535.0

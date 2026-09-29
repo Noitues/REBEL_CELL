@@ -27,6 +27,8 @@ var slam: float = 1.0
 var alpha: float = 0.0
 var _tween: Tween = null
 var _fade_only: bool = false
+## The boss's hologram whose intro plays under the slam (a skip ends it too).
+var hologram: Hologram = null
 
 
 func _init() -> void:
@@ -38,11 +40,15 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
-## Plays the sting for boss `p_text` in its corporation's `p_hue`. Returns whether it plays.
-func play(p_text: String, p_hue: Color) -> bool:
+## Plays the sting for boss `p_text` in its corporation's `p_hue`; W5's `p_hologram` (the
+## boss's, behind its wheel) projects in under the slam. Returns whether it plays.
+func play(p_text: String, p_hue: Color, p_hologram: Hologram = null) -> bool:
+	skip()
 	text = p_text
 	hue = p_hue
-	skip()
+	hologram = p_hologram
+	if hologram != null:
+		hologram.play_intro()
 	var live := Motion.live(&"boss_intro")
 	# Reduce effects: the T4 sting becomes a cross-fade (§8); headless: nothing at all.
 	_fade_only = not live and not Fx.effects_enabled() and (Motion.force_live or DisplayServer.get_name() != "headless")
@@ -64,6 +70,8 @@ func playing() -> bool:
 
 ## Ends the sting at once (a press, a new fight): the end state is nothing on screen.
 func skip() -> void:
+	if hologram != null and is_instance_valid(hologram):
+		hologram.finish_intro()
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
 	_tween = null

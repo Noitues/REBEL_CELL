@@ -345,20 +345,67 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	look = WheelBezel.operative_look(operative_class()) if c.is_player else WheelBezel.enemy_look(_corporation_of(c), is_boss())
 	look["flicker_depth"] = Motion.amplitude(&"bezel_ambient")
 	size_scale = BOSS_SCALE if is_boss() else 1.0
-	if is_boss() and backdrop == null:
-		set_backdrop(BossBackdrop.new())
-	if backdrop != null and backdrop.has_method(&"show_subject"):
-		backdrop.call(&"show_subject", shown_subject(), wheel_color)
+	# W5 (§7.2): a boss's hologram stands behind its wheel; any other enemy's bust hangs
+	# above its bezel (badge_rect).
+	var data := _enemy_data()
+	var key := String(c.source_id)
+	if data != null and data.is_boss and (backdrop == null or String(backdrop.get_meta(&"for", "")) != key):
+		var holo := Hologram.for_enemy(data)
+		holo.set_meta(&"for", key)
+		set_backdrop(holo)
+	elif (data == null or not data.is_boss) and backdrop != null:
+		set_backdrop(null)
+	if data != null and not data.is_boss and not c.is_player:
+		if bust == null or String(bust.get_meta(&"for", "")) != key:
+			if bust != null:
+				bust.queue_free()
+			bust = Hologram.for_enemy(data)
+			bust.set_meta(&"for", key)
+			add_child(bust)
+	elif bust != null:
+		bust.queue_free()
+		bust = null
 	_sync_ambient()
 	queue_redraw()
+
+
+## An enemy's portrait above its bezel (W5's Hologram in BUST mode); null for the operative
+## and a boss (its nameplate carries its face).
+var bust: Hologram = null
+
+
+## This enemy's content (null for the operative or unknown content).
+func _enemy_data() -> EnemyData:
+	if combatant == null or combatant.is_player or lookup == null or not lookup.has(combatant.source_id):
+		return null
+	return lookup.get_content(combatant.source_id) as EnemyData
+
+
+## Art pass W3 with W5 (§7.1): the operative's face follows the fight: HURT under a quarter HP,
+## TRIUMPHANT once the fight is won (`triumphant`), FLATLINED once it is lost.
+func expression() -> int:
+	var c := _shown()
+	if c == null:
+		return PortraitArt.Expr.NEUTRAL
+	if flatlined or not c.is_alive():
+		return PortraitArt.Expr.FLATLINED
+	if triumphant:
+		return PortraitArt.Expr.TRIUMPHANT
+	if shown_hp() / maxf(1.0, c.max_hp) < Palette.HP_HARM_BELOW:
+		return PortraitArt.Expr.HURT
+	return PortraitArt.Expr.NEUTRAL
+
+
+## The fight is won (the scene sets it when VICTORY lands): the operative looks triumphant.
+var triumphant: bool = false
 
 
 ## §6.1: a boss's wheel is this much bigger than a normal one (as far as its view allows).
 const BOSS_SCALE := 1.2
 ## The wheel's size against a normal wheel's (BOSS_SCALE for a boss).
 var size_scale: float = 1.0
-## §7.2: what stands behind a boss's wheel (a BossBackdrop until W5's Hologram plugs in
-## through set_backdrop); null for any other wheel.
+## §7.2: what stands behind a boss's wheel (W5's Hologram in BOSS mode, set_backdrop);
+## null for any other wheel.
 var backdrop: Control = null
 
 
@@ -381,15 +428,13 @@ func _place_backdrop() -> void:
 	if backdrop == null or not is_instance_valid(backdrop):
 		return
 	var vh := get_viewport_rect().size.y if is_inside_tree() else size.y
-	var side := maxf(vh * BACKDROP_SCREEN_SHARE, 2.0 * bezel_radius())
-	backdrop.size = Vector2(side, side)
-	backdrop.position = _center() - Vector2(side * 0.5, side * 0.5 + _radius() * BACKDROP_LIFT)
+	var box := Hologram.boss_size(vh)
+	backdrop.size = box
+	# Its foot at the wheel's centre: the figure rises behind the wheel, its head above the
+	# bezel (behind the tag); the wheel and its values draw over it.
+	backdrop.position = _center() - Vector2(box.x * 0.5, box.y)
 
 
-## The backdrop's side as a share of the screen's height (§7.2 "≈ 40%") and how far above
-## the wheel's centre it sits (share of the radius).
-const BACKDROP_SCREEN_SHARE := 0.4
-const BACKDROP_LIFT := 0.35
 
 
 ## The ambient clock (T0, `bezel_ambient`: 0..1 over its period) the class ornaments that
@@ -432,14 +477,16 @@ func is_boss() -> bool:
 ## Who the wheel's portrait shows: `portrait_subject`, else the operative's class face or the
 ## enemy's own (PortraitArt).
 func shown_subject() -> Dictionary:
-	if not portrait_subject.is_empty():
-		return portrait_subject
 	var c := _shown()
 	if c == null:
-		return {}
+		return portrait_subject
 	if c.is_player:
-		return PortraitArt.operative_subject(operative_class())
-	return PortraitArt.enemy_subject(c.source_id, shown_name(), _corporation_of(c), is_boss())
+		var base := portrait_subject if not portrait_subject.is_empty() else PortraitArt.operative_subject(operative_class())
+		return PortraitArt.with_expression(base, expression())
+	if not portrait_subject.is_empty():
+		return portrait_subject
+	var data := _enemy_data()
+	return PortraitArt.enemy_data_subject(data) if data != null else PortraitArt.enemy_subject(c.source_id, shown_name(), _corporation_of(c), is_boss())
 
 
 ## Where the operative's Polaroid inset sits (local, unrotated); empty for an enemy.
@@ -527,10 +574,12 @@ func badge_rect() -> Rect2:
 	var c := _shown()
 	if c == null or c.is_player or defeated():
 		return Rect2()
-	var side := WheelBezel.BADGE_SIDE
 	var bottom := _center().y - needle_reach() - WheelBezel.BADGE_GAP
-	var r := Rect2(Vector2(_center().x - side * 0.5, bottom - side), Vector2(side, side))
 	var tag := _intent_rect_local()
+	# As big as the room up to the tag allows, from BADGE_SIDE to W5's bust size.
+	var room := bottom - (_center().y - _radius() - _band() - INTENT_HEIGHT) - WheelBezel.BADGE_GAP * 2.0 - 1.0
+	var side := clampf(room, WheelBezel.BADGE_SIDE, Hologram.BUST_SIDE * _ts())
+	var r := Rect2(Vector2(_center().x - side * 0.5, bottom - side), Vector2(side, side))
 	if tag.has_area() and r.grow(WheelBezel.BADGE_GAP).intersects(tag):
 		return Rect2()
 	for ar in arrows():
@@ -2172,8 +2221,16 @@ func _draw_view() -> void:
 	else:
 		var badge := badge_rect()
 		if badge.has_area():
-			# Art pass W3 (§6.1, §7.2): the enemy's portrait hangs above its bezel (W5 seam).
-			WheelBezel.draw_badge(self, badge, shown_subject(), look, portrait_texture)
+			# Art pass W3 (§6.1, §7.2): the enemy's portrait hangs above its bezel: W5's
+			# hologram bust in a machined, notched frame.
+			if bust != null:
+				WheelBezel.draw_badge_frame(self, badge, look)
+			else:
+				WheelBezel.draw_badge(self, badge, shown_subject(), look, portrait_texture)
+		if bust != null:
+			bust.visible = badge.has_area()
+			bust.position = badge.position
+			bust.size = badge.size
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
 	if highlighted and combatant.is_alive():

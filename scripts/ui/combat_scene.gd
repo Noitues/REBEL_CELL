@@ -1874,6 +1874,9 @@ func _refresh(state: CombatState) -> void:
 	_end_turn_button.disabled = state.is_over()
 	_sync_over(state.is_over() and not _outcome_held)
 	_player_view.flatlined = state.outcome == CombatState.Outcome.DEFEAT and not _outcome_held
+	_player_view.triumphant = state.outcome == CombatState.Outcome.VICTORY and not _outcome_held
+	# W5: the column's Polaroid wears the same face as the hub's inset.
+	portrait.set_expression(_player_view.expression())
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
 	_rewind_button.disabled = not engine.can_rewind()
@@ -1952,8 +1955,10 @@ func _land_outcome() -> void:
 	_sync_heat()
 	_sync_over(state.is_over())
 	var lost := state.outcome == CombatState.Outcome.DEFEAT
+	_player_view.triumphant = state.outcome == CombatState.Outcome.VICTORY
 	if lost and not _player_view.flatlined:
 		_player_view.play_flatline()
+	portrait.set_expression(_player_view.expression())
 	outcome_landed.emit()
 
 
@@ -2758,7 +2763,7 @@ func _play_boss_intro(state: CombatState) -> bool:
 	for e in state.enemies:
 		var v := _view_of(e.id)
 		if v != null and v.is_boss():
-			return boss_intro.play(v.shown_name().to_upper(), v.wheel_color)
+			return boss_intro.play(v.shown_name().to_upper(), v.wheel_color, v.backdrop as Hologram)
 	return false
 ## Captured before an action goes to the engine (only while motion plays).
 var _before_action: CombatState = null
@@ -2830,6 +2835,8 @@ func skip_motion() -> void:
 	_motion_tweens.clear()
 	if fx_layer != null:
 		fx_layer.clear()
+	if boss_intro != null:
+		boss_intro.skip()
 	_release_forecast()
 	for v in _views():
 		# A skip lands: the forecast is already on the tags, which don't flip (C3).
