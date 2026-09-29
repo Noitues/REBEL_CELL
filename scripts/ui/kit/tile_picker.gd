@@ -24,6 +24,13 @@ const PAD := UiTheme.SP_S
 const ICON_R := 10.0
 ## The chosen tile's edge (px).
 const CHOSEN_EDGE := 2.0
+## Art pass WF (§4.3 rule 3): a name wraps at word boundaries, never mid-word, on up to
+## NAME_LINES lines; when a word or the lines don't fit it steps down through NAME_STEPS to
+## the caption floor, and past that the tile grows (taller for lines, wider for a word).
+const NAME_STEPS: Array[int] = [UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]
+const NAME_LINES := 2
+## The lock badge's radius as a share of the icon's.
+const LOCK_SHARE := 0.7
 
 ## Tiles: {name: String, meta: String, icon: StringName, locked: bool, unlock: String} (all
 ## words translated by the caller).
@@ -96,8 +103,103 @@ func _cols() -> int:
 
 
 func _tile_size() -> Vector2:
+	_layout()
+	return _size_cache
+
+
+## Art pass WF: tile `i`'s name as drawn: {px: the type size, lines: the words per line
+## (whole words only), line_h: px per line}.
+func name_layout(i: int) -> Dictionary:
+	_layout()
+	return _names[i] if i >= 0 and i < _names.size() else {}
+
+
+## Art pass WF: tile `i`'s meta (or unlock) line as drawn: {px, lines, line_h}; it wraps at
+## word boundaries at caption, the floor.
+func meta_layout(i: int) -> Dictionary:
+	_layout()
+	return _metas[i] if i >= 0 and i < _metas.size() else {}
+
+
+## The width tile names wrap to in a tile of width `tile_w` (px): the tile less its
+## padding and the icon's room.
+func name_width(tile_w: float, with_icon: bool = true) -> float:
 	var s := Settings.text_scale
-	return Vector2(TILE_W, TILE_H) * s
+	return tile_w - PAD * 2.0 - ((ICON_R * s * 2.0 + PAD) if with_icon else 0.0)
+
+
+## `text` wrapped to `width` at `px`, at word boundaries only (a word wider than `width`
+## sits alone on its line; the caller checks for it).
+static func wrap_words(text: String, font: Font, px: int, width: float) -> PackedStringArray:
+	var lines := PackedStringArray()
+	var line := ""
+	for word in text.split(" ", false):
+		var tried := word if line == "" else line + " " + word
+		if line != "" and font.get_string_size(tried, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > width:
+			lines.append(line)
+			line = word
+		else:
+			line = tried
+	if line != "":
+		lines.append(line)
+	return lines
+
+
+## The widest line of `lines` at `px` (px).
+static func widest(lines: PackedStringArray, font: Font, px: int) -> float:
+	var w := 0.0
+	for l in lines:
+		w = maxf(w, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
+	return w
+
+
+var _layout_key: Array = []
+var _size_cache := Vector2.ZERO
+var _names: Array[Dictionary] = []
+var _metas: Array[Dictionary] = []
+
+
+## Lays every tile's words out (cached per tiles and text scale): each name takes the largest
+## NAME_STEPS size whose whole words fit NAME_LINES lines; the tiles (all one size, so the
+## grid stays even) grow to hold the tallest words and the widest word.
+func _layout() -> void:
+	var s := Settings.text_scale
+	var key := [s, tiles.hash()]
+	if key == _layout_key:
+		return
+	_layout_key = key
+	var f := Palette.mono()
+	var tile := Vector2(TILE_W, TILE_H) * s
+	_names.clear()
+	_metas.clear()
+	var need_w := 0.0
+	var need_h := 0.0
+	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
+	var meta_lh := meta_px * UiTheme.line_height(UiTheme.CAPTION)
+	for t in tiles:
+		var has_icon: bool = t.get("icon", &"") != &""
+		var w := name_width(tile.x, has_icon)
+		if bool(t.get("locked", false)):
+			w -= ICON_R * s * LOCK_SHARE * 2.0  # the lock badge's corner
+		var words := String(t.get("name", ""))
+		var chosen := {}
+		for step in NAME_STEPS:
+			var px := UiTheme.font_px(step)
+			var lines := wrap_words(words, f, px, w)
+			chosen = {"px": px, "lines": lines, "line_h": px * UiTheme.line_height(step)}
+			if lines.size() <= NAME_LINES and widest(lines, f, px) <= w:
+				break
+		_names.append(chosen)
+		var lines_n: PackedStringArray = chosen["lines"]
+		need_w = maxf(need_w, widest(lines_n, f, int(chosen["px"])) + tile.x - w)
+		var meta := String(t.get("unlock", "")) if bool(t.get("locked", false)) else String(t.get("meta", ""))
+		var meta_w := tile.x - PAD * 2.0
+		var meta_lines := wrap_words(meta, f, meta_px, meta_w) if meta != "" else PackedStringArray()
+		_metas.append({"px": meta_px, "lines": meta_lines, "line_h": meta_lh})
+		need_w = maxf(need_w, widest(meta_lines, f, meta_px) + PAD * 2.0)
+		var name_h := maxf(lines_n.size() * float(chosen["line_h"]), ICON_R * s * 2.0 if has_icon else 0.0)
+		need_h = maxf(need_h, PAD * 2.0 + name_h + meta_lines.size() * meta_lh)
+	_size_cache = Vector2(ceilf(maxf(tile.x, need_w)), ceilf(maxf(tile.y, need_h)))
 
 
 ## Tile `i`'s rect (local, at rest).
@@ -185,8 +287,6 @@ func state() -> StringName:
 
 func _draw() -> void:
 	var f := Palette.mono()
-	var name_px := UiTheme.font_px(UiTheme.LABEL)
-	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
 	var s := Settings.text_scale
 	for i in tiles.size():
 		var t: Dictionary = tiles[i]
@@ -204,13 +304,20 @@ func _draw() -> void:
 			var ic := Vector2(x + ICON_R * s, r.position.y + PAD + ICON_R * s)
 			StatIcon.draw(self, ic, ICON_R * s, icon, ink if st == KitState.DISABLED else StatIcon.color_of(icon))
 			x += ICON_R * s * 2.0 + PAD
-		var w := r.end.x - PAD - x
-		var name_base := r.position.y + PAD + f.get_ascent(name_px)
-		draw_string(f, Vector2(x, name_base), String(t.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, w, name_px, ink)
-		var meta := String(t.get("unlock", "")) if is_locked(i) else String(t.get("meta", ""))
-		if meta != "":
-			draw_string(f, Vector2(r.position.x + PAD, r.end.y - PAD - f.get_descent(meta_px)), meta, HORIZONTAL_ALIGNMENT_LEFT,
-				r.size.x - PAD * 2.0, meta_px, Palette.TEXT_MID)
+		# Art pass WF (§4.3 rule 3): whole words on up to NAME_LINES lines (see _layout).
+		var nl := name_layout(i)
+		var name_px: int = nl["px"]
+		var base := r.position.y + PAD + f.get_ascent(name_px)
+		for line in nl["lines"] as PackedStringArray:
+			draw_string(f, Vector2(x, base), line, HORIZONTAL_ALIGNMENT_LEFT, -1, name_px, ink)
+			base += float(nl["line_h"])
+		var ml := meta_layout(i)
+		var meta_lines: PackedStringArray = ml["lines"]
+		var meta_px: int = ml["px"]
+		var mbase := r.end.y - PAD - f.get_descent(meta_px) - (meta_lines.size() - 1) * float(ml["line_h"])
+		for line in meta_lines:
+			draw_string(f, Vector2(r.position.x + PAD, mbase), line, HORIZONTAL_ALIGNMENT_LEFT, -1, meta_px, Palette.TEXT_MID)
+			mbase += float(ml["line_h"])
 		if is_locked(i):
-			StatIcon.draw(self, Vector2(r.end.x - PAD - ICON_R * s * 0.7, r.position.y + PAD + ICON_R * s * 0.7), ICON_R * s * 0.7, StatIcon.LOCK, Palette.TEXT_MID)
+			StatIcon.draw(self, Vector2(r.end.x - PAD - ICON_R * s * LOCK_SHARE, r.position.y + PAD + ICON_R * s * LOCK_SHARE), ICON_R * s * LOCK_SHARE, StatIcon.LOCK, Palette.TEXT_MID)
 		KitState.draw_frame(self, r, st if st != KitState.DISABLED or not is_locked(i) else KitState.IDLE)

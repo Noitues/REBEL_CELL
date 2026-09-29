@@ -89,3 +89,59 @@ func test_an_uncapped_fit_scroll_never_takes_a_pre_layout_height() -> void:
 	await wait_frames(3)
 	assert_false(fit.degenerate(fit.content_height()))
 	assert_almost_eq(fit.scroll.custom_minimum_size.y, ceilf(fit.content_height()), 1.0, "the view is the laid-out content")
+
+
+# --- 2. TilePicker long names (§4.3 rule 3) ------------------------------------------------
+
+## Every corporation, class and home-server name in the content (display names).
+func _content_names() -> Array[String]:
+	var out: Array[String] = []
+	for dir in ["res://content/corporations", "res://content/classes", "res://content/nodes"]:
+		for file in DirAccess.get_files_at(dir):
+			if not file.ends_with(".tres") or (dir.ends_with("nodes") and not file.begins_with("home_")):
+				continue
+			var res := load(dir + "/" + file)
+			if res is CorporationData or res is ClassData or res is HomeServerVariantData:
+				out.append(String(res.get(&"display_name")))
+	return out
+
+
+func test_tile_names_wrap_at_words_and_fit_at_every_scale() -> void:
+	var names := _content_names()
+	assert_gt(names.size(), 15, "corporations, classes and home servers")
+	var longest := ""
+	for n in names:
+		if n.length() > longest.length():
+			longest = n
+	var f := Palette.mono()
+	for scale: float in [1.0, 1.6, 2.0]:
+		Settings.set_text_scale(scale)
+		var h := _holder()
+		var tiles: Array[Dictionary] = []
+		for i in names.size():
+			tiles.append({"name": names[i], "meta": "T%d" % (i % 3), "icon": StatIcon.HOME, "locked": i % 4 == 3, "unlock": "Win a campaign"})
+		var tp := TilePicker.new(tiles, 3)
+		h.add_child(tp)
+		for i in tiles.size():
+			var nl := tp.name_layout(i)
+			var lines: PackedStringArray = nl["lines"]
+			var words := " ".join(names[i].split(" ", false))
+			assert_eq(" ".join(lines), words, "%s at %s: whole words only, none dropped" % [names[i], scale])
+			assert_true(int(nl["px"]) >= UiTheme.font_px(UiTheme.CAPTION), "%s never under caption" % names[i])
+			var r := tp.tile_rect(i)
+			var w: float = tp.name_width(r.size.x) - (TilePicker.ICON_R * scale * TilePicker.LOCK_SHARE * 2.0 if tp.is_locked(i) else 0.0)
+			assert_true(TilePicker.widest(lines, f, int(nl["px"])) <= w + 0.5, "%s at %s: every line inside the tile" % [names[i], scale])
+			var ml := tp.meta_layout(i)
+			var name_h := lines.size() * float(nl["line_h"])
+			var meta_h := (ml["lines"] as PackedStringArray).size() * float(ml["line_h"])
+			assert_true(TilePicker.PAD * 2.0 + name_h + meta_h <= r.size.y + 0.5, "%s at %s: name and meta stacked inside the tile" % [names[i], scale])
+		var ll := tp.name_layout(names.find(longest))
+		assert_true((ll["lines"] as PackedStringArray).size() >= 2, "the longest name (%s) wraps rather than cuts" % longest)
+		h.free()
+	Settings.set_text_scale(1.0)
+
+
+func test_wrap_words_never_breaks_a_word() -> void:
+	var f := Palette.mono()
+	var lines := TilePicker.wrap_words("Solace Root Certificate Store", f, 18, 10.0)
+	assert_eq(lines, PackedStringArray(["Solace", "Root", "Certificate", "Store"]), "a word too wide sits alone, whole")
