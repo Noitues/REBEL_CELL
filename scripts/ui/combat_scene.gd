@@ -3311,9 +3311,9 @@ static func sequence_schedule(beats: Array[Dictionary]) -> Dictionary:
 ## side's hits wait for every roll plus `resolve_side_gap`; another attacker on the same
 ## side (a drone, a satellite) waits `resolve_attacker_gap`.
 static func beat_timing() -> Dictionary:
-	var arrive := Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") if Motion.live(&"number_to_hp") else 0.0
+	var arrive := number_arrive()
 	return {"hit_gap": Motion.seconds(&"hit_line"), "impact": CombatFxLayer.impact_seconds(), "absorb": Motion.seconds(&"hit_absorb"),
-		"settle": Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + Motion.seconds(&"hp_drain"),
+		"settle": arrive + Motion.seconds(&"hp_drain"),
 		"arrive": arrive, "break_delay": Motion.delay_of(&"enemy_break"),
 		"side_gap": Motion.seconds(&"resolve_side_gap"), "attacker_gap": Motion.seconds(&"resolve_attacker_gap")}
 
@@ -3322,7 +3322,15 @@ static func beat_timing() -> Dictionary:
 ## first): the hit's number travelling into the HP counter, the HP rolling down, then
 ## `enemy_break`'s delay at 0.
 static func death_lead() -> float:
-	return Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") + Motion.seconds(&"hp_drain") + Motion.delay_of(&"enemy_break")
+	return number_arrive() + Motion.seconds(&"hp_drain") + Motion.delay_of(&"enemy_break")
+
+
+## ANIM-R6 D8: how long a hit's number takes to travel into the HP counter: its delay and
+## seconds while `number_to_hp` plays, 0 when it doesn't (switched off, reduce effects,
+## headless: the number is in at once). "arrive", "settle" and the death's lead all count
+## it the same way (settle and the lead counted its time even when it did not play).
+static func number_arrive() -> float:
+	return Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp") if Motion.live(&"number_to_hp") else 0.0
 
 
 ## ANIM-R5 combat 1: when the outcome (VICTORY / DEFEAT) lands: at its own beat, but never

@@ -237,14 +237,15 @@ func _ready() -> void:
 
 func new_campaign(seed: int) -> void:
 	RunManager.new_campaign(seed)
-	_log.append_text("[b]New campaign[/b] (seed %d): %d Schematics, %d rookies.\n" % [seed, RunManager.campaign.schematics, RunManager.campaign.roster.size()])
+	# ANIM-R6 D11: the log strip (an Options switch) translates its words.
+	_log.append_text("[b]%s[/b] %s\n" % [tr("New campaign"), tr("(seed %d): %d Schematics, %d rookies.") % [seed, RunManager.campaign.schematics, RunManager.campaign.roster.size()]])
 	_show_start()
 
 
 func start_run(_tier: int = 1) -> void:
 	var s := RunManager.start_run()
 	if s == null:
-		_log.append_text("[color=orange]No living operative or open Site: go to HQ.[/color]\n")
+		_log.append_text("[color=orange]%s[/color]\n" % tr("No living operative or open Site: go to HQ."))
 		return
 	_report(s.last_events)
 	_show_current()
@@ -252,10 +253,10 @@ func start_run(_tier: int = 1) -> void:
 
 func resume() -> void:
 	if RunManager.resume():
-		_log.append_text("[b]Resumed.[/b]\n")
+		_log.append_text("[b]%s[/b]\n" % tr("Resumed."))
 		_show_current()
 	else:
-		_log.append_text("[color=orange]Nothing to resume.[/color]\n")
+		_log.append_text("[color=orange]%s[/color]\n" % tr("Nothing to resume."))
 
 
 func enter_node(node_id: StringName) -> void:
@@ -868,7 +869,7 @@ func save_and_quit() -> void:
 	if RunManager.scene_change_pending():
 		return
 	RunManager.autosave()
-	_log.append_text("Saved.\n")
+	_log.append_text(tr("Saved.") + "\n")
 	RunManager.go_to_hq()
 	_show_start()
 

@@ -468,12 +468,11 @@ func _type_page(from: int) -> float:
 	var total := text_label.get_total_character_count()
 	if total <= from:
 		return 0.0
-	var seconds := (total - from) * Motion.seconds(&"dispatch_type")
 	# ANIM-R5 B4: the whole page types within the entry's amplitude (s), so a page's line is
 	# whole about when the page it plays over has settled (a route or raid line typed on for
 	# 2-3 s after the page had come in, and fast players moved on before reading it).
-	if Motion.amplitude(&"dispatch_type") > 0.0:
-		seconds = minf(seconds, Motion.amplitude(&"dispatch_type") / maxf(Motion.speed, Motion.SPEED_MIN))
+	# ANIM-R6 D8: Typing's one cap (it was copied here by hand).
+	var seconds := Typing.seconds_for(total - from, &"dispatch_type")
 	text_label.visible_characters = from
 	var e := Motion.entry(&"dispatch_type")
 	_type_tween = create_tween()

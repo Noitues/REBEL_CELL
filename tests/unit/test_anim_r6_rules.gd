@@ -411,3 +411,75 @@ func test_the_suite_guard_is_wired_into_every_run() -> void:
 	assert_eq(String(cfg.get("post_run_script", "")), "res://tests/helpers/suite_guard.gd", "and its post-run hook")
 	var runner := FileAccess.get_file_as_string("res://tools/run_tests.py")
 	assert_true(runner.contains("-gpre_run_script=") and runner.contains("-gpost_run_script=") and runner.contains("tests/helpers/suite_guard.gd"), "the parallel runner's shards")
+
+
+## ANIM-R6 D8: the subtitle and the page's words type under one cap (Typing.seconds_for).
+func test_the_subtitle_types_under_typings_one_cap() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	if not Settings.subtitle_typing:
+		Settings.set_subtitle_typing(true)
+	var src := FileAccess.get_file_as_string("res://scripts/autoload/dialogue.gd")
+	assert_true(src.contains("Typing.seconds_for("), "Dialogue asks Typing's cap")
+	assert_false(src.contains("Motion.amplitude(&\"dispatch_type\")"), "and keeps no copy of it")
+	var cap := Motion.amplitude(&"dispatch_type")
+	assert_gt(cap, 0.0, "dispatch_type has a cap")
+	var long_chars := int(cap / Motion.seconds(&"dispatch_type")) * 3
+	assert_almost_eq(Typing.seconds_for(long_chars, &"dispatch_type"), cap, 0.0001, "a long page types within the cap")
+	assert_almost_eq(Typing.seconds_for(4, &"dispatch_type"), 4 * Motion.seconds(&"dispatch_type"), 0.0001, "a short one at its pace")
+	Motion.set_speed(2.0)
+	assert_almost_eq(Typing.seconds_for(long_chars, &"dispatch_type"), cap / 2.0, 0.0001, "the cap at the speed")
+	Motion.set_speed(1.0)
+	Dialogue.say(RC.Voice.DISPATCH, "Jacking you in. The rack is two hops out: keep your Heat down and bank before the audit lands.")
+	var total := Dialogue.text_label.get_total_character_count()
+	assert_true(Dialogue.typing(), "the subtitle types")
+	assert_lte(Typing.seconds_for(total, &"dispatch_type"), cap + 0.0001, "the subtitle's page under the same cap")
+
+
+## ANIM-R6 D8: a hit's number that doesn't travel (number_to_hp off) takes no time in the
+## replay's settle or a death's lead, as it takes none in "arrive".
+func test_a_number_that_does_not_travel_takes_no_time_anywhere() -> void:
+	var combat: GDScript = load("res://scripts/ui/combat_scene.gd")
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	var travel := Motion.delay_of(&"number_to_hp") + Motion.seconds(&"number_to_hp")
+	assert_gt(travel, 0.0, "the number travels")
+	var on: Dictionary = combat.beat_timing()
+	assert_almost_eq(float(on["settle"]), travel + Motion.seconds(&"hp_drain"), 0.0001, "on: settle counts the travel")
+	assert_almost_eq(float(on["arrive"]), travel, 0.0001, "and arrive")
+	_table_with_off(&"number_to_hp")
+	var off: Dictionary = combat.beat_timing()
+	assert_eq(float(off["arrive"]), 0.0, "off: no arrival time")
+	assert_almost_eq(float(off["settle"]), Motion.seconds(&"hp_drain"), 0.0001, "off: settle is the HP roll alone (it counted the travel)")
+	assert_almost_eq(combat.death_lead(), Motion.seconds(&"hp_drain") + Motion.delay_of(&"enemy_break"), 0.0001, "and the death's lead")
+
+
+## ANIM-R6 D11: the system log strip (an Options switch, so a player may read it) writes no
+## English literal: every word it adds goes through tr (bbcode and format marks aside).
+func test_the_system_log_translates_its_words() -> void:
+	var tag := RegEx.create_from_string("\\[/?[a-z]+(=[a-z]+)?\\]|%[0-9.]*[a-z]|\\\\n")
+	var literal := RegEx.create_from_string("\"([^\"]*)\"")
+	var found: Array[String] = []
+	for path in ["res://scripts/ui/hq_scene.gd", "res://scripts/ui/netrun_scene.gd"]:
+		var lines := FileAccess.get_file_as_string(path).split("\n")
+		for n in lines.size():
+			var line := lines[n]
+			if not line.contains("_log.append_text("):
+				continue
+			# A dictionary key (e["text"]) is no word shown.
+			var outside_tr := RegEx.create_from_string("\\[\"[a-z_]+\"\\]").sub(line, "", true)
+			var k := outside_tr.find("tr(\"")
+			while k >= 0:
+				var end := outside_tr.find("\")", k)
+				outside_tr = outside_tr.substr(0, k) + outside_tr.substr(end + 2) if end > k else outside_tr.substr(0, k)
+				k = outside_tr.find("tr(\"")
+			for m in literal.search_all(outside_tr):
+				var words := tag.sub(m.get_string(1), "", true).strip_edges()
+				if RegEx.create_from_string("[A-Za-z]").search(words) != null:
+					found.append("%s:%d %s" % [path, n + 1, line.strip_edges()])
+	assert_eq(found, [] as Array[String], "every word the log strip writes is translated")
+	var csv := FileAccess.get_file_as_string("res://assets/text/strings.csv")
+	for key in ["New campaign", "Resumed.", "Nothing to resume.", "No living operative or open Site: go to HQ.", "Saved."]:
+		assert_true(csv.contains(key), "%s is in the strings the translators get" % key)

@@ -582,6 +582,28 @@ unless named.
   were orphans until the frame ended; now they are hidden and queued in place (no orphan at
   any time). The suite guard fails a run that leaves any node outside the tree at its end
   (`ORPHAN LEFT`); it found none after these fixes.
+- **D8 one cap, one arrival, a flash that minds the setting.** Dialogue copied Typing's
+  typing cap by hand: `Typing.seconds_for(chars, id)` is the one (seconds per character,
+  at most the entry's amplitude, both at the speed), used by both. `beat_timing` counted
+  the hit number's travel (`number_to_hp`) in "arrive" only while it plays, but always in
+  "settle" and in the death's lead: `number_arrive()` is the one answer (0 when it does not
+  play) for all three (fix agent A's `combat_scene.gd`: the three reads and the new
+  static). `Fx.flash` had no reduce-effects check (its callers gate on their own entry, but
+  the default flash did not): it never flashes under reduce effects, and on
+  `screen_flash`'s numbers not when that entry is off (D3). Tests:
+  `test_the_subtitle_types_under_typings_one_cap`,
+  `test_a_number_that_does_not_travel_takes_no_time_anywhere`,
+  `test_fx_pieces_honour_their_switch`.
+- **D11 the system log speaks the player's language.** The log strip at the foot of the
+  HQ and the run is an Options switch, so a player can read it: it is not dev-only. Its
+  words ("New campaign", the seed line, "Resumed.", "Nothing to resume.", "No living
+  operative or open Site: go to HQ.", "Saved.") go through `tr` now (the bbcode stays
+  outside the key); strings.csv re-exported (fix agents B's and C's scene files: the
+  log lines only). The lines the rules write into it (a raid's event text, a refused
+  launch's reason) are the rules' English, as the toasts that show the same text are; the
+  coordinator has this as a finding for the screens that show them. Test:
+  `test_the_system_log_translates_its_words` (no English literal outside `tr` in a log
+  line; the keys are in strings.csv).
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
