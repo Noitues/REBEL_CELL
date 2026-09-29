@@ -158,6 +158,7 @@ static func memory_bytes() -> int:
 static func clear() -> void:
 	_entries.clear()
 	_lru.clear()
+	_keep.clear()
 
 
 ## ANIM-R2 R10: the game is quitting (or a test resets): every running build is told to stop
@@ -258,13 +259,20 @@ static func fit_scale(region: Rect2, wanted: float) -> float:
 ## Starts a bake of `painter` (a NeonCity set up by `NeonCity.make_painter`) for `key`
 ## (a region of `look`), unless one is running; `waiter` is redrawn when it lands.
 ## ANIM-R2 R1: `urgent` (a view waiting on it) goes ahead of queued prebakes.
-static func request(key: String, look: String, painter: NeonCity, waiter: Node, urgent: bool = false) -> void:
+## ANIM-R5 P2: `outlive` bakes for the next scene (the HQ warmed from a run's end, a raid
+## interlude's framing from the jack): the cache's own holder waits on it too, so it is never
+## stale when the scene that asked for it goes.
+static func request(key: String, look: String, painter: NeonCity, waiter: Node, urgent: bool = false, outlive: bool = false) -> void:
 	drop_stale()
 	if _pending.has(key):
 		wait(key, waiter)
+		if outlive:
+			wait(key, _holder())
 		painter.free()
 		return
 	_pending[key] = {"waiters": [waiter.get_instance_id()], "look": look, "region": painter.painter_region}
+	if outlive:
+		(_pending[key]["waiters"] as Array).append(_holder().get_instance_id())
 	if simulate:
 		painter.free()
 		return
@@ -287,15 +295,44 @@ static func _pump() -> void:
 
 
 ## Stores a finished bake (the baker, and tests that stand in for the renderer).
+## ANIM-R5 P2: the least recently used entry that no slot keeps (`keep`) goes first; kept
+## ones go only when nothing else is left to drop.
 static func store(key: String, e: Dictionary) -> void:
 	_entries[key] = e
 	_lru.erase(key)
 	_lru.append(key)
 	while _lru.size() > 1 and (_lru.size() > CAPACITY or memory_bytes() > BUDGET_BYTES):
-		_entries.erase(_lru.pop_front())
+		var drop := 0
+		while drop < _lru.size() - 1 and _kept_keys().has(_lru[drop]):
+			drop += 1
+		_entries.erase(_lru[drop])
+		_lru.remove_at(drop)
 	# A simulated bake (tests) lands here: its waiters redraw as a real one's do.
 	if _pending.has(key) and not _live.has(key):
 		_land(key)
+
+
+## ANIM-R5 P2: named slots, each keeping one entry in the cache past the LRU (the run's route
+## while its pages come and go: the route after a fight, loot or an event came back to the
+## silhouette when the pages' bakes had pushed it out).
+static var _keep: Dictionary = {}
+
+
+## Keeps `key` in slot `slot` (replacing what the slot kept); "" empties the slot.
+static func keep(slot: StringName, key: String) -> void:
+	if key == "":
+		_keep.erase(slot)
+	else:
+		_keep[slot] = key
+
+
+## The key slot `slot` keeps ("" when none).
+static func kept_key(slot: StringName) -> String:
+	return String(_keep.get(slot, ""))
+
+
+static func _kept_keys() -> Array:
+	return _keep.values()
 
 
 ## Redraws `waiter` when the running bake for `key` lands.
@@ -331,39 +368,39 @@ static func _gpu_copy(vp: SubViewport) -> Texture2D:
 	if rd.texture_copy(src, dst, Vector3.ZERO, Vector3.ZERO, Vector3(fmt.width, fmt.height, 1), 0, 0, 0, 0) != OK:
 		rd.free_rid(dst)
 		return null
-	var tex := BakedTexture.new()
-	tex.texture_rd_rid = dst
-	return tex
+	return BakedTexture.of_rd(dst)
 
 
 ## Off switch for the GPU copy (tests and a renderer that shows it wrong).
 static var gpu_copy: bool = true
 
 
-## ANIM-R4 H10: the bake's picture as the viewport's own render target, the viewport kept
-## (never updated again; its painter and geometry go): no second texture is made or filled
-## in the landing frame. Null when the renderer has no RenderingDevice (the Compatibility
-## renderer) or with the GPU path off.
+## ANIM-R5 P1: the bake's picture is its viewport's own render target, the viewport kept
+## (never updated again; its painter and geometry go) and drawn through its ViewportTexture
+## (`BakedTexture.of_viewport`): no second texture is made or filled in the landing frame.
+## (ANIM-R4 H10 wrapped the target in a Texture2DRD; Godot refuses one over a viewport's
+## shared texture, so every kept bake drew nothing.) Null with the switch off.
 static func _keep_viewport(vp: SubViewport) -> Texture2D:
-	if not gpu_copy or not keep_viewports:
-		return null
-	if RenderingServer.get_rendering_device() == null:
-		return null
-	var src := RenderingServer.texture_get_rd_texture(vp.get_texture().get_rid())
-	if not src.is_valid():
+	if not keep_viewports:
 		return null
 	vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
-	var tex := BakedTexture.new()
-	tex.texture_rd_rid = src
-	tex.held = vp
-	return tex
+	return BakedTexture.of_viewport(vp)
 
 
-## Off switch for keeping the viewports (the copy path then runs, as before ANIM-R4).
-## Off (R5 hotfix): Godot refuses a Texture2DRD over a viewport's shared render target
-## ("Please create the texture object using the original texture"), so every kept bake drew
-## nothing and the city went grey everywhere. The copy path is back until R5 replaces this.
-static var keep_viewports: bool = false
+## Keep the bake viewports (ANIM-R5 P1; see DECISIONS "ANIM-R5 city" for the measurement);
+## off runs the GPU copy (then the CPU readback) as before ANIM-R4.
+static var keep_viewports: bool = true
+
+
+## ANIM-R5 P1: a picture the views can draw: a texture with a valid RID and a non-empty size
+## (a BakedTexture also checks its viewport or its copy). A bake whose picture fails this is
+## marked `failed`, and the views show the city's silhouette instead of drawing nothing.
+static func usable(tex: Texture2D) -> bool:
+	if tex == null or tex.get_width() <= 0 or tex.get_height() <= 0:
+		return false
+	if tex is BakedTexture:
+		return (tex as BakedTexture).valid()
+	return tex.get_rid().is_valid()
 
 
 static func _holder() -> Node:
@@ -450,21 +487,25 @@ static func _bake(key: String, look: String, painter: NeonCity) -> void:
 			return
 	var e := {"look": look, "region": painter.painter_region, "scale": painter.scale.x}
 	var tex: Texture2D = _keep_viewport(vp) if is_instance_valid(vp) else null
-	var kept := tex != null
-	if tex == null and is_instance_valid(vp):
-		tex = _gpu_copy(vp)
-	if tex == null and is_instance_valid(vp):
+	var kept := usable(tex)
+	if not kept:
+		tex = _gpu_copy(vp) if is_instance_valid(vp) else null
+	if not usable(tex) and is_instance_valid(vp):
 		var img: Image = vp.get_texture().get_image()
 		if img != null and not img.is_empty():
 			tex = ImageTexture.create_from_image(img)
-	if tex == null:
+	if not usable(tex):
 		e["failed"] = true
+		kept = false
+		tex = null
 	else:
 		e["texture"] = tex
 		e.merge(painter.overlay_data())
 	painter.free_chunks()
 	if kept:
-		# The viewport stays (its target is the picture); the painter goes.
+		# The viewport stays (its target is the picture; it goes with the texture), the
+		# painter goes.
+		rec.erase("vp")
 		vp.remove_child(painter)
 		painter.queue_free()
 	elif is_instance_valid(vp):

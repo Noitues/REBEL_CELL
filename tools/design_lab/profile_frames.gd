@@ -6,6 +6,7 @@ extends SceneTree
 ##
 ##   godot --path . -s tools/design_lab/profile_frames.gd -- --demo-hq [--scene=res://...]
 ##     [--reduce] (reduce effects on: the city's live layer off)
+##     [--bake-copy] (ANIM-R5 P1: bakes copied on the GPU instead of kept viewports)
 ##
 ## ANIM-R1 M2: `--timeline` times every frame from the first (no warm-up) for `--frames=N`
 ## (default FRAMES) and prints the longest frame and every frame over SPIKE_MS with its
@@ -49,6 +50,9 @@ func _initialize() -> void:
 			_frames = int(a.trim_prefix("--frames="))
 		elif a == "--probe-map":
 			_probe = true
+		elif a == "--bake-copy":
+			# ANIM-R5 P1: the GPU copy path instead of the kept viewports (to compare the two).
+			(load("res://scripts/ui/kit/city_bake_cache.gd") as GDScript).set("keep_viewports", false)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	var scene: Node = (load(path) as PackedScene).instantiate()
 	root.add_child(scene)

@@ -655,6 +655,97 @@ func raid_fight() -> void:
 	_report(events)
 	RunManager.after_step()
 	_show_raid_playout(events, before)
+	# ANIM-R5 P2: behind the playout, the looks the next page and its end show after the raid:
+	# the route first (the next page; a quick Continue found it still queued behind the
+	# playout's), then the fights' stretch of city under the result's tint (it spreads at the
+	# end; until then the old image stands in).
+	_prebake_route.call_deferred()
+	if before != null and not events.is_empty():
+		_prebake_raid_playout.call_deferred(before, CityInfluence.of(RunManager.campaign, RunManager.corporation))
+
+
+## ANIM-R5 P2: the Heat the city's corporate creep shows while a raid's playout holds the
+## pre-raid look (-1: the campaign's).
+var _creep_heat: int = -1
+
+
+## The city's corporate creep for Heat `heat` (0..1 of the Heat track).
+static func creep_of(heat: int) -> float:
+	return clampf(heat / float(RunManager.config().heat_max), 0.0, 1.0)
+
+
+## ANIM-R5 P2: the mid-run raid's playout area, baked ahead (off the main thread) for campaign
+## `c`'s raid map under influence `inf` (null: the city's current one): every node of it as a
+## fight's focus at RAID_MIN_ZOOM (the interlude's playout ran ~5 s over the silhouette).
+func _prebake_raid_playout(c: CampaignState, inf: Variant) -> void:
+	if c == null or not is_inside_tree() or background == null:
+		return
+	var g := CityLayout.grid_graph(c, RunManager.corporation, CityLayout.threat_paths(c, RunManager.corporation))
+	var region := Rect2()
+	for n: Dictionary in g["nodes"]:
+		var at: Vector2 = n["at"]
+		var r := background.city.region_for(at + Vector2(0.5, 0.5), PLAYOUT_ANCHOR, RAID_MIN_ZOOM, size)
+		region = r if not region.has_area() else region.merge(r)
+	if region.has_area():
+		background.city.prebake(region, inf, false, creep_of(RunManager.campaign.heat) if inf != null else -1.0)
+
+
+## Where the interlude playout's fight sits on screen (its map area's centre; `_show_raid_playout`).
+const PLAYOUT_ANCHOR := Vector2(0.4, 0.56)
+
+
+## ANIM-R5 P2: the route's frame baked ahead, from a page before it (the raid interlude and its
+## playout: the route after an interlude raid sat 6.5 s on the silhouette): the route's
+## camera as `_show_map` mounts it, out to ROUTE_MIN_ZOOM (the fit zooms out at most that
+## far), under the city's current influence.
+func _prebake_route() -> void:
+	var s := RunManager.netrun
+	if s == null or not is_inside_tree() or background == null or s.run == null or s.run.map == null:
+		return
+	var r := route_graph()
+	var nodes: Array = r["nodes"]
+	if nodes.is_empty():
+		return
+	var c := Vector2.ZERO
+	for n: Dictionary in nodes:
+		c += Vector2(n["at"])
+	c /= nodes.size()
+	# The look the route shows: the campaign's own tint and Heat (a playout may hold the old).
+	background.city.prebake(background.city.region_for(c, ROUTE_ANCHOR, ROUTE_MIN_ZOOM, size), CityInfluence.of(RunManager.campaign, RunManager.corporation), false,
+		creep_of(RunManager.campaign.heat))
+
+
+## ANIM-R5 P2: the route's own bake is kept in the cache (CityBakeCache.keep) while the run's
+## other pages come and go, so coming back to the route is never the silhouette again.
+func _keep_route_bake() -> void:
+	if city_overlay == null or not is_instance_valid(city_overlay) or _grid_zoomed or _shown_screen != "route":
+		return
+	var city := background.city
+	if city.view_covered():
+		CityBakeCache.keep(ROUTE_KEEP, CityBakeCache.find(city.look_key(), city.view_rect()))
+
+
+const ROUTE_KEEP := &"route"
+## The hidden HQ backdrop twin warming the HQ's bake (`_warm_hq`).
+var _hq_warm: CyberdeckBackground = null
+
+
+## ANIM-R5 P2: the HQ's city baked ahead from the run's end page (the HQ came up with ~3.5 s
+## of black behind its panels): a hidden twin of its backdrop (the same look: its district,
+## the campaign's territory) asks for the HQ's default frame at this screen's size; the bake
+## outlives this scene (the jack out frees it).
+func _warm_hq() -> void:
+	if RunManager.campaign == null or not is_inside_tree():
+		return
+	if _hq_warm != null and is_instance_valid(_hq_warm):
+		_hq_warm.queue_free()
+	_hq_warm = CyberdeckBackground.new()
+	_hq_warm.name = "HqWarm"
+	_hq_warm.visible = false
+	add_child(_hq_warm)
+	_hq_warm.set_district(RunManager.campaign.corporation_id)
+	# The frame's region is worked out from the screen's size (the twin's own layout waits).
+	_hq_warm.city.prebake_frames([size], true)
 
 
 ## ANIM-R1 M8: whether the screen a jack in lands on is built and framed (Fx keeps its
@@ -772,7 +863,9 @@ func _set_panel(p: Control, glass: bool = true) -> void:
 		if s.run.phase != RunState.Phase.COMBAT:
 			background.visible = true
 	if RunManager.campaign != null:
-		background.corp_creep = clampf(RunManager.campaign.heat / float(RunManager.config().heat_max), 0.0, 1.0)
+		# ANIM-R5 P2: a raid's playout holds the Heat creep of before the raid (as it holds the
+		# pre-raid tint): its new Heat is a new look, which rebaked the whole playout mid-raid.
+		background.corp_creep = creep_of(_creep_heat if _creep_heat >= 0 else RunManager.campaign.heat)
 		background.corp_color = Palette.corp_color(RunManager.campaign.corporation_id)
 		background.set_district(RunManager.campaign.corporation_id)
 	# The combat panel brings its own log; give it the height instead.
@@ -1015,6 +1108,9 @@ func _show_map() -> void:
 	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Modem, an event or loot, all on
 	# the default frame of this city's look: baked now, behind the route (after its own view).
 	_prebake_backdrops.call_deferred()
+	# ANIM-R5 P2: the route's own bake stays in the cache while those pages show.
+	if not background.city.rebuilt.is_connected(_keep_route_bake):
+		background.city.rebuilt.connect(_keep_route_bake)
 
 
 ## The ROUTE window's choice buttons for the choices the view shows (view_choices: ANIM-R4
@@ -1540,14 +1636,22 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	side.add_child(feed)
 	playout = RaidPlayoutPanel.new(null, RaidPlayoutPanel.LOG_SIZE)
 	feed.body.add_child(playout)
-	var cont := _icon_button(tr("Continue"), _show_current, StatIcon.CONTINUE)
+	var cont := _icon_button(tr("Continue"), _leave_raid_playout, StatIcon.CONTINUE)
 	cont.disabled = true
 	playout.finished.connect(func() -> void:
 		cont.disabled = false
+		# ANIM-R5 P7: the verdict is in: the network's packets stop.
+		if city_overlay != null and is_instance_valid(city_overlay):
+			city_overlay.packets = false
+		# ANIM-R5 P2: the raid's Heat reaches the city's look with its tint.
+		_creep_heat = -1
+		background.corp_creep = creep_of(RunManager.campaign.heat)
 		background.city.release_influence())
 	# ANIM-5: Skip goes straight on (the raid's result).
-	playout.skipped.connect(_show_current)
+	playout.skipped.connect(_leave_raid_playout)
 	side.add_child(cont)
+	if before != null and not _instant_playout():
+		_creep_heat = before.heat
 	_set_panel(box, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1568,6 +1672,14 @@ func _show_raid_playout(events: Array[Dictionary], before: CampaignState = null)
 	playout.play(events, _instant_playout())
 	if playout.is_done() and _instant_playout():
 		_show_current()
+
+
+## ANIM-R5 P10: Continue (or Skip) after the interlude's raid: the fight camera's frame is let
+## go before the next page mounts (the route showed ~3 frames at the raid's zoom, the rig
+## still holding it, then eased out): the route starts at its own framing.
+func _leave_raid_playout() -> void:
+	background.settle_camera()
+	_show_current()
 
 
 ## ANIM-R4 H11a: the top bar's HEAT during a raid's playout: what the feed has told (-1:
@@ -1624,11 +1736,29 @@ func _frame_raid_map() -> void:
 	_raid_map_framing = false
 	if _raid_map_area == null or not is_instance_valid(_raid_map_area) or city_overlay == null or not is_instance_valid(city_overlay):
 		return
-	var pts := PackedVector2Array()
-	for n in city_overlay.nodes:
-		pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
-	background.frame_points(pts, _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
+	background.frame_points(raid_frame_points(), _raid_map_area.get_global_rect().grow(-LegendSpot.MARGIN * 2.0), RAID_ZOOM, RAID_MIN_ZOOM)
 	background.settle_camera()
+
+
+## ANIM-R5 P5: what the interlude's map frames: home (CORE) and the raid's entry Sites, the
+## road the raid takes (it fitted the whole Grid, which at its least zoom left CORE under the
+## RAID window).
+func raid_frame_points() -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var s := RunManager.netrun
+	if s == null or city_overlay == null or not is_instance_valid(city_overlay):
+		return pts
+	var c := s.campaign
+	var want := {c.grid.home_site_id: true}
+	for e in CampaignRules.raid_entries(c, RunManager.corporation, s.raid_pending()):
+		want[e] = true
+	for n in city_overlay.nodes:
+		if want.has(n["id"]):
+			pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
+	if pts.is_empty():
+		for n in city_overlay.nodes:
+			pts.append(Vector2(n["at"]) + Vector2(0.5, 0.5))
+	return pts
 
 
 
@@ -2529,6 +2659,10 @@ func _show_raid() -> void:
 	city_overlay.avoid_controls([win])
 	_raid_map_area = area
 	_frame_raid_map.call_deferred()
+	# ANIM-R5 P2: behind the setup (after its own view), the playout's fights and the route
+	# the run goes on to.
+	_prebake_raid_playout.call_deferred(c, null)
+	_prebake_route.call_deferred()
 	_register_raid_drops(run_assets, armory_row)
 
 
@@ -2635,6 +2769,8 @@ func _site_name(site_id: StringName) -> String:
 
 func _show_end() -> void:
 	var s := RunManager.netrun
+	# ANIM-R5 P2: the HQ's city bakes while the run's report shows.
+	_warm_hq.call_deferred()
 	var box := VBoxContainer.new()
 	var won := s.run.outcome == RunState.Outcome.COMPLETED
 	var aborted := s.run.outcome == RunState.Outcome.ABORTED

@@ -276,8 +276,6 @@ var influence: Dictionary = {}
 ## Set on a bake painter: the world rect (px) it paints; empty on a live city.
 var painter_region: Rect2 = Rect2()
 var _painter: bool = false
-## A bake came back empty (no readback on this renderer): draw procedurally.
-var _fallback: bool = false
 ## The live layer: the baked image, the screen shade and the fx overlay (own material).
 var _view: Control
 ## Offset from the stored overlay data (roofs, beacons...) to this control's space.
@@ -499,7 +497,7 @@ func set_influence(inf: Dictionary) -> void:
 
 ## True while this city draws the shared baked image (not headless, not a painter).
 func is_baked() -> bool:
-	return use_bake and not _painter and not _fallback and CityBakeCache.can_bake()
+	return use_bake and not _painter and CityBakeCache.can_bake()
 
 
 ## Re-reads the followed campaign's influence (re-bakes only if it changed).
@@ -1216,11 +1214,12 @@ func _draw_view() -> void:
 	var look := look_key()
 	var view := view_rect()
 	var key := CityBakeCache.find(look, view)
-	if key != "" and CityBakeCache.entry(key).has("failed"):
-		_fallback = true
-		queue_redraw()
-		return
-	if key != "":
+	if key != "" and not _drawable(CityBakeCache.entry(key)):
+		# ANIM-R5 P1: a bake whose picture is not usable (CityBakeCache marks it failed): a
+		# stand-in or the city's silhouette (below), never an empty map and never the
+		# seconds-long procedural build on this thread; it is not asked for again.
+		key = _stand_in(look, view)
+	elif key != "":
 		_want = {}
 		_note_seen()
 		_note_frame_size()
@@ -1228,6 +1227,7 @@ func _draw_view() -> void:
 			_flush_prebakes.call_deferred()
 	else:
 		_want_bake(look)
+		_mark_early()
 		key = _stand_in(look, view)
 	if key == "":
 		_sky_shown = true
@@ -1277,13 +1277,18 @@ func _draw_view() -> void:
 ## strip of city over part of the screen, over the wheels, read worse than the dark).
 func _stand_in(look: String, view: Rect2) -> String:
 	var key := CityBakeCache.find_covering(look, view, STANDIN_COVER)
-	if key != "":
+	if key != "" and _drawable(CityBakeCache.entry(key)):
 		return key
 	if _baked_key != "" and CityBakeCache.has(_baked_key):
 		var e := CityBakeCache.entry(_baked_key)
-		if not e.has("failed") and e.has("texture") and (e.get("region", Rect2()) as Rect2).encloses(view):
+		if _drawable(e) and (e.get("region", Rect2()) as Rect2).encloses(view):
 			return _baked_key
 	return ""
+
+
+## ANIM-R5 P1: an entry whose picture can be drawn (not failed, its texture usable).
+static func _drawable(e: Dictionary) -> bool:
+	return not e.has("failed") and CityBakeCache.usable(e.get("texture") as Texture2D)
 
 
 ## ANIM-R2 R1: the view needs a bake of `look`: noted with the camera now, asked for once
@@ -1457,11 +1462,35 @@ func _note_seen() -> void:
 	var prev: Variant = _seen.get(fam)
 	if prev != null and CityInfluence.signature(prev) != CityInfluence.signature(influence):
 		_start_spread(prev)
-		mark_changes(prev, influence)
+		if _marked_sig != CityInfluence.signature(influence):
+			mark_changes(prev, influence)
+	_marked_sig = ""
 	_seen[fam] = influence
 	if _spread_elapsed >= 0.0:
 		_old_layer.queue_redraw()
 		_front_layer.queue_redraw()
+
+
+## ANIM-R5 P2: a territory change whose new look is still baking stamps its marks (CLAIMED /
+## SEIZED, the outline and hatch) at once, over the old image: a claim waited 3.6 s with no
+## feedback for the bake before anything showed. The tint's spread follows when the bake lands
+## (`_note_seen`, which then does not stamp them again). Not while the influence is pinned (a
+## raid's playout lets its result spread at its end).
+func _mark_early() -> void:
+	if influence_pin != null:
+		return
+	var sig := CityInfluence.signature(influence)
+	if sig == _marked_sig:
+		return
+	var prev: Variant = _seen.get(_family())
+	if prev == null or CityInfluence.signature(prev) == sig:
+		return
+	_marked_sig = sig
+	mark_changes(prev, influence)
+
+
+## The influence whose marks stamped before its bake landed ("" when none: ANIM-R5 P2).
+var _marked_sig: String = ""
 
 
 ## The live layer's visible share (culled to the view, capped), refreshed when the camera
@@ -1867,15 +1896,22 @@ func free_chunks() -> void:
 ## waits). ANIM-R2 R1: a city on screen whose own view is not baked yet asks for it first:
 ## the prebake waits until the view's image has landed (it took the build slot before the
 ## view's own bake, and the raid setup sat 3.5 s on the sky).
-func prebake(region: Rect2, inf: Variant = null) -> String:
+## ANIM-R5 P2: `outlive` for a bake the next scene shows (CityBakeCache.request): it is not
+## dropped when this scene goes.
+## `creep` (>= 0) names another Heat creep than the city's (the look after a raid's Heat while
+## the playout still holds the old one).
+func prebake(region: Rect2, inf: Variant = null, outlive: bool = false, creep: float = -1.0) -> String:
 	if not is_baked() or not is_inside_tree():
 		return ""
 	var held: Dictionary = (_followed_influence() if inf == null else inf as Dictionary).duplicate(true)
 	if is_visible_in_tree() and not view_covered():
-		_deferred_prebakes.append([region, held])
+		_deferred_prebakes.append([region, held, outlive, creep])
 		return ""
 	var saved := influence
+	var saved_creep := corp_creep
 	influence = held
+	if creep >= 0.0:
+		corp_creep = creep
 	var look := look_key()
 	var key := ""
 	if CityBakeCache.find(look, region) == "":
@@ -1885,10 +1921,25 @@ func prebake(region: Rect2, inf: Variant = null) -> String:
 		var running := CityBakeCache.find_pending(look, region)
 		if running != "":
 			key = running
+			if outlive:
+				CityBakeCache.wait(running, CityBakeCache._holder())
 		elif not CityBakeCache.has(key) and not CityBakeCache.is_pending(key):
-			CityBakeCache.request(key, look, make_painter(r, bake_scale(r)), _view)
+			CityBakeCache.request(key, look, make_painter(r, bake_scale(r)), _view, false, outlive)
 	influence = saved
+	corp_creep = saved_creep
 	return key
+
+
+## ANIM-R5 P2: the bake region (world px, snapped, with its margin) a camera focused on grid
+## point `focus` at `anchor` (0..1 of the screen) and `zoom` shows on a screen of
+## `screen` px: a page's frame worked out before the page exists (the route after a raid
+## interlude, a playout's fights).
+func region_for(focus: Vector2, anchor: Vector2, zoom: float, screen: Vector2) -> Rect2:
+	var view := screen / maxf(zoom, 0.001)
+	var a := view * anchor
+	var ox := a.x - (focus.x - focus.y) * TILE_A
+	var oy := a.y - (focus.x + focus.y) * TILE_B
+	return snap_region(Rect2(-ox, -oy, view.x, view.y).grow(REGION_MARGIN))
 
 
 ## ANIM-R2 R1: prebakes asked for while this city's own view was not baked yet ([region,
@@ -1900,7 +1951,7 @@ func _flush_prebakes() -> void:
 	var todo := _deferred_prebakes
 	_deferred_prebakes = []
 	for q: Array in todo:
-		prebake(q[0], q[1])
+		prebake(q[0], q[1], bool(q[2]), float(q[3]))
 
 
 ## `region` (world px) grown out to the REGION_SNAP grid (bakes of nearby cameras share it).
@@ -1942,7 +1993,7 @@ func _note_frame_size() -> void:
 ## ANIM-R2 R1: bakes, ahead, the default frame at every size in `sizes` and every size it was
 ## drawn at lately (one region enclosing them all): a fight's arena, the Modem, event and
 ## loot pages open on their city. Returns prebake's key.
-func prebake_frames(sizes: Array[Vector2]) -> String:
+func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
 	var all: Array[Vector2] = sizes.duplicate()
 	for v in frame_sizes:
 		if not all.has(v):
@@ -1955,7 +2006,7 @@ func prebake_frames(sizes: Array[Vector2]) -> String:
 		region = r if not region.has_area() else region.merge(r)
 	if not region.has_area():
 		return ""
-	return prebake(region)
+	return prebake(region, null, outlive)
 
 
 ## The procedural city's geometry for the current camera and look: streets, the fist,
