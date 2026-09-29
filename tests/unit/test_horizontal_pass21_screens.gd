@@ -528,7 +528,9 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 			name_label = n
 	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * Settings.TEXT_SCALE_MAX), "the dossier's name grows")
 	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
-	var line_h := Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale))
+	# Art pass W1: MSDF faces report fractional heights (no hinting); a RichTextLabel lays
+	# each line on whole pixels, so one shown line is the height rounded up.
+	var line_h := ceilf(Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale)))
 	var lines := radio.label.size.y / line_h
 	assert_almost_eq(lines, roundf(lines), 0.05, "the radio shows whole lines (%.2f)" % lines)
 	hq.open_loadout()
