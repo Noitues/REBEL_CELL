@@ -131,7 +131,7 @@ func _label(words: String, step: int, font: Font, col: Color = Palette.INK) -> L
 	# Art pass WF (§12): words filed on the paper go INK in high contrast (the empty
 	# folder's words sit on the glass and keep theirs).
 	l.add_theme_color_override("font_color", col if summary.is_empty() else PaperInk.text(col))
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	# A wrapped line knows its height only at its width: set it now, so the folder is never
 	# measured at width 0 (a transient 2600 px page made the scrolling slot page chase itself).
 	l.custom_minimum_size.x = inner_width()

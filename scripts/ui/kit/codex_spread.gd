@@ -148,7 +148,7 @@ func _entry(name_key: String, item: Dictionary) -> Control:
 	t.add_theme_font_override("font", Palette.display())
 	t.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.LABEL))
 	t.add_theme_color_override("font_color", Palette.INK)
-	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(t)  # art pass W9F §4.3.3: whole words, never mid-word
 	t.custom_minimum_size.x = column_width()
 	words.add_child(t)
 	var body := Label.new()
@@ -156,7 +156,7 @@ func _entry(name_key: String, item: Dictionary) -> Control:
 	body.text = String(item.get("text", ""))
 	body.theme_type_variation = UiTheme.BODY_TEXT
 	body.add_theme_color_override("font_color", Palette.INK)
-	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(body)  # art pass W9F §4.3.3: whole words, never mid-word
 	body.custom_minimum_size.x = column_width()
 	words.add_child(body)
 	row.add_child(words)

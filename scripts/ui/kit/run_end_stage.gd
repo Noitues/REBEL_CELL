@@ -124,7 +124,7 @@ func _init(p_outcome: int = RunState.Outcome.DIED, verdict: String = "", color: 
 	fate_label.name = "RunFate"
 	fate_label.theme_type_variation = UiTheme.BODY_TEXT
 	fate_label.text = fate
-	fate_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(fate_label)  # art pass W9F §4.3.3: whole words, never mid-word
 	fate_label.custom_minimum_size.x = words_width()
 	words.add_child(fate_label)
 	back_button = Button.new()

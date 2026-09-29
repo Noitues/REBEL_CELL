@@ -177,7 +177,7 @@ func _set_words(text: String, is_refusal: bool, room: float) -> void:
 	var chrome := _panel.content_margin_left + _panel.content_margin_right
 	var natural := Palette.marker().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.LABEL)).x
 	if room > 0.0 and natural + chrome > room:
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(label)  # art pass W9F §4.3.3: whole words, never mid-word
 		label.custom_minimum_size.x = maxf(1.0, room - chrome)
 	queue_redraw()
 

@@ -547,7 +547,7 @@ func _stat_cell(cell: Array) -> Control:
 	l.add_theme_color_override("font_color", Palette.TEXT_MID)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Wraps at word boundaries at the cell's width, never inside a word (§4.3 rule 3).
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size.x = STAT_CELL_W * Settings.text_scale
 	v.add_child(l)
 	return v

@@ -24,7 +24,7 @@ func _init(question: String, yes_text: String = "Yes", no_text: String = "No") -
 	panel.content.add_child(box)
 	var l := Label.new()
 	l.text = question
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size = Vector2(380, 0)
 	l.add_theme_color_override("font_color", Palette.TEXT_HI)
 	box.add_child(l)
