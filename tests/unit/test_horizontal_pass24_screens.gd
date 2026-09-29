@@ -648,7 +648,7 @@ func _assert_saved_clear(root: Node, what: String) -> void:
 
 func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 	for pad in [false, true]:
-		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+		for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 			Settings.set_text_scale(scale)
 			Settings.set_pad_active(pad)
 			var hq := _open(HQ)
@@ -679,7 +679,7 @@ func test_the_saved_stamp_is_placed_on_the_page_it_lands_on() -> void:
 func test_the_first_page_always_carries_words() -> void:
 	var hq := _open(HQ)
 	await _frames()
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		await _frames(2)
 		var width := Dialogue.default_rect.size.x
@@ -706,7 +706,7 @@ func test_the_first_page_always_carries_words() -> void:
 # --- S9 the event's choices ----------------------------------------------------------------------------
 
 func test_event_choices_stay_on_screen_and_no_change_shows_a_mark() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
@@ -801,7 +801,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 	var c := RunManager.campaign
 	while c.roster.size() < 3:
 		c.recruit(RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData)
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames(6)
@@ -874,7 +874,7 @@ func test_route_nodes_clear_of_the_route_column_and_choices_told_apart() -> void
 func test_the_continue_line_reads_as_a_line_of_icons() -> void:
 	RunManager.campaign.heat = 14
 	RunManager.autosave()
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		var title := _open(TITLE)
 		title.continue_slot = SLOT

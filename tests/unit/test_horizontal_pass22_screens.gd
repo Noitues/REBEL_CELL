@@ -168,7 +168,7 @@ func _assert_pages_fit(line: String, band: Rect2, label: String) -> void:
 
 
 func test_subtitles_page_cjk_and_pseudolocalised_text_inside_the_band() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames()
@@ -185,7 +185,7 @@ func test_subtitles_page_cjk_and_pseudolocalised_text_inside_the_band() -> void:
 
 func test_a_narrow_paged_dock_holds_cjk_and_long_words() -> void:
 	# The combat dock (dock_at(rect, lines)): a narrow column, three lines a page.
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		var rect := Rect2(900, 90, 300, (20.0 + 3 * 20.0) * scale)
 		Dialogue.dock_at(rect, 3)
@@ -246,7 +246,7 @@ func test_the_raid_stamp_is_a_forecast() -> void:
 
 
 func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		var hq: Control = await _raid(scale)
 		var legend: MapLegend = hq.raid_legend
 		assert_not_null(legend)
@@ -264,7 +264,7 @@ func test_the_raid_legend_covers_no_node_and_stays_on_screen() -> void:
 
 
 func test_defence_cards_are_on_screen_readable_and_say_how_to_deploy() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		var hq: Control = await _raid(scale)
 		var cards: Node = hq._panel.find_child("AssetCards", true, false)
 		assert_eq(cards.get_child_count(), 3)
@@ -298,7 +298,7 @@ func _assert_hint_clear(hint: ScrollHint, root: Node, label: String) -> void:
 
 
 func test_more_below_covers_no_control() -> void:
-	for scale in [1.0, 1.3, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, 1.3, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -337,7 +337,7 @@ func _dpad_reachable() -> Dictionary:
 func test_every_dossier_loadout_is_pad_reachable_and_has_its_icon() -> void:
 	var c := RunManager.campaign
 	assert_true(c.living_operatives().size() >= 2, "two rookies")
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		Settings.set_pad_active(true)
 		var hq := _open(HQ)
@@ -432,7 +432,7 @@ func test_outcomes_name_no_rescued_class_and_show_capped_amounts() -> void:
 # --- #14 words that stay, legends and map icons ------------------------------------------------
 
 func test_stat_tags_keep_their_words_at_big_text() -> void:
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	RunManager.new_campaign(1)
 	_raid_campaign()
 	var hq := _open(HQ)
@@ -446,7 +446,7 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 		await _frames()
 		var st: HudStats = hq.hud.stats
 		assert_false(st.compact, "%s: the tags keep their names at 1.6" % screen)
-		assert_true(st.tag_scale >= Settings.TEXT_SCALE_MAX * HudStats.FULL_MIN_FIT - 0.01, "%s: the names stay big (%.2f)" % [screen, st.tag_scale])
+		assert_true(st.tag_scale >= LayoutScales.VERIFIED_MAX * HudStats.FULL_MIN_FIT - 0.01, "%s: the names stay big (%.2f)" % [screen, st.tag_scale])
 		for r in st.tag_rects():
 			assert_true(r.end.x <= st.size.x + 0.5, "%s: a tag stays in the row" % screen)
 	hq.get_parent().queue_free()
@@ -474,7 +474,7 @@ func test_stat_tags_keep_their_words_at_big_text() -> void:
 
 
 func test_the_route_view_has_its_legend() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()

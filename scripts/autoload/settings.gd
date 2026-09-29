@@ -14,7 +14,8 @@ const PATH := "user://settings.json"
 ## runs never leak text scale or keybinds into each other (H24).
 var path: String = PATH
 const TEXT_SCALE_MIN := 0.8
-const TEXT_SCALE_MAX := 1.6
+## ART_BIBLE §12 (Q5): text scale runs 0.8-2.0.
+const TEXT_SCALE_MAX := 2.0
 enum WindowMode { WINDOWED, FULLSCREEN, BORDERLESS }
 const RESOLUTIONS: Array[Vector2i] = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440)]
 ## Actions the player may rebind (GDD 9.5); the card keys stay 1-9. H20: cards are aimed

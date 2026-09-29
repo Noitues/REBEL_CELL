@@ -307,7 +307,7 @@ func _assert_clear(root: Node, label: String) -> void:
 
 
 func test_subtitles_never_cover_controls_on_any_screen() -> void:
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		_raid_campaign()
@@ -359,7 +359,7 @@ func test_the_default_dock_pages_and_names_the_speaker_inline() -> void:
 	assert_false(Dialogue.speaker_label.visible, "the name leads the line instead of its own row")
 	assert_string_contains(Dialogue.text_label.get_parsed_text(), "DISPATCH:")
 	Dialogue.clear()
-	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	Settings.set_text_scale(LayoutScales.VERIFIED_MAX)
 	assert_eq(Dialogue.dock_lines, Dialogue.lines_fitting(Dialogue.default_rect), "the page size follows the text scale")
 
 

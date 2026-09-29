@@ -128,7 +128,7 @@ func test_raid_setup_end_and_title_panels_fit_at_every_text_scale() -> void:
 	RunManager.scene_switching_enabled = false
 	RunManager.delete_save()
 	RunManager.reset()
-	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
+	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var c := RunManager.campaign
