@@ -165,3 +165,49 @@ func test_the_subtitle_band_is_one_line_at_1_and_two_above() -> void:
 	assert_eq(strip.lines_at(1.6), 2)
 	assert_eq(strip.lines_at(2.0), 2)
 	strip.free()
+
+
+# --- Item 2: the HQ in its DECK frame (§2 DECK, §11 HQ) ------------------------------------------
+
+func test_the_hq_sits_in_its_deck_frame_with_a_crt_monitor_and_a_three_column_crew() -> void:
+	var c := _raid_campaign()
+	c.recruit(RunManager.lookup().get_content(&"ghost") as ClassData)
+	var hq := _open(HQ)
+	await _frames(6)
+	var frame: DeckFrame = hq.deck_frame
+	assert_true(frame.visible, "the HQ page shows the deck frame")
+	var page := hq._panel as Control
+	assert_eq(page.name, &"DeckPage", "the page sits inside the frame")
+	var kb := Rect2(frame.get_global_transform() * frame.keyboard_rect().position, frame.keyboard_rect().size)
+	var scroll := hq._panel_host.get_parent() as ScrollContainer
+	for n in _all(page):
+		if n is BaseButton and (n as Control).is_visible_in_tree():
+			var r := (n as Control).get_global_rect()
+			if r.end.y <= scroll.get_global_rect().end.y:
+				assert_false(r.intersects(kb.grow(-1.0)), "%s clear of the keyboard edge" % n.name)
+			assert_true(r.position.x >= frame.frame_rect().position.x + DeckFrame.BEZEL - 0.5, "%s clear of the bezel" % n.name)
+	var monitor := page.find_child("GridMonitor", true, false) as DeckMonitor
+	assert_not_null(monitor, "the Grid monitor is a DECK CRT")
+	assert_eq(monitor.title_label.get_theme_color(&"font_color"), Palette.CRT_AMBER, "amber readouts")
+	assert_true(monitor.screen.get_child(0) is GridMapView and monitor.screen.get_child(0).material != null, "the map shows through the CRT shader")
+	var roster := page.find_child("Roster", true, false) as GridContainer
+	assert_eq(roster.columns, 3, "three crew columns at 1.0 (three operatives)")
+	var raid := page.find_child("RaidPending", true, false) as Button
+	assert_eq(raid.autowrap_mode, TextServer.AUTOWRAP_OFF, "the pending raid keeps one line")
+	assert_string_contains(raid.tooltip_text, "RAID PENDING", "its words in the tooltip")
+	var jack := page.find_child("JackIn", true, false) as Control
+	assert_true(jack.size.x >= float(hq.get_script().get_script_constant_map()["JACK_SIDE"]) - 0.5, "JACK IN is the page's big stamp")
+	var mini := monitor.screen.get_child(0) as GridMapView
+	for l in mini.drawn_labels:
+		assert_true(int(l["size"]) >= UiTheme.CAPTION, "mini-map label %s at caption or larger" % l["text"])
+	await _close(hq)
+
+
+func test_other_pages_drop_the_frame_and_maps_dim_the_city() -> void:
+	var hq := _open(HQ)
+	await _frames()
+	hq.show_grid()
+	await _frames()
+	assert_false(hq.deck_frame.visible, "the net pages are not the deck (§2)")
+	assert_true(hq.wireframe.city.atmosphere().state.map_mode, "map mode on the Grid (§9.5)")
+	await _close(hq)

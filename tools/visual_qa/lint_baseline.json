@@ -33,9 +33,6 @@
 		"res://scripts/ui/kit/graffiti_scrawl.gd": {
 			"font_size_assign": 1
 		},
-		"res://scripts/ui/kit/grid_map_view.gd": {
-			"font_const": 3
-		},
 		"res://scripts/ui/kit/heat_poster.gd": {
 			"color": 2,
 			"draw_size": 2,

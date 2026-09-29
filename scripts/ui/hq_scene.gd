@@ -88,6 +88,18 @@ const RADIO_BOTTOM := 8.0
 const RADIO_LINES := 4
 ## The launch button on a Site's card: the same words as the HQ's JACK IN stamp (H21 #21).
 const JACK_IN := "JACK IN" # TR
+## Art pass W8b (ART_BIBLE §11 HQ): the HQ's JACK IN stamp's side and how far it grows with
+## the text (px; the page's first focal point), the menu column's least width, the deck
+## monitor's map at text scale 1.0 and its growth, and the crew grid's columns (fewer at
+## big text: §5.3 3 -> 2).
+const JACK_SIDE := 140.0
+const JACK_GROW_MAX := 1.3
+const HQ_LEFT_WIDTH := 300.0
+const MONITOR_MAP := Vector2(420, 170)
+const MONITOR_GROW_MAX := 1.3
+const MONITOR_MAP_LOW := 110.0
+const CREW_COLUMNS := 3
+const CREW_COLUMNS_BIG := 2
 ## Gap round a price's currency icon at a button's right end (px).
 const PRICE_ICON_GAP := 8.0
 ## What each Site status means (the selected Site card's status badge).
@@ -111,6 +123,8 @@ var _panel: Control = null
 var panel_name: String = ""
 var background: CyberdeckBackground
 var wireframe: WireframeBackground
+## Art pass W8b: the HQ page's cyberdeck frame (DeckFrame; shown on the HQ page only).
+var deck_frame: DeckFrame
 var grid_view: GridMapView = null
 var playout: RaidPlayoutPanel = null
 ## The raid setup's map key (placed clear of the nodes).
@@ -972,6 +986,16 @@ func _set_panel(p: Control, name: String) -> void:
 	var net := name in ["grid", "raid", "raid_playout", "raid_summary"] or name.begins_with("city")
 	background.visible = not net
 	wireframe.visible = net
+	# Art pass W8b: W7's hookups (§9.1 grades, §9.5 maps over the city dim 40% and blur) and
+	# the HQ's deck frame (§2 DECK, the HQ page only).
+	background.set_context(&"hq")
+	wireframe.set_context(&"net")
+	wireframe.set_map_mode(net)
+	deck_frame.visible = name == "hq"
+	deck_frame.keys_row.visible = name == "hq"
+	if name != "hq":
+		var none: Array[Control] = []
+		background.set_calm_controls(none)
 	AudioDirector.play_music("raid" if name.begins_with("raid") else ("grid" if name == "grid" else "hq"),
 		RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
 	if RunManager.campaign != null:
@@ -1294,14 +1318,15 @@ func show_hq() -> void:
 	var c := RunManager.campaign
 	var cfg := RunManager.config()
 	var lookup := RunManager.lookup()
+	var ts := Settings.text_scale
+	# Art pass W8b (ART_BIBLE §11 HQ): at big text the page stacks in two rows (the three
+	# columns ran past the screen at 2.0).
+	var narrow := ts >= HudStats.FOLD_SCALE - 0.001
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", 14)
 	box.add_child(cols)
-	# Right column (built now, added last): wanted poster, pirate radio, JACK IN.
-	var right := VBoxContainer.new()
-	right.add_theme_constant_override("separation", 10)
 	var poster := HeatPoster.new(true)
 	poster.hot_color = Palette.corp_color(c.corporation_id)
 	poster.set_heat(c.heat, cfg.heat_max, cfg.major_heat_levels())
@@ -1311,8 +1336,8 @@ func show_hq() -> void:
 	if lead != null:
 		poster.wanted = PortraitArt.operative_subject(lead.class_id, lead.id, lead.name)
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
-	# half); the rest scrolls.
-	var line_h := Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale))
+	# half); the rest scrolls. W1: the line height rounded up (MSDF heights are fractional).
+	var line_h := ceilf(Palette.mono().get_height(UiTheme.font_px(UiTheme.BODY)))
 	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
 	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
@@ -1332,8 +1357,10 @@ func show_hq() -> void:
 	_fit_radio.call_deferred(radio, line_h)
 	# No key hint: JACK IN is pressed by click or focus (Space does nothing here). It is the
 	# same JACK IN as on a Site's card (H21 #21): here it opens the Grid to pick the Site.
+	# W8b (§11 HQ focal order): the first thing the eye meets, the page's largest stamp.
 	var jack := ZineStamp.new(tr(JACK_IN), Palette.CELL_PINK)
 	jack.name = "JackIn"
+	jack.custom_minimum_size = Vector2.ONE * JACK_SIDE * minf(ts, JACK_GROW_MAX)
 	jack.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	jack.tooltip_text = UiTip.fold(tr("JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."))
 	jack.icon_kind = StatIcon.JACK_IN  # H22 #14: the plug, as on the Site card's JACK IN
@@ -1346,20 +1373,13 @@ func show_hq() -> void:
 				RunManager.go_to_netrun())
 	else:
 		jack.pressed.connect(show_grid)
-	var top_right := HBoxContainer.new()
-	top_right.add_theme_constant_override("separation", 10)
-	top_right.add_child(poster)
-	top_right.add_child(jack)
-	right.add_child(top_right)
-	right.add_child(radio)
 	# ANIM-R4 H10: what the pages this one leads to need is made ahead (their first frames
 	# made it): the Grid's and a raid's music, a run's, and the open runs' previews.
 	AudioDirector.prewarm_music(["grid", "raid", "netrun", "combat"], c.corporation_id)
 	_warm_previews.call_deferred()
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 12)
-	left.custom_minimum_size.x = 300
-	cols.add_child(left)
+	left.custom_minimum_size.x = HQ_LEFT_WIDTH
 	# The deck menu (reference: "> OPERATIVES / NETWORK / LOADOUT").
 	var deck := TerminalWindow.new(tr("CYBERDECK"))
 	left.add_child(deck)
@@ -1371,12 +1391,13 @@ func show_hq() -> void:
 	_add_tip(actions, grid_btn, tr("The campaign map: pick a Site and JACK IN, claim and upgrade nodes."))
 	if not c.pending_raids.is_empty():
 		var raid := CampaignRules.raid_data(c.pending_raids[0], lookup)
-		var raid_btn := _icon(_button(tr("RAID PENDING: %s (%d)") % [TextDb.t(raid, "display_name"), c.pending_raids.size()], show_raid), StatIcon.RAIDS)
+		# W8b (critique 05): one line, never wrapped: the raid's name and count with the raids
+		# icon in WARN (§3.3: a pending raid); "RAID PENDING" and its warning in the tooltip
+		# ("RAID PENDING: Collections: Trespass (6)" wrapped to three lines in the menu).
+		var raid_btn := _icon(_button("%s (%d)" % [TextDb.t(raid, "display_name"), c.pending_raids.size()], show_raid), StatIcon.RAIDS)
 		raid_btn.name = "RaidPending"
-		# Long raid names wrap in the menu column instead of widening the page at big text.
-		raid_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
-		_add_tip(actions, raid_btn, TextDb.t(raid, "warning_text"))
+		raid_btn.add_theme_color_override("font_color", Palette.WARN)
+		_add_tip(actions, raid_btn, "%s\n%s" % [tr("RAID PENDING: %s (%d)") % [TextDb.t(raid, "display_name"), c.pending_raids.size()], TextDb.t(raid, "warning_text")])
 	var scrub := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
 	# H23 S13: the price says what it is: "pay 25" and the Schematics icon after it.
 	var scrub_price := CampaignRules.heat_purchase_price(c, cfg)
@@ -1401,33 +1422,61 @@ func show_hq() -> void:
 	status.name = "CellStatus"
 	left.add_child(status)
 	status.body.add_child(cell_badges())
-	# The crew: Polaroids with their stats and orders.
-	# The deck monitor: the City Grid at a glance (click or JACK IN to open it).
-	var monitor := TerminalWindow.new(tr("CITY GRID // %s") % TextDb.t(RunManager.corporation, "display_name"))
-	monitor.tag_label.text = tr("STATUS: %s") % (tr("RAID INBOUND") if not c.pending_raids.is_empty() else tr("STABLE"))
-	monitor.tag_label.add_theme_color_override("font_color", Palette.CELL_PINK if not c.pending_raids.is_empty() else Palette.CELL_ACID)
+	# The deck monitor (W8b, §2 DECK, §11 HQ): the City Grid at a glance on a CRT with amber
+	# readouts (click a Site, or JACK IN, to open it).
+	var monitor := DeckMonitor.new(tr("CITY GRID // %s") % TextDb.t(RunManager.corporation, "display_name"))
+	monitor.name = "GridMonitor"
 	monitor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var center := VBoxContainer.new()
-	center.add_theme_constant_override("separation", 12)
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cols.add_child(center)
-	center.add_child(monitor)
+	monitor.set_readouts(tr("STATUS: %s") % (tr("RAID INBOUND") if not c.pending_raids.is_empty() else tr("STABLE")),
+		"%s · %s" % [tr("SITES %d") % maxi(0, c.grid.claimed_ids().size() - 1), tr("EXPLOITS %d/%d") % [c.exploits.size(), cfg.min_exploits_for_breach]])
 	# ANIM-5 (4.1): the deck monitor is the CRT jack in pushes into and jack out leaves.
 	monitor.add_to_group(Fx.JACK_FOCUS_GROUP)
 	var mini := GridMapView.new()
-	mini.custom_minimum_size = Vector2(420, 170)
+	# Stacked at big text the monitor is a wide, low screen, so the crew under it stays on
+	# the first screen (H22: a dossier's Loadout in view at 1.6).
+	mini.custom_minimum_size = MONITOR_MAP * minf(ts, MONITOR_GROW_MAX) if not narrow else Vector2(MONITOR_MAP.x, MONITOR_MAP_LOW)
 	mini.track_seen = true  # ANIM-5: a Site whose status changed since last seen pulses once
 	mini.show_grid(c, RunManager.corporation, _threat_paths())
 	mini.site_clicked.connect(func(id: StringName) -> void: selected_site = id; show_grid())
 	mini.tooltip_text = tr("Click a Site to open it on the City Grid.")
-	monitor.body.add_child(mini)
-	cols.add_child(right)
+	monitor.set_content(mini)
+	# The crew (W8b, §5.3 / §11 HQ): the dossiers fill a grid of CREW_COLUMNS columns (fewer
+	# at big text), the window as wide as its dossiers (critique 05: 40% of it was empty).
 	var crew := TerminalWindow.new(tr("CREW // ROSTER"), Palette.CELL_PINK)
-	crew.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var roster_box := HFlowContainer.new()
+	crew.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var roster_box := GridContainer.new()
+	roster_box.columns = maxi(1, mini(CREW_COLUMNS if not narrow else CREW_COLUMNS_BIG, c.roster.size()))
 	roster_box.add_theme_constant_override("h_separation", 18)
 	roster_box.add_theme_constant_override("v_separation", 14)
 	crew.body.add_child(roster_box)
+	if not narrow:
+		# Three columns: the menu | the monitor over the crew | JACK IN, the poster, the radio.
+		var center := VBoxContainer.new()
+		center.add_theme_constant_override("separation", 12)
+		center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var right := VBoxContainer.new()
+		right.add_theme_constant_override("separation", 10)
+		right.add_child(jack)
+		right.add_child(poster)
+		right.add_child(radio)
+		cols.add_child(left)
+		cols.add_child(center)
+		cols.add_child(right)
+		center.add_child(monitor)
+		center.add_child(crew)
+	else:
+		# Two rows: JACK IN, the poster and the monitor | the menu (and radio) beside the crew.
+		cols.add_child(jack)
+		cols.add_child(poster)
+		cols.add_child(monitor)
+		var lower := HBoxContainer.new()
+		lower.add_theme_constant_override("separation", 14)
+		box.add_child(lower)
+		left.add_child(radio)
+		lower.add_child(left)
+		lower.add_child(crew)
+		jack.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		poster.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	for op in c.roster:
 		# A crew dossier: Polaroid, name, tags, HP, kit, then orders.
 		var where := CampaignRules.stationed_site(c, op.id)
@@ -1489,7 +1538,6 @@ func show_hq() -> void:
 					orders.add_child(pick)
 		roster_box.add_child(row)
 	roster_box.name = "Roster"
-	center.add_child(crew)
 	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
 	var market := TerminalWindow.new(tr("BLACK MARKET // SCHEMATICS %d") % c.schematics, Palette.CELL_ACID)
 	market.name = "BlackMarket"
@@ -1569,12 +1617,22 @@ func show_hq() -> void:
 			t.custom_minimum_size = Vector2(700, 0)
 			t.text = "  [%s] %s" % [TextDb.t(b, "title"), TextDb.t(b, "text")]
 			story.body.add_child(t)
-	_set_panel(box, "hq")
+	# W8b (§2 DECK, ruling Q4): the page sits inside the deck's frame, never under it.
+	var framed := MarginContainer.new()
+	framed.name = "DeckPage"
+	framed.add_theme_constant_override("margin_left", DeckFrame.INSET_SIDE)
+	framed.add_theme_constant_override("margin_right", DeckFrame.INSET_SIDE)
+	framed.add_theme_constant_override("margin_bottom", DeckFrame.INSET_BOTTOM)
+	framed.add_child(box)
+	_set_panel(framed, "hq")
+	# W7 hookup (§9.1): the city dims and calms behind the HQ's text panels.
+	var calm: Array[Control] = [deck, status, crew, market, radio]
+	background.set_calm_controls(calm)
 	_link_crew_focus(roster_box, jack, market)
 	_register_hq_drops(crew, mini, queue)
 	# HQ idle (ANIM-6, 4.13): the deck monitor hums, JACK IN breathes, and on arrival the
 	# pirate radio types in.
-	CrtHum.attach(monitor)
+	CrtHum.attach(monitor.screen)
 	jack.breathe()
 	if entering:
 		Typing.type_in(radio.label, &"radio_type")
@@ -1915,7 +1973,8 @@ func fit_grid_map() -> void:
 ## ANIM-5 (4.14): the Grid map has settled into `free`: the camera leans toward the
 ## selected Site once (`grid_lean`), then the picture eases from the frame it held.
 func _grid_settled(free: Rect2) -> void:
-	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay):
+	# W8b (§12 reduce motion): no lean when camera moves are off (the fitted frame is the end).
+	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay) and Motion.camera_moves_allowed():
 		_grid_leaned = true
 		var lean: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_lean(free))
 		if lean.length() >= GRID_LEAN_MIN:
@@ -3721,6 +3780,10 @@ func _build_ui() -> void:
 	wireframe.city.territory_marked.connect(_on_territory_marked)
 	wireframe.visible = false
 	add_child(wireframe)
+	# Art pass W8b (§2 DECK): the HQ's cyberdeck frame, under the page (it frames the scroll).
+	deck_frame = DeckFrame.new()
+	deck_frame.visible = false
+	add_child(deck_frame)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE  # city map screens take clicks behind
@@ -3740,6 +3803,15 @@ func _build_ui() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(scroll)
+	deck_frame.target = scroll
+	# The deck's keyboard edge: a row of its own under the page, so nothing scrolls under it.
+	var keys := Control.new()
+	keys.name = "DeckKeys"
+	keys.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	keys.custom_minimum_size.y = DeckFrame.KEYBOARD_H
+	keys.visible = false
+	root.add_child(keys)
+	deck_frame.keys_row = keys
 	_panel_host = PanelContainer.new()
 	_panel_host.theme_type_variation = &"GlassPanel"
 	_panel_host.material = UiTheme.crt_material()
