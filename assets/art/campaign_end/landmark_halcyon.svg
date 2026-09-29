@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+  <!-- Halcyon Civic: the clock tower (art pass W8d, ART_BIBLE 3.6, 11 Campaign end). White and greys, tinted in the corp hue at runtime. -->
+  <rect x="34.0" y="286" width="132.0" height="10" fill="#FFFFFF"/>
+  <rect x="46.0" y="276" width="108.0" height="10" fill="#D2D2D2"/>
+  <rect x="50" y="236" width="100" height="42" fill="#FFFFFF"/>
+  <rect x="64" y="160" width="72" height="80" fill="#FFFFFF"/>
+  <rect x="90" y="176" width="20" height="44" rx="10" fill="#5A5A5A"/>
+  <rect x="70" y="184" width="12" height="30" rx="6" fill="#9C9C9C"/>
+  <rect x="118" y="184" width="12" height="30" rx="6" fill="#9C9C9C"/>
+  <rect x="80" y="246" width="40" height="32" rx="18" fill="#5A5A5A"/>
+  <rect x="54" y="84" width="92" height="82" fill="#FFFFFF"/>
+  <rect x="48" y="78" width="104" height="10" fill="#D2D2D2"/>
+  <polygon points="52.0,80.0 100.0,14.0 148.0,80.0" fill="#FFFFFF"/>
+  <polygon points="100.0,14.0 148.0,80.0 122.0,80.0" fill="#D2D2D2"/>
+  <line x1="100" y1="16" x2="100" y2="0" stroke="#FFFFFF" stroke-width="4"/>
+  <circle cx="100" cy="125" r="33" fill="#9C9C9C"/>
+  <circle cx="100" cy="125" r="26" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+  <circle cx="100" cy="125" r="14" fill="none" stroke="#D2D2D2" stroke-width="2"/>
+  <line x1="121.0" y1="125.0" x2="125.0" y2="125.0" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="118.2" y1="135.5" x2="121.7" y2="137.5" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="110.5" y1="143.2" x2="112.5" y2="146.7" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="100.0" y1="146.0" x2="100.0" y2="150.0" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="89.5" y1="143.2" x2="87.5" y2="146.7" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="81.8" y1="135.5" x2="78.3" y2="137.5" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="79.0" y1="125.0" x2="75.0" y2="125.0" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="81.8" y1="114.5" x2="78.3" y2="112.5" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="89.5" y1="106.8" x2="87.5" y2="103.3" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="100.0" y1="104.0" x2="100.0" y2="100.0" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="110.5" y1="106.8" x2="112.5" y2="103.3" stroke="#FFFFFF" stroke-width="2.5"/>
+  <line x1="118.2" y1="114.5" x2="121.7" y2="112.5" stroke="#FFFFFF" stroke-width="2.5"/>
+  <polyline points="100.0,104.0 100.0,125.0 116.0,134.0" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

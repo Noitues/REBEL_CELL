@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300" viewBox="0 0 200 300">
+  <!-- Meridian Freight Systems: the container crane (art pass W8d, ART_BIBLE 3.6, 11 Campaign end). White and greys, tinted in the corp hue at runtime. -->
+  <rect x="38" y="286" width="46" height="10" rx="3" fill="#D2D2D2"/>
+  <rect x="116" y="286" width="46" height="10" rx="3" fill="#D2D2D2"/>
+  <polygon points="48.0,286.0 64.0,286.0 72.0,104.0 60.0,104.0" fill="#FFFFFF"/>
+  <polygon points="136.0,286.0 152.0,286.0 140.0,104.0 128.0,104.0" fill="#FFFFFF"/>
+  <rect x="52" y="196" width="96" height="12" fill="#9C9C9C"/>
+  <line x1="60" y1="202" x2="140" y2="118" stroke="#9C9C9C" stroke-width="5"/>
+  <line x1="140" y1="202" x2="60" y2="118" stroke="#9C9C9C" stroke-width="5"/>
+  <rect x="50" y="100" width="100" height="18" fill="#FFFFFF"/>
+  <polyline points="62.0,74.0 100.0,12.0 138.0,74.0" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round"/>
+  <line x1="100" y1="12" x2="196" y2="72" stroke="#D2D2D2" stroke-width="4"/>
+  <line x1="100" y1="12" x2="6" y2="72" stroke="#D2D2D2" stroke-width="4"/>
+  <line x1="100" y1="12" x2="100" y2="100" stroke="#9C9C9C" stroke-width="6"/>
+  <rect x="4" y="70" width="194" height="16" fill="#FFFFFF"/>
+  <line x1="12" y1="72" x2="20" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="28" y1="72" x2="36" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="44" y1="72" x2="52" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="60" y1="72" x2="68" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="76" y1="72" x2="84" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="92" y1="72" x2="100" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="108" y1="72" x2="116" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="124" y1="72" x2="132" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="140" y1="72" x2="148" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="156" y1="72" x2="164" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="172" y1="72" x2="180" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <line x1="188" y1="72" x2="196" y2="84" stroke="#9C9C9C" stroke-width="2.5"/>
+  <rect x="150" y="86" width="26" height="10" fill="#9C9C9C"/>
+  <line x1="155" y1="96" x2="150" y2="148" stroke="#D2D2D2" stroke-width="3"/>
+  <line x1="171" y1="96" x2="176" y2="148" stroke="#D2D2D2" stroke-width="3"/>
+  <rect x="134" y="148" width="58" height="34" fill="#FFFFFF"/>
+  <line x1="140" y1="152" x2="140" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="147" y1="152" x2="147" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="154" y1="152" x2="154" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="161" y1="152" x2="161" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="168" y1="152" x2="168" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="175" y1="152" x2="175" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="182" y1="152" x2="182" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+  <line x1="189" y1="152" x2="189" y2="178" stroke="#9C9C9C" stroke-width="3"/>
+</svg>
