@@ -421,6 +421,10 @@
 			"seconds": 0.5,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_suite_compiles.gd": {
+			"seconds": 30.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_suite_integrity.gd": {
 			"seconds": 0.4,
 			"tier": "fast"

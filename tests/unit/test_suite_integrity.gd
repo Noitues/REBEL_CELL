@@ -1,9 +1,11 @@
 extends GutTest
-## Every test script compiles (Animation pass review: GUT skipped a test file that failed
-## to parse, silently, for two batches). Test suite optimization (docs/TEST_SUITE.md):
-## every test script is listed once in tests/test_manifest.json (its measured time for the
-## parallel runner's shards and its tier), holds at least one test, and the fast tier keeps
-## the rule guards CLAUDE.md names.
+## Test suite optimization (docs/TEST_SUITE.md): every test script is listed once in
+## tests/test_manifest.json (its measured time for the parallel runner's shards and its
+## tier), holds at least one test, and the fast tier keeps the rule guards CLAUDE.md names;
+## plus the source rules (prints, frame lambdas, fixed waits). ANIM-R5: that every test
+## script compiles is test_suite_compiles.gd (loading every script is most of a minute);
+## the rules here read each file once (`source`) and compile each pattern once (_re), so
+## this script stays a few seconds.
 
 const MANIFEST := "res://tests/test_manifest.json"
 const TEST_DIRS: Array[String] = ["res://tests/unit", "res://tests/integration"]
@@ -23,12 +25,24 @@ const FAST_GUARDS: Array[String] = [
 ]
 
 
-func _scripts(dir: String, out: Array[String]) -> void:
-	for f in DirAccess.get_files_at(dir):
-		if f.ends_with(".gd"):
-			out.append(dir.path_join(f))
-	for d in DirAccess.get_directories_at(dir):
-		_scripts(dir.path_join(d), out)
+## ANIM-R5: every source a rule reads, read once for all of them ({path: text}).
+static var _sources: Dictionary = {}
+## ANIM-R5: every pattern a rule matches, compiled once ({pattern: RegEx}).
+static var _regexes: Dictionary = {}
+
+
+## The text of `path` (read once).
+static func source(path: String) -> String:
+	if not _sources.has(path):
+		_sources[path] = FileAccess.get_file_as_string(path)
+	return _sources[path]
+
+
+## `pattern` compiled (once).
+static func _re(pattern: String) -> RegEx:
+	if not _regexes.has(pattern):
+		_regexes[pattern] = RegEx.create_from_string(pattern)
+	return _regexes[pattern]
 
 
 ## The test scripts GUT runs (prefix test_, in the unit and integration folders).
@@ -45,17 +59,6 @@ func _manifest() -> Dictionary:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST))
 	assert_true(parsed is Dictionary and (parsed as Dictionary).has("scripts"), "%s parses" % MANIFEST)
 	return (parsed as Dictionary).get("scripts", {}) if parsed is Dictionary else {}
-
-
-func test_every_test_script_compiles() -> void:
-	var paths: Array[String] = []
-	_scripts("res://tests", paths)
-	assert_gt(paths.size(), 50, "the suite's scripts were found")
-	for p in paths:
-		var s := load(p) as GDScript
-		assert_not_null(s, "%s loads" % p)
-		if s != null:
-			assert_true(s.can_instantiate(), "%s compiles" % p)
 
 
 func test_every_test_script_is_in_the_manifest_once_with_a_tier() -> void:
@@ -78,7 +81,7 @@ func test_every_test_script_is_in_the_manifest_once_with_a_tier() -> void:
 
 func test_no_test_script_is_empty() -> void:
 	for p in _test_scripts():
-		var src := FileAccess.get_file_as_string(p)
+		var src := source(p)
 		var tests := 0
 		for line in src.split("\n"):
 			if line.begins_with("func test_"):
@@ -146,7 +149,7 @@ func test_game_scripts_print_only_capture_markers() -> void:
 	assert_gt(paths.size(), 100, "the game's scripts were found")
 	var found: Array[String] = []
 	for p in paths:
-		var lines := FileAccess.get_file_as_string(p).split("\n")
+		var lines := source(p).split("\n")
 		for n in lines.size():
 			for b in bad_prints(lines[n]):
 				found.append("%s:%d %s" % [p, n + 1, b])
@@ -195,15 +198,25 @@ static func _frame_code(line: String) -> String:
 	return out.strip_edges()
 
 
+## True when `text` names a frame signal at all (ANIM-R5: a line that doesn't is never read
+## further, so the scan costs a substring search per line).
+static func _names_frame_signal(text: String) -> bool:
+	for sig in FRAME_SIGNALS:
+		if text.contains(sig):
+			return true
+	return false
+
+
 ## What `line` connects to a frame signal ("" when it connects nothing to one).
 static func _frame_target(line: String) -> String:
+	if not _names_frame_signal(line):
+		return ""
 	var code := _frame_code(line)
 	if code == "":
 		return ""
 	var sigs := "|".join(FRAME_SIGNALS)
 	for pat in FRAME_CONNECT_PATTERNS:
-		var re := RegEx.create_from_string(pat % sigs)
-		var m := re.search(code)
+		var m := _re(pat % sigs).search(code)
 		if m != null:
 			return m.get_string(1).strip_edges()
 	return ""
@@ -216,8 +229,7 @@ static func frame_lambda(line: String, lambdas: Dictionary = {}) -> bool:
 	var target := _frame_target(line)
 	if target == "":
 		return false
-	var is_func := RegEx.create_from_string("^(?:Callable\\s*\\(\\s*)?func\\b")
-	if is_func.search(target) != null:
+	if _re("^(?:Callable\\s*\\(\\s*)?func\\b").search(target) != null:
 		return true
 	var ident := target
 	for stop in [",", ")", " ", "."]:
@@ -231,10 +243,11 @@ static func frame_lambda(line: String, lambdas: Dictionary = {}) -> bool:
 ## `name = func`, typed `var name: Callable = func`), as a set.
 static func lambda_names(lines: PackedStringArray) -> Dictionary:
 	var out := {}
-	var re := RegEx.create_from_string("^(?:var\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?::\\s*[A-Za-z_][A-Za-z0-9_\\[\\]]*\\s*)?:?=\\s*func\\b")
+	var re := _re("^(?:var\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?::\\s*[A-Za-z_][A-Za-z0-9_\\[\\]]*\\s*)?:?=\\s*func\\b")
 	for line in lines:
-		var code := _frame_code(line)
-		var m := re.search(code)
+		if not line.contains("func"):
+			continue
+		var m := re.search(_frame_code(line))
 		if m != null:
 			out[m.get_string(1)] = true
 	return out
@@ -243,15 +256,22 @@ static func lambda_names(lines: PackedStringArray) -> Dictionary:
 ## The 0-based numbers of `lines` (one script) that connect a lambda to a frame signal.
 ## ANIM-R4 H8: a connect whose line ends open (`process_frame.connect(` with the `func` on
 ## the next line) is read with the lines that follow it until the call has an argument.
+## ANIM-R5: only lines naming a frame signal are read (the lambdas' names only when one is).
 static func frame_lambda_lines(lines: PackedStringArray) -> Array[int]:
-	var lambdas := lambda_names(lines)
 	var out: Array[int] = []
+	var lambdas: Variant = null
 	for n in lines.size():
+		if not _names_frame_signal(lines[n]):
+			continue
+		if lambdas == null:
+			lambdas = lambda_names(lines)
 		var line := lines[n]
 		var k := n
-		while k + 1 < lines.size() and (_frame_code(line).ends_with("(") or _frame_code(line).ends_with(",")) and _frame_target(line) == "" and k - n < 3:
+		var code := _frame_code(line)
+		while k + 1 < lines.size() and (code.ends_with("(") or code.ends_with(",")) and _frame_target(line) == "" and k - n < 3:
 			k += 1
-			line = _frame_code(line) + " " + _frame_code(lines[k])
+			line = code + " " + _frame_code(lines[k])
+			code = _frame_code(line)
 		if frame_lambda(line, lambdas):
 			out.append(n)
 	return out
@@ -268,7 +288,7 @@ func test_no_lambda_is_connected_to_a_frame_signal() -> void:
 		_game_scripts(root, paths)
 	var found: Array[String] = []
 	for p in paths:
-		var lines := FileAccess.get_file_as_string(p).split("\n")
+		var lines := source(p).split("\n")
 		for n in frame_lambda_lines(lines):
 			found.append("%s:%d %s" % [p, n + 1, lines[n].strip_edges()])
 	assert_eq(found, [] as Array[String], "no lambda on a frame signal in scripts/, tests/ or tools/")
@@ -328,6 +348,9 @@ func test_the_frame_lambda_rule_catches_every_form() -> void:
 const FIXED_WAIT_CALLS: Array[String] = ["create_timer(", "wait_seconds(", "Time.get_ticks_msec(", "Time.get_ticks_usec(",
 	"tween_interval(", "Timer.new(", "wait_time", "OS.delay_msec(", "OS.delay_usec(", "get_unix_time"]
 const FIXED_WAIT_OK := "# fixed-wait-ok:"
+## ANIM-R5: the test helpers are scanned too; BoundedWait is the one that polls.
+const HELPER_DIR := "res://tests/helpers"
+const BOUNDED_WAIT := "res://tests/helpers/bounded_wait.gd"
 const ASSERT_CALLS: Array[String] = ["assert_", "pass_test(", "fail_test(", "pending("]
 
 
@@ -373,7 +396,7 @@ static func fixed_waits(src: String) -> Array[String]:
 		if bare.begins_with("const ") or (raw.begins_with("var ") or raw.begins_with("static var ")) or bare.begins_with("class ") or bare.begins_with("class_name "):
 			in_fn = false
 			continue
-		if not in_fn:
+		if not in_fn or not _names_wait(raw):
 			continue
 		var code := _code_of(raw)
 		var waits := false
@@ -395,6 +418,15 @@ static func fixed_waits(src: String) -> Array[String]:
 		if asserts:
 			out.append("%d: %s" % [n + 1, raw.strip_edges()])
 	return out
+
+
+## True when `raw` holds a fixed-wait call's text anywhere (code, string or comment): only
+## such a line is read further (ANIM-R5).
+static func _names_wait(raw: String) -> bool:
+	for call in FIXED_WAIT_CALLS:
+		if raw.contains(call):
+			return true
+	return false
 
 
 ## ANIM-R4 H8: whether `call` on line `n` of `lines` is a wait. A tween's interval waits only
@@ -468,8 +500,20 @@ func test_no_fixed_wait_gates_an_assertion() -> void:
 	# No false alarms: an interval that keeps a sequence running, a sleep standing in for load.
 	assert_eq(fixed_waits("func test_x() -> void:\n\tseq = create_tween()\n\tseq.tween_interval(5.0)\n\tbreak_it()\n\tassert_true(busy())\n").size(), 0, "an interval nothing awaits")
 	assert_eq(fixed_waits("func test_x() -> void:\n\tvar ok := await BoundedWait.until(get_tree(), func() -> bool:\n\t\tOS.delay_msec(12)\n\t\treturn done(), 2.0)\n\tassert_true(ok)\n").size(), 0, "a sleep in a poll's lambda (load)")
+	# ANIM-R5: the helpers too (every function there is a helper: its caller asserts, so any
+	# fixed wait in one is flagged). BoundedWait's documented poll forms (a frame at a time,
+	# counting game time: `until`, `timed`, `frozen_frames`) are no fixed wait, so it needs
+	# no marker and carries none: nothing in the helpers is let through wholesale.
+	assert_eq(fixed_waits("static func settle(tree: SceneTree) -> void:\n\tawait tree.create_timer(0.5).timeout\n").size(), 1, "a helper's timer is caught")
+	assert_eq(fixed_waits(source(BOUNDED_WAIT)), [] as Array[String], "BoundedWait's polls are no fixed wait")
+	assert_false(source(BOUNDED_WAIT).contains(FIXED_WAIT_OK), "BoundedWait needs no fixed-wait-ok marker")
+	var scanned := _test_scripts()
+	for f in DirAccess.get_files_at(HELPER_DIR):
+		if f.ends_with(".gd"):
+			scanned.append(HELPER_DIR.path_join(f))
+	assert_true(scanned.has(BOUNDED_WAIT), "the helpers are scanned")
 	var found: Array[String] = []
-	for p in _test_scripts():
-		for w in fixed_waits(FileAccess.get_file_as_string(p)):
+	for p in scanned:
+		for w in fixed_waits(source(p)):
 			found.append("%s:%s" % [p, w])
 	assert_eq(found, [] as Array[String], "no fixed wait or wall-clock read gates an assertion (use BoundedWait; see DECISIONS \"Test suite: bounded waits\")")
