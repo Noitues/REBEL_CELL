@@ -190,6 +190,9 @@ def lint_screen(data: dict, png: Path) -> dict:
             found["clipped"].append(dict(where, why="; ".join(whys)))
         if img is not None:
             bg = background(img, c["ink"])
+            if c.get("box_color"):
+                # Art pass W9F: the label's own opaque box is its background (a sticker's paper).
+                bg = tuple(round(v * 255) for v in c["box_color"])
             if bg is not None:
                 col = c["color"]
                 a = max(0.0, min(1.0, col[3] * c.get("alpha", 1.0)))

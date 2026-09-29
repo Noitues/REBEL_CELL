@@ -59,12 +59,12 @@ var _note: String = ""
 ## ruling width and padding (px).
 var note_label: Label
 const NOTE_MOTION := &"raid_incoming_hold"
-const NOTE_FONT := 34
+const NOTE_FONT := UiTheme.HEADING  # art pass W9F (§4.2): a step, not 34
 const NOTE_TILT := -4.0
 const NOTE_RULE := 4
 const NOTE_PAD := 14
 ## The CONNECTING line's lettering at text scale 1.0 and the bar's height and gap (px).
-const CONNECT_FONT := 20
+const CONNECT_FONT := UiTheme.TITLE  # art pass W9F (§4.2): a step, not 20
 const CONNECT_BAR_H := 4.0
 const CONNECT_GAP := 12.0
 

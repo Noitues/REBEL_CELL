@@ -102,6 +102,7 @@ func _relabel() -> void:
 		any = true
 	var was := visible
 	visible = any and Settings.pad_active
+	queue_redraw()
 	# Animation pass ANIM-6: a new set of prompts fades in (`pad_prompts_in`); a relabel of
 	# the same set does not.
 	var sig := str(prompts) + str(visible)
@@ -109,6 +110,19 @@ func _relabel() -> void:
 		modulate.a = 0.0
 		Motion.fade(self, 1.0, &"pad_prompts_in")
 	_shown_sig = sig
+
+
+## Art pass W9F (§3.7, §5.2.4): the bar reads over any city: glass behind its words (the
+## verbs met 3.8:1 over a bright district), a little past them on every side.
+func _draw() -> void:
+	if get_child_count() == 0:
+		return
+	var box := Rect2(Vector2.ZERO, size).grow(BACK_PAD)
+	draw_rect(box, HighContrast.BG if Settings.high_contrast else Palette.TERMINAL_BG)
+
+
+## How far the bar's glass reaches past its words (px).
+const BACK_PAD := float(UiTheme.SP_S)
 
 
 ## The prompt set last shown (a relabel of the same set does not fade).

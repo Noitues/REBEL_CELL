@@ -200,7 +200,24 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 	# A line on screen when the dock moves is fitted to its new rect (H23: moving from the
 	# top band into combat's column left the label 0 px tall, an empty framed box).
 	if text_label != null and bar.visible and text_label.get_parsed_text() != "":
+		# Art pass W9F (§5.2: never clipped mid-sentence): a page that no longer fits the new
+		# dock (a fight's narrow column) is paged again for it, from the line's start.
+		if dock_lines > 0 and not _shown_line.is_empty() and _page_height(text_label.get_parsed_text()) > _dock_text_room() + 0.5:
+			_repage_shown()
+			return
 		_fit_page(text_label.get_parsed_text())
+
+
+## Art pass W9F: shows the line on screen again, paged for the dock in force (its queued
+## continuation pages are dropped: the new paging makes its own).
+func _repage_shown() -> void:
+	while not _queue.is_empty() and bool((_queue[0] as Dictionary).get("continued", false)):
+		_queue.pop_front()
+	var line := _shown_line.duplicate()
+	line.erase("more")
+	_queue.push_front(line)
+	_timer = null
+	_next()
 
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and

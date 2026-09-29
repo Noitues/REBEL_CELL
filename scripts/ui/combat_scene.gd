@@ -2135,14 +2135,23 @@ func _fit_status() -> void:
 	var floor_px := UiTheme.font_px(STATUS_MIN_FONT)
 	var parts := _status_parts.duplicate() if not _status_parts.is_empty() else [_status.text]
 	var text := "".join(parts)
+	# The sizes it may take: its own, then each type step under it down to the floor (§4.2:
+	# a size is a step x the text scale, never an odd px).
+	var sizes: Array[int] = [fs]
+	for st in [UiTheme.TITLE, UiTheme.LABEL, UiTheme.BODY, UiTheme.CAPTION]:
+		var px := UiTheme.font_px(st)
+		if px < sizes[-1] and px >= floor_px:
+			sizes.append(px)
+	var at := 0
 	while true:
-		while fs > floor_px and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > _status.size.x:
-			fs -= 1
+		at = 0
+		while at < sizes.size() - 1 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, sizes[at]).x > _status.size.x:
+			at += 1
+		fs = sizes[at]
 		if parts.size() <= 1 or font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= _status.size.x:
 			break
 		parts.pop_back()
 		text = "".join(parts)
-		fs = _status.get_theme_font_size("font_size")
 	_status.text = text
 	_status.add_theme_font_size_override("font_size", fs)
 	_fitting_status = false

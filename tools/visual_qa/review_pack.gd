@@ -1073,7 +1073,7 @@ func _open_modals() -> Array[Control]:
 			continue
 		var s := c.get_script() as Script
 		var cls: String = s.get_global_name() if s != null else ""
-		if MODAL_CLASSES.has(cls):
+		if MODAL_CLASSES.has(cls) or c.name == &"CardDetailHolder":
 			out.append(c)
 		elif c is GlassScrim and c.get_global_rect().size.x * c.get_global_rect().size.y >= view.x * view.y * MODAL_SCRIM_SHARE:
 			# A full-screen scrim is its parent's backdrop: the parent is the modal (a page
@@ -1225,20 +1225,26 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 				widest = maxf(widest, font.get_string_size(part, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px).x)
 			if l.autowrap_mode == TextServer.AUTOWRAP_OFF:
 				fits = widest <= l.size.x + 1.0
-			var w := minf(widest, l.size.x)
-			var h := minf(line_h * maxi(visible_lines, 1), l.size.y)
-			var x := 0.0
+			# Art pass W9F: the text sits inside the label's own box (a sticker's paper, SAVED):
+			# the ink is measured inside its content margins, so the ring round it reads the box.
+			var sb := l.get_theme_stylebox(&"normal")
+			var ml := sb.get_margin(SIDE_LEFT) if sb != null else 0.0
+			var mt := sb.get_margin(SIDE_TOP) if sb != null else 0.0
+			var inner := l.size - (sb.get_minimum_size() if sb != null else Vector2.ZERO)
+			var w := minf(widest, inner.x)
+			var h := minf(line_h * maxi(visible_lines, 1), inner.y)
+			var x := ml
 			match l.horizontal_alignment:
 				HORIZONTAL_ALIGNMENT_CENTER:
-					x = (l.size.x - w) * 0.5
+					x = ml + (inner.x - w) * 0.5
 				HORIZONTAL_ALIGNMENT_RIGHT:
-					x = l.size.x - w
-			var y := 0.0
+					x = ml + inner.x - w
+			var y := mt
 			match l.vertical_alignment:
 				VERTICAL_ALIGNMENT_CENTER:
-					y = (l.size.y - h) * 0.5
+					y = mt + (inner.y - h) * 0.5
 				VERTICAL_ALIGNMENT_BOTTOM:
-					y = l.size.y - h
+					y = mt + inner.y - h
 			ink = _screen_rect_of(c, Rect2(x, y, w, h))
 	elif c is Button:
 		var b := c as Button
@@ -1281,6 +1287,7 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 		"screen_px": font_px * absf(scale.y),
 		"scale": absf(scale.y),
 		"under_modal": _under_modal(c),
+		"box_color": _box_color(c),
 		"visible_rect": _vr(c, rect),
 		"override": override,
 		"color": [col.r, col.g, col.b, col.a],
@@ -1293,6 +1300,17 @@ func _text_record(c: Control, screen_rect: Rect2) -> Dictionary:
 		"in_scroll": in_scroll,
 		"ellipsis": text.contains("…"),
 	}
+
+
+## Art pass W9F: the colour of the opaque box a Label draws behind its own words (a
+## sticker's paper: SAVED), or [] when it has none: the text's real background.
+func _box_color(c: Control) -> Array:
+	if not (c is Label):
+		return []
+	var sb := c.get_theme_stylebox(&"normal") as StyleBoxFlat
+	if sb == null or not sb.draw_center or sb.bg_color.a < 0.9:
+		return []
+	return [sb.bg_color.r, sb.bg_color.g, sb.bg_color.b]
 
 
 func _vr(c: Control, rect: Rect2) -> Array:

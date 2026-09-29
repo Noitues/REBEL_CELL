@@ -126,7 +126,8 @@ func _place(control: Control) -> void:
 func _body(cols: int, fshare: float) -> Control:
 	var fs := 0
 	if fshare < 1.0:
-		fs = maxi(UiTheme.font_px(UiTheme.CAPTION), roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare))
+		# Art pass W9F (§4.2): the step the share lands in (a size is a step x the text scale).
+		fs = maxi(UiTheme.font_px(UiTheme.CAPTION), UiTheme.font_px(UiTheme.step_of(roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare))))
 	return UiTip.make(text, "", cols, fs)
 
 
