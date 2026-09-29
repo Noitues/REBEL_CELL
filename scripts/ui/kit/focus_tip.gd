@@ -11,11 +11,14 @@ const GAP := 6.0
 ## ANIM-R2 E8: when every spot covers something, the tip is folded narrower (these shares
 ## of its columns, never under FOLD_MIN columns) and the spot covering least wins, so a
 ## tall narrow tip can go beside the loot row instead of over Skip.
-const FOLD_SHARES: Array[float] = [0.7, 0.5, 0.35]
+## Art pass W2 (ART_BIBLE 6.8): the folds are the columns between UiTip.COLUMNS (36) and
+## UiTip.MIN_COLUMNS (26), widest first.
+const FOLD_COLUMNS: Array[int] = [31, 26]
 ## ANIM-R4 C7: a fold never goes under this many columns (at 1.6 a 16-column fold put one
 ## word per line and the tall tip covered the MODEM sign and a loot card); a crowded tip
-## keeps that width, tries the screen's edges and steps its lettering down (FONT_SHARES).
-const FOLD_MIN := 20
+## keeps that width, tries the screen's edges and steps its lettering down (FONT_SHARES),
+## never under the caption step (ART_BIBLE 4.3 rule 2).
+const FOLD_MIN := UiTip.MIN_COLUMNS
 
 
 ## Shows `control`'s tooltip while it has focus (not while the mouse is over it).
@@ -83,13 +86,12 @@ func _place(control: Control) -> void:
 		# ANIM-R2 E8: narrower folds, the one covering least. ANIM-R4 C7: never under FOLD_MIN
 		# columns; when every fold still covers something the lettering steps down
 		# (FONT_SHARES) at the same folds before a word a line ever would.
-		var cols := maxi(FOLD_MIN, roundi(UiTip.COLUMNS / maxf(1.0, Settings.text_scale)))
 		var best_cols := -1
 		var best_font := 1.0
 		var chrome: Vector2 = get_combined_minimum_size() - (get_child(0) as Control).get_combined_minimum_size()
 		for fshare in FONT_SHARES:
-			for share in FOLD_SHARES:
-				var c := maxi(FOLD_MIN, roundi(cols * share))
+			for fold_cols in FOLD_COLUMNS:
+				var c := maxi(FOLD_MIN, fold_cols)
 				var body := _body(c, fshare)
 				add_child(body)
 				var sz: Vector2 = body.get_combined_minimum_size() + chrome
@@ -116,15 +118,13 @@ func _place(control: Control) -> void:
 	global_position = at
 
 
-## The tip's body folded to `cols` columns, its lettering at `fshare` of the theme's.
+## The tip's body folded to `cols` columns, its lettering at `fshare` of the theme's (never
+## under the caption step).
 func _body(cols: int, fshare: float) -> Control:
-	var body := UiTip.make(UiTip.fold_to(text, cols))
+	var fs := 0
 	if fshare < 1.0:
-		var fs := roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare)
-		for l in body.get_children():
-			if l is Label:
-				(l as Label).add_theme_font_size_override(&"font_size", maxi(1, fs))
-	return body
+		fs = maxi(UiTheme.font_px(UiTheme.CAPTION), roundi(get_theme_font_size(&"font_size", &"TooltipLabel") * fshare))
+	return UiTip.make(text, "", cols, fs)
 
 
 ## ANIM-R4 C7: the lettering steps a crowded tip tries (shares of the theme's size).
