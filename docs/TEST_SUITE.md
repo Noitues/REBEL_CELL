@@ -62,8 +62,8 @@ The review-pack harness and the visual lint (ART_BIBLE §13). Full how-to, copy-
 commands and the screen table: `docs/art_review/W10/README.md`.
 
 - `python tools/visual_qa/capture_pack.py --out <dir> [--screens a,b] [--scales 1.0,1.6,2.0]
-  [--inputs mouse,pad] [--reduce-effects off,on] [--filters none,grey,deutan] [--scramble]`
-  captures every screen (43) through `tools/run_windowed.py`, each run with its own user://
+  [--inputs mouse,pad] [--reduce-effects off,on] [--filters none,grey,deutan] [--scramble]
+  [--high-contrast] [--reduce-motion]` captures every screen (53 since art pass W9F) through `tools/run_windowed.py`, each run with its own user://
   folder, and writes `manifest.json`, the runtime lint (`lint_report.md`) and, with
   `--sheets`, contact sheets. `--list` prints the screens.
 - `python tools/visual_qa/diff_pack.py <before> <after> <out>`: side-by-side + heatmap per
@@ -72,6 +72,9 @@ commands and the screen table: `docs/art_review/W10/README.md`.
   font sizes per file under `scripts/ui` may only go down against
   `tools/visual_qa/lint_baseline.json`. After migrating a file, lower the baseline with
   `python tools/visual_qa/update_lint_baseline.py`.
+- Art pass W9F: the runtime lint judges the on-screen size (font × ancestor scales), leaves
+  text under an open modal or scrolled out of its view out of contrast and overlap, and
+  reads a label's own opaque box as its background. `docs/art_review/W9F/README.md`.
 
 ## How the runner works
 
