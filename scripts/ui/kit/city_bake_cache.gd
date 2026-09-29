@@ -168,8 +168,8 @@ static func shutdown() -> void:
 		_stop(_live[key])
 	_live.clear()
 	for job in _queue:
-		var p: NeonCity = job.get("painter")
-		if p != null and is_instance_valid(p):
+		var p := _alive_painter(job.get("painter"))
+		if p != null:
 			p.free()
 	_queue.clear()
 	_pending.clear()
@@ -180,7 +180,7 @@ static func shutdown() -> void:
 ## Stops a running build's record `rec`: tells its painter and slices to stop, joins its
 ## worker tasks, frees its painter, slices and viewport. The caller drops it from `_live`.
 static func _stop(rec: Dictionary) -> void:
-	var painter: NeonCity = rec.get("painter")
+	var painter := _alive_painter(rec.get("painter"))
 	if painter != null and is_instance_valid(painter):
 		painter.cancelled = true
 		for t in painter._slices:
@@ -197,9 +197,16 @@ static func _stop(rec: Dictionary) -> void:
 		painter.free_slices()
 		if not painter.is_inside_tree():
 			painter.free()
-	var vp: SubViewport = rec.get("vp")
-	if vp != null and is_instance_valid(vp):
-		vp.free()
+	var vp_v: Variant = rec.get("vp")
+	if is_instance_valid(vp_v):
+		(vp_v as SubViewport).free()
+
+
+## Art pass W7 (W10's harness): `v` as a painter, or null when it was freed already (a scene
+## freed mid-bake frees its painter first; assigning a freed instance to a typed variable is a
+## script error).
+static func _alive_painter(v: Variant) -> NeonCity:
+	return v as NeonCity if is_instance_valid(v) else null
 
 
 ## True when some waiter of the bake for `key` is still alive (a bake nobody waits for is
@@ -220,8 +227,8 @@ static func drop_stale() -> int:
 	for i in range(_queue.size() - 1, -1, -1):
 		var job: Dictionary = _queue[i]
 		if not _wanted(job["key"]):
-			var p: NeonCity = job.get("painter")
-			if p != null and is_instance_valid(p):
+			var p := _alive_painter(job.get("painter"))
+			if p != null:
 				p.free()
 			_pending.erase(job["key"])
 			_queue.remove_at(i)
@@ -389,8 +396,8 @@ static func _join(key: String, rec: Dictionary, field: String, group: bool) -> b
 	else:
 		WorkerThreadPool.wait_for_task_completion(int(rec[field]))
 	rec.erase(field)
-	var painter: NeonCity = rec.get("painter")
-	return painter != null and is_instance_valid(painter) and not painter.cancelled
+	var painter := _alive_painter(rec.get("painter"))
+	return painter != null and not painter.cancelled
 
 
 static func _bake(key: String, look: String, painter: NeonCity) -> void:

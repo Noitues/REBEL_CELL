@@ -448,4 +448,28 @@ func _anim1() -> int:
 				bad_tier += 1
 	print("W6: ui_motion.tres entries with a bad tier ", bad_tier)
 	if bad_tier != 0: fails += 1
+	return fails + _w7()
+
+
+## Art pass W7 (ART_BIBLE 9): CityLookData (the city's presentation numbers) round-trips, the
+## shipped content/config/city_look.tres validates, and a T0 loop under 3 s or a rim flicker
+## over 1 Hz is refused.
+func _w7() -> int:
+	var fails := 0
+	var d := CityLookData.new()
+	print("W7: city look defaults errors ", d.validate())
+	if d.validate().size() != 0: fails += 1
+	d.map_dim = 0.37
+	d.grades = {&"title": {"contrast": 1.1}, &"hq": {}, &"net": {}, &"combat": {"dim": 0.35}}
+	var err := ResourceSaver.save(d, "user://smoke_city_look.tres")
+	var back: CityLookData = load("user://smoke_city_look.tres")
+	print("W7: save=", err, " reload map_dim ", back.map_dim if back != null else -1.0, " combat dim ", back.grade_of(&"combat")["dim"] if back != null else -1.0)
+	if back == null or not is_equal_approx(back.map_dim, 0.37) or not is_equal_approx(float(back.grade_of(&"combat")["dim"]), 0.35): fails += 1
+	d.drone_period = 1.0
+	d.flagged_flicker_hz = 2.0
+	print("W7: bad loop and flicker errors ", d.validate().size())
+	if d.validate().size() != 2: fails += 1
+	var shipped: CityLookData = load(CityLookData.PATH)
+	print("W7: city_look.tres errors ", shipped.validate() if shipped != null else ["missing"])
+	if shipped == null or shipped.validate().size() != 0: fails += 1
 	return fails

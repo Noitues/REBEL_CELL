@@ -24,6 +24,9 @@
 		"res://scripts/ui/kit/city_map_overlay.gd": {
 			"color": 23
 		},
+		"res://scripts/ui/kit/city_palette.gd": {
+			"color": 22
+		},
 		"res://scripts/ui/kit/daemon_tray.gd": {
 			"draw_size": 1
 		},
@@ -50,10 +53,6 @@
 		},
 		"res://scripts/ui/kit/modem_sign.gd": {
 			"color": 1
-		},
-		"res://scripts/ui/kit/neon_city.gd": {
-			"color": 23,
-			"draw_size": 1
 		},
 		"res://scripts/ui/kit/netrun_map_view.gd": {
 			"draw_size": 3

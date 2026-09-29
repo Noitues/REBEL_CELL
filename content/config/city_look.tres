@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="CityLookData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/city_look_data.gd" id="1_citylook"]
+
+[resource]
+script = ExtResource("1_citylook")
+ink_glow = PackedFloat32Array(0.9, 1.15, 1.0, 0.8, 0.85)
+glow_threshold = 0.3
+glow_radius_px = 5.0
+glow_strength = 0.8
+haze_band_y = PackedFloat32Array(0.16, 0.46, 0.8)
+haze_band_width = PackedFloat32Array(0.1, 0.13, 0.16)
+haze_band_alpha = PackedFloat32Array(0.2, 0.13, 0.1)
+haze_drift_period = 26.0
+haze_drift = 0.02
+reflection_strength = 0.45
+reflection_reach_px = 16.0
+reflection_ripple_period = 5.0
+reflection_ripple_px = 1.5
+rim_lights_max = 6
+rim_radius = 0.16
+rim_strength = 1.6
+grades = {
+&"combat": {
+"contrast": 1.3,
+"dim": 0.35,
+"lift": 0.0,
+"saturation": 0.92,
+"warmth": -0.25
+},
+&"hq": {
+"contrast": 0.94,
+"dim": 0.0,
+"lift": 0.035,
+"saturation": 0.82,
+"warmth": 0.45
+},
+&"net": {
+"contrast": 1.22,
+"dim": 0.0,
+"lift": 0.0,
+"saturation": 1.08,
+"warmth": -0.4
+},
+&"title": {
+"contrast": 1.05,
+"dim": 0.0,
+"lift": 0.0,
+"saturation": 1.0,
+"warmth": 0.0
+}
+}
+progress_max_shift = 0.2
+searchlight_count = 2
+searchlight_period = 11.0
+searchlight_arc_deg = 38.0
+searchlight_width_deg = 6.0
+searchlight_length = 0.9
+searchlight_alpha = 0.45
+flagged_flicker_hz = 0.8
+flagged_rim_strength = 3.0
+flagged_drones = 3
+hunted_desaturate = 0.25
+hunted_haze_gain = 1.8
+tags_per_site = 3
+tag_size_px = 26.0
+tag_alpha = 0.9
+hatch_alpha = 0.32
+hatch_spacing_px = 7.0
+hatch_width_px = 1.6
+hatch_reach_lots = 3.2
+leak_strength = 0.12
+leak_radius_lots = 6.0
+wash_gain = 0.4
+map_dim = 0.4
+map_blur_px = 2.5
+calm_dim = 0.45
+calm_desaturate = 0.75
+calm_feather_px = 28.0
+high_contrast_calm_dim = 0.3
+life_density = PackedFloat32Array(0.6, 0.8, 1.0, 1.3)
+aircraft_max = 5
+aircraft_cross_seconds = 34.0
+aircraft_blink_period = 3.0
+aircraft_blink_on = 0.12
+drones_max = 3
+drone_period = 20.0
+drone_out_share = 0.55
+drone_radius_lots = 5.0
+billboards_max = 7
+billboard_period = 9.0
+billboard_size_px = Vector2(30, 16)
+billboard_alpha = 0.8
+window_period_min = 3.0
+silhouette_height_px = 40.0
+silhouette_window_share = 0.07
+silhouette_alpha = 0.95
+quality_glow_taps = PackedInt32Array(0, 6, 12)
+quality_default = 2

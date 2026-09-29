@@ -24,6 +24,13 @@ uniform float front_alpha = 0.5;
 // ANIM-R2 R7: the lasting tint over the district the front has crossed (mode 1), in the new
 // owner's colour; it stays after the spread (the front's band fades, the wash does not).
 uniform float wash = 0.0;
+// Art pass W7 (ART_BIBLE 9.3, critique gifs/16): the lasting wash is a CELL_TURF hatch, not a
+// flat fill (acid over a green district read as muddy khaki): 45-degree lines `hatch_px`
+// apart (screen px), `hatch_width` px wide. 0 spacing draws the old flat wash.
+uniform float hatch_px = 7.0;
+uniform float hatch_width = 1.6;
+// How strong the lasting wash is (W7 turns it down: the claimed buildings carry their own hatch).
+uniform float wash_gain = 1.0;
 
 varying vec2 local_pos;
 
@@ -53,6 +60,11 @@ void fragment() {
 		COLOR.a *= 1.0 - reveal;
 	} else {
 		float band = radius > 0.0 ? 1.0 - smoothstep(0.0, feather, abs(d - radius)) : 0.0;
-		COLOR = vec4(front_color.rgb, clamp(band * front_alpha * (1.0 - fade) + spread * wash, 0.0, 1.0));
+		float lines = 1.0;
+		if (hatch_px > 0.0) {
+			float u = fract((FRAGCOORD.x + FRAGCOORD.y) / hatch_px) * hatch_px;
+			lines = 1.0 - smoothstep(hatch_width * 0.5, hatch_width * 0.5 + 1.0, abs(u - hatch_px * 0.5));
+		}
+		COLOR = vec4(front_color.rgb, clamp(band * front_alpha * (1.0 - fade) + spread * wash * lines * wash_gain, 0.0, 1.0));
 	}
 }
