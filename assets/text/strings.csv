@@ -2825,3 +2825,6 @@ R%d,R%d
 // %s,// %s
 "If you SEND IT now: your HP changes by %s (hits aimed at you, less what your guard takes).","If you SEND IT now: your HP changes by %s (hits aimed at you, less what your guard takes)."
 (%d capped),(%d capped)
+NEXT TURN %d,NEXT TURN %d
+"NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why).","NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why)."
+"NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why).","NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why)."

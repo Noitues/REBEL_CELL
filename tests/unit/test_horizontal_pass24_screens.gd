@@ -327,7 +327,7 @@ func _unlock_all() -> void:
 func test_every_code_key_is_in_the_csv() -> void:
 	var keys := TextDb.code_keys(PackedStringArray(["res://scripts/ui", "res://scripts/autoload"]))
 	assert_true(keys.size() > 100, "the code translates its words (%d keys)" % keys.size())
-	assert_true(keys.has("LAST TURN: ") and keys.has("NEXT %d"), "the combat's drawn words are keys")
+	assert_true(keys.has("LAST TURN: ") and keys.has("NEXT TURN %d"), "the combat's drawn words are keys")
 	assert_true(keys.has("CYBERDECK HQ") and keys.has("START DEFENSE") and keys.has("PIRATE RADIO"), "and the screens'")
 	var csv := {}
 	var f := FileAccess.open("res://assets/text/strings.csv", FileAccess.READ)

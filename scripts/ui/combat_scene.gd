@@ -37,8 +37,8 @@ const STICKER_GAP := 6.0
 const STICKER_EDGE := 4.0
 ## Chip colours on the tags (the text says what they are; colour is a second cue).
 const CHIP_HIT := Palette.CELL_PINK
-const CHIP_LOSS := Color("#FF4D4D")
-const CHIP_GAIN := Color("#3DFF8B")
+const CHIP_LOSS := Palette.HARM
+const CHIP_GAIN := Palette.GAIN
 const CHIP_GUARD := Palette.NET_CYAN
 const CHIP_STATUS := Palette.CELL_ACID
 const CHIP_RESIST := Palette.RESIST_GOLD
@@ -119,7 +119,7 @@ var _dragging: bool = false
 var _aim_line: Control
 ## The aiming instruction over the hand.
 var _aim_hint: Label
-const AIM_HINT_FONT := 14
+const AIM_HINT_FONT := UiTheme.BODY
 ## Other cards fade while one is aimed.
 const AIM_DIM := 0.45
 const AIM_LINE_WIDTH := 3.0
@@ -2062,7 +2062,7 @@ func _fit_status() -> void:
 
 
 ## The smallest the status line's font shrinks to (px).
-const STATUS_MIN_FONT := 10
+const STATUS_MIN_FONT := UiTheme.CAPTION
 var _fitting_status := false
 
 
@@ -2556,7 +2556,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 	for tgt in to:
 		var victim := state.get_combatant(StringName(String(tgt)))
 		var who := tr("YOU") if victim != null and victim.is_player else (_name_of(victim).to_upper() if victim != null else "?")
-		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_HIT, "ink": Palette.INK,
+		chips.append({"text": tr("HITS %s %d") % [who, int(to[tgt])], "color": CHIP_LOSS if victim != null and victim.is_player else CHIP_HIT, "ink": Palette.INK,
 			"rank": CHIP_RANK_HURTS_YOU if victim != null and victim.is_player else CHIP_RANK_DEALT,
 			"beats": ForecastTicks.filter(["damage", "evaded"], id, StringName(String(tgt)))})
 	if to.is_empty() and int(d["dealt"]) > 0:
@@ -2615,7 +2615,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			continue
 		var name := _name_of(sat).to_lower()
 		if int(sd["dealt"]) > 0:
-			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT, "ink": Palette.INK,
+			chips.append({"text": tr("%s HITS %d") % [name, int(sd["dealt"])], "color": CHIP_HIT if sat.is_player else CHIP_LOSS, "ink": Palette.INK,
 				"rank": CHIP_RANK_DEALT if sat.is_player else CHIP_RANK_HURTS_YOU, "beats": ForecastTicks.filter(["damage", "evaded"], sat.id)})
 		if bool(sd["alive_before"]) and not bool(sd["alive_after"]):
 			chips.append({"text": tr("%s DOWN") % name, "color": CHIP_LOSS, "ink": Palette.PAPER, "rank": CHIP_RANK_HP, "beats": ForecastTicks.filter(["died"], &"", sat.id)})
@@ -2645,7 +2645,7 @@ func _chips_for(o: CombatOutcome, id: StringName, state: CombatState) -> Array:
 			var heat := 0
 			for h in o.heat_events:
 				heat += HeatRules.scaled_delta(RunManager.campaign, h, RunManager.config()) if RunManager.campaign != null else h
-			chips.append({"text": tr("HEAT %s") % signed(heat), "color": heat_poster.hot_color, "ink": Palette.INK})
+			chips.append({"text": tr("HEAT %s") % signed(heat), "color": Palette.WARN, "ink": Palette.INK})  # §3.5: Heat is a warning, never a corp hue
 		if o.cycles != 0:
 			chips.append({"text": tr("CYCLES %s") % signed(o.cycles), "color": CHIP_RUN, "ink": Palette.INK})
 		if o.schematics != 0:

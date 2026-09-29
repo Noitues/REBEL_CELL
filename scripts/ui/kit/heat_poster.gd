@@ -24,14 +24,14 @@ const MUG_SIZE := 44.0
 ## word's baseline below that block's top, its lettering, and the paper kept under it (px).
 const POSTER_BLOCK_TOP := 84.0
 const BAND_BASELINE := 68.0
-const BAND_FONT := 13
+const BAND_FONT := UiTheme.BODY
 const BAND_PAD := 6.0
 ## ANIM-R1 M16: the ransom letters' layout for `count` letters on this poster's width:
 ## {"step", "strip" (a strip's width), "num_w" (the widest the number or "/max" is),
 ## "num_x" (where the number starts)}; the number's right end stays on the poster.
 func letter_layout(count: int) -> Dictionary:
 	var num_w := maxf(Palette.display().get_string_size("%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT).x,
-		Palette.mono().get_string_size("/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
+		Palette.mono().get_string_size("/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT).x)
 	var width := size.x if size.x > 0.0 else custom_minimum_size.x
 	var room := width - 8.0 - 6.0 - num_w - 4.0
 	var step := clampf(room / maxf(1.0, count), LETTER_STEP_MIN, LETTER_STEP)
@@ -73,17 +73,17 @@ var banner_alpha: float = 0.0
 var banner_scale: float = 1.0
 var _roll_from: int = -1
 ## The number's lettering and the banner's (px), and the banner's tilt (degrees).
-const NUMBER_FONT := 30
-const BANNER_FONT := 18
+const NUMBER_FONT := UiTheme.HEADING
+const BANNER_FONT := UiTheme.LABEL
 const BANNER_PAD := 6.0
 const BANNER_TILT := -7.0
 ## ANIM-R2 R8 / ANIM-R3 B7: the banner's lettering follows the text size and shrinks (to
 ## BANNER_FONT_MIN, still readable) until the tilted banner fits the poster less
 ## BANNER_MARGIN a side; past that it wraps to two lines (at "-", else the middle space) and
-## only then shrinks further (to BANNER_FONT_FLOOR). The 8 px floor on one line ran a French
-## banner 168 px in 164.
-const BANNER_FONT_MIN := 12
-const BANNER_FONT_FLOOR := 8
+## only then shrinks further (to BANNER_FONT_FLOOR). Art pass W3 (§4.3 rule 2): the floor is
+## `caption`; nothing on the poster is drawn under 12 px at text scale 1.0.
+const BANNER_FONT_MIN := UiTheme.CAPTION
+const BANNER_FONT_FLOOR := UiTheme.CAPTION
 const BANNER_MARGIN := 3.0
 ## Line height of the banner's lettering (x its size) and the gap between it and the poster's
 ## Heat block (px).
@@ -91,12 +91,20 @@ const BANNER_LINE := 1.15
 const BANNER_GAP := 4.0
 ## ANIM-R3 B7: the band's consequence under the banner's words (mono, px at text scale 1.0)
 ## and the eye glyph before them (x the lettering: width, and the gap after it).
-const SUB_FONT := 10
+const SUB_FONT := UiTheme.CAPTION
 const EYE_W := 1.3
 const EYE_GAP := 0.35
 ## ANIM-R3 B7: a crossing is a warning, never good news: amber (noticed), orange (flagged),
 ## red (hunted), by band (1-3), not the corporation's colour (Solace green read as good).
-const BAND_COLORS: Array[Color] = [Color("#FFB000"), Color("#FFB000"), Color("#FF8C1A"), Color("#FF2A3D")]
+## Art pass W3: the §3.5 Heat scale's tokens (COOL, NOTICED, FLAGGED, HUNTED); a crossing
+## banner is at least NOTICED.
+const BAND_COLORS: Array[Color] = Palette.HEAT_BAND_COLORS
+## The WANTED header, the ransom letters and the "/max" (§4.2 steps), a letter's floor.
+const WANTED_FONT := UiTheme.TITLE
+const LETTER_FONT := UiTheme.LABEL
+const MAX_FONT := UiTheme.CAPTION
+## The Heat number's ink outline on the paper poster (px): WARN and FLAGGED read on paper.
+const NUMBER_OUTLINE := 4
 ## The ink box round the band word while it stamps (px).
 const STAMP_BOX_PAD := 3.0
 ## A ransom letter's strip and the step between strips at rest, and the closest the
@@ -391,7 +399,7 @@ func _fit_banner(text: String, sub: String, room: Rect2) -> Dictionary:
 				if not wrap and banner_span(f, lines, fs) > room.size.x:
 					continue
 				var sfs := clampi(roundi(fs * float(SUB_FONT) / BANNER_FONT), BANNER_FONT_FLOOR, sub_top)
-				var subs := wrap_words(Palette.mono(), sub, sfs, room.size.x - BANNER_PAD * 2.0 - SUB_TILT_ROOM) if with_sub else PackedStringArray()
+				var subs := wrap_words(sub_font(), sub, sfs, room.size.x - BANNER_PAD * 2.0 - SUB_TILT_ROOM) if with_sub else PackedStringArray()
 				if subs.size() > SUB_LINES_MAX:
 					continue
 				var r := _banner_box(lines, fs, subs, sfs, room)
@@ -417,7 +425,7 @@ func _banner_box(lines: PackedStringArray, fs: int, subs: PackedStringArray, sfs
 		w = maxf(w, Palette.display().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
 	w += fs * (EYE_W + EYE_GAP) + BANNER_PAD * 2.0
 	for line in subs:
-		w = maxf(w, Palette.mono().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x + BANNER_PAD * 2.0)
+		w = maxf(w, sub_font().get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x + BANNER_PAD * 2.0)
 	var h := banner_height(lines.size(), fs) + subs.size() * sfs * BANNER_LINE
 	var t := _tilted(Vector2(w, h))
 	var cy := room.get_center().y if poster else room.position.y + t.y * 0.5
@@ -541,7 +549,13 @@ func sub_lines() -> PackedStringArray:
 	return banner_layout()["subs"]
 
 
-const SUB_LINES_MAX := 4
+const SUB_LINES_MAX := 5
+
+
+## The consequence's face: the body face (§4.1: a text block over three lines; condensed,
+## so it keeps the caption floor on the small poster).
+static func sub_font() -> Font:
+	return Palette.body()
 ## Width kept free beside the lines so the tilted, taller box still fits (px).
 const SUB_TILT_ROOM := 12.0
 
@@ -563,7 +577,7 @@ func _draw() -> void:
 	if poster:
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER_ALT)
 		draw_rect(Rect2(Vector2.ZERO, size), Palette.INK, false, 3.0)
-		draw_string(Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, 26, Palette.INK)
+		draw_string(Palette.display(), Vector2(10, 30), tr("WANTED"), HORIZONTAL_ALIGNMENT_LEFT, size.x - 20, WANTED_FONT, Palette.INK)
 		PortraitArt.draw(self, Rect2(size.x * 0.5 - MUG_SIZE * 0.5, 38, MUG_SIZE, MUG_SIZE), wanted)
 		y = POSTER_BLOCK_TOP
 	# The ransom-note word, cut into letters (translated; H24).
@@ -585,21 +599,27 @@ func _draw() -> void:
 		draw_rect(strip, Palette.PAPER if i % 2 == 0 else Palette.CELL_PINK)
 		draw_rect(strip, Palette.INK, false, 1.0)
 		var lf: Font = fonts[i % fonts.size()]
-		var lfs := 18
-		while lfs > 8 and lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > strip_w - 4.0:
+		var lfs := LETTER_FONT
+		while lfs > UiTheme.CAPTION and lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > strip_w - 4.0:
 			lfs -= 1
 		draw_string(lf, strip.position + Vector2(maxf(2.0, (strip_w - lf.get_string_size(letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x) * 0.5), 22), letters[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, Palette.INK)
 		x += step
 	x = minf(x, size.x - 6.0 - num_w)
 	# ANIM-R1 M6: the number rolls, grows and flashes white on a crossing.
-	var num_col := Palette.CELL_PINK if band < 2 else hot_color
+	# Art pass W3 (§3.5): the Heat scale's colour, never the corporation's (green on Solace
+	# read as good news); COOL is ink on the paper poster, TEXT_MID on the dark one.
+	var num_col := Palette.heat_color(roundi(shown_heat), marks)
+	if poster and shown_band() == 0:
+		num_col = Palette.INK
 	if number_scale > 1.0:
 		num_col = num_col.lerp(Palette.PAPER, clampf((number_scale - 1.0) / maxf(0.001, Motion.amplitude(&"heat_number_pop") - 1.0), 0.0, 1.0))
 	var num_at := Vector2(x + 6, y + 30)
 	draw_set_transform(num_at + Vector2(0, -NUMBER_FONT * 0.35), 0.0, Vector2.ONE * number_scale)
+	if poster and shown_band() > 0:
+		draw_string_outline(Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, NUMBER_OUTLINE, Palette.INK)
 	draw_string(Palette.display(), Vector2(0, NUMBER_FONT * 0.35), "%d" % roundi(shown_heat), HORIZONTAL_ALIGNMENT_LEFT, -1, NUMBER_FONT, num_col)
 	draw_set_transform(Vector2.ZERO)
-	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.INK if poster else Palette.PAPER)
+	draw_string(Palette.mono(), Vector2(x + 6, y + 44), "/%d" % heat_max, HORIZONTAL_ALIGNMENT_LEFT, -1, MAX_FONT, Palette.INK if poster else Palette.PAPER)
 	var bar := Rect2(8, y + 44, size.x - 16, 8)
 	draw_rect(bar, Color(Palette.INK, 0.3) if poster else Color(Palette.PAPER, 0.15))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0), bar.size.y)), Palette.CELL_PINK)
@@ -613,7 +633,7 @@ func _draw() -> void:
 		var c := r.get_center()
 		draw_set_transform(c, 0.0, Vector2.ONE * stamp_scale)
 		var box := Rect2(r.position - c, r.size).grow(STAMP_BOX_PAD)
-		draw_rect(box, Color(hot_color, clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
+		draw_rect(box, Color(Palette.heat_color(heat, marks), clampf((stamp_scale - 1.0) * 4.0, 0.0, 1.0)), false, 2.0)
 		draw_string(Palette.marker(), Vector2(8, y + BAND_BASELINE) - c, tr(BAND_WORDS[mini(shown_band(), 3)]), HORIZONTAL_ALIGNMENT_LEFT, -1, BAND_FONT, word_col)
 		draw_set_transform(Vector2.ZERO)
 	else:
@@ -639,7 +659,7 @@ func _draw_banner(y: float) -> void:
 	var a := banner_alpha
 	draw_set_transform(r.get_center(), deg_to_rad(BANNER_TILT), Vector2.ONE * banner_scale)
 	var box := Rect2(-r.size * 0.5, r.size)
-	draw_rect(box.grow(2.0), Color(0, 0, 0, 0.8 * a))
+	draw_rect(box.grow(2.0), Color(Palette.INK, 0.8 * a))
 	draw_rect(box, Color(Palette.NIGHT_SKY, 0.94 * a))
 	draw_rect(box, Color(col, a), false, 3.0)
 	var x := box.position.x + BANNER_PAD
@@ -651,7 +671,7 @@ func _draw_banner(y: float) -> void:
 		draw_string(f, Vector2(x, top + line_h * i + f.get_ascent(fs)), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col.lerp(Palette.PAPER, 0.25), a))
 	var sy := top + line_h * lines.size()
 	for i in subs.size():
-		draw_string(Palette.mono(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + Palette.mono().get_ascent(sfs)), subs[i],
+		draw_string(sub_font(), Vector2(box.position.x + BANNER_PAD, sy + sfs * BANNER_LINE * i + sub_font().get_ascent(sfs)), subs[i],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(Palette.PAPER, a))
 	draw_set_transform(Vector2.ZERO)
 

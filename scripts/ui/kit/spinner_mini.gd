@@ -86,7 +86,7 @@ func _caption_size() -> int:
 func _draw() -> void:
 	var c := centre()
 	var n := slices.size()
-	draw_circle(c, RADIUS + 3.0, Color(0, 0, 0, 0.55))
+	draw_circle(c, RADIUS + 3.0, Color(Palette.INK, 0.55))
 	for k in n:
 		var sd := lookup.get_content(slices[k]) as SliceData if lookup != null else null
 		var type := sd.slice_type if sd != null else RC.SliceType.MISS

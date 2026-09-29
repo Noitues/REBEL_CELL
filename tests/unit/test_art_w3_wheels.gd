@@ -646,3 +646,49 @@ func test_status_glyphs_are_drawn_icons_and_the_dev_picker_is_kit() -> void:
 	var scene := await _combat()
 	assert_false(scene._seed_spin.visible, "the dev picker never shows in a test or a run")
 	assert_true(scene.toast is Toast, "combat keeps the one sticky toast")
+
+
+# --- 12. Layout, type and 2.0 (§4.3, §11, §12) --------------------------------------------------
+
+const W3_FILES: Array[String] = ["res://scripts/ui/wheel_view.gd", "res://scripts/ui/combat_scene.gd", "res://scripts/ui/kit/spinner_view.gd",
+	"res://scripts/ui/kit/spinner_mini.gd", "res://scripts/ui/kit/resolve_beats.gd", "res://scripts/ui/kit/forecast_stamp.gd",
+	"res://scripts/ui/kit/forecast_ticks.gd", "res://scripts/ui/kit/outcome_row.gd", "res://scripts/ui/kit/ram_bar.gd",
+	"res://scripts/ui/kit/heat_poster.gd", "res://scripts/ui/kit/wheel_bezel.gd", "res://scripts/ui/kit/boss_intro.gd", "res://scripts/ui/kit/hub_queue.gd"]
+
+
+func test_no_literal_colour_or_size_and_nothing_under_12() -> void:
+	var lint: GDScript = load("res://tools/visual_qa/visual_lint_static.gd")
+	for path in W3_FILES:
+		var found: Dictionary = lint.scan_text(path, FileAccess.get_file_as_string(path))
+		for rule in found:
+			assert_eq((found[rule] as Array).size(), 0, "%s: no %s findings (lines %s)" % [path.get_file(), rule, found[rule]])
+	# The wheel's own floors are caption (§4.3 rule 2).
+	for n in [WheelView.HUB_FONT_SIZE, WheelView.ICON_ROW_MIN_FONT, int(WheelView.NUMBER_MIN_FONT), HeatPoster.BANNER_FONT_FLOOR, HeatPoster.SUB_FONT,
+			HeatPoster.MAX_FONT, RamBar.FONT_SIZE, ForecastStamp.CAPTION_SIZE, SpinnerView.HUB_MIN_FONT_SIZE]:
+		assert_gte(n, UiTheme.CAPTION, "nothing under 12 at 1.0")
+
+
+func test_last_turn_is_caption_and_next_says_next_turn() -> void:
+	var scene := await _combat()
+	scene.end_turn()
+	await _frames(1)
+	var pv: WheelView = scene._player_view
+	var lay := pv.hp_layout()
+	if pv.last_turn != "":
+		assert_gte(int(lay["last_fs"]), UiTheme.CAPTION, "LAST TURN at caption or larger")
+	var ev := _enemy_view(scene)
+	ev.outcome = {"hp_after": ev.combatant.hp - 5, "alive_after": true, "statuses": [], "satellites": {}}
+	assert_string_contains(String(ev.hp_layout()["next_text"]), tr("NEXT TURN %d") % (ev.combatant.hp - 5), "the plate says NEXT TURN")
+
+
+func test_heat_is_never_the_corp_colour_and_paper_amounts_read() -> void:
+	RunManager.new_campaign(1)
+	var p: HeatPoster = add_child_autofree(HeatPoster.new(false))
+	p.size = Vector2(170, 134)
+	p.hot_color = Palette.CORP_SOLACE
+	p.set_heat(62, 100, [25, 50, 75] as Array[int])
+	assert_ne(Palette.heat_color(62, p.marks), Palette.CORP_SOLACE, "62 is FLAGGED, never green")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/heat_poster.gd")
+	assert_true(src.contains("var num_col := Palette.heat_color(roundi(shown_heat), marks)"), "the number wears the Heat scale")
+	assert_gte(Palette.contrast(OutcomeRow.GOOD, Palette.NOTE_PAPER), 4.5, "a gain reads as ink on paper")
+	assert_gte(Palette.contrast(OutcomeRow.BAD, Palette.NOTE_PAPER), 4.5, "a cost reads as ink on paper")

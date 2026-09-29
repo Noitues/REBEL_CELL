@@ -213,14 +213,16 @@ const LAST_TURN_PAD := 4.0
 ## Lines LAST TURN may take before its font shrinks below its text-scale-1.0 size.
 const LAST_TURN_LINES := 2
 ## Lettering sizes at text scale 1.0.
-const INTENT_FONT_SIZE := 15
-const CHIP_FONT_SIZE := 13
-const HUB_FONT_SIZE := 10
-const NAME_FONT_SIZE := 13
-const VALUE_FONT_SIZE := 20
+const INTENT_FONT_SIZE := UiTheme.LABEL
+const CHIP_FONT_SIZE := UiTheme.BODY
+const HUB_FONT_SIZE := UiTheme.CAPTION
+const NAME_FONT_SIZE := UiTheme.BODY
+const VALUE_FONT_SIZE := UiTheme.LABEL
+## The NEXT TURN plate's and the icon row's lettering (§4.2 `body`).
+const NEXT_FONT_SIZE := UiTheme.BODY
 const HP_FONT_SIZE := UiTheme.HEADING
 const INTENT_HEIGHT := 30.0
-const CHIP_HEIGHT := 20.0
+const CHIP_HEIGHT := 22.0
 ## The widest a tag may get before its chips wrap (fraction of the view width).
 const TAG_MAX_SHARE := 0.96
 ## Gain and harm (§3.3): heals and good statuses, damage and bad ones (the HP itself reads Palette.hp_color).
@@ -287,8 +289,8 @@ func _get_tooltip(at_position: Vector2) -> String:
 			# ANIM-R5 combat 3: the LETHAL plate says what it means.
 			return tr("LETHAL: this turn takes you to 0 HP.") if combatant.is_player else tr("LETHAL: this turn takes it to 0 HP.")
 		if combatant.is_player:
-			return tr("NEXT %d: your HP after SEND IT, if you press it now (the tag above says why).") % next_hp
-		return tr("NEXT %d: its HP after SEND IT, if you press it now (the tag above says why).") % next_hp
+			return tr("NEXT TURN %d: your HP after SEND IT, if you press it now (the tag above says why).") % next_hp
+		return tr("NEXT TURN %d: its HP after SEND IT, if you press it now (the tag above says why).") % next_hp
 	if ((lay["last"] as Rect2).has_point(at_position) or (lay["icons"] as Rect2).has_point(at_position)) and last_turn != "":
 		return last_turn_tip if last_turn_tip != "" else last_turn
 	if (lay["net"] as Rect2).has_point(at_position):
@@ -633,13 +635,13 @@ const NUMBER_ROOM := 0.62
 ## off the hub's words, and never shrink below NUMBER_MIN_FONT px.
 const NUMBER_HUB_SHARE := 0.9
 const NUMBER_GAP := 2.0
-const NUMBER_MIN_FONT := 10.0
+const NUMBER_MIN_FONT := float(UiTheme.CAPTION)
 ## A landed slice's rim (px); the MISS X's arm as a share of the slice band, its width.
 const LANDED_RIM := 4.0
 const MISS_X_SHARE := 0.32
 const MISS_X_WIDTH := 5.0
 ## The DEFEATED stamp's lettering (px at text scale 1.0) and tilt (rad).
-const DEFEATED_FONT := 22
+const DEFEATED_FONT := UiTheme.TITLE
 ## §3.5: at 0 HP the wheel's own colour dims to this share under its DEFEATED / DEFEAT stamp.
 const DEFEATED_DIM := 0.3
 const STAMP_TILT := -0.2
@@ -2137,7 +2139,7 @@ const TAG_CLEAR := EXTENT
 
 ## Height kept for the tag at the current text scale (title and TAG_CHIP_ROWS rows).
 static func _tag_reserve() -> float:
-	return INTENT_HEIGHT * _ts() + _chip_row_cap() * (CHIP_HEIGHT * _ts() + 2.0)
+	return title_row_h() + _chip_row_cap() * (CHIP_HEIGHT * _ts() + 2.0)
 
 
 ## Chip rows kept: fewer at big text so the wheel doesn't shrink away (H22).
@@ -2183,7 +2185,7 @@ func _wedge(center: Vector2, r0: float, r1: float, a0: float, a1: float) -> Pack
 
 func _draw() -> void:
 	if combatant == null or combatant.wheel == null:
-		draw_string(Palette.mono(), Vector2(8, 20), "(no wheel)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Palette.PAPER)
+		draw_string(Palette.mono(), Vector2(8, 20), "(no wheel)", HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.CAPTION), Palette.PAPER)
 		return
 	if shown_state == null:
 		_draw_view()
@@ -2327,7 +2329,7 @@ func _draw_view() -> void:
 			var e0 := _tick_angle(k * 10 + 5, irot)
 			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
 			var m := _tick_angle(k * 10, irot)
-			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), TextDb.t(seg, "display_name") if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, mini(_fs(9), 12), _col(Palette.PAPER))
+			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), TextDb.t(seg, "display_name") if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), _col(Palette.PAPER))
 	if ring_pulse > 0.0:
 		# Good landing: a clean ring grows off the rim and fades.
 		draw_arc(center, radius + Motion.amplitude(&"precision_good_ring") * ring_pulse, 0, TAU, 64, _col(Color(Palette.PAPER, 1.0 - ring_pulse)), 3.0, true)
@@ -2541,7 +2543,7 @@ func _draw_defeated(center: Vector2, radius: float, inner: float) -> void:
 var flatlined: bool = false
 var flatline_pop: float = 1.0
 ## The DEFEAT stamp's lettering at text scale 1.0 (px) and the veil over the disc (alpha).
-const FLATLINE_FONT := 34
+const FLATLINE_FONT := UiTheme.HEADING
 const FLATLINE_VEIL := 1.0 - DEFEATED_DIM
 
 
@@ -2641,7 +2643,7 @@ func _draw_caption(text: String, shown: float) -> void:
 	var fs := _fs(INTENT_FONT_SIZE)
 	var font := Palette.marker()
 	var w := minf(size.x * TAG_MAX_SHARE, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 16.0)
-	var h := INTENT_HEIGHT * _ts()
+	var h := title_row_h()
 	var bottom := tag_bottom()
 	var r := Rect2(Vector2(clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w)), maxf(0.0, bottom - h)), Vector2(w, h))
 	var a := clampf(shown, 0.0, 1.0)
@@ -2689,7 +2691,7 @@ func _draw_satellites() -> void:
 		var sat_text := "%d" % int(anim_sat_hp.get(sat.id, sat.hp))
 		if not replaying and not sat_out.is_empty() and int(sat_out.get("hp_after", sat.hp)) != sat.hp:
 			sat_text += " >%d" % int(sat_out["hp_after"]) if bool(sat_out.get("alive_after", true)) else " >x"
-		var lfs := _fs(HUB_FONT_SIZE + 1)
+		var lfs := _fs(HUB_FONT_SIZE)
 		var plate := satellite_plate_rect(sat, sat_text)
 		draw_rect(plate, Color(Palette.NIGHT_SKY, 0.85))
 		draw_string(Palette.mono(), plate.position + Vector2(3, lfs), sat_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, sat_col)
@@ -2716,7 +2718,7 @@ func _draw_satellites() -> void:
 func satellite_plate_rect(sat: CombatantState, text: String) -> Rect2:
 	var satp := _satellite_pos(sat) - global_position
 	var tok_r := SATELLITE_TOKEN * _ts()
-	var lfs := _fs(HUB_FONT_SIZE + 1)
+	var lfs := _fs(HUB_FONT_SIZE)
 	var lw := Palette.mono().get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x
 	var out_dir := (satp - _center()).normalized()
 	var avoid: Array[Rect2] = _hp_block_rects()
@@ -2825,7 +2827,7 @@ func _draw_arrows() -> void:
 		var hr := arrow_hint_rect(ring, d)
 		if hr.has_area():
 			# ANIM-R4 C4: the key hint sits where it is clear of the tag (arrow_hint_rect).
-			var fs := _fs(HUB_FONT_SIZE + 1)
+			var fs := _fs(HUB_FONT_SIZE)
 			draw_string(Palette.mono(), hr.position + Vector2(0.0, Palette.mono().get_ascent(fs)), String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _col(Palette.CELL_ACID))
 
 
@@ -2837,7 +2839,7 @@ func _draw_arrows() -> void:
 func arrow_hint_rect(ring: int, d: int) -> Rect2:
 	if ring != key_ring or not arrow_hints.has(d) or String(arrow_hints[d]) == "":
 		return Rect2()
-	var fs := _fs(HUB_FONT_SIZE + 1)
+	var fs := _fs(HUB_FONT_SIZE)
 	var f := Palette.mono()
 	var sz := Vector2(f.get_string_size(String(arrow_hints[d]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs))
 	var c := arrow_center(ring, d) - global_position
@@ -3014,7 +3016,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 	draw_string_outline(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, HP_OUTLINE, Palette.NIGHT_SKY)
 	draw_string(Palette.display(), hp_at, String(lay["hp_text"]), HORIZONTAL_ALIGNMENT_LEFT, -1, hs, hp_col)
 	if not replaying and is_nan(anim_hp) and (after != combatant.hp or bool(lay.get("lethal", false))):
-		var fs := _fs(HUB_FONT_SIZE + 3)
+		var fs := _fs(NEXT_FONT_SIZE)
 		var ftext := String(lay["next_text"])
 		var fr: Rect2 = lay["next"]
 		var fcol := _col(LOSS_COLOR) if after < combatant.hp else _col(HP_COLOR)
@@ -3030,7 +3032,7 @@ func _draw_hp(center: Vector2, radius: float) -> void:
 		draw_string(Palette.mono(), Vector2(fr.position.x + 17, fr.position.y + fs), ftext, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fcol)
 		if lethal:
 			# The skull sits in the gap before LETHAL.
-			var head := tr("NEXT %d") % maxi(0, after)
+			var head := tr("NEXT TURN %d") % maxi(0, after)
 			var gx := fr.position.x + 17 + Palette.mono().get_string_size(head + "  ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			draw_skull(self, Vector2(gx, ay), fs * LETHAL_SKULL_SHARE, fcol)
 	if (lay["icons"] as Rect2).has_area():
@@ -3070,7 +3072,7 @@ func hp_layout() -> Dictionary:
 	if not items.is_empty():
 		# ANIM-R3 A6f: the last turn as icons left of the HP number (ANIM-R4 notation: sword 6 − shield 5 = 1),
 		# shrinking to fit the room there.
-		var ifs := _fs(HUB_FONT_SIZE + 3)
+		var ifs := _fs(NEXT_FONT_SIZE)
 		var room := center.x - tw * 0.5 - ICON_ROW_GAP - left_reserve
 		var iw := icon_row_width(items, ifs)
 		while ifs > ICON_ROW_MIN_FONT and iw > room:
@@ -3081,8 +3083,8 @@ func hp_layout() -> Dictionary:
 	var after := int(outcome.get("hp_after", combatant.hp))
 	out["lethal"] = lethal_forecast()
 	if after != combatant.hp or bool(out["lethal"]):
-		var fs := _fs(HUB_FONT_SIZE + 3)
-		var ftext := tr("NEXT %d") % maxi(0, after)
+		var fs := _fs(NEXT_FONT_SIZE)
+		var ftext := tr("NEXT TURN %d") % maxi(0, after)
 		if bool(out["lethal"]):
 			# ANIM-R5 combat 3: the turn that takes this wheel to 0 says so by its HP (a skull
 			# and LETHAL on a solid red plate; the red cross over the hub struck through its
@@ -3121,7 +3123,7 @@ func hp_layout() -> Dictionary:
 			ls -= 1
 			lines = _wrap_last_turn(last_turn, box, ls)
 		var fits := func(n: int, f: int) -> bool: return n * f + LAST_TURN_PAD <= size.y - top_y
-		while (lines.size() > room_lines or not fits.call(lines.size(), ls)) and ls > 7:
+		while (lines.size() > room_lines or not fits.call(lines.size(), ls)) and ls > UiTheme.CAPTION:
 			ls -= 1
 			lines = _wrap_last_turn(last_turn, box, ls)
 		var lw := 0.0
@@ -3144,7 +3146,7 @@ var last_turn_icons: Dictionary = {}
 var last_turn_tip: String = ""
 ## Room between the icon row and the HP number, and the row's smallest lettering (px).
 const ICON_ROW_GAP := 8.0
-const ICON_ROW_MIN_FONT := 8
+const ICON_ROW_MIN_FONT := UiTheme.CAPTION
 
 
 ## The icon row's items: [{icon (a slice type, -1 = none), text, color, sep (a joining sign
@@ -3260,10 +3262,10 @@ func hub_name_lines(width: float) -> Array:
 				best = cut
 		var l1 := " ".join(words.slice(0, best))
 		var l2 := " ".join(words.slice(best))
-		while fs > 7 and maxf(font.get_string_size(l1, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_string_size(l2, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) > width:
+		while fs > UiTheme.CAPTION and maxf(font.get_string_size(l1, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, font.get_string_size(l2, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x) > width:
 			fs -= 1
 		return [fs, l1, l2]
-	while fs > 7 and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+	while fs > UiTheme.CAPTION and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
 		fs -= 1
 	return [fs, name]
 
@@ -3363,7 +3365,7 @@ func _draw_hub(center: Vector2, _inner: float, line: Color) -> void:
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
 		var lfs := fs
-		while lfs > 6 and Palette.mono().get_string_size(hub_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
+		while lfs > UiTheme.CAPTION and Palette.mono().get_string_size(hub_lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
 			lfs -= 1  # shrink to the hub (H23: "Breaker Core" was cut to "Breake")
 		var line_text: String = hub_lines[i]
 		while line_text.length() > 3 and Palette.mono().get_string_size(line_text, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs).x > hw:
@@ -3511,7 +3513,7 @@ func chip_layout(r: Rect2) -> Array[Dictionary]:
 	var ts := _ts()
 	var fs := chip_font()
 	var chip_h := CHIP_HEIGHT * ts
-	var y := r.position.y + INTENT_HEIGHT * ts
+	var y := r.position.y + title_row_h()
 	var font := Palette.mono()
 	var room := tick_room() if _ticking() else 0.0
 	for row in _chip_rows_at(fs):
@@ -3545,7 +3547,7 @@ func _tag_geometry() -> Dictionary:
 	if combatant == null or it.is_empty() or String(it.get("text", "")) == "":
 		return {"rect": Rect2(), "was": Rect2()}
 	var ts := _ts()
-	var title_h := INTENT_HEIGHT * ts
+	var title_h := title_row_h()
 	var chip_h := CHIP_HEIGHT * ts
 	var fs := chip_font()
 	var rows := _chip_rows_at(fs)
@@ -3674,7 +3676,7 @@ func _intent_tag(r: Rect2, alpha: float = 1.0) -> void:
 		draw_rect(tape, fade.call(Palette.NOTE_TAPE))
 		draw_string(Palette.mono(), Vector2(tape.position.x, tape.position.y + cap_fs), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap_w, cap_fs, fade.call(Palette.INK))
 	var tx := r.position.x + 8
-	var title_h := INTENT_HEIGHT * ts
+	var title_h := title_row_h()
 	if type >= 0:
 		SliceIcon.draw_icon(self, r.position + Vector2(17, title_h * 0.5 + TAPE_INSET * ts * 0.5), 9 * ts, type, fade.call(Palette.slice_color(type)))
 		tx += 22 * ts
@@ -3762,3 +3764,14 @@ func _draw_dashed_arc(center: Vector2, radius: float, start: float, end: float, 
 		var a := start + span * i / dashes
 		var b := start + span * (i + 1) / dashes
 		draw_arc(center, radius, a, b, 4, color, width)
+
+
+## The tag's title row height (px): INTENT_HEIGHT at text scale 1.0, then as tall as its
+## lettering needs (art pass W3: a row twice the lettering's size at big text took the
+## wheels' room).
+static func title_row_h() -> float:
+	return maxf(INTENT_HEIGHT, _fs(INTENT_FONT_SIZE) * TITLE_ROW_SHARE)
+
+
+## The title row's height as a share of its lettering.
+const TITLE_ROW_SHARE := 1.35
