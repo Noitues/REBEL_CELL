@@ -5,6 +5,12 @@ extends Control
 ## = the time constant, amplitude = the ghost's alpha) and tilts with the cursor's speed
 ## (`drag_ghost_tilt`: duration = smoothing, amplitude = most degrees). Under reduce
 ## effects and headless it sits on the cursor, untilted. View only.
+## W4 (ART_BIBLE 6.3): a dragged card (ZineCard, card Look) is shown at CARD_SCALE so it
+## never covers the target hub it is aimed at; center_global() is where the aim line
+## starts (W3).
+
+## The dragged card's scale (the ghost of a card; other items keep their size).
+const CARD_SCALE := 0.6
 
 
 ## The item shown (a ZineCard in combat; operatives, assets and chips since ANIM-4).
@@ -22,6 +28,9 @@ func _init(p_card: Control) -> void:
 	card.modulate.a = Motion.amplitude(&"drag_ghost_follow")
 	add_child(card)
 	card.position = -card.size * 0.5
+	card.pivot_offset = card.size * 0.5
+	if card is ZineCard and (card as ZineCard).look == ZineCard.Look.STICKER:
+		card.scale = Vector2.ONE * CARD_SCALE
 
 
 func _ready() -> void:
@@ -57,4 +66,12 @@ func step(delta: float) -> void:
 
 ## The card's centre on screen now (where a cancelled drag starts its way home).
 func card_center() -> Vector2:
-	return card.get_global_rect().get_center() if is_inside_tree() else global_position
+	return center_global()
+
+
+## W4 (for W3's aim line): the dragged card's centre on screen, through its lag, tilt and
+## CARD_SCALE (the holder's position before it is in a tree).
+func center_global() -> Vector2:
+	if not is_inside_tree():
+		return global_position
+	return card.get_global_transform() * (card.size * 0.5)

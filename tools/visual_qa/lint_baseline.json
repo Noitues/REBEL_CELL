@@ -27,9 +27,6 @@
 		"res://scripts/ui/kit/daemon_tray.gd": {
 			"draw_size": 1
 		},
-		"res://scripts/ui/kit/deck_view.gd": {
-			"color": 2
-		},
 		"res://scripts/ui/kit/graffiti_scrawl.gd": {
 			"font_size_assign": 1
 		},
@@ -86,10 +83,6 @@
 		},
 		"res://scripts/ui/kit/terminal_window.gd": {
 			"font_override": 2
-		},
-		"res://scripts/ui/kit/zine_card.gd": {
-			"color": 9,
-			"draw_size": 4
 		},
 		"res://scripts/ui/kit/zine_note.gd": {
 			"draw_size": 1

@@ -24,8 +24,6 @@ var hint_label: Label
 const GRID_WIDTH := 860.0
 const GRID_GAP := 14.0
 const CARDS_PER_ROW := 4
-## Card rarities in words (keys).
-const RARITY_WORDS: Array[String] = ["Common", "Uncommon", "Rare", "Boss"] # TR
 
 
 func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String = "DECK", p_action: String = "") -> void:
@@ -36,7 +34,7 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Palette.SCRIM
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
 	# H24 S4: the viewer shows its words as given: the title comes translated, the action
@@ -59,12 +57,19 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	window.body.add_child(scroll)
+	# W4: the cards' tape and shadow reach past their rect; the grid keeps room for them
+	# (the first row's titles were clipped by the header, critique 11).
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_top", UiTheme.SP_L)
+	pad.add_theme_constant_override("margin_left", UiTheme.SP_XS)
+	pad.add_theme_constant_override("margin_bottom", UiTheme.SP_S)
+	scroll.add_child(pad)
 	var grid := HFlowContainer.new()
 	grid.name = "DeckGrid"
-	grid.custom_minimum_size.x = 860
-	grid.add_theme_constant_override("h_separation", 14)
-	grid.add_theme_constant_override("v_separation", 14)
-	scroll.add_child(grid)
+	grid.custom_minimum_size.x = GRID_WIDTH
+	grid.add_theme_constant_override("h_separation", roundi(GRID_GAP))
+	grid.add_theme_constant_override("v_separation", roundi(GRID_GAP))
+	pad.add_child(grid)
 	# Cards follow the text size (H21 #15) while a row still holds CARDS_PER_ROW of them, and
 	# show what they do as pictograms.
 	var ds := clampf(minf(Settings.text_scale, (GRID_WIDTH - GRID_GAP * (CARDS_PER_ROW - 1)) / (CARDS_PER_ROW * ZineCard.STICKER_SIZE.x)), 1.0, Settings.TEXT_SCALE_MAX)
@@ -73,6 +78,8 @@ func _init(p_deck: Array[StringName], p_lookup: ContentLookup, p_title: String =
 		var sticker := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[i]), card.ram_cost if card != null else 0,
 			TextDb.t(card, "description") if card != null else "", i).scaled(ds).with_card(card)
 		sticker.hotkey = ""
+		# W4 (ART_BIBLE 6.3): the full face, every word; a long text grows the card.
+		sticker.fit_whole = true
 		var index := i
 		sticker.pressed.connect(func() -> void: _on_left(index))
 		sticker.inspected.connect(func() -> void: open_card(index))
@@ -183,7 +190,7 @@ func add_tab(text: String, on_pressed: Callable, active: bool = false) -> void:
 	# reverse video (light block, dark text) without one.
 	var fg := Palette.TERMINAL_TEXT
 	var bg := Palette.TERMINAL_BG
-	var style := UiTheme.box(bg if active else fg, fg if active else Color(0, 0, 0, 0), 2 if active else 0, 12, 4)
+	var style := UiTheme.box(bg if active else fg, fg if active else Color.TRANSPARENT, 2 if active else 0, 12, 4)
 	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
 		b.add_theme_stylebox_override(st, style)
 	var ink := fg if active else bg
@@ -239,38 +246,38 @@ func close() -> void:
 	UiFocus.release(self)
 
 
-## The card detail popup for deck index `index`: the card, its text, and Close.
+## The card detail for deck index `index` (W4, ART_BIBLE 6.3): the card at detail size with
+## its whole art and rules, beside a glass notes panel that never repeats the face's text
+## (InspectPopup.card_detail), centred over the viewer. Esc or Close closes it.
 func open_card(index: int) -> void:
 	if _popup != null and is_instance_valid(_popup):
 		_popup.queue_free()
 	var card := lookup.get_content(deck[index]) as CardData
-	var pop := TerminalWindow.new(tr("CARD DETAIL"), Palette.CELL_ACID)
-	pop.name = "CardDetail"
-	pop.position = Vector2(360, 130)
-	pop.custom_minimum_size = Vector2(560, 0)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 18)
-	pop.body.add_child(row)
-	var big := ZineCard.new(TextDb.t(card, "display_name") if card != null else String(deck[index]), card.ram_cost if card != null else 0, TextDb.t(card, "description") if card != null else "", index).with_card(card)
-	big.hotkey = ""
-	big.custom_minimum_size = Vector2(170, 224)
-	big.focus_mode = Control.FOCUS_NONE
-	row.add_child(big)
-	var info := VBoxContainer.new()
-	info.custom_minimum_size.x = 320
-	row.add_child(info)
-	if card != null:
-		for line in [tr("%s  //  %d RAM") % [TextDb.t(card, "display_name").to_upper(), card.ram_cost],
-				tr(RARITY_WORDS[clampi(card.rarity, 0, 3)]) + (tr(" // exhausts") if card.exhaust else ""), Codex.describe(card)]:
-			var l := Label.new()
-			l.text = line
-			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			l.custom_minimum_size.x = 320
-			info.add_child(l)
-	var close_btn := Button.new()
-	close_btn.text = tr("Close")
-	close_btn.pressed.connect(func() -> void: pop.queue_free(); _popup = null)
-	pop.body.add_child(close_btn)
-	add_child(pop)
-	_popup = pop
-	UiFocus.focus_first.call_deferred(pop)
+	var s := Settings.text_scale
+	var view := get_viewport_rect().size if is_inside_tree() else Vector2(DETAIL_VIEW)
+	var room := view - Vector2.ONE * (UiTheme.SAFE_MARGIN * 2.0)
+	var holder := Control.new()
+	holder.name = "CardDetailHolder"
+	holder.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(holder)
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Palette.SCRIM
+	holder.add_child(dim)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var close_it := func() -> void:
+		if is_instance_valid(holder):
+			holder.queue_free()
+		_popup = null
+	var row := InspectPopup.card_detail(card, TextDb.t(card, "display_name") if card != null else String(deck[index]),
+		TextDb.t(card, "description") if card != null else "", s, room, close_it)
+	holder.add_child(row)
+	_popup = holder
+	# Centred once laid out.
+	row.reset_size()
+	row.position = ((view - row.get_combined_minimum_size()) * 0.5).floor()
+	UiFocus.focus_first.call_deferred(holder)
+
+
+## The viewport the detail is laid out for when the viewer is not in a tree (px).
+const DETAIL_VIEW := Vector2i(1280, 720)
