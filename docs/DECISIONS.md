@@ -112,6 +112,25 @@ Review folders: `docs/art_review/W1/`, `W6/` and `W10/`. The baseline "before" p
 - **Harness dependencies:** the harness calls some private members (`_panel`, `_show_current`, `_preview_card`, …). Screen owners keep them, or add public capture hooks.
 - **City bake bug:** freeing a scene mid-bake raised a script error at `city_bake_cache.gd:183` (`_stop`). This goes to W7. It's likely also fixed by the ANIM-R5 city branch.
 
+### 2026-09-29 — Art pass W9s: accessibility settings (merged into `art-pass`)
+Review folder: `docs/art_review/W9/`. The text-scale 2.0 breakage table there is W3's and W8's to-do list.
+- **Text scale (Q5):** `Settings.TEXT_SCALE_MAX` is 2.0. The 12 layout test scripts that don't fit at 2.0 yet check up to `LayoutScales.VERIFIED_MAX` (1.6, in `tests/helpers`). W8 raises that to `TEXT_SCALE_MAX` screen by screen, and the art pass isn't done until it equals 2.0.
+- **Colour-blind (§12):** "remap corp and semantic hues" is done as a global LMS daltonize **correction** in linear light, on canvas layer 127, because Palette values are compile-time constants.
+  - Patterns and glyphs stay the primary cue.
+  - `off` means no layer at all.
+  - W10's simulation filter sits above it, at 128.
+  - Proposal for the bible (not applied): say "correct" instead of "remap".
+- **High contrast:** `HighContrast.apply(theme)` makes filled theme boxes #000, keeps each state's tint as an opaque 2 px edge, and sets text to `TEXT_HI`, focus to 4 px `FOCUS`, disabled to `TEXT_MID`, and button edges to 3 px.
+  - Views with their own `_draw` or colour overrides (paper, HUD tags, wheels, cards) must read `Settings.high_contrast` in their own workstreams: W2, W3, W4, W5, W8.
+  - Proposal for the bible (not applied): state how PAPER looks in high contrast.
+- **Reduce motion** is independent of reduce effects. It works through `Motion.camera_moves_allowed()`, `parallax_allowed()` and `page_transition_style()` (slide or fade). Consumers are W7 (city camera) and W8 (page transitions, map framing).
+- **Resolve speed:** `x1`/`x2`/`instant`, via `Motion.resolve_time_scale()` and `resolve_instant()`.
+  - Holding `resolve_fast_forward` (Shift / right stick) runs at 4×.
+  - W3 wires it and must exempt the action from MotionSkip's "a press completes the motion" rule.
+- **Pad glyph set:** `auto`/`xbox`/`playstation`/`switch`/`deck`. Auto-detect matches substrings of the joy name; Sony counts as PlayStation, and anything unknown is xbox.
+- **Steam Deck:** the first-run default is `text_scale` 1.2 (`TEXT_SCALE_STEAM_DECK`). Test runs skip the device probe unless one is injected.
+- **Deviation:** items 4–7 share one commit, because they share Settings' declarations.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
