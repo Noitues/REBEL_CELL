@@ -20,6 +20,7 @@ extends Node
 
 const TITLE := preload("res://scenes/menu/title_scene.tscn")
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
+const COMBAT := preload("res://scenes/combat/combat_scene.tscn")
 const NETRUN := preload("res://scenes/netrun_map/netrun_scene.tscn")
 const FILTER_SHADER := preload("res://tools/visual_qa/cvd_filter.gdshader")
 const ErrorLog := preload("res://tools/visual_qa/review_pack_log.gd")
@@ -97,6 +98,17 @@ const SCREENS := [
 	["run_end", "_s_run_end", "Run end: FLATLINED."],
 	["campaign_won", "_s_campaign_won", "Campaign end: WON."],
 	["campaign_lost", "_s_campaign_lost", "Campaign end: LOST."],
+	# Art pass W9F: the screens W10 didn't list.
+	["event_dispatch", "_s_event_dispatch", "A DISPATCH (terminal) event."],
+	["deck_view", "_s_deck_view", "VIEW LOADOUT in a netrun: the deck viewer."],
+	["card_detail", "_s_card_detail", "A card's detail over the deck viewer."],
+	["daemon_tray", "_s_daemon_tray", "The Daemon tray with an installed Daemon."],
+	["modem_remove", "_s_modem_remove", "The Modem's REMOVE A CARD viewer."],
+	["modem_overwrite", "_s_modem_overwrite", "The Modem's UPGRADE A SLICE viewer, a slot picked."],
+	["tutorial", "_s_tutorial", "The tutorial's first step over its fight."],
+	["jack_in", "_s_jack_in", "The jack-in transition, its cover up."],
+	["pause_netrun", "_s_pause_netrun", "The pause menu over a netrun's route."],
+	["pause_fight", "_s_pause_fight", "The pause menu over a fight."],
 ]
 
 var out_dir := ""
@@ -105,6 +117,9 @@ var pad := false
 var reduce_effects := false
 var filter := "none"
 var scramble := false
+## Art pass W9F: the §12 settings as axes (captured into their own packs).
+var high_contrast := false
+var reduce_motion := false
 var screen_timeout := DEFAULT_TIMEOUT_S
 var _keep: Array[Node] = []
 var _log: RefCounted = null
@@ -113,6 +128,8 @@ var _done := false
 var _filter_layer: CanvasLayer = null
 var _custom_draw: Array = []
 var _draw_cache := {}
+## Art pass W9F: run once the picture is taken (the jack's switch lets its cover lift).
+var _after_capture: Callable = Callable()
 
 
 func _ready() -> void:
@@ -133,6 +150,10 @@ func _ready() -> void:
 			filter = a.trim_prefix("--filter=")
 		elif a == "--scramble":
 			scramble = true
+		elif a == "--high-contrast":
+			high_contrast = true
+		elif a == "--reduce-motion":
+			reduce_motion = true
 		elif a.begins_with("--screen-timeout="):
 			screen_timeout = float(a.trim_prefix("--screen-timeout="))
 		elif a.begins_with("--list="):
@@ -180,6 +201,8 @@ func _setup_settings() -> void:
 		TranslationServer.reload_pseudolocalization()
 	Settings.text_scale = text_scale  # past the clamp on purpose (W9 raises it)
 	Settings.reduce_effects = reduce_effects
+	Settings.high_contrast = high_contrast
+	Settings.reduce_motion = reduce_motion
 	Settings.changed.emit()
 	Settings.pad_active = pad
 	Settings.hints_changed.emit()
@@ -258,6 +281,11 @@ func _capture(screen: String, method: String, what: String) -> void:
 		"seconds": (Time.get_ticks_msec() - started) / 1000.0, "frames": frames,
 	})
 	print("review_pack: %s %s (%d frames)" % [screen, status, frames])
+	if _after_capture.is_valid():
+		var after := _after_capture
+		_after_capture = Callable()
+		await after.call()
+		await _frames(SETTLE_FRAMES)
 
 
 func _run_screen(method: String) -> void:
@@ -860,6 +888,113 @@ func _s_campaign_won() -> void:
 
 func _s_campaign_lost() -> void:
 	await _campaign_end(CampaignState.Outcome.LOST)
+
+
+# --- Art pass W9F: the screens W10 didn't list -------------------------------------------
+
+func _s_event_dispatch() -> void:
+	var net: Node = await _netrun()
+	var run := RunManager.netrun.run
+	run.event_id = &"ev_dispatch_early_reply"
+	run.phase = RunState.Phase.EVENT
+	net._show_current()
+	await _settle(net)
+
+
+func _route_page() -> Node:
+	var net: Node = await _netrun()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	return net
+
+
+func _s_deck_view() -> void:
+	var net: Node = await _route_page()
+	net.open_loadout()
+	await _settle(net)
+
+
+func _s_card_detail() -> void:
+	var net: Node = await _route_page()
+	net.open_loadout()
+	await _frames(4)
+	var lv := net.get_node_or_null("LoadoutView")
+	var deck: Variant = lv.get("_view") if lv != null else null
+	if not (deck is DeckView):
+		push_error("review_pack: no deck viewer")
+		return
+	(deck as DeckView).open_card(0)
+	await _settle(net)
+
+
+func _s_daemon_tray() -> void:
+	var net: Node = await _netrun()
+	var ids: Array = RunManager.lookup().ids_of_class(&"DaemonData")
+	ids.sort()
+	if not ids.is_empty():
+		RunManager.netrun.run.operative.daemon_ids.append(StringName(ids[0]))
+	net._show_current()
+	await _until(func() -> bool: return net.arrival_ready(), "the route camera")
+	await _settle(net)
+	net.open_daemons()
+	await _settle(net)
+
+
+func _s_modem_remove() -> void:
+	var net: Node = await _modem(7)
+	net.open_remove()
+	await _settle(net)
+
+
+func _s_modem_overwrite() -> void:
+	for seed in range(7, 7 + SOCKET_SEEDS):
+		var net: Node = await _modem(seed)
+		if not (RunManager.netrun.run.shop.get("slices", []) as Array).is_empty():
+			net.open_overwrite(0)
+			await _frames(4)
+			var view := net.get_node_or_null("SpinnerView") as SpinnerView
+			if view != null:
+				view.select(0)
+			await _settle(net)
+			return
+		net.queue_free()
+		await _frames(2)
+		RunManager.reset()
+	push_error("review_pack: no Modem with slices in %d seeds" % SOCKET_SEEDS)
+
+
+func _s_tutorial() -> void:
+	RunManager.new_campaign(7)
+	Settings.tutorial_done = false
+	RunManager.pending_tutorial = true
+	var combat: Node = _open(COMBAT)
+	await _frames(4)
+	await _settle(combat)
+	Settings.tutorial_done = true
+
+
+func _s_jack_in() -> void:
+	var hq: Node = await _hq_with_campaign()
+	await _settle(hq)
+	Fx.jack_in(func() -> void: pass, -1.0, "Solace Biosystems")
+	await _until(func() -> bool: return Fx.connect_label.visible or not bool(Fx.get(&"_jacking")), "the jack's cover")
+	await _frames(4)
+	# The picture is taken with the cover up; the next screen waits for it to lift.
+	_after_capture = func() -> void: await _until(func() -> bool: return not bool(Fx.get(&"_jacking")), "the jack to end")
+
+
+func _s_pause_netrun() -> void:
+	var net: Node = await _route_page()
+	net.open_settings()
+	await _settle(net)
+
+
+func _s_pause_fight() -> void:
+	var combat := await _fight()
+	if combat == null:
+		return
+	combat.open_settings()
+	await _settle(combat.get_parent())
 
 
 # --- Runtime lint export -----------------------------------------------------------------

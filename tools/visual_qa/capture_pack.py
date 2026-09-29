@@ -119,6 +119,10 @@ def capture_combo(args, screens: list[str], combo: str, axes: dict, shader_filte
             user.append("--reduce-effects")
         if args.scramble:
             user.append("--scramble")
+        if args.high_contrast:
+            user.append("--high-contrast")
+        if args.reduce_motion:
+            user.append("--reduce-motion")
         timeout = RUN_OVERHEAD_S + args.screen_timeout * (len(todo) + 1)
         cmd = [sys.executable, str(ROOT / "tools" / "run_windowed.py"), "--log", str(log), "--timeout", str(timeout),
                "--godot", args.godot, "--", "--fixed-fps", str(FIXED_FPS), "--resolution", "%dx%d" % (pack_axes.WIDTH, pack_axes.HEIGHT), SCENE, "--"] + user
@@ -180,6 +184,8 @@ def main() -> int:
     ap.add_argument("--filters", default="none", help="none,grey,deutan")
     ap.add_argument("--filter-mode", choices=["pillow", "shader"], default="pillow")
     ap.add_argument("--scramble", action="store_true")
+    ap.add_argument("--high-contrast", action="store_true", help="art pass W9F: Settings.high_contrast on (pack into its own --out)")
+    ap.add_argument("--reduce-motion", action="store_true", help="art pass W9F: Settings.reduce_motion on (pack into its own --out)")
     ap.add_argument("--screen-timeout", type=float, default=90.0)
     ap.add_argument("-j", "--jobs", type=int, default=1, help="Godot runs at once (default 1)")
     ap.add_argument("--godot", default=os.environ.get("GODOT", "godot"))
