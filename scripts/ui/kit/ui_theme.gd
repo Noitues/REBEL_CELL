@@ -40,6 +40,25 @@ const TRACKING_DISPLAY := 0.02
 const TRACKING_MONO_CAPS := 0.08
 const TRACKING_DEFAULT := 0.0
 
+# --- ART_BIBLE §5.1 spacing ------------------------------------------------------------------
+# An 8 px grid with a 4 px half-step; reference pixels at 1280x720 (they scale with the
+# viewport through the stretch mode, not with text_scale).
+const SP_XS := 4
+const SP_S := 8
+const SP_M := 16
+const SP_L := 24
+const SP_XL := 32
+const SP_XXL := 48
+## The screen safe margin at 1280x720 (TV-safe mode is 5% of the viewport, W9).
+const SAFE_MARGIN := 24
+## Panel content padding, horizontal and vertical.
+const PANEL_PAD_H := 16
+const PANEL_PAD_V := 12
+## The gutter between panels.
+const GUTTER := 16
+## Every spacing token, smallest first.
+const SPACING: Array[int] = [SP_XS, SP_S, SP_M, SP_L, SP_XL, SP_XXL]
+
 
 ## The pixel size of type step `step` (e.g. UiTheme.TITLE) at the player's text scale.
 static func font_px(step: int) -> int:

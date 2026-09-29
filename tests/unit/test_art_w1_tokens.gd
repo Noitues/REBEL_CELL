@@ -271,3 +271,16 @@ func test_hot_button_and_header_scale_with_the_text() -> void:
 		assert_eq(t.get_font_size(&"font_size", &"HotButton"), UiTheme.font_px_at(UiTheme.TITLE, scale), "HotButton at %.1f" % scale)
 		assert_eq(t.get_font_size(&"font_size", &"HeaderLabel"), UiTheme.font_px_at(UiTheme.TITLE, scale), "HeaderLabel at %.1f" % scale)
 	assert_eq(UiTheme.build(1.0).get_font_size(&"font_size", &"HotButton"), 22, "unchanged at 1.0")
+
+
+# --- §5.1 spacing ---------------------------------------------------------------------------
+
+func test_spacing_tokens_sit_on_the_4px_grid() -> void:
+	assert_eq(UiTheme.SPACING, [4, 8, 16, 24, 32, 48] as Array[int])
+	assert_eq([UiTheme.SP_XS, UiTheme.SP_S, UiTheme.SP_M, UiTheme.SP_L, UiTheme.SP_XL, UiTheme.SP_XXL], [4, 8, 16, 24, 32, 48])
+	assert_eq(UiTheme.SAFE_MARGIN, 24)
+	assert_eq(UiTheme.PANEL_PAD_H, 16)
+	assert_eq(UiTheme.PANEL_PAD_V, 12)
+	assert_eq(UiTheme.GUTTER, 16)
+	for v in UiTheme.SPACING + [UiTheme.SAFE_MARGIN, UiTheme.PANEL_PAD_H, UiTheme.PANEL_PAD_V, UiTheme.GUTTER]:
+		assert_eq(v % 4, 0, "%d is a multiple of 4" % v)
