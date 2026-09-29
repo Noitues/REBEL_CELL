@@ -684,7 +684,7 @@ func test_tooltips_are_themed_and_on_the_screens_controls() -> void:
 	var style := hq.get_theme_stylebox(&"panel", &"TooltipPanel") as StyleBoxFlat
 	assert_not_null(style, "the tooltip panel has the terminal look")
 	assert_eq(style.border_color, Palette.CELL_PINK)
-	assert_true(UiTip.make("A long line that wraps", "Title") is Control, "custom tooltip body")
+	assert_true(autofree(UiTip.make("A long line that wraps", "Title")) is Control, "custom tooltip body")  # ANIM-R6 D10: it was left an orphan
 	for line in UiTip.fold(LONG_LINE).split("\n"):
 		assert_true(line.length() <= UiTip.COLUMNS, "tooltip lines wrap")
 	# HUD stat tags answer per tag.

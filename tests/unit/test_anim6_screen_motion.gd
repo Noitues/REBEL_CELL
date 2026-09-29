@@ -216,6 +216,7 @@ func test_a_screen_enters_and_focus_lands_on_its_first_control() -> void:
 	assert_false(page.is_ancestor_of(_focus_owner()) if _focus_owner() != null else false, "focus waits for the entrance")
 	var took := await _until(func() -> bool: return not PageTransition.running(page))
 	_assert_in_time(took, PageTransition.seconds_for(PageTransition.Look.GLASS), "the entrance")
+	# fixed-wait-ok: the bounded wait above saw the entrance end; these frames let focus land
 	await _frames()
 	assert_false(PageTransition.running(page), "the entrance ended")
 	assert_eq(_focus_owner(), UiFocus.first_focusable(page), "focus on the page's first control")
@@ -513,12 +514,12 @@ func test_a_settings_change_animates_nothing() -> void:
 	PageTransition.settle(scene)
 	await _frames()
 	Settings.set_text_scale(1.3)
-	await _frames()
+	await BoundedWait.frozen_frames(get_tree(), 3)  # ANIM-R6 D9: time stopped, a motion started would still show
 	assert_false(PageTransition.running(scene._panel), "no page re-enters")
 	assert_eq(FlightFx.active_count(scene), 0, "nothing flies")
 	assert_eq(scene.hud.stats.bumping().size(), 0, "no tag bumps")
 	Settings.set_language(Settings.language)
-	await _frames()
+	await BoundedWait.frozen_frames(get_tree(), 3)  # ANIM-R6 D9
 	assert_false(PageTransition.running(scene._panel))
 
 

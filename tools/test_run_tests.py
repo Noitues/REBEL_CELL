@@ -77,6 +77,15 @@ class RerunAndDisk(unittest.TestCase):
         self.assertEqual(run_tests.disk_check(3.0, 1.0, 5.0)[0], "warn")
         self.assertEqual(run_tests.disk_check(20.0, 1.0, 5.0)[0], "ok")
 
+    def test_the_suite_guards_findings_are_read_from_the_log(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="rebel_cell_runner_test_") as d:
+            log = Path(d) / "gut.log"
+            log.write_text("* test_a\n\x1b[0mSETTINGS LEAK res://tests/unit/test_a.gd: tutorial_done\nORPHAN LEFT <Control#1> (Label)\nok\n",
+                           encoding="utf-8")
+            self.assertEqual(run_tests.guard_lines(log), ["SETTINGS LEAK res://tests/unit/test_a.gd: tutorial_done",
+                                                          "ORPHAN LEFT <Control#1> (Label)"])
+            self.assertEqual(run_tests.guard_lines(Path(d) / "missing.log"), [])
+
     def test_free_space_is_read_for_a_folder_not_made_yet(self) -> None:
         self.assertGreater(run_tests.free_gb(Path(tempfile.gettempdir()) / "not" / "made" / "yet"), 0.0)
 

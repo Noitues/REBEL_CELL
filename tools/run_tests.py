@@ -58,6 +58,9 @@ DEFAULT_SECONDS = 10.0
 DISK_FAIL_GB = 1.0
 DISK_WARN_GB = 5.0
 GB = 1024.0 ** 3
+# ANIM-R6: the suite guard (GUT's pre- and post-run hook): Settings left as found by each
+# script, no node left outside the tree at the end (docs/TEST_SUITE.md).
+GUARD = "res://tests/helpers/suite_guard.gd"
 
 
 def discover() -> list[str]:
@@ -133,6 +136,26 @@ def rerun_list(failures: list, not_run: list[str]) -> list[str]:
     return sorted({name for name, _t, _m in failures} | set(not_run))
 
 
+GUARD_MARKS = ("SETTINGS LEAK ", "ORPHAN LEFT ")
+
+
+def guard_lines(log: Path) -> list[str]:
+    """ANIM-R6: the suite guard's findings in a shard's log (a script that left Settings
+    changed, a node left outside the tree), without the log's colour codes."""
+    out: list[str] = []
+    try:
+        text = log.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return out
+    for line in text.splitlines():
+        clean = line.replace("\x1b[0m", "").strip()
+        for mark in GUARD_MARKS:
+            k = clean.find(mark)
+            if k >= 0:
+                out.append(clean[k:])
+    return out
+
+
 def parse_junit(path: Path) -> dict:
     res = {"tests": 0, "failures": [], "pending": 0, "times": {}, "test_times": []}
     root = ET.parse(path).getroot()
@@ -157,7 +180,7 @@ def godot_cmd(args, scripts: list[str], xml: Path) -> list[str]:
     # Headless already means no window and the Dummy audio driver; the flag says so.
     return [args.godot, "--headless", "--audio-driver", "Dummy", "--path", str(ROOT), "-s", "addons/gut/gut_cmdln.gd",
             "-gconfig=", "-gexit", "-glog=1", "-gtest=" + ",".join(scripts),
-            "-gjunit_xml_file=" + str(xml)] + args.gut_arg
+            "-gjunit_xml_file=" + str(xml), "-gpre_run_script=" + GUARD, "-gpost_run_script=" + GUARD] + args.gut_arg
 
 
 def isolate(scripts: list[str], out: Path, args, not_run: list[str] | None = None) -> None:
@@ -309,6 +332,8 @@ def main() -> int:
         not_run_all.extend(not_run)
         for x in not_run:
             problems.append(f"shard {s['i']}: {x} did not run (log {s['dir'] / 'gut.log'})")
+        for g in guard_lines(s["dir"] / "gut.log"):
+            problems.append(f"shard {s['i']}: {g}")
         if s["rc"] != 0 and not r["failures"]:
             problems.append(f"shard {s['i']} exited {s['rc']} without a failing test (log {s['dir'] / 'gut.log'})")
 

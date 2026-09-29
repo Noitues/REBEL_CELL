@@ -28,13 +28,13 @@ func test_every_combat_action_has_a_controller_button() -> void:
 
 
 func test_rebinding_a_key_keeps_the_pad_button() -> void:
-	var before := Settings.key_for(&"end_turn")
+	var snap := Settings.snapshot()  # ANIM-R6 D9: rebinding back left the key saved as a keybind
 	Settings.rebind(&"end_turn", KEY_ENTER)
 	var pad := false
 	for ev in InputMap.action_get_events(&"end_turn"):
 		pad = pad or ev is InputEventJoypadButton
 	assert_true(pad)
-	Settings.rebind(&"end_turn", before)
+	Settings.restore(snap)
 
 
 func test_campaign_codes_round_trip_and_reject_garbage() -> void:

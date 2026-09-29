@@ -381,3 +381,33 @@ func test_a_short_motion_completes_with_a_press_another_helper_takes_and_takes_n
 	assert_false(drips.motion_running(), "SEND IT at rest")
 	assert_eq(sign.warm, 1.0, "whole")
 	assert_eq(drips.squash, 1.0, "unsquashed")
+
+
+## ANIM-R6 D9: Settings' snapshot covers every value it holds (a new field must join it,
+## or the suite guard would miss a test that leaves it changed), and restore puts back what
+## to_dict / from_dict missed (the session's pad_active, the InputMap's keys).
+func test_a_settings_snapshot_covers_every_field_and_restores_it() -> void:
+	var snap := Settings.snapshot()
+	for prop in (Settings.get_script() as Script).get_script_property_list():
+		var name := String(prop["name"])
+		if int(prop["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE == 0 or name == "path" or name.begins_with("_"):
+			continue
+		assert_true(snap.has(name), "the snapshot holds Settings.%s" % name)
+	var nudge := Settings.key_for(&"nudge_left")
+	Settings.set_pad_active(not Settings.pad_active)
+	Settings.rebind(&"nudge_left", KEY_J)
+	Settings.set_tutorial_done(not Settings.tutorial_done)
+	var guard: GDScript = load("res://tests/helpers/suite_guard.gd")
+	assert_eq(guard.changed_keys(snap, Settings.snapshot()), PackedStringArray(["keybinds", "pad_active", "tutorial_done"]), "the guard names what changed")
+	Settings.restore(snap)
+	assert_eq(guard.changed_keys(snap, Settings.snapshot()), PackedStringArray(), "restored whole")
+	assert_eq(Settings.key_for(&"nudge_left"), nudge, "the InputMap's key too")
+
+
+## ANIM-R6 D9 / D10: the suite guard runs in both ways of running the suite.
+func test_the_suite_guard_is_wired_into_every_run() -> void:
+	var cfg := JSON.parse_string(FileAccess.get_file_as_string("res://.gutconfig.json")) as Dictionary
+	assert_eq(String(cfg.get("pre_run_script", "")), "res://tests/helpers/suite_guard.gd", "the single-process run's pre-run hook")
+	assert_eq(String(cfg.get("post_run_script", "")), "res://tests/helpers/suite_guard.gd", "and its post-run hook")
+	var runner := FileAccess.get_file_as_string("res://tools/run_tests.py")
+	assert_true(runner.contains("-gpre_run_script=") and runner.contains("-gpost_run_script=") and runner.contains("tests/helpers/suite_guard.gd"), "the parallel runner's shards")

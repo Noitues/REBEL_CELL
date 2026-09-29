@@ -552,6 +552,36 @@ unless named.
   joins no group fails unless listed; a listed script that registers or stops animating
   fails too; the guide names each),
   `test_a_short_motion_completes_with_a_press_another_helper_takes_and_takes_none_itself`.
+- **D9 Settings as found, and frame counts under live motion.** `test_horizontal_pass20`
+  left `tutorial_done` on; `pad_active` is not in `Settings.to_dict` (it is session state,
+  not saved: kept out of the file on purpose), so tests restoring through
+  `to_dict` / `from_dict` missed it. `Settings.snapshot()` (to_dict plus `pad_active`) and
+  `Settings.restore()` (the InputMap's keys too) give tests one call for every field
+  (a test fails when a new field is missing from the snapshot), and the suite guard
+  (`tests/helpers/suite_guard.gd`, GUT's pre- and post-run hook, in `.gutconfig.json` and on
+  every runner shard) compares a snapshot per test script: a change left behind is named
+  (`SETTINGS LEAK`), put back, and fails the run. Its first full run found two more:
+  `test_horizontal_pass16` and `test_polish` rebound a key back to its old key, which leaves
+  it saved as a keybind; both restore their snapshot now. The fixed-wait rule now also
+  flags a frame-count wait whose next statement asserts on live motion's progress
+  (`frame_waits`, see TEST_SUITE); four sites: two now wait frozen frames, one frozen
+  frame, one is marked (the bounded wait above it saw the entrance end). The manifest's
+  times were refreshed from a green run (`--update-times`; the ANIM-R5 city and netrun
+  scripts had placeholder times). Tests: `test_a_settings_snapshot_covers_every_field_and_restores_it`,
+  `test_the_suite_guard_is_wired_into_every_run`,
+  `test_no_frame_count_wait_gates_a_motion_assertion`,
+  `test_the_suite_guards_findings_are_read_from_the_log` (tools/test_run_tests.py).
+- **D10 no leaks at exit.** The exit leaks of a passing run (shard 1: 213 ObjectDB
+  instances, 31 dummy textures, 68 shaped texts, 3 CanvasItems, 2 resources; shard 3: 19
+  instances) were two orphaned node trees a test built and never freed: a reference
+  ZineNote in `test_pad_reachability` (with its RichTextLabel, scroll bar and timer) and a
+  tooltip body from `UiTip.make` in `test_horizontal_pass20_screens`; both are freed now
+  and no shard prints a leak at exit. GUT's per-test orphan counts after
+  `test_settings_extras` (74) and `test_horizontal_pass17` (22) were SettingsPanel's
+  section swap: it took the old section's labels out of the tree and queued them, so they
+  were orphans until the frame ended; now they are hidden and queued in place (no orphan at
+  any time). The suite guard fails a run that leaves any node outside the tree at its end
+  (`ORPHAN LEFT`); it found none after these fixes.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
