@@ -80,6 +80,24 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
 ]
 
+## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.
+## - An entry with a motion of its own (played through Motion.run / fade / pop / ... or
+##   gated on Motion.live): off, it shows its end state at once (live() is false).
+## - A part of another motion that a view reads as a number (a share of its time, a gap,
+##   a riding size): OFF_PARTS below. Off, Motion.seconds and Motion.delay_of give 0 (the
+##   part takes no time) and Motion.amplitude gives the listed value (the part shows no
+##   motion: 0 for a share, px or frames; 1 for a scale).
+## - A tuning of another entry with nothing of its own to switch off: ALWAYS_ON below.
+##   validate() refuses it switched off (switch off the entry it tunes instead).
+const OFF_PARTS: Dictionary = {
+	&"hit_line_flight": 0.0, &"ride_swap": 0.0, &"ride_shrink": 1.0, &"ride_perfect": 1.0,
+	&"break_crack": 0.0, &"modem_sign_strike": 0.0, &"modem_sign_flicker": 0.0,
+	&"forecast_change_fade": 0.0, &"resolve_side_gap": 0.0, &"resolve_attacker_gap": 0.0,
+	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
+}
+## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
+const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share"]
+
 @export var entries: Array[UiMotionEntryData] = []
 
 
@@ -111,4 +129,6 @@ func validate() -> PackedStringArray:
 		if seen.has(e.id):
 			errors.append("Motion id %s appears twice." % e.id)
 		seen[e.id] = true
+		if not e.enabled and ALWAYS_ON.has(e.id):
+			errors.append("Motion %s tunes another entry and can't be switched off (switch that entry off)." % e.id)
 	return errors

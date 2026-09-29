@@ -73,22 +73,39 @@ static func has(id: StringName) -> bool:
 	return _index.has(id)
 
 
-## Seconds for `id` at the current speed (0 when unknown).
+## Seconds for `id` at the current speed (0 when unknown). ANIM-R5: 0 for a switched-off
+## part of another motion (UiMotionData.OFF_PARTS: it takes no time).
 static func seconds(id: StringName) -> float:
 	var e := entry(id)
-	return e.duration / maxf(speed, SPEED_MIN) if e != null else 0.0
+	if e == null or part_off(e):
+		return 0.0
+	return e.duration / maxf(speed, SPEED_MIN)
 
 
-## Delay seconds for `id` at the current speed (0 when unknown).
+## Delay seconds for `id` at the current speed (0 when unknown, or a switched-off part).
 static func delay_of(id: StringName) -> float:
 	var e := entry(id)
-	return e.delay / maxf(speed, SPEED_MIN) if e != null else 0.0
+	if e == null or part_off(e):
+		return 0.0
+	return e.delay / maxf(speed, SPEED_MIN)
 
 
 ## Amplitude of `id` (px, scale, alpha or degrees as its entry says; 0 when unknown).
+## ANIM-R5: a switched-off part of another motion gives the value that shows no motion
+## (UiMotionData.OFF_PARTS: 0 for a share, px or frames, 1 for a scale).
 static func amplitude(id: StringName) -> float:
 	var e := entry(id)
-	return e.amplitude if e != null else 0.0
+	if e == null:
+		return 0.0
+	if part_off(e):
+		return float(UiMotionData.OFF_PARTS[e.id])
+	return e.amplitude
+
+
+## ANIM-R5: true when `e` is a part of another motion (UiMotionData.OFF_PARTS) switched off.
+## Every other entry honours `enabled` through live() (its own motion shows its end state).
+static func part_off(e: UiMotionEntryData) -> bool:
+	return e != null and not e.enabled and UiMotionData.OFF_PARTS.has(e.id)
 
 
 ## True when animated effects may play at all: effects on (not reduce effects) and a
