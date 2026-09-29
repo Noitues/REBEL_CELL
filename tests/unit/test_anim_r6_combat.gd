@@ -432,7 +432,9 @@ func test_a_lost_fight_waits_for_jack_out() -> void:
 	net.enter_node(RunManager.netrun.available_nodes()[0])
 	await BoundedWait.until(get_tree(), _has_combat.bind(net), 5.0)
 	_live()
-	await net._demo_combat_end("lose")
+	# The demo steps on frame callbacks (ANIM-R6 B3): wait for its SEND IT.
+	net._demo_combat_end("lose")
+	await BoundedWait.until(get_tree(), _fight_over.bind(net), 5.0)
 	var combat: Control = net.combat_scene
 	assert_eq(combat.engine.state().outcome, CombatState.Outcome.DEFEAT, "the fight is lost")
 	combat.skip_motion()
@@ -444,6 +446,10 @@ func test_a_lost_fight_waits_for_jack_out() -> void:
 	assert_null(net.combat_scene, "JACK OUT leaves")
 	holder.queue_free()
 	await _frames(2)
+
+
+func _fight_over(net: Control) -> bool:
+	return net.combat_scene != null and net.combat_scene.engine.state().is_over()
 
 
 func _left(net: Control) -> bool:
