@@ -48,7 +48,7 @@ const CREEP_STEP := 0.05
 ## Territory influence (CityInfluence): share of lines taking the lean colour at full
 ## influence, and how far the ground leans.
 const INFLUENCE_INK_SHARE := 0.55
-const INFLUENCE_GROUND_TINT := 0.16
+const INFLUENCE_GROUND_TINT := 0.06  # art pass W7: 0.16 read as a muddy khaki (critique gifs/16); the hatch carries the claim
 ## Live layer over the baked image: share of lit windows that blink, their period
 ## (seconds, min + hash spread) and on-share; at most LIGHTS_MAX / SPARKS_MAX drawn per
 ## frame. Blinks are small and slow (well under the flash limiter's 3 per second).
@@ -449,6 +449,20 @@ func _ready() -> void:
 	Settings.changed.connect(_apply_effects)
 	_apply_effects()
 	sync_influence()
+	# Art pass W7 hook: the lighting, grade, life and state layer (never on a bake painter).
+	if not _painter:
+		atmosphere()
+
+
+## Art pass W7 (ART_BIBLE §9): this city's CityAtmosphere (made on first use): lighting,
+## grade, T0 life and the state the screens pass down (set_context, set_heat, ...).
+func atmosphere() -> CityAtmosphere:
+	if _atmosphere == null:
+		_atmosphere = CityAtmosphere.new(self)
+	return _atmosphere
+
+
+var _atmosphere: CityAtmosphere = null
 
 
 func _apply_effects() -> void:
