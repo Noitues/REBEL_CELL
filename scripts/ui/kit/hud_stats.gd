@@ -43,6 +43,9 @@ const PAD := 6.0
 const PAD_V := 4.0
 const ICON_GAP := 5.0
 const DIGIT_HALF := 0.36
+## The height a line of Anton digits takes, as a share of its size (a fight fits its values
+## by it).
+const DIGIT_FIT := 0.8
 ## The icon, padding and gap grow with the text only up to this scale (a 36 px icon at 2.0
 ## left a tag no room for its number); the value keeps the whole text scale.
 const CHROME_GROW_MAX := 1.3
@@ -476,7 +479,10 @@ func _relayout() -> void:
 				break
 	compact = folded
 	var tag_h := (TAG_H_FOLDED if s >= FOLD_SCALE - 0.001 or fight else TAG_H) * s
-	var room_v := TOP_ROOM * s + BOTTOM_ROOM * s
+	# A fight keeps its band: its rooms and padding grow only as far as the chrome does, so the
+	# numbers keep the height (W3: the fight's tags were squeezed to a sliver at 2.0).
+	var rs := _chrome(s) if fight else s
+	var room_v := (TOP_ROOM + BOTTOM_ROOM) * rs
 	if fight:
 		tag_h = minf(tag_h, maxf(1.0, max_height - room_v))
 	# The value's step: the largest that fits every tag's width (and a fight's height), with
@@ -492,7 +498,7 @@ func _relayout() -> void:
 	for t in tries:
 		var px := UiTheme.font_px_at(int(t[0]), s)
 		var fits := true
-		if fight and Palette.display().get_height(px) > tag_h - PAD_V * 2.0 * s:
+		if fight and px * DIGIT_FIT > tag_h - PAD_V * 2.0 * rs:
 			fits = false
 		for it in items:
 			if not fits:
@@ -504,7 +510,7 @@ func _relayout() -> void:
 			_suffix_on = bool(t[1])
 			break
 	for i in n:
-		_rects.append(Rect2(i * (tag_w + gap), TOP_ROOM * s, tag_w, tag_h))
+		_rects.append(Rect2(i * (tag_w + gap), TOP_ROOM * rs, tag_w, tag_h))
 	if with_captions:
 		_place_captions(s)
 	var h := room_v + tag_h
