@@ -13,10 +13,11 @@ extends CanvasLayer
 
 const LAYER := 80
 const NODE_NAME := "FlightFx"
-## Share of a flight spent lifting before it travels (the lift is the entry's
-## `lift` argument); the arrival fades over the last FADE_SHARE.
-const LIFT_SHARE := 0.25
-const FADE_SHARE := 0.3
+## ANIM-R6 D2 (were inline LIFT_SHARE / FADE_SHARE): the share of a flight's seconds spent
+## lifting before it travels (its ease and trans shape the lift; the lift's height is the
+## `lift` argument), and the share at its end over which the arrival fades (its shape too).
+const LIFT_MOTION := &"flight_lift_share"
+const FADE_MOTION := &"flight_fade_share"
 ## Every flight shrinks to this entry's amplitude as it arrives (the Modem's `buy_fly`: one
 ## size for anything landing in a top bar icon).
 const ARRIVE_MOTION := &"buy_fly"
@@ -24,12 +25,18 @@ const ARRIVE_MOTION := &"buy_fly"
 const STAMP_TEXT_SHARE := 0.34
 const STAMP_BORDER := 3.0
 const STAMP_TILT := -0.2
-## event_choice_stamp: share spent stamping down, then holding; the rest fades.
-const STAMP_DOWN_SHARE := 0.25
-const STAMP_HOLD_SHARE := 0.45
+## ANIM-R6 D2 (were inline STAMP_DOWN_SHARE / STAMP_HOLD_SHARE): a stamp's share of its
+## seconds spent stamping down, then holding; the rest fades.
+const STAMP_DOWN_MOTION := &"choice_stamp_down_share"
+const STAMP_HOLD_MOTION := &"choice_stamp_hold_share"
 
 ## Flights and stamps on screen: [{node, tween, to}]
 var flights: Array[Dictionary] = []
+
+
+## ANIM-R6 D2: the share of a flight's seconds its lift adds before the travel.
+static func lift_share() -> float:
+	return clampf(Motion.amplitude(LIFT_MOTION), 0.0, 1.0)
 
 
 ## The layer on `screen` (the scene that shows the flights; made on first use).
@@ -147,11 +154,14 @@ static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: 
 		tw.tween_method(func(v: float) -> void: mark.scale = Vector2.ONE * v, Motion.amplitude(&"sold_stamp"), 1.0, Motion.seconds(&"sold_stamp")) \
 			.set_ease(Motion.entry(&"sold_stamp").ease).set_trans(Motion.entry(&"sold_stamp").trans)
 	if lift != 0.0:
-		tw.tween_property(node, "position:y", from.position.y - lift, d * LIFT_SHARE).set_ease(Tween.EASE_OUT)
+		var le := Motion.entry(LIFT_MOTION)
+		tw.tween_property(node, "position:y", from.position.y - lift, d * lift_share()).set_ease(le.ease).set_trans(le.trans)
 	var end_pos := to - from.size * 0.5
 	tw.tween_property(node, "position", end_pos, d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(node, "scale", Vector2.ONE * Motion.amplitude(ARRIVE_MOTION), d).set_ease(e.ease).set_trans(e.trans)
-	tw.parallel().tween_property(node, "modulate:a", 0.0, d * FADE_SHARE).set_delay(d * (1.0 - FADE_SHARE))
+	var fade := clampf(Motion.amplitude(FADE_MOTION), 0.0, 1.0)
+	var fe := Motion.entry(FADE_MOTION)
+	tw.parallel().tween_property(node, "modulate:a", 0.0, d * fade).set_delay(d * (1.0 - fade)).set_ease(fe.ease).set_trans(fe.trans)
 	var f := {"node": holder if holder != null else node, "tween": tw, "to": to + (clip.position if holder != null else Vector2.ZERO), "id": id, "on_land": on_land}
 	tw.tween_callback(l._end.bind(f))
 	l.flights.append(f)
@@ -187,10 +197,12 @@ static func stamp_on(screen: Node, source: Control, word: String, id: StringName
 	holder.modulate.a = 0.0
 	var tw := holder.create_tween()
 	tw.tween_interval(Motion.delay_of(id))
-	tw.tween_property(holder, "scale", Vector2.ONE, d * STAMP_DOWN_SHARE).set_ease(e.ease).set_trans(e.trans)
-	tw.parallel().tween_property(holder, "modulate:a", 1.0, d * STAMP_DOWN_SHARE * Motion.amplitude(&"stamp_fade_in"))
-	tw.tween_interval(d * STAMP_HOLD_SHARE)
-	tw.tween_property(holder, "modulate:a", 0.0, d * (1.0 - STAMP_DOWN_SHARE - STAMP_HOLD_SHARE))
+	var down := clampf(Motion.amplitude(STAMP_DOWN_MOTION), 0.0, 1.0)
+	var hold := clampf(Motion.amplitude(STAMP_HOLD_MOTION), 0.0, 1.0 - down)
+	tw.tween_property(holder, "scale", Vector2.ONE, d * down).set_ease(e.ease).set_trans(e.trans)
+	tw.parallel().tween_property(holder, "modulate:a", 1.0, d * down * Motion.amplitude(&"stamp_fade_in"))
+	tw.tween_interval(d * hold)
+	tw.tween_property(holder, "modulate:a", 0.0, d * (1.0 - down - hold))
 	var f := {"node": holder, "tween": tw, "to": r.get_center(), "id": id}
 	tw.tween_callback(l._end.bind(f))
 	l.flights.append(f)

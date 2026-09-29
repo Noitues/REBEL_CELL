@@ -121,13 +121,13 @@ func press_motion() -> void:
 	var de := Motion.entry(&"send_it_drips")
 	var d := Motion.seconds(&"send_it_press")
 	var tw := create_tween()
-	tw.tween_method(_set_squash, 1.0, Motion.amplitude(&"send_it_press"), d * Motion.POP_GROW_SHARE).set_ease(Tween.EASE_OUT)
+	tw.tween_method(_set_squash, 1.0, Motion.amplitude(&"send_it_press"), d * Motion.POP_GROW_SHARE).set_ease(Motion.POP_GROW_EASE).set_trans(pe.trans)
 	tw.tween_method(_set_squash, Motion.amplitude(&"send_it_press"), 1.0, d * (1.0 - Motion.POP_GROW_SHARE)).set_ease(pe.ease).set_trans(pe.trans)
 	if Motion.live(&"send_it_drips"):
 		var dd := Motion.seconds(&"send_it_drips")
 		var out_share := clampf(Motion.amplitude(&"send_it_drips_share"), 0.0, 1.0)
 		tw.parallel().tween_method(_set_run, 0.0, Motion.amplitude(&"send_it_drips"), dd * out_share).set_ease(de.ease).set_trans(de.trans)
-		tw.tween_method(_set_run, Motion.amplitude(&"send_it_drips"), 0.0, dd * (1.0 - out_share)).set_ease(Tween.EASE_IN_OUT)
+		tw.tween_method(_set_run, Motion.amplitude(&"send_it_drips"), 0.0, dd * (1.0 - out_share)).set_ease(de.ease).set_trans(de.trans)
 	_press_tween = tw
 
 

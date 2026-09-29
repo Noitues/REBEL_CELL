@@ -764,7 +764,7 @@ func play_pulse(index: int, sat: StringName = &"") -> void:
 	var d := Motion.seconds(&"resolve_pulse")
 	var e := Motion.entry(&"resolve_pulse")
 	var tw := _tw(&"pulse")
-	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), 1.0, amp, d * Motion.POP_GROW_SHARE).set_ease(Tween.EASE_OUT)
+	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), 1.0, amp, d * Motion.POP_GROW_SHARE).set_ease(Motion.POP_GROW_EASE).set_trans(e.trans)
 	tw.tween_method(func(v: float) -> void: pulse_scale = v; queue_redraw(), amp, 1.0, d * (1.0 - Motion.POP_GROW_SHARE)).set_ease(e.ease).set_trans(e.trans)
 	tw.tween_callback(func() -> void: pulse_pointer = -1; pulse_satellite = &""; pulse_scale = 1.0; _end(&"pulse"))
 

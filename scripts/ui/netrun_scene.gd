@@ -572,9 +572,9 @@ func _hold_loot_page() -> void:
 	_loot_hold = create_tween()
 	# ANIM-R5 B5: the picked card's flight (`loot_pick`, now the longer) lands before the page
 	# goes too, so its landing pulse shows with the loot page still up.
-	# (its lift takes FlightFx.LIFT_SHARE of its time on top of the travel).
+	# (its lift takes FlightFx.lift_share() of its time on top of the travel).
 	var hold := maxf(Motion.seconds(&"loot_reject") + Motion.delay_of(&"loot_reject"),
-		Motion.seconds(&"loot_pick") * (1.0 + FlightFx.LIFT_SHARE) + Motion.delay_of(&"loot_pick"))
+		Motion.seconds(&"loot_pick") * (1.0 + FlightFx.lift_share()) + Motion.delay_of(&"loot_pick"))
 	# The page leaves as soon as nothing flies (`_loot_hold_step`); the hold's time is only its
 	# bound, with one `loot_reject` more as grace for a flight ending on the same frame.
 	_loot_hold.tween_method(_loot_hold_step, 0.0, 1.0, hold + Motion.seconds(&"loot_reject"))

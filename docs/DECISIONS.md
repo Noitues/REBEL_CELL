@@ -456,6 +456,27 @@ unless named.
   A's file, one argument). A skip by hand (`complete_all` with no press) still completes
   every helper. Tests: a focus move and accept on 2x handled first by a typing label leave
   the step playing and complete the typing; a stray key handled by the label ends both.
+- **D2 no inline motion numbers in the kit.** FlightFx's lift and fade shares and the
+  choice stamp's down and hold shares move into the table (`flight_lift_share`,
+  `flight_fade_share`, `choice_stamp_down_share`, `choice_stamp_hold_share`: tunings of the
+  flight or stamp, `UiMotionData.ALWAYS_ON`, same values; the lift and the fade take their
+  shape from their entry: the lift was an inline EASE_OUT); `FlightFx.lift_share()` replaces
+  the netrun's read of the old const (fix agent B's file, one line). The jack's push eased in
+  by an inline EASE_IN over the table's IN_OUT: it now takes the entry's ease and `jack_in`
+  / `jack_out` say IN (the look kept). The reduced jack read the raw duration (it ignored
+  1x / 2x / 4x): `Fx.reduced_fade_times()` reads `Motion.seconds` / `amplitude`, and the
+  fades take the entry's shape. The shredder's fade takes `shred_feed`'s shape, the drop
+  stamp's fade `drop_stamp`'s, the SEND IT drips' draw-back `send_it_drips`'s (it was an
+  inline IN_OUT). A pop's grow ease is one named kit constant (`Motion.POP_GROW_EASE`),
+  used by `Motion.pop`, SEND IT's squash and the wheel's resolve pulse (fix agent A's
+  `wheel_view.gd`, one line). `combat_fx_layer.gd` (fix agent A's file) names its inline
+  shapes: the played card's grow share (`PLAY_GROW_SHARE`), the dissolve's eases and the
+  drawn marks' overshoot settle (`POP_SETTLE_TRANS` / `POP_SETTLE_EASE`). New entries play
+  in the lab on the real flight and stamp. Tests: `test_no_tween_shape_is_written_inline`
+  (scans every game script for a `Tween.EASE_*` / `TRANS_*` literal outside a const, an
+  export default or a dictionary fallback, naming offenders; the dev-only demo drags are
+  exempt), `test_the_reduced_jack_fade_runs_at_the_speed`,
+  `test_a_flight_and_a_stamp_take_their_shares_from_the_table`.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is

@@ -26,6 +26,16 @@ const FADE_SHARE := 0.35
 const GROW_FROM := 0.6
 const CRIT_POP_SCALE := 1.35
 const TRAVEL_FADE_TO := 0.6
+## ANIM-R6 D2 (were inline): a played card grows to `card_play`'s amplitude over this share
+## of its travel (a pop's grow, Motion.POP_GROW_EASE); a dissolving card (`effect_burst`'s
+## seconds) fades easing out while it shrinks easing in (it thins, then snaps away).
+const PLAY_GROW_SHARE := 0.5
+const DISSOLVE_FADE_EASE := Tween.EASE_OUT
+const DISSOLVE_SHRINK_EASE := Tween.EASE_IN
+## ANIM-R6 D2 (were inline): a drawn mark that grows in from a smaller size (an impact's
+## glyph, a status mark, a block or heal number) settles with this overshooting shape.
+const POP_SETTLE_TRANS := Tween.TRANS_BACK
+const POP_SETTLE_EASE := Tween.EASE_OUT
 ## ANIM-R4 C5: a hit's projectile flies over `hit_line_flight`'s share of `hit_line` (the
 ## impact), and its line fades over the rest (the table's, see line_share()).
 ## The number riding with a projectile: its size as a share of a floating number's, and its
@@ -573,7 +583,7 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 	var tw := card.create_tween()
 	tw.tween_property(card, "position", end_pos, fly).set_ease(fe.ease).set_trans(fe.trans)
 	tw.parallel().tween_property(card, "rotation", 0.0, fly).set_ease(fe.ease).set_trans(fe.trans)
-	tw.parallel().tween_property(card, "scale", Vector2.ONE * Motion.amplitude(&"card_play"), fly * 0.5).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(card, "scale", Vector2.ONE * Motion.amplitude(&"card_play"), fly * PLAY_GROW_SHARE).set_ease(Motion.POP_GROW_EASE).set_trans(fe.trans)
 	# The stamp: from a size up, down onto the target.
 	tw.tween_property(card, "scale", Vector2.ONE * (1.0 / maxf(0.01, Motion.amplitude(&"card_stamp"))), land).set_ease(se.ease).set_trans(se.trans)
 	var f := {"node": card, "tween": tw, "to": to, "kind": "exhaust" if exhaust else "play", "on_done": on_done}
@@ -583,8 +593,8 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 		tw.parallel().tween_property(card, "modulate", Color(Palette.CELL_PINK.darkened(0.6), 0.0), gone)
 	else:
 		tw.tween_callback(func() -> void: burst(to, Palette.CELL_ACID, &"effect_burst"))
-		tw.tween_property(card, "modulate:a", 0.0, gone).set_ease(Tween.EASE_OUT)
-		tw.parallel().tween_property(card, "scale", Vector2.ZERO, gone).set_ease(Tween.EASE_IN)
+		tw.tween_property(card, "modulate:a", 0.0, gone).set_ease(DISSOLVE_FADE_EASE)
+		tw.parallel().tween_property(card, "scale", Vector2.ZERO, gone).set_ease(DISSOLVE_SHRINK_EASE)
 	tw.tween_callback(func() -> void: _end_flight(f))
 	flights.append(f)
 	set_process(true)
@@ -756,7 +766,7 @@ func _draw_impact(s: Dictionary) -> void:
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var d := maxf(0.001, float(s["dur"]))
 	var q := clampf(a / (d * GROW_SHARE), 0.0, 1.0)
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var fs := maxi(1, roundi(float(s["fs"]) * sc))
 	var text := String(s["text"])
@@ -813,7 +823,7 @@ func _draw_tag(s: Dictionary) -> void:
 	var land := float(s["land"])
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
 	var fs := int(s["fs"])
 	var text := String(s["text"])
@@ -893,7 +903,7 @@ func _draw_stamp(s: Dictionary) -> void:
 	var land := float(s["land"])
 	var a := float(s["age"])
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var c := _local(s["at"])
 	var fs := roundi(STAMP_FONT * Settings.text_scale * sc)
@@ -993,7 +1003,7 @@ func _draw_word(s: Dictionary) -> void:
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var land := float(s["land"])
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
-	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, Tween.TRANS_BACK, Tween.EASE_OUT))
+	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
 	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
 	var fs := roundi(float(s.get("fs", WORD_FONT * Settings.text_scale)) * sc)
 	var text := String(s["text"])

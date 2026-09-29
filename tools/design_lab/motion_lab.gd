@@ -138,6 +138,9 @@ const DEMOS := {
 	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy): the top bar
 	# CARDS tag a flight lands on (HudStats.land_pulse).
 	&"flight_land_pulse": ["screen", "land_pulse"],
+	# ANIM-R6 rules: the flight's and the stamp's shares, on the real flight and stamp.
+	&"flight_lift_share": ["screen", "pick"], &"flight_fade_share": ["screen", "buy"],
+	&"choice_stamp_down_share": ["screen", "stamp"], &"choice_stamp_hold_share": ["screen", "stamp"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

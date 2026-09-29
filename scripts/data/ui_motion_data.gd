@@ -82,6 +82,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"defeat_stamp",
 	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
 	&"flight_land_pulse",
+	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
+	# (were inline in FlightFx).
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.
@@ -100,7 +103,8 @@ const OFF_PARTS: Dictionary = {
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
-const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share"]
+const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share",
+	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share"]
 
 @export var entries: Array[UiMotionEntryData] = []
 

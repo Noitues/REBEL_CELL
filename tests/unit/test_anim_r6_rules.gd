@@ -124,3 +124,69 @@ func test_complete_all_without_a_press_completes_every_helper() -> void:
 	MotionSkip.complete_all(panel)
 	assert_almost_eq(panel._clock, panel._next_at, 0.0001, "a skip by hand (no press) ends the step: motion_passes asks only about a press")
 	assert_false(MotionSkip.lets_pass(panel, null), "no event: nothing passes")
+
+
+## ANIM-R6 D2: the lines of the game's scripts that write a tween's shape inline (a
+## `Tween.EASE_*` / `Tween.TRANS_*` literal outside a named constant, an export default or a
+## dictionary fallback), as "path:line: code". The dev-only demo drags are exempt (their
+## path is a drawn stand-in for a hand, not a motion of the game).
+static func inline_shapes(root: String = "res://scripts") -> Array[String]:
+	var out: Array[String] = []
+	var stack: Array[String] = [root]
+	while not stack.is_empty():
+		var dir: String = stack.pop_back()
+		for f in DirAccess.get_files_at(dir):
+			if not f.ends_with(".gd"):
+				continue
+			var path := dir.path_join(f)
+			var lines := FileAccess.get_file_as_string(path).split("\n")
+			for n in lines.size():
+				var line := lines[n]
+				var bare := line.strip_edges()
+				if not (line.contains("Tween.EASE_") or line.contains("Tween.TRANS_")):
+					continue
+				if bare.begins_with("#") or bare.begins_with("const ") or bare.begins_with("@export") \
+						or line.contains(".get(\"trans\", Tween.") or line.contains(".get(\"ease\", Tween.") \
+						or line.contains("DEMO_DRAG_FRAMES"):
+					continue
+				out.append("%s:%d: %s" % [path, n + 1, bare])
+		for d in DirAccess.get_directories_at(dir):
+			stack.append(dir.path_join(d))
+	return out
+
+
+func test_no_tween_shape_is_written_inline() -> void:
+	var found := inline_shapes()
+	assert_eq(found, [] as Array[String], "every tween's ease and trans come from its entry or a named constant:\n%s" % "\n".join(found))
+
+
+func test_the_reduced_jack_fade_runs_at_the_speed() -> void:
+	Motion.set_speed(1.0)
+	var at_1 := Fx.reduced_fade_times()
+	Motion.set_speed(2.0)
+	var at_2 := Fx.reduced_fade_times()
+	var e := Motion.entry(&"jack_fade_reduced")
+	assert_almost_eq(at_1.x + at_1.y, e.duration, 0.0001, "the whole fade is the entry's seconds at 1x")
+	assert_almost_eq(at_1.x, e.duration * e.amplitude, 0.0001, "its amplitude's share goes dark")
+	assert_almost_eq(at_2.x + at_2.y, e.duration / 2.0, 0.0001, "at 2x it takes half (it read the raw duration)")
+
+
+func test_a_flight_and_a_stamp_take_their_shares_from_the_table() -> void:
+	Motion.force_live = true
+	if Settings.reduce_effects:
+		Settings.set_reduce_effects(false)
+	var holder: Control = add_child_autofree(Control.new())
+	holder.size = SCREEN.size
+	var source := Button.new()
+	source.text = "A card"
+	source.position = Vector2(100, 100)
+	source.size = Vector2(120, 160)
+	holder.add_child(source)
+	Motion.start_recording()
+	FlightFx.fly(holder, source, Vector2(900, 40), &"buy_fly", "", 30.0)
+	FlightFx.stamp_on(holder, source, "PICKED")
+	var reads := Motion.stop_recording()
+	for id: StringName in [&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share"]:
+		assert_true(reads.has(id) and (reads[id] as Dictionary).has("res://scripts/ui/kit/flight_fx.gd"), "FlightFx reads %s" % id)
+		assert_true(UiMotionData.ALWAYS_ON.has(id), "%s tunes its flight or stamp (never switched off)" % id)
+	FlightFx.finish_all(holder)

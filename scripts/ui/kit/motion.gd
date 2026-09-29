@@ -19,6 +19,9 @@ const SHAKE_STEPS := 4
 const BLINK_DIP_SHARE := 1.0 / 3.0
 ## A pop spends this share of its duration growing and the rest settling.
 const POP_GROW_SHARE := 0.4
+## A pop grows easing out (it springs up) and settles with its entry's ease and trans
+## (ANIM-R6 D2: one named shape for every pop-like motion drawn by hand).
+const POP_GROW_EASE := Tween.EASE_OUT
 ## Node meta holding a running helper tween and the value it returns to (so a helper
 ## started again mid-motion settles on the true rest value, not a mid-way one).
 const META_PREFIX := "motion_"
@@ -196,7 +199,7 @@ static func pop(node: CanvasItem, id: StringName) -> Tween:
 	var d := seconds(id)
 	var tw := node.create_tween()
 	tw.tween_interval(delay_of(id))
-	tw.tween_method(_setter(node, ^"scale"), base, base * amplitude(id), d * POP_GROW_SHARE).set_ease(Tween.EASE_OUT).set_trans(e.trans)
+	tw.tween_method(_setter(node, ^"scale"), base, base * amplitude(id), d * POP_GROW_SHARE).set_ease(POP_GROW_EASE).set_trans(e.trans)
 	tw.tween_method(_setter(node, ^"scale"), base * amplitude(id), base, d * (1.0 - POP_GROW_SHARE)).set_ease(e.ease).set_trans(e.trans)
 	_hold(node, ^"scale", tw, base)
 	return tw
