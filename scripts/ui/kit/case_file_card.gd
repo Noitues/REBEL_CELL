@@ -128,6 +128,7 @@ func _label(words: String, step: int, font: Font, col: Color = Palette.INK) -> L
 	l.text = words
 	l.add_theme_font_override("font", font)
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
+	UiTheme.track_label(l)  # art pass W9F (§4.2): Anton and mono CAPS tracked
 	# Art pass WF (§12): words filed on the paper go INK in high contrast (the empty
 	# folder's words sit on the glass and keep theirs).
 	l.add_theme_color_override("font_color", col if summary.is_empty() else PaperInk.text(col))

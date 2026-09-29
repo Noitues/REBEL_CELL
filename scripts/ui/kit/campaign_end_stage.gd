@@ -234,6 +234,7 @@ func _paper_label(words: String, step: int, font: Font) -> Label:
 	if font != null:
 		l.add_theme_font_override("font", font)
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
+	UiTheme.track_label(l)  # art pass W9F (§4.2): Anton and mono CAPS tracked
 	l.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
 	UiWrap.whole_words(l)  # art pass W9F §4.3.3: whole words, never mid-word
 	l.custom_minimum_size.x = story_width()

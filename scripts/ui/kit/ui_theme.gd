@@ -110,8 +110,8 @@ static var _tracked: Dictionary = {}
 
 ## Art pass WF (§4.2): `font` with the tracking of `face` at `step` (a cached FontVariation
 ## whose spacing_glyph is tracking_step_px), for a Label's font override or draw_string.
-static func tracked(font: Font, face: StringName, step: int) -> Font:
-	var px := tracking_step_px(face, step)
+static func tracked(font: Font, face: StringName, step: int, scale: float = -1.0) -> Font:
+	var px := tracking_step_px(face, step, scale)
 	if px == 0 or font == null:
 		return font
 	var key := "%d|%d" % [font.get_instance_id(), px]
@@ -121,6 +121,45 @@ static func tracked(font: Font, face: StringName, step: int) -> Font:
 		v.spacing_glyph = px
 		_tracked[key] = v
 	return _tracked[key]
+
+
+## Art pass W9F (§4.2): the type step a size (px, at the player's text scale) belongs to:
+## the largest step whose size is at most `px` (caption when smaller).
+static func step_of(px: int, scale: float = -1.0) -> int:
+	var s := Settings.text_scale if scale < 0.0 else scale
+	var out := CAPTION
+	for st in STEPS:
+		if font_px_at(st, s) <= px:
+			out = st
+	return out
+
+
+## Art pass W9F (§4.2): gives a Label or RichTextLabel its tracking: Anton by its step, Share
+## Tech Mono by its step when its words are in CAPS; any other face or mixed-case mono is
+## left alone. Call after its font, size and words are set (again if they change).
+static func track_label(c: Control) -> void:
+	if c == null:
+		return
+	var rich := c is RichTextLabel
+	var font_name := &"normal_font" if rich else &"font"
+	var size_name := &"normal_font_size" if rich else &"font_size"
+	var f := c.get_theme_font(font_name)
+	var base: Font = f
+	if f is FontVariation and (f as FontVariation).base_font != null and _tracked.values().has(f):
+		base = (f as FontVariation).base_font
+	var text := (c as RichTextLabel).get_parsed_text() if rich else String(c.get(&"text"))
+	var face := &""
+	if base == Palette.display():
+		face = TRACK_DISPLAY
+	elif base == Palette.mono() and text == text.to_upper() and text != text.to_lower():
+		face = TRACK_MONO_CAPS
+	if face == &"":
+		if base != f:
+			c.add_theme_font_override(font_name, base)
+		return
+	var want := tracked(base, face, step_of(c.get_theme_font_size(size_name)))
+	if want != f:
+		c.add_theme_font_override(font_name, want)
 
 
 static func build(text_scale: float = 1.0) -> Theme:
@@ -145,7 +184,8 @@ static func build(text_scale: float = 1.0) -> Theme:
 	_bars(t)
 	var header := "HeaderLabel"
 	t.set_type_variation(header, "Label")
-	t.set_font(&"font", header, Palette.mono())
+	# Art pass W9F (§4.2): screen titles are mono CAPS: tracked at `title`.
+	t.set_font(&"font", header, tracked(Palette.mono(), TRACK_MONO_CAPS, TITLE, text_scale))
 	t.set_font_size(&"font_size", header, font_px_at(TITLE, text_scale))
 	t.set_color(&"font_color", header, Palette.PAPER)
 	_body_text(t, text_scale)
@@ -326,7 +366,8 @@ static func _buttons(t: Theme, text_scale: float) -> void:
 		Palette.INK, Palette.INK, BUTTON_PAD_H, PRIMARY_PAD_V)
 	for key in [&"icon_normal_color", &"icon_hover_color", &"icon_pressed_color", &"icon_focus_color"]:
 		t.set_color(key, hv, Palette.INK)
-	t.set_font(&"font", hv, Palette.display())
+	# Art pass W9F (§4.2): the Primary's Anton at `title`, tracked.
+	t.set_font(&"font", hv, tracked(Palette.display(), TRACK_DISPLAY, TITLE, text_scale))
 	# §4.3.1: the Primary's title size scales with the text like every other size.
 	t.set_font_size(&"font_size", hv, font_px_at(TITLE, text_scale))
 	# Tertiary (§6.4): text plus icon, no box; the glow is the label brightening.

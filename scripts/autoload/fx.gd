@@ -104,7 +104,7 @@ func _ready() -> void:
 	add_child(connect_label)
 	note_label = Label.new()
 	note_label.name = "JackRaidNote"
-	note_label.add_theme_font_override("font", Palette.display())
+	note_label.add_theme_font_override("font", UiTheme.tracked(Palette.display(), UiTheme.TRACK_DISPLAY, UiTheme.HEADING))  # art pass W9F (§4.2)
 	note_label.add_theme_color_override("font_color", Palette.CRT_AMBER)
 	note_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	note_label.add_theme_constant_override("outline_size", 6)

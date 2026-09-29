@@ -173,6 +173,7 @@ func _label(text: String, step: int, font: Font) -> Label:
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(step))
 	l.add_theme_color_override("font_color", text_color())
 	l.add_theme_color_override("font_shadow_color", Color(text_color(), 0.0))
+	UiTheme.track_label(l)  # art pass W9F (§4.2)
 	_labels.append(l)
 	return l
 
