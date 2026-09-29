@@ -92,3 +92,61 @@ func test_every_class_in_content_has_its_accent() -> void:
 		n += 1
 	assert_eq(n, Palette.CLASS_ACCENTS.size(), "one accent per class, no strays")
 	assert_eq(Palette.class_accent(&"no_such_class"), Palette.CLASS_ACCENT_FALLBACK, "safe fallback")
+
+
+# --- §3.5 HP and Heat scales, §3.7 contrast ------------------------------------------------
+
+func test_hp_color_bands() -> void:
+	assert_eq(Palette.hp_color(1.0), Palette.GAIN)
+	assert_eq(Palette.hp_color(0.5), Palette.GAIN, "50% is still GAIN")
+	assert_eq(Palette.hp_color(0.49), Palette.WARN)
+	assert_eq(Palette.hp_color(0.25), Palette.WARN, "25% is WARN")
+	assert_eq(Palette.hp_color(0.24), Palette.HARM)
+	assert_eq(Palette.hp_color(1.0 / 60.0), Palette.HARM, "1/60 is never green (§15)")
+	assert_eq(Palette.hp_color(0.0), Palette.HARM)
+	assert_eq(Palette.HP_WARN_BELOW, 0.5)
+	assert_eq(Palette.HP_HARM_BELOW, 0.25)
+
+
+func test_heat_color_bands_follow_the_config_majors() -> void:
+	var majors := (load(ContentRegistry.CONFIG_PATH) as CampaignConfigData).major_heat_levels()
+	assert_eq(majors.size(), 3, "three MAJOR thresholds (COOL/NOTICED/FLAGGED/HUNTED)")
+	assert_eq(Palette.heat_color(0), Palette.TEXT_MID, "COOL")
+	assert_eq(Palette.heat_color(majors[0] - 1), Palette.TEXT_MID, "COOL up to the first major")
+	assert_eq(Palette.heat_color(majors[0]), Palette.WARN, "NOTICED")
+	assert_eq(Palette.heat_color(majors[1]), Palette.HEAT_FLAGGED, "FLAGGED")
+	assert_eq(Palette.heat_color(62), Palette.HEAT_FLAGGED, "Heat 62 no longer reads good (§15)")
+	assert_eq(Palette.heat_color(majors[2]), Palette.HARM, "HUNTED")
+	assert_eq(Palette.heat_color(100), Palette.HARM)
+	var custom: Array[int] = [10, 20, 30, 40]
+	assert_eq(Palette.heat_band(15, custom), 1, "explicit levels are honoured")
+	assert_eq(Palette.heat_band(99, custom), 3, "capped at HUNTED")
+
+
+func test_heat_is_never_green() -> void:
+	for h in range(0, 201):
+		var c := Palette.heat_color(h)
+		assert_ne(c, Palette.GAIN, "Heat %d is not GAIN" % h)
+		assert_false(c.h > 0.2 and c.h < 0.45 and c.s > 0.3, "Heat %d hue is not green" % h)
+
+
+func test_contrast_matches_known_wcag_pairs() -> void:
+	assert_almost_eq(Palette.contrast(Color.BLACK, Color.WHITE), 21.0, 0.01, "black on white")
+	assert_almost_eq(Palette.contrast(Color.WHITE, Color.BLACK), 21.0, 0.01, "order-free")
+	assert_almost_eq(Palette.contrast(Color.WHITE, Color.WHITE), 1.0, 0.001)
+	assert_almost_eq(Palette.contrast(Color("#777777"), Color.WHITE), 4.48, 0.01, "#777 on white")
+	assert_almost_eq(Palette.contrast(Color("#767676"), Color.WHITE), 4.54, 0.01, "#767676 on white (AA)")
+	assert_almost_eq(Palette.contrast(Color("#0000FF"), Color.WHITE), 8.59, 0.01, "blue on white")
+	assert_almost_eq(Palette.contrast(Color("#FF0000"), Color.WHITE), 4.0, 0.01, "red on white")
+
+
+func test_text_tokens_read_on_glass_and_over_the_scrim() -> void:
+	var glass := Palette.over(Palette.NIGHT_SKY, Palette.TERMINAL_BG)
+	assert_gt(Palette.contrast(Palette.TEXT_HI, glass), 7.0, "TEXT_HI on glass")
+	assert_gt(Palette.contrast(Palette.TEXT_MID, glass), 4.5, "TEXT_MID on glass")
+	assert_gt(Palette.contrast(Palette.DISABLED, glass), 3.0, "DISABLED outline is visible")
+	var bright := Palette.over(Color.WHITE, Palette.SCRIM)
+	assert_almost_eq(bright.a, 1.0, 0.001, "over an opaque ground is opaque")
+	assert_lt(Palette.luminance(bright), Palette.luminance(Color.WHITE), "the scrim dims")
+	assert_eq(Palette.over(Color.RED, Color(0, 0, 1, 1)), Color(0, 0, 1, 1), "an opaque fg covers")
+	assert_eq(Palette.over(Color.RED, Color(0, 0, 1, 0)), Color.RED, "a clear fg leaves the ground")

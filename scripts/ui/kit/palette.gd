@@ -170,6 +170,83 @@ static func class_accent(class_id: StringName) -> Color:
 	return CLASS_ACCENTS.get(class_id, CLASS_ACCENT_FALLBACK)
 
 
+# --- ART_BIBLE §3.5 HP and Heat scales, §3.7 contrast ----------------------------------------
+## HP at or above this fraction of max reads GAIN; below it, WARN (§3.5: "≥50%").
+const HP_WARN_BELOW := 0.5
+## HP below this fraction of max reads HARM (§3.5: "<25%"), plus the heartbeat pulse.
+const HP_HARM_BELOW := 0.25
+## Heat colour per band: COOL, NOTICED, FLAGGED, HUNTED (§3.5). Heat is never green.
+const HEAT_BAND_COLORS: Array[Color] = [TEXT_MID, WARN, HEAT_FLAGGED, HARM]
+## The content registry's script, for its config path only (Palette also compiles in `-s`
+## tool scripts, before any autoload exists).
+const _REGISTRY_SCRIPT := preload("res://scripts/autoload/content_registry.gd")
+## WCAG 2.x relative-luminance weights and flare term (the standard's own constants).
+const _WCAG_R := 0.2126
+const _WCAG_G := 0.7152
+const _WCAG_B := 0.0722
+const _WCAG_FLARE := 0.05
+
+static var _heat_levels: Array[int] = []
+
+
+## The HP colour for `frac` = hp / max_hp (§3.5): GAIN, then WARN under HP_WARN_BELOW,
+## then HARM under HP_HARM_BELOW.
+static func hp_color(frac: float) -> Color:
+	if frac < HP_HARM_BELOW:
+		return HARM
+	if frac < HP_WARN_BELOW:
+		return WARN
+	return GAIN
+
+
+## The Heat band for `heat`: how many MAJOR thresholds it has reached (0 COOL, 1 NOTICED,
+## 2 FLAGGED, 3+ HUNTED, capped at the last band). `major_levels` are the ascending MAJOR
+## threshold levels (`CampaignConfigData.major_heat_levels()`); empty reads them from the
+## campaign config, so the bands never duplicate the game's numbers.
+static func heat_band(heat: int, major_levels: Array[int] = []) -> int:
+	var levels := major_levels if not major_levels.is_empty() else _config_heat_levels()
+	var band := 0
+	for level in levels:
+		if heat >= level:
+			band += 1
+	return mini(band, HEAT_BAND_COLORS.size() - 1)
+
+
+## The Heat colour for `heat` (§3.5): COOL TEXT_MID, NOTICED WARN, FLAGGED HEAT_FLAGGED,
+## HUNTED HARM. Never GAIN. `major_levels` as in heat_band().
+static func heat_color(heat: int, major_levels: Array[int] = []) -> Color:
+	return HEAT_BAND_COLORS[heat_band(heat, major_levels)]
+
+
+## The MAJOR Heat levels from the campaign config (read once; the Resource is never changed).
+static func _config_heat_levels() -> Array[int]:
+	if _heat_levels.is_empty():
+		var cfg := load(_REGISTRY_SCRIPT.CONFIG_PATH) as CampaignConfigData
+		if cfg != null:
+			_heat_levels = cfg.major_heat_levels()
+	return _heat_levels
+
+
+## WCAG 2.x relative luminance of `c` (sRGB, alpha ignored).
+static func luminance(c: Color) -> float:
+	var l := c.srgb_to_linear()
+	return _WCAG_R * l.r + _WCAG_G * l.g + _WCAG_B * l.b
+
+
+## The WCAG contrast ratio of `a` against `b` (1.0 to 21.0; order doesn't matter). Both are
+## read as opaque: composite a translucent colour onto its background with over() first.
+static func contrast(a: Color, b: Color) -> float:
+	var la := luminance(a)
+	var lb := luminance(b)
+	return (maxf(la, lb) + _WCAG_FLARE) / (minf(la, lb) + _WCAG_FLARE)
+
+
+## `fg` alpha-composited over `bg` (Porter-Duff "over", sRGB as the 2D renderer blends),
+## e.g. over(city_pixel, SCRIM) for the colour behind a glass panel.
+static func over(bg: Color, fg: Color) -> Color:
+	return bg.blend(fg)
+
+
 static var _fonts: Dictionary = {}
 
 
