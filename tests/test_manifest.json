@@ -409,6 +409,10 @@
 			"seconds": 0.2,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_shader_library.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_simulation.gd": {
 			"seconds": 2.2,
 			"tier": "fast"
