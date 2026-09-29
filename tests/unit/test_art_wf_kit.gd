@@ -378,3 +378,46 @@ func test_out_of_high_contrast_the_paper_pieces_look_as_before() -> void:
 		assert_almost_eq(float(piece.call(&"edge_width")), 1.0, 0.01)
 	assert_eq(AchievementBadge.outline_color(), Palette.DISABLED)
 	assert_eq(PaperInk.text(Palette.HARM_INK), Palette.HARM_INK)
+
+
+# --- 8. Steam Deck defaults: city quality tier 1 (W7, §13) ------------------------------------
+
+func _deck_probe(deck: bool) -> Dictionary:
+	return {"feature": deck, "env": "", "os": "Windows", "screen": Vector2i(1920, 1080), "joy_names": PackedStringArray()}
+
+
+func test_a_first_run_on_a_deck_starts_the_city_at_quality_1() -> void:
+	var deck: Node = autofree(load("res://scripts/autoload/settings.gd").new())
+	deck.apply_first_run_defaults(_deck_probe(true))
+	assert_eq(deck.city_quality, Settings.CITY_QUALITY_STEAM_DECK)
+	assert_eq(Settings.CITY_QUALITY_STEAM_DECK, 1, "medium on the Deck")
+	assert_eq(deck.text_scale, Settings.TEXT_SCALE_STEAM_DECK, "next to the Deck's text scale")
+	var pc: Node = autofree(load("res://scripts/autoload/settings.gd").new())
+	pc.apply_first_run_defaults(_deck_probe(false))
+	assert_eq(pc.city_quality, -1, "elsewhere the look's default tier")
+	# Through load_settings with no file (the real first-run path), with the probe injected.
+	var first: Node = autofree(load("res://scripts/autoload/settings.gd").new())
+	first.path = "user://wf_deck_missing_%d.json" % OS.get_process_id()
+	first.device_probe_override = _deck_probe(true)
+	first.load_settings()
+	assert_eq(first.city_quality, Settings.CITY_QUALITY_STEAM_DECK, "no file on a Deck: tier 1")
+	# Saved and read back; an old file without the key keeps the default.
+	var back: Node = autofree(load("res://scripts/autoload/settings.gd").new())
+	back.from_dict(first.to_dict())
+	assert_eq(back.city_quality, 1, "kept across runs")
+	back.from_dict({})
+	assert_eq(back.city_quality, -1, "an old settings file: the look's default")
+
+
+func test_the_city_reads_the_deck_tier() -> void:
+	var was := Settings.city_quality
+	var atm := CityAtmosphere.new()
+	Settings.city_quality = -1
+	assert_eq(atm.tier(), atm.cfg.quality_default, "no setting: city_look.tres's default")
+	Settings.city_quality = Settings.CITY_QUALITY_STEAM_DECK
+	assert_eq(atm.tier(), 1, "the Deck's tier")
+	CityAtmosphere.quality = 0
+	assert_eq(atm.tier(), 0, "a design tool's override still wins")
+	CityAtmosphere.quality = -1
+	Settings.city_quality = was
+	atm.free()
