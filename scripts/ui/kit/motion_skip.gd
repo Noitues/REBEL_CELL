@@ -53,6 +53,10 @@ extends RefCounted
 ##   them all, for a press that passes on (PASS) as for one it consumes (CONSUME).
 ##   `consume` completes them all too, so a helper that consumes by hand still does. A
 ##   helper a PauseMenu covers is left alone (its motion plays on).
+## - **Reading holds are not motion (ANIM-R6 C1)**: a hold that is there to be read (the Heat
+##   banner and its consequence note, `heat_banner`'s delay, like RAID INCOMING's) is not
+##   `motion_running`: a press completes what moves (HeatPoster: the number's roll, the
+##   crossings, the pops and stamps, the banner's fade) and the banner then stays its hold.
 
 ## The group of every helper whose motion one press completes (ANIM-R5).
 const GROUP := &"motion_skip_helpers"
