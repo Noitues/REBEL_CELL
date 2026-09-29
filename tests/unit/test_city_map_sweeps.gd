@@ -379,7 +379,7 @@ func _check_run_rows_and_steps(hq: Control, what: String) -> void:
 	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
 	assert_not_null(rows, "%s: one run a row" % what)
 	var checked := 0
-	for b in rows.get_children():
+	for b in rows.find_children("Run_*", "Button", true, false):  # W8b: each run in its framed row
 		if b is Button and String(b.name).begins_with("Run_"):
 			var id := StringName(String(b.name).trim_prefix("Run_"))
 			var kind := String(nodes[id]["kind"])
@@ -431,7 +431,7 @@ func test_the_route_for_every_corporation() -> void:
 			var overlay: CityMapOverlay = scene.city_overlay
 			overlay.avoid_controls([win])
 			var here := overlay.here_id()
-			assert_true(overlay.label_rects().has(String(here)), "%s x%.1f: YOU ARE HERE shows" % [corp, scale])
+			assert_true(overlay.here_tab_rect().has_area(), "%s x%.1f: YOU ARE HERE shows (the tab on its pin, W8b)" % [corp, scale])
 			_assert_on_screen(overlay, "route %s x%.1f" % [corp, scale])
 		Settings.set_text_scale(1.0)
 		await _close(scene)

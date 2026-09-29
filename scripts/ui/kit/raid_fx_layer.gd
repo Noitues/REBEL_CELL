@@ -275,7 +275,7 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			_tints.append({"site": StringName(e["site"]), "t0": t0, "dur": RaidBeats.raw_seconds(&"influence_spread")})
 		"home_lost":
 			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
-			_banner = {"text": CityMapOverlay.tr_word(BANNER_BREACHED), "color": Palette.CELL_PINK, "t0": t0}
+			_banner = {"text": CityMapOverlay.tr_word(BANNER_BREACHED), "color": RaidVerdict.color_of(false), "t0": t0}  # W8b §3.3: HARM, never pink
 		"raid_end":
 			# ANIM-R2 R6: the outcomes stamp node after node (`raid_outcome_stagger`, by id),
 			# then the result banner stamps over home. ANIM-R3 B5: every node's stamp is its
@@ -302,12 +302,12 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			if _results.has("home_after"):
 				var after := int(_results["home_after"])
 				if after != home_value:
-					_number(home_id, after - home_value, Palette.CELL_PINK, t0, dur)
+					_number(home_id, after - home_value, Palette.HARM, t0, dur)
 					_home_hit(home_value - after, t0, home_id)
 			if _banner.is_empty():
 				var lost := int(_results.get("home_before", home_value)) - int(_results.get("home_after", home_value))
 				_banner = {"text": CityMapOverlay.tr_word(BANNER_HOME) % TextDb.signed(-lost) if lost > 0 else CityMapOverlay.tr_word(BANNER_HOLDS),
-					"color": Palette.CELL_PINK if lost > 0 else Palette.CELL_ACID,
+					"color": RaidVerdict.color_of(lost <= 0),
 					"t0": maxf(t0, last + flip) + Motion.delay_of(BANNER_MOTION)}
 	queue_redraw()
 
@@ -316,10 +316,10 @@ func play_beat(b: Dictionary, t0: float) -> void:
 static func stamp_color(outcome: String) -> Color:
 	match outcome:
 		"holds":
-			return Palette.CELL_ACID
+			return Palette.GAIN
 		"seized":
 			return Palette.RESIST_GOLD
-	return Palette.CELL_PINK
+	return Palette.HARM  # W8b §3.3: a fallen node is HARM, never the Cell's pink
 
 
 func _number(site: StringName, value: int, col: Color, t0: float, dur: float) -> void:
@@ -749,9 +749,29 @@ func _draw_number(f: Dictionary, k: float, where: Dictionary = {}) -> void:
 		at = p + Vector2(-w - CityMapOverlay.MARKER_SIZE * TOKEN_SCALE * k - NUMBER_GAP * k, -rise)
 	else:
 		at = p + Vector2(CityMapOverlay.ICON_RADIUS_BIG * k + NUMBER_GAP * k, font.get_ascent(fs) * 0.5 - rise - _stack_of(f) * fs * NUMBER_STACK)
+	if not f.has("threat"):
+		at = _off_labels(at, Vector2(w, fs), p, k)
 	var a := 1.0 if u < 0.66 else (1.0 - u) / 0.34
 	draw_string_outline(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(1, roundi(4.0 * k)), Color(0, 0, 0, 0.9 * a))
 	draw_string(font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(f["color"], a))
+
+
+## Art pass W8b (critique 24/26): a node's number at baseline `at` (text `box` px) moved off
+## the map's labels: its own spot when clear, else left of its node, else above it.
+func _off_labels(at: Vector2, box: Vector2, node_at: Vector2, k: float) -> Vector2:
+	var labels: Array = overlay.label_rects().values()
+	var tries: Array[Vector2] = [at, Vector2(node_at.x - CityMapOverlay.ICON_RADIUS_BIG * k - NUMBER_GAP * k - box.x, at.y),
+		Vector2(node_at.x - box.x * 0.5, node_at.y - CityMapOverlay.ICON_RADIUS_BIG * k - NUMBER_GAP * k - box.y * 0.2)]
+	for t in tries:
+		var r := Rect2(t - Vector2(0, box.y * 0.8), box)
+		var clear := true
+		for l: Rect2 in labels:
+			if r.intersects(l):
+				clear = false
+				break
+		if clear:
+			return t
+	return at
 
 
 ## How many numbers on the same Site show now and started before `f` (its row in the stack).

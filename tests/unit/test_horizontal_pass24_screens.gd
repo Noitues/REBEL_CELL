@@ -423,7 +423,7 @@ func test_hq_raid_and_grid_words_are_translated_once() -> void:
 		if n is CrewCard:
 			assert_true((n as CrewCard).polaroid.caption.contains(PSEUDO_PREFIX), "the rank tag: %s" % (n as CrewCard).polaroid.caption)
 	var boosts: Node = hq._panel.find_child("Boosts", true, false)
-	for b in boosts.get_children():
+	for b in boosts.find_children("Boost_*", "Button", true, false):  # W8b: each item in its cell
 		if b is Button:
 			assert_false(_shown_text(b).begins_with(PSEUDO_PREFIX + PSEUDO_PREFIX), "boost '%s' once" % _shown_text(b))
 	hq.show_grid()
@@ -801,7 +801,7 @@ func test_every_crew_dossier_is_reachable_at_big_text() -> void:
 	var c := RunManager.campaign
 	while c.roster.size() < 3:
 		c.recruit(RunManager.lookup().get_content(RunManager.DEFAULT_CLASS) as ClassData)
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var hq := _open(HQ)
 		await _frames(6)

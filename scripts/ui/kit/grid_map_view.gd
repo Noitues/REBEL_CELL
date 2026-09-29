@@ -24,11 +24,11 @@ signal site_clicked(site_id: StringName)
 
 ## Label font sizes at text scale 1.0 (px): Site labels on a dense (> 16 Sites) and a
 ## sparse Grid, and the second line (node / home integrity, threats).
-const LABEL_FONT_DENSE := 9
-const LABEL_FONT := 10
-const DETAIL_FONT := 9
+const LABEL_FONT_DENSE := UiTheme.CAPTION
+const LABEL_FONT := UiTheme.CAPTION
+const DETAIL_FONT := UiTheme.CAPTION
 ## The tier pips' scale in a label at text scale 1.0, and their gap to the text (px).
-const PIP_SCALE := 0.8
+const PIP_SCALE := 1.0
 const PIP_TEXT_GAP := 4.0
 ## H23 #1 label layout (px): the pill's padding, the margin kept inside the view, the gap
 ## between a Site's block and its label, and how far the objective badge floats over

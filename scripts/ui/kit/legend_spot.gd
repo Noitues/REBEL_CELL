@@ -70,6 +70,19 @@ static func place(legend: Control, overlay: CityMapOverlay) -> float:
 	legend.grow_vertical = Control.GROW_DIRECTION_END
 	legend.size = own
 	var k := fit_scale(own, area.size)
+	# Art pass W8b (§4.3.2): a key that can fold folds instead of shrinking below its text.
+	if k < 1.0 and legend.has_method("force_fold") and not (legend.has_method("foldable") and bool(legend.call("foldable"))):
+		legend.call("force_fold")
+		own = legend.get_combined_minimum_size()
+		legend.size = own
+	# Art pass W8b (§4.3.2, §6.10): a key that folds (big text) is never scaled down (it went
+	# to 9.8 px): it is placed by its folded line at 1:1, and opened it grows up over its room.
+	if legend.has_method("foldable") and bool(legend.call("foldable")):
+		var folded: Vector2 = legend.call("fit_size")
+		legend.scale = Vector2.ONE
+		var y := maxf(MARGIN, area.size.y - folded.y - MARGIN) - (own.y - folded.y)
+		legend.position = Vector2(MARGIN, y)
+		return covered(Rect2(area.position + legend.position, own), node_rects(overlay, false))
 	legend.scale = Vector2(k, k)
 	var lsize := own * k
 	var blocked := node_rects(overlay, false)

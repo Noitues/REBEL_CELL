@@ -149,6 +149,10 @@
 			"seconds": 8.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art_w8b_screens.gd": {
+			"seconds": 20.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_art_w8c_netrun.gd": {
 			"seconds": 27.0,
 			"tier": "fast"

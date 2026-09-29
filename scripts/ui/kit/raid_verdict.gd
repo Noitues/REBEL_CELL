@@ -72,14 +72,21 @@ static func clean_projection(p: RaidResolver.RaidResult) -> bool:
 	return clean(_dict(p))
 
 
-## The verdict's colour: acid when all hold, pink when anything is lost.
+## The verdict's colour (art pass W8b, ART_BIBLE §3.3: CELL_PINK never means harm): GAIN
+## when all hold, HARM when anything is lost. Never alone: the icon and the words say it.
 static func color_of(is_clean: bool) -> Color:
-	return Palette.CELL_ACID if is_clean else Palette.CELL_PINK
+	return Palette.GAIN if is_clean else Palette.HARM
 
 
 ## The verdict's icon: the raid shield when all hold, home when anything is lost.
 static func icon_of(is_clean: bool) -> StringName:
 	return StatIcon.RAIDS if is_clean else StatIcon.HOME
+
+
+## A node's outcome as a glyph (W8b, critique scr/10: the result read by colour alone): a
+## tick when it held, the no-entry mark when it fell.
+static func outcome_icon(held: bool) -> StringName:
+	return StatIcon.CHECK if held else StatIcon.NO_ENTRY
 
 
 static func _dict(p: RaidResolver.RaidResult) -> Dictionary:

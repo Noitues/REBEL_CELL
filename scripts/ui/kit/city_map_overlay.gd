@@ -34,6 +34,14 @@ extends Control
 ## the boss) with no free spot near its node moves inward instead. Sites carry a tier
 ## difficulty cue: `draw_tier` pips under the icon, shared with the legend and mini-map.
 ##
+## Art pass W8b (ART_BIBLE §6.10, §3.6, §9.5): nodes at least 28 px (ICON_RADIUS 14) and
+## placed defences on a 28 px plate with the asset's glyph; labels at `caption` on a GLASS
+## pill (TERMINAL_BG, a TERMINAL_EDGE rule, the node's colour as a stripe) tied to their node
+## by a leader line, a clear gap between any two; threat routes carry the corporation's
+## CorpPattern dashes (`corp_id`) with chevrons, the Cell's links stay solid CELL_TURF; the
+## ISOLATE veil lightens under the city's map mode (§9.5: the city dims 40% and blurs, the map
+## stays sharp); every colour is a Palette token; high contrast drops the pills' glass for #000.
+##
 ## H23: a node off the visible map (outside it or under a blocked area) gets no label; a
 ## moved label stays within LABEL_REACH of its node and never lands on another label.
 ## Every kind has a word (`kind_word`) its tooltip leads with.
@@ -66,7 +74,9 @@ const DASH_ON := 9.0
 const DASH_PERIOD := 16.0
 ## ANIM-R1 M4: a placed defence's marker on its node (screen px radius), and the chevrons
 ## on threat routes (edges with "arrows"): their spacing and half-size (screen px).
-const ASSET_ICON := 9.0
+const ASSET_ICON := 11.2
+## W8b §6.10: a placed defence's plate is ASSET_ICON x this (28 px across on screen).
+const ASSET_PLATE := 1.25
 const ARROW_STEP := 34.0
 const ARROW_SIZE := 6.0
 ## ANIM-R1 M15: the most dashes drawn along one route segment.
@@ -126,7 +136,7 @@ const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP
 	KIND_HOME: "CORE", KIND_TIER: "Site"} # TR
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
 ## how far above the roof the icon floats (px, local).
-const ICON_RADIUS := 13.0
+const ICON_RADIUS := 14.0
 const ICON_RADIUS_BIG := 17.0
 const ICON_LIFT := 10.0
 ## Clearance between two icons (screen px), and how many steps an icon may float up to
@@ -142,9 +152,27 @@ const ICON_STACK_LIMIT := 32
 const PILLAR_HEIGHT := 46.0
 const PILLAR_HEIGHT_BIG := 70.0
 ## Map labels: font size at text scale 1.0 (screen px), padding and gap to the icon (px).
-const TAG_FONT := 13
+const TAG_FONT := UiTheme.CAPTION
 const TAG_PAD := 3.0
 const LABEL_GAP := 4.0
+## W8b §6.10: the gap every label keeps from other labels, icons and pips (screen px), the
+## pill's corner radius and edge (px), and the leader line's width (px).
+const LABEL_CLEAR := 2.0
+const PILL_CORNER := 3.0
+const PILL_EDGE := 1.0
+const LEADER_W := 1.5
+## The ISOLATE / XRAY / BLUEPRINT veils over the city (alpha of their token) when the city is
+## not in map mode (§9.5 map mode dims and blurs it instead), the spotlight's fog.
+const VEIL_ISOLATE := 0.62
+const VEIL_ISOLATE_MAP := 0.35
+const VEIL_XRAY := 0.72
+const VEIL_BLUEPRINT := 0.55
+const SPOT_FOG := 0.8
+## Ink under drawn marks (keylines, plates) and its alphas.
+const INK_KEY := 0.85
+const INK_SOFT := 0.7
+const INK_MID := 0.8
+const INK_HARD := 0.9
 ## Candidate rings a label may step out to when its first spots are taken.
 const LABEL_RINGS := 3
 ## Label priorities (lower is placed first).
@@ -298,6 +326,9 @@ var drawn_tiers: Dictionary = {}
 var draw_markers: bool = true
 var _blocked_rects: Array[Rect2] = []
 var _blocked_controls: Array[Control] = []
+## W8b §3.6: the corporation whose threat routes this map draws (its CorpPattern on the
+## dashes); &"": the nodes' "threat_corp", else plain dashes.
+var corp_id: StringName = &""
 
 
 func _init(p_city: NeonCity = null) -> void:
@@ -525,6 +556,8 @@ func here_marker_rects() -> Array[Rect2]:
 	var xf := get_global_transform()
 	var r := (ICON_RADIUS + HERE_RING + HERE_PIN * 2.0) * _k()
 	out.append(Rect2(xf * (p - Vector2(r, r)), Vector2(r, r) * 2.0 * xf.get_scale()))
+	var tab := here_tab_rect()
+	out.append(Rect2(xf * tab.position, tab.size * xf.get_scale()))
 	return out
 
 
@@ -931,11 +964,13 @@ func _draw() -> void:
 	_c = self
 	match look:
 		Look.ISOLATE:
-			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.02, 0.04, 0.62))
+			# §9.5: the city's map mode dims it 40% and blurs it; a lighter veil on top keeps
+			# a busy district (Solace's green on green) behind the nodes.
+			draw_rect(Rect2(-size, size * 3.0), Color(Palette.SCRIM, VEIL_ISOLATE_MAP if _city_map_mode() else VEIL_ISOLATE))
 		Look.XRAY:
-			draw_rect(Rect2(-size, size * 3.0), Color(0.0, 0.03, 0.05, 0.72))
+			draw_rect(Rect2(-size, size * 3.0), Color(Palette.NET_BG_OUTER, VEIL_XRAY))
 		Look.BLUEPRINT:
-			draw_rect(Rect2(-size, size * 3.0), Color(0.02, 0.1, 0.32, 0.55))
+			draw_rect(Rect2(-size, size * 3.0), Color(Palette.NET_BG_INNER, VEIL_BLUEPRINT))
 		Look.SPOTLIGHT:
 			_spotlight()
 	for k in edges.size():
@@ -944,6 +979,21 @@ func _draw() -> void:
 	# the map too, over its dimming and under its nodes. ANIM-R3 B6: their stamps draw on the
 	# top layer, over the labels (a label hid CLAIMED).
 	city.draw_marks_on(self, true, false)
+
+
+## True when the city behind is in map mode (§9.5: it dims and blurs itself).
+func _city_map_mode() -> bool:
+	return city != null and city.atmosphere().state.map_mode
+
+
+## The corporation whose pattern the threat routes carry (see `corp_id`).
+func threat_corp() -> StringName:
+	if corp_id != &"":
+		return corp_id
+	for n in nodes:
+		if n.has("threat_corp"):
+			return StringName(String(n["threat_corp"]))
+	return &""
 
 
 ## Flowing dashes and packets (redrawn every frame unless reduce-effects).
@@ -1018,18 +1068,17 @@ func _draw_top() -> void:
 	drawn_tiers.clear()
 	for n in nodes:
 		_node(n)
-	# ANIM-R3 B8: before the route's first node the marker stands at the street, with its words.
+	# ANIM-R3 B8: before the route's first node the marker stands at the street.
 	if here_id() == &"" and here_at.x != INF and _travel.is_empty():
 		var p := here_point()
 		if p.x != INF:
 			_here(p, ICON_RADIUS * _k())
-			var f := Palette.mono()
-			var fs := label_font_size()
-			var word := tr_word(HERE_LABEL)
-			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var at := p + Vector2(-w * 0.5, (ICON_RADIUS + HERE_RING + LABEL_GAP) * _k() + f.get_ascent(fs))
-			_c.draw_rect(Rect2(at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
-			_c.draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.CELL_PINK)
+	# W8b (§6.10, critique 27): YOU ARE HERE is a tab on the pin itself, on the node (or the
+	# street stub before the first node), never a label floating in empty space.
+	if _travel.is_empty():
+		var tab := here_tab_rect()
+		if tab.has_area():
+			_here_tab(tab)
 	_c = self
 
 
@@ -1073,7 +1122,7 @@ func _draw_hi() -> void:
 		var k := _k()
 		var hn := _node_dict(hover_id)
 		var hr := (icon_radius(hn) if not hn.is_empty() else ICON_RADIUS * k) + (SELECT_RING + pulse_amplitude() + HOVER_RING) * k
-		_hi.draw_arc(hc, hr, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
+		_hi.draw_arc(hc, hr, 0, TAU, 32, Color(Palette.INK, INK_KEY), 5.0 * k)
 		_hi.draw_arc(hc, hr, 0, TAU, 32, Palette.PAPER, 2.0 * k)
 		for q in 4:
 			var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
@@ -1105,7 +1154,7 @@ func _draw_changes() -> void:
 		var size := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * k
 		var at := p + Vector2(-size.x * 0.5, -ICON_RADIUS_BIG * k - LABEL_GAP * k - size.y - rise)
 		var box := Rect2(at, size)
-		_hi.draw_rect(box.grow(2.0 * k), Color(0, 0, 0, 0.85 * a))
+		_hi.draw_rect(box.grow(2.0 * k), Color(Palette.INK, INK_KEY * a))
 		_hi.draw_rect(box, Color(Palette.NIGHT_SKY, 0.95 * a))
 		_hi.draw_rect(box, Color(col, a), false, 2.0 * k)
 		_hi.draw_string(f, at + Vector2(TAG_PAD * k, TAG_PAD * k + f.get_ascent(fs)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
@@ -1152,8 +1201,8 @@ func _spotlight() -> void:
 	if focus_id != &"" and _lots.has(focus_id):
 		c = _to_local(Vector2(_lots[focus_id]) + Vector2(0.5, 0.5))
 	var r := 230.0
-	var fog := Color(0.01, 0.01, 0.03, 0.8)
-	var clear := Color(0.01, 0.01, 0.03, 0.0)
+	var fog := Color(Palette.NET_BG_OUTER, SPOT_FOG)
+	var clear := Color(Palette.NET_BG_OUTER, 0.0)
 	var ring := PackedVector2Array()
 	for k in 49:
 		ring.append(c + Vector2(cos(TAU * k / 48.0), sin(TAU * k / 48.0) * 0.6) * r)
@@ -1180,7 +1229,7 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
 	# Dark keyline under every path so it separates from the city's own ink.
-	draw_polyline(pts, Color(0, 0, 0, 0.7), width + 5.0, true)
+	draw_polyline(pts, Color(Palette.INK, INK_SOFT), width + 5.0, true)
 	draw_polyline(pts, Color(col, 0.16), width * 4.0, true)
 	if not _is_dashed(e):
 		draw_polyline(pts, col, width, true)
@@ -1191,7 +1240,19 @@ func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
 		return
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
-	if _is_dashed(e):
+	if _is_dashed(e) and e.get("arrows", false) and threat_corp() != &"":
+		# W8b §3.6: a threat route carries its corporation's pattern (helix dots, container
+		# stripes, civic rings, star dots, scan-glitch bars), marching toward home.
+		var kind := Palette.corp_pattern_id(threat_corp())
+		var march := anim_t * crawl_speed() if e.get("flow", true) else 0.0
+		var run := 0.0
+		for k in pts.size() - 1:
+			var length := pts[k].distance_to(pts[k + 1])
+			if not is_finite(length) or length <= 0.0:
+				continue
+			CorpPattern.dashed_line(_c, pts[k], pts[k + 1], kind, col, width * _k(), _k(), march - run)
+			run += length
+	elif _is_dashed(e):
 		var phase := fmod(anim_t * crawl_speed(), DASH_PERIOD) if e.get("flow", true) else 0.0
 		for k in pts.size() - 1:
 			var a := pts[k]
@@ -1246,7 +1307,7 @@ func _chevrons(e: Dictionary, pts: PackedVector2Array) -> void:
 			var p := a + dir * (carry + i * step)
 			var tip := p + dir * s
 			var wing := PackedVector2Array([p - dir * s + side * s, tip, p - dir * s - side * s])
-			_c.draw_polyline(wing, Color(0, 0, 0, 0.8), 4.5 * k)
+			_c.draw_polyline(wing, Color(Palette.INK, INK_MID), 4.5 * k)
 			_c.draw_polyline(wing, col, 2.2 * k)
 		# Where the next chevron falls on the next segment (the spacing runs on round corners).
 		carry = maxf(0.0, carry + n * step - length)
@@ -1278,7 +1339,7 @@ func _node(n: Dictionary) -> void:
 	var top := _centroid(roof)
 	var closed := roof.duplicate()
 	closed.append(roof[0])
-	var ink := Color(0, 0, 0, 0.85 * (DIM_ALPHA if dim else 1.0))
+	var ink := Color(Palette.INK, INK_KEY * (DIM_ALPHA if dim else 1.0))
 	var at := icon_pos(n)
 	var r := icon_radius(n)
 	match look:
@@ -1313,7 +1374,7 @@ func _node(n: Dictionary) -> void:
 		var tk := _k()
 		var t0 := at + Vector2(r * 0.55, r * 0.35)
 		var tick := PackedVector2Array([t0, t0 + Vector2(TICK * 0.35, TICK * 0.4) * tk, t0 + Vector2(TICK, -TICK * 0.55) * tk])
-		_c.draw_polyline(tick, Color(0, 0, 0, 0.9 * ta), 5.0 * tk)
+		_c.draw_polyline(tick, Color(Palette.INK, INK_HARD * ta), 5.0 * tk)
 		_c.draw_polyline(tick, Color(Palette.PAPER, ta), 2.5 * tk)
 	if tier_of(n) > 0:
 		draw_tier(_c, tier_pips_centre(n), tier_of(n), col, _pip_scale(n), DIM_ALPHA if dim else 1.0)
@@ -1334,21 +1395,21 @@ func _node(n: Dictionary) -> void:
 		if landing and drop_stamp_t < 1.0 and drop_t >= 1.0:
 			var grow := lerpf(1.0, Motion.amplitude(&"asset_drop_stamp"), drop_stamp_t)
 			var fade := 1.0 - drop_stamp_t
-			_c.draw_circle(slot, ar * 1.25 * grow, Color(Palette.CELL_PINK, 0.35 * fade))
-			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(0, 0, 0, 0.8 * fade), 7.0 * _k())
-			_c.draw_arc(slot, ar * 1.25 * grow, 0, TAU, 28, Color(Palette.PAPER, fade), 4.0 * _k())
+			_c.draw_circle(slot, ar * ASSET_PLATE * grow, Color(Palette.CELL_PINK, 0.35 * fade))
+			_c.draw_arc(slot, ar * ASSET_PLATE * grow, 0, TAU, 28, Color(Palette.INK, INK_MID * fade), 7.0 * _k())
+			_c.draw_arc(slot, ar * ASSET_PLATE * grow, 0, TAU, 28, Color(Palette.PAPER, fade), 4.0 * _k())
 		# ANIM-R1 M4: the placed defence stays on its node as a marker the size of a map
 		# icon (a dark plate, a pink ring, the asset's own icon), readable at any zoom.
-		_c.draw_circle(slot, ar * 1.25, Color(0, 0, 0, 0.85))
-		_c.draw_arc(slot, ar * 1.25, 0, TAU, 20, Palette.CELL_PINK, 2.0 * _k())
-		AssetIcon.draw_icon(_c, slot, ar, assets[k])
+		_c.draw_circle(slot, ar * ASSET_PLATE, Color(Palette.INK, INK_KEY))
+		_c.draw_arc(slot, ar * ASSET_PLATE, 0, TAU, 20, Palette.CELL_PINK, 2.0 * _k())
+		AssetIcon.draw_icon(_c, slot, ar, assets[k], false)
 		if landing and String(_drop.get("label", "")) != "":
 			# ANIM-R2 R6: the defence that just landed keeps its name under it.
 			var f := Palette.mono()
 			var fs := label_font_size()
 			var word: String = str(_drop["label"])
 			var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var lab_at := slot + Vector2(-w * 0.5, ar * 1.25 + LABEL_GAP * _k() + f.get_ascent(fs))
+			var lab_at := slot + Vector2(-w * 0.5, ar * ASSET_PLATE + LABEL_GAP * _k() + f.get_ascent(fs))
 			_c.draw_rect(Rect2(lab_at - Vector2(TAG_PAD * _k(), f.get_ascent(fs) + TAG_PAD * _k()), Vector2(w, f.get_height(fs)) + Vector2(TAG_PAD, TAG_PAD) * 2.0 * _k()), Color(Palette.NIGHT_SKY, 0.86))
 			_c.draw_string(f, lab_at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, AssetIcon.color_of(assets[k]))
 	if draw_markers and markers.has(n["id"]):
@@ -1363,10 +1424,11 @@ func _node(n: Dictionary) -> void:
 
 
 ## ANIM-R1 M4: where placed asset `k` of `count` on node `n` sits (local px): a row
-## beside the icon, on its right, screen-sized.
+## beside the icon, on its right, screen-sized (W8b: plates of ASSET_ICON x ASSET_PLATE
+## radius, a hair apart).
 func asset_slot(n: Dictionary, k: int, count: int) -> Vector2:
-	var step := ASSET_ICON * 2.8 * _k()
-	var at := icon_pos(n) + Vector2(icon_radius(n) + ASSET_ICON * 1.6 * _k(), 0)
+	var step := ASSET_ICON * ASSET_PLATE * 2.0 * 1.1 * _k()
+	var at := icon_pos(n) + Vector2(icon_radius(n) + ASSET_ICON * ASSET_PLATE * 1.2 * _k(), 0)
 	return at + Vector2(step * k, 0)
 
 
@@ -1407,7 +1469,7 @@ static func draw_tier(ci: CanvasItem, at: Vector2, tier: int, col: Color, scale:
 	var r := TIER_PIP * scale
 	var step := TIER_PIP_STEP * scale
 	var x0 := at.x - step * (TIER_PIPS_MAX - 1) * 0.5
-	var ink := Color(0, 0, 0, 0.85 * alpha)
+	var ink := Color(Palette.INK, INK_KEY * alpha)
 	var lit := Color(col, col.a * alpha)
 	for k in TIER_PIPS_MAX:
 		var p := Vector2(x0 + step * k, at.y)
@@ -1593,10 +1655,10 @@ func _draw_road() -> void:
 	var steps := 16
 	for i in steps + 1:
 		lit.append(_along(pts, lerpf(tail, u, float(i) / steps)))
-	_hi.draw_polyline(lit, Color(0, 0, 0, 0.7), (ROAD_WIDTH + 3.0) * k, true)
+	_hi.draw_polyline(lit, Color(Palette.INK, INK_SOFT), (ROAD_WIDTH + 3.0) * k, true)
 	_hi.draw_polyline(lit, Color(Palette.CELL_ACID, 0.9), ROAD_WIDTH * k, true)
 	var head := _along(pts, u)
-	_hi.draw_circle(head, (ROAD_DOT + 2.0) * k, Color(0, 0, 0, 0.8))
+	_hi.draw_circle(head, (ROAD_DOT + 2.0) * k, Color(Palette.INK, INK_MID))
 	_hi.draw_circle(head, ROAD_DOT * k, Palette.CELL_ACID)
 	_hi.draw_circle(head, ROAD_DOT * 0.45 * k, Palette.PAPER)
 
@@ -1765,14 +1827,14 @@ func _draw_travel() -> void:
 		var period := maxf(Motion.seconds(&"route_target_pulse"), 0.001)
 		var swell := (0.5 + 0.5 * sin(anim_t * TAU / period)) * Motion.amplitude(&"route_target_pulse")
 		var tr_r := icon_radius(_node_dict(_travel["to"])) + (SELECT_RING + swell) * k
-		_hi.draw_arc(to, tr_r, 0, TAU, 32, Color(0, 0, 0, 0.8), 6.0 * k)
+		_hi.draw_arc(to, tr_r, 0, TAU, 32, Color(Palette.INK, INK_MID), 6.0 * k)
 		_hi.draw_arc(to, tr_r, 0, TAU, 32, Palette.CELL_ACID, 3.0 * k)
 	# ANIM-R2 R12: a thick, bright trail along the street behind the head (it was a row of
 	# small dots), a dark keyline under it.
 	var trail := PackedVector2Array()
 	for q in TRAVEL_TRAIL + 1:
 		trail.append(_travel_point(maxf(0.0, travel_t - (TRAVEL_TRAIL - q) * TRAVEL_TRAIL_STEP)))
-	_hi.draw_polyline(trail, Color(0, 0, 0, 0.8), TRAVEL_WIDTH * 2.0 * k, true)
+	_hi.draw_polyline(trail, Color(Palette.INK, INK_MID), TRAVEL_WIDTH * 2.0 * k, true)
 	_hi.draw_polyline(trail, Color(Palette.CELL_ACID, 0.9), TRAVEL_WIDTH * k, true)
 	_hi.draw_polyline(trail, Palette.PAPER, TRAVEL_WIDTH * 0.35 * k, true)
 	_hi.draw_circle(head, TRAVEL_WIDTH * 1.1 * k, Palette.CELL_ACID)
@@ -1807,17 +1869,44 @@ func _stroke_on(pts: PackedVector2Array, share: float, col: Color, width: float)
 		_c.draw_circle(drawn[drawn.size() - 1], width * 2.5, Palette.PAPER)
 
 
+## W8b (§6.10): the YOU ARE HERE tab's rect (local px): on top of the pin over the node that
+## is "here" (or the street marker before the first node); empty when there is none.
+func here_tab_rect() -> Rect2:
+	var p := here_point()
+	if p.x == INF or city == null:
+		return Rect2()
+	var k := _k()
+	var id := here_id()
+	var r := icon_radius(_node_dict(id)) if id != &"" else ICON_RADIUS * k
+	var f := Palette.mono()
+	var fs := label_font_size()
+	var w := f.get_string_size(tr_word(HERE_LABEL), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + TAG_PAD * 2.0 * k
+	var h := f.get_height(fs) + TAG_PAD * 2.0 * k
+	var pin_top := p.y - (r + HERE_RING * k + 2.0 * k + HERE_PIN * k * 1.4)
+	return Rect2(Vector2(p.x - w * 0.5, pin_top - h), Vector2(w, h))
+
+
+## Draws the YOU ARE HERE tab (pink, INK words) at `tab`, joined to the pin under it.
+func _here_tab(tab: Rect2) -> void:
+	var k := _k()
+	var f := Palette.mono()
+	var fs := label_font_size()
+	_c.draw_rect(tab.grow(1.0 * k), Color(Palette.INK, INK_KEY))
+	_c.draw_rect(tab, Palette.CELL_PINK)
+	_c.draw_string(f, tab.position + Vector2(TAG_PAD * k, TAG_PAD * k + f.get_ascent(fs)), tr_word(HERE_LABEL), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.INK)
+
+
 ## The "you are here" mark: a pink ring round the icon and a pin pointing down at it.
 func _here(at: Vector2, r: float) -> void:
 	var k := _k()
 	var ring := r + HERE_RING * k
-	_c.draw_arc(at, ring, 0, TAU, 32, Color(0, 0, 0, 0.85), 5.0 * k)
+	_c.draw_arc(at, ring, 0, TAU, 32, Color(Palette.INK, INK_KEY), 5.0 * k)
 	_c.draw_arc(at, ring, 0, TAU, 32, Palette.CELL_PINK, 2.5 * k)
 	var tip := at - Vector2(0, ring + 2.0 * k)
 	var s := HERE_PIN * k
 	var pin := PackedVector2Array([tip, tip + Vector2(-s, -s * 1.4), tip + Vector2(s, -s * 1.4)])
 	_c.draw_colored_polygon(pin, Palette.CELL_PINK)
-	_c.draw_polyline(pin + PackedVector2Array([pin[0]]), Color(0, 0, 0, 0.85), 1.5 * k)
+	_c.draw_polyline(pin + PackedVector2Array([pin[0]]), Color(Palette.INK, INK_KEY), 1.5 * k)
 
 
 # --- Labels -----------------------------------------------------------------------------
@@ -1849,8 +1938,10 @@ func unplaced_with_room() -> Array[StringName]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+	if here_tab_rect().has_area():
+		marks.append(here_tab_rect())
 	var obstacles := {"icons": icons, "marks": marks, "placed": placed, "ring_c": ring_centre(), "ring_r": ring_radius(),
-		"area": label_area(), "blocks": label_blocks()}
+		"area": label_area(), "blocks": label_blocks(), "gap": LABEL_CLEAR * _k()}
 	for n in nodes:
 		var lines := label_lines(n["id"])
 		if lines.is_empty() or got.has(String(n["id"])) or _roof(n["id"]).is_empty():
@@ -1895,8 +1986,7 @@ func label_lines(id: StringName) -> PackedStringArray:
 	if n.is_empty() or is_dimmed(id):
 		return lines
 	var text := String(n.get("label", ""))
-	if text == "" and n.get("here", false):
-		text = HERE_LABEL
+	# W8b: the "here" node's YOU ARE HERE is its pin's tab (here_tab_rect), not a label.
 	# H24 K4: a node lit from its list row shows its name even where the map shows none.
 	if text == "" and id == hover_id:
 		text = String(n.get("name", ""))
@@ -1952,6 +2042,9 @@ func _place_labels() -> Array[Dictionary]:
 			icons.append({"id": n["id"], "at": icon_pos(n), "r": icon_radius(n)})
 			if tier_of(n) > 0:
 				marks.append(tier_pips_rect(n))
+	var here_tab := here_tab_rect()
+	if here_tab.has_area():
+		marks.append(here_tab)
 	var area := label_area()
 	var blocks := label_blocks()
 	var ring_c := ring_centre()
@@ -2221,8 +2314,9 @@ static func _visible_at(at: Vector2, area: Rect2, blocks: Array[Rect2]) -> bool:
 
 ## True when `rect` overlaps a label placed before it.
 static func _hits_label(rect: Rect2, obstacles: Dictionary) -> bool:
+	var gap: float = obstacles.get("gap", 0.0)
 	for other: Dictionary in obstacles["placed"]:
-		if rect.intersects(other["rect"]):
+		if rect.grow(gap).intersects(other["rect"]):
 			return true
 	return false
 
@@ -2266,14 +2360,17 @@ static func _clamp_into(rect: Rect2, area: Rect2) -> Rect2:
 ## True when `rect` overlaps a placed label, a node icon, a tier pip row or the
 ## selection ring.
 static func _blocked(rect: Rect2, obstacles: Dictionary) -> bool:
+	# W8b §6.10: a clear gap round every label (the densest cluster's labels touched at 1.6).
+	var gap: float = obstacles.get("gap", 0.0)
+	var g := rect.grow(gap)
 	for other: Dictionary in obstacles["placed"]:
-		if rect.intersects(other["rect"]):
+		if g.intersects(other["rect"]):
 			return true
 	for ic: Dictionary in obstacles["icons"]:
-		if _rect_hits_disc(rect, ic["at"], ic["r"]):
+		if _rect_hits_disc(g, ic["at"], ic["r"]):
 			return true
 	for m: Rect2 in obstacles["marks"]:
-		if rect.intersects(m):
+		if g.intersects(m):
 			return true
 	var ring_c: Vector2 = obstacles["ring_c"]
 	return ring_c.x != INF and _rect_hits_disc(rect, ring_c, obstacles["ring_r"])
@@ -2284,19 +2381,29 @@ static func _rect_hits_disc(rect: Rect2, c: Vector2, r: float) -> bool:
 	return q.distance_to(c) < r
 
 
-## Draws a placed label: a dark box with a colour edge, one line per row, and a thin
-## leader back to its node when it had to step away.
+## Draws a placed label (W8b §6.10): a GLASS pill (TERMINAL_BG, a TERMINAL_EDGE rule, the
+## node's colour as its stripe), one line per row, and a leader line from the node's icon to
+## the pill whenever they don't touch.
 func _tag_box(l: Dictionary) -> void:
 	var rect: Rect2 = l["rect"]
 	var col: Color = l["col"]
 	var f := Palette.mono()
 	var fs: int = l["fs"]
 	var pad: float = l["pad"]
+	var k := _k()
+	var hc := Settings.high_contrast
 	var near := Vector2(clampf(l["at"].x, rect.position.x, rect.end.x), clampf(l["at"].y, rect.position.y, rect.end.y))
-	if near.distance_to(l["at"]) > float(l["r"]) + LABEL_GAP * _k() * 2.0:
-		_c.draw_line(l["at"] + (near - l["at"]).normalized() * float(l["r"]), near, Color(col, 0.7), 1.0)
-	_c.draw_rect(rect, Color(Palette.NIGHT_SKY, 0.86))
-	_c.draw_rect(Rect2(rect.position, Vector2(2.0 * _k(), rect.size.y)), col)
+	if near.distance_to(l["at"]) > float(l["r"]) + 0.5 * k:
+		var from: Vector2 = l["at"] + (near - l["at"]).normalized() * float(l["r"])
+		_c.draw_line(from, near, Color(Palette.INK, INK_KEY), (LEADER_W + 2.0) * k)
+		_c.draw_line(from, near, Color(col, 1.0), LEADER_W * k)
+	var pill := StyleBoxFlat.new()
+	pill.bg_color = HighContrast.BG if hc else Palette.TERMINAL_BG
+	pill.border_color = Palette.TEXT_HI if hc else Palette.TERMINAL_EDGE
+	pill.set_border_width_all(maxi(1, roundi(PILL_EDGE * k * (2.0 if hc else 1.0))))
+	pill.set_corner_radius_all(roundi(PILL_CORNER * k))
+	_c.draw_style_box(pill, rect)
+	_c.draw_rect(Rect2(rect.position + Vector2(PILL_EDGE * k, PILL_EDGE * k), Vector2(2.0 * k, rect.size.y - PILL_EDGE * 2.0 * k)), col)
 	var y := rect.position.y + pad + f.get_ascent(fs)
 	for line in l["lines"]:
 		# ANIM-R4 H11b: a result line "50 → 40 HOLDS" draws its arrow from the fallback face.
@@ -2315,7 +2422,7 @@ func _mark(n: Dictionary, at: Vector2, col: Color) -> void:
 				var t := TAU * k / SPRAY_SEGMENTS
 				var wob := sin(t * 3.0 + float(seed_v % 97)) * SPRAY_WOBBLE
 				ring.append(at + Vector2(cos(t), sin(t) * 0.55) * (SPRAY_RADIUS + wob))
-			_c.draw_polyline(ring, Color(0, 0, 0, 0.8), 6.0, true)
+			_c.draw_polyline(ring, Color(Palette.INK, INK_MID), 6.0, true)
 			_c.draw_polyline(ring, Color(Palette.CELL_TURF, 0.95), 3.0, true)
 			for d in SPRAY_DRIPS:
 				var t := TAU * (0.15 + 0.2 * d) + float((seed_v >> (d * 4)) % 7) * 0.05
@@ -2326,7 +2433,7 @@ func _mark(n: Dictionary, at: Vector2, col: Color) -> void:
 		MARK_CROSS:
 			var s := CROSS_SIZE
 			for pair in [[Vector2(-s, -s * 0.6), Vector2(s, s * 0.6)], [Vector2(-s, s * 0.6), Vector2(s, -s * 0.6)]]:
-				_c.draw_line(at + pair[0], at + pair[1], Color(0, 0, 0, 0.85), 6.0)
+				_c.draw_line(at + pair[0], at + pair[1], Color(Palette.INK, INK_KEY), 6.0)
 				_c.draw_line(at + pair[0], at + pair[1], col, 3.0)
 
 
@@ -2392,7 +2499,7 @@ static func icon_shape(kind: String, p: Vector2, r: float) -> PackedVector2Array
 ## with MapLegend so the key shows exactly what the map draws. `alpha` dims it.
 static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: Color, text: String = "", alpha: float = 1.0) -> void:
 	var shape := icon_shape(kind, p, r)
-	var ink := Color(0, 0, 0, 0.85 * alpha)
+	var ink := Color(Palette.INK, INK_KEY * alpha)
 	var edge := Color(col, alpha)
 	var w := maxf(1.5, r * 0.13)
 	ci.draw_colored_polygon(shape, Color(Palette.NIGHT_SKY, 0.94 * alpha))

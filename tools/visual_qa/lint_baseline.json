@@ -14,36 +14,17 @@
 		"res://scripts/ui/kit/asset_card.gd": {
 			"color": 1
 		},
-		"res://scripts/ui/kit/city_map_overlay.gd": {
-			"color": 23
-		},
 		"res://scripts/ui/kit/city_palette.gd": {
 			"color": 22
 		},
 		"res://scripts/ui/kit/graffiti_scrawl.gd": {
 			"font_size_assign": 1
 		},
-		"res://scripts/ui/kit/grid_map_view.gd": {
-			"font_const": 3
-		},
-		"res://scripts/ui/kit/hud_bar.gd": {
-			"color": 1,
-			"draw_size": 2
-		},
-		"res://scripts/ui/kit/hud_stats.gd": {
-			"color": 2
-		},
 		"res://scripts/ui/kit/map_legend.gd": {
 			"color": 1
 		},
-		"res://scripts/ui/kit/netrun_map_view.gd": {
-			"draw_size": 3
-		},
 		"res://scripts/ui/kit/raid_fx_layer.gd": {
 			"color": 8
-		},
-		"res://scripts/ui/kit/raid_playout_panel.gd": {
-			"font_override": 1
 		},
 		"res://scripts/ui/kit/zine_note.gd": {
 			"draw_size": 1

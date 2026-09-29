@@ -82,14 +82,14 @@ func test_the_start_panel_ice_and_seed_are_pad_reachable() -> void:
 	var hq: Control = add_child_autofree(load("res://scenes/hq/hq_scene.tscn").instantiate())
 	hq.show_start()
 	await _frames()
-	var spin := hq.find_child("IceSpin", true, false) as SpinBox
-	var up := hq.find_child("IceUp", true, false) as Button
-	var seed := hq.find_child("SeedSpin", true, false) as SpinBox
-	var next := hq.find_child("SeedNext", true, false) as Button
-	assert_true(up != null and next != null)
-	up.pressed.emit()
+	# Art pass W8b: ICE and the seed are W2 Steppers (the pad steps them with left / right).
+	var spin := hq.find_child("IceSpin", true, false) as Stepper
+	var seed := hq.find_child("SeedSpin", true, false) as Stepper
+	assert_true(spin != null and seed != null)
+	assert_eq(spin.focus_mode, Control.FOCUS_ALL, "ICE takes pad focus")
+	spin.nudge(1)
 	assert_eq(int(spin.value), 1)
-	next.pressed.emit()
+	seed.nudge(1)
 	assert_eq(int(seed.value), 2)
 	_end()
 

@@ -251,12 +251,12 @@ func test_run_rows_say_what_clearing_gives_and_light_their_node() -> void:
 	var rows := hq.find_child("RunRows", true, false) as VBoxContainer
 	var sets := {}
 	var buttons: Array[Button] = []
-	for b in rows.get_children():
+	for b in rows.find_children("Run_*", "Button", true, false):  # W8b: each run in its framed row
 		if not (b is Button and String(b.name).begins_with("Run_")):
 			continue
 		buttons.append(b)
 		var id := StringName(String(b.name).trim_prefix("Run_"))
-		var gains := rows.get_node_or_null("Gains_%s" % id) as Control
+		var gains := rows.find_child("Gains_%s" % id, true, false) as Control
 		assert_not_null(gains, "%s: its gains under it" % id)
 		var icons := PackedStringArray()
 		for g in gains.get_children():
@@ -329,7 +329,7 @@ func test_no_two_kinds_share_an_icon_and_the_keys_draw_the_map_icons() -> void:
 	var route: RouteLegend = add_child_autofree(RouteLegend.new(RouteLegend.ORDER))
 	await _frames(4)
 	for kind in RouteLegend.ORDER:
-		var sw := route.body.get_node("Kind_%s/Swatch" % kind) as Control
+		var sw := route.body.find_child("Kind_%s" % kind, true, false).get_node("Swatch") as Control
 		assert_eq(String(sw.get_meta(&"icon_id", "")), CityMapOverlay.icon_id(kind), "route key %s draws the map's icon" % kind)
 	# The mini-map floats the map's icons over objective Sites and CORE.
 	var mini: GridMapView = add_child_autofree(GridMapView.new())
@@ -384,7 +384,7 @@ func test_map_words_are_translated_once() -> void:
 	_pseudo(true)
 	hq.show_grid()
 	await _frames(2)
-	for b in hq.find_child("RunRows", true, false).get_children():
+	for b in hq.find_child("RunRows", true, false).find_children("Run_*", "Button", true, false):
 		if b is Button:
 			assert_eq((b as Button).auto_translate_mode, Node.AUTO_TRANSLATE_MODE_DISABLED)
 			assert_true((b as Button).text.begins_with(CityMapOverlay.tier_text(1)) or (b as Button).text.begins_with(CityMapOverlay.tier_text(2)), "%s: the tier translated" % b.name)

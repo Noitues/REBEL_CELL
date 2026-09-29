@@ -52,6 +52,8 @@ const FRAME_WAIT_SHARE := 0.35
 ## ANIM-R2 R6: the log window beside a playout map (px at text scale 1.0; it was 330x330,
 ## half the window: now a short strip that follows its newest line).
 const LOG_SIZE := Vector2(330, 150)
+## The step label's width at text scale 1.0 (px).
+const STEP_LABEL_W := 90.0
 ## ANIM-R3 B5: the RAID FEED's sentences, translated once here: display names, never an id
 ## (the resolver's own log lines named Sites by id: "Turret at t1_a hits..."). Each takes
 ## names and numbers in order.
@@ -98,9 +100,9 @@ func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -
 	add_child(controls)
 	step_label = Label.new()
 	step_label.text = tr("Setup")
-	step_label.custom_minimum_size.x = 90
+	step_label.custom_minimum_size.x = STEP_LABEL_W * Settings.text_scale
 	step_label.add_theme_font_override("font", Palette.display())
-	step_label.add_theme_font_size_override("font_size", 22)
+	step_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.TITLE))  # W8b §4.3.1: a type step
 	step_label.add_theme_color_override("font_color", Palette.CELL_ACID)
 	controls.add_child(step_label)
 	for s in [1.0, 2.0, 4.0]:
@@ -138,6 +140,11 @@ func attach_fx(p_results: Dictionary, home: StringName, home_max: int, color: Co
 	if fx == null or not is_instance_valid(fx):
 		fx = RaidFxLayer.new(overlay)
 		overlay.add_child(fx)
+		# W8b (critique 24/26): the raid's glow, hits and numbers draw under the map's labels
+		# (a node's name is never covered; the numbers keep off the labels themselves).
+		var labels := overlay.get_node_or_null(^"Labels")
+		if labels != null:
+			overlay.move_child(fx, labels.get_index())
 	fx.setup(p_results, home, home_max, color)
 	overlay.draw_markers = false
 	return fx

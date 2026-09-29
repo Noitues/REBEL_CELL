@@ -106,6 +106,8 @@ func test_esc_leaves_the_share_code_field() -> void:
 	var hq: Control = add_child_autofree(load("res://scenes/hq/hq_scene.tscn").instantiate())
 	hq.show_start()
 	await _frames()
+	hq.set_codes_open(true)  # W8b: the share code sits in its folded drawer
+	await _frames()
 	var field := hq.find_child("CodeEdit", true, false) as LineEdit
 	field.grab_focus()
 	await _frames()
