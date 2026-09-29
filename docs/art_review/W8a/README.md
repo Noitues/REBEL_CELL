@@ -11,7 +11,13 @@ Branch `art/w8a-menus`. The "before" pictures are the W10 baseline (`art-pass/do
 | `page_transition_strip.jpg` | Title → slots (glass slides in from the right) and title → codex (glass tabs slide in, the paper spread drops), at 0.1 s steps. Captured with `--demo-page-after=<page>`. |
 | `baked_art.jpg`, `logo_rebel_cell.png` | The baked SVGs as the game rasterises them: logo, NEVER SLEEP, TRUST NO ONE, and the five landmark glyphs. |
 
-The last two small fixes (the plan note's empty fourth line and the empty-slot hint in `TEXT_HI`) landed after these captures were taken.
+**Review round 1:** I recaptured title, options and modem (`modem_*.jpg`) at every scale after the orchestrator's review.
+- NEVER SLEEP and TRUST NO ONE are redrawn as solid marker graffiti: `CELL_PINK` letterforms with an `INK` keyline, a hard shadow, and drips with bulbs.
+- Options keeps a side room inside its scrolling view wide enough for the pad focus scale plus brackets, so no row clips (tested for every tab at 1.0, 1.6 and 2.0, pad and mouse).
+- LEAVE THE MODEM is placed under the spinner in the REMOVE A CARD window (granted edit in `netrun_scene.gd`).
+- The plan note is taped only over the menu's frame.
+
+The other screens' pictures predate two small fixes: the plan note's empty fourth line and the empty-slot hint in `TEXT_HI`.
 
 ## What changed (files)
 
@@ -64,7 +70,7 @@ The last two small fixes (the plan note's empty fourth line and the empty-slot h
 
 ## Could not do / known gaps
 
-- **`test_anim4b_run_drag_drop` fails at 1.6 on this branch: "the spinner covers no LeaveModem".** It passes on `art-pass` and on my pre-merge commit, and fails only with both combined. The shared glass title now scales, which moves the Modem's REMOVE A CARD window down about 4 px onto `LeaveModem`, and `LeaveModem` is placed at the fixed `LEAVE_AT` in `netrun_scene.gd`. That file is W8c's to fix: place the button under the window.
+- **Fixed in review round 1: the Modem overlap** (`test_anim4b_run_drag_drop` at 1.6). `LeaveModem` now follows the spinner. I placed it under the spinner rather than under the whole window, because under the window it would leave the screen at 1.6.
 - **`FitScroll`/`ScrollHint` (W2) can crash when content measures huge for one frame** (wrapped labels at width 0). I fixed my callers by giving wrapped labels their width up front. The hint's layout chase itself is unchanged.
 - **High contrast** is not drawn specially for the custom-drawn paper pieces (case file, receipts, badges).
 - **2.0 slots:** one case file per row, and the view shows about one folder at a time.
