@@ -172,6 +172,37 @@ Review folder: `docs/art_review/W2/`. The component lab is `tools/design_lab/com
 - W8: use `IconMark.attach(b, StatIcon.TRASH)` on real Delete buttons (the Danger X texture doesn't scale).
 - W3: the RESPIN sticker's words overrun at 1.6.
 
+### 2026-09-29 — Art pass W5: characters (merged into `art-pass`)
+Review folder: `docs/art_review/W5/`. Briefs are in `docs/art_briefs/characters/` (24). Concepts are in `W5/concepts/`: 47 pixel-art busts, not game assets.
+
+**Operatives (§7.1)**
+- Eight class silhouettes and props in `Palette.class_accent`.
+- The operative's tint is the accent lightened or darkened by 7%. At 12%, a dark Overclocker drifted towards Breaker's pink.
+- Four expressions (`PortraitArt.Expr`; `Expression` is a native class name):
+  - hurt adds two `HARM` scratches and a crack;
+  - triumphant raises a fist;
+  - flatlined greys everything, with a flat line.
+- The closest class pair (Rigger/Botnet) differs by a mask distance of 0.142. The test's floor is 0.12.
+
+**Polaroids and dossiers**
+- The Polaroid caption is the rank ("RANK n", or "R n" when compact), so the name isn't repeated.
+- Polaroid handwriting is set at `label` and steps down only to fit, never below `caption`.
+- Dossier stats are icon + number fields, read-only from the campaign.
+
+**Stamps:** FLATLINED stamps and low-HP glitch bars use `HARM` (they were pink). "ON <SITE>" stamps are ink.
+
+**Enemies and bosses (§7.2)**
+- Enemies fill the body with their corp's `CorpPattern`. Bosses also get a pattern halo.
+- `Hologram` shows a bust, or a boss at 40% of the screen height dimmed to 0.5 behind its wheel.
+  - The intro is T4. Under reduce effects it's a cross-fade.
+  - The `crt_overlay` settings are scan 0.18, roll 0.12, flicker 0.02.
+- Enemies with no corp (the summoned drones and the Mirror templates) get no brief of their own.
+- Text under 12 px in the WIRE and MUGSHOT looks was removed rather than enlarged.
+
+**Proposal for the bible (not applied):** §4.1 says handwriting is never under 16 px. That can't hold on the 60 px compact Polaroid, so suggest "16 px where the frame allows".
+
+**Orchestrator merge:** W2's and W5's appended motion entries were combined, and `ui_motion.tres` was rebuilt from W2's version plus W5's three hologram entries.
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few
