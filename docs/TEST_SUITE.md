@@ -75,7 +75,10 @@ python tools/run_windowed.py --log <file> -- res://tools/design_lab/motion_lab.t
   runner catches that).
 - **Order.** Shards run scripts in another order than the single process does. That
   surfaced one leak (pad reachability left the pad active); a script must leave the
-  Settings and autoload state it changes as it found it.
+  Settings and autoload state it changes as it found it. ANIM-R5: a script that fails in
+  its shard is run again alone; `ORDER-DEPENDENT <script>: passes alone` means its result
+  depends on what ran before it (state leaking between scripts; ANIM-R5 found one in
+  `test_anim_r4_city`'s verdict sweep). The run still fails. `--no-isolate` skips the rerun.
 
 ## Tiers and the manifest
 

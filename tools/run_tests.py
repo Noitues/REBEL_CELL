@@ -9,6 +9,11 @@ exits non-zero on any failure, crash or timeout.
     python tools/run_tests.py --tier fast     # the fast tier only (iteration)
     python tools/run_tests.py --select pass24 # scripts whose path contains "pass24"
     python tools/run_tests.py --update-times  # also write measured times to the manifest
+    python tools/run_tests.py --no-isolate    # don't rerun failing scripts alone
+
+A script that fails in its shard is run again alone (ANIM-R5): when it passes alone its
+result depends on what ran before it in the shard (state leaking between scripts), and it
+is reported as ORDER-DEPENDENT. The run still fails either way.
 
 Each shard gets its own user:// directory (APPDATA / XDG_DATA_HOME point into the
 shard's output folder), so save slots, profiles and GUT's temp files never collide
@@ -93,6 +98,51 @@ def parse_junit(path: Path) -> dict:
     return res
 
 
+def godot_cmd(args, scripts: list[str], xml: Path) -> list[str]:
+    # Headless already means no window and the Dummy audio driver; the flag says so.
+    return [args.godot, "--headless", "--audio-driver", "Dummy", "--path", str(ROOT), "-s", "addons/gut/gut_cmdln.gd",
+            "-gconfig=", "-gexit", "-glog=1", "-gtest=" + ",".join(scripts),
+            "-gjunit_xml_file=" + str(xml)] + args.gut_arg
+
+
+def isolate(scripts: list[str], out: Path, args) -> None:
+    """Runs each failing script alone (at most --jobs at once) and says whether it passes
+    alone: then its failure depends on the scripts before it in its shard."""
+    print()
+    print(f"run_tests: rerunning {len(scripts)} failing script(s) alone to spot order dependence")
+    todo = list(enumerate(scripts))
+    running: list[dict] = []
+    while todo or running:
+        while todo and len(running) < max(1, args.jobs):
+            k, s = todo.pop(0)
+            d = out / f"alone{k}"
+            if d.exists():
+                shutil.rmtree(d)
+            d.mkdir(parents=True)
+            log = open(d / "gut.log", "w", encoding="utf-8", errors="replace")
+            p = subprocess.Popen(godot_cmd(args, [s], d / "results.xml"), cwd=str(ROOT), stdout=log,
+                                 stderr=subprocess.STDOUT, env=shard_env(d / "userdata"))
+            running.append({"s": s, "p": p, "log": log, "dir": d, "start": time.monotonic()})
+        for r in list(running):
+            rc = r["p"].poll()
+            if rc is None and time.monotonic() - r["start"] > args.timeout:
+                r["p"].kill()  # only this runner's own child process
+                rc = r["p"].wait()
+            if rc is None:
+                continue
+            r["log"].close()
+            running.remove(r)
+            xml = r["dir"] / "results.xml"
+            alone_fails = parse_junit(xml)["failures"] if xml.exists() else None
+            if alone_fails is None:
+                print(f"  ALONE {r['s']}: wrote no results (log {r['dir'] / 'gut.log'})")
+            elif alone_fails:
+                print(f"  ALONE {r['s']}: fails alone too ({len(alone_fails)} failing)")
+            else:
+                print(f"  ORDER-DEPENDENT {r['s']}: passes alone; it fails after the scripts before it in its shard")
+        time.sleep(0.5)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-j", "--jobs", type=int, default=4, help="number of shards (Godot processes)")
@@ -104,6 +154,7 @@ def main() -> int:
     ap.add_argument("--update-times", action="store_true", help="write measured script times to the manifest")
     ap.add_argument("--list", action="store_true", help="print the shards and exit")
     ap.add_argument("--gut-arg", action="append", default=[], help="extra GUT argument for every shard (repeatable), e.g. --gut-arg=-gunit_test_name=foo")
+    ap.add_argument("--no-isolate", action="store_true", help="don't rerun failing scripts alone to spot order-dependent ones")
     args = ap.parse_args()
 
     manifest = load_manifest()
@@ -143,10 +194,7 @@ def main() -> int:
             shutil.rmtree(shard_dir)
         shard_dir.mkdir(parents=True)
         xml = shard_dir / "results.xml"
-        # Headless already means no window and the Dummy audio driver; the flag says so.
-        cmd = [args.godot, "--headless", "--audio-driver", "Dummy", "--path", str(ROOT), "-s", "addons/gut/gut_cmdln.gd",
-               "-gconfig=", "-gexit", "-glog=1", "-gtest=" + ",".join(sh),
-               "-gjunit_xml_file=" + str(xml)] + args.gut_arg
+        cmd = godot_cmd(args, sh, xml)
         log = open(shard_dir / "gut.log", "w", encoding="utf-8", errors="replace")
         p = subprocess.Popen(cmd, cwd=str(ROOT), stdout=log, stderr=subprocess.STDOUT,
                              env=shard_env(shard_dir / "userdata"))
@@ -209,6 +257,9 @@ def main() -> int:
             json.dump(manifest, f, indent="\t", sort_keys=True)
             f.write("\n")
         print(f"run_tests: updated times for {len(measured)} scripts in {MANIFEST.relative_to(ROOT)}")
+
+    if failures and not args.no_isolate:
+        isolate(sorted({name for name, _t, _m in failures}), out, args)
 
     ok = not failures and not problems
     print("run_tests: PASSED" if ok else "run_tests: FAILED")
