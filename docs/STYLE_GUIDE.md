@@ -205,12 +205,37 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   holds it. The SEND IT replay keeps presses on the fight's own controls (SEND IT, RESPIN,
   UNDO, the hand): they end the replay and do nothing else, so a turn is never played blind.
   In a menu the Settings key passes too (Esc while a pause-menu line types closes it).
-  ANIM-R5: the raid playout follows `MotionSkip.verdict` too (a press that works the screen
-  ends the current step and passes on; it used to pass without ending it). **One exception:**
+  ANIM-R5: the raid playout follows `MotionSkip.verdict` too and joins `MotionSkip.GROUP` (its
+  step ends with every other running motion): a press that works the screen ends the current
+  step and passes on (it used to pass without ending it). **One exception:**
   a press that drives the playout itself (a focus move, which is how keys and the pad reach
   1x / 2x / 4x and Skip, and a press on those buttons) passes without ending the step:
   stepping onto 2x or pressing it speeds the raid up, it never skips the step being watched
   (Skip makes its own jump).
+  ANIM-R5: one press completes every skippable motion running on screen, not only the one
+  whose helper saw it first: a stray key during a flight and a drop, or a page entrance and
+  a flight, ends them all (it used to end one; a focus move already ended all). Every helper
+  calls `MotionSkip.handle` (the verdict, then every running motion completed, then the
+  press consumed on CONSUME) and joins `MotionSkip.GROUP` (`motion_running()`,
+  `complete_motion()`, `motion_keeps()` when it keeps presses). The verdict counts the keeps
+  of every running helper (a click on SEND IT during the replay is kept even when a flight
+  sees it first). A helper an open pause menu covers is left alone; helpers inside the pause
+  menu (its lines' typing) own its presses with it. Menus ask the same rule: a click on a
+  line trusts the hovered control and the line's button mask like any other click.
+- **Switching an entry off (ANIM-R5).** `enabled = false` shows the end state at once, by
+  kind of entry: an entry with a motion of its own never plays (`Motion.live` is false; its
+  time and size stay, the hold and look of the end state); a part of another motion that a
+  view reads as a number (`UiMotionData.OFF_PARTS`: the projectile's share of a hit line,
+  the riding number's swap, shrink and PERFECT size, the break's crack, the MODEM tubes'
+  strike and flicker, the forecast change's fade, the gaps between sides and attackers, the
+  drag ghost's tilt, the hit freeze, a stamp's fade-in) takes no time and shows no motion
+  (`Motion.seconds` / `delay_of` 0, `amplitude` 0 for a share, px or frames, 1 for a
+  scale); a tuning of another entry (`UiMotionData.ALWAYS_ON`: the ghost's full-tilt speed,
+  SEND IT's drip split) has nothing of its own and validation refuses it off.
+- **The lab shows the real motion (ANIM-R5).** Each id's demo plays on the real piece (a
+  live combat scene, the screen, the city map, the raid, Fx) or, for a motion the game
+  plays with a Motion helper, that same helper on a lab piece. `test_motion_lab_demos.gd`
+  plays every demo with `Motion.recording` on and checks the id is read by the real piece.
 
 ### 5.2 Combat motion (the Animation pass, ANIM-2 / ANIM-3)
 - **Replay, never re-run.** The state is final at once; motion replays the engine's own
@@ -438,9 +463,19 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **ANIM-R4 screens**: the loot page stays (inert) until the offers not taken have fallen
   inside its window, then leaves; drawn words are translated once (LOOT / CONTINUE, the loot's
   graffiti tag and scrawls) and measured as drawn, the tag shrinking to fit its window; a
-  focus tip never folds under 26 columns and goes beside (off the MODEM sign); a flapping BUY
-  keeps off its card's text; a price refusal under a narrow tag wraps at its dot; an event's
-  story types within 0.8 s on paper as tall as its words.
+  focus tip never folds under 20 columns (`FocusTip.FOLD_MIN`, DECISIONS ANIM-R4 C7) and
+  goes beside (off the MODEM sign); a flapping BUY keeps off its card's text; a price
+  refusal under a narrow tag wraps at its dot; an event's story types within 0.8 s on paper
+  as tall as its words.
+- **ANIM-R5 netrun screens**: typing never changes a layout (words are shaped whole while
+  they type; paper is at least as tall as its content); a subtitle page types within 0.8 s,
+  is paged again when its band changes shape, never shrinks under 12 px x the text size, and
+  the event's and the run end's bands hold two lines; a page's focus lands once its words
+  are whole (a press completes them). The run's end is a window over the city with a verdict
+  stamp (FLATLINED / JACKED OUT / HOME FELL), the operative's fate (a flatline is for good)
+  and why Heat rose. Flights take 0.7 s, arrive at x0.55 and pulse the tag they land on. A
+  route move keeps its page's presses (they end the move, nothing else); "then:" icons carry
+  their words; the Modem's socket list says "Chips go into:".
 
 ## 6. Accessibility
 Reduce-effects toggle, flash limiter (≤ 3 flashes/s, on by default), glyphs for every

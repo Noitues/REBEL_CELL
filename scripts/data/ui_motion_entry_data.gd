@@ -19,7 +19,8 @@ extends Resource
 ## for splits of a motion's time or of a quantity; px per second for speeds; a count for
 ## pulses.
 @export var amplitude: float = 0.0
-## Off = the end state at once, as under reduce effects.
+## Off = the end state at once, as under reduce effects (ANIM-R5: by kind of entry, see
+## UiMotionData.OFF_PARTS and ALWAYS_ON).
 @export var enabled: bool = true
 
 

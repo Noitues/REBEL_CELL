@@ -308,8 +308,8 @@ func test_flights_and_drops_follow_the_one_rule() -> void:
 	assert_true(layer.busy(), "and the stamp plays on")
 	menu.free()
 	var got := counter.got
-	# One press each: the helper nearest the front ends its motion and consumes the press.
-	get_viewport().push_input(_key(KEY_SEMICOLON))
+	# ANIM-R5: one press completes both (it used to take one each: the consumed press
+	# reached only the helper nearest the front).
 	get_viewport().push_input(_key(KEY_SEMICOLON))
 	assert_eq(FlightFx.active_count(holder), 0)
 	assert_false(layer.busy())

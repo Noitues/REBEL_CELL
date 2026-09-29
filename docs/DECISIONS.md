@@ -528,6 +528,108 @@ Forward+), other agents' runs sharing it.
   WON/LOST - ...", the one-line profile sentence.
 - **Expectation changes:** `test_horizontal_pass24_city` (the gains row opens with its caption),
   `test_anim_r4_city` (a fallen node is named by its outcome).
+
+#### 2026-09-28 — Animation pass — ANIM-R5 motion rules and tests
+The fifth fix batch of the Animation pass review, motion rules, test infrastructure and docs
+(fix agent D, R1-R8). Every call below was the implementer's (the standing rule: nothing
+deferred). Views, tools, tests and docs only; `scripts/data/` gains two consts (below), no
+field. Tests: `tests/unit/test_anim_r5_rules.gd` (full tier), `tests/unit/test_motion_lab_demos.gd`
+(full tier), `tests/unit/test_suite_compiles.gd` (full tier, split out of the integrity
+test); R4 / R1 tests adjusted where they pinned the old behaviour (below).
+
+- **R1 one rule in every helper.** Typing, the Dialogue subtitle and MenuMotion hand-rolled
+  the press test and the verdict (`is_press`, `pause_open`, `works_ui`); they now call
+  `MotionSkip.handle` like the others. `MenuMotion.works_menu` is `MotionSkip.works_ui`, so
+  a click on a menu line trusts the hovered control (a line under a panel isn't clicked)
+  and the line's `button_mask` (a right-click works nothing), as `button_at` does. Menus
+  lose two looser passes: an accept while focus is on no usable button and a click on a
+  disabled line are now consumed (they worked nothing either way). `pause_open(node)` is
+  false for a node inside the open PauseMenu (its lines' MenuMotion owns the menu's presses
+  with it; MenuMotion's own check moved into MotionSkip as `in_pause_menu`).
+- **R2 one press completes every running motion.** A consumed press reached only the first
+  helper in `_input` order, so a stray key during a flight and a drop (or a page entrance and
+  a flight) ended one of them; a focus move (passed on) ended all. Now defined once in
+  MotionSkip: every helper joins `MotionSkip.GROUP` (`register`) and answers
+  `motion_running()` / `complete_motion()` (and `motion_keeps()` when it keeps presses);
+  `handle` gives one verdict (the keeps of every running helper count: a click on SEND IT
+  seen first by a flight is kept, never played blind), then completes every running helper
+  (PASS and CONSUME alike), then consumes on CONSUME; `consume` completes them all too, so a
+  helper that consumes by hand still does. Helpers a PauseMenu covers are left alone.
+  Registered: Typing's skip nodes, Dialogue, MenuMotion, DropLayer, FlightFx, PageTransition,
+  the combat replay (keeps SEND IT, RESPIN, UNDO, the hand) and the netrun route move. The
+  raid playout panel (fix agent C's file this round) still ends only its own step; its
+  one-press fix should register it the same way (a `motion_running` / `complete_motion`
+  pair and `MotionSkip.handle`). `test_anim_r4_combat` pushed two presses to end a flight
+  and a drop ("one press each"); it now pushes one.
+- **R3 switching an entry off, by kind.** `enabled` was honoured only through
+  `Motion.live`; entries a view reads as numbers ignored it. Three kinds, decided in one
+  place (`Motion.seconds` / `delay_of` / `amplitude` and `UiMotionData`): an entry with a
+  motion of its own (the default) never plays when off and keeps its time and size (they
+  are the end state's hold and look: the saved stamp's and a toast's hold, a dim's alpha);
+  a part of another motion (`UiMotionData.OFF_PARTS`: `hit_line_flight`, `ride_swap`,
+  `ride_shrink`, `ride_perfect`, `break_crack`, `modem_sign_strike`, `modem_sign_flicker`,
+  `forecast_change_fade`, `resolve_side_gap`, `resolve_attacker_gap`, `drag_ghost_tilt`,
+  `hit_freeze`, `stamp_fade_in`) takes no time and shows no motion when off (seconds and
+  delay 0, amplitude 0 for a share / px / frames, 1 for a scale); a tuning of another entry
+  with nothing of its own (`UiMotionData.ALWAYS_ON`: `drag_ghost_tilt_speed`,
+  `send_it_drips_share`) is refused off by `UiMotionData.validate` (content validation and
+  the schema smoke test check it). A blanket "amplitude 0 when off" was rejected: many
+  amplitudes are sizes the rest state keeps (a line's width, the ghost's alpha, a traffic
+  threshold). The test switches every table entry off in turn and checks its kind, and the
+  views' own shares (the projectile's floor 0.05, the forecast fade's floor 0.01, the
+  combat's beat gaps).
+- **R4 the lab shows the real motion.** 73 demos played a generic helper on a lab piece
+  for a motion the game draws otherwise (a 0 s lift of 0.33 px for `forecast_change_fade`,
+  an alpha loop on a sticker for `forecast_road_pulse`, a 1.2 s panel fade for
+  `raid_incoming_hold`), or passed the numbers to Fx itself so the piece never read its id.
+  Each now plays on the real piece: Fx's own flash and jack (with its CONNECTING line and
+  the RAID INCOMING stamp; the reduced jack with reduce effects on for that jack only, the
+  setting's value never saved), the real DropLayer (landing, purchase, shred, refusal,
+  carry, market flight), the Heat poster crossing a threshold, Toast / ToastNote, the top
+  bar's refusal, FlightFx's reject, the HQ scene on a demo campaign in the lab's own save
+  slot `motion_lab` (never the player's; deleted when the demo ends) for the selection, the
+  drop and its forecast road, the raid (turret and decoy; an ICE-lock raid for the lock and
+  home's number fly), the minimap pulse, the key's fold and the influence spread; the
+  netrun scene for the route move; the combat scene's own calls (`_perfect_feedback`,
+  `_boss_phase_feedback`, `_victory_flash`, `_play_beat` with a made beat for a guard, a
+  heal, a status landing and a PERFECT hit, `fx_layer.play_card`, a card that plays, the
+  RAM spend float). A demo may stay a stand-in (the lab's Motion helper on a lab piece) only
+  when the game plays that id with the same helper (a pop is a pop). `Motion.recording`
+  notes, per entry read, the first script outside the kit that asked; `test_motion_lab_demos`
+  plays every demo and fails any whose id no real piece read (or whose stand-in helper the
+  game doesn't use). Eight ids are gated by the headless display inside their piece (Toast,
+  the combat log, the hand's gap under the pointer) or need the GPU's bake (the influence
+  spread and the bake fade): the test checks they play on a real piece and the windowed
+  `--demo-check=<frames>` run confirmed each is read. Also fixed in the lab: a menu demo's
+  timers held a window that the next demo freed (now a weak reference) and the city demo set
+  a size on a full-rect control. Captured windowed: `forecast_road_pulse` (the pulse runs
+  the real threat road to CORE) and `raid_incoming_hold` (the stamp under CONNECTING).
+- **R5 a fast integrity test.** `test_suite_integrity` took 40 s alone (47 s in a shard; the
+  manifest said 0.4 s): 31 s loaded every test script (and the whole game behind them) and
+  8 s compiled three RegExes per line several times over. The compile check is now
+  `test_suite_compiles.gd` (full tier, its measured time; the parallel runner also reports
+  a script that did not run); the rules read each file once (`source`), compile each
+  pattern once (`_re`) and read a line further only when it names a frame signal or a
+  fixed-wait call. The integrity tests now take under a second. The manifest's times were
+  refreshed from measured runs (`run_tests.py --update-times`). The runner now reruns a
+  script that failed in its shard alone and reports it ORDER-DEPENDENT when it passes alone
+  (the first full run here failed `test_anim_r4_city`'s verdict sweep in its shard only:
+  the RunManager lookup kept a Mirror corporation built by an earlier script, which fix
+  agent C is fixing); the run still fails.
+- **R6 the fixed-wait rule scans `tests/helpers/`.** Every function there is a helper (its
+  caller asserts), so any fixed wait in one is flagged. BoundedWait's polls (a frame at a
+  time, counting game time) are no fixed wait: it needs no marker and the test asserts it
+  carries none.
+- **R7 docs.** STYLE_GUIDE: the focus tip never folds under 20 columns (`FocusTip.FOLD_MIN`,
+  ANIM-R4 C7; it said 26), 5.1 gains the one-press-completes-all rule, switching entries
+  off and the lab's real pieces. TEST_SUITE: frame lambdas are guarded in `scripts/`,
+  `tests/` and `tools/` in every form; every fixed-wait form the rule knows (awaited
+  `tween_interval`, `Timer.new` / `wait_time`, `OS.delay_*`, `get_unix_time`, the sleep in a
+  poll's lambda, the helpers scan); headless has no RenderingDevice, so rendering paths get
+  a windowed check; the integrity test's speed and the compile test.
+- **R8** `docs/timeline/motion/README.md`: no combat or generic row changed (their strips
+  were captured from scenes and demos this batch didn't change); the city rows are fix
+  agent C's.
 #### 2026-09-28 — Animation pass — ANIM-R5 combat
 The fifth fix batch of the Animation pass review, combat part (items 1-13 of fix agent A).
 Views only: no rule, no schema field changed (one new motion id is data). Every call below was
@@ -599,6 +701,81 @@ captures (`netrun_scene --demo-combat --demo-end=lose|win|hover`, new dev flag; 
 - Test expectations changed on purpose: `test_anim_r3_combat`
   `test_after_a_win_the_next_step_replaces_send_it_at_once` (the next step shows once VICTORY
   lands, not at the press); `test_anim_r4_combat` exports "ON A RANDOM SLICE:" (RANDOM SLICE gone).
+#### 2026-09-28 — Animation pass — ANIM-R5 netrun screens
+The fifth fix batch of the Animation pass review, netrun screens part (B1-B11). Views only
+(no rule, no schema field; the one new motion id is data). Every call below was the
+implementer's (the standing rule: nothing deferred). Tests: `tests/unit/test_anim_r5_netrun.gd`
+(full tier, 14 tests). Checked in windowed Movie Maker captures (no ERROR in the logs); strips
+recaptured in `docs/timeline/motion/` (CHOSEN on top, a variant under it, the whole screen,
+quantized to 128 colours, raw frames never entered the repo): `buy_fly`, `loot_pick`,
+`dispatch_type`, `route_pulse`, and new `event_page`, `run_end`.
+- **B1 the event's paper (P1).** R4 C7's "as tall as its words" gave the ZinePanel no height
+  at all: a ZinePanel is a plain Control with no minimum of its own, and the RichTextLabel,
+  typing from `visible_characters = 0`, measured (fit_content) only the characters shown, so
+  the paper was a sliver and the title and story drew in dark ink over the city. Now
+  `ZinePanel.fit_to_content()` (opt-in; other panels size themselves) makes the paper's minimum
+  its content's, and a typing label is shaped whole (`VC_CHARS_AFTER_SHAPING`, set by
+  `Typing.type_in` for every typing label, and on the event's text and the subtitle): the words
+  keep their full height from the first frame. Tested with typing ON at 1.0 / 1.3 / 1.6: the
+  paper holds its title and every line while they type, and the height does not change when
+  they finish.
+- **B2 the subtitle.** The event's line was paged for the fallback band (two lines at 964 px)
+  before the page's own one-line strip registered; the re-dock then fitted that two-line page
+  into one line by shrinking the font (to 7 px), and nothing grew it back. A dock of another
+  shape now pages the line on screen again (`Dialogue._repage_shown`: the page shown and the
+  rest of its line, at the text size's font), and a page never shrinks below
+  `Dialogue.MIN_FONT_SIZE` (12 px x the text size; past it the page clips). The event's and the
+  run end's bands hold two lines (`SubtitleStrip.set_lines`, `SUBTITLE_LINES`): long lines wrap
+  instead of paging with a "…" (the run end's "do not let it be for …").
+- **B3 the run's end.** It was the glass sheet (solid over the city, which a flatline in a
+  fight had also hidden: `background.visible` is now set for every page but a fight) with its
+  words in the top 250 px. Now a window centred over the city: a verdict stamp (a resolved
+  `ForecastStamp`, landing with `forecast_stamp_resolve`: FLATLINED / JACKED OUT / HOME FELL),
+  the operative's fate in words (**a flatline is permanent**, GDD 4.2 / 5.1 permadeath: "X is
+  gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are
+  kept; Cycles and unbanked loot are lost."), the run's tags, and a Heat line beside the HEAT
+  tag's number ("Heat +11: flatlined on a run."; with Heat from the route too, "+11 for
+  flatlining on a run, +2 from the route's nodes and events", the flatline's share read from
+  the session's own Heat event). Translated once. **Decided:** a completed run's verdict is
+  JACKED OUT (the title bar already said "NETRUN // JACK OUT"), an aborted one's HOME FELL.
+- **B4 words whole before the page settles.** A subtitle page now types within
+  `dispatch_type`'s amplitude (new: 0.8 s, the event story's cap), and a netrun page's first
+  focus lands once its entrance has ended and the words typing on it and in the subtitle are
+  whole (`_settle_page`; the one-press rule completes them and the focus lands at once). The
+  event page keeps its own rule (focus on the first choice at once, the choices held until the
+  words are whole: ANIM-R2 E1).
+- **B5 flights.** `buy_fly` 0.7 s to x0.55 (was 0.4 s to x0.35), `loot_pick` 0.7 s (was 0.35 s),
+  and a flight's landing pulses the tag it went to (`flight_land_pulse`, new: 0.4 s to x1.3,
+  bigger than a value's x1.08 bump; CARDS for a card, the DAEMONS icon or VIEW LOADOUT for the
+  rest; `FlightFx.fly(..., on_land)`). Within the readability rule: nothing waits on it (any
+  press ends a flight and the pulse still plays). The loot page (R4 C7) now waits for the picked
+  card's flight too (its lift included), so no loot flies over the route that comes in.
+- **B6 the route move.** The move's new choices were live and focused, and the "a choice
+  pressed while travelling skips the move" guard in `enter_node` was dead: `_input` ended the
+  move and passed the press on, and the choice then reached `NetrunSession.enter_node` after the
+  move had opened the node (refused). Now the route page is the move's keep list
+  (`MotionSkip.verdict(..., route_keep())`: a press on a choice, GRID VIEW or Save & quit ends the
+  move and does nothing else) and nothing on the page takes focus during the move (the node's
+  screen takes it). The guard stays as a defence.
+- **B7 the route demo** reaches its first node through the session (`demo_first_node`:
+  `enter_node`, the fight's SEND ITs, `skip_reward`); the view no longer sets the run's node or
+  visited list.
+- **B8** the mid-run raid playout is a screen of its own (`RAID_PLAYOUT_SCREEN`): its title is
+  NETRUN // RAID (it said NETRUN // ROUTE, the run's phase being the route again), and the route
+  after it enters as a new screen.
+- **B9** a route choice's "then:" icons carry their words ("then: [bag] Shop", the route's own
+  node words, translated), in a flow that wraps in the ROUTE window.
+- **B10** `_frame_raid_map` stops when the scene left the tree during its frame's wait, and the
+  demos' frame waits go through `_frames_in_tree` (never `get_tree()` on nothing).
+- **B11** the Modem's socket list says what it is for: "Chips go into: [Slot 1: CRIT 12]" with a
+  tooltip on both (what a chip does, that BUY sockets it there, that a drag picks the slot too).
+  Presentation only.
+- New id: `flight_land_pulse` (REQUIRED_IDS, lab demo). Retuned: `buy_fly`, `loot_pick`,
+  `dispatch_type` (amplitude). Words (exported once): the fate lines, the Heat reasons, JACKED
+  OUT, HOME FELL, Chips go into:, the socket tip; dropped: CLEAN EXIT, ABORTED, "Socket into
+  %s", the old socket tip.
+- Expectation changed on purpose: `test_horizontal_pass20_screens` (the result stamp is a
+  resolved ForecastStamp saying JACKED OUT).
 
 #### 2026-09-28 — Animation pass — ANIM-R4 combat, input and screens
 The fourth fix batch of the Animation pass review, combat, input and screens part (C1-C7).

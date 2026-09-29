@@ -105,6 +105,7 @@ var _told_reached: Dictionary = {}
 func _init(p_grid_view: Control = null, log_size: Vector2 = Vector2(600, 120)) -> void:
 	grid_view = p_grid_view
 	TextDb.shown_as_given(self)  # H24 S4: its words translated here, shown as given
+	MotionSkip.register(self)  # ANIM-R5: one press ends its step with every other motion
 	var controls := HBoxContainer.new()
 	add_child(controls)
 	step_label = Label.new()
@@ -253,9 +254,22 @@ func _input(event: InputEvent) -> void:
 		return
 	if v == MotionSkip.Verdict.PASS and drives_playout(event):
 		return
+	# ANIM-R5 (MotionSkip.handle): the step ends with every other running motion.
 	skip_step()
 	if v == MotionSkip.Verdict.CONSUME:
 		MotionSkip.consume(self, event)
+	else:
+		MotionSkip.complete_all(self)
+
+
+## MotionSkip (ANIM-R5): a step is playing (a press ends it with every other motion).
+func motion_running() -> bool:
+	return not _done and not _instant and is_visible_in_tree()
+
+
+## MotionSkip (ANIM-R5): the current step's beats at their ends.
+func complete_motion() -> void:
+	skip_step()
 
 
 ## ANIM-R5 P11: true when `event` drives the playout itself: a focus move, or a press (a

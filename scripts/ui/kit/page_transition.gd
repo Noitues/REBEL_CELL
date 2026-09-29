@@ -173,6 +173,7 @@ func finish() -> void:
 
 
 func _ready() -> void:
+	MotionSkip.register(self)
 	set_process(true)
 	set_process_input(true)
 
@@ -183,11 +184,17 @@ func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press completes the entrance and is consumed. ANIM-R4 C2 (the
 	# one rule, MotionSkip.verdict): a press that works the screen completes it and passes
 	# on; an open pause menu keeps its presses (the entrance plays on).
-	var v := MotionSkip.verdict(event, self)
-	if v == MotionSkip.Verdict.IGNORE:
-		return
-	if v == MotionSkip.Verdict.CONSUME:
-		MotionSkip.consume(self, event)
+	# ANIM-R5 (MotionSkip.handle): the press completes every running motion, this one too.
+	MotionSkip.handle(event, self)
+
+
+## MotionSkip (ANIM-R5): the entrance plays.
+func motion_running() -> bool:
+	return not _done
+
+
+## MotionSkip (ANIM-R5): the page at rest, and every motion on it at its end.
+func complete_motion() -> void:
 	var p := page
 	finish()
 	settle(p)

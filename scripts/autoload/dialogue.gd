@@ -50,6 +50,7 @@ var _shown: String = ""
 
 
 func _ready() -> void:
+	MotionSkip.register(self)
 	layer = 90
 	bar = PanelContainer.new()
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -76,6 +77,8 @@ func _ready() -> void:
 	text_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	text_label.scroll_active = false
 	text_label.clip_contents = true
+	# ANIM-R5 B2: a page types in over its whole laid-out lines (no reflow while it types).
+	text_label.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
 	box.add_child(text_label)
 	_style(RC.Voice.DISPATCH)
 	_collect_sets()
@@ -113,14 +116,12 @@ func add_set(set: LineSetData) -> void:
 ## inline, paged to the lines that fit (H20: the old bottom bar covered raid asset cards,
 ## LEAVE THE MODEM, crew Loadout buttons, Grid rows and menu buttons).
 func dock_default() -> void:
-	dock_at(default_rect, lines_fitting(default_rect))
+	# ANIM-R5 B2: the lines that fit are counted at the text size's own font (a page shrunk
+	# for the old dock must not count them).
+	_apply_font_size()
 	# The label's own minimum must not stretch the bar past a one-line strip; a line on
 	# screen is refitted to the strip (H23: zeroing it left the label 0 px tall).
-	text_label.custom_minimum_size.y = 0.0
-	if bar.visible and text_label.get_parsed_text() != "":
-		_fit_page(text_label.get_parsed_text())
-	inline_speaker = true
-	_default_dock = true
+	dock_at(default_rect, lines_fitting(default_rect), true)
 
 
 ## Where dock_default puts the bar: the rect a SubtitleStrip registered, else DEFAULT_DOCK.
@@ -176,7 +177,8 @@ func lines_fitting(rect: Rect2) -> int:
 ## The subtitle bar in a screen rect (combat puts it at the top, clear of the hand). With
 ## `max_lines` > 0 a longer line is shown as pages of at most that many lines, one after
 ## the other, so the bar never grows past the rect's neighbours at any text scale.
-func dock_at(rect: Rect2, max_lines: int = 0) -> void:
+func dock_at(rect: Rect2, max_lines: int = 0, as_default: bool = false) -> void:
+	var before := [_dock_rect, dock_lines, inline_speaker]
 	# A bar sliding in lands where the new dock puts it.
 	Motion.stop(bar)
 	bar.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -192,12 +194,40 @@ func dock_at(rect: Rect2, max_lines: int = 0) -> void:
 	var margins := sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0
 	if text_label != null:
 		text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, rect.size.x - margins))
-	inline_speaker = false
-	_default_dock = false
+	inline_speaker = as_default
+	_default_dock = as_default
+	if as_default and text_label != null:
+		text_label.custom_minimum_size.y = 0.0
 	# A line on screen when the dock moves is fitted to its new rect (H23: moving from the
 	# top band into combat's column left the label 0 px tall, an empty framed box).
+	# ANIM-R5 B2: a dock of another shape pages the line again for it (the event's line,
+	# paged for the fallback band, was squeezed into the one-line strip at 7 px).
 	if text_label != null and bar.visible and text_label.get_parsed_text() != "":
-		_fit_page(text_label.get_parsed_text())
+		if [_dock_rect, dock_lines, inline_speaker] != before and not _shown_line.is_empty():
+			_repage_shown()
+		else:
+			_fit_page(text_label.get_parsed_text())
+
+
+## ANIM-R5 B2: the line on screen paged again for the dock in force: the page shown and the
+## rest of its line still queued are shown again from that page, at the text size's font.
+func _repage_shown() -> void:
+	var line := _shown_line.duplicate()
+	var rest: Array[Dictionary] = []
+	while not _queue.is_empty() and bool(_queue[0].get("continued", false)):
+		rest.append(_queue.pop_front())
+	if bool(line.get("continued", false)):
+		# A later page: its words and the pages after it make the line to page again.
+		var words := PackedStringArray([String(line["text"])])
+		for r in rest:
+			words.append(String(r["text"]))
+			line["seconds"] = float(line["seconds"]) + float(r["seconds"])
+			line["more"] = bool(r.get("more", false))
+		line["text"] = " ".join(words)
+	# The first page's line is the whole line as said: its queued pages are dropped.
+	_queue.push_front(line)
+	_timer = null
+	_next()
 
 
 ## Splits `text` into pages of at most `dock_lines` wrapped lines at the bar's width and
@@ -439,6 +469,11 @@ func _type_page(from: int) -> float:
 	if total <= from:
 		return 0.0
 	var seconds := (total - from) * Motion.seconds(&"dispatch_type")
+	# ANIM-R5 B4: the whole page types within the entry's amplitude (s), so a page's line is
+	# whole about when the page it plays over has settled (a route or raid line typed on for
+	# 2-3 s after the page had come in, and fast players moved on before reading it).
+	if Motion.amplitude(&"dispatch_type") > 0.0:
+		seconds = minf(seconds, Motion.amplitude(&"dispatch_type") / maxf(Motion.speed, Motion.SPEED_MIN))
 	text_label.visible_characters = from
 	var e := Motion.entry(&"dispatch_type")
 	_type_tween = create_tween()
@@ -449,15 +484,23 @@ func _type_page(from: int) -> float:
 
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press shows the typing page whole and is consumed (it does
-	# nothing else). ANIM-R2: with every other word typing on screen (Typing.finish_all).
-	# ANIM-R3 A3: a press that works the screen (MotionSkip.works_ui) shows the words and
-	# passes on to what it works; only a press aimed at the subtitle is consumed; an open
-	# PauseMenu keeps its presses.
-	if typing() and MotionSkip.is_press(event) and not MotionSkip.pause_open(self):
-		Typing.finish_all(get_tree())
-		finish_typing()
-		if not MotionSkip.works_ui(event, self):
-			MotionSkip.consume(self, event)
+	# nothing else). ANIM-R2: with every other word typing on screen. ANIM-R3 A3: a press
+	# that works the screen (MotionSkip.works_ui) shows the words and passes on to what it
+	# works; only a press aimed at the subtitle is consumed; an open PauseMenu keeps its
+	# presses. ANIM-R5: by the one rule (MotionSkip.handle): the press completes every
+	# running motion (the subtitle is registered: motion_running / complete_motion).
+	if typing():
+		MotionSkip.handle(event, self)
+
+
+## MotionSkip (ANIM-R5): the page is still typing.
+func motion_running() -> bool:
+	return typing()
+
+
+## MotionSkip (ANIM-R5): the page whole.
+func complete_motion() -> void:
+	finish_typing()
 
 
 func is_showing() -> bool:
@@ -552,9 +595,10 @@ func _fit_page(page: String) -> void:
 	var h := _page_height(page)
 	if h > room + 0.5:
 		# Before clipping: this page a size smaller (accents stacked by pseudolocalisation, a
-		# taller fallback font); the next page starts at the text size again.
+		# taller fallback font); the next page starts at the text size again. ANIM-R5 B2: never
+		# under the readable floor (MIN_FONT_SIZE at the text size); past it the page clips.
 		var fs := text_label.get_theme_font_size("normal_font_size")
-		text_label.add_theme_font_size_override("normal_font_size", maxi(1, floori(fs * room / h)))
+		text_label.add_theme_font_size_override("normal_font_size", maxi(min_font_size(), floori(fs * room / h)))
 		h = _page_height(page)
 	text_label.custom_minimum_size.y = minf(h, room)
 
@@ -572,13 +616,31 @@ func _on_settings_changed() -> void:
 	_apply_text_scale()
 
 
-## Subtitle font sizes follow Settings.text_scale (GDD 9.6).
-func _apply_text_scale() -> void:
-	var scale := 1.0
-	if has_node("/root/Settings"):
-		scale = float(get_node("/root/Settings").text_scale)
+## ANIM-R5 B2: the smallest a subtitle page may shrink to at text scale 1.0 (px); it grows
+## with the text size.
+const MIN_FONT_SIZE := 12
+
+
+## The text size in force (Settings.text_scale; 1.0 without Settings).
+func _text_scale() -> float:
+	return float(get_node("/root/Settings").text_scale) if has_node("/root/Settings") else 1.0
+
+
+## The subtitle's readable floor at the text size in force (px).
+func min_font_size() -> int:
+	return roundi(MIN_FONT_SIZE * _text_scale())
+
+
+## The subtitle's lettering at the text size in force (a page shrunk to fit is undone).
+func _apply_font_size() -> void:
+	var scale := _text_scale()
 	speaker_label.add_theme_font_size_override("font_size", roundi(SPEAKER_FONT_SIZE * scale))
 	text_label.add_theme_font_size_override("normal_font_size", roundi(TEXT_FONT_SIZE * scale))
+
+
+## Subtitle font sizes follow Settings.text_scale (GDD 9.6).
+func _apply_text_scale() -> void:
+	_apply_font_size()
 	if _default_dock:
 		dock_lines = lines_fitting(default_rect)
 

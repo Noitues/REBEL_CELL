@@ -106,6 +106,7 @@ var _carry_ghost: DragGhost = null
 
 func _init() -> void:
 	name = "DropLayer"
+	MotionSkip.register(self)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	focus_mode = Control.FOCUS_NONE
@@ -725,6 +726,16 @@ func busy() -> bool:
 	return not flights.is_empty() or not sprites.is_empty()
 
 
+## MotionSkip (ANIM-R5): a flight, mark or stamp plays.
+func motion_running() -> bool:
+	return busy()
+
+
+## MotionSkip (ANIM-R5): every flight, mark and stamp at its end.
+func complete_motion() -> void:
+	finish_all()
+
+
 # --- Marks --------------------------------------------------------------------------------
 
 ## The no-entry mark on a refused target at `at` (global): it shakes `drop_reject`'s
@@ -761,14 +772,9 @@ func _input(event: InputEvent) -> void:
 	# consumed (a B that ends a viewer's landing never also leaves the page behind it).
 	# ANIM-R4 C2 (MotionSkip.verdict): a press that works the screen completes them and passes
 	# on; an open pause menu keeps its presses.
-	if busy():
-		var v := MotionSkip.verdict(event, self)
-		if v == MotionSkip.Verdict.CONSUME:
-			finish_all()
-			MotionSkip.consume(self, event)
-			return
-		if v == MotionSkip.Verdict.PASS:
-			finish_all()
+	# ANIM-R5 (MotionSkip.handle): the press completes every running motion, not only these.
+	if busy() and MotionSkip.handle(event, self) == MotionSkip.Verdict.CONSUME:
+		return
 	if retiring:
 		return
 	if mode == Mode.CARRY:

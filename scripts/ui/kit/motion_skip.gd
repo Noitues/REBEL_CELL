@@ -43,7 +43,19 @@ extends RefCounted
 ##   `verdict` like every helper, but a PASS that drives the playout itself (a focus move,
 ##   which walks to 1x / 2x / 4x and Skip, or a press on one of them:
 ##   `RaidPlayoutPanel.drives_playout`) does not end the current step: speeding the raid up
-##   never skips the step being watched. STYLE_GUIDE 5.1 says so.
+##   never skips the step being watched. STYLE_GUIDE 5.1 says so. It joins GROUP too.
+## - **One press, every motion (ANIM-R5, `handle`)**: a press completes every skippable
+##   motion running on screen, not only the one whose helper saw it first (a stray key used
+##   to end a flight and leave the drop under it running, as the consumed press reached no
+##   other helper). Each helper joins GROUP (`register`) and answers `motion_running()` and
+##   `complete_motion()` (and `motion_keeps()` when it keeps presses); `handle` gives one
+##   verdict for all of them (the keeps of every running helper count) and then completes
+##   them all, for a press that passes on (PASS) as for one it consumes (CONSUME).
+##   `consume` completes them all too, so a helper that consumes by hand still does. A
+##   helper a PauseMenu covers is left alone (its motion plays on).
+
+## The group of every helper whose motion one press completes (ANIM-R5).
+const GROUP := &"motion_skip_helpers"
 
 ## Focus-move actions (a menu's D-pad / arrows / Tab).
 const FOCUS_ACTIONS: Array[StringName] = [&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"]
@@ -56,13 +68,62 @@ enum Verdict { IGNORE, PASS, CONSUME }
 ## ANIM-R4 C2: the one press rule as a verdict. IGNORE: not a press, or an open PauseMenu
 ## owns it (the motion goes on); PASS: a press that works the screen (`works_ui`, and not
 ## on a button in `keep`): complete the motion and let it through; CONSUME: complete the
-## motion and `consume` the press.
+## motion and `consume` the press. ANIM-R5: the keeps of every running registered helper
+## count too (a press the combat replay keeps is kept whichever helper sees it first).
 static func verdict(event: InputEvent, node: Node, keep: Array = []) -> Verdict:
 	if not is_press(event) or pause_open(node):
 		return Verdict.IGNORE
-	if works_ui(event, node, keep):
+	if works_ui(event, node, keep + running_keeps(node)):
 		return Verdict.PASS
 	return Verdict.CONSUME
+
+
+## ANIM-R5: the one rule in one call, for a helper whose motion runs: the verdict; on PASS
+## or CONSUME every running motion completes (`complete_all`); on CONSUME the press is
+## consumed. Returns the verdict (IGNORE: nothing done).
+static func handle(event: InputEvent, node: Node, keep: Array = []) -> Verdict:
+	var v := verdict(event, node, keep)
+	if v == Verdict.CONSUME:
+		consume(node, event)
+	elif v == Verdict.PASS:
+		complete_all(node)
+	return v
+
+
+## ANIM-R5: adds `node` to the helpers one press completes together (it answers
+## `motion_running()` and `complete_motion()`, and may answer `motion_keeps()`).
+static func register(node: Node) -> void:
+	if node != null and not node.is_in_group(GROUP):
+		node.add_to_group(GROUP)
+
+
+## ANIM-R5: the registered helpers under `node`'s tree whose motion runs now, in tree order,
+## leaving out any a PauseMenu covers (its motion plays on).
+static func running(node: Node) -> Array[Node]:
+	var out: Array[Node] = []
+	if node == null or not node.is_inside_tree():
+		return out
+	for h in node.get_tree().get_nodes_in_group(GROUP):
+		if is_instance_valid(h) and not h.is_queued_for_deletion() and h.has_method(&"motion_running") \
+				and bool(h.call(&"motion_running")) and not pause_open(h):
+			out.append(h)
+	return out
+
+
+## ANIM-R5: the buttons every running helper keeps (`motion_keeps`), together.
+static func running_keeps(node: Node) -> Array:
+	var out: Array = []
+	for h in running(node):
+		if h.has_method(&"motion_keeps"):
+			out.append_array(h.call(&"motion_keeps") as Array)
+	return out
+
+
+## ANIM-R5: completes every running registered motion (the end state of each at once).
+static func complete_all(node: Node) -> void:
+	for h in running(node):
+		if is_instance_valid(h) and h.has_method(&"complete_motion"):
+			h.call(&"complete_motion")
 
 
 ## True when `event` is a press that completes a motion (see the class notes).
@@ -85,6 +146,8 @@ static func is_press(event: InputEvent) -> bool:
 static func consume(node: Node, event: InputEvent = null) -> void:
 	if node == null or not node.is_inside_tree():
 		return
+	# ANIM-R5: the press completes every running motion, not only the one that took it.
+	complete_all(node)
 	if event != null:
 		var settings := node.get_tree().root.get_node_or_null(^"Settings")
 		if settings != null and settings.has_method(&"observe_device"):
@@ -181,9 +244,21 @@ static func takes(b: BaseButton, button: int) -> bool:
 	return (b.button_mask & (1 << (button - 1))) != 0
 
 
-## True while a PauseMenu is open (its presses are its own).
+## True while a PauseMenu is open and `node` is not in it (the menu's presses are its own;
+## ANIM-R5: a helper inside the pause menu, its lines' MenuMotion, owns them with it).
 static func pause_open(node: Node) -> bool:
-	return node != null and node.is_inside_tree() and not node.get_tree().get_nodes_in_group(PAUSE_GROUP).is_empty()
+	return node != null and node.is_inside_tree() and not node.get_tree().get_nodes_in_group(PAUSE_GROUP).is_empty() \
+		and not in_pause_menu(node)
+
+
+## True when `node` is (inside) a PauseMenu.
+static func in_pause_menu(node: Node) -> bool:
+	var n := node
+	while n != null:
+		if n.is_in_group(PAUSE_GROUP):
+			return true
+		n = n.get_parent()
+	return false
 
 
 ## True while a jack (Fx.transitioning) covers the screen. Looked up at run time: the kit

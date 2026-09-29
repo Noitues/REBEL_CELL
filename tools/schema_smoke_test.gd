@@ -419,6 +419,13 @@ func _anim1() -> int:
 	if be == null or be.ease != Tween.EASE_IN_OUT or be.trans != Tween.TRANS_BACK or not is_equal_approx(be.amplitude, 1.2): fails += 1
 	table.entries = [e, e]
 	if table.validate().size() != 1: fails += 1  # repeated id
+	# ANIM-R5: a tuning of another entry (UiMotionData.ALWAYS_ON) is refused switched off.
+	var tuning := UiMotionEntryData.new()
+	tuning.id = UiMotionData.ALWAYS_ON[0]
+	tuning.enabled = false
+	table.entries = [tuning]
+	print("ANIM-R5: ", tuning.id, " off -> ", table.validate())
+	if table.validate().size() != 1: fails += 1
 	var shipped: UiMotionData = load("res://content/config/ui_motion.tres")
 	var missing := 0
 	for id in UiMotionData.REQUIRED_IDS:

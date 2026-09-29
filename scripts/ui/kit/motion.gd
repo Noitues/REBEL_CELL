@@ -32,6 +32,12 @@ static var force_live: bool = false
 
 static var _config: UiMotionData = null
 static var _index: Dictionary = {}
+## ANIM-R5 (the motion lab's check that each demo exercises its own entry): while true,
+## every entry read is noted in `reads` with the script that asked for it (the first
+## caller outside this kit). Dev and test only; off in play.
+static var recording: bool = false
+## Entry reads while `recording`: {id: {script path: true}}.
+static var reads: Dictionary = {}
 
 
 ## The motion table in use (loaded from CONFIG_PATH on first use).
@@ -61,10 +67,44 @@ static func set_speed(value: float) -> void:
 ## The entry for `id`, or null (with an error) when the table has none.
 static func entry(id: StringName) -> UiMotionEntryData:
 	config()
+	if recording:
+		_note_read(id)
 	if not _index.has(id):
 		push_error("Motion: no entry '%s' in %s." % [id, CONFIG_PATH])
 		return null
 	return _index[id]
+
+
+## ANIM-R5: starts noting entry reads afresh (see `recording`).
+static func start_recording() -> void:
+	reads.clear()
+	recording = true
+
+
+## ANIM-R5: stops noting entry reads; returns what was read ({id: {script path: true}}).
+static func stop_recording() -> Dictionary:
+	recording = false
+	return reads.duplicate(true)
+
+
+## The scripts that read `id` while recording (paths), sorted.
+static func readers(id: StringName) -> Array[String]:
+	var out: Array[String] = []
+	for p in reads.get(id, {}):
+		out.append(String(p))
+	out.sort()
+	return out
+
+
+static func _note_read(id: StringName) -> void:
+	var own := (Motion as Script).resource_path
+	for frame in get_stack():
+		var src := String(frame.get("source", ""))
+		if src != own:
+			if not reads.has(id):
+				reads[id] = {}
+			reads[id][src] = true
+			return
 
 
 ## True when `id` has an entry.
@@ -73,22 +113,39 @@ static func has(id: StringName) -> bool:
 	return _index.has(id)
 
 
-## Seconds for `id` at the current speed (0 when unknown).
+## Seconds for `id` at the current speed (0 when unknown). ANIM-R5: 0 for a switched-off
+## part of another motion (UiMotionData.OFF_PARTS: it takes no time).
 static func seconds(id: StringName) -> float:
 	var e := entry(id)
-	return e.duration / maxf(speed, SPEED_MIN) if e != null else 0.0
+	if e == null or part_off(e):
+		return 0.0
+	return e.duration / maxf(speed, SPEED_MIN)
 
 
-## Delay seconds for `id` at the current speed (0 when unknown).
+## Delay seconds for `id` at the current speed (0 when unknown, or a switched-off part).
 static func delay_of(id: StringName) -> float:
 	var e := entry(id)
-	return e.delay / maxf(speed, SPEED_MIN) if e != null else 0.0
+	if e == null or part_off(e):
+		return 0.0
+	return e.delay / maxf(speed, SPEED_MIN)
 
 
 ## Amplitude of `id` (px, scale, alpha or degrees as its entry says; 0 when unknown).
+## ANIM-R5: a switched-off part of another motion gives the value that shows no motion
+## (UiMotionData.OFF_PARTS: 0 for a share, px or frames, 1 for a scale).
 static func amplitude(id: StringName) -> float:
 	var e := entry(id)
-	return e.amplitude if e != null else 0.0
+	if e == null:
+		return 0.0
+	if part_off(e):
+		return float(UiMotionData.OFF_PARTS[e.id])
+	return e.amplitude
+
+
+## ANIM-R5: true when `e` is a part of another motion (UiMotionData.OFF_PARTS) switched off.
+## Every other entry honours `enabled` through live() (its own motion shows its end state).
+static func part_off(e: UiMotionEntryData) -> bool:
+	return e != null and not e.enabled and UiMotionData.OFF_PARTS.has(e.id)
 
 
 ## True when animated effects may play at all: effects on (not reduce effects) and a
