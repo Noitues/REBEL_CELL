@@ -353,17 +353,17 @@ func test_options_rows_drive_the_new_settings() -> void:
 	panel.reduce_motion_check.button_pressed = true
 	assert_true(Settings.reduce_motion)
 	panel.reduce_motion_check.button_pressed = false
-	panel.colorblind_option.select(Settings.COLORBLIND_MODES.find(&"protan"))
-	panel.colorblind_option.item_selected.emit(Settings.COLORBLIND_MODES.find(&"protan"))
+	# Art pass W8a: the pickers are TilePickers (choose a tile), not OptionButtons.
+	panel.colorblind_option.choose(Settings.COLORBLIND_MODES.find(&"protan"))
 	assert_eq(Settings.colorblind_mode, &"protan")
-	panel.colorblind_option.item_selected.emit(0)
+	panel.colorblind_option.choose(0)
 	assert_eq(Settings.colorblind_mode, &"off")
-	panel.resolve_speed_option.item_selected.emit(Settings.RESOLVE_SPEEDS.find(&"instant"))
+	panel.resolve_speed_option.choose(Settings.RESOLVE_SPEEDS.find(&"instant"))
 	assert_eq(Settings.resolve_speed, &"instant")
 	assert_eq(panel.scale_slider.max_value, 2.0, "the slider reaches 2.0")
 	panel.show_section("Controls")
 	assert_true(panel.glyph_option.is_inside_tree(), "pad glyphs sit with the controls")
-	panel.glyph_option.item_selected.emit(Settings.PAD_GLYPH_SETS.find(&"playstation"))
+	panel.glyph_option.choose(Settings.PAD_GLYPH_SETS.find(&"playstation"))
 	assert_eq(Settings.pad_glyph_set, &"playstation")
 
 

@@ -485,7 +485,9 @@ func test_key_hints_follow_the_device_outside_combat() -> void:
 	assert_eq(menu.resume_button.text, ("Resume %s" % Settings.hint(&"open_settings")).strip_edges())
 	menu.show_options()
 	await _frames()
-	assert_eq(menu.settings_panel.close_button.text, ("Close %s" % Settings.hint(&"ui_cancel")).strip_edges())
+	# Art pass W8a (ART_BIBLE 12): with a pad the prompt bar names the button; the words
+	# carry no "[B]".
+	assert_eq(menu.settings_panel.close_button.text, "Close")
 	Settings.set_pad_active(false)
 	await _frames()
 	assert_eq(menu.resume_button.text, ("Resume %s" % Settings.hint(&"open_settings")).strip_edges(), "back to the keyboard")
