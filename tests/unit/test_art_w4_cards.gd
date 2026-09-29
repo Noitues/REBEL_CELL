@@ -325,3 +325,22 @@ func test_the_deck_detail_shows_the_card_at_detail_size_with_whole_art() -> void
 		assert_true(Rect2(Vector2.ZERO, Vector2(1280, 720)).encloses(row.get_global_rect()), "x%.1f: the detail on screen" % s)
 		assert_false(big.get_parent() is TerminalWindow, "the paper card is not inside the glass (ART_BIBLE 2)")
 	Settings.set_text_scale(1.0)
+
+
+# --- 6. The drag ghost (6.3) ---------------------------------------------------------------------
+
+func test_a_dragged_card_shows_at_60_percent_centred_on_the_cursor() -> void:
+	var card := _sticker(_card(&"jolt"))
+	var ghost := DragGhost.new(card)
+	add_child_autofree(ghost)
+	ghost.position = Vector2(400, 300)
+	ghost.step(1.0 / 60.0)
+	assert_almost_eq(card.scale.x, 0.6, 0.001, "the card at 60%")
+	assert_eq(DragGhost.CARD_SCALE, 0.6)
+	assert_almost_eq(ghost.center_global().x, 400.0, 0.5, "the aim line starts at the card's centre")
+	assert_almost_eq(ghost.center_global().y, 300.0, 0.5)
+	var tile := ZineCard.new("CHIP", -1, "x", 0).as_tile(ZineCard.Look.CHIP, Palette.NET_CYAN)
+	tile.size = tile.custom_minimum_size
+	var g2 := DragGhost.new(tile)
+	add_child_autofree(g2)
+	assert_eq(tile.scale, Vector2.ONE, "shop tiles keep their size")
