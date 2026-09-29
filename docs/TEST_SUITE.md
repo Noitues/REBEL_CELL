@@ -56,6 +56,23 @@ python tools/run_windowed.py --log <file> -- res://tools/design_lab/motion_lab.t
   Movie Maker folder first (Godot writes nothing into a missing one). Checked on this
   machine with a foreground-window watcher: focus never left the active window.
 
+## Visual QA (art pass W10)
+
+The review-pack harness and the visual lint (ART_BIBLE §13). Full how-to, copy-paste
+commands and the screen table: `docs/art_review/W10/README.md`.
+
+- `python tools/visual_qa/capture_pack.py --out <dir> [--screens a,b] [--scales 1.0,1.6,2.0]
+  [--inputs mouse,pad] [--reduce-effects off,on] [--filters none,grey,deutan] [--scramble]`
+  captures every screen (43) through `tools/run_windowed.py`, each run with its own user://
+  folder, and writes `manifest.json`, the runtime lint (`lint_report.md`) and, with
+  `--sheets`, contact sheets. `--list` prints the screens.
+- `python tools/visual_qa/diff_pack.py <before> <after> <out>`: side-by-side + heatmap per
+  picture and `diff_report.md` sorted by changed pixels.
+- `tests/unit/test_visual_lint_static.gd` (fast tier) is the CI gate: literal colours and
+  font sizes per file under `scripts/ui` may only go down against
+  `tools/visual_qa/lint_baseline.json`. After migrating a file, lower the baseline with
+  `python tools/visual_qa/update_lint_baseline.py`.
+
 ## How the runner works
 
 - **Shards.** Every `tests/unit/test_*.gd` and `tests/integration/test_*.gd` script is
