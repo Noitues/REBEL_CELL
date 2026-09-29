@@ -461,7 +461,8 @@ Forward+), other agents' runs sharing it.
   made or filled in the landing frame); measurements below. `bake_smoke.gd` passes on both paths
   (3264x2304 bakes, 545 distinct colours sampled, no error logged, no viewport left after
   shutdown).
-- **P1 H10 re-measured with the city drawing** (see the numbers under "Measurements").
+- **P1 H10 re-measured with the city drawing** (numbers under "Measurements"; ANIM-R4's
+  H10 figures are corrected there).
 - **P2 pages open on their city.** Measured (`page_bake_probe.gd`) before any change on the
   copy path by the designer: loot / event ~2 s, fight ~3 s, Modem ~2 s, HQ ~3.5 s, interlude
   playout ~5 s, route after an interlude raid 6.5 s, claim 3.6 s with no feedback. Found: a
@@ -514,7 +515,20 @@ Forward+), other agents' runs sharing it.
 - **P15** RAID INCOMING fits the screen (the lettering steps down to 22 px x the text size,
   then wraps).
 - **P16** heat_poster's notes name the banner as it reads.
-- **P17 schema smoke test crash** (see "P17" under Measurements).
+- **P17 the schema smoke test's exit crash.** `tools/schema_smoke_test.gd` printed PASS and then
+  crashed at shutdown about one exit in ten (exit 139). Found: an access violation inside the
+  engine's GDScript clean-up at shutdown (the .NET runtime's event log gives the same fault
+  address every time, in godot.exe's `GDScript::clear`, after every node, autoload and our
+  static caches were already freed, so not a thread of ours: freeing each autoload by hand
+  first, then quitting, still crashed after the last one). What decides it is the order the
+  class scripts were loaded in: the checks, compiled as part of the `-s` script, loaded their
+  dozens of data classes as that script's dependencies before any content; the same script
+  with its checks left uncalled crashed as often, while a script instancing all 46 classes,
+  `tools/validate_content.gd` (content first, 0 of 100) and the game never did. Fix: the tool is
+  now a runner that loads the content first (the registry's scan, as validate_content does)
+  and only then loads and runs the checks, now in `tools/schema_smoke_checks.gd` (a schema
+  change adds its check there; CLAUDE.md's command is unchanged). The Fx exit hygiene (fonts,
+  the terminal material, the chevron let go) stays but was not the cause.
 - **P18 (coordinator).** a) `RunManager.build_generated` put the built REBEL_CELL (and its
   generated content) into the lookup for good; a test that built it left it to every later
   script (test_anim_r4_city then read raids of the built corporation). The lookup is rebuilt
@@ -528,6 +542,36 @@ Forward+), other agents' runs sharing it.
   WON/LOST - ...", the one-line profile sentence.
 - **Expectation changes:** `test_horizontal_pass24_city` (the gains row opens with its caption),
   `test_anim_r4_city` (a fallen node is named by its outcome).
+- **Measurements** (this machine, 1280x720, RX 6700 XT, Vulkan Forward+, other agents' test
+  runs sharing it; windowed runs through `tools/run_windowed.py`; no ERROR in any log):
+  - **H10 corrected** (ANIM-R4's numbers were taken while every kept bake drew nothing, so the
+    city cost nothing to show; min / median / max of 5 runs, `profile_frames.gd --timeline`,
+    kept viewports vs `--bake-copy`): the Grid's first open from the HQ page 102 / 106 / 128 ms
+    (copy 116 / 131 / 138; R4 said 136-170, median 149), the re-open 67 / 71 / 86 ms (copy
+    75 / 87 / 89; R4 said 94-109). The route after a jack at 1.6 (`--demo-grid
+    --demo-anim=jack_in`): its bake lands 0-6 frames before the jack's cover lifts (unseen), in
+    a frame under 50 ms in 4 runs of 5 (53 ms once; copy: under 50 in 3 of 5, 50-51 twice);
+    after the cover lifts no frame over 66 ms (51-66, copy 53-61, single frames the machine's
+    load shows before the jack too). R4's "landing frame 54, 56, <50, <50, <50" was measured
+    with nothing drawn. The kept viewport is faster on the open and re-open (about 15-25 ms)
+    and ties on the landing; it stays the default.
+  - **P2 page timings** (`page_bake_probe.gd`, three runs; the designer's copy-path numbers
+    before in brackets): event, loot, Modem, fight, the route back after each and the run's
+    end page each covered on their first frame (22-66 ms) [loot / event ~2 s, fight ~3 s,
+    Modem ~2 s]; the HQ after the run covered on its first frame (the jack out's 1.6-1.7 s
+    before it) [~3.5 s black behind the panels]; the interlude's playout 0 frames of 123
+    uncovered [the whole raid over the silhouette, ~5 s]; the route after the interlude's raid
+    covered on its first frame (55-68 ms) [6.5 s]; a claim stamps CLAIMED at once and the tint
+    follows its bake 1.46-1.56 s later [3.6 s with no feedback]. Not changed: the Grid's very
+    first open in a campaign (1.72-1.84 s: nothing remembered yet to bake ahead, ANIM-R2 R1),
+    the raid interlude's own page (1.45-1.48 s, most of it under the jack's RAID INCOMING hold)
+    and the first route of a run (4.7-5.4 s from the press, under the jack). A quick player
+    (`--leave=20`, each page left 20 frames after it is covered) sees the event 0.48 s and the
+    route after the interlude's raid 1.49 s on their silhouette (the prebakes still running).
+  - **P17 proof:** before, 12 crashes in 100 runs, 10 in 70, 5 in 50, 3 in 20 (on the same
+    machine the same day); after, 240 consecutive runs of
+    `godot --headless --path . -s tools/schema_smoke_test.gd` (4 x 60, run 4 at a time) exit 0,
+    every one printing SCHEMA SMOKE TEST: PASS; the runner layout in a scratch copy, 0 in 490.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 motion rules and tests
 The fifth fix batch of the Animation pass review, motion rules, test infrastructure and docs
@@ -958,7 +1002,8 @@ quantized to 128 colours, raw frames deleted): `raid_playout`, `influence_spread
 - **H9** B6's colour claim corrected in place (acid is at least 40 degrees of hue from every
   corporation, Meridian's orange the nearest; it said "furthest"), and in `Palette`.
   `CHANGE_FADE_SHARE` (1/3 inline) is `forecast_change_fade`'s amplitude.
-- **H10 performance** (this machine's display, 1280x720, RX 6700 XT; min / median of 5 runs,
+- **H10 performance** (corrected by ANIM-R5 city, "Measurements": these were taken while every
+  kept bake drew nothing) (this machine's display, 1280x720, RX 6700 XT; min / median of 5 runs,
   the baseline aa51ad2 measured in the same session, the machine busy with other test runs):
   - the Grid opened from the HQ page (`--demo-grid-open=150`): 136-170 ms, median 149
     (baseline 243-268, median 255; R2 measured 161). What its frame spent (instrumented): the

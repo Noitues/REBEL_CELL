@@ -36,7 +36,7 @@ content/                .tres by type: classes/, cards/, slices/, firmware/, dae
 shaders/                glow, scanline, zine_paper, distortion
 audio/                  placeholders
 tests/                  GUT tests mirroring scripts/ (unit/, integration/)
-tools/                  schema_smoke_test.gd, validate_content.gd
+tools/                  schema_smoke_test.gd (+ its checks, schema_smoke_checks.gd), validate_content.gd
 addons/gut/             GUT 9.x (installed in M0)
 ```
 
