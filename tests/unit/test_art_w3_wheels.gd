@@ -480,3 +480,47 @@ func test_numbers_never_sit_on_the_hp_text() -> void:
 		var eq: Array = scene.hit_equation(_beat(src, tgt, 0, 12, 12, wv.combatant.hp))
 		var spot: Vector2 = scene.impact_spot(wv, bottom, "0", RC.SliceType.DEFEND, eq)
 		assert_false(CombatFxLayer.impact_rect(spot, "0", RC.SliceType.DEFEND, eq).intersects(hp), "%s: the impact mark is off the HP number" % wv.combatant.display_name)
+
+
+# --- 8. Card drag and aim ---------------------------------------------------------------------------
+
+func _previewing(scene: Control) -> bool:
+	for v in scene._views():
+		for chip in (v as WheelView).intent.get("chips", []):
+			if bool((chip as Dictionary).get("play", false)):
+				return true
+	return false
+
+
+func test_the_preview_stays_through_the_whole_mouse_drag() -> void:
+	var scene := await _combat()
+	var s: CombatState = scene.engine.state()
+	s.hand = [&"fine_tune", &"jolt"] as Array[StringName]
+	s.ram = s.max_ram
+	var none: Array[Dictionary] = []
+	scene.engine.state_changed.emit(s, none)
+	var options: Array[CombatAction] = CardTargeting.options(scene.engine.resolver, s, 0)
+	assert_gt(options.size(), 1, "a card aimed by dragging")
+	scene._dragging = true
+	scene._begin_targeting(0, options)
+	assert_eq(scene._option_index, -1, "nothing aimed at pick-up")
+	assert_true(_previewing(scene), "the card's preview shows at pick-up")
+	scene._on_view_drag_hover(s.player.id, {"kind": "hub"})
+	scene._on_view_drag_hover(s.player.id, {})
+	assert_true(_previewing(scene), "and stays while the card is off every zone")
+	scene._dragging = false
+	scene.cancel_selection()
+	assert_false(_previewing(scene), "a cancel ends it")
+
+
+func test_the_aim_line_starts_at_the_card_centre() -> void:
+	var scene := await _combat()
+	var s: CombatState = scene.engine.state()
+	s.hand = [&"fine_tune"] as Array[StringName]
+	s.ram = s.max_ram
+	var none: Array[Dictionary] = []
+	scene.engine.state_changed.emit(s, none)
+	scene.select_card(0)
+	await _frames(1)
+	var card: ZineCard = scene._card_node(0)
+	assert_eq(scene.aim_origin(), card.get_global_rect().get_center(), "from the card's centre, not its top edge")

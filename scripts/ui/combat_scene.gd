@@ -961,7 +961,9 @@ func _begin_targeting(hand_index: int, options: Array[CombatAction]) -> void:
 		aimed_card.grab_focus()
 	if _dragging:
 		_option_index = -1  # nothing aimed until the card is over a zone
-		_show_end_turn_preview()
+		# Art pass W3 (§6.3, critique 3): the card's preview stays on the tags through the whole
+		# drag (it vanished at pick-up with the mouse).
+		_preview_card(hand_index)
 		_dim_hand()
 		for v in _views():
 			v.queue_redraw()
@@ -1042,7 +1044,12 @@ func _on_view_drag_hover(view_id: StringName, zone: Dictionary) -> void:
 			v.hover_zone = {}
 			v.queue_redraw()
 		_clear_ghost()
-		_show_end_turn_preview()
+		# Art pass W3 (§6.3): off every zone the dragged card still previews its default play;
+		# only a drop or a cancel ends it.
+		if _dragging:
+			_preview_card(selecting)
+		else:
+			_show_end_turn_preview()
 		_aim_line.queue_redraw()
 		return
 	_show_selection()
@@ -1071,8 +1078,7 @@ func _draw_aim_line() -> void:
 	if v == null:
 		return
 	var origin := _aim_line.get_global_rect().position
-	var card := card_node.get_global_rect()
-	var from := Vector2(card.get_center().x, card.position.y) - origin
+	var from := aim_origin() - origin
 	# ANIM-3: the line draws in from the card each time the aim moves.
 	var to := from.lerp(v.zone_center(z[1]) - origin, _aim_draw)
 	var n := maxi(2, int(from.distance_to(to) / 14.0))
@@ -1080,6 +1086,15 @@ func _draw_aim_line() -> void:
 		if k % 2 == 0:
 			_aim_line.draw_line(from.lerp(to, float(k) / n), from.lerp(to, float(k + 1) / n), Palette.CELL_ACID, AIM_LINE_WIDTH)
 	_aim_line.draw_arc(to, 12.0, 0, TAU, 20, Palette.CELL_ACID, AIM_LINE_WIDTH)
+
+
+## Art pass W3 (§6.3, critique 3): where the aim line starts (global): the card's centre (the
+## dragged card's while it is dragged: W4's drag ghost centre follows the pointer).
+func aim_origin() -> Vector2:
+	if _dragging:
+		return get_global_mouse_position()
+	var card_node := _card_node(selecting)
+	return card_node.get_global_rect().get_center() if card_node != null else Vector2.ZERO
 
 
 ## Fades the cards not being aimed (and restores them).
