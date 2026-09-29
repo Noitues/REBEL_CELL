@@ -133,6 +133,7 @@ func _exit_tree() -> void:
 
 func _ready() -> void:
 	UiTheme.apply(self)
+	MotionSkip.register(self)  # ANIM-R5: the replay completes with every other motion
 	_build_ui()
 	engine.state_changed.connect(_on_state_changed)
 	engine.action_refused.connect(_on_action_refused)
@@ -723,7 +724,8 @@ func _input(event: InputEvent) -> void:
 	if _skippable():
 		var verdict := MotionSkip.verdict(event, self, replay_keeps())
 		if verdict != MotionSkip.Verdict.IGNORE:
-			skip_motion()
+			# ANIM-R5: every running motion completes with the replay (MotionSkip.complete_all).
+			MotionSkip.complete_all(self)
 			# ANIM-R3 A6h: the fight's next-step action works at once, replay or not (the press
 			# ends the replay and goes on to it).
 			if continue_shown() and _for_continue(event):
@@ -2621,6 +2623,21 @@ func skip_motion() -> void:
 
 func _skippable() -> bool:
 	return _seq != null
+
+
+## MotionSkip (ANIM-R5): the SEND IT replay plays.
+func motion_running() -> bool:
+	return _skippable()
+
+
+## MotionSkip (ANIM-R5): the replay at its end state.
+func complete_motion() -> void:
+	skip_motion()
+
+
+## MotionSkip (ANIM-R5): a press on the fight's own controls only ends the replay.
+func motion_keeps() -> Array:
+	return replay_keeps()
 
 
 ## ANIM-R4 C6e: a card's (or a respin's) spin is turning: the forecast tags wait (hidden)

@@ -50,6 +50,7 @@ var _shown: String = ""
 
 
 func _ready() -> void:
+	MotionSkip.register(self)
 	layer = 90
 	bar = PanelContainer.new()
 	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -449,15 +450,23 @@ func _type_page(from: int) -> float:
 
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 (MotionSkip): a press shows the typing page whole and is consumed (it does
-	# nothing else). ANIM-R2: with every other word typing on screen (Typing.finish_all).
-	# ANIM-R3 A3: a press that works the screen (MotionSkip.works_ui) shows the words and
-	# passes on to what it works; only a press aimed at the subtitle is consumed; an open
-	# PauseMenu keeps its presses.
-	if typing() and MotionSkip.is_press(event) and not MotionSkip.pause_open(self):
-		Typing.finish_all(get_tree())
-		finish_typing()
-		if not MotionSkip.works_ui(event, self):
-			MotionSkip.consume(self, event)
+	# nothing else). ANIM-R2: with every other word typing on screen. ANIM-R3 A3: a press
+	# that works the screen (MotionSkip.works_ui) shows the words and passes on to what it
+	# works; only a press aimed at the subtitle is consumed; an open PauseMenu keeps its
+	# presses. ANIM-R5: by the one rule (MotionSkip.handle): the press completes every
+	# running motion (the subtitle is registered: motion_running / complete_motion).
+	if typing():
+		MotionSkip.handle(event, self)
+
+
+## MotionSkip (ANIM-R5): the page is still typing.
+func motion_running() -> bool:
+	return typing()
+
+
+## MotionSkip (ANIM-R5): the page whole.
+func complete_motion() -> void:
+	finish_typing()
 
 
 func is_showing() -> bool:

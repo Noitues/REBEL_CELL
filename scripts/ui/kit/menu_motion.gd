@@ -82,6 +82,7 @@ static func of(p_menu: Control) -> MenuMotion:
 
 func _init() -> void:
 	name = NODE_NAME
+	MotionSkip.register(self)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	focus_mode = Control.FOCUS_NONE
 
@@ -246,47 +247,36 @@ func _end_typing() -> void:
 func _input(event: InputEvent) -> void:
 	# ANIM-R1 / R2 (MotionSkip): a press completes the typing and the slide; a press that
 	# works the menu (a focus move, an accept, a click on a line) is let through, any other
-	# is consumed.
-	if not (typing() or sliding()) or not MotionSkip.is_press(event):
-		return
-	# ANIM-R4 C2: a menu behind an open pause menu leaves it the presses (the pause menu's own
-	# lines are this menu's).
-	if MotionSkip.pause_open(self) and not in_pause_menu():
-		return
-	finish()
-	if not works_menu(event):
-		MotionSkip.consume(self, event)
+	# is consumed. ANIM-R4 C2: a menu behind an open pause menu leaves it the presses (the
+	# pause menu's own lines are this menu's: MotionSkip.pause_open). ANIM-R5: by the one
+	# rule (MotionSkip.handle): the press completes every running motion, not this line's
+	# alone.
+	if typing() or sliding():
+		MotionSkip.handle(event, self)
 
 
-## True when `event` works this menu (ANIM-R2): a focus move, an accept, or a click on one
-## of its lines. Such a press completes the line's motion and passes on. ANIM-R4 C2: the
-## Settings key too (Esc while a pause menu's line types closes the menu at once).
+## True when `event` works this menu (ANIM-R2): a focus move, an accept on its focused
+## line, the Settings key (ANIM-R4 C2: Esc while a pause menu's line types closes the menu
+## at once), or a click on one of its lines. ANIM-R5: the one rule's `works_ui`, so a click
+## trusts what is hovered (a line under a panel isn't clicked) and the line's button_mask
+## (a right-click on a line works nothing), as everywhere else.
 func works_menu(event: InputEvent) -> bool:
-	if _is_focus_move(event) or event.is_action(&"ui_accept") or event.is_action(&"open_settings"):
-		return true
-	if event is InputEventMouseButton and menu != null and is_instance_valid(menu):
-		var at := (event as InputEventMouseButton).global_position
-		for b in menu.get_children():
-			if b is Button and (b as Button).is_visible_in_tree() and (b as Button).get_global_rect().has_point(at):
-				return true
-	return false
+	return MotionSkip.works_ui(event, self)
 
 
 ## True when this menu is (inside) an open PauseMenu.
 func in_pause_menu() -> bool:
-	var n: Node = self
-	while n != null:
-		if n.is_in_group(MotionSkip.PAUSE_GROUP):
-			return true
-		n = n.get_parent()
-	return false
+	return MotionSkip.in_pause_menu(self)
 
 
-static func _is_focus_move(event: InputEvent) -> bool:
-	for a in [&"ui_up", &"ui_down", &"ui_left", &"ui_right", &"ui_focus_next", &"ui_focus_prev"]:
-		if event.is_action(a):
-			return true
-	return false
+## MotionSkip (ANIM-R5): the focused line still types or its highlight slides.
+func motion_running() -> bool:
+	return typing() or sliding()
+
+
+## MotionSkip (ANIM-R5): the line's words whole and its box in place.
+func complete_motion() -> void:
+	finish()
 
 
 func _process(delta: float) -> void:
