@@ -13,7 +13,17 @@ exits non-zero on any failure, crash or timeout.
 
 A script that fails in its shard is run again alone (ANIM-R5): when it passes alone its
 result depends on what ran before it in the shard (state leaking between scripts), and it
-is reported as ORDER-DEPENDENT. The run still fails either way.
+is reported as ORDER-DEPENDENT. The run still fails either way. ANIM-R6: so is a script
+that did not run in its shard (a crash before it, or results that are missing, empty or
+cut short): alone, it says whether it runs and passes.
+
+A shard whose results.xml is empty or truncated (a crash while writing, a full disk) is
+reported as a problem of that shard; the other shards' results still count. Before the
+run the free disk space where the logs go is checked: under --min-free-gb the run stops
+at once with a clear message, under --warn-free-gb it warns (a full disk cut results
+short and lost a whole run before).
+
+    python tools/test_run_tests.py            # the runner's own unit tests
 
 Each shard gets its own user:// directory (APPDATA / XDG_DATA_HOME point into the
 shard's output folder), so save slots, profiles and GUT's temp files never collide
@@ -42,6 +52,12 @@ TEST_DIRS = ["tests/unit", "tests/integration"]
 # A script missing from the manifest (added on another branch) is still run; it is
 # scheduled with this estimate and reported so it can be added.
 DEFAULT_SECONDS = 10.0
+# ANIM-R6: free disk space (GB) where the logs go: under FAIL the run does not start,
+# under WARN it warns. A full run writes a few hundred MB (logs, each shard's user://);
+# the Godot shader and import caches grow meanwhile.
+DISK_FAIL_GB = 1.0
+DISK_WARN_GB = 5.0
+GB = 1024.0 ** 3
 
 
 def discover() -> list[str]:
@@ -78,6 +94,45 @@ def shard_env(user_root: Path) -> dict[str, str]:
     return env
 
 
+def read_results(path: Path) -> tuple[dict | None, str]:
+    """ANIM-R6: a shard's JUnit results, or (None, why) when they are missing, empty or cut
+    short (unparseable). Never raises: one shard's broken file must not lose the others."""
+    if not path.exists():
+        return None, "wrote no results (crash or compile error)"
+    try:
+        if path.stat().st_size == 0:
+            return None, "wrote an empty results file (a crash while writing, or a full disk)"
+        return parse_junit(path), ""
+    except ET.ParseError as e:
+        return None, f"wrote results that are cut short or broken ({e}; a crash while writing, or a full disk)"
+    except OSError as e:
+        return None, f"results could not be read ({e})"
+
+
+def free_gb(path: Path) -> float:
+    """Free space (GB) on the disk holding `path` (its nearest existing parent)."""
+    p = path
+    while not p.exists() and p.parent != p:
+        p = p.parent
+    return shutil.disk_usage(p).free / GB
+
+
+def disk_check(free: float, fail_gb: float, warn_gb: float) -> tuple[str, str]:
+    """ANIM-R6: ("fail" | "warn" | "ok", message) for `free` GB against the thresholds."""
+    if free < fail_gb:
+        return "fail", (f"only {free:.1f} GB free where the logs go (need {fail_gb:.1f} GB): free some disk space; "
+                        "a full disk cuts the shards' results short")
+    if free < warn_gb:
+        return "warn", f"only {free:.1f} GB free where the logs go (under {warn_gb:.1f} GB): results may be cut short"
+    return "ok", f"{free:.1f} GB free"
+
+
+def rerun_list(failures: list, not_run: list[str]) -> list[str]:
+    """ANIM-R6: the scripts to run alone: every failing script and every script that did
+    not run in its shard, each once, sorted."""
+    return sorted({name for name, _t, _m in failures} | set(not_run))
+
+
 def parse_junit(path: Path) -> dict:
     res = {"tests": 0, "failures": [], "pending": 0, "times": {}, "test_times": []}
     root = ET.parse(path).getroot()
@@ -105,11 +160,13 @@ def godot_cmd(args, scripts: list[str], xml: Path) -> list[str]:
             "-gjunit_xml_file=" + str(xml)] + args.gut_arg
 
 
-def isolate(scripts: list[str], out: Path, args) -> None:
+def isolate(scripts: list[str], out: Path, args, not_run: list[str] | None = None) -> None:
     """Runs each failing script alone (at most --jobs at once) and says whether it passes
-    alone: then its failure depends on the scripts before it in its shard."""
+    alone: then its failure depends on the scripts before it in its shard. ANIM-R6: a script
+    that did not run in its shard (`not_run`) is run alone too."""
+    not_run = not_run or []
     print()
-    print(f"run_tests: rerunning {len(scripts)} failing script(s) alone to spot order dependence")
+    print(f"run_tests: rerunning {len(scripts)} failing or not-run script(s) alone to spot order dependence")
     todo = list(enumerate(scripts))
     running: list[dict] = []
     while todo or running:
@@ -132,12 +189,14 @@ def isolate(scripts: list[str], out: Path, args) -> None:
                 continue
             r["log"].close()
             running.remove(r)
-            xml = r["dir"] / "results.xml"
-            alone_fails = parse_junit(xml)["failures"] if xml.exists() else None
+            res, why = read_results(r["dir"] / "results.xml")
+            alone_fails = res["failures"] if res is not None else None
             if alone_fails is None:
-                print(f"  ALONE {r['s']}: wrote no results (log {r['dir'] / 'gut.log'})")
+                print(f"  ALONE {r['s']}: {why} (log {r['dir'] / 'gut.log'})")
             elif alone_fails:
                 print(f"  ALONE {r['s']}: fails alone too ({len(alone_fails)} failing)")
+            elif r["s"] in not_run:
+                print(f"  ALONE {r['s']}: runs and passes alone; it did not run in its shard (what ran before it crashed or cut the results short)")
             else:
                 print(f"  ORDER-DEPENDENT {r['s']}: passes alone; it fails after the scripts before it in its shard")
         time.sleep(0.5)
@@ -155,6 +214,8 @@ def main() -> int:
     ap.add_argument("--list", action="store_true", help="print the shards and exit")
     ap.add_argument("--gut-arg", action="append", default=[], help="extra GUT argument for every shard (repeatable), e.g. --gut-arg=-gunit_test_name=foo")
     ap.add_argument("--no-isolate", action="store_true", help="don't rerun failing scripts alone to spot order-dependent ones")
+    ap.add_argument("--min-free-gb", type=float, default=DISK_FAIL_GB, help="stop before running when less disk space (GB) is free where the logs go")
+    ap.add_argument("--warn-free-gb", type=float, default=DISK_WARN_GB, help="warn when less disk space (GB) is free where the logs go")
     args = ap.parse_args()
 
     manifest = load_manifest()
@@ -178,6 +239,12 @@ def main() -> int:
                 print(f"    {seconds[s]:7.1f}s  {s}")
         return 0
 
+    level, msg = disk_check(free_gb(Path(args.out) if args.out else Path(tempfile.gettempdir())), args.min_free_gb, args.warn_free_gb)
+    if level == "fail":
+        print(f"run_tests: FAILED before running: {msg}")
+        return 2
+    if level == "warn":
+        print(f"run_tests: WARNING {msg}")
     out = Path(args.out) if args.out else Path(tempfile.mkdtemp(prefix="rebel_cell_tests_"))
     out.mkdir(parents=True, exist_ok=True)
     print(f"run_tests: {len(scripts)} scripts in {len(shards)} shard(s); logs in {out}")
@@ -222,19 +289,24 @@ def main() -> int:
     failures: list = []
     problems: list[str] = []
     measured: dict[str, float] = {}
+    not_run_all: list[str] = []
     for s in procs:
         sh = shards[s["i"]]
         if s["timed_out"]:
             problems.append(f"shard {s['i']} timed out after {args.timeout:.0f}s (log {s['dir'] / 'gut.log'})")
-        if not s["xml"].exists():
-            problems.append(f"shard {s['i']} wrote no results (crash or compile error; log {s['dir'] / 'gut.log'})")
+        r, why = read_results(s["xml"])
+        if r is None:
+            # ANIM-R6: reported as this shard's problem; the other shards still count, and
+            # its scripts are run alone below.
+            problems.append(f"shard {s['i']} {why}; {free_gb(s['dir']):.1f} GB free now (log {s['dir'] / 'gut.log'})")
+            not_run_all.extend(sh)
             continue
-        r = parse_junit(s["xml"])
         total_tests += r["tests"]
         total_pending += r["pending"]
         failures.extend(r["failures"])
         measured.update(r["times"])
         not_run = [x for x in sh if x not in r["times"]]
+        not_run_all.extend(not_run)
         for x in not_run:
             problems.append(f"shard {s['i']}: {x} did not run (log {s['dir'] / 'gut.log'})")
         if s["rc"] != 0 and not r["failures"]:
@@ -258,8 +330,9 @@ def main() -> int:
             f.write("\n")
         print(f"run_tests: updated times for {len(measured)} scripts in {MANIFEST.relative_to(ROOT)}")
 
-    if failures and not args.no_isolate:
-        isolate(sorted({name for name, _t, _m in failures}), out, args)
+    again = rerun_list(failures, not_run_all)
+    if again and not args.no_isolate:
+        isolate(again, out, args, not_run_all)
 
     ok = not failures and not problems
     print("run_tests: PASSED" if ok else "run_tests: FAILED")

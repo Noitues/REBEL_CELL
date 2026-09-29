@@ -79,6 +79,19 @@ python tools/run_windowed.py --log <file> -- res://tools/design_lab/motion_lab.t
   its shard is run again alone; `ORDER-DEPENDENT <script>: passes alone` means its result
   depends on what ran before it (state leaking between scripts; ANIM-R5 found one in
   `test_anim_r4_city`'s verdict sweep). The run still fails. `--no-isolate` skips the rerun.
+  ANIM-R6: a script that did not run in its shard is run alone too (`ALONE ...: runs and
+  passes alone; it did not run in its shard` when it does).
+- **Broken results and a full disk (ANIM-R6).** A shard whose `results.xml` is missing,
+  empty or cut short (a crash while writing; the disk filled up once and every shard's
+  results were lost to one unreadable file) is reported as that shard's problem, with the
+  free space left; the other shards' results still count and its scripts are run alone.
+  Before starting, the runner checks the free space where the logs go: under
+  `--min-free-gb` (1 GB) it stops at once and says so (exit 2), under `--warn-free-gb`
+  (5 GB) it warns.
+- **The runner's own tests.** `python tools/test_run_tests.py` (Python's `unittest`, no
+  other package): good, missing, empty and truncated results, the rerun list, the disk
+  check. `test_anim_r6_rules.gd` runs it, so the full suite covers the runner (pending when
+  Python isn't on PATH).
 
 ## Tiers and the manifest
 

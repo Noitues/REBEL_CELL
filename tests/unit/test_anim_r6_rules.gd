@@ -244,3 +244,18 @@ func test_fx_pieces_honour_their_switch() -> void:
 	assert_ne(Fx._roll(0), Fx._roll(100), "the scanlines roll")
 	_table_with_off(&"jack_scanlines")
 	assert_eq([Fx._roll(0), Fx._roll(100)], [0.0, 0.0], "jack_scanlines off: they hold still")
+
+
+## ANIM-R6 D4: the parallel runner's own unit tests (tools/test_run_tests.py: an empty or
+## cut-short results.xml is that shard's problem, never a crash that loses every shard; a
+## script that did not run is run alone; the free-disk check) pass. Needs Python on PATH,
+## as the runner itself does.
+func test_the_runners_own_tests_pass() -> void:
+	var out: Array = []
+	var code := OS.execute("python", [ProjectSettings.globalize_path("res://tools/test_run_tests.py")], out, true)
+	if code == -1:
+		pending("python is not on PATH here: run tools/test_run_tests.py by hand")
+		return
+	var text := "\n".join(out)
+	assert_eq(code, 0, "tools/test_run_tests.py passes:\n%s" % text)
+	assert_true(text.contains("OK"), "unittest says OK")

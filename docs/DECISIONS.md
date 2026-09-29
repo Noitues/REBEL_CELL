@@ -511,6 +511,16 @@ unless named.
   `test_the_switch_check_names_a_view_that_never_asks`,
   `test_a_view_asks_whether_its_motion_plays_through_the_kit`,
   `test_fx_pieces_honour_their_switch`.
+- **D4 the runner survives a broken results file.** `parse_junit` raised on an empty or
+  cut-short `results.xml` (it happened under a full disk) and the uncaught error lost
+  every shard's results. `read_results` never raises: a missing, empty or unparseable file
+  is that shard's problem (with the free space left), the other shards count, and its
+  scripts join the scripts that did not run in the alone-rerun (which now runs failing and
+  not-run scripts). A free-disk check runs before the shards start: under 1 GB
+  (`--min-free-gb`) the run stops with a clear message (exit 2), under 5 GB
+  (`--warn-free-gb`) it warns. Tested by `tools/test_run_tests.py` (Python `unittest`: the
+  runner is Python, so its tests are too; TEST_SUITE documents it), which
+  `test_the_runners_own_tests_pass` runs inside the suite.
 
 #### 2026-09-28 — Animation pass — ANIM-R5 city, raid, HQ and bake
 The fifth fix batch of the Animation pass review, city, raid, HQ and bake part (P1-P18; P18 is
