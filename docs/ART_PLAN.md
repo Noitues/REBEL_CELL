@@ -351,6 +351,6 @@ They are listed here so none is silently lost. Raise them as a later pass if you
 | 0 | Branch + baseline | `art-pass` | done: the baseline is green (1094 tests) at 8ddfa86 + docs |
 | 1 | W1, W10 | `art/w1-foundation`, `art/w10-visual-qa` | **merged** into art-pass (1146 tests green); review folders W1/ and W10/ |
 | 2 | W2, W4, W6, W9s | — | **all merged** |
-| 3 | W3, W5, W7 | `art/w3-combat` | W5 and W7 **merged**; W3 finished, sent back once (hub text overlap, §4.3.4) |
+| 3 | W3, W5, W7 | — | **all merged** (1290 tests green) |
 | 4 | W8a–d | `art/w8a-menus`, `art/w8b-hq-grid`, `art/w8c-netrun` | W8a, W8b and W8c running. W8c also owns the FLATLINED run end (it lives in netrun_scene.gd); W8d is now campaign WON/LOST only |
 | 5 | W9 sweep, W10 full | — | not started |
