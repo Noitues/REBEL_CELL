@@ -203,6 +203,68 @@ Review folder: `docs/art_review/W5/`. Briefs are in `docs/art_briefs/characters/
 
 **Orchestrator merge:** W2's and W5's appended motion entries were combined, and `ui_motion.tres` was rebuilt from W2's version plus W5's three hologram entries.
 
+### 2026-09-29 — Art pass W4: cards (merged into `art-pass`)
+Review folder: `docs/art_review/W4/`. Briefs are in `docs/art_briefs/cards/`: 35 effect families and 12 unique cards. Concepts are pixel art, in `W4/concepts/`.
+- **§6.3 faces.** Hand-size cards (112×148, unchanged) show a compact face: gem, title, 60% art and the band, with no rules text. Screens that must show every word (Modem, loot, deck view, detail at 288×320) show the full face.
+- **No ellipsis anywhere (§4.3).** When text doesn't fit, the full face steps down in this order:
+  1. the text shrinks one step;
+  2. the art shrinks (floor 15%);
+  3. the band is dropped;
+  4. the card grows taller.
+
+  Tested on all 71 cards at 1.0, 1.6 and 2.0.
+- **Card type drives the card colour.** It comes from the first effect:
+  - WHEEL (paper): moves wheels.
+  - SYSTEM (black): defence, resources and buffs.
+  - HACK (pink): damage, corrupt/parasite, breach, resistance strip and RAM drain.
+
+  The colour no longer depends on hand position.
+- **Riso stand-ins (§7.3).** Two inks, INK + `CELL_PINK`: key screen at 45°, spot at 15°, about 1.4% off register. Rares and class cards vary by a hash of the card id. Renders are cached, 2 per frame.
+- **Art override.** `CardData.art`, an existing field that wasn't used, is now the final-art override. **No schema change.**
+- **Rarity (§6.3).** Common is photocopy grain, uncommon a glossy die-cut sticker, rare/boss holographic foil (`shaders/foil.gdshader`, static under reduce effects). In greyscale, rarity also reads by pip (dot/diamond/star) and edge.
+- **Cost gem** is `NOTE_YELLOW` (`CELL_ACID` is reserved for focus). A RAM refusal pulses `HARM`.
+- **Motion constants.** Hover is 12 px + ×1.12 on `card_hover` timing. The ghost scale is 0.6. Both are named constants; there are no new motion ids.
+- **Detail view (§2).** The paper card is taped *beside* a glass notes panel, never inside it. The notes never repeat the face text.
+- **Orchestrator decision on W4's open gap.** In greyscale, paper and pink stock are hard to tell apart. Because §3.1 says colour is never alone, HACK stock gets a light diagonal hatch. This goes to W3/W8 as a follow-up: `zine_card.gd` is W4's file, and W4 has finished, so the orchestrator will apply it.
+- **Orchestrator test fix.** `test_horizontal_pass19` now sets keyboard input itself. Earlier scripts in its shard leave the pad active, and the new shard layout exposed that (the hint showed "[LB]").
+
+### 2026-09-29 — Art pass W7: city (merged into `art-pass`)
+Review folder: `docs/art_review/W7/`, with frame times in `perf.md`.
+
+**How it's built (§9.1, §13)**
+- HDR 2D stays off. All the lighting is done in shaders, in one city composite with no screen copy: per-ink glow, three haze bands, wet streets, rim light, searchlights and territory light.
+- The per-context grade is parametric (contrast, saturation, warmth, lift, dim and corp lean), not a LUT texture. Its values live in `content/config/city_look.tres`, a new `CityLookData` schema: logged, smoke-tested and self-validating.
+
+**Dim and progress**
+- A context's dim is the total darkening. The screen's own `NeonCity.dim` veil counts towards it, so combat is never darkened twice.
+- Bible tension: §9.1 gives a 35% combat dim, but combat's existing veil is 0.55. The context total rules.
+- Default campaign progress is the claimed + cleared weight over the corp's Site count, taken from `CityInfluence`.
+- A city that follows the campaign reads Heat, territory and progress read-only. Explicit setters win.
+
+**Territory (§9.3):** a lasting 40% wash as a `CELL_TURF` hatch, a hatch on claimed roofs, 3 spray tags per Site, and ground lean 0.06. This replaces the khaki.
+
+**Blinks and life timing**
+- Window and beacon blinks are floored at 3 s in the shader.
+- Life timings live in `city_look.tres`, not `ui_motion.tres`.
+- Bible tension: §8 wants a T0 period of ≥ 3 s, but §9.3 wants the FLAGGED rim flicker at ≤ 1 Hz. The flicker is a §9.3 state signal and is off under reduce effects, so it's kept at ≤ 1 Hz.
+
+**Reduce effects:** no aircraft or drones, billboards hold on frame 0, searchlights stand still and the rim flicker is off.
+
+**Performance (§13)**
+- `crt_overlay` isn't used on the city, because it would add a second full-screen pass.
+- Frame time goes up 12% (combat), 22% (grid) and 23% (title), missing the plan's 15% relative budget. **Orchestrator ruling: accepted.** The absolute cost is +0.2–0.8 ms of GPU at 1080p, and the worst scene is 4.9 ms (about 200 fps), well inside §13's 60 fps target.
+- There are quality tiers 0/1/2, default 2. The Steam Deck first-run default should be tier 1; W9's final sweep adds that to `apply_first_run_defaults`. The Deck itself hasn't been measured.
+
+**Bake fix:** the `city_bake_cache.gd` freed-painter bug (W10's finding) is fixed with `_alive_painter`. The ANIM-R5 city branch doesn't touch `_stop`. `git merge-tree` shows W7's `neon_city.gd` and `city_bake_cache.gd` hooks auto-merging with that branch.
+
+**Screen hookups (to do)**
+- W8b: `set_map_mode` on Grid, Route and Raid, and calm zones on the HQ and event pages.
+- W8a: calm zones on the title panels.
+- W3: `set_context(&"combat")` in place of `city.dim = 0.55`.
+- Audio: sirens can hook `CityAtmosphere.state.hunted()`.
+
+**Orchestrator tool:** new `tools/visual_qa/merge_shared_json.py` resolves the recurring merge conflicts in `tests/test_manifest.json` (the union) and `lint_baseline.json` (a three-way minimum).
+
 ### 2026-09-28 — Test suite: bounded waits
 Tests that started a motion and then waited a fixed time (a timer, `wait_seconds`, a fixed
 frame count, the wall clock) before asserting kept flaking under parallel shards (a few

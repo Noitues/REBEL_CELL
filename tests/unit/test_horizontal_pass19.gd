@@ -47,6 +47,9 @@ func test_combat_key_hints_follow_a_rebind() -> void:
 	RunManager.delete_save()
 	RunManager.reset()
 	RunManager.new_campaign(1)
+	# Key hints are for keys: an earlier script in the shard may leave the pad active (its
+	# hints then show pad glyphs, "[LB]"), so this test states its input.
+	Settings.set_pad_active(false)
 	var scene: Control = add_child_autofree(load("res://scenes/combat/combat_scene.tscn").instantiate())
 	scene.start_fight(&"triage_unit", 7)
 	await _frames()

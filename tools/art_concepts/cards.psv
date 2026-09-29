@@ -1,0 +1,71 @@
+arc_flash|arc|false|HACK CARD|UNCOMMON||Arc Flash
+armor_plate|encrypt|false|SYSTEM CARD|UNCOMMON||Armor Plate
+backspin|backspin|false|WHEEL CARD|COMMON||Backspin
+blind_spot|freeze|true|WHEEL CARD|UNCOMMON|ghost|Blind Spot
+brute_spin|spin_heavy|false|WHEEL CARD|COMMON||Brute Spin
+bug|drain|false|HACK CARD|COMMON||Bug
+bulwark|block|false|SYSTEM CARD|UNCOMMON||Bulwark
+cache|ram|false|SYSTEM CARD|COMMON||Cache
+calibrate|calibrate|false|WHEEL CARD|COMMON||Calibrate
+cleanse|cleanse|false|SYSTEM CARD|COMMON||Cleanse
+cold_snap|freeze|false|WHEEL CARD|UNCOMMON||Cold Snap
+corrupt_packet|corrupt|false|HACK CARD|COMMON||Corrupt Packet
+counter_spin|backspin|false|WHEEL CARD|COMMON||Counter-Spin
+data_surge|draw|false|SYSTEM CARD|UNCOMMON||Data Surge
+deep_calibrate|calibrate|false|WHEEL CARD|UNCOMMON||Deep Calibrate
+deep_strip|strip|false|HACK CARD|UNCOMMON||Deep Strip
+double_jam|jam|false|WHEEL CARD|UNCOMMON||Double Jam
+duck|evade|false|SYSTEM CARD|UNCOMMON||Duck
+encrypt|encrypt|false|SYSTEM CARD|COMMON||Encrypt
+feather_touch|nudge|false|WHEEL CARD|COMMON||Feather Touch
+fine_tune|nudge|false|WHEEL CARD|COMMON||Fine Tune
+firewall|block|false|SYSTEM CARD|COMMON||Firewall
+flick|spin|false|WHEEL CARD|COMMON||Flick
+flip_switch|flip|false|WHEEL CARD|COMMON||Flip Switch
+freeze|freeze|false|WHEEL CARD|COMMON||Freeze
+gear_mesh|gear|false|WHEEL CARD|UNCOMMON||Gear Mesh
+gear_shift|inner_ring|false|WHEEL CARD|COMMON||Gear Shift
+ghost_step|jam|true|WHEEL CARD|UNCOMMON|ghost|Ghost Step
+heavy_spin|spin_heavy|false|WHEEL CARD|COMMON||Heavy Spin
+hot_patch|overclock|false|SYSTEM CARD|UNCOMMON||Hot Patch
+hot_swap|snap|true|WHEEL CARD|UNCOMMON|rigger|Hot Swap
+hub_breach|breach|false|HACK CARD|COMMON||Hub Breach
+inner_drift|inner_ring|false|WHEEL CARD|COMMON||Inner Drift
+inner_snap|snap|false|WHEEL CARD|UNCOMMON||Inner Snap
+jam|jam|false|WHEEL CARD|COMMON||Jam
+jolt|spin|false|WHEEL CARD|COMMON||Jolt
+leech_worm|parasite|true|HACK CARD|RARE||Leech Worm
+lock_on|snap|false|WHEEL CARD|UNCOMMON||Lock On
+malware_drop|corrupt|false|HACK CARD|COMMON||Malware Drop
+micro_adjust|nudge|false|WHEEL CARD|COMMON||Micro-Adjust
+mirror_flip|flip|false|WHEEL CARD|COMMON||Mirror Flip
+momentum|spin|false|WHEEL CARD|COMMON||Momentum
+overclock_nudges|amplify|true|WHEEL CARD|RARE||Nudge Driver
+overdrive|overclock|true|SYSTEM CARD|COMMON|breaker|Overdrive
+overload|overload|false|HACK CARD|UNCOMMON||Overload
+parasite_pulse|parasite|true|HACK CARD|UNCOMMON|botnet|Parasite Pulse
+patch_up|heal|false|SYSTEM CARD|COMMON||Patch Up
+power_tap|ram|false|SYSTEM CARD|COMMON||Power Tap
+pull|draw|false|SYSTEM CARD|COMMON||Pull
+ratchet|inner_ring|false|WHEEL CARD|COMMON||Ratchet
+reroll|respin|false|WHEEL CARD|COMMON||Reroll
+ring_lock|ring_lock|false|WHEEL CARD|COMMON||Ring Lock
+ring_tap|inner_ring|false|WHEEL CARD|COMMON||Ring Tap
+sanitize|cleanse|false|SYSTEM CARD|COMMON||Sanitize
+scrap_code|ram|false|SYSTEM CARD|COMMON||Scrap Code
+shatter|breach|true|HACK CARD|UNCOMMON|breaker|Shatter
+shield_wall|shield|false|SYSTEM CARD|COMMON||Shield Wall
+short_circuit|breach|true|HACK CARD|RARE||Short Circuit
+snap|snap|false|WHEEL CARD|COMMON||Snap
+spawn_drone|drone|true|SYSTEM CARD|UNCOMMON|botnet|Spawn Drone
+spin_cycle|spin_heavy|false|WHEEL CARD|UNCOMMON||Spin Cycle
+static_shock|damage|false|HACK CARD|COMMON||Static Shock
+steady_hand|steady|false|SYSTEM CARD|COMMON||Steady Hand
+stim_patch|heal|true|SYSTEM CARD|RARE||Stim Patch
+strip|strip|false|HACK CARD|COMMON||Strip
+tailspin|spin|false|WHEEL CARD|UNCOMMON||Tailspin
+tap_tap|nudge|false|WHEEL CARD|COMMON||Tap Tap
+torque_wrench|gear|true|WHEEL CARD|UNCOMMON|rigger|Torque Wrench
+twist|spin|false|WHEEL CARD|COMMON||Twist
+undock|undock|false|WHEEL CARD|COMMON||Undock
+whirl|spin_heavy|false|WHEEL CARD|COMMON||Whirl
