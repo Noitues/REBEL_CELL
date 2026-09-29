@@ -9,27 +9,26 @@ Rules: **font** (a: < 12 x text scale, or a size override off the §4.2 scale), 
 | combo | screens | font | overlap | clipped | contrast |
 |---|---|---|---|---|---|
 | 1.0_mouse_re-off_none | 2 | 0 | 2 | 0 | 3 |
-| 1.0_pad_re-off_none | 2 | 0 | 1 | 0 | 6 |
-| 1.6_mouse_re-off_none | 2 | 0 | 0 | 1 | 2 |
-| 1.6_pad_re-off_none | 2 | 0 | 4 | 1 | 4 |
-| 2.0_mouse_re-off_none | 2 | 0 | 0 | 2 | 2 |
-| 2.0_pad_re-off_none | 2 | 0 | 4 | 2 | 4 |
+| 1.0_pad_re-off_none | 2 | 0 | 2 | 0 | 7 |
+| 1.6_mouse_re-off_none | 2 | 0 | 0 | 0 | 2 |
+| 1.6_pad_re-off_none | 2 | 0 | 4 | 0 | 4 |
+| 2.0_mouse_re-off_none | 2 | 0 | 0 | 0 | 2 |
+| 2.0_pad_re-off_none | 2 | 0 | 4 | 0 | 4 |
 
 ## Findings per screen (all combos summed)
 
 | screen | font | overlap | clipped | contrast | custom-drawn scripts |
 |---|---|---|---|---|---|
-| campaign_won | 0 | 5 | 4 | 10 | 8 |
-| campaign_lost | 0 | 6 | 2 | 11 | 8 |
+| campaign_won | 0 | 6 | 0 | 10 | 8 |
+| campaign_lost | 0 | 6 | 0 | 12 | 8 |
 
 ## Findings per owning script and rule (all combos)
 
 | script | rule | findings |
 |---|---|---|
 | scripts/autoload/fx.gd | contrast | 12 |
-| scripts/ui/kit/fit_scroll.gd | overlap | 7 |
-| scripts/ui/kit/fit_scroll.gd | contrast | 7 |
-| scripts/autoload/dialogue.gd | clipped | 6 |
+| scripts/ui/kit/fit_scroll.gd | overlap | 8 |
+| scripts/ui/kit/fit_scroll.gd | contrast | 8 |
 | scripts/ui/kit/zine_panel.gd | overlap | 4 |
 | scripts/ui/kit/zine_panel.gd | contrast | 2 |
 
@@ -37,109 +36,101 @@ Rules: **font** (a: < 12 x text scale, or a size override off the §4.2 scale), 
 
 ### campaign_won (26 text controls, 2 findings)
 - **overlap** (1)
-  - `Beats/@Label@149` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x17 px overlap
+  - `Beats/@Label@112` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x17 px overlap
 - **contrast** (1)
   - `Fx/@Label@20` "SAVED": 1.02:1 < 4.5:1 (font #111111 on bg #0b0e11; measured 14.09:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
 ### campaign_lost (26 text controls, 3 findings)
 - **overlap** (1)
-  - `Beats/@Label@309` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x17 px overlap
+  - `Beats/@Label@235` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x17 px overlap
 - **contrast** (2)
   - `Fx/@Label@20` "SAVED": 1.04:1 < 4.5:1 (font #111111 on bg #0a0b0f; measured 14.32:1, low confidence)
-  - `Beats/@Label@310` "GHOST PATIENT III": 1.11:1 < 4.5:1 (font #111111 on bg #1a1c20; measured 14.83:1, low confidence)
+  - `Beats/@Label@236` "GHOST PATIENT III": 1.01:1 < 4.5:1 (font #111111 on bg #101011; measured 16.56:1, low confidence)
+- not in the picture (covered, left out): 1
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
 ## Details: 1.0_pad_re-off_none
 
-### campaign_won (28 text controls, 3 findings)
+### campaign_won (28 text controls, 4 findings)
+- **overlap** (1)
+  - `Beats/@Label@112` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x4 px overlap
 - **contrast** (3)
-  - `Fx/@Label@20` "SAVED": 1.05:1 < 4.5:1 (font #111111 on bg #060a16; measured 14.39:1, low confidence)
-  - `Beats/@Label@149` "The kill-switch logs show a bricking order sent from inside ": 1.24:1 < 4.5:1 (font #111111 on bg #1d272d; measured 13.61:1, low confidence)
-  - `Beats/@Label@150` "GHOST PATIENT III": 1.24:1 < 4.5:1 (font #111111 on bg #1d272e; measured 2.42:1)
+  - `Fx/@Label@20` "SAVED": 1.03:1 < 4.5:1 (font #111111 on bg #0a0d11; measured 14.18:1, low confidence)
+  - `Beats/@Label@112` "The kill-switch logs show a bricking order sent from inside ": 1.25:1 < 4.5:1 (font #111111 on bg #1d282d; measured 13.45:1, low confidence)
+  - `Beats/@Label@113` "GHOST PATIENT III": 1.21:1 < 4.5:1 (font #111111 on bg #1c252b; measured 2.49:1)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/pad_glyph.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
-### campaign_lost (28 text controls, 4 findings)
+### campaign_lost (29 text controls, 5 findings)
 - **overlap** (1)
-  - `Beats/@Label@309` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x10 px overlap
-- **contrast** (3)
-  - `Fx/@Label@20` "SAVED": 1.04:1 < 4.5:1 (font #111111 on bg #060b16; measured 14.33:1, low confidence)
-  - `Beats/@Label@309` "The kill-switch logs show a bricking order sent from inside ": 1.05:1 < 4.5:1 (font #111111 on bg #13171a; measured 16.41:1, low confidence)
-  - `Beats/@Label@310` "GHOST PATIENT III": 1.11:1 < 4.5:1 (font #111111 on bg #1a1c20; measured 2.97:1)
+  - `Beats/@Label@235` "The kill-switch logs show a bricking ord" vs `FitScroll/ScrollHint` "MORE BELOW": 82x12 px overlap
+- **contrast** (4)
+  - `Fx/@Label@20` "SAVED": 1.03:1 < 4.5:1 (font #111111 on bg #0d0d10; measured 14.13:1, low confidence)
+  - `Beats/@Label@235` "The kill-switch logs show a bricking order sent from inside ": 1.05:1 < 4.5:1 (font #111111 on bg #121819; measured 16.19:1, low confidence)
+  - `Beats/@Label@236` "GHOST PATIENT III": 1.11:1 < 4.5:1 (font #111111 on bg #1a1c1f; measured 2.97:1)
+  - `Beats/@Label@237` "The patch carries a signature in its header. DISPATCH would ": 1.11:1 < 4.5:1 (font #111111 on bg #1a1c20; measured 9.19:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/pad_glyph.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
 ## Details: 1.6_mouse_re-off_none
 
-### campaign_won (6 text controls, 2 findings)
-- **clipped** (1)
-  - `@VBoxContainer@22/@RichTextLabel@26` "DISPATCH: The Renewal Engine is down. Every leash in the dis": text holds "…"
+### campaign_won (5 text controls, 1 findings)
 - **contrast** (1)
   - `Fx/@Label@20` "SAVED": 1.00:1 < 4.5:1 (font #111111 on bg #0d1115; measured 13.80:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
-### campaign_lost (6 text controls, 1 findings)
+### campaign_lost (5 text controls, 1 findings)
 - **contrast** (1)
   - `Fx/@Label@20` "SAVED": 1.02:1 < 4.5:1 (font #111111 on bg #0d0e11; measured 14.06:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
 ## Details: 1.6_pad_re-off_none
 
-### campaign_won (9 text controls, 5 findings)
+### campaign_won (8 text controls, 4 findings)
 - **overlap** (2)
   - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down" vs `Prompt/Verb` "Select": 78x4 px overlap
-  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down" vs `@HBoxContainer@170/Verb` "Settings": 81x4 px overlap
-- **clipped** (1)
-  - `@VBoxContainer@22/@RichTextLabel@26` "DISPATCH: The Renewal Engine is down. Every leash in the dis": text holds "…"
+  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down" vs `@HBoxContainer@132/Verb` "Settings": 81x4 px overlap
 - **contrast** (2)
   - `Fx/@Label@20` "SAVED": 1.01:1 < 4.5:1 (font #111111 on bg #0c1014; measured 13.91:1, low confidence)
-  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down": 1.12:1 < 4.5:1 (font #111111 on bg #1b1d20; measured 11.82:1, low confidence)
+  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down": 1.12:1 < 4.5:1 (font #111111 on bg #1b1d21; measured 11.92:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/pad_glyph.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
-### campaign_lost (9 text controls, 4 findings)
+### campaign_lost (8 text controls, 4 findings)
 - **overlap** (2)
   - `Beats/Headline` "CAMPAIGN LOST - home server destroyed" vs `Prompt/Verb` "Select": 78x4 px overlap
-  - `Beats/Headline` "CAMPAIGN LOST - home server destroyed" vs `@HBoxContainer@330/Verb` "Settings": 75x4 px overlap
+  - `Beats/Headline` "CAMPAIGN LOST - home server destroyed" vs `@HBoxContainer@254/Verb` "Settings": 75x4 px overlap
 - **contrast** (2)
-  - `Fx/@Label@20` "SAVED": 1.00:1 < 4.5:1 (font #111111 on bg #0f1214; measured 13.69:1, low confidence)
+  - `Fx/@Label@20` "SAVED": 1.01:1 < 4.5:1 (font #111111 on bg #101214; measured 13.67:1, low confidence)
   - `Beats/Headline` "CAMPAIGN LOST - home server destroyed": 1.12:1 < 4.5:1 (font #111111 on bg #1b1d21; measured 10.09:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/pad_glyph.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
 ## Details: 2.0_mouse_re-off_none
 
-### campaign_won (6 text controls, 2 findings)
-- **clipped** (1)
-  - `@VBoxContainer@22/@RichTextLabel@26` "DISPATCH: The Renewal Engine is down. Every leash in the dis": text holds "…"
+### campaign_won (5 text controls, 1 findings)
 - **contrast** (1)
   - `Fx/@Label@20` "SAVED": 1.02:1 < 4.5:1 (font #111111 on bg #0d0f11; measured 13.99:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
-### campaign_lost (6 text controls, 2 findings)
-- **clipped** (1)
-  - `@VBoxContainer@22/@RichTextLabel@26` "DISPATCH: The home server is gone. Scatter. We rebuild somew": text holds "…"
+### campaign_lost (5 text controls, 1 findings)
 - **contrast** (1)
   - `Fx/@Label@20` "SAVED": 1.02:1 < 4.5:1 (font #111111 on bg #0d0e11; measured 14.06:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
 ## Details: 2.0_pad_re-off_none
 
-### campaign_won (9 text controls, 5 findings)
+### campaign_won (8 text controls, 4 findings)
 - **overlap** (2)
   - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down" vs `Prompt/Verb` "Select": 98x3 px overlap
-  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down" vs `@HBoxContainer@168/Verb` "Settings": 99x3 px overlap
-- **clipped** (1)
-  - `@VBoxContainer@22/@RichTextLabel@26` "DISPATCH: The Renewal Engine is down. Every leash in the dis": text holds "…"
+  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down" vs `@HBoxContainer@130/Verb` "Settings": 99x3 px overlap
 - **contrast** (2)
-  - `Fx/@Label@20` "SAVED": 1.05:1 < 4.5:1 (font #111111 on bg #050914; measured 14.49:1, low confidence)
-  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down": 1.12:1 < 4.5:1 (font #111111 on bg #1b1d20; measured 9.91:1, low confidence)
+  - `Fx/@Label@20` "SAVED": 1.00:1 < 4.5:1 (font #111111 on bg #0d1114; measured 13.81:1, low confidence)
+  - `Beats/Headline` "CAMPAIGN WON - Renewal Engine is down": 1.11:1 < 4.5:1 (font #111111 on bg #1b1c20; measured 9.99:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/pad_glyph.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
 
-### campaign_lost (9 text controls, 5 findings)
+### campaign_lost (8 text controls, 4 findings)
 - **overlap** (2)
   - `Beats/Headline` "CAMPAIGN LOST - home server destroyed" vs `Prompt/Verb` "Select": 98x3 px overlap
-  - `Beats/Headline` "CAMPAIGN LOST - home server destroyed" vs `@HBoxContainer@326/Verb` "Settings": 90x3 px overlap
-- **clipped** (1)
-  - `@VBoxContainer@22/@RichTextLabel@26` "DISPATCH: The home server is gone. Scatter. We rebuild somew": text holds "…"
+  - `Beats/Headline` "CAMPAIGN LOST - home server destroyed" vs `@HBoxContainer@250/Verb` "Settings": 90x3 px overlap
 - **contrast** (2)
-  - `Fx/@Label@20` "SAVED": 1.05:1 < 4.5:1 (font #111111 on bg #050915; measured 14.48:1, low confidence)
-  - `Beats/Headline` "CAMPAIGN LOST - home server destroyed": 1.12:1 < 4.5:1 (font #111111 on bg #1b1d20; measured 9.91:1, low confidence)
+  - `Fx/@Label@20` "SAVED": 1.01:1 < 4.5:1 (font #111111 on bg #111215; measured 13.64:1, low confidence)
+  - `Beats/Headline` "CAMPAIGN LOST - home server destroyed": 1.12:1 < 4.5:1 (font #111111 on bg #1b1d21; measured 9.99:1, low confidence)
 - custom-drawn (not linted): kit/corp_glyph_field.gd, kit/hud_bar.gd, kit/hud_stats.gd, kit/neon_city.gd, kit/pad_glyph.gd, kit/polaroid.gd, kit/verdict_stamp.gd, kit/zine_panel.gd
