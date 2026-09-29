@@ -508,7 +508,7 @@ delay = 0.0
 ease = 2
 trans = 1
 amplitude = 0.0
-tier = 1
+tier = 2
 
 ; raid playout: a gun's trace to its target, then fades; shots in one step follow each other by half of it
 [sub_resource type="Resource" id="m_turret_trace"]

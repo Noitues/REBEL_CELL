@@ -230,3 +230,20 @@ func test_the_combat_scene_flashes_its_wheels_not_the_screen() -> void:
 	assert_false(src.contains("Fx.flash("), "no full-screen flash left in combat")
 	assert_true(src.contains("wheel_burst(view.global_center(), view.disc_radius(), CombatFxLayer.BURST_PERFECT)"), "Perfect bursts on its wheel")
 	assert_true(src.contains("CombatFxLayer.BURST_PHASE, hue)"), "a phase bursts on the boss's wheel in its corp hue")
+
+
+# --- Raid FX ------------------------------------------------------------------------------------
+
+func test_raid_effects_have_tiers_and_none_covers_the_screen() -> void:
+	for kind in RaidFxLayer.FX_MOTION:
+		var id: StringName = RaidFxLayer.FX_MOTION[kind]
+		assert_true(Motion.has(id), "raid %s has its entry %s" % [kind, id])
+		var tier := RaidFxLayer.fx_tier(kind)
+		assert_true(VfxTier.valid(tier), "raid %s has a tier" % kind)
+		assert_lt(tier, VfxTier.T4, "raid %s is local, never cinematic" % kind)
+		assert_true(VfxTier.fits(Motion.entry(id)), "raid %s runs within its tier" % kind)
+	assert_true(VfxTier.clamp_alpha(RaidFxLayer.fx_tier("tint"), RaidFxLayer.TINT_ALPHA) == RaidFxLayer.TINT_ALPHA, "the district wash is within T3")
+	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/raid_fx_layer.gd")
+	assert_false(src.contains("Fx.flash("), "no full-screen flash in the raid")
+	for full in ["draw_rect(get_rect()", "draw_rect(Rect2(Vector2.ZERO, size)"]:
+		assert_false(src.contains(full), "nothing drawn over the whole map (%s)" % full)
