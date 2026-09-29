@@ -80,6 +80,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp that stays.
 	&"defeat_stamp",
+	# ANIM-R5 netrun screens: a flight's landing pulses its top bar tag.
+	&"flight_land_pulse",
 ]
 
 @export var entries: Array[UiMotionEntryData] = []

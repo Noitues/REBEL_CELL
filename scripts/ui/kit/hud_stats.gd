@@ -205,6 +205,11 @@ func settle() -> void:
 		if tw != null and tw.is_valid():
 			tw.kill()
 	_moving.clear()
+	for k in _landing.keys():
+		var lt: Tween = _landing[k]["tween"]
+		if lt != null and lt.is_valid():
+			lt.kill()
+	_landing.clear()
 	if _caption_tween != null and _caption_tween.is_valid():
 		_caption_tween.kill()
 	_caption_fade = 1.0
@@ -261,14 +266,59 @@ func _bump(key: String, from: String, to: String, kind: StringName) -> void:
 	_moving[key] = m
 
 
-## A tag's drawn scale while it bumps (1 at rest): up to the entry's amplitude and back.
+## A tag's drawn scale while it bumps (1 at rest): up to the entry's amplitude and back;
+## ANIM-R5 B5: times a flight's landing pulse on it.
 func _bump_scale(key: String) -> float:
+	var k := _pulse_scale(float(_landing.get(key, {}).get("t", 1.0)), Motion.amplitude(LAND_PULSE)) if _landing.has(key) else 1.0
 	var m: Dictionary = _moving.get(key, {})
 	if m.is_empty():
-		return 1.0
-	var t := float(m["bump"])
+		return k
+	return k * _pulse_scale(float(m["bump"]), Motion.amplitude(&"sticky_bump"))
+
+
+## A pop's scale at progress `t` (0..1) peaking at `peak` (Motion.pop's shape).
+static func _pulse_scale(t: float, peak: float) -> float:
 	var up := t / Motion.POP_GROW_SHARE if t < Motion.POP_GROW_SHARE else 1.0 - (t - Motion.POP_GROW_SHARE) / (1.0 - Motion.POP_GROW_SHARE)
-	return lerpf(1.0, Motion.amplitude(&"sticky_bump"), clampf(up, 0.0, 1.0))
+	return lerpf(1.0, peak, clampf(up, 0.0, 1.0))
+
+
+## ANIM-R5 B5: a flight has landed on the tag carrying icon `kind` (a bought card on CARDS):
+## the tag pulses (`flight_land_pulse`), bigger than a value's bump, so the eye finds where
+## the item went. Nothing under reduce effects or headless. Returns whether a tag pulses.
+const LAND_PULSE := &"flight_land_pulse"
+## Tag name -> {t: 0..1, tween} while a landing pulse plays.
+var _landing: Dictionary = {}
+
+
+func land_pulse(kind: StringName) -> bool:
+	if not Motion.live(LAND_PULSE) or not is_inside_tree():
+		return false
+	for i in items.size():
+		if icon_of(i) != kind:
+			continue
+		var key := String(items[i][0])
+		var old: Dictionary = _landing.get(key, {})
+		if not old.is_empty() and old["tween"] != null and (old["tween"] as Tween).is_valid():
+			(old["tween"] as Tween).kill()
+		var p := {"t": 0.0, "tween": null}
+		var e := Motion.entry(LAND_PULSE)
+		var tw := create_tween()
+		tw.tween_method(func(v: float) -> void:
+			p["t"] = v
+			queue_redraw(), 0.0, 1.0, Motion.seconds(LAND_PULSE)).set_ease(e.ease).set_trans(e.trans)
+		tw.tween_callback(func() -> void:
+			if is_same(_landing.get(key, null), p):
+				_landing.erase(key)
+			queue_redraw())
+		p["tween"] = tw
+		_landing[key] = p
+		return true
+	return false
+
+
+## The tag names pulsing for a landing now (tests).
+func landing() -> PackedStringArray:
+	return PackedStringArray(_landing.keys())
 
 
 static func _caption_words(a: Array) -> String:

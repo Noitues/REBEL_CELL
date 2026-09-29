@@ -33,6 +33,10 @@ static func type_in(p_label: Control, id: StringName = &"dispatch_type") -> floa
 	# (an event's story took 8 s, its panel empty meanwhile).
 	if Motion.amplitude(id) > 0.0:
 		seconds = minf(seconds, Motion.amplitude(id) / maxf(Motion.speed, Motion.SPEED_MIN))
+	# ANIM-R5 B1: the words are shaped whole while they type, so a label that sizes to its
+	# text (fit_content, autowrap) keeps its full height from the first frame (by default
+	# only the shown characters were laid out: the event's paper collapsed to a sliver).
+	p_label.set(&"visible_characters_behavior", TextServer.VC_CHARS_AFTER_SHAPING)
 	p_label.set(&"visible_characters", 0)
 	var e := Motion.entry(id)
 	var tw := p_label.create_tween()

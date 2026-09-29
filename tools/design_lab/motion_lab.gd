@@ -124,6 +124,8 @@ const DEMOS := {
 	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp (a SEND IT the operative does not survive).
 	&"defeat_stamp": ["scene", "send_lose"],
+	# ANIM-R5 (netrun screens; in context: netrun_scene --demo-shop --demo-buy):
+	&"flight_land_pulse": ["pop", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a

@@ -80,7 +80,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s is DISABLED.,%s is DISABLED.
 %s is SEIZED.,%s is SEIZED.
 %s is at HQ already.,%s is at HQ already.
+"%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics.","%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics."
 %s is destroyed.,%s is destroyed.
+%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.,%s is gone for good (permadeath): an operative who flatlines never comes back. Banked Schematics are kept; Cycles and unbanked loot are lost.
 %s is held at %s (%d more).,%s is held at %s (%d more).
 %s is lost. The campaign is over.,%s is lost. The campaign is over.
 %s moves from %s to %s.,%s moves from %s to %s.
@@ -132,10 +134,10 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > MODIFIERS,> MODIFIERS
 > SEED     %d,> SEED     %d
 > TARGET   %s,> TARGET   %s
+A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).
 A guided first fight.,A guided first fight.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
-ABORTED,ABORTED
 AFFLICT,AFFLICT
 AFL,AFL
 AGAIN,AGAIN
@@ -211,7 +213,6 @@ CELL STATUS,CELL STATUS
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
 CLAIMED,CLAIMED
-CLEAN EXIT,CLEAN EXIT
 CLEANSE,CLEANSE
 CLEARED,CLEARED
 CLEARS %s,CLEARS %s
@@ -389,6 +390,7 @@ Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
 "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
+Chips go into:,Chips go into:
 Choose,Choose
 City Grid,City Grid
 Claim,Claim
@@ -786,6 +788,7 @@ HOME %d → %d,HOME %d → %d
 HOME %d/%d,HOME %d/%d
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
+HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
@@ -802,6 +805,11 @@ Heat %d crossed: %s,Heat %d crossed: %s
 Heat %d of %d: how hard the corporation hunts the Cell.,Heat %d of %d: how hard the corporation hunts the Cell.
 Heat %s for the lost raid: %d → %d.,Heat %s for the lost raid: %d → %d.
 Heat %s: %d → %d.,Heat %s: %d → %d.
+"Heat %s: %s for flatlining on a run, %s from the route's nodes and events.","Heat %s: %s for flatlining on a run, %s from the route's nodes and events."
+Heat %s: flatlined on a run (and the route before it).,Heat %s: flatlined on a run (and the route before it).
+Heat %s: flatlined on a run.,Heat %s: flatlined on a run.
+Heat %s: from the route's nodes and events.,Heat %s: from the route's nodes and events.
+Heat +0: this run added no Heat.,Heat +0: this run added no Heat.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
@@ -910,6 +918,7 @@ JACK IN to %s: start a %s here with the picked operative.,JACK IN to %s: start a
 JACK IN: back into the run you left.,JACK IN: back into the run you left.
 "JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun.","JACK IN: pick a Site on the City Grid, then JACK IN on its card to start the netrun."
 JACK OUT,JACK OUT
+JACKED OUT,JACKED OUT
 LAST TURN: ,LAST TURN: 
 LEAVE THE MODEM,LEAVE THE MODEM
 LEFT,LEFT
@@ -1926,7 +1935,6 @@ Slices,Slices
 Slot %d: %s%s,Slot %d: %s%s
 Slot %s: %s,Slot %s: %s
 "Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s.","Slot %s: %s. Heat %d, ICE %d, %d runs completed. Campaign %s%s."
-Socket into %s,Socket into %s
 Socket into slot:,Socket into slot:
 Something opens at ICE %d everywhere (%d/%d).,Something opens at ICE %d everywhere (%d/%d).
 Start a netrun at the first open Site,Start a netrun at the first open Site
@@ -2640,12 +2648,12 @@ The campaign's numbers: they stay between runs.,The campaign's numbers: they sta
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
 "The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre).","The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
+The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
 The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 The operative on %s ghosts %s for %d step(s).,The operative on %s ghosts %s for %d step(s).
 The operative on %s patches it: %s.,The operative on %s patches it: %s.
 The operative's deck and spinner (hub core and inner ring included).,The operative's deck and spinner (hub core and inner ring included).
-The spinner slot a bought Firmware chip goes into.,The spinner slot a bought Firmware chip goes into.
 The spinner slot the Firmware chip goes into.,The spinner slot the Firmware chip goes into.
 "The three campaign slots: start, load or delete.","The three campaign slots: start, load or delete."
 "The turn, and the free nudges left this turn (each extra nudge costs RAM).","The turn, and the free nudges left this turn (each extra nudge costs RAM)."
