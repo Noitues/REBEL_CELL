@@ -541,3 +541,26 @@ func test_reduce_motion_shakes_nothing() -> void:
 	assert_eq(n.position, Vector2(10, 10), "it rests where it was")
 	assert_false(Motion.camera_moves_allowed(), "and the camera holds (the jack cross-fades)")
 	Settings.set_reduce_motion(was)
+
+
+func test_the_upgrade_viewer_stays_on_the_canvas_at_two() -> void:
+	Settings.set_text_scale(Settings.TEXT_SCALE_MAX)
+	var scene := _open(NETRUN)
+	scene.start_run(1)
+	await _frames(2)
+	for seed in 12:
+		RunManager.netrun.run.cycles = 120
+		RunManager.netrun._open_shop()
+		if not (RunManager.netrun.run.shop.get("slices", []) as Array).is_empty():
+			break
+	if (RunManager.netrun.run.shop.get("slices", []) as Array).is_empty():
+		pending("no slices stocked")
+		return
+	scene._show_current()
+	await _frames(3)
+	scene.open_overwrite(0)
+	await _frames(4)
+	var view := scene.get_node("SpinnerView") as SpinnerView
+	assert_true(view.window.get_global_rect().end.y <= 720.5, "the window ends on the canvas: %s" % view.window.get_global_rect())
+	assert_true(view.draw_scale >= SpinnerView.WHEEL_SCALE_MIN - 0.001, "the wheel never under its floor")
+	view.close()

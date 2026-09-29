@@ -3553,7 +3553,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(spacer)
-	var legend := MapLegend.pin_to(spacer, c.corporation_id)
+	# Art pass W9F (§6.10: legends fold to MAP KEY above 1.3): at 2.0 the open key covered
+	# the playout's verdict stamp.
+	var legend := MapLegend.pin_to(spacer, c.corporation_id, Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001)
 	_fight_area = [spacer, legend]
 	var side := VBoxContainer.new()
 	side.add_theme_constant_override("separation", 12)
@@ -3809,7 +3811,7 @@ func show_raid_summary() -> void:
 	stamp.rotation_degrees = -8.0
 	table.add_child(stamp)
 	outer.add_child(table)
-	MapLegend.pin_to(table, c.corporation_id)
+	MapLegend.pin_to(table, c.corporation_id, Settings.text_scale >= MapLegend.FOLD_SCALE - 0.001)  # art pass W9F (§6.10)
 	var report := TerminalWindow.new(tr("RAID REPORT"), RaidVerdict.color_of(clean))
 	report.custom_minimum_size.x = 340
 	outer.add_child(report)

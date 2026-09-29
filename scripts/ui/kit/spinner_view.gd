@@ -95,7 +95,7 @@ func _init(p_slices: Array[StringName], p_firmware: Array[StringName], p_lookup:
 	prompts.alignment = BoxContainer.ALIGNMENT_BEGIN
 	window.body.add_child(prompts)
 	_wheel = Control.new()
-	_wheel.custom_minimum_size = Vector2(_wheel_width(), 440)
+	_wheel.custom_minimum_size = Vector2(_wheel_width(), WHEEL_H)
 	_wheel.draw.connect(_draw_wheel)
 	window.body.add_child(_wheel)
 	for i in slices.size():
@@ -144,6 +144,7 @@ func _ready() -> void:
 	Settings.hints_changed.connect(_relabel)
 	_relabel()
 	_place_pads.call_deferred()
+	_fit_canvas.call_deferred()
 	if not _pads.is_empty():
 		_pads[0].grab_focus.call_deferred()
 	else:
@@ -384,6 +385,40 @@ func confirm() -> void:
 	var picked := selected
 	close()
 	slot_picked.emit(picked)
+
+
+## Art pass W9F (§5.3, §12): the viewer stays on the canvas: a window taller than the room
+## under the subtitle band draws its wheel smaller (never under WHEEL_SCALE_MIN; its lettering
+## keeps its on-screen size, `draw_scale`), then moves up. Inside the loadout, the loadout
+## fits the wheel itself.
+const WHEEL_SCALE_MIN := 0.7
+const WHEEL_H := 440.0
+
+
+func _fit_canvas() -> void:
+	if not is_inside_tree() or window == null or get_parent() is LoadoutView:
+		return
+	var h := window.get_combined_minimum_size().y
+	var over := window.position.y + h - CANVAS_BOTTOM
+	if over > 0.0:
+		var holder := _wheel.get_parent() as Control
+		if holder == null or holder.name != &"WheelFit":
+			var box := _wheel.get_parent()
+			var at := _wheel.get_index()
+			box.remove_child(_wheel)
+			holder = Control.new()
+			holder.name = "WheelFit"
+			holder.mouse_filter = Control.MOUSE_FILTER_PASS
+			box.add_child(holder)
+			box.move_child(holder, at)
+			holder.add_child(_wheel)
+		var k := clampf((WHEEL_H * _wheel.scale.y - over) / WHEEL_H, WHEEL_SCALE_MIN, 1.0)
+		_wheel.scale = Vector2.ONE * k
+		holder.custom_minimum_size = Vector2(_wheel_width(), WHEEL_H) * k
+		draw_scale = k
+		window.size = Vector2.ZERO
+		h = window.get_combined_minimum_size().y
+	window.position.y = maxf(float(UiTheme.SP_S), minf(window.position.y, CANVAS_BOTTOM - h))
 
 
 ## The wheel area's width (px): the window's body is this wide.
