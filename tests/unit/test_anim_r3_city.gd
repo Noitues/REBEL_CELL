@@ -141,11 +141,16 @@ func test_a_choice_that_differs_further_on_shows_what_only_it_reaches() -> void:
 		var id: StringName = open[i]
 		var row: Node = nr._panel.find_child("Ahead%d" % (i + 1), true, false)
 		var kinds: Array = differs.get(id, [])
+		# Art pass W8c: every choice's compact row also says where it leads next; a twin's
+		# says "(same as N)" and no difference.
 		if twins.has(id):
-			assert_null(row, "a twin shows no difference")
+			assert_not_null(row.find_child("TwinOf", true, false), "a twin says which it equals")
+			for k in NetrunScript.AHEAD_ORDER:
+				assert_null(row.find_child("Ahead_%s" % k, true, false), "a twin shows no difference")
 			continue
-		if kinds.is_empty() and s.node_heat(id) == 0:
-			assert_null(row, "nothing differs: no row")
+		if kinds.is_empty():
+			for k in NetrunScript.AHEAD_ORDER:
+				assert_null(row.find_child("Ahead_%s" % k, true, false) if row != null else null, "nothing differs: no difference icons")
 		else:
 			assert_not_null(row, "choice %d shows what only it reaches" % (i + 1))
 			for k: StringName in kinds:

@@ -828,7 +828,7 @@ func test_an_event_types_its_story_quickly_on_a_panel_its_size() -> void:
 	Typing.finish(label)
 	var src := FileAccess.get_file_as_string("res://scripts/ui/netrun_scene.gd")
 	assert_true(src.contains("Typing.type_in(text, &\"event_type\")"), "the event page uses it")
-	assert_true(src.contains("panel.custom_minimum_size = Vector2(760, 0)"), "the paper is as tall as its words")
+	assert_true(src.contains("_fit_paper"), "the paper is as tall as its words (art pass W8c)")
 
 
 func test_new_words_are_exported_once() -> void:

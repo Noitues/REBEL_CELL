@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- REBEL_CELL: the Modem's vertical neon sign, MODEM / CYBER SHOP (original design, art pass
+     W8c; ART_BIBLE 4.3 rule 5: baked art, translated by a subtitle where needed). A dark
+     circuit board in a pink neon tube frame; MODEM stacked in angular pink tubes, CYBER SHOP
+     in cyan tubes under it. Each tube is three strokes (wide faint halo, glow, bright core)
+     so it reads as neon without filters. Laid out in six horizontal bands (ModemSign.BANDS:
+     the five MODEM letters, then CYBER SHOP) so the warm-up can strike each band on its own.
+     Colours: Palette.CELL_PINK #FF3DA8, NET_CYAN #5CE1FF, NIGHT_SKY #060816. 210 x 540. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="210" height="540" viewBox="0 0 210 540">
+  <!-- the board -->
+  <rect x="8" y="8" width="194" height="524" rx="26" ry="26" fill="#05060f" fill-opacity="0.96"/>
+  <!-- board traces (thin pink, pads at their ends) -->
+  <g fill="none" stroke="#FF3DA8" stroke-opacity="0.26" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 40 H40 L50 50 V92"/><path d="M188 58 H170 L162 66 V110"/>
+    <path d="M24 130 H38 L46 138 V170 L54 178"/><path d="M186 150 H174 L166 158 V196"/>
+    <path d="M22 214 H44 L52 222 V246"/><path d="M188 232 H168 L160 240 V270 L152 278"/>
+    <path d="M24 300 H36 L44 308 V344"/><path d="M186 318 H172 L164 326 V352"/>
+    <path d="M22 372 H40 L48 380 V392"/><path d="M188 376 H176 L168 384 V394"/>
+    <path d="M30 506 H64 L72 498 H100"/><path d="M180 506 H148 L140 498 H118"/>
+    <path d="M60 24 V34 H96"/><path d="M150 24 V34 H114"/>
+  </g>
+  <g fill="#FF3DA8" fill-opacity="0.5">
+    <circle cx="50" cy="92" r="3"/><circle cx="162" cy="110" r="3"/><circle cx="54" cy="178" r="3"/>
+    <circle cx="166" cy="196" r="3"/><circle cx="52" cy="246" r="3"/><circle cx="152" cy="278" r="3"/>
+    <circle cx="44" cy="344" r="3"/><circle cx="164" cy="352" r="3"/><circle cx="100" cy="498" r="3"/>
+    <circle cx="118" cy="498" r="3"/><circle cx="96" cy="34" r="2.5"/><circle cx="114" cy="34" r="2.5"/>
+  </g>
+  <!-- the frame tube -->
+  <g fill="none" stroke-linejoin="round">
+    <rect x="8" y="8" width="194" height="524" rx="26" ry="26" stroke="#FF3DA8" stroke-opacity="0.12" stroke-width="18"/>
+    <rect x="8" y="8" width="194" height="524" rx="26" ry="26" stroke="#FF3DA8" stroke-opacity="0.32" stroke-width="8"/>
+    <rect x="8" y="8" width="194" height="524" rx="26" ry="26" stroke="#FF8FCB" stroke-width="3"/>
+  </g>
+  <!-- MODEM: five letters, 96 x 56 each, bands at y 44, 110, 176, 242, 308 -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g id="letters-halo" stroke="#FF3DA8" stroke-opacity="0.14" stroke-width="16">
+      <path d="M57 100 V44 L105 76 L153 44 V100"/>
+      <path d="M73 110 H137 L153 126 V150 L137 166 H73 L57 150 V126 Z"/>
+      <path d="M57 176 H127 L153 196 V212 L127 232 H57 Z"/>
+      <path d="M153 242 H57 V298 H153 M57 270 H131"/>
+      <path d="M57 364 V308 L105 340 L153 308 V364"/>
+    </g>
+    <g stroke="#FF3DA8" stroke-opacity="0.4" stroke-width="8">
+      <path d="M57 100 V44 L105 76 L153 44 V100"/>
+      <path d="M73 110 H137 L153 126 V150 L137 166 H73 L57 150 V126 Z"/>
+      <path d="M57 176 H127 L153 196 V212 L127 232 H57 Z"/>
+      <path d="M153 242 H57 V298 H153 M57 270 H131"/>
+      <path d="M57 364 V308 L105 340 L153 308 V364"/>
+    </g>
+    <g stroke="#FF9ED2" stroke-width="3.4">
+      <path d="M57 100 V44 L105 76 L153 44 V100"/>
+      <path d="M73 110 H137 L153 126 V150 L137 166 H73 L57 150 V126 Z"/>
+      <path d="M57 176 H127 L153 196 V212 L127 232 H57 Z"/>
+      <path d="M153 242 H57 V298 H153 M57 270 H131"/>
+      <path d="M57 364 V308 L105 340 L153 308 V364"/>
+    </g>
+  </g>
+  <!-- the tubes' electrodes: pads where each letter's tube ends -->
+  <g fill="#FF3DA8">
+    <circle cx="57" cy="100" r="3.2"/><circle cx="153" cy="100" r="3.2"/>
+    <circle cx="131" cy="270" r="3.2"/><circle cx="153" cy="298" r="3.2"/>
+    <circle cx="57" cy="364" r="3.2"/><circle cx="153" cy="364" r="3.2"/>
+  </g>
+  <!-- CYBER / SHOP: cyan tubes, letters 26 x 34; CYBER at y 398, SHOP at y 446 -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(24 398)">
+    <g stroke="#5CE1FF" stroke-opacity="0.16" stroke-width="10">
+      <path d="M26 0 H6 L0 6 V28 L6 34 H26"/>
+      <path d="M34 0 L47 16 L60 0 M47 16 V34"/>
+      <path d="M68 0 H88 L94 6 V12 L88 17 H68 M88 17 L94 22 V28 L88 34 H68 V0"/>
+      <path d="M128 0 H102 V34 H128 M102 17 H122"/>
+      <path d="M136 34 V0 H156 L162 6 V12 L156 17 H136 M148 17 L162 34"/>
+    </g>
+    <g stroke="#5CE1FF" stroke-opacity="0.45" stroke-width="5">
+      <path d="M26 0 H6 L0 6 V28 L6 34 H26"/>
+      <path d="M34 0 L47 16 L60 0 M47 16 V34"/>
+      <path d="M68 0 H88 L94 6 V12 L88 17 H68 M88 17 L94 22 V28 L88 34 H68 V0"/>
+      <path d="M128 0 H102 V34 H128 M102 17 H122"/>
+      <path d="M136 34 V0 H156 L162 6 V12 L156 17 H136 M148 17 L162 34"/>
+    </g>
+    <g stroke="#B8F1FF" stroke-width="2.2">
+      <path d="M26 0 H6 L0 6 V28 L6 34 H26"/>
+      <path d="M34 0 L47 16 L60 0 M47 16 V34"/>
+      <path d="M68 0 H88 L94 6 V12 L88 17 H68 M88 17 L94 22 V28 L88 34 H68 V0"/>
+      <path d="M128 0 H102 V34 H128 M102 17 H122"/>
+      <path d="M136 34 V0 H156 L162 6 V12 L156 17 H136 M148 17 L162 34"/>
+    </g>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(41 446)">
+    <g stroke="#5CE1FF" stroke-opacity="0.16" stroke-width="10">
+      <path d="M26 0 H6 L0 6 V12 L6 17 H20 L26 22 V28 L20 34 H0"/>
+      <path d="M34 0 V34 M60 0 V34 M34 17 H60"/>
+      <path d="M74 0 H88 L94 6 V28 L88 34 H74 L68 28 V6 Z"/>
+      <path d="M102 34 V0 H122 L128 6 V12 L122 17 H102"/>
+    </g>
+    <g stroke="#5CE1FF" stroke-opacity="0.45" stroke-width="5">
+      <path d="M26 0 H6 L0 6 V12 L6 17 H20 L26 22 V28 L20 34 H0"/>
+      <path d="M34 0 V34 M60 0 V34 M34 17 H60"/>
+      <path d="M74 0 H88 L94 6 V28 L88 34 H74 L68 28 V6 Z"/>
+      <path d="M102 34 V0 H122 L128 6 V12 L122 17 H102"/>
+    </g>
+    <g stroke="#B8F1FF" stroke-width="2.2">
+      <path d="M26 0 H6 L0 6 V12 L6 17 H20 L26 22 V28 L20 34 H0"/>
+      <path d="M34 0 V34 M60 0 V34 M34 17 H60"/>
+      <path d="M74 0 H88 L94 6 V28 L88 34 H74 L68 28 V6 Z"/>
+      <path d="M102 34 V0 H122 L128 6 V12 L122 17 H102"/>
+    </g>
+  </g>
+  <!-- a rule of cyan dots between the two words' bands and the frame's foot -->
+  <g fill="#5CE1FF" fill-opacity="0.55">
+    <circle cx="36" cy="390" r="1.6"/><circle cx="46" cy="390" r="1.6"/><circle cx="164" cy="390" r="1.6"/><circle cx="174" cy="390" r="1.6"/>
+  </g>
+</svg>

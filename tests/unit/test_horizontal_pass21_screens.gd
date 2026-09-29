@@ -181,9 +181,14 @@ func test_every_stat_tag_has_its_icon_on_every_screen() -> void:
 	RunManager.netrun.run.phase = RunState.Phase.ENDED
 	scene._show_end()
 	await _frames()
-	var end_tags := scene._panel.find_child("RunTags", true, false) as HudStats
-	for i in end_tags.items.size():
-		assert_true(StatIcon.ALL.has(end_tags.icon_of(i)), "run end tag %s has an icon" % end_tags.items[i][0])
+	# Art pass W8c: the run's numbers on a taped receipt, each after its icon (StatField).
+	var receipt := scene._panel.find_child("RunReceipt", true, false) as RunReceipt
+	assert_not_null(receipt)
+	var fields := 0
+	for n in receipt.find_children("*", "StatField", true, false):
+		fields += 1
+		assert_true(StatIcon.ALL.has((n as StatField).kind), "run end field %s has an icon" % n.name)
+	assert_true(fields >= 5, "the run in numbers")
 	var title := _open(TITLE)
 	await _frames()
 	# Art pass W8a: the profile is a GLASS uplink of icon + number fields (one PAPER note).
@@ -307,19 +312,24 @@ func test_a_fight_gets_its_height_back_and_its_own_dock() -> void:
 
 
 func test_the_modem_shows_the_wallet() -> void:
-	for scale in [1.0, LayoutScales.VERIFIED_MAX]:
+	for scale in [1.0, Settings.TEXT_SCALE_MAX]:  # art pass W8c: this page fits 2.0
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
 		var scene := _netrun()
 		_shop(scene)
 		await _frames()
-		var wallet := scene._panel.find_child("Wallet", true, false) as HudStats
-		assert_not_null(wallet, "the Modem has its wallet")
-		assert_eq(String(wallet.items[0][1]), str(RunManager.netrun.run.cycles), "the Cycles you have")
-		assert_eq(wallet.icon_of(0), StatIcon.CYCLES, "with the coin")
-		assert_ne(wallet._get_tooltip(wallet.tag_rects()[0].get_center()), "", "and says what it is")
-		var r := wallet.get_global_rect()
-		assert_true(wallet.is_visible_in_tree() and r.end.y <= CANVAS.y and r.end.x <= CANVAS.x, "on screen at text %.1f: %s" % [scale, r])
+		# Art pass W8c (ART_BIBLE 11 Modem): one Cycles readout, the top bar's (the wallet in
+		# the REMOVE window said it twice).
+		assert_null(scene._panel.find_child("Wallet", true, false), "no second Cycles readout")
+		var bar: HudStats = scene.hud.stats
+		var k := -1
+		for i in bar.items.size():
+			if bar.icon_of(i) == StatIcon.CYCLES:
+				k = i
+		assert_true(k >= 0, "the top bar's CYCLES tag")
+		assert_eq(String(bar.items[k][1]), str(RunManager.netrun.run.cycles), "the Cycles you have")
+		var r := bar.get_global_rect()
+		assert_true(bar.is_visible_in_tree() and r.end.y <= CANVAS.y and r.end.x <= CANVAS.x, "on screen at text %.1f: %s" % [scale, r])
 		scene.get_parent().queue_free()
 		await _frames(2)
 
@@ -370,11 +380,12 @@ func test_socket_lists_name_slots_not_ids() -> void:
 			assert_false(t.contains(id), "slot name without '%s': %s" % [id, t])
 	_loot(scene, "firmware", [String(RunManager.lookup().ids_of_class(&"FirmwareData")[0])])
 	await _frames()
-	var slot_pick := scene._panel.find_child("SlotPick", true, false) as OptionButton
-	assert_not_null(slot_pick, "the loot's socket list")
-	for i in slot_pick.item_count:
+	# Art pass W8c: the loot's slots are tiles (SlotPicker); each tile's words and tip.
+	var slot_pick := scene._panel.find_child("SlotPick", true, false) as SlotPicker
+	assert_not_null(slot_pick, "the loot's socket tiles")
+	for t in slot_pick.tiles:
 		for id in raw:
-			assert_false(slot_pick.get_item_text(i).contains(id), "loot socket list without '%s'" % id)
+			assert_false(String(t["meta"]).contains(id) or String(t["tip"]).contains(id), "loot socket tile without '%s'" % id)
 
 
 # --- #13 event outcomes as icons; icons on menus ---------------------------------------------
@@ -553,10 +564,16 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	assert_true(cards_win.get_global_rect().grow(1.0).encloses(card.get_global_rect()), "and stay in their quadrant")
 	for n in _all(scene._panel):
 		if n is ZineCard and (n as ZineCard).look != ZineCard.Look.STICKER:
-			assert_almost_eq((n as ZineCard).text_scale, LayoutScales.VERIFIED_MAX, 0.01, "tile lettering grows")
-	for id in ["LeaveModem", "Wallet"]:
-		var r := (scene._panel.find_child(id, true, false) as Control).get_global_rect()
-		assert_true(r.end.y <= CANVAS.y, "%s on screen at 1.6: %s" % [id, r])
+			# Art pass W8c: chips and Daemons letter at `body` (their caption step x 15/12).
+			var want: float = scene.chip_text_scale(LayoutScales.VERIFIED_MAX) if (n as ZineCard).look == ZineCard.Look.CHIP else LayoutScales.VERIFIED_MAX
+			assert_almost_eq((n as ZineCard).text_scale, want, 0.01, "tile lettering grows")
+	# Art pass W8c: at big text the Modem is one column and scrolls inside its page (MORE
+	# BELOW); LEAVE THE MODEM comes into view by scrolling (and the pad's B leaves).
+	var leave := scene._panel.find_child("LeaveModem", true, false) as Control
+	(scene._panel_host.get_parent() as ScrollContainer).ensure_control_visible(leave)
+	await _frames()
+	var lr := leave.get_global_rect()
+	assert_true(lr.end.y <= CANVAS.y and lr.end.x <= CANVAS.x, "LeaveModem reachable at 1.6: %s" % lr)
 	_loot(scene)
 	await _frames()
 	var loot: Node = scene._panel.find_child("Stickers", true, false)

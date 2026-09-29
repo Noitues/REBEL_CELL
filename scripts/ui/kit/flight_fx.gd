@@ -20,6 +20,8 @@ const FADE_SHARE := 0.3
 ## Every flight shrinks to this entry's amplitude as it arrives (the Modem's `buy_fly`: one
 ## size for anything landing in a top bar icon).
 const ARRIVE_MOTION := &"buy_fly"
+## The stamp box's paper alpha (opaque under high contrast, art pass W8c).
+const STAMP_PAPER_ALPHA := 0.85
 ## A stamp's lettering relative to the stamped height, its border and its colour.
 const STAMP_TEXT_SHARE := 0.34
 const STAMP_BORDER := 3.0
@@ -159,7 +161,9 @@ static func fly_node(screen: Node, node: Control, from: Rect2, to: Vector2, id: 
 
 ## A stamp landing on `rect` (global): a picture of `source` (or a `word` in a stamp box)
 ## stamps down from the entry's amplitude scale, holds and fades (`event_choice_stamp`).
-static func stamp_on(screen: Node, source: Control, word: String, id: StringName = &"event_choice_stamp") -> Control:
+## Art pass W8c: `picture` false stamps the word alone (no picture of `source`: an event
+## choice's note left a white bar over the page that came in).
+static func stamp_on(screen: Node, source: Control, word: String, id: StringName = &"event_choice_stamp", picture: bool = true) -> Control:
 	if not Motion.live(id) or source == null or not source.is_inside_tree():
 		return null
 	var l := layer_for(screen)
@@ -172,7 +176,7 @@ static func stamp_on(screen: Node, source: Control, word: String, id: StringName
 	holder.position = r.position
 	holder.size = r.size
 	holder.pivot_offset = r.size * 0.5
-	var tex := snapshot(source)
+	var tex := snapshot(source) if picture else null
 	if tex != null:
 		var pic := TextureRect.new()
 		pic.texture = tex
@@ -208,13 +212,13 @@ static func stamp_mark(onto: Control, box: Rect2, word: String) -> Control:
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	mark.size = box.size
 	mark.pivot_offset = box.size * 0.5
-	var fs := maxi(10, roundi(minf(box.size.y, box.size.x * 0.6) * STAMP_TEXT_SHARE))
+	var fs := maxi(UiTheme.font_px(UiTheme.CAPTION), roundi(minf(box.size.y, box.size.x * 0.6) * STAMP_TEXT_SHARE))
 	mark.draw.connect(func() -> void:
 		var f := Palette.display()
 		var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + fs * 0.6
 		var h := fs * 1.3
 		mark.draw_set_transform(box.size * 0.5, STAMP_TILT, Vector2.ONE)
-		mark.draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Color(Palette.PAPER, 0.85))
+		mark.draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Palette.PAPER if Settings.high_contrast else Color(Palette.PAPER, STAMP_PAPER_ALPHA))  # art pass W8c: §12
 		mark.draw_rect(Rect2(-w * 0.5, -h * 0.5, w, h), Palette.CELL_PINK, false, STAMP_BORDER)
 		mark.draw_string(f, Vector2(-w * 0.5, fs * 0.4), word, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Palette.CELL_PINK))
 	onto.add_child(mark)

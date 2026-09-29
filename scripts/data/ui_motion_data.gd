@@ -95,6 +95,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	# Art pass W5 (ART_BIBLE 7.2, 8): the enemy/boss hologram idle (T0), intro (T4) and its reduce-effects cross-fade.
 	&"hologram_idle", &"hologram_intro", &"hologram_intro_fade",
 	&"modal_in", &"modal_out", &"logo_drip",  # art pass W8a (ART_BIBLE 10, 11 Title)
+	&"run_end_flatline",  # art pass W8c (ART_BIBLE 11 Run failed, 8 T4)
 	&"hub_clear",  # art pass W3
 	&"wheel_respin_settle",  # art pass W3
 ]
