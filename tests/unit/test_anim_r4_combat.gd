@@ -89,14 +89,12 @@ func _live() -> void:
 	Motion.force_live = true
 
 
+## ANIM-R6 A18: on, then the project's own pseudolocalisation values back (PseudoLoc).
 func _pseudo(on: bool) -> void:
-	if TranslationServer.pseudolocalization_enabled == on:
-		return
-	ProjectSettings.set_setting("internationalization/pseudolocalization/replace_with_accents", on)
-	ProjectSettings.set_setting("internationalization/pseudolocalization/double_vowels", on)
-	ProjectSettings.set_setting("internationalization/pseudolocalization/override", false)
-	TranslationServer.pseudolocalization_enabled = on
-	TranslationServer.reload_pseudolocalization()
+	if on:
+		PseudoLoc.on()
+	else:
+		PseudoLoc.off()
 
 
 func _translate(pairs: Dictionary) -> void:

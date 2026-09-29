@@ -399,14 +399,31 @@ func _draw() -> void:
 
 ## ANIM-R1 C7: a drawn "▶▶" (the end-turn mark, readable in any language), right edge at
 ## `right` (vertical middle there), `h` px tall, scaled by the ready pulse.
+## ANIM-R6 A17: a play button's mark (a disc in the lettering's paint with a ▶ cut in it,
+## PLAY_DISC x the key hint's height), so SEND IT reads as "go" without English (the small
+## ▶▶ beside the key read as fast-forward, if at all).
 func _draw_glyph(right: Vector2, h: float, col: Color) -> void:
-	var s := h * GLYPH_H * ready_pulse
-	var w := s * GLYPH_W / GLYPH_H
-	for k in 2:
-		var x1 := right.x - k * w
-		var tri := PackedVector2Array([Vector2(x1, right.y), Vector2(x1 - w, right.y - s * 0.5), Vector2(x1 - w, right.y + s * 0.5)])
-		draw_colored_polygon(tri, Color(1, 1, 1, OUTLINE_ALPHA))
-		draw_colored_polygon(PackedVector2Array([tri[0] + Vector2(-OUTLINE_PX, 0), tri[1] + Vector2(OUTLINE_PX * 0.5, OUTLINE_PX), tri[2] + Vector2(OUTLINE_PX * 0.5, -OUTLINE_PX)]), col)
+	var r := h * GLYPH_H * PLAY_DISC * 0.5 * ready_pulse
+	var c := right - Vector2(r, 0.0)
+	draw_circle(c, r + OUTLINE_PX, Color(1, 1, 1, OUTLINE_ALPHA))
+	draw_circle(c, r, col)
+	var tri := PackedVector2Array([c + Vector2(r * PLAY_TIP, 0.0), c + Vector2(-r * PLAY_BACK, -r * PLAY_HALF), c + Vector2(-r * PLAY_BACK, r * PLAY_HALF)])
+	draw_colored_polygon(tri, Palette.NIGHT_SKY)
+
+
+## The play mark's box (local) for a glyph whose right edge is at `right`, `h` tall (tests
+## and layout: it stays inside the button).
+func play_mark_rect(right: Vector2, h: float) -> Rect2:
+	var r := h * GLYPH_H * PLAY_DISC * 0.5 + OUTLINE_PX
+	return Rect2(right - Vector2(2.0 * r, r), Vector2(2.0 * r, 2.0 * r))
+
+
+## The play mark's disc as a multiple of the old glyph's height, and its ▶ (tip forward,
+## back edge, half height) as shares of the disc's radius (drawing).
+const PLAY_DISC := 1.5
+const PLAY_TIP := 0.55
+const PLAY_BACK := 0.35
+const PLAY_HALF := 0.5
 
 
 ## ANIM-R1 C7: the end-turn mark pulses gently while there's nothing left to spend (`on`);

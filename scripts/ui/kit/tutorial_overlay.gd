@@ -6,6 +6,8 @@ extends Control
 ## combat events (or Next); Skip ends it. Marks Settings.tutorial_done when finished.
 
 signal finished
+## ANIM-R6 A16: a new step shows (its box is sized to its text).
+signal step_changed
 
 ## Height kept for the Next / Skip row under the note.
 const BUTTON_ROW_HEIGHT := 40.0
@@ -94,23 +96,100 @@ func _init(p_size: Vector2 = Vector2(380, 190)) -> void:
 	Settings.hints_changed.connect(_show)
 
 
-## Resizes the overlay (note above, Next / Skip row under it); the note scrolls when the
-## step's text is longer than it.
+## Resizes the overlay (note above, Next / Skip row under it). ANIM-R6 A16: a step whose text
+## is longer than the note shows it in pages that fit (Next turns the page), never cut.
 func fit(p_size: Vector2) -> void:
 	custom_minimum_size = p_size
 	size = p_size
 	note.custom_minimum_size = Vector2(p_size.x, p_size.y - BUTTON_ROW_HEIGHT)
 	note.size = note.custom_minimum_size
 	row.position = Vector2(10, p_size.y - BUTTON_ROW_HEIGHT + 2)
+	_show()
+
+
+## ANIM-R6 A16: the note's text room: its label's width and height, the lettering's line
+## height, and the lines a page holds under the title.
+func _room(p_size: Vector2) -> Dictionary:
+	var fs := note.label.get_theme_font_size(&"normal_font_size")
+	var font := note.label.get_theme_font(&"normal_font")
+	var line_h := font.get_height(fs) + note.label.get_theme_constant(&"line_separation")
+	var w := p_size.x - note.label.offset_left + note.label.offset_right - TEXT_SLACK
+	var h := p_size.y - BUTTON_ROW_HEIGHT - note.label.offset_top + note.label.offset_bottom
+	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1)}
+
+
+## ANIM-R6 A16: `text` wrapped at word breaks to `width` px in `font` at `fs`.
+static func wrap_words(text: String, font: Font, fs: int, width: float) -> PackedStringArray:
+	var lines := PackedStringArray()
+	var line := ""
+	for word in text.split(" ", false):
+		var trial := word if line == "" else line + " " + word
+		if line != "" and font.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+			lines.append(line)
+			line = word
+		else:
+			line = trial
+	if line != "":
+		lines.append(line)
+	return lines
+
+
+## ANIM-R6 A16: the height the overlay needs at `width` px to show the current step whole
+## (its title, its text, the Next / Skip row): the scene sizes the box to it.
+func needed_height(width: float) -> float:
+	var r := _room(Vector2(width, BUTTON_ROW_HEIGHT))
+	var n := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"])).size() + 1
+	return n * float(r["line_h"]) + note.label.offset_top - note.label.offset_bottom + BUTTON_ROW_HEIGHT + TEXT_SLACK
+
+
+## ANIM-R6 A16: the current step's pages at this size (one when its text fits).
+func pages() -> PackedStringArray:
+	var r := _room(size)
+	var lines := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"]))
+	var per := int(r["lines"])
+	var out := PackedStringArray()
+	var i := 0
+	while i < lines.size():
+		out.append(" ".join(lines.slice(i, i + per)))
+		i += per
+	if out.is_empty():
+		out.append("")
+	return out
+
+
+## Room kept beside the text for the label's scroll bar and rounding (px).
+const TEXT_SLACK := 6.0
+## The page of the current step on show.
+var page: int = 0
+var _pulse: Tween = null
 
 
 func _show() -> void:
 	note.clear()
 	var s: Dictionary = STEPS[step]
-	note.append("[b]%d/%d %s[/b]" % [step + 1, STEPS.size(), tr(String(s["title"]))])
-	note.append(step_text(step))
+	var all := pages()
+	page = clampi(page, 0, all.size() - 1)
+	var head := "[b]%d/%d %s[/b]" % [step + 1, STEPS.size(), tr(String(s["title"]))]
+	if all.size() > 1:
+		head += " (%d/%d)" % [page + 1, all.size()]
+	note.append(head)
+	note.append(all[page])
 	note.label.scroll_to_line.call_deferred(0)  # the step title first, at any text scale
-	next_button.text = tr("Finish") if step == STEPS.size() - 1 else tr("Next")
+	var last := step == STEPS.size() - 1 and page == all.size() - 1
+	next_button.text = tr("Finish") if last else tr("Next")
+	# ANIM-R6 A16: Next pulses when it is what moves the tutorial on (a step no play of the
+	# fight ends, or a page to turn), so the box never sits unread on one step.
+	var waits := String(s["until"]) == "" or page < all.size() - 1
+	if waits and (_pulse == null or not _pulse.is_valid()):
+		_pulse = Motion.loop_pulse(next_button, ^"modulate:a", &"tutorial_next_pulse")
+	elif not waits:
+		Motion.stop(next_button)
+		_pulse = null
+
+
+## True while Next pulses (tests).
+func next_pulsing() -> bool:
+	return _pulse != null and _pulse.is_valid()
 
 
 ## Step `i`'s text with the current binds filled in (pad buttons when a pad is in use).
@@ -145,11 +224,12 @@ func current_title() -> String:
 
 
 func advance() -> void:
-	if step >= STEPS.size() - 1:
-		_finish()
+	# ANIM-R6 A16: a longer step's next page first.
+	if page < pages().size() - 1:
+		page += 1
+		_show()
 		return
-	step += 1
-	_show()
+	_next_step()
 
 
 func skip() -> void:
@@ -157,14 +237,29 @@ func skip() -> void:
 
 
 ## Combat events from the engine: the current step advances when its trigger appears.
+## ANIM-R6 A16: a step no play ends (the wheel, resistance, Heat) moves on with the turn (a
+## new turn's start), so it never stays up turn after turn.
 func on_events(events: Array[Dictionary]) -> void:
 	var until := String(STEPS[step]["until"])
 	if until == "":
-		return
+		until = "turn_start"
 	for e in events:
 		if String(e.get("type", "")) == until:
-			advance()
+			_next_step()
 			return
+
+
+## The next step (its first page), or the end.
+func _next_step() -> void:
+	if step >= STEPS.size() - 1:
+		_finish()
+		return
+	step += 1
+	page = 0
+	Motion.stop(next_button)
+	_pulse = null
+	_show()
+	step_changed.emit()
 
 
 func _finish() -> void:

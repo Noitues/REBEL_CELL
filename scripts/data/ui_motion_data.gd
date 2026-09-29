@@ -85,6 +85,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ANIM-R6 rules: a flight's lift and fade shares and a stamp's down and hold shares
 	# (were inline in FlightFx).
 	&"flight_lift_share", &"flight_fade_share", &"choice_stamp_down_share", &"choice_stamp_hold_share",
+	# ANIM-R6 combat: the tutorial's Next pulses while it waits for it.
+	&"tutorial_next_pulse",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

@@ -102,6 +102,15 @@ func test_pause_menu_opens_from_hq_with_options_and_codex() -> void:
 	assert_null(hq._settings_panel)
 
 
+## Next until the tutorial's step changes (ANIM-R6 A16: a longer step turns its pages first).
+func _next_step(t: TutorialOverlay) -> void:
+	var at := t.step
+	for i in 10:
+		t.advance()
+		if t.step != at:
+			return
+
+
 func test_tutorial_overlay_advances_on_events_and_skip_marks_it_done() -> void:
 	Settings.set_tutorial_done(false)
 	RunManager.pending_tutorial = true
@@ -110,11 +119,11 @@ func test_tutorial_overlay_advances_on_events_and_skip_marks_it_done() -> void:
 	assert_false(RunManager.pending_tutorial)
 	var t: TutorialOverlay = scene.tutorial
 	assert_eq(t.current_title(), "THE WHEEL")
-	t.advance()
+	_next_step(t)
 	assert_eq(t.current_title(), "NUDGE")
 	scene.nudge(1)
 	assert_eq(t.current_title(), "RESISTANCE", "a nudge advances the nudge step")
-	t.advance()
+	_next_step(t)
 	assert_eq(t.current_title(), "CARDS")
 	scene.play_card(0)
 	assert_eq(t.current_title(), "UNDO")

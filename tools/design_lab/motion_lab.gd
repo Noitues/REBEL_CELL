@@ -88,7 +88,7 @@ const DEMOS := {
 	# ANIM-2 / ANIM-3 (combat): "view" plays on the lab's wheel / card / SEND IT; "scene"
 	# plays in a live combat scene over the whole lab (1280x720).
 	&"resolve_sequence": ["scene", "send_hit"], &"hit_line": ["scene", "send_hit"], &"victory_stamp": ["scene", "victory"],
-	&"combat_end_hold": ["scene", "victory"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
+	&"combat_end_hold": ["netrun", "fight_won"], &"wheel_flip": ["view", "flip"], &"dead_wheel_fade": ["scene", "break"],
 	&"drag_ghost_tilt": ["scene", "drag"], &"card_pile": ["scene", "deal"], &"hand_reflow": ["scene", "play"],
 	&"ram_tick": ["scene", "ram"], &"ram_pending_blink": ["scene", "aim"],
 	# ANIM-5 (map, raid, jack and Heat):
@@ -141,6 +141,8 @@ const DEMOS := {
 	# ANIM-R6 rules: the flight's and the stamp's shares, on the real flight and stamp.
 	&"flight_lift_share": ["screen", "pick"], &"flight_fade_share": ["screen", "buy"],
 	&"choice_stamp_down_share": ["screen", "stamp"], &"choice_stamp_hold_share": ["screen", "stamp"],
+	# ANIM-R6 combat: the tutorial's Next (TutorialOverlay plays it with Motion.loop_pulse).
+	&"tutorial_next_pulse": ["pulse", "sticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -852,10 +854,14 @@ func _play_context(scene: String, what: String) -> void:
 		_context.new_campaign(DEMO_CAMPAIGN_SEED)
 		_context.start_run(1)
 		var s := RunManager.netrun
-		var first: StringName = s.available_nodes()[0]
-		s.run.current_node_id = first
-		s.run.visited.append(first)
-		_context._show_map()
+		if what == "fight_won":
+			# ANIM-R6 A15: the run's first node is a fight (as --demo-combat); it is won there.
+			_context.enter_node(s.available_nodes()[0])
+		else:
+			var first: StringName = s.available_nodes()[0]
+			s.run.current_node_id = first
+			s.run.visited.append(first)
+			_context._show_map()
 	else:
 		_demo_campaign(what)
 		_context = load(HQ_SCENE).instantiate()
@@ -877,6 +883,11 @@ func _play_context(scene: String, what: String) -> void:
 	var hq := _context
 	var c := RunManager.campaign
 	match what:
+		"fight_won":
+			# The fight is won by SEND IT; VICTORY stands until the netrun opens the loot after
+			# `combat_end_hold`.
+			if hq.combat_scene != null:
+				hq._demo_combat_end("win")
 		"route":
 			hq.enter_node(RunManager.netrun.available_nodes()[0])
 		"select":
@@ -1082,6 +1093,17 @@ func _play_scene(what: String) -> void:
 				_scene.start_fight(SCENE_ENEMY, SCENE_SEED + s + 1)
 				_scene.skip_motion()
 			_scene.engine.state().player.hp = 1
+			# ANIM-R6 A18: a deterministic fallback when no fight tried has the enemy hitting
+			# (lab only): the enemy's wheel is turned tick by tick until SEND IT loses.
+			var st: CombatState = _scene.engine.state()
+			var foe: CombatantState = st.enemies[0]
+			var base_rot := foe.wheel.rotation
+			for k in RC.TICKS:
+				if _scene.engine.preview_end_turn().state.outcome == CombatState.Outcome.DEFEAT:
+					break
+				foe.wheel.rotation = (base_rot + k + 1) % RC.TICKS
+			if _scene.engine.preview_end_turn().state.outcome != CombatState.Outcome.DEFEAT:
+				push_warning("motion_lab: send_lose found no losing SEND IT")
 			_scene._refresh(_scene.engine.state())
 			_scene.skip_motion()
 			await get_tree().process_frame

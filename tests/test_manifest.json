@@ -129,6 +129,10 @@
 			"seconds": 16.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_anim_r6_combat.gd": {
+			"seconds": 30.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r5_rules.gd": {
 			"seconds": 1.1,
 			"tier": "full"
