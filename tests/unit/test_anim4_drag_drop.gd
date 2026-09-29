@@ -285,7 +285,7 @@ func test_recruit_and_boost_drops_match_their_buttons() -> void:
 			var cfg := RunManager.config()
 			var button: Button
 			if kind == "recruit":
-				button = hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+				button = hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 			else:
 				button = hq._panel.find_child("Boost_%s" % cfg.netrun_boosts[0].id, true, false) as Button
 			if use_drag:
@@ -490,7 +490,7 @@ func test_reduce_effects_and_headless_show_the_end_state_at_once() -> void:
 		# A click purchase: bought and shown at once.
 		hq.show_hq()
 		await _frames(3)
-		var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+		var rb := hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 		rb.pressed.emit()
 		assert_true(hq.drops.flights.is_empty(), "no purchase flight")
 		var c := RunManager.campaign
@@ -507,7 +507,7 @@ func test_motion_plays_live_and_input_completes_it() -> void:
 	hq.show_hq()
 	await _frames(4)
 	_live()
-	var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+	var rb := hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 	rb.pressed.emit()
 	assert_eq(hq.drops.flights.size(), 1, "the new operative flies from the Black Market to the crew")
 	var c := RunManager.campaign
@@ -594,7 +594,7 @@ func test_views_never_change_game_state() -> void:
 	hq.drops.start_carry(dossier)
 	assert_true(hq.drops.offered("station:%s" % safe), "the safehouse is checked (a dry run)")
 	hq.drops.cancel()
-	var rb := hq._panel.find_child("Recruits", true, false).get_child(1) as Button
+	var rb := hq._panel.find_child("Recruit_%s" % RunManager.DEFAULT_CLASS, true, false) as Button
 	hq.drops.begin_drag(rb, rb.get_meta(DropLayer.SOURCE_META))
 	hq.drops.cancel()
 	hq.drops.finish_all()

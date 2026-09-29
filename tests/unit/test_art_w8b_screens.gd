@@ -211,3 +211,44 @@ func test_other_pages_drop_the_frame_and_maps_dim_the_city() -> void:
 	assert_false(hq.deck_frame.visible, "the net pages are not the deck (§2)")
 	assert_true(hq.wireframe.city.atmosphere().state.map_mode, "map mode on the Grid (§9.5)")
 	await _close(hq)
+
+
+# --- Item 3: the Black Market (§11 HQ, §3.7; critique 06/09, scr/05) -----------------------------
+
+func test_the_black_market_is_grouped_with_icons_prices_and_readable_locks() -> void:
+	var c := RunManager.campaign
+	c.schematics = 1  # nothing affordable
+	var hq := _open(HQ)
+	await _frames(4)
+	var market := hq._panel.find_child("BlackMarket", true, false) as Control
+	var order := []
+	for n in _all(market):
+		if n.name in [&"RecruitsHeader", &"BoostsHeader", &"UnlocksHeader"]:
+			order.append(String(n.name))
+	assert_eq(order, ["RecruitsHeader", "BoostsHeader", "UnlocksHeader"], "three headed groups in order")
+	var items := market.find_children("*_*", "Button", true, false)
+	var checked := 0
+	for b: Button in items:
+		if not (String(b.name).begins_with("Recruit_") or String(b.name).begins_with("Boost_") or String(b.name).begins_with("Unlock_")):
+			continue
+		checked += 1
+		assert_not_null(b.get_node_or_null(^"IconMark"), "%s carries its icon" % b.name)
+		assert_true(b.has_meta(&"price_kind"), "%s carries a price tag" % b.name)
+		assert_true(b.disabled, "%s can't be bought with 1 Schematic" % b.name)
+		var why := b.get_parent().get_node(^"Why") as Label
+		assert_true(why.visible and why.text != "", "%s says why (%s)" % [b.name, why.text])
+		assert_eq(b.modulate.a, 1.0, "never faded")
+		var bg := Palette.over(Palette.NIGHT_SKY, Palette.TERMINAL_BG)
+		assert_true(Palette.contrast(b.get_theme_color(&"font_disabled_color"), bg) >= 4.5, "%s label 4.5:1 when disabled" % b.name)
+		assert_true(Palette.contrast(why.get_theme_color(&"font_color"), bg) >= 4.5, "%s reason 4.5:1" % b.name)
+	assert_true(checked >= 3, "items checked (%d)" % checked)
+	var locked := 0
+	for id in RunManager.lookup().ids_of_class(&"ClassData"):
+		var cls := RunManager.lookup().get_content(id) as ClassData
+		if cls != null and not CampaignRules.class_available(RunManager.profile, RunManager.lookup(), cls):
+			var rb := market.find_child("Recruit_%s" % id, true, false) as Button
+			assert_not_null(rb, "a locked class shows in the market (%s)" % id)
+			assert_true(rb.get_meta(&"market_locked", false), "with its lock")
+			locked += 1
+	assert_true(locked > 0, "a fresh profile has locked classes")
+	await _close(hq)

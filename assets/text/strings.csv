@@ -2843,3 +2843,7 @@ Fast-forward the resolve (hold),Fast-forward the resolve (hold)
 RANK %d,RANK %d
 R%d,R%d
 // %s,// %s
+RECRUIT,RECRUIT
+BOOSTS,BOOSTS
+UNLOCKS,UNLOCKS
+Needs %s,Needs %s

@@ -1538,75 +1538,13 @@ func show_hq() -> void:
 					orders.add_child(pick)
 		roster_box.add_child(row)
 	roster_box.name = "Roster"
-	# The market: recruits, next-run boosts (GDD 11.4) and Profile unlocks (GDD 3.4).
+	# The market (W8b, §11 HQ, critique 06/09): recruits, next-run boosts (GDD 11.4) and
+	# Profile unlocks (GDD 3.4), each group under its header, each item with its icon and a
+	# price tag; what can't be bought now says why.
 	var market := TerminalWindow.new(tr("BLACK MARKET // SCHEMATICS %d") % c.schematics, Palette.CELL_ACID)
 	market.name = "BlackMarket"
 	box.add_child(market)
-	var recruits := HFlowContainer.new()
-	recruits.name = "Recruits"
-	recruits.add_child(_label(tr("Recruit:")))
-	for cls in RunManager.available_classes():
-		var cid := cls.id
-		# ANIM-4: a click buys as before and the new operative flies to the crew; or drag the
-		# button onto CREW // ROSTER.
-		var pay := {"kind": "recruit", "cls": cid, "motion": &"crew_assign"}
-		var ref: Array = [null]
-		var rb := _icon(_button(tr("Recruit %s (%d)") % [TextDb.t(cls, "display_name"), CampaignRules.rookie_price(c, cfg)],
-			func() -> void: _market_buy(ref[0], pay, func() -> void: recruit(cid))), StatIcon.OPERATIVE)
-		ref[0] = rb
-		rb.name = "Recruit_%s" % cls.id
-		_add_tip(recruits, rb, TextDb.t(cls, "description"))
-		drops.add_source(rb, pay)
-	market.body.add_child(recruits)
-	var boosts := HFlowContainer.new()
-	boosts.name = "Boosts"
-	boosts.add_child(_label(tr("Next-run boosts:")))
-	for b in cfg.netrun_boosts:
-		if b == null:
-			continue
-		var bid := b.id
-		var pay := {"kind": "boost", "boost": bid}
-		var ref: Array = [null]
-		var btn := _button("%s (%d)" % [TextDb.t(b, "display_name"), b.cost], func() -> void: _market_buy(ref[0], pay, func() -> void: buy_boost(bid)))
-		ref[0] = btn
-		btn.name = "Boost_%s" % b.id
-		btn.tooltip_text = UiTip.fold(TextDb.t(b, "description"))
-		btn.disabled = c.pending_boosts.has(b.id) or c.schematics < b.cost
-		boosts.add_child(btn)
-		drops.add_source(btn, pay)
-	# ANIM-4: the next run's kit is a slot of its own (always shown: the boosts' drop target).
-	var queued := PackedStringArray()
-	for bid in c.pending_boosts:
-		for b in cfg.netrun_boosts:
-			if b != null and b.id == bid:
-				queued.append(TextDb.t(b, "display_name"))
-	var queue := _label(tr("queued: %s") % (", ".join(queued) if not queued.is_empty() else "-"))
-	queue.name = "QueuedBoosts"
-	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	queue.mouse_filter = Control.MOUSE_FILTER_PASS
-	queue.tooltip_text = UiTip.fold(tr("The boosts bought for the next run. Drag a boost here to buy it."))
-	boosts.add_child(queue)
-	market.body.add_child(boosts)
-	var unlocks := HFlowContainer.new()
-	unlocks.add_child(_label(tr("Profile unlocks:")))
-	var any_unlock := false
-	for id in lookup.ids_of_class(&"ProfileUnlockData"):
-		var u := lookup.get_content(id) as ProfileUnlockData
-		if u == null or RunManager.profile.has_unlock(u.id):
-			continue
-		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
-		if u.schematic_cost == 0:
-			continue
-		any_unlock = true
-		var uid := u.id
-		var btn := _button("%s (%d)" % [TextDb.t(u, "display_name"), u.schematic_cost], func() -> void: purchase_unlock(uid))
-		btn.name = "Unlock_%s" % u.id
-		btn.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
-		btn.disabled = c.schematics < u.schematic_cost
-		unlocks.add_child(btn)
-	if not any_unlock:
-		unlocks.add_child(_label(tr("everything unlocked")))
-	market.body.add_child(unlocks)
+	var queue := _market_sections(market.body)
 	var beats := CampaignRules.revealed_beats(c, RunManager.corporation)
 	if not beats.is_empty():
 		var story := TerminalWindow.new(tr("Story so far:"), Palette.CRT_AMBER)
@@ -1639,6 +1577,204 @@ func show_hq() -> void:
 	# ANIM-R2 R1: the Grid is a press away: its city bakes now, behind the HQ (while a jack out
 	# still covers the screen too), so the Grid opens on its image.
 	_prebake_grid.call_deferred()
+
+
+# --- The Black Market (art pass W8b: ART_BIBLE §11 HQ, §3.7, §6.4; critique 06/09, scr/05) ---
+
+## The market's group headers, in order (translated where shown).
+const MARKET_RECRUIT := "RECRUIT" # TR
+const MARKET_BOOSTS := "BOOSTS" # TR
+const MARKET_UNLOCKS := "UNLOCKS" # TR
+## Why a locked item can't be bought yet (its unlock condition).
+const MARKET_CLASS_LOCKED := "Needs %s" # TR
+const MARKET_NEEDS := MARKET_CLASS_LOCKED
+## A market item's words and its price ("Scanner · 25", the Schematics icon after it).
+const MARKET_ITEM := "%s · %d"
+## The market's sections: gap between them and between items (px at text scale 1.0).
+const MARKET_GAP := UiTheme.SP_S
+const MARKET_ITEM_GAP := UiTheme.SP_M
+
+
+## The Black Market's three groups under `body`: RECRUIT (every class, locked ones with
+## their unlock), BOOSTS (and the next run's kit, their drop target) and UNLOCKS. Each item
+## is its icon, its name and a price tag; one that can't be bought now is disabled (W2's
+## locked look: DISABLED outline, a lock, the label still 4.5:1) with the reason under it
+## ("NEED 25 · HAVE 10", the unlock it waits for). Returns the next run's kit label.
+func _market_sections(body: VBoxContainer) -> Label:
+	var c := RunManager.campaign
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var profile := RunManager.profile
+	body.add_theme_constant_override("separation", roundi(MARKET_GAP * Settings.text_scale))
+	# RECRUIT: every class; a locked one shows its lock and the unlock it waits for.
+	var recruits := _market_section(body, "Recruits", MARKET_RECRUIT, StatIcon.OPERATIVE)
+	var price := CampaignRules.rookie_price(c, cfg)
+	for id in lookup.ids_of_class(&"ClassData"):
+		var cls := lookup.get_content(id) as ClassData
+		if cls == null:
+			continue
+		var cid := cls.id
+		# ANIM-4: a click buys as before and the new operative flies to the crew; or drag the
+		# item onto CREW // ROSTER.
+		var pay := {"kind": "recruit", "cls": cid, "motion": &"crew_assign"}
+		var ref: Array = [null]
+		var rb := _market_item(recruits, "Recruit_%s" % cid, TextDb.t(cls, "display_name"), StatIcon.OPERATIVE, price,
+			func() -> void: _market_buy(ref[0], pay, func() -> void: recruit(cid)))
+		ref[0] = rb
+		rb.tooltip_text = UiTip.fold(TextDb.t(cls, "description"))
+		if not CampaignRules.class_available(profile, lookup, cls):
+			var u := CampaignRules.unlock_for(lookup, cls)
+			_market_locked(rb, tr(MARKET_CLASS_LOCKED) % (TextDb.t(u, "display_name") if u != null else TextDb.t(cls, "display_name")))
+		elif c.schematics < price:
+			_market_short(rb, price, c.schematics)
+		else:
+			drops.add_source(rb, pay)
+	# BOOSTS: the next run's kit (always shown: the boosts' drop target).
+	var boosts := _market_section(body, "Boosts", MARKET_BOOSTS, StatIcon.PLUS)
+	for b in cfg.netrun_boosts:
+		if b == null:
+			continue
+		var bid := b.id
+		var pay := {"kind": "boost", "boost": bid}
+		var ref: Array = [null]
+		var btn := _market_item(boosts, "Boost_%s" % b.id, TextDb.t(b, "display_name"), boost_icon(b), b.cost,
+			func() -> void: _market_buy(ref[0], pay, func() -> void: buy_boost(bid)))
+		ref[0] = btn
+		btn.tooltip_text = UiTip.fold(TextDb.t(b, "description"))
+		if c.pending_boosts.has(b.id):
+			_market_locked(btn, tr("queued: %s") % TextDb.t(b, "display_name"), false)
+		elif c.schematics < b.cost:
+			_market_short(btn, b.cost, c.schematics)
+		drops.add_source(btn, pay)
+	var queued := PackedStringArray()
+	for bid in c.pending_boosts:
+		for b in cfg.netrun_boosts:
+			if b != null and b.id == bid:
+				queued.append(TextDb.t(b, "display_name"))
+	var queue := _label(tr("queued: %s") % (", ".join(queued) if not queued.is_empty() else "-"))
+	queue.name = "QueuedBoosts"
+	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	queue.mouse_filter = Control.MOUSE_FILTER_PASS
+	queue.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	queue.tooltip_text = UiTip.fold(tr("The boosts bought for the next run. Drag a boost here to buy it."))
+	boosts.add_child(queue)
+	# UNLOCKS: Profile unlocks for sale; one waiting on another unlock shows its lock.
+	var unlocks := _market_section(body, "Unlocks", MARKET_UNLOCKS, StatIcon.LOCK)
+	var any_unlock := false
+	for id in lookup.ids_of_class(&"ProfileUnlockData"):
+		var u := lookup.get_content(id) as ProfileUnlockData
+		if u == null or profile.has_unlock(u.id):
+			continue
+		# Free unlocks (REBEL_CELL) open by themselves once their requirements are met.
+		if u.schematic_cost == 0:
+			continue
+		any_unlock = true
+		var uid := u.id
+		var btn := _market_item(unlocks, "Unlock_%s" % u.id, TextDb.t(u, "display_name"), unlock_icon(u), u.schematic_cost, func() -> void: purchase_unlock(uid))
+		btn.tooltip_text = UiTip.fold(TextDb.t(u, "description"))
+		var missing := PackedStringArray()
+		for need in u.requires_unlock_ids:
+			if not profile.has_unlock(need):
+				var nu := lookup.get_content(need) as ProfileUnlockData
+				missing.append(TextDb.t(nu, "display_name") if nu != null else String(need))
+		if not missing.is_empty():
+			_market_locked(btn, tr(MARKET_NEEDS) % ", ".join(missing))
+		elif c.schematics < u.schematic_cost:
+			_market_short(btn, u.schematic_cost, c.schematics)
+	if not any_unlock:
+		unlocks.add_child(_label(tr("everything unlocked")))
+	return queue
+
+
+## A market group under `body`: its header (icon and words at `title`) and the flow its
+## items fill (named `flow_name`; returned).
+func _market_section(body: VBoxContainer, flow_name: String, words: String, icon: StringName) -> HFlowContainer:
+	var s := Settings.text_scale
+	var head := HBoxContainer.new()
+	head.name = "%sHeader" % flow_name
+	head.add_theme_constant_override("separation", roundi(UiTheme.SP_S * s))
+	head.add_child(IconMark.standalone(icon, UiTheme.font_px(UiTheme.TITLE), Palette.CELL_ACID))
+	var l := _label(tr(words))
+	l.theme_type_variation = &"HeaderLabel"
+	l.add_theme_color_override("font_color", Palette.CELL_ACID)
+	head.add_child(l)
+	body.add_child(head)
+	var flow := HFlowContainer.new()
+	flow.name = flow_name
+	flow.add_theme_constant_override("h_separation", roundi(MARKET_ITEM_GAP * s))
+	flow.add_theme_constant_override("v_separation", roundi(MARKET_GAP * s))
+	body.add_child(flow)
+	return flow
+
+
+## A market item in `flow`: a cell with the item's button (its icon, `words` and a price
+## tag of `price` Schematics; named `button_name`) and the line saying why it can't be
+## bought (hidden until `_market_short` / `_market_locked`). Returns the button.
+func _market_item(flow: HFlowContainer, button_name: String, words: String, icon: StringName, price: int, on_pressed: Callable) -> Button:
+	var cell := VBoxContainer.new()
+	cell.name = "Cell_%s" % button_name
+	cell.add_theme_constant_override("separation", 0)
+	var b := _icon(_button(MARKET_ITEM % [words, price], on_pressed), icon)
+	b.name = button_name
+	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	cell.add_child(b)
+	var why := _label("")
+	why.name = "Why"
+	why.visible = false
+	why.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	why.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	why.add_theme_color_override("font_color", Palette.TEXT_MID)
+	cell.add_child(why)
+	flow.add_child(cell)
+	_price_icon(b, StatIcon.SCHEMATICS)
+	return b
+
+
+## §3.7: an item the Cell can't afford: W2's disabled look and "NEED n · HAVE m" under it
+## (the words never faded; TEXT_MID is 4.5:1 on glass).
+func _market_short(b: Button, price: int, have: int) -> void:
+	b.disabled = true
+	_market_why(b, tr("NEED %d · HAVE %d") % [price, have])
+
+
+## §3.7 / §6.5: a locked item (or one already queued, `lock` false: disabled without the
+## lock reason): disabled with the words `why` under it.
+func _market_locked(b: Button, why: String, lock: bool = true) -> void:
+	b.disabled = true
+	if lock:
+		b.set_meta(&"market_locked", true)
+	_market_why(b, why)
+
+
+func _market_why(b: Button, text: String) -> void:
+	var why := b.get_parent().get_node_or_null(^"Why") as Label
+	if why != null:
+		why.text = text
+		why.visible = true
+	b.tooltip_text = UiTip.fold("%s\n%s" % [b.tooltip_text.strip_edges(), text]) if b.tooltip_text != "" else UiTip.fold(text)
+
+
+## A boost's icon: what it gives (Cycles, cards, RAM as a chip).
+static func boost_icon(b: NetrunBoostData) -> StringName:
+	if b.cycles > 0:
+		return StatIcon.CYCLES
+	if not b.temp_cards.is_empty():
+		return StatIcon.CARDS
+	return StatIcon.FIRMWARE
+
+
+## A Profile unlock's icon: what kind of thing it opens.
+static func unlock_icon(u: ProfileUnlockData) -> StringName:
+	match u.kind:
+		RC.UnlockKind.CLASS, RC.UnlockKind.CLASS_ALTERNATIVE:
+			return StatIcon.OPERATIVE
+		RC.UnlockKind.CORPORATION:
+			return StatIcon.MAP
+		RC.UnlockKind.HOME_SERVER:
+			return StatIcon.HOME
+		RC.UnlockKind.NODE_TYPE:
+			return StatIcon.LINKS
+	return StatIcon.BADGES
 
 
 ## ANIM-R2 R1 (view memory): the bake region the Grid was last framed at, per campaign.
