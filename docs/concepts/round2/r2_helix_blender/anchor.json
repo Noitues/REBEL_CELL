@@ -1,0 +1,32 @@
+{
+  "sprite": "helix_rgba.png",
+  "sprite_size": [
+    336,
+    1332
+  ],
+  "base_center_sprite_px": [
+    168.18,
+    1206.45
+  ],
+  "base_center_city_px": [
+    1539.18,
+    630.45
+  ],
+  "paste_topleft_city_px": [
+    1371,
+    -576
+  ],
+  "note": "Image.alpha_composite / paste the sprite with its top-left at paste_topleft_city_px (it may be negative: the tower rises above the frame). The base centre is the helix axis at ground level (city units x=43.4, y=1.9, z=0) projected with city.py default_cam; the podium (r=6.4, h=1.2) replaces the Pillow plaza.",
+  "px_per_unit": 25.011258392736288,
+  "projection": {
+    "az": 24.0,
+    "el": 38.0,
+    "S": 25.011258392736288,
+    "ox": 566.8632781662852,
+    "oy": 331.9019307098097
+  },
+  "axis_city_units": [
+    43.4,
+    1.9
+  ]
+}
