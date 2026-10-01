@@ -246,6 +246,7 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 **Corporations**
 - Corp motifs move into the full slice background; no small motif panel.
 - Per-slice briefs for Solace, Meridian, Halcyon and Orbital are in round 15.
+- Meridian's JUDGEMENT slice: a gavel striking down, replacing the receipt machine.
 - REBEL_CELL = the player's own slices in red, with a rebel-fist crest.
 
 ## Art backlog (to address in coming rounds)
