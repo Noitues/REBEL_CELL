@@ -1,0 +1,25 @@
+breaker 0 4.8
+breaker 1 5.1
+breaker 2 5.3
+breaker 3 4.9
+route_optimizer 0 5.1
+route_optimizer 1 5.0
+route_optimizer 2 5.1
+route_optimizer 3 5.2
+the_manifest 0 6.0
+the_manifest 1 5.4
+the_manifest 2 9.9
+the_manifest 3 5.2
+tiles 1
+tiles 2
+tiles 3
+v 1 breaker
+v 1 route_optimizer
+v 1 the_manifest
+v 2 breaker
+v 2 route_optimizer
+v 2 the_manifest
+v 3 breaker
+v 3 route_optimizer
+v 3 the_manifest
+done all 91.8
