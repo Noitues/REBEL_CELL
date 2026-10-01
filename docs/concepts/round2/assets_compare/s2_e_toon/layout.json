@@ -1,0 +1,252 @@
+{
+ "01_operatives": {
+  "cells": {
+   "breaker_neutral": [
+    700,
+    237
+   ],
+   "ghost_neutral": [
+    1340,
+    237
+   ],
+   "breaker_hurt": [
+    700,
+    472
+   ],
+   "ghost_hurt": [
+    1340,
+    472
+   ],
+   "breaker_triumphant": [
+    700,
+    707
+   ],
+   "ghost_triumphant": [
+    1340,
+    707
+   ],
+   "breaker_flatlined": [
+    700,
+    942
+   ],
+   "ghost_flatlined": [
+    1340,
+    942
+   ]
+  }
+ },
+ "02_enemies": {
+  "cells": {
+   "en_manifest": [
+    360,
+    430
+   ],
+   "en_manifest_bezel": [
+    360,
+    870
+   ],
+   "en_adjuster": [
+    960,
+    430
+   ],
+   "en_adjuster_bezel": [
+    960,
+    870
+   ],
+   "en_drone": [
+    1560,
+    430
+   ],
+   "en_drone_bezel": [
+    1560,
+    870
+   ]
+  }
+ },
+ "03_landmarks": {
+  "cells": {
+   "lm_ziggurat": [
+    360,
+    540
+   ],
+   "lm_pyramid": [
+    960,
+    540
+   ],
+   "lm_tether": [
+    1560,
+    540
+   ]
+  }
+ },
+ "04_threats": {
+  "cells": {
+   "th_bailiff": {
+    "small": [
+     360,
+     304
+    ],
+    "big": [
+     360,
+     620
+    ]
+   },
+   "th_courier": {
+    "small": [
+     960,
+     304
+    ],
+    "big": [
+     960,
+     620
+    ]
+   },
+   "th_customs": {
+    "small": [
+     1560,
+     304
+    ],
+    "big": [
+     1560,
+     620
+    ]
+   }
+  }
+ },
+ "05_cards": {
+  "cells": {
+   "backspin": [
+    280,
+    540
+   ],
+   "arcflash": [
+    735,
+    540
+   ],
+   "bulwark": [
+    1190,
+    540
+   ],
+   "back": [
+    1645,
+    540
+   ]
+  }
+ },
+ "06_icons": {
+  "cells": {
+   "ATTACK": [
+    180,
+    290
+   ],
+   "CRITICAL": [
+    375,
+    290
+   ],
+   "DEFEND": [
+    570,
+    290
+   ],
+   "SHIELD": [
+    765,
+    290
+   ],
+   "EVADE": [
+    960,
+    290
+   ],
+   "HEAL": [
+    1155,
+    290
+   ],
+   "AFFLICT": [
+    1350,
+    290
+   ],
+   "DEPLOY": [
+    1545,
+    290
+   ],
+   "MISS": [
+    1740,
+    290
+   ],
+   "CORRUPTED": [
+    320,
+    740
+   ],
+   "OVERCLOCKED": [
+    710,
+    740
+   ],
+   "ENCRYPTED": [
+    1100,
+    740
+   ],
+   "PARASITE": [
+    1490,
+    740
+   ]
+  }
+ },
+ "07_items": {
+  "cells": {
+   "it_daemon": [
+    360,
+    340
+   ],
+   "it_chip": [
+    960,
+    340
+   ],
+   "it_slice": [
+    1560,
+    340
+   ],
+   "cu_cycles": [
+    330,
+    800
+   ],
+   "cu_schematics": [
+    750,
+    800
+   ],
+   "cu_ram": [
+    1170,
+    800
+   ],
+   "cu_heat": [
+    1590,
+    800
+   ]
+  }
+ },
+ "08_stamps": {
+  "cells": {
+   "VICTORY": [
+    360,
+    340
+   ],
+   "DEFEATED": [
+    960,
+    340
+   ],
+   "SOLD": [
+    1560,
+    340
+   ],
+   "JACK IN": [
+    360,
+    760
+   ],
+   "LETHAL": [
+    960,
+    760
+   ],
+   "PHASE 2": [
+    1560,
+    760
+   ]
+  }
+ }
+}
