@@ -87,6 +87,31 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - Operative portraits and characters, if the asset list wants them beyond wheel hubs.
 - Reward, event and dialogue screens.
 
+## Decisions from round 10 (2026-10-01)
+
+**VIRUS slice**
+- Screen effect: the round 10 option B ooze (it slides down from the rim and pools).
+- Icon: the biohazard (option C).
+- The option A effect (violet blotches eating a hex dump) is reserved for future BURN, TORCH or DISSOLVE programs.
+- The poison-vial icon is reserved for later.
+
+**EVADE slice**
+- Icon: the double chevron.
+- Screen: a street-sign hard turn, a detour arrow. The zigzag was dropped because it read as lightning.
+
+**Guy Fawkes-style mask**
+- It's no longer an icon.
+- It becomes a slice **background** (screen content) for a program to be decided. It isn't EVADE.
+
+**Grease pencil**
+- Near-opaque.
+- Thicker.
+- Saturated yellow and red.
+- A dark under-shadow, so it reads on both day and night.
+
+**Combat backdrop**
+- Round 11 tests a close-up of the building being attacked, in day and night versions, instead of the whole city dimmed.
+
 ## What happens after the decisions
 1. Rewrite `docs/ART_BIBLE.md` around the locked direction.
 2. Write a Godot implementation plan: shaders, atlases, and the order of screens.
