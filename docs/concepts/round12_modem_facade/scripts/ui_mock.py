@@ -22,5 +22,6 @@ for (x0, y0, x1, y1), name in PANELS:
     d.text((x0 + 26, y0 + 22), name, font=f, fill=(230, 235, 240, 230))
     d.text(((x0 + x1) / 2, (y0 + y1) / 2 + 10), '(panel)', font=f, fill=(150, 170, 190, 140), anchor='mm')
 out = Image.alpha_composite(img, lay).convert('RGB')
-out.save(os.path.join(D, 'with_ui_mock.png'), optimize=True)
+name = sys.argv[2] if len(sys.argv) > 2 else 'with_ui_mock.png'
+out.save(os.path.join(D, name), optimize=True)
 print('with_ui_mock.png from', src)

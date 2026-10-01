@@ -37,3 +37,12 @@ shutter, container stack) but is louder. F3 Kiosk stack is the busiest next to t
 - **Lost F2 cladding.** The corrugated stripes are finer than the facet size, so the F2 cladding reads
   as flat.
 - **Faint billboard.** The distant holo billboard is only a hint behind the haze.
+
+## F1B (designer picked F1)
+`f1b_{rain,day,night}.png`, `f1b_compare.jpg`, `with_ui_mock_f1b.png`. Render with
+`MF_VAR=b sh scripts/render_one.sh f1 <state>`. Changes from F1:
+- Sign spill hue is magenta (`#f23cff`, like F2), not red-coral.
+- Only two alley cables are left. Both run wall to wall with anchor brackets.
+- Lower day sun, so the front building's shadow covers more of the shop facade.
+- The holo billboard is brighter and nearer. City window lights use their own seed, so the towers
+  stay the same in every state.

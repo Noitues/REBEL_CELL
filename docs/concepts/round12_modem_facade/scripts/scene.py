@@ -25,6 +25,7 @@ SIGN_PNG = os.path.join(ROOT, 'round4_modem_sign', 'sign_rgba.png')
 
 args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else ['f1', 'rain', os.path.join(HERE, '..', 'scratch', 'test')]
 OPT, STATE, OUT = args[0], args[1], os.path.abspath(args[2])
+VAR_B = os.environ.get('MF_VAR', '') == 'b'   # f1b: magenta spill, no dangling cables, lower sun, brighter billboard
 
 # ------------------------------------------------------------------ layout (from screen targets)
 D_SIGN = 22.0
@@ -346,10 +347,16 @@ def alley(pal):
     # hanging cables + small glyph signs on the alley walls
     cb = Mesh('alley_cables')
     rng = random.Random('cables')
-    for k in range(7):
+    for k in range(2 if VAR_B else 7):    # f1b: only cables spanning wall to wall at the alley mouth
         y = YS + 1.0 + k * 2.6
         z0 = rng.uniform(5.0, 9.0)
-        catenary(cb, (XA0, y, z0), (XA1, y + rng.uniform(-1, 1), z0 + rng.uniform(-1, 1)), rng.uniform(0.4, 1.2))
+        p0, p1 = (XA0, y, z0), (XA1, y + rng.uniform(-1, 1), z0 + rng.uniform(-1, 1))
+        if VAR_B:   # both ends on a wall, below the front building's roof, with anchor brackets
+            p0, p1 = (XA0, y, 5.6 + 0.5 * k), (XA1, y + 0.4, 5.0 + 0.4 * k)
+            for q, dx in ((p0, 0.12), (p1, -0.12)):
+                cb.box(min(q[0], q[0] + dx), max(q[0], q[0] + dx), q[1] - 0.06, q[1] + 0.06, q[2] - 0.08, q[2] + 0.08,
+                       cell=3, col=hexl('#2a2c30'), faces='fltrd')
+        catenary(cb, p0, p1, rng.uniform(0.4, 1.2))
     cb.build()
     gs = Mesh('alley_signs', 'window')
     glyph_box(gs, XA0, YS + 3.5, 4.6, 1.8, 0.7, hexl(pal['accent']), seed=11, cols=6, rows=2, face='+x')
@@ -529,12 +536,13 @@ def city(pal):
             c_pal = WARM[:3] + [hexl('#9ff3ff'), hexl('#ffe3b0')]
             cols = max(1, int(w / 1.6))
             band = rng.random() < 0.3
+            wr = random.Random(str(("cw", n))) if VAR_B else rng   # f1b: window lights do not shift the city layout between states
             for i in range(cols):
                 for j in range(1, rows):
-                    if rng.random() < lit * (1.6 if band and j % 3 == 0 else 1.0):
-                        c = rng.choice(c_pal)
+                    if wr.random() < lit * (1.6 if band and j % 3 == 0 else 1.0):
+                        c = wr.choice(c_pal)
                         wm.grid((x + (i + 0.3) * w / cols, yy - 0.05, j * 3.2), (0.35 * w / cols, 0, 0), (0, 0, 1.1),
-                                cell=6, col=scl(c, 0.3), emi=scl(c, rng.uniform(0.3, 0.65)))
+                                cell=6, col=scl(c, 0.3), emi=scl(c, wr.uniform(0.3, 0.65)))
             if h > 70 and rng.random() < 0.6:   # red beacon
                 wm.box(x + w / 2 - 0.4, x + w / 2 + 0.4, yy + w / 2 - 0.4, yy + w / 2 + 0.4, h, h + 0.8, cell=3,
                        col=hexl('#ff3030'), emi=scl(hexl('#ff3030'), 1.2), faces='flt')
@@ -543,10 +551,12 @@ def city(pal):
             n += 1
     # holo billboard on a mid tower (unreadable)
     hb = Mesh('holo_billboard', 'citywin')
-    hx, hy = 20.0, 72.0
+    hx, hy = (24.0, 61.0) if VAR_B else (20.0, 72.0)
     hb.box(hx - 1, hx + 19, hy + 1, hy + 18, 0, 34, cell=3, colfn=tone('#3a4050', 0.25, 0.2), faces='flt')
-    glyph_box(hb, hx, hy, 21, 17, 10, hexl('#ff4fd0'), seed='bill', cols=7, rows=5, frame='#1a1424')
-    glyph_box(hb, hx + 2, hy - 0.3, 14, 13, 5, hexl('#56f2ff'), seed='bill2', cols=8, rows=3, frame='#101820')
+    bk = 1.35 if VAR_B else 1.0
+    bw, bh = (12, 7) if VAR_B else (17, 10)
+    glyph_box(hb, hx, hy, 21, bw, bh, scl(hexl('#ff4fd0'), bk), seed='bill', cols=7, rows=5, frame='#1a1424')
+    glyph_box(hb, hx + 1.5, hy - 0.3, 15, bw - 3, 3.5 if VAR_B else 5, scl(hexl('#56f2ff'), bk), seed='bill2', cols=8, rows=3, frame='#101820')
     hb.build()
 
 
@@ -686,7 +696,7 @@ def build_f3(pal):
 
 # ------------------------------------------------------------------ lighting states
 def lights(pal):
-    pink, cyan = hexl('#ff3fa8'), hexl('#3fe0ff')
+    pink, cyan = (hexl('#f23cff') if VAR_B else hexl('#ff3fa8')), hexl('#3fe0ff')
     k = {'rain': 1.0, 'day': 0.07, 'night': 1.7}[STATE]
     cx, cz = (SX0 + SX1) / 2, (SZ0 + SZ1) / 2
     F.light('AREA', (cx, D_SIGN - 0.3, cz), pink, 3400 * k, size=SW, size_y=SH * 0.85,
@@ -710,7 +720,7 @@ def lights(pal):
     F.light('POINT', (XFR + 3.8, Y_KERB + 0.4, 6.3), hexl('#ffcf90'), 120 * kd, size=0.3, name='street_lamp')
     if STATE == 'day':
         F.light('SUN', (0, 0, 40), hexl('#fff0d6'), 7.0, size=math.radians(0.5),
-                rot=F.sun_dir_rot((-0.88, 0.38, -0.2)), name='sun')
+                rot=F.sun_dir_rot((-0.9, 0.4, -0.11) if VAR_B else (-0.88, 0.38, -0.2)), name='sun')
         F.world(hexl('#9fb2c8'), 0.3)
     elif STATE == 'rain':
         F.light('SUN', (0, 0, 40), hexl('#b6c3d6'), 0.6, size=math.radians(12),
