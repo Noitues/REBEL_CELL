@@ -112,6 +112,44 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 **Combat backdrop**
 - Round 11 tests a close-up of the building being attacked, in day and night versions, instead of the whole city dimmed.
 
+## Designer answers on the open items (2026-10-01)
+1. **City night and suspicion shots:** approved. The helicopters and drones read, and they will read even better once they move, so they need animation.
+2. **Combat fade:** the fade amount is good, but the view is too zoomed out. The next pass focuses on this (round 11 is a target-building close-up).
+3. **Verb over a washed-out system word:** **sticker**.
+4. **MODEM shop:** an exterior street view, with the circuit-board MODEM sign. It becomes a fixed shop building facade. Options are in progress in round 12:
+   - 3 facades;
+   - each in rain, day (with building shadow) and night.
+5. **Wheel details:** to be handled over the next iterations.
+6. **Glyphs:** they're starting to look good. A full glyph pass is needed.
+7. **New slice types:** yes. Some art will be a placeholder for game content that doesn't exist yet. Add them to the game to-do list when the art is reintegrated.
+8. **Value and upgrade variation:** spec 3 versions of every slice. Also spec temporary slice-state overlays (frozen, locked, burning, empowered, …) that sit on top of a slice.
+9. **Enemy and boss designs:** keep iterating.
+10. **Cards:** sticker cards are **LOCKED**, with peel and stick animations. Explore an effect where the sticker dissolves into binary or code when it's played.
+11. **Binary damage shards:** yes, but iterate on the visual.
+
+## Art backlog (to address in coming rounds)
+- [ ] Combat backdrop: a zoomed-in target building, in day and night versions (round 11 in progress).
+- [ ] MODEM shop facade, 3 options × rain, day and night (round 12 in progress).
+- [ ] Wheel details: pointer, hub readout, 3D/layered depth, boss "extra something".
+- [ ] Full glyph pass, covering every slice type, status and pictogram in one consistent set.
+- [ ] 3 value or upgrade tiers for every slice.
+- [ ] Temporary slice-state overlays: frozen, locked, burning, empowered, plus CORRUPTED, OVERCLOCKED, ENCRYPTED and PARASITE.
+- [ ] Enemy and boss wheel iterations (corp skins, phase 2).
+- [ ] Sticker card animation: peel, stick, and a dissolve into binary or code on play.
+- [ ] Binary damage shards, visual iteration.
+- [ ] Heat glitch shader, visual exploration (switchable in Options).
+- [ ] City motion: helicopters, drones, searchlights, traffic and hologram billboards.
+- [ ] Raid/grid view in the new style, with nodes and paths on the same plane.
+- [ ] Menus and UI chrome: title, map HUD, panels, buttons, tooltips, and typography.
+- [ ] Operative portraits and characters.
+- [ ] Reward, event and dialogue screens.
+- [ ] Rewrite the art bible, then write the Godot implementation plan.
+
+## Game to-do list for reintegration (art placeholders for content that doesn't exist yet)
+- New slice types and programs: PHISHING (hook), SHIELD, ENCRYPT (`***`), RECON (magnifier). These need a GDD/DECISIONS entry before they become content.
+- Reserved effects: BURN, TORCH and DISSOLVE programs (the round 10 VIRUS-A blotch effect).
+- A program for the Guy Fawkes-style mask slice background.
+
 ## What happens after the decisions
 1. Rewrite `docs/ART_BIBLE.md` around the locked direction.
 2. Write a Godot implementation plan: shaders, atlases, and the order of screens.
