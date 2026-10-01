@@ -197,10 +197,65 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 | LOCKED | Lock symbols scrolling left to right. |
 | EMPOWERED | Huge arrows moving outward. |
 
+## Decisions from round 14 (2026-10-01)
+
+**Glyphs approved**
+
+| Glyph | Approved form |
+|---|---|
+| WEIGHT | The anvil. |
+| SANDBOX | The plank box with a shovel. |
+| PATCH | Crossed band-aids. |
+| SHIELD | Option A, heraldic. |
+| JUDGEMENT | The gavel. |
+| CITATION | The receipt. |
+| EMPOWERED | Option A, a chevron stack. |
+| Also approved | UNDOCK, BREACH, EXHAUST, the two-peak burn, FIREWALL. |
+
+**Glyphs being redone (round 15 in progress)**
+
+| Glyph | Redo |
+|---|---|
+| RECON | Thin-circle binoculars. |
+| NULL | 1/0. |
+| SPOOF | White ridge lines. |
+| CLEANSE | An ESC key. |
+| KILL PROCESS | A power symbol. |
+| MOMENTUM | A spin arrow with big/small numbers, where the big one is the one that executes. |
+| NUDGE | An arc with a needle. |
+| NUDGE INNER | Check it doesn't look like SPIN. |
+
+**Tiers**
+- All upgrade flair moves inside the slice border.
+- Round 15 shows three options:
+  - a: an inner line, then a filled gap;
+  - b: an outer-arc pattern, plus stronger tick and PERFECT marks;
+  - c: a pattern all the way round.
+
+**States**
+- PARASITE: only the animated bug.
+- EMPOWERED: huge rising chevrons.
+
+**Card-play preview**
+- Option A, the ghost blade, with:
+  - no aim pips;
+  - a dashed outline on the landing slice;
+  - an outside trace line with direction arrows.
+- To be shown with multiple needles and a docked drone.
+
+**Corporations**
+- Corp motifs move into the full slice background; no small motif panel.
+- Per-slice briefs for Solace, Meridian, Halcyon and Orbital are in round 15.
+- REBEL_CELL = the player's own slices in red, with a rebel-fist crest.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
 - [ ] Target buildings for the other corps and fights, since every fight needs its own target.
+- [ ] HQ updates:
+  - Meridian HQ gets cranes, to match its crest.
+  - Orbital HQ might become a launch pad.
+  - Halcyon's crest is now an eye; check the HQ matches.
 - [ ] Wheel details: pointer, hub readout, 3D/layered depth, boss "extra something".
 - [ ] Full glyph pass, covering every slice type, status and pictogram in one consistent set.
 - [ ] 3 value or upgrade tiers for every slice.
@@ -226,7 +281,10 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - SANDBOX's purpose: the GDD defines it as SHIELD, a shield that persists across turns (cap 15). The designer is considering "block one whole attack regardless of size" or "block the next status". This is a design decision.
 - Slice upgrade tiers I–III. SliceData has no tier yet.
 - Placeholder states FROZEN, LOCKED, BURNING and EMPOWERED. These are not in the game yet.
-- A CLEANSE ability with a CTRL-ALT-DEL glyph, and an ALT-F4 "kill process" ability.
+- A CLEANSE ability, now with an ESC-key glyph, and a "kill process" ability with a power-symbol glyph.
+- Solace's HEAL slice reads as growth: a possible rename to GROWTH.
+- A future mechanic, **gates**: rim gates that trigger when the pointer rotates through them. The card-play preview trace shows the direction and the gates passed.
+- MOMENTUM's pictogram is dynamic: the big number switches once a spin has happened. It needs runtime support.
 
 ## What happens after the decisions
 1. Rewrite `docs/ART_BIBLE.md` around the locked direction.
