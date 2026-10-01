@@ -1,0 +1,32 @@
+{
+  "image": "sign_rgba.png",
+  "image_size": [
+    390,
+    1174
+  ],
+  "composition": "docs/concepts/round2/r2c_v2_modem/modem_shop.png (1920x1080)",
+  "image_top_left_in_shop": [
+    -48,
+    -48
+  ],
+  "plate_rect_in_image": [
+    70,
+    70,
+    250,
+    1034
+  ],
+  "plate_rect_in_shop": [
+    22,
+    22,
+    250,
+    1034
+  ],
+  "pivot": "top-left; the image overhangs the screen edge by the glow margin",
+  "replaces": [
+    "old MODEM sign",
+    "CYBER SHOP plate",
+    "BUY/SELL/TRADE stickers"
+  ],
+  "blend": "straight alpha; plate pixels opaque, glow semi-transparent. In Godot draw the glow additively (or rely on 2D HDR glow) and add a PointLight2D/TextureLight2D spill using the blurred emission, pink+cyan, energy ~1.2, range ~600 px",
+  "state": "static lit (reduce-effects frame); pulses and warm-up are shader/animation driven"
+}
