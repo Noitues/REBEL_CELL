@@ -249,6 +249,39 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - Meridian's JUDGEMENT slice: a gavel striking down, replacing the receipt machine.
 - REBEL_CELL = the player's own slices in red, with a rebel-fist crest.
 
+## Decisions from round 15 (2026-10-01)
+
+**State overlays: LOCKED ("ship it")**
+CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURNING and EMPOWERED (chevrons).
+
+**Card-play preview**
+- Every needle gets a full ghost blade.
+- Ghost drones show where docked drones end up.
+- The trace line has no arrowheads.
+- Gates are deferred to the to-do list.
+
+**Corporations**
+- Halcyon and Orbital palettes move further apart.
+- Corp tiers:
+  - tier 1: corp primary border;
+  - tier 2: corp secondary border;
+  - tier 3: the player tier-III style in the corp palette.
+- Corp animations stay upright.
+- Halcyon MISS: the CLOSED sign.
+- Defend walls everywhere: attacks come from the outer arc, and the wall sits on the inner arc.
+- Per-slice fixes are in round 16.
+
+**Glyphs**
+- RECON: cone eyepieces.
+- SPOOF: realistic ridges, thinner border.
+- NUDGE: the needle points down through the arc.
+- JUDGEMENT: a strike block offset from the gavel.
+- SANDBOX: a sand pile with a pail and shovel.
+
+**Tiers**
+- Option a is agreed.
+- It must be more obvious, while keeping the silhouette identical.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
@@ -284,7 +317,7 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - Placeholder states FROZEN, LOCKED, BURNING and EMPOWERED. These are not in the game yet.
 - A CLEANSE ability, now with an ESC-key glyph, and a "kill process" ability with a power-symbol glyph.
 - Solace's HEAL slice reads as growth: a possible rename to GROWTH.
-- A future mechanic, **gates**: rim gates that trigger when the pointer rotates through them. The card-play preview trace shows the direction and the gates passed.
+- A future mechanic, **gates**: rim gates that trigger when the pointer rotates through them. The card-play preview trace shows the direction and the gates passed. The art is deferred until the mechanic is designed. Round 15's `preview_A.png` has a first sketch: crossed gates light gold, uncrossed gates stay grey.
 - MOMENTUM's pictogram is dynamic: the big number switches once a spin has happened. It needs runtime support.
 
 ## What happens after the decisions
