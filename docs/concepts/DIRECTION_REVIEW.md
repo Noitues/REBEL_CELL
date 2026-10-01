@@ -146,6 +146,57 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - The dangling cables over the alley stairs are removed.
 - The F1b revision is in progress.
 
+## Decisions from round 13 (2026-10-01)
+
+**Wheel frame**
+- **D4 "Lens & rail"** is LOCKED for every wheel.
+- The phase pips are loved.
+- The NEXT arrows are removed as a standing element. They are reused as the card-play preview: where the pointer will land, shown when a card is aimed.
+- The grease pencil will follow the cursor, so its clipping doesn't matter.
+
+**Enemies and bosses**
+- Slices get more identity through a **corp-level theme** that every enemy and boss of that corp inherits.
+- Variations then sit on top: regular, elite, boss, plus boss upgrade and phase effects.
+- Round 14 is in progress.
+
+**Glyphs (round 14 in progress)**
+
+| Glyph | Change |
+|---|---|
+| SANDBOX | A kid's sandbox with a shovel. |
+| PATCH and HEAL | Two crossed band-aids of one width. DOSE is kept. |
+| SHIELD | Keep trying. |
+| RECON | Binoculars. |
+| NULL | Try divide-by-zero options. |
+| JUDGEMENT (the gavel) | Takes the Meridian RAM-drain effect. |
+| CITATION | Takes the receipt. |
+| SPOOF | A full fingerprint. |
+| CLEANSE | Try CTRL-ALT-DEL. ALT-F4 is a placeholder "kill process". |
+| EMPOWERED | New options. |
+| SPIN N+ (the Momentum card) | Redraw it as a conditional or combo spin. |
+| NUDGE INNER | Concentric rings with the inner ring highlighted. |
+| NUDGE | A short ±1 two-way arc. |
+| UNDOCK | A drone with an arrow, or an open ball-and-socket. |
+| BREACH | Lightning over a bullseye. |
+| EXHAUST | A tearing card. |
+| All fire | One shared two-peak flame. |
+
+**Upgrade tiers**
+- Tier II → III needs a shape change, not only colour, so it works for colour-blind players. Round 14 is in progress.
+
+**State overlays**
+
+| State | Change |
+|---|---|
+| CORRUPTED | A pink and green full-slice glitch shader. |
+| ENCRYPTED | Asterisks scrolling outward. |
+| OVERCLOCKED | More translucent. |
+| PARASITE | The symbol latched on, translucent. |
+| FROZEN | Approved. |
+| BURNING | Approved. |
+| LOCKED | Lock symbols scrolling left to right. |
+| EMPOWERED | Huge arrows moving outward. |
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
@@ -169,6 +220,13 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - New slice types and programs: PHISHING (hook), SHIELD, ENCRYPT (`***`), RECON (magnifier). These need a GDD/DECISIONS entry before they become content.
 - Reserved effects: BURN, TORCH and DISSOLVE programs (the round 10 VIRUS-A blotch effect).
 - A program for the Guy Fawkes-style mask slice background.
+- Renames:
+  - INERTIA becomes WEIGHT.
+  - TARIFF becomes JUDGEMENT (the Meridian RAM drain).
+- SANDBOX's purpose: the GDD defines it as SHIELD, a shield that persists across turns (cap 15). The designer is considering "block one whole attack regardless of size" or "block the next status". This is a design decision.
+- Slice upgrade tiers I–III. SliceData has no tier yet.
+- Placeholder states FROZEN, LOCKED, BURNING and EMPOWERED. These are not in the game yet.
+- A CLEANSE ability with a CTRL-ALT-DEL glyph, and an ALT-F4 "kill process" ability.
 
 ## What happens after the decisions
 1. Rewrite `docs/ART_BIBLE.md` around the locked direction.
