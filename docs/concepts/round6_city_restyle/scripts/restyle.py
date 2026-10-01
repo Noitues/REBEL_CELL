@@ -41,6 +41,9 @@ toon.BEVEL = hexc('#9a8ec8')
 BANDS = (0.30, 0.50, 0.70)
 FAMKEYS = ['soot', 'concrete', 'corp', 'oily', 'brick', 'concrete', 'corp', 'rust']
 NIGHT_DARK = hexc('#05061a')
+# theme knobs (views.py switches them for day): darkening, neon strength, windows, glow
+TH = {'darken': 0.28, 'neon': 1.0, 'win': 0.2, 'glow': 1.0, 'ground': None, 'street': None, 'ground_mix': (24, 22, 40),
+      'vary': False}
 
 
 def h01(*v):
@@ -85,11 +88,18 @@ class Restyler:
             key = FAMKEYS[int(h01(ctx_i, 3) * len(FAMKEYS))]
             base = FAM[key]
             amt = 0.3 if terr else 0.0
+            if TH['vary'] and terr:
+                amt = 0.12 + 0.28 * h01(ctx_i, 44)
+                if h01(ctx_i, 45) < 0.18:
+                    amt = 0.0
             # border blend: some buildings take the neighbour's colour
             if ctx.get('border', 0) > 0 and h01(ctx_i, 41) < ctx['border'] * 0.5:
                 terr = ctx.get('next', terr)
         col = self.terr_col.get(terr, (200, 200, 200))
-        st = [mix(mix(s, col, amt), NIGHT_DARK, 0.28) for s in base]
+        if TH['vary'] and terr == 'solace' and ctx['kind'] != 'hq':
+            # Solace: mint, sea-teal, pale clinic white and a lilac accent, not one teal mass
+            col = [col, (60, 200, 190), (210, 226, 222), (178, 150, 230)][int(h01(ctx_i, 46) * 4)]
+        st = [mix(mix(s, col, amt), NIGHT_DARK, TH['darken']) for s in base]
         self.fams[ctx_i] = (st, col)
         return st, col
 
@@ -110,6 +120,7 @@ class Restyler:
             return
         ci = pr['ctx']
         stops, tcol = self.fam_for(ci)
+        self.roof_hook(ci, top, hh)
         ink = c255(pr['ink'])
         hq = ci >= 0 and self.ctxs[ci]['kind'] == 'hq'
         seed = (ci, pr['key'], round(pr['z0']))
@@ -188,7 +199,7 @@ class Restyler:
         warm = hexc('#ffc872')
         for i in range(nx):
             for j in range(ny):
-                if rng.random() > 0.2:
+                if rng.random() > TH['win']:
                     continue
                 u = (i + 0.5) / nx
                 z = (j + 0.6) / (ny + 0.4) * hh
@@ -258,7 +269,7 @@ class Restyler:
     # ---- streets (the game's glowing neon marker streets)
     def streets(self, gd, sd, gl):
         v = self.v
-        street = c255(self.d['colors']['street'])
+        street = TH['street'] or c255(self.d['colors']['street'])
         for st in self.d['streets']:
             q = v.pts(st['p'])
             if not v.visible(q):
@@ -277,7 +288,7 @@ class Restyler:
             L = math.hypot(b[0] - a[0], b[1] - a[1]) or 1
             dx, dy = (b[0] - a[0]) / L, (b[1] - a[1]) / L
             nx, ny = -dy, dx
-            g = 0.05 + tr * 0.08
+            g = (0.05 + tr * 0.08) * TH['neon']
             gw = half + 3 * v.s
             quad = [(a[0] - nx * gw, a[1] - ny * gw), (b[0] - nx * gw, b[1] - ny * gw), (b[0] + nx * gw, b[1] + ny * gw),
                     (a[0] + nx * gw, a[1] + ny * gw)]
@@ -287,7 +298,7 @@ class Restyler:
             for k in range(nl):
                 t = (k + 0.5) / nl * 2 - 1
                 lane = t * half * 0.8 + (h01(key, k, 81) - 0.5) * 1.2 * v.s
-                al = 0.5 + 0.35 * h01(key + k, 3, 85) + tr * 0.15
+                al = (0.5 + 0.35 * h01(key + k, 3, 85) + tr * 0.15) * TH['neon']
                 p0 = (a[0] + nx * lane - dx * 1.5 * v.s, a[1] + ny * lane - dy * 1.5 * v.s)
                 p1 = (b[0] + nx * lane + dx * 1.5 * v.s, b[1] + ny * lane + dy * 1.5 * v.s)
                 w = max(1, int((0.9 + h01(k, key, 86) * 0.6) * v.s * SS * 1.1))
@@ -298,7 +309,7 @@ class Restyler:
     def fist(self, gd, sd, gl):
         v = self.v
         col = c255(self.d['colors']['fist'])
-        street = c255(self.d['colors']['street'])
+        street = TH['street'] or c255(self.d['colors']['street'])
         H = self.d['fist_half'] * v.s
         for n, sg in enumerate(self.d['fist']):
             a, b = v.pts(sg)
@@ -317,7 +328,7 @@ class Restyler:
                 t = (k + 0.5) / 12 * 2 - 1
                 lane = t * H + (h01(n, k, 87) - 0.5) * 1.6 * v.s
                 over = H * (0.4 + 0.6 * h01(k, n, 88))
-                al = 0.55 + 0.4 * h01(n + k, 5, 89)
+                al = (0.55 + 0.4 * h01(n + k, 5, 89)) * max(0.75, TH['neon'])
                 p0 = (a[0] + nx * lane - dx * over, a[1] + ny * lane - dy * over)
                 p1 = (b[0] + nx * lane + dx * over, b[1] + ny * lane + dy * over)
                 w = max(1, int(1.1 * v.s * SS))
@@ -365,12 +376,12 @@ class Restyler:
     def render(self):
         v = self.v
         W2, H2 = v.w * SS, v.h * SS
-        ground = c255(self.d['colors']['ground'])
+        ground = TH['ground'] or c255(self.d['colors']['ground'])
         img = Image.new('RGB', (W2, H2), ground)
         gd = ImageDraw.Draw(img)
         # faceted ground (calm big facets) under everything
         facet(gd, bil([(0, 0), (v.w, 0), (v.w, v.h), (0, v.h)]), 24, 14,
-              lambda u, vv, i, j, k, rc: mix(ground, (24, 22, 40), rc.uniform(0.0, 0.5)), 'ground', 0.35)
+              lambda u, vv, i, j, k, rc: mix(ground, TH['ground_mix'], rc.uniform(0.0, 0.5)), 'ground', 0.35)
         self.plazas(gd)
         sharp = Image.new('RGBA', (W2, H2), (0, 0, 0, 0))
         sd = ImageDraw.Draw(sharp, 'RGBA')
@@ -379,7 +390,7 @@ class Restyler:
         self.streets(gd, sd, gl)
         self.fist(gd, sd, gl)
         self.trails(sd, gl)
-        img = self.bloom(img, glow, 7, 1.0)
+        img = self.bloom(img, glow, 7, TH['glow'])
         img = Image.alpha_composite(img.convert('RGBA'), sharp).convert('RGB')
         del sharp
         # standing: the game's own draw order
@@ -398,12 +409,25 @@ class Restyler:
             if pr['t'] == 'sign':
                 self.sign(d, bg, pr)
         self.beacons(d, bg)
-        img = img.convert('RGB')
+        img = self.after_standing(img.convert('RGB'), bg)
         img = paint_texture(img)
         # neon spill: the streets' and roofs' glow bleeding over the facades, then the trims' bloom
-        img = self.bloom(img, glow, 34, 0.55)
-        img = self.bloom(img, bglow, 6, 0.9)
+        img = self.bloom(img, glow, 34, 0.55 * TH['glow'])
+        img = self.bloom(img, bglow, 6, 0.9 * max(0.6, TH['glow']))
+        img = self.finish(img)
         return img.resize((v.w, v.h), Image.LANCZOS)
+
+    def roof_hook(self, ci, top, hh):
+        """Hook (views.py): every drawn roof (out px)."""
+        pass
+
+    def after_standing(self, img, bg):
+        """Hook (views.py): overlays drawn over the buildings, before texture and bloom."""
+        return img
+
+    def finish(self, img):
+        """Hook (views.py): the last pass at full resolution."""
+        return img
 
     @staticmethod
     def bloom(img, src, radius, amount):
