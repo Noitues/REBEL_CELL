@@ -29,6 +29,9 @@ DST = os.path.join(OUT, "scratch", "backdrops")
 W, H = 1920, 1080
 
 MODE = {
+    # round 11b cool day: clearer air (haze 0.36 -> 0.22), cooler haze/rain, same bloom/spill/grime as day
+    "daycool": dict(ink=(0.08, 0.08, 0.11), haze=(0.60, 0.67, 0.78), haze_k=0.22, bloom=0.4, spill=0.3, rain=(0.82, 0.88, 0.96),
+                    rain_a=0.11, grime=0.26),
     "night": dict(ink=(0.05, 0.04, 0.09), haze=(0.09, 0.07, 0.17), haze_k=0.5, bloom=0.9, spill=0.75, rain=(0.75, 0.82, 1.0),
                   rain_a=0.16, grime=0.16),
     "day": dict(ink=(0.10, 0.08, 0.08), haze=(0.62, 0.63, 0.67), haze_k=0.36, bloom=0.4, spill=0.3, rain=(0.85, 0.87, 0.92),
@@ -139,7 +142,9 @@ def finish(variant, mode):
         d.line([(x, y), (x + L * 0.22, y + L)], fill=int(rng.uniform(90, 255)), width=1 if rng.random() < 0.8 else 2)
     r = np.asarray(rain.filter(ImageFilter.GaussianBlur(0.6)), np.float32) / 255 * M["rain_a"]
     img = img * (1 - r[..., None]) + np.array(M["rain"], np.float32) * r[..., None]
-    if mode == "day":  # a touch more contrast and colour so the day city is not washed out
+    if mode == "daycool":  # slight cool grade on top of the cooler render
+        img = img * np.array([0.96, 0.99, 1.05], np.float32)
+    if mode in ("day", "daycool"):  # a touch more contrast and colour so the day city is not washed out
         lum = img.mean(axis=2, keepdims=True)
         img = (lum + (img - lum) * 1.18 - 0.5) * 1.1 + 0.5
     out = Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8)).resize((W, H), Image.LANCZOS)
@@ -152,13 +157,14 @@ def finish(variant, mode):
 
 
 if __name__ == "__main__":
-    jobs = [("boss", "night"), ("boss", "day"), ("regular", "night")]
+    jobs = [("boss", "night"), ("boss", "day"), ("boss", "daycool"), ("regular", "night")]
     if len(sys.argv) > 1:
         jobs = [tuple(sys.argv[1:3])]
     for v, m in jobs:
         im = finish(v, m)
         if v == "boss":
-            im.save(os.path.join(OUT, "target_building_%s.png" % m))
+            im.save(os.path.join(OUT, "target_building_%s.png" % ("day_cool" if m == "daycool" else m)))
+
 
 
 

@@ -75,7 +75,7 @@ def target_base(variant, mode, pools):
     """Round 11: the authored close-up of the target building (backdrop.py), calmed behind the wheels:
     darker and softer inside each wheel's pool, darker hand band and top bar; the building stays crisp
     in the centre gap and along the top."""
-    day = mode == "day"
+    day = mode.startswith("day")
     src = Image.open(os.path.join(BACKDROPS, "%s_%s.png" % (variant, mode))).convert("RGB")
     a = np.asarray(src, np.float32) / 255
     soft = np.asarray(src.filter(ImageFilter.GaussianBlur(3.5)), np.float32) / 255
@@ -481,7 +481,7 @@ def card_img(c, w=210, h=280, state="hand"):
 # ================================================================== compose
 def compose(kind, which, variant=None):
     boss = kind == "boss"
-    day = which == "day"
+    day = which.startswith("day")
     variant = variant or ("boss" if boss else "regular")
     E = BOSS if boss else ENEMY
     pk = "player_b" if boss else "player"
@@ -593,7 +593,7 @@ def compose(kind, which, variant=None):
     grease(ov, [(nx0 + 204, ny + 4), (nx0 + 205, ny + 6)], GP_RED, 8, seed=23)
     img.alpha_composite(ov)
     out = img.convert("RGB")
-    name = "combat_%s_%s.png" % ("boss" if boss else "regular", which)
+    name = "combat_%s_%s.png" % ("boss" if boss else "regular", "day_cool" if which == "daycool" else which)
     out.save(os.path.join(OUT, name))
     print("saved", name, flush=True)
     return out
@@ -623,6 +623,7 @@ if __name__ == "__main__":
         compose("boss", "day")
         contact()
     print("done")
+
 
 
 

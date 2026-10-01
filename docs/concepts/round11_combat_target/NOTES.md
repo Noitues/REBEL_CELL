@@ -77,3 +77,23 @@ There are still 5 overlay marks. None of them covers a slice value or an HP numb
 - **The boss wheel and banner cover the right third of the ziggurat and the crane's right leg.** The centre gap shows the building's spine (signage, tiers, hanging container). A smaller boss offset, or a camera yawed about 10° left, would show more of it.
 - **In the regular shot, the DEPOT 15 sign sits behind the yard gantry and the aim arrow.**
 - **Hand cards still sit partly off the bottom edge**, as in round 10.
+
+## 11b: cooler day (`target_building_day_cool.png`, `combat_boss_day_cool.png`)
+The old day files are kept for comparison. Cool day is a new mode, `daycool`.
+
+The sun direction and its hard toon shadows are unchanged. These settings changed:
+
+| Setting | Warm day | Cool day |
+|---|---|---|
+| Toon ramp, shadow band | (0.26, 0.27, 0.40) | (0.22, 0.26, 0.42) |
+| Toon ramp, mid band | (0.56, 0.55, 0.60) | (0.50, 0.54, 0.64) |
+| Toon ramp, lit band | warm (0.86, 0.82, 0.72) | neutral (0.84, 0.84, 0.82) |
+| Sky / world colour | (0.50, 0.50, 0.52) | (0.52, 0.58, 0.68) |
+| Window glass | (0.10, 0.13, 0.17) | (0.10, 0.14, 0.20) |
+| Haze colour (`backdrop.py`) | (0.62, 0.63, 0.67) | (0.60, 0.67, 0.78) |
+| Haze strength | 0.36 | 0.22 (clearer air) |
+| Ink colour | (0.10, 0.08, 0.08) | (0.08, 0.08, 0.11) |
+| Rain colour | (0.85, 0.87, 0.92) | (0.82, 0.88, 0.96) |
+| Final grade | none | RGB × (0.96, 0.99, 1.05) |
+
+The surrounding towers now read blue-grey. The orange ziggurat and The Manifest's orange wheel separate from them.

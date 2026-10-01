@@ -671,6 +671,9 @@ MODES = {
     # ramp colours: shadow / mid / lit  (cool shadows, warm lit), glow gains, dark glass for windows by day
     "day": dict(ramp=[(0.26, 0.27, 0.40), (0.56, 0.55, 0.60), (0.86, 0.82, 0.72)], neon=0.75, neon_mix=0.0,
                 win=0.55, win_mix=0.55, glass=(0.10, 0.13, 0.17), sign=(1.0, 0.6, 0.22), world=(0.50, 0.50, 0.52)),
+    # round 11b: cooler day - bluer shadow/ambient, neutral lit band, cooler sky (designer: separate the orange)
+    "daycool": dict(ramp=[(0.22, 0.26, 0.42), (0.50, 0.54, 0.64), (0.84, 0.84, 0.82)], neon=0.75, neon_mix=0.0,
+                    win=0.55, win_mix=0.55, glass=(0.10, 0.14, 0.20), sign=(1.0, 0.6, 0.22), world=(0.52, 0.58, 0.68)),
     "night": dict(ramp=[(0.09, 0.08, 0.21), (0.20, 0.17, 0.36), (0.36, 0.30, 0.54)], neon=1.0, neon_mix=0.0,
                   win=1.0, win_mix=0.0, glass=(0.0, 0.0, 0.0), sign=(1.0, 0.62, 0.22), world=(0.03, 0.025, 0.06)),
 }
@@ -738,13 +741,14 @@ def override_mat(kind):
 
 
 v = VARIANT
-for m in ("day", "night"):
+MODE_LIST = ("day", "daycool", "night") if v == "boss" else ("day", "night")
+for m in MODE_LIST:
     set_mode(m)
     render(os.path.join(OUTDIR, "%s_beauty_%s.png" % (v, m)))
 # glow-only pass: solid surfaces black, emissives as in the night/day mode
 blackm, _ = mat_flat("black", (0.0, 0.0, 0.0))
 solid.data.materials[0] = blackm
-for m in ("day", "night"):
+for m in MODE_LIST:
     set_mode(m)
     bg.inputs["Color"].default_value = (0, 0, 0, 1)
     render(os.path.join(OUTDIR, "%s_glow_%s.png" % (v, m)))
@@ -758,6 +762,7 @@ for kind in ("normal", "id", "depth"):
     render(os.path.join(OUTDIR, "%s_%s.png" % (v, kind)))
 bpy.context.view_layer.material_override = None
 print("DONE", flush=True)
+
 
 
 
