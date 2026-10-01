@@ -127,6 +127,19 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 10. **Cards:** sticker cards are **LOCKED**, with peel and stick animations. Explore an effect where the sticker dissolves into binary or code when it's played.
 11. **Binary damage shards:** yes, but iterate on the visual.
 
+## Decisions from round 11 (2026-10-01)
+
+**Combat backdrop**
+- **Locked:** a close-up of the building under attack.
+- Night is approved.
+- Day should be slightly cooler, so the orange target building separates from the orange corp wheels. This is being re-rendered.
+- It's fine for the wheels to hide parts of the building.
+
+**Approved**
+- EVADE: the double chevron over a road-sign hard turn.
+- VIRUS: the biohazard over ooze.
+- The opaque grease pencil.
+
 ## Art backlog (to address in coming rounds)
 - [ ] Combat backdrop: a zoomed-in target building, in day and night versions (round 11 in progress).
 - [ ] MODEM shop facade, 3 options × rain, day and night (round 12 in progress).
