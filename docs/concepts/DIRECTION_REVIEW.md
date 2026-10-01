@@ -140,9 +140,16 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - VIRUS: the biohazard over ooze.
 - The opaque grease pencil.
 
+## Decisions from round 12 (2026-10-01)
+- MODEM shop exterior: **F1 Tenement** is locked.
+- Its sign spill becomes pinker, like F2.
+- The dangling cables over the alley stairs are removed.
+- The F1b revision is in progress.
+
 ## Art backlog (to address in coming rounds)
-- [ ] Combat backdrop: a zoomed-in target building, in day and night versions (round 11 in progress).
-- [ ] MODEM shop facade, 3 options × rain, day and night (round 12 in progress).
+- [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
+- [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
+- [ ] Target buildings for the other corps and fights, since every fight needs its own target.
 - [ ] Wheel details: pointer, hub readout, 3D/layered depth, boss "extra something".
 - [ ] Full glyph pass, covering every slice type, status and pictogram in one consistent set.
 - [ ] 3 value or upgrade tiers for every slice.
