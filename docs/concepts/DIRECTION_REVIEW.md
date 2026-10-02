@@ -613,3 +613,37 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - BREACHED speed.
 - **Accepted for now:** the swap motion. It's a bit janky; revisit it when the art goes back into the game.
 - **In progress:** the TAKEN mark becomes normal weight, placed above the node.
+
+## Decisions from round 24 (2026-10-02)
+
+**Locked**
+- The TAKEN mark v2.
+
+**Rule**
+- The boss target **is** the corp HQ.
+- The close-up combat view must match the city map exactly: the same HQ model and the same roads.
+- Regular fights happen at smaller Sites, which also sit on the real road layout.
+
+**Meridian**
+- Pivot to a **container castle**: a medieval castle built from shipping containers.
+- Follow-up: check which other Meridian assets need to follow.
+
+**Solace**
+- A DNA helix only, with no centre tower.
+- Thicker strands and thin walkway rungs.
+- The green toned down.
+
+**Halcyon**
+- Loved. Add more levels.
+
+**Orbital**
+- Pivot: the dishes and antenna tower in a crescent around missile silo doors.
+- Two states: doors closed, and doors open with a missile nose showing.
+
+**REBEL_CELL**
+- The player's home for most of the game, until the betrayal reveal.
+- Iterate the design.
+- The fist road network must show in the close-up too, consistent with the map.
+- Two versions: home and post-betrayal DISPATCH.
+
+**Round 25 in progress.**
