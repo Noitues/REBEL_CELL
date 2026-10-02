@@ -1,4 +1,4 @@
-# Art direction review: everything explored so far (2026-10-01)
+﻿# Art direction review: everything explored so far (2026-10-01)
 
 Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner exists but it hasn't been confirmed. **OPEN** = no decision yet. **UNEXPLORED** = no concept work done yet.
 
@@ -6,7 +6,7 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - **Choice:** Cv2, gritty triangulated low-poly, with E's cel shading (toon bands and ink lines).
   - Proof: `round2/assets_compare/s1_cv2_cel`, `round2/r2_blend_EC_on_Cv2_day`.
 - **Rejected:**
-  - round 1 A–E (neon ink, tilt-shift diorama, riso zine, rain noir, glitch vector);
+  - round 1 Aâ€“E (neon ink, tilt-shift diorama, riso zine, rain noir, glitch vector);
   - round 2 A, B and D (low-poly 3D, painterly matte, neon painting);
   - Cv3 (regressed the variable polygon sizes);
   - the E-only city.
@@ -39,7 +39,7 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 - **Explored:**
   - round 1 `spinner_3d` (depth studies);
   - round 4 W-A salvaged faceted, W-B instrument dial, W-C layered stack, W-D segmented ring with stickers;
-  - round 7 V1–V3. **V2 "living programs" was picked**, and its telemetry readout border was "great".
+  - round 7 V1â€“V3. **V2 "living programs" was picked**, and its telemetry readout border was "great".
 - **OPEN, the pointer:** the round 4 notched blade with a value window, or the V2 pointer.
 - **OPEN, the hub readout:** "ATK 6" (borrowed from W-B) for accessibility.
 - **OPEN, the 3D/layered feel (item 4):** how much depth? The W-C layer parallax is the cheapest way to show it.
@@ -122,7 +122,7 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 5. **Wheel details:** to be handled over the next iterations.
 6. **Glyphs:** they're starting to look good. A full glyph pass is needed.
 7. **New slice types:** yes. Some art will be a placeholder for game content that doesn't exist yet. Add them to the game to-do list when the art is reintegrated.
-8. **Value and upgrade variation:** spec 3 versions of every slice. Also spec temporary slice-state overlays (frozen, locked, burning, empowered, …) that sit on top of a slice.
+8. **Value and upgrade variation:** spec 3 versions of every slice. Also spec temporary slice-state overlays (frozen, locked, burning, empowered, â€¦) that sit on top of a slice.
 9. **Enemy and boss designs:** keep iterating.
 10. **Cards:** sticker cards are **LOCKED**, with peel and stick animations. Explore an effect where the sticker dissolves into binary or code when it's played.
 11. **Binary damage shards:** yes, but iterate on the visual.
@@ -175,14 +175,14 @@ Status key: **LOCKED** = the designer has decided. **LEANING** = a front-runner 
 | EMPOWERED | New options. |
 | SPIN N+ (the Momentum card) | Redraw it as a conditional or combo spin. |
 | NUDGE INNER | Concentric rings with the inner ring highlighted. |
-| NUDGE | A short ±1 two-way arc. |
+| NUDGE | A short Â±1 two-way arc. |
 | UNDOCK | A drone with an arrow, or an open ball-and-socket. |
 | BREACH | Lightning over a bullseye. |
 | EXHAUST | A tearing card. |
 | All fire | One shared two-peak flame. |
 
 **Upgrade tiers**
-- Tier II → III needs a shape change, not only colour, so it works for colour-blind players. Round 14 is in progress.
+- Tier II â†’ III needs a shape change, not only colour, so it works for colour-blind players. Round 14 is in progress.
 
 **State overlays**
 
@@ -317,7 +317,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Solar flare: the horizon line only.
 - The final glyph package is exported.
 
-## Decisions from rounds 17–18 (2026-10-02)
+## Decisions from rounds 17â€“18 (2026-10-02)
 
 **Locked**
 - The animated card-play preview.
@@ -354,7 +354,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - they circle and jiggle;
   - drones carry mini spotlights;
   - helicopters come in and out at the edges.
-- A threat vehicle matrix: corp × unit type × upgrade.
+- A threat vehicle matrix: corp Ã— unit type Ã— upgrade.
 
 ## Decisions from round 19 (2026-10-02)
 
@@ -374,7 +374,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - H1 at NOTICED needs to be more noticeable.
 - Batch 2 of the effects.
 
-## Decisions from rounds 19–20 (2026-10-02)
+## Decisions from rounds 19â€“20 (2026-10-02)
 
 ### Combat effects
 
@@ -420,7 +420,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Vehicle corp colours plus icon versions.
 - A campaign-lost ransomware screen and the campaign summary.
 
-## Decisions from rounds 20–21 (2026-10-02)
+## Decisions from rounds 20â€“21 (2026-10-02)
 
 ### Combat
 
@@ -525,7 +525,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - a corp-coloured dashed status ring, bigger than the icon, carrying the heading;
   - the fast chevron nudged up;
   - Lander becomes Orbital's special;
-  - flying is a drone diamond with a 2×2 circle glyph;
+  - flying is a drone diamond with a 2Ã—2 circle glyph;
   - the red ring paled.
 
 ## Decisions from raid round 22 (2026-10-02)
@@ -542,8 +542,8 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Swap with a truthful cursor path.
 - A brief grease-pencil TAKEN mark.
 - A slower BREACHED sequence.
-- The slow field drawn under the units.
-- Repair raises the node diamond's middle health fill, plus a diegetic count-up on hover.
+- The slow field drawn under the units: **LOCKED** (round 23).
+- Repair raises the node diamond's middle health fill, plus a diegetic count-up on hover: **LOCKED** (round 23).
 
 **Round 24 in progress**
 - Target buildings for Solace, Halcyon, Orbital and REBEL_CELL.
@@ -581,7 +581,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - INERTIA becomes WEIGHT.
   - TARIFF becomes JUDGEMENT (the Meridian RAM drain).
 - SANDBOX's purpose: the GDD defines it as SHIELD, a shield that persists across turns (cap 15). The designer is considering "block one whole attack regardless of size" or "block the next status". This is a design decision.
-- Slice upgrade tiers I–III. SliceData has no tier yet.
+- Slice upgrade tiers Iâ€“III. SliceData has no tier yet.
 - Placeholder states FROZEN, LOCKED, BURNING and EMPOWERED. These are not in the game yet.
 - A CLEANSE ability, now with an ESC-key glyph, and a "kill process" ability with a power-symbol glyph.
 - Solace's HEAL slice reads as growth: a possible rename to GROWTH.
