@@ -528,6 +528,28 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - flying is a drone diamond with a 2×2 circle glyph;
   - the red ring paled.
 
+## Decisions from raid round 22 (2026-10-02)
+
+**Locked**
+- Remove-to-hand.
+- Frozen ice on links and units.
+- Vehicle icons v4, with the close and far health views and the status pips.
+- The Rigger beacon.
+- The slow-field proposal.
+
+**Round 23 in progress**
+- Drag snap: the arrow parks just outside a node's circle and the circle draws (yellow = valid; red circle + X = invalid). Leaving the node erases the circle and the arrow snaps back to the cursor.
+- Swap with a truthful cursor path.
+- A brief grease-pencil TAKEN mark.
+- A slower BREACHED sequence.
+- The slow field drawn under the units.
+- Repair raises the node diamond's middle health fill, plus a diegetic count-up on hover.
+
+**Round 24 in progress**
+- Target buildings for Solace, Halcyon, Orbital and REBEL_CELL.
+- HQ updates: Meridian cranes, an Orbital launch pad, the Halcyon eye.
+- City motion.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
