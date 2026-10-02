@@ -317,6 +317,45 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Solar flare: the horizon line only.
 - The final glyph package is exported.
 
+## Decisions from rounds 17–18 (2026-10-02)
+
+**Locked**
+- The animated card-play preview.
+- The sticker card play: peel, slap, dissolve.
+- The hit and crit damage shards.
+- The corp slices, except the Solace and Meridian fixes below.
+- Raid nodes and links on the street use **C, the circuit inlay**. B (holo tiles) is kept for some other feature.
+
+**Corp fixes (round 18 in progress)**
+- Solace GROWTH: no pink arrows.
+- Meridian:
+  - DEFEND: running-bond containers.
+  - CRIT becomes AIRMAIL, a plane flying across.
+  - The RAM-drain slice becomes PRIORITY: the stamped box, with a new alarm-light glyph. JUDGEMENT is retired.
+
+**Combat effects (round 19 in progress)**
+- The card play gets the hover preview.
+- Each dissolve gets its own GIF.
+- A full effects list, plus a first batch of animations.
+- The heat glitch is kept but the designer isn't sold on it: explore non-intrusive Heat alternatives.
+
+**Raid (round 19 in progress)**
+- Stickers only for things that don't change: cards, node types, buttons, titles. A subtler sheen.
+- Grease pencil on tactical elements must be true to the game rules:
+  - no "THEY WANT THE VAULT", "FLAK HERE?" or "HOLD IT!";
+  - drag hover shows the arrow, the circle and the route shift.
+- Other mediums for the info panels.
+- No node tags; node status shown on the node itself.
+- Live info (feed, speed, HP, damage) in a live medium, not stickers.
+- More polygons on buildings.
+- Major nodes inside buildings.
+- No fog by day.
+- Helicopter spotlights only with a gameplay effect:
+  - they circle and jiggle;
+  - drones carry mini spotlights;
+  - helicopters come in and out at the edges.
+- A threat vehicle matrix: corp × unit type × upgrade.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
@@ -353,6 +392,11 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - A CLEANSE ability, now with an ESC-key glyph, and a "kill process" ability with a power-symbol glyph.
 - Solace's HEAL slice reads as growth: a possible rename to GROWTH.
 - A future mechanic, **gates**: rim gates that trigger when the pointer rotates through them. The card-play preview trace shows the direction and the gates passed. The art is deferred until the mechanic is designed. Round 15's `preview_A.png` has a first sketch: crossed gates light gold, uncrossed gates stay grey.
+- Meridian content: CRIT becomes AIRMAIL, and the RAM-drain slice becomes PRIORITY (TARIFF, then JUDGEMENT, then PRIORITY).
+- The heat glitch needs an Options setting (`heat_glitch`) and an exemption from the VfxTier rules.
+- Raid Heat proposals that need a GDD decision:
+  - a node in a helicopter spotlight is "exposed" (takes extra damage);
+  - higher Heat brings more and stronger waves and more routes.
 - MOMENTUM's pictogram is dynamic: the big number switches once a spin has happened. It needs runtime support.
 
 ## What happens after the decisions
