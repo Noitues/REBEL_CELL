@@ -282,6 +282,41 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Option a is agreed.
 - It must be more obvious, while keeping the silhouette identical.
 
+## Decisions from round 16 (2026-10-01)
+
+**Locked**
+- Slice tiers: **V2 "strong"**.
+  - Tier II: a steel bezel plus a bright inset line with a gap.
+  - Tier III: a gold strip, heavy cross-hatch and a brighter screen.
+- Player FIREWALL: shots fall from the outer arc onto a wall at the hub.
+- Glyphs: NUDGE (the needle down through the arc), JUDGEMENT (the raised gavel), SANDBOX option C.
+- Corp slices: Orbital and REBEL_CELL are fully approved.
+  - Halcyon attack: option B, the drone lock-on.
+  - Solace: everything except GROWTH.
+
+**Round 17 in progress**
+
+*Card-play preview*
+- It gets an animated version.
+- One set of large ghosted chevrons, chasing from the top needle to its landing; no white trace lines.
+- The example must be clearer: start, direction, where each needle lands, where each drone ends.
+
+*Corp fixes*
+- Solace and Orbital palettes move further apart.
+- Solace: GROWTH as true mitosis.
+- Meridian:
+  - CRIT: a stamped box.
+  - DEFEND: running-bond containers.
+  - JUDGEMENT: a real gavel striking its block.
+  - MISS: the box shreds away.
+- Halcyon: SHIELD reverts to the round-15 riot shield.
+
+*Glyph tweaks*
+- Binoculars: short, filled cones.
+- Fingerprint: the bottom horizontal lines removed.
+- Solar flare: the horizon line only.
+- The final glyph package is exported.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
