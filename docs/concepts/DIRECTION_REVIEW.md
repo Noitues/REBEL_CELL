@@ -420,6 +420,57 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Vehicle corp colours plus icon versions.
 - A campaign-lost ransomware screen and the campaign summary.
 
+## Decisions from rounds 20–21 (2026-10-02)
+
+### Combat
+
+**Locked**
+- Evade v3.
+- Phase change v2.
+- RAM gain comes from the **TURN banner**.
+
+**Round 22 in progress**
+- Drone destroyed: its own HP counter goes to 0, with no tag.
+- FLAGGED Heat: city searchlights plus one or two alarms on the target.
+- SEND IT restyled as a raid-format sticker.
+- Word stickers from effects (CORRUPTED, EVADED, CHECKPOINT, PHASE 2, DELETED) are temporary and dissolve into binary.
+
+### Raid
+
+**Locked**
+- Red grease-pencil routes.
+- The DOWN wipe.
+- The CELL HOLDS sticker.
+- Panels: option **E, by fiction**.
+- Building nodes: **B, uplink pad**.
+- Vehicle models and colours.
+- Campaign lost: **A, ransomware lock**.
+- EXPOSED is kept.
+
+**Path rules**
+- Solid line = the active route; dashed = what-if.
+- Decoy preview: scribble through the old path, and show the new route dashed.
+- On placement: erase the old path and draw a new solid one.
+- No re-route during execution, unless the decoy is destroyed, in which case the route reverts.
+
+**Card drag model**
+- The peeled sticker parks.
+- A grease-pencil arrow follows the cursor.
+- Near a node, a yellow circle means valid and a red X means invalid.
+
+**Round 21 in progress: raid screen**
+- Panels: a less transparent holo with a decrypted corp seal (and a non-decrypted variant), the work order kept, and Speed/Skip moved.
+- Node health: the outline and icon stay lit; only the fill drains.
+- Interaction GIF fixes.
+- The raid report as a classified corp document.
+
+**Round 21 in progress: raid world**
+- R3 class beacons with cone beams, one per class.
+- Station-bonus effects.
+- Heading circle shown only on hover.
+- Vehicle icon shapes by type.
+- The campaign summary as a corporate dossier with polaroids and auditor post-its.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
@@ -461,6 +512,14 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Raid Heat proposals that need a GDD decision:
   - a node in a helicopter spotlight is "exposed" (takes extra damage);
   - higher Heat brings more and stronger waves and more routes.
+- **EXPOSED** (raid): a node in a helicopter or drone spotlight takes extra damage. The designer wants it; it needs a GDD rule.
+- Station bonuses for the alternate classes (Wrecker, Phantom, Overclocker, Hivemind). The designer's proposals, each with a levelled-up version:
+  - damage boost (levelled: adjacent nodes too);
+  - slow radius (levelled: freeze);
+  - sniper (levelled: player-aimed);
+  - drone operator (levelled: counters enemy drones, helicopters and EXPOSED).
+- Station levelling: levelled-up stationed operatives. The GDD has no operative station levels yet.
+- Raid intel: the corp intel shows "decrypted" normally; at high Heat it may not decrypt.
 - MOMENTUM's pictogram is dynamic: the big number switches once a spin has happened. It needs runtime support.
 
 ## What happens after the decisions
