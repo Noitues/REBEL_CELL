@@ -471,6 +471,18 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Vehicle icon shapes by type.
 - The campaign summary as a corporate dossier with polaroids and auditor post-its.
 
+## Decisions from round 22 (2026-10-02)
+
+**Locked**
+- SEND IT vinyl sticker.
+- Drone destroyed v3.
+- Heat on the combat screen, all three bands.
+
+**Round 23 in progress**
+- Apply CORRUPTED is overlay only: no corner diamond badge and no rule chip.
+- The CORRUPTED overlay is the full-slice pink and green glitch.
+- The other word stickers are re-rendered with the temporary-label rule.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
