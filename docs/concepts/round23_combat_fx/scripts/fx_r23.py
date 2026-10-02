@@ -329,6 +329,48 @@ def board():
     print("board", flush=True)
 
 
+# ================================================================== respin v3: RESPIN word (temporary), UNDO greys + lock
+def undo_box():
+    from slicelib import f_ui, f_mono
+    f = f_ui(19, b"Bold SemiCondensed")
+    tw = max(f.getlength("RESPIN"), f_mono(12).getlength("4 RAM  [R]")) + 28
+    bx = 1370 + tw + 12
+    tw2 = max(f.getlength("UNDO"), f_mono(12).getlength("[Z]")) + 28
+    return (bx, 1006, bx + tw2, 1058)
+
+
+def undo_locked(img, k):
+    """Subtle: the UNDO button greys out and a small lock tick appears on its corner (no word)."""
+    if k <= 0:
+        return img
+    from slicelib import f_ui, f_mono
+    x0, y0, x1, y1 = undo_box()
+    lay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(lay)
+    a = int(255 * k)
+    d.rounded_rectangle([x0, y0, x1, y1], radius=8, fill=(22, 21, 28, a), outline=(80, 78, 92, a), width=2)
+    d.text((x0 + 14, y0 + 5), "UNDO", font=f_ui(19, b"Bold SemiCondensed"), fill=(110, 108, 120, a))
+    d.text((x0 + 14, y0 + 31), "[Z]", font=f_mono(12), fill=(90, 88, 100, a))
+    cx, cy = x1 - 4, y0 + 2
+    d.ellipse([cx - 11, cy - 11, cx + 11, cy + 11], fill=(14, 13, 20, a), outline=(170, 168, 180, a), width=2)
+    d.arc([cx - 4, cy - 8, cx + 4, cy], 180, 360, fill=(200, 198, 210, a), width=2)
+    d.rectangle([cx - 5, cy - 3, cx + 5, cy + 5], fill=(200, 198, 210, a))
+    img = img.copy()
+    img.alpha_composite(lay)
+    return img
+
+
+def respin_v3(t):
+    if not getattr(R20, "_R23_RESPIN", False):
+        R20.CHECK = EB.vinyl_word("RESPIN", (240, 240, 236), size=40, tilt=-4)
+        R20._R23_RESPIN = True
+    img = R20.respin(t)
+    return undo_locked(img, seg(t, R20.T_RS[1] + 60, R20.T_RS[1] + 260))
+
+
+SINGLE["respin_v3"] = (respin_v3, 3500, (0, 0, 1920, 1080), (960, 540), True)  # full frame: the UNDO button is in view
+
+
 if __name__ == "__main__":
     args = sys.argv[1:] or list(SINGLE) + ["board"]
     if args[0] == "test":

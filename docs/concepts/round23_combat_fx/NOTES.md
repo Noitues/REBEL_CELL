@@ -35,3 +35,8 @@ Run from `scripts/`:
 - `python fx_r23.py`
 
 `scratch/` is git-ignored and cleared.
+
+## Respin v3 (`fx_respin_v3.gif`)
+- The temporary word now reads **RESPIN**, not CHECKPOINT. It still dissolves to bits.
+- The undo block is shown on the **UNDO button** instead of a word. After the landing it greys out (200 ms fade) and a small lock tick appears on its top-right corner.
+- The GIF is full frame so the button is in view. v2 is kept.
