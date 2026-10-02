@@ -374,6 +374,52 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - H1 at NOTICED needs to be more noticeable.
 - Batch 2 of the effects.
 
+## Decisions from rounds 19–20 (2026-10-02)
+
+### Combat effects
+
+**Locked**
+- Corrupt tick.
+- Nudge and resistance.
+- Respin.
+- Drone destroyed, without its labels.
+
+**Rule**
+- Every card-caused effect stems from the card's slap and dissolve on the target wheel, not from the hand.
+
+**Round 21 in progress**
+- Evade veers off earlier.
+- Phase-change bits come from the HP phase pip.
+- RAM-gain origin options.
+- Heat dialled down:
+  - the old FLAGGED becomes HUNTED;
+  - the old NOTICED becomes FLAGGED;
+  - the new NOTICED is a couple of alarms on non-target buildings.
+
+### Raid
+
+**Locked**
+- Lime links.
+- The node status key.
+- City detail.
+- The EXPOSED spotlight.
+- The CELL HOLDS stamp.
+- The threat vehicle models.
+
+**Round 20 in progress**
+- Routes back to red grease pencil.
+- "DOWN" marks wipe away.
+- The decoy frame redone.
+- Node health: lit portion drains north to south, plus floats on hover or an Options toggle.
+- GIFs for every changing state.
+- No Heat escalation during a raid; Heat changes after it.
+- More panel-medium options.
+- Speed/Skip matches the chosen panel medium.
+- Building nodes get a rooftop outline and an operator drop target.
+- Stationed operators.
+- Vehicle corp colours plus icon versions.
+- A campaign-lost ransomware screen and the campaign summary.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
