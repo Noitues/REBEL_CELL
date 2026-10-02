@@ -356,6 +356,24 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - helicopters come in and out at the edges.
 - A threat vehicle matrix: corp × unit type × upgrade.
 
+## Decisions from round 19 (2026-10-02)
+
+**Locked**
+- Corporations: all five kits.
+- Card play: hover preview, then slap, then **dissolve A** (bit stream).
+- Effects:
+  - block/shield walls;
+  - heal;
+  - drone deploy and attack;
+  - enemy defeated.
+- Heat: **H1, the city reacts**. Police lights, searchlights and helicopters on the backdrop. The screen glitch is an Options extra only.
+
+**Round 20 in progress**
+- Corrupt tick: the bars dissolve left to right.
+- Evade: the token flies to the top left with the attack chasing it, and both fade at the edge. No wheel shift.
+- H1 at NOTICED needs to be more noticeable.
+- Batch 2 of the effects.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
