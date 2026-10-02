@@ -606,3 +606,10 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 1. Rewrite `docs/ART_BIBLE.md` around the locked direction.
 2. Write a Godot implementation plan: shaders, atlases, and the order of screens.
 3. Implement on `art-pass`, screen by screen, with before/after captures.
+
+## Decisions from raid round 23 (2026-10-02)
+- **Locked**
+  - The drag dock preview.
+  - BREACHED speed.
+- **Accepted for now:** the swap motion. It's a bit janky; revisit it when the art goes back into the game.
+- **In progress:** the TAKEN mark becomes normal weight, placed above the node.
