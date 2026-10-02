@@ -497,6 +497,37 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Its label reads **RESPIN**, not CHECKPOINT.
 - A checkpoint is the GDD's rewind point, which every random outcome sets. The undo block is shown on the UNDO button instead.
 
+## Decisions from raid round 21 (2026-10-02)
+
+**Locked**
+- Raid setup, path rules, node health and the interaction GIFs.
+- The raid report.
+- YOUR NETWORK keeps its detail chips.
+- R3 station beacons.
+- The campaign dossier and audit report.
+
+**Round 22 in progress: raid screen**
+- The parked sticker sits above its hand slot, with no dashed outline in the game.
+- Node "LOST" is renamed **TAKEN**.
+- BREACHED: no double stroke, keep the underline.
+- Swap = return to hand (park at the bottom), plus the pencil arrow drawing to the cursor.
+- Ice: crystals along the inside border with a light-blue fill, for links and for units.
+
+**Round 22 in progress: raid world**
+- Rigger: blinking glasses and an occasional angry face.
+- Phantom and Botnet violets separated.
+- Station bonuses:
+  - the slow ring moves inward;
+  - freeze grows crystals on the ring;
+  - repair rises upward.
+- Vehicle icons:
+  - a health disc that drains downward;
+  - a corp-coloured dashed status ring, bigger than the icon, carrying the heading;
+  - the fast chevron nudged up;
+  - Lander becomes Orbital's special;
+  - flying is a drone diamond with a 2×2 circle glyph;
+  - the red ring paled.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
@@ -546,6 +577,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - drone operator (levelled: counters enemy drones, helicopters and EXPOSED).
 - Station levelling: levelled-up stationed operatives. The GDD has no operative station levels yet.
 - Raid intel: the corp intel shows "decrypted" normally; at high Heat it may not decrypt.
+- Decoy destroyed: a planned future enemy ability for harder AI and difficulty scaling. The route reverts when the decoy is destroyed. The raid code has no defence damage yet.
 - MOMENTUM's pictogram is dynamic: the big number switches once a spin has happened. It needs runtime support.
 
 ## What happens after the decisions
