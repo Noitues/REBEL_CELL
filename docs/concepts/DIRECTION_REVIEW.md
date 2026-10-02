@@ -483,6 +483,20 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - The CORRUPTED overlay is the full-slice pink and green glitch.
 - The other word stickers are re-rendered with the temporary-label rule.
 
+## Decisions from round 23 (2026-10-02)
+
+**Locked**
+- Corrupt apply v4: overlay only, the glitch.
+- Corrupt tick v3.
+- Evade v4.
+- Phase change v3.
+- Enemy defeated v2.
+- Temporary word stickers dissolve into bits.
+
+**Respin**
+- Its label reads **RESPIN**, not CHECKPOINT.
+- A checkpoint is the GDD's rewind point, which every random outcome sets. The undo block is shown on the UNDO button instead.
+
 ## Art backlog (to address in coming rounds)
 - [x] Combat backdrop: a zoomed-in target building, in day and night versions (round 11; the cooler day is in round 11b).
 - [x] MODEM shop facade: F1 picked (round 12; the F1b polish is in progress).
