@@ -1,0 +1,48 @@
+"""Round 16 corp kits: (program, value, special, scene_kind override, label, loop description)."""
+KIT = {
+    "meridian": [
+        ("EXPLOIT", 14, None, None, "ATTACK", "crates ride the rollers, above the barcode strip"),
+        ("ZERO-DAY", 24, None, None, "CRIT", "a PRIORITY stamp slams down (no second barcode)"),
+        ("FIREWALL", 12, None, None, "DEFEND", "the crane brings two containers in from the outer edge onto the wall on the inner side"),
+        ("SANDBOX", 8, None, None, "SHIELD", "lid folds shut, a thin tape is drawn across starting on the box"),
+        ("VIRUS", 3, "tariff", None, "JUDGEMENT", "the gavel swings down from the top onto its block"),
+        ("NULL", None, None, None, "MISS", "tape peels off, the box opens, sides fall: EMPTY"),
+    ],
+    "solace": [
+        ("EXPLOIT", 14, None, None, "ATTACK", "syringe point inside the slice; a bead forms and drops fall"),
+        ("ZERO-DAY", 24, None, None, "CRIT", "heartbeat pulse races across (kept)"),
+        ("FIREWALL", 12, None, None, "DEFEND", "beaker tilted above a test tube pours straight down; it fills"),
+        ("PATCH", 4, None, None, "GROWTH (heal)", "a round cell splits into two round cells that drift apart"),
+        ("VIRUS", None, "dose", None, "DOSE", "a static tilted bottle; capsules keep falling out"),
+        ("NULL", None, None, None, "MISS", "flatline; a bright dot travels along it (kept)"),
+    ],
+    "halcyon": [
+        ("EXPLOIT", 14, None, None, "ATTACK  option A", "a police baton strikes down from the top: impact star"),
+        ("EXPLOIT", 14, None, "ATTACK_B", "ATTACK  option B", "a patrol drone's spotlight sweeps, then the reticle locks on"),
+        ("EXPLOIT", 14, None, "ATTACK_C", "ATTACK  option C", "an arrest warrant with a mugshot is stamped WANTED"),
+        ("ZERO-DAY", 24, None, None, "CRIT", "the jail door slides shut (no CLANG, no lines)"),
+        ("FIREWALL", 6, None, None, "DEFEND", "police tape criss-crosses through the slice"),
+        ("SANDBOX", 8, None, None, "SHIELD", "a rock from the top bounces off a riot shield"),
+        ("PATCH", 6, None, None, "HEAL", "an ambulance drives by (kept)"),
+        ("VIRUS", None, "citation", None, "CITATION", "a paper is stamped FINE (kept)"),
+        ("NULL", None, None, None, "MISS", "option A: the CLOSED sign swings"),
+    ],
+    "orbital": [
+        ("EXPLOIT", 14, None, None, "ATTACK", "one small meteor hits the planet"),
+        ("ZERO-DAY", 24, None, None, "CRIT", "a large meteor and a shower of small ones"),
+        ("FIREWALL", 12, None, None, "DEFEND", "a satellite laser destroys a meteor"),
+        ("PROXY", 1, None, None, "EVADE", "a spaceship fires its engine and leaves"),
+        ("VIRUS", None, "solar_flare", None, "SOLAR FLARE", "the flare flies off screen; a new one forms"),
+        ("NULL", None, None, None, "MISS", "an astronaut drifts away: TETHER LOST"),
+    ],
+    "rebel_cell": [
+        ("EXPLOIT", 14, None, None, "ATTACK", "the player's EXPLOIT, in red"),
+        ("ZERO-DAY", 24, None, None, "CRIT", "the player's ZERO-DAY, in red"),
+        ("FIREWALL", 12, None, None, "DEFEND", "packets fall from the outer arc and burst on a wall on the inner side"),
+        ("SANDBOX", 5, None, None, "SHIELD", "QUARANTINE: a hex barrier closes; a packet bounces off (reworked)"),
+        ("PROXY", 1, None, None, "EVADE", "the player's PROXY, in red"),
+        ("VIRUS", 3, None, None, "AFFLICT", "the player's VIRUS, in red"),
+        ("PATCH", 6, None, None, "HEAL", "the player's PATCH, in red"),
+        ("NULL", None, None, None, "MISS", "the player's NULL, in red"),
+    ],
+}
