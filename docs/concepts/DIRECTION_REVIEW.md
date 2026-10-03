@@ -647,3 +647,43 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Two versions: home and post-betrayal DISPATCH.
 
 **Round 25 in progress.**
+
+## Decisions from round 25 (2026-10-02)
+
+**Locked**
+- City motion layers ("amazing").
+- The map = close-up rule.
+- Solace helix form.
+- Halcyon's extra layers and stair ramps.
+- The Orbital rocket.
+- The Meridian regular site.
+
+**Combat framing**
+- Zoom in further. The HQ is the focus of the backdrop, and the wheels may overlap it.
+
+**Round 26 in progress**
+
+*City*
+- More highways and complex interchanges.
+
+*Meridian*
+- Historical castle silhouettes that read from afar.
+- Combat view face-on to the drawbridge.
+
+*Solace*
+- Lighting: underside down-lights, a centre up-spot, and LED chasers spiralling up.
+- The regular site becomes a hospital.
+
+*Halcyon*
+- No radar dish.
+- The eye scans like the Eye of Sauron.
+- Regular site: a sphinx or a police station.
+
+*Orbital*
+- No tower in front.
+- The silo is a round in-ground hole with a caution rim and sideways-sliding doors.
+- The regular site becomes a TV station with dishes.
+
+*REBEL_CELL*
+- Explore several ideas: a Tokyo street, painted roofs that form a fist, hijacked holograms and billboards.
+- The regular site becomes the MODEM shop with a red sign.
