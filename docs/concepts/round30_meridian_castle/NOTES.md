@@ -40,3 +40,6 @@ The castle is round 29's locked A: texture A, lower walls, the moat, and the cra
 ## Open
 - **In combat, the boom, the trolley and the trains sit behind the boss wheel** (right side). The crane's A-frame and legs in the centre gap show the lift. To show the train under the HUD, the yard would have to be on the left (mirror the crane), where the player wheel sits.
 - **On the map, the tracks are thin at map scale.** The train reads as a dotted line next to the castle.
+
+## v2 (combat framing tweak)
+The combat camera pans 32 units sideways (`HQ_PAN=32`), so the castle and yard sit left of centre: the boom, trolley, container and tracks fill the gap between the wheels, and the castle sits partly behind the player wheel. Files: `combat_meridian_v2.jpg`, `combat_meridian_motion_v2.gif` (2.4 MB) and `combat_meridian_motion_strip_v2.jpg`; v1 files kept. Build: `HQ_PAN=32 render anim`, then `python make_motion30_v2.py`.

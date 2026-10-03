@@ -338,8 +338,10 @@ else:
             "site": (DIAG, 80, 54, 9)}
     dv, D, Hc, Zt = CAMS["hq"][CORP] if KIND == "hq" else CAMS["site"]
     dv = Vector((dv[0], dv[1], 0)).normalized()
-    tgt = Vector((0, 0, Zt))
-    cam.location = (dv.x * D, dv.y * D, Hc)
+    pan = float(os.environ.get("HQ_PAN", "0"))  # round 30 v2: lateral pan (world +Y for Meridian) - the HQ moves left in frame
+    side = Vector((-dv.y, dv.x, 0))
+    tgt = Vector((0, 0, Zt)) + side * pan
+    cam.location = tuple(Vector((dv.x * D, dv.y * D, Hc)) + side * pan)
     cam_data.lens = 34
 cam.rotation_euler = (tgt - Vector(cam.location)).to_track_quat("-Z", "Y").to_euler()
 bpy.context.view_layer.update()
