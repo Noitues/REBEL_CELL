@@ -12,11 +12,12 @@ import roads
 
 N = 48
 MS = 80
-TOL = {'v2': {'night': 28, 'day': 20}, 'v3': {'night': 36, 'day': 22}}
+TOL = {'v2': {'night': 28, 'day': 20}, 'v3': {'night': 36, 'day': 22}, 'v4': {'night': 36, 'day': 22}}
 
 
 def main(ver, themes):
-    roads.Network.sky = ver == 'v3'
+    roads.Network.sky = ver in ('v3', 'v4')
+    roads.Network.mixed = ver == 'v4'
     for th in themes:
         s = cm.Scene(th)
         frames = [s.frame(f, N) for f in range(N)]
@@ -31,6 +32,6 @@ def main(ver, themes):
 if __name__ == '__main__':
     args = sys.argv[1:]
     ver = 'v2'
-    if args and args[0] in ('v2', 'v3'):
+    if args and args[0] in ('v2', 'v3', 'v4'):
         ver = args.pop(0)
     main(ver, args or ['night', 'day'])

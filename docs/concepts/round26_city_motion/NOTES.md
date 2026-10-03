@@ -79,3 +79,12 @@ That gives 16 roads in total.
 - **Script.** Set by `roads.Network.sky = True`. Run `python scripts/make_ambient.py v3` and `python scripts/make_boards.py inter2`. v2 is kept.
 - **GIF compression.** The night v3 GIF treats colour changes under 36 levels as unchanged, to stay under 4 MB, so streak tails band a little.
 - **Godot.** Drop the deck Polygon2D strips. Each lane is its Path2D + elevation curve, a MultiMesh of car quads with a stretched additive streak, and one MultiMesh of guide dots per road.
+
+## v4: mixed lane colours (designer: flying cars and speed locked)
+- `city_ambient_night_v4.gif` (3.4 MB) and `city_ambient_day_v4.gif` (3.2 MB): 960x540, 48 frames x 80 ms.
+- **Colours.** Each sky-lane car picks one of the six lane colours at random (pink, cyan, amber, violet, mint, orange). The pick is seeded per car, and it applies day and night to the streak and the under-glow.
+- **Mixing.** Every lane carries all six colours. The lane-guide dots keep their lane colour.
+- **Unchanged from v3:** speed, shapes and street traffic.
+- **At night** the white headlight dot stays at the nose, so travel direction still reads.
+- **Script.** Set by `roads.Network.mixed = True`. Run `python scripts/make_ambient.py v4`. v3 is kept.
+- **Godot.** A per-instance colour (INSTANCE_CUSTOM) on the car MultiMesh, picked from a 6-colour palette in config by a seeded RngService stream.

@@ -103,6 +103,8 @@ def clip(pts, el, pad=50):
 
 class Network:
     sky = False                        # v3 (designer): True = no decks, the roads become sky lanes
+    mixed = False                      # v4 (designer): every car takes a random lane colour, day and night
+    LANE_COLS = ((255, 70, 190), (80, 220, 255), (255, 196, 60), (170, 120, 255), (90, 255, 200), (255, 120, 60))
 
     def __init__(self, scene):
         self.s = scene
@@ -225,7 +227,7 @@ class Network:
                 x += nx * off * r.w * 0.22
                 y += ny * off * r.w * 0.22
                 el = r.elev[k] + (r.elev[min(k + 1, len(r.elev) - 1)] - r.elev[k]) * 0.5
-                out.append((k, x, y, dx, dy, d, el, rng.randrange(6)))
+                out.append((k, x, y, dx, dy, d, el, rng.randrange(6), rng.randrange(6)))
         return out
 
     def draw_sky(self, over, addd, t):
@@ -251,7 +253,8 @@ class Network:
             for c in self.cars(r, t):
                 allc.append((c[6], c[2], r, c))
         allc.sort(key=lambda a: (round(a[0] / 3.0), a[1]))
-        for _, _, r, (k, x, y, dx, dy, d, el, cc) in allc:
+        for _, _, r, (k, x, y, dx, dy, d, el, cc, lc) in allc:
+            lane_col = self.LANE_COLS[lc] if self.mixed else r.rail
             if night:
                 col = (255, 240, 210) if d > 0 else (255, 46, 60)
                 tl = 16 if d > 0 else 13
@@ -263,8 +266,9 @@ class Network:
                 u0, u1 = q / seg, (q + 1) / seg
                 a_ = ((x - dx * tl * u0 * d) * SS, (y - dy * tl * u0 * d) * SS)
                 b_ = ((x - dx * tl * u1 * d) * SS, (y - dy * tl * u1 * d) * SS)
-                tc = col if night else r.rail
-                addd.line([a_, b_], fill=tc + (int((140 if night else 230) * (1 - u0)),), width=3 if night else 4)
+                tc = lane_col if (self.mixed or not night) else col
+                ta = 230 if not night else (190 if self.mixed else 140)
+                addd.line([a_, b_], fill=tc + (int(ta * (1 - u0)),), width=4 if (self.mixed or not night) else 3)
             if night:
                 over.ellipse([x * SS - 2.2, y * SS - 1.6, x * SS + 2.2, y * SS + 1.6], fill=(14, 12, 20, 255))
                 addd.ellipse([(x + dx * 1.5 * d) * SS - 2, (y + dy * 1.5 * d) * SS - 2,
@@ -275,7 +279,7 @@ class Network:
                 over.line([((x - dx * 1.7) * SS, (y - dy * 1.7) * SS), ((x + dx * 1.7) * SS, (y + dy * 1.7) * SS)],
                           fill=col + (255,), width=3)
             addd.ellipse([x * SS - 5, (y + 1.5) * SS - 2.5, x * SS + 5, (y + 1.5) * SS + 2.5],
-                         fill=r.rail + (70 if night else 50,))
+                         fill=lane_col + (70 if night else 50,))
 
     def draw(self, img, over, addd, t):
         if self.sky:
@@ -348,7 +352,7 @@ class Network:
             if not r.oneway:
                 over.line([(a[0] * SS, a[1] * SS), (b[0] * SS, b[1] * SS)],
                           fill=(70, 64, 96, 255) if night else (220, 214, 190, 255), width=1)
-            for (_, x, y, dx, dy, d, el, cc) in cars[r.name].get(k, []):
+            for (_, x, y, dx, dy, d, el, cc, _lc) in cars[r.name].get(k, []):
                 self._car(over, addd, x, y, dx, dy, d, el, cc, night)
 
     def _car(self, over, addd, x, y, dx, dy, d, el, cc, night):
