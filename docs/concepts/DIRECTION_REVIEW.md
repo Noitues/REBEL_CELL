@@ -714,3 +714,16 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - City map: painted rooftops forming a subtle fist, in home and DISPATCH versions.
 - Combat backdrop: the **Tokyo street canyon**.
 - Round 27 is in progress.
+
+## Decisions from rounds 27–28 (2026-10-02)
+
+**Locked**
+- The shop sign is **MARKET NEON**.
+- On a REBEL_CELL takeover it flashes **NO → MoRE → MAN**. The "o" comes from lighting the top half of the A.
+- Source: ound27_modem_sign_flicker/market_neon_more_sequence.gif.
+
+**Meridian castle**
+- Not yet.
+- Keep texture A (raw corrugated steel, Meridian orange).
+- Lower walls, add a moat, and a beefy gantry crane as the central keep.
+- Round 29 is in progress.
