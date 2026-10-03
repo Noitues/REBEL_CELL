@@ -727,3 +727,29 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Keep texture A (raw corrugated steel, Meridian orange).
 - Lower walls, add a moat, and a beefy gantry crane as the central keep.
 - Round 29 is in progress.
+
+## Decisions from round 29 and REBEL_CELL round 27 (2026-10-02)
+
+### Meridian
+
+**Locked**
+- Texture A.
+- Lower walls.
+- A moat.
+- The gantry crane as the keep, with the boom lowered.
+
+**Round 30 in progress**
+- Train tracks along the boom side, with the crane loading a freight train.
+- More polygon detail on the castle and on the moat water.
+- Combat motion: the crane raises and lowers, and trains pass.
+
+### REBEL_CELL
+
+**Locked**
+- The Tokyo canyon direction.
+
+**Round 28 in progress**
+- The map fist: bigger paint strokes, or a low hologram fist just above the roofs.
+- Darker canyon lighting so the alley detail reads.
+- Animated signs and holograms in the combat backdrop.
+- A street-level combat test.
