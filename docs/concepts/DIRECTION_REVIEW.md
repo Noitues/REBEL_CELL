@@ -701,3 +701,16 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Meridian: an angular container fortress, with no rounded shapes. For example, a big container wall around a regular building.
 - Halcyon regular site: a sphinx that isn't janky, or an alternative landmark.
 - The MARKET NEON takeover sign: a flash sequence NO / MRE / MAN.
+
+## Decisions from round 27 (2026-10-02)
+
+**Locked**
+- Meridian HQ shape: **A, the container wall** fortress. Its textures are still being iterated in round 28.
+- Halcyon regular site: **Halcyon Court + Justice statue**. The new sphinx is liked and kept in the library.
+
+**REBEL_CELL**
+- No fist streets: a normal street grid.
+- The HQ is a subtle city look, not a standout building.
+- City map: painted rooftops forming a subtle fist, in home and DISPATCH versions.
+- Combat backdrop: the **Tokyo street canyon**.
+- Round 27 is in progress.
