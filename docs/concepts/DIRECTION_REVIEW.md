@@ -687,3 +687,17 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 *REBEL_CELL*
 - Explore several ideas: a Tokyo street, painted roofs that form a fist, hijacked holograms and billboards.
 - The regular site becomes the MODEM shop with a red sign.
+
+## Decisions from round 26 (2026-10-02)
+
+**Locked**
+- City motion v4: the flying-car sky lanes, the speed, and random lane colours by day and night.
+- Solace HQ: the lit helix, plus the hospital site.
+- Halcyon HQ, with the scanning eye.
+- Orbital HQ: the in-ground silo, plus the TV station site.
+- Combat zoom framing.
+
+**Round 27 in progress**
+- Meridian: an angular container fortress, with no rounded shapes. For example, a big container wall around a regular building.
+- Halcyon regular site: a sphinx that isn't janky, or an alternative landmark.
+- The MARKET NEON takeover sign: a flash sequence NO / MRE / MAN.
