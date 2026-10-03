@@ -102,6 +102,8 @@ def clip(pts, el, pad=50):
 
 
 class Network:
+    sky = False                        # v3 (designer): True = no decks, the roads become sky lanes
+
     def __init__(self, scene):
         self.s = scene
         R = []
@@ -202,10 +204,14 @@ class Network:
         Ln = r.len
         for lane in lanes:
             d = 1 if (lane > 0 or r.oneway) else -1
-            gap = rng.uniform(13, 20) / r.cars
+            gap = rng.uniform(13, 20) / r.cars * (1.4 if self.sky else 1.0)
             n = max(1, int(Ln / gap))
             gap = Ln / n
             m = rng.choice((2, 3, 3, 4))
+            if self.sky:
+                # v3: much faster. Moves 14-20 car gaps per loop (5-7 px a frame, under half a gap, so no
+                # wagon-wheel aliasing); the length of the streak carries the speed.
+                m = rng.choice((14, 16, 17, 19, 20))
             s0 = rng.uniform(0, gap)
             off = (lane - 1.0) if r.oneway else lane
             for c in range(n):
@@ -222,7 +228,58 @@ class Network:
                 out.append((k, x, y, dx, dy, d, el, rng.randrange(6)))
         return out
 
+    def draw_sky(self, over, addd, t):
+        """v3: no decks, pylons or rails. The same road shapes as pure sky lanes: faint lane-guide dots and
+        fast flying cars with light streaks."""
+        night = self.s.night
+        ga = 70 if night else 120
+        for r in self.roads:
+            Ln = r.len
+            n = int(Ln / 9)
+            for k in range(n):
+                x, y, dx, dy, _ = _at_k(r.deck, k * Ln / n)
+                if r.oneway:
+                    col = r.rail
+                    addd.ellipse([x * SS - 1.3, y * SS - 1.3, x * SS + 1.3, y * SS + 1.3], fill=col + (ga,))
+                else:
+                    nx, ny = -dy, dx
+                    for side in (-1, 1):
+                        px, py = x + nx * side * r.w * 0.45, y + ny * side * r.w * 0.45
+                        addd.ellipse([px * SS - 1.3, py * SS - 1.3, px * SS + 1.3, py * SS + 1.3], fill=r.rail + (ga,))
+        allc = []
+        for r in self.roads:
+            for c in self.cars(r, t):
+                allc.append((c[6], c[2], r, c))
+        allc.sort(key=lambda a: (round(a[0] / 3.0), a[1]))
+        for _, _, r, (k, x, y, dx, dy, d, el, cc) in allc:
+            if night:
+                col = (255, 240, 210) if d > 0 else (255, 46, 60)
+                tl = 16 if d > 0 else 13
+            else:
+                col = ((240, 236, 226), (250, 196, 30), (210, 50, 44), (60, 70, 96), (170, 180, 196), (90, 160, 210))[cc]
+                tl = 16
+            seg = 5
+            for q in range(seg):
+                u0, u1 = q / seg, (q + 1) / seg
+                a_ = ((x - dx * tl * u0 * d) * SS, (y - dy * tl * u0 * d) * SS)
+                b_ = ((x - dx * tl * u1 * d) * SS, (y - dy * tl * u1 * d) * SS)
+                tc = col if night else r.rail
+                addd.line([a_, b_], fill=tc + (int((140 if night else 230) * (1 - u0)),), width=3 if night else 4)
+            if night:
+                over.ellipse([x * SS - 2.2, y * SS - 1.6, x * SS + 2.2, y * SS + 1.6], fill=(14, 12, 20, 255))
+                addd.ellipse([(x + dx * 1.5 * d) * SS - 2, (y + dy * 1.5 * d) * SS - 2,
+                              (x + dx * 1.5 * d) * SS + 2, (y + dy * 1.5 * d) * SS + 2], fill=col + (255,))
+            else:
+                over.line([((x - dx * 2) * SS, (y - dy * 2) * SS), ((x + dx * 2) * SS, (y + dy * 2) * SS)],
+                          fill=(16, 14, 20, 255), width=5)
+                over.line([((x - dx * 1.7) * SS, (y - dy * 1.7) * SS), ((x + dx * 1.7) * SS, (y + dy * 1.7) * SS)],
+                          fill=col + (255,), width=3)
+            addd.ellipse([x * SS - 5, (y + 1.5) * SS - 2.5, x * SS + 5, (y + 1.5) * SS + 2.5],
+                         fill=r.rail + (70 if night else 50,))
+
     def draw(self, img, over, addd, t):
+        if self.sky:
+            return self.draw_sky(over, addd, t)
         s = self.s
         night = s.night
         # day shadows on the ground

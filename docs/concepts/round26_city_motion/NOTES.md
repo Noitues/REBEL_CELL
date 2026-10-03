@@ -62,3 +62,20 @@ That gives 16 roads in total.
 - The cloverleaf sits in the upper tilt-shift band, so in the GIF it reads soft (depth). `interchanges.png` shows it sharp.
 - To stay under 4 MB, the night GIF's encoder treats colour changes under 28 levels as unchanged (day: 20). Small glows band slightly as a result.
 - The labels in the close-ups (`THE SPRAWL`, `R…`) are baked into the base map. They are not overlays.
+
+## v3: sky lanes (designer: shapes locked, decks out, faster)
+| File | What |
+|---|---|
+| `city_ambient_night_v3.gif` | 960x540, 48 x 80 ms, 3.2 MB. |
+| `city_ambient_day_v3.gif` | 3.0 MB. |
+| `interchanges_v2.png` | The stack, cloverleaf and spiral/flyovers as sky lanes, night + day. |
+
+- **The road shapes are unchanged.** Same 16 paths and heights as v2, with no deck surface, side, rail, pylon, spiral column or day shadow. Each lane is now just:
+  - fast cars, each with a light streak, a dark body and an under-glow;
+  - faint lane-guide dots every 9 px. Two-way lanes get one row along each edge; one-way ramps get a single centre row in the ramp colour.
+- **Night lanes** use headlights one way and tail lights the other, as before. **By day** the streaks take the lane colour (pink, cyan, amber, violet, mint, orange) so the shapes still read against the bright city.
+- **Speed.** Highway cars now move 14-20 car gaps per 3.84 s loop (was 2-4), about 6x faster. Spacing is 1.4x wider so the lanes don't smear. Street-level traffic is unchanged.
+- **Draw order.** Cars are sorted by height band, then screen y, so higher streaks pass over lower ones.
+- **Script.** Set by `roads.Network.sky = True`. Run `python scripts/make_ambient.py v3` and `python scripts/make_boards.py inter2`. v2 is kept.
+- **GIF compression.** The night v3 GIF treats colour changes under 36 levels as unchanged, to stay under 4 MB, so streak tails band a little.
+- **Godot.** Drop the deck Polygon2D strips. Each lane is its Path2D + elevation curve, a MultiMesh of car quads with a stretched additive streak, and one MultiMesh of guide dots per road.

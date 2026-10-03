@@ -126,7 +126,57 @@ def storyboard():
 
 if __name__ == '__main__':
     w = sys.argv[1:] or ['inter', 'story']
+    if w == ['inter2']:
+        w = []
     if 'inter' in w:
         interchanges()
     if 'story' in w:
         storyboard()
+
+
+def interchanges_v2():
+    """interchanges_v2.png: the same three close-ups with the v3 sky lanes (no decks)."""
+    import roads
+    roads.Network.sky = True
+    opts = dict(fog=False, rain=False, steam=False, tilt=False, labels=False, hires=True)
+    sn, sd = cm.Scene('night'), cm.Scene('day')
+    pad, W1, W2 = 24, 1100, 520
+    rows = []
+    for title, box, note in (
+            ('A  FOUR-LEVEL STACK  (D x E, beside Orbital)', STACK,
+             'The stack as sky lanes: D (orange) and E (cyan) cross, four directional ramps arch over at two more '
+             'heights (amber, pink). Only cars, light streaks and faint lane-guide dots: no deck, rail or pylon.'),
+            ('B  CLOVERLEAF  (A x F, north Sprawl)', CLOVER,
+             'Four 270-degree loops trace between A (pink/cyan) and F (violet). Two-way lanes have a guide-dot row '
+             'on each edge; one-way ramps a single centre row in the ramp colour.')):
+        n_im = crop2(sn.frame(14, 48, opts=opts), box, W1)
+        n2 = crop2(sn.frame(15, 48, opts=opts), box, W1)
+        rows.append((title, n_im, crop2(sd.frame(14, 48, opts=opts), box, W2), crop2(sd.frame(15, 48, opts=opts), box, W2), note))
+    sp = [crop2(sn.frame(14, 48, opts=opts), SPIRAL, W2), crop2(sd.frame(14, 48, opts=opts), SPIRAL, W2)]
+    H = 120 + sum(r[1].height + 60 for r in rows) + sp[0].height + 80
+    sheet = Image.new('RGB', (pad * 3 + W1 + W2, H), BG)
+    d = ImageDraw.Draw(sheet)
+    d.text((pad, 20), 'INTERCHANGES v2  -  sky lanes (no road surface)', font=cm.font(34), fill=INK)
+    d.text((pad, 64), 'Same locked shapes as interchanges.png. Highway traffic about 6x faster (14-20 car gaps per 3.84 s '
+                      'loop, was 2-4); street traffic unchanged. Night left, day right; 2x composite, fog/tilt off.',
+           font=cm.font(16, False), fill=DIM)
+    y = 120
+    for title, n_im, d_im, d2, note in rows:
+        d.text((pad, y), title, font=cm.font(20), fill=LIME)
+        sheet.paste(n_im, (pad, y + 30))
+        sheet.paste(d_im, (pad * 2 + W1, y + 30))
+        _wrap(d, (pad * 2 + W1, y + 40 + d_im.height), note, cm.font(14, False), DIM, W2)
+        y += n_im.height + 60
+    d.text((pad, y), 'C  SPIRAL + FLYOVERS AT THREE HEIGHTS', font=cm.font(20), fill=LIME)
+    sheet.paste(sp[0], (pad, y + 30))
+    sheet.paste(sp[1], (pad * 2 + W2, y + 30))
+    _wrap(d, (pad * 3 + 2 * W2, y + 30), 'C spirals down 1.75 turns to street level as a one-way lane of mint streaks; '
+          'it crosses under B and F, each lane drawn in height order so the higher streaks pass over.',
+          cm.font(14, False), DIM, sheet.width - (pad * 4 + 2 * W2))
+    sheet = sheet.crop((0, 0, sheet.width, y + 40 + sp[0].height))
+    sheet.save(os.path.join(cm.ROOT, 'interchanges_v2.png'), optimize=True)
+    print('interchanges_v2', sheet.size)
+
+
+if __name__ == '__main__' and 'inter2' in sys.argv[1:]:
+    interchanges_v2()
