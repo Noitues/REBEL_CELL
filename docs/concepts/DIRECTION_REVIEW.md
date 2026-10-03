@@ -753,3 +753,27 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Darker canyon lighting so the alley detail reads.
 - Animated signs and holograms in the combat backdrop.
 - A street-level combat test.
+
+## Decisions from Meridian round 30 and REBEL_CELL round 28 (2026-10-02)
+
+### Meridian
+- **LOCKED** for now: "good enough to move on".
+- Final tweak: shift the HQ and the train left in combat, so more detail shows between the wheels.
+
+### REBEL_CELL
+
+**Dropped**
+- Holograms.
+- Giant floating fists.
+- Painted roofs.
+- Street-level combat.
+
+**Map**
+- Normal buildings, with the window lights in the fist area coloured red so the fist reads city-wide.
+
+**Canyon (combat)**
+- Keep the darker canyon and the flicker.
+- Home lays low: no rebel signs.
+- DISPATCH: every sign and billboard shows the fist, REBEL_CELL or Cell slogans.
+
+**Round 29 is in progress.**
