@@ -1,4 +1,4 @@
-"""flicker_sign.py - round 33 v3 (MAINFRAME, filled tubes, letter-wired circuit board board.py): renamed MODEM-style circuit-board neon signs with a Cell takeover.
+"""flicker_sign.py - round 33 (MAINFRAME, FILLED tubes; copied from round 32): renamed MODEM-style circuit-board neon signs with a Cell takeover.
 
 Reuses the round 4 sign pipeline (modem_sign_r4.py, a copy): plate facets, hollow double-line tubes,
 PCB traces routed around the letters, chips, self-lit plate and glow. What's new:
@@ -19,7 +19,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import modem_sign_r4 as M          # noqa: E402
 from lightpen import gblur, tonemap  # noqa: E402
-import board as BD  # noqa: E402
 
 PW, PH, MARGIN, CW, CH = M.PW, M.PH, M.MARGIN, M.CW, M.CH
 PINK, CYAN, PINK_OFF, CYAN_OFF = M.PINK, M.CYAN, M.PINK_OFF, M.CYAN_OFF
@@ -134,9 +133,7 @@ class FlickerSign:
         self.lets = letters(self.layout)
         M.element_list = lambda: [(k, ch, x, y, w, h, W, t, col) for k, ch, x, y, w, h, W, t, col in self.lets]
         M.ELEMENTS = ["frame"] + [l[0] for l in self.lets]
-        M.CHIPS = []                           # v3: components live on the designed board (board.py)
-        self.base = M.Sign(seed=seed, traces=[])   # plate, frame + tube masks; no random routing
-        self.board = BD.Board(self.lets)
+        self.base = M.Sign(seed=seed)          # plate, traces, chips, frame + tube masks for our letters
         self.keys = [l[0] for l in self.lets]
         self.col = {l[0]: l[8] for l in self.lets}
         self.alt = {}
@@ -193,7 +190,6 @@ class FlickerSign:
         emis = np.zeros((CH, CW, 3), np.float32)
         glass = np.zeros((CH, CW, 3), np.float32)
         hot = np.zeros((CH, CW), np.float32)
-        lvls = {}
         for k in ["frame"] + self.keys:
             t = b.solids[k]                     # round 33: filled tube (solid glowing stroke)
             if k in broken:
@@ -211,9 +207,6 @@ class FlickerSign:
             part = None
             if isinstance(lv, tuple):
                 part, lv = b.bands.get(k, 1.0), lv[1]
-            if k != "frame":
-                half = 0.45 if (k in msg and msg[k]) else 1.0      # partial (A-top) letters: dimmer wiring
-                lvls[k] = ((lv * (0.6 if part is not None else 1.0) * half) if lit_mask is not None else 0.0, c)
             if lit_mask is not None and lv > 0:
                 m = lit_mask * (part if part is not None else 1.0)
                 warm = c * (0.55 + 0.45 * lv) + np.array([0.2, 0.0, 0.35]) * (1 - lv)
@@ -225,15 +218,15 @@ class FlickerSign:
                 glass += off[None, None] * (lit_mask * (1 - 0.6 * lv))[..., None]
             else:
                 glass += off[None, None] * t[..., None] * 1.1
-        # v3: the board's light follows its letters; rails follow the frame / brightest letter
-        rail = max([frame] + [v[0] * 0.8 for v in lvls.values()])
-        rail_col = PAL[SIGN_PAL][0] if frame > 0 or not msg else MSG_COL
-        lvls['rail'] = (rail, rail_col)
-        bem, bglass = self.board.light(lvls, pulse_t)
-        emis += bem
-        glass += bglass
-        bd = self.board
-        alb = b.plate_alb * (1 - bd.comp_m[..., None]) + bd.comp_alb * bd.comp_m[..., None] + glass
+        tm, pdm, pum = M.draw_traces(b.traces, 1.0, pulse_t, b.phase)
+        tc = PAL[SIGN_PAL][2] if trace_col is None else trace_col
+        emis += tc * (tm * 0.55 + pdm * 0.8)[..., None] * traces
+        if pulse_t is not None:
+            emis += (0.5 * tc + 0.5) * (pum * 2.4)[..., None] * traces
+        glass += np.array([0.30, 0.17, 0.09], np.float32) * (tm * 0.55 + pdm * 0.8)[..., None] * (1 - 0.7 * min(1, traces))
+        emis += tc * (b.chip_pins * 0.45)[..., None] * traces
+        emis += PAL[SIGN_PAL][2] * (gblur(b.chip_led, 0.7) * 2.2)[..., None] * min(1.0, traces + 0.3)
+        alb = b.plate_alb * (1 - b.chip_m[..., None]) + b.chip_alb * b.chip_m[..., None] + glass
         if broken:
             alb = alb * (1 - 0.75 * self.soot[..., None])
         self_light = np.stack([gblur(emis[..., c], 7) * 1.1 + gblur(emis[..., c], 24) * 1.2 for c in range(3)], -1)

@@ -1,4 +1,4 @@
-"""Round 33 v3 MAINFRAME, letter-wired circuit board (v1/v2 kept as make_all_v1.py / make_all_v2.py) (copied from round 32): build sign textures, render facade backdrops, composite stills, flicker GIFs, storyboard, compare.
+"""Round 33 v2 MAINFRAME, filled saturated tubes (v1 kept as make_all_v1.py) (copied from round 32): build sign textures, render facade backdrops, composite stills, flicker GIFs, storyboard, compare.
 
 python make_all.py            (everything; ~6 min)
 python make_all.py --no-bg    (reuse scratch/bg_*.png)
@@ -99,8 +99,7 @@ def sequence(sign, seq_key, rng, loops=2, fps=12):
                 if j in (3, 6) and rng.random() < 0.6:
                     hum = rng.choice(list(mk))
                 m = dict(mk)
-                kw = dict(msg=m, frame=0.0, traces=0.22, trace_col=FS.TRACE_RED, broken=dead, msg_level=lvl,
-                          pulse_t=(lp * 3 + wi) * 0.75 + j / fps)   # v3: data pulses run into the lit letters
+                kw = dict(msg=m, frame=0.0, traces=0.22, trace_col=FS.TRACE_RED, broken=dead, msg_level=lvl)
                 if hum:   # a single letter of the word dips
                     kw['normal'] = {}
                     m2 = {k: v for k, v in m.items() if k != hum}
@@ -158,8 +157,8 @@ def main():
         render_bg.render('take', os.path.join(SCR, 'tex_take.png'), SPILL_RED, 0.09)
     dark = f32(os.path.join(SCR, 'bg_dark.png'))
     bblue, bred, btake = (f32(os.path.join(SCR, 'bg_%s.png' % n)) for n in ('blue', 'red', 'take'))
-    to_img(composite((dark, bblue, btake), 1.0, 0.0, blue)).save(os.path.join(OUT, 'mainframe_blue_v3.png'), optimize=True)
-    to_img(composite((dark, bred, btake), 1.0, 0.0, red)).save(os.path.join(OUT, 'mainframe_red_v3.png'), optimize=True)
+    to_img(composite((dark, bblue, btake), 1.0, 0.0, blue)).save(os.path.join(OUT, 'mainframe_blue_v2.png'), optimize=True)
+    to_img(composite((dark, bred, btake), 1.0, 0.0, red)).save(os.path.join(OUT, 'mainframe_red_v2.png'), optimize=True)
     rows = []
     for key, seq, title, gif in OPTIONS:
         words = s.words(seq)
@@ -168,9 +167,9 @@ def main():
             im = to_img(composite((dark, bred, btake), 0.0, min(1.0, len(mk) / 4), s.state_word(seq, wi)))
             tag = w.lower().replace(' ', '')
             if key == 'mainframe':
-                im.save(os.path.join(OUT, 'mainframe_takeover_%s_v3.png' % tag), optimize=True)
+                im.save(os.path.join(OUT, 'mainframe_takeover_%s_v2.png' % tag), optimize=True)
             else:
-                im.save(os.path.join(OUT, '%s_%s_v3.jpg' % (key, tag)), quality=90)
+                im.save(os.path.join(OUT, '%s_%s_v2.jpg' % (key, tag)), quality=90)
             cells.append((w, im))
         rows.append((title, cells))
         if not gif:
@@ -178,7 +177,7 @@ def main():
         rng = random.Random('seq32_' + key)
         seqf = sequence(s, seq, rng, loops=2)
         frames = [to_img(composite((dark, bred, btake), a, min(1.0, b), s.render(**kw))) for lab, kw, a, b in seqf]
-        gname = 'mainframe_sequence_v3.gif' if key == 'mainframe' else '%s_sequence_v3.gif' % key
+        gname = 'mainframe_sequence_v2.gif' if key == 'mainframe' else '%s_sequence_v2.gif' % key
         size = make_gif(frames, os.path.join(OUT, gname))
         print(gname, len(frames), 'frames', round(size / 1e6, 2), 'MB')
         picks, seen = [], set()
@@ -192,15 +191,15 @@ def main():
         for i, (lab, im) in enumerate(picks):
             strip.paste(im.crop(CROP).resize((tw, th), Image.LANCZOS), (10 + i * (tw + 10), 54))
             label(d, (14 + i * (tw + 10), 14), '%d  %s' % (i + 1, lab.replace('NORMAL', 'RED (CELL)')))
-        strip.save(os.path.join(OUT, '%s_storyboard_v3.jpg' % key), quality=88)
+        strip.save(os.path.join(OUT, '%s_storyboard_v2.jpg' % key), quality=88)
     # compare: blue | red | each takeover word, one row per sequence
     tw, th = 220, 480
     cp = (0, 0, 330, 720)
     ncol = 2 + max(len(c) for _, c in rows)
     sheet = Image.new('RGB', (260 + ncol * (tw + 10) + 10, 20 + len(rows) * (th + 50)), (18, 17, 22))
     d = ImageDraw.Draw(sheet)
-    base = [('BLUE', Image.open(os.path.join(OUT, 'mainframe_blue_v3.png'))),
-            ('RED', Image.open(os.path.join(OUT, 'mainframe_red_v3.png')))]
+    base = [('BLUE', Image.open(os.path.join(OUT, 'mainframe_blue_v2.png'))),
+            ('RED', Image.open(os.path.join(OUT, 'mainframe_red_v2.png')))]
     for r, (title, cells) in enumerate(rows):
         y = 20 + r * (th + 50)
         label(d, (14, y + 40), title.replace(': ', ':\n'), size=24)
@@ -209,7 +208,7 @@ def main():
             sheet.paste(im.convert('RGB').crop(cp).resize((tw, th), Image.LANCZOS), (x, y + 36))
             label(d, (x + 4, y + 4), n if c < 2 else '%d. %s' % (c - 1, n), size=24,
                   fill=(235, 228, 220) if c < 2 else (255, 110, 100))
-    sheet.save(os.path.join(OUT, 'signs_compare_v3.jpg'), quality=88)
+    sheet.save(os.path.join(OUT, 'signs_compare_v2.jpg'), quality=88)
     print('signs_compare.jpg', sheet.size)
 
 

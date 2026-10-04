@@ -56,3 +56,21 @@ sequence those are I2, F4 and M7.
   The other phrases are dropped.
 - **Files.** v2 files carry `_v2`; v1 files are kept. `make_all.py` builds v2, and
   `make_all_v1.py` / `flicker_sign_v1.py` are the v1 scripts.
+
+## v3: circuit board wired to the letters (`scripts/board.py`)
+- **One style throughout.** Every trace is the same width on a 6 px pitch, with one 45° jog per run.
+- **Rails.** Two power rails run down the left and right edges of the plate.
+- **Electrode mounts.** Each letter's two electrode ends get a ring solder pad. A trace leaves each pad
+  and lands on its rail at a junction via.
+- **Components between letters.** Each gap between letters holds a resistor or an SOT chip, wired to
+  both rails. A row of driver chips sits under the E.
+- **Lighting follows the letters.** Every trace, pad, component pin and status LED belongs to a letter
+  (or to the rails), so it lights in that letter's colour and level.
+  - Lit letters' traces carry data pulses running into the tube, during the takeover too.
+  - Dead letters' wiring falls back to dark copper.
+  - The partial A-top letters' wiring glows at half strength.
+  - The rails follow the frame or the brightest lit letter.
+- **Files.** v3 files carry `_v3`; v1 and v2 are kept, with scripts `make_all_v1.py`,
+  `make_all_v2.py`, `flicker_sign_v1.py` and `flicker_sign_v2.py`.
+- **GIF size.** `mainframe_sequence_v3.gif` and `iamnoman_sequence_v3.gif` were re-encoded to 96
+  colours to stay under 3 MB.
