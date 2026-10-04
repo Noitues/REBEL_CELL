@@ -878,3 +878,63 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - The player-facing name is **Firmware**, not Microchip.
 - A campaign upgrade that adds nudges to the shop wheel.
 - Replacing a socketed firmware destroys the old chip, with a confirm (proposal).
+
+## Decisions from round 34 (2026-10-04)
+
+### Locked
+- Firmware and Daemons.
+- The multiplier tags move under the status badge.
+- MAINFRAME letter legibility.
+- The normal canyon.
+
+### Shop
+- Slice price tags sit closer to their slices.
+
+### MAINFRAME sign
+- The circuit board interacts with the letters: traces into the tubes, pads, components, and traces that pulse with the flicker.
+- One consistent trace style.
+
+### Netrun rules
+
+**Player choices**
+- No planning feature: the route lives in the player's head.
+- Runs go from any owned node to any unowned node across a border link. There's no cap on choices.
+
+**Node and link states**
+- Unavailable nodes and links are **white**. Past nodes are greyed.
+
+**Info panels**
+- Node panel: only tier, rewards and type, and only when decrypted.
+- Operative: a corp-paper dossier with stats and the raid placement effect.
+
+**Map display**
+- The target circle is labelled TARGET.
+- Heat is shown.
+- Each node shows its tier; tier 3 nodes, which carry the Central Server keys, are special.
+- Parts of the city irrelevant to the run are greyed out.
+- A denser network, a higher zoom level, and map panning.
+- Three transition ideas for zooming into a link.
+
+**Consistency**
+- Buildings are individual, not blocks, so the raid, city grid and netrun views look consistent.
+
+**HQ run**
+- Branches merge.
+- The top node is the Central Server.
+- Each room is detailed.
+- Try a raid-style overhead view of the compound. Meridian's crane and train make the map dynamic.
+
+### REBEL_CELL
+
+**Fist shape**
+- A tucked thumb: a half-length bottom line on the right, plus a vertical line up to the fingers.
+- Toned down.
+
+**Reveal**
+- The whole sector starts lit, then the ring and the hand lines black out.
+
+**Label**
+- Moved off the fist.
+
+**DISPATCH canyon**
+- The closest right-hand hologram becomes the fist.
