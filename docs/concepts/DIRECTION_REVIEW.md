@@ -828,3 +828,53 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 ### Missed systems
 - **Microchips** and **Daemons** were never designed.
 - A GDD art-coverage audit is in progress (GDD_ART_COVERAGE.md) before designing them.
+
+## Decisions from rounds 32–33 (2026-10-03)
+
+### Locked
+
+**Netrun**
+- Option **D, the hybrid**: a transit path for site runs, a building climb for the HQ boss, and raids on the city map.
+- Runs start from a Cell-owned node and expand toward the target HQ.
+- A finite set of options at each step.
+- Greyed-out, plannable unreachable nodes.
+
+**Firmware and Daemons**
+- Firmware: the **socketed die**. It now plugs in from the slice's hub side.
+- Daemons: the icons and the combat rack and animations.
+
+**Shop**
+- The offscreen slice wheel (option B).
+- The recycle bin for removal.
+- The new layout.
+
+**Slice names**
+- SHIM (attack), OVERFLOW (crit), DEFRAG (defend), DETOUR (evade), HOTFIX (heal), INFECT (afflict).
+- SANDBOX, TROJAN and NULL are unchanged.
+
+**UI**
+- Courier Prime for corp paper.
+- A yellow CANCEL sticker.
+- Main menu option A, with **SIMULATE** as the tutorial verb.
+
+**MAINFRAME sign**
+- Filled neon.
+- Sequences: NO → MoRE → MAN, I AM → AI, and I AM → NO → MAN.
+- The white core is being toned down.
+
+### In progress
+
+- Daemon action and miss colours are being separated.
+- The shop label is being corrected from MICROCHIPS to FIRMWARE.
+- REBEL_CELL:
+  - blacked-out buildings draw the fist's details;
+  - a brighter canyon;
+  - fuller signs.
+
+### Game to-do (integration)
+
+- Rename the boss breach "Mainframe Gate" to **"Central Server"** (GDD §11.7), because the shop is now MAINFRAME.
+- Rename the slice programs as above.
+- The player-facing name is **Firmware**, not Microchip.
+- A campaign upgrade that adds nudges to the shop wheel.
+- Replacing a socketed firmware destroys the old chip, with a confirm (proposal).
