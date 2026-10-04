@@ -986,3 +986,34 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - On the city map, cleared sites can be patrolled (existing rules).
 - HQ moving nodes: links de-power and are then remade. Needs a dedicated pass on unique HQ mechanics: Meridian crane and train, Solace rotating walkways, Halcyon eye blocking, Orbital silo doors.
 - Central Server names per corp (to iterate): The Master Manifest, The Genome Core, The Panopticon, Launch Control.
+
+## Decisions from round 36 (2026-10-04)
+
+### Locked
+
+**Unified city concept**
+- One real-city model shared by the City Grid, raid and netrun views: "the concept I am looking for".
+- The City Grid view must include all city details (highways and sky lanes, holo billboards, etc.).
+
+**Netrun node states**
+- Option **A**: normal icons with outline rings (white unavailable, orange selectable, lime visited).
+
+**Node backdrops**
+- The detailed room backdrops for HQ nodes.
+
+**Exploits**
+- Exploits stay on **tier-2 sites**, per the GDD. The tier-3 wording was a slip.
+
+### Round 37 in progress
+- Netrun:
+  - nodes that aren't next are hidden by default;
+  - an always-show option;
+  - legend hover shows all nodes, and node hover shows that one node;
+  - calmer, slower Heat lights;
+  - the combo transition: terminal connect, then the window despawns, the operative's wheel spins up, and the wheel lens zooms in.
+- Unified city:
+  - city details on the grid;
+  - translucent, darkened buildings in the raid and netrun views, so nodes and links dominate.
+
+### Game to-do
+- Raid view zoom fits the player's network size. Needs a dedicated pass.
