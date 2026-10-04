@@ -947,3 +947,16 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Version v4: `round33_mainframe_sign/*_v4`.
 - Filled neon with varied circuitry wired to the letters.
 - Sequences: NO → MoRE → MAN, I AM → AI, and I AM → NO → MAN. An A's legs go dark when only its top is lit.
+
+### REBEL_CELL: LOCKED (2026-10-04)
+- Version: `round34_rebel_cell`.
+
+**Map**
+- Option A: red windows forming a tucked-thumb fist.
+- The washed-out lit state, then a blackout reveal of the ring and the hand's lines.
+
+**Combat backdrop**
+- The Tokyo canyon.
+- Home lays low.
+- DISPATCH shows anti-human signage and the fist hologram.
+- Animation is slow and gentle.
