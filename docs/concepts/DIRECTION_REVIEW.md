@@ -942,3 +942,8 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 ### Shop wheel (2026-10-04)
 - The shop spinner has no needle. The top slice's price tag hangs in its place.
 - **Game to-do:** the top slice is cheaper than the sides (80 vs 100 in the concept). The GDD price is a flat 100, so this needs a DECISIONS entry.
+
+### MAINFRAME sign: LOCKED (2026-10-04)
+- Version v4: `round33_mainframe_sign/*_v4`.
+- Filled neon with varied circuitry wired to the letters.
+- Sequences: NO → MoRE → MAN, I AM → AI, and I AM → NO → MAN. An A's legs go dark when only its top is lit.
