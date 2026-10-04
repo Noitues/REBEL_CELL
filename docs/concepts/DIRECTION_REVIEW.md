@@ -1021,3 +1021,19 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 ### HQ backdrops: LOCKED (2026-10-04)
 - Regular HQ-run nodes (combat, event, shop) use their **detailed room backdrop**.
 - The boss fight at the Central Server uses the locked **HQ close-up**, for example Meridian facing the boom.
+
+### Netrun round 37: LOCKED (2026-10-04)
+
+**Node visibility**
+- Hidden-node visibility rules.
+- An "Always show all nodes" option.
+- Legend hover and node hover reveal hidden nodes.
+
+**Heat**
+- Calm Heat lights: two slow searchlights, plus gentle circling on hardened nodes.
+
+**Transition**
+- Terminal connect, then the window despawns, the wheel spins up, and the wheel lens zooms in (about 4.4 s, skippable).
+
+**Game to-do**
+- Add the "Always show all nodes" setting.
