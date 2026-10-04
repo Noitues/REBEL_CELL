@@ -1017,3 +1017,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 
 ### Game to-do
 - Raid view zoom fits the player's network size. Needs a dedicated pass.
+
+### HQ backdrops: LOCKED (2026-10-04)
+- Regular HQ-run nodes (combat, event, shop) use their **detailed room backdrop**.
+- The boss fight at the Central Server uses the locked **HQ close-up**, for example Meridian facing the boom.
