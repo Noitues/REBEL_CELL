@@ -960,3 +960,29 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Home lays low.
 - DISPATCH shows anti-human signage and the fist hologram.
 - Animation is slow and gentle.
+
+## Decisions from netrun round 35 (2026-10-04)
+
+### Locked
+- HQ run: the **overhead compound**.
+- Heat: option **B**, darker orange. The city reacts with circling lights, and Heat lights centre on the nodes it has made harder.
+
+### Round 36 in progress
+- The AT LARGE stamp moves next to the operative's name.
+- Node states, two options:
+  - outline circles: white = unavailable, orange = selectable, lime = visited;
+  - or a softer white wash.
+- A per-node Heat marker.
+- A patrol affordance on grey city sites.
+- A dressed-room close-up per node.
+- Four more zoom transitions in the mixed-media style.
+
+### New: unified city, raid and run pass (in progress)
+- One shared, detailed real-city model for the City Grid, raid management and run transit, shown side by side.
+
+### Rules: game to-do
+- The tier-3 "keys" are the **Exploits**: the Central Server needs 3.
+- On the run map, nodes are never revisited.
+- On the city map, cleared sites can be patrolled (existing rules).
+- HQ moving nodes: links de-power and are then remade. Needs a dedicated pass on unique HQ mechanics: Meridian crane and train, Solace rotating walkways, Halcyon eye blocking, Orbital silo doors.
+- Central Server names per corp (to iterate): The Master Manifest, The Genome Core, The Panopticon, Launch Control.
