@@ -100,3 +100,13 @@ The other four families are unchanged.
 - **Copied from earlier rounds:** `fwlib.py` and `fwfx.py` (round 33, updated here); `r31lib.py`, `sticker_lib19.py`, `shop.py` and `removal.py`; `shop2.py`, `assets.py` and `recycle.py` (from round33_shop); `lib17/`.
 - **Cleanup:** `clear_scratch.py` empties `scratch/`.
 - **Randomness:** all of it is seeded.
+
+## shop_v4.png (designer follow-up)
+
+The designer approved the multiplier-tag move and the Firmware and Daemons work.
+
+The fix in this version: each slice price tag now hangs from its own for-sale slice. It is tied by a short string to a pin on the slice's rim and sits just outside the wheel housing, tilted with the slice. The slice name sits next to the tag.
+
+The centre tag sits 9° right of the pointer so the pointer stays clear.
+
+`shop_v4.py` builds it from `shop_layout.py`, where the tag code is in `wheel_section`.

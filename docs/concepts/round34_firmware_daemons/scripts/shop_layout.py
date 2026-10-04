@@ -111,15 +111,28 @@ def wheel_section(img, angle=0.0, blur=0.0, reveal=1.0):
     if reveal > 0.5:
         k = min(1.0, (reveal - 0.5) * 2)
         for n, i in enumerate(OFFER):
-            tx, ty = TAGS[i]
+            # round 34 v4: each tag is tied to its own slice, just outside the rim at the slice's angle
+            # (the centre one sits a few degrees right so the pointer stays clear)
+            th = [-30.0, 9.0, 30.0][n]
+            ra = math.radians(th - 90)
+            rt = R + 34
+            tx, ty = WC[0] + rt * math.cos(ra), WC[1] + rt * math.sin(ra)
             drop = (1 - k) * 50
+            ty -= drop
+            sa = math.radians([-30.0, 4.0, 30.0][n] - 90)
+            ax, ay = WC[0] + (WR + 6) * math.cos(sa), WC[1] + (WR + 6) * math.sin(sa)
             d = ImageDraw.Draw(img)
-            d.line([(tx - 30, BOARD[3] - 2), (tx - 30, ty - drop - 14)], fill=(230, 220, 200, 255), width=2)
+            d.line([(ax, ay), (tx, ty + 12)], fill=(230, 220, 200, 255), width=2)
+            d.ellipse([ax - 5, ay - 5, ax + 5, ay + 5], fill=(170, 170, 180, 255), outline=L.INK + (255,), width=2)
             t = L.price_tag(PRICE[i], seed=300 + n)
-            t = L.rotate_rgba(t, [-6, 0, 6][n])
-            img = L.drop_shadow(img, t, tx - t.width / 2, ty - drop - t.height / 2, blur=4, off=(2, 3), op=0.5)
+            t = L.rotate_rgba(t, -th * 0.8)
+            img = L.drop_shadow(img, t, tx - t.width / 2, ty - t.height / 2, blur=4, off=(2, 3), op=0.5)
             d = ImageDraw.Draw(img)
-            d.text((tx + t.width / 2 + 8, ty - drop), NAMES[i], font=L.f_mono(15), fill=(240, 240, 248, 255), anchor="lm", stroke_width=3, stroke_fill=(8, 6, 12, 255))
+            rn = rt + 52
+            nx, ny = WC[0] + rn * math.cos(ra), WC[1] + rn * math.sin(ra) - drop
+            if n == 1:
+                nx, ny = tx + t.width / 2 + 70, ty + 4
+            d.text((nx, ny), NAMES[i], font=L.f_mono(15), fill=(240, 240, 248, 255), anchor="mm", stroke_width=3, stroke_fill=(8, 6, 12, 255))
     return img
 
 
