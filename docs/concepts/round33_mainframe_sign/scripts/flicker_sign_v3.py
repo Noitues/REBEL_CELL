@@ -1,4 +1,4 @@
-"""flicker_sign.py - round 33 v4 (MAINFRAME, filled tubes, varied letter-wired board, A-top legs fully dark): renamed MODEM-style circuit-board neon signs with a Cell takeover.
+"""flicker_sign.py - round 33 v3 (MAINFRAME, filled tubes, letter-wired circuit board board.py): renamed MODEM-style circuit-board neon signs with a Cell takeover.
 
 Reuses the round 4 sign pipeline (modem_sign_r4.py, a copy): plate facets, hollow double-line tubes,
 PCB traces routed around the letters, chips, self-lit plate and glow. What's new:
@@ -19,7 +19,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import modem_sign_r4 as M          # noqa: E402
 from lightpen import gblur, tonemap  # noqa: E402
-import board as BD  # noqa: E402
+import board_v3 as BD  # noqa: E402  (v3 snapshot)
 
 PW, PH, MARGIN, CW, CH = M.PW, M.PH, M.MARGIN, M.CW, M.CH
 PINK, CYAN, PINK_OFF, CYAN_OFF = M.PINK, M.CYAN, M.PINK_OFF, M.CYAN_OFF
@@ -212,7 +212,7 @@ class FlickerSign:
             if isinstance(lv, tuple):
                 part, lv = b.bands.get(k, 1.0), lv[1]
             if k != "frame":
-                half = 0.0 if (k in msg and msg[k]) else 1.0       # v4: A lit only as an o -> its wiring stays dark
+                half = 0.45 if (k in msg and msg[k]) else 1.0      # partial (A-top) letters: dimmer wiring
                 lvls[k] = ((lv * (0.6 if part is not None else 1.0) * half) if lit_mask is not None else 0.0, c)
             if lit_mask is not None and lv > 0:
                 m = lit_mask * (part if part is not None else 1.0)
@@ -236,18 +236,10 @@ class FlickerSign:
         alb = b.plate_alb * (1 - bd.comp_m[..., None]) + bd.comp_alb * bd.comp_m[..., None] + glass
         if broken:
             alb = alb * (1 - 0.75 * self.soot[..., None])
-        dark = np.zeros((CH, CW), np.float32)          # v4: legs of an A lit only as an o are completely dark
-        for k, var in msg.items():
-            if var:
-                dark = np.maximum(dark, self.board.dark_box(k, 0.68))
-        keep = (1 - dark)[..., None]
-        emis = emis * keep
         self_light = np.stack([gblur(emis[..., c], 7) * 1.1 + gblur(emis[..., c], 24) * 1.2 for c in range(3)], -1)
-        self_light = self_light * keep
         plate_rgb = alb * (0.5 + self_light * 2.4) + emis
         glow = np.stack([0.45 * gblur(emis[..., c], 2.0) + 0.34 * gblur(emis[..., c], 7) +
                          0.26 * gblur(emis[..., c], 20) + 0.14 * gblur(emis[..., c], 44) for c in range(3)], -1)
-        glow = glow * keep
         pm = b.plate_m[..., None]
         h = (gblur(hot, 0.5) * 0.45)[..., None]          # v2: thin pale core on top of the saturated tube
         pl, rg = huemap(plate_rgb), huemap(plate_rgb * pm + glow)

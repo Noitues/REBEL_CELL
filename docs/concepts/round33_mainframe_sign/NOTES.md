@@ -74,3 +74,22 @@ sequence those are I2, F4 and M7.
   `make_all_v2.py`, `flicker_sign_v1.py` and `flicker_sign_v2.py`.
 - **GIF size.** `mainframe_sequence_v3.gif` and `iamnoman_sequence_v3.gif` were re-encoded to 96
   colours to stay under 3 MB.
+
+## v4: more varied circuitry, dark A legs
+- **Three trace weights.** Power rails are 3.4 px, letter feeds 2.4 px and signal buses 1.3 px. The
+  style stays the same: 6 px pitch, 45° bends only, ring pads, filled vias.
+- **More component types, irregular density.** Each letter's side zones get a seeded mix:
+  - SOIC chips on 3–4-trace bus bundles;
+  - pairs of capacitors;
+  - test points;
+  - an LED with its resistor;
+  - a crystal;
+  - or nothing.
+
+  The gaps between letters cycle through resistors, SOT chips, capacitor pairs and crystals.
+- **Dark A legs.** When an A is lit only as an "o", everything below its crossbar is masked out: the
+  tube emission, the plate's self-light and the glow. That A's wiring stays dark copper too.
+- **Files.** v4 files carry `_v4`; v1–v3 are kept. Each version's scripts are snapshotted as
+  `*_v1.py` to `*_v3.py`.
+- **GIF size.** `scripts/shrink_gif.py` re-encodes GIFs to 96 colours; it brought the v4
+  NO → MoRE → MAN and I AM → NO → MAN GIFs under 3 MB.
