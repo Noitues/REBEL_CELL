@@ -1133,3 +1133,54 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 **City**
 - Map panning.
 - Car LOD tiers.
+
+## Decisions from round 39 (2026-10-04)
+
+### Locked
+- **Portraits:** all classes except Phantom (triangle eyes pointing down) and Rigger (goggles in line with the headband), both being fixed.
+- **Precision landings:** Perfect / Good / WEAK.
+- **Exploit options:** the expanded set, including the ROOTKIT, HIJACK and CIPHER proposals.
+- **Satellites:**
+  - icon and number size;
+  - the destroyed effect;
+  - the spin;
+  - bodyguard.
+- **Parasite ring colours.**
+- **Hub cores:** Rigger and Overclocker.
+- **Inner ring:**
+  - textures that extend into the affected slices;
+  - the sub-needle, hangar, double-status and other proposals as directions.
+
+### Round 40 in progress
+- **Exploit map:** a badge only, with the full tag on hover, and nothing covering grease pencil.
+- **Satellites:**
+  - the dock blends into the slice outline;
+  - the replace effect: the old satellite returns to the core as green bits, and the new one hovers, then installs.
+- **Parasite ring:**
+  - thinner, with a bigger icon and number;
+  - its icon coloured like its number;
+  - shown on the player's wheel;
+  - its slices can reuse effects, for example a heal that heals the boss;
+  - three layouts for how it interacts with the needle.
+- **Hub cores:**
+  - Breaker: spiderweb cracks.
+  - Phantom: no inner pulse.
+- **Enemy lockdown:** an encrypted-bits waterline that drains with the timer.
+- **Player defeat:** bits vanish at the bottom, with no pink line.
+- **Inner ring:**
+  - a sub-needle shaped like the real needle;
+  - a hangar with two drones;
+  - status stack indicators.
+- **Unified city:**
+  - medium car LOD matches its line colour and is translucent;
+  - all the raid interaction GIFs re-run in the unified concept.
+- **Netrun transit:**
+  - single dashed lines meandering between the buildings of the adjacent blocks;
+  - a closer zoom;
+  - about 7 layers, around 15 to 20 nodes.
+
+### Game to-do
+- **One-pointer boss:** never offer the Breach Exploit, or change it to "boss starts stunned (misses its first turn)".
+- **Parasite ring:** can latch onto either wheel. It's mainly a boss mechanic inflicted on the player.
+- **Hangar:** decide how damage works with multiple drones.
+- **Status stacking:** show the stack count.
