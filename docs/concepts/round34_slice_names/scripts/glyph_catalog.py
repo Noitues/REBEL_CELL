@@ -16,12 +16,12 @@ CORP_COL = {"meridian": (255, 140, 26), "halcyon": (140, 123, 255), "orbital": (
 
 # (glyph id, label, meaning, colour, kind) ; kind: slice | special | renamed | placeholder
 # round 34: the slice programs renamed (six old names collided with game terms; see names.md)
-RENAME = {"EXPLOIT": "SHIV", "ZERO-DAY": "OVERFLOW", "FIREWALL": "BURNWALL", "SANDBOX": "SANDBOX", "PROXY": "DETOUR",
+RENAME = {"EXPLOIT": "SHIM", "ZERO-DAY": "OVERFLOW", "FIREWALL": "DEFRAG", "SANDBOX": "SANDBOX", "PROXY": "DETOUR",
           "PATCH": "HOTFIX", "VIRUS": "INFECT", "TROJAN": "TROJAN", "NULL": "NULL"}
 PROGRAMS = [
-    ("EXPLOIT", "SHIV", "ATTACK: damage (dagger)", PINK, "slice"),
+    ("EXPLOIT", "SHIM", "ATTACK: damage (dagger)", PINK, "slice"),
     ("ZERO-DAY", "OVERFLOW", "CRIT: big damage (burst)", (255, 120, 215), "slice"),
-    ("FIREWALL", "BURNWALL", "DEFEND: block (wall + flame)", CYAN, "slice"),
+    ("FIREWALL", "DEFRAG", "DEFEND: block (wall + flame)", CYAN, "slice"),
     ("SANDBOX", "SANDBOX", "SHIELD: persists, cap 15 (sand pile)", (70, 226, 205), "slice"),
     ("PROXY", "DETOUR", "EVADE: dodge next hit (chevrons)", GREEN, "slice"),
     ("PATCH", "HOTFIX", "HEAL: restore HP (crossed band-aids)", (170, 240, 110), "slice"),
@@ -84,7 +84,7 @@ PICTOS = [
     ("WEIGHT", "RESIST", "resistance +- n", "-2"),
     ("PI_BREACH", "BREACH", "disable the hub", "1"),
     ("PI_UNDOCK", "UNDOCK", "move a satellite", None),
-    ("EXPLOIT", "DAMAGE", "deal n (= SHIV)", "4"),
+    ("EXPLOIT", "DAMAGE", "deal n (= SHIM)", "4"),
     ("PI_BLOCK", "BLOCK", "gain n block", "6"),
     ("SHIELD", "SHIELD pts", "gain n shield", "4"),
     ("PROXY", "EVADE", "evade next attack", None),

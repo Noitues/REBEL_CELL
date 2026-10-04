@@ -131,8 +131,8 @@ def system_final():
     d = ImageDraw.Draw(im)
     for y in range(0, H, 4):
         d.line([(0, y), (W, y)], fill=(14, 13, 20))
-    d.text((40, 18), "REBEL_CELL  SLICE SYSTEM  v2  (round 34 program names)", font=f_num(56), fill=(255, 255, 255))
-    d.text((44, 106), "Programs renamed (round 34): EXPLOIT->SHIV  ZERO-DAY->OVERFLOW  FIREWALL->BURNWALL  PROXY->DETOUR  PATCH->HOTFIX  VIRUS->INFECT;  "
+    d.text((40, 18), "REBEL_CELL  SLICE SYSTEM  v3  (round 34 program names, approved)", font=f_num(56), fill=(255, 255, 255))
+    d.text((44, 106), "Programs renamed (round 34): EXPLOIT->SHIM  ZERO-DAY->OVERFLOW  FIREWALL->DEFRAG  PROXY->DETOUR  PATCH->HOTFIX  VIRUS->INFECT;  "
            "SANDBOX, TROJAN, NULL kept.  Glyphs, screens, tiers and overlays unchanged.", font=f_mono(14, False), fill=(255, 214, 64))
     d.text((44, 84), "Screens & Data slices: a live CRT screen per slice in its own bezel; an upright white glyph + value on a read plate; tier flair inside the border; "
            "state overlays as a separate layer under the read block.", font=f_mono(14, False), fill=(190, 190, 200))
@@ -184,7 +184,7 @@ def system_final():
         d.text((x + t.width // 2 - 10, 512 + t.height - 6), ["I", "II", "III"][k - 1], font=f_num(28), fill=(220, 220, 230))
         x += t.width + 8
     # 3 player firewall
-    head(x + 40, 470, "3  PLAYER BURNWALL (DEFEND)", (92, 225, 255))
+    head(x + 40, 470, "3  PLAYER DEFRAG (DEFEND)", (92, 225, 255))
     fw = K.tile("FIREWALL", 5, t=0.3, tier=2, scale=0.8)
     im.alpha_composite(fw, (x + 40, 512))
     d.text((x + 50, 512 + fw.height - 2), "shots fall from the rim onto a wall by the hub", font=f_mono(12, False), fill=(170, 170, 182))
@@ -210,8 +210,8 @@ def system_final():
         d.text((x + t.width + 42, y + 44), stt, font=f_ui(20, b"Bold SemiCondensed"), fill=bcol)
         d.text((x + t.width + 8, y + 76), "status" if real else "placeholder", font=f_mono(11, False), fill=(150, 220, 150) if real else (255, 150, 90))
     out = bloom(im.convert("RGB"), 1, 0.25, 0.66)
-    out.save(os.path.join(OUT, "slice_system_final_v2.png"))
-    print("saved slice_system_final_v2.png", out.size, flush=True)
+    out.save(os.path.join(OUT, "slice_system_final_v3.png"))
+    print("saved slice_system_final_v3.png", out.size, flush=True)
 
 
 if __name__ == "__main__":

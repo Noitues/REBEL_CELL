@@ -14,9 +14,9 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 
 CANDIDATES = {
     # type: (old, [options])  -- first option of each list is the recommendation
-    "ATTACK": ("EXPLOIT", ["SHIV", "SPIKE", "STAB", "PAYLOAD"]),
+    "ATTACK": ("EXPLOIT", ["SHIM", "SHIV", "SPIKE", "STAB", "PAYLOAD"]),
     "CRIT": ("ZERO-DAY", ["OVERFLOW", "SEGFAULT", "KERNEL PANIC", "BLUESCREEN"]),
-    "DEFEND": ("FIREWALL", ["BLACKWALL", "BURNWALL", "IRONWALL"]),
+    "DEFEND": ("FIREWALL", ["DEFRAG", "BURNWALL", "IRONWALL", "BLACKWALL"]),
     "SHIELD": ("SANDBOX", ["SANDBOX", "BUBBLE", "QUARANTINE"]),
     "EVADE": ("PROXY", ["DETOUR", "REROUTE", "TUNNEL"]),
     "HEAL": ("PATCH", ["HOTFIX", "RESTORE", "DEBUG"]),

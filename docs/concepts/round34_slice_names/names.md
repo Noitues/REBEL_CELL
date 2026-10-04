@@ -33,9 +33,9 @@ Hit counts for the current names:
 
 | Type | Old | Options (hits) | Recommended | Collision checked against |
 |---|---|---|---|---|
-| ATTACK | EXPLOIT | **SHIV** (0), SPIKE (0), STAB (0), PAYLOAD (3: Orbital event text) | **SHIV** | GDD, DECISIONS, all content `.tres`. Fits the dagger glyph; 4 letters. |
+| ATTACK | EXPLOIT | **SHIM** (0), SHIV (0), SPIKE (0), STAB (0), PAYLOAD (3: Orbital event text) | **SHIM** (designer, v3) | GDD, DECISIONS, all content `.tres`. 0 hits, and none in the other docs either. A shim slipped into a gap fits the dagger glyph; 4 letters. |
 | CRIT | ZERO-DAY | **OVERFLOW** (0), SEGFAULT (0), BLUESCREEN (0), KERNEL PANIC (0 as a phrase, but "Kernel Sync" exists) | **OVERFLOW** | Same corpus. Buffer overflow fits the burst glyph. "overflow" also appears in ART_BIBLE / VISUAL_CRITIQUE as UI wording ("+N MORE"), but it is not a displayed game term. |
-| DEFEND | FIREWALL | **BURNWALL** (0), IRONWALL (0), BLACKWALL (0) | **BURNWALL** | Same corpus. Keeps the wall-plus-flame glyph meaning. BLACKWALL is avoided because it is a known Cyberpunk 2077 lore term. Note: BURN is a placeholder slice and BURNING a placeholder state; the wall reading should keep them apart. |
+| DEFEND | FIREWALL | **DEFRAG** (0), BURNWALL (0), IRONWALL (0), BLACKWALL (0) | **DEFRAG** (designer, v3) | Same corpus. 0 hits, and none in the other docs either. It also avoids the BURN / BURNING placeholder clash that BURNWALL had. The wall glyph and the screen stay as they are. Defrag (re-stacking blocks) fits the brick rows. BLACKWALL is avoided because it is a known Cyberpunk 2077 lore term. |
 | SHIELD | SANDBOX | **SANDBOX** (0), BUBBLE (0), QUARANTINE (3: the Quarantine Ward event) | **SANDBOX (keep)** | Same corpus. No collision. Glyph locked (option C). |
 | EVADE | PROXY | **DETOUR** (0), TUNNEL (0), REROUTE (11: Meridian `reroute_the_audit` Site and events) | **DETOUR** | Same corpus. Matches the locked road-sign detour screen. |
 | HEAL | PATCH | **HOTFIX** (0), RESTORE (4: GDD, DECISIONS, event text), DEBUG (1, code) | **HOTFIX** | Same corpus. The cards "Hot Patch" and "Hot Swap" share only the word "hot", not the name. |
@@ -43,12 +43,14 @@ Hit counts for the current names:
 | DEPLOY | TROJAN | **TROJAN** (0), SPAWN (34: Spawn Drone card, classes), FORK (5: Tuning Fork daemon) | **TROJAN (keep)** | Same corpus. No collision; fits the horse glyph. |
 | MISS | NULL | **NULL** (3, code wording only), NOP (0), VOID (4: event text "Void the invoices") | **NULL (keep)** | Same corpus. Keep with the 1/0 glyph. NOP is the fallback if the designer wants zero hits even in code docs. |
 
-## The recommended set
+## The approved set (v3)
+
+The designer changed SHIV to **SHIM** and BURNWALL to **DEFRAG**, and approved the rest.
 | Type | Name |
 |---|---|
-| ATTACK | **SHIV** |
+| ATTACK | **SHIM** |
 | CRIT | **OVERFLOW** |
-| DEFEND | **BURNWALL** |
+| DEFEND | **DEFRAG** |
 | SHIELD | **SANDBOX** |
 | EVADE | **DETOUR** |
 | HEAL | **HOTFIX** |
@@ -63,8 +65,8 @@ Not covered here: the separate corporation-special renames (TARIFF → PRIORITY,
 ## Files
 | File | What it is |
 |---|---|
-| `slice_system_final_v2.png` | The round 17 summary sheet with the new labels. |
-| `glyph_set_v2.png` | The full glyph sheet with the new labels. |
+| `slice_system_final_v3.png`, `glyph_set_v3.png` | The approved names: SHIM and DEFRAG. |
+| `slice_system_final_v2.png`, `glyph_set_v2.png` | The first proposal (SHIV, BURNWALL), kept for history. |
 | `scripts/name_check.py` | The collision check. Rerun it after content changes. |
 | `scripts/glyph_catalog.py` | Holds the `RENAME` map. |
 

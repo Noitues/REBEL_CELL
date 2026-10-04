@@ -182,7 +182,7 @@ def compose():
     d = ImageDraw.Draw(im)
     for y in range(0, H, 4):
         d.line([(0, y), (W, y)], fill=(14, 13, 20))
-    d.text((40, 18), "GLYPH SET  v2  (round 34 program names)", font=f_num(54), fill=(255, 255, 255))
+    d.text((40, 18), "GLYPH SET  v3  (round 34 program names, approved)", font=f_num(54), fill=(255, 255, 255))
     d.text((44, 80), "One flat language: a solid white silhouette, few dark cut-outs, dark rounded outline. Each glyph at 64 / 24 / 16 px, colour and greyscale. "
            "Names from rc.gd (SliceType, Status) and art_asset.md E2/E3/E5.", font=f_mono(15, False), fill=(190, 190, 200))
     x0, y = 40, 120
@@ -237,8 +237,8 @@ def compose():
     d.text((x0, y), "Kept alike on purpose (not scored): SPIN CW / CCW mirror pair, MOMENTUM = the SPIN arrow (numbers differ), BURN = BURNING, ENCRYPT = ENCRYPTED, HP / TAKE DMG.  "
            "Changes and options: glyph_changes.png.", font=f_mono(12, False), fill=(185, 185, 198))
     im = im.crop((0, 0, W, y + 42)).convert("RGB")
-    im.save(os.path.join(OUT, "glyph_set_v2.png"))
-    print("saved glyph_set_v2.png", im.size, flush=True)
+    im.save(os.path.join(OUT, "glyph_set_v3.png"))
+    print("saved glyph_set_v3.png", im.size, flush=True)
 
 
 if __name__ == "__main__":
