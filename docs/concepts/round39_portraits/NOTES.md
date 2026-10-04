@@ -22,3 +22,8 @@ This round fixes five classes from round 38. Approved and unchanged since round 
 - `sheet.py` makes a review sheet in scratch.
 
 Everything else is copied from round 38 (`portraits.py` also builds `states` and `contexts`). Scratch is cleared.
+
+## v2 (`portraits_classes_v2.png`)
+- Phantom: the eyes are downward-pointing triangles (a dark rim and a glowing lilac lens), matching the Phantom icon.
+- Rigger: the goggle band is level and hugs the head at goggle height, and the cups are centred on the band, so they sit inline with it whether up on the forehead or down over the eyes.
+- Patch: `scripts/patch_r39c.py` (applied).

@@ -208,6 +208,21 @@ def boolean(obj, cutter, op="DIFFERENCE"):
     bpy.data.objects.remove(cutter, do_unlink=True)
 
 
+def tri_prism(cx, cy, cz, r, depth):
+    """A triangular prism facing the camera (-y), one vertex pointing DOWN."""
+    pts = [(cx + r * math.cos(math.radians(a)), cz + r * math.sin(math.radians(a))) for a in (90 + 120 * 0 + 0, 210, 330)]
+    pts = [(cx, cz - r), (cx + r * 0.95, cz + r * 0.55), (cx - r * 0.95, cz + r * 0.55)]
+    verts = [(x, cy - depth / 2, z) for x, z in pts] + [(x, cy + depth / 2, z) for x, z in pts]
+    faces = [(0, 1, 2), (5, 4, 3), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)]
+    me = bpy.data.meshes.new("tri")
+    me.from_pydata(verts, [], faces)
+    me.update()
+    o = bpy.data.objects.new("tri", me)
+    bpy.context.collection.objects.link(o)
+    bpy.context.view_layer.objects.active = o
+    return o
+
+
 # ------------------------------------------------------------------ build
 def build(job):
     global RNG
@@ -368,33 +383,30 @@ def build(job):
         boolean(mk, box((0, 0.62, 0), (3, 1.2, 3)))
         boolean(mk, box((0, 0, 1.0), (3, 3, 0.7)))
         finish(mk, toon("phmask", (0.93, 0.90, 0.98) if seed % 3 != 2 else (0.80, 0.74, 0.90), RIM, 0.5), ink=0.025)
-        er = 0.17 if seed % 3 != 1 else 0.2
+        er = 0.19 if seed % 3 != 1 else 0.23
         for sx in (-1, 1):
-            ring = cyl(12, er + 0.06, er + 0.06, 0.12, (sx * 0.31, -0.95, 0.12), rot=(math.radians(90), 0, 0))
-            finish(ring, toon("ring", (0.25, 0.22, 0.32), RIM, 0.4), ink=0.01, tri=False)
-            lens = cyl(12, er, er, 0.06, (sx * 0.31, -1.02, 0.12), rot=(math.radians(90), 0, 0))
+            rim_ = tri_prism(sx * 0.31, -0.93, 0.12, er + 0.07, 0.12)
+            finish(rim_, toon("ring", (0.25, 0.22, 0.32), RIM, 0.4), ink=0.01, tri=False)
+            lens = tri_prism(sx * 0.31, -1.0, 0.12, er, 0.06)
             finish(lens, emit(acc, 2.0), ink=0.0, tri=False)
-            pup = cyl(8, er * 0.35, er * 0.35, 0.04, (sx * 0.31, -1.06, 0.12), rot=(math.radians(90), 0, 0))
-            finish(pup, toon("pupil", (0.12, 0.08, 0.2), RIM, 0.0), ink=0.0, tri=False)
         for k_ in range(3 if seed % 2 else 2):
             vent = box((0, -0.9, -0.5 - k_ * 0.12), (0.28, 0.05, 0.035))
             finish(vent, toon("vent", (0.35, 0.3, 0.42), RIM, 0.0), ink=0.0)
     elif cls == "rigger":
         hair()
         gz = 0.62 if seed % 3 else 0.12
-        tilt = 12 if gz > 0.5 else 0
-        # one strap running through both goggle cups; lenses sit in the cups
-        band = torus(wid + 0.07, 0.07, (0, 0.04, gz - 0.02), rot=(math.radians(tilt), 0, 0), maj=16)
-        band.scale = (1, 1.04, 1)
+        # a level band hugging the head at the goggle height; the cups are centred ON the band
+        rb = wid * math.sqrt(max(0.05, 1 - (gz / 1.1) ** 2)) + 0.07
+        band = torus(rb, 0.075, (0, 0.0, gz), maj=18)
+        band.scale = (1, 1.0, 1)
         finish(band, toon("band", (0.12, 0.12, 0.14), RIM, 0.5), ink=0.01)
-        R_ = (wid + 0.07) * 1.04
         for sx in (-1, 1):
-            gy = 0.04 - math.sqrt(max(0.01, R_ ** 2 - 0.3 ** 2)) - 0.06
-            g = cyl(8, 0.22, 0.22, 0.24, (sx * 0.3, gy, gz), rot=(math.radians(90 - tilt), 0, 0))
+            gy = -math.sqrt(max(0.01, rb ** 2 - 0.3 ** 2)) - 0.05
+            g = cyl(8, 0.22, 0.22, 0.22, (sx * 0.3, gy, gz), rot=(math.radians(90), 0, 0))
             finish(g, toon("goggle", (0.12, 0.12, 0.14), RIM, 0.5), ink=0.012)
-            l = cyl(8, 0.16, 0.16, 0.05, (sx * 0.3, gy - 0.13, gz - 0.02 * (tilt > 0)), rot=(math.radians(90 - tilt), 0, 0))
+            l = cyl(8, 0.16, 0.16, 0.05, (sx * 0.3, gy - 0.12, gz), rot=(math.radians(90), 0, 0))
             finish(l, emit(acc, 1.6), ink=0.006, tri=False)
-        bridge = box((0, 0.04 - R_ - 0.04, gz), (0.24, 0.08, 0.08), rot=(math.radians(tilt), 0, 0))
+        bridge = box((0, -rb - 0.06, gz), (0.24, 0.08, 0.075))
         finish(bridge, toon("band", (0.12, 0.12, 0.14), RIM, 0.5), ink=0.008)
         cup = cyl(8, 0.3, 0.3, 0.22, (-wid - 0.08, 0.05, 0.0), rot=(0, math.radians(90), 0))
         finish(cup, toon("cup", (0.15, 0.15, 0.18), RIM, 0.5))

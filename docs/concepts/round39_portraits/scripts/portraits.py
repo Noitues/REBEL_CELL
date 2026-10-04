@@ -223,13 +223,13 @@ def make_classes():
         d.text((cx + 16, cy + 340), lab, font=L.f_num(44), fill=col + (255,))
         d.text((cx + 18, cy + 396), ("alt of " + base.upper() + "  //  " if base else "base class  //  ") + role, font=L.f_mono(15), fill=(180, 180, 195, 255))
         d.text((cx + 18, cy + 424), "gear: " + GEAR[cid], font=L.f_mono(14), fill=tuple(int(c * 0.8) for c in col) + (255,))
-    L.save(img, "portraits_classes.png")
+    L.save(img, os.environ.get("R39_OUT", "portraits_classes_v2.png"))
 
 
 GEAR = {
     "breaker": "hood + visor bar (no chin piece)", "wrecker": "respirator + shoulder pads",
-    "ghost": "ninja head + face wrap, eyes open", "phantom": "full mask, round robot eyes",
-    "rigger": "goggles on one strap, headset", "overclocker": "slot goggles, heat-sink fins",
+    "ghost": "ninja head + face wrap, eyes open", "phantom": "full mask, down-triangle eyes",
+    "rigger": "goggles inline on the band, headset", "overclocker": "slot goggles, heat-sink fins",
     "botnet": "antenna, monocle, 2-3 drones", "hivemind": "circlet wired to a square lens",
 }
 
