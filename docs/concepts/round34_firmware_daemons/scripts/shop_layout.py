@@ -29,6 +29,8 @@ NAMES = {11: "PROXY 4 II", 0: "ZERO-DAY 15 II", 1: "SANDBOX 8"}
 PRICE = {11: 100, 0: 120, 1: 100}
 TAGS = {11: (735, 700), 0: (1010, 690), 1: (1285, 700)}
 YEL = (255, 214, 64)
+POINTER = True      # round 34 v5: the shop wheel drops its pointer
+CENTRE_TH = 9.0     # angle of the centre slice's tag (0 = where the pointer was)
 
 _c = {}
 
@@ -77,7 +79,8 @@ def wheel_section(img, angle=0.0, blur=0.0, reveal=1.0):
         r0, r1 = R - 4, R - (16 if k % 5 == 0 else 9)
         d.line([(WC[0] + r0 * math.cos(a), WC[1] + r0 * math.sin(a)), (WC[0] + r1 * math.cos(a), WC[1] + r1 * math.sin(a))], fill=(200, 190, 220, 255), width=2)
     px, py = WC[0], WC[1] - R - 4
-    d.polygon([(px - 20, py - 24), (px + 20, py - 24), (px, py + 18)], fill=YEL + (255,), outline=L.INK + (255,))
+    if POINTER:
+        d.polygon([(px - 20, py - 24), (px + 20, py - 24), (px, py + 18)], fill=YEL + (255,), outline=L.INK + (255,))
     if reveal > 0:
         dim = Image.new("L", img.size, 0)
         for i in range(N):
@@ -113,13 +116,13 @@ def wheel_section(img, angle=0.0, blur=0.0, reveal=1.0):
         for n, i in enumerate(OFFER):
             # round 34 v4: each tag is tied to its own slice, just outside the rim at the slice's angle
             # (the centre one sits a few degrees right so the pointer stays clear)
-            th = [-30.0, 9.0, 30.0][n]
+            th = [-30.0, CENTRE_TH, 30.0][n]
             ra = math.radians(th - 90)
             rt = R + 34
             tx, ty = WC[0] + rt * math.cos(ra), WC[1] + rt * math.sin(ra)
             drop = (1 - k) * 50
             ty -= drop
-            sa = math.radians([-30.0, 4.0, 30.0][n] - 90)
+            sa = math.radians([-30.0, min(4.0, CENTRE_TH), 30.0][n] - 90)
             ax, ay = WC[0] + (WR + 6) * math.cos(sa), WC[1] + (WR + 6) * math.sin(sa)
             d = ImageDraw.Draw(img)
             d.line([(ax, ay), (tx, ty + 12)], fill=(230, 220, 200, 255), width=2)

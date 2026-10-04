@@ -110,3 +110,16 @@ The fix in this version: each slice price tag now hangs from its own for-sale sl
 The centre tag sits 9° right of the pointer so the pointer stays clear.
 
 `shop_v4.py` builds it from `shop_layout.py`, where the tag code is in `wheel_section`.
+
+## shop_v5.png (designer follow-up)
+
+- **No pointer:** the shop wheel no longer has a pointer.
+- **Centre tag:** the top slice's price tag now hangs exactly where the pointer was.
+- **Prices:** the top slice is now the **cheapest** at 80; the left and right slices stay at 100.
+  - The 80 is a proposal. The number belongs in config, and the change needs a DECISIONS entry, because GDD 11.2 says 100 per slice.
+- **Build:** `shop_v5.py` sets three things on `shop_layout`:
+  - `POINTER = False`;
+  - `CENTRE_TH = 0`;
+  - `PRICE[0] = 80`.
+
+  `shop_v4.py` still reproduces v4.

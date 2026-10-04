@@ -938,3 +938,7 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 
 **DISPATCH canyon**
 - The closest right-hand hologram becomes the fist.
+
+### Shop wheel (2026-10-04)
+- The shop spinner has no needle. The top slice's price tag hangs in its place.
+- **Game to-do:** the top slice is cheaper than the sides (80 vs 100 in the concept). The GDD price is a flat 100, so this needs a DECISIONS entry.
