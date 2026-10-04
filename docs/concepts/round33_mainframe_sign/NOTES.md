@@ -48,3 +48,11 @@ sequence those are I2, F4 and M7.
 - **Partials:** the A-top is an extra mask on both A's.
 - **Takeover:** a timeline of per-letter levels.
 - **Spill:** the light swaps from blue to red, and drops to about 10% while the words flash.
+
+## v2 (designer: less white, sequences locked)
+- **Saturated tubes.** The tube body now stays saturated blue or red. There is a hue-preserving tone
+  map (`huemap` in `flicker_sign.py`), and the only pale part is a thin hot centre line.
+- **Locked sequences.** Only three sequences remain: NO → MoRE → MAN, I AM → AI and I AM → NO → MAN.
+  The other phrases are dropped.
+- **Files.** v2 files carry `_v2`; v1 files are kept. `make_all.py` builds v2, and
+  `make_all_v1.py` / `flicker_sign_v1.py` are the v1 scripts.

@@ -189,7 +189,6 @@ class FlickerSign:
         broken = broken or set()
         emis = np.zeros((CH, CW, 3), np.float32)
         glass = np.zeros((CH, CW, 3), np.float32)
-        hot = np.zeros((CH, CW), np.float32)
         for k in ["frame"] + self.keys:
             t = b.solids[k]                     # round 33: filled tube (solid glowing stroke)
             if k in broken:
@@ -210,10 +209,9 @@ class FlickerSign:
             if lit_mask is not None and lv > 0:
                 m = lit_mask * (part if part is not None else 1.0)
                 warm = c * (0.55 + 0.45 * lv) + np.array([0.2, 0.0, 0.35]) * (1 - lv)
-                emis += warm[None, None] * (m * lv * 0.92)[..., None]   # v2: saturated tube body (no white blow-out)
-                core = np.clip((gblur(lit_mask, 3.2) - 0.88) / 0.1, 0, 1) * (part if part is not None else 1.0)
-                emis += (0.6 * c + 0.4)[None, None] * (core * lv * 0.5)[..., None]   # v2: thin hot centre line
-                hot = np.maximum(hot, core * lv)
+                emis += warm[None, None] * (m * lv * 1.55)[..., None]
+                core = np.clip((gblur(lit_mask, 2.2) - 0.72) / 0.28, 0, 1) * (part if part is not None else 1.0)
+                emis += (0.45 * c + 0.55)[None, None] * (core * lv * 1.1)[..., None]   # hot centre line
                 glass += off[None, None] * np.clip(t - lit_mask, 0, 1)[..., None]
                 glass += off[None, None] * (lit_mask * (1 - 0.6 * lv))[..., None]
             else:
@@ -234,9 +232,7 @@ class FlickerSign:
         glow = np.stack([0.45 * gblur(emis[..., c], 2.0) + 0.34 * gblur(emis[..., c], 7) +
                          0.26 * gblur(emis[..., c], 20) + 0.14 * gblur(emis[..., c], 44) for c in range(3)], -1)
         pm = b.plate_m[..., None]
-        h = (gblur(hot, 0.5) * 0.45)[..., None]          # v2: thin pale core on top of the saturated tube
-        pl, rg = huemap(plate_rgb), huemap(plate_rgb * pm + glow)
-        return dict(plate=pl + (1 - pl) * h, glow=glow, alpha=b.plate_m, rgb=rg + (1 - rg) * h)
+        return dict(plate=tonemap(plate_rgb), glow=glow, alpha=b.plate_m, rgb=tonemap(plate_rgb * pm + glow))
 
     # convenience states
     def state_normal(self, pulse_t=0.0):
@@ -253,11 +249,3 @@ def save_rgba(res, path):
     rgb = (np.clip(res["rgb"], 0, 1) * 255 + 0.5).astype(np.uint8)
     a = (np.clip(res["alpha"], 0, 1) * 255 + 0.5).astype(np.uint8)
     Image.fromarray(np.dstack([rgb, a]), "RGBA").save(path)
-
-
-def huemap(x):
-    """v2: hue-preserving tone map (scale by the max channel), so bright neon stays saturated, not white."""
-    m = x.max(-1, keepdims=True)
-    k = 0.8
-    t = np.where(m < k, m, k + (1 - k) * (1 - np.exp(-(m - k) / (1 - k))))
-    return np.clip(x * (t / np.maximum(m, 1e-6)), 0, 1)
