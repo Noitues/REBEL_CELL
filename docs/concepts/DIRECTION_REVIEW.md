@@ -1053,3 +1053,83 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - Exploit items and the Central Server gate.
 - Satellites as mini-wheels.
 - Operative portraits, their states and contexts, plus contacts (DISPATCH is voice-only).
+
+## Decisions from round 38 (2026-10-04)
+
+### Locked
+- Portrait states and contexts.
+- Portraits: Wrecker, Overclocker and Botnet.
+- Hub cores: Ghost, Swarm and Hive, plus all enemy hubs.
+- The Central Server breach look.
+- Unified city: the opacity treatment at every zoom.
+
+### Round 39 in progress
+
+**Portraits**
+- Breaker: no chin piece.
+- Ghost: ninja style, with no eye slits.
+- Phantom: a full mask with round robot eyes.
+- Rigger: goggles attached to the strap.
+- Hivemind: a square lens connected to the circlet.
+
+**Hub cores**
+- Breaker: a crowbar hitting a cracked glass square.
+- Wrecker: the unexplained lines are removed.
+- Phantom: an echo trail.
+- Rigger: a socketing chip.
+- Overclocker: an RPM gauge in the red.
+- Breached stays as an enemy state (the Hub Breach card disables the Hub for one turn).
+- New: a player defeat state where the core turns to bits and drains away.
+
+**Inner ring**
+- More defined: bezel, outline and polish.
+- Full-slice textures that extend into the outer slices.
+- Proposal mock-ups (see the game to-do).
+
+**Satellites**
+- Centred on their slice.
+- A rounded clamp.
+- A binary explosion when destroyed.
+- Bigger slices spread at an angle.
+- Fix the spin centre.
+- New: a **parasite partial third ring** concept as a boss mechanic.
+
+**Landings and Exploits**
+- The OVERFLOW banner moves off the needle.
+- PARTIAL becomes **WEAK**.
+- An expanded Exploit set, one for each boss power-up.
+- Map badges showing which Exploit each tier-2 site holds.
+
+**Unified city**
+- A closer default zoom with panning.
+- Meandering links.
+- The raid view carries all the locked raid UI.
+- Netrun paths are thin double dashes that follow the street grid, with the locked netrun details.
+- Car LOD: dot plus line far out, a grey box plus line at mid zoom, and a full model plus speed line up close.
+
+### Game to-do (design proposals from the designer)
+
+**Inner ring**
+- ACCELERATOR becomes a mini second needle that triggers whichever outer slice it points at.
+- New segments:
+  - a drone-focused segment;
+  - status-themed segments, or CORRUPT becomes "double status effect";
+  - AOE segments, adjacent or global.
+- Operatives start with 1–2 blank inner segments.
+- Echo and ×2 overlap: consider making ×2 a firmware (Echo plus ×2 firmware gives big multipliers).
+
+**Satellites**
+- A new satellite overwrites an occupied slice.
+- Satellites can't be nudged, except as a drone-class ability.
+- A parasite third-ring boss mechanic.
+
+**Exploits**
+- One for each boss buff.
+- Make each tier-2 site's Exploit visible on the map.
+- Breach against a one-pointer boss: it stays at one pointer.
+- Virus picks its slices at random.
+- Nice-to-have: replace the reused placeholder icons.
+
+**City**
+- Map panning.
+- Car LOD tiers.
