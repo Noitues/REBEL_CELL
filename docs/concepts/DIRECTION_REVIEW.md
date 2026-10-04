@@ -777,3 +777,54 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 - DISPATCH: every sign and billboard shows the fist, REBEL_CELL or Cell slogans.
 
 **Round 29 is in progress.**
+
+## Decisions from round 31 (2026-10-03)
+
+### Locked
+- Rewards: option **A**, peel from the loot sheet.
+- Dialogue: option **A**, a cel bust on a CRT feed.
+- Events: as drawn. A full design pass comes once enough events exist.
+
+### Meridian
+- Combat camera faces the boom, with the crane centred between the wheels.
+- The train runs left to right in front, takes a container, and speeds off.
+
+### REBEL_CELL
+**Map**
+- The fist must be smaller and subtler. Options include a red-tinted district.
+
+**Canyon**
+- Detailed surrounding buildings.
+- Fewer business signs.
+- Food and chip holograms.
+- Multilingual signs.
+- DISPATCH shows anti-human slogans.
+
+### UI
+- Abandon dialog: both buttons are stickers.
+- Title menu: replace EXFIL. The designer suggests BREACH / DISABLE / OVERTHROW.
+- Corp paper font: **Courier Prime** (OFL).
+- Backdrops: no fist roads, and the new Meridian.
+
+### Shop
+- Renamed **MAINFRAME**: a blue neon sign, with no extra words.
+- Takeover sequence:
+  - NO = N + the top of the R;
+  - MoRE = M + the top of the A + R + E;
+  - MAN = M + A + N.
+- The clerk screen moves down.
+- A grease-pencil note replaces the MODEM sticker.
+- Slices are sold from a spun wheel showing the top 3, not as stickers.
+- SHRED is replaced: removal-concept options.
+- A more colourful LEAVE sticker.
+
+### Fight won
+- The building lights turn to the Cell's colours.
+
+### Netrun route
+- The blueprint is rejected.
+- Explore combined designs (on the city map) versus separate ones (a building climb, a transit path), plus a hybrid.
+
+### Missed systems
+- **Microchips** and **Daemons** were never designed.
+- A GDD art-coverage audit is in progress (GDD_ART_COVERAGE.md) before designing them.
