@@ -1037,3 +1037,19 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 
 **Game to-do**
 - Add the "Always show all nodes" setting.
+
+## Decisions from unified city round 37 (2026-10-04)
+
+### Unified city (round 38 in progress)
+- Buildings: slightly lighter.
+- A real-scope test before locking: the real run-map node count, plus a real raid view fitted to a mid-campaign network.
+- Flying cars as low-poly models, not dots.
+- The zoom-through GIF is only a scale proof, not a gameplay transition.
+
+### Backlog started (round 38)
+- Hub cores, Mk2 versions, enemy hubs and the breached state.
+- Inner-ring glyphs, including Anchor.
+- Precision landings (Perfect / Good / Partial).
+- Exploit items and the Central Server gate.
+- Satellites as mini-wheels.
+- Operative portraits, their states and contexts, plus contacts (DISPATCH is voice-only).
