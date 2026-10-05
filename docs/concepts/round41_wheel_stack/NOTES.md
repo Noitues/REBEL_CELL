@@ -184,3 +184,30 @@ Scripts: `stack42.py` (v2 drones and the locked inner ring), `ringlock.py` (a ve
 - **The popped parasites reach the top forecast tags** (18–23 %). Suggested fix: the tags gain 30 px of top margin, or slide sideways when a parasite pops on the top slice.
 - **Six status badges with ×N tabs per wheel are still busy.** The rule "one badge per slice, full list on hover" still applies.
 - **The drone band tiles are small at r = 220**, about 14 px values. That is acceptable because hovering shows full size, and the forecast chip carries the numbers.
+
+---
+
+# v3: HUD rework (`combat_worst_case_v3.png`, `combat_typical_v3.png`, `combat_worst_case_spin_v3.gif`)
+
+Script: `scripts/combat43.py worst | typical | frame k | gif`.
+
+## Changes
+1. **Nudge buttons sit above each wheel.** They keep roughly their old lateral positions and swap sides: anticlockwise (CCW) on the left, clockwise (CW) on the right.
+   - Player buttons: (192, 190) [Q] and (770, 190) [E].
+   - Boss buttons: (1150, 215) and (1726, 215), with no key labels yet. Assigning keys is an open question.
+   - All four clear the popped parasites and the hovered drones.
+2. **The CELL-9 // BREAKER sticker moves to just above the RAM readout,** at (24, 846).
+3. **The forecast tags and NEXT plates are removed.** Instead, each HP value gets **result chips**: what this turn does if SEND IT is pressed now.
+   - Player: "♥ −14".
+   - Boss: "♥ −8" and "shield +4".
+   - **Hovering a chip shows a breakdown tooltip** (shown on the boss's −8 chip): YOU: ZERO-DAY 12 (GOOD), − its SHIELD 4, = −8 HP (340 → 332); IT: EXPLOIT 14 (PERFECT), −14 HP to you; Priority Routing: +4 SHIELD.
+4. **The boss HP readout moves right,** centred at x = 1500, so it clears the HEAVY SPIN card.
+
+## Overlap check (v3)
+**Worst case:** 0 % off-screen, and no HUD element is covered by wheel content. I measured every kept panel, the sticker, all four nudge buttons and both HP readouts with their chips.
+
+**Typical case:** 0 % off-screen, no overlaps.
+
+**Remaining note:** the hover tooltip appears over the bottom of the boss wheel. That is acceptable because it is transient.
+
+**The spin GIF was re-made as v3** because the HUD changed: 16 frames, 3.8 MB.
