@@ -175,15 +175,15 @@ func _draw_over() -> void:
 	_over.draw_rect(_grown(), Color.WHITE)
 
 
-## The caret, on the content layer (under the scanlines).
+## The caret, on the content layer (under the scanlines), once the text has typed on.
 func _draw_caret() -> void:
-	if caret and _caret_on:
+	if caret and _caret_on and not typing():
 		var at := caret_position()
 		var px := UiTheme.font_px(text_step)
 		content.draw_string(Palette.mono(), at, CARET_GLYPH, HORIZONTAL_ALIGNMENT_LEFT, -1, px, accent())
 
 
-## Where the caret sits (after the last shown character; unwrapped text), local px.
+## Where the caret sits (after the shown text; unwrapped text), local px.
 func caret_position() -> Vector2:
 	var shown := label.text
 	if label.visible_characters >= 0:
