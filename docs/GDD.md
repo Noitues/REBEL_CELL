@@ -441,7 +441,8 @@ Meridian Freight Systems, Halcyon Civic, Orbital Commons). A beat may trigger a 
 
 ### 8.4b Meridian Freight Systems (M8, DECISIONS.md 2026-09-24)
 Logistics: automated freight, tariffs, tracking, last-mile drones. Enemies lean on
-Inertia (spin resistance), Tariffs (RAM drain), Conveyors (orbiting pointers) and courier
+Inertia (spin resistance), **PRIORITY** (RAM drain; its OVERFLOW shows as **AIRMAIL**; DECISIONS
+2026-10-05, names for M14, D3), Conveyors (orbiting pointers) and courier
 drones. Exploits: Intel (shipping manifests), Breach (customs override keys), Virus (rogue
 routing table). Final server: **The Manifest**, which shields itself every turn unless its
 Hub, the **Customs Seal** (was Priority Routing; DECISIONS 2026-10-05, ruling 6.1), is breached.

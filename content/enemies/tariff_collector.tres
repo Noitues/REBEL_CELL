@@ -4,7 +4,7 @@
 [ext_resource type="Resource" path="res://content/slices/shim_7_drain.tres" id="e1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
 [ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="e3"]
-[ext_resource type="Resource" path="res://content/slices/tariff.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/priority.tres" id="e4"]
 [ext_resource type="Resource" path="res://content/slices/overflow_12_drain.tres" id="e5"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="e6"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e7"]
@@ -19,7 +19,7 @@ slice = ExtResource("e1")
 script = ExtResource("e2")
 slice = ExtResource("e3")
 
-[sub_resource type="Resource" id="wheel_slot_tariff"]
+[sub_resource type="Resource" id="wheel_slot_priority"]
 script = ExtResource("e2")
 slice = ExtResource("e4")
 
@@ -34,7 +34,7 @@ slice = ExtResource("e6")
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("e7")
 slice_count = 6
-slots = Array[ExtResource("e2")]([SubResource("wheel_slot_shim_7_drain"), SubResource("wheel_slot_shim_7_drain"), SubResource("wheel_slot_defrag_6"), SubResource("wheel_slot_tariff"), SubResource("wheel_slot_overflow_12_drain"), SubResource("wheel_slot_miss")])
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_shim_7_drain"), SubResource("wheel_slot_shim_7_drain"), SubResource("wheel_slot_defrag_6"), SubResource("wheel_slot_priority"), SubResource("wheel_slot_overflow_12_drain"), SubResource("wheel_slot_miss")])
 pointer_ticks = PackedInt32Array(0)
 
 [resource]

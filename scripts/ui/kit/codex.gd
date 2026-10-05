@@ -11,7 +11,7 @@ const SLICE_TYPE_TEXT := {
 	RC.SliceType.DETOUR: "DETOUR: cancels the next incoming SHIM or OVERFLOW this turn.",
 	RC.SliceType.DEPLOY: "DEPLOY: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
 	RC.SliceType.HOTFIX: "HOTFIX: restores HP.",
-	RC.SliceType.INFECT: "INFECT: applies a status or a drain to your wheel (Dose corrupts, Tariff drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
+	RC.SliceType.INFECT: "INFECT: applies a status or a drain to your wheel (Dose corrupts, Priority drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
 	RC.SliceType.MISS: "MISS: nothing happens, unless a Daemon says otherwise.",
 }
 const STATUS_TEXT := {
@@ -36,7 +36,7 @@ const LEXICON := {
 	"Heat": "How hard the corporation is looking for you. Thresholds fire raids and complications.",
 	"ICE": "Difficulty ladder, 20 cumulative levels.",
 	"DISPATCH": "The Cell's handler. Clean system text, always.",
-	"Tariff": "Meridian's fee on every packet: an enemy slice that drains your RAM.",
+	"Priority": "Meridian's fast lane: an enemy slice that bills your RAM for it.",
 	"Citation": "Halcyon's fine: a Parasite on one of your slices until you cleanse it.",
 	"Solar Flare": "Orbital's gift: your slice runs hot once (1.5x), then corrupts.",
 	"Inertia": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",

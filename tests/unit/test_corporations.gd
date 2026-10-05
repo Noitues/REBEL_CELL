@@ -1,6 +1,6 @@
 extends GutTest
 ## M8 corporation selection and Meridian Freight Systems (GAP_ANALYSIS P0 3, P1 8):
-## unlock gating, per-corporation raids, pools, boss hub, Tariff slice, voice, picker.
+## unlock gating, per-corporation raids, pools, boss hub, Priority slice, voice, picker.
 
 var _resolver: CombatResolver
 var _cfg: CampaignConfigData
@@ -105,16 +105,16 @@ func _shield_on_boss(r: CombatResult) -> int:
 	return total
 
 
-func test_tariff_drains_ram() -> void:
+func test_priority_drains_ram() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"customs_scanner"], 4)
-	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Tariff
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Priority
 	CombatFixture.land(s.state.player, 5)
 	var r := s.apply(CombatAction.end_turn())
 	var drained := false
 	for e in CombatFixture.events_of(r, "ram"):
 		if int(e["amount"]) < 0:
 			drained = true
-	assert_true(drained, "Tariff drains RAM")
+	assert_true(drained, "Priority drains RAM")
 
 
 func test_meridian_voice_and_briefings() -> void:

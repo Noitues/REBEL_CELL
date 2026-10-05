@@ -50,6 +50,14 @@ player strings and code for each item's old words.
   style, set by OVERFLOW slices and Perfects alike). SANDBOX / TROJAN / NULL (the art pass's SHIELD /
   DEPLOY / MISS) are not renamed: the ruling keeps them out of D2; the enum keeps SHIELD / DEPLOY /
   MISS (question below).
+- **D3 Meridian.** The RAM-drain slice is `priority` (`content/slices/priority.tres`, "Priority", its
+  wheel sub-resources `*_slot_priority`; codex and descriptions). A corporation's own program word
+  lives in `Palette.CORP_SLICE_WORDS` (view words, `# TR`), read by `Palette.slice_word(type,
+  corporation_id)`; the combat tags over a wheel and its odds use the wheel's corporation
+  (`combat_scene.corp_of`): Meridian's OVERFLOW reads **AIRMAIL** (test
+  `test_a_meridian_wheel_says_airmail_for_its_overflow`). JUDGEMENT: no id, string or code carried
+  it on main; the sweep keeps it out. Kept as flavour: the Tariff Collector enemy, the Tariff
+  Calculation Office Site, "Tariff season" and tariffs in prose (allow-listed).
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal

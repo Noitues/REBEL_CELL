@@ -120,6 +120,20 @@ const SLICE_WORDS := {
 	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
 	RC.SliceType.MISS: "MISS", # TR
 }
+## A corporation's own word for a program on its wheels (DECISIONS "Designer rulings: names
+## for M14", D3 / D4): Meridian's OVERFLOW shows as AIRMAIL.
+const CORP_SLICE_WORDS := {
+	&"meridian": {RC.SliceType.OVERFLOW: "AIRMAIL"}, # TR
+}
+
+
+## The whole word for slice type `type` on a wheel of corporation `corporation_id` ("" for the
+## Cell's own): the corporation's word when it has one, else SLICE_WORDS. Untranslated (a key).
+static func slice_word(type: int, corporation_id: StringName = &"") -> String:
+	var own: Dictionary = CORP_SLICE_WORDS.get(corporation_id, {})
+	return String(own.get(type, SLICE_WORDS.get(type, "?")))
+
+
 const STATUS_WORDS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CORRUPTED", RC.Status.OVERCLOCKED: "OVERCLOCKED", RC.Status.ENCRYPTED: "ENCRYPTED", RC.Status.PARASITE: "PARASITE"} # TR
 ## How well a needle lands, in plain words.
 const TIER_WORDS := {RC.PrecisionTier.PERFECT: "perfect aim", RC.PrecisionTier.GOOD: "good aim", RC.PrecisionTier.PARTIAL: "half power"} # TR

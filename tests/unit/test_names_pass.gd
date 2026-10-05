@@ -136,6 +136,10 @@ const PART2: Array = [
 		"(?-i)\\b(ATK|ATTACK|DEFEND|AFFLICT|AFL|EVD|DEF|CRIT|HEAL)\\b|\\bCRITICAL\\b|\\b(EVADE|Evade) slices?\\b",
 		"SliceType\\.(ATTACK|CRIT|DEFEND|EVADE|HEAL|AFFLICT)\\b|(?<![A-Za-z0-9])(atk|crit|def|evade|heal)_\\d",
 		["reads CRITICAL"]],
+	["D3 Meridian programs",
+		"(?-i)\\bTariff\\b|(?i)\\bjudge?ment\\b",
+		"slices/tariff|&\"tariff\"|\"tariff\"|slot_tariff|(?i)judge?ment",
+		["Tariff Collector", "Tariff Calculation Office", "Tariff season"]],
 ]
 
 

@@ -2,7 +2,7 @@
 RebelCellBuilder fills from the profile at campaign start: its elites mirror your classes,
 its hub runs your Daemons, its Sites carry your node types and its raids field your own
 assets. The static parts written here: normal enemies that use every corporation's
-signature affliction (Dose, Tariff, Citation, Solar Flare), a mini-boss, the boss -
+signature affliction (Dose, Priority, Citation, Solar Flare), a mini-boss, the boss -
 DISPATCH itself - and the six reveal paths. Unlocks free once every other corporation is
 cleared at ICE 10 (config.rebel_cell_unlock_ice)."""
 import os
@@ -25,8 +25,8 @@ SPEC = {
     "slices": [],
     "satellite": {"id": "echo_drone", "name": "Echo Drone", "desc": "A copy of one of your own drones, running someone else's orders."},
     "enemies": [
-        {"id": "echo_process", "name": "Echo Process", "desc": "Replays your moves back at you: Dose and Tariff.", "hp": 52,
-         "slices": ["shim_10", "dose", "defrag_8", "overflow_16", "tariff", "miss"]},
+        {"id": "echo_process", "name": "Echo Process", "desc": "Replays your moves back at you: Dose and Priority.", "hp": 52,
+         "slices": ["shim_10", "dose", "defrag_8", "overflow_16", "priority", "miss"]},
         {"id": "mirror_script", "name": "Mirror Script", "desc": "Two readers, a Citation and a flare.", "hp": 50,
          "slices": ["shim_9", "citation", "defrag_6", "overflow_16", "solar_flare", "miss"], "pointers": (0, 15)},
         {"id": "handler_proxy", "name": "Handler Proxy", "desc": "Heavy, resistant and patient.", "hp": 64,
@@ -34,7 +34,7 @@ SPEC = {
         {"id": "dead_drop", "name": "Dead Drop", "desc": "Shields itself and drops an echo drone every other turn.", "hp": 48,
          "slices": ["shield_5", "shim_9", "shield_5", "dose", "shim_9", "miss"], "spawns": [("echo_drone", 2, 2, -1, 2)]},
         {"id": "cell_informant", "name": "Cell Informant", "desc": "It knows your wheel. Its reader orbits 3 a turn.", "hp": 46,
-         "slices": ["shim_10", "tariff", "detour_1", "overflow_16", "citation", "miss"], "orbit": 3},
+         "slices": ["shim_10", "priority", "detour_1", "overflow_16", "citation", "miss"], "orbit": 3},
         {"id": "loyalty_test", "name": "Loyalty Test", "desc": "Heals, hits hard and flares.", "hp": 54,
          "slices": ["hotfix_6", "shim_12", "defrag_8", "overflow_16", "solar_flare", "miss"]},
     ],
@@ -51,14 +51,14 @@ SPEC = {
                   "phases": [{"at": 0.5, "behavior": 1, "ticks": (0, 15), "line": "The Handler opens a second channel."},
                              {"at": 0.25, "behavior": 3, "orbit": 3, "line": "The channels drift: DISPATCH is listening."}]},
     "boss": {"id": "dispatch_core", "name": "DISPATCH", "desc": "The voice that gave every order. It was never human.", "hp": 460,
-             "slices": ["shim_14", "dose", "defrag_12", "overflow_24", "tariff", "miss"], "boss": True, "cycle": 0,
+             "slices": ["shim_14", "dose", "defrag_12", "overflow_24", "priority", "miss"], "boss": True, "cycle": 0,
              "hub": {"id": "root_access", "name": "Root Access", "desc": "Repairs 4 and gains 4 shield each turn unless the Hub is breached.",
                      "effects": [(14, 0, 4), (2, 0, 4)]},
              "phases": [{"at": 0.66, "behavior": 1, "ticks": (0, 15),
                          "wheel": ["shim_14", "citation", "defrag_12", "overflow_24", "solar_flare", "miss"],
                          "line": "DISPATCH: You were always going to come here. I scheduled it."},
                         {"at": 0.33, "behavior": 1, "ticks": (0, 10, 20),
-                         "wheel": ["overflow_24", "dose", "overflow_24", "overflow_24", "tariff", "miss"],
+                         "wheel": ["overflow_24", "dose", "overflow_24", "overflow_24", "priority", "miss"],
                          "spawns": [("echo_drone", 1, 1, -1, 2)],
                          "line": "DISPATCH: Every order you followed built this. Thank you for your service."}],
              "comment": "DISPATCH, REBEL_CELL final boss (M11, decision 2026-09-24): 460 HP; Root Access repairs 4 and shields 4 per\nturn unless breached; afflictions from every corporation; 66%: two pointers; 33%: three pointers, Crit wheel, drones."},

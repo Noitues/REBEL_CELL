@@ -102,3 +102,17 @@ func test_revealed_phases_and_drones_reach_the_views() -> void:
 	_scene.end_turn()
 	assert_eq(seeded.size(), 1, "one Perfect, one seed drone (H15: Daemons fire once per landing)")
 	assert_eq(_scene._player_view.satellites.size(), _state().living_drones().size(), "the player wheel shows its living drones")
+
+
+## ART-0 D3 (DECISIONS "names for M14"): a Meridian wheel calls its OVERFLOW slice AIRMAIL;
+## other wheels keep the program word.
+func test_a_meridian_wheel_says_airmail_for_its_overflow() -> void:
+	assert_eq(Palette.slice_word(RC.SliceType.OVERFLOW, &"meridian"), "AIRMAIL")
+	assert_eq(Palette.slice_word(RC.SliceType.OVERFLOW, &"halcyon"), "OVERFLOW")
+	assert_eq(Palette.slice_word(RC.SliceType.OVERFLOW), "OVERFLOW", "the Cell's own wheel")
+	var ids: Array[StringName] = [&"the_manifest"]
+	_scene.engine.start_fight(&"breaker", ids, 3)
+	var boss: CombatantState = _state().get_combatant(&"enemy_0")
+	assert_eq(_scene.corp_of(boss), &"meridian")
+	assert_true(_scene.odds_text(boss).contains("AIRMAIL"), "the Manifest's odds name AIRMAIL")
+	assert_false(_scene.odds_text(_state().player).contains("AIRMAIL"), "the operative's do not")

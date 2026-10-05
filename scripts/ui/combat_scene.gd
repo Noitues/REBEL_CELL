@@ -636,6 +636,15 @@ func inspect_at(global_point: Vector2) -> String:
 
 ## Odds a random effect shows instead of a result (GDD 2.10): the slice type mix of a
 ## wheel, optionally leaving the Miss slice out (random non-Miss picks).
+## The corporation whose words `c`'s wheel speaks (DECISIONS "names for M14" D3 / D4): an
+## enemy's corporation, "" for the Cell's own wheels.
+func corp_of(c: CombatantState) -> StringName:
+	if c == null or c.is_player or engine == null:
+		return &""
+	var e := engine.content(c.source_id) as EnemyData
+	return e.corporation_id if e != null else &""
+
+
 func odds_text(c: CombatantState, non_miss_only: bool = false) -> String:
 	var parts := PackedStringArray()
 	for chip in _odds_chips(c, non_miss_only):
@@ -658,7 +667,7 @@ func _odds_chips(c: CombatantState, non_miss_only: bool = false) -> Array[Dictio
 		var slice := engine.content(id) as SliceData
 		if slice == null or (non_miss_only and slice.slice_type == RC.SliceType.MISS):
 			continue
-		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?")))]
+		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(Palette.slice_word(slice.slice_type, corp_of(c)))]
 		if not counts.has(key):
 			order.append(key)
 		counts[key] = int(counts.get(key, 0)) + 1
@@ -2487,7 +2496,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			if not rs.is_empty():
 				var sl: SliceData = rs[0]["slice"]
 				landings[sat.id] = {"type": sl.slice_type, "tier": int(rs[0]["tier"]),
-					"text": "%s (%s)" % [tr(String(Palette.SLICE_WORDS.get(sl.slice_type, "?"))), tr(String(Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")))]}
+					"text": "%s (%s)" % [tr(Palette.slice_word(sl.slice_type, corp_of(sat))), tr(String(Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")))]}
 		view.satellite_landings = landings
 		var d := o.of(id)
 		var shown_statuses: Array = d.get("statuses", [])
@@ -2578,9 +2587,9 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 			type = slice.slice_type
 			tier = int(r["tier"])
 		if rs.size() <= 1:
-			parts.append("%s · %s" % [tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?"))), tr(String(Palette.TIER_WORDS.get(r["tier"], "")))])
+			parts.append("%s · %s" % [tr(Palette.slice_word(slice.slice_type, corp_of(c))), tr(String(Palette.TIER_WORDS.get(r["tier"], "")))])
 		elif rs.size() == 2:
-			parts.append("%s %s" % [tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).to_lower()])
+			parts.append("%s %s" % [tr(Palette.slice_word(slice.slice_type, corp_of(c))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).to_lower()])
 		else:
 			parts.append("%s·%s" % [tr(String(Palette.SLICE_NAMES.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).left(1)])
 	return {"type": type, "tier": tier if rs.size() == 1 else -1, "text": " + ".join(parts)}

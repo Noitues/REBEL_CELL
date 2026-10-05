@@ -148,6 +148,7 @@ A guided first fight.,A guided first fight.
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
 AGAIN,AGAIN
+AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
@@ -637,7 +638,7 @@ EnemyData.drone_dispatcher.description,Launches a courier drone every other turn
 EnemyData.drone_dispatcher.display_name,Drone Dispatcher
 EnemyData.echo_drone.description,"A copy of one of your own drones, running someone else's orders."
 EnemyData.echo_drone.display_name,Echo Drone
-EnemyData.echo_process.description,Replays your moves back at you: Dose and Tariff.
+EnemyData.echo_process.description,Replays your moves back at you: Dose and Priority.
 EnemyData.echo_process.display_name,Echo Process
 EnemyData.geostationary_guard.description,"Orbits 3 a turn, hits like a falling satellite, brings a drone."
 EnemyData.geostationary_guard.display_name,Geostationary Guard
@@ -1951,6 +1952,7 @@ SliceData.overflow_14.display_name,Overflow 14
 SliceData.overflow_15.display_name,Overflow 15
 SliceData.overflow_16.display_name,Overflow 16
 SliceData.overflow_24.display_name,Overflow 24
+SliceData.priority.display_name,Priority
 SliceData.shield_5.display_name,Shield 5
 SliceData.shield_8.display_name,Shield 8
 SliceData.shim_10.display_name,Shim 10
@@ -1967,7 +1969,6 @@ SliceData.shim_8.display_name,Shim 8
 SliceData.shim_8_inertia.display_name,Shim 8 (+1 resistance)
 SliceData.shim_9.display_name,Shim 9
 SliceData.solar_flare.display_name,Solar Flare
-SliceData.tariff.display_name,Tariff
 Slices,Slices
 Slot %d: %s%s,Slot %d: %s%s
 Slot %s: %s,Slot %s: %s

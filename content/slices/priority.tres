@@ -19,8 +19,8 @@ effects = Array[ExtResource("e1")]([SubResource("fx")])
 
 [resource]
 script = ExtResource("main_script")
-id = &"tariff"
-display_name = "Tariff"
+id = &"priority"
+display_name = "Priority"
 slice_type = 7
 target_rule = 1
 base_output = 0
