@@ -216,8 +216,7 @@ func test_high_contrast_theme_reaches_seven_to_one() -> void:
 			assert_gte(Palette.contrast(c, sb.bg_color), HighContrast.HC_MIN_CONTRAST, "%s on %s" % [label, panel])
 	assert_gte(Palette.contrast(t.get_color(&"default_color", &"RichTextLabel"), HighContrast.BG), HighContrast.HC_MIN_CONTRAST)
 	var states := {&"normal": &"font_color", &"hover": &"font_hover_color", &"pressed": &"font_pressed_color",
-		&"focus": &"font_focus_color"}
-	states[StringName("disabled")] = &"font_disabled_color"  # (a UI-control state, not the old raid word)
+		&"disabled": &"font_disabled_color", &"focus": &"font_focus_color"}
 	for kind in [&"Button", &"OptionButton", &"HotButton", &"NoteButton", &"MenuItem"]:
 		for state in states:
 			if not t.has_color(states[state], kind):

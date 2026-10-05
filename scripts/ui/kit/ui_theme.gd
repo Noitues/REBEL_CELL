@@ -402,7 +402,7 @@ static func terminal_button_boxes(border: int, pad_h: float, pad_v: float) -> Di
 	pressed.shadow_color = Color(Palette.NET_CYAN, GLOW_ALPHA * GLOW_PRESSED)
 	pressed.shadow_size = GLOW_PX
 	var disabled := box(Color(Palette.TERMINAL_BG, 0.7), Palette.DISABLED, border, pad_h, pad_v)
-	return {&"normal": normal, &"hover": hover, &"pressed": pressed, (&"disabled"): disabled}
+	return {&"normal": normal, &"hover": hover, &"pressed": pressed, &"disabled": disabled}
 
 
 static func _terminal_look(t: Theme, kind: StringName, boxes: Dictionary, focus: StyleBox) -> void:

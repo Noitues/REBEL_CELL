@@ -492,7 +492,7 @@ func hub_breach(c: CombatantState, turns: int, events: Array[Dictionary]) -> voi
 	if not c.is_hub_breached():
 		c.resistance = maxi(0, c.resistance - c.hub_resistance)
 	c.hub_breached_turns = maxi(c.hub_breached_turns, turns)
-	events.append({"type": "hub_breach", "target": c.id, "text": "%s Hub BREACHED for %d turn(s) (resistance %d)." % [c.display_name, turns, c.resistance]})
+	events.append({"type": "hub_breach", "target": c.id, "text": "%s hub in LOCKDOWN for %d turn(s) (resistance %d)." % [c.display_name, turns, c.resistance]})
 
 
 func gain_ram(state: CombatState, amount: int, events: Array[Dictionary]) -> void:
