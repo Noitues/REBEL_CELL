@@ -51,6 +51,9 @@ const PLAYER_HIT_COLOR := Palette.CELL_ACID
 const ENEMY_HIT_COLOR := CHIP_LOSS
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
+## ART-1 1A: the most of the screen's height a hand card takes (the narrower Anton stickers
+## freed width, the cards grew with it and the wheels shrank under BIG_TEXT_RADIUS_KEEP).
+const HAND_HEIGHT_SHARE := 0.24
 
 @export var auto_start: bool = true
 
@@ -1164,7 +1167,9 @@ func _show_aim_hint() -> void:
 	if Settings.pad_active:
 		_aim_hint.text = tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]
 	else:
-		_aim_hint.text = tr("Drop or click on a glowing target  ·  right-click cancels")
+		# ART-0 F (ported from art-pass W9F, §6.8 / §12): input-aware words, one call.
+		_aim_hint.text = UiTip.for_input(tr("Drop or click on a glowing target  ·  right-click cancels"),
+			tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")])
 	# Over the enemy side, above both the hand and the RAM row, shrunk to the room to the
 	# screen's edge (H24: at 1.6 it ran over "RAM 6/12" and off the screen).
 	var hand := _hand_box.get_global_rect()
@@ -2206,7 +2211,8 @@ func _build_hand(state: CombatState) -> void:
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		c.short_ram = not state.is_over() and state.ram < card.ram_cost  # ART-2 2C: the grey dot and NEED tag
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
-		shown_tip(c, "%s\n%s" % [Codex.describe(card), tr("Drag it onto a glowing target, or click it and then the target.") if several else tr("Click to play.")])
+		shown_tip(c, "%s\n%s" % [Codex.describe(card), UiTip.for_input(tr("Drag it onto a glowing target, or click it and then the target."), tr("Press it, then pick a glowing target.")) if several
+			else UiTip.for_input(tr("Click to play."), tr("Press it to play."))])
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
@@ -2253,6 +2259,8 @@ func _card_scale_for(count: int) -> float:
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
 	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
+	var height := size.y if size.y > 0.0 else get_viewport_rect().size.y
+	fit = minf(fit, height * HAND_HEIGHT_SHARE / ZineCard.STICKER_SIZE.y)
 	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)
 
 

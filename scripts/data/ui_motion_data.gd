@@ -101,6 +101,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"heal_inflow", &"evade_token", &"corrupt_apply", &"corrupt_tick", &"drone_deploy", &"drone_attack", &"drone_destroyed",
 	&"enemy_defeated_bits", &"phase_change_bits", &"respin_bits", &"nudge_resist_bits", &"ram_gain_bits", &"temp_label",
 	&"daemon_trigger", &"firmware_trigger", &"heat_city_beacon", &"heat_city_sweep",
+	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
+	# modal's open and close (PageTransition.open_modal / close_modal).
+	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

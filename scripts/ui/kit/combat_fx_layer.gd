@@ -1095,7 +1095,7 @@ func _draw_tag(s: Dictionary) -> void:
 	# ink or paper lettering (whichever reads on it), cut away from the left as it dissolves.
 	var shown := Rect2(Vector2(cut_x, box.position.y), Vector2(box.end.x - cut_x, box.size.y))
 	if shown.size.x > 0.0:
-		draw_rect(shown.grow(STICKER_EDGE), Color(Palette.PAPER, alpha))
+		draw_rect(shown.grow(STICKER_EDGE), Color(Palette.STICKER_DIE_CUT, alpha))
 		draw_rect(shown, Color(col, alpha))
 	var ink := Palette.INK if Palette.contrast(col, Palette.INK) >= Palette.contrast(col, Palette.PAPER) else Palette.PAPER
 	if icon == GUARD_NULL and -w * 0.5 >= cut_x:

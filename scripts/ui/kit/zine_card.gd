@@ -458,7 +458,7 @@ func _draw_sticker() -> void:
 		draw_style_box(_cc_style(Color(Palette.CELL_ACID, 0.5), edge + 4.0, CC_CORNER * s + 4.0), rect)
 	# The shadow under the die-cut, the white edge, then the fill.
 	draw_style_box(_cc_style(Palette.SHADOW, edge, CC_CORNER * s), Rect2(rect.position + CC_SHADOW * s, rect.size))
-	draw_style_box(_cc_style(Palette.PAPER, edge, CC_CORNER * s), rect)
+	draw_style_box(_cc_style(Palette.STICKER_DIE_CUT, edge, CC_CORNER * s), rect)
 	draw_style_box(_cc_style(bg, 0.0, CC_CORNER * s * 0.6), rect)
 	if rare:
 		# The holo border: the die-cut edge in turning hues (readable without colour: it is a
@@ -483,7 +483,7 @@ func _draw_sticker() -> void:
 	if cost >= 0:
 		var r := (13.0 if cost < 100 else 17.0) * s
 		title_w -= r * 2 + 4
-		var cost_fill := Palette.DISABLED if short_ram else Palette.RESIST_GOLD  # ART-2 2C §3.18: the yellow cost dot (grey when short)
+		var cost_fill := Palette.DISABLED if short_ram else Palette.STICKER_SAFE  # ART-2 2C §3.18: the yellow cost dot (grey when short)
 		if cost_alarm > 0.0:
 			# ANIM-R1 C6: a RAM refusal pulses the cost red (not enough RAM for it).
 			cost_fill = cost_fill.lerp(REFUSED_COLOR, cost_alarm)

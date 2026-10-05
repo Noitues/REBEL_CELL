@@ -41,6 +41,10 @@ func _ready() -> void:
 	UiFocus.hold(self)
 	_init_drops()
 	show_deck()
+	# ART-0 F (ported from art-pass W8a, §10): a modal: it opens with the modal motion and a
+	# page change waits for it (PageTransition.after_modals). It closes at once (main's
+	# UiFocus.release, so focus goes back the same frame).
+	PageTransition.open_modal(self)
 
 
 func show_deck() -> void:
@@ -79,9 +83,10 @@ func _add_swaps(view: SpinnerView, ring: Array) -> void:
 		chip.theme_type_variation = &"NoteButton"
 		chip.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		chip.text = TextDb.t(seg, "display_name") if seg != null else tr("Class default")
-		chip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		chip.autowrap_mode = TextServer.AUTOWRAP_WORD
 		chip.custom_minimum_size.x = SpinnerView.SIDE_W
-		chip.tooltip_text = UiTip.fold((Codex.describe(seg) + "\n" if seg != null else "") + tr("Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."))
+		chip.tooltip_text = UiTip.fold((Codex.describe(seg) + "\n" if seg != null else "") + UiTip.for_input(tr("Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."),
+			tr("Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).")))
 		# ANIM-R3 A7: a ring pictogram on each chip (they were words only): the segment it
 		# swaps in lit on a small ring, the class default with its hub lit.
 		SegmentMark.attach(chip, seg == null)

@@ -109,6 +109,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 "%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
 %s: integrity (HP) %s → %s in the raid. %s,%s: integrity (HP) %s → %s in the raid. %s
 %s: no change,%s: no change
+"%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.","%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."
 %s: select a card to %s. %s: details.,%s: select a card to %s. %s: details.
 %s: select the slot to %s. %s: details.,%s: select the slot to %s. %s: details.
 %s: the node falls; threats go on past it.,%s: the node falls; threats go on past it.
@@ -144,8 +145,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 > MODIFIERS,> MODIFIERS
 > SEED     %d,> SEED     %d
 > TARGET   %s,> TARGET   %s
-A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too).
-A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too).,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too).
+A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into.
+A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.,A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into.
 A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
@@ -181,7 +182,6 @@ Back,Back
 Back to HQ,Back to HQ
 "Back to HQ: the campaign, the City Grid and the crew.","Back to HQ: the campaign, the City Grid and the crew."
 Back to the Armory.,Back to the Armory.
-Back to the Armory. Or drag it onto another node's row to move it there.,Back to the Armory. Or drag it onto another node's row to move it there.
 "Back to the HQ: crew, Black Market, Cell status.","Back to the HQ: crew, Black Market, Cell status."
 Back to the HQ; the raid waits until you start the defence.,Back to the HQ; the raid waits until you start the defence.
 Back to the main menu.,Back to the main menu.
@@ -565,12 +565,15 @@ Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
 Display,Display
+Drag Firmware or a slice onto a slot to put it there.,Drag Firmware or a slice onto a slot to put it there.
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
 "Drag it onto a glowing target, or click it and then the target.","Drag it onto a glowing target, or click it and then the target."
 "Drag it onto a node's row to deploy it there (or press it, then pick the row).","Drag it onto a node's row to deploy it there (or press it, then pick the row)."
 "Drag it onto a slot to overwrite that slot (or press it, then pick the slot).","Drag it onto a slot to overwrite that slot (or press it, then pick the slot)."
 "Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.","Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."
+Dragging a chip onto a slot of the small spinner picks it too.,Dragging a chip onto a slot of the small spinner picks it too.
+Dragging it onto a slot of the small spinner picks it too.,Dragging it onto a slot of the small spinner picks it too.
 Drop,Drop
 Drop a nudge card here to aim it this way.,Drop a nudge card here to aim it this way.
 Drop or click on a glowing target  ·  right-click cancels,Drop or click on a glowing target  ·  right-click cancels
@@ -1463,9 +1466,16 @@ Options,Options
 "Options: text size, sound, controls, subtitles.","Options: text size, sound, controls, subtitles."
 Or drag it onto a slot of your spinner: the chip goes into that slot.,Or drag it onto a slot of your spinner: the chip goes into that slot.
 Or drag it onto a slot of your spinner: the slice overwrites that slot.,Or drag it onto a slot of your spinner: the slice overwrites that slot.
+Or drag it onto another node's row to move it there.,Or drag it onto another node's row to move it there.
 Or drag it onto any of your nodes.,Or drag it onto any of your nodes.
 Or drag it onto the CARDS tag: the card goes into your deck.,Or drag it onto the CARDS tag: the card goes into your deck.
 Or drag it onto the DAEMONS icon: the Daemon is installed.,Or drag it onto the DAEMONS icon: the Daemon is installed.
+Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.,Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.
+Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.,Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.
+Or pick it up and move it onto another node's row to move it there.,Or pick it up and move it onto another node's row to move it there.
+Or pick it up and move it onto any of your nodes.,Or pick it up and move it onto any of your nodes.
+Or pick it up and move it onto the CARDS tag: the card goes into your deck.,Or pick it up and move it onto the CARDS tag: the card goes into your deck.
+Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.,Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.
 Out of reach from here.,Out of reach from here.
 "Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
@@ -1493,14 +1503,26 @@ Pause / options,Pause / options
 "Pause: options, codex, save and quit.","Pause: options, codex, save and quit."
 Pays %d-%d Cycles.,Pays %d-%d Cycles.
 Pick a card from your deck to remove.,Pick a card from your deck to remove.
+Pick a card up and move it here to shred it (or select it and press REMOVE).,Pick a card up and move it here to shred it (or select it and press REMOVE).
 "Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels).","Pick a card with %s, choose a glowing target with the D-pad, press %s again (%s cancels)."
+"Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).","Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row)."
+"Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).","Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot)."
+"Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.","Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."
 "Pick the target: click a node of yours on the map, or its button in YOUR NODES.","Pick the target: click a node of yours on the map, or its button in YOUR NODES."
+"Pick the target: press a node of yours on the map, or its button in YOUR NODES.","Pick the target: press a node of yours on the map, or its button in YOUR NODES."
 Pick up,Pick up
+Pick up Firmware or a slice and move it onto a slot to put it there.,Pick up Firmware or a slice and move it onto a slot to put it there.
 Pick up the campaign saved most recently.,Pick up the campaign saved most recently.
+Picking a chip up and moving it onto a slot of the small spinner picks it too.,Picking a chip up and moving it onto a slot of the small spinner picks it too.
+Picking it up and moving it onto a slot of the small spinner picks it too.,Picking it up and moving it onto a slot of the small spinner picks it too.
 PlayStation,PlayStation
 Press,Press
 Press %s on,Press %s on
+Press a Site to open it on the City Grid.,Press a Site to open it on the City Grid.
+"Press a key, then press the new one. Cards stay on 1-9.","Press a key, then press the new one. Cards stay on 1-9."
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
+Press it to play.,Press it to play.
+"Press it, then pick a glowing target.","Press it, then pick a glowing target."
 Profile unlocks:,Profile unlocks:
 "Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s.","Profile: %d campaigns started, %d won, %d lost; %d runs completed, %d operatives lost, raids %d/%d; best ICE %s."
 ProfileUnlockData.unlock_botnet.description,Recruit Botnet operatives in every campaign.
@@ -1684,6 +1706,7 @@ Raids pending against your network. Set up the defence before the next run.,Raid
 Raids repelled / lost.,Raids repelled / lost.
 Rank,Rank
 "Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: drag it onto an inner ring segment of the wheel (or press it, then pick the segment)."
+"Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment).","Rank 3 swap: pick it up and move it onto an inner ring segment of the wheel (or press it, then pick the segment)."
 Rank: runs survived. It brings wheel upgrades and higher netrun tiers.,Rank: runs survived. It brings wheel upgrades and higher netrun tiers.
 Rare,Rare
 Recall,Recall
@@ -2708,6 +2731,7 @@ That is not a campaign code.,That is not a campaign code.
 The Armory is empty: runs bank defence assets from their drops.,The Armory is empty: runs bank defence assets from their drops.
 "The Armory: defence assets banked from runs, deployed on your nodes in raid setup.","The Armory: defence assets banked from runs, deployed on your nodes in raid setup."
 The boosts bought for the next run. Drag a boost here to buy it.,The boosts bought for the next run. Drag a boost here to buy it.
+The boosts bought for the next run. Pick a boost up and move it here to buy it.,The boosts bought for the next run. Pick a boost up and move it here to buy it.
 "The campaign map: pick a Site and JACK IN, claim and upgrade nodes.","The campaign map: pick a Site and JACK IN, claim and upgrade nodes."
 The campaign's numbers: they stay between runs.,The campaign's numbers: they stay between runs.
 The corporation's core. The breach needs %d Exploits.,The corporation's core. The breach needs %d Exploits.
@@ -2814,7 +2838,7 @@ You can move here now.,You can move here now.
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
-Your spinner. Drag Firmware or a slice onto a slot to put it there.,Your spinner. Drag Firmware or a slice onto a slot to put it there.
+Your spinner.,Your spinner.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 a Rack,a Rack
 a Shop,a Shop
@@ -2825,6 +2849,7 @@ an Elite fight,an Elite fight
 an Event,an Event
 an operative,an operative
 armory: %s,armory: %s
+asset,asset
 best ICE %s,best ICE %s
 boss,boss
 calibrate_handler,calibrate_handler
@@ -2847,9 +2872,11 @@ guarded,guarded
 half power,half power
 hunted,hunted
 in a run,in a run
+install,install
 it costs you %s,it costs you %s
 link,link
 lo-fi loop: HQ,lo-fi loop: HQ
+loot_socket,loot_socket
 lost,lost
 momentum_handler,momentum_handler
 netrun,netrun
@@ -2876,7 +2903,9 @@ run: %s,run: %s
 seg %d: %s,seg %d: %s
 seg %d: default,seg %d: default
 slice,slice
+socket,socket
 sold out,sold out
+spinner,spinner
 steady_hand_handler,steady_hand_handler
 the home server falls and the campaign is lost,the home server falls and the campaign is lost
 the net,the net
@@ -2885,6 +2914,7 @@ ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, 
 undock_handler,undock_handler
 v%s // cell uplink,v%s // cell uplink
 vs %s | ICE %d%s,vs %s | ICE %d%s
+withdraw,withdraw
 won,won
 you are here,you are here
 your network holds every threat,your network holds every threat

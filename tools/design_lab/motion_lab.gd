@@ -159,6 +159,10 @@ const DEMOS := {
 	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
 	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
 	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
+	# ART-0 F (ported from art-pass W2 / W8a): kit behaviour on the real pieces (a native
+	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
+	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
+	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -792,6 +796,40 @@ func _play_screen(what: String) -> void:
 		"drop_land", "drop_buy", "drop_shred", "drop_refuse", "drop_carry", "market":
 			await _play_drop(what)
 			length = 1.5
+		"kit_focus":
+			# ART-0 F: a pad player's focus on a native button grows it about its centre
+			# (UiFocus, `focus_scale`); the pad is in use for this focus move only.
+			var b := Button.new()
+			b.text = "JACK IN"
+			b.position = Vector2(260, 300)
+			_screen_host.add_child(b)
+			UiFocus.install_on(b)
+			await get_tree().process_frame
+			if not is_instance_valid(b):
+				return
+			var pad_was := Settings.pad_active
+			Settings.pad_active = true
+			b.grab_focus()
+			Settings.pad_active = pad_was
+		"kit_refused":
+			# ART-0 F: a refused sticker (KitState: HARM outline flash, no-entry mark).
+			var s := StickerButton.new("RESPIN")
+			s.position = Vector2(260, 300)
+			_screen_host.add_child(s)
+			await get_tree().process_frame
+			if is_instance_valid(s):
+				s.refuse()
+			length = Motion.seconds(KitState.REFUSED_MOTION)
+		"modal_open", "modal_close":
+			# ART-0 F: a modal opens (fade and grow, `modal_in`), then closes (`modal_out`).
+			var m := ConfirmDialog.new(TYPE_TEXT)
+			m.position = Vector2(220, 240)
+			_screen_host.add_child(m)
+			PageTransition.open_modal(m)
+			if what == "modal_close":
+				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
+				if is_instance_valid(m):
+					PageTransition.close_modal(m)
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

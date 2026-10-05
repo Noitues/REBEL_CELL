@@ -21,6 +21,9 @@ DESIGNER RULINGS THAT BIND EVERY AGENT (2026-10-05)
   (cleanly, with the existing "can't load" path).
 - Internal names follow display names (no "display-only" aliases). Ids, enums, file names, class names change with
   the word.
+- The art pass design is correct (designer, 2026-10-05): where the game and ART_BIBLE v2 / the locked concepts differ on
+  a view, word, layout, look or presentation rule, follow the art pass without asking; log it. Mechanics the rules
+  lack (G1–G16) are still not built.
 - Nothing deferred: never write "out of scope". If an item does not fit, say so in your report and propose a slice.
 - Decide small things yourself and log them in DECISIONS ("Art direction — ART-2 <area>"); real design questions go
   under DECISIONS "Open questions for the designer" and in your report, with your default implemented.
@@ -52,6 +55,18 @@ LONG JOBS AND SHARING THE MACHINE (added 2026-10-05 after interrupted waits)
   machine stays responsive for everyone's tests.
 - An interrupted tool call is not an error: re-read your log or output file to see where the job stands,
   and carry on. Do not restart a job that is still running.
+
+BATCH GODOT LAUNCHES (designer 2026-10-05)
+- Each Godot launch costs ~6 s of boot (+ ~9 s for an import with nothing new). Batch work into as few
+  launches as possible:
+  - Tests: run every script you need in ONE gt.sh call (it takes a list), not one call per script; only
+    re-run the scripts that failed.
+  - Captures: ONE windowed launch per capture session that walks a list of screens / states / demos
+    (e.g. tools/visual_qa/review_pack.tscn `--screens=a,b,c`, the storyboard, or your own lab scene that
+    steps through every state and writes a frame per state), not one launch per screenshot.
+  - Import only after you add or rename files / class_names or after `git merge main`, not before every run.
+- Do not keep a long-lived Godot "server" between edits: changed scripts need a fresh process anyway, and
+  shared static state leaks between runs.
 
 MACHINE RULES
 - NEVER run `python -` (it hangs on stdin, even with an empty heredoc). Write scripts to files with the Write tool and

@@ -497,6 +497,18 @@
 			"seconds": 2.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art1_palette_theme.gd": {
+			"seconds": 2.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art0_kit_states.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art0_kit_words.gd": {
+			"seconds": 6.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_vfx_tiers.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
@@ -507,6 +519,10 @@
 		},
 		"res://tests/unit/test_art2_cards_fx.gd": {
 			"seconds": 8.0,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_art1_glyphs.gd": {
+			"seconds": 4.0,
 			"tier": "fast"
 		}
 	}
