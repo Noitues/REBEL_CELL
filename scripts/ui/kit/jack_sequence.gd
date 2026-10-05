@@ -92,11 +92,11 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_make_terminal(lines_for(String(link.get("from", "")), String(link.get("to", ""))))
 	# 1-2. Typing, the rain joining over its last lines.
 	var lines: PackedStringArray = _text.get_meta(&"lines")
-	var per_char := Motion.seconds(&"jack_terminal_type")
-	var pause := Motion.delay_of(&"jack_terminal_type")
+	var per_char := Motion.seconds_live(&"jack_terminal_type")
+	var pause := Motion.delay_of(&"jack_terminal_type") if Motion.live(&"jack_terminal_type") else 0.0
 	var total_chars := _text.text.length()
 	var type_s := per_char * total_chars + pause * lines.size()
-	var rain_s := Motion.seconds(&"jack_link_rain")
+	var rain_s := Motion.seconds_live(&"jack_link_rain")
 	var rain_from := maxf(0.0, type_s - rain_s * RAIN_LEAD)
 	var t := 0.0
 	while t < maxf(type_s, rain_from + rain_s) and not skipping:
@@ -108,7 +108,7 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	_text.visible_characters = -1
 	rain_t = -1.0
 	# 3. CRT collapse: a line, then a dot.
-	var col_s := Motion.seconds(&"jack_crt_collapse")
+	var col_s := Motion.seconds_live(&"jack_crt_collapse")
 	var line_share := clampf(Motion.amplitude(&"jack_crt_collapse"), 0.05, 0.95)
 	terminal.pivot_offset = terminal.size * 0.5
 	t = 0.0
@@ -124,9 +124,11 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	# 4. The wheel slaps onto the link's Site end and spins up.
 	wheel_at = points[points.size() - 1]
 	wheel_r = WHEEL_R * Settings.text_scale
-	var slap_s := Motion.seconds(&"jack_wheel_slap")
+	var slap_s := Motion.seconds_live(&"jack_wheel_slap")
 	var slap := Motion.entry(&"jack_wheel_slap")
-	var spin_s := Motion.seconds(&"jack_wheel_spin")
+	var spin_s := Motion.seconds_live(&"jack_wheel_spin")
+	# The spin keeps its rate through the lens (none when switched off).
+	var spin_rate := TAU * Motion.amplitude(&"jack_wheel_spin") / maxf(Motion.seconds(&"jack_wheel_spin"), 0.001) if spin_s > 0.0 else 0.0
 	var turns := Motion.amplitude(&"jack_wheel_spin")
 	t = 0.0
 	while t < slap_s + spin_s and not skipping:
@@ -151,7 +153,7 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 		var e := u * u
 		wheel_at = start_at.lerp(vp * 0.5, e)
 		wheel_scale = lerpf(1.0, cover_r / maxf(wheel_r, 1.0), e)
-		wheel_turn += TAU * turns * get_process_delta_time() / maxf(spin_s, 0.001)
+		wheel_turn += spin_rate * get_process_delta_time()
 		queue_redraw()
 		await get_tree().process_frame
 	wheel_at = vp * 0.5
@@ -169,7 +171,7 @@ func play(link: Dictionary, fx: Node, switch: Callable) -> void:
 	while t < open_s and not skipping:
 		t += get_process_delta_time()
 		open_t = clampf(t / maxf(open_s, 0.001), 0.0, 1.0)
-		wheel_turn += TAU * turns * get_process_delta_time() / maxf(spin_s, 0.001)
+		wheel_turn += spin_rate * get_process_delta_time()
 		queue_redraw()
 		await get_tree().process_frame
 	if not switched:

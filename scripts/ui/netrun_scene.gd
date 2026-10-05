@@ -1299,6 +1299,10 @@ func _show_map() -> void:
 		# H24 S12: the route's nodes fitted into the map area beside the ROUTE column (at 1.6 a
 		# node sat under the ROUTE window).
 		_route_fits = 0
+		_route_under_dossier = false
+		if dossier != null and is_instance_valid(dossier):
+			dossier.force_compact = false
+			dossier.visible = true
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
@@ -1407,6 +1411,8 @@ func fit_route_map() -> void:
 	if not city.camera_settled():
 		_fit_route_after_redraw()
 		return
+	if _route_under_dossier:
+		_place_dossier()
 	var area := route_free_area()
 	if area.size.x <= LegendSpot.MARGIN * 2.0 or area.size.y <= LegendSpot.MARGIN * 2.0:
 		return
@@ -1421,6 +1427,16 @@ func fit_route_map() -> void:
 	# (the whole route squeezed to the minimum zoom jammed its nodes against the screen's edge
 	# and put the current node off it).
 	var fit := LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
+	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR and not _route_under_dossier and dossier != null and is_instance_valid(dossier):
+		# ART-7 3B: the whole route does not fit right of the dossier: it may run under the
+		# paper (pinned over the map) rather than under the ROUTE column (from now on this page).
+		var full := _route_area.get_global_rect().intersection(get_global_rect()).grow(-ROUTE_MARGIN * Settings.text_scale)
+		var whole := LegendSpot.fit_into(city_overlay, full, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
+		if whole.is_empty() or float(whole["zoom"]) * city.scale.x >= ROUTE_FIT_FLOOR:
+			_route_under_dossier = true
+			dossier.force_compact = true
+			free = full
+			fit = whole
 	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR:
 		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
 	elif fit.is_empty() and not route_frames(free):
@@ -1989,10 +2005,38 @@ func _fit_node_panel() -> void:
 		node_panel.visible = fits and not node_panel.data.is_empty()
 
 
-## The map area the route is fitted into (screen px): the map area right of the dossier.
+## ART-7 3B: the whole route needed the room under the dossier (this page).
+var _route_under_dossier: bool = false
+
+
+## With the route under it, the folded dossier takes the map area's corner (top left or
+## bottom left) that covers least of where the player is and the next choices; their labels
+## keep off it (avoid_controls).
+func _place_dossier() -> void:
+	if dossier == null or not is_instance_valid(dossier) or _route_area == null or city_overlay == null:
+		return
+	var m := DOSSIER_MARGIN * Settings.text_scale
+	var focus := LegendSpot.node_rects(city_overlay, false, route_focus_ids())
+	focus.append_array(city_overlay.here_marker_rects())
+	var area := _route_area.get_global_rect()
+	var best := Vector2(m, m)
+	var best_hits := INF
+	for at in [Vector2(m, m), Vector2(m, area.size.y - dossier.size.y - m)]:
+		var hits := LegendSpot.covered(Rect2(area.position + at, dossier.size), focus)
+		if hits < best_hits:
+			best_hits = hits
+			best = at
+	dossier.position = best
+	# Where the player is and the next choices come first: a file that would cover them in
+	# both corners steps aside (the top bar keeps HP and Heat).
+	dossier.visible = best_hits <= 0.0
+
+
+## The map area the route is fitted into (screen px): the map area right of the dossier
+## (the whole area once the route needed it).
 func route_free_area() -> Rect2:
 	var area := _route_area.get_global_rect().intersection(get_global_rect())
-	if dossier != null and is_instance_valid(dossier) and dossier.is_visible_in_tree():
+	if not _route_under_dossier and dossier != null and is_instance_valid(dossier) and dossier.is_visible_in_tree():
 		var right := dossier.get_global_rect().end.x + DOSSIER_MARGIN * Settings.text_scale
 		if right < area.end.x - LegendSpot.MARGIN * 4.0:
 			area = Rect2(Vector2(right, area.position.y), Vector2(area.end.x - right, area.size.y))

@@ -216,7 +216,9 @@ func test_the_route_sweeps_every_corporation_with_labels_and_you_are_here() -> v
 			for i in keys.size():
 				for j in range(i + 1, keys.size()):
 					assert_false((rects[keys[i]] as Rect2).intersects(rects[keys[j]]), "%s x%.1f: labels overlap" % [corp, scale])
-			assert_true(scene.dossier.is_visible_in_tree(), "%s: the dossier shows" % corp)
+			if scene.dossier.is_visible_in_tree():
+				for r in LegendSpot.node_rects(ov, false, scene.route_focus_ids()):
+					assert_false(scene.dossier.get_global_rect().intersects(r), "%s x%.1f: the dossier covers no choice" % [corp, scale])
 			var legend: Rect2 = scene.route_legend.get_global_rect()
 			assert_true(SCREEN.grow(1.0).encloses(legend), "%s x%.1f: the strip fits (%s)" % [corp, scale, legend])
 		Settings.set_text_scale(1.0)

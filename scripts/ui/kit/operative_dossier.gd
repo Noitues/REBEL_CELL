@@ -56,6 +56,12 @@ const HEAT_STAMP := "HEAT %d: %s" # TR
 var data: Dictionary = {}
 ## True while the compact file shows (big text on a small screen).
 var compact: bool = false
+## The screen folds the file when the route needs the room (ART-7 3B).
+var force_compact: bool = false:
+	set(v):
+		if v != force_compact:
+			force_compact = v
+			_relayout()
 var _rows: Array = []
 ## 1B's corp paper sheet under the ink (letterhead, stock, shadow).
 var paper: CorpPaperPanel
@@ -99,7 +105,7 @@ func file_width() -> float:
 
 func _relayout() -> void:
 	var vw := get_viewport_rect().size.x if is_inside_tree() else 1280.0
-	compact = file_width() > vw * MAX_WIDTH_SHARE
+	compact = force_compact or file_width() > vw * MAX_WIDTH_SHARE
 	_rows = _build_rows()
 	custom_minimum_size = Vector2(file_width() if not compact else minf(file_width(), vw * MAX_WIDTH_SHARE), _height())
 	update_minimum_size()
