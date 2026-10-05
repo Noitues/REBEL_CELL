@@ -512,6 +512,10 @@
 		"res://tests/unit/test_w9_accessibility_settings.gd": {
 			"seconds": 3.0,
 			"tier": "fast"
+		},
+		"res://tests/unit/test_art1_glyphs.gd": {
+			"seconds": 4.0,
+			"tier": "fast"
 		}
 	}
 }
