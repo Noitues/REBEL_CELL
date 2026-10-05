@@ -397,7 +397,7 @@ func test_a_node_down_then_taken_is_one_taken_node_everywhere() -> void:
 
 # --- P4: the campaign's end and the pause menu ---------------------------------------------------
 
-func test_the_campaign_end_is_a_see_through_page_with_a_verdict_stamp() -> void:
+func test_the_campaign_end_is_the_audit_dossier_with_its_stamp() -> void:
 	for won in [true, false]:
 		for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 			Settings.set_text_scale(scale)
@@ -411,20 +411,19 @@ func test_the_campaign_end_is_a_see_through_page_with_a_verdict_stamp() -> void:
 			await _frames(3)
 			var tag := "%s %.1f" % ["won" if won else "lost", scale]
 			assert_eq(hq.panel_name, "end")
-			assert_eq(hq._panel_host.theme_type_variation, &"", "%s: no opaque glass: the city shows round its windows" % tag)
-			var stamp := hq._panel.find_child("CampaignVerdict", true, false) as ForecastStamp
-			assert_not_null(stamp, "%s: a verdict stamp" % tag)
-			assert_true(stamp.resolved, "%s: it has landed" % tag)
-			assert_eq(stamp.verdict, HqScript.END_WON if won else HqScript.END_LOST)
-			assert_eq(stamp.color, RaidVerdict.color_of(won))
-			var head := hq._panel.find_child("Headline", true, false) as Label
-			assert_gte(head.get_theme_font_size(&"font_size"), roundi(HqScript.END_HEADLINE_FONT * scale), "%s: the headline in display lettering" % tag)
-			assert_not_null(hq._panel.find_child("EndStory", true, false), "%s: the story in its own window" % tag)
-			assert_not_null(hq._panel.find_child("ProfileFacts", true, false), "%s: the profile as badges" % tag)
+			assert_eq(hq._panel_host.theme_type_variation, &"", "%s: no opaque glass over the desk" % tag)
+			var dossier := hq._panel as AuditDossier
+			assert_not_null(dossier, "%s: the corporation's audit dossier (ART-11 4D)" % tag)
+			var stamp := dossier.find_child("CaseStamp", true, false) as RubberStamp
+			assert_not_null(stamp, "%s: a verdict stamp on the report" % tag)
+			assert_true(stamp.visible, "%s: it has landed (headless: at once)" % tag)
+			assert_eq(stamp.text, tr("AT LARGE") if won else tr("CASE CLOSED"))
+			assert_not_null(dossier.find_child("EndStory", true, false), "%s: the story uncovered (annex A)" % tag)
+			assert_not_null(dossier.find_child("ProfileFacts", true, false), "%s: the profile's records (annex B)" % tag)
 			var width := 0.0
-			for w in hq._panel.find_children("*", "TerminalWindow", true, false):
-				width = maxf(width, (w as Control).get_global_rect().end.x)
-			assert_true(width <= SCREEN.size.x + 1.0, "%s: on the screen" % tag)
+			for sheet in dossier.find_children("*", "PaperSheet", true, false):
+				width = maxf(width, (sheet as Control).get_global_rect().end.x)
+			assert_true(width <= SCREEN.size.x + 1.0, "%s: the sheets on the screen" % tag)
 			hq.get_parent().queue_free()
 			await _frames(1)
 

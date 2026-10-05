@@ -14,6 +14,7 @@
 | 2C | `RamBar.pip_spot(k)`; damage numbers via `UiTheme.live_number()`; hover scale 1.36 with neighbours shifting and the RAM meter hatching the cost; a non-timed trigger beat + hook for the Daemon / Firmware trigger FX | 2D |
 | 2C | Card idle bob; hit shards, heal, drones and corrupt read smaller / dimmer than their strips: a tuning pass on 1B's emitter | Group 2 rolling audit → fix |
 | 2C | Round 18 FX defaults to confirm under "art pass is correct": enemy hits in the attacker's colour, blocked shards fall away, heal bits come from outside the wheel | follow the art pass (no question) |
+| 8p | DISPATCH's HQ run: the round 43 DISPATCH ideas play in the Tokyo canyon, not the round 42 base 8p built. Under "the art pass design is correct" the latest lock wins: the canyon replaces the base (orchestrator call, logged in DECISIONS) | ART-8 wave 2 |
 | CI agent | `test_horizontal_pass20_city.gd :: test_headless_never_bakes_and_still_draws_the_city` is ORDER-DEPENDENT (fails in a shard, passes alone): fix before CI is re-enabled | after ART-12, with the full-suite run |
 
 ## Views with no M14 owner (found by the R7 re-evaluation prep, 2026-10-05)

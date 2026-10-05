@@ -55,6 +55,10 @@ const CAP_SHARE := 0.74
 ## Slap (lifecycle APPEAR): the start scale, the squash and its time, the drop's share.
 const SLAP_FROM_SCALE := 1.24
 const SLAP_SQUASH := Vector2(1.13, 0.84)
+## The slap's drop and the peel's curl-away shapes (named, ANIM-R6 rule: no inline tween shapes).
+const DROP_EASE := Tween.EASE_IN
+const DROP_TRANS := Tween.TRANS_QUAD
+const PEEL_AWAY_TRANS := Tween.TRANS_CUBIC
 const SLAP_SQUASH_SECONDS := 0.09
 const SLAP_DROP_SHARE := 0.45
 ## Peel (EXIT): the curl away down-left (px, deg) and the share of the time the fade takes at
@@ -570,8 +574,8 @@ func slap() -> float:
 	modulate.a = 0.0
 	var tw := _start(SLAP)
 	tw.tween_property(self, "modulate:a", 1.0, drop * 0.5)
-	tw.parallel().tween_property(self, "scale", SLAP_SQUASH, drop).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-	tw.parallel().tween_property(self, "rotation_degrees", tilt_deg - e.amplitude * 0.15, drop).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	tw.parallel().tween_property(self, "scale", SLAP_SQUASH, drop).set_ease(DROP_EASE).set_trans(DROP_TRANS)
+	tw.parallel().tween_property(self, "rotation_degrees", tilt_deg - e.amplitude * 0.15, drop).set_ease(DROP_EASE).set_trans(DROP_TRANS)
 	tw.tween_interval(squash)
 	var rest := maxf(d - drop - squash, 0.01)
 	tw.tween_property(self, "scale", Vector2.ONE, rest).set_ease(e.ease).set_trans(e.trans)
@@ -596,8 +600,8 @@ func peel() -> float:
 	var tw := _start(PEEL)
 	tw.tween_property(self, "fold", e.amplitude, d).set_ease(e.ease).set_trans(e.trans)
 	tw.parallel().tween_property(self, "lift", 1.0, d * 0.6)
-	tw.parallel().tween_property(self, "position", from + PEEL_AWAY, d).set_delay(d * 0.3).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_CUBIC)
-	tw.parallel().tween_property(self, "rotation_degrees", tilt_deg + PEEL_TURN_DEG, d).set_delay(d * 0.3).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(self, "position", from + PEEL_AWAY, d).set_delay(d * 0.3).set_ease(DROP_EASE).set_trans(PEEL_AWAY_TRANS)
+	tw.parallel().tween_property(self, "rotation_degrees", tilt_deg + PEEL_TURN_DEG, d).set_delay(d * 0.3).set_ease(DROP_EASE)
 	tw.parallel().tween_property(self, "modulate:a", 0.0, d * PEEL_FADE_SHARE).set_delay(d * (1.0 - PEEL_FADE_SHARE))
 	tw.tween_callback(func() -> void:
 		_tween = null

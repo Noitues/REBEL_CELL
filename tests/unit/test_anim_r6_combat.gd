@@ -571,7 +571,7 @@ func test_the_settings_button_stickers_and_notes_translate() -> void:
 	assert_eq(scene.preview_note.title, tr("WHAT WILL RESOLVE"))
 	assert_eq(scene.log_note.title, tr("LOG"))
 	var src := FileAccess.get_file_as_string("res://scripts/ui/combat_scene.gd")
-	assert_true(src.contains("StickerButton.new(tr(String(sp[1]))"), "the stickers are built translated")
+	assert_true(src.contains("TerminalChip.new(tr(String(sp[1]))"), "the stickers are built translated")
 	PseudoLoc.off()
 	await _close(scene)
 
@@ -595,8 +595,8 @@ func test_a_hovered_card_names_itself_on_the_tape_not_as_a_chip() -> void:
 				var lay := wv.was_layout(wv._tag_geometry()["was"])
 				assert_eq(String(lay["play"]), tr("YOUR %s") % wv.play_note, "x%.1f: YOUR <CARD>" % scale)
 				assert_gte(int(lay["fs"]), roundi(WheelView.WAS_FONT_SIZE * scale), "x%.1f: at a readable size" % scale)
-				var r: Rect2 = wv.was_rect()
-				assert_true(wv.get_global_rect().grow(0.5).encloses(r), "x%.1f: the tape stays in its view" % scale)
+				# ART-2 2D (D15): no tape on screen; the chips' breakdown names the play first.
+				assert_string_contains(scene.chip_row(wv.combatant.id).tooltip_text, tr("YOUR %s") % wv.play_note, "x%.1f: the breakdown names the card" % scale)
 			assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f card %d: no layout rule broken" % [scale, i])
 			scene._show_end_turn_preview()
 			for v in scene._views():

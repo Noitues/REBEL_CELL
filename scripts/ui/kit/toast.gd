@@ -1,8 +1,9 @@
 class_name Toast
 extends PanelContainer
-## A short-lived strip of taped paper that says why an action was refused ("Not enough
-## RAM") right where the player is looking (H20: refusals used to go to a hidden log).
-## View only. Instant and static under headless or reduce effects.
+## A short-lived terminal strip that says why an action was refused ("Not enough RAM")
+## right where the player is looking (H20: refusals used to go to a hidden log).
+## ART-2 2D (ART_BIBLE v2 §4.13): plain cyan terminal for a note; a refusal has a HARM edge
+## and the no-entry mark. View only. Instant and static under headless or reduce effects.
 
 ## Seconds on screen (delay) and the fade at the end (duration): the `toast` motion entry.
 const MOTION := &"toast"
@@ -24,8 +25,8 @@ func _init() -> void:
 	visible = false
 	var sb := StyleBoxFlat.new()
 	_panel = sb
-	sb.bg_color = Palette.NOTE_YELLOW
-	sb.border_color = Palette.INK
+	sb.bg_color = HudSkin.TERMINAL_BG
+	sb.border_color = HudSkin.TERMINAL_EDGE
 	sb.set_border_width_all(2)
 	sb.set_content_margin_all(8)
 	sb.content_margin_left = MARK_ROOM
@@ -33,8 +34,8 @@ func _init() -> void:
 	label = Label.new()
 	# Callers pass translated text (H24: the respin note was translated twice).
 	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	label.add_theme_color_override("font_color", Palette.INK)
-	label.add_theme_font_override("font", Palette.marker())
+	label.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
+	label.add_theme_font_override("font", HudSkin.mono())
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(label)
 
@@ -59,8 +60,9 @@ func _show(text: String, anchor: Vector2, is_refusal: bool, max_width: float = 0
 	queue_redraw()
 	label.text = text
 	label.add_theme_font_size_override("font_size", roundi(FONT_SIZE * Settings.text_scale))
-	# ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6): words INK, the edge opaque INK at PaperInk.EDGE_PX (read each time it shows).
-	label.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
+	# ART-2 2D: terminal words on dark glass (high contrast: the brightest text token); the
+	# edge says what it is: HARM for a refusal, cyan for a note (read each time it shows).
+	label.add_theme_color_override("font_color", HudSkin.TERMINAL_HI if Settings.high_contrast else HudSkin.TERMINAL_TEXT)
 	_panel.border_color = edge_color()
 	_panel.set_border_width_all(roundi(edge_width()))
 	if max_width > 0.0:
@@ -92,7 +94,7 @@ func _draw() -> void:
 		return
 	var r := MARK_RADIUS * Settings.text_scale
 	var c := Vector2(MARK_ROOM * 0.5, size.y * 0.5)
-	var mark := PaperInk.text(Palette.CELL_PINK.darkened(0.2))
+	var mark := Palette.HARM
 	draw_arc(c, r, 0, TAU, 20, mark, 3.0, true)
 	var d := Vector2(r, -r) * 0.7
 	draw_line(c - d, c + d, mark, 3.0, true)
@@ -112,14 +114,15 @@ func text() -> String:
 	return label.text if visible else ""
 
 
-# --- High contrast on paper (ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6)) -------------------------
+# --- Edge (ART-0 F high contrast kept: the edge is opaque and at least PaperInk.EDGE_PX) ----
 ## The toast's edge width out of high contrast (px).
 const EDGE_PX := 2.0
 
 
-## The toast's edge: INK (opaque in high contrast too).
+## The toast's edge: HARM on a refusal, the terminal cyan on a note (opaque in high contrast).
 func edge_color() -> Color:
-	return PaperInk.edge(Palette.INK)
+	var c := Palette.HARM if refusal else HudSkin.TERMINAL_EDGE
+	return Color(c, 1.0) if Settings.high_contrast else c
 
 
 ## The toast's edge width (px): EDGE_PX, at least PaperInk.EDGE_PX under high contrast.

@@ -166,6 +166,26 @@ static func build(before: CombatState, events: Array[Dictionary], lookup: Conten
 ## order (each moved beat is marked `same_moment`), and recounts every beat's `hp_after`
 ## from `before` in the new order. Presentation only: the events and the result are the
 ## engine's.
+## ART-2 2D: the Daemon / firmware triggers in `events`, timed on the replay without a beat of
+## their own (the schedule is the beats'; a trigger never adds time): each rides the first beat
+## after it in event order (`beats` and their `times`), or `fallback` when none follows.
+## [{event_index, source_id, at}].
+static func trigger_marks(events: Array[Dictionary], beats: Array[Dictionary], times: PackedFloat32Array, fallback: float) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for i in events.size():
+		if String(events[i].get("type", "")) != "trigger":
+			continue
+		var at := fallback
+		var best := -1
+		for k in mini(beats.size(), times.size()):
+			var ei := int(beats[k]["event_index"])
+			if ei > i and (best < 0 or ei < best):
+				best = ei
+				at = times[k]
+		out.append({"event_index": i, "source_id": StringName(String(events[i].get("source_id", ""))), "at": at})
+	return out
+
+
 static func doomed_first(before: CombatState, beats: Array[Dictionary]) -> Array[Dictionary]:
 	var out: Array[Dictionary] = beats.duplicate()
 	for b in beats:

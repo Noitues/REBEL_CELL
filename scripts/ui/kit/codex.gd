@@ -50,7 +50,7 @@ static func describe(res: Resource) -> String:
 		return ""
 	if res is SliceData:
 		var s := res as SliceData
-		var head := "%s %s" % [Palette.SLICE_GLYPHS.get(s.slice_type, "?"), s.display_name if s.display_name != "" else String(s.id)]
+		var head: String = s.display_name if s.display_name != "" else String(s.id)  # ART-2 2A: no text symbol (the atlas glyph is the icon)
 		var out := "%s\n%s" % [head, SLICE_TYPE_TEXT.get(s.slice_type, "")]
 		if s.base_output > 0:
 			out += "\nBase output %d." % s.base_output
@@ -157,7 +157,7 @@ static func entries(lookup: ContentLookup, profile: ProfileState = null) -> Dict
 		var v := lookup.get_content(id) as HomeServerVariantData
 		out["Home servers"].append({"title": v.display_name, "text": v.description})
 	for t in SLICE_TYPE_TEXT:
-		out["Slices"].append({"title": "%s %s" % [Palette.SLICE_GLYPHS.get(t, ""), Palette.SLICE_NAMES.get(t, "")], "text": SLICE_TYPE_TEXT[t]})
+		out["Slices"].append({"title": String(Palette.SLICE_NAMES.get(t, "")), "text": SLICE_TYPE_TEXT[t]})
 	for st in STATUS_TEXT:
 		out["Statuses & precision"].append({"title": "%s %s" % [Palette.STATUS_GLYPHS.get(st, ""), RC.Status.keys()[st]], "text": STATUS_TEXT[st]})
 	for tier in TIER_TEXT:
