@@ -285,3 +285,43 @@ func test_the_report_is_the_corps_paper_with_cell_holds_when_the_cell_survived()
 		assert_not_null(verdict, "the raid's one verdict stays its stamp")
 		hq.get_parent().queue_free()
 		await _frames(1)
+
+
+func test_a_stationed_operative_shows_its_class_beacon_from_the_concept() -> void:
+	for cls in [&"breaker", &"wrecker", &"ghost", &"phantom", &"rigger", &"overclocker", &"botnet", &"hivemind"]:
+		var strip := RaidBeaconLayer.strip(cls)
+		assert_not_null(strip, "%s: the concept's beacon (screens21.beacon), baked" % cls)
+		if strip != null:
+			assert_eq(strip.get_width(), int(RaidBeaconLayer.FRAME_PX.x) * RaidBeaconLayer.FRAMES, "%s: one strip of the idle loop" % cls)
+	var manifest := JSON.parse_string(FileAccess.get_file_as_string(RaidBeaconLayer.DIR + "manifest.json")) as Dictionary
+	assert_eq(int(manifest["frames"]), RaidBeaconLayer.FRAMES)
+	assert_true(String(manifest["source"]["script"]).begins_with("docs/concepts/round22_raid_world/scripts/screens21.py"), "the beacons come from the concept script")
+	Settings.set_reduce_effects(true)
+	assert_eq(RaidBeaconLayer.frame_at(0.9), 0, "reduce effects: the beacon stands still")
+	Settings.set_reduce_effects(false)
+	_raid_campaign(&"halcyon")
+	var c := RunManager.campaign
+	var site := c.grid.claimed_ids()[1]
+	var op := c.living_operatives()[0]
+	c.grid.sites[site]["stationed"] = String(op.id)
+	var hq := _scene(HQ)
+	await _frames(1)
+	hq.show_raid()
+	await _frames(2)
+	var layer := hq.find_child("RaidBeacons", true, false) as RaidBeaconLayer
+	assert_not_null(layer, "the raid map carries the beacons")
+	if layer != null:
+		var shown := layer.shown()
+		assert_eq(shown.size(), 1, "one beacon")
+		if shown.size() == 1:
+			assert_eq(String(shown[0]["site"]), String(site), "over the node it is stationed on")
+			assert_eq(String(shown[0]["class"]), String(op.class_id), "in its class")
+
+
+func test_ice_is_the_concepts_baked_crystals_growing_in_steps() -> void:
+	for step in range(1, RaidFxLayer.ICE_STEPS + 1):
+		var p := RaidFxLayer.ICE_DIR + "ice_%02d.png" % step
+		assert_true(ResourceLoader.exists(p), "%s: the concept's ice (ui22.ice), baked" % p)
+	var manifest := JSON.parse_string(FileAccess.get_file_as_string(RaidFxLayer.ICE_DIR + "manifest.json")) as Dictionary
+	assert_true(String(manifest["source"]["script"]).begins_with("docs/concepts/round22_raid_ui/scripts/ui22.py"), "the ice comes from the concept script")
+	assert_eq(int(manifest["steps"]), RaidFxLayer.ICE_STEPS, "every baked step is used")

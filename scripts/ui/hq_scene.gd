@@ -2896,6 +2896,7 @@ func _mount_raid_routes(paths: Array[Array]) -> void:
 		return
 	raid_routes = RaidRouteLayer.new(city_overlay)
 	city_overlay.add_child(raid_routes)
+	city_overlay.add_child(RaidBeaconLayer.new(city_overlay))  # the R3 beacons of stationed operatives
 	# Written on when they change (a new raid, a defence that turns a threat), not on every
 	# rebuild of the page (picking a target).
 	var key := str(paths)
@@ -3082,6 +3083,12 @@ func raid_socket(site_id: StringName, res: Dictionary, forecast: bool, c: Campai
 	var most := c.grid.home_max_integrity if home else maxi(1, int(s.get("max_integrity", 1)))
 	var state := RaidSocket.STATE_DOWN if not c.grid.is_active_node(site_id) else RaidSocket.STATE_HOLDS
 	var spec := {"glyph": glyph, "state": state, "health": float(integ) / float(maxi(1, most)), "max": most}
+	# The R3 class beacon of the operative stationed there (RaidBeaconLayer).
+	var op_id := c.grid.stationed_on(site_id)
+	if op_id != &"":
+		for op in c.roster:
+			if op.id == op_id:
+				spec["beacon"] = op.class_id
 	if not res.is_empty():
 		var outcome := String(res.get("outcome", ""))
 		if forecast:
