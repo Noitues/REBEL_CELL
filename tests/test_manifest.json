@@ -517,6 +517,10 @@
 			"seconds": 6.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art10_menus.gd": {
+			"seconds": 12.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_vfx_tiers.gd": {
 			"seconds": 3.0,
 			"tier": "fast"

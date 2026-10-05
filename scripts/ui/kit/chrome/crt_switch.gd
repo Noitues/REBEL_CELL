@@ -16,6 +16,8 @@ const PAD := Vector2(12, 7)
 const LINE_GAP := 2.0
 const PILL := Vector2(48, 22)
 const KNOB_INSET := 3.0
+## The OFF track's fill: this share of the cyan over the glass.
+const OFF_TRACK := 0.22
 ## The caret's room before the name (shares of the name's size).
 const CARET_SHARE := 1.1
 const NAME_STEP := UiTheme.LABEL
@@ -144,7 +146,9 @@ func _draw_pill(pill: Rect2, on: bool, dim: bool) -> void:
 	var cyan := Palette.DISABLED if dim else Palette.NET_CYAN
 	var rad := pill.size.y * 0.5
 	var shape := _capsule(pill, rad)
-	draw_colored_polygon(shape, cyan if on else Palette.TERMINAL_BG)
+	# OFF keeps a visible track (audit P2: a lone knob read as a bullet): a dim cyan fill and
+	# the full outline, the knob on the left and the word OFF.
+	draw_colored_polygon(shape, cyan if on else Palette.TERMINAL_BG.lerp(cyan, OFF_TRACK))
 	var edge := shape.duplicate()
 	edge.append(shape[0])
 	draw_polyline(edge, cyan, 1.5, true)

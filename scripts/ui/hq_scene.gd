@@ -1217,14 +1217,19 @@ func show_start() -> void:
 	box.add_child(setup)
 	var row := HFlowContainer.new()
 	setup.body.add_child(row)
-	row.add_child(_label(tr("Campaign seed:")))
+	# ART-10 4C (audit P3): the setup words say what they do, with an icon and a tooltip.
+	var seed_label := _label(tr("City seed (same seed, same city):"))
+	seed_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	seed_label.tooltip_text = UiTip.fold(tr("The seed builds the campaign's city and runs: the same seed gives the same campaign. Share it with a friend to play the same city."))
+	row.add_child(seed_label)
 	var seed_spin := SpinBox.new()
 	seed_spin.min_value = 0
 	seed_spin.max_value = 999999
 	seed_spin.value = 1
 	seed_spin.name = "SeedSpin"
 	row.add_child(seed_spin)
-	var next_seed := _button("+1", func() -> void: seed_spin.value = int(seed_spin.value) + 1)
+	var next_seed := _icon(_button(tr("Next seed"), func() -> void: seed_spin.value = int(seed_spin.value) + 1), StatIcon.RUNS)
+	next_seed.tooltip_text = UiTip.fold(tr("Try the next city: the seed goes up by one."))
 	next_seed.name = "SeedNext"
 	row.add_child(next_seed)
 	row.add_child(_label(tr("Target:")))
@@ -1235,7 +1240,9 @@ func show_start() -> void:
 		corp_pick.add_item(TextDb.t(corp, "display_name"))
 	row.add_child(corp_pick)
 	var cap := RunManager.ice_cap(corps[0].id if not corps.is_empty() else RunManager.DEFAULT_CORPORATION)
-	var ice_label := _label(tr("ICE (0-%d):") % cap)
+	var ice_label := _label(tr("ICE difficulty (0-%d):") % cap)
+	ice_label.mouse_filter = Control.MOUSE_FILTER_PASS
+	ice_label.tooltip_text = UiTip.fold(tr("ICE is the difficulty ladder: each level adds a rule against the Cell. Clear a level to unlock the next one for this corporation."))
 	row.add_child(ice_label)
 	var ice_spin := SpinBox.new()
 	ice_spin.name = "IceSpin"
@@ -1254,7 +1261,7 @@ func show_start() -> void:
 	corp_pick.item_selected.connect(func(i: int) -> void:
 		var corp_cap := RunManager.ice_cap(corps[i].id)
 		ice_spin.max_value = corp_cap
-		ice_label.text = tr("ICE (0-%d):") % corp_cap
+		ice_label.text = tr("ICE difficulty (0-%d):") % corp_cap
 		warm_start_hq(corps[i]))
 	# ANIM-R6 C9: the HQ the picked corporation's campaign opens on bakes while this page is open.
 	if not corps.is_empty():

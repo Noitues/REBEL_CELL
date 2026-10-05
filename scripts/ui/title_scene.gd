@@ -185,7 +185,7 @@ func _set_panel(p: Control, name: String) -> void:
 
 ## The control a page focuses first: BREACH (or the first live verb) on the main page.
 func _default_focus(p: Control) -> Control:
-	if p.name != "MainPage":
+	if panel_name != "main" or p != _panel:
 		return null
 	for v in verbs:
 		if is_instance_valid(v) and not v.disabled:
@@ -213,6 +213,7 @@ func show_main() -> void:
 	motto.position = Vector2(NeonSign.BOARD.x - mm.x * 0.55, NeonSign.BOARD.y - mm.y * 0.15)
 	motto.size = mm
 	page.add_child(motto)
+	motto.visible = not big_text()  # big text: the chips take its room
 	# The plan: three numbered verbs, each on its terminal chip.
 	var plan := HBoxContainer.new()
 	plan.name = "Plan"
@@ -242,7 +243,7 @@ func show_main() -> void:
 	more.name = "More"
 	more.tag_label.text = "v%s" % ProjectSettings.get_setting("application/config/version", "dev")
 	more.tag_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	more.custom_minimum_size.x = MORE_W * maxf(1.0, Settings.text_scale * 0.8)
+	more.custom_minimum_size.x = MORE_W * maxf(1.0, Settings.text_scale * 0.7)
 	var box := more.body
 	box.name = "MoreList"
 	_item(box, tr("Campaign slots"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."), "C")
@@ -256,10 +257,12 @@ func show_main() -> void:
 	var foot := _foot()
 	page.add_child(more)
 	page.add_child(profile)
+	# Big text: the right column is MORE; the profile is on the Stats page (it has the same tags).
+	profile.visible = not big_text()
 	page.add_child(foot)
 	_place_bottom(profile, true)
 	_place_bottom(foot, false, true)
-	if Settings.text_scale >= MORE_RIGHT_FROM:
+	if big_text():
 		# Big text: the left column is full; MORE heads the right column.
 		more.anchor_left = 1.0
 		more.anchor_right = 1.0
@@ -268,6 +271,12 @@ func show_main() -> void:
 		_place_bottom(more, false)
 		more.offset_bottom = -foot.get_combined_minimum_size().y - 6.0
 	_set_panel(page, "main")
+
+
+## True at big text (MORE_RIGHT_FROM and up): MORE heads the right column, the chips drop
+## their second line (it stays in the tooltip), the motto and the profile panel make room.
+func big_text() -> bool:
+	return Settings.text_scale >= MORE_RIGHT_FROM
 
 
 ## Pins `c` to the page's bottom (right when `right`), growing up (and left).
@@ -294,11 +303,12 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 	s.pre_translated = true
 	s.fist_at = fist
 	s.tooltip_text = UiTip.fold(tip)
-	var chip := TerminalChip.new(tr(label), line)
+	# Big text (MORE_RIGHT_FROM): the chip keeps its label; its line moves into the tooltip.
+	var chip := TerminalChip.new(tr(label), line if not big_text() else "")
 	chip.pre_translated = true
 	chip.name = label.replace(" ", "")
 	chip.focus_mode = Control.FOCUS_NONE
-	chip.min_width = CHIP_MIN_W * maxf(1.0, Settings.text_scale * 0.75)
+	chip.min_width = CHIP_MIN_W  # it grows with its label at big text
 	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	chip.tooltip_text = s.tooltip_text
 	if on_pressed.is_valid():

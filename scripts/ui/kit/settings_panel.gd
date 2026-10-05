@@ -114,7 +114,7 @@ var _scale_value: Label
 var _scale_sample: Label
 var _scale_block: VBoxContainer
 var _body: VBoxContainer
-var _tabs: HBoxContainer
+var _tabs: HFlowContainer
 var _tab_buttons: Dictionary = {}
 var _key_buttons: Dictionary = {}
 var _label_counter: int = 0
@@ -131,12 +131,12 @@ func _init() -> void:
 	window.minimum_size_changed.connect(update_minimum_size)
 	var box := window.body
 	box.add_theme_constant_override("separation", 10)
-	var tab_row := HBoxContainer.new()
+	var tab_row := HFlowContainer.new()
 	tab_row.name = "TabRow"
 	box.add_child(tab_row)
-	_tabs = HBoxContainer.new()
+	_tabs = HFlowContainer.new()
 	_tabs.name = "Tabs"
-	_tabs.add_theme_constant_override("separation", 6)
+	_tabs.add_theme_constant_override("h_separation", 6)
 	_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_row.add_child(_tabs)
 	for name in SECTIONS:
@@ -211,9 +211,9 @@ func _init() -> void:
 			language_option.select(i)
 	language_option.item_selected.connect(func(i: int) -> void: Settings.set_language(langs[i]))
 	# The foot: Close, the pad prompts, "saved to profile".
-	var foot := HBoxContainer.new()
+	var foot := HFlowContainer.new()
 	foot.name = "Foot"
-	foot.add_theme_constant_override("separation", 18)
+	foot.add_theme_constant_override("h_separation", 18)
 	box.add_child(foot)
 	var close := Button.new()
 	close.name = "Close"

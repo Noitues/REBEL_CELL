@@ -9,8 +9,11 @@ extends Button
 ## committing verb), YELLOW (the safe choice, screen titles), BLUE (OVERTHROW, with a red
 ## rebel fist for one letter), GLITCH (SIMULATE: the CORRUPTED glitch inside the letters,
 ## bursting twice a loop, `title_glitch_burst`). A sticker is a word that never changes; the
-## scene decides what a press means. Runtime-drawn until Group 1B's sticker material lands
-## (Chrome is the seam). View only.
+## scene decides what a press means. View only.
+## PINK and YELLOW are drawn by Group 1B's VinylSticker (`vinyl`, the kit material: die-cut,
+## keyline, extrude, rim, gloss, its own hover / press / disabled states and motions); this
+## Button gives it focus, presses and the lime focus halo. BLUE (the pictogram letter) and
+## GLITCH have no kit fill yet, so they are drawn here with the kit's raster Anton.
 
 enum Fill { PINK, YELLOW, BLUE, GLITCH, GREY }
 
@@ -64,6 +67,19 @@ var _hover_k: float = 0.0
 var _sweep_tween: Tween = null
 var _scale_tween: Tween = null
 var _clock: float = 0.0
+## Group 1B's sticker drawing a PINK / YELLOW word (null for BLUE / GLITCH).
+var vinyl: VinylSticker = null
+## Room round the kit sticker's body for the focus halo (px), the halo's stroke and corner.
+const HALO_ROOM := 9.0
+## The kit sticker's die-cut border as a share of the lettering size.
+const KIT_DIE_CUT := 0.2
+const HALO_STROKE := 4.0
+const HALO_RADIUS := 16
+
+
+## True when the kit's VinylSticker draws this fill.
+func uses_kit() -> bool:
+	return fill == Fill.PINK or fill == Fill.YELLOW
 
 
 func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p_tilt: float = 0.0) -> void:
@@ -93,6 +109,14 @@ func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p
 
 
 func _ready() -> void:
+	if uses_kit() and vinyl == null:
+		vinyl = VinylSticker.new()
+		vinyl.name = "Vinyl"
+		vinyl.fill = VinylSticker.Fill.YELLOW if fill == Fill.YELLOW else VinylSticker.Fill.PINK
+		vinyl.tilt_deg = tilt
+		vinyl.seed = hash(text) % 997
+		add_child(vinyl)
+		_fit()
 	Settings.changed.connect(_refit_later)
 	resized.connect(_pivot)
 	_pivot()
@@ -130,6 +154,19 @@ func _pad() -> float:
 
 
 func _fit() -> void:
+	if vinyl != null:
+		vinyl.font_step = maxi(1, roundi(letter_px() / Settings.text_scale))
+		# The kit's die-cut (18 px) is sized for hero verbs; a menu verb keeps the round 33
+		# proportion (die-cut a share of the lettering), like the BLUE / GLITCH stickers drawn here.
+		vinyl.border_px = roundf(letter_px() * KIT_DIE_CUT)
+		vinyl.text = shown_text()
+		var b := vinyl.body_rect
+		custom_minimum_size = (b.size + Vector2(HALO_ROOM, HALO_ROOM) * 2.0).ceil()
+		size = custom_minimum_size
+		vinyl.position = Vector2(HALO_ROOM, HALO_ROOM) - b.position
+		_pivot()
+		queue_redraw()
+		return
 	var s := float(letter_px())
 	var w := Chrome.sticker_font().get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, letter_px()).x
 	custom_minimum_size = Vector2(ceilf(w + _pad() * 2.0 + s * EXTRUDE), ceilf(s * CAP_SHARE + _pad() * 2.0 + s * EXTRUDE))
@@ -144,7 +181,7 @@ func _refit_later() -> void:
 
 func _pivot() -> void:
 	pivot_offset = size * 0.5
-	rotation_degrees = tilt
+	rotation_degrees = 0.0 if vinyl != null else tilt  # the kit sticker tilts itself
 
 
 ## Re-measures (after a text or text-scale change).
@@ -174,20 +211,27 @@ func _notification(what: int) -> void:
 
 ## Hover / focus: the sticker grows to the `sticker_hover` amplitude (1.05) about its centre.
 func _grow(on: bool) -> void:
+	if vinyl != null:
+		vinyl.set_state(VinylSticker.State.DISABLED if disabled else (VinylSticker.State.HOVER if on else VinylSticker.State.REST))
+		return
 	var to := Vector2.ONE * (Motion.amplitude(HOVER_MOTION) if on and not disabled else 1.0)
 	if _scale_tween != null:
 		_scale_tween.kill()
 	_scale_tween = Motion.run(HOVER_MOTION, self, ^"scale", to)
 
 
-## A press squashes it (`sticker_press`: x by 1 + amplitude / 2, y by 1 - amplitude); a
+## A press squashes it (`sticker_press`: x to VinylSticker.PRESS_X, y to the amplitude); a
 ## release springs it back to its hover size.
 func _press(down: bool) -> void:
 	if disabled:
 		return
+	if vinyl != null:
+		var hot := has_focus() or bool(get_meta(KitState.META_HOVER, false))
+		vinyl.set_state(VinylSticker.State.PRESSED if down else (VinylSticker.State.HOVER if hot else VinylSticker.State.REST))
+		return
 	var a := Motion.amplitude(PRESS_MOTION)
 	var hover := Motion.amplitude(HOVER_MOTION) if (has_focus() or bool(get_meta(KitState.META_HOVER, false))) else 1.0
-	var to := Vector2(1.0 + a * 0.5, 1.0 - a) if down else Vector2.ONE * hover
+	var to := Vector2(VinylSticker.PRESS_X, a) if down else Vector2.ONE * hover
 	if _scale_tween != null:
 		_scale_tween.kill()
 	_scale_tween = Motion.run(PRESS_MOTION, self, ^"scale", to)
@@ -196,7 +240,7 @@ func _press(down: bool) -> void:
 ## One gloss sweep across the lettering (§4.13: hover = gloss sweep); none when the motion
 ## does not play.
 func _sweep() -> void:
-	if not Motion.live(HOVER_MOTION):
+	if vinyl != null or not Motion.live(HOVER_MOTION):
 		return
 	if _sweep_tween != null:
 		_sweep_tween.kill()
@@ -234,17 +278,20 @@ func bursting() -> bool:
 func _fill_colors() -> Array[Color]:
 	match fill:
 		Fill.YELLOW:
-			return [Palette.STICKER_SAFE, Palette.STICKER_SAFE_LOW]
+			return Palette.STICKER_FILL_YELLOW
 		Fill.BLUE:
 			return [Palette.STICKER_BLUE, Palette.STICKER_BLUE_LOW]
 		Fill.GREY:
 			return [Palette.TEXT_MID, Palette.DISABLED]
-	return [Palette.STICKER_COMMIT_HIGH, Palette.STICKER_COMMIT_LOW]
+	return Palette.STICKER_FILL_PINK
 
 
 func _draw() -> void:
+	if vinyl != null:
+		_draw_kit_frame()
+		return
 	var word := shown_text()
-	var f := Chrome.sticker_font()
+	var f: Font = VinylSticker.art_font()  # the kit's raster Anton (one face for every sticker)
 	var px := letter_px()
 	var s := float(px)
 	var key := s * KEYLINE
@@ -269,18 +316,18 @@ func _draw() -> void:
 	var outer := roundi((die + key) * 2.0)
 	# The lime die-cut halo (focus, §2.10), then the shadow, the ink rim and the white die-cut.
 	if has_focus() or KitState.of(self) == KitState.FOCUS:
-		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0) + roundi(RIM_PX * 2.0), Palette.GLYPH_INK)
+		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0) + roundi(RIM_PX * 2.0), Palette.VINYL_INK)
 		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0), Palette.FOCUS)
-	draw_string_outline(f, origin + Vector2(s * SHADOW_SHARE * 0.5, s * SHADOW_SHARE), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Color(Palette.GLYPH_INK, SHADOW_ALPHA))
-	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Palette.GLYPH_INK)
+	draw_string_outline(f, origin + Vector2(s * SHADOW_SHARE * 0.5, s * SHADOW_SHARE), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Color(Palette.VINYL_INK, SHADOW_ALPHA))
+	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Palette.VINYL_INK)
 	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer, Palette.STICKER_DIE_CUT)
 	# The extrude (down and right), then the keyline.
 	var steps := maxi(2, roundi(ext))
 	for i in range(steps, 0, -1):
 		var o := origin + Vector2(ext, ext) * (float(i) / steps)
-		draw_string_outline(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.GLYPH_INK)
-		draw_string(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.GLYPH_INK)
-	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.GLYPH_INK)
+		draw_string_outline(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.VINYL_INK)
+		draw_string(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.VINYL_INK)
+	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.VINYL_INK)
 	# The fill (the shader paints the marker colours).
 	if fill == Fill.GLITCH:
 		_draw_glitch(f, origin, word, px)
@@ -294,6 +341,28 @@ func _draw() -> void:
 		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)).grow(key * 0.8), key)
 	else:
 		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
+	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
+
+
+## The kit sticker's frame: its disabled state follows the Button's, the lime halo round
+## its body on focus (§2.10: a focused sticker gets a lime halo, never brackets).
+func _draw_kit_frame() -> void:
+	var want := VinylSticker.State.DISABLED if disabled else vinyl.state
+	if vinyl.state != want or (vinyl.state == VinylSticker.State.DISABLED and not disabled):
+		vinyl.set_state.call_deferred(want if disabled else VinylSticker.State.REST)
+	if has_focus() or KitState.of(self) == KitState.FOCUS:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Palette.AUTO
+		sb.border_color = Palette.FOCUS
+		sb.set_border_width_all(int(HALO_STROKE))
+		sb.set_corner_radius_all(HALO_RADIUS)
+		sb.anti_aliasing = true
+		var r := Rect2(Vector2.ZERO, size).grow(-HALO_STROKE * 0.5)
+		var ink := sb.duplicate() as StyleBoxFlat
+		ink.border_color = Palette.VINYL_INK
+		ink.set_border_width_all(int(HALO_STROKE) + 2)
+		draw_style_box(ink, r.grow(1.0))
+		draw_style_box(sb, r)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
@@ -317,7 +386,7 @@ func _draw_glitch(f: Font, origin: Vector2, word: String, px: int) -> void:
 ## front, a forearm with a cuff; ink keyline like the letters.
 func _draw_fist(box: Rect2, key: float) -> void:
 	var red := Palette.CORP_REBEL_CELL
-	var ink := Palette.GLYPH_INK
+	var ink := Palette.VINYL_INK
 	var lw := maxf(1.5, key * 1.2)
 	var cuff := _unit(box, FIST_CUFF)
 	draw_rect(cuff.grow(lw), ink)

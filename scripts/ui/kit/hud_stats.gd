@@ -37,12 +37,16 @@ const BOTTOM_ROOM := 3.0
 ## The icon's radius, the inner padding and lettering at scale 1.0.
 const ICON_R := 9.0
 const PAD := 6.0
-const NAME_SIZE := 10
+## ART-10 4C (audit P2: 6-7 px names): the tag's name is terminal CAPS at the caption floor.
+const NAME_SIZE := UiTheme.CAPTION
 const VALUE_SIZE := 22
-const SUFFIX_SIZE := 11
+const SUFFIX_SIZE := UiTheme.CAPTION
 ## What a tag shows for a number that doesn't exist yet (no best ICE): never "none".
 const NO_VALUE := "—"
-const PAPERS: Array[Color] = [Color("#E9DFC6"), Color("#F5AFCB"), Color("#F2DC7A"), Color("#F2EEE4")]
+## ART-10 4C (ART_BIBLE v2 §1.2: the resources strip is the Cell's terminal; audit P2: the
+## sticky notes' colours meant nothing): every tag is the same navy terminal tag; colour only
+## where it means something (Heat in its band's colour, §2.8).
+const TAG_EDGE_ALPHA := 0.6
 
 ## [[name, value, suffix, tooltip, icon kind], ...] (tooltip and icon optional: the icon
 ## defaults to StatIcon.kind_for(name)).
@@ -75,7 +79,7 @@ var captions: Array = []:
 ## The captions' rects as laid out now (local; empty while they are not drawn).
 var _caption_rects: Array[Rect2] = []
 ## Caption lettering and the gap after a caption at scale 1.0 (px).
-const CAPTION_SIZE := 10
+const CAPTION_SIZE := UiTheme.CAPTION
 const CAPTION_GAP := 6.0
 
 
@@ -377,6 +381,16 @@ func tag_name(i: int) -> String:
 	return tr(String(items[i][0])) if i >= 0 and i < items.size() else ""
 
 
+## ART-10 4C: the colour tag `i`'s value is drawn in: Heat in its band's colour (§2.8, five
+## bands; the band word is on the Heat readouts), every other value plain TEXT_HI.
+func tone_of(i: int) -> Color:
+	if icon_of(i) == StatIcon.HEAT:
+		var v := String(items[i][1])
+		if v.is_valid_int():
+			return Palette.heat_color(int(v))
+	return Palette.TEXT_HI
+
+
 func icon_of(i: int) -> StringName:
 	var it: Array = items[i]
 	if it.size() > 4 and String(it[4]) != "":
@@ -411,7 +425,7 @@ func tag_rects() -> Array[Rect2]:
 ## Width of a tag fitted to its words at scale 1.0: the longer of the name and the icon
 ## with its value (H22 #14).
 func _fitted_tag_width(it: Array) -> float:
-	var name_w := Palette.marker().get_string_size(tr(String(it[0])), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
+	var name_w := Chrome.caps_font(NAME_SIZE).get_string_size(tr(String(it[0])).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_SIZE).x + NAME_SLACK
 	return maxf(PAD + name_w + PAD, _compact_tag_width(it))
 
 
@@ -427,7 +441,7 @@ func _compact_tag_width(it: Array) -> float:
 	var value := String(it[1])
 	var w := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, VALUE_SIZE).x
 	if it.size() > 2 and String(it[2]) != "":
-		w += 2.0 + Palette.marker().get_string_size(String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, SUFFIX_SIZE).x
+		w += 2.0 + Palette.mono().get_string_size(String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, SUFFIX_SIZE).x
 	return PAD + ICON_R * 2.0 + 5.0 + w + PAD
 
 
@@ -588,13 +602,11 @@ func _draw() -> void:
 	for i in mini(items.size(), _rects.size()):
 		var it: Array = items[i]
 		var box := _rects[i]
-		var tilt := (-2.0 if i % 2 == 0 else 2.5) * PI / 180.0
-		draw_set_transform(box.get_center(), tilt, Vector2.ONE * _bump_scale(String(it[0])))
+		draw_set_transform(box.get_center(), 0.0, Vector2.ONE * _bump_scale(String(it[0])))
 		var r := Rect2(-box.size * 0.5, box.size)
-		draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Palette.SHADOW)
-		draw_rect(r, PAPERS[i % PAPERS.size()])
-		draw_rect(r, Color(Palette.INK, 0.45), false, 1.0)
-		draw_rect(Rect2(Vector2(-13, r.position.y - 5), Vector2(26, 9)), Palette.NOTE_TAPE)
+		var tone := tone_of(i)
+		draw_rect(r, HighContrast.BG if Settings.high_contrast else Palette.TERMINAL_BG)
+		draw_rect(r, Color(tone if tone != Palette.TEXT_HI else Palette.NET_CYAN, TAG_EDGE_ALPHA), false, 1.0)
 		var value := shown_value(i)
 		var vs := roundi(VALUE_SIZE * s)
 		var icon_c: Vector2
@@ -603,14 +615,14 @@ func _draw() -> void:
 			icon_c = r.position + Vector2(PAD + ICON_R, COMPACT_H * 0.5) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, COMPACT_H * 0.5 + VALUE_SIZE * 0.36) * s
 		else:
-			draw_string(Palette.marker(), r.position + Vector2(PAD, 14) * s, tag_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.INK)
+			draw_string(Chrome.caps_font(NAME_SIZE), r.position + Vector2(PAD, 14) * s, tag_name(i).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 10.0 * s, roundi(NAME_SIZE * s), Palette.TEXT_MID)
 			icon_c = r.position + Vector2(PAD + ICON_R, 30) * s
 			value_at = r.position + Vector2(PAD + ICON_R * 2.0 + 5.0, 38) * s
-		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), Palette.INK)
-		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, Palette.INK)
+		StatIcon.draw(self, icon_c, ICON_R * s, icon_of(i), tone if tone != Palette.TEXT_HI else Palette.NET_CYAN)
+		draw_string(Palette.display(), value_at, value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs, tone)
 		if it.size() > 2 and String(it[2]) != "":
 			var vw := Palette.display().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, vs).x
-			draw_string(Palette.marker(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), Palette.INK)
+			draw_string(Palette.mono(), value_at + Vector2(vw + 2.0 * s, -1.0 * s), String(it[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(SUFFIX_SIZE * s), Palette.TEXT_MID)
 		if _refused_tag != "" and String(it[0]) == _refused_tag:
 			# ANIM-R2 E9: a refusal for want of this (Cycles): the tag flashes red and
 			# "PRICE > MONEY" shows under it.

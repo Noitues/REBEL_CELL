@@ -1,10 +1,10 @@
 class_name CrtWindow
 extends TerminalWindow
-## ART-10 4C: the v2 terminal panel (ART_BIBLE v2 §1.2 "CRT terminal", §4.13 "terminal panel
-## (chamfered corner, `> TITLE` header)"; round 33 `ui_kit.jpg`): navy glass with its top-right
-## corner cut, faint scanlines and hex-dump, an accent edge, a header strip reading
-## `> TITLE` with an optional tag chip and the square marker, and a small bracket at the
-## bottom left. Same API as TerminalWindow (`body`, `tag_label`, `title`, `accent`), so a
+## ART-10 4C: the v2 terminal window (ART_BIBLE v2 §1.2 "CRT terminal", §4.13 "terminal panel
+## (`> TITLE` header)"; round 33 `ui_kit.jpg`): Group 1B's CrtTerminalPanel is the glass
+## (navy, scanlines, the scrolling hex dump, the accent edge glow), and over it a header strip
+## reading `> TITLE` with an optional tag chip and the square marker, and a small bracket at
+## the bottom left. High contrast: opaque black and a solid edge (§5.6), no glass. Same API as TerminalWindow (`body`, `tag_label`, `title`, `accent`), so a
 ## screen swaps one for the other. `max_body` > 0 puts the body in a FitScroll (it sizes to
 ## its rows up to that height, then scrolls inside the panel with MORE BELOW). View only.
 
@@ -22,18 +22,43 @@ var hex := true
 var _bar: Control = null
 var _outer: Control = null
 var _square: ColorRect = null
+## Group 1B's terminal glass (behind the content) and the header strip drawn over it.
+var glass: CrtTerminalPanel = null
+var _glass_host: Control = null
+var _frame: Control = null
 
 
 func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN, max_body: float = 0.0) -> void:
 	super(p_title, p_accent)
-	material = null  # the glass draws its own scanlines (Chrome.draw_terminal)
+	material = null  # the kit glass draws the scanlines
+	# The glass sits in a host the PanelContainer lays out at its content rect; the glass
+	# itself is placed over the whole window (_place_glass), then the header strip over it.
+	_glass_host = Control.new()
+	_glass_host.name = "GlassHost"
+	_glass_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_glass_host)
+	move_child(_glass_host, 0)
+	glass = CrtTerminalPanel.new()
+	glass.name = "Glass"
+	glass.prompt = false
+	glass.caret = false
+	glass.accent_kind = CrtTerminalPanel.Accent.CORP
+	glass.corp_color = p_accent
+	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_glass_host.add_child(glass)
+	_frame = Control.new()
+	_frame.name = "HeaderStrip"
+	_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_frame.draw.connect(_draw_frame)
+	_glass_host.add_child(_frame)
+	resized.connect(_place_glass)
 	var box := StyleBoxEmpty.new()
 	box.content_margin_left = PAD_H
 	box.content_margin_right = PAD_H
 	box.content_margin_top = PAD_TOP
 	box.content_margin_bottom = PAD_BOTTOM
 	add_theme_stylebox_override(&"panel", box)
-	var outer := get_child(0) as VBoxContainer
+	var outer := get_child(1) as VBoxContainer
 	_outer = outer
 	# A window sized past its rows (a menu's scroll, a fixed-height panel) gives the room to
 	# its body.
@@ -71,12 +96,32 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN, max_body: f
 
 
 func _ready() -> void:
-	Settings.changed.connect(queue_redraw)
+	Settings.changed.connect(_settings_changed)
+	glass.hex_dump = hex
+	_place_glass()
 
 
 func _exit_tree() -> void:
-	if Settings.changed.is_connected(queue_redraw):
-		Settings.changed.disconnect(queue_redraw)
+	if Settings.changed.is_connected(_settings_changed):
+		Settings.changed.disconnect(_settings_changed)
+
+
+func _settings_changed() -> void:
+	_place_glass()
+	queue_redraw()
+
+
+## The glass over the whole window (its host is inset by the content margins).
+func _place_glass() -> void:
+	if glass == null:
+		return
+	var inset := Vector2(PAD_H, PAD_TOP)
+	glass.position = -inset
+	glass.size = size
+	glass.visible = not Settings.high_contrast
+	_frame.position = -inset
+	_frame.size = size
+	_frame.queue_redraw()
 
 
 ## The header strip's height (px, local): down to the rule under the title bar.
@@ -86,15 +131,20 @@ func header_height() -> float:
 	return _outer.position.y + _bar.position.y + _bar.size.y + 2.0
 
 
+## High contrast: the opaque terminal (the glass is hidden).
 func _draw() -> void:
+	if Settings.high_contrast:
+		Chrome.draw_terminal(self, Rect2(Vector2.ZERO, size), accent)
+
+
+## The header strip, its tag chip and the foot bracket, over the glass, under the content.
+func _draw_frame() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	Chrome.draw_terminal(self, r, accent)
 	var hh := header_height()
-	if hex:
-		Chrome.draw_hex(self, Rect2(Vector2(r.size.x * 0.55, hh + 4.0), Vector2(r.size.x * 0.45 - PAD_H, r.size.y - hh - PAD_BOTTOM)), accent)
 	if hh > 0.0:
-		draw_rect(Rect2(Vector2(1, 1), Vector2(r.size.x - Chrome.CHAMFER - 1.0, hh - 1.0)), Color(accent, 0.1))
-		draw_rect(Rect2(Vector2(r.size.x - Chrome.CHAMFER, Chrome.CHAMFER * 0.5), Vector2(Chrome.CHAMFER - 1.0, hh - Chrome.CHAMFER * 0.5)), Color(accent, 0.1))
-	if tag_label != null and tag_label.text != "":
+		_frame.draw_rect(Rect2(Vector2(1, 1), Vector2(r.size.x - 2.0, hh - 1.0)), Color(accent, 0.1))
+	if tag_label != null and tag_label.text != "" and _bar != null:
 		var local := Rect2(tag_label.position + _bar.position + _outer.position, tag_label.size).grow_individual(4, 0, 4, 0)
-		draw_rect(local, accent, false, 1.0)
+		_frame.draw_rect(local, accent, false, 1.0)
+	var foot := Vector2(r.position.x - 3.0, r.end.y + 3.0)
+	_frame.draw_polyline(PackedVector2Array([foot + Vector2(0, -Chrome.FOOT_TICK), foot, foot + Vector2(Chrome.FOOT_TICK, 0)]), Color(accent, 0.7), Chrome.EDGE_W)

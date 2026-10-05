@@ -48,7 +48,6 @@ func _frames(n: int = 1) -> void:
 
 func _title() -> Control:
 	var t: Control = add_child_autofree(load(TITLE).instantiate())
-	t.size = SCREEN.size
 	return t
 
 
@@ -148,6 +147,8 @@ func test_the_title_fits_at_every_text_scale() -> void:
 		var page := t._panel as Control
 		for n in ["LeftColumn", "More", "ProfileTags"]:
 			var c := page.find_child(n, true, false) as Control
+			if not c.visible:
+				continue  # big text: the profile waits on the Stats page
 			var r := c.get_global_rect()
 			assert_true(SCREEN.encloses(r.grow(-1.0)), "%s on the screen at %.1f: %s" % [n, scale, r])
 		var more := (page.find_child("More", true, false) as Control).get_global_rect()
@@ -183,19 +184,28 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 
 func test_sticker_motions_show_their_end_state_headless() -> void:
 	var h: Control = add_child_autofree(Control.new())
-	var s := VerbSticker.new("BURN IT", VerbSticker.Fill.PINK, 40.0)
-	h.add_child(s)
+	# BLUE (drawn here) and PINK (Group 1B's VinylSticker inside) grow and squash alike.
+	var blue := VerbSticker.new("OVERTHROW", VerbSticker.Fill.BLUE, 40.0)
+	var pink := VerbSticker.new("BURN IT", VerbSticker.Fill.PINK, 40.0)
+	h.add_child(blue)
+	h.add_child(pink)
 	await _frames(1)
-	s._hot(true)
-	assert_almost_eq(s.scale.x, Motion.amplitude(VerbSticker.HOVER_MOTION), 0.001, "hover: the grown size at once")
-	s._press(true)
-	assert_almost_eq(s.scale.y, 1.0 - Motion.amplitude(VerbSticker.PRESS_MOTION), 0.001, "press: squashed at once")
-	s._press(false)
-	s._hot(false)
-	assert_almost_eq(s.scale.x, 1.0, 0.001)
-	assert_true(UiFocus.META_NO_SCALE in s.get_meta_list(), "a sticker grows itself: no pad focus scale")
-	s.disabled = true
-	assert_eq(s.state(), KitState.DISABLED)
+	assert_null(blue.vinyl, "BLUE has no kit fill: drawn here")
+	assert_not_null(pink.vinyl, "PINK is the kit's vinyl sticker")
+	for pair in [[blue, blue], [pink, pink.vinyl]]:
+		var s: VerbSticker = pair[0]
+		var shown: Control = pair[1]
+		s._hot(true)
+		assert_almost_eq(shown.scale.x, Motion.amplitude(VerbSticker.HOVER_MOTION), 0.001, "hover: the grown size at once")
+		s._press(true)
+		assert_almost_eq(shown.scale.y, Motion.amplitude(VerbSticker.PRESS_MOTION), 0.001, "press: squashed at once")
+		s._press(false)
+		s._hot(false)
+		assert_almost_eq(shown.scale.x, 1.0, 0.001, "rest")
+		assert_true(UiFocus.META_NO_SCALE in s.get_meta_list(), "a sticker grows itself: no pad focus scale")
+	pink.disabled = true
+	assert_eq(pink.state(), KitState.DISABLED)
+	assert_gt(pink.get_combined_minimum_size().x, 0.0, "it takes the kit sticker's size")
 
 
 func test_the_glitch_sign_and_ticker_hold_still_headless() -> void:

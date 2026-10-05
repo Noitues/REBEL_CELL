@@ -166,11 +166,9 @@ const STICKER_COMMIT := CELL_PINK
 const STICKER_DISABLED_GREY := 0.8
 ## The die-cut border of a vinyl sticker and its ink keyline (§1.2).
 const STICKER_DIE_CUT := Color("#FFFFFF")
-## ART-10 4C (round 33 ui_chrome): the pink verb's vinyl gradient (top -> bottom of the
-## lettering round STICKER_COMMIT), OVERTHROW's readable blue (round 33 §2), the REBEL_CELL
-## neon tube and its hot core, and the title sign's circuit-board backing.
-const STICKER_COMMIT_HIGH := Color("#FF8AD4")
-const STICKER_COMMIT_LOW := Color("#E0157F")
+## ART-10 4C (round 33 ui_chrome): OVERTHROW's readable blue vinyl (round 33 §2; top -> bottom
+## of the lettering), the REBEL_CELL neon tube and its hot core, and the title sign's
+## circuit-board backing.
 const STICKER_BLUE := Color("#84C8FF")
 const STICKER_BLUE_LOW := Color("#2268E8")
 const NEON_TUBE := Color("#FF4FD8")

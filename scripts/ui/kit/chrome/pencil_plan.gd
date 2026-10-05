@@ -35,7 +35,7 @@ func _process(_delta: float) -> void:
 ## Draws `text` as wax at `at` (baseline) with its under-shadow.
 static func wax_text(ci: CanvasItem, at: Vector2, text: String, px: int, color: Color = Palette.PENCIL_PLAN) -> void:
 	var f := Chrome.pencil_font()
-	ci.draw_string(f, at + SHADOW, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.GLYPH_INK, 0.8))
+	ci.draw_string(f, at + SHADOW, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.PENCIL_SHADOW)
 	ci.draw_string(f, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(color, WAX_ALPHA))
 
 
@@ -44,7 +44,7 @@ static func wax_line(ci: CanvasItem, pts: PackedVector2Array, width: float = STR
 	var shadow := PackedVector2Array()
 	for p in pts:
 		shadow.append(p + SHADOW)
-	ci.draw_polyline(shadow, Color(Palette.GLYPH_INK, 0.8), width, true)
+	ci.draw_polyline(shadow, Palette.PENCIL_SHADOW, width, true)
 	ci.draw_polyline(pts, Color(color, WAX_ALPHA), width, true)
 
 
