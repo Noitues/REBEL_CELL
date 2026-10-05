@@ -11,6 +11,163 @@ extends RefCounted
 
 const BASE_SIZE := 15
 
+# --- Type scale (ART_BIBLE §2.9 / v1 §4.2; art pass W1 + WF, ported in ART-0 E) -----------
+# Reference pixels at the 1280x720 base viewport, before Settings.text_scale. Views move
+# their literal sizes onto these steps in ART-1..12 (a literal size is a bug).
+## Legend rows, keybind hints, tertiary meta. The floor: nothing the player reads is smaller.
+const CAPTION := 12
+## Default glass text, list rows, card rules text.
+const BODY := BASE_SIZE
+## Emphasised rows, chip text, button labels, forecast lines.
+const LABEL := 18
+## Panel titles, section headings.
+const TITLE := 22
+## Screen titles, stamp words, HP numbers.
+const HEADING := 30
+## Big numbers (Heat on the poster), verdict banners.
+const DISPLAY := 44
+## Verb graffiti (SEND IT), VICTORY, campaign verdicts (the hero range runs to HERO_MAX).
+const HERO := 64
+const HERO_MAX := 96
+## Every step, smallest first.
+const STEPS: Array[int] = [CAPTION, BODY, LABEL, TITLE, HEADING, DISPLAY, HERO]
+## Line height per step, as a multiple of the font size.
+const LINE_HEIGHT := {CAPTION: 1.3, BODY: 1.4, LABEL: 1.25, TITLE: 1.2, HEADING: 1.1, DISPLAY: 1.0, HERO: 1.0}
+## Tracking as a fraction of the font size: Anton +2%, Share Tech Mono CAPS labels +8%,
+## everything else default (0). Below `heading` these round to 0 px: TRACKING_PX is the
+## per-step table the views use.
+const TRACKING_DISPLAY := 0.02
+const TRACKING_MONO_CAPS := 0.08
+const TRACKING_DEFAULT := 0.0
+## Tracking in px per type step at text scale 1.0. Faces: TRACK_DISPLAY (Anton) and
+## TRACK_MONO_CAPS (Share Tech Mono labels in CAPS); any other face, or a step not listed,
+## tracks 0.
+const TRACK_DISPLAY := &"display"
+const TRACK_MONO_CAPS := &"mono_caps"
+const TRACKING_PX := {
+	TRACK_DISPLAY: {CAPTION: 1, BODY: 1, LABEL: 1, TITLE: 1, HEADING: 2, DISPLAY: 2, HERO: 3},
+	TRACK_MONO_CAPS: {CAPTION: 1, BODY: 1, LABEL: 1, TITLE: 2, HEADING: 2, DISPLAY: 3, HERO: 4},
+}
+
+# --- Spacing (ART_BIBLE v1 §5.1, kept by v2) -------------------------------------------------
+# An 8 px grid with a 4 px half-step; reference pixels at 1280x720 (they scale with the
+# viewport through the stretch mode, not with text_scale).
+const SP_XS := 4
+const SP_S := 8
+const SP_M := 16
+const SP_L := 24
+const SP_XL := 32
+const SP_XXL := 48
+## The screen safe margin at 1280x720.
+const SAFE_MARGIN := 24
+## Panel content padding, horizontal and vertical.
+const PANEL_PAD_H := 16
+const PANEL_PAD_V := 12
+## The gutter between panels.
+const GUTTER := 16
+## Every spacing token, smallest first.
+const SPACING: Array[int] = [SP_XS, SP_S, SP_M, SP_L, SP_XL, SP_XXL]
+## The theme type variation for body text: set `theme_type_variation = UiTheme.BODY_TEXT` on
+## a Label or a RichTextLabel.
+const BODY_TEXT := &"BodyText"
+## The header label's type step (a screen title).
+const HEADER_STEP := TITLE
+
+
+## The pixel size of type step `step` (e.g. UiTheme.TITLE) at the player's text scale.
+static func font_px(step: int) -> int:
+	return font_px_at(step, Settings.text_scale)
+
+
+## The pixel size of type step `step` at text scale `scale` (pure; any scale).
+static func font_px_at(step: int, scale: float) -> int:
+	return roundi(step * scale)
+
+
+## The line height multiple for type step `step`; 1.0 for a size off the scale.
+static func line_height(step: int) -> float:
+	return LINE_HEIGHT.get(step, 1.0)
+
+
+## Extra line spacing (px) that brings `font` at `px` to the step's line height, for
+## Label/RichTextLabel `line_spacing` (negative when the face's own height is taller).
+static func line_spacing_px(font: Font, step: int, px: int) -> int:
+	return roundi(px * line_height(step) - font.get_height(px))
+
+
+## Tracking in pixels for a tracking fraction (TRACKING_*) at `px`, for
+## FontVariation.spacing_glyph.
+static func tracking_px(tracking: float, px: int) -> int:
+	return roundi(px * tracking)
+
+
+## The tracking (px) of `face` (TRACK_DISPLAY / TRACK_MONO_CAPS) at type step `step`, at the
+## player's text scale (or `scale` when given): TRACKING_PX's value times the scale,
+## rounded, never under the 1.0 value.
+static func tracking_step_px(face: StringName, step: int, scale: float = -1.0) -> int:
+	var base: int = (TRACKING_PX.get(face, {}) as Dictionary).get(step, 0)
+	var s := Settings.text_scale if scale < 0.0 else scale
+	return maxi(base, roundi(base * s)) if s >= 1.0 else roundi(base * s)
+
+
+static var _tracked: Dictionary = {}
+
+
+## `font` with the tracking of `face` at `step` (a cached FontVariation whose spacing_glyph
+## is tracking_step_px), for a Label's font override or draw_string. The loaded font is
+## never changed.
+static func tracked(font: Font, face: StringName, step: int, scale: float = -1.0) -> Font:
+	var px := tracking_step_px(face, step, scale)
+	if px == 0 or font == null:
+		return font
+	var key := "%d|%d" % [font.get_instance_id(), px]
+	if not _tracked.has(key):
+		var v := FontVariation.new()
+		v.base_font = font
+		v.spacing_glyph = px
+		_tracked[key] = v
+	return _tracked[key]
+
+
+## The type step a size (px, at the player's text scale or `scale`) belongs to: the largest
+## step whose size is at most `px` (caption when smaller).
+static func step_of(px: int, scale: float = -1.0) -> int:
+	var s := Settings.text_scale if scale < 0.0 else scale
+	var out := CAPTION
+	for st in STEPS:
+		if font_px_at(st, s) <= px:
+			out = st
+	return out
+
+
+## Gives a Label or RichTextLabel its tracking: Anton by its step, Share Tech Mono by its
+## step when its words are in CAPS; any other face or mixed-case mono is left alone (an
+## earlier tracking is taken off). Call after its font, size and words are set (again if
+## they change). No screen calls it yet (ART-1..12 do, with their restyle).
+static func track_label(c: Control) -> void:
+	if c == null:
+		return
+	var rich := c is RichTextLabel
+	var font_name := &"normal_font" if rich else &"font"
+	var size_name := &"normal_font_size" if rich else &"font_size"
+	var f := c.get_theme_font(font_name)
+	var base: Font = f
+	if f is FontVariation and (f as FontVariation).base_font != null and _tracked.values().has(f):
+		base = (f as FontVariation).base_font
+	var text := (c as RichTextLabel).get_parsed_text() if rich else String(c.get(&"text"))
+	var face := &""
+	if base == Palette.display():
+		face = TRACK_DISPLAY
+	elif base == Palette.mono() and text == text.to_upper() and text != text.to_lower():
+		face = TRACK_MONO_CAPS
+	if face == &"":
+		if base != f:
+			c.add_theme_font_override(font_name, base)
+		return
+	var want := tracked(base, face, step_of(c.get_theme_font_size(size_name)))
+	if want != f:
+		c.add_theme_font_override(font_name, want)
+
 
 static func build(text_scale: float = 1.0) -> Theme:
 	var t := Theme.new()
@@ -35,9 +192,32 @@ static func build(text_scale: float = 1.0) -> Theme:
 	var header := "HeaderLabel"
 	t.set_type_variation(header, "Label")
 	t.set_font(&"font", header, Palette.mono())
-	t.set_font_size(&"font_size", header, roundi(22 * text_scale))
+	t.set_font_size(&"font_size", header, font_px_at(HEADER_STEP, text_scale))
 	t.set_color(&"font_color", header, Palette.PAPER)
+	_body_text(t, text_scale)
 	return t
+
+
+## "BodyText": Plex Sans Condensed at the BODY step with the body line height (1.4), TEXT_HI
+## on dark. One variation serves Label (font, font_size, font_color, line_spacing) and
+## RichTextLabel (normal/bold fonts and sizes, default_color, line_separation); its own
+## empty "normal" box keeps either from inheriting the other's. No screen uses it yet.
+static func _body_text(t: Theme, text_scale: float) -> void:
+	var v := BODY_TEXT
+	t.set_type_variation(v, &"Label")
+	var px := font_px_at(BODY, text_scale)
+	var spacing := line_spacing_px(Palette.body(), BODY, px)
+	t.set_stylebox(&"normal", v, StyleBoxEmpty.new())
+	t.set_font(&"font", v, Palette.body())
+	t.set_font_size(&"font_size", v, px)
+	t.set_color(&"font_color", v, Palette.TEXT_HI)
+	t.set_constant(&"line_spacing", v, spacing)
+	t.set_font(&"normal_font", v, Palette.body())
+	t.set_font(&"bold_font", v, Palette.body_medium())
+	for key in [&"normal_font_size", &"bold_font_size", &"italics_font_size", &"bold_italics_font_size"]:
+		t.set_font_size(key, v, px)
+	t.set_color(&"default_color", v, Palette.TEXT_HI)
+	t.set_constant(&"line_separation", v, spacing)
 
 
 ## A terminal box: deep glass, thin edge, square corners.
@@ -285,6 +465,8 @@ static func release() -> void:
 	_crt = null
 	_chevron = null
 	_roots.clear()
+	# ART-0 E: the tracked font variations hold fonts too (the same exit crash).
+	_tracked.clear()
 
 
 ## Applies the theme to `root` and re-applies it while `root` lives and Settings change.
