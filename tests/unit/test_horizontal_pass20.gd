@@ -265,9 +265,10 @@ func test_pad_players_see_pad_buttons() -> void:
 
 func test_the_text_scale_reaches_tags_chips_and_cards() -> void:
 	var small := await _combat(&"compliance_officer", 1.0)
-	var tag_small: float = small._player_view.intent_rect().size.y
+	# ART-2 2D (D15): the result chips are the tag now.
+	var tag_small: float = small.chip_row(&"player").size.y
 	var big := await _combat(&"compliance_officer", Settings.TEXT_SCALE_MAX)
-	assert_true(big._player_view.intent_rect().size.y > tag_small, "the tag grows with the text scale")
+	assert_true(big.chip_row(&"player").size.y > tag_small, "the chips grow with the text scale")
 	var card: ZineCard = big._hand_box.get_child(0)
 	assert_true(card.text_scale > 1.0, "hand cards scale their lettering")
 	assert_eq(big.layout_violations(), [], "still nothing over a wheel at TEXT_SCALE_MAX")
@@ -277,7 +278,7 @@ func test_combat_controls_have_tooltips() -> void:
 	var scene := await _combat()
 	for c in [scene._end_turn_button, scene._stickers["respin"], scene._stickers["undo"], scene.heat_poster, scene.ram_note]:
 		assert_ne((c as Control).tooltip_text, "", "%s has a tooltip" % c.name)
-	assert_ne(scene._player_view._get_tooltip(scene._player_view.intent_rect().get_center() - scene._player_view.global_position), "", "the tag explains its chips")
+	assert_ne(scene.chip_row(&"player").tooltip_text, "", "the chips explain themselves (the breakdown)")
 	assert_eq(scene.ram_note.mouse_filter, Control.MOUSE_FILTER_PASS, "the RAM bar receives the mouse (tooltips need it)")
 
 

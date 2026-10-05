@@ -11,6 +11,13 @@ extends Control
 ## Z rewind, right-click inspect, Esc settings. Pad: A picks and confirms, D-pad aims, B
 ## cancels. Random effects show odds, never the exact roll (GDD 2.10). Signal Up, Call
 ## Down: the views emit what the player points at; only this scene calls the engine.
+## ART-2 2D (ART_BIBLE v2 §3.1, HUD v4): the TURN banner at the top; the player's wheel left,
+## the enemies right, the notes column (subtitles, tutorial, Daemons) between them; nudge
+## buttons on one line above each wheel and the D15 result chips beside each HP (HudWheelLayer);
+## bottom left the operative's name sticker over the RAM panel, then the hand, RESPIN / UNDO
+## terminal chips and SEND IT, a pink vinyl sticker over EXECUTE. Regions other areas hook
+## into: "# --- HUD v4" (2D), the views' setup in _build_ui / _refresh (2A wheel_view), the
+## arena's backdrop (`background`, 2B), the motion section (2C FX).
 
 const ENEMY_CHOICES: Array[StringName] = [&"collections_agent", &"compliance_officer", &"dosage_dispenser"]
 const CLASS_ID := &"breaker"
@@ -51,6 +58,21 @@ const PLAYER_HIT_COLOR := Palette.CELL_ACID
 const ENEMY_HIT_COLOR := CHIP_LOSS
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
+## ART-2 2D: the TURN banner (width, title lettering and padding at text scale 1.0), SEND IT's
+## and the next step's lettering, and the overlap of the name sticker on the RAM panel (px).
+const BANNER_W := 460.0
+const BANNER_FONT := 24
+const BANNER_PAD_H := 18.0
+const BANNER_PAD_V := 3.0
+const SEND_IT_FONT := 64
+const CONTINUE_FONT := 46
+const NAME_OVERLAP := 10
+## The banner never takes more than this share of the screen's width.
+const BANNER_MAX_SHARE := 0.4
+## The banner's title grows with the text up to this scale (its words stay big: Anton 36 px).
+const BANNER_SCALE_MAX := 1.5
+## Up to this text scale RESPIN and UNDO stand side by side; above it they stack.
+const STICKERS_SIDE_BY_SIDE_UP_TO := 1.3
 
 @export var auto_start: bool = true
 
@@ -82,7 +104,7 @@ var _slot_option: OptionButton
 var _respin_button: Button
 ## Stickers beside SEND IT: RESPIN and UNDO.
 var _stickers: Dictionary = {}
-var _sticker_box: VBoxContainer
+var _sticker_box: BoxContainer
 var _hand_box: HBoxContainer
 var _end_turn_button: Button
 ## ANIM-R3 A6h: the next step's action once the fight is over ("" label = none shown).
@@ -100,6 +122,20 @@ var _nudge_plus_button: Button
 var _menu_layer: CanvasLayer = null
 var _arena: Control
 var _right: VBoxContainer
+# --- HUD v4 (ART-2 2D) ---
+## The layer over the wheels: nudge buttons and the result chips (D15).
+var hud_layer: HudWheelLayer
+## The TURN banner's title line (the status line under it keeps the key hints).
+var _banner: PanelContainer
+var _banner_title: Label
+## Bottom left: the operative's name sticker over the RAM panel.
+var _cell_panel: VBoxContainer
+var name_sticker: HudNameSticker
+## Where the cell panel goes: the bottom row's start, or the notes column's foot at big text
+## (the hand keeps its room).
+var _bottom_row: HBoxContainer
+## The result chips shown when SEND IT was pressed (wheel id -> chips), held for its replay.
+var _held_chips: Dictionary = {}
 ## The free part of the right column: subtitles on top, the tutorial under them.
 var _notes_area: Control
 var _zine_elements: Array[Control] = []
@@ -188,6 +224,7 @@ func end_turn() -> void:
 	_hold_slot = -1
 	_pending_discard = _capture_hand() if Motion.animating() and engine.has_fight() else []
 	_held_tags.clear()
+	_held_chips.clear()
 	if Motion.animating() and engine.has_fight():
 		# ANIM-R3 A6b: the forecast SEND IT carries out (never a hovered card's) stays up
 		# through the replay, its lines ticked as they happen.
@@ -195,9 +232,12 @@ func end_turn() -> void:
 		for v in _views():
 			if v.combatant != null and not v.intent.is_empty():
 				_held_tags[v.combatant.id] = v.intent.duplicate(true)
+			if v.combatant != null:
+				_held_chips[v.combatant.id] = hud_layer.row_for(v).chips.duplicate(true)
 	if not engine.submit(CombatAction.end_turn()):
 		_pending_discard = []
 		_held_tags.clear()
+		_held_chips.clear()
 
 
 ## State before the SEND IT being resolved (for the last-turn lines).
@@ -744,6 +784,25 @@ func layout_violations() -> Array[String]:
 				out.append("subtitles cover %s's tag" % w.combatant.display_name)
 		if not w.get_global_rect().grow(0.5).encloses(w.intent_rect()):
 			out.append("%s's tag leaves its view" % w.combatant.display_name)
+	# ART-2 2D: each result chip row stays on screen, off every other wheel, the cards, the
+	# stickers and the subtitles.
+	var screen := get_global_rect()
+	for w in wheels:
+		if w.combatant == null or hud_layer == null:
+			continue
+		var row := hud_layer.row_for(w)
+		hud_layer.place_rows()
+		if not row.visible or row.chips.is_empty():
+			continue
+		var rr := row.get_global_rect()
+		if not screen.grow(0.5).encloses(rr):
+			out.append("%s's result chips leave the screen" % w.combatant.display_name)
+		for other in wheels:
+			if other != w and other.combatant != null and other.covers(rr):
+				out.append("%s's result chips cover %s's wheel" % [w.combatant.display_name, other.combatant.display_name])
+		for cv in covers:
+			if (cv[1] as Rect2).intersects(rr):
+				out.append("%s covers %s's result chips" % [cv[0], w.combatant.display_name])
 	# ANIM-R4 C4: the nudge arrows' key hints ([Q] / [E], [LB] / [RB]) never sit on a tag.
 	for w in wheels:
 		if w.combatant == null:
@@ -1583,7 +1642,28 @@ func _build_ui() -> void:
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.mouse_filter = Control.MOUSE_FILTER_PASS
 	shown_tip(_status, tr("The turn, and the free nudges left this turn (each extra nudge costs RAM)."))
-	top.add_child(_status)
+	# ART-2 2D (§3.1): the TURN banner, a terminal panel centred at the top: the turn and the
+	# free nudges, the key hints under them (the status line).
+	_banner = PanelContainer.new()
+	_banner.name = "TurnBanner"
+	_banner.add_theme_stylebox_override("panel", UiTheme.box(HudSkin.TERMINAL_BG, HudSkin.TERMINAL_EDGE, 1, BANNER_PAD_H, BANNER_PAD_V))
+	_banner.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_CENTER
+	_banner.mouse_filter = Control.MOUSE_FILTER_PASS
+	var banner_rows := VBoxContainer.new()
+	banner_rows.add_theme_constant_override("separation", 0)
+	_banner.add_child(banner_rows)
+	_banner_title = Label.new()
+	_banner_title.name = "BannerTitle"
+	_banner_title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # built from translated parts
+	_banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner_title.add_theme_font_override("font", HudSkin.display())
+	_banner_title.add_theme_color_override("font_color", HudSkin.TERMINAL_HI)
+	_banner_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner_rows.add_child(_banner_title)
+	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_status.add_theme_color_override("font_color", HudSkin.TERMINAL_TEXT)
+	banner_rows.add_child(_status)
+	top.add_child(_banner)
 	_settings_button = _button(tr("Settings"), open_settings)
 	_settings_button.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # ANIM-R6 A12: its words come translated
 	shown_tip(_settings_button, tr("Pause: options, codex, save and quit."))
@@ -1608,19 +1688,21 @@ func _build_ui() -> void:
 	_player_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	player_col.add_child(_player_view)
 	_connect_view(_player_view)
-	ram_note = RamBar.new()
-	ram_note.name = "RamTally"
-	player_col.add_child(ram_note)
+	_player_view.hud_results = true  # ART-2 2D: chips beside the HP, nudges above the wheel
+
+	# ART-2 2D (§3.1): the notes column between the wheels: the Daemons, then the subtitles
+	# and the tutorial (the Polaroid and the Heat poster stay hidden here: the HP number and
+	# the run's top bar carry them; Heat on the combat screen is ART-3's).
+	_right = VBoxContainer.new()
+	_right.name = "NotesColumn"
+	_right.custom_minimum_size = Vector2(RIGHT_WIDTH, 0)
+	_arena.add_child(_right)
 	_enemy_views_box = VBoxContainer.new()
 	_enemy_views_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_enemy_views_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_arena.add_child(_enemy_views_box)
-
-	# Right column: the Polaroid and Heat, the Daemons, then the subtitles and the tutorial.
-	_right = VBoxContainer.new()
-	_right.custom_minimum_size = Vector2(RIGHT_WIDTH, 0)
-	middle.add_child(_right)
 	var side_top := HBoxContainer.new()
+	side_top.visible = false
 	side_top.add_theme_constant_override("separation", 10)
 	_right.add_child(side_top)
 	portrait = Polaroid.new("Breaker", "[BREAKER PORTRAIT]", -3.0)
@@ -1688,18 +1770,35 @@ func _build_ui() -> void:
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 10)
 	root.add_child(bottom)
+	_bottom_row = bottom
+	# ART-2 2D (§3.1): bottom left, the CELL-9 // CLASS sticker over the RAM panel.
+	_cell_panel = VBoxContainer.new()
+	_cell_panel.name = "CellPanel"
+	_cell_panel.alignment = BoxContainer.ALIGNMENT_END
+	_cell_panel.add_theme_constant_override("separation", -NAME_OVERLAP)
+	bottom.add_child(_cell_panel)
+	name_sticker = HudNameSticker.new()
+	name_sticker.name = "NameSticker"
+	name_sticker.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_cell_panel.add_child(name_sticker)
+	ram_note = RamBar.new()
+	ram_note.name = "RamTally"
+	_cell_panel.add_child(ram_note)
 	_hand_box = HBoxContainer.new()
 	_hand_box.add_theme_constant_override("separation", 10)
 	_hand_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom.add_child(_hand_box)
-	# RESPIN and UNDO stand between the hand and SEND IT, clear of every wheel.
-	_sticker_box = VBoxContainer.new()
+	# RESPIN and UNDO stand between the hand and SEND IT, clear of every wheel: terminal chips
+	# side by side at the row's foot (ART-2 2D).
+	_sticker_box = BoxContainer.new()
 	_sticker_box.name = "Stickers"
-	_sticker_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_sticker_box.alignment = BoxContainer.ALIGNMENT_END
+	_sticker_box.size_flags_vertical = Control.SIZE_SHRINK_END
 	_sticker_box.add_theme_constant_override("separation", int(STICKER_GAP))
 	bottom.add_child(_sticker_box)
 	_build_stickers()
-	_end_turn_button = DripButton.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), DripButton.DRIP_PINK, 50, DripButton.SEND_IT_DRIPS)
+	# ART-2 2D (§1.3): SEND IT is a pink vinyl sticker over the washed-out EXECUTE.
+	_end_turn_button = VinylSticker.new("SEND IT", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, SEND_IT_FONT)
 	_end_turn_button.name = "SendIt"
 	(_end_turn_button as DripButton).glyph = true  # ANIM-R1 C7: the drawn ▶▶ end-turn mark
 	shown_tip(_end_turn_button, tr("End the turn: every needle resolves at once (defensive, then offensive, then statuses). The tags show the outcome."))
@@ -1708,7 +1807,9 @@ func _build_ui() -> void:
 	_zine_elements.append(_end_turn_button)
 	# ANIM-R3 A6h: once the fight is over, SEND IT, RESPIN and UNDO go and the next step's
 	# action takes their place at once (the netrun names it: LOOT, CONTINUE).
-	_continue_button = DripButton.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), DripButton.DRIP_PINK, 40, DripButton.SEND_IT_DRIPS)
+	_continue_button = VinylSticker.new("CONTINUE", "[%s]" % Settings.key_text(&"end_turn"), HudSkin.VINYL_PINK, CONTINUE_FONT)
+	(_continue_button as VinylSticker).system_word = "PROCEED"
+	(_continue_button as VinylSticker).system_line = "> next_step.exe"
 	_continue_button.name = "Continue"
 	_continue_button.visible = false
 	_continue_button.pressed.connect(_continue_pressed)
@@ -1716,6 +1817,11 @@ func _build_ui() -> void:
 	bottom.add_child(_continue_button)
 	_zine_elements.append(_continue_button)
 
+	# ART-2 2D: the HUD over the wheels (nudge buttons, result chips), under the motion overlay.
+	hud_layer = HudWheelLayer.new()
+	hud_layer.name = "HudLayer"
+	hud_layer.views_of = _views
+	add_child(hud_layer)
 	# The motion overlay: over the arena and the hand, under the toast and popups.
 	fx_layer = CombatFxLayer.new()
 	fx_layer.name = "MotionLayer"
@@ -1809,6 +1915,18 @@ func _relayout() -> void:
 		dock_h = (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
 	Dialogue.dock_at(Rect2(area.position, Vector2(area.size.x, dock_h)), lines)
 	_place_stickers()
+	_banner.custom_minimum_size.x = minf(BANNER_W * ts, size.x * BANNER_MAX_SHARE)
+	_banner_title.add_theme_font_size_override("font_size", roundi(BANNER_FONT * minf(ts, BANNER_SCALE_MAX)))
+	name_sticker._fit()
+	# At big text RESPIN and UNDO stack (the row's width is the hand's).
+	_sticker_box.vertical = ts > STICKERS_SIDE_BY_SIDE_UP_TO
+	# At big text the name sticker and RAM panel leave the bottom row for the notes column's foot.
+	var cell_home: Container = _right if ts > STICKERS_SIDE_BY_SIDE_UP_TO else _bottom_row
+	if _cell_panel.get_parent() != cell_home:
+		_cell_panel.get_parent().remove_child(_cell_panel)
+		cell_home.add_child(_cell_panel)
+		if cell_home == _bottom_row:
+			_bottom_row.move_child(_cell_panel, 0)
 	if engine.has_fight() and absf(_card_scale_for(engine.state().hand.size()) - _hand_scale) > 0.01:
 		var had_focus := UiFocus.owner_of(self) != null and _hand_box.is_ancestor_of(UiFocus.owner_of(self))
 		_build_hand(engine.state())
@@ -1892,6 +2010,8 @@ func _refresh(state: CombatState) -> void:
 		# The same face as the operative's dossier (H20 #23).
 		portrait.set_operative(engine.netrun.run.operative.class_id, engine.netrun.run.operative.id)
 	_portrait_name = [operative_name, _name_of(state.player)]
+	# A fight with no operative (the dev fight) says CELL for the name (ART-2 2D).
+	name_sticker.set_names(operative_name if operative_name != state.player.display_name else tr("CELL"), _name_of(state.player))
 	# ANIM-R6 A8: while a SEND IT replays, the portrait (its glitch, its HP tooltip) shows the
 	# HP the replay has reached, not the turn's end.
 	_sync_portrait(state.player.hp if _replay_hp < 0 else _replay_hp, state.player.max_hp)
@@ -1911,6 +2031,7 @@ func _refresh(state: CombatState) -> void:
 		if not _enemy_views.has(e.id):
 			var v := WheelView.new()
 			v.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			v.hud_results = true  # ART-2 2D: chips beside the HP, nudges above the wheel
 			_connect_view(v)
 			_enemy_views[e.id] = v
 			_enemy_views_box.add_child(v)
@@ -2131,7 +2252,9 @@ func _refresh_status() -> void:
 	if not engine.has_fight():
 		return
 	var state := engine.state()
-	var text := tr("TURN %d · FREE NUDGE %d") % [state.turn if _shown_turn < 0 else _shown_turn, state.free_nudges]
+	# ART-2 2D: the banner's title says the turn; the status line under it, the keys.
+	_banner_title.text = tr("TURN %d  |  FREE NUDGE %d") % [state.turn if _shown_turn < 0 else _shown_turn, state.free_nudges]
+	var text := ""
 	if _outcome_held:
 		pass  # ANIM-R5 combat 1: the outcome's word waits for its beat (no key hints: SEND IT is spent)
 	elif state.outcome == CombatState.Outcome.VICTORY:
@@ -2148,7 +2271,7 @@ func _refresh_status() -> void:
 		var wheel := state.get_combatant(_selected_nudge_wheel())
 		if wheel != null and wheel.wheel.has_inner_ring():
 			text += tr(" · %s: %s RING") % [Settings.key_text(&"toggle_ring"), tr("OUTER") if inner else tr("INNER")]
-	_status.text = text
+	_status.text = text.trim_prefix(" · ")
 	_fit_status()
 
 
@@ -2242,7 +2365,8 @@ func _card_scale_for(count: int) -> float:
 	var n := maxi(1, count)
 	var sep := float(_hand_box.get_theme_constant("separation"))
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
-	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - sep * 3.0
+	var cell := _cell_panel.get_combined_minimum_size().x + sep if _cell_panel.get_parent() == _bottom_row else 0.0
+	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - cell - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
 	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)
 
@@ -2352,6 +2476,9 @@ func _mark_was(was: Dictionary) -> void:
 		var old: Dictionary = was.get(v, {})
 		v.was_tag = old if tag_changed(old, v.intent) else {}
 		v.queue_redraw()
+		# ART-2 2D: what the row said before this play leads its breakdown.
+		if not v.was_tag.is_empty():
+			hud_layer.row_for(v).prepend_note(tr("Before this play: %s") % v.was_text())
 
 
 ## True when tag `now` says something other than `old` (its title or a chip; the "YOU PLAY
@@ -2393,6 +2520,7 @@ func _preview_result(action: CombatAction, state: CombatState, result: CombatRes
 			v.intent = {"type": -1, "text": tr("%s rolls") % TextDb.t(card, "display_name"), "chips": chips,
 				"tooltip": tr("A random effect: the roll is hidden until you play it. %s") % odds_text(target, non_null)}
 			v.queue_redraw()
+			_set_chips(v, [ResultChipModel.odds_chip()], tr("%s rolls") % TextDb.t(card, "display_name"), String(v.intent["tooltip"]))
 		preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
 		return
 	var after := result.state
@@ -2428,6 +2556,8 @@ func _mark_preview_source(action: CombatAction, card: CardData) -> void:
 	v.play_note = what
 	v.intent["tooltip"] = tr("Your %s, if you play it:") % what + "\n" + String(v.intent.get("tooltip", ""))
 	v.queue_redraw()
+	# ART-2 2D: the chips' breakdown names the play first ("YOUR JOLT").
+	hud_layer.row_for(v).prepend_note(tr("YOUR %s") % what)
 
 
 func _show_respin_odds() -> void:
@@ -2441,6 +2571,7 @@ func _show_respin_odds() -> void:
 	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": chips,
 		"tooltip": tr("Respin your wheel for %d RAM: a random result (UNDO stops here). %s") % [cost, odds_text(engine.state().player)]}
 	_player_view.queue_redraw()
+	_set_chips(_player_view, [ResultChipModel.odds_chip()], tr("Respin for %d RAM") % cost, String(_player_view.intent["tooltip"]))
 	_mark_was(was)
 	preview_note.clear()
 	preview_note.append("Respin your wheel for %d RAM (a random event: UNDO stops here)." % cost)
@@ -2467,6 +2598,7 @@ func _show_end_turn_preview() -> void:
 			v.intent = {}
 			v.outcome = {}
 			v.queue_redraw()
+			_set_chips(v, [], "", "")
 		ram_note.set_pending(0)
 		return
 	if state.is_over() or _hold_forecast:
@@ -2475,6 +2607,7 @@ func _show_end_turn_preview() -> void:
 			v.intent = {}
 			v.outcome = {}
 			v.queue_redraw()
+			_set_chips(v, [], "", "")
 		ram_note.set_pending(0)
 		return
 	var result := engine.preview_end_turn()
@@ -2519,6 +2652,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			view.intent = {}
 			view.outcome = {}
 			view.queue_redraw()
+			_set_chips(view, [], "", "")
 			continue
 		var lc := landing.get_combatant(id)
 		var title := _landing_title(landing, lc if lc != null else c)
@@ -2550,6 +2684,14 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			"statuses": shown_statuses, "satellites": sats}
 		view.intent = {"type": title["type"], "tier": title.get("tier", -1), "text": title["text"], "chips": chips, "tooltip": _chips_tooltip(chips)}
 		view.queue_redraw()
+		# ART-2 2D, D15: the result chips beside the HP are this preview (the tag's model above
+		# stays the breakdown's source and the replay's tick list).
+		var heat := 0
+		if c.is_player:
+			for h in o.heat_events:
+				heat += HeatRules.scaled_delta(RunManager.campaign, h, RunManager.config()) if RunManager.campaign != null else h
+		var result := ResultChipModel.build(state, resolved, events, id, int(random_picks.get(id, -1)), heat)
+		_set_chips(view, result, tr("IF YOU SEND IT NOW: %s") % _who(c), breakdown(landing, state, resolved, events, id, result, chips))
 	ram_note.set_pending(o.ram_delta)
 
 
@@ -2888,21 +3030,105 @@ static func _chips_tooltip(chips: Array) -> String:
 		+ String(TranslationServer.translate("The dots: ●○○ half power (a needle near a slice's edge), ●●○ good aim, ●●● perfect aim (dead centre)."))
 
 
+# --- HUD v4 (ART-2 2D, ART_BIBLE v2 §3.1) ----------------------------------------------
+
+## Puts `chips` (ResultChipModel) beside `view`'s HP with its breakdown tooltip.
+func _set_chips(view: WheelView, chips: Array, title: String, body: String) -> void:
+	if hud_layer == null or view == null:
+		return
+	hud_layer.row_for(view).set_result(chips, title, body)
+
+
+## The result chips beside a wheel's HP now (tests: the chip is the preview).
+func result_chips(id: StringName) -> Array[Dictionary]:
+	var v := _view_of(id)
+	if v == null or hud_layer == null:
+		return []
+	return hud_layer.row_for(v).chips
+
+
+## The chip row beside a wheel's HP (tests, layout).
+func chip_row(id: StringName) -> HudResultChips:
+	var v := _view_of(id)
+	return hud_layer.row_for(v) if v != null and hud_layer != null else null
+
+
+## "YOU" for the operative, the name in capitals for anyone else.
+func _who(c: CombatantState) -> String:
+	if c == null:
+		return "?"
+	return tr("YOU") if c.is_player else _name_of(c).to_upper()
+
+
+## D15's breakdown tooltip for wheel `id`: who hits it with what (their slice and landing),
+## what its guard soaks, the HP it ends on; then what it lands on itself, and every result
+## the turn has for it in words (the forecast tag's lines, `tag_chips`, so nothing the tag
+## said is lost).
+func breakdown(landing: CombatState, state: CombatState, resolved: CombatState, events: Array[Dictionary], id: StringName,
+		chips: Array, tag_chips: Array) -> String:
+	var c := state.get_combatant(id)
+	if c == null:
+		return ""
+	var lines := PackedStringArray()
+	var hits := hit_totals(events)
+	var attackers: Array = hits.keys()
+	attackers.sort()
+	for src in attackers:
+		var per: Dictionary = hits[src]
+		if not per.has(id):
+			continue
+		var who := state.get_combatant(StringName(String(src)))
+		var host := state.get_combatant(who.host_id) if who != null and who.is_satellite else who
+		var lc := landing.get_combatant(host.id) if host != null else null
+		var title := _landing_title(landing, lc if lc != null else host) if host != null else {"text": "?"}
+		var h: Dictionary = per[id]
+		lines.append(tr("%s: %s -> %d HP") % [_who(who), String(title["text"]).to_upper(), int(h["applied"])])
+	var soaked := ResultChipModel.value_of(chips, ResultChipModel.ABSORBED)
+	if soaked > 0:
+		lines.append("  " + tr("- its block and shield %d (absorbed)") % soaked)
+	var rc := resolved.get_combatant(id)
+	var after := rc.hp if rc != null else 0
+	if after != c.hp or not chips.is_empty():
+		lines.append(tr("= %s HP  (%d -> %d)") % [signed(after - c.hp), c.hp, maxi(0, after)])
+	var lc0 := landing.get_combatant(id)
+	var own := _landing_title(landing, lc0 if lc0 != null else c)
+	if String(own["text"]) != "":
+		lines.append(tr("%s LANDS ON: %s") % [_who(c), String(own["text"]).to_upper()])
+	for ch in chips:
+		if StringName(ch["kind"]) != ResultChipModel.DAMAGE and StringName(ch["kind"]) != ResultChipModel.ABSORBED:
+			lines.append("  " + ResultChipModel.words(ch))
+	var rest := PackedStringArray()
+	for t in tag_chips:
+		rest.append(String(t["text"]))
+	if not rest.is_empty():
+		lines.append(tr("ALL RESULTS: %s") % ", ".join(rest))
+	for t in tag_chips:
+		if String(t.get("tooltip", "")) != "":
+			lines.append(String(t["tooltip"]))
+	return "\n".join(lines)
+
+
+## The banner's words (its title, then the status line under it).
+func banner_text() -> String:
+	return "%s %s" % [_banner_title.text, _status.text]
+
+
 # --- Stickers and hints ---------------------------------------------------------------
 
 ## Stickers by the player spinner: RESPIN and UNDO (nudges are the arrows on every
 ## wheel; cards are aimed by dragging).
 func _build_stickers() -> void:
 	var specs := [
-		["respin", "RESPIN", Palette.STICKER_PINK, 3.0, respin],
-		["undo", "UNDO", Palette.NOTE_PAPER, -3.0, rewind],
+		["respin", "RESPIN", respin],
+		["undo", "UNDO", rewind],
 	]
 	for sp in specs:
-		var b := StickerButton.new(tr(String(sp[1])), sp[2], sp[3])  # ANIM-R6 A12: translated from the first frame
+		# ART-2 2D (§3.1): terminal chips; the undo block greys UNDO with its lock tick (D12).
+		var b := TerminalChip.new(tr(String(sp[1])))  # ANIM-R6 A12: translated from the first frame
 		b.pre_translated = true  # labels come from _sticker_text (translated there)
 		b.drawn_icon = String(sp[0])
 		b.name = "Sticker_" + String(sp[0])
-		b.pressed.connect(sp[4])
+		b.pressed.connect(sp[2])
 		_sticker_box.add_child(b)
 		_stickers[sp[0]] = b
 	_respin_button = _stickers["respin"]
@@ -3050,6 +3276,8 @@ func _restore_time_scale() -> void:
 func motion_busy() -> bool:
 	if _seq != null or (fx_layer != null and fx_layer.busy()):
 		return true
+	if hud_layer != null and hud_layer.motion_running():
+		return true
 	for v in _views():
 		if v.motion_busy():
 			return true
@@ -3083,6 +3311,8 @@ func skip_motion() -> void:
 		# A skip lands: the forecast is already on the tags, which don't flip (C3).
 		v.stop_motion()
 		v.inverted = false
+	if hud_layer != null:
+		hud_layer.release_rows()
 	_numbers_on.clear()
 	_deal_waiting = false
 	if _hand_box != null:
@@ -3560,8 +3790,18 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 			for i in ticks:
 				_after_seq(float(ticks[i]), v.tick_chip.bind(int(i)))
 			_after_seq(fade_at, v.fade_replay_tag)
+		# ART-2 2D: the result chips hold what they showed, tick as the replay does each one
+		# and fade with the tag's entries (`forecast_tick`, `forecast_fade`).
+		var row := hud_layer.row_for(v)
+		row.hold(_held_chips.get(c0.id, []))
+		if not row.held.is_empty():
+			var cticks := ForecastTicks.schedule(row.held, beats, times, beat_timing(), cap)
+			for i in cticks:
+				_after_seq(float(cticks[i]), row.tick.bind(int(i)))
+			_after_seq(fade_at, row.fade)
 		v.queue_redraw()
 	_held_tags.clear()
+	_held_chips.clear()
 	ram_note.hold(before.ram)
 	_hide_new_cards(0)
 	var discard_spot := _discard_spot()
@@ -3746,6 +3986,7 @@ func _finish_sequence() -> void:
 	_release_forecast()
 	for v in _views():
 		v.stop_motion(false)
+	hud_layer.release_rows()
 	_numbers_on.clear()
 	if _deal_waiting:
 		for c in _hand_box.get_children():

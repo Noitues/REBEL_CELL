@@ -598,7 +598,7 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 	ev.play_enter()
 	await BoundedWait.frozen_frames(get_tree(), 1)  # still entering after the frame
 	assert_true(ev.enter_slide > 0.0, "the enemy is entering")
-	assert_true(ev.intent_rect().has_area(), "its forecast tag is laid out")
+	assert_true(ev.hud_results and scene.chip_row(ev.combatant.id) != null, "its forecast (the result chips) is laid out")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
 	assert_true(src.contains("if tag.has_area() and not replaying:"), "the tag draws while the enemy enters")
 	scene.skip_motion()

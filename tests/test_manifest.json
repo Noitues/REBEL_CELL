@@ -145,6 +145,10 @@
 			"seconds": 30.0,
 			"tier": "full"
 		},
+		"res://tests/unit/test_art2_hud.gd": {
+			"seconds": 40.0,
+			"tier": "full"
+		},
 		"res://tests/unit/test_anim_r5_rules.gd": {
 			"seconds": 1.3,
 			"tier": "full"
