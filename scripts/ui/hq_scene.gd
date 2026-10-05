@@ -3706,7 +3706,7 @@ func _end_lock_ready() -> bool:
 ## The Cell's stickers on the glass when the lock takes it: the screen's title, the Armory's
 ## defence cards (up to END_LOCK_CARDS, in id order) and the Cell's name.
 func end_stickers() -> Array[Dictionary]:
-	var out: Array[Dictionary] = [{"text": tr("CELL DEFENSE"), "fill": Palette.END_VINYL_YELLOW, "size": UiTheme.HEADING}]
+	var out: Array[Dictionary] = [{"text": tr("CELL DEFENSE"), "fill": VinylSticker.Fill.YELLOW, "size": UiTheme.HEADING}]
 	var c := RunManager.campaign
 	var ids: Array[StringName] = []
 	for a in c.armory:
@@ -3719,7 +3719,7 @@ func end_stickers() -> Array[Dictionary]:
 	ids.sort_custom(func(a: StringName, b: StringName) -> bool: return String(a) < String(b))
 	for id in ids.slice(0, END_LOCK_CARDS):
 		out.append({"asset": id, "text": TextDb.t(RunManager.lookup().get_content(id), "display_name").to_upper()})
-	out.append({"text": "REBEL_CELL", "fill": Palette.END_VINYL_PINK, "size": UiTheme.TITLE})
+	out.append({"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK, "size": UiTheme.TITLE})
 	return out
 
 

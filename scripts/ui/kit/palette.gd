@@ -202,8 +202,35 @@ const PAIRED_WITH := {
 ## ART_BIBLE v2 §2.9 grease pencil face: Permanent Marker, rendered as wax, for plans and
 ## threats only (never UI chrome, body text or numbers).
 const FONT_PENCIL := "res://assets/fonts/PermanentMarker-Regular.ttf"
+
+# --- ART-1 1B material kit (ART_BIBLE v2 §1.2; round 3 combined_v2 kit palette; the pencil
+# inks and the die-cut white are 1A's PENCIL_PLAN / PENCIL_THREAT / PENCIL_SHADOW / STICKER_DIE_CUT)
+## Vinyl: the lower stop of the white die-cut's gradient (STICKER_DIE_CUT on top) and the
+## adhesive back a peel shows.
+const VINYL_WHITE_LO := Color("#EFEDE7")
+const VINYL_BACKING := Color("#E0DDD6")
+## Vinyl: the printed keyline ink and the darker extrude under it.
+const VINYL_INK := Color("#141118")
+const VINYL_EXTRUDE := Color("#09080C")
+## Kraft note-card stock and its fibres.
+const KRAFT := Color("#B68E5C")
+const KRAFT_FIBRE := Color("#5F4224")
+## Sticker word fills (kit gradients, top to bottom): the Cell's verbs, threat words, ours.
+const STICKER_FILL_PINK: Array[Color] = [Color("#FF60AC"), Color("#DE1270")]
+const STICKER_FILL_RED: Array[Color] = [Color("#FF5850"), Color("#CC1416")]
+const STICKER_FILL_YELLOW: Array[Color] = [STICKER_SAFE, STICKER_SAFE_LOW]
+## CRT terminal glass: the navy top and bottom of the panel's glass.
+const CRT_GLASS_TOP := Color("#0B1630")
+const CRT_GLASS_BOTTOM := Color("#050A1A")
+## Corp paper: the letterhead rule and the typewriter ink.
+const PAPER_TYPE_INK := Color("#1E1A16")
+## The near-opaque scrim laid behind a decrypted holo panel (§1.2: 0.88).
+const HOLO_SCRIM := Color(0.00784314, 0.0117647, 0.0392157, 0.88)
+## Toon ink lines (3D city and props).
+const TOON_INK := Color("#0C0A16")
+
 ## §2.9 sticker / display face: Anton (stickers, titles, stamps, bare live numbers).
-const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
+const FONT_DISPLAY :="res://assets/fonts/Anton-Regular.ttf"
 ## §2.9 terminal face: Share Tech Mono (the Cell's systems).
 const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
 ## ART_BIBLE §2.9 body face: IBM Plex Sans Condensed (OFL) for text blocks over 3 lines and
@@ -519,8 +546,8 @@ static func mono_for(text: String) -> Font:
 
 
 # --- ART-11 4D: campaign end and run end (ART_BIBLE v2 §1.2, §4.8; refs campaign_end/) ----------
-# The campaign end's own stock (manila, post-its, ballpoint, stamp red) and the vinyl seam until
-# 1B lands its sticker material; the end screens read only these names. Values from tag
+# The campaign end's own stock (manila, post-its, ballpoint, stamp red, desk, house backs);
+# the vinyl and the paper material are 1B's. Values from tag
 # art-concepts-r43 (round 20 lost20.py, round 21 dossier21.py).
 ## The desk under the dossier, the lamp's warm pool, the manila folder and its fold, the
 ## report's and annex's stock, the typed ink and its soft (meta) ink.
@@ -546,13 +573,6 @@ const END_HOUSE_BACK := {&"halcyon": Color("#120C28"), &"meridian": Color("#2212
 	&"orbital": Color("#040E1C"), &"rebel_cell": Color("#1E0406")}
 ## The notice's light words (head line, field values) on the house back.
 const END_HOUSE_TEXT := Color("#F4F1E9")
-## Vinyl sticker seam (§1.2, §2.10): the die-cut border, then each fill's top and bottom: the
-## pink verb, the yellow safe choice, the red loss verdict, the lime Cell word.
-const END_VINYL_BORDER := Color("#FFFFFF")
-const END_VINYL_PINK: Array[Color] = [Color("#FF6FB0"), Color("#E0156E")]
-const END_VINYL_YELLOW: Array[Color] = [Color("#FFEE60"), Color("#FFB60E")]
-const END_VINYL_RED: Array[Color] = [Color("#FF5A4A"), Color("#C8101E")]
-const END_VINYL_LIME: Array[Color] = [Color("#E8FF60"), Color("#A8D400")]
 
 # --- ART-1 1C: glyph atlas colours (ART_BIBLE 2.1 INK row, 3.5) -------------------------
 ## A glyph's flat white silhouette (bible 3.5: white on the read plate).

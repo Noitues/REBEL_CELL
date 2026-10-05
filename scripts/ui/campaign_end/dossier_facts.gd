@@ -87,7 +87,7 @@ static func build(c: CampaignState, corp: CorporationData, profile: ProfileState
 		if who != &"":
 			posts[who] = site_name.call(id)
 	for o in c.roster:
-		var row := {"name": o.name, "class_id": o.class_id, "class_name": String(class_name_of.call(o.class_id)), "rank": o.rank,
+		var row := {"id": o.id, "name": o.name, "class_id": o.class_id, "class_name": String(class_name_of.call(o.class_id)), "rank": o.rank,
 			"alive": o.alive, "runs": o.runs_completed, "post": String(posts.get(o.id, ""))}
 		f.crew.append(row)
 		if f.most_troublesome.is_empty() or o.runs_completed > int(f.most_troublesome["runs"]):

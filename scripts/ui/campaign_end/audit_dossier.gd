@@ -40,8 +40,8 @@ const STAMP_TILT := -12.0
 ## The letterhead seal's side (px at 1.0) and the rule under the letterhead (px).
 const LETTERHEAD_SEAL := 58.0
 const LETTERHEAD_RULE := 3.0
-## The personnel rows' bust side (px at 1.0).
-const BUST := 26.0
+## The personnel rows' portrait prints (px at 1.0).
+const BUST_PRINT := Vector2(30, 34)
 ## The typed fields' size at text scale 1.0 (bible §2.9: 20 px fields at 1080p, ÷1.5).
 const FIELD_PX := 13
 ## Leader dots after a field name up to this many characters (the typed column).
@@ -189,12 +189,12 @@ func _build() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_END
 	buttons.add_theme_constant_override(&"separation", roundi(UiTheme.SP_L * s))
 	column.add_child(buttons)
-	main_menu_button = VinylButton.new(TextDb.mark("Main menu"), Palette.END_VINYL_YELLOW, UiTheme.TITLE)
+	main_menu_button = VinylButton.new(TextDb.mark("Main menu"), VinylSticker.Fill.YELLOW, UiTheme.TITLE)
 	main_menu_button.name = "MainMenu"
 	main_menu_button.tooltip_text = UiTip.fold(tr("Back to the title screen."))
 	main_menu_button.pressed.connect(func() -> void: main_menu_pressed.emit())
 	buttons.add_child(main_menu_button)
-	new_campaign_button = VinylButton.new(TextDb.mark("New campaign"), Palette.END_VINYL_PINK, UiTheme.HEADING)
+	new_campaign_button = VinylButton.new(TextDb.mark("New campaign"), VinylSticker.Fill.PINK, UiTheme.HEADING)
 	new_campaign_button.name = "NewCampaign"
 	new_campaign_button.tooltip_text = UiTip.fold(tr("Start a new campaign."))
 	new_campaign_button.pressed.connect(func() -> void: new_campaign_pressed.emit())
@@ -268,11 +268,14 @@ func _build_personnel() -> void:
 		row.name = "Operative_%s" % String(r["name"]).validate_node_name()
 		row.add_theme_constant_override(&"separation", roundi(UiTheme.SP_S * s))
 		col.add_child(row)
-		var bust := Control.new()
-		bust.custom_minimum_size = Vector2(BUST, BUST) * s
-		var cls: StringName = r["class_id"]
+		# 4B's portrait print: the operative's own face; KIA (dimmed, crossed out) when DECEASED.
 		var who := String(r["name"])
-		bust.draw.connect(func() -> void: PortraitArt.draw_operative(bust, Rect2(Vector2.ZERO, bust.size), cls, &"", who))
+		var bust := Polaroid.new("", "[PORTRAIT]", 0.0)
+		bust.name = "Print"
+		bust.custom_minimum_size = BUST_PRINT * s
+		bust.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bust.set_operative(r["class_id"], r["id"])
+		bust.kia = not bool(r["alive"])
 		row.add_child(bust)
 		var names := VBoxContainer.new()
 		names.add_theme_constant_override(&"separation", 0)

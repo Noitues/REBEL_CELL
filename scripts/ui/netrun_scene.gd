@@ -3239,18 +3239,16 @@ func _site_name(site_id: StringName) -> String:
 ## ANIM-R5 B3 / ART-11 4D (ART_BIBLE v2 §1.2): the run's end over the city: the Cell's own CRT
 ## window in the middle of the screen (cyan for a run that jacked out, red for a loss) with the
 ## verdict slapped on the glass as a vinyl sticker (JACKED OUT yellow; FLATLINED, HOME FELL
-## red; `run_end_slap`), what happened to the operative (a flatline is for good: GDD 4.2
+## red; 1B's `sticker_slap`), what happened to the operative (a flatline is for good: GDD 4.2
 ## permadeath), the run in numbers and why Heat rose, then BACK TO HQ, the screen's one pink
 ## verb. HOME FELL hands over to the HQ's campaign lost lock.
 const END_WIDTH := 760.0
 const END_GROW := 1.3
 ## The verdict sticker's lettering (type step) and tilt (degrees).
-const END_VERDICT_STEP := UiTheme.DISPLAY
+const END_VERDICT_STEP := UiTheme.HEADING
 const END_VERDICT_TILT := -6.0
-const END_SLAP := &"run_end_slap"
-## The most the verdict and BACK TO HQ stickers grow with the text size (whole objects, bible
-## §2.9: at 2.0 the window kept off the screen's foot).
-const END_STICKER_CAP := 1.3
+## BACK TO HQ's lettering (type step).
+const END_BACK_STEP := UiTheme.TITLE
 
 
 func _show_end() -> void:
@@ -3271,13 +3269,12 @@ func _show_end() -> void:
 	head.add_theme_constant_override("separation", roundi(UiTheme.SP_L * Settings.text_scale))
 	report.body.add_child(head)
 	# The verdict: a sticker on the glass, display only (no focus; its tooltip says what it means).
-	var stamp := VinylWord.new(tr(end_verdict(s.run.outcome)), Palette.END_VINYL_YELLOW if won else Palette.END_VINYL_RED, END_VERDICT_STEP)
+	var stamp := VinylSticker.new()
 	stamp.name = "ResultStamp"
-	stamp.pre_translated = true
-	stamp.verdict = end_verdict(s.run.outcome)
-	stamp.resolved = true
-	stamp.scale_cap = END_STICKER_CAP
-	stamp.refit()
+	stamp.text = tr(end_verdict(s.run.outcome))
+	stamp.fill = VinylSticker.Fill.YELLOW if won else VinylSticker.Fill.RED
+	stamp.font_step = END_VERDICT_STEP
+	stamp.focus_mode = Control.FOCUS_NONE
 	stamp.mouse_filter = Control.MOUSE_FILTER_PASS
 	stamp.tooltip_text = UiTip.fold(end_fate(s))
 	# A container resets a child's tilt when it lays it out: the sticker's holder tilts it.
@@ -3327,9 +3324,7 @@ func _show_end() -> void:
 	foot.name = "RunEndFoot"
 	foot.alignment = BoxContainer.ALIGNMENT_CENTER
 	side_col.add_child(foot)
-	var back := VinylButton.new(TextDb.mark("Back to HQ"), Palette.END_VINYL_PINK, UiTheme.HEADING)
-	back.sticker.scale_cap = END_STICKER_CAP
-	back.refit()
+	var back := VinylButton.new(TextDb.mark("Back to HQ"), VinylSticker.Fill.PINK, END_BACK_STEP)
 	back.name = "BackToHq"
 	back.pressed.connect(finish_run)
 	back.tooltip_text = UiTip.fold(tr("Back to HQ: the campaign, the City Grid and the crew."))
@@ -3345,10 +3340,10 @@ func _show_end() -> void:
 		_slap_verdict.call_deferred(stamp)
 
 
-## The run end's verdict sticker slaps on (`run_end_slap`) once laid out.
-func _slap_verdict(stamp: VinylWord) -> void:
+## The run end's verdict sticker slaps on (1B's `sticker_slap`) once laid out.
+func _slap_verdict(stamp: VinylSticker) -> void:
 	if is_instance_valid(stamp) and stamp.is_inside_tree():
-		stamp.slap(END_SLAP)
+		stamp.slap()
 
 
 ## ANIM-R5 B3: the run's verdict as its stamp says it (a key).

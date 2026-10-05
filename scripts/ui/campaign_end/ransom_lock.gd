@@ -49,6 +49,10 @@ const HOME_LOCK_SCALE := 1.35
 const NOTICE_SLIDE := 14.0
 const STAMP_AT := Vector2(0.72, 0.68)
 const STAMP_TILT := -9.0
+## The corner each sticker lifts in turn, and a defence card's die-cut border (px).
+const STICKER_CORNERS: Array[VinylSticker.Lift] = [VinylSticker.Lift.TOP_RIGHT, VinylSticker.Lift.TOP_LEFT, VinylSticker.Lift.BOTTOM_RIGHT,
+	VinylSticker.Lift.TOP_RIGHT, VinylSticker.Lift.BOTTOM_LEFT]
+const CARD_BORDER := 7.0
 ## How far a dropping sticker drifts sideways (px at 1.0) and turns (degrees) as it falls.
 const DROP_DRIFT := 60.0
 const DROP_TURN := 40.0
@@ -87,7 +91,7 @@ var countdown_label: Label = null
 var fields_label: Label = null
 var progress: Control = null
 var verb_stamp: RubberStamp = null
-var stickers: Array[VinylWord] = []
+var stickers: Array[VinylSticker] = []
 var _sticker_rest: Array[Dictionary] = []
 var _locks_landed: int = 0
 var _marks: Array[Dictionary] = []
@@ -131,18 +135,24 @@ func setup(corporation_id: StringName, display_name: String, p_home_now: int, p_
 	verb_stamp.name = "VerbStamp"
 	add_child(verb_stamp)
 	for spec in sticker_specs:
-		var v: VinylWord
+		# 1B's vinyl: a word sticker, or a defence card (an object sticker framing its face).
+		var v := VinylSticker.new()
 		if spec.has("asset"):
-			v = VinylWord.card(StringName(String(spec["asset"])), String(spec["text"]))
+			v.shape = VinylSticker.Shape.RECT
+			v.border_px = CARD_BORDER
+			v.body_size = DefenceCardFace.SIZE * Settings.text_scale
+			var face := DefenceCardFace.new(StringName(String(spec["asset"])), String(spec["text"]))
+			v.content_root.add_child(face)
+			face.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		else:
-			var fill: Array[Color] = []
-			fill.assign(spec.get("fill", Palette.END_VINYL_YELLOW))
-			v = VinylWord.new(String(spec["text"]), fill, int(spec.get("size", UiTheme.HEADING)))
-			v.pre_translated = true
-			v.refit()
+			v.text = String(spec["text"])
+			v.fill = int(spec.get("fill", VinylSticker.Fill.YELLOW))
+			v.font_step = int(spec.get("size", UiTheme.HEADING))
 		v.name = "Sticker%d" % stickers.size()
-		v.curl_corner = [1, 0, 2, 1, 3][stickers.size() % 5]
+		v.seed = stickers.size() + 1
+		v.lifted_corner = STICKER_CORNERS[stickers.size() % STICKER_CORNERS.size()]
 		add_child(v)
+		v.resized.connect(_layout_stickers)
 		stickers.append(v)
 	resized.connect(_layout_stickers)
 	_layout_stickers.call_deferred()
@@ -404,27 +414,30 @@ func _layout_stickers() -> void:
 	var s := Settings.text_scale
 	var margin := SCREEN_MARGIN * s
 	# The title sticker top-left, the cards in a row along the foot, the Cell's name bottom-right.
-	var cards: Array[VinylWord] = []
+	var cards: Array[VinylSticker] = []
+	# Each sticker is placed by its body (its art's shadow pad lies round it).
 	for i in stickers.size():
 		var v := stickers[i]
+		var body := v.body_rect.size
 		var at := Vector2.ZERO
-		if v.kind == VinylWord.Kind.CARD:
+		if v.shape == VinylSticker.Shape.RECT:
 			cards.append(v)
 			continue
 		if i == 0:
 			at = Vector2(margin * 2.0, margin)
 		else:
-			at = Vector2(size.x - v.size.x - margin * 2.0, size.y - v.size.y - margin * 1.5)
-		_sticker_rest.append({"v": v, "at": at, "tilt": [-1.5, -3.0, 2.0][i % 3]})
+			at = Vector2(size.x - body.x - margin * 2.0, size.y - body.y - margin * 1.5)
+		_sticker_rest.append({"v": v, "at": at - v.body_rect.position, "tilt": [-1.5, -3.0, 2.0][i % 3]})
 	var gap := margin * 0.6
 	var row_w := 0.0
 	for c in cards:
-		row_w += c.size.x + gap
+		row_w += c.body_rect.size.x + gap
 	var x := (size.x - row_w) * 0.5
 	for i in cards.size():
 		var c := cards[i]
-		_sticker_rest.append({"v": c, "at": Vector2(x, size.y - c.size.y - margin * 1.2), "tilt": [-2.0, 1.5, -1.0, 2.0, -1.5][i % 5]})
-		x += c.size.x + gap
+		var at := Vector2(x, size.y - c.body_rect.size.y - margin * 1.2)
+		_sticker_rest.append({"v": c, "at": at - c.body_rect.position, "tilt": [-2.0, 1.5, -1.0, 2.0, -1.5][i % 5]})
+		x += c.body_rect.size.x + gap
 	_apply_stickers()
 
 
@@ -434,11 +447,12 @@ func _apply_stickers() -> void:
 	var stagger := Motion.seconds(STAGGER) if Motion.live(STAGGER) else 0.0
 	for i in _sticker_rest.size():
 		var r: Dictionary = _sticker_rest[i]
-		var v: VinylWord = r["v"]
+		var v: VinylSticker = r["v"]
 		var lag := stagger * i
 		var c := phase(CURL, lag)
 		var d := phase(DROP, lag)
-		v.curl = curl_amp * c
+		v.fold = curl_amp * c
+		v.lift = d
 		var side := -1.0 if i % 2 == 0 else 1.0
 		v.position = (r["at"] as Vector2) + Vector2(side * DROP_DRIFT * Settings.text_scale * d, fall * d * d)
 		v.rotation_degrees = float(r["tilt"]) + side * DROP_TURN * d

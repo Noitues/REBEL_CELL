@@ -11,7 +11,7 @@ const LAB_SCRIPT := "res://tools/design_lab/motion_lab.gd"
 const SCREEN := Rect2(0, 0, 1280, 720)
 const IDS: Array[StringName] = [&"ransom_glitch", &"ransom_wipe", &"ransom_padlock", &"ransom_notice_in", &"ransom_verb_stamp",
 	&"ransom_sticker_curl", &"ransom_sticker_drop", &"ransom_sticker_stagger", &"ransom_countdown", &"ransom_wipe_hold", &"ransom_cut",
-	&"dossier_open", &"dossier_stamp", &"dossier_note", &"dossier_note_stagger", &"run_end_slap"]
+	&"dossier_open", &"dossier_stamp", &"dossier_note", &"dossier_note_stagger"]
 ## Frames a forced-live lock gets to cut and finish (bounded; its cut is half a second).
 const CUT_FRAMES := 240
 
@@ -88,7 +88,7 @@ func _lock() -> RansomLock:
 			pts.append({"at": Vector2(200 + i * 200, 150 + (i % 2) * 300), "home": i == 0})
 		return pts
 	var specs: Array[Dictionary] = [{"text": "CELL DEFENSE"}, {"asset": &"turret", "text": "TURRET"}, {"asset": &"decoy", "text": "DECOY"},
-		{"text": "REBEL_CELL", "fill": Palette.END_VINYL_PINK}]
+		{"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK}]
 	lock.setup(&"halcyon", "Halcyon Civic", 0, 50, specs)
 	return lock
 
@@ -173,8 +173,8 @@ func test_the_dossiers_buttons_emit_and_are_stickers_the_pad_reaches() -> void:
 	assert_eq(d.main_menu_button.focus_mode, Control.FOCUS_ALL)
 	assert_eq(d.new_campaign_button.focus_mode, Control.FOCUS_ALL)
 	assert_eq(UiFocus.first_focusable(d), d.main_menu_button, "the yellow safe choice has the first focus (bible §2.10)")
-	assert_eq(d.main_menu_button.sticker.fill, Palette.END_VINYL_YELLOW)
-	assert_eq(d.new_campaign_button.sticker.fill, Palette.END_VINYL_PINK, "the pink verb")
+	assert_eq(d.main_menu_button.sticker.fill, VinylSticker.Fill.YELLOW)
+	assert_eq(d.new_campaign_button.sticker.fill, VinylSticker.Fill.PINK, "the pink verb")
 	var got := []
 	d.main_menu_pressed.connect(func() -> void: got.append("menu"))
 	d.new_campaign_pressed.connect(func() -> void: got.append("new"))
@@ -298,27 +298,30 @@ func test_the_run_ends_verdicts_are_stickers_and_home_fell_is_red() -> void:
 		RunManager.netrun.run.phase = RunState.Phase.ENDED
 		scene._show_end()
 		await _frames(2)
-		var stamp := scene._panel.find_child("ResultStamp", true, false) as VinylWord
+		var stamp := scene._panel.find_child("ResultStamp", true, false) as VinylSticker
 		assert_not_null(stamp)
-		assert_eq(stamp.verdict, scene.end_verdict(outcome))
-		assert_eq(stamp.fill, Palette.END_VINYL_YELLOW if outcome == RunState.Outcome.COMPLETED else Palette.END_VINYL_RED)
+		assert_eq(stamp.text, tr(scene.end_verdict(outcome)))
+		assert_eq(stamp.fill, VinylSticker.Fill.YELLOW if outcome == RunState.Outcome.COMPLETED else VinylSticker.Fill.RED)
 		assert_eq(stamp.focus_mode, Control.FOCUS_NONE)
 		assert_true(stamp.get_parent() is TiltBox, "tilted on the glass")
 		var back := scene._panel.find_child("BackToHq", true, false) as VinylButton
 		assert_eq(back.text, "Back to HQ")
-		assert_eq(back.sticker.fill, Palette.END_VINYL_PINK, "the screen's one pink verb")
+		assert_eq(back.sticker.fill, VinylSticker.Fill.PINK, "the screen's one pink verb")
+		assert_gt(back.size.x, 0.0, "the button is the sticker's body")
 	assert_eq(scene.end_verdict(RunState.Outcome.ABORTED), "HOME FELL")
 
 
-func test_the_verdict_slap_completes_with_a_press() -> void:
-	_live()
-	var v: VinylWord = add_child_autofree(VinylWord.new("FLATLINED", Palette.END_VINYL_RED, UiTheme.DISPLAY))
-	await _frames(1)
-	v.slap(&"run_end_slap")
-	assert_true(v.motion_running())
-	MotionSkip.complete_all(v)
-	assert_false(v.motion_running())
-	assert_eq(v.scale, Vector2.ONE)
+func test_the_lock_stickers_are_vinyl_that_curl_and_drop() -> void:
+	var lock := _lock()
+	await _frames(2)
+	assert_eq(lock.stickers.size(), 4)
+	assert_eq(lock.stickers[1].shape, VinylSticker.Shape.RECT, "a defence card is an object sticker")
+	assert_true(lock.stickers[1].content_root.get_child(0) is DefenceCardFace)
+	assert_eq(lock.stickers[0].fill, VinylSticker.Fill.YELLOW, "the title sticker")
+	lock.complete_motion()
+	for v in lock.stickers:
+		assert_almost_eq(v.fold, Motion.amplitude(RansomLock.CURL), 0.001, "curled at its corner")
+		assert_false(v.visible, "dropped off the glass")
 
 
 # --- Motion table -----------------------------------------------------------------------------

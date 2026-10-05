@@ -18,6 +18,21 @@ const MAX_QUEUE := 6
 var bar: PanelContainer
 var speaker_label: Label
 var text_label: RichTextLabel
+## ART-9 4B (ART_BIBLE v2 §4.11, DECISIONS "DISPATCH text"): the speaker's comm feed at the
+## bar's left: an operative's cel bust talking while its page types, DISPATCH's red voice
+## trace (never a face). Hidden for speakers without a feed.
+var feed: PortraitFeed
+var _feed_anchor: Node2D
+## The feed's height as a share of the bar's, its least and largest height (px at text scale
+## 1.0), its widest share of the bar, its gap to the words (px) and its inset from the edge.
+const FEED_HEIGHT_SHARE := 1.0
+const FEED_MIN := 22.0
+const FEED_MAX := 120.0
+const FEED_WIDTH_SHARE := 0.22
+const FEED_GAP := 10.0
+const FEED_INSET := 3.0
+## DISPATCH's trace is wider than a bust (width / height).
+const VOICE_ASPECT := 1.6
 ## Lines shown so far this session (tests and the codex read it).
 var history: Array[Dictionary] = []
 var _queue: Array[Dictionary] = []
@@ -80,6 +95,15 @@ func _ready() -> void:
 	# ANIM-R5 B2: a page types in over its whole laid-out lines (no reflow while it types).
 	text_label.visible_characters_behavior = TextServer.VC_CHARS_AFTER_SHAPING
 	box.add_child(text_label)
+	# ART-9 4B: the speaker's comm feed in the bar's left margin (a Node2D holds it, so the
+	# bar's container never lays it out; it moves with the bar).
+	_feed_anchor = Node2D.new()
+	_feed_anchor.name = "FeedAnchor"
+	bar.add_child(_feed_anchor)
+	feed = PortraitFeed.new()
+	feed.name = "SpeakerFeed"
+	feed.visible = false
+	_feed_anchor.add_child(feed)
 	_style(RC.Voice.DISPATCH)
 	_collect_sets()
 	if has_node("/root/Settings"):
@@ -190,10 +214,10 @@ func dock_at(rect: Rect2, max_lines: int = 0, as_default: bool = false) -> void:
 	dock_lines = max_lines
 	_dock_rect = rect
 	# The text wraps inside the rect (a narrow column dock must not widen the bar).
-	var sb := bar.get_theme_stylebox("panel")
-	var margins := sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0
-	if text_label != null:
-		text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, rect.size.x - margins))
+	# ART-9 4B: the speaker's feed is sized to the dock, its room kept in the left margin.
+	if feed != null and feed.visible:
+		_style(_feed_speaker, _feed_corp, _feed_class)
+	_fit_text_width()
 	inline_speaker = as_default
 	_default_dock = as_default
 	if as_default and text_label != null:
@@ -352,14 +376,16 @@ const PAGE_FILL := 0.95
 ## H24 S15: `scope` ties the line to a screen ("route", "event", "raid"...): it ends when
 ## the player leaves that screen (`enter_screen` with another), queued or showing. Lines
 ## with no scope (campaign news: Heat thresholds, raid warnings from a run) play out.
-func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"", translated: bool = false, scope: String = "") -> void:
+## ART-9 4B: `class_id` names the operative class speaking (a bark): its bust talks in the
+## bar's feed.
+func say(speaker: int, text: String, seconds: float = 0.0, corporation_id: StringName = &"", translated: bool = false, scope: String = "", class_id: StringName = &"") -> void:
 	if text == "":
 		return
 	history.append({"speaker": speaker, "text": text, "corporation": corporation_id})
 	line_spoken.emit(speaker, text)
 	if _queue.size() >= MAX_QUEUE:
 		_queue.pop_front()
-	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id, "translated": translated, "scope": scope,
+	_queue.append({"speaker": speaker, "text": text, "corporation": corporation_id, "translated": translated, "scope": scope, "class": class_id,
 		"seconds": seconds if seconds > 0.0 else maxf(MIN_SECONDS, text.length() * SECONDS_PER_CHAR)})
 	if _timer == null:
 		_next()
@@ -535,6 +561,8 @@ func _next() -> void:
 	# the bar paging for another size).
 	_apply_text_scale()
 	var corp_id := StringName(String(line.get("corporation", "")))
+	# ART-9 4B: the speaker's look (and feed, whose room the paging below leaves) first.
+	_style(int(line["speaker"]), corp_id, StringName(String(line.get("class", ""))))
 	var name := speaker_name(int(line["speaker"]), corp_id)
 	# Default dock: the name leads the first page ("DISPATCH: ..."), not a row of its own.
 	var continued := bool(line.get("continued", false))
@@ -567,7 +595,6 @@ func _next() -> void:
 			_queue.push_front(rest)
 		line["seconds"] = maxf(MIN_SECONDS, seconds * pages[0].length() / whole)
 		more = true
-	_style(int(line["speaker"]), corp_id)
 	speaker_label.text = name
 	speaker_label.visible = name != "" and not inline_speaker
 	var mark := CONTINUED_MARK if more else ""
@@ -668,35 +695,120 @@ func speaker_name(speaker: int, corporation_id: StringName = &"") -> String:
 	return tr(own) if own != "" else ""
 
 
-## DISPATCH: clean dark strip with amber system text; everyone else: paper strip, ink.
-func _style(speaker: int, corporation_id: StringName = &"") -> void:
-	var style := StyleBoxFlat.new()
-	style.content_margin_left = 14
-	style.content_margin_right = 14
-	style.content_margin_top = 6
-	style.content_margin_bottom = 6
-	if speaker == RC.Voice.DISPATCH or speaker == RC.Voice.CORPO:
-		style.bg_color = Color(0.02, 0.03, 0.08, 0.95)
-		var corp_color := Palette.corp_color(corporation_id) if corporation_id != &"" else Palette.CORP_SOLACE
-		style.border_color = Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else corp_color
-		style.set_border_width_all(1)
-		style.border_width_left = 4
-		style.shadow_color = Color(0, 0, 0, 0.5)
-		style.shadow_size = 8
-		speaker_label.add_theme_color_override("font_color", style.border_color)
-		text_label.add_theme_color_override("default_color", Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else Palette.PAPER)
-	else:
-		# ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6): the subtitle paper opaque, its speaker in INK (pink read 2.3:1).
-		style.bg_color = PaperInk.opaque(Color(Palette.NOTE_PAPER, 0.97), Palette.NIGHT_SKY)
-		style.border_color = Palette.INK
-		style.set_border_width_all(1)
-		style.border_width_left = 4
-		style.border_color = Palette.CELL_PINK
-		style.shadow_color = Color(0, 0, 0, 0.5)
-		style.shadow_size = 8
-		speaker_label.add_theme_color_override("font_color", PaperInk.text(Palette.CELL_PINK))
-		text_label.add_theme_color_override("default_color", PaperInk.text(Palette.INK))
+## The speaker of the line on screen (the feed's look follows it when the dock moves).
+var _feed_speaker: int = RC.Voice.DISPATCH
+var _feed_corp: StringName = &""
+var _feed_class: StringName = &""
+## The bar's padding left and right of the words, top and bottom (px).
+const BAR_SIDE_PAD := 14.0
+const BAR_TOP_PAD := 6.0
+
+
+## ART-9 4B (ART_BIBLE v2 §1.2, §4.11; DECISIONS "DISPATCH text"): every line is on the
+## Cell's CRT terminal (the dialogue feed): navy glass with a glowing edge in the speaker's
+## accent, the Cell's cyan for operatives and the narrator, the corp's colour inside a corp's
+## terminal, DISPATCH a clean red terminal feed on black (never a sticker or pencil). A
+## speaker with a feed (an operative's bust, DISPATCH's voice trace) gets it at the bar's
+## left, its room kept in the left margin (the paging measures the words' room).
+func _style(speaker: int, corporation_id: StringName = &"", class_id: StringName = &"") -> void:
+	_feed_speaker = speaker
+	_feed_corp = corporation_id
+	_feed_class = class_id
+	var style := crt_style(line_accent(speaker, corporation_id), speaker == RC.Voice.DISPATCH)
+	var room := _place_feed(speaker, class_id)
+	style.content_margin_left = BAR_SIDE_PAD + room
+	style.content_margin_right = BAR_SIDE_PAD
+	style.content_margin_top = BAR_TOP_PAD
+	style.content_margin_bottom = BAR_TOP_PAD
+	speaker_label.add_theme_color_override("font_color", line_accent(speaker, corporation_id).lightened(NAME_LIFT))
+	text_label.add_theme_color_override("default_color", line_ink(speaker))
 	bar.add_theme_stylebox_override("panel", style)
+	_fit_text_width()
+
+
+## Lift of the speaker's name over its accent (reads on the dark glass).
+const NAME_LIFT := 0.15
+## DISPATCH's words: its red lifted toward white so the words read at body size.
+const DISPATCH_INK_LIFT := 0.55
+
+
+## The accent of a line's terminal: DISPATCH red, a corp's colour, else the Cell's cyan.
+func line_accent(speaker: int, corporation_id: StringName = &"") -> Color:
+	if speaker == RC.Voice.DISPATCH:
+		return PortraitFeed.dispatch_red()
+	if speaker == RC.Voice.CORPO:
+		return Palette.corp_color(corporation_id) if corporation_id != &"" else Palette.CORP_SOLACE
+	return Palette.NET_CYAN
+
+
+## The words' colour on the terminal (DISPATCH's lifted red; the terminal text otherwise).
+func line_ink(speaker: int) -> Color:
+	if speaker == RC.Voice.DISPATCH:
+		return PortraitFeed.dispatch_red().lerp(Palette.TEXT_HI, DISPATCH_INK_LIFT)
+	return Palette.TERMINAL_TEXT
+
+
+## The CRT terminal's panel in `accent`: 1A's TerminalPanel box (UiTheme.terminal_box: navy
+## glass, the chamfer, the edge glow) tinted the speaker's accent, its edge a little heavier
+## on the left. `black`: DISPATCH's feed is on black glass. (1B's CRT material: pending.)
+static func crt_style(accent: Color, black: bool = false) -> StyleBoxFlat:
+	var style := UiTheme.terminal_box(accent)
+	if black:
+		style.bg_color = Color(Palette.TERMINAL_BG.darkened(BLACK_GLASS), Palette.TERMINAL_BG.a)
+	style.border_width_left = LEFT_EDGE_PX
+	return style
+
+
+## DISPATCH's black glass (the terminal's navy darkened) and the bar's left edge (px).
+const BLACK_GLASS := 0.6
+const LEFT_EDGE_PX := 3
+
+
+## The words' minimum width: the dock's width less the bar's margins (a narrow column dock
+## must not widen the bar), at most TEXT_MIN_WIDTH.
+func _fit_text_width() -> void:
+	var sb := bar.get_theme_stylebox("panel")
+	var margins := sb.get_margin(SIDE_LEFT) + sb.get_margin(SIDE_RIGHT) if sb != null else 0.0
+	if text_label != null:
+		text_label.custom_minimum_size.x = minf(TEXT_MIN_WIDTH, maxf(0.0, _dock_rect.size.x - margins))
+
+
+## Whether `speaker` (with `class_id`) has a feed: DISPATCH's voice trace, an operative
+## class's bust.
+static func has_feed(speaker: int, class_id: StringName) -> bool:
+	return speaker == RC.Voice.DISPATCH or (class_id != &"" and PortraitBust.has_class(class_id))
+
+
+## Shows and sizes the feed for `speaker` in the bar's left margin; returns the room it
+## takes there (px, 0 without one). Its height follows the dock's (FEED_HEIGHT_SHARE, within
+## FEED_MIN / FEED_MAX at the text size), its width never past FEED_WIDTH_SHARE of the bar.
+func _place_feed(speaker: int, class_id: StringName) -> float:
+	if feed == null:
+		return 0.0
+	if not has_feed(speaker, class_id):
+		feed.visible = false
+		return 0.0
+	var ts := _text_scale()
+	var voice := speaker == RC.Voice.DISPATCH
+	var aspect := VOICE_ASPECT if voice else float(PortraitBust.CELL.x) / float(PortraitBust.CELL.y)
+	var h := clampf(_dock_rect.size.y * FEED_HEIGHT_SHARE - FEED_INSET * 2.0, FEED_MIN * ts, FEED_MAX * ts)
+	var w := h * aspect
+	var widest := _dock_rect.size.x * FEED_WIDTH_SHARE
+	if w > widest:
+		w = widest
+		h = w / aspect
+	if voice:
+		feed.set_operative(&"")
+		feed.set_mode(PortraitFeed.Mode.VOICE)
+	else:
+		if feed.class_id != class_id or feed.mode == PortraitFeed.Mode.VOICE:
+			feed.set_operative(class_id)
+		# The speaker is live: it talks while its line is up (the line's time is its voice).
+		feed.set_mode(PortraitFeed.Mode.TALK)
+	feed.position = Vector2(FEED_INSET, FEED_INSET)
+	feed.size = Vector2(w, h)
+	feed.visible = true
+	return w + FEED_GAP
 
 
 # --- Line database ---------------------------------------------------------------------------
@@ -757,7 +869,7 @@ func speak(key: String, speaker: int = -1, corporation_id: StringName = &"", cla
 				voice = set.speaker
 	# H23 S15: the line in the player's language (TextDb key of its set), said as translated.
 	var text := voice_text(l)
-	say(voice, text, 0.0, corporation_id, true, scope)
+	say(voice, text, 0.0, corporation_id, true, scope, class_id)
 	return text
 
 
@@ -790,8 +902,13 @@ func threshold_line(corporation_id: StringName, heat: int, salt: int = 0) -> Str
 
 
 func bark(class_id: StringName, trigger: String, salt: int = 0, scope: String = "") -> String:
-	# Class alternatives speak with their base class's barks.
-	return speak("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", _class_base.get(class_id, class_id), salt, scope)
+	# Class alternatives speak with their base class's barks; ART-9 4B: with their own face.
+	var l := line("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", _class_base.get(class_id, class_id), salt)
+	if l == null:
+		return ""
+	var text := voice_text(l)
+	say(RC.Voice.STREET_MERC, text, 0.0, &"", true, scope, class_id)
+	return text
 
 
 func dj(salt: int = 0, corporation_id: StringName = &"") -> String:
