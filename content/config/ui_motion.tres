@@ -2367,8 +2367,8 @@ tier = 0
 [sub_resource type="Resource" id="m_jack_terminal_type"]
 script = ExtResource("1_entry")
 id = &"jack_terminal_type"
-duration = 0.022
-delay = 0.18
+duration = 0.012
+delay = 0.12
 ease = 1
 trans = 0
 amplitude = 0.0
