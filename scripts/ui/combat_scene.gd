@@ -73,6 +73,9 @@ const BANNER_MAX_SHARE := 0.4
 const BANNER_SCALE_MAX := 1.5
 ## Up to this text scale RESPIN and UNDO stand side by side; above it they stack.
 const STICKERS_SIDE_BY_SIDE_UP_TO := 1.3
+## ART-1 1A: the most of the screen's height a hand card takes (the narrower Anton stickers
+## freed width, the cards grew with it and the wheels shrank under BIG_TEXT_RADIUS_KEEP).
+const HAND_HEIGHT_SHARE := 0.24
 
 @export var auto_start: bool = true
 
@@ -2368,6 +2371,8 @@ func _card_scale_for(count: int) -> float:
 	var cell := _cell_panel.get_combined_minimum_size().x + sep if _cell_panel.get_parent() == _bottom_row else 0.0
 	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - cell - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
+	var height := size.y if size.y > 0.0 else get_viewport_rect().size.y
+	fit = minf(fit, height * HAND_HEIGHT_SHARE / ZineCard.STICKER_SIZE.y)
 	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)
 
 
