@@ -9,7 +9,7 @@ extends Node3D
 const LANDMARKS := "res://assets/city/landmarks"
 const CORPS: Array[String] = ["meridian", "solace", "halcyon", "orbital", "rebel_cell"]
 const SPIKE_CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
-const POST_SHADER := preload("res://tools/spike/city/shaders/city_post.gdshader")
+const POST_SHADER := preload("res://shaders/city/city_post.gdshader")
 const LOOK := preload("res://assets/city/landmarks/landmark_look.tres")
 ## Review-only framing and look numbers (the game's own come from the city config).
 const SETTLE_FRAMES := 12

@@ -346,9 +346,10 @@ static func families_of(cfg: CityConfig, prisms: Array[Dictionary], idx: PackedI
 	var out := {}
 	for n in idx:
 		var key := family_of(cfg, prisms[n])
+		# Packed arrays are values: append through the dictionary, never a cast copy.
 		if not out.has(key):
 			out[key] = PackedInt32Array()
-		(out[key] as PackedInt32Array).append(n)
+		out[key].append(n)
 	return out
 
 

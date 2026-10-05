@@ -544,6 +544,7 @@ DISPATCH // ECHO 00,DISPATCH // ECHO 00
 DISPATCH HAS YOUR CELL,DISPATCH HAS YOUR CELL
 DOWN,DOWN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
+DRAG / WASD,DRAG / WASD
 DRAW %d,DRAW %d
 DRONE ENDS HERE,DRONE ENDS HERE
 DTOR,DTOR
@@ -1449,6 +1450,7 @@ MAINFRAME,MAINFRAME
 MAINFRAME SHOP,MAINFRAME SHOP
 MANIFEST MF-0041-C,MANIFEST MF-0041-C
 MAP KEY,MAP KEY
+MINIMAP,MINIMAP
 MORE BELOW,MORE BELOW
 MOST TROUBLESOME -> %s,MOST TROUBLESOME -> %s
 Main menu,Main menu
@@ -1731,6 +1733,7 @@ RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN: ODDS,RESPIN: ODDS
 REWARDS,REWARDS
+RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE VIEW,ROUTE VIEW
@@ -3035,6 +3038,7 @@ hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
+lime=you red=target box=view,lime=you red=target box=view
 link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 locked,locked

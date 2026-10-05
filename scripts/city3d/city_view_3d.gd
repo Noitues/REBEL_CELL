@@ -67,11 +67,25 @@ var covered: bool = false:
 			_sync_ambient()
 			_sync_update()
 var network: CityNetworkData = null
+## The view band the host holds whatever the zoom (-1: by zoom, CityLod.band). The City
+## Grid holds Band.GRID: solid buildings and the city's full life at any player zoom (the
+## raid and netrun views take theirs by zoom when they move onto the city).
+var band_lock: int = -1:
+	set(v):
+		if v != band_lock:
+			band_lock = v
+			if iso != null and camera != null:
+				set_iso(iso)
 
 var _layers: Dictionary = {}
 var _chunks: Dictionary = {}  # Vector2i -> {"families": {int: MultiMeshInstance3D}, "ground": MeshInstance3D}
 var _pending: Array[Vector2i] = []
 var _hidden_hq: Dictionary = {}
+## World X/Z rects whose procedural buildings give way to a landmark's own (the art pass's
+## glTF stands there instead: never two cities on one lot).
+var _cleared: Array[Rect2] = []
+## The landmarks placed (corp -> Node3D), 5b's glTFs.
+var landmarks: Dictionary = {}
 var _inks: Array[Color] = []
 var _building_mat: ShaderMaterial
 var _ground_mat: ShaderMaterial
@@ -238,6 +252,8 @@ func set_iso(cam: CityIsoCamera) -> void:
 	_ground_cam.global_transform = camera.global_transform
 	_ground_cam.size = iso.ortho
 	var lod := CityIsoCamera.lod_of(cfg, iso.ortho)
+	if band_lock == CityLod.Band.GRID:
+		lod = maxf(lod, cfg.see_through_lod_to)
 	var op := CityLod.opacity(cfg, lod)
 	var city := CityLod.city_share(cfg, lod)
 	_post.set_shader_parameter("opacity", op)
@@ -257,7 +273,7 @@ func set_iso(cam: CityIsoCamera) -> void:
 		building_lod = lod_now
 		_apply_building_lod()
 		building_lod_changed.emit(building_lod)
-	var band_now := CityLod.band(cfg, iso.ortho, band)
+	var band_now := band_lock if band_lock >= 0 else CityLod.band(cfg, iso.ortho, band)
 	if band_now != band:
 		band = band_now
 		band_changed.emit(band)
@@ -379,9 +395,9 @@ func _build_scene() -> void:
 	_lane_mat = CityMaterials.ground(cfg, true)
 	var outer := MeshInstance3D.new()
 	outer.name = "OuterGround"
-	var pm := PlaneMesh.new()
-	pm.size = Vector2(OUTER_GROUND_BU, OUTER_GROUND_BU)
-	outer.mesh = pm
+	# The ground shader takes its colour from the vertices (asphalt).
+	var h := OUTER_GROUND_BU * 0.5
+	outer.mesh = CityMeshKit.ground_mesh_of(cfg, Rect2(-h, -h, OUTER_GROUND_BU, OUTER_GROUND_BU), [], [])
 	outer.position = Vector3(0, -0.05, 0)
 	var om := CityMaterials.ground(cfg, false)
 	outer.material_override = om
@@ -492,6 +508,8 @@ func _on_model(m: CityModel) -> void:
 	CityMaterials.set_inks(_building_mat, _inks)
 	if iso != null:
 		set_iso(iso)
+	if can_render():
+		place_landmarks()
 	_pending = m.keys()
 	var at := Vector2(iso.target.x, iso.target.z) if iso != null else Vector2.ZERO
 	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
@@ -521,6 +539,8 @@ func _build_chunk(key: Vector2i) -> void:
 		var pr := model.prisms[n]
 		if pr.get("hq", false) and _hidden_hq.has(pr["terr"]):
 			continue
+		if _in_cleared(pr["centre"]):
+			continue
 		idx.append(n)
 	var fams := CityMeshKit.families_of(cfg, model.prisms, idx)
 	var keys: Array = fams.keys()
@@ -537,6 +557,9 @@ func _build_chunk(key: Vector2i) -> void:
 		mm.mesh = CityMeshKit.family_mesh(cfg, fk, maxi(0, building_lod))
 		mm.instance_count = ids.size()
 		mm.buffer = CityMeshKit.instance_buffer(cfg, model.prisms, ids, _inks)
+		# A buffer written whole does not refresh the MultiMesh's bounds: the chunk's box
+		# (its prisms) is the cull box.
+		mm.custom_aabb = model.chunk_aabb(key)
 		var mi := MultiMeshInstance3D.new()
 		mi.multimesh = mm
 		mi.material_override = _building_mat
@@ -590,3 +613,70 @@ func _apply_building_lod() -> void:
 ## Chunks placed so far (tests, the perf probe).
 func chunks_built() -> int:
 	return _chunks.size()
+
+
+# --- Landmarks: the art pass's own models (5b), never re-modelled -----------------------------
+
+## Where 5b's landmark glTFs live (assets/city/landmarks/<corp>/<file>, with a manifest).
+const LANDMARKS_DIR := "res://assets/city/landmarks"
+## The Cell's district (5b): its own street grid of buildings whose windows draw the fist.
+const CELL := &"rebel_cell"
+const CELL_DISTRICT_FILE := "rebel_cell_district.glb"
+## Share of a landmark's ground box its procedural neighbours give way inside (its edges
+## keep the street's own buildings).
+const CLEAR_SHARE := 0.92
+
+
+## Places every corporation's HQ landmark glTF on its HQ lot (the stand-in tower goes) and
+## the Cell's district glTF on the Cell's district (the procedural buildings under it go),
+## with 5b's LandmarkMaterials (night). A landmark whose file is missing keeps the stand-in.
+func place_landmarks() -> void:
+	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+	var corps: Array = model.hqs.keys()
+	corps.sort()
+	for corp: StringName in corps:
+		var path := "%s/%s/%s_hq.glb" % [LANDMARKS_DIR, corp, corp]
+		if _place_landmark(corp, path, landmark_slot(corp), look):
+			hide_stand_in(corp)
+	var centre := NeonCity.hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
+
+
+func _place_landmark(corp: StringName, path: String, at: Transform3D, look: LandmarkLook) -> bool:
+	if landmarks.has(corp) or not ResourceLoader.exists(path):
+		return false
+	var scene := load(path) as PackedScene
+	if scene == null:
+		return false
+	var node := scene.instantiate() as Node3D
+	node.name = "Landmark_%s" % corp
+	LandmarkMaterials.apply(node, look, corp, false)
+	node.transform = at
+	add_to_layer(&"landmarks", node)
+	landmarks[corp] = node
+	var box := _ground_box(node)
+	if box.has_area():
+		_cleared.append(Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE))
+	return true
+
+
+## The X/Z box of every mesh under `node` (world).
+static func _ground_box(node: Node3D) -> Rect2:
+	var out := Rect2()
+	var first := true
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		var b := m.global_transform * m.mesh.get_aabb() if m.is_inside_tree() else (node.transform * m.transform) * m.mesh.get_aabb()
+		var r := Rect2(Vector2(b.position.x, b.position.z), Vector2(b.size.x, b.size.z))
+		out = r if first else out.merge(r)
+		first = false
+	return out
+
+
+func _in_cleared(c: Vector2) -> bool:
+	for r in _cleared:
+		if r.has_point(c):
+			return true
+	return false

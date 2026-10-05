@@ -24,6 +24,10 @@ DESIGNER RULINGS THAT BIND EVERY AGENT (2026-10-05)
 - The art pass design is correct (designer, 2026-10-05): where the game and ART_BIBLE v2 / the locked concepts differ on
   a view, word, layout, look or presentation rule, follow the art pass without asking; log it. Mechanics the rules
   lack (G1–G16) are still not built.
+- REUSE ART-PASS ASSETS (designer, 2026-10-05): any icon, sprite, texture, model or sheet the art pass made is
+  exported by running its own generator script on tag art-concepts-r43 (drawing code unchanged; a wrapper may split
+  a sheet into per-item PNGs at 2x) or sliced from the approved image. Never redraw it by hand or procedurally;
+  shaders may tint/fill/animate it. Procedural only where no concept asset exists (list each with its reason).
 - Nothing deferred: never write "out of scope". If an item does not fit, say so in your report and propose a slice.
 - Decide small things yourself and log them in DECISIONS ("Art direction — ART-1 <area>"); real design questions go
   under DECISIONS "Open questions for the designer" and in your report, with your default implemented.

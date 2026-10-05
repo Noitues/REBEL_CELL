@@ -105,3 +105,19 @@ raid / netrun / HQ-run views move onto the city.
 | combat_scene.gd, wheel_view.gd, combat FX | Group 2 |
 | palette / theme, materials, glyphs, city spike | Group 1 |
 | ui_motion.tres, REQUIRED_IDS, lab DEMOS, test_manifest.json, strings.csv, Settings additions, DECISIONS | union |
+
+## Wave 2b (after 5a, re-planned 2026-10-05 15:35 with the full coverage check)
+- **5e City integration** (critical path): place 5b's landmark glTFs and 8p's compound glTFs in CityModel
+  (`landmark_slot` / `hide_stand_in`, manifests' origin + footprint); attach 5c's `CityViewMotion` and 5d's
+  `SiteMarkerLayer` + `GridMarkerProjection.from_view` on the live Grid (CityMapOverlay keeps routes only); the
+  Cell's red-window crest from 5b's crest mask in the window shader with the blackout reveal; off-screen TARGET
+  chevrons + pencil marker; spread the Site layout ×2 so the Grid frames at ortho 440 (round 39) — presentation
+  only, rules unchanged (verify `raid_verdict` / route sweeps); fix the unresolved "no buildings" captures.
+- **7w Netrun on the city**: transit v3 cables routed on the 3D streets (cable router: 45° jogs, bridge hops,
+  crossing avoidance), the route page on CityView3D at the NETRUN band, the CLOSE car tier at netrun close-ups
+  (art pass: `cars_lod`), node rooms unchanged.
+- **8w HQ runs on the city**: HQ-run pages on the compounds at the HQ zoom (static, current rules); DISPATCH's run in
+  the round 43 Tokyo canyon; the Central Server breach look (bible §4.9); D17 combat backdrops swapped from 2B's
+  baked stills to city close-ups through `BackdropCatalog` (keep the stills as the Deck-tier fallback if cheaper).
+- **6w Raid on the city** (starts when 3A hands back): the raid map on CityView3D at the RAID band, building nodes as
+  uplink pads, 3A's marks / icons / pencil projected through the city camera, raid zoom fit.

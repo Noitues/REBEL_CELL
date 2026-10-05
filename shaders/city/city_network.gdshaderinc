@@ -102,7 +102,7 @@ void fragment() {
 		if (d > r + halo_px * 2.0) {
 			continue;
 		}
-		over(col, al, n1.rgb, exp(-pow(d / (r + halo_px), 2.0)) * halo * 1.6);
+		over(col, al, n1.rgb, exp(-pow(d / (r + halo_px), 2.0)) * halo);
 		over(col, al, keyline, line_px(d, r) * 0.85);
 		over(col, al, n1.rgb * 0.45, line_px(d, r - ring_px) * (0.35 + 0.3 * mgmt));
 		over(col, al, n1.rgb, line_px(abs(d - r + ring_px * 0.5), ring_px * 0.5));

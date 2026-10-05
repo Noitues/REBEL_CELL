@@ -15,6 +15,17 @@ var corp_creep: float = 0.0:
 		if not is_equal_approx(v, corp_creep):
 			corp_creep = v
 			_sync_city()
+## ART-5 5a: the City Grid draws the unified 3D city (NeonCity.city3d): no wireframe
+## lattice over it (bible §1.2: the wireframe net is rejected).
+var city3d: bool = false:
+	set(v):
+		city3d = v
+		if city != null:
+			city.city3d = v
+			# Only the City Grid is on the 3D city yet: it holds the Grid band.
+			city.band_lock = CityLod.Band.GRID if v else -1
+		if _grid != null:
+			_grid.visible = not v
 var floor_offset: float = 0.0
 var skyline_seed: int = 7
 var city: NeonCity
@@ -78,7 +89,7 @@ func _process(delta: float) -> void:
 	# draws (a fit pass or the lean moves the camera; waiting for the redraw showed one
 	# frame of the new camera under the old rig).
 	sync_hold()
-	if Settings.reduce_effects:
+	if Settings.reduce_effects or city3d:
 		return
 	floor_offset = fmod(floor_offset + delta * 0.15, 1.0)
 	_grid.queue_redraw()
