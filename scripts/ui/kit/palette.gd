@@ -16,15 +16,29 @@ const INK := Color("#111111")
 const NET_CYAN := Color("#5CE1FF")
 const NET_BG_INNER := Color("#0D1440")
 const NET_BG_OUTER := Color("#02030A")
-## ART_BIBLE §2.4 (art pass W1 tokens, ported in ART-0 E): each corporation owns a hue; a
-## corp hue is never used for a §2.2 UI role. Values are main's until ART-1 sets the v2 kits.
-const CORP_SOLACE := Color("#3DFF8B")
+## ART_BIBLE v2 §2.4 corporation kits (LOCKED, round 18 values; ART-1 1A): each corporation
+## owns hue + material + crest + landmark, never hue alone, and a corp hue is never used for
+## a §2.2 UI role. Greyscale pair: the corp's material and crest (and its name in words).
+## Solace: leaf green, kept off the Cell's lime (Solace never appears on a link or ring).
+const CORP_SOLACE := Color("#96FF46")
+## Meridian Freight: orange.
 const CORP_MERIDIAN := Color("#FF8C1A")
-const CORP_HALCYON := Color("#8C7BFF")
-const CORP_ORBITAL := Color("#DDE3FF")
-## REBEL_CELL (the handler AI): a deep blood red, clearly apart from the Cell pink in hue
-## and lightness (H20 #14; was #FF2A6D, nearly the Cell pink).
+## Halcyon Civic: violet.
+const CORP_HALCYON := Color("#B06EFF")
+## Orbital Commons: ice white (near TEXT_HI: its material and crest MUST carry it).
+const CORP_ORBITAL := Color("#CDF0FF")
+## REBEL_CELL (DISPATCH): a deep blood red, clearly apart from the Cell pink in hue and
+## lightness (H20 #14).
 const CORP_REBEL_CELL := Color("#E8141E")
+## §2.4 secondary hues (a corp wheel's tier II): Meridian hot red, Solace pink, Halcyon amber,
+## Orbital white, REBEL_CELL pale pink (the paled ring colour, so its dashes read).
+const CORP_MERIDIAN_2 := Color("#FF2E28")
+const CORP_SOLACE_2 := Color("#FF4696")
+const CORP_HALCYON_2 := Color("#FFAA28")
+const CORP_ORBITAL_2 := Color("#FFFFFF")
+const CORP_REBEL_CELL_2 := Color("#FFAAAC")
+## §2.4: Solace vehicles, deliberately greener than the Cell's lime.
+const CORP_SOLACE_VEHICLE := Color(0.42, 1.0, 0.16)
 const CRT_AMBER := Color("#FFB000")
 const RESIST_GOLD := Color("#FFD24D")
 const DESK_DARK := Color("#1B1D21")
@@ -37,10 +51,18 @@ const NIGHT_BLOCK := Color("#101832")
 const NIGHT_BLOCK_LIT := Color("#1C2A55")
 const NIGHT_STREET := Color("#0A0E22")
 const NEON_VIOLET := Color("#B04DFF")
-const TERMINAL_BG := Color(0.02, 0.05, 0.11, 0.95)
-const TERMINAL_BG_HOT := Color(0.16, 0.04, 0.16, 0.92)
-const TERMINAL_EDGE := Color(0.36, 0.88, 1.0, 0.75)
+## §2.1 CRT terminal ("Screens & Data", the Cell's own systems): navy glass rgba(5,13,28,.95),
+## a NET_CYAN edge at 78 %, TERMINAL_TEXT lettering.
+const TERMINAL_BG := Color(5.0 / 255.0, 13.0 / 255.0, 28.0 / 255.0, 0.95)
+## A terminal surface under the pointer (hover): the navy glass lit by its cyan edge (v2: the
+## hover is a lit edge, a glow and a caret, never the pink of the committing verb).
+const TERMINAL_BG_HOT := Color(10.0 / 255.0, 34.0 / 255.0, 54.0 / 255.0, 0.95)
+const TERMINAL_EDGE := Color(NET_CYAN, 0.78)
 const TERMINAL_TEXT := Color("#CFF6FF")
+## §2.1: the glyph outline (the glyph atlas shader's ink; ART_BIBLE §6.2).
+const GLYPH_OUTLINE := Color("#0C0A16")
+## §6.4: the live-number rim (bare Anton: HP, Heat, damage numbers).
+const LIVE_NUMBER_RIM := Color("#06060A")
 const NOTE_PAPER := Color("#E9DFC6")
 const NOTE_PINK := Color("#F4C3CF")
 const NOTE_YELLOW := Color("#F2DC7A")
@@ -84,6 +106,100 @@ const SCRIM := Color(0.00784314, 0.0117647, 0.0392157, 0.55)
 const SCRIM_BLUR_PX := 6
 ## Heat FLAGGED band (§2.8): between WARN and HARM.
 const HEAT_FLAGGED := Color("#FF7A1A")
+
+# --- ART_BIBLE v2 §2.2 new tokens, §2.6-2.8, §2.10 (ART-1 1A) -------------------------------
+## Grease pencil (§1.2, §2.2): yellow = our plan / valid; red = threat / invalid / loss; the
+## dark under-shadow that makes the wax read day and night. Paired with: solid (will happen)
+## vs dashed (what-if) strokes and the written word.
+const PENCIL_PLAN := Color("#FFE200")
+const PENCIL_THREAT := Color("#FF1C2C")
+const PENCIL_SHADOW := Color(6.0 / 255.0, 3.0 / 255.0, 8.0 / 255.0, 0.85)
+## The world Heat tint on maps (§2.2, §2.8).
+const HEAT_B := Color("#CE5412")
+## Netrun rings (§2.2; Appendix C #22: the run orange until the designer says otherwise).
+## Paired with: the ring's glyph and its state word (AVAILABLE / CUT).
+const RING_AVAILABLE := Color("#FF8C1A")
+const RING_UNAVAILABLE := Color("#F2F6FF")
+## "Dim grey" (§2.2 gives no value): the NULL slice grey.
+const RING_CUT := Color("#6A6A6A")
+
+## §2.8 Heat colour per band. Paired with: the band word, always printed (never colour
+## alone). Heat is never green. PURGE has its own token with HUNTED's look until the art
+## gives it one (designer ruling 2026-10-05, five Heat bands).
+const HEAT_COOL := TEXT_MID
+const HEAT_NOTICED := WARN
+const HEAT_HUNTED := HARM
+const HEAT_PURGE := HEAT_HUNTED
+
+## §2.6 Daemon trigger families (LOCKED, round 34 phosphors, `fwlib.FAM`). Paired with: each
+## Daemon's own sigil and the family word in its tooltip. NULL is the bible's MISS family
+## (it fires on the NULL slice, renamed from MISS by the 2026-10-05 ruling).
+const DAEMON_PERFECT := Color("#FFD640")
+const DAEMON_NULL := Color("#EC303A")
+const DAEMON_TURN := Color("#5CE1FF")
+const DAEMON_ACTION := Color("#BA92FF")
+const DAEMON_RUN := Color("#96FF6E")
+const DAEMON_HEAT := Color("#FF8C3C")
+## Family id -> colour (ids lower case, as content will name them).
+const DAEMON_FAMILY_COLORS := {
+	&"perfect": DAEMON_PERFECT, &"null": DAEMON_NULL, &"turn": DAEMON_TURN,
+	&"action": DAEMON_ACTION, &"run": DAEMON_RUN, &"heat": DAEMON_HEAT,
+}
+
+## §2.7 rarity (firmware chips and Daemon tiles; round 34 `fwlib.RAR_COL`): common cool white
+## LED on gunmetal, uncommon cyan, rare gold. Paired with: pips (1 / 2 / 3, RARITY_PIPS).
+const RARITY_COMMON := Color("#D6DEEC")
+const RARITY_GUNMETAL := Color("#3A4048")
+const RARITY_UNCOMMON := NET_CYAN
+const RARITY_RARE := Color("#FFD640")
+const RARITY_COLORS: Array[Color] = [RARITY_COMMON, RARITY_UNCOMMON, RARITY_RARE]
+const RARITY_PIPS: Array[int] = [1, 2, 3]
+
+## §2.10 state chrome. ON / selected: a cyan fill plus a word (lime is focus only, never ON).
+const SELECTED := NET_CYAN
+## Lettering on a SELECTED (cyan) fill: the terminal's deep navy.
+const ON_SELECTED := NET_BG_OUTER
+## Two-sticker choice: yellow (top to bottom of the vinyl) = the safe / back-out choice and the
+## screen-title stickers; pink = the committing verb; grey vinyl only when disabled (the
+## sticker art at STICKER_DISABLED_GREY greyscale).
+const STICKER_SAFE := Color("#FFEE60")
+const STICKER_SAFE_LOW := Color("#FFB60E")
+const STICKER_COMMIT := CELL_PINK
+const STICKER_DISABLED_GREY := 0.8
+## The die-cut border of a vinyl sticker and its ink keyline (§1.2).
+const STICKER_DIE_CUT := Color("#FFFFFF")
+
+## §5.1 "never colour alone": what each meaningful colour token is paired with (a greyscale
+## reader gets the same information). The token table test checks every entry is filled.
+const PAIRED_WITH := {
+	&"HARM": "a down mark / minus sign and the word",
+	&"GAIN": "an up mark / plus sign",
+	&"HARM_INK": "as HARM, on paper",
+	&"GAIN_INK": "as GAIN, on paper",
+	&"PROTECT": "the shield / block glyph",
+	&"WARN": "the warning word (LOW, NOTICED, RAID PENDING)",
+	&"FOCUS": "corner brackets and the > caret (a shape, not a fill)",
+	&"DISABLED": "a lock or the reason in words; grey vinyl for stickers",
+	&"SELECTED": "the ON / selected word beside the fill",
+	&"PENCIL_PLAN": "solid vs dashed stroke and the written word",
+	&"PENCIL_THREAT": "solid vs dashed stroke and the written word",
+	&"RING_AVAILABLE": "the ring's state glyph and word",
+	&"RING_UNAVAILABLE": "the ring's state glyph and word",
+	&"RING_CUT": "the cut mark and the word CUT",
+	&"HEAT_COOL": "the band word COOL",
+	&"HEAT_NOTICED": "the band word NOTICED",
+	&"HEAT_FLAGGED": "the band word FLAGGED",
+	&"HEAT_HUNTED": "the band word HUNTED",
+	&"HEAT_PURGE": "the band word PURGE",
+	&"HEAT_B": "the Heat value and band word on the HUD",
+	&"CORP_*": "the corp's material, crest and name",
+	&"CLASS_ACCENTS": "the class portrait, name and hub emblem",
+	&"SLICE_*": "the slice's glyph and program word",
+	&"DAEMON_*": "the Daemon's own sigil and the family word in its tooltip",
+	&"RARITY_*": "1 / 2 / 3 pips",
+	&"STICKER_SAFE": "the verb word (CANCEL) and default focus",
+	&"STICKER_COMMIT": "the verb word (SEND IT, BURN IT)",
+}
 
 ## ART_BIBLE v2 §2.9 grease pencil face: Permanent Marker, rendered as wax, for plans and
 ## threats only (never UI chrome, body text or numbers).
@@ -166,6 +282,23 @@ static func corp_color(corporation_id: StringName) -> Color:
 			return NET_CYAN
 
 
+## A corporation's secondary hue (§2.4, its wheels' tier II): TEXT_HI for an unknown id.
+static func corp_secondary(corporation_id: StringName) -> Color:
+	match corporation_id:
+		&"solace":
+			return CORP_SOLACE_2
+		&"meridian":
+			return CORP_MERIDIAN_2
+		&"halcyon":
+			return CORP_HALCYON_2
+		&"orbital":
+			return CORP_ORBITAL_2
+		&"rebel_cell":
+			return CORP_REBEL_CELL_2
+		_:
+			return TEXT_HI
+
+
 ## ART_BIBLE §2.3 slice colours: the colour means slice type on any wheel, not its owner.
 const SLICE_HOTFIX := Color("#7BE07B")
 const SLICE_INFECT := Color("#C85AFF")
@@ -192,17 +325,17 @@ static func slice_color(type: int) -> Color:
 
 
 ## ART_BIBLE §2.5 class accents, keyed by the class content id (content/classes/*.tres).
-## Accents sit only on the class's portrait, hub glow, beacon and dossier stripe. Values are
-## the M13 ones until ART-1 sets the v2 accents.
+## Accents sit only on the class's portrait, hub glow, beacon and dossier stripe. v2 values
+## (LOCKED round 22 `class_colours_v2`, round 38 portraits; ART-1 1A, App. C #4).
 const CLASS_ACCENTS := {
 	&"breaker": CELL_PINK,
-	&"wrecker": Color("#FF7A1A"),
-	&"ghost": Color("#9FE8FF"),
-	&"phantom": Color("#C8B6FF"),
-	&"rigger": Color("#FFD24D"),
-	&"overclocker": Color("#FF4FD8"),
-	&"botnet": Color("#7BE07B"),
-	&"hivemind": Color("#B04DFF"),
+	&"wrecker": Color("#FF6E32"),
+	&"ghost": Color("#5BE0FF"),
+	&"phantom": Color("#DBC1FF"),
+	&"rigger": Color("#7AE07A"),
+	&"overclocker": Color("#FFB040"),
+	&"botnet": Color("#6072FF"),
+	&"hivemind": Color("#C659FF"),
 }
 ## The accent for a class id nobody listed (a new or modded class): the neutral text tone.
 const CLASS_ACCENT_FALLBACK := TEXT_MID
@@ -219,9 +352,9 @@ const HP_WARN_BELOW := 0.5
 ## HP below this fraction of max reads HARM.
 const HP_HARM_BELOW := 0.25
 ## Heat colour per band: COOL, NOTICED, FLAGGED, HUNTED, PURGE (§2.8; GDD 4.3). Heat is never
-## green. PURGE reuses HUNTED's colour until ART-1 gives it its own look (designer ruling
+## green. PURGE has its own token (HEAT_PURGE) with HUNTED's look until the art gives it one (designer ruling
 ## 2026-10-05, five Heat bands).
-const HEAT_BAND_COLORS: Array[Color] = [TEXT_MID, WARN, HEAT_FLAGGED, HARM, HARM]
+const HEAT_BAND_COLORS: Array[Color] = [HEAT_COOL, HEAT_NOTICED, HEAT_FLAGGED, HEAT_HUNTED, HEAT_PURGE]
 ## The content registry's script, for its config path only (Palette also compiles in `-s`
 ## tool scripts, before any autoload exists).
 const _REGISTRY_SCRIPT := preload("res://scripts/autoload/content_registry.gd")
