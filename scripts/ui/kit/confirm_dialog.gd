@@ -33,14 +33,15 @@ const BUTTON_GAP := 48
 ## `question` comes translated (H24 S4: the dialog shows its words as given); the answers,
 ## the title and the captions are keys, translated here. `body` (translated) goes under the
 ## question; `destructive` marks the panel CANNOT UNDO in HARM.
-func _init(question: String, yes_text: String = "Yes", no_text: String = "No", title: String = "ARE YOU SURE?", # TR
+func _init(question: String, yes_text: String = "YES", no_text: String = "CANCEL", title: String = "ARE YOU SURE?", # TR
 		body: String = "", destructive: bool = false, yes_note: String = "", no_note: String = "") -> void:
 	var s := Settings.text_scale
 	custom_minimum_size = Vector2(DIALOG_W * minf(s, MAX_SCALE), 0)
+
 	TextDb.shown_as_given(self)
 	panel = HudDialogPanel.new(tr(title), destructive)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(panel)
+	panel.resized.connect(func() -> void: size = panel.size)  # the dialog is as big as its panel
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	panel.body.add_child(box)
@@ -116,12 +117,11 @@ func _ready() -> void:
 	_return_focus = UiFocus.owner_of(self)
 	# ART-0 F: a modal over a SCRIM (the page behind blurred and dimmed; it takes the clicks
 	# meant for the page), opened with the modal motion.
-	GlassScrim.backdrop_for(self, get_viewport_rect().size)
+	var scrim := GlassScrim.backdrop_for(self, get_viewport_rect().size)
+	move_child(scrim, 0)  # ART-2 2D: drawn before the panel, so the blur stays behind the dialog
 	PageTransition.open_modal(self)
 	# The panel drops in (Animation pass ANIM-6); a press during the drop completes it.
-	var glass := get_child(0) as Control
-	if glass != null:
-		PageTransition.enter(glass, PageTransition.Look.GLASS)
+	PageTransition.enter(panel, PageTransition.Look.GLASS)
 	UiFocus.trap.call_deferred(self)  # Yes <-> No, and never out to the screen behind
 	# Pad / keyboard: the safe answer takes focus.
 	if no_button != null:
