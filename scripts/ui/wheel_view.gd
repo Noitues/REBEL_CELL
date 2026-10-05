@@ -2074,7 +2074,9 @@ const WORD_HOLD := 0.62
 ## The WEAK stutter steps as shares of the first step (3.19: +3.5 / -2.5 / +1.5 / -0.6 degrees).
 const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
 ## The landing words (3.19), their tints and the word's offset from the blade window (master units).
-const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
+## M14 asset parity: each word is the art pass's own vinyl (`StickerArt`, round 39 `landing.word`);
+## WEAK's x0.5 stays on the rail, as round 39 has it.
+const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK"} # TR
 const WORD_SIDE := 120.0
 ## The PERFECT jaws: their length and open gap (master units) at the tip.
 const JAW_LEN := 26.0

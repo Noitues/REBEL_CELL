@@ -1,0 +1,151 @@
+{
+ "source_tag": "art-concepts-r43",
+ "source": "docs/concepts/round39_landing_exploits/scripts/{fx_r22.py, effects_batch1.py, landing.py, sticker_lib19.py}",
+ "reference": "docs/art_reference/hud/round22_combat_fx/send_it_sticker.jpg; cards_fx/round39_landing_exploits/landing_*.frames.jpg; cards_fx/round23_combat_fx/fx_evade_v4.gif; cards_fx/round19_combat_fx/fx_drone.gif; cards_fx/round22_combat_fx/fx_drone_destroyed_v3.gif",
+ "script": "tools/art/export_combat_stickers.py",
+ "cropped_to_alpha": true,
+ "files": {
+  "send_it.png": {
+   "call": "SL.lettering(['SEND IT'], 74, [FILL_PINK], key_w=6, extrude=9, seed=21, jitter=4.0, track=1, holo_seed=61) + SL.build_sticker(border=15, close=18.75, seed=21, gloss_k=0.0)",
+   "from": "fx_r22.send_sticker",
+   "scale": 2,
+   "lettering_px": 74,
+   "size": [
+    499,
+    236
+   ]
+  },
+  "word_perfect.png": {
+   "call": "EB.vinyl_word('PERFECT', (255, 214, 64), size=50, tilt=-5)",
+   "from": "landing.word",
+   "scale": 1,
+   "lettering_px": 50,
+   "size": [
+    240,
+    132
+   ]
+  },
+  "word_good.png": {
+   "call": "EB.vinyl_word('GOOD', (240, 244, 255), size=42, tilt=-5)",
+   "from": "landing.word",
+   "scale": 1,
+   "lettering_px": 42,
+   "size": [
+    167,
+    118
+   ]
+  },
+  "word_weak.png": {
+   "call": "EB.vinyl_word('WEAK', (255, 150, 40), size=50, tilt=-5)",
+   "from": "landing.word",
+   "scale": 1,
+   "lettering_px": 50,
+   "size": [
+    191,
+    128
+   ]
+  },
+  "evade_token.png": {
+   "call": "EB.token_sticker()",
+   "scale": 1,
+   "size": [
+    84,
+    84
+   ]
+  },
+  "drone.png": {
+   "call": "fx_r22.drone_sticker(hp) with ImageDraw.text split off",
+   "scale": 1,
+   "size": [
+    142,
+    144
+   ],
+   "hp_plate_centre": [
+    42,
+    76
+   ],
+   "hex_centre": [
+    42,
+    42
+   ]
+  },
+  "drone_piece_0.png": {
+   "call": "fx_r22._pieces_from(drone_sticker)[0]",
+   "offset": [
+    24.5,
+    -26.5
+   ],
+   "dir": -1.0472,
+   "dir_deg": -60.0,
+   "size": [
+    49,
+    55
+   ]
+  },
+  "drone_piece_1.png": {
+   "call": "fx_r22._pieces_from(drone_sticker)[1]",
+   "offset": [
+    25.5,
+    0.5
+   ],
+   "dir": 0.0,
+   "dir_deg": 0.0,
+   "size": [
+    51,
+    57
+   ]
+  },
+  "drone_piece_2.png": {
+   "call": "fx_r22._pieces_from(drone_sticker)[2]",
+   "offset": [
+    25.0,
+    30.5
+   ],
+   "dir": 1.0472,
+   "dir_deg": 60.0,
+   "size": [
+    50,
+    61
+   ]
+  },
+  "drone_piece_3.png": {
+   "call": "fx_r22._pieces_from(drone_sticker)[3]",
+   "offset": [
+    -25.0,
+    30.5
+   ],
+   "dir": 2.0944,
+   "dir_deg": 120.0,
+   "size": [
+    52,
+    61
+   ]
+  },
+  "drone_piece_4.png": {
+   "call": "fx_r22._pieces_from(drone_sticker)[4]",
+   "offset": [
+    -26.0,
+    0.5
+   ],
+   "dir": 3.1416,
+   "dir_deg": 180.0,
+   "size": [
+    54,
+    61
+   ]
+  },
+  "drone_piece_5.png": {
+   "call": "fx_r22._pieces_from(drone_sticker)[5]",
+   "offset": [
+    -24.5,
+    -26.5
+   ],
+   "dir": 4.1888,
+   "dir_deg": 240.0,
+   "size": [
+    51,
+    55
+   ]
+  }
+ }
+}

@@ -2,7 +2,8 @@ class_name DaemonRack
 extends Control
 ## The Daemon rack (ART_BIBLE v2 §3.1, §3.13; round 34 `daemon_row`): a narrow CRT plate on the left
 ## edge beside the operative's wheel, "DAEMONS" over a column of CRT tiles in install order; more than
-## MAX_TILES shows the last tile as "+N". Each tile: the Daemon's sigil in its phosphor colour, the
+## MAX_TILES shows the last tile as "+N". Each tile is the art pass's round 34 CRT tile (`assets/wheel/daemons/`,
+## exported from `fwlib.daemon_tile`; the drawn tile below is only the fallback for an id it lacks): the sigil in its phosphor colour, the
 ## rarity on its bezel, an idle scan bar rolling (phase per slot) and a heartbeat LED. The fire cue
 ## (flash, RGB split, packet line) is ART-3's (`fire_slot` is its seam). Hover a tile for what the
 ## Daemon does. View only: it reads the installed Daemons from the scene's DaemonRow.
@@ -28,6 +29,13 @@ const SCAN_ALPHA := 0.22
 ## The heartbeat LED (share of the tile) and its dim alpha.
 const LED := 0.06
 const LED_DIM := 0.35
+## The art pass's tiles (`tools/art/export_firmware_daemons.py`, round 34 `fwlib.daemon_tile`): one sheet
+## per Daemon, TILE_FRAMES idle frames then the fire frame, each TILE_PX square.
+const TILE_DIR := "res://assets/wheel/daemons/"
+const TILE_FRAMES := 12
+const TILE_PX := 128.0
+
+static var _sheets: Dictionary = {}
 
 ## The scene's DaemonRow (the installed ids and the lookup).
 var source: DaemonRow = null
@@ -36,7 +44,7 @@ var view: WheelView = null
 ## Per-slot fire flash 0..1 (ART-3's trigger cue sets it).
 var fire: Dictionary = {}
 var _clock: float = 0.0
-## The sigil glyphs (1C's atlas), one batch per phosphor colour.
+## The sigil glyphs (1C's atlas) for a Daemon without an exported tile, one batch per phosphor colour.
 var _batches: Dictionary = {}
 ## The CRT plate (1B) and the layer the tiles draw on, over it.
 var plate: CrtTerminalPanel
@@ -158,24 +166,35 @@ func _draw_tiles() -> void:
 		var rarity: int = d.rarity if d != null else RC.Rarity.COMMON
 		var phos := AttachStyle.daemon_color(d)
 		var f := float(fire.get(k, 0.0))
-		_tiles.draw_rect(r, AttachStyle.glass(0.95))
-		_tiles.draw_rect(r.grow(-2.0), Color(phos, GLOW_ALPHA + 0.5 * f))
+		var phase := fposmod(_clock + float(k) / MAX_TILES, 1.0)
+		var sheet := tile_sheet(id)
 		if k == shown - 1 and list.size() > MAX_TILES:
+			_tiles.draw_rect(r, AttachStyle.glass(0.95))
 			AttachStyle.draw_centred(_tiles, AttachStyle.value_font(), r.get_center(), "+%d" % (list.size() - MAX_TILES + 1), roundi(TILE * ts * 0.4), Palette.TERMINAL_TEXT, 2)
+			_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
+		elif sheet != null:
+			# The art pass's tile (round 34 `daemon_tile`): idle frame by the scan's phase (frame 0 when
+			# the scan is off: reduce effects), the fire frame cross-faded in by the fire cue.
+			var frame := int(phase * TILE_FRAMES) % TILE_FRAMES if Motion.live(SCAN_MOTION) else 0
+			if f < 1.0:
+				_tiles.draw_texture_rect_region(sheet, r, _cell(frame))
+			if f > 0.0:
+				_tiles.draw_texture_rect_region(sheet, r, _cell(TILE_FRAMES), Color(Color.WHITE, f))
 		else:
+			# No exported tile for this id (a Daemon the art pass never drew): the drawn stand-in.
+			_tiles.draw_rect(r, AttachStyle.glass(0.95))
+			_tiles.draw_rect(r.grow(-2.0), Color(phos, GLOW_ALPHA + 0.5 * f))
 			var g := AttachStyle.daemon_glyph(id)
 			if GlyphBatch.has_glyph(g):
 				_batch(phos).add(g, r.get_center(), r.size.x * SIGIL * 2.0)
 			else:
 				DaemonSigil.draw_sigil(_tiles, r.get_center(), r.size.x * SIGIL, id, rarity)
-		# Idle: the scan bar rolls down the tile, each slot on its own phase; the LED beats with it.
-		var phase := fposmod(_clock + float(k) / MAX_TILES, 1.0)
-		if Motion.live(SCAN_MOTION):
-			var bar := Rect2(Vector2(r.position.x, r.position.y + phase * r.size.y * (1.0 - SCAN_H)), Vector2(r.size.x, r.size.y * SCAN_H))
-			_tiles.draw_rect(bar, Color(phos, SCAN_ALPHA))
-		var beat := 1.0 if phase < 0.12 or not Motion.live(SCAN_MOTION) else LED_DIM
-		_tiles.draw_circle(r.position + Vector2(r.size.x - r.size.x * LED * 2.0, r.size.y * LED * 2.0), r.size.x * LED, Color(phos, beat))
-		_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
+			if Motion.live(SCAN_MOTION):
+				var bar := Rect2(Vector2(r.position.x, r.position.y + phase * r.size.y * (1.0 - SCAN_H)), Vector2(r.size.x, r.size.y * SCAN_H))
+				_tiles.draw_rect(bar, Color(phos, SCAN_ALPHA))
+			var beat := 1.0 if phase < 0.12 or not Motion.live(SCAN_MOTION) else LED_DIM
+			_tiles.draw_circle(r.position + Vector2(r.size.x - r.size.x * LED * 2.0, r.size.y * LED * 2.0), r.size.x * LED, Color(phos, beat))
+			_tiles.draw_rect(r, AttachStyle.rarity_color(rarity), false, 1.5)
 
 
 ## The glyph batch that draws sigils in phosphor `col` (made on first use).
@@ -186,3 +205,15 @@ func _batch(col: Color) -> GlyphBatch:
 		_tiles.add_child(b)
 		_batches[key] = b
 	return _batches[key]
+
+
+## The exported tile sheet of Daemon `id`, or null when the art pass drew none.
+static func tile_sheet(id: StringName) -> Texture2D:
+	if not _sheets.has(id):
+		var path := TILE_DIR + String(id) + ".png"
+		_sheets[id] = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	return _sheets[id]
+
+
+static func _cell(k: int) -> Rect2:
+	return Rect2(Vector2(k * TILE_PX, 0.0), Vector2(TILE_PX, TILE_PX))
