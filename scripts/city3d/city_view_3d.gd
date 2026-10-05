@@ -203,6 +203,50 @@ func set_spill(sources: Array) -> void:
 	CityMaterials.set_spill([_building_mat, _ground_mat], sources)
 
 
+## ART-5 5e: true while the host pauses the city's ambience (the map covered or the window
+## unfocused). Reduce effects / reduce motion are not a pause: the layers apply their own
+## rules (end state; street traffic at 40 % without streaks, bible 5.4).
+func host_paused() -> bool:
+	return covered or not _focused
+
+
+## ART-5 5e: the day-look call (5c's open question to 5a). Lerps the city's night look (the
+## config's ramp, sky, window and neon gains, haze and grade) toward `day` by night share
+## `n` (1 night .. 0 day), on the buildings, streets, post and sky, and switches the
+## landmarks' materials to their day or night look. `day` keys: "ramp" (3 Colors: shadow,
+## mid, lit), "sky", "window_gain", "neon_gain", "haze", "grade" (CityViewMotion.day_look
+## builds it from the motion config). By day there is no rain, and no fog below the Grid.
+func set_night_share(n: float, day: Dictionary) -> void:
+	night_share = clampf(n, 0.0, 1.0)
+	if _building_mat == null or day.is_empty():
+		return
+	var names: Array[StringName] = [&"ramp_shadow", &"ramp_mid", &"ramp_lit"]
+	var day_ramp: Array = day["ramp"]
+	for k in 3:
+		var col := (day_ramp[k] as Color).lerp(cfg.ramp[k], night_share)
+		for m in [_building_mat, _ground_mat, _lane_mat]:
+			(m as ShaderMaterial).set_shader_parameter(names[k], Vector3(col.r, col.g, col.b))
+	_building_mat.set_shader_parameter(&"window_gain", lerpf(float(day["window_gain"]), cfg.window_gain, night_share))
+	_building_mat.set_shader_parameter(&"neon_gain", lerpf(float(day["neon_gain"]), cfg.neon_gain, night_share))
+	var hz := (day["haze"] as Color).lerp(cfg.haze, night_share)
+	_post.set_shader_parameter(&"haze_color", Vector3(hz.r, hz.g, hz.b))
+	var gr := (day["grade"] as Color).lerp(cfg.grade, night_share)
+	_post.set_shader_parameter(&"grade", Vector3(gr.r, gr.g, gr.b))
+	var night := night_share >= 0.5
+	_post.set_shader_parameter(&"rain_on", bool(quality.get("rain", true)) and night)
+	_post.set_shader_parameter(&"fog_on", bool(quality.get("fog", true)) and (night or band == CityLod.Band.GRID))
+	_env.background_color = (day["sky"] as Color).lerp(cfg.sky, night_share)
+	if night != _landmarks_night:
+		_landmarks_night = night
+		_restyle_landmarks()
+
+
+## The share of the night look the city shows (1 night .. 0 day; set_night_share).
+var night_share: float = 1.0
+var _landmarks_night: bool = true
+var _env: Environment
+
+
 # --- Picking API ------------------------------------------------------------------------------
 
 ## What is under pixel `p` of this viewport ({} until the model is built).
@@ -346,6 +390,7 @@ func _sync_update() -> void:
 
 func _build_scene() -> void:
 	var env := Environment.new()
+	_env = env
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = cfg.sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
@@ -650,14 +695,107 @@ func _place_landmark(corp: StringName, path: String, at: Transform3D, look: Land
 		return false
 	var node := scene.instantiate() as Node3D
 	node.name = "Landmark_%s" % corp
-	LandmarkMaterials.apply(node, look, corp, false)
+	landmark_mats[corp] = LandmarkMaterials.apply(node, look, _landmark_corp(corp), not _landmarks_night)
 	node.transform = at
 	add_to_layer(&"landmarks", node)
 	landmarks[corp] = node
 	var box := _ground_box(node)
 	if box.has_area():
 		_cleared.append(Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE))
+	if corp == CELL:
+		LandmarkMaterials.set_reveal(landmark_mats[corp], cell_reveal)
+		LandmarkMaterials.show_dispatch(node, cell_dispatch)
 	return true
+
+
+## ART-5 5e: the materials of each placed landmark (key -> LandmarkMaterials.apply's
+## result), for the reveal and the day / night look.
+var landmark_mats: Dictionary = {}
+## ART-5 5e: the Cell's blackout reveal (0 the sector fully lit .. 1 the fist revealed) and
+## which fist its windows draw (DISPATCH's when true, else home's).
+var cell_reveal: float = 1.0
+var cell_dispatch: bool = false
+## ART-5 5e: the Site landmark placed (5b's `<corp>_site.glb`): {"corp", "lot"} or {}.
+var site_landmark: Dictionary = {}
+## Key of the Site landmark in `landmarks` / `landmark_mats`.
+const SITE_KEY := &"site"
+
+
+## The corporation whose tint a landmark key takes (the Site landmark's is its corp's).
+func _landmark_corp(key: StringName) -> StringName:
+	return StringName(site_landmark.get("corp", key)) if key == SITE_KEY else key
+
+
+## ART-5 5e: the Cell's blackout reveal (bible 4.4, round 34 `map_fist_reveal`): 0 the
+## sector fully lit and washed out, 1 the ring and the hand's lines dark and the fist shown.
+func set_cell_reveal(q: float) -> void:
+	cell_reveal = clampf(q, 0.0, 1.0)
+	if landmark_mats.has(CELL):
+		LandmarkMaterials.set_reveal(landmark_mats[CELL], cell_reveal)
+
+
+## ART-5 5e: the Cell's district shows DISPATCH's fist (the REBEL_CELL campaign) or home's.
+func show_cell_dispatch(on: bool) -> void:
+	cell_dispatch = on
+	if landmarks.has(CELL):
+		LandmarkMaterials.show_dispatch(landmarks[CELL], on)
+
+
+## ART-5 5e: places corporation `corp`'s Site landmark (5b's `<corp>_site.glb`) centred on
+## lot point `lot` (lots; its 6 x 6 block's centre), facing lot +y as the locked renders;
+## the procedural buildings under it give way (their chunks are rebuilt). An empty `corp`
+## or a corp without a Site landmark removes it. Returns true when one stands.
+func set_site_landmark(corp: StringName, lot: Vector2) -> bool:
+	var want := {"corp": corp, "lot": lot} if corp != &"" else {}
+	if want == site_landmark:
+		return landmarks.has(SITE_KEY)
+	_remove_site_landmark()
+	site_landmark = want
+	if want.is_empty() or model == null:
+		return false
+	var path := CityLandmarks.site_path(corp)
+	if path == "":
+		return false
+	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+	var before := _cleared.size()
+	if not _place_landmark(SITE_KEY, path, Transform3D(Basis(), lot_world(lot)), look):
+		return false
+	_rebuild_under(_cleared[before] if _cleared.size() > before else Rect2())
+	return true
+
+
+func _remove_site_landmark() -> void:
+	if not landmarks.has(SITE_KEY):
+		return
+	var node: Node3D = landmarks[SITE_KEY]
+	var box := _ground_box(node)
+	var r := Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE)
+	for k in range(_cleared.size() - 1, -1, -1):
+		if _cleared[k].is_equal_approx(r):
+			_cleared.remove_at(k)
+	node.queue_free()
+	landmarks.erase(SITE_KEY)
+	landmark_mats.erase(SITE_KEY)
+	_rebuild_under(r)
+
+
+## Rebuilds the built chunks whose ground meets world X/Z rect `r`.
+func _rebuild_under(r: Rect2) -> void:
+	if not r.has_area() or model == null:
+		return
+	for key: Vector2i in _chunks.keys():
+		var b := model.chunk_aabb(key)
+		if Rect2(Vector2(b.position.x, b.position.z), Vector2(b.size.x, b.size.z)).intersects(r):
+			_free_chunk(key)
+			_build_chunk(key)
+
+
+## Every placed landmark's materials again in the day or night look (set_night_share).
+func _restyle_landmarks() -> void:
+	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+	for key: StringName in landmarks:
+		landmark_mats[key] = LandmarkMaterials.apply(landmarks[key], look, _landmark_corp(key), not _landmarks_night)
+	set_cell_reveal(cell_reveal)
 
 
 ## The X/Z box of every mesh under `node` (world).
