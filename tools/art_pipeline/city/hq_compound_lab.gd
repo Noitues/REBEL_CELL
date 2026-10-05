@@ -9,7 +9,7 @@ extends Node3D
 ## Writes <out>/<corp>_model.png (model only) and <out>/<corp>_anchors.png (with anchors).
 
 const CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
-const POST_SHADER := preload("res://tools/spike/city/shaders/city_post.gdshader")
+const POST_SHADER := preload("res://shaders/city/city_post.gdshader")
 const TOON_SHADER := preload("res://tools/art_pipeline/city/hq_compound_toon.gdshader")
 const ROLES := {"hq_toon": 0, "hq_lit": 1, "hq_neon": 2, "hq_win": 3, "hq_sign": 4, "hq_beam": 2}
 const CORPS := ["meridian", "solace", "halcyon", "orbital", "rebel_cell"]

@@ -81,6 +81,11 @@ var _layers: Dictionary = {}
 var _chunks: Dictionary = {}  # Vector2i -> {"families": {int: MultiMeshInstance3D}, "ground": MeshInstance3D}
 var _pending: Array[Vector2i] = []
 var _hidden_hq: Dictionary = {}
+## World X/Z rects whose procedural buildings give way to a landmark's own (the art pass's
+## glTF stands there instead: never two cities on one lot).
+var _cleared: Array[Rect2] = []
+## The landmarks placed (corp -> Node3D), 5b's glTFs.
+var landmarks: Dictionary = {}
 var _inks: Array[Color] = []
 var _building_mat: ShaderMaterial
 var _ground_mat: ShaderMaterial
@@ -503,6 +508,8 @@ func _on_model(m: CityModel) -> void:
 	CityMaterials.set_inks(_building_mat, _inks)
 	if iso != null:
 		set_iso(iso)
+	if can_render():
+		place_landmarks()
 	_pending = m.keys()
 	var at := Vector2(iso.target.x, iso.target.z) if iso != null else Vector2.ZERO
 	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
@@ -531,6 +538,8 @@ func _build_chunk(key: Vector2i) -> void:
 	for n: int in ch["prisms"]:
 		var pr := model.prisms[n]
 		if pr.get("hq", false) and _hidden_hq.has(pr["terr"]):
+			continue
+		if _in_cleared(pr["centre"]):
 			continue
 		idx.append(n)
 	var fams := CityMeshKit.families_of(cfg, model.prisms, idx)
@@ -604,3 +613,70 @@ func _apply_building_lod() -> void:
 ## Chunks placed so far (tests, the perf probe).
 func chunks_built() -> int:
 	return _chunks.size()
+
+
+# --- Landmarks: the art pass's own models (5b), never re-modelled -----------------------------
+
+## Where 5b's landmark glTFs live (assets/city/landmarks/<corp>/<file>, with a manifest).
+const LANDMARKS_DIR := "res://assets/city/landmarks"
+## The Cell's district (5b): its own street grid of buildings whose windows draw the fist.
+const CELL := &"rebel_cell"
+const CELL_DISTRICT_FILE := "rebel_cell_district.glb"
+## Share of a landmark's ground box its procedural neighbours give way inside (its edges
+## keep the street's own buildings).
+const CLEAR_SHARE := 0.92
+
+
+## Places every corporation's HQ landmark glTF on its HQ lot (the stand-in tower goes) and
+## the Cell's district glTF on the Cell's district (the procedural buildings under it go),
+## with 5b's LandmarkMaterials (night). A landmark whose file is missing keeps the stand-in.
+func place_landmarks() -> void:
+	var look := load(LandmarkMaterials.LOOK_PATH) as LandmarkLook
+	var corps: Array = model.hqs.keys()
+	corps.sort()
+	for corp: StringName in corps:
+		var path := "%s/%s/%s_hq.glb" % [LANDMARKS_DIR, corp, corp]
+		if _place_landmark(corp, path, landmark_slot(corp), look):
+			hide_stand_in(corp)
+	var centre := NeonCity.hq_of(CELL) + Vector2(NeonCity.HQ_LOTS, NeonCity.HQ_LOTS) * 0.5
+	_place_landmark(CELL, "%s/%s/%s" % [LANDMARKS_DIR, CELL, CELL_DISTRICT_FILE], Transform3D(Basis(), lot_world(centre)), look)
+
+
+func _place_landmark(corp: StringName, path: String, at: Transform3D, look: LandmarkLook) -> bool:
+	if landmarks.has(corp) or not ResourceLoader.exists(path):
+		return false
+	var scene := load(path) as PackedScene
+	if scene == null:
+		return false
+	var node := scene.instantiate() as Node3D
+	node.name = "Landmark_%s" % corp
+	LandmarkMaterials.apply(node, look, corp, false)
+	node.transform = at
+	add_to_layer(&"landmarks", node)
+	landmarks[corp] = node
+	var box := _ground_box(node)
+	if box.has_area():
+		_cleared.append(Rect2(box.get_center() - box.size * CLEAR_SHARE * 0.5, box.size * CLEAR_SHARE))
+	return true
+
+
+## The X/Z box of every mesh under `node` (world).
+static func _ground_box(node: Node3D) -> Rect2:
+	var out := Rect2()
+	var first := true
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		var b := m.global_transform * m.mesh.get_aabb() if m.is_inside_tree() else (node.transform * m.transform) * m.mesh.get_aabb()
+		var r := Rect2(Vector2(b.position.x, b.position.z), Vector2(b.size.x, b.size.z))
+		out = r if first else out.merge(r)
+		first = false
+	return out
+
+
+func _in_cleared(c: Vector2) -> bool:
+	for r in _cleared:
+		if r.has_point(c):
+			return true
+	return false
