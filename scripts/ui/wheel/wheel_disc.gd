@@ -52,6 +52,8 @@ func set_kit(kit: WheelKit) -> void:
 	mat.set_shader_parameter(&"theme", kit.theme)
 	mat.set_shader_parameter(&"tier", kit.tier)
 	mat.set_shader_parameter(&"accent", kit.accent)
+	mat.set_shader_parameter(&"tier_prim", kit.tier_primary)
+	mat.set_shader_parameter(&"tier_sec", kit.tier_secondary)
 	mat.set_shader_parameter(&"boss", kit.is_boss)
 	mat.set_shader_parameter(&"elite", kit.is_elite)
 	var bug := WheelGlyphs.texture(WheelGlyphs.status_id(RC.Status.PARASITE))

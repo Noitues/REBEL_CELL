@@ -26,10 +26,6 @@ const vec3 SLICE_BEZEL[6] = vec3[6](vec3(0.085, 0.08, 0.11), vec3(0.17, 0.115, 0
 	vec3(0.16, 0.09, 0.24), vec3(0.20, 0.22, 0.28), vec3(0.11, 0.04, 0.05));
 const vec3 FRAME_BASE[6] = vec3[6](vec3(0.16, 0.15, 0.19), vec3(0.36, 0.21, 0.09), vec3(0.62, 0.66, 0.64),
 	vec3(0.30, 0.18, 0.44), vec3(0.47, 0.55, 0.59), vec3(0.20, 0.05, 0.06));
-const vec3 TIER_PRIM[6] = vec3[6](vec3(1.0, 0.804, 0.353), vec3(1.0, 0.549, 0.102), vec3(0.588, 1.0, 0.275),
-	vec3(0.69, 0.431, 1.0), vec3(0.804, 0.941, 1.0), vec3(1.0, 0.157, 0.204));
-const vec3 TIER_SEC[6] = vec3[6](vec3(1.0, 0.941, 0.784), vec3(1.0, 0.18, 0.157), vec3(1.0, 0.275, 0.588),
-	vec3(1.0, 0.667, 0.157), vec3(1.0, 1.0, 1.0), vec3(1.0, 0.784, 0.824));
 const vec3 THREAT = vec3(1.0, 0.204, 0.251);
 const vec3 SEG_COL[8] = vec3[8](vec3(0.47, 0.47, 0.53), vec3(1.0, 0.839, 0.251), vec3(0.745, 0.961, 1.0),
 	vec3(1.0, 0.157, 0.627), vec3(0.745, 0.784, 0.843), vec3(1.0, 0.627, 0.157), vec3(0.361, 0.882, 1.0),
@@ -64,6 +60,10 @@ uniform vec2 tex_size = vec2(374.0, 215.0);
 uniform float r_out_s = 349.9;
 uniform int theme = 0;
 uniform int tier = 1;
+// Tier colours (3.7): the kit's primary and secondary (Palette.corp_color / corp_secondary; the
+// player's RESIST_GOLD / PAPER), set by WheelKit.
+uniform vec4 tier_prim : source_color = vec4(1.0, 0.804, 0.353, 1.0);
+uniform vec4 tier_sec : source_color = vec4(1.0, 0.941, 0.784, 1.0);
 uniform vec4 accent : source_color = vec4(1.0, 0.24, 0.66, 1.0);
 uniform vec4 hub_tint : source_color = vec4(1.0, 0.24, 0.66, 1.0);
 uniform float hub_r = 96.0;
@@ -200,7 +200,7 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 		float roll = floor(t_s / 0.083);
 		float band = floor(ty / 14.0);
 		float hb = hash(vec2(band + float(i) * 7.0, roll));
-		if (hb > 0.62) {
+		if (hb > 0.45) {
 			tear = (hash(vec2(band, roll + 3.0)) - 0.5) * 2.0 * mix(6.0, 20.0, hb);
 		}
 	}
@@ -255,22 +255,23 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 		float roll = floor(t_s / 0.083);
 		float cb = hash(vec2(floor(ty / 9.0), roll + 11.0));
 		vec3 band_c = cb > 0.5 ? PINK : GREENG;
-		float bmask = step(0.78, hash(vec2(floor(ty / 9.0) + 40.0, roll)));
+		float bmask = step(0.55, hash(vec2(floor(ty / 9.0) + 40.0, roll)));
 		float flick = 1.0 - 0.18 * step(0.5, hash(vec2(floor(ty / sl_p), roll)));
 		float tl = step(0.94, fract(t_s)) * exp(-pow((ty - H * fract(t_s * 3.7)) / 2.0, 2.0));
 		scr = scr * flick;
-		scr = mix(scr, band_c, 0.45 * bmask * wash_k);
+		scr = mix(scr, band_c, 0.6 * bmask * wash_k);
+		scr += mix(PINK, GREENG, step(0.5, fract(tx / 7.0))) * 0.1 * wash_k;
 		scr += vec3(1.0, 0.9, 1.0) * tl * wash_k;
 	} else if (st == 3) {
 		// ENCRYPTED: asterisks scrolling outward
-		vec2 g = vec2(tx, ty + t_s * 26.0) / 22.0;
+		vec2 g = vec2(tx, ty + t_s * 26.0) / 18.0;
 		vec2 cell = fract(g) - 0.5;
 		float ang = atan(cell.y, cell.x);
-		float star = (0.5 + 0.5 * cos(ang * 6.0)) * 0.16 + 0.06 - length(cell);
+		float star = (0.5 + 0.5 * cos(ang * 6.0)) * 0.2 + 0.09 - length(cell);
 		float on = step(0.45, hash(floor(g)));
 		float am = clamp(star * 40.0, 0.0, 1.0) * on;
-		scr = mix(scr, CYANS * 1.2, am * 0.45 * wash_k);
-		scr += CYANS * 0.06 * wash_k;
+		scr = mix(scr, CYANS * 1.3, am * 0.8 * wash_k);
+		scr += CYANS * 0.1 * wash_k;
 	} else if (st == 2) {
 		// OVERCLOCKED: a translucent heat look, rising shimmer from the hub side
 		float heat = sm(H, 0.0, ty) * 0.5 + 0.5;
@@ -287,7 +288,7 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 			vec2 buv = bq + 0.5;
 			if (buv.x > 0.0 && buv.x < 1.0 && buv.y > 0.0 && buv.y < 1.0) {
 				vec4 b = texture(bug_tex, buv);
-				scr = mix(scr, mix(vec3(0.55, 1.0, 0.3), b.rgb, 0.4), b.a * 0.5 * wash_k);
+				scr = mix(scr, vec3(0.55, 1.0, 0.3) * mix(1.2, 0.25, 1.0 - b.r), b.a * 0.62 * wash_k);
 			}
 		}
 	}
@@ -314,13 +315,13 @@ vec4 slice_tile(vec2 p, int i, float sc) {
 	float led_lat = radians(half_span - min(4.0, half_span * 0.35)) * led_r * 0.86;
 	float ld = length(vec2(rho * radians(d) - led_lat, rho - led_r));
 	float led = clamp(1.6 - ld, 0.0, 1.0) + exp(-pow(ld / 3.5, 2.0)) * 0.5;
-	vec3 led_col = theme == 0 ? col : TIER_PRIM[theme];
+	vec3 led_col = theme == 0 ? col : tier_prim.rgb;
 	bez += led * led_col * 1.3;
 	vec3 rgb = scr * a_scr + bez * (1.0 - a_scr);
 	// tiers (3.7, V2 strong): I primary border, II secondary border + inset line, III gold strip + hatch
 	if (theme != 0 || tier > 1) {
-		vec3 prim = TIER_PRIM[theme];
-		vec3 sec = TIER_SEC[theme];
+		vec3 prim = tier_prim.rgb;
+		vec3 sec = tier_sec.rgb;
 		vec3 tcol = (tier == 2) ? sec : prim;
 		float band_b = clamp(1.0 - abs(e_scr + BW * 0.45) / (BW * 0.42), 0.0, 1.0) * a_tile;
 		rgb = rgb * (1.0 - band_b * 0.75) + tcol * (0.55 + 0.45 * light) * band_b * 0.75;
@@ -442,7 +443,7 @@ void fragment() {
 		// elite collar (3.2): a band of corp-colour chevrons on the outer bevel
 		if (elite && rho > RCH1 + 2.0) {
 			float cv = step(0.5, fract(th / 6.0 + (rho - RCH1) * 0.02));
-			c = mix(c, TIER_PRIM[theme], 0.55 * cv);
+			c = mix(c, tier_prim.rgb, 0.55 * cv);
 		}
 		// the readout rail: static, tinted the program colour, bracketed, split round each needle
 		float dn = near_needle(th);

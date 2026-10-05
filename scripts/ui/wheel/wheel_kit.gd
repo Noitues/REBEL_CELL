@@ -27,6 +27,9 @@ var is_boss: bool = false
 var is_elite: bool = false
 ## The frame accent: the class accent on the player's wheel, the corp hue on an enemy's.
 var accent: Color = Palette.CELL_PINK
+## The tier colours (3.7): the corp's primary and secondary (2.4), the player's gold and paper.
+var tier_primary: Color = Palette.RESIST_GOLD
+var tier_secondary: Color = Palette.PAPER
 var screens: Texture2D = null
 var scenes: Texture2D = null
 ## The enemy's name and its corp line for the boss banner.
@@ -53,6 +56,8 @@ static func of(c: CombatantState, lookup: ContentLookup, class_id: StringName = 
 		k.is_elite = data != null and "is_elite" in data and bool(data.is_elite)
 		k.tier = 3 if k.is_boss else (2 if k.is_elite else 1)
 		k.crest = StringName("crest_" + String(THEMES[k.theme]))
+		k.tier_primary = Palette.corp_color(THEMES[k.theme])
+		k.tier_secondary = Palette.corp_secondary(THEMES[k.theme])
 	k.screens = _load(SCREENS % THEMES[k.theme])
 	k.scenes = _load(SCENES % THEMES[k.theme]) if k.theme != 0 else null
 	return k

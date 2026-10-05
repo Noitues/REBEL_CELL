@@ -1856,7 +1856,7 @@ func _draw_view() -> void:
 		# you, red: bad for you), on its mark, its ring and the slice's rim as it lands.
 		var scol := status_color(status, combatant.is_player)
 		if status != RC.Status.NONE and radius >= BADGE_MIN_RADIUS:
-			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status))
+			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status) if radius >= TAG_MIN_RADIUS else "")
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
@@ -2000,7 +2000,7 @@ const WORD_HOLD := 0.62
 ## The WEAK stutter steps as shares of the first step (3.19: +3.5 / -2.5 / +1.5 / -0.6 degrees).
 const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
 ## The landing words (3.19), their tints and the word's offset from the blade window (master units).
-const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"}
+const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
 const WORD_SIDE := 120.0
 const WORD_MASTER := 46.0
 ## The PERFECT jaws: their length and open gap (master units) at the tip.
@@ -2190,6 +2190,8 @@ func play_lockdown_drain() -> void:
 ## Below this radius (px) the corner badges hide (ART_BIBLE 3.8: x N tabs hide under r 150 at 1080p;
 ## the 720p layout's px).
 const BADGE_MIN_RADIUS := 60.0
+## Below this radius (px) the multiplier tag under a badge hides too (3.8: r 150 at 1080p = 100 at 720p).
+const TAG_MIN_RADIUS := 100.0
 ## The hub's radius in master units: the player's inside the inner ring (3.10, ring 100..127), an
 ## enemy's filling the centre (3.3, no ring).
 const HUB_PLAYER := 96.0
@@ -2204,13 +2206,13 @@ const RING_PLATE_R := 113.5
 const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corrupt": 3, &"seg_anchor": 4,
 	&"seg_accelerator": 5, &"seg_echo": 6}
 ## The multiplier tags under a status badge (3.8): OVERCLOCKED x1.5, PARASITE x0.5.
-const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5", RC.Status.PARASITE: "x0.5"}
+const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5", RC.Status.PARASITE: "x0.5"} # TR
 ## The rail's precision words (3.19): PERFECT gold, GOOD white, WEAK amber with x0.5.
-const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"}
+const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
 ## The rail's kind words per slice type (frames.KIND).
-const KIND_WORDS := {RC.SliceType.SHIM: "ATK", RC.SliceType.OVERFLOW: "CRIT", RC.SliceType.DEFRAG: "DEF",
-	RC.SliceType.SANDBOX: "SHIELD", RC.SliceType.DETOUR: "EVADE", RC.SliceType.HOTFIX: "HEAL",
-	RC.SliceType.INFECT: "AFFLICT", RC.SliceType.TROJAN: "DEPLOY", RC.SliceType.NULL: "MISS"}
+const KIND_WORDS := {RC.SliceType.SHIM: "ATK", RC.SliceType.OVERFLOW: "CRIT", RC.SliceType.DEFRAG: "DEF", # TR
+	RC.SliceType.SANDBOX: "SHIELD", RC.SliceType.DETOUR: "EVADE", RC.SliceType.HOTFIX: "HEAL", # TR
+	RC.SliceType.INFECT: "AFFLICT", RC.SliceType.TROJAN: "DEPLOY", RC.SliceType.NULL: "MISS"} # TR
 
 
 ## The angle (degrees clockwise from the top) slot `i` is shown at, for a rotation of `rot` ticks.

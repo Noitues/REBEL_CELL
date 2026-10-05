@@ -176,8 +176,9 @@ func test_a_landing_plays_live_and_one_press_ends_it() -> void:
 	Motion.force_live = true
 	v.play_precision(RC.PrecisionTier.WEAK, v.active_slot())
 	assert_true(v.motion_busy(), "the WEAK stutter and word play")
-	assert_gt(v.land_word + v.land_fx, 0.0)
-	MotionSkip.skip()
+	await _frames(2)
+	assert_gt(v.land_word, 0.0, "the word is up")
+	MotionSkip.complete_all(v)
 	assert_false(v.motion_busy(), "one press ends it")
 	assert_eq(v.stutter_deg, 0.0, "the wheel back on its tick")
 	assert_eq(v.land_word, 0.0, "the word gone")

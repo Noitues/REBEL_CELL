@@ -150,12 +150,14 @@ A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
+AFFLICT,AFFLICT
 AGAIN,AGAIN
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
+ATK,ATK
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -173,6 +175,7 @@ BEST ICE,BEST ICE
 BLACK MARKET // SCHEMATICS %d,BLACK MARKET // SCHEMATICS %d
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
+BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACHED,BREACHED
@@ -232,6 +235,7 @@ CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
 CREW // ROSTER,CREW // ROSTER
+CRIT,CRIT
 CYBER,CYBER
 CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
@@ -468,10 +472,12 @@ DAEMON,DAEMON
 DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DECK,DECK
+DEF,DEF
 DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
+DEPLOY,DEPLOY
 DETOUR,DETOUR
 DFRG,DFRG
 DISPATCH,DISPATCH
@@ -579,6 +585,7 @@ ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
+EVADE,EVADE
 EVADED %d,EVADED %d
 EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
@@ -794,6 +801,7 @@ Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
+HEAL,HEAL
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
@@ -816,6 +824,7 @@ HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
 HOTFIX,HOTFIX
 HP,HP
+HP %d/%d,HP %d/%d
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s,HP %s
@@ -965,6 +974,7 @@ LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
 LINES HEARD,LINES HEARD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
+LOCKDOWN,LOCKDOWN
 LOG,LOG
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
@@ -1353,6 +1363,7 @@ Loadout,Loadout
 MAINFRAME,MAINFRAME
 MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
+MISS,MISS
 MORE BELOW,MORE BELOW
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop
@@ -1384,6 +1395,7 @@ NEXT SITE >,NEXT SITE >
 NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: select the next Site on the Grid: %s (the map follows).
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
+NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
 NUDGE,NUDGE
 NULL,NULL
@@ -2809,6 +2821,7 @@ Virus,Virus
 WANTED,WANTED
 WAS,WAS
 WEAK,WEAK
+WEAK x0.5,WEAK x0.5
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON
@@ -2912,6 +2925,8 @@ v%s // cell uplink,v%s // cell uplink
 vs %s | ICE %d%s,vs %s | ICE %d%s
 withdraw,withdraw
 won,won
+x0.5,x0.5
+x1.5,x1.5
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.
