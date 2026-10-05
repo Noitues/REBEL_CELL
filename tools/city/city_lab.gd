@@ -13,7 +13,8 @@ extends Control
 
 const CONFIG := preload("res://content/config/city_config.tres")
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
-const ZOOMS := {"grid": 440.0, "raid": 300.0, "netrun": 160.0, "close": 70.0, "city": 1300.0}
+## "gridpage": the Grid page's fitted frame (ortho ~220) holding the GRID band, as the game does.
+const ZOOMS := {"grid": 440.0, "gridpage": 220.0, "raid": 300.0, "netrun": 160.0, "close": 70.0, "city": 1300.0}
 const SETTLE_DEFAULT := 40
 
 var cfg: CityConfig = CONFIG
@@ -87,6 +88,7 @@ func _next_state() -> void:
 	var size := Vector2(DisplayServer.window_get_size())
 	if Vector2i(size) != view.size:
 		view.set_view_size(Vector2i(size))
+	view.band_lock = CityLod.Band.GRID if zoom == "gridpage" else -1
 	view.set_iso(CityIsoCamera.make(cfg, view.lot_world(at), float(ZOOMS.get(zoom, 440.0)), size))
 	if _args.get("network", "1") == "1":
 		view.set_network(_sample_network(corp))

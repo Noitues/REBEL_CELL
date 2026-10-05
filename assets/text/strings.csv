@@ -1692,6 +1692,7 @@ RESPIN,RESPIN
 RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN: ODDS,RESPIN: ODDS
+RIGHT STICK,RIGHT STICK
 RING LOCK,RING LOCK
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE KEY,ROUTE KEY
@@ -2978,7 +2979,7 @@ hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
-lime = you   red = target   box = view,lime = you   red = target   box = view
+lime=you red=target box=view,lime=you red=target box=view
 link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 loot_socket,loot_socket

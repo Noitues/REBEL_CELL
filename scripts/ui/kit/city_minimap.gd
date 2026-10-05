@@ -19,8 +19,8 @@ const MAP_SIDE := 10.0
 const DOT_R := 2.5
 const BOX_W := 1.5
 ## The camera's view box (our plan colour: yellow pencil).
-const BOX_COLOR := Color("#FFE200")
-const TARGET_COLOR := Color("#FF1C2C")
+const BOX_COLOR := Palette.PENCIL_PLAN
+const TARGET_COLOR := Palette.PENCIL_THREAT
 ## The terminal grows with the text size up to this (at 2.0 it would take the map).
 const SCALE_MAX := 1.3
 
@@ -74,7 +74,7 @@ static func terrain_of(city: NeonCity, p_cfg: CityConfig) -> ImageTexture:
 			var i := r.position.x + x * TERRAIN_STEP
 			var j := r.position.y + y * TERRAIN_STEP
 			var t := city.territory_at(i, j)
-			var c := Palette.corp_color(t).darkened(0.45) if t != &"" else Color(0.18, 0.17, 0.26)
+			var c := Palette.corp_color(t).darkened(0.45) if t != &"" else Palette.NIGHT_BLOCK
 			img.set_pixel(x, y, Color(c, TERRAIN_ALPHA))
 	var tex := ImageTexture.create_from_image(img)
 	_terrain[city.city_seed] = tex
@@ -138,7 +138,7 @@ func _draw_map() -> void:
 	if _terrain_tex != null:
 		_map.draw_colored_polygon(corners, Color.WHITE, PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), _terrain_tex)
 	else:
-		_map.draw_colored_polygon(corners, Color(0.18, 0.17, 0.26, TERRAIN_ALPHA))
+		_map.draw_colored_polygon(corners, Color(Palette.NIGHT_BLOCK, TERRAIN_ALPHA))
 	var edge := corners.duplicate()
 	edge.append(corners[0])
 	_map.draw_polyline(edge, Color(Palette.NET_CYAN, 0.5), 1.0)
@@ -158,11 +158,12 @@ func _draw_map() -> void:
 		_map.draw_polyline(box, BOX_COLOR, BOX_W)
 	var f := Palette.mono()
 	var px := UiTheme.font_px(UiTheme.CAPTION)
-	var hint := CityMapOverlay.tr_word("DRAG / WASD")
+	# The pad pans with the right stick (UiTip.for_input picks the device's words).
+	var hint := UiTip.for_input(CityMapOverlay.tr_word("DRAG / WASD"), CityMapOverlay.tr_word("RIGHT STICK"))
 	var hw := f.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 	# The hint sits on the title line, right-aligned (drawn from the map's layer).
 	_map.draw_string(f, Vector2(_map.size.x - hw, -_map.position.y + f.get_ascent(px) + PAD.y * 0.5), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, 0.7))
-	var key := CityMapOverlay.tr_word("lime = you   red = target   box = view")
+	var key := CityMapOverlay.tr_word("lime=you red=target box=view")
 	_map.draw_string(f, Vector2(0, _map.size.y + f.get_ascent(px) + 2.0), key, HORIZONTAL_ALIGNMENT_LEFT, _map.size.x, px, Color(Palette.TERMINAL_TEXT, 0.6))
 
 

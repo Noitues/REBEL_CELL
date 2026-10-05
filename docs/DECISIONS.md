@@ -78,7 +78,60 @@ ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
     `lot_at(p)`, `project(world)`, `unproject(p, height)`, `lot_world(lot, height)`, `top_at(lot)`;
     the same on `CityModel` with a `CityIsoCamera` for headless tests.
   - Overlays read the camera only through `CityIsoCamera` (1D's constraint).
-- **Tests:** `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
+- **The City Grid runs on the 3D city.** The Grid page sets `WireframeBackground.city3d`; its
+  NeonCity then keeps every map API (camera, `grid_to_local`, `roof_of`, `nearest_building`,
+  `is_street`, `camera_settled`, marks and the spread mask) but projects the way the 3D camera does
+  (the ground's rows step `TILE_A × sin 40°` instead of the 2:1 `TILE_B`; roofs lifted to their 3D
+  height, `height_px_bu × cos 40°`), answers from its placement with the fist roads dropped (the
+  model's layout), never bakes (`view_covered` is true, `prebake` does nothing), and draws
+  CityView3D's texture in place of the baked image (no 2D dim, no scanline live shader). So
+  `CityMapOverlay`, the legend, the fits, labels, lean, ANIM motion (ease, crawl, packets, chevrons,
+  drop, travel, the claim's marks and the influence spread mask, now over the 3D city) and their tests
+  are unchanged; `test_city3d_grid` proves a lot's map point is `CityIsoCamera.project` of it. The
+  raid / netrun / HQ-run pages keep the 2D city until the next step (they switch the same flag).
+  Headless keeps the projection and placement (no 3D nodes): the tests measure the real Grid.
+- **The map's links are the ground decal** (`CityMapOverlay.on_ground_decal`): the overlay feeds
+  `CityNetworkData` to the city on every relayout (read-only), draws no veil and no static link
+  strokes; the decal (`shaders/city/city_network*.gdshader`: single trace + halo + node disc and tier
+  rings at city zoom, 3-trace bus with vias and packets at management zooms, dashed border links)
+  sits on render layer 2 (under see-through buildings) and an x-ray pass with the depth test
+  inverted shows hidden links through buildings (solid at the Grid, `net_xray`).
+- **Call: the Grid holds the GRID band** (`band_lock`): its fit frames the Sites at ortho ≈ 200–300
+  (CityLayout spreads the Sites ±7.5 lots; at the bible's ortho 440 they would take a third of the
+  map and crowd the labels), so the Grid keeps solid buildings and the full city life at any player
+  zoom rather than going see-through by ortho. Proposed slice with the raid / netrun move: spread the
+  Site layout ×2 for every view at once (Grid at ortho 440 as round 39) — not now, because the 2D
+  raid and netrun views share the layout and their fits.
+- **Player camera** (`CityGridControls`, `CityMapCamera`, pure): the wheel and + / − zoom
+  log-linearly about the cursor (`zoom_step`, clamped to `zoom_ortho_min/max`); a drag on the empty
+  map, WASD (physical keys: no new input actions) and the pad's right stick pan, the frame's centre
+  kept in the city; every move goes through the page's `_frame_city`, so fits and labels read the
+  real camera. **Minimap terminal** (`CityMinimap`, a CrtTerminalPanel): the city's territories, the
+  Sites (lime yours, red the target), the view box; a press or drag centres the camera. It sits at
+  the map's foot left of the key (the key's strip is that much narrower) and labels avoid it.
+- **Ambient pause:** `ambient_scale` is 0 when the map is covered, the window unfocused, or reduce
+  effects / reduce motion is on; the post's rain / fog and the decal's packets freeze (end state).
+- **Test changed:** `test_anim_r5_city` "a claim stamps at once and the tint follows its bake" no
+  longer waits for a bake on the Grid (the 3D city has none): the claim stamps once at once and the
+  view stays covered.
+- **Not done in this slice (proposed next):** the edge chevrons and the red pencil marker for an
+  off-screen TARGET (§4.1; with 5d's markers), the Cell's red-window crest and the HQ heroes (5b's
+  glTFs: `landmark_slot` / `hide_stand_in` are ready), city motion layers (5c, on the layer seam), a
+  Deck measurement (tier 1 on this PC only).
+- **Perf** (`tools/city/city_lab.tscn --perf`, windowed through run_windowed.py, RX 6700 XT, 4–6
+  other agents' Godot processes running): tier 2 at 1920×1080 — the Grid page's frame (ortho 220,
+  GRID band) 2.54–2.72 ms a frame (city GPU 2.0–2.2 ms, 0.5–0.6 ms CPU), the bible Grid (440) 2.24,
+  raid (300) 3.06, netrun (160) 2.75, the whole city (1300) 3.01 ms; 300–1,250 draw calls (chunks ×
+  families × the shadow pass), 0.65–4.2 M primitives, 118–139 MB texture memory. Deck tier 1 at
+  1280×800: 1.91 / 2.11 / 2.62 ms (Grid page / raid / whole city), 51–57 MB. All inside the 8 ms
+  budget; the Deck itself is still unmeasured. The model records in 1.2–1.4 s on the worker pool
+  (the city fills in nearest chunks first, 6 a frame).
+- **Captures read** (`docs/art_review/ART-5/5a/`): the Grid page beside round 39 `city_grid`
+  (same violet night city, solid toon bands, ink, roof neon, lane glow, the network as a ground
+  decal under the icons and x-rayed through buildings, the minimap terminal; closer framing than the
+  reference, see the GRID-band call); the lab at grid / raid / netrun (see-through at 0.68 from
+  raid, LOD swaps), every corporation's Grid frame, the whole city and a close frame.
+- **Tests:** `tests/unit/test_city3d_grid.gd` (fast): the map layer projects like the 3D camera, roofs at their 3D height, the fist-free layout, zoom / pan / minimap maths, the Grid page in 3D feeding the decal, the camera controls. `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
   the deterministic chunked model, the Cell's grid, picking through chunks = every prism,
   `top_at`, building LOD and view bands with hysteresis, log-linear zoom about the cursor and pan,
   the network decal's buffers, CityView3D's layer and picking API, ambient pause.
