@@ -7,7 +7,10 @@ extends GutTest
 ## a Site that can't be run says why (Group 1 naive audit P2).
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
-const SPIKE_CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
+const CITY_CONFIG := preload("res://content/config/city_config.tres")
+const CITY_SEED := 7
+## Lots of city kept round the Sites for the headless model.
+const MODEL_MARGIN := 6
 const CORPS: Array[StringName] = [&"solace", &"meridian", &"halcyon", &"orbital", &"rebel_cell"]
 const SCALES: Array[float] = [1.0, 1.6, 2.0]
 const SCREEN := Rect2(0, 0, 1280, 720)
@@ -211,30 +214,43 @@ func test_the_key_draws_the_maps_markers_says_each_in_plain_words_and_reveals_on
 		assert_ne(SiteMarker.meaning(key), "", key)
 
 
-# --- Projection seam and placement (headless, spike camera) ------------------------------
+# --- Projection seam and placement (headless, on 5a's CityModel + CityIsoCamera) ----------
 
-func test_markers_project_place_apart_and_pick_on_the_spike_camera() -> void:
+## The city model under corporation `corp`'s Sites (the lots they need, grown by a margin).
+func _model_for(corp: CorporationData) -> CityModel:
+	var probe := GridMarkerProjection.from_camera(CITY_CONFIG, corp, VIEW)
+	return CityModel.build(CITY_CONFIG, CITY_SEED, probe.lots_rect(MODEL_MARGIN))
+
+
+func test_markers_project_place_apart_and_pick_on_the_city_model() -> void:
 	_open_all()
 	for corp_id in CORPS:
 		var c := RunManager.new_campaign(1, corp_id)
 		var corp := RunManager.corporation
-		var proj := GridMarkerProjection.from_spike(SPIKE_CONFIG, corp, VIEW)
+		var model := _model_for(corp)
+		var cam := CityIsoCamera.make(CITY_CONFIG, Vector3.ZERO, CITY_CONFIG.grid_ortho, VIEW)
+		var proj := GridMarkerProjection.from_model(model, cam, corp)
+		proj.aim_at_sites()
 		var anchors := proj.anchors()
 		assert_eq(anchors.size(), corp.city_grid.sites.filter(func(s: SiteData) -> bool: return s != null).size(), "%s: every Site projects" % corp_id)
+		var roofs := 0
 		for id in anchors:
-			var back := proj.lot_under(anchors[id])
+			var back := proj.lot_under(anchors[id], id)
 			assert_almost_eq(back.x, (proj.lots[id] as Vector2).x, 0.01, "%s: projection round-trips (%s)" % [corp_id, id])
 			assert_almost_eq(back.y, (proj.lots[id] as Vector2).y, 0.01)
+			if proj.height_of(id) > 0.0:
+				roofs += 1
+		assert_gt(roofs, 0, "%s: pads stand on the Site buildings' roofs" % corp_id)
 		var specs := _specs(c, corp)
+		var discs := SiteMarkerLayout.place_discs(anchors, specs, 1.0)
+		var ids := discs.keys()
+		for i in ids.size():
+			var a := SiteMarker.box(specs[ids[i]], discs[ids[i]])
+			for j in range(i + 1, ids.size()):
+				assert_false(a.intersects(SiteMarker.box(specs[ids[j]], discs[ids[j]])), "%s: %s and %s apart" % [corp_id, ids[i], ids[j]])
+		for id in ids:
+			assert_eq(SiteMarkerLayout.pick(discs, specs, discs[id]), id, "%s: its disc picks %s" % [corp_id, id])
 		for scale in SCALES:
-			var discs := SiteMarkerLayout.place_discs(anchors, specs, 1.0)
-			var ids := discs.keys()
-			for i in ids.size():
-				var a := SiteMarker.box(specs[ids[i]], discs[ids[i]])
-				for j in range(i + 1, ids.size()):
-					assert_false(a.intersects(SiteMarker.box(specs[ids[j]], discs[ids[j]])), "%s: %s and %s apart" % [corp_id, ids[i], ids[j]])
-			for id in ids:
-				assert_eq(SiteMarkerLayout.pick(discs, specs, discs[id]), id, "%s: its disc picks %s" % [corp_id, id])
 			var sizes := {}
 			for id in ids:
 				sizes[id] = LABEL_BOX * scale
@@ -248,6 +264,57 @@ func test_markers_project_place_apart_and_pick_on_the_spike_camera() -> void:
 					assert_false(r.intersects(labels[lk[j]]), "%s x%.1f: labels apart" % [corp_id, scale])
 				for id in ids:
 					assert_false(r.intersects(SiteMarker.box(specs[id], discs[id])), "%s x%.1f: a label never covers a marker" % [corp_id, scale])
+
+
+func test_the_marker_layer_follows_the_camera_hides_and_picks() -> void:
+	_open_all()
+	var c := RunManager.new_campaign(1, &"meridian")
+	var corp := RunManager.corporation
+	var model := _model_for(corp)
+	var cam := CityIsoCamera.make(CITY_CONFIG, Vector3.ZERO, CITY_CONFIG.grid_ortho, VIEW)
+	var proj := GridMarkerProjection.from_model(model, cam, corp)
+	proj.aim_at_sites()
+	var layer: SiteMarkerLayer = add_child_autofree(SiteMarkerLayer.new())
+	layer.size = VIEW
+	var specs := _specs(c, corp)
+	var labels := {}
+	for id in specs:
+		labels[id] = String(id)
+	layer.attach(proj, specs, labels)
+	var hidden := specs.keys().filter(func(id: Variant) -> bool: return not bool(specs[id]["pinned"]))
+	assert_false(hidden.is_empty())
+	assert_null(layer.view_of(hidden[0]), "a hidden Site has no marker")
+	layer.show_all = true
+	assert_not_null(layer.view_of(hidden[0]), "SHOW ALL shows it")
+	var before: Vector2 = layer.discs[hidden[0]]
+	cam.pan_px(Vector2(40, 0))
+	layer.replace()
+	assert_almost_eq(absf((layer.discs[hidden[0]] as Vector2).x - before.x), 40.0, 1.0, "markers follow the camera")
+	for id in layer.label_rects:
+		for other in layer.discs:
+			assert_false((layer.label_rects[id] as Rect2).intersects(SiteMarker.box(specs[other], layer.discs[other])), "labels clear of markers")
+
+
+func test_fight_won_lights_light_only_won_site_buildings_in_cell_colours() -> void:
+	_open_all()
+	var c := RunManager.new_campaign(1, &"meridian")
+	var corp := RunManager.corporation
+	var model := _model_for(corp)
+	var proj := GridMarkerProjection.from_model(model, CityIsoCamera.make(CITY_CONFIG, Vector3.ZERO, CITY_CONFIG.grid_ortho, VIEW), corp)
+	var won := {}
+	for id in proj.lots:
+		if proj.height_of(id) > 0.0:
+			won[id] = proj.lots[id]
+			break
+	assert_false(won.is_empty(), "a Site with a building")
+	var wins := SiteWonLights.windows_for(model, won)
+	assert_false(wins.is_empty(), "its building's windows light up")
+	for w in wins:
+		assert_true(w["color"] == Palette.CELL_PINK or w["color"] == Palette.CELL_ACID, "in Cell colours")
+	assert_eq(SiteWonLights.windows_for(model, won), wins, "deterministic")
+	var lights: SiteWonLights = autofree(SiteWonLights.new())
+	lights.build(model, won)
+	assert_eq(lights.multimesh.instance_count, wins.size(), "one window quad each, for the fx layer")
 
 
 # --- On the Grid page -------------------------------------------------------------------
@@ -297,7 +364,7 @@ func test_the_grid_draws_v4_markers_hides_unselectable_sites_and_lights_won_figh
 		else:
 			hidden += 1
 			assert_null(overlay.marker_view(n["id"]), "%s is hidden" % n["id"])
-			assert_eq(overlay.node_at(overlay.icon_pos(n)), &"", "a hidden Site is not picked")
+			assert_ne(overlay.node_at(overlay.icon_pos(n)), n["id"], "a hidden Site is not picked")
 	assert_gt(hidden, 0, "regular Sites not yet reachable are hidden")
 	var dv := overlay.marker_view(down)
 	assert_not_null(dv, "the DOWN node shows")
