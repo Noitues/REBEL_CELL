@@ -7,7 +7,7 @@ extends Node
 ## (FLATLINED, JACKED OUT, HOME FELL). A demo campaign in the lab's own slot; never headless.
 ##
 ##   python tools/run_windowed.py --log <file> -- res://tools/design_lab/campaign_end_lab.tscn
-##       -- --out=<abs dir> [--corps=halcyon,meridian] [--what=lost,won,run] [--scale=1.6]
+##       -- --out=<abs dir> [--corps=halcyon,meridian] [--what=lost,won,run] [--scales=1.0,2.0]
 ##       [--reduce-effects]
 
 const HQ := preload("res://scenes/hq/hq_scene.tscn")
@@ -33,6 +33,7 @@ var _shots := 0
 func _ready() -> void:
 	var corps := CORPS.duplicate()
 	var what := ["lost", "won", "run"]
+	var scales: Array[float] = [1.0]
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			out_dir = a.trim_prefix("--out=")
@@ -42,15 +43,34 @@ func _ready() -> void:
 				corps.append(StringName(c))
 		elif a.begins_with("--what="):
 			what = Array(a.trim_prefix("--what=").split(","))
-		elif a.begins_with("--scale="):
-			Settings.text_scale = float(a.trim_prefix("--scale="))
+		elif a.begins_with("--scales="):
+			scales.clear()
+			for v in a.trim_prefix("--scales=").split(","):
+				scales.append(float(v))
 		elif a == "--reduce-effects":
 			Settings.set_reduce_effects(true)
 			Fx.apply_settings()
 	RunManager.save_slot = SLOT
 	RunManager.scene_switching_enabled = false
 	_unlock_all()
-	_run.call_deferred(corps, what)
+	_run_scales.call_deferred(corps, what, scales)
+
+
+## Every end state at each text size in turn (one launch), then quits.
+func _run_scales(corps: Array, what: Array, scales: Array[float]) -> void:
+	var was := Settings.text_scale
+	for sc in scales:
+		Settings.text_scale = sc
+		Settings.changed.emit()
+		_tag = "s%.1f_" % sc
+		await _run(corps, what)
+	Settings.text_scale = was
+	print("lab4d: done, %d pictures" % _shots)
+	RunManager.delete_save()
+	get_tree().quit()
+
+
+var _tag := ""
 
 
 func _run(corps: Array, what: Array) -> void:
@@ -64,9 +84,6 @@ func _run(corps: Array, what: Array) -> void:
 	if "run" in what:
 		for kind in ["died", "completed", "aborted"]:
 			await _run_end(kind)
-	print("lab4d: done, %d pictures" % _shots)
-	RunManager.delete_save()
-	get_tree().quit()
 
 
 func _unlock_all() -> void:
@@ -85,7 +102,7 @@ func _frames(n: int) -> void:
 func _shot(name: String) -> void:
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
-	img.save_png(out_dir.path_join("%02d_%s.png" % [_shots, name]))
+	img.save_png(out_dir.path_join("%02d_%s%s.png" % [_shots, _tag, name]))
 	_shots += 1
 	print("lab4d: shot %s" % name)
 

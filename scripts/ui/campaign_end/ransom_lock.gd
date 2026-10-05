@@ -77,6 +77,11 @@ var ready_check: Callable = Callable()
 var snapshot: Image = null
 var snapshot_points: Array = []
 var started: bool = false
+var _waited: int = 0
+## Frames the screen behind draws before the lock starts (its last one is the picture), and
+## the most the countdown's live number grows with the text size (it fills the notice at 2.0).
+const START_FRAMES := 3
+const COUNTDOWN_SCALE_CAP := 1.4
 
 ## Seconds since the lock began (game time at Motion's speed).
 var elapsed: float = 0.0
@@ -238,6 +243,7 @@ func _build_notice() -> void:
 	clock.add_child(clock_col)
 	clock_col.add_child(_label(tr("WIPE IN"), Palette.mono(), UiTheme.TITLE, style.color()))
 	countdown_label = _label(COUNTDOWN_FORMAT % 0.0, Palette.mono(), UiTheme.HERO, style.accent())
+	countdown_label.add_theme_font_size_override(&"font_size", UiTheme.font_px_at(UiTheme.HERO, minf(s, COUNTDOWN_SCALE_CAP)))
 	countdown_label.name = "Countdown"
 	clock_col.add_child(countdown_label)
 	var foot := MarginContainer.new()
@@ -332,7 +338,9 @@ func _process(delta: float) -> void:
 	if done:
 		return
 	if not started:
-		if ready_check.is_valid() and not bool(ready_check.call()):
+		# The page under the lock draws for a few frames first (its picture is the prints').
+		_waited += 1
+		if _waited < START_FRAMES or (ready_check.is_valid() and not bool(ready_check.call())):
 			return
 		started = true
 		_take_snapshot()

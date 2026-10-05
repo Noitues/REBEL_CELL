@@ -76,22 +76,34 @@ no rule, schema or save change. New views in `scripts/ui/campaign_end/` (one cla
   disabled look) are vinyl stickers on the desk; they emit, the HQ calls. A won campaign is the same
   file in the corporation's failure: stamp, tab and status AT LARGE.
 - **4D.3 Run end restyled.** The Cell's CRT window (cyan for JACKED OUT, red for a loss) with the
-  verdict as a vinyl sticker slapped on the glass (`run_end_slap`; JACKED OUT yellow, FLATLINED and
-  HOME FELL red) and BACK TO HQ the screen's one pink sticker verb; the fate, tags and Heat reason
+  verdict as a vinyl sticker slapped on the glass (1B's `sticker_slap`; JACKED OUT yellow, FLATLINED and
+  HOME FELL red) and BACK TO HQ, the screen's one pink sticker verb, under it (one row: the window
+  fits at 2.0); the fate, tags and Heat reason
   are kept. HOME FELL hands over to the HQ's lock.
-- **Seams.** Courier Prime (`Palette.paper` / `paper_bold`, 1A) types the corp paper; the house accent
-  is 1A's `corp_secondary`. Until 1B lands: the vinyl sticker (`VinylWord`, `VinylButton`: Anton with
-  ink keyline, extrude and bevel on a white die-cut plate, the corner curl cut along the fold with the
-  cream backing folded over) and the corp paper (`PaperSheet`, `PostIt`, `RubberStamp` with
-  `shaders/rubber_stamp.gdshader`) are drawn here; the switch to 1B's materials is these classes only.
-  The campaign end's own stock (manila, report, ballpoint, stamp red, post-its, desk, house backs,
-  vinyl fills) is a block of `END_*` tokens in `palette.gd` (Group 1's file, smallest edit, reported).
-  `TiltBox` holds a tilted piece in a container (a Container resets its children's rotation).
+- **Materials (Group 1 merged).** Courier Prime (`Palette.paper` / `paper_bold`, 1A) types the
+  corp paper; the house accent is 1A's `corp_secondary`. 1B's `VinylSticker` is every Cell sticker:
+  the lock's title, defence cards (object stickers framing a `DefenceCardFace`) and REBEL_CELL, whose
+  `fold` (curl) and `lift` the lock drives from its own entries; the run end's verdict (1B's
+  `slap`); the buttons (`VinylButton`: a Button whose rect is the sticker's body, the sticker's
+  REST / HOVER / PRESSED / DISABLED following it, the lime halo on focus). The dossier's flowing
+  sheets (`PaperSheet`) draw 1B's corp paper stock (`CorpPaperPanel.SHADER`); `CorpPaperPanel`
+  itself places its fields by hand, so the container sheets keep their own layout. 4B's v2 portrait
+  prints (`PortraitArt.draw`) fill the prints and the personnel rows, DECEASED with 4B's KIA look
+  (`Polaroid` KIA values: greyed, crossed out in red pencil). Not used, on purpose: `GreasePencilMark`
+  (the bible keeps grease pencil the Cell's own, true-to-the-rules marks, yellow / red; the dossier's
+  marks are the corporation's auditor's, in blue ballpoint, §1.2 corp paper), `BinaryBits` (§1.2: bits
+  for dissolves and damage; the lock's stickers curl and drop, never dissolve, round 20 notes), and
+  `CorpPaperPanel` for the ransom notice (round 20 draws it as the house's screen takeover, not a
+  printed sheet). The campaign end's own stock (manila, report, ballpoint, stamp red, post-its, desk,
+  house backs) is a block of `END_*` tokens in `palette.gd` (Group 1's file, smallest edit, reported);
+  `RubberStamp` (+ `shaders/rubber_stamp.gdshader`), `PostIt`, `DossierPhoto` and `CorpSeal` are 4D's.
+  `TiltBox` holds a tilted piece in a container (a Container resets its children's rotation; a
+  VinylSticker is held by its body, not its shadow pad).
 - **Motion** (`ui_motion.tres`, REQUIRED_IDS, lab demos on the real pieces): `ransom_glitch`,
   `ransom_wipe`, `ransom_padlock`, `ransom_notice_in`, `ransom_verb_stamp`, `ransom_sticker_curl`,
   `ransom_sticker_drop`, `ransom_sticker_stagger` (a part), `ransom_countdown`, `ransom_wipe_hold`
   (a hold), `ransom_cut`, `dossier_open`, `dossier_stamp`, `dossier_note`, `dossier_note_stagger` (a
-  part), `run_end_slap`. One press completes the lock's takeover (every node padlocked, 00:00.00, no
+  part); the run end's verdict slaps with 1B's `sticker_slap`. One press completes the lock's takeover (every node padlocked, 00:00.00, no
   sticker left) and the dossier's opening; a press in the lock's hold cuts at once. Reduce effects shows
   the end state at once and still holds the notice to be read; headless shows no lock (the dossier at
   once) and never waits. Capture lab `tools/design_lab/campaign_end_lab.tscn` walks every end state for
@@ -102,7 +114,7 @@ no rule, schema or save change. New views in `scripts/ui/campaign_end/` (one cla
   (the ForecastStamp WON / LOST and the display headline are gone; the story and profile stay as
   EndStory / ProfileFacts); `test_anim_r6_city` C13 (the dossier's motion completes with a press instead
   of the verdict stamp's pop) and C15 (the won file says AT LARGE instead of the WON stamp's icon);
-  `test_anim_r5_netrun` and `test_horizontal_pass20_screens` (the ResultStamp is a VinylWord). New:
+  `test_anim_r5_netrun` and `test_horizontal_pass20_screens` (the ResultStamp is a VinylSticker, checked by its words). New:
   `tests/unit/test_art11_campaign_end.gd`. Dropped: the HQ constants END_STAMP*, END_WINDOW_W,
   END_HEADLINE*, END_BEAT_TITLE_FONT, END_CAPTION / END_WON / END_LOST and `_land_end_stamp`; the netrun's
   END_STAMP, END_CAPTION and `end_icon`.

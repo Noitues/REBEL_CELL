@@ -244,7 +244,8 @@ func test_reduce_effects_shows_the_locks_end_state_at_once() -> void:
 	assert_eq(lock._locks_landed, 5)
 	assert_eq(lock.phase(RansomLock.WIPE), 1.0, "the takeover covers the screen")
 	assert_eq(lock.hold_seconds(), 0.0, "headless never waits (no hold)")
-	assert_true(lock.done, "headless: it cuts at once")
+	await BoundedWait.until(get_tree(), func() -> bool: return lock.done, 2.0, RansomLock.START_FRAMES + 2)
+	assert_true(lock.done, "headless: it cuts as soon as it starts (no hold, no cut motion)")
 
 
 func test_headless_campaign_loss_goes_straight_to_the_dossier_and_state_holds() -> void:

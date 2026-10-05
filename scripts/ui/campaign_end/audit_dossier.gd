@@ -41,7 +41,7 @@ const STAMP_TILT := -12.0
 const LETTERHEAD_SEAL := 58.0
 const LETTERHEAD_RULE := 3.0
 ## The personnel rows' portrait prints (px at 1.0).
-const BUST_PRINT := Vector2(30, 34)
+const BUST_PRINT := Vector2(32, 36)
 ## The typed fields' size at text scale 1.0 (bible §2.9: 20 px fields at 1080p, ÷1.5).
 const FIELD_PX := 13
 ## Leader dots after a field name up to this many characters (the typed column).
@@ -189,12 +189,12 @@ func _build() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_END
 	buttons.add_theme_constant_override(&"separation", roundi(UiTheme.SP_L * s))
 	column.add_child(buttons)
-	main_menu_button = VinylButton.new(TextDb.mark("Main menu"), VinylSticker.Fill.YELLOW, UiTheme.TITLE)
+	main_menu_button = VinylButton.new(TextDb.mark("Main menu"), VinylSticker.Fill.YELLOW, UiTheme.LABEL)
 	main_menu_button.name = "MainMenu"
 	main_menu_button.tooltip_text = UiTip.fold(tr("Back to the title screen."))
 	main_menu_button.pressed.connect(func() -> void: main_menu_pressed.emit())
 	buttons.add_child(main_menu_button)
-	new_campaign_button = VinylButton.new(TextDb.mark("New campaign"), VinylSticker.Fill.PINK, UiTheme.HEADING)
+	new_campaign_button = VinylButton.new(TextDb.mark("New campaign"), VinylSticker.Fill.PINK, UiTheme.TITLE)
 	new_campaign_button.name = "NewCampaign"
 	new_campaign_button.tooltip_text = UiTip.fold(tr("Start a new campaign."))
 	new_campaign_button.pressed.connect(func() -> void: new_campaign_pressed.emit())
@@ -268,21 +268,21 @@ func _build_personnel() -> void:
 		row.name = "Operative_%s" % String(r["name"]).validate_node_name()
 		row.add_theme_constant_override(&"separation", roundi(UiTheme.SP_S * s))
 		col.add_child(row)
-		# 4B's portrait print: the operative's own face; KIA (dimmed, crossed out) when DECEASED.
-		var who := String(r["name"])
-		var bust := Polaroid.new("", "[PORTRAIT]", 0.0)
+		# 4B's v2 portrait print of the operative's own face; KIA (dimmed, crossed out in red
+		# pencil, as 4B's Polaroid.kia) when DECEASED.
+		var bust := Control.new()
 		bust.name = "Print"
 		bust.custom_minimum_size = BUST_PRINT * s
 		bust.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		bust.set_operative(r["class_id"], r["id"])
-		bust.kia = not bool(r["alive"])
+		var subj := PortraitArt.operative_subject(r["class_id"], r["id"], String(r["name"]))
+		bust.draw.connect(_draw_print.bind(bust, subj, not bool(r["alive"])))
 		row.add_child(bust)
 		var names := VBoxContainer.new()
 		names.add_theme_constant_override(&"separation", 0)
 		names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(names)
 		var alive: bool = r["alive"]
-		var head := _typed("%s  R%d" % [who.to_upper(), int(r["rank"])], FIELD_PX, true)
+		var head := _typed("%s  R%d" % [String(r["name"]).to_upper(), int(r["rank"])], FIELD_PX, true)
 		head.name = "Name"
 		if not alive:
 			head.draw.connect(_strike.bind(head))
@@ -300,6 +300,24 @@ func _build_personnel() -> void:
 		fate_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		UiWrap.whole_words(fate_label)  # whole words, never mid-word (ART-0 F)
 		row.add_child(fate_label)
+
+
+## A personnel print: the portrait on its white border; KIA greyed and crossed out (4B's
+## Polaroid.kia look and values).
+func _draw_print(c: Control, subj: Dictionary, kia: bool) -> void:
+	var r := Rect2(Vector2.ZERO, c.size)
+	c.draw_rect(r, PaperInk.opaque(Palette.PAPER))
+	var m := maxf(1.0, c.size.x * DossierPhoto.FRAME_SHARE)
+	var img := r.grow(-m)
+	PortraitArt.draw(c, img, subj)
+	if kia:
+		c.draw_rect(img, Color(Palette.INK, Polaroid.KIA_GREY))
+		var inset := img.size.x * Polaroid.KIA_INSET
+		var w := maxf(2.0, img.size.x * Polaroid.KIA_WIDTH)
+		var red := Color(PortraitFeed.pencil_red(), Polaroid.PENCIL_ALPHA)
+		c.draw_line(img.position + Vector2(inset, inset), img.end - Vector2(inset, inset), red, w, true)
+		c.draw_line(Vector2(img.end.x - inset, img.position.y + inset), Vector2(img.position.x + inset, img.end.y - inset), red, w, true)
+	c.draw_rect(r, PaperInk.edge(Color(Palette.INK, Polaroid.EDGE_ALPHA)), false, PaperInk.edge_width(1.0))
 
 
 ## A typed name struck through (a DECEASED operative).
@@ -515,7 +533,7 @@ func _place_overlays() -> void:
 	var spots := [Vector2(per.end.x - notes[0].size.x * 0.75, per.position.y + UiTheme.SP_L * s),
 		Vector2(per.end.x - notes[1].size.x * 0.68, per.position.y + notes[0].size.y + UiTheme.SP_S * s),
 		Vector2(rep.end.x - notes[2].size.x * 0.7, rep.position.y - UiTheme.SP_S * s),
-		Vector2(rep.end.x - notes[3].size.x * 0.5, rep.end.y - notes[3].size.y * 0.55)]
+		Vector2(rep.end.x - notes[3].size.x * 0.5, rep.end.y - notes[3].size.y * 1.05)]
 	var stagger := Motion.seconds(NOTE_STAGGER) if Motion.live(NOTE_STAGGER) else 0.0
 	var namp := Motion.amplitude(NOTE)
 	for i in notes.size():
