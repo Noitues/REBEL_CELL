@@ -4,3 +4,7 @@
 
 [resource]
 script = ExtResource("1")
+district_centre = Vector2(2.5, 2.5)
+district_radius = 120.0
+city_rect = Rect2i(-80, -80, 165, 165)
+chunk_lots = 24
