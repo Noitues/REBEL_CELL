@@ -332,6 +332,17 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer rulings: D10, D13, D14 confirmed; the art pass design is correct
+1. **D10, D13, D14 confirmed** at their plan defaults: title verbs BREACH / DISABLE / OVERTHROW with
+   **SIMULATE** for the tutorial; an "Always show all nodes" setting with hidden-node visibility on the
+   netrun map; the netrun presentation rules of plan §3.1 D14 (within the current GDD 4.2 rules).
+2. **Standing ruling: assume the art pass design is correct.** From now on, where a view, word, layout,
+   look or presentation rule differs between the game and ART_BIBLE v2 / the locked concepts
+   (`docs/concepts/DIRECTION_REVIEW.md` locks, `docs/art_reference/`), the art pass wins without asking the
+   designer; the change is logged in the area's DECISIONS entry and any GDD presentation line is updated
+   citing this ruling. Mechanics the art shows but the rules do not have (plan §3.2 G1–G16) still follow
+   ruling 8 of pause point 0 (re-evaluated after M14).
+
 ### 2026-10-05 — CI paused for M14 (designer: "stop those CI failures")
 GitHub CI (`.github/workflows/ci.yml`) ran the whole suite in one process on every push to main; with
 M14's frequent pushes each run outran the 30-minute job limit and was cancelled (reported as failures),
