@@ -85,6 +85,37 @@ const SCRIM_BLUR_PX := 6
 ## Heat FLAGGED band (§2.8): between WARN and HARM.
 const HEAT_FLAGGED := Color("#FF7A1A")
 
+# --- ART-1 1B material kit (ART_BIBLE v2 §1.2; round 3 combined_v2 kit palette) -----------
+## Grease pencil yellow: our plan, valid, solid = will happen (§1.2).
+const PENCIL_YELLOW := Color("#FFE200")
+## Grease pencil red: threat, invalid, loss (§1.2).
+const PENCIL_RED := Color("#FF1C2C")
+## The dark under-shadow every pencil stroke casts (reads day and night).
+const PENCIL_SHADOW := Color("#050308")
+## Vinyl: the die-cut white border, its lower gradient stop and the adhesive back a peel shows.
+const VINYL_WHITE := Color("#F6F3EC")
+const VINYL_WHITE_LO := Color("#EFEDE7")
+const VINYL_BACKING := Color("#E0DDD6")
+## Vinyl: the printed keyline ink and the darker extrude under it.
+const VINYL_INK := Color("#141118")
+const VINYL_EXTRUDE := Color("#09080C")
+## Kraft note-card stock and its fibres.
+const KRAFT := Color("#B68E5C")
+const KRAFT_FIBRE := Color("#5F4224")
+## Sticker word fills (kit gradients, top to bottom): the Cell's verbs, threat words, ours.
+const STICKER_FILL_PINK: Array[Color] = [Color("#FF60AC"), Color("#DE1270")]
+const STICKER_FILL_RED: Array[Color] = [Color("#FF5850"), Color("#CC1416")]
+const STICKER_FILL_YELLOW: Array[Color] = [Color("#FFEE60"), Color("#E8B016")]
+## CRT terminal glass: the navy top and bottom of the panel's glass.
+const CRT_GLASS_TOP := Color("#0B1630")
+const CRT_GLASS_BOTTOM := Color("#050A1A")
+## Corp paper: the letterhead rule and the typewriter ink.
+const PAPER_TYPE_INK := Color("#1E1A16")
+## The near-opaque scrim laid behind a decrypted holo panel (§1.2: 0.88).
+const HOLO_SCRIM := Color(0.00784314, 0.0117647, 0.0392157, 0.88)
+## Toon ink lines (3D city and props).
+const TOON_INK := Color("#0C0A16")
+
 const FONT_MARKER := "res://assets/fonts/PermanentMarker-Regular.ttf"
 const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
 const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
