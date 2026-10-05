@@ -176,6 +176,11 @@ const DEMOS := {
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-7 3B: the netrun map's reveal and calm Heat (the route at Heat 60, every node shown),
+	# and the jack-in transition along a link (Fx.jack_in_link).
+	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
+	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
+	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
 	# ART-2 2A: the wheel stack.
 	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
 
@@ -230,6 +235,9 @@ const CONTEXT_LOOP := 6.0
 const DEMO_CAMPAIGN_SEED := 1
 ## The jack demos' destination line and the raid interlude's stamp (translated).
 const JACK_DESTINATION := "SOLACE // THE RACK"
+## ART-7 3B: the link jack demo's loop length (s) and the route Heat demo's Heat.
+const JACK_LINK_LOOP := 6.0
+const DEMO_ROUTE_HEAT := 60
 ## ANIM-R6 C14: the words the game stamps (RunManager.jack_note: "RAID INCOMING" over the
 ## raiding corporation), for the demo campaign's corporation.
 const RAID_NOTE := "RAID INCOMING\n%s"
@@ -602,6 +610,11 @@ func _play() -> void:
 			Fx.jack_out(func() -> void: pass, -1.0, JACK_DESTINATION)
 		"jack_reduced":
 			_play_jack_reduced()
+		"jack_link":
+			# ART-7 3B: the netrun jack along a stand-in link across the stage.
+			Fx.jack_in_link(func() -> void: pass, {"from": "RELAY_4", "to": "DEPOT_15",
+				"points": PackedVector2Array([Vector2(PANEL_W + 160, 520), Vector2(PANEL_W + 560, 300)])}, JACK_DESTINATION)
+			length = JACK_LINK_LOOP
 		"view":
 			length = _play_view(String(demo[1]))
 		"screen":
@@ -1092,6 +1105,9 @@ func _play_context(scene: String, what: String) -> void:
 			var first: StringName = s.available_nodes()[0]
 			s.run.current_node_id = first
 			s.run.visited.append(first)
+			if what == "route_heat":
+				# ART-7 3B: Heat past the resistance band (calm Heat marks and searchlights).
+				RunManager.campaign.heat = DEMO_ROUTE_HEAT
 			_context._show_map()
 	else:
 		_demo_campaign(what)
@@ -1120,6 +1136,9 @@ func _play_context(scene: String, what: String) -> void:
 			hq._demo_combat_end("win")
 		"route":
 			hq.enter_node(RunManager.netrun.available_nodes()[0])
+		"route_heat":
+			# ART-7 3B: every node fades in (D13), the Heat lights circle, the searchlights sweep.
+			(hq.city_overlay as RouteOverlay).show_all = true
 		"select":
 			hq.show_grid()
 			await get_tree().process_frame
