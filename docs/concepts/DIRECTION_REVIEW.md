@@ -1295,3 +1295,19 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
   - sabotage 3 missiles;
   - on the 4th lap the path bypasses the platform, and the 4th launch destroys the base.
 - **DISPATCH:** 3–5 out-of-the-box ideas, such as several operatives running at once to hit 3 nodes simultaneously.
+
+### Site markers and HUD (2026-10-05)
+
+**Site markers**
+- The previous icon changes are reverted.
+- Disabled: a white lightning bolt over the whole site circle, with the full icon greyed out.
+- The duplicate key icon becomes a new icon.
+- Seized and disabled nodes de-power their links.
+- A plain-language legend explains what each icon means.
+
+**HUD**
+- Nudge buttons are aligned across both wheels, and the boss has key labels.
+
+**Forecast format**
+- [final damage] (shield-absorbed) [+shield gained] [−other] [status].
+- Example: −6 (4 shield) +4 shield −1 RAM.
