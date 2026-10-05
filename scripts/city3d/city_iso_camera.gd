@@ -16,7 +16,7 @@ var distance: float = 2600.0
 
 
 ## A camera from the config for view `view_name` ("grid", "raid", "netrun", "close").
-static func for_view(cfg: CitySpikeConfig, view_name: String, size: Vector2) -> CityIsoCamera:
+static func for_view(cfg: CityConfig, view_name: String, size: Vector2) -> CityIsoCamera:
 	var c := CityIsoCamera.new()
 	c.yaw_deg = cfg.yaw_deg
 	c.pitch_deg = cfg.pitch_deg
@@ -29,12 +29,12 @@ static func for_view(cfg: CitySpikeConfig, view_name: String, size: Vector2) -> 
 
 
 ## World position (height 0) of lot point `lot` (lots, not lot centres).
-static func lot_to_world(cfg: CitySpikeConfig, lot: Vector2, height: float = 0.0) -> Vector3:
+static func lot_to_world(cfg: CityConfig, lot: Vector2, height: float = 0.0) -> Vector3:
 	return Vector3((lot.x - cfg.district_centre.x) * cfg.lot_bu, height, (lot.y - cfg.district_centre.y) * cfg.lot_bu)
 
 
 ## Lot point of world position `w`.
-static func world_to_lot(cfg: CitySpikeConfig, w: Vector3) -> Vector2:
+static func world_to_lot(cfg: CityConfig, w: Vector3) -> Vector2:
 	return Vector2(w.x / cfg.lot_bu + cfg.district_centre.x, w.z / cfg.lot_bu + cfg.district_centre.y)
 
 
@@ -92,10 +92,59 @@ func bu_per_px() -> float:
 
 
 ## The continuous zoom level (post40.lod_of): 0 transit, 1 raid, 2 city.
-static func lod_of(cfg: CitySpikeConfig, p_ortho: float) -> float:
+static func lod_of(cfg: CityConfig, p_ortho: float) -> float:
 	if p_ortho >= cfg.lod_ortho_raid:
 		return 1.0 + minf(1.0, log(p_ortho / cfg.lod_ortho_raid) / log(cfg.lod_ortho_city / cfg.lod_ortho_raid))
 	return maxf(0.0, log(p_ortho / cfg.lod_ortho_transit) / log(cfg.lod_ortho_raid / cfg.lod_ortho_transit))
+
+
+## ART-5 5a: a camera on ground point `p_target` (world, height 0) `p_ortho` BU wide.
+static func make(cfg: CityConfig, p_target: Vector3, p_ortho: float, size: Vector2) -> CityIsoCamera:
+	var c := CityIsoCamera.new()
+	c.yaw_deg = cfg.yaw_deg
+	c.pitch_deg = cfg.pitch_deg
+	c.distance = cfg.camera_distance
+	c.viewport = size
+	c.target = p_target
+	c.ortho = p_ortho
+	return c
+
+
+## A copy of this camera.
+func copy() -> CityIsoCamera:
+	var c := CityIsoCamera.new()
+	c.yaw_deg = yaw_deg
+	c.pitch_deg = pitch_deg
+	c.distance = distance
+	c.viewport = viewport
+	c.target = target
+	c.ortho = ortho
+	return c
+
+
+## ART-5 5a continuous zoom: multiplies the ortho by `factor` (log-linear: one notch is one
+## factor), clamped to [lo, hi], keeping the ground point under screen pixel `p` still.
+func zoom_about(p: Vector2, factor: float, lo: float, hi: float) -> void:
+	var before := unproject(p, 0.0)
+	ortho = clampf(ortho * factor, lo, hi)
+	var after := unproject(p, 0.0)
+	target += before - after
+
+
+## ART-5 5a pan: moves the view by `delta_px` screen pixels (the city slides the other way).
+func pan_px(delta_px: Vector2) -> void:
+	var g0 := unproject(viewport * 0.5, 0.0)
+	var g1 := unproject(viewport * 0.5 + delta_px, 0.0)
+	target += g1 - g0
+
+
+## The ground rect (world X/Z) the view covers, its four corners' bounds at height 0.
+func ground_bounds() -> Rect2:
+	var r := Rect2(Vector2(unproject(Vector2.ZERO).x, unproject(Vector2.ZERO).z), Vector2.ZERO)
+	for p in [Vector2(viewport.x, 0), viewport, Vector2(0, viewport.y)]:
+		var w := unproject(p)
+		r = r.expand(Vector2(w.x, w.z))
+	return r
 
 
 ## Fits target and ortho to world points `pts` plus `margin` BU, ortho clamped to

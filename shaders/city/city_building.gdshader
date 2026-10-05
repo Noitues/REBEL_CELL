@@ -1,10 +1,13 @@
-// ART-1 1D spike: Cv2 faceted buildings with the E 3-band toon ramp (target_corps.mat_toon:
+// ART-5 5a (from ART-1 1D's spike): Cv2 faceted buildings with the E 3-band toon ramp (target_corps.mat_toon:
 // colour * ramp(band of N.L with shadow) * tone jitter per triangle), procedural window
 // grid, ledges, shopfronts and the neon roof trim (unified40.city_building). Prototype of
-// the shared toon material (1B owns shaders/kit/; unified later). Instances: MultiMesh,
+// the shared toon material: the bands and the light spill come from 1B's kit include
+// (shaders/kit/toon_bands.gdshaderinc, ToonInkMaterial.set_spill feeds it); the ink is the
+// city's post pass (city_post.gdshader), not the hull (it splits at hard corners). Instances: MultiMesh,
 // COLOR = base colour, INSTANCE_CUSTOM = (taper, trim ink index + 1 or 0, seed 0-1, crest).
 shader_type spatial;
 render_mode cull_disabled, specular_disabled;
+#include "res://shaders/kit/toon_bands.gdshaderinc"
 
 uniform vec3 ramp_shadow;
 uniform vec3 ramp_mid;
@@ -27,6 +30,10 @@ uniform float ledge_every = 6.0;
 uniform float ledge_bu = 0.16;
 // 0 city, 1 raid, 2 transit (CityLod.Detail).
 uniform int detail = 0;
+// Light spill: the shadow / mid bands' share of a source's light, and its emission share.
+uniform float spill_mid = 0.62;
+uniform float spill_low = 0.32;
+uniform float spill_gain = 1.9;
 
 varying flat vec3 v_corner;
 varying flat vec3 v_edge;
@@ -127,11 +134,14 @@ void fragment() {
 		}
 	}
 	ALBEDO = base;
-	EMISSION = em;
+	vec3 nw = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
+	vec3 spill = toon_spill(v_world, nw, ramp_edges.x, ramp_edges.y, spill_mid, spill_low);
+	EMISSION = em + base * spill * spill_gain;
 }
 
 void light() {
 	float ndl = dot(NORMAL, LIGHT) * ATTENUATION;
-	vec3 band = ndl < ramp_edges.x ? ramp_shadow : (ndl < ramp_edges.y ? ramp_mid : ramp_lit);
+	int b = toon_band_index(ndl, ramp_edges.x, ramp_edges.y);
+	vec3 band = b == 0 ? ramp_shadow : (b == 1 ? ramp_mid : ramp_lit);
 	DIFFUSE_LIGHT = band;
 }

@@ -9,7 +9,7 @@ extends Control
 const CONFIG := preload("res://tools/spike/city/city_spike_config.tres")
 const SETTLE_DEFAULT := 30
 
-var cfg: CitySpikeConfig = CONFIG
+var cfg: CityConfig = CONFIG
 var traffic: CityTraffic
 var iso: CityIsoCamera
 var view_name: String = "grid"

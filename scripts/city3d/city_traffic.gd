@@ -17,7 +17,7 @@ var cars: Array[Dictionary] = []
 
 
 ## Lanes and cars for district `d`, seeded by `seed`.
-static func build(cfg: CitySpikeConfig, d: CityDistrict, seed: int) -> CityTraffic:
+static func build(cfg: CityConfig, d: CityDistrict, seed: int) -> CityTraffic:
 	var t := CityTraffic.new()
 	var lines := avenue_lines(d)
 	var rng := RngStreams.make_stream(seed, STREAM)

@@ -143,7 +143,7 @@ static func _mesh(verts: PackedVector3Array, uvs: PackedVector2Array, uv2s: Pack
 
 
 ## The facet-row class of height `h` (BU).
-static func height_class(cfg: CitySpikeConfig, h: float) -> int:
+static func height_class(cfg: CityConfig, h: float) -> int:
 	for k in cfg.height_classes.size():
 		if h <= cfg.height_classes[k]:
 			return k
@@ -151,12 +151,12 @@ static func height_class(cfg: CitySpikeConfig, h: float) -> int:
 
 
 ## Family key of a prism: sides * 16 + height class.
-static func family_of(cfg: CitySpikeConfig, pr: Dictionary) -> int:
+static func family_of(cfg: CityConfig, pr: Dictionary) -> int:
 	return (pr["poly"] as PackedVector2Array).size() * 16 + height_class(cfg, float(pr["h"]))
 
 
 ## Groups the district's prisms by family: key -> Array of prism indices (prism order).
-static func families(cfg: CitySpikeConfig, d: CityDistrict) -> Dictionary:
+static func families(cfg: CityConfig, d: CityDistrict) -> Dictionary:
 	var out := {}
 	for n in d.prisms.size():
 		var key := family_of(cfg, d.prisms[n])
@@ -167,7 +167,7 @@ static func families(cfg: CitySpikeConfig, d: CityDistrict) -> Dictionary:
 
 
 ## The base colour of a building (family mix + territory tint, unified40.city_building).
-static func base_color(cfg: CitySpikeConfig, pr: Dictionary) -> Color:
+static func base_color(cfg: CityConfig, pr: Dictionary) -> Color:
 	var fam := cfg.families[absi(int(pr["key"])) % cfg.families.size()]
 	var terr: StringName = pr["terr"]
 	if terr == &"":
@@ -176,16 +176,23 @@ static func base_color(cfg: CitySpikeConfig, pr: Dictionary) -> Color:
 
 
 ## The ground mesh: asphalt, plazas, street lots (lot quads at height 0).
-static func ground_mesh(cfg: CitySpikeConfig, d: CityDistrict) -> ArrayMesh:
+static func ground_mesh(cfg: CityConfig, d: CityDistrict) -> ArrayMesh:
+	var r := cfg.district_radius * cfg.lot_bu * 1.6
+	return ground_mesh_of(cfg, Rect2(-r, -r, r * 2.0, r * 2.0), d.plazas, d.streets)
+
+
+## ART-5 5a: the ground of world rect `area` (X/Z): asphalt, then plazas and street lots.
+static func ground_mesh_of(cfg: CityConfig, area: Rect2, plazas: Array, streets: Array) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var r := cfg.district_radius * cfg.lot_bu * 1.6
-	_quad(st, Vector3(-r, -0.02, -r), Vector3(r, -0.02, -r), Vector3(r, -0.02, r), Vector3(-r, -0.02, r), cfg.ground)
-	for p in d.plazas:
+	var a := area.position
+	var b := area.end
+	_quad(st, Vector3(a.x, -0.02, a.y), Vector3(b.x, -0.02, a.y), Vector3(b.x, -0.02, b.y), Vector3(a.x, -0.02, b.y), cfg.ground)
+	for p: Dictionary in plazas:
 		var l: Vector2i = p["lot"]
 		var col := cfg.plaza.lerp(Palette.corp_color(p["terr"]), 0.12)
 		_lot_quad(st, cfg, l, 0.005, col)
-	for s in d.streets:
+	for s: Dictionary in streets:
 		_lot_quad(st, cfg, s["lot"], 0.01, cfg.street)
 	st.generate_normals()
 	return st.commit()
@@ -193,11 +200,17 @@ static func ground_mesh(cfg: CitySpikeConfig, d: CityDistrict) -> ArrayMesh:
 
 ## Lane glow strips (unified40 GLANE): a soft bed and 3-12 bright strokes per street lot
 ## in its lane colour (vertex colour = emission).
-static func lane_mesh(cfg: CitySpikeConfig, d: CityDistrict) -> ArrayMesh:
+static func lane_mesh(cfg: CityConfig, d: CityDistrict) -> ArrayMesh:
+	return lane_mesh_of(cfg, d.streets)
+
+
+## ART-5 5a: lane glow strips of street lots `streets` (one chunk's).
+static func lane_mesh_of(cfg: CityConfig, streets: Array) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var u := cfg.lot_bu
-	for s in d.streets:
+	var any := false
+	for s: Dictionary in streets:
 		if s["along_i"] and s["along_j"]:
 			continue
 		var l: Vector2i = s["lot"]
@@ -214,6 +227,7 @@ static func lane_mesh(cfg: CitySpikeConfig, d: CityDistrict) -> ArrayMesh:
 		var nrm := Vector3(-dir.z, 0, dir.x)
 		var bed := col * (cfg.lane_glow_base + tr * cfg.lane_glow_traffic)
 		_strip(st, wa - dir * 0.3, wb + dir * 0.3, nrm, half + 0.5, 0.02, bed)
+		any = true
 		var nl := mini(strokes, 3 + int(tr * 9.0))
 		for k in nl:
 			var t := (k + 0.5) / nl * 2.0 - 1.0
@@ -221,7 +235,7 @@ static func lane_mesh(cfg: CitySpikeConfig, d: CityDistrict) -> ArrayMesh:
 			var al := 0.55 + 0.35 * hash01(l.x, l.y * 31 + k, 4) + tr * 0.15
 			var c2 := Color(minf(1.0, col.r * al), minf(1.0, col.g * al), minf(1.0, col.b * al))
 			_strip(st, wa + nrm * lane - dir * 0.35, wb + nrm * lane + dir * 0.35, nrm, cfg.lane_stroke_bu * 0.5, 0.04, c2)
-	return st.commit()
+	return st.commit() if any else null
 
 
 ## Car part ids (CUSTOM0.x): body, lane-colour light, headlight, tail light.
@@ -278,7 +292,7 @@ static func _strip(st: SurfaceTool, a: Vector3, b: Vector3, nrm: Vector3, half: 
 	_quad(st, a + nrm * half + up, b + nrm * half + up, b - nrm * half + up, a - nrm * half + up, col)
 
 
-static func _lot_quad(st: SurfaceTool, cfg: CitySpikeConfig, l: Vector2i, y: float, col: Color) -> void:
+static func _lot_quad(st: SurfaceTool, cfg: CityConfig, l: Vector2i, y: float, col: Color) -> void:
 	var p0 := CityIsoCamera.lot_to_world(cfg, Vector2(l.x, l.y), y)
 	var p1 := CityIsoCamera.lot_to_world(cfg, Vector2(l.x + 1, l.y), y)
 	var p2 := CityIsoCamera.lot_to_world(cfg, Vector2(l.x + 1, l.y + 1), y)
@@ -294,3 +308,106 @@ static func _quad(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, d: Vector
 		st.set_color(col)
 		st.set_normal(Vector3.UP)
 		st.add_vertex(p)
+
+
+# --- ART-5 5a: the whole city's chunked building families and LODs --------------------------
+
+## Floats per MultiMesh instance: transform (3x4), colour, custom.
+const INSTANCE_FLOATS := 20
+## Unit meshes made so far: "key|lod|rows|cols" -> ArrayMesh (pure functions of their key).
+static var _unit_cache: Dictionary = {}
+
+
+## Facet rows of height class `hc` at building LOD `lod` (CityLod.building_lod).
+static func lod_rows(cfg: CityConfig, hc: int, lod: int) -> int:
+	var share: float = cfg.lod_rows_share[clampi(lod, 0, cfg.lod_rows_share.size() - 1)]
+	if share <= 0.0:
+		return 1
+	return maxi(1, roundi(cfg.height_class_rows[hc] * share))
+
+
+## The unit prism of family `key` (sides * 16 + height class) at building LOD `lod`
+## (cached: the same mesh for every chunk).
+static func family_mesh(cfg: CityConfig, key: int, lod: int) -> ArrayMesh:
+	var sides := key / 16
+	var hc := key % 16
+	var rows := lod_rows(cfg, hc, lod)
+	var cols: int = cfg.lod_cols[clampi(lod, 0, cfg.lod_cols.size() - 1)]
+	var k := "%d|%d|%d|%d|%s" % [key, lod, rows, cols, cfg.resource_path]
+	if not _unit_cache.has(k):
+		var jit := cfg.facet_jitter if rows > 1 else 0.0
+		_unit_cache[k] = unit_prism(sides, rows, cols, jit, cfg.facet_normal_jitter * 0.1 if rows > 1 else 0.0, key)
+	return _unit_cache[k]
+
+
+## Groups prisms `idx` (indices into `prisms`) by family: key -> PackedInt32Array, in
+## index order.
+static func families_of(cfg: CityConfig, prisms: Array[Dictionary], idx: PackedInt32Array) -> Dictionary:
+	var out := {}
+	for n in idx:
+		var key := family_of(cfg, prisms[n])
+		if not out.has(key):
+			out[key] = PackedInt32Array()
+		(out[key] as PackedInt32Array).append(n)
+	return out
+
+
+## The roof-trim ink palette of `prisms` (distinct inks by RGBA, sorted, at most 16: the
+## building shader's `ink_colors`).
+static func ink_palette(prisms: Array[Dictionary]) -> Array[Color]:
+	var seen := {}
+	for pr in prisms:
+		seen[(pr["ink"] as Color).to_rgba32()] = pr["ink"]
+	var keys: Array = seen.keys()
+	keys.sort()
+	var out: Array[Color] = []
+	for k in keys:
+		if out.size() >= 16:
+			break
+		out.append(seen[k])
+	return out
+
+
+## The ink palette slot of `c` (1-based; the nearest when the palette is full).
+static func ink_slot(inks: Array[Color], c: Color) -> int:
+	var best := 0
+	var best_d := INF
+	for k in inks.size():
+		var d := Vector3(inks[k].r - c.r, inks[k].g - c.g, inks[k].b - c.b).length_squared()
+		if d < best_d:
+			best_d = d
+			best = k + 1
+	return best
+
+
+## The MultiMesh buffer of prisms `idx` (TRANSFORM_3D + colours + custom data):
+## transform rows, COLOR = base colour, INSTANCE_CUSTOM = (taper, trim ink slot or 0,
+## seed, crest).
+static func instance_buffer(cfg: CityConfig, prisms: Array[Dictionary], idx: PackedInt32Array, inks: Array[Color]) -> PackedFloat32Array:
+	var buf := PackedFloat32Array()
+	buf.resize(idx.size() * INSTANCE_FLOATS)
+	var o := 0
+	for n in idx:
+		var pr := prisms[n]
+		var t := instance_transform(pr["poly"], pr["y0"], pr["h"])
+		var b := t.basis
+		var vals := [b.x.x, b.y.x, b.z.x, t.origin.x, b.x.y, b.y.y, b.z.y, t.origin.y, b.x.z, b.y.z, b.z.z, t.origin.z]
+		for v: float in vals:
+			buf[o] = v
+			o += 1
+		var col := base_color(cfg, pr)
+		buf[o] = col.r
+		buf[o + 1] = col.g
+		buf[o + 2] = col.b
+		buf[o + 3] = 1.0
+		o += 4
+		var key_i := int(pr["key"])
+		var trim := 0.0
+		if float(pr["taper"]) > 0.05 and hash01(key_i, 42, 1) < cfg.roof_trim_share:
+			trim = float(ink_slot(inks, pr["ink"]))
+		buf[o] = float(pr["taper"])
+		buf[o + 1] = trim
+		buf[o + 2] = hash01(key_i, 43, 2)
+		buf[o + 3] = 0.0
+		o += 4
+	return buf
