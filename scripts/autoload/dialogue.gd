@@ -686,15 +686,16 @@ func _style(speaker: int, corporation_id: StringName = &"") -> void:
 		speaker_label.add_theme_color_override("font_color", style.border_color)
 		text_label.add_theme_color_override("default_color", Palette.CRT_AMBER if speaker == RC.Voice.DISPATCH else Palette.PAPER)
 	else:
-		style.bg_color = Color(Palette.NOTE_PAPER, 0.97)
+		# ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6): the subtitle paper opaque, its speaker in INK (pink read 2.3:1).
+		style.bg_color = PaperInk.opaque(Color(Palette.NOTE_PAPER, 0.97), Palette.NIGHT_SKY)
 		style.border_color = Palette.INK
 		style.set_border_width_all(1)
 		style.border_width_left = 4
 		style.border_color = Palette.CELL_PINK
 		style.shadow_color = Color(0, 0, 0, 0.5)
 		style.shadow_size = 8
-		speaker_label.add_theme_color_override("font_color", Palette.CELL_PINK)
-		text_label.add_theme_color_override("default_color", Palette.INK)
+		speaker_label.add_theme_color_override("font_color", PaperInk.text(Palette.CELL_PINK))
+		text_label.add_theme_color_override("default_color", PaperInk.text(Palette.INK))
 	bar.add_theme_stylebox_override("panel", style)
 
 
