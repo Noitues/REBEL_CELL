@@ -1,0 +1,51 @@
+{
+ "frames": 12,
+ "cell": [
+  187,
+  108
+ ],
+ "tex": [
+  374,
+  215
+ ],
+ "scale": 0.5,
+ "span": 60.0,
+ "r_out": 360.0,
+ "r_in": 130.0,
+ "r_out_s": 349.9,
+ "r_in_s": 138.825,
+ "kinds": [
+  "EXPLOIT",
+  "ZERO-DAY",
+  "FIREWALL",
+  "PROXY",
+  "SANDBOX",
+  "TROJAN",
+  "PATCH",
+  "VIRUS",
+  "NULL",
+  "SPECIAL"
+ ],
+ "scene": {
+  "meridian": {
+   "yc": 0.36,
+   "cut": 0.7674418604651163
+  },
+  "solace": {
+   "yc": 0.5,
+   "cut": -1.0
+  },
+  "halcyon": {
+   "yc": 0.5,
+   "cut": -1.0
+  },
+  "orbital": {
+   "yc": 0.5,
+   "cut": -1.0
+  },
+  "rebel_cell": {
+   "yc": 0.5,
+   "cut": -1.0
+  }
+ }
+}

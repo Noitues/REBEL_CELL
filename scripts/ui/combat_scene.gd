@@ -4172,6 +4172,8 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	var is_null_slice := slice != null and slice.slice_type == RC.SliceType.NULL
 	var tier := int(b["tier"])
 	AudioDirector.play_precision(tier, is_null_slice)
+	if not is_null_slice:
+		v.play_precision(tier, slot, int(b["pointer_index"]))  # ART-2 2A: the landing's shape (ART_BIBLE 3.19)
 	if is_null_slice:
 		v.play_null_static(slot)
 		_bark("null", s)

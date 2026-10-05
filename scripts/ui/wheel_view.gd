@@ -184,7 +184,7 @@ const PIP_RADIUS := 3.0
 const TAG_CHIP_ROWS := 2
 ## HP arc and number below the rim (px): the arc's outer edge, then the number's offset.
 const HP_ARC_OUT := 40.0
-const HP_TEXT_GAP := 44.0
+const HP_TEXT_GAP := 54.0
 ## Gap between the HP number and the last-turn line (px).
 const LAST_TURN_GAP := 4.0
 ## Padding round the LAST TURN plate (px).
@@ -207,7 +207,22 @@ const LOSS_COLOR := Color("#FF4D4D")
 const TARGET_COLOR := Palette.CELL_ACID
 
 
+## ART-2 2A: the disc layer (slice screens, bezel, hub, inner ring; WheelDisc) and the telemetry
+## ring (WheelTelemetry), both under this view's own drawing; the kit the wheel wears.
+var disc: WheelDisc = null
+var telemetry: WheelTelemetry = null
+var kit: WheelKit = WheelKit.new()
+## The operative's class (its accent on the player wheel's frame and hub, 2.5).
+var class_id: StringName = &"breaker"
+
+
 func _init() -> void:
+	disc = WheelDisc.new()
+	disc.name = "Disc"
+	add_child(disc, false, Node.INTERNAL_MODE_FRONT)
+	telemetry = WheelTelemetry.new()
+	telemetry.name = "Telemetry"
+	add_child(telemetry, false, Node.INTERNAL_MODE_FRONT)
 	custom_minimum_size = Vector2(330, 330)
 	# PASS: hover tooltips on slices; clicks still reach the scene.
 	mouse_filter = Control.MOUSE_FILTER_PASS
@@ -305,6 +320,18 @@ func show_combatant(c: CombatantState, p_satellites: Array[CombatantState], p_re
 	readouts = p_readouts
 	lookup = p_lookup
 	wheel_color = Palette.CELL_PINK if c.is_player else Palette.corp_color(_corporation_of(c))
+	if c.is_hub_breached():
+		var lt: Tween = _tweens.get(&"lockdown")
+		if lt != null and lt.is_valid():
+			lt.kill()
+		_tweens.erase(&"lockdown")
+		lockdown_level = 1.0
+	elif lockdown_level > 0.0 and not _tweens.has(&"lockdown"):
+		play_lockdown_drain()
+	var was := kit
+	kit = WheelKit.of(c, lookup, class_id)
+	if was == null or was.theme != kit.theme or was.tier != kit.tier or was.accent != kit.accent or disc.mat.get_shader_parameter(&"screens") == null:
+		disc.set_kit(kit)
 	queue_redraw()
 
 
@@ -466,6 +493,13 @@ func stop_motion(sync_tag: bool = true) -> void:
 	replay_tag_alpha = 1.0
 	status_flash = {}
 	flatline_pop = 1.0  # the DEFEAT stamp itself stays (ANIM-R5 combat 2)
+	landing_tier = -1
+	land_fx = 0.0
+	land_word = 0.0
+	latch = 0.0
+	stutter_deg = 0.0
+	drain_p = 1.0 if flatlined else 0.0
+	lockdown_level = 1.0 if combatant != null and combatant.is_hub_breached() else 0.0
 	if sync_tag:
 		_intent_sig = intent_signature() if _intent_rect_local().has_area() else ""
 	set_process(false)
@@ -1200,8 +1234,8 @@ func hp_counter_spot() -> Vector2:
 func hp_ring_spot() -> Vector2:
 	var c := _shown()
 	var frac := clampf(shown_hp() / maxf(1.0, c.max_hp), 0.0, 1.0)
-	var a := PI * 0.1 + PI * 0.8 * frac
-	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + (32.0 + HP_ARC_OUT) * 0.5)
+	var deg := WheelFace.HP_A1 - (WheelFace.HP_A1 - WheelFace.HP_A0) * frac
+	return global_position + WheelFace.at(_center(), art_scale(), frame_master() + (WheelFace.HP_R0 + WheelFace.HP_R1) * 0.5, deg)
 
 
 ## Valid drop zones pulse while a card is aimed (`drop_zone_pulse`); the hovered one stays
@@ -1233,7 +1267,7 @@ func pointer_spot(index: int) -> Vector2:
 	if ps.is_empty():
 		return global_center()
 	var a := _ang(ps[clampi(index, 0, ps.size() - 1)])
-	return global_center() + Vector2(cos(a), sin(a)) * (_radius() + _band() * 0.55)
+	return global_center() + Vector2(cos(a), sin(a)) * window_radius()
 
 
 ## Where docked satellite `id` stands on screen (its token), the centre when it's gone.
@@ -1293,6 +1327,18 @@ func number_anchor(k: int) -> Vector2:
 ## The radius (px) floating numbers keep within, round the centre.
 func number_room() -> float:
 	return (_radius() - _band()) * NUMBER_ROOM
+
+
+## The boss's phase thresholds as HP fractions (its phase pips, 3.16); empty for other wheels.
+func phase_marks() -> Array[float]:
+	var out: Array[float] = []
+	var data := lookup.get_content(combatant.source_id) as EnemyData if lookup != null and combatant != null else null
+	if data == null or not data.is_boss:
+		return out
+	for ph in data.phases:
+		if ph != null and ph.hp_threshold_pct > 0.0:
+			out.append(ph.hp_threshold_pct)
+	return out
 
 
 ## The pieces a broken wheel falls apart into, as shown (global): ANIM-R3 A6g, the real
@@ -1381,7 +1427,7 @@ func global_center() -> Vector2:
 ## the HP arc and its numbers).
 ## The disc's radius with its needles' band (px): a break's local flash covers it.
 func disc_radius() -> float:
-	return _radius() + _band() * 0.55
+	return _radius() + _above() * 0.55
 
 
 func extent_radius() -> float:
@@ -1638,7 +1684,10 @@ func _corporation_of(c: CombatantState) -> StringName:
 ## Vertical position of the wheel centre as a fraction of the view's height.
 const CENTER_Y := 0.56
 ## Width of the slice band as a share of the radius.
-const BAND_SHARE := 0.34
+## ART-2 2A: the slice band runs from the hub (R_IN 130 of R_OUT 360, ART_BIBLE 3.21) to the rim.
+const BAND_SHARE := 1.0 - WheelFace.R_IN / WheelFace.R_OUT
+## Room kept over the rim for the needle blades (the layout's share of the radius).
+const ABOVE_SHARE := 0.34
 
 
 func _center() -> Vector2:
@@ -1662,7 +1711,7 @@ func _radius() -> float:
 	# and last-turn line below share the view's height; the centre moves to fit (_center).
 	# Everything fits at r_full; below that the tag may clamp under the arrows down to
 	# RADIUS_FLOOR of the unconstrained size, as long as its title row still fits (H23).
-	var span := 2.0 + BAND_SHARE
+	var span := 2.0 + ABOVE_SHARE
 	var r_full := (size.y - _bottom_need() - INTENT_HEIGHT - _tag_reserve()) / span
 	var r_title := (size.y - _bottom_need() - INTENT_HEIGHT * _ts()) / span
 	r = minf(r, maxf(r_full, minf(r_title, r * RADIUS_FLOOR)))
@@ -1686,6 +1735,27 @@ const BIG_TEXT := 1.3
 ## Width of the slice bar band.
 func _band() -> float:
 	return _radius() * BAND_SHARE
+
+
+## Room over the rim the needles take.
+func _above() -> float:
+	return _radius() * ABOVE_SHARE
+
+
+## Pixels per master unit of the art (the rim R_OUT = 360 is the view's radius).
+func art_scale() -> float:
+	return _radius() / WheelFace.R_OUT
+
+
+## The frame's outer radius in master units: the bezel, or the threat ring on a boss (3.2).
+func frame_master() -> float:
+	return WheelFace.R1 + (WheelFace.THREAT_DEPTH if kit.is_boss else 0.0)
+
+
+## The radius (px) of the blades' value windows: where a needle's value reads (3.2).
+func window_radius() -> float:
+	var rt := frame_master()
+	return (rt + (WheelFace.WINDOW_IN + WheelFace.BLADE_TOP - WheelFace.WINDOW_OUT) * 0.5) * art_scale()
 
 
 ## Screen angle of a position `x` ticks round from the top, clockwise on screen when the
@@ -1741,73 +1811,52 @@ func _draw_view() -> void:
 	var inner := radius - band
 	var line := _col(wheel_color if combatant.is_alive() else Color(wheel_color, 0.3))
 	var tps := wheel.ticks_per_slice()
-	var rot := shown_rotation()
+	var rot := shown_rotation() + stutter_deg / DEG_PER_TICK
+	var k := art_scale()
 	# Platform so the wheel reads over the city.
 	draw_circle(center, radius + 40, Color(Palette.NIGHT_SKY, 0.55))
 	if defeated():
 		# ANIM-R1: a beaten enemy leaves its empty spot with a DEFEATED stamp (a new enemy
 		# can never read as this one coming back).
+		disc.visible = false
+		telemetry.visible = false
 		_draw_defeated(center, radius, inner)
 		_draw_hp(center, radius)
 		return
+	disc.visible = true
+	telemetry.visible = true
+	var active := _sync_disc(center, radius, rot)
 	if flip_squash < 1.0:
 		# FLIP: the disc squashes to a line about its centre and opens mirrored.
 		draw_set_transform(Vector2(center.x * (1.0 - flip_squash), 0.0), 0.0, Vector2(flip_squash, 1.0))
-	if inverted:
-		draw_circle(center, radius + 24, Color(Palette.PAPER, 0.9))
-	draw_circle(center, inner - 3, Color("#07080F"))
 	var status_ghosts := {}
 	if not replaying:
 		for st in outcome.get("statuses", []):
 			status_ghosts[int(st["slot"])] = int(st["after"])
-	# Slices: neon bars, icon inside, value outside, the perfect arrow at the outer edge.
+	var span := tps * DEG_PER_TICK
+	# Per slice over the disc, in the round 41 stack: drop-zone outline, NULL static, the read
+	# block (7, always re-stamped on top), the state badge and its tag (8), the status landing.
 	for i in wheel.slice_count:
 		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
 		var a0 := _tick_angle(i * tps - tps / 2.0, rot)
 		var a1 := _tick_angle(i * tps + tps / 2.0, rot)
 		var mid := _tick_angle(i * tps, rot)
-		var sc := Palette.slice_color(slice.slice_type)
-		if blur > 0.0:
-			# Fast turn: faint copies trail each slice against the way it turns.
-			for k in range(1, BLUR_COPIES + 1):
-				var back := -_blur_dir * BLUR_STEP * k
-				var b0 := _tick_angle(i * tps - tps / 2.0 + back, rot)
-				var b1 := _tick_angle(i * tps + tps / 2.0 + back, rot)
-				draw_colored_polygon(_wedge(center, inner, radius, minf(b0, b1), maxf(b0, b1)), _col(Color(sc, 0.22 * blur / k)))
+		var deg := slice_deg(i, rot)
 		var wedge := _wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03)
-		if slice.slice_type == RC.SliceType.NULL:
-			draw_colored_polygon(wedge, _col(Color(sc, 0.18)))
-			_draw_dashed_arc(center, radius - 1, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03, line, 1.5)
-			_draw_dashed_arc(center, inner + 1, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03, line, 1.5)
-		else:
-			# Translucent neon: the city shows through, a bright rim keeps the shape.
-			draw_colored_polygon(wedge, _col(Color(sc, 0.5)))
-			var closed := wedge.duplicate()
-			closed.append(wedge[0])
-			draw_polyline(closed, _col(Color(sc.lightened(0.35), 0.95)), 1.8, true)
 		if _zone_is(valid_zones, {"kind": "slot", "slot": i}):
 			var hot := _zone_is([hover_zone], {"kind": "slot", "slot": i})
 			draw_polyline(wedge, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5, true)
 		if i == null_slot and null_static > 0.0:
 			_draw_static(center, inner, radius, minf(a0, a1), maxf(a0, a1))
-		var dir := Vector2(cos(mid), sin(mid))
-		SliceIcon.draw_on_slice(self, center + dir * (inner + band * 0.42), band * 0.36, slice.slice_type, sc)
-		if slice.base_output > 0:
-			var vs := _fs(VALUE_FONT_SIZE)
-			draw_string(Palette.display(), center + dir * (radius + VALUE_OUT) + Vector2(-vs, vs * 0.4), str(slice.base_output), HORIZONTAL_ALIGNMENT_CENTER, vs * 2, vs, _col(sc.lightened(0.35)))
-		var tip := center + dir * (radius - 3)
-		var base := center + dir * (radius - 10)
-		var side := dir.orthogonal() * 4.0
-		draw_colored_polygon(PackedVector2Array([tip, base + side, base - side]), _col(Palette.PAPER))
+		var lift := WheelFace.READ_R * (0.025 if i == active else 0.0)
+		WheelFace.read_block(self, center + Vector2(sin(deg_to_rad(deg)), -cos(deg_to_rad(deg))) * lift * k, k, deg, WheelGlyphs.slice_id(slice), _read_value(slice))
 		var status: int = wheel.slice_statuses[i]
-		var sp := center + dir * (inner + band * 0.5) + dir.orthogonal() * band * 0.42
+		var sp := badge_spot(i) - global_position
 		# ANIM-R4 C6f: a status wears its good / bad colour for the operative (green: good for
 		# you, red: bad for you), on its mark, its ring and the slice's rim as it lands.
 		var scol := status_color(status, combatant.is_player)
-		if status != RC.Status.NONE:
-			draw_circle(sp, 7, Palette.NIGHT_SKY)
-			draw_arc(sp, 7, 0, TAU, 16, _col(scol), 1.5, true)
-			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(status, ""), HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(scol))
+		if status != RC.Status.NONE and radius >= BADGE_MIN_RADIUS:
+			WheelFace.badge(self, center, k, deg, span, status, status_good_for_owner(status), _status_tag(status))
 		if status_flash.has(i):
 			# ANIM-R3 A6j: a status just landed here (CORRUPTED...): its mark rings out and the
 			# slice's rim lights, so the slice it hit is seen as it lands.
@@ -1823,24 +1872,12 @@ func _draw_view() -> void:
 			var g: int = status_ghosts[i]
 			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(g, "×") if g != RC.Status.NONE else "×", HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
 		if wheel.slot_firmware_ids[i] != &"":
+			var dir := Vector2(cos(mid), sin(mid))
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
 	_draw_landed(center, radius, inner, tps, rot)
-	draw_arc(center, radius, 0, TAU, 96, Color(line, 0.9), 1.5)
-	draw_arc(center, inner, 0, TAU, 96, Color(line, 0.6), 1.0)
-	if hit_flash > 0.0:
-		# A hit landed in the HP counter: the disc flashes.
-		draw_circle(center, radius, _col(Color(LOSS_COLOR, hit_flash * Motion.amplitude(&"hit_flash"))))
 	if wheel.has_inner_ring():
-		var ring_r := inner - 12
-		var irot := shown_inner_rotation()
-		for k in RC.RING_SEGMENTS:
-			var seg := lookup.get_content(wheel.ring_segment_ids[k]) as RingSegmentData
-			var s0 := _tick_angle(k * 10 - 5, irot)
-			var e0 := _tick_angle(k * 10 + 5, irot)
-			draw_arc(center, ring_r, minf(s0, e0), maxf(s0, e0), 12, Color(line, 0.35 if k % 2 == 0 else 0.2), 9.0)
-			var m := _tick_angle(k * 10, irot)
-			draw_string(Palette.mono(), center + Vector2(cos(m), sin(m)) * (ring_r - 14) + Vector2(-8, 4), TextDb.t(seg, "display_name") if seg != null else "?", HORIZONTAL_ALIGNMENT_LEFT, -1, mini(_fs(9), 12), _col(Palette.PAPER))
+		_draw_ring_plates(center, k)
 	if ring_pulse > 0.0:
 		# Good landing: a clean ring grows off the rim and fades.
 		draw_arc(center, radius + Motion.amplitude(&"precision_good_ring") * ring_pulse, 0, TAU, 64, _col(Color(Palette.PAPER, 1.0 - ring_pulse)), 3.0, true)
@@ -1849,27 +1886,38 @@ func _draw_view() -> void:
 		var ta := _ang(float(t[0]))
 		var tb := _ang(float(t[1]))
 		_draw_dashed_arc(center, radius + band * 0.55, minf(ta, tb), maxf(ta, tb), Color(_col(Palette.PAPER), trail_alpha), 3.0)
-	# Pointers: short white gauge needles, hub just outside the rim, tip just past its edge.
-	var pcol := Color(_col(Palette.PAPER), pointer_alpha)
+	_draw_hub_face(center, k)
+	if kit.is_boss:
+		WheelFace.crest_lugs(self, center, k, frame_master(), kit.accent, kit.crest)
+	# The rail over each needle (static, split round every needle), then the blades (13).
 	var ps := shown_pointers()
+	var degs: Array[float] = []
+	for p in ps:
+		degs.append(fposmod(-p * DEG_PER_TICK, 360.0))
 	for pk in ps.size():
-		var p: float = ps[pk]
-		var a := _ang(p)
-		var dir := Vector2(cos(a), sin(a))
-		var hub := center + dir * (radius + band * 0.55)
-		var ntip := center + dir * (radius - band * 0.2)
-		var hub_r := 9.0 * (pulse_scale if pk == pulse_pointer else 1.0)
+		var at_slot := WheelMath.slice_at(roundi(ps[pk] + rot), wheel.slice_count)
+		var sl := lookup.get_content(wheel.slot_slice_ids[at_slot]) as SliceData
+		var sc := Palette.slice_color(sl.slice_type) if sl != null else wheel_color
+		WheelFace.rail(self, center, k, degs[pk], degs, rail_text(pk, sl), sc, _rail_word_tint(pk))
+	for pk in ps.size():
+		var at_slot := WheelMath.slice_at(roundi(ps[pk] + rot), wheel.slice_count)
+		var sl := lookup.get_content(wheel.slot_slice_ids[at_slot]) as SliceData
+		var sc := Palette.slice_color(sl.slice_type) if sl != null else wheel_color
+		var body := kit.accent.lightened(0.25) if kit.is_boss else Palette.PAPER
+		var bscale := (WheelFace.LOD_BLADE if radius <= WheelFace.LOD_RADIUS else 1.0) * (pulse_scale if pk == pulse_pointer else 1.0)
 		if pk == pulse_pointer:
-			# The needle resolving now: its hub swells and glows.
-			draw_circle(hub, hub_r + 5.0, Color(_col(Palette.CELL_ACID), 0.35))
-		draw_colored_polygon(PackedVector2Array([ntip, hub + dir.orthogonal() * 4.0, hub - dir.orthogonal() * 4.0]), pcol)
-		draw_circle(hub, hub_r, Palette.NIGHT_SKY)
-		draw_arc(hub, hub_r, 0, TAU, 20, pcol, 2.5)
-		draw_circle(hub, 3, pcol)
+			# The needle resolving now: its window glows.
+			draw_circle(center + Vector2(sin(deg_to_rad(degs[pk])), -cos(deg_to_rad(degs[pk]))) * window_radius(), WheelFace.WINDOW_HALF * k * 1.6, Color(_col(Palette.CELL_ACID), 0.35))
+		WheelFace.blade(self, center, k, degs[pk], frame_master(), kit.accent, body, _read_value(sl), WheelGlyphs.slice_id(sl), sc,
+			pk + 1 if ps.size() > 1 else 0, kit.is_boss, bscale, pointer_alpha)
 		if wheel.pointer_orbit != 0:
-			for k in range(1, 4):
-				var oa := _ang(fposmod(p + wheel.pointer_orbit * k, RC.TICKS))
-				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - k * 0.12))
+			for o in range(1, 4):
+				var oa := _ang(fposmod(ps[pk] + wheel.pointer_orbit * o, RC.TICKS))
+				draw_circle(center + Vector2(cos(oa), sin(oa)) * (radius + band * 0.55), 3, Color(Palette.PAPER, 0.5 - o * 0.12))
+	_draw_landing(center, k)
+	if kit.is_boss and radius > WheelFace.LOD_RADIUS:
+		var top := frame_master() + WheelFace.BLADE_TOP
+		WheelFace.banner(self, center.x, center.y - (top + 8.0) * k, k, shown_name().to_upper(), _banner_sub(), kit.accent)
 	# Telegraphed migration (GDD 2.11, 9.2): next turn's needles, dashed and flickering.
 	for p in wheel.pending_pointer_ticks:
 		var a := _ang(p)
@@ -1877,9 +1925,9 @@ func _draw_view() -> void:
 		var hub := center + Vector2(cos(a), sin(a)) * (radius + band * 0.55)
 		var mcol := Color(_col(Palette.CELL_ACID), 1.2 - pointer_alpha)
 		var n := 6
-		for k in n:
-			if k % 2 == 0:
-				draw_line(hub.lerp(ntip, float(k) / n), hub.lerp(ntip, float(k + 1) / n), mcol, 3.0)
+		for d in n:
+			if d % 2 == 0:
+				draw_line(hub.lerp(ntip, float(d) / n), hub.lerp(ntip, float(d + 1) / n), mcol, 3.0)
 		draw_string(Palette.mono(), hub + Vector2(10, -4), tr("next"), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
 	if not replaying:
 		_draw_ghost(center, radius, wheel)
@@ -1888,6 +1936,8 @@ func _draw_view() -> void:
 		draw_set_transform(Vector2.ZERO)
 	_draw_hp(center, radius)
 	_draw_hub(center, inner, line)
+	if combatant.is_player:
+		_draw_drain(center, (HUB_PLAYER if combatant.wheel.has_inner_ring() else HUB_ENEMY) * k)
 	if flatlined and combatant.is_player:
 		_draw_flatlined(center, radius, inner)
 	if highlighted and combatant.is_alive():
@@ -1925,6 +1975,490 @@ func _draw_view() -> void:
 		draw_set_transform(Vector2.ZERO)
 	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
 	_draw_satellites()
+
+
+# --- ART-2 2A: precision landings (ART_BIBLE 3.19) and the player's defeat (3.3) ----------------
+
+## The landing being shown (-1 = none): its tier, needle and slot.
+var landing_tier: int = -1
+var landing_needle: int = 0
+var landing_slot_shown: int = -1
+## 1 -> 0 as the landing's flash, tick ring and sparks fade.
+var land_fx: float = 0.0
+## 0 -> 1 through the landing word's life: it holds, then leaves as bits.
+var land_word: float = 0.0
+## PERFECT: the jaws clamping the needle tip (0 open .. 1 shut).
+var latch: float = 0.0
+## WEAK: the stutter's offset (degrees) on the shown rotation.
+var stutter_deg: float = 0.0
+## The defeat drain (0 .. 1): the core's rows release from the bottom and their bits fall.
+var drain_p: float = 0.0
+
+## The landing word's share of its life spent holding before it leaves as bits (3.20: hold, then
+## dissolve within 0.5 s).
+const WORD_HOLD := 0.62
+## The WEAK stutter steps as shares of the first step (3.19: +3.5 / -2.5 / +1.5 / -0.6 degrees).
+const STUTTER_STEPS: Array[float] = [1.0, -0.714, 0.429, -0.171, 0.0]
+## The landing words (3.19), their tints and the word's offset from the blade window (master units).
+const LAND_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"}
+const WORD_SIDE := 120.0
+const WORD_MASTER := 46.0
+## The PERFECT jaws: their length and open gap (master units) at the tip.
+const JAW_LEN := 26.0
+const JAW_GAP := 22.0
+
+
+## A needle lands (3.19): PERFECT latches the tip, flashes the slice gold and stamps a gold word;
+## GOOD rings the tip once with a small white word; WEAK stutters the wheel, sprays grey sparks,
+## dims the slice and says WEAK x0.5. Reduce effects: the rail recolours only (its readout tier).
+func play_precision(tier: int, slot: int, needle: int = 0) -> void:
+	landing_tier = tier
+	landing_slot_shown = slot
+	landing_needle = needle
+	if not Motion.live(&"precision_word"):
+		land_fx = 0.0
+		land_word = 0.0
+		latch = 0.0
+		stutter_deg = 0.0
+		queue_redraw()
+		return
+	var e := Motion.entry(&"precision_word")
+	var life := Motion.seconds(&"precision_word") / WORD_HOLD
+	var tw := _tw(&"landing")
+	tw.set_parallel(true)
+	tw.tween_method(func(x: float) -> void: land_word = x; land_fx = 1.0 - minf(1.0, x / WORD_HOLD); queue_redraw(), 0.0, 1.0, life).set_ease(e.ease).set_trans(e.trans)
+	if tier == RC.PrecisionTier.PERFECT and Motion.live(&"precision_latch"):
+		var le := Motion.entry(&"precision_latch")
+		tw.tween_method(func(x: float) -> void: latch = x; queue_redraw(), 0.0, 1.0, Motion.seconds(&"precision_latch")).set_ease(le.ease).set_trans(le.trans)
+	if tier == RC.PrecisionTier.WEAK and Motion.live(&"precision_stutter"):
+		var step := Motion.seconds(&"precision_stutter")
+		var amp := Motion.amplitude(&"precision_stutter")
+		var st := create_tween()
+		_tweens[&"stutter"] = st
+		for v in STUTTER_STEPS:
+			st.tween_property(self, ^"stutter_deg", v * amp, step)
+		st.tween_callback(func() -> void: stutter_deg = 0.0; _end(&"stutter"); queue_redraw())
+		st.step_finished.connect(func(_i: int) -> void: queue_redraw())
+	tw.chain().tween_callback(func() -> void:
+		land_fx = 0.0
+		land_word = 0.0
+		latch = 0.0
+		_end(&"landing")
+		queue_redraw())
+
+
+## The landing's tint (3.19): gold PERFECT, white GOOD, amber WEAK.
+func landing_tint() -> Color:
+	match landing_tier:
+		RC.PrecisionTier.PERFECT:
+			return Palette.RESIST_GOLD
+		RC.PrecisionTier.WEAK:
+			return Palette.CRT_AMBER
+	return Palette.TEXT_HI
+
+
+## The landing's marks at the needle tip and its word beside the blade (13, over the blades).
+func _draw_landing(center: Vector2, k: float) -> void:
+	var ps := shown_pointers()
+	if landing_tier < 0 or landing_needle >= ps.size():
+		return
+	var deg := fposmod(-ps[landing_needle] * DEG_PER_TICK, 360.0)
+	var tip := WheelFace.at(center, k, WheelFace.BLADE_TIP, deg)
+	var tint := landing_tint()
+	match landing_tier:
+		RC.PrecisionTier.PERFECT:
+			if latch > 0.0 or land_fx > 0.0:
+				for side: float in [-1.0, 1.0]:
+					var gap := (1.0 - latch) * JAW_GAP + 6.0
+					var jaw := PackedVector2Array([
+						WheelFace.axis(center, k, WheelFace.BLADE_TIP + 4.0, side * gap, deg),
+						WheelFace.axis(center, k, WheelFace.BLADE_TIP + 4.0 + JAW_LEN, side * (gap + 10.0), deg),
+						WheelFace.axis(center, k, WheelFace.BLADE_TIP + 4.0 + JAW_LEN, side * (gap + 22.0), deg),
+						WheelFace.axis(center, k, WheelFace.BLADE_TIP - 6.0, side * (gap + 8.0), deg)])
+					draw_colored_polygon(jaw, Palette.RESIST_GOLD)
+					var closed := jaw.duplicate()
+					closed.append(jaw[0])
+					draw_polyline(closed, Palette.INK, maxf(1.0, 2.0 * k), true)
+			if land_fx > 0.0:
+				# the class core flares (the Perfect hook)
+				draw_circle(center, (HUB_PLAYER if combatant.wheel.has_inner_ring() else HUB_ENEMY) * k, Color(kit.accent, 0.35 * land_fx))
+		RC.PrecisionTier.GOOD:
+			if land_fx > 0.0:
+				draw_arc(tip, (6.0 + (1.0 - land_fx) * 26.0) * k, 0.0, TAU, 24, Color(Palette.TEXT_HI, land_fx), maxf(1.0, 3.0 * k), true)
+		RC.PrecisionTier.WEAK:
+			if land_fx > 0.0:
+				for i in 7:
+					var a := deg_to_rad(deg + 180.0 + (i - 3) * 24.0)
+					var d := Vector2(sin(a), -cos(a))
+					var r0 := (4.0 + (1.0 - land_fx) * 20.0) * k
+					draw_line(tip + d * r0, tip + d * (r0 + 10.0 * k), Color(Palette.TEXT_MID, land_fx), maxf(1.0, 2.0 * k))
+	if land_word > 0.0 and land_word < 1.0:
+		_draw_land_word(center, k, deg, tint)
+
+
+## The landing word (3.19): a vinyl word (white die-cut, ink keyline) that holds, then dissolves left
+## to right into 0/1 bits drifting up (3.20 temporary labels).
+func _draw_land_word(center: Vector2, k: float, deg: float, tint: Color) -> void:
+	var word := tr(String(LAND_WORDS.get(landing_tier, "")))
+	var big := landing_tier == RC.PrecisionTier.PERFECT
+	var fs := maxi(WheelFace.MIN_TEXT_PX, roundi(WORD_MASTER * k * (1.0 if big else 0.62) * Motion.amplitude(&"precision_word")))
+	var font := Palette.display()
+	var tw := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var at := WheelFace.axis(center, k, frame_master() + WheelFace.BLADE_TOP * 0.55, WORD_SIDE, deg)
+	var base := Vector2(at.x - tw * 0.5, at.y + WheelFace.cap_height(font, fs) * 0.5)
+	var gone := clampf((land_word - WORD_HOLD) / (1.0 - WORD_HOLD), 0.0, 1.0)
+	var cut := base.x + tw * gone
+	# the word, its left part already gone to bits
+	var x := base.x
+	for i in word.length():
+		var ch := word[i]
+		var adv := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		if x + adv * 0.5 >= cut:
+			if big:
+				draw_char_outline(font, Vector2(x, base.y), ch, fs, maxi(2, roundi(fs * 0.34)), Palette.TEXT_HI)
+			draw_char_outline(font, Vector2(x, base.y), ch, fs, maxi(1, roundi(fs * 0.14)), Palette.INK)
+			draw_char(font, Vector2(x, base.y), ch, fs, tint)
+		x += adv
+	if gone > 0.0:
+		var bf := maxi(WheelFace.MIN_TEXT_PX, roundi(fs * 0.45))
+		var n := int(word.length() * 3 * gone)
+		for b in n:
+			var h := absi(hash(Vector2i(b, landing_tier)))
+			var bx := base.x + float(h % 997) / 997.0 * tw * gone
+			var rise := (gone - float(b) / maxf(1.0, word.length() * 3.0)) * fs * 1.6
+			var alpha := clampf(1.0 - gone, 0.0, 1.0)
+			draw_char(Palette.mono(), Vector2(bx, base.y - rise - float(h % 13)), "1" if h % 2 == 0 else "0", bf, Color(tint, alpha))
+
+
+## The player's defeat (3.3, round 40): the core breaks into bits, bottom rows first; they fall,
+## tint toward the class accent and vanish at the circle's edge. `hub_defeat_drain`.
+func play_defeat_drain() -> void:
+	if not Motion.live(&"hub_defeat_drain"):
+		drain_p = 1.0
+		queue_redraw()
+		return
+	var e := Motion.entry(&"hub_defeat_drain")
+	drain_p = 0.0
+	var tw := _tw(&"drain")
+	tw.tween_method(func(x: float) -> void: drain_p = x; queue_redraw(), 0.0, 1.0, Motion.seconds(&"hub_defeat_drain")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: drain_p = 1.0; _end(&"drain"))
+
+
+func _draw_drain(center: Vector2, hr: float) -> void:
+	if drain_p <= 0.0 or drain_p >= 1.0:
+		return
+	var b := maxf(2.0, Motion.amplitude(&"hub_defeat_drain"))
+	var rows := int(hr * 2.0 / b)
+	for r in rows:
+		var y := -hr + (r + 0.5) * b
+		var release := (1.0 - float(r) / rows) * 0.75
+		if drain_p < release:
+			continue
+		var t := (drain_p - release) / 0.25
+		var half := sqrt(maxf(0.0, hr * hr - y * y))
+		var cols := int(half * 2.0 / b)
+		for c in cols:
+			var h := absi(hash(Vector2i(r, c)))
+			if h % 3 != 0:
+				continue
+			var x := -half + (c + 0.5) * b
+			var fy := y + t * t * hr * (1.0 + float(h % 7) * 0.1)
+			if x * x + fy * fy > hr * hr:
+				continue
+			var col := Palette.TEXT_HI.lerp(kit.accent, clampf(t, 0.0, 1.0))
+			draw_rect(Rect2(center + Vector2(x, fy) - Vector2(b, b) * 0.5, Vector2(b, b)), col)
+
+
+## LOCKDOWN's waterline (3.3): 1 full while Hub Breach holds, draining to 0 when it ends.
+var lockdown_level: float = 0.0
+
+
+## Hub Breach has ended: the waterline drains (`hub_lockdown_drain`); at once without motion.
+func play_lockdown_drain() -> void:
+	if not Motion.live(&"hub_lockdown_drain"):
+		lockdown_level = 0.0
+		queue_redraw()
+		return
+	var e := Motion.entry(&"hub_lockdown_drain")
+	var tw := _tw(&"lockdown")
+	tw.tween_method(func(x: float) -> void: lockdown_level = x; queue_redraw(), lockdown_level, 0.0, Motion.seconds(&"hub_lockdown_drain")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: lockdown_level = 0.0; _end(&"lockdown"))
+
+
+# --- ART-2 2A: the wheel stack -----------------------------------------------------------------
+
+## Below this radius (px) the corner badges hide (ART_BIBLE 3.8: x N tabs hide under r 150 at 1080p;
+## the 720p layout's px).
+const BADGE_MIN_RADIUS := 60.0
+## The hub's radius in master units: the player's inside the inner ring (3.10, ring 100..127), an
+## enemy's filling the centre (3.3, no ring).
+const HUB_PLAYER := 96.0
+const HUB_ENEMY := 124.0
+## The hub emblem's box and height over the centre (master units, roster_wheel.draw_hub).
+const HUB_EMBLEM := 40.0
+const HUB_EMBLEM_Y := 0.62
+## Segment plates on the inner ring (3.10): glyph box and radius (master units).
+const RING_PLATE := 20.0
+const RING_PLATE_R := 113.5
+## The segment kinds the disc shader textures (its SEG_COL order).
+const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corrupt": 3, &"seg_anchor": 4,
+	&"seg_accelerator": 5, &"seg_echo": 6}
+## The multiplier tags under a status badge (3.8): OVERCLOCKED x1.5, PARASITE x0.5.
+const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5", RC.Status.PARASITE: "x0.5"}
+## The rail's precision words (3.19): PERFECT gold, GOOD white, WEAK amber with x0.5.
+const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"}
+## The rail's kind words per slice type (frames.KIND).
+const KIND_WORDS := {RC.SliceType.SHIM: "ATK", RC.SliceType.OVERFLOW: "CRIT", RC.SliceType.DEFRAG: "DEF",
+	RC.SliceType.SANDBOX: "SHIELD", RC.SliceType.DETOUR: "EVADE", RC.SliceType.HOTFIX: "HEAL",
+	RC.SliceType.INFECT: "AFFLICT", RC.SliceType.TROJAN: "DEPLOY", RC.SliceType.NULL: "MISS"}
+
+
+## The angle (degrees clockwise from the top) slot `i` is shown at, for a rotation of `rot` ticks.
+func slice_deg(i: int, rot: float) -> float:
+	var c := _shown()
+	var tps := c.wheel.ticks_per_slice() if c != null else RC.TICKS / RC.SLICES
+	return fposmod((rot - i * tps) * DEG_PER_TICK, 360.0)
+
+
+## The slice the first needle stands on, as shown (-1 without one): it is lifted (3.2).
+func active_slot() -> int:
+	var c := _shown()
+	var ps := shown_pointers()
+	if c == null or ps.is_empty():
+		return -1
+	return WheelMath.slice_at(roundi(ps[0] + shown_rotation()), c.wheel.slice_count)
+
+
+## Where slot `slot`'s state badge sits (global): its outer clockwise corner (3.8).
+func badge_spot(slot: int) -> Vector2:
+	var c := _shown()
+	var span := c.wheel.ticks_per_slice() * DEG_PER_TICK
+	return global_position + WheelFace.at(_center(), art_scale(), WheelFace.BADGE_R, slice_deg(slot, shown_rotation()) + span * 0.5 - WheelFace.BADGE_INSET)
+
+
+## The value a read block and a blade window show for `slice` ("" = the glyph alone: NULL).
+func _read_value(slice: SliceData) -> String:
+	if slice == null or slice.slice_type == RC.SliceType.NULL or slice.base_output <= 0:
+		return ""
+	return str(slice.base_output)
+
+
+func _status_tag(status: int) -> String:
+	return String(STATUS_TAGS.get(status, ""))
+
+
+## The rail's words for needle `index` on `slice`: `OVERFLOW 12 // CRIT // PERFECT // ` (3.2).
+func rail_text(index: int, slice: SliceData) -> String:
+	if slice == null:
+		return ""
+	var word := tr(Palette.slice_word(slice.slice_type, kit.corporation_id))
+	var value := _read_value(slice)
+	var tier_word := tr(String(RAIL_WORDS.get(_needle_tier(index), "")))
+	if slice.slice_type == RC.SliceType.NULL:
+		return "%s // %s // %s // " % [word, tr("MISS"), tr("NO EFFECT")]
+	return "%s %s // %s // %s // " % [word, value, tr(String(KIND_WORDS.get(slice.slice_type, ""))), tier_word]
+
+
+## The landing tier needle `index` reads now (its readout, else GOOD).
+func _needle_tier(index: int) -> int:
+	if index >= 0 and index < readouts.size():
+		return int(readouts[index].get("tier", RC.PrecisionTier.GOOD))
+	return RC.PrecisionTier.GOOD
+
+
+## The rail text's tint (3.19): gold on a PERFECT, white on GOOD, amber on WEAK.
+func _rail_word_tint(index: int) -> Color:
+	match _needle_tier(index):
+		RC.PrecisionTier.PERFECT:
+			return Palette.RESIST_GOLD
+		RC.PrecisionTier.WEAK:
+			return Palette.CRT_AMBER
+	return Palette.TEXT_HI
+
+
+## The boss banner's second line: corp, rank and phase (frames.banner).
+func _banner_sub() -> String:
+	var corp := tr(String(kit.corporation_id).replace("_", " ").to_upper()) if kit.corporation_id != &"" else ""
+	return "%s  |  %s  |  %s" % [corp, tr("BOSS"), tr("PHASE %d") % (combatant.phase_index + 1)]
+
+
+## The telemetry ring's text (3.2): the wheel's name, its hub and its HP, repeating.
+func telemetry_text() -> String:
+	var c := _shown()
+	if c == null:
+		return ""
+	var parts := PackedStringArray([shown_name().to_upper()])
+	if c.wheel.hub_id != &"" and lookup != null:
+		var hub_data := lookup.get_content(c.wheel.hub_id)
+		if hub_data != null and "display_name" in hub_data:
+			parts.append(TextDb.t(hub_data, "display_name").to_upper())
+	parts.append(tr("HP %d/%d") % [c.hp, c.max_hp])
+	if c.block > 0:
+		parts.append(tr("BLOCK %d") % c.block)
+	if c.shield > 0:
+		parts.append(tr("SHIELD %d") % c.shield)
+	return " // ".join(parts) + " // "
+
+
+## Pushes what the view shows into the disc layer and the telemetry ring; returns the lifted slot.
+func _sync_disc(center: Vector2, radius: float, rot: float) -> int:
+	var c := combatant
+	var wheel := c.wheel
+	var n := mini(wheel.slice_count, WheelDisc.MAX_SLICES)
+	var mids := PackedFloat32Array()
+	var kinds := PackedInt32Array()
+	var cols := PackedColorArray()
+	var stats := PackedInt32Array()
+	var flashes := PackedFloat32Array()
+	var plates := PackedVector2Array()
+	for i in WheelDisc.MAX_SLICES:
+		if i >= n:
+			mids.append(0.0)
+			kinds.append(0)
+			cols.append(Palette.SLICE_NULL)
+			stats.append(0)
+			flashes.append(0.0)
+			plates.append(Vector2.ONE)
+			continue
+		var slice := lookup.get_content(wheel.slot_slice_ids[i]) as SliceData
+		var type := slice.slice_type if slice != null else RC.SliceType.NULL
+		mids.append(slice_deg(i, rot))
+		var row := type
+		if kit.theme != 0 and slice != null and WheelGlyphs.table().glyph_for(StringName("slice_" + String(slice.id))) != &"" and slice.slice_type != RC.SliceType.NULL:
+			row = WheelKit.SPECIAL_ROW
+		kinds.append(row)
+		cols.append(Palette.slice_color(type))
+		stats.append(wheel.slice_statuses[i] if i < wheel.slice_statuses.size() else RC.Status.NONE)
+		flashes.append(land_fx * 0.8 if i == landing_slot_shown and land_fx > 0.0 else (landing_pulse * 0.6 if landed.has(i) else 0.0))
+		plates.append(WheelFace.plate_radii(_read_value(slice)))
+	disc.place(center, radius)
+	disc.scale = Vector2(flip_squash, 1.0)
+	disc.pivot_offset = disc.size * 0.5
+	disc.put(&"n", n)
+	disc.put(&"span", wheel.ticks_per_slice() * DEG_PER_TICK)
+	disc.put(&"mids", mids)
+	disc.put(&"kinds", kinds)
+	disc.put(&"cols", cols)
+	disc.put(&"stat", stats)
+	disc.put(&"flash", flashes)
+	disc.put(&"plate", plates)
+	var active := active_slot()
+	disc.put(&"active", active)
+	var ps := shown_pointers()
+	var needles := PackedFloat32Array()
+	for i in 4:
+		needles.append(fposmod(-ps[i] * DEG_PER_TICK, 360.0) if i < ps.size() else 0.0)
+	disc.put(&"needles", needles)
+	disc.put(&"needle_n", mini(ps.size(), 4))
+	disc.put(&"rail_half", WheelFace.RAIL_HALF)
+	disc.put(&"needle_gap", WheelFace.NEEDLE_GAP)
+	var rail_col := wheel_color
+	if active >= 0:
+		var sl := lookup.get_content(wheel.slot_slice_ids[active]) as SliceData
+		if sl != null:
+			rail_col = Palette.slice_color(sl.slice_type)
+	disc.put(&"rail_col", rail_col)
+	var ring := wheel.has_inner_ring()
+	disc.put(&"ring_on", ring)
+	disc.put(&"hub_r", HUB_PLAYER if ring else HUB_ENEMY)
+	disc.put(&"hub_tint", kit.accent)
+	if ring:
+		var segs := PackedInt32Array()
+		for j in 3:
+			# the disc numbers segments clockwise; the ring's segment k sits at -k x 120 degrees
+			var seg_id := wheel.ring_segment_ids[posmod(-j, 3)] if wheel.ring_segment_ids.size() == 3 else &""
+			segs.append(int(SEG_KINDS.get(seg_id, 0)))
+		disc.put(&"seg_kind", segs)
+		disc.put(&"ring_rot", fposmod(shown_inner_rotation() * DEG_PER_TICK, 360.0))
+		var seg_now := -1
+		if not readouts.is_empty():
+			seg_now = int(readouts[0].get("segment_index", -1))
+		disc.put(&"seg_active", posmod(-seg_now, 3) if seg_now >= 0 else -1)
+	disc.put(&"lockdown", lockdown_level)
+	disc.put(&"phase", c.phase_index + 1 if kit.is_boss else 1)
+	disc.put(&"land_tint", landing_tint())
+	disc.put(&"land_slot", landing_slot_shown if landing_tier >= 0 else -1)
+	disc.put(&"land_dim", 0.2 if landing_tier == RC.PrecisionTier.WEAK and land_word > 0.0 else 0.0)
+	disc.put(&"drain", drain_p if c.is_player and flatlined else 0.0)
+	disc.put(&"invert", 1.0 if inverted else 0.0)
+	disc.put(&"hit", hit_flash * Motion.amplitude(&"hit_flash"))
+	disc.put(&"grey", 0.0 if c.is_alive() else 0.6)
+	disc.put(&"threat_rot", fposmod(-rot * DEG_PER_TICK * 1.7 + 7.0, 360.0))
+	disc.run_screens()
+	telemetry.setup(center, art_scale(), telemetry_text(), kit.accent)
+	return active
+
+
+## The inner ring's segment plates (3.10): each segment's glyph on a small dark plate.
+func _draw_ring_plates(center: Vector2, k: float) -> void:
+	var wheel := combatant.wheel
+	var irot := shown_inner_rotation()
+	for seg in RC.RING_SEGMENTS:
+		var deg := fposmod((irot - seg * 10) * DEG_PER_TICK, 360.0)
+		var at := WheelFace.at(center, k, RING_PLATE_R, deg)
+		var r := RING_PLATE * 0.62 * k
+		draw_circle(at, r, Color(Palette.NIGHT_SKY, 0.9))
+		draw_arc(at, r, 0.0, TAU, 16, Color(kit.accent, 0.8), maxf(1.0, k * 1.5), true)
+		var seg_id: StringName = wheel.ring_segment_ids[seg] if seg < wheel.ring_segment_ids.size() else &""
+		WheelGlyphs.draw(self, WheelGlyphs.segment_id(seg_id), at, RING_PLATE * k * 0.8, Palette.TEXT_HI)
+
+
+## The hub's emblem (3.3): its core glyph in the accent over the CRT disc (the name and lines are
+## `_draw_hub`'s); the LOCKDOWN plate and waterline bits while the hub is breached.
+func _draw_hub_face(center: Vector2, k: float) -> void:
+	var hub_m := HUB_PLAYER if combatant.wheel.has_inner_ring() else HUB_ENEMY
+	var glyph := kit.hub_glyph(combatant)
+	var size := HUB_EMBLEM * k * (hub_m / HUB_PLAYER)
+	var gone := drain_p if combatant.is_player and flatlined else 0.0
+	if gone < 1.0:
+		WheelGlyphs.draw(self, glyph, center + Vector2(0.0, -hub_m * HUB_EMBLEM_Y * k), size, Color(kit.accent, 1.0 - gone))
+	if lockdown_level > 0.0:
+		_draw_lockdown(center, hub_m * k)
+
+
+## LOCKDOWN (3.3, round 40): encrypted bits churning under a bright wavy waterline that fills the
+## hub, a plate with a padlock and the turns left.
+func _draw_lockdown(center: Vector2, hr: float) -> void:
+	var font := Palette.mono()
+	var fs := maxi(WheelFace.MIN_TEXT_PX, roundi(hr * 0.16))
+	var step := fs * 1.05
+	var t := disc.clock()
+	var chars := "0123456789ABCDEF*$#&%@"
+	var water := hr - 2.0 * hr * lockdown_level
+	var y := maxf(-hr + step, water + step * 0.6)
+	var row := 0
+	while y < hr:
+		var half := sqrt(maxf(0.0, hr * hr - y * y)) - fs * 0.5
+		var x := -half
+		var col := 0
+		while x < half:
+			var h := absi(hash(Vector3i(row, col, int(t * 4.0))))
+			var ch := chars[h % chars.length()]
+			draw_char(font, center + Vector2(x, y + fs * 0.35), ch, fs, Color(Palette.NET_CYAN, 0.55 + 0.35 * float(h % 3) / 2.0))
+			x += fs * 0.75
+			col += 1
+		y += step
+		row += 1
+	var wave := PackedVector2Array()
+	for i in 25:
+		var x := lerpf(-hr, hr, i / 24.0)
+		var wy := maxf(water, -hr * 0.92) + sin(x / hr * 9.0 + t * 3.0) * hr * 0.03
+		if x * x + wy * wy <= hr * hr:
+			wave.append(center + Vector2(x, wy))
+	if wave.size() > 1:
+		draw_polyline(wave, Palette.TEXT_HI, maxf(1.0, hr * 0.03), true)
+	if not combatant.is_hub_breached():
+		return
+	var pf := maxi(WheelFace.MIN_TEXT_PX, roundi(hr * 0.2))
+	var label := tr("LOCKDOWN")
+	var lw := Palette.display().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, pf).x
+	var plate := Rect2(center + Vector2(-lw * 0.5 - pf, -hr - pf * 1.1), Vector2(lw + pf * 2.0, pf * 1.3))
+	draw_rect(plate, Palette.NET_CYAN.darkened(0.55))
+	draw_rect(plate, Palette.NET_CYAN, false, 1.0)
+	WheelGlyphs.draw(self, WheelGlyphs.status_id(RC.Status.ENCRYPTED), plate.position + Vector2(pf * 0.55, plate.size.y * 0.5), pf * 0.8, Palette.TEXT_HI)
+	draw_string(Palette.display(), Vector2(plate.position.x + pf, plate.end.y - pf * 0.25), label, HORIZONTAL_ALIGNMENT_LEFT, -1, pf, Palette.TEXT_HI)
+	var turns := str(combatant.hub_breached_turns)
+	draw_string(Palette.display(), center + Vector2(hr * 0.62, -hr * 0.55), turns, HORIZONTAL_ALIGNMENT_LEFT, -1, pf, Palette.NET_CYAN)
 
 
 ## The tag's content as text (title and chips): a change flips the tag, the same content
@@ -2040,6 +2574,7 @@ const FLATLINE_VEIL := 0.6
 ## The DEFEAT stamp lands on the operative's wheel (and stays).
 func play_flatline() -> void:
 	flatlined = true
+	play_defeat_drain()
 	if not Motion.live(&"defeat_stamp"):
 		flatline_pop = 1.0
 		queue_redraw()
@@ -2055,6 +2590,7 @@ func play_flatline() -> void:
 ## the press that ended the replay).
 func show_flatline() -> void:
 	flatlined = true
+	drain_p = 1.0
 	var old: Tween = _tweens.get(&"flatline")
 	if old != null and old.is_valid():
 		old.kill()
@@ -2067,8 +2603,8 @@ func show_flatline() -> void:
 func flatline_box() -> Dictionary:
 	var center := _center()
 	var radius := _radius()
-	var word := tr("DEFEAT")
-	var font := Palette.marker()
+	var word := tr("FLATLINED")
+	var font := Palette.display()
 	var fs := _fs(FLATLINE_FONT)
 	var ww := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	while fs > NUMBER_MIN_FONT and ww + fs > radius * 1.8:
@@ -2089,7 +2625,7 @@ func _draw_flatlined(center: Vector2, radius: float, inner: float) -> void:
 	var local := Rect2(box.position - center, box.size)
 	draw_rect(local, Color(Palette.NIGHT_SKY, 0.9 * p))
 	draw_rect(local, Color(col, p), false, 4.0)
-	draw_string(Palette.marker(), Vector2(local.position.x + fs * 0.3, fs * 0.35), String(fb["word"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, p))
+	draw_string(Palette.display(), Vector2(local.position.x + fs * 0.3, fs * 0.35), String(fb["word"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, p))
 	draw_set_transform(Vector2.ZERO)
 	var sr := minf(fs * SKULL_SHARE, inner * 0.3)
 	draw_skull(self, center + Vector2(0.0, fs * 0.9 + sr * 1.2), sr, Color(col, p))
@@ -2146,7 +2682,7 @@ func _draw_caption(text: String, shown: float) -> void:
 	var font := Palette.marker()
 	var w := minf(size.x * TAG_MAX_SHARE, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 16.0)
 	var h := INTENT_HEIGHT * _ts()
-	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
+	var bottom := _center().y - _radius() - _above() - INTENT_HEIGHT
 	var r := Rect2(Vector2(clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w)), maxf(0.0, bottom - h)), Vector2(w, h))
 	var a := clampf(shown, 0.0, 1.0)
 	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(Palette.SHADOW, Palette.SHADOW.a * a))
@@ -2381,29 +2917,15 @@ func arrow_hint_rects() -> Array[Rect2]:
 ## the HP the end of the turn leaves: lost segments in red, healed ones bright.
 func _draw_hp(center: Vector2, radius: float) -> void:
 	var hp_col := _col(HP_COLOR)
-	var segs := 20
 	var hp_now := shown_hp()
 	var frac := hp_now / maxf(1.0, combatant.max_hp)
 	var after := int(outcome.get("hp_after", combatant.hp)) if not replaying and is_nan(anim_hp) else roundi(hp_now)
 	var frac_after := float(after) / maxf(1.0, combatant.max_hp)
 	# The white lag bar: HP just lost, draining after the arc (ANIM-2).
 	var frac_lag := (lag_hp / maxf(1.0, combatant.max_hp)) if not is_nan(lag_hp) else frac
-	for k in segs:
-		var a0 := PI * 0.1 + PI * 0.8 * k / segs
-		var a1 := a0 + PI * 0.8 / segs * 0.8
-		if absf((a0 + a1) * 0.5 - PI * 0.5) < 0.34:
-			continue
-		var f := float(k) / segs
-		var col := Color(1, 1, 1, 0.1)
-		if f < minf(frac, frac_after):
-			col = hp_col
-		elif f < frac:
-			col = _col(LOSS_COLOR)
-		elif f < frac_after:
-			col = _col(HP_COLOR.lightened(0.5))
-		elif f < frac_lag:
-			col = _col(Palette.PAPER)
-		draw_colored_polygon(_wedge(center, radius + 32, radius + HP_ARC_OUT, a0, a1), col)
+	# ART-2 2A: the D4 HP arc under the frame, thick and segmented, the boss's phase pips on it (3.2).
+	WheelFace.hp_arc(self, center, art_scale(), frame_master(), frac, frac_after, frac_lag, hp_col, _col(LOSS_COLOR),
+		_col(HP_COLOR.lightened(0.5)), phase_marks(), combatant.phase_index + 1)
 	# The number is the HP now (it agrees with the top bar); the forecast after SEND IT is a
 	# separate dashed plate with an arrow (H22: "60→49" read as a result).
 	var lay := hp_layout()
@@ -2649,7 +3171,7 @@ func _draw_dashed_rect(r: Rect2, col: Color) -> void:
 ## "BILLING DAEMON" drew at 10 px at 1.6 and 13 px at 1.0). [size, line, line?]
 func hub_name_lines(width: float) -> Array:
 	var name := shown_name().to_upper()
-	var font := Palette.marker()
+	var font := Palette.display()
 	var fs := _fs(NAME_FONT_SIZE)
 	while fs > NAME_FONT_SIZE and font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
 		fs -= 1
@@ -2730,7 +3252,8 @@ func _draw_hub(center: Vector2, inner: float, line: Color) -> void:
 	for k in name_count:
 		# The last line sits where a one-line name does; a first line goes above it.
 		var ny := top - (name_count - 1 - k) * (name_size + 1)
-		draw_string(Palette.marker(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(line.lightened(0.2)))
+		draw_string_outline(Palette.display(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, maxi(1, roundi(name_size * 0.18)), _col(Palette.INK))
+		draw_string(Palette.display(), center + Vector2(-hw * 0.5, ny), String(name_lines[k + 1]), HORIZONTAL_ALIGNMENT_CENTER, hw, name_size, _col(Palette.TEXT_HI))
 	for i in hub_lines.size():
 		var col := _col(Palette.RESIST_GOLD) if i == resist_line else _col(Palette.PAPER)
 		var lfs := fs
@@ -2927,7 +3450,7 @@ func _tag_geometry() -> Dictionary:
 	# short tag's title).
 	w = maxf(w, tape_width())
 	w = minf(w, size.x * TAG_MAX_SHARE)
-	var bottom := _center().y - _radius() - _band() - INTENT_HEIGHT
+	var bottom := _center().y - _radius() - _above() - INTENT_HEIGHT
 	var x := clampf(_center().x - w * 0.5, 0.0, maxf(0.0, size.x - w))
 	var top_min := tape_height() - TAPE_INSET * ts
 	# The tape stands above the tag (off its title): the tag keeps room for it in the view.
