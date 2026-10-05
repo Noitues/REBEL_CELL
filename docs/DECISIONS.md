@@ -676,9 +676,10 @@ player strings and code for each item's old words.
   codex and GDD 2.6 texts name the programs. Kept on purpose: the *evade* mechanic
   (EffectType.EVADE, a card's "Evade the next incoming attack", the "%s EVADE" charge chip), *heal*
   as an effect ("Heal 6"), *attack* as a verb, and the damage beats' `crit` flag (a big-hit number
-  style, set by OVERFLOW slices and Perfects alike). SANDBOX / TROJAN / NULL (the art pass's SHIELD /
+  style, set by OVERFLOW slices and Perfects alike). ~~SANDBOX / TROJAN / NULL (the art pass's SHIELD /
   DEPLOY / MISS) are not renamed: the ruling keeps them out of D2; the enum keeps SHIELD / DEPLOY /
-  MISS (question below).
+  MISS (question below).~~ *Superseded (ART-0 audit B5):* the designer ruled SANDBOX / TROJAN / NULL
+  ("Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands"); ART-0 B3 renamed the enum and words.
 - **D3 Meridian.** The RAM-drain slice is `priority` (`content/slices/priority.tres`, "Priority", its
   wheel sub-resources `*_slot_priority`; codex and descriptions). A corporation's own program word
   lives in `Palette.CORP_SLICE_WORDS` (view words, `# TR`), read by `Palette.slice_word(type,
@@ -707,12 +708,14 @@ player strings and code for each item's old words.
   2.4 / 10. Schema: `CampaignConfigData.partial_multiplier` → `weak_multiplier` (0.5; checked in
   `schema_smoke_checks.gd` `_art0`). Motion id `precision_partial` → `precision_weak` (table,
   REQUIRED_IDS, motion lab). "Partial" in other meanings (a partial cover, a partial patch) stays.
-- **D11 Heat bands.** Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
+- **D11 Heat bands.** ~~Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
   FLAGGED 50+, HUNTED 75+; the bible's NOTICED is the "couple of alarms" band and the thresholds stay),
   so no band or threshold changes; the five-band reading is asked under "Open questions for the
-  designer". Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
+  designer".~~ *Superseded (ART-0 audit B5):* the designer ruled five bands; ART-0 B3 built them
+  ("ART-0 names pass, part 3"). Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
   `Settings.VFX_TIER_EXEMPT`) and its row on the current panel (Accessibility, "Heat glitch (the
-  screen distorts as Heat rises; off by default)"); the glitch itself comes in ART-3 / ART-5 (test
+  screen distorts as Heat rises; off by default)"); ~~the glitch itself comes in ART-3 / ART-5~~
+  *(annotated, ART-0 audit B1: the glitch was built by the ART-0 audit fixes, `HeatGlitchLayer`)* (test
   `test_the_heat_glitch_extra_is_off_by_default_and_round_trips`). settings.gd and settings_panel.gd
   are area C's files: additions only.
 - **D12 RESPIN / UNDO.** The respin sticker already read RESPIN; its tips and the tutorial no longer say
@@ -6542,7 +6545,6 @@ and annotated in the GDD where it changes a rule.
   Marker is grease pencil only); the screens that still letter in it read as Anton until their
   ART-n restyle.
 
-- **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
 - **Glyph concept slice after M14 (designer, 2026-10-05, from the two ART-1 1C questions below):** draw
   glyphs for Heat, Cycles, Schematics and custom effects, and redraw the 16 px twins in the Firmware /
   Daemon set; both defaults hold for M14 (pending stand-in; twins allow-listed). Scheduled with the other
@@ -6576,7 +6578,9 @@ and annotated in the GDD where it changes a rule.
   bible. Default applied: the band names and thresholds stay as the bible has them (no new band, no
   config value); the re-cut is the backdrop's look per band (ART-3 / ART-5). Say if you want the
   five-band version (and its lowest threshold).
-- **SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):** the art pass calls SHIELD, DEPLOY and
+- ~~**SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):**~~ resolved: the designer ruled SANDBOX /
+  TROJAN / NULL ("Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands"; built by ART-0 B3;
+  struck by the ART-0 audit, B5). Original note: the art pass calls SHIELD, DEPLOY and
   MISS by these program names; the D2 ruling left them unchanged, so the game still shows SHIELD,
   DEPLOY and MISS (SHIELD is also the shield points' word). Default: unchanged until you say.
 - **Merge commit `7e569ca` (ART-0 B):** its message keeps git's "# Conflicts:" lines (a merge commit
