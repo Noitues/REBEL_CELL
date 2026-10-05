@@ -39,7 +39,7 @@ SPAN = 60.0
 # RC.SliceType order (scripts/data/rc.gd) -> the recipe's program name; row 9 is the corp special.
 KINDS = ["EXPLOIT", "ZERO-DAY", "FIREWALL", "PROXY", "SANDBOX", "TROJAN", "PATCH", "VIRUS", "NULL", "SPECIAL"]
 KITS = ["player", "meridian", "solace", "halcyon", "orbital", "rebel_cell"]
-SPECIALS = {"meridian": "tariff", "solace": "dose", "halcyon": "citation", "orbital": "solar_flare", "rebel_cell": "dose"}
+SPECIALS = {"meridian": "priority", "solace": "dose", "halcyon": "citation", "orbital": "solar_flare", "rebel_cell": "dose"}
 
 
 def remap_fonts(SL) -> None:

@@ -14,7 +14,7 @@ const META := "res://assets/wheel/screens/meta.json"
 ## The atlases' row for a corp special (rows 0..8 follow RC.SliceType).
 const SPECIAL_ROW := 9
 ## Boss hubs without their own core glyph yet: the bible's enemy hub emblems (3.3) by boss.
-const BOSS_HUB := {&"the_manifest": &"hub_priority_routing", &"civic_core": &"hub_emergency_powers",
+const BOSS_HUB := {&"civic_core": &"hub_emergency_powers",
 	&"commons_array": &"hub_station_keeping", &"renewal_engine": &"hub_auto_renew", &"dispatch_core": &"hub_root_access"}
 
 static var _meta: Dictionary = {}

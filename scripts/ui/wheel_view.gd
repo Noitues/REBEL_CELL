@@ -2209,11 +2209,6 @@ const SEG_KINDS := {&"seg_blank": 0, &"seg_x2": 1, &"seg_pierce": 2, &"seg_corru
 const STATUS_TAGS := {RC.Status.OVERCLOCKED: "x1.5", RC.Status.PARASITE: "x0.5"} # TR
 ## The rail's precision words (3.19): PERFECT gold, GOOD white, WEAK amber with x0.5.
 const RAIL_WORDS := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK x0.5"} # TR
-## The rail's kind words per slice type (frames.KIND).
-const KIND_WORDS := {RC.SliceType.SHIM: "ATK", RC.SliceType.OVERFLOW: "CRIT", RC.SliceType.DEFRAG: "DEF", # TR
-	RC.SliceType.SANDBOX: "SHIELD", RC.SliceType.DETOUR: "EVADE", RC.SliceType.HOTFIX: "HEAL", # TR
-	RC.SliceType.INFECT: "AFFLICT", RC.SliceType.TROJAN: "DEPLOY", RC.SliceType.NULL: "MISS"} # TR
-
 
 ## The angle (degrees clockwise from the top) slot `i` is shown at, for a rotation of `rot` ticks.
 func slice_deg(i: int, rot: float) -> float:
@@ -2249,7 +2244,8 @@ func _status_tag(status: int) -> String:
 	return String(STATUS_TAGS.get(status, ""))
 
 
-## The rail's words for needle `index` on `slice`: `OVERFLOW 12 // CRIT // PERFECT // ` (3.2).
+## The rail's words for needle `index` on `slice`: `OVERFLOW 12 // PERFECT // ` (3.2; the recipe's
+## kind word between them used the pre-rename words ATK / CRIT ..., dropped by the names pass).
 func rail_text(index: int, slice: SliceData) -> String:
 	if slice == null:
 		return ""
@@ -2257,8 +2253,8 @@ func rail_text(index: int, slice: SliceData) -> String:
 	var value := _read_value(slice)
 	var tier_word := tr(String(RAIL_WORDS.get(_needle_tier(index), "")))
 	if slice.slice_type == RC.SliceType.NULL:
-		return "%s // %s // %s // " % [word, tr("MISS"), tr("NO EFFECT")]
-	return "%s %s // %s // %s // " % [word, value, tr(String(KIND_WORDS.get(slice.slice_type, ""))), tier_word]
+		return "%s // %s // " % [word, tr("NO EFFECT")]
+	return "%s %s // %s // " % [word, value, tier_word]
 
 
 ## The landing tier needle `index` reads now (its readout, else GOOD).

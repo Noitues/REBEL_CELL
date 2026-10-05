@@ -151,14 +151,12 @@ A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
-AFFLICT,AFFLICT
 AGAIN,AGAIN
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
-ATK,ATK
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -236,7 +234,6 @@ CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
 CREW // ROSTER,CREW // ROSTER
-CRIT,CRIT
 CYBER,CYBER
 CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
@@ -473,12 +470,10 @@ DAEMON,DAEMON
 DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DECK,DECK
-DEF,DEF
 DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
-DEPLOY,DEPLOY
 DETOUR,DETOUR
 DFRG,DFRG
 DISPATCH,DISPATCH
@@ -586,7 +581,6 @@ ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
-EVADE,EVADE
 EVADED %d,EVADED %d
 EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
@@ -802,7 +796,6 @@ Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
-HEAL,HEAL
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
@@ -1366,7 +1359,6 @@ Loadout,Loadout
 MAINFRAME,MAINFRAME
 MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
-MISS,MISS
 MORE BELOW,MORE BELOW
 Mainframe,Mainframe
 Mainframe: the cyber shop,Mainframe: the cyber shop

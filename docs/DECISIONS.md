@@ -60,6 +60,7 @@ ringlock, skins / scenes18). Decided by the implementer:
   PAPER); material tables (bezel bases, segment colours) stay in the shader as recipe material, not
   UI tokens. Boss phase 2 = hot threat ring, phase 3 = overdriven screens + bolted armour plates
   (round 14). Bosses without their own hub glyph use the bible's enemy-hub emblem by boss.
+- **The rail reads `OVERFLOW 12 // PERFECT //`**: the recipe's kind word (ATK, CRIT ...) is a pre-rename word the names pass bans from player text, so it is dropped.
 - **Tier I screen gain is 1.0, not 60 %** (§3.7): the combat v4 mocks show tier I screens at full
   gain and at 60 % the slices read black at combat size; a `screen_gain` of 1.6 stands in for the
   recipe's bloom pass. Tiers are a game to-do; only rank tiers show.
