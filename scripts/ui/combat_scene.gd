@@ -1326,7 +1326,7 @@ func _instant_playback() -> bool:
 
 
 ## Precision and action feedback (STYLE_GUIDE 5, GDD 10): Perfect = latch + wheel-local
-## inversion + 2-frame freeze (+ a limited flash); Good = click; Partial = stutter shake;
+## inversion + 2-frame freeze (+ a limited flash); Good = click; Weak = stutter shake;
 ## Miss slice = static burst. Nudges tick, spins run down, flips clack. Telegraphed
 ## migrations flicker the boss pointers until they move.
 func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = false) -> void:
@@ -1352,7 +1352,7 @@ func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = f
 				elif tier == RC.PrecisionTier.PERFECT:
 					_perfect_feedback(_player_view)
 					_bark("perfect", state)
-				elif tier == RC.PrecisionTier.PARTIAL:
+				elif tier == RC.PrecisionTier.WEAK:
 					_stutter_view(_player_view)
 			"boss_phase":
 				_boss_phase_feedback(state)
@@ -1466,7 +1466,7 @@ func _perfect_frame(view: WheelView, left: int) -> void:
 func _stutter_view(view: WheelView) -> void:
 	if not Fx.effects_enabled():
 		return
-	Motion.shake(view, &"precision_partial", ^"shake")
+	Motion.shake(view, &"precision_weak", ^"shake")
 
 
 func _flicker_view(view: WheelView) -> void:
@@ -3908,7 +3908,7 @@ func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 	if tier == RC.PrecisionTier.PERFECT:
 		# ANIM-R4 C5: a PERFECT hit's riding size is `ride_perfect`'s amplitude.
 		out["scale"] = Motion.amplitude(&"ride_perfect")
-	if base > 0 and base != raw and tier in [RC.PrecisionTier.PARTIAL, RC.PrecisionTier.PERFECT]:
+	if base > 0 and base != raw and tier in [RC.PrecisionTier.WEAK, RC.PrecisionTier.PERFECT]:
 		out["from"] = str(base)
 	return out
 
@@ -4074,7 +4074,7 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 
 ## A needle latches: its slice pulses in its colour (a MISS slice gets a big grey X,
 ## ANIM-R1 C5a); the player's landings show their precision (Perfect: inversion + freeze +
-## a limited flash; Good: a clean ring; Partial: a stutter; Miss: static over that slice
+## a limited flash; Good: a clean ring; Weak: a stutter; Miss: static over that slice
 ## only), with their sound and bark; every needle pulses.
 func _land(b: Dictionary, s: CombatState) -> void:
 	var owner := StringName(String(b["source"]))
@@ -4099,7 +4099,7 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	elif tier == RC.PrecisionTier.PERFECT:
 		_perfect_feedback(v)
 		_bark("perfect", s)
-	elif tier == RC.PrecisionTier.PARTIAL:
+	elif tier == RC.PrecisionTier.WEAK:
 		_stutter_view(v)
 	else:
 		v.play_good_ring()

@@ -74,6 +74,10 @@ player strings and code for each item's old words.
   says "Drag Firmware or a slice onto a slot"; comments and the drag test
   (`test_a_firmware_chip_dropped_on_a_slot_matches_the_socket_list_and_buy`) follow. "Chip" stays as
   the drawing's word for a Firmware tile.
+- **D8 WEAK.** `RC.PrecisionTier.WEAK` (was PARTIAL, same position), the tier tag WEAK, codex text, GDD
+  2.4 / 10. Schema: `CampaignConfigData.partial_multiplier` → `weak_multiplier` (0.5; checked in
+  `schema_smoke_checks.gd` `_art0`). Motion id `precision_partial` → `precision_weak` (table,
+  REQUIRED_IDS, motion lab). "Partial" in other meanings (a partial cover, a partial patch) stays.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal

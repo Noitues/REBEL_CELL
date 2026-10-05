@@ -478,6 +478,10 @@ func _art0() -> int:
 	if not names.has("map_mainframe_layers") or names.has("map_" + "mo" + "dem_layers"): fails += 1
 	if shipped == null or shipped.map_mainframe_layers != Vector2i(3, 5): fails += 1
 	if RC.InfilNodeType.keys().has("MO" + "DEM"): fails += 1
+	# ART-0 D8: the precision tier is WEAK (was Partial); its multiplier follows.
+	print("ART-0 D8: weak_multiplier ", cfg.weak_multiplier, " shipped ", shipped.weak_multiplier if shipped != null else -1.0, " tiers ", RC.PrecisionTier.keys())
+	if not names.has("weak_multiplier") or names.has("par" + "tial_multiplier") or not is_equal_approx(cfg.weak_multiplier, 0.5): fails += 1
+	if shipped == null or not is_equal_approx(shipped.weak_multiplier, 0.5) or RC.PrecisionTier.keys() != ["WEAK", "GOOD", "PERFECT"]: fails += 1
 	# ART-0 S0: the save locations and the replay switch (CampaignConfigData).
 	print("ART-0 S0: saves ", cfg.save_dir_source, " / ", cfg.save_dir_export, " replays ", cfg.replay_subdir, " on ", cfg.write_replays)
 	if cfg.save_dir_source != "res://saves" or cfg.save_dir_export != "user://saves" or cfg.replay_subdir != "replays" or not cfg.write_replays: fails += 1

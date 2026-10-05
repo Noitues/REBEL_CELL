@@ -1460,7 +1460,6 @@ Out of reach from here.,Out of reach from here.
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
 PARASITE,PARASITE
-PARTIAL,PARTIAL
 PASSED,PASSED
 PAUSED,PAUSED
 PAYOUT,PAYOUT
@@ -2765,6 +2764,7 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
+WEAK,WEAK
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON

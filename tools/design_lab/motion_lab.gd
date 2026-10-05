@@ -53,7 +53,7 @@ const DEMOS := {
 	&"jack_in": ["jack_in", "stage"], &"jack_out": ["jack_out", "stage"], &"jack_fade_reduced": ["jack_reduced", "stage"],
 	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
 	&"precision_perfect": ["scene", "perfect"], &"precision_good_ring": ["view", "good"],
-	&"precision_partial": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
+	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
 	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
 	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send_hit"], &"resolve_pulse": ["view", "pulse"],
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],

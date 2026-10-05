@@ -71,7 +71,7 @@ func test_a_strip_during_resolution_lasts_into_the_next_turn() -> void:
 	CombatFixture.land(s.state.player, 1)  # dead centre: Perfect
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 1, "3 - 2 after the next turn's restore")
-	CombatFixture.land(s.state.player, 1, 2)  # Partial: no Perfect this time
+	CombatFixture.land(s.state.player, 1, 2)  # Weak: no Perfect this time
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 3, "back to full a turn later")
 

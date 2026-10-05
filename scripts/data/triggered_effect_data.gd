@@ -4,7 +4,7 @@ extends Resource
 
 @export var trigger: RC.Trigger = RC.Trigger.ON_SLICE_TRIGGER
 ## Minimum precision tier needed for slice-based triggers.
-@export var min_tier: RC.PrecisionTier = RC.PrecisionTier.PARTIAL
+@export var min_tier: RC.PrecisionTier = RC.PrecisionTier.WEAK
 ## e.g. Clean Signal = 3 consecutive ON_PERFECT.
 @export_range(1, 10) var consecutive_required: int = 1
 ## 0 = unlimited. e.g. Stolen Intent = 1.

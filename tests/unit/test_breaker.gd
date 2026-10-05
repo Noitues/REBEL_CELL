@@ -43,7 +43,7 @@ func test_perfect_resolves_the_slice_twice() -> void:
 	assert_eq(_enemy(s).hp, 198, "12 total, 10 blocked -> 2")
 
 
-func test_good_and_partial_do_not_retrigger() -> void:
+func test_good_and_weak_do_not_retrigger() -> void:
 	var s := _session()
 	CombatFixture.land(s.state.player, 1, 1)
 	CombatFixture.land_inner(s.state.player, 2)
@@ -56,7 +56,7 @@ func test_good_and_partial_do_not_retrigger() -> void:
 	CombatFixture.land_inner(s.state.player, 2)
 	CombatFixture.land(_enemy(s), 5)
 	r = s.apply(CombatAction.end_turn())
-	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], 3, "Partial = 0.5x")
+	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], 3, "Weak = 0.5x")
 
 
 func test_ring_x2_doubles_output_and_stacks_with_the_perfect_hook() -> void:

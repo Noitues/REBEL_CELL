@@ -670,8 +670,8 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		"tier": r["tier"], "slice_index": slot, "source_id": slice.id}
 	var listeners := _slice_listeners(s, r)
 	var mult: float = owner.output_scale * float(r.get("extra_multiplier", 1.0))
-	if r["tier"] == RC.PrecisionTier.PARTIAL:
-		mult *= config.partial_multiplier
+	if r["tier"] == RC.PrecisionTier.WEAK:
+		mult *= config.weak_multiplier
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
 		mult *= fw.output_multiplier

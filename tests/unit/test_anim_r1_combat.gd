@@ -358,7 +358,7 @@ func test_a_skip_stops_every_wheel_motion_and_lands_without_a_flip() -> void:
 	_live()
 	scene.end_turn()
 	var pv: WheelView = scene._player_view
-	scene._stutter_view(pv)  # the Partial shake (a kit helper, not the view's own tween)
+	scene._stutter_view(pv)  # the Weak shake (a kit helper, not the view's own tween)
 	assert_true(pv.motion_busy(), "the stutter counts as motion")
 	scene.skip_motion()
 	assert_false(scene.motion_busy(), "nothing plays right after a skip")

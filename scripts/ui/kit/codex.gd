@@ -23,7 +23,7 @@ const STATUS_TEXT := {
 const TIER_TEXT := {
 	RC.PrecisionTier.PERFECT: "PERFECT (offset 0): full output and the class Perfect hook.",
 	RC.PrecisionTier.GOOD: "GOOD (offset 1): full output.",
-	RC.PrecisionTier.PARTIAL: "PARTIAL (offset 2): half output.",
+	RC.PrecisionTier.WEAK: "WEAK (offset 2): half output.",
 }
 ## Original slang (GDD 8.1). Never borrowed from existing IP.
 const LEXICON := {
@@ -101,7 +101,7 @@ static func describe_triggered(te: TriggeredEffectData) -> String:
 		if e != null:
 			parts.append(describe_effect(e))
 	var when := String(RC.Trigger.keys()[te.trigger]).to_lower().replace("_", " ")
-	if te.min_tier > RC.PrecisionTier.PARTIAL:
+	if te.min_tier > RC.PrecisionTier.WEAK:
 		when += " (%s or better)" % String(RC.PrecisionTier.keys()[te.min_tier]).to_lower()
 	if te.consecutive_required > 1:
 		when += " x%d in a row" % te.consecutive_required

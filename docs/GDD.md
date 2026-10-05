@@ -98,7 +98,7 @@ so the slice opposite the pointer arrives at the pointer and slice order reverse
 |---|---|---|---|
 | Perfect | 0 | 1.0× | Triggers the class Perfect hook and Perfect-based effects |
 | Good | ±1 | 1.0× | |
-| Partial | ±2 | 0.5× | |
+| WEAK | ±2 | 0.5× | (was Partial; DECISIONS 2026-10-05, names for M14, D8) |
 
 There is **no Miss tier**: every landing is within 2 ticks of some slice centre. "Miss"
 means only the **Miss slice** resolving. Effects that mention misses (Fault Tolerance,
@@ -534,7 +534,7 @@ scaling; subtitles with speaker names.
 - **Mechanical ratchet:** every tick clicks; spins produce a decelerating run of clicks,
   nudges a single click, flips a mechanical clack. Players can hear wheel position.
 - **Precision feedback:** Perfect = latch + wheel-local inversion + 2-frame freeze; Good =
-  clean click; Partial = stutter; Miss slice = static burst.
+  clean click; WEAK = stutter; Miss slice = static burst.
 - **Music by context:** HQ/Grid lo-fi; netrun traversal dark ambient/synthwave; combat
   synthwave with layers added at Heat thresholds; raids industrial; bosses industrial
   synthwave; Solace raids corporate hold music; REBEL_CELL your HQ lo-fi slowed and wrong.

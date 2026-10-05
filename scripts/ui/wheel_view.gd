@@ -177,7 +177,7 @@ const SATELLITE_TOKEN := 11.0
 const BOTTOM_SECTOR_SIN := 0.8
 const HP_BLOCK_HALF := 90.0
 ## Aim quality pips on the tag (1 = half power, 2 = good, 3 = perfect).
-const TIER_PIPS := {RC.PrecisionTier.PARTIAL: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
+const TIER_PIPS := {RC.PrecisionTier.WEAK: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
 const PIP_RADIUS := 3.0
 ## Tag rows kept on screen: the title and at most this many chip rows (the rest fold into
 ## a "+N" chip; the tooltip lists them all).
@@ -386,7 +386,7 @@ func _shown() -> CombatantState:
 
 
 ## True while any motion of this view still runs (its own tweens, queued nudges, and the
-## kit's helpers on it: the Partial stutter, the Miss blink).
+## kit's helpers on it: the Weak stutter, the Miss blink).
 func motion_busy() -> bool:
 	for k in _tweens:
 		var tw: Tween = _tweens[k]
@@ -416,7 +416,7 @@ func complete_motion() -> void:
 
 ## Ends every motion of this view at once: the view shows the state as it is (skip,
 ## reduce effects, a new state arriving mid-motion). ANIM-R1 C3: the kit's helpers stop
-## too (the Partial shake kept running), and with `sync_tag` the tag takes the content it
+## too (the Weak shake kept running), and with `sync_tag` the tag takes the content it
 ## shows now without a flip (a skip lands; only a replay that plays out flips the tags in).
 func stop_motion(sync_tag: bool = true) -> void:
 	# The kit's one-shot helpers (the migration flicker is the scene's loop and stays).

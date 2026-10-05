@@ -73,7 +73,7 @@ extends Resource
 ## ClassData (starting_ram, ram_regen, max_ram) because classes vary them.
 ## RAM cost of a Respin (11.3). Cards cost 0-3 RAM each (content); first nudge is free.
 @export var respin_ram_cost: int = 4
-@export var partial_multiplier: float = 0.5
+@export var weak_multiplier: float = 0.5
 @export var overclock_multiplier: float = 1.5
 ## Output of a slice with a PARASITE docked on it (Botnet).
 @export var parasite_multiplier: float = 0.5

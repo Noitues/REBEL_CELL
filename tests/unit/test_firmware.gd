@@ -74,7 +74,7 @@ func test_leech_restores_1_ram_on_good_or_better() -> void:
 	CombatFixture.land(s.state.player, 1, 2)
 	ram = s.state.ram
 	s.apply(CombatAction.end_turn())
-	assert_eq(s.state.ram, ram + 4, "Partial: nothing from Leech")
+	assert_eq(s.state.ram, ram + 4, "Weak: nothing from Leech")
 
 
 func test_leech_only_fits_attack_slices() -> void:
@@ -117,10 +117,10 @@ func test_shunt_resolves_the_neighbour_instead_at_1_5x() -> void:
 	assert_eq(_hits(r).size(), 1)
 	assert_eq(_hits(r)[0]["amount"], 18, "Overflow 12 x 1.5, own Shim skipped")
 	s = _session(&"shunt")
-	CombatFixture.land(s.state.player, 1, 2)  # toward slot 2 (Defrag 5), Partial
+	CombatFixture.land(s.state.player, 1, 2)  # toward slot 2 (Defrag 5), Weak
 	r = s.apply(CombatAction.end_turn())
 	assert_eq(_hits(r).size(), 0)
-	assert_eq(CombatFixture.events_of(r, "block")[0]["amount"], 4, "Defrag 5 x 1.5 x 0.5 partial = 3.75 -> 4")
+	assert_eq(CombatFixture.events_of(r, "block")[0]["amount"], 4, "Defrag 5 x 1.5 x 0.5 weak = 3.75 -> 4")
 
 
 func test_shunt_does_nothing_special_on_perfect() -> void:

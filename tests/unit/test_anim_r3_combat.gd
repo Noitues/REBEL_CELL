@@ -678,7 +678,7 @@ func test_the_hit_shows_its_aim() -> void:
 	assert_gt(slot, -1, "the operative has a SHIM slice")
 	var hit := _base(state, enemy)
 	hit.merge({"kind": "damage", "source": state.player.id, "target": enemy.id, "amount": base / 2, "soaked": 0, "raw": base / 2,
-		"source_slot": slot, "source_tier": RC.PrecisionTier.PARTIAL, "hp_after": enemy.hp - base / 2}, true)
+		"source_slot": slot, "source_tier": RC.PrecisionTier.WEAK, "hp_after": enemy.hp - base / 2}, true)
 	var ride: Dictionary = scene.ride_for(hit, state)
 	assert_eq(String(ride["from"]), str(base), "the slice's own value first (%d)" % base)
 	assert_eq(String(ride["label"]), str(base / 2), "then what it deals, a whole number (ANIM-R6 A4: never a fraction)")

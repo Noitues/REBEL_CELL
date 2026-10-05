@@ -135,7 +135,7 @@ func _run_every_helper(n: Control, label: Label) -> Array:
 		Motion.fade(n, 0.25, &"visited_dim"),
 		Motion.pop(n, &"sticky_bump"),
 		Motion.slide_in(n, Vector2(-48, 0), &"panel_in"),
-		Motion.shake(n, &"precision_partial"),
+		Motion.shake(n, &"precision_weak"),
 		Motion.blink(n, &"precision_blink"),
 		Motion.loop_pulse(n, ^"modulate:a", &"pointer_flicker"),
 		Motion.number_roll(label, 3, 42, &"number_roll"),
@@ -201,7 +201,7 @@ func test_live_helpers_end_where_the_instant_path_does() -> void:
 	_finish(slide, "slide_in")
 	assert_almost_eq(n.position, home, Vector2.ONE * 0.01, "slide ends home")
 	n = _node()
-	_finish(Motion.shake(n, &"precision_partial"), "shake")
+	_finish(Motion.shake(n, &"precision_weak"), "shake")
 	assert_almost_eq(n.position, home, Vector2.ONE * 0.01, "shake ends home")
 	n = _node()
 	_finish(Motion.blink(n, &"precision_blink"), "blink")
