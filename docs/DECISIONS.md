@@ -33,6 +33,56 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-5 5a city model
+Bible §1.2 World, §4.1–4.3, §6.1; 1D's report (`docs/handoff/art_1/city_spike_report.md`, "What
+ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
+- **Production classes (from 1D's spike).** `CitySpikeConfig` is renamed `CityConfig` (internal
+  names follow the word; the spike keeps its district in `tools/spike/city/city_spike_config.tres`).
+  The game's values are `content/config/city_config.tres`: the whole city `city_rect` (lots
+  -80..85 on both axes: every territory, HQ and the Sprawl round them), `chunk_lots` 24, building
+  LOD (`lod0_below` 400, `lod2_above` 760, `lod_rows_share`, `lod_cols`), zoom / pan (`grid_ortho`
+  440, `zoom_ortho_min/max`, `zoom_step`, `pan_screens_s`, `band_netrun_below`, `minimap_size`) and
+  the network decal (`net_*`).
+- **`CityModel`** (`scripts/city3d/city_model.gd`): the whole city of the game's own layout
+  (CityLayoutRecorder per chunk, the NeonCity placement code, seed 7): 13,306 buildings, 17,968
+  extrusions, 9,267 street lots, 64 chunks; recorded in 1.4 s headless on one thread, in the game on
+  the worker pool (`CityView3D`, chunks in order, so the model is deterministic). Shared once per
+  process (`CityModel.shared`). Picking tests only the chunks the ray crosses (equal to testing every
+  prism; ~3 ms a pick). The Cell's district keeps the street grid (round 34 lock); the HQs are
+  stepped stand-ins until 5b's landmarks (`hide_stand_in`).
+- **Building families** stay 1D's 12 unit-prism families (4 / 6 / 8 sides × 4 facet-row classes,
+  the bible's "~6" is per side count) — one MultiMesh per family **per chunk**, so frustum culling
+  works; LOD0 / LOD1 / LOD2 meshes (all rows / half the rows and 2 columns / one row: a plain
+  extrusion) swap by camera ortho with the 6 % hysteresis (`CityLod.building_lod`), never by
+  distance. Buffers are written whole (`CityMeshKit.instance_buffer`, 31 ms for the city).
+- **View bands** (`CityLod.band`): GRID at and above the see-through band's top (ortho ≈ 440, 1D's
+  lod 1.595), RAID down to ortho 200, NETRUN below, with hysteresis: the views move onto the city by
+  zoom band, no scene change.
+- **Materials: one seam** (`CityMaterials`). The building and ground shaders moved to
+  `shaders/city/`; their toon bands and banded light spill now come from 1B's kit through a shared
+  include, `shaders/kit/toon_bands.gdshaderinc` (`toon_band_index`, `toon_spill` and the
+  `spill_*` uniforms), so `ToonInkMaterial.set_spill` / `LightSpill.uniforms_3d` drive the city as
+  they drive props. **Small change to 1B's material:** `toon_ink.gdshader` includes that file
+  instead of declaring its spill uniforms and loop itself (same uniforms, same maths). The city's
+  ink stays 1D's depth / normal post pass (1B's note: the inverted hull splits at hard corners on
+  big city meshes); the band edges and ramp colours stay the city's config values.
+- **SEAMS for 5c / 5d / 5b / the views** (`CityView3D`, a SubViewport with its own World3D):
+  - *Scene layers:* `layer(name)` for `ground, network, buildings, landmarks, props, traffic, sky,
+    heat, fx`; `add_to_layer(name, node, ground_pass)` (ground_pass = also drawn in the ground-only
+    pass, render layer 2, seen under see-through buildings); signals `camera_changed(iso)`,
+    `band_changed(band)`, `building_lod_changed(lod)`, `ambient_changed(scale)` and
+    `ambient_scale` (0 when the map is covered, the window unfocused, or reduce effects / reduce
+    motion is on: every ambient layer pauses on it); `set_spill(sources)`; `landmark_slot(corp)`,
+    `hide_stand_in(corp)`.
+  - *Picking (pure, this viewport's pixels):* `pick(p)` → {prism, building, cell, lot, terr, world},
+    `lot_at(p)`, `project(world)`, `unproject(p, height)`, `lot_world(lot, height)`, `top_at(lot)`;
+    the same on `CityModel` with a `CityIsoCamera` for headless tests.
+  - Overlays read the camera only through `CityIsoCamera` (1D's constraint).
+- **Tests:** `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
+  the deterministic chunked model, the Cell's grid, picking through chunks = every prism,
+  `top_at`, building LOD and view bands with hysteresis, log-linear zoom about the cursor and pan,
+  the network decal's buffers, CityView3D's layer and picking API, ambient pause.
+
 ### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
 ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
 text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
