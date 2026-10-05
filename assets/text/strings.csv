@@ -30,10 +30,12 @@ Stationed on %s."
 %d HP lost: LETHAL,%d HP lost: LETHAL
 %d LEFT,%d LEFT
 %d RAM lost,%d RAM lost
+%d NEEDLES,%d NEEDLES
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
 %d absorbed by block and shield,%d absorbed by block and shield
 %d destroyed,%d destroyed
+%d fps,%d fps
 %d lost,%d lost
 %d reached home,%d reached home
 %d won,%d won
@@ -491,6 +493,7 @@ DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
+DELETED,DELETED
 DETOUR,DETOUR
 DFRG,DFRG
 DISPATCH,DISPATCH
@@ -819,6 +822,8 @@ HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
 HFIX,HFIX
+HIRE,HIRE
+HIRE: %d SCHEMATICS,HIRE: %d SCHEMATICS
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
 HITS %s %d → %d LEFT,HITS %s %d → %d LEFT
@@ -835,6 +840,7 @@ HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
 HOTFIX,HOTFIX
 HP,HP
+HP %d/%d,HP %d/%d
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
 HP %s,HP %s
@@ -1382,6 +1388,7 @@ Map legend on the city views,Map legend on the city views
 Master volume,Master volume
 Move it to %s.,Move it to %s.
 Music volume,Music volume
+NEED %d,NEED %d
 NEED %d · HAVE %d,NEED %d · HAVE %d
 NETRUN,NETRUN
 NETRUN // FLATLINED,NETRUN // FLATLINED
@@ -1406,6 +1413,7 @@ NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: se
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
 NO GAIN,NO GAIN
+NO SIGNAL,NO SIGNAL
 NUDGE,NUDGE
 NULL,NULL
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
@@ -1616,6 +1624,7 @@ REMOVE,REMOVE
 REMOVE A CARD,REMOVE A CARD
 REMOVE A CARD // %d CYCLES,REMOVE A CARD // %d CYCLES
 RES%s,RES%s
+RESIST,RESIST
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
 RESISTANCE,RESISTANCE
@@ -1796,6 +1805,7 @@ SPIN %d+,SPIN %d+
 SPINNER,SPINNER
 STABLE,STABLE
 START DEFENSE,START DEFENSE
+STATIONED,STATIONED
 STATS,STATS
 STATUS: %s,STATUS: %s
 STOPPED %d/%d,STOPPED %d/%d
@@ -2828,6 +2838,7 @@ Upgrade the node one level (level %d now).,Upgrade the node one level (level %d 
 V-sync,V-sync
 VICTORY,VICTORY
 VIEW LOADOUT,VIEW LOADOUT
+VOICE ONLY // NO FEED,VOICE ONLY // NO FEED
 Virus,Virus
 WANTED,WANTED
 WAS,WAS

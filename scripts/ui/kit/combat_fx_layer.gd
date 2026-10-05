@@ -466,8 +466,12 @@ const POLY_MIN_SPAN := 0.5
 ## <= 1.2 s); the ring stays inside the wheel's region. Through the one flash limiter.
 ## Reduce effects, headless or the entry off: nothing (the end state at once). Returns
 ## whether it plays.
-func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: Color = Palette.AUTO) -> bool:
+func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: Color = Palette.AUTO, pip: Vector2 = Vector2.INF) -> bool:
 	var id: StringName = BURST_MOTION.get(kind, &"")
+	# ART-2 2C §3.16 phase change v3: orange bits stream from the crossed phase pip (`pip`)
+	# under the arc to the bezel, whether or not the limiter lets the burst's flash show.
+	if kind == BURST_PHASE and pip != Vector2.INF and radius > 0.0:
+		phase_bits(wheel_center, radius, pip)
 	if id == &"" or radius <= 0.0 or not Motion.live(id):
 		return false
 	if not Fx.request_flash():
@@ -536,8 +540,15 @@ func word_stamp(at: Vector2, text: String, color: Color, hold: float, max_w: flo
 	var box := Rect2(at - Vector2(w * 0.5, fs * WORD_BOX_H * 0.5), Vector2(w, fs * WORD_BOX_H))
 	if not Motion.live(&"result_stamp"):
 		return box
-	_add({"kind": "tag", "at": at, "text": text, "color": color, "fs": fs, "dur": Motion.seconds(&"result_stamp") + hold,
-		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp"), "delay": delay, "icon": icon})
+	var tag := {"kind": "tag", "at": at, "text": text, "color": color, "fs": fs, "dur": Motion.seconds(&"result_stamp") + hold,
+		"land": Motion.seconds(&"result_stamp"), "from": Motion.amplitude(&"result_stamp"), "delay": delay, "icon": icon}
+	_add(tag)
+	# ART-2 2C §3.20: every word an effect stamps is a temporary label: it ends by dissolving
+	# left to right into 0/1 bits (in its last `temp_label` seconds), never a plain fade.
+	if Motion.live(&"temp_label"):
+		tag["dissolve"] = minf(Motion.seconds(&"temp_label"), maxf(0.0, float(tag["dur"]) - float(tag["land"])))
+		if float(tag["dissolve"]) > 0.0:
+			_label_bits(tag)
 	return box
 
 
@@ -601,11 +612,30 @@ func stamp(at: Vector2, glyph: String, color: Color, hold: float, delay: float =
 
 ## A broken wheel: `pieces` ([polygon (global), colour]) fall `enemy_break`'s amplitude px
 ## with a spin each, fading out.
-func shards(pieces: Array) -> void:
+## ART-2 2C §3.20 enemy defeated v2: the pieces fly apart and fall; round them the hub
+## shockwave and the bits they shed in their own colours, and `word` (DELETED for an enemy)
+## as a temporary label that dissolves to bits (`defeat_fx`).
+func shards(pieces: Array, word: String = "") -> void:
 	if not Motion.live(&"enemy_break") or pieces.is_empty():
 		return
 	_add({"kind": "shards", "pieces": pieces, "dur": Motion.seconds(&"enemy_break"), "fall": Motion.amplitude(&"enemy_break"),
 		"ease": Motion.entry(&"enemy_break").ease, "trans": Motion.entry(&"enemy_break").trans})
+	var mid := Vector2.ZERO
+	var count := 0
+	var colors: Array[Color] = []
+	for pc in pieces:
+		for v in (pc[0] as PackedVector2Array):
+			mid += v
+			count += 1
+		var col: Color = pc[1]
+		if not colors.has(Color(col, 1.0)):
+			colors.append(Color(col, 1.0))
+	mid /= maxf(1.0, float(count))
+	var r := 0.0
+	for pc in pieces:
+		for v in (pc[0] as PackedVector2Array):
+			r = maxf(r, v.distance_to(mid))
+	defeat_fx(mid, r, colors, word)
 
 
 ## Hub glass shattering at `at` (global) out of a hub `radius` px across.
@@ -701,13 +731,19 @@ func hide_reticle() -> void:
 ## `card_stamp` landing, then it dissolves (`effect_burst`) or, when `exhaust`, burns
 ## (`card_exhaust`: curls up with embers). Returns the seconds until the effect may play
 ## (travel + stamp + its dissolve: ANIM-R3 A6i). `on_done` runs when it lands or is skipped.
-func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, exhaust: bool, on_done: Callable = Callable()) -> float:
+func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, exhaust: bool, on_done: Callable = Callable(),
+		hub: Vector2 = Vector2.INF) -> float:
+	# ART-2 2C D16: the card's slap point is where its effect starts (CardFx.origin), even
+	# when its motion doesn't play.
+	slap_point = to
 	if not Motion.live(&"card_play"):
 		card.free()
 		if on_done.is_valid():
 			on_done.call()
 		return 0.0
 	_adopt(card, from, from_rotation)
+	# ART-2 2C §3.18: the sticker's material (the gloss band and the dissolve's scan front).
+	card.material = StickerSeam.card_material(card.size)
 	# ANIM-R6 A11: each part plays only when its own entry is on (a switched-off stamp or burn
 	# takes no time: the card lands, then goes at once).
 	var stamps := Motion.live(&"card_stamp")
@@ -717,15 +753,28 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 	var land := Motion.seconds(&"card_stamp") if stamps else 0.0
 	var gone := Motion.seconds(gone_id) if goes else 0.0
 	var fe := Motion.entry(&"card_play")
-	var se := Motion.entry(&"card_stamp")
 	var end_pos := to - card.size * 0.5
+	var size := Motion.amplitude(&"card_play")
+	# ART-2 2C §3.18 step 3, the peel: the sticker pops free (`card_peel`) and a faint liner
+	# stays in its slot through the flight.
+	if Motion.live(&"card_peel"):
+		_add({"kind": "liner", "rect": from, "rot": from_rotation, "dur": fly + Motion.seconds(&"card_peel")})
 	var tw := card.create_tween()
 	tw.tween_property(card, "position", end_pos, fly).set_ease(fe.ease).set_trans(fe.trans)
-	tw.parallel().tween_property(card, "rotation", 0.0, fly).set_ease(fe.ease).set_trans(fe.trans)
-	tw.parallel().tween_property(card, "scale", Vector2.ONE * Motion.amplitude(&"card_play"), fly * CARD_GROW_SHARE).set_ease(CARD_GROW_EASE)
+	if Motion.live(&"card_peel"):
+		var pe := Motion.entry(&"card_peel")
+		var pop := minf(Motion.seconds(&"card_peel"), fly * CARD_GROW_SHARE)
+		tw.parallel().tween_property(card, "scale", Vector2.ONE * Motion.amplitude(&"card_peel"), pop).set_ease(pe.ease).set_trans(pe.trans)
+		tw.parallel().tween_property(card, "scale", Vector2.ONE * size, fly * CARD_GROW_SHARE).set_delay(pop).set_ease(CARD_GROW_EASE)
+	else:
+		tw.parallel().tween_property(card, "scale", Vector2.ONE * size, fly * CARD_GROW_SHARE).set_ease(CARD_GROW_EASE)
+	# §3.18 step 4: it tilts by its velocity (a spring lag), straight again as it lands.
+	tw.parallel().tween_method(_tilt_step.bind(card, from_rotation, signf(to.x - from.get_center().x)), 0.0, 1.0, fly)
 	if stamps:
-		# The stamp: from a size up, down onto the target.
-		tw.tween_property(card, "scale", Vector2.ONE * (1.0 / maxf(0.01, Motion.amplitude(&"card_stamp"))), land).set_ease(se.ease).set_trans(se.trans)
+		# §3.18 step 5, the slap: drop from a size up, squash 1.13 / 0.86, overshoot, settle;
+		# the white contact ring and the gloss sweep.
+		tw.tween_callback(func() -> void: _slap(to, card))
+		tw.tween_method(_slap_step.bind(card, size), 0.0, 1.0, land)
 	var f := {"node": card, "tween": tw, "to": to, "kind": "exhaust" if exhaust else "play", "on_done": on_done}
 	if goes and exhaust:
 		var xe := Motion.entry(&"card_exhaust")
@@ -733,9 +782,11 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 		tw.tween_property(card, "scale:y", 0.0, gone).set_ease(xe.ease).set_trans(xe.trans)
 		tw.parallel().tween_property(card, "modulate", Color(Palette.CELL_PINK.darkened(0.6), 0.0), gone)
 	elif goes:
-		tw.tween_callback(func() -> void: burst(to, Palette.CELL_ACID, &"effect_burst"))
-		tw.tween_property(card, "modulate:a", 0.0, gone).set_ease(DISSOLVE_FADE_EASE)
-		tw.parallel().tween_property(card, "scale", Vector2.ZERO, gone).set_ease(DISSOLVE_SHRINK_EASE)
+		# §3.18 step 6, dissolve A: a scan front runs down the card; each cell decodes to a 0/1
+		# glyph and spirals clockwise into the hub, absorbed over the last 30 %.
+		var into := hub if hub != Vector2.INF else to
+		tw.tween_callback(func() -> void: _dissolve(card, to, into, gone))
+		tw.tween_method(func(p: float) -> void: StickerSeam.set_scan(card, p / CardFx.SCAN_SHARE), 0.0, 1.0, gone)
 	tw.tween_callback(func() -> void: _end_flight(f))
 	flights.append(f)
 	set_process(true)
@@ -750,8 +801,49 @@ func play_card(card: ZineCard, from: Rect2, from_rotation: float, to: Vector2, e
 ## out while it shrinks easing in (it thins away before it vanishes).
 const CARD_GROW_SHARE := 0.5
 const CARD_GROW_EASE := Tween.EASE_OUT
-const DISSOLVE_FADE_EASE := Tween.EASE_OUT
-const DISSOLVE_SHRINK_EASE := Tween.EASE_IN
+
+
+## ART-2 2C §3.18 step 4: the flying card turns from its slot's tilt to upright, leaning
+## FLIGHT_TILT into its travel (`dir` = its side) at mid-flight.
+static func _tilt_step(p: float, card: Control, from_rotation: float, dir: float) -> void:
+	if is_instance_valid(card):
+		card.rotation = from_rotation * (1.0 - p) + FLIGHT_TILT * sin(PI * p) * dir
+
+
+## §3.18 step 5: the slap's scale at `p` (from the flight's `size` down to 1, squashed).
+static func _slap_step(p: float, card: Control, size: float) -> void:
+	if is_instance_valid(card):
+		card.scale = CardFx.slap_scale(p) * lerpf(size, 1.0, minf(1.0, p * 2.0))
+
+
+## §3.18 step 5: the card lands at `at`: the white contact ring, the gloss sweep (D16: the
+## slap point is where its effect starts).
+func _slap(at: Vector2, card: Control) -> void:
+	slap_point = at
+	if not Motion.live(&"card_slap_ring"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"card_slap_ring"), Motion.seconds(&"card_slap_ring"))
+	var r0 := card.size.length() * 0.5 if is_instance_valid(card) else IMPACT_DISC
+	_add({"kind": "slap_ring", "at": at, "r0": r0 * SLAP_RING_FROM, "grow": Motion.amplitude(&"card_slap_ring"), "dur": dur})
+	if is_instance_valid(card):
+		var e := Motion.entry(&"card_slap_ring")
+		var tw := card.create_tween()
+		tw.tween_method(StickerSeam.set_gloss.bind(card), -0.2, 1.2, dur).set_ease(e.ease).set_trans(e.trans)
+		tw.tween_callback(StickerSeam.set_gloss.bind(-1.0, card))
+
+
+## The slap ring starts at this share of the card's half-diagonal.
+const SLAP_RING_FROM := 0.55
+
+
+## §3.18 step 6: dissolve A's bits for `card` landed at `at`, spiralling into `hub` over
+## `seconds`.
+func _dissolve(card: Control, at: Vector2, hub: Vector2, seconds: float) -> void:
+	if not is_instance_valid(card):
+		return
+	var r := Rect2(at - card.size * 0.5, card.size)
+	last_origin = at
+	bits(CardFx.dissolve_path(r, seconds, hub, Settings.text_scale), Palette.CELL_ACID.lerp(Palette.RESIST_GOLD, 0.5), &"effect_burst")
 
 
 ## Flies `card` (a copy) from `from` to the discard pile at `to` (global) along an arc of
@@ -879,6 +971,8 @@ func _draw() -> void:
 				_draw_embers(s)
 			"wheel_burst":
 				_draw_wheel_burst(s)
+			_:
+				_draw_fx2(s)  # ART-2 2C: bits, the card's slap and the locked effect set
 	if not held_word.is_empty() and float(held_word["age"]) >= float(held_word.get("delay", 0.0)):
 		_draw_word(held_word)  # ANIM-R6 A15: VICTORY holds at full strength
 	if reticle_visible:
@@ -979,7 +1073,14 @@ func _draw_tag(s: Dictionary) -> void:
 	var a := float(s["age"]) - float(s.get("delay", 0.0))
 	var q := clampf(a / land, 0.0, 1.0) if land > 0.0 else 1.0
 	var sc := lerpf(float(s["from"]), 1.0, Tween.interpolate_value(0.0, 1.0, q, 1.0, POP_SETTLE_TRANS, POP_SETTLE_EASE))
-	var alpha := minf(1.0, q * 2.0) * (1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0))
+	var dissolve := float(s.get("dissolve", 0.0))
+	var alpha := minf(1.0, q * 2.0)
+	var cut := 0.0
+	if dissolve > 0.0:
+		# ART-2 2C §3.20: a temporary label dissolves left to right into bits (_label_bits).
+		cut = clampf((a - _tag_dissolve_at(s)) / dissolve, 0.0, 1.0)
+	else:
+		alpha *= 1.0 - clampf((_p(s) - (1.0 - FADE_SHARE)) / FADE_SHARE, 0.0, 1.0)
 	var fs := int(s["fs"])
 	var text := String(s["text"])
 	var font := Palette.marker()
@@ -988,13 +1089,36 @@ func _draw_tag(s: Dictionary) -> void:
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + iw
 	var box := Rect2(-w * 0.5 - fs * WORD_BOX_PAD, -fs * WORD_BOX_H * 0.5, w + fs * WORD_BOX_PAD * 2.0, fs * WORD_BOX_H)
 	var col: Color = s["color"]
+	var cut_x := box.position.x + box.size.x * cut
 	draw_set_transform(_local(s["at"]), WORD_TILT, Vector2.ONE * sc)
-	draw_rect(box, Color(Palette.NIGHT_SKY, 0.88 * alpha))
-	draw_rect(box, Color(col, alpha), false, 3.0)
-	if icon == GUARD_NULL:
-		draw_guard_null(self, Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.5, Color(col, alpha))
-	draw_string(font, Vector2(-w * 0.5 + iw, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, alpha))
+	# ART-2 2C §3.18 / §3.20: a vinyl word sticker: a white die-cut edge, the colour's fill,
+	# ink or paper lettering (whichever reads on it), cut away from the left as it dissolves.
+	var shown := Rect2(Vector2(cut_x, box.position.y), Vector2(box.end.x - cut_x, box.size.y))
+	if shown.size.x > 0.0:
+		draw_rect(shown.grow(STICKER_EDGE), Color(Palette.STICKER_DIE_CUT, alpha))
+		draw_rect(shown, Color(col, alpha))
+	var ink := Palette.INK if Palette.contrast(col, Palette.INK) >= Palette.contrast(col, Palette.PAPER) else Palette.PAPER
+	if icon == GUARD_NULL and -w * 0.5 >= cut_x:
+		draw_guard_null(self, Vector2(-w * 0.5 + fs * GLYPH_SHARE * 0.5, 0.0), fs * GLYPH_SHARE * 0.5, Color(ink, alpha))
+	if cut <= 0.0:
+		draw_string(font, Vector2(-w * 0.5 + iw, fs * 0.35), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
+	else:
+		var x := -w * 0.5 + iw
+		for ch in text:
+			var cw := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			if x + cw * 0.5 >= cut_x:
+				draw_string(font, Vector2(x, fs * 0.35), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(ink, alpha))
+			x += cw
 	draw_set_transform(Vector2.ZERO)
+
+
+## ART-2 2C: a word sticker's white die-cut edge (px).
+const STICKER_EDGE := 3.0
+## ART-2 2C enemy defeated v2: a piece's flight as shares of `enemy_break`'s amplitude (px):
+## out from the middle, up, and the gravity that pulls it down after.
+const PIECE_FLY := 0.55
+const PIECE_UP := 0.6
+const PIECE_GRAVITY := 1.6
 
 
 func _draw_burst(s: Dictionary) -> void:
@@ -1082,6 +1206,15 @@ func _draw_shards(s: Dictionary) -> void:
 	var fall := float(s["fall"])
 	var origin := get_global_rect().position
 	var pieces: Array = s["pieces"]
+	# ART-2 2C §3.20 enemy defeated v2: the pieces fly apart from the wheel's middle (radial
+	# plus up), then gravity takes them, spinning.
+	var mid := Vector2.ZERO
+	var count := 0
+	for pc in pieces:
+		for v in (pc[0] as PackedVector2Array):
+			mid += v
+			count += 1
+	mid /= maxf(1.0, float(count))
 	for k in pieces.size():
 		var poly: PackedVector2Array = pieces[k][0]
 		if poly.is_empty():
@@ -1090,10 +1223,11 @@ func _draw_shards(s: Dictionary) -> void:
 		for v in poly:
 			centre += v
 		centre /= poly.size()
-		# Each piece drifts off along its own crack, falls and turns (hash scatter).
+		# Each piece flies off along its own direction, up, then falls and turns (hash scatter).
 		var side := (_h(int(s["serial"]), k) - 0.5) * 2.0
 		var spin := side * PI * 0.5 * q
-		var shift := Vector2(side * fall * 0.3, fall * (0.4 + 0.6 * _h(k, int(s["serial"]), 1))) * q
+		var away := (centre - mid).normalized() if centre.distance_to(mid) > 0.5 else Vector2.UP
+		var shift := away * fall * PIECE_FLY * q + Vector2(0.0, -fall * PIECE_UP * q + fall * PIECE_GRAVITY * (0.6 + 0.4 * _h(k, int(s["serial"]), 1)) * q * q)
 		var xf := Transform2D(spin, centre + shift - origin) * Transform2D(0.0, -centre)
 		var fade := 1.0 - q
 		var col: Color = pieces[k][1]
@@ -1190,3 +1324,485 @@ func _draw_embers(s: Dictionary) -> void:
 		var y := o.y + r.size.y * (1.0 - p * (0.6 + 0.8 * _h(k, 5, int(s["serial"]))))
 		var col := Palette.CELL_ACID if k % 3 == 0 else Palette.CELL_PINK
 		draw_circle(Vector2(x, y), 2.0 + 2.0 * (1.0 - p), Color(col, 1.0 - p))
+
+
+# --- ART-2 2C: sticker card play, 0/1 bits and the locked effect set --------------------------
+# ART_BIBLE v2 §3.15, §3.18, §3.20, §5.3-5.4, §6.3. Every effect below plays only when its own
+# motion entry is live (nothing under reduce effects or headless: the end state shows at once,
+# and the scene never waits on it); local flashes go through the one limiter (a denied flash
+# skips the flash and keeps the bits); durations and shake are held to each entry's tier.
+# Bits are BitPath streams drawn through BitsSeam (1B's emitter once it lands).
+
+## D16: the last played card's slap point (global; Vector2.INF = none): a card-caused
+## effect's bits leave from here, never from the hand (CardFx.origin).
+var slap_point: Vector2 = Vector2.INF
+## Where the last effect's bits came from (global; tests read it: the D16 origin rule).
+var last_origin: Vector2 = Vector2.INF
+## The card's liner, a faint outline left in the hand slot through the flight (alpha).
+const LINER_ALPHA := 0.35
+## A card flight's tilt by velocity (rad at mid-flight; §3.18 step 4 spring lag).
+const FLIGHT_TILT := 0.12
+## Bit sizes (px at text scale 1.0) for the effect streams; the heal's share of `+` glyphs.
+const BIT_MIN := 18.0
+const BIT_MAX := 26.0
+const BIT_END := 0.45
+const HEAL_PLUS_SHARE := 0.3
+## A stream's shares of its entry's time: bits appear over STREAM_STAGGER, each travels
+## STREAM_TRAVEL (so the last lands by the end); the shape (wall, hexes, drone) follows them.
+const STREAM_STAGGER := 0.35
+const STREAM_TRAVEL := 0.4
+## How far a stream bows to the side (px), and how far the heal's bits start below the wheel
+## (share of its radius).
+const STREAM_BOW := 40.0
+const HEAL_FROM_BELOW := 0.55
+## Hit shards: shares of `hit_shards`' time for the free flight, the suck's stagger and each
+## shard's travel; their spread (rad) and their smallest glyph (share of the largest).
+const SHARD_FREE := 0.28
+const SHARD_STAGGER := 0.24
+const SHARD_TRAVEL := 0.46
+const SHARD_SPREAD := 2.4
+const SHARD_MIN_SHARE := 0.6
+## A blocked hit's bounced shards fall this far (px) as they fade.
+const BOUNCE_FALL := 70.0
+## The impact disc at a hit (px) and its tear's size (px): a 3-frame pixel tear.
+const IMPACT_DISC := 16.0
+const TEAR_PX := 34.0
+const TEAR_SECONDS := 0.1
+## Crit: crack reach (share of the wheel's radius) and the streaks' flight share.
+const CRIT_REACH := 0.45
+const STREAK_FLY := 0.3
+## Evade: the token's place past the rim (share of the radius); its lift share of the
+## effect and its exit (up then left, as shares of the amplitude).
+const TOKEN_OUT := 0.12
+const TOKEN_LIFT_SHARE := 0.25
+const TOKEN_EXIT := Vector2(-1.4, -1.0)
+## Corrupt: the glitch's rect round the slice (px at text scale 1.0) and the tick's tear spike.
+const SLICE_BOX := Vector2(92, 58)
+## Enemy defeated: the shockwave reaches this many radii; bits leave from this share of
+## the radius and fall this far (px).
+const SHOCK_REACH := 1.35
+const DEFEAT_BITS_OUT := 0.8
+const DEFEAT_FALL := 140.0
+## Phase change: bits run under the HP arc at this share of the radius past the rim.
+const PHASE_ARC_OUT := 1.12
+## Temporary label: its bits per letter and how far they drift up (px).
+const LABEL_BITS_PER_CHAR := 2
+const LABEL_RISE := 26.0
+## Respin / RAM gain / triggers: bit glyph size (px at text scale 1.0).
+const SMALL_BIT := 17.0
+
+
+## Adds a stream of bits (`path`) in `color`, starting `delay` s from now; returns its
+## length (s). Not added when `id`'s motion doesn't play (returns 0).
+func bits(path: BitPath, color: Color, id: StringName, delay: float = 0.0, dim: float = 1.0, trail: bool = true) -> float:
+	if path == null or path.bits.is_empty() or not Motion.live(id):
+		return 0.0
+	_add({"kind": "bits", "path": path, "color": color, "delay": delay, "dur": maxf(0.001, path.length()), "dim": dim, "trail": trail})
+	return path.length()
+
+
+func _bit_px(px: float) -> float:
+	return px * Settings.text_scale
+
+
+## ART-2 2C §3.20 hit / crit / blocked: 0/1 shards in the attacker's `color` burst from
+## `hit_at` (global) outward from the wheel at `center` (outer radius `r_out`), tumble, then
+## curve round the rim into `targets` (the drained HP arc segments). Count and size from the
+## campaign config by `damage` (a crit the most, with crack lines and code streaks); a
+## `blocked` hit pops the DEFRAG wall first and only `hit_blocked_wall`'s share of the shards
+## gets through (the rest bounce off and fall). Starts `delay` s from now. Returns the shards'
+## arrival times (s from now, ascending; precomputed: the view schedules on them and never
+## reads a particle back); empty when it doesn't play.
+func hit_shards(hit_at: Vector2, center: Vector2, r_out: float, targets: Array[Vector2], color: Color, damage: int, crit: bool,
+		delay: float = 0.0, blocked: bool = false) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	if not Motion.live(&"hit_shards"):
+		return out
+	var cfg := RunManager.config()
+	var tier := VfxTier.of(&"hit_crit_streaks") if crit else VfxTier.of(&"hit_shards")
+	var dur := VfxTier.clamp_seconds(tier, Motion.seconds(&"hit_shards"))
+	var n := cfg.fx_shard_count(damage, crit)
+	var big := _bit_px(cfg.fx_glyph_px(damage, crit))
+	var normal := (hit_at - center).normalized()
+	var reach := VfxTier.clamp_radius(tier, Motion.amplitude(&"hit_shards") * (1.4 if crit else 1.0), r_out, r_out * WHEEL_REGION)
+	var through := clampf(Motion.amplitude(&"hit_blocked_wall"), 0.0, 1.0) if blocked and Motion.live(&"hit_blocked_wall") else 1.0
+	var seed := hash([hit_at.snapped(Vector2.ONE), damage, crit])
+	var path := BitPath.shards(seed, hit_at, normal, n, SHARD_SPREAD * (1.25 if crit else 1.0), reach, dur * SHARD_FREE, dur * SHARD_STAGGER,
+		dur * SHARD_TRAVEL, targets, center, r_out, big * SHARD_MIN_SHARE, big, BIT_END, blocked, through, BOUNCE_FALL)
+	last_origin = hit_at
+	bits(path, color, &"hit_shards", delay)
+	# The impact disc (a local flash, through the limiter: denied, the shards still fly) and
+	# a 3-frame pixel tear.
+	if Fx.request_flash():
+		_add({"kind": "disc", "at": hit_at, "r": IMPACT_DISC * Settings.text_scale, "color": Palette.PAPER,
+			"alpha": VfxTier.clamp_alpha(tier, VfxTier.MAX_FLASH_ALPHA[VfxTier.T2]), "dur": TEAR_SECONDS, "delay": delay})
+	_add({"kind": "tear", "at": hit_at, "color": color, "dur": TEAR_SECONDS, "delay": delay, "seed": seed})
+	if blocked and Motion.live(&"hit_blocked_wall"):
+		_add({"kind": "wall", "shape": "brick", "at": center, "r": r_out, "face": normal.angle(), "n": int(Motion.amplitude(&"block_wall")),
+			"color": Palette.NET_CYAN, "dur": VfxTier.clamp_seconds(VfxTier.of(&"hit_blocked_wall"), Motion.seconds(&"hit_blocked_wall")),
+			"delay": maxf(0.0, delay - Motion.seconds(&"hit_blocked_wall") * 0.25)})
+	if crit and Motion.live(&"hit_crit_streaks"):
+		var cd := VfxTier.clamp_seconds(VfxTier.of(&"hit_crit_streaks"), Motion.seconds(&"hit_crit_streaks"))
+		_add({"kind": "crit", "at": hit_at, "n": int(Motion.amplitude(&"hit_crit_streaks")), "reach": r_out * CRIT_REACH, "color": color,
+			"dur": cd, "delay": delay, "seed": seed})
+	for i in path.bits.size():
+		if not bool(path.bits[i].get("fade", false)):
+			out.append(delay + path.arrival(i))
+	out.sort()
+	return out
+
+
+## ART-2 2C §3.20 block / shield gain: `shape` "brick" (DEFRAG bricks pop in course by
+## course) or "hex" (SANDBOX hex plates tile out with a ripple) on the side of the wheel at
+## `center` (radius `r`) facing `foe` (global); its bits stream from `origin` (the slap point
+## for a card, the slice otherwise: D16) to the wall first.
+func wall(center: Vector2, r: float, foe: Vector2, shape: String, origin: Vector2, delay: float = 0.0) -> void:
+	var id := &"block_wall" if shape == "brick" else &"shield_hex"
+	if not Motion.live(id):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
+	var face := (foe - center).angle() if foe.distance_to(center) > 1.0 else 0.0
+	var col := Palette.NET_CYAN if shape == "brick" else Palette.CELL_PINK.lerp(Palette.NET_CYAN, 0.6)
+	var n := int(Motion.amplitude(id))
+	var targets := BitPath.arc_points(center, r * (1.0 + FxDraw.WALL_OUT), face - FxDraw.WALL_SPAN * 0.5, face + FxDraw.WALL_SPAN * 0.5, n)
+	last_origin = origin
+	bits(BitPath.inflow(hash([center.snapped(Vector2.ONE), shape]), [origin], targets, n, dur * STREAM_STAGGER * 0.5, dur * STREAM_TRAVEL * 0.6,
+		STREAM_BOW, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END), col, id, delay)
+	_add({"kind": "wall", "shape": shape, "at": center, "r": r, "face": face, "n": n, "color": col, "dur": dur, "delay": delay + dur * STREAM_STAGGER * 0.5})
+
+
+## ART-2 2C §3.20 heal: green +/1/0 rise in from outside, below the wheel at `center`
+## (radius `r`), into `targets` (the HP arc segments that come back), which relight white
+## to green as their bits arrive. Returns the arrivals (s from now).
+func heal_inflow(center: Vector2, r: float, targets: Array[Vector2], delay: float = 0.0) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	if not Motion.live(&"heal_inflow") or targets.is_empty():
+		return out
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"heal_inflow"), Motion.seconds(&"heal_inflow"))
+	var n := int(Motion.amplitude(&"heal_inflow"))
+	# From outside: each bit starts past the rim, out from the segment it relights.
+	var below: Array[Vector2] = []
+	for k in n:
+		var t: Vector2 = targets[k % targets.size()]
+		var away := (t - center).normalized()
+		below.append(t + away.rotated((BitPath.noise(n, k, 21) - 0.5) * 0.8) * r * (HEAL_FROM_BELOW + 0.4 * BitPath.noise(n, k, 22)))
+	var path := BitPath.inflow(hash(center.snapped(Vector2.ONE)), below, targets, n, dur * STREAM_STAGGER, dur * STREAM_TRAVEL * 1.4, STREAM_BOW * 0.5,
+		_bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END, HEAL_PLUS_SHARE)
+	last_origin = below[0]
+	bits(path, Palette.GAIN, &"heal_inflow", delay)
+	_add({"kind": "relight", "at": center, "targets": targets, "dur": dur, "delay": delay + dur * STREAM_STAGGER, "color": Palette.GAIN})
+	for t in path.arrivals():
+		out.append(delay + t)
+	return out
+
+
+## ART-2 2C §3.20 evade gain: green bits from `origin` form the `>>` token on the rim at
+## `at`. The standing EVADE badge is the wheel's.
+func evade_gain(at: Vector2, origin: Vector2, delay: float = 0.0) -> void:
+	if not Motion.live(&"evade_token"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"evade_token"), Motion.seconds(&"evade_token"))
+	last_origin = origin
+	bits(BitPath.inflow(hash(at.snapped(Vector2.ONE)), [origin], [at], int(Motion.amplitude(&"drone_deploy")) / 2, dur * STREAM_STAGGER, dur * STREAM_TRAVEL,
+		STREAM_BOW * 0.5, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END), Palette.GAIN, &"evade_token", delay)
+	_add({"kind": "token", "at": at, "to": at, "dur": dur, "delay": delay + dur * (STREAM_STAGGER + STREAM_TRAVEL), "lift": 0.0, "grow": true})
+
+
+## ART-2 2C §3.20 evade v4: the `>>` token on the rim at `at` lifts early and flies up then
+## left; the attack from `attack_from` bends off and chases it; both fade at the screen's
+## edge. The wheel never moves.
+func evade_token(at: Vector2, attack_from: Vector2, color: Color, delay: float = 0.0) -> void:
+	if not Motion.live(&"evade_token"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"evade_token"), Motion.seconds(&"evade_token"))
+	var to := at + TOKEN_EXIT * Motion.amplitude(&"evade_token")
+	_add({"kind": "token", "at": at, "to": to, "dur": dur, "delay": maxf(0.0, delay - dur * TOKEN_LIFT_SHARE), "lift": TOKEN_LIFT_SHARE, "grow": false})
+	_add({"kind": "chase", "from": attack_from, "at": at, "to": to, "color": color, "dur": dur, "delay": delay})
+
+
+## ART-2 2C §3.20 apply CORRUPTED v4: pink bits from `origin` (the slap point for a card)
+## into the slice at `slice_at`, then the glitch takes the slice left to right with doubled
+## tears. The result is the slice's overlay (the wheel's).
+func corrupt_apply(slice_at: Vector2, origin: Vector2, delay: float = 0.0) -> void:
+	if not Motion.live(&"corrupt_apply"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"corrupt_apply"), Motion.seconds(&"corrupt_apply"))
+	last_origin = origin
+	var travel := bits(BitPath.inflow(hash(slice_at.snapped(Vector2.ONE)), [origin], [slice_at], int(Motion.amplitude(&"corrupt_tick")), dur * 0.2, dur * 0.3,
+		STREAM_BOW * 0.4, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END), Palette.CELL_PINK, &"corrupt_apply", delay)
+	var box := SLICE_BOX * Settings.text_scale
+	_add({"kind": "tears", "rect": Rect2(slice_at - box * 0.5, box), "wipe": clampf(Motion.amplitude(&"corrupt_apply") / maxf(0.01, dur), 0.05, 1.0),
+		"color": Palette.CELL_PINK, "color2": Palette.NET_CYAN, "dur": maxf(0.05, dur - travel), "delay": delay + travel, "seed": hash(slice_at.snapped(Vector2.ONE))})
+
+
+## ART-2 2C §3.20 CORRUPTED tick v3: a flash and tear spike on the slice at `slice_at`, the
+## glitch wipes into pink/green bits that run round the rim of the wheel at `center`
+## (outer radius `r_out`) into `targets` (HP). Returns the arrivals (s from now).
+func corrupt_tick(slice_at: Vector2, center: Vector2, r_out: float, targets: Array[Vector2], delay: float = 0.0) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	if not Motion.live(&"corrupt_tick"):
+		return out
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"corrupt_tick"), Motion.seconds(&"corrupt_tick"))
+	var n := int(Motion.amplitude(&"corrupt_tick"))
+	var seed := hash([slice_at.snapped(Vector2.ONE), n])
+	var path := BitPath.shards(seed, slice_at, (slice_at - center).normalized(), n, SHARD_SPREAD, r_out * 0.2, dur * SHARD_FREE * 0.5, dur * SHARD_STAGGER,
+		dur * SHARD_TRAVEL, targets, center, r_out, _bit_px(BIT_MIN), _bit_px(BIT_MAX), BIT_END)
+	last_origin = slice_at
+	# Pink and green bits: two halves of the stream in each colour.
+	var half := BitPath.new()
+	half.bits = path.bits.slice(n / 2)
+	path.bits = path.bits.slice(0, n / 2)
+	bits(path, Palette.CELL_PINK, &"corrupt_tick", delay)
+	bits(half, Palette.GAIN, &"corrupt_tick", delay)
+	var box := SLICE_BOX * Settings.text_scale
+	_add({"kind": "tears", "rect": Rect2(slice_at - box * 0.5, box), "wipe": 1.0, "color": Palette.CELL_PINK, "color2": Palette.GAIN,
+		"dur": dur * SHARD_FREE, "delay": delay, "seed": seed})
+	if Fx.request_flash():
+		_add({"kind": "disc", "at": slice_at, "r": box.y * 0.5, "color": Palette.PAPER, "alpha": VfxTier.clamp_alpha(VfxTier.of(&"corrupt_tick"), VfxTier.MAX_FLASH_ALPHA[VfxTier.T2]),
+			"dur": TEAR_SECONDS, "delay": delay})
+	for t in path.arrivals():
+		out.append(delay + t)
+	for t in half.arrivals():
+		out.append(delay + t)
+	out.sort()
+	return out
+
+
+## ART-2 2C §3.20 drone deploy: bits stream from `origin` (the slap point for a card, the
+## hub otherwise) to the dock at `dock` and pack into the drone's hex; its sticker slaps on.
+func drone_deploy(dock: Vector2, origin: Vector2, color: Color, delay: float = 0.0) -> void:
+	if not Motion.live(&"drone_deploy"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"drone_deploy"), Motion.seconds(&"drone_deploy"))
+	last_origin = origin
+	bits(BitPath.inflow(hash(dock.snapped(Vector2.ONE)), [origin], [dock], int(Motion.amplitude(&"drone_deploy")), dur * STREAM_STAGGER, dur * STREAM_TRAVEL,
+		STREAM_BOW, _bit_px(SMALL_BIT), _bit_px(BIT_MAX), BIT_END), color, &"drone_deploy", delay)
+	_add({"kind": "drone_hex", "at": dock, "color": color, "dur": dur, "delay": delay})
+
+
+## ART-2 2C §3.20 drone attack: the drone's lens ring charges at `at` before its tracer.
+func drone_attack(at: Vector2, color: Color, delay: float = 0.0) -> void:
+	if not Motion.live(&"drone_attack"):
+		return
+	_add({"kind": "lens", "at": at, "color": color, "r": FxDraw.DRONE_HEX * Settings.text_scale, "grow": Motion.amplitude(&"drone_attack"),
+		"dur": VfxTier.clamp_seconds(VfxTier.of(&"drone_attack"), Motion.seconds(&"drone_attack")), "delay": delay})
+
+
+## ART-2 2C §3.20 drone destroyed v3: the hex at `at` cracks and pops into 0/1 bits, the
+## clamp springs open.
+func drone_destroyed(at: Vector2, color: Color, delay: float = 0.0) -> void:
+	if not Motion.live(&"drone_destroyed"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"drone_destroyed"), Motion.seconds(&"drone_destroyed"))
+	var fly := Motion.amplitude(&"drone_destroyed")
+	last_origin = at
+	var pts: Array[Vector2] = []
+	var n := int(Motion.amplitude(&"nudge_resist_bits")) + 4
+	for k in n:
+		var a := TAU * k / n
+		pts.append(at + Vector2(cos(a), sin(a)) * fly)
+	bits(BitPath.inflow(hash(at.snapped(Vector2.ONE)), [at], pts, n, dur * 0.1, dur * 0.8, STREAM_BOW * 0.2, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), 1.0),
+		color, &"drone_destroyed", delay)
+	_add({"kind": "drone_burst", "at": at, "color": color, "fly": fly, "dur": dur, "delay": delay})
+
+
+## ART-2 2C §3.16 / §3.20 phase change v3: orange bits stream from the crossed phase pip
+## `pip` (global) along under the HP arc of the wheel at `center` (radius `r`) to the bezel.
+func phase_bits(center: Vector2, r: float, pip: Vector2, color: Color = Palette.CORP_MERIDIAN) -> void:
+	if not Motion.live(&"phase_change_bits"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"phase_change_bits"), Motion.seconds(&"phase_change_bits"))
+	var a0 := (pip - center).angle()
+	var n := int(Motion.amplitude(&"phase_change_bits"))
+	# Along under the arc: targets spread from the pip round to the bezel's side (the arc's
+	# ends), half each way.
+	var ends := BitPath.arc_points(center, r * PHASE_ARC_OUT, a0 - PI * 0.45, a0 + PI * 0.45, n)
+	last_origin = pip
+	var path := BitPath.new()
+	for i in n:
+		var to: Vector2 = ends[i]
+		var ctrl := center + ((pip + to) * 0.5 - center).normalized() * r * PHASE_ARC_OUT * 1.05
+		var appear := dur * STREAM_STAGGER * float(i) / maxf(1.0, float(n - 1))
+		path.bits.append({"from": pip, "burst": Vector2.ZERO, "ctrl": ctrl, "to": to, "appear": appear, "release": appear, "travel": dur * 0.55,
+			"glyph": BitPath.ONE if BitPath.noise(n, i, 31) > 0.5 else BitPath.ZERO, "size": _bit_px(BIT_MAX), "fade": true, "end_scale": 1.0})
+	bits(path, color, &"phase_change_bits", Motion.delay_of(&"phase_change_bits"))
+
+
+## ART-2 2C §3.20 respin v3: the spent RAM pips at `pips` (global) crack into cyan bits that
+## fly to the hub at `hub`; a temporary RESPIN label.
+func respin_bits(pips: Array[Vector2], hub: Vector2, word: String = "") -> void:
+	if not Motion.live(&"respin_bits") or pips.is_empty():
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"respin_bits"), Motion.seconds(&"respin_bits"))
+	var per := maxi(1, int(Motion.amplitude(&"respin_bits")))
+	var from: Array[Vector2] = []
+	for p in pips:
+		for k in per:
+			from.append(p)
+	last_origin = pips[0]
+	bits(BitPath.inflow(hash(hub.snapped(Vector2.ONE)), from, [hub], from.size(), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * 1.4, STREAM_BOW * 2.0,
+		_bit_px(SMALL_BIT), _bit_px(BIT_MIN), BIT_END), Palette.NET_CYAN, &"respin_bits")
+	if word != "":
+		temp_label(hub, word, Palette.NET_CYAN)
+
+
+## ART-2 2C §3.20 nudge + resistance: the RESIST chip at `at` cracks into grey bits, with a
+## temporary `word`.
+func nudge_resist(at: Vector2, word: String = "", delay: float = 0.0) -> void:
+	if not Motion.live(&"nudge_resist_bits"):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"nudge_resist_bits"), Motion.seconds(&"nudge_resist_bits"))
+	var n := int(Motion.amplitude(&"nudge_resist_bits"))
+	var pts: Array[Vector2] = []
+	for k in n:
+		pts.append(at + Vector2((float(k) / maxf(1.0, n - 1.0) - 0.5) * 40.0 * Settings.text_scale, 0.0))
+	last_origin = at
+	bits(BitPath.drift(hash(at.snapped(Vector2.ONE)), pts, dur * 0.3, dur * 0.7, LABEL_RISE, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)), Palette.DISABLED,
+		&"nudge_resist_bits", delay)
+	if word != "":
+		temp_label(at, word, Palette.RESIST_GOLD, delay)
+
+
+## ART-2 2C §3.20 RAM gain (option B): bits fall from the TURN banner at `from` down the
+## centre gap into the meter's new pips at `pips` (global), `ram_gain_bits`' amplitude per pip.
+func ram_gain(from: Vector2, pips: Array[Vector2]) -> void:
+	if not Motion.live(&"ram_gain_bits") or pips.is_empty():
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(&"ram_gain_bits"), Motion.seconds(&"ram_gain_bits"))
+	var per := maxi(1, int(Motion.amplitude(&"ram_gain_bits")))
+	var to: Array[Vector2] = []
+	for p in pips:
+		for k in per:
+			to.append(p)
+	last_origin = from
+	bits(BitPath.inflow(hash(from.snapped(Vector2.ONE)), [from], to, to.size(), dur * STREAM_STAGGER, dur * (1.0 - STREAM_STAGGER), STREAM_BOW * 0.25,
+		_bit_px(SMALL_BIT), _bit_px(SMALL_BIT), BIT_END), Palette.NET_CYAN, &"ram_gain_bits")
+
+
+## ART-2 2C §3.20 Daemon / firmware trigger: the source at `from` (a Daemon's sigil on the
+## rack, a socketed firmware die) pulses and bits in `color` stream to `to`, where it acts.
+## `id` is `daemon_trigger` or `firmware_trigger`.
+func trigger_fx(from: Vector2, to: Vector2, color: Color, id: StringName = &"daemon_trigger", delay: float = 0.0) -> void:
+	if not Motion.live(id):
+		return
+	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
+	last_origin = from
+	_add({"kind": "lens", "at": from, "color": color, "r": FxDraw.DRONE_HEX * Settings.text_scale, "grow": FxDraw.DRONE_HEX * 0.5, "dur": dur * 0.4, "delay": delay})
+	bits(BitPath.inflow(hash([from.snapped(Vector2.ONE), id]), [from], [to], int(Motion.amplitude(id)), dur * STREAM_STAGGER, dur * STREAM_TRAVEL * 1.4,
+		STREAM_BOW, _bit_px(SMALL_BIT), _bit_px(BIT_MIN), BIT_END), color, id, delay + dur * 0.15)
+
+
+## ART-2 2C §3.20 temporary label (one TempLabel look): a word sticker pops in at `at`,
+## holds `temp_label`'s amplitude (s), then dissolves left to right into 0/1 bits that drift
+## up and fade within the entry's duration. Returns the box it covers (global).
+func temp_label(at: Vector2, text: String, color: Color, delay: float = 0.0, max_w: float = -1.0) -> Rect2:
+	var hold := Motion.amplitude(&"temp_label") + Motion.seconds(&"temp_label") if Motion.live(&"temp_label") else 0.0
+	return word_stamp(at, text, color, hold, max_w if max_w > 0.0 else get_global_rect().size.x, -1, delay)
+
+
+## The bits a tag's word dissolves into (left to right), from its box at rest.
+func _label_bits(s: Dictionary) -> void:
+	var fs := int(s["fs"])
+	var text := String(s["text"])
+	var font := Palette.marker()
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + stamp_icon_width(fs, String(s.get("icon", "")))
+	var at: Vector2 = s["at"]
+	var n := maxi(4, text.length() * LABEL_BITS_PER_CHAR)
+	var pts: Array[Vector2] = []
+	for k in n:
+		var x := -w * 0.5 + w * (float(k) + 0.5) / n
+		pts.append(at + Vector2(x, (BitPath.noise(n, k, 41) - 0.5) * fs * 0.6).rotated(WORD_TILT))
+	var dur := Motion.seconds(&"temp_label")
+	bits(BitPath.drift(hash([at.snapped(Vector2.ONE), text]), pts, dur * 0.4, dur * 0.6, LABEL_RISE * Settings.text_scale, _bit_px(SMALL_BIT), _bit_px(BIT_MIN)),
+		s["color"], &"temp_label", float(s.get("delay", 0.0)) + _tag_dissolve_at(s))
+
+
+## When a tag starts to dissolve (s after it shows): its last `temp_label` seconds.
+static func _tag_dissolve_at(s: Dictionary) -> float:
+	return maxf(float(s.get("land", 0.0)), float(s["dur"]) - float(s.get("dissolve", 0.0)))
+
+
+## ART-2 2C §3.20 enemy defeated v2: around the broken wheel's pieces, the hub shockwave
+## and bits shed from the pieces in their own colours, falling; `word` (DELETED) as a
+## temporary label. The pieces themselves fly apart in `shards`.
+func defeat_fx(center: Vector2, r: float, colors: Array[Color], word: String = "") -> void:
+	if not Motion.live(&"enemy_defeated_bits"):
+		return
+	var id := &"enemy_defeated_bits"
+	var dur := VfxTier.clamp_seconds(VfxTier.of(id), Motion.seconds(id))
+	var delay := Motion.delay_of(id)
+	_add({"kind": "shockwave", "at": center, "r0": r * 0.3, "r1": r * SHOCK_REACH, "color": colors[0] if not colors.is_empty() else Palette.PAPER,
+		"dur": dur * 0.5, "delay": delay})
+	var n := int(Motion.amplitude(id))
+	var per := maxi(1, n / maxi(1, colors.size()))
+	for c in maxi(1, colors.size()):
+		var from: Array[Vector2] = []
+		var to: Array[Vector2] = []
+		for k in per:
+			var a := TAU * (c * per + k) / n + BitPath.noise(c, k, 51)
+			var d := Vector2(cos(a), sin(a))
+			from.append(center + d * r * DEFEAT_BITS_OUT * (0.5 + 0.5 * BitPath.noise(c, k, 52)))
+			to.append(center + d * r * SHOCK_REACH + Vector2(0, DEFEAT_FALL))
+		var path := BitPath.inflow(hash([center.snapped(Vector2.ONE), c]), from, to, per, dur * 0.5, dur * 0.45, STREAM_BOW * 0.3, _bit_px(SMALL_BIT), _bit_px(BIT_MAX), 1.0)
+		for b in path.bits:
+			b["fade"] = true
+		bits(path, colors[c] if not colors.is_empty() else Palette.PAPER, id, delay)
+	last_origin = center
+	if word != "":
+		temp_label(center, word, Palette.HARM, delay + dur * 0.3)
+
+
+# --- ART-2 2C drawing ---------------------------------------------------------------------------
+
+func _draw_fx2(s: Dictionary) -> void:
+	var o := get_global_rect().position
+	var p := _p(s)
+	match String(s["kind"]):
+		"bits":
+			BitsSeam.draw(self, s["path"], float(s["age"]) - float(s.get("delay", 0.0)), s["color"], o, CardFx.HOT_SECONDS, bool(s.get("trail", true)), float(s.get("dim", 1.0)))
+		"liner":
+			FxDraw.liner(self, Rect2((s["rect"] as Rect2).position - o, (s["rect"] as Rect2).size), float(s["rot"]), LINER_ALPHA * (1.0 - p))
+		"slap_ring":
+			FxDraw.slap_ring(self, _local(s["at"]), float(s["r0"]), float(s["grow"]), p, 1.0)
+		"wall":
+			if String(s["shape"]) == "brick":
+				FxDraw.bricks(self, _local(s["at"]), float(s["r"]), float(s["face"]), int(s["n"]), s["color"], p, 1.0)
+			else:
+				FxDraw.hexes(self, _local(s["at"]), float(s["r"]), float(s["face"]), int(s["n"]), s["color"], p, 1.0)
+		"relight":
+			var a := sin(p * PI)
+			for t in s["targets"]:
+				draw_circle(_local(t), 5.0 * Settings.text_scale, Color((Palette.PAPER as Color).lerp(s["color"], p), a))
+		"token":
+			var lift := float(s.get("lift", 0.0))
+			var q := clampf((p - lift) / maxf(0.001, 1.0 - lift), 0.0, 1.0) if lift > 0.0 else 0.0
+			var at := (s["at"] as Vector2).lerp(s["to"], q * q)
+			var sc := clampf(p * 4.0, 0.0, 1.0) if bool(s.get("grow", false)) else 1.0
+			FxDraw.token(self, at - o, sc, Palette.GAIN, 1.0 - (q if lift > 0.0 else clampf((p - 0.7) / 0.3, 0.0, 1.0)))
+		"chase":
+			# The attack bends off its line and chases the token out.
+			var from: Vector2 = s["from"]
+			var at0: Vector2 = s["at"]
+			var to: Vector2 = s["to"]
+			var head := BitPath.quad(from, at0, to, p)
+			var tail := BitPath.quad(from, at0, to, maxf(0.0, p - 0.25))
+			draw_line(tail - o, head - o, Color(s["color"], 1.0 - p), 4.0, true)
+			draw_circle(head - o, 5.0, Color(Palette.PAPER, 1.0 - p))
+		"tears":
+			var r: Rect2 = s["rect"]
+			FxDraw.tears(self, Rect2(r.position - o, r.size), clampf(p / float(s["wipe"]), 0.0, 1.0), s["color"], s["color2"], 1.0 - clampf((p - 0.8) / 0.2, 0.0, 1.0), int(s["seed"]))
+		"tear":
+			FxDraw.pixel_tear(self, _local(s["at"]), TEAR_PX * Settings.text_scale, s["color"], int(p * 3.0), int(s["seed"]))
+		"drone_hex":
+			FxDraw.drone_hex(self, _local(s["at"]), s["color"], clampf(p / (STREAM_STAGGER + STREAM_TRAVEL), 0.0, 1.0),
+				clampf((p - STREAM_STAGGER - STREAM_TRAVEL) / maxf(0.01, 1.0 - STREAM_STAGGER - STREAM_TRAVEL), 0.0, 1.0), 1.0 - clampf((p - 0.9) / 0.1, 0.0, 1.0))
+		"drone_burst":
+			FxDraw.drone_burst(self, _local(s["at"]), s["color"], p, float(s["fly"]))
+		"lens":
+			var c := _local(s["at"])
+			draw_arc(c, float(s["r"]) + float(s["grow"]) * (1.0 - p), 0.0, TAU, 32, Color(s["color"], p), 3.0, true)
+		"crit":
+			FxDraw.cracks(self, _local(s["at"]), int(s["n"]), float(s["reach"]), p, int(s["seed"]))
+			FxDraw.streaks(self, _local(s["at"]), int(s["n"]), float(s["reach"]), p, STREAK_FLY, s["color"], int(s["seed"]))
+		"shockwave":
+			FxDraw.shockwave(self, _local(s["at"]), float(s["r0"]), float(s["r1"]), _ease(s), s["color"])

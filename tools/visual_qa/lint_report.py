@@ -22,6 +22,8 @@ Rules:
   d  contrast  font colour against the background estimated from the PNG (median of a
                ring of pixels just outside the text area) under 4.5:1 (3:1 at >= 24 px);
                "measured" is the strongest glyph pixel inside, for a second opinion
+  f  pencil    (ART-1 1B) a UI node drawn over a grease pencil stroke, or a UI layer above the
+               pencil's layer (PencilLint; ART_BIBLE v2 1.2 "no UI ever covers grease pencil")
   e  custom    Controls whose script draws its own text (draw_string): the tree walk can't
                lint those; they are listed per screen
 
@@ -54,7 +56,7 @@ LARGE_PX = 24
 RING = 4
 MIN_OVERLAP = 3.0
 MIN_ALPHA = 0.05
-RULES = ("font", "overlap", "clipped", "contrast")
+RULES = ("font", "overlap", "clipped", "contrast", "pencil")
 ## Strongest glyph-to-background contrast under which a text Control counts as not in the
 ## picture (covered by a modal).
 HIDDEN_BELOW = 1.25
@@ -228,6 +230,10 @@ def lint_screen(data: dict, png: Path) -> dict:
                 found["overlap"].append({"path": pa, "text": a["text"][:40], "owner": a.get("owner_script", ""),
                                          "other": pb, "other_text": b["text"][:40],
                                          "why": "%.0fx%.0f px overlap" % (ox, oy)})
+    # f: ART-1 1B pencil rule (ART_BIBLE v2 1.2, 6.4): no UI drawn over a grease pencil stroke and
+    # no UI layer above the pencil's (PencilLint, exported by the harness under "pencil").
+    for v in data.get("pencil", []):
+        found["pencil"].append({"path": v["node"], "text": v["rule"], "owner": "", "why": "%s (mark %s)" % (v["why"], v["mark"])})
     custom = sorted({d["script"] for d in data.get("custom_draw", [])})
     return {"screen": data["screen"], "text_scale": ts, "controls": len(items), "findings": found,
             "hidden": hidden, "custom_draw_scripts": custom}
