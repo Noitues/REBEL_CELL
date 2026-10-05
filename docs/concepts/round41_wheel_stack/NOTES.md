@@ -211,3 +211,32 @@ Script: `scripts/combat43.py worst | typical | frame k | gif`.
 **Remaining note:** the hover tooltip appears over the bottom of the boss wheel. That is acceptable because it is transient.
 
 **The spin GIF was re-made as v3** because the HUD changed: 16 frames, 3.8 MB.
+
+---
+
+# v4: nudge alignment, boss nudge keys, forecast format (`*_v4` files, `scripts/combat44.py`)
+
+1. **Nudge alignment.** All four nudge buttons sit on one line at y = 216: player at x 192 / 770, boss at x 1150 / 1748. I lowered them from y 200 because the popped parasite's turn pips grazed the boss CW button.
+2. **Boss nudge keys:** [A] for CCW and [D] for CW. These are proposed keys; confirm they don't clash with other bindings.
+3. **Forecast beside each HP**, in this order:
+   1. **final damage** (red, boxed);
+   2. **absorbed** (blue, "(N shield)", no box);
+   3. **shield gained** (green "+N shield");
+   4. **other losses** (red "−N icon", for example RAM; none happen on this screen);
+   5. **status icons** with ×N.
+
+   Hovering the final-damage chip keeps the breakdown tooltip.
+
+## Values used (from the screen)
+| Case | Player | Boss |
+|---|---|---|
+| Typical | −14 | −8, (4 shield), +4 shield |
+| Worst | −21 (EXPLOIT 14 × 1.5), OVERCLOCKED ×2 | −14 (ZERO-DAY 12 × 1.5 = 18, minus 4 absorbed), (4 shield), +4 shield, OVERCLOCKED ×2 |
+
+In the worst case, both resolving slices carry OVERCLOCKED ×2 (×1.5).
+
+## Overlap check (v4)
+- **Worst case:** 0 % off-screen, no overlaps.
+- **Typical case:** 0 % off-screen, no overlaps.
+
+**The spin GIF was re-made as v4** (16 frames, 3.5 MB). Its forecast chips show the pre-spin values on every frame. In the game they would update when the wheel settles.
