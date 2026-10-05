@@ -21,6 +21,8 @@ const ARROW_HEAD := 9.0
 ## over the last FADE_SHARE.
 const GROW_SHARE := 0.25
 const FADE_SHARE := 0.35
+## The slap shrinks the card from its flight size to 1 over this share of the slap.
+const SLAP_SHRINK_SHARE := 0.5
 ## ANIM-R2 E10 (named, were inline): a number grows in from this share of its size; a crit
 ## pops from this scale and settles; a travelling number fades to this alpha on its way.
 const GROW_FROM := 0.6
@@ -813,7 +815,7 @@ static func _tilt_step(p: float, card: Control, from_rotation: float, dir: float
 ## §3.18 step 5: the slap's scale at `p` (from the flight's `size` down to 1, squashed).
 static func _slap_step(p: float, card: Control, size: float) -> void:
 	if is_instance_valid(card):
-		card.scale = CardFx.slap_scale(p) * lerpf(size, 1.0, minf(1.0, p * 2.0))
+		card.scale = CardFx.slap_scale(p) * lerpf(size, 1.0, minf(1.0, p / SLAP_SHRINK_SHARE))
 
 
 ## §3.18 step 5: the card lands at `at`: the white contact ring, the gloss sweep (D16: the
