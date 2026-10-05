@@ -835,6 +835,7 @@ Heat +0: this run added no Heat.,Heat +0: this run added no Heat.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
+Heat glitch (the screen distorts as Heat rises; off by default),Heat glitch (the screen distorts as Heat rises; off by default)
 Heat reduction,Heat reduction
 Heat reduction Site,Heat reduction Site
 "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.","Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat."

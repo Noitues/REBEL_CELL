@@ -78,6 +78,14 @@ player strings and code for each item's old words.
   2.4 / 10. Schema: `CampaignConfigData.partial_multiplier` → `weak_multiplier` (0.5; checked in
   `schema_smoke_checks.gd` `_art0`). Motion id `precision_partial` → `precision_weak` (table,
   REQUIRED_IDS, motion lab). "Partial" in other meanings (a partial cover, a partial patch) stays.
+- **D11 Heat bands.** Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
+  FLAGGED 50+, HUNTED 75+; the bible's NOTICED is the "couple of alarms" band and the thresholds stay),
+  so no band or threshold changes; the five-band reading is asked under "Open questions for the
+  designer". Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
+  `Settings.VFX_TIER_EXEMPT`) and its row on the current panel (Accessibility, "Heat glitch (the
+  screen distorts as Heat rises; off by default)"); the glitch itself comes in ART-3 / ART-5 (test
+  `test_the_heat_glitch_extra_is_off_by_default_and_round_trips`). settings.gd and settings_panel.gd
+  are area C's files: additions only.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal
@@ -5615,6 +5623,21 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
+  HUNTED, old NOTICED → FLAGGED, new NOTICED = a couple of alarms" comes from the concept rounds
+  (DIRECTION_REVIEW round 21: the combat backdrop's intensity dialled down a band). ART_BIBLE v2 §2.8
+  and §3.15 already state the result: COOL 0–24, NOTICED 25+ (three alarm beacons on side buildings,
+  nothing on the target), FLAGGED 50+, HUNTED 75+, "thresholds unchanged", which is what main's
+  Heat poster shows. Adding a NOTICED band below 25 would make five bands and disagree with the
+  bible. Default applied: the band names and thresholds stay as the bible has them (no new band, no
+  config value); the re-cut is the backdrop's look per band (ART-3 / ART-5). Say if you want the
+  five-band version (and its lowest threshold).
+- **SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):** the art pass calls SHIELD, DEPLOY and
+  MISS by these program names; the D2 ruling left them unchanged, so the game still shows SHIELD,
+  DEPLOY and MISS (SHIELD is also the shield points' word). Default: unchanged until you say.
+- **Merge commit `7e569ca` (ART-0 B):** its message keeps git's "# Conflicts:" lines (a merge commit
+  cannot be reworded without rewriting the branch). Harmless; noted for the audit.
 
 - ~~**GDD 8.2 "DISPATCH text is … never zine-styled" (2026-10-05, ART-0a):**~~ resolved: the designer took
   the default (2026-10-05); GDD 8.2 reworded citing "Designer ruling: DISPATCH text". Original note: the zine look is
