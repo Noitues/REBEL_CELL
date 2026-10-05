@@ -33,6 +33,20 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Designer ruling: check cadence for M14
+The designer asked to run work in parallel and to stop re-running the full suite after every commit
+and merge. From ART-0 on:
+- **Agents** hand back after the fast tier (`python tools/run_tests.py --tier fast`), their own new or
+  changed test scripts, the schema smoke test and content validation
+  (`docs/handoff/art_0/process/checks_fast.sh`). No full-suite runs per agent.
+- **Each merge into main:** import + the same fast checks, then push. A red fast check is never pushed.
+- **End of each ART batch** (before its audit round and the designer report): the full suite ×3
+  (`process/checks.sh`), smoke and validate, run **in isolation** (no agents or other heavy jobs running),
+  so timing-sensitive tests see a quiet machine. Failures found there are fixed before the audit.
+- Agents, audits and captures otherwise run in parallel (at most 4–5 agents at once).
+CLAUDE.md's "full suite before declaring any task done" is met per batch: a batch is the unit that is
+declared done.
+
 ### 2026-10-05 — Designer rulings: names for M14 (plan §3.1 D2–D8, D11–D12; resolved by the designer)
 Defaults accepted for all (`docs/ART_REINTEGRATION_PLAN.md` §3.1). Per ruling 5 of "pause point 0" below,
 internal names (enums, ids, files, classes) follow these display names; no compatibility kept.
