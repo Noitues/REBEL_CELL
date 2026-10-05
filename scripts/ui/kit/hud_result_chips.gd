@@ -13,7 +13,8 @@ const CHIP_H := 26.0
 const NUMBER_FONT := 20
 const GAP := 6.0
 const PAD := 5.0
-const ICON_R := 6.0
+const ICON_BOX := 16.0
+const ICON_GAP := 3.0
 ## The lethal skull's size as a share of the chip's height.
 const SKULL_SHARE := 0.28
 ## Alpha of a ticked chip and its check's stroke (px).
@@ -33,8 +34,10 @@ var held_alpha: float = 1.0
 var flip: float = 1.0
 var flips: int = 0
 var _sig: String = ""
-var _shown_once: bool = false
+var _sets: int = 0
 var _tweens: Dictionary = {}
+## 1C's glyph nodes in the row (HudSkin.glyph_node).
+var _glyphs: Array[GlyphIcon] = []
 
 
 ## Puts a line before the breakdown (a hovered card's name, what the row said before it).
@@ -68,17 +71,16 @@ func _init() -> void:
 
 ## Shows `p_chips` with the breakdown `title` / `body` (translated by the caller). New
 ## content flips in (also after the row was empty, e.g. once a replay's wheel settles); the
-## very first content and the same content re-set (a hover) don't.
+## row's first content (a fight's start) and the same content re-set (a hover) don't.
 func set_result(p_chips: Array, title: String, body: String) -> void:
 	tip_title = title
 	tip_body = body
 	tooltip_text = body if body != "" else ""
 	var sig := signature(p_chips)
 	chips.assign(p_chips)
-	if sig != _sig and sig != "" and _shown_once and not holding:
+	if sig != _sig and sig != "" and _sets > 0 and not holding:
 		_flip()
-	if sig != "":
-		_shown_once = true
+	_sets += 1
 	_sig = sig
 	_fit()
 	queue_redraw()
@@ -197,6 +199,51 @@ static func font_px() -> int:
 	return roundi(NUMBER_FONT * _ts())
 
 
+## A chip's pieces, left to right: {lead (atlas glyph before the words), words, glyph (atlas
+## glyph after them), mark (a drawn mark when there is no atlas glyph), close (")")}.
+static func parts(c: Dictionary) -> Dictionary:
+	var kind := StringName(c["kind"])
+	var icon := String(c.get("icon", ""))
+	var out := {"lead": &"", "words": ResultChipModel.label(c), "glyph": HudSkin.glyph_name(icon), "mark": "", "close": ""}
+	if icon != "" and out["glyph"] == &"":
+		out["mark"] = icon
+	if kind == ResultChipModel.ABSORBED:
+		out["close"] = ")"
+	if kind == ResultChipModel.STATUS or kind == ResultChipModel.CLEARS:
+		var g: StringName = HudSkin.STATUS_GLYPHS.get(int(c["status"]), &"")
+		if g != &"":
+			out["lead"] = g
+			# The glyph stands for the status's character: the words keep the count (or "?").
+			out["words"] = ("?" if bool(c.get("random", false)) else "×%d" % int(c["count"])) if kind == ResultChipModel.STATUS else "×"
+			if kind == ResultChipModel.CLEARS:
+				out["lead"] = &""
+				out["glyph"] = g
+	return out
+
+
+## The glyph box in a chip (px; never under the 16 px glyph rule).
+static func glyph_px() -> float:
+	return maxf(HudSkin.GLYPH_MIN_PX, ICON_BOX * _ts())
+
+
+## A chip's width: its words, its glyphs and its padding.
+static func chip_width(c: Dictionary) -> float:
+	var s := _ts()
+	var p := parts(c)
+	var f := HudSkin.display()
+	var w := f.get_string_size(String(p["words"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PAD * 2.0 * s
+	for key in ["lead", "glyph"]:
+		if p[key] != &"":
+			w += glyph_px() + ICON_GAP * s
+	if String(p["mark"]) != "":
+		w += glyph_px() + ICON_GAP * s
+	if String(p["close"]) != "":
+		w += f.get_string_size(String(p["close"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x
+	if bool(c.get("lethal", false)):
+		w += CHIP_H * SKULL_SHARE * 2.4 * s
+	return w
+
+
 ## Each chip's rect in the row (local), in order.
 func chip_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
@@ -209,24 +256,12 @@ func chip_rects() -> Array[Rect2]:
 	return out
 
 
-## A chip's width: its words, its icon and its padding.
-static func chip_width(c: Dictionary) -> float:
-	var s := _ts()
-	var w := HudSkin.display().get_string_size(ResultChipModel.label(c), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + PAD * 2.0 * s
-	if String(c.get("icon", "")) != "":
-		w += (ICON_R * 2.0 + 3.0) * s
-	if StringName(c["kind"]) == ResultChipModel.ABSORBED:
-		w += HudSkin.display().get_string_size(")", HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x
-	if bool(c.get("lethal", false)):
-		w += CHIP_H * SKULL_SHARE * 2.4 * s
-	return w
-
-
 func _fit() -> void:
 	var rs := chip_rects()
 	var w := 0.0 if rs.is_empty() else rs[rs.size() - 1].end.x
 	custom_minimum_size = Vector2(w, CHIP_H * _ts())
 	size = custom_minimum_size
+	_layout_glyphs()
 
 
 ## The colour a chip is drawn in.
@@ -243,6 +278,66 @@ static func chip_color(c: Dictionary) -> Color:
 		ResultChipModel.RAM, ResultChipModel.HEAT, ResultChipModel.HP_OTHER:
 			return HudSkin.CHIP_GAIN if bool(c.get("good", false)) else HudSkin.CHIP_OTHER
 	return HudSkin.CHIP_GAIN if bool(c.get("good", false)) else HudSkin.CHIP_DAMAGE
+
+
+## The ink of chip `i` now (its colour; the damage chip's words are white on its red box).
+func _ink(i: int, c: Dictionary) -> Color:
+	var a := held_alpha if holding else 1.0
+	var t := float(ticks.get(i, 0.0)) if holding else 0.0
+	var ca := a * (1.0 - (1.0 - TICKED_ALPHA) * t)
+	var col := HudSkin.TERMINAL_HI if StringName(c["kind"]) == ResultChipModel.DAMAGE else chip_color(c)
+	return Color(col, ca)
+
+
+## Each chip's pieces placed (local x of each), shared by the drawing and the glyph nodes.
+func _piece_xs(r: Rect2, c: Dictionary) -> Dictionary:
+	var s := _ts()
+	var p := parts(c)
+	var f := HudSkin.display()
+	var x := r.position.x + PAD * s
+	var out := {}
+	if p["lead"] != &"":
+		out["lead"] = x
+		x += glyph_px() + ICON_GAP * s
+	out["words"] = x
+	x += f.get_string_size(String(p["words"]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_px()).x + ICON_GAP * s * 0.5
+	if p["glyph"] != &"" or String(p["mark"]) != "":
+		out["glyph"] = x
+		x += glyph_px() + ICON_GAP * s * 0.5
+	out["close"] = x
+	return out
+
+
+## 1C's atlas glyphs as nodes (the SDF shader needs its own material): one per glyph in the
+## row, placed in their chips, tinted with them.
+func _layout_glyphs() -> void:
+	var want: Array = []
+	var row := shown()
+	var rs := chip_rects()
+	var gp := glyph_px()
+	var h := CHIP_H * _ts()
+	for i in row.size():
+		var p := parts(row[i])
+		var xs := _piece_xs(rs[i], row[i])
+		for key in ["lead", "glyph"]:
+			if p[key] != &"":
+				want.append([p[key], Vector2(float(xs[key]), (h - gp) * 0.5), _ink(i, row[i])])
+	while _glyphs.size() > want.size():
+		var g: GlyphIcon = _glyphs.pop_back()
+		g.queue_free()
+	while _glyphs.size() < want.size():
+		var g := HudSkin.glyph_node(&"", gp, HudSkin.TERMINAL_HI)
+		add_child(g)
+		_glyphs.append(g)
+	for k in want.size():
+		var g: GlyphIcon = _glyphs[k]
+		var cell := GlyphIcon.cell_size_for(gp)
+		g.glyph = want[k][0]
+		g.box_px = gp
+		g.fill = want[k][2]
+		g.position = Vector2(want[k][1]) - (cell - Vector2(gp, gp)) * 0.5
+		g.scale = Vector2(1.0, maxf(0.05, flip))
+		g.visible = (held_alpha if holding else 1.0) > 0.0
 
 
 func _draw() -> void:
@@ -266,29 +361,27 @@ func _draw() -> void:
 		var t := float(ticks.get(i, 0.0)) if holding else 0.0
 		var ca := a * (1.0 - (1.0 - TICKED_ALPHA) * t)
 		var kind := StringName(c["kind"])
-		var ink := Color(col, ca)
+		var ink := _ink(i, c)
 		match kind:
 			ResultChipModel.DAMAGE:
 				draw_rect(r, Color(HudSkin.CHIP_DAMAGE, ca))
 				draw_rect(r, Color(HudSkin.CHIP_INK, ca), false, 1.5)
-				ink = Color(HudSkin.TERMINAL_HI, ca)
 			ResultChipModel.GAINED:
 				draw_rect(r, Color(HudSkin.CHIP_INK, 0.7 * ca))
 				draw_rect(r, Color(col, ca), false, 1.5)
 			_:
 				draw_rect(r, Color(HudSkin.CHIP_INK, 0.55 * ca))
-		var x := r.position.x + PAD * s
+		var p := parts(c)
+		var xs := _piece_xs(r, c)
 		var base := r.position.y + (h + font.get_ascent(fs) - font.get_descent(fs)) * 0.5
-		var words := ResultChipModel.label(c)
-		draw_string_outline(font, Vector2(x, base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 2, Color(HudSkin.CHIP_INK, ca))
-		draw_string(font, Vector2(x, base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
-		x += font.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		var icon := String(c.get("icon", ""))
-		if icon != "":
-			HudSkin.draw_glyph(self, icon, Vector2(x + 2.0 * s + ICON_R * s, r.position.y + h * 0.5), ICON_R * s, ink)
-			x += (ICON_R * 2.0 + 3.0) * s
-		if kind == ResultChipModel.ABSORBED:
-			draw_string(font, Vector2(x, base), ")", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+		var words := String(p["words"])
+		draw_string_outline(font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 2, Color(HudSkin.CHIP_INK, ca))
+		draw_string(font, Vector2(float(xs["words"]), base), words, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+		if String(p["mark"]) != "":
+			var gp := glyph_px()
+			HudSkin.draw_glyph(self, String(p["mark"]), Vector2(float(xs["glyph"]) + gp * 0.5, r.position.y + h * 0.5), gp * 0.5, ink)
+		if String(p["close"]) != "":
+			draw_string(font, Vector2(float(xs["close"]), base), String(p["close"]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
 		if bool(c.get("lethal", false)):
 			WheelView.draw_skull(self, Vector2(r.end.x - CHIP_H * SKULL_SHARE * 1.4 * s, r.position.y + h * 0.5), CHIP_H * SKULL_SHARE * s, ink)
 		if t > 0.0:
@@ -297,6 +390,7 @@ func _draw() -> void:
 			var k := h * 0.3 * t
 			draw_polyline(PackedVector2Array([cc + Vector2(-k, 0), cc + Vector2(-k * 0.3, k * 0.7), cc + Vector2(k, -k * 0.8)]), Color(HudSkin.TERMINAL_HI, a), CHECK_PX * s, true)
 	draw_set_transform(Vector2.ZERO)
+	_layout_glyphs.call_deferred()
 
 
 func _make_custom_tooltip(for_text: String) -> Object:

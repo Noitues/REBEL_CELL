@@ -44,13 +44,13 @@ func _draw() -> void:
 	var s := Settings.text_scale
 	var st := state()
 	var r := Rect2(Vector2(0.0, KitState.lift(st)), size)
-	var edge := KitState.edge_color(st, HudSkin.TERMINAL_EDGE)
+	var edge := KitState.edge_color(st, HudSkin.PIP_ON) if not disabled else HudSkin.TERMINAL_DIM
 	HudSkin.draw_terminal_panel(self, r, edge, HudSkin.TERMINAL_BG)
 	var p := parts()
 	var f := HudSkin.mono()
 	var wf := roundi(WORD_FONT * s)
 	var sf := roundi(SUB_FONT * s)
-	var col := KitState.label_color(st)
+	var col := HudSkin.TERMINAL_HI if not disabled else KitState.label_color(st)
 	var x := r.position.x + (CHIP_PAD + CARET_ROOM) * s
 	if st == KitState.HOVER or st == KitState.FOCUS:
 		draw_string(f, Vector2(r.position.x + CHIP_PAD * 0.5 * s, r.position.y + CHIP_PAD * 0.4 * s + f.get_ascent(wf)), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, wf, HudSkin.FOCUS)

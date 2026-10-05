@@ -225,7 +225,7 @@ func set_pending(delta: int) -> void:
 
 ## ART-2 2D (ART_BIBLE v2 §3.1): the RAM readout is a terminal panel: a "RAM" header, the
 ## count in big numbers, then the pips (lit = available). Sizes at text scale 1.0 (px).
-const PANEL_W := 272.0
+const PANEL_W := 240.0
 const PANEL_H := 62.0
 const PANEL_PAD := 9.0
 const HEADER_FONT := 12
@@ -237,6 +237,9 @@ const PIP_GAP := 12.0
 ## The panel grows with the text by this share of the text scale's step (the pips shrink to
 ## fit; the count keeps the whole text scale).
 const PANEL_GROWTH := 0.1
+## ART-2 2D: words before "RAM" in the header (the operative's name and class, when the name
+## sticker stands down at big text); "" = none.
+var owner_words: String = ""
 
 
 ## The panel's size at the current text scale.
@@ -304,6 +307,8 @@ func _draw() -> void:
 	var hf := roundi(HEADER_FONT * s)
 	var mono := HudSkin.mono()
 	var head := tr("RAM")  # drawn words translate (H24)
+	if owner_words != "":
+		head = "%s  ·  %s" % [owner_words, head]  # ART-2 2D: the name sticker's words at big text
 	if pending != 0:
 		head += "  (%+d)" % pending
 	draw_string(mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
@@ -314,7 +319,7 @@ func _draw() -> void:
 		draw_string(mono, Vector2(size.x - pad - rw, pad + mono.get_ascent(hf)), refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, red)
 	var cf := roundi(COUNT_FONT * s)
 	var lr := label_rect()
-	draw_string_outline(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, 2, Palette.NIGHT_SKY)
+	draw_string_outline(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, 2, Palette.LIVE_NUMBER_RIM)
 	draw_string(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, HudSkin.PIP_ON)
 	var lit := shown_ram
 	var after := clampi(lit + pending, 0, max_ram)

@@ -26,6 +26,8 @@ const EDGE := 4.0
 var views_of: Callable
 ## The result chip row per view (created on demand).
 var rows: Dictionary = {}
+## 1C's atlas glyphs on the buttons (nodes: the SDF shader needs its own material).
+var _glyphs: Array[GlyphIcon] = []
 
 
 func _init() -> void:
@@ -69,7 +71,32 @@ func motion_running() -> bool:
 
 func _process(_delta: float) -> void:
 	place_rows()
+	_place_glyphs()
 	queue_redraw()
+
+
+## The buttons' rotate glyphs (picto_spin_ccw / picto_spin), one node per button.
+func _place_glyphs() -> void:
+	var bs := buttons()
+	while _glyphs.size() > bs.size():
+		var g: GlyphIcon = _glyphs.pop_back()
+		g.queue_free()
+	while _glyphs.size() < bs.size():
+		var g := HudSkin.glyph_node(&"", HudSkin.GLYPH_MIN_PX, HudSkin.TERMINAL_TEXT)
+		add_child(g)
+		_glyphs.append(g)
+	var origin := get_global_rect().position
+	var mouse := get_global_mouse_position()
+	for k in bs.size():
+		var b: Dictionary = bs[k]
+		var g: GlyphIcon = _glyphs[k]
+		var box := maxf(HudSkin.GLYPH_MIN_PX, float(b["radius"]) * 2.0 * GLYPH_SHARE)
+		var cell := GlyphIcon.cell_size_for(box)
+		g.glyph = HudSkin.glyph_name("ccw" if int(b["direction"]) < 0 else "cw")
+		g.box_px = box
+		var hot := Vector2(b["center"]).distance_to(mouse) <= float(b["radius"])
+		g.fill = HudSkin.TERMINAL_HI if hot else HudSkin.TERMINAL_TEXT
+		g.position = Vector2(b["center"]) - origin - cell * 0.5
 
 
 ## Puts each row beside its view's HP number (right of it; under it when the screen's edge
@@ -130,9 +157,11 @@ func _draw() -> void:
 		draw_circle(c, r, Palette.TERMINAL_BG_HOT if hot else HudSkin.TERMINAL_BG)
 		draw_arc(c, r, 0.0, TAU, 32, rim.lightened(0.25) if hot else rim, RIM_PX * s * (1.4 if hot or drop else 1.0), true)
 		var gc := HudSkin.TERMINAL_HI if hot or drop else HudSkin.TERMINAL_TEXT
-		HudSkin.draw_glyph(self, "ccw" if int(b["direction"]) < 0 else "cw", c, r * GLYPH_SHARE, gc)
+		if HudSkin.glyph_name("ccw" if int(b["direction"]) < 0 else "cw") == &"":
+			HudSkin.draw_glyph(self, "ccw" if int(b["direction"]) < 0 else "cw", c, r * GLYPH_SHARE, gc)
 		if int(b["ring"]) == RC.RingScope.INNER:
-			draw_circle(c, r * INNER_DOT, gc)
+			# The inner ring's pair: a dot under the glyph.
+			draw_circle(c + Vector2(0.0, r * 0.72), r * INNER_DOT, gc)
 		var hr := wv.arrow_hint_rect(int(b["ring"]), int(b["direction"]))
 		if hr.has_area():
 			var key := String(wv.arrow_hints.get(int(b["direction"]), ""))

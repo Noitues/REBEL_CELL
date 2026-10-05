@@ -101,7 +101,7 @@ func test_the_tutorial_teaches_the_nudge_switches_and_the_turn_lines() -> void:
 	assert_string_contains(nudge, Settings.key_text(&"toggle_ring"))
 	var wheel := TutorialOverlay.step_text(0)
 	assert_string_contains(wheel, "LAST TURN")
-	assert_string_contains(wheel, "NEXT")
+	assert_string_contains(wheel, "chips beside each HP")  # ART-2 2D (D15): the chips replace the NEXT plate
 	assert_false(wheel.contains("BLK"))
 
 

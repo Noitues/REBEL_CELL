@@ -64,11 +64,13 @@ const BANNER_W := 460.0
 const BANNER_FONT := 24
 const BANNER_PAD_H := 18.0
 const BANNER_PAD_V := 3.0
-const SEND_IT_FONT := 64
+const SEND_IT_FONT := 58
 const CONTINUE_FONT := 46
 const NAME_OVERLAP := 10
 ## The banner never takes more than this share of the screen's width.
 const BANNER_MAX_SHARE := 0.4
+## At big text the banner's two lines stand side by side and it may take this share.
+const BANNER_WIDE_SHARE := 0.45
 ## The banner's title grows with the text up to this scale (its words stay big: Anton 36 px).
 const BANNER_SCALE_MAX := 1.5
 ## Up to this text scale RESPIN and UNDO stand side by side; above it they stack.
@@ -131,6 +133,8 @@ var hud_layer: HudWheelLayer
 ## The TURN banner's title line (the status line under it keeps the key hints).
 var _banner: PanelContainer
 var _banner_title: Label
+## The banner's lines: stacked, or side by side at big text (the arena keeps its height).
+var _banner_rows: BoxContainer
 ## Bottom left: the operative's name sticker over the RAM panel.
 var _cell_panel: VBoxContainer
 var name_sticker: HudNameSticker
@@ -1652,7 +1656,10 @@ func _build_ui() -> void:
 	_banner.add_theme_stylebox_override("panel", UiTheme.box(HudSkin.TERMINAL_BG, HudSkin.TERMINAL_EDGE, 1, BANNER_PAD_H, BANNER_PAD_V))
 	_banner.size_flags_horizontal = Control.SIZE_EXPAND | Control.SIZE_SHRINK_CENTER
 	_banner.mouse_filter = Control.MOUSE_FILTER_PASS
-	var banner_rows := VBoxContainer.new()
+	_banner_rows = BoxContainer.new()
+	var banner_rows := _banner_rows
+	banner_rows.vertical = true
+	banner_rows.alignment = BoxContainer.ALIGNMENT_CENTER
 	banner_rows.add_theme_constant_override("separation", 0)
 	_banner.add_child(banner_rows)
 	_banner_title = Label.new()
@@ -1725,6 +1732,7 @@ func _build_ui() -> void:
 	_notes_area.name = "NotesArea"
 	_notes_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_notes_area.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_notes_area.resized.connect(_relayout.call_deferred)  # ART-2 2D: the cell panel can take its foot
 	_right.add_child(_notes_area)
 	_zine_elements.append_array([portrait, heat_poster])
 	# Hidden text records.
@@ -1918,18 +1926,25 @@ func _relayout() -> void:
 		dock_h = (SUBTITLE_CHROME_PX + lines * SUBTITLE_LINE_PX) * ts
 	Dialogue.dock_at(Rect2(area.position, Vector2(area.size.x, dock_h)), lines)
 	_place_stickers()
-	_banner.custom_minimum_size.x = minf(BANNER_W * ts, size.x * BANNER_MAX_SHARE)
 	_banner_title.add_theme_font_size_override("font_size", roundi(BANNER_FONT * minf(ts, BANNER_SCALE_MAX)))
 	name_sticker._fit()
 	# At big text RESPIN and UNDO stack (the row's width is the hand's).
 	_sticker_box.vertical = ts > STICKERS_SIDE_BY_SIDE_UP_TO
-	# At big text the name sticker and RAM panel leave the bottom row for the notes column's foot.
+	_banner_rows.vertical = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
+	_banner_rows.add_theme_constant_override("separation", 0 if _banner_rows.vertical else roundi(BANNER_PAD_H))
+	_banner.custom_minimum_size.x = minf(BANNER_W * ts, size.x * (BANNER_MAX_SHARE if _banner_rows.vertical else BANNER_WIDE_SHARE))
+	# At big text the name sticker and RAM panel leave the bottom row for the notes column's foot;
+	# the sticker stands down there (its words lead the RAM header) so the notes keep their room.
+	name_sticker.visible = ts <= STICKERS_SIDE_BY_SIDE_UP_TO
+	ram_note.owner_words = "" if name_sticker.visible else name_sticker.words
+	ram_note.queue_redraw()
 	var cell_home: Container = _right if ts > STICKERS_SIDE_BY_SIDE_UP_TO else _bottom_row
 	if _cell_panel.get_parent() != cell_home:
 		_cell_panel.get_parent().remove_child(_cell_panel)
 		cell_home.add_child(_cell_panel)
 		if cell_home == _bottom_row:
 			_bottom_row.move_child(_cell_panel, 0)
+		_relayout.call_deferred()  # the notes' room changed: dock the subtitles and the tutorial again
 	if engine.has_fight() and absf(_card_scale_for(engine.state().hand.size()) - _hand_scale) > 0.01:
 		var had_focus := UiFocus.owner_of(self) != null and _hand_box.is_ancestor_of(UiFocus.owner_of(self))
 		_build_hand(engine.state())
@@ -2020,6 +2035,7 @@ func _refresh(state: CombatState) -> void:
 	_sync_portrait(state.player.hp if _replay_hp < 0 else _replay_hp, state.player.max_hp)
 	ram_note.set_ram(state.ram, state.max_ram)
 	daemon_row.set_daemons(state.daemon_ids, lookup)
+	daemon_row.visible = not state.daemon_ids.is_empty()  # ART-2 2D: an empty row leaves the notes their room
 	if not _outcome_held:
 		_sync_heat()  # ANIM-R5 combat 1: a fight's Heat moves once its outcome has landed
 	_player_view.show_combatant(state.player, state.satellites_of(state.player.id), engine.readouts(state.player), lookup)
@@ -3987,11 +4003,12 @@ func _finish_sequence() -> void:
 	_seq = null
 	_restore_time_scale()
 	_hold_city(false)
-	# The forecast goes on first, so the tags flip in with it (C5e).
+	# The forecast goes on first, so the tags flip in with it (C5e); the chips are let go
+	# first so the new forecast flips in on them (ART-2 2D).
+	hud_layer.release_rows()
 	_release_forecast()
 	for v in _views():
 		v.stop_motion(false)
-	hud_layer.release_rows()
 	_numbers_on.clear()
 	if _deal_waiting:
 		for c in _hand_box.get_children():

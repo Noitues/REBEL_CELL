@@ -13,7 +13,7 @@ const CHIP_DAMAGE := Palette.HARM
 const CHIP_ABSORBED := Palette.PROTECT
 const CHIP_GAIN := Palette.GAIN
 const CHIP_OTHER := Palette.TEXT_MID
-const CHIP_INK := Palette.NIGHT_SKY
+const CHIP_INK := Palette.LIVE_NUMBER_RIM
 ## Terminal chrome (RESPIN / UNDO chips, the RAM panel, the TURN banner).
 const TERMINAL_BG := Palette.TERMINAL_BG
 const TERMINAL_EDGE := Palette.TERMINAL_EDGE
@@ -24,9 +24,9 @@ const TERMINAL_HI := Palette.TEXT_HI
 const PIP_ON := Palette.NET_CYAN
 const PIP_OFF := Palette.NIGHT_BLOCK_LIT
 ## Vinyl stickers: the pink verb (SEND IT), the yellow safe choice, the die-cut and keyline.
-const VINYL_PINK := Palette.CELL_PINK
-const VINYL_YELLOW := Palette.NOTE_YELLOW
-const VINYL_DIE_CUT := Palette.TEXT_HI
+const VINYL_PINK := Palette.STICKER_COMMIT
+const VINYL_YELLOW := Palette.STICKER_SAFE
+const VINYL_DIE_CUT := Palette.STICKER_DIE_CUT
 const VINYL_KEYLINE := Palette.INK
 const VINYL_DISABLED := Palette.DISABLED
 ## The lime focus halo of a sticker (§2.10).
@@ -43,7 +43,7 @@ const VINYL_DIE_CUT_PX := 8.0
 ## Vinyl gloss at rest and on hover (alpha of the white sweep), and the disabled grey's share.
 const VINYL_GLOSS_REST := 0.22
 const VINYL_GLOSS_HOT := 0.5
-const VINYL_GREY := 0.8
+const VINYL_GREY := Palette.STICKER_DISABLED_GREY
 ## The pink's light and dark ends (shares lightened / darkened).
 const VINYL_LIGHT := 0.35
 const VINYL_DARK := 0.35
@@ -64,6 +64,26 @@ static func mono() -> Font:
 ## The tooltip / body face: Plex Sans Condensed.
 static func body() -> Font:
 	return Palette.body()
+
+
+## 1C: the atlas glyph for a HUD mark (&"" = the drawn mark below), and for a status.
+const GLYPHS := {"shield": &"picto_block", "ram": &"picto_ram", "hp": &"picto_hp", "ccw": &"picto_spin_ccw", "cw": &"picto_spin"}
+const STATUS_GLYPHS := {RC.Status.CORRUPTED: &"status_corrupted", RC.Status.OVERCLOCKED: &"status_overclocked",
+	RC.Status.ENCRYPTED: &"status_encrypted", RC.Status.PARASITE: &"status_parasite"}
+## The smallest a glyph box is drawn (ART_BIBLE v2 §5.2, the 16 px glyph rule).
+const GLYPH_MIN_PX := 16.0
+
+
+## The atlas glyph for mark `kind` (&"" when it has none and is drawn).
+static func glyph_name(kind: String) -> StringName:
+	return GLYPHS.get(kind, &"")
+
+
+## A glyph node for atlas glyph `name` in `fill` (1C's SDF shader), its box `box_px`.
+static func glyph_node(name: StringName, box_px: float, fill: Color) -> GlyphIcon:
+	var g := GlyphIcon.make(name, maxf(GLYPH_MIN_PX, box_px))
+	g.fill = fill
+	return g
 
 
 ## 1B seam: the vinyl sticker material (null = drawn by the sticker itself).

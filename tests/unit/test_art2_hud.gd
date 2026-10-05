@@ -341,7 +341,10 @@ func test_the_hud_fits_at_every_text_size() -> void:
 		scene._show_end_turn_preview()
 		await _frames(4)
 		assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f: layout rules" % scale)
+		gut.p("x%.1f: send %s stickers %s cell %s banner %s card scale %.2f radius %.0f" % [scale, scene._end_turn_button.size, scene._sticker_box.size,
+			scene._cell_panel.size, scene._banner.size, scene._hand_scale, scene._player_view._radius()])
 		var parts: Array[Control] = [scene._end_turn_button, scene._respin_button, scene._rewind_button, scene.name_sticker, scene.ram_note, scene._banner]
+		parts = parts.filter(func(c: Control) -> bool: return c.is_visible_in_tree())  # the name sticker stands down above 1.3
 		for c in parts:
 			assert_true(SCREEN.grow(0.5).encloses(c.get_global_rect()), "x%.1f: %s on screen %s" % [scale, c.name, c.get_global_rect()])
 		for i in parts.size():

@@ -289,7 +289,7 @@ func test_the_tutorial_and_subtitles_share_the_right_column() -> void:
 		Dialogue.say(RC.Voice.DISPATCH, "Runner, keep the needle off the NULL slice and bank the Rack before the audit lands.")
 		await _frames()
 		assert_eq(scene.layout_violations(), [], "tutorial and subtitles clear of every wheel and tag at %.1f" % scale)
-		assert_false(scene.tutorial.get_global_rect().intersects(Rect2(Dialogue.bar.global_position, Dialogue.bar.size)), "the tutorial sits under the subtitles")
+		assert_false(scene.tutorial.get_global_rect().intersects(Rect2(Dialogue.bar.global_position, Dialogue.bar.size)), "the tutorial sits under the subtitles at %.1f (tutorial %s, subtitles %s, notes %s)" % [scale, scene.tutorial.get_global_rect(), Rect2(Dialogue.bar.global_position, Dialogue.bar.size), scene._notes_area.get_global_rect()])
 		assert_true(scene.tutorial.get_global_rect().end.x <= scene.get_global_rect().end.x + 0.5, "the tutorial stays on screen")
 		assert_false(TutorialOverlay.step_text(4).contains("preview strip"), "no mention of the old preview strip")
 		scene.tutorial.skip()

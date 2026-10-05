@@ -18,7 +18,7 @@ var tilt: float = -4.0
 
 ## The system word's size as a share of the lettering's, and how far the sticker sits in
 ## from its left edge (share of the word's width) and down from its top (share of `fs`).
-const SYSTEM_SHARE := 0.95
+const SYSTEM_SHARE := 0.8
 const STICKER_IN := 0.3
 const STICKER_DOWN := 0.62
 ## The terminal line's size as a share of the key hint's, and the largest text scale that
@@ -50,7 +50,7 @@ static func face() -> Font:
 
 
 func shown_lettering() -> Array:
-	var shown := String(TranslationServer.translate(tag_text)).to_upper()
+	var shown := String(TranslationServer.translate(tag_text))
 	var room := lettering_room()
 	var fs := font_size
 	var floor_size := maxi(1, roundi(font_size * FIT_MIN_SHARE))
@@ -60,9 +60,9 @@ func shown_lettering() -> Array:
 
 
 func lettering_room() -> float:
-	var shown := String(TranslationServer.translate(tag_text)).to_upper()
+	var shown := String(TranslationServer.translate(tag_text))
 	var floor_size := maxi(1, roundi(font_size * FIT_MIN_SHARE))
-	return maxf(face().get_string_size(tag_text.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x,
+	return maxf(face().get_string_size(tag_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x,
 		face().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, floor_size).x)
 
 
@@ -81,14 +81,14 @@ func _system_w() -> float:
 
 ## Where the lettering starts (px from the left edge).
 func _sticker_x() -> float:
-	return HudSkin.VINYL_DIE_CUT_PX * Settings.text_scale + _system_w() * STICKER_IN
+	return HudSkin.VINYL_DIE_CUT_PX + _system_w() * STICKER_IN
 
 
 ## The system word's baseline (local y).
 func _system_y() -> float:
 	if system_word == "":
 		# No system word: the sticker's top sits under its die-cut.
-		return HudSkin.VINYL_DIE_CUT_PX * Settings.text_scale + face().get_ascent(font_size) - font_size * STICKER_DOWN
+		return HudSkin.VINYL_DIE_CUT_PX + face().get_ascent(font_size) - font_size * STICKER_DOWN
 	return HudSkin.mono().get_ascent(_system_px()) + 2.0
 
 
@@ -110,10 +110,9 @@ func _hint_px() -> int:
 
 
 func _fit_size() -> void:
-	var s := Settings.text_scale
-	var cut := HudSkin.VINYL_DIE_CUT_PX * s
+	var cut := HudSkin.VINYL_DIE_CUT_PX
 	var w := maxf(maxf(_system_w(), _sticker_x() + lettering_room() + cut), _line_w())
-	var h := _system_y() + font_size * STICKER_DOWN + face().get_descent(font_size) + cut + HudSkin.VINYL_EXTRUDE_PX * s
+	var h := _system_y() + font_size * STICKER_DOWN + face().get_descent(font_size) + cut + HudSkin.VINYL_EXTRUDE_PX
 	if key_hint != "" or system_line != "":
 		h += _hint_px() + 8.0
 	custom_minimum_size = Vector2(w + cut, h)
@@ -153,9 +152,9 @@ func _draw() -> void:
 	var paint_col := paint if not off else HudSkin.VINYL_DISABLED
 	var light := paint_col.lightened(HudSkin.VINYL_LIGHT)
 	var dark := paint_col.darkened(HudSkin.VINYL_DARK)
-	var cut := HudSkin.VINYL_DIE_CUT_PX * s
-	var key := HudSkin.VINYL_KEYLINE_PX * s
-	var ext := HudSkin.VINYL_EXTRUDE_PX * s
+	var cut := HudSkin.VINYL_DIE_CUT_PX
+	var key := HudSkin.VINYL_KEYLINE_PX
+	var ext := HudSkin.VINYL_EXTRUDE_PX
 	# Shadow (snaps in on a press: `send_it_drips` runs it in).
 	var shadow := SHADOW_OFFSET * s * (1.0 - clampf(drip_run / maxf(1.0, Motion.amplitude(&"send_it_drips")), 0.0, 1.0) * 0.6)
 	_stamp(f, at + shadow, shown, fs, cut, Color(Palette.NIGHT_SKY, SHADOW_ALPHA))
