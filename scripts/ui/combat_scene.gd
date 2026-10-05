@@ -2055,7 +2055,6 @@ func _refresh(state: CombatState) -> void:
 	_sync_portrait(state.player.hp if _replay_hp < 0 else _replay_hp, state.player.max_hp)
 	ram_note.set_ram(state.ram, state.max_ram)
 	daemon_row.set_daemons(state.daemon_ids, lookup)
-	daemon_row.visible = not state.daemon_ids.is_empty()  # ART-2 2D: an empty row leaves the notes their room
 	if not _outcome_held:
 		_sync_heat()  # ANIM-R5 combat 1: a fight's Heat moves once its outcome has landed
 	_player_view.show_combatant(state.player, state.satellites_of(state.player.id), engine.readouts(state.player), lookup)
@@ -3894,7 +3893,8 @@ func _play_resolve_sequence(before: CombatState, after: CombatState, events: Arr
 func _trigger_fx(source_id: StringName) -> void:
 	var data: Resource = engine.content(source_id) if engine.resolver.lookup.has(source_id) else null
 	var daemon := data is DaemonData
-	var from := daemon_row.get_global_rect().get_center() if daemon and daemon_row.is_visible_in_tree() else _player_view.global_center()
+	var rack := _player_view.get_node_or_null("DaemonRack") as Control  # 2B's rack beside the wheel
+	var from := rack.get_global_rect().get_center() if daemon and rack != null else _player_view.global_center()
 	CombatBeatFx.trigger(fx_layer, from, _player_view.global_center(), daemon)
 
 

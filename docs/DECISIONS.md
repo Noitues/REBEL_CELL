@@ -124,7 +124,7 @@ default, since confirmed by the designer. Views only: no rule, number or content
   its neighbours slide aside (`slide_aside`), and the RAM pips a previewed play would spend are hatched; (4) Daemon /
   firmware `trigger` events get no beat: `ResolveBeats.trigger_marks` times each on the first beat after it (or the
   result), so the schedule is unchanged (tested), and the replay calls `CombatBeatFx.trigger` (2C's `trigger_fx`, lime
-  for firmware, violet for a Daemon) from the Daemon row (or the player's hub for firmware) to the player's wheel.
+  for firmware, violet for a Daemon) from 2B's DaemonRack (or the player's hub for firmware) to the player's wheel.
   Tests in `test_art2_hud.gd`.
 - **Group 1 naive audit P2s (docs/handoff/m14_audit/group1_naive.md)**: pink is the action stickers' only: the
   combat's hit / loss chip colours are the one harm red (`Palette.HARM`), gains GAIN, plain counters (RAM, Heat) neutral;
