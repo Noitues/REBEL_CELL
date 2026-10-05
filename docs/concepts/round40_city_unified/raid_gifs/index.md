@@ -36,6 +36,8 @@ Same unified model as the grid and netrun views (see-through buildings, dimmed l
 | [30_unit_health.gif](30_unit_health.gif) | R22w | Unit health + status (icons v4) | corp-colour disc drains top-down under the unit; status pips on the dashed corp ring; heading on hover; the v4 icon carries the same | INLAY + ICON | 1109 KB |
 | [31_spotlights.gif](31_spotlights.gif) | R19/35 | Heat spotlights (EXPOSED) | a chopper circles the Relay, its spot wobbles on the node (EXPOSED ticks); drones circle with mini spots | 3D + INLAY | 1859 KB |
 
+**v2, a lighter city** (`LIGHT40=1`, see `../NOTES.md`): [02_drag_dock_preview_v2.gif](02_drag_dock_preview_v2.gif), [13_threat_moving_v2.gif](13_threat_moving_v2.gif), [14_defence_fires_v2.gif](14_defence_fires_v2.gif). These are representative; every other gif would be regenerated with the same setting.
+
 Replaced (not shipped): 02 drag valid + 03 invalid -> 02 dock preview; 05 remove -> 05 remove to hand; 06 move -> 06 swap in one motion; 21 node lost -> 21 node TAKEN.
 
 Rebuild: see `../NOTES.md` (Blender `scripts/run40.py`, then `scripts/raidui` builders through the compat layer).

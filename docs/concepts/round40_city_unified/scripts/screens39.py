@@ -35,8 +35,18 @@ MER, LIME, WHITE, GOLD = R.MER, R.LIME, R.WHITE, R.GOLD
 GREY = (118, 114, 128)
 
 
+SUF = os.environ.get("SUF40", "")                   # round 40 v2: "_v2" (LIGHT40=1 renders)
+SCRATCH = os.path.join(OUT, "scratch")
+
+
+def outp(name):
+    """Deliverables get the suffix; the transit still (redone by the netrun agent) only feeds three_views, from scratch."""
+    b, e = os.path.splitext(name)
+    return os.path.join(SCRATCH if b == "run_transit" and SUF else OUT, b + SUF + e)
+
+
 def save(img, name):
-    img.convert("RGB").save(os.path.join(OUT, name), optimize=True)
+    img.convert("RGB").save(outp(name), optimize=True)
     print("saved", name, flush=True)
 
 
@@ -542,7 +552,7 @@ def three_views():
     mid = l["pts"][len(l["pts"]) // 2]
     for i, (fn, tagn, lab) in enumerate(shots):
         x = 16 + i * (tw + 8)
-        im = Image.open(os.path.join(OUT, fn)).convert("RGBA")
+        im = Image.open(outp(fn)).convert("RGBA")
         cam = scene(tagn)["cam"]
         dd = ImageDraw.Draw(im)
         for key, p, col in (("A", NODES["core"]["lot"], (255, 222, 30)), ("B", mid, (92, 225, 255))):
@@ -569,7 +579,7 @@ def three_views():
     cars = Image.open(os.path.join(OUT, "cars_lod.png")).convert("RGBA").crop((0, 110, W, 530)).resize((1500, 328), Image.LANCZOS)
     cv.alpha_composite(cars, (16, 748))
     d.text((1540, 760), "CARS by zoom:", font=RL.font(RL.ANTON, 22), fill=(255, 222, 30, 255))
-    for i, t_ in enumerate(("FAR: dot + line", "MEDIUM: grey box + line", "CLOSE: model + thick line")):
+    for i, t_ in enumerate(("FAR: dot + line", "MEDIUM: lane-colour box + line", "CLOSE: model + thick line")):
         d.text((1540, 800 + i * 30), t_, font=RL.f_mono(16), fill=(210, 220, 232, 255))
     return cv
 

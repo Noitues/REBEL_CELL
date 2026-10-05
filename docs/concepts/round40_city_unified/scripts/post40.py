@@ -263,6 +263,16 @@ MODE = dict(ink=(0.05, 0.04, 0.09), haze=(0.08, 0.06, 0.16), haze_k=0.34, bloom=
             rain_a=0.11, grime=0.15, fog=(0.20, 0.17, 0.33), grade=(0.94, 0.92, 1.04))
 
 
+# round 40 v2 ("the city is too dark"): LIGHT40=1 lifts the buildings and the ambient. Translucent buildings darken to
+# x0.80 (was x0.62), the beauty gains +38 % on buildings (+23 % on the ground) plus a cool ambient floor; the haze is
+# lighter. Decals, glow and the UI are untouched, so the network still reads first.
+_LK = float(os.environ.get("LIGHT40", "0"))
+LIGHT = dict(k=_LK, dark_add=0.18 * _LK, gain=0.38 * _LK, amb=(0.030 * _LK, 0.028 * _LK, 0.046 * _LK))
+if _LK > 0:
+    MODE["haze"] = (0.08 + 0.05 * _LK, 0.06 + 0.05 * _LK, 0.16 + 0.06 * _LK)
+    MODE["grade"] = (0.94 + 0.04 * _LK, 0.92 + 0.04 * _LK, 1.04 + 0.02 * _LK)
+
+
 def opacity(lod):
     """Round 37: building opacity by zoom. City 1.0 (the real city); raid and transit 0.32 (translucent, darkened:
     you can tell they are there, the network is the critical layer)."""
@@ -308,9 +318,12 @@ def finish(tag, decorate=None, pools=(), out_size=(1920, 1080), seed=1, t=0.0, r
         gdk = (net.dk * lk)[..., None]                  # the hidden streets step back as much as the visible ones
         gb = P.gbeauty * gdk
         gg = P.gglow * gdk * 0.7 + net.em * 0.6
-        dark = 0.62
+        dark = 0.62 + LIGHT["dark_add"]
         beauty = beauty * (1 - bld) + (gb * (1 - op) + P.beauty * op * dark) * bld
         glow = glow * (1 - bld) + (gg * (1 - op) + P.glow * op * 0.45) * bld
+    if LIGHT["k"] > 0:                                    # round 40 v2: the city lighter (buildings + ambient), the network unchanged
+        bmask = (1 - vis)[..., None] if P.defmask is None else bld
+        beauty = beauty * (1 + LIGHT["gain"] * (0.6 + 0.4 * bmask)) + np.array(LIGHT["amb"], np.float32) * (0.5 + 0.5 * bmask)
     e_id = F0.diff_edges(P.ids, 0.03)
     e_n = F0.diff_edges(P.nrm, 0.42)
     dep = P.dep

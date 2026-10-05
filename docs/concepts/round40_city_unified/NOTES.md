@@ -9,6 +9,21 @@ The transit view is skipped this round (the netrun agent is redoing it).
 | `raid_gifs/` | Every raid interaction, re-run on the unified city model, using the latest locked version of each. Raid UI sources are rounds 21, 22 and 23. Raid world sources: round 23 slow and repair, round 22 unit health and icons v4, and the Heat spotlights. Each gif is 2 MB or less and uses a shared palette with dither, so saturation is kept. Contents are listed in `raid_gifs/index.md`, with a sheet at `raid_gifs/index.jpg`. |
 | `scripts/` | All the scripts. |
 
+## v2: lighter city (designer: "too dark now")
+| File | What |
+|---|---|
+| `city_grid_v2.png`, `raid_view_v2.png`, `three_views_v2.png` | The same views with `LIGHT40=1`. |
+| `raid_gifs/02_drag_dock_preview_v2.gif`, `13_threat_moving_v2.gif`, `14_defence_fires_v2.gif` | Three representative raid gifs with the same setting. |
+
+**The setting** (`post40.LIGHT`, env `LIGHT40=1`) makes only the city lighter: the buildings and the ambient light.
+- See-through buildings at raid and transit zoom are darkened less: ×0.80 instead of ×0.62.
+- Building beauty is +38 % brighter and the ground +23 %, plus a cool ambient floor.
+- The haze and the grade are a touch lighter.
+
+Decals, glow, the network and the UI are unchanged. Mean frame brightness goes up by about 25 %.
+
+**The rest:** every other raid gif (and `cars_lod.png`, which is locked) would be regenerated with the same setting. That means setting `LIGHT40=1` and re-running the steps below; nothing else changes. The stills come from `SUF40=_v2 LIGHT40=1 python screens39.py city raid transit`, then `three`. The three gifs come from `python raidui/v2gifs40.py 21 23`. The `three_views_v2` car strip still uses the locked `cars_lod.png`.
+
 ## How the raid gifs reach the one city (compat layer)
 The locked gif code (rounds 19 to 23) is written against round 19's 6-node layout. It was ported rather than rewritten:
 

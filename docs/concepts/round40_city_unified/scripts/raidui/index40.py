@@ -73,6 +73,10 @@ def main():
         g = Image.open(p)
         g.seek(int(g.n_frames * 0.6))
         tiles.append((name, g.convert("RGB")))
+    v2 = [n for n in ("02_drag_dock_preview_v2.gif", "13_threat_moving_v2.gif", "14_defence_fires_v2.gif") if os.path.exists(os.path.join(GIFS, n))]
+    if v2:
+        md += ["", "**v2, a lighter city** (`LIGHT40=1`, see `../NOTES.md`): " + ", ".join("[%s](%s)" % (n, n) for n in v2) +
+               ". These are representative; every other gif would be regenerated with the same setting."]
     md += ["", "Replaced (not shipped): 02 drag valid + 03 invalid -> 02 dock preview; 05 remove -> 05 remove to hand; "
            "06 move -> 06 swap in one motion; 21 node lost -> 21 node TAKEN.",
            "", "Rebuild: see `../NOTES.md` (Blender `scripts/run40.py`, then `scripts/raidui` builders through the compat layer)."]
