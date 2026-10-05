@@ -590,11 +590,13 @@ func test_the_hq_pages_pops_complete_with_a_press() -> void:
 	assert_eq(badge.scale, Vector2.ONE, "at rest")
 	hq.show_end()
 	await _frames(3)
-	var stamp := hq._panel.find_child("CampaignVerdict", true, false) as ForecastStamp
-	stamp.resolve(HqScript.END_CAPTION, HqScript.END_WON)
-	assert_true(hq.popping().has(stamp), "a verdict stamp's landing too")
-	MotionSkip.complete_all(hq)
-	assert_eq(stamp.scale, Vector2.ONE)
+	# ART-11 4D: the audit dossier's own motion (cover, stamp, notes) completes with a press.
+	var dossier := hq._panel as AuditDossier
+	assert_true(dossier.motion_running(), "the dossier opens")
+	get_viewport().push_input(_key(KEY_SEMICOLON))
+	assert_false(dossier.motion_running(), "a press completes it")
+	assert_true(dossier.case_stamp.visible, "the stamp has landed")
+	assert_eq(dossier.case_stamp.scale, Vector2.ONE, "at rest")
 
 
 # --- C14: RAID INCOMING's hold ------------------------------------------------------------------------
@@ -665,8 +667,8 @@ func test_newcomer_words_and_places() -> void:
 	await _frames(1)
 	hq.show_end()
 	await _frames(2)
-	var stamp := hq._panel.find_child("CampaignVerdict", true, false) as ForecastStamp
-	assert_eq(stamp.icon_kind, StatIcon.WON, "the WON stamp wears the win's icon")
+	var dossier := hq._panel as AuditDossier
+	assert_eq(dossier.stamp_word(), tr("AT LARGE"), "a won campaign's file: the Cell is AT LARGE (ART-11 4D)")
 	hq.show_hq()
 	await _frames(1)
 	assert_true(hq.more_hint.snap_rows, "the HQ page never ends in a half-cut row (the crew's Loadout at TEXT_SCALE_MAX)")

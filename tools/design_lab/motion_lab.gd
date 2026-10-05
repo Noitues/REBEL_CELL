@@ -148,6 +148,10 @@ const DEMOS := {
 	# ART-0 E (ported from art-pass W6): the wheel-local T3 bursts on the fight's wheels (the
 	# Perfect's on the operative's, a boss phase's on an enemy's in the corp hue).
 	&"wheel_burst_perfect": ["scene", "perfect"], &"wheel_burst_phase": ["scene", "phase_burst"],
+	# ART-2 2B (wheel attachments and the arena): on the live fight's wheels and backdrop.
+	&"backdrop_won_lights": ["scene", "arena_won"], &"drone_bloom": ["scene", "attach_bloom"],
+	&"preview_chevron_chase": ["scene", "attach_preview"], &"preview_ghost": ["scene", "attach_preview"],
+	&"daemon_rack_scan": ["scene", "attach_rack"],
 	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
 	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
 	&"card_peel": ["scene", "play_fx"], &"card_slap_ring": ["scene", "play_fx"],
@@ -178,10 +182,23 @@ const DEMOS := {
 	&"raid_slow_field": ["hq", "raid"], &"raid_ice_grow": ["hq", "raid_ice"], &"raid_repair_rise": ["hq", "raid"],
 	&"raid_route_write": ["hq", "raid_setup"], &"raid_route_wipe": ["hq", "raid"],
 	&"raid_dock_circle": ["hq", "raid_drag"], &"raid_drag_arrow": ["hq", "raid_drag"],
+	# ART-2 2A: the wheel stack.
+	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
+
+	# ART-11 4D: the campaign lost lock (RansomLock over the stage), the audit dossier
+	# (AuditDossier), each the real piece.
+	&"ransom_glitch": ["screen", "ransom"], &"ransom_wipe": ["screen", "ransom"], &"ransom_padlock": ["screen", "ransom"],
+	&"ransom_notice_in": ["screen", "ransom"], &"ransom_verb_stamp": ["screen", "ransom"], &"ransom_sticker_curl": ["screen", "ransom"],
+	&"ransom_sticker_drop": ["screen", "ransom"], &"ransom_sticker_stagger": ["screen", "ransom"], &"ransom_countdown": ["screen", "ransom"],
+	&"ransom_wipe_hold": ["screen", "ransom"], &"ransom_cut": ["screen", "ransom"],
+	&"dossier_open": ["screen", "dossier_file"], &"dossier_stamp": ["screen", "dossier_file"], &"dossier_note": ["screen", "dossier_file"],
+	&"dossier_note_stagger": ["screen", "dossier_file"],
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
 }
+## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
+const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -878,6 +895,49 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"ransom":
+			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
+			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
+			var lock := RansomLock.new()
+			_screen_host.add_child(lock)
+			var host := _screen_host
+			lock.nodes_provider = func() -> Array:
+				var pts: Array = []
+				if is_instance_valid(host):
+					for i in RANSOM_NODES.size():
+						pts.append({"at": host.global_position + RANSOM_NODES[i], "home": i == 0})
+				return pts
+			var specs: Array[Dictionary] = [{"text": "CELL DEFENSE"}, {"asset": &"turret", "text": "TURRET"}, {"asset": &"ice_lock", "text": "ICE LOCK"},
+				{"asset": &"decoy", "text": "DECOY"}, {"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK, "size": UiTheme.TITLE}]
+			lock.setup(&"halcyon", "Halcyon Civic", 0, 50, specs)
+			length = lock.motion_end() + Motion.seconds(RansomLock.HOLD) + Motion.seconds(RansomLock.CUT)
+		"dossier_file":
+			# ART-11 4D: a lost campaign's audit dossier opening, stamped, its notes slapping on.
+			var f := DossierFacts.new()
+			f.corporation_id = &"halcyon"
+			f.corporation_name = "Halcyon Civic"
+			f.cell_number = 3
+			f.runs_started = 8
+			f.deaths = 2
+			f.raids_won = 3
+			f.raids_lost = 1
+			f.held = 3
+			f.down = 1
+			f.taken = 1
+			f.home_max = 50
+			f.heat = 82
+			f.heat_max = 100
+			f.heat_marks.assign([25, 50, 75])
+			f.heat_levels.assign([25, 50, 75])
+			f.crew.assign([{"id": &"op_1", "name": "Vex", "class_id": &"breaker", "class_name": "Breaker", "rank": 3, "alive": true, "runs": 7, "post": "Firewall Relay"},
+				{"id": &"op_2", "name": "Ash", "class_id": &"ghost", "class_name": "Ghost", "rank": 2, "alive": false, "runs": 4, "post": ""}])
+			f.most_troublesome = f.crew[0]
+			f.next_ice = 2
+			var prints: Array[Dictionary] = [{"caption": "HOME SERVER - 0/50"}, {"caption": "NODES AT THE END"}]
+			var dossier := AuditDossier.new(f, prints)
+			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			_screen_host.add_child(dossier)
+			length = dossier.motion_end()
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1171,6 +1231,21 @@ func _play_view(what: String) -> float:
 			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
 		"press":
 			(_pieces["send"] as DripButton).press_motion()
+		"screens":
+			_wheel.disc.run_screens()
+		"telemetry":
+			_wheel.queue_redraw()
+		"perfect_latch":
+			_wheel.play_precision(RC.PrecisionTier.PERFECT, 0)
+		"landing_word":
+			_wheel.play_precision(RC.PrecisionTier.GOOD, 0)
+		"weak_stutter":
+			_wheel.play_precision(RC.PrecisionTier.WEAK, 0)
+		"defeat_drain":
+			_wheel.play_defeat_drain()
+		"lockdown":
+			_wheel.lockdown_level = 1.0
+			_wheel.play_lockdown_drain()
 		"ready":
 			var send := _pieces["send"] as DripButton
 			send.glyph = true
@@ -1194,6 +1269,42 @@ func _show_scene(on: bool) -> void:
 
 ## A motion in a live combat scene (a fresh fight each time, laid out for SCENE_SETTLE
 ## frames before the motion starts).
+## ART-2 2B demos on the live fight (lab only: the fight's state is dressed directly): a drone's
+## band blooms, a spin card's animated preview, the Daemon rack's idle scan, the won backdrop.
+func _play_attach(what: String) -> void:
+	var st: CombatState = _scene.engine.state()
+	var pv: WheelView = _scene._player_view
+	match what:
+		"attach_bloom":
+			if st.drones.is_empty():
+				var d := EffectInterpreter.make_combatant(_scene.engine.content(LAB_DRONE) as EnemyData, &"lab_drone", true)
+				d.is_player = true
+				d.host_id = st.player.id
+				d.dock_slot = 1
+				st.drones.append(d)
+			_scene._refresh(st)
+			pv.attachments.dock.force_bloom = false
+			await get_tree().process_frame
+			pv.attachments.dock.force_bloom = true
+		"attach_preview":
+			st.hand[0] = LAB_SPIN_CARD
+			_scene._refresh(st)
+			_scene._preview_card(0)
+		"attach_rack":
+			st.daemon_ids.clear()
+			st.daemon_ids.append_array(LAB_DAEMONS)
+			_scene._refresh(st)
+		"arena_won":
+			_scene.arena_backdrop.won = 0.0
+			_scene.arena_backdrop.play_won()
+
+
+## The ART-2 2B demos' drone, spin card and Daemons.
+const LAB_DRONE := &"botnet_drone"
+const LAB_SPIN_CARD := &"heavy_spin"
+const LAB_DAEMONS: Array[StringName] = [&"clean_signal", &"cascade", &"botnet_seed"]
+
+
 func _play_scene(what: String) -> void:
 	_show_scene(true)
 	_clear_screen()
@@ -1207,6 +1318,8 @@ func _play_scene(what: String) -> void:
 	var enemy: StringName = _scene.engine.state().enemies[0].id
 	var ev: WheelView = _scene._view_of(enemy)
 	match what:
+		"attach_bloom", "attach_preview", "attach_rack", "arena_won":
+			_play_attach(what)
 		"send":
 			_scene.end_turn()
 		"send_hit", "send_kill":
