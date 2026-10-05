@@ -49,6 +49,8 @@ const HISTORY_H := 150.0
 const TICKER_WORDS := ["PIRATE RADIO 88.1", "HALCYON RAISES FARES AGAIN"] # TR
 ## The confirm's caption under CANCEL (a key).
 const CONFIRM_WORDS := ["keep going [B]"] # TR
+## The verbs, their chips' labels and the page titles (keys, translated where they are shown).
+const PAGE_WORDS := ["BREACH", "SIMULATE", "OVERTHROW", "Continue", "Tutorial", "New campaign", "CAMPAIGN SLOTS", "CODEX", "STATS"] # TR
 
 var background: CyberdeckBackground
 ## The subtitles' band (H21 #11), top right, clear of every menu.
