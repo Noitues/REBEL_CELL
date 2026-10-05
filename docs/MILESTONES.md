@@ -212,11 +212,162 @@ recruitment gated by Profile unlocks. Decisions are the implementer's, logged in
 - [ ] Skins: deferred to art integration (M13).
 - [x] Tests, schema smoke test and content validation green.
 
+## M13 — Art pass v1 (art-pass branch, superseded in part)
+
+Presentation only, governed by ART_BIBLE v1.0 (now `docs/ART_BIBLE_v1.md`); plan in
+`docs/art_history/ART_PLAN_M13.md`; DECISIONS "M13 art pass (art-pass branch, superseded in part)".
+Built on branch `art-pass` (from `8ddfa86`), **never merged**: W1–W10 + WF + W9F, 1414 tests green
+there. Tags: `art-m13-final` = `f80f393` (the last M13 code state) and `art-concepts-r43` =
+`9a62cec` (concept rounds 1–43, ART_BIBLE v2, the reintegration plan). The concept direction
+superseded its zine / neon / cyberdeck look; its direction-agnostic infrastructure is ported by
+M14 ART-0 (salvage S1–S5), the rest is re-implemented from ART_BIBLE v2 (DECISIONS 2026-10-05 "Designer rulings: art reintegration, pause point 0", rulings 2 and 4).
+
+Done on `art-pass` (summary of its acceptance box): W1 tokens, type scale, MSDF, Plex body face ·
+W10 visual QA harness and lint · W2 component library · W4 cards · W6 VFX tiers and shader library
+· W9 accessibility settings (text scale 2.0, colour-blind, high contrast, reduce motion, resolve
+speed, glyph sets) · W3 wheels and combat · W5 characters · W7 city · W8 screens (8a–8d) · W9F
+final accessibility sweep; tests, schema smoke test and content validation green on the branch.
+
+## M14 — Art direction v2 (added 2026-10-05)
+
+Port the art pass onto main (DECISIONS 2026-10-05 "Designer rulings: art reintegration, pause point 0"): ruling 1 puts M14 first, ruling 2 ports and never merges.
+Visual source of truth: `docs/ART_BIBLE.md` (v2) with `docs/art_reference/`; plan:
+`docs/ART_REINTEGRATION_PLAN.md` §4 (loop shape §4.1: batch → audit ART-Rn → fix batch until
+CLEAN → designer review). ANIM motion behaviour is kept and restyled (MotionSkip, holds, reduce
+effects = end state, `ui_motion.tres` entries).
+
+**Acceptance (M14):** the look and most of the feel of the art pass are present by the end of the
+milestone (ruling 2), or M14 has failed.
+
+**Shape (designer, 2026-10-05, "Designer ruling: M14 regrouped"):** ART-0, then four groups, then the
+final sweep. Inside a group its batches are built **in parallel** (one agent area each, at most 4–5
+agents); the group gets **one** audit round (vertical / horizontal / naive) and its fix rounds until
+CLEAN, then **one** designer review. The next group's brief may be written while the previous group is
+in audit. Check cadence ("Designer ruling: check cadence for M14"): fast checks per hand-back and merge;
+the full suite ×3 once per group, in isolation, before its audit.
+- **Group 1 — Foundations:** ART-1 (everything else builds on its kit and the render spike).
+- **Group 2 — Combat:** ART-2 wheel stack, ART-3 cards and FX, ART-4 HUD.
+- **Group 3 — City:** ART-5 unified city, ART-6 raid, ART-7 netrun, ART-8 HQ runs (ART-5's city model
+  and render tech land first inside the group; 6–8 build on it).
+- **Group 4 — Screens:** ART-9 shop / rewards / events / dialogue / portraits, ART-10 menus / title /
+  settings, ART-11 campaign lost and dossier.
+- **Final:** ART-12 sweep, its audit to CLEAN, "M14 complete".
+
+Every batch also meets the common acceptance (plan §4.1): 3 checks green (full suite ×3 once per
+group, never only the fast tier); new tests in `tests/test_manifest.json`; layout tests at 1.0 / 1.6 / 2.0; reduce
+effects = end state; headless never waits; motion values in `ui_motion.tres` with a lab demo; no
+colour or size literals (tokens); the runtime lint clean; a GAP_ANALYSIS ART-n row; the perf
+budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orchestrator merges.
+
+**ART-0 — Rulings, landing, salvage** (`docs/handoff/art_0/ART_0_BATCH.md`)
+- [ ] A1–A6 docs landing (bible v2 + v1, plan, `docs/art_reference/`, art history, GDD 9, this box).
+- [ ] B1–B4 names pass part 1 (raid words, Mainframe, Customs Seal) and the saves folder.
+- [ ] C accessibility settings, D visual QA harness and lint, E tokens / type machinery and VFX
+      tiers, F kit behaviour; B part 2 names D2–D8, D11–D12 after the §3.1 rulings.
+- [ ] The full suite is green with the ported M13 tests; the QA harness runs on main's screens.
+- [ ] Timeline `17_art0` (the baseline before the new look) with a README row.
+- [ ] Audit round ART-R0 to CLEAN.
+
+### Group 1 — Foundations
+- [ ] Group 1 full suite ×3 in isolation; audit ART-R1 to CLEAN; designer review.
+
+**ART-1 — Foundations** (palette v2, faces incl. Courier Prime, theme, the material kit, glyph
+pipeline, the render spike)
+- [ ] Kit sheet capture vs `round3_overlay/combined_v2`, `round33_ui_chrome/ui_kit.png` and
+      `typography.png`.
+- [ ] Every shader has a `reduce_effects` uniform and a VfxTier.
+- [ ] Lint rule: no UI node's rect over a pencil stroke.
+- [ ] Render spike for the unified city, **fidelity first** (ruling 7): the technique that
+      reproduces the reference images most faithfully is chosen, then an optimisation round brings
+      it inside the plan §5.2 budget (the budget is a gate, not a reason to change the look).
+
+### Group 2 — Combat
+- [ ] Group 2 full suite ×3 in isolation; audit ART-R2 (one round for ART-2/3/4) to CLEAN; designer review.
+
+**ART-2 — Combat wheel stack**
+- [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
+- [ ] Preview == result still holds.
+- [ ] Wheel draw time is within budget.
+
+**ART-3 — Cards and FX**
+- [ ] Every FX has an entry in `ui_motion.tres`, a lab demo and its reduce-effects end state.
+- [ ] Flash limiter (≤ 3/s) test.
+- [ ] The D16 origin rule tested.
+
+**ART-4 — HUD**
+- [ ] GDD 2.10 holds: chip == resolve for all enemies × seeds (the H23/H24 sweeps re-used).
+- [ ] Pad reachability.
+- [ ] Fits at 2.0.
+
+### Group 3 — City
+- [ ] Group 3 full suite ×3 in isolation; audit ART-R3 (one round for ART-5/6/7/8) to CLEAN; designer review.
+
+**ART-5 — Unified city model and motion**
+- [ ] Each corporation's Grid capture vs the reference.
+- [ ] Motion layers pause under reduce motion.
+- [ ] LOD switches at the configured zooms.
+- [ ] 60 fps at 1080p on the target PC, and the Deck tier.
+- [ ] Logic-side tests headless (projection, picking, label placement); render verified windowed.
+
+**ART-6 — Raid**
+- [ ] The raid verdict sweep still matches `raid_verdict`.
+- [ ] Reading holds never shortened at 2x / 4x (R7 C4).
+- [ ] Every changing state has a capture.
+- [ ] DOWN is the Site markers' white bolt over a greyed marker at every zoom; no amber dashed
+      socket (ruling 11).
+
+**ART-7 — Netrun**
+- [ ] The route sweeps for every corporation still pass (labels, you-are-here, fits).
+- [ ] The transition skips with one press (STYLE_GUIDE 5.1).
+
+**ART-8 — HQ runs**
+- [ ] Each corporation's HQ run is playable and captured; the boss backdrop matches the city
+      model (D17).
+
+### Group 4 — Screens
+- [ ] Group 4 full suite ×3 in isolation; audit ART-R4 (one round for ART-9/10/11) to CLEAN; designer review.
+
+**ART-9 — Shop, rewards, events, dialogue, portraits**
+- [ ] The shop and event sweeps (affordability, outcome rows == deltas) still hold.
+
+**ART-10 — Menus, title, settings** (plan §4.2 names references, no acceptance line; these are
+its items)
+- [ ] Title option A with the verbs (D10) and SIMULATE; the abandon dialog; Options on the v2 kit
+      (incl. `heat_glitch`, always-show nodes), each captured vs `round33_ui_chrome/title_screen.png`,
+      `title_screen_alt_simulate.png`, `abandon_dialog.png`.
+- [ ] Codex, stats, achievements, pause, campaign slots and the new-campaign picker on the v2 kit;
+      corp paper in Courier Prime.
+
+**ART-11 — Campaign lost and dossier** (no acceptance line in the plan; these are its items)
+- [ ] Campaign lost = A, ransomware lock; the campaign summary as a corporate dossier with the
+      audit report; campaign won in the same language.
+- [ ] Run end (FLATLINED / JACKED OUT / HOME FELL) restyled.
+
+### Final
+
+**ART-12 — Final sweep**
+- [ ] The full QA matrix (all screens × 1.0 / 1.6 / 2.0 × mouse / pad × reduce effects × high
+      contrast × greyscale × colour-blind).
+- [ ] A perf profile on the target PC and the Deck tier.
+- [ ] Skins (the M12 box: procedural palette skins on the v2 tokens).
+- [ ] A last vertical / horizontal / naive audit to CLEAN; "M14 complete" logged in DECISIONS.
+
+**After ART-12** (rulings 1, 8, 9; nothing deferred)
+- [ ] **R7 re-evaluation:** every ANIM-R7 finding (`docs/handoff/anim_r7/`) re-checked against the
+      ported screens, then the ones still valid fixed (batches A–E re-cut), incl. the overkill
+      wording "→ N LEFT" (ruling 9).
+- [ ] **G1–G16 re-evaluation with the designer** (plan §3.2, ruling 8); approved ones become
+      G-passes.
+- [ ] **Horizontal list re-evaluation.**
+- [ ] Then H25+ and the Queued passes below.
+
 ## Queued passes (designer, 2026-09-27)
 
 Order: finish the Animation pass review loop (ANIM-R1…, until an audit is clean), then the
 horizontal review loop (pass 25+), then these passes, each with its own review loop. See
 DECISIONS "Designer rulings on the open questions".
+Order changed 2026-10-05 (DECISIONS 2026-10-05 "Designer rulings: art reintegration, pause point 0", ruling 1): M14 first, then the
+R7, G1–G16 and horizontal re-evaluations, then H25+ and these passes (see M14 above).
 
 - [ ] **Rulings and balance**: rewards up slightly for pacing (sim-tuned); a small Rigger
       buff at ICE 0; an extra Schematics payout at the final Rack; a soft enrage for boss

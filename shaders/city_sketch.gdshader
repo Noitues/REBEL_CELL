@@ -3,6 +3,8 @@
 // CRT scanlines. Static wobble (no time): lines never "boil". `scan_strength` and
 // `flicker` go to 0 under reduce-effects.
 shader_type canvas_item;
+// Reduce effects (rc_common): the flicker stops; the static scanlines and grain stay.
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform float wobble = 0.0;
 uniform float jitter = 0.0;
@@ -83,6 +85,6 @@ void fragment() {
 	c.a *= 1.0 - grain * noise(FRAGCOORD.xy * 0.45);
 	float line = step(0.5, fract(FRAGCOORD.y / 3.0));
 	c.rgb *= 1.0 - scan_strength * line;
-	c.rgb *= 1.0 - flicker * (0.5 + 0.5 * sin(TIME * 41.0));
+	c.rgb *= 1.0 - flicker * rc_live() * (0.5 + 0.5 * sin(rc_time(TIME) * 41.0));
 	COLOR = c;
 }

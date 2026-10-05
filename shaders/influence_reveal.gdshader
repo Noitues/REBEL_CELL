@@ -1,4 +1,6 @@
 shader_type canvas_item;
+// Reduce effects (rc_common): nothing here runs on TIME; the spread is driven by the view, which shows its end state at once under reduce effects.
+#include "res://shaders/lib/rc_common.gdshaderinc"
 // Territory colour change (Animation pass ANIM-5): NeonCity draws the NEW baked city as
 // usual and the OLD image on a layer above it with this shader, which masks the old one
 // away as the new tint spreads from the Sites that changed owner (the same formula as
