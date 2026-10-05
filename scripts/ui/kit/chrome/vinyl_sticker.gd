@@ -86,7 +86,6 @@ func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p
 	KitState.track(self)
 	mouse_entered.connect(_hot.bind(true))
 	mouse_exited.connect(_hot.bind(false))
-	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
 	button_down.connect(_press.bind(true))
 	button_up.connect(_press.bind(false))
@@ -235,12 +234,12 @@ func bursting() -> bool:
 func _fill_colors() -> Array[Color]:
 	match fill:
 		Fill.YELLOW:
-			return [Palette.VINYL_YELLOW_TOP, Palette.VINYL_YELLOW_BOTTOM]
+			return [Palette.STICKER_SAFE, Palette.STICKER_SAFE_LOW]
 		Fill.BLUE:
-			return [Palette.VINYL_BLUE_TOP, Palette.VINYL_BLUE_BOTTOM]
+			return [Palette.STICKER_BLUE, Palette.STICKER_BLUE_LOW]
 		Fill.GREY:
 			return [Palette.TEXT_MID, Palette.DISABLED]
-	return [Palette.VINYL_PINK_TOP, Palette.VINYL_PINK_BOTTOM]
+	return [Palette.STICKER_COMMIT_HIGH, Palette.STICKER_COMMIT_LOW]
 
 
 func _draw() -> void:
@@ -258,7 +257,7 @@ func _draw() -> void:
 	var cols := _fill_colors()
 	_mat.set_shader_parameter(&"top_color", cols[0])
 	_mat.set_shader_parameter(&"bottom_color", cols[1])
-	_mat.set_shader_parameter(&"white_color", Palette.VINYL_WHITE)
+	_mat.set_shader_parameter(&"white_color", Palette.STICKER_DIE_CUT)
 	_mat.set_shader_parameter(&"glitch_a", Palette.CELL_PINK)
 	_mat.set_shader_parameter(&"glitch_b", Palette.CORP_SOLACE)
 	_mat.set_shader_parameter(&"fill_top", top)
@@ -270,18 +269,18 @@ func _draw() -> void:
 	var outer := roundi((die + key) * 2.0)
 	# The lime die-cut halo (focus, §2.10), then the shadow, the ink rim and the white die-cut.
 	if has_focus() or KitState.of(self) == KitState.FOCUS:
-		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0) + roundi(RIM_PX * 2.0), Palette.VINYL_INK)
+		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0) + roundi(RIM_PX * 2.0), Palette.GLYPH_INK)
 		draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(s * HALO * 2.0), Palette.FOCUS)
-	draw_string_outline(f, origin + Vector2(s * SHADOW_SHARE * 0.5, s * SHADOW_SHARE), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Color(Palette.VINYL_INK, SHADOW_ALPHA))
-	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Palette.VINYL_INK)
-	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer, Palette.VINYL_WHITE)
+	draw_string_outline(f, origin + Vector2(s * SHADOW_SHARE * 0.5, s * SHADOW_SHARE), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Color(Palette.GLYPH_INK, SHADOW_ALPHA))
+	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer + roundi(RIM_PX * 2.0), Palette.GLYPH_INK)
+	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, outer, Palette.STICKER_DIE_CUT)
 	# The extrude (down and right), then the keyline.
 	var steps := maxi(2, roundi(ext))
 	for i in range(steps, 0, -1):
 		var o := origin + Vector2(ext, ext) * (float(i) / steps)
-		draw_string_outline(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.VINYL_INK)
-		draw_string(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.VINYL_INK)
-	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.VINYL_INK)
+		draw_string_outline(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.GLYPH_INK)
+		draw_string(f, o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.GLYPH_INK)
+	draw_string_outline(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(key * 2.0), Palette.GLYPH_INK)
 	# The fill (the shader paints the marker colours).
 	if fill == Fill.GLITCH:
 		_draw_glitch(f, origin, word, px)
@@ -292,7 +291,7 @@ func _draw() -> void:
 		var slot_w := f.get_string_size(word.substr(0, fist_at + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		draw_string(f, origin, head, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
 		draw_string(f, origin + Vector2(slot_w, 0), tail, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
-		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)), key)
+		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)).grow(key * 0.8), key)
 	else:
 		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
@@ -318,7 +317,7 @@ func _draw_glitch(f: Font, origin: Vector2, word: String, px: int) -> void:
 ## front, a forearm with a cuff; ink keyline like the letters.
 func _draw_fist(box: Rect2, key: float) -> void:
 	var red := Palette.CORP_REBEL_CELL
-	var ink := Palette.VINYL_INK
+	var ink := Palette.GLYPH_INK
 	var lw := maxf(1.5, key * 1.2)
 	var cuff := _unit(box, FIST_CUFF)
 	draw_rect(cuff.grow(lw), ink)

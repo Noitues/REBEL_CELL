@@ -166,6 +166,19 @@ const STICKER_COMMIT := CELL_PINK
 const STICKER_DISABLED_GREY := 0.8
 ## The die-cut border of a vinyl sticker and its ink keyline (§1.2).
 const STICKER_DIE_CUT := Color("#FFFFFF")
+## ART-10 4C (round 33 ui_chrome): the pink verb's vinyl gradient (top -> bottom of the
+## lettering round STICKER_COMMIT), OVERTHROW's readable blue (round 33 §2), the REBEL_CELL
+## neon tube and its hot core, and the title sign's circuit-board backing.
+const STICKER_COMMIT_HIGH := Color("#FF8AD4")
+const STICKER_COMMIT_LOW := Color("#E0157F")
+const STICKER_BLUE := Color("#84C8FF")
+const STICKER_BLUE_LOW := Color("#2268E8")
+const NEON_TUBE := Color("#FF4FD8")
+const NEON_CORE := Color("#FFE3F7")
+const BOARD_BG := Color("#0A1512")
+const BOARD_TRACE := Color("#24493A")
+const BOARD_PAD := Color("#D0663C")
+const BOARD_FRAME := Color("#59606B")
 
 ## §5.1 "never colour alone": what each meaningful colour token is paired with (a greyscale
 ## reader gets the same information). The token table test checks every entry is filled.

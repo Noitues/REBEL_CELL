@@ -222,6 +222,7 @@ func _exit_tree() -> void:
 	CityBakeCache.shutdown()
 	Motion.use_config(null)
 	Palette.release_fonts()
+	Chrome.release()  # ART-10 4C: the stickers' rasterised Anton copy
 	UiTheme.release()
 
 

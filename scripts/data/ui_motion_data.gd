@@ -98,6 +98,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
 	# modal's open and close (PageTransition.open_modal / close_modal).
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
+	# ART-10 4C (ART_BIBLE v2 4.13, round 33 ui_chrome): the vinyl sticker's hover and press,
+	# the title's SIMULATE glitch and neon sign loops, the ON AIR ticker.
+	&"sticker_hover", &"sticker_press", &"title_glitch_burst", &"title_sign_flicker", &"on_air_ticker",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

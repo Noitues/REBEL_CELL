@@ -14,16 +14,18 @@ const SLOTS: Array[String] = ["1", "2", "3"]
 ## Subtitle lines the header band holds.
 const HEADER_LINES := 2
 ## The verb stickers' lettering size (px at 1280x720, text scale 1.0) and tilts.
-const VERB_PX := 40.0
+const VERB_PX := 36.0
 const VERB_TILTS: Array[float] = [-2.0, 1.5, -1.0]
 ## The page's title sticker size and tilt.
 const TITLE_STICKER_PX := 30.0
 const TITLE_STICKER_TILT := -3.0
+## The motto's tilt (degrees).
+const MOTTO_TILT := 3.0
 ## Margins of the page (px): sides, top, bottom (the ticker's room is added).
-const PAGE_MARGIN := Vector3(40, 26, 16)
+const PAGE_MARGIN := Vector3(40, 22, 8)
 ## Gaps (px): sign to the verbs, between verb rows, a sticker to its chip.
 const GAP_SIGN := 14
-const GAP_ROWS := 12
+const GAP_ROWS := 4
 const GAP_CHIP := 22
 ## The verbs' chips' least width (px at text scale 1.0).
 const CHIP_MIN_W := 300.0
@@ -33,7 +35,7 @@ const PROFILE_W := 290.0
 ## From this text scale the MORE panel moves to the right column (the left one is full).
 const MORE_RIGHT_FROM := 1.6
 ## The city's dim behind the title (it reads as the backdrop, round 33's blurred city).
-const CITY_DIM := 0.42
+const CITY_DIM := 0.58
 ## The page widths for the codex / stats / slots terminals (px at 1.0) and the codex text's
 ## least height.
 const PAGE_W := 900.0
@@ -203,19 +205,14 @@ func show_main() -> void:
 	var sign := NeonSign.new()
 	sign.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	left.add_child(sign)
-	# The motto in grease pencil, under the sign's right end (round 33).
-	var motto_row := HBoxContainer.new()
-	motto_row.add_theme_constant_override("separation", 0)
-	motto_row.custom_minimum_size.x = NeonSign.BOARD.x
-	motto_row.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	var fill := Control.new()
-	fill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	motto_row.add_child(fill)
-	var motto := PencilWords.new(tr("NEVER SLEEP"), 3.0)
+	# The motto in grease pencil, written across the sign's lower right corner (round 33); it
+	# takes no room of its own.
+	var motto := PencilWords.new(tr("NEVER SLEEP"), MOTTO_TILT, true)
 	motto.name = "Motto"
-	motto_row.add_child(motto)
-	left.add_child(motto_row)
+	var mm := motto.get_combined_minimum_size()
+	motto.position = Vector2(NeonSign.BOARD.x - mm.x * 0.55, NeonSign.BOARD.y - mm.y * 0.15)
+	motto.size = mm
+	page.add_child(motto)
 	# The plan: three numbered verbs, each on its terminal chip.
 	var plan := HBoxContainer.new()
 	plan.name = "Plan"
@@ -227,8 +224,6 @@ func show_main() -> void:
 	plan.add_child(PencilPlan.new(rows))
 	plan.add_child(rows)
 	left.add_child(plan)
-	# Pull the plan up under the sign: the motto overlaps the first row's chip column.
-	motto_row.custom_minimum_size.y = 0
 	verbs.clear()
 	var latest := continue_slot if continue_slot != "" else RunManager.latest_slot()
 	var summary := RunManager.slot_summary(latest) if latest != "" else {}
@@ -303,7 +298,7 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 	chip.pre_translated = true
 	chip.name = label.replace(" ", "")
 	chip.focus_mode = Control.FOCUS_NONE
-	chip.custom_minimum_size.x = CHIP_MIN_W * maxf(1.0, Settings.text_scale * 0.75)
+	chip.min_width = CHIP_MIN_W * maxf(1.0, Settings.text_scale * 0.75)
 	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	chip.tooltip_text = s.tooltip_text
 	if on_pressed.is_valid():
@@ -346,21 +341,28 @@ func _align_verbs(rows: Control) -> void:
 ## The profile at a glance (round 33 PROFILE // CELL-03): campaigns, won, best ICE, runs,
 ## raids held, badges; Stats has the rest. Live numbers in the terminal mono.
 func _profile_panel() -> CrtWindow:
-	var p := RunManager.profile
 	var win := CrtWindow.new(tr("PROFILE // THE CELL"))
 	win.name = "ProfileTags"
 	win.custom_minimum_size.x = PROFILE_W * maxf(1.0, Settings.text_scale * 0.8)
+	win.body.add_child(profile_grid(2))
+	return win
+
+
+## The profile's numbers as a grid of caption + value cells (`columns` wide): campaigns,
+## won, best ICE, runs, raids held, badges.
+static func profile_grid(columns: int) -> GridContainer:
+	var p := RunManager.profile
 	var grid := GridContainer.new()
 	grid.name = "Tags"
-	grid.columns = 2
+	grid.columns = columns
 	grid.add_theme_constant_override("h_separation", 28)
 	grid.add_theme_constant_override("v_separation", 4)
-	var items := [[tr("CAMPAIGNS"), str(p.campaigns_started), tr("Campaigns started on this profile.")],
-		[tr("WON"), str(p.campaigns_won), tr("Campaigns won.")],
-		[tr("BEST ICE"), HudStats.ice_value(p.best_ice), tr("The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.")],
-		[tr("RUNS"), str(p.runs_completed), tr("Netruns completed.")],
-		[tr("RAIDS HELD"), str(p.raids_won), tr("Raids repelled.")],
-		[tr("BADGES"), "%d / %d" % [p.achievements.size(), Achievements.DEFS.size()], tr("Achievements earned (Stats & achievements lists them).")]]
+	var items := [[TranslationServer.translate("CAMPAIGNS"), str(p.campaigns_started), TranslationServer.translate("Campaigns started on this profile.")],
+		[TranslationServer.translate("WON"), str(p.campaigns_won), TranslationServer.translate("Campaigns won.")],
+		[TranslationServer.translate("BEST ICE"), HudStats.ice_value(p.best_ice), TranslationServer.translate("The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.")],
+		[TranslationServer.translate("RUNS"), str(p.runs_completed), TranslationServer.translate("Netruns completed.")],
+		[TranslationServer.translate("RAIDS HELD"), str(p.raids_won), TranslationServer.translate("Raids repelled.")],
+		[TranslationServer.translate("BADGES"), "%d/%d" % [p.achievements.size(), Achievements.DEFS.size()], TranslationServer.translate("Achievements earned (Stats & achievements lists them).")]]
 	for it in items:
 		var cell := VBoxContainer.new()
 		cell.add_theme_constant_override("separation", 0)
@@ -374,8 +376,7 @@ func _profile_panel() -> CrtWindow:
 		value.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		cell.add_child(value)
 		grid.add_child(cell)
-	win.body.add_child(grid)
-	return win
+	return grid
 
 
 ## The page's foot: the build line (left) and the pad prompts (right).
@@ -441,20 +442,11 @@ func show_slots() -> void:
 	_set_panel(_page("CAMPAIGN SLOTS", win, "SlotsPage"), "slots")
 
 
-## The codex entries into a terminal text (sections as terminal headings).
-static func fill_codex(note: CrtText) -> void:
-	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
-	for section in entries:
-		note.heading(TranslationServer.translate(section))
-		for item in entries[section]:
-			note.append("[b]%s[/b]  %s" % [item["title"], String(item["text"]).split("\n")[0]])
-
-
 func show_codex() -> void:
 	var box := VBoxContainer.new()
 	var note := CrtText.new(tr("CODEX // WHAT THE CELL KNOWS"), Vector2(PAGE_W, CODEX_H)).make_reference()
 	note.name = "Codex"
-	fill_codex(note)
+	note.fill_codex()
 	box.add_child(note)
 	_item(box, tr("Back"), show_main, StatIcon.BACK, tr("Back to the main menu."))
 	_set_panel(_page("CODEX", box, "CodexPage"), "codex")
@@ -464,6 +456,10 @@ func show_stats() -> void:
 	var p := RunManager.profile
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
+	var records := CrtWindow.new(tr("PROFILE // THE CELL"))
+	records.name = "Records"
+	records.body.add_child(profile_grid(6))
+	box.add_child(records)
 	var note := CrtText.new(tr("STATS // RECORDS"), Vector2(PAGE_W, STATS_H)).make_reference()
 	note.name = "Stats"
 	note.append(tr("Campaigns: %d started, %d won, %d lost. Runs completed: %d. Operatives lost: %d. Raids: %d won / %d lost.") % [
@@ -674,6 +670,7 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 			b.custom_minimum_size.x = maxf(b.custom_minimum_size.x, 0.0)
 	else:
 		IconMark.attach(b, kind)
+		b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN  # a terminal chip, not a full-width bar
 	return b
 
 

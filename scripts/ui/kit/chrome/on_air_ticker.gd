@@ -56,4 +56,4 @@ func _draw() -> void:
 		draw_string(f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.NET_CYAN)
 		x += w
 	draw_rect(block, Palette.NET_CYAN)
-	draw_string(f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.VINYL_INK)
+	draw_string(f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)

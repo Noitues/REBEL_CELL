@@ -38,13 +38,15 @@ func _init(p_text: String = "") -> void:
 		add_theme_icon_override(icon, none)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	KitState.track(self)
-	for s in [mouse_entered, mouse_exited, focus_entered, focus_exited]:
+	for s in [mouse_entered, mouse_exited, focus_exited]:
 		(s as Signal).connect(queue_redraw)
 	toggled.connect(func(_on: bool) -> void: queue_redraw())
+	refit()
 
 
 func _ready() -> void:
 	Settings.changed.connect(_settings_changed)
+	refit()
 
 
 func _exit_tree() -> void:
@@ -53,7 +55,7 @@ func _exit_tree() -> void:
 
 
 func _settings_changed() -> void:
-	update_minimum_size()
+	refit()
 	queue_redraw()
 
 
@@ -74,7 +76,15 @@ func _note_text() -> String:
 	return String(note.call()) if note.is_valid() else ""
 
 
-func _get_minimum_size() -> Vector2:
+## Sizes the row to its words (a Button's own minimum ignores a script's
+## _get_minimum_size); called on build, on a Settings change and when its note may change.
+func refit() -> void:
+	custom_minimum_size = measure()
+	queue_redraw()
+
+
+## The size the name, the line, the note chip and the switch need (px).
+func measure() -> Vector2:
 	var p := parts()
 	var nf := Chrome.caps_font(NAME_STEP)
 	var np := Chrome.px(NAME_STEP)
@@ -146,7 +156,7 @@ func _draw_pill(pill: Rect2, on: bool, dim: bool) -> void:
 	var word := tr("ON") if on else tr("OFF")
 	var tx := pill.position.x + rad * 0.5 if on else pill.position.x + rad * 2.0
 	draw_string(f, Vector2(tx, pill.position.y + (pill.size.y + f.get_ascent(cp) - f.get_descent(cp)) * 0.5), word, HORIZONTAL_ALIGNMENT_LEFT, pill.size.x - rad * 2.2, cp,
-		Palette.VINYL_INK if on else cyan)
+		Palette.GLYPH_INK if on else cyan)
 
 
 static func _capsule(r: Rect2, rad: float) -> PackedVector2Array:

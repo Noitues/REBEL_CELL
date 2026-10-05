@@ -7,10 +7,6 @@ extends RefCounted
 ## only through here, so Group 1's foundations (1A faces / theme types, 1B materials)
 ## switch in at one place when they land. View only.
 
-## Courier Prime (corp paper, §2.9): Group 1A copies it into assets/fonts/; until then the
-## paper falls back to the terminal mono (never Courier New, §2.9).
-const FONT_PAPER := "res://assets/fonts/CourierPrime-Regular.ttf"
-const FONT_PAPER_BOLD := "res://assets/fonts/CourierPrime-Bold.ttf"
 ## The chamfer cut off a terminal panel's top-right corner, and the length of the small
 ## bracket drawn at its bottom-left (px at 1280x720, ui_kit.jpg).
 const CHAMFER := 12.0
@@ -29,8 +25,37 @@ const HEX_ALPHA := 0.06
 const HEX_TEXT := "4F 2A 9C 11 E0 7B 3D A2 5E 88 0C F1 6B 92 D4 17 3A C9 0E 7F B3 21 58 E6 9A 04 CD 6E 13 F8 A7 42 "
 
 
+static var _raster: Dictionary = {}
+
+
+## Anton for the drawn stickers and the neon sign. Their die-cut, keyline, extrude and glow
+## are outlines 2-5x wider than an MSDF field holds (`Palette.FONTS_MSDF_RANGE` 16 at
+## msdf_size 48 keeps 6-8 px; a sticker's die-cut is 10-14 px, the neon's glow 20+), so they
+## draw from a rasterised copy of the face (a duplicate with MSDF off: the loaded font is
+## never changed). Everything else keeps the MSDF face.
 static func sticker_font() -> Font:
-	return Palette.display()
+	return raster(Palette.display())
+
+
+## A copy of `f` drawn without MSDF (cached); `f` itself when it is not a FontFile.
+static func raster(f: Font) -> Font:
+	if not (f is FontFile) or not (f as FontFile).multichannel_signed_distance_field:
+		return f
+	var key := f.get_instance_id()
+	if not _raster.has(key):
+		# A fresh FontFile on the same bytes (a duplicate kept the imported MSDF cache).
+		var copy := FontFile.new()
+		copy.data = (f as FontFile).data
+		copy.multichannel_signed_distance_field = false
+		copy.generate_mipmaps = false
+		_raster[key] = copy if not copy.data.is_empty() else f
+	return _raster[key]
+
+
+## Lets the cached copies go (with the other static fonts, before the text server shuts
+## down).
+static func release() -> void:
+	_raster.clear()
 
 
 static func terminal_font() -> Font:
@@ -46,16 +71,16 @@ static func body_medium_font() -> Font:
 
 
 static func pencil_font() -> Font:
-	return Palette.marker()
+	return Palette.pencil()
 
 
-## Courier Prime when the repo has it (Group 1A), else the terminal mono.
+## Courier Prime (corp paper fields, §2.9; Group 1A's face).
 static func paper_font() -> Font:
-	return Palette.font(FONT_PAPER) if ResourceLoader.exists(FONT_PAPER) else Palette.mono()
+	return Palette.paper()
 
 
 static func paper_bold_font() -> Font:
-	return Palette.font(FONT_PAPER_BOLD) if ResourceLoader.exists(FONT_PAPER_BOLD) else Palette.mono()
+	return Palette.paper_bold()
 
 
 ## The pixel size of type step `step` at the player's text scale.
@@ -75,6 +100,9 @@ static func caps_label(text: String, step: int, color: Color) -> Label:
 	l.add_theme_font_override(&"font", caps_font(step))
 	l.add_theme_font_size_override(&"font_size", px(step))
 	l.add_theme_color_override(&"font_color", color)
+	UiWrap.whole_words(l)  # a page's UiWrap.fit leaves it be
+	# Terminal CAPS are short labels: they hold their line (a caption that wraps reads as two).
+	l.custom_minimum_size.x = ceilf(caps_font(step).get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px(step)).x)
 	return l
 
 

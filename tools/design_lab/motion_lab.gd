@@ -152,6 +152,11 @@ const DEMOS := {
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-10 4C (round 33 ui_chrome): the vinyl stickers (hover, press), the title's SIMULATE
+	# glitch and REBEL_CELL neon sign loops, the ON AIR ticker.
+	&"sticker_hover": ["screen", "sticker_hover"], &"sticker_press": ["screen", "sticker_press"],
+	&"title_glitch_burst": ["screen", "title_glitch"], &"title_sign_flicker": ["screen", "title_sign"],
+	&"on_air_ticker": ["screen", "ticker"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -817,6 +822,39 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"sticker_hover", "sticker_press":
+			# ART-10 4C: a pink verb sticker hovered (grow + gloss sweep), then pressed (squash).
+			var st := VinylSticker.new("BURN IT", VinylSticker.Fill.PINK, 40.0, 2.0)
+			st.position = Vector2(240, 280)
+			_screen_host.add_child(st)
+			await get_tree().process_frame
+			if is_instance_valid(st):
+				st._hot(true)
+				if what == "sticker_press":
+					st._press(true)
+					await get_tree().create_timer(Motion.seconds(&"sticker_press") + LOOP_GAP).timeout
+					if is_instance_valid(st):
+						st._press(false)
+			length = Motion.seconds(&"sticker_hover") * 3.0 + LOOP_GAP
+		"title_glitch":
+			# ART-10 4C: SIMULATE's glitch loop (bursts on frames 9-10 and 27-28 of 48).
+			var sim := VinylSticker.new("SIMULATE", VinylSticker.Fill.GLITCH, 48.0, 1.5)
+			sim.position = Vector2(220, 280)
+			_screen_host.add_child(sim)
+			length = Motion.seconds(&"title_glitch_burst")
+		"title_sign":
+			# ART-10 4C: the REBEL_CELL neon sign's idle loop.
+			var sign_board := NeonSign.new()
+			sign_board.position = Vector2(60, 220)
+			_screen_host.add_child(sign_board)
+			length = Motion.seconds(&"title_sign_flicker")
+		"ticker":
+			# ART-10 4C: the ON AIR ticker's crawl.
+			var t := OnAirTicker.new(PackedStringArray(["PIRATE RADIO 88.1", "HALCYON RAISES FARES AGAIN"]))
+			t.position = Vector2(0, 600)
+			t.size = Vector2(1280 - PANEL_W, 32)
+			_screen_host.add_child(t)
+			length = 4.0 * Motion.seconds(&"on_air_ticker")
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

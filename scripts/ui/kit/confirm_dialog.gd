@@ -16,7 +16,7 @@ signal confirmed
 signal cancelled
 
 ## The stickers' lettering size (px at 1.0) and their tilts.
-const STICKER_PX := 34.0
+const STICKER_PX := 40.0
 const TILT_NO := -2.0
 const TILT_YES := 2.0
 ## The dialog's least width (px at text scale 1.0) and the question's.
@@ -131,7 +131,11 @@ func _ready() -> void:
 	_return_focus = UiFocus.owner_of(self)
 	# ART-0 F: a modal over a SCRIM (the page behind blurred and dimmed; it takes the clicks
 	# meant for the page), opened with the modal motion.
-	GlassScrim.backdrop_for(self, get_viewport_rect().size)
+	var scrim := GlassScrim.backdrop_for(self, get_viewport_rect().size)
+	# ART-10 4C: a top-level scrim drew over the dialog's own terminal (its words blurred);
+	# as a plain child behind its parent it stays under the dialog and still covers the page.
+	scrim.top_level = false
+	scrim.position = -global_position
 	PageTransition.open_modal(self)
 	PageTransition.enter(window, PageTransition.Look.GLASS)
 	UiFocus.trap.call_deferred(self)  # the two choices, never out to the screen behind

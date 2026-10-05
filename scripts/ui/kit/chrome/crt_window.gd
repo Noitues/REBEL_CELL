@@ -35,6 +35,10 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN, max_body: f
 	add_theme_stylebox_override(&"panel", box)
 	var outer := get_child(0) as VBoxContainer
 	_outer = outer
+	# A window sized past its rows (a menu's scroll, a fixed-height panel) gives the room to
+	# its body.
+	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var head := find_child("TerminalTitle", true, false) as Label
 	if head != null:
 		_bar = head.get_parent() as Control

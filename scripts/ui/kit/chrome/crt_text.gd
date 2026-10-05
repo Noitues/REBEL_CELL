@@ -64,5 +64,15 @@ func heading(text: String) -> void:
 	label.append_text("[color=#%s][code]> %s[/code][/color]\n" % [accent.to_html(false), text.to_upper()])
 
 
+## Fills the text with the codex (Codex.entries): a terminal heading per section, then each
+## entry's name in Medium and its first line.
+func fill_codex() -> void:
+	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
+	for section in entries:
+		heading(tr(section))
+		for item in entries[section]:
+			append("[b]%s[/b]  %s" % [item["title"], String(item["text"]).get_slice("\n", 0)])
+
+
 func clear() -> void:
 	label.clear()

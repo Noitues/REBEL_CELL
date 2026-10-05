@@ -41,21 +41,22 @@ func _init(p_text: String = "", p_line: String = "", p_accent: Color = Palette.N
 	for key in [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_focus_color", &"font_hover_pressed_color", &"font_disabled_color"]:
 		add_theme_color_override(key, Palette.AUTO)
 	KitState.track(self)
+	refit()
 	mouse_entered.connect(queue_redraw)
 	mouse_exited.connect(queue_redraw)
-	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
 	button_down.connect(queue_redraw)
 	button_up.connect(queue_redraw)
 
 
 func _ready() -> void:
-	Settings.changed.connect(update_minimum_size)
+	Settings.changed.connect(refit)
+	refit()
 
 
 func _exit_tree() -> void:
-	if Settings.changed.is_connected(update_minimum_size):
-		Settings.changed.disconnect(update_minimum_size)
+	if Settings.changed.is_connected(refit):
+		Settings.changed.disconnect(refit)
 
 
 func shown_text() -> String:
@@ -65,11 +66,23 @@ func shown_text() -> String:
 ## The second line as shown (translated where it is set).
 func set_line(t: String) -> void:
 	line = t
-	update_minimum_size()
+	refit()
 	queue_redraw()
 
 
-func _get_minimum_size() -> Vector2:
+## The least width the chip keeps (px), whatever its words.
+var min_width: float = 0.0
+
+
+## Sizes the chip to its words (a Button's own minimum ignores a script's
+## _get_minimum_size): custom_minimum_size = its measure, at least `min_width` wide.
+func refit() -> void:
+	var m := measure()
+	custom_minimum_size = Vector2(maxf(min_width, m.x), m.y)
+
+
+## The size the label, the caret's room and the line need (px).
+func measure() -> Vector2:
 	var lf := Chrome.caps_font(label_step)
 	var lp := Chrome.px(label_step)
 	var w := lf.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x + lp * CARET_SHARE
@@ -95,7 +108,7 @@ func _draw() -> void:
 			x += HATCH
 	var lf := Chrome.caps_font(label_step)
 	var lp := Chrome.px(label_step)
-	var ink := Palette.VINYL_INK if pressed else (Palette.TEXT_HI if not disabled else Palette.TEXT_LO)
+	var ink := Palette.GLYPH_INK if pressed else (Palette.TEXT_HI if not disabled else Palette.TEXT_LO)
 	var x0 := r.position.x + PAD.x
 	var y := r.position.y + PAD.y + lf.get_ascent(lp)
 	if hot and not disabled:
@@ -106,5 +119,5 @@ func _draw() -> void:
 		var sp := Chrome.px(line_step)
 		var ly := y + lf.get_descent(lp) + PAD.z + Palette.mono().get_ascent(sp)
 		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x, ly), line, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0, sp,
-			Palette.VINYL_INK if pressed else (Palette.TEXT_MID if not disabled else Palette.TEXT_LO))
+			Palette.GLYPH_INK if pressed else (Palette.TEXT_MID if not disabled else Palette.TEXT_LO))
 	KitState.draw_frame(self, r, st, false)

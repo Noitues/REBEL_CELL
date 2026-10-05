@@ -31,6 +31,10 @@ const STUTTER_LETTER := 1
 const STUTTER_FRAMES: Array[int] = [14, 16, 17, 31]
 const DROP_FRAMES: Array[int] = [36, 37]
 const CURSOR_PERIOD := 12
+## Frames of each cursor period the underscore is lit (a terminal cursor: on longer than off).
+const CURSOR_ON := 8
+## The tube's light on the board inside each letter (share of the tube colour).
+const INNER_GLOW := 0.16
 ## A dead tube's alpha.
 const DEAD_ALPHA := 0.16
 const RIG_LABEL := "RC-03 // NEON RIG REV.B"
@@ -74,7 +78,7 @@ static func lit_at(i: int, f: int) -> float:
 		return DEAD_ALPHA
 	if i == STUTTER_LETTER and STUTTER_FRAMES.has(f):
 		return DEAD_ALPHA
-	if i == WORD_A.length() and (f / (CURSOR_PERIOD / 2)) % 2 == 1:
+	if i == WORD_A.length() and f % CURSOR_PERIOD >= CURSOR_ON:
 		return DEAD_ALPHA
 	return 1.0
 
@@ -84,13 +88,13 @@ func _draw() -> void:
 	# The wires it hangs on.
 	for x in [BOARD.x * 0.12, BOARD.x * 0.88]:
 		draw_line(Vector2(x, -BOARD.y), Vector2(x, 2.0), Palette.BOARD_FRAME, 2.0)
-	draw_rect(r.grow(2.0), Palette.VINYL_INK)
+	draw_rect(r.grow(2.0), Palette.GLYPH_INK)
 	draw_rect(r, Palette.BOARD_BG)
 	_draw_traces(r.grow(-FRAME_W * 3.0))
 	draw_rect(r.grow(-FRAME_W * 0.5), Palette.BOARD_FRAME, false, FRAME_W)
 	for c in [Vector2(14, 14), Vector2(BOARD.x - 14, 14), Vector2(14, BOARD.y - 14), Vector2(BOARD.x - 14, BOARD.y - 14)]:
 		draw_circle(c, SCREW_R, Palette.BOARD_FRAME)
-		draw_line(c - Vector2(SCREW_R * 0.7, 0), c + Vector2(SCREW_R * 0.7, 0), Palette.VINYL_INK, 1.5)
+		draw_line(c - Vector2(SCREW_R * 0.7, 0), c + Vector2(SCREW_R * 0.7, 0), Palette.GLYPH_INK, 1.5)
 	var cap_f := Palette.mono()
 	var cap_px := Chrome.px(UiTheme.CAPTION)
 	draw_string(cap_f, Vector2(28, BOARD.y - 10), RIG_LABEL, HORIZONTAL_ALIGNMENT_LEFT, -1, cap_px, Palette.TEXT_LO)
@@ -154,4 +158,4 @@ func _draw_tube_letter(f: Font, ch: String, at: Vector2, px: int, lit: float) ->
 	draw_string_outline(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(TUBE * 2.0), Color(Palette.NEON_TUBE, lit))
 	draw_string_outline(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(TUBE * 1.2), Color(Palette.NEON_CORE, lit * 0.85))
 	draw_string_outline(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, roundi(TUBE * 0.5), Color(Palette.NEON_TUBE, lit))
-	draw_string(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.BOARD_BG)
+	draw_string(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.BOARD_BG.lerp(Palette.NEON_TUBE, INNER_GLOW * lit))

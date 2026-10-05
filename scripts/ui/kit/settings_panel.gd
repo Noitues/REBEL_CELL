@@ -57,6 +57,8 @@ const TITLE_PX := 34.0
 const TITLE_TILT := -3.0
 const SCALE_TICKS: Array[float] = [1.0, 1.5, 2.0]
 const STACK_FROM := 1.5
+## A section heading stands this many caption lines tall (its room above it).
+const HEADING_LINES := 2.4
 ## The title sticker overlaps the header strip by this share of its height.
 const STICKER_RISE := 0.45
 ## The space the panel leaves under it when it fits its own height (px at 1.0; the title
@@ -67,6 +69,8 @@ const SCREEN_ROOM := 150.0
 var _bind_note: Label = null
 ## Set by a modal host (the pause menu): D-pad focus never leaves the panel.
 var trap_focus: bool = false
+## One column always (set by a narrow host: the pause menu's MENU_SIZE).
+var compact: bool = false
 ## Where the Options were opened from (the header: "> PAUSED // OPTIONS"); translated.
 var context: String = ""
 var reduce_check: CheckButton
@@ -141,6 +145,7 @@ func _init() -> void:
 		b.label_step = UiTheme.BODY
 		b.name = "Tab%s" % name
 		b.set_meta(UiFocus.META_NO_SCALE, true)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var n: String = name
 		b.pressed.connect(func() -> void: show_section(n))
 		_tabs.add_child(b)
@@ -250,6 +255,8 @@ func _glitch_note() -> String:
 func _place_sticker() -> void:
 	if title_sticker == null:
 		return
+	# Inside the pause menu its PAUSED sticker is the title.
+	title_sticker.visible = not compact
 	var m := title_sticker.get_combined_minimum_size()
 	title_sticker.size = m
 	title_sticker.position = Vector2(size.x - m.x - Chrome.CHAMFER * 3.0, -m.y * STICKER_RISE)
@@ -257,7 +264,7 @@ func _place_sticker() -> void:
 
 ## The two columns side by side (wide enough, text below STACK_FROM).
 func two_columns() -> bool:
-	return Settings.text_scale < STACK_FROM
+	return not compact and Settings.text_scale < STACK_FROM
 
 
 func show_section(name: String) -> void:
@@ -521,7 +528,7 @@ static func _grabber() -> Texture2D:
 	if _grab_tex != null:
 		return _grab_tex
 	var img := Image.create(10, 22, false, Image.FORMAT_RGBA8)
-	img.fill(Palette.VINYL_INK)
+	img.fill(Palette.GLYPH_INK)
 	for y in range(2, 20):
 		for x in range(2, 8):
 			img.set_pixel(x, y, Palette.TEXT_HI)
@@ -532,6 +539,8 @@ static func _grabber() -> Texture2D:
 ## A section heading: terminal CAPS, cyan, caption step (round 31 "EFFECTS & MOTION").
 func _heading(text: String) -> Label:
 	var l := Chrome.caps_label(text.to_upper(), UiTheme.CAPTION, Palette.NET_CYAN)
+	l.custom_minimum_size.y = Chrome.px(UiTheme.CAPTION) * HEADING_LINES
+	l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_label_counter += 1
 	l.name = "_tmp_%d" % _label_counter
 	return l
