@@ -31,6 +31,9 @@ const TAB := Vector2(190, 22)
 const TAB_INSET := 40.0
 ## The spine's crease (px) and how far the stickers overlap the folder's foot (px at 1.0).
 const SPINE := 3.0
+## The folder's manila stock (M14 asset parity, round 21 `manila`) and the cover's shade of it.
+const MANILA_ART := "res://assets/campaign_end/manila.jpg"
+const COVER_DARK := 0.06
 const BUTTON_OVERLAP := 34.0
 ## A page's share of the post-it width it leaves free on its right for the notes.
 const NOTE_ROOM := 0.62
@@ -306,7 +309,7 @@ func _build_personnel() -> void:
 ## Polaroid.kia look and values).
 func _draw_print(c: Control, subj: Dictionary, kia: bool) -> void:
 	var r := Rect2(Vector2.ZERO, c.size)
-	c.draw_rect(r, PaperInk.opaque(Palette.PAPER))
+	c.draw_texture_rect(load(DossierPhoto.STOCK_ART) as Texture2D, r, false)
 	var m := maxf(1.0, c.size.x * DossierPhoto.FRAME_SHARE)
 	var img := r.grow(-m)
 	PortraitArt.draw(c, img, subj)
@@ -580,22 +583,31 @@ func _draw_folder() -> void:
 	folder.draw_rect(Rect2(r.position + Vector2(6, 10) * s, r.size), Palette.SHADOW)
 	# The file tab, its words typed on it.
 	var tab := Rect2(Vector2(r.end.x - (TAB.x + TAB_INSET) * s, 0), Vector2(TAB.x * s, TAB.y * s + 2.0))
-	folder.draw_rect(tab, PaperInk.opaque(Palette.END_MANILA))
+	_manila(folder, tab, Color.WHITE)
 	var f := EndFaces.typed_bold()
 	var fs := UiTheme.font_px(UiTheme.BODY)
 	var tab_text := tr("CELL-%02d / %s") % [audit_number(), tr("AT LARGE") if facts.won else tr("CLOSED")]
 	folder.draw_string(f, Vector2(tab.position.x + UiTheme.SP_M * s, tab.position.y + (tab.size.y + f.get_ascent(fs)) * 0.5 - 2.0), tab_text, HORIZONTAL_ALIGNMENT_LEFT, tab.size.x - UiTheme.SP_M * s, fs, PaperInk.text(Palette.END_TYPE_SOFT))
-	folder.draw_rect(r, PaperInk.opaque(Palette.END_MANILA))
+	_manila(folder, r, Color.WHITE)
 	if not spread.vertical:
 		var x := (_rect_in_self(left_page).end.x + _rect_in_self(right_page).position.x) * 0.5 - folder.position.x
 		folder.draw_line(Vector2(x, r.position.y), Vector2(x, r.end.y), Palette.END_MANILA_EDGE, SPINE * s)
 	folder.draw_rect(r, PaperInk.edge(Palette.END_MANILA_EDGE), false, PaperInk.edge_width(1.0))
 
 
+## M14 asset parity: the folder's stock is round 21's own `manila` (one screen of it,
+## `assets/campaign_end/manila.jpg`), laid 1:1 from its top-left (stretched only when a rect is
+## bigger than the screen it was made for); `tint` darkens the cover.
+func _manila(ci: Control, r: Rect2, tint: Color) -> void:
+	var t := load(MANILA_ART) as Texture2D
+	var src := Rect2(Vector2.ZERO, Vector2(minf(r.size.x, t.get_width()), minf(r.size.y, t.get_height())))
+	ci.draw_texture_rect_region(t, r, src, tint)
+
+
 func _draw_cover() -> void:
 	var s := Settings.text_scale
 	var r := Rect2(Vector2.ZERO, cover.size)
-	cover.draw_rect(r, PaperInk.opaque(Palette.END_MANILA.darkened(0.06)))
+	_manila(cover, r, Color.WHITE.darkened(COVER_DARK))
 	cover.draw_rect(r, Palette.END_MANILA_EDGE, false, 2.0)
 	if cover.size.x < r.size.y * 0.25:
 		return
