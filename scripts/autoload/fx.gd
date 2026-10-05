@@ -41,6 +41,8 @@ var _pulse_tween: Tween
 var _frozen: bool = false
 ## ANIM-R2 R3: the jack's input blocker, kept last under the root (first in the input order).
 var input_gate: JackInputGate
+## ART-7 3B: the netrun jack along a link (`jack_in_link`).
+var jack_link: JackSequence
 ## ANIM-R2 R5: "CONNECTING TO <place>" and its progress mark on the cover while the arriving
 ## screen builds (the wait was ~3 s of an empty tunnel with no words).
 var connect_label: Label
@@ -105,6 +107,9 @@ func _ready() -> void:
 	jack_cover.material.shader = JACK_SHADER
 	jack_cover.visible = false
 	transition_rect = _full_rect(Color(0, 0, 0, 0))
+	# ART-7 3B: the netrun jack along a link (under the CONNECTING words).
+	jack_link = JackSequence.new()
+	add_child(jack_link)
 	connect_label = Label.new()
 	connect_label.name = "JackConnecting"
 	connect_label.add_theme_font_override("font", Palette.mono())
@@ -624,6 +629,47 @@ func jack_in(on_switch: Callable, seconds: float = -1.0, destination: String = "
 		_note = note
 		_destination_tier = tier
 	await _transition(on_switch, seconds, &"jack_in")
+
+
+## ART-7 3B (ART_BIBLE v2 4.6, LOCKED ~4.4 s, skippable): the jack into a netrun along the
+## chosen link (`link`: {from, to: the ends' words; points: the link in screen px; slices:
+## the operative's wheel colours}): the terminal types it, bits rain along the link, the
+## terminal collapses, the wheel slaps on and spins, and its lens opens onto the run
+## (JackSequence). One press skips to the run (the gate passes it to the sequence). Headless,
+## reduce effects, reduce motion, an entry switched off or no link: `jack_in` as before.
+func jack_in_link(on_switch: Callable, link: Dictionary, destination: String = "", note: String = "", tier: int = 0) -> void:
+	if _jacking:
+		return
+	var headless := DisplayServer.get_name() == "headless" and not Motion.force_live
+	if link.is_empty() or headless or not effects_enabled() or not Motion.camera_moves_allowed() or not Motion.live(&"jack_in") \
+			or not Motion.live(&"jack_lens"):
+		await jack_in(on_switch, -1.0, destination, note, tier)
+		return
+	_destination = destination
+	_note = note
+	_destination_tier = tier
+	_set_jacking(true)
+	if input_gate != null:
+		input_gate.on_press = jack_link.skip
+	await jack_link.play(link, self, _link_switch.bind(on_switch))
+	if input_gate != null:
+		input_gate.on_press = Callable()
+	_set_jacking(false)
+
+
+## ART-7 3B: the link jack's switch under the covering hub: the new scene, the CONNECTING
+## line while it builds (its reading time), then the lens may open.
+func _link_switch(on_switch: Callable) -> void:
+	_cover_opaque = true
+	on_switch.call()
+	_show_connect()
+	for f in 2:
+		await get_tree().process_frame
+	await _wait_arrival()
+	if not jack_link.skipping:
+		await _hold_connect()
+	_hide_connect()
+	_cover_opaque = false
 
 
 func jack_out(on_switch: Callable, seconds: float = -1.0, destination: String = "") -> void:

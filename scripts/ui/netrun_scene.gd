@@ -22,7 +22,8 @@ const ELITE_WORD := "Elite fight" # TR
 ## The pause menu's least top (px); it opens under the subtitle band.
 const PAUSE_TOP := 100.0
 ## A reachable route node's colour on the map (route_graph) and on its button's icon.
-const ROUTE_NEXT_COLOR := Palette.CELL_ACID
+## ART-7 3B (ART_BIBLE v2 4.6 option A): the selectable ring's orange.
+const ROUTE_NEXT_COLOR := RouteInk.RING_AVAILABLE
 ## The home server's name (as the HQ shows it; never its id).
 const HOME_LABEL := "CORE" # TR
 ## The Mainframe's quadrant (px) and the room its window frame and title take (px): shop cards
@@ -102,6 +103,12 @@ var _route_buttons: Array[Button] = []
 ## The route view's key: the route's node kinds (placed clear of the nodes; null when
 ## zoomed out, where the campaign map's MapLegend shows in the ROUTE window).
 var route_legend: RouteLegend = null
+## ART-7 3B: the operative's corp-paper dossier over the map, and the decrypted node panel
+## under the ROUTE window (route view only; null otherwise).
+var dossier: OperativeDossier = null
+var node_panel: RouteNodePanel = null
+## ART-7 3B: the dressed room behind a node's own screen (event, shop, loot).
+var node_backdrop: NodeBackdrop = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
 ## The screen on show (screen_name) and whether the last page entered a new screen (its
@@ -954,6 +961,7 @@ func _show_current() -> void:
 			_show_raid()
 		_:
 			_show_end()
+	_update_node_backdrop()  # ART-7 3B: the node's dressed room behind its screen
 
 
 ## `glass` = false for screens built from their own terminal windows (the city shows
@@ -1265,20 +1273,9 @@ func _show_map() -> void:
 	if _grid_zoomed:
 		win.body.add_child(MapLegend.new(RunManager.campaign.corporation_id))
 	else:
-		# The route view's map key (H22 #14: it had none) in the room under the choices,
-		# scaled down if that room is short (LegendSpot).
-		top.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		route_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		var key_room := Control.new()
-		key_room.name = "LegendRoom"
-		key_room.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		key_room.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		route_col.add_child(key_room)
-		# H23 S7: the route's own key, the node kinds this route has (not the campaign map's).
-		route_legend = RouteLegend.new(RouteLegend.kinds_of(route_graph()["nodes"]), Palette.corp_color(RunManager.campaign.corporation_id))
-		key_room.add_child(route_legend)
-		spacer.name = "RouteMapArea"
-		_route_area = spacer
+		# ART-7 3B (ART_BIBLE v2 4.6): the map area with the dossier pinned at its top left and
+		# the legend strip along its foot; the decrypted node panel at the foot of the column.
+		_build_route_frame(top, spacer, route_col)
 	_set_panel(panel, false)
 	(_panel_host.get_parent() as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1291,9 +1288,10 @@ func _show_map() -> void:
 		_mount_route(r["nodes"], r["edges"], CityMapOverlay.Look.ISOLATE, ROUTE_ZOOM, ROUTE_ANCHOR, Vector2.INF)
 		city_overlay.here_at = r["entry"]
 		city_overlay.ease_rings()  # ANIM-5: the "you are here" ring eases in
-		city_overlay.avoid_controls([win, route_legend])
+		city_overlay.avoid_controls([win, route_legend, dossier, node_panel])
 		route_legend.minimum_size_changed.connect(func() -> void: place_route_legend.call_deferred())
 		city_overlay.node_clicked.connect(func(id: StringName) -> void: map_view.node_clicked.emit(id))
+		_wire_route_frame()
 		place_route_legend.call_deferred()
 		route_legend.get_parent().resized.connect(place_route_legend)
 		if not background.city.rebuilt.is_connected(place_route_legend):
@@ -1301,6 +1299,10 @@ func _show_map() -> void:
 		# H24 S12: the route's nodes fitted into the map area beside the ROUTE column (at 1.6 a
 		# node sat under the ROUTE window).
 		_route_fits = 0
+		_route_under_dossier = false
+		if dossier != null and is_instance_valid(dossier):
+			dossier.force_compact = false
+			dossier.visible = true
 		_fit_route_next_frame()
 		spacer.resized.connect(_refit_route)
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
@@ -1360,6 +1362,8 @@ func _fill_route_choices(row: VBoxContainer) -> void:
 		# so the same node looks the same on the button and on the map.
 		IconMark.attach_map(b, CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), ROUTE_NEXT_COLOR)
 		b.tooltip_text = UiTip.fold(route_tip(s, node, heat) + ((" " + tr(TWIN_TIP) % (int(twins[id]) + 1)) if twins.has(id) else ""))
+		# ART-7 3B: the focused choice's decrypted file shows in the node panel.
+		b.focus_entered.connect(show_node_panel.bind(id))
 		_route_buttons.append(b)
 		row.add_child(b)
 		if ahead_rows.has(i):
@@ -1382,10 +1386,11 @@ func _prebake_backdrops() -> void:
 	background.city.prebake_frames(sizes)
 
 
-## The route legend where it covers no route node (H22 #14).
+## The route legend where it covers no route node (H22 #14). ART-7 3B: the strip has a row
+## of its own at the map's foot; it is scaled down only when wider than that row.
 func place_route_legend() -> void:
 	if route_legend != null and is_instance_valid(route_legend) and city_overlay != null and is_instance_valid(city_overlay):
-		LegendSpot.place(route_legend, city_overlay)
+		_fit_route_strip()
 
 
 ## The route map's area (left of the ROUTE column; null when zoomed out) and the fit
@@ -1406,7 +1411,9 @@ func fit_route_map() -> void:
 	if not city.camera_settled():
 		_fit_route_after_redraw()
 		return
-	var area := _route_area.get_global_rect().intersection(get_global_rect())
+	if _route_under_dossier:
+		_place_dossier()
+	var area := route_free_area()
 	if area.size.x <= LegendSpot.MARGIN * 2.0 or area.size.y <= LegendSpot.MARGIN * 2.0:
 		return
 	if _route_fits >= ROUTE_FITS_MAX:
@@ -1420,6 +1427,16 @@ func fit_route_map() -> void:
 	# (the whole route squeezed to the minimum zoom jammed its nodes against the screen's edge
 	# and put the current node off it).
 	var fit := LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
+	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR and not _route_under_dossier and dossier != null and is_instance_valid(dossier):
+		# ART-7 3B: the whole route does not fit right of the dossier: it may run under the
+		# paper (pinned over the map) rather than under the ROUTE column (from now on this page).
+		var full := _route_area.get_global_rect().intersection(get_global_rect()).grow(-ROUTE_MARGIN * Settings.text_scale)
+		var whole := LegendSpot.fit_into(city_overlay, full, ROUTE_ZOOM / city.scale.x, 0.0, [], here)
+		if whole.is_empty() or float(whole["zoom"]) * city.scale.x >= ROUTE_FIT_FLOOR:
+			_route_under_dossier = true
+			dossier.force_compact = true
+			free = full
+			fit = whole
 	if not fit.is_empty() and float(fit["zoom"]) * city.scale.x < ROUTE_FIT_FLOOR:
 		fit = LegendSpot.fit_into(city_overlay, free, ROUTE_ZOOM / city.scale.x, ROUTE_MIN_ZOOM / city.scale.x, route_focus_ids(), here)
 	elif fit.is_empty() and not route_frames(free):
@@ -1754,6 +1771,9 @@ func route_graph() -> Dictionary:
 	var available := view_choices(s)
 	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MAINFRAME: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
 	var twins := choice_twins(s)
+	# ART-7 3B: the TARGET (the final Rack) and what Heat has made harder (calm Heat, 4.3).
+	var final_id: StringName = map.final_node_id()
+	var heat_marks := route_heat_marks(s)
 	var rows := {}
 	for n in map.all_nodes():
 		rows[int(n["layer"])] = maxi(int(rows.get(int(n["layer"]), 0)), int(n["index"]) + 1)
@@ -1779,6 +1799,9 @@ func route_graph() -> Dictionary:
 			label += tr(" %s Heat") % TextDb.signed(nh)
 		if twins.has(n["id"]):
 			label += " " + tr(TWIN_WORDS) % (int(twins[n["id"]]) + 1)
+		# ART-7 3B: the TARGET is named on the map (pencil) when it is not a choice yet.
+		if label == "" and n["id"] == final_id and n["id"] != s.run.current_node_id:
+			label = tr(RouteOverlay.TARGET_WORD)
 		# The reachable nodes carry their route button's index and word (H21 #14); "kind"
 		# is the StatIcon the button shows.
 		nodes.append({"id": n["id"], "at": at, "color": col, "glyph": type_glyph.get(int(n["type"]), "?"),
@@ -1789,16 +1812,22 @@ func route_graph() -> Dictionary:
 			# kind with the same painter (H22 #14).
 			"kind": CityMapOverlay.route_kind(int(n["type"]), n["elite"]), "icon": node_icon(n),
 			"here": n["id"] == s.run.current_node_id, "next": idx >= 0,
-			"visited": s.run.visited.has(n["id"]) and n["id"] != s.run.current_node_id})
+			"visited": s.run.visited.has(n["id"]) and n["id"] != s.run.current_node_id,
+			# ART-7 3B: option A's TARGET circle, the choice's number, and its calm-Heat mark
+			# (only selectable nodes carry one, 4.3).
+			"target": n["id"] == final_id, "number": idx + 1 if idx >= 0 else 0,
+			"heat_chip": String(heat_marks.get(int(n["type"]), "")) if idx >= 0 else ""})
 	var edges: Array[Dictionary] = []
 	for n in map.all_nodes():
 		for nxt in n["next"]:
 			var live: bool = n["id"] == s.run.current_node_id and available.has(nxt)
 			var walked: bool = _walked(s, n["id"]) and _walked(s, nxt)
 			if walked:
-				edges.append({"a": n["id"], "b": nxt, "color": Color(Palette.CELL_PINK, ROUTE_TRAIL_ALPHA), "width": ROUTE_TRAIL_WIDTH, "dashed": false, "flow": false, "trail": true})
+				edges.append({"a": n["id"], "b": nxt, "color": Color(Palette.CELL_PINK, ROUTE_TRAIL_ALPHA), "width": ROUTE_TRAIL_WIDTH, "dashed": false, "flow": false, "trail": true,
+					"state": RouteOverlay.STATE_WALKED})
 				continue
-			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live})
+			edges.append({"a": n["id"], "b": nxt, "color": Palette.CELL_ACID if live else Color(Palette.NET_CYAN, 0.45), "width": 3.0 if live else 1.6, "dashed": not live, "flow": live,
+				"state": "live" if live else RouteOverlay.STATE_LATER})
 	# ANIM-R3 B8: before the first node the Cell stands at the street, one step before the
 	# route's first layer: the "you are here" marker is drawn there (it was drawn nowhere).
 	var entry := Vector2.INF
@@ -1812,10 +1841,319 @@ static func _walked(s: NetrunSession, id: StringName) -> bool:
 	return s.run.visited.has(id) or id == s.run.current_node_id
 
 
+# --- ART-7 3B: route presentation (ART_BIBLE v2 4.6; D13, D14) -------------------------------
+
+## ART-7 3B (4.6 node backdrops): the room of the node the run stands on shows behind its
+## event, shop and loot pages (the fight's arena is the combat screen's own); hidden on the
+## map, in a fight, a raid and at the run's end.
+func _update_node_backdrop() -> void:
+	var s := RunManager.netrun
+	var kind := ""
+	if s != null and s.run.current_node_id != &"" and s.run.phase in [RunState.Phase.EVENT, RunState.Phase.SHOP, RunState.Phase.REWARD]:
+		var node := s.run.current_node()
+		if not node.is_empty():
+			kind = CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"]))
+	if node_backdrop == null or not is_instance_valid(node_backdrop):
+		if kind == "":
+			return
+		node_backdrop = NodeBackdrop.new()
+		add_child(node_backdrop)
+		move_child(node_backdrop, background.get_index() + 1)
+	node_backdrop.show_room(kind, RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
+
+
+## The dossier's margin off the map area's corner and the gap the route keeps from it (px at
+## text scale 1.0).
+const DOSSIER_MARGIN := 10.0
+## The Heat effect lines a choice carries (keys): fights under ENEMY_RESISTANCE, the shop
+## under a SHOP_STOCK complication.
+const HEAT_RESIST_WORDS := "HEAT: +%d RESISTANCE" # TR
+const HEAT_SHOP_WORDS := "HEAT: SHOP STOCK %d" # TR
+## The node panel's reward words (keys; numbers from the config).
+const REWARD_CYCLES := "%d-%d Cycles, a card" # TR
+const REWARD_FIRMWARE := "a Firmware chip to pick" # TR
+const REWARD_FIRMWARE_MAYBE := "maybe a Firmware chip" # TR
+const REWARD_RACK := "+%d Schematics banked, assets banked" # TR
+const REWARD_DAEMON := "a Daemon to pick" # TR
+const REWARD_OBJECTIVE := "the Site's objective" # TR
+const REWARD_SHOP := "spend Cycles: cards, Firmware, slices" # TR
+const REWARD_EVENT := "a choice, and its price" # TR
+const PANEL_HEAT := "%s Heat on entry" # TR
+## The node panel's title: the node's word and its layer.
+const PANEL_TITLE := "%s // L%d" # TR
+
+
+## The route view's frame: the dossier over the map area's top left, the legend strip in a
+## row under the map area, the decrypted node panel at the foot of the ROUTE column.
+func _build_route_frame(top: HBoxContainer, spacer: Control, route_col: VBoxContainer) -> void:
+	top.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	route_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# The map column: the map area over the strip's row.
+	var left := VBoxContainer.new()
+	left.name = "RouteMapColumn"
+	left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	top.add_child(left)
+	top.move_child(left, spacer.get_index())
+	top.remove_child(spacer)
+	left.add_child(spacer)
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	spacer.name = "RouteMapArea"
+	_route_area = spacer
+	# A plain row (no container): the strip never widens the map column at big text; it is
+	# scaled down to the row instead (_fit_route_strip).
+	var foot := Control.new()
+	foot.name = "LegendRoom"
+	foot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	foot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_child(foot)
+	# H23 S7: the route's own key, the node kinds this route has (not the campaign map's).
+	route_legend = RouteLegend.new(RouteLegend.kinds_of(route_graph()["nodes"]), Palette.corp_color(RunManager.campaign.corporation_id))
+	foot.add_child(route_legend)
+	foot.custom_minimum_size.y = route_legend.get_combined_minimum_size().y
+	# The dossier, pinned over the map's top left (corp paper).
+	dossier = OperativeDossier.new()
+	spacer.add_child(dossier)
+	dossier.position = Vector2(DOSSIER_MARGIN, DOSSIER_MARGIN) * Settings.text_scale
+	dossier.show_file(dossier_data())
+	dossier.size = dossier.custom_minimum_size
+	dossier.minimum_size_changed.connect(func() -> void:
+		if is_instance_valid(dossier):
+			dossier.size = dossier.custom_minimum_size)
+	# The decrypted node panel at the foot of the column.
+	var gap := Control.new()
+	gap.name = "RouteColumnGap"
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	route_col.add_child(gap)
+	node_panel = RouteNodePanel.new()
+	route_col.add_child(node_panel)
+	var foot_gap := Control.new()
+	foot_gap.name = "RouteColumnFoot"
+	foot_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	foot_gap.custom_minimum_size.y = DOSSIER_MARGIN * Settings.text_scale
+	route_col.add_child(foot_gap)
+	var first := view_choices(RunManager.netrun)
+	show_node_panel(first[0] if not first.is_empty() else &"")
+
+
+## Hooks the frame to the mounted map: the strip's hover shows every node (D13), the map's
+## hover and the choices' focus show their node's file, Options' setting shows every node.
+func _wire_route_frame() -> void:
+	var overlay := city_overlay as RouteOverlay
+	if overlay == null:
+		return
+	overlay.show_all = Settings.always_show_all_nodes
+	overlay.heat_sweeps = route_heat_sweeps()
+	route_legend.set_showing_all(overlay.show_all)
+	route_legend.show_all_hovered.connect(_on_legend_hover)
+	overlay.node_hovered.connect(func(id: StringName) -> void:
+		if id != &"":
+			show_node_panel(id))
+	if not Settings.changed.is_connected(_on_route_settings):
+		Settings.changed.connect(_on_route_settings)
+
+
+func _on_legend_hover(on: bool) -> void:
+	var overlay := city_overlay as RouteOverlay
+	if overlay == null or not is_instance_valid(overlay):
+		return
+	overlay.show_all = on or Settings.always_show_all_nodes
+	if route_legend != null and is_instance_valid(route_legend):
+		route_legend.set_showing_all(overlay.show_all)
+
+
+func _on_route_settings() -> void:
+	var overlay := city_overlay as RouteOverlay
+	if overlay == null or not is_instance_valid(overlay):
+		return
+	overlay.show_all = Settings.always_show_all_nodes
+	if route_legend != null and is_instance_valid(route_legend):
+		route_legend.set_showing_all(overlay.show_all)
+
+
+## The strip at the map's foot, scaled down when wider than its row (big text).
+func _fit_route_strip() -> void:
+	var row := route_legend.get_parent() as Control
+	if row == null:
+		return
+	var own := route_legend.get_combined_minimum_size()
+	var k := minf(1.0, (row.size.x - LegendSpot.MARGIN * 2.0) / maxf(1.0, own.x)) if row.size.x > 0.0 else 1.0
+	k = maxf(k, 0.1)
+	route_legend.size = own
+	route_legend.scale = Vector2(k, k)
+	route_legend.position = Vector2(maxf(0.0, (row.size.x - own.x * k) * 0.5), 0.0)
+	if not is_equal_approx(row.custom_minimum_size.y, ceilf(own.y * k)):
+		row.custom_minimum_size.y = ceilf(own.y * k)
+	_fit_node_panel()
+
+
+## The node panel shows only when the ROUTE column has room for it under the window (big
+## text on a small screen: the window's choices come first; the hover tips still say it all).
+func _fit_node_panel() -> void:
+	if node_panel == null or not is_instance_valid(node_panel) or not node_panel.is_inside_tree():
+		return
+	var col := node_panel.get_parent() as Control
+	var win := col.find_child("RouteWindow", false, false) as Control if col != null else null
+	var top := col.get_parent() as Control if col != null else null
+	if win == null or top == null or top.size.y <= 0.0:
+		return
+	var need := win.get_combined_minimum_size().y + node_panel.get_combined_minimum_size().y + DOSSIER_MARGIN * Settings.text_scale * 3.0
+	var fits := need <= top.size.y and node_panel.get_combined_minimum_size().x <= col.size.x + 1.0
+	if node_panel.visible != (fits and not node_panel.data.is_empty()):
+		node_panel.visible = fits and not node_panel.data.is_empty()
+
+
+## ART-7 3B: the whole route needed the room under the dossier (this page).
+var _route_under_dossier: bool = false
+
+
+## With the route under it, the folded dossier takes the map area's corner (top left or
+## bottom left) that covers least of where the player is and the next choices; their labels
+## keep off it (avoid_controls).
+func _place_dossier() -> void:
+	if dossier == null or not is_instance_valid(dossier) or _route_area == null or city_overlay == null:
+		return
+	var m := DOSSIER_MARGIN * Settings.text_scale
+	var focus := LegendSpot.node_rects(city_overlay, false, route_focus_ids())
+	focus.append_array(city_overlay.here_marker_rects())
+	var area := _route_area.get_global_rect()
+	var best := Vector2(m, m)
+	var best_hits := INF
+	for at in [Vector2(m, m), Vector2(m, area.size.y - dossier.size.y - m)]:
+		var hits := LegendSpot.covered(Rect2(area.position + at, dossier.size), focus)
+		if hits < best_hits:
+			best_hits = hits
+			best = at
+	dossier.position = best
+	# Where the player is and the next choices come first: a file that would cover them in
+	# both corners steps aside (the top bar keeps HP and Heat).
+	dossier.visible = best_hits <= 0.0
+
+
+## The map area the route is fitted into (screen px): the map area right of the dossier
+## (the whole area once the route needed it).
+func route_free_area() -> Rect2:
+	var area := _route_area.get_global_rect().intersection(get_global_rect())
+	if not _route_under_dossier and dossier != null and is_instance_valid(dossier) and dossier.is_visible_in_tree():
+		var right := dossier.get_global_rect().end.x + DOSSIER_MARGIN * Settings.text_scale
+		if right < area.end.x - LegendSpot.MARGIN * 4.0:
+			area = Rect2(Vector2(right, area.position.y), Vector2(area.end.x - right, area.size.y))
+	return area
+
+
+## What the dossier shows: the run's operative as the target corporation's file on them.
+func dossier_data() -> Dictionary:
+	var s := RunManager.netrun
+	var c := RunManager.campaign
+	if s == null or c == null:
+		return {}
+	var op := s.run.operative
+	var cls := RunManager.lookup().get_content(op.class_id) as ClassData
+	var corp := RunManager.corporation
+	var wheel: Array[String] = []
+	for id in op.slot_slice_ids:
+		var sd := RunManager.lookup().get_content(id) as SliceData
+		if sd != null:
+			wheel.append(tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?"))))
+	# The rank's Hub Core upgrade, else the class wheel's own Hub.
+	var hub: HubCoreData = null
+	if cls != null:
+		var hub_id := op.hub_id(cls)
+		hub = RunManager.lookup().get_content(hub_id) as HubCoreData if hub_id != &"" else (cls.starting_wheel.hub if cls.starting_wheel != null else null)
+	var station: Array[String] = []
+	if cls != null:
+		for te in cls.station_bonus:
+			if te != null:
+				station.append(Codex.describe_triggered(te))
+	var ram := cls.max_ram if cls != null else 0
+	ram = int(s.run.combat_overrides.get("max_ram", ram))
+	var bands := HeatRules.band_levels(c, s.config)
+	return {"corp": TextDb.t(corp, "display_name") if corp != null else "", "corp_color": Palette.corp_color(c.corporation_id),
+		"subject": op.name, "class_word": TextDb.t(cls, "display_name") if cls != null else "", "class_id": op.class_id,
+		"operative_id": op.id, "rank": op.rank, "hp": op.hp, "max_hp": op.max_hp, "ram": ram, "wheel": wheel,
+		"hub": TextDb.t(hub, "display_name") if hub != null else "", "deck": op.deck.size(), "station": station,
+		"heat": c.heat, "band": tr(HeatPoster.BAND_WORDS[mini(HeatPoster.band_of(c.heat, bands), HeatPoster.BAND_WORDS.size() - 1)])}
+
+
+## Calm Heat (4.3): the effect line each node type Heat has made harder carries (type ->
+## translated words): fights under the Heat's enemy resistance, the shop under a stock
+## complication. Only the current rules' effects (GDD 4.3); none = {}.
+func route_heat_marks(s: NetrunSession) -> Dictionary:
+	var out := {}
+	var resist := 0
+	for m in HeatRules.active_modifiers(s.campaign, s.config):
+		if m.type == RC.RuleModifierType.ENEMY_RESISTANCE:
+			resist += int(m.value)
+	if resist > 0:
+		var words := tr(HEAT_RESIST_WORDS) % resist
+		out[RC.InfilNodeType.ROUTER] = words
+		out[RC.InfilNodeType.SERVER_RACK] = words
+	var shop := int(s.run.combat_overrides.get("shop_stock_delta", 0))
+	if shop < 0:
+		out[RC.InfilNodeType.MAINFRAME] = tr(HEAT_SHOP_WORDS) % shop
+	return out
+
+
+## Calm Heat (4.3): the city-wide searchlights sweep from the first Heat band up.
+func route_heat_sweeps() -> bool:
+	var s := RunManager.netrun
+	if s == null:
+		return false
+	var bands := HeatRules.band_levels(s.campaign, s.config)
+	return HeatPoster.band_of(s.campaign.heat, bands) > 0
+
+
+## Shows node `id`'s decrypted file in the panel (D14: every node the map shows is decrypted
+## under the current rules).
+func show_node_panel(id: StringName) -> void:
+	if node_panel == null or not is_instance_valid(node_panel):
+		return
+	node_panel.show_node(id, node_panel_data(id))
+	_fit_node_panel()
+
+
+## The node panel's words for node `id` from the rules and the config ({} for none).
+func node_panel_data(id: StringName) -> Dictionary:
+	var s := RunManager.netrun
+	if s == null or id == &"":
+		return {}
+	var node := s.run.map.get_node(id)
+	if node.is_empty():
+		return {}
+	var cfg := s.config
+	var rewards: Array[String] = []
+	var scale := s.reward_scale()
+	match int(node["type"]):
+		RC.InfilNodeType.ROUTER:
+			var pay: Vector2i = cfg.cycles_elite_range if _is_elite(node) else cfg.cycles_router_range
+			rewards.append(tr(REWARD_CYCLES) % [roundi(pay.x * scale), roundi(pay.y * scale)])
+			rewards.append(tr(REWARD_FIRMWARE) if _is_elite(node) else tr(REWARD_FIRMWARE_MAYBE))
+		RC.InfilNodeType.SERVER_RACK:
+			var ti := clampi(s.run.tier - 1, 0, cfg.rack_schematics_by_tier.size() - 1)
+			rewards.append(tr(REWARD_RACK) % cfg.rack_schematics_by_tier[ti])
+			rewards.append(tr(REWARD_OBJECTIVE) if id == s.run.map.final_node_id() else tr(REWARD_DAEMON))
+		RC.InfilNodeType.MAINFRAME:
+			rewards.append(tr(REWARD_SHOP))
+		RC.InfilNodeType.TERMINAL:
+			rewards.append(tr(REWARD_EVENT))
+	var heat := s.node_heat(id)
+	var heat_words := tr(PANEL_HEAT) % TextDb.signed(heat) if heat != 0 else ""
+	var mark := String(route_heat_marks(s).get(int(node["type"]), ""))
+	if mark != "":
+		heat_words = mark if heat_words == "" else "%s; %s" % [heat_words, mark]
+	return {"title": tr(PANEL_TITLE) % [node_word(node), int(node["layer"])], "tier": s.run.tier,
+		"type": tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), node_word(node)))),
+		"rewards": rewards, "heat": heat_words, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
+
+
 func _mount_route(nodes: Array[Dictionary], edges: Array[Dictionary], look: int, zoom: float, anchor: Vector2, focus: Vector2) -> void:
 	_clear_route()
 	var city := background.city
-	city_overlay = CityMapOverlay.new(city)
+	# ART-7 3B: the run's own route draws in the v2 netrun look (RouteOverlay); GRID VIEW keeps
+	# the campaign map's overlay.
+	city_overlay = CityMapOverlay.new(city) if _grid_zoomed else RouteOverlay.new(city)
 	# H24 S4: the node tips come translated (the screens build them), shown as given.
 	city_overlay.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	city.add_child(city_overlay)

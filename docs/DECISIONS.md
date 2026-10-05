@@ -280,6 +280,94 @@ ART_BIBLE v2 §1.2 (World), §2.4, §4.1, §4.4, §6.1; ART_3_BATCH "Wave 2" 5b;
   bloom); the fist reads in Blender and more faintly in Godot on the bare district, where it needs the lit city around
   the blackout ring for contrast.
 
+### 2026-10-05 — Art direction — ART-7 3B netrun presentation
+ART-7 wave 1, 2D parts (ART_BIBLE v2 §4.6, §1.2; D13 and D14 confirmed), on the **current**
+route view (the route still sits on the neon city; wave 2 moves it onto the 3D city).
+- **Route look (3B.1, 3B.5): `RouteOverlay`** (a CityMapOverlay subclass, so the route sweeps,
+  label layout, moves and hover keep their rules). Option A: every node is a vinyl sticker in
+  its kind's colour (white die-cut, ink keyline, StatIcon symbol), one ring carries the state:
+  lime walked, orange selectable (soft glow, orange number chip), white not yet, `RING_CUT`
+  grey cut off; each state also has its own ring style (§5.1 never colour alone, the Group 1
+  naive-reader audit P2): walked a double ring, selectable a thick solid ring with its glow
+  and number, not yet dashed, cut off dotted and struck through (`RouteOverlay.RING_STYLES`,
+  the key's swatches draw the same `draw_state_ring`). The final Rack carries the red grease-pencil TARGET circle and word (the word
+  is the node's map label, so the layout keeps it off other labels). "You are here" is the
+  operative's pink sticker pinned over the node. Transit v3 cables: each link runs along the
+  city's two ground axes with one turn (straight segments, no street-following); walked = solid
+  lime, live = crawling orange dash, later = white dash, cut = grey dash. **Call:** one turn
+  per link (no 45° jog, no bridge hops; crossings are not avoided): the hops need the real
+  city's cable router (wave 2). **Projection seam:** everything the route draws goes through
+  `RouteOverlay.cable()`, `_axes()` and CityMapOverlay's `icon_pos` / `_to_local`; the 3D city
+  replaces those, nothing else.
+- **D13 hidden nodes:** only walked nodes, the choices and the TARGET are drawn; hovering the
+  legend strip shows all (`show_all`, `route_node_reveal` fade); the pointer reveals one hidden
+  node within 40 px; `Settings.always_show_all_nodes` (additive key, default off, Options >
+  Display row "Always show all nodes on the netrun map"; 4C restyles that panel). The pad
+  reads "OPTIONS > DISPLAY: SHOW ALL NODES" on the strip instead of the hover words.
+- **Route key:** the RouteLegend is now the foot strip (stickers COMBAT / ELITE / EVENT / SHOP
+  / RACK as the map draws them, the four rings, the D13 cue), in a row of its own under the
+  map, scaled down to its row at big text. `COLOR_KEYS` are now walked / next / later / cut
+  (were here / next / later / visited / corp). Test edit: `test_horizontal_pass24_city` reads
+  the key's rows under `strip` (the rows moved into the strip's HBox).
+- **Calm Heat (D14, GDD 4.3 only):** a choice Heat has made harder carries a thin `HEAT_B`
+  ring with a red and a blue light circling it (`route_heat_orbit`) and its effect as a
+  second label line: fights (Routers, Racks) "HEAT: +N RESISTANCE" from
+  `HeatRules.active_modifiers` ENEMY_RESISTANCE; the Mainframe "HEAT: SHOP STOCK -N" from a
+  SHOP_STOCK complication. From NOTICED up two slow searchlights sweep the map
+  (`route_searchlight`). **Not drawn (needs a rule):** "HEAT: +1 ELITE" per node: the elite
+  frequency modifier changes map generation, not a node, so no node can honestly carry it.
+- **Panels (3B.2):** `OperativeDossier` on 1B's CorpPaperPanel (letterhead = the target corp;
+  Courier Prime fields: subject, class, rank, HP, RAM, wheel, hub core (the rank's upgrade
+  else the wheel's own hub), deck, the class's raid station bonus via Codex; AT LARGE and
+  "HEAT n: BAND" stamps). It folds to a compact file when the full one would take more than
+  24 % of the screen's width (text 2.0 at 1280). `RouteNodePanel` on 1B's DecryptedHoloPanel
+  (no full-screen scrim over the map): title (node word // layer), tier (the run's Site tier),
+  type, rewards from the config (Cycles range x reward scale, Firmware, Rack Schematics by tier,
+  Daemon / the Site's objective), Heat on entry and Heat marks. **D14 "only when decrypted":**
+  under GDD 4.2 every node's kind is known, so every node the map shows is decrypted; the
+  panel follows the hovered node or the focused ROUTE choice. DECK / MENU stickers from the
+  reference are not added (VIEW LOADOUT and the pause menu already do that; ART-10 screens).
+- **Jack-in (3B.3): `Fx.jack_in_link`** (`JackSequence`), used by `RunManager.go_to_netrun`
+  with `RunManager.jack_link(site)` (the owned end: home or a claimed Site linked to the
+  target, lowest id; the link's screen points from the HQ's City Grid overlay; the operative's
+  slice colours). Beats: 1B's CrtTerminalPanel types `> jack --from A --to B`, routing,
+  handshake, CONNECTED (`jack_terminal_type`); binary rain along the link only
+  (`jack_link_rain`, drawn glyphs: BinaryBits flies to one target, the rain lands along a line);
+  CRT collapse (`jack_crt_collapse`); the wheel slaps on and spins (`jack_wheel_slap`,
+  `jack_wheel_spin`); the lens (`jack_lens`): the wheel swells until its hub covers the screen,
+  the switch and the CONNECTING line happen under it, then the hub opens onto the run and the
+  ring flies past. One press skips (the JackInputGate passes the press to the sequence; the
+  press still reaches no screen): the switch at once, then the run. Reduce effects / reduce
+  motion / headless / an entry off / no link: the old `jack_in` (its fade and end state). Plain
+  `Fx.jack_in` (jack out, the tests) is unchanged.
+- **Node backdrops (3B.4):** round 36's tower rooms (r32_scene.py, Blender 5.2 headless, the
+  room camera per kind: fight, elite, event, shop = modem room, rack; recipe in
+  `tools/art_pipeline/netrun_rooms/`: `make_rooms.py` builds rooms3b.py from the tag's
+  r32_scene.py, `finish_all3b.py` runs the tag's finish.py) rendered per corp (the
+  container families mixed 55 % toward the corp hue; Meridian as drawn) and finished with the
+  round 32 Cv2 + E finish at 1280x720, JPEG q82, 25 stills, 2.7 MB in
+  `assets/backdrops/netrun/<corp>_<kind>.jpg`. `NodeBackdrop` shows the current node's room
+  behind its event, shop and loot pages (`_update_node_backdrop`); the fight keeps its arena.
+- **Motion (union):** `route_node_reveal`, `route_heat_orbit`, `route_searchlight`,
+  `jack_terminal_type`, `jack_link_rain`, `jack_crt_collapse`, `jack_wheel_slap`,
+  `jack_wheel_spin`, `jack_lens` in ui_motion.tres, REQUIRED_IDS and the lab (`netrun
+  route_heat`, `jack_link`). Capture walk: `tools/design_lab/netrun_states.tscn` (one windowed
+  launch, every state). Tests: `tests/unit/test_art7_netrun.gd` (fast).
+- **1B kit:** the dossier's sheet is `CorpPaperPanel` (letterhead = the corp's mark word, the
+  sheet's letterhead is one fixed-size line), the node panel's plate `DecryptedHoloPanel`
+  (scrim off: it would darken the map), the jack terminal `CrtTerminalPanel` (typed on the
+  sequence's own clock). Not used: `BinaryBits` (it flies bits to one target; the rain lands
+  along a line, drawn in the same mono glyphs) and `GreasePencilMark` (a Node2D of Line2Ds; the
+  route redraws per camera frame in the overlay's own canvas, so the TARGET circle and word are
+  drawn there in the pencil colours and face; the walked path is the Cell's lime line, not
+  pencil, per §4.6).
+- **Big text:** the dossier folds (above); the node panel widens to 1.3x at most and shows only
+  when the ROUTE column has room under the window (the choices come first).
+- **Files outside 3B's area (smallest change):** `scripts/autoload/fx.gd` (jack_in_link,
+  _link_switch, the sequence node), `scripts/ui/kit/jack_input_gate.gd` (on_press),
+  `scripts/autoload/run_manager.gd` (jack_link, the launch call), `settings.gd` /
+  `settings_panel.gd` (the D13 key and row), `motion_lab.gd` (demos).
+
 ### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
 ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
 `hq/round43_hq_mechanics/hq_*_compound.jpg`, `hq/round35_netrun/hq_compound.jpg`; 1D's pick (real-time
@@ -7201,6 +7289,11 @@ and annotated in the GDD where it changes a rule.
   (bible 4.4). Default: 5a's CityModel window shader samples `rebel_cell_crest_mask.png` at the palm of the Cell's
   district and the district glTF stays a reference. Also: crest size 110 BU tall on the iso screen (map34's 880 px at
   8 px/BU); say if the fist should scale with the zoom instead.
+
+- **ART-7 3B (netrun):** (1) a per-node "HEAT: +1 ELITE" mark needs the elite-frequency
+  Heat modifier to pick nodes (today it changes map generation), so it is not drawn; (2) the
+  "available" ring stays the run orange for every corporation (Appendix C #22); (3) transit v3's
+  bridge hops and crossing avoidance wait for the 3D city's cable router (wave 2).
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
   HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single

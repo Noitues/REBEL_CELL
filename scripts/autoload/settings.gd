@@ -55,6 +55,9 @@ var vsync: bool = true
 var show_fps: bool = false
 ## Map views on the city show a legend (claimed / cleared / corporate, glyphs).
 var map_legend: bool = true
+## ART-7 3B (D13, ART_BIBLE v2 4.6): the netrun map draws every node, not only the walked
+## nodes, the choices and the TARGET (Options > Display "Always show all nodes").
+var always_show_all_nodes: bool = false
 ## The scrolling system log strip at the foot of the HQ and netrun screens (off by
 ## default: DISPATCH and the notes carry the story; the log is a record for players who
 ## want it).
@@ -467,6 +470,12 @@ func set_map_legend(value: bool) -> void:
 	_apply()
 
 
+## ART-7 3B (D13): the netrun map shows every node.
+func set_always_show_all_nodes(value: bool) -> void:
+	always_show_all_nodes = value
+	_apply()
+
+
 func set_system_log(value: bool) -> void:
 	system_log = value
 	_apply()
@@ -652,7 +661,7 @@ func to_dict() -> Dictionary:
 		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode,
 		"colorblind_mode": String(colorblind_mode), "high_contrast": high_contrast,
 		"reduce_motion": reduce_motion, "resolve_speed": String(resolve_speed), "pad_glyph_set": String(pad_glyph_set),
-		"city_quality": city_quality}
+		"city_quality": city_quality, "always_show_all_nodes": always_show_all_nodes}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -690,6 +699,8 @@ func from_dict(d: Dictionary) -> void:
 	resolve_speed = _pick(d.get("resolve_speed", ""), RESOLVE_SPEEDS)
 	pad_glyph_set = _pick(d.get("pad_glyph_set", ""), PAD_GLYPH_SETS)
 	city_quality = clampi(int(d.get("city_quality", -1)), -1, CITY_QUALITY_MAX)
+	# ART-7 3B (D13): an additive key; a file without it gets the default (off).
+	always_show_all_nodes = bool(d.get("always_show_all_nodes", false))
 
 
 ## `value` as one of `allowed` (a StringName), or `allowed[0]` (the default) when it isn't.

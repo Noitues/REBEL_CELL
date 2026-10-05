@@ -64,6 +64,8 @@ var vsync_check: CheckButton
 var fps_check: CheckButton
 var legend_check: CheckButton
 var log_check: CheckButton
+## ART-7 3B (D13): "Always show all nodes" on the netrun map.
+var all_nodes_check: CheckButton
 var language_option: OptionButton
 var close_button: Button
 var section: String = "Accessibility"
@@ -137,6 +139,8 @@ func _init() -> void:
 	legend_check.name = "LegendCheck"
 	log_check = _check(tr("System log strip at the foot of the screen"), Settings.system_log, Settings.set_system_log)
 	log_check.name = "LogCheck"
+	all_nodes_check = _check(tr("Always show all nodes on the netrun map"), Settings.always_show_all_nodes, Settings.set_always_show_all_nodes)
+	all_nodes_check.name = "AllNodesCheck"
 	language_option = OptionButton.new()
 	var langs := Settings.available_languages()
 	for i in langs.size():
@@ -175,7 +179,7 @@ func show_section(name: String) -> void:
 					_labelled(tr("Text scale")), scale_slider]:
 				_body.add_child(w)
 		"Display":
-			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, log_check]:
+			for w in [_labelled(tr("Window mode")), mode_option, _labelled(tr("Resolution (windowed)")), resolution_option, vsync_check, fps_check, legend_check, all_nodes_check, log_check]:
 				_body.add_child(w)
 		"Audio":
 			for w in [_labelled(tr("Master volume")), master_slider, _labelled(tr("Music volume")), music_slider, _labelled(tr("SFX volume")), sfx_slider]:
@@ -219,7 +223,7 @@ func show_section(name: String) -> void:
 ## The widgets built once in _init (they move between the body and off the tree).
 func _persistent() -> Array[Control]:
 	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
-		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option,
+		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, all_nodes_check, language_option,
 		reduce_motion_check, high_contrast_check, colorblind_option, resolve_speed_option, glyph_option]
 
 
