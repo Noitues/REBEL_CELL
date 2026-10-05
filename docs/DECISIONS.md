@@ -45,6 +45,75 @@ model first); Group 4 Screens (ART-9, 10, 11); Final (ART-12). A group's batches
 and one designer review per group. Batch contents and acceptance lines are unchanged. MILESTONES M14
 and plan §4 annotated. Estimate given at the time: about 1.5–2.5 weeks, re-estimated after ART-0.
 
+### 2026-10-05 — Art direction — ART-0 tokens and VFX tiers (salvage S3 + S4, area E)
+Ported from tag `art-m13-final` (W1, W6, WF items 6 and 9, W9F `track_label`) onto main's
+files by hand; ANIM behaviour kept. No view restyled; values stay main's (ART-1 sets v2).
+- **Tokens (S3):** `Palette` gains the semantic tokens (HARM, GAIN, HARM_INK, GAIN_INK,
+  PROTECT, WARN, FOCUS, DISABLED, TEXT_HI/MID/LO, SCRIM, HEAT_FLAGGED, AUTO), named corp and
+  slice constants, `CLASS_ACCENTS` / `class_accent`, `hp_color`, `heat_band` / `heat_color`
+  (from the config's MAJOR levels), `luminance` / `contrast` / `over`, `FONT_BODY(_MEDIUM)`.
+  Values: where main had one it is kept (`CORP_ORBITAL` stays #DDE3FF, not M13's #7FA8FF; the
+  slice and corp hues unchanged); the new semantic tokens take the M13 values, which ART_BIBLE
+  v2 §2.2 keeps; the class accents take the M13 values until ART-1 applies v2 §2.5. No view
+  reads the new tokens yet.
+- **Type (S3):** `UiTheme` gains the type steps (CAPTION..HERO, HERO_MAX), line heights,
+  `font_px` / `font_px_at`, `line_spacing_px`, tracking (fraction and `TRACKING_PX` per step,
+  `tracking_step_px`, `tracked`, `step_of`, `track_label`), spacing tokens and the `BodyText`
+  variation (IBM Plex Sans Condensed, OFL in `assets/fonts/`). HeaderLabel reads its size
+  from the TITLE step (the same 22 x scale). Not ported: the W2 button restyle, HotButton's
+  scaled size and the tracked HeaderLabel / Primary fonts (looks, ART-1..12).
+- **MSDF switch (call made):** the fonts' `.import` files are tracked (force-added) with
+  `msdf_pixel_range=16`, but `multichannel_signed_distance_field` stays **false** with
+  `Palette.FONTS_MSDF = false`. With MSDF on, main's text took different line metrics: the
+  windowed capture showed multi-line text a little tighter (the combat tutorial note), and
+  three checks failed: `test_horizontal_pass21_screens` (radio whole lines, 8.15 lines),
+  `test_anim_r5_netrun` (a page paged at 14 lines instead of 15) and `test_anim_r5_city`
+  `test_your_nodes_never_ends_in_a_cut_row`, which crashed the process (signal 11 after a
+  flood of "Object was deleted while awaiting a callback": the raid's YOUR NODES list at 1.6).
+  All three pass with MSDF off; main passes them. ART-1 turns the switch on (the constant
+  and the five `.import` lines) together with the layouts it moves, and should find why the
+  YOUR NODES list crashes under the new metrics.
+- **Not ported:** `CorpPattern` and `Palette.corp_pattern_id` (ART_BIBLE v2 §2.4 gives each
+  corp a material and crest instead of v1's patterns; the boss-phase burst carries long and
+  short dashes as its non-colour cue); the W6 library shaders (glass_blur, crt_overlay,
+  paper_burn, glitch_dissolve, marker_stroke, halftone: zine / v1 looks); the per-slice hit
+  shapes (W6 item 5, a look; v2 §5 restyles hits as bits).
+- **VFX tiers (S4):** `UiMotionEntryData.tier` (T0-T4, default T1; schema change, checked in
+  `tools/schema_smoke_checks.gd` `_art0_tier`) is written on every `ui_motion.tres` entry:
+  M13's tier per id where M13 had the entry; main's newer entries: `flight_land_pulse` T1,
+  `tutorial_next_pulse` T1, `flight_lift_share` / `flight_fade_share` /
+  `choice_stamp_down_share` / `choice_stamp_hold_share` / `raid_shot_stagger` /
+  `raid_threat_withdraw` T2 (as the entries they tune), `heat_pulse_rise` T3. `VfxTier`
+  (`scripts/ui/fx/vfx_tier.gd`, verbatim) holds the limits. `Fx.flash` takes a tier
+  (default T3) and refuses anything below T4 (`refused_flashes`); `Fx.request_flash` puts
+  local flashes under the one limiter; `Fx.shake_px` and the hit-stop are held to tier.
+  The Perfect and boss-phase full-screen flashes become `CombatFxLayer.wheel_burst`
+  (new entries `wheel_burst_perfect` 0.5 s / `wheel_burst_phase` 0.9 s, T3, REQUIRED_IDS,
+  lab demos `scene perfect` / `scene phase_burst`); `disc_flash` goes through the limiter
+  held to its tier (so VICTORY's 0.8 disc shows at T3's 0.7); the raid's hit ring and
+  district wash are held to their tiers (`RaidFxLayer.FX_MOTION`, `fx_tier`; the ANIM-R6
+  `raid_threat_withdraw` joins the list). Known gap for ART-3: combat's own 3 px hit shake
+  (`hit_shake`, T2) still runs its own shake, over T2's 2 px (M13 W3 routed it through
+  `Fx.shake_px`; that is the combat restyle's).
+- **reduce_effects uniform (call made):** every shader includes
+  `shaders/lib/rc_common.gdshaderinc` and its `reduce_effects` uniform (animated parts go
+  static through `rc_live()` / `rc_time()`). M13 made it a global uniform registered in
+  project.godot `[shader_globals]`; ART-0 agents never touch project.godot, and a runtime
+  `global_shader_parameter_add` would come after Fx preloads its shaders, so here it is a
+  per-material uniform set by `ShaderReduce` (`scripts/ui/fx/shader_reduce.gd`) on every
+  material built on an animating shader (Fx's three, NeonCity's sketch / live / lights,
+  UiTheme's glass), from Settings through `Fx.apply_settings`. Going global later is one line
+  in rc_common plus project.godot. The unused `glow.gdshader` is removed, as on art-pass.
+- **Tests:** `tests/unit/test_art_w1_tokens.gd` (ported; dropped: the corp-pattern tests,
+  `test_hot_button_and_header_scale_with_the_text` (HotButton keeps main's size; the header
+  part kept), the M13 value pins for Orbital and MSDF-on), `tests/unit/test_vfx_tiers.gd`
+  (ported, plus the shader checks of M13's `test_shader_library.gd` adapted to the
+  per-material uniform; its library-shader and project.godot checks dropped);
+  `test_motion.gd` and `test_anim_r6_rules.gd` ask Fx.flash for T4.
+- **Screens unchanged:** storyboard captures before and after (title, HQ, Grid, fight, card
+  hover, shop) differ only in animated city content (rain, lights, traffic, the selection
+  blink); text and layout match. The two bursts were read windowed in the motion lab.
+
 ### 2026-10-05 — Designer ruling: DISPATCH text
 Default accepted for the ART-0a open question: DISPATCH text is always a clean CRT terminal feed (red
 accent, ART_BIBLE v2 §1.2), never a sticker or pencil. GDD 8.2's "never zine-styled" reworded to that.

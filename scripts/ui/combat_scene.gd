@@ -1393,9 +1393,14 @@ func _bark(trigger: String, state: CombatState) -> void:
 ## (`boss_phase_flash`: amplitude = strength; nothing when motion doesn't play) and a bark.
 func _boss_phase_feedback(state: CombatState) -> void:
 	AudioDirector.play_sfx("alarm")
-	if Motion.live(&"boss_phase_flash"):
-		Fx.flash(Palette.corp_color(RunManager.campaign.corporation_id) if RunManager.campaign != null else Palette.CORP_SOLACE,
-			Motion.amplitude(&"boss_phase_flash"), Motion.seconds(&"boss_phase_flash"))
+	if Motion.live(&"boss_phase_flash") and fx_layer != null:
+		# ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): a T3 ring on the boss's own
+		# wheel, never the screen.
+		var hue := Palette.corp_color(RunManager.campaign.corporation_id) if RunManager.campaign != null else Palette.CORP_SOLACE
+		for boss in state.enemies:
+			var bv: WheelView = _view_of(boss.id) if boss.phase_index > 0 else null
+			if bv != null:
+				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, hue)
 	_bark("boss", state)
 
 
@@ -1424,7 +1429,10 @@ func _perfect_feedback(view: WheelView) -> void:
 		return
 	view.inverted = true
 	view.queue_redraw()
-	Fx.flash(Palette.CELL_PINK, Motion.amplitude(&"precision_perfect"), Motion.seconds(&"precision_perfect"))
+	# ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): a T3 burst on this wheel only,
+	# never the screen.
+	if fx_layer != null:
+		fx_layer.wheel_burst(view.global_center(), view.disc_radius(), CombatFxLayer.BURST_PERFECT)
 	Fx.freeze_frames()
 	# ANIM-R5 combat 11: the scene may leave the tree between the frames (a fight left
 	# mid-freeze): no await that resumes on a freed scene; each frame is a one-shot connection
