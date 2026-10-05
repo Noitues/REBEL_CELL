@@ -5,7 +5,7 @@ extends GutTest
 ## together; a menu never drops a fast Enter or a click on a line (E3); hits fly one at a
 ## time in their side's colour and every HP change has a number of exactly its size, the
 ## result holding before the respin (E4); a break flashes its own wheel, VICTORY lands on
-## the enemies' side, the result reads before the break (E5); the Modem's chip and Daemon
+## the enemies' side, the result reads before the break (E5); the Mainframe's chip and Daemon
 ## tiles show their whole text (seeds 1-6, English and pseudolocalised, 1.0 / 1.3 / 1.6) and
 ## a slice shows one price (E6); the entering plate never hides the forecast, chips shrink
 ## before they fold, satellites keep off the values (E7); loot keeps its tip off Skip and its
@@ -487,7 +487,7 @@ func test_a_hit_flies_in_its_sides_colour_with_its_raw_number_and_its_guard_chip
 	assert_eq(marks.size(), 1)
 	if not marks.is_empty():
 		assert_eq(String(marks[0]["text"]), "0", "and shows 0 with a shield on impact")
-		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFEND)
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFRAG)
 	scene.skip_motion()
 	await _close(scene)
 
@@ -551,9 +551,9 @@ func test_the_result_reads_before_the_break_which_flashes_its_own_wheel() -> voi
 	await _close(scene)
 
 
-# --- E6: the Modem at big text ----------------------------------------------------------------------
+# --- E6: the Mainframe at big text ----------------------------------------------------------------------
 
-func test_modem_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> void:
+func test_mainframe_tiles_show_their_whole_text_over_seeds_languages_and_sizes() -> void:
 	var failures: Array[String] = []
 	var tiles := 0
 	for pseudo in [false, true]:
@@ -608,7 +608,7 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 func test_chips_shrink_before_they_fold_at_big_text() -> void:
 	var scene := await _combat(&"collections_agent", Settings.TEXT_SCALE_MAX)
 	var v: WheelView = scene._player_view
-	v.intent = {"text": "DEFEND", "type": RC.SliceType.DEFEND, "chips": [
+	v.intent = {"text": "DEFRAG", "type": RC.SliceType.DEFRAG, "chips": [
 		{"text": "+3 BLOCK", "color": Palette.NET_CYAN}, {"text": "? RANDOM STATUS", "color": Palette.CELL_ACID},
 		{"text": "RAM +4", "color": Palette.NOTE_YELLOW}, {"text": "+2 SHIELD", "color": Palette.NET_CYAN}]}
 	var full := v._chip_rows_at(roundi(WheelView.CHIP_FONT_SIZE * Settings.text_scale))

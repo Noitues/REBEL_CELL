@@ -41,6 +41,10 @@
 			"seconds": 0.0,
 			"tier": "fast"
 		},
+		"res://tests/integration/test_saves_folder.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
 		"res://tests/integration/test_save_service.gd": {
 			"seconds": 0.1,
 			"tier": "fast"
@@ -372,6 +376,10 @@
 		"res://tests/unit/test_motion_lab_demos.gd": {
 			"seconds": 100.7,
 			"tier": "full"
+		},
+		"res://tests/unit/test_names_pass.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
 		},
 		"res://tests/unit/test_nodes.gd": {
 			"seconds": 0.9,

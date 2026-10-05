@@ -7,8 +7,8 @@ Target: SELF 0, OWN_WHEEL 1, TARGET_WHEEL 2, POINTER_TARGET 3, ALL_ENEMIES 4, CA
 WheelTarget OWN 0, ENEMY 1, ANY 2. Status CORRUPTED 1, OVERCLOCKED 2, ENCRYPTED 3, PARASITE 4.
 SlicePick UNDER_POINTER 0, RANDOM_NON_MISS 1, CHOSEN 2. Ring OUTER 0, INNER 1, WHOLE 2.
 Trigger COMBAT_START 1, TURN_START 2, CARD_PLAYED 3, NUDGE 4, SLICE_TRIGGER 5, PERFECT 6,
-MISS_SLICE 7, TURN_END 8, COMBAT_END 9, RACK 10, NETRUN_COMPLETE 11. Tier PARTIAL 0, GOOD 1,
-PERFECT 2. SliceType ATK 0, CRIT 1, DEF 2, EVADE 3, SHIELD 4, DEPLOY 5, HEAL 6, AFFLICT 7, MISS 8."""
+MISS_SLICE 7, TURN_END 8, COMBAT_END 9, RACK 10, NETRUN_COMPLETE 11. Tier WEAK 0, GOOD 1,
+PERFECT 2. SliceType SHIM 0, OVERFLOW 1, DEFRAG 2, DETOUR 3, SHIELD 4, DEPLOY 5, HOTFIX 6, INFECT 7, MISS 8."""
 import os
 import re
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -102,16 +102,16 @@ for cid, name, desc, ram, cyc, wt, exhaust, rarity, effects in CARDS:
 # ---- Firmware -------------------------------------------------------------------------------------
 # (id, name, desc, rarity, cycles, allowed types, output multiplier, [(trigger, min_tier, limit, [effects])])
 FIRMWARE = [
-    ("overvolt", "Overvolt", "ATK and CRIT slices: output +25%.", 0, 90, [0, 1], 1.25, []),
-    ("bulkhead", "Bulkhead", "DEF and SHIELD slices: output +50%.", 0, 90, [2, 4], 1.5, []),
-    ("siphon", "Siphon", "ATK slice heals you 2 on Good or better.", 0, 100, [0], 1.0, [(5, 1, 0, [(14, 0, 2)])]),
-    ("static_coat", "Static Coat", "DEF slice also grants 2 shield.", 0, 100, [2], 1.0, [(5, 0, 0, [(2, 0, 2)])]),
-    ("barbed_wire", "Barbed Wire", "DEF slice also deals 2 damage to the pointer target.", 0, 100, [2], 1.0, [(5, 0, 0, [(0, 3, 2)])]),
-    ("tracer", "Tracer", "ATK or CRIT slice strips 1 resistance from the target on a Perfect.", 1, 120, [0, 1], 1.0, [(5, 2, 0, [(10, 3, -1)])]),
+    ("overvolt", "Overvolt", "SHIM and OVERFLOW slices: output +25%.", 0, 90, [0, 1], 1.25, []),
+    ("bulkhead", "Bulkhead", "DEFRAG and SHIELD slices: output +50%.", 0, 90, [2, 4], 1.5, []),
+    ("siphon", "Siphon", "SHIM slice heals you 2 on Good or better.", 0, 100, [0], 1.0, [(5, 1, 0, [(14, 0, 2)])]),
+    ("static_coat", "Static Coat", "DEFRAG slice also grants 2 shield.", 0, 100, [2], 1.0, [(5, 0, 0, [(2, 0, 2)])]),
+    ("barbed_wire", "Barbed Wire", "DEFRAG slice also deals 2 damage to the pointer target.", 0, 100, [2], 1.0, [(5, 0, 0, [(0, 3, 2)])]),
+    ("tracer", "Tracer", "SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.", 1, 120, [0, 1], 1.0, [(5, 2, 0, [(10, 3, -1)])]),
     ("coolant_loop", "Coolant Loop", "Once per combat, a Perfect on this slice lowers Heat by 1.", 2, 150, [], 1.0, [(5, 2, 1, [(21, 6, -1)])]),
-    ("skimmer", "Skimmer", "ATK slice: +3 Cycles on a Perfect (twice per combat).", 1, 120, [0], 1.0, [(5, 2, 2, [(22, 6, 3)])]),
-    ("counterstrike", "Counterstrike", "EVADE slice also deals 4 damage to the pointer target.", 1, 110, [3], 1.0, [(5, 0, 0, [(0, 3, 4)])]),
-    ("nanite_mesh", "Nanite Mesh", "HEAL slice: output +50%, and it cleanses itself after resolving.", 1, 110, [6], 1.5, [(5, 0, 0, [(15, 1, None, {"slice_pick": 0})])]),
+    ("skimmer", "Skimmer", "SHIM slice: +3 Cycles on a Perfect (twice per combat).", 1, 120, [0], 1.0, [(5, 2, 2, [(22, 6, 3)])]),
+    ("counterstrike", "Counterstrike", "DETOUR slice also deals 4 damage to the pointer target.", 1, 110, [3], 1.0, [(5, 0, 0, [(0, 3, 4)])]),
+    ("nanite_mesh", "Nanite Mesh", "HOTFIX slice: output +50%, and it cleanses itself after resolving.", 1, 110, [6], 1.5, [(5, 0, 0, [(15, 1, None, {"slice_pick": 0})])]),
     ("power_cell", "Power Cell", "SHIELD slice also restores 1 RAM.", 1, 110, [4], 1.0, [(5, 0, 0, [(12, 0, 1)])]),
     ("recycler", "Recycler", "The Miss slice restores 2 RAM when it resolves.", 0, 90, [8], 1.0, [(5, 0, 0, [(12, 0, 2)])]),
 ]
@@ -188,7 +188,7 @@ for aid, name, desc, atype, integ, dmg, rng_, shots, targ, delay, pull, rarity i
     written["assets"] += 1
 
 # ---- New shop slices ------------------------------------------------------------------------------------
-for sid, name, stype, rule, out in [("shield_8", "Shield 8", 4, 0, 8), ("evade_2", "Evade 2", 3, 0, 2)]:
+for sid, name, stype, rule, out in [("shield_8", "Shield 8", 4, 0, 8), ("detour_2", "Detour 2", 3, 0, 2)]:
     path = "content/slices/%s.tres" % sid
     text = ('[gd_resource type="Resource" script_class="SliceData" format=3]\n\n'
             '[ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="1"]\n\n'
@@ -202,10 +202,10 @@ p = "content/config/campaign_config.tres"
 s = open(p, encoding="utf-8").read()
 if "sl_shield_8" not in s:
     new_ext = "".join('[ext_resource type="Resource" path="res://content/slices/%s.tres" id="sl_%s"]\n' % (x, x)
-                      for x in ["atk_10", "crit_16", "heal_6", "shield_8", "evade_2"] if ('id="sl_%s"' % x) not in s)
+                      for x in ["shim_10", "overflow_16", "hotfix_6", "shield_8", "detour_2"] if ('id="sl_%s"' % x) not in s)
     first = s.index("[ext_resource")
     s = s[:first] + new_ext + s[first:]
-    s = s.replace('ExtResource("sl_evade_1")])', 'ExtResource("sl_evade_1"), ExtResource("sl_atk_10"), ExtResource("sl_crit_16"), ExtResource("sl_heal_6"), ExtResource("sl_shield_8"), ExtResource("sl_evade_2")])', 1)
+    s = s.replace('ExtResource("sl_detour_1")])', 'ExtResource("sl_detour_1"), ExtResource("sl_shim_10"), ExtResource("sl_overflow_16"), ExtResource("sl_hotfix_6"), ExtResource("sl_shield_8"), ExtResource("sl_detour_2")])', 1)
     m = re.search(r"load_steps=(\d+)", s)
     s = s.replace(m.group(0), "load_steps=%d" % (int(m.group(1)) + new_ext.count("[ext_resource")), 1)
     open(p, "w", encoding="utf-8", newline="\n").write(s)

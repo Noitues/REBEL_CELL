@@ -2,7 +2,7 @@ class_name StatIcon
 extends RefCounted
 ## Vector icons for the game's numbers and menus (H21 #10, #13; STYLE_GUIDE 4.1): one
 ## drawing per resource, the same wherever it appears (top-bar tags, CELL STATUS badges,
-## Modem prices and wallet, event choice outcomes, run and profile tags), plus small icons
+## Mainframe prices and wallet, event choice outcomes, run and profile tags), plus small icons
 ## for menu items and route node types. Drawn with CanvasItem line and polygon calls only
 ## (no font glyphs, no textures), so an icon reads the same in every language and at any
 ## text size. `draw(ci, centre, radius, kind, colour)` from any CanvasItem's draw pass
@@ -55,12 +55,12 @@ const SHOP := &"shop"
 const TERMINAL := &"terminal"
 const RACK := &"rack"
 # H24 K5: map concepts with a glyph of their own (a Heat reduction Site is not ICE's
-# snowflake; the Modem shop is not an Exploit's diamond), and a Site run's outcomes.
+# snowflake; the Mainframe shop is not an Exploit's diamond), and a Site run's outcomes.
 const COOLING := &"cooling"
 const CLAIM := &"claim"
 const LINKS := &"links"
 # ANIM-R6 B10 / B11 (the naive player's pass): RAM on a card's pictograms (a memory chip, as
-# the RAM bar's chips), and the Modem's two verbs on its sign (a cart for BUY, a shredder for
+# the RAM bar's chips), and the Mainframe's two verbs on its sign (a cart for BUY, a shredder for
 # SHRED), readable whatever the language.
 const RAM := &"ram"
 const CART := &"cart"

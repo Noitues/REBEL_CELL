@@ -64,7 +64,7 @@ func test_odds_text_gives_percentages_not_rolls() -> void:
 	var odds: String = _scene.odds_text(_state().player)
 	assert_true(odds.begins_with("odds:"))
 	assert_true(odds.contains("%"))
-	assert_true(odds.contains("ATTACK"), "whole words (H22)")
+	assert_true(odds.contains("SHIM"), "whole words (H22)")
 	var non_miss: String = _scene.odds_text(_state().player, true)
 	assert_false(non_miss.contains("MISS"))
 
@@ -102,3 +102,47 @@ func test_revealed_phases_and_drones_reach_the_views() -> void:
 	_scene.end_turn()
 	assert_eq(seeded.size(), 1, "one Perfect, one seed drone (H15: Daemons fire once per landing)")
 	assert_eq(_scene._player_view.satellites.size(), _state().living_drones().size(), "the player wheel shows its living drones")
+
+
+## ART-0 D3 (DECISIONS "names for M14"): a Meridian wheel calls its OVERFLOW slice AIRMAIL;
+## other wheels keep the program word.
+func test_a_meridian_wheel_says_airmail_for_its_overflow() -> void:
+	assert_eq(Palette.slice_word(RC.SliceType.OVERFLOW, &"meridian"), "AIRMAIL")
+	assert_eq(Palette.slice_word(RC.SliceType.OVERFLOW, &"halcyon"), "OVERFLOW")
+	assert_eq(Palette.slice_word(RC.SliceType.OVERFLOW), "OVERFLOW", "the Cell's own wheel")
+	var ids: Array[StringName] = [&"the_manifest"]
+	_scene.engine.start_fight(&"breaker", ids, 3)
+	var boss: CombatantState = _state().get_combatant(&"enemy_0")
+	assert_eq(_scene.corp_of(boss), &"meridian")
+	assert_true(_scene.odds_text(boss).contains("AIRMAIL"), "the Manifest's odds name AIRMAIL")
+	assert_false(_scene.odds_text(_state().player).contains("AIRMAIL"), "the operative's do not")
+
+
+## ART-0 D12: the respin control reads RESPIN (never the old label); the undo block shows on UNDO.
+func test_respin_reads_respin_and_the_undo_block_shows_on_undo() -> void:
+	var respin: StickerButton = _scene._respin_button
+	var undo: StickerButton = _scene._rewind_button
+	assert_false(respin.tooltip_text.to_lower().contains("checkpoint"), "the respin control names no checkpoint")
+	_scene.respin()
+	assert_false(_scene.engine.can_rewind(), "nothing to undo after a random event")
+	await get_tree().process_frame
+	assert_true(undo.disabled, "UNDO is off")
+	assert_eq(undo.tooltip_text, tr(_scene.UNDO_BLOCKED), "and says why on itself")
+	var turn: int = _state().turn
+	_scene.rewind()
+	assert_eq(_scene.toast.label.text, tr(_scene.UNDO_BLOCKED), "a press shows the block")
+	var at: Rect2 = undo.get_global_rect()
+	var t: Rect2 = _scene.toast.get_global_rect()
+	assert_lt(absf(t.get_center().x - at.get_center().x), maxf(t.size.x, at.size.x), "over the UNDO sticker")
+	assert_eq(_state().turn, turn, "nothing changed")
+
+
+## ART-0 D4: a Solace wheel calls its HOTFIX slice GROWTH (Triage Unit heals).
+func test_a_solace_wheel_says_growth_for_its_hotfix() -> void:
+	assert_eq(Palette.slice_word(RC.SliceType.HOTFIX, &"solace"), "GROWTH")
+	assert_eq(Palette.slice_word(RC.SliceType.HOTFIX, &"halcyon"), "HOTFIX")
+	var ids: Array[StringName] = [&"triage_unit"]
+	_scene.engine.start_fight(&"breaker", ids, 3)
+	var e: CombatantState = _state().get_combatant(&"enemy_0")
+	assert_true(_scene.odds_text(e).contains("GROWTH"), "the Triage Unit's odds name GROWTH")
+	assert_false(_scene.odds_text(e).contains("HOTFIX"))

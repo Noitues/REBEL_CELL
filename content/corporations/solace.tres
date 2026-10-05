@@ -226,7 +226,7 @@ script = ExtResource("3")
 id = &"t3_core"
 display_name = "Continuum Core Cluster"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 locked_links = Array[StringName]([&"t3_b"])
 map_position = Vector2(660, 60)
 
@@ -235,7 +235,7 @@ script = ExtResource("3")
 id = &"t3_b"
 display_name = "Renewal Forecasting Engine"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 map_position = Vector2(660, 140)
 
 [sub_resource type="Resource" id="site_t3_c"]
@@ -243,7 +243,7 @@ script = ExtResource("3")
 id = &"t3_c"
 display_name = "Kill-Switch Escrow"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 map_position = Vector2(660, 220)
 
 [sub_resource type="Resource" id="site_t3_d"]
@@ -251,7 +251,7 @@ script = ExtResource("3")
 id = &"t3_d"
 display_name = "Patient Twin Simulator"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 locked_links = Array[StringName]([&"t3_e"])
 map_position = Vector2(660, 300)
 
@@ -260,7 +260,7 @@ script = ExtResource("3")
 id = &"t3_e"
 display_name = "Board Comms Backbone"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 map_position = Vector2(660, 380)
 
 [sub_resource type="Resource" id="site_t3_f"]
@@ -268,7 +268,7 @@ script = ExtResource("3")
 id = &"t3_f"
 display_name = "Continuum Licensing Authority"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 map_position = Vector2(660, 460)
 
 [sub_resource type="Resource" id="site_t3_g"]
@@ -276,7 +276,7 @@ script = ExtResource("3")
 id = &"t3_g"
 display_name = "Implant Cohort Archive"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 locked_links = Array[StringName]([&"t3_h"])
 map_position = Vector2(660, 540)
 
@@ -285,7 +285,7 @@ script = ExtResource("3")
 id = &"t3_h"
 display_name = "Solace Root Certificate Store"
 tier = 3
-links = Array[StringName]([&"renewal_engine_site"])
+links = Array[StringName]([&"the_genome_core"])
 map_position = Vector2(660, 620)
 
 [sub_resource type="Resource" id="site_scrub_records"]
@@ -324,10 +324,10 @@ objective = 2
 heat_change = -8
 map_position = Vector2(560, 430)
 
-[sub_resource type="Resource" id="site_renewal_engine_site"]
+[sub_resource type="Resource" id="site_the_genome_core"]
 script = ExtResource("3")
-id = &"renewal_engine_site"
-display_name = "Renewal Engine"
+id = &"the_genome_core"
+display_name = "The Genome Core"
 tier = 4
 objective = 4
 claimable = false
@@ -335,9 +335,9 @@ map_position = Vector2(900, 330)
 
 [sub_resource type="Resource" id="grid"]
 script = ExtResource("2")
-sites = Array[ExtResource("3")]([SubResource("site_home"), SubResource("site_t1_a"), SubResource("site_t1_b"), SubResource("site_t1_c"), SubResource("site_t1_d"), SubResource("site_t1_e"), SubResource("site_t1_f"), SubResource("site_t1_g"), SubResource("site_t1_h"), SubResource("site_t1_i"), SubResource("site_t1_j"), SubResource("site_t2_intel"), SubResource("site_t2_breach"), SubResource("site_t2_virus"), SubResource("site_t2_d"), SubResource("site_t2_e"), SubResource("site_t2_f"), SubResource("site_t2_g"), SubResource("site_t2_h"), SubResource("site_t3_core"), SubResource("site_t3_b"), SubResource("site_t3_c"), SubResource("site_t3_d"), SubResource("site_t3_e"), SubResource("site_t3_f"), SubResource("site_t3_g"), SubResource("site_t3_h"), SubResource("site_scrub_records"), SubResource("site_purge_camera_logs"), SubResource("site_wipe_biometrics"), SubResource("site_burn_the_ledger"), SubResource("site_renewal_engine_site")])
+sites = Array[ExtResource("3")]([SubResource("site_home"), SubResource("site_t1_a"), SubResource("site_t1_b"), SubResource("site_t1_c"), SubResource("site_t1_d"), SubResource("site_t1_e"), SubResource("site_t1_f"), SubResource("site_t1_g"), SubResource("site_t1_h"), SubResource("site_t1_i"), SubResource("site_t1_j"), SubResource("site_t2_intel"), SubResource("site_t2_breach"), SubResource("site_t2_virus"), SubResource("site_t2_d"), SubResource("site_t2_e"), SubResource("site_t2_f"), SubResource("site_t2_g"), SubResource("site_t2_h"), SubResource("site_t3_core"), SubResource("site_t3_b"), SubResource("site_t3_c"), SubResource("site_t3_d"), SubResource("site_t3_e"), SubResource("site_t3_f"), SubResource("site_t3_g"), SubResource("site_t3_h"), SubResource("site_scrub_records"), SubResource("site_purge_camera_logs"), SubResource("site_wipe_biometrics"), SubResource("site_burn_the_ledger"), SubResource("site_the_genome_core")])
 home_site_id = &"home"
-boss_site_id = &"renewal_engine_site"
+boss_site_id = &"the_genome_core"
 
 ; ---- Exploits (GDD 11.7) ----
 

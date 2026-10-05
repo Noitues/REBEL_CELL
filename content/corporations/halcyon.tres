@@ -225,7 +225,7 @@ script = ExtResource("e1")
 id = &"h3_core"
 display_name = "Civic Operations Centre"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 locked_links = Array[StringName]([&"h3_b"])
 map_position = Vector2(660, 60)
 
@@ -234,7 +234,7 @@ script = ExtResource("e1")
 id = &"h3_b"
 display_name = "Zoning Futures Desk"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 map_position = Vector2(660, 137)
 
 [sub_resource type="Resource" id="site_h3_c"]
@@ -242,7 +242,7 @@ script = ExtResource("e1")
 id = &"h3_c"
 display_name = "Override Key Escrow"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 locked_links = Array[StringName]([&"h3_d"])
 map_position = Vector2(660, 214)
 
@@ -251,7 +251,7 @@ script = ExtResource("e1")
 id = &"h3_d"
 display_name = "City Twin Simulator"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 map_position = Vector2(660, 291)
 
 [sub_resource type="Resource" id="site_h3_e"]
@@ -259,7 +259,7 @@ script = ExtResource("e1")
 id = &"h3_e"
 display_name = "Council Backchannel"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 locked_links = Array[StringName]([&"h3_f"])
 map_position = Vector2(660, 369)
 
@@ -268,7 +268,7 @@ script = ExtResource("e1")
 id = &"h3_f"
 display_name = "Municipal Pricing Authority"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 map_position = Vector2(660, 446)
 
 [sub_resource type="Resource" id="site_h3_g"]
@@ -276,7 +276,7 @@ script = ExtResource("e1")
 id = &"h3_g"
 display_name = "Citizen Profile Archive"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 locked_links = Array[StringName]([&"h3_h"])
 map_position = Vector2(660, 523)
 
@@ -285,7 +285,7 @@ script = ExtResource("e1")
 id = &"h3_h"
 display_name = "Halcyon Root Registry"
 tier = 3
-links = Array[StringName]([&"civic_core_site"])
+links = Array[StringName]([&"the_panopticon"])
 map_position = Vector2(660, 600)
 
 [sub_resource type="Resource" id="site_wipe_the_citations"]
@@ -324,10 +324,10 @@ objective = 2
 heat_change = -8
 map_position = Vector2(560, 430)
 
-[sub_resource type="Resource" id="site_civic_core_site"]
+[sub_resource type="Resource" id="site_the_panopticon"]
 script = ExtResource("e1")
-id = &"civic_core_site"
-display_name = "The Civic Core"
+id = &"the_panopticon"
+display_name = "The Panopticon"
 tier = 4
 objective = 4
 claimable = false
@@ -335,9 +335,9 @@ map_position = Vector2(900, 330)
 
 [sub_resource type="Resource" id="grid"]
 script = ExtResource("e2")
-sites = Array[ExtResource("e1")]([SubResource("site_h_home"), SubResource("site_h1_a"), SubResource("site_h1_b"), SubResource("site_h1_c"), SubResource("site_h1_d"), SubResource("site_h1_e"), SubResource("site_h1_f"), SubResource("site_h1_g"), SubResource("site_h1_h"), SubResource("site_h1_i"), SubResource("site_h1_j"), SubResource("site_h2_intel"), SubResource("site_h2_breach"), SubResource("site_h2_virus"), SubResource("site_h2_d"), SubResource("site_h2_e"), SubResource("site_h2_f"), SubResource("site_h2_g"), SubResource("site_h2_h"), SubResource("site_h3_core"), SubResource("site_h3_b"), SubResource("site_h3_c"), SubResource("site_h3_d"), SubResource("site_h3_e"), SubResource("site_h3_f"), SubResource("site_h3_g"), SubResource("site_h3_h"), SubResource("site_wipe_the_citations"), SubResource("site_blind_the_cameras"), SubResource("site_lose_the_case_file"), SubResource("site_pardon_the_district"), SubResource("site_civic_core_site")])
+sites = Array[ExtResource("e1")]([SubResource("site_h_home"), SubResource("site_h1_a"), SubResource("site_h1_b"), SubResource("site_h1_c"), SubResource("site_h1_d"), SubResource("site_h1_e"), SubResource("site_h1_f"), SubResource("site_h1_g"), SubResource("site_h1_h"), SubResource("site_h1_i"), SubResource("site_h1_j"), SubResource("site_h2_intel"), SubResource("site_h2_breach"), SubResource("site_h2_virus"), SubResource("site_h2_d"), SubResource("site_h2_e"), SubResource("site_h2_f"), SubResource("site_h2_g"), SubResource("site_h2_h"), SubResource("site_h3_core"), SubResource("site_h3_b"), SubResource("site_h3_c"), SubResource("site_h3_d"), SubResource("site_h3_e"), SubResource("site_h3_f"), SubResource("site_h3_g"), SubResource("site_h3_h"), SubResource("site_wipe_the_citations"), SubResource("site_blind_the_cameras"), SubResource("site_lose_the_case_file"), SubResource("site_pardon_the_district"), SubResource("site_the_panopticon")])
 home_site_id = &"h_home"
-boss_site_id = &"civic_core_site"
+boss_site_id = &"the_panopticon"
 
 [sub_resource type="Resource" id="ex_intel"]
 script = ExtResource("e3")

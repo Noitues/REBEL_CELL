@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/data/class_data.gd" id="main_script"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e1"]
-[ext_resource type="Resource" path="res://content/slices/atk_14.tres" id="e2"]
-[ext_resource type="Resource" path="res://content/slices/def_6.tres" id="e3"]
-[ext_resource type="Resource" path="res://content/slices/evade_1.tres" id="e4"]
+[ext_resource type="Resource" path="res://content/slices/shim_14.tres" id="e2"]
+[ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="e3"]
+[ext_resource type="Resource" path="res://content/slices/detour_1.tres" id="e4"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
 [ext_resource type="Resource" path="res://content/hub_cores/ghost_core.tres" id="e6"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e7"]
@@ -28,7 +28,7 @@
 [ext_resource type="Resource" path="res://content/cards/ghost_step.tres" id="e25"]
 [ext_resource type="Resource" path="res://content/cards/blind_spot.tres" id="e26"]
 
-; Ghost (GDD 5.2): 50 HP; Atk, Atk, Def, Def, Evade, Miss. Station bonus: threats entering the node
+; Ghost (GDD 5.2): 50 HP; Shim, Shim, Defrag, Defrag, Detour, Miss. Station bonus: threats entering the node
 ; are held 1 step (FREEZE amount 1; Rank scales it: 1 / 1 / 2 / 2 steps).
 
 [sub_resource type="Resource" id="slot_0"]

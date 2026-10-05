@@ -2,7 +2,7 @@ class_name GridMapView
 extends Control
 ## City Grid as wireframe (STYLE_GUIDE 4): isometric wireframe buildings per Site,
 ## claimed Sites in cell_pink with spray circles, corporate Sites in the corporation
-## colour, cleared Sites dim cyan, Seized Sites crossed out, links as net_cyan lines,
+## colour, cleared Sites dim cyan, TAKEN Sites crossed out, links as net_cyan lines,
 ## frozen links in resist_gold, threat paths as glowing corporate arrows (pending raid
 ## entry -> home) and, during a playout, threat markers on the Sites they stand on.
 ## Emits site_clicked so the sidebar can act; the view never changes state.
@@ -231,7 +231,7 @@ func _draw() -> void:
 				col = Palette.CELL_TURF  # ANIM-R3 B6
 			GridState.SiteStatus.CLEARED:
 				col = Color(Palette.NET_CYAN, 0.7)
-			GridState.SiteStatus.SEIZED:
+			GridState.SiteStatus.TAKEN:
 				col = Palette.RESIST_GOLD
 		var grow := lerpf(Motion.amplitude(&"select_ring_ease"), 1.0, ring_ease)
 		if s.id == campaign.grid.home_site_id:
@@ -246,7 +246,7 @@ func _draw() -> void:
 		if status == GridState.SiteStatus.CLAIMED:
 			draw_arc(p + Vector2(0, 6), w + 4, 0, TAU * 0.92, 24, Color(Palette.CELL_TURF, 0.5), 4.0)
 			draw_arc(p + Vector2(3, 4), w - 2, 0.5, TAU * 0.8 + 0.5, 20, Color(Palette.CELL_TURF, 0.3), 2.0)
-		if status == GridState.SiteStatus.SEIZED:
+		if status == GridState.SiteStatus.TAKEN:
 			draw_line(p + Vector2(-w * 0.6, -w * 0.6), p + Vector2(w * 0.6, w * 0.6), Palette.RESIST_GOLD, 2.0)
 			draw_line(p + Vector2(-w * 0.6, w * 0.6), p + Vector2(w * 0.6, -w * 0.6), Palette.RESIST_GOLD, 2.0)
 		# H24 K5: the map's own icon over objective Sites and CORE (the same drawing as the

@@ -6,7 +6,7 @@ extends GutTest
 ## at fight scale and still ends on the resolved campaign; territory changes leave a
 ## lasting mark; the Heat pulse is small and the number and banner carry it; the route's
 ## choice labels follow the move; the jack lands on a built screen; the event's choices
-## wait for its words; nothing is cut; the Modem keeps its tiles in place after a buy.
+## wait for its words; nothing is cut; the Mainframe keeps its tiles in place after a buy.
 
 const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
@@ -394,16 +394,16 @@ func test_home_hits_fly_into_the_counter_and_end_on_the_resolved_raid() -> void:
 
 # --- M5: territory changes leave marks -------------------------------------------------------------------
 
-func test_a_territory_change_leaves_a_claimed_or_seized_mark() -> void:
+func test_a_territory_change_leaves_a_claimed_or_taken_mark() -> void:
 	var before := {"corp": &"solace", "sources": [], "sway": 0.0}
 	var after := {"corp": &"solace", "sources": [{"id": &"a", "at": Vector2(10, 10), "w": CityInfluence.WEIGHT_CLAIMED}], "sway": 0.0}
 	var m := InfluenceSpread.marks(before, after)
 	assert_eq(m.size(), 1)
 	assert_eq(m[0]["word"], InfluenceSpread.MARK_CLAIMED, "claimed toward the Cell")
 	assert_eq(m[0]["color"], Palette.CELL_TURF, "the Cell's territory colour (ANIM-R3 B6)")
-	var lost := {"corp": &"solace", "sources": [{"id": &"a", "at": Vector2(10, 10), "w": CityInfluence.WEIGHT_SEIZED}], "sway": 0.0}
+	var lost := {"corp": &"solace", "sources": [{"id": &"a", "at": Vector2(10, 10), "w": CityInfluence.WEIGHT_TAKEN}], "sway": 0.0}
 	var m2 := InfluenceSpread.marks(after, lost)
-	assert_eq(m2[0]["word"], InfluenceSpread.MARK_SEIZED, "seized away from it")
+	assert_eq(m2[0]["word"], InfluenceSpread.MARK_TAKEN, "taken away from it")
 	var city := NeonCity.new()
 	add_child_autofree(city)
 	var got := []
@@ -565,9 +565,9 @@ func test_outcome_rows_wrap_inside_their_choice_at_big_text() -> void:
 	await _close(scene)
 
 
-# --- M10 / M11: the Modem and loot -----------------------------------------------------------------------------
+# --- M10 / M11: the Mainframe and loot -----------------------------------------------------------------------------
 
-func test_modem_items_show_their_whole_text_and_keep_their_places_after_a_buy() -> void:
+func test_mainframe_items_show_their_whole_text_and_keep_their_places_after_a_buy() -> void:
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		var scene := _scene(NETRUN)

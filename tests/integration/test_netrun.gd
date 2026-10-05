@@ -250,7 +250,7 @@ func test_death_loses_unbanked_loot_keeps_banked_and_adds_heat() -> void:
 		var attack_slot := 0
 		for i in enemy.wheel.slot_slice_ids.size():
 			var slice := _resolver.lookup.get_content(enemy.wheel.slot_slice_ids[i]) as SliceData
-			if slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
+			if slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW]:
 				attack_slot = i
 				break
 		CombatFixture.land(enemy, attack_slot)
@@ -316,11 +316,11 @@ func test_cold_exit_and_scrubber_run_level_daemons() -> void:
 	assert_eq(cold, not s.run.miss_resolved, "Cold Exit -3 iff the Miss slice never resolved")
 
 
-# --- Modem and Terminal ------------------------------------------------------------------
+# --- Mainframe and Terminal ------------------------------------------------------------------
 
-func test_modem_shop_sells_cards_firmware_daemons_removal_and_overwrites() -> void:
+func test_mainframe_shop_sells_cards_firmware_daemons_removal_and_overwrites() -> void:
 	var s := _start(5)
-	var path := _path_to(s, func(n: Dictionary) -> bool: return n["type"] == RC.InfilNodeType.MODEM)
+	var path := _path_to(s, func(n: Dictionary) -> bool: return n["type"] == RC.InfilNodeType.MAINFRAME)
 	assert_true(path.size() > 0)
 	for i in path.size() - 1:
 		s.enter_node(path[i])

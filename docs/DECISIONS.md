@@ -33,6 +33,121 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
+Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
+the display names; no aliases, no migrations. `tests/unit/test_names_pass.gd` (PART2 table) sweeps
+player strings and code for each item's old words.
+- **D2 slice programs.** `RC.SliceType` is { SHIM, OVERFLOW, DEFRAG, DETOUR, SHIELD, DEPLOY, HOTFIX,
+  INFECT, MISS } (same positions, so content keeps its ints). Slice content ids and files follow:
+  `shim_*` (was atk_*), `overflow_*` (crit_*), `defrag_*` (def_*), `detour_*` (evade_*), `hotfix_*`
+  (heal_*); display names "Shim 14", "Overflow 24", "Defrag 12", "Detour", "Hotfix 6". Whole words
+  (`Palette.SLICE_WORDS`) are the program names; the compact tags (`Palette.SLICE_NAMES`, slot lists
+  and shop tiles) are SHIM / OVFL / DFRG / DTOR / HFIX / INFC (SHD / DEP / MISS kept): the whole
+  words in those tiles pushed the shop's spinner onto LEAVE MAINFRAME at text size 1.6. Firmware,
+  codex and GDD 2.6 texts name the programs. Kept on purpose: the *evade* mechanic
+  (EffectType.EVADE, a card's "Evade the next incoming attack", the "%s EVADE" charge chip), *heal*
+  as an effect ("Heal 6"), *attack* as a verb, and the damage beats' `crit` flag (a big-hit number
+  style, set by OVERFLOW slices and Perfects alike). SANDBOX / TROJAN / NULL (the art pass's SHIELD /
+  DEPLOY / MISS) are not renamed: the ruling keeps them out of D2; the enum keeps SHIELD / DEPLOY /
+  MISS (question below).
+- **D3 Meridian.** The RAM-drain slice is `priority` (`content/slices/priority.tres`, "Priority", its
+  wheel sub-resources `*_slot_priority`; codex and descriptions). A corporation's own program word
+  lives in `Palette.CORP_SLICE_WORDS` (view words, `# TR`), read by `Palette.slice_word(type,
+  corporation_id)`; the combat tags over a wheel and its odds use the wheel's corporation
+  (`combat_scene.corp_of`): Meridian's OVERFLOW reads **AIRMAIL** (test
+  `test_a_meridian_wheel_says_airmail_for_its_overflow`). JUDGEMENT: no id, string or code carried
+  it on main; the sweep keeps it out. Kept as flavour: the Tariff Collector enemy, the Tariff
+  Calculation Office Site, "Tariff season" and tariffs in prose (allow-listed).
+- **D4.** INERTIA is **WEIGHT**: `shim_8_weight` (was the inertia strike), the codex entry "Weight",
+  the Cargo Hauler's text, GDD 8.4b. Solace's HOTFIX reads **GROWTH** through
+  `Palette.CORP_SLICE_WORDS` (test `test_a_solace_wheel_says_growth_for_its_hotfix`).
+- **D5 Central Server.** The boss Site is the corporation's Central Server: `RC.SiteObjective.CENTRAL_SERVER`
+  (was BOSS, same position), `CityMapOverlay.KIND_CENTRAL_SERVER` ("central_server"), the map key,
+  tooltips and HQ badge (CENTRAL SERVER). Each Central Server's name is its Site's content string
+  and id: The Genome Core (`the_genome_core`, Solace), The Master Manifest (`the_master_manifest`,
+  Meridian), The Panopticon (`the_panopticon`, Halcyon), Launch Control (`launch_control`,
+  Orbital). REBEL_CELL's stays DISPATCH (`dispatch_core_site`): GDD 8.5 names no final server, only
+  that the final boss is DISPATCH. The boss enemies keep their names (Renewal Engine, The Manifest…)
+  and the run kind "boss" stays (it is the fight). GDD 11.7 and the summary; the part-1 "(name
+  pending, D5)" note is gone (test `test_d5_each_central_server_has_its_name`).
+- **D6 Firmware.** The Mainframe's top-left window is FIRMWARE (was MICROCHIPS); the small spinner's tip
+  says "Drag Firmware or a slice onto a slot"; comments and the drag test
+  (`test_a_firmware_chip_dropped_on_a_slot_matches_the_socket_list_and_buy`) follow. "Chip" stays as
+  the drawing's word for a Firmware tile.
+- **D8 WEAK.** `RC.PrecisionTier.WEAK` (was PARTIAL, same position), the tier tag WEAK, codex text, GDD
+  2.4 / 10. Schema: `CampaignConfigData.partial_multiplier` → `weak_multiplier` (0.5; checked in
+  `schema_smoke_checks.gd` `_art0`). Motion id `precision_partial` → `precision_weak` (table,
+  REQUIRED_IDS, motion lab). "Partial" in other meanings (a partial cover, a partial patch) stays.
+- **D11 Heat bands.** Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
+  FLAGGED 50+, HUNTED 75+; the bible's NOTICED is the "couple of alarms" band and the thresholds stay),
+  so no band or threshold changes; the five-band reading is asked under "Open questions for the
+  designer". Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
+  `Settings.VFX_TIER_EXEMPT`) and its row on the current panel (Accessibility, "Heat glitch (the
+  screen distorts as Heat rises; off by default)"); the glitch itself comes in ART-3 / ART-5 (test
+  `test_the_heat_glitch_extra_is_off_by_default_and_round_trips`). settings.gd and settings_panel.gd
+  are area C's files: additions only.
+- **D12 RESPIN / UNDO.** The respin sticker already read RESPIN; its tips and the tutorial no longer say
+  "checkpoint" ("UNDO stops here"). The undo block shows on UNDO: the sticker's tooltip says why it is
+  off (`combat_scene.UNDO_BLOCKED`), and an undo pressed with nothing to undo (Ctrl+Z, the pad)
+  shows that note over the UNDO sticker instead of the notes column (`show_undo_block`); the core's
+  refusal text reads "Nothing to undo: a random event came since (UNDO stops there)". The rules word
+  checkpoint stays internal (CombatSession, GDD 2.10). Test
+  `test_respin_reads_respin_and_the_undo_block_shows_on_undo`.
+
+### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
+Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal
+names follow the display words; no aliases, no migrations.
+- **Raid words (6.2).** `GridState.SiteStatus.TAKEN` (was SEIZED), `GridState.Condition.DOWN`
+  (was DISABLED), `GridState.is_taken`, `RaidResult.taken` / `.down`, node outcomes and raid
+  event types `"taken"` / `"down"`, `RC.RuleModifierType.TAKEN_RAID_STRENGTH_PCT` (same enum
+  position, so `campaign_config.tres` keeps its int), the view constants (`RaidVerdict.TAKEN`,
+  `DOWN`, `CELL_HOLDS`, `BREACHED`; `InfluenceSpread.MARK_TAKEN` / `MARK_DOWN`;
+  `CityInfluence.WEIGHT_TAKEN` / `WEIGHT_DOWN`; the feed's `FEED_TAKEN` / `FEED_DOWN`) and the
+  tests that named them. The raid verdict says **CELL HOLDS** when nothing is lost (was ALL HOLD)
+  and **BREACHED** when the home server falls (was CAMPAIGN LOST; the banner already used the
+  verdict's word); a raid with losses still lists them (HOME -5 / 1 DOWN / 1 TAKEN), as GDD 7.2
+  "the summary shows DOWN/TAKEN nodes". Player text uses the upper-case state words ("TAKEN by
+  a raid", "Bring the DOWN node back online", "The home server is BREACHED. Campaign lost.").
+  Unchanged on purpose: the UI-control "disabled", Hub Breach's "disabled 1 turn", and the
+  freight flavour (Freight Seizure, Asset Seizure, "Seized goods": allow-listed).
+- **Mainframe (6.5).** `RC.InfilNodeType.MAINFRAME`, `MainframeSign`
+  (`scripts/ui/kit/mainframe_sign.gd`), `tools/design_lab/mainframe_backdrops.*`, motion ids
+  `mainframe_sign_warmup` / `mainframe_sign_strike` / `mainframe_sign_flicker` /
+  `mainframe_trace`, and every string. Schema: `CampaignConfigData.map_modem_layers` →
+  `map_mainframe_layers` (checked in `tools/schema_smoke_checks.gd` `_art0`). The shop's top-bar
+  title is **MAINFRAME SHOP** and its exit tag **LEAVE MAINFRAME**: the longer words
+  (MAINFRAME CYBER SHOP, LEAVE THE MAINFRAME) wrapped at text size 1.6 and pushed the shop's
+  deck viewer and a control off the canvas (`test_end_state_layout_is_the_instant_layout_at_every_text_size`,
+  `test_the_new_pieces_keep_the_layout_at_each_text_size`); the sign keeps CYBER SHOP. The sign
+  stacks its 9 letters in the room its 5 had (the rows shrink with the word, as the code already
+  did). The boss gate is written "Mainframe Gate (name pending, D5)" in the GDD until the
+  designer rules on D5. Timeline images and history docs keep the old word.
+- **Customs Seal (6.1).** The Manifest's hub `customs_seal` / "Customs Seal" (sub-resources
+  `hub_customs_seal`, `te_customs_seal`); rules unchanged
+  (`test_the_manifest_customs_seal_gains_4_shield_each_turn_unless_breached`).
+- **Sweep.** `tests/unit/test_names_pass.gd` fails on the old words in strings.csv English, in
+  every content `.tres` string, and (for the old names as code) under scripts / scenes / tests /
+  tools / content.
+- **Saves folder (S0, ruling 5).** Schema: `CampaignConfigData.save_dir_source`
+  (`res://saves`), `save_dir_export` (`user://saves`), `replay_subdir` (`replays`),
+  `write_replays` (true), checked in `_art0`. `SaveService` saves under `save_dir_source` when
+  running from source (`OS.has_feature("editor")` or not `template`) and `save_dir_export` in an
+  exported build; making a folder under the source folder writes `saves/.gdignore` so Godot
+  never imports it; `.gitignore` has `/saves/`. GUT runs keep their per-process folder under
+  `user://saves`. `SAVE_VERSION` is 2; the migrations table ships empty, so a version-1 file is
+  refused by `load_dict` (push_error, `{}`): the title shows the slot empty and CONTINUE
+  returns false, no crash. Replays: new pure `CombatReplay` (`scripts/core/combat_replay.gd`)
+  records what the session already keeps (setup, seed as a string, action history, outcome,
+  state hash as a string) and replays it; `CombatEngine.submit` calls
+  `SaveService.record_replay` when a fight ends, which writes `saves/replays/replay_<seed>_<ms>.json`
+  only on source runs, never in a test (`write_replay(session, dir)` for a test that asks).
+  A replay is rebuilt with the shipped config and the content registry (the resolver every
+  fight uses). Tests: `tests/integration/test_saves_folder.gd`; `test_save_service.gd` updated
+  (no `SAVE_DIR` constant: the folders are config).
+- Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
+  their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
+  folder for a clean title screen.
+
 ### 2026-10-05 — Designer ruling: reduce effects as a project-wide shader global
 Asked after area E merged (E made `reduce_effects` a per-material uniform set by `ShaderReduce`, because
 M13's global lives in `project.godot`, a designer file). Ruling: add the global to `project.godot`
@@ -5546,6 +5661,21 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
+  HUNTED, old NOTICED → FLAGGED, new NOTICED = a couple of alarms" comes from the concept rounds
+  (DIRECTION_REVIEW round 21: the combat backdrop's intensity dialled down a band). ART_BIBLE v2 §2.8
+  and §3.15 already state the result: COOL 0–24, NOTICED 25+ (three alarm beacons on side buildings,
+  nothing on the target), FLAGGED 50+, HUNTED 75+, "thresholds unchanged", which is what main's
+  Heat poster shows. Adding a NOTICED band below 25 would make five bands and disagree with the
+  bible. Default applied: the band names and thresholds stay as the bible has them (no new band, no
+  config value); the re-cut is the backdrop's look per band (ART-3 / ART-5). Say if you want the
+  five-band version (and its lowest threshold).
+- **SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):** the art pass calls SHIELD, DEPLOY and
+  MISS by these program names; the D2 ruling left them unchanged, so the game still shows SHIELD,
+  DEPLOY and MISS (SHIELD is also the shield points' word). Default: unchanged until you say.
+- **Merge commit `7e569ca` (ART-0 B):** its message keeps git's "# Conflicts:" lines (a merge commit
+  cannot be reworded without rewriting the branch). Harmless; noted for the audit.
 
 - ~~**GDD 8.2 "DISPATCH text is … never zine-styled" (2026-10-05, ART-0a):**~~ resolved: the designer took
   the default (2026-10-05); GDD 8.2 reworded citing "Designer ruling: DISPATCH text". Original note: the zine look is

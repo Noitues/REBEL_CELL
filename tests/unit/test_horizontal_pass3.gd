@@ -49,7 +49,7 @@ func test_mirror_and_final_final_numbers_come_from_the_config() -> void:
 	var corp := RebelCellBuilder.build(template, {"classes": ["breaker"], "daemons": [], "nodes": ["relay"], "assets": ["turret"]}, _lookup, cfg)
 	var mirror := corp.elites[0]
 	assert_eq(mirror.wheel.passive_resistance, 3)
-	assert_eq(mirror.wheel.slots[1].slice.base_output, 12, "Atk 6 at 2x -> Atk 12")
+	assert_eq(mirror.wheel.slots[1].slice.base_output, 12, "Shim 6 at 2x -> Shim 12")
 	var turret := ContentRegistry.get_content(&"turret") as DefenseAssetData
 	assert_eq(corp.raids[0].waves[0].threats[0].damage, turret.damage + 5)
 	RebelCellBuilder.build(template, {"classes": ["breaker"], "daemons": [], "nodes": ["relay"], "assets": ["turret"]}, _lookup, _cfg)  # restore defaults

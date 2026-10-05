@@ -10,7 +10,7 @@ extends Button
 const DRIP_PINK := Color("#FF3DA8")
 ## Drip presets: long -> short, left to right.
 const SEND_IT_DRIPS := [[0, 44, 0.3], [2, 28, 0.88], [6, 14, 0.5]]
-const LEAVE_MODEM_DRIPS := [[0, 42, 0.25], [7, 26, 0.85], [10, 14, 0.2]]
+const LEAVE_MAINFRAME_DRIPS := [[0, 42, 0.25], [7, 26, 0.85], [10, 14, 0.2]]
 ## Key hint lettering under the tag (px at text scale 1.0).
 const HINT_SIZE := 18
 ## The white outline round drip lettering (px each side) and its opacity.

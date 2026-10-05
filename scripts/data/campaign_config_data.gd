@@ -31,7 +31,7 @@ extends Resource
 @export var cycles_router_range: Vector2i = Vector2i(15, 25)
 
 @export_group("Shop")
-## Modem shop prices in Cycles (11.2), inclusive [min, max] ranges.
+## Mainframe shop prices in Cycles (11.2), inclusive [min, max] ranges.
 @export var card_price_range: Vector2i = Vector2i(50, 75)
 @export var firmware_price_range: Vector2i = Vector2i(75, 150)
 @export var daemon_price_range: Vector2i = Vector2i(150, 250)
@@ -40,7 +40,7 @@ extends Resource
 @export var card_removal_increment: int = 25
 @export var slice_overwrite_price: int = 100
 @export var miss_slice_overwrite_price: int = 150
-## Slice catalogue a Modem draws its overwrite offers from (designer ruling 2026-09-24).
+## Slice catalogue a Mainframe draws its overwrite offers from (designer ruling 2026-09-24).
 @export var shop_slices: Array[SliceData] = []
 @export var shop_slice_choices: int = 3
 
@@ -73,7 +73,7 @@ extends Resource
 ## ClassData (starting_ram, ram_regen, max_ram) because classes vary them.
 ## RAM cost of a Respin (11.3). Cards cost 0-3 RAM each (content); first nudge is free.
 @export var respin_ram_cost: int = 4
-@export var partial_multiplier: float = 0.5
+@export var weak_multiplier: float = 0.5
 @export var overclock_multiplier: float = 1.5
 ## Output of a slice with a PARASITE docked on it (Botnet).
 @export var parasite_multiplier: float = 0.5
@@ -90,8 +90,8 @@ extends Resource
 @export var map_nodes_max: int = 4
 ## Layers (1-based) holding a Server Rack. The last one is the run's final node.
 @export var rack_layers: PackedInt32Array = PackedInt32Array([4, 7])
-## At least one Modem somewhere in these layers (inclusive band).
-@export var map_modem_layers: Vector2i = Vector2i(3, 5)
+## At least one Mainframe somewhere in these layers (inclusive band).
+@export var map_mainframe_layers: Vector2i = Vector2i(3, 5)
 ## About this many Elite Routers per layer in this band (4.2 guarantees).
 @export var map_elite_layers: Vector2i = Vector2i(3, 6)
 @export var map_elites_per_layer: int = 1
@@ -148,7 +148,7 @@ extends Resource
 ## ICE selectable on a fresh profile, and how far past its best win a corporation unlocks.
 @export var ice_base_cap: int = 3
 @export var ice_unlock_step: int = 3
-## Modem stock (GDD 4.4): cards, Firmware and Daemons offered per visit.
+## Mainframe stock (GDD 4.4): cards, Firmware and Daemons offered per visit.
 @export var shop_card_stock: int = 3
 @export var shop_firmware_stock: int = 2
 @export var shop_daemon_stock: int = 1
@@ -168,6 +168,13 @@ extends Resource
 @export var dispatch_drift_late: int = 6
 ## Rookie price when no operative is alive (decision 2026-09-24): the cell can always rebuild.
 @export var emergency_rookie_cost: int = 0
+## ART-0 S0 (ruling 5): where saves and replays go. A run from source saves in the project's
+## own git-ignored folder, an exported build in the user folder; finished combats write a
+## replay into `replay_subdir` of the save folder when `write_replays` (source runs only).
+@export var save_dir_source: String = "res://saves"
+@export var save_dir_export: String = "user://saves"
+@export var replay_subdir: String = "replays"
+@export var write_replays: bool = true
 
 
 ## Highest ICE level on the ladder (final_final_ice when the ladder is empty).

@@ -4,14 +4,14 @@ extends RefCounted
 ## screen (GDD 8.1, 9.5). Reads content only; never changes state.
 
 const SLICE_TYPE_TEXT := {
-	RC.SliceType.ATTACK: "ATTACK: deals damage to whatever sits at each pointer of the target wheel.",
-	RC.SliceType.CRIT: "CRIT: deals high damage to whatever sits at each pointer of the target wheel.",
-	RC.SliceType.DEFEND: "DEFEND: gains block. Block expires at the start of your next turn.",
+	RC.SliceType.SHIM: "SHIM: deals damage to whatever sits at each pointer of the target wheel.",
+	RC.SliceType.OVERFLOW: "OVERFLOW: deals high damage to whatever sits at each pointer of the target wheel.",
+	RC.SliceType.DEFRAG: "DEFRAG: gains block. Block expires at the start of your next turn.",
 	RC.SliceType.SHIELD: "SHIELD: gains shield. Shield persists across turns (cap 15).",
-	RC.SliceType.EVADE: "EVADE: cancels the next incoming ATTACK or CRIT this turn.",
+	RC.SliceType.DETOUR: "DETOUR: cancels the next incoming SHIM or OVERFLOW this turn.",
 	RC.SliceType.DEPLOY: "DEPLOY: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
-	RC.SliceType.HEAL: "HEAL: restores HP.",
-	RC.SliceType.AFFLICT: "AFFLICT: applies a status or a drain to your wheel (Dose corrupts, Tariff drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
+	RC.SliceType.HOTFIX: "HOTFIX: restores HP.",
+	RC.SliceType.INFECT: "INFECT: applies a status or a drain to your wheel (Dose corrupts, Priority drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
 	RC.SliceType.MISS: "MISS: nothing happens, unless a Daemon says otherwise.",
 }
 const STATUS_TEXT := {
@@ -23,7 +23,7 @@ const STATUS_TEXT := {
 const TIER_TEXT := {
 	RC.PrecisionTier.PERFECT: "PERFECT (offset 0): full output and the class Perfect hook.",
 	RC.PrecisionTier.GOOD: "GOOD (offset 1): full output.",
-	RC.PrecisionTier.PARTIAL: "PARTIAL (offset 2): half output.",
+	RC.PrecisionTier.WEAK: "WEAK (offset 2): half output.",
 }
 ## Original slang (GDD 8.1). Never borrowed from existing IP.
 const LEXICON := {
@@ -36,10 +36,10 @@ const LEXICON := {
 	"Heat": "How hard the corporation is looking for you. Thresholds fire raids and complications.",
 	"ICE": "Difficulty ladder, 20 cumulative levels.",
 	"DISPATCH": "The Cell's handler. Clean system text, always.",
-	"Tariff": "Meridian's fee on every packet: an enemy slice that drains your RAM.",
+	"Priority": "Meridian's fast lane: an enemy slice that bills your RAM for it.",
 	"Citation": "Halcyon's fine: a Parasite on one of your slices until you cleanse it.",
 	"Solar Flare": "Orbital's gift: your slice runs hot once (1.5x), then corrupts.",
-	"Inertia": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",
+	"Weight": "Heavy freight resists nudges; some Meridian slices add resistance as they hit.",
 	"Mirror": "A copy of one of your own operatives. You will know it when you meet it.",
 }
 
@@ -101,7 +101,7 @@ static func describe_triggered(te: TriggeredEffectData) -> String:
 		if e != null:
 			parts.append(describe_effect(e))
 	var when := String(RC.Trigger.keys()[te.trigger]).to_lower().replace("_", " ")
-	if te.min_tier > RC.PrecisionTier.PARTIAL:
+	if te.min_tier > RC.PrecisionTier.WEAK:
 		when += " (%s or better)" % String(RC.PrecisionTier.keys()[te.min_tier]).to_lower()
 	if te.consecutive_required > 1:
 		when += " x%d in a row" % te.consecutive_required

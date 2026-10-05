@@ -198,8 +198,8 @@ func number(at: Vector2, text: String, color: Color, id: StringName, dir: Vector
 
 
 ## ANIM-R3 A6a: what a hit did, shown where it struck (`at`, global: the arrowhead on the
-## victim's HP ring or its token): a glyph (`icon`, a slice type: DEFEND for a hit soaked
-## whole, EVADE for one evaded) and `text` ("0"), popping from `impact_mark`'s amplitude
+## victim's HP ring or its token): a glyph (`icon`, a slice type: DEFRAG for a hit soaked
+## whole, DETOUR for one evaded) and `text` ("0"), popping from `impact_mark`'s amplitude
 ## scale after `delay` (the impact), holding its duration and fading.
 ## ANIM-R4 C6c: with `items` (hit_equation's: sword and the raw hit, the guard's glyph and
 ## what it took, "=" and what got through) the mark is that equation, the one notation for
@@ -564,7 +564,7 @@ static func stamp_icon_width(fs: int, icon: String) -> float:
 ## The shield-over-empty-set mark centred at `c`, `r` px in radius, in `col`: a shield
 ## outline with a ring and slash inside (nothing got through).
 static func draw_guard_null(ci: CanvasItem, c: Vector2, r: float, col: Color) -> void:
-	SliceIcon.draw_icon(ci, c, r, RC.SliceType.DEFEND, col)
+	SliceIcon.draw_icon(ci, c, r, RC.SliceType.DEFRAG, col)
 	var ring := r * 0.42
 	ci.draw_arc(c + Vector2(0, r * 0.05), ring, 0.0, TAU, 16, Palette.NIGHT_SKY, maxf(2.0, r * 0.22), true)
 	ci.draw_arc(c + Vector2(0, r * 0.05), ring, 0.0, TAU, 16, Palette.PAPER, maxf(1.2, r * 0.12), true)

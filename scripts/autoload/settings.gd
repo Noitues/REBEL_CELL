@@ -27,6 +27,12 @@ const REBINDABLE: Array[StringName] = [&"nudge_left", &"nudge_right", &"cycle_ta
 var reduce_effects: bool = false
 ## Never more than 3 flashes per second (on by default).
 var flash_limiter: bool = true
+## ART-0 D11 (DECISIONS "Designer rulings: names for M14"): the full-screen Heat glitch, an
+## Options extra, off by default. A player's own choice, so exempt from VfxTier's limits
+## (VFX_TIER_EXEMPT). The glitch itself comes with ART-3 / ART-5; the key and its row exist now.
+var heat_glitch: bool = false
+## Settings whose effect VfxTier never clamps (ART-0 D11).
+const VFX_TIER_EXEMPT: Array[StringName] = [&"heat_glitch"]
 var text_scale: float = 1.0
 ## Subtitles with speaker names for voiced lines (story beats, events, DISPATCH).
 var subtitles: bool = true
@@ -94,6 +100,12 @@ func set_reduce_effects(value: bool) -> void:
 
 func set_flash_limiter(value: bool) -> void:
 	flash_limiter = value
+	_apply()
+
+
+## ART-0 D11: the Heat glitch extra on or off.
+func set_heat_glitch(value: bool) -> void:
+	heat_glitch = value
 	_apply()
 
 
@@ -399,7 +411,7 @@ func apply_display() -> void:
 
 
 func to_dict() -> Dictionary:
-	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "text_scale": text_scale,
+	return {"reduce_effects": reduce_effects, "flash_limiter": flash_limiter, "heat_glitch": heat_glitch, "text_scale": text_scale,
 		"subtitles": subtitles, "subtitle_typing": subtitle_typing, "master_volume": master_volume, "music_volume": music_volume, "sfx_volume": sfx_volume,
 		"language": language, "window_mode": window_mode, "resolution": [resolution.x, resolution.y], "vsync": vsync,
 		"show_fps": show_fps, "map_legend": map_legend, "system_log": system_log, "keybinds": keybinds.duplicate(), "tutorial_done": tutorial_done, "assist_mode": assist_mode}
@@ -408,6 +420,7 @@ func to_dict() -> Dictionary:
 func from_dict(d: Dictionary) -> void:
 	reduce_effects = bool(d.get("reduce_effects", false))
 	flash_limiter = bool(d.get("flash_limiter", true))
+	heat_glitch = bool(d.get("heat_glitch", false))
 	text_scale = clampf(float(d.get("text_scale", 1.0)), TEXT_SCALE_MIN, TEXT_SCALE_MAX)
 	subtitles = bool(d.get("subtitles", true))
 	subtitle_typing = bool(d.get("subtitle_typing", true))

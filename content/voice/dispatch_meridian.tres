@@ -257,7 +257,7 @@ text = "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of 
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
-key = "site:the_manifest_site"
+key = "site:the_master_manifest"
 text = "The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut."
 
 [resource]

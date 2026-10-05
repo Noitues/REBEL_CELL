@@ -233,41 +233,41 @@ def klass(cid, name, desc, hp, slices, hub_id, hub_mk2, ring_id, options, deck, 
     r.write("content/classes/%s.tres" % cid, comment)
 
 klass("ghost", "Ghost", "Slips past resistance. Perfect landings strip the target's defences.", 50,
-      ["atk_14", "def_6", "atk_14", "evade_1", "def_6", "miss"], "ghost_core", "ghost_core_mk2", "ghost_ring",
+      ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "miss"], "ghost_core", "ghost_core_mk2", "ghost_ring",
       ["seg_blank", "seg_anchor", "seg_corrupt", "seg_accelerator"],
       ["fine_tune", "fine_tune", "fine_tune", "jolt", "jolt", "jam", "micro_adjust", "strip", "snap", "ghost_step"],
       ["ghost_step", "blind_spot"], (9, 1),
-      "Ghost (GDD 5.2): 50 HP; Atk, Atk, Def, Def, Evade, Miss. Station bonus: threats entering the node\nare held 1 step (FREEZE amount 1; Rank scales it: 1 / 1 / 2 / 2 steps).")
+      "Ghost (GDD 5.2): 50 HP; Shim, Shim, Defrag, Defrag, Detour, Miss. Station bonus: threats entering the node\nare held 1 step (FREEZE amount 1; Rank scales it: 1 / 1 / 2 / 2 steps).")
 klass("rigger", "Rigger", "Runs hot on RAM. Perfect landings pay for the next move.", 55,
-      ["atk_16", "def_6", "atk_16", "shield_5", "def_6", "miss"], "rig_core", "rig_core_mk2", "rigger_ring",
+      ["shim_16", "defrag_6", "shim_16", "shield_5", "defrag_6", "miss"], "rig_core", "rig_core_mk2", "rigger_ring",
       ["seg_pierce", "seg_corrupt", "seg_anchor"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "calibrate", "cache", "ring_tap", "brute_spin", "torque_wrench"],
       ["torque_wrench", "hot_swap"], (14, 5),
-      "Rigger (GDD 5.2): 55 HP; Atk, Atk, Def, Def, Shield, Miss. Station bonus: the node regains 5\nintegrity after each wave and when the raid ends (HEAL amount 5, Rank scales it).")
+      "Rigger (GDD 5.2): 55 HP; Shim, Shim, Defrag, Defrag, Shield, Miss. Station bonus: the node regains 5\nintegrity after each wave and when the raid ends (HEAL amount 5, Rank scales it).")
 klass("botnet", "Botnet", "Fights through drones that ride the whole netrun.", 45,
-      ["atk_16", "deploy_1", "atk_16", "deploy_1", "def_8", "miss"], "swarm_core", "swarm_core_mk2", "botnet_ring",
+      ["shim_16", "deploy_1", "shim_16", "deploy_1", "defrag_8", "miss"], "swarm_core", "swarm_core_mk2", "botnet_ring",
       ["seg_pierce", "seg_anchor", "seg_accelerator"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "twist", "counter_spin", "pull", "cache", "spawn_drone"],
       ["spawn_drone", "parasite_pulse"], (18, 1),
-      "Botnet (GDD 5.2): 45 HP; Atk, Atk, Def, Deploy, Deploy, Miss. Station bonus: one free turret on\nthe node for each raid (DEPLOY_DRONE amount 1; config.station_deploy_asset; Rank scales it).")
+      "Botnet (GDD 5.2): 45 HP; Shim, Shim, Defrag, Deploy, Deploy, Miss. Station bonus: one free turret on\nthe node for each raid (DEPLOY_DRONE amount 1; config.station_deploy_asset; Rank scales it).")
 
 BREAKER_DECK = ["jolt", "jolt", "jolt", "jolt", "brute_spin", "brute_spin", "fine_tune", "fine_tune", "mirror_flip", "overdrive"]
 klass("wrecker", "Wrecker", "A Breaker that trades spin control for a heavier Perfect.", 60,
-      ["crit_12", "atk_6", "atk_6", "atk_6", "def_5", "miss"], "wrecker_core", "wrecker_core_mk2", "breaker_ring",
+      ["overflow_12", "shim_6", "shim_6", "shim_6", "defrag_5", "miss"], "wrecker_core", "wrecker_core_mk2", "breaker_ring",
       ["seg_corrupt", "seg_anchor", "seg_accelerator", "seg_echo"], BREAKER_DECK, ["overdrive", "shatter"], (0, None),
       "Wrecker: Breaker alternative (GDD 3.4, same deck + different core; decision 2026-09-24).", alternative_of="breaker", station_mult="1.5")
 klass("phantom", "Phantom", "A Ghost that dodges instead of slipping resistance.", 50,
-      ["atk_14", "def_6", "atk_14", "evade_1", "def_6", "miss"], "phantom_core", "phantom_core_mk2", "ghost_ring",
+      ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "miss"], "phantom_core", "phantom_core_mk2", "ghost_ring",
       ["seg_blank", "seg_anchor", "seg_corrupt", "seg_accelerator"],
       ["fine_tune", "fine_tune", "fine_tune", "jolt", "jolt", "jam", "micro_adjust", "strip", "snap", "ghost_step"],
       ["ghost_step", "blind_spot"], (9, 1), "Phantom: Ghost alternative (decision 2026-09-24).", alternative_of="ghost")
 klass("overclocker", "Overclocker", "A Rigger that banks raw RAM instead of free nudges.", 55,
-      ["atk_16", "def_6", "atk_16", "shield_5", "def_6", "miss"], "overclock_core", "overclock_core_mk2", "rigger_ring",
+      ["shim_16", "defrag_6", "shim_16", "shield_5", "defrag_6", "miss"], "overclock_core", "overclock_core_mk2", "rigger_ring",
       ["seg_pierce", "seg_corrupt", "seg_anchor"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "calibrate", "cache", "ring_tap", "brute_spin", "torque_wrench"],
       ["torque_wrench", "hot_swap"], (14, 5), "Overclocker: Rigger alternative (decision 2026-09-24).", alternative_of="rigger")
 klass("hivemind", "Hivemind", "A Botnet whose swarm is bigger but never leaves the fight.", 45,
-      ["atk_16", "deploy_1", "atk_16", "deploy_1", "def_8", "miss"], "hive_core", "hive_core_mk2", "botnet_ring",
+      ["shim_16", "deploy_1", "shim_16", "deploy_1", "defrag_8", "miss"], "hive_core", "hive_core_mk2", "botnet_ring",
       ["seg_pierce", "seg_anchor", "seg_accelerator"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "twist", "counter_spin", "pull", "cache", "spawn_drone"],
       ["spawn_drone", "parasite_pulse"], (18, 1), "Hivemind: Botnet alternative (decision 2026-09-24).", alternative_of="botnet")

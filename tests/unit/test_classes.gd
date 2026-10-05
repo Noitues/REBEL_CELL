@@ -82,7 +82,7 @@ func test_botnet_perfect_deploy_plants_a_parasite() -> void:
 func test_parasite_halves_the_slice_output() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"triage_unit"], 4, &"", 0, {"ring_segment_ids": ["seg_blank", "seg_blank", "seg_blank"]})
 	s.state.player.wheel.slice_statuses[1] = RC.Status.PARASITE
-	CombatFixture.land(s.state.player, 1, 1)  # Atk 6, Good
+	CombatFixture.land(s.state.player, 1, 1)  # Shim 6, Good
 	var r := s.apply(CombatAction.end_turn())
 	var hits := CombatFixture.events_of(r, "damage")
 	assert_true(hits.size() >= 1)
@@ -230,14 +230,14 @@ func test_hive_core_drones_do_not_persist() -> void:
 	assert_false(hub.drones_persist)
 	assert_eq(hub.max_drones, 4)
 	var s := CombatSession.start(_resolver, &"hivemind", [&"triage_unit"], 3)
-	CombatFixture.land(s.state.player, 0, 0)  # Atk, Perfect: the hook docks a drone
+	CombatFixture.land(s.state.player, 0, 0)  # Shim, Perfect: the hook docks a drone
 	s.apply(CombatAction.end_turn())
 	assert_true(s.state.living_drones().size() >= 1)
 
 
 func test_wrecker_perfect_resolves_at_one_and_a_half() -> void:
 	var s := CombatSession.start(_resolver, &"wrecker", [&"triage_unit"], 4)
-	CombatFixture.land(s.state.player, 1, 0)  # Atk 6, Perfect
+	CombatFixture.land(s.state.player, 1, 0)  # Shim 6, Perfect
 	var r := s.apply(CombatAction.end_turn())
 	var amounts := []
 	for h in CombatFixture.events_of(r, "damage"):

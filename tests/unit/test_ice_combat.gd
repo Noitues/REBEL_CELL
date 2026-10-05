@@ -85,7 +85,7 @@ func test_heat_gated_enemy_behaviour_only_above_its_heat() -> void:
 	for heat in [0, 50]:
 		var s := _session(&"compliance_officer", {"heat": heat})
 		var e := s.state.get_combatant(&"enemy_0")
-		CombatFixture.land(e, 0)  # Atk 7
+		CombatFixture.land(e, 0)  # Shim 7
 		CombatFixture.land(s.state.player, 5)
 		var ram := s.state.ram
 		s.apply(CombatAction.end_turn())
@@ -118,7 +118,7 @@ func test_netrun_reads_the_ice_ladder_into_combat() -> void:
 	assert_eq(cs.campaign_heat, 0)
 	# ICE 18: the final boss gains a pointer.
 	var c2 := _campaign(18)
-	var boss := NetrunSession.start_special(_resolver, c2, &"op_1", "boss", &"renewal_engine_site", 4, 5, &"renewal_engine", {})
+	var boss := NetrunSession.start_special(_resolver, c2, &"op_1", "boss", &"the_genome_core", 4, 5, &"renewal_engine", {})
 	boss.enter_node(boss.available_nodes()[0])
 	assert_true(boss.in_combat())
 	var b := boss.combat.state.get_combatant(&"enemy_0")

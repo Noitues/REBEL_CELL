@@ -1,6 +1,6 @@
 extends RefCounted
 ## Zero Day (GDD 6.2): a Perfect on the Miss slice resolves as an `amount`x Crit against
-## the pointer target (that multiple of the wheel's best CRIT output, else its best ATTACK).
+## the pointer target (that multiple of the wheel's best OVERFLOW output, else its best SHIM).
 
 
 func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Dictionary]:
@@ -15,9 +15,9 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	var best_atk := 0
 	for i in owner.wheel.slot_slice_ids.size():
 		var s := fx.slice_of(owner.wheel, i)
-		if s.slice_type == RC.SliceType.CRIT:
+		if s.slice_type == RC.SliceType.OVERFLOW:
 			best_crit = maxi(best_crit, s.base_output)
-		elif s.slice_type == RC.SliceType.ATTACK:
+		elif s.slice_type == RC.SliceType.SHIM:
 			best_atk = maxi(best_atk, s.base_output)
 	var d: DaemonData = context.get("daemon")
 	var mult := d.amount if d != null else 0

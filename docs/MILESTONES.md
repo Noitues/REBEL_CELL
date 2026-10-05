@@ -54,7 +54,7 @@ Placeholder art is expected until M4 (see `STYLE_GUIDE.md` §7).
 ## M2 — Netrun Loop
 **Build**
 - Map generator (TECH_SPEC §6), map scene, node types, Terminal events (5 placeholder
-  events), Modem shop, rewards (cards 1-of-3, elite Firmware 1-of-2, Rack Daemon 1-of-3,
+  events), Mainframe shop, rewards (cards 1-of-3, elite Firmware 1-of-2, Rack Daemon 1-of-3,
   asset drops), Heat per node, Server Rack banking, death and completion flow.
 - Content: all Appendix A.2 cards, A.3 normal + elite enemies, A.4 Firmware & Daemons,
   A.5 assets.

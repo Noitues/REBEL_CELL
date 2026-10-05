@@ -1,7 +1,7 @@
 class_name TutorialOverlay
 extends Control
 ## Guided first fight (gap analysis 2.5 onboarding): zine notes that explain the wheel,
-## precision, nudges and resistance, cards and the preview, rewind and checkpoints, End
+## precision, nudges and resistance, cards and the preview, rewind (UNDO) and where it stops, End
 ## Turn and the resolution order, then Heat and banking. Steps advance on the matching
 ## combat events (or Next); Skip ends it. Marks Settings.tutorial_done when finished.
 
@@ -47,7 +47,7 @@ const STEPS: Array[Dictionary] = [
 		"title":
 			"UNDO",  # TR
 		"text":
-			"{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.",  # TR
+			"{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.",  # TR
 		"until": "rewind",
 	},
 	{

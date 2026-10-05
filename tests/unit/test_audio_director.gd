@@ -23,7 +23,7 @@ func test_every_placeholder_sound_is_generated() -> void:
 func test_precision_feedback_maps_to_the_gdd_sounds() -> void:
 	AudioDirector.play_precision(RC.PrecisionTier.PERFECT, false)
 	AudioDirector.play_precision(RC.PrecisionTier.GOOD, false)
-	AudioDirector.play_precision(RC.PrecisionTier.PARTIAL, false)
+	AudioDirector.play_precision(RC.PrecisionTier.WEAK, false)
 	AudioDirector.play_precision(RC.PrecisionTier.PERFECT, true)
 	assert_eq(AudioDirector.played, ["latch", "click", "stutter", "static"])
 

@@ -43,14 +43,14 @@ func test_renewal_engine_orbit_phase_reconfigures_the_wheel() -> void:
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "boss_wheel_override").size(), 1)
 	b = s.state.get_combatant(&"enemy_0")
-	assert_eq(b.wheel.slot_slice_ids, [&"atk_14", &"crit_24", &"def_12", &"dose", &"crit_24", &"miss"])
+	assert_eq(b.wheel.slot_slice_ids, [&"shim_14", &"overflow_24", &"defrag_12", &"dose", &"overflow_24", &"miss"])
 	assert_eq(b.wheel.hub_id, &"auto_renew")
 	assert_eq(b.wheel.pointer_ticks.size(), 2, "pointers from the MULTIPLY phase are kept")
 
 
 func test_turn_start_spawns_follow_every_n_and_max_active() -> void:
-	var atk := CombatFixture.slice(&"bt_atk", RC.SliceType.ATTACK, 3)
-	var def := CombatFixture.slice(&"bt_def", RC.SliceType.DEFEND, 2, RC.TargetRule.SELF)
+	var atk := CombatFixture.slice(&"bt_atk", RC.SliceType.SHIM, 3)
+	var def := CombatFixture.slice(&"bt_def", RC.SliceType.DEFRAG, 2, RC.TargetRule.SELF)
 	var drone := CombatFixture.enemy(&"bt_drone", 4, CombatFixture.wheel([atk, def]))
 	var spawn := SatelliteSpawnData.new()
 	spawn.satellite = drone

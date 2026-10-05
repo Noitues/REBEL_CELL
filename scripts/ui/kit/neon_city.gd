@@ -710,7 +710,7 @@ const MARK_FILL := 0.2
 const MARK_HATCH := 9.0
 const MARK_HATCH_ALPHA := 0.5
 ## ANIM-R4 H11d: what a map keeps clear for its words (its node labels and icons, this city's
-## local px): a CLAIMED / SEIZED stamp takes the first spot round its Site that covers none
+## local px): a CLAIMED / TAKEN stamp takes the first spot round its Site that covers none
 ## of them (above, below, right, left; the least covered when all do), so it never hides the
 ## Site's name. Set by the map before it draws the stamps; [] draws them above the Site.
 var stamp_avoid: Array[Rect2] = []
@@ -720,7 +720,7 @@ const MARK_GAP := 4.0
 
 
 ## ANIM-R1 M5: a territory change from `prev` to `now` ends in lasting marks: an outline
-## and a tint on each Site that changed hands and a CLAIMED / SEIZED stamp tied to it (it
+## and a tint on each Site that changed hands and a CLAIMED / TAKEN stamp tied to it (it
 ## reads as "this block is now mine / theirs"). The stamps stamp on as the spread's front
 ## passes (`influence_mark`), at once when motion doesn't play. Emits territory_marked.
 func mark_changes(prev: Dictionary, now: Dictionary) -> void:
@@ -765,7 +765,7 @@ func _on_child_changed(_n: Node) -> void:
 
 ## Draws the marks on canvas item `ci` (in this city's local space: the city's own layer,
 ## or a map overlay over it, which draws them above its dimming and under its nodes).
-## ANIM-R3 B6: `rings` (the outline, wash and hatch) and `stamps` (the CLAIMED / SEIZED
+## ANIM-R3 B6: `rings` (the outline, wash and hatch) and `stamps` (the CLAIMED / TAKEN
 ## stamps) can go on different layers: a map puts its stamps over its labels.
 func draw_marks_on(ci: CanvasItem, rings: bool = true, stamps: bool = true) -> void:
 	if marks.is_empty() or ci == null:
@@ -1550,7 +1550,7 @@ func _note_seen() -> void:
 
 
 ## ANIM-R5 P2: a territory change whose new look is still baking stamps its marks (CLAIMED /
-## SEIZED, the outline and hatch) at once, over the old image: a claim waited 3.6 s with no
+## TAKEN, the outline and hatch) at once, over the old image: a claim waited 3.6 s with no
 ## feedback for the bake before anything showed. The tint's spread follows when the bake lands
 ## (`_note_seen`, which then does not stamp them again). Not while the influence is pinned (a
 ## raid's playout lets its result spread at its end).
@@ -2040,7 +2040,7 @@ static func snap_region(region: Rect2) -> Rect2:
 
 
 ## ANIM-R2 R1: the bake region the default frame (the district's HQ at `hq_anchor`, no zoom,
-## no pan) shows at `view_size` (the Modem, event and loot backdrops, a fight's arena).
+## no pan) shows at `view_size` (the Mainframe, event and loot backdrops, a fight's arena).
 func frame_region(view_size: Vector2) -> Rect2:
 	var focus := hq_of(district) + Vector2(HQ_LOTS * 0.5, HQ_LOTS * 0.5) if district != &"" else Vector2.ZERO
 	var anchor := Vector2(view_size.x * hq_anchor.x, view_size.y * hq_anchor.y) if district != &"" else view_size * 0.5
@@ -2069,7 +2069,7 @@ func _note_frame_size() -> void:
 
 
 ## ANIM-R2 R1: bakes, ahead, the default frame at every size in `sizes` and every size it was
-## drawn at lately (one region enclosing them all): a fight's arena, the Modem, event and
+## drawn at lately (one region enclosing them all): a fight's arena, the Mainframe, event and
 ## loot pages open on their city. Returns prebake's key.
 func prebake_frames(sizes: Array[Vector2], outlive: bool = false) -> String:
 	var all: Array[Vector2] = sizes.duplicate()

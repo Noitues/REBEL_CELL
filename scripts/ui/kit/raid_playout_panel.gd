@@ -64,8 +64,8 @@ const FEED_SHOT := "%s on %s hits %s for %d." # TR
 const FEED_DESTROYED := "%s is destroyed." # TR
 const FEED_NODE_HIT := "%s takes %d damage: HP %d → %d." # TR
 const FEED_CASCADE := "Cascade: %s takes %d damage: HP %d → %d." # TR
-const FEED_DISABLED := "%s is DISABLED." # TR
-const FEED_SEIZED := "%s is SEIZED." # TR
+const FEED_DOWN := "%s is DOWN." # TR
+const FEED_TAKEN := "%s is TAKEN." # TR
 const FEED_HOME_HIT := "%s reaches %s: %d damage, HP %d → %d." # TR
 const FEED_HOME_LOST := "%s is lost. The campaign is over." # TR
 const FEED_REGEN := "The operative on %s patches it: %s." # TR
@@ -75,9 +75,9 @@ const FEED_FREEZES := "%s freezes the link %s - %s for this raid." # TR
 const FEED_RECALLED := "%s returns to the reserves." # TR
 const FEED_REPELLED := "Raid repelled after %d step(s)." # TR
 const FEED_ENDED := "Raid over after %d step(s)." # TR
-const FEED_TALLY := "Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d." # TR
+const FEED_TALLY := "Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d." # TR
 const FEED_WON := "Reward: %s Schematics." # TR
-const FEED_CAMPAIGN_LOST := "The home server is gone. Campaign lost." # TR
+const FEED_CAMPAIGN_LOST := "The home server is BREACHED. Campaign lost." # TR
 const FEED_HEAT := "Heat %s: %d → %d." # TR
 ## ANIM-R5 P3: the raid's Heat says why, in words that agree with its verdict (RaidVerdict):
 ## the rules add it whenever a threat was not destroyed ("lost raid"), even when home holds,
@@ -410,12 +410,12 @@ func feed_line(e: Dictionary) -> String:
 		"node_hit", "cascade":
 			var hit := _take(StringName(String(e.get("site", ""))), int(e.get("damage", 0)))
 			text = tr(FEED_NODE_HIT if t == "node_hit" else FEED_CASCADE) % [site_word(e.get("site", &"")), hit[0], hit[1], hit[2]]
-		"disabled":
+		"down":
 			_hp[String(e.get("site", ""))] = 0
-			text = tr(FEED_DISABLED) % site_word(e.get("site", &""))
-		"seized":
+			text = tr(FEED_DOWN) % site_word(e.get("site", &""))
+		"taken":
 			_hp[String(e.get("site", ""))] = 0
-			text = tr(FEED_SEIZED) % site_word(e.get("site", &""))
+			text = tr(FEED_TAKEN) % site_word(e.get("site", &""))
 		"home_hit":
 			var home_hit := _take(_home(), int(e.get("damage", 0)))
 			text = tr(FEED_HOME_HIT) % [threat_word(e), site_word(_home()), home_hit[0], home_hit[1], home_hit[2]]
@@ -439,10 +439,10 @@ func feed_line(e: Dictionary) -> String:
 			text = (tr(FEED_REPELLED) if bool(e.get("won", false)) else tr(FEED_ENDED)) % int(e.get("steps", 0))
 			if not results.is_empty():
 				# ANIM-R5 P18: the nodes counted by their outcome, as the verdict counts them (a node
-				# Disabled then Seized is one Seized node).
+				# DOWN then TAKEN is one TAKEN node).
 				var l := RaidVerdict.losses(results)
 				text += " " + tr(FEED_TALLY) % [int(results.get("threats_destroyed", 0)), int(results.get("threats_reached_home", 0)),
-					int(l["disabled"]), int(l["seized"])]
+					int(l["down"]), int(l["taken"])]
 		"raid_won":
 			text = tr(FEED_WON) % TextDb.signed(int(e.get("schematics", 0)))
 		"campaign_lost":
@@ -489,7 +489,7 @@ func _note_threat(t: String, e: Dictionary) -> void:
 ## saying why in the verdict's terms: the threats that hit CORE ("Heat +5: Collector reached
 ## CORE: 0 → 5."), else those still standing ("Heat +5: Collector not destroyed: 0 → 5."),
 ## else, with no threats told, that not every threat was destroyed. Never "lost": home may
-## well hold (the verdict HOME -5 · HOLDS or ALL HOLD).
+## well hold (the verdict HOME -5 · HOLDS or CELL HOLDS).
 func raid_heat_line(amount: int, before: int, after: int) -> String:
 	var reached := _told_names(_told_reached.keys())
 	if not reached.is_empty():

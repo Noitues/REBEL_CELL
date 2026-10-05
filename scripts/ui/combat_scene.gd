@@ -378,12 +378,39 @@ static func last_turn_tips(lines: Dictionary, events: Array[Dictionary]) -> Dict
 func rewind() -> void:
 	cancel_selection()
 	skip_motion()
+	if engine.has_fight() and not engine.can_rewind():
+		show_undo_block()
+		return
 	_rewind_from = engine.state().duplicate_state() if Motion.animating() and engine.has_fight() else null
 	var ok := engine.rewind()
 	_rewind_from = null
 	if ok and tutorial != null and is_instance_valid(tutorial):
 		var ev: Array[Dictionary] = [{"type": "rewind"}]
 		tutorial.on_events(ev)
+
+
+## ART-0 D12 (DECISIONS "Designer rulings: names for M14"): UNDO's words, and the block when there
+## is nothing to undo since the last random event.
+const UNDO_TIP := "Undo back to the last random event (free, unlimited this turn)." # TR
+const UNDO_BLOCKED := "UNDO is blocked: a random event came since (a respin, a random pick)." # TR
+
+
+## UNDO's tooltip: what it does, or why it is blocked now.
+func _sync_undo_tip() -> void:
+	if _rewind_button == null:
+		return
+	var blocked := engine == null or not engine.has_fight() or not engine.can_rewind()
+	shown_tip(_rewind_button, tr(UNDO_BLOCKED) if blocked else tr(UNDO_TIP))
+
+
+## ART-0 D12: an undo with nothing to undo shows its block on the UNDO sticker itself (its
+## refusal note sits over it), not in the notes column.
+func show_undo_block() -> void:
+	if _rewind_button == null:
+		return
+	var r := _rewind_button.get_global_rect()
+	toast.show_text(tr(UNDO_BLOCKED), Vector2(r.get_center().x, r.position.y - TOAST_GAP), _toast_spot().size.x)
+	AudioDirector.play_sfx("click")
 
 
 ## Keyboard / pad nudge: the wheel and ring the W and R toggles chose.
@@ -636,6 +663,15 @@ func inspect_at(global_point: Vector2) -> String:
 
 ## Odds a random effect shows instead of a result (GDD 2.10): the slice type mix of a
 ## wheel, optionally leaving the Miss slice out (random non-Miss picks).
+## The corporation whose words `c`'s wheel speaks (DECISIONS "names for M14" D3 / D4): an
+## enemy's corporation, "" for the Cell's own wheels.
+func corp_of(c: CombatantState) -> StringName:
+	if c == null or c.is_player or engine == null:
+		return &""
+	var e := engine.content(c.source_id) as EnemyData
+	return e.corporation_id if e != null else &""
+
+
 func odds_text(c: CombatantState, non_miss_only: bool = false) -> String:
 	var parts := PackedStringArray()
 	for chip in _odds_chips(c, non_miss_only):
@@ -658,7 +694,7 @@ func _odds_chips(c: CombatantState, non_miss_only: bool = false) -> Array[Dictio
 		var slice := engine.content(id) as SliceData
 		if slice == null or (non_miss_only and slice.slice_type == RC.SliceType.MISS):
 			continue
-		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?")))]
+		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(Palette.slice_word(slice.slice_type, corp_of(c)))]
 		if not counts.has(key):
 			order.append(key)
 		counts[key] = int(counts.get(key, 0)) + 1
@@ -1317,7 +1353,7 @@ func _instant_playback() -> bool:
 
 
 ## Precision and action feedback (STYLE_GUIDE 5, GDD 10): Perfect = latch + wheel-local
-## inversion + 2-frame freeze (+ a limited flash); Good = click; Partial = stutter shake;
+## inversion + 2-frame freeze (+ a limited flash); Good = click; Weak = stutter shake;
 ## Miss slice = static burst. Nudges tick, spins run down, flips clack. Telegraphed
 ## migrations flicker the boss pointers until they move.
 func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = false) -> void:
@@ -1343,7 +1379,7 @@ func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = f
 				elif tier == RC.PrecisionTier.PERFECT:
 					_perfect_feedback(_player_view)
 					_bark("perfect", state)
-				elif tier == RC.PrecisionTier.PARTIAL:
+				elif tier == RC.PrecisionTier.WEAK:
 					_stutter_view(_player_view)
 			"boss_phase":
 				_boss_phase_feedback(state)
@@ -1417,7 +1453,7 @@ func _victory_flash() -> void:
 func _slice_type_of(state: CombatState, e: Dictionary) -> int:
 	var slot := int(e.get("slice_index", 0))
 	var slice := engine.content(state.player.wheel.slot_slice_ids[slot]) as SliceData
-	return slice.slice_type if slice != null else RC.SliceType.ATTACK
+	return slice.slice_type if slice != null else RC.SliceType.SHIM
 
 
 func _perfect_feedback(view: WheelView) -> void:
@@ -1457,7 +1493,7 @@ func _perfect_frame(view: WheelView, left: int) -> void:
 func _stutter_view(view: WheelView) -> void:
 	if not Fx.effects_enabled():
 		return
-	Motion.shake(view, &"precision_partial", ^"shake")
+	Motion.shake(view, &"precision_weak", ^"shake")
 
 
 func _flicker_view(view: WheelView) -> void:
@@ -1917,6 +1953,7 @@ func _refresh(state: CombatState) -> void:
 	# ANIM-R1 C7: nothing left to spend: the ▶▶ mark pulses gently (off under reduce effects).
 	(_end_turn_button as DripButton).set_ready(state.ram <= 0 and not state.is_over())
 	_rewind_button.disabled = not engine.can_rewind()
+	_sync_undo_tip()
 	_link_hand_focus()
 	_nav_focus = false  # the refocus below is automatic, not the player moving focus
 	UiFocus.focus_first(_hand_box, true, _end_turn_button.get_parent())
@@ -2394,11 +2431,11 @@ func _show_respin_odds() -> void:
 	var chips: Array = [{"text": tr("RESPIN: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
 	chips.append_array(_odds_chips(engine.state().player))
 	_player_view.intent = {"type": -1, "text": tr("Respin for %d RAM") % cost, "chips": chips,
-		"tooltip": tr("Respin your wheel for %d RAM: a random result (sets a checkpoint). %s") % [cost, odds_text(engine.state().player)]}
+		"tooltip": tr("Respin your wheel for %d RAM: a random result (UNDO stops here). %s") % [cost, odds_text(engine.state().player)]}
 	_player_view.queue_redraw()
 	_mark_was(was)
 	preview_note.clear()
-	preview_note.append("Respin your wheel for %d RAM (a random event: sets a checkpoint)." % cost)
+	preview_note.append("Respin your wheel for %d RAM (a random event: UNDO stops here)." % cost)
 	preview_note.append(odds_text(engine.state().player))
 
 
@@ -2461,7 +2498,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 	for e in events:
 		if String(e.get("type", "")) == "status" and bool(e.get("random", false)):
 			random_picks[StringName(String(e.get("target", "")))] = int(e.get("status", RC.Status.NONE))
-	# ANIM-R5 combat 8: an AFFLICT names what it puts on whom on its own tag ("PUTS ☠
+	# ANIM-R5 combat 8: an INFECT names what it puts on whom on its own tag ("PUTS ☠
 	# CORRUPTED ON YOU"), from the replay's own beats (who acted).
 	var afflicts := afflict_chips(state, events)
 	var views := {state.player.id: _player_view}
@@ -2487,7 +2524,7 @@ func _show_outcome(landing: CombatState, resolved: CombatState, events: Array[Di
 			if not rs.is_empty():
 				var sl: SliceData = rs[0]["slice"]
 				landings[sat.id] = {"type": sl.slice_type, "tier": int(rs[0]["tier"]),
-					"text": "%s (%s)" % [tr(String(Palette.SLICE_WORDS.get(sl.slice_type, "?"))), tr(String(Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")))]}
+					"text": "%s (%s)" % [tr(Palette.slice_word(sl.slice_type, corp_of(sat))), tr(String(Palette.TIER_WORDS.get(int(rs[0]["tier"]), "")))]}
 		view.satellite_landings = landings
 		var d := o.of(id)
 		var shown_statuses: Array = d.get("statuses", [])
@@ -2532,7 +2569,7 @@ static func odds_lead_chip() -> Dictionary:
 
 ## ANIM-R5 combat 8: per acting wheel (id), a chip for each status it puts on another wheel
 ## in `events` (from `state`): "PUTS ☠ CORRUPTED ON YOU" / "... ON <NAME>", in the colour of
-## whose win it is. Who acts comes from the replay's beats (ResolveBeats: the AFFLICT's
+## whose win it is. Who acts comes from the replay's beats (ResolveBeats: the INFECT's
 ## attacker), so the tag says what the replay shows.
 func afflict_chips(state: CombatState, events: Array[Dictionary]) -> Dictionary:
 	var out := {}
@@ -2578,9 +2615,9 @@ func _landing_title(s: CombatState, c: CombatantState) -> Dictionary:
 			type = slice.slice_type
 			tier = int(r["tier"])
 		if rs.size() <= 1:
-			parts.append("%s · %s" % [tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?"))), tr(String(Palette.TIER_WORDS.get(r["tier"], "")))])
+			parts.append("%s · %s" % [tr(Palette.slice_word(slice.slice_type, corp_of(c))), tr(String(Palette.TIER_WORDS.get(r["tier"], "")))])
 		elif rs.size() == 2:
-			parts.append("%s %s" % [tr(String(Palette.SLICE_WORDS.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).to_lower()])
+			parts.append("%s %s" % [tr(Palette.slice_word(slice.slice_type, corp_of(c))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).to_lower()])
 		else:
 			parts.append("%s·%s" % [tr(String(Palette.SLICE_NAMES.get(slice.slice_type, "?"))), tr(String(Palette.TIER_NAMES.get(r["tier"], ""))).left(1)])
 	return {"type": type, "tier": tier if rs.size() == 1 else -1, "text": " + ".join(parts)}
@@ -2867,7 +2904,7 @@ func _build_stickers() -> void:
 		if _nav_focus:
 			_show_respin_odds())
 	_respin_button.mouse_exited.connect(_show_end_turn_preview)
-	shown_tip(_rewind_button, tr("Undo back to the last random event (free, unlimited this turn)."))
+	_sync_undo_tip()
 
 
 ## Sticker label with its bound key (the action each sticker runs).
@@ -2890,7 +2927,7 @@ func _sync_stickers() -> void:
 	var cost := engine.resolver.config.respin_ram_cost if engine != null and engine.has_fight() else 0
 	(_stickers["respin"] as StickerButton).set_label(_sticker_text("respin", tr("RESPIN %d RAM") % cost if cost > 0 else tr("RESPIN")))
 	(_stickers["undo"] as StickerButton).set_label(_sticker_text("undo", tr("UNDO")))
-	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (sets a checkpoint).") % cost)
+	shown_tip(_respin_button, tr("Respin your wheel for %d RAM: a random result (UNDO stops here).") % cost)
 	for key in _stickers:
 		(_stickers[key] as StickerButton).refit()
 	_place_stickers()
@@ -3785,12 +3822,12 @@ func _guard_of(b: Dictionary) -> Dictionary:
 	var amount := int(b["amount"])
 	match String(b["kind"]):
 		"block":
-			return {"text": signed(amount), "icon": RC.SliceType.DEFEND}
+			return {"text": signed(amount), "icon": RC.SliceType.DEFRAG}
 		"shield":
 			if amount > 0:
 				return {"text": signed(amount), "icon": RC.SliceType.SHIELD}
 		"evade":
-			return {"text": signed(amount), "icon": RC.SliceType.EVADE}
+			return {"text": signed(amount), "icon": RC.SliceType.DETOUR}
 	return {}
 
 
@@ -3835,10 +3872,10 @@ func hit_stamp_for(b: Dictionary) -> String:
 static func zero_mark(b: Dictionary) -> Dictionary:
 	match String(b["kind"]):
 		"evaded":
-			return {"text": "0", "icon": RC.SliceType.EVADE}
+			return {"text": "0", "icon": RC.SliceType.DETOUR}
 		"damage":
 			if int(b["amount"]) <= 0 and int(b["soaked"]) > 0:
-				return {"text": "0", "icon": RC.SliceType.DEFEND}
+				return {"text": "0", "icon": RC.SliceType.DEFRAG}
 	return {}
 
 
@@ -3851,16 +3888,16 @@ static func hit_equation(b: Dictionary) -> Array:
 	if not ResolveBeats.is_hit(b):
 		return []
 	var raw := int(b.get("raw", b["amount"])) if kind == "damage" else int(b["amount"])
-	var items: Array = [{"icon": RC.SliceType.ATTACK, "text": str(raw), "color": WheelView.LOSS_COLOR, "sep": ""}]
+	var items: Array = [{"icon": RC.SliceType.SHIM, "text": str(raw), "color": WheelView.LOSS_COLOR, "sep": ""}]
 	if kind == "evaded":
-		items.append({"icon": RC.SliceType.EVADE, "text": str(raw), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
+		items.append({"icon": RC.SliceType.DETOUR, "text": str(raw), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
 		items.append({"icon": -1, "text": "0", "color": CHIP_GUARD, "sep": "="})
 		return items
 	var soaked := int(b["soaked"])
 	if soaked <= 0:
 		return []
 	var through := maxi(0, raw - soaked)
-	items.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
+	items.append({"icon": RC.SliceType.DEFRAG, "text": str(soaked), "color": CHIP_GUARD, "sep": CombatFxLayer.EQ_MINUS})
 	items.append({"icon": -1, "text": str(through), "color": WheelView.LOSS_COLOR if through > 0 else CHIP_GUARD, "sep": "="})
 	# ANIM-R6 A4: a victim with fewer HP left than gets through says so (the HP number that
 	# follows is what it really takes).
@@ -3894,12 +3931,12 @@ func ride_for(b: Dictionary, s: CombatState) -> Dictionary:
 	var base := -1
 	if src != null and slot >= 0 and slot < src.wheel.slot_slice_ids.size():
 		var slice := engine.content(src.wheel.slot_slice_ids[slot]) as SliceData
-		if slice != null and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT]:
+		if slice != null and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW]:
 			base = slice.base_output
 	if tier == RC.PrecisionTier.PERFECT:
 		# ANIM-R4 C5: a PERFECT hit's riding size is `ride_perfect`'s amplitude.
 		out["scale"] = Motion.amplitude(&"ride_perfect")
-	if base > 0 and base != raw and tier in [RC.PrecisionTier.PARTIAL, RC.PrecisionTier.PERFECT]:
+	if base > 0 and base != raw and tier in [RC.PrecisionTier.WEAK, RC.PrecisionTier.PERFECT]:
 		out["from"] = str(base)
 	return out
 
@@ -4065,7 +4102,7 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 
 ## A needle latches: its slice pulses in its colour (a MISS slice gets a big grey X,
 ## ANIM-R1 C5a); the player's landings show their precision (Perfect: inversion + freeze +
-## a limited flash; Good: a clean ring; Partial: a stutter; Miss: static over that slice
+## a limited flash; Good: a clean ring; Weak: a stutter; Miss: static over that slice
 ## only), with their sound and bark; every needle pulses.
 func _land(b: Dictionary, s: CombatState) -> void:
 	var owner := StringName(String(b["source"]))
@@ -4090,7 +4127,7 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	elif tier == RC.PrecisionTier.PERFECT:
 		_perfect_feedback(v)
 		_bark("perfect", s)
-	elif tier == RC.PrecisionTier.PARTIAL:
+	elif tier == RC.PrecisionTier.WEAK:
 		_stutter_view(v)
 	else:
 		v.play_good_ring()

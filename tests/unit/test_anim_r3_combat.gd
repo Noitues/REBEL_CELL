@@ -7,7 +7,7 @@ extends GutTest
 ## outcome where it struck, ALL BLOCKED on impact, the forecast kept and ticked, the aim's
 ## multiplier, one hit at a time into the HP, guards as glyphs, the icon row, the real
 ## wheel breaking with a skull, the next step's action after a win, the card gone before
-## its spin, the words (A6); the Modem's first focus and sign, flights of fresh copies,
+## its spin, the words (A6); the Mainframe's first focus and sign, flights of fresh copies,
 ## loot falling within its window, the empty-set mark, the swap chips' pictogram, every
 ## event choice's icons, discards off the stickers (A7).
 
@@ -565,7 +565,7 @@ func test_a_hit_soaked_whole_shows_zero_with_a_shield_where_it_struck_and_all_bl
 	assert_eq(marks.size(), 1, "its outcome shows where it struck")
 	if not marks.is_empty():
 		assert_eq(String(marks[0]["text"]), "0", "0 got through")
-		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFEND, "with the shield glyph")
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DEFRAG, "with the shield glyph")
 		assert_eq(marks[0]["at"], pv.hp_ring_spot(), "at the impact")
 		assert_almost_eq(float(marks[0]["delay"]), CombatFxLayer.impact_seconds(), 0.001, "on impact")
 	var tags: Array = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "tag")
@@ -671,14 +671,14 @@ func test_the_hit_shows_its_aim() -> void:
 	var base := 0
 	for i in state.player.wheel.slot_slice_ids.size():
 		var sd := scene.engine.content(state.player.wheel.slot_slice_ids[i]) as SliceData
-		if sd != null and sd.slice_type == RC.SliceType.ATTACK and sd.base_output >= 2:
+		if sd != null and sd.slice_type == RC.SliceType.SHIM and sd.base_output >= 2:
 			slot = i
 			base = sd.base_output
 			break
-	assert_gt(slot, -1, "the operative has an ATTACK slice")
+	assert_gt(slot, -1, "the operative has a SHIM slice")
 	var hit := _base(state, enemy)
 	hit.merge({"kind": "damage", "source": state.player.id, "target": enemy.id, "amount": base / 2, "soaked": 0, "raw": base / 2,
-		"source_slot": slot, "source_tier": RC.PrecisionTier.PARTIAL, "hp_after": enemy.hp - base / 2}, true)
+		"source_slot": slot, "source_tier": RC.PrecisionTier.WEAK, "hp_after": enemy.hp - base / 2}, true)
 	var ride: Dictionary = scene.ride_for(hit, state)
 	assert_eq(String(ride["from"]), str(base), "the slice's own value first (%d)" % base)
 	assert_eq(String(ride["label"]), str(base / 2), "then what it deals, a whole number (ANIM-R6 A4: never a fraction)")
@@ -923,7 +923,7 @@ func test_the_tape_never_clips_the_tag() -> void:
 
 # --- A7: screens -----------------------------------------------------------------------------------------
 
-func test_the_modem_first_focus_is_the_first_item() -> void:
+func test_the_mainframe_first_focus_is_the_first_item() -> void:
 	for rich in [true, false]:
 		var scene := await _netrun()
 		Settings.set_pad_active(true)
@@ -938,21 +938,21 @@ func test_the_modem_first_focus_is_the_first_item() -> void:
 		await _close(scene)
 
 
-func test_the_modem_sign_is_whole_before_its_warm_up_ends() -> void:
-	var sign := ModemSign.new()
+func test_the_mainframe_sign_is_whole_before_its_warm_up_ends() -> void:
+	var sign := MainframeSign.new()
 	add_child_autofree(sign)
-	var lit_at := ModemSign.strike_share() + ModemSign.flicker_share()
+	var lit_at := MainframeSign.strike_share() + MainframeSign.flicker_share()
 	assert_lt(lit_at, 0.8, "every tube holds lit well before the warm-up ends")
 	sign.warm = lit_at + 0.01
 	for id in 12:
 		assert_eq(sign.tube(id), 1.0, "tube %d is lit" % id)
-	sign.warm = ModemSign.strike_share() * 0.5 + ModemSign.flicker_share()
+	sign.warm = MainframeSign.strike_share() * 0.5 + MainframeSign.flicker_share()
 	var lit := 0
 	for id in 6:
 		if sign.tube(id) >= 1.0:
 			lit += 1
 	assert_gt(lit, 1, "half-way, more than one letter is lit (a still showed one: it read as broken)")
-	assert_lte(Motion.entry(&"modem_sign_warmup").duration, 0.5, "a shorter warm-up")
+	assert_lte(Motion.entry(&"mainframe_sign_warmup").duration, 0.5, "a shorter warm-up")
 
 
 func test_a_flying_card_is_a_fresh_copy_and_loot_falls_within_its_window() -> void:

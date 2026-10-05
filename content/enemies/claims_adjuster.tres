@@ -3,13 +3,13 @@
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
-[ext_resource type="Resource" path="res://content/slices/atk_10.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="s_def"]
-[ext_resource type="Resource" path="res://content/slices/crit_16.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/shim_10.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/overflow_16.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 
-; Claims Adjuster, elite (GDD A.3): 90 HP; Atk 10, Def 8, Crit 16, Atk 10, Dose, Miss;
+; Claims Adjuster, elite (GDD A.3): 90 HP; Shim 10, Defrag 8, Overflow 16, Shim 10, Dose, Miss;
 ; two pointers at ticks 0 and 15.
 
 [sub_resource type="Resource" id="slot_atk"]

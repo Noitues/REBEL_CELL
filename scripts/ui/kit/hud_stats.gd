@@ -179,7 +179,7 @@ func refusal_text() -> String:
 	return _refused_text
 
 
-## ANIM-R2 E9: another set of tags this one mirrors (the Modem's wallet mirrors the top
+## ANIM-R2 E9: another set of tags this one mirrors (the Mainframe's wallet mirrors the top
 ## bar): a tag of the same name shows the mirror's number while it rolls, so the two never
 ## disagree mid-roll (the top bar read 119 while the wallet read 120).
 ## It redraws on the mirror's own roll steps (`rolled`), so both draw the same number in
@@ -604,7 +604,7 @@ func _draw() -> void:
 			draw_rect(r, red, false, 2.0)
 			var rfs := roundi(VALUE_SIZE * s * REFUSED_TEXT_SHARE)
 			# ANIM-R4 C7: wider than its tag, the words wrap at their dot (NEED 53 over HAVE 5):
-			# on one line they ran past the Modem's panel edge at 1.6.
+			# on one line they ran past the Mainframe's panel edge at 1.6.
 			var lines := refusal_lines(_refused_text, r.size.x, rfs)
 			for li in lines.size():
 				var tw := Palette.display().get_string_size(lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x

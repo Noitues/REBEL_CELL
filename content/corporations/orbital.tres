@@ -225,7 +225,7 @@ script = ExtResource("e1")
 id = &"o3_core"
 display_name = "Mission Control"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 locked_links = Array[StringName]([&"o3_b"])
 map_position = Vector2(660, 60)
 
@@ -234,7 +234,7 @@ script = ExtResource("e1")
 id = &"o3_b"
 display_name = "Station Keeping Core"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 map_position = Vector2(660, 137)
 
 [sub_resource type="Resource" id="site_o3_c"]
@@ -242,7 +242,7 @@ script = ExtResource("e1")
 id = &"o3_c"
 display_name = "Launch Key Escrow"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 locked_links = Array[StringName]([&"o3_d"])
 map_position = Vector2(660, 214)
 
@@ -251,7 +251,7 @@ script = ExtResource("e1")
 id = &"o3_d"
 display_name = "Sky Twin Simulator"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 map_position = Vector2(660, 291)
 
 [sub_resource type="Resource" id="site_o3_e"]
@@ -259,7 +259,7 @@ script = ExtResource("e1")
 id = &"o3_e"
 display_name = "Board Uplink"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 locked_links = Array[StringName]([&"o3_f"])
 map_position = Vector2(660, 369)
 
@@ -268,7 +268,7 @@ script = ExtResource("e1")
 id = &"o3_f"
 display_name = "Orbital Pricing Authority"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 map_position = Vector2(660, 446)
 
 [sub_resource type="Resource" id="site_o3_g"]
@@ -276,7 +276,7 @@ script = ExtResource("e1")
 id = &"o3_g"
 display_name = "Surveillance Constellation"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 locked_links = Array[StringName]([&"o3_h"])
 map_position = Vector2(660, 523)
 
@@ -285,7 +285,7 @@ script = ExtResource("e1")
 id = &"o3_h"
 display_name = "Orbital Root Keystore"
 tier = 3
-links = Array[StringName]([&"commons_array_site"])
+links = Array[StringName]([&"launch_control"])
 map_position = Vector2(660, 600)
 
 [sub_resource type="Resource" id="site_scrub_the_downlink"]
@@ -324,10 +324,10 @@ objective = 2
 heat_change = -8
 map_position = Vector2(560, 430)
 
-[sub_resource type="Resource" id="site_commons_array_site"]
+[sub_resource type="Resource" id="site_launch_control"]
 script = ExtResource("e1")
-id = &"commons_array_site"
-display_name = "The Commons Array"
+id = &"launch_control"
+display_name = "Launch Control"
 tier = 4
 objective = 4
 claimable = false
@@ -335,9 +335,9 @@ map_position = Vector2(900, 330)
 
 [sub_resource type="Resource" id="grid"]
 script = ExtResource("e2")
-sites = Array[ExtResource("e1")]([SubResource("site_o_home"), SubResource("site_o1_a"), SubResource("site_o1_b"), SubResource("site_o1_c"), SubResource("site_o1_d"), SubResource("site_o1_e"), SubResource("site_o1_f"), SubResource("site_o1_g"), SubResource("site_o1_h"), SubResource("site_o1_i"), SubResource("site_o1_j"), SubResource("site_o2_intel"), SubResource("site_o2_breach"), SubResource("site_o2_virus"), SubResource("site_o2_d"), SubResource("site_o2_e"), SubResource("site_o2_f"), SubResource("site_o2_g"), SubResource("site_o2_h"), SubResource("site_o3_core"), SubResource("site_o3_b"), SubResource("site_o3_c"), SubResource("site_o3_d"), SubResource("site_o3_e"), SubResource("site_o3_f"), SubResource("site_o3_g"), SubResource("site_o3_h"), SubResource("site_scrub_the_downlink"), SubResource("site_spoof_the_positioning"), SubResource("site_jam_the_imaging"), SubResource("site_burn_the_orbit_logs"), SubResource("site_commons_array_site")])
+sites = Array[ExtResource("e1")]([SubResource("site_o_home"), SubResource("site_o1_a"), SubResource("site_o1_b"), SubResource("site_o1_c"), SubResource("site_o1_d"), SubResource("site_o1_e"), SubResource("site_o1_f"), SubResource("site_o1_g"), SubResource("site_o1_h"), SubResource("site_o1_i"), SubResource("site_o1_j"), SubResource("site_o2_intel"), SubResource("site_o2_breach"), SubResource("site_o2_virus"), SubResource("site_o2_d"), SubResource("site_o2_e"), SubResource("site_o2_f"), SubResource("site_o2_g"), SubResource("site_o2_h"), SubResource("site_o3_core"), SubResource("site_o3_b"), SubResource("site_o3_c"), SubResource("site_o3_d"), SubResource("site_o3_e"), SubResource("site_o3_f"), SubResource("site_o3_g"), SubResource("site_o3_h"), SubResource("site_scrub_the_downlink"), SubResource("site_spoof_the_positioning"), SubResource("site_jam_the_imaging"), SubResource("site_burn_the_orbit_logs"), SubResource("site_launch_control")])
 home_site_id = &"o_home"
-boss_site_id = &"commons_array_site"
+boss_site_id = &"launch_control"
 
 [sub_resource type="Resource" id="ex_intel"]
 script = ExtResource("e3")

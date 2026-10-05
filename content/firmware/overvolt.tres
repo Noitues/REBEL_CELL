@@ -9,7 +9,7 @@
 script = ExtResource("main_script")
 id = &"overvolt"
 display_name = "Overvolt"
-description = "ATK and CRIT slices: output +25%."
+description = "SHIM and OVERFLOW slices: output +25%."
 rarity = 0
 cycle_cost = 90
 allowed_slice_types = Array[int]([0, 1])

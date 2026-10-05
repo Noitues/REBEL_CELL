@@ -101,3 +101,22 @@ func test_settings_panel_toggles_write_to_settings() -> void:
 	assert_false(Settings.reduce_effects)
 	panel.scale_slider.value = 1.2
 	assert_almost_eq(Settings.text_scale, 1.2, 0.001)
+
+
+## ART-0 D11 (DECISIONS "Designer rulings: names for M14"): the Heat glitch is an Options extra,
+## off by default, saved with the settings, exempt from VfxTier, with its row on the panel.
+func test_the_heat_glitch_extra_is_off_by_default_and_round_trips() -> void:
+	var fresh: Node = autofree(load("res://scripts/autoload/settings.gd").new())
+	assert_false(fresh.heat_glitch, "off by default")
+	assert_true(Settings.VFX_TIER_EXEMPT.has(&"heat_glitch"), "exempt from VfxTier")
+	Settings.set_heat_glitch(true)
+	var d := Settings.to_dict()
+	assert_true(bool(d["heat_glitch"]), "saved")
+	Settings.set_heat_glitch(false)
+	Settings.from_dict(d)
+	assert_true(Settings.heat_glitch, "loaded back")
+	var panel: SettingsPanel = add_child_autofree(SettingsPanel.new())
+	panel.show_section("Accessibility")
+	assert_true(panel.heat_glitch_check.is_inside_tree(), "its row is in Accessibility")
+	panel.heat_glitch_check.button_pressed = false
+	assert_false(Settings.heat_glitch, "the row writes the setting")

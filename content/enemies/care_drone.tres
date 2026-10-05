@@ -3,10 +3,10 @@
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
-[ext_resource type="Resource" path="res://content/slices/atk_3.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_2.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/shim_3.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_2.tres" id="s_def"]
 
-; Care Swarm satellite (GDD A.3): 4 HP; 3-slice wheel Atk 3, Atk 3, Def 2.
+; Care Swarm satellite (GDD A.3): 4 HP; 3-slice wheel Shim 3, Shim 3, Defrag 2.
 
 [sub_resource type="Resource" id="slot_atk"]
 script = ExtResource("3")

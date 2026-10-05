@@ -8,9 +8,9 @@ extends RefCounted
 ## living operatives, scrub Heat at 70+; claim one Firewall Relay next to home when rich;
 ## launch the highest-ranked operative at the breach when open, else an Exploit Site,
 ## else a Heat objective at Heat 50+, else the deepest Site its Rank allows (ties by id).
-## In a run: avoid elites below half HP, visit a Modem with 75+ Cycles, take the first
+## In a run: avoid elites below half HP, visit a Mainframe with 75+ Cycles, take the first
 ## card while the deck is under 16, socket Firmware (never Heat-costing Burner) in the first slot that fits, take
-## Daemons, pick the last (safest) event choice, remove Bug cards at Modems.
+## Daemons, pick the last (safest) event choice, remove Bug cards at Mainframes.
 
 ## GDD 11.8 time budget per netrun and per raid, for the hour estimate.
 const MINUTES_PER_RUN := 15.0
@@ -70,7 +70,7 @@ func run_campaign(campaign_seed: int, ice: int = 0, max_runs: int = 60) -> Dicti
 		var op: OperativeState = pick["op"]
 		var site: SiteData = pick["site"]
 		var s := _start(c, op, site, seeds.randi())
-		if site.objective == RC.SiteObjective.BOSS:
+		if site.objective == RC.SiteObjective.CENTRAL_SERVER:
 			stats["heat_at_breach"] = c.heat
 			stats["log"].append("  boss loadout: R%d HP %d deck %s | daemons %s | firmware %s" % [op.rank, op.max_hp, ",".join(op.deck), ",".join(op.daemon_ids), ",".join(op.slot_firmware_ids)])
 		_play_run(s, stats)
@@ -122,7 +122,7 @@ func _deploy_armory(c: CampaignState) -> void:
 
 func _maintain(c: CampaignState) -> void:
 	for site_id in c.grid.claimed_ids():
-		if c.grid.is_claimed(site_id) and int(c.grid.site(site_id).get("condition", 0)) == GridState.Condition.DISABLED:
+		if c.grid.is_claimed(site_id) and int(c.grid.site(site_id).get("condition", 0)) == GridState.Condition.DOWN:
 			CampaignRules.repair(c, config, lookup, site_id)
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		CampaignRules.repair_home(c, config)
@@ -156,7 +156,7 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 	var targets := CampaignRules.launchable_sites(c, corp, config)
 	targets.append_array(CampaignRules.patrol_sites(c, corp))
 	for site in targets:
-		if c.grid.is_seized(site.id):
+		if c.grid.is_taken(site.id):
 			continue
 		for op in ops:
 			var cls := lookup.get_content(op.class_id) as ClassData
@@ -168,7 +168,7 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 				objective = RC.SiteObjective.NONE  # a patrol holds no objective
 				key -= 200  # only when nothing corporate is open to this operative
 			match objective:
-				RC.SiteObjective.BOSS:
+				RC.SiteObjective.CENTRAL_SERVER:
 					key += 1000
 				RC.SiteObjective.EXPLOIT:
 					key += 500
@@ -251,7 +251,7 @@ func _pick_node(s: NetrunSession) -> StringName:
 		match int(node["type"]):
 			RC.InfilNodeType.SERVER_RACK:
 				key = 50
-			RC.InfilNodeType.MODEM:
+			RC.InfilNodeType.MAINFRAME:
 				key = 60 if s.run.cycles >= 75 else 10
 			RC.InfilNodeType.TERMINAL:
 				key = 30 if hp_low else 20
@@ -381,7 +381,7 @@ static func _card_score(card: CardData) -> float:
 static func _firmware_score(fw: FirmwareData) -> float:
 	if fw == null:
 		return -1.0
-	var offensive := fw.allowed_slice_types.is_empty() or RC.SliceType.ATTACK in fw.allowed_slice_types or RC.SliceType.CRIT in fw.allowed_slice_types
+	var offensive := fw.allowed_slice_types.is_empty() or RC.SliceType.SHIM in fw.allowed_slice_types or RC.SliceType.OVERFLOW in fw.allowed_slice_types
 	var score := (fw.output_multiplier - 1.0) * (10.0 if offensive else 3.0)
 	if not fw.triggered_effects.is_empty():
 		score += 0.5

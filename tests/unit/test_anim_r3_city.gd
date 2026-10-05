@@ -311,8 +311,8 @@ func test_the_raid_feed_names_places_and_never_shows_an_id() -> void:
 				continue
 			var re := RegEx.create_from_string("(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % id)
 			assert_null(re.search(text), "%s: no raw id '%s' in the feed" % [corp, id])
-		assert_false(text.contains(" home,"), "%s: the end is a sentence, not 'reached home, 0 Disabled'" % corp)
-		assert_string_contains(text, CityMapOverlay.tr_word("Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.").get_slice(":", 0), "%s: the tally" % corp)
+		assert_false(text.contains(" home,"), "%s: the end is a sentence, not 'reached home, 0 DOWN'" % corp)
+		assert_string_contains(text, CityMapOverlay.tr_word("Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.").get_slice(":", 0), "%s: the tally" % corp)
 
 
 func test_a_drop_carries_the_forecast_numbers_it_changed() -> void:

@@ -367,19 +367,19 @@ func test_a_built_rebel_cell_leaves_the_lookup_with_its_campaign() -> void:
 	assert_eq(RunManager.lookup().get_content(&"rebel_cell"), template, "another campaign starts on the shipped content")
 
 
-func test_a_node_disabled_then_seized_is_one_seized_node_everywhere() -> void:
+func test_a_node_down_then_taken_is_one_taken_node_everywhere() -> void:
 	_raid_campaign(&"solace", true)
 	var c := RunManager.campaign
 	var site: StringName = c.grid.claimed_ids()[0] if c.grid.claimed_ids()[0] != c.grid.home_site_id else c.grid.claimed_ids()[1]
 	var r := {"raid_id": "test", "steps_run": 3, "won": false, "campaign_lost": false, "home_before": 50, "home_after": 50,
-		"threats_destroyed": 0, "threats_reached_home": 0, "nodes": {String(site): {"before": 30, "after": 0, "outcome": "seized"}},
-		"disabled": [String(site)], "seized": [String(site)]}
-	assert_eq(RaidVerdict.of_result(r), CityMapOverlay.tr_word(RaidVerdict.SEIZED) % 1, "the verdict names the stronger loss once")
+		"threats_destroyed": 0, "threats_reached_home": 0, "nodes": {String(site): {"before": 30, "after": 0, "outcome": "taken"}},
+		"down": [String(site)], "taken": [String(site)]}
+	assert_eq(RaidVerdict.of_result(r), CityMapOverlay.tr_word(RaidVerdict.TAKEN) % 1, "the verdict names the stronger loss once")
 	var panel := RaidPlayoutPanel.new(null)
 	add_child_autofree(panel)
 	panel.results = r
 	var tally := panel.feed_line({"type": "raid_end", "won": false, "steps": 3})
-	assert_string_contains(tally, tr(RaidPlayoutPanel.FEED_TALLY) % [0, 0, 0, 1], "the feed's tally counts it once, as Seized")
+	assert_string_contains(tally, tr(RaidPlayoutPanel.FEED_TALLY) % [0, 0, 0, 1], "the feed's tally counts it once, as TAKEN")
 	c.last_raid = r
 	var hq := _scene(HQ)
 	await _frames(1)
@@ -391,7 +391,7 @@ func test_a_node_disabled_then_seized_is_one_seized_node_everywhere() -> void:
 		var t := (b as Badge).text
 		if t.begins_with(site_label):
 			badges += 1
-			assert_string_contains(t, tr("SEIZED"), "the report says SEIZED")
+			assert_string_contains(t, tr("TAKEN"), "the report says TAKEN")
 	assert_eq(badges, 1, "the report lists the node once")
 
 

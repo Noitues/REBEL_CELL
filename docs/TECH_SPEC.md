@@ -129,7 +129,7 @@ subscribe and animate events with Tweens. Views emit intent signals up
 Input: tier, Site data, config, `map` RNG. Output: `MapGraph` (layers of nodes + edges).
 1. Layer count = `config.map_layers` (7). Each layer gets `randi_range(min, max)` nodes;
    layer 7 has exactly one node (final Server Rack).
-2. Assign types: layer 1 all Routers; one Server Rack in layer 4; at least one Modem in
+2. Assign types: layer 1 all Routers; one Server Rack in layer 4; at least one Mainframe in
    layers 3–5; about one Elite per layer in 3–6; Terminals ≈ 25% of the rest; remainder
    Routers.
 3. Edges: each node connects to 1–2 nodes in the next layer; no crossing edges; every

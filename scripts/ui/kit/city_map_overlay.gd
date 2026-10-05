@@ -8,7 +8,7 @@ extends Control
 ##
 ## Feed it a graph with `set_graph(nodes, edges)`:
 ##   nodes: [{id, at: Vector2 (grid target), color, label, glyph, big: bool,
-##            mark: "spray" (claimed: a spray-paint ring) | "cross" (Seized) | "",
+##            mark: "spray" (claimed: a spray-paint ring) | "cross" (TAKEN) | "",
 ##            kind: an icon (KIND_*; "" draws `glyph` in a hexagon), tip: hover text,
 ##            here: bool (you are here), next: bool (reachable now),
 ##            tier: int (a Site's tier 1-4: difficulty pips; 0 or missing = none)}]
@@ -51,7 +51,7 @@ signal node_hovered(id: StringName)
 enum Look { TRACE, PILLARS, ISOLATE, XRAY, BLUEPRINT, SPOTLIGHT }
 
 ## Non-colour Site marks (GDD 9.6: never colour alone): claimed Sites get a spray ring,
-## Seized ones a cross.
+## TAKEN ones a cross.
 const MARK_SPRAY := "spray"
 const MARK_CROSS := "cross"
 ## Spray ring: radius around the roof (px), wobble, drips (count, length) and strokes.
@@ -86,7 +86,7 @@ const KIND_ELITE := "elite"
 const KIND_SHOP := "shop"
 const KIND_EVENT := "event"
 const KIND_RACK := "rack"
-const KIND_BOSS := "boss"
+const KIND_CENTRAL_SERVER := "central_server"
 const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
 const KIND_HOME := "home"
@@ -94,8 +94,8 @@ const KIND_TIER := "tier"
 ## Plain names of the kinds (tooltips built here when a node has no tip; translated where
 ## the tip is built, ANIM-R4 H7).
 const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight", # TR
-	KIND_SHOP: "Modem: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
-	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core", # TR
+	KIND_SHOP: "Mainframe: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
+	KIND_RACK: "Server Rack: the Site's guardian", KIND_CENTRAL_SERVER: "Central Server: the corporation's core", # TR
 	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)", # TR
 	KIND_TIER: "Site"} # TR
 ## ANIM-R4 H7: the hover text's own sentences, translated once where the tip is built (they
@@ -103,7 +103,7 @@ const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a
 const TIP_NAMED := "%s: %s." # TR
 const TIP_ONE := "%s." # TR
 const TIP_CLAIMED := "Claimed: part of your network." # TR
-const TIP_SEIZED := "Seized by the corporation." # TR
+const TIP_TAKEN := "TAKEN by the corporation." # TR
 const TIP_ELITE := "Elite: a harder fight." # TR
 const TIP_HERE := "You are here." # TR
 const TIP_NEXT := "You can move here now." # TR
@@ -111,18 +111,18 @@ const TIP_OUT := "Out of reach from here." # TR
 const TIP_RAID := "Raid: %s." # TR
 const TIP_THREATS := "Threats here: %s." # TR
 ## H24 K5: each kind's icon is a silhouette and a symbol, and no two kinds share either
-## silhouette or both (the Modem shop was the Exploit's diamond, the Heat reduction Site
+## silhouette or both (the Mainframe shop was the Exploit's diamond, the Heat reduction Site
 ## ICE's snowflake). A symbol named like a StatIcon is drawn by StatIcon, so a map icon
 ## and the tag for the same thing match (the Exploit's diamond, the shop's bag).
 const KIND_SHAPES := {KIND_FIGHT: "circle", KIND_ELITE: "star8", KIND_SHOP: "tag", KIND_EVENT: "square",
-	KIND_RACK: "tower", KIND_BOSS: "star5", KIND_EXPLOIT: "diamond", KIND_HEAT: "drop", KIND_HOME: "house",
+	KIND_RACK: "tower", KIND_CENTRAL_SERVER: "star5", KIND_EXPLOIT: "diamond", KIND_HEAT: "drop", KIND_HOME: "house",
 	KIND_TIER: "hexagon"}
 const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades", KIND_SHOP: "shop",
-	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_BOSS: "star", KIND_EXPLOIT: "exploits",
+	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_CENTRAL_SERVER: "star", KIND_EXPLOIT: "exploits",
 	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number"}
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
-const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Modem", KIND_EVENT: "Terminal", # TR
-	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
+const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Mainframe", KIND_EVENT: "Terminal", # TR
+	KIND_RACK: "Server Rack", KIND_CENTRAL_SERVER: "Central Server", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
 	KIND_HOME: "CORE", KIND_TIER: "Site"} # TR
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
 ## how far above the roof the icon floats (px, local).
@@ -357,7 +357,7 @@ static func route_kind(node_type: int, elite: bool) -> String:
 			return KIND_ELITE if elite else KIND_FIGHT
 		RC.InfilNodeType.TERMINAL:
 			return KIND_EVENT
-		RC.InfilNodeType.MODEM:
+		RC.InfilNodeType.MAINFRAME:
 			return KIND_SHOP
 		RC.InfilNodeType.SERVER_RACK:
 			return KIND_RACK
@@ -777,7 +777,7 @@ func tip_of(id: StringName) -> String:
 			MARK_SPRAY:
 				tip += " " + tr_word(TIP_CLAIMED)
 			MARK_CROSS:
-				tip += " " + tr_word(TIP_SEIZED)
+				tip += " " + tr_word(TIP_TAKEN)
 	parts.append(tip)
 	var elite := tr_word(TIP_ELITE)
 	if String(n.get("kind", "")) == KIND_ELITE and not tip.contains(elite.get_slice(":", 0)):
@@ -953,7 +953,7 @@ func _draw() -> void:
 			_spotlight()
 	for k in edges.size():
 		_edge_static(edges[k], _route_px(k))
-	# ANIM-R1 M5: a territory change's marks (outline, tint, CLAIMED / SEIZED stamp) show on
+	# ANIM-R1 M5: a territory change's marks (outline, tint, CLAIMED / TAKEN stamp) show on
 	# the map too, over its dimming and under its nodes. ANIM-R3 B6: their stamps draw on the
 	# top layer, over the labels (a label hid CLAIMED).
 	city.draw_marks_on(self, true, false)
@@ -2388,7 +2388,7 @@ func _tag_box(l: Dictionary) -> void:
 		y += f.get_height(fs)
 
 
-## The node's non-colour mark: a spray-paint ring (claimed) or a cross (Seized). The
+## The node's non-colour mark: a spray-paint ring (claimed) or a cross (TAKEN). The
 ## wobble and drips come from a hash of the node id (no game RNG).
 func _mark(n: Dictionary, at: Vector2, col: Color) -> void:
 	match String(n.get("mark", "")):
@@ -2462,7 +2462,7 @@ static func icon_shape(kind: String, p: Vector2, r: float) -> PackedVector2Array
 				p + Vector2(-r * 0.75, r * 1.1), p + Vector2(-r * 0.75, -r * 1.1)])
 		KIND_EVENT:
 			return _ngon(p, r * 1.2, 4, PI * 0.25)
-		KIND_BOSS:
+		KIND_CENTRAL_SERVER:
 			return _star(p, r * 1.3, r * 0.72, 5)
 		KIND_HOME:
 			var s := r * 0.85
@@ -2507,7 +2507,7 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 				var y := p.y + (k - 1) * bh * 1.5 - bh * 0.5
 				ci.draw_rect(Rect2(p.x - bw * 0.5, y, bw, bh), edge, false, maxf(1.0, w * 0.7))
 				ci.draw_circle(Vector2(p.x + bw * 0.3, y + bh * 0.5), bh * 0.3, edge)
-		KIND_BOSS:
+		KIND_CENTRAL_SERVER:
 			ci.draw_colored_polygon(_star(p, r * 0.55, r * 0.25, 5), edge)
 		KIND_EXPLOIT:
 			StatIcon.draw(ci, p, r * 0.62, StatIcon.EXPLOITS, edge)

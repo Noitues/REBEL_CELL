@@ -327,7 +327,7 @@ func test_b_during_a_shred_landing_only_ends_the_landing() -> void:
 	assert_false(is_instance_valid(layer) and layer.busy(), "B ends the landing")
 	await _frames(2)
 	assert_null(scene.get_node_or_null("DeckView"), "the viewer closes as REMOVE closes it")
-	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "and the Modem stays: B did nothing else")
+	assert_eq(RunManager.netrun.run.phase, RunState.Phase.SHOP, "and the Mainframe stays: B did nothing else")
 	holder.queue_free()
 	await _frames(2)
 
@@ -358,7 +358,7 @@ func test_a_skip_stops_every_wheel_motion_and_lands_without_a_flip() -> void:
 	_live()
 	scene.end_turn()
 	var pv: WheelView = scene._player_view
-	scene._stutter_view(pv)  # the Partial shake (a kit helper, not the view's own tween)
+	scene._stutter_view(pv)  # the Weak shake (a kit helper, not the view's own tween)
 	assert_true(pv.motion_busy(), "the stutter counts as motion")
 	scene.skip_motion()
 	assert_false(scene.motion_busy(), "nothing plays right after a skip")
@@ -668,7 +668,7 @@ func test_hits_fly_to_the_hp_ring_and_hits_that_deal_nothing_stamp() -> void:
 	marks = scene.fx_layer.sprites.filter(func(s: Dictionary) -> bool: return s["kind"] == "impact")
 	assert_eq(marks.size(), 1)
 	if not marks.is_empty():
-		assert_eq(int(marks[0]["icon"]), RC.SliceType.EVADE, "an evaded hit shows 0 with the evade mark")
+		assert_eq(int(marks[0]["icon"]), RC.SliceType.DETOUR, "an evaded hit shows 0 with the evade mark")
 	scene.skip_motion()
 	await _close(scene)
 
@@ -834,7 +834,7 @@ func test_chips_come_in_order_of_importance_and_the_fold_keeps_damage() -> void:
 	var many: Array = ranked.duplicate()
 	for k in 8:
 		many.append({"text": "STATUS %d" % k, "color": Color.GREEN})
-	v.intent = {"text": "ATTACK", "chips": many}
+	v.intent = {"text": "SHIM", "chips": many}
 	var rows: Array = v._chip_rows()
 	var shown: Array = []
 	for row in rows:

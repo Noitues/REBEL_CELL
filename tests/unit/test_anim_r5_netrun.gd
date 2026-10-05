@@ -6,7 +6,7 @@ extends GutTest
 ## fate and why Heat rose (B3), typing within its cap and the page's focus after the words
 ## (B4), flights that can be followed and land with a pulse (B5), a route move whose page
 ## takes no press (B6), the route demo through the session (B7), the raid playout's title
-## (B8), "then:" words (B9), a raid framing that stops off the tree (B10), the Modem's socket
+## (B8), "then:" words (B9), a raid framing that stops off the tree (B10), the Mainframe's socket
 ## list that says what it is for (B11).
 
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
@@ -400,5 +400,5 @@ func test_the_socket_list_says_what_it_is_for() -> void:
 		var win := row.get_parent()
 		while win != null and not (win is TerminalWindow):
 			win = win.get_parent()
-		assert_true((win as Control).get_global_rect().grow(1.0).encloses(row.get_global_rect()), "%.1f: inside MICROCHIPS" % scale)
+		assert_true((win as Control).get_global_rect().grow(1.0).encloses(row.get_global_rect()), "%.1f: inside FIRMWARE" % scale)
 		await _close(scene)

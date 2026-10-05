@@ -12,16 +12,16 @@ const HOME_LABEL := "CORE"
 const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clear it.",
 	GridState.SiteStatus.CLEARED: "Cleared: claim it to build a node of your network.",
 	GridState.SiteStatus.CLAIMED: "Claimed: part of your network; it defends in raids.",
-	GridState.SiteStatus.SEIZED: "Seized by a raid: run it again to take it back."}
+	GridState.SiteStatus.TAKEN: "TAKEN by a raid: run it again to take it back."}
 ## H23 #6: what each Site kind is and does (map and mini-map tooltips), led by its kind
 ## word (CityMapOverlay.kind_word) and the icon's shape, so a newcomer learns the icons
 ## without the legend.
 ## H24 K5: the Heat reduction Site is a drop with a flame and a down arrow (the snowflake
 ## is ICE's icon on the top bar).
 const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.", # TR
-	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the boss breach.", # TR
+	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.", # TR
 	CityMapOverlay.KIND_HEAT: "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.", # TR
-	CityMapOverlay.KIND_BOSS: "Boss Site (star): the corporation's core.", # TR
+	CityMapOverlay.KIND_CENTRAL_SERVER: "Central Server (star): the corporation's core.", # TR
 	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."} # TR
 
 
@@ -35,8 +35,8 @@ static func site_kind(c: CampaignState, sd: SiteData) -> String:
 			return CityMapOverlay.KIND_EXPLOIT
 		RC.SiteObjective.HEAT_REDUCTION:
 			return CityMapOverlay.KIND_HEAT
-		RC.SiteObjective.BOSS:
-			return CityMapOverlay.KIND_BOSS
+		RC.SiteObjective.CENTRAL_SERVER:
+			return CityMapOverlay.KIND_CENTRAL_SERVER
 	return CityMapOverlay.KIND_TIER
 
 
@@ -95,7 +95,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 				col = Palette.CELL_TURF  # ANIM-R3 B6: territory, not the damage pink
 			GridState.SiteStatus.CLEARED:
 				col = Palette.NET_CYAN
-			GridState.SiteStatus.SEIZED:
+			GridState.SiteStatus.TAKEN:
 				col = Palette.RESIST_GOLD
 		# H24 K5 / K7: the kind is the drawn icon (no font glyph); a plain Site's hexagon
 		# carries its tier, translated.
@@ -104,16 +104,16 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 		var home := kind == CityMapOverlay.KIND_HOME
 		var glyph := CityMapOverlay.tier_text(sd.tier) if kind == CityMapOverlay.KIND_TIER else ""
 		var named := home or status != GridState.SiteStatus.CORPORATE or kind != CityMapOverlay.KIND_TIER or sd.id == selected
-		# Never colour alone (GDD 9.6): claimed Sites carry a spray ring, Seized a cross.
+		# Never colour alone (GDD 9.6): claimed Sites carry a spray ring, TAKEN a cross.
 		var mark := ""
 		if status == GridState.SiteStatus.CLAIMED:
 			mark = CityMapOverlay.MARK_SPRAY
-		elif status == GridState.SiteStatus.SEIZED:
+		elif status == GridState.SiteStatus.TAKEN:
 			mark = CityMapOverlay.MARK_CROSS
 		# H22: the translated name (TextDb), as on every other screen.
 		var site_label := home_label() if home else TextDb.t(sd, "display_name")
 		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
-			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.BOSS,
+			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.CENTRAL_SERVER,
 			"tier": 0 if home else sd.tier,
 			"tip": site_tip(site_label, sd.tier, status, kind)})
 	var edges: Array[Dictionary] = []

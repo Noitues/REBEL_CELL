@@ -3,13 +3,13 @@
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
-[ext_resource type="Resource" path="res://content/slices/atk_9.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="s_def"]
-[ext_resource type="Resource" path="res://content/slices/crit_15.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/shim_9.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/overflow_15.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="s_shield"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 
-; Recall Unit, elite (GDD A.3): 85 HP; Atk 9, Atk 9, Def 8, Crit 15, Shield 5, Miss;
+; Recall Unit, elite (GDD A.3): 85 HP; Shim 9, Shim 9, Defrag 8, Overflow 15, Shield 5, Miss;
 ; pointer orbits +2 ticks per turn; passive resistance 1.
 
 [sub_resource type="Resource" id="slot_atk"]

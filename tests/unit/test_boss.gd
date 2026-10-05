@@ -21,7 +21,7 @@ func _boss(s: CombatSession) -> CombatantState:
 func test_stats_match_a3() -> void:
 	var b := _boss(_session())
 	assert_eq(b.max_hp, 360, "A.3 lists 300; raised by the M7 balance pass (DECISIONS)")
-	assert_eq(b.wheel.slot_slice_ids, [&"atk_14", &"atk_14", &"def_12", &"dose", &"crit_24", &"miss"])
+	assert_eq(b.wheel.slot_slice_ids, [&"shim_14", &"shim_14", &"defrag_12", &"dose", &"overflow_24", &"miss"])
 	assert_eq(b.wheel.hub_id, &"auto_renew")
 	assert_eq(b.wheel.pointer_ticks, PackedInt32Array([0]))
 

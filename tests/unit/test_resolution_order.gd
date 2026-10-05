@@ -9,12 +9,12 @@ var _dose: SliceData
 
 
 func before_each() -> void:
-	_atk8 = CombatFixture.slice(&"o_atk8", RC.SliceType.ATTACK, 8)
-	_def5 = CombatFixture.slice(&"o_def5", RC.SliceType.DEFEND, 5, RC.TargetRule.SELF)
-	_crit12 = CombatFixture.slice(&"o_crit12", RC.SliceType.CRIT, 12)
+	_atk8 = CombatFixture.slice(&"o_atk8", RC.SliceType.SHIM, 8)
+	_def5 = CombatFixture.slice(&"o_def5", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
+	_crit12 = CombatFixture.slice(&"o_crit12", RC.SliceType.OVERFLOW, 12)
 	var corrupt := CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.POINTER_TARGET, 0, RC.RingScope.OUTER, 1.0, RC.Status.CORRUPTED, RC.SlicePick.RANDOM_NON_MISS)
 	var te: Array[TriggeredEffectData] = [CombatFixture.triggered(RC.Trigger.ON_SLICE_TRIGGER, [corrupt])]
-	_dose = CombatFixture.slice(&"o_dose", RC.SliceType.AFFLICT, 0, RC.TargetRule.POINTER, te)
+	_dose = CombatFixture.slice(&"o_dose", RC.SliceType.INFECT, 0, RC.TargetRule.POINTER, te)
 
 
 func _fight(player_slices: Array, enemy_slices: Array, enemy_hp: int = 50) -> CombatSession:
@@ -47,7 +47,7 @@ func test_passes_run_defensive_then_offensive_then_statuses() -> void:
 	var o := CombatFixture.index_of_event(r, "pass", "pass", "offensive")
 	var st := CombatFixture.index_of_event(r, "pass", "pass", "statuses")
 	assert_true(d < o and o < st, "pass markers in order")
-	assert_true(CombatFixture.index_of_event(r, "block") < o, "DEF resolves in the defensive pass")
+	assert_true(CombatFixture.index_of_event(r, "block") < o, "DEFRAG resolves in the defensive pass")
 	assert_true(CombatFixture.index_of_event(r, "status") > st, "DOSE applies its status in the status pass")
 	assert_eq(s.state.player.wheel.slice_statuses.count(RC.Status.CORRUPTED), 1, "one player slice corrupted")
 

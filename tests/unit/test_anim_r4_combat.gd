@@ -438,15 +438,15 @@ func test_nudge_key_hints_keep_off_the_tags_at_every_text_size() -> void:
 # --- C5: motion numbers in the table -------------------------------------------------------------------------
 
 func test_motion_shares_live_in_the_table() -> void:
-	var ids: Array[StringName] = [&"hit_line_flight", &"ride_swap", &"ride_shrink", &"ride_perfect", &"break_crack", &"modem_sign_strike",
-		&"modem_sign_flicker", &"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type"]
+	var ids: Array[StringName] = [&"hit_line_flight", &"ride_swap", &"ride_shrink", &"ride_perfect", &"break_crack", &"mainframe_sign_strike",
+		&"mainframe_sign_flicker", &"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type"]
 	var lab := FileAccess.get_file_as_string("res://tools/design_lab/motion_lab.gd")
 	for id in ids:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)
 		assert_true(Motion.has(id), "%s is in the table" % id)
 		assert_true(lab.contains("&\"%s\":" % id), "%s has a lab demo" % id)
 	var gone := {"res://scripts/ui/kit/combat_fx_layer.gd": ["RIDE_SWAP_SHARE :=", "RIDE_SHRINK_TO :=", "CRACK_SHARE :=", "LINE_DRAW_SHARE :="],
-		"res://scripts/ui/combat_scene.gd": ["PERFECT_RIDE_SCALE :="], "res://scripts/ui/kit/modem_sign.gd": ["STRIKE_SHARE :=", "FLICKER_SHARE :="]}
+		"res://scripts/ui/combat_scene.gd": ["PERFECT_RIDE_SCALE :="], "res://scripts/ui/kit/mainframe_sign.gd": ["STRIKE_SHARE :=", "FLICKER_SHARE :="]}
 	for path in gone:
 		var src := FileAccess.get_file_as_string(path)
 		for c in gone[path]:
@@ -572,11 +572,11 @@ func test_a_hit_meets_its_guard_in_one_notation_everywhere() -> void:
 	whole.merge({"soaked": 8, "raw": 8, "blocked": 8}, true)
 	var eq: Array = script.hit_equation(whole)
 	assert_eq(eq.map(func(it: Dictionary) -> String: return String(it["text"])), ["8", "8", "0"], "sword 8 − shield 8 = 0")
-	assert_eq(eq.map(func(it: Dictionary) -> int: return int(it["icon"])), [RC.SliceType.ATTACK, RC.SliceType.DEFEND, -1], "as glyphs")
+	assert_eq(eq.map(func(it: Dictionary) -> int: return int(it["icon"])), [RC.SliceType.SHIM, RC.SliceType.DEFRAG, -1], "as glyphs")
 	assert_eq(eq.map(func(it: Dictionary) -> String: return String(it["sep"])), ["", CombatFxLayer.EQ_MINUS, "="], "joined by minus and equals")
 	var shield := whole.duplicate()
 	shield.merge({"blocked": 0, "shielded": 8}, true)
-	assert_eq(int(script.hit_equation(shield)[1]["icon"]), RC.SliceType.DEFEND, "a shield's soak wears the same glyph (one notation)")
+	assert_eq(int(script.hit_equation(shield)[1]["icon"]), RC.SliceType.DEFRAG, "a shield's soak wears the same glyph (one notation)")
 	var part := _hit(&"e0", "enemy", &"player", 9, 41)
 	part.merge({"soaked": 5, "raw": 14, "blocked": 5}, true)
 	assert_eq((script.hit_equation(part) as Array).map(func(it: Dictionary) -> String: return String(it["text"])), ["14", "5", "9"], "sword 14 − shield 5 = 9")
@@ -791,11 +791,11 @@ func test_the_loot_tag_fits_its_window_under_pseudolocalisation() -> void:
 func test_focus_tips_keep_a_readable_width() -> void:
 	assert_gte(FocusTip.FOLD_MIN, 20, "a tip never folds to a word a line")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/kit/focus_tip.gd")
-	assert_true(src.contains("c is ModemSign"), "tips keep off the MODEM sign")
+	assert_true(src.contains("c is MainframeSign"), "tips keep off the MAINFRAME sign")
 
 
 func test_buy_keeps_off_the_cards_text_while_it_flaps() -> void:
-	var card := ZineCard.new("TRACER", -1, "ATK or CRIT slice strips 1 resistance from the target on a Perfect.", 0)
+	var card := ZineCard.new("TRACER", -1, "SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.", 0)
 	card.price = 76
 	card.size = Vector2(120, 150)
 	add_child_autofree(card)

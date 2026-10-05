@@ -17,14 +17,14 @@ func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0
 func _batch1() -> int:
 	var fails := 0
 	# Slices
-	var atk := SliceData.new(); atk.id = &"attack"; atk.slice_type = RC.SliceType.ATTACK; atk.base_output = 6
-	var crit := SliceData.new(); crit.id = &"crit"; crit.slice_type = RC.SliceType.CRIT; crit.base_output = 12
-	var def := SliceData.new(); def.id = &"defend"; def.slice_type = RC.SliceType.DEFEND; def.target_rule = RC.TargetRule.SELF; def.base_output = 5
+	var atk := SliceData.new(); atk.id = &"attack"; atk.slice_type = RC.SliceType.SHIM; atk.base_output = 6
+	var crit := SliceData.new(); crit.id = &"crit"; crit.slice_type = RC.SliceType.OVERFLOW; crit.base_output = 12
+	var def := SliceData.new(); def.id = &"defend"; def.slice_type = RC.SliceType.DEFRAG; def.target_rule = RC.TargetRule.SELF; def.base_output = 5
 	var miss := SliceData.new(); miss.id = &"miss"; miss.slice_type = RC.SliceType.MISS
 	# Mirror firmware
 	var mirror := FirmwareData.new(); mirror.id = &"mirror"; mirror.neighbor_rule = RC.NeighborRule.MIRROR
 	var leech := FirmwareData.new(); leech.id = &"leech"
-	leech.allowed_slice_types = [RC.SliceType.ATTACK]
+	leech.allowed_slice_types = [RC.SliceType.SHIM]
 	var t := TriggeredEffectData.new(); t.min_tier = RC.PrecisionTier.GOOD
 	t.effects = [_mk_effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 1)]
 	leech.triggered_effects = [t]
@@ -40,7 +40,7 @@ func _batch1() -> int:
 	for s in layout:
 		var sl := WheelSlotData.new(); sl.slice = s; slots.append(sl)
 	slots[1].firmware = leech
-	slots[4].firmware = leech   # should fail: leech only fits ATTACK
+	slots[4].firmware = leech   # should fail: leech only fits SHIM
 	w.slots = slots
 	var errs := w.validate()
 	print("Breaker wheel errors (expect 1): ", errs)
@@ -101,10 +101,10 @@ func _site(id, tier, links: Array[StringName], obj := RC.SiteObjective.NONE, ex 
 
 func _batch2() -> int:
 	var fails := 0
-	var atk := _slice(&"atk", RC.SliceType.ATTACK, 6)
-	var def := _slice(&"def", RC.SliceType.DEFEND, 5, RC.TargetRule.SELF)
+	var atk := _slice(&"atk", RC.SliceType.SHIM, 6)
+	var def := _slice(&"def", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
 	var miss := _slice(&"miss", RC.SliceType.MISS, 0)
-	var crit := _slice(&"crit", RC.SliceType.CRIT, 12)
+	var crit := _slice(&"crit", RC.SliceType.OVERFLOW, 12)
 
 	# Class
 	var hub := HubCoreData.new(); hub.id = &"breaker_core"
@@ -138,7 +138,7 @@ func _batch2() -> int:
 		_site(&"a1", 1, [&"a2"]), _site(&"a2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.INTEL),
 		_site(&"b1", 1, [&"b2"]), _site(&"b2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.BREACH),
 		_site(&"c1", 1, [&"c2"]), _site(&"c2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.VIRUS),
-		_site(&"t3", 3, [&"boss"]), _site(&"boss", 4, [], RC.SiteObjective.BOSS),
+		_site(&"t3", 3, [&"boss"]), _site(&"boss", 4, [], RC.SiteObjective.CENTRAL_SERVER),
 	]
 	var grid := CityGridData.new(); grid.sites = sites; grid.home_site_id = &"home"; grid.boss_site_id = &"boss"
 	var ge := grid.validate(); print("Grid (expect 0): ", ge, " warnings: ", grid.size_warnings())
@@ -213,8 +213,8 @@ func _batch4() -> int:
 	bug.effects = [_mk_effect(RC.EffectType.DRAIN_RAM, RC.EffectTarget.SELF, 1)]
 	print("Bug card (expect 0 errors, offered=false): ", bug.validate(), " ", bug.offered)
 	if bug.validate().size() != 0 or bug.offered: fails += 1
-	var atk := _slice(&"atk", RC.SliceType.ATTACK, 3)
-	var def := _slice(&"def", RC.SliceType.DEFEND, 3, RC.TargetRule.SELF)
+	var atk := _slice(&"atk", RC.SliceType.SHIM, 3)
+	var def := _slice(&"def", RC.SliceType.DEFRAG, 3, RC.TargetRule.SELF)
 	var drone := EnemyData.new(); drone.id = &"drone"; drone.hp = 5; drone.wheel = _wheel([atk, def])
 	var hub := HubCoreData.new(); hub.id = &"botnet_core"; hub.max_drones = 3; hub.drone = drone
 	var seg := RingSegmentData.new(); seg.id = &"seg_echo"
@@ -353,7 +353,7 @@ func _h2() -> int:
 	return fails + _h11()
 
 
-## Horizontal pass 11: config ICE caps, Modem stock, emergency rookie, max_ice_level().
+## Horizontal pass 11: config ICE caps, Mainframe stock, emergency rookie, max_ice_level().
 func _h11() -> int:
 	var fails := 0
 	var cfg := CampaignConfigData.new()
@@ -434,7 +434,7 @@ func _anim1() -> int:
 	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
 	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
 	fails += _art0_tier(shipped)
-	return fails
+	return fails + _art0()
 
 
 ## ART-0 E (ported from art-pass W6): every motion entry carries a VFX tier (T0..T4, default
@@ -461,4 +461,29 @@ func _art0_tier(shipped: UiMotionData) -> int:
 				bad_tier += 1
 	print("ART-0 E: ui_motion.tres entries with a bad tier ", bad_tier)
 	if bad_tier != 0: fails += 1
+	return fails
+
+
+## ART-0 names pass (ruling 6.5): the shop node is the Mainframe, in the config field
+## (CampaignConfigData.map_mainframe_layers) and the node-type enum; the old field is gone.
+func _art0() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	var names := {}
+	for p in cfg.get_property_list():
+		names[String(p["name"])] = true
+	print("ART-0: map_mainframe_layers ", cfg.map_mainframe_layers, " shipped ", shipped.map_mainframe_layers if shipped != null else Vector2i(-1, -1),
+		" MAINFRAME ", RC.InfilNodeType.MAINFRAME)
+	if not names.has("map_mainframe_layers") or names.has("map_" + "mo" + "dem_layers"): fails += 1
+	if shipped == null or shipped.map_mainframe_layers != Vector2i(3, 5): fails += 1
+	if RC.InfilNodeType.keys().has("MO" + "DEM"): fails += 1
+	# ART-0 D8: the precision tier is WEAK (was Partial); its multiplier follows.
+	print("ART-0 D8: weak_multiplier ", cfg.weak_multiplier, " shipped ", shipped.weak_multiplier if shipped != null else -1.0, " tiers ", RC.PrecisionTier.keys())
+	if not names.has("weak_multiplier") or names.has("par" + "tial_multiplier") or not is_equal_approx(cfg.weak_multiplier, 0.5): fails += 1
+	if shipped == null or not is_equal_approx(shipped.weak_multiplier, 0.5) or RC.PrecisionTier.keys() != ["WEAK", "GOOD", "PERFECT"]: fails += 1
+	# ART-0 S0: the save locations and the replay switch (CampaignConfigData).
+	print("ART-0 S0: saves ", cfg.save_dir_source, " / ", cfg.save_dir_export, " replays ", cfg.replay_subdir, " on ", cfg.write_replays)
+	if cfg.save_dir_source != "res://saves" or cfg.save_dir_export != "user://saves" or cfg.replay_subdir != "replays" or not cfg.write_replays: fails += 1
+	if shipped == null or shipped.save_dir_source != cfg.save_dir_source or shipped.save_dir_export != cfg.save_dir_export or shipped.replay_subdir != cfg.replay_subdir or shipped.write_replays != cfg.write_replays: fails += 1
 	return fails

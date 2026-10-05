@@ -1,7 +1,7 @@
 class_name NetrunSession
 extends RefCounted
 ## One netrun from launch to completion or death (GDD 4.2, 6.3, 11): map movement,
-## node contents, combats, rewards, Modem shops, Terminal events, banking and the
+## node contents, combats, rewards, Mainframe shops, Terminal events, banking and the
 ## campaign write-back. Pure data + rules; RunManager (autoload) wraps it.
 ##
 ## Randomness: the run's own RngStreams derived from the run seed. Stream use:
@@ -247,7 +247,7 @@ func enter_node(node_id: StringName) -> Array[Dictionary]:
 			_start_combat(true)
 		RC.InfilNodeType.TERMINAL:
 			_open_event()
-		RC.InfilNodeType.MODEM:
+		RC.InfilNodeType.MAINFRAME:
 			_open_shop()
 	_sync()
 	return last_events
@@ -347,7 +347,7 @@ func rule_overrides() -> Dictionary:
 	}
 
 
-## ICE 11 STARTING_BUG_CARD: the working deck carries at least N Bug cards (a Modem can
+## ICE 11 STARTING_BUG_CARD: the working deck carries at least N Bug cards (a Mainframe can
 ## remove them; removal is the counterplay). Applied at run start.
 func _apply_bug_cards() -> void:
 	var wanted := int(campaign.rule_modifier(config, RC.RuleModifierType.STARTING_BUG_CARD))
@@ -721,7 +721,7 @@ func _rescue_class(fallback: ClassData) -> ClassData:
 	var pick := lookup.get_content(StringName(ids[streams.get_stream(&"events").randi_range(0, ids.size() - 1)])) as ClassData
 	return pick if pick != null else fallback
 
-# --- Modem shop ----------------------------------------------------------------------
+# --- Mainframe shop ----------------------------------------------------------------------
 
 func _open_shop() -> void:
 	var rng := streams.get_stream(&"rewards")
@@ -746,7 +746,7 @@ func _open_shop() -> void:
 		remaining.remove_at(idx)
 	run.shop = stock
 	run.phase = RunState.Phase.SHOP
-	last_events.append({"type": "shop", "text": "Modem: %d cards, %d Firmware, %d Daemon(s) for sale." % [stock["cards"].size(), stock["firmware"].size(), stock["daemons"].size()]})
+	last_events.append({"type": "shop", "text": "Mainframe: %d cards, %d Firmware, %d Daemon(s) for sale." % [stock["cards"].size(), stock["firmware"].size(), stock["daemons"].size()]})
 
 
 func _stock(stock: Dictionary, key: String, price_key: String, pool: Array, count: int, price_range: Vector2i, rng: RandomNumberGenerator) -> void:
@@ -758,7 +758,7 @@ func _stock(stock: Dictionary, key: String, price_key: String, pool: Array, coun
 		remaining.remove_at(idx)
 
 
-## CYCLE_PRICE_PCT (ICE 4): every Modem price scales with it.
+## CYCLE_PRICE_PCT (ICE 4): every Mainframe price scales with it.
 func _price_scale() -> float:
 	return 1.0 + campaign.rule_modifier(config, RC.RuleModifierType.CYCLE_PRICE_PCT) / 100.0
 
@@ -847,7 +847,7 @@ func leave_shop() -> Array[Dictionary]:
 		return _refuse("No shop open.")
 	run.shop = {}
 	run.phase = RunState.Phase.MAP
-	last_events.append({"type": "shop_left", "text": "Left the Modem."})
+	last_events.append({"type": "shop_left", "text": "Left the Mainframe."})
 	_maybe_raid_interlude()
 	_sync()
 	return last_events
