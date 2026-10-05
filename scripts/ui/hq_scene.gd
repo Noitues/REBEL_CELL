@@ -1397,7 +1397,7 @@ func show_hq() -> void:
 		poster.wanted = PortraitArt.operative_subject(lead.class_id, lead.id, lead.name)
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
 	# half); the rest scrolls.
-	var line_h := Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale))
+	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
 	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
 	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)

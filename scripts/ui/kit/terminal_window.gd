@@ -1,7 +1,7 @@
 class_name TerminalWindow
 extends PanelContainer
 ## A terminal window over the night city (STYLE_GUIDE 4, "Neon city"): deep navy glass,
-## a thin cyan frame with bright corner brackets and an optional mono title with a pink
+## a thin cyan frame with bright corner brackets and an optional mono title with an accent
 ## underline ("NODE STATUS", "SYSTEM ONLINE"). Put content in `body`.
 
 var title: String = ""
@@ -35,7 +35,7 @@ func _init(p_title: String = "", p_accent: Color = Palette.NET_CYAN) -> void:
 		bar.add_child(tag_label)
 		outer.add_child(bar)
 		var rule := ColorRect.new()
-		rule.color = Color(Palette.CELL_PINK, 0.8)
+		rule.color = Color(accent, 0.8)  # ART-1 1A (v2 §1.2): the terminal's own edge colour, not the verb pink
 		rule.custom_minimum_size = Vector2(0, 2)
 		rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		outer.add_child(rule)
