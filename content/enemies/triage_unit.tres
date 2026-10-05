@@ -6,9 +6,9 @@
 [ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/hotfix_6.tres" id="s_heal"]
 [ext_resource type="Resource" path="res://content/slices/shim_6.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 
-; Triage Unit (GDD A.3): 45 HP; Defrag 8, Hotfix 6, Shim 6, Hotfix 6, Defrag 8, Miss.
+; Triage Unit (GDD A.3): 45 HP; Defrag 8, Hotfix 6, Shim 6, Hotfix 6, Defrag 8, Null.
 
 [sub_resource type="Resource" id="slot_def"]
 script = ExtResource("3")
@@ -22,14 +22,14 @@ slice = ExtResource("s_heal")
 script = ExtResource("3")
 slice = ExtResource("s_atk")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_atk"), SubResource("slot_heal"), SubResource("slot_def"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_def"), SubResource("slot_heal"), SubResource("slot_atk"), SubResource("slot_heal"), SubResource("slot_def"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
 
 [resource]

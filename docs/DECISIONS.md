@@ -168,6 +168,54 @@ colours kept, every new colour a Palette token (the static lint baseline is unch
   `test_codex_is_a_two_column_spread_of_short_lines_with_glyphs`, `test_stats_show_earned_and_unearned_badges_a_grid_and_receipts`,
   `test_pause_fits_its_content_one_primary_and_the_code_in_a_field`, `test_title_pages_fit_at_every_text_scale`,
   `test_every_option_row_stays_inside_the_view_focused_with_pad_or_mouse`: ART-10).
+### 2026-10-05 — Art direction — ART-0 names pass, part 3
+Applies "2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands" (ART-0 B3).
+Internal names follow the display names; no aliases, no migrations (old saves naming `shield_5`,
+`deploy_1` or `miss` fail to load through the existing "can't load" path). `tests/unit/test_names_pass.gd`
+(PART3 table) sweeps player strings and code for the old words.
+- **Slice programs (ruling 1).** `RC.SliceType` is { SHIM, OVERFLOW, DEFRAG, DETOUR, SANDBOX, TROJAN,
+  HOTFIX, INFECT, NULL } (same positions, so content keeps its ints). Content ids and files:
+  `sandbox_5`, `sandbox_8` (were shield_*), `trojan_1` (deploy_1), `null` (miss); display names
+  "Sandbox 5", "Sandbox 8", "Trojan 1", "Null"; their wheel sub-resources (`*_slot_null`, ...),
+  the generators under `tools/content_gen/`. Enums and identifiers that named the slice follow:
+  `RC.SlicePick.RANDOM_NON_NULL`, `RC.Trigger.ON_NULL_SLICE`, `Palette.SLICE_NULL` /
+  `SLICE_TROJAN`, `CombatState.null_resolved` / `RunState.null_resolved` (Cold Exit), the combat
+  event `"null"` (was "miss"), the operative bark trigger `bark:null`, the motion id
+  `precision_null_static` (table, REQUIRED_IDS, motion lab demo `null`), `WheelView.play_null_static`.
+  Schema: `CampaignConfigData.miss_slice_overwrite_price` → `null_slice_overwrite_price` (150) and
+  `mirror_deploy_base` → `mirror_trojan_base` (6), checked in `schema_smoke_checks.gd` `_art0` with
+  the enum's keys.
+- **Words and tags.** Whole words (`Palette.SLICE_WORDS`) SANDBOX / TROJAN / NULL; compact tags
+  (`Palette.SLICE_NAMES`) **SBOX / TRJN / NULL**, four letters like part 2's SHIM / OVFL / DFRG / DTOR /
+  HFIX / INFC, so they take the room those tags already fit in at text size 2.0 (the mono face:
+  test `test_b3_the_new_tags_fit_like_the_others_at_text_size_2`). Player text names the
+  programs the way part 2 does: upper case in rules text ("The NULL slice restores 2 RAM",
+  "DEFRAG and SANDBOX slices", "non-NULL slice", codex "SANDBOX: gains shield."), title case in
+  wheel lists ("Shim, Shim, Defrag, Trojan, Trojan, Null"), the barks "Null. Rerouting power.",
+  "Perfect Trojan. Something of mine is inside theirs now."; GDD 2.3, 2.4, 2.6, 5.2, 6.2, 10,
+  11 and A.3 follow (the v0.9 change line "Miss precision tier removed" is history and stays).
+- **Kept meanings (allow-listed in the sweep).** *Shield* the resource: block / shield, the
+  shield cap 15, "+%d SHIELD", "SHIELD %d", hubs that "gain 4 shield", Shield Wall, Shield Cache,
+  EffectType.GAIN_SHIELD; a SANDBOX slice *gains shield*. *Deploy* the verb: drones and Armory
+  assets ("Deploy armory asset"), EffectType.DEPLOY_DRONE, the `"deploy"` combat event and
+  `bark:deploy` (a drone deployed, by a TROJAN slice or a card). *Miss* in prose: "Miss a payment",
+  "the cameras miss", "make a miss count", the precision rule "no miss tier".
+- **Five Heat bands (ruling 2).** COOL / NOTICED / FLAGGED / HUNTED / PURGE, starting at the MAJOR
+  levels and the PURGE level of `heat_thresholds` (25 / 50 / 75 / 100); no threshold or number
+  changed and none is written in code. New `CampaignConfigData.heat_band_levels()` (a method, no
+  field; smoke-checked in `_art0`) and `HeatRules.band_levels(campaign, config)`; the HQ's
+  wanted poster and the combat top bar pass the latter. `HeatPoster.BAND_WORDS` gains "purge"
+  (the index caps follow the array, no more `3`); `Palette.HEAT_BAND_COLORS` gains a fifth entry,
+  HARM again: PURGE reuses HUNTED's colour (and the poster's red banner, by its existing clamp)
+  until ART-1 with its own word. Call: the PURGE band starts where the Purge actually fires,
+  so at ICE 17+ (PURGE_THRESHOLD 90) it reads PURGE from 90; `Palette.heat_band` without a
+  campaign reads the config's 100. Unchanged: `CampaignState.heat_majors_crossed` (rules
+  scaling, CORRUPTED) and the HQ backdrop's search lights (MAJOR count), and `consequence()`
+  (the MAJOR modifiers in force; the PURGE event text is a one-time event). GDD 4.3: the
+  duplicated "Bands" line is one line, with the ICE 17 note. Tests:
+  `test_b3_every_heat_band_boundary_maps_to_its_word` (24/25, 49/50, 74/75, 99/100),
+  `test_b3_the_poster_shows_purge_at_100`, `test_b3_the_purge_band_starts_where_the_purge_fires`;
+  `test_heat_color_bands_follow_the_config_majors` caps at PURGE now.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
 Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
@@ -283,6 +331,27 @@ names follow the display words; no aliases, no migrations.
 - Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
+
+### 2026-10-05 — Designer ruling: one full run, one audit at the end
+1. **One full-suite run** instead of three: each ART group (and ART-0) ends with one full run in isolation
+   (`process/checks.sh`, `RUNS=3` only after a failure, to tell a flaky test from a real one; the runner
+   already reruns failing scripts alone). Supersedes the "×3" in "Designer ruling: check cadence for M14".
+2. **No per-batch or per-group audits.** The vertical / horizontal / naive audit loop runs **once**, after
+   ART-12, over every M14 change, with its fix rounds until CLEAN (nothing deferred, P3s included). The
+   designer review after each group stays. Supersedes the per-group audit in "Designer ruling: M14
+   regrouped" and plan §4.1 step 5; MILESTONES M14 and the ART-0 brief updated.
+
+### 2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands
+1. **Default accepted:** the remaining slice programs follow ART_BIBLE v2 §3 (rounds 32–34): SHIELD →
+   **SANDBOX**, DEPLOY → **TROJAN**, MISS → **NULL**, display and internal names alike (ruling 5 of pause
+   point 0). The names-for-M14 entry's "SANDBOX, TROJAN, NULL unchanged" meant "these program words are
+   already settled", not "keep SHIELD / DEPLOY / MISS".
+2. **Changed: five Heat bands.** The game is balanced around the five Heat levels the rules already have
+   (GDD 4.3: below 25, MAJOR 25 / 50 / 75, PURGE 100), so the bands follow them: **COOL** 0–24,
+   **NOTICED** 25–49, **FLAGGED** 50–74, **HUNTED** 75–99, **PURGE** 100. Thresholds unchanged; no new
+   threshold. ART_BIBLE v2 (four bands, §2.8 / §3.15) is updated later to match ("art can be updated
+   later"); until then the PURGE band reuses HUNTED's look with its own word. Supersedes the D11 wording
+   about a new NOTICED band below 25 and area B's four-band call.
 
 ### 2026-10-05 — Designer ruling: reduce effects as a project-wide shader global
 Asked after area E merged (E made `reduce_effects` a per-material uniform set by `ShaderReduce`, because

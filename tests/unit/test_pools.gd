@@ -83,7 +83,7 @@ func _fw_session(slot: int, firmware_id: String) -> CombatSession:
 
 
 func test_new_firmware_hooks() -> void:
-	# Breaker wheel: 0 Overflow 12, 1-3 Shim 6, 4 Defrag 5, 5 Miss.
+	# Breaker wheel: 0 Overflow 12, 1-3 Shim 6, 4 Defrag 5, 5 Null.
 	var s := _fw_session(1, "siphon")
 	s.state.player.hp = 30
 	CombatFixture.land(s.state.player, 1, 1)
@@ -96,7 +96,7 @@ func test_new_firmware_hooks() -> void:
 	for ev in CombatFixture.events_of(r, "ram"):
 		if int(ev["amount"]) == 2:
 			ram_up = true
-	assert_true(ram_up, "Recycler: the Miss slice restores 2 RAM")
+	assert_true(ram_up, "Recycler: the NULL slice restores 2 RAM")
 	s = _fw_session(4, "bulkhead")
 	CombatFixture.land(s.state.player, 4, 1)
 	r = s.apply(CombatAction.end_turn())

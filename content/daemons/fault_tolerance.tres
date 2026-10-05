@@ -21,6 +21,6 @@ effects = Array[ExtResource("3")]([SubResource("fx")])
 script = ExtResource("1")
 id = &"fault_tolerance"
 display_name = "Fault Tolerance"
-description = "The Miss slice deals 3 damage to the pointer target."
+description = "The NULL slice deals 3 damage to the pointer target."
 cycle_cost = 200
 triggered_effects = Array[ExtResource("2")]([SubResource("te")])

@@ -5,7 +5,7 @@ extends GutTest
 var _atk6: SliceData
 var _def5: SliceData
 var _crit12: SliceData
-var _miss: SliceData
+var _null: SliceData
 var _ring: InnerRingData
 
 
@@ -13,7 +13,7 @@ func before_each() -> void:
 	_atk6 = CombatFixture.slice(&"cd_atk6", RC.SliceType.SHIM, 6)
 	_def5 = CombatFixture.slice(&"cd_def5", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
 	_crit12 = CombatFixture.slice(&"cd_crit12", RC.SliceType.OVERFLOW, 12)
-	_miss = CombatFixture.slice(&"cd_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"cd_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	_ring = CombatFixture.ring([CombatFixture.segment(&"cd_s0"), CombatFixture.segment(&"cd_s1"), CombatFixture.segment(&"cd_s2")])
 
 
@@ -22,14 +22,14 @@ func _card(id: StringName) -> CardData:
 
 
 ## A session whose hand holds exactly `card_ids` (deck = those cards), on a wheel
-## Overflow, Shim, Shim, Shim, Defrag, Miss with an inner ring, against `enemy`.
+## Overflow, Shim, Shim, Shim, Defrag, Null with an inner ring, against `enemy`.
 func _session(card_ids: Array, enemy: EnemyData = null, hp: int = 60) -> CombatSession:
 	var deck: Array[CardData] = []
 	for id in card_ids:
 		deck.append(_card(id))
-	var cls := CombatFixture.operative_class(&"cd_class", hp, CombatFixture.wheel([_crit12, _atk6, _atk6, _atk6, _def5, _miss], null, [0], 0, _ring), deck)
+	var cls := CombatFixture.operative_class(&"cd_class", hp, CombatFixture.wheel([_crit12, _atk6, _atk6, _atk6, _def5, _null], null, [0], 0, _ring), deck)
 	if enemy == null:
-		enemy = CombatFixture.enemy(&"cd_dummy", 200, CombatFixture.miss_wheel())
+		enemy = CombatFixture.enemy(&"cd_dummy", 200, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	CombatFixture.land(s.state.player, 1)
 	CombatFixture.land_inner(s.state.player, 0)
@@ -199,13 +199,13 @@ func test_steady_hand_pays_2_ram_next_turn_on_a_perfect() -> void:
 
 
 func test_strip_removes_2_resistance() -> void:
-	var s := _session([&"strip"], CombatFixture.enemy(&"cd_resist", 200, CombatFixture.miss_wheel(3)))
+	var s := _session([&"strip"], CombatFixture.enemy(&"cd_resist", 200, CombatFixture.null_wheel(3)))
 	_play(s, &"strip", &"enemy_0")
 	assert_eq(_enemy(s).resistance, 1)
 
 
 func test_hub_breach_disables_the_hub_for_a_turn() -> void:
-	var s := _session([&"hub_breach"], CombatFixture.enemy(&"cd_hubbed", 200, CombatFixture.miss_wheel(0, CombatFixture.hub(&"cd_lock", 3))))
+	var s := _session([&"hub_breach"], CombatFixture.enemy(&"cd_hubbed", 200, CombatFixture.null_wheel(0, CombatFixture.hub(&"cd_lock", 3))))
 	assert_eq(_enemy(s).resistance, 3)
 	_play(s, &"hub_breach", &"enemy_0")
 	assert_true(_enemy(s).is_hub_breached())
@@ -214,10 +214,10 @@ func test_hub_breach_disables_the_hub_for_a_turn() -> void:
 
 
 func test_undock_moves_a_satellite_to_an_adjacent_slice() -> void:
-	var drone := CombatFixture.enemy(&"cd_drone", 5, CombatFixture.wheel([_miss, _miss]))
-	var host := CombatFixture.enemy(&"cd_host", 200, CombatFixture.miss_wheel(), [CombatFixture.spawn(drone, 2)])
+	var drone := CombatFixture.enemy(&"cd_drone", 5, CombatFixture.wheel([_null, _null]))
+	var host := CombatFixture.enemy(&"cd_host", 200, CombatFixture.null_wheel(), [CombatFixture.spawn(drone, 2)])
 	var deck: Array[CardData] = [_card(&"undock")]
-	var cls := CombatFixture.operative_class(&"cd_class", 60, CombatFixture.wheel([_crit12, _atk6, _atk6, _atk6, _def5, _miss]), deck)
+	var cls := CombatFixture.operative_class(&"cd_class", 60, CombatFixture.wheel([_crit12, _atk6, _atk6, _atk6, _def5, _null]), deck)
 	var s := CombatSession.start(CombatFixture.resolver([cls, drone, host]), cls.id, [host.id], 3)
 	var sat := s.state.satellites_of(&"enemy_0")[0]
 	var r := s.apply(CombatAction.play_card(0, sat.id))
@@ -242,7 +242,7 @@ func test_freeze_skips_the_next_respin_and_exhausts() -> void:
 
 
 func test_jam_nudges_through_resistance() -> void:
-	var s := _session([&"jam"], CombatFixture.enemy(&"cd_resist", 200, CombatFixture.miss_wheel(3)))
+	var s := _session([&"jam"], CombatFixture.enemy(&"cd_resist", 200, CombatFixture.null_wheel(3)))
 	var before := _enemy(s).wheel.rotation
 	_play(s, &"jam", &"enemy_0")
 	assert_eq(_enemy(s).wheel.rotation, before + 1)

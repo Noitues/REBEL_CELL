@@ -5,7 +5,7 @@ extends Resource
 ##   "raid:<raid_id>"      raid warning (Corpo voice or DISPATCH)
 ##   "threshold:<heat>"    Heat threshold crossed
 ##   "boss", "win", "loss" the breach, the campaign end
-##   "bark:<trigger>"      operative barks: perfect, miss, hurt, victory, defeat, deploy, jack_in
+##   "bark:<trigger>"      operative barks: perfect, null, hurt, victory, defeat, deploy, jack_in
 ##   "dj"                  pirate-radio lines at HQ
 ##   "run_start", "run_complete", "run_died", "rack"
 ## Several lines may share a key; Dialogue picks one deterministically.

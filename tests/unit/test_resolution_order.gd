@@ -12,7 +12,7 @@ func before_each() -> void:
 	_atk8 = CombatFixture.slice(&"o_atk8", RC.SliceType.SHIM, 8)
 	_def5 = CombatFixture.slice(&"o_def5", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
 	_crit12 = CombatFixture.slice(&"o_crit12", RC.SliceType.OVERFLOW, 12)
-	var corrupt := CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.POINTER_TARGET, 0, RC.RingScope.OUTER, 1.0, RC.Status.CORRUPTED, RC.SlicePick.RANDOM_NON_MISS)
+	var corrupt := CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.POINTER_TARGET, 0, RC.RingScope.OUTER, 1.0, RC.Status.CORRUPTED, RC.SlicePick.RANDOM_NON_NULL)
 	var te: Array[TriggeredEffectData] = [CombatFixture.triggered(RC.Trigger.ON_SLICE_TRIGGER, [corrupt])]
 	_dose = CombatFixture.slice(&"o_dose", RC.SliceType.INFECT, 0, RC.TargetRule.POINTER, te)
 

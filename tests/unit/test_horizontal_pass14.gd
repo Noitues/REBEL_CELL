@@ -127,7 +127,7 @@ func test_a_start_of_turn_kill_ends_the_fight() -> void:
 	var atk := CombatFixture.slice(&"h14_atk", RC.SliceType.SHIM, 6)
 	var deck: Array[CardData] = [CombatFixture.card(&"h14_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h14_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, atk], hub), deck)
-	var enemy := CombatFixture.enemy(&"h14_dummy", 50, CombatFixture.miss_wheel())
+	var enemy := CombatFixture.enemy(&"h14_dummy", 50, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	assert_true(s.state.is_over(), "the turn-start zap won the fight")
 	assert_eq(s.state.outcome, CombatState.Outcome.VICTORY)

@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="e2"]
 [ext_resource type="Resource" path="res://content/slices/shim_12.tres" id="e3"]
 [ext_resource type="Resource" path="res://content/slices/defrag_12.tres" id="e4"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e5"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="e5"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e6"]
 
 ; rebel_cell enemy (decision 2026-09-24).
@@ -22,14 +22,14 @@ slice = ExtResource("e3")
 script = ExtResource("e2")
 slice = ExtResource("e4")
 
-[sub_resource type="Resource" id="wheel_slot_miss"]
+[sub_resource type="Resource" id="wheel_slot_null"]
 script = ExtResource("e2")
 slice = ExtResource("e5")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("e6")
 slice_count = 6
-slots = Array[ExtResource("e2")]([SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_miss")])
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_overflow_24"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_shim_12"), SubResource("wheel_slot_defrag_12"), SubResource("wheel_slot_null")])
 pointer_ticks = PackedInt32Array(0, 15)
 passive_resistance = 1
 

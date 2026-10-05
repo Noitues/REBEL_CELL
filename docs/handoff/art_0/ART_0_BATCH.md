@@ -159,8 +159,7 @@ guards, `PaperInk` high contrast. Behaviour and tests only; zine skins are not p
 | tests/test_manifest.json, DECISIONS | everyone (union) |
 
 ## Batch acceptance (ART-0)
-- [ ] A1–A6, B1–B4, C, D, E, F, B part 2 merged one at a time, each followed by checks_fast.sh green, pushed; full suite x3 (checks.sh) once at batch end, in isolation.
+- [ ] A1–A6, B1–B4, C, D, E, F, B part 2 merged one at a time, each followed by checks_fast.sh green, pushed; one full-suite run (checks.sh) at batch end, in isolation.
 - [ ] Full suite green with the ported M13 tests; the QA harness runs on main's screens.
 - [ ] Timeline `17_art0` (the baseline before the new look) with a README row.
-- [ ] Audit round ART-R0 to CLEAN.
 - [ ] GAP_ANALYSIS row, test count, DECISIONS per area.

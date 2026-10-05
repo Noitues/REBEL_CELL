@@ -20,12 +20,12 @@ text = "Perfect. Tell the board the invoice is in the mail."
 
 [sub_resource type="Resource" id="l3"]
 script = ExtResource("2")
-key = "bark:miss"
-text = "Miss. The wheel owes me one."
+key = "bark:null"
+text = "Null. The wheel owes me one."
 
 [sub_resource type="Resource" id="l4"]
 script = ExtResource("2")
-key = "bark:miss"
+key = "bark:null"
 text = "Nothing. Static. Spin it again."
 
 [sub_resource type="Resource" id="l5"]

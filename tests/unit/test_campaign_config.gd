@@ -84,7 +84,7 @@ func test_shop_and_ram_match_gdd_11_2_and_11_3() -> void:
 	assert_eq(_cfg.card_removal_price, 50)
 	assert_eq(_cfg.card_removal_increment, 25)
 	assert_eq(_cfg.slice_overwrite_price, 100)
-	assert_eq(_cfg.miss_slice_overwrite_price, 150)
+	assert_eq(_cfg.null_slice_overwrite_price, 150)
 	assert_eq(_cfg.extra_nudge_ram_cost, 1)
 	assert_eq(_cfg.respin_ram_cost, 4)
 

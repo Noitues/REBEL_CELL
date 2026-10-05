@@ -6,10 +6,10 @@
 [ext_resource type="Resource" path="res://content/slices/shim_9.tres" id="s_atk"]
 [ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/overflow_15.tres" id="s_crit"]
-[ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="s_shield"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/sandbox_5.tres" id="s_shield"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 
-; Recall Unit, elite (GDD A.3): 85 HP; Shim 9, Shim 9, Defrag 8, Overflow 15, Shield 5, Miss;
+; Recall Unit, elite (GDD A.3): 85 HP; Shim 9, Shim 9, Defrag 8, Overflow 15, Sandbox 5, Null;
 ; pointer orbits +2 ticks per turn; passive resistance 1.
 
 [sub_resource type="Resource" id="slot_atk"]
@@ -28,14 +28,14 @@ slice = ExtResource("s_crit")
 script = ExtResource("3")
 slice = ExtResource("s_shield")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_shield"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_shield"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
 passive_resistance = 1
 pointer_orbit_per_turn = 2

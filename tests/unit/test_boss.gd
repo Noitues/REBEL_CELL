@@ -10,7 +10,7 @@ func before_all() -> void:
 
 func _session(overrides: Dictionary = {}) -> CombatSession:
 	var s := CombatSession.start(_resolver, &"breaker", [&"renewal_engine"], 5, &"rank:1", 0, overrides)
-	CombatFixture.land(s.state.player, 5)  # Miss: the operative does no damage unless told to
+	CombatFixture.land(s.state.player, 5)  # NULL: the operative does no damage unless told to
 	return s
 
 
@@ -21,7 +21,7 @@ func _boss(s: CombatSession) -> CombatantState:
 func test_stats_match_a3() -> void:
 	var b := _boss(_session())
 	assert_eq(b.max_hp, 360, "A.3 lists 300; raised by the M7 balance pass (DECISIONS)")
-	assert_eq(b.wheel.slot_slice_ids, [&"shim_14", &"shim_14", &"defrag_12", &"dose", &"overflow_24", &"miss"])
+	assert_eq(b.wheel.slot_slice_ids, [&"shim_14", &"shim_14", &"defrag_12", &"dose", &"overflow_24", &"null"])
 	assert_eq(b.wheel.hub_id, &"auto_renew")
 	assert_eq(b.wheel.pointer_ticks, PackedInt32Array([0]))
 
@@ -88,6 +88,6 @@ func test_virus_exploit_corrupts_two_boss_slices_at_the_start() -> void:
 	var s := _session({"boss_corrupt_slices": 2})
 	var statuses := _boss(s).wheel.slice_statuses
 	assert_eq(statuses.count(RC.Status.CORRUPTED), 2)
-	assert_eq(statuses[5], RC.Status.NONE, "never the Miss slice")
+	assert_eq(statuses[5], RC.Status.NONE, "never the NULL slice")
 	var replayed := CombatSession.replay(_resolver, s.setup, s.combat_seed, s.history)
 	assert_eq(replayed.state.get_combatant(&"enemy_0").wheel.slice_statuses, statuses, "deterministic")

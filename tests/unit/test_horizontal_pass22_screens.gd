@@ -11,7 +11,7 @@ const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const SLOT := "gut_s22_screens"
 const CANVAS := Vector2(1280, 720)
-const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the Miss slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
+const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the NULL slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
 ## A long Japanese line (no spaces at all).
 const CJK_LINE := "コンプライアンス部門があなたのセルを監査対象に指定しました。針をミスのスライスから外し、監査官が到着する前にラックを確保し、ヒートが次のしきい値を超えないようにしてください。さもないと地区全体が一週間封鎖されます。"
 ## One German-style word longer than a narrow dock.

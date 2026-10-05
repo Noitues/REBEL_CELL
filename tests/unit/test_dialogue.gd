@@ -28,7 +28,7 @@ func test_every_site_raid_and_threshold_has_a_line() -> void:
 		assert_not_null(Dialogue.line("threshold:%d" % heat, RC.Voice.DISPATCH, &"solace"))
 	for key in ["boss", "win", "loss", "run_start", "run_complete", "run_died", "rack"]:
 		assert_not_null(Dialogue.line(key, RC.Voice.DISPATCH, &"solace"), key)
-	for trigger in ["perfect", "miss", "hurt", "victory", "defeat", "deploy", "jack_in", "boss"]:
+	for trigger in ["perfect", "null", "hurt", "victory", "defeat", "deploy", "jack_in", "boss"]:
 		assert_not_null(Dialogue.line("bark:%s" % trigger, RC.Voice.STREET_MERC, &"", &"breaker"), trigger)
 	assert_not_null(Dialogue.line("dj"))
 

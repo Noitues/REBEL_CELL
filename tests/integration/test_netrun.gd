@@ -313,7 +313,7 @@ func test_cold_exit_and_scrubber_run_level_daemons() -> void:
 	for e in s.last_events:
 		if e.get("type", "") == "heat" and e["reason"] == "cold_exit":
 			cold = true
-	assert_eq(cold, not s.run.miss_resolved, "Cold Exit -3 iff the Miss slice never resolved")
+	assert_eq(cold, not s.run.null_resolved, "Cold Exit -3 iff the NULL slice never resolved")
 
 
 # --- Mainframe and Terminal ------------------------------------------------------------------
@@ -353,12 +353,12 @@ func test_mainframe_shop_sells_cards_firmware_daemons_removal_and_overwrites() -
 	s.remove_card(0)
 	assert_eq(s.run.operative.deck.size(), deck)
 	assert_eq(s.card_removal_price(), _cfg.card_removal_price + _cfg.card_removal_increment, "+25 each time")
-	assert_eq(s.slice_overwrite_price(5), _cfg.miss_slice_overwrite_price, "Miss slot costs 150")
+	assert_eq(s.slice_overwrite_price(5), _cfg.null_slice_overwrite_price, "NULL slot costs 150")
 	assert_eq(s.slice_overwrite_price(1), _cfg.slice_overwrite_price)
 	var cycles := s.run.cycles
 	s.overwrite_slice(5, 0)
-	assert_ne(s.run.operative.slot_slice_ids[5], &"miss", "Miss slice overwritten")
-	assert_eq(s.run.cycles, cycles - _cfg.miss_slice_overwrite_price)
+	assert_ne(s.run.operative.slot_slice_ids[5], &"null", "NULL slice overwritten")
+	assert_eq(s.run.cycles, cycles - _cfg.null_slice_overwrite_price)
 	var daemon := StringName(String(shop["daemons"][0]))
 	s.buy("daemons", 0)
 	assert_true(s.run.operative.daemon_ids.has(daemon))

@@ -8,10 +8,10 @@
 [ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
 [ext_resource type="Resource" path="res://content/slices/overflow_14.tres" id="s_crit"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 [ext_resource type="Resource" path="res://content/enemies/collections_drone.tres" id="drone"]
 
-; Collections Agent (GDD A.3): 40 HP; Shim 8, Shim 8, Defrag 6, Dose, Overflow 14, Miss;
+; Collections Agent (GDD A.3): 40 HP; Shim 8, Shim 8, Defrag 6, Dose, Overflow 14, Null;
 ; satellite drone docked on slice 1 at combat start (trigger 1 = ON_COMBAT_START).
 
 [sub_resource type="Resource" id="slot_atk"]
@@ -30,14 +30,14 @@ slice = ExtResource("s_dose")
 script = ExtResource("3")
 slice = ExtResource("s_crit")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
 
 [sub_resource type="Resource" id="spawn_drone"]

@@ -3,7 +3,7 @@ content. Enum values: EffectType DEAL_DAMAGE 0, EVADE 3, APPLY_STATUS 4, NUDGE 5
 FREEZE 9, MODIFY_RESISTANCE 10, GAIN_RAM 12, HEAL 14, SNAP_TO_CENTER 16, DEPLOY_DRONE 18,
 RETRIGGER 19, CUSTOM 24. EffectTarget SELF 0, OWN_WHEEL 1, TARGET_WHEEL 2, POINTER_TARGET 3.
 Trigger PASSIVE 0, ON_PERFECT 6, ON_RAID_START 12. Status PARASITE 4. SlicePick CHOSEN 2.
-WheelTarget OWN 0, ENEMY 1, ANY 2. SliceType DEPLOY 5. RingScope WHOLE 2."""
+WheelTarget OWN 0, ENEMY 1, ANY 2. SliceType TROJAN 5. RingScope WHOLE 2."""
 import os
 # Repo root (this file lives in tools/content_gen/).
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -106,10 +106,10 @@ ring("content/rings/ghost_ring.tres", ["seg_pierce", "seg_x2", "seg_echo"], "Gho
 ring("content/rings/rigger_ring.tres", ["seg_accelerator", "seg_x2", "seg_echo"], "Rigger Rank 1 Inner Ring: Accelerator / x2 / Echo (decision 2026-09-24).")
 ring("content/rings/botnet_ring.tres", ["seg_echo", "seg_corrupt", "seg_x2"], "Botnet Rank 1 Inner Ring: Echo / Corrupt / x2 (decision 2026-09-24).")
 
-# ---- Deploy slice ---------------------------------------------------------------------------------------
+# ---- Trojan slice ---------------------------------------------------------------------------------------
 r = Res("SliceData", "res://scripts/data/slice_data.gd")
-r.main = ['id = &"deploy_1"', 'display_name = "Deploy 1"', "slice_type = 5", "target_rule = 0", "base_output = 1"]
-r.write("content/slices/deploy_1.tres", "DEPLOY (GDD 2.6): docks one drone of the Hub's template on this slice (or the next free one).")
+r.main = ['id = &"trojan_1"', 'display_name = "Trojan 1"', "slice_type = 5", "target_rule = 0", "base_output = 1"]
+r.write("content/slices/trojan_1.tres", "TROJAN (GDD 2.6): docks one drone of the Hub's template on this slice (or the next free one).")
 
 # ---- Hub Cores ----------------------------------------------------------------------------------------------
 def hub(hid, name, desc, passive=None, hook=None, extra=(), comment=""):
@@ -136,11 +136,11 @@ hub("rig_core", "Rig Core", "+1 max RAM. Perfect: the slice resolves again at ha
 hub("rig_core_mk2", "Rig Core Mk2", "+2 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 2 RAM and gain a free nudge.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_ram", 12, 0, 2), r.effect("fx_nudge", 24, 0, 1, custom_handler=r.script("res://scripts/core/handlers/calibrate_handler.gd"))], 2),
     extra=["max_ram_bonus = 2"], comment="Rig Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
-hub("swarm_core", "Swarm Core", "Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice.",
+hub("swarm_core", "Swarm Core", "Up to 3 drones; drones persist between the fights of a netrun. Perfect: the slice resolves again at half; on a Trojan, a parasite halves the target slice.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_parasite", 24, 3, None, custom_handler=r.script("res://scripts/core/handlers/parasite_handler.gd"))], 2),
     extra=lambda r: ["max_drones = 3", "drone = " + r.res("res://content/enemies/botnet_drone.tres"), "drones_persist = true"],
     comment="Swarm Core (GDD 5.2).")
-hub("swarm_core_mk2", "Swarm Core Mk2", "Up to 4 drones that persist between fights. Perfect: the slice resolves again at half; on a Deploy, a parasite halves the target slice.",
+hub("swarm_core_mk2", "Swarm Core Mk2", "Up to 4 drones that persist between fights. Perfect: the slice resolves again at half; on a Trojan, a parasite halves the target slice.",
     hook=lambda r: r.te("hook", 6, [r.effect("fx_retrigger", 19, 0, None, multiplier="0.5"), r.effect("fx_parasite", 24, 3, None, custom_handler=r.script("res://scripts/core/handlers/parasite_handler.gd"))], 2),
     extra=lambda r: ["max_drones = 4", "drone = " + r.res("res://content/enemies/botnet_drone.tres"), "drones_persist = true"],
     comment="Swarm Core Mk2, Rank 2 upgrade (decision 2026-09-24).")
@@ -233,41 +233,41 @@ def klass(cid, name, desc, hp, slices, hub_id, hub_mk2, ring_id, options, deck, 
     r.write("content/classes/%s.tres" % cid, comment)
 
 klass("ghost", "Ghost", "Slips past resistance. Perfect landings strip the target's defences.", 50,
-      ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "miss"], "ghost_core", "ghost_core_mk2", "ghost_ring",
+      ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "null"], "ghost_core", "ghost_core_mk2", "ghost_ring",
       ["seg_blank", "seg_anchor", "seg_corrupt", "seg_accelerator"],
       ["fine_tune", "fine_tune", "fine_tune", "jolt", "jolt", "jam", "micro_adjust", "strip", "snap", "ghost_step"],
       ["ghost_step", "blind_spot"], (9, 1),
-      "Ghost (GDD 5.2): 50 HP; Shim, Shim, Defrag, Defrag, Detour, Miss. Station bonus: threats entering the node\nare held 1 step (FREEZE amount 1; Rank scales it: 1 / 1 / 2 / 2 steps).")
+      "Ghost (GDD 5.2): 50 HP; Shim, Shim, Defrag, Defrag, Detour, Null. Station bonus: threats entering the node\nare held 1 step (FREEZE amount 1; Rank scales it: 1 / 1 / 2 / 2 steps).")
 klass("rigger", "Rigger", "Runs hot on RAM. Perfect landings pay for the next move.", 55,
-      ["shim_16", "defrag_6", "shim_16", "shield_5", "defrag_6", "miss"], "rig_core", "rig_core_mk2", "rigger_ring",
+      ["shim_16", "defrag_6", "shim_16", "sandbox_5", "defrag_6", "null"], "rig_core", "rig_core_mk2", "rigger_ring",
       ["seg_pierce", "seg_corrupt", "seg_anchor"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "calibrate", "cache", "ring_tap", "brute_spin", "torque_wrench"],
       ["torque_wrench", "hot_swap"], (14, 5),
-      "Rigger (GDD 5.2): 55 HP; Shim, Shim, Defrag, Defrag, Shield, Miss. Station bonus: the node regains 5\nintegrity after each wave and when the raid ends (HEAL amount 5, Rank scales it).")
+      "Rigger (GDD 5.2): 55 HP; Shim, Shim, Defrag, Defrag, Sandbox, Null. Station bonus: the node regains 5\nintegrity after each wave and when the raid ends (HEAL amount 5, Rank scales it).")
 klass("botnet", "Botnet", "Fights through drones that ride the whole netrun.", 45,
-      ["shim_16", "deploy_1", "shim_16", "deploy_1", "defrag_8", "miss"], "swarm_core", "swarm_core_mk2", "botnet_ring",
+      ["shim_16", "trojan_1", "shim_16", "trojan_1", "defrag_8", "null"], "swarm_core", "swarm_core_mk2", "botnet_ring",
       ["seg_pierce", "seg_anchor", "seg_accelerator"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "twist", "counter_spin", "pull", "cache", "spawn_drone"],
       ["spawn_drone", "parasite_pulse"], (18, 1),
-      "Botnet (GDD 5.2): 45 HP; Shim, Shim, Defrag, Deploy, Deploy, Miss. Station bonus: one free turret on\nthe node for each raid (DEPLOY_DRONE amount 1; config.station_deploy_asset; Rank scales it).")
+      "Botnet (GDD 5.2): 45 HP; Shim, Shim, Defrag, Trojan, Trojan, Null. Station bonus: one free turret on\nthe node for each raid (DEPLOY_DRONE amount 1; config.station_deploy_asset; Rank scales it).")
 
 BREAKER_DECK = ["jolt", "jolt", "jolt", "jolt", "brute_spin", "brute_spin", "fine_tune", "fine_tune", "mirror_flip", "overdrive"]
 klass("wrecker", "Wrecker", "A Breaker that trades spin control for a heavier Perfect.", 60,
-      ["overflow_12", "shim_6", "shim_6", "shim_6", "defrag_5", "miss"], "wrecker_core", "wrecker_core_mk2", "breaker_ring",
+      ["overflow_12", "shim_6", "shim_6", "shim_6", "defrag_5", "null"], "wrecker_core", "wrecker_core_mk2", "breaker_ring",
       ["seg_corrupt", "seg_anchor", "seg_accelerator", "seg_echo"], BREAKER_DECK, ["overdrive", "shatter"], (0, None),
       "Wrecker: Breaker alternative (GDD 3.4, same deck + different core; decision 2026-09-24).", alternative_of="breaker", station_mult="1.5")
 klass("phantom", "Phantom", "A Ghost that dodges instead of slipping resistance.", 50,
-      ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "miss"], "phantom_core", "phantom_core_mk2", "ghost_ring",
+      ["shim_14", "defrag_6", "shim_14", "detour_1", "defrag_6", "null"], "phantom_core", "phantom_core_mk2", "ghost_ring",
       ["seg_blank", "seg_anchor", "seg_corrupt", "seg_accelerator"],
       ["fine_tune", "fine_tune", "fine_tune", "jolt", "jolt", "jam", "micro_adjust", "strip", "snap", "ghost_step"],
       ["ghost_step", "blind_spot"], (9, 1), "Phantom: Ghost alternative (decision 2026-09-24).", alternative_of="ghost")
 klass("overclocker", "Overclocker", "A Rigger that banks raw RAM instead of free nudges.", 55,
-      ["shim_16", "defrag_6", "shim_16", "shield_5", "defrag_6", "miss"], "overclock_core", "overclock_core_mk2", "rigger_ring",
+      ["shim_16", "defrag_6", "shim_16", "sandbox_5", "defrag_6", "null"], "overclock_core", "overclock_core_mk2", "rigger_ring",
       ["seg_pierce", "seg_corrupt", "seg_anchor"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "calibrate", "cache", "ring_tap", "brute_spin", "torque_wrench"],
       ["torque_wrench", "hot_swap"], (14, 5), "Overclocker: Rigger alternative (decision 2026-09-24).", alternative_of="rigger")
 klass("hivemind", "Hivemind", "A Botnet whose swarm is bigger but never leaves the fight.", 45,
-      ["shim_16", "deploy_1", "shim_16", "deploy_1", "defrag_8", "miss"], "hive_core", "hive_core_mk2", "botnet_ring",
+      ["shim_16", "trojan_1", "shim_16", "trojan_1", "defrag_8", "null"], "hive_core", "hive_core_mk2", "botnet_ring",
       ["seg_pierce", "seg_anchor", "seg_accelerator"],
       ["jolt", "jolt", "jolt", "fine_tune", "fine_tune", "twist", "counter_spin", "pull", "cache", "spawn_drone"],
       ["spawn_drone", "parasite_pulse"], (18, 1), "Hivemind: Botnet alternative (decision 2026-09-24).", alternative_of="botnet")
@@ -284,17 +284,17 @@ for cid, name, cost in [("ghost", "Ghost", 80), ("rigger", "Rigger", 80), ("botn
 # ---- Barks --------------------------------------------------------------------------------------------------------------
 BARKS = {
     "ghost": [("perfect", "Clean. They never saw the wheel move."), ("perfect", "Perfect. Resistance is a rumour."),
-              ("miss", "Miss. Stay quiet, reset, try again."), ("hurt", "Grazed. Nothing they can trace."),
+              ("null", "Null. Stay quiet, reset, try again."), ("hurt", "Grazed. Nothing they can trace."),
               ("victory", "Gone before the log catches up."), ("defeat", "They saw me. First time for everything."),
               ("deploy", "No drones. I prefer to be alone in here."), ("jack_in", "Ghosting in. Leave no footprints."),
               ("boss", "Big wheel, bigger blind spots.")],
     "rigger": [("perfect", "Perfect. The deck pays me back."), ("perfect", "Latched and refunded."),
-               ("miss", "Miss. Rerouting power."), ("hurt", "Running hot. Still running."),
+               ("null", "Null. Rerouting power."), ("hurt", "Running hot. Still running."),
                ("victory", "Rig holds. Next node."), ("defeat", "Power's out. Tell the Cell the rig was good."),
                ("deploy", "Deploying? That's the Botnet's job."), ("jack_in", "RAM topped up. Let's overclock something."),
                ("boss", "That thing eats RAM for breakfast. So do I.")],
-    "botnet": [("perfect", "Perfect Deploy. Something of mine is inside theirs now."), ("perfect", "The swarm says hello."),
-               ("miss", "Miss. The drones will cover."), ("hurt", "They hit a drone. Probably."),
+    "botnet": [("perfect", "Perfect Trojan. Something of mine is inside theirs now."), ("perfect", "The swarm says hello."),
+               ("null", "Null. The drones will cover."), ("hurt", "They hit a drone. Probably."),
                ("victory", "Swarm intact. Carry on."), ("defeat", "Swarm down. Scatter the seeds."),
                ("deploy", "Another one on the wheel."), ("jack_in", "Waking the swarm."),
                ("boss", "Every drone on the Hub. Now.")],

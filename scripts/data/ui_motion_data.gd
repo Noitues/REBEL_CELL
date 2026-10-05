@@ -11,7 +11,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"jack_in", &"jack_out", &"jack_fade_reduced",  # 4.1
 	&"wheel_spin", &"wheel_spin_blur",  # 4.2
 	&"wheel_nudge",  # 4.3
-	&"precision_perfect", &"precision_good_ring", &"precision_weak", &"precision_blink", &"precision_miss_static",  # 4.4
+	&"precision_perfect", &"precision_good_ring", &"precision_weak", &"precision_blink", &"precision_null_static",  # 4.4
 	&"card_hover", &"card_play", &"card_draw", &"card_exhaust",  # 4.5
 	&"send_it_press", &"send_it_drips", &"resolve_pass", &"resolve_pulse",  # 4.6
 	&"number_float", &"number_crit", &"hp_lag",  # 4.7

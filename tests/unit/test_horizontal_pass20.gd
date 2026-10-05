@@ -285,7 +285,7 @@ func test_the_tutorial_and_subtitles_share_the_right_column() -> void:
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		var scene := await _combat(&"compliance_officer", scale)
 		scene.start_tutorial()
-		Dialogue.say(RC.Voice.DISPATCH, "Runner, keep the needle off the Miss slice and bank the Rack before the audit lands.")
+		Dialogue.say(RC.Voice.DISPATCH, "Runner, keep the needle off the NULL slice and bank the Rack before the audit lands.")
 		await _frames()
 		assert_eq(scene.layout_violations(), [], "tutorial and subtitles clear of every wheel and tag at %.1f" % scale)
 		assert_false(scene.tutorial.get_global_rect().intersects(Rect2(Dialogue.bar.global_position, Dialogue.bar.size)), "the tutorial sits under the subtitles")

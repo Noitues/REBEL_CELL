@@ -10,7 +10,7 @@ const TICKS_PER_RING_SEGMENT: int = 10
 
 # --- Combat ---
 ## INFECT applies statuses via extra_effects (e.g. Solace DOSE). HOTFIX is enemy-facing.
-enum SliceType { SHIM, OVERFLOW, DEFRAG, DETOUR, SHIELD, DEPLOY, HOTFIX, INFECT, MISS }
+enum SliceType { SHIM, OVERFLOW, DEFRAG, DETOUR, SANDBOX, TROJAN, HOTFIX, INFECT, NULL }
 enum TargetRule { SELF, POINTER, SWEEP, CHOSEN }
 ## Ordered low to high so tiers can be compared with >=. There is no Miss
 ## tier: every landing is within 2 ticks of some slice centre (GDD 2.4).
@@ -31,8 +31,8 @@ enum Trigger {
 	ON_NUDGE,
 	ON_SLICE_TRIGGER,
 	ON_PERFECT,
-	## The Miss *slice* resolved (not a precision tier).
-	ON_MISS_SLICE,
+	## The NULL *slice* resolved (not a precision tier).
+	ON_NULL_SLICE,
 	ON_TURN_END,
 	ON_COMBAT_END,
 	ON_SERVER_RACK_CAPTURE,
@@ -74,9 +74,9 @@ enum EffectType {
 
 enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, CHOSEN, CAMPAIGN }
 ## Which slice of the target wheel a slice-level effect (APPLY_STATUS, CLEANSE) hits:
-## the slice under the pointer (Overdrive, Corrupt segment), a random non-Miss slice
+## the slice under the pointer (Overdrive, Corrupt segment), a random non-NULL slice
 ## (Solace DOSE), or one the player picks (Cleanse, Encrypt).
-enum SlicePick { UNDER_POINTER, RANDOM_NON_MISS, CHOSEN }
+enum SlicePick { UNDER_POINTER, RANDOM_NON_NULL, CHOSEN }
 
 # --- Netrun map ---
 enum InfilNodeType { ROUTER, TERMINAL, MAINFRAME, SERVER_RACK }

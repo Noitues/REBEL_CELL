@@ -4,9 +4,9 @@
 [ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="3"]
 
-; DOSE (GDD A.3): INFECT slice applying CORRUPTED to a random non-Miss player slice.
+; DOSE (GDD A.3): INFECT slice applying CORRUPTED to a random non-NULL player slice.
 ; EffectType 4 = APPLY_STATUS, target 3 = POINTER_TARGET, status 1 = CORRUPTED,
-; slice_pick 1 = RANDOM_NON_MISS, trigger 5 = ON_SLICE_TRIGGER.
+; slice_pick 1 = RANDOM_NON_NULL, trigger 5 = ON_SLICE_TRIGGER.
 
 [sub_resource type="Resource" id="fx_corrupt"]
 script = ExtResource("3")

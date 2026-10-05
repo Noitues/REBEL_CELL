@@ -19,7 +19,7 @@ func before_each() -> void:
 	_breach = CombatFixture.card(&"t_breach", [CombatFixture.effect(RC.EffectType.HUB_BREACH, RC.EffectTarget.TARGET_WHEEL, 1)])
 	_strip = CombatFixture.card(&"t_strip", [CombatFixture.effect(RC.EffectType.MODIFY_RESISTANCE, RC.EffectTarget.TARGET_WHEEL, -2)])
 	var deck: Array[CardData] = [_spin4, _flip, _respin, _breach, _strip]
-	_cls = CombatFixture.operative_class(&"t_class", 60, CombatFixture.miss_wheel(), deck)
+	_cls = CombatFixture.operative_class(&"t_class", 60, CombatFixture.null_wheel(), deck)
 
 
 func _session(enemy: EnemyData) -> CombatSession:
@@ -32,7 +32,7 @@ func _hand_index(session: CombatSession, card_id: StringName) -> int:
 
 
 func test_nudges_are_absorbed_tick_for_tick() -> void:
-	var s := _session(CombatFixture.enemy(&"t_resist3", 50, CombatFixture.miss_wheel(3)))
+	var s := _session(CombatFixture.enemy(&"t_resist3", 50, CombatFixture.null_wheel(3)))
 	var enemy := s.state.get_combatant(&"enemy_0")
 	assert_eq(enemy.resistance, 3)
 	var rotation_before := enemy.wheel.rotation
@@ -46,7 +46,7 @@ func test_nudges_are_absorbed_tick_for_tick() -> void:
 
 
 func test_extra_nudges_cost_ram() -> void:
-	var s := _session(CombatFixture.enemy(&"t_resist0", 50, CombatFixture.miss_wheel()))
+	var s := _session(CombatFixture.enemy(&"t_resist0", 50, CombatFixture.null_wheel()))
 	var ram := s.state.ram
 	s.apply(CombatAction.nudge(&"enemy_0", 1))
 	assert_eq(s.state.ram, ram, "first nudge is free")
@@ -55,7 +55,7 @@ func test_extra_nudges_cost_ram() -> void:
 
 
 func test_spin_loses_its_first_r_ticks_to_resistance() -> void:
-	var s := _session(CombatFixture.enemy(&"t_resist3", 50, CombatFixture.miss_wheel(3)))
+	var s := _session(CombatFixture.enemy(&"t_resist3", 50, CombatFixture.null_wheel(3)))
 	var before := s.state.get_combatant(&"enemy_0").wheel.rotation
 	var r := s.apply(CombatAction.play_card(_hand_index(s, &"t_spin4"), &"enemy_0"))
 	assert_true(r.ok(), r.error)
@@ -65,7 +65,7 @@ func test_spin_loses_its_first_r_ticks_to_resistance() -> void:
 
 
 func test_flip_is_blocked_entirely_while_resistance_remains() -> void:
-	var s := _session(CombatFixture.enemy(&"t_resist1", 50, CombatFixture.miss_wheel(1)))
+	var s := _session(CombatFixture.enemy(&"t_resist1", 50, CombatFixture.null_wheel(1)))
 	var r := s.apply(CombatAction.play_card(_hand_index(s, &"t_flip"), &"enemy_0"))
 	assert_false(r.ok(), "flip refused")
 	assert_string_contains(r.error, "FLIP blocked")
@@ -79,7 +79,7 @@ func test_flip_is_blocked_entirely_while_resistance_remains() -> void:
 
 
 func test_respin_is_blocked_while_resistance_remains() -> void:
-	var s := _session(CombatFixture.enemy(&"t_resist2", 50, CombatFixture.miss_wheel(2)))
+	var s := _session(CombatFixture.enemy(&"t_resist2", 50, CombatFixture.null_wheel(2)))
 	var r := s.apply(CombatAction.play_card(_hand_index(s, &"t_respin"), &"enemy_0"))
 	assert_false(r.ok())
 	assert_string_contains(r.error, "RESPIN blocked")
@@ -91,7 +91,7 @@ func test_respin_is_blocked_while_resistance_remains() -> void:
 
 
 func test_passive_resistance_restores_each_player_turn() -> void:
-	var s := _session(CombatFixture.enemy(&"t_resist3", 50, CombatFixture.miss_wheel(3)))
+	var s := _session(CombatFixture.enemy(&"t_resist3", 50, CombatFixture.null_wheel(3)))
 	for i in 3:
 		s.apply(CombatAction.nudge(&"enemy_0", 1))
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 0)
@@ -102,7 +102,7 @@ func test_passive_resistance_restores_each_player_turn() -> void:
 
 func test_hub_breach_disables_hub_resistance_for_one_turn() -> void:
 	var lock := CombatFixture.hub(&"t_lock", 3)
-	var s := _session(CombatFixture.enemy(&"t_hubbed", 50, CombatFixture.miss_wheel(1, lock)))
+	var s := _session(CombatFixture.enemy(&"t_hubbed", 50, CombatFixture.null_wheel(1, lock)))
 	var enemy := s.state.get_combatant(&"enemy_0")
 	assert_eq(enemy.resistance, 4, "passive 1 + hub 3")
 	var r := s.apply(CombatAction.play_card(_hand_index(s, &"t_breach"), &"enemy_0"))
