@@ -411,11 +411,118 @@ static func line_share() -> float:
 
 ## ANIM-R2 E5: a short local flash (a disc of `radius` at `at`, global) in `color`, `id`'s
 ## amplitude its alpha, fading over its duration: a wheel's break flashes here, never the
-## whole screen.
+## whole screen. ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): a local flash like any
+## other: through the one flash limiter (Fx.request_flash), its alpha and duration held to
+## `id`'s tier.
 func disc_flash(at: Vector2, radius: float, color: Color, id: StringName) -> void:
-	if not Motion.live(id):
+	if not Motion.live(id) or not Fx.request_flash():
 		return
-	_add({"kind": "disc", "at": at, "r": radius, "color": color, "alpha": Motion.amplitude(id), "dur": Motion.seconds(id)})
+	var tier := VfxTier.of(id)
+	_add({"kind": "disc", "at": at, "r": radius, "color": color, "alpha": VfxTier.clamp_alpha(tier, Motion.amplitude(id)),
+		"dur": VfxTier.clamp_seconds(tier, Motion.seconds(id))})
+
+
+# --- Wheel-local T3 bursts (ART-0 E, ported from art-pass W6; ART_BIBLE v2 5.3) -------------
+
+## The kinds of wheel_burst: a Perfect landing and a boss's phase change.
+const BURST_PERFECT := &"perfect"
+const BURST_PHASE := &"phase"
+## Each kind's motion entry (T3: duration, peak alpha).
+const BURST_MOTION := {&"perfect": &"wheel_burst_perfect", &"phase": &"wheel_burst_phase"}
+## A burst's region is its wheel: the disc and its rim, HP arc and bezel, this many disc
+## radii out; its ring grows from the rim by BURST_RING_GROW radii (held inside the region).
+const WHEEL_REGION := 1.35
+const BURST_RING_GROW := 0.3
+## Ring widths (px at its start and end) and the glow's rim share of the disc.
+const BURST_RING_W0 := 10.0
+const BURST_RING_W1 := 2.0
+const BURST_GLOW_EDGE := 1.0
+## The phase ring: dashes round it (long and short alternate, so it reads without colour),
+## the share of each step a long dash fills, a short dash's share of a long one, its turn
+## over the burst (rad) and the ring's width share.
+const PHASE_DASHES := 16
+const PHASE_DASH_FILL := 0.6
+const PHASE_SHORT_DASH := 0.45
+const PHASE_TURN := 0.35
+const PHASE_RING_SHARE := 0.7
+## The phase's glow and rim shares of its alpha and the rim's width (px); the Perfect's
+## paper ring's lag (share of the way to the coloured ring) and alpha share.
+const PHASE_GLOW_ALPHA := 0.5
+const PHASE_RIM_ALPHA := 0.6
+const PHASE_RIM_W := 2.0
+const PERFECT_PAPER_LAG := 0.6
+const PERFECT_PAPER_ALPHA := 0.8
+const BURST_SEGMENTS := 48
+const BURST_DASH_SEGMENTS := 6
+## Below this span (px) a glow is degenerate and is not drawn.
+const POLY_MIN_SPAN := 0.5
+
+
+## ART_BIBLE v2 5.3 T3: a burst on one wheel only, never the screen (it retires the
+## full-screen Perfect and boss-phase flashes). `wheel_center` (global) and `radius` (the
+## disc's) name the wheel; `kind` is BURST_PERFECT (a radial glow and a ring pulse in `color`,
+## default CELL_PINK) or BURST_PHASE (a broken ring in `color`, the boss's corp hue, over a
+## faint glow). Peak alpha and duration come from the kind's entry held to T3 (<= 70%,
+## <= 1.2 s); the ring stays inside the wheel's region. Through the one flash limiter.
+## Reduce effects, headless or the entry off: nothing (the end state at once). Returns
+## whether it plays.
+func wheel_burst(wheel_center: Vector2, radius: float, kind: StringName, color: Color = Palette.AUTO) -> bool:
+	var id: StringName = BURST_MOTION.get(kind, &"")
+	if id == &"" or radius <= 0.0 or not Motion.live(id):
+		return false
+	if not Fx.request_flash():
+		return false
+	var tier := VfxTier.of(id)
+	var col := color
+	if col.a <= 0.0:
+		col = Palette.CELL_PINK if kind == BURST_PERFECT else Palette.NET_CYAN
+	var e := Motion.entry(id)
+	_add({"kind": "wheel_burst", "burst": kind, "at": wheel_center, "r": radius, "color": col,
+		"alpha": VfxTier.clamp_alpha(tier, Motion.amplitude(id)), "dur": VfxTier.clamp_seconds(tier, Motion.seconds(id)),
+		"reach": wheel_burst_reach(radius), "ease": e.ease, "trans": e.trans})
+	return true
+
+
+## The farthest a wheel burst at `radius` reaches (px from its centre), for layout checks.
+static func wheel_burst_reach(radius: float) -> float:
+	return VfxTier.clamp_radius(VfxTier.T3, radius * (1.0 + BURST_RING_GROW), radius, radius * WHEEL_REGION)
+
+
+func _draw_wheel_burst(s: Dictionary) -> void:
+	var q := _ease(s)
+	var fade := 1.0 - q
+	var c := _local(s["at"])
+	var r := float(s["r"])
+	var a := float(s["alpha"]) * fade
+	var col: Color = s["color"]
+	var ring_r := lerpf(r, float(s["reach"]), q)
+	if String(s["burst"]) == String(BURST_PHASE):
+		_draw_glow(c, r, Color(col, a * PHASE_GLOW_ALPHA))
+		var step := TAU / PHASE_DASHES
+		var turn := PHASE_TURN * q
+		var w := lerpf(BURST_RING_W0, BURST_RING_W1, q) * PHASE_RING_SHARE
+		for k in PHASE_DASHES:
+			var fill := PHASE_DASH_FILL * (1.0 if k % 2 == 0 else PHASE_SHORT_DASH)
+			var a0 := turn + k * step
+			draw_arc(c, ring_r, a0, a0 + step * fill, BURST_DASH_SEGMENTS, Color(col, a), w, true)
+		draw_arc(c, r * BURST_GLOW_EDGE, 0.0, TAU, BURST_SEGMENTS, Color(col, a * PHASE_RIM_ALPHA), PHASE_RIM_W, true)
+		return
+	_draw_glow(c, r, Color(col, a))
+	draw_arc(c, ring_r, 0.0, TAU, BURST_SEGMENTS, Color(col, a), lerpf(BURST_RING_W0, BURST_RING_W1, q), true)
+	# A thin paper ring lags the pink one: the latch's click, readable without colour.
+	draw_arc(c, lerpf(r, ring_r, PERFECT_PAPER_LAG), 0.0, TAU, BURST_SEGMENTS, Color(Palette.PAPER, a * PERFECT_PAPER_ALPHA), BURST_RING_W1, true)
+
+
+## A radial glow: `col` at the centre fading to nothing at `r`.
+func _draw_glow(c: Vector2, r: float, col: Color) -> void:
+	if r * BURST_GLOW_EDGE < POLY_MIN_SPAN:
+		return
+	var edge := Color(col, 0.0)
+	var cols := PackedColorArray([col, edge, edge])
+	for k in BURST_SEGMENTS:
+		var a0 := TAU * k / BURST_SEGMENTS
+		var a1 := TAU * (k + 1) / BURST_SEGMENTS
+		draw_polygon(PackedVector2Array([c, c + Vector2(cos(a0), sin(a0)) * r * BURST_GLOW_EDGE, c + Vector2(cos(a1), sin(a1)) * r * BURST_GLOW_EDGE]), cols)
 
 
 ## ANIM-R1: a word stamped at `at` (global) in a tilted box (BLOCKED, EVADED, NO DAMAGE,
@@ -770,6 +877,8 @@ func _draw() -> void:
 				_draw_pile(s)
 			"embers":
 				_draw_embers(s)
+			"wheel_burst":
+				_draw_wheel_burst(s)
 	if not held_word.is_empty() and float(held_word["age"]) >= float(held_word.get("delay", 0.0)):
 		_draw_word(held_word)  # ANIM-R6 A15: VICTORY holds at full strength
 	if reticle_visible:

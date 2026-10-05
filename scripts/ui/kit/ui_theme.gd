@@ -424,6 +424,7 @@ static func crt_material() -> ShaderMaterial:
 	if _crt == null:
 		_crt = ShaderMaterial.new()
 		_crt.shader = load("res://shaders/crt_panel.gdshader")
+		ShaderReduce.track(_crt)  # ART-0 E: rc_common's reduce_effects
 		_sync_crt()
 	return _crt
 

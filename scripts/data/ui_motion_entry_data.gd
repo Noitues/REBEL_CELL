@@ -22,6 +22,11 @@ extends Resource
 ## Off = the end state at once, as under reduce effects (ANIM-R5: by kind of entry, see
 ## UiMotionData.OFF_PARTS and ALWAYS_ON).
 @export var enabled: bool = true
+## ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): the effect's VFX tier, spectacle by
+## importance. The FX layers clamp an effect to its tier's limits (coverage, duration, flash
+## alpha, shake and hit-stop: VfxTier); only T4 may cover the whole screen.
+enum Tier { T0_AMBIENT, T1_FEEDBACK, T2_OUTCOME, T3_MOMENT, T4_CINEMATIC }
+@export var tier: Tier = Tier.T1_FEEDBACK
 
 
 ## Problems with this entry (empty when valid).
@@ -31,4 +36,6 @@ func validate() -> PackedStringArray:
 		errors.append("Motion entry has no id.")
 	if duration < 0.0 or delay < 0.0:
 		errors.append("Motion %s: duration and delay must be >= 0." % id)
+	if tier < Tier.T0_AMBIENT or tier > Tier.T4_CINEMATIC:
+		errors.append("Motion %s: tier must be T0..T4." % id)
 	return errors
