@@ -12,9 +12,11 @@ const THEY_LOST := "THEY LOST %d" # TR
 const OURS := "OURS! +%d" # TR
 const RIP := "RIP" # TR
 const WRITE := &"raid_mark_write"
-## Pencil sizes (px at 1.0): the words, the stroke; the gap between marks (x a write).
-const WORD_PX := 22
-const STROKE := 3.5
+## Pencil: the words' type step, the gap to the paper (px), the stroke (px); the gap between
+## marks (x a write).
+const WORD_STEP := UiTheme.TITLE
+const NOTE_GAP := 18.0
+const STROKE := 6.0
 const GAP_SHARE := 0.6
 
 var report: Control
@@ -41,7 +43,13 @@ func _process(delta: float) -> void:
 		return
 	if _t < _total():
 		_t += delta
-	queue_redraw()
+	_lay()
+
+
+func _exit_tree() -> void:
+	if _pool != null and is_instance_valid(_pool):
+		_pool.release()
+	_pool = null
 
 
 func _total() -> float:
@@ -56,18 +64,16 @@ func motion_running() -> bool:
 ## MotionSkip: every mark written.
 func complete_motion() -> void:
 	_t = INF
-	queue_redraw()
 
 
-## The report row value named `value_name` (local rect; empty when missing).
+## The report row value named `value_name` (global rect; empty when missing).
 func _value_rect(value_name: String) -> Rect2:
 	if report == null or not is_instance_valid(report):
 		return Rect2()
 	var l := report.find_child(value_name, true, false) as Control
 	if l == null or not l.is_visible_in_tree():
 		return Rect2()
-	var r := l.get_global_rect()
-	return Rect2(get_global_transform().affine_inverse() * r.position, r.size)
+	return l.get_global_rect()
 
 
 func _u(i: int) -> float:
@@ -75,44 +81,51 @@ func _u(i: int) -> float:
 	return clampf((_t - i * w * (1.0 + GAP_SHARE)) / maxf(w, 0.001), 0.0, 1.0)
 
 
-func _draw() -> void:
-	var k := Settings.text_scale
-	var px := roundi(WORD_PX * k)
-	var w := STROKE * k
-	var yellow := RaidSkin.pencil_plan()
-	var red := RaidSkin.pencil_threat()
+## Lays the Cell's marks on 1B's grease pencil (RaidPencilPool, above the paper and every panel).
+func _lay() -> void:
+	if _pool == null:
+		_pool = RaidPencilPool.make(self)
+	_pool.begin()
+	var plan := GreasePencilMark.Ink.PLAN
+	var threat := GreasePencilMark.Ink.THREAT
 	var i := 0
 	var destroyed := int(result.get("threats_destroyed", 0))
 	var units := _value_rect("ReportUnits")
 	if units.has_area() and destroyed > 0:
 		var u := _u(i)
-		RaidPencil.circle(self, units.get_center(), units.size.x * 0.62 + 6.0 * k, units.size.y * 0.75, yellow, w, 0.0, u, 11)
-		_side_word(tr(THEY_LOST) % destroyed, units, px, yellow, u)
+		_pool.stroke("units", [PencilShapes.hand_circle(units.get_center(), Vector2(units.size.x * 0.62 + 6.0, units.size.y * 0.8), 11)], plan, STROKE, u, 0.0, false, 11)
+		_side_word("lost", tr(THEY_LOST) % destroyed, units, plan, u)
 		i += 1
 	var reward_r := _value_rect("ReportReward")
 	if reward_r.has_area() and reward > 0:
 		var u := _u(i)
-		RaidPencil.circle(self, reward_r.get_center(), reward_r.size.x * 0.6 + 6.0 * k, reward_r.size.y * 0.75, yellow, w, 0.0, u, 23)
-		_side_word(tr(OURS) % reward, reward_r, px, yellow, u)
+		_pool.stroke("reward", [PencilShapes.hand_circle(reward_r.get_center(), Vector2(reward_r.size.x * 0.6 + 6.0, reward_r.size.y * 0.8), 23)], plan, STROKE, u, 0.0, false, 23)
+		_side_word("ours", tr(OURS) % reward, reward_r, plan, u)
 		i += 1
 	var rec := _value_rect("ReportReclaimed")
 	if rec.has_area():
-		RaidPencil.word(self, tr(RIP), rec.position + Vector2(-px * 1.4, rec.size.y * 0.5), px, red, _u(i), 0.0, -0.1, false, 0.0, 37)
+		var w := RaidPencilPool.word_size(tr(RIP), WORD_STEP)
+		_pool.word("rip", tr(RIP), rec.position + Vector2(-w.x * 0.7, rec.size.y * 0.5), WORD_STEP, threat, 1.0, _u(i), 0.0, -0.1)
 		i += 1
 	var home := _value_rect("ReportHome")
 	if home.has_area() and int(result.get("home_after", 0)) >= int(result.get("home_before", 0)) and held:
-		RaidPencil.tick(self, home.position + Vector2(-px * 0.9, home.size.y * 0.5), px * 0.9, yellow, w, _u(i), 41)
+		var s := home.size.y * 0.9
+		var tc := home.position + Vector2(-s, home.size.y * 0.5)
+		_pool.stroke("tick", [PackedVector2Array([tc + Vector2(-s * 0.5, 0), tc + Vector2(-s * 0.1, s * 0.4), tc + Vector2(s * 0.6, -s * 0.55)])], plan, STROKE, _u(i), 0.0, false, 41)
+	_pool.end()
 
 
-## A pencil note left of a circled value with an arrow toward it ("THEY LOST 6 ->").
-func _side_word(text: String, at: Rect2, px: int, col: Color, u: float) -> void:
-	if report == null:
-		return
-	var size := RaidPencil.word_size(text, px)
-	var paper := Rect2(get_global_transform().affine_inverse() * report.get_global_rect().position, report.size)
-	var c := Vector2(paper.position.x - size.x * 0.55 - px * 0.8, at.get_center().y)
-	RaidPencil.word(self, text, c, px, col, u, 0.0, -0.05, false, 0.0, text.hash())
-	var from := c + Vector2(size.x * 0.5 + px * 0.15, 0)
-	var to := Vector2(at.position.x - px * 0.4, at.get_center().y)
+## A pencil note left of the report with an arrow to the circled value ("THEY LOST 6 ->").
+func _side_word(key: String, text: String, at: Rect2, ink: GreasePencilMark.Ink, u: float) -> void:
+	var size := RaidPencilPool.word_size(text, WORD_STEP)
+	var paper := report.get_global_rect()
+	var c := Vector2(paper.position.x - size.x * 0.55 - NOTE_GAP, at.get_center().y)
+	_pool.word(key, text, c, WORD_STEP, ink, 1.0, u, 0.0, -0.05)
+	var from := c + Vector2(size.x * 0.5 + NOTE_GAP * 0.2, 0)
+	var to := Vector2(at.position.x - NOTE_GAP * 0.5, at.get_center().y)
 	if to.x > from.x:
-		RaidPencil.arrow(self, PackedVector2Array([from, (from + to) * 0.5 + Vector2(0, -px * 0.25), to]), col, STROKE * Settings.text_scale * 0.8, u, 5)
+		var shaft := PencilShapes.bezier(from, (from + to) * 0.5 + Vector2(0, -NOTE_GAP * 0.4), to, 16)
+		_pool.stroke(key + "_arrow", PencilShapes.arrow(shaft, STROKE * 2.5, 5), ink, STROKE * 0.8, u, 0.0, false, 5)
+
+
+var _pool: RaidPencilPool = null

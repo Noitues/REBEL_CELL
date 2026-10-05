@@ -217,6 +217,8 @@ func test_raid_setup_shows_each_nodes_projected_outcome_without_a_text_wall() ->
 		for b in _all(row):
 			if b is Badge and (b as Badge).text.contains("→"):
 				badge_text = (b as Badge).text
+			if b is RaidChip and (b as Label).text.contains("→"):  # ART-6 3A: YOUR NETWORK's status chip
+				badge_text = (b as Label).text
 		# H23 S5 (updated on purpose): the numbers say they are the node's HP.
 		assert_eq(badge_text, "HP %s → %s %s" % [n.get("before", "?"), n.get("after", "?"), String(n.get("outcome", "?")).to_upper()], "exact projected outcome for %s (GDD 9.3)" % id)
 	# H22 #9 (updated on purpose): a dashed forecast, "IF THE RAID RUNS NOW:" + verdict.

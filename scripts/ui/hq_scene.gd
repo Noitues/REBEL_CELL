@@ -2592,7 +2592,9 @@ func show_raid() -> void:
 	side.add_theme_constant_override("separation", 8)
 	var big_text := Settings.text_scale > RAID_SIDE_LOADOUT_ABOVE
 	var side_scroll: ScrollContainer = null
-	if big_text:
+	# ART-6 3A: the work order and the terminals take more of the column than the old badges:
+	# above the base text size the column scrolls (the loadout stays under the map to 1.6).
+	if Settings.text_scale > RAID_SIDE_SCROLL_ABOVE:
 		# ART-0 C (text scale 2.0): the side column (the Armory, intro, raid card, YOUR NODES,
 		# START DEFENSE) is taller than the page's view; it scrolls on its own (focus follows).
 		# The bar is never drawn (it would take width from the column and cut its words);
@@ -2652,7 +2654,7 @@ func show_raid() -> void:
 	# vinyl sticker (§1.2), the Speed / Skip terminal strip sits under it (greyed: nothing
 	# plays yet) and stays when START peels away in the playout.
 	_add_tip(go, _icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK), tr("Back to the HQ; the raid waits until you start the defence."))
-	var run_btn := RaidSticker.new(START_DEFENSE, roundi(START_STICKER_PX * Settings.text_scale), RaidSticker.PINK)
+	var run_btn := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK)
 	run_btn.name = "RunRaid"
 	run_btn.pressed.connect(fight_raid)
 	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
@@ -2785,9 +2787,10 @@ const ORDER_UNITS_MANY := "%d IN %d WAVES" # TR
 const ORDER_STAMP_SHARE := 0.78
 ## START DEFENSE's sticker lettering (px at text scale 1.0) and THREAT INTEL's width beside
 ## the loadout (px at 1.0).
-const START_STICKER_PX := 30
-## How far START DEFENSE turns as it peels away (degrees).
-const START_PEEL_TURN := 24.0
+const START_STICKER_STEP := UiTheme.TITLE
+## Above this text scale the raid setup's side column scrolls (ART-6 3A: at every scale, the
+## work order, YOUR NETWORK and START never push the page past the screen).
+const RAID_SIDE_SCROLL_ABOVE := 0.0
 const INTEL_WIDTH := 300.0
 
 
@@ -2833,12 +2836,12 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var target_l := card.add_row(tr("TARGET"), ", ".join(targets).to_upper(), Palette.INK, "RaidTarget")
 	_tip_label(target_l, tr("What the threats go for (their routing rule)."))
 	var waves := raid.waves.size()
-	card.add_row(tr("UNITS"), (tr(ORDER_UNITS) if waves == 1 else tr(ORDER_UNITS_MANY)) % [units, waves], Palette.INK, "RaidUnits")
+	var units_l := card.add_row(tr("UNITS"), (tr(ORDER_UNITS) if waves == 1 else tr(ORDER_UNITS_MANY)) % [units, waves], Palette.INK, "RaidUnits")
 	var entries := PackedStringArray()
 	for e in CampaignRules.raid_entries(c, RunManager.corporation, pending):
 		entries.append(site_name(e))
-	var entry_l := card.add_row(tr("ENTRY SITES"), str(entries.size()), Palette.INK, "RaidEntries")
-	_tip_label(entry_l, tr("Threats come into the city at %d Sites: %s. The red pencil routes on the map show where they go.") % [entries.size(), ", ".join(entries)])
+	# The entry Sites in the units' tooltip (the pencil circles and letters them on the map).
+	_tip_label(units_l, tr("Threats come into the city at %d Sites: %s. The red pencil routes on the map show where they go.") % [entries.size(), ", ".join(entries)])
 	var strength := card.add_row(tr("STRENGTH"), tr("STRENGTH %s%%") % TextDb.signed(roundi(CampaignRules.raid_strength_pct(c, cfg, pending, RunManager.corporation))),
 		Palette.INK, "RaidStrength")
 	_tip_label(strength, tr("How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."))
@@ -2849,7 +2852,8 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var stopped := card.add_row(tr("STOPPED"), tr("STOPPED %d/%d") % [projection.threats_destroyed, total], Palette.GAIN_INK if projection.threats_destroyed == total and total > 0 else Palette.INK, "ThreatsStopped")
 	_tip_label(stopped, tr("Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.") % [projection.threats_destroyed, total])
 	var l := RaidVerdict.losses(_raid_dict(projection))
-	card.add_row(tr("DOWN / TAKEN"), "%d / %d" % [int(l["down"]), int(l["taken"])], Palette.HARM_INK if int(l["down"]) + int(l["taken"]) > 0 else Palette.INK, "RaidLosses")
+	if int(l["down"]) + int(l["taken"]) > 0:
+		card.add_row(tr("DOWN / TAKEN"), "%d / %d" % [int(l["down"]), int(l["taken"])], Palette.HARM_INK, "RaidLosses")
 	for e in projection.events:
 		if e.get("type", "") in ["link_frozen", "link_altered"]:
 			var link := card.add_row(tr("LINK"), tr("FROZEN") if e["type"] == "link_frozen" else tr("ALTERED"), Palette.HARM_INK)
@@ -2859,7 +2863,6 @@ func _raid_card(raid: RaidData, pending: Dictionary, projection: RaidResolver.Ra
 	var verdict := raid_verdict(projection)
 	var clean := RaidVerdict.clean_projection(projection)
 	var stamp := ForecastStamp.new(FORECAST_CAPTION, verdict, RaidVerdict.color_of(clean), RaidVerdict.icon_of(clean))
-	stamp.name = "RaidForecast"
 	stamp.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * ORDER_STAMP_SHARE * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	stamp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	stamp.tooltip_text = UiTip.fold(forecast_tip(projection))
@@ -2958,7 +2961,7 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 		var names := PackedStringArray()
 		var rules := PackedStringArray()
 		for cid: StringName in g["threats"]:
-			var td := RunManager.lookup().get_content(cid) as ThreatData
+			var td: ThreatData = RunManager.lookup().get_content(cid) as ThreatData if RunManager.lookup().has(cid) else null
 			var nm := TextDb.t(td, "display_name").to_upper() if td != null else String(cid).to_upper()
 			names.append(nm)
 			var rule := tr(String(RAID_TARGETS.get(td.routing if td != null else RC.ThreatRouting.SHORTEST_TO_HOME, "")))
@@ -2973,9 +2976,15 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 		sub.reparent(words)
 	if groups.is_empty():
 		holo.add_line(tr("No threats can reach your network."))
-	if not units.is_empty():
+	# The scanned threats strip at the base text size (bigger text keeps the map its room: the
+	# names say the same).
+	if not units.is_empty() and Settings.text_scale <= INTEL_STRIP_SCALE_MAX:
 		holo.body.add_child(RaidIntelStrip.new(c.corporation_id, units))
 	return holo
+
+
+## THREAT INTEL shows its scanned threats strip up to this text scale.
+const INTEL_STRIP_SCALE_MAX := 1.0
 
 
 ## ART-6 3A: the projection's threats grouped by their entry Site, in entry order (A first):
@@ -3599,31 +3608,22 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 
 
 ## ART-6 3A (§4.8): START DEFENSE peels away off the Speed / Skip strip as the playout starts
-## (`raid_start_peel`: lifts, turns and falls away; one press ends it; gone at once when motion
-## doesn't play). The strip stays where it was.
+## (1B's vinyl peel, `sticker_peel`: one press ends it; gone at once when motion doesn't play).
+## The strip stays where it was.
 func _peel_start(feed: Control) -> void:
-	if not is_instance_valid(feed) or not feed.is_inside_tree() or not Motion.live(&"raid_start_peel"):
+	if not is_instance_valid(feed) or not feed.is_inside_tree() or not Motion.live(VinylSticker.PEEL):
 		return
 	var strip := feed.find_child("SpeedStrip", true, false) as Control
 	if strip == null:
 		return
-	var sticker := RaidSticker.new(START_DEFENSE, roundi(START_STICKER_PX * Settings.text_scale), RaidSticker.PINK).stamp_only()
+	var sticker := RaidSticker.new(tr(START_DEFENSE), START_STICKER_STEP, RaidSticker.PINK).stamp_only()
 	sticker.name = "StartPeel"
 	add_child(sticker)
 	var box := strip.get_global_rect()
 	sticker.size = sticker.custom_minimum_size
 	sticker.global_position = Vector2(box.end.x - sticker.size.x, box.position.y - sticker.size.y * 0.85)
-	var lift := Motion.amplitude(&"raid_start_peel")
-	MotionSkip.register_passive(sticker)
-	sticker.set_meta(&"peel", true)
-	Motion.run(&"raid_start_peel", sticker, ^"position", sticker.position + Vector2(lift * 0.6, -lift))
-	Motion.run(&"raid_start_peel", sticker, ^"rotation", deg_to_rad(START_PEEL_TURN))
-	var tw := Motion.run(&"raid_start_peel", sticker, ^"modulate:a", 0.0)
-	if tw != null:
-		tw.finished.connect(sticker.queue_free)
-	else:
-		sticker.queue_free()
-
+	sticker.peel()
+	sticker.vinyl.motion_finished.connect(func(_kind: StringName) -> void: sticker.queue_free(), CONNECT_ONE_SHOT)
 
 ## ANIM-R6 C10: what the playout opens on (grid points; emptied once it has opened there).
 var _playout_open: PackedVector2Array = PackedVector2Array()
@@ -3864,7 +3864,7 @@ const REPORT_NO_CHANGE := "%d > %d NO CHANGE" # TR
 const REPORT_BACK := "BACK TO THE GRID" # TR
 ## The report's paper width (px at 1.0) and the CELL HOLDS sticker's lettering (px at 1.0).
 const REPORT_WIDTH := 400.0
-const HOLDS_STICKER_PX := 52
+const HOLDS_STICKER_STEP := UiTheme.DISPLAY
 ## The Heat and the reward the last raid's feed told ([before, after], Schematics; -1 none).
 var _raid_heat: Array[int] = []
 var _raid_reward: int = -1
@@ -3909,13 +3909,13 @@ func show_raid_summary() -> void:
 	outer.add_child(table)
 	MapLegend.pin_to(table, c.corporation_id)
 	var skin := RaidSkin.of(c.corporation_id)
-	var raid := RunManager.lookup().get_content(StringName(String(r.get("raid_id", "")))) as RaidData
+	var raid_key := StringName(String(r.get("raid_id", "")))
+	var raid: RaidData = RunManager.lookup().get_content(raid_key) as RaidData if RunManager.lookup().has(raid_key) else null
 	var raid_name := TextDb.t(raid, "display_name").to_upper() if raid != null else String(r.get("raid_id", "")).to_upper()
 	var held := not bool(r.get("campaign_lost", false))
 	var number := skin.order_number(StringName(String(r.get("raid_id", ""))), c.heat)
 	var report := RaidPaper.new(c.corporation_id, tr(REPORT_TITLE), RaidPaper.STAMP_CLASSIFIED, number)
 	report.name = "RaidReport"
-	report.stamp_at = Vector2(0.7, 0.9)
 	report.custom_minimum_size.x = REPORT_WIDTH * Settings.text_scale
 	report.set_sub(tr(REPORT_OPERATION) % [raid_name, tr(REPORT_FAILED) if held else tr(REPORT_SUCCESS)])
 	var side := VBoxContainer.new()
@@ -3977,7 +3977,7 @@ func show_raid_summary() -> void:
 		node_name.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.3))
 		node_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node_name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		node_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(node_name)
 		node_row.add_child(node_name)
 		var v := Label.new()
 		v.name = "Value"
@@ -3989,7 +3989,7 @@ func show_raid_summary() -> void:
 		_tip_label(v, tr("Integrity before and after, and whether the node held."))
 		node_row.add_child(v)
 		box.add_child(node_row)
-	var back := RaidSticker.new(REPORT_BACK, roundi(START_STICKER_PX * Settings.text_scale), RaidSticker.PINK)
+	var back := RaidSticker.new(tr(REPORT_BACK), START_STICKER_STEP, RaidSticker.PINK)
 	back.name = "ReportBack"
 	back.pressed.connect(show_hq)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -4004,14 +4004,14 @@ func show_raid_summary() -> void:
 	pencil.name = "ReportPencil"
 	report.add_child(pencil)
 	if held:
-		var holds := RaidSticker.new(RaidVerdict.CELL_HOLDS, roundi(HOLDS_STICKER_PX * Settings.text_scale), RaidSticker.YELLOW, -6.0).stamp_only()
+		var holds := RaidSticker.new(tr(RaidVerdict.CELL_HOLDS), HOLDS_STICKER_STEP, RaidSticker.YELLOW, -6.0).stamp_only()
 		holds.name = "CellHolds"
 		table.add_child(holds)
 		_slap_holds.call_deferred(holds, table, report)
 
 
-## ART-6 3A: CELL HOLDS slaps onto the report (`raid_holds_slap`: from amplitude x its size;
-## one press ends it; at rest at once when motion doesn't play), over the table's top right.
+## ART-6 3A: CELL HOLDS slaps onto the report (1B's vinyl slap, `sticker_slap`; one press ends
+## it; at rest at once when motion doesn't play), beside the report's top.
 func _slap_holds(holds: RaidSticker, table: Control, report: Control) -> void:
 	if not is_instance_valid(holds) or not is_instance_valid(table):
 		return
@@ -4020,9 +4020,7 @@ func _slap_holds(holds: RaidSticker, table: Control, report: Control) -> void:
 	# Slapped beside the report's top, over the table (clear of the verdict stamp at its left).
 	var at := report.global_position + Vector2(-holds.size.x - SLAP_MARGIN * Settings.text_scale, SLAP_MARGIN * 2.0 * Settings.text_scale) if is_instance_valid(report) else table.global_position
 	holds.global_position = at.max(table.global_position + Vector2(SLAP_MARGIN * 8.0, SLAP_MARGIN))
-	MotionSkip.register_passive(holds)
-	holds.scale = Vector2.ONE * Motion.amplitude(&"raid_holds_slap") if Motion.live(&"raid_holds_slap") else Vector2.ONE
-	Motion.run(&"raid_holds_slap", holds, ^"scale", Vector2.ONE)
+	holds.slap()
 
 
 ## Room round the CELL HOLDS sticker on the table (px at 1.0).

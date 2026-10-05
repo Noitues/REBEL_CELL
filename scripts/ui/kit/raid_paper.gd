@@ -19,12 +19,14 @@ const FOOTER := "%s  //  INTERNAL  //  DO NOT FORWARD" # TR
 
 ## The letterhead's height (px at text scale 1.0) and the seal's radius in it.
 const LETTERHEAD_H := 46.0
+## Room under 1B's letterhead rule for the division line (px at 1.0).
+const DIVISION_ROOM := 18.0
 const SEAL_R := 15.0
 ## Margins (px at 1.0): sides, top under the clip, and the footer's room (redactions + meta).
 const PAD := 14.0
-const FOOTER_H := 46.0
+const FOOTER_H := 32.0
 ## Redacted bars: rows, height, the share of the width they run to.
-const REDACT_ROWS := 2
+const REDACT_ROWS := 1
 const REDACT_H := 6.0
 const REDACT_SPAN := 0.62
 ## Paper grain: specks per 10 000 px² and their alpha.
@@ -49,6 +51,9 @@ var number: String = ""
 ## Where the stamp sits, as a share of the page (its centre).
 var stamp_at: Vector2 = Vector2(0.74, 0.91)
 var body: VBoxContainer
+## 1B's sheet under the words, and the layer the Cell's view of it draws on.
+var paper: CorpPaperPanel
+var _deco_node: Control
 var title_label: Label
 var sub_label: Label
 var _k: float = 1.0
@@ -64,9 +69,23 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	var box := StyleBoxEmpty.new()
 	box.content_margin_left = PAD * _k
 	box.content_margin_right = PAD * _k
-	box.content_margin_top = (LETTERHEAD_H + PAD * 0.5) * _k
+	box.content_margin_top = (CorpPaperPanel.LETTERHEAD_H + DIVISION_ROOM) * _k
 	box.content_margin_bottom = FOOTER_H * _k
 	add_theme_stylebox_override("panel", box)
+	# 1B's corp paper is the sheet (stock, letterhead, rule, the stamp in its slot).
+	paper = CorpPaperPanel.new()
+	paper.name = "Paper"
+	paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	paper.corp_name = skin.corp_name()
+	paper.corp_color = skin.paper_hue.lightened(0.35) if Palette.luminance(skin.hue) > Palette.luminance(Palette.TEXT_MID) else skin.hue
+	paper.stamp = tr(p_stamp)
+	paper.seed = absi(p_title.hash()) % 97 + 1
+	add_child(paper, false, Node.INTERNAL_MODE_FRONT)
+	_deco_node = Control.new()
+	_deco_node.name = "Deco"
+	_deco_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_deco_node.draw.connect(func() -> void: _deco(_deco_node))
+	add_child(_deco_node, false, Node.INTERNAL_MODE_BACK)
 	body = VBoxContainer.new()
 	body.name = "PaperBody"
 	body.add_theme_constant_override("separation", roundi(2 * _k))
@@ -78,14 +97,14 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	title_label.add_theme_font_override("font", Palette.display())
 	title_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.TITLE))
 	title_label.add_theme_color_override("font_color", Palette.INK)
-	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(title_label)
 	body.add_child(title_label)
 	sub_label = Label.new()
 	sub_label.name = "PaperSub"
 	sub_label.add_theme_font_override("font", Palette.paper())
 	sub_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	sub_label.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.42))
-	sub_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(sub_label)
 	sub_label.visible = false
 	body.add_child(sub_label)
 
@@ -111,7 +130,7 @@ func add_row(label: String, value: String, value_col: Color = Palette.INK, value
 	l.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.3))
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)
 	l.custom_minimum_size.x = 60.0 * _k
 	row.add_child(l)
 	var v := Label.new()
@@ -141,30 +160,29 @@ func _rule_box() -> StyleBoxLine:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_RESIZED:
-		queue_redraw()
+	if (what == NOTIFICATION_RESIZED or what == NOTIFICATION_SORT_CHILDREN) and paper != null:  # after the container fitted it
+		paper.position = Vector2.ZERO
+		paper.size = size
+		_deco_node.position = Vector2.ZERO
+		_deco_node.size = size
+		_deco_node.queue_redraw()
 
 
 func _draw() -> void:
+	pass  # 1B's CorpPaperPanel is the stock; the decorations draw over it (_deco)
+
+
+## The Cell's view of the stolen sheet, over 1B's paper: the corp seal at the letterhead's
+## right, the division line under the rule, redacted lines and the footer meta, a paper clip.
+func _deco(on: Control) -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	var k := _k
-	# A soft drop shadow, then the stock.
-	draw_rect(Rect2(r.position + Vector2(5, 7) * k, r.size), Color(Palette.NIGHT_SKY, 0.55))
-	draw_rect(r, Palette.NOTE_PAPER)
-	_grain(r)
-	# The letterhead: seal, corp name, division, and the rule in the corp's ink.
-	var seal_c := Vector2(PAD + SEAL_R, PAD * 0.6 + SEAL_R) * k
-	draw_seal(self, seal_c, SEAL_R * k, skin.paper_hue, false, skin.corporation_id)
-	var head_font := Palette.display()
-	var head_px := UiTheme.font_px(UiTheme.LABEL)
-	var x := seal_c.x + (SEAL_R + 8.0) * k
-	draw_string(head_font, Vector2(x, seal_c.y - 1.0 * k), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - x - PAD * k, head_px, skin.paper_hue)
+	var seal_c := Vector2(r.size.x - (PAD + SEAL_R) * k, (PAD * 0.4 + SEAL_R) * k)
+	draw_seal(on, seal_c, SEAL_R * k, skin.paper_hue, false, skin.corporation_id)
 	var meta_font := Palette.paper()
 	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
-	draw_string(meta_font, Vector2(x, seal_c.y + meta_px * 0.95), skin.division(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - x - PAD * k, meta_px,
-		Palette.INK.lerp(Palette.PAPER, 0.45))
-	var rule_y := LETTERHEAD_H * k
-	draw_line(Vector2(PAD * k, rule_y), Vector2(r.size.x - PAD * k, rule_y), skin.paper_hue, 2.0 * k)
+	on.draw_string(meta_font, Vector2(CorpPaperPanel.LETTERHEAD_H * 0.0 + UiTheme.SP_L, CorpPaperPanel.LETTERHEAD_H + meta_px * 0.6), skin.division(),
+		HORIZONTAL_ALIGNMENT_LEFT, r.size.x - UiTheme.SP_L * 2.0, meta_px, Palette.INK.lerp(Palette.PAPER, 0.45))
 	# The footer: redacted lines and the meta line.
 	var fy := r.size.y - FOOTER_H * k + 8.0 * k
 	for row in REDACT_ROWS:
@@ -172,15 +190,12 @@ func _draw() -> void:
 		var i := 0
 		while bx < r.size.x * REDACT_SPAN:
 			var ln := (34.0 + 26.0 * absf(RaidPencil.noise(row * 31 + 7, i))) * k
-			draw_rect(Rect2(bx, fy + row * (REDACT_H + 5.0) * k, ln, REDACT_H * k), Palette.INK)
+			on.draw_rect(Rect2(bx, fy + row * (REDACT_H + 5.0) * k, ln, REDACT_H * k), Palette.INK)
 			bx += ln + (6.0 + 6.0 * absf(RaidPencil.noise(row * 17 + 3, i))) * k
 			i += 1
-	draw_string(meta_font, Vector2(PAD * k, r.size.y - 7.0 * k), tr(FOOTER) % skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD * 2.0 * k, meta_px,
+	on.draw_string(meta_font, Vector2(PAD * k, r.size.y - 7.0 * k), tr(FOOTER) % skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x * REDACT_SPAN, meta_px,
 		Palette.INK.lerp(Palette.PAPER, 0.5))
-	_clip(k)
-	if stamp_word != "":
-		draw_stamp(self, Vector2(r.size.x * stamp_at.x, r.size.y * stamp_at.y), tr(stamp_word), roundi(STAMP_PX * k), Palette.HARM_INK, deg_to_rad(STAMP_TILT))
-
+	_clip(on, k)
 
 ## Paper grain: deterministic specks (a hash, no RNG).
 func _grain(r: Rect2) -> void:
@@ -192,7 +207,7 @@ func _grain(r: Rect2) -> void:
 
 
 ## The paper clip over the top edge.
-func _clip(k: float) -> void:
+func _clip(on: CanvasItem, k: float) -> void:
 	var x := CLIP_X * k
 	var steel := Palette.TEXT_MID
 	for j in 2:
@@ -200,12 +215,12 @@ func _clip(k: float) -> void:
 		var h := (CLIP_H - j * 9.0) * k
 		var top := (-10.0 + j * 4.0) * k
 		var r := Rect2(x - w * 0.5, top, w, h)
-		draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
-		draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
-		draw_arc(Vector2(x, r.position.y + w * 0.5), w * 0.5, PI, TAU, 10, steel, 2.0 * k)
-		draw_arc(Vector2(x, r.end.y - w * 0.5), w * 0.5, 0, PI, 10, steel, 2.0 * k)
-		draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), steel, 2.0 * k)
-		draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), steel, 2.0 * k)
+		on.draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
+		on.draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), Color(Palette.NIGHT_SKY, 0.6), 3.0 * k)
+		on.draw_arc(Vector2(x, r.position.y + w * 0.5), w * 0.5, PI, TAU, 10, steel, 2.0 * k)
+		on.draw_arc(Vector2(x, r.end.y - w * 0.5), w * 0.5, 0, PI, 10, steel, 2.0 * k)
+		on.draw_line(r.position + Vector2(0, w * 0.5), Vector2(r.position.x, r.end.y - w * 0.5), steel, 2.0 * k)
+		on.draw_line(Vector2(r.end.x, r.position.y + w * 0.5), r.end - Vector2(0, w * 0.5), steel, 2.0 * k)
 
 
 ## An Anton rubber stamp: `word` in a box, tilted `tilt` radians round `c`, in `col` ink.

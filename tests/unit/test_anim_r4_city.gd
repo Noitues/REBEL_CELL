@@ -519,6 +519,11 @@ func test_a_drop_runs_its_road_to_core_and_every_forecast_change_reads_as_arrows
 		if (b as Badge).text.contains("→"):
 			arrows += 1
 			assert_true((b as Badge)._font().has_char(0x2192), "a badge writing a change draws its arrow")
+	# ART-6 3A: YOUR NETWORK's rows are status chips (terminal labels) now.
+	for chip in hq._panel.find_children("Chip_*", "RaidChip", true, false):
+		if (chip as Label).text.contains("→"):
+			arrows += 1
+			assert_true((chip as Label).get_theme_font(&"font").has_char(0x2192), "a chip writing a change draws its arrow")
 	assert_gt(arrows, 0, "the forecast badges read a → b")
 
 

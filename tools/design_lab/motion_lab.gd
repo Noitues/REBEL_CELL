@@ -176,8 +176,7 @@ const DEMOS := {
 	&"raid_mark_write": ["hq", "raid"], &"raid_mark_hold": ["hq", "raid"], &"raid_mark_wipe": ["hq", "raid"],
 	&"raid_breached_write": ["hq", "raid_breached"], &"raid_bits_burst": ["hq", "raid_breached"],
 	&"raid_slow_field": ["hq", "raid"], &"raid_ice_grow": ["hq", "raid_ice"], &"raid_repair_rise": ["hq", "raid"],
-	&"raid_route_write": ["hq", "raid_setup"], &"raid_route_wipe": ["hq", "raid"], &"raid_holo_band": ["hq", "raid_setup"],
-	&"raid_hex_scroll": ["hq", "raid_setup"], &"raid_holds_slap": ["hq", "raid_report"], &"raid_start_peel": ["hq", "raid"],
+	&"raid_route_write": ["hq", "raid_setup"], &"raid_route_wipe": ["hq", "raid"],
 	&"raid_dock_circle": ["hq", "raid_drag"], &"raid_drag_arrow": ["hq", "raid_drag"],
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],

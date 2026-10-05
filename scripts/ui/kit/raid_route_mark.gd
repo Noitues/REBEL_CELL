@@ -1,6 +1,6 @@
 class_name RaidRouteMark
 extends Control
-## ART-6 3A: a raid route's letter (A, B, C) in a red pencil circle (ART_BIBLE v2 §4.8 "A/B/C
+## ART-6 3A: a raid route's letter (A, B, C) in a red ring (ART_BIBLE v2 §4.8 "A/B/C
 ## circles at entry Sites"; round 19 `ui19._draw_rows` "route" rows), beside a THREAT INTEL
 ## row so the intel and the map's routes name the same entry.
 
@@ -26,7 +26,7 @@ func _draw() -> void:
 	var c := size * 0.5
 	var r := minf(size.x, size.y) * 0.42
 	var red := RaidSkin.pencil_threat()
-	RaidPencil.circle(self, c, r, r, red, maxf(2.0, r * 0.22), 0.0, 1.0, letter.unicode_at(0))
+	draw_arc(c, r, 0.0, TAU, 28, red, maxf(2.0, r * 0.16), true)
 	var f := Palette.display()
 	var px := roundi(r * 1.25)
 	var w := f.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x

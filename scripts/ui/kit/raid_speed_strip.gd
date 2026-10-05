@@ -26,31 +26,51 @@ func _init(p_steps_max: int = 30) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var k := Settings.text_scale
 	custom_minimum_size = Vector2((KEY_W * 3.0 + SKIP_W + GAP * 4.0 + PAD * 2.0) * k + _step_w(), HEIGHT * k)
+	# 1B's CRT terminal is the strip's glass (greyed: nothing plays yet); the keys draw over it.
+	crt = CrtTerminalPanel.new()
+	crt.name = "Crt"
+	crt.prompt = false
+	crt.caret = false
+	crt.hex_dump = false
+	crt.modulate.a = IDLE_ALPHA + 0.25
+	crt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(crt, false, Node.INTERNAL_MODE_FRONT)
+	_keys = Control.new()
+	_keys.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_keys.draw.connect(_draw_keys)
+	add_child(_keys, false, Node.INTERNAL_MODE_BACK)
+	resized.connect(func() -> void:
+		crt.position = Vector2.ZERO
+		crt.size = size
+		_keys.position = Vector2.ZERO
+		_keys.size = size
+		_keys.queue_redraw())
+
+
+var crt: CrtTerminalPanel
+var _keys: Control
 
 
 func _step_w() -> float:
 	return Palette.mono().get_string_size(tr(STEP_IDLE) % steps_max, HORIZONTAL_ALIGNMENT_LEFT, -1, UiTheme.font_px(UiTheme.BODY)).x + GAP * 2.0
 
 
-func _draw() -> void:
+func _draw_keys() -> void:
 	var k := Settings.text_scale
-	var r := Rect2(Vector2.ZERO, size)
 	var a := IDLE_ALPHA
-	draw_rect(r, Color(Palette.TERMINAL_BG, Palette.TERMINAL_BG.a * a))
-	draw_rect(r, Color(Palette.TERMINAL_EDGE, a), false, 1.0)
 	var x := PAD * k
 	var px := UiTheme.font_px(UiTheme.BODY)
 	var f := Palette.mono()
 	for key in KEYS:
 		var w := (SKIP_W if key == "SKIP" else KEY_W) * k
 		var box := Rect2(x, PAD * k * 0.6, w, size.y - PAD * k * 1.2)
-		draw_rect(box, Color(Palette.NET_CYAN, 0.12 * a))
-		draw_rect(box, Color(Palette.NET_CYAN, a), false, 1.0)
+		_keys.draw_rect(box, Color(Palette.NET_CYAN, 0.12 * a))
+		_keys.draw_rect(box, Color(Palette.NET_CYAN, a), false, 1.0)
 		var word := tr(key)
 		var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		draw_string(f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.NET_CYAN, a))
+		_keys.draw_string(f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.NET_CYAN, a))
 		x += w + GAP * k
-	draw_string(f, Vector2(x + GAP * k, size.y * 0.5 + f.get_ascent(px) * 0.4), tr(STEP_IDLE) % steps_max, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, a))
+	_keys.draw_string(f, Vector2(x + GAP * k, size.y * 0.5 + f.get_ascent(px) * 0.4), tr(STEP_IDLE) % steps_max, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, a))
 
 
 ## Dresses a live playout button `b` as a key of this strip: navy key with a cyan edge, lit

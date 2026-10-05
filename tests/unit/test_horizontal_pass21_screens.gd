@@ -644,8 +644,8 @@ func test_new_hq_code_reads_content_text_through_textdb() -> void:
 	assert_true(asset_named, "asset badge")
 	hq.show_raid()
 	await _frames()
-	var card := hq._panel.find_child("RaidCard", true, false) as TerminalWindow
-	assert_string_contains(card.title, "XL_RAID", "raid card title")
+	var card := hq._panel.find_child("RaidCard", true, false) as RaidPaper  # ART-6 3A: the work order is corp paper
+	assert_string_contains(card.title_label.text, "XL_RAID", "raid card title")
 
 
 func test_one_name_for_jack_in_and_names_on_the_title() -> void:

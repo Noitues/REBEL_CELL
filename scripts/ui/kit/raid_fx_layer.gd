@@ -104,11 +104,12 @@ const REPAIR_RISE := &"raid_repair_rise"
 const MARK_INCOMING := "INCOMING" # TR
 ## Pencil word sizes (screen px x screen_k x text scale): state marks, the verdict banner,
 ## BREACHED; their stroke widths (x size) and the lift of a word above its node (x icon r).
-const MARK_PX := 26
-const BANNER_PX := 34
-const BREACH_PX := 52
 const MARK_LIFT := 2.4
 const HOLDS_TICK := 16.0
+## Screen px: a mark's lift above its node, the BREACHED underline's and the ticks' width.
+const MARK_LIFT_PX := 46.0
+const UNDERLINE_W := 9.0
+const TICK_W := 6.0
 ## The vehicle icon's radius (screen px x screen_k), the ice block round a frozen one (x
 ## radius) and its crystals, the slow field's radius (x the node icon) and rings.
 const VEHICLE_R := 11.0
@@ -244,6 +245,9 @@ func _exit_tree() -> void:
 	if _under != null and is_instance_valid(_under):
 		_under.queue_free()
 	_under = null
+	if _pool != null and is_instance_valid(_pool):
+		_pool.release()
+	_pool = null
 
 
 func _process(delta: float) -> void:
@@ -255,6 +259,7 @@ func _process(delta: float) -> void:
 	_real += delta
 	_start_marks()
 	_update_hover()
+	_lay_pencil()
 	_refresh_sockets()
 	_show_due_hits()
 	if _tint_fade_t0 == INF and not _tints.is_empty() and overlay != null and overlay.city != null and overlay.city.influence_pin == null \
@@ -418,7 +423,8 @@ func play_beat(b: Dictionary, t0: float) -> void:
 		"threat_enters":
 			# ART-6 3A: its v4 icon (type from its rules, its health from its integrity), and
 			# INCOMING written once at the Site it enters by.
-			var td := RunManager.lookup().get_content(StringName(String(e.get("threat_content", "")))) as ThreatData
+			var tid := StringName(String(e.get("threat_content", "")))
+			var td: ThreatData = RunManager.lookup().get_content(tid) as ThreatData if RunManager.lookup().has(tid) else null
 			var most := int(e.get("integrity", td.integrity if td != null else 1))
 			_tokens[String(e["threat"])] = {"site": StringName(e["site"]), "enter_at": t0, "enter_at_dur": dur,
 				"type": RaidVehicle.type_of(td), "max": maxi(1, most), "hits": []}
@@ -675,10 +681,8 @@ func _draw() -> void:
 	for f in _fx:
 		if f["kind"] == "number":
 			_draw_number(f, k, at)
-	_draw_banner(k)
-	# ART-6 3A: the pencil goes on top (no UI covers grease pencil).
-	for m in _marks:
-		_draw_mark(m, k)
+	# ART-6 3A: the verdict banner and the state marks are grease pencil on the pencil layer
+	# (_lay_pencil), above every panel.
 
 
 ## The moving parts (tints, traces, tokens, ICE locks, hits) on `_ci`.
@@ -708,35 +712,13 @@ func _draw_under() -> void:
 
 ## ANIM-R2 R6: the result banner over home: stamps on from `raid_result_banner`'s amplitude
 ## and stays (the result).
-func _draw_banner(k: float) -> void:
-	if _banner.is_empty() or clock < float(_banner["t0"]) or bool(_banner.get("breached", false)):
-		return  # BREACHED is its own heavy pencil mark (ART-6 3A)
-	var place := banner_rect()
-	if not place.has_area():
-		return
-	# ART-6 3A: home's verdict in grease pencil: the loss in red, HOLDS in our yellow, written on
-	# (`raid_result_banner`), and it stays (the result).
-	var u := beat_u(BANNER_MOTION, float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
-	var px := banner_px(k)
-	var parts := banner_parts()
-	var total := 0.0
-	for part: Array in parts:
-		total += RaidPencil.word_size(String(part[0]), px).x
-	var x := place.get_center().x - total * 0.5
-	var done := 0.0
-	for part: Array in parts:
-		var w := RaidPencil.word_size(String(part[0]), px).x
-		var share := w / maxf(total, 1.0)
-		var pu := clampf((u - done) / maxf(share, 0.001), 0.0, 1.0)
-		var col := RaidSkin.pencil_plan() if (part[1] as Color) == Palette.CELL_ACID else RaidSkin.pencil_threat()
-		RaidPencil.word(self, String(part[0]), Vector2(x + w * 0.5, place.get_center().y), px, col, pu, 0.0, deg_to_rad(STAMP_TILT), false, 0.0, 5)
-		x += w
-		done += share
+func _draw_banner(_k: float) -> void:
+	pass  # ART-6 3A: home's verdict is grease pencil on the pencil layer (_lay_pencil)
 
 
-## ART-6 3A: the verdict banner's pencil size (px).
-func banner_px(k: float) -> int:
-	return maxi(1, roundi(BANNER_PX * Settings.text_scale * k))
+## ART-6 3A: the verdict banner's pencil type step (BREACHED writes larger, heavy).
+func banner_step() -> int:
+	return UiTheme.DISPLAY if bool(_banner.get("breached", false)) else UiTheme.TITLE
 
 ## ANIM-R6 C11: the banner's words in their colours: [[words, colour], ...]. HOME -5 · HOLDS
 ## is its damage (pink, to the last " · ") then HOLDS (acid); any other banner is one colour.
@@ -772,8 +754,9 @@ func banner_rect() -> Rect2:
 		return Rect2()
 	var k := overlay.screen_k()
 	# ART-6 3A: the pencil words' size (BREACHED writes larger, heavy).
-	var bpx := maxi(1, roundi((BREACH_PX if bool(_banner.get("breached", false)) else BANNER_PX) * Settings.text_scale * k))
-	var size := RaidPencil.word_size(String(_banner["text"]), bpx) + Vector2(BANNER_PAD, BANNER_PAD) * 2.0 * k
+	# The pencil word's screen size, in this layer's px (the map's zoom undone).
+	var size := RaidPencilPool.word_size(String(_banner["text"]), banner_step()) / maxf(RaidMapAnchor.scale(overlay), 0.001) \
+		+ Vector2(BANNER_PAD, BANNER_PAD) * 2.0 * k
 	var clear := BANNER_CLEAR * k
 	var r_icon := CityMapOverlay.ICON_RADIUS_BIG * k
 	var bar_bottom := r_icon + (HOME_BAR_GAP + HOME_BAR.y) * k
@@ -1025,9 +1008,7 @@ func _draw_token(id: String, at: Dictionary, k: float) -> void:
 		fmod(anim_phase(), 1.0), alpha)
 	if frozen and String(t.get("status", "")) == RaidVehicle.STATUS_FROZEN:
 		_ice_block(p, r * ICE_BLOCK, beat_u(ICE_GROW, float(t.get("status_t0", 0.0)), RaidBeats.raw_seconds(ICE_GROW)), alpha, id.hash())
-	if struck >= 0.0 and clock >= float(t["dead_at"]):
-		# ANIM-R6 C11: the withdrawing threat is struck out (ART-6 3A: a red pencil X).
-		RaidPencil.cross(_ci, p, s * Motion.amplitude(WITHDRAW_MOTION), Color(RaidSkin.pencil_threat(), 1.0 - struck), 4.0 * k, 1.0, id.hash())
+	# ANIM-R6 C11: the withdrawing threat is struck out (ART-6 3A: a red pencil X, _lay_pencil).
 
 
 ## ART-6 3A: threat `id`'s health now (0..1): its integrity less the shots landed so far.
@@ -1212,47 +1193,106 @@ func _stack_of(f: Dictionary) -> int:
 	return n
 
 
-func _draw_stamp(site: StringName, s: Dictionary, k: float) -> void:
-	# ART-6 3A: a node that holds gets the Cell's yellow pencil tick at the verdict (it stays);
-	# DOWN and TAKEN are written, held and wiped (their marks), then the socket shows them.
-	if clock < float(s["t0"]) or String(s.get("outcome", "")) != "holds":
-		return
-	var p := overlay.icon_at(site)
-	if p.x == INF:
-		return
-	var u := beat_u(&"raid_flip", float(s["t0"]), float(s["dur"]))
-	var r := CityMapOverlay.ICON_RADIUS * k
-	RaidPencil.tick(self, p + Vector2(r * RaidSocket.HALF.x * 1.1, -r * 0.9), HOLDS_TICK * k, RaidSkin.pencil_plan(), 3.5 * k, u, String(site).hash())
+func _draw_stamp(_site: StringName, _s: Dictionary, _k: float) -> void:
+	pass  # ART-6 3A: outcomes are pencil now (_lay_pencil: a HOLDS tick; DOWN / TAKEN marks)
 
 
-## ART-6 3A: a pencil mark: DOWN written over its node, INCOMING / TAKEN above theirs,
-## BREACHED heavy where the verdict banner sits.
-func _draw_mark(m: Dictionary, k: float) -> void:
-	var pr := mark_progress(m)
-	if pr.x <= 0.0 or pr.y >= 1.0:
+## ART-6 3A: the playout's pencil on 1B's grease pencil (RaidPencilPool, on the raid pencil
+## layer above every panel), anchored through RaidMapAnchor: the state marks (DOWN written
+## over its node, INCOMING / TAKEN above theirs, BREACHED heavy where the verdict sits, with
+## its underline), home's verdict ("HOME -5" red, "HOLDS" yellow), a yellow tick on each
+## node that holds at the verdict, a red X on a threat withdrawing.
+func _lay_pencil() -> void:
+	if overlay == null or overlay.city == null or not is_visible_in_tree():
 		return
-	var site := StringName(m["site"])
-	var heavy := bool(m.get("heavy", false))
-	var c: Vector2
-	var px: int
-	if heavy:
+	if _pool == null:
+		_pool = RaidPencilPool.make(self)
+	_pool.begin()
+	var threat := GreasePencilMark.Ink.THREAT
+	var plan := GreasePencilMark.Ink.PLAN
+	var gxf := get_global_transform()
+	var zoom := RaidMapAnchor.scale(overlay)
+	for i in _marks.size():
+		var m: Dictionary = _marks[i]
+		var pr := mark_progress(m)
+		if pr.x <= 0.0 or pr.y >= 1.0:
+			continue
+		var site := StringName(m["site"])
+		var heavy := bool(m.get("heavy", false))
+		var c: Vector2
+		if heavy:
+			var place := banner_rect()
+			c = gxf * place.get_center() if place.has_area() else RaidMapAnchor.site(overlay, site) - Vector2(0, MARK_LIFT_PX)
+		else:
+			c = RaidMapAnchor.site(overlay, site)
+			if bool(m.get("above", false)):
+				c -= Vector2(0, MARK_LIFT_PX)
+		if c.x == INF:
+			continue
+		var step := UiTheme.DISPLAY if heavy else UiTheme.TITLE
+		var write := minf(1.0, pr.x * (1.25 if heavy else 1.0))
+		_pool.word("mark_%d" % i, String(m["word"]), c, step, threat, 1.0, write, pr.y, -0.05)
+		if heavy:
+			var size := RaidPencilPool.word_size(String(m["word"]), step)
+			var y := c.y + size.y * 0.55
+			var line := PackedVector2Array([Vector2(c.x - size.x * 0.56, y), Vector2(c.x + size.x * 0.56, y + size.y * 0.06)])
+			_pool.stroke("under_%d" % i, [line], threat, UNDERLINE_W, clampf(pr.x * 1.25 - 0.25, 0.0, 1.0), 0.0, false, 9)
+	# Home's verdict (not BREACHED: that is its own heavy mark).
+	if not _banner.is_empty() and clock >= float(_banner["t0"]) and not bool(_banner.get("breached", false)):
 		var place := banner_rect()
-		if not place.has_area():
-			var at := overlay.icon_at(site)
-			if at.x == INF:
-				return
-			place = Rect2(at - Vector2(0, CityMapOverlay.ICON_RADIUS_BIG * k * MARK_LIFT), Vector2.ZERO)
-		c = place.get_center()
-		px = maxi(1, roundi(BREACH_PX * Settings.text_scale * k))
-	else:
-		var p := overlay.icon_at(site)
+		if place.has_area():
+			var u := beat_u(BANNER_MOTION, float(_banner["t0"]), Motion.seconds(BANNER_MOTION))
+			var parts := banner_parts()
+			var total := 0.0
+			for part: Array in parts:
+				total += RaidPencilPool.word_size(String(part[0]), banner_step()).x
+			var c := gxf * place.get_center()
+			var x := c.x - total * 0.5
+			var done := 0.0
+			for j in parts.size():
+				var part: Array = parts[j]
+				var w := RaidPencilPool.word_size(String(part[0]), banner_step()).x
+				var share := w / maxf(total, 1.0)
+				var pu := clampf((u - done) / maxf(share, 0.001), 0.0, 1.0)
+				var ink := plan if (part[1] as Color) == Palette.CELL_ACID else threat
+				_pool.word("banner_%d" % j, String(part[0]), Vector2(x + w * 0.5, c.y), banner_step(), ink, 1.0, pu, 0.0, deg_to_rad(STAMP_TILT))
+				x += w
+				done += share
+	# A yellow tick on each node that holds, at the verdict.
+	for id in _stamps:
+		var s: Dictionary = _stamps[id]
+		if clock < float(s["t0"]) or String(s.get("outcome", "")) != "holds":
+			continue
+		var p := RaidMapAnchor.site(overlay, StringName(id))
 		if p.x == INF:
-			return
-		c = p - Vector2(0, CityMapOverlay.ICON_RADIUS * k * MARK_LIFT) if bool(m.get("above", false)) else p
-		px = maxi(1, roundi(MARK_PX * Settings.text_scale * k))
-	var under := clampf(pr.x * 1.25 - 0.25, 0.0, 1.0) if heavy else 0.0
-	RaidPencil.word(self, String(m["word"]), c, px, m["col"], minf(1.0, pr.x * (1.25 if heavy else 1.0)), pr.y, -0.05, heavy, under, String(site).hash())
+			continue
+		var r := CityMapOverlay.ICON_RADIUS * zoom
+		var tc := p + Vector2(r * RaidSocket.HALF.x * 1.1, -r * 0.9)
+		var t := PackedVector2Array([tc + Vector2(-HOLDS_TICK * 0.5, 0), tc + Vector2(-HOLDS_TICK * 0.1, HOLDS_TICK * 0.4), tc + Vector2(HOLDS_TICK * 0.6, -HOLDS_TICK * 0.55)])
+		_pool.stroke("tick_%s" % id, [t], plan, TICK_W, beat_u(&"raid_flip", float(s["t0"]), float(s["dur"])), 0.0, false, String(id).hash())
+	# A red X on a threat withdrawing at the verdict.
+	var at := _token_positions()
+	for id in _tokens:
+		var tk: Dictionary = _tokens[id]
+		if not bool(tk.get("withdrawn", false)) or clock < float(tk["dead_at"]):
+			continue
+		var du := beat_u(WITHDRAW_MOTION, float(tk["dead_at"]), float(tk.get("dead_at_dur", 0.0)))
+		var p: Vector2 = at.get(id, Vector2.INF)
+		if du >= 1.0 or p.x == INF:
+			continue
+		var g := gxf * p
+		var arm := VEHICLE_R * zoom * Motion.amplitude(WITHDRAW_MOTION)
+		_pool.stroke("x_%s" % id, [PackedVector2Array([g + Vector2(-arm, -arm * 0.85), g + Vector2(arm, arm * 0.8)]),
+			PackedVector2Array([g + Vector2(arm, -arm * 0.85), g + Vector2(-arm * 0.95, arm * 0.9)])], threat, TICK_W, 1.0, du, false, String(id).hash())
+	_pool.end()
 
+
+## The pencil marks laid now (tests).
+func pencil_shown() -> Array[Node2D]:
+	return _pool.shown() if _pool != null else []
+
+
+var _pool: RaidPencilPool = null
 
 ## ART-6 3A (§4.8 Ghost station bonus): a slow field drawn under the units on the node whose
 ## operative holds them: dashed rings drifting inward (still under reduce effects).

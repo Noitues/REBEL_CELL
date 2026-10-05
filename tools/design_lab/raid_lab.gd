@@ -84,7 +84,7 @@ func _clear() -> void:
 
 ## A campaign against `corp` with five claimed nodes of every type (a turret, an ICE lock and
 ## an operative on them), weak spots so a raid takes and downs nodes, and a raid queued.
-func _campaign(corp_id: StringName, home_integrity: int = -1, defended: bool = true) -> void:
+func _campaign(corp_id: StringName, home_integrity: int = -1, defended: bool = true, weak: bool = false) -> void:
 	var p := RunManager.profile
 	for u in [&"unlock_meridian", &"unlock_halcyon", &"unlock_orbital", &"unlock_rebel_cell"]:
 		if not p.unlocks.has(u):
@@ -112,8 +112,8 @@ func _campaign(corp_id: StringName, home_integrity: int = -1, defended: bool = t
 		CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, ids[1])
 		CampaignRules.deploy_asset(c, RunManager.config(), RunManager.lookup(), 0, ids[1])
 	for id in ids:
-		if id != c.grid.home_site_id and c.grid.node_type_of(id) == &"vault_terminal":
-			c.grid.sites[id]["integrity"] = 4  # a weak vault: DOWN, then TAKEN
+		if id != c.grid.home_site_id and (c.grid.node_type_of(id) == &"vault_terminal" or weak):
+			c.grid.sites[id]["integrity"] = 2  # weak nodes: DOWN, then TAKEN
 		if id != c.grid.home_site_id and c.grid.node_type_of(id) == &"safehouse" and not c.living_operatives().is_empty():
 			CampaignRules.station(c, RunManager.lookup(), c.living_operatives()[0].id, id)
 	if home_integrity > 0:
@@ -122,11 +122,11 @@ func _campaign(corp_id: StringName, home_integrity: int = -1, defended: bool = t
 		CampaignRules.queue_raid(c, corp, RC.RaidTriggerSource.STORY, &"", "raid lab")
 
 
-func _open_raid(corp_id: StringName, home_integrity: int = -1, defended: bool = true) -> Node:
+func _open_raid(corp_id: StringName, home_integrity: int = -1, defended: bool = true, weak: bool = false) -> Node:
 	_hq = HQ.instantiate()
 	add_child(_hq)
 	await _frames(2)
-	_campaign(corp_id, home_integrity, defended)
+	_campaign(corp_id, home_integrity, defended, weak)
 	_hq.show_raid()
 	await _until(func() -> bool: return _hq.arrival_ready())
 	await _frames(SETTLE)
@@ -144,7 +144,7 @@ func _screen(state: String) -> void:
 			await _until(func() -> bool: return hq.drops.mode == DropLayer.Mode.CARRY)
 			await _frames(17)  # the pointer at the target, before the release
 		"playout_mark":
-			var hq: Node = await _open_raid(&"meridian")
+			var hq: Node = await _open_raid(&"meridian", -1, false, true)
 			hq.fight_raid()
 			await _until(func() -> bool:
 				var fx: RaidFxLayer = hq.playout.fx if hq.playout != null else null
@@ -156,7 +156,7 @@ func _screen(state: String) -> void:
 						return true
 				return false, 3000)
 		"playout_end":
-			var hq: Node = await _open_raid(&"meridian")
+			var hq: Node = await _open_raid(&"meridian", -1, false, true)
 			hq.fight_raid()
 			await _frames(4)
 			hq.playout.skip_to_end()
@@ -219,10 +219,10 @@ func _sheet() -> void:
 		h.add_child(RaidChip.new(String(row[1]), row[2]))
 		term.body.add_child(h)
 	add_child(term)
-	var start := RaidSticker.new("START DEFENSE", 30, RaidSticker.PINK)
+	var start := RaidSticker.new("START DEFENSE", UiTheme.HEADING, RaidSticker.PINK)
 	start.position = Vector2(560, 620)
 	add_child(start)
-	var holds := RaidSticker.new("CELL HOLDS", 44, RaidSticker.YELLOW, -6.0)
+	var holds := RaidSticker.new("CELL HOLDS", UiTheme.DISPLAY, RaidSticker.YELLOW, -6.0)
 	holds.position = Vector2(860, 610)
 	add_child(holds)
 	var strip := RaidSpeedStrip.new(30)

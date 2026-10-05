@@ -21,19 +21,23 @@ Stationed on %s."
  · %s: NUDGE %s, · %s: NUDGE %s
  · REACH %d, · REACH %d
  · [DEAD], · [DEAD]
+%d / %d,%d / %d
+%d / %d INTACT,%d / %d INTACT
+%d > %d,%d > %d
+%d > %d NO CHANGE,%d > %d NO CHANGE
 %d BLOCKED,%d BLOCKED
 %d CYCLES,%d CYCLES
 %d DOWN,%d DOWN
-%d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
+%d IN %d WAVE,%d IN %d WAVE
+%d IN %d WAVES,%d IN %d WAVES
 %d LEFT,%d LEFT
 %d NEEDLES,%d NEEDLES
+%d SCHEMATICS,%d SCHEMATICS
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
-%d destroyed,%d destroyed
 %d fps,%d fps
 %d lost,%d lost
-%d reached home,%d reached home
 %d won,%d won
 "%s
 %d CYCLES","%s
@@ -52,6 +56,7 @@ Press to deploy it to %s (the target: pick another node on the map or in YOUR NO
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds.","%s
 ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on your nodes) of the %d it holds."
 %s  //  %d RAM,%s  //  %d RAM
+%s  //  INTERNAL  //  DO NOT FORWARD,%s  //  INTERNAL  //  DO NOT FORWARD
 %s  HP %s → %s  %s,%s  HP %s → %s  %s
 %s %s HP,%s %s HP
 "%s %s: %s. %s %s Select it, then %s on its card.","%s %s: %s. %s %s Select it, then %s on its card."
@@ -133,11 +138,14 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 3. EXFIL","1. BREACH
 2. DISABLE
 3. EXFIL"
+1x,1x
 1x (full replay),1x (full replay)
 2  Press a card,2  Press a card
+2x,2x
 2x (twice as fast),2x (twice as fast)
 2x NUDGE,2x NUDGE
 2× NUDGE CARDS NEXT,2× NUDGE CARDS NEXT
+4x,4x
 ": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next"
 < PREV SITE,< PREV SITE
 > CREW     %s,> CREW     %s
@@ -152,9 +160,11 @@ A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
+AFTER-ACTION REPORT,AFTER-ACTION REPORT
 AGAIN,AGAIN
 AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
+ALTERED,ALTERED
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
@@ -169,6 +179,7 @@ Asset,Asset
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
 Audio,Audio
 Automatic (match the pad),Automatic (match the pad)
+BACK TO THE GRID,BACK TO THE GRID
 BADGES,BADGES
 BANKED,BANKED
 BEST ICE,BEST ICE
@@ -183,6 +194,7 @@ Back,Back
 Back to HQ,Back to HQ
 "Back to HQ: the campaign, the City Grid and the crew.","Back to HQ: the campaign, the City Grid and the crew."
 Back to the Armory.,Back to the Armory.
+Back to the HQ.,Back to the HQ.
 "Back to the HQ: crew, Black Market, Cell status.","Back to the HQ: crew, Black Market, Cell status."
 Back to the HQ; the raid waits until you start the defence.,Back to the HQ; the raid waits until you start the defence.
 Back to the main menu.,Back to the main menu.
@@ -219,7 +231,9 @@ CELL STATUS,CELL STATUS
 CENTRAL SERVER,CENTRAL SERVER
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
+CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE,CIVIC ORDER  //  PUBLIC SAFETY  //  COMPLIANCE
 CLAIMED,CLAIMED
+CLASSIFIED,CLASSIFIED
 CLEANSE,CLEANSE
 CLEARED,CLEARED
 CLEARS %s,CLEARS %s
@@ -229,6 +243,7 @@ CONNECTING,CONNECTING
 CONNECTING TO,CONNECTING TO
 CONTINUE,CONTINUE
 CORE,CORE
+CORE (home),CORE (home)
 CORE (house): your home server; if its integrity reaches 0 the campaign is lost.,CORE (house): your home server; if its integrity reaches 0 the campaign is lost.
 CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
@@ -470,6 +485,7 @@ DAEMON,DAEMON
 DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DECK,DECK
+DECRYPTED BY THE CELL  //  KEY %s,DECRYPTED BY THE CELL  //  KEY %s
 DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
@@ -478,7 +494,9 @@ DELETED,DELETED
 DETOUR,DETOUR
 DFRG,DFRG
 DISPATCH,DISPATCH
+DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP,DISPATCH  //  INTERNAL AFFAIRS  //  CLEAN-UP
 DOWN,DOWN
+DOWN / TAKEN,DOWN / TAKEN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAW %d,DRAW %d
 DTOR,DTOR
@@ -582,6 +600,7 @@ ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
+EQUIPMENT LOST TO HOSTILES,EQUIPMENT LOST TO HOSTILES
 EVADED %d,EVADED %d
 EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
@@ -731,12 +750,14 @@ Exploit Site (diamond): clearing it gives an Exploit for the Central Server brea
 Exploits,Exploits
 Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.,Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
+FAILED,FAILED
 FIGHT WON,FIGHT WON
 FIRMWARE,FIRMWARE
 FLATLINED,FLATLINED
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
+FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS,FREIGHT SECURITY  //  YARD OPERATIONS  //  CUSTOMS
 FROZEN,FROZEN
 Fast-forward the resolve (hold),Fast-forward the resolve (hold)
 Fight,Fight
@@ -790,6 +811,7 @@ GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
 GRID VIEW,GRID VIEW
+GROUND SEGMENT  //  DEBRIS CONTROL  //  LICENSING,GROUND SEGMENT  //  DEBRIS CONTROL  //  LICENSING
 GROWTH,GROWTH
 GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
@@ -813,12 +835,15 @@ HOLDS,HOLDS
 HOLDS %d STEPS,HOLDS %d STEPS
 HOLDS: the node survives and keeps fighting.,HOLDS: the node survives and keeps fighting.
 HOME,HOME
+HOME %d > %d,HOME %d > %d
 HOME %d → %d,HOME %d → %d
 HOME %d/%d,HOME %d/%d
 HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
 HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
+HOSTILE HOME SERVER,HOSTILE HOME SERVER
+HOSTILE NODES DISABLED,HOSTILE NODES DISABLED
 HOTFIX,HOTFIX
 HP,HP
 HP %d/%d,HP %d/%d
@@ -852,6 +877,7 @@ Heat glitch (the screen distorts as Heat rises; off by default),Heat glitch (the
 Heat reduction,Heat reduction
 Heat reduction Site,Heat reduction Site
 "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.","Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat."
+Heat settles here: what the raid changed.,Heat settles here: what the raid changed.
 Heat stops at its limit,Heat stops at its limit
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
 Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.,Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.
@@ -937,14 +963,18 @@ ICE (0-%d):,ICE (0-%d):
 ICE 0: the baseline rules.,ICE 0: the baseline rules.
 ICE Lock on %s holds %s for %d step(s).,ICE Lock on %s holds %s for %d step(s).
 IF CLEARED:,IF CLEARED:
+IF IT RAN NOW,IF IT RAN NOW
+IF PLACED,IF PLACED
 "IF THE RAID
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
+INCOMING,INCOMING
 INFC,INFC
 INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
+INTERCEPTED,INTERCEPTED
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Inner ring segment %d: Rank 3 lets you swap it for another.,Inner ring segment %d: Rank 3 lets you swap it for another.
@@ -969,6 +999,8 @@ LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
 LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
 LINES HEARD,LINES HEARD
+LINK,LINK
+LIVE RAID FEED,LIVE RAID FEED
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
 LOG,LOG
@@ -1393,6 +1425,7 @@ NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
 NO GAIN,NO GAIN
 NO SIGNAL,NO SIGNAL
+NO SLOT,NO SLOT
 NUDGE,NUDGE
 NULL,NULL
 NetrunBoostData.boost_field_kit.description,+2 max RAM in every combat of the next netrun.
@@ -1442,6 +1475,7 @@ No First Turn Free Nudge,No First Turn Free Nudge
 No campaign.,No campaign.
 No change to your numbers.,No change to your numbers.
 No living operative or open Site: go to HQ.,No living operative or open Site: go to HQ.
+No threats can reach your network.,No threats can reach your network.
 Node upgrade level %d.,Node upgrade level %d.
 Nodes,Nodes
 Nothing to resume.,Nothing to resume.
@@ -1458,8 +1492,10 @@ ON %s,ON %s
 ON A RANDOM SLICE:,ON A RANDOM SLICE:
 OPENS %d SITE,OPENS %d SITE
 OPENS %d SITES,OPENS %d SITES
+OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s,OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
+OURS! +%d,OURS! +%d
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW
@@ -1487,6 +1523,7 @@ Out of reach from here.,Out of reach from here.
 "
 PARASITE,PARASITE
 PASSED,PASSED
+PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE,PATIENT RECOVERY  //  COLLECTIONS  //  COMPLIANCE
 PAUSED,PAUSED
 PAYOUT,PAYOUT
 PERFECT,PERFECT
@@ -1585,6 +1622,7 @@ RAID INBOUND,RAID INBOUND
 "RAID INCOMING
 %s","RAID INCOMING
 %s"
+RAID INCOMING  //  %s,RAID INCOMING  //  %s
 RAID PENDING: %s (%d),RAID PENDING: %s (%d)
 RAID REPORT,RAID REPORT
 RAID SETUP,RAID SETUP
@@ -1611,6 +1649,7 @@ RESPIN %d RAM,RESPIN %d RAM
 RESPIN -%d RAM: %s%s,RESPIN -%d RAM: %s%s
 RESPIN: ODDS,RESPIN: ODDS
 RING LOCK,RING LOCK
+RIP,RIP
 ROUTE // pick the next node,ROUTE // pick the next node
 ROUTE KEY,ROUTE KEY
 ROUTE VIEW,ROUTE VIEW
@@ -1773,6 +1812,8 @@ SHOP,SHOP
 SHRED,SHRED
 SHRED A CARD,SHRED A CARD
 SITES %d,SITES %d
+SITES RECLAIMED,SITES RECLAIMED
+SKIP,SKIP
 SLICE %d DETAIL,SLICE %d DETAIL
 SLICES,SLICES
 SLOT %s · %s,SLOT %s · %s
@@ -1785,9 +1826,14 @@ START DEFENSE,START DEFENSE
 STATIONED,STATIONED
 STATS,STATS
 STATUS: %s,STATUS: %s
+STEP -- / %d,STEP -- / %d
+STOPPED,STOPPED
 STOPPED %d/%d,STOPPED %d/%d
 STORY UNCOVERED,STORY UNCOVERED
+STRENGTH,STRENGTH
 STRENGTH %s%%,STRENGTH %s%%
+SUCCESS,SUCCESS
+SUSPECT FILE (HEAT),SUSPECT FILE (HEAT)
 SYSTEM ONLINE,SYSTEM ONLINE
 "Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick.","Same kind, Heat and road ahead as choice %d: the enemy is picked when you enter, so either is the same pick."
 Save,Save
@@ -2462,12 +2508,15 @@ TAKEN,TAKEN
 TAKEN by a raid: run it again to take it back.,TAKEN by a raid: run it again to take it back.
 TAKEN by the corporation.,TAKEN by the corporation.
 TAKEN: the corporation took the Site back.,TAKEN: the corporation took the Site back.
+TARGET,TARGET
 TARGET: %s,TARGET: %s
 TERMINAL EVENT,TERMINAL EVENT
 THE TARGET,THE TARGET
 THE WHEEL,THE WHEEL
+THEY LOST %d,THEY LOST %d
 THIS RUN,THIS RUN
 THIS TURN,THIS TURN
+THREAT INTEL // SCAN,THREAT INTEL // SCAN
 TODAY'S RUN,TODAY'S RUN
 TRJN,TRJN
 TROJAN,TROJAN
@@ -2791,11 +2840,9 @@ ThreatData.signal_jammer.display_name,Signal Jammer
 ThreatData.tow_truck.description,Seals a link behind it for the rest of the raid.
 ThreatData.tow_truck.display_name,Tow Truck
 Threats,Threats
-Threats come in at %s (the dashed routes on the map).,Threats come in at %s (the dashed routes on the map).
-Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.,Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.
+Threats come into the city at %d Sites: %s. The red pencil routes on the map show where they go.,Threats come into the city at %d Sites: %s. The red pencil routes on the map show where they go.
 Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.,Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.
 Threats here: %s.,Threats here: %s.
-Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
 Tritan (blue-weak),Tritan (blue-weak)
@@ -2804,6 +2851,8 @@ UNDO,UNDO
 UNDO %s,UNDO %s
 "UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
 UNDOCK,UNDOCK
+UNITS,UNITS
+UNITS DEPLOYED / DESTROYED,UNITS DEPLOYED / DESTROYED
 UPGRADE,UPGRADE
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
 UPGRADES: %s,UPGRADES: %s
@@ -2824,6 +2873,7 @@ WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON
 What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.,What the last SEND IT did to this wheel; the icons: hits aimed at it -> what its guard took = its HP change.
+What the threats go for (their routing rule).,What the threats go for (their routing rule).
 What this wheel's needles land on. Nothing else changes this turn.,What this wheel's needles land on. Nothing else changes this turn.
 When you SEND IT: %s.,When you SEND IT: %s.
 Who runs it.,Who runs it.
@@ -2836,7 +2886,7 @@ YOU,YOU
 YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s
 YOUR %s,YOUR %s
-YOUR NODES // pick the target,YOUR NODES // pick the target
+YOUR NETWORK,YOUR NETWORK
 YOUR WHEEL,YOUR WHEEL
 Yes,Yes
 You are here.,You are here.
@@ -2877,11 +2927,11 @@ further along the route,further along the route
 good aim,good aim
 guarded,guarded
 half power,half power
+highest-value node,highest-value node
 hunted,hunted
 in a run,in a run
 install,install
 it costs you %s,it costs you %s
-link,link
 lo-fi loop: HQ,lo-fi loop: HQ
 loot_socket,loot_socket
 lost,lost
@@ -2921,6 +2971,7 @@ ui.raid_intro,"The corp is raiding your CORE. Place defences to cut the damage, 
 undock_handler,undock_handler
 v%s // cell uplink,v%s // cell uplink
 vs %s | ICE %d%s,vs %s | ICE %d%s
+weakest node,weakest node
 withdraw,withdraw
 won,won
 you are here,you are here

@@ -11,12 +11,12 @@ extends Control
 
 const WRITE_MOTION := &"raid_route_write"
 const WIPE_MOTION := &"raid_route_wipe"
-## Stroke width and the entry circle's radii (screen px x the overlay's screen_k), the
+## Stroke width and the entry circle's radii (screen px), the
 ## arrow's stop short of the target node (x its icon radius), the letter's size.
-const WIDTH := 4.5
+const WIDTH := 7.0
 const ENTRY_R := Vector2(30, 20)
 const ARROW_STOP := 1.9
-const LETTER_PX := 24
+const LETTER_STEP := UiTheme.TITLE
 const LETTER_OFF := Vector2(34, -22)
 
 var overlay: CityMapOverlay
@@ -38,6 +38,7 @@ var wipe_u: float:
 	set(v):
 		_mv.put(&"wipe_u", v)
 var _mv := MotionValues.new({&"write_u": 1.0, &"wipe_u": 0.0})
+var _pool: RaidPencilPool = null
 
 
 func _init(p_overlay: CityMapOverlay = null) -> void:
@@ -100,68 +101,83 @@ func complete_motion() -> void:
 
 
 func _process(_delta: float) -> void:
-	if is_visible_in_tree() and not routes.is_empty():
-		queue_redraw()
+	_lay()
 
 
-## Route `path`'s points on the map (local px): node to node along the streets, ending short
-## of the last node (its arrow stops outside the node's circle); empty when off the map.
+func _exit_tree() -> void:
+	if _pool != null and is_instance_valid(_pool):
+		_pool.release()
+	_pool = null
+
+
+## Route `path`'s points (global px, through RaidMapAnchor): node to node along the streets,
+## ending short of the last node (its arrow stops outside the node's circle); empty when off
+## the map.
 func path_points(path: Array) -> PackedVector2Array:
 	var pts := PackedVector2Array()
 	if overlay == null or path.size() < 2:
 		return pts
-	var first := overlay.icon_at(StringName(String(path[0])))
+	var first := RaidMapAnchor.site(overlay, StringName(String(path[0])))
 	if first.x == INF:
 		return pts
 	pts.append(first)
 	for i in path.size() - 1:
 		var a := StringName(String(path[i]))
 		var b := StringName(String(path[i + 1]))
-		for p in overlay.route_between(a, b):
-			pts.append(overlay.grid_point_local(p))
-		var end := overlay.icon_at(b)
+		pts.append_array(RaidMapAnchor.street(overlay, a, b))
+		var end := RaidMapAnchor.site(overlay, b)
 		if end.x == INF:
 			return PackedVector2Array()
 		pts.append(end)
 	# Stop short of the target's circle.
-	var stop := CityMapOverlay.ICON_RADIUS_BIG * overlay.screen_k() * ARROW_STOP
-	var total := RaidPencil.length_of(pts)
+	var stop := CityMapOverlay.ICON_RADIUS_BIG * ARROW_STOP
+	var total := PencilShapes.length_of(pts)
 	if total > stop * 1.5:
-		pts = RaidPencil.trimmed(pts, 0.0, 1.0 - stop / total)
+		pts = PencilShapes.trim(pts, 0.0, total - stop)
 	return pts
 
 
-func _draw() -> void:
-	if overlay == null or overlay.city == null:
+## Lays the routes on 1B's grease pencil (RaidPencilPool): red arrows along the streets
+## (snapped onto them: the mark says what the rules will do), the entries circled and lettered.
+func _lay() -> void:
+	if overlay == null or overlay.city == null or not is_visible_in_tree():
+		if _pool != null:
+			_pool.begin()
+			_pool.end()
 		return
-	var k := overlay.screen_k()
-	var red := RaidSkin.pencil_threat()
-	var w := WIDTH * k
+	if _pool == null:
+		_pool = RaidPencilPool.make(self)
+	_pool.begin()
+	var threat := GreasePencilMark.Ink.THREAT
 	for i in routes.size():
-		var pts := path_points(routes[i])
-		if pts.size() < 2:
+		var street := path_points(routes[i])
+		if street.size() < 2:
 			continue
-		if wipe_u <= 0.0:
-			RaidPencil.arrow(self, pts, red, w, write_u, 31 + i * 17)
-		else:
-			RaidPencil.stroke(self, pts, red, w, wipe_u, write_u, 31 + i * 17)
+		var hand := PencilShapes.snap_to(RaidPencil.roughen(street, 31 + i, WIDTH * 0.4, WIDTH * 3.0), street)
+		var strokes := PencilShapes.arrow(hand, WIDTH * RaidPencil.HEAD_LEN, 31 + i)
+		_pool.stroke("route_%d" % i, strokes, threat, WIDTH, write_u, wipe_u, false, 31 + i)
 	for i in what_if.size():
-		var pts := path_points(what_if[i])
-		if pts.size() >= 2:
-			RaidPencil.arrow(self, pts, red, w, 1.0, 71 + i * 13, true)
+		var street := path_points(what_if[i])
+		if street.size() >= 2:
+			_pool.stroke("whatif_%d" % i, PencilShapes.arrow(street, WIDTH * RaidPencil.HEAD_LEN, 71 + i), threat, WIDTH, 1.0, 0.0, true, 71 + i)
 	var ids := letters.keys()
 	ids.sort()
 	for id in ids:
-		var c := overlay.icon_at(id)
+		var c := RaidMapAnchor.site(overlay, id)
 		if c.x == INF:
 			continue
 		var u := clampf(write_u * 1.5, 0.0, 1.0)
-		RaidPencil.circle(self, c, ENTRY_R.x * k, ENTRY_R.y * k, red, w, wipe_u, u, String(id).hash())
-		if wipe_u < 1.0 and u > 0.0:
-			var px := maxi(1, roundi(LETTER_PX * k * Settings.text_scale))
-			RaidPencil.word(self, String(letters[id]), c + LETTER_OFF * k, px, red, u, wipe_u, -0.08)
+		var seed := String(id).hash()
+		_pool.stroke("entry_%s" % id, [PencilShapes.hand_circle(c, ENTRY_R, seed)], threat, WIDTH, u, wipe_u, false, seed)
+		_pool.word("letter_%s" % id, String(letters[id]), c + LETTER_OFF, LETTER_STEP, threat, 1.0, u, wipe_u, -0.08)
+	_pool.end()
 
 
 ## The entry letters drawn (Site id -> letter; tests).
 func letter_of(site: StringName) -> String:
 	return String(letters.get(site, ""))
+
+
+## The pencil marks laid now (tests).
+func shown() -> Array[Node2D]:
+	return _pool.shown() if _pool != null else []

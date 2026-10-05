@@ -386,13 +386,17 @@ func test_a_node_down_then_taken_is_one_taken_node_everywhere() -> void:
 	hq.show_raid_summary()
 	await _frames(2)
 	var site_label: String = hq.site_name(site)
-	var badges := 0
-	for b in hq._panel.find_children("*", "Badge", true, false):
-		var t := (b as Badge).text
-		if t.begins_with(site_label):
-			badges += 1
-			assert_string_contains(t, tr("TAKEN"), "the report says TAKEN")
-	assert_eq(badges, 1, "the report lists the node once")
+	# ART-6 3A: the report is the corp's after-action report: a row per node (its value says
+	# TAKEN) and the reclaimed Sites' line, each naming the node once.
+	var rows := hq._panel.find_children("ReportRow_%s" % site, "HBoxContainer", true, false)
+	assert_eq(rows.size(), 1, "the report lists the node once")
+	if rows.size() == 1:
+		assert_string_contains((rows[0].get_child(1) as Label).text, tr("TAKEN"), "the report says TAKEN")
+	var reclaimed := hq._panel.find_child("ReportReclaimed", true, false) as Label
+	assert_not_null(reclaimed, "the reclaimed Sites' line")
+	if reclaimed != null:
+		assert_eq(reclaimed.text.count(site_label.to_upper()), 1, "named once there")
+	assert_null(hq._panel.find_child("ReportDown", true, false), "a node DOWN then TAKEN is not also listed DOWN")
 
 
 # --- P4: the campaign's end and the pause menu ---------------------------------------------------
@@ -564,7 +568,7 @@ func test_the_raid_report_keeps_each_nodes_hp_on_its_row_and_the_forecast_float_
 	for row in rows:
 		var name_l := row.get_child(0) as Control
 		var badge := row.get_child(1) as Control
-		assert_true(badge is Badge)
+		assert_true(badge is Label, "ART-6 3A: the after-action report's value")
 		var a := name_l.get_global_rect()
 		var b := badge.get_global_rect()
 		assert_true(b.position.y < a.end.y and b.end.y > a.position.y, "%s: the HP beside its name, not on a line below" % row.name)
