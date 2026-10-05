@@ -74,8 +74,6 @@ const CABLE_GLOW_ALPHA := 0.18
 ## The later and cut dashes' alpha.
 const LATER_ALPHA := 0.7
 const CUT_EDGE_ALPHA := 0.5
-## Share of the run along the first axis taken before the jog (the cable's elbow).
-const JOG_SHARE := 0.5
 ## Hover reveal (D13): radius round the pointer (screen px), and the motion that fades a
 ## hidden node in.
 const REVEAL_RADIUS := 40.0
@@ -252,8 +250,8 @@ func _axes() -> Array[Vector2]:
 	return [_to_local(Vector2(1, 0)) - o, _to_local(Vector2(0, 1)) - o]
 
 
-## Transit v3: a cable run from local point `a` to `b` along the city's two axes, the first
-## leg split by the jog (a, elbow, corner, b): straight segments, 45 / 90 degree turns only.
+## Transit v3: a cable run from local point `a` to `b` along the city's two axes (a, corner,
+## b): straight segments, one turn, along the blocks' edges like a cable run between them.
 func cable(a: Vector2, b: Vector2) -> PackedVector2Array:
 	var pts := PackedVector2Array([a])
 	if a.x == INF or b.x == INF or city == null:
@@ -268,9 +266,7 @@ func cable(a: Vector2, b: Vector2) -> PackedVector2Array:
 		return pts
 	var s := (d.x * v.y - d.y * v.x) / det
 	var t := (u.x * d.y - u.y * d.x) / det
-	var elbow := a + u * s * JOG_SHARE
-	pts.append(elbow)
-	pts.append(elbow + v * t)
+	pts.append(a + u * s)
 	pts.append(b)
 	return pts
 

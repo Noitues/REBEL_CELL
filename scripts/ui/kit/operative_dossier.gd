@@ -13,9 +13,9 @@ extends Control
 
 ## The file at text scale 1.0 (px): width, margins, the letterhead's height, the mugshot's
 ## side, the gap between rows.
-const WIDTH := 236.0
+const WIDTH := 252.0
 const MARGIN := 10.0
-const HEAD_H := 30.0
+const HEAD_H := 44.0
 const MUG := 64.0
 const ROW_GAP := 2.0
 ## Lettering at text scale 1.0 (px): letterhead, its sub line, fields, stamps.
@@ -45,7 +45,7 @@ const F_WHEEL := "WHEEL" # TR
 const F_HUB := "HUB CORE" # TR
 const F_DECK := "DECK" # TR
 const DECK_CARDS := "%d cards" # TR
-const STATION := "IF STATIONED ON A NODE (RAIDS):" # TR
+const STATION := "IF STATIONED (RAIDS):" # TR
 const AT_LARGE := "AT LARGE" # TR
 const HEAT_STAMP := "HEAT %d: %s" # TR
 
@@ -133,8 +133,14 @@ func _draw() -> void:
 	var w := size.x
 	var h := size.y
 	draw_set_transform(Vector2.ZERO, PAPER_TILT)
-	draw_rect(Rect2(SHADOW_OFFSET, Vector2(w, h)), Palette.SHADOW)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(w, h)), RouteInk.PAPER_STOCK)
+	# The theme's PaperPanel stock (1A: paper, ink keyline, drop shadow); 1B's paper material
+	# goes over it.
+	var stock := get_theme_stylebox(&"panel", UiTheme.PAPER_PANEL)
+	if stock != null:
+		draw_style_box(stock, Rect2(Vector2.ZERO, Vector2(w, h)))
+	else:
+		draw_rect(Rect2(SHADOW_OFFSET, Vector2(w, h)), Palette.SHADOW)
+		draw_rect(Rect2(Vector2.ZERO, Vector2(w, h)), RouteInk.PAPER_STOCK)
 	# The letterhead: a dark band, the corp's name in its colour, the sub line.
 	var head_h := HEAD_H * s
 	draw_rect(Rect2(Vector2.ZERO, Vector2(w, head_h)), Palette.DESK_DARK)
@@ -149,14 +155,10 @@ func _draw() -> void:
 	var mark := words[0] if not words.is_empty() else ""
 	var rest := " ".join(words.slice(1)) if words.size() > 1 else ""
 	var x := MARGIN * s
-	var mark_w := minf(lf.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, hfs).x, w * 0.5)
-	draw_string(lf, Vector2(x, head_h * 0.5 + lf.get_ascent(hfs) * 0.5 - lf.get_descent(hfs) * 0.3), mark, HORIZONTAL_ALIGNMENT_LEFT, w * 0.5, hfs, corp_col)
-	var sub_x := x + mark_w + MARGIN * s * 0.6
-	var sub_w := w - sub_x - MARGIN * s * 0.5
-	if sub_w > sfs * 3:
-		var top_line := (tr(SECURITY) % rest).strip_edges() if rest != "" else tr(SECURITY) % ""
-		draw_string(pf, Vector2(sub_x, head_h * 0.5 - pf.get_descent(sfs)), top_line.strip_edges(), HORIZONTAL_ALIGNMENT_LEFT, sub_w, sfs, Palette.TEXT_MID)
-		draw_string(pf, Vector2(sub_x, head_h * 0.5 + pf.get_ascent(sfs)), tr(SUBTITLE), HORIZONTAL_ALIGNMENT_LEFT, sub_w, sfs, Palette.TEXT_LO)
+	# Row 1: the mark word, large; row 2: the rest of the name with SECURITY // the file line.
+	draw_string(lf, Vector2(x, head_h * 0.08 + lf.get_ascent(hfs)), mark, HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, hfs, corp_col)
+	var sub := ("%s // %s" % [(tr(SECURITY) % rest).strip_edges(), tr(SUBTITLE)])
+	draw_string(pf, Vector2(x, head_h - pf.get_descent(sfs) - 3.0 * s), sub, HORIZONTAL_ALIGNMENT_LEFT, w - x * 2.0, sfs, Palette.TEXT_MID)
 	# The mugshot and the fields.
 	var y := head_h + MARGIN * s
 	var fs := roundi(FIELD_FONT * s)

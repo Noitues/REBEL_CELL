@@ -22,9 +22,6 @@ const SCAN_ALPHA := 0.12
 const SPLIT := 2.0
 const SPLIT_ALPHA := 0.45
 const EDGE := 2.0
-## The corp tint's share over the scrim (§1.2: about 78 % of the corp hue, read on the dark
-## scrim as this share of the fill).
-const TINT_SHARE := 0.22
 ## The words (keys).
 const F_TIER := "TIER" # TR
 const F_TYPE := "TYPE" # TR
@@ -94,7 +91,8 @@ func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	var corp: Color = data.get("corp_color", Palette.CORP_MERIDIAN)
 	draw_rect(r, Color(RouteInk.HOLO_SCRIM, RouteInk.HOLO_SCRIM_ALPHA))
-	draw_rect(r, Color(corp.darkened(1.0 - RouteInk.HOLO_ALPHA), TINT_SHARE))
+	# The theme's HoloPanel plate in the corp's hue (1A); 1B's holo shader goes over it.
+	draw_style_box(UiTheme.holo_box(corp), r)
 	var y := 0.0
 	while y < r.size.y:
 		draw_rect(Rect2(0, y, r.size.x, 1.0), Color(RouteInk.HOLO_SCRIM, SCAN_ALPHA))
@@ -102,7 +100,6 @@ func _draw() -> void:
 	# The edge: the corp hue, with a red / cyan split either side (the edge only).
 	draw_rect(r.grow(-SPLIT * s), Color(RouteInk.HOLO_FRACTURE, SPLIT_ALPHA), false, EDGE * s * 0.5)
 	draw_rect(r.grow(SPLIT * s * 0.5), Color(Palette.NET_CYAN, SPLIT_ALPHA), false, EDGE * s * 0.5)
-	draw_rect(r, corp, false, EDGE * s)
 	var m := MARGIN * s
 	var tf := Palette.body_medium()
 	var tfs := roundi(TITLE_FONT * s)

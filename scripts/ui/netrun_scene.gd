@@ -107,6 +107,8 @@ var route_legend: RouteLegend = null
 ## under the ROUTE window (route view only; null otherwise).
 var dossier: OperativeDossier = null
 var node_panel: RouteNodePanel = null
+## ART-7 3B: the dressed room behind a node's own screen (event, shop, loot).
+var node_backdrop: NodeBackdrop = null
 ## Pad button prompts at the foot of the screen (H23 S11).
 var pad_prompts: PadPrompts
 ## The screen on show (screen_name) and whether the last page entered a new screen (its
@@ -959,6 +961,7 @@ func _show_current() -> void:
 			_show_raid()
 		_:
 			_show_end()
+	_update_node_backdrop()  # ART-7 3B: the node's dressed room behind its screen
 
 
 ## `glass` = false for screens built from their own terminal windows (the city shows
@@ -1824,6 +1827,25 @@ static func _walked(s: NetrunSession, id: StringName) -> bool:
 
 # --- ART-7 3B: route presentation (ART_BIBLE v2 4.6; D13, D14) -------------------------------
 
+## ART-7 3B (4.6 node backdrops): the room of the node the run stands on shows behind its
+## event, shop and loot pages (the fight's arena is the combat screen's own); hidden on the
+## map, in a fight, a raid and at the run's end.
+func _update_node_backdrop() -> void:
+	var s := RunManager.netrun
+	var kind := ""
+	if s != null and s.run.current_node_id != &"" and s.run.phase in [RunState.Phase.EVENT, RunState.Phase.SHOP, RunState.Phase.REWARD]:
+		var node := s.run.current_node()
+		if not node.is_empty():
+			kind = CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"]))
+	if node_backdrop == null or not is_instance_valid(node_backdrop):
+		if kind == "":
+			return
+		node_backdrop = NodeBackdrop.new()
+		add_child(node_backdrop)
+		move_child(node_backdrop, background.get_index() + 1)
+	node_backdrop.show_room(kind, RunManager.campaign.corporation_id if RunManager.campaign != null else &"")
+
+
 ## The dossier's margin off the map area's corner and the gap the route keeps from it (px at
 ## text scale 1.0).
 const DOSSIER_MARGIN := 10.0
@@ -1888,6 +1910,11 @@ func _build_route_frame(top: HBoxContainer, spacer: Control, route_col: VBoxCont
 	route_col.add_child(gap)
 	node_panel = RouteNodePanel.new()
 	route_col.add_child(node_panel)
+	var foot_gap := Control.new()
+	foot_gap.name = "RouteColumnFoot"
+	foot_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	foot_gap.custom_minimum_size.y = DOSSIER_MARGIN * Settings.text_scale
+	route_col.add_child(foot_gap)
 	var first := view_choices(RunManager.netrun)
 	show_node_panel(first[0] if not first.is_empty() else &"")
 
@@ -2048,7 +2075,7 @@ func node_panel_data(id: StringName) -> Dictionary:
 	var mark := String(route_heat_marks(s).get(int(node["type"]), ""))
 	if mark != "":
 		heat_words = mark if heat_words == "" else "%s; %s" % [heat_words, mark]
-	return {"title": tr(PANEL_TITLE) % [node_word(node), int(node["layer"]) + 1], "tier": s.run.tier,
+	return {"title": tr(PANEL_TITLE) % [node_word(node), int(node["layer"])], "tier": s.run.tier,
 		"type": tr(String(RouteLegend.MEANINGS.get(CityMapOverlay.route_kind(int(node["type"]), bool(node["elite"])), node_word(node)))),
 		"rewards": rewards, "heat": heat_words, "corp_color": Palette.corp_color(s.campaign.corporation_id)}
 

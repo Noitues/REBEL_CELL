@@ -14,7 +14,7 @@ const SETTLE := 20
 const BAKE_FRAMES := 600
 const ALL_STATES := ["start", "underway", "show_all", "heat", "meridian_16", "halcyon_20", "orbital", "jack"]
 ## Seconds into the jack-in at which frames are written.
-const JACK_TIMES: Array[float] = [0.3, 1.0, 1.6, 2.1, 2.5, 2.9, 3.4, 4.0, 5.0]
+const JACK_TIMES: Array[float] = [0.6, 1.4, 2.2, 3.0, 3.6, 4.2, 4.8, 5.6, 6.6, 8.0]
 
 var _out := ""
 var _scene: Node = null
