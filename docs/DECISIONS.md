@@ -30,6 +30,61 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 D: visual QA harness and lint (salvage S2)
+Ported from art-pass (tag `art-m13-final`; W10 visual QA, W9F additions) into
+`tools/visual_qa/`: the review-pack harness (`review_pack.gd/.tscn`, `review_pack_log.gd`),
+its driver `capture_pack.py` (every Godot run through `tools/run_windowed.py`, each with its
+own user:// folder), `contact_sheet.py`, `diff_pack.py`, `filters.py` + `cvd_filter.gdshader`,
+`lint_report.py` (runtime lint: on-screen sizes, overlaps, clipping incl. scroll views, modals,
+contrast), and the static lint (`visual_lint_static.gd`, `lint_static_cli.gd`,
+`update_lint_baseline.py`, `merge_shared_json.py`). M13's baseline images and lint baseline
+are not ported (the brief: re-captured / re-seeded).
+- **Static lint baseline:** `tests/unit/test_visual_lint_static.gd` (fast tier) gates
+  `tools/visual_qa/lint_baseline.json`, seeded with main's violations today: **205 lines in
+  41 files** (literal colours, literal font sizes in `scripts/ui/**`; `kit/palette.gd` exempt).
+  ART-1…ART-12 drive it to zero. A count may only go down. A merge that ports art-pass files
+  with their literals (E's `ui_theme.gd` mechanism, later batches) adds them to the baseline
+  in that merge (only the ported file's rows, by hand or with `update_lint_baseline.py --reset`
+  checked against `--check`), said in that merge's report, never silently.
+- **Re-pointed at main's screens:** 58 screens (the art pass's 53, with the Modem pages
+  named `mainframe*` after ruling 6.5, plus five ANIM states main has and M13 never saw:
+  `hq_heat_band` (the Heat poster's band crossing and reading hold), `grid_influence` (the
+  territory spread after a claim), `grid_drag_crew` and `raid_drag_asset` (ANIM-4 drags,
+  mid-carry), `run_end_clean` (the clean-exit verdict). Setups go through `DemoSetup` and
+  the views' own dev hooks (`_demo_drag`, `_demo_combat_end`, `_demo_city`) where main has
+  them. No art-pass screen is skipped; the M13-only views main lacks are only seen as main's
+  own version: the dossier-tile target picker and the slot-tile socket picker (main pops its
+  OptionButton list), `CardDetailHolder` (main's `CardDetail` window), `GlassScrim` and the
+  kit's modal group (read only when ART-0 F ports them).
+- **Axes:** text scale 1.0 / 1.6 / 2.0 (written past main's 1.6 clamp), mouse / pad, reduce
+  effects off / on, grey and deutan (Pillow, from the captured frame), and the accessibility
+  settings high contrast, reduce motion and the colour-blind mode as a fifth combo part
+  (`_hc`, `_rm`, `_cb-deutan`). Those are gated on the Settings property existing (ART-0 C
+  ports them): the harness reports which exist (`--list`), the driver skips the others and
+  names them in the manifest's `skipped`; `--matrix` runs them at 1.0 and 2.0 mouse.
+- **Small packs out of git:** pictures are laid out and linted at 1280x720 and saved at
+  800x450 (`--save-size`); the runtime lint scales them back up to measure contrast. Packs
+  go under %TEMP%; a pack inside the project gets a `.gdignore` (review packs land later in
+  `docs/art_review/ART-n/`). The driver refuses to start with < 5 GB free.
+- **Runtime lint type steps:** the "override is not a type step" half of the font rule reads
+  the build's `UiTheme.STEPS` (exported by the harness); main has none until ART-0 E ports the
+  step machinery, so that half is skipped and only the 12 px x scale floor is checked.
+- **Harness robustness on main:** main's views hold the bake they draw (ANIM-R6), so "no bake
+  running" never holds: a screen waits for every visible city to show its current look,
+  covered and faded in (at most 20 s real time, then a warning naming the city; a fight's
+  held city, which lands between turns by design, is not waited for). Every screen starts
+  from a cold city cache (`CityBakeCache.shutdown()` after the last screen's scenes are
+  freed), as a fresh launch does: without it, bakes of freed scenes starved later screens and
+  most pictures showed the silhouette stand-in. A screen given up
+  on (timeout or script error) parks its coroutine instead of driving freed scenes on the
+  next screen. `tests/unit/test_visual_qa_harness.gd` (fast) checks the harness compiles
+  against main, every screen has its method, and the axes follow Settings.
+- **Fixed on the way (outside D's files, smallest change):** `CityBakeCache._stop` assigned a
+  record's painter to a typed variable before checking it; a scene freed mid-bake (the
+  harness's grid-influence screen, also reachable in game) raised "Trying to assign invalid
+  previously freed instance" and later crashed the run. It now checks the instance first
+  (the M13 W10 entry logged the same bug at `city_bake_cache.gd:183`).
+
 ### 2026-10-05 — Designer rulings: art reintegration, pause point 0 (resolved by the designer)
 Answered by the designer as a numbered list against `docs/ART_REINTEGRATION_PLAN.md` §1
 (art-pass tag `art-concepts-r43`) plus the ANIM-R7 open question and ART_BIBLE v2
