@@ -268,7 +268,7 @@ budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orch
 - [x] C accessibility settings, D visual QA harness and lint, E tokens / type machinery and VFX
       tiers, F kit behaviour; B part 2 names D2–D8, D11–D12 after the §3.1 rulings.
 - [x] The full suite is green with the ported M13 tests; the QA harness runs on main's screens.
-- [ ] Timeline `17_art0` (the baseline before the new look) with a README row.
+- [x] Timeline `17_art0` (the baseline before the new look) with a README row.
 - [ ] Audit round ART-R0 to CLEAN.
 
 ### Group 1 — Foundations
