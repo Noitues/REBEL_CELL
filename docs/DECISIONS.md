@@ -342,6 +342,32 @@ ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
   decal under the icons and x-rayed through buildings, the minimap terminal; closer framing than the
   reference, see the GRID-band call); the lab at grid / raid / netrun (see-through at 0.68 from
   raid, LOD swaps), every corporation's Grid frame, the whole city and a close frame.
+- **The art pass's own models, never redrawn (designer ruling 2026-10-05, "reuse the art pass's
+  assets").** CityView3D places 5b's landmark glTFs with 5b's `LandmarkMaterials` (night) once the
+  model is in: each corporation's `assets/city/landmarks/<corp>/<corp>_hq.glb` on its HQ lot (the
+  stepped stand-in goes), and `rebel_cell/rebel_cell_district.glb` (the Cell's own street grid with
+  the red-window fist) on the Cell's district centre; the procedural buildings inside a landmark's
+  ground box give way to it (`_cleared`), so no lot holds two cities. A missing file keeps the
+  stand-in. Visuals and their sources:
+  - ordinary buildings, street lots, lane glow: the game's own layout (NeonCity placement through
+    CityLayoutRecorder) extruded with 1D's port of the concept recipe (`unified40.fgrid` facets,
+    `city_building` windows / ledges / shopfronts / roof trim, `target_corps.mat_toon` bands) —
+    shader-shaded, the shapes are the layout's extrusions;
+  - the four corporate HQs and the Cell's district: 5b's glTFs (Blender from the concept scripts,
+    `tools/art_pipeline/city/`), shaded by 5b's `landmark_toon` / `landmark_beam` shaders;
+  - ink, see-through, spill, bloom, fog, haze, rain, grade: 1D's port of `post40.finish`;
+  - toon bands and light spill: 1B's kit include;
+  - the network decal: `post36.Net36` / `netdecal21` as specified in bible §6.1 (a shader, no model);
+  - not placed yet: 5b's `*_site.glb` Site landmarks (with 5d's markers), 8p's HQ compounds (they
+    belong to the HQ-run view, the next step), the concept's roof props (AC, tanks, antennas) and
+    billboards (no export exists yet: proposed as a 5b / 5c export job, never re-modelled here).
+- **No buildings in 5c's / 5d's captures:** the seam commit (54ee7d2) had two bugs, both fixed in
+  66e4f1a: `CityMeshKit.families_of` appended to a cast copy of a packed array (every family
+  MultiMesh was empty), and a MultiMesh filled through `buffer` keeps no bounds (now the chunk's box
+  as `custom_aabb`). Merge 66e4f1a or later; the buildings draw (captures above).
+- **Moved files:** the city shaders moved from `tools/spike/city/shaders/` to `shaders/city/`; 5b's
+  `landmark_review.gd` and 8p's `hq_compound_lab.gd` preloaded the old post path and now point at
+  the new one (one line each).
 - **Tests:** `tests/unit/test_city3d_grid.gd` (fast): the map layer projects like the 3D camera, roofs at their 3D height, the fist-free layout, zoom / pan / minimap maths, the Grid page in 3D feeding the decal, the camera controls. `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
   the deterministic chunked model, the Cell's grid, picking through chunks = every prism,
   `top_at`, building LOD and view bands with hysteresis, log-linear zoom about the cursor and pan,
