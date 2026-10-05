@@ -83,7 +83,7 @@ func test_settings_round_trip_and_clamp() -> void:
 
 
 func test_theme_uses_style_guide_fonts_and_scales_text() -> void:
-	assert_true(ResourceLoader.exists(Palette.FONT_MARKER), "Permanent Marker present")
+	assert_true(ResourceLoader.exists(Palette.FONT_PENCIL), "Permanent Marker present")
 	assert_true(ResourceLoader.exists(Palette.FONT_DISPLAY), "Anton present")
 	assert_true(ResourceLoader.exists(Palette.FONT_MONO), "Share Tech Mono present")
 	var t1 := UiTheme.build(1.0)

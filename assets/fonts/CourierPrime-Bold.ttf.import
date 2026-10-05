@@ -2,13 +2,13 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://c55lydrevl483"
-path="res://.godot/imported/PermanentMarker-Regular.ttf-147798058b4bc9c35b652069b6af9cfc.fontdata"
+uid="uid://vd55ijamfpr8"
+path="res://.godot/imported/CourierPrime-Bold.ttf-976e7168a9bd68d3075217c154f4000e.fontdata"
 
 [deps]
 
-source_file="res://assets/fonts/PermanentMarker-Regular.ttf"
-dest_files=["res://.godot/imported/PermanentMarker-Regular.ttf-147798058b4bc9c35b652069b6af9cfc.fontdata"]
+source_file="res://assets/fonts/CourierPrime-Bold.ttf"
+dest_files=["res://.godot/imported/CourierPrime-Bold.ttf-976e7168a9bd68d3075217c154f4000e.fontdata"]
 
 [params]
 
