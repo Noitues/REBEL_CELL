@@ -650,6 +650,8 @@ func _check_satellites(scene: Control, scale: float) -> void:
 				assert_false(wv.intent_rect().intersects(Rect2(p - Vector2(tok, tok), Vector2(tok, tok) * 2.0)), "x%.1f: %s's token keeps off the tag" % [scale, sat.display_name])
 			var c := wv.combatant
 			var tps := c.wheel.ticks_per_slice()
+			if wv.attachments != null:
+				continue  # ART-2 2B: drones dock in the band past the frame (§3.21); values move to the read block
 			for i in c.wheel.slice_count:
 				var a := WheelView._ang(i * tps - wv.shown_rotation())
 				var vs := WheelView._fs(WheelView.VALUE_FONT_SIZE)

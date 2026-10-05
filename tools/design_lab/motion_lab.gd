@@ -148,6 +148,10 @@ const DEMOS := {
 	# ART-0 E (ported from art-pass W6): the wheel-local T3 bursts on the fight's wheels (the
 	# Perfect's on the operative's, a boss phase's on an enemy's in the corp hue).
 	&"wheel_burst_perfect": ["scene", "perfect"], &"wheel_burst_phase": ["scene", "phase_burst"],
+	# ART-2 2B (wheel attachments and the arena): on the live fight's wheels and backdrop.
+	&"backdrop_won_lights": ["scene", "arena_won"], &"drone_bloom": ["scene", "attach_bloom"],
+	&"preview_chevron_chase": ["scene", "attach_preview"], &"preview_ghost": ["scene", "attach_preview"],
+	&"daemon_rack_scan": ["scene", "attach_rack"],
 	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
 	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
 	&"card_peel": ["scene", "play_fx"], &"card_slap_ring": ["scene", "play_fx"],
@@ -159,6 +163,15 @@ const DEMOS := {
 	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
 	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
 	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
+
+	# ART-1 1B material kit: each entry on a fresh real piece (KitDemo: a VinylSticker, a
+	# CrtTerminalPanel, a GreasePencilMark, a DecryptedHoloPanel, a LightSpill, BinaryBits).
+	&"crt_type_on": ["kit", "crt_type_on"], &"crt_caret_blink": ["kit", "crt_caret_blink"], &"crt_hex_scroll": ["kit", "crt_hex_scroll"],
+	&"sticker_slap": ["kit", "sticker_slap"], &"sticker_peel": ["kit", "sticker_peel"], &"sticker_dissolve": ["kit", "sticker_dissolve"],
+	&"sticker_gloss_sweep": ["kit", "sticker_gloss_sweep"], &"sticker_corner_flutter": ["kit", "sticker_corner_flutter"],
+	&"sticker_hover": ["kit", "sticker_hover"], &"sticker_press": ["kit", "sticker_press"],
+	&"pencil_write_on": ["kit", "pencil_write_on"], &"pencil_wipe": ["kit", "pencil_wipe"], &"pencil_glint": ["kit", "pencil_glint"],
+	&"holo_bands": ["kit", "holo_bands"], &"light_spill_breathe": ["kit", "light_spill_breathe"], &"bits_flight": ["kit", "bits_flight"],
 	# ART-0 F (ported from art-pass W2 / W8a): kit behaviour on the real pieces (a native
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
@@ -571,6 +584,8 @@ func _play() -> void:
 		"hq", "netrun":
 			_play_context(String(demo[0]), String(demo[1]))
 			length = CONTEXT_LOOP
+		"kit":
+			length = maxf(_play_kit(StringName(demo[1])), LOOP_HOLD)
 	_show_values()
 	if _loop:
 		_replay_later(maxf(length, 0.0) + LOOP_GAP)
@@ -586,6 +601,24 @@ func _replay_later(seconds: float) -> void:
 # --- Combat demos (ANIM-2 / ANIM-3) --------------------------------------------------------
 
 # --- Screen demos (ANIM-6) -------------------------------------------------------------------
+
+## ART-1 1B: a material-kit motion on a fresh real piece (KitDemo) over the stage. Returns
+## its length (s).
+func _play_kit(id: StringName) -> float:
+	_show_scene(false)
+	if _screen_host != null:
+		_screen_host.queue_free()
+	_screen_host = Control.new()
+	_screen_host.name = "KitDemo"
+	_screen_host.position = Vector2(PANEL_W, 0)
+	_screen_host.size = Vector2(1280 - PANEL_W, 720)
+	add_child(_screen_host)
+	var bg := ColorRect.new()
+	bg.color = Palette.DESK_DARK
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_screen_host.add_child(bg)
+	return KitDemo.play(id, _screen_host)
+
 
 ## A screen motion on a fresh piece over the stage (the stage's own pieces hide). Returns
 ## its length (s).
@@ -1134,6 +1167,42 @@ func _show_scene(on: bool) -> void:
 
 ## A motion in a live combat scene (a fresh fight each time, laid out for SCENE_SETTLE
 ## frames before the motion starts).
+## ART-2 2B demos on the live fight (lab only: the fight's state is dressed directly): a drone's
+## band blooms, a spin card's animated preview, the Daemon rack's idle scan, the won backdrop.
+func _play_attach(what: String) -> void:
+	var st: CombatState = _scene.engine.state()
+	var pv: WheelView = _scene._player_view
+	match what:
+		"attach_bloom":
+			if st.drones.is_empty():
+				var d := EffectInterpreter.make_combatant(_scene.engine.content(LAB_DRONE) as EnemyData, &"lab_drone", true)
+				d.is_player = true
+				d.host_id = st.player.id
+				d.dock_slot = 1
+				st.drones.append(d)
+			_scene._refresh(st)
+			pv.attachments.dock.force_bloom = false
+			await get_tree().process_frame
+			pv.attachments.dock.force_bloom = true
+		"attach_preview":
+			st.hand[0] = LAB_SPIN_CARD
+			_scene._refresh(st)
+			_scene._preview_card(0)
+		"attach_rack":
+			st.daemon_ids.clear()
+			st.daemon_ids.append_array(LAB_DAEMONS)
+			_scene._refresh(st)
+		"arena_won":
+			_scene.arena_backdrop.won = 0.0
+			_scene.arena_backdrop.play_won()
+
+
+## The ART-2 2B demos' drone, spin card and Daemons.
+const LAB_DRONE := &"botnet_drone"
+const LAB_SPIN_CARD := &"heavy_spin"
+const LAB_DAEMONS: Array[StringName] = [&"clean_signal", &"cascade", &"botnet_seed"]
+
+
 func _play_scene(what: String) -> void:
 	_show_scene(true)
 	_clear_screen()
@@ -1147,6 +1216,8 @@ func _play_scene(what: String) -> void:
 	var enemy: StringName = _scene.engine.state().enemies[0].id
 	var ev: WheelView = _scene._view_of(enemy)
 	match what:
+		"attach_bloom", "attach_preview", "attach_rack", "arena_won":
+			_play_attach(what)
 		"send":
 			_scene.end_turn()
 		"send_hit", "send_kill":
