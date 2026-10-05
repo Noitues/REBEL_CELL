@@ -352,10 +352,10 @@ func _neon(c: Control, at: Vector2, word: String) -> void:
 	c.draw_rect(Rect2(at - Vector2(52, 40), Vector2(104, 392)), Palette.CELL_PINK.lightened(0.6), false, 2.0)
 	for i in word.length():
 		var w := font.get_string_size(word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		var p := at + Vector2(-w * 0.5, 36 + i * 41)
+		var p := at + Vector2(-w * 0.5, 34 + i * 40)
 		# a hollow tube: the glow, the pink tube and its hot core
-		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 12, Palette.CELL_PINK.darkened(0.4))
-		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 6, Palette.CELL_PINK)
+		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 7, Palette.CELL_PINK.darkened(0.4))
+		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 4, Palette.CELL_PINK)
 		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 2, Palette.CELL_PINK.lightened(0.8))
 
 
