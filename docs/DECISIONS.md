@@ -1612,6 +1612,17 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer ruling: reuse the art pass's assets, never redraw them
+The designer saw hand-drawn stand-ins (e.g. the raid HEAVY vehicle icon drawn as a half circle) where the
+art pass has approved images (`round22_raid_world/vehicle_icons_v4`). Ruling: **any icon, sprite, texture,
+model or sheet the art pass already produced is used as is** — exported by running the concept's own
+generator script on tag `art-concepts-r43` (unchanged drawing code; an export wrapper may split a sheet into
+per-item transparent PNGs at 2×) or sliced from the approved image — never redrawn by hand or rebuilt
+procedurally. Shaders may tint, fill, drain or animate an asset, not replace its shape. Procedural drawing
+is allowed only where no concept asset exists or the shape must move in a way an image can't, and each
+such case is listed with its reason. Every asset carries a manifest (source script / image, tag). An
+asset-parity sweep replaces the stand-ins already merged (Groups 1–4); every running agent applies it now.
+
 ### 2026-10-05 — Designer ruling: rolling audits stopped; one audit at the end (risk accepted)
 The designer found the rolling audits premature: they are stopped (the Group 1 vertical auditor was
 stopped mid-run) and **audits run only once, after the art integration (ART-12)**, the designer accepting
