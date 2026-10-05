@@ -6669,7 +6669,10 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
-- **ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):** the compounds are built
+- ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
+  standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
+  HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single
+  breach node until G12 / G11 rule otherwise. Original note: the compounds are built
   on today's rules, where the HQ run is the single breach node (all slots exist for a full 7-layer run map at the
   HQ as well). Defaults: REBEL_CELL's compound is DISPATCH's base (round 42 `rebel_base`, dispatch state) with
   DISPATCH CORE on the relay mast; the round 43 Sync Strike / mirror ideas play in the Tokyo canyon instead and wait
