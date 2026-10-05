@@ -70,6 +70,10 @@ player strings and code for each item's old words.
   that the final boss is DISPATCH. The boss enemies keep their names (Renewal Engine, The Manifest…)
   and the run kind "boss" stays (it is the fight). GDD 11.7 and the summary; the part-1 "(name
   pending, D5)" note is gone (test `test_d5_each_central_server_has_its_name`).
+- **D6 Firmware.** The Mainframe's top-left window is FIRMWARE (was MICROCHIPS); the small spinner's tip
+  says "Drag Firmware or a slice onto a slot"; comments and the drag test
+  (`test_a_firmware_chip_dropped_on_a_slot_matches_the_socket_list_and_buy`) follow. "Chip" stays as
+  the drawing's word for a Firmware tile.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal

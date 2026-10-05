@@ -388,7 +388,7 @@ func _demo_drag_arg(args: PackedStringArray) -> void:
 
 
 ## ANIM-4b frame capture: picks an item up, carries it along a scripted pointer path and
-## lets go: a Mainframe card onto the deck (`drag_buy_card`), a microchip onto a slot it fits
+## lets go: a Mainframe card onto the deck (`drag_buy_card`), a Firmware chip onto a slot it fits
 ## (`drag_buy_chip`), a card too dear for the Cycles left (`drag_buy_refuse`), a deck card
 ## onto the shredder (`drag_shred`), a loot card onto the deck (`drag_loot`). Prints
 ## "anim4b: <id> starts on frame N" at the pick-up.
@@ -2564,7 +2564,7 @@ static func _choice_text(label: String, costs: String) -> String:
 	return base if costs == "" else "%s (%s)" % [base, costs]
 
 
-## Mainframe (GDD 11.2) in four quadrants over the storefront: MICROCHIPS (Firmware, top
+## Mainframe (GDD 11.2) in four quadrants over the storefront: FIRMWARE (top
 ## left), CARDS (as their own stickers, top right), SLICES + DAEMONS (bottom left, split)
 ## and REMOVE A CARD (bottom right, opens the deck viewer). Overwriting a slice opens the
 ## spinner viewer to pick the slot. "Leave the Mainframe" is a dripping tag in the corner.
@@ -2588,12 +2588,12 @@ func _show_shop() -> void:
 	root.add_child(grid)
 	var q_size := MAINFRAME_QUAD
 	var ts := Settings.text_scale
-	# Top left: microchips (Firmware). The socket list names each slot by its slice.
+	# Top left: Firmware. The socket list names each slot by its slice.
 	var fw_slot := OptionButton.new()
 	fw_slot.name = "SocketPick"
 	for k in op.slot_slice_ids.size():
 		fw_slot.add_item(slot_name(op, k))
-	var chips_win := TerminalWindow.new(tr("MICROCHIPS"))
+	var chips_win := TerminalWindow.new(tr("FIRMWARE"))
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
 	var chips := HBoxContainer.new()
@@ -2788,7 +2788,7 @@ func _show_shop() -> void:
 	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
 	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(wallet)
-	# ANIM-4b: the spinner in small beside the wallet: microchips and slice upgrades drag onto
+	# ANIM-4b: the spinner in small beside the wallet: Firmware and slice upgrades drag onto
 	# its slots (the socket list and the UPGRADE viewer stay).
 	var mini := _spinner_mini()
 	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -2895,7 +2895,7 @@ func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts
 	return stub
 
 
-## What a shop item does in words (H23 S8: microchips showed no description): the
+## What a shop item does in words (H23 S8: Firmware showed no description): the
 ## content's translated description, else the Codex's.
 static func shop_text(res: Resource) -> String:
 	var d := TextDb.t(res, "description") if res != null else ""
@@ -2926,7 +2926,7 @@ static func tile_growth(ts: float) -> float:
 
 
 ## ANIM-R2 E6: the most a chip ("firmware") or Daemon tile may grow to at text scale `ts`
-## with `count` in its row: a microchip shares its window's width (the socket list under
+## with `count` in its row: a Firmware chip shares its window's width (the socket list under
 ## it), a Daemon widens a little (the SLICES window keeps its row); both may grow as tall
 ## as the lower row's tiles.
 static func chip_tile_room(kind: String, count: int, ts: float) -> Vector2:
@@ -3498,7 +3498,7 @@ func _spinner_mini() -> SpinnerMini:
 	for k in op.slot_slice_ids.size():
 		tips.append(slot_name(op, k))
 	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
-	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag a microchip or a slice onto a slot to put it there."))
+	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag Firmware or a slice onto a slot to put it there."))
 	return mini
 
 
@@ -3512,7 +3512,7 @@ func _item_payload(kind: String, src: String, index: int, item: StringName) -> D
 	return p
 
 
-## Mainframe: cards drag onto the deck, microchips onto a slot of the small spinner, Daemons
+## Mainframe: cards drag onto the deck, Firmware onto a slot of the small spinner, Daemons
 ## onto the DAEMONS icon, slice upgrades onto the slot they overwrite.
 func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 	var shop := RunManager.netrun.run.shop

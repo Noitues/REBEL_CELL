@@ -11,7 +11,7 @@ enum Variant { PAPER, BLACK, PINK }
 ## Selection marks drawn over the card.
 enum Mark { NONE, CROSS, CIRCLE }
 ## STICKER: the zine card (hand, loot). CHIP / CARD_TILE: shop tiles (reference: the
-## Mainframe's microchips and card builder) with an icon, a name and a Cycle price.
+## Mainframe's Firmware and card builder) with an icon, a name and a Cycle price.
 enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
 
 var card_title: String = ""
@@ -486,7 +486,7 @@ func _draw_tile() -> void:
 		draw_string(Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
 
 
-## The reference's glowing microchip: a die with pins and a circuit square inside.
+## The reference's glowing Firmware chip: a die with pins and a circuit square inside.
 func _big_chip(c: Vector2, col: Color) -> void:
 	var r := Rect2(c - Vector2(20, 20), Vector2(40, 40))
 	draw_rect(r.grow(3), Color(col, 0.15))
@@ -524,7 +524,7 @@ func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
 var _icon_xf: Transform2D = Transform2D.IDENTITY
 
 
-## A small microchip mark in the corner (the reference's chip stickers).
+## A small Firmware chip mark in the corner (the reference's chip stickers).
 func _chip(c: Vector2, col: Color) -> void:
 	var r := Rect2(c - Vector2(8, 8), Vector2(16, 16))
 	draw_rect(r, Color(col, 0.15))
@@ -971,7 +971,7 @@ func tile_description() -> String:
 	return d
 
 
-## A microchip tile (Firmware, Daemons) at any text scale (H23 S8: chips had no words for
+## A Firmware chip tile (Firmware, Daemons) at any text scale (H23 S8: chips had no words for
 ## what they do): the chip icon (smaller when the words need the room), the name in the
 ## text colour, then as much of the effect text as fits, ending in an ellipsis (the whole
 ## text is the tooltip and shows on focus). The foot is the buy button's (H24 S10: the

@@ -1,6 +1,6 @@
 extends GutTest
 ## Animation pass ANIM-4b (drag and drop in the run): every drag makes exactly the state
-## change its button path makes (Mainframe cards, microchips, Daemons, slice upgrades on the
+## change its button path makes (Mainframe cards, Firmware, Daemons, slice upgrades on the
 ## page and in the UPGRADE viewer, the shredder in the REMOVE viewer, loot, event rewards,
 ## raid interlude assets); a refused or cancelled drop changes nothing and the item glides
 ## home; keys and the pad reach every target; a click picks up and a click drops; reduce
@@ -159,7 +159,7 @@ func test_mainframe_cards_and_daemons_dropped_on_their_tags_match_buy() -> void:
 		assert_ne(hashes[0], "", "bought")
 
 
-func test_a_microchip_dropped_on_a_slot_matches_the_socket_list_and_buy() -> void:
+func test_a_firmware_chip_dropped_on_a_slot_matches_the_socket_list_and_buy() -> void:
 	var hashes := []
 	var slot := -1
 	for use_drag in [false, true]:

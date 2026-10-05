@@ -400,5 +400,5 @@ func test_the_socket_list_says_what_it_is_for() -> void:
 		var win := row.get_parent()
 		while win != null and not (win is TerminalWindow):
 			win = win.get_parent()
-		assert_true((win as Control).get_global_rect().grow(1.0).encloses(row.get_global_rect()), "%.1f: inside MICROCHIPS" % scale)
+		assert_true((win as Control).get_global_rect().grow(1.0).encloses(row.get_global_rect()), "%.1f: inside FIRMWARE" % scale)
 		await _close(scene)
