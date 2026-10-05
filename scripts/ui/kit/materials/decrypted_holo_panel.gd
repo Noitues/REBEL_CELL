@@ -65,7 +65,7 @@ func _init() -> void:
 	glass.name = "Glass"
 	glass.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	glass.material = _glass_mat
-	glass.draw.connect(func() -> void: glass.draw_rect(Rect2(Vector2.ZERO, size).grow(SPLIT_PX + 2.0), Color.WHITE))
+	glass.draw.connect(func() -> void: glass.draw_rect(Rect2(Vector2.ZERO, size).grow(SPLIT_PX + 2.0), Palette.NO_TINT))
 	add_child(glass, false, Node.INTERNAL_MODE_FRONT)
 	glass.set_anchors_preset(Control.PRESET_FULL_RECT)
 	content = Control.new()
@@ -86,7 +86,7 @@ func _init() -> void:
 	_over = Control.new()
 	_over.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_over.material = _over_mat
-	_over.draw.connect(func() -> void: _over.draw_rect(Rect2(Vector2.ZERO, size), Color.WHITE))
+	_over.draw.connect(func() -> void: _over.draw_rect(Rect2(Vector2.ZERO, size), Palette.NO_TINT))
 	add_child(_over, false, Node.INTERNAL_MODE_BACK)
 	_over.set_anchors_preset(Control.PRESET_FULL_RECT)
 

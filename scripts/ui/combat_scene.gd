@@ -1462,7 +1462,7 @@ func _victory_flash() -> void:
 		return
 	for v in _enemy_views.values():
 		var wv := v as WheelView
-		fx_layer.disc_flash(wv.global_center(), wv.disc_radius(), Color.WHITE, &"victory_flash")
+		fx_layer.disc_flash(wv.global_center(), wv.disc_radius(), Palette.WHITE_HOT, &"victory_flash")
 
 
 func _slice_type_of(state: CombatState, e: Dictionary) -> int:
@@ -4229,7 +4229,7 @@ func _death_beat(id: StringName, before: CombatState, after: CombatState = null)
 	v.anim_hp = 0.0
 	# ANIM-R2 E5: a short white flash on the breaking wheel only (a full-screen flash read as
 	# a rendering fault).
-	fx_layer.disc_flash(v.global_center(), v.disc_radius(), Color.WHITE, &"victory_flash")
+	fx_layer.disc_flash(v.global_center(), v.disc_radius(), Palette.WHITE_HOT, &"victory_flash")
 	fx_layer.shards(v.slice_pieces(), tr("DELETED") if not c.is_player else "")  # ART-2 2C: enemy defeated v2
 	v.play_break()
 	AudioDirector.play_sfx("clack")

@@ -339,7 +339,7 @@ static func _buttons(t: Theme, text_scale: float) -> void:
 	hot_h.shadow_offset = Vector2.ZERO
 	var hot_p := shifted(sticker_box(Palette.STICKER_COMMIT.darkened(FILL_SHIFT)), PRESS_DROP)
 	hot_p.shadow_offset = Vector2(0, STICKER_EXTRUDE_PX - PRESS_DROP)
-	var hot_f := sticker_box(Color.TRANSPARENT)
+	var hot_f := sticker_box(Palette.CLEAR)
 	hot_f.draw_center = false
 	hot_f.border_color = Palette.FOCUS
 	hot_f.set_border_width_all(STICKER_HALO_PX)
@@ -639,7 +639,7 @@ static func chevron() -> Texture2D:
 		for w in 3:
 			var px := x + w - 1
 			if px >= 0 and px < 10:
-				img.set_pixel(px, y, Color.WHITE)
+				img.set_pixel(px, y, Palette.NO_TINT)
 	_chevron = ImageTexture.create_from_image(img)
 	return _chevron
 

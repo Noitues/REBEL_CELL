@@ -70,6 +70,17 @@ const NOTE_TAPE := Color(0.93, 0.89, 0.78, 0.7)
 const SHADOW := Color(0, 0, 0, 0.45)
 ## "No colour given": a default parameter meaning "use the element's own colour" (never drawn).
 const AUTO := Color(0, 0, 0, 0)
+## ART-0 audit C1 / D2: the named colours the views used as plain `Color.*` constants are
+## tokens here, so the static lint counts every other one.
+## Plain white as a multiplier: a modulate, a shader's carrier rect (the shader makes the
+## colour), a mask or tile fill, a "no tint" default. Never a white the player reads as one.
+const NO_TINT := Color(1, 1, 1, 1)
+## Fully transparent: an empty fill (a box that draws only its border).
+const CLEAR := Color(0, 0, 0, 0)
+## The white of a hot moment: a victory disc flash, a binary bit's white-hot start.
+const WHITE_HOT := Color(1, 1, 1, 1)
+## High contrast's panel colour behind TEXT_HI (ART_BIBLE §12 "TEXT_HI on #000").
+const HC_BG := Color(0, 0, 0, 1)
 
 # --- ART_BIBLE §2.2 semantic tokens (art pass W1, ported in ART-0 E) ----------------------
 # A semantic hue means one thing everywhere and is always paired with a glyph, shape or word.

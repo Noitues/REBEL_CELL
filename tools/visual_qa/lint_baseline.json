@@ -66,14 +66,14 @@
 		"res://scripts/ui/kit/icon_mark.gd": {
 			"color": 5
 		},
+		"res://scripts/ui/kit/mainframe_sign.gd": {
+			"color": 1
+		},
 		"res://scripts/ui/kit/map_legend.gd": {
 			"color": 1
 		},
 		"res://scripts/ui/kit/menu_motion.gd": {
 			"color": 2
-		},
-		"res://scripts/ui/kit/mainframe_sign.gd": {
-			"color": 1
 		},
 		"res://scripts/ui/kit/neon_city.gd": {
 			"color": 23,
@@ -124,7 +124,7 @@
 			"color": 1
 		},
 		"res://scripts/ui/kit/ui_theme.gd": {
-			"color": 24
+			"color": 12
 		},
 		"res://scripts/ui/kit/zine_card.gd": {
 			"color": 9,

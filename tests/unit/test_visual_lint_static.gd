@@ -4,7 +4,9 @@ extends GutTest
 ## holds main's violations on 2026-10-05 (205 lines in 41 files); ART-1…ART-12 drive it to 0. Counts per file and rule are compared with the
 ## committed baseline `tools/visual_qa/lint_baseline.json`; a new file starts at 0. File
 ## reads only (no scene is instanced). Lower the baseline after a migration with
-## `python tools/visual_qa/update_lint_baseline.py`.
+## `python tools/visual_qa/update_lint_baseline.py`: ART-0 audit D1, a count that went
+## down without the baseline following fails too, so the baseline never keeps slack that
+## would let literals come back silently.
 
 const Lint := preload("res://tools/visual_qa/visual_lint_static.gd")
 
@@ -14,9 +16,32 @@ func test_no_file_gains_literal_colours_or_font_sizes() -> void:
 	var base := Lint.load_baseline()
 	assert_false(base.is_empty(), "%s exists and lists files" % Lint.BASELINE)
 	var cmp := Lint.compare(findings, base)
-	for l in cmp["down"]:
-		gut.p("visual lint went down (lower the baseline: python tools/visual_qa/update_lint_baseline.py): %s" % l)
 	assert_eq((cmp["up"] as Array).size(), 0, "literal colours / font sizes went up:\n%s" % "\n".join(cmp["up"]))
+
+
+func test_the_baseline_has_no_slack() -> void:
+	# ART-0 audit D1: the baseline equals today's counts. A count that went down must be
+	# lowered in the same commit, or the freed slack would hide a literal coming back.
+	var cmp := Lint.compare(Lint.scan_all(), Lint.load_baseline())
+	assert_eq((cmp["down"] as Array).size(), 0,
+		"the lint went down; lower the baseline (python tools/visual_qa/update_lint_baseline.py):\n%s" % "\n".join(cmp["down"]))
+
+
+func test_named_colour_constants_are_palette_tokens() -> void:
+	# ART-0 audit C1 / D2: high contrast's background is a Palette token, and the views'
+	# plain whites and clears read the Palette tokens (the lint counts Color.WHITE and the like).
+	assert_eq(HighContrast.BG, Palette.HC_BG, "high contrast's background is Palette.HC_BG")
+	assert_eq(Palette.HC_BG, Color(0, 0, 0, 1), "#000 (ART_BIBLE §12)")
+	assert_eq(Palette.NO_TINT, Color(1, 1, 1, 1))
+	assert_eq(Palette.CLEAR.a, 0.0)
+	var named := RegEx.create_from_string("\\bColor\\.[A-Z][A-Z0-9_]*\\b")
+	for p in Lint.ui_files():
+		if Lint.COLOR_EXEMPT.has(p):
+			continue
+		var lines := FileAccess.get_file_as_string(p).split("\n")
+		for i in lines.size():
+			var code := Lint.strip_comment(lines[i])
+			assert_null(named.search(code), "%s:%d uses a named Color constant: %s" % [p, i + 1, code.strip_edges()])
 
 
 func test_baseline_names_only_existing_files_and_known_rules() -> void:
@@ -38,9 +63,13 @@ func test_colour_rule_counts_literals_and_skips_tokens_and_comments() -> void:
 		"var f := Color(Palette.INK, 0.5)",
 		"var g := Palette.INK  # Color(1, 1, 1) in a comment",
 		"var h := Color(-0.5, 0, 0)",
+		"var i := Color.WHITE",
+		"\tdraw_rect(r, Color.TRANSPARENT)",
+		"const J := Color.BLACK.lerp(Palette.INK, 0.5)",
+		"var k := Palette.NO_TINT",
 	])
 	var got: Dictionary = Lint.scan_text("res://scripts/ui/x.gd", text)
-	assert_eq(got["color"], [1, 2, 3, 4, 5, 8])
+	assert_eq(got["color"], [1, 2, 3, 4, 5, 8, 9, 10, 11], "named constants (Color.WHITE…) count too (ART-0 audit D2)")
 	var pal: Dictionary = Lint.scan_text("res://scripts/ui/kit/palette.gd", text)
 	assert_eq(pal["color"], [], "palette.gd defines the tokens")
 
