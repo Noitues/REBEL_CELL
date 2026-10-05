@@ -481,6 +481,14 @@
 			"seconds": 0.2,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_visual_lint_static.gd": {
+			"seconds": 0.3,
+			"tier": "fast"
+		},
+		"res://tests/unit/test_visual_qa_harness.gd": {
+			"seconds": 0.5,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_wheel_math.gd": {
 			"seconds": 0.1,
 			"tier": "fast"
