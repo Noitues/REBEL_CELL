@@ -83,11 +83,11 @@ var _destination_tier: int = 0
 
 func _ready() -> void:
 	layer = 100
+	# ART-0 E2: the shader global first, before any material on rc_common is built or drawn.
+	_apply_shader_global()
 	scanlines = _full_rect(Color.WHITE)
 	scanlines.material = ShaderMaterial.new()
 	scanlines.material.shader = SCANLINE_SHADER
-	# ART-0 E: every animating shader reads rc_common's reduce_effects (ShaderReduce).
-	ShaderReduce.track(scanlines.material as ShaderMaterial)
 	# The CRT look lives on the city and terminal glass (their own shaders); screen-wide
 	# only a faint vignette and a whisper of flicker remain, so paper stays clean.
 	scanlines.material.set_shader_parameter("scanline_strength", 0.0)
@@ -97,14 +97,12 @@ func _ready() -> void:
 	distortion = _full_rect(Color.WHITE)
 	distortion.material = ShaderMaterial.new()
 	distortion.material.shader = DISTORTION_SHADER
-	ShaderReduce.track(distortion.material as ShaderMaterial)
 	distortion.material.set_shader_parameter("intensity", 0.0)
 	distortion.visible = false
 	flash_rect = _full_rect(Color(1, 1, 1, 0))
 	jack_cover = _full_rect(Color.WHITE)
 	jack_cover.material = ShaderMaterial.new()
 	jack_cover.material.shader = JACK_SHADER
-	ShaderReduce.track(jack_cover.material as ShaderMaterial)
 	jack_cover.visible = false
 	transition_rect = _full_rect(Color(0, 0, 0, 0))
 	connect_label = Label.new()
@@ -225,7 +223,6 @@ func _exit_tree() -> void:
 	Motion.use_config(null)
 	Palette.release_fonts()
 	UiTheme.release()
-	ShaderReduce.release()
 
 
 func _notification(what: int) -> void:
@@ -461,8 +458,22 @@ func apply_settings() -> void:
 			_pulse_tween.kill()
 	limiter.enabled = Settings.flash_limiter
 	fps_label.visible = Settings.show_fps
-	# ART-0 E (ported from art-pass W6): the shader library's one reduce-effects control.
-	ShaderReduce.set_reduce(Settings.reduce_effects)
+	_apply_shader_global()
+
+
+## ART-0 E2 (ported from art-pass 290ae4c, W6 item 1): the shader library's one
+## reduce-effects control, the global shader uniform every shader reads through
+## `shaders/lib/rc_common.gdshaderinc` (registered in project.godot [shader_globals]): 1.0
+## under reduce effects, 0.0 otherwise. Set first thing in _ready (before any material is
+## drawn, -s tool scripts included: they get the autoloads too) and on every Settings change.
+const REDUCE_GLOBAL := &"reduce_effects"
+## The value last sent to REDUCE_GLOBAL (tests read it: the headless renderer keeps none).
+var shader_reduce: float = -1.0
+
+
+func _apply_shader_global() -> void:
+	shader_reduce = 1.0 if Settings.reduce_effects else 0.0
+	RenderingServer.global_shader_parameter_set(REDUCE_GLOBAL, shader_reduce)
 
 
 func effects_enabled() -> bool:

@@ -72,11 +72,11 @@ func test_launchable_sites_follow_the_tier_chains_and_the_breach_gate() -> void:
 	for id in [&"t1_b", &"t1_c", &"t2_intel", &"t2_breach", &"t2_virus", &"t3_core"]:
 		CampaignRules.on_run_completed(c, _corp, _cfg, _run(id))
 	assert_eq(c.exploits.size(), 3)
-	assert_true(_ids(CampaignRules.launchable_sites(c, _corp, _cfg)).has(&"renewal_engine_site"), "3 Exploits open the breach")
+	assert_true(_ids(CampaignRules.launchable_sites(c, _corp, _cfg)).has(&"the_genome_core"), "3 Exploits open the breach")
 	var c2 := _campaign()
 	for id in [&"t1_a", &"t2_intel", &"t3_core"]:
 		CampaignRules.on_run_completed(c2, _corp, _cfg, _run(id))
-	assert_false(_ids(CampaignRules.launchable_sites(c2, _corp, _cfg)).has(&"renewal_engine_site"), "one Exploit is not enough")
+	assert_false(_ids(CampaignRules.launchable_sites(c2, _corp, _cfg)).has(&"the_genome_core"), "one Exploit is not enough")
 
 
 func test_rank_gates_netrun_tiers() -> void:
@@ -95,7 +95,7 @@ func test_rank_gates_netrun_tiers() -> void:
 	assert_eq(CampaignRules.launch_error(c, _corp, _cfg, op, _breaker, t2), "")
 	var t1 := CampaignRules.site_data(_corp, &"t1_b")
 	assert_eq(CampaignRules.launch_error(c, _corp, _cfg, op, _breaker, t1), "")
-	var boss := CampaignRules.site_data(_corp, &"renewal_engine_site")
+	var boss := CampaignRules.site_data(_corp, &"the_genome_core")
 	assert_string_contains(CampaignRules.launch_error(c, _corp, _cfg, op, _breaker, boss), "Exploits")
 
 
@@ -161,7 +161,7 @@ func test_repair_costs_half_the_install_and_restores_the_node() -> void:
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	CampaignRules.claim(c, _corp, _cfg, _lookup, &"t1_a", &"firewall_relay")
 	var s := c.grid.site(&"t1_a")
-	s["condition"] = GridState.Condition.DISABLED
+	s["condition"] = GridState.Condition.DOWN
 	s["integrity"] = 0
 	var schematics := c.schematics
 	CampaignRules.repair(c, _cfg, _lookup, &"t1_a")
@@ -217,7 +217,7 @@ func test_deployed_assets_persist_can_be_repositioned_and_the_armory_is_capped()
 	assert_eq(CampaignRules.move_asset(c, _cfg, _lookup, &"home", 0, &"")[0]["type"], "refused", "Armory cap 6")
 
 
-func test_claim_raid_seizes_or_holds_and_updates_counters() -> void:
+func test_claim_raid_takes_or_holds_and_updates_counters() -> void:
 	var c := _campaign()
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	CampaignRules.claim(c, _corp, _cfg, _lookup, &"t1_a", &"relay")
@@ -232,7 +232,7 @@ func test_claim_raid_seizes_or_holds_and_updates_counters() -> void:
 
 func test_boss_win_and_home_loss_end_the_campaign() -> void:
 	var c := _campaign()
-	var events := CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"renewal_engine_site", "boss"))
+	var events := CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"the_genome_core", "boss"))
 	assert_eq(c.outcome, CampaignState.Outcome.WON)
 	assert_eq(events[0]["type"], "campaign_won")
 	assert_eq(events[1]["type"], "story_beat", "finale")

@@ -1,7 +1,7 @@
 class_name InfluenceSpread
 extends RefCounted
 ## Territory colour change as motion (Animation pass ANIM-5, the designer's ask): when a
-## Site changes owner (cleared or claimed by the Cell, Seized in a raid, taken back) the
+## Site changes owner (cleared or claimed by the Cell, TAKEN in a raid, taken back) the
 ## city's territory tint does not jump; the new tint spreads out from the Site(s) that
 ## changed, block by block along the street grid, and whatever changed beyond the
 ## spread's reach (a raid's sway over the whole territory) cross-fades in behind it.
@@ -73,7 +73,7 @@ static func front_color(old_inf: Dictionary, new_inf: Dictionary) -> Color:
 
 ## ANIM-R1 M5: what a territory change leaves on the city once it has spread: one mark per
 ## Site whose pull changed (id order, at most MAX_ORIGINS): {"id", "at" (grid lots),
-## "word" (untranslated: CLAIMED / CLEARED toward the Cell, SEIZED / DISABLED away from
+## "word" (untranslated: CLAIMED / CLEARED toward the Cell, TAKEN / DOWN away from
 ## it), "color" (the Cell's territory colour, or the corporation's)}. Empty for a sway-only change.
 static func marks(old_inf: Dictionary, new_inf: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -89,7 +89,7 @@ static func marks(old_inf: Dictionary, new_inf: Dictionary) -> Array[Dictionary]
 		if w1 > w0:
 			word = MARK_CLAIMED if w1 >= CityInfluence.WEIGHT_CLAIMED - WEIGHT_EPSILON else MARK_CLEARED
 		else:
-			word = MARK_SEIZED if w1 <= CityInfluence.WEIGHT_SEIZED + WEIGHT_EPSILON else MARK_DISABLED
+			word = MARK_TAKEN if w1 <= CityInfluence.WEIGHT_TAKEN + WEIGHT_EPSILON else MARK_DOWN
 		var at := _site_point(new_inf, id) if _has_source(new_inf, id) else _site_point(old_inf, id)
 		out.append({"id": id, "at": at, "word": word, "color": Palette.CELL_TURF if w1 > w0 else Palette.corp_color(corp)})
 	return out
@@ -98,8 +98,8 @@ static func marks(old_inf: Dictionary, new_inf: Dictionary) -> Array[Dictionary]
 ## The marks' words (translation keys).
 const MARK_CLAIMED := "CLAIMED" # TR
 const MARK_CLEARED := "CLEARED" # TR
-const MARK_SEIZED := "SEIZED" # TR
-const MARK_DISABLED := "DISABLED" # TR
+const MARK_TAKEN := "TAKEN" # TR
+const MARK_DOWN := "DOWN" # TR
 
 
 ## Deterministic 0-1 jitter of lot `lot` (whole blocks turn together). The shader uses

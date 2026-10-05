@@ -9,7 +9,7 @@
 script = ExtResource("main_script")
 id = &"bulkhead"
 display_name = "Bulkhead"
-description = "DEF and SHIELD slices: output +50%."
+description = "DEFRAG and SHIELD slices: output +50%."
 rarity = 0
 cycle_cost = 90
 allowed_slice_types = Array[int]([2, 4])

@@ -124,7 +124,7 @@ static func seconds_for(p_look: int) -> float:
 
 
 ## Ends every screen motion under `root` at once (a press during an entrance): the
-## entrance itself, cards fanning or dealing in, drips growing, the Modem sign warming up,
+## entrance itself, cards fanning or dealing in, drips growing, the Mainframe sign warming up,
 ## menu lines typing, top bar bumps.
 static func settle(root: Node) -> void:
 	if root == null or not is_instance_valid(root):
@@ -136,8 +136,8 @@ static func settle(root: Node) -> void:
 			(root as ZineCard).finish_deal()
 	elif root is DripButton:
 		(root as DripButton).settle_motion()
-	elif root is ModemSign:
-		(root as ModemSign).settle()
+	elif root is MainframeSign:
+		(root as MainframeSign).settle()
 	elif root is HudStats:
 		(root as HudStats).settle()
 	elif root is BuyButton:

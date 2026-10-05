@@ -181,7 +181,10 @@ static func shutdown() -> void:
 ## Stops a running build's record `rec`: tells its painter and slices to stop, joins its
 ## worker tasks, frees its painter, slices and viewport. The caller drops it from `_live`.
 static func _stop(rec: Dictionary) -> void:
-	var painter: NeonCity = rec.get("painter")
+	# ART-0 D: the painter may already be freed (its scene went mid-bake): a typed assignment
+	# of a freed instance is a script error, so it is checked first.
+	var held: Variant = rec.get("painter")
+	var painter: NeonCity = held as NeonCity if is_instance_valid(held) else null
 	if painter != null and is_instance_valid(painter):
 		painter.cancelled = true
 		for t in painter._slices:
@@ -198,9 +201,9 @@ static func _stop(rec: Dictionary) -> void:
 		painter.free_slices()
 		if not painter.is_inside_tree():
 			painter.free()
-	var vp: SubViewport = rec.get("vp")
-	if vp != null and is_instance_valid(vp):
-		vp.free()
+	var held_vp: Variant = rec.get("vp")
+	if is_instance_valid(held_vp):
+		(held_vp as SubViewport).free()
 
 
 ## True when some waiter of the bake for `key` is still alive (a bake nobody waits for is

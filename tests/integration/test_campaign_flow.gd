@@ -76,9 +76,9 @@ func test_winning_the_breach_with_three_exploits_wins_the_campaign_and_records_i
 	var c := RunManager.campaign
 	assert_eq(c.exploits.size(), 3)
 	assert_eq(c.story_beats_revealed, 3, "one beat per Exploit")
-	assert_true(RunManager.launch_error(c.living_operatives()[0].id, &"renewal_engine_site") == "", "breach open")
+	assert_true(RunManager.launch_error(c.living_operatives()[0].id, &"the_genome_core") == "", "breach open")
 	var op := c.living_operatives()[0]
-	assert_true(_hq.launch(&"renewal_engine_site", op.id))
+	assert_true(_hq.launch(&"the_genome_core", op.id))
 	assert_eq(RunManager.netrun.run.kind, "boss")
 	assert_eq(RunManager.netrun.run.combat_overrides["remove_boss_pointers"], 1)
 	RunManager.netrun.enter_node(RunManager.netrun.available_nodes()[0])

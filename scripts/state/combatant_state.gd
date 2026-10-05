@@ -19,7 +19,7 @@ var max_hp: int = 1
 var block: int = 0
 ## Shield persists across turns, capped by config.shield_cap.
 var shield: int = 0
-## Pending EVADE cancels for incoming ATTACK/CRIT this turn.
+## Pending EVADE cancels for incoming SHIM/OVERFLOW this turn.
 var evade_charges: int = 0
 var wheel: WheelState = null
 ## Spin resistance remaining this turn (passive + hub while the hub is up).

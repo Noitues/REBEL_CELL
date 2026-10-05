@@ -376,7 +376,7 @@ func test_a_clamped_hit_says_so_and_the_ride_is_whole() -> void:
 	# A hit at half power rides a whole number.
 	var st: CombatState = scene.engine.state()
 	var hit := {"kind": "damage", "source": st.player.id, "target": st.enemies[0].id, "amount": 3, "raw": 3, "soaked": 0,
-		"source_slot": 0, "source_tier": RC.PrecisionTier.PARTIAL}
+		"source_slot": 0, "source_tier": RC.PrecisionTier.WEAK}
 	var ride: Dictionary = scene.ride_for(hit, st)
 	assert_eq(String(ride["label"]), "3", "no '3 ½'")
 	await _close(scene)

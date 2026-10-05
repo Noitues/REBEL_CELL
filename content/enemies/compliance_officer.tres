@@ -3,16 +3,16 @@
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
-[ext_resource type="Resource" path="res://content/slices/atk_7.tres" id="s_atk"]
-[ext_resource type="Resource" path="res://content/slices/def_6.tres" id="s_def"]
-[ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="s_crit"]
+[ext_resource type="Resource" path="res://content/slices/shim_7.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/overflow_12.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 [ext_resource type="Resource" path="res://content/hub_cores/compliance_lock.tres" id="hub"]
 [ext_resource type="Script" path="res://scripts/data/heat_gated_effect_data.gd" id="hg"]
 [ext_resource type="Script" path="res://scripts/data/triggered_effect_data.gd" id="te"]
 [ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="fx"]
 
-; Compliance Officer (GDD A.3): 50 HP; Atk 7, Atk 7, Def 6, Crit 12, Atk 7, Miss;
+; Compliance Officer (GDD A.3): 50 HP; Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Miss;
 ; Hub Compliance Lock (resistance 3). Heat 50+: "Audit" - each of its attacks also
 ; drains 1 RAM (HeatGatedEffectData; trigger 5 ON_SLICE_TRIGGER, effect 13 DRAIN_RAM on
 ; POINTER_TARGET 3).

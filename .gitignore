@@ -17,3 +17,6 @@ override.cfg
 .mono/
 
 
+
+# Saves and replays of runs from source (ART-0 S0; the folder carries its own .gdignore)
+/saves/

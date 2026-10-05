@@ -9,12 +9,12 @@ const RING_SEGMENTS: int = 3
 const TICKS_PER_RING_SEGMENT: int = 10
 
 # --- Combat ---
-## AFFLICT applies statuses via extra_effects (e.g. Solace DOSE). HEAL is enemy-facing.
-enum SliceType { ATTACK, CRIT, DEFEND, EVADE, SHIELD, DEPLOY, HEAL, AFFLICT, MISS }
+## INFECT applies statuses via extra_effects (e.g. Solace DOSE). HOTFIX is enemy-facing.
+enum SliceType { SHIM, OVERFLOW, DEFRAG, DETOUR, SHIELD, DEPLOY, HOTFIX, INFECT, MISS }
 enum TargetRule { SELF, POINTER, SWEEP, CHOSEN }
 ## Ordered low to high so tiers can be compared with >=. There is no Miss
 ## tier: every landing is within 2 ticks of some slice centre (GDD 2.4).
-enum PrecisionTier { PARTIAL, GOOD, PERFECT }
+enum PrecisionTier { WEAK, GOOD, PERFECT }
 ## PARASITE (Botnet, 2026-09-24): a parasite drone halves the slice's output until cleansed.
 enum Status { NONE, CORRUPTED, OVERCLOCKED, ENCRYPTED, PARASITE }
 enum RingScope { OUTER, INNER, WHOLE_WHEEL }
@@ -79,10 +79,10 @@ enum EffectTarget { SELF, OWN_WHEEL, TARGET_WHEEL, POINTER_TARGET, ALL_ENEMIES, 
 enum SlicePick { UNDER_POINTER, RANDOM_NON_MISS, CHOSEN }
 
 # --- Netrun map ---
-enum InfilNodeType { ROUTER, TERMINAL, MODEM, SERVER_RACK }
+enum InfilNodeType { ROUTER, TERMINAL, MAINFRAME, SERVER_RACK }
 
 # --- City Grid & network ---
-enum SiteObjective { NONE, EXPLOIT, HEAT_REDUCTION, RECLAIM, BOSS }
+enum SiteObjective { NONE, EXPLOIT, HEAT_REDUCTION, RECLAIM, CENTRAL_SERVER }
 enum ExploitType { NONE, INTEL, BREACH, VIRUS }
 enum NetworkNodeType { HOME_SERVER, RELAY, FIREWALL_RELAY, COMPILER_RACK, VAULT_TERMINAL, PROXY_RELAY, SAFEHOUSE }
 
@@ -117,7 +117,7 @@ enum RuleModifierType {
 	STARTING_BUG_CARD,
 	NO_FIRST_TURN_FREE_NUDGE,
 	REPAIR_COST_PCT,
-	SEIZED_RAID_STRENGTH_PCT,
+	TAKEN_RAID_STRENGTH_PCT,
 	PURGE_THRESHOLD,
 	## Boss HP and damage +N% (ICE ladder).
 	BOSS_STRENGTH_PCT,

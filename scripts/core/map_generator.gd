@@ -32,7 +32,7 @@ static func _build(tier: int, config: CampaignConfigData, rng: RandomNumberGener
 			layer.append({"id": MapGraph.make_id(number, ni), "layer": number, "index": ni,
 				"type": RC.InfilNodeType.ROUTER, "elite": false, "next": [] as Array[StringName], "heat": 0})
 		graph.layers.append(layer)
-	# 2. Types. Layer 1 all Routers; Racks at rack layers; a Modem in the modem band;
+	# 2. Types. Layer 1 all Routers; Racks at rack layers; a Mainframe in the mainframe band;
 	#    about one Elite per layer in the elite band; Terminals ~25% of the rest.
 	var taken := {}  # id -> true for nodes with a fixed type
 	for rack_layer in config.rack_layers:
@@ -41,11 +41,11 @@ static func _build(tier: int, config: CampaignConfigData, rng: RandomNumberGener
 		pick["type"] = RC.InfilNodeType.SERVER_RACK
 		pick["elite"] = true
 		taken[pick["id"]] = true
-	var modem_candidates: Array[Dictionary] = _free_nodes(graph, config.map_modem_layers.x, config.map_modem_layers.y, taken)
-	if not modem_candidates.is_empty():
-		var modem: Dictionary = modem_candidates[rng.randi_range(0, modem_candidates.size() - 1)]
-		modem["type"] = RC.InfilNodeType.MODEM
-		taken[modem["id"]] = true
+	var mainframe_candidates: Array[Dictionary] = _free_nodes(graph, config.map_mainframe_layers.x, config.map_mainframe_layers.y, taken)
+	if not mainframe_candidates.is_empty():
+		var mainframe: Dictionary = mainframe_candidates[rng.randi_range(0, mainframe_candidates.size() - 1)]
+		mainframe["type"] = RC.InfilNodeType.MAINFRAME
+		taken[mainframe["id"]] = true
 	var extra_accumulator := 0.0
 	for layer_number in range(config.map_elite_layers.x, config.map_elite_layers.y + 1):
 		var elites_here := config.map_elites_per_layer

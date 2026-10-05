@@ -257,7 +257,7 @@ text = "Burn the Orbit Logs. Every record of the Cell's signals, deorbited."
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
-key = "site:commons_array_site"
+key = "site:launch_control"
 text = "The Commons Array. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut."
 
 [resource]

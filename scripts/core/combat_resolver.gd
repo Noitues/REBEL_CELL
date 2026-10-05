@@ -8,9 +8,9 @@ var config: CampaignConfigData
 var lookup: ContentLookup
 var fx: EffectInterpreter
 
-const DEFENSIVE_TYPES := [RC.SliceType.DEFEND, RC.SliceType.SHIELD, RC.SliceType.EVADE, RC.SliceType.HEAL]
-const OFFENSIVE_TYPES := [RC.SliceType.ATTACK, RC.SliceType.CRIT, RC.SliceType.DEPLOY]
-const STATUS_TYPES := [RC.SliceType.AFFLICT]
+const DEFENSIVE_TYPES := [RC.SliceType.DEFRAG, RC.SliceType.SHIELD, RC.SliceType.DETOUR, RC.SliceType.HOTFIX]
+const OFFENSIVE_TYPES := [RC.SliceType.SHIM, RC.SliceType.OVERFLOW, RC.SliceType.DEPLOY]
+const STATUS_TYPES := [RC.SliceType.INFECT]
 ## Where an extra boss pointer goes (ICE 18 BOSS_EXTRA_POINTER): offsets from pointer 0
 ## tried in order, the first free one wins (evenly spaced, GDD 2.1).
 const EXTRA_POINTER_OFFSETS := [15, 10, 20, 5, 25]
@@ -651,7 +651,7 @@ func _heat_listeners(s: CombatState, owner: CombatantState, slice: SliceData = n
 	for i in data.heat_effects.size():
 		var he := data.heat_effects[i]
 		if he != null and s.campaign_heat >= he.min_heat:
-			if he.offensive_slices_only and (slice == null or not (slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT])):
+			if he.offensive_slices_only and (slice == null or not (slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW])):
 				continue
 			out.append({"source_id": StringName("%s:heat%d" % [data.id, he.min_heat]), "effects": he.effects})
 	return out
@@ -670,8 +670,8 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 		"tier": r["tier"], "slice_index": slot, "source_id": slice.id}
 	var listeners := _slice_listeners(s, r)
 	var mult: float = owner.output_scale * float(r.get("extra_multiplier", 1.0))
-	if r["tier"] == RC.PrecisionTier.PARTIAL:
-		mult *= config.partial_multiplier
+	if r["tier"] == RC.PrecisionTier.WEAK:
+		mult *= config.weak_multiplier
 	var fw: FirmwareData = r["firmware"]
 	if fw != null:
 		mult *= fw.output_multiplier
@@ -701,7 +701,7 @@ func _resolve_pointer(s: CombatState, r: Dictionary, rng: RandomNumberGenerator,
 	var once := listeners.filter(func(l: Dictionary) -> bool: return l.get("once", false)) if is_landing(r) else []
 	for m in instances:
 		var output := roundi(slice.base_output * m)
-		if owner == s.player and slice.slice_type in [RC.SliceType.ATTACK, RC.SliceType.CRIT] and s.damage_bonus > 0:
+		if owner == s.player and slice.slice_type in [RC.SliceType.SHIM, RC.SliceType.OVERFLOW] and s.damage_bonus > 0:
 			output += s.damage_bonus
 		_slice_action(s, owner, slice, output, pierce, ctx, events)
 		_landing_triggers(s, r, slice, ctx, per_instance, rng, events)
@@ -732,7 +732,7 @@ func _landing_triggers(s: CombatState, r: Dictionary, slice: SliceData, ctx: Dic
 
 func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, output: int, pierce: bool, ctx: Dictionary, events: Array[Dictionary]) -> void:
 	match slice.slice_type:
-		RC.SliceType.ATTACK, RC.SliceType.CRIT:
+		RC.SliceType.SHIM, RC.SliceType.OVERFLOW:
 			var target: CombatantState = ctx["target"]
 			if target == null or not target.is_alive():
 				return
@@ -748,17 +748,17 @@ func _slice_action(s: CombatState, owner: CombatantState, slice: SliceData, outp
 					events.append({"type": "bodyguard", "target": target.id, "guard": guard.id, "pointer_index": q,
 						"text": "%s takes the hit for %s (pointer %d)." % [guard.display_name, target.display_name, q]})
 				fx.deal_hit(s, owner, victim, output, pierce, true, events, slice.id)
-		RC.SliceType.DEFEND:
+		RC.SliceType.DEFRAG:
 			fx.gain_block(owner, output, events)
 		RC.SliceType.SHIELD:
 			fx.gain_shield(owner, output, events)
-		RC.SliceType.EVADE:
+		RC.SliceType.DETOUR:
 			fx.gain_evade(owner, maxi(1, output), events)
-		RC.SliceType.HEAL:
+		RC.SliceType.HOTFIX:
 			fx.heal(owner, output, events)
 		RC.SliceType.DEPLOY:
 			_deploy(s, owner, maxi(1, output), int(ctx.get("slice_index", 0)), events)
-		RC.SliceType.AFFLICT:
+		RC.SliceType.INFECT:
 			events.append({"type": "afflict", "attacker": owner.id, "text": "%s %s." % [owner.display_name, _slice_name(slice)]})
 		RC.SliceType.MISS:
 			events.append({"type": "miss", "owner": owner.id, "text": "%s lands on MISS." % owner.display_name})

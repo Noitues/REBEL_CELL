@@ -104,29 +104,44 @@ const FONTS_MSDF_RANGE := 16
 
 ## A glyph for every slice type (STYLE_GUIDE 4): readable without colour.
 const SLICE_GLYPHS := {
-	RC.SliceType.ATTACK: "▲", RC.SliceType.CRIT: "✦", RC.SliceType.DEFEND: "■", RC.SliceType.EVADE: "◇",
-	RC.SliceType.SHIELD: "⬢", RC.SliceType.DEPLOY: "⬡", RC.SliceType.HEAL: "✚", RC.SliceType.AFFLICT: "◈",
+	RC.SliceType.SHIM: "▲", RC.SliceType.OVERFLOW: "✦", RC.SliceType.DEFRAG: "■", RC.SliceType.DETOUR: "◇",
+	RC.SliceType.SHIELD: "⬢", RC.SliceType.DEPLOY: "⬡", RC.SliceType.HOTFIX: "✚", RC.SliceType.INFECT: "◈",
 	RC.SliceType.MISS: "✕",
 }
 const SLICE_NAMES := {
-	RC.SliceType.ATTACK: "ATK", RC.SliceType.CRIT: "CRIT", RC.SliceType.DEFEND: "DEF", RC.SliceType.EVADE: "EVD", # TR
-	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFL", # TR
+	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVFL", RC.SliceType.DEFRAG: "DFRG", RC.SliceType.DETOUR: "DTOR", # TR
+	RC.SliceType.SHIELD: "SHD", RC.SliceType.DEPLOY: "DEP", RC.SliceType.HOTFIX: "HFIX", RC.SliceType.INFECT: "INFC", # TR
 	RC.SliceType.MISS: "MISS", # TR
 }
 ## Whole words for the tags over the spinners (H21: new players read DEF / AFL / BLK as
 ## noise).
 const SLICE_WORDS := {
-	RC.SliceType.ATTACK: "ATTACK", RC.SliceType.CRIT: "CRITICAL", RC.SliceType.DEFEND: "DEFEND", RC.SliceType.EVADE: "EVADE", # TR
-	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HEAL: "HEAL", RC.SliceType.AFFLICT: "AFFLICT", # TR
+	RC.SliceType.SHIM: "SHIM", RC.SliceType.OVERFLOW: "OVERFLOW", RC.SliceType.DEFRAG: "DEFRAG", RC.SliceType.DETOUR: "DETOUR", # TR
+	RC.SliceType.SHIELD: "SHIELD", RC.SliceType.DEPLOY: "DEPLOY", RC.SliceType.HOTFIX: "HOTFIX", RC.SliceType.INFECT: "INFECT", # TR
 	RC.SliceType.MISS: "MISS", # TR
 }
+## A corporation's own word for a program on its wheels (DECISIONS "Designer rulings: names
+## for M14", D3 / D4): Meridian's OVERFLOW shows as AIRMAIL, Solace's HOTFIX as GROWTH.
+const CORP_SLICE_WORDS := {
+	&"meridian": {RC.SliceType.OVERFLOW: "AIRMAIL"}, # TR
+	&"solace": {RC.SliceType.HOTFIX: "GROWTH"}, # TR
+}
+
+
+## The whole word for slice type `type` on a wheel of corporation `corporation_id` ("" for the
+## Cell's own): the corporation's word when it has one, else SLICE_WORDS. Untranslated (a key).
+static func slice_word(type: int, corporation_id: StringName = &"") -> String:
+	var own: Dictionary = CORP_SLICE_WORDS.get(corporation_id, {})
+	return String(own.get(type, SLICE_WORDS.get(type, "?")))
+
+
 const STATUS_WORDS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CORRUPTED", RC.Status.OVERCLOCKED: "OVERCLOCKED", RC.Status.ENCRYPTED: "ENCRYPTED", RC.Status.PARASITE: "PARASITE"} # TR
 ## How well a needle lands, in plain words.
-const TIER_WORDS := {RC.PrecisionTier.PERFECT: "perfect aim", RC.PrecisionTier.GOOD: "good aim", RC.PrecisionTier.PARTIAL: "half power"} # TR
+const TIER_WORDS := {RC.PrecisionTier.PERFECT: "perfect aim", RC.PrecisionTier.GOOD: "good aim", RC.PrecisionTier.WEAK: "half power"} # TR
 ## A glyph and tag for every status, also readable without colour.
 const STATUS_GLYPHS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "☠", RC.Status.OVERCLOCKED: "⚡", RC.Status.ENCRYPTED: "⌗", RC.Status.PARASITE: "✺"}
 const STATUS_TAGS := {RC.Status.NONE: "", RC.Status.CORRUPTED: "CRPT", RC.Status.OVERCLOCKED: "OVCL", RC.Status.ENCRYPTED: "ENC", RC.Status.PARASITE: "PRST"}
-const TIER_NAMES := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.PARTIAL: "PARTIAL"} # TR
+const TIER_NAMES := {RC.PrecisionTier.PERFECT: "PERFECT", RC.PrecisionTier.GOOD: "GOOD", RC.PrecisionTier.WEAK: "WEAK"} # TR
 
 ## Corporation glow colour (each corporation has its own; see STYLE_GUIDE).
 static func corp_color(corporation_id: StringName) -> Color:
@@ -146,8 +161,8 @@ static func corp_color(corporation_id: StringName) -> Color:
 
 
 ## ART_BIBLE §2.3 slice colours: the colour means slice type on any wheel, not its owner.
-const SLICE_HEAL := Color("#7BE07B")
-const SLICE_AFFLICT := Color("#C85AFF")
+const SLICE_HOTFIX := Color("#7BE07B")
+const SLICE_INFECT := Color("#C85AFF")
 const SLICE_DEPLOY := Color("#B08CFF")
 const SLICE_MISS := Color("#6A6A6A")
 
@@ -156,14 +171,14 @@ const SLICE_MISS := Color("#6A6A6A")
 ## green, afflict violet, deploy lilac, miss grey.
 static func slice_color(type: int) -> Color:
 	match type:
-		RC.SliceType.ATTACK, RC.SliceType.CRIT:
+		RC.SliceType.SHIM, RC.SliceType.OVERFLOW:
 			return CELL_PINK
-		RC.SliceType.DEFEND, RC.SliceType.SHIELD:
+		RC.SliceType.DEFRAG, RC.SliceType.SHIELD:
 			return NET_CYAN
-		RC.SliceType.EVADE, RC.SliceType.HEAL:
-			return SLICE_HEAL
-		RC.SliceType.AFFLICT:
-			return SLICE_AFFLICT
+		RC.SliceType.DETOUR, RC.SliceType.HOTFIX:
+			return SLICE_HOTFIX
+		RC.SliceType.INFECT:
+			return SLICE_INFECT
 		RC.SliceType.DEPLOY:
 			return SLICE_DEPLOY
 		_:

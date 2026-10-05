@@ -96,7 +96,7 @@ func _home_variants() -> Array[StringName]:
 	return out
 
 
-func test_the_verdict_is_all_hold_only_when_nothing_is_lost_for_every_corporation_home_and_ice() -> void:
+func test_the_verdict_is_cell_holds_only_when_nothing_is_lost_for_every_corporation_home_and_ice() -> void:
 	var cases := 0
 	var lossy_but_won := 0
 	var ice_top := RunManager.config().ice_ladder.size()
@@ -117,21 +117,21 @@ func test_the_verdict_is_all_hold_only_when_nothing_is_lost_for_every_corporatio
 					assert_eq(forecast, verdict, "%s: the forecast is the result's verdict" % tag)
 					assert_false(verdict.contains("HOME HIT"), "%s: no HOME HIT" % tag)
 					var any_lost := bool(r["campaign_lost"]) or int(r["home_after"]) < int(r["home_before"]) \
-						or not (r.get("disabled", []) as Array).is_empty() or not (r.get("seized", []) as Array).is_empty()
-					assert_eq(verdict == CityMapOverlay.tr_word(RaidVerdict.ALL_HOLD), not any_lost, "%s: ALL HOLD only when nothing is lost (%s)" % [tag, verdict.replace("\n", " / ")])
+						or not (r.get("down", []) as Array).is_empty() or not (r.get("taken", []) as Array).is_empty()
+					assert_eq(verdict == CityMapOverlay.tr_word(RaidVerdict.CELL_HOLDS), not any_lost, "%s: CELL HOLDS only when nothing is lost (%s)" % [tag, verdict.replace("\n", " / ")])
 					if bool(r["won"]) and any_lost:
 						lossy_but_won += 1
-					# ANIM-R5 P18: a node counts once, by its outcome (Disabled then Seized is SEIZED).
-					for sid in (r.get("disabled", []) if not bool(r["campaign_lost"]) else []):
+					# ANIM-R5 P18: a node counts once, by its outcome (DOWN then TAKEN is TAKEN).
+					for sid in (r.get("down", []) if not bool(r["campaign_lost"]) else []):
 						var outcome := String((r["nodes"] as Dictionary).get(sid, {}).get("outcome", ""))
-						var word := RaidVerdict.SEIZED if outcome == "seized" else RaidVerdict.DISABLED
+						var word := RaidVerdict.TAKEN if outcome == "taken" else RaidVerdict.DOWN
 						assert_string_contains(verdict, CityMapOverlay.tr_word(word).get_slice(" ", 1), "%s: a fallen node is named by its outcome (%s)" % [tag, outcome])
 					if bool(r["campaign_lost"]):
-						assert_eq(verdict, CityMapOverlay.tr_word(RaidVerdict.LOST))
+						assert_eq(verdict, CityMapOverlay.tr_word(RaidVerdict.BREACHED))
 					# The map's banner speaks the same words: HOLDS only when home held.
 					var fx := _play(RunManager.campaign, r)
 					if bool(r["campaign_lost"]):
-						assert_eq(fx.banner_text(), CityMapOverlay.tr_word(RaidVerdict.LOST), "%s: the banner and the stamp both say CAMPAIGN LOST" % tag)
+						assert_eq(fx.banner_text(), CityMapOverlay.tr_word(RaidVerdict.BREACHED), "%s: the banner and the stamp both say BREACHED" % tag)
 					else:
 						assert_string_contains(fx.banner_text(), "HOLDS", "%s: home held" % tag)
 					fx.get_parent().queue_free()
@@ -160,10 +160,10 @@ func _play(c: CampaignState, r: Dictionary) -> RaidFxLayer:
 
 
 func test_the_verdict_names_each_loss() -> void:
-	assert_eq(RaidVerdict.words(false, 0, 0, 0), CityMapOverlay.tr_word("ALL HOLD"))
-	assert_eq(RaidVerdict.words(false, 0, 1, 0), CityMapOverlay.tr_word("%d DISABLED") % 1, "a node Disabled with every threat stopped is not ALL HOLD")
-	assert_eq(RaidVerdict.words(false, 5, 1, 2), "%s\n%s\n%s" % [CityMapOverlay.tr_word("HOME %s") % "-5", CityMapOverlay.tr_word("%d DISABLED") % 1, CityMapOverlay.tr_word("%d SEIZED") % 2])
-	assert_eq(RaidVerdict.words(true, 50, 0, 0), CityMapOverlay.tr_word("CAMPAIGN LOST"))
+	assert_eq(RaidVerdict.words(false, 0, 0, 0), CityMapOverlay.tr_word("CELL HOLDS"))
+	assert_eq(RaidVerdict.words(false, 0, 1, 0), CityMapOverlay.tr_word("%d DOWN") % 1, "a node DOWN with every threat stopped is not CELL HOLDS")
+	assert_eq(RaidVerdict.words(false, 5, 1, 2), "%s\n%s\n%s" % [CityMapOverlay.tr_word("HOME %s") % "-5", CityMapOverlay.tr_word("%d DOWN") % 1, CityMapOverlay.tr_word("%d TAKEN") % 2])
+	assert_eq(RaidVerdict.words(true, 50, 0, 0), CityMapOverlay.tr_word("BREACHED"))
 	var stamp: ForecastStamp = add_child_autofree(ForecastStamp.new("IF", RaidVerdict.words(false, 5, 1, 0)))
 	stamp.size = Vector2(124, 124)
 	assert_eq(stamp.verdict_lines().size(), 2, "one line per loss")

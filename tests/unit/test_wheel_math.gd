@@ -91,9 +91,9 @@ func test_precision_tiers_have_no_miss_tier() -> void:
 	assert_eq(WheelMath.tier(0), RC.PrecisionTier.PERFECT)
 	assert_eq(WheelMath.tier(1), RC.PrecisionTier.GOOD)
 	assert_eq(WheelMath.tier(-1), RC.PrecisionTier.GOOD)
-	assert_eq(WheelMath.tier(2), RC.PrecisionTier.PARTIAL)
-	assert_eq(WheelMath.tier(-2), RC.PrecisionTier.PARTIAL)
-	assert_eq(RC.PrecisionTier.keys().size(), 3, "exactly Partial, Good, Perfect")
+	assert_eq(WheelMath.tier(2), RC.PrecisionTier.WEAK)
+	assert_eq(WheelMath.tier(-2), RC.PrecisionTier.WEAK)
+	assert_eq(RC.PrecisionTier.keys().size(), 3, "exactly Weak, Good, Perfect")
 	assert_false(RC.PrecisionTier.keys().has("MISS"))
 	for tick in 30:
 		assert_true(absi(WheelMath.offset_at(tick)) <= 2, "every tick is within 2 of a centre")

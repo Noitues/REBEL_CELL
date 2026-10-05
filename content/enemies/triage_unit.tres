@@ -3,12 +3,12 @@
 [ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="2"]
 [ext_resource type="Script" path="res://scripts/data/wheel_slot_data.gd" id="3"]
-[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="s_def"]
-[ext_resource type="Resource" path="res://content/slices/heal_6.tres" id="s_heal"]
-[ext_resource type="Resource" path="res://content/slices/atk_6.tres" id="s_atk"]
+[ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="s_def"]
+[ext_resource type="Resource" path="res://content/slices/hotfix_6.tres" id="s_heal"]
+[ext_resource type="Resource" path="res://content/slices/shim_6.tres" id="s_atk"]
 [ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
 
-; Triage Unit (GDD A.3): 45 HP; Def 8, Heal 6, Atk 6, Heal 6, Def 8, Miss.
+; Triage Unit (GDD A.3): 45 HP; Defrag 8, Hotfix 6, Shim 6, Hotfix 6, Defrag 8, Miss.
 
 [sub_resource type="Resource" id="slot_def"]
 script = ExtResource("3")

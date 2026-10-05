@@ -3,8 +3,8 @@ extends Control
 ## Raid execution drawn on the city map (Animation pass ANIM-5, handoff 4.15): threats
 ## travel their street routes between nodes, guns fire traces, ICE LOCK rings close on a
 ## threat and freeze it, a DECOY's lure pulls a threat aside, damage numbers pop off
-## nodes, HOLDS / DISABLED / SEIZED / BREACHED stamps flip onto nodes, the home server's
-## integrity drains with a lag bar, and a Seized node tints the streets round it in the
+## nodes, HOLDS / DOWN / TAKEN / BREACHED stamps flip onto nodes, the home server's
+## integrity drains with a lag bar, and a TAKEN node tints the streets round it in the
 ## corporation's colour until the city's real tint spreads (NeonCity).
 ##
 ## A child of a CityMapOverlay (it pans and zooms with the city; sizes are screen px x the
@@ -15,8 +15,8 @@ extends Control
 
 ## Node outcomes (RaidResolver) and their stamp words (the raid summary's words, in the
 ## same order), translated when drawn.
-const STAMP_OUTCOMES: Array[String] = ["holds", "disabled", "seized", "passed", "breached"]
-const STAMP_TEXT: Array[String] = ["HOLDS", "DISABLED", "SEIZED", "PASSED", "BREACHED"] # TR
+const STAMP_OUTCOMES: Array[String] = ["holds", "down", "taken", "passed", "breached"]
+const STAMP_TEXT: Array[String] = ["HOLDS", "DOWN", "TAKEN", "PASSED", "BREACHED"] # TR
 ## Screen px (x screen_k): stamp lettering, its padding, tilt (degrees) and lift over
 ## the icon; damage numbers; traces; hit rings; the home bar and its gap under CORE.
 ## ANIM-R1 M4: stamps, numbers, traces and tokens grew (the raid was unreadable at map
@@ -58,10 +58,10 @@ const BANNER_MOTION := &"raid_result_banner"
 ## The banner's words (translated when drawn). ANIM-R3 B5: the banner is home's one verdict
 ## (home gets no stamp of its own): what it lost and the resolved outcome. ANIM-R4 H3: in
 ## the raid verdict's words (RaidVerdict): "HOME -5 · HOLDS" (never "HOME HIT"), and
-## CAMPAIGN LOST, the verdict's own word, when the home server fell.
+## BREACHED, the verdict's own word, when the home server fell.
 const BANNER_HOME := "HOME %s · HOLDS" # TR
 const BANNER_HOLDS := "HOME HOLDS" # TR
-const BANNER_BREACHED := RaidVerdict.LOST
+const BANNER_BREACHED := RaidVerdict.BREACHED
 ## ANIM-R3 B5: gap between the banner and what it keeps clear of, and from the map's edge
 ## (screen px x screen_k); numbers on one node stack this many of their lines apart.
 const BANNER_CLEAR := 8.0
@@ -74,7 +74,7 @@ const NUMBER_HOLD_SHARE := 0.66
 ## ANIM-R1 M4: a hit on the home server shows now (its number starts): `damage` from Site
 ## `site` (the screen flies the number into its home counter).
 signal home_hit_shown(damage: int, site: StringName)
-## Alpha of a Seized node's corporate tint disc (its reach is CityInfluence.RADIUS lots).
+## Alpha of a TAKEN node's corporate tint disc (its reach is CityInfluence.RADIUS lots).
 const TINT_ALPHA := 0.24
 ## ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): each drawn effect's motion entry,
 ## whose tier it keeps to. All are local (T2 on a node or a threat, T3 for a district's tint
@@ -296,23 +296,23 @@ func play_beat(b: Dictionary, t0: float) -> void:
 			var site := StringName(e["site"])
 			_node_left[String(site)] = int(_node_left.get(String(site), 0)) + int(e.get("amount", 0))
 			_number(site, int(e.get("amount", 0)), Palette.CELL_ACID, t0, dur)
-		"disabled":
+		"down":
 			# ANIM-R3 B5: the hit that disables takes what integrity was left (its own number).
 			var site := StringName(e["site"])
 			var left := int(_node_left.get(String(site), 0))
 			if left > 0:
 				_number(site, -left, Palette.CELL_PINK, t0, dur)
 			_node_left[String(site)] = 0
-			_stamp(site, "disabled", Palette.CELL_PINK, t0, dur)
-		"seized":
-			# ANIM-R3 B5: a Site seized with integrity left (threats standing on it at the step
+			_stamp(site, "down", Palette.CELL_PINK, t0, dur)
+		"taken":
+			# ANIM-R3 B5: a Site taken with integrity left (threats standing on it at the step
 			# cap) loses it all: its own number, so the numbers add up to before - after.
-			var seized_site := StringName(e["site"])
-			var seized_left := int(_node_left.get(String(seized_site), 0))
-			if seized_left > 0:
-				_number(seized_site, -seized_left, Palette.RESIST_GOLD, t0, dur)
-			_node_left[String(seized_site)] = 0
-			_stamp(seized_site, "seized", Palette.RESIST_GOLD, t0, dur)
+			var taken_site := StringName(e["site"])
+			var taken_left := int(_node_left.get(String(taken_site), 0))
+			if taken_left > 0:
+				_number(taken_site, -taken_left, Palette.RESIST_GOLD, t0, dur)
+			_node_left[String(taken_site)] = 0
+			_stamp(taken_site, "taken", Palette.RESIST_GOLD, t0, dur)
 			_tints.append({"site": StringName(e["site"]), "t0": t0, "dur": RaidBeats.raw_seconds(&"influence_spread")})
 		"home_lost":
 			# ANIM-R3 B5: home's verdict is its banner (no stamp over it).
@@ -374,12 +374,12 @@ const WITHDRAW_MOTION := &"raid_threat_withdraw"
 var _withdraw_len: float = 0.0
 
 
-## ANIM-R3 B5: a stamp's colour by outcome (acid holds, gold seized, pink the rest).
+## ANIM-R3 B5: a stamp's colour by outcome (acid holds, gold taken, pink the rest).
 static func stamp_color(outcome: String) -> Color:
 	match outcome:
 		"holds":
 			return Palette.CELL_ACID
-		"seized":
+		"taken":
 			return Palette.RESIST_GOLD
 	return Palette.CELL_PINK
 
@@ -982,7 +982,7 @@ func _draw_home(k: float) -> void:
 	draw_rect(Rect2(r.position, Vector2(w * now, h)), Palette.CELL_ACID if now > 0.5 else Palette.CELL_PINK)
 
 
-## Seized nodes' corporate tint: a soft disc grows over the streets round the node and
+## TAKEN nodes' corporate tint: a soft disc grows over the streets round the node and
 ## holds (the city's own tint is baked at the raid's end) until the city's spread starts.
 func _draw_tints(_k: float) -> void:
 	var fade := 1.0

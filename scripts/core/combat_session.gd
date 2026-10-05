@@ -92,7 +92,7 @@ func can_rewind() -> bool:
 func rewind() -> CombatResult:
 	var result := CombatResult.new()
 	if not can_rewind():
-		result.error = "Nothing to rewind: the last checkpoint is a random event."
+		result.error = "Nothing to undo: a random event came since (UNDO stops there)."
 		result.state = state
 		return result
 	var to_replay := actions_since_checkpoint.duplicate()

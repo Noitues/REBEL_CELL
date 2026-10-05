@@ -1,6 +1,6 @@
 extends GutTest
 ## M8 corporation selection and Meridian Freight Systems (GAP_ANALYSIS P0 3, P1 8):
-## unlock gating, per-corporation raids, pools, boss hub, Tariff slice, voice, picker.
+## unlock gating, per-corporation raids, pools, boss hub, Priority slice, voice, picker.
 
 var _resolver: CombatResolver
 var _cfg: CampaignConfigData
@@ -79,33 +79,47 @@ func test_meridian_netruns_use_meridian_pools() -> void:
 	assert_true(pools["events"].has(&"ev_rival_crew"), "corporation-neutral events are shared")
 
 
-func test_the_manifest_shields_itself_unless_breached() -> void:
+## ART-0 (ruling 6.1): the Manifest's hub is the Customs Seal (`customs_seal`); rules unchanged.
+func test_the_manifest_customs_seal_gains_4_shield_each_turn_unless_breached() -> void:
+	var hub: HubCoreData = (_lookup.get_content(&"the_manifest") as EnemyData).wheel.hub
+	assert_eq(hub.id, &"customs_seal")
+	assert_eq(hub.display_name, "Customs Seal")
 	var s := CombatSession.start(_resolver, &"breaker", [&"the_manifest"], 4)
 	CombatFixture.land(s.state.player, 5)
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 5)
 	var r := s.apply(CombatAction.end_turn())
-	var shielded := false
+	assert_eq(_shield_on_boss(r), 4, "Customs Seal: +4 shield at turn start")
+	var events: Array[Dictionary] = []
+	_resolver.fx.hub_breach(s.state.get_combatant(&"enemy_0"), 1, events)
+	CombatFixture.land(s.state.player, 5)
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 5)
+	r = s.apply(CombatAction.end_turn())
+	assert_eq(_shield_on_boss(r), 0, "breached: no shield this turn")
+
+
+func _shield_on_boss(r: CombatResult) -> int:
+	var total := 0
 	for e in CombatFixture.events_of(r, "shield"):
 		if e["target"] == &"enemy_0":
-			shielded = true
-	assert_true(shielded, "Priority Routing: +4 shield at turn start")
+			total += int(e.get("amount", 0))
+	return total
 
 
-func test_tariff_drains_ram() -> void:
+func test_priority_drains_ram() -> void:
 	var s := CombatSession.start(_resolver, &"breaker", [&"customs_scanner"], 4)
-	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Tariff
+	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 1)  # Priority
 	CombatFixture.land(s.state.player, 5)
 	var r := s.apply(CombatAction.end_turn())
 	var drained := false
 	for e in CombatFixture.events_of(r, "ram"):
 		if int(e["amount"]) < 0:
 			drained = true
-	assert_true(drained, "Tariff drains RAM")
+	assert_true(drained, "Priority drains RAM")
 
 
 func test_meridian_voice_and_briefings() -> void:
 	assert_ne(Dialogue.briefing(&"meridian", &"m1_a"), "")
-	assert_ne(Dialogue.briefing(&"meridian", &"the_manifest_site"), "")
+	assert_ne(Dialogue.briefing(&"meridian", &"the_master_manifest"), "")
 	var mer := Dialogue.raid_warning(&"meridian", &"raid_heat_25")
 	var sol := Dialogue.raid_warning(&"solace", &"raid_heat_25")
 	assert_true(mer.begins_with("MERIDIAN"), mer)

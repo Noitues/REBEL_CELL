@@ -192,14 +192,14 @@ func test_grid_nodes_are_never_dimmed() -> void:
 
 func test_node_icons_are_distinct_and_the_legend_draws_them() -> void:
 	var route := [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_EVENT, CityMapOverlay.KIND_RACK]
-	var grid := [CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_BOSS, CityMapOverlay.KIND_HOME, CityMapOverlay.KIND_TIER]
+	var grid := [CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_CENTRAL_SERVER, CityMapOverlay.KIND_HOME, CityMapOverlay.KIND_TIER]
 	for kinds in [route, grid]:
 		var shapes := {}
 		for kind in kinds:
 			shapes[str(CityMapOverlay.icon_shape(kind, Vector2.ZERO, 10.0))] = kind
 		assert_eq(shapes.size(), kinds.size(), "each kind on a map has its own silhouette: %s" % [kinds])
 	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.ROUTER, true), CityMapOverlay.KIND_ELITE)
-	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.MODEM, false), CityMapOverlay.KIND_SHOP)
+	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.MAINFRAME, false), CityMapOverlay.KIND_SHOP)
 	assert_eq(CityMapOverlay.route_kind(RC.InfilNodeType.SERVER_RACK, false), CityMapOverlay.KIND_RACK)
 	assert_true(CityMapOverlay.ICON_RADIUS >= 12.0, "icons read at a glance")
 	# The legend's icon rows are exactly the Grid's kinds, drawn by the map's painter.

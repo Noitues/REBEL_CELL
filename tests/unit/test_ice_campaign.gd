@@ -1,6 +1,6 @@
 extends GutTest
 ## Campaign-side ICE modifiers (GDD 11.9): Heat gain/sink scaling, the pulled-down Purge,
-## fewer Heat-objective Sites, death and Exploit Heat, Cycle prices, repair costs, Seized
+## fewer Heat-objective Sites, death and Exploit Heat, Cycle prices, repair costs, TAKEN
 ## raid strength and the extra raid wave. Each reads the ladder through
 ## CampaignState.rule_modifier at the ICE level that introduces it.
 
@@ -81,7 +81,7 @@ func test_ice_8_adds_5_heat_to_deaths_and_ice_16_adds_5_to_exploits() -> void:
 	CombatFixture.land(s.combat.state.player, 5)
 	var e := s.combat.state.get_combatant(&"enemy_0")
 	for i in e.wheel.slot_slice_ids.size():
-		if (_lookup.get_content(e.wheel.slot_slice_ids[i]) as SliceData).slice_type == RC.SliceType.ATTACK:
+		if (_lookup.get_content(e.wheel.slot_slice_ids[i]) as SliceData).slice_type == RC.SliceType.SHIM:
 			CombatFixture.land(e, i)
 			break
 	var guard := 0
@@ -99,7 +99,7 @@ func test_ice_8_adds_5_heat_to_deaths_and_ice_16_adds_5_to_exploits() -> void:
 	assert_eq(c16.heat - before, roundi(15 * 1.1), "Exploit: (10 + ICE 16) x ICE 1 gain")
 
 
-func test_ice_4_raises_every_modem_price_by_10_percent() -> void:
+func test_ice_4_raises_every_mainframe_price_by_10_percent() -> void:
 	var c := _campaign(4)
 	var s := NetrunSession.start(_resolver, c, c.roster[0].id, 1, &"t1_a", 3)
 	assert_eq(s.card_removal_price(), 55)
@@ -115,18 +115,18 @@ func test_ice_13_makes_repairs_cost_25_percent_more() -> void:
 	CampaignRules.on_run_completed(c, _corp, _cfg, _run(&"t1_a"))
 	CampaignRules.claim(c, _corp, _cfg, _lookup, &"t1_a", &"firewall_relay")
 	var s := c.grid.site(&"t1_a")
-	s["condition"] = GridState.Condition.DISABLED
+	s["condition"] = GridState.Condition.DOWN
 	s["integrity"] = 0
 	var schematics := c.schematics
 	CampaignRules.repair(c, _cfg, _lookup, &"t1_a")
 	assert_eq(schematics - c.schematics, 19, "15 x 1.25 = 18.75 -> 19")
 
 
-func test_ice_14_strengthens_raids_from_seized_sites_and_ice_19_adds_a_wave() -> void:
+func test_ice_14_strengthens_raids_from_taken_sites_and_ice_19_adds_a_wave() -> void:
 	var c := _campaign(14)
-	c.grid.site(&"t1_a")["status"] = GridState.SiteStatus.SEIZED
+	c.grid.site(&"t1_a")["status"] = GridState.SiteStatus.TAKEN
 	var pending := {"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "site_id": "t1_a"}
-	assert_eq(CampaignRules.raid_strength_pct(c, _cfg, pending, _corp), 25.0 + 15.0, "ICE 5 +15 and Seized +25")
+	assert_eq(CampaignRules.raid_strength_pct(c, _cfg, pending, _corp), 25.0 + 15.0, "ICE 5 +15 and TAKEN +25")
 	var plain := {"raid_id": "raid_heat_25", "source": RC.RaidTriggerSource.HEAT_THRESHOLD, "site_id": "t1_b"}
 	assert_eq(CampaignRules.raid_strength_pct(c, _cfg, plain, _corp), 15.0)
 	var c19 := _campaign(19)

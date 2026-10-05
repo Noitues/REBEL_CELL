@@ -61,9 +61,9 @@ func test_audit_rides_attack_slices_only() -> void:
 	var def: SliceData = null
 	for id in officer.wheel.slot_slice_ids:
 		var sl := r.lookup.get_content(id) as SliceData
-		if sl.slice_type == RC.SliceType.ATTACK:
+		if sl.slice_type == RC.SliceType.SHIM:
 			atk = sl
-		elif sl.slice_type == RC.SliceType.DEFEND:
+		elif sl.slice_type == RC.SliceType.DEFRAG:
 			def = sl
 	assert_eq(r._heat_listeners(s.state, officer, def).size(), 0, "no Audit on a Defend")
 	assert_eq(r._heat_listeners(s.state, officer, atk).size(), 1, "Audit on an attack")
@@ -115,7 +115,7 @@ func test_terminal_choices_refuse_unfit_firmware_and_missing_cycles() -> void:
 	var s := _netrun()
 	var fw := EventChoiceData.new()
 	fw.reward = ContentRegistry.get_content(&"nanite_mesh")
-	assert_string_contains(s.choice_error(fw), "fits no slice", "a Breaker has no HEAL slice")
+	assert_string_contains(s.choice_error(fw), "fits no slice", "a Breaker has no HOTFIX slice")
 	var pricey := EventChoiceData.new()
 	pricey.cycle_cost = s.run.cycles + 1
 	assert_string_contains(s.choice_error(pricey), "Not enough Cycles")
@@ -124,7 +124,7 @@ func test_terminal_choices_refuse_unfit_firmware_and_missing_cycles() -> void:
 func test_a_start_of_turn_kill_ends_the_fight() -> void:
 	var zap := CombatFixture.triggered(RC.Trigger.ON_TURN_START, [CombatFixture.effect(RC.EffectType.DEAL_DAMAGE, RC.EffectTarget.ALL_ENEMIES, 999)])
 	var hub := CombatFixture.hub(&"h14_zap", 0, [zap])
-	var atk := CombatFixture.slice(&"h14_atk", RC.SliceType.ATTACK, 6)
+	var atk := CombatFixture.slice(&"h14_atk", RC.SliceType.SHIM, 6)
 	var deck: Array[CardData] = [CombatFixture.card(&"h14_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h14_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, atk], hub), deck)
 	var enemy := CombatFixture.enemy(&"h14_dummy", 50, CombatFixture.miss_wheel())

@@ -52,7 +52,7 @@ static func tier(offset: int) -> RC.PrecisionTier:
 		1:
 			return RC.PrecisionTier.GOOD
 		_:
-			return RC.PrecisionTier.PARTIAL
+			return RC.PrecisionTier.WEAK
 
 
 ## Inner ring segment (0-2) under `inner_tick`; segment k is centred on tick 10*k.

@@ -33,7 +33,7 @@ static func effect(type: int, target: int, amount: int = 0, scope: int = RC.Ring
 	return e
 
 
-static func triggered(trigger: int, effects: Array[EffectData], min_tier: int = RC.PrecisionTier.PARTIAL, consecutive: int = 1, limit: int = 0) -> TriggeredEffectData:
+static func triggered(trigger: int, effects: Array[EffectData], min_tier: int = RC.PrecisionTier.WEAK, consecutive: int = 1, limit: int = 0) -> TriggeredEffectData:
 	var t := TriggeredEffectData.new()
 	t.trigger = trigger
 	t.effects = effects

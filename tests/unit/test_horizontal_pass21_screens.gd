@@ -1,7 +1,7 @@
 extends GutTest
 ## H21 screens (GAP_ANALYSIS H21 #10-15, #19, #21; DECISIONS "H21 screens"): an icon on
 ## every stat tag and the same icon wherever the resource shows; subtitles in a band of
-## their own that covers no control and no stat tag; the Modem's wallet and price tags
+## their own that covers no control and no stat tag; the Mainframe's wallet and price tags
 ## (the RAM circle keeps the card's RAM cost); slot names in the socket lists; event
 ## choice outcomes as icons; icons on menus and Skip / Leave; route buttons that differ
 ## and say what the node is on every device; big text that reaches the cards, tags and
@@ -277,7 +277,7 @@ func test_subtitles_cover_no_control_and_no_stat_tag_on_any_screen() -> void:
 		await _assert_clear(scene, "route")
 		_shop(scene)
 		await _frames()
-		await _assert_clear(scene, "Modem")
+		await _assert_clear(scene, "Mainframe")
 		_event(scene)
 		await _frames()
 		await _assert_clear(scene, "event")
@@ -304,7 +304,7 @@ func test_a_fight_gets_its_height_back_and_its_own_dock() -> void:
 		assert_true(scene.hud.stats.get_combined_minimum_size().y <= HudBar.BAND_HEIGHT + 0.5, "the tags keep the top bar's height in a fight")
 
 
-func test_the_modem_shows_the_wallet() -> void:
+func test_the_mainframe_shows_the_wallet() -> void:
 	for scale in [1.0, Settings.TEXT_SCALE_MAX]:
 		Settings.set_text_scale(scale)
 		RunManager.new_campaign(1)
@@ -312,7 +312,7 @@ func test_the_modem_shows_the_wallet() -> void:
 		_shop(scene)
 		await _frames()
 		var wallet := scene._panel.find_child("Wallet", true, false) as HudStats
-		assert_not_null(wallet, "the Modem has its wallet")
+		assert_not_null(wallet, "the Mainframe has its wallet")
 		assert_eq(String(wallet.items[0][1]), str(RunManager.netrun.run.cycles), "the Cycles you have")
 		assert_eq(wallet.icon_of(0), StatIcon.CYCLES, "with the coin")
 		assert_ne(wallet._get_tooltip(wallet.tag_rects()[0].get_center()), "", "and says what it is")
@@ -324,7 +324,7 @@ func test_the_modem_shows_the_wallet() -> void:
 
 # --- #12 price tags, RAM circles, slot names ------------------------------------------------
 
-func test_modem_prices_hang_on_tags_and_the_circle_keeps_the_ram_cost() -> void:
+func test_mainframe_prices_hang_on_tags_and_the_circle_keeps_the_ram_cost() -> void:
 	var scene := _netrun()
 	_shop(scene)
 	await _frames()
@@ -468,7 +468,7 @@ func test_menus_and_skip_leave_carry_icons() -> void:
 	_shop(scene)
 	await _frames()
 	var leave := scene._panel.find_child("LeaveIcon", true, false) as IconMark
-	assert_not_null(leave, "LEAVE THE MODEM has its icon")
+	assert_not_null(leave, "LEAVE MAINFRAME has its icon")
 	assert_eq(leave.kind, StatIcon.EXIT)
 	assert_ne(leave.tooltip_text, "", "and a tooltip")
 
@@ -506,7 +506,7 @@ func test_route_buttons_differ_and_say_what_the_node_is_on_both_devices() -> voi
 	var elite := {"type": RC.InfilNodeType.ROUTER, "elite": true}
 	assert_eq(scene.node_word(elite), "Elite fight")
 	assert_eq(scene.node_icon(elite), StatIcon.ELITE)
-	for t in [RC.InfilNodeType.ROUTER, RC.InfilNodeType.TERMINAL, RC.InfilNodeType.MODEM, RC.InfilNodeType.SERVER_RACK]:
+	for t in [RC.InfilNodeType.ROUTER, RC.InfilNodeType.TERMINAL, RC.InfilNodeType.MAINFRAME, RC.InfilNodeType.SERVER_RACK]:
 		var node := {"type": t, "elite": false}
 		assert_ne(scene.node_word(node), "?")
 		assert_true(StatIcon.ALL.has(scene.node_icon(node)))
@@ -547,13 +547,13 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 	await _frames()
 	var stickers: Node = scene._panel.find_child("Stickers", true, false)
 	var card := stickers.get_child(0) as ZineCard
-	assert_true(card.text_scale > 1.2, "Modem cards grow (%.2f)" % card.text_scale)
+	assert_true(card.text_scale > 1.2, "Mainframe cards grow (%.2f)" % card.text_scale)
 	var cards_win := stickers.get_parent().get_parent() as Control
 	assert_true(cards_win.get_global_rect().grow(1.0).encloses(card.get_global_rect()), "and stay in their quadrant")
 	for n in _all(scene._panel):
 		if n is ZineCard and (n as ZineCard).look != ZineCard.Look.STICKER:
 			assert_almost_eq((n as ZineCard).text_scale, Settings.TEXT_SCALE_MAX, 0.01, "tile lettering grows")
-	for id in ["LeaveModem", "Wallet"]:
+	for id in ["LeaveMainframe", "Wallet"]:
 		var r := (scene._panel.find_child(id, true, false) as Control).get_global_rect()
 		assert_true(r.end.y <= CANVAS.y, "%s on screen at TEXT_SCALE_MAX: %s" % [id, r])
 	_loot(scene)

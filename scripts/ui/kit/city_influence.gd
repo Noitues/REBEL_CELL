@@ -2,7 +2,7 @@ class_name CityInfluence
 extends RefCounted
 ## Territory colour influence on the city (view-only, H20): the campaign's Grid state
 ## pulls the city's ink toward the Cell or the corporation around each Site. A claimed
-## Site tints its blocks toward the Cell's pink, a cleared one a little; a Seized or
+## Site tints its blocks toward the Cell's pink, a cleared one a little; a TAKEN or
 ## disabled Site pulls them back toward the corporation. Raid results sway the whole
 ## corporate territory and the blocks round every one of its Sites, wherever they stand
 ## (won raids toward the Cell, lost ones toward the corporation).
@@ -12,9 +12,9 @@ extends RefCounted
 ## Weight per Site status (+ = the Cell, - = the corporation).
 const WEIGHT_CLAIMED := 1.0
 const WEIGHT_CLEARED := 0.45
-const WEIGHT_SEIZED := -1.0
-## A claimed Site knocked out in a raid (condition DISABLED) pulls this far back.
-const WEIGHT_DISABLED := -0.6
+const WEIGHT_TAKEN := -1.0
+## A claimed Site knocked out in a raid (condition DOWN) pulls this far back.
+const WEIGHT_DOWN := -0.6
 ## How far a Site's pull reaches (lots) and its falloff exponent.
 const RADIUS := 7.5
 const FALLOFF := 2.0
@@ -60,12 +60,12 @@ static func weight_of(grid: GridState, site_id: StringName) -> float:
 	match grid.status_of(site_id):
 		GridState.SiteStatus.CLAIMED:
 			w = WEIGHT_CLAIMED
-			if int(grid.site(site_id).get("condition", GridState.Condition.OK)) == GridState.Condition.DISABLED:
-				w += WEIGHT_DISABLED
+			if int(grid.site(site_id).get("condition", GridState.Condition.OK)) == GridState.Condition.DOWN:
+				w += WEIGHT_DOWN
 		GridState.SiteStatus.CLEARED:
 			w = WEIGHT_CLEARED
-		GridState.SiteStatus.SEIZED:
-			w = WEIGHT_SEIZED
+		GridState.SiteStatus.TAKEN:
+			w = WEIGHT_TAKEN
 	return w
 
 

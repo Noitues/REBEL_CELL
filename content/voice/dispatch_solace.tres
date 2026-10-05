@@ -155,19 +155,19 @@ text = "The ledger. Every Cell transaction they have reconstructed. Burn it and 
 
 [sub_resource type="Resource" id="l30"]
 script = ExtResource("2")
-key = "site:renewal_engine_site"
+key = "site:the_genome_core"
 text = "The Renewal Engine. Three Exploits in hand. It heals ten a turn unless you breach the Hub. Go."
 
 [sub_resource type="Resource" id="l31"]
 script = ExtResource("2")
-key = "site:renewal_engine_site"
+key = "site:the_genome_core"
 text = "The Renewal Engine. I have run this breach four hundred times. Follow the plan exactly."
 drift_stage = 1
 dispatch_clue = true
 
 [sub_resource type="Resource" id="l32"]
 script = ExtResource("2")
-key = "site:renewal_engine_site"
+key = "site:the_genome_core"
 text = "The Renewal Engine. Its collapse is scheduled. You are the schedule. Proceed."
 drift_stage = 2
 dispatch_clue = true

@@ -1,6 +1,6 @@
 class_name BuyButton
 extends StickerButton
-## A shop item's buy button (H23 S8: the Modem's price tags and the BUY / SHRED notes on
+## A shop item's buy button (H23 S8: the Mainframe's price tags and the BUY / SHRED notes on
 ## its sign did not read as buttons): a taped yellow sticker at the foot of the item's
 ## card or tile reading "BUY ⊙45" (the coin drawn), "BUY ⊙100-150" when the price depends
 ## on the slot, and the pad button that presses it ("A") while its item has focus and a

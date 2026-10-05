@@ -105,7 +105,7 @@ func test_the_final_boss_is_tier_scaled_too() -> void:
 		c.grid.sites[id]["status"] = GridState.SiteStatus.CLEARED
 	var op := c.living_operatives()[0]
 	op.rank = 3
-	var s := RunManager.start_run(op.id, &"renewal_engine_site")
+	var s := RunManager.start_run(op.id, &"the_genome_core")
 	assert_eq(s.run.kind, "boss")
 	assert_eq(s.enemy_scale(), pow(1.6, 3))
 	s.enter_node(s.available_nodes()[0])

@@ -78,7 +78,7 @@ DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-
 - **Wheels:** neon gauge rings; translucent slices (attack/crit `cell_pink`,
   defend/shield `net_cyan`, evade/heal green, afflict/deploy violet) with a bright rim;
   a glyph on every slice drawn **bold**: solid black with a heavy white outline
-  (`SliceIcon.style` 4), the same on Modem slice tiles; value outside the ring; white
+  (`SliceIcon.style` 4), the same on Mainframe slice tiles; value outside the ring; white
   gauge-needle pointers; dashed outline for the Miss slice; resistance in `resist_gold`.
   A right nudge turns the wheel clockwise on screen (H20). Curved white nudge arrows sit
   at the top left (anticlockwise) and top right (clockwise) of every wheel, a second pair
@@ -107,7 +107,7 @@ DISPATCH is always Share Tech Mono on clean surfaces, never handwritten or zine-
 One line-drawn vector icon per resource and action (`StatIcon`, no font glyphs or emoji,
 so it reads in every language and at every text size), drawn in ink on paper tags and in
 the resource's colour on the dark screens. The same icon wherever the resource shows:
-top-bar tags, CELL STATUS badges, Modem price tags and wallet, event choice outcomes, run
+top-bar tags, CELL STATUS badges, Mainframe price tags and wallet, event choice outcomes, run
 and profile tags.
 
 | Resource / action | Icon | | Resource / action | Icon |
@@ -120,7 +120,7 @@ and profile tags.
 | ICE | snowflake | | Crew / operative | two people / one person |
 | HP | heart | | Firmware | chip with pins |
 | Daemon | ghost | | Fights won / fight | crossed swords / crosshair |
-| Elite | crown | | Shop (Modem) | bag |
+| Elite | crown | | Shop (Mainframe) | bag |
 | Terminal event | screen with a prompt | | Rack | server rack |
 | Play / continue | triangle / bar + triangle | | Map / Grid | folded map |
 | Codex | open book | | Settings | gear |
@@ -138,7 +138,7 @@ route and Grid buttons and the tooltips all use the same painter.
 |---|---|---|---|---|---|---|
 | Fight | circle | crossed blades | | Boss Site | star | small star |
 | Elite fight | 8-point star | crossed blades | | Exploit Site | diamond | Exploits diamond |
-| Shop (Modem) | price tag | bag | | Heat reduction Site | drop | flame + down arrow |
+| Shop (Mainframe) | price tag | bag | | Heat reduction Site | drop | flame + down arrow |
 | Event | square | ? | | CORE | house | door |
 | Rack | tall box | server blades | | Site (tier) | hexagon | its tier ("T2") |
 
@@ -240,7 +240,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   kind of entry: an entry with a motion of its own never plays (`Motion.live` is false; its
   time and size stay, the hold and look of the end state); a part of another motion that a
   view reads as a number (`UiMotionData.OFF_PARTS`: the projectile's share of a hit line,
-  the riding number's swap, shrink and PERFECT size, the break's crack, the MODEM tubes'
+  the riding number's swap, shrink and PERFECT size, the break's crack, the MAINFRAME tubes'
   strike and flicker, the forecast change's fade, the gaps between sides and attackers, the
   drag ghost's tilt, the hit freeze, a stamp's fade-in) takes no time and shows no motion
   (`Motion.seconds` / `delay_of` 0, `amplitude` 0 for a share, px or frames, 1 for a
@@ -479,7 +479,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   where it went, which shows as it lands.
 - Reduce effects and headless: no pulses, flights or marks, the end state at once. Values:
   `ui_motion.tres` (DECISIONS "Animation pass — ANIM-4"); strips `docs/timeline/motion/drag_*`.
-- **In the run too (ANIM-4b)**: Modem purchases drag onto where they go (cards onto the
+- **In the run too (ANIM-4b)**: Mainframe purchases drag onto where they go (cards onto the
   CARDS tag, Daemons onto the DAEMONS icon, microchips and slice upgrades onto a slot of
   the small spinner in the REMOVE A CARD window, or of the UPGRADE viewer's wheel); deck
   cards drag onto the REMOVE viewer's SHRED tile; loot and an event's card or Daemon drag
@@ -504,23 +504,23 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Words type in**: subtitles (the page's time starts once it is all shown), the event's
   DISPATCH text, the pirate radio. Options can make them instant; the words are always
   whole underneath, and any press shows them.
-- **Once, then hold**: drips grow the first time a tag appears; the Modem's tubes warm up
+- **Once, then hold**: drips grow the first time a tag appears; the Mainframe's tubes warm up
   and its traces light on entry; hover gives one halo pulse. Idle loops are few and slow:
   the deck monitor's hum, JACK IN breathing, the caret, a third of the HQ signs, sparse
   traffic dashes on the busiest streets. All stop under reduce effects.
 - **Settings changes animate nothing** (text size, language): the page just re-lays out.
 - **Words before choices, places kept (ANIM-R1)**: an event's choices wait for its typed
   words (ANIM-R2: readable and focusable on their paper with a typing mark; a press shows
-  the words, the first choice then has focus); shop and loot cards show their whole text; a bought Modem item stays as a SOLD
+  the words, the first choice then has focus); shop and loot cards show their whole text; a bought Mainframe item stays as a SOLD
   stub in its place; loot not taken falls away; tips keep off buttons and titles.
-- **ANIM-R3 screens**: the Modem's first focus is an item; its sign is whole within 0.3 s; a
+- **ANIM-R3 screens**: the Mainframe's first focus is an item; its sign is whole within 0.3 s; a
   flying card is a fresh copy of itself; loot not taken falls within its window; swap chips
   wear a ring pictogram; every event choice shows icons; discards keep off RESPIN / UNDO.
 - **ANIM-R4 screens**: the loot page stays (inert) until the offers not taken have fallen
   inside its window, then leaves; drawn words are translated once (LOOT / CONTINUE, the loot's
   graffiti tag and scrawls) and measured as drawn, the tag shrinking to fit its window; a
   focus tip never folds under 20 columns (`FocusTip.FOLD_MIN`, DECISIONS ANIM-R4 C7) and
-  goes beside (off the MODEM sign); a flapping BUY keeps off its card's text; a price
+  goes beside (off the MAINFRAME sign); a flapping BUY keeps off its card's text; a price
   refusal under a narrow tag wraps at its dot; an event's story types within 0.8 s on paper
   as tall as its words.
 - **ANIM-R5 netrun screens**: typing never changes a layout (words are shaped whole while
@@ -531,7 +531,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   stamp (FLATLINED / JACKED OUT / HOME FELL), the operative's fate (a flatline is for good)
   and why Heat rose. Flights take 0.7 s, arrive at x0.55 and pulse the tag they land on. A
   route move keeps its page's presses (they end the move, nothing else); "then:" icons carry
-  their words; the Modem's socket list says "Chips go into:".
+  their words; the Mainframe's socket list says "Chips go into:".
 - **Holds (ANIM-R6)**: some entries are a time, not a motion: how long an end state or a
   word shows (`resolve_landing_hold`, `resolve_result_hold`, `combat_end_hold`,
   `toast_note_hold`, `raid_incoming_hold`, `jack_connect`), a bounded wait
@@ -543,7 +543,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
 - **Which motions a press completes (ANIM-R6)**: every helper that ends its motion on a press
   (5.1) takes presses. The short motions that answer the player join the same group
   passively (`MotionSkip.register_passive`): the top bar's bumps, rolls and landing pulses
-  (`hud_stats`; DAEMONS' and VIEW LOADOUT's landing pops, `hud_bar`), the MODEM sign's warm-up (`modem_sign`), SEND IT's drips, halo and squash
+  (`hud_stats`; DAEMONS' and VIEW LOADOUT's landing pops, `hud_bar`), the MAINFRAME sign's warm-up (`mainframe_sign`), SEND IT's drips, halo and squash
   (`drip_button`), a card dealing or fanning in (`zine_card`) and a wheel's spin after a card
   (`wheel_view`). They complete with any press another helper takes (one press, every
   motion) but take none on their own: a key pressed while a tag bumps still does what it
@@ -565,7 +565,7 @@ combat's NEXT plate; solid stamps are results only (REPELLED, BREACHED after the
   has played; the event's story is on its paper only (the subtitle bar no longer repeats it).
   The run end's title agrees with its verdict (NETRUN // FLATLINED / JACK OUT / HOME FELL) and
   the fight's barks end with the fight. The loot window names what paid out (FIGHT WON, ELITE
-  DOWN, RACK BREACHED, EVENT PAYOUT); RAM on a card carries its chip icon; the Modem's sign
+  DOWN, RACK BREACHED, EVENT PAYOUT); RAM on a card carries its chip icon; the Mainframe's sign
   wears a shop bag, its BUY / SHRED notes a cart and a shredder. The jack names its
   destination large and bright under CONNECTING TO, with the Site's tier icon. A landing
   pulse waits its entry's delay; a toast holds longer at a slower speed, never shorter.

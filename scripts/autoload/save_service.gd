@@ -1,25 +1,45 @@
 extends Node
-## SaveService autoload: versioned JSON save/load (TECH_SPEC §8). M0 skeleton: it
-## writes and reads dictionaries with a top-level "version" and runs the migrations
-## table on load. Profile/campaign layouts arrive with their state classes (M2–M3).
+## SaveService autoload: versioned JSON save/load (TECH_SPEC §8). It writes and reads
+## dictionaries with a top-level "version"; a file of another version is refused (the
+## "can't load" path: an empty dictionary). There is no save or replay compatibility
+## (DECISIONS 2026-10-05, ruling 5): the migrations table stays empty.
+##
+## Where saves live (ART-0 S0, DECISIONS "Art direction — ART-0 names pass, part 1 + saves
+## folder"): a run from source writes to the project's own folder that git ignores
+## (CampaignConfigData.save_dir_source, `res://saves`), with a `.gdignore` written when the
+## folder is made so Godot never imports it; an exported build keeps
+## CampaignConfigData.save_dir_export (`user://saves`). Finished combats are written as
+## replays (CombatReplay) to the replay folder inside it, on source runs only.
 ##
 ## JSON caveat: numbers come back as floats and only integers up to 2^53 survive.
 ## Store 64-bit values (RNG states) as strings; see RngService.to_dict().
 
-const SAVE_VERSION: int = 1
-const SAVE_DIR := "user://saves"
+## ART-0 S0: bumped from 1 (names follow the display words; old saves are not read).
+const SAVE_VERSION: int = 2
 const PROFILE_FILE := "profile.json"
 const CAMPAIGN_FILE_FORMAT := "campaign_%s.json"
+## A replay's file name: its seed and the time it was written (ms), so two fights never
+## share one.
+const REPLAY_FILE_FORMAT := "replay_%s_%d.json"
+## Godot's marker that keeps a folder out of the import (a fixed engine file name).
+const GDIGNORE_FILE := ".gdignore"
+## The config the save locations come from.
+const CONFIG_PATH := preload("res://scripts/autoload/content_registry.gd").CONFIG_PATH
 
-## A GUT run's own save folder under SAVE_DIR (by process id), as Settings keeps its own
-## file: parallel test shards and test runs by other people on the machine never share a
-## save slot or a profile (Test suite optimization, docs/TEST_SUITE.md).
+## A GUT run's own save folder under the export folder (by process id), as Settings keeps
+## its own file: parallel test shards and test runs by other people on the machine never
+## share a save slot or a profile (Test suite optimization, docs/TEST_SUITE.md).
 const TEST_DIR_FORMAT := "gut_%d"
 
 ## from_version (int) -> Callable(data: Dictionary) -> Dictionary at from_version + 1.
+## Empty: no compatibility (ruling 5).
 var _migrations: Dictionary = {}
-## Where saves live: SAVE_DIR, or this test run's own folder in it.
-var save_dir: String = SAVE_DIR.path_join(TEST_DIR_FORMAT % OS.get_process_id()) if is_test_run() else SAVE_DIR
+## The save locations and the replay switch.
+var config: CampaignConfigData = load(CONFIG_PATH)
+## The folder this process saves under: the source folder or the export folder.
+var root_dir: String = base_dir_for(config, is_source_run())
+## Where saves live: root_dir, or this test run's own folder in the export folder.
+var save_dir: String = config.save_dir_export.path_join(TEST_DIR_FORMAT % OS.get_process_id()) if is_test_run() else root_dir
 
 
 ## Whether this process runs the GUT test suite (as Settings.is_test_run; SaveService loads
@@ -31,9 +51,20 @@ static func is_test_run() -> bool:
 	return false
 
 
+## Whether this process runs from source (the editor, or a project run that is not an
+## exported template build).
+static func is_source_run() -> bool:
+	return OS.has_feature("editor") or not OS.has_feature("template")
+
+
+## The save folder for a run from source (`source` true) or an exported build.
+static func base_dir_for(cfg: CampaignConfigData, source: bool) -> String:
+	return cfg.save_dir_source if source else cfg.save_dir_export
+
+
 ## A test run removes its own save folder when it ends.
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE and save_dir != SAVE_DIR:
+	if what == NOTIFICATION_PREDELETE and save_dir != root_dir:
 		_remove_tree(save_dir)
 
 
@@ -58,9 +89,37 @@ func campaign_path(campaign_id: String) -> String:
 	return save_dir.path_join(CAMPAIGN_FILE_FORMAT % campaign_id)
 
 
+## The folder replays are written to (inside the save folder).
+func replay_dir() -> String:
+	return save_dir.path_join(config.replay_subdir)
+
+
+## Whether a finished combat writes its replay: the config's switch, on a run from source,
+## never in a test run (a test that wants one calls write_replay with its own folder).
+func replays_enabled() -> bool:
+	return config.write_replays and is_source_run() and not is_test_run()
+
+
 ## Registers a migration that upgrades data from `from_version` to `from_version + 1`.
 func register_migration(from_version: int, migration: Callable) -> void:
 	_migrations[from_version] = migration
+
+
+## Makes `dir_path` (and its parents). A folder made under the source save folder gets a
+## `.gdignore` at that folder's root so Godot never imports what is saved there.
+func ensure_dir(dir_path: String) -> Error:
+	var err := DirAccess.make_dir_recursive_absolute(dir_path)
+	if err != OK:
+		return err
+	var root := config.save_dir_source
+	if dir_path == root or dir_path.begins_with(root + "/"):
+		var marker := root.path_join(GDIGNORE_FILE)
+		if not FileAccess.file_exists(marker):
+			var f := FileAccess.open(marker, FileAccess.WRITE)
+			if f == null:
+				return FileAccess.get_open_error()
+			f.close()
+	return OK
 
 
 ## Writes `data` as JSON at `path`, stamping the current SAVE_VERSION. Creates the
@@ -68,7 +127,7 @@ func register_migration(from_version: int, migration: Callable) -> void:
 func save_dict(path: String, data: Dictionary) -> Error:
 	var stamped := data.duplicate(true)
 	stamped["version"] = SAVE_VERSION
-	var dir_error := DirAccess.make_dir_recursive_absolute(path.get_base_dir())
+	var dir_error := ensure_dir(path.get_base_dir())
 	if dir_error != OK:
 		SignalBus.save_failed.emit(path, dir_error)
 		return dir_error
@@ -84,7 +143,7 @@ func save_dict(path: String, data: Dictionary) -> Error:
 
 
 ## Reads and migrates the JSON dictionary at `path`. Returns an empty dictionary
-## (and pushes an error) when the file is missing, unparsable or newer than this build.
+## (and pushes an error) when the file is missing, unparsable or of another version.
 func load_dict(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		push_error("SaveService: no file at %s." % path)
@@ -115,6 +174,35 @@ func migrate(data: Dictionary) -> Dictionary:
 		current["version"] = version
 	current["version"] = SAVE_VERSION
 	return current
+
+
+## Writes the replay of the finished `session` (CombatReplay) into `dir` (replay_dir() when
+## empty). Returns the file's path, or "" when it could not be written.
+func write_replay(session: CombatSession, dir: String = "") -> String:
+	var folder := dir if dir != "" else replay_dir()
+	var data := CombatReplay.record(session)
+	var path := folder.path_join(REPLAY_FILE_FORMAT % [data["seed"], Time.get_ticks_msec()])
+	var n := 1
+	while FileAccess.file_exists(path):
+		path = folder.path_join(REPLAY_FILE_FORMAT % [data["seed"], Time.get_ticks_msec() + n])
+		n += 1
+	return path if save_dict(path, data) == OK else ""
+
+
+## Writes the replay of a combat that just ended, when replays are on (replays_enabled).
+## Returns the path written, or "".
+func record_replay(session: CombatSession) -> String:
+	if session == null or session.state == null or not session.state.is_over() or not replays_enabled():
+		return ""
+	return write_replay(session)
+
+
+## Reads a replay file (load_dict; {} when missing, of another version or not a replay).
+func load_replay(path: String) -> Dictionary:
+	var data := load_dict(path)
+	if String(data.get("kind", "")) != CombatReplay.KIND:
+		return {}
+	return data
 
 
 ## Campaign slot names with a save file, sorted.

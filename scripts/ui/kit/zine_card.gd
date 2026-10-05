@@ -11,7 +11,7 @@ enum Variant { PAPER, BLACK, PINK }
 ## Selection marks drawn over the card.
 enum Mark { NONE, CROSS, CIRCLE }
 ## STICKER: the zine card (hand, loot). CHIP / CARD_TILE: shop tiles (reference: the
-## Modem's microchips and card builder) with an icon, a name and a Cycle price.
+## Mainframe's Firmware and card builder) with an icon, a name and a Cycle price.
 enum Look { STICKER, CHIP, CARD_TILE, SLICE_TILE }
 
 var card_title: String = ""
@@ -28,7 +28,7 @@ var look: int = Look.STICKER
 ## Icon colour for shop tiles.
 var accent: Color = Palette.NET_CYAN
 ## SLICE_TILE: the slice type and output drawn as the wheel draws them.
-var slice_type: int = RC.SliceType.ATTACK
+var slice_type: int = RC.SliceType.SHIM
 var slice_output: int = 0
 ## CARD_TILE icon: "" (mini card), "shred" (card through a shredder), "deck" (a fanned stack).
 var icon_kind: String = ""
@@ -64,9 +64,9 @@ const CUSTOM_PICTOS := {"calibrate_handler": "FREE NUDGE x%d", "momentum_handler
 const STICKER_FOOT := 26.0
 const TILE_GAP := 2.0
 ## Slice icon for each effect that does what a slice does.
-const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.ATTACK, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFEND,
-	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.EVADE, RC.EffectType.HEAL: RC.SliceType.HEAL,
-	RC.EffectType.DEPLOY_DRONE: RC.SliceType.DEPLOY, RC.EffectType.APPLY_STATUS: RC.SliceType.AFFLICT}
+const EFFECT_SLICE := {RC.EffectType.DEAL_DAMAGE: RC.SliceType.SHIM, RC.EffectType.GAIN_BLOCK: RC.SliceType.DEFRAG,
+	RC.EffectType.GAIN_SHIELD: RC.SliceType.SHIELD, RC.EffectType.EVADE: RC.SliceType.DETOUR, RC.EffectType.HEAL: RC.SliceType.HOTFIX,
+	RC.EffectType.DEPLOY_DRONE: RC.SliceType.DEPLOY, RC.EffectType.APPLY_STATUS: RC.SliceType.INFECT}
 ## Lettering scale (the combat hand follows Settings.text_scale; see scaled()).
 var text_scale: float = 1.0
 ## Sticker size and lettering at scale 1.0.
@@ -80,7 +80,7 @@ const BODY_TOP := 58.0
 ## word fits; never under FIT_MIN_TEXT px (past that the focus tip carries the rest).
 ## Off for the combat hand (its cards keep their layout).
 var fit_whole: bool = false
-## ANIM-R1 M11: a Modem item bought on this visit: its place stays, dimmed and stamped SOLD.
+## ANIM-R1 M11: a Mainframe item bought on this visit: its place stays, dimmed and stamped SOLD.
 var sold_stub: bool = false
 const SOLD_WORD := "SOLD" # TR
 const SOLD_FONT := 22
@@ -191,7 +191,7 @@ func scaled(s: float) -> ZineCard:
 
 
 ## A fresh copy of how this card or tile looks (no buy sticker, no hotkey, not pressable):
-## the ghost and the flying copies of a dragged Modem, loot or deck item (ANIM-4b).
+## the ghost and the flying copies of a dragged Mainframe, loot or deck item (ANIM-4b).
 func ghost_copy() -> ZineCard:
 	var g := ZineCard.new(card_title, cost, description, 0)
 	g.variant = variant
@@ -486,7 +486,7 @@ func _draw_tile() -> void:
 		draw_string(Palette.mono(), Vector2(px + 17, size.y - 10), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.CELL_ACID)
 
 
-## The reference's glowing microchip: a die with pins and a circuit square inside.
+## The reference's glowing Firmware chip: a die with pins and a circuit square inside.
 func _big_chip(c: Vector2, col: Color) -> void:
 	var r := Rect2(c - Vector2(20, 20), Vector2(40, 40))
 	draw_rect(r.grow(3), Color(col, 0.15))
@@ -524,7 +524,7 @@ func _mini_card(c: Vector2, col: Color, initials_on: bool = true) -> void:
 var _icon_xf: Transform2D = Transform2D.IDENTITY
 
 
-## A small microchip mark in the corner (the reference's chip stickers).
+## A small Firmware chip mark in the corner (the reference's chip stickers).
 func _chip(c: Vector2, col: Color) -> void:
 	var r := Rect2(c - Vector2(8, 8), Vector2(16, 16))
 	draw_rect(r, Color(col, 0.15))
@@ -971,7 +971,7 @@ func tile_description() -> String:
 	return d
 
 
-## A microchip tile (Firmware, Daemons) at any text scale (H23 S8: chips had no words for
+## A Firmware chip tile (Firmware, Daemons) at any text scale (H23 S8: chips had no words for
 ## what they do): the chip icon (smaller when the words need the room), the name in the
 ## text colour, then as much of the effect text as fits, ending in an ellipsis (the whole
 ## text is the tooltip and shows on focus). The foot is the buy button's (H24 S10: the

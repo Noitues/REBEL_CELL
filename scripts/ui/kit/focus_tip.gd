@@ -13,7 +13,7 @@ const GAP := 6.0
 ## tall narrow tip can go beside the loot row instead of over Skip.
 const FOLD_SHARES: Array[float] = [0.7, 0.5, 0.35]
 ## ANIM-R4 C7: a fold never goes under this many columns (at 1.6 a 16-column fold put one
-## word per line and the tall tip covered the MODEM sign and a loot card); a crowded tip
+## word per line and the tall tip covered the MAINFRAME sign and a loot card); a crowded tip
 ## keeps that width, tries the screen's edges and steps its lettering down (FONT_SHARES).
 const FOLD_MIN := 20
 
@@ -199,7 +199,7 @@ static func _titles(node: Node, out: Array[Rect2]) -> void:
 	for c in node.get_children():
 		if c is CanvasItem and not (c as CanvasItem).visible:
 			continue
-		# ANIM-R4 C7: the MODEM sign too (a tip lay over it at 1.6).
-		if c is GraffitiTag or c is ModemSign or (c is Label and c.name == &"TerminalTitle"):
+		# ANIM-R4 C7: the MAINFRAME sign too (a tip lay over it at 1.6).
+		if c is GraffitiTag or c is MainframeSign or (c is Label and c.name == &"TerminalTitle"):
 			out.append((c as Control).get_global_rect())
 		_titles(c, out)

@@ -2,7 +2,7 @@ class_name SpinnerView
 extends Control
 ## Spinner viewer (modal): the wheel drawn large, each slice a pad with its icon and
 ## value. Right-click opens a slice's detail popup (type, output, firmware, stronger
-## same-type slices from the Modem catalogue). With an `action` ("UPGRADE") left click
+## same-type slices from the Mainframe catalogue). With an `action` ("UPGRADE") left click
 ## selects / deselects a slot, marked with a drippy circle, and the action appears in
 ## dripping marker next to Close; pressing it emits `slot_picked(index)`. Without an
 ## action, left click opens the detail. Emits `closed`. View only.

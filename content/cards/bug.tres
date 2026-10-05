@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/data/effect_data.gd" id="2"]
 
 ; Bug (GDD 11.9, ICE 11 STARTING_BUG_CARD): dead code in the deck. Playing it costs no RAM
-; but drains 1 RAM and exhausts; a Modem can remove it. Never offered as a reward.
+; but drains 1 RAM and exhausts; a Mainframe can remove it. Never offered as a reward.
 ; EffectType 13 = DRAIN_RAM, target 0 = SELF.
 
 [sub_resource type="Resource" id="fx"]

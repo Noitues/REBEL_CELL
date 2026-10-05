@@ -90,7 +90,7 @@ func _open_all() -> void:
 ## Completes the first `n` runs open now (in id order), as the real rules do.
 func _advance(n: int) -> void:
 	for i in n:
-		var open := RunManager.launchable_sites().filter(func(s: SiteData) -> bool: return s.objective != RC.SiteObjective.BOSS)
+		var open := RunManager.launchable_sites().filter(func(s: SiteData) -> bool: return s.objective != RC.SiteObjective.CENTRAL_SERVER)
 		if open.is_empty():
 			return
 		var run := RunState.new()

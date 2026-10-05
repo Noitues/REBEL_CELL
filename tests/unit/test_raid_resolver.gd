@@ -1,6 +1,6 @@
 extends GutTest
 ## Raid resolution (GDD 7, M3 acceptance): golden results for five layouts, projection
-## equals the real result, Disabled/Seized rules, cascade (50%), step cap and
+## equals the real result, DOWN/TAKEN rules, cascade (50%), step cap and
 ## home-server loss. Expected numbers are worked by hand from the A.5 stats
 ## (Collector 12/5/1, Auditor 8/3/2, Enforcer 25/9/1; Turret 4 dmg range 1; ICE Lock
 ## holds 2; Firewall turret 3 dmg own node; Relay 15, Safehouse 20, Firewall 30, home 50).
@@ -51,11 +51,11 @@ func test_layout_3_enforcer_disables_a_relay_and_cascades_half_the_excess() -> v
 	var grid := GridFixture.chain_grid([&"r1"])
 	var c := GridFixture.campaign(grid, {&"r1": &"relay"})
 	var r := _resolve(c, grid, GridFixture.raid(&"g3", [&"enforcer"]))
-	# Step 1: r1 15-9 = 6. Step 2: 6-9 = -3 -> Disabled, excess 3 x 0.5 = 1 cascades to home.
+	# Step 1: r1 15-9 = 6. Step 2: 6-9 = -3 -> DOWN, excess 3 x 0.5 = 1 cascades to home.
 	# Step 3: moves on to home: 49 - 9 = 40.
-	assert_eq(r.nodes["r1"]["outcome"], "disabled")
+	assert_eq(r.nodes["r1"]["outcome"], "down")
 	assert_eq(r.nodes["r1"]["after"], 0)
-	assert_eq(r.disabled, ["r1"])
+	assert_eq(r.down, ["r1"])
 	assert_eq(r.home_after, 40)
 	assert_eq(r.steps_run, 3)
 	var cascades := 0
@@ -66,16 +66,16 @@ func test_layout_3_enforcer_disables_a_relay_and_cascades_half_the_excess() -> v
 	assert_eq(cascades, 1)
 
 
-func test_layout_4_step_cap_seizes_the_node_a_threat_still_stands_on() -> void:
+func test_layout_4_step_cap_takes_the_node_a_threat_still_stands_on() -> void:
 	var grid := GridFixture.chain_grid([&"s1"])
 	var c := GridFixture.campaign(grid, {&"s1": &"safehouse"})
 	var cfg := GridFixture.config_with_cap(2)
 	var r := _resolve(c, grid, GridFixture.raid(&"g4", [&"enforcer"]), cfg)
 	# Weakest-node routing camps on the Safehouse: 20-9 = 11 (step 1), 2 (step 2); cap.
 	assert_eq(r.steps_run, 2)
-	assert_eq(r.nodes["s1"]["outcome"], "seized")
-	assert_eq(r.seized, ["s1"])
-	assert_true(r.grid_after.is_seized(&"s1"))
+	assert_eq(r.nodes["s1"]["outcome"], "taken")
+	assert_eq(r.taken, ["s1"])
+	assert_true(r.grid_after.is_taken(&"s1"))
 	assert_eq(r.grid_after.node_type_of(&"s1"), &"", "the node is lost with the Site")
 	assert_false(r.won)
 
@@ -89,18 +89,18 @@ func test_layout_5_six_enforcers_take_the_home_server_down() -> void:
 	assert_eq(r.steps_run, 1, "all six reach home on step 1: 54 damage")
 
 
-func test_disabled_node_hit_again_is_seized() -> void:
+func test_a_down_node_hit_again_is_taken() -> void:
 	var grid := GridFixture.chain_grid([&"r1"])
 	var c := GridFixture.campaign(grid, {&"r1": &"relay"})
-	c.grid.site(&"r1")["condition"] = GridState.Condition.DISABLED
+	c.grid.site(&"r1")["condition"] = GridState.Condition.DOWN
 	c.grid.site(&"r1")["integrity"] = 0
 	var cfg := GridFixture.config_with_cap(1)
 	var r := _resolve(c, grid, GridFixture.raid(&"g6", [&"auditor"]), cfg)
-	# Auditor moves 2 edges: entry -> r1 (Disabled, no stop) -> home (stop). It never
-	# ends a step on r1, so the Disabled node is not hit; a slower threat is.
+	# Auditor moves 2 edges: entry -> r1 (DOWN, no stop) -> home (stop). It never
+	# ends a step on r1, so the DOWN node is not hit; a slower threat is.
 	assert_eq(r.threats_reached_home, 1)
 	var slow := _resolve(c, grid, GridFixture.raid(&"g7", [&"collector"]), cfg)
-	assert_eq(slow.nodes["r1"]["outcome"], "seized", "a Collector ends step 1 on the Disabled Relay -> Seized")
+	assert_eq(slow.nodes["r1"]["outcome"], "taken", "a Collector ends step 1 on the DOWN Relay -> TAKEN")
 
 
 func test_decoy_pulls_routing_toward_its_node() -> void:
@@ -117,10 +117,10 @@ func test_decoy_pulls_routing_toward_its_node() -> void:
 	var c := GridFixture.campaign(grid, {&"a": &"relay", &"b": &"relay"})
 	GridFixture.deploy(c, &"b", &"decoy")
 	var r := _resolve(c, grid, GridFixture.raid(&"g8", [&"collector"]))
-	# The Collector camps on the Decoy node until it falls (15 -> 10 -> 5 -> Disabled),
+	# The Collector camps on the Decoy node until it falls (15 -> 10 -> 5 -> DOWN),
 	# then carries on to home. The other Relay is never touched.
 	assert_eq(r.nodes["a"]["after"], 15, "a untouched")
-	assert_eq(r.nodes["b"]["outcome"], "disabled", "the Collector went for the Decoy on b")
+	assert_eq(r.nodes["b"]["outcome"], "down", "the Collector went for the Decoy on b")
 	assert_eq(r.home_after, 45)
 	var first_move := {}
 	for e in r.events:

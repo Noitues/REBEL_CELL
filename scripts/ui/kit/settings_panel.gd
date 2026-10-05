@@ -48,6 +48,8 @@ var colorblind_option: OptionButton
 var resolve_speed_option: OptionButton
 var glyph_option: OptionButton
 var flash_check: CheckButton
+## ART-0 D11: the Heat glitch extra (off by default).
+var heat_glitch_check: CheckButton
 var subtitles_check: CheckButton
 ## Subtitles type in, or show whole at once (Animation pass ANIM-6).
 var typing_check: CheckButton
@@ -98,6 +100,8 @@ func _init() -> void:
 	# Widgets are built once so tests (and Settings.changed) can drive them by name.
 	reduce_check = _check(tr("Reduce effects (no scanlines, flicker, chromatic, distortion)"), Settings.reduce_effects, Settings.set_reduce_effects)
 	flash_check = _check(tr("Flash limiter (max 3 flashes per second)"), Settings.flash_limiter, Settings.set_flash_limiter)
+	heat_glitch_check = _check(tr("Heat glitch (the screen distorts as Heat rises; off by default)"), Settings.heat_glitch, Settings.set_heat_glitch)
+	heat_glitch_check.name = "HeatGlitchCheck"
 	reduce_motion_check = _check(tr(REDUCE_MOTION_WORDS), Settings.reduce_motion, Settings.set_reduce_motion)
 	reduce_motion_check.name = "ReduceMotionCheck"
 	high_contrast_check = _check(tr(HIGH_CONTRAST_WORDS), Settings.high_contrast, Settings.set_high_contrast)
@@ -166,7 +170,7 @@ func show_section(name: String) -> void:
 	_key_buttons.clear()
 	match name:
 		"Accessibility":
-			for w in [reduce_check, reduce_motion_check, flash_check, high_contrast_check, subtitles_check, typing_check, assist_check,
+			for w in [reduce_check, reduce_motion_check, flash_check, heat_glitch_check, high_contrast_check, subtitles_check, typing_check, assist_check,
 					_labelled(tr(COLORBLIND_HEADING)), colorblind_option, _labelled(tr(RESOLVE_SPEED_HEADING)), resolve_speed_option,
 					_labelled(tr("Text scale")), scale_slider]:
 				_body.add_child(w)
@@ -214,7 +218,7 @@ func show_section(name: String) -> void:
 
 ## The widgets built once in _init (they move between the body and off the tree).
 func _persistent() -> Array[Control]:
-	return [reduce_check, flash_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
+	return [reduce_check, flash_check, heat_glitch_check, subtitles_check, typing_check, assist_check, scale_slider, master_slider, music_slider,
 		sfx_slider, mode_option, resolution_option, vsync_check, fps_check, legend_check, log_check, language_option,
 		reduce_motion_check, high_contrast_check, colorblind_option, resolve_speed_option, glyph_option]
 

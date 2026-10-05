@@ -6,7 +6,7 @@ extends CanvasLayer
 ## copy flies from where it was to a point (the top bar's icon, the deck), optionally after
 ## a stamp lands on it ("SOLD"), and shrinks into its target; a stamp can also land on a
 ## spot by itself (the chosen event outcome). The layer lives on the current scene over its
-## pages, so a page rebuilt after the action (the Modem after a purchase) does not cut the
+## pages, so a page rebuilt after the action (the Mainframe after a purchase) does not cut the
 ## flight short. The state already holds the result: this only replays it. Under reduce
 ## effects, headless and for a disabled entry nothing flies. `finish_all` ends every flight
 ## (tests, skips). View only: never game state.
@@ -18,7 +18,7 @@ const NODE_NAME := "FlightFx"
 ## `lift` argument), and the share at its end over which the arrival fades (its shape too).
 const LIFT_MOTION := &"flight_lift_share"
 const FADE_MOTION := &"flight_fade_share"
-## Every flight shrinks to this entry's amplitude as it arrives (the Modem's `buy_fly`: one
+## Every flight shrinks to this entry's amplitude as it arrives (the Mainframe's `buy_fly`: one
 ## size for anything landing in a top bar icon).
 const ARRIVE_MOTION := &"buy_fly"
 ## A stamp's lettering relative to the stamped height, its border and its colour.

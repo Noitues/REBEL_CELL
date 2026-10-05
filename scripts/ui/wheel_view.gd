@@ -177,7 +177,7 @@ const SATELLITE_TOKEN := 11.0
 const BOTTOM_SECTOR_SIN := 0.8
 const HP_BLOCK_HALF := 90.0
 ## Aim quality pips on the tag (1 = half power, 2 = good, 3 = perfect).
-const TIER_PIPS := {RC.PrecisionTier.PARTIAL: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
+const TIER_PIPS := {RC.PrecisionTier.WEAK: 1, RC.PrecisionTier.GOOD: 2, RC.PrecisionTier.PERFECT: 3}
 const PIP_RADIUS := 3.0
 ## Tag rows kept on screen: the title and at most this many chip rows (the rest fold into
 ## a "+N" chip; the tooltip lists them all).
@@ -386,7 +386,7 @@ func _shown() -> CombatantState:
 
 
 ## True while any motion of this view still runs (its own tweens, queued nudges, and the
-## kit's helpers on it: the Partial stutter, the Miss blink).
+## kit's helpers on it: the Weak stutter, the Miss blink).
 func motion_busy() -> bool:
 	for k in _tweens:
 		var tw: Tween = _tweens[k]
@@ -416,7 +416,7 @@ func complete_motion() -> void:
 
 ## Ends every motion of this view at once: the view shows the state as it is (skip,
 ## reduce effects, a new state arriving mid-motion). ANIM-R1 C3: the kit's helpers stop
-## too (the Partial shake kept running), and with `sync_tag` the tag takes the content it
+## too (the Weak shake kept running), and with `sync_tag` the tag takes the content it
 ## shows now without a flip (a skip lands; only a replay that plays out flips the tags in).
 func stop_motion(sync_tag: bool = true) -> void:
 	# The kit's one-shot helpers (the migration flicker is the scene's loop and stays).
@@ -2563,16 +2563,16 @@ func icon_row_items() -> Array[Dictionary]:
 	if soaked <= 0 and evaded <= 0:
 		if hp == 0:
 			return out
-		out.append({"icon": RC.SliceType.HEAL if hp > 0 else -1, "text": ("+%d " % hp if hp > 0 else "-%d " % absi(hp)) + tr("HP"),
+		out.append({"icon": RC.SliceType.HOTFIX if hp > 0 else -1, "text": ("+%d " % hp if hp > 0 else "-%d " % absi(hp)) + tr("HP"),
 			"color": HP_COLOR if hp > 0 else LOSS_COLOR, "sep": ""})
 		return out
 	var through := maxi(0, hit - soaked - evaded)
 	var dealt := int(d.get("dealt", 0))
-	out.append({"icon": RC.SliceType.ATTACK, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
+	out.append({"icon": RC.SliceType.SHIM, "text": str(hit), "color": LOSS_COLOR, "sep": ""})
 	if soaked > 0:
-		out.append({"icon": RC.SliceType.DEFEND, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+		out.append({"icon": RC.SliceType.DEFRAG, "text": str(soaked), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
 	if evaded > 0:
-		out.append({"icon": RC.SliceType.EVADE, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
+		out.append({"icon": RC.SliceType.DETOUR, "text": str(evaded), "color": Palette.NET_CYAN, "sep": CombatFxLayer.EQ_MINUS})
 	out.append({"icon": -1, "text": str(through), "color": LOSS_COLOR if through > 0 else Palette.NET_CYAN, "sep": "="})
 	if dealt < through:
 		out.append({"icon": -1, "text": tr("%d LEFT") % dealt, "color": LOSS_COLOR, "sep": CLAMP_ARROW})
@@ -2580,7 +2580,7 @@ func icon_row_items() -> Array[Dictionary]:
 	var rest := hp + dealt
 	if rest != 0:
 		var hp_text := ("+%d" % rest) if rest > 0 else ("-%d" % absi(rest))
-		out.append({"icon": RC.SliceType.HEAL if rest > 0 else -1, "text": hp_text + " " + tr("HP"),
+		out.append({"icon": RC.SliceType.HOTFIX if rest > 0 else -1, "text": hp_text + " " + tr("HP"),
 			"color": HP_COLOR if rest > 0 else LOSS_COLOR, "sep": "·"})
 	return out
 
@@ -2964,7 +2964,7 @@ static func was_height() -> float:
 
 ## ANIM-R5 combat 7: the tag before the play or nudge being previewed (the scene sets it
 ## when a hover changes this tag; {} = unchanged). The tag shows it struck through under a
-## WAS row, so a flip reads as a change ("CRITICAL · HITS YOU 14" was "ATTACK · HITS YOU 6").
+## WAS row, so a flip reads as a change ("OVERFLOW · HITS YOU 14" was "SHIM · HITS YOU 6").
 var was_tag: Dictionary = {}
 ## What the tag said before the preview, as one line ("" = nothing to show).
 func was_text() -> String:

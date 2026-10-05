@@ -2,7 +2,7 @@ extends GutTest
 ## Horizontal pass 6 (GAP_ANALYSIS H6): from the control a panel focuses, every usable
 ## control must be reachable with the D-pad (walking focus neighbours the way Godot does:
 ## Control.find_valid_focus_neighbor on the four sides). Covers the HQ start panel, the
-## Grid list, netrun rewards, the Modem and combat.
+## Grid list, netrun rewards, the Mainframe and combat.
 
 var _pad_before: bool = false
 
@@ -90,7 +90,7 @@ func test_hq_start_panel_and_grid_are_pad_reachable() -> void:
 	_end()
 
 
-func test_rewards_and_modem_are_pad_reachable() -> void:
+func test_rewards_and_mainframe_are_pad_reachable() -> void:
 	_begin("gut_test_pad_netrun")
 	RunManager.new_campaign(1)
 	var scene: Control = add_child_autofree(load("res://scenes/netrun_map/netrun_scene.tscn").instantiate())
@@ -106,7 +106,7 @@ func test_rewards_and_modem_are_pad_reachable() -> void:
 	s._open_shop()
 	scene._show_current()
 	await _frames()
-	_assert_all_reachable(scene._panel, "modem")
+	_assert_all_reachable(scene._panel, "mainframe")
 	_end()
 
 

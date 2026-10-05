@@ -5,7 +5,7 @@ extends SceneTree
 ## the page's switch until every city on screen is covered by a finished bake of its current
 ## look: "probe <page>: covered in N ms (F frames), bakes landed K".
 ##
-## The flows: a run's route, then an event, the loot page, the Modem and a fight, back to the
+## The flows: a run's route, then an event, the loot page, the Mainframe and a fight, back to the
 ## route after each; the run's end page, then the HQ; the Grid and a claim; a run that opens
 ## on a raid interlude, its playout (the frames the fight camera showed uncovered are
 ## counted) and the route after it; ANIM-R6 C9: the start page, the HQ New campaign opens and

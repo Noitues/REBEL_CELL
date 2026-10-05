@@ -98,7 +98,7 @@ def build(spec):
         r.write("content/slices/%s.tres" % sid, "%s slice (decision 2026-09-24)." % corp)
     sat = spec["satellite"]
     r = Res("EnemyData", "res://scripts/data/enemy_data.gd")
-    w = wheel_sub(r, "wheel", ["atk_3", "def_3"])
+    w = wheel_sub(r, "wheel", ["shim_3", "defrag_3"])
     r.main = ['id = &"%s"' % sat["id"], 'display_name = "%s"' % sat["name"], 'description = "%s"' % sat["desc"],
               'corporation_id = &"%s"' % corp, "hp = 5", "wheel = " + w, "cycle_reward = 0"]
     r.write("content/enemies/%s.tres" % sat["id"], "%s satellite (decision 2026-09-24)." % corp)

@@ -8,9 +8,9 @@ extends RefCounted
 ##
 ## Per step: threats move (edges_per_step, routing rule, decoys pull), ICE Locks hold,
 ## assets and built-in defenses fire, threats damage the node they stand on (0 ->
-## Disabled, 50% of the excess cascades to adjacent claimed nodes; a Disabled node hit
-## again is Seized; damage at home reduces home integrity, 0 = campaign lost). The raid
-## ends when no threat is active or at the step cap; threats still on nodes Seize them.
+## DOWN, 50% of the excess cascades to adjacent claimed nodes; a DOWN node hit
+## again is TAKEN; damage at home reduces home integrity, 0 = campaign lost). The raid
+## ends when no threat is active or at the step cap; threats still on nodes take them.
 
 class RaidResult:
 	extends RefCounted
@@ -22,10 +22,10 @@ class RaidResult:
 	var home_after: int = 0
 	var threats_destroyed: int = 0
 	var threats_reached_home: int = 0
-	## site_id (String) -> {"before": int, "after": int, "outcome": "holds"|"disabled"|"seized"|"passed"}
+	## site_id (String) -> {"before": int, "after": int, "outcome": "holds"|"down"|"taken"|"passed"}
 	var nodes: Dictionary = {}
-	var seized: Array[String] = []
-	var disabled: Array[String] = []
+	var taken: Array[String] = []
+	var down: Array[String] = []
 	var events: Array[Dictionary] = []
 	var grid_after: GridState = null
 
@@ -33,7 +33,7 @@ class RaidResult:
 		return {"raid_id": String(raid_id), "steps_run": steps_run, "won": won, "campaign_lost": campaign_lost,
 			"home_before": home_before, "home_after": home_after, "threats_destroyed": threats_destroyed,
 			"threats_reached_home": threats_reached_home, "nodes": nodes.duplicate(true),
-			"seized": seized.duplicate(), "disabled": disabled.duplicate()}
+			"taken": taken.duplicate(), "down": down.duplicate()}
 
 	func summary_hash() -> int:
 		return hash(JSON.stringify(to_dict()))
@@ -57,8 +57,8 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 	var before := {}
 	for id in grid.claimed_ids():
 		before[String(id)] = int(grid.site(id)["integrity"]) if id != grid.home_site_id else grid.home_integrity
-	var seized_now: Array[String] = []
-	var disabled_now: Array[String] = []
+	var taken_now: Array[String] = []
+	var down_now: Array[String] = []
 	var step := 0
 	while step < config.raid_step_cap:
 		step += 1
@@ -77,7 +77,7 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		_move_threats(threats, grid, grid_data, lookup, step, result)
 		_hold_threats(threats, grid, lookup, step, result, campaign, grid_data)
 		_fire_assets(campaign, threats, grid, grid_data, lookup, step, result, config)
-		_damage_nodes(threats, grid, grid_data, lookup, config, step, result, seized_now, disabled_now)
+		_damage_nodes(threats, grid, grid_data, lookup, config, step, result, taken_now, down_now)
 		if grid.home_integrity <= 0:
 			result.campaign_lost = true
 			result.events.append({"type": "home_lost", "step": step, "text": "Step %d: HOME SERVER integrity 0. Campaign lost." % step})
@@ -87,12 +87,12 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 	result.steps_run = step
 	if not result.campaign_lost:
 		_station_regen(campaign, grid, grid_data, lookup, step, result)
-	# Step cap: threats still standing on a node Seize it.
+	# Step cap: threats still standing on a node take it.
 	for t in _active(threats):
 		var site: StringName = t["site"]
 		if grid.is_claimed(site) and site != grid.home_site_id:
-			_seize(grid, site, seized_now)
-			result.events.append({"type": "seized", "site": site, "text": "Raid over: %s still on %s -> SEIZED." % [t["name"], site]})
+			_take(grid, site, taken_now)
+			result.events.append({"type": "taken", "site": site, "text": "Raid over: %s still on %s -> TAKEN." % [t["name"], site]})
 	for t in threats:
 		if t["integrity"] <= 0:
 			result.threats_destroyed += 1
@@ -104,34 +104,34 @@ static func resolve(campaign: CampaignState, grid_data: CityGridData, raid: Raid
 		var sid := StringName(id)
 		var after: int = grid.home_integrity if sid == grid.home_site_id else int(grid.site(sid)["integrity"])
 		var outcome := "holds"
-		if seized_now.has(id):
-			outcome = "seized"
-		elif disabled_now.has(id):
-			outcome = "disabled"
+		if taken_now.has(id):
+			outcome = "taken"
+		elif down_now.has(id):
+			outcome = "down"
 		result.nodes[id] = {"before": before[id], "after": after, "outcome": outcome}
-	result.seized = seized_now
-	result.disabled = disabled_now
+	result.taken = taken_now
+	result.down = down_now
 	result.events.append({"type": "raid_end", "won": result.won, "steps": result.steps_run,
-		"text": "Raid %s after %d step(s): %d threat(s) destroyed, %d reached home, %d Disabled, %d Seized." % [
-			"REPELLED" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, disabled_now.size(), seized_now.size()]})
+		"text": "Raid %s after %d step(s): %d threat(s) destroyed, %d reached home, %d DOWN, %d TAKEN." % [
+			"REPELLED" if result.won else "ENDED", result.steps_run, result.threats_destroyed, result.threats_reached_home, down_now.size(), taken_now.size()]})
 	return result
 
 
-## Writes a resolved raid into the campaign: node states, home integrity, Seized Sites
+## Writes a resolved raid into the campaign: node states, home integrity, TAKEN Sites
 ## (their nodes and assets are lost), counters, Heat for a lost raid, reward for a win.
 static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, config: CampaignConfigData) -> Array[Dictionary]:
 	var events: Array[Dictionary] = []
 	campaign.grid = result.grid_after.duplicate_state()
 	campaign.grid.frozen_links.clear()  # freezes last one raid; opened links stay open
 	campaign.last_raid = result.to_dict()
-	for sid in result.seized:
+	for sid in result.taken:
 		var s := campaign.grid.site(StringName(sid))
 		if s.get("stationed", "") != "":
-			events.append({"type": "recalled", "operative": s["stationed"], "text": "%s returns to the reserves from Seized %s." % [s["stationed"], sid]})
+			events.append({"type": "recalled", "operative": s["stationed"], "text": "%s returns to the reserves from TAKEN %s." % [s["stationed"], sid]})
 	if result.campaign_lost:
 		campaign.outcome = CampaignState.Outcome.LOST
 		campaign.raids_lost += 1
-		events.append({"type": "campaign_lost", "text": "The home server is gone. Campaign lost."})
+		events.append({"type": "campaign_lost", "text": "The home server is BREACHED. Campaign lost."})
 		return events
 	if result.won:
 		campaign.raids_won += 1
@@ -143,14 +143,14 @@ static func apply(campaign: CampaignState, result: RaidResult, raid: RaidData, c
 	return events
 
 
-## Corporate Sites adjacent to the territory, plus Seized Sites adjacent to it; the boss
+## Corporate Sites adjacent to the territory, plus TAKEN Sites adjacent to it; the boss
 ## Site as a last resort. Sorted by id.
 static func default_entry_sites(campaign: CampaignState, grid_data: CityGridData) -> Array[StringName]:
 	var grid := campaign.grid
 	var out := {}
 	for id in grid.claimed_ids():
 		for n in grid.neighbors(id, grid_data):
-			if grid.is_corporate(n) or grid.is_seized(n):
+			if grid.is_corporate(n) or grid.is_taken(n):
 				out[n] = true
 	var ids: Array[StringName] = []
 	for k in out.keys():
@@ -549,7 +549,7 @@ static func _key_less(a: Array, b: Array) -> bool:
 	return false
 
 
-static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, config: CampaignConfigData, step: int, result: RaidResult, seized_now: Array[String], disabled_now: Array[String]) -> void:
+static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data: CityGridData, lookup: ContentLookup, config: CampaignConfigData, step: int, result: RaidResult, taken_now: Array[String], down_now: Array[String]) -> void:
 	for t in _active(threats):
 		var site: StringName = t["site"]
 		var damage := int(t["damage"])
@@ -564,9 +564,9 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 		if not grid.is_claimed(site):
 			continue
 		var s := grid.site(site)
-		if int(s["condition"]) == GridState.Condition.DISABLED:
-			_seize(grid, site, seized_now)
-			result.events.append({"type": "seized", "step": step, "site": site, "text": "Step %d: %s hits Disabled %s -> SEIZED." % [step, t["name"], site]})
+		if int(s["condition"]) == GridState.Condition.DOWN:
+			_take(grid, site, taken_now)
+			result.events.append({"type": "taken", "step": step, "site": site, "text": "Step %d: %s hits DOWN %s -> TAKEN." % [step, t["name"], site]})
 			continue
 		var integrity := int(s["integrity"]) - damage
 		if integrity > 0:
@@ -576,10 +576,10 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 			continue
 		var excess := -integrity
 		s["integrity"] = 0
-		s["condition"] = GridState.Condition.DISABLED
-		if not disabled_now.has(String(site)):
-			disabled_now.append(String(site))
-		result.events.append({"type": "disabled", "step": step, "site": site, "text": "Step %d: %s DISABLED by %s." % [step, site, t["name"]]})
+		s["condition"] = GridState.Condition.DOWN
+		if not down_now.has(String(site)):
+			down_now.append(String(site))
+		result.events.append({"type": "down", "step": step, "site": site, "text": "Step %d: %s goes DOWN under %s." % [step, site, t["name"]]})
 		_recall_from(s, site, step, result)
 		var cascade := int(floor(excess * config.cascade_ratio))
 		if cascade <= 0:
@@ -593,30 +593,30 @@ static func _damage_nodes(threats: Array[Dictionary], grid: GridState, grid_data
 				ns["integrity"] = maxi(0, int(ns["integrity"]) - cascade)
 				result.events.append({"type": "cascade", "step": step, "site": n, "damage": cascade, "text": "Step %d: cascade hits %s for %d (%d left)." % [step, n, cascade, ns["integrity"]]})
 				if int(ns["integrity"]) == 0:
-					ns["condition"] = GridState.Condition.DISABLED
-					if not disabled_now.has(String(n)):
-						disabled_now.append(String(n))
+					ns["condition"] = GridState.Condition.DOWN
+					if not down_now.has(String(n)):
+						down_now.append(String(n))
 					_recall_from(ns, n, step, result)
 
 
-## A stationed operative on a node that goes Disabled returns to the reserves unharmed
-## (GDD 3.3); Seized nodes do the same through _seize + apply().
+## A stationed operative on a node that goes DOWN returns to the reserves unharmed
+## (GDD 3.3); TAKEN nodes do the same through _take + apply().
 static func _recall_from(s: Dictionary, site: StringName, step: int, result: RaidResult) -> void:
 	if String(s.get("stationed", "")) == "":
 		return
 	result.events.append({"type": "recalled", "step": step, "operative": s["stationed"], "site": site,
-		"text": "Step %d: %s returns to the reserves from Disabled %s." % [step, s["stationed"], site]})
+		"text": "Step %d: %s returns to the reserves from DOWN %s." % [step, s["stationed"], site]})
 	s["stationed"] = ""
 
 
-static func _seize(grid: GridState, site: StringName, seized_now: Array[String]) -> void:
+static func _take(grid: GridState, site: StringName, taken_now: Array[String]) -> void:
 	var s := grid.site(site)
-	s["status"] = GridState.SiteStatus.SEIZED
+	s["status"] = GridState.SiteStatus.TAKEN
 	s["node_type"] = ""
 	s["integrity"] = 0
 	s["max_integrity"] = 0
 	s["condition"] = GridState.Condition.OK
 	s["assets"] = []
 	s["stationed"] = ""
-	if not seized_now.has(String(site)):
-		seized_now.append(String(site))
+	if not taken_now.has(String(site)):
+		taken_now.append(String(site))

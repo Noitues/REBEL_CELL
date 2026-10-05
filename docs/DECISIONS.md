@@ -33,6 +33,130 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
+Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
+the display names; no aliases, no migrations. `tests/unit/test_names_pass.gd` (PART2 table) sweeps
+player strings and code for each item's old words.
+- **D2 slice programs.** `RC.SliceType` is { SHIM, OVERFLOW, DEFRAG, DETOUR, SHIELD, DEPLOY, HOTFIX,
+  INFECT, MISS } (same positions, so content keeps its ints). Slice content ids and files follow:
+  `shim_*` (was atk_*), `overflow_*` (crit_*), `defrag_*` (def_*), `detour_*` (evade_*), `hotfix_*`
+  (heal_*); display names "Shim 14", "Overflow 24", "Defrag 12", "Detour", "Hotfix 6". Whole words
+  (`Palette.SLICE_WORDS`) are the program names; the compact tags (`Palette.SLICE_NAMES`, slot lists
+  and shop tiles) are SHIM / OVFL / DFRG / DTOR / HFIX / INFC (SHD / DEP / MISS kept): the whole
+  words in those tiles pushed the shop's spinner onto LEAVE MAINFRAME at text size 1.6. Firmware,
+  codex and GDD 2.6 texts name the programs. Kept on purpose: the *evade* mechanic
+  (EffectType.EVADE, a card's "Evade the next incoming attack", the "%s EVADE" charge chip), *heal*
+  as an effect ("Heal 6"), *attack* as a verb, and the damage beats' `crit` flag (a big-hit number
+  style, set by OVERFLOW slices and Perfects alike). SANDBOX / TROJAN / NULL (the art pass's SHIELD /
+  DEPLOY / MISS) are not renamed: the ruling keeps them out of D2; the enum keeps SHIELD / DEPLOY /
+  MISS (question below).
+- **D3 Meridian.** The RAM-drain slice is `priority` (`content/slices/priority.tres`, "Priority", its
+  wheel sub-resources `*_slot_priority`; codex and descriptions). A corporation's own program word
+  lives in `Palette.CORP_SLICE_WORDS` (view words, `# TR`), read by `Palette.slice_word(type,
+  corporation_id)`; the combat tags over a wheel and its odds use the wheel's corporation
+  (`combat_scene.corp_of`): Meridian's OVERFLOW reads **AIRMAIL** (test
+  `test_a_meridian_wheel_says_airmail_for_its_overflow`). JUDGEMENT: no id, string or code carried
+  it on main; the sweep keeps it out. Kept as flavour: the Tariff Collector enemy, the Tariff
+  Calculation Office Site, "Tariff season" and tariffs in prose (allow-listed).
+- **D4.** INERTIA is **WEIGHT**: `shim_8_weight` (was the inertia strike), the codex entry "Weight",
+  the Cargo Hauler's text, GDD 8.4b. Solace's HOTFIX reads **GROWTH** through
+  `Palette.CORP_SLICE_WORDS` (test `test_a_solace_wheel_says_growth_for_its_hotfix`).
+- **D5 Central Server.** The boss Site is the corporation's Central Server: `RC.SiteObjective.CENTRAL_SERVER`
+  (was BOSS, same position), `CityMapOverlay.KIND_CENTRAL_SERVER` ("central_server"), the map key,
+  tooltips and HQ badge (CENTRAL SERVER). Each Central Server's name is its Site's content string
+  and id: The Genome Core (`the_genome_core`, Solace), The Master Manifest (`the_master_manifest`,
+  Meridian), The Panopticon (`the_panopticon`, Halcyon), Launch Control (`launch_control`,
+  Orbital). REBEL_CELL's stays DISPATCH (`dispatch_core_site`): GDD 8.5 names no final server, only
+  that the final boss is DISPATCH. The boss enemies keep their names (Renewal Engine, The Manifest…)
+  and the run kind "boss" stays (it is the fight). GDD 11.7 and the summary; the part-1 "(name
+  pending, D5)" note is gone (test `test_d5_each_central_server_has_its_name`).
+- **D6 Firmware.** The Mainframe's top-left window is FIRMWARE (was MICROCHIPS); the small spinner's tip
+  says "Drag Firmware or a slice onto a slot"; comments and the drag test
+  (`test_a_firmware_chip_dropped_on_a_slot_matches_the_socket_list_and_buy`) follow. "Chip" stays as
+  the drawing's word for a Firmware tile.
+- **D8 WEAK.** `RC.PrecisionTier.WEAK` (was PARTIAL, same position), the tier tag WEAK, codex text, GDD
+  2.4 / 10. Schema: `CampaignConfigData.partial_multiplier` → `weak_multiplier` (0.5; checked in
+  `schema_smoke_checks.gd` `_art0`). Motion id `precision_partial` → `precision_weak` (table,
+  REQUIRED_IDS, motion lab). "Partial" in other meanings (a partial cover, a partial patch) stays.
+- **D11 Heat bands.** Main already shows the bands ART_BIBLE v2 §2.8 / §3.15 sets (COOL, NOTICED 25+,
+  FLAGGED 50+, HUNTED 75+; the bible's NOTICED is the "couple of alarms" band and the thresholds stay),
+  so no band or threshold changes; the five-band reading is asked under "Open questions for the
+  designer". Added: `Settings.heat_glitch` (off by default, saved in settings.json, listed in
+  `Settings.VFX_TIER_EXEMPT`) and its row on the current panel (Accessibility, "Heat glitch (the
+  screen distorts as Heat rises; off by default)"); the glitch itself comes in ART-3 / ART-5 (test
+  `test_the_heat_glitch_extra_is_off_by_default_and_round_trips`). settings.gd and settings_panel.gd
+  are area C's files: additions only.
+- **D12 RESPIN / UNDO.** The respin sticker already read RESPIN; its tips and the tutorial no longer say
+  "checkpoint" ("UNDO stops here"). The undo block shows on UNDO: the sticker's tooltip says why it is
+  off (`combat_scene.UNDO_BLOCKED`), and an undo pressed with nothing to undo (Ctrl+Z, the pad)
+  shows that note over the UNDO sticker instead of the notes column (`show_undo_block`); the core's
+  refusal text reads "Nothing to undo: a random event came since (UNDO stops there)". The rules word
+  checkpoint stays internal (CombatSession, GDD 2.10). Test
+  `test_respin_reads_respin_and_the_undo_block_shows_on_undo`.
+
+### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
+Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal
+names follow the display words; no aliases, no migrations.
+- **Raid words (6.2).** `GridState.SiteStatus.TAKEN` (was SEIZED), `GridState.Condition.DOWN`
+  (was DISABLED), `GridState.is_taken`, `RaidResult.taken` / `.down`, node outcomes and raid
+  event types `"taken"` / `"down"`, `RC.RuleModifierType.TAKEN_RAID_STRENGTH_PCT` (same enum
+  position, so `campaign_config.tres` keeps its int), the view constants (`RaidVerdict.TAKEN`,
+  `DOWN`, `CELL_HOLDS`, `BREACHED`; `InfluenceSpread.MARK_TAKEN` / `MARK_DOWN`;
+  `CityInfluence.WEIGHT_TAKEN` / `WEIGHT_DOWN`; the feed's `FEED_TAKEN` / `FEED_DOWN`) and the
+  tests that named them. The raid verdict says **CELL HOLDS** when nothing is lost (was ALL HOLD)
+  and **BREACHED** when the home server falls (was CAMPAIGN LOST; the banner already used the
+  verdict's word); a raid with losses still lists them (HOME -5 / 1 DOWN / 1 TAKEN), as GDD 7.2
+  "the summary shows DOWN/TAKEN nodes". Player text uses the upper-case state words ("TAKEN by
+  a raid", "Bring the DOWN node back online", "The home server is BREACHED. Campaign lost.").
+  Unchanged on purpose: the UI-control "disabled", Hub Breach's "disabled 1 turn", and the
+  freight flavour (Freight Seizure, Asset Seizure, "Seized goods": allow-listed).
+- **Mainframe (6.5).** `RC.InfilNodeType.MAINFRAME`, `MainframeSign`
+  (`scripts/ui/kit/mainframe_sign.gd`), `tools/design_lab/mainframe_backdrops.*`, motion ids
+  `mainframe_sign_warmup` / `mainframe_sign_strike` / `mainframe_sign_flicker` /
+  `mainframe_trace`, and every string. Schema: `CampaignConfigData.map_modem_layers` →
+  `map_mainframe_layers` (checked in `tools/schema_smoke_checks.gd` `_art0`). The shop's top-bar
+  title is **MAINFRAME SHOP** and its exit tag **LEAVE MAINFRAME**: the longer words
+  (MAINFRAME CYBER SHOP, LEAVE THE MAINFRAME) wrapped at text size 1.6 and pushed the shop's
+  deck viewer and a control off the canvas (`test_end_state_layout_is_the_instant_layout_at_every_text_size`,
+  `test_the_new_pieces_keep_the_layout_at_each_text_size`); the sign keeps CYBER SHOP. The sign
+  stacks its 9 letters in the room its 5 had (the rows shrink with the word, as the code already
+  did). The boss gate is written "Mainframe Gate (name pending, D5)" in the GDD until the
+  designer rules on D5. Timeline images and history docs keep the old word.
+- **Customs Seal (6.1).** The Manifest's hub `customs_seal` / "Customs Seal" (sub-resources
+  `hub_customs_seal`, `te_customs_seal`); rules unchanged
+  (`test_the_manifest_customs_seal_gains_4_shield_each_turn_unless_breached`).
+- **Sweep.** `tests/unit/test_names_pass.gd` fails on the old words in strings.csv English, in
+  every content `.tres` string, and (for the old names as code) under scripts / scenes / tests /
+  tools / content.
+- **Saves folder (S0, ruling 5).** Schema: `CampaignConfigData.save_dir_source`
+  (`res://saves`), `save_dir_export` (`user://saves`), `replay_subdir` (`replays`),
+  `write_replays` (true), checked in `_art0`. `SaveService` saves under `save_dir_source` when
+  running from source (`OS.has_feature("editor")` or not `template`) and `save_dir_export` in an
+  exported build; making a folder under the source folder writes `saves/.gdignore` so Godot
+  never imports it; `.gitignore` has `/saves/`. GUT runs keep their per-process folder under
+  `user://saves`. `SAVE_VERSION` is 2; the migrations table ships empty, so a version-1 file is
+  refused by `load_dict` (push_error, `{}`): the title shows the slot empty and CONTINUE
+  returns false, no crash. Replays: new pure `CombatReplay` (`scripts/core/combat_replay.gd`)
+  records what the session already keeps (setup, seed as a string, action history, outcome,
+  state hash as a string) and replays it; `CombatEngine.submit` calls
+  `SaveService.record_replay` when a fight ends, which writes `saves/replays/replay_<seed>_<ms>.json`
+  only on source runs, never in a test (`write_replay(session, dir)` for a test that asks).
+  A replay is rebuilt with the shipped config and the content registry (the resolver every
+  fight uses). Tests: `tests/integration/test_saves_folder.gd`; `test_save_service.gd` updated
+  (no `SAVE_DIR` constant: the folders are config).
+- Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
+  their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
+  folder for a clean title screen.
+
+### 2026-10-05 — Designer ruling: reduce effects as a project-wide shader global
+Asked after area E merged (E made `reduce_effects` a per-material uniform set by `ShaderReduce`, because
+M13's global lives in `project.godot`, a designer file). Ruling: add the global to `project.godot`
+(`[shader_globals]` `reduce_effects`, float, 0.0, as on `art-m13-final`). Agents may stage
+`project.godot` **for that entry only** (area E2, ART-0); every other `project.godot` change still needs
+the designer. `rc_common.gdshaderinc` reads the global; `Fx.apply_settings` sets it with
+`RenderingServer.global_shader_parameter_set`; `ShaderReduce` is removed or reduced to what the global
+cannot cover.
+
 ### 2026-10-05 — Designer ruling: M14 regrouped
 The designer asked why integrating a one-week art pass would take 3–4 weeks. The reason: the locked v2
 direction exists only as concept stills and GIFs (43 rounds, 5,915 files under `docs/concepts/`; after
@@ -173,7 +297,7 @@ screen at 2.0 (unchanged at 1.6 and below unless said):
 - **Campaign end:** the story column's room takes the row's gap off (4 px past the screen).
 - **Combat:** `TUTORIAL_MIN_HEIGHT` 130 (was 140): a one-line subtitle dock left 138 px and the
   tutorial jumped over the subtitles.
-- **Modem:** LEAVE THE MODEM moves under the REMOVE A CARD row's pieces it would cover (the
+- **Mainframe (the shop):** its LEAVE button moves under the REMOVE A CARD row's pieces it would cover (the
   spinner grew into it); its exit icon follows (as at 1.6 it sits beside SHRED).
 - **Loadout spinner view:** above 1.6 the Rank 3 swaps column scrolls inside the wheel area (five
   swaps took 564 px).
@@ -187,7 +311,38 @@ screen at 2.0 (unchanged at 1.6 and below unless said):
   titles) read what a scroll view shows (a control scrolled out of the raid side column is not
   cut), as M13 W8c did for `test_horizontal_pass20_screens`.
 - Windowed check: the storyboard at `--scale=2.0` (15 screens, 1280x720), frames read: HQ,
-  raid setup, fight, Modem, event and loot fit with nothing cut; no ERROR in the log.
+  raid setup, fight, Mainframe shop, event and loot fit with nothing cut; no ERROR in the log.
+
+### 2026-10-05 — Art direction — ART-0 reduce_effects shader global (area E2)
+Following the designer ruling "reduce effects as a project-wide shader global" (above);
+supersedes area E's "reduce_effects uniform" call. Ported from art-pass 290ae4c (W6 item 1).
+- **project.godot:** only the `[shader_globals]` entry `reduce_effects` (float, 0.0), as on
+  `art-m13-final`. Registered there, it exists before any shader compiles, so Fx's preloaded
+  shaders and every material built later (script, scene or `.tres`) see it.
+- **rc_common:** `global uniform float reduce_effects;` (was a per-material uniform);
+  `rc_live()` / `rc_time()` unchanged, so no shader changed.
+- **Fx:** `Fx.REDUCE_GLOBAL` and `_apply_shader_global()` set it with
+  `RenderingServer.global_shader_parameter_set` (1.0 under reduce effects, else 0.0) first
+  thing in `Fx._ready` (before Fx builds or warms any material, so before any shader draws)
+  and on every `apply_settings` (Settings.changed). `Fx.shader_reduce` keeps the value sent,
+  for tests (the headless renderer keeps no globals). `-s` tool scripts get the autoloads, so
+  Fx sets it there too; the design-lab scripts that toggle reduce effects already go through
+  `Fx.apply_settings` / `Settings.changed` (motion_lab `_play_jack_reduced`,
+  profile_frames `--reduce`). Unset, the global is project.godot's 0.0 (effects on).
+- **ShaderReduce removed** (`scripts/ui/fx/shader_reduce.gd` and its `.uid`), with its
+  `track` calls (Fx 3, NeonCity 3, UiTheme 1) and `release`. Nothing remains that a global
+  cannot cover: the scripts' own zeroing of shader strengths (Fx scanlines / distortion,
+  UiTheme `_sync_crt`, NeonCity's live layers) is separate behaviour and stays.
+- **Tests** (`tests/unit/test_vfx_tiers.gd`): the include declares the global and
+  project.godot registers it; every shader includes rc_common and declares no
+  `reduce_effects` of its own; no script keeps a per-material copy
+  (`test_no_script_keeps_a_per_material_reduce_effects`); toggling Settings.reduce_effects
+  changes the global's value (`test_toggling_the_setting_changes_the_global`; it also asks
+  the renderer when not headless). Dropped (superseded by the global):
+  `test_every_animating_material_is_tracked`, `test_shader_reduce_follows_the_setting`.
+- **Windowed check:** HQ `--demo-grid` captured 150 frames with reduce effects off and on
+  (settings.json in a redirected APPDATA): off, the city area changes frame to frame
+  (3,000-8,000 px between frames); on, 0 px over 50 frames. No ERROR in either log.
 
 ### 2026-10-05 — Designer ruling: DISPATCH text
 Default accepted for the ART-0a open question: DISPATCH text is always a clean CRT terminal feed (red
@@ -269,6 +424,70 @@ The art docs land on main, ported from art-pass 9a62cec (tag `art-concepts-r43`)
   the post-ART-12 re-evaluations); plan §4.2 has no acceptance lines for ART-10 and ART-11, so
   their boxes list the batch's items.
 - **A6:** STYLE_GUIDE pointer: ART_BIBLE v2 is the visual source of truth from M14; §5 stays binding.
+
+### 2026-10-05 — Art direction — ART-0 D: visual QA harness and lint (salvage S2)
+Ported from art-pass (tag `art-m13-final`; W10 visual QA, W9F additions) into
+`tools/visual_qa/`: the review-pack harness (`review_pack.gd/.tscn`, `review_pack_log.gd`),
+its driver `capture_pack.py` (every Godot run through `tools/run_windowed.py`, each with its
+own user:// folder), `contact_sheet.py`, `diff_pack.py`, `filters.py` + `cvd_filter.gdshader`,
+`lint_report.py` (runtime lint: on-screen sizes, overlaps, clipping incl. scroll views, modals,
+contrast), and the static lint (`visual_lint_static.gd`, `lint_static_cli.gd`,
+`update_lint_baseline.py`, `merge_shared_json.py`). M13's baseline images and lint baseline
+are not ported (the brief: re-captured / re-seeded).
+- **Static lint baseline:** `tests/unit/test_visual_lint_static.gd` (fast tier) gates
+  `tools/visual_qa/lint_baseline.json`, seeded with main's violations today: **205 lines in
+  41 files** (literal colours, literal font sizes in `scripts/ui/**`; `kit/palette.gd` exempt).
+  ART-1…ART-12 drive it to zero. A count may only go down. A merge that ports art-pass files
+  with their literals (E's `ui_theme.gd` mechanism, later batches) adds them to the baseline
+  in that merge (only the ported file's rows, by hand or with `update_lint_baseline.py --reset`
+  checked against `--check`), said in that merge's report, never silently.
+- **Re-pointed at main's screens:** 58 screens (the art pass's 53, with the Modem pages
+  named `mainframe*` after ruling 6.5, plus five ANIM states main has and M13 never saw:
+  `hq_heat_band` (the Heat poster's band crossing and reading hold), `grid_influence` (the
+  territory spread after a claim), `grid_drag_crew` and `raid_drag_asset` (ANIM-4 drags,
+  mid-carry), `run_end_clean` (the clean-exit verdict). Setups go through `DemoSetup` and
+  the views' own dev hooks (`_demo_drag`, `_demo_combat_end`, `_demo_city`) where main has
+  them. No art-pass screen is skipped; the M13-only views main lacks are only seen as main's
+  own version: the dossier-tile target picker and the slot-tile socket picker (main pops its
+  OptionButton list), `CardDetailHolder` (main's `CardDetail` window), `GlassScrim` and the
+  kit's modal group (read only when ART-0 F ports them).
+- **Axes:** text scale 1.0 / 1.6 / 2.0 (written past main's 1.6 clamp), mouse / pad, reduce
+  effects off / on, grey and deutan (Pillow, from the captured frame), and the accessibility
+  settings high contrast, reduce motion and the colour-blind mode as a fifth combo part
+  (`_hc`, `_rm`, `_cb-deutan`). Those are gated on the Settings property existing (ART-0 C
+  ports them): the harness reports which exist (`--list`), the driver skips the others and
+  names them in the manifest's `skipped`; `--matrix` runs them at 1.0 and 2.0 mouse.
+- **Small packs out of git:** pictures are laid out and linted at 1280x720 and saved at
+  800x450 (`--save-size`); the runtime lint scales them back up to measure contrast. Packs
+  go under %TEMP%; a pack inside the project gets a `.gdignore` (review packs land later in
+  `docs/art_review/ART-n/`). The driver refuses to start with < 5 GB free.
+- **Runtime lint type steps:** the "override is not a type step" half of the font rule reads
+  the build's `UiTheme.STEPS` (exported by the harness); a build without them skips that half
+  (main before ART-0 E); since E merged, the steps are read and checked.
+- **First matrix on main (with E merged), `--matrix -j 2`:** 58 screens x 12 combos, 696
+  captures + 696 grey, all ok, 23 min, 587 MB at 800x450 (deleted after reading). Settings
+  axes skipped (C not merged yet). Runtime lint totals (font / overlap / clipped / contrast):
+  1.0 mouse 63 / 0 / 5 / 22, 1.6 mouse 219 / 0 / 8 / 22, 2.0 mouse 203 / 3 / 11 / 17,
+  2.0 pad 196 / 3 / 11 / 11 (the font rule now checks E's type steps). Read by eye on the
+  HQ sheet: at 2.0 the top bar takes two rows and the crew dossier and Pirate Radio text are
+  cut at the bottom of their panels (area C's layout-at-2.0 work).
+- **Lint baseline re-taken after merging main with E** (tokens and type steps): unchanged,
+  205 lines in 41 files (E moved no literal out of `scripts/ui/**` views; ART-1…12 do).
+- **Harness robustness on main:** main's views hold the bake they draw (ANIM-R6), so "no bake
+  running" never holds: a screen waits for every visible city to show its current look,
+  covered and faded in (at most 20 s real time, then a warning naming the city; a fight's
+  held city, which lands between turns by design, is not waited for). Every screen starts
+  from a cold city cache (`CityBakeCache.shutdown()` after the last screen's scenes are
+  freed), as a fresh launch does: without it, bakes of freed scenes starved later screens and
+  most pictures showed the silhouette stand-in. A screen given up
+  on (timeout or script error) parks its coroutine instead of driving freed scenes on the
+  next screen. `tests/unit/test_visual_qa_harness.gd` (fast) checks the harness compiles
+  against main, every screen has its method, and the axes follow Settings.
+- **Fixed on the way (outside D's files, smallest change):** `CityBakeCache._stop` assigned a
+  record's painter to a typed variable before checking it; a scene freed mid-bake (the
+  harness's grid-influence screen, also reachable in game) raised "Trying to assign invalid
+  previously freed instance" and later crashed the run. It now checks the instance first
+  (the M13 W10 entry logged the same bug at `city_bake_cache.gd:183`).
 
 ### 2026-10-05 — Designer rulings: art reintegration, pause point 0 (resolved by the designer)
 Answered by the designer as a numbered list against `docs/ART_REINTEGRATION_PLAN.md` §1
@@ -5581,6 +5800,21 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+
+- **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
+  HUNTED, old NOTICED → FLAGGED, new NOTICED = a couple of alarms" comes from the concept rounds
+  (DIRECTION_REVIEW round 21: the combat backdrop's intensity dialled down a band). ART_BIBLE v2 §2.8
+  and §3.15 already state the result: COOL 0–24, NOTICED 25+ (three alarm beacons on side buildings,
+  nothing on the target), FLAGGED 50+, HUNTED 75+, "thresholds unchanged", which is what main's
+  Heat poster shows. Adding a NOTICED band below 25 would make five bands and disagree with the
+  bible. Default applied: the band names and thresholds stay as the bible has them (no new band, no
+  config value); the re-cut is the backdrop's look per band (ART-3 / ART-5). Say if you want the
+  five-band version (and its lowest threshold).
+- **SANDBOX / TROJAN / NULL (2026-10-05, ART-0 B part 2, D2):** the art pass calls SHIELD, DEPLOY and
+  MISS by these program names; the D2 ruling left them unchanged, so the game still shows SHIELD,
+  DEPLOY and MISS (SHIELD is also the shield points' word). Default: unchanged until you say.
+- **Merge commit `7e569ca` (ART-0 B):** its message keeps git's "# Conflicts:" lines (a merge commit
+  cannot be reworded without rewriting the branch). Harmless; noted for the audit.
 
 - ~~**GDD 8.2 "DISPATCH text is … never zine-styled" (2026-10-05, ART-0a):**~~ resolved: the designer took
   the default (2026-10-05); GDD 8.2 reworded citing "Designer ruling: DISPATCH text". Original note: the zine look is

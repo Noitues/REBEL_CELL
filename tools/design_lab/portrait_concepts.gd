@@ -18,7 +18,7 @@ static func subjects() -> Array[Dictionary]:
 		var sub := PortraitArt.enemy_subject(StringName(e[0]), e[1], e[2], false)
 		sub["group"] = "ENEMIES"
 		out.append(sub)
-	for e in [["the_manifest", "Priority Routing", &"meridian"], ["civic_core", "Emergency Powers", &"halcyon"], ["the_handler", "The Handler", &"rebel_cell"]]:
+	for e in [["the_manifest", "Customs Seal", &"meridian"], ["civic_core", "Emergency Powers", &"halcyon"], ["the_handler", "The Handler", &"rebel_cell"]]:
 		var sub := PortraitArt.enemy_subject(StringName(e[0]), e[1], e[2], true)
 		sub["group"] = "BOSSES"
 		out.append(sub)

@@ -13,7 +13,7 @@ Stationed on %s."
  // PINNED, // PINNED
  // exhausts, // exhausts
  AGAIN, AGAIN
- DISABLED, DISABLED
+ DOWN, DOWN
  [locked], [locked]
  | ASSIST, | ASSIST
  · %s/%s NUDGE %s%s, · %s/%s NUDGE %s%s
@@ -23,12 +23,12 @@ Stationed on %s."
  · [DEAD], · [DEAD]
 %d BLOCKED,%d BLOCKED
 %d CYCLES,%d CYCLES
-%d DISABLED,%d DISABLED
+%d DOWN,%d DOWN
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
 %d LEFT,%d LEFT
-%d SEIZED,%d SEIZED
 %d SLICES,%d SLICES
+%d TAKEN,%d TAKEN
 %d destroyed,%d destroyed
 %d lost,%d lost
 %d reached home,%d reached home
@@ -81,8 +81,8 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 %s finds no locked route to open near %s.,%s finds no locked route to open near %s.
 %s freezes the link %s - %s for this raid.,%s freezes the link %s - %s for this raid.
 %s guards %s (%s): the class's station bonus helps it hold in raids.,%s guards %s (%s): the class's station bonus helps it hold in raids.
-%s is DISABLED.,%s is DISABLED.
-%s is SEIZED.,%s is SEIZED.
+%s is DOWN.,%s is DOWN.
+%s is TAKEN.,%s is TAKEN.
 %s is at HQ already.,%s is at HQ already.
 "%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics.","%s is back at HQ, healed, keeping the deck, Firmware and Daemons. Unspent Cycles became Schematics."
 %s is destroyed.,%s is destroyed.
@@ -149,16 +149,12 @@ A guided first fight.,A guided first fight.
 "A patrol: loot, Heat and Rank from the run, no objective.","A patrol: loot, Heat and Rank from the run, no objective."
 A random effect: the roll is hidden until you play it. %s,A random effect: the roll is hidden until you play it. %s
 A run is already in progress: finish it first.,A run is already in progress: finish it first.
-AFFLICT,AFFLICT
-AFL,AFL
 AGAIN,AGAIN
+AIRMAIL,AIRMAIL
 ALL BLOCKED,ALL BLOCKED
-ALL HOLD,ALL HOLD
 ARE YOU SURE?,ARE YOU SURE?
 ARMORY %d/%d,ARMORY %d/%d
 ARMORY:,ARMORY:
-ATK,ATK
-ATTACK,ATTACK
 Accessibility,Accessibility
 Achievements,Achievements
 Achievements earned (Stats & achievements lists them).,Achievements earned (Stats & achievements lists them).
@@ -176,7 +172,6 @@ BEST ICE,BEST ICE
 BLACK MARKET // SCHEMATICS %d,BLACK MARKET // SCHEMATICS %d
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
-BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACHED,BREACHED
@@ -203,24 +198,23 @@ Borderless,Borderless
 Boss,Boss
 Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
-Boss Site (star): the corporation's core.,Boss Site (star): the corporation's core.
-Boss Site: the corporation's core,Boss Site: the corporation's core
 Boss Strength,Boss Strength
 Breach,Breach
 Bring %s back from %s.,Bring %s back from %s.
 Bring its HP to 0 to win the fight.,Bring its HP to 0 to win the fight.
-Bring the disabled node back online.,Bring the disabled node back online.
+Bring the DOWN node back online.,Bring the DOWN node back online.
 Build the picked node here: it joins your network and defends in raids.,Build the picked node here: it joins your network and defends in raids.
 Buy,Buy
 CAMPAIGN,CAMPAIGN
 CAMPAIGN END,CAMPAIGN END
-CAMPAIGN LOST,CAMPAIGN LOST
 CAMPAIGNS,CAMPAIGNS
 CAN BE YOUR NODE,CAN BE YOUR NODE
 CARD DETAIL,CARD DETAIL
 CARDS,CARDS
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
+CELL HOLDS,CELL HOLDS
 CELL STATUS,CELL STATUS
+CENTRAL SERVER,CENTRAL SERVER
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
 CLAIMED,CLAIMED
@@ -238,8 +232,6 @@ CORPORATE,CORPORATE
 CORRUPTED,CORRUPTED
 CREW,CREW
 CREW // ROSTER,CREW // ROSTER
-CRIT,CRIT
-CRITICAL,CRITICAL
 CYBER,CYBER
 CYBERDECK,CYBERDECK
 CYBERDECK HQ,CYBERDECK HQ
@@ -403,6 +395,9 @@ Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
 "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
+Central Server,Central Server
+Central Server (star): the corporation's core.,Central Server (star): the corporation's core.
+Central Server: the corporation's core,Central Server: the corporation's core
 Chips go into:,Chips go into:
 Choose,Choose
 City Grid,City Grid
@@ -431,7 +426,7 @@ Clear this Site for the %s Exploit (%d/%d for the breach).,Clear this Site for t
 Cleared: claim it to build a node of your network.,Cleared: claim it to build a node of your network.
 Clearing it changes Heat by %s.,Clearing it changes Heat by %s.
 Clearing it gives %s Schematics.,Clearing it gives %s Schematics.
-Clearing it gives the %s Exploit for the boss breach.,Clearing it gives the %s Exploit for the boss breach.
+Clearing it gives the %s Exploit for the Central Server breach.,Clearing it gives the %s Exploit for the Central Server breach.
 Clearing it now brings a raid on your network.,Clearing it now brings a raid on your network.
 Clearing it opens %d more Sites to runs: %s.,Clearing it opens %d more Sites to runs: %s.
 Clearing it wins the campaign.,Clearing it wins the campaign.
@@ -467,23 +462,25 @@ Cycle Price,Cycle Price
 Cycle target,Cycle target
 Cycles,Cycles
 Cycles in hand when the run ended.,Cycles in hand when the run ended.
-Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.,Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.
-"Cycles: this run's money, spent in the Modem.","Cycles: this run's money, spent in the Modem."
+Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.,Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.
+"Cycles: this run's money, spent in the Mainframe.","Cycles: this run's money, spent in the Mainframe."
 DAEMON,DAEMON
 DAEMONS,DAEMONS
 DAMAGE %s,DAMAGE %s
 DECK,DECK
-DEF,DEF
 DEFEAT,DEFEAT
 DEFEATED,DEFEATED
-DEFEND,DEFEND
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
+DEFRAG,DEFRAG
 DEP,DEP
 DEPLOY,DEPLOY
-DISABLED,DISABLED
+DETOUR,DETOUR
+DFRG,DFRG
 DISPATCH,DISPATCH
 DOWN,DOWN
+DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAW %d,DRAW %d
+DTOR,DTOR
 Daemon,Daemon
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
 DaemonData.adrenal_loop.display_name,Adrenal Loop
@@ -531,7 +528,7 @@ DaemonData.twin_pointer.description,Your wheel is also read at the bottom; both 
 DaemonData.twin_pointer.display_name,Twin Pointer
 DaemonData.warm_boot.description,Start every combat with +2 RAM.
 DaemonData.warm_boot.display_name,Warm Boot
-DaemonData.zero_day.description,A Perfect on the Miss slice resolves as a 3x Crit.
+DaemonData.zero_day.description,A Perfect on the Miss slice resolves as a 3x OVERFLOW.
 DaemonData.zero_day.display_name,Zero Day
 Daemons,Daemons
 Daemons: permanent programs of this operative (none installed).,Daemons: permanent programs of this operative (none installed).
@@ -567,7 +564,6 @@ Delete the campaign in slot %s? This cannot be undone.,Delete the campaign in sl
 Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
 Deutan (green-weak),Deutan (green-weak)
-Disabled: repair the node on the Grid.,Disabled: repair the node on the Grid.
 Display,Display
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
 "Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards.","Drag a card onto a glowing target (or click it, then click the target; right-click cancels). The number keys pick cards."
@@ -582,9 +578,7 @@ ELITE DOWN,ELITE DOWN
 ELITES,ELITES
 ENCRYPTED,ENCRYPTED
 ENCRYPTED STOPPED %d,ENCRYPTED STOPPED %d
-EVADE,EVADE
 EVADED %d,EVADED %d
-EVD,EVD
 EVENT PAYOUT,EVENT PAYOUT
 EXPLOIT,EXPLOIT
 EXPLOITS,EXPLOITS
@@ -614,7 +608,7 @@ EnemyData.care_drone.description,A swarm drone.
 EnemyData.care_drone.display_name,Care Drone
 EnemyData.care_swarm.description,A cloud of care drones around a fragile core.
 EnemyData.care_swarm.display_name,Care Swarm
-EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: inertia resists every nudge."
+EnemyData.cargo_hauler.description,"Slow, heavy and hard to turn: its weight resists every nudge."
 EnemyData.cargo_hauler.display_name,Cargo Hauler
 EnemyData.cell_informant.description,It knows your wheel. Its reader orbits 3 a turn.
 EnemyData.cell_informant.display_name,Cell Informant
@@ -650,7 +644,7 @@ EnemyData.drone_dispatcher.description,Launches a courier drone every other turn
 EnemyData.drone_dispatcher.display_name,Drone Dispatcher
 EnemyData.echo_drone.description,"A copy of one of your own drones, running someone else's orders."
 EnemyData.echo_drone.display_name,Echo Drone
-EnemyData.echo_process.description,Replays your moves back at you: Dose and Tariff.
+EnemyData.echo_process.description,Replays your moves back at you: Dose and Priority.
 EnemyData.echo_process.display_name,Echo Process
 EnemyData.geostationary_guard.description,"Orbits 3 a turn, hits like a falling satellite, brings a drone."
 EnemyData.geostationary_guard.display_name,Geostationary Guard
@@ -698,7 +692,7 @@ EnemyData.seed_drone.description,A one-hit drone sprouted by a Perfect landing.
 EnemyData.seed_drone.display_name,Seed Drone
 EnemyData.station_commander.description,"Two readers, heavy block and a flare."
 EnemyData.station_commander.display_name,Station Commander
-EnemyData.surveillance_mast.description,Hard to pin down: Evade slices and an orbiting read head.
+EnemyData.surveillance_mast.description,Hard to pin down: DETOUR slices and an orbiting read head.
 EnemyData.surveillance_mast.display_name,Surveillance Mast
 EnemyData.tariff_collector.description,Every hit is a fee: attacks drain RAM.
 EnemyData.tariff_collector.display_name,Tariff Collector
@@ -729,11 +723,12 @@ Exploit,Exploit
 Exploit %s found (%d/%d for the breach).,Exploit %s found (%d/%d for the breach).
 Exploit Heat,Exploit Heat
 Exploit Site,Exploit Site
-Exploit Site (diamond): clearing it gives an Exploit for the boss breach.,Exploit Site (diamond): clearing it gives an Exploit for the boss breach.
+Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.,Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.
 Exploits,Exploits
 Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.,Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
 FIGHT WON,FIGHT WON
+FIRMWARE,FIRMWARE
 FLATLINED,FLATLINED
 FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
@@ -747,25 +742,25 @@ Fights won this run.,Fights won this run.
 Finish,Finish
 Firmware,Firmware
 Firmware chip,Firmware chip
-FirmwareData.barbed_wire.description,DEF slice also deals 2 damage to the pointer target.
+FirmwareData.barbed_wire.description,DEFRAG slice also deals 2 damage to the pointer target.
 FirmwareData.barbed_wire.display_name,Barbed Wire
-FirmwareData.bulkhead.description,DEF and SHIELD slices: output +50%.
+FirmwareData.bulkhead.description,DEFRAG and SHIELD slices: output +50%.
 FirmwareData.bulkhead.display_name,Bulkhead
 FirmwareData.burner.description,Permanently OVERCLOCKED (1.5x); each trigger adds 1 Heat.
 FirmwareData.burner.display_name,Burner
 FirmwareData.coolant_loop.description,"Once per combat, a Perfect on this slice lowers Heat by 1."
 FirmwareData.coolant_loop.display_name,Coolant Loop
-FirmwareData.counterstrike.description,EVADE slice also deals 4 damage to the pointer target.
+FirmwareData.counterstrike.description,DETOUR slice also deals 4 damage to the pointer target.
 FirmwareData.counterstrike.display_name,Counterstrike
 FirmwareData.hardened.description,Slice permanently ENCRYPTED.
 FirmwareData.hardened.display_name,Hardened
-FirmwareData.leech.description,ATK slice restores 1 RAM on Good or better.
+FirmwareData.leech.description,SHIM slice restores 1 RAM on Good or better.
 FirmwareData.leech.display_name,Leech
 FirmwareData.mirror.description,Copies the neighbour on the side you landed; both on Perfect.
 FirmwareData.mirror.display_name,Mirror
-FirmwareData.nanite_mesh.description,"HEAL slice: output +50%, and it cleanses itself after resolving."
+FirmwareData.nanite_mesh.description,"HOTFIX slice: output +50%, and it cleanses itself after resolving."
 FirmwareData.nanite_mesh.display_name,Nanite Mesh
-FirmwareData.overvolt.description,ATK and CRIT slices: output +25%.
+FirmwareData.overvolt.description,SHIM and OVERFLOW slices: output +25%.
 FirmwareData.overvolt.display_name,Overvolt
 FirmwareData.patch_plus.description,Slice output +50%.
 FirmwareData.patch_plus.display_name,Patch+
@@ -775,13 +770,13 @@ FirmwareData.recycler.description,The Miss slice restores 2 RAM when it resolves
 FirmwareData.recycler.display_name,Recycler
 FirmwareData.shunt.description,Resolves the neighbour on the side you landed toward at 1.5x; nothing special on Perfect.
 FirmwareData.shunt.display_name,Shunt
-FirmwareData.siphon.description,ATK slice heals you 2 on Good or better.
+FirmwareData.siphon.description,SHIM slice heals you 2 on Good or better.
 FirmwareData.siphon.display_name,Siphon
-FirmwareData.skimmer.description,ATK slice: +3 Cycles on a Perfect (twice per combat).
+FirmwareData.skimmer.description,SHIM slice: +3 Cycles on a Perfect (twice per combat).
 FirmwareData.skimmer.display_name,Skimmer
-FirmwareData.static_coat.description,DEF slice also grants 2 shield.
+FirmwareData.static_coat.description,DEFRAG slice also grants 2 shield.
 FirmwareData.static_coat.display_name,Static Coat
-FirmwareData.tracer.description,ATK or CRIT slice strips 1 resistance from the target on a Perfect.
+FirmwareData.tracer.description,SHIM or OVERFLOW slice strips 1 resistance from the target on a Perfect.
 FirmwareData.tracer.display_name,Tracer
 Flash limiter (max 3 flashes per second),Flash limiter (max 3 flashes per second)
 "Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it.","Forecast, not a result: if you start the defence now, %s. The playout matches it exactly. The raid has not happened yet: deploy assets or pick other targets to change it."
@@ -791,18 +786,19 @@ GETS %s,GETS %s
 GOOD,GOOD
 GOT %s,GOT %s
 GRID VIEW,GRID VIEW
+GROWTH,GROWTH
 GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
-HEAL,HEAL
 HEAT,HEAT
 HEAT %d · %s,HEAT %d · %s
 HEAT %d · %s (%d+),HEAT %d · %s (%d+)
 HEAT %s,HEAT %s
 HEAT & BANKING,HEAT & BANKING
+HFIX,HFIX
 HITS %d,HITS %d
 HITS %s %d,HITS %s %d
 HITS %s %d → %d LEFT,HITS %s %d → %d LEFT
@@ -817,6 +813,7 @@ HOME %s,HOME %s
 HOME %s · HOLDS,HOME %s · HOLDS
 HOME FELL,HOME FELL
 HOME HOLDS,HOME HOLDS
+HOTFIX,HOTFIX
 HP,HP
 HP %d/%d · DECK %d · DAEMONS %d%s,HP %d/%d · DECK %d · DAEMONS %d%s
 HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.,HP %d: the hits it takes before it breaks. %d LEFT: in the Armory to deploy.
@@ -844,6 +841,7 @@ Heat +0: this run added no Heat.,Heat +0: this run added no Heat.
 Heat Gain,Heat Gain
 Heat Objective Sites,Heat Objective Sites
 Heat Sink,Heat Sink
+Heat glitch (the screen distorts as Heat rises; off by default),Heat glitch (the screen distorts as Heat rises; off by default)
 Heat reduction,Heat reduction
 Heat reduction Site,Heat reduction Site
 "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.","Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat."
@@ -851,17 +849,17 @@ Heat stops at its limit,Heat stops at its limit
 Heat the run added (campaign Heat is now %d).,Heat the run added (campaign Heat is now %d).
 Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.,Heat: how hard the corporation hunts the Cell. Thresholds add raids and harder rules.
 Heat: the corporation's attention. Thresholds bring raids and harder rules.,Heat: the corporation's attention. Thresholds bring raids and harder rules.
-HeatThresholdData.heat_10.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_10.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_100.event_text,PURGE: the corporation sends the largest raid of the campaign.
 HeatThresholdData.heat_20.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_25.event_text,"A raid is queued. While Heat stays at 25 or more, elites are more frequent."
-HeatThresholdData.heat_30.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_30.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_40.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_50.event_text,"A raid is queued. While Heat stays at 50 or more, every enemy gains +1 resistance."
-HeatThresholdData.heat_60.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_60.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_70.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 or more, raids are 25% stronger."
-HeatThresholdData.heat_80.event_text,The next netrun's Modem carries one item fewer.
+HeatThresholdData.heat_80.event_text,The next netrun's Mainframe carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
 "High contrast (opaque panels, 7:1 text, thick edges)","High contrast (opaque panels, 7:1 text, thick edges)"
 Home integrity before and after the raid.,Home integrity before and after the raid.
@@ -881,7 +879,7 @@ HomeServerVariantData.home_relay_nest.display_name,Relay Nest home server
 HomeServerVariantData.home_standard.description,The default home server layout.
 HomeServerVariantData.home_standard.display_name,Standard home server
 Hover or right-click,Hover or right-click
-"How much stronger than normal the threats are (from Heat, ICE and seized Sites). 0% is normal strength.","How much stronger than normal the threats are (from Heat, ICE and seized Sites). 0% is normal strength."
+"How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength.","How much stronger than normal the threats are (from Heat, ICE and taken Sites). 0% is normal strength."
 HubCoreData.auto_renew.description,Heals 10 each turn unless the Hub is breached.
 HubCoreData.auto_renew.display_name,Auto-Renew
 HubCoreData.breaker_core.description,+1 spin on all cards. Perfect: the slice resolves twice.
@@ -890,6 +888,8 @@ HubCoreData.breaker_core_mk2.description,+2 spin on all cards. Perfect: the slic
 HubCoreData.breaker_core_mk2.display_name,Breaker Core Mk2
 HubCoreData.compliance_lock.description,Spin resistance 3 while the Hub is online.
 HubCoreData.compliance_lock.display_name,Compliance Lock
+HubCoreData.customs_seal.description,Gains 4 shield each turn unless the Hub is breached.
+HubCoreData.customs_seal.display_name,Customs Seal
 HubCoreData.emergency_powers.description,Heals 4 and gains 4 block each turn unless the Hub is breached.
 HubCoreData.emergency_powers.display_name,Emergency Powers
 HubCoreData.ghost_core.description,"First nudge on an enemy wheel each turn ignores resistance. Perfect: the slice resolves twice; on each resolution, strip 2 resistance."
@@ -908,8 +908,6 @@ HubCoreData.phantom_core.description,"A free nudge at the start of each turn. Pe
 HubCoreData.phantom_core.display_name,Phantom Core
 HubCoreData.phantom_core_mk2.description,"Two free nudges at the start of each turn. Perfect: the slice resolves twice; on each resolution, evade the next attack."
 HubCoreData.phantom_core_mk2.display_name,Phantom Core Mk2
-HubCoreData.priority_routing.description,Gains 4 shield each turn unless the Hub is breached.
-HubCoreData.priority_routing.display_name,Priority Routing
 HubCoreData.rig_core.description,"+1 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 1 RAM and gain a free nudge."
 HubCoreData.rig_core.display_name,Rig Core
 HubCoreData.rig_core_mk2.description,"+2 max RAM. Perfect: the slice resolves again at half; on each resolution, refund 2 RAM and gain a free nudge."
@@ -936,6 +934,8 @@ IF CLEARED:,IF CLEARED:
 RUNS NOW:","IF THE RAID
 RUNS NOW:"
 IF YOU SEND IT,IF YOU SEND IT
+INFC,INFC
+INFECT,INFECT
 INNER,INNER
 INNER RING SEGMENT,INNER RING SEGMENT
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
@@ -956,7 +956,7 @@ JACK OUT,JACK OUT
 JACKED OUT,JACKED OUT
 Key,Key
 LAST TURN: ,LAST TURN: 
-LEAVE THE MODEM,LEAVE THE MODEM
+LEAVE MAINFRAME,LEAVE MAINFRAME
 LEFT,LEFT
 LETHAL,LETHAL
 LETHAL: this turn takes it to 0 HP.,LETHAL: this turn takes it to 0 HP.
@@ -974,7 +974,7 @@ Language,Language
 Language (translations from assets/text/strings.csv),Language (translations from assets/text/strings.csv)
 Leave,Leave
 Leave REBEL_CELL (asks first).,Leave REBEL_CELL (asks first).
-Leave the Modem and go back to the route.,Leave the Modem and go back to the route.
+Leave the Mainframe and go back to the route.,Leave the Mainframe and go back to the route.
 Left click,Left click
 Lexicon,Lexicon
 LineSetData.barks_botnet.lines.0,Perfect Deploy. Something of mine is inside theirs now.
@@ -1349,17 +1349,16 @@ Living operatives in the Cell.,Living operatives in the Cell.
 Load,Load
 Load the campaign in slot %s.,Load the campaign in slot %s.
 Loadout,Loadout
+MAINFRAME,MAINFRAME
+MAINFRAME SHOP,MAINFRAME SHOP
 MAP KEY,MAP KEY
-MICROCHIPS,MICROCHIPS
 MISS,MISS
-MODEM,MODEM
-MODEM CYBER SHOP,MODEM CYBER SHOP
 MORE BELOW,MORE BELOW
+Mainframe,Mainframe
+Mainframe: the cyber shop,Mainframe: the cyber shop
+"Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Map legend on the city views,Map legend on the city views
 Master volume,Master volume
-Modem,Modem
-Modem: the cyber shop,Modem: the cyber shop
-"Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).","Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal)."
 Move it to %s.,Move it to %s.
 Music volume,Music volume
 NEED %d · HAVE %d,NEED %d · HAVE %d
@@ -1454,6 +1453,8 @@ OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
+OVERFLOW,OVERFLOW
+OVFL,OVFL
 Off (no correction),Off (no correction)
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Operative,Operative
@@ -1469,7 +1470,6 @@ Out of reach from here.,Out of reach from here.
 ","Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).
 "
 PARASITE,PARASITE
-PARTIAL,PARTIAL
 PASSED,PASSED
 PAUSED,PAUSED
 PAYOUT,PAYOUT
@@ -1699,8 +1699,8 @@ Resolution (windowed),Resolution (windowed)
 Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
 Respin,Respin
 Respin for %d RAM,Respin for %d RAM
-Respin your wheel for %d RAM: a random result (sets a checkpoint).,Respin your wheel for %d RAM: a random result (sets a checkpoint).
-Respin your wheel for %d RAM: a random result (sets a checkpoint). %s,Respin your wheel for %d RAM: a random result (sets a checkpoint). %s
+Respin your wheel for %d RAM: a random result (UNDO stops here).,Respin your wheel for %d RAM: a random result (UNDO stops here).
+Respin your wheel for %d RAM: a random result (UNDO stops here). %s,Respin your wheel for %d RAM: a random result (UNDO stops here). %s
 Resume,Resume
 Resume saved campaign,Resume saved campaign
 Resume saved game,Resume saved game
@@ -1730,7 +1730,6 @@ Runs,Runs
 SAVED,SAVED
 SCHEMATICS,SCHEMATICS
 SCHEMATICS %s,SCHEMATICS %s
-SEIZED,SEIZED
 SEND IT,SEND IT
 "SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome.","SEND IT {end_turn} resolves every needle at once: defensive slices, then offensive, then statuses. The tags already show the outcome."
 SFX volume,SFX volume
@@ -1738,6 +1737,7 @@ SHARE CODES,SHARE CODES
 SHD,SHD
 SHIELD,SHIELD
 SHIELD %d,SHIELD %d
+SHIM,SHIM
 SHOP,SHOP
 SHRED,SHRED
 SHRED A CARD,SHRED A CARD
@@ -1770,10 +1770,6 @@ Schematics this run has banked for the campaign.,Schematics this run has banked 
 "Schematics: the campaign's currency, spent at HQ.","Schematics: the campaign's currency, spent at HQ."
 "Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks.","Schematics: the campaign's currency. Recruit, claim and upgrade nodes, repair, scrub Heat, buy boosts and Profile unlocks."
 Scrub Heat %d · pay %d,Scrub Heat %d · pay %d
-Seized Raid Strength,Seized Raid Strength
-Seized by a raid: run it again to take it back.,Seized by a raid: run it again to take it back.
-Seized by the corporation.,Seized by the corporation.
-Seized: the corporation took the Site back.,Seized: the corporation took the Site back.
 Select,Select
 Server Rack,Server Rack
 Server Rack: the Site's guardian,Server Rack: the Site's guardian
@@ -1784,7 +1780,7 @@ Share this code: Start from code on the new campaign screen starts this campaign
 "Shield %d: soaks damage, lasts.","Shield %d: soaks damage, lasts."
 Shop,Shop
 Shop Stock,Shop Stock
-Shop: spend Cycles (Modem),Shop: spend Cycles (Modem)
+Shop: spend Cycles (Mainframe),Shop: spend Cycles (Mainframe)
 Show frame rate,Show frame rate
 Site,Site
 "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.","Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network."
@@ -1792,8 +1788,6 @@ SiteData.blind_the_cameras.display_name,Blind the Cameras
 SiteData.burn_the_ledger.display_name,Burn the Ledger
 SiteData.burn_the_orbit_logs.display_name,Burn the Orbit Logs
 SiteData.burn_the_orders.display_name,Burn the Orders
-SiteData.civic_core_site.display_name,The Civic Core
-SiteData.commons_array_site.display_name,The Commons Array
 SiteData.dispatch_core_site.display_name,DISPATCH
 SiteData.erase_the_ledger.display_name,Erase the Ledger
 SiteData.forge_the_manifest.display_name,Forge the Manifest
@@ -1826,6 +1820,7 @@ SiteData.h3_h.display_name,Halcyon Root Registry
 SiteData.h_home.display_name,Home Server
 SiteData.home.display_name,Home Server
 SiteData.jam_the_imaging.display_name,Jam the Imaging
+SiteData.launch_control.display_name,Launch Control
 SiteData.lose_the_case_file.display_name,Lose the Case File
 SiteData.lose_the_handler.display_name,Lose the Handler
 SiteData.lose_the_tracking.display_name,Lose the Tracking
@@ -1912,7 +1907,6 @@ SiteData.r3_f.display_name,Timestamp Engine
 SiteData.r3_g.display_name,Voice Model
 SiteData.r3_h.display_name,DISPATCH Root
 SiteData.r_home.display_name,Home Server
-SiteData.renewal_engine_site.display_name,Renewal Engine
 SiteData.reroute_the_audit.display_name,Reroute the Audit
 SiteData.scramble_the_voice.display_name,Scramble the Voice
 SiteData.scrub_records.display_name,Scrub Records
@@ -1945,50 +1939,52 @@ SiteData.t3_e.display_name,Board Comms Backbone
 SiteData.t3_f.display_name,Continuum Licensing Authority
 SiteData.t3_g.display_name,Implant Cohort Archive
 SiteData.t3_h.display_name,Solace Root Certificate Store
-SiteData.the_manifest_site.display_name,The Manifest
+SiteData.the_genome_core.display_name,The Genome Core
+SiteData.the_master_manifest.display_name,The Master Manifest
+SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
 Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.
 Skip,Skip
 Skip tutorial,Skip tutorial
-SliceData.atk_10.display_name,Attack 10
-SliceData.atk_12.display_name,Attack 12
-SliceData.atk_14.display_name,Attack 14
-SliceData.atk_16.display_name,Attack 16
-SliceData.atk_20.display_name,Attack 20
-SliceData.atk_3.display_name,Attack 3
-SliceData.atk_4.display_name,Attack 4
-SliceData.atk_6.display_name,Attack 6
-SliceData.atk_7.display_name,Attack 7
-SliceData.atk_7_drain.display_name,Attack 7 (drains 1 RAM)
-SliceData.atk_8.display_name,Attack 8
-SliceData.atk_8_inertia.display_name,Attack 8 (+1 resistance)
-SliceData.atk_9.display_name,Attack 9
 SliceData.citation.display_name,Citation
-SliceData.crit_12.display_name,Crit 12
-SliceData.crit_12_drain.display_name,Crit 12 (drains 2 RAM)
-SliceData.crit_14.display_name,Crit 14
-SliceData.crit_15.display_name,Crit 15
-SliceData.crit_16.display_name,Crit 16
-SliceData.crit_24.display_name,Crit 24
-SliceData.def_12.display_name,Defend 12
-SliceData.def_2.display_name,Defend 2
-SliceData.def_3.display_name,Defend 3
-SliceData.def_4.display_name,Defend 4
-SliceData.def_5.display_name,Defend 5
-SliceData.def_6.display_name,Defend 6
-SliceData.def_8.display_name,Defend 8
+SliceData.defrag_12.display_name,Defrag 12
+SliceData.defrag_2.display_name,Defrag 2
+SliceData.defrag_3.display_name,Defrag 3
+SliceData.defrag_4.display_name,Defrag 4
+SliceData.defrag_5.display_name,Defrag 5
+SliceData.defrag_6.display_name,Defrag 6
+SliceData.defrag_8.display_name,Defrag 8
 SliceData.deploy_1.display_name,Deploy 1
+SliceData.detour_1.display_name,Detour
+SliceData.detour_2.display_name,Detour 2
 SliceData.dose.display_name,Dose
-SliceData.evade_1.display_name,Evade
-SliceData.evade_2.display_name,Evade 2
-SliceData.heal_4.display_name,Heal 4
-SliceData.heal_6.display_name,Heal 6
+SliceData.hotfix_4.display_name,Hotfix 4
+SliceData.hotfix_6.display_name,Hotfix 6
 SliceData.miss.display_name,Miss
+SliceData.overflow_12.display_name,Overflow 12
+SliceData.overflow_12_drain.display_name,Overflow 12 (drains 2 RAM)
+SliceData.overflow_14.display_name,Overflow 14
+SliceData.overflow_15.display_name,Overflow 15
+SliceData.overflow_16.display_name,Overflow 16
+SliceData.overflow_24.display_name,Overflow 24
+SliceData.priority.display_name,Priority
 SliceData.shield_5.display_name,Shield 5
 SliceData.shield_8.display_name,Shield 8
+SliceData.shim_10.display_name,Shim 10
+SliceData.shim_12.display_name,Shim 12
+SliceData.shim_14.display_name,Shim 14
+SliceData.shim_16.display_name,Shim 16
+SliceData.shim_20.display_name,Shim 20
+SliceData.shim_3.display_name,Shim 3
+SliceData.shim_4.display_name,Shim 4
+SliceData.shim_6.display_name,Shim 6
+SliceData.shim_7.display_name,Shim 7
+SliceData.shim_7_drain.display_name,Shim 7 (drains 1 RAM)
+SliceData.shim_8.display_name,Shim 8
+SliceData.shim_8_weight.display_name,Shim 8 (+1 resistance)
+SliceData.shim_9.display_name,Shim 9
 SliceData.solar_flare.display_name,Solar Flare
-SliceData.tariff.display_name,Tariff
 Slices,Slices
 Slot %d: %s%s,Slot %d: %s%s
 Slot %s: %s,Slot %s: %s
@@ -2430,6 +2426,10 @@ Subtitles with speaker names,Subtitles with speaker names
 Switch,Switch
 System log strip at the foot of the screen,System log strip at the foot of the screen
 T%d,T%d
+TAKEN,TAKEN
+TAKEN by a raid: run it again to take it back.,TAKEN by a raid: run it again to take it back.
+TAKEN by the corporation.,TAKEN by the corporation.
+TAKEN: the corporation took the Site back.,TAKEN: the corporation took the Site back.
 TARGET: %s,TARGET: %s
 TERMINAL EVENT,TERMINAL EVENT
 THE TARGET,THE TARGET
@@ -2444,6 +2444,7 @@ TURN %d · FREE NUDGE %d,TURN %d · FREE NUDGE %d
 TUTORIAL,TUTORIAL
 Take,Take
 Take nothing from this payout.,Take nothing from this payout.
+Taken Raid Strength,Taken Raid Strength
 Target:,Target:
 Terminal,Terminal
 Terminal: an event with choices,Terminal: an event with choices
@@ -2709,8 +2710,8 @@ The corporation's core. The breach needs %d Exploits.,The corporation's core. Th
 The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.,The highest ICE level cleared (— until you clear one). Each corporation keeps its own ladder.
 The highest ICE level cleared.,The highest ICE level cleared.
 The home server fell: the campaign is lost.,The home server fell: the campaign is lost.
+The home server is BREACHED. Campaign lost.,The home server is BREACHED. Campaign lost.
 The home server is destroyed.,The home server is destroyed.
-The home server is gone. Campaign lost.,The home server is gone. Campaign lost.
 The installed Daemons. Opens the tray: each sigil shows what its Daemon does.,The installed Daemons. Opens the tray: each sigil shows what its Daemon does.
 "The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too.","The map key: what the icons, colours and lines mean. Point at it or press it to open it; the pad's key button too."
 The next %s campaign may start up to ICE %d.,The next %s campaign may start up to ICE %d.
@@ -2757,7 +2758,7 @@ ThreatData.tow_truck.display_name,Tow Truck
 Threats,Threats
 Threats come in at %s (the dashed routes on the map).,Threats come in at %s (the dashed routes on the map).
 Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.,Threats come into the city at %d Sites: %s. They follow the dashed routes on the map to your nodes.
-Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.,Threats destroyed: %d. Reached home: %d. Disabled: %d. Seized: %d.
+Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.,Threats destroyed: %d. Reached home: %d. DOWN: %d. TAKEN: %d.
 Threats here: %s.,Threats here: %s.
 Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
@@ -2766,6 +2767,7 @@ Tritan (blue-weak),Tritan (blue-weak)
 Tutorial,Tutorial
 UNDO,UNDO
 UNDO %s,UNDO %s
+"UNDO is blocked: a random event came since (a respin, a random pick).","UNDO is blocked: a random event came since (a respin, a random pick)."
 UNDOCK,UNDOCK
 UPGRADE,UPGRADE
 UPGRADE A SLICE // INSTALL %s,UPGRADE A SLICE // INSTALL %s
@@ -2781,6 +2783,7 @@ VIEW LOADOUT,VIEW LOADOUT
 Virus,Virus
 WANTED,WANTED
 WAS,WAS
+WEAK,WEAK
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON
@@ -2806,7 +2809,7 @@ You can move here now.,You can move here now.
 Your home Site (CORE),Your home Site (CORE)
 Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.,Your home server (CORE) now and after the raid: %d → %d integrity. At 0 the campaign is lost. Exact: the playout matches it.
 "Your records, achievements and run history.","Your records, achievements and run history."
-Your spinner. Drag a microchip or a slice onto a slot to put it there.,Your spinner. Drag a microchip or a slice onto a slot to put it there.
+Your spinner. Drag Firmware or a slice onto a slot to put it there.,Your spinner. Drag Firmware or a slice onto a slot to put it there.
 Zoom out to the whole City Grid.,Zoom out to the whole City Grid.
 a Rack,a Rack
 a Shop,a Shop
@@ -2879,4 +2882,4 @@ vs %s | ICE %d%s,vs %s | ICE %d%s
 won,won
 you are here,you are here
 your network holds every threat,your network holds every threat
-{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; a Respin or a random slice pick sets a new checkpoint.
+{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.

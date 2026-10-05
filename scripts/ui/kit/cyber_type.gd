@@ -2,7 +2,7 @@ class_name CyberType
 extends RefCounted
 ## A drawn "cybernetic" display face: letters as chamfered strokes on a 4x6 grid (circuit
 ## traces, 45-degree corners), with optional traces branching off the strokes and ending in
-## round solder pads. Used for neon signs (MODEM, CYBER SHOP). Covers the letters the signs
+## round solder pads. Used for neon signs (MAINFRAME, CYBER SHOP). Covers the letters the signs
 ## need plus a few spares; unknown characters draw as a gap.
 
 const W := 4.0
@@ -13,6 +13,7 @@ const GLYPHS := {
 	"O": [[Vector2(1, 0), Vector2(3, 0), Vector2(4, 1), Vector2(4, 5), Vector2(3, 6), Vector2(1, 6), Vector2(0, 5), Vector2(0, 1), Vector2(1, 0)]],
 	"D": [[Vector2(0, 0), Vector2(3, 0), Vector2(4, 1), Vector2(4, 5), Vector2(3, 6), Vector2(0, 6), Vector2(0, 0)]],
 	"E": [[Vector2(4, 0), Vector2(0, 0), Vector2(0, 6), Vector2(4, 6)], [Vector2(0, 3), Vector2(3, 3)]],
+	"F": [[Vector2(4, 0), Vector2(0, 0), Vector2(0, 6)], [Vector2(0, 3), Vector2(3, 3)]],
 	"C": [[Vector2(4, 0), Vector2(1, 0), Vector2(0, 1), Vector2(0, 5), Vector2(1, 6), Vector2(4, 6)]],
 	"Y": [[Vector2(0, 0), Vector2(0, 2), Vector2(1, 3), Vector2(3, 3), Vector2(4, 2), Vector2(4, 0)], [Vector2(2, 3), Vector2(2, 6)]],
 	"B": [[Vector2(0, 0), Vector2(3, 0), Vector2(4, 1), Vector2(4, 2), Vector2(3, 3), Vector2(4, 4), Vector2(4, 5), Vector2(3, 6), Vector2(0, 6), Vector2(0, 0)], [Vector2(0, 3), Vector2(3, 3)]],

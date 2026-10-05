@@ -91,7 +91,7 @@ func reset() -> void:
 ## its template in the lookup and adds its generated elites, threats and raids; that belongs
 ## to its campaign only. Forgetting the campaign (reset), starting another or resuming one
 ## gives the lookup back its shipped content: a test that built the mirror left the built
-## corporation to every later test (its raids read differently: a node Disabled then Seized),
+## corporation to every later test (its raids read differently: a node DOWN then TAKEN),
 ## and a second REBEL_CELL campaign found the first one's build instead of the template.
 func _restore_lookup() -> void:
 	if _generated_in_lookup:

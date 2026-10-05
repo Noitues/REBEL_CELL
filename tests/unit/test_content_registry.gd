@@ -20,7 +20,7 @@ func after_each() -> void:
 func _slice(id: StringName) -> SliceData:
 	var s := SliceData.new()
 	s.id = id
-	s.slice_type = RC.SliceType.ATTACK
+	s.slice_type = RC.SliceType.SHIM
 	s.base_output = 6
 	return s
 

@@ -1,22 +1,22 @@
 [gd_resource type="Resource" script_class="CampaignConfigData" load_steps=49 format=3]
 
-[ext_resource type="Resource" path="res://content/slices/atk_10.tres" id="sl_atk_10"]
-[ext_resource type="Resource" path="res://content/slices/crit_16.tres" id="sl_crit_16"]
-[ext_resource type="Resource" path="res://content/slices/heal_6.tres" id="sl_heal_6"]
+[ext_resource type="Resource" path="res://content/slices/shim_10.tres" id="sl_shim_10"]
+[ext_resource type="Resource" path="res://content/slices/overflow_16.tres" id="sl_overflow_16"]
+[ext_resource type="Resource" path="res://content/slices/hotfix_6.tres" id="sl_hotfix_6"]
 [ext_resource type="Resource" path="res://content/slices/shield_8.tres" id="sl_shield_8"]
-[ext_resource type="Resource" path="res://content/slices/evade_2.tres" id="sl_evade_2"]
+[ext_resource type="Resource" path="res://content/slices/detour_2.tres" id="sl_detour_2"]
 [ext_resource type="Script" path="res://scripts/data/campaign_config_data.gd" id="1_cfg"]
 [ext_resource type="Script" path="res://scripts/data/heat_threshold_data.gd" id="2_ht"]
 [ext_resource type="Script" path="res://scripts/data/rule_modifier_data.gd" id="3_rm"]
 [ext_resource type="Script" path="res://scripts/data/ice_level_data.gd" id="4_ice"]
 [ext_resource type="Script" path="res://scripts/data/slice_data.gd" id="5_slice"]
-[ext_resource type="Resource" path="res://content/slices/atk_6.tres" id="sl_atk_6"]
-[ext_resource type="Resource" path="res://content/slices/atk_8.tres" id="sl_atk_8"]
-[ext_resource type="Resource" path="res://content/slices/crit_12.tres" id="sl_crit_12"]
-[ext_resource type="Resource" path="res://content/slices/def_5.tres" id="sl_def_5"]
-[ext_resource type="Resource" path="res://content/slices/def_8.tres" id="sl_def_8"]
+[ext_resource type="Resource" path="res://content/slices/shim_6.tres" id="sl_shim_6"]
+[ext_resource type="Resource" path="res://content/slices/shim_8.tres" id="sl_shim_8"]
+[ext_resource type="Resource" path="res://content/slices/overflow_12.tres" id="sl_overflow_12"]
+[ext_resource type="Resource" path="res://content/slices/defrag_5.tres" id="sl_defrag_5"]
+[ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="sl_defrag_8"]
 [ext_resource type="Resource" path="res://content/slices/shield_5.tres" id="sl_shield_5"]
-[ext_resource type="Resource" path="res://content/slices/evade_1.tres" id="sl_evade_1"]
+[ext_resource type="Resource" path="res://content/slices/detour_1.tres" id="sl_detour_1"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_25.tres" id="raid_25"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_50.tres" id="raid_50"]
 [ext_resource type="Resource" path="res://content/raids/raid_heat_75.tres" id="raid_75"]
@@ -32,7 +32,7 @@
 ; 3 ELITE_FREQUENCY_PCT, 4 CYCLE_PRICE_PCT, 5 SHOP_STOCK, 6 RAID_STRENGTH_PCT,
 ; 7 RAID_EXTRA_WAVE, 8 ENEMY_RESISTANCE, 9 DEATH_HEAT, 10 EXPLOIT_HEAT,
 ; 11 BOSS_PHASE_EARLY, 12 BOSS_EXTRA_POINTER, 13 STARTING_BUG_CARD,
-; 14 NO_FIRST_TURN_FREE_NUDGE, 15 REPAIR_COST_PCT, 16 SEIZED_RAID_STRENGTH_PCT,
+; 14 NO_FIRST_TURN_FREE_NUDGE, 15 REPAIR_COST_PCT, 16 TAKEN_RAID_STRENGTH_PCT,
 ; 17 PURGE_THRESHOLD
 
 [sub_resource type="Resource" id="rm_minor_shop_stock"]
@@ -70,7 +70,7 @@ heat = 10
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_20"]
 script = ExtResource("2_ht")
@@ -98,7 +98,7 @@ heat = 30
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_40"]
 script = ExtResource("2_ht")
@@ -126,7 +126,7 @@ heat = 60
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_70"]
 script = ExtResource("2_ht")
@@ -154,7 +154,7 @@ heat = 80
 kind = 0
 event_complications = Array[ExtResource("3_rm")]([SubResource("rm_minor_shop_stock")])
 ongoing_modifiers = Array[ExtResource("3_rm")]([])
-event_text = "The next netrun's Modem carries one item fewer."
+event_text = "The next netrun's Mainframe carries one item fewer."
 
 [sub_resource type="Resource" id="ht_90"]
 script = ExtResource("2_ht")
@@ -343,7 +343,7 @@ modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_13")])
 [sub_resource type="Resource" id="ice_14"]
 script = ExtResource("4_ice")
 level = 14
-description = "Seized Sites spawn stronger raids."
+description = "TAKEN Sites spawn stronger raids."
 modifiers = Array[ExtResource("3_rm")]([SubResource("rm_ice_14")])
 
 [sub_resource type="Resource" id="ice_15"]
@@ -411,7 +411,7 @@ card_removal_price = 50
 card_removal_increment = 25
 slice_overwrite_price = 100
 miss_slice_overwrite_price = 150
-shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_atk_6"), ExtResource("sl_atk_8"), ExtResource("sl_crit_12"), ExtResource("sl_def_5"), ExtResource("sl_def_8"), ExtResource("sl_shield_5"), ExtResource("sl_evade_1"), ExtResource("sl_atk_10"), ExtResource("sl_crit_16"), ExtResource("sl_heal_6"), ExtResource("sl_shield_8"), ExtResource("sl_evade_2")])
+shop_slices = Array[ExtResource("5_slice")]([ExtResource("sl_shim_6"), ExtResource("sl_shim_8"), ExtResource("sl_overflow_12"), ExtResource("sl_defrag_5"), ExtResource("sl_defrag_8"), ExtResource("sl_shield_5"), ExtResource("sl_detour_1"), ExtResource("sl_shim_10"), ExtResource("sl_overflow_16"), ExtResource("sl_hotfix_6"), ExtResource("sl_shield_8"), ExtResource("sl_detour_2")])
 shop_slice_choices = 3
 rookie_cost = 15
 node_base_cost = 20
@@ -428,7 +428,7 @@ class_unlock_cost = 80
 hand_size = 5
 draw_per_turn = 5
 respin_ram_cost = 4
-partial_multiplier = 0.5
+weak_multiplier = 0.5
 overclock_multiplier = 1.5
 parasite_multiplier = 0.5
 shield_cap = 15
@@ -440,7 +440,7 @@ map_layers = 7
 map_nodes_min = 2
 map_nodes_max = 4
 rack_layers = PackedInt32Array(4, 7)
-map_modem_layers = Vector2i(3, 5)
+map_mainframe_layers = Vector2i(3, 5)
 map_elite_layers = Vector2i(3, 6)
 map_elites_per_layer = 1
 map_terminal_ratio = 0.25
@@ -462,3 +462,7 @@ retaliation_min_heat = 50
 ice_ladder = Array[ExtResource("4_ice")]([SubResource("ice_1"), SubResource("ice_2"), SubResource("ice_3"), SubResource("ice_4"), SubResource("ice_5"), SubResource("ice_6"), SubResource("ice_7"), SubResource("ice_8"), SubResource("ice_9"), SubResource("ice_10"), SubResource("ice_11"), SubResource("ice_12"), SubResource("ice_13"), SubResource("ice_14"), SubResource("ice_15"), SubResource("ice_16"), SubResource("ice_17"), SubResource("ice_18"), SubResource("ice_19"), SubResource("ice_20")])
 rebel_cell_unlock_ice = 10
 new_corp_ice_offset = 5
+save_dir_source = "res://saves"
+save_dir_export = "user://saves"
+replay_subdir = "replays"
+write_replays = true

@@ -67,7 +67,7 @@ func test_accelerator_makes_nudge_cards_trigger_twice_next_turn() -> void:
 
 func test_echo_resolves_the_outer_slice_again_at_half() -> void:
 	var s := _session(&"seg_echo")
-	CombatFixture.land(s.state.player, 1, 1)  # Atk 6, Good (no Breaker Perfect hook)
+	CombatFixture.land(s.state.player, 1, 1)  # Shim 6, Good (no Breaker Perfect hook)
 	var r := s.apply(CombatAction.end_turn())
 	var hits := CombatFixture.events_of(r, "damage")
 	assert_eq(hits.size(), 2)

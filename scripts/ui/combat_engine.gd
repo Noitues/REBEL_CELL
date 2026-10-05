@@ -63,6 +63,7 @@ func submit(action: CombatAction) -> bool:
 		return false
 	state_changed.emit(session.state, result.events)
 	if session.state.is_over():
+		SaveService.record_replay(session)  # ART-0 S0: source runs only, never in tests
 		fight_ended.emit(session.state.outcome)
 	return true
 

@@ -8,8 +8,8 @@ var _miss: SliceData
 
 
 func before_each() -> void:
-	_atk6 = CombatFixture.slice(&"dm_atk6", RC.SliceType.ATTACK, 6)
-	_crit12 = CombatFixture.slice(&"dm_crit12", RC.SliceType.CRIT, 12)
+	_atk6 = CombatFixture.slice(&"dm_atk6", RC.SliceType.SHIM, 6)
+	_crit12 = CombatFixture.slice(&"dm_crit12", RC.SliceType.OVERFLOW, 12)
 	_miss = CombatFixture.slice(&"dm_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 
 
@@ -70,7 +70,7 @@ func test_kernel_sync_adds_1_damage_per_perfect() -> void:
 	CombatFixture.land(s.state.player, 0, 0)
 	r = s.apply(CombatAction.end_turn())
 	assert_eq(s.state.damage_bonus, 2)
-	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], 13, "Crit 12 + 1 (the second Perfect grants after it hits)")
+	assert_eq(CombatFixture.events_of(r, "damage")[0]["amount"], 13, "Overflow 12 + 1 (the second Perfect grants after it hits)")
 
 
 func test_zero_day_turns_a_perfect_miss_into_a_3x_crit() -> void:
@@ -79,7 +79,7 @@ func test_zero_day_turns_a_perfect_miss_into_a_3x_crit() -> void:
 	var r := s.apply(CombatAction.end_turn())
 	var hits := CombatFixture.events_of(r, "damage")
 	assert_eq(hits.size(), 1)
-	assert_eq(hits[0]["amount"], 36, "3 x Crit 12")
+	assert_eq(hits[0]["amount"], 36, "3 x Overflow 12")
 	assert_eq(_enemy(s).hp, 264)
 	s = _session([&"zero_day"])
 	CombatFixture.land(s.state.player, 5, 1)

@@ -10,7 +10,7 @@ var _deploy: SliceData
 
 
 func before_each() -> void:
-	_atk = CombatFixture.slice(&"h17_atk", RC.SliceType.ATTACK, 6)
+	_atk = CombatFixture.slice(&"h17_atk", RC.SliceType.SHIM, 6)
 	_miss = CombatFixture.slice(&"h17_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	_deploy = CombatFixture.slice(&"h17_deploy", RC.SliceType.DEPLOY, 1, RC.TargetRule.SELF)
 

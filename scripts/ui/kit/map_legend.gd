@@ -2,7 +2,7 @@ class_name MapLegend
 extends TerminalWindow
 ## The map key for the city map views (Settings.map_legend): what the highlight colours,
 ## marks, line styles and badge glyphs mean. Every status row has its own glyph, so the
-## key never relies on colour alone (GDD 9.6): claimed Sites carry a spray ring, Seized
+## key never relies on colour alone (GDD 9.6): claimed Sites carry a spray ring, TAKEN
 ## ones a cross. Follows the setting live, and can resize a linked control with it (the
 ## HQ Grid's Site list takes the legend's room back when it is off).
 ##
@@ -24,12 +24,12 @@ extends TerminalWindow
 ## H24 K1: the key was folded or opened.
 signal fold_changed
 
-const ROWS := [["○", "#D4FF00", "claimed (yours): spray ring"], ["■", "#5CE1FF", "cleared"], ["■", "", "corporate"], ["✕", "#FFD24D", "seized: crossed out"],
+const ROWS := [["○", "#D4FF00", "claimed (yours): spray ring"], ["■", "#5CE1FF", "cleared"], ["■", "", "corporate"], ["✕", "#FFD24D", "taken: crossed out"],
 	["━", "#D4FF00", "your network link"], ["- -", "", "threat route"]]
 ## The node icons (H21 #14), drawn by CityMapOverlay.draw_icon exactly as on the map:
 ## [kind, text shown in the icon, meaning].
 const ICON_ROWS := [[CityMapOverlay.KIND_EXPLOIT, "", "exploit"], [CityMapOverlay.KIND_HEAT, "", "heat reduction"],
-	[CityMapOverlay.KIND_BOSS, "", "boss"], [CityMapOverlay.KIND_HOME, "", "CORE (your home)"], [CityMapOverlay.KIND_TIER, "T2", "Site tier: more lit pips, harder"]]
+	[CityMapOverlay.KIND_CENTRAL_SERVER, "", "central server"], [CityMapOverlay.KIND_HOME, "", "CORE (your home)"], [CityMapOverlay.KIND_TIER, "T2", "Site tier: more lit pips, harder"]]
 ## The tier row's example tier (its icon text above is "T2").
 const TIER_EXAMPLE := 2
 ## Legend width, glyph column width, the full and compact variants' font sizes (legends
@@ -51,8 +51,8 @@ const PIN_MARGIN := 10.0
 ## H23 #3: the strip variant (the Grid's key along the foot of its map) says each row in
 ## fewer words, in as many columns as its width holds; gaps between them (px at text
 ## scale 1.0).
-const STRIP_ROWS := ["claimed: spray ring", "cleared", "corporate", "seized: crossed out", "your network link", "threat route"]
-const STRIP_ICON_ROWS := ["exploit", "heat reduction", "boss", "CORE (your home)", "tier: more pips, harder"]
+const STRIP_ROWS := ["claimed: spray ring", "cleared", "corporate", "taken: crossed out", "your network link", "threat route"]
+const STRIP_ICON_ROWS := ["exploit", "heat reduction", "central server", "CORE (your home)", "tier: more pips, harder"]
 const STRIP_H_GAP := 16
 const STRIP_V_GAP := 2
 
@@ -61,7 +61,7 @@ const STRIP_V_GAP := 2
 const FOLD_SCALE := 1.3
 
 ## H23 S4: each ROWS row's key (the ICON_ROWS rows are keyed by their kind).
-const ROW_KEYS: Array[String] = ["claimed", "cleared", "corporate", "seized", "link", "threat"]
+const ROW_KEYS: Array[String] = ["claimed", "cleared", "corporate", "taken", "link", "threat"]
 
 var compact: bool = false
 ## H23 S4: the rows shown, by key (ROW_KEYS, icon kinds); empty = every row. A map key
@@ -383,7 +383,7 @@ static func keys_of(graph: Dictionary, grid: GridState) -> Array[String]:
 			CityMapOverlay.MARK_SPRAY:
 				_add_key(out, "claimed")
 			CityMapOverlay.MARK_CROSS:
-				_add_key(out, "seized")
+				_add_key(out, "taken")
 		if grid != null:
 			match grid.status_of(n["id"]):
 				GridState.SiteStatus.CLEARED:

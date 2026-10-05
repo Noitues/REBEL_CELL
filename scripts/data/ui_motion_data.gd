@@ -11,7 +11,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"jack_in", &"jack_out", &"jack_fade_reduced",  # 4.1
 	&"wheel_spin", &"wheel_spin_blur",  # 4.2
 	&"wheel_nudge",  # 4.3
-	&"precision_perfect", &"precision_good_ring", &"precision_partial", &"precision_blink", &"precision_miss_static",  # 4.4
+	&"precision_perfect", &"precision_good_ring", &"precision_weak", &"precision_blink", &"precision_miss_static",  # 4.4
 	&"card_hover", &"card_play", &"card_draw", &"card_exhaust",  # 4.5
 	&"send_it_press", &"send_it_drips", &"resolve_pass", &"resolve_pulse",  # 4.6
 	&"number_float", &"number_crit", &"hp_lag",  # 4.7
@@ -26,7 +26,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"route_pulse", &"node_pop", &"visited_dim",  # 4.16
 	&"panel_in", &"panel_crt_roll", &"panel_drop",  # 4.17
 	&"menu_cursor_blink", &"menu_type", &"menu_highlight",  # 4.18
-	&"modem_sign_warmup", &"modem_trace", &"buy_fly", &"note_flap",  # 4.19
+	&"mainframe_sign_warmup", &"mainframe_trace", &"buy_fly", &"note_flap",  # 4.19
 	&"loot_fan", &"loot_pick", &"count_up",  # 4.20
 	&"dispatch_type", &"subtitle_bar_in",  # 4.21
 	&"drip_grow", &"drip_halo",  # 4.22
@@ -74,9 +74,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ANIM-R4 city, raid, Heat, route and HQ.
 	&"forecast_change_fade", &"raid_incoming_hold", &"forecast_road_pulse",
 	# ANIM-R4 combat, input and screens: motion shares that were inline (the projectile's
-	# flight, the riding number's swap, shrink and PERFECT size, the break's crack, the MODEM
+	# flight, the riding number's swap, shrink and PERFECT size, the break's crack, the MAINFRAME
 	# tubes' strike and flicker), the two sides' hits one after the other, the RAM refill.
-	&"hit_line_flight", &"ride_swap", &"ride_shrink", &"ride_perfect", &"break_crack", &"modem_sign_strike", &"modem_sign_flicker",
+	&"hit_line_flight", &"ride_swap", &"ride_shrink", &"ride_perfect", &"break_crack", &"mainframe_sign_strike", &"mainframe_sign_flicker",
 	&"resolve_side_gap", &"resolve_attacker_gap", &"ram_refill_float", &"event_type",
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp that stays.
 	&"defeat_stamp",
@@ -108,7 +108,7 @@ const REQUIRED_IDS: Array[StringName] = [
 ##   validate() refuses it switched off (switch off the entry it tunes instead).
 const OFF_PARTS: Dictionary = {
 	&"hit_line_flight": 0.0, &"ride_swap": 0.0, &"ride_shrink": 1.0, &"ride_perfect": 1.0,
-	&"break_crack": 0.0, &"modem_sign_strike": 0.0, &"modem_sign_flicker": 0.0,
+	&"break_crack": 0.0, &"mainframe_sign_strike": 0.0, &"mainframe_sign_flicker": 0.0,
 	&"forecast_change_fade": 0.0, &"resolve_side_gap": 0.0, &"resolve_attacker_gap": 0.0,
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
 	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).

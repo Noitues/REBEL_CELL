@@ -11,7 +11,7 @@ var _ring: InnerRingData
 
 
 func before_each() -> void:
-	_atk6 = CombatFixture.slice(&"h13_atk6", RC.SliceType.ATTACK, 6)
+	_atk6 = CombatFixture.slice(&"h13_atk6", RC.SliceType.SHIM, 6)
 	_miss = CombatFixture.slice(&"h13_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
 	_ring = CombatFixture.ring([CombatFixture.segment(&"h13_s0"), CombatFixture.segment(&"h13_s1"), CombatFixture.segment(&"h13_s2")])
 
@@ -71,7 +71,7 @@ func test_a_strip_during_resolution_lasts_into_the_next_turn() -> void:
 	CombatFixture.land(s.state.player, 1)  # dead centre: Perfect
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 1, "3 - 2 after the next turn's restore")
-	CombatFixture.land(s.state.player, 1, 2)  # Partial: no Perfect this time
+	CombatFixture.land(s.state.player, 1, 2)  # Weak: no Perfect this time
 	s.apply(CombatAction.end_turn())
 	assert_eq(s.state.get_combatant(&"enemy_0").resistance, 3, "back to full a turn later")
 

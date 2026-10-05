@@ -34,14 +34,14 @@ var combat: Dictionary = {}
 ## Queue of offers: {"kind": "card"|"firmware"|"daemon", "options": [ids]}.
 var pending_rewards: Array[Dictionary] = []
 var event_id: StringName = &""
-## Modem stock: {"cards": [ids], "firmware": [ids], "daemons": [ids], "slices": [ids],
+## Mainframe stock: {"cards": [ids], "firmware": [ids], "daemons": [ids], "slices": [ids],
 ## "removal_price": int}.
 var shop: Dictionary = {}
 var combats_won: int = 0
 ## Server Racks captured this run (the "racks" stat).
 var racks_captured: int = 0
 ## Launched as a patrol of an already cleared or claimed Site: completion changes nothing,
-## even if a raid Seizes the Site mid-run.
+## even if a raid Takes the Site mid-run.
 var patrol: bool = false
 var elites_defeated: int = 0
 ## Cold Exit: did the operative's Miss slice resolve at any point this run?

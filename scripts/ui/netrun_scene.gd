@@ -1,6 +1,6 @@
 extends Control
 ## Functional M2 netrun scene (placeholder look): start screen, map, combat (embedded
-## CombatScene), rewards, Terminal events, Modem shop and the run summary. Every
+## CombatScene), rewards, Terminal events, Mainframe shop and the run summary. Every
 ## action goes through RunManager's NetrunSession; the scene only displays state.
 
 const COMBAT_SCENE := preload("res://scenes/combat/combat_scene.tscn")
@@ -9,15 +9,15 @@ const COMBAT_SCENE := preload("res://scenes/combat/combat_scene.tscn")
 ## shown; every page but the fight shows its words as given (TextDb.shown_as_given).
 const NODE_TIPS := {RC.InfilNodeType.ROUTER: "Router: a fight. Win it for Cycles and loot.", # TR
 	RC.InfilNodeType.TERMINAL: "Terminal: an event with choices.", # TR
-	RC.InfilNodeType.MODEM: "Modem: the cyber shop (cards, Firmware, Daemons, slices, card removal).", # TR
+	RC.InfilNodeType.MAINFRAME: "Mainframe: the cyber shop (cards, Firmware, Daemons, slices, card removal).", # TR
 	RC.InfilNodeType.SERVER_RACK: "Server Rack: the Site's guardian. Breach it to complete the run."} # TR
 
 ## What each route node is, in a word (H21 #14: two "Router" buttons looked the same) and
 ## as an icon; an elite Router is an "Elite fight" with the crown.
 const NODE_WORDS := {RC.InfilNodeType.ROUTER: "Fight", RC.InfilNodeType.TERMINAL: "Event", # TR
-	RC.InfilNodeType.MODEM: "Shop", RC.InfilNodeType.SERVER_RACK: "Rack"} # TR
+	RC.InfilNodeType.MAINFRAME: "Shop", RC.InfilNodeType.SERVER_RACK: "Rack"} # TR
 const NODE_ICONS := {RC.InfilNodeType.ROUTER: StatIcon.FIGHT, RC.InfilNodeType.TERMINAL: StatIcon.TERMINAL,
-	RC.InfilNodeType.MODEM: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
+	RC.InfilNodeType.MAINFRAME: StatIcon.SHOP, RC.InfilNodeType.SERVER_RACK: StatIcon.RACK}
 const ELITE_WORD := "Elite fight" # TR
 ## The pause menu's least top (px); it opens under the subtitle band.
 const PAUSE_TOP := 100.0
@@ -25,16 +25,16 @@ const PAUSE_TOP := 100.0
 const ROUTE_NEXT_COLOR := Palette.CELL_ACID
 ## The home server's name (as the HQ shows it; never its id).
 const HOME_LABEL := "CORE" # TR
-## The Modem's quadrant (px) and the room its window frame and title take (px): shop cards
+## The Mainframe's quadrant (px) and the room its window frame and title take (px): shop cards
 ## grow with the text size only as far as a quadrant holds them (H21 #15).
-const MODEM_QUAD := Vector2(490, 250)
+const MAINFRAME_QUAD := Vector2(490, 250)
 const QUAD_FRAME := Vector2(24, 56)
 const QUAD_GAP := 12.0
-## LEAVE THE MODEM (in the free corner of the REMOVE A CARD quadrant, so the Modem ends
+## LEAVE MAINFRAME (in the free corner of the REMOVE A CARD quadrant, so the Mainframe ends
 ## on screen at text scale 1.6) and its exit icon beside it (px).
 const LEAVE_AT := Vector2(900, 440)
 const LEAVE_ICON := 34.0
-## ART-0 C (text scale 2.0): the least gap kept between LEAVE THE MODEM and the REMOVE A
+## ART-0 C (text scale 2.0): the least gap kept between LEAVE THE MAINFRAME and the REMOVE A
 ## CARD row's pieces it would otherwise cover (px).
 const LEAVE_GAP := 6.0
 ## Loot stickers at text scale 1.0 and the most a row of them may grow (px).
@@ -63,7 +63,7 @@ const ROUTE_MIN_ZOOM := 0.7
 ## a far-out route stays readable); a route that needs less shows the part the player decides
 ## on (route_focus_ids) at ROUTE_MIN_ZOOM or closer.
 const ROUTE_FIT_FLOOR := 0.4
-## The slice tiles in the Modem at text scale 1.0 (px): they widen with the text as far as
+## The slice tiles in the Mainframe at text scale 1.0 (px): they widen with the text as far as
 ## their window holds them (H24 S10: "BUY 100-150" shrank to fit a fixed tile at 1.6).
 const SLICE_TILE := Vector2(96, 130)
 ## Share of the text scale the lower row's tiles grow in height by.
@@ -171,7 +171,7 @@ func _ready() -> void:
 		elif args.has("--demo-deckgrid"):
 			open_remove()
 		elif args.has("--demo-buy"):
-			# Capture (ANIM-6): the first card is bought once the Modem has come in.
+			# Capture (ANIM-6): the first card is bought once the Mainframe has come in.
 			MotionDemo.after_frames(self, DEMO_ACTION_FRAMES, func() -> void: buy("cards", 0))
 		_demo_drag_arg(args)
 		return
@@ -391,7 +391,7 @@ func _demo_drag_arg(args: PackedStringArray) -> void:
 
 
 ## ANIM-4b frame capture: picks an item up, carries it along a scripted pointer path and
-## lets go: a Modem card onto the deck (`drag_buy_card`), a microchip onto a slot it fits
+## lets go: a Mainframe card onto the deck (`drag_buy_card`), a Firmware chip onto a slot it fits
 ## (`drag_buy_chip`), a card too dear for the Cycles left (`drag_buy_refuse`), a deck card
 ## onto the shredder (`drag_shred`), a loot card onto the deck (`drag_loot`). Prints
 ## "anim4b: <id> starts on frame N" at the pick-up.
@@ -669,7 +669,7 @@ func _buy(kind: String, index: int, slot: int, fly: bool) -> void:
 
 
 ## Item `index` of the row named `row` on the page on screen (a loot or shop sticker;
-## ANIM-R1 M11: a Modem row's SOLD stubs are not items).
+## ANIM-R1 M11: a Mainframe row's SOLD stubs are not items).
 func _page_item(row: String, index: int) -> Control:
 	var holder := _panel.find_child(row, true, false) if _panel != null and row != "" else null
 	if holder == null or index < 0:
@@ -678,7 +678,7 @@ func _page_item(row: String, index: int) -> Control:
 	return items[index] if index < items.size() else null
 
 
-## The items of a page row in stock order (a Modem row's SOLD stubs left out).
+## The items of a page row in stock order (a Mainframe row's SOLD stubs left out).
 static func _row_items(row: Node) -> Array[Control]:
 	var out: Array[Control] = []
 	for c in row.get_children():
@@ -973,7 +973,7 @@ func _set_panel(p: Control, glass: bool = true, screen_as: String = "") -> void:
 	_panel_host.add_child(p)
 	var s := RunManager.netrun
 	# ANIM-6: a new screen enters (glass slides in, paper drops); a page rebuilt on the same
-	# screen (the Modem after a purchase) just shows. Focus lands when it ends.
+	# screen (the Mainframe after a purchase) just shows. Focus lands when it ends.
 	var screen := screen_name(s) if screen_as == "" else screen_as
 	entering = screen != _shown_screen
 	_shown_screen = screen
@@ -1058,7 +1058,7 @@ func _stop_settle_poll() -> void:
 		get_tree().process_frame.disconnect(_poll_settle)
 
 
-## A page's first focus: the control it names (FIRST_FOCUS_META: the Modem's first item,
+## A page's first focus: the control it names (FIRST_FOCUS_META: the Mainframe's first item,
 ## ANIM-R3 A7: its prompt says "A Buy" and the focus sat on the socket list), else its first
 ## usable control.
 func _focus_page(p: Control) -> void:
@@ -1089,7 +1089,7 @@ const RAID_PLAYOUT_SCREEN := "netrun_raid_playout"
 
 
 ## The pad prompts of the screen for the run's phase (H23 S11): A presses the focused
-## choice (its verb here), B leaves the Modem, Menu opens the settings. A fight shows its
+## choice (its verb here), B leaves the Mainframe, Menu opens the settings. A fight shows its
 ## own prompts.
 static func prompts_for(s: NetrunSession) -> Array:
 	var accept := "Select" # TR
@@ -1161,11 +1161,11 @@ func _title_screen(s: NetrunSession, screen: String = "") -> void:
 		RunState.Phase.REWARD:
 			hud.set_screen("", tr("BREACH PAYOUT"))
 		RunState.Phase.EVENT:
-			# ANIM-R2 E2: a title as short as the Modem's, so the top bar keeps one row at 1.6
+			# ANIM-R2 E2: a title as short as the Mainframe's, so the top bar keeps one row at 1.6
 			# (the long one wrapped the tags onto two rows and pushed the page down).
 			hud.set_screen("04", tr("TERMINAL EVENT"))
 		RunState.Phase.SHOP:
-			hud.set_screen("05", tr("MODEM CYBER SHOP"))
+			hud.set_screen("05", tr("MAINFRAME SHOP"))
 		RunState.Phase.RAID:
 			hud.set_screen("", tr("NETRUN // RAID"))
 		_:
@@ -1300,7 +1300,7 @@ func _show_map() -> void:
 	# ANIM-R4 H10: a fight's, a boss's and a raid's music are made ahead (a fight's first frame
 	# built its loop).
 	AudioDirector.prewarm_music(["combat", "boss", "raid"], RunManager.campaign.corporation_id)
-	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Modem, an event or loot, all on
+	# ANIM-R2 R1 / R2: the next screen is a fight's arena, the Mainframe, an event or loot, all on
 	# the default frame of this city's look: baked now, behind the route (after its own view).
 	_prebake_backdrops.call_deferred()
 	# ANIM-R5 P2: the route's own bake stays in the cache while those pages show.
@@ -1746,7 +1746,7 @@ func route_graph() -> Dictionary:
 	var target: Vector2 = CityLayout.site_points(RunManager.corporation).get(s.run.site_id, NeonCity.hq_of(RunManager.corporation.id))
 	var layers := map.layer_count()
 	var available := view_choices(s)
-	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MODEM: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
+	var type_glyph := {RC.InfilNodeType.ROUTER: "○", RC.InfilNodeType.TERMINAL: "▭", RC.InfilNodeType.MAINFRAME: "◇", RC.InfilNodeType.SERVER_RACK: "⬢"}
 	var twins := choice_twins(s)
 	var rows := {}
 	for n in map.all_nodes():
@@ -2203,7 +2203,7 @@ func _show_reward() -> void:
 	box.add_child(GraffitiTag.new(tr("LOOT: pick a %s") % kind_word).fit_width(LOOT_ROW_MAX))
 	var slot_option: OptionButton = null
 	if offer["kind"] == "firmware":
-		# ANIM-R6 B8: the Modem's words for the same list ("Chips go into:"; it said "Socket
+		# ANIM-R6 B8: the Mainframe's words for the same list ("Chips go into:"; it said "Socket
 		# into slot:" here).
 		var row := HFlowContainer.new()
 		row.name = "SocketRow"
@@ -2283,13 +2283,13 @@ func _show_reward() -> void:
 		_fan_loot.call_deferred(stickers)
 
 
-## ANIM-R6 B8: what the loot's socket list is for (a key; the Modem's SOCKET_TIP without
+## ANIM-R6 B8: what the loot's socket list is for (a key; the Mainframe's SOCKET_TIP without
 ## buying).
 const LOOT_SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too)." # TR
 ## ANIM-R6 B10: what paid the loot out, by the node the run stands on (keys): a fight, an
 ## Elite, the Server Rack, an event.
 const LOOT_SOURCES := {RC.InfilNodeType.ROUTER: "FIGHT WON", RC.InfilNodeType.SERVER_RACK: "RACK BREACHED", # TR
-	RC.InfilNodeType.TERMINAL: "EVENT PAYOUT", RC.InfilNodeType.MODEM: "PAYOUT"} # TR
+	RC.InfilNodeType.TERMINAL: "EVENT PAYOUT", RC.InfilNodeType.MAINFRAME: "PAYOUT"} # TR
 const LOOT_ELITE := "ELITE DOWN" # TR
 
 
@@ -2540,12 +2540,12 @@ func choices_held() -> bool:
 	return false
 
 
-## ANIM-R5 B11: what the Modem's socket list is for (a key).
+## ANIM-R5 B11: what the Mainframe's socket list is for (a key).
 const SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too)." # TR
 
 
-## A spinner slot by what is in it, never by ids (H21 #12: "crit_12" in the socket list):
-## "Slot 2: ATK 10 + Barbed Wire".
+## A spinner slot by what is in it, never by ids (H21 #12: "overflow_12" in the socket list):
+## "Slot 2: SHIM 10 + Barbed Wire".
 static func slot_name(op: OperativeState, k: int) -> String:
 	var lookup := RunManager.lookup()
 	var sd := lookup.get_content(op.slot_slice_ids[k]) as SliceData
@@ -2567,19 +2567,19 @@ static func _choice_text(label: String, costs: String) -> String:
 	return base if costs == "" else "%s (%s)" % [base, costs]
 
 
-## Modem (GDD 11.2) in four quadrants over the storefront: MICROCHIPS (Firmware, top
+## Mainframe (GDD 11.2) in four quadrants over the storefront: FIRMWARE (top
 ## left), CARDS (as their own stickers, top right), SLICES + DAEMONS (bottom left, split)
 ## and REMOVE A CARD (bottom right, opens the deck viewer). Overwriting a slice opens the
-## spinner viewer to pick the slot. "Leave the Modem" is a dripping tag in the corner.
+## spinner viewer to pick the slot. "Leave the Mainframe" is a dripping tag in the corner.
 func _show_shop() -> void:
 	var s := RunManager.netrun
 	var shop := s.run.shop
 	var op := s.run.operative
 	var root := Control.new()
-	root.name = "ModemRoot"
+	root.name = "MainframeRoot"
 	root.custom_minimum_size = Vector2(1240, 540)
-	var sign := ModemSign.new()
-	sign.name = "ModemSign"
+	var sign := MainframeSign.new()
+	sign.name = "MainframeSign"
 	sign.position = Vector2(0, -6)
 	sign.size = Vector2(230, 560)
 	root.add_child(sign)
@@ -2589,14 +2589,14 @@ func _show_shop() -> void:
 	grid.add_theme_constant_override("v_separation", 12)
 	grid.position = Vector2(236, 0)
 	root.add_child(grid)
-	var q_size := MODEM_QUAD
+	var q_size := MAINFRAME_QUAD
 	var ts := Settings.text_scale
-	# Top left: microchips (Firmware). The socket list names each slot by its slice.
+	# Top left: Firmware. The socket list names each slot by its slice.
 	var fw_slot := OptionButton.new()
 	fw_slot.name = "SocketPick"
 	for k in op.slot_slice_ids.size():
 		fw_slot.add_item(slot_name(op, k))
-	var chips_win := TerminalWindow.new(tr("MICROCHIPS"))
+	var chips_win := TerminalWindow.new(tr("FIRMWARE"))
 	chips_win.custom_minimum_size = q_size
 	grid.add_child(chips_win)
 	var chips := HBoxContainer.new()
@@ -2628,7 +2628,7 @@ func _show_shop() -> void:
 	daemon_row.name = "Daemons"
 	daemons_win.body.add_child(daemon_row)
 	var n := 0
-	# ANIM-R1 M11: what the Modem offered when the player came in; a bought item stays as a
+	# ANIM-R1 M11: what the Mainframe offered when the player came in; a bought item stays as a
 	# SOLD stub in its place (the rest keep their spots and colours).
 	var seen := _shop_seen(s)
 	# Cards grow with the text size as far as their quadrant holds them (H21 #15).
@@ -2695,8 +2695,8 @@ func _show_shop() -> void:
 					daemon_row.add_child(sticker)
 			n += 1
 	if not shop.get("firmware", []).is_empty():
-		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: CRIT 12"); a bare
-		# "Socket into Slot 1: CRIT 12" lost a beginner. Presentation only.
+		# ANIM-R5 B11: the list says what it is for ("Chips go into: Slot 1: OVERFLOW 12"); a bare
+		# "Socket into Slot 1: OVERFLOW 12" lost a beginner. Presentation only.
 		var socket_row := HFlowContainer.new()
 		socket_row.name = "SocketRow"
 		socket_row.add_theme_constant_override("h_separation", 6)
@@ -2786,21 +2786,21 @@ func _show_shop() -> void:
 	# covers the top bar.
 	var wallet := HudStats.new()
 	wallet.name = "Wallet"
-	wallet.items = [[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles you have to spend in the Modem. Runs and events pay them; they don't leave the run.")]]
+	wallet.items = [[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles you have to spend in the Mainframe. Runs and events pay them; they don't leave the run.")]]
 	wallet.custom_minimum_size.x = wallet.full_width(ts)
 	wallet.mirror = hud.stats  # ANIM-R2 E9: it rolls with the top bar's CYCLES
 	wallet.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(wallet)
-	# ANIM-4b: the spinner in small beside the wallet: microchips and slice upgrades drag onto
+	# ANIM-4b: the spinner in small beside the wallet: Firmware and slice upgrades drag onto
 	# its slots (the socket list and the UPGRADE viewer stay).
 	var mini := _spinner_mini()
 	mini.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	remove_row.add_child(mini)
-	var leave := DripButton.new(TextDb.mark("LEAVE THE MODEM"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MODEM_DRIPS)
-	leave.name = "LeaveModem"
+	var leave := DripButton.new(TextDb.mark("LEAVE MAINFRAME"), "", DripButton.DRIP_PINK, 32, DripButton.LEAVE_MAINFRAME_DRIPS)
+	leave.name = "LeaveMainframe"
 	leave.position = LEAVE_AT
 	leave.pressed.connect(leave_shop)
-	leave.tooltip_text = tr("Leave the Modem and go back to the route.")
+	leave.tooltip_text = tr("Leave the Mainframe and go back to the route.")
 	root.add_child(leave)
 	var leave_icon := IconMark.standalone(StatIcon.EXIT, LEAVE_ICON, DripButton.DRIP_PINK)
 	leave_icon.name = "LeaveIcon"
@@ -2834,14 +2834,14 @@ func _show_shop() -> void:
 		sign.warm_up()
 
 
-## ANIM-R1 M11: the node meta naming a Modem item's stock index (SOLD stubs have none).
+## ANIM-R1 M11: the node meta naming a Mainframe item's stock index (SOLD stubs have none).
 const STOCK_META := &"stock_index"
-## What the Modem offered when the player came in (view memory, per visit): "key" (the
+## What the Mainframe offered when the player came in (view memory, per visit): "key" (the
 ## run and node), then each kind's stock.
 var _shop_memory: Dictionary = {}
 
 
-## The Modem's stock as first seen on this visit, kind -> ids (taken again when the stock
+## The Mainframe's stock as first seen on this visit, kind -> ids (taken again when the stock
 ## is not what was seen less some purchases: a new visit, a restock).
 func _shop_seen(s: NetrunSession) -> Dictionary:
 	var key := "%s|%s|%s" % [s.run.site_id, s.run.current_node_id, s.run.visited.size()]
@@ -2864,7 +2864,7 @@ func _shop_seen(s: NetrunSession) -> Dictionary:
 	return _shop_memory
 
 
-## ANIM-R1 M11: the Modem's places for one kind: [id, stock index] for each item first
+## ANIM-R1 M11: the Mainframe's places for one kind: [id, stock index] for each item first
 ## offered (`seen`), in order; the index is -1 for one bought since (a SOLD stub). Items are
 ## matched in order, so a repeated id keeps its place.
 static func shop_slots(seen: Array, current: Array) -> Array[Array]:
@@ -2879,7 +2879,7 @@ static func shop_slots(seen: Array, current: Array) -> Array[Array]:
 	return out
 
 
-## A bought Modem item's place: its tile, dimmed, stamped SOLD; not a button any more.
+## A bought Mainframe item's place: its tile, dimmed, stamped SOLD; not a button any more.
 func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts: float) -> ZineCard:
 	var stub := ZineCard.new(title, ram, "", index)
 	match kind:
@@ -2901,7 +2901,7 @@ func _sold_stub(title: String, ram: int, index: int, kind: String, cs: float, ts
 	return stub
 
 
-## What a shop item does in words (H23 S8: microchips showed no description): the
+## What a shop item does in words (H23 S8: Firmware showed no description): the
 ## content's translated description, else the Codex's.
 static func shop_text(res: Resource) -> String:
 	var d := TextDb.t(res, "description") if res != null else ""
@@ -2917,28 +2917,28 @@ static func loot_tip(res: Resource) -> String:
 	return "%s\n%s" % [TextDb.t(res, "display_name"), d if d != "" else Codex.describe(res)]
 
 
-## A slice tile's size in the Modem's SLICES window for `count` tiles at text scale `ts`
+## A slice tile's size in the Mainframe's SLICES window for `count` tiles at text scale `ts`
 ## (H24 S10): SLICE_TILE grown with the text as far as the window's width holds the row.
 static func slice_tile_size(count: int, ts: float) -> Vector2:
-	var room := MODEM_QUAD.x * 0.5 - QUAD_FRAME.x - 8.0 * maxi(0, count - 1)
+	var room := MAINFRAME_QUAD.x * 0.5 - QUAD_FRAME.x - 8.0 * maxi(0, count - 1)
 	var k := clampf(minf(ts, room / maxf(1.0, count * SLICE_TILE.x)), 1.0, Settings.TEXT_SCALE_MAX)
 	return Vector2(SLICE_TILE.x * k, SLICE_TILE.y * tile_growth(ts))
 
 
-## How much taller a Modem tile in the lower row grows at text scale `ts` (H24 S10: at 1.6
+## How much taller a Mainframe tile in the lower row grows at text scale `ts` (H24 S10: at 1.6
 ## the name, the icon and a two-line buy sticker did not fit 130 px).
 static func tile_growth(ts: float) -> float:
 	return 1.0 + (ts - 1.0) * TILE_GROW
 
 
 ## ANIM-R2 E6: the most a chip ("firmware") or Daemon tile may grow to at text scale `ts`
-## with `count` in its row: a microchip shares its window's width (the socket list under
+## with `count` in its row: a Firmware chip shares its window's width (the socket list under
 ## it), a Daemon widens a little (the SLICES window keeps its row); both may grow as tall
 ## as the lower row's tiles.
 static func chip_tile_room(kind: String, count: int, ts: float) -> Vector2:
 	var h := CHIP_TILE.y * tile_growth(ts)
 	if kind == "firmware":
-		var w := (MODEM_QUAD.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
+		var w := (MAINFRAME_QUAD.x - QUAD_FRAME.x - 10.0 * maxi(0, count - 1)) / maxf(1.0, count)
 		return Vector2(maxf(CHIP_TILE.x, minf(w, CHIP_TILE.x * ts)), h)
 	return Vector2(CHIP_TILE.x * (1.0 + (ts - 1.0) * DAEMON_WIDEN), h)
 
@@ -2966,7 +2966,7 @@ static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
 
 
 ## Opens a modal viewer over the netrun screen. The viewers hold focus themselves
-## (UiFocus.hold: the D-pad and A can't reach the Modem behind them; focus returns to the
+## (UiFocus.hold: the D-pad and A can't reach the Mainframe behind them; focus returns to the
 ## tile that opened them on close).
 func _open_modal(view: Control) -> void:
 	add_child(view)
@@ -3380,7 +3380,7 @@ const DEATH_HEAT_REASON := "operative death"
 
 # --- Drag and drop (Animation pass ANIM-4b) --------------------------------------------------
 # Every item a run moves between places drags there too, as on the HQ (ANIM-4's DropLayer):
-# Modem purchases onto the deck, a slot or the Daemons, deck cards onto the shredder, loot
+# Mainframe purchases onto the deck, a slot or the Daemons, deck cards onto the shredder, loot
 # onto the deck, a slot or the Daemons, event rewards onto the deck or the Daemons, raid
 # assets onto nodes. A drop is an intent: `_on_dropped` makes the same call the item's
 # button makes (Signal Up, Call Down). Whether a target takes an item is the rules' own
@@ -3496,7 +3496,7 @@ func _add_slot_targets(layer: DropLayer, mini: SpinnerMini, accepts: Array) -> v
 		layer.add_target("slot:%d" % k, accepts, "slot", k, DropLayer.rect_of(mini.pad(k)))
 
 
-## The running operative's small spinner (the Modem and a Firmware loot: its slots are
+## The running operative's small spinner (the Mainframe and a Firmware loot: its slots are
 ## where chips and slices go), each slot's pad named as the socket lists name it.
 func _spinner_mini() -> SpinnerMini:
 	var op := RunManager.netrun.run.operative
@@ -3504,7 +3504,7 @@ func _spinner_mini() -> SpinnerMini:
 	for k in op.slot_slice_ids.size():
 		tips.append(slot_name(op, k))
 	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
-	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag a microchip or a slice onto a slot to put it there."))
+	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag Firmware or a slice onto a slot to put it there."))
 	return mini
 
 
@@ -3532,7 +3532,7 @@ func _place_leave(leave: Control, icon: Control, row: Control, root: Control) ->
 	icon.position = at + Vector2(-LEAVE_ICON - 4.0, 4.0)
 
 
-## Modem: cards drag onto the deck, microchips onto a slot of the small spinner, Daemons
+## Mainframe: cards drag onto the deck, Firmware onto a slot of the small spinner, Daemons
 ## onto the DAEMONS icon, slice upgrades onto the slot they overwrite.
 func _register_shop_drops(mini: SpinnerMini, fw_slot: OptionButton) -> void:
 	var shop := RunManager.netrun.run.shop
@@ -3657,7 +3657,7 @@ func dry_session() -> NetrunSession:
 
 
 ## `text` (a rules refusal) with the ids in `ids` written as the screens name them (the rules
-## speak in ids: "barbed_wire does not fit a ATTACK slice.").
+## speak in ids: "barbed_wire does not fit a SHIM slice.").
 func _named(text: String, ids: Array) -> String:
 	for id in ids:
 		var key := String(id)
@@ -3738,7 +3738,7 @@ func _on_dropped(payload: Dictionary, target: Dictionary, layer: DropLayer) -> v
 			else:
 				_choose_reward(i, int(value), false)
 		["slice", "slot"]:
-			# In the UPGRADE viewer: select the slot and press UPGRADE; on the Modem page the
+			# In the UPGRADE viewer: select the slot and press UPGRADE; on the Mainframe page the
 			# same call the viewer's UPGRADE makes.
 			overwrite_slice(int(value), i)
 			if src == "modal":
@@ -3772,7 +3772,7 @@ func _on_refused(_payload: Dictionary, _target: Dictionary, reason: String) -> v
 
 
 ## ANIM-R2 E9: a purchase refused for want of Cycles flashes the money: the top bar's
-## CYCLES tag (and the Modem's wallet) go red with "PRICE > CYCLES" under them.
+## CYCLES tag (and the Mainframe's wallet) go red with "PRICE > CYCLES" under them.
 func price_refused(price: int) -> void:
 	var s := RunManager.netrun
 	if s == null:
@@ -3817,7 +3817,7 @@ func _refresh_status() -> void:
 		var op := s.run.operative
 		captions.append([stats.size(), tr("THIS RUN"), tr("This run's numbers: the operative's HP, the Cycles to spend, the deck, rank and what the run has banked.")])
 		stats.append_array([[TextDb.mark("HP"), str(_shown_operative_hp(op.hp)), "/%d" % op.max_hp, tr("%s's HP. At 0 the operative flatlines.") % op.name],
-			[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles: this run's money, spent in the Modem.")],
+			[TextDb.mark("CYCLES"), str(s.run.cycles), "", tr("Cycles: this run's money, spent in the Mainframe.")],
 			[TextDb.mark("CARDS"), str(op.deck.size()), "", tr("Cards in %s's deck (VIEW LOADOUT shows them).") % op.name],
 			[TextDb.mark("RANK"), str(op.rank), "", tr("Rank: runs survived. It brings wheel upgrades and higher netrun tiers.")],
 			[TextDb.mark("BANKED"), str(s.run.banked_schematics), "", tr("Schematics this run has banked for the campaign.")]])
@@ -3866,7 +3866,7 @@ func _report(events: Array[Dictionary]) -> void:
 			continue
 		match String(e.get("type", "")):
 			# H24 S15: a line tied to a screen ends when the player leaves it ("Jacking you
-			# in" stayed on the Modem and the event).
+			# in" stayed on the Mainframe and the event).
 			"run_start":
 				Dialogue.speak("run_start", RC.Voice.DISPATCH, c.corporation_id, &"", c.runs_started, "route")
 				if RunManager.netrun != null:
@@ -3939,7 +3939,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		open_settings()
 		get_viewport().set_input_as_handled()
 		return
-	# B leaves the Modem (H23 S11). H24 S6: only a pad's B: a keyboard's Esc (ui_cancel too)
+	# B leaves the Mainframe (H23 S11). H24 S6: only a pad's B: a keyboard's Esc (ui_cancel too)
 	# must not leave when open_settings is bound elsewhere.
 	if event is InputEventJoypadButton and event.is_action_pressed("ui_cancel") and not event.is_action("open_settings") and not _modal_open() \
 			and RunManager.netrun != null and RunManager.netrun.run.phase == RunState.Phase.SHOP:

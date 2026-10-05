@@ -82,13 +82,13 @@ func test_no_corp_hue_is_a_ui_role_token() -> void:
 
 
 func test_slice_colours_keep_their_values_through_named_constants() -> void:
-	assert_eq(Palette.slice_color(RC.SliceType.ATTACK), Palette.CELL_PINK)
-	assert_eq(Palette.slice_color(RC.SliceType.CRIT), Palette.CELL_PINK)
-	assert_eq(Palette.slice_color(RC.SliceType.DEFEND), Palette.NET_CYAN)
+	assert_eq(Palette.slice_color(RC.SliceType.SHIM), Palette.CELL_PINK)
+	assert_eq(Palette.slice_color(RC.SliceType.OVERFLOW), Palette.CELL_PINK)
+	assert_eq(Palette.slice_color(RC.SliceType.DEFRAG), Palette.NET_CYAN)
 	assert_eq(Palette.slice_color(RC.SliceType.SHIELD), Palette.NET_CYAN)
-	assert_eq(Palette.slice_color(RC.SliceType.EVADE), Color("#7BE07B"))
-	assert_eq(Palette.slice_color(RC.SliceType.HEAL), Palette.SLICE_HEAL)
-	assert_eq(Palette.slice_color(RC.SliceType.AFFLICT), Color("#C85AFF"))
+	assert_eq(Palette.slice_color(RC.SliceType.DETOUR), Color("#7BE07B"))
+	assert_eq(Palette.slice_color(RC.SliceType.HOTFIX), Palette.SLICE_HOTFIX)
+	assert_eq(Palette.slice_color(RC.SliceType.INFECT), Color("#C85AFF"))
 	assert_eq(Palette.slice_color(RC.SliceType.DEPLOY), Color("#B08CFF"))
 	assert_eq(Palette.slice_color(RC.SliceType.MISS), Color("#6A6A6A"))
 

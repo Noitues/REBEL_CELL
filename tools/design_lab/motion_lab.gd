@@ -53,7 +53,7 @@ const DEMOS := {
 	&"jack_in": ["jack_in", "stage"], &"jack_out": ["jack_out", "stage"], &"jack_fade_reduced": ["jack_reduced", "stage"],
 	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
 	&"precision_perfect": ["scene", "perfect"], &"precision_good_ring": ["view", "good"],
-	&"precision_partial": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
+	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
 	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
 	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send_hit"], &"resolve_pulse": ["view", "pulse"],
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
@@ -67,7 +67,7 @@ const DEMOS := {
 	&"route_pulse": ["netrun", "route"], &"node_pop": ["netrun", "route"], &"visited_dim": ["netrun", "route"],
 	&"panel_in": ["screen", "glass"], &"panel_crt_roll": ["screen", "glass"], &"panel_drop": ["screen", "paper"],
 	&"menu_cursor_blink": ["screen", "menu"], &"menu_type": ["screen", "menu"], &"menu_highlight": ["screen", "menu"],
-	&"modem_sign_warmup": ["screen", "modem"], &"modem_trace": ["screen", "modem"], &"buy_fly": ["screen", "buy"], &"note_flap": ["screen", "flap"],
+	&"mainframe_sign_warmup": ["screen", "mainframe"], &"mainframe_trace": ["screen", "mainframe"], &"buy_fly": ["screen", "buy"], &"note_flap": ["screen", "flap"],
 	&"loot_fan": ["screen", "loot"], &"loot_pick": ["screen", "pick"], &"count_up": ["screen", "hud"],
 	&"dispatch_type": ["screen", "subtitle"], &"subtitle_bar_in": ["screen", "subtitle"],
 	&"drip_grow": ["screen", "drip"], &"drip_halo": ["screen", "halo"],
@@ -96,7 +96,7 @@ const DEMOS := {
 	&"minimap_pulse": ["hq", "grid"], &"select_ring_ease": ["hq", "select"], &"legend_fold": ["hq", "legend"],
 	# ANIM-4 (HQ drag and drop; in context: hq_scene --demo-anim=drag_*):
 	&"drop_stamp": ["screen", "drop_land"], &"market_fly": ["screen", "market"],
-	# ANIM-6 (screens): "screen" builds a fresh piece on the stage (a menu, the Modem sign, a
+	# ANIM-6 (screens): "screen" builds a fresh piece on the stage (a menu, the Mainframe sign, a
 	# loot row, the top bar, a dossier...) and plays the real motion on it.
 	&"saved_stamp_in": ["screen", "saved"], &"pad_prompts_in": ["fade_in", "sticker"], &"focus_tip_in": ["fade_in", "panel"],
 	&"event_outcome_pop": ["pop", "sticker"], &"event_choice_stamp": ["screen", "stamp"], &"sold_stamp": ["screen", "buy"],
@@ -127,11 +127,11 @@ const DEMOS := {
 	# ANIM-R4 (city, raid, Heat, route and HQ):
 	&"forecast_change_fade": ["hq", "drop"], &"raid_incoming_hold": ["jack_in", "stage"], &"forecast_road_pulse": ["hq", "drop"],
 	# ANIM-R4 (combat, input and screens): the shares that were inline play where they act (a
-	# live SEND IT, the break, the MODEM sign); the two sides one after the other in a SEND IT
+	# live SEND IT, the break, the MAINFRAME sign); the two sides one after the other in a SEND IT
 	# where both hit; the RAM refill in the RAM demo.
 	&"hit_line_flight": ["scene", "send_hit"], &"ride_swap": ["scene", "send_hit"], &"ride_shrink": ["scene", "send_hit"],
-	&"ride_perfect": ["scene", "beat_hit"], &"break_crack": ["scene", "send_kill"], &"modem_sign_strike": ["screen", "modem"],
-	&"modem_sign_flicker": ["screen", "modem"], &"resolve_side_gap": ["scene", "send_both"], &"resolve_attacker_gap": ["scene", "send_both"],
+	&"ride_perfect": ["scene", "beat_hit"], &"break_crack": ["scene", "send_kill"], &"mainframe_sign_strike": ["screen", "mainframe"],
+	&"mainframe_sign_flicker": ["screen", "mainframe"], &"resolve_side_gap": ["scene", "send_both"], &"resolve_attacker_gap": ["scene", "send_both"],
 	&"ram_refill_float": ["scene", "ram"], &"event_type": ["screen", "radio"],
 	# ANIM-R5 combat: the lost fight's DEFEAT stamp (a SEND IT the operative does not survive).
 	&"defeat_stamp": ["scene", "send_lose"],
@@ -622,13 +622,13 @@ func _play_screen(what: String) -> void:
 					if w != null:
 						(w.body.get_child(k + 1) as Button).grab_focus())
 			length = MENU_STEP * 4.0
-		"modem":
-			var sign := ModemSign.new()
+		"mainframe":
+			var sign := MainframeSign.new()
 			sign.position = Vector2(300, 90)
 			sign.size = Vector2(230, 560)
 			_screen_host.add_child(sign)
 			sign.warm_up()
-			length = Motion.delay_of(&"modem_trace") + Motion.seconds(&"modem_trace")
+			length = Motion.delay_of(&"mainframe_trace") + Motion.seconds(&"mainframe_trace")
 		"buy", "pick", "loot", "flap":
 			var row := HBoxContainer.new()
 			row.position = Vector2(160, 300)
@@ -1039,7 +1039,7 @@ func _play_view(what: String) -> float:
 		"flip":
 			_wheel.play_flip()
 		"tag":
-			_wheel.intent = {"type": RC.SliceType.ATTACK, "text": "ATTACK · GOOD %d" % _generation, "chips": [{"text": "HITS 8", "color": Palette.CELL_PINK, "ink": Palette.INK}]}
+			_wheel.intent = {"type": RC.SliceType.SHIM, "text": "SHIM · GOOD %d" % _generation, "chips": [{"text": "HITS 8", "color": Palette.CELL_PINK, "ink": Palette.INK}]}
 			_wheel.queue_redraw()
 		"hover":
 			var card: ZineCard = _pieces["card"]
