@@ -13,6 +13,10 @@ Hubs, Inner Rings, satellites, multiple pointers added · three-layer progressio
 campaign / netrun) · City Grid campaign map · Heat redefined as a campaign meter · Ranks,
 stationing, Armory · Exploit-based Mainframe gate · economy, ICE difficulty, narrative, UX,
 audio and visual baseline defined · vertical-slice content defined (Appendix A).
+2026-10-05 (M14, DECISIONS 2026-10-05, ruling 4): §9 rewritten around ART_BIBLE v2: the visual baseline is the
+cel-shaded low-poly city, CRT screens, vinyl stickers, grease pencil and light spill (9.1),
+with the sticker / pencil layer rules and status overlays in 9.2 (ruling 10), DOWN as the
+white bolt at every zoom in 9.3 (ruling 11) and "the city reacts" in 9.4.
 
 ---
 
@@ -470,37 +474,55 @@ barks, and an optional pirate-radio DJ at HQ.
 
 ## 9. UX & Visual Direction
 
-### 9.1 Visual Baseline: Three Worlds (locked)
-| World | Style | Screens |
-|---|---|---|
-| Physical | **Diegetic Cyberdeck** (tech-noir, rain, neon) | HQ, recruitment, stationing, loadout |
-| The net | **Wireframe Cyberspace** (glowing geometry) | City Grid, netrun map, combat arena, raids |
-| The Cell's voice | **Punk Zine** (paper, tape, marker, spray paint) | Cards, HUD, notes, menus, story beats, codex |
+### 9.1 Visual Baseline: the City, the Cell's Screens, Stickers and Pencil (locked)
+*Rewritten around ART_BIBLE v2 (`docs/ART_BIBLE.md`) per DECISIONS 2026-10-05, ruling 4 ("Designer rulings:
+art reintegration, pause point 0"); it supersedes the three-worlds baseline of v0.9. Reference
+images: `docs/art_reference/`.*
 
-The room is a cyberdeck, the net is wireframe, and anything the Cell touches gets zined.
-Cell colour: **hot pink**. Details and tokens: `STYLE_GUIDE.md`.
+| Medium | Job | Look |
+|---|---|---|
+| **Cel-shaded low-poly city** | The world: one city model for the City Grid, raids and netrun transit; HQs, Sites, combat backdrops | Gritty triangulated low-poly, three hard toon bands, wobbly **ink lines**; rain and haze at night |
+| **CRT screens** | The Cell's own systems: slices, menus, resources, tooltips, forecasts, the dialogue feed | Navy glass with a cyan edge, scanlines, terminal type; **white glyphs** on the slice screens |
+| **Vinyl stickers** | **Everything that never changes**: cards, buttons and verbs (SEND IT), titles, name plates, node-type stickers, result stamps | Die-cut vinyl with an ink keyline; peel, slap and dissolve |
+| **Grease pencil** | **Plans** and annotations that are true to the rules | Opaque wax; **yellow = our routes and plans**, **red = threats** and losses; solid = what will happen, dashed = what-if; writes on, wipes off |
+| **Light spill** | Glowing things light the city | Signs, screens and lights spill onto walls and streets |
+
+Supporting media, each with one job (ART_BIBLE v2 §1.2): corp paper for intercepted corporate
+documents, decrypted holo for hacked intel, binary bits for digital transitions and damage, bare
+numerals for live values. Values that change never sit on a sticker. Cell colour: **hot pink**;
+lime marks what the Cell owns. Details and tokens: ART_BIBLE v2 (visual source of truth from
+M14); motion and interaction rules: `STYLE_GUIDE.md` §5.
 
 ### 9.2 Combat Readability
 Always-on outcome preview per pointer; ghost preview on card hover; explicit targeting
 (outer ring / inner ring / enemy wheel / satellite); per-pointer intent labels; migrating
-pointers flicker a turn early; orbiting pointers show a trail. Zine elements never cover
-the wheels.
+pointers flicker a turn early; orbiting pointers show a trail. Layer rules (DECISIONS 2026-10-05, ruling 4,
+ART_BIBLE v2 §1.2, §3.21): stickers and HUD controls stay clear of the wheels and their extras,
+and each slice's value is always drawn on top of its overlays; **no UI ever covers grease
+pencil**. A status is shown by its overlay on the slice: the overlay is the status; a small flat
+corner badge appears only to carry a ×N stack tab or a ×1.5 / ×0.5 multiplier tag (DECISIONS 2026-10-05, ruling 10).
 
 ### 9.3 Raids & Grid
-Threat paths drawn on links; exact projected outcomes per node during setup; playout speed
-controls and skip; post-raid summary.
+Threat paths drawn on links in red grease pencil, the Cell's plans in yellow (solid = will
+happen, dashed = what-if); exact projected outcomes per node during setup; playout speed
+controls and skip; post-raid summary. **DOWN** is shown the same way at every zoom, on the Grid
+and in the raid view: a white bolt over a greyed marker (DECISIONS 2026-10-05, ruling 11; the raid words per
+ruling 6.2, 3.3).
 
 ### 9.4 Heat Feedback
 Heat bands follow thresholds (25/50/75), not arbitrary ranges. Distortion **pulses** on
-threshold events rather than staying on. Physical world: wanted posters, searchlights.
-Net: corporate wireframe creeps over the zine layer.
+threshold events rather than staying on. **The city reacts** (DECISIONS 2026-10-05, ruling 4, ART_BIBLE v2
+§3.15, §4.3): Heat shows in the world, never as a HUD tint: alarm beacons, then searchlights,
+then police lights behind the combat wheels as the bands rise; calm lights on the map nodes Heat
+has made harder. A full-screen screen glitch exists only as an **Options extra, off by default**.
 
 ### 9.5 Input (PC)
 Hover for previews, right-click to inspect, full keyboard support (e.g. Q/E nudge, Tab
 cycle target, Space end turn, Z/Ctrl+Z rewind).
 
 ### 9.6 Accessibility
-Reduce-effects toggle (scanlines, flicker, chromatic aberration); flash limiter capped at
+Reduce-effects toggle (scanline roll, flicker, chromatic aberration; static CRT scanlines may
+stay, ART_BIBLE v2 §5.4 per DECISIONS 2026-10-05, ruling 4); flash limiter capped at
 3 flashes/second, on by default; never colour alone (every slice has a glyph); text
 scaling; subtitles with speaker names.
 

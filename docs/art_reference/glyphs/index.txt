@@ -1,0 +1,66 @@
+# Round 17 final glyphs: 256 px, white on transparent (alpha = coverage). file | glyph id | meaning
+slice_exploit.png | EXPLOIT | ATTACK: damage (dagger)
+slice_zero_day.png | ZERO-DAY | CRIT: big damage (burst)
+slice_firewall.png | FIREWALL | DEFEND: block (wall + flame)
+slice_sandbox.png | SANDBOX | SHIELD: persists, cap 15 (sand pile)
+slice_proxy.png | PROXY | EVADE: dodge next hit (chevrons)
+slice_patch.png | PATCH | HEAL: restore HP (crossed band-aids)
+slice_virus.png | BIOHAZ | AFFLICT: status on target
+slice_trojan.png | TROJAN | DEPLOY: dock drones (horse)
+slice_null.png | NULL | MISS: nothing (1/0)
+special_judgement.png | JUDGEMENT | Meridian: drains RAM (gavel); was TARIFF
+special_citation.png | CITATION | Halcyon: plants PARASITE (receipt)
+special_solar_flare.png | FLARE | Orbital: overclock then corrupt
+special_dose.png | DOSE | Solace: corrupts (capsule)
+special_weight.png | WEIGHT | +1 resistance (anvil); was INERTIA
+special_drone.png | DRONE | satellite docked on a slice
+placeholder_phishing.png | PHISHING | hook + bait mail
+placeholder_shield.png | SHIELD | heraldic shield (A)
+placeholder_encrypt.png | ENCRYPT | *** password field
+placeholder_recon.png | RECON | binoculars: scout
+placeholder_burn.png | BURN | the shared 2-peak flame
+placeholder_bomb.png | BOMB | delayed big hit
+placeholder_vault.png | SAFE | steel door: heavy block
+placeholder_key.png | KEY | unlock / bypass
+placeholder_spoof.png | FINGERPRINT | whole fingerprint: identity
+placeholder_storm.png | STORM | storm cloud: hits all
+placeholder_kill_process.png | POWER | power button
+status_corrupted.png | ST_CORRUPTED | slice output broken (hurts)
+status_parasite.png | ST_PARASITE | half output (hurts)
+status_overclocked.png | ST_OVERCLOCKED | 1.5x once, then CORRUPTED
+status_encrypted.png | ST_ENCRYPTED | absorbs the next status
+status_cleanse.png | ST_CLEANSE | ESC keycap
+state_frozen.png | ST_FROZEN | slice skips / is held
+state_locked.png | ST_LOCKED | slice can't be changed
+state_burning.png | ST_BURNING | loses value each turn
+state_empowered.png | ST_EMPOWERED | boosted next trigger
+picto_spin.png | PI_SPIN_CW | spin n ticks clockwise
+picto_spin_ccw.png | PI_SPIN_CCW | spin n anticlockwise
+picto_momentum.png | PI_MOMENTUM | big 2 runs; 5 if you spin first
+(alias) picto_momentum | PI_MOMENTUM | uses picto_momentum.png
+picto_respin.png | PI_RESPIN | respin to random tick
+picto_nudge.png | PI_NUDGE | free +-1 tick, either way
+picto_nudge_inner.png | PI_NUDGE_INNER | +-1 on the inner ring
+picto_free_nudge.png | PI_FREE | next n nudges free
+picto_again.png | PI_AGAIN | nudges trigger twice
+picto_flip.png | PI_FLIP | mirror the wheel
+picto_snap.png | PI_SNAP | snap to slice centre
+picto_ring_lock.png | PI_RING_LOCK | inner ring holds
+picto_perfect.png | PI_PERFECT | perfect mark (RAM+)
+picto_draw.png | PI_DRAW | draw n cards
+picto_ram.png | PI_RAM | gain / lose RAM
+(alias) picto_freeze | ST_FROZEN | uses state_frozen.png
+(alias) picto_resist | WEIGHT | uses special_weight.png
+picto_breach.png | PI_BREACH | disable the hub
+picto_undock.png | PI_UNDOCK | move a satellite
+(alias) picto_damage | EXPLOIT | uses slice_exploit.png
+picto_block.png | PI_BLOCK | gain n block
+(alias) picto_shield_pts | SHIELD | uses placeholder_shield.png
+(alias) picto_evade | PROXY | uses slice_proxy.png
+(alias) picto_heal | PATCH | uses slice_patch.png
+picto_all_targets.png | PI_ALL | every enemy
+picto_take_dmg.png | PI_SELF_DMG | you take n
+picto_exhaust.png | PI_EXHAUST | card torn in two
+picto_target.png | PI_RETICLE | aim reticle
+picto_no_damage.png | PI_REFUSAL | refused / blocked
+picto_hp.png | PI_HP | health
