@@ -450,4 +450,8 @@ func _art0() -> int:
 	if not names.has("map_mainframe_layers") or names.has("map_" + "mo" + "dem_layers"): fails += 1
 	if shipped == null or shipped.map_mainframe_layers != Vector2i(3, 5): fails += 1
 	if RC.InfilNodeType.keys().has("MO" + "DEM"): fails += 1
+	# ART-0 S0: the save locations and the replay switch (CampaignConfigData).
+	print("ART-0 S0: saves ", cfg.save_dir_source, " / ", cfg.save_dir_export, " replays ", cfg.replay_subdir, " on ", cfg.write_replays)
+	if cfg.save_dir_source != "res://saves" or cfg.save_dir_export != "user://saves" or cfg.replay_subdir != "replays" or not cfg.write_replays: fails += 1
+	if shipped == null or shipped.save_dir_source != cfg.save_dir_source or shipped.save_dir_export != cfg.save_dir_export or shipped.replay_subdir != cfg.replay_subdir or shipped.write_replays != cfg.write_replays: fails += 1
 	return fails

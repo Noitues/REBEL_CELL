@@ -168,6 +168,13 @@ extends Resource
 @export var dispatch_drift_late: int = 6
 ## Rookie price when no operative is alive (decision 2026-09-24): the cell can always rebuild.
 @export var emergency_rookie_cost: int = 0
+## ART-0 S0 (ruling 5): where saves and replays go. A run from source saves in the project's
+## own git-ignored folder, an exported build in the user folder; finished combats write a
+## replay into `replay_subdir` of the save folder when `write_replays` (source runs only).
+@export var save_dir_source: String = "res://saves"
+@export var save_dir_export: String = "user://saves"
+@export var replay_subdir: String = "replays"
+@export var write_replays: bool = true
 
 
 ## Highest ICE level on the ladder (final_final_ice when the ladder is empty).

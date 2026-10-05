@@ -462,3 +462,7 @@ retaliation_min_heat = 50
 ice_ladder = Array[ExtResource("4_ice")]([SubResource("ice_1"), SubResource("ice_2"), SubResource("ice_3"), SubResource("ice_4"), SubResource("ice_5"), SubResource("ice_6"), SubResource("ice_7"), SubResource("ice_8"), SubResource("ice_9"), SubResource("ice_10"), SubResource("ice_11"), SubResource("ice_12"), SubResource("ice_13"), SubResource("ice_14"), SubResource("ice_15"), SubResource("ice_16"), SubResource("ice_17"), SubResource("ice_18"), SubResource("ice_19"), SubResource("ice_20")])
 rebel_cell_unlock_ice = 10
 new_corp_ice_offset = 5
+save_dir_source = "res://saves"
+save_dir_export = "user://saves"
+replay_subdir = "replays"
+write_replays = true

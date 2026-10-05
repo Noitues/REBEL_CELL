@@ -30,6 +30,60 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
+Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal
+names follow the display words; no aliases, no migrations.
+- **Raid words (6.2).** `GridState.SiteStatus.TAKEN` (was SEIZED), `GridState.Condition.DOWN`
+  (was DISABLED), `GridState.is_taken`, `RaidResult.taken` / `.down`, node outcomes and raid
+  event types `"taken"` / `"down"`, `RC.RuleModifierType.TAKEN_RAID_STRENGTH_PCT` (same enum
+  position, so `campaign_config.tres` keeps its int), the view constants (`RaidVerdict.TAKEN`,
+  `DOWN`, `CELL_HOLDS`, `BREACHED`; `InfluenceSpread.MARK_TAKEN` / `MARK_DOWN`;
+  `CityInfluence.WEIGHT_TAKEN` / `WEIGHT_DOWN`; the feed's `FEED_TAKEN` / `FEED_DOWN`) and the
+  tests that named them. The raid verdict says **CELL HOLDS** when nothing is lost (was ALL HOLD)
+  and **BREACHED** when the home server falls (was CAMPAIGN LOST; the banner already used the
+  verdict's word); a raid with losses still lists them (HOME -5 / 1 DOWN / 1 TAKEN), as GDD 7.2
+  "the summary shows DOWN/TAKEN nodes". Player text uses the upper-case state words ("TAKEN by
+  a raid", "Bring the DOWN node back online", "The home server is BREACHED. Campaign lost.").
+  Unchanged on purpose: the UI-control "disabled", Hub Breach's "disabled 1 turn", and the
+  freight flavour (Freight Seizure, Asset Seizure, "Seized goods": allow-listed).
+- **Mainframe (6.5).** `RC.InfilNodeType.MAINFRAME`, `MainframeSign`
+  (`scripts/ui/kit/mainframe_sign.gd`), `tools/design_lab/mainframe_backdrops.*`, motion ids
+  `mainframe_sign_warmup` / `mainframe_sign_strike` / `mainframe_sign_flicker` /
+  `mainframe_trace`, and every string. Schema: `CampaignConfigData.map_modem_layers` →
+  `map_mainframe_layers` (checked in `tools/schema_smoke_checks.gd` `_art0`). The shop's top-bar
+  title is **MAINFRAME SHOP** and its exit tag **LEAVE MAINFRAME**: the longer words
+  (MAINFRAME CYBER SHOP, LEAVE THE MAINFRAME) wrapped at text size 1.6 and pushed the shop's
+  deck viewer and a control off the canvas (`test_end_state_layout_is_the_instant_layout_at_every_text_size`,
+  `test_the_new_pieces_keep_the_layout_at_each_text_size`); the sign keeps CYBER SHOP. The sign
+  stacks its 9 letters in the room its 5 had (the rows shrink with the word, as the code already
+  did). The boss gate is written "Mainframe Gate (name pending, D5)" in the GDD until the
+  designer rules on D5. Timeline images and history docs keep the old word.
+- **Customs Seal (6.1).** The Manifest's hub `customs_seal` / "Customs Seal" (sub-resources
+  `hub_customs_seal`, `te_customs_seal`); rules unchanged
+  (`test_the_manifest_customs_seal_gains_4_shield_each_turn_unless_breached`).
+- **Sweep.** `tests/unit/test_names_pass.gd` fails on the old words in strings.csv English, in
+  every content `.tres` string, and (for the old names as code) under scripts / scenes / tests /
+  tools / content.
+- **Saves folder (S0, ruling 5).** Schema: `CampaignConfigData.save_dir_source`
+  (`res://saves`), `save_dir_export` (`user://saves`), `replay_subdir` (`replays`),
+  `write_replays` (true), checked in `_art0`. `SaveService` saves under `save_dir_source` when
+  running from source (`OS.has_feature("editor")` or not `template`) and `save_dir_export` in an
+  exported build; making a folder under the source folder writes `saves/.gdignore` so Godot
+  never imports it; `.gitignore` has `/saves/`. GUT runs keep their per-process folder under
+  `user://saves`. `SAVE_VERSION` is 2; the migrations table ships empty, so a version-1 file is
+  refused by `load_dict` (push_error, `{}`): the title shows the slot empty and CONTINUE
+  returns false, no crash. Replays: new pure `CombatReplay` (`scripts/core/combat_replay.gd`)
+  records what the session already keeps (setup, seed as a string, action history, outcome,
+  state hash as a string) and replays it; `CombatEngine.submit` calls
+  `SaveService.record_replay` when a fight ends, which writes `saves/replays/replay_<seed>_<ms>.json`
+  only on source runs, never in a test (`write_replay(session, dir)` for a test that asks).
+  A replay is rebuilt with the shipped config and the content registry (the resolver every
+  fight uses). Tests: `tests/integration/test_saves_folder.gd`; `test_save_service.gd` updated
+  (no `SAVE_DIR` constant: the folders are config).
+- Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
+  their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
+  folder for a clean title screen.
+
 ### 2026-10-05 — Designer rulings: art reintegration, pause point 0 (resolved by the designer)
 Answered by the designer as a numbered list against `docs/ART_REINTEGRATION_PLAN.md` §1
 (art-pass tag `art-concepts-r43`) plus the ANIM-R7 open question and ART_BIBLE v2

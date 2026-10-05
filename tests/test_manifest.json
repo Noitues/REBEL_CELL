@@ -41,6 +41,10 @@
 			"seconds": 0.0,
 			"tier": "fast"
 		},
+		"res://tests/integration/test_saves_folder.gd": {
+			"seconds": 1.0,
+			"tier": "fast"
+		},
 		"res://tests/integration/test_save_service.gd": {
 			"seconds": 0.1,
 			"tier": "fast"
