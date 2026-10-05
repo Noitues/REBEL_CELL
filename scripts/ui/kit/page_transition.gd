@@ -140,6 +140,10 @@ static func settle(root: Node) -> void:
 		(root as ModemSign).settle()
 	elif root is HudStats:
 		(root as HudStats).settle()
+	elif root is BuyButton:
+		# ART-0 C: a buy sticker's flap on its tape ends too (at 2.0 a mid-flap sticker sat
+		# more than a pixel from its end state).
+		Motion.settle(root, ^"rotation_degrees")
 	elif root is MenuMotion:
 		(root as MenuMotion).finish()
 	elif root.has_meta(Typing.META):

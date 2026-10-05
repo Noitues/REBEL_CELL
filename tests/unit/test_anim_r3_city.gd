@@ -588,7 +588,11 @@ func test_saved_keeps_off_titles_and_buttons_on_the_map_screens() -> void:
 			var titles: Array[Rect2] = [hq.hud.title_box.get_global_rect()]
 			for t in hq.find_children("TerminalTitle", "Label", true, false):
 				if (t as Control).is_visible_in_tree():
-					titles.append(((t as Control).get_parent() as Control).get_global_rect())
+					# ART-0 C: the part its scroll views show (at 2.0 the raid's side column
+					# scrolls; a title below its view is not on the screen).
+					var shown := Fx._shown_rect((t as Control).get_parent() as Control)
+					if shown.has_area():
+						titles.append(shown)
 			for t in titles:
 				assert_false(r.intersects(t), "%s at %.1f: SAVED %s off the title %s" % [page, scale, r, t])
 			for b in hq.find_children("*", "BaseButton", true, false):

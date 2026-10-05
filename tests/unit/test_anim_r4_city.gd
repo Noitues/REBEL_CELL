@@ -361,6 +361,8 @@ func _clipped(root: Node, out: Array) -> void:
 					var wraps: bool = c is Badge or c.get("autowrap_mode") != TextServer.AUTOWRAP_OFF
 					var g := c.get_global_rect()
 					var vis := _clip_rect(c)
+					if not g.intersects(vis):
+						continue  # ART-0 C: scrolled out of its view (the raid side column at 2.0), not cut
 					if (not wraps and w > c.size.x + 1.0) or g.position.x < vis.position.x - 1.0 or g.end.x > vis.end.x + 1.0 or g.end.x > SCREEN.end.x + 1.0:
 						out.append("%s '%s'" % [c.name, text.left(40)])
 		_clipped(n, out)
