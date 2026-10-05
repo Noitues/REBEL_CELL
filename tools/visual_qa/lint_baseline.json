@@ -1,0 +1,148 @@
+{
+	"about": "Static visual lint baseline (tests/unit/test_visual_lint_static.gd; ART-0 D, ported from art-pass W10): per file under scripts/ui, the count of lines per rule (literal colours, literal font sizes). Seeded with main's violations on 2026-10-05; ART-1 to ART-12 drive it to zero. A count may only go down. Lower it with python tools/visual_qa/update_lint_baseline.py after migrating a file.",
+	"rules": [
+		"color",
+		"font_override",
+		"draw_size",
+		"font_const",
+		"font_size_assign"
+	],
+	"files": {
+		"res://scripts/ui/combat_scene.gd": {
+			"color": 2,
+			"font_const": 1
+		},
+		"res://scripts/ui/hq_scene.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/asset_card.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/asset_icon.gd": {
+			"color": 3
+		},
+		"res://scripts/ui/kit/buy_button.gd": {
+			"font_const": 1
+		},
+		"res://scripts/ui/kit/city_map_overlay.gd": {
+			"color": 23,
+			"font_const": 1
+		},
+		"res://scripts/ui/kit/crew_card.gd": {
+			"color": 4,
+			"font_const": 1
+		},
+		"res://scripts/ui/kit/daemon_sigil.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/daemon_tray.gd": {
+			"draw_size": 1
+		},
+		"res://scripts/ui/kit/deck_view.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/drip_button.gd": {
+			"color": 5,
+			"font_size_assign": 1
+		},
+		"res://scripts/ui/kit/graffiti_scrawl.gd": {
+			"font_size_assign": 1
+		},
+		"res://scripts/ui/kit/grid_map_view.gd": {
+			"font_const": 3
+		},
+		"res://scripts/ui/kit/heat_poster.gd": {
+			"color": 3,
+			"draw_size": 2,
+			"font_const": 2
+		},
+		"res://scripts/ui/kit/hud_bar.gd": {
+			"color": 1,
+			"draw_size": 2
+		},
+		"res://scripts/ui/kit/hud_stats.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/icon_mark.gd": {
+			"color": 5
+		},
+		"res://scripts/ui/kit/map_legend.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/menu_motion.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/modem_sign.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/neon_city.gd": {
+			"color": 23,
+			"draw_size": 1
+		},
+		"res://scripts/ui/kit/netrun_map_view.gd": {
+			"draw_size": 3
+		},
+		"res://scripts/ui/kit/outcome_row.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/pause_menu.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/portrait_art.gd": {
+			"color": 16
+		},
+		"res://scripts/ui/kit/raid_fx_layer.gd": {
+			"color": 9
+		},
+		"res://scripts/ui/kit/raid_playout_panel.gd": {
+			"font_override": 1
+		},
+		"res://scripts/ui/kit/ram_bar.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/slice_icon.gd": {
+			"color": 5
+		},
+		"res://scripts/ui/kit/spinner_mini.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/spinner_view.gd": {
+			"color": 4,
+			"draw_size": 5,
+			"font_const": 1
+		},
+		"res://scripts/ui/kit/stat_icon.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/kit/sticker_button.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/terminal_window.gd": {
+			"font_override": 2
+		},
+		"res://scripts/ui/kit/toast_note.gd": {
+			"color": 1
+		},
+		"res://scripts/ui/kit/ui_theme.gd": {
+			"color": 24
+		},
+		"res://scripts/ui/kit/zine_card.gd": {
+			"color": 9,
+			"draw_size": 4
+		},
+		"res://scripts/ui/kit/zine_note.gd": {
+			"draw_size": 1
+		},
+		"res://scripts/ui/kit/zine_panel.gd": {
+			"draw_size": 1
+		},
+		"res://scripts/ui/netrun_scene.gd": {
+			"color": 2
+		},
+		"res://scripts/ui/wheel_view.gd": {
+			"color": 5,
+			"draw_size": 3,
+			"font_const": 2
+		}
+	}
+}
