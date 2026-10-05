@@ -56,6 +56,29 @@ python tools/run_windowed.py --log <file> -- res://tools/design_lab/motion_lab.t
   Movie Maker folder first (Godot writes nothing into a missing one). Checked on this
   machine with a foreground-window watcher: focus never left the active window.
 
+## CI (GitHub Actions)
+
+`.github/workflows/ci.yml` (manual `workflow_dispatch` only during M14; the push and
+pull_request triggers are kept as a commented block to restore after ART-12).
+
+- **`checks`**: a matrix of 6 jobs. Job K runs `python3 tools/run_tests.py --shard K/6 -j 2`:
+  `--shard K/N` splits all scripts into N global shards with the same longest-first balancing
+  as `-j N`, runs only shard K, and `-j 2` splits that shard into two local Godot processes
+  (each with its own user://). The 6 shards are disjoint and cover every script exactly once
+  (`tools/test_run_tests.py` checks this). Measured script time is 1752 s in total, so about
+  292 s per shard on the dev PC; assuming a runner about 3x slower, 2 processes and 1-3 min of
+  setup and import, a shard should take about 10 min (limit 25 min). A failing script is
+  rerun alone as usual, and the shard's `gut.log` and `results.xml` are uploaded as the
+  `gut-logs-shard-K` artifact when the job fails.
+- **`fast-checks`**: schema smoke test (passes on "SCHEMA SMOKE TEST: PASS" in its output, as Godot
+  can exit 139 after printing it), content validation, and the text export diff.
+- **`export`**: needs both of the above.
+- Caches: the Godot download (`~/.local/share/godot`, best effort) and `.godot/` (keyed on
+  `project.godot`, `addons/`, `assets/` and the `*.import` files; `--import` still runs and only
+  does the delta).
+- Changing the shard count: edit `SHARDS` and the `shard` list in the workflow together. After
+  a large change in script times, `python tools/run_tests.py --update-times` keeps the split even.
+
 ## How the runner works
 
 - **Shards.** Every `tests/unit/test_*.gd` and `tests/integration/test_*.gd` script is

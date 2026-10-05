@@ -8,7 +8,7 @@ const TOKEN_TABLE := {
 	# §2.1 brand and neutral
 	&"CELL_PINK": "#FF3DA8", &"CELL_ACID": "#D4FF00", &"FOCUS": "#D4FF00", &"CELL_TURF": "#D4FF00",
 	&"NET_CYAN": "#5CE1FF", &"PROTECT": "#5CE1FF", &"TERMINAL_TEXT": "#CFF6FF", &"INK": "#111111",
-	&"GLYPH_OUTLINE": "#0C0A16", &"PAPER": "#F2EEE4", &"PAPER_ALT": "#E9E4D6", &"CRT_AMBER": "#FFB000",
+	&"GLYPH_INK": "#0C0A16", &"PAPER": "#F2EEE4", &"PAPER_ALT": "#E9E4D6", &"CRT_AMBER": "#FFB000",
 	&"WARN": "#FFB000", &"RESIST_GOLD": "#FFD24D", &"NEON_VIOLET": "#B04DFF",
 	# §2.2 semantic and new
 	&"HARM": "#FF4433", &"GAIN": "#7BE07B", &"HARM_INK": "#AB2E22", &"GAIN_INK": "#396739",

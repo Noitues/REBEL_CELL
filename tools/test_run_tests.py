@@ -93,5 +93,49 @@ class RerunAndDisk(unittest.TestCase):
         self.assertGreater(run_tests.free_gb(Path(tempfile.gettempdir()) / "not" / "made" / "yet"), 0.0)
 
 
+class Sharding(unittest.TestCase):
+    SECONDS = {f"res://tests/unit/test_{c}.gd": t for c, t in zip("abcdefghij", [50, 40, 30, 20, 10, 9, 8, 7, 1, 0])}
+
+    def test_shard_text_is_parsed_and_validated(self) -> None:
+        self.assertEqual(run_tests.parse_shard("2/6"), (2, 6))
+        for bad in ["", "2", "0/4", "5/4", "a/b", "1/0", "1/2/3", "-1/4"]:
+            with self.assertRaises(ValueError, msg=bad):
+                run_tests.parse_shard(bad)
+
+    def test_the_global_shards_are_disjoint_and_cover_every_script(self) -> None:
+        scripts = sorted(self.SECONDS)
+        for n in (1, 3, 4, 6):
+            picked = [run_tests.pick_shard(scripts, self.SECONDS, k, n) for k in range(1, n + 1)]
+            flat = [s for sh in picked for s in sh]
+            self.assertEqual(sorted(flat), scripts, f"n={n}: every script exactly once")
+
+    def test_a_global_shard_matches_the_local_balance(self) -> None:
+        scripts = sorted(self.SECONDS)
+        local = run_tests.balance(scripts, self.SECONDS, 3)
+        for k in (1, 2, 3):
+            self.assertEqual(run_tests.pick_shard(scripts, self.SECONDS, k, 3), local[k - 1])
+
+    def test_shards_are_deterministic_and_balanced(self) -> None:
+        scripts = sorted(self.SECONDS)
+        self.assertEqual(run_tests.pick_shard(scripts, self.SECONDS, 2, 4), run_tests.pick_shard(list(reversed(scripts)), self.SECONDS, 2, 4))
+        loads = [sum(self.SECONDS[s] for s in run_tests.pick_shard(scripts, self.SECONDS, k, 3)) for k in (1, 2, 3)]
+        self.assertLessEqual(max(loads) - min(loads), 50, "the slowest script (50 s) bounds the spread")
+
+    def test_more_shards_than_scripts_leaves_empty_shards(self) -> None:
+        scripts = ["res://tests/unit/test_a.gd", "res://tests/unit/test_b.gd"]
+        picked = [run_tests.pick_shard(scripts, {}, k, 5) for k in range(1, 6)]
+        self.assertEqual(sum(len(p) for p in picked), 2)
+        self.assertEqual(picked[4], [])
+
+    def test_the_cli_runs_one_shard_and_rejects_a_bad_one(self) -> None:
+        import subprocess
+        script = str(Path(run_tests.__file__))
+        ok = subprocess.run([sys.executable, "-B", script, "--shard", "1/4", "--list"], capture_output=True, text=True)
+        self.assertEqual(ok.returncode, 0, ok.stdout + ok.stderr)
+        self.assertIn("global shard 1/4", ok.stdout)
+        bad = subprocess.run([sys.executable, "-B", script, "--shard", "9/4", "--list"], capture_output=True, text=True)
+        self.assertEqual(bad.returncode, 2)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

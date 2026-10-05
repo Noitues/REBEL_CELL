@@ -1,0 +1,871 @@
+{
+ "source_tag": "art-concepts-r43",
+ "source_commit": "9a62cec89be362d89ad58ce8e2c2e2a126c8a3a1",
+ "script": "tools/art_pipeline/glyphs/build_glyph_atlas.py",
+ "master_px": 512,
+ "cell_px": 128,
+ "box_px": 96,
+ "spread_px": 16,
+ "columns": 16,
+ "encoding": "L8: 0.5 + signed_distance / (2 * spread_px), inside positive, cell px",
+ "glyphs": [
+  {
+   "name": "slice_shim",
+   "source": "r40",
+   "source_id": "EXPLOIT",
+   "meaning": "ATTACK: damage (dagger)"
+  },
+  {
+   "name": "slice_overflow",
+   "source": "r40",
+   "source_id": "ZERO-DAY",
+   "meaning": "CRIT: big damage (burst)"
+  },
+  {
+   "name": "slice_defrag",
+   "source": "r40",
+   "source_id": "FIREWALL",
+   "meaning": "DEFEND: block (wall + flame)"
+  },
+  {
+   "name": "slice_sandbox",
+   "source": "r40",
+   "source_id": "SANDBOX",
+   "meaning": "SHIELD: persists (sand pile)"
+  },
+  {
+   "name": "slice_detour",
+   "source": "r40",
+   "source_id": "PROXY",
+   "meaning": "EVADE: dodge next hit (chevrons)"
+  },
+  {
+   "name": "slice_hotfix",
+   "source": "r40",
+   "source_id": "PATCH",
+   "meaning": "HEAL: restore HP (crossed band-aids)"
+  },
+  {
+   "name": "slice_infect",
+   "source": "r40",
+   "source_id": "BIOHAZ",
+   "meaning": "AFFLICT: status on target (biohazard)"
+  },
+  {
+   "name": "slice_trojan",
+   "source": "r40",
+   "source_id": "TROJAN",
+   "meaning": "DEPLOY: dock drones (horse)"
+  },
+  {
+   "name": "slice_null",
+   "source": "r40",
+   "source_id": "NULL",
+   "meaning": "MISS: nothing (1/0)"
+  },
+  {
+   "name": "special_priority",
+   "source": "priority",
+   "source_id": "PRIORITY",
+   "meaning": "Meridian: drains RAM (alarm beacon); round 18"
+  },
+  {
+   "name": "special_citation",
+   "source": "r40",
+   "source_id": "CITATION",
+   "meaning": "Halcyon: plants PARASITE (receipt)"
+  },
+  {
+   "name": "special_solar_flare",
+   "source": "r40",
+   "source_id": "FLARE",
+   "meaning": "Orbital: overclock then corrupt (sun on the horizon)"
+  },
+  {
+   "name": "special_dose",
+   "source": "r40",
+   "source_id": "DOSE",
+   "meaning": "Solace: corrupts (capsule)"
+  },
+  {
+   "name": "special_weight",
+   "source": "r40",
+   "source_id": "WEIGHT",
+   "meaning": "+1 resistance (anvil)"
+  },
+  {
+   "name": "special_drone",
+   "source": "r40",
+   "source_id": "DRONE",
+   "meaning": "satellite docked on a slice (quad-rotor)"
+  },
+  {
+   "name": "status_corrupted",
+   "source": "r40",
+   "source_id": "ST_CORRUPTED",
+   "meaning": "slice output broken (hurts)"
+  },
+  {
+   "name": "status_parasite",
+   "source": "r40",
+   "source_id": "ST_PARASITE",
+   "meaning": "half output (hurts)"
+  },
+  {
+   "name": "status_overclocked",
+   "source": "r40",
+   "source_id": "ST_OVERCLOCKED",
+   "meaning": "1.5x once, then CORRUPTED"
+  },
+  {
+   "name": "status_encrypted",
+   "source": "r40",
+   "source_id": "ST_ENCRYPTED",
+   "meaning": "absorbs the next status"
+  },
+  {
+   "name": "status_cleanse",
+   "source": "r40",
+   "source_id": "ST_CLEANSE",
+   "meaning": "ESC keycap"
+  },
+  {
+   "name": "state_frozen",
+   "source": "r40",
+   "source_id": "ST_FROZEN",
+   "meaning": "slice skips / is held"
+  },
+  {
+   "name": "state_locked",
+   "source": "r40",
+   "source_id": "ST_LOCKED",
+   "meaning": "slice can't be changed"
+  },
+  {
+   "name": "state_burning",
+   "source": "r40",
+   "source_id": "ST_BURNING",
+   "meaning": "loses value each turn"
+  },
+  {
+   "name": "state_empowered",
+   "source": "r40",
+   "source_id": "ST_EMPOWERED",
+   "meaning": "boosted next trigger"
+  },
+  {
+   "name": "picto_spin",
+   "source": "r40",
+   "source_id": "PI_SPIN_CW",
+   "meaning": "spin n ticks clockwise"
+  },
+  {
+   "name": "picto_spin_ccw",
+   "source": "r40",
+   "source_id": "PI_SPIN_CCW",
+   "meaning": "spin n anticlockwise"
+  },
+  {
+   "name": "picto_momentum",
+   "source": "r40",
+   "source_id": "PI_MOMENTUM",
+   "meaning": "big 2 runs; 5 if you spin first"
+  },
+  {
+   "name": "picto_respin",
+   "source": "r40",
+   "source_id": "PI_RESPIN",
+   "meaning": "respin to random tick"
+  },
+  {
+   "name": "picto_nudge",
+   "source": "r40",
+   "source_id": "PI_NUDGE",
+   "meaning": "free +-1 tick, either way"
+  },
+  {
+   "name": "picto_nudge_inner",
+   "source": "r40",
+   "source_id": "PI_NUDGE_INNER",
+   "meaning": "+-1 on the inner ring"
+  },
+  {
+   "name": "picto_free_nudge",
+   "source": "r40",
+   "source_id": "PI_FREE",
+   "meaning": "next n nudges free"
+  },
+  {
+   "name": "picto_again",
+   "source": "r40",
+   "source_id": "PI_AGAIN",
+   "meaning": "nudges trigger twice"
+  },
+  {
+   "name": "picto_flip",
+   "source": "r40",
+   "source_id": "PI_FLIP",
+   "meaning": "mirror the wheel"
+  },
+  {
+   "name": "picto_snap",
+   "source": "r40",
+   "source_id": "PI_SNAP",
+   "meaning": "snap to slice centre"
+  },
+  {
+   "name": "picto_ring_lock",
+   "source": "r40",
+   "source_id": "PI_RING_LOCK",
+   "meaning": "inner ring holds"
+  },
+  {
+   "name": "picto_perfect",
+   "source": "r40",
+   "source_id": "PI_PERFECT",
+   "meaning": "perfect mark (RAM+)"
+  },
+  {
+   "name": "picto_draw",
+   "source": "r40",
+   "source_id": "PI_DRAW",
+   "meaning": "draw n cards"
+  },
+  {
+   "name": "picto_ram",
+   "source": "r40",
+   "source_id": "PI_RAM",
+   "meaning": "gain / lose RAM"
+  },
+  {
+   "name": "picto_breach",
+   "source": "r40",
+   "source_id": "PI_BREACH",
+   "meaning": "disable the hub"
+  },
+  {
+   "name": "picto_undock",
+   "source": "r40",
+   "source_id": "PI_UNDOCK",
+   "meaning": "move a satellite"
+  },
+  {
+   "name": "picto_block",
+   "source": "r40",
+   "source_id": "PI_BLOCK",
+   "meaning": "gain n block"
+  },
+  {
+   "name": "picto_all_targets",
+   "source": "r40",
+   "source_id": "PI_ALL",
+   "meaning": "every enemy"
+  },
+  {
+   "name": "picto_take_dmg",
+   "source": "r40",
+   "source_id": "PI_SELF_DMG",
+   "meaning": "you take n"
+  },
+  {
+   "name": "picto_exhaust",
+   "source": "r40",
+   "source_id": "PI_EXHAUST",
+   "meaning": "card torn in two"
+  },
+  {
+   "name": "picto_target",
+   "source": "r40",
+   "source_id": "PI_RETICLE",
+   "meaning": "aim reticle"
+  },
+  {
+   "name": "picto_no_damage",
+   "source": "r40",
+   "source_id": "PI_REFUSAL",
+   "meaning": "refused / blocked"
+  },
+  {
+   "name": "picto_hp",
+   "source": "r40",
+   "source_id": "PI_HP",
+   "meaning": "health"
+  },
+  {
+   "name": "hub_breaker_core",
+   "source": "r40",
+   "source_id": "CORE_breaker_core",
+   "meaning": "crowbar striking a spiderweb of glass cracks"
+  },
+  {
+   "name": "hub_wrecker_core",
+   "source": "r40",
+   "source_id": "CORE_wrecker_core",
+   "meaning": "sledgehammer"
+  },
+  {
+   "name": "hub_ghost_core",
+   "source": "r40",
+   "source_id": "CORE_ghost_core",
+   "meaning": "hood with mesh eyes"
+  },
+  {
+   "name": "hub_phantom_core",
+   "source": "r40",
+   "source_id": "CORE_phantom_core",
+   "meaning": "mask (the hub draws the echo trail as motion)"
+  },
+  {
+   "name": "hub_phantom_echo",
+   "source": "r40",
+   "source_id": "CORE_phantom_echo",
+   "meaning": "mask + echo outlines: Phantom's static icon"
+  },
+  {
+   "name": "hub_rig_core",
+   "source": "r40",
+   "source_id": "CORE_rig_core",
+   "meaning": "firmware chip dropping into a socket"
+  },
+  {
+   "name": "hub_overclock_core",
+   "source": "r40",
+   "source_id": "CORE_overclock_core",
+   "meaning": "RPM gauge, needle in the red"
+  },
+  {
+   "name": "hub_swarm_core",
+   "source": "r40",
+   "source_id": "CORE_swarm_core",
+   "meaning": "three linked drones"
+  },
+  {
+   "name": "hub_hive_core",
+   "source": "r40",
+   "source_id": "CORE_hive_core",
+   "meaning": "hex cell holding 4 nodes"
+  },
+  {
+   "name": "hub_compliance_lock",
+   "source": "r40",
+   "source_id": "HUB_compliance_lock",
+   "meaning": "rubber stamp"
+  },
+  {
+   "name": "hub_customs_seal",
+   "source": "r40",
+   "source_id": "HUB_priority_routing",
+   "meaning": "express arrow overtaking two lanes (round 38 emblem of this hub)"
+  },
+  {
+   "name": "hub_emergency_powers",
+   "source": "r40",
+   "source_id": "HUB_emergency_powers",
+   "meaning": "siren dome"
+  },
+  {
+   "name": "hub_station_keeping",
+   "source": "r40",
+   "source_id": "HUB_station_keeping",
+   "meaning": "satellite"
+  },
+  {
+   "name": "hub_auto_renew",
+   "source": "r40",
+   "source_id": "HUB_auto_renew",
+   "meaning": "renew loop round a plus"
+  },
+  {
+   "name": "hub_root_access",
+   "source": "r40",
+   "source_id": "HUB_root_access",
+   "meaning": "terminal with #_"
+  },
+  {
+   "name": "seg_x2",
+   "source": "r40",
+   "source_id": "SEG_x2",
+   "meaning": "x2"
+  },
+  {
+   "name": "seg_pierce",
+   "source": "r40",
+   "source_id": "SEG_pierce",
+   "meaning": "arrow through a brick slab"
+  },
+  {
+   "name": "seg_corrupt",
+   "source": "r40",
+   "source_id": "SEG_corrupt",
+   "meaning": "glitched block"
+  },
+  {
+   "name": "seg_anchor",
+   "source": "r40",
+   "source_id": "SEG_anchor",
+   "meaning": "anchor"
+  },
+  {
+   "name": "seg_accelerator",
+   "source": "r40",
+   "source_id": "SEG_accelerator",
+   "meaning": "gear + speed lines"
+  },
+  {
+   "name": "seg_echo",
+   "source": "r40",
+   "source_id": "SEG_echo",
+   "meaning": "block + two arcs"
+  },
+  {
+   "name": "seg_blank",
+   "source": "r40",
+   "source_id": "SEG_blank",
+   "meaning": "dash"
+  },
+  {
+   "name": "fw_patch_plus",
+   "source": "fw",
+   "source_id": "patch_plus",
+   "meaning": "double plus"
+  },
+  {
+   "name": "fw_hardened",
+   "source": "fw",
+   "source_id": "hardened",
+   "meaning": "armoured hex with ***"
+  },
+  {
+   "name": "fw_burner",
+   "source": "fw",
+   "source_id": "burner",
+   "meaning": "gas ring"
+  },
+  {
+   "name": "fw_leech",
+   "source": "fw",
+   "source_id": "leech",
+   "meaning": "fanged drop"
+  },
+  {
+   "name": "fw_mirror",
+   "source": "fw",
+   "source_id": "mirror",
+   "meaning": "mirror"
+  },
+  {
+   "name": "fw_shunt",
+   "source": "fw",
+   "source_id": "shunt",
+   "meaning": "fork with two arrowheads"
+  },
+  {
+   "name": "fw_overvolt",
+   "source": "fw",
+   "source_id": "overvolt",
+   "meaning": "bolt"
+  },
+  {
+   "name": "fw_bulkhead",
+   "source": "fw",
+   "source_id": "bulkhead",
+   "meaning": "blast door"
+  },
+  {
+   "name": "fw_siphon",
+   "source": "fw",
+   "source_id": "siphon",
+   "meaning": "pipe"
+  },
+  {
+   "name": "fw_static_coat",
+   "source": "fw",
+   "source_id": "static_coat",
+   "meaning": "zig-zag shield"
+  },
+  {
+   "name": "fw_barbed_wire",
+   "source": "fw",
+   "source_id": "barbed_wire",
+   "meaning": "barbed wire"
+  },
+  {
+   "name": "fw_recycler",
+   "source": "fw",
+   "source_id": "recycler",
+   "meaning": "three-arrow triangle"
+  },
+  {
+   "name": "fw_counterstrike",
+   "source": "fw",
+   "source_id": "counterstrike",
+   "meaning": "two-way arrows"
+  },
+  {
+   "name": "fw_nanite_mesh",
+   "source": "fw",
+   "source_id": "nanite_mesh",
+   "meaning": "hex cluster"
+  },
+  {
+   "name": "fw_power_cell",
+   "source": "fw",
+   "source_id": "power_cell",
+   "meaning": "battery"
+  },
+  {
+   "name": "fw_tracer",
+   "source": "fw",
+   "source_id": "tracer",
+   "meaning": "tracer round"
+  },
+  {
+   "name": "fw_skimmer",
+   "source": "fw",
+   "source_id": "skimmer",
+   "meaning": "coin stack"
+  },
+  {
+   "name": "fw_coolant_loop",
+   "source": "fw",
+   "source_id": "coolant_loop",
+   "meaning": "radiator coil"
+  },
+  {
+   "name": "daemon_clean_signal",
+   "source": "fw",
+   "source_id": "clean_signal",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_kernel_sync",
+   "source": "fw",
+   "source_id": "kernel_sync",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_zero_day",
+   "source": "fw",
+   "source_id": "zero_day",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_botnet_seed",
+   "source": "fw",
+   "source_id": "botnet_seed",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_adrenal_loop",
+   "source": "fw",
+   "source_id": "adrenal_loop",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_cascade",
+   "source": "fw",
+   "source_id": "cascade",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_fault_tolerance",
+   "source": "fw",
+   "source_id": "fault_tolerance",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_fail_forward",
+   "source": "fw",
+   "source_id": "fail_forward",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_stolen_intent",
+   "source": "fw",
+   "source_id": "stolen_intent",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_twin_pointer",
+   "source": "fw",
+   "source_id": "twin_pointer",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_warm_boot",
+   "source": "fw",
+   "source_id": "warm_boot",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_shield_cache",
+   "source": "fw",
+   "source_id": "shield_cache",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_idle_armor",
+   "source": "fw",
+   "source_id": "idle_armor",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_static_field",
+   "source": "fw",
+   "source_id": "static_field",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_linked_bus",
+   "source": "fw",
+   "source_id": "linked_bus",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_tuning_fork",
+   "source": "fw",
+   "source_id": "tuning_fork",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_feedback_loop",
+   "source": "fw",
+   "source_id": "feedback_loop",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_salvager",
+   "source": "fw",
+   "source_id": "salvager",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_field_medic",
+   "source": "fw",
+   "source_id": "field_medic",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_bounty_code",
+   "source": "fw",
+   "source_id": "bounty_code",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_rack_skimmer",
+   "source": "fw",
+   "source_id": "rack_skimmer",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_cold_exit",
+   "source": "fw",
+   "source_id": "cold_exit",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_scrubber",
+   "source": "fw",
+   "source_id": "scrubber",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "daemon_log_wiper",
+   "source": "fw",
+   "source_id": "log_wiper",
+   "meaning": "Daemon sigil"
+  },
+  {
+   "name": "exploit_intel",
+   "source": "r40",
+   "source_id": "RECON",
+   "meaning": "INTEL Exploit: binoculars"
+  },
+  {
+   "name": "exploit_breach",
+   "source": "r40",
+   "source_id": "KEY",
+   "meaning": "BREACH Exploit: key"
+  },
+  {
+   "name": "pending",
+   "source": "pending",
+   "source_id": "",
+   "meaning": "no art yet: neutral rounded square"
+  }
+ ],
+ "twin_px": 16,
+ "closest_pairs": [
+  [
+   1.0,
+   "picto_spin",
+   "picto_momentum"
+  ],
+  [
+   0.88,
+   "picto_take_dmg",
+   "picto_hp"
+  ],
+  [
+   0.871,
+   "hub_phantom_core",
+   "hub_phantom_echo"
+  ],
+  [
+   0.751,
+   "hub_ghost_core",
+   "daemon_shield_cache"
+  ],
+  [
+   0.718,
+   "picto_no_damage",
+   "daemon_shield_cache"
+  ],
+  [
+   0.714,
+   "fw_bulkhead",
+   "daemon_shield_cache"
+  ],
+  [
+   0.703,
+   "picto_respin",
+   "fw_bulkhead"
+  ],
+  [
+   0.701,
+   "picto_snap",
+   "daemon_shield_cache"
+  ],
+  [
+   0.7,
+   "hub_ghost_core",
+   "fw_bulkhead"
+  ],
+  [
+   0.698,
+   "picto_ram",
+   "fw_bulkhead"
+  ],
+  [
+   0.696,
+   "status_cleanse",
+   "fw_bulkhead"
+  ],
+  [
+   0.695,
+   "hub_ghost_core",
+   "fw_hardened"
+  ],
+  [
+   0.694,
+   "picto_respin",
+   "fw_hardened"
+  ],
+  [
+   0.691,
+   "picto_ram",
+   "hub_ghost_core"
+  ],
+  [
+   0.691,
+   "picto_no_damage",
+   "hub_ghost_core"
+  ],
+  [
+   0.688,
+   "seg_corrupt",
+   "fw_bulkhead"
+  ],
+  [
+   0.687,
+   "special_citation",
+   "hub_phantom_core"
+  ],
+  [
+   0.682,
+   "fw_barbed_wire",
+   "fw_tracer"
+  ],
+  [
+   0.679,
+   "slice_trojan",
+   "hub_phantom_core"
+  ],
+  [
+   0.674,
+   "picto_respin",
+   "hub_ghost_core"
+  ],
+  [
+   0.671,
+   "status_cleanse",
+   "fw_hardened"
+  ],
+  [
+   0.669,
+   "status_cleanse",
+   "picto_block"
+  ],
+  [
+   0.668,
+   "daemon_shield_cache",
+   "daemon_field_medic"
+  ],
+  [
+   0.667,
+   "seg_corrupt",
+   "fw_hardened"
+  ]
+ ],
+ "reference_iou_256": {
+  "slice_shim": 1.0,
+  "slice_overflow": 1.0,
+  "slice_defrag": 1.0,
+  "slice_sandbox": 1.0,
+  "slice_detour": 1.0,
+  "slice_hotfix": 1.0,
+  "slice_infect": 1.0,
+  "slice_trojan": 1.0,
+  "slice_null": 1.0,
+  "special_citation": 1.0,
+  "special_solar_flare": 1.0,
+  "special_dose": 1.0,
+  "special_weight": 1.0,
+  "special_drone": 1.0,
+  "exploit_intel": 1.0,
+  "exploit_breach": 1.0,
+  "status_corrupted": 1.0,
+  "status_parasite": 1.0,
+  "status_overclocked": 1.0,
+  "status_encrypted": 1.0,
+  "status_cleanse": 1.0,
+  "state_frozen": 1.0,
+  "state_locked": 1.0,
+  "state_burning": 1.0,
+  "state_empowered": 1.0,
+  "picto_spin": 1.0,
+  "picto_spin_ccw": 1.0,
+  "picto_momentum": 1.0,
+  "picto_respin": 1.0,
+  "picto_nudge": 1.0,
+  "picto_nudge_inner": 1.0,
+  "picto_free_nudge": 1.0,
+  "picto_again": 1.0,
+  "picto_flip": 1.0,
+  "picto_snap": 1.0,
+  "picto_ring_lock": 1.0,
+  "picto_perfect": 1.0,
+  "picto_draw": 1.0,
+  "picto_ram": 1.0,
+  "picto_breach": 1.0,
+  "picto_undock": 1.0,
+  "picto_block": 1.0,
+  "picto_all_targets": 1.0,
+  "picto_take_dmg": 1.0,
+  "picto_exhaust": 1.0,
+  "picto_target": 1.0,
+  "picto_no_damage": 1.0,
+  "picto_hp": 1.0,
+  "special_priority": 1.0
+ }
+}

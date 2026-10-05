@@ -59,8 +59,6 @@ const TERMINAL_BG := Color(5.0 / 255.0, 13.0 / 255.0, 28.0 / 255.0, 0.95)
 const TERMINAL_BG_HOT := Color(10.0 / 255.0, 34.0 / 255.0, 54.0 / 255.0, 0.95)
 const TERMINAL_EDGE := Color(NET_CYAN, 0.78)
 const TERMINAL_TEXT := Color("#CFF6FF")
-## §2.1: the glyph outline (the glyph atlas shader's ink; ART_BIBLE §6.2).
-const GLYPH_OUTLINE := Color("#0C0A16")
 ## §6.4: the live-number rim (bare Anton: HP, Heat, damage numbers).
 const LIVE_NUMBER_RIM := Color("#06060A")
 const NOTE_PAPER := Color("#E9DFC6")
@@ -518,3 +516,10 @@ static func has_arrows(text: String) -> bool:
 ## The mono lettering for `text`: with the arrows' fallback when it needs it.
 static func mono_for(text: String) -> Font:
 	return mono_arrows() if has_arrows(text) else mono()
+
+
+# --- ART-1 1C: glyph atlas colours (ART_BIBLE 2.1 INK row, 3.5) -------------------------
+## A glyph's flat white silhouette (bible 3.5: white on the read plate).
+const GLYPH_FILL := Color("#FFFFFF")
+## The dark rounded outline added at render time (bible 2.1: glyph outline #0C0A16).
+const GLYPH_INK := Color("#0C0A16")

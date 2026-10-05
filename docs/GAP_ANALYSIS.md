@@ -36,6 +36,7 @@ horizontal slices. Every decision is made by the implementer and logged in
 | H19 | 2026-09-25 | 3 + doc (refused rebind widened Options off screen, key hints ignored rebinds, Mirror copies ignored Parasite, README autoloads) | Fixed in horizontal batch H19 |
 | Merge | 2026-09-26 | Visual/UI branch merged (5afe42d): stickers and SEND IT carry bound keys, stickers moved off the wheel, paged combat subtitles | 540 tests; see DECISIONS "Merge" |
 | H24 | 2026-09-27 | 38 from pass 24 (0 P1; 11 P2; 27 P3) incl. the fourth naive-player reviews, plus test isolation (parallel runs shared one settings file) | Fixed in horizontal batch H24 (combat, city maps, screens); DECISIONS "H24 ..." entries. Motion moved to its own Animation pass |
+| ART-0 | 2026-10-05 | Not an audit pass (the M14 audit is deferred to after ART-12, DECISIONS "Designer ruling: one full run, one audit at the end"). Rulings and names: raid words TAKEN / DOWN / CELL HOLDS / BREACHED, Mainframe, Customs Seal, slice programs SANDBOX / TROJAN / NULL, Central Server, FIRMWARE, WEAK, five Heat bands (COOL / NOTICED / FLAGGED / HUNTED / PURGE), RESPIN; the saves folder (`saves/` in the checkout); salvage S1-S5 (settings to 2.0, QA harness and lint, tokens and VFX tiers, `reduce_effects` as a project-wide shader global, kit behaviour: component states, focus brackets, PadGlyph, modal API) | Merged in ART-0 areas A, B (parts 1-3), C, D, E, E2, F; DECISIONS "Art direction - ART-0 ..." entries. 1372 tests (fast tier 736); timeline `17_art0` is the baseline before the v2 look |
 | H23 | 2026-09-27 | 21 from pass 23 (1 P1: an empty subtitle box after a re-dock; 12 P2; 8 P3) incl. the third naive-player reviews | Fixed in horizontal batch H23 (combat, city maps, screens); DECISIONS "H23 ..." entries |
 | H22 | 2026-09-27 | 14 from pass 22 (0 P1, 8 P2, 6 P3) incl. the second naive-player reviews | Fixed in horizontal batch H22 (combat, city maps, screens); DECISIONS "H22 ..." entries |
 | H21 | 2026-09-26 | 22 from pass 21 (3 P1: pad nudge wheel/ring, pad focus lost, no visible turn result; 12 P2; 7 P3) incl. the first naive-player reviews | Fixed in horizontal batch H21 (combat, city maps, screens); DECISIONS "H21 ..." entries |
@@ -221,7 +222,7 @@ translation, a human performance run and playtests).
 | Content | 60 shared cards, 18 Firmware, 24 Daemons, 8 assets, 12 shop slices, events: Solace 40, others 28 rollable each |
 | Tooling | Balance simulator per class and corporation drafting by measured value; content generators in `tools/content_gen/` |
 
-Tests: 741 passing at H24 (700 at H23); schema smoke test and content validation green.
+Tests: 1372 at ART-0 (fast tier 736; 741 at H24, 700 at H23); schema smoke test and content validation green.
 
 ---
 

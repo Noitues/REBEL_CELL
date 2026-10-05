@@ -158,7 +158,12 @@ enemy Hub for one turn.
 - Combat is deterministic between random events, so the HUD always shows what will
   resolve at every pointer: slice, offset, tier, ring segment, satellite guard, and the
   full outcome including damage after block. Hovering a card shows its result before
-  playing it.
+  playing it. In the HUD v4 layout the **result chips beside each HP value are the preview**
+  (they replace the forecast tags and NEXT plates): "the full outcome before commit" still
+  holds, shown by the chip (final damage, shield absorbed or gained, other losses, status
+  stacks) and its breakdown tooltip (each wheel's slice, landing tier, guard and hub
+  passive), updated when the wheels settle. Preview equals the real result.
+  (Designer rulings: D15–D17 defaults, DECISIONS 2026-10-05; ART_BIBLE v2 §3.1.)
 - Random effects (Respin, random targets) show odds instead of a single result.
 - **Rewind:** unlimited undo within a turn, back to the most recent checkpoint. Every
   random outcome sets a checkpoint; the start-of-turn respin is the first. Checkpoints
@@ -500,12 +505,22 @@ M14); motion and interaction rules: `STYLE_GUIDE.md` §5.
 
 ### 9.2 Combat Readability
 Always-on outcome preview per pointer; ghost preview on card hover; explicit targeting
-(outer ring / inner ring / enemy wheel / satellite); per-pointer intent labels; migrating
-pointers flicker a turn early; orbiting pointers show a trail. Layer rules (DECISIONS 2026-10-05, ruling 4,
+(outer ring / inner ring / enemy wheel / satellite); migrating pointers flicker a turn early;
+orbiting pointers show a trail. The always-on outcome is carried by the **HUD v4 result chips**
+beside each HP value, with a breakdown tooltip on the final-damage chip; the per-pointer forecast
+tags and NEXT plates are retired (D15; Designer rulings: D15–D17 defaults, DECISIONS 2026-10-05;
+the chip is the preview, so GDD 2.10 holds). Layer rules (DECISIONS 2026-10-05, ruling 4,
 ART_BIBLE v2 §1.2, §3.21): stickers and HUD controls stay clear of the wheels and their extras,
 and each slice's value is always drawn on top of its overlays; **no UI ever covers grease
 pencil**. A status is shown by its overlay on the slice: the overlay is the status; a small flat
 corner badge appears only to carry a ×N stack tab or a ×1.5 / ×0.5 multiplier tag (DECISIONS 2026-10-05, ruling 10).
+Two presentation rules (Designer rulings: D15–D17 defaults, DECISIONS 2026-10-05; no rule changes):
+- **D16, card effects.** Every card-caused effect stems from the card's slap and dissolve on the
+  **target wheel**, never from the hand. The effect starts where the card lands and the result is
+  the rules' own, unchanged.
+- **D17, combat backdrop.** A boss fight's backdrop is the corporation's HQ; a regular fight's is
+  the Site being attacked. When a fight is won, the target building's lights turn Cell colours
+  (ART_BIBLE v2 §3.14).
 
 ### 9.3 Raids & Grid
 Threat paths drawn on links in red grease pencil, the Cell's plans in yellow (solid = will
