@@ -569,6 +569,10 @@
 			"seconds": 20.0,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art7_netrun_city.gd": {
+			"seconds": 15.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art2_hud.gd": {
 			"seconds": 40.0,
 			"tier": "full"
