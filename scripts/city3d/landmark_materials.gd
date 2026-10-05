@@ -64,6 +64,7 @@ static func make(material_name: String, look: LandmarkLook, corp: StringName, da
 	m.set_shader_parameter("glass_mix", look.window_glass_mix_day if day else 0.0)
 	m.set_shader_parameter("sign_gain", look.sign_gain)
 	m.set_shader_parameter("flicker_band", look.flicker_band)
+	m.set_shader_parameter("fist_gain", look.fist_gain)
 	m.set_shader_parameter("lines_window_share", look.lines_window_share)
 	m.set_shader_parameter("lines_dark", Vector3(look.lines_dark.r, look.lines_dark.g, look.lines_dark.b))
 	m.set_shader_parameter("lines_dark_k", look.lines_dark_k)

@@ -127,7 +127,7 @@ def build_district():
             ins = r.uniform(0.5, 1.1)
             cxl, cyl = x0 + U / 2, y0 + U / 2
             hr = r.random()
-            h = 6.0 + 30.0 * hr * hr + (r.uniform(20, 40) if r.random() < 0.06 else 0.0)
+            h = 7.0 + 20.0 * hr * hr + (r.uniform(10, 24) if r.random() < 0.04 else 0.0)  # mid-rise, as the round 34 district
             shape = r.random()
             if shape < 0.22:  # hexagonal / octagonal prisms, as in the city
                 sides = 6 if shape < 0.12 else 8

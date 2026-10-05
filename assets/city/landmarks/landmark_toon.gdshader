@@ -27,6 +27,8 @@ uniform float lines_window_share = 0.85;
 uniform vec3 lines_dark = vec3(0.031, 0.024, 0.047);
 uniform float lines_dark_k = 0.55;
 uniform float flicker_frame = 0.0;
+// The red fist burns brighter than the city's windows (map34 lights it denser and adds a red glow), so it blooms.
+uniform float fist_gain = 1.0;
 
 varying vec3 v_world;
 
@@ -77,7 +79,7 @@ void fragment() {
 			}
 		}
 		ALBEDO = vec3(0.0);
-		EMISSION = mix(c * window_gain, glass, glass_mix);
+		EMISSION = mix(c * window_gain * (role == 7 ? fist_gain : 1.0), glass, glass_mix);
 		ROUGHNESS = 0.5;
 	}
 }

@@ -27,6 +27,8 @@ extends Resource
 ## REBEL_CELL reveal (map34): the blackout front's flicker band, the lit share of detail-line windows before the
 ## reveal, and how far the detail-line buildings darken toward lines_dark once revealed.
 @export var flicker_band: float = 0.12
+## The red fist windows' emission over the city windows' (map34 lights the crest brighter and spills a red glow).
+@export var fist_gain: float = 1.8
 @export var lines_window_share: float = 0.85
 @export var lines_dark: Color = Color(8.0 / 255.0, 6.0 / 255.0, 12.0 / 255.0)
 @export var lines_dark_k: float = 0.55
