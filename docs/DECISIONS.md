@@ -33,6 +33,308 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
+ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
+text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
+`round39_portraits/portraits_classes_v2.jpg`.
+- **Bust sets, pre-rendered.** `tools/art_gen/portraits/bust_rig.py` + `render_busts.py`
+  (ported from art-pass 9a62cec, round 39 rig with the r39 / r39b / r39c gear) render in
+  headless Blender 5.2: 8 classes x 4 rookie seeds x 4 frames (idle, blink = dead eyes,
+  talk, hurt = grimace + squint), 240x266 cells, one 256-colour atlas per class
+  (`assets/portraits/busts_<class>.png`, 31-47 KB) and the corp's photo print of each rookie
+  (`prints_<class>.jpg`, about 37 KB; desaturated, warmed, grained on a flat backdrop).
+  The rig now draws the same random numbers in every frame of one rookie (the mouth's tilt
+  and the brows are drawn whatever the frame; the mouth's jitter never shifts the shared
+  stream), so blink / talk / hurt are the same face; idle is unchanged from round 39.
+  Pre-rendered rather than a SubViewport per feed: no 3D cost per visible feed; the seed
+  pool is 4 per class (variants), a later pass can raise it by re-running the script.
+- **Which rookie.** `PortraitBust.variant_for(class, operative id)`: a hash of class and id
+  (an empty id, the class's own face / an unhired rookie, is variant 0). No game RNG, no
+  state change (no seed field added to OperativeState), the same face on every screen and in
+  every session. Operative ids repeat between campaigns (op_1...), so a campaign's first
+  Breaker wears the same rookie each time; storing a roster-RNG seed on the operative
+  (round 38 NOTES) is a schema change left for the portrait pass.
+- **One feed.** `PortraitFeed` (kit) + `shaders/portrait_feed.gdshader` with `mode` (idle,
+  talk, hurt, stationed, dead, recruit, print, voice), `tint`, `split`, `tear`, `noise`,
+  `fps_hold` (stationed), a feed clock; the chrome (label strip "● CLASS // CALLSIGN", LED
+  green / red / class / amber / off, HP chip, voice bars, ON <SITE> // 12 fps, NO SIGNAL +
+  red pencil X + FLATLINED, HIRE: 15 SCHEMATICS stamp, cracked glass) is drawn on top. The
+  chrome's words show only where they reach the 12 px floor (roster chips show the LED and
+  the marks). Hurt at HP ≤ 25 % (`set_hp`); the flatlined stay flatlined. Listener dim for
+  dialogue (`set_dimmed`). The print mode is the corp-paper context.
+- **Motion.** New entries `portrait_feed` (clock; rolling bar period 4 s; amplitude = the
+  stationed frame rate, 12 fps), `portrait_blink` (0.14 s every 5 s, phase per operative),
+  `portrait_talk` (0.11 s mouth / bar step), `dispatch_trace` (1.6 s sweep), all T0, in
+  REQUIRED_IDS and the motion lab (`["screen", "feed"]`). Off, under reduce effects or
+  headless the feed is a still in its end state (talking keeps the mouth-open frame,
+  flatlined the dead eyes); nothing waits.
+- **Paper views draw the print.** `PortraitArt.operative_subject` carries `class_id` and
+  `variant` and the class accent for a class with a bust set; `PortraitArt.draw` draws the
+  print (Polaroid, crew chip, WANTED poster, combat Polaroid) so an operative keeps one face
+  everywhere. Enemies, bosses, corp faces keep the M13 drawn styles (no v2 reference).
+  `Polaroid.kia` (campaign audit): the print dimmed and crossed out in pencil red.
+- **Dialogue.** Every subtitle line is on the Cell's CRT terminal (1A `UiTheme.terminal_box`
+  tinted: cyan for the Cell / operatives / narrator, the corp's colour for a corp speaker,
+  DISPATCH red on black glass with its words in a lifted red); the paper strip for
+  non-DISPATCH speakers is gone (ART_BIBLE §1.2: the dialogue feed is CRT). The speaker's
+  feed sits in the bar's left margin (a Node2D holds it so the container never lays it out;
+  the paging measures the words' room after it): an operative's bark shows its own class's
+  bust talking (`say(..., class_id)`; `bark` passes the class, not its base class, so a
+  Wrecker shows a Wrecker), DISPATCH a red voice trace (never a face). Narrator, corp and
+  observer lines have no feed. The feed follows the dock's height (22-120 px at the text
+  size, at most 22 % of the bar's width). Typing, paging, skip and the bar's slide-in are
+  unchanged. 1B's CRT material replaces the panel's look when it lands (seam:
+  `Dialogue.crt_style`).
+- There is no dialogue screen with choices in the game (dialogue.jpg's briefing layout):
+  the portrait lab's `dialogue` page composes it from the real pieces (speaker live,
+  listener dimmed, DISPATCH, the bar) for review; a briefing screen would be a new screen.
+- Lab: `tools/design_lab/portrait_lab.tscn` (one windowed launch, a PNG per page: classes,
+  states, matrix, contexts, dialogue, strip / column at 1.0 / 1.6 / 2.0).
+- Tests: `tests/unit/test_art9_portraits_dialogue.gd` (fast). No M13 test dropped.
+
+### 2026-10-05 — Art direction — ART-1 1D city render spike
+Bible §1.2, §4.1–4.2, §6.1; plan §5.1–5.2; ruling 7 (fidelity first, then optimise). Full report:
+`docs/handoff/art_1/city_spike_report.md`; crops in `docs/art_review/ART-1/1D/` (`.gdignore`d).
+- **Built both ways on one district of the game's own layout:** NeonCity's streets, lots,
+  territories and buildings, seed 7, read by `CityLayoutRecorder` (NeonCity placement mode, nothing
+  drawn, game code untouched): the Halcyon border, 50 lots around lot (34, 22), with 3,710
+  buildings and 2,608 street lots.
+  - (a) Real-time Godot 3D: MultiMesh unit-prism families with jittered facets; the 3-band toon
+    light function; procedural windows, ledges, shopfronts and roof trim; one full-screen post
+    pass porting `post40.finish` (ink from normal, depth and material edges, grime, spill, bloom,
+    fog, haze, rain, grade); a half-resolution ground pass for the see-through band; three sky-lane
+    car tiers; one orthographic `Camera3D`.
+  - (b) Blender 5.2 bake with the concept recipe, plus the post40 port, with 2D car motion on top.
+- **Choice: (a).** It is closer to the references at grid, raid and netrun (read side by side). It
+  is also the only one that gives §4.1's continuous zoom, the see-through band, the LOD swaps and
+  the camera fits without a bake per view and zoom; a whole-city bake at raid density is about
+  220 MB per layer.
+- **Numbers, after optimisation (RX 6700 XT, 1080p, tier 2):** grid / raid / netrun take
+  2.69 / 2.78 / 2.53 ms a frame (GPU 2.31 / 2.22 / 1.95 ms), 31–33 draw calls, 2.2 M primitives,
+  and 106–127 MB of texture memory.
+  - Deck tier 1 at 1280×800 on this PC: 1.81 ms a frame (GPU 1.3–1.4 ms).
+  - The budget (city ≤ 8 ms) is met. The Deck itself is not measured yet; scaling suggests about
+    10–12 ms there, and tier 0's levers are ready in config.
+  - Measured with 3–6 other agents' Godot processes running.
+- **Optimisation round** (config only, frames compared, look unchanged): the tier 2 shadow atlas went
+  from 4096 to 2048, MSAA went off (the ink draws the edges) and the ground pass went to half
+  resolution. Texture memory fell from 210–283 MB to 106–127 MB and frame time by about 0.6 ms.
+- **Calls:**
+  1. The see-through band is lod 1.50–1.595, so the City Grid (ortho 440) is solid and the raid
+     (ortho 380) sits at the locked v3 opacity of 0.68. The bible's 1.45–1.75 with post40's anchors
+     gave the Grid an opacity of 0.83.
+  2. The toon band edges include the concept's world ambient: N·L 0.118 and 0.363.
+  3. The post works on display values, as post40 does. Bloom and spill come from screen mips over a
+     threshold, because Godot has no emission-only pass; Godot's glow is off.
+  4. Sky lanes run over the district's six busiest avenues. Car colours come from the
+     `RngStreams` stream `city_traffic`.
+  5. Round 34 lock: the Cell's district keeps the street grid, with no fist roads. The HQs are
+     stepped stand-ins; the heroes are ART-5's.
+  6. The toon, ink and post shaders are prototypes in `tools/spike/city/shaders/`, because 1B owns
+     `shaders/kit/`. They are to be unified with 1B's material.
+- **Tests:** `tests/unit/test_city3d_spike.gd` (fast tier) covers:
+  - projection round trips and the locked iso;
+  - picking;
+  - LOD, see-through and detail tiers from config;
+  - car tiers with hysteresis;
+  - quality tiers, with the Deck at tier 1;
+  - the deterministic district;
+  - the unit-prism instance mapping (never mirrored);
+  - seeded traffic.
+
+  The render is verified windowed only. No shipped screen changed.
+
+### 2026-10-05 — Art direction — ART-2 2C cards and FX
+ART-3 in Group 2 (`docs/handoff/art_2/ART_2_BATCH.md` 2C.1–2C.5; ART_BIBLE v2 §3.15, §3.18, §3.20,
+§5.3–5.4, §6.3). Tests: `tests/unit/test_art2_cards_fx.gd` (fast tier).
+- **Seams until Group 1 lands.** Bits: `scripts/ui/fx/bits_seam.gd` (BitsSeam) draws a `BitPath`
+  as Share Tech Mono 0/1/+ glyphs (dark rim, 80–100 ms white-hot core, one 28 % trail copy): the
+  bible's CPU fallback; 1B's pooled emitter replaces this file only. Sticker material:
+  `scripts/ui/fx/sticker_seam.gd` (StickerSeam) puts `shaders/fx/card_sticker_fx.gdshader` (gloss
+  band, dissolve scan front; reads `reduce_effects` through rc_common) on the flying card; 1B's
+  vinyl sticker material replaces it there. Palette: tokens from `Palette` only (1A's v2 palette
+  follows through the tokens).
+- **Bits are pure numbers.** `BitPath` (RefCounted) gives each bit as a function of time and its
+  arrival time; the view schedules on the precomputed arrivals and never reads a particle back.
+  Scatter is hashed (no RNG). Shard Beziers take their control point on the rim-side bisector at
+  1.5 × R_out (round the wheel, never across its face).
+- **D16 (confirmed by the designer 2026-10-05):** `CardFx.origin`: a beat in the "act" phase (a
+  played card's effect) leaves from the card's slap point (`CombatFxLayer.slap_point`, set when the
+  card is played, also under reduce effects); slice, hub, turn-start and enemy beats keep their own
+  source. Tested on the scene's real `_play_beat` path.
+- **Effects, reference strip, motion id, tier, reduce-effects end state.** Under reduce effects
+  (and headless, and an entry switched off) none of these adds anything: HP, guards, statuses and
+  drones show their end state at once on the wheel (2A) and the existing static chips; nothing
+  waits.
+
+  | Effect | Reference | Motion id(s) | Tier |
+  |---|---|---|---|
+  | Card peel / flight tilt | `round19_combat_fx/card_play_v2` | `card_peel`, `card_play` | T2 |
+  | Card slap (squash 1.13/0.86, contact ring, gloss sweep) | card_play_v2 | `card_stamp`, `card_slap_ring` | T2 |
+  | Dissolve A, the bit stream (17 px cells, 19–25 px glyphs, clockwise into the hub) | `round19_combat_fx/dissolve_A_bitstream` | `effect_burst` (its duration) | T2 |
+  | Hit shards (count/size from config) | `binary_damage/01_hit`, `round18_combat_fx/damage_shards` | `hit_shards` | T2 |
+  | Crit (cracks, 7 `0110 1001` streaks) | `binary_damage/03_crit` | `hit_crit_streaks` | T3 |
+  | Blocked (wall pops, shards bounce, a share passes) | `binary_damage/04_blocked` | `hit_blocked_wall` | T2 |
+  | Block gain: DEFRAG bricks course by course facing the foe | `round19_combat_fx/fx_block_shield` | `block_wall` | T2 |
+  | Shield gain: SANDBOX hex plates with a ripple | fx_block_shield | `shield_hex` | T2 |
+  | Heal: green +/1/0 in from outside, segments relight | `round19_combat_fx/fx_heal`, `binary_damage/05_heal` | `heal_inflow` | T2 |
+  | Evade gain (token forms) / evaded (token flies up-left, the attack chases it) | `round23_combat_fx/fx_evade_v4` | `evade_token` | T2 |
+  | Apply CORRUPTED (pink bits in, glitch wipe L→R, doubled tears) | `round23_combat_fx/fx_corrupt_apply_v4` | `corrupt_apply` | T2 |
+  | CORRUPTED tick (flash, tear spike, pink/green bits round the rim to HP) | `round23_combat_fx/fx_corrupt_tick_v3` | `corrupt_tick` | T2 |
+  | Drone deploy (bits pack into the hex, sticker slaps) | `round19_combat_fx/fx_drone` | `drone_deploy` | T2 |
+  | Drone attack (lens charge) | fx_drone | `drone_attack` | T2 |
+  | Drone destroyed (hex cracks into bits, clamp springs) | `round22_combat_fx/fx_drone_destroyed_v3` | `drone_destroyed` | T2 |
+  | Enemy defeated (pieces fly apart and fall, shockwave, shed bits, DELETED) | `round23_combat_fx/fx_enemy_defeated_v2` | `enemy_break`, `enemy_defeated_bits` | T3 |
+  | Phase change (orange bits from the crossed pip under the arc; PHASE N, N NEEDLES) | `round23_combat_fx/fx_phase_change_v3` | `wheel_burst_phase`, `phase_change_bits` | T3 |
+  | Respin (spent RAM chips crack into cyan bits to the hub; RESPIN) | `round23_combat_fx/fx_respin_v3` | `respin_bits` | T2 |
+  | Nudge resisted (grey bits; RESIST) | `round20_combat_fx/fx_nudge_resist` | `nudge_resist_bits` | T1 |
+  | RAM gain (bits down the centre into the new chips, 4 per chip) | `round21_combat_fx/fx_ram_gain_origins` (B) | `ram_gain_bits` | T1 |
+  | Temporary labels (every effect word: pop, hold, dissolve L→R into rising bits) | §3.20 | `temp_label` (+ `result_stamp`) | T2 |
+  | Daemon / firmware trigger (source pulses, bits stream to where it acts) | §3.20 | `daemon_trigger`, `firmware_trigger` | T2 |
+  | Heat H1 on the backdrop (beacons, searchlights, police lights per band) | `round22_combat_fx/heat_city_v4_strip` | `heat_city_beacon`, `heat_city_sweep` | T0 |
+- **Small calls.** The shards burst where the hit meets the rim facing its attacker and curve round
+  into the drained HP segments (the hit line still ends on the HP ring). `effect_burst`'s duration is
+  now the dissolve (0.3 → 0.5 s) and `card_stamp` the slap (0.1 → 0.18 s): the card is gone before
+  its effect, as ANIM-R3 A6i had it. The old green word box became the vinyl word sticker (white
+  die-cut, colour fill, ink or paper lettering by contrast); every `word_stamp` dissolves into bits.
+  The sticker card: white die-cut 5 px at hand size, fill by what the card does first (spin gold,
+  harm pink, guards cyan, else violet, darkened 42 %), gloss band, yellow cost dot (grey + NEED n
+  when the RAM is short), peel curl at the foot that grows on hover, holo-striped edge for Rare and
+  Boss cards. HP arc geometry is mirrored from `WheelView.hp_ring_spot` and RAM chip spots from
+  RamBar's draw (both other areas' files): a public `hp_arc_spot(frac)` (2A) and `pip_spot(k)` (2D)
+  would replace the copies.
+- **Schema (minimal):** CampaignConfigData "Combat FX" group: `fx_shard_base/per_dmg/max`,
+  `fx_glyph_px_base/per_dmg/max` (round 18 NOTES numbers) and `heat_city_*` per-band counts (5
+  entries each, validated); `fx_shard_count` / `fx_glyph_px`. Smoke check `_art2c`.
+- **Carry-over:** combat `hit_shake` 3 → 2 px (T2's limit).
+- **Hooks in other areas' files (smallest):** `combat_scene.gd` (2D): one `CombatBeatFx.play` line
+  in `_play_beat`, `CombatBeatFx.spawn` on a spawn beat, RAM gain on the ram beat, the
+  `nudge_absorbed` case in `_animate_wheels`, respin bits in `respin()`, the hub point for the
+  dissolve (`cap["hub"]`), the drone destroyed / DELETED calls in `_death_beat`, the phase pip in
+  `_boss_phase_feedback`, `N NEEDLES` in `_phase_beat`, `short_ram` on hand cards, the HeatCity node
+  over the background and its band in `_sync_heat`. `motion_lab.gd`: 24 demos.
+- **Not built yet (proposed slices):** Daemon / firmware triggers have their effect and demo but no
+  game hook: the engine's `trigger` events make no replay beat (adding one to ResolveBeats moves the
+  replay's pacing; slice: a non-timed "trigger" beat, then one hook). Crit RGB split on the wheel
+  rect and the defeated pieces' pixelation (need the wheel as a texture: 2A). Hover scale 1.36 with
+  neighbours shifting and the RAM meter hatching the cost (hand layout and RamBar: 2D), card idle bob.
+  The standing walls / hexes / EVADE token after the effect (wheel overlays: 2A).
+- **Dropped tests:** none.
+
+### 2026-10-05 — Art direction — ART-1 1B material kit
+The reusable materials every later group applies (ART_BIBLE v2 §1.2, §1.3, §5.3–5.4, §6.3, §6.4),
+built new in Godot from the round 3 combined_v2 concept toolkit (`art-concepts-r43:docs/concepts/
+round3_overlay/combined_v2/scripts/` `sticker_lib.py`, `kit.py`, `s04_kit_sheet.py`, `s05_lifecycle.py`;
+the tactical-glass pencil `o_a_tactical_glass/scripts/tg_lib.py`; round 19/22 `sticker_lib19.py`
+gloss_k). No screen is restyled. Files: `shaders/kit/*` (10 shaders + the bits atlas),
+`scripts/ui/kit/materials/*` (one class per file), `tools/design_lab/kit_sheet.gd/.tscn`,
+`tools/design_lab/bits_atlas_bake.py`.
+- **Register.** `KitMaterials.ALL` lists each material, its component, shaders, VfxTier (of its
+  resting look; T0 for all but the bits, T2) and motion ids. Every kit shader includes `rc_common`
+  and reads the `reduce_effects` global; every TIME line goes through `rc_time` / `rc_live`.
+- **1B.1 CRT terminal** (`CrtTerminalPanel`, `crt_terminal.gdshader`) vs `04_kit_sheet.jpg`
+  (EXECUTE box) and §1.2: navy glass (Palette `CRT_GLASS_TOP/BOTTOM`), a 1.5 px accent edge with
+  an outer glow, the corner notch, 3 px scanlines at 10 % over the text, a hex dump at 6 % that
+  scrolls, Share Tech Mono text that types on behind `> ` (through `Typing`, so one press shows it
+  whole) and a blinking `_` caret. Accent per use: cyan Cell, lime firmware, gold Schematics, corp
+  colour, red DISPATCH. The glass is a separate shader from `shaders/crt_panel.gdshader` (UiTheme's
+  existing glass, 1A's TerminalPanel variation may adopt this one).
+- **1B.2 vinyl sticker** (`VinylSticker`, `vinyl_sticker.gdshader`, `sticker_fill.gdshader`) vs
+  `04_kit_sheet.jpg` columns C and `send_it_sticker.jpg`: the art (die-cut body = every glyph grown
+  by border + keyline with `draw_string_outline` plus a band that closes the notches between
+  letters; extrude stepped down-right; ink keyline; gradient or holo fill per glyph with ±4° jitter
+  from KitNoise) is drawn once into a SubViewport; the shader adds the rim light / shade and cut
+  line, the gloss (soft band + two sharp lines on a 28° diagonal, `gloss_k` 0.22 at rest as round
+  19's sticker_lib19, 1.0 while a sweep crosses), the peel (corner folded back with the adhesive
+  back shaded across the fold, a bright crease, the flap's cast shadow), the two-layer drop shadow
+  raised by `lift`, dissolve and disabled grey. Objects: `Shape.RECT/CIRCLE` on white, kraft or
+  holo stock with any content under `content_root`. One sweep on one sticker at a time:
+  `StickerSweepQueue` (join order, the entry's delay between sweeps). Word over a system word
+  (§1.3): `SystemWordSticker` (washed mono word + scanlines + hint line, the verb slapped at -5°
+  on the panel's bottom edge). Runtime sticker only (the per-locale baked atlas is ART-4/10's).
+- **1B.3 grease pencil** (`GreasePencilMark`, `GreasePencilWord`, `PencilShapes`,
+  `marker_stroke.gdshader`) vs the kit sheet's column A and round 11's pencil: Line2D strokes in
+  writing order, round caps, width 10, TILE UVs so the shader knows along / across; wax = an
+  opaque core, 9 bristle bands with dropouts toward the edge, a ragged grain edge, the round body
+  lit on one side with a sheen line, alpha 0.96, the glint every `pencil_glint` delay; a duplicate
+  under-shadow line offset (3, 4) and 3 px wider at 0.42; dashed = hand dashes cut in the shader
+  (what-if). Write-on and the cloth wipe trim points (never alpha); the wipe also drags the wax.
+  `PencilShapes.snap_to` moves a mark onto a real polyline. Words ("HIT IT", 1–2 a screen) use the
+  marker face with the wax grain (mode 2) and write / wipe letter by letter.
+  **Lint rule:** `PencilLint.violations` (cover: a drawing Control later in draw order whose rect
+  meets a stroke segment; layer: any drawing UI on a CanvasLayer above the pencil's, cursor layers
+  ≥ 128 excepted). Exported by `tools/visual_qa/review_pack.gd` (lint key `pencil`) and reported
+  by `lint_report.py` as rule **f pencil** (two small edits in D's runtime lint).
+- **1B.4 light spill** (`LightSpill`, `light_spill.gdshader`) vs the kit sheet's column D: a rect
+  round the source reads the screen texture and adds `base × colour × light × 1.9 + colour × light
+  × 0.28` through a tonemap shoulder (kit.py's light_spill); bright saturated pixels (the emitter)
+  are not re-lit; two falloffs; `gain` per screen (`GAIN_COMBAT` 1.15, `GAIN_CITY` 0.38,
+  `GAIN_SHOP` 1.2), `lit` follows the source. 3D: `LightSpill.uniforms_3d` packs up to 8 sources
+  for the toon shader.
+- **1B.5 decrypted holo** (`DecryptedHoloPanel`) and **corp paper** (`CorpPaperPanel`): holo =
+  corp tint at 78 % over the deep, 4 px scanlines, 3.5 slow bands, a ±2 px RGB split on the edge
+  only (0 under reduce effects), the 0.88 scrim (`Palette.HOLO_SCRIM`, a top-level full-screen
+  rect behind it), the seal cracked by a red fracture and a DECRYPTED stamp slot. Paper = stock
+  with cloud, tooth, fibres, toner speckle and handled edges (scales like a 9-patch), an IBM Plex
+  Sans Condensed Medium letterhead and rule in the corp colour, Courier Prime fields (1A's
+  `Palette.paper()`), a stamp slot (CLASSIFIED).
+- **1B.6 binary bits** (`BinaryBits`, `BitsPath`, `binary_bits.gdshader`, `bits_atlas.png`):
+  pooled GPUParticles2D (4 kept), one-shot, additive, `particles_animation` over a 4-cell atlas
+  (0, 1, +, bit-rot; Share Tech Mono with a same-colour outline ~1/22, baked by
+  `bits_atlas_bake.py`); the process shader lerps each bit along its quadratic Bezier (control on
+  the rim-side bisector at 1.5 × R_out round a wheel; a bow of 0.25 of the length elsewhere),
+  white-hot for the entry's amplitude, flipping every 60 ms, tumbling, shrinking in. Every number
+  per bit (start, control, spawn delay ∝ x, flight ± 15 %, phase, spin) is computed by `BitsPath`
+  and handed in, so `burst` returns the arrival times before anything flies. **Call made:** the
+  CPU fallback draws the same plan from this node (≤ 44 bits) instead of a `CPUParticles2D`, which
+  cannot run a process shader and could not follow the Bezier.
+- **1B.7 cel / toon + ink** (`ToonInkMaterial`, `toon_ink.gdshader`, `toon_ink_hull.gdshader`):
+  3 hard bands in `light()` (0.55 / 0.12 → 1 / 0.62 / 0.32, shadow tinted violet), per-face tone
+  jitter (Cv2), world-space grime stronger low on a wall, banded spill from `spill_lights[8]` /
+  `spill_colors[8]` / `spill_count`, depth haze; ink = an inverted hull next pass grown 2.5 screen
+  px along its normals with a world-noise wobble. For 1D: the city may prefer a depth/normal
+  post-process for ink on large meshes (hull splits at hard box corners); the toon pass and the
+  spill uniforms are the same either way.
+- **Motion** (`ui_motion.tres` + REQUIRED_IDS + motion-lab demos kind `kit` through `KitDemo`):
+  `crt_type_on` 0.02 s/char T1, `crt_caret_blink` 0.5 s T0, `crt_hex_scroll` 14 px/s T0;
+  `sticker_slap` 0.45 s T2 (lifecycle APPEAR in `05_lifecycle.jpg`: from 1.24x, over-rotated 13°,
+  squash 1.13 / 0.84 for 90 ms, one overshoot (BACK), the shine sweep), `sticker_peel` 0.30 s T2
+  (EXIT: fold 0 → 0.6, lift, curl away down-left), `sticker_dissolve` 0.5 s T2 (cells left to right,
+  white-hot rim, bits from the sticker's rect), `sticker_gloss_sweep` 1.4 s + 4.0 s rest T0,
+  `sticker_corner_flutter` 2.4 s, 0.08 ↔ 0.20 T0 (IDLE), `sticker_hover` 0.12 s ×1.05 T1 and
+  `sticker_press` 0.08 s y 0.90 T1 (`send_it_sticker.jpg` HOVER / PRESSED); `pencil_write_on`
+  900 px/s capped 0.6 s T2 (lifecycle "draws in writing order"), `pencil_wipe` 0.30 s T2 (EXIT "a
+  palm drags the pencil"), `pencil_glint` 0.6 s every 3 s T0 (IDLE "a thin glint every ~3 s");
+  `holo_bands` 4 s T0; `light_spill_breathe` 3.2 s ±8 % T0; `bits_flight` 0.55 s, 0.12 s spread,
+  0.08 s white-hot T2. Every motion shows its end state at once under reduce effects, headless or
+  switched off (`Motion.live`), and the one-shot ones join MotionSkip (passive).
+- **Palette tokens** (palette.gd, a 1B block after 1A's): the kit uses 1A's `PENCIL_PLAN`
+  #FFE200, `PENCIL_THREAT` #FF1C2C, `PENCIL_SHADOW`, `STICKER_DIE_CUT`, `STICKER_SAFE(_LOW)` and the
+  faces `pencil()` (Permanent Marker, wax words) and `paper()` (Courier Prime); 1B adds
+  `VINYL_WHITE_LO`, `VINYL_BACKING`, `VINYL_INK`, `VINYL_EXTRUDE`, `KRAFT`, `KRAFT_FIBRE`,
+  `STICKER_FILL_PINK/RED/YELLOW` (yellow = 1A's safe pair), `CRT_GLASS_TOP/BOTTOM`,
+  `PAPER_TYPE_INK`, `HOLO_SCRIM`, `TOON_INK`. (Merging 1A: 1B's own PENCIL_YELLOW / PENCIL_RED /
+  VINYL_WHITE were dropped for 1A's tokens; `Palette.marker()` is now Anton, so the kit's pencil
+  words and kraft notes use `pencil()`.)
+- **Kit sheet, read windowed next to the references** (`docs/art_review/ART-1/1B/`):
+  `--page=kit` vs `04_kit_sheet.jpg`: sticker words and objects match the reference's build (thick
+  white die-cut, keyline, extrude, gloss, curl, shadow; holo SEND IT and crew card, kraft note);
+  the pencil column reads as wax on glass (yellow plan circle and dashed route with a waypoint, red
+  target circle, printed brackets and range ring, HIT IT + arrow); spill lights the facets round the
+  neon sign (the reference's sign spelled with the shop's old name; the sheet's says MAINFRAME).
+  Remaining gaps: the reference's letters carry a bevel highlight (not drawn), its pencil
+  words are hand-lettered strokes (ours: the marker face with wax grain), its neon sign is the
+  shop's own art. `--page=lifecycle` vs `05_lifecycle.jpg`: APPEAR (slap, the circle writing on),
+  IDLE (flutter, holo drift, sweep) and EXIT (peel with the backing and crease, the pencil wiped)
+  play as described. `--page=materials`: CRT (four accents), bits round a wheel rim (GPU and CPU
+  frames), holo over its scrim, paper with a stamp, the toon + ink 3D sample.
+- **Tests:** `tests/unit/test_art1_material_kit.gd` (fast): register (shaders, tiers, entries, lab
+  demos), tokens, sticker build / states / reduce-effects end states / one press / one sweep at a
+  time / word over system word, CRT accents and type-on, pencil write-on and wipe by trimming,
+  reduce-effects and headless end states, look uniforms, shapes and snap, the pencil lint rule,
+  bits round the rim / deterministic arrivals ∝ x / no flight under reduce effects / CPU cap, holo
+  split, paper fields, spill breathe and 3D packing, toon bands and uniforms. No test dropped.
+
 ### 2026-10-05 — Art direction — ART-1 1A palette, faces, theme
 ART_BIBLE v2 §2.1–2.10, §5.6, §6.4 applied through `Palette` and `UiTheme` only (no screen
 restyled; screens pick it up through the tokens and the theme).
@@ -6207,6 +6509,31 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **Unified city: real-time 3D or baked layers? (2026-10-05, ART-1 1D):** the spike recommends
+  real-time Godot 3D. It is closer to the round 39/40 references and is the only option with the
+  continuous zoom and the see-through band, at 2.5–2.8 ms at 1080p on this PC. See
+  `docs/handoff/art_1/city_spike_report.md` and the crops in `docs/art_review/ART-1/1D/`.
+  - Default: ART-5 builds on (a).
+  - Also: the see-through band was moved to lod 1.50–1.595 so that the Grid is solid and the raid
+    sits at 0.68. Say if the bible's 1.45–1.75 was meant literally.
+  - Tier 1 still needs a measurement on a Steam Deck.
+
+- **ART-2 2C defaults from the round 18 notes (2026-10-05):** (D16, every card-caused effect from
+  the card's slap point, is confirmed by the designer and tested.) Defaults applied: an enemy's hit uses its own (attacker's) colour;
+  blocked shards that don't get through fall away (not into the guard's number); heal bits come in
+  from outside the wheel, not from the heal slice.
+
+- **ART-1 1B: the bits' CPU fallback (2026-10-05):** ART_BIBLE §6.3 names a `CPUParticles2D`
+  fallback (<= 44); a CPUParticles2D can't run the Bezier process shader, so the fallback draws the
+  same precomputed plan from the emitter node (<= 44 bits, same look and arrival times). Default
+  applied; say if a real CPUParticles2D (straight-line flight) is wanted instead.
+- **ART-1 1B: "gloss 0.22" (2026-10-05):** read as round 19's `gloss_k` (the specular sheen's
+  strength at rest, 1.0 while the one sweep crosses), not the band's position. Default applied.
+- **ART-1 1B: the washed system word's alpha (2026-10-05):** round 22 says 30 %; the round 3 kit
+  sheet's EXECUTE reads stronger, so `SystemWordSticker.WORD_ALPHA` is 45 %. Say if 30 % is wanted.
+- **ART-1 1B: pencil words (2026-10-05):** the references' "HIT IT" is hand-lettered single strokes
+  (tg_lib's stroke font); ours is the marker face with the wax grain, written letter by letter.
+  A stroke font (true write-on per stroke) can follow if the designer wants it.
 - **ART-1 1A: the Daemon family MISS, the PURGE look, the gunmetal (2026-10-05):** ART_BIBLE v2
   §2.6 calls the family that fires on the Miss slice MISS; the slice is NULL since the
   2026-10-05 ruling, so the token and id follow it (`DAEMON_NULL`, `&"null"`). Say if the family
