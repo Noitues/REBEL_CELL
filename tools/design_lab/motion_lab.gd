@@ -181,10 +181,23 @@ const DEMOS := {
 	&"route_node_reveal": ["netrun", "route_heat"], &"route_heat_orbit": ["netrun", "route_heat"], &"route_searchlight": ["netrun", "route_heat"],
 	&"jack_terminal_type": ["jack_link", "stage"], &"jack_link_rain": ["jack_link", "stage"], &"jack_crt_collapse": ["jack_link", "stage"],
 	&"jack_wheel_slap": ["jack_link", "stage"], &"jack_wheel_spin": ["jack_link", "stage"], &"jack_lens": ["jack_link", "stage"],
+	# ART-2 2A: the wheel stack.
+	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
+
+	# ART-11 4D: the campaign lost lock (RansomLock over the stage), the audit dossier
+	# (AuditDossier), each the real piece.
+	&"ransom_glitch": ["screen", "ransom"], &"ransom_wipe": ["screen", "ransom"], &"ransom_padlock": ["screen", "ransom"],
+	&"ransom_notice_in": ["screen", "ransom"], &"ransom_verb_stamp": ["screen", "ransom"], &"ransom_sticker_curl": ["screen", "ransom"],
+	&"ransom_sticker_drop": ["screen", "ransom"], &"ransom_sticker_stagger": ["screen", "ransom"], &"ransom_countdown": ["screen", "ransom"],
+	&"ransom_wipe_hold": ["screen", "ransom"], &"ransom_cut": ["screen", "ransom"],
+	&"dossier_open": ["screen", "dossier_file"], &"dossier_stamp": ["screen", "dossier_file"], &"dossier_note": ["screen", "dossier_file"],
+	&"dossier_note_stagger": ["screen", "dossier_file"],
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
 }
+## ART-11 4D: the lock demo's nodes on the stage (px from its top-left; the first is home).
+const RANSOM_NODES: Array[Vector2] = [Vector2(450, 300), Vector2(250, 180), Vector2(640, 170), Vector2(180, 430), Vector2(700, 420)]
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
 ## subtitle demo says, and how long the frames between a menu's focus moves are (s).
@@ -889,6 +902,49 @@ func _play_screen(what: String) -> void:
 				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
 				if is_instance_valid(m):
 					PageTransition.close_modal(m)
+		"ransom":
+			# ART-11 4D: Halcyon's lock over the stage: tearing, the wipe, padlocks on five nodes,
+			# the notice and its verb, the countdown, the stickers curling and dropping, the cut.
+			var lock := RansomLock.new()
+			_screen_host.add_child(lock)
+			var host := _screen_host
+			lock.nodes_provider = func() -> Array:
+				var pts: Array = []
+				if is_instance_valid(host):
+					for i in RANSOM_NODES.size():
+						pts.append({"at": host.global_position + RANSOM_NODES[i], "home": i == 0})
+				return pts
+			var specs: Array[Dictionary] = [{"text": "CELL DEFENSE"}, {"asset": &"turret", "text": "TURRET"}, {"asset": &"ice_lock", "text": "ICE LOCK"},
+				{"asset": &"decoy", "text": "DECOY"}, {"text": "REBEL_CELL", "fill": VinylSticker.Fill.PINK, "size": UiTheme.TITLE}]
+			lock.setup(&"halcyon", "Halcyon Civic", 0, 50, specs)
+			length = lock.motion_end() + Motion.seconds(RansomLock.HOLD) + Motion.seconds(RansomLock.CUT)
+		"dossier_file":
+			# ART-11 4D: a lost campaign's audit dossier opening, stamped, its notes slapping on.
+			var f := DossierFacts.new()
+			f.corporation_id = &"halcyon"
+			f.corporation_name = "Halcyon Civic"
+			f.cell_number = 3
+			f.runs_started = 8
+			f.deaths = 2
+			f.raids_won = 3
+			f.raids_lost = 1
+			f.held = 3
+			f.down = 1
+			f.taken = 1
+			f.home_max = 50
+			f.heat = 82
+			f.heat_max = 100
+			f.heat_marks.assign([25, 50, 75])
+			f.heat_levels.assign([25, 50, 75])
+			f.crew.assign([{"id": &"op_1", "name": "Vex", "class_id": &"breaker", "class_name": "Breaker", "rank": 3, "alive": true, "runs": 7, "post": "Firewall Relay"},
+				{"id": &"op_2", "name": "Ash", "class_id": &"ghost", "class_name": "Ghost", "rank": 2, "alive": false, "runs": 4, "post": ""}])
+			f.most_troublesome = f.crew[0]
+			f.next_ice = 2
+			var prints: Array[Dictionary] = [{"caption": "HOME SERVER - 0/50"}, {"caption": "NODES AT THE END"}]
+			var dossier := AuditDossier.new(f, prints)
+			dossier.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			_screen_host.add_child(dossier)
+			length = dossier.motion_end()
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1163,6 +1219,21 @@ func _play_view(what: String) -> float:
 			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
 		"press":
 			(_pieces["send"] as DripButton).press_motion()
+		"screens":
+			_wheel.disc.run_screens()
+		"telemetry":
+			_wheel.queue_redraw()
+		"perfect_latch":
+			_wheel.play_precision(RC.PrecisionTier.PERFECT, 0)
+		"landing_word":
+			_wheel.play_precision(RC.PrecisionTier.GOOD, 0)
+		"weak_stutter":
+			_wheel.play_precision(RC.PrecisionTier.WEAK, 0)
+		"defeat_drain":
+			_wheel.play_defeat_drain()
+		"lockdown":
+			_wheel.lockdown_level = 1.0
+			_wheel.play_lockdown_drain()
 		"ready":
 			var send := _pieces["send"] as DripButton
 			send.glyph = true

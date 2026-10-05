@@ -40,6 +40,11 @@ var _lifted: bool = false
 ## Motion (Animation pass ANIM-3), drawn only (the card's rect and layout never move):
 ## the hover lift (px up), the deal-in offset (px) and tilt (radians) from the deck pile.
 var lift: float = 0.0
+## ART-2 2D (ART_BIBLE v2 §3.18): the hovered sticker grows to HOVER_SCALE about its foot
+## (drawn only: its slot and hit area stay), and its neighbours slide aside by `spread` px.
+var hover_scale: float = 1.0
+var spread: float = 0.0
+const HOVER_SCALE := 1.36
 var draw_offset: Vector2 = Vector2.ZERO
 var draw_tilt: float = 0.0
 ## The sticker's resting tilt (degrees; hover tilts it to 0).
@@ -86,6 +91,11 @@ const SOLD_WORD := "SOLD" # TR
 const SOLD_FONT := 22
 const SOLD_TILT := -0.25
 const FIT_MIN_TEXT := 8
+## ART-2 2D (audit P2: hand card text at 6 px): a sticker card's body never under the 12 px
+## caption floor (what does not fit ends in an ellipsis; the hover growth and tooltip show it).
+const BODY_FLOOR := 12
+## The smallest the body is drawn (FIT_MIN_TEXT; the combat hand sets BODY_FLOOR).
+var body_floor: int = FIT_MIN_TEXT
 ## A sticker's largest rest tilt either way (degrees; a row keeps room for it, ANIM-R2 E8).
 const REST_TILT_MAX := 4
 const CHIP_ICON_FIT_SHRINK := 0.3
@@ -104,7 +114,9 @@ func _init(p_title: String = "", p_cost: int = 0, p_description: String = "", in
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	tooltip_text = p_description
 	mouse_entered.connect(_set_lift.bind(true))
+	mouse_entered.connect(grow_hover.bind(true))  # ART-2 2D: the pointer grows a card; focus only lifts it
 	mouse_exited.connect(_set_lift.bind(false))
+	mouse_exited.connect(grow_hover.bind(false))
 	focus_entered.connect(_set_lift.bind(true))
 	focus_exited.connect(_set_lift.bind(false))
 
@@ -260,6 +272,19 @@ func _set_lift(on: bool) -> void:
 	queue_redraw()
 
 
+## ART-2 2D (§3.18): the pointer over the sticker grows it to HOVER_SCALE (`card_hover`).
+func grow_hover(on: bool) -> void:
+	if look == Look.STICKER and is_inside_tree():
+		Motion.run(&"card_hover", self, ^"hover_scale", HOVER_SCALE if on and not disabled else 1.0)
+
+
+## ART-2 2D: how far a neighbour slides aside when the card `away` slots off is hovered
+## (-1 left, 1 right, 0 back), on `card_hover`'s timing.
+func slide_aside(away: int) -> void:
+	var px := size.x * (HOVER_SCALE - 1.0) * 0.5 * float(away)
+	Motion.run(&"card_hover", self, ^"spread", px)
+
+
 ## Deals the sticker in from `pile` (global): it starts there, turned `fan` degrees and
 ## clear, and lands in its slot after `delay` (`card_draw`). Drawn only: the slot is
 ## already where the card lives, so nothing under the cursor moves.
@@ -365,9 +390,10 @@ func complete_motion() -> void:
 
 
 func _draw() -> void:
-	if lift != 0.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0:
-		var c := size * 0.5
-		draw_set_transform_matrix(Transform2D(draw_tilt, c + draw_offset + Vector2(0.0, -lift)) * Transform2D(0.0, -c))
+	if lift != 0.0 or draw_offset != Vector2.ZERO or draw_tilt != 0.0 or hover_scale != 1.0 or spread != 0.0:
+		# ART-2 2D: the hover growth is about the card's foot (it grows up out of the hand).
+		var foot := Vector2(size.x * 0.5, size.y)
+		draw_set_transform_matrix(Transform2D(draw_tilt, foot + draw_offset + Vector2(spread, -lift)) * Transform2D(0.0, Vector2(hover_scale, hover_scale), 0.0, Vector2.ZERO) * Transform2D(0.0, -foot))
 	if look != Look.STICKER:
 		_draw_tile_any()
 	else:
@@ -677,13 +703,13 @@ func _body_rows_at(line: float) -> int:
 ## under FIT_MIN_TEXT) until every line fits.
 func sticker_body_fit() -> Dictionary:
 	var s := text_scale
-	var fs := roundi(BODY_SIZE * s)
-	var line := BODY_LINE * s
+	var fs := maxi(body_floor, roundi(BODY_SIZE * s))  # ART-2 2D: never under its floor
+	var line := BODY_LINE * fs / float(BODY_SIZE)
 	var lines := wrap_px(description, size.x - 16, fs)
 	var rows := _body_rows_at(line)
-	while fit_whole and lines.size() > rows and fs > FIT_MIN_TEXT:
+	while fit_whole and lines.size() > rows and fs > body_floor:
 		fs -= 1
-		line = BODY_LINE * s * fs / float(roundi(BODY_SIZE * s))
+		line = BODY_LINE * fs / float(BODY_SIZE)
 		lines = wrap_px(description, size.x - 16, fs)
 		rows = _body_rows_at(line)
 	return {"fs": fs, "line": line, "rows": rows, "lines": lines}

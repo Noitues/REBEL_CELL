@@ -384,7 +384,7 @@ func test_a_card_preview_shows_what_the_tag_was() -> void:
 				seen += 1
 				assert_true(scene.tag_changed(wv.was_tag, wv.intent), "x%.1f: only a changed tag has a before" % scale)
 				assert_string_contains(wv.was_text(), String(wv.was_tag["text"]), "x%.1f: the before names its title" % scale)
-				var tip := wv._get_tooltip(wv._intent_rect_local().get_center())
+				var tip: String = scene.chip_row(wv.combatant.id).tooltip_text  # ART-2 2D: the chips' breakdown
 				assert_string_contains(tip, tr("Before this play: %s") % wv.was_text(), "x%.1f: the tooltip says it always" % scale)
 			assert_eq(scene.layout_violations(), [] as Array[String], "x%.1f card %d: the WAS row breaks no layout rule" % [scale, i])
 			scene._show_end_turn_preview()

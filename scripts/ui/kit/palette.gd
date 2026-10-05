@@ -545,6 +545,35 @@ static func mono_for(text: String) -> Font:
 	return mono_arrows() if has_arrows(text) else mono()
 
 
+# --- ART-11 4D: campaign end and run end (ART_BIBLE v2 §1.2, §4.8; refs campaign_end/) ----------
+# The campaign end's own stock (manila, post-its, ballpoint, stamp red, desk, house backs);
+# the vinyl and the paper material are 1B's. Values from tag
+# art-concepts-r43 (round 20 lost20.py, round 21 dossier21.py).
+## The desk under the dossier, the lamp's warm pool, the manila folder and its fold, the
+## report's and annex's stock, the typed ink and its soft (meta) ink.
+const END_DESK := Color("#1E181E")
+const END_DESK_LAMP := Color("#4A3524")
+const END_MANILA := Color("#DEC48C")
+const END_MANILA_EDGE := Color("#AA8C5A")
+const END_REPORT := Color("#F0ECE2")
+const END_ANNEX := Color("#E8E4D8")
+const END_TYPE_INK := Color("#221E22")
+const END_TYPE_SOFT := Color("#5A565A")
+## The auditor's blue ballpoint and the rubber stamp's red.
+const END_BALLPOINT := Color("#1C286E")
+const END_STAMP_RED := Color("#C41E28")
+## The auditor's post-its.
+const END_NOTE_PINK := Color("#FF78AA")
+const END_NOTE_YELLOW := Color("#FFE85A")
+const END_NOTE_BLUE := Color("#96DCFF")
+const END_NOTE_GREEN := Color("#B4F08C")
+## Each corporation's ransomware house style (round 20 CORP_STYLE): the notice's back. The
+## hue is `corp_color`, the accent `corp_secondary` (1A's round 18 kits).
+const END_HOUSE_BACK := {&"halcyon": Color("#120C28"), &"meridian": Color("#221206"), &"solace": Color("#06180C"),
+	&"orbital": Color("#040E1C"), &"rebel_cell": Color("#1E0406")}
+## The notice's light words (head line, field values) on the house back.
+const END_HOUSE_TEXT := Color("#F4F1E9")
+
 # --- ART-1 1C: glyph atlas colours (ART_BIBLE 2.1 INK row, 3.5) -------------------------
 ## A glyph's flat white silhouette (bible 3.5: white on the read plate).
 const GLYPH_FILL := Color("#FFFFFF")
