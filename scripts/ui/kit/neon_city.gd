@@ -369,7 +369,6 @@ func _init() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	material = ShaderMaterial.new()
 	material.shader = SKETCH_SHADER
-	ShaderReduce.track(material as ShaderMaterial)  # ART-0 E: rc_common's reduce_effects
 	material.set_shader_parameter("wall_mode", TEXTURE_SHADER_MODE[face_texture])
 	_view = Control.new()
 	_view.name = "CityView"
@@ -377,7 +376,6 @@ func _init() -> void:
 	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_view.material = ShaderMaterial.new()
 	(_view.material as ShaderMaterial).shader = LIVE_SHADER
-	ShaderReduce.track(_view.material as ShaderMaterial)
 	_view.draw.connect(_draw_view)
 	add_child(_view)
 	# ANIM-R2 R1: the sky over a bake that just landed, fading out (`city_bake_fade`): the
@@ -428,7 +426,6 @@ func _blink_layer(layer_name: String, duty: float, painter: Callable) -> Control
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var m := ShaderMaterial.new()
 	m.shader = LIGHTS_SHADER
-	ShaderReduce.track(m)
 	m.set_shader_parameter("duty", duty)
 	c.material = m
 	c.draw.connect(painter)

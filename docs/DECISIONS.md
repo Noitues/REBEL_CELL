@@ -238,6 +238,37 @@ files by hand; ANIM behaviour kept. No view restyled; values stay main's (ART-1 
   hover, shop) differ only in animated city content (rain, lights, traffic, the selection
   blink); text and layout match. The two bursts were read windowed in the motion lab.
 
+### 2026-10-05 — Art direction — ART-0 reduce_effects shader global (area E2)
+Following the designer ruling "reduce effects as a project-wide shader global" (above);
+supersedes area E's "reduce_effects uniform" call. Ported from art-pass 290ae4c (W6 item 1).
+- **project.godot:** only the `[shader_globals]` entry `reduce_effects` (float, 0.0), as on
+  `art-m13-final`. Registered there, it exists before any shader compiles, so Fx's preloaded
+  shaders and every material built later (script, scene or `.tres`) see it.
+- **rc_common:** `global uniform float reduce_effects;` (was a per-material uniform);
+  `rc_live()` / `rc_time()` unchanged, so no shader changed.
+- **Fx:** `Fx.REDUCE_GLOBAL` and `_apply_shader_global()` set it with
+  `RenderingServer.global_shader_parameter_set` (1.0 under reduce effects, else 0.0) first
+  thing in `Fx._ready` (before Fx builds or warms any material, so before any shader draws)
+  and on every `apply_settings` (Settings.changed). `Fx.shader_reduce` keeps the value sent,
+  for tests (the headless renderer keeps no globals). `-s` tool scripts get the autoloads, so
+  Fx sets it there too; the design-lab scripts that toggle reduce effects already go through
+  `Fx.apply_settings` / `Settings.changed` (motion_lab `_play_jack_reduced`,
+  profile_frames `--reduce`). Unset, the global is project.godot's 0.0 (effects on).
+- **ShaderReduce removed** (`scripts/ui/fx/shader_reduce.gd` and its `.uid`), with its
+  `track` calls (Fx 3, NeonCity 3, UiTheme 1) and `release`. Nothing remains that a global
+  cannot cover: the scripts' own zeroing of shader strengths (Fx scanlines / distortion,
+  UiTheme `_sync_crt`, NeonCity's live layers) is separate behaviour and stays.
+- **Tests** (`tests/unit/test_vfx_tiers.gd`): the include declares the global and
+  project.godot registers it; every shader includes rc_common and declares no
+  `reduce_effects` of its own; no script keeps a per-material copy
+  (`test_no_script_keeps_a_per_material_reduce_effects`); toggling Settings.reduce_effects
+  changes the global's value (`test_toggling_the_setting_changes_the_global`; it also asks
+  the renderer when not headless). Dropped (superseded by the global):
+  `test_every_animating_material_is_tracked`, `test_shader_reduce_follows_the_setting`.
+- **Windowed check:** HQ `--demo-grid` captured 150 frames with reduce effects off and on
+  (settings.json in a redirected APPDATA): off, the city area changes frame to frame
+  (3,000-8,000 px between frames); on, 0 px over 50 frames. No ERROR in either log.
+
 ### 2026-10-05 — Designer ruling: DISPATCH text
 Default accepted for the ART-0a open question: DISPATCH text is always a clean CRT terminal feed (red
 accent, ART_BIBLE v2 §1.2), never a sticker or pencil. GDD 8.2's "never zine-styled" reworded to that.
