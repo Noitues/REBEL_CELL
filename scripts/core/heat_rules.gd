@@ -27,6 +27,18 @@ static func effective_heat(t: HeatThresholdData, campaign: CampaignState, config
 	return t.heat
 
 
+## Where the Heat bands start for this campaign, ascending (GDD 4.3): the MAJOR levels and
+## the PURGE level as it fires (effective_heat: ICE 17 pulls the PURGE band down with it).
+## `campaign` null reads the config's levels (CampaignConfigData.heat_band_levels).
+static func band_levels(campaign: CampaignState, config: CampaignConfigData) -> Array[int]:
+	var out: Array[int] = []
+	for t in config.heat_thresholds:
+		if t != null and (t.kind == RC.ThresholdKind.MAJOR or t.kind == RC.ThresholdKind.PURGE):
+			out.append(effective_heat(t, campaign, config) if campaign != null else t.heat)
+	out.sort()
+	return out
+
+
 ## Adds `delta` Heat (scaled by the gain/sink modifiers) and fires newly crossed
 ## thresholds. Returns events.
 static func add_heat(campaign: CampaignState, delta: int, config: CampaignConfigData, reason: String = "") -> Array[Dictionary]:

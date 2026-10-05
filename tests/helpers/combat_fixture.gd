@@ -131,9 +131,9 @@ static func operative_class(id: StringName, hp: int, p_wheel: WheelData, deck: A
 	return c
 
 
-## A 6-slice wheel that never does anything (all Miss), for passive punching bags.
-static func miss_wheel(passive_resistance: int = 0, p_hub: HubCoreData = null, pointers: Array = [0]) -> WheelData:
-	var m := slice(&"fx_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+## A 6-slice wheel that never does anything (all NULL), for passive punching bags.
+static func null_wheel(passive_resistance: int = 0, p_hub: HubCoreData = null, pointers: Array = [0]) -> WheelData:
+	var m := slice(&"fx_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	return wheel([m, m, m, m, m, m], p_hub, pointers, passive_resistance)
 
 

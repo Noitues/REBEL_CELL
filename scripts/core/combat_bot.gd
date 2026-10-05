@@ -122,7 +122,7 @@ static func _candidates(session: CombatSession) -> Array[CombatAction]:
 
 static func _is_random(card: CardData) -> bool:
 	for e in card.effects:
-		if e != null and (e.type == RC.EffectType.RESPIN or e.type == RC.EffectType.DRAW_CARDS or e.slice_pick == RC.SlicePick.RANDOM_NON_MISS):
+		if e != null and (e.type == RC.EffectType.RESPIN or e.type == RC.EffectType.DRAW_CARDS or e.slice_pick == RC.SlicePick.RANDOM_NON_NULL):
 			return true
 	return false
 

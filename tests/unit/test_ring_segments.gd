@@ -60,7 +60,7 @@ func test_accelerator_makes_nudge_cards_trigger_twice_next_turn() -> void:
 	assert_true(r.ok(), r.error)
 	assert_eq(CombatFixture.events_of(r, "accelerator").size(), 1)
 	assert_eq(s.state.player.wheel.rotation, before + 4, "two nudges resolved twice")
-	CombatFixture.land(s.state.player, 5)  # Miss (no accelerator this time: ring resolves anyway)
+	CombatFixture.land(s.state.player, 5)  # NULL (no accelerator this time: ring resolves anyway)
 	s.state.player.wheel.inner_rotation = 0
 	s.apply(CombatAction.end_turn())
 

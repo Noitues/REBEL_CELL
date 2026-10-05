@@ -174,6 +174,17 @@ func _init(p_text: String = "SEND IT", p_hint: String = "", p_color: Color = DRI
 	mouse_exited.connect(_set_hot.bind(false))
 	focus_entered.connect(_set_hot.bind(true))
 	focus_exited.connect(_set_hot.bind(false))
+	KitState.track(self)  # ART-0 F (art pass W2, §6): the six states
+
+
+## ART-0 F (§6): the state drawn now (KitState).
+func state() -> StringName:
+	return KitState.of(self)
+
+
+## ART-0 F (§6 Error / refused): flashes the refused state (HARM outline, no-entry mark).
+func refuse() -> void:
+	KitState.refuse(self)
 
 
 func _fit_size() -> void:
@@ -395,6 +406,9 @@ func _draw() -> void:
 		var hs := roundi(HINT_SIZE * Settings.text_scale)
 		var tw := Palette.marker().get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_draw_glyph(Vector2(12 + tw * 0.5 + hs * GLYPH_W, size.y - 6 - hs * 0.5), hs, col)
+	# ART-0 F (§6): the disabled lock and the refused mark; focus is the lettering's own lime
+	# halo (the screen's sticker verb, v2 §2.10), never brackets.
+	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
 ## ANIM-R1 C7: a drawn "▶▶" (the end-turn mark, readable in any language), right edge at

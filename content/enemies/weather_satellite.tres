@@ -7,7 +7,7 @@
 [ext_resource type="Resource" path="res://content/slices/detour_1.tres" id="e4"]
 [ext_resource type="Resource" path="res://content/slices/overflow_14.tres" id="e5"]
 [ext_resource type="Resource" path="res://content/slices/solar_flare.tres" id="e6"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="e7"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="e7"]
 [ext_resource type="Script" path="res://scripts/data/wheel_data.gd" id="e8"]
 
 ; orbital enemy (decision 2026-09-24).
@@ -32,14 +32,14 @@ slice = ExtResource("e5")
 script = ExtResource("e2")
 slice = ExtResource("e6")
 
-[sub_resource type="Resource" id="wheel_slot_miss"]
+[sub_resource type="Resource" id="wheel_slot_null"]
 script = ExtResource("e2")
 slice = ExtResource("e7")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("e8")
 slice_count = 6
-slots = Array[ExtResource("e2")]([SubResource("wheel_slot_hotfix_6"), SubResource("wheel_slot_shim_9"), SubResource("wheel_slot_detour_1"), SubResource("wheel_slot_overflow_14"), SubResource("wheel_slot_solar_flare"), SubResource("wheel_slot_miss")])
+slots = Array[ExtResource("e2")]([SubResource("wheel_slot_hotfix_6"), SubResource("wheel_slot_shim_9"), SubResource("wheel_slot_detour_1"), SubResource("wheel_slot_overflow_14"), SubResource("wheel_slot_solar_flare"), SubResource("wheel_slot_null")])
 pointer_ticks = PackedInt32Array(0)
 pointer_orbit_per_turn = 4
 

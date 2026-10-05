@@ -50,11 +50,11 @@ func test_corp_colours_are_named_constants_with_mains_values() -> void:
 	assert_eq(Palette.corp_color(&"halcyon"), Palette.CORP_HALCYON)
 	assert_eq(Palette.corp_color(&"orbital"), Palette.CORP_ORBITAL)
 	assert_eq(Palette.corp_color(&"rebel_cell"), Palette.CORP_REBEL_CELL)
-	# main's values until ART-1 moves them to the v2 kits (ART_BIBLE v2 §2.4 palette debt).
-	assert_eq(Palette.CORP_SOLACE, Color("#3DFF8B"))
+	# The v2 kits (ART_BIBLE v2 §2.4, round 18; ART-1 1A paid the palette debt).
+	assert_eq(Palette.CORP_SOLACE, Color("#96FF46"))
 	assert_eq(Palette.CORP_MERIDIAN, Color("#FF8C1A"))
-	assert_eq(Palette.CORP_HALCYON, Color("#8C7BFF"))
-	assert_eq(Palette.CORP_ORBITAL, Color("#DDE3FF"))
+	assert_eq(Palette.CORP_HALCYON, Color("#B06EFF"))
+	assert_eq(Palette.CORP_ORBITAL, Color("#CDF0FF"))
 	assert_eq(Palette.CORP_REBEL_CELL, Color("#E8141E"))
 	assert_eq(Palette.corp_color(&"nobody"), Palette.NET_CYAN, "unknown corp falls back to the net cyan")
 
@@ -85,12 +85,12 @@ func test_slice_colours_keep_their_values_through_named_constants() -> void:
 	assert_eq(Palette.slice_color(RC.SliceType.SHIM), Palette.CELL_PINK)
 	assert_eq(Palette.slice_color(RC.SliceType.OVERFLOW), Palette.CELL_PINK)
 	assert_eq(Palette.slice_color(RC.SliceType.DEFRAG), Palette.NET_CYAN)
-	assert_eq(Palette.slice_color(RC.SliceType.SHIELD), Palette.NET_CYAN)
+	assert_eq(Palette.slice_color(RC.SliceType.SANDBOX), Palette.NET_CYAN)
 	assert_eq(Palette.slice_color(RC.SliceType.DETOUR), Color("#7BE07B"))
 	assert_eq(Palette.slice_color(RC.SliceType.HOTFIX), Palette.SLICE_HOTFIX)
 	assert_eq(Palette.slice_color(RC.SliceType.INFECT), Color("#C85AFF"))
-	assert_eq(Palette.slice_color(RC.SliceType.DEPLOY), Color("#B08CFF"))
-	assert_eq(Palette.slice_color(RC.SliceType.MISS), Color("#6A6A6A"))
+	assert_eq(Palette.slice_color(RC.SliceType.TROJAN), Color("#B08CFF"))
+	assert_eq(Palette.slice_color(RC.SliceType.NULL), Color("#6A6A6A"))
 
 
 func test_every_class_in_content_has_its_accent() -> void:
@@ -131,10 +131,10 @@ func test_heat_color_bands_follow_the_config_majors() -> void:
 	assert_eq(Palette.heat_color(majors[1]), Palette.HEAT_FLAGGED, "FLAGGED")
 	assert_eq(Palette.heat_color(majors[2] - 1), Palette.HEAT_FLAGGED, "FLAGGED up to the last major")
 	assert_eq(Palette.heat_color(majors[2]), Palette.HARM, "HUNTED")
-	assert_eq(Palette.heat_color(100), Palette.HARM)
-	var custom: Array[int] = [10, 20, 30, 40]
+	assert_eq(Palette.heat_color(100), Palette.HARM, "PURGE reuses HUNTED's colour until ART-1")
+	var custom: Array[int] = [10, 20, 30, 40, 50]
 	assert_eq(Palette.heat_band(15, custom), 1, "explicit levels are honoured")
-	assert_eq(Palette.heat_band(99, custom), 3, "capped at HUNTED")
+	assert_eq(Palette.heat_band(99, custom), 4, "capped at PURGE")
 
 
 func test_heat_is_never_green() -> void:
@@ -266,9 +266,9 @@ func test_track_label_tracks_anton_and_mono_caps_only() -> void:
 	assert_eq(caps.get_theme_font(&"font"), Palette.mono(), "mixed-case mono: the tracking comes off")
 	var marker: Label = add_child_autofree(Label.new())
 	marker.text = "TAG"
-	marker.add_theme_font_override(&"font", Palette.marker())
+	marker.add_theme_font_override(&"font", Palette.pencil())
 	UiTheme.track_label(marker)
-	assert_eq(marker.get_theme_font(&"font"), Palette.marker(), "other faces are left alone")
+	assert_eq(marker.get_theme_font(&"font"), Palette.pencil(), "other faces are left alone")
 	UiTheme.track_label(null)
 
 
@@ -337,10 +337,10 @@ func test_body_text_variation_serves_label_and_rich_text() -> void:
 	assert_eq(rtl.get_theme_font_size(&"normal_font_size"), UiTheme.BODY)
 
 
-func test_the_shared_theme_is_unchanged_for_mains_screens() -> void:
-	# ART-0 E ports the mechanism only: the variations main's screens use keep their look.
+func test_the_shared_theme_keeps_mono_system_text() -> void:
+	# ART-1 1A restyled the theme (v2); system text stays Share Tech Mono.
 	var t := UiTheme.build(1.0)
 	assert_eq(t.default_font, Palette.mono(), "system text stays Share Tech Mono")
-	assert_eq(t.get_font_size(&"font_size", &"HotButton"), 22, "the Primary keeps its size")
-	assert_eq(t.get_font(&"font", &"HeaderLabel"), Palette.mono(), "the header is not tracked yet")
+	assert_eq(t.get_font_size(&"font_size", &"HotButton"), UiTheme.font_px_at(UiTheme.TITLE, 1.0), "the Primary at the title step")
+	assert_eq((t.get_font(&"font", &"HeaderLabel") as FontVariation).base_font, Palette.mono(), "the header is tracked mono CAPS")
 	assert_eq(t.get_color(&"font_color", &"Label"), Palette.TERMINAL_TEXT)

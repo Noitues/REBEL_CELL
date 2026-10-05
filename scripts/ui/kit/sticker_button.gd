@@ -33,7 +33,18 @@ func _init(p_text: String = "", p_paper: Color = Palette.NOTE_YELLOW, p_tilt: fl
 	mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
 	focus_entered.connect(func() -> void: _hot = true; queue_redraw())
 	focus_exited.connect(func() -> void: _hot = false; queue_redraw())
+	KitState.track(self)  # ART-0 F (art pass W2, §6): the six states
 	_fit()
+
+
+## ART-0 F (§6): the state drawn now (KitState).
+func state() -> StringName:
+	return KitState.of(self)
+
+
+## ART-0 F (§6 Error / refused): flashes the refused state (HARM outline, no-entry mark).
+func refuse() -> void:
+	KitState.refuse(self)
 
 
 ## The lettering size: Settings.text_scale reaches the stickers too (GDD 9.6).
@@ -88,7 +99,9 @@ func set_label(t: String) -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	draw_set_transform(size * 0.5, deg_to_rad(tilt), Vector2.ONE)
+	var st := state()
+	# ART-0 F (§6): hover lifts the sticker, a press drops it.
+	draw_set_transform(size * 0.5 + Vector2(0, KitState.lift(st)), deg_to_rad(tilt), Vector2.ONE)
 	var rr := Rect2(-size * 0.5, size)
 	if _hot and not disabled:
 		draw_rect(rr.grow(3), Color(Palette.CELL_ACID, 0.5))
@@ -108,5 +121,8 @@ func _draw() -> void:
 		text_x += ICON_ROOM * s
 		text_w -= ICON_ROOM * s
 	draw_string(Palette.marker(), Vector2(text_x, baseline), shown_text(), HORIZONTAL_ALIGNMENT_CENTER, text_w, fs, ink)
+	# ART-0 F (§6): the disabled lock and the refused mark on the sticker's face; its focus is
+	# the lime halo above (a sticker's focus, v2 §2.10), never brackets.
+	KitState.draw_frame(self, rr, st, false)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	r = r

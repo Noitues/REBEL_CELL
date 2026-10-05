@@ -378,14 +378,14 @@ func test_precision_landings_are_distinct_marks() -> void:
 	var pv: WheelView = scene._player_view
 	pv.play_good_ring()
 	assert_true(pv.ring_pulse > 0.0, "Good: a ring off the rim")
-	pv.play_miss_static(2)
-	assert_eq(pv.miss_slot, 2, "Miss: static over that slice only")
-	assert_true(pv.miss_static > 0.0, "static on")
+	pv.play_null_static(2)
+	assert_eq(pv.null_slot, 2, "NULL: static over that slice only")
+	assert_true(pv.null_static > 0.0, "static on")
 	pv.play_pulse(0)
 	assert_eq(pv.pulse_pointer, 0, "the resolving needle pulses")
 	pv.stop_motion()
 	assert_eq(pv.ring_pulse, 0.0, "a skip clears the ring")
-	assert_eq(pv.miss_slot, -1, "and the static")
+	assert_eq(pv.null_slot, -1, "and the static")
 
 
 func test_death_breaks_the_wheel_and_the_skip_mends_the_view() -> void:

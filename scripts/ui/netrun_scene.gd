@@ -932,6 +932,12 @@ func _show_current() -> void:
 	if s == null:
 		_show_start()
 		return
+	# ART-0 F (ported from art-pass W8c, ART_BIBLE v1 §10 rule 6): a modal never outlives a
+	# page change: the page changes once the open viewers have closed (a rebuild of the same
+	# page under a viewer, the Mainframe after a shred, goes on at once).
+	if screen_name(s) != _shown_screen and PageTransition.modal_open(self):
+		PageTransition.after_modals(self, _show_current)
+		return
 	_refresh_status()
 	match s.run.phase:
 		RunState.Phase.MAP:
@@ -2210,14 +2216,14 @@ func _show_reward() -> void:
 		row.add_theme_constant_override("h_separation", 6)
 		var word := _label(tr("Chips go into:"))
 		word.name = "SocketWord"
-		word.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP))
+		word.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket"))
 		word.mouse_filter = Control.MOUSE_FILTER_PASS
 		row.add_child(word)
 		slot_option = OptionButton.new()
 		slot_option.name = "SlotPick"
 		for i in s.run.operative.slot_slice_ids.size():
 			slot_option.add_item(slot_name(s.run.operative, i))
-		slot_option.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP))
+		slot_option.tooltip_text = UiTip.fold(tr(LOOT_SOCKET_TIP) + " " + drag_tip("loot_socket"))
 		row.add_child(slot_option)
 		box.add_child(row)
 	# Offers as zine stickers (STYLE_GUIDE 4): cards show their RAM cost and what they do as
@@ -2258,7 +2264,7 @@ func _show_reward() -> void:
 		sticker.hotkey = ""  # rewards are picked by click or focus, not number keys
 		# H24 S17: the whole text on hover and, for a pad or keyboard, on focus (FocusTip).
 		var drag_kind := String({"card": "card", "firmware": "chip", "daemon": "daemon"}.get(String(offer["kind"]), ""))
-		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + tr(String(DRAG_TIPS[drag_kind])) if drag_kind != "" else ""))
+		sticker.tooltip_text = UiTip.fold(loot_tip(res) + ("\n" + drag_tip(drag_kind) if drag_kind != "" else ""))
 		FocusTip.attach(sticker)
 		var index: int = i
 		sticker.pressed.connect(func() -> void: choose_reward(index, slot_option.selected if slot_option != null else -1))
@@ -2285,7 +2291,7 @@ func _show_reward() -> void:
 
 ## ANIM-R6 B8: what the loot's socket list is for (a key; the Mainframe's SOCKET_TIP without
 ## buying).
-const LOOT_SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into (dragging it onto a slot of the small spinner picks it too)." # TR
+const LOOT_SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot the chip you take goes into." # TR
 ## ANIM-R6 B10: what paid the loot out, by the node the run stands on (keys): a fight, an
 ## Elite, the Server Rack, an event.
 const LOOT_SOURCES := {RC.InfilNodeType.ROUTER: "FIGHT WON", RC.InfilNodeType.SERVER_RACK: "RACK BREACHED", # TR
@@ -2433,7 +2439,7 @@ func _show_event() -> void:
 		b.pressed.connect(func() -> void: _press_choice(index))
 		b.theme_type_variation = &"NoteButton"
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD
 		options.add_child(b)
 		# H23 S9: no numbers for a change that is none; H24 S9: a choice that changes nothing
 		# says so with the neutral "no change" mark (it showed nothing at all).
@@ -2541,7 +2547,7 @@ func choices_held() -> bool:
 
 
 ## ANIM-R5 B11: what the Mainframe's socket list is for (a key).
-const SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into (dragging a chip onto a slot of the small spinner picks it too)." # TR
+const SOCKET_TIP := "A Firmware chip upgrades one slot of your spinner: it works on the slice in that slot whenever the slice lands. Pick here which slot a chip you BUY goes into." # TR
 
 
 ## A spinner slot by what is in it, never by ids (H21 #12: "overflow_12" in the socket list):
@@ -2668,7 +2674,7 @@ func _show_shop() -> void:
 			elif kind == "daemons":
 				sticker.as_tile(ZineCard.Look.CHIP, Palette.NEON_VIOLET).tile_text(ts)
 			sticker.tooltip_text = UiTip.fold(tr("%s\n%s\nBuy: %d Cycles (you have %d).") % [TextDb.t(res, "display_name"), shop_text(res), int(prices[i]), s.run.cycles]
-				+ "\n" + tr(String(DRAG_TIPS[{"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind]])))
+				+ "\n" + drag_tip(String({"cards": "card", "firmware": "chip", "daemons": "daemon"}[kind])))
 			sticker.disabled = int(prices[i]) > s.run.cycles
 			# H23 S8: a clear buy button on every item, and the whole text on focus.
 			sticker.with_buy(TextDb.mark("BUY"))
@@ -2702,10 +2708,10 @@ func _show_shop() -> void:
 		socket_row.add_theme_constant_override("h_separation", 6)
 		var socket_word := _label(tr("Chips go into:"))
 		socket_word.name = "SocketWord"
-		socket_word.tooltip_text = UiTip.fold(tr(SOCKET_TIP))
+		socket_word.tooltip_text = UiTip.fold(tr(SOCKET_TIP) + " " + drag_tip("socket"))
 		socket_word.mouse_filter = Control.MOUSE_FILTER_PASS
 		socket_row.add_child(socket_word)
-		fw_slot.tooltip_text = UiTip.fold(tr(SOCKET_TIP))
+		fw_slot.tooltip_text = UiTip.fold(tr(SOCKET_TIP) + " " + drag_tip("socket"))
 		socket_row.add_child(fw_slot)
 		chips_win.body.add_child(socket_row)
 	if daemon_row.get_child_count() == 0:
@@ -2754,8 +2760,8 @@ func _show_shop() -> void:
 			tile.with_price(low)
 		# H23 S8: the real prices (the slot you overwrite sets it), said in words.
 		tile.tooltip_text = UiTip.fold(tr("Overwrite a slot of your spinner with this slice. Price: %s Cycles%s (you have %d).\n") % [tile.price_words(),
-			(tr(": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
-			+ "\n" + tr(String(DRAG_TIPS["slice"])))
+			(tr(": %d for most slots, %d for a pricier one such as the NULL slot; you pick the slot next") % [low, high]) if high > low else "", s.run.cycles] + Codex.describe(sd)
+			+ "\n" + drag_tip("slice"))
 		tile.with_buy(TextDb.mark("BUY"))
 		FocusTip.attach(tile)
 		var si := i
@@ -2970,6 +2976,9 @@ static func fit_chip_tile(tile: ZineCard, most: Vector2) -> void:
 ## tile that opened them on close).
 func _open_modal(view: Control) -> void:
 	add_child(view)
+	# ART-0 F (ported from art-pass W8a / W8c, §10): the viewer opens with the modal motion
+	# and counts as open, so a page change waits for it to close (`_show_current`).
+	PageTransition.open_modal(view)
 
 
 ## Deck viewer in pick mode: the chosen card is removed for the shop's price.
@@ -2987,7 +2996,7 @@ func open_overwrite(stock_index: int) -> void:
 	var s := RunManager.netrun
 	var sd := s.lookup.get_content(StringName(String(s.run.shop["slices"][stock_index]))) as SliceData
 	var name_text := "%s %d" % [tr(String(Palette.SLICE_NAMES.get(sd.slice_type, "?"))), sd.base_output] if sd != null else "?"
-	# The price depends on the slot (the Miss slot costs more): the view shows the picked
+	# The price depends on the slot (the NULL slot costs more): the view shows the picked
 	# slot's own price and turns UPGRADE off when it is out of reach (H20).
 	var view := SpinnerView.new(s.run.operative.slot_slice_ids, s.run.operative.slot_firmware_ids, s.lookup, tr("UPGRADE A SLICE // INSTALL %s") % name_text,
 		TextDb.mark("UPGRADE"), RunManager.config().shop_slices)
@@ -3004,7 +3013,7 @@ func open_overwrite(stock_index: int) -> void:
 		chip.slice_output = sd.base_output
 		chip.hotkey = ""
 		chip.custom_minimum_size = Vector2(SpinnerView.SIDE_W, SLICE_TILE.y * tile_growth(Settings.text_scale))
-		chip.tooltip_text = UiTip.fold(tr("Drag it onto a slot to overwrite that slot (or press it, then pick the slot)."))
+		chip.tooltip_text = UiTip.fold(drag_tip("install"))
 		view.enable_drops(_modal_layer(view), chip, _item_payload("slice", "modal", stock_index, sd.id))
 
 
@@ -3022,7 +3031,7 @@ func _show_raid() -> void:
 	# warning, a forecast stamp and the facts as badges, then a row per node.
 	var warn := _label(TextDb.t(raid, "warning_text"))
 	warn.name = "RaidWarning"
-	warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(warn)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	box.add_child(warn)
 	box.add_child(_raid_forecast(projection))
 	var run_assets := s.run_assets()
@@ -3061,7 +3070,7 @@ func _show_raid() -> void:
 			var sid := site_id
 			var withdraw := _button(tr("Withdraw %s") % _content_name(deployed[i]), func() -> void: raid_move(sid, idx, &""))
 			withdraw.name = "Withdraw_%s_%d" % [sid, idx]
-			withdraw.tooltip_text = UiTip.fold(tr("Back to the Armory. Or drag it onto another node's row to move it there."))
+			withdraw.tooltip_text = UiTip.fold(tr("Back to the Armory.") + " " + drag_tip("withdraw"))
 			row.add_child(withdraw)
 		if c.grid.is_active_node(site_id):
 			if not run_assets.is_empty():
@@ -3183,7 +3192,7 @@ func _asset_chip(chip_name: String, asset: StringName) -> Button:
 	b.theme_type_variation = &"NoteButton"
 	b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	b.text = _content_name(asset)
-	b.tooltip_text = UiTip.fold(tr("Drag it onto a node's row to deploy it there (or press it, then pick the row)."))
+	b.tooltip_text = UiTip.fold(drag_tip("asset"))
 	return b
 
 
@@ -3271,7 +3280,7 @@ func _show_end() -> void:
 	# What happened to the operative, in words (a flatline is permanent).
 	var fate := _label(end_fate(s))
 	fate.name = "RunFate"
-	fate.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(fate)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	fate.add_theme_color_override("font_color", Palette.PAPER)
 	col_box.add_child(fate)
 	# The run in numbers as the top bar's paper tags (H20: no text summary).
@@ -3293,7 +3302,7 @@ func _show_end() -> void:
 	why.add_child(IconMark.standalone(StatIcon.HEAT, side, StatIcon.color_of(StatIcon.HEAT)))
 	var why_text := _label(heat_reason(s))
 	why_text.name = "HeatReasonText"
-	why_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(why_text)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	why_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	why.add_child(why_text)
 	col_box.add_child(why)
@@ -3391,6 +3400,35 @@ const DRAG_TIPS := {"card": "Or drag it onto the CARDS tag: the card goes into y
 	"chip": "Or drag it onto a slot of your spinner: the chip goes into that slot.", # TR
 	"daemon": "Or drag it onto the DAEMONS icon: the Daemon is installed.", # TR
 	"slice": "Or drag it onto a slot of your spinner: the slice overwrites that slot."} # TR
+## ART-0 F (ported from art-pass W8c / W9F, ART_BIBLE v1 §6.8, §12): the drag lines of the
+## other drag items (mouse words; DRAG_TIPS_PAD has each for a pad).
+const DRAG_TIPS_MORE := {"install": "Drag it onto a slot to overwrite that slot (or press it, then pick the slot).", # TR
+	"withdraw": "Or drag it onto another node's row to move it there.", # TR
+	"asset": "Drag it onto a node's row to deploy it there (or press it, then pick the row).", # TR
+	"spinner": "Drag Firmware or a slice onto a slot to put it there.", # TR
+	"socket": "Dragging a chip onto a slot of the small spinner picks it too.", # TR
+	"loot_socket": "Dragging it onto a slot of the small spinner picks it too."} # TR
+## ART-0 F: the same lines for a pad player (never "click" or "drag": the pick-up button
+## carries the item, the D-pad aims, A drops).
+const DRAG_TIPS_PAD := {"card": "Or pick it up and move it onto the CARDS tag: the card goes into your deck.", # TR
+	"chip": "Or pick it up and move it onto a slot of your spinner: the chip goes into that slot.", # TR
+	"daemon": "Or pick it up and move it onto the DAEMONS icon: the Daemon is installed.", # TR
+	"slice": "Or pick it up and move it onto a slot of your spinner: the slice overwrites that slot.", # TR
+	"install": "Pick it up and move it onto a slot to overwrite that slot (or press it, then pick the slot).", # TR
+	"withdraw": "Or pick it up and move it onto another node's row to move it there.", # TR
+	"asset": "Pick it up and move it onto a node's row to deploy it there (or press it, then pick the row).", # TR
+	"spinner": "Pick up Firmware or a slice and move it onto a slot to put it there.", # TR
+	"socket": "Picking a chip up and moving it onto a slot of the small spinner picks it too.", # TR
+	"loot_socket": "Picking it up and moving it onto a slot of the small spinner picks it too."} # TR
+
+
+## ART-0 F (ported from art-pass W8c / W9F): the drag line of item kind `kind` in the words
+## of the device in use (UiTip.for_input), translated; "" for an unknown kind.
+func drag_tip(kind: String) -> String:
+	var mouse := String(DRAG_TIPS.get(kind, DRAG_TIPS_MORE.get(kind, "")))
+	if mouse == "":
+		return ""
+	return UiTip.for_input(tr(mouse), tr(String(DRAG_TIPS_PAD.get(kind, mouse))))
 
 ## The run's drop layer (over every page) and the pad prompts of the page on show (kept, so
 ## a carry can swap them and put them back).
@@ -3504,7 +3542,7 @@ func _spinner_mini() -> SpinnerMini:
 	for k in op.slot_slice_ids.size():
 		tips.append(slot_name(op, k))
 	var mini := SpinnerMini.new(op.slot_slice_ids, op.slot_firmware_ids, RunManager.lookup(), tips)
-	mini.tooltip_text = UiTip.fold(tr("Your spinner. Drag Firmware or a slice onto a slot to put it there."))
+	mini.tooltip_text = UiTip.fold(tr("Your spinner.") + " " + drag_tip("spinner"))
 	return mini
 
 
@@ -3584,7 +3622,7 @@ func _register_event_drops(ev: TerminalEventData, options: Control) -> void:
 			continue
 		var p := _item_payload(kind, "event", i, (ev.choices[i].reward as Resource).get("id"))
 		drops.add_source(b, p)
-		b.tooltip_text += "\n" + tr(String(DRAG_TIPS.get(kind, "")))
+		b.tooltip_text += "\n" + drag_tip(kind)
 		any = true
 	if any:
 		_add_bar_targets(["card"], ["daemon"])

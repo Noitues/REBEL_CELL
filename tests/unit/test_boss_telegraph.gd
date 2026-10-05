@@ -43,7 +43,7 @@ func test_renewal_engine_orbit_phase_reconfigures_the_wheel() -> void:
 	var r := s.apply(CombatAction.end_turn())
 	assert_eq(CombatFixture.events_of(r, "boss_wheel_override").size(), 1)
 	b = s.state.get_combatant(&"enemy_0")
-	assert_eq(b.wheel.slot_slice_ids, [&"shim_14", &"overflow_24", &"defrag_12", &"dose", &"overflow_24", &"miss"])
+	assert_eq(b.wheel.slot_slice_ids, [&"shim_14", &"overflow_24", &"defrag_12", &"dose", &"overflow_24", &"null"])
 	assert_eq(b.wheel.hub_id, &"auto_renew")
 	assert_eq(b.wheel.pointer_ticks.size(), 2, "pointers from the MULTIPLY phase are kept")
 
@@ -58,9 +58,9 @@ func test_turn_start_spawns_follow_every_n_and_max_active() -> void:
 	spawn.every_n = 2
 	spawn.dock_slot = 1
 	spawn.max_active = 1
-	var host := CombatFixture.enemy(&"bt_host", 100, CombatFixture.miss_wheel(), [spawn])
+	var host := CombatFixture.enemy(&"bt_host", 100, CombatFixture.null_wheel(), [spawn])
 	var noop: Array[CardData] = [CombatFixture.card(&"bt_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"bt_class", 60, CombatFixture.miss_wheel(), noop)
+	var cls := CombatFixture.operative_class(&"bt_class", 60, CombatFixture.null_wheel(), noop)
 	var s := CombatSession.start(CombatFixture.resolver([cls, host, drone]), cls.id, [host.id], 2)
 	assert_eq(s.state.satellites_of(&"enemy_0").size(), 0, "turn 1: count 1 of 2")
 	var r := s.apply(CombatAction.end_turn())

@@ -12,7 +12,7 @@ const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const TITLE := "res://scenes/menu/title_scene.tscn"
 const SLOT := "gut_s21_screens"
 const CANVAS := Vector2(1280, 720)
-const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the Miss slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
+const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the NULL slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
 
 var _text_scale_before: float = 1.0
 var _pad_before: bool = false
@@ -528,7 +528,7 @@ func test_big_text_reaches_cards_tags_notes_and_crew() -> void:
 			name_label = n
 	assert_eq(name_label.get_theme_font_size(&"font_size"), roundi(CrewCard.NAME_SIZE * Settings.TEXT_SCALE_MAX), "the dossier's name grows")
 	var radio := hq._panel.find_child("PirateRadio", true, false) as ZineNote
-	var line_h := Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale))
+	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
 	var lines := radio.label.size.y / line_h
 	assert_almost_eq(lines, roundf(lines), 0.05, "the radio shows whole lines (%.2f)" % lines)
 	hq.open_loadout()

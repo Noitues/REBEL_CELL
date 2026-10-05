@@ -89,7 +89,7 @@ func _draw() -> void:
 	draw_circle(c, RADIUS + 3.0, Color(0, 0, 0, 0.55))
 	for k in n:
 		var sd := lookup.get_content(slices[k]) as SliceData if lookup != null else null
-		var type := sd.slice_type if sd != null else RC.SliceType.MISS
+		var type := sd.slice_type if sd != null else RC.SliceType.NULL
 		var col := Palette.slice_color(type)
 		var a0 := angle(k) - PI / n + GAP
 		var a1 := angle(k) + PI / n - GAP
@@ -100,7 +100,7 @@ func _draw() -> void:
 		for q in 9:
 			var a := lerpf(a1, a0, q / 8.0)
 			pts.append(c + Vector2(cos(a), sin(a)) * INNER)
-		draw_colored_polygon(pts, Color(col, 0.55) if type != RC.SliceType.MISS else Color(col, 0.22))
+		draw_colored_polygon(pts, Color(col, 0.55) if type != RC.SliceType.NULL else Color(col, 0.22))
 		pts.append(pts[0])
 		draw_polyline(pts, col.lightened(0.3), 1.2, true)
 		var am := angle(k)

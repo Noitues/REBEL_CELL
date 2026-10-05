@@ -67,10 +67,10 @@ func test_combat_key_hints_follow_a_rebind() -> void:
 
 func test_a_mirror_copy_of_a_parasited_slot_is_halved() -> void:
 	var atk := CombatFixture.slice(&"h19_atk", RC.SliceType.SHIM, 6)
-	var miss := CombatFixture.slice(&"h19_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	var null_slice := CombatFixture.slice(&"h19_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	var deck: Array[CardData] = [CombatFixture.card(&"h19_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
-	var cls := CombatFixture.operative_class(&"h19_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, miss]), deck)
-	var enemy := CombatFixture.enemy(&"h19_dummy", 300, CombatFixture.miss_wheel())
+	var cls := CombatFixture.operative_class(&"h19_class", 60, CombatFixture.wheel([atk, atk, atk, atk, atk, null_slice]), deck)
+	var enemy := CombatFixture.enemy(&"h19_dummy", 300, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, enemy]), cls.id, [enemy.id], 3)
 	s.state.player.wheel.slot_firmware_ids[0] = &"mirror"
 	s.state.player.wheel.slice_statuses[1] = RC.Status.PARASITE

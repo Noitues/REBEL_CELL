@@ -48,8 +48,11 @@ static func _show_for(control: Control) -> void:
 	tip.top_level = true
 	tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tip.z_index = 50
-	tip.text = control.tooltip_text
-	tip.add_child(UiTip.make(control.tooltip_text))
+	# ART-0 F (ported from art-pass W9F, §6.8 / §12): the safety net: a pad player never reads
+	# mouse words, even in a tip built before the device changed (UiTip.pad_safe swaps them).
+	var words := UiTip.pad_safe(control.tooltip_text) if Settings.pad_active else control.tooltip_text
+	tip.text = words
+	tip.add_child(UiTip.make(words))
 	control.add_child(tip)
 	tip._place.call_deferred(control)
 	# Animation pass ANIM-6: the tip fades in (`focus_tip_in`).

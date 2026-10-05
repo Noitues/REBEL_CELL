@@ -84,6 +84,332 @@ Bible §1.2, §4.1–4.2, §6.1; plan §5.1–5.2; ruling 7 (fidelity first, the
   - seeded traffic.
 
   The render is verified windowed only. No shipped screen changed.
+### 2026-10-05 — Art direction — ART-1 1A palette, faces, theme
+ART_BIBLE v2 §2.1–2.10, §5.6, §6.4 applied through `Palette` and `UiTheme` only (no screen
+restyled; screens pick it up through the tokens and the theme).
+- **Palette v2:** every §2 row with a value has a token with the bible's value
+  (`tests/unit/test_art1_palette_theme.gd` holds the bible's tables row by row). Corp kits move to
+  round 18 (Solace #96FF46, Halcyon #B06EFF, Orbital #CDF0FF; ART-0 kept #DDE3FF for Orbital) with
+  `CORP_*_2` secondaries and `corp_secondary()`; class accents to round 22 / 38 (App. C #4); new
+  §2.2 tokens (PENCIL_PLAN / THREAT / SHADOW, HEAT_B, RING_AVAILABLE / UNAVAILABLE / CUT); Daemon
+  families (§2.6, round 34 `fwlib.FAM` values where the bible names only a hue), rarity (§2.7,
+  round 34 `RAR_COL`, gunmetal #3A4048 my pick), the five Heat bands as tokens with **HEAT_PURGE**
+  of its own (HUNTED's look until art gives it one), §2.10 chrome (SELECTED cyan, ON_SELECTED navy,
+  STICKER_SAFE yellow pair, STICKER_COMMIT pink, die-cut white), LIVE_NUMBER_RIM (the glyph outline is 1C's GLYPH_INK).
+  `PAIRED_WITH` notes each meaningful token's non-colour cue (§5.1); the test checks every entry.
+  Contrast checks (WCAG via `Palette.contrast`): terminal text on navy glass ≥ 9:1, TEXT_LO
+  disabled words ≥ 4.5:1, navy on the cyan fill ≥ 7:1, ink on the pink / yellow stickers ≥ 4.5:1,
+  the theme's own font colour against its own box per state.
+- **Calls made (palette):** RING_CUT "dim grey" = the NULL slice grey #6A6A6A; the Daemon family the
+  bible calls MISS is **NULL** (`DAEMON_NULL`, `&"null"`): it fires on the NULL slice, renamed by
+  the 2026-10-05 ruling; TERMINAL_BG is rgb(5,13,28) at .95 exactly and TERMINAL_EDGE NET_CYAN at
+  78 %; TERMINAL_BG_HOT moves from magenta to a cyan-lit navy (v2 hover is a lit edge + glow, never
+  the verb's pink). RING_AVAILABLE equals Meridian's orange (App. C #22, kept until the designer
+  says otherwise).
+- **Faces (§2.9):** **MSDF on** (`Palette.FONTS_MSDF`, every `.import`, range 16). Courier Prime
+  Regular + Bold copied to `assets/fonts/` with `OFL_CourierPrime.txt` (`FONT_PAPER(_BOLD)`,
+  `paper()`, `paper_bold()`); README rewritten with one row per face. **Call made:** Permanent
+  Marker is grease pencil only (`FONT_PENCIL`, `pencil()`; FONT_MARKER removed); `Palette.marker()`
+  (the Cell's lettering on its fixed objects: verbs, tags, stamps, names; 105 call sites in 34
+  files) now returns Anton, the §2.9 sticker face. The screens move to their v2 components in
+  ART-2..12, so the name stays rather than churning 34 files while Group 2 builds on them.
+- **MSDF fallout fixed:** MSDF faces report fractional heights (`get_height`: Share Tech Mono 30 px
+  = 34.375) while a RichTextLabel lays lines at ceil(ascent) + ceil(descent) (35); the HQ's
+  pirate radio and the subtitle pager measured with `get_height` and drifted (radio 11.2 lines,
+  a page split at 14 lines instead of 15). New `UiTheme.line_px`, used by `Dialogue` (band
+  height, lines fitting, page height, dock room) and the radio. The **signal-11 crash**
+  (ART-0 carry-over) was not YOUR NODES but the raid setup at 2.0 in
+  `test_the_home_banner_keeps_off_cores_label_and_the_tokens_and_the_packets_stop`: the NODE
+  ORDERS list's `ScrollHint` flipped its room every frame (with the room, the view held at its
+  least height gave the room out of the column instead of itself, so "overflows" said no; without
+  it, yes) until the deferred calls on freed nodes flooded and the process crashed. `ScrollHint.overflows`
+  now measures a view held at its least height against that height (kit file, smallest edit).
+- **Theme (§6.4):** `TerminalPanel` = navy glass, cyan edge, the top-right corner cut
+  (`corner_detail` 1) and a cyan edge glow; `GlassPanel`, popups and tooltips the same family
+  (tooltips in Plex, §2.9); new variations `TerminalButton` (2 px edge, F's lime brackets),
+  `HoloPanel` (`holo_box(corp)`: corp-tinted plate at .88 with the corp edge; 1B's holo shader
+  draws over it), `PaperPanel` (paper stock, ink keyline, drop shadow); `UiTheme.live_number(step,
+  colour)` LabelSettings (Anton, 2 px #06060A rim × text scale, own-colour glow at 50 %, size 10).
+  Every terminal button, menu line, tab, toggle, slider and scroll grabber is cyan: hover = lit
+  edge + glow, pressed = cyan fill with navy words, tabs selected = cyan fill; disabled = DISABLED
+  edge with TEXT_LO words. `HotButton` is the pink vinyl verb (die-cut white border, round
+  corners, ink extrude, Anton at the TITLE step × text scale) with the lime die-cut halo on focus
+  (no brackets, as the coordinator relayed; F's test updated to that). HeaderLabel is tracked
+  mono CAPS in TEXT_HI. High contrast is still applied last (tested). `TerminalWindow`'s title
+  rule takes the window's accent instead of the Cell pink (kit file, one line).
+- **Combat hand (call made, outside my area, smallest edit):** Anton is narrower than Permanent
+  Marker, so the SEND IT and sticker column freed width, `_card_scale_for` grew the hand cards
+  (148 x 1.39 at 2.0) and the wheels fell under `BIG_TEXT_RADIUS_KEEP` (90 vs 126). The hand card
+  scale is now also held to `HAND_HEIGHT_SHARE` (0.24) of the screen's height (no change at 1.0).
+  Dict keys spelled `"disabled":` trip the names-pass lint's raid-word check, so the few new ones
+  are written `(&"DISABLED"):`.
+- **Tests:** new `tests/unit/test_art1_palette_theme.gd` (fast). Changed pins (superseded looks):
+  `test_art_w1_tokens` corp values and "the shared theme is unchanged" (now: mono system text,
+  the verb at the title step, tracked header), the track_label check uses `pencil()`;
+  `test_horizontal_pass20_screens` tooltip edge pink → cyan; `test_art0_kit_states` HotButton
+  focus = the sticker halo; `test_accessibility` FONT_PENCIL; `test_horizontal_pass21_screens`
+  measures the radio with `line_px`; `test_anim_r3_city` territory hue gap: Solace's locked
+  #96FF46 sits 0.066 from the Cell's lime (bible §2.4 names the risk; the hatch, the stamp word
+  and "Solace never on a link or ring" carry it), so Solace needs 0.05, every other corp still
+  0.1. No test dropped.
+- **Capture:** `tools/design_lab/type_chrome_sheet.tscn` read next to `typography.jpg` and
+  `ui_kit.jpg`; before / after of title, HQ, a fight and the Mainframe at 1.0 and 2.0; crops in
+  `docs/art_review/ART-1/1A/` (`.gdignore`d).
+### 2026-10-05 — CI sharded (ready to re-enable after M14)
+Follows "CI paused for M14". The workflow is rebuilt but still `workflow_dispatch` only; the push and
+pull_request triggers sit in a commented block in `.github/workflows/ci.yml` to restore after ART-12.
+- **Six GUT shards**, one matrix job each, via the new `tools/run_tests.py --shard K/N` (same longest-first
+  balancing on the manifest's measured times as `-j N`; shards disjoint and complete; tested in
+  `tools/test_run_tests.py`). Each shard runs in 2 local processes (`-j 2`, suited to a 4-core runner).
+  Reason: 1752 s of measured script time / 6 = ~292 s per shard; assuming runners 3x slower than the dev PC
+  that is about 7-8 min with 2 processes, about 10 min with setup and import, against a 25 min job limit
+  (the old 30 min single process needed about 1 h on a runner). More shards would only add import overhead.
+- **Separate `fast-checks` job** (schema smoke test judged by its "SCHEMA SMOKE TEST: PASS" output because
+  Godot can exit 139 afterwards, content validation, text export diff); `export` needs it and all shards.
+- **Caches**: the Godot download and `.godot/` (keyed on `project.godot`, `addons/`, `assets/`, `*.import`);
+  `--import` still runs each time. The Godot download cache is best effort (unverified on a real runner).
+- A failing shard uploads its `gut.log` and `results.xml` as an artifact.
+- Not yet run on GitHub: the timing figures are estimates; check them on the first manual run and adjust
+  `SHARDS`/`-j`. If the repo is private the runner has 2 cores, so use `-j 1` and more shards.
+
+### 2026-10-05 — Art direction — ART-1 1C glyph pipeline
+The production glyph atlas, its shader and an id → glyph table (ART_BIBLE 3.5, 5.2, 6.2; plan 5.3).
+Nothing is swapped into the wheel views yet (ART-2).
+- **Masters regenerated, not copied.** `tools/art_pipeline/glyphs/build_glyph_atlas.py` runs the concept
+  generators from tag `art-concepts-r43` (round 40 `slicelib.glyph_mask`, which chains back to the round 17
+  shapes; round 18 `glyph_priority`; round 34 `fwlib.icon`) at their 512 / 1024 px masters and builds a
+  single-channel **SDF** from them (4x the cell's resolution; the sign from the master's coverage, the
+  distance from sub-pixel edge points). Every round 17 glyph and PRIORITY regenerate identical to the
+  `docs/art_reference/glyphs` PNGs (IoU 1.0 at 256 px, recorded in the manifest). SDF, not MSDF: the masters
+  are PIL rasters, not vector contours; the outline is rounded by design (bible 3.5), so the corner
+  rounding an SDF gives at 128 px cells is not visible at 16–128 px.
+- **Files.** `assets/glyphs/glyph_atlas.png` (16 × 8 cells of 128 px, L8, glyph box 96 px centred, field
+  ±16 px; imported with mipmaps), `glyph_atlas_manifest.json` (geometry, source tag and commit, per-glyph
+  source ids, closest 16 px pairs, reference IoU), `masters/<name>.png` (256 px white-on-transparent copies,
+  `.gdignore`d: the source record), `glyph_sdf.gdshader` (fill at smoothstep 0.5 ± aa from `fwidth`,
+  outline at 0.075 × box in `Palette.GLYPH_INK` #0C0A16, fill `Palette.GLYPH_FILL`, node modulate applies).
+- **Names and order.** `index.txt` order with the program names (`slice_shim`, `slice_overflow`,
+  `slice_defrag`, `slice_sandbox`, `slice_detour`, `slice_hotfix`, `slice_infect`, `slice_trojan`,
+  `slice_null`), JUDGEMENT's slot taken by `special_priority` (round 18; JUDGEMENT retired by D3), the
+  eleven `placeholder_*` left out; then `hub_<core id>` (8 player cores + `hub_phantom_echo`, Phantom's static
+  icon, + the 6 enemy hubs), `seg_<id>` (7), `fw_<id>` (18), `daemon_<id>` (24), `exploit_intel` /
+  `exploit_breach` and `pending`. 114 cells.
+- **Hubs, segments, Firmware, Daemons and Exploits joined the atlas** (bible 3.5 / 6.2 "join the same
+  atlas") from their locked rounds' own generators rather than waiting: hub cores and segments from
+  round 38–40 `glyphs38/39/40`, Firmware and Daemons from round 34 `fwlib`. The Manifest's hub is
+  `customs_seal` in the game (renamed from Priority Routing), drawn with round 38's Priority Routing
+  emblem (express arrow). Mk2 cores share their core's emblem (bible 3.3: Mk2 adds a rim and a tab).
+- **Exploit glyphs reuse two round 17 placeholder shapes**: round 38/39's Exploit art draws INTEL with the
+  RECON binoculars and BREACH with the KEY, so those two shapes enter the atlas as `exploit_intel` /
+  `exploit_breach` (not as placeholders); VIRUS uses `status_corrupted`, as round 38 does.
+- **Aliases** (bible 3.5) are table entries, not cells: FREEZE → `state_frozen`, RESIST → `special_weight`,
+  DAMAGE → `slice_shim`, EVADE → `slice_detour`, HEAL → `slice_hotfix`. **SHIELD pts → `slice_sandbox`**,
+  not `placeholder_shield` (placeholders are out of the game). AIRMAIL and GROWTH show their program's
+  glyph (OVERFLOW, HOTFIX): round 18's kits give them their own screen, not their own glyph. DOUBLE_NUDGE_CARDS
+  and RETRIGGER both use AGAIN; APPLY_STATUS uses INFECT; DEPLOY_DRONE uses TROJAN; a satellite uses DRONE.
+- **Schema (minimal, new class):** `scripts/data/glyph_table_data.gd` `GlyphTableData` (atlas, glyph_names,
+  columns, cell_px, box_px, spread_px, outline_width, twin_px, twin_max_iou, twin_exceptions, ids) with
+  `validate()`; shipped as `content/config/glyph_table.tres`; checked in
+  `tools/schema_smoke_checks.gd` `_art1_glyphs`. Keys by kind: `type_*`, `status_*`, `effect_*`
+  (+ `effect_spin_ccw`, `effect_nudge_inner`), `hub_*`, `seg_*`, `firmware_*`, `daemon_*`, `exploit_*`,
+  `slice_<id>` (specials: priority, citation, dose, solar_flare, shim_8_weight), `word_*`, `satellite`.
+- **View:** `scripts/ui/kit/GlyphIcon` (new file; F's kit files untouched) draws one cell; `box_px` is the
+  glyph box on screen, the control is the whole cell so the outline fits; one shared material per colour
+  pair. `Palette.GLYPH_FILL` / `GLYPH_INK` appended at the end of palette.gd (1A's file: two lines).
+- **16 px rule** checked from the atlas itself with the round 17 catalogue's metric (box-filtered coverage
+  of the glyph box at 16 px, 0.6 px Gaussian, soft IoU): worst non-exempt pair below 0.68. Exempt: the
+  pairs kept alike on purpose (SPIN / MOMENTUM, SPIN CW / CCW, HP / TAKE DMG, Phantom core / its echo icon),
+  the bible's known borderlines and the 15 Firmware/Daemon pairs under the open question.
+- **Capture:** `tools/design_lab/glyph_sheet.tscn` (every glyph at 64 / 32 / 16 px and 16 / 32 px at text
+  scale 2.0, six pages, one Movie Maker run, one window), read next to `glyph_set_v3.jpg`; crop in
+  `docs/art_review/ART-1/1C/glyphs_vs_round34.jpg`. Shapes match the reference cell for cell; at 16 px the
+  outline stays closed and the silhouettes read (the HOTFIX band-aid pads drop out at 16 px, as in the
+  reference).
+- Tests: `tests/unit/test_art1_glyphs.gd` (fast tier). No test dropped.
+
+### 2026-10-05 — Art direction — ART-0 kit behaviour (salvage S5, area F)
+Ported by hand onto main's kit from art-pass (tag `art-m13-final`): 59b064e (W2 states, focus
+brackets, focus scale), 77c96df (RefusalMark), ccf30fc (PadGlyph, glyph prompts), bb4f2e2 and the
+W9F sweep (UiTip.for_input, pad wording), a155849 / d91a26f (W8a modal API, GlassScrim),
+c77b99f / 9ad2133 (W9F UiWrap.whole_words), fc477fc (WF FitScroll / ScrollHint guards), b9af7e3
+(WF PaperInk). Behaviour and tests only: no zine skin ported (ART-4 / ART-10 restyle), main's
+colours kept, every new colour a Palette token (the static lint baseline is unchanged).
+- **Component states:** `KitState` (six states, lift / glow, `draw_frame`, `force`,
+  `force_native`) and `RefusalMark` (any control's refused flash; a reason shows as a warn
+  ToastNote). StickerButton, ZineStamp and DripButton report `state()`, take `refuse()`, lift on
+  hover / drop on press and draw the disabled lock badge and the refused HARM outline + no-entry
+  mark. UiTheme's button, HotButton, NoteButton and MenuItem hover boxes lift 2 px and pressed
+  boxes drop 1 px at the same minimum size (`UiTheme.shifted`). **Call:** the W2 button variants
+  (Primary / Secondary / Tertiary / Danger, label + 32 px, the `StyleBoxLocked` disabled box) are a
+  look and are not ported; main's native disabled boxes stay (ART-1 / ART-10). The no-entry mark
+  is drawn by KitState (main's StatIcon has no NO_ENTRY; the W2 icon redraw is ART-1's).
+- **Focus brackets (v2 §2.10, Appendix C #15, round 31):** `StyleBoxBrackets` at **3 px, 7 px
+  outside** (M13: 2 px at 4 px), INK keyline, never adds to a minimum size; the theme's focus box
+  for Button, OptionButton, CheckButton, CheckBox, NoteButton, MenuItem, LineEdit and LogText
+  (`UiTheme.BRACKET_FOCUS_TYPES`; HotButton inherits Button's). TabBar's tab focus keeps its box.
+  High contrast thickens them to `HC_FOCUS_BORDER` (4 px) in solid FOCUS (area C's HighContrast
+  handles StyleBoxBrackets; C's test reads the brackets now). **Call:** stickers (StickerButton,
+  ZineStamp, the SEND IT DripButton) keep their lime halo for focus and get no brackets (v2:
+  "a focused sticker gets a lime die-cut halo instead"). The 1.03 pad focus scale (`UiFocus`,
+  `focus_scale`, T1) is ported as M13 had it: pad only, headless never scales.
+- **PadGlyph** draws every button of the four sets; its set is area C's
+  `Settings.effective_glyph_set()` (stored choice, or the pad in use under auto) and
+  `detect_set` is C's `Settings.glyph_set_for_joy_name` (one rule set). PadPrompts shows glyph +
+  verb pairs (`glyphs()`); `texts()` still reads "A  Buy" (the glyph's name), so the H23 / ANIM
+  prompt tests are unchanged. **Not ported:** the prompt bar's glass backing and compact mode
+  (W9F looks) and the glyph on SEND IT / the buy stickers (W9F / W8 restyles, ART-3 / ART-4).
+- **UiTip.for_input** (+ `has_mouse_words`, `pad_safe`); FocusTip swaps mouse words on a pad
+  (the safety net). Every player string with a mouse word now has a pad variant: HQ (mini-map,
+  dossier, boosts, crew chips, assets, raid steps), combat (aim hint, card tip), the deck viewer's
+  shred tile, the loadout swaps, the rebind note, and netrun's drag lines through
+  `netrun_scene.drag_tip(kind)` with `DRAG_TIPS_MORE` / `DRAG_TIPS_PAD` (the socket tips'
+  "dragging ..." clause became a drag line; the old one-string keys are gone from strings.csv,
+  re-exported). The M13 tooltip restyle (26-36 columns, body face, title said once) is not
+  ported (a look, ART-10).
+- **Modals:** `PageTransition.open_modal / close_modal / open_modals / modal_open /
+  after_modals`, `MODAL_GROUP` (`rc_modal`), `modal_in` 0.18 s / `modal_out` 0.14 s (T1, new
+  ui_motion entries, REQUIRED_IDS, lab demos `screen modal_open` / `modal_close`; with
+  `focus_scale` → `screen kit_focus` and `button_refused` → `screen kit_refused`). Modals on main:
+  ConfirmDialog (opens itself over a `GlassScrim.backdrop_for` that stops the page's clicks; Yes /
+  No / Esc close through `close_modal`), LoadoutView and DaemonTray (open themselves), the netrun
+  viewers (`_open_modal`). Page changes wait for them: the title's pages, slots, tutorial; the
+  netrun's `_show_current` when the screen changes; the HQ's pad B and quit to title.
+  **Calls:** main's viewers still close at once (`UiFocus.release`: focus returns the same
+  frame, as ANIM made it); W8a's "one direction per material" page rule is not ported (main's
+  ANIM directions stay); PauseMenu is not in the group (it pauses the tree itself).
+  `GlassScrim` + `shaders/glass_blur.gdshader` (from the tag; it includes rc_common) is the
+  v2 SCRIM (#02030A 55% + 6 px blur), opaque `HighContrast.BG` under high contrast.
+- **UiWrap.whole_words**, and no `AUTOWRAP_WORD_SMART` / `ARBITRARY` left under `scripts/`
+  (tested): Labels go through whole_words (never narrower than their longest word), Buttons
+  and the SAVED note wrap at words (`AUTOWRAP_WORD`).
+- **FitScroll** (the kit piece, from W8a) with WF's pre-layout guards, and ScrollHint's
+  `degenerate_view`. WF's cap of the snap reserve at a row's share of the view is **not** ported:
+  main's ANIM-R6 C8 measures a row's share against the view with no snap, and the cap cut the
+  YOUR NODES snap at 2.0 short of the row (`test_anim_r5_city`
+  `test_your_nodes_never_ends_in_a_cut_row`: 32 px of a 44 px row). **Call:** main's ScrollHint holds
+  its view at its own least height (ANIM-R6 C8), which overrode FitScroll's sizing; FitScroll now
+  sets it through `ScrollHint.set_view_min`. No view uses FitScroll yet: the shared panels
+  (TerminalWindow, ZinePanel) adopt it in their restyle (ART-4 / ART-10).
+- **PaperInk** on main's paper pieces: Polaroid (edge, caption, glitch bars), Toast (words, edge,
+  mark), CrewCard (words, edge, HP strip, tape), ZineNote (words, edge, tape) and the subtitle
+  paper (opaque, speaker in INK). CaseFileCard, RunReceipt and AchievementBadge are art-pass only.
+- **MotionSkip:** it still owns the one-press skip; nothing new registers a helper. `kit_state`,
+  `refusal_mark` (the refused flash answers the refused press) and `ui_focus` (the pad focus
+  scale is a focus state) join `test_anim_r6_rules`' NOT_SKIPPABLE list and STYLE_GUIDE 5.5
+  (outside F's files: one line each).
+- **Windowed check** (review pack, title / HQ / Mainframe / Options / Loadout, 1.0, pad and mouse,
+  1280x720): the lime brackets sit 7 px outside the focused menu line and option row; the
+  Mainframe's prompt bar shows the Xbox glyphs (A green, X blue, B red, Menu) beside their verbs;
+  its card tip reads "pick it up and move it"; the Loadout modal shows whole. No ERROR in the logs.
+  Seen there: the pad focus scale on a full-width Options row moves its words about 18 px and puts
+  the brackets past the panel's edge (M13 scaled them too); ART-10's Options restyle should give
+  full-width rows `UiFocus.META_NO_SCALE` or narrower rows.
+- **Visual QA harness:** `tools/visual_qa/review_pack.gd` needed **no change**: it already reads
+  `PageTransition.MODAL_GROUP` and the `GlassScrim` class by name when they exist.
+- **Tests:** `tests/unit/test_art0_kit_states.gd` and `test_art0_kit_words.gd` (fast). Ported:
+  six states (on main's three drawn components), live states (on StickerButton), hover / pressed
+  boxes (main's kinds, no glow asserts: main's normal boxes have no glow), refusal mark, focus
+  brackets (3 px / 7 px), focus scale, cards / tilted controls, the four pad glyph tests, prompts
+  as glyphs, pad wording, mouse words go through for_input, focus tip, pad pages (mouse words
+  only), no mid-word wrap, whole_words, crew card tag at the ceiling, both FitScroll tests, paper
+  inks, paper pieces in and out of high contrast (main's Polaroid / Toast / CrewCard), modals in
+  budget, no page change under a modal, scrim opaque in high contrast. New: refused entry and
+  tier, force_native, brackets on every focus type, high contrast thickens brackets,
+  headless / mouse never scale, glyph set follows Settings, headless modals, the confirm on its
+  scrim with pad reachability inside it, scrim shader include, drag tips have pad lines, the
+  hint ignores a degenerate view. **Dropped** (looks restyled later, or pieces main lacks):
+  from `test_art_w2_components.gd` — `test_every_button_variant_has_every_state_box`,
+  `test_a_standalone_button_is_its_label_plus_32`, `test_menu_item_uses_a_type_step`,
+  `test_disabled_labels_keep_4_5_to_1` (W2 button variants / StyleBoxLocked: ART-1 / ART-10),
+  `test_the_toast_never_overlaps_a_bottom_button`, `test_one_toast_style_for_every_caller`,
+  `test_toast_timings_follow_the_bible` (the W2 toast restyle), `test_tooltips_fold_to_26_to_36_columns_and_long_text_uses_the_body_face`,
+  `test_a_tooltip_never_repeats_its_title` (W2 tooltip restyle), `test_stamp_hold_follows_the_reading_rule`,
+  `test_a_stamp_says_three_words_at_most`, `test_one_banner_per_region_the_rest_queue`,
+  `test_a_zine_stamp_word_never_falls_under_caption` (zine stamp / BannerQueue skins),
+  `test_the_status_glyphs_are_stat_icons`, `test_status_icons_draw_filled_and_open` (W2 icon
+  redraw, ART-1), `test_saved_is_a_type_step_with_4_5_to_1` (SAVED restyle),
+  `test_inputs_emit_expose_value_and_take_focus`, `test_toggles_line_up_16_px_right_of_the_longest_label`,
+  `test_the_tile_picker_moves_its_cursor_with_the_keys` (ZineToggle / ZineSlider / Stepper /
+  TilePicker / CodeField: zine inputs main lacks, ART-10); from `test_art_wf_kit.gd` —
+  `test_tile_names_wrap_at_words_and_fit_at_every_scale`, `test_wrap_words_never_breaks_a_word`
+  (TilePicker), `test_a_sticker_yields_its_type_step_before_passing_its_share`,
+  `test_without_a_cap_a_sticker_grows_as_before`, `test_respin_at_2_is_capped_and_1_0_is_unchanged`
+  (sticker max_share, combat restyle ART-3), `test_the_polaroid_caption_always_fits_whole`,
+  `test_a_polaroid_caption_abbreviates_by_w5s_rule` (W5 caption; main has ANIM-R6 C6's),
+  `test_a_status_stamp_carries_its_stat_icon` (combat stamps, ART-3), `test_paper_pieces_use_the_paper_inks`
+  (CaseFileCard), `test_a_first_run_on_a_deck_starts_the_city_at_quality_1`, `test_the_city_reads_the_deck_tier`
+  (area C / ART-1), `test_tracking_is_px_per_type_step_and_never_rounds_away`,
+  `test_a_tracked_font_carries_the_step_spacing` (area E); from `test_art_w9f_sweep.gd` —
+  `test_every_layout_test_runs_at_the_text_scale_ceiling` (area C), the bracket-letter half of
+  `test_pad_pages_speak_pad_and_show_their_prompt_bar` and `test_a_fight_has_a_pad_prompt_bar_and_glyphs_not_brackets`
+  (SEND IT's glyph and the fight's prompt bar: combat restyle, ART-3), `test_netrun_hookups` (W8b),
+  `test_flatline_is_a_city_context_that_blends_and_gives_the_colour_back`,
+  `test_run_end_greys_the_whole_city_and_hands_it_back`, `test_clear_campaign_progress_forgets_the_lean`
+  (city, ART-5), `test_settle_calls_any_settle_motion_and_the_stages_leave_typing_meta`
+  (W9F run / campaign end stages main lacks), `test_empty_subtitle_band_holds_one_line_and_grows_when_a_line_comes`,
+  `test_a_subtitle_page_never_shrinks_under_caption`, `test_polaroid_caption_band_keeps_the_floor_caption`,
+  `test_spinner_hub_name_fits_the_disc_whole`, `test_spinner_viewer_price_on_upgrade_lettering_and_circle`,
+  `test_modem_cards_window_is_never_a_quarter_empty_in_one_column`, `test_the_upgrade_viewer_stays_on_the_canvas_at_two`
+  (screen restyles, ART-3 / ART-4 / ART-9), `test_lint_export_cuts_text_to_its_scroll_view_and_sees_modals`,
+  `test_lint_report_uses_on_screen_size_and_leaves_out_hidden_text` (area D), `test_reduce_motion_shakes_nothing`
+  (area C); from `test_art_w8a_menus.gd` — `test_glass_window_type_comes_from_the_scale_and_has_a_scrim`,
+  `test_a_long_title_never_widens_its_window`, `test_panels_fit_their_content_and_scroll_past_the_cap`
+  (TerminalWindow / ZinePanel restyle on FitScroll, ART-4 / ART-10), `test_glass_slides_from_the_right_and_paper_drops_whatever_the_caller_asks`
+  (W8a direction rule, not ported), `test_reduce_motion_cross_fades_in_place` (area C), and the title-family
+  look tests (`test_the_logo_is_baked_art_with_a_drip_that_stops_under_reduce_effects`,
+  `test_the_title_has_one_primary_one_note_one_scrawl_taped_to_the_menu`, `test_never_sleep_is_art_with_a_subtitle_in_other_languages`,
+  `test_slots_are_case_files_and_delete_is_danger_with_a_confirm`, `test_options_use_kit_components_one_size_and_aligned_toggles`,
+  `test_codex_is_a_two_column_spread_of_short_lines_with_glyphs`, `test_stats_show_earned_and_unearned_badges_a_grid_and_receipts`,
+  `test_pause_fits_its_content_one_primary_and_the_code_in_a_field`, `test_title_pages_fit_at_every_text_scale`,
+  `test_every_option_row_stays_inside_the_view_focused_with_pad_or_mouse`: ART-10).
+### 2026-10-05 — Art direction — ART-0 names pass, part 3
+Applies "2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands" (ART-0 B3).
+Internal names follow the display names; no aliases, no migrations (old saves naming `shield_5`,
+`deploy_1` or `miss` fail to load through the existing "can't load" path). `tests/unit/test_names_pass.gd`
+(PART3 table) sweeps player strings and code for the old words.
+- **Slice programs (ruling 1).** `RC.SliceType` is { SHIM, OVERFLOW, DEFRAG, DETOUR, SANDBOX, TROJAN,
+  HOTFIX, INFECT, NULL } (same positions, so content keeps its ints). Content ids and files:
+  `sandbox_5`, `sandbox_8` (were shield_*), `trojan_1` (deploy_1), `null` (miss); display names
+  "Sandbox 5", "Sandbox 8", "Trojan 1", "Null"; their wheel sub-resources (`*_slot_null`, ...),
+  the generators under `tools/content_gen/`. Enums and identifiers that named the slice follow:
+  `RC.SlicePick.RANDOM_NON_NULL`, `RC.Trigger.ON_NULL_SLICE`, `Palette.SLICE_NULL` /
+  `SLICE_TROJAN`, `CombatState.null_resolved` / `RunState.null_resolved` (Cold Exit), the combat
+  event `"null"` (was "miss"), the operative bark trigger `bark:null`, the motion id
+  `precision_null_static` (table, REQUIRED_IDS, motion lab demo `null`), `WheelView.play_null_static`.
+  Schema: `CampaignConfigData.miss_slice_overwrite_price` → `null_slice_overwrite_price` (150) and
+  `mirror_deploy_base` → `mirror_trojan_base` (6), checked in `schema_smoke_checks.gd` `_art0` with
+  the enum's keys.
+- **Words and tags.** Whole words (`Palette.SLICE_WORDS`) SANDBOX / TROJAN / NULL; compact tags
+  (`Palette.SLICE_NAMES`) **SBOX / TRJN / NULL**, four letters like part 2's SHIM / OVFL / DFRG / DTOR /
+  HFIX / INFC, so they take the room those tags already fit in at text size 2.0 (the mono face:
+  test `test_b3_the_new_tags_fit_like_the_others_at_text_size_2`). Player text names the
+  programs the way part 2 does: upper case in rules text ("The NULL slice restores 2 RAM",
+  "DEFRAG and SANDBOX slices", "non-NULL slice", codex "SANDBOX: gains shield."), title case in
+  wheel lists ("Shim, Shim, Defrag, Trojan, Trojan, Null"), the barks "Null. Rerouting power.",
+  "Perfect Trojan. Something of mine is inside theirs now."; GDD 2.3, 2.4, 2.6, 5.2, 6.2, 10,
+  11 and A.3 follow (the v0.9 change line "Miss precision tier removed" is history and stays).
+- **Kept meanings (allow-listed in the sweep).** *Shield* the resource: block / shield, the
+  shield cap 15, "+%d SHIELD", "SHIELD %d", hubs that "gain 4 shield", Shield Wall, Shield Cache,
+  EffectType.GAIN_SHIELD; a SANDBOX slice *gains shield*. *Deploy* the verb: drones and Armory
+  assets ("Deploy armory asset"), EffectType.DEPLOY_DRONE, the `"deploy"` combat event and
+  `bark:deploy` (a drone deployed, by a TROJAN slice or a card). *Miss* in prose: "Miss a payment",
+  "the cameras miss", "make a miss count", the precision rule "no miss tier".
+- **Five Heat bands (ruling 2).** COOL / NOTICED / FLAGGED / HUNTED / PURGE, starting at the MAJOR
+  levels and the PURGE level of `heat_thresholds` (25 / 50 / 75 / 100); no threshold or number
+  changed and none is written in code. New `CampaignConfigData.heat_band_levels()` (a method, no
+  field; smoke-checked in `_art0`) and `HeatRules.band_levels(campaign, config)`; the HQ's
+  wanted poster and the combat top bar pass the latter. `HeatPoster.BAND_WORDS` gains "purge"
+  (the index caps follow the array, no more `3`); `Palette.HEAT_BAND_COLORS` gains a fifth entry,
+  HARM again: PURGE reuses HUNTED's colour (and the poster's red banner, by its existing clamp)
+  until ART-1 with its own word. Call: the PURGE band starts where the Purge actually fires,
+  so at ICE 17+ (PURGE_THRESHOLD 90) it reads PURGE from 90; `Palette.heat_band` without a
+  campaign reads the config's 100. Unchanged: `CampaignState.heat_majors_crossed` (rules
+  scaling, CORRUPTED) and the HQ backdrop's search lights (MAJOR count), and `consequence()`
+  (the MAJOR modifiers in force; the PURGE event text is a one-time event). GDD 4.3: the
+  duplicated "Bands" line is one line, with the ICE 17 note. Tests:
+  `test_b3_every_heat_band_boundary_maps_to_its_word` (24/25, 49/50, 74/75, 99/100),
+  `test_b3_the_poster_shows_purge_at_100`, `test_b3_the_purge_band_starts_where_the_purge_fires`;
+  `test_heat_color_bands_follow_the_config_majors` caps at PURGE now.
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
 Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
@@ -199,6 +525,52 @@ names follow the display words; no aliases, no migrations.
 - Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
+
+### 2026-10-05 — Designer rulings: D10, D13, D14 confirmed; the art pass design is correct
+1. **D10, D13, D14 confirmed** at their plan defaults: title verbs BREACH / DISABLE / OVERTHROW with
+   **SIMULATE** for the tutorial; an "Always show all nodes" setting with hidden-node visibility on the
+   netrun map; the netrun presentation rules of plan §3.1 D14 (within the current GDD 4.2 rules).
+2. **Standing ruling: assume the art pass design is correct.** From now on, where a view, word, layout,
+   look or presentation rule differs between the game and ART_BIBLE v2 / the locked concepts
+   (`docs/concepts/DIRECTION_REVIEW.md` locks, `docs/art_reference/`), the art pass wins without asking the
+   designer; the change is logged in the area's DECISIONS entry and any GDD presentation line is updated
+   citing this ruling. Mechanics the art shows but the rules do not have (plan §3.2 G1–G16) still follow
+   ruling 8 of pause point 0 (re-evaluated after M14).
+
+### 2026-10-05 — CI paused for M14 (designer: "stop those CI failures")
+GitHub CI (`.github/workflows/ci.yml`) ran the whole suite in one process on every push to main; with
+M14's frequent pushes each run outran the 30-minute job limit and was cancelled (reported as failures),
+and the runs queued behind each other. The trigger is now `workflow_dispatch` only (run by hand from the
+Actions tab), with a concurrency group that cancels a superseded run. Restore `push: [main]` and
+`pull_request` after ART-12, together with the one M14 full-suite run; consider sharding the CI suite
+(`tools/run_tests.py -j 4`) instead of single-process GUT so it fits the limit.
+
+### 2026-10-05 — Designer rulings: D15–D17 defaults; Sonnet for mechanical tasks
+1. **D15–D17 confirmed at their plan defaults** (plan §3.1): D15 combat HUD v4 result chips beside each HP
+   replace the forecast tags and NEXT plates — the chip is the preview, GDD 2.10 still holds; D16 every
+   card-caused effect stems from the card's slap and dissolve on the target wheel, never from the hand;
+   D17 boss fight backdrop = the corp HQ, regular fights at the target Site, fight won → the building's
+   lights turn Cell colours. GDD 2.10 / 9.2 wording follows in Group 2's DECISIONS entries.
+2. **Agent models:** mechanical tasks (renames and sweeps, docs landing, test re-pointing, lint-baseline
+   and merge follow-ups, wording-only docs) run on Sonnet; visual, rules-sensitive and judgment work
+   (shaders, view ports, the city, merges touching ANIM motion, the audit) stay on Opus.
+
+### 2026-10-05 — Designer ruling: groups in parallel, fast checks only, done within days
+The designer asked to start ART-2 (Group 2) in parallel with Group 1, to skip every non-fast test run and
+the audit until **all** art groups are done, and to finish M14 within a few days. From now:
+- **Checks during M14:** only the fast checks (`checks_fast.sh`) at hand-back and at every merge, plus each
+  agent's own test scripts. **No full-suite run per group.** One full-suite run (in isolation) and the one
+  audit loop happen after ART-12, before "M14 complete". Supersedes item 1 of "one full run, one audit at
+  the end" for the groups; its item 2 stands.
+- **Groups overlap:** a group starts before the previous one merges. Its agents build on main as it is and
+  `git merge main` whenever the orchestrator says a foundation landed (palette/theme 1A, material kit 1B,
+  glyphs 1C, city spike 1D); views switch to the new foundations as they arrive.
+- **Designer reviews are non-blocking:** each group's report goes to the designer when it lands; work on
+  the next group continues meanwhile; rulings are applied as they come.
+- **Agent cap raised** from 4–5 to about 9 at once; windowed captures limited to 1 window per agent while
+  more than 5 agents run.
+- **Pending presentation rulings** for Group 2 (plan §3.1 D15, D16, D17) are built on their plan defaults
+  and listed in the next designer report for confirmation.
 
 ### 2026-10-05 — Designer ruling: one full run, one audit at the end
 1. **One full-suite run** instead of three: each ART group (and ART-0) ends with one full run in isolation
@@ -5882,8 +6254,40 @@ and annotated in the GDD where it changes a rule.
   - Also: the see-through band was moved to lod 1.50–1.595 so that the Grid is solid and the raid
     sits at 0.68. Say if the bible's 1.45–1.75 was meant literally.
   - Tier 1 still needs a measurement on a Steam Deck.
+- **ART-1 1A: the Daemon family MISS, the PURGE look, the gunmetal (2026-10-05):** ART_BIBLE v2
+  §2.6 calls the family that fires on the Miss slice MISS; the slice is NULL since the
+  2026-10-05 ruling, so the token and id follow it (`DAEMON_NULL`, `&"null"`). Say if the family
+  word should stay MISS. HEAT_PURGE uses HUNTED's colour until the art gives PURGE its own; §2.7's
+  "gunmetal" has no value (#3A4048 picked). `Palette.marker()` now returns Anton (Permanent
+  Marker is grease pencil only); the screens that still letter in it read as Anton until their
+  ART-n restyle.
 
 - **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
+- **Glyph concept slice after M14 (designer, 2026-10-05, from the two ART-1 1C questions below):** draw
+  glyphs for Heat, Cycles, Schematics and custom effects, and redraw the 16 px twins in the Firmware /
+  Daemon set; both defaults hold for M14 (pending stand-in; twins allow-listed). Scheduled with the other
+  post-M14 concept slice (the Cell's own crest).
+- ~~**Card pictograms with no glyph yet (2026-10-05, ART-1 1C):**~~ resolved: default (see the glyph concept slice above). Original note: four card effect types have no glyph in
+  the bible's set: `effect_modify_heat` (Heat up/down), `effect_gain_cycles` (Cycles),
+  `effect_gain_schematics` (Schematics) and `effect_custom` (a custom handler's own effect; the card
+  shows its tag). Default: they map to the `pending` stand-in (a neutral rounded square, bible 3.5's
+  "rounded square = neutral" badge shape, not new art) in `content/config/glyph_table.tres`, and the cards
+  keep their word tags. Say if you want glyphs drawn for Heat, Cycles and Schematics (they would join
+  the atlas and the 16 px check).
+- ~~**16 px twins in the Firmware / Daemon set (2026-10-05, ART-1 1C):**~~ resolved: default (see the glyph concept slice above). Original note: the 16 px rule (bible 5.2) run over
+  the whole atlas (114 glyphs) finds 15 pairs above 0.68 besides the bible's known borderlines
+  (CITATION / Phantom 0.69, CLEANSE / BLOCK 0.68). They all involve the round 33/34 Firmware and
+  Daemon glyphs or the Ghost core, which were never scored against the round 17 set: Ghost core /
+  Shield Cache 0.75, No-damage / Shield Cache 0.72, Bulkhead / Shield Cache 0.72, Respin / Bulkhead 0.71,
+  RAM / Bulkhead 0.71, Ghost core / Bulkhead 0.71, CLEANSE / Bulkhead 0.71, Snap / Shield Cache 0.70,
+  Respin / Hardened 0.70, Ghost core / Hardened 0.70, Ghost core / RAM 0.70, Corrupt segment / Bulkhead 0.70,
+  Ghost core / No-damage 0.69, Barbed Wire / Tracer 0.69, CLEANSE / Hardened 0.68. They are compact
+  round or square blobs at 16 px. Default: drawn as the concepts have them and listed in the table's
+  `twin_exceptions`, so any new twin fails `test_the_16_px_rule_holds_over_the_whole_atlas`; most
+  never share a context (chips, Daemon tiles, card pictos). Say if any should be redrawn.
+
+- ~~**D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):**~~ resolved: five bands
+  (DECISIONS "Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands"; built by B3). Original note: the plan's "old FLAGGED →
   HUNTED, old NOTICED → FLAGGED, new NOTICED = a couple of alarms" comes from the concept rounds
   (DIRECTION_REVIEW round 21: the combat backdrop's intensity dialled down a band). ART_BIBLE v2 §2.8
   and §3.15 already state the result: COOL 0–24, NOTICED 25+ (three alarm beacons on side buildings,

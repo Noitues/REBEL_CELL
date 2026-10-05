@@ -4,13 +4,13 @@ extends GutTest
 
 var _atk6: SliceData
 var _def10: SliceData
-var _miss: SliceData
+var _null: SliceData
 
 
 func before_each() -> void:
 	_atk6 = CombatFixture.slice(&"g_atk6", RC.SliceType.SHIM, 6)
 	_def10 = CombatFixture.slice(&"g_def10", RC.SliceType.DEFRAG, 10, RC.TargetRule.SELF)
-	_miss = CombatFixture.slice(&"g_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"g_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 
 
 func _player_class(with_ring: bool) -> ClassData:
@@ -24,7 +24,7 @@ func _player_class(with_ring: bool) -> ClassData:
 
 func test_pointer_rule_hits_every_pointer_of_the_target_wheel() -> void:
 	var cls := _player_class(false)
-	var boss := CombatFixture.enemy(&"g_two_pointers", 100, CombatFixture.wheel([_miss, _miss, _miss, _miss, _miss, _miss], null, [0, 15]))
+	var boss := CombatFixture.enemy(&"g_two_pointers", 100, CombatFixture.wheel([_null, _null, _null, _null, _null, _null], null, [0, 15]))
 	var s := CombatSession.start(CombatFixture.resolver([cls, boss]), cls.id, [boss.id], 5)
 	CombatFixture.land(s.state.player, 0)
 	var r := s.apply(CombatAction.end_turn())
@@ -43,8 +43,8 @@ func test_enemy_with_several_pointers_attacks_from_each() -> void:
 
 func test_satellite_docked_on_the_resolved_slice_takes_the_hit() -> void:
 	var cls := _player_class(false)
-	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_miss, _miss]))
-	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_miss, _miss, _miss, _miss, _miss, _miss]), [CombatFixture.spawn(drone, 2)])
+	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_null, _null]))
+	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_null, _null, _null, _null, _null, _null]), [CombatFixture.spawn(drone, 2)])
 	var s := CombatSession.start(CombatFixture.resolver([cls, drone, host]), cls.id, [host.id], 5)
 	var sat := s.state.satellites_of(&"enemy_0")[0]
 	assert_eq(sat.dock_slot, 2)
@@ -59,8 +59,8 @@ func test_satellite_docked_on_the_resolved_slice_takes_the_hit() -> void:
 
 func test_satellite_on_another_slice_does_not_guard() -> void:
 	var cls := _player_class(false)
-	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_miss, _miss]))
-	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_miss, _miss, _miss, _miss, _miss, _miss]), [CombatFixture.spawn(drone, 2)])
+	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_null, _null]))
+	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_null, _null, _null, _null, _null, _null]), [CombatFixture.spawn(drone, 2)])
 	var s := CombatSession.start(CombatFixture.resolver([cls, drone, host]), cls.id, [host.id], 5)
 	CombatFixture.land(s.state.player, 0)
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 3)
@@ -71,7 +71,7 @@ func test_satellite_on_another_slice_does_not_guard() -> void:
 func test_satellite_attacks_the_player_after_its_host() -> void:
 	var cls := _player_class(false)
 	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_atk6, _atk6]))
-	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_atk6, _miss, _miss, _miss, _miss, _miss]), [CombatFixture.spawn(drone, 4)])
+	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_atk6, _null, _null, _null, _null, _null]), [CombatFixture.spawn(drone, 4)])
 	var s := CombatSession.start(CombatFixture.resolver([cls, drone, host]), cls.id, [host.id], 5)
 	CombatFixture.land(s.state.get_combatant(&"enemy_0"), 0)
 	var r := s.apply(CombatAction.end_turn())
@@ -106,7 +106,7 @@ func test_pierce_ignores_block_and_shield_but_not_satellites() -> void:
 
 func test_pierce_still_hits_the_bodyguard_satellite() -> void:
 	var cls := _player_class(true)
-	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_miss, _miss]))
+	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_null, _null]))
 	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_def10, _def10, _def10, _def10, _def10, _def10]), [CombatFixture.spawn(drone, 1)])
 	var s := CombatSession.start(CombatFixture.resolver([cls, drone, host]), cls.id, [host.id], 5)
 	CombatFixture.land(s.state.player, 0)
@@ -120,7 +120,7 @@ func test_pierce_still_hits_the_bodyguard_satellite() -> void:
 
 func test_shield_absorbs_after_block_without_pierce() -> void:
 	var cls := _player_class(false)
-	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.miss_wheel())
+	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.null_wheel())
 	var s := CombatSession.start(CombatFixture.resolver([cls, host]), cls.id, [host.id], 5)
 	var enemy := s.state.get_combatant(&"enemy_0")
 	enemy.block = 2
@@ -137,9 +137,9 @@ func test_shield_absorbs_after_block_without_pierce() -> void:
 func test_flip_carries_docked_satellites_to_their_mirrored_slot() -> void:
 	var flip := CombatFixture.card(&"g_flip", [CombatFixture.effect(RC.EffectType.FLIP, RC.EffectTarget.TARGET_WHEEL, 0, RC.RingScope.WHOLE_WHEEL)])
 	var deck: Array[CardData] = [flip]
-	var cls := CombatFixture.operative_class(&"g_flipper", 60, CombatFixture.miss_wheel(), deck)
-	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_miss, _miss]))
-	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_atk6, _def10, _miss, _miss, _miss, _miss]), [CombatFixture.spawn(drone, 1)])
+	var cls := CombatFixture.operative_class(&"g_flipper", 60, CombatFixture.null_wheel(), deck)
+	var drone := CombatFixture.enemy(&"g_drone", 5, CombatFixture.wheel([_null, _null]))
+	var host := CombatFixture.enemy(&"g_host", 40, CombatFixture.wheel([_atk6, _def10, _null, _null, _null, _null]), [CombatFixture.spawn(drone, 1)])
 	var s := CombatSession.start(CombatFixture.resolver([cls, drone, host]), cls.id, [host.id], 5)
 	var e := s.state.get_combatant(&"enemy_0")
 	CombatFixture.land(e, 1)
@@ -150,7 +150,7 @@ func test_flip_carries_docked_satellites_to_their_mirrored_slot() -> void:
 	assert_eq(e.wheel.slot_slice_ids[5], &"g_def10", "slot 1 content moved to slot 5")
 	assert_eq(e.wheel.slice_statuses[5], RC.Status.CORRUPTED, "status moved with its slice")
 	assert_eq(s.state.satellites_of(&"enemy_0")[0].dock_slot, 5, "drone rode along")
-	assert_eq(e.wheel.slot_slice_ids[e.wheel.slice_at(0)], &"g_miss", "the slice opposite DEF is now under the pointer")
+	assert_eq(e.wheel.slot_slice_ids[e.wheel.slice_at(0)], &"g_null", "the slice opposite DEF is now under the pointer")
 	assert_null(s.state.satellite_at(e.id, e.wheel.slice_at(0)), "no guard under the pointer after the flip")
 
 

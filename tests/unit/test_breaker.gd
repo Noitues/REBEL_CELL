@@ -22,10 +22,10 @@ func _enemy(s: CombatSession) -> CombatantState:
 	return s.state.get_combatant(&"enemy_0")
 
 
-func test_breaker_wheel_is_crit_atk_atk_atk_def_miss() -> void:
+func test_breaker_wheel_is_overflow_shim_shim_shim_defrag_null() -> void:
 	var s := _session()
 	var ids := s.state.player.wheel.slot_slice_ids
-	assert_eq(ids, [&"overflow_12", &"shim_6", &"shim_6", &"shim_6", &"defrag_5", &"miss"])
+	assert_eq(ids, [&"overflow_12", &"shim_6", &"shim_6", &"shim_6", &"defrag_5", &"null"])
 	assert_eq(s.state.player.hp, 60)
 	assert_eq(s.state.ram, 6)
 	assert_eq(s.state.player.wheel.hub_id, &"breaker_core")

@@ -35,7 +35,7 @@ func test_card_costs_match_a1() -> void:
 func test_collections_agent_matches_a3() -> void:
 	var e := _enemy(&"collections_agent")
 	assert_eq(e.hp, 40)
-	assert_eq(_slice_ids(e.wheel), [&"shim_8", &"shim_8", &"defrag_6", &"dose", &"overflow_14", &"miss"])
+	assert_eq(_slice_ids(e.wheel), [&"shim_8", &"shim_8", &"defrag_6", &"dose", &"overflow_14", &"null"])
 	assert_eq(e.spawns.size(), 1)
 	assert_eq(e.spawns[0].satellite.id, &"collections_drone")
 	assert_eq(e.spawns[0].dock_slot, 1)
@@ -48,7 +48,7 @@ func test_collections_agent_matches_a3() -> void:
 func test_compliance_officer_matches_a3() -> void:
 	var e := _enemy(&"compliance_officer")
 	assert_eq(e.hp, 50)
-	assert_eq(_slice_ids(e.wheel), [&"shim_7", &"shim_7", &"defrag_6", &"overflow_12", &"shim_7", &"miss"])
+	assert_eq(_slice_ids(e.wheel), [&"shim_7", &"shim_7", &"defrag_6", &"overflow_12", &"shim_7", &"null"])
 	assert_eq(e.wheel.hub.id, &"compliance_lock")
 	assert_eq(e.wheel.hub.hub_resistance, 3)
 
@@ -56,11 +56,11 @@ func test_compliance_officer_matches_a3() -> void:
 func test_dosage_dispenser_matches_a3() -> void:
 	var e := _enemy(&"dosage_dispenser")
 	assert_eq(e.hp, 38)
-	assert_eq(_slice_ids(e.wheel), [&"dose", &"shim_6", &"dose", &"defrag_5", &"shim_6", &"miss"])
+	assert_eq(_slice_ids(e.wheel), [&"dose", &"shim_6", &"dose", &"defrag_5", &"shim_6", &"null"])
 	var dose := ContentRegistry.get_content(&"dose") as SliceData
 	assert_eq(dose.slice_type, RC.SliceType.INFECT)
 	assert_eq(dose.extra_effects[0].effects[0].status, RC.Status.CORRUPTED)
-	assert_eq(dose.extra_effects[0].effects[0].slice_pick, RC.SlicePick.RANDOM_NON_MISS)
+	assert_eq(dose.extra_effects[0].effects[0].slice_pick, RC.SlicePick.RANDOM_NON_NULL)
 
 
 func test_session_against_collections_agent_docks_the_drone_on_slot_1() -> void:

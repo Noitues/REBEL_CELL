@@ -7,9 +7,9 @@
 [ext_resource type="Resource" path="res://content/slices/defrag_8.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/overflow_16.tres" id="s_crit"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 
-; Claims Adjuster, elite (GDD A.3): 90 HP; Shim 10, Defrag 8, Overflow 16, Shim 10, Dose, Miss;
+; Claims Adjuster, elite (GDD A.3): 90 HP; Shim 10, Defrag 8, Overflow 16, Shim 10, Dose, Null;
 ; two pointers at ticks 0 and 15.
 
 [sub_resource type="Resource" id="slot_atk"]
@@ -28,14 +28,14 @@ slice = ExtResource("s_crit")
 script = ExtResource("3")
 slice = ExtResource("s_dose")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_atk"), SubResource("slot_dose"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_atk"), SubResource("slot_dose"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0, 15)
 
 [resource]

@@ -250,7 +250,7 @@ func test_rank_2_breaker_fights_with_the_mk2_core() -> void:
 	var s := CombatSession.start(resolver, &"breaker", [&"compliance_officer"], 3, &"rank:1", 0, {"hub_id": "breaker_core_mk2"})
 	assert_eq(s.state.player.wheel.hub_id, &"breaker_core_mk2")
 	assert_eq(resolver.fx.spin_bonus_of(s.state.player), 2, "+2 spin")
-	var dummy := CombatFixture.enemy(&"mk_dummy", 200, CombatFixture.miss_wheel())
+	var dummy := CombatFixture.enemy(&"mk_dummy", 200, CombatFixture.null_wheel())
 	var s2 := CombatSession.start(CombatFixture.resolver([dummy]), &"breaker", [&"mk_dummy"], 3, &"rank:1", 0, {"hub_id": "breaker_core_mk2"})
 	CombatFixture.land(s2.state.player, 1, 0)
 	CombatFixture.land_inner(s2.state.player, 2)

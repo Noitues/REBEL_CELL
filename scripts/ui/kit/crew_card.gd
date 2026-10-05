@@ -48,7 +48,7 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	var s := Settings.text_scale
 	var compact := is_compact()
 	custom_minimum_size = Vector2(CARD_WIDTH * (minf(s, CARD_MAX_SCALE) + maxf(0.0, s - BIG_FROM) * BIG_GROW if compact else s), 0)
-	var style := UiTheme.box(Palette.NOTE_PAPER, Color(Palette.INK, 0.45), 1, 10, 12)
+	var style := UiTheme.box(Palette.NOTE_PAPER, edge_color(), roundi(edge_width()), 10, 12)
 	style.shadow_color = Palette.SHADOW
 	style.shadow_size = 7
 	style.shadow_offset = Vector2(4, 5)
@@ -66,29 +66,29 @@ func _init(p_name: String, p_class: String, rank: int, hp: int, max_hp: int, det
 	name_label.text = p_name.to_upper()
 	name_label.add_theme_font_override("font", Palette.marker())
 	name_label.add_theme_font_size_override("font_size", roundi(NAME_SIZE * s))
-	name_label.add_theme_color_override("font_color", Palette.INK)
+	name_label.add_theme_color_override("font_color", text_ink())
 	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	box.add_child(name_label)
 	var tags := Label.new()
 	tags.text = tr("// %s // RANK %d") % [p_class.to_upper(), rank]
-	tags.add_theme_color_override("font_color", Color(Palette.INK, 0.75))
+	tags.add_theme_color_override("font_color", PaperInk.text(Color(Palette.INK, TAGS_ALPHA)))
 	tags.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	tags.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
-	tags.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(tags)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	box.add_child(tags)
 	var hp_strip := Control.new()
 	hp_strip.custom_minimum_size = Vector2(0, 16)
 	hp_strip.draw.connect(func() -> void:
 		var r := Rect2(Vector2(0, 4), Vector2(hp_strip.size.x, 8))
-		hp_strip.draw_rect(r, Color(Palette.INK, 0.15))
+		hp_strip.draw_rect(r, PaperInk.opaque(Color(Palette.INK, HP_BACK_ALPHA), Palette.NOTE_PAPER))
 		hp_strip.draw_rect(Rect2(r.position, Vector2(r.size.x * hp_frac, r.size.y)), Palette.CELL_PINK if hp_frac < 0.35 else Color("#2a8f3c"))
-		hp_strip.draw_rect(r, Color(Palette.INK, 0.6), false, 1.0))
+		hp_strip.draw_rect(r, PaperInk.edge(Color(Palette.INK, HP_EDGE_ALPHA)), false, PaperInk.edge_width(1.0)))
 	box.add_child(hp_strip)
 	var info := Label.new()
 	info.text = detail
-	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(info)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	info.custom_minimum_size.x = custom_minimum_size.x - 20.0 * s
-	info.add_theme_color_override("font_color", Palette.INK)
+	info.add_theme_color_override("font_color", text_ink())
 	info.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
 	info.add_theme_font_size_override("font_size", roundi(DETAIL_SIZE * s))
 	box.add_child(info)
@@ -151,7 +151,7 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(size.x * 0.5 - 24, -7, 48, 14), Palette.NOTE_TAPE)
+	draw_rect(Rect2(size.x * 0.5 - 24, -7, 48, 14), PaperInk.opaque(Palette.NOTE_TAPE, Palette.NOTE_PAPER))
 	if dead or stamp_text != "":
 		var t := stamp_text if stamp_text != "" else tr("FLATLINED")
 		draw_set_transform(Vector2(size.x * 0.5, polaroid.position.y + polaroid.size.y * 0.55), -0.3, Vector2.ONE)
@@ -163,3 +163,26 @@ func _draw() -> void:
 			fs = maxi(STAMP_MIN_FONT_SIZE, floori(fs * (STAMP_WIDTH - 8.0) / w))
 		draw_string(Palette.display(), Vector2(-STAMP_WIDTH * 0.5, 10), t, HORIZONTAL_ALIGNMENT_CENTER, STAMP_WIDTH, fs, Color(Palette.CELL_PINK, 0.9))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+# --- High contrast on paper (ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6)) -------------------------
+## The dossier's soft edge, class tags and HP strip alphas out of high contrast.
+const EDGE_ALPHA := 0.45
+const TAGS_ALPHA := 0.75
+const HP_BACK_ALPHA := 0.15
+const HP_EDGE_ALPHA := 0.6
+
+
+## The dossier's words: INK on paper (7:1 under high contrast too).
+func text_ink() -> Color:
+	return PaperInk.text(Palette.INK)
+
+
+## The paper's edge: soft INK, or opaque INK under high contrast.
+func edge_color() -> Color:
+	return PaperInk.edge(Color(Palette.INK, EDGE_ALPHA))
+
+
+## The paper's edge width (px): 1, or PaperInk.EDGE_PX under high contrast.
+func edge_width() -> float:
+	return PaperInk.edge_width(1.0)

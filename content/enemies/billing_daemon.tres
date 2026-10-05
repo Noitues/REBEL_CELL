@@ -6,9 +6,9 @@
 [ext_resource type="Resource" path="res://content/slices/shim_7_drain.tres" id="s_atk"]
 [ext_resource type="Resource" path="res://content/slices/defrag_6.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/overflow_12_drain.tres" id="s_crit"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 
-; Billing Daemon (GDD A.3): 42 HP; Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Miss; attacks
+; Billing Daemon (GDD A.3): 42 HP; Shim 7, Shim 7, Defrag 6, Overflow 12, Shim 7, Null; attacks
 ; drain 1 RAM (Crit drains 2).
 
 [sub_resource type="Resource" id="slot_atk"]
@@ -23,14 +23,14 @@ slice = ExtResource("s_def")
 script = ExtResource("3")
 slice = ExtResource("s_crit")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_atk"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_crit"), SubResource("slot_atk"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
 
 [resource]

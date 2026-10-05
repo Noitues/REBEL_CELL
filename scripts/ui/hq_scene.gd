@@ -1113,7 +1113,8 @@ func open_settings() -> void:
 	_settings_panel = PauseMenu.new()
 	_settings_panel.position = Vector2((size.x - PauseMenu.MENU_SIZE.x) / 2.0, SubtitleStrip.top_below(PAUSE_TOP))  # under the subtitle band (H22: the top bar grows with its words)
 	_settings_panel.resumed.connect(open_settings)
-	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); RunManager.go_to_title())
+	# ART-0 F (ported from art-pass W8a, §10 rule 6): the open modals close before the title.
+	_settings_panel.quit_to_title.connect(func() -> void: open_settings(); PageTransition.after_modals(self, RunManager.go_to_title))
 	add_child(_settings_panel)
 	get_tree().paused = false
 
@@ -1140,7 +1141,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	# elsewhere.
 	if event is InputEventJoypadButton and event.is_action_pressed("ui_cancel") and not event.is_action("open_settings") and panel_name in BACK_PANELS \
 			and _settings_panel == null and not has_node("LoadoutView") and not has_node("DaemonTray"):
-		show_hq()
+		# ART-0 F (ported from art-pass W8a, §10 rule 6): a modal never outlives a page change.
+		PageTransition.after_modals(self, show_hq)
 		get_viewport().set_input_as_handled()
 
 
@@ -1387,7 +1389,7 @@ func show_hq() -> void:
 	right.add_theme_constant_override("separation", 10)
 	var poster := HeatPoster.new(true)
 	poster.hot_color = Palette.corp_color(c.corporation_id)
-	poster.set_heat(c.heat, cfg.heat_max, cfg.major_heat_levels())
+	poster.set_heat(c.heat, cfg.heat_max, HeatRules.band_levels(c, cfg))
 	poster.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	poster.tooltip_text = heat_tip()
 	var lead := selected_op()
@@ -1395,7 +1397,7 @@ func show_hq() -> void:
 		poster.wanted = PortraitArt.operative_subject(lead.class_id, lead.id, lead.name)
 	# The note shows whole lines at any text size (H21 #15: at 1.6 its last line was cut in
 	# half); the rest scrolls.
-	var line_h := Palette.mono().get_height(roundi(UiTheme.BASE_SIZE * Settings.text_scale))
+	var line_h := UiTheme.line_px(Palette.mono(), roundi(UiTheme.BASE_SIZE * Settings.text_scale))
 	var radio := ZineNote.new(tr("PIRATE RADIO"), Vector2(RADIO_WIDTH, RADIO_TOP + RADIO_BOTTOM + line_h * RADIO_LINES))
 	radio.name = "PirateRadio"
 	var dj_line := Dialogue.line("dj", RC.Voice.NARRATOR, c.corporation_id, &"", c.runs_started + c.runs_completed * 7)
@@ -1457,7 +1459,7 @@ func show_hq() -> void:
 		var raid_btn := _icon(_button(tr("RAID PENDING: %s (%d)") % [TextDb.t(raid, "display_name"), c.pending_raids.size()], show_raid), StatIcon.RAIDS)
 		raid_btn.name = "RaidPending"
 		# Long raid names wrap in the menu column instead of widening the page at big text.
-		raid_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		raid_btn.autowrap_mode = TextServer.AUTOWRAP_WORD
 		raid_btn.add_theme_color_override("font_color", Palette.CELL_PINK)
 		_add_tip(actions, raid_btn, TextDb.t(raid, "warning_text"))
 	var scrub := HeatRules.scaled_delta(c, -cfg.heat_purchase_amount, cfg)
@@ -1467,11 +1469,11 @@ func show_hq() -> void:
 	scrub_btn.name = "ScrubHeat"
 	# ART-0 C (text scale 2.0): the priced lines wrap in the menu column like RAID PENDING
 	# (at 2.0 "Scrub Heat · pay" alone widened the page past the screen).
-	scrub_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	scrub_btn.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_add_tip(actions, scrub_btn, tr("Costs %d Schematics (you have %d): Heat changes by %d.") % [scrub_price, c.schematics, scrub])
 	if c.grid.home_integrity < c.grid.home_max_integrity:
 		var patch_btn := _icon(_button(tr("Patch home %s (%d)") % [TextDb.signed(c.grid.home_max_integrity - c.grid.home_integrity), CampaignRules.home_repair_price(c, cfg)], repair_home), StatIcon.HOME)
-		patch_btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # ART-0 C: as Scrub Heat
+		patch_btn.autowrap_mode = TextServer.AUTOWRAP_WORD  # ART-0 C: as Scrub Heat
 		_add_tip(actions, patch_btn, tr("Repair the home server to full integrity."))
 	_add_tip(actions, _icon(_button(tr("Codex"), show_codex), StatIcon.CODEX), tr("Everything the Cell knows: slices, cards, Firmware, Daemons, rules."))
 	var settings_btn := _hint_button(tr("Settings"), &"open_settings", open_settings)
@@ -1506,7 +1508,7 @@ func show_hq() -> void:
 	mini.track_seen = true  # ANIM-5: a Site whose status changed since last seen pulses once
 	mini.show_grid(c, RunManager.corporation, _threat_paths())
 	mini.site_clicked.connect(func(id: StringName) -> void: selected_site = id; show_grid())
-	mini.tooltip_text = tr("Click a Site to open it on the City Grid.")
+	mini.tooltip_text = UiTip.for_input(tr("Click a Site to open it on the City Grid."), tr("Press a Site to open it on the City Grid."))
 	monitor.body.add_child(mini)
 	cols.add_child(right)
 	var crew := TerminalWindow.new(tr("CREW // ROSTER"), Palette.CELL_PINK)
@@ -1525,7 +1527,8 @@ func show_hq() -> void:
 		row.name = "Crew_%s" % op.id
 		row.set_operative(op.class_id, op.id)
 		row.tooltip_text = UiTip.fold("%s%s%s" % [TextDb.t(cls_data, "description") if cls_data != null else "", (tr("\nStationed on %s.") % site_name(where)) if where != &"" else "",
-			("\n" + tr("Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back.")) if op.alive else ""])
+			("\n" + UiTip.for_input(tr("Drag the dossier onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."),
+				tr("Pick the dossier up and move it onto one of your nodes on the City Grid monitor to station them there, or onto CORE to bring them back."))) if op.alive else ""])
 		row.polaroid.glitch = not op.alive or op.hp * 4 <= op.max_hp
 		row.dead = not op.alive
 		if op.alive:
@@ -1628,7 +1631,7 @@ func show_hq() -> void:
 	queue.name = "QueuedBoosts"
 	queue.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	queue.mouse_filter = Control.MOUSE_FILTER_PASS
-	queue.tooltip_text = UiTip.fold(tr("The boosts bought for the next run. Drag a boost here to buy it."))
+	queue.tooltip_text = UiTip.fold(UiTip.for_input(tr("The boosts bought for the next run. Drag a boost here to buy it."), tr("The boosts bought for the next run. Pick a boost up and move it here to buy it.")))
 	boosts.add_child(queue)
 	market.body.add_child(boosts)
 	var unlocks := HFlowContainer.new()
@@ -1967,7 +1970,7 @@ func show_grid() -> void:
 			b.name = "Run_%s" % s.id
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long name wraps in the column
+			b.autowrap_mode = TextServer.AUTOWRAP_WORD  # a long name wraps in the column
 			# H22 #14: the Site's own map icon (objective or tier, the map's colour) and its tier
 			# as pips (the harder the run, the more bars).
 			_site_mark(b, mn)
@@ -2247,7 +2250,7 @@ func _fit_steps(nav: HFlowContainer) -> void:
 		if Settings.text_scale >= STEP_ICONS_SCALE - 0.001 or btn.get_combined_minimum_size().x > room:
 			btn.text = String(btn.get_meta(&"short_text"))
 		if btn.get_combined_minimum_size().x > room:
-			btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			btn.autowrap_mode = TextServer.AUTOWRAP_WORD
 			btn.custom_minimum_size.x = room
 func _fit_after_redraw() -> void:
 	var city := wireframe.city
@@ -2502,7 +2505,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		for op in living:
 			var chip := CrewChip.new(op.class_id, op.id, op.name)
 			chip.name = "Chip_%s" % op.id
-			chip.tooltip_text = UiTip.fold(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.") % [op.name, site_name(site.id)])
+			chip.tooltip_text = UiTip.fold(UiTip.for_input(tr("%s: drag onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN."),
+				tr("%s: pick them up and move them onto JACK IN to pick them for %s (or pick them in the list), then press JACK IN.")) % [op.name, site_name(site.id)])
 			chips.add_child(chip)
 			_grid_chips.append(chip)
 		card.body.add_child(chips)
@@ -2681,7 +2685,7 @@ func show_raid() -> void:
 		var card := AssetCard.new(aid, TextDb.t(data, "display_name") if data != null else String(aid), data.integrity if data != null else 0, c.armory.count(aid))
 		card.set_effect(data)  # H24 S14: what it does, in a line and a pictogram
 		card.tooltip_text = UiTip.fold(tr("%s\n%s\nPress to deploy it to %s (the target: pick another node on the map or in YOUR NODES).") % [TextDb.t(data, "description") if data != null else "", card.numbers_tip(), site_name(selected_site)]
-			+ " " + tr("Or drag it onto any of your nodes."))
+			+ " " + UiTip.for_input(tr("Or drag it onto any of your nodes."), tr("Or pick it up and move it onto any of your nodes.")))
 		card.disabled = selected_site == &"" or not c.grid.is_active_node(selected_site)
 		var index := i
 		card.pressed.connect(func() -> void: deploy_asset(index, selected_site))
@@ -3076,7 +3080,8 @@ func _deploy_steps() -> VBoxContainer:
 	steps.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var side := UiTheme.BASE_SIZE * Settings.text_scale * IconMark.SIZE_FACTOR * DEPLOY_ICON_GROW
 	var target := site_name(selected_site) if selected_site != &"" else "?"
-	for step in [[StatIcon.MAP, tr("1  Pick a node"), tr("Pick the target: click a node of yours on the map, or its button in YOUR NODES.")],
+	for step in [[StatIcon.MAP, tr("1  Pick a node"), UiTip.for_input(tr("Pick the target: click a node of yours on the map, or its button in YOUR NODES."),
+			tr("Pick the target: press a node of yours on the map, or its button in YOUR NODES."))],
 			[StatIcon.ARMORY, tr("2  Press a card"), tr("Press an asset card: it deploys to the target (%s now).") % target]]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
@@ -4295,7 +4300,7 @@ func _as_menu(box: Control) -> void:
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).
 func _para(text: String) -> Label:
 	var l := _label(text)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(l)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
 
