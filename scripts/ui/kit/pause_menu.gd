@@ -77,7 +77,7 @@ func _init() -> void:
 		seed_line.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		seed_line.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		seed_line.text = code
-		seed_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(seed_line)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 		seed_line.mouse_filter = Control.MOUSE_FILTER_PASS
 		seed_line.tooltip_text = UiTip.fold(tr("Share this code: Start from code on the new campaign screen starts this campaign again."))
 		_menu.add_child(seed_line)

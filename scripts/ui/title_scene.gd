@@ -116,6 +116,11 @@ func _ready() -> void:
 # --- Panels -----------------------------------------------------------------------------------
 
 func _set_panel(p: Control, name: String) -> void:
+	# ART-0 F (ported from art-pass W8a, ART_BIBLE v1 §10 rule 6): an open modal (a confirm)
+	# closes before the page changes.
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, _set_panel.bind(p, name))
+		return
 	if _panel != null:
 		_panel.queue_free()
 	_panel = p
@@ -281,12 +286,18 @@ func show_options() -> void:
 # --- Actions ---------------------------------------------------------------------------------
 
 func new_in_slot(slot: String) -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, new_in_slot.bind(slot))
+		return
 	RunManager.save_slot = slot
 	RunManager.reset()
 	RunManager.change_scene(RunManager.HQ_SCENE)
 
 
 func load_slot(slot: String) -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, load_slot.bind(slot))
+		return
 	RunManager.save_slot = slot
 	RunManager.reset()
 	if RunManager.resume():
@@ -309,6 +320,9 @@ func confirm_quit() -> void:
 
 
 func start_tutorial() -> void:
+	if PageTransition.modal_open(self):
+		PageTransition.after_modals(self, start_tutorial)
+		return
 	RunManager.pending_tutorial = true
 	RunManager.change_scene(RunManager.COMBAT_SCENE)
 

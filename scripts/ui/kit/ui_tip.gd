@@ -50,3 +50,68 @@ static func make(text: String, title: String = "") -> Control:
 	body.text = fold(text)
 	box.add_child(body)
 	return box
+
+
+# --- Input-aware words (ART-0 F, ported from art-pass W2 / W9F; ART_BIBLE v1 §6.8, §12) ------
+## Mouse words a pad player never reads, lower case, whole words, and the pad words that
+## stand in for them when a caller passes mouse wording by mistake.
+const MOUSE_WORDS := {"click": "press", "clicks": "presses", "clicked": "pressed", "clicking": "pressing",
+	"right-click": "press", "double-click": "press", "drag": "move", "drags": "moves", "dragged": "moved",
+	"dragging": "moving", "hover": "focus", "hovering": "focusing"}
+
+
+## The words for the device in use: `pad_text` while a pad is in use, else `mouse_text`. Pad
+## players never read mouse wording: if `pad_text` still says "click" or "drag" (a caller's
+## slip), those words are swapped for pad ones (and a debug warning).
+static func for_input(mouse_text: String, pad_text: String) -> String:
+	if not Settings.pad_active:
+		return mouse_text
+	if has_mouse_words(pad_text):
+		if OS.is_debug_build():
+			push_warning("UiTip.for_input: pad text has mouse words: '%s'" % pad_text)
+		return pad_safe(pad_text)
+	return pad_text
+
+
+## True when `text` says a mouse word ("click", "drag", ...), as a whole word.
+static func has_mouse_words(text: String) -> bool:
+	for w in _words(text):
+		if MOUSE_WORDS.has(w.to_lower()):
+			return true
+	return false
+
+
+## `text` with every mouse word swapped for its pad word (the first letter's case kept).
+static func pad_safe(text: String) -> String:
+	var out := ""
+	var at := 0
+	for m in _word_re().search_all(text):
+		out += text.substr(at, m.get_start() - at)
+		var w := m.get_string()
+		var swap: String = MOUSE_WORDS.get(w.to_lower(), "")
+		if swap == "":
+			out += w
+		elif w == w.to_upper() and w.length() > 1:
+			out += swap.to_upper()
+		elif w[0] == w[0].to_upper():
+			out += swap.capitalize()
+		else:
+			out += swap
+		at = m.get_end()
+	return out + text.substr(at)
+
+
+static var _re: RegEx = null
+
+
+static func _word_re() -> RegEx:
+	if _re == null:
+		_re = RegEx.create_from_string("[A-Za-z-]+")
+	return _re
+
+
+static func _words(text: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	for m in _word_re().search_all(text):
+		out.append(m.get_string())
+	return out

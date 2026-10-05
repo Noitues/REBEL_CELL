@@ -29,7 +29,7 @@ func _ready() -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Palette.PAPER)
-	draw_rect(Rect2(Vector2.ZERO, size), Color(Palette.INK, 0.4), false, 1.0)
+	draw_rect(Rect2(Vector2.ZERO, size), edge_color(), false, edge_width())
 	var lay := caption_layout()
 	var side: float = lay["image"]
 	var image := Rect2((size.x - side) * 0.5, CAPTION_INSET, side, side)
@@ -39,13 +39,13 @@ func _draw() -> void:
 		PortraitArt.draw(self, image, _subject())
 	if glitch:
 		for i in 4:
-			draw_rect(Rect2(image.position.x, image.position.y + i * image.size.y / 4.0 + 3, image.size.x, 3), Color(Palette.CELL_PINK, 0.6))
+			draw_rect(Rect2(image.position.x, image.position.y + i * image.size.y / 4.0 + 3, image.size.x, 3), PaperInk.opaque(Color(Palette.CELL_PINK, GLITCH_ALPHA)))
 	var lines: PackedStringArray = lay["lines"]
 	var fs: int = lay["fs"]
 	var f := Palette.marker()
 	for i in lines.size():
 		var y := size.y - CAPTION_BOTTOM - (lines.size() - 1 - i) * f.get_height(fs)
-		draw_string(f, Vector2(CAPTION_INSET, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - CAPTION_INSET * 2.0, fs, Palette.INK)
+		draw_string(f, Vector2(CAPTION_INSET, y), lines[i], HORIZONTAL_ALIGNMENT_LEFT, size.x - CAPTION_INSET * 2.0, fs, caption_ink())
 
 
 ## The caption's lettering (px at text scale 1.0) at rest, the least it shrinks to (ANIM-R6
@@ -132,3 +132,23 @@ func set_operative(class_id: StringName, operative_id: StringName) -> void:
 	subject = PortraitArt.operative_subject(class_id, operative_id, caption)
 	queue_redraw()
 
+
+# --- High contrast on paper (ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6)) -------------------------
+## The frame's soft ink edge (alpha) and the glitch bars' alpha out of high contrast.
+const EDGE_ALPHA := 0.4
+const GLITCH_ALPHA := 0.6
+
+
+## The caption's ink: INK (7:1 on PAPER in high contrast too).
+func caption_ink() -> Color:
+	return PaperInk.text(Palette.INK)
+
+
+## The frame's edge: soft INK, or opaque INK under high contrast.
+func edge_color() -> Color:
+	return PaperInk.edge(Color(Palette.INK, EDGE_ALPHA))
+
+
+## The frame's edge width (px): 1, or PaperInk.EDGE_PX under high contrast.
+func edge_width() -> float:
+	return PaperInk.edge_width(1.0)
