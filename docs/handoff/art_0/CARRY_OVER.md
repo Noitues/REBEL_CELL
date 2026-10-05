@@ -10,6 +10,7 @@
 | F | Panels adopt `FitScroll` | ART-4 / ART-10 |
 | B3 | Seeded-replay and preview == result sweeps to confirm in the final full-suite run | after ART-12 |
 | 1C | Glyphs for Heat, Cycles, Schematics, custom effects; redraw the 16 px Firmware / Daemon twins | post-M14 glyph concept slice (designer) |
+| CI agent | `test_horizontal_pass20_city.gd :: test_headless_never_bakes_and_still_draws_the_city` is ORDER-DEPENDENT (fails in a shard, passes alone): fix before CI is re-enabled | after ART-12, with the full-suite run |
 
 ## Views with no M14 owner (found by the R7 re-evaluation prep, 2026-10-05)
 | View | Goes to |
@@ -17,4 +18,3 @@
 | `tutorial_overlay.gd` (combat tutorial note) | Group 2, 2D HUD (combat chrome) |
 | Deck viewer (`deck_view.gd`) | Group 4, 4A (netrun screens beside the shop) |
 | The map legend / key on the Grid and route | Group 3 wave 2 (unified city), 3B for the route key now |
-| CI agent | `test_horizontal_pass20_city.gd :: test_headless_never_bakes_and_still_draws_the_city` is ORDER-DEPENDENT (fails in a shard, passes alone): fix before CI is re-enabled | after ART-12, with the full-suite run |
