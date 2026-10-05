@@ -284,3 +284,112 @@ func _add_roll() -> void:
 func _exit_tree() -> void:
 	if not _done and is_instance_valid(page) and page.is_queued_for_deletion():
 		_done = true
+
+
+# --- Modals (ART-0 F, ported from art-pass W8a; ART_BIBLE v1 §10, kept by v2) ----------------
+## A modal opens and closes in `modal_in` / `modal_out` (<= MODAL_BUDGET, a fade and a slight
+## scale, never a cut; `open_modal`, `close_modal`), and a page never changes under an open
+## modal: `after_modals(node, action)` closes every open modal first, then runs the page
+## change. Open modals are in MODAL_GROUP (the visual QA harness reads it).
+
+## Open modals are in this group (open_modal); a closing one leaves it at once.
+const MODAL_GROUP := &"rc_modal"
+## A modal's scale when it starts to open (it grows to 1 while it fades in).
+const MODAL_FROM_SCALE := 0.96
+## §10: the longest a modal takes to open or close (s).
+const MODAL_BUDGET := 0.22
+## Meta on a modal that is closing (it no longer counts as open).
+const META_MODAL_CLOSING := &"modal_closing"
+
+
+## Opens modal `m` (already in the tree): it joins MODAL_GROUP and fades in while growing
+## from MODAL_FROM_SCALE (`modal_in`; at once where motion doesn't play).
+static func open_modal(m: Control) -> void:
+	if m == null or not is_instance_valid(m):
+		return
+	if m.is_in_group(MODAL_GROUP) and not bool(m.get_meta(META_MODAL_CLOSING, false)):
+		return  # open already (a view that opens itself, opened again by its screen)
+	m.add_to_group(MODAL_GROUP)
+	m.set_meta(META_MODAL_CLOSING, false)
+	if not Motion.live(&"modal_in") or not m.is_inside_tree():
+		return
+	m.pivot_offset = m.size * 0.5
+	m.modulate.a = 0.0
+	m.scale = Vector2.ONE * MODAL_FROM_SCALE
+	var e := Motion.entry(&"modal_in")
+	var secs := Motion.seconds(&"modal_in")
+	var tw := m.create_tween().set_parallel(true)
+	tw.tween_property(m, ^"modulate:a", 1.0, secs).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_property(m, ^"scale", Vector2.ONE, secs).set_ease(e.ease).set_trans(e.trans)
+
+
+## Closes modal `m`: it leaves MODAL_GROUP at once (a page may change after it), fades out
+## (`modal_out`, never a cut), frees itself and then runs `on_done`. Where motion doesn't
+## play it frees at once and `on_done` runs at once.
+static func close_modal(m: Control, on_done: Callable = Callable()) -> void:
+	if m == null or not is_instance_valid(m) or m.is_queued_for_deletion():
+		if on_done.is_valid():
+			on_done.call()
+		return
+	if m.is_in_group(MODAL_GROUP):
+		m.remove_from_group(MODAL_GROUP)
+	m.set_meta(META_MODAL_CLOSING, true)
+	if not Motion.live(&"modal_out") or not m.is_inside_tree():
+		m.queue_free()
+		if on_done.is_valid():
+			on_done.call()
+		return
+	# Input stops at once: the fade is the only thing left of it.
+	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	m.process_mode = Node.PROCESS_MODE_DISABLED
+	m.pivot_offset = m.size * 0.5
+	var e := Motion.entry(&"modal_out")
+	var secs := Motion.seconds(&"modal_out")
+	var tw := m.get_tree().create_tween().set_parallel(true)
+	tw.tween_property(m, ^"modulate:a", 0.0, secs).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_property(m, ^"scale", Vector2.ONE * MODAL_FROM_SCALE, secs).set_ease(e.ease).set_trans(e.trans)
+	tw.chain().tween_callback(PageTransition._modal_closed.bind(m, on_done))
+
+
+static func _modal_closed(m: Variant, on_done: Callable) -> void:
+	if is_instance_valid(m):
+		(m as Node).queue_free()
+	if on_done.is_valid():
+		on_done.call()
+
+
+## The open modals in `node`'s tree (in tree order; a closing one is not open).
+static func open_modals(node: Node) -> Array[Control]:
+	var out: Array[Control] = []
+	if node == null or not node.is_inside_tree():
+		return out
+	for n in node.get_tree().get_nodes_in_group(MODAL_GROUP):
+		if n is Control and is_instance_valid(n) and n.is_inside_tree() and not n.is_queued_for_deletion() \
+				and not bool(n.get_meta(META_MODAL_CLOSING, false)):
+			out.append(n as Control)
+	return out
+
+
+## True while a modal is open in `node`'s tree.
+static func modal_open(node: Node) -> bool:
+	return not open_modals(node).is_empty()
+
+
+## §10 rule 6: a modal never outlives a page change. Closes every open modal in `node`'s
+## tree, then runs `action` (the page change) once the last one has closed; at once when
+## none is open.
+static func after_modals(node: Node, action: Callable) -> void:
+	var open := open_modals(node)
+	if open.is_empty():
+		if action.is_valid():
+			action.call()
+		return
+	var left := [open.size()]
+	for m in open:
+		close_modal(m, PageTransition._one_closed.bind(left, action))
+
+
+static func _one_closed(left: Array, action: Callable) -> void:
+	left[0] -= 1
+	if left[0] == 0 and action.is_valid():
+		action.call()
