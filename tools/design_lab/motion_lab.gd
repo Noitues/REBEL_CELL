@@ -148,6 +148,17 @@ const DEMOS := {
 	# ART-0 E (ported from art-pass W6): the wheel-local T3 bursts on the fight's wheels (the
 	# Perfect's on the operative's, a boss phase's on an enemy's in the corp hue).
 	&"wheel_burst_perfect": ["scene", "perfect"], &"wheel_burst_phase": ["scene", "phase_burst"],
+	# ART-2 2C (ART_BIBLE v2 §3.15, §3.18, §3.20): each effect on the fight's real wheels, through
+	# the scene's own _play_beat where a beat plays it (CombatBeatFx), else the FX layer's call.
+	&"card_peel": ["scene", "play_fx"], &"card_slap_ring": ["scene", "play_fx"],
+	&"hit_shards": ["scene", "fx_hit"], &"hit_crit_streaks": ["scene", "fx_crit"], &"hit_blocked_wall": ["scene", "fx_blocked"],
+	&"block_wall": ["scene", "fx_block"], &"shield_hex": ["scene", "fx_shield"], &"heal_inflow": ["scene", "fx_heal"],
+	&"evade_token": ["scene", "fx_evade"], &"corrupt_apply": ["scene", "fx_corrupt"], &"corrupt_tick": ["scene", "fx_corrupt_tick"],
+	&"drone_deploy": ["scene", "fx_drone"], &"drone_attack": ["scene", "fx_drone_attack"], &"drone_destroyed": ["scene", "fx_drone_down"],
+	&"enemy_defeated_bits": ["scene", "fx_defeat"], &"phase_change_bits": ["scene", "fx_phase"], &"respin_bits": ["scene", "fx_respin"],
+	&"nudge_resist_bits": ["scene", "fx_resist"], &"ram_gain_bits": ["scene", "fx_ram"], &"temp_label": ["scene", "fx_label"],
+	&"daemon_trigger": ["scene", "fx_daemon"], &"firmware_trigger": ["scene", "fx_firmware"],
+	&"heat_city_beacon": ["scene", "fx_heat"], &"heat_city_sweep": ["scene", "fx_heat"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -193,6 +204,8 @@ const REFUSAL_TEXT := "NEED 40 CYCLES"
 const TOAST_TEXT := "NOT ENOUGH RAM"
 ## Beat demos: the amount a made beat carries.
 const DEMO_BEAT_AMOUNT := 6
+## ART-2 2C: the Heat band the Heat city demo shows (HUNTED: police lights and searchlights).
+const DEMO_HEAT_BAND := 3
 
 ## ANIM-R5 HQ demos: the demo campaign's Schematics and the raid demo's defences (a turret
 ## shoots, a decoy draws fire, an ICE lock holds).
@@ -1268,6 +1281,78 @@ func _play_scene(what: String) -> void:
 				if view != null:
 					view.shown_state = s.get_combatant(id).duplicate_state()
 			_scene._play_beat(b, s, s)
+		"fx_hit", "fx_crit", "fx_blocked", "fx_block", "fx_shield", "fx_heal", "fx_evade", "fx_corrupt", "fx_corrupt_tick":
+			_fx_beat(what, enemy)
+		_:
+			_fx_call(what, ev)
+
+
+## ART-2 2C: an effect a beat plays, as a SEND IT plays it (the scene's own _play_beat and
+## CombatBeatFx): a hit (crit, blocked), the operative's block / shield / heal, an evaded
+## hit, CORRUPTED put on the enemy's slice and its tick.
+func _fx_beat(what: String, enemy: StringName) -> void:
+	var s: CombatState = _scene.engine.state()
+	var pl: StringName = s.player.id
+	var mine := what in ["fx_block", "fx_shield", "fx_heal"]
+	var b := _beat("block" if mine and what != "fx_heal" else ("heal" if what == "fx_heal" else ("status" if what == "fx_corrupt" else "damage")),
+		pl, pl if mine else enemy)
+	match what:
+		"fx_shield":
+			b["kind"] = "shield"
+		"fx_heal":
+			b["hp_after"] = s.player.hp
+		"fx_evade":
+			b["kind"] = "evaded"
+			b["source"] = enemy
+			b["target"] = pl
+		"fx_corrupt_tick":
+			b["kind"] = "corrupted"
+			b["hp_after"] = maxi(0, s.get_combatant(enemy).hp - DEMO_BEAT_AMOUNT)
+		"fx_hit", "fx_crit", "fx_blocked":
+			b["hp_after"] = maxi(0, s.get_combatant(enemy).hp - DEMO_BEAT_AMOUNT)
+			b["crit"] = what == "fx_crit"
+			if what == "fx_blocked":
+				b["blocked"] = DEMO_BEAT_AMOUNT
+				b["raw"] = DEMO_BEAT_AMOUNT * 2
+	for id in [pl, enemy]:
+		var view: WheelView = _scene._view_of(id)
+		if view != null:
+			view.shown_state = s.get_combatant(id).duplicate_state()
+	_scene._play_beat(b, s, s)
+
+
+## ART-2 2C: an effect the FX layer plays from a scene call (a drone, the defeat, a phase, a
+## respin, a resisted nudge, RAM gain, a label, a trigger, the Heat city) on the live fight.
+func _fx_call(what: String, ev: WheelView) -> void:
+	var fx: CombatFxLayer = _scene.fx_layer
+	var pv: WheelView = _scene._player_view
+	match what:
+		"fx_drone":
+			fx.drone_deploy(pv.global_center() + Vector2(pv.disc_radius() * 1.1, -pv.disc_radius() * 0.6), pv.global_center(), Palette.SLICE_TROJAN)
+		"fx_drone_attack":
+			fx.drone_attack(pv.global_center() + Vector2(pv.disc_radius() * 1.1, -pv.disc_radius() * 0.6), Palette.SLICE_TROJAN)
+		"fx_drone_down":
+			fx.drone_destroyed(ev.global_center() + Vector2(-ev.disc_radius() * 1.1, -ev.disc_radius() * 0.6), Palette.SLICE_TROJAN)
+		"fx_defeat":
+			fx.shards(ev.slice_pieces(), tr("DELETED"))
+			ev.play_break()
+		"fx_phase":
+			fx.wheel_burst(ev.global_center(), ev.disc_radius(), CombatFxLayer.BURST_PHASE, Palette.CORP_SOLACE, ev.hp_ring_spot())
+			fx.temp_label(ev.global_center(), tr("PHASE %d") % 2, Palette.RESIST_GOLD)
+		"fx_respin":
+			fx.respin_bits(CombatBeatFx.ram_pips(_scene.ram_note, 0, DEMO_RAM_SPEND), pv.global_center(), tr("RESPIN"))
+		"fx_resist":
+			fx.nudge_resist(ev.pointer_spot(0), tr("RESIST"))
+		"fx_ram":
+			fx.ram_gain(Vector2(_scene.get_global_rect().get_center().x, _scene.get_global_rect().position.y), CombatBeatFx.ram_pips(_scene.ram_note, 0, DEMO_RAM_SPEND))
+		"fx_label":
+			fx.temp_label(ev.global_center(), tr("EVADED"), Palette.GAIN)
+		"fx_daemon":
+			fx.trigger_fx(_scene.daemon_row.get_global_rect().get_center(), pv.global_center(), Palette.NEON_VIOLET, &"daemon_trigger")
+		"fx_firmware":
+			fx.trigger_fx(pv.global_center() + Vector2(0, pv.hub_radius() * 0.5), pv.slot_spot(0), Palette.RESIST_GOLD, &"firmware_trigger")
+		"fx_heat":
+			_scene.heat_city.set_band(DEMO_HEAT_BAND, ev.global_center())
 
 
 

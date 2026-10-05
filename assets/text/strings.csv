@@ -27,6 +27,7 @@ Stationed on %s."
 %d ENTRY SITES,%d ENTRY SITES
 %d HP,%d HP
 %d LEFT,%d LEFT
+%d NEEDLES,%d NEEDLES
 %d SLICES,%d SLICES
 %d TAKEN,%d TAKEN
 %d destroyed,%d destroyed
@@ -472,6 +473,7 @@ DEFEAT,DEFEAT
 DEFEATED,DEFEATED
 DEFENSE LOADOUT // %s,DEFENSE LOADOUT // %s
 DEFRAG,DEFRAG
+DELETED,DELETED
 DETOUR,DETOUR
 DFRG,DFRG
 DISPATCH,DISPATCH
@@ -1358,6 +1360,7 @@ Map legend on the city views,Map legend on the city views
 Master volume,Master volume
 Move it to %s.,Move it to %s.
 Music volume,Music volume
+NEED %d,NEED %d
 NEED %d · HAVE %d,NEED %d · HAVE %d
 NETRUN,NETRUN
 NETRUN // FLATLINED,NETRUN // FLATLINED
@@ -1572,6 +1575,7 @@ REMOVE,REMOVE
 REMOVE A CARD,REMOVE A CARD
 REMOVE A CARD // %d CYCLES,REMOVE A CARD // %d CYCLES
 RES%s,RES%s
+RESIST,RESIST
 RESIST %d,RESIST %d
 RESIST %d→%d,RESIST %d→%d
 RESISTANCE,RESISTANCE

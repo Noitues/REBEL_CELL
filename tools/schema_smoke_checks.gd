@@ -496,4 +496,20 @@ func _art0() -> int:
 	# ART-0 B3: five Heat bands on the existing thresholds (MAJOR 25 / 50 / 75 and PURGE 100).
 	print("ART-0 B3: heat_band_levels ", shipped.heat_band_levels() if shipped != null else [])
 	if shipped == null or shipped.heat_band_levels() != ([25, 50, 75, 100] as Array[int]): fails += 1
+	return fails + _art2c()
+
+
+## ART-2 2C: CampaignConfigData's Combat FX group (shard severity, the Heat city's counts).
+func _art2c() -> int:
+	var fails := 0
+	var cfg := CampaignConfigData.new()
+	var shipped: CampaignConfigData = load("res://content/config/campaign_config.tres")
+	print("ART-2 2C: shards ", cfg.fx_shard_base, " +", cfg.fx_shard_per_dmg, " max ", cfg.fx_shard_max, " glyph ", cfg.fx_glyph_px_base, " +", cfg.fx_glyph_px_per_dmg,
+		" max ", cfg.fx_glyph_px_max, " heat city ", cfg.heat_city_side_beacons, cfg.heat_city_police_lights)
+	if cfg.fx_shard_count(7) != 18 or cfg.fx_shard_count(0, true) != 40 or not is_equal_approx(cfg.fx_glyph_px(100), 38.0): fails += 1
+	if cfg.heat_city_police_lights.size() != 5 or cfg.heat_city_police_lights[3] != 13 or cfg.heat_city_side_beacons[1] != 3: fails += 1
+	if shipped == null or not shipped.validate().is_empty(): fails += 1
+	var bad := CampaignConfigData.new()
+	bad.heat_city_side_beacons = PackedInt32Array([1, 2])
+	if bad.validate().is_empty(): fails += 1
 	return fails

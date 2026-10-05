@@ -175,6 +175,39 @@ extends Resource
 @export var save_dir_export: String = "user://saves"
 @export var replay_subdir: String = "replays"
 @export var write_replays: bool = true
+@export_group("Combat FX")
+## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
+## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
+## base + per_dmg x damage (at most max; px at text scale 1.0). A crit uses the max.
+@export var fx_shard_base: int = 8
+@export var fx_shard_per_dmg: float = 1.4
+@export var fx_shard_max: int = 40
+@export var fx_glyph_px_base: float = 18.0
+@export var fx_glyph_px_per_dmg: float = 0.9
+@export var fx_glyph_px_max: float = 38.0
+## ART-2 2C (§3.15 H1 "the city reacts"): what the combat backdrop shows per Heat band,
+## indexed COOL, NOTICED, FLAGGED, HUNTED, PURGE (PURGE = HUNTED's look for now): alarm
+## beacons on side buildings, searchlights at the screen sides (sweeping away from the
+## target), alarm beacons on the target, police light clusters, searchlights on the target.
+@export var heat_city_side_beacons: PackedInt32Array = PackedInt32Array([0, 3, 0, 0, 0])
+@export var heat_city_side_searchlights: PackedInt32Array = PackedInt32Array([0, 0, 2, 0, 0])
+@export var heat_city_target_beacons: PackedInt32Array = PackedInt32Array([0, 0, 2, 0, 0])
+@export var heat_city_police_lights: PackedInt32Array = PackedInt32Array([0, 0, 0, 13, 13])
+@export var heat_city_target_searchlights: PackedInt32Array = PackedInt32Array([0, 0, 0, 2, 2])
+
+
+## ART-2 2C: the 0/1 shard count for a hit of `damage` (a crit takes the most).
+func fx_shard_count(damage: int, crit: bool = false) -> int:
+	if crit:
+		return fx_shard_max
+	return clampi(fx_shard_base + roundi(fx_shard_per_dmg * maxi(0, damage)), 1, fx_shard_max)
+
+
+## ART-2 2C: the largest shard glyph (px at text scale 1.0) for a hit of `damage`.
+func fx_glyph_px(damage: int, crit: bool = false) -> float:
+	if crit:
+		return fx_glyph_px_max
+	return minf(fx_glyph_px_max, fx_glyph_px_base + fx_glyph_px_per_dmg * maxi(0, damage))
 
 
 ## Highest ICE level on the ladder (final_final_ice when the ladder is empty).
@@ -242,4 +275,10 @@ func validate() -> PackedStringArray:
 		if levels.has(l.level):
 			errors.append("Duplicate ICE level %d." % l.level)
 		levels[l.level] = true
+	# ART-2 2C: the Heat city's counts are one per band (five bands).
+	for arr in [heat_city_side_beacons, heat_city_side_searchlights, heat_city_target_beacons, heat_city_police_lights, heat_city_target_searchlights]:
+		if arr.size() != 5:
+			errors.append("Heat city counts need 5 entries (one per Heat band).")
+	if fx_shard_base < 1 or fx_shard_max < fx_shard_base or fx_glyph_px_max < fx_glyph_px_base:
+		errors.append("FX shard counts / glyph sizes out of order.")
 	return errors

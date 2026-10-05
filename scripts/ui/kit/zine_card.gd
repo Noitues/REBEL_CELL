@@ -180,7 +180,23 @@ static func pictos_of(card: CardData) -> Array[Dictionary]:
 ## Sets the pictograms from the card's data (combat hand, loot, shop, deck views).
 func with_card(card: CardData) -> ZineCard:
 	pictos = pictos_of(card)
+	rare = card != null and card.rarity >= RC.Rarity.RARE
 	return self
+
+
+## ART-2 2C §3.18: a Rare (or Boss) card wears the holo border.
+var rare: bool = false
+## ART-2 2C §3.18: the RAM there is falls short of the cost: the dot greys, a NEED tag.
+var short_ram: bool = false:
+	set(v):
+		short_ram = v
+		queue_redraw()
+const NEED_WORD := "NEED %d" # TR
+const NEED_FONT := 12
+const NEED_PAD := 3.0
+## The holo border's hues, in turn round the die-cut edge.
+const HOLO_HUES: Array[Color] = [Palette.CELL_PINK, Palette.RESIST_GOLD, Palette.CELL_ACID, Palette.NET_CYAN, Palette.NEON_VIOLET]
+const HOLO_STEPS := 20
 
 
 ## Scales the sticker and its lettering by `s` (the combat hand at text scale > 1).
@@ -201,6 +217,7 @@ func ghost_copy() -> ZineCard:
 	g.slice_output = slice_output
 	g.icon_kind = icon_kind
 	g.pictos = pictos
+	g.rare = rare
 	g.text_scale = text_scale
 	g.price = price
 	g.price_from = price_from
@@ -218,6 +235,7 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 		return null
 	var ghost := ZineCard.new(card_title, cost, description, drag_index).scaled(text_scale)
 	ghost.pictos = pictos
+	ghost.rare = rare
 	ghost.variant = variant
 	ghost.size = ghost.custom_minimum_size
 	# ANIM-3: the ghost trails the cursor with a lag and a tilt (DragGhost).
@@ -372,29 +390,100 @@ func _draw() -> void:
 			HandMarks.draw_drip_circle(self, size * 0.5, size * 0.5 * Vector2(0.95, 0.8), DripButton.DRIP_PINK)
 
 
+## ART-2 2C (ART_BIBLE v2 §3.18, round 19 card_play_v2): the C-C sticker card. A white
+## die-cut edge (CC_EDGE px at hand size, rounded CC_CORNER), a fill in the card's family
+## colour (what its first effect does), a gloss band across its top, the yellow cost dot,
+## and a peel curl at its foot corner that lifts on hover. Paper lettering on the fill.
+const CC_EDGE := 5.0
+const CC_CORNER := 9.0
+const CC_SHADOW := Vector2(3, 5)
+const CC_GLOSS_ALPHA := 0.16
+const CC_GLOSS_TOP := 0.18
+const CC_GLOSS_H := 0.16
+const CC_CURL := 14.0
+const CC_CURL_HOVER := 22.0
+## How far each family's colour is darkened for the fill (white lettering reads on it).
+const CC_FILL_DARKEN := 0.42
+
+
+## The sticker's fill: the family of what the card does first (spin and nudge gold, harm
+## pink, guards cyan, the rest violet).
+func sticker_color() -> Color:
+	var kind := String(pictos[0].get("kind", "")) if not pictos.is_empty() else ""
+	var type := int(pictos[0].get("type", -1)) if not pictos.is_empty() else -1
+	var base := Palette.NEON_VIOLET
+	if kind in ["spin", "nudge", "flip", "respin"]:
+		base = Palette.RESIST_GOLD
+	elif type in [RC.SliceType.SHIM, RC.SliceType.INFECT] or kind in ["damage", "status"]:
+		base = Palette.CELL_PINK
+	elif type in [RC.SliceType.DEFRAG, RC.SliceType.SANDBOX, RC.SliceType.DETOUR, RC.SliceType.HOTFIX]:
+		base = Palette.NET_CYAN
+	return base.darkened(CC_FILL_DARKEN)
+
+
+static var _cc_box: StyleBoxFlat = null
+
+
+## A point `d` px along the card's edge (clockwise from its top left), `out` px outside it.
+func _edge_point(d: float, out: float) -> Vector2:
+	var w := size.x
+	var h := size.y
+	var t := fposmod(d, (w + h) * 2.0)
+	if t < w:
+		return Vector2(t, -out)
+	if t < w + h:
+		return Vector2(w + out, t - w)
+	if t < w * 2.0 + h:
+		return Vector2(w - (t - w - h), h + out)
+	return Vector2(-out, h - (t - w * 2.0 - h))
+
+
+func _cc_style(fill: Color, grow: float, radius: float) -> StyleBoxFlat:
+	if _cc_box == null:
+		_cc_box = StyleBoxFlat.new()
+		_cc_box.anti_aliasing = true
+	_cc_box.bg_color = fill
+	_cc_box.set_corner_radius_all(roundi(radius))
+	_cc_box.set_expand_margin_all(grow)
+	return _cc_box
+
+
 func _draw_sticker() -> void:
-	var bg := Palette.PAPER
-	var fg := Palette.INK
-	match variant:
-		Variant.BLACK:
-			bg = Palette.INK
-			fg = Palette.PAPER
-		Variant.PINK:
-			bg = Palette.STICKER_PINK
-			fg = Palette.INK
+	var bg := sticker_color()
+	var fg := Palette.PAPER
 	var rect := Rect2(Vector2.ZERO, size)
-	if _lifted:
-		draw_rect(rect.grow(4), Color(Palette.CELL_ACID, 0.5))
-	draw_rect(rect, bg)
-	draw_rect(rect, Palette.INK if variant != Variant.BLACK else Palette.PAPER, false, 2.0)
-	draw_rect(Rect2(size.x * 0.3, -5, 44, 12), Palette.TAPE)
 	var s := text_scale
+	var edge := CC_EDGE * s
+	if _lifted:
+		draw_style_box(_cc_style(Color(Palette.CELL_ACID, 0.5), edge + 4.0, CC_CORNER * s + 4.0), rect)
+	# The shadow under the die-cut, the white edge, then the fill.
+	draw_style_box(_cc_style(Palette.SHADOW, edge, CC_CORNER * s), Rect2(rect.position + CC_SHADOW * s, rect.size))
+	draw_style_box(_cc_style(Palette.PAPER, edge, CC_CORNER * s), rect)
+	draw_style_box(_cc_style(bg, 0.0, CC_CORNER * s * 0.6), rect)
+	if rare:
+		# The holo border: the die-cut edge in turning hues (readable without colour: it is a
+		# second, striped edge only Rare cards have).
+		var per := (size.x + size.y) * 2.0 / HOLO_STEPS
+		for k in HOLO_STEPS:
+			var d := k * per
+			var a0 := _edge_point(d, edge * 0.5)
+			var a1 := _edge_point(d + per * 0.8, edge * 0.5)
+			draw_line(a0, a1, HOLO_HUES[k % HOLO_HUES.size()], edge * 0.8, true)
+	# The gloss band across the top.
+	var gy := size.y * CC_GLOSS_TOP
+	draw_colored_polygon(PackedVector2Array([Vector2(0, gy + size.y * CC_GLOSS_H), Vector2(size.x, gy - size.y * 0.04), Vector2(size.x, gy + size.y * (CC_GLOSS_H - 0.04)),
+		Vector2(0, gy + size.y * CC_GLOSS_H * 2.0)]), Color(Palette.PAPER, CC_GLOSS_ALPHA))
+	# The peel curl at the foot corner: the white backing folds over, bigger on hover.
+	var curl := (CC_CURL_HOVER if _lifted else CC_CURL) * s
+	var corner := Vector2(size.x + edge, size.y + edge)
+	draw_colored_polygon(PackedVector2Array([corner - Vector2(curl, 0), corner - Vector2(0, curl), corner - Vector2(curl, curl) * 0.92]), Palette.PAPER_ALT)
+	draw_colored_polygon(PackedVector2Array([corner - Vector2(curl, 0), corner, corner - Vector2(0, curl)]), Palette.NIGHT_SKY)
 	# cost < 0 = no cost circle (Firmware and Daemon offers). The title stops short of it.
 	var title_w := size.x - 16
 	if cost >= 0:
 		var r := (13.0 if cost < 100 else 17.0) * s
 		title_w -= r * 2 + 4
-		var cost_fill := Palette.CELL_ACID if variant != Variant.PINK else Palette.PAPER
+		var cost_fill := Palette.DISABLED if short_ram else Palette.RESIST_GOLD  # ART-2 2C §3.18: the yellow cost dot (grey when short)
 		if cost_alarm > 0.0:
 			# ANIM-R1 C6: a RAM refusal pulses the cost red (not enough RAM for it).
 			cost_fill = cost_fill.lerp(REFUSED_COLOR, cost_alarm)
@@ -426,6 +515,15 @@ func _draw_sticker() -> void:
 		draw_string(Palette.marker(), Vector2(8, size.y - 8), "[%s]" % key, HORIZONTAL_ALIGNMENT_LEFT, -1, roundi(14 * s), fg)
 	if disabled:
 		draw_rect(rect, Color(0, 0, 0, 0.5))
+	if short_ram and cost >= 0:
+		# ART-2 2C §3.18: can't afford: the dot greys and a NEED tag says what is missing.
+		var tfs := roundi(NEED_FONT * s)
+		var word := tr(NEED_WORD) % cost
+		var tw := Palette.display().get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
+		var tag := Rect2(Vector2(size.x - tw - NEED_PAD * 2.0 - 5.0, (13.0 * 2.0 + 8.0) * s), Vector2(tw + NEED_PAD * 2.0, tfs * 1.3))
+		draw_rect(tag.grow(2.0), Palette.PAPER)
+		draw_rect(tag, Palette.HARM)
+		draw_string(Palette.display(), tag.position + Vector2(NEED_PAD, tfs * 1.0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, Palette.PAPER)
 
 
 func _draw_tile() -> void:

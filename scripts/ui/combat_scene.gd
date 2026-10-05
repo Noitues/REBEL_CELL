@@ -59,6 +59,8 @@ const MIN_CARD_SCALE := 0.6
 var background: WireframeBackground
 var portrait: Polaroid
 var heat_poster: HeatPoster
+## ART-2 2C: Heat on the backdrop (ART_BIBLE v2 §3.15 H1).
+var heat_city: HeatCity
 var ram_note: RamBar
 var daemon_row: DaemonRow
 var inspect_popup: InspectPopup
@@ -436,6 +438,9 @@ func respin() -> void:
 	var ram_before := engine.state().ram
 	_submit(CombatAction.respin())
 	var spent := ram_before - engine.state().ram
+	if spent > 0 and fx_layer != null:
+		# ART-2 2C: respin v3, the spent chips crack into cyan bits to the hub; RESPIN.
+		fx_layer.respin_bits(CombatBeatFx.ram_pips(ram_note, engine.state().ram, ram_before), _player_view.global_center(), tr("RESPIN"))
 	if spent > 0:
 		# Where it landed, even when it's the same slice (H23: 8 RAM seemed to buy nothing).
 		var after: String = _landing_title(engine.state(), engine.state().player)["text"]
@@ -1441,7 +1446,7 @@ func _boss_phase_feedback(state: CombatState) -> void:
 		for boss in state.enemies:
 			var bv: WheelView = _view_of(boss.id) if boss.phase_index > 0 else null
 			if bv != null:
-				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, hue)
+				fx_layer.wheel_burst(bv.global_center(), bv.disc_radius(), CombatFxLayer.BURST_PHASE, hue, bv.hp_ring_spot())
 	_bark("boss", state)
 
 
@@ -1545,6 +1550,10 @@ func _build_ui() -> void:
 	background = WireframeBackground.new()
 	background.city.dim = 0.55  # the arena: wheels first, city second
 	add_child(background)
+	# ART-2 2C §3.15: Heat on the backdrop (H1, the city reacts), behind every wheel.
+	heat_city = HeatCity.new()
+	heat_city.name = "HeatCity"
+	add_child(heat_city)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("separation", 4)
@@ -2058,6 +2067,8 @@ func _sync_heat() -> void:
 	var heat_max := engine.resolver.config.heat_max
 	heat_poster.set_heat(heat, heat_max, HeatRules.band_levels(RunManager.campaign, engine.resolver.config))
 	background.corp_creep = clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0)
+	var levels := HeatRules.band_levels(RunManager.campaign, engine.resolver.config)
+	heat_city.set_band(Palette.heat_band(heat, levels), _enemy_views_box.get_global_rect().get_center() if _enemy_views_box != null else Vector2.INF)
 
 
 ## ANIM-R5 combat 1: the outcome lands (the replay's VICTORY / DEFEAT beat, a skip, the
@@ -2193,6 +2204,7 @@ func _build_hand(state: CombatState) -> void:
 		var card := lookup.get_content(state.hand[i]) as CardData
 		var c := _make_card(card, i, s)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
+		c.short_ram = not state.is_over() and state.ram < card.ram_cost  # ART-2 2C: the grey dot and NEED tag
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
 		shown_tip(c, "%s\n%s" % [Codex.describe(card), tr("Drag it onto a glowing target, or click it and then the target.") if several else tr("Click to play.")])
 		var index := i
@@ -3250,6 +3262,7 @@ func _capture_play(action: CombatAction, from_point: Vector2) -> void:
 	var z := _zone_of(action)
 	var v := _view_of(z[0])
 	cap["to"] = v.zone_center(z[1]) if v != null else (cap["rect"] as Rect2).get_center()
+	cap["hub"] = v.global_center() if v != null else Vector2.INF  # ART-2 2C: dissolve A spirals into the hub
 	cap["zone"] = z
 	_pending_play = cap
 	_hold_slot = action.hand_index
@@ -3427,7 +3440,7 @@ func _deal_hand(from: int) -> void:
 func _play_action(before: CombatState, state: CombatState, events: Array[Dictionary], play: Dictionary) -> void:
 	var delay := 0.0
 	if play.has("copy"):
-		delay = fx_layer.play_card(play["copy"], play["rect"], float(play["rot"]), play["to"], bool(play["exhaust"]), _release_gap)
+		delay = fx_layer.play_card(play["copy"], play["rect"], float(play["rot"]), play["to"], bool(play["exhaust"]), _release_gap, play.get("hub", Vector2.INF))
 	else:
 		_hold_slot = -1
 	var lands := _animate_wheels(before, events, delay)
@@ -3475,6 +3488,8 @@ func _animate_wheels(before: CombatState, events: Array[Dictionary], delay: floa
 					kind = "respin"
 				"flip":
 					v.play_flip(delay)
+				"nudge_absorbed":
+					fx_layer.nudge_resist(v.pointer_spot(0), tr("RESIST"), delay)  # ART-2 2C: nudge + resistance
 		var moved := c0.wheel.rotation != v.combatant.wheel.rotation or c0.wheel.inner_rotation != v.combatant.wheel.inner_rotation
 		if kind == "" and not nudges.is_empty() and delay <= 0.0:
 			for e in nudges:
@@ -4019,6 +4034,8 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 				tv.play_pointers(Array(c0.wheel.pointer_ticks), &"pointer_orbit" if kind == "orbit" else &"pointer_migrate", kind == "orbit")
 			return
 		"ram":
+			# ART-2 2C: RAM gain, bits from the TURN banner down the centre gap into the new chips.
+			fx_layer.ram_gain(Vector2(get_global_rect().get_center().x, get_global_rect().position.y), CombatBeatFx.ram_pips(ram_note, ram_note.shown_ram, ram_note.ram))
 			ram_note.play_refill()
 			return
 		"draw":
@@ -4037,6 +4054,7 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 			return
 		"spawn":
 			_spawn_beat(target, int(b["hp_after"]), after)
+			CombatBeatFx.spawn(fx_layer, b, tv)  # ART-2 2C: drone deploy
 			return
 		"phase":
 			_phase_beat(b, after)
@@ -4066,6 +4084,8 @@ func _play_beat(b: Dictionary, before: CombatState, after: CombatState) -> void:
 		var ride := ride_for(b, before) if kind in ["damage", "evaded"] else {"label": "", "from": "", "scale": 1.0}
 		fx_layer.hit_line(_source_spot(b, before, after), line_to, hit_color(src, before, after), String(ride["label"]), String(ride["from"]), float(ride["scale"]))
 		impact = CombatFxLayer.impact_seconds()
+	# ART-2 2C: the beat's locked effect (0/1 shards, walls, heal, evade, corrupt; D16 origin).
+	CombatBeatFx.play(fx_layer, b, tv, _player_view, _view_of(engine.state().target_id), _source_spot(b, before, after) if sv != null else Vector2.INF, on_host, impact, hit_color(src, before, after))
 	# ANIM-R3 A6a: a hit that got nothing through shows "0" with its glyph where it struck
 	# (the arrowhead on the HP ring, or the token); the wheel whose every hit was soaked says
 	# ALL BLOCKED (with its mark) on its last hit's impact.
@@ -4144,6 +4164,8 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 	fx_layer.word_stamp(v.global_center(), word, CHIP_RESIST, Motion.seconds(&"number_float"), v.hub_radius() * 2.0 * WheelView.NUMBER_HUB_SHARE)
 	if int(b.get("behavior", -1)) == RC.PointerBehavior.MULTIPLY:
 		v.play_phase_needles(b.get("ticks", []))
+		# ART-2 2C §3.16: "2 NEEDLES", a temporary label under PHASE N.
+		fx_layer.temp_label(v.global_center() + Vector2(0, v.hub_radius() * 0.5), tr("%d NEEDLES") % (b.get("ticks", []) as Array).size(), CHIP_RESIST)
 	for sp in b.get("spawned", []):
 		_spawn_beat(StringName(String(sp.get("id", ""))), int(sp.get("hp", 0)), after)
 
@@ -4193,14 +4215,14 @@ func _death_beat(id: StringName, before: CombatState, after: CombatState = null)
 	if c == null or v == null:
 		return
 	if v.combatant != null and v.combatant.id != id:
-		fx_layer.burst(v.satellite_spot(id), Palette.RESIST_GOLD, &"effect_burst")
+		fx_layer.drone_destroyed(v.satellite_spot(id), Palette.SLICE_TROJAN)  # ART-2 2C: drone destroyed v3
 		v.remove_shown_satellite(id)
 		return
 	v.anim_hp = 0.0
 	# ANIM-R2 E5: a short white flash on the breaking wheel only (a full-screen flash read as
 	# a rendering fault).
 	fx_layer.disc_flash(v.global_center(), v.disc_radius(), Color.WHITE, &"victory_flash")
-	fx_layer.shards(v.slice_pieces())
+	fx_layer.shards(v.slice_pieces(), tr("DELETED") if not c.is_player else "")  # ART-2 2C: enemy defeated v2
 	v.play_break()
 	AudioDirector.play_sfx("clack")
 
