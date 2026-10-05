@@ -150,6 +150,7 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 +%d RAM,+%d RAM
 +%d SHIELD,+%d SHIELD
 +%d block and shield gained,+%d block and shield gained
++%d more routes (the pencil letters them on the map),+%d more routes (the pencil letters them on the map)
 ", a run in progress",", a run in progress"
 - its block and shield %d (absorbed),- its block and shield %d (absorbed)
 -%d RAM,-%d RAM

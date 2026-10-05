@@ -49,8 +49,12 @@ BREACHED); crops in `docs/art_review/ART-6/3A/`.
    letterhead line, order number); START DEFENSE is a vinyl sticker (`RaidSticker` over
    `VinylSticker`) with the Speed / Skip terminal strip under it (greyed in setup); in the
    playout START peels away (1B's `sticker_peel`) and the live strip is the feed's foot.
-   THREAT INTEL sits beside the loadout under the map (the reference's bottom left); at text
-   scale > 1.6 it joins the side column (which scrolls).
+   THREAT INTEL sits beside the loadout under the map at text scale 1.0 (the reference's
+   bottom left), listing at most three entry routes (A, B, C; the rest as a count); above 1.0
+   it joins the side column. The side column now scrolls at every text scale (the paper and
+   the terminals are taller than the old badges; MORE BELOW says so), YOUR NETWORK keeping a
+   150 px view of its own there; the go row wraps and the Speed / Skip strip's STEP readout
+   shows only when the column has room, so nothing widens the page.
 2. **Node status and health v2** (`RaidSocket`): an isometric chip socket with pins and the
    pin-1 notch, the type glyph (no tags), holds green / CORE pink; only the inner fill drains
    north to south with a hatch and a drain line, the outline and glyph stay lit; DOWN = the

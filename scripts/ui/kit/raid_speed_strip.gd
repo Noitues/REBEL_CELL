@@ -25,7 +25,8 @@ func _init(p_steps_max: int = 30) -> void:
 	name = "SpeedStrip"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var k := Settings.text_scale
-	custom_minimum_size = Vector2((KEY_W * 3.0 + SKIP_W + GAP * 4.0 + PAD * 2.0) * k + _step_w(), HEIGHT * k)
+	# The keys set its width; the STEP readout shows when the column has room for it.
+	custom_minimum_size = Vector2((KEY_W * 3.0 + SKIP_W + GAP * 4.0 + PAD * 2.0) * k, HEIGHT * k)
 	# 1B's CRT terminal is the strip's glass (greyed: nothing plays yet); the keys draw over it.
 	crt = CrtTerminalPanel.new()
 	crt.name = "Crt"
@@ -70,6 +71,8 @@ func _draw_keys() -> void:
 		var tw := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		_keys.draw_string(f, Vector2(box.get_center().x - tw * 0.5, box.get_center().y + f.get_ascent(px) * 0.4), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.NET_CYAN, a))
 		x += w + GAP * k
+	if size.x - x < _step_w():
+		return
 	_keys.draw_string(f, Vector2(x + GAP * k, size.y * 0.5 + f.get_ascent(px) * 0.4), tr(STEP_IDLE) % steps_max, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(Palette.TERMINAL_TEXT, a))
 
 

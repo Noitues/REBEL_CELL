@@ -2634,7 +2634,9 @@ func show_raid() -> void:
 	# text scale), so the Armory's cards under it stay on screen at big text.
 	var orders_scroll := ScrollContainer.new()
 	orders_scroll.name = "OrdersScroll"
-	orders_scroll.custom_minimum_size = Vector2(0, ORDERS_MIN_HEIGHT * Settings.text_scale)
+	# ART-6 3A: in the scrolling column the list keeps a taller view of its own (a picked node's
+	# Withdraw row never ends under its foot).
+	orders_scroll.custom_minimum_size = Vector2(0, (ORDERS_SCROLL_MIN_HEIGHT if side_scroll != null else ORDERS_MIN_HEIGHT) * Settings.text_scale)
 	orders_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	orders_win.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	# ANIM-R6 C8: the window's body takes its height too, so the list fills the window (it
@@ -2650,10 +2652,11 @@ func show_raid() -> void:
 	orders_scroll.add_child(orders)
 	for site_id in claimed:
 		orders.add_child(_node_order_row(site_id, projection, claimed))
-	var go := HBoxContainer.new()
+	var go := HFlowContainer.new()  # wraps at big text (the sticker and Back never widen the column)
 	go.name = "RaidGo"
-	go.add_theme_constant_override("separation", 10)
-	go.alignment = BoxContainer.ALIGNMENT_END
+	go.add_theme_constant_override("h_separation", 10)
+	go.add_theme_constant_override("v_separation", 6)
+	go.alignment = FlowContainer.ALIGNMENT_END
 	side.add_child(go)
 	# H24 S14: "RUN THE RAID" read like attacking; the Cell defends. ART-6 3A: the verb is a
 	# vinyl sticker (§1.2), the Speed / Skip terminal strip sits under it (greyed: nothing
@@ -2664,7 +2667,7 @@ func show_raid() -> void:
 	run_btn.pressed.connect(fight_raid)
 	_add_tip(go, run_btn, tr("Start the defence: the raid plays out on the map; the result matches the forecast."))
 	var strip := RaidSpeedStrip.new(RunManager.config().raid_step_cap)
-	strip.size_flags_horizontal = Control.SIZE_SHRINK_END
+	strip.size_flags_horizontal = Control.SIZE_FILL
 	side.add_child(strip)
 	# H24 S14: the same words and tooltip as the HQ's ARMORY badge (assets banked, not
 	# deployed, of the Armory's room).
@@ -2675,17 +2678,23 @@ func show_raid() -> void:
 	# ART-6 3A: THREAT INTEL (the decrypted holo) sits beside the loadout under the map (the
 	# reference's bottom left), or in the side column at big text.
 	var intel := _threat_intel(raid, pending, projection)
+	# Above the base text size the holo's rows would take the map's height: it joins the side
+	# column (which scrolls) under the work order.
+	var intel_in_side := big_text or Settings.text_scale > INTEL_STRIP_SCALE_MAX
+	if intel_in_side:
+		side.add_child(intel)
+		side.move_child(intel, side.get_child_count() - 3)
 	if big_text:
 		side.add_child(loadout)
 		side.move_child(loadout, 0)  # ART-0 C: the cards on the first screen
-		side.add_child(intel)
-		side.move_child(intel, side.get_child_count() - 3)
+	elif intel_in_side:
+		map_col.add_child(loadout)
 	else:
 		var bottom := HBoxContainer.new()
 		bottom.name = "RaidBottom"
 		bottom.add_theme_constant_override("separation", 10)
 		bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		intel.custom_minimum_size.x = INTEL_WIDTH * Settings.text_scale
+		intel.custom_minimum_size.x = INTEL_WIDTH
 		bottom.add_child(intel)
 		loadout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		bottom.add_child(loadout)
@@ -2796,6 +2805,8 @@ const START_STICKER_STEP := UiTheme.TITLE
 ## Above this text scale the raid setup's side column scrolls (ART-6 3A: at every scale, the
 ## work order, YOUR NETWORK and START never push the page past the screen).
 const RAID_SIDE_SCROLL_ABOVE := 0.0
+## YOUR NETWORK's list view in the scrolling column (px at 1.0; ART-6 3A).
+const ORDERS_SCROLL_MIN_HEIGHT := 150.0
 const INTEL_WIDTH := 300.0
 
 
@@ -2952,7 +2963,25 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 	var groups := raid_route_groups(projection)
 	var units: Array[Dictionary] = []
 	var seen := {}
-	for g: Dictionary in groups:
+	for gi in groups.size():
+		var g: Dictionary = groups[gi]
+		var names := PackedStringArray()
+		var counts := {}
+		var rules := PackedStringArray()
+		for cid: StringName in g["threats"]:
+			var td: ThreatData = RunManager.lookup().get_content(cid) as ThreatData if RunManager.lookup().has(cid) else null
+			var nm := TextDb.t(td, "display_name").to_upper() if td != null else String(cid).to_upper()
+			if not counts.has(nm):
+				names.append(nm)
+			counts[nm] = int(counts.get(nm, 0)) + 1
+			var rule := tr(String(RAID_TARGETS.get(td.routing if td != null else RC.ThreatRouting.SHORTEST_TO_HOME, "")))
+			if not rules.has(rule):
+				rules.append(rule)
+			if not seen.has(cid):
+				seen[cid] = true
+				units.append({"type": RaidVehicle.type_of(td), "name": nm, "letter": "%s%d" % [g["letter"], units.size() + 1]})
+		if gi >= INTEL_ROWS_MAX:
+			continue
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2963,22 +2992,16 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 		words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(words)
 		holo.body.add_child(row)
-		var names := PackedStringArray()
-		var rules := PackedStringArray()
-		for cid: StringName in g["threats"]:
-			var td: ThreatData = RunManager.lookup().get_content(cid) as ThreatData if RunManager.lookup().has(cid) else null
-			var nm := TextDb.t(td, "display_name").to_upper() if td != null else String(cid).to_upper()
-			names.append(nm)
-			var rule := tr(String(RAID_TARGETS.get(td.routing if td != null else RC.ThreatRouting.SHORTEST_TO_HOME, "")))
-			if not rules.has(rule):
-				rules.append(rule)
-			if not seen.has(cid):
-				seen[cid] = true
-				units.append({"type": RaidVehicle.type_of(td), "name": nm, "letter": "%s%d" % [g["letter"], units.size() + 1]})
-		var head := holo.add_line(" + ".join(names), Palette.AUTO, UiTheme.BODY)
+		var listed := PackedStringArray()
+		for nm in names:
+			listed.append(nm if int(counts[nm]) == 1 else "%d %s" % [int(counts[nm]), nm])
+		var head := holo.add_line(" + ".join(listed), Palette.AUTO, UiTheme.BODY)
 		head.reparent(words)
 		var sub := holo.add_line("> " + " / ".join(rules) + "  //  " + site_name(StringName(String(g["entry"]))))
 		sub.reparent(words)
+	if groups.size() > INTEL_ROWS_MAX:
+		holo.add_line(tr("+%d more routes (the pencil letters them on the map)") % (groups.size() - INTEL_ROWS_MAX))
+
 	if groups.is_empty():
 		holo.add_line(tr("No threats can reach your network."))
 	# The scanned threats strip at the base text size (bigger text keeps the map its room: the
@@ -2990,6 +3013,8 @@ func _threat_intel(raid: RaidData, pending: Dictionary, projection: RaidResolver
 
 ## THREAT INTEL shows its scanned threats strip up to this text scale.
 const INTEL_STRIP_SCALE_MAX := 1.0
+## THREAT INTEL lists at most this many entry routes (A, B, C); the rest are a count.
+const INTEL_ROWS_MAX := 3
 
 
 ## ART-6 3A: the projection's threats grouped by their entry Site, in entry order (A first):
