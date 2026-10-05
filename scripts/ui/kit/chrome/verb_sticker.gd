@@ -81,13 +81,63 @@ const HALO_STROKE := 4.0
 const HALO_RADIUS := 16
 
 
-## True when the kit's VinylSticker draws this fill.
+## The concept art baked by tools/art/bake_menus_r33.py (round 33 title.py / menu33.py /
+## ui31.sticker, unchanged): `<key>.png` at rest, `<key>_focus.png` with its lime die-cut halo,
+## `<key>_sweep_NN.png` (the focused gloss sweep), `<key>_burst_N[_focus].png` (the glitch).
+const ART_DIR := "res://assets/ui/menus/stickers/"
+## The baked stickers are at 2x the 1920 board: a third of their pixels in the game.
+const ART_TO_GAME := 1.0 / 3.0
+## The concept's two glitch bursts by loop frame (title.py GLITCH_FRAMES).
+const BURST_FRAMES := {9: 0, 10: 1, 27: 1, 28: 0}
+## The baked art's key ("" = none: drawn).
+var art_key: String = ""
+var _art_rest: Texture2D = null
+var _art_focus: Texture2D = null
+var _art_sweeps: Array[Texture2D] = []
+var _art_bursts: Array[Texture2D] = []
+var _art_bursts_focus: Array[Texture2D] = []
+var _sweep_k: int = -1
+
+
+## The baked art key for a screen-title word ("OPTIONS" -> "title_options"), or "" when the
+## concept has none (the kit's sticker draws it).
+static func title_art(word: String) -> String:
+	var key := "title_" + word.to_lower().replace(" ", "_")
+	return key if ResourceLoader.exists(ART_DIR + key + ".png") else ""
+
+
+## True when the kit's VinylSticker draws this fill (no baked art for it).
 func uses_kit() -> bool:
-	return fill == Fill.PINK or fill == Fill.YELLOW
+	return art_key == "" and (fill == Fill.PINK or fill == Fill.YELLOW)
 
 
-func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p_tilt: float = 0.0) -> void:
+## True when the concept's baked art draws it.
+func uses_art() -> bool:
+	return _art_rest != null
+
+
+func _load_art() -> void:
+	if art_key == "" or not ResourceLoader.exists(ART_DIR + art_key + ".png"):
+		return
+	_art_rest = load(ART_DIR + art_key + ".png") as Texture2D
+	var fp := ART_DIR + art_key + "_focus.png"
+	_art_focus = load(fp) as Texture2D if ResourceLoader.exists(fp) else _art_rest
+	var k := 0
+	while ResourceLoader.exists(ART_DIR + "%s_sweep_%02d.png" % [art_key, k]):
+		_art_sweeps.append(load(ART_DIR + "%s_sweep_%02d.png" % [art_key, k]) as Texture2D)
+		k += 1
+	k = 0
+	while ResourceLoader.exists(ART_DIR + "%s_burst_%d.png" % [art_key, k]):
+		_art_bursts.append(load(ART_DIR + "%s_burst_%d.png" % [art_key, k]) as Texture2D)
+		var bf := ART_DIR + "%s_burst_%d_focus.png" % [art_key, k]
+		_art_bursts_focus.append(load(bf) as Texture2D if ResourceLoader.exists(bf) else _art_bursts[-1])
+		k += 1
+
+
+func _init(p_text: String = "", p_fill: int = Fill.PINK, p_size: float = 40.0, p_tilt: float = 0.0, p_art: String = "") -> void:
 	text = p_text
+	art_key = p_art
+	_load_art()
 	fill = p_fill
 	base_size = p_size
 	tilt = p_tilt
@@ -126,6 +176,7 @@ func complete_motion() -> void:
 	if _sweep_tween != null and _sweep_tween.is_valid():
 		_sweep_tween.kill()
 		_mat.set_shader_parameter(&"sweep", SWEEP_OFF)
+		_sweep_k = -1
 
 
 func _ready() -> void:
@@ -175,6 +226,15 @@ func _pad() -> float:
 
 
 func _fit() -> void:
+	if uses_art():
+		# The focus image (with its halo) is the largest: the sticker keeps that size, so the
+		# halo never moves the layout.
+		var k := ART_TO_GAME * clampf(Settings.text_scale, 1.0, SCALE_MAX)
+		custom_minimum_size = (_art_focus.get_size() * k).ceil()
+		size = custom_minimum_size
+		_pivot()
+		queue_redraw()
+		return
 	if vinyl != null:
 		vinyl.font_step = maxi(1, roundi(letter_px() / Settings.text_scale))
 		# The kit's die-cut (18 px) is sized for hero verbs; a menu verb keeps the round 33
@@ -265,6 +325,18 @@ func _press(down: bool) -> void:
 func _sweep() -> void:
 	if vinyl != null or not Motion.live(HOVER_MOTION):
 		return
+	if uses_art():
+		# The concept's own sweep: its focused frames played once.
+		if _art_sweeps.is_empty():
+			return
+		if _sweep_tween != null:
+			_sweep_tween.kill()
+		_sweep_tween = create_tween()
+		_sweep_tween.tween_method(func(t: float) -> void:
+			_sweep_k = mini(_art_sweeps.size() - 1, int(t * _art_sweeps.size()))
+			queue_redraw(), 0.0, 1.0, Motion.seconds(HOVER_MOTION) * 3.0)
+		_sweep_tween.tween_callback(func() -> void: _sweep_k = -1; queue_redraw())
+		return
 	if _sweep_tween != null:
 		_sweep_tween.kill()
 	var w := size.x
@@ -281,21 +353,23 @@ func _process(delta: float) -> void:
 			_clock = 0.0
 			queue_redraw()
 		return
-	var was := bursting()
+	var was := burst_phase()
 	_clock = fmod(_clock + delta, maxf(0.05, Motion.seconds(GLITCH_MOTION)))
-	if bursting() != was:
+	if burst_phase() != was:
 		queue_redraw()
 
 
 ## True while the glitch bursts (frames 9-10 and 27-28 of its 48-frame loop).
 func bursting() -> bool:
+	return burst_phase() >= 0
+
+
+## The burst frame shown now (title.py GLITCH_FRAMES), -1 at rest.
+func burst_phase() -> int:
 	if fill != Fill.GLITCH or not Motion.live(GLITCH_MOTION):
-		return false
-	var f := _clock / maxf(0.05, Motion.seconds(GLITCH_MOTION)) * LOOP_FRAMES
-	for b in BURSTS:
-		if f >= b.x and f < b.y:
-			return true
-	return false
+		return -1
+	var f := int(_clock / maxf(0.05, Motion.seconds(GLITCH_MOTION)) * LOOP_FRAMES)
+	return int(BURST_FRAMES.get(f, -1))
 
 
 func _fill_colors() -> Array[Color]:
@@ -310,6 +384,10 @@ func _fill_colors() -> Array[Color]:
 
 
 func _draw() -> void:
+	_mat.set_shader_parameter(&"grey", DISABLED_GREY if disabled else 0.0)
+	if uses_art():
+		_draw_art()
+		return
 	if vinyl != null:
 		_draw_kit_frame()
 		return
@@ -386,6 +464,21 @@ func _draw_kit_frame() -> void:
 		ink.set_border_width_all(int(HALO_STROKE) + 2)
 		draw_style_box(ink, r.grow(1.0))
 		draw_style_box(sb, r)
+	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
+
+
+## The concept art: rest, focus (lime halo), the sweep's frame, the glitch's burst frame; centred.
+func _draw_art() -> void:
+	var focused := has_focus() or KitState.of(self) == KitState.FOCUS
+	var tex := _art_focus if focused else _art_rest
+	var ph := burst_phase()
+	if ph >= 0 and ph < _art_bursts.size():
+		tex = _art_bursts_focus[ph] if focused else _art_bursts[ph]
+	elif _sweep_k >= 0 and _sweep_k < _art_sweeps.size():
+		tex = _art_sweeps[_sweep_k]
+	var k := ART_TO_GAME * clampf(Settings.text_scale, 1.0, SCALE_MAX)
+	var sz := tex.get_size() * k
+	draw_texture_rect(tex, Rect2((size - sz) * 0.5, sz), false)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 

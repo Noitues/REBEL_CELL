@@ -151,6 +151,7 @@ func _init() -> void:
 	tab_row.add_child(_tabs)
 	for name in SECTIONS:
 		var b := MenuChip.new(tr(name))
+		b.plate = &"tab"  # ui31.tabs plates (round 31)
 		b.pre_translated = true
 		b.label_step = UiTheme.BODY
 		b.name = "Tab%s" % name
@@ -244,7 +245,7 @@ func _init() -> void:
 	saved.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	foot.add_child(saved)
 	# The yellow OPTIONS title sticker over the header's right end (round 31).
-	title_sticker = VerbSticker.new(tr("OPTIONS"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT)
+	title_sticker = VerbSticker.new(tr("OPTIONS"), VerbSticker.Fill.YELLOW, TITLE_PX, TITLE_TILT, VerbSticker.title_art("OPTIONS"))
 	title_sticker.pre_translated = true
 	title_sticker.name = "TitleSticker"
 	title_sticker.focus_mode = Control.FOCUS_NONE
@@ -536,17 +537,19 @@ func _slider(text: String, lo: float, hi: float, step: float, value: float, sett
 
 
 static var _grab_tex: ImageTexture = null
+const GRABBER_ART := "res://assets/ui/menus/kit/slider_handle.png"
+const GRABBER_SCALE := 2.0 / 3.0
 
 
-## The slider's grabber: a white bar with an ink rim.
+## The slider's grabber: the concept's white notched handle.
 static func _grabber() -> Texture2D:
 	if _grab_tex != null:
 		return _grab_tex
-	var img := Image.create(10, 22, false, Image.FORMAT_RGBA8)
-	img.fill(Palette.GLYPH_INK)
-	for y in range(2, 20):
-		for x in range(2, 8):
-			img.set_pixel(x, y, Palette.TEXT_HI)
+	# The concept's notched handle (round 31 ui31.slider, baked by tools/art/bake_menus_r33.py),
+	# at two thirds (board -> game); a texture's pixels, resized once (the loaded one is kept).
+	var src := load(GRABBER_ART) as Texture2D
+	var img := src.get_image()
+	img.resize(maxi(1, roundi(img.get_width() * GRABBER_SCALE)), maxi(1, roundi(img.get_height() * GRABBER_SCALE)), Image.INTERPOLATE_LANCZOS)
 	_grab_tex = ImageTexture.create_from_image(img)
 	return _grab_tex
 

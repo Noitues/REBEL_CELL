@@ -24,6 +24,9 @@ const NAME_STEP := UiTheme.LABEL
 const LINE_STEP := UiTheme.BODY
 const NOTE_STEP := UiTheme.CAPTION
 
+## The baked art this view draws, held while it lives (a texture loaded only inside _draw
+## was freed before the frame drew it: a white box).
+var _held: Dictionary = {}
 var note: Callable = Callable()
 
 
@@ -179,7 +182,20 @@ func _draw() -> void:
 
 
 ## The switch: ON = cyan fill, ink "ON", knob right; OFF = outline, "OFF", knob left.
+## The concept's pill switch (round 31 ui31.toggle, baked by tools/art/bake_menus_r33.py: on /
+## off x idle / hover / disabled), at two thirds (board -> game) with the text scale.
+const TOGGLE_DIR := "res://assets/ui/menus/kit/"
+const TOGGLE_SCALE := 2.0 / 3.0
+
+
 func _draw_pill(pill: Rect2, on: bool, dim: bool) -> void:
+	var st := "disabled" if dim else ("hover" if KitState.of(self) in [KitState.HOVER, KitState.FOCUS] else "idle")
+	var path := TOGGLE_DIR + "toggle_%s_%s.png" % ["on" if on else "off", st]
+	if ResourceLoader.exists(path):
+		var tex := Chrome.held(_held, path)
+		var sz := tex.get_size() * TOGGLE_SCALE * Settings.text_scale
+		draw_texture_rect(tex, Rect2(Vector2(pill.end.x - sz.x, pill.get_center().y - sz.y * 0.5), sz), false)
+		return
 	var cyan := Palette.DISABLED if dim else Palette.NET_CYAN
 	var rad := pill.size.y * 0.5
 	var shape := _capsule(pill, rad)

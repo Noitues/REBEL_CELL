@@ -1,38 +1,60 @@
 class_name PencilPlan
 extends Control
 ## ART-10 4C: the grease-pencil plan beside the title's three verb stickers (ART_BIBLE v2
-## §1.2 "Grease pencil", §4.13 title option A "the plan"; round 33 `title_screen.jpg`): a
-## yellow wax stroke down the left and a number before each sticker ("1." "2." "3."), in
-## Permanent Marker with a dark under-shadow so it reads day and night. Plans only: no
-## live numbers, no body text. It reads the rows' centres from `rows` (the stickers'
-## column) each frame it draws. View only.
+## §1.2 "Grease pencil", §4.13 title option A "the plan"; round 33 `title_screen.jpg`). The art
+## is the concept's own (round 33 title.py `static_ui`: the numbers 1. 2. 3. and the plan
+## bracket in `ui31.Pencil`, baked by tools/art/bake_menus_r33.py into
+## `assets/ui/menus/pencil/plan.png`); the verb rows keep its 112 px board pitch
+## (`row_pitch`) so each number sits on its row. `wax_text` / `wax_line` remain for pencil
+## words the concept never drew (the HQ's new-campaign motto). View only.
 
+const ART := "res://assets/ui/menus/pencil/plan.png"
+const META := "res://assets/ui/menus/pencil/meta.json"
+## The concept board (1920 wide) to the game's 1280.
+const BOARD_TO_GAME := 2.0 / 3.0
 ## Wax alpha and the under-shadow offset (px) (§1.2: opaque wax 0.96, a dark under-shadow).
 const WAX_ALPHA := 0.96
 const SHADOW := Vector2(2, 2)
-## Stroke width (px) and the number lettering step.
+## Stroke width (px).
 const STROKE := 4.0
-const NUMBER_STEP := UiTheme.HEADING
-## The column's width (px at text scale 1.0).
-const WIDTH := 46.0
 
-## The column whose children the numbers stand beside.
+static var _meta: Dictionary = {}
+
+## The column whose rows the numbers stand beside (kept for the layout's reference).
 var rows: Control = null
+var _tex: Texture2D = null
+
+
+static func meta() -> Dictionary:
+	if _meta.is_empty():
+		var f := FileAccess.open(META, FileAccess.READ)
+		if f != null:
+			_meta = JSON.parse_string(f.get_as_text())
+	return _meta
+
+
+## The art's scale with the text (stickers and the plan scale as whole objects, up to
+## VerbSticker.SCALE_MAX).
+static func art_scale() -> float:
+	return BOARD_TO_GAME * clampf(Settings.text_scale, 1.0, VerbSticker.SCALE_MAX)
+
+
+## The verb rows' pitch (px): the concept's 112 board px, scaled.
+static func row_pitch() -> float:
+	return float(meta().get("row_pitch", 112)) * art_scale()
 
 
 func _init(p_rows: Control = null) -> void:
 	rows = p_rows
 	name = "PencilPlan"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(WIDTH, 0)
 	auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_tex = load(ART) as Texture2D
+	custom_minimum_size = Vector2(_tex.get_size().x * art_scale(), 0.0) if _tex != null else Vector2.ZERO
 
 
-func _process(_delta: float) -> void:
-	queue_redraw()
-
-
-## Draws `text` as wax at `at` (baseline) with its under-shadow.
+## Draws `text` as wax at `at` (baseline) with its under-shadow (pencil words with no concept
+## art).
 static func wax_text(ci: CanvasItem, at: Vector2, text: String, px: int, color: Color = Palette.PENCIL_PLAN) -> void:
 	var f := Chrome.pencil_font()
 	ci.draw_string(f, at + SHADOW, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.PENCIL_SHADOW)
@@ -49,21 +71,11 @@ static func wax_line(ci: CanvasItem, pts: PackedVector2Array, width: float = STR
 
 
 func _draw() -> void:
-	if rows == null or not is_instance_valid(rows) or rows.get_child_count() == 0:
+	if _tex == null:
 		return
-	var inv := get_global_transform().affine_inverse()
-	var px := Chrome.px(NUMBER_STEP)
-	var top := INF
-	var bottom := -INF
-	var n := 0
-	for c in rows.get_children():
-		if not (c is Control) or not (c as Control).visible:
-			continue
-		n += 1
-		var g := (c as Control).get_global_rect()
-		var y := (inv * g.get_center()).y
-		top = minf(top, (inv * g.position).y)
-		bottom = maxf(bottom, (inv * g.end).y)
-		wax_text(self, Vector2(STROKE * 2.5, y + px * 0.35), "%d." % n, px)
-	if n > 0:
-		wax_line(self, PackedVector2Array([Vector2(STROKE, top - 6.0), Vector2(STROKE + 1.5, (top + bottom) * 0.5), Vector2(STROKE - 1.0, bottom + 18.0)]))
+	# The plan art's first number sits on the first row's centre (the concept's row_y[0]).
+	var box: Array = meta().get("plan_box", [0, 300, 0, 0])
+	var row_y: Array = meta().get("row_y", [392])
+	var k := art_scale()
+	var y := row_pitch() * 0.5 - (float(row_y[0]) - float(box[1])) * k
+	draw_texture_rect(_tex, Rect2(Vector2(0, y), _tex.get_size() * k), false)

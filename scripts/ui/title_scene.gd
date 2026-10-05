@@ -24,7 +24,7 @@ const MOTTO_TILT := 3.0
 ## Margins of the page (px): sides, top, bottom (the ticker's room is added).
 const PAGE_MARGIN := Vector3(40, 22, 8)
 ## Gaps (px): sign to the verbs, between verb rows, a sticker to its chip.
-const GAP_SIGN := 14
+const GAP_SIGN := 4
 const GAP_ROWS := 4
 const GAP_CHIP := 22
 ## The verbs' chips' least width (px at text scale 1.0).
@@ -34,6 +34,8 @@ const MORE_W := 300.0
 const PROFILE_W := 290.0
 ## From this text scale the MORE panel moves to the right column (the left one is full).
 const MORE_RIGHT_FROM := 1.6
+## The MORE lines' type step (round 33: five lines in 156 px of the board).
+const MORE_STEP := UiTheme.BODY
 ## The city's dim behind the title (it reads as the backdrop, round 33's blurred city).
 const CITY_DIM := 0.58
 ## The page widths for the codex / stats / slots terminals (px at 1.0) and the codex text's
@@ -176,8 +178,8 @@ func _set_panel(p: Control, name: String) -> void:
 	var back := name == "main" and panel_name != ""
 	panel_name = name
 	# The sub-pages start under the subtitles' band (H21 #11); the main page keeps its top
-	# left for the sign (the band sits top right, clear of it).
-	margin.add_theme_constant_override("margin_top", int(PAGE_MARGIN.y if name == "main" else SubtitleStrip.top_below(PAGE_MARGIN.y)))
+	# left for the sign, which hangs from the top edge on its cables (the band sits top right).
+	margin.add_theme_constant_override("margin_top", int(0.0 if name == "main" else SubtitleStrip.top_below(PAGE_MARGIN.y)))
 	# H24 S4: the page shows its words as given (translated once where built).
 	TextDb.shown_as_given(p)
 	_panel_host.add_child(p)
@@ -212,11 +214,10 @@ func show_main() -> void:
 	left.add_child(sign)
 	# The motto in grease pencil, written across the sign's lower right corner (round 33); it
 	# takes no room of its own.
-	var motto := PencilWords.new(tr("NEVER SLEEP"), MOTTO_TILT, true)
+	var motto := PencilWords.new(tr("NEVER SLEEP"), MOTTO_TILT, true, PencilWords.MOTTO_ART)
 	motto.name = "Motto"
-	var mm := motto.get_combined_minimum_size()
-	motto.position = Vector2(NeonSign.BOARD.x - mm.x * 0.55, NeonSign.BOARD.y - mm.y * 0.15)
-	motto.size = mm
+	motto.position = PencilWords.motto_at()
+	motto.size = motto.get_combined_minimum_size()
 	page.add_child(motto)
 	motto.visible = not big_text()  # big text: the chips take its room
 	# The plan: three numbered verbs, each on its terminal chip.
@@ -226,7 +227,7 @@ func show_main() -> void:
 	plan.custom_minimum_size.y = 0
 	var rows := VBoxContainer.new()
 	rows.name = "Verbs"
-	rows.add_theme_constant_override("separation", GAP_ROWS)
+	rows.add_theme_constant_override("separation", 0)  # the concept's row pitch (PencilPlan.row_pitch)
 	plan.add_child(PencilPlan.new(rows))
 	plan.add_child(rows)
 	left.add_child(plan)
@@ -306,7 +307,8 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", GAP_CHIP)
 	row.alignment = BoxContainer.ALIGNMENT_BEGIN
-	var s := VerbSticker.new(tr(word), fill, VERB_PX, VERB_TILTS[verbs.size()])
+	# The concept's own sticker art (round 33 title.py / menu33.py, baked): BREACH, SIMULATE, OVERTHROW.
+	var s := VerbSticker.new(tr(word), fill, VERB_PX, VERB_TILTS[verbs.size()], word.to_lower())
 	s.pre_translated = true
 	s.fist_at = fist
 	s.tooltip_text = UiTip.fold(tip)
@@ -342,12 +344,12 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 
 ## Gives every sticker slot the widest sticker's size, so the chips line up.
 func _align_verbs(rows: Control) -> void:
+	# The rows keep the concept's pitch (title.py: 112 px on the 1920 board) so the pencil's
+	# numbers sit on them; a sticker (its focus halo, its shadow) may reach past its row.
 	var w := 0.0
-	var h := 0.0
+	var h := PencilPlan.row_pitch()
 	for v in verbs:
-		var m := v.get_combined_minimum_size()
-		w = maxf(w, m.x)
-		h = maxf(h, m.y)
+		w = maxf(w, v.get_combined_minimum_size().x)
 	for v in verbs:
 		var slot := v.get_parent() as Control
 		slot.custom_minimum_size = Vector2(w, h)
@@ -421,7 +423,7 @@ func _page(title_word: String, content: Control, page_name: String) -> VBoxConta
 	box.name = page_name
 	box.add_theme_constant_override("separation", 6)
 	var head := HBoxContainer.new()
-	var sticker := VerbSticker.new(tr(title_word), VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT)
+	var sticker := VerbSticker.new(tr(title_word), VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT, VerbSticker.title_art(title_word))
 	sticker.pre_translated = true
 	sticker.name = "TitleSticker"
 	sticker.focus_mode = Control.FOCUS_NONE
@@ -671,8 +673,8 @@ func _item(box: Control, text: String, on_pressed: Callable, kind: StringName, t
 		b.text = text.to_upper()
 		b.theme_type_variation = &"MenuItem"
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.add_theme_font_override(&"font", Chrome.caps_font(UiTheme.LABEL))
-		b.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.LABEL))
+		b.add_theme_font_override(&"font", Chrome.caps_font(MORE_STEP))
+		b.add_theme_font_size_override(&"font_size", Chrome.px(MORE_STEP))
 		b.add_theme_color_override(&"font_color", Palette.TEXT_HI)
 		b.add_theme_color_override(&"font_hover_color", Palette.TEXT_HI)
 		b.add_theme_color_override(&"font_focus_color", Palette.TEXT_HI)

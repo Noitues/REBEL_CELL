@@ -10,10 +10,16 @@ const STEP := UiTheme.BODY
 ## The band's height as a multiple of its font size, and the ON AIR block's width share.
 const HEIGHT_SHARE := 2.0
 const BLOCK_SHARE := 0.11
+const ON_AIR_ART := "res://assets/ui/menus/kit/on_air.png"
 const SEPARATOR := "   +++   "
 
 var words: PackedStringArray = []
 var _offset: float = 0.0
+
+
+## The baked art this view draws, held while it lives (a texture loaded only inside _draw
+## was freed before the frame drew it: a white box).
+var _held: Dictionary = {}
 
 
 func _init(p_words: PackedStringArray = []) -> void:
@@ -47,7 +53,9 @@ func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	draw_rect(r, Color(Palette.NET_BG_OUTER, 0.92))
 	draw_line(Vector2(0, 0.5), Vector2(size.x, 0.5), Color(Palette.NET_CYAN, 0.6), 1.0)
-	var block := Rect2(Vector2.ZERO, Vector2(size.x * BLOCK_SHARE, size.y))
+	# The concept's ON AIR block (round 33 title.py ticker(), baked), at the band's height.
+	var tex := Chrome.held(_held, ON_AIR_ART)
+	var block := Rect2(Vector2.ZERO, Vector2(tex.get_size().x * size.y / tex.get_size().y if tex != null else size.x * BLOCK_SHARE, size.y))
 	var base := (size.y + f.get_ascent(px) - f.get_descent(px)) * 0.5
 	var text := _line()
 	var w := maxf(1.0, f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
@@ -55,5 +63,8 @@ func _draw() -> void:
 	while x < size.x:
 		draw_string(f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.NET_CYAN)
 		x += w
-	draw_rect(block, Palette.NET_CYAN)
-	draw_string(f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)
+	if tex != null:
+		draw_texture_rect(tex, block, false)
+	else:
+		draw_rect(block, Palette.NET_CYAN)
+		draw_string(f, Vector2(block.position.x, base), tr("ON AIR"), HORIZONTAL_ALIGNMENT_CENTER, block.size.x, px, Palette.GLYPH_INK)

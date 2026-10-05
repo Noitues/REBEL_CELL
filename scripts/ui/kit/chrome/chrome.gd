@@ -32,6 +32,14 @@ static func sticker_font() -> Font:
 	return VinylSticker.art_font()
 
 
+## `path`'s texture, kept in `into` (a view's own holder) so it lives as long as the view
+## that draws it.
+static func held(into: Dictionary, path: String) -> Texture2D:
+	if not into.has(path):
+		into[path] = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	return into[path]
+
+
 static func terminal_font() -> Font:
 	return Palette.mono()
 

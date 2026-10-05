@@ -222,15 +222,25 @@ func test_the_glitch_sign_and_ticker_hold_still_headless() -> void:
 	assert_eq(ticker._offset, 0.0, "the ticker holds still")
 
 
-func test_the_sign_loop_drops_to_cell_and_stutters_an_e() -> void:
-	for i in "REBEL_CELL".length():
-		assert_eq(NeonSign.lit_at(i, -1), 1.0, "held: letter %d lit" % i)
-	var drop: int = NeonSign.DROP_FRAMES[0]
-	for i in 6:
-		assert_lt(NeonSign.lit_at(i, drop), 1.0, "the drop darkens REBEL_ (%d)" % i)
-	for i in range(6, 10):
-		assert_eq(NeonSign.lit_at(i, drop), 1.0, "CELL stays lit (%d)" % i)
-	assert_lt(NeonSign.lit_at(NeonSign.STUTTER_LETTER, NeonSign.STUTTER_FRAMES[0]), 1.0, "the E stutters")
+func test_the_sign_is_the_concept_art_and_loops_its_lit_states() -> void:
+	# The baked round 33 title.py sign: one image per lit state of its 48-frame loop.
+	var m := NeonSign.meta()
+	var frames: Array = m.get("frames", [])
+	assert_eq(frames.size(), 48, "the concept's 48-frame loop")
+	assert_eq(NeonSign.state_at(-1), 0, "held: fully lit")
+	var states := {}
+	for f in frames:
+		states[int(f)] = true
+	assert_gte(states.size(), 4, "lit, cursor off, the E stutter, the drop to CELL")
+	for i in states:
+		assert_true(ResourceLoader.exists(NeonSign.DIR + "sign_%d.png" % i), "state %d baked" % i)
+	assert_true(VerbSticker.title_art("OPTIONS") != "", "the OPTIONS title sticker is baked")
+	assert_eq(VerbSticker.title_art("NOT A BAKED WORD"), "", "no art: the kit's sticker draws it")
+	var h: Control = add_child_autofree(Control.new())
+	var b := VerbSticker.new("BREACH", VerbSticker.Fill.PINK, 36.0, 0.0, "breach")
+	h.add_child(b)
+	await _frames(1)
+	assert_true(b.uses_art() and b.vinyl == null, "BREACH is the concept's sticker art")
 	assert_true(UiMotionData.REQUIRED_IDS.has(NeonSign.MOTION))
 	for id in [VerbSticker.HOVER_MOTION, VerbSticker.PRESS_MOTION, VerbSticker.GLITCH_MOTION, OnAirTicker.MOTION]:
 		assert_true(UiMotionData.REQUIRED_IDS.has(id), "%s is required" % id)

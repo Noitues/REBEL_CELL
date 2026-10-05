@@ -24,6 +24,7 @@ func _init(p_option: OptionButton) -> void:
 	for i in option.item_count:
 		var words := split(option.get_item_text(i))
 		var t := MenuChip.new(words[0], words[1])
+		t.plate = &"tile"  # settings.py tile plates (round 31)
 		t.pre_translated = true
 		t.name = "Tile%d" % i
 		t.label_step = UiTheme.BODY

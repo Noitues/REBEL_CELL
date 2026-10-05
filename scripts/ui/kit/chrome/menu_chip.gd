@@ -94,13 +94,52 @@ func measure() -> Vector2:
 	return Vector2(ceilf(w + PAD.x * 2.0), ceilf(h + PAD.y + PAD.w))
 
 
+## The concept's plates (tools/art/bake_menus_r33.py, wordless): `chip` = the title's terminal
+## chip (title.py `static_ui` term_panel; hot / idle), `tab` = ui31.tabs (active / idle), `tile`
+## = settings.py tiles (selected / idle). Each a nine-patch at two thirds (board -> game).
+const PLATE_DIR := "res://assets/ui/menus/kit/"
+const PLATES := {&"chip": ["chip_hot", "chip_idle", 20], &"tab": ["tab_active", "tab_idle", 10], &"tile": ["tile_selected", "tile_idle", 10]}
+const PLATE_SCALE := 2.0 / 3.0
+## Which concept plate this chip wears (&"" = drawn).
+var plate: StringName = &"chip"
+static var _plates: Dictionary = {}
+
+
+static func _plate_box(file: String, margin: int) -> StyleBoxTexture:
+	if not _plates.has(file):
+		var sb := StyleBoxTexture.new()
+		sb.texture = load(PLATE_DIR + file + ".png") as Texture2D
+		sb.texture_margin_left = margin
+		sb.texture_margin_right = margin
+		sb.texture_margin_top = margin
+		sb.texture_margin_bottom = margin
+		_plates[file] = sb
+	return _plates[file]
+
+
+## Lets the cached plates go (exit).
+static func release() -> void:
+	_plates.clear()
+
+
 func _draw() -> void:
 	var st := KitState.of(self)
 	var r := Rect2(Vector2(0, KitState.lift(st)), size)
 	var hot := st == KitState.HOVER or st == KitState.FOCUS or st == KitState.PRESSED
 	var pressed := st == KitState.PRESSED or (selected and not disabled)
-	var glass := Color(accent, 0.85) if pressed else (Palette.TERMINAL_BG if not hot else Palette.TERMINAL_BG.lerp(accent, 0.12))
-	Chrome.draw_terminal(self, r, accent if not disabled else Palette.DISABLED, glass, Chrome.CHAMFER * 0.8)
+	if PLATES.has(plate):
+		var p: Array = PLATES[plate]
+		# The chip's lit plate on hover / focus; a tab's or a tile's filled plate when selected.
+		var lit := (hot or selected) if plate == &"chip" else (selected or st == KitState.PRESSED)
+		var sb := _plate_box(String(p[0]) if lit else String(p[1]), int(p[2]))
+		draw_set_transform(r.position, 0.0, Vector2.ONE * PLATE_SCALE)
+		draw_style_box(sb, Rect2(Vector2.ZERO, r.size / PLATE_SCALE))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if plate == &"chip":
+			pressed = false  # the chip's plate stays navy: its words stay white
+	else:
+		var glass := Color(accent, 0.85) if pressed else (Palette.TERMINAL_BG if not hot else Palette.TERMINAL_BG.lerp(accent, 0.12))
+		Chrome.draw_terminal(self, r, accent if not disabled else Palette.DISABLED, glass, Chrome.CHAMFER * 0.8)
 	if disabled:
 		var x := r.position.x
 		while x < r.end.x + r.size.y:
@@ -110,14 +149,19 @@ func _draw() -> void:
 	var lp := Chrome.px(label_step)
 	var ink := Palette.GLYPH_INK if pressed else (Palette.TEXT_HI if not disabled else Palette.TEXT_LO)
 	var x0 := r.position.x + PAD.x
+	if plate != &"chip" and plate != &"":
+		# Tabs and tiles centre their words (ui31.tabs, settings.py tiles).
+		x0 = r.position.x + (r.size.x - lf.get_string_size(shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x) * 0.5
 	var y := r.position.y + PAD.y + lf.get_ascent(lp)
 	if hot and not disabled:
-		draw_string(lf, Vector2(x0, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else accent)
-		x0 += lp * CARET_SHARE
+		var centred := plate != &"chip" and plate != &""
+		draw_string(lf, Vector2(x0 - (lp * CARET_SHARE if centred else 0.0), y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink if pressed else accent)
+		if not centred:
+			x0 += lp * CARET_SHARE
 	draw_string(lf, Vector2(x0, y), shown_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, lp, ink)
 	if line != "":
 		var sp := Chrome.px(line_step)
 		var ly := y + lf.get_descent(lp) + PAD.z + Palette.mono().get_ascent(sp)
-		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x, ly), line, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0, sp,
+		draw_string(Palette.mono(), Vector2(r.position.x + PAD.x, ly), line, HORIZONTAL_ALIGNMENT_CENTER if plate != &"chip" else HORIZONTAL_ALIGNMENT_LEFT, r.size.x - PAD.x * 2.0, sp,
 			Palette.GLYPH_INK if pressed else (Palette.TEXT_MID if not disabled else Palette.TEXT_LO))
 	KitState.draw_frame(self, r, st, false)

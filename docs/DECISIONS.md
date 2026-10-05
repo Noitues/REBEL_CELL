@@ -49,6 +49,28 @@ kit) after both merged; generator scripts read on `art-concepts-r43` (round 33 `
   ON / OFF pill with a visible OFF track; a CheckButton, so C's behaviour and tests are unchanged),
   `CrtTiles` (tiles fronting a hidden OptionButton), `HeatGlitchPreview`, `NeonSign`, `PencilPlan`,
   `PencilWords`, `OnAirTicker`, and `shaders/chrome/vinyl_sticker.gdshader` (the BLUE / GLITCH fill).
+- **Concept art, not redrawn (designer correction 2026-10-05):** `tools/art/bake_menus_r33.py` runs
+  the round 33 ui_chrome scripts from `art-concepts-r43` unchanged (only the font paths and the
+  defaults that captured them are re-pointed at `assets/fonts`) and splits their output into
+  `assets/ui/menus/`: the BREACH / SIMULATE / OVERTHROW stickers (rest, focus halo, BREACH's 12
+  gloss-sweep frames, SIMULATE's two burst frames; `title.stk`, `menu33`), the yellow title stickers
+  OPTIONS, PAUSED, CODEX, STATS, CAMPAIGN SLOTS, NEW CAMPAIGN (`ui31.sticker`, round 33 parameters),
+  the REBEL_CELL sign per lit state of its 48-frame loop and its glow (`title.board` + `neon`), the
+  pencil plan and NEVER SLEEP + crown (`ui31.Pencil`), the pill switches, slider handle, tab and tile
+  plates and the title's chip plates (`ui31.toggle / slider / tabs / term_panel`, `settings.tiles`),
+  the ON AIR block (`title.ticker`) and the Heat glitch preview frames (the round 18 storyboard,
+  cropped as settings.py crops it). Stickers are at 2x the 1920 board (a third in the game), the
+  rest at 1x (two thirds). The title's verb rows keep the concept's 112 px board pitch so the
+  pencil numbers sit on them. **Every visual and its source:** sign, verb stickers, title stickers,
+  plan, motto, switches, slider handle, tabs, tiles, chip plates, ON AIR, glitch preview = baked
+  concept art (above). Drawn, with the reason: terminal windows (CrtWindow = 1B's CrtTerminalPanel
+  glass, the coordinator's seam; its header, tag chip and square carry live, translated words), the
+  MORE / PROFILE / Options / pause terminals (same), the chip and tile words, the ticker's crawl
+  (live words), the codex / stats text, the HQ (no concept: G13 dropped the HQ room), the
+  new-campaign page and its TRUST NO ONE pencil (no concept: §4.14 "new-campaign page" not
+  designed), stickers for words the concept never drew (the kit's VinylSticker), the confirm (2D's
+  ConfirmDialog). The title's backdrop stays the live city (round 33 used pre-rendered city frames;
+  the city is 1D / ART-5's), dimmed.
 - **Title option A (D10, confirmed):** the REBEL_CELL neon tube sign on its circuit board (idle loop
   `title_sign_flicker`: underscore cursor, an E stutter, a two-frame drop to CELL); 1. BREACH (pink,
   default focus) = Continue with the slot line `slot // corp // run N // Heat H`; 2. SIMULATE (the

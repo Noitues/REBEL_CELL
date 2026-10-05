@@ -1215,7 +1215,7 @@ func show_start() -> void:
 	head.add_theme_constant_override("separation", 24)
 	# ART-10 4C (v2 §1.2, §2.10): the yellow title sticker and the Cell's motto in grease
 	# pencil (the spray tag and scrawl are rejected media).
-	head.add_child(_title_sticker(tr("NEW CAMPAIGN")))
+	head.add_child(_title_sticker(tr("NEW CAMPAIGN"), "NEW CAMPAIGN"))
 	head.add_child(PencilWords.new(tr("TRUST NO ONE"), -4.0))
 	box.add_child(head)
 	var setup := CrtWindow.new(tr("NEW CAMPAIGN // [HQ] the deck is warm. Jack a campaign in."))
@@ -3252,7 +3252,7 @@ func raid_graph(results: Variant, markers: Dictionary, c: CampaignState = null, 
 func show_codex() -> void:
 	var box := VBoxContainer.new()
 	# ART-10 4C (v2 §2.10): the screen title is a yellow sticker; the codex a terminal.
-	box.add_child(_title_sticker(tr("CODEX")))
+	box.add_child(_title_sticker(tr("CODEX"), "CODEX"))
 	var entries := Codex.entries(RunManager.lookup(), RunManager.profile)
 	var tabs := HFlowContainer.new()
 	box.add_child(tabs)
@@ -4424,8 +4424,8 @@ func _as_menu(box: Control) -> void:
 
 ## A long line of prose that wraps to the panel width (profile, unlocks, records).
 ## ART-10 4C (v2 §2.10): a screen's title as a yellow vinyl sticker (never focused, no clicks).
-func _title_sticker(word: String) -> VerbSticker:
-	var s := VerbSticker.new(word, VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT)
+func _title_sticker(word: String, key: String = "") -> VerbSticker:
+	var s := VerbSticker.new(word, VerbSticker.Fill.YELLOW, TITLE_STICKER_PX, TITLE_STICKER_TILT, VerbSticker.title_art(key))
 	s.pre_translated = true
 	s.name = "TitleSticker"
 	s.focus_mode = Control.FOCUS_NONE
