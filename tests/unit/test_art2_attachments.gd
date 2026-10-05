@@ -80,7 +80,7 @@ func test_every_corporation_has_a_boss_and_a_site_backdrop_day_and_night() -> vo
 				var path := BackdropCatalog.still_path(p)
 				assert_ne(path, "", "%s has a still" % BackdropCatalog.stem(p))
 				assert_true(path.contains(String(corp)), "%s shows its own corporation (%s)" % [BackdropCatalog.stem(p), path])
-				assert_true(path.contains("_boss_" if boss else "_site_"), "%s: a boss fight at the HQ, a regular one at the Site" % path)
+				assert_true(path.contains("_hq_" if boss else "_site_"), "%s: a boss fight at the HQ, a regular one at the Site" % path)
 				if corp != &"rebel_cell":
 					assert_true(path.ends_with(("_day" if day else "_night") + ".jpg"), "%s: day is the cool day, night the reference" % path)
 					assert_ne(BackdropCatalog.won_mask_path(p), "", "%s has its won lights mask" % path)
@@ -100,7 +100,7 @@ func test_the_place_follows_the_fight_and_the_run() -> void:
 	var foes: Array[EnemyData] = [grunt, boss]
 	var p := BackdropCatalog.place_for(camp, foes)
 	assert_eq(p["corp"], &"halcyon", "the campaign's corporation")
-	assert_eq(p["kind"], BackdropCatalog.KIND_BOSS, "a boss among the foes: its HQ")
+	assert_eq(p["kind"], BackdropCatalog.KIND_HQ, "a boss among the foes: its HQ")
 	var only: Array[EnemyData] = [grunt]
 	assert_eq(BackdropCatalog.place_for(null, only)["corp"], &"orbital", "no campaign: the enemy's corporation")
 	assert_eq(BackdropCatalog.place_for(camp, only)["kind"], BackdropCatalog.KIND_SITE, "a regular fight: the Site")
@@ -114,7 +114,7 @@ func test_the_combat_scene_stands_in_front_of_the_target_and_lights_it_when_won(
 	var scene := await _combat(&"the_manifest")
 	var bd: CombatBackdrop = scene.arena_backdrop
 	assert_not_null(bd, "the combat scene has the backdrop")
-	assert_eq(bd.place.get("kind"), BackdropCatalog.KIND_BOSS, "The Manifest is a boss: its HQ")
+	assert_eq(bd.place.get("kind"), BackdropCatalog.KIND_HQ, "The Manifest is a boss: its HQ")
 	assert_eq(bd.won, 0.0, "a fight going on is not won")
 	assert_false(scene.background.visible, "the net city under it is hidden")
 	bd.play_won()

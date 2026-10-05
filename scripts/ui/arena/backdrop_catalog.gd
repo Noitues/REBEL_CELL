@@ -8,7 +8,7 @@ extends RefCounted
 ## it reads the campaign and the fight, never changes them.
 
 const DIR := "res://assets/backdrops/combat/"
-const KIND_BOSS := &"boss"
+const KIND_HQ := &"hq"
 const KIND_SITE := &"site"
 ## The fallback corporation when a fight names none (the standalone combat scene's picker).
 const DEFAULT_CORP := &"meridian"
@@ -21,23 +21,23 @@ const NIGHT_ONLY: Array[StringName] = [&"rebel_cell"]
 ## Top-centre of each target's silhouette (share of the still), where "OURS NOW" is pencilled once
 ## the fight is won; measured from the won masks (the bake's silhouette pass).
 const ANCHORS := {
-	&"meridian_boss": Vector2(0.47, 0.16), &"meridian_site": Vector2(0.50, 0.27),
-	&"solace_boss": Vector2(0.50, 0.16), &"solace_site": Vector2(0.48, 0.29),
-	&"halcyon_boss": Vector2(0.50, 0.16), &"halcyon_site": Vector2(0.50, 0.23),
-	&"orbital_boss": Vector2(0.50, 0.16), &"orbital_site": Vector2(0.51, 0.16),
-	&"rebel_cell_boss": Vector2(0.50, 0.16), &"rebel_cell_site": Vector2(0.50, 0.16),
+	&"meridian_hq": Vector2(0.47, 0.16), &"meridian_site": Vector2(0.50, 0.27),
+	&"solace_hq": Vector2(0.50, 0.16), &"solace_site": Vector2(0.48, 0.29),
+	&"halcyon_hq": Vector2(0.50, 0.16), &"halcyon_site": Vector2(0.50, 0.23),
+	&"orbital_hq": Vector2(0.50, 0.16), &"orbital_site": Vector2(0.51, 0.16),
+	&"rebel_cell_hq": Vector2(0.50, 0.16), &"rebel_cell_site": Vector2(0.50, 0.16),
 }
 ## The anchor when a place has none.
 const ANCHOR_FALLBACK := Vector2(0.5, 0.2)
 ## Places whose fight-won look is another still rather than a lights mask: the DISPATCH canyon's
 ## hijacked signs give way to the Cell's own street (the HOME canyon).
-const WON_STILLS := {&"rebel_cell_boss": "rebel_cell_site_night"}
+const WON_STILLS := {&"rebel_cell_hq": "rebel_cell_site_night"}
 
 
-## The place a fight stands in: {corp, kind (boss | site), day}.
+## The place a fight stands in: {corp, kind (hq for a boss fight | site), day}.
 static func place(corporation_id: StringName, boss: bool, day: bool) -> Dictionary:
 	var corp := corporation_id if corporation_id != &"" else DEFAULT_CORP
-	return {"corp": corp, "kind": KIND_BOSS if boss else KIND_SITE, "day": day and not NIGHT_ONLY.has(corp)}
+	return {"corp": corp, "kind": KIND_HQ if boss else KIND_SITE, "day": day and not NIGHT_ONLY.has(corp)}
 
 
 ## Whether this campaign's current run plays by day (see DAY_EVERY); no campaign: night.
@@ -64,7 +64,7 @@ static func stem(p: Dictionary) -> String:
 	return "%s_%s_%s" % [String(p["corp"]), String(p["kind"]), "day" if bool(p["day"]) else "night"]
 
 
-## The still for `p`: its own, else the night one, else the corporation's boss night, else the default.
+## The still for `p`: its own, else the night one, else the corporation's HQ night, else the default.
 static func still_path(p: Dictionary) -> String:
 	for s in _candidates(p):
 		var path := DIR + s + ".jpg"
@@ -100,7 +100,7 @@ static func _candidates(p: Dictionary) -> Array[String]:
 	var night := p.duplicate()
 	night["day"] = false
 	var boss := night.duplicate()
-	boss["kind"] = KIND_BOSS
+	boss["kind"] = KIND_HQ
 	var fallback := place(DEFAULT_CORP, true, false)
 	var out: Array[String] = [stem(p), stem(night), stem(boss), stem(fallback)]
 	return out

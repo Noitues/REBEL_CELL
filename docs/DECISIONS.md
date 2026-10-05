@@ -97,7 +97,7 @@ arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per
   not aiming, the whole preview at 50 % while aiming; on commit the ghost rides the turning slices
   until the wheel lands (`preview_ghost` fades). The inner ring's legacy ghost arc stays (2A's ring).
 - **Combat backdrop (§3.14, D17 on its default).** Baked stills, 1280x720 JPEG q84
-  (`assets/backdrops/combat/<corp>_<boss|site>_<day|night>.jpg`, about 0.2 MB each) re-rendered with
+  (`assets/backdrops/combat/<corp>_<hq|site>_<day|night>.jpg`, about 0.2 MB each) re-rendered with
   Blender 5.2 headless from the art-concepts-r43 generator scripts (round 31 `hq_scene.py`,
   `backdrop26.finish`, for the four corporations' HQs and Sites, day and night; round 34
   `run34.py` / `post34.py` for the REBEL_CELL canyon) **without** the baked wheel pools: the shader
