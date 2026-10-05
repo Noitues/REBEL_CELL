@@ -127,6 +127,10 @@ var raid_legend: MapLegend = null
 var _raid_reframes: int = 0
 ## The Grid map's key, on the map (H23 #3), and the passes fitting the map so far.
 var grid_legend: MapLegend = null
+## ART-5 5a: the Grid's player camera on the 3D city (wheel, drag, WASD, the pad's right
+## stick) and its minimap terminal (on the map's foot, left of the key); freed with the page.
+var grid_controls: CityGridControls = null
+var grid_minimap: CityMinimap = null
 var _grid_fits: int = 0
 ## ANIM-5: the Grid camera has leaned toward the selected Site on this page.
 var _grid_leaned: bool = false
@@ -970,6 +974,10 @@ func _set_panel(p: Control, name: String) -> void:
 	if raid_side_hint != null and is_instance_valid(raid_side_hint):
 		raid_side_hint.queue_free()
 	raid_side_hint = null
+	# ART-5 5a: the City Grid is the unified 3D city (the raid / netrun / HQ-run views move
+	# onto it next); the other net pages keep the 2D city until then.
+	if wireframe != null:
+		wireframe.city3d = name == "grid"
 	_clear_city_map()
 	# City map screens: clicks fall through the empty panel area to the map.
 	var on_city := name in ["grid", "raid", "raid_playout", "raid_summary", "end_lock"] or name.begins_with("city")
@@ -2031,6 +2039,7 @@ func show_grid() -> void:
 	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
 	city_overlay.node_hovered.connect(light_run_row)
 	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
+	_mount_grid_camera(spacer, outer, column)
 	_grid_fits = 0
 	_grid_leaned = false
 	_fit_next_frame()
@@ -2065,15 +2074,20 @@ func fit_grid_map() -> void:
 	# H24 K1: map labels stay on the map's own area (under the top bar, beside the column).
 	city_overlay.screen_rect = area
 	var free := area.grow(-LegendSpot.MARGIN)
+	_sync_grid_minimap()
 	if grid_legend.visible:
 		# The key runs along the map's foot, in as many columns as the width holds; the
 		# nodes fit above it (above its folded MAP KEY line at big text, H24 K1).
 		_grid_legend_size = Vector2.INF  # the width set here is not a text size change
-		grid_legend.set_strip_width(free.size.x)
+		# ART-5 5a: the minimap terminal sits at the foot's left, the key beside it.
+		grid_legend.set_strip_width(free.size.x - _minimap_room().x)
 		var own := grid_legend.fit_size()
 		_grid_legend_size = own
 		_place_grid_legend()
-		free.size.y = maxf(1.0, area.size.y - own.y - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
+		free.size.y = maxf(1.0, area.size.y - maxf(own.y, _minimap_room().y) - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
+	elif _minimap_room() != Vector2.ZERO:
+		free.size.y = maxf(1.0, area.size.y - _minimap_room().y - LegendSpot.MARGIN * 2.0 - LegendSpot.MARGIN)
+	_place_grid_minimap()
 	if _grid_fits >= GRID_FITS_MAX:
 		_grid_settled(free)
 		return
@@ -2234,7 +2248,70 @@ func _place_grid_legend() -> void:
 	var area_ctl := grid_legend.get_parent() as Control
 	var own := grid_legend.get_combined_minimum_size()
 	grid_legend.size = own
-	grid_legend.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
+	grid_legend.position = Vector2(LegendSpot.MARGIN + _minimap_room().x, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
+
+
+## ART-5 5a: the room the minimap terminal takes at the map's foot (its size and a margin;
+## zero without one).
+func _minimap_room() -> Vector2:
+	if grid_minimap == null or not is_instance_valid(grid_minimap) or not grid_minimap.visible:
+		return Vector2.ZERO
+	return grid_minimap.get_combined_minimum_size() + Vector2(LegendSpot.MARGIN, 0.0)
+
+
+## ART-5 5a: the minimap shows while the key keeps its rows; at the text sizes where the key
+## folds to one line (MapLegend.FOLD_SCALE) the map needs that room, so the minimap folds away
+## with it (the wheel, drag, WASD and the right stick still move the camera).
+func _sync_grid_minimap() -> void:
+	if grid_minimap == null or not is_instance_valid(grid_minimap):
+		return
+	grid_minimap.visible = grid_legend == null or not is_instance_valid(grid_legend) or not grid_legend.foldable()
+
+
+func _place_grid_minimap() -> void:
+	if grid_minimap == null or not is_instance_valid(grid_minimap):
+		return
+	var area_ctl := grid_minimap.get_parent() as Control
+	var own := grid_minimap.get_combined_minimum_size()
+	grid_minimap.size = own
+	grid_minimap.position = Vector2(LegendSpot.MARGIN, maxf(LegendSpot.MARGIN, area_ctl.size.y - own.y - LegendSpot.MARGIN))
+
+
+## ART-5 5a: the Grid's player camera and minimap on the 3D city (bible §4.1): wheel / +-
+## zoom about the cursor (log-linear), drag / WASD / right stick pan, the minimap centres.
+## Each move is a frame through `_frame_city`; nothing moves headless without input.
+func _mount_grid_camera(area: Control, page: Control, column: Control) -> void:
+	grid_controls = null
+	grid_minimap = null
+	if not wireframe.city3d:
+		return
+	grid_minimap = CityMinimap.new()
+	grid_minimap.name = "GridMinimap"
+	area.add_child(grid_minimap)
+	grid_controls = CityGridControls.new(wireframe.city, self, func(z: float, f: Vector2, a: Vector2) -> void:
+		_frame_city(z, f, a)
+		wireframe.city.update_camera())
+	grid_controls.sites_of = _minimap_sites
+	page.add_child(grid_controls)
+	grid_controls.attach(city_overlay, grid_minimap)
+	_sync_grid_minimap()
+	wireframe.city.rebuilt.connect(grid_controls.sync_minimap)
+	city_overlay.avoid_controls([column, grid_legend, grid_minimap])
+
+
+## ART-5 5a: the Grid's Sites for the minimap: yours lime, the target red, the rest white.
+func _minimap_sites() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if city_overlay == null or not is_instance_valid(city_overlay):
+		return out
+	for n in city_overlay.nodes:
+		var kind := "site"
+		if String(n.get("kind", "")) == CityMapOverlay.KIND_HOME or String(n.get("mark", "")) == CityMapOverlay.MARK_SPRAY:
+			kind = "you"
+		elif String(n.get("kind", "")) == CityMapOverlay.KIND_CENTRAL_SERVER:
+			kind = "target"
+		out.append({"at": Vector2(city_overlay.lot_of(n["id"])) + Vector2(0.5, 0.5), "kind": kind})
+	return out
 
 
 ## H24 K1 / K2: a Grid step button that carries its full words and its short form (icon

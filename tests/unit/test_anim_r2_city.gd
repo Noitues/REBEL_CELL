@@ -84,7 +84,8 @@ func test_the_grid_draws_its_nodes_before_any_bake_lands() -> void:
 	await _frames(1)
 	var city: NeonCity = hq.wireframe.city
 	assert_true(city.is_baked(), "the city takes the baked path")
-	assert_false(city.view_covered(), "no bake has landed")
+	# ART-5 5a: the Grid is the unified 3D city: no bake, it covers its view at once.
+	assert_true(city.city3d and city.view_covered(), "the 3D city covers the Grid at once")
 	var overlay: CityMapOverlay = hq.city_overlay
 	assert_eq(_placed_nodes(overlay), overlay.nodes.size(), "every node is placed on the first frame")
 	assert_false(overlay.label_rects().is_empty(), "and the labels")

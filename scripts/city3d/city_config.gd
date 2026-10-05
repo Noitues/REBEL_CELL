@@ -234,7 +234,7 @@ extends Resource
 ## Strengths: the ground decal, the halo, and the x-ray pass through buildings at the City
 ## Grid zoom (solid at city lod).
 @export var net_gain: float = 1.6
-@export var net_halo: float = 0.35
+@export var net_halo: float = 0.25
 @export var net_xray: float = 0.85
 
 

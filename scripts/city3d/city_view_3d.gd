@@ -67,6 +67,15 @@ var covered: bool = false:
 			_sync_ambient()
 			_sync_update()
 var network: CityNetworkData = null
+## The view band the host holds whatever the zoom (-1: by zoom, CityLod.band). The City
+## Grid holds Band.GRID: solid buildings and the city's full life at any player zoom (the
+## raid and netrun views take theirs by zoom when they move onto the city).
+var band_lock: int = -1:
+	set(v):
+		if v != band_lock:
+			band_lock = v
+			if iso != null and camera != null:
+				set_iso(iso)
 
 var _layers: Dictionary = {}
 var _chunks: Dictionary = {}  # Vector2i -> {"families": {int: MultiMeshInstance3D}, "ground": MeshInstance3D}
@@ -238,6 +247,8 @@ func set_iso(cam: CityIsoCamera) -> void:
 	_ground_cam.global_transform = camera.global_transform
 	_ground_cam.size = iso.ortho
 	var lod := CityIsoCamera.lod_of(cfg, iso.ortho)
+	if band_lock == CityLod.Band.GRID:
+		lod = maxf(lod, cfg.see_through_lod_to)
 	var op := CityLod.opacity(cfg, lod)
 	var city := CityLod.city_share(cfg, lod)
 	_post.set_shader_parameter("opacity", op)
@@ -257,7 +268,7 @@ func set_iso(cam: CityIsoCamera) -> void:
 		building_lod = lod_now
 		_apply_building_lod()
 		building_lod_changed.emit(building_lod)
-	var band_now := CityLod.band(cfg, iso.ortho, band)
+	var band_now := band_lock if band_lock >= 0 else CityLod.band(cfg, iso.ortho, band)
 	if band_now != band:
 		band = band_now
 		band_changed.emit(band)
@@ -379,9 +390,9 @@ func _build_scene() -> void:
 	_lane_mat = CityMaterials.ground(cfg, true)
 	var outer := MeshInstance3D.new()
 	outer.name = "OuterGround"
-	var pm := PlaneMesh.new()
-	pm.size = Vector2(OUTER_GROUND_BU, OUTER_GROUND_BU)
-	outer.mesh = pm
+	# The ground shader takes its colour from the vertices (asphalt).
+	var h := OUTER_GROUND_BU * 0.5
+	outer.mesh = CityMeshKit.ground_mesh_of(cfg, Rect2(-h, -h, OUTER_GROUND_BU, OUTER_GROUND_BU), [], [])
 	outer.position = Vector3(0, -0.05, 0)
 	var om := CityMaterials.ground(cfg, false)
 	outer.material_override = om
@@ -537,6 +548,9 @@ func _build_chunk(key: Vector2i) -> void:
 		mm.mesh = CityMeshKit.family_mesh(cfg, fk, maxi(0, building_lod))
 		mm.instance_count = ids.size()
 		mm.buffer = CityMeshKit.instance_buffer(cfg, model.prisms, ids, _inks)
+		# A buffer written whole does not refresh the MultiMesh's bounds: the chunk's box
+		# (its prisms) is the cull box.
+		mm.custom_aabb = model.chunk_aabb(key)
 		var mi := MultiMeshInstance3D.new()
 		mi.multimesh = mm
 		mi.material_override = _building_mat

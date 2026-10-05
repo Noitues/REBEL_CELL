@@ -301,11 +301,12 @@ func test_a_claim_stamps_at_once_and_the_tint_follows_its_bake() -> void:
 	CampaignRules.on_run_completed(c, RunManager.corporation, RunManager.config(), run)
 	hq.claim(site, &"firewall_relay")
 	await _frames(2)
-	assert_false(city.view_covered(), "the new look is still baking")
-	assert_eq(marked[0], 1, "CLAIMED stamps at once, before the bake")
+	# ART-5 5a: the Grid is the unified 3D city: no bake to wait for, the new look is on at once.
+	assert_true(city.city3d)
+	assert_true(city.view_covered(), "the 3D city covers its view throughout")
+	assert_eq(marked[0], 1, "CLAIMED stamps at once")
 	assert_false(city.marks.is_empty())
 	await _settle_bakes()
-	assert_true(city.view_covered(), "the new look landed")
 	assert_eq(marked[0], 1, "and the tint followed without stamping again")
 
 
