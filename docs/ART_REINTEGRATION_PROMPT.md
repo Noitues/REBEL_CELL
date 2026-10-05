@@ -47,9 +47,8 @@ On `main` (the main checkout, read-only for agents):
 In the worktree `C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art-pass` (branch
 `art-pass`, read-only for you until ART-0):
 8. `docs/ART_REINTEGRATION_PLAN.md`: **the plan you execute.**
-9. `docs/ART_BIBLE.md`: being rewritten around the locked direction by another agent. Once the
-   rewrite lands it is **the art source of truth**. If it is still v1.0 when you start, wait for
-   v2 before ART-1. ART-0 may proceed.
+9. `docs/ART_BIBLE.md` (v2, rewritten around the locked direction; v1 is `docs/ART_BIBLE_v1.md`):
+   **the art source of truth.** Its contradictions table lists items the designer must confirm.
 10. `docs/concepts/DIRECTION_REVIEW.md` (every lock, rounds 1–43, and the game to-do lists) and
     `docs/concepts/GDD_ART_COVERAGE.md` (the name collisions and missing systems).
 11. `docs/ART_PLAN.md` (M13 W1–W10, for the salvage list) and the M13 "Art pass …" entries in
@@ -62,7 +61,7 @@ In the worktree `C:\Users\noitu\Documents\Godot\rebel_cell\.claude\worktrees\art
   - ANIM-R7 audits are done and NOT clean: 2 P1, about 29 P2.
   - **The R7 fix batches A–E are written but were never launched.**
   - One open question: the overkill wording "→ N LEFT".
-- **art-pass `c7b5809`, pushed.**
+- **art-pass `1d4cff1` or later, pushed** (re-check with `git log`).
   - 424 commits ahead of main; main is 94 ahead of the fork (`8ddfa86`).
   - It holds (a) the M13 W1–W10 code, 1414 tests green, implementing the superseded ART_BIBLE v1.0;
   - and (b) ~43 rounds of concept docs: `docs/concepts/`, ≈277 MB, 5,912 files.
