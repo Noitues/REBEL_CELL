@@ -1,7 +1,7 @@
 #!/bin/bash
 # Per-merge / per-hand-back checks (designer 2026-10-05): import + fast tier + schema smoke + content validation.
 # The full suite (checks.sh, one run) runs once per ART group, at its end, in isolation (no agents running).
-# usage: bash docs/handoff/art_1/process/checks_fast.sh   (logs in $SP, default %TEMP%\rebel_cell_checks)
+# usage: bash docs/handoff/art_4/process/checks_fast.sh   (logs in $SP, default %TEMP%\rebel_cell_checks)
 cd "$(git rev-parse --show-toplevel)" || exit 1
 SP="${SP:-$TEMP/rebel_cell_checks}"; mkdir -p "$SP"
 timeout 900 godot --headless --path . --import > "$SP/import_c.log" 2>&1

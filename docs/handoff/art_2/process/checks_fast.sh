@@ -6,7 +6,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 SP="${SP:-$TEMP/rebel_cell_checks}"; mkdir -p "$SP"
 timeout 900 godot --headless --path . --import > "$SP/import_c.log" 2>&1
 echo "import=$?"
-timeout 1200 python tools/run_tests.py --tier fast -j 4 > "$SP/fast.log" 2>&1 < /dev/null
+timeout 1200 python tools/run_tests.py --tier fast -j "${JOBS:-2}" > "$SP/fast.log" 2>&1 < /dev/null
 echo "fast=$?"; tail -n 3 "$SP/fast.log"
 timeout 300 godot --headless --path . -s tools/schema_smoke_test.gd > "$SP/smoke.log" 2>&1
 r=$?
