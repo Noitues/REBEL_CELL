@@ -1,78 +1,131 @@
 {
- "about": "ART-5 5b landmark (bible 4.4). Built by tools/art_pipeline/city/build_landmarks_v1.py; do not edit by hand.",
+ "schema": "rebel_cell.art_export/1",
+ "asset": "landmark",
  "corp": "solace",
- "version": "v1",
- "source_commit": "2a1fda14b3cd053d2be19f2f983e632508c8f022",
- "source_scripts": [
-  "tools/art_pipeline/city/landmark_spec_v1.py",
-  "tools/art_pipeline/city/landmark_build_v1.py",
-  "tools/art_pipeline/city/landmark_district_v1.py",
-  "tools/art_pipeline/city/landmark_crest_v1.py",
-  "tools/art_pipeline/city/landmark_post_v1.py",
-  "tools/art_pipeline/city/gltf_anim_v1.py",
-  "tools/art_pipeline/city/build_landmarks_v1.py",
-  "tools/art_pipeline/city/concept_r31/target_corps.py",
-  "tools/art_pipeline/city/concept_r31/heroes24.py",
-  "tools/art_pipeline/city/concept_r31/heroes25.py",
-  "tools/art_pipeline/city/concept_r31/heroes26.py",
-  "tools/art_pipeline/city/concept_r31/heroes27.py",
-  "tools/art_pipeline/city/concept_r31/heroes28.py",
-  "tools/art_pipeline/city/concept_r31/heroes29.py",
-  "tools/art_pipeline/city/concept_r31/heroes30.py",
-  "tools/art_pipeline/city/concept_r31/heroes31.py"
- ],
- "concept_source": "art-concepts-r43 (art-pass 097a6c0 round 31 builders; d14b8f6 round 34 crest)",
- "coordinates": {
-  "units": "1 glTF unit = 1 BU; 1 lot = 6 BU",
-  "up": "+Y",
-  "frame": "glTF x = lot x, glTF z = lot y (CityIsoCamera.lot_to_world), origin = centre of the job's lot rectangle at ground level",
-  "front": "as the concept built them: HQs are symmetric or face the iso camera's side (+x, +z); Meridian's gate faces +x and its rail yard runs along x at z = -34 / -40 (the round 31 combat camera looks from -z); a Site's front faces +z (lot +y: screen lower-left, as in the locked Site renders)"
- },
- "materials": {
-  "note": "COLOR_0 is linear: rgb = base colour x the per-triangle tone jitter (0.86-1.12) for toon roles; alpha = a part id (toon roles: write it to ROUGHNESS 0.5-1.0 for material-edge ink) or a window's own seeded value (window roles)",
-  "lm_toon": "3-band toon (spike city_building light(): ramp shadow / mid / lit on N.L, edges 0.118 / 0.363)",
-  "lm_toon_lines": "lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
-  "lm_lit": "lm_toon + emission 0.42 x colour (floodlit towers)",
-  "lm_neon": "emissive colour x neon gain (night 1.0, day 0.75)",
-  "lm_window": "emissive colour x window gain (night 1.0; day 0.55 mixed 0.55 toward dark glass (0.10, 0.14, 0.20))",
-  "lm_window_ring": "lm_window, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
-  "lm_window_lines": "lm_window, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
-  "lm_window_fist_home": "red fist windows, home look (70 % density baked)",
-  "lm_window_fist_dispatch": "red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
-  "lm_beam": "additive translucent light cone, emission colour x 0.22",
-  "lm_sign": "flat emissive sign colour (corp sign colour)"
+ "about": "ART-5 5b landmark (bible 4.4). Built by tools/art_pipeline/city/build_landmarks_v1.py; do not edit by hand.",
+ "source": {
+  "script": "tools/art_pipeline/city/landmark_build_v1.py",
+  "spec": "tools/art_pipeline/city/landmark_spec_v1.py",
+  "driver": "tools/art_pipeline/city/build_landmarks_v1.py",
+  "vendor": "art-concepts-r43:docs/concepts/round31_meridian_combat/scripts @ 097a6c0 (concept_r31/); round34_rebel_cell/scripts/map34.py @ d14b8f6 (landmark_crest_v1)",
+  "scripts": [
+   "tools/art_pipeline/city/landmark_spec_v1.py",
+   "tools/art_pipeline/city/landmark_build_v1.py",
+   "tools/art_pipeline/city/landmark_district_v1.py",
+   "tools/art_pipeline/city/landmark_crest_v1.py",
+   "tools/art_pipeline/city/landmark_post_v1.py",
+   "tools/art_pipeline/city/gltf_anim_v1.py",
+   "tools/art_pipeline/city/build_landmarks_v1.py",
+   "tools/art_pipeline/city/concept_r31/target_corps.py",
+   "tools/art_pipeline/city/concept_r31/heroes24.py",
+   "tools/art_pipeline/city/concept_r31/heroes25.py",
+   "tools/art_pipeline/city/concept_r31/heroes26.py",
+   "tools/art_pipeline/city/concept_r31/heroes27.py",
+   "tools/art_pipeline/city/concept_r31/heroes28.py",
+   "tools/art_pipeline/city/concept_r31/heroes29.py",
+   "tools/art_pipeline/city/concept_r31/heroes30.py",
+   "tools/art_pipeline/city/concept_r31/heroes31.py"
+  ],
+  "commit": "012dc6813e2f2ab261197c905fad0c3bdc7788e3",
+  "scripts_sha256": "c0b99454bfc673b57ca229540c34e63bd6ebaa284009441d21a44a1b1bc24390"
  },
  "settings": {
-  "lot_bu": 6.0,
-  "hq_lots": 10,
-  "site_lots": 6,
+  "blender": "5.2.2 LTS",
+  "version": "v1",
+  "units": "1 BU = 1 m; 1 lot = 6 BU",
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y)); glTF x = lot x, z = lot y (CityIsoCamera.lot_to_world)",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "part_alpha": [
+   0.55,
+   1.0
+  ],
+  "ramp_tint": "LandmarkLook.corp_tint (target_corps.TINT)",
+  "pitch_deg": 40.0,
+  "yaw_deg": 135.0,
+  "normals": "none (facet normal from screen derivatives)",
+  "layered_sprites": "dropped: 1D chose real-time Godot 3D",
   "site_scale": 0.8,
   "site_rot_deg": 0.0,
-  "camera": {
-   "yaw": 135.0,
-   "pitch": 40.0
-  }
+  "front": "as the concept built them: Meridian's gate faces +x, its rail yard runs along x at z = -34 / -40; a Site's front faces +z (lot +y, screen lower-left, as the locked Site renders)"
+ },
+ "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+ "footprint": {
+  "min": [
+   -27.5,
+   0.0,
+   -27.5
+  ],
+  "max": [
+   27.5,
+   140.0,
+   27.5
+  ],
+  "size": [
+   55.0,
+   140.0,
+   55.0
+  ]
+ },
+ "materials": {
+  "lm_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part value 0.55-1.0 -> ROUGHNESS (ink material edges)",
+  "lm_toon_lines": "lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
+  "lm_lit": "lm_toon + emission 0.25 x colour (floodlit towers; LandmarkLook.lit_emission)",
+  "lm_neon": "emissive: vertex colour x neon gain (night 1.0, day 0.75)",
+  "lm_win": "emissive windows: vertex colour x window gain (day: 0.55, mixed 0.55 toward dark glass); alpha = the window's seeded value",
+  "lm_win_ring": "lm_win, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
+  "lm_win_lines": "lm_win, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
+  "lm_win_fist_home": "red fist windows, home look (70 % density baked) x LandmarkLook.fist_gain",
+  "lm_win_fist_dispatch": "red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
+  "lm_beam": "translucent light cone: vertex colour at 0.22 over what is behind, no depth write (no ink)",
+  "lm_sign": "emissive diegetic signage (corp sign colour)"
  },
  "landmarks": [
   {
    "job": "solace_hq",
-   "file": "solace_hq.glb",
    "kind": "hq",
+   "file": "solace_hq.glb",
    "what": "Lit DNA double helix: down-lights, light cones, the spotlight up the axis and the 12-frame LED chaser",
-   "references": [
-    "city/round26_hq_targets/hq_solace_close_night.jpg",
-    "city/round26_hq_targets/hq_solace_close_day.jpg"
-   ],
+   "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+   "footprint": {
+    "min": [
+     -27.5,
+     0.0,
+     -27.5
+    ],
+    "max": [
+     27.5,
+     140.0,
+     27.5
+    ],
+    "size": [
+     55.0,
+     140.0,
+     55.0
+    ]
+   },
+   "lot_rect": {
+    "lots": [
+     10,
+     10
+    ],
+    "bu": [
+     60.0,
+     60.0
+    ],
+    "overhang_bu": 0.0
+   },
    "states": [
     ""
    ],
-   "seed": 3468,
-   "triangles": 28056,
-   "roles": {
-    "lm_toon": 1,
-    "lm_neon": 13,
-    "lm_beam": 1,
-    "lm_sign": 1
+   "state_nodes": [],
+   "triangles": {
+    "lm_toon": 12618,
+    "lm_neon": 14166,
+    "lm_beam": 364,
+    "lm_sign": 908
    },
    "animation": {
     "name": "chaser",
@@ -84,31 +137,7 @@
     "tracks": 12,
     "note": "rest pose = the concept's still; play the animation looped"
    },
-   "bounds_gltf": {
-    "min": [
-     -27.5,
-     0.0,
-     -27.5
-    ],
-    "max": [
-     27.5,
-     140.0,
-     27.5
-    ]
-   },
-   "footprint": {
-    "lots": [
-     10,
-     10
-    ],
-    "bu": [
-     60.0,
-     60.0
-    ],
-    "overhang_bu": 0.0,
-    "note": "origin = centre of the lot rectangle on the ground; the model may overhang its rectangle by overhang_bu (lamps, rails, steps); the city should keep that margin clear of tall buildings"
-   },
-   "state_nodes": [],
+   "seed": 3468,
    "reference_camera": {
     "kind": "perspective",
     "position": [
@@ -125,47 +154,18 @@
     "sensor_mm": 36.0,
     "hfov_deg": 55.795
    },
-   "exporter": {
-    "export_format": "GLB",
-    "export_yup": true,
-    "export_apply": false,
-    "export_texcoords": false,
-    "export_normals": true,
-    "export_materials": "EXPORT",
-    "export_cameras": false,
-    "export_lights": false,
-    "export_animations": false,
-    "export_extras": false,
-    "export_vertex_color": "ACTIVE",
-    "export_all_vertex_colors": false,
-    "export_tangents": false,
-    "export_attributes": false,
-    "export_active_vertex_color_when_no_material": true,
-    "export_shared_accessors": true
-   },
-   "blender": "5.2.2 LTS"
+   "references": [
+    "docs/art_reference/city/round26_hq_targets/hq_solace_close_night.jpg",
+    "docs/art_reference/city/round26_hq_targets/hq_solace_close_day.jpg"
+   ]
   },
   {
    "job": "solace_site",
-   "file": "solace_site.glb",
    "kind": "site",
+   "file": "solace_site.glb",
    "what": "SOLACE GENERAL hospital: clinic block, wings, lime cross, ambulance bay, helipad",
-   "references": [
-    "city/round26_hq_targets/site_solace_night.jpg"
-   ],
-   "states": [
-    ""
-   ],
-   "seed": 3688,
-   "triangles": 2558,
-   "roles": {
-    "lm_toon": 1,
-    "lm_neon": 1,
-    "lm_window": 1,
-    "lm_sign": 1
-   },
-   "animation": null,
-   "bounds_gltf": {
+   "origin": "the Site's ground centre at (0, 0, 0); place it on the centre of its 6 x 6 lot block",
+   "footprint": {
     "min": [
      -21.72,
      0.0,
@@ -175,9 +175,14 @@
      21.72,
      14.66,
      14.0
+    ],
+    "size": [
+     43.44,
+     14.66,
+     30.14
     ]
    },
-   "footprint": {
+   "lot_rect": {
     "lots": [
      6,
      6
@@ -186,10 +191,20 @@
      36.0,
      36.0
     ],
-    "overhang_bu": 3.72,
-    "note": "origin = centre of the lot rectangle on the ground; the model may overhang its rectangle by overhang_bu (lamps, rails, steps); the city should keep that margin clear of tall buildings"
+    "overhang_bu": 3.72
    },
+   "states": [
+    ""
+   ],
    "state_nodes": [],
+   "triangles": {
+    "lm_toon": 200,
+    "lm_neon": 416,
+    "lm_win": 338,
+    "lm_sign": 1604
+   },
+   "animation": null,
+   "seed": 3688,
    "reference_camera": {
     "kind": "perspective",
     "position": [
@@ -206,37 +221,24 @@
     "sensor_mm": 36.0,
     "hfov_deg": 55.795
    },
-   "exporter": {
-    "export_format": "GLB",
-    "export_yup": true,
-    "export_apply": false,
-    "export_texcoords": false,
-    "export_normals": true,
-    "export_materials": "EXPORT",
-    "export_cameras": false,
-    "export_lights": false,
-    "export_animations": false,
-    "export_extras": false,
-    "export_vertex_color": "ACTIVE",
-    "export_all_vertex_colors": false,
-    "export_tangents": false,
-    "export_attributes": false,
-    "export_active_vertex_color_when_no_material": true,
-    "export_shared_accessors": true
-   },
-   "blender": "5.2.2 LTS"
+   "references": [
+    "docs/art_reference/city/round26_hq_targets/site_solace_night.jpg"
+   ]
   }
  ],
  "files": [
   {
-   "path": "assets/city/landmarks/solace/solace_hq.glb",
-   "bytes": 1956824,
-   "sha256": "8d99c161ab941a39e25cca62856e23e7968a0be22ee7f1d783a588317ea09511"
+   "path": "solace_hq.glb",
+   "kind": "gltf",
+   "bytes": 1282924,
+   "sha256": "b2ac04ec34d2e5a4a857e83346eb0736969312a7aa6f671cafd630b4a000a6ce"
   },
   {
-   "path": "assets/city/landmarks/solace/solace_site.glb",
-   "bytes": 133340,
-   "sha256": "2cb3edbba944718fadfd92199e0ad70f4b9ed3b87dcc93d9c324c29c266cf76d"
+   "path": "solace_site.glb",
+   "kind": "gltf",
+   "bytes": 89920,
+   "sha256": "9c53e96f3039d583003aa6f3839d15ceb71254295ac952e71cf4533874c32919"
   }
- ]
+ ],
+ "validator": "tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline"
 }
