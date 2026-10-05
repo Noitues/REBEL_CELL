@@ -598,7 +598,7 @@ func test_the_entering_plate_never_hides_the_forecast() -> void:
 	ev.play_enter()
 	await BoundedWait.frozen_frames(get_tree(), 1)  # still entering after the frame
 	assert_true(ev.enter_slide > 0.0, "the enemy is entering")
-	assert_true(ev.intent_rect().has_area(), "its forecast tag is laid out")
+	assert_true(ev.hud_results and scene.chip_row(ev.combatant.id) != null, "its forecast (the result chips) is laid out")
 	var src := FileAccess.get_file_as_string("res://scripts/ui/wheel_view.gd")
 	assert_true(src.contains("if tag.has_area() and not replaying:"), "the tag draws while the enemy enters")
 	scene.skip_motion()
@@ -650,6 +650,8 @@ func _check_satellites(scene: Control, scale: float) -> void:
 				assert_false(wv.intent_rect().intersects(Rect2(p - Vector2(tok, tok), Vector2(tok, tok) * 2.0)), "x%.1f: %s's token keeps off the tag" % [scale, sat.display_name])
 			var c := wv.combatant
 			var tps := c.wheel.ticks_per_slice()
+			if wv.attachments != null:
+				continue  # ART-2 2B: drones dock in the band past the frame (§3.21); values move to the read block
 			for i in c.wheel.slice_count:
 				var a := WheelView._ang(i * tps - wv.shown_rotation())
 				var vs := WheelView._fs(WheelView.VALUE_FONT_SIZE)

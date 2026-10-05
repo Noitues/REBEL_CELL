@@ -21,6 +21,8 @@ const ARROW_HEAD := 9.0
 ## over the last FADE_SHARE.
 const GROW_SHARE := 0.25
 const FADE_SHARE := 0.35
+## The slap shrinks the card from its flight size to 1 over this share of the slap.
+const SLAP_SHRINK_SHARE := 0.5
 ## ANIM-R2 E10 (named, were inline): a number grows in from this share of its size; a crit
 ## pops from this scale and settles; a travelling number fades to this alpha on its way.
 const GROW_FROM := 0.6
@@ -813,7 +815,7 @@ static func _tilt_step(p: float, card: Control, from_rotation: float, dir: float
 ## §3.18 step 5: the slap's scale at `p` (from the flight's `size` down to 1, squashed).
 static func _slap_step(p: float, card: Control, size: float) -> void:
 	if is_instance_valid(card):
-		card.scale = CardFx.slap_scale(p) * lerpf(size, 1.0, minf(1.0, p * 2.0))
+		card.scale = CardFx.slap_scale(p) * lerpf(size, 1.0, minf(1.0, p / SLAP_SHRINK_SHARE))
 
 
 ## §3.18 step 5: the card lands at `at`: the white contact ring, the gloss sweep (D16: the
@@ -1006,8 +1008,13 @@ func _draw_number(s: Dictionary) -> void:
 		var gc := at + Vector2(-w * 0.5 + size * GLYPH_SHARE * 0.5, 0.0)
 		draw_circle(gc, size * GLYPH_SHARE * 0.55, Color(Palette.NIGHT_SKY, 0.8 * alpha))
 		SliceIcon.draw_icon(self, gc, size * GLYPH_SHARE * 0.45, icon, Color(s["color"], alpha))
-	draw_string_outline(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, NUMBER_OUTLINE, Color(Palette.PAPER, alpha))
-	draw_string(f, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
+	# ART-2 2D (§6.4 live numbers): 1A's live_number look: the LIVE_NUMBER_RIM rim and a glow
+	# in the number's own colour (its LabelSettings, drawn at the number's animated size).
+	var ls := UiTheme.live_number(UiTheme.DISPLAY, Color(s["color"]))
+	var lf: Font = ls.font if ls.font != null else f
+	draw_string_outline(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ls.outline_size + ls.shadow_size, Color(ls.shadow_color, ls.shadow_color.a * alpha))
+	draw_string_outline(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ls.outline_size, Color(ls.outline_color, alpha))
+	draw_string(lf, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(s["color"], alpha))
 
 
 ## ANIM-R3 A6a: a hit's outcome where it struck: its glyph and "0", popping in and fading.

@@ -1,6 +1,7 @@
 class_name RamBar
 extends Control
-## RAM as a bare row of cyan chips (lit = available) with the count, and the change the
+## RAM on a terminal panel (ART-2 2D, ART_BIBLE v2 §3.1): the count and a row of cyan pips
+## (lit = available), and the change the
 ## hovered card or the end of the turn brings: chips about to be spent blink out in pink,
 ## chips about to be gained are outlined in acid (H20). Hover for what RAM does.
 
@@ -32,7 +33,8 @@ var _blink_tween: Tween = null
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	custom_minimum_size = Vector2(200, 16)
+	custom_minimum_size = Vector2(PANEL_W, PANEL_H)
+	_glass = HudSkin.crt_backing(self, true)  # ART-1 1B: the CRT glass with its hex dump
 
 
 func set_ram(value: int, maximum: int) -> void:
@@ -43,7 +45,7 @@ func set_ram(value: int, maximum: int) -> void:
 	ram = value
 	max_ram = maximum
 	_tick_to(from, value)
-	custom_minimum_size.y = (CHIP + 4.0) * Settings.text_scale
+	custom_minimum_size = panel_size()
 	# ANIM-R5 combat 9: translated here, shown as given.
 	tooltip_text = tr("RAM %d/%d: pays for cards, respins and extra nudges. Refills each turn.") % [value, maximum]
 	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -222,13 +224,40 @@ func set_pending(delta: int) -> void:
 		queue_redraw()
 
 
-## ANIM-R4 C6h: the count's words ("RAM 6/10") as drawn (local rect).
+## ART-2 2D (ART_BIBLE v2 §3.1): the RAM readout is a terminal panel: a "RAM" header, the
+## count in big numbers, then the pips (lit = available). Sizes at text scale 1.0 (px).
+const PANEL_W := 240.0
+const PANEL_H := 62.0
+const PANEL_PAD := 9.0
+const HEADER_FONT := 12
+const COUNT_FONT := 28
+const PIP_W := 9.0
+const PIP_H := 18.0
+const PIP_STEP := 13.0
+const PIP_GAP := 12.0
+## The hatch over the pips a previewed play spends: the gap between its strokes (px at 1.0).
+const HATCH_STEP := 5.0
+## The panel grows with the text by this share of the text scale's step (the pips shrink to
+## fit; the count keeps the whole text scale).
+const PANEL_GROWTH := 0.1
+## ART-2 2D: words before "RAM" in the header (the operative's name and class, when the name
+## sticker stands down at big text); "" = none.
+var owner_words: String = ""
+
+
+## The panel's size at the current text scale.
+static func panel_size() -> Vector2:
+	return Vector2(PANEL_W, PANEL_H) * (1.0 + (Settings.text_scale - 1.0) * PANEL_GROWTH) + Vector2(0.0, (COUNT_FONT + HEADER_FONT) * (Settings.text_scale - 1.0))
+
+
+## ANIM-R4 C6h: the count's words ("5/12") as drawn (local rect).
 func label_rect() -> Rect2:
 	var s := Settings.text_scale
-	var fs := roundi(FONT_SIZE * s)
-	var f := Palette.mono()
-	var x := _label_x()
-	return Rect2(Vector2(x, CHIP * s - f.get_ascent(fs)), Vector2(f.get_string_size(_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_height(fs)))
+	var fs := roundi(COUNT_FONT * s)
+	var f := HudSkin.display()
+	var pad := PANEL_PAD * s
+	var base := size.y - pad
+	return Rect2(Vector2(pad, base - f.get_ascent(fs)), Vector2(f.get_string_size(_count(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, f.get_ascent(fs)))
 
 
 ## ANIM-R4 C6h: where the RAM float is now (local rect; empty when none shows): it starts
@@ -245,6 +274,10 @@ func spend_rect() -> Rect2:
 	return Rect2(Vector2(lr.position.x, bottom - sz.y), sz)
 
 
+var _glass: CrtTerminalPanel = null
+
+
+## The words a reader gets ("RAM 6/12 (-2)"; the tooltip and tests).
 func _label() -> String:
 	var label := tr("RAM %d/%d") % [ram, max_ram]
 	if pending != 0:
@@ -252,65 +285,95 @@ func _label() -> String:
 	return label
 
 
-## Where the count's words start (local x).
-func _label_x() -> float:
+## The big count ("6/12").
+func _count() -> String:
+	return "%d/%d" % [ram, max_ram]
+
+
+## The pips' rects (local), one per RAM.
+func pip_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
 	var s := Settings.text_scale
-	var step := STEP * s
-	var chip := CHIP * s
-	var fs := roundi(FONT_SIZE * s)
-	var lw := Palette.mono().get_string_size(_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
-	var refusal := refusal_text()
-	var rw := 0.0
-	if refusal != "":
-		rw = chip + 4.0 + Palette.mono().get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
-	return (size.x - max_ram * step - lw - rw) * 0.5 + max_ram * step + 6.0
+	var lr := label_rect()
+	var x0 := lr.end.x + PIP_GAP * s
+	var room := size.x - PANEL_PAD * s - x0
+	var step := minf(PIP_STEP * s, room / maxf(1.0, max_ram))
+	var w := minf(PIP_W * s, step * 0.75)
+	var h := PIP_H * s
+	var y := lr.position.y + (lr.size.y - h) * 0.5
+	for k in max_ram:
+		out.append(Rect2(Vector2(x0 + k * step, y), Vector2(w, h)))
+	return out
+
+
+## The centre of pip `k` on screen (global; FX fly to and from it). Past the last pip, the
+## spot one step on.
+func pip_spot(k: int) -> Vector2:
+	var pips := pip_rects()
+	if pips.is_empty():
+		return get_global_rect().get_center()
+	if k < pips.size():
+		return global_position + pips[maxi(0, k)].get_center()
+	var last := pips[pips.size() - 1]
+	var step := last.position.x - pips[pips.size() - 2].position.x if pips.size() > 1 else last.size.x
+	return global_position + last.get_center() + Vector2(step * (k - pips.size() + 1), 0.0)
 
 
 func _draw() -> void:
 	var s := Settings.text_scale
-	var step := STEP * s
-	var chip := CHIP * s
-	var fs := roundi(FONT_SIZE * s)
-	var label := tr("RAM %d/%d") % [ram, max_ram]  # drawn words translate (H24)
+	var pad := PANEL_PAD * s
+	HudSkin.draw_terminal_edge(self, Rect2(Vector2.ZERO, size), HudSkin.TERMINAL_EDGE)
+	var hf := roundi(HEADER_FONT * s)
+	var mono := HudSkin.mono()
+	var head := tr("RAM")  # drawn words translate (H24)
+	if owner_words != "":
+		head = owner_words  # ART-2 2D: the name sticker's words at big text (the count says RAM)
 	if pending != 0:
-		label += " (%+d)" % pending
-	var lw := Palette.mono().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
+		head += "  (%+d)" % pending
+	draw_string(mono, Vector2(pad, pad + mono.get_ascent(hf)), head, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, HudSkin.TERMINAL_TEXT)
 	var refusal := refusal_text()
-	var rw := 0.0
 	if refusal != "":
-		rw = chip + 4.0 + Palette.mono().get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 8.0
-	var x0 := (size.x - max_ram * step - lw - rw) * 0.5
+		var red := Color(REFUSED_COLOR, maxf(MISSING_ALPHA, flash_alpha))
+		var rw := mono.get_string_size(refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf).x
+		draw_string(mono, Vector2(size.x - pad - rw, pad + mono.get_ascent(hf)), refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, hf, red)
+	var cf := roundi(COUNT_FONT * s)
+	var lr := label_rect()
+	draw_string_outline(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, 2, Palette.LIVE_NUMBER_RIM)
+	draw_string(HudSkin.display(), Vector2(lr.position.x, size.y - pad), _count(), HORIZONTAL_ALIGNMENT_LEFT, -1, cf, HudSkin.PIP_ON)
 	var lit := shown_ram
 	var after := clampi(lit + pending, 0, max_ram)
-	for k in max_ram:
-		var rc := Rect2(x0 + k * step, 1, chip, chip)
-		var col := Color(1, 1, 1, 0.1)
+	var pips := pip_rects()
+	for k in pips.size():
+		var rc := pips[k]
+		var col := HudSkin.PIP_OFF
 		if k < mini(lit, after):
-			col = Palette.NET_CYAN
+			col = HudSkin.PIP_ON
 		elif k < lit:
 			col = Color(Palette.CELL_PINK, pending_alpha)  # spent by the previewed action
 		if _flash:
-			# The RAM there is falls short: every chip flashes red, the missing ones faint.
+			# The RAM there is falls short: every pip flashes red, the missing ones faint.
 			col = col.lerp(Color(REFUSED_COLOR, 1.0 if k < lit else MISSING_ALPHA), flash_alpha)
 		if tick_pop > 0.0 and k == (lit - 1 if lit > 0 and ram >= lit else lit):
-			# The chip ticking now pops (`ram_tick` amplitude).
-			rc = rc.grow(chip * (Motion.amplitude(&"ram_tick") - 1.0) * 0.5 * tick_pop)
+			# The pip ticking now pops (`ram_tick` amplitude).
+			rc = rc.grow(rc.size.x * (Motion.amplitude(&"ram_tick") - 1.0) * 0.5 * tick_pop)
 			col = col.lerp(Palette.PAPER, tick_pop * 0.6)
 		draw_rect(rc, col)
-		draw_rect(rc, Color(Palette.CELL_ACID, 0.9) if (k >= lit and k < after) else Color(Palette.NET_CYAN, 0.6), false, 2.0 if (k >= lit and k < after) else 1.0)
-	draw_string(Palette.mono(), Vector2(x0 + max_ram * step + 6.0, chip), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.NET_CYAN)
+		if k >= after and k < lit:
+			# ART-2 2D: the previewed cost is hatched across the pips it will spend.
+			var hy := rc.size.x
+			var y := rc.position.y - hy
+			while y < rc.end.y:
+				var a0 := Vector2(rc.position.x, clampf(y + hy, rc.position.y, rc.end.y))
+				var a1 := Vector2(rc.end.x, clampf(y, rc.position.y, rc.end.y))
+				draw_line(a0, a1, Color(Palette.LIVE_NUMBER_RIM, 0.7 * pending_alpha), 1.5)
+				y += HATCH_STEP * Settings.text_scale
+		if k >= lit and k < after:
+			draw_rect(rc, Color(Palette.CELL_ACID, 0.9), false, 2.0)  # gained by the previewed action
 	if spend_text != "":
 		# "-N RAM" (or "+N RAM") rising off the count and fading, from above its words.
 		var r := spend_rect()
 		var a := 1.0 - clampf((spend_p - SPEND_FADE_FROM) / (1.0 - SPEND_FADE_FROM), 0.0, 1.0)
-		var sfs := roundi(fs * SPEND_FONT_SHARE)
+		var sfs := roundi(roundi(FONT_SIZE * s) * SPEND_FONT_SHARE)
 		var at := Vector2(r.position.x, r.position.y + Palette.display().get_ascent(sfs))
 		draw_string_outline(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, 4, Color(Palette.NIGHT_SKY, a))
 		draw_string(Palette.display(), at, spend_text, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(spend_color, a))
-	if refusal != "":
-		# A RAM chip, then "COST > RAM" in red.
-		var rx := x0 + max_ram * step + lw + 4.0
-		var red := Color(REFUSED_COLOR, maxf(MISSING_ALPHA, flash_alpha))
-		draw_rect(Rect2(rx, 1, chip, chip), red)
-		draw_rect(Rect2(rx, 1, chip, chip), Palette.PAPER, false, 1.0)
-		draw_string(Palette.mono(), Vector2(rx + chip + 4.0, chip), refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, red)
