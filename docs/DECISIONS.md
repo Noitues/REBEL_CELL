@@ -33,6 +33,10 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Designer ruling: DISPATCH text
+Default accepted for the ART-0a open question: DISPATCH text is always a clean CRT terminal feed (red
+accent, ART_BIBLE v2 §1.2), never a sticker or pencil. GDD 8.2's "never zine-styled" reworded to that.
+
 ### 2026-10-05 — Designer ruling: check cadence for M14
 The designer asked to run work in parallel and to stop re-running the full suite after every commit
 and merge. From ART-0 on:
@@ -5422,7 +5426,8 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
-- **GDD 8.2 "DISPATCH text is … never zine-styled" (2026-10-05, ART-0a):** the zine look is
+- ~~**GDD 8.2 "DISPATCH text is … never zine-styled" (2026-10-05, ART-0a):**~~ resolved: the designer took
+  the default (2026-10-05); GDD 8.2 reworded citing "Designer ruling: DISPATCH text". Original note: the zine look is
   retired (ruling 4) but this §8 line still names it. Default (applied nowhere yet): read it as
   "DISPATCH text is always a clean CRT terminal feed (red accent, ART_BIBLE v2 §1.2), never a
   sticker or pencil"; reword GDD 8.2 to that if you agree.

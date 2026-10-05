@@ -421,8 +421,8 @@ The player is the Cell's unseen leader. Orders come through **DISPATCH**, an enc
 handler everyone assumes is human. DISPATCH is a rogue AI using the Cell to destroy its
 competitors. Hidden clues across campaigns: replies before messages are sent, impossible
 timestamps, stolen data mentioning a buyer who profits from every collapse, and a voice
-that slowly shifts from human to machine. DISPATCH text is always clean system text,
-never zine-styled.
+that slowly shifts from human to machine. DISPATCH text is always a clean CRT terminal
+feed (red accent, ART_BIBLE v2 §1.2), never a sticker or pencil (DECISIONS 2026-10-05, DISPATCH text ruling).
 
 ### 8.3 First Corporation: Solace Biosystems (placeholder name)
 Software for life-critical implants, sold as the **Continuum** subscription; prices just
