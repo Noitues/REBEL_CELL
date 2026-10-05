@@ -175,6 +175,9 @@ extends Resource
 @export var save_dir_export: String = "user://saves"
 @export var replay_subdir: String = "replays"
 @export var write_replays: bool = true
+## ART-0 audit B4: the most replay files the replay folder keeps; writing one more deletes
+## the oldest (storyboard, demo and harness runs would pile them up). 0 = no cap.
+@export var max_replays: int = 50
 @export_group("Combat FX")
 ## ART-2 2C (ART_BIBLE v2 §3.20, round 18 binary_damage NOTES): a hit's 0/1 shards scale
 ## with the damage it deals: count = base + per_dmg x damage (at most max), glyph px =
@@ -242,6 +245,8 @@ func heat_band_levels() -> Array[int]:
 
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
+	if max_replays < 0:
+		errors.append("max_replays must be >= 0 (0 = no cap).")
 	for arr in [rack_heat_by_tier, rack_schematics_by_tier, raid_schematics_by_tier]:
 		if arr.size() != 4:
 			errors.append("Per-tier arrays need 4 entries.")

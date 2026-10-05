@@ -95,6 +95,92 @@ func test_a_save_of_an_older_version_is_refused_without_a_crash() -> void:
 	SaveService.delete_save(path)
 
 
+## ART-0 audit B4: the replay folder keeps at most `max_replays` files; the oldest go first.
+func test_the_replay_folder_is_capped_and_drops_the_oldest() -> void:
+	var cfg: CampaignConfigData = _cfg.duplicate()
+	cfg.max_replays = 3
+	_saves.config = cfg
+	var s := _finished_session()
+	var written: Array[String] = []
+	for i in 5:
+		written.append(_saves.write_replay(s, _replays))
+	var kept: PackedStringArray = _saves.list_replays(_replays)
+	assert_eq(kept.size(), 3, "capped at max_replays")
+	for i in 2:
+		assert_false(FileAccess.file_exists(written[i]), "the oldest went first: %s" % written[i])
+	for i in range(2, 5):
+		assert_true(kept.has(written[i]), "the newest stay: %s" % written[i])
+	assert_eq(_saves.list_replays(_replays), kept, "names sort oldest first")
+	cfg.max_replays = 0
+	_saves.write_replay(s, _replays)
+	assert_eq(_saves.list_replays(_replays).size(), 4, "0 = no cap")
+	assert_eq(_cfg.max_replays, 50, "the shipped cap (campaign_config.tres)")
+	assert_true(FileAccess.get_file_as_string("res://export_presets.cfg").contains("saves/*"), "exports leave the saves folder out")
+
+
+## ART-0 audit B4: netrun fights replay too: a plain one, one with a rewind, and one saved
+## mid-fight and resumed (through JSON, as CONTINUE does); each written replay reloads and
+## matches its recorded hash.
+func test_netrun_rewind_and_resumed_fights_replay_to_the_same_hash() -> void:
+	var resolver := CombatFixture.resolver()
+	for mode in ["plain", "rewind", "resume"]:
+		for seed in [11, 23]:
+			var tag := "%s seed %d" % [mode, seed]
+			var run := _netrun_in_combat(resolver, seed)
+			assert_not_null(run, "%s: reached a fight" % tag)
+			if run == null:
+				continue
+			var turns := 0
+			# The live fight (the run drops it once the fight is settled).
+			var session: CombatSession = run.combat
+			var twist := false
+			while run.in_combat() and turns < 60:
+				if mode == "rewind" and turns == 1:
+					run.combat_action(CombatAction.nudge(&"player", 1))
+					assert_true(run.combat_rewind().ok(), "%s: rewound" % tag)
+					twist = true
+				if mode == "resume" and turns == 2:
+					var saved: Variant = JSON.parse_string(JSON.stringify(run.to_dict()))
+					run = NetrunSession.from_dict(resolver, run.campaign, saved)
+					assert_true(run.in_combat(), "%s: resumed in the fight" % tag)
+					twist = true
+				session = run.combat
+				run.combat_action(CombatAction.nudge(&"player", 1))
+				if session.state.is_over():
+					break
+				run.combat_action(CombatAction.end_turn())
+				turns += 1
+			assert_true(twist or mode == "plain", "%s: the fight lasted long enough to %s" % [tag, mode])
+			var path: String = _saves.write_replay(session, _replays)
+			assert_ne(path, "", "%s: written" % tag)
+			var data: Dictionary = _saves.load_replay(path)
+			assert_false(data.is_empty(), "%s: reloads" % tag)
+			assert_eq(String(data["result_hash"]), str(session.state.state_hash()), "%s: records the live hash" % tag)
+			assert_true(CombatReplay.matches(resolver, data), "%s: replays to the same hash" % tag)
+
+
+## A netrun on a fresh campaign, walked to its first fight (null when none is reachable).
+func _netrun_in_combat(resolver: CombatResolver, seed: int) -> NetrunSession:
+	var c := CampaignState.new()
+	c.campaign_seed = 99
+	c.schematics = resolver.config.starting_schematics
+	c.recruit(ContentRegistry.get_content(&"breaker") as ClassData, "Vex")
+	var run := NetrunSession.start(resolver, c, &"op_1", 1, &"t1_a", seed)
+	for step in 12:
+		if run.in_combat():
+			return run
+		var next := run.available_nodes()
+		if next.is_empty():
+			return null
+		var pick: StringName = next[0]
+		for id in next:
+			if int(run.run.map.get_node(id)["type"]) == RC.InfilNodeType.ROUTER:
+				pick = id
+				break
+		run.enter_node(pick)
+	return run if run.in_combat() else null
+
+
 ## A short standalone fight played to its end (or a turn cap), as the engine records it.
 func _finished_session() -> CombatSession:
 	var s := CombatSession.start(CombatFixture.resolver(), &"breaker", [&"claims_adjuster"], 7, &"rank:1")

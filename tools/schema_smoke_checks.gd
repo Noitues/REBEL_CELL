@@ -486,6 +486,12 @@ func _art0() -> int:
 	print("ART-0 S0: saves ", cfg.save_dir_source, " / ", cfg.save_dir_export, " replays ", cfg.replay_subdir, " on ", cfg.write_replays)
 	if cfg.save_dir_source != "res://saves" or cfg.save_dir_export != "user://saves" or cfg.replay_subdir != "replays" or not cfg.write_replays: fails += 1
 	if shipped == null or shipped.save_dir_source != cfg.save_dir_source or shipped.save_dir_export != cfg.save_dir_export or shipped.replay_subdir != cfg.replay_subdir or shipped.write_replays != cfg.write_replays: fails += 1
+	# ART-0 audit B4: the replay folder's cap (0 = none; negative is an error).
+	print("ART-0 audit B4: max_replays ", cfg.max_replays, " shipped ", shipped.max_replays if shipped != null else -1)
+	if not names.has("max_replays") or cfg.max_replays != 50 or shipped == null or shipped.max_replays != 50: fails += 1
+	var neg := CampaignConfigData.new()
+	neg.max_replays = -1
+	if neg.validate().is_empty(): fails += 1
 	# ART-0 B3: the slice programs SANDBOX / TROJAN / NULL; the config fields follow the words.
 	print("ART-0 B3: null_slice_overwrite_price ", cfg.null_slice_overwrite_price, " shipped ", shipped.null_slice_overwrite_price if shipped != null else -1,
 		" mirror_trojan_base ", cfg.mirror_trojan_base, " slices ", RC.SliceType.keys())
