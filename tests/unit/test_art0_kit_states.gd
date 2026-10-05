@@ -247,11 +247,11 @@ func test_cards_and_tilted_controls_keep_their_own_focus_look() -> void:
 	var t := Button.new()
 	t.rotation = 0.1
 	assert_false(UiFocus.scales_on_focus(t))
-	assert_true(UiFocus.scales_on_focus(Button.new()))
-	assert_false(UiFocus.scales_on_focus(Label.new()))
-	var card := ZineCard.new("JAM", 1, "Deal 8.", 0)
+	assert_true(UiFocus.scales_on_focus(autofree(Button.new())))
+	assert_false(UiFocus.scales_on_focus(autofree(Label.new())))
+	var card: ZineCard = add_child_autofree(ZineCard.new("JAM", 1, "Deal 8.", 0))  # in the tree: its parts free with it
 	assert_false(UiFocus.scales_on_focus(card), "a card lifts itself")
-	for n in [c, t, card]:
+	for n in [c, t]:
 		n.free()
 
 

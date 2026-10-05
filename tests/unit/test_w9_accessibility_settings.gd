@@ -300,7 +300,9 @@ func test_reduce_motion_pages_cross_fade_in_place() -> void:
 		if reduce:
 			assert_eq(page.position, Vector2.ZERO, "no slide: the page fades where it rests")
 			assert_null(page.get_node_or_null(^"PageTransition/CrtRoll"), "no CRT roll jump")
-		helper.finish()
+		# ART-0 F: on a loaded shard the entrance can end within the two frames (it frees itself).
+		if is_instance_valid(helper):
+			helper.finish()
 
 
 func test_reduce_motion_shakes_nothing_and_holds_no_camera() -> void:
