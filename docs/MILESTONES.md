@@ -263,13 +263,13 @@ colour or size literals (tokens); the runtime lint clean; a GAP_ANALYSIS ART-n r
 budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orchestrator merges.
 
 **ART-0 — Rulings, landing, salvage** (`docs/handoff/art_0/ART_0_BATCH.md`)
-- [ ] A1–A6 docs landing (bible v2 + v1, plan, `docs/art_reference/`, art history, GDD 9, this box).
-- [ ] B1–B4 names pass part 1 (raid words, Mainframe, Customs Seal) and the saves folder.
-- [ ] C accessibility settings, D visual QA harness and lint, E tokens / type machinery and VFX
+- [x] A1–A6 docs landing (bible v2 + v1, plan, `docs/art_reference/`, art history, GDD 9, this box).
+- [x] B1–B4 names pass part 1 (raid words, Mainframe, Customs Seal) and the saves folder.
+- [x] C accessibility settings, D visual QA harness and lint, E tokens / type machinery and VFX
       tiers, F kit behaviour; B part 2 names D2–D8, D11–D12 after the §3.1 rulings.
-- [ ] The full suite is green with the ported M13 tests; the QA harness runs on main's screens.
-- [ ] Timeline `17_art0` (the baseline before the new look) with a README row.
-- [ ] Audit round ART-R0 to CLEAN.
+- [x] The full suite is green with the ported M13 tests; the QA harness runs on main's screens.
+- [x] Timeline `17_art0` (the baseline before the new look) with a README row.
+- [x] ~~Audit round ART-R0 to CLEAN.~~ Superseded: one M14 audit after ART-12 (DECISIONS "one full run, one audit at the end").
 
 ### Group 1 — Foundations
 - [ ] Group 1 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
