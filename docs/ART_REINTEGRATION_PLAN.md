@@ -488,7 +488,7 @@ Common acceptance for every batch:
 | **Mechanic-dependent art.** | Art for unapproved mechanics never ships (§3.2); the batch says which items wait on which G-pass. |
 | **Conflicts with ANIM.** | Port, don't merge; ANIM behaviour wins; motion entries move with their views; union-merge `ui_motion.tres` / REQUIRED_IDS / lab DEMOS / manifest / strings. |
 | **Disk** (C: filled once; ~40 worktrees ≈100 MB each). | Curated reference set; captures at 800×450 or crops; delete capture folders after reading; `df -h /c` before big captures (stop under 5 GB); ask before removing merged worktrees. |
-| **Renames break saves or replays.** | Display names only; ids unchanged; a seeded replay test before and after the names pass. |
+| **Renames break saves or replays.** | ~~Display names only; ids unchanged; a seeded replay test before and after the names pass.~~ **Ruling 5 (DECISIONS 2026-10-05 pause point 0), changed:** no save or replay compatibility; ids follow the names; old files are refused through the "can't load" path; seeded replay tests still pass with the new names. |
 | **Translation.** | Every new word through `tr()` once; re-export `strings.csv`; pseudolocale check. |
 | **Suite runtime grows** (1233 → more). | New tests in the right tier; `--update-times`; merged sweeps (TEST_SUITE consolidation rules). |
 | **Licences.** | Courier Prime OFL text shipped beside the font; fonts README; Blender-made assets are ours. |
