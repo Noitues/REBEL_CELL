@@ -34,7 +34,7 @@ func validate(min_exploits: int = 3) -> PackedStringArray:
 		errors.append("Home site %s not found." % home_site_id)
 	if not by_id.has(boss_site_id):
 		errors.append("Boss site %s not found." % boss_site_id)
-	elif by_id[boss_site_id].objective != RC.SiteObjective.BOSS:
+	elif by_id[boss_site_id].objective != RC.SiteObjective.CENTRAL_SERVER:
 		errors.append("Boss site %s does not have objective BOSS." % boss_site_id)
 	# Tier chains: each T1 opens at most one T2.
 	for s in by_id.values():

@@ -253,7 +253,7 @@ func test_one_raid_legend_listing_what_the_map_shows_clear_of_the_tags() -> void
 		var legend: MapLegend = hq.raid_legend
 		var keys := MapLegend.keys_of(hq.raid_graph(RunManager.project_raid(), {}), RunManager.campaign.grid)
 		assert_eq(legend.only, keys, "the legend lists what the map shows")
-		assert_false(keys.has(CityMapOverlay.KIND_BOSS) and not _graph_has_kind(hq, CityMapOverlay.KIND_BOSS), "no row for what is not there")
+		assert_false(keys.has(CityMapOverlay.KIND_CENTRAL_SERVER) and not _graph_has_kind(hq, CityMapOverlay.KIND_CENTRAL_SERVER), "no row for what is not there")
 		var lr := legend.get_global_rect()
 		for r in LegendSpot.node_rects(hq.city_overlay, true):
 			assert_false(lr.intersects(r), "the legend %s covers a node, tag or label at %s (text %.1f)" % [lr, r, scale])

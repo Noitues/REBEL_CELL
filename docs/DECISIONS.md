@@ -61,6 +61,15 @@ player strings and code for each item's old words.
 - **D4.** INERTIA is **WEIGHT**: `shim_8_weight` (was the inertia strike), the codex entry "Weight",
   the Cargo Hauler's text, GDD 8.4b. Solace's HOTFIX reads **GROWTH** through
   `Palette.CORP_SLICE_WORDS` (test `test_a_solace_wheel_says_growth_for_its_hotfix`).
+- **D5 Central Server.** The boss Site is the corporation's Central Server: `RC.SiteObjective.CENTRAL_SERVER`
+  (was BOSS, same position), `CityMapOverlay.KIND_CENTRAL_SERVER` ("central_server"), the map key,
+  tooltips and HQ badge (CENTRAL SERVER). Each Central Server's name is its Site's content string
+  and id: The Genome Core (`the_genome_core`, Solace), The Master Manifest (`the_master_manifest`,
+  Meridian), The Panopticon (`the_panopticon`, Halcyon), Launch Control (`launch_control`,
+  Orbital). REBEL_CELL's stays DISPATCH (`dispatch_core_site`): GDD 8.5 names no final server, only
+  that the final boss is DISPATCH. The boss enemies keep their names (Renewal Engine, The Manifest…)
+  and the run kind "boss" stays (it is the fight). GDD 11.7 and the summary; the part-1 "(name
+  pending, D5)" note is gone (test `test_d5_each_central_server_has_its_name`).
 
 ### 2026-10-05 — Art direction — ART-0 names pass, part 1 + saves folder
 Applies rulings 5, 6.1, 6.2 and 6.5 of the entry below (ART-0 area B, items B1–B4). Internal

@@ -29,7 +29,7 @@ const ROWS := [["○", "#D4FF00", "claimed (yours): spray ring"], ["■", "#5CE1
 ## The node icons (H21 #14), drawn by CityMapOverlay.draw_icon exactly as on the map:
 ## [kind, text shown in the icon, meaning].
 const ICON_ROWS := [[CityMapOverlay.KIND_EXPLOIT, "", "exploit"], [CityMapOverlay.KIND_HEAT, "", "heat reduction"],
-	[CityMapOverlay.KIND_BOSS, "", "boss"], [CityMapOverlay.KIND_HOME, "", "CORE (your home)"], [CityMapOverlay.KIND_TIER, "T2", "Site tier: more lit pips, harder"]]
+	[CityMapOverlay.KIND_CENTRAL_SERVER, "", "central server"], [CityMapOverlay.KIND_HOME, "", "CORE (your home)"], [CityMapOverlay.KIND_TIER, "T2", "Site tier: more lit pips, harder"]]
 ## The tier row's example tier (its icon text above is "T2").
 const TIER_EXAMPLE := 2
 ## Legend width, glyph column width, the full and compact variants' font sizes (legends
@@ -52,7 +52,7 @@ const PIN_MARGIN := 10.0
 ## fewer words, in as many columns as its width holds; gaps between them (px at text
 ## scale 1.0).
 const STRIP_ROWS := ["claimed: spray ring", "cleared", "corporate", "taken: crossed out", "your network link", "threat route"]
-const STRIP_ICON_ROWS := ["exploit", "heat reduction", "boss", "CORE (your home)", "tier: more pips, harder"]
+const STRIP_ICON_ROWS := ["exploit", "heat reduction", "central server", "CORE (your home)", "tier: more pips, harder"]
 const STRIP_H_GAP := 16
 const STRIP_V_GAP := 2
 

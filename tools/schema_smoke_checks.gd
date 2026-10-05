@@ -138,7 +138,7 @@ func _batch2() -> int:
 		_site(&"a1", 1, [&"a2"]), _site(&"a2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.INTEL),
 		_site(&"b1", 1, [&"b2"]), _site(&"b2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.BREACH),
 		_site(&"c1", 1, [&"c2"]), _site(&"c2", 2, [&"t3"], RC.SiteObjective.EXPLOIT, RC.ExploitType.VIRUS),
-		_site(&"t3", 3, [&"boss"]), _site(&"boss", 4, [], RC.SiteObjective.BOSS),
+		_site(&"t3", 3, [&"boss"]), _site(&"boss", 4, [], RC.SiteObjective.CENTRAL_SERVER),
 	]
 	var grid := CityGridData.new(); grid.sites = sites; grid.home_site_id = &"home"; grid.boss_site_id = &"boss"
 	var ge := grid.validate(); print("Grid (expect 0): ", ge, " warnings: ", grid.size_warnings())

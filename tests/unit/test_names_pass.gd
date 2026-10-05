@@ -140,6 +140,10 @@ const PART2: Array = [
 		"(?-i)\\bTariff\\b|(?i)\\bjudge?ment\\b",
 		"slices/tariff|&\"tariff\"|\"tariff\"|slot_tariff|(?i)judge?ment",
 		["Tariff Collector", "Tariff Calculation Office", "Tariff season"]],
+	["D5 Central Server",
+		"(?i)mainframe gate|\\bboss site\\b",
+		"SiteObjective\\.BOSS\\b|KIND_BOSS|GLYPH_BOSS|renewal_engine_site|the_manifest_site|civic_core_site|commons_array_site|(?i)mainframe gate",
+		[]],
 	["D4 WEIGHT",
 		"(?i)\\binertia\\b",
 		"(?i)inertia",
@@ -181,6 +185,19 @@ func test_part2_no_code_keeps_an_old_name() -> void:
 					if re.search(lines[i]) != null:
 						hits.append("%s:%d" % [path, i + 1])
 		assert_eq(hits, [] as Array[String], "%s: the old names are gone from the code" % entry[0])
+
+
+## D5: each corporation's Central Server (its boss Site) carries its own name.
+func test_d5_each_central_server_has_its_name() -> void:
+	var want := {&"solace": "The Genome Core", &"meridian": "The Master Manifest", &"halcyon": "The Panopticon",
+		&"orbital": "Launch Control", &"rebel_cell": "DISPATCH"}
+	for corp_id in want:
+		var corp := ContentRegistry.get_content(corp_id) as CorporationData
+		var names: Array[String] = []
+		for s in corp.city_grid.sites:
+			if s.objective == RC.SiteObjective.CENTRAL_SERVER:
+				names.append(s.display_name)
+		assert_eq(names, [want[corp_id]] as Array[String], "%s's Central Server" % corp_id)
 
 
 ## D2: every slice's display name uses the program's new word.

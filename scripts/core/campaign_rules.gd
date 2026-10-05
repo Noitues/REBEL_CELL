@@ -129,7 +129,7 @@ static func launchable_sites(campaign: CampaignState, corp: CorporationData, con
 		if campaign.grid.is_taken(s.id):
 			out.append(s)
 		elif campaign.grid.is_corporate(s.id) and touches_territory(campaign, corp, s.id):
-			if s.objective == RC.SiteObjective.BOSS and campaign.exploits.size() < config.min_exploits_for_breach:
+			if s.objective == RC.SiteObjective.CENTRAL_SERVER and campaign.exploits.size() < config.min_exploits_for_breach:
 				continue
 			out.append(s)
 	out.sort_custom(func(a: SiteData, b: SiteData) -> bool: return String(a.id) < String(b.id))
@@ -143,7 +143,7 @@ static func launchable_sites(campaign: CampaignState, corp: CorporationData, con
 static func patrol_sites(campaign: CampaignState, corp: CorporationData) -> Array[SiteData]:
 	var out: Array[SiteData] = []
 	for s in corp.city_grid.sites:
-		if s == null or s.id == corp.city_grid.home_site_id or s.objective == RC.SiteObjective.BOSS:
+		if s == null or s.id == corp.city_grid.home_site_id or s.objective == RC.SiteObjective.CENTRAL_SERVER:
 			continue
 		if campaign.grid.is_cleared(s.id) or campaign.grid.is_claimed(s.id):
 			out.append(s)
@@ -152,7 +152,7 @@ static func patrol_sites(campaign: CampaignState, corp: CorporationData) -> Arra
 
 
 static func is_patrol(campaign: CampaignState, site: SiteData) -> bool:
-	return site != null and site.objective != RC.SiteObjective.BOSS and site.id != campaign.grid.home_site_id \
+	return site != null and site.objective != RC.SiteObjective.CENTRAL_SERVER and site.id != campaign.grid.home_site_id \
 		and (campaign.grid.is_cleared(site.id) or campaign.grid.is_claimed(site.id))
 
 
@@ -180,7 +180,7 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 		if s.id == site.id:
 			allowed = true
 	if not allowed:
-		if site.objective == RC.SiteObjective.BOSS:
+		if site.objective == RC.SiteObjective.CENTRAL_SERVER:
 			if campaign.exploits.size() < config.min_exploits_for_breach:
 				return "The breach needs %d Exploits (%d held)." % [config.min_exploits_for_breach, campaign.exploits.size()]
 			return "The breach needs a cleared or claimed Site next to it."
@@ -199,7 +199,7 @@ static func launch_error(campaign: CampaignState, corp: CorporationData, config:
 static func run_kind_for(campaign: CampaignState, site: SiteData) -> String:
 	if campaign.grid.is_taken(site.id):
 		return "reclaim"
-	if site.objective == RC.SiteObjective.BOSS:
+	if site.objective == RC.SiteObjective.CENTRAL_SERVER:
 		return "boss"
 	if is_patrol(campaign, site):
 		return "patrol"

@@ -85,7 +85,7 @@ SPEC = {
            ("h3_e", "Council Backchannel"), ("h3_f", "Municipal Pricing Authority"), ("h3_g", "Citizen Profile Archive"), ("h3_h", "Halcyon Root Registry")],
     "heat_sites": [("wipe_the_citations", "Wipe the Citations", 1, -5, "h1_a"), ("blind_the_cameras", "Blind the Cameras", 1, -5, "h1_f"),
                    ("lose_the_case_file", "Lose the Case File", 2, -8, "h1_j"), ("pardon_the_district", "Pardon the District", 3, -8, "h2_e")],
-    "boss_site": ("civic_core_site", "The Civic Core"),
+    "boss_site": ("the_panopticon", "The Panopticon"),
     "exploit_names": ("Intel: Council Minutes", "Breach: Emergency Override", "Virus: Open Data Leak"),
     "paths": [
         ("water_rights", "Water Rights", "Halcyon owns the city's water now. The price follows the weather, and the weather follows the price.",
@@ -224,7 +224,7 @@ SPEC = {
         "blind_the_cameras": "Blind the Cameras. Put the block's cameras to sleep. Heat drops.",
         "lose_the_case_file": "Lose the Case File. Halcyon has a file on the Cell. Misplace it.",
         "pardon_the_district": "Pardon the District. Clear the records of a whole district, the Cell's included.",
-        "civic_core_site": "The Civic Core. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut.",
+        "the_panopticon": "The Civic Core. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut.",
     },
     "dispatch": [
         ("run_start", "Jacking you in. Halcyon watches the streets; stay off them."), ("run_start", "Route is live. Mind the cameras."),

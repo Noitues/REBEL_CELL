@@ -85,7 +85,7 @@ SPEC = {
            ("o3_e", "Board Uplink"), ("o3_f", "Orbital Pricing Authority"), ("o3_g", "Surveillance Constellation"), ("o3_h", "Orbital Root Keystore")],
     "heat_sites": [("scrub_the_downlink", "Scrub the Downlink", 1, -5, "o1_a"), ("spoof_the_positioning", "Spoof the Positioning", 1, -5, "o1_f"),
                    ("jam_the_imaging", "Jam the Imaging", 2, -8, "o1_j"), ("burn_the_orbit_logs", "Burn the Orbit Logs", 3, -8, "o2_e")],
-    "boss_site": ("commons_array_site", "The Commons Array"),
+    "boss_site": ("launch_control", "Launch Control"),
     "exploit_names": ("Intel: Launch Codes", "Breach: Ground Station Override", "Virus: Open Spectrum"),
     "paths": [
         ("the_enclosure", "The Enclosure", "Orbital Commons bought the sky. Now the sky has a fee.",
@@ -224,7 +224,7 @@ SPEC = {
         "spoof_the_positioning": "Spoof the Positioning. Put the Cell somewhere it is not. Heat drops.",
         "jam_the_imaging": "Jam the Imaging. The satellites stop looking at your roof.",
         "burn_the_orbit_logs": "Burn the Orbit Logs. Every record of the Cell's signals, deorbited.",
-        "commons_array_site": "The Commons Array. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut.",
+        "launch_control": "The Commons Array. It owns the sky. It repairs and shields every turn. Breach the Hub, then cut.",
     },
     "dispatch": [
         ("run_start", "Jacking you in. The sky is watching; give it nothing to see."), ("run_start", "Uplink is live. Keep it short."),

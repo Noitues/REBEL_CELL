@@ -169,7 +169,6 @@ BEST ICE,BEST ICE
 BLACK MARKET // SCHEMATICS %d,BLACK MARKET // SCHEMATICS %d
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
-BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACHED,BREACHED
@@ -196,8 +195,6 @@ Borderless,Borderless
 Boss,Boss
 Boss Extra Pointer,Boss Extra Pointer
 Boss Phase Early,Boss Phase Early
-Boss Site (star): the corporation's core.,Boss Site (star): the corporation's core.
-Boss Site: the corporation's core,Boss Site: the corporation's core
 Boss Strength,Boss Strength
 Breach,Breach
 Bring %s back from %s.,Bring %s back from %s.
@@ -214,6 +211,7 @@ CARDS,CARDS
 CELL DEFENSE RAID SETUP,CELL DEFENSE RAID SETUP
 CELL HOLDS,CELL HOLDS
 CELL STATUS,CELL STATUS
+CENTRAL SERVER,CENTRAL SERVER
 CITY GRID,CITY GRID
 CITY GRID // %s,CITY GRID // %s
 CLAIMED,CLAIMED
@@ -394,6 +392,9 @@ Cards,Cards
 Cards in %s's deck (VIEW LOADOUT shows them).,Cards in %s's deck (VIEW LOADOUT shows them).
 "Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit.","Cards spin, nudge and flip wheels; they cost RAM. {card_how} Nudge cards go on an arrow (that sets the way they turn), slice cards on a slice. While you aim, the tags and the dashed acid arc show the result before you commit."
 Cascade: %s takes %d damage: HP %d → %d.,Cascade: %s takes %d damage: HP %d → %d.
+Central Server,Central Server
+Central Server (star): the corporation's core.,Central Server (star): the corporation's core.
+Central Server: the corporation's core,Central Server: the corporation's core
 Chips go into:,Chips go into:
 Choose,Choose
 City Grid,City Grid
@@ -422,7 +423,7 @@ Clear this Site for the %s Exploit (%d/%d for the breach).,Clear this Site for t
 Cleared: claim it to build a node of your network.,Cleared: claim it to build a node of your network.
 Clearing it changes Heat by %s.,Clearing it changes Heat by %s.
 Clearing it gives %s Schematics.,Clearing it gives %s Schematics.
-Clearing it gives the %s Exploit for the boss breach.,Clearing it gives the %s Exploit for the boss breach.
+Clearing it gives the %s Exploit for the Central Server breach.,Clearing it gives the %s Exploit for the Central Server breach.
 Clearing it now brings a raid on your network.,Clearing it now brings a raid on your network.
 Clearing it opens %d more Sites to runs: %s.,Clearing it opens %d more Sites to runs: %s.
 Clearing it wins the campaign.,Clearing it wins the campaign.
@@ -717,7 +718,7 @@ Exploit,Exploit
 Exploit %s found (%d/%d for the breach).,Exploit %s found (%d/%d for the breach).
 Exploit Heat,Exploit Heat
 Exploit Site,Exploit Site
-Exploit Site (diamond): clearing it gives an Exploit for the boss breach.,Exploit Site (diamond): clearing it gives an Exploit for the boss breach.
+Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.,Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.
 Exploits,Exploits
 Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.,Exploits found: %s. Exploit Sites on the Grid give one each; the breach on the corporation's core needs %d.
 Exploits found: %s. The breach on the corporation's core needs %d.,Exploits found: %s. The breach on the corporation's core needs %d.
@@ -1773,8 +1774,6 @@ SiteData.blind_the_cameras.display_name,Blind the Cameras
 SiteData.burn_the_ledger.display_name,Burn the Ledger
 SiteData.burn_the_orbit_logs.display_name,Burn the Orbit Logs
 SiteData.burn_the_orders.display_name,Burn the Orders
-SiteData.civic_core_site.display_name,The Civic Core
-SiteData.commons_array_site.display_name,The Commons Array
 SiteData.dispatch_core_site.display_name,DISPATCH
 SiteData.erase_the_ledger.display_name,Erase the Ledger
 SiteData.forge_the_manifest.display_name,Forge the Manifest
@@ -1807,6 +1806,7 @@ SiteData.h3_h.display_name,Halcyon Root Registry
 SiteData.h_home.display_name,Home Server
 SiteData.home.display_name,Home Server
 SiteData.jam_the_imaging.display_name,Jam the Imaging
+SiteData.launch_control.display_name,Launch Control
 SiteData.lose_the_case_file.display_name,Lose the Case File
 SiteData.lose_the_handler.display_name,Lose the Handler
 SiteData.lose_the_tracking.display_name,Lose the Tracking
@@ -1893,7 +1893,6 @@ SiteData.r3_f.display_name,Timestamp Engine
 SiteData.r3_g.display_name,Voice Model
 SiteData.r3_h.display_name,DISPATCH Root
 SiteData.r_home.display_name,Home Server
-SiteData.renewal_engine_site.display_name,Renewal Engine
 SiteData.reroute_the_audit.display_name,Reroute the Audit
 SiteData.scramble_the_voice.display_name,Scramble the Voice
 SiteData.scrub_records.display_name,Scrub Records
@@ -1926,7 +1925,9 @@ SiteData.t3_e.display_name,Board Comms Backbone
 SiteData.t3_f.display_name,Continuum Licensing Authority
 SiteData.t3_g.display_name,Implant Cohort Archive
 SiteData.t3_h.display_name,Solace Root Certificate Store
-SiteData.the_manifest_site.display_name,The Manifest
+SiteData.the_genome_core.display_name,The Genome Core
+SiteData.the_master_manifest.display_name,The Master Manifest
+SiteData.the_panopticon.display_name,The Panopticon
 SiteData.wipe_biometrics.display_name,Wipe Biometrics
 SiteData.wipe_the_citations.display_name,Wipe the Citations
 Sites your network holds besides CORE: claim cleared Sites on the City Grid.,Sites your network holds besides CORE: claim cleared Sites on the City Grid.

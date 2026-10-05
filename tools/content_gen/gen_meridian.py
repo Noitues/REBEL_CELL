@@ -192,7 +192,7 @@ T3 = [("m3_core", "Global Routing Core"), ("m3_b", "Freight Futures Desk"), ("m3
       ("m3_e", "Board Logistics Backbone"), ("m3_f", "Contract Pricing Authority"), ("m3_g", "Surveillance Route Archive"), ("m3_h", "Meridian Root Ledger")]
 HEAT = [("lose_the_tracking", "Lose the Tracking", 1, -5, "m1_a"), ("forge_the_manifest", "Forge the Manifest", 1, -5, "m1_f"),
         ("reroute_the_audit", "Reroute the Audit", 2, -8, "m1_j"), ("sink_the_cargo_logs", "Sink the Cargo Logs", 3, -8, "m2_e")]
-BOSS_SITE = ("the_manifest_site", "The Manifest")
+BOSS_SITE = ("the_master_manifest", "The Master Manifest")
 
 sites = []  # dicts
 
@@ -476,7 +476,7 @@ BRIEF = {
     "forge_the_manifest": "Forge the Manifest. Rewrite the Cell's traffic as routine freight. Heat drops.",
     "reroute_the_audit": "Reroute the Audit. Meridian's auditors are looking at you. Make them look somewhere else.",
     "sink_the_cargo_logs": "Sink the Cargo Logs. Every log that mentions the Cell, at the bottom of the harbour.",
-    "the_manifest_site": "The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut.",
+    "the_master_manifest": "The Manifest. Every package on the planet passes through it. It shields itself every turn. Breach the Hub or pierce, and cut.",
 }
 DISPATCH_LINES = [
     ("run_start", "Jacking you in. Meridian logs everything; log nothing."), ("run_start", "Route is live. Keep it quiet and bank at the first Rack."),

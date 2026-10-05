@@ -119,7 +119,7 @@ func test_priority_drains_ram() -> void:
 
 func test_meridian_voice_and_briefings() -> void:
 	assert_ne(Dialogue.briefing(&"meridian", &"m1_a"), "")
-	assert_ne(Dialogue.briefing(&"meridian", &"the_manifest_site"), "")
+	assert_ne(Dialogue.briefing(&"meridian", &"the_master_manifest"), "")
 	var mer := Dialogue.raid_warning(&"meridian", &"raid_heat_25")
 	var sol := Dialogue.raid_warning(&"solace", &"raid_heat_25")
 	assert_true(mer.begins_with("MERIDIAN"), mer)

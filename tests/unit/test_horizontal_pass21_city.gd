@@ -192,7 +192,7 @@ func test_grid_nodes_are_never_dimmed() -> void:
 
 func test_node_icons_are_distinct_and_the_legend_draws_them() -> void:
 	var route := [CityMapOverlay.KIND_FIGHT, CityMapOverlay.KIND_ELITE, CityMapOverlay.KIND_SHOP, CityMapOverlay.KIND_EVENT, CityMapOverlay.KIND_RACK]
-	var grid := [CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_BOSS, CityMapOverlay.KIND_HOME, CityMapOverlay.KIND_TIER]
+	var grid := [CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_CENTRAL_SERVER, CityMapOverlay.KIND_HOME, CityMapOverlay.KIND_TIER]
 	for kinds in [route, grid]:
 		var shapes := {}
 		for kind in kinds:

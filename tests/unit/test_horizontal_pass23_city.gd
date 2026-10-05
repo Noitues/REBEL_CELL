@@ -220,5 +220,5 @@ func test_every_node_tooltip_names_its_kind_and_what_it_does() -> void:
 			assert_string_contains(tip, CityMapOverlay.kind_word(kind), "%s %s: names its kind" % [corp, n["id"]])
 			assert_string_contains(tip, String(CityLayout.KIND_TIPS[kind]), "%s %s: says what it does" % [corp, n["id"]])
 		assert_true(kinds.has(CityMapOverlay.KIND_HOME) and kinds.has(CityMapOverlay.KIND_TIER), "%s: CORE and plain Sites checked" % corp)
-	for kind in [CityMapOverlay.KIND_TIER, CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_BOSS, CityMapOverlay.KIND_HOME]:
+	for kind in [CityMapOverlay.KIND_TIER, CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_CENTRAL_SERVER, CityMapOverlay.KIND_HOME]:
 		assert_true(String(CityLayout.KIND_TIPS[kind]).begins_with(CityMapOverlay.kind_word(kind)), "%s: the tip leads with its word" % kind)

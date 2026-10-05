@@ -226,7 +226,7 @@ script = ExtResource("e1")
 id = &"m3_core"
 display_name = "Global Routing Core"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 locked_links = Array[StringName]([&"m3_b"])
 map_position = Vector2(660, 60)
 
@@ -235,7 +235,7 @@ script = ExtResource("e1")
 id = &"m3_b"
 display_name = "Freight Futures Desk"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 map_position = Vector2(660, 137)
 
 [sub_resource type="Resource" id="site_m3_c"]
@@ -243,7 +243,7 @@ script = ExtResource("e1")
 id = &"m3_c"
 display_name = "Customs Override Escrow"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 locked_links = Array[StringName]([&"m3_d"])
 map_position = Vector2(660, 214)
 
@@ -252,7 +252,7 @@ script = ExtResource("e1")
 id = &"m3_d"
 display_name = "Supply Twin Simulator"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 map_position = Vector2(660, 291)
 
 [sub_resource type="Resource" id="site_m3_e"]
@@ -260,7 +260,7 @@ script = ExtResource("e1")
 id = &"m3_e"
 display_name = "Board Logistics Backbone"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 locked_links = Array[StringName]([&"m3_f"])
 map_position = Vector2(660, 369)
 
@@ -269,7 +269,7 @@ script = ExtResource("e1")
 id = &"m3_f"
 display_name = "Contract Pricing Authority"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 map_position = Vector2(660, 446)
 
 [sub_resource type="Resource" id="site_m3_g"]
@@ -277,7 +277,7 @@ script = ExtResource("e1")
 id = &"m3_g"
 display_name = "Surveillance Route Archive"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 locked_links = Array[StringName]([&"m3_h"])
 map_position = Vector2(660, 523)
 
@@ -286,7 +286,7 @@ script = ExtResource("e1")
 id = &"m3_h"
 display_name = "Meridian Root Ledger"
 tier = 3
-links = Array[StringName]([&"the_manifest_site"])
+links = Array[StringName]([&"the_master_manifest"])
 map_position = Vector2(660, 600)
 
 [sub_resource type="Resource" id="site_lose_the_tracking"]
@@ -325,10 +325,10 @@ objective = 2
 heat_change = -8
 map_position = Vector2(560, 430)
 
-[sub_resource type="Resource" id="site_the_manifest_site"]
+[sub_resource type="Resource" id="site_the_master_manifest"]
 script = ExtResource("e1")
-id = &"the_manifest_site"
-display_name = "The Manifest"
+id = &"the_master_manifest"
+display_name = "The Master Manifest"
 tier = 4
 objective = 4
 claimable = false
@@ -336,9 +336,9 @@ map_position = Vector2(900, 330)
 
 [sub_resource type="Resource" id="grid"]
 script = ExtResource("e2")
-sites = Array[ExtResource("e1")]([SubResource("site_m_home"), SubResource("site_m1_a"), SubResource("site_m1_b"), SubResource("site_m1_c"), SubResource("site_m1_d"), SubResource("site_m1_e"), SubResource("site_m1_f"), SubResource("site_m1_g"), SubResource("site_m1_h"), SubResource("site_m1_i"), SubResource("site_m1_j"), SubResource("site_m2_intel"), SubResource("site_m2_breach"), SubResource("site_m2_virus"), SubResource("site_m2_d"), SubResource("site_m2_e"), SubResource("site_m2_f"), SubResource("site_m2_g"), SubResource("site_m2_h"), SubResource("site_m3_core"), SubResource("site_m3_b"), SubResource("site_m3_c"), SubResource("site_m3_d"), SubResource("site_m3_e"), SubResource("site_m3_f"), SubResource("site_m3_g"), SubResource("site_m3_h"), SubResource("site_lose_the_tracking"), SubResource("site_forge_the_manifest"), SubResource("site_reroute_the_audit"), SubResource("site_sink_the_cargo_logs"), SubResource("site_the_manifest_site")])
+sites = Array[ExtResource("e1")]([SubResource("site_m_home"), SubResource("site_m1_a"), SubResource("site_m1_b"), SubResource("site_m1_c"), SubResource("site_m1_d"), SubResource("site_m1_e"), SubResource("site_m1_f"), SubResource("site_m1_g"), SubResource("site_m1_h"), SubResource("site_m1_i"), SubResource("site_m1_j"), SubResource("site_m2_intel"), SubResource("site_m2_breach"), SubResource("site_m2_virus"), SubResource("site_m2_d"), SubResource("site_m2_e"), SubResource("site_m2_f"), SubResource("site_m2_g"), SubResource("site_m2_h"), SubResource("site_m3_core"), SubResource("site_m3_b"), SubResource("site_m3_c"), SubResource("site_m3_d"), SubResource("site_m3_e"), SubResource("site_m3_f"), SubResource("site_m3_g"), SubResource("site_m3_h"), SubResource("site_lose_the_tracking"), SubResource("site_forge_the_manifest"), SubResource("site_reroute_the_audit"), SubResource("site_sink_the_cargo_logs"), SubResource("site_the_master_manifest")])
 home_site_id = &"m_home"
-boss_site_id = &"the_manifest_site"
+boss_site_id = &"the_master_manifest"
 
 [sub_resource type="Resource" id="ex_intel"]
 script = ExtResource("e3")

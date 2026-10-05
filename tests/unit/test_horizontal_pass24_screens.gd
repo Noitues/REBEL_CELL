@@ -256,7 +256,7 @@ const LATE_TAKEN := 2
 func _late_campaign() -> CampaignState:
 	var c := RunManager.campaign
 	var sites: Array = RunManager.corporation.city_grid.sites.filter(func(sd: SiteData) -> bool:
-		return sd != null and sd.id != RunManager.corporation.city_grid.home_site_id and sd.objective != RC.SiteObjective.BOSS)
+		return sd != null and sd.id != RunManager.corporation.city_grid.home_site_id and sd.objective != RC.SiteObjective.CENTRAL_SERVER)
 	sites.sort_custom(func(a: SiteData, b: SiteData) -> bool: return a.tier < b.tier or (a.tier == b.tier and String(a.id) < String(b.id)))
 	var claimed := 0
 	var taken := 0

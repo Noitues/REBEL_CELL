@@ -11,7 +11,7 @@ All numbers are tuning placeholders unless marked **locked**. Numeric tuning liv
 30-tick wheel (was 24) · Miss precision tier removed · jitter replaced by spin resistance ·
 Hubs, Inner Rings, satellites, multiple pointers added · three-layer progression (profile /
 campaign / netrun) · City Grid campaign map · Heat redefined as a campaign meter · Ranks,
-stationing, Armory · Exploit-based Mainframe Gate (name pending, D5) · economy, ICE difficulty, narrative, UX,
+stationing, Armory · Exploit-based Central Server · economy, ICE difficulty, narrative, UX,
 audio and visual baseline defined · vertical-slice content defined (Appendix A).
 2026-10-05 (M14, DECISIONS 2026-10-05, ruling 4): §9 rewritten around ART_BIBLE v2: the visual baseline is the
 cel-shaded low-poly city, CRT screens, vinyl stickers, grease pencil and light spill (9.1),
@@ -592,7 +592,10 @@ Enemy HP per tier: base × 1.6^(tier−1); enemy damage (slice output) per tier:
 1.2^(tier−1) (split 2026-09-24 after simulation, see DECISIONS.md). Rewards: base ×
 1.7^(tier−1).
 
-### 11.7 Mainframe Gate (name pending, D5): Exploits
+### 11.7 Central Server: Exploits
+The boss Site is the corporation's **Central Server** (DECISIONS 2026-10-05, names for M14, D5):
+The Genome Core (Solace), The Master Manifest (Meridian), The Panopticon (Halcyon), Launch Control
+(Orbital); REBEL_CELL's stays DISPATCH (8.5 names none).
 Minimum **3 Exploits** to attempt the breach. Each extra Exploit weakens the boss further.
 | Exploit | Effect on the final breach |
 |---|---|

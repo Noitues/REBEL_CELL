@@ -70,7 +70,7 @@ func run_campaign(campaign_seed: int, ice: int = 0, max_runs: int = 60) -> Dicti
 		var op: OperativeState = pick["op"]
 		var site: SiteData = pick["site"]
 		var s := _start(c, op, site, seeds.randi())
-		if site.objective == RC.SiteObjective.BOSS:
+		if site.objective == RC.SiteObjective.CENTRAL_SERVER:
 			stats["heat_at_breach"] = c.heat
 			stats["log"].append("  boss loadout: R%d HP %d deck %s | daemons %s | firmware %s" % [op.rank, op.max_hp, ",".join(op.deck), ",".join(op.daemon_ids), ",".join(op.slot_firmware_ids)])
 		_play_run(s, stats)
@@ -168,7 +168,7 @@ func _pick_launch(c: CampaignState) -> Dictionary:
 				objective = RC.SiteObjective.NONE  # a patrol holds no objective
 				key -= 200  # only when nothing corporate is open to this operative
 			match objective:
-				RC.SiteObjective.BOSS:
+				RC.SiteObjective.CENTRAL_SERVER:
 					key += 1000
 				RC.SiteObjective.EXPLOIT:
 					key += 500

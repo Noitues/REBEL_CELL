@@ -257,7 +257,7 @@ text = "Pardon the District. Clear the records of a whole district, the Cell's i
 
 [sub_resource type="Resource" id="l50"]
 script = ExtResource("e1")
-key = "site:civic_core_site"
+key = "site:the_panopticon"
 text = "The Civic Core. Halcyon's city brain. It heals and walls up every turn. Breach the Hub, then cut."
 
 [resource]

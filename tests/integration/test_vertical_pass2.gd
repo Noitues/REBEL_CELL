@@ -137,7 +137,7 @@ func test_patrols_rank_operatives_up_without_touching_the_grid() -> void:
 	p.site_id = &"t1_a"
 	CampaignRules.on_run_completed(c, corp, cfg, p)
 	assert_true(c.grid.is_claimed(&"t1_a"))
-	assert_false(CampaignRules.is_patrol(c, CampaignRules.site_data(corp, &"renewal_engine_site")), "never the boss")
+	assert_false(CampaignRules.is_patrol(c, CampaignRules.site_data(corp, &"the_genome_core")), "never the boss")
 
 
 func test_enemy_damage_scales_separately_from_hp() -> void:

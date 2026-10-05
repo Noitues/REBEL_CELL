@@ -19,9 +19,9 @@ const STATUS_TIPS := {GridState.SiteStatus.CORPORATE: "Corporate: run it to clea
 ## H24 K5: the Heat reduction Site is a drop with a flame and a down arrow (the snowflake
 ## is ICE's icon on the top bar).
 const KIND_TIPS := {CityMapOverlay.KIND_TIER: "Site (hexagon, its tier inside): a corporate server on the Grid; clear it, then claim it for your network.", # TR
-	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the boss breach.", # TR
+	CityMapOverlay.KIND_EXPLOIT: "Exploit Site (diamond): clearing it gives an Exploit for the Central Server breach.", # TR
 	CityMapOverlay.KIND_HEAT: "Heat reduction Site (drop, flame and down arrow): clearing it lowers Heat.", # TR
-	CityMapOverlay.KIND_BOSS: "Boss Site (star): the corporation's core.", # TR
+	CityMapOverlay.KIND_CENTRAL_SERVER: "Central Server (star): the corporation's core.", # TR
 	CityMapOverlay.KIND_HOME: "CORE (house): your home server; if its integrity reaches 0 the campaign is lost."} # TR
 
 
@@ -35,8 +35,8 @@ static func site_kind(c: CampaignState, sd: SiteData) -> String:
 			return CityMapOverlay.KIND_EXPLOIT
 		RC.SiteObjective.HEAT_REDUCTION:
 			return CityMapOverlay.KIND_HEAT
-		RC.SiteObjective.BOSS:
-			return CityMapOverlay.KIND_BOSS
+		RC.SiteObjective.CENTRAL_SERVER:
+			return CityMapOverlay.KIND_CENTRAL_SERVER
 	return CityMapOverlay.KIND_TIER
 
 
@@ -113,7 +113,7 @@ static func grid_graph(c: CampaignState, corp: CorporationData, paths: Array[Arr
 		# H22: the translated name (TextDb), as on every other screen.
 		var site_label := home_label() if home else TextDb.t(sd, "display_name")
 		nodes.append({"id": sd.id, "at": points[sd.id], "color": col, "mark": mark, "kind": kind,
-			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.BOSS,
+			"label": site_label if named else "", "name": site_label, "glyph": glyph, "big": home or objective == RC.SiteObjective.CENTRAL_SERVER,
 			"tier": 0 if home else sd.tier,
 			"tip": site_tip(site_label, sd.tier, status, kind)})
 	var edges: Array[Dictionary] = []

@@ -107,7 +107,7 @@ func _open_all() -> void:
 ## Completes the first `n` runs open now (in id order), as the real rules do.
 func _advance(n: int) -> void:
 	for i in n:
-		var open := RunManager.launchable_sites().filter(func(s: SiteData) -> bool: return s.objective != RC.SiteObjective.BOSS)
+		var open := RunManager.launchable_sites().filter(func(s: SiteData) -> bool: return s.objective != RC.SiteObjective.CENTRAL_SERVER)
 		if open.is_empty():
 			return
 		var run := RunState.new()
@@ -320,7 +320,7 @@ func test_no_two_kinds_share_an_icon_and_the_keys_draw_the_map_icons() -> void:
 		assert_true(StatIcon.ALL.has(k), "%s is a StatIcon" % k)
 	# The keys: each icon row names and draws the map's icon.
 	RunManager.new_campaign(1)
-	var grid_kinds := [CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_BOSS, CityMapOverlay.KIND_HOME, CityMapOverlay.KIND_TIER]
+	var grid_kinds := [CityMapOverlay.KIND_EXPLOIT, CityMapOverlay.KIND_HEAT, CityMapOverlay.KIND_CENTRAL_SERVER, CityMapOverlay.KIND_HOME, CityMapOverlay.KIND_TIER]
 	for strip in [false, true]:
 		var legend: MapLegend = add_child_autofree(MapLegend.new(&"solace", strip, strip))
 		await _frames(4)

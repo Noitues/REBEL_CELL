@@ -86,7 +86,7 @@ const KIND_ELITE := "elite"
 const KIND_SHOP := "shop"
 const KIND_EVENT := "event"
 const KIND_RACK := "rack"
-const KIND_BOSS := "boss"
+const KIND_CENTRAL_SERVER := "central_server"
 const KIND_EXPLOIT := "exploit"
 const KIND_HEAT := "heat"
 const KIND_HOME := "home"
@@ -95,7 +95,7 @@ const KIND_TIER := "tier"
 ## the tip is built, ANIM-R4 H7).
 const KIND_NAMES := {KIND_FIGHT: "Router: a fight", KIND_ELITE: "Elite Router: a harder fight", # TR
 	KIND_SHOP: "Mainframe: the cyber shop", KIND_EVENT: "Terminal: an event with choices", # TR
-	KIND_RACK: "Server Rack: the Site's guardian", KIND_BOSS: "Boss Site: the corporation's core", # TR
+	KIND_RACK: "Server Rack: the Site's guardian", KIND_CENTRAL_SERVER: "Central Server: the corporation's core", # TR
 	KIND_EXPLOIT: "Exploit Site", KIND_HEAT: "Heat reduction Site", KIND_HOME: "Your home Site (CORE)", # TR
 	KIND_TIER: "Site"} # TR
 ## ANIM-R4 H7: the hover text's own sentences, translated once where the tip is built (they
@@ -115,14 +115,14 @@ const TIP_THREATS := "Threats here: %s." # TR
 ## ICE's snowflake). A symbol named like a StatIcon is drawn by StatIcon, so a map icon
 ## and the tag for the same thing match (the Exploit's diamond, the shop's bag).
 const KIND_SHAPES := {KIND_FIGHT: "circle", KIND_ELITE: "star8", KIND_SHOP: "tag", KIND_EVENT: "square",
-	KIND_RACK: "tower", KIND_BOSS: "star5", KIND_EXPLOIT: "diamond", KIND_HEAT: "drop", KIND_HOME: "house",
+	KIND_RACK: "tower", KIND_CENTRAL_SERVER: "star5", KIND_EXPLOIT: "diamond", KIND_HEAT: "drop", KIND_HOME: "house",
 	KIND_TIER: "hexagon"}
 const KIND_SYMBOLS := {KIND_FIGHT: "crossed_blades", KIND_ELITE: "crossed_blades", KIND_SHOP: "shop",
-	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_BOSS: "star", KIND_EXPLOIT: "exploits",
+	KIND_EVENT: "question", KIND_RACK: "server_blades", KIND_CENTRAL_SERVER: "star", KIND_EXPLOIT: "exploits",
 	KIND_HEAT: "cooling", KIND_HOME: "door", KIND_TIER: "tier_number"}
 ## H23 #6: the one word naming each kind (it leads every node tooltip).
 const KIND_WORDS := {KIND_FIGHT: "Router", KIND_ELITE: "Elite Router", KIND_SHOP: "Mainframe", KIND_EVENT: "Terminal", # TR
-	KIND_RACK: "Server Rack", KIND_BOSS: "Boss", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
+	KIND_RACK: "Server Rack", KIND_CENTRAL_SERVER: "Central Server", KIND_EXPLOIT: "Exploit", KIND_HEAT: "Heat reduction", # TR
 	KIND_HOME: "CORE", KIND_TIER: "Site"} # TR
 ## Icon radius on screen (px, undoing the city's zoom), for normal and big nodes, and
 ## how far above the roof the icon floats (px, local).
@@ -2462,7 +2462,7 @@ static func icon_shape(kind: String, p: Vector2, r: float) -> PackedVector2Array
 				p + Vector2(-r * 0.75, r * 1.1), p + Vector2(-r * 0.75, -r * 1.1)])
 		KIND_EVENT:
 			return _ngon(p, r * 1.2, 4, PI * 0.25)
-		KIND_BOSS:
+		KIND_CENTRAL_SERVER:
 			return _star(p, r * 1.3, r * 0.72, 5)
 		KIND_HOME:
 			var s := r * 0.85
@@ -2507,7 +2507,7 @@ static func draw_icon(ci: CanvasItem, kind: String, p: Vector2, r: float, col: C
 				var y := p.y + (k - 1) * bh * 1.5 - bh * 0.5
 				ci.draw_rect(Rect2(p.x - bw * 0.5, y, bw, bh), edge, false, maxf(1.0, w * 0.7))
 				ci.draw_circle(Vector2(p.x + bw * 0.3, y + bh * 0.5), bh * 0.3, edge)
-		KIND_BOSS:
+		KIND_CENTRAL_SERVER:
 			ci.draw_colored_polygon(_star(p, r * 0.55, r * 0.25, 5), edge)
 		KIND_EXPLOIT:
 			StatIcon.draw(ci, p, r * 0.62, StatIcon.EXPLOITS, edge)

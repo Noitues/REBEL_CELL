@@ -29,7 +29,7 @@ const SIDE_SCROLLBAR := 14.0
 ## Glyphs for Site objectives and facts on badges (the map uses the same).
 const GLYPH_EXPLOIT := "◈"
 const GLYPH_HEAT := "❄"
-const GLYPH_BOSS := "✦"
+const GLYPH_CENTRAL_SERVER := "✦"
 const GLYPH_HOME := "⌂"
 const GLYPH_NODE := "⬡"
 const GLYPH_RULE := "!"
@@ -2133,7 +2133,7 @@ func run_gains(_site: SiteData, preview: Dictionary) -> Array[Badge]:
 	var ex := int(preview.get("exploit", -1))
 	if ex >= 0:
 		var ename := String(RC.ExploitType.keys()[ex]).capitalize()
-		out.append(Badge.new(CityMapOverlay.tr_word("EXPLOIT"), Palette.CELL_ACID, "", CityMapOverlay.tr_word("Clearing it gives the %s Exploit for the boss breach.") % ename).with_icon(StatIcon.EXPLOITS))
+		out.append(Badge.new(CityMapOverlay.tr_word("EXPLOIT"), Palette.CELL_ACID, "", CityMapOverlay.tr_word("Clearing it gives the %s Exploit for the Central Server breach.") % ename).with_icon(StatIcon.EXPLOITS))
 	var heat := int(preview.get("heat", 0))
 	if heat != 0:
 		out.append(Badge.new(CityMapOverlay.tr_word("HEAT %s") % TextDb.signed(heat), Palette.NET_CYAN if heat < 0 else StatIcon.color_of(StatIcon.HEAT), "",
@@ -2378,8 +2378,8 @@ func _site_glyph(site: SiteData) -> String:
 			return GLYPH_EXPLOIT
 		RC.SiteObjective.HEAT_REDUCTION:
 			return GLYPH_HEAT
-		RC.SiteObjective.BOSS:
-			return GLYPH_BOSS
+		RC.SiteObjective.CENTRAL_SERVER:
+			return GLYPH_CENTRAL_SERVER
 	return CityMapOverlay.tier_text(site.tier)
 
 
@@ -2421,8 +2421,8 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	elif objective == RC.SiteObjective.HEAT_REDUCTION:
 		var dh := HeatRules.scaled_delta(c, site.heat_change, cfg)
 		facts.add_child(Badge.new(CityMapOverlay.tr_word("Heat %s") % TextDb.signed(dh), Palette.NET_CYAN, GLYPH_HEAT, tr("Clearing this Site changes Heat by %d.") % dh).with_icon(StatIcon.COOLING if dh < 0 else StatIcon.HEAT))
-	elif objective == RC.SiteObjective.BOSS:
-		facts.add_child(Badge.new(tr("BOSS"), Palette.corp_color(c.corporation_id), GLYPH_BOSS, tr("The corporation's core. The breach needs %d Exploits.") % cfg.min_exploits_for_breach))
+	elif objective == RC.SiteObjective.CENTRAL_SERVER:
+		facts.add_child(Badge.new(tr("CENTRAL SERVER"), Palette.corp_color(c.corporation_id), GLYPH_CENTRAL_SERVER, tr("The corporation's core. The breach needs %d Exploits.") % cfg.min_exploits_for_breach))
 	elif site.objective == RC.SiteObjective.HEAT_REDUCTION:
 		facts.add_child(Badge.new(CityMapOverlay.tr_word("off"), Color(Palette.NET_CYAN, 0.6), GLYPH_HEAT, tr("This Site's Heat objective is switched off at this ICE level.")).with_icon(StatIcon.COOLING))
 	if c.grid.is_claimed(site.id):
