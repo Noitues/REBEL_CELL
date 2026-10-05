@@ -33,6 +33,92 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-2 2B attachments and arena
+ART-2 area 2B (`docs/handoff/art_2/ART_2_BATCH.md`; ART_BIBLE v2 §3.9, §3.11, §3.13, §3.14, §3.17,
+§3.21). Built on main behind seams while Group 1 (1A palette, 1B materials, 1C glyphs, 1D city) and
+2A's wheel land in parallel. Tests: `tests/unit/test_art2_attachments.gd`. Lab: `tools/design_lab/
+arena_lab.tscn` (windowed only; fixtures typical / worst, bloom, hover, won, per corporation).
+- **Seams.** `scripts/ui/wheel/attach/` holds every attachment: `WheelAttachments` (one child of each
+  WheelView, three layers in the §3.21 z-order: `FirmwareLayer` 5, `DroneDock` 10–12,
+  `CardPreviewOverlay` 14), `MiniWheel`, `FirmwareSocket`, `DaemonRack`, and `AttachStyle`, the one
+  place that picks tokens, glyphs and faces. After merging 1A / 1C: rarity from
+  `Palette.RARITY_COLORS` / `RARITY_PIPS`, Daemon phosphors from `Palette.DAEMON_FAMILY_COLORS`, every
+  glyph (slice, `fw_<id>`, `daemon_<id>`) from 1C's atlas through `GlyphBatch` (a child of each
+  immediate-mode layer carrying `GlyphIcon`'s shader material; drawn firmware / sigil shapes remain only
+  as the fallback for a name the atlas lacks), the rack plate is 1B's `CrtTerminalPanel` (after 1B merged).
+  Trigger seams for 2D's beat and ART-3's FX: `FirmwareLayer.trigger_origin(slot)` and
+  `DaemonRack.trigger_origin(id)` (global points). ToonInk / LightSpill / BinaryBits are not needed by
+  these pieces (stills are baked; bits belong to the replace / destroy FX). Geometry is in master units of the round 41 stack (the slices end at 360), read
+  from the view, so it follows 2A's new wheel. The backdrop is `scripts/ui/arena/` (`CombatBackdrop`,
+  `BackdropCatalog`, `shaders/arena/combat_backdrop.gdshader`); `BackdropCatalog` is the seam ART-5's
+  real city swaps.
+- **Hooks in 2A's `wheel_view.gd` (smallest):** `WheelAttachments.attach(self)` in `_init`; a public
+  `attachments` var, `rim_radius()` and `band_width()`; while attached, `_satellite_pos` asks the
+  attachments (so zone_at, tooltips and FX follow the drawn drone) and the legacy satellite tokens,
+  firmware marks and outer ghost arc are not drawn (`attachments == null` guards). **Hooks in 2D's
+  `combat_scene.gd`:** the backdrop built over the (now hidden) WireframeBackground with
+  `wheel_source = _views`; `arena_backdrop.play_won(instant)` in `_hold_victory`;
+  `DaemonRack.mount(_player_view, daemon_row)` and the right-column DaemonRow hidden (it stays the
+  rack's data source and the pad inspect text). Tests ported (a superseded look, not a dropped rule):
+  `test_horizontal_pass22` "past the values" becomes "outside the rim"; `test_anim_r2_combat`
+  `_check_satellites` skips the slice-value boxes on attached wheels (values move into 2A's read block;
+  the tag check stays); `test_anim_r4_city` checks the Heat banner against the rack instead of the
+  hidden row. The HP-block rules of passes 23 / 24 hold: a band slides along its slice, else steps out,
+  to keep off the HP number, NEXT and LAST TURN plates.
+- **Satellites and drones (§3.11, §3.21).** Collapsed by default: one band per slice outside the
+  frame (master 414 + 6, 34 deep, floored at 15 px x text scale), as long as its tiles need, a tile
+  per drone with its current effect (the slice its own needle reads: glyph + value) and its HP, on a
+  short stem. Hovering the slice or its band, or a card aiming at a drone (its satellite zones), blooms
+  the band into mini-wheels (0.22 of the host frame, floored at 26 px) on a waisted dock lobe in the
+  owner's frame colour; values upright, the blade pointing away from the host with the value it reads,
+  HP number and pips in the hub. Over the HP arc the dock stands outside it; in the arc's bottom gap
+  (over the HP number) the band hugs the rim. Bloomed mini-wheels that would leave the view turn round
+  the rim (clockwise first) until they fit. The game docks at most one satellite per slice; the
+  layout handles two (±14°, wider when they would touch) for the bible's limit. Not built: parasites
+  (G mechanic), replace / destroyed animations (ART-3's FX list).
+- **Firmware socket (§3.9).** The die at master ρ 168 (zone 142–194), 50 master wide (floor 12 px),
+  pins toward the core, octagon with 3-tone facets, lip and LED in the rarity colour (common cool
+  white, uncommon cyan, rare gold, boss pink: §2.7 from Palette tokens), 1–3 pips, glyph upright;
+  below 14 px it drops glyph and pips; below rim 100 px (720p) it draws 0.9x. `flash_slot` is ART-3's
+  seam for the trigger cue's FLARE. "Spent" dimming of once/twice-per-combat chips is not drawn: the
+  view has no CombatState (`per_combat_uses`); slice proposed below.
+- **Daemon rack (§3.13).** The CRT plate on the left edge of the operative's wheel view, vertically on
+  the wheel, "DAEMONS" over 40 px tiles (x text scale), 6 at most, the last saying "+N" past six;
+  sigil (atlas) in its family phosphor (§2.6; DaemonData has no family field, so `AttachStyle.daemon_family`
+  reads it from what fires the Daemon: Perfect, NULL slice, card / nudge = action, combat end / rack /
+  netrun = run, raid = heat, else turn), rarity on the bezel; the wheel lays out right of the rack
+  (`left_reserve`), idle scan bar (`daemon_rack_scan`, 2.4 s, phase per slot) and heartbeat LED.
+  Fire cue is ART-3's (`fire_slot` seam).
+- **Card-play preview (§3.17).** Fed only by `WheelView.ghost_rotation`, which the combat scene sets
+  from `engine.preview(action)` (the forecast's path): landing slots = the slices under the needles at
+  the ghost rotation, tested against the real `submit` (`test_the_card_play_preview_lands_where_the_card_lands`).
+  Nine chevrons (87 master) at 1.36 x rim chase from the top needle to its landing the shortest way
+  round (`preview_chevron_chase`, 1.2 s loop; reduce effects / headless: all lit, still); dashed ghost
+  blades with value window and index tab (multi-needle); landing slices dashed in their program colour;
+  a dashed ghost per drone where it ends up; labels "N LANDS HERE" / one "DRONE ENDS HERE" only while
+  not aiming, the whole preview at 50 % while aiming; on commit the ghost rides the turning slices
+  until the wheel lands (`preview_ghost` fades). The inner ring's legacy ghost arc stays (2A's ring).
+- **Combat backdrop (§3.14, D17 on its default).** Baked stills, 1280x720 JPEG q84
+  (`assets/backdrops/combat/<corp>_<hq|site>_<day|night>.jpg`, about 0.2 MB each) re-rendered with
+  Blender 5.2 headless from the art-concepts-r43 generator scripts (round 31 `hq_scene.py`,
+  `backdrop26.finish`, for the four corporations' HQs and Sites, day and night; round 34
+  `run34.py` / `post34.py` for the REBEL_CELL canyon) **without** the baked wheel pools: the shader
+  softens (9-tap) and darkens (to 55 %) a pool behind each shown wheel at its live position, and
+  darkens bands under the top bar and the hand. Sites now render day too (the concepts had night
+  only). Orbital's HQ uses the open silo at night (combat state) and the closed silo by day (the only
+  day bake). A per-still `_won.png` (640x360: R the target's silhouette from an added Blender pass, G
+  its own lights) drives the won look: district to 62 %, the target's lights lime with pink hazard
+  stripes, a lime outline, then "OURS NOW" in yellow marker over its top (`backdrop_won_lights`,
+  0.9 s; reduce effects / headless: at once; MotionSkip completes it). Calls: **day / night** follows
+  the campaign's run count (odd runs by day; no game clock exists); **REBEL_CELL** is night only, its
+  boss backdrop is the DISPATCH canyon and its regular one the HOME canyon (the MAINFRAME-shop Site is
+  not modelled in any concept script), and winning there crossfades DISPATCH to HOME (the hijacked
+  signs give way to the Cell's street) instead of a lights mask. The standalone combat scene (no
+  campaign) uses the enemy's corporation. Heat on combat (§3.15) is ART-3's: `heat_layer` is its
+  layer above the still. HQ-run room backdrops are not 2B's (ART-8).
+- **Motion entries** (ui_motion.tres, REQUIRED_IDS, motion lab scene demos): `backdrop_won_lights`,
+  `drone_bloom` (a hover state: never skipped), `preview_chevron_chase`, `preview_ghost`,
+  `daemon_rack_scan`. Strings: "OURS NOW", "%d LANDS HERE", "DRONE ENDS HERE".
 ### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
 ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
 text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
@@ -6509,6 +6595,13 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **Combat backdrop day / night and the REBEL_CELL Site (2026-10-05, ART-2 2B):** the game has no
+  clock, so the backdrop alternates by run (odd runs by the cool day). Default applied; say if day
+  should follow something else (Heat, a city clock in ART-5). The REBEL_CELL regular Site (the
+  MAINFRAME shop) has no model in the concept scripts: regular fights there use the HOME canyon until
+  it is modelled. Firmware chips that are spent for the fight are not dimmed yet (the wheel view does
+  not see per-combat uses): proposed slice, the combat scene passes the spent firmware ids to the
+  wheel views beside the satellites.
 - **Unified city: real-time 3D or baked layers? (2026-10-05, ART-1 1D):** the spike recommends
   real-time Godot 3D. It is closer to the round 39/40 references and is the only option with the
   continuous zoom and the see-through band, at 2.5–2.8 ms at 1080p on this PC. See
