@@ -4,8 +4,8 @@ extends GutTest
 ## (VfxTier) and clamp; Fx.flash is full screen and T4 only (refused below T4, nothing under
 ## reduce effects) and the one limiter governs every flash; no code path asks for a
 ## full-screen flash below T4; the Perfect and a boss phase burst on their own wheel. And
-## the shader side: every shader reads the one `reduce_effects` uniform (rc_common), and
-## ShaderReduce keeps every animating material in step with the setting.
+## the shader side: every shader reads the one `reduce_effects` global shader uniform
+## (rc_common, registered in project.godot), and Fx sets it from the setting (ART-0 E2).
 
 const MOTION_TRES := "res://content/config/ui_motion.tres"
 const SHADER_DIR := "res://shaders"
@@ -285,7 +285,9 @@ func _shaders() -> PackedStringArray:
 
 func test_the_include_declares_the_one_reduce_effects_control() -> void:
 	var src := FileAccess.get_file_as_string(INCLUDE)
-	assert_true(src.contains("uniform float reduce_effects"), "one reduce_effects uniform")
+	assert_true(src.contains("global uniform float reduce_effects;"), "a global uniform, one control for every shader")
+	var project := FileAccess.get_file_as_string("res://project.godot")
+	assert_true(project.contains("[shader_globals]") and project.contains("reduce_effects={"), "registered in project.godot")
 	for fn in ["float rc_live()", "float rc_time(float t)"]:
 		assert_true(src.contains(fn), "the include offers %s" % fn)
 
@@ -295,7 +297,8 @@ func test_every_shader_reads_reduce_effects_and_freezes_its_clock() -> void:
 	assert_gt(files.size(), 5, "the game's shaders")
 	for path in files:
 		var src := FileAccess.get_file_as_string(path)
-		assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s includes rc_common (has the uniform)" % path)
+		assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s includes rc_common (declares the global)" % path)
+		assert_false(src.contains("uniform float reduce_effects"), "%s reads the global, never a uniform of its own" % path)
 		var uses_time := false
 		for line in src.split("\n"):
 			var code := line.split("//")[0]
@@ -315,31 +318,30 @@ func test_the_unused_glow_shader_is_gone() -> void:
 	assert_false(FileAccess.file_exists(SHADER_DIR.path_join("glow.gdshader")))
 
 
-func test_every_animating_material_is_tracked() -> void:
-	# Each script that builds a material on an animating shader hands it to ShaderReduce.
-	var builders := {"res://scripts/autoload/fx.gd": 3, "res://scripts/ui/kit/neon_city.gd": 3, "res://scripts/ui/kit/ui_theme.gd": 1}
-	for path in builders:
+func test_no_script_keeps_a_per_material_reduce_effects() -> void:
+	# ART-0 E2: the global reaches every material on rc_common; no script tracks its own copy.
+	assert_false(FileAccess.file_exists("res://scripts/ui/fx/shader_reduce.gd"), "the per-material tracker is gone")
+	for path in ["res://scripts/autoload/fx.gd", "res://scripts/ui/kit/neon_city.gd", "res://scripts/ui/kit/ui_theme.gd"]:
 		var src := FileAccess.get_file_as_string(path)
-		assert_eq(src.count("ShaderReduce.track("), builders[path], "%s tracks its animating materials" % path)
-	assert_eq((Fx.scanlines.material as ShaderMaterial).get_shader_parameter(ShaderReduce.UNIFORM), ShaderReduce.value, "Fx's own are tracked")
+		assert_false(src.contains("ShaderReduce"), "%s: no ShaderReduce" % path)
+		assert_false(src.contains("set_shader_parameter(\"reduce_effects\""), "%s sets no per-material reduce_effects" % path)
 
 
-func test_shader_reduce_follows_the_setting() -> void:
-	var mat := ShaderMaterial.new()
-	mat.shader = load(SHADER_DIR.path_join("crt_panel.gdshader"))
-	Settings.set_reduce_effects(false)
-	ShaderReduce.track(mat)
-	assert_eq(mat.get_shader_parameter(ShaderReduce.UNIFORM), 0.0, "effects on: 0")
+func test_toggling_the_setting_changes_the_global() -> void:
+	# Ported from art-pass 290ae4c (test_shader_library). The headless renderer keeps no
+	# shader globals, so the value Fx sent is read there; a real renderer is asked as well.
+	assert_eq(Fx.REDUCE_GLOBAL, &"reduce_effects", "the global rc_common declares")
 	Settings.set_reduce_effects(true)
-	assert_eq(ShaderReduce.value, 1.0, "Fx passes the setting on")
-	assert_eq(mat.get_shader_parameter(ShaderReduce.UNIFORM), 1.0, "reduce effects: 1 on every tracked material")
-	assert_eq((UiTheme.crt_material()).get_shader_parameter(ShaderReduce.UNIFORM), 1.0, "the shared glass too")
-	var late_mat := ShaderMaterial.new()
-	late_mat.shader = mat.shader
-	var late := ShaderReduce.track(late_mat)
-	assert_eq(late.get_shader_parameter(ShaderReduce.UNIFORM), 1.0, "a material tracked later starts at the current value")
+	assert_eq(Fx.shader_reduce, 1.0, "reduce effects on: 1")
+	_assert_renderer_global(1.0)
 	Settings.set_reduce_effects(false)
-	assert_eq(mat.get_shader_parameter(ShaderReduce.UNIFORM), 0.0, "back to 0")
-	var n := ShaderReduce.tracked_count()
-	ShaderReduce.track(mat)
-	assert_eq(ShaderReduce.tracked_count(), n, "tracked once")
+	assert_eq(Fx.shader_reduce, 0.0, "off: 0")
+	_assert_renderer_global(0.0)
+	Settings.set_reduce_effects(true)
+	assert_eq(Fx.shader_reduce, 1.0, "on again: 1")
+
+
+func _assert_renderer_global(expected: float) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	assert_eq(float(RenderingServer.global_shader_parameter_get(Fx.REDUCE_GLOBAL)), expected, "the renderer holds it")
