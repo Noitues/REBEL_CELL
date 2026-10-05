@@ -272,7 +272,7 @@ budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orch
 - [ ] Audit round ART-R0 to CLEAN.
 
 ### Group 1 — Foundations
-- [ ] Group 1 full suite (one run) in isolation; designer review.
+- [ ] Group 1 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-1 — Foundations** (palette v2, faces incl. Courier Prime, theme, the material kit, glyph
 pipeline, the render spike)
@@ -285,7 +285,7 @@ pipeline, the render spike)
       it inside the plan §5.2 budget (the budget is a gate, not a reason to change the look).
 
 ### Group 2 — Combat
-- [ ] Group 2 full suite (one run) in isolation; designer review.
+- [ ] Group 2 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-2 — Combat wheel stack**
 - [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
@@ -303,7 +303,7 @@ pipeline, the render spike)
 - [ ] Fits at 2.0.
 
 ### Group 3 — City
-- [ ] Group 3 full suite (one run) in isolation; designer review.
+- [ ] Group 3 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-5 — Unified city model and motion**
 - [ ] Each corporation's Grid capture vs the reference.
@@ -328,7 +328,7 @@ pipeline, the render spike)
       model (D17).
 
 ### Group 4 — Screens
-- [ ] Group 4 full suite (one run) in isolation; designer review.
+- [ ] Group 4 merged with fast checks green; designer review (non-blocking; full suite deferred to after ART-12, DECISIONS "groups in parallel, fast checks only").
 
 **ART-9 — Shop, rewards, events, dialogue, portraits**
 - [ ] The shop and event sweeps (affordability, outcome rows == deltas) still hold.
@@ -353,7 +353,7 @@ its items)
       contrast × greyscale × colour-blind).
 - [ ] A perf profile on the target PC and the Deck tier.
 - [ ] Skins (the M12 box: procedural palette skins on the v2 tokens).
-- [ ] **The M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
+- [ ] **One full-suite run** in isolation (the only one in M14), then **the M14 audit** (the only one): vertical / horizontal / naive over every ART-0…12 change, fix
       rounds until CLEAN (nothing deferred, P3s included); "M14 complete" logged in DECISIONS.
 
 **After ART-12** (rulings 1, 8, 9; nothing deferred)

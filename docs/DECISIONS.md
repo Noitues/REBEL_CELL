@@ -88,6 +88,141 @@ Nothing is swapped into the wheel views yet (ART-2).
   reference).
 - Tests: `tests/unit/test_art1_glyphs.gd` (fast tier). No test dropped.
 
+### 2026-10-05 — Art direction — ART-0 kit behaviour (salvage S5, area F)
+Ported by hand onto main's kit from art-pass (tag `art-m13-final`): 59b064e (W2 states, focus
+brackets, focus scale), 77c96df (RefusalMark), ccf30fc (PadGlyph, glyph prompts), bb4f2e2 and the
+W9F sweep (UiTip.for_input, pad wording), a155849 / d91a26f (W8a modal API, GlassScrim),
+c77b99f / 9ad2133 (W9F UiWrap.whole_words), fc477fc (WF FitScroll / ScrollHint guards), b9af7e3
+(WF PaperInk). Behaviour and tests only: no zine skin ported (ART-4 / ART-10 restyle), main's
+colours kept, every new colour a Palette token (the static lint baseline is unchanged).
+- **Component states:** `KitState` (six states, lift / glow, `draw_frame`, `force`,
+  `force_native`) and `RefusalMark` (any control's refused flash; a reason shows as a warn
+  ToastNote). StickerButton, ZineStamp and DripButton report `state()`, take `refuse()`, lift on
+  hover / drop on press and draw the disabled lock badge and the refused HARM outline + no-entry
+  mark. UiTheme's button, HotButton, NoteButton and MenuItem hover boxes lift 2 px and pressed
+  boxes drop 1 px at the same minimum size (`UiTheme.shifted`). **Call:** the W2 button variants
+  (Primary / Secondary / Tertiary / Danger, label + 32 px, the `StyleBoxLocked` disabled box) are a
+  look and are not ported; main's native disabled boxes stay (ART-1 / ART-10). The no-entry mark
+  is drawn by KitState (main's StatIcon has no NO_ENTRY; the W2 icon redraw is ART-1's).
+- **Focus brackets (v2 §2.10, Appendix C #15, round 31):** `StyleBoxBrackets` at **3 px, 7 px
+  outside** (M13: 2 px at 4 px), INK keyline, never adds to a minimum size; the theme's focus box
+  for Button, OptionButton, CheckButton, CheckBox, NoteButton, MenuItem, LineEdit and LogText
+  (`UiTheme.BRACKET_FOCUS_TYPES`; HotButton inherits Button's). TabBar's tab focus keeps its box.
+  High contrast thickens them to `HC_FOCUS_BORDER` (4 px) in solid FOCUS (area C's HighContrast
+  handles StyleBoxBrackets; C's test reads the brackets now). **Call:** stickers (StickerButton,
+  ZineStamp, the SEND IT DripButton) keep their lime halo for focus and get no brackets (v2:
+  "a focused sticker gets a lime die-cut halo instead"). The 1.03 pad focus scale (`UiFocus`,
+  `focus_scale`, T1) is ported as M13 had it: pad only, headless never scales.
+- **PadGlyph** draws every button of the four sets; its set is area C's
+  `Settings.effective_glyph_set()` (stored choice, or the pad in use under auto) and
+  `detect_set` is C's `Settings.glyph_set_for_joy_name` (one rule set). PadPrompts shows glyph +
+  verb pairs (`glyphs()`); `texts()` still reads "A  Buy" (the glyph's name), so the H23 / ANIM
+  prompt tests are unchanged. **Not ported:** the prompt bar's glass backing and compact mode
+  (W9F looks) and the glyph on SEND IT / the buy stickers (W9F / W8 restyles, ART-3 / ART-4).
+- **UiTip.for_input** (+ `has_mouse_words`, `pad_safe`); FocusTip swaps mouse words on a pad
+  (the safety net). Every player string with a mouse word now has a pad variant: HQ (mini-map,
+  dossier, boosts, crew chips, assets, raid steps), combat (aim hint, card tip), the deck viewer's
+  shred tile, the loadout swaps, the rebind note, and netrun's drag lines through
+  `netrun_scene.drag_tip(kind)` with `DRAG_TIPS_MORE` / `DRAG_TIPS_PAD` (the socket tips'
+  "dragging ..." clause became a drag line; the old one-string keys are gone from strings.csv,
+  re-exported). The M13 tooltip restyle (26-36 columns, body face, title said once) is not
+  ported (a look, ART-10).
+- **Modals:** `PageTransition.open_modal / close_modal / open_modals / modal_open /
+  after_modals`, `MODAL_GROUP` (`rc_modal`), `modal_in` 0.18 s / `modal_out` 0.14 s (T1, new
+  ui_motion entries, REQUIRED_IDS, lab demos `screen modal_open` / `modal_close`; with
+  `focus_scale` → `screen kit_focus` and `button_refused` → `screen kit_refused`). Modals on main:
+  ConfirmDialog (opens itself over a `GlassScrim.backdrop_for` that stops the page's clicks; Yes /
+  No / Esc close through `close_modal`), LoadoutView and DaemonTray (open themselves), the netrun
+  viewers (`_open_modal`). Page changes wait for them: the title's pages, slots, tutorial; the
+  netrun's `_show_current` when the screen changes; the HQ's pad B and quit to title.
+  **Calls:** main's viewers still close at once (`UiFocus.release`: focus returns the same
+  frame, as ANIM made it); W8a's "one direction per material" page rule is not ported (main's
+  ANIM directions stay); PauseMenu is not in the group (it pauses the tree itself).
+  `GlassScrim` + `shaders/glass_blur.gdshader` (from the tag; it includes rc_common) is the
+  v2 SCRIM (#02030A 55% + 6 px blur), opaque `HighContrast.BG` under high contrast.
+- **UiWrap.whole_words**, and no `AUTOWRAP_WORD_SMART` / `ARBITRARY` left under `scripts/`
+  (tested): Labels go through whole_words (never narrower than their longest word), Buttons
+  and the SAVED note wrap at words (`AUTOWRAP_WORD`).
+- **FitScroll** (the kit piece, from W8a) with WF's pre-layout guards, and ScrollHint's
+  `degenerate_view`. WF's cap of the snap reserve at a row's share of the view is **not** ported:
+  main's ANIM-R6 C8 measures a row's share against the view with no snap, and the cap cut the
+  YOUR NODES snap at 2.0 short of the row (`test_anim_r5_city`
+  `test_your_nodes_never_ends_in_a_cut_row`: 32 px of a 44 px row). **Call:** main's ScrollHint holds
+  its view at its own least height (ANIM-R6 C8), which overrode FitScroll's sizing; FitScroll now
+  sets it through `ScrollHint.set_view_min`. No view uses FitScroll yet: the shared panels
+  (TerminalWindow, ZinePanel) adopt it in their restyle (ART-4 / ART-10).
+- **PaperInk** on main's paper pieces: Polaroid (edge, caption, glitch bars), Toast (words, edge,
+  mark), CrewCard (words, edge, HP strip, tape), ZineNote (words, edge, tape) and the subtitle
+  paper (opaque, speaker in INK). CaseFileCard, RunReceipt and AchievementBadge are art-pass only.
+- **MotionSkip:** it still owns the one-press skip; nothing new registers a helper. `kit_state`,
+  `refusal_mark` (the refused flash answers the refused press) and `ui_focus` (the pad focus
+  scale is a focus state) join `test_anim_r6_rules`' NOT_SKIPPABLE list and STYLE_GUIDE 5.5
+  (outside F's files: one line each).
+- **Windowed check** (review pack, title / HQ / Mainframe / Options / Loadout, 1.0, pad and mouse,
+  1280x720): the lime brackets sit 7 px outside the focused menu line and option row; the
+  Mainframe's prompt bar shows the Xbox glyphs (A green, X blue, B red, Menu) beside their verbs;
+  its card tip reads "pick it up and move it"; the Loadout modal shows whole. No ERROR in the logs.
+  Seen there: the pad focus scale on a full-width Options row moves its words about 18 px and puts
+  the brackets past the panel's edge (M13 scaled them too); ART-10's Options restyle should give
+  full-width rows `UiFocus.META_NO_SCALE` or narrower rows.
+- **Visual QA harness:** `tools/visual_qa/review_pack.gd` needed **no change**: it already reads
+  `PageTransition.MODAL_GROUP` and the `GlassScrim` class by name when they exist.
+- **Tests:** `tests/unit/test_art0_kit_states.gd` and `test_art0_kit_words.gd` (fast). Ported:
+  six states (on main's three drawn components), live states (on StickerButton), hover / pressed
+  boxes (main's kinds, no glow asserts: main's normal boxes have no glow), refusal mark, focus
+  brackets (3 px / 7 px), focus scale, cards / tilted controls, the four pad glyph tests, prompts
+  as glyphs, pad wording, mouse words go through for_input, focus tip, pad pages (mouse words
+  only), no mid-word wrap, whole_words, crew card tag at the ceiling, both FitScroll tests, paper
+  inks, paper pieces in and out of high contrast (main's Polaroid / Toast / CrewCard), modals in
+  budget, no page change under a modal, scrim opaque in high contrast. New: refused entry and
+  tier, force_native, brackets on every focus type, high contrast thickens brackets,
+  headless / mouse never scale, glyph set follows Settings, headless modals, the confirm on its
+  scrim with pad reachability inside it, scrim shader include, drag tips have pad lines, the
+  hint ignores a degenerate view. **Dropped** (looks restyled later, or pieces main lacks):
+  from `test_art_w2_components.gd` — `test_every_button_variant_has_every_state_box`,
+  `test_a_standalone_button_is_its_label_plus_32`, `test_menu_item_uses_a_type_step`,
+  `test_disabled_labels_keep_4_5_to_1` (W2 button variants / StyleBoxLocked: ART-1 / ART-10),
+  `test_the_toast_never_overlaps_a_bottom_button`, `test_one_toast_style_for_every_caller`,
+  `test_toast_timings_follow_the_bible` (the W2 toast restyle), `test_tooltips_fold_to_26_to_36_columns_and_long_text_uses_the_body_face`,
+  `test_a_tooltip_never_repeats_its_title` (W2 tooltip restyle), `test_stamp_hold_follows_the_reading_rule`,
+  `test_a_stamp_says_three_words_at_most`, `test_one_banner_per_region_the_rest_queue`,
+  `test_a_zine_stamp_word_never_falls_under_caption` (zine stamp / BannerQueue skins),
+  `test_the_status_glyphs_are_stat_icons`, `test_status_icons_draw_filled_and_open` (W2 icon
+  redraw, ART-1), `test_saved_is_a_type_step_with_4_5_to_1` (SAVED restyle),
+  `test_inputs_emit_expose_value_and_take_focus`, `test_toggles_line_up_16_px_right_of_the_longest_label`,
+  `test_the_tile_picker_moves_its_cursor_with_the_keys` (ZineToggle / ZineSlider / Stepper /
+  TilePicker / CodeField: zine inputs main lacks, ART-10); from `test_art_wf_kit.gd` —
+  `test_tile_names_wrap_at_words_and_fit_at_every_scale`, `test_wrap_words_never_breaks_a_word`
+  (TilePicker), `test_a_sticker_yields_its_type_step_before_passing_its_share`,
+  `test_without_a_cap_a_sticker_grows_as_before`, `test_respin_at_2_is_capped_and_1_0_is_unchanged`
+  (sticker max_share, combat restyle ART-3), `test_the_polaroid_caption_always_fits_whole`,
+  `test_a_polaroid_caption_abbreviates_by_w5s_rule` (W5 caption; main has ANIM-R6 C6's),
+  `test_a_status_stamp_carries_its_stat_icon` (combat stamps, ART-3), `test_paper_pieces_use_the_paper_inks`
+  (CaseFileCard), `test_a_first_run_on_a_deck_starts_the_city_at_quality_1`, `test_the_city_reads_the_deck_tier`
+  (area C / ART-1), `test_tracking_is_px_per_type_step_and_never_rounds_away`,
+  `test_a_tracked_font_carries_the_step_spacing` (area E); from `test_art_w9f_sweep.gd` —
+  `test_every_layout_test_runs_at_the_text_scale_ceiling` (area C), the bracket-letter half of
+  `test_pad_pages_speak_pad_and_show_their_prompt_bar` and `test_a_fight_has_a_pad_prompt_bar_and_glyphs_not_brackets`
+  (SEND IT's glyph and the fight's prompt bar: combat restyle, ART-3), `test_netrun_hookups` (W8b),
+  `test_flatline_is_a_city_context_that_blends_and_gives_the_colour_back`,
+  `test_run_end_greys_the_whole_city_and_hands_it_back`, `test_clear_campaign_progress_forgets_the_lean`
+  (city, ART-5), `test_settle_calls_any_settle_motion_and_the_stages_leave_typing_meta`
+  (W9F run / campaign end stages main lacks), `test_empty_subtitle_band_holds_one_line_and_grows_when_a_line_comes`,
+  `test_a_subtitle_page_never_shrinks_under_caption`, `test_polaroid_caption_band_keeps_the_floor_caption`,
+  `test_spinner_hub_name_fits_the_disc_whole`, `test_spinner_viewer_price_on_upgrade_lettering_and_circle`,
+  `test_modem_cards_window_is_never_a_quarter_empty_in_one_column`, `test_the_upgrade_viewer_stays_on_the_canvas_at_two`
+  (screen restyles, ART-3 / ART-4 / ART-9), `test_lint_export_cuts_text_to_its_scroll_view_and_sees_modals`,
+  `test_lint_report_uses_on_screen_size_and_leaves_out_hidden_text` (area D), `test_reduce_motion_shakes_nothing`
+  (area C); from `test_art_w8a_menus.gd` — `test_glass_window_type_comes_from_the_scale_and_has_a_scrim`,
+  `test_a_long_title_never_widens_its_window`, `test_panels_fit_their_content_and_scroll_past_the_cap`
+  (TerminalWindow / ZinePanel restyle on FitScroll, ART-4 / ART-10), `test_glass_slides_from_the_right_and_paper_drops_whatever_the_caller_asks`
+  (W8a direction rule, not ported), `test_reduce_motion_cross_fades_in_place` (area C), and the title-family
+  look tests (`test_the_logo_is_baked_art_with_a_drip_that_stops_under_reduce_effects`,
+  `test_the_title_has_one_primary_one_note_one_scrawl_taped_to_the_menu`, `test_never_sleep_is_art_with_a_subtitle_in_other_languages`,
+  `test_slots_are_case_files_and_delete_is_danger_with_a_confirm`, `test_options_use_kit_components_one_size_and_aligned_toggles`,
+  `test_codex_is_a_two_column_spread_of_short_lines_with_glyphs`, `test_stats_show_earned_and_unearned_badges_a_grid_and_receipts`,
+  `test_pause_fits_its_content_one_primary_and_the_code_in_a_field`, `test_title_pages_fit_at_every_text_scale`,
+  `test_every_option_row_stays_inside_the_view_focused_with_pad_or_mouse`: ART-10).
 ### 2026-10-05 — Art direction — ART-0 names pass, part 3
 Applies "2026-10-05 — Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands" (ART-0 B3).
 Internal names follow the display names; no aliases, no migrations (old saves naming `shield_5`,
@@ -251,6 +386,33 @@ names follow the display words; no aliases, no migrations.
 - Side effect worth knowing: tools run from source (storyboard, demos, the motion lab) now keep
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
+
+### 2026-10-05 — Designer rulings: D15–D17 defaults; Sonnet for mechanical tasks
+1. **D15–D17 confirmed at their plan defaults** (plan §3.1): D15 combat HUD v4 result chips beside each HP
+   replace the forecast tags and NEXT plates — the chip is the preview, GDD 2.10 still holds; D16 every
+   card-caused effect stems from the card's slap and dissolve on the target wheel, never from the hand;
+   D17 boss fight backdrop = the corp HQ, regular fights at the target Site, fight won → the building's
+   lights turn Cell colours. GDD 2.10 / 9.2 wording follows in Group 2's DECISIONS entries.
+2. **Agent models:** mechanical tasks (renames and sweeps, docs landing, test re-pointing, lint-baseline
+   and merge follow-ups, wording-only docs) run on Sonnet; visual, rules-sensitive and judgment work
+   (shaders, view ports, the city, merges touching ANIM motion, the audit) stay on Opus.
+
+### 2026-10-05 — Designer ruling: groups in parallel, fast checks only, done within days
+The designer asked to start ART-2 (Group 2) in parallel with Group 1, to skip every non-fast test run and
+the audit until **all** art groups are done, and to finish M14 within a few days. From now:
+- **Checks during M14:** only the fast checks (`checks_fast.sh`) at hand-back and at every merge, plus each
+  agent's own test scripts. **No full-suite run per group.** One full-suite run (in isolation) and the one
+  audit loop happen after ART-12, before "M14 complete". Supersedes item 1 of "one full run, one audit at
+  the end" for the groups; its item 2 stands.
+- **Groups overlap:** a group starts before the previous one merges. Its agents build on main as it is and
+  `git merge main` whenever the orchestrator says a foundation landed (palette/theme 1A, material kit 1B,
+  glyphs 1C, city spike 1D); views switch to the new foundations as they arrive.
+- **Designer reviews are non-blocking:** each group's report goes to the designer when it lands; work on
+  the next group continues meanwhile; rulings are applied as they come.
+- **Agent cap raised** from 4–5 to about 9 at once; windowed captures limited to 1 window per agent while
+  more than 5 agents run.
+- **Pending presentation rulings** for Group 2 (plan §3.1 D15, D16, D17) are built on their plan defaults
+  and listed in the next designer report for confirmation.
 
 ### 2026-10-05 — Designer ruling: one full run, one audit at the end
 1. **One full-suite run** instead of three: each ART group (and ART-0) ends with one full run in isolation

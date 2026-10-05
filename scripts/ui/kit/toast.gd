@@ -59,11 +59,15 @@ func _show(text: String, anchor: Vector2, is_refusal: bool, max_width: float = 0
 	queue_redraw()
 	label.text = text
 	label.add_theme_font_size_override("font_size", roundi(FONT_SIZE * Settings.text_scale))
+	# ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6): words INK, the edge opaque INK at PaperInk.EDGE_PX (read each time it shows).
+	label.add_theme_color_override("font_color", PaperInk.text(Palette.INK))
+	_panel.border_color = edge_color()
+	_panel.set_border_width_all(roundi(edge_width()))
 	if max_width > 0.0:
 		var chrome := _panel.content_margin_left + _panel.content_margin_right
 		var natural := label.get_theme_font("font").get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x
 		if natural + chrome > max_width:
-			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			UiWrap.whole_words(label)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 			label.custom_minimum_size.x = max_width - chrome
 	_anchor = anchor
 	_reanchor()
@@ -88,9 +92,10 @@ func _draw() -> void:
 		return
 	var r := MARK_RADIUS * Settings.text_scale
 	var c := Vector2(MARK_ROOM * 0.5, size.y * 0.5)
-	draw_arc(c, r, 0, TAU, 20, Palette.CELL_PINK.darkened(0.2), 3.0, true)
+	var mark := PaperInk.text(Palette.CELL_PINK.darkened(0.2))
+	draw_arc(c, r, 0, TAU, 20, mark, 3.0, true)
 	var d := Vector2(r, -r) * 0.7
-	draw_line(c - d, c + d, Palette.CELL_PINK.darkened(0.2), 3.0, true)
+	draw_line(c - d, c + d, mark, 3.0, true)
 
 
 ## Bottom centre on the anchor at the toast's current size.
@@ -105,3 +110,18 @@ var _anchor := Vector2.ZERO
 
 func text() -> String:
 	return label.text if visible else ""
+
+
+# --- High contrast on paper (ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6)) -------------------------
+## The toast's edge width out of high contrast (px).
+const EDGE_PX := 2.0
+
+
+## The toast's edge: INK (opaque in high contrast too).
+func edge_color() -> Color:
+	return PaperInk.edge(Palette.INK)
+
+
+## The toast's edge width (px): EDGE_PX, at least PaperInk.EDGE_PX under high contrast.
+func edge_width() -> float:
+	return PaperInk.edge_width(EDGE_PX)

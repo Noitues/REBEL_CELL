@@ -119,4 +119,4 @@ hub, segment, Firmware, Daemon and Exploit has a glyph; the 16 px rule (§5.2) c
 - [ ] Lint rule: no UI node's rect over a pencil stroke.
 - [ ] Render spike: fidelity-first choice, then optimised inside the budget; report with numbers.
 - [ ] Timeline `18_art1` with a README row; before/after of the most visible screens.
-- [ ] One full-suite run in isolation; designer review.
+- [ ] Fast checks green at every merge; designer review (non-blocking).

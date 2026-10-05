@@ -53,6 +53,18 @@ LONG JOBS AND SHARING THE MACHINE (added 2026-10-05 after interrupted waits)
 - An interrupted tool call is not an error: re-read your log or output file to see where the job stands,
   and carry on. Do not restart a job that is still running.
 
+BATCH GODOT LAUNCHES (designer 2026-10-05)
+- Each Godot launch costs ~6 s of boot (+ ~9 s for an import with nothing new). Batch work into as few
+  launches as possible:
+  - Tests: run every script you need in ONE gt.sh call (it takes a list), not one call per script; only
+    re-run the scripts that failed.
+  - Captures: ONE windowed launch per capture session that walks a list of screens / states / demos
+    (e.g. tools/visual_qa/review_pack.tscn `--screens=a,b,c`, the storyboard, or your own lab scene that
+    steps through every state and writes a frame per state), not one launch per screenshot.
+  - Import only after you add or rename files / class_names or after `git merge main`, not before every run.
+- Do not keep a long-lived Godot "server" between edits: changed scripts need a fresh process anyway, and
+  shared static state leaks between runs.
+
 MACHINE RULES
 - NEVER run `python -` (it hangs on stdin, even with an empty heredoc). Write scripts to files with the Write tool and
   run `python file.py`. Set PYTHONIOENCODING=utf-8 when printing non-ASCII.

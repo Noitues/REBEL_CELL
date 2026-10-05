@@ -289,3 +289,108 @@ static func trap(root) -> void:
 		for side in ["focus_neighbor_left", "focus_neighbor_right", "focus_neighbor_top", "focus_neighbor_bottom"]:
 			if (ctl.get(side) as NodePath).is_empty():
 				ctl.set(side, NodePath("."))
+
+
+# --- ART_BIBLE §6 Focus: the 1.03 focus scale (art pass W2) ------------------------------------
+## The focus scale's motion entry (T1; amplitude = the scale, 1.03).
+const SCALE_MOTION := &"focus_scale"
+## Meta on a control that keeps its own focus look (it never scales on focus).
+const META_NO_SCALE := &"focus_no_scale"
+## Meta on a viewport already hooked.
+const META_INSTALLED := &"ui_focus_scale_hook"
+## The control scaled now (weak: it may be freed while focused).
+static var _scaled: WeakRef = null
+
+
+## Hooks the focus scale on `node`'s viewport (once per viewport; UiTheme.apply calls it).
+static func install_on(node: Node) -> void:
+	if node == null:
+		return
+	if not node.is_inside_tree():
+		if not node.tree_entered.is_connected(UiFocus.install_on.bind(node)):
+			node.tree_entered.connect(UiFocus.install_on.bind(node), CONNECT_ONE_SHOT)
+		return
+	var vp := node.get_viewport()
+	if vp == null or vp.has_meta(META_INSTALLED):
+		return
+	vp.set_meta(META_INSTALLED, true)
+	vp.gui_focus_changed.connect(UiFocus._on_focus_changed)
+
+
+## True when `c` grows on focus: a pressable or editable control (buttons, sliders and
+## steppers, fields) that isn't tilted, isn't already scaled by its own motion and hasn't
+## opted out (META_NO_SCALE: cards and stickers that lift themselves).
+static func scales_on_focus(c: Control) -> bool:
+	if c == null or not is_instance_valid(c) or c.has_meta(META_NO_SCALE):
+		return false
+	if not (c is BaseButton or c is Range or c is LineEdit):
+		return false
+	if c is ScrollBar or c is ZineCard:
+		return false
+	return is_zero_approx(c.rotation)
+
+
+## The focus scale (1.03 from `focus_scale`), or 1 when the scale doesn't play. It plays
+## for a pad player (§6/§12: focus seen from 3 m on a TV); a mouse or keyboard player's
+## focus shows by its brackets alone, so a click never grows the button under the pointer.
+## Headless runs keep every rect exact (layout tests), unless Motion.force_live.
+static func focus_scale() -> float:
+	if DisplayServer.get_name() == "headless" and not Motion.force_live:
+		return 1.0
+	if not Settings.pad_active:
+		return 1.0
+	return Motion.amplitude(SCALE_MOTION)
+
+
+static func _on_focus_changed(c: Control) -> void:
+	_unscale()
+	if not scales_on_focus(c) or not is_equal_approx(c.scale.x, 1.0):
+		return
+	var k := focus_scale()
+	if is_equal_approx(k, 1.0):
+		return
+	_scaled = weakref(c)
+	c.pivot_offset = c.size * 0.5
+	# §6: T1, never a reflow (scale about the centre, the size untouched); under reduce
+	# effects Motion applies the end state at once.
+	Motion.run(SCALE_MOTION, c, ^"scale", Vector2.ONE * k)
+	if not c.resized.is_connected(UiFocus._refit.bind(c)):
+		c.resized.connect(UiFocus._refit.bind(c))
+	var box := c.get_parent() as Container
+	if box != null and not box.sort_children.is_connected(UiFocus._refit.bind(c)):
+		# A container's sort resets its children's scale: set it again after each sort.
+		box.sort_children.connect(UiFocus._refit.bind(c))
+
+
+## Keeps the focused control's scale about its centre after a resize or a container sort.
+static func _refit(c: Control) -> void:
+	if not is_instance_valid(c) or _scaled == null or _scaled.get_ref() != c:
+		return
+	c.pivot_offset = c.size * 0.5
+	var k := focus_scale()
+	if not Motion.live(SCALE_MOTION) or is_equal_approx(c.scale.x, 1.0):
+		c.scale = Vector2.ONE * k
+
+
+## Returns the last focused control to its rest scale.
+static func _unscale() -> void:
+	if _scaled == null:
+		return
+	var c := _scaled.get_ref() as Control
+	_scaled = null
+	if c == null or not is_instance_valid(c):
+		return
+	if c.resized.is_connected(UiFocus._refit.bind(c)):
+		c.resized.disconnect(UiFocus._refit.bind(c))
+	var box := c.get_parent() as Container
+	if box != null and box.sort_children.is_connected(UiFocus._refit.bind(c)):
+		box.sort_children.disconnect(UiFocus._refit.bind(c))
+	if c.is_inside_tree() and not c.is_queued_for_deletion():
+		Motion.run(SCALE_MOTION, c, ^"scale", Vector2.ONE)
+	else:
+		c.scale = Vector2.ONE
+
+
+## The control the focus scale holds now (null when none).
+static func scaled_control() -> Control:
+	return _scaled.get_ref() as Control if _scaled != null else null
