@@ -122,6 +122,176 @@ BREACHED); crops in `docs/art_review/ART-6/3A/`.
 
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-5 5c city motion
+Agent 5c (ART_BIBLE v2 §4.1 car LOD, §4.2 city motion, §4.3 Heat on maps, §5.3–5.5, §6.1;
+refs round 24 `motion_layers`, round 26 ambient v4, round 37 calm Heat B, round 40 `cars_lod`).
+- **One seam.** The layers (`CityMotionLayers`, `scripts/city3d/`) read the city only through
+  `CityMotionSite` (lot frame, avenues busiest first, roofs, street lots, home, bounds), built by
+  `from_model` (5a's CityModel) or `from_district` (1D's spike). `CityViewMotion` puts them on 5a's
+  `CityView3D`: groups `traffic`, `sky`, `props`, `heat` go to the view's scene layers (traffic,
+  sky and heat also in the ground-only pass, so cars and Heat pools show under see-through
+  buildings); `camera_changed` drives car LOD and sprite sizes, `band_changed` the view
+  (GRID / RAID / NETRUN), `ambient_changed` pauses every layer, the spill goes to `set_spill`.
+  `tools/spike/city/city_spike_motion.gd` keeps a spike host for windowed render checks.
+- **Config.** New schema `CityMotionConfigData` (`scripts/data/`, shipped
+  `content/config/city_motion_config.tres`; smoke check `_art5_city_motion`): counts, sizes,
+  colours, road heights, band rigs, the day look. Every timing is a `ui_motion.tres` entry (all
+  T0, in REQUIRED_IDS, each with a motion-lab demo on a small grid city): `sky_lane_cars`,
+  `street_cars`, `holo_billboard`, `aviation_blink`, `searchlight_sweep`, `chopper_orbit`,
+  `drone_orbit`, `police_strobe`, `alarm_beacon`, `heat_node_light`, `city_light_fade`. NeonCity's
+  `city_traffic` / `beacon_blink` stay with the 2D city (its AWAITING_FIX entries are not hidden).
+- **Sky lanes** (round 26 v4): the 16 road shapes (A double deck, B, C with its flyovers and
+  1.75-turn spiral, F's cloverleaf of four 270° loops, the D×E four-level stack) on the city's own
+  busiest avenues (three per axis, at least 6 lots apart), each a row per direction baked into a
+  float texture (xyz, a = length), uniform by arc length; the car shader moves every vertex along
+  its row, so lines bend through loops and ramps. A loop moves 14–20 whole gaps (seamless). Guide
+  dots per road in its rail colour.
+- **Colours from a derived stream.** Cars and street cars take their lane colour from
+  `RngStreams.make_stream(city_seed, &"city_traffic")`, billboards and aviation phases from
+  `&"city_ambient"`: seeded like RngService streams but never the campaign's own, so a view moves
+  no game state.
+- **Car LOD:** FAR / MEDIUM / CLOSE by ortho (400 / 150) with hysteresis **0.04** (1D's 0.06 kept
+  the raid's 380 on FAR coming from the Grid; the bible and `cars_lod` put the raid on MEDIUM). At
+  management zooms only the lane line drops to 35 %; the car stays full strength. The CLOSE model
+  is a light toon-lit wedge (ToonInkMaterial's bands in the path shader; no ink hull: the cars are
+  drawn after the city's ink pass). Choppers and drones use `ToonInkMaterial` with its ink.
+- **Heat lights** (calm, centred on the hardened nodes' centre, home when none): every hardened
+  node one circling red / blue light on a thin `HEAT_B` ring, drawn through buildings like the
+  network decal; per band COOL nothing, NOTICED 3 alarm beacons, FLAGGED two slow searchlights
+  (calm, lower alpha) + 2 alarms, HUNTED + 13 police strobes, 2 choppers, 6 drones with
+  spotlights and ground pools; **PURGE uses HUNTED's look** (`CityHeatRig.look_of`). Suspicion
+  (round 6) adds 13 strobes, 3 choppers, 5 drones round the Cell's home, day or night.
+- **Day / night.** The layers crossfade (`city_light_fade`) and send the night share up; the host
+  lerps its toon ramp, sky, windows, neon, haze and grade toward the config's day look; by day no
+  rain and no fog at raid zoom (bible 4.2). 5a's CityView3D has no day-look call yet:
+  `CityViewMotion` sets the view's materials directly (asked of 5a below).
+- **Pause / reduce.** Every layer keeps its own clock: covered, unfocused or the host's ambient
+  scale 0 → stopped where it is; reduce effects / headless / entry off → the end state at once
+  (time 0, lights steady on, one billboard panel, searchlights at rest, aircraft parked);
+  **reduce motion pauses every layer in its steady look** and shows the sky lanes' markers
+  without cars (the brief and 5a's ambient scale; bible 5.4's "street traffic at 40 %" is not
+  kept). Quiet windowed runs ignore focus (they never have it). The netrun transit turns the
+  sky-lane cars off (bible 4.1); the CLOSE tier (< 150) therefore only shows outside the netrun
+  band (open question below).
+- **Frame cost** (spike host, this PC, 6 s averages, worst rig HUNTED): 1920×1080 tier 2 grid
+  2.97 ms with the layers vs 2.93 without (GPU +0.03 ms, +46 draws); raid 3.04 vs 2.95. Deck tier 1
+  at 1280×800: grid 2.10 vs 2.04, raid 2.17 vs 2.15. City total within the 8 ms budget.
+- Tests: `tests/unit/test_city_motion.gd` (fast). Captures: `tools/city/city_motion_capture.tscn`
+  (one launch walks 15 states; `--host=spike`; `--mperf`). Crops: `docs/art_review/ART-5/5c/`.
+
+### 2026-10-05 — Art direction — ART-5 5a city model
+Bible §1.2 World, §4.1–4.3, §6.1; 1D's report (`docs/handoff/art_1/city_spike_report.md`, "What
+ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
+- **Production classes (from 1D's spike).** `CitySpikeConfig` is renamed `CityConfig` (internal
+  names follow the word; the spike keeps its district in `tools/spike/city/city_spike_config.tres`).
+  The game's values are `content/config/city_config.tres`: the whole city `city_rect` (lots
+  -80..85 on both axes: every territory, HQ and the Sprawl round them), `chunk_lots` 24, building
+  LOD (`lod0_below` 400, `lod2_above` 760, `lod_rows_share`, `lod_cols`), zoom / pan (`grid_ortho`
+  440, `zoom_ortho_min/max`, `zoom_step`, `pan_screens_s`, `band_netrun_below`, `minimap_size`) and
+  the network decal (`net_*`).
+- **`CityModel`** (`scripts/city3d/city_model.gd`): the whole city of the game's own layout
+  (CityLayoutRecorder per chunk, the NeonCity placement code, seed 7): 13,306 buildings, 17,968
+  extrusions, 9,267 street lots, 64 chunks; recorded in 1.4 s headless on one thread, in the game on
+  the worker pool (`CityView3D`, chunks in order, so the model is deterministic). Shared once per
+  process (`CityModel.shared`). Picking tests only the chunks the ray crosses (equal to testing every
+  prism; ~3 ms a pick). The Cell's district keeps the street grid (round 34 lock); the HQs are
+  stepped stand-ins until 5b's landmarks (`hide_stand_in`).
+- **Building families** stay 1D's 12 unit-prism families (4 / 6 / 8 sides × 4 facet-row classes,
+  the bible's "~6" is per side count) — one MultiMesh per family **per chunk**, so frustum culling
+  works; LOD0 / LOD1 / LOD2 meshes (all rows / half the rows and 2 columns / one row: a plain
+  extrusion) swap by camera ortho with the 6 % hysteresis (`CityLod.building_lod`), never by
+  distance. Buffers are written whole (`CityMeshKit.instance_buffer`, 31 ms for the city).
+- **View bands** (`CityLod.band`): GRID at and above the see-through band's top (ortho ≈ 440, 1D's
+  lod 1.595), RAID down to ortho 200, NETRUN below, with hysteresis: the views move onto the city by
+  zoom band, no scene change.
+- **Materials: one seam** (`CityMaterials`). The building and ground shaders moved to
+  `shaders/city/`; their toon bands and banded light spill now come from 1B's kit through a shared
+  include, `shaders/kit/toon_bands.gdshaderinc` (`toon_band_index`, `toon_spill` and the
+  `spill_*` uniforms), so `ToonInkMaterial.set_spill` / `LightSpill.uniforms_3d` drive the city as
+  they drive props. **Small change to 1B's material:** `toon_ink.gdshader` includes that file
+  instead of declaring its spill uniforms and loop itself (same uniforms, same maths). The city's
+  ink stays 1D's depth / normal post pass (1B's note: the inverted hull splits at hard corners on
+  big city meshes); the band edges and ramp colours stay the city's config values.
+- **SEAMS for 5c / 5d / 5b / the views** (`CityView3D`, a SubViewport with its own World3D):
+  - *Scene layers:* `layer(name)` for `ground, network, buildings, landmarks, props, traffic, sky,
+    heat, fx`; `add_to_layer(name, node, ground_pass)` (ground_pass = also drawn in the ground-only
+    pass, render layer 2, seen under see-through buildings); signals `camera_changed(iso)`,
+    `band_changed(band)`, `building_lod_changed(lod)`, `ambient_changed(scale)` and
+    `ambient_scale` (0 when the map is covered, the window unfocused, or reduce effects / reduce
+    motion is on: every ambient layer pauses on it); `set_spill(sources)`; `landmark_slot(corp)`,
+    `hide_stand_in(corp)`.
+  - *Picking (pure, this viewport's pixels):* `pick(p)` → {prism, building, cell, lot, terr, world},
+    `lot_at(p)`, `project(world)`, `unproject(p, height)`, `lot_world(lot, height)`, `top_at(lot)`;
+    the same on `CityModel` with a `CityIsoCamera` for headless tests.
+  - Overlays read the camera only through `CityIsoCamera` (1D's constraint).
+- **Tests:** `tests/unit/test_city3d_model.gd` (fast): the whole-city config and its chunk tiling,
+  the deterministic chunked model, the Cell's grid, picking through chunks = every prism,
+  `top_at`, building LOD and view bands with hysteresis, log-linear zoom about the cursor and pan,
+  the network decal's buffers, CityView3D's layer and picking API, ambient pause.
+
+### 2026-10-05 — Art direction — ART-5 5b landmarks
+ART_BIBLE v2 §1.2 (World), §2.4, §4.1, §4.4, §6.1; ART_3_BATCH "Wave 2" 5b; references `city/round26_hq_targets/*`,
+`round27_hq_targets/*`, `round31_meridian_combat/*`, `round34_rebel_cell/*`, `foundations/round2/*`; 1D's pick
+(real-time Godot 3D); 8p's export convention (`rebel_cell.art_export/1`).
+- **Blender 5.2 headless from the concept generators.** `tools/art_pipeline/city/` (v1): `concept_r31/` holds the round
+  31 builders unchanged (target_corps + heroes24–31, ported from art-pass 097a6c0); `landmark_build_v1.py` is the port
+  of `hq_scene.py` (same seeds `2525 + job`, same reference cameras) that exports instead of compositing a city;
+  `landmark_crest_v1.py` / `landmark_district_v1.py` port the round 34 crest (`map34.Crest.zone`, the blackout ring,
+  the DISPATCH glitch bands; art-pass d14b8f6); `build_landmarks_v1.py blender|post|sheets|assemble` runs it all. Builds
+  are deterministic (same bytes on a rebuild).
+- **What is built, per bible 4.4:** Meridian container castle on texture A (round 29 t1), moat, gantry keep, rail yard
+  and the round 31 crane + train loop; Solace lit helix (down-lights, cones, spotlight, 12-frame chaser) + the SOLACE
+  GENERAL hospital Site; Halcyon seven-tier Civic Core with the scanning eye (own pivot, ±55°, searchlight) + Halcyon
+  Court with the Justice statue (the round 27 default Site); Orbital silo crescent with the doors 1.6 below the rim,
+  closed and open (rocket) as two state nodes + the OC-TV Site; REBEL_CELL district: a normal street grid whose window
+  lights draw the tucked-thumb fist (home 70 %, DISPATCH 90 % with the glitch rows), detail lines on windowless
+  buildings, the blackout ring and the reveal. Meridian's regular Site (the depot) is not one of the five landmarks
+  and is not exported; it is one more job in `landmark_spec_v1.JOBS` when the Sites need it.
+- **glTF is the primary and only export (coordinator, after 1D's pick); the 2× day/night layered sprites are dropped.**
+  They would need their own render, holdout passes and finish per corp, mode and animation frame and would only
+  serve the baked technique 1D did not pick. 5.9 MB in all (Meridian 1.27 MB, Solace 1.34, Halcyon 0.44, Orbital
+  0.63, REBEL_CELL 2.38), uncompressed (Godot imports no Draco or meshopt).
+- **On 8p's convention (`rebel_cell.art_export/1`):** no normals (the toon shader takes the facet normal from screen
+  derivatives; rendered with and without normals: no difference); COLOR_0 linear = face colour × tone (0.86–1.12);
+  alpha = a part value 0.55–1.0 written to ROUGHNESS (part edges ink as material edges; ≥ 0.5 marks a building for the
+  spike post) or, on windows, the window's own seeded value; materials named by role `lm_toon`, `lm_lit`, `lm_neon`,
+  `lm_win`, `lm_sign` (as 8p's `hq_*`) plus `lm_beam`, `lm_toon_lines`, `lm_win_ring`, `lm_win_lines`,
+  `lm_win_fist_home`, `lm_win_fist_dispatch`. Manifest per corp (`assets/city/landmarks/<corp>/manifest.json`):
+  source (scripts, commit, `scripts_sha256`), settings, origin and footprint (Godot frame) per landmark, the lot
+  rectangle and overhang, triangles per role, animation, reference camera, files with sizes and sha256.
+- **Origin convention for 5a:** glTF x = lot x, z = lot y (`CityIsoCamera.lot_to_world`), 1 unit = 1 BU, +Y up; an HQ's
+  origin is its plaza's ground centre, to sit on the centre of its 10 × 10 HQ lot rectangle; a Site's on the centre of
+  its 6 × 6 lot block; the district's at the palm. Some landmarks overhang their rectangle (`lot_rect.overhang_bu`:
+  Meridian's rail yard runs ±90 BU along x).
+- **Moving parts as glTF animation, written by `gltf_anim_v1.py`** (the exporter's action handling is not used):
+  Meridian `loop` (3.0 s: 17 crane poses as step flipbooks over one shared portal, the train once, slid along the
+  track, its new container from frame 9 to 14, motion streaks 11–14); Solace `chaser` (12 × 90 ms); Halcyon `eye_scan`
+  (12 × 110 ms, rotation about +Y). The rest pose is the concept's still (Meridian frame 6, chaser frame 0; the eye at
+  frame 0, its still angle 28° is in the manifest).
+- **Locked Site renders face lot +y:** the round 26–27 `build_at` meant to turn new Sites 45° but turned only their
+  sign objects, so the references show them unturned; the export matches the references (front +z), with a readable
+  sign (the references' was turned into the wall).
+- **Smaller than the concept, same picture:** signs at curve resolution 2 (the default 12 made a sign heavier than its
+  building); Orbital's sign once on the root (not per state); the district's walls 4 jittered triangles each (the
+  city's 1.7 BU facet grid is the CityModel shader's job) and mid-rise heights (7–27 BU, a few to 51) so the fist
+  reads; the fist's panes 1.3 × 1.2 BU and `LandmarkLook.fist_gain` 1.8 (map34 lights the crest denser and spills red).
+- **Godot side (no view changes):** `assets/city/landmarks/landmark_toon.gdshader` / `landmark_beam.gdshader` (the
+  spike's 3-band light() and ramp × the corp `TINT`; the reveal: ring windows off as q passes their value with a
+  ±0.12 flicker band, detail-line windows off, line buildings darken), `LandmarkLook` (`landmark_look.tres`: night and
+  cool-day ramps, gains, the concept's numbers; `lit_emission` 0.25 as 8p, since the spike post blooms every bright
+  pixel) and `LandmarkMaterials` (role → material, `set_reveal`, `show_dispatch`). The crest mask
+  (`rebel_cell_crest_mask.png`, R home / G DISPATCH zone, B ring weight, on the iso screen plane; mapping in the
+  manifest) is for the CityModel's window shader, so the fist can be drawn on the city's own buildings.
+- **Validator hook and test:** `tools/landmark_asset_checks.gd` from `validate_content.gd` (every corporation, schema,
+  files, sizes, sha256, stale pipeline); `tests/unit/test_art5_landmarks.gd` (fast): every glTF loads headless with
+  landmark roles only, loops with their lengths, Orbital's states, the district's reveal meshes, the mask imports.
+- **Renders read:** `tools/art_pipeline/city/landmark_review.tscn` (windowed, one launch, 26 shots) next to the Blender
+  concept finish and the references in `docs/art_review/ART-5/5b/` (`.gdignore` in `ART-5/`). Halcyon, Orbital and
+  Meridian match closely; Solace's strands read violet-grey in Godot where the concept's emission-pass bloom and the
+  stand-in city's lime lanes tint them lime (the spike post blooms only what passes its threshold, so dim seams do not
+  bloom); the fist reads in Blender and more faintly in Godot on the bare district, where it needs the lit city around
+  the blackout ring for contrast.
+
 ### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
 ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
 `hq/round43_hq_mechanics/hq_*_compound.jpg`, `hq/round35_netrun/hq_compound.jpg`; 1D's pick (real-time
@@ -7028,11 +7198,21 @@ and annotated in the GDD where it changes a rule.
 - **Display:** 1280×720 viewport, `canvas_items` stretch, `keep` aspect (TECH_SPEC §10).
 
 ## Open questions for the designer
+- **ART-5 5c city motion (defaults implemented):** (1) the netrun transit turns the sky-lane
+  cars off (bible 4.1) while `cars_lod` shows the CLOSE tier at a netrun close-up: CLOSE is built
+  and tested but only shows below ortho 150 outside the netrun band; should the transit show it?
+  (2) reduce motion pauses street traffic (brief) where bible 5.4 says 40 % without streaks.
+  (3) 5a: a public day-look call on CityView3D (CityViewMotion sets the view's materials for now).
 
 - **ART-6 3A (raid):** "Remove to hand = click the node" (ART_BIBLE v2 §4.8 card drag) changes what a click on a
   claimed node does in the raid setup (today it picks the target for the cards, a behaviour the pad path and
   several tests rely on). Default kept: click = pick the target; a defence returns by its Withdraw button or a
   drag to the loadout. Confirm the change, and whether the pad keeps a separate target pick.
+- **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
+  patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows
+  (bible 4.4). Default: 5a's CityModel window shader samples `rebel_cell_crest_mask.png` at the palm of the Cell's
+  district and the district glTF stays a reference. Also: crest size 110 BU tall on the iso screen (map34's 880 px at
+  8 px/BU); say if the fist should scale with the zoom instead.
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
   HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single

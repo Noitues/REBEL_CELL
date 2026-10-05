@@ -1,0 +1,239 @@
+{
+ "schema": "rebel_cell.art_export/1",
+ "asset": "landmark",
+ "corp": "orbital",
+ "about": "ART-5 5b landmark (bible 4.4). Built by tools/art_pipeline/city/build_landmarks_v1.py; do not edit by hand.",
+ "source": {
+  "script": "tools/art_pipeline/city/landmark_build_v1.py",
+  "spec": "tools/art_pipeline/city/landmark_spec_v1.py",
+  "driver": "tools/art_pipeline/city/build_landmarks_v1.py",
+  "vendor": "art-concepts-r43:docs/concepts/round31_meridian_combat/scripts @ 097a6c0 (concept_r31/); round34_rebel_cell/scripts/map34.py @ d14b8f6 (landmark_crest_v1)",
+  "scripts": [
+   "tools/art_pipeline/city/landmark_spec_v1.py",
+   "tools/art_pipeline/city/landmark_build_v1.py",
+   "tools/art_pipeline/city/landmark_district_v1.py",
+   "tools/art_pipeline/city/landmark_crest_v1.py",
+   "tools/art_pipeline/city/landmark_post_v1.py",
+   "tools/art_pipeline/city/gltf_anim_v1.py",
+   "tools/art_pipeline/city/build_landmarks_v1.py",
+   "tools/art_pipeline/city/concept_r31/target_corps.py",
+   "tools/art_pipeline/city/concept_r31/heroes24.py",
+   "tools/art_pipeline/city/concept_r31/heroes25.py",
+   "tools/art_pipeline/city/concept_r31/heroes26.py",
+   "tools/art_pipeline/city/concept_r31/heroes27.py",
+   "tools/art_pipeline/city/concept_r31/heroes28.py",
+   "tools/art_pipeline/city/concept_r31/heroes29.py",
+   "tools/art_pipeline/city/concept_r31/heroes30.py",
+   "tools/art_pipeline/city/concept_r31/heroes31.py"
+  ],
+  "commit": "012dc6813e2f2ab261197c905fad0c3bdc7788e3",
+  "scripts_sha256": "c0b99454bfc673b57ca229540c34e63bd6ebaa284009441d21a44a1b1bc24390"
+ },
+ "settings": {
+  "blender": "5.2.2 LTS",
+  "version": "v1",
+  "units": "1 BU = 1 m; 1 lot = 6 BU",
+  "up": "+Y (glTF; Blender (x, y, z) -> (x, z, -y)); glTF x = lot x, z = lot y (CityIsoCamera.lot_to_world)",
+  "tone": [
+   0.86,
+   1.12
+  ],
+  "part_alpha": [
+   0.55,
+   1.0
+  ],
+  "ramp_tint": "LandmarkLook.corp_tint (target_corps.TINT)",
+  "pitch_deg": 40.0,
+  "yaw_deg": 135.0,
+  "normals": "none (facet normal from screen derivatives)",
+  "layered_sprites": "dropped: 1D chose real-time Godot 3D",
+  "site_scale": 0.8,
+  "site_rot_deg": 0.0,
+  "front": "as the concept built them: Meridian's gate faces +x, its rail yard runs along x at z = -34 / -40; a Site's front faces +z (lot +y, screen lower-left, as the locked Site renders)"
+ },
+ "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+ "footprint": {
+  "min": [
+   -28.2,
+   0.0,
+   -28.2
+  ],
+  "max": [
+   28.0,
+   90.2,
+   28.0
+  ],
+  "size": [
+   56.2,
+   90.2,
+   56.2
+  ]
+ },
+ "materials": {
+  "lm_toon": "toon: 3-band ramp x vertex colour (tone baked); alpha = part value 0.55-1.0 -> ROUGHNESS (ink material edges)",
+  "lm_toon_lines": "lm_toon, darkened toward (8, 6, 12)/255 by 0.55 x reveal q (REBEL_CELL detail-line buildings)",
+  "lm_lit": "lm_toon + emission 0.25 x colour (floodlit towers; LandmarkLook.lit_emission)",
+  "lm_neon": "emissive: vertex colour x neon gain (night 1.0, day 0.75)",
+  "lm_win": "emissive windows: vertex colour x window gain (day: 0.55, mixed 0.55 toward dark glass); alpha = the window's seeded value",
+  "lm_win_ring": "lm_win, visible while alpha > reveal q (+/- 0.12 flicker band at the front): the blackout ring",
+  "lm_win_lines": "lm_win, visible while alpha < (1 - q) x 0.85: lit detail lines before the reveal",
+  "lm_win_fist_home": "red fist windows, home look (70 % density baked) x LandmarkLook.fist_gain",
+  "lm_win_fist_dispatch": "red fist windows, DISPATCH look (90 %, glitch rows, a few white); show instead of _home",
+  "lm_beam": "translucent light cone: vertex colour at 0.22 over what is behind, no depth write (no ink)",
+  "lm_sign": "emissive diegetic signage (corp sign colour)"
+ },
+ "landmarks": [
+  {
+   "job": "orbital_hq",
+   "kind": "hq",
+   "file": "orbital_hq.glb",
+   "what": "Silo crescent: launch podium, in-ground silo with the doors 1.6 below the rim (closed / open with the rocket), mast and dishes",
+   "origin": "the landmark's ground centre (plaza centre) at (0, 0, 0); place it on the HQ lot rectangle's centre",
+   "footprint": {
+    "min": [
+     -28.2,
+     0.0,
+     -28.2
+    ],
+    "max": [
+     28.0,
+     90.2,
+     28.0
+    ],
+    "size": [
+     56.2,
+     90.2,
+     56.2
+    ]
+   },
+   "lot_rect": {
+    "lots": [
+     10,
+     10
+    ],
+    "bu": [
+     60.0,
+     60.0
+    ],
+    "overhang_bu": 0.0
+   },
+   "states": [
+    "",
+    "open"
+   ],
+   "state_nodes": [
+    "orbital_hq__state_closed",
+    "orbital_hq__state_open"
+   ],
+   "triangles": {
+    "lm_sign": 1912,
+    "lm_toon": 5974,
+    "lm_neon": 4292
+   },
+   "animation": null,
+   "seed": 3586,
+   "reference_camera": {
+    "kind": "perspective",
+    "position": [
+     84.853,
+     70,
+     84.853
+    ],
+    "target": [
+     0.0,
+     22,
+     -0.0
+    ],
+    "lens_mm": 34.0,
+    "sensor_mm": 36.0,
+    "hfov_deg": 55.795
+   },
+   "references": [
+    "docs/art_reference/city/round26_hq_targets/hq_orbital_close_night.jpg",
+    "docs/art_reference/city/round26_hq_targets/hq_orbital_close_night_open.jpg",
+    "docs/art_reference/city/round26_hq_targets/hq_orbital_close_day.jpg"
+   ]
+  },
+  {
+   "job": "orbital_site",
+   "kind": "site",
+   "file": "orbital_site.glb",
+   "what": "OC-TV station: studio, roof dishes, lattice mast with red lights, the big screen, uplink truck",
+   "origin": "the Site's ground centre at (0, 0, 0); place it on the centre of its 6 x 6 lot block",
+   "footprint": {
+    "min": [
+     -16.14,
+     0.0,
+     -16.241
+    ],
+    "max": [
+     19.32,
+     42.28,
+     8.364
+    ],
+    "size": [
+     35.46,
+     42.28,
+     24.605
+    ]
+   },
+   "lot_rect": {
+    "lots": [
+     6,
+     6
+    ],
+    "bu": [
+     36.0,
+     36.0
+    ],
+    "overhang_bu": 1.32
+   },
+   "states": [
+    ""
+   ],
+   "state_nodes": [],
+   "triangles": {
+    "lm_toon": 1586,
+    "lm_neon": 124,
+    "lm_win": 142,
+    "lm_sign": 484
+   },
+   "animation": null,
+   "seed": 3806,
+   "reference_camera": {
+    "kind": "perspective",
+    "position": [
+     56.569,
+     54,
+     56.569
+    ],
+    "target": [
+     0.0,
+     9,
+     -0.0
+    ],
+    "lens_mm": 34.0,
+    "sensor_mm": 36.0,
+    "hfov_deg": 55.795
+   },
+   "references": [
+    "docs/art_reference/city/round26_hq_targets/site_orbital_night.jpg"
+   ]
+  }
+ ],
+ "files": [
+  {
+   "path": "orbital_hq.glb",
+   "kind": "gltf",
+   "bytes": 543404,
+   "sha256": "717eb8046f7ed8844ff5c956c5d8d6745a1fba18c18b40cf2f26c3c8de00b6d4"
+  },
+  {
+   "path": "orbital_site.glb",
+   "kind": "gltf",
+   "bytes": 103764,
+   "sha256": "6e3af781c64fb8b2e650ab65db9d7e4ae9194ad4e2ee1cdc6b3da63a6a9aa515"
+  }
+ ],
+ "validator": "tools/landmark_asset_checks.gd (from tools/validate_content.gd): manifest keys, files, sizes, sha256, stale pipeline"
+}

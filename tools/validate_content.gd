@@ -13,6 +13,7 @@ func _init() -> void:
 	errors.append_array(registry.validate())
 	errors.append_array(_motion_errors(registry.motion))
 	errors.append_array(_hq_compound_errors(registry))
+	errors.append_array(LandmarkAssetChecks.errors(_corporation_ids(registry)))
 	for e in errors:
 		printerr("  - ", e)
 	print("Content: %d resources, %d ids, config %s, motion %s." % [
@@ -22,6 +23,17 @@ func _init() -> void:
 	print("CONTENT VALIDATION: ", "PASS" if errors.is_empty() else "FAIL (%d)" % errors.size())
 	registry.free()
 	quit(0 if errors.is_empty() else 1)
+
+
+## ART-5 5b: the corporation ids (each owns a landmark under assets/city/landmarks/), sorted.
+func _corporation_ids(registry: Node) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for id: StringName in registry.all_ids():
+		var r: Resource = registry.get_content(id)
+		if r is CorporationData:
+			out.append(id)
+	out.sort()
+	return out
 
 
 ## The UI motion table must exist at its path (Animation pass ANIM-1) and carry every animation id

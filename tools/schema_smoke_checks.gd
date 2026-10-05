@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art8_hq_compound()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs() + _art5_city_motion() + _art8_hq_compound()
 
 
 func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:
@@ -538,6 +538,32 @@ func _art1_glyphs() -> int:
 	print("ART-1 1C: glyph table save=", err, " ids ", back.ids if back != null else {}, " box ", back.box_px if back != null else -1)
 	if err != OK or back == null or back.glyph_for(&"type_shim") != &"slice_shim" or not back.is_pending(&"effect_custom") or back.box_px != 90: fails += 1
 	if back == null or back.cell_region(&"pending") != Rect2(128, 0, 128, 128): fails += 1
+	return fails
+
+
+## ART-5 5c: CityMotionConfigData (the city's motion layers' counts, sizes and colours): the
+## shipped one validates; a short palette, a short band array and an inverted LOD are each
+## refused; a save keeps its values.
+func _art5_city_motion() -> int:
+	var fails := 0
+	var shipped := CityMotionConfigData.shipped()
+	var se := shipped.validate() if shipped != null else PackedStringArray(["missing"])
+	print("ART-5 5c: shipped city motion config errors (expect 0): ", se)
+	if se.size() != 0: fails += 1
+	var bad := CityMotionConfigData.new()
+	bad.lane_colors = [Color.RED]
+	bad.band_drones = [0, 1]
+	bad.car_close_below = 500.0
+	var be := bad.validate()
+	print("ART-5 5c: bad city motion config errors (expect 3): ", be)
+	if be.size() != 3: fails += 1
+	var t := CityMotionConfigData.new()
+	t.car_gap = 21.0
+	t.band_police = [0, 1, 2, 3]
+	var err := ResourceSaver.save(t, "user://smoke_city_motion.tres")
+	var back: CityMotionConfigData = load("user://smoke_city_motion.tres")
+	print("ART-5 5c: city motion config save=", err, " gap ", back.car_gap if back != null else -1.0)
+	if err != OK or back == null or back.car_gap != 21.0 or back.band_police != [0, 1, 2, 3] or back.validate().size() != 0: fails += 1
 	return fails
 
 

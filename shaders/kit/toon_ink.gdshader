@@ -15,6 +15,8 @@
 shader_type spatial;
 render_mode diffuse_lambert, specular_disabled;
 #include "res://shaders/lib/rc_common.gdshaderinc"
+// ART-5 5a: the bands' spill (and its uniforms) shared with the city shaders.
+#include "res://shaders/kit/toon_bands.gdshaderinc"
 
 uniform vec4 albedo : source_color = vec4(0.42, 0.40, 0.48, 1.0);
 uniform float band_hi = 0.55;
@@ -25,9 +27,6 @@ uniform vec4 shadow_tint : source_color = vec4(0.16, 0.12, 0.30, 1.0);
 uniform float tone_jitter = 0.08;
 uniform float grime = 0.18;
 uniform float grime_scale = 0.35;
-uniform vec4 spill_lights[8];
-uniform vec4 spill_colors[8];
-uniform int spill_count = 0;
 uniform float spill_emission = 0.35;
 uniform vec4 haze_color : source_color = vec4(0.10, 0.08, 0.20, 1.0);
 uniform float haze_start = 20.0;
@@ -66,21 +65,9 @@ void fragment() {
 	float low = 1.0 - clamp(world_pos.y / 6.0, 0.0, 1.0);
 	base *= 1.0 - grime * g * (0.5 + 0.5 * low);
 	ALBEDO = base;
-	// light spill, banded
-	vec3 spill = vec3(0.0);
-	for (int i = 0; i < 8; i++) {
-		if (i >= spill_count) {
-			break;
-		}
-		vec3 d = spill_lights[i].xyz - world_pos;
-		float r = max(spill_lights[i].w, 0.001);
-		float fall = clamp(1.0 - length(d) / r, 0.0, 1.0);
-		vec3 n = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
-		float facing = clamp(dot(n, normalize(d)) * 0.7 + 0.3, 0.0, 1.0);
-		float s = band(fall * fall * facing);
-		s = fall > 0.0 ? s * fall : 0.0;
-		spill += spill_colors[i].rgb * spill_colors[i].a * s;
-	}
+	// light spill, banded (toon_bands.gdshaderinc)
+	vec3 n = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	vec3 spill = toon_spill(world_pos, n, band_lo, band_hi, shade_mid, shade_low);
 	EMISSION = base * spill * 1.9 + spill * spill_emission * 0.15;
 	// depth haze
 	float depth = length(VERTEX);

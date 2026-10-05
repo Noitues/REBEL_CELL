@@ -13,7 +13,7 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--out="):
 			out = a.trim_prefix("--out=")
-	var cfg: CitySpikeConfig = CONFIG
+	var cfg: CityConfig = CONFIG
 	var d := CityDistrict.from_layout(cfg)
 	var prisms := []
 	for pr in d.prisms:

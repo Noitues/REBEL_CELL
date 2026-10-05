@@ -1,9 +1,10 @@
-class_name CitySpikeConfig
+class_name CityConfig
 extends Resource
-## ART-1 1D render spike: every number the unified-city prototype reads (bible §4.1, §4.2,
-## §6.1; concept recipes art-concepts-r43 round 36-40 `layout36.py`, `unified40.py`,
-## `target_corps.py`, `post40.py`). Read-only at runtime. The values live in
-## `tools/spike/city/city_spike_config.tres`.
+## The unified city's config (ART-5 5a, from ART-1 1D's spike config): every number the 3D
+## city reads (bible §4.1, §4.2, §6.1; concept recipes art-concepts-r43 round 36-40
+## `layout36.py`, `unified40.py`, `target_corps.py`, `post40.py`). Read-only at runtime.
+## The game's values live in `content/config/city_config.tres` (the whole city); the
+## render spike keeps its district in `tools/spike/city/city_spike_config.tres`.
 
 @export_group("World")
 ## World units (BU) per lot (layout36.U).
@@ -181,6 +182,60 @@ extends Resource
 @export var street_car_traffic: float = 0.25
 ## Medium-LOD box alpha.
 @export var car_box_alpha: float = 0.65
+
+
+@export_group("Whole city (ART-5 5a)")
+## The whole city the model is built for (lots): every territory, HQ and the Sprawl round
+## them (bible §4.1: ~14 100 extrusions).
+@export var city_rect: Rect2i = Rect2i(-80, -80, 165, 165)
+## Chunk size (lots): one MultiMesh per building family per chunk, so frustum culling
+## drops what the camera does not see.
+@export var chunk_lots: int = 24
+## Building LOD by camera ortho (bible §6.1, never distance): LOD0 (full facet grid) at or
+## below lod0_below, LOD2 (plain extrusion) above lod2_above, LOD1 between; the swap keeps
+## lod_hysteresis.
+@export var lod0_below: float = 400.0
+@export var lod2_above: float = 760.0
+## Facet rows per LOD (share of the height class's rows; 0 = one row) and wall columns.
+@export var lod_rows_share: Array[float] = [1.0, 0.5, 0.0]
+@export var lod_cols: Array[int] = [4, 2, 1]
+
+@export_group("Zoom and pan (ART-5 5a)")
+## The City Grid's own zoom (bible §4.1: ortho ~440) and the continuous zoom's range.
+@export var grid_ortho: float = 440.0
+@export var zoom_ortho_min: float = 60.0
+@export var zoom_ortho_max: float = 1400.0
+## Ortho factor per wheel notch / zoom key press (log-linear: equal steps in log ortho).
+@export var zoom_step: float = 1.18
+## Pan speed of the keys / stick (screen widths per second).
+@export var pan_screens_s: float = 0.6
+## View bands the views live in (ortho): the netrun transit below band_netrun_below, the
+## raid between it and the see-through band's top, the City Grid above.
+@export var band_netrun_below: float = 200.0
+## Minimap: its size (px at text scale 1), the share of the city it shows, the view box
+## and marker colours come from the palette.
+@export var minimap_size: Vector2 = Vector2(232, 148)
+
+@export_group("Network decal (bible §6.1; ART-5 5a)")
+## Nodes and link points the decal's buffers hold (data texture rows).
+@export var net_nodes_max: int = 64
+@export var net_points_max: int = 1024
+## City-zoom trace: core width and halo (screen px), node disc and tier ring radius (px).
+@export var net_trace_px: float = 3.0
+@export var net_halo_px: float = 12.0
+@export var net_node_px: float = 13.0
+@export var net_ring_px: float = 3.0
+## Management zooms: the 3-trace bus spacing (px) and the packets' speed (BU / s) and gap.
+@export var net_bus_gap_px: float = 4.0
+@export var net_packet_speed: float = 24.0
+@export var net_packet_gap: float = 30.0
+## Dash length / gap (BU) of border and not-yet links.
+@export var net_dash_bu: Vector2 = Vector2(4.0, 3.0)
+## Strengths: the ground decal, the halo, and the x-ray pass through buildings at the City
+## Grid zoom (solid at city lod).
+@export var net_gain: float = 1.6
+@export var net_halo: float = 0.35
+@export var net_xray: float = 0.85
 
 
 ## The quality tier for a Settings.city_quality value (-1 = default).
