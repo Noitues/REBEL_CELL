@@ -33,6 +33,50 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-0 docs landing (ART-0a, A1–A6)
+The art docs land on main, ported from art-pass 9a62cec (tag `art-concepts-r43`) by
+`git checkout`/`git show`, never by merge. Docs only: no code, content or test changed.
+- **A1 docs:** `docs/ART_BIBLE.md` (v2), `docs/ART_BIBLE_v1.md`, `docs/ART_REINTEGRATION_PLAN.md`,
+  `docs/ART_REINTEGRATION_PROMPT.md`, `docs/concepts/DIRECTION_REVIEW.md`,
+  `docs/concepts/GDD_ART_COVERAGE.md`, `docs/concepts/.gdignore`. The plan gets a "Rulings applied"
+  banner; plan §1 items 1, 5, 6.2, 6.5, 6.6, 7, 9 and (ours, same reason) the §5.1 risk row
+  "Renames break saves or replays" are struck or annotated with the ruling, never rewritten. In
+  the bible, Appendix C #12 is annotated with ruling 11 and #1 (its "Designer to confirm") with
+  ruling 10, which confirmed it. Diff against the tag: those annotations only.
+- **A2 `docs/art_reference/`** (ruling 3): 60.7 MB (59 MiB by `du -sh`), 257 files plus README and
+  `.gdignore`, one README row per file (element, round + lock, ART_BIBLE v2 section, original
+  path, ART-n batch, how it was copied). Every ART_BIBLE v2 Appendix A row and every §3.20 effect
+  resolves to a README row (checked by a script). Appendix A names about 300 MB of images, so:
+  stills over 600 KB (or wider than 1600 px) are 1600 px wide JPEG q82 copies (wide strips keep
+  their width); stills with alpha (the glyphs) and GIFs up to 1.0 MB are byte-identical (22 GIFs);
+  the 42 GIFs over 1.0 MB are replaced by an 8-frame keyframe sheet `<name>.frames.jpg` (34) or by
+  the art pass's own strip / storyboard (8). No Pillow GIF re-encode was smaller than the
+  originals, so none is re-encoded. The brief's "keep a > 2 MB original if Appendix A names it as
+  final" is not applied: every Appendix A image is a named final, and keeping them would pass the
+  80 MB cap; each original is one `git show art-concepts-r43:docs/concepts/<path>` away and the
+  README "Not copied, why" table lists every one. Also there: the 31 round 40 raid GIFs
+  (`raid_gifs/index.md` and its contact sheet are copied, the GIFs stay on the tag) and the rest of
+  the 277 MB archive (earlier rounds, rejected media, superseded versions, scripts, `*.pyc`, the
+  EVOLUTION slideshow, video and PDF). The round 17 glyph masters are 58 PNGs + `index.txt` (59
+  files; the brief said 59 PNGs). Courier Prime Regular/Bold + `OFL_CourierPrime.txt` are in
+  `fonts/` (from round 33). Appendix A writes `round18_combat_fx/binary_damage/`; the folder is
+  the top-level `binary_damage/` on the tag.
+- **A3:** `docs/art_history/ART_PLAN_M13.md` = art-pass `docs/ART_PLAN.md` with a superseded
+  banner. The 14 M13 DECISIONS entries (Art pass rulings, wave 1, W9s, W2, W5, W4, W7, W3, W8a, WF,
+  W8c, W8b, W8d, W9F) are below under "M13 art pass (art-pass branch, superseded in part)",
+  verbatim except their heading level (### → ####, to sit under that heading). None of them names
+  the Grid fit-pass constant, so `test_horizontal_pass24_city` needed no annotation.
+- **A4:** GDD §9.1–9.4 rewritten around ART_BIBLE v2, every changed paragraph citing its ruling;
+  9.6 notes that static CRT scanlines may stay under reduce effects (v2 §5.4); 9.5 unchanged. GDD
+  "Changes since" line added; the locked line "Visual baseline: three worlds" is struck and marked
+  superseded. GDD 8.2's "never zine-styled" (DISPATCH text) is outside §9 and describes no
+  baseline, so it was left for the designer (open question below).
+- **A5:** MILESTONES gains "M13 — Art pass v1 (art-pass branch, superseded in part)" and "M14 — Art
+  direction v2" (ART-0…ART-12 acceptance lines from plan §4.2 unticked, ruling 7 and 11 adjustments,
+  the post-ART-12 re-evaluations); plan §4.2 has no acceptance lines for ART-10 and ART-11, so
+  their boxes list the batch's items.
+- **A6:** STYLE_GUIDE pointer: ART_BIBLE v2 is the visual source of truth from M14; §5 stays binding.
+
 ### 2026-10-05 — Designer rulings: art reintegration, pause point 0 (resolved by the designer)
 Answered by the designer as a numbered list against `docs/ART_REINTEGRATION_PLAN.md` §1
 (art-pass tag `art-concepts-r43`) plus the ANIM-R7 open question and ART_BIBLE v2
@@ -5345,6 +5389,10 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **GDD 8.2 "DISPATCH text is … never zine-styled" (2026-10-05, ART-0a):** the zine look is
+  retired (ruling 4) but this §8 line still names it. Default (applied nowhere yet): read it as
+  "DISPATCH text is always a clean CRT terminal feed (red accent, ART_BIBLE v2 §1.2), never a
+  sticker or pencil"; reword GDD 8.2 to that if you agree.
 - **The Cell's own crest vs the REBEL_CELL corporation (2026-10-05, ruling 6.6):** the art
   direction gives the Cell the fist crest; telling the player's Cell apart from the eventual
   REBEL_CELL corporation (art_asset A2) needs a future concept slice. Scheduled after M14.
