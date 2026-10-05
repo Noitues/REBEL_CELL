@@ -170,7 +170,7 @@ func test_confirm_dialogs_and_the_pause_menu_trap_focus() -> void:
 	add_child(d)
 	await _frames()
 	assert_true(_neighbours_inside(d, d.no_button) and _neighbours_inside(d, d.yes_button), "the dialog keeps focus")
-	assert_eq(d.no_button.find_valid_focus_neighbor(SIDE_LEFT), d.yes_button, "Yes is reachable by D-pad")
+	assert_eq(d.no_button.find_valid_focus_neighbor(SIDE_RIGHT), d.yes_button, "Yes is reachable by D-pad (ART-2 2D: CANCEL left, the verb right)")
 	d.queue_free()
 	var menu := PauseMenu.new()
 	add_child_autofree(menu)
