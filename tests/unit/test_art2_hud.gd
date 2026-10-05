@@ -353,3 +353,99 @@ func test_the_hud_fits_at_every_text_size() -> void:
 					continue  # the sticker overlaps the panel's top edge on purpose
 				assert_false(parts[i].get_global_rect().intersects(parts[j].get_global_rect()), "x%.1f: %s and %s apart" % [scale, parts[i].name, parts[j].name])
 		await _close(scene)
+
+
+# --- Group 1 naive audit P2s (2026-10-05) -----------------------------------------------------
+
+func test_pink_is_for_actions_and_one_red_is_harm() -> void:
+	var script: Script = load("res://scripts/ui/combat_scene.gd")
+	var consts := script.get_script_constant_map()
+	for key in ["CHIP_HIT", "CHIP_LOSS"]:
+		assert_eq(consts[key], Palette.HARM, "%s is the one harm red" % key)
+	for kind in ResultChipModel.ORDER:
+		for good in [true, false]:
+			var c := {"kind": kind, "value": 1, "good": good, "status": RC.Status.CORRUPTED, "count": 1}
+			assert_ne(HudResultChips.chip_color(c), Palette.CELL_PINK, "%s: no pink on a result" % kind)
+			if not good and kind in [ResultChipModel.DAMAGE, ResultChipModel.STATUS]:
+				assert_eq(HudResultChips.chip_color(c), Palette.HARM, "%s: harm is HARM" % kind)
+
+
+func test_hand_cards_never_draw_their_body_under_12_px() -> void:
+	for scale in SCALES:
+		var scene := await _combat(scale)
+		for c in scene._hand_box.get_children():
+			if c is ZineCard:
+				assert_gte(int((c as ZineCard).sticker_body_fit()["fs"]), 12, "x%.1f: %s's body" % [scale, (c as ZineCard).card_title])
+		await _close(scene)
+
+
+func test_the_tutorial_says_how_to_go_on() -> void:
+	var t := TutorialOverlay.new(Vector2(300, 260))
+	add_child_autofree(t)
+	await _frames()
+	var text: String = t.note.label.get_parsed_text()
+	assert_true(text.contains(tr("Press NEXT to go on.")) or text.contains(tr("More on the next page: press NEXT.")) or text.contains(tr("Do it in the fight to go on (or press NEXT).")), "a reason line: %s" % text)
+
+
+# --- Hooks the other areas use (coordinator, 2026-10-05) ------------------------------------
+
+func test_ram_pip_spot_is_the_drawn_pip() -> void:
+	var scene := await _combat()
+	var bar: RamBar = scene.ram_note
+	var pips := bar.pip_rects()
+	assert_gt(pips.size(), 0, "pips drawn")
+	for k in pips.size():
+		assert_eq(bar.pip_spot(k), bar.global_position + pips[k].get_center(), "pip %d" % k)
+	assert_eq(CombatBeatFx.ram_pip(bar, 0), bar.pip_spot(0), "2C's FX fly to the panel's own pips")
+	assert_gt(bar.pip_spot(pips.size()).x, bar.pip_spot(pips.size() - 1).x, "past the last pip, one step on")
+	await _close(scene)
+
+
+func test_a_trigger_rides_the_next_beat_and_never_changes_the_replay_timing() -> void:
+	var scene := await _combat(1.0, &"collections_agent", 5)
+	var eng: CombatEngine = scene.engine
+	var before: CombatState = eng.state().duplicate_state()
+	var res: CombatResult = eng.preview_end_turn()
+	var plain: Array[Dictionary] = res.events.duplicate(true)
+	# The same resolve with a Daemon trigger before its second event and one at its end.
+	var with: Array[Dictionary] = plain.duplicate(true)
+	with.insert(1, {"type": "trigger", "source_id": &"zero_day", "trigger": 0, "text": ""})
+	with.append({"type": "trigger", "source_id": &"zero_day", "trigger": 0, "text": ""})
+	var script: Script = load("res://scripts/ui/combat_scene.gd")
+	var b0 := ResolveBeats.build(before, plain, eng.resolver.lookup)
+	var b1 := ResolveBeats.build(before, with, eng.resolver.lookup)
+	assert_eq(b1.size(), b0.size(), "a trigger adds no beat")
+	var s0: Dictionary = script.sequence_schedule(b0)
+	var s1: Dictionary = script.sequence_schedule(b1)
+	assert_eq(Array(s1["times"]), Array(s0["times"]), "the replay timing is unchanged")
+	assert_eq(float(s1["total"]), float(s0["total"]), "and so is its length")
+	var marks := ResolveBeats.trigger_marks(with, b1, s1["times"], float(s1["result_at"]))
+	var n := 0
+	for e in with:
+		if String(e.get("type", "")) == "trigger":
+			n += 1
+	assert_eq(marks.size(), n, "every trigger is marked (the two added and any the resolve has)")
+	if not b1.is_empty():
+		var first := 0
+		for k in b1.size():
+			if int(b1[k]["event_index"]) < int(b1[first]["event_index"]):
+				first = k
+		assert_eq(float(marks[0]["at"]), float((s1["times"] as PackedFloat32Array)[first]), "the first rides the beat after it")
+	assert_eq(float(marks[marks.size() - 1]["at"]), float(s1["result_at"]), "the last, with nothing after it, at the result")
+	await _close(scene)
+
+
+func test_a_hovered_card_grows_and_its_neighbours_slide_aside() -> void:
+	var scene := await _combat()
+	var cards: Array = scene._hand_box.get_children().filter(func(c: Node) -> bool: return c is ZineCard)
+	assert_gt(cards.size(), 2, "a hand to hover")
+	scene._spread_hand(1)
+	assert_lt((cards[0] as ZineCard).spread, 0.0, "the left neighbour slides left")
+	assert_gt((cards[2] as ZineCard).spread, 0.0, "the right one slides right")
+	assert_eq((cards[1] as ZineCard).spread, 0.0, "the hovered card keeps its slot")
+	(cards[1] as ZineCard).grow_hover(true)
+	assert_eq((cards[1] as ZineCard).hover_scale, ZineCard.HOVER_SCALE, "it grows to %s (end state headless)" % ZineCard.HOVER_SCALE)
+	scene._spread_hand(-1)
+	for c in cards:
+		assert_eq((c as ZineCard).spread, 0.0, "all back in place")
+	await _close(scene)
