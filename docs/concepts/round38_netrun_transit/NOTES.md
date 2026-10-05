@@ -63,3 +63,20 @@ This is the netrun transit view rebuilt on the round 39 unified city: the same c
 6. `python transit38.py all`
 
 All randomness is seeded.
+
+## v3: cable runs (`transit_v3.png`, `transit_step_v3.gif` 2.4 MB)
+
+v2 is kept. `transit_step.gif` was re-rendered from the same seeded inputs after an accidental overwrite, so it is the same animation.
+
+- **Network, not hiking.** Edges are routed like cables or PCB traces (`runmap38.astar_oct`, used when `RUN_V3=1`):
+  - **Straight runs, 45° or 90° turns only.** A* over (cell, heading); a 45° turn costs 5, a 90° turn costs 10, and sharper turns are not allowed.
+  - **Through the blocks.** The routes still go between buildings: walls stay blocked, streets cost ×6 (crossed, not ridden) and the kerb band costs ×3.
+  - **No meander.** The noise is lowered and the sideways waypoint is dropped.
+  - **Corners only.** Collinear cells are merged, so each edge is a handful of segments.
+- **Solid = taken.** The walked path, and the walked part of the edge being run, is a SOLID lime line (a bit thicker). Available (orange) and not-yet (white) paths stay dashed.
+- **Crossings.**
+  - **Avoided:** a placed cable makes its own cells cost +18 and its surroundings +2.5, so later cables keep clear.
+  - **Bridged:** 2 crossings remain, and both get a **hop**: a dark gap cut into the lower cable and a half-circle bridge in the upper cable's state colour (`transit38.hops`).
+  - Crossings within 0.7 lot of a node don't count (those are branches meeting at the node).
+- **Lighter city.** The post image gets gamma 0.78 ×1.05 before the UI, so the buildings and streets read clearly and the network still dominates.
+- **Build:** `RUN_V3=1 NET36=net_scope.json python runmap38.py`, then `python run38.py`, then `python transit38.py all`. This writes `run38v3.json`.

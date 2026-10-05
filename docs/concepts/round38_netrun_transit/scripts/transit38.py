@@ -61,6 +61,38 @@ def _runpath1(self, pts_lots, col, k=1.0, period=2.0, on=1.15, width=1.0):
     return None
 
 
+
+V3 = os.environ.get("RUN_V3") == "1"
+SOLID = 99.0                                            # dash 'on' >= period: a solid line (the path already taken)
+HOPCOL = {"walked": S.LIME, "option": S.MER, "white": S.WHITE, "past": (110, 106, 120), "moving": S.MER}
+
+
+def hops(cv, cam, run, E):
+    """Where two cables cross, the later one HOPS: a dark gap cut into the lower cable and a small arc bridge."""
+    d = ImageDraw.Draw(cv)
+    for c in run.get("cross", []):
+        eu, eo = run["edges"][c["under"]], run["edges"][c["over"]]
+        su, so = E[(eu["a"], eu["b"])], E[(eo["a"], eo["b"])]
+        if su == "hidden" or so == "hidden":
+            continue
+        x, y = S.prj(cam, c["at"], 0)
+        p2 = S.prj(cam, (c["at"][0] + c["dir"][0] * 0.05, c["at"][1] + c["dir"][1] * 0.05), 0)
+        ang = math.atan2(p2[1] - y, p2[0] - x)
+        r = 16
+        d.ellipse([x - 10, y - 10, x + 10, y + 10], fill=(14, 12, 22, 255))       # the gap in the lower cable
+        col = HOPCOL.get(so, S.WHITE)
+        # the bridge: a half circle across the gap, on the 'up' side of the over-cable's direction
+        pts = []
+        for k in range(13):
+            t = math.pi * k / 12
+            ox, oy = -r * math.cos(t), -r * 1.1 * math.sin(t)
+            pts.append((x + ox * math.cos(ang) - oy * math.sin(ang), y + ox * math.sin(ang) + oy * math.cos(ang)))
+        d.line(pts, fill=(10, 8, 16, 255), width=8)
+        d.line(pts, fill=col + (255,), width=4)
+        for sgn in (-1, 1):
+            d.line([(x + sgn * r * math.cos(ang), y + sgn * r * math.sin(ang)), (x + sgn * (r + 10) * math.cos(ang), y + sgn * (r + 10) * math.sin(ang))],
+                   fill=col + (255,), width=4)
+    return cv
 P.Net36.runpath1 = _runpath1
 GREYC = P.C(0.40, 0.40, 0.46)
 STK = {"router": "router", "elite": "elite", "terminal": "terminal", "modem": "modem", "rack": "rack"}
@@ -105,19 +137,23 @@ def render(tag, walked, cur, show_all=False, move=None, t=0.2, legend_hot=False,
             if s == "moving":
                 n = len(e["pts"])
                 cutn = max(2, int(n * move[1]))
-                net.runpath1(e["pts"][:cutn], P.LIME, k=1.5)
+                net.runpath1(e["pts"][:cutn], P.LIME, k=1.5, on=SOLID)
                 net.runpath1(e["pts"][cutn - 1:], P.ORANGE, k=1.6)
                 continue
             kk = {"walked": 1.4, "option": 1.7, "white": 0.75 * fade, "past": 0.6 * fade}[s]
-            net.runpath1(e["pts"], COL[s], k=kk, width=1.0 if s in ("walked", "option") else 0.8)
+            net.runpath1(e["pts"], COL[s], k=kk, width=(1.35 if s == "walked" else 1.0) if s in ("walked", "option") else 0.8, on=SOLID if s == "walked" else 1.15)
         for n in P.NET["nodes"]:
             if n["state"] in ("owned", "core"):
                 net.node(n)
     pools = [(L.W(nodes["L5_2"]["lot"])[0], L.W(nodes["L5_2"]["lot"])[1], 16.0, 0.32)]   # calm Heat B: one slow, soft sweep
     img, cam = P.finish(tag, decorate=deco, pools=pools, t=t, sky=False)   # no sky-lane cars over the run map
+    if V3:                                                # v3: a lighter city (designer: too dark)
+        img = np.clip(img, 0, 1) ** 0.78 * 1.05
     cv = S.to_rgba(img)
     if cv.size != (1920, 1080):
         cv = cv.resize((1920, 1080), Image.LANCZOS)
+    if V3:
+        cv = hops(cv, cam, run, E)
     # stickers + option A rings
     for n in sorted(run["nodes"], key=lambda n: S.prj(cam, n["lot"])[1]):
         s = st[n["id"]]
@@ -193,8 +229,9 @@ WALKED = ["L0_0", "L1_1", "L2_1"]
 
 def png():
     img = render("t_run38", WALKED, "L2_1", show_all=True, legend_hot=True, cursor=(1300, 1032))
-    img.convert("RGB").save(os.path.join(OUT, "transit_v2.png"), optimize=True)
-    print("saved transit_v2.png")
+    name = "transit_v3.png" if V3 else "transit_v2.png"
+    img.convert("RGB").save(os.path.join(OUT, name), optimize=True)
+    print("saved", name)
 
 
 def gif():
@@ -213,7 +250,7 @@ def gif():
     add(render("t_run38g", w2, tgt, t=0.6), 1600)
     add(render("t_run38g", w2, tgt, show_all=True, legend_hot=True, cursor=(1300, 1032), t=0.7, fade=0.5), 160)
     add(render("t_run38g", w2, tgt, show_all=True, legend_hot=True, cursor=(1300, 1032), t=0.8), 2000)
-    out = os.path.join(OUT, "transit_step.gif")
+    out = os.path.join(OUT, "transit_step_v3.gif" if V3 else "transit_step.gif")
     size = U32.save_gif(frames, durs, out, size=(960, 540))
     if size > 3_000_000:
         size = U32.save_gif(frames, durs, out, size=(800, 450))

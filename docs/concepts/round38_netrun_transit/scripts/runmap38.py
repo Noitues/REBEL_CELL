@@ -133,6 +133,86 @@ def free_spot(free, tgt, used, g, rmax=70, ok=None):
     return best
 
 
+V3 = os.environ.get("RUN_V3") == "1"
+RUNFILE = "run38v3.json" if V3 else "run38.json"
+DIRS = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
+
+
+def astar_oct(cost, a, b, turn45=5.0, turn90=10.0):
+    """v3 cable routing: straight runs with 45 / 90 degree turns only (PCB-trace style). State = (cell, heading);
+    turning costs extra, 135 / 180 turns are not allowed, so the result is long straight segments."""
+    h, w = cost.shape
+    INF = 1e18
+    start = (a[0], a[1], -1)
+    dist = {start: 0.0}
+    prev = {start: None}
+    pq = [(0.0, start)]
+    end = None
+    while pq:
+        f, s = heapq.heappop(pq)
+        if (s[0], s[1]) == b:
+            end = s
+            break
+        ds = dist[s]
+        if f - math.hypot(b[0] - s[0], b[1] - s[1]) > ds + 1e-9:
+            continue
+        for di, (dx, dy) in enumerate(DIRS):
+            if s[2] >= 0:
+                t = min((di - s[2]) % 8, (s[2] - di) % 8)
+                if t > 2:
+                    continue
+                tp = (0.0, turn45, turn90)[t]
+            else:
+                tp = 0.0
+            nx, ny = s[0] + dx, s[1] + dy
+            if not (0 <= nx < w and 0 <= ny < h):
+                continue
+            cc = cost[ny, nx]
+            if cc >= 1e8:
+                continue
+            if dx and dy and (cost[s[1], nx] >= 1e8 or cost[ny, s[0]] >= 1e8):
+                continue                                  # no corner cutting through a wall
+            n = (nx, ny, di)
+            nd = ds + (1.414 if dx and dy else 1.0) * cc + tp
+            if nd < dist.get(n, INF):
+                dist[n] = nd
+                prev[n] = s
+                heapq.heappush(pq, (nd + math.hypot(b[0] - nx, b[1] - ny), n))
+    out, s = [], end
+    while s is not None:
+        out.append((s[0], s[1]))
+        s = prev[s]
+    return out[::-1]
+
+
+def corners(path):
+    """cells -> the polyline of its corners (collinear runs merged)."""
+    out = [path[0]]
+    for i in range(1, len(path) - 1):
+        a, b, c = out[-1], path[i], path[i + 1]
+        d1 = (b[0] - path[i - 1][0], b[1] - path[i - 1][1])
+        d2 = (c[0] - b[0], c[1] - b[1])
+        if d1 != d2:
+            out.append(b)
+    out.append(path[-1])
+    return out
+
+
+def seg_x(p, q, r, s):
+    """intersection point of segments pq and rs (proper crossing only), else None."""
+    d = (q[0] - p[0]) * (s[1] - r[1]) - (q[1] - p[1]) * (s[0] - r[0])
+    if abs(d) < 1e-9:
+        return None
+    t = ((r[0] - p[0]) * (s[1] - r[1]) - (r[1] - p[1]) * (s[0] - r[0])) / d
+    u = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d
+    if 0.02 < t < 0.98 and 0.02 < u < 0.98:
+        return (p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1]))
+    return None
+
+
+def tower_scene_unused():
+    return None
+
 def build():
     net = L.load_net()
     nb = {n["id"]: n for n in net["nodes"]}
@@ -177,7 +257,7 @@ def build():
     byid = {n["id"]: n for n in nodes}
     # cost field: walls, streets (cross, don't ride), meander noise
     nz = noise(h, w, 6, 38) * 0.6 + noise(h, w, 3, 39) * 0.4
-    base = 1.0 + 3.0 * nz
+    base = 1.0 + (0.4 if V3 else 3.0) * nz
     cost = np.where(street, 6.0 + 2.0 * nz, base).astype(np.float64)
     cost = np.where(near_st & ~street, cost * 3.0, cost)        # do not hug the kerb: go into the block
     cost[bld] = 1e9
@@ -197,6 +277,14 @@ def build():
             wp = free_spot(free, L0(wp_t), [], g) or (int(mx), int(my))
             for q in (ga, gb):
                 cost[max(0, q[1] - 3):q[1] + 4, max(0, q[0] - 3):q[0] + 4] = np.minimum(cost[max(0, q[1] - 3):q[1] + 4, max(0, q[0] - 3):q[0] + 4], 2.0)
+            if V3:                                       # cable run: no waypoint, octilinear A* with turn costs
+                path = astar_oct(cost, ga, gb)
+                pts = [L0((c[0] + 0.5, c[1] + 0.5)) for c in corners(path)]
+                edges.append(dict(a=A["id"], b=B["id"], pts=[list(p) for p in pts]))
+                for c in path[5:-5]:                     # a used cable is expensive: later runs keep clear (no overlap)
+                    cost[max(0, c[1] - 3):c[1] + 4, max(0, c[0] - 3):c[0] + 4] += 2.5
+                    cost[c[1], c[0]] += 18.0
+                continue
             p1 = astar(cost, ga, (int(wp[0]), int(wp[1])))
             p2 = astar(cost, (int(wp[0]), int(wp[1])), gb)
             path = p1 + p2[1:]
@@ -212,7 +300,18 @@ def build():
                 cost[max(0, c[1] - 2):c[1] + 3, max(0, c[0] - 2):c[0] + 3] += 2.5
     for n in nodes:
         n.pop("g", None)
-    json.dump(dict(nodes=nodes, edges=edges, link=list(LINK), walked=WALKED), open(os.path.join(L.DST, "run38.json"), "w"), indent=1)
+    cross = []
+    if V3:                                           # the remaining crossings: the later edge hops over the earlier one
+        for i, e1 in enumerate(edges):
+            for j in range(i + 1, len(edges)):
+                e2 = edges[j]
+                for p, q in zip(e1["pts"], e1["pts"][1:]):
+                    for r, t in zip(e2["pts"], e2["pts"][1:]):
+                        x = seg_x(p, q, r, t)
+                        if x and all(math.hypot(x[0] - n["lot"][0], x[1] - n["lot"][1]) > 0.7 for n in nodes):
+                            cross.append(dict(under=i, over=j, at=list(x), dir=[t[0] - r[0], t[1] - r[1]]))
+    json.dump(dict(nodes=nodes, edges=edges, link=list(LINK), walked=WALKED, cross=cross), open(os.path.join(L.DST, RUNFILE), "w"), indent=1)
+    print("crossings", len(cross))
     # the close transit camera: fitted to every run node, clamped to 100-118 BU (round 39 was 190)
     import scope39
     tc = dict(t=[19.5, 8.0], ortho=130.0)    # framed so the run clears the HUD (grid search over the projected nodes)
@@ -222,7 +321,7 @@ def build():
 
 
 def load():
-    return json.load(open(os.path.join(L.DST, "run38.json")))
+    return json.load(open(os.path.join(L.DST, RUNFILE)))
 
 
 def states(run, walked, cur, show_all=False):
