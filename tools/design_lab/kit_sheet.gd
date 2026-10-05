@@ -158,7 +158,7 @@ func _build_kit() -> void:
 	_head(0, "C  STICKER WORDS", "VERBS + HEADLINES", "bold die-cut lettering: black keyline, chunky\nextrude, thick crisp white border, gloss 0.22 at rest,\none slow sweep on one sticker at a time. Holo foil on\nthe primary verb, slapped over the system word.")
 	_head(1, "C  STICKER OBJECTS", "THINGS", "crew ID (holo), Heat poster, price dot, kraft note\ncard. White or kraft die-cut, gloss, soft shadow,\ncorner curl. Holo only on the key items.")
 	_head(2, "A  GREASE PENCIL ON GLASS", "PLANS", "yellow = plan and route, red = threat and target.\nSolid = will happen, dashed = what-if. Waxy lit\nstrokes, dropouts, 4 px cast shadow; writes on and\nwipes off by trimming points (never alpha).")
-	_head(3, "D  LIGHT SPILL", "BASE LAYER", "glowing base elements (neon, MODEM sign, spinner\nrims) light the facets around them: the spill\nmultiplies what is under it plus a little haze.")
+	_head(3, "D  LIGHT SPILL", "BASE LAYER", "glowing base elements (neon, MAINFRAME sign, spinner\nrims) light the facets around them: the spill\nmultiplies what is under it plus a little haze.")
 	_build_sticker_words()
 	_build_sticker_objects()
 	_build_pencil_column()
@@ -347,12 +347,12 @@ func _facets(c: Control, r: Rect2, seed: int, hue: Color, cell: float = 34.0) ->
 
 func _neon(c: Control, at: Vector2, word: String) -> void:
 	var font := Palette.display()
-	var px := 64
+	var px := 40
 	c.draw_rect(Rect2(at - Vector2(52, 40), Vector2(104, 392)), Palette.CELL_PINK.darkened(0.2), false, 6.0)
 	c.draw_rect(Rect2(at - Vector2(52, 40), Vector2(104, 392)), Palette.CELL_PINK.lightened(0.6), false, 2.0)
 	for i in word.length():
 		var w := font.get_string_size(word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		var p := at + Vector2(-w * 0.5, 40 + i * 76)
+		var p := at + Vector2(-w * 0.5, 36 + i * 41)
 		# a hollow tube: the glow, the pink tube and its hot core
 		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 12, Palette.CELL_PINK.darkened(0.4))
 		c.draw_string_outline(font, p, word[i], HORIZONTAL_ALIGNMENT_LEFT, -1, px, 6, Palette.CELL_PINK)
@@ -368,7 +368,7 @@ func _build_spill_column() -> void:
 		var r := Rect2(Vector2.ZERO, box.size)
 		box.draw.connect(func() -> void:
 			_facets(box, r, 21, Palette.NEON_VIOLET)
-			_neon(box, Vector2(81, 40), "MODEM"))
+			_neon(box, Vector2(81, 36), "MAINFRAME"))
 		stage.add_child(box)
 		if k == 1:
 			var spill := LightSpill.new()

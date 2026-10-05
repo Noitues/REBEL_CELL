@@ -80,7 +80,7 @@ func add_field(label: String, value: String) -> Label:
 	l.add_theme_font_override(&"font", courier())
 	l.add_theme_font_size_override(&"font_size", UiTheme.font_px(UiTheme.BODY))
 	l.add_theme_color_override(&"font_color", Palette.PAPER_TYPE_INK)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD
 	content.add_child(l)
 	return l
 

@@ -133,7 +133,8 @@ gloss_k). No screen is restyled. Files: `shaders/kit/*` (10 shaders + the bits a
   white die-cut, keyline, extrude, gloss, curl, shadow; holo SEND IT and crew card, kraft note);
   the pencil column reads as wax on glass (yellow plan circle and dashed route with a waypoint, red
   target circle, printed brackets and range ring, HIT IT + arrow); spill lights the facets round the
-  MODEM sign. Remaining gaps: the reference's letters carry a bevel highlight (not drawn), its pencil
+  neon sign (the reference's sign spelled with the shop's old name; the sheet's says MAINFRAME).
+  Remaining gaps: the reference's letters carry a bevel highlight (not drawn), its pencil
   words are hand-lettered strokes (ours: the marker face with wax grain), its neon sign is the
   shop's own art. `--page=lifecycle` vs `05_lifecycle.jpg`: APPEAR (slap, the circle writing on),
   IDLE (flutter, holo drift, sweep) and EXIT (peel with the backing and crease, the pencil wiped)
