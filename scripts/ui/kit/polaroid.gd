@@ -12,6 +12,14 @@ var glitch: bool = false
 var tilt: float = -3.0
 ## Who is in the picture (PortraitArt subject); empty = an operative keyed by the label.
 var subject: Dictionary = {}
+## ART-9 4B: killed in action (the campaign audit): the print dimmed and crossed out.
+var kia: bool = false
+## KIA: the dim over the print (alpha), the X's inset and width (shares of the picture's
+## side) and the grease pencil's opacity (ART_BIBLE §1.2: 0.96).
+const KIA_GREY := 0.45
+const KIA_INSET := 0.08
+const KIA_WIDTH := 0.05
+const PENCIL_ALPHA := 0.96
 
 
 func _init(p_caption: String = "", p_label: String = "[PORTRAIT]", p_tilt: float = -3.0) -> void:
@@ -37,6 +45,15 @@ func _draw() -> void:
 		draw_texture_rect(portrait, image, false)
 	else:
 		PortraitArt.draw(self, image, _subject())
+	if kia:
+		# ART-9 4B (round 38 contexts, campaign audit): KIA, the print greyed and crossed out
+		# in red pencil.
+		draw_rect(image, Color(Palette.INK, KIA_GREY))
+		var m := image.size.x * KIA_INSET
+		var w := maxf(2.0, image.size.x * KIA_WIDTH)
+		var red := Color(PortraitFeed.pencil_red(), PENCIL_ALPHA)
+		draw_line(image.position + Vector2(m, m), image.end - Vector2(m, m), red, w, true)
+		draw_line(Vector2(image.end.x - m, image.position.y + m), Vector2(image.position.x + m, image.end.y - m), red, w, true)
 	if glitch:
 		for i in 4:
 			draw_rect(Rect2(image.position.x, image.position.y + i * image.size.y / 4.0 + 3, image.size.x, 3), PaperInk.opaque(Color(Palette.CELL_PINK, GLITCH_ALPHA)))

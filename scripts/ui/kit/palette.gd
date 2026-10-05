@@ -215,8 +215,35 @@ const PAIRED_WITH := {
 ## ART_BIBLE v2 §2.9 grease pencil face: Permanent Marker, rendered as wax, for plans and
 ## threats only (never UI chrome, body text or numbers).
 const FONT_PENCIL := "res://assets/fonts/PermanentMarker-Regular.ttf"
+
+# --- ART-1 1B material kit (ART_BIBLE v2 §1.2; round 3 combined_v2 kit palette; the pencil
+# inks and the die-cut white are 1A's PENCIL_PLAN / PENCIL_THREAT / PENCIL_SHADOW / STICKER_DIE_CUT)
+## Vinyl: the lower stop of the white die-cut's gradient (STICKER_DIE_CUT on top) and the
+## adhesive back a peel shows.
+const VINYL_WHITE_LO := Color("#EFEDE7")
+const VINYL_BACKING := Color("#E0DDD6")
+## Vinyl: the printed keyline ink and the darker extrude under it.
+const VINYL_INK := Color("#141118")
+const VINYL_EXTRUDE := Color("#09080C")
+## Kraft note-card stock and its fibres.
+const KRAFT := Color("#B68E5C")
+const KRAFT_FIBRE := Color("#5F4224")
+## Sticker word fills (kit gradients, top to bottom): the Cell's verbs, threat words, ours.
+const STICKER_FILL_PINK: Array[Color] = [Color("#FF60AC"), Color("#DE1270")]
+const STICKER_FILL_RED: Array[Color] = [Color("#FF5850"), Color("#CC1416")]
+const STICKER_FILL_YELLOW: Array[Color] = [STICKER_SAFE, STICKER_SAFE_LOW]
+## CRT terminal glass: the navy top and bottom of the panel's glass.
+const CRT_GLASS_TOP := Color("#0B1630")
+const CRT_GLASS_BOTTOM := Color("#050A1A")
+## Corp paper: the letterhead rule and the typewriter ink.
+const PAPER_TYPE_INK := Color("#1E1A16")
+## The near-opaque scrim laid behind a decrypted holo panel (§1.2: 0.88).
+const HOLO_SCRIM := Color(0.00784314, 0.0117647, 0.0392157, 0.88)
+## Toon ink lines (3D city and props).
+const TOON_INK := Color("#0C0A16")
+
 ## §2.9 sticker / display face: Anton (stickers, titles, stamps, bare live numbers).
-const FONT_DISPLAY := "res://assets/fonts/Anton-Regular.ttf"
+const FONT_DISPLAY :="res://assets/fonts/Anton-Regular.ttf"
 ## §2.9 terminal face: Share Tech Mono (the Cell's systems).
 const FONT_MONO := "res://assets/fonts/ShareTechMono-Regular.ttf"
 ## ART_BIBLE §2.9 body face: IBM Plex Sans Condensed (OFL) for text blocks over 3 lines and
