@@ -230,6 +230,21 @@ func _init() -> void:
 	tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	MotionSkip.register_passive(self)  # ANIM-R6 D7: a spin ends with any press that ends a motion
 	set_process(false)
+	WheelAttachments.attach(self)  # ART-2 2B: satellites, firmware sockets, card-play preview
+
+
+## ART-2 2B seam: the WheelAttachments docked on this wheel; while set, the view leaves its own
+## satellite tokens, firmware marks and ghost arc to it and asks it where a satellite stands.
+var attachments: WheelAttachments = null
+
+
+## ART-2 2B seam: the slices' outer edge and the slice band's width (px).
+func rim_radius() -> float:
+	return _radius()
+
+
+func band_width() -> float:
+	return _band()
 
 
 static func _ts() -> float:
@@ -1556,6 +1571,8 @@ func _satellite(id: StringName) -> CombatantState:
 
 
 func _satellite_pos(sat: CombatantState) -> Vector2:
+	if attachments != null:
+		return attachments.satellite_global_pos(sat)  # ART-2 2B: docked by the attachments
 	var tps := combatant.wheel.ticks_per_slice()
 	var a := _ang(sat.dock_slot * tps - shown_rotation())
 	var p := global_center() + Vector2(cos(a), sin(a)) * (_radius() + satellite_out(a))
@@ -1842,7 +1859,7 @@ func _draw_view() -> void:
 			_draw_dashed_arc(sp, 10, 0, TAU, _col(Palette.CELL_ACID), 1.5)
 			var g: int = status_ghosts[i]
 			draw_string(Palette.mono(), sp + Vector2(-7, 5), Palette.STATUS_GLYPHS.get(g, "×") if g != RC.Status.NONE else "×", HORIZONTAL_ALIGNMENT_CENTER, 14, 11, _col(Palette.CELL_ACID))
-		if wheel.slot_firmware_ids[i] != &"":
+		if wheel.slot_firmware_ids[i] != &"" and attachments == null:
 			var fp := center + dir * (inner + 5) - dir.orthogonal() * band * 0.3
 			draw_rect(Rect2(fp - Vector2(3, 3), Vector2(6, 6)), _col(Palette.NET_CYAN))
 	_draw_landed(center, radius, inner, tps, rot)
@@ -1901,7 +1918,7 @@ func _draw_view() -> void:
 			if k % 2 == 0:
 				draw_line(hub.lerp(ntip, float(k) / n), hub.lerp(ntip, float(k + 1) / n), mcol, 3.0)
 		draw_string(Palette.mono(), hub + Vector2(10, -4), tr("next"), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(HUB_FONT_SIZE), mcol)
-	if not replaying:
+	if not replaying and attachments == null:
 		_draw_ghost(center, radius, wheel)
 		_draw_inner_ghost(center, radius, wheel)
 	if flip_squash < 1.0:
@@ -1944,7 +1961,8 @@ func _draw_view() -> void:
 		_intent_tag(tag)
 		draw_set_transform(Vector2.ZERO)
 	_draw_arrows()  # after the tag: the arrows stay on top at big text (H22)
-	_draw_satellites()
+	if attachments == null:
+		_draw_satellites()
 
 
 ## The tag's content as text (title and chips): a change flips the tag, the same content

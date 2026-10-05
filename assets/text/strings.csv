@@ -28,6 +28,7 @@ Stationed on %s."
 %d HP,%d HP
 %d HP lost,%d HP lost
 %d HP lost: LETHAL,%d HP lost: LETHAL
+%d LANDS HERE,%d LANDS HERE
 %d LEFT,%d LEFT
 %d RAM lost,%d RAM lost
 %d NEEDLES,%d NEEDLES
@@ -500,6 +501,7 @@ DISPATCH,DISPATCH
 DOWN,DOWN
 DOWN: repair the node on the Grid.,DOWN: repair the node on the Grid.
 DRAW %d,DRAW %d
+DRONE ENDS HERE,DRONE ENDS HERE
 DTOR,DTOR
 Daemon,Daemon
 DaemonData.adrenal_loop.description,Each Perfect heals 2.
@@ -1480,6 +1482,7 @@ OPENS %d SITE,OPENS %d SITE
 OPENS %d SITES,OPENS %d SITES
 OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
+OURS NOW,OURS NOW
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
 OVERFLOW,OVERFLOW

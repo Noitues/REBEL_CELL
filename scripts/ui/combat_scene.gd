@@ -85,6 +85,8 @@ const HAND_HEIGHT_SHARE := 0.24
 @onready var engine: CombatEngine = $CombatEngine
 
 var background: WireframeBackground
+## ART-2 2B: the combat backdrop (the HQ or Site close-up) over the hidden net city.
+var arena_backdrop: CombatBackdrop
 var portrait: Polaroid
 var heat_poster: HeatPoster
 ## ART-2 2C: Heat on the backdrop (ART_BIBLE v2 §3.15 H1).
@@ -1621,6 +1623,10 @@ func _build_ui() -> void:
 	background = WireframeBackground.new()
 	background.city.dim = 0.55  # the arena: wheels first, city second
 	add_child(background)
+	arena_backdrop = CombatBackdrop.new()  # ART-2 2B: the target's close-up covers the net city (§3.14)
+	arena_backdrop.wheel_source = _views
+	add_child(arena_backdrop)
+	background.visible = false
 	# ART-2 2C §3.15: Heat on the backdrop (H1, the city reacts), behind every wheel.
 	heat_city = HeatCity.new()
 	heat_city.name = "HeatCity"
@@ -1740,6 +1746,8 @@ func _build_ui() -> void:
 	daemon_row = DaemonRow.new()
 	daemon_row.name = "DaemonRow"
 	_right.add_child(daemon_row)
+	DaemonRack.mount(_player_view, daemon_row)  # ART-2 2B: the CRT rack beside the wheel (§3.13)
+	daemon_row.visible = false
 	_notes_area = Control.new()
 	_notes_area.name = "NotesArea"
 	_notes_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -4540,6 +4548,7 @@ func _hold_victory(instant: bool) -> void:
 	if fx_layer == null:
 		return
 	var word := tr("VICTORY")
+	arena_backdrop.play_won(instant)  # ART-2 2B (D17): the target's lights turn Cell colours
 	fx_layer.hold_word(end_word_spot(true), word, Palette.CELL_ACID, end_word_size(true, word), instant)
 
 

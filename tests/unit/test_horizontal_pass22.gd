@@ -62,8 +62,9 @@ func test_satellites_dock_outside_the_values_and_are_aimed_before_the_arrows() -
 			host.combatant.wheel.rotation = rot
 			for sat in host.satellites:
 				var sp := host._satellite_pos(sat)
-				var dist := sp.distance_to(host.global_center())
-				assert_true(dist >= host._radius() + WheelView.VALUE_OUT + WheelView._fs(WheelView.VALUE_FONT_SIZE) * 0.5, "past the values at %.1f" % scale)
+				# ART-2 2B: drones dock in the band past the frame (ART_BIBLE v2 §3.21); the slice values
+				# move into the read block (2A), so "past the values" no longer applies.
+				assert_true(sp.distance_to(host.global_center()) > host.rim_radius(), "outside the rim at %.1f" % scale)
 				assert_eq(String(host.zone_at(sp).get("kind", "")), "satellite", "the drone wins its spot over any arrow (rot %d, %.1f)" % [rot, scale])
 
 
