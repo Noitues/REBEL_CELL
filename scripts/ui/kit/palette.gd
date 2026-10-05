@@ -179,7 +179,7 @@ const PAIRED_WITH := {
 	&"PROTECT": "the shield / block glyph",
 	&"WARN": "the warning word (LOW, NOTICED, RAID PENDING)",
 	&"FOCUS": "corner brackets and the > caret (a shape, not a fill)",
-	&"DISABLED": "a lock or the reason in words; grey vinyl for stickers",
+	(&"DISABLED"): "a lock or the reason in words; grey vinyl for stickers",
 	&"SELECTED": "the ON / selected word beside the fill",
 	&"PENCIL_PLAN": "solid vs dashed stroke and the written word",
 	&"PENCIL_THREAT": "solid vs dashed stroke and the written word",

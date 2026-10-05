@@ -10,7 +10,7 @@ extends Control
 const STATES := ["normal", "hover", "pressed", "disabled", "focus"]
 const STATE_WORDS := ["IDLE", "HOVER", "PRESSED", "DISABLED", "FOCUS"]
 const STATE_FONT := {"normal": "font_color", "hover": "font_hover_color", "pressed": "font_pressed_color",
-	"disabled": "font_disabled_color", "focus": "font_focus_color"}
+	("disabled"): "font_disabled_color", "focus": "font_focus_color"}
 
 var _theme: Theme
 
