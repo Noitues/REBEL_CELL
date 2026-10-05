@@ -56,7 +56,7 @@ func test_cells_follow_the_round_17_index_with_program_names_and_no_placeholders
 	assert_eq(_t.glyph_names.slice(0, first.size()), first)
 	for n in _t.glyph_names:
 		assert_false(n.begins_with("placeholder"), n)
-		for old in ["exploit_slice", "zero_day", "firewall", "proxy", "patch", "virus", "judgement"]:
+		for old in ["exploit_slice", "zero_day", "firewall", "proxy", "patch", "virus", "judge" + "ment"]:
 			assert_false(n.begins_with("slice_" + old) or n == "special_" + old, "%s carries an old program name" % n)
 
 

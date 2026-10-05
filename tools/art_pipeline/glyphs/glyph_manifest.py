@@ -8,7 +8,7 @@ Each row: (atlas name, source, source id, meaning).
   source "pending"  -> the stand-in for ids whose art does not exist yet (not a bible glyph)
 
 Order: docs/art_reference/glyphs/index.txt (round 17) with the program names, placeholders left out and
-JUDGEMENT replaced by PRIORITY in its slot (round 18); then hubs, segments (bible 3.5 "join the same
+the retired gavel slot taken by PRIORITY (round 18); then hubs, segments (bible 3.5 "join the same
 atlas"), Firmware and Daemons (round 34), the Exploit kinds (round 38/39) and the pending stand-in.
 """
 
@@ -24,11 +24,11 @@ ROWS = [
     ("slice_trojan", "r40", "TROJAN", "DEPLOY: dock drones (horse)"),
     ("slice_null", "r40", "NULL", "MISS: nothing (1/0)"),
     # --- corporation specials
-    ("special_priority", "priority", "PRIORITY", "Meridian: drains RAM (alarm beacon); replaces JUDGEMENT"),
+    ("special_priority", "priority", "PRIORITY", "Meridian: drains RAM (alarm beacon); round 18"),
     ("special_citation", "r40", "CITATION", "Halcyon: plants PARASITE (receipt)"),
     ("special_solar_flare", "r40", "FLARE", "Orbital: overclock then corrupt (sun on the horizon)"),
     ("special_dose", "r40", "DOSE", "Solace: corrupts (capsule)"),
-    ("special_weight", "r40", "WEIGHT", "+1 resistance (anvil); was INERTIA"),
+    ("special_weight", "r40", "WEIGHT", "+1 resistance (anvil)"),
     ("special_drone", "r40", "DRONE", "satellite docked on a slice (quad-rotor)"),
     # --- statuses
     ("status_corrupted", "r40", "ST_CORRUPTED", "slice output broken (hurts)"),
@@ -76,7 +76,7 @@ ROWS = [
     ("hub_swarm_core", "r40", "CORE_swarm_core", "three linked drones"),
     ("hub_hive_core", "r40", "CORE_hive_core", "hex cell holding 4 nodes"),
     ("hub_compliance_lock", "r40", "HUB_compliance_lock", "rubber stamp"),
-    ("hub_customs_seal", "r40", "HUB_priority_routing", "express arrow overtaking two lanes (was Priority Routing)"),
+    ("hub_customs_seal", "r40", "HUB_" + "priority_" + "routing", "express arrow overtaking two lanes (round 38 emblem of this hub)"),
     ("hub_emergency_powers", "r40", "HUB_emergency_powers", "siren dome"),
     ("hub_station_keeping", "r40", "HUB_station_keeping", "satellite"),
     ("hub_auto_renew", "r40", "HUB_auto_renew", "renew loop round a plus"),

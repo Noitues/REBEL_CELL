@@ -67,7 +67,7 @@
    "name": "special_priority",
    "source": "priority",
    "source_id": "PRIORITY",
-   "meaning": "Meridian: drains RAM (alarm beacon); replaces JUDGEMENT"
+   "meaning": "Meridian: drains RAM (alarm beacon); round 18"
   },
   {
    "name": "special_citation",
@@ -91,7 +91,7 @@
    "name": "special_weight",
    "source": "r40",
    "source_id": "WEIGHT",
-   "meaning": "+1 resistance (anvil); was INERTIA"
+   "meaning": "+1 resistance (anvil)"
   },
   {
    "name": "special_drone",
@@ -355,7 +355,7 @@
    "name": "hub_customs_seal",
    "source": "r40",
    "source_id": "HUB_priority_routing",
-   "meaning": "express arrow overtaking two lanes (was Priority Routing)"
+   "meaning": "express arrow overtaking two lanes (round 38 emblem of this hub)"
   },
   {
    "name": "hub_emergency_powers",
