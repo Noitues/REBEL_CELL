@@ -1311,3 +1311,24 @@ CORRUPTED, ENCRYPTED, OVERCLOCKED, PARASITE (the bug only), FROZEN, LOCKED, BURN
 **Forecast format**
 - [final damage] (shield-absorbed) [+shield gained] [−other] [status].
 - Example: −6 (4 shield) +4 shield −1 RAM.
+
+## Decisions from round 43 (2026-10-05)
+
+### Locked
+- **Combat HUD v4:**
+  - aligned nudges;
+  - boss keys A/D;
+  - the forecast format.
+- **HQ mechanics, good for now** (revisit in playtest):
+  - **Meridian:** the crane/train cycle.
+  - **Halcyon:** the switchback, shortcuts and eye.
+  - **Orbital:** the missile loop, cutting encounters to keep within the time rule.
+- **Solace:** the strands are semi-random node sets, not "all elites" or "all shops".
+- **DISPATCH:**
+  - the finale is **Sync Strike** (3 runners hit 3 locks together);
+  - **mirror combats** (fighting your own slices and firmware) appear throughout that chapter.
+
+### Site markers v4 (in progress)
+- **Seized:** matches the raid map's memo-pad icon, replacing the node circle like disabled does.
+- **Second key icon:** a bolder icon that reads from afar.
+- **Yours:** a rebel fist with the thumb tucked.
