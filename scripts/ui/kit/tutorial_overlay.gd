@@ -118,7 +118,9 @@ func _room(p_size: Vector2) -> Dictionary:
 	var line_h := font.get_height(fs) + note.label.get_theme_constant(&"line_separation")
 	var w := p_size.x - note.label.offset_left + note.label.offset_right - TEXT_SLACK
 	var h := p_size.y - BUTTON_ROW_HEIGHT - note.label.offset_top + note.label.offset_bottom
-	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1)}
+	# ART-2 2D (audit P2: a page was cut mid-sentence): room for the title and the line that
+	# says how to go on, and a line of margin (the label's own wrap can take one more line).
+	return {"font": font, "fs": fs, "line_h": line_h, "w": w, "lines": maxi(1, floori(h / line_h) - 1 - REASON_LINES)}
 
 
 ## ANIM-R6 A16: `text` wrapped at word breaks to `width` px in `font` at `fs`.
@@ -141,7 +143,7 @@ static func wrap_words(text: String, font: Font, fs: int, width: float) -> Packe
 ## (its title, its text, the Next / Skip row): the scene sizes the box to it.
 func needed_height(width: float) -> float:
 	var r := _room(Vector2(width, BUTTON_ROW_HEIGHT))
-	var n := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"])).size() + 1
+	var n := wrap_words(step_text(step), r["font"], int(r["fs"]), float(r["w"])).size() + 1 + REASON_LINES
 	return n * float(r["line_h"]) + note.label.offset_top - note.label.offset_bottom + BUTTON_ROW_HEIGHT + TEXT_SLACK
 
 
@@ -161,7 +163,9 @@ func pages() -> PackedStringArray:
 
 
 ## Room kept beside the text for the label's scroll bar and rounding (px).
-const TEXT_SLACK := 6.0
+const TEXT_SLACK := 18.0
+## ART-2 2D: lines kept under the page for what moves the tutorial on (and a margin).
+const REASON_LINES := 2
 ## The page of the current step on show.
 var page: int = 0
 var _pulse: Tween = null
@@ -177,6 +181,10 @@ func _show() -> void:
 		head += " (%d/%d)" % [page + 1, all.size()]
 	note.append(head)
 	note.append(all[page])
+	# ART-2 2D (audit P2: "Next" read as greyed with no reason): what moves it on, in words.
+	var more := page < all.size() - 1
+	var reason := tr("More on the next page: press NEXT.") if more else (tr("Press NEXT to go on.") if String(s["until"]) == "" else tr("Do it in the fight to go on (or press NEXT)."))
+	note.append("[color=#%s]%s[/color]" % [HudSkin.TERMINAL_HI.to_html(false), reason])
 	note.label.scroll_to_line.call_deferred(0)  # the step title first, at any text scale
 	var last := step == STEPS.size() - 1 and page == all.size() - 1
 	next_button.text = tr("Finish") if last else tr("Next")

@@ -108,7 +108,35 @@ default, since confirmed by the designer. Views only: no rule, number or content
   tape to measure (risky, kept for 2A's wheel pass to retire with the tag code).
 - **Files outside 2D's area** (smallest edits): wheel_view.gd (2A: the `hud_results` flag, the nudge line in
   `arrow_center` / `arrow_hint_rect` / `_radius`, no rim arrows, no tag, no NEXT plate); pause_menu.gd (the quit
-  confirm's words); test_art0_kit_words.gd (F's toast check).
+  confirm's words); test_art0_kit_words.gd (F's toast check); test_anim_r4_city.gd (the combat Heat poster is
+  hidden: Heat is 2C's HeatCity backdrop); combat_beat_fx.gd and combat_fx_layer.gd (2C, see below); zine_card.gd
+  (2C's card view, the hover growth below).
+- **1B switch**: SEND IT / the next step / the dialog stickers draw 1B's `VinylSticker` (child `art`, fill PINK /
+  YELLOW / WHITE from the button's paint; its REST / HOVER / PRESSED / DISABLED states follow the button's KitState;
+  its `slap` plays on the first show) over the system word; SendItSticker keeps the DripButton entries and API, the
+  terminal line and a lime focus halo. RESPIN / UNDO and the RAM panel sit on 1B's `CrtTerminalPanel` glass (a backing
+  drawn behind them; the RAM panel with the hex dump). The drawn fallbacks stay behind `SendItSticker.use_kit_art`
+  and `HudSkin.draw_terminal_panel`.
+- **Items handed to 2D by the coordinator (2026-10-05)**: (1) `RamBar.pip_spot(k)`, and 2C's `CombatBeatFx.ram_pip`
+  reads it (its copy of the old chip geometry is gone); (2) damage numbers draw with 1A's `UiTheme.live_number()`
+  settings (font, LIVE_NUMBER_RIM rim, the glow in the number's colour) at their animated size; (3) a hovered hand card
+  grows to `ZineCard.HOVER_SCALE` 1.36 about its foot (drawn only: slots and hit areas stay) on `card_hover`'s timing,
+  its neighbours slide aside (`slide_aside`), and the RAM pips a previewed play would spend are hatched; (4) Daemon /
+  firmware `trigger` events get no beat: `ResolveBeats.trigger_marks` times each on the first beat after it (or the
+  result), so the schedule is unchanged (tested), and the replay calls `CombatBeatFx.trigger` (2C's `trigger_fx`, lime
+  for firmware, violet for a Daemon) from the Daemon row (or the player's hub for firmware) to the player's wheel.
+  Tests in `test_art2_hud.gd`.
+- **Group 1 naive audit P2s (docs/handoff/m14_audit/group1_naive.md)**: pink is the action stickers' only: the
+  combat's hit / loss chip colours are the one harm red (`Palette.HARM`), gains GAIN, plain counters (RAM, Heat) neutral;
+  the D15 chips never draw pink. Hand cards fit their body text (`fit_whole`) and never draw it under the 12 px
+  caption floor (ZineCard `FIT_MIN_TEXT` 12, the line step follows the font); what does not fit ends in an ellipsis
+  and shows whole on the hover growth and the tooltip. The tutorial keeps a margin of lines so a page never cuts
+  mid-sentence, and says how it goes on in words ("Press NEXT to go on." / "More on the next page" / "Do it in the
+  fight to go on (or press NEXT)"). The tutorial fight is the standalone fight (no run): it has no run top bar to
+  show; its turn, nudges and RAM are on the TURN banner and the RAM panel (asked under Open questions if a run bar
+  is wanted there). Cards grow on the pointer only (a pad's focus lifts the card without the growth, so the
+  focused first card never covers the HP chips). The HUD's numbers stay Anton on boxes / panels, distinct from the
+  mono bits.
 ### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
 ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
 text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
