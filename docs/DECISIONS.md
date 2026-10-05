@@ -863,6 +863,14 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer ruling: rolling audits stopped; one audit at the end (risk accepted)
+The designer found the rolling audits premature: they are stopped (the Group 1 vertical auditor was
+stopped mid-run) and **audits run only once, after the art integration (ART-12)**, the designer accepting
+the risk. The reports already written stay in `docs/handoff/m14_audit/` (ART-0 horizontal, Group 1 naive,
+Group 1 horizontal) as input to that final audit; the ART-0 fix agent already running finishes; findings
+already passed to building agents stay with them; the other findings wait for the final audit.
+Supersedes item 1 of "rolling audits as groups merge"; its item 2 (Gantt in the hourly report) stands.
+
 ### 2026-10-05 — Designer ruling: rolling audits as groups merge; Gantt in the hourly report
 1. **Rolling audits** (partly reverses "no audit until the end"): when an M14 group is merged (ART-0, Group 1,
    Group 2, Group 3, Group 4), its vertical / horizontal / naive auditors review that group on main while the
