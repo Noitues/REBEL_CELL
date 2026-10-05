@@ -276,12 +276,32 @@ func test_raid_effects_have_tiers_and_none_covers_the_screen() -> void:
 
 # --- Shaders: the one reduce_effects control ---------------------------------------------------
 
+# ART-0 audit E3: every *.gdshader in the project except addons/ (res://shaders and its
+# subfolders, assets/, tools/), not only the top level of res://shaders.
 func _shaders() -> PackedStringArray:
 	var out := PackedStringArray()
-	for f in DirAccess.get_files_at(SHADER_DIR):
-		if f.ends_with(".gdshader"):
-			out.append(SHADER_DIR.path_join(f))
+	_collect_shaders("res://", out)
+	out.sort()
 	return out
+
+
+func _collect_shaders(dir: String, out: PackedStringArray) -> void:
+	for f in DirAccess.get_files_at(dir):
+		if f.ends_with(".gdshader"):
+			out.append(dir.path_join(f))
+	for d in DirAccess.get_directories_at(dir):
+		if d.begins_with(".") or (dir == "res://" and d == "addons"):
+			continue
+		_collect_shaders(dir.path_join(d), out)
+
+
+func test_the_shader_scan_reaches_every_folder() -> void:
+	var files := _shaders()
+	for path in [SHADER_DIR.path_join("kit/crt_terminal.gdshader"), "res://assets/glyphs/glyph_sdf.gdshader",
+			"res://tools/visual_qa/cvd_filter.gdshader", "res://tools/spike/city/shaders/city_post.gdshader"]:
+		assert_true(files.has(path), "the scan finds %s" % path)
+	for path in files:
+		assert_false(path.begins_with("res://addons/"), "addons are not ours: %s" % path)
 
 
 func test_the_include_declares_the_one_reduce_effects_control() -> void:
@@ -298,7 +318,10 @@ func test_every_shader_reads_reduce_effects_and_freezes_its_clock() -> void:
 	assert_gt(files.size(), 5, "the game's shaders")
 	for path in files:
 		var src := FileAccess.get_file_as_string(path)
-		assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s includes rc_common (declares the global)" % path)
+		# Game shaders always include rc_common; a harness or spike shader under tools/ must
+		# when it animates (checked below).
+		if not path.begins_with("res://tools/"):
+			assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s includes rc_common (declares the global)" % path)
 		assert_false(src.contains("uniform float reduce_effects"), "%s reads the global, never a uniform of its own" % path)
 		var uses_time := false
 		for line in src.split("\n"):
@@ -309,6 +332,7 @@ func test_every_shader_reads_reduce_effects_and_freezes_its_clock() -> void:
 					"%s: an animated line goes static under reduce effects (%s)" % [path, line.strip_edges()])
 		if uses_time:
 			assert_true(src.contains("rc_live()") or src.contains("rc_time("), "%s reads reduce_effects" % path)
+			assert_true(src.contains("#include \"%s\"" % INCLUDE), "%s animates, so it includes rc_common" % path)
 		var sh := load(path) as Shader
 		assert_not_null(sh, "%s loads" % path)
 	# The jack cover animates on a uniform the script drives (`roll`): it reads it too.

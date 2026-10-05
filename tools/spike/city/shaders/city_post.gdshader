@@ -7,6 +7,7 @@
 // Prototype of the shared ink pass (1B owns shaders/kit/; unified later).
 shader_type spatial;
 render_mode unshaded, cull_disabled, depth_draw_never, depth_test_disabled, fog_disabled;
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
 uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
@@ -93,7 +94,7 @@ vec3 glow_at(vec2 uv, float lod) {
 void fragment() {
 	vec2 uv = SCREEN_UV;
 	vec2 px = 1.0 / VIEWPORT_SIZE;
-	float t = TIME * time_scale;
+	float t = rc_time(TIME) * time_scale;
 	vec3 lin = textureLod(screen_tex, uv, 0.0).rgb;
 	vec3 vp = view_pos(uv, INV_PROJECTION_MATRIX);
 	vec4 here = nr(uv);
