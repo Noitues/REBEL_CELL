@@ -99,6 +99,87 @@ Godot 3D, `docs/handoff/art_1/city_spike_report.md`).
   (the red-lit base; the round 43 ideas play in the Tokyo canyon instead, see the open question).
 - No view changes; no mechanics; no change to how HQ runs play.
 
+### 2026-10-05 — Art direction — ART-2 2A wheel stack
+
+ART-2 2A (ART_BIBLE v2 §3.2–3.8, 3.10, 3.16, 3.19, 6.2): every wheel wears the D4 "Lens & rail"
+frame and the family C "Screens & Data" slices, ported from the round 41 recipes on
+`art-concepts-r43` (slicelib.render_slice, frames._d4 / blade / telemetry / banner, d4corp,
+ringlock, skins / scenes18). Decided by the implementer:
+
+- **One disc pass per wheel.** `WheelDisc` (a quad under the view, `shaders/wheel/wheel_disc.gdshader`)
+  draws the radial layers in the round 41 order (screens, ring extension, tier, state wash, bezel and
+  rail tint, threat ring, inner ring, hub CRT, the lifted slice and its cream outline, the glass
+  crescent); `WheelView._draw` keeps the upright and line work (read blocks, badges, rail text,
+  blades, HP arc, banner, lugs, hub words), and `WheelTelemetry` scrolls the ring as a node (no
+  redraw). §6.2's Polygon2D-per-slice layout is replaced by this single pass (one material per
+  wheel, no per-slice nodes); profile below.
+- **Screens are baked, not hand-written shaders.** `tools/art/bake_wheel_screens.py` runs the
+  concept recipes unchanged (fonts remapped to the shipped faces: Consolas → Share Tech Mono,
+  Bahnschrift → Anton / Plex) into 12-frame flipbooks per kit (`assets/wheel/screens/`, 10 rows:
+  the 9 slice types in `RC.SliceType` order + the corp special); corp kits add the upright corp
+  scene atlas (round 16). The loop is `wheel_screen_loop` (T0, 3 s; frame 0 under reduce effects).
+- **Glyphs** come from 1C's atlas through one seam (`WheelGlyphs`; cells decoded once into outlined
+  coverage textures so one `_draw` can stamp many). The five corp crests are not in the atlas yet:
+  interim PNGs from the round 15/18 recipes in `assets/wheel/glyphs_interim/` (`tools/art/bake_wheel_glyphs.py`).
+- **Kits** (`WheelKit`): theme = player or the enemy's corp; tier by rank (regular I, elite II,
+  boss III); tier colours from `Palette.corp_color` / `corp_secondary` (the player: RESIST_GOLD /
+  PAPER); material tables (bezel bases, segment colours) stay in the shader as recipe material, not
+  UI tokens. Boss phase 2 = hot threat ring, phase 3 = overdriven screens + bolted armour plates
+  (round 14). Bosses without their own hub glyph use the bible's enemy-hub emblem by boss.
+- **The rail reads `OVERFLOW 12 // PERFECT //`**: the recipe's kind word (ATK, CRIT ...) is a pre-rename word the names pass bans from player text, so it is dropped.
+- **Tier I screen gain is 1.0, not 60 %** (§3.7): the combat v4 mocks show tier I screens at full
+  gain and at 60 % the slices read black at combat size; a `screen_gain` of 1.6 stands in for the
+  recipe's bloom pass. Tiers are a game to-do; only rank tiers show.
+- **Geometry:** the view's radius is the slice rim (R_OUT 360 master); hub R_IN 130 (`BAND_SHARE`
+  now 0.639), the needles' room over the rim stays the old 0.34 share (`ABOVE_SHARE`, layout
+  unchanged); HP arc 6–26 master beyond the frame, the HP number 10 px lower (`HP_TEXT_GAP` 54).
+  Badges hide under r 60 px and their ×1.5 / ×0.5 tags under r 100 px (720p; §3.8's 150 at 1080p).
+  No status stacks exist in the game, so no ×N tab is drawn.
+- **Precision landings** (`play_precision`, called by combat_scene's landing beat for the player's
+  needles): PERFECT gold jaws (`precision_latch`), GOOD tick ring, WEAK sparks + stutter
+  (`precision_stutter`), the word holding then leaving as 0/1 bits (`precision_word`); the slice
+  flash / dim in the disc. The existing Perfect inversion, freeze and NULL static are kept.
+  Reduce effects: the rail's tier colour only.
+- **Hub states:** LOCKDOWN = cyan bit waterline + plate + turns while Hub Breach holds, draining on
+  `hub_lockdown_drain`; the player's defeat drains the core into falling bits (`hub_defeat_drain`)
+  before the stamp, which now says FLATLINED (round 40).
+- **Profile** (worst-case fixture in the real combat scene, `tools/design_lab/wheel_lab.tscn --case=worst`,
+  1920×1080 window, `profile_frames.gd`): mean 3.8 ms a frame for the whole screen, GPU 1.15 ms,
+  render CPU 0.79 ms (budget: wheels + FX ≤ 4 ms).
+- Seams for 2B (attachments): `art_scale()`, `frame_master()`, `window_radius()`, `slice_deg()`,
+  `active_slot()`, `badge_spot()`, `WheelFace.at/axis`, `WheelFace.R_*` zones; the firmware square
+  and satellite tokens are left as they were for 2B to replace.
+- **On 1B's kit:** the disc shader includes `rc_common` (its clocks stop under the `reduce_effects`
+  global as well as on the view's own gate); the landing word is a `VinylSticker` (yellow PERFECT,
+  white GOOD, yellow WEAK x0.5) that slaps and `dissolve`s into `BinaryBits`; the defeat's core bits
+  are a `BinaryBits` burst from the hub falling past its bottom edge. The slice screens stay their
+  own polar CRT in the disc pass rather than `CrtTerminalPanel` (a rectangle panel can't bend into
+  the wedge; the recipe's scanlines and vignette are the locked slice look); the LOCKDOWN plate stays
+  drawn at hub size for the same reason.
+- **Seams taken over from 2C:** `WheelView.hp_arc_spot(frac)` (the HP arc geometry, replaces 2C's
+  copy); `rgb_split` (the crit's RGB split on the disc only, master units; off under reduce effects)
+  and `pixelate` (the disc in cells, for the defeated pieces) on the view, pushed to the disc;
+  `wheel_texture()` (a one-off readback of `wheel_rect()`, null headless) for pieces that need the
+  wheel's pixels. The standing guards after their effect: DEFRAG bricks in three courses on the side
+  facing the foe (the defend rule), SANDBOX hex plates beyond them, the `>>` EVADE token on the rim,
+  each with its amount; they show whenever the state holds block / shield / evade (reduce effects:
+  they simply stand).
+- **Group 1 audit P2s.** (1) One glyph source for a slice: `SliceIcon.draw_icon` / `draw_on_slice`
+  (every caller: wheels, tags, cards, the FX layer, spinners, Mainframe tiles) now draws 1C's atlas
+  glyph through `WheelGlyphs` (`glyph_table.tres`); the drawn vector icons are gone, and the slice
+  text symbols (✦ ▲ ■ ...) are dropped from the odds chips (combat_scene) and the Codex titles.
+  2D and 2A share that one call (`SliceIcon.draw_icon`, or `WheelGlyphs.draw` with a table key;
+  `GlyphIcon.make` for a node). The status chips' text symbols (☠ ⚡ ⌗ ✺) are the tags' layout (2D).
+  (2) The boss HP arc's gold ticks are the D4 phase pips (§3.2, §3.16): each now carries its `P2` /
+  `P3` label (the recipe's), and hovering the arc says "Gold mark P2: phase 2 starts at 66 % HP";
+  the lime target reticle round the target wheel got its own tooltip.
+- **Files outside 2A:** `scripts/ui/combat_scene.gd` (2D: the `play_precision` call in the landing
+  beat; the odds chips without the text symbol), `scripts/ui/kit/slice_icon.gd`, `scripts/ui/kit/codex.gd`
+  (the glyph source), `scripts/ui/kit/materials/vinyl_sticker.gd` and `scripts/ui/fx/fx_draw.gd`
+  (1B / 2C: their inline tween shapes named, so `test_anim_r6_rules` passes), `tools/design_lab/motion_lab.gd`
+  (demos), `tools/design_lab/wheel_lab.*` and `tools/art/*` (new).
+- No test dropped. Captures: `docs/art_review/ART-2/2A/`.
+
 ### 2026-10-05 — Art direction — ART-2 2B attachments and arena
 ART-2 area 2B (`docs/handoff/art_2/ART_2_BATCH.md`; ART_BIBLE v2 §3.9, §3.11, §3.13, §3.14, §3.17,
 §3.21). Built on main behind seams while Group 1 (1A palette, 1B materials, 1C glyphs, 1D city) and
@@ -6679,6 +6760,10 @@ and annotated in the GDD where it changes a rule.
   for G12 — say if the canyon should replace the base. Meridian's train and the crane's moves, Solace's crossover
   walkways, Halcyon's eye sweep and Orbital's silo loop are left out until G12 says how they play.
 
+- **ART-2 2A: tier I screen gain, interim corp crests (2026-10-05):** the wheels show tier I
+  slices at full screen gain (the combat v4 mocks), not ART_BIBLE §3.7's 60 %; say if tier I should
+  dim once slice tiers exist. The corp crests are interim recipe renders until the glyph atlas
+  carries them.
 - **Combat backdrop day / night and the REBEL_CELL Site (2026-10-05, ART-2 2B):** the game has no
   clock, so the backdrop alternates by run (odd runs by the cool day). Default applied; say if day
   should follow something else (Heat, a city clock in ART-5). The REBEL_CELL regular Site (the

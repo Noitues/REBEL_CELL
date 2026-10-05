@@ -707,7 +707,7 @@ func _odds_chips(c: CombatantState, non_null_only: bool = false) -> Array[Dictio
 		var slice := engine.content(id) as SliceData
 		if slice == null or (non_null_only and slice.slice_type == RC.SliceType.NULL):
 			continue
-		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(Palette.slice_word(slice.slice_type, corp_of(c)))]
+		var key: String = tr(Palette.slice_word(slice.slice_type, corp_of(c)))  # ART-2 2A: the word only; the glyph is the atlas one (SliceIcon)
 		if not counts.has(key):
 			order.append(key)
 		counts[key] = int(counts.get(key, 0)) + 1
@@ -4207,6 +4207,8 @@ func _land(b: Dictionary, s: CombatState) -> void:
 	var is_null_slice := slice != null and slice.slice_type == RC.SliceType.NULL
 	var tier := int(b["tier"])
 	AudioDirector.play_precision(tier, is_null_slice)
+	if not is_null_slice:
+		v.play_precision(tier, slot, int(b["pointer_index"]))  # ART-2 2A: the landing's shape (ART_BIBLE 3.19)
 	if is_null_slice:
 		v.play_null_static(slot)
 		_bark("null", s)

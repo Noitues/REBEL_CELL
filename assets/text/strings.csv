@@ -176,6 +176,7 @@ BEST ICE,BEST ICE
 BLACK MARKET // SCHEMATICS %d,BLACK MARKET // SCHEMATICS %d
 BLOCK,BLOCK
 BLOCK %d,BLOCK %d
+BOSS,BOSS
 BREACH,BREACH
 BREACH PAYOUT,BREACH PAYOUT
 BREACHED,BREACHED
@@ -797,6 +798,7 @@ GUARD +%d BLOCK,GUARD +%d BLOCK
 GUARD TOOK %d,GUARD TOOK %d
 Go,Go
 "Go to HQ (City Grid, raids, roster)","Go to HQ (City Grid, raids, roster)"
+Gold mark P%d: phase %d starts at %d%% HP.,Gold mark P%d: phase %d starts at %d%% HP.
 Good for you: %s,Good for you: %s
 Guarded by %s (%d HP): it takes hits aimed at this slice.,Guarded by %s (%d HP): it takes hits aimed at this slice.
 HEAT,HEAT
@@ -973,6 +975,7 @@ LETHAL: this turn takes you to 0 HP.,LETHAL: this turn takes you to 0 HP.
 LINES HEARD,LINES HEARD
 LOADOUT // %s // DECK,LOADOUT // %s // DECK
 LOADOUT // %s // SPINNER,LOADOUT // %s // SPINNER
+LOCKDOWN,LOCKDOWN
 LOG,LOG
 LOOT,LOOT
 LOOT: pick a %s,LOOT: pick a %s
@@ -1393,6 +1396,7 @@ NEXT SITE >,NEXT SITE >
 NEXT SITE: select the next Site on the Grid: %s (the map follows).,NEXT SITE: select the next Site on the Grid: %s (the map follows).
 NO CHANGE,NO CHANGE
 NO DAMAGE,NO DAMAGE
+NO EFFECT,NO EFFECT
 NO GAIN,NO GAIN
 NO SIGNAL,NO SIGNAL
 NUDGE,NUDGE
@@ -2483,6 +2487,7 @@ Take,Take
 Take nothing from this payout.,Take nothing from this payout.
 Taken Raid Strength,Taken Raid Strength
 Target:,Target:
+Target: the lime brackets mark the wheel your attacks and aimed cards hit.,Target: the lime brackets mark the wheel your attacks and aimed cards hit.
 Terminal,Terminal
 Terminal: an event with choices,Terminal: an event with choices
 Terminal: an event with choices.,Terminal: an event with choices.
@@ -2823,6 +2828,7 @@ Virus,Virus
 WANTED,WANTED
 WAS,WAS
 WEAK,WEAK
+WEAK x0.5,WEAK x0.5
 WHAT WILL RESOLVE,WHAT WILL RESOLVE
 WIN,WIN
 WON,WON
@@ -2926,6 +2932,8 @@ v%s // cell uplink,v%s // cell uplink
 vs %s | ICE %d%s,vs %s | ICE %d%s
 withdraw,withdraw
 won,won
+x0.5,x0.5
+x1.5,x1.5
 you are here,you are here
 your network holds every threat,your network holds every threat
 {undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.,{undo_how} undoes anything back to the last random event (the start-of-turn respin). Undo is free and unlimited within a turn; UNDO stops at a Respin or a random slice pick.

@@ -176,6 +176,8 @@ const DEMOS := {
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-2 2A: the wheel stack.
+	&"wheel_screen_loop": ["view", "screens"], &"wheel_telemetry_scroll": ["view", "telemetry"], &"precision_latch": ["view", "perfect_latch"], &"precision_word": ["view", "landing_word"], &"precision_stutter": ["view", "weak_stutter"], &"hub_defeat_drain": ["view", "defeat_drain"], &"hub_lockdown_drain": ["view", "lockdown"],
 	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
 	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
 	&"dispatch_trace": ["screen", "feed"],
@@ -1144,6 +1146,21 @@ func _play_view(what: String) -> float:
 			get_tree().create_timer(Motion.seconds(_id) * 3.0).timeout.connect(card.release_focus)
 		"press":
 			(_pieces["send"] as DripButton).press_motion()
+		"screens":
+			_wheel.disc.run_screens()
+		"telemetry":
+			_wheel.queue_redraw()
+		"perfect_latch":
+			_wheel.play_precision(RC.PrecisionTier.PERFECT, 0)
+		"landing_word":
+			_wheel.play_precision(RC.PrecisionTier.GOOD, 0)
+		"weak_stutter":
+			_wheel.play_precision(RC.PrecisionTier.WEAK, 0)
+		"defeat_drain":
+			_wheel.play_defeat_drain()
+		"lockdown":
+			_wheel.lockdown_level = 1.0
+			_wheel.play_lockdown_drain()
 		"ready":
 			var send := _pieces["send"] as DripButton
 			send.glyph = true
