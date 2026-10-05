@@ -117,6 +117,12 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
 	# ART-2 2A (the wheel stack): the screens' loop, the telemetry scroll, the precision landings, the hub states.
 	&"wheel_screen_loop", &"wheel_telemetry_scroll", &"precision_latch", &"precision_word", &"precision_stutter", &"hub_defeat_drain", &"hub_lockdown_drain",
+
+	# ART-11 4D (ART_BIBLE v2 §4.8): the campaign lost lock (RansomLock), the audit dossier
+	# (AuditDossier); the run end's verdict slaps with 1B's sticker_slap.
+	&"ransom_glitch", &"ransom_wipe", &"ransom_padlock", &"ransom_notice_in", &"ransom_verb_stamp", &"ransom_sticker_curl",
+	&"ransom_sticker_drop", &"ransom_sticker_stagger", &"ransom_countdown", &"ransom_wipe_hold", &"ransom_cut",
+	&"dossier_open", &"dossier_stamp", &"dossier_note", &"dossier_note_stagger",
 	# ART-9 4B (ART_BIBLE v2 §4.11 / §4.12): the portrait feed's live clock, its blink and
 	# talking mouth, DISPATCH's voice trace (PortraitFeed).
 	&"portrait_feed", &"portrait_blink", &"portrait_talk", &"dispatch_trace",
@@ -142,6 +148,8 @@ const OFF_PARTS: Dictionary = {
 	&"drag_ghost_tilt": 0.0, &"hit_freeze": 0.0, &"stamp_fade_in": 0.0,
 	# ANIM-R6 city: the gap between raid steps and the raid volley's stagger (a share).
 	&"raid_step_gap": 0.0, &"raid_shot_stagger": 0.0,
+	# ART-11 4D: the lock's sticker stagger and the dossier's note stagger (off = together).
+	&"ransom_sticker_stagger": 0.0, &"dossier_note_stagger": 0.0,
 }
 ## ANIM-R5: tunings of another entry (see OFF_PARTS): never switched off.
 const ALWAYS_ON: Array[StringName] = [&"drag_ghost_tilt_speed", &"send_it_drips_share", &"heat_pulse_rise",

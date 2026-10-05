@@ -102,10 +102,10 @@ func test_netrun_panels_are_zine_styled() -> void:
 	s.run.outcome = RunState.Outcome.COMPLETED
 	s.run.phase = RunState.Phase.ENDED
 	scene._show_current()
-	# ANIM-R5 B3: the verdict is a resolved ForecastStamp (JACKED OUT for a completed run).
+	# ANIM-R5 B3 / ART-11 4D: the verdict is a vinyl sticker (JACKED OUT for a completed run).
 	var stamp := false
 	for n in _descendants(scene._panel):
-		stamp = stamp or (n is ForecastStamp and n.verdict == "JACKED OUT")
+		stamp = stamp or (n is VinylSticker and n.text == tr("JACKED OUT"))
 	assert_true(stamp)
 
 
