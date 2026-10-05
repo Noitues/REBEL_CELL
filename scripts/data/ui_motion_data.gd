@@ -98,6 +98,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
 	# modal's open and close (PageTransition.open_modal / close_modal).
 	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
+	# ART-6 3A (raid presentation): pencil marks, routes, panels, stickers and the drag.
+	&"raid_mark_write", &"raid_mark_hold", &"raid_mark_wipe", &"raid_breached_write", &"raid_bits_burst", &"raid_slow_field", &"raid_ice_grow", &"raid_repair_rise", &"raid_route_write", &"raid_route_wipe", &"raid_holo_band", &"raid_hex_scroll", &"raid_holds_slap", &"raid_start_peel", &"raid_dock_circle", &"raid_drag_arrow",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

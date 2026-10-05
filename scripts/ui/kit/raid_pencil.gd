@@ -255,9 +255,18 @@ static func scribble_points(pts: PackedVector2Array, amp: float, pitch: float, s
 	return out
 
 
+## `ch` drawn thickened by `r` px (copies round it: an MSDF face caps outline widths).
+static func _thick(ci: CanvasItem, f: Font, at: Vector2, ch: String, px: int, r: float, col: Color) -> void:
+	ci.draw_string(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	if r < 0.5:
+		return
+	for i in 8:
+		ci.draw_string(f, at + Vector2.from_angle(TAU * i / 8.0) * r, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+
+
 ## The pencil face (§2.9 Permanent Marker).
 static func font() -> Font:
-	return Palette.marker()
+	return Palette.pencil()
 
 
 ## The size of pencil word `text` at `px` (its advance with the tracking, and the face's height).
@@ -299,14 +308,17 @@ static func word(ci: CanvasItem, text: String, centre: Vector2, px: int, col: Co
 			var a := minf(shown * 2.0, 1.0) * (1.0 - gone)
 			var at := Vector2(x, base + bob)
 			var off := SHADOW_OFFSET * keyline * 1.6
-			ci.draw_string_outline(f, at + off, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, keyline + 2, Color(shadow, shadow.a * a))
-			ci.draw_string_outline(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, keyline, Color(body, body.a * a))
-			ci.draw_string(f, at, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(body, body.a * a))
+			_thick(ci, f, at + off, ch, px, keyline * 0.5 + 1.0, Color(shadow, shadow.a * a))
+			_thick(ci, f, at, ch, px, keyline * 0.5, Color(body, body.a * a))
+			# The sheen: a thin lighter pass up and left.
+			ci.draw_string(f, at - Vector2(1, 1) * keyline * 0.3, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(col.lerp(Palette.PAPER, SHEEN_LIFT * 0.6), 0.35 * a))
 		x += adv + px * WORD_TRACKING
 	if wipe_u > 0.0:
-		# The cloth's smear trails its front.
-		var smear := Rect2(Vector2(-size.x * 0.5, -size.y * 0.25), Vector2(maxf(0.0, wiped_to + size.x * 0.5), size.y * 0.5))
-		ci.draw_rect(smear, Color(col, SMEAR_ALPHA * (1.0 - wipe_u)))
+		# The cloth's smear trails its front: a few faint streaks where the wax was.
+		var span := maxf(0.0, wiped_to + size.x * 0.5)
+		for s in 3:
+			var y := (s - 1) * size.y * 0.18
+			ci.draw_line(Vector2(-size.x * 0.5, y), Vector2(-size.x * 0.5 + span, y + px * 0.04), Color(col, SMEAR_ALPHA * (1.0 - wipe_u)), maxf(1.0, px * 0.08))
 	if heavy and underline_u > 0.0:
 		var y := size.y * 0.5 + px * UNDERLINE_DROP * 0.4
 		var over := size.x * UNDERLINE_OVERSHOOT

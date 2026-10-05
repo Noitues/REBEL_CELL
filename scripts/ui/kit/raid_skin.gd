@@ -4,15 +4,6 @@ extends RefCounted
 ## resource)"): the raiding corporation's house style for the raid's stolen documents (the
 ## work order, THREAT INTEL, the after-action report) and the raid's shared looks (grease
 ## pencil, holo, paper), built from the corporation id. View only: no rule reads it.
-##
-## Seams (Group 1 lands in parallel): the v2 tokens (PENCIL_PLAN, PENCIL_THREAT,
-## PENCIL_SHADOW, the v2 corp kits) and the corp paper face (Courier Prime) are read through
-## `token` / `paper_font`, which fall back to the nearest token main already has until 1A
-## merges (DECISIONS "Art direction — ART-6 3A raid presentation").
-
-## The paper face (ART_BIBLE §2.9 Courier Prime), once 1A copies it into assets/fonts.
-const PAPER_FONT_PATH := "res://assets/fonts/CourierPrime-Regular.ttf"
-const PAPER_BOLD_PATH := "res://assets/fonts/CourierPrime-Bold.ttf"
 
 ## Corporations whose kit the raid knows (the order every sheet and sweep walks).
 const CORPS: Array[StringName] = [&"meridian", &"solace", &"halcyon", &"orbital", &"rebel_cell"]
@@ -78,29 +69,15 @@ func order_number(raid_id: StringName, heat: int) -> String:
 	return "WO %02d-%s-%03d" % [clampi(heat, 0, 99), String(CODES.get(corporation_id, "XX")), h]
 
 
-## A v2 token by name, or `fallback` while the palette doesn't have it yet (1A seam).
-static func token(name: StringName, fallback: Color) -> Color:
-	var consts: Dictionary = (Palette as Script).get_script_constant_map()
-	var v: Variant = consts.get(name, null)
-	return v if v is Color else fallback
-
-
-## Grease pencil yellow (our plan / valid), red (threat / invalid / loss) and its shadow.
+## Grease pencil yellow (our plan / valid), red (threat / invalid / loss) and its shadow
+## (ART_BIBLE v2 §2.2 tokens). Seam: 1B's grease pencil material reads the same tokens.
 static func pencil_plan() -> Color:
-	return token(&"PENCIL_PLAN", Palette.NOTE_YELLOW.lerp(Palette.RESIST_GOLD, 0.5))
+	return Palette.PENCIL_PLAN
 
 
 static func pencil_threat() -> Color:
-	return token(&"PENCIL_THREAT", Palette.HARM)
+	return Palette.PENCIL_THREAT
 
 
 static func pencil_shadow() -> Color:
-	return token(&"PENCIL_SHADOW", Color(Palette.NIGHT_SKY, 0.85))
-
-
-## The corp paper face (Courier Prime) or the terminal face until 1A lands it.
-static func paper_font(bold: bool = false) -> Font:
-	var path := PAPER_BOLD_PATH if bold else PAPER_FONT_PATH
-	if ResourceLoader.exists(path):
-		return Palette.font(path)
-	return Palette.mono()
+	return Palette.PENCIL_SHADOW

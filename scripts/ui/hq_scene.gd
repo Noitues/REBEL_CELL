@@ -619,6 +619,7 @@ func fight_raid() -> void:
 		hud_heat_shown = RunManager.campaign.heat
 		hud_raids_shown = RunManager.campaign.pending_raids.size()
 	var events := RunManager.fight_raid()
+	_note_raid_outcome(events)  # ART-6 3A: the report prints the Heat and the reward
 	_report(events)
 	if events.is_empty():
 		wireframe.city.release_influence()
@@ -2785,6 +2786,8 @@ const ORDER_STAMP_SHARE := 0.78
 ## START DEFENSE's sticker lettering (px at text scale 1.0) and THREAT INTEL's width beside
 ## the loadout (px at 1.0).
 const START_STICKER_PX := 30
+## How far START DEFENSE turns as it peels away (degrees).
+const START_PEEL_TURN := 24.0
 const INTEL_WIDTH := 300.0
 
 
@@ -2882,6 +2885,41 @@ func _mount_raid_routes(paths: Array[Array]) -> void:
 
 
 var _routes_shown: String = ""
+
+
+## ART-6 3A: the raid setup is the page (the drag pencil draws only there).
+func _raid_page_open() -> bool:
+	return panel_name == "raid"
+
+
+## ART-6 3A: the IF PLACED terminal's lines for carrying `payload` onto node `site_id`: the
+## defence and the node, then what the forecast would change (that node's outcome, home's
+## integrity), from the rules on a copy of the campaign (exact: preview equals result).
+func if_placed_lines(payload: Dictionary, site_id: Variant) -> Array:
+	var c := RunManager.campaign
+	var pending := RunManager.pending_raid()
+	if c == null or pending.is_empty() or not (site_id is StringName):
+		return []
+	var sid: StringName = site_id
+	var cfg := RunManager.config()
+	var lookup := RunManager.lookup()
+	var copy := c.duplicate_state()
+	match String(payload.get("kind", "")):
+		"asset":
+			CampaignRules.deploy_asset(copy, cfg, lookup, int(payload["index"]), sid)
+		"placed":
+			CampaignRules.move_asset(copy, cfg, lookup, payload["site"], int(payload["index"]), sid)
+		_:
+			return []
+	var now := RunManager.project_raid()
+	var then := CampaignRules.project_raid(copy, RunManager.corporation, cfg, lookup, pending)
+	var lines: Array = ["%s > %s" % [_display(StringName(String(payload.get("asset", "")))).to_upper(), site_name(sid).to_upper()]]
+	var a: Dictionary = now.nodes.get(String(sid), {})
+	var b: Dictionary = then.nodes.get(String(sid), {})
+	if not a.is_empty() and not b.is_empty():
+		lines.append("%s  %s > %s" % [site_name(sid).to_upper(), outcome_word(String(a["outcome"])), outcome_word(String(b["outcome"]))])
+	lines.append(tr("HOME %d > %d") % [now.home_after, then.home_after])
+	return lines
 
 
 ## A paper value label with a tooltip (hovered, it shows the old badge's words).
@@ -3476,7 +3514,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	forecast.custom_minimum_size = Vector2(PROJECTION_STAMP, PROJECTION_STAMP) * (1.0 + (Settings.text_scale - 1.0) * PROJECTION_FOLLOW)
 	forecast.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	side.add_child(forecast)
-	var feed := TerminalWindow.new(tr("RAID FEED // LIVE"), Palette.corp_color(c.corporation_id))
+	# ART-6 3A: the live feed is the Cell's terminal (§1.2), the Speed / Skip strip at its foot.
+	var feed := RaidTerminal.new(tr("LIVE RAID FEED"), Palette.HARM)
+	feed.name = "RaidFeedWindow"
 	side.add_child(feed)
 	var cont := _button(tr("Continue"), _after_playout)
 	cont.theme_type_variation = &"HotButton"
@@ -3489,6 +3529,7 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	var kept: Array = pre.grid.claimed_ids()
 	var g := raid_graph({}, {}, pre)
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, PLAYOUT_ANCHOR, PLAYOUT_ZOOM)
+	_mount_raid_routes(raid_route_paths(events))  # ART-6 3A: the plan stays drawn while it plays
 	# ANIM-R6 C10: the playout opens framed on CORE and the Sites the raid enters at (it opened
 	# on the middle of the whole network, CORE at the screen's edge, and eased from there).
 	_playout_open = playout_frame_points(events)
@@ -3528,6 +3569,9 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 		if dealt:
 			hud.stats.land_pulse(StatIcon.RAIDS)
 		forecast.resolve(RESULT_CAPTION, verdict)
+		# ART-6 3A: the plan is done: its pencil routes cloth-wipe off.
+		if raid_routes != null and is_instance_valid(raid_routes):
+			raid_routes.wipe()
 		# ANIM-R5 P2: the raid's Heat band reaches the city's look with its tint.
 		_creep_band = -1
 		wireframe.corp_creep = RunManager.campaign.heat_majors_crossed(RunManager.config()) / 3.0
@@ -3551,6 +3595,34 @@ func show_raid_playout(events: Array[Dictionary], before: CampaignState = null) 
 	# the camera first fits CORE and the entries into the map's free part (the fight area has
 	# no size before), then step 1 frames its fight from there.
 	playout.play(events, false, false)
+	_peel_start.call_deferred(feed)
+
+
+## ART-6 3A (§4.8): START DEFENSE peels away off the Speed / Skip strip as the playout starts
+## (`raid_start_peel`: lifts, turns and falls away; one press ends it; gone at once when motion
+## doesn't play). The strip stays where it was.
+func _peel_start(feed: Control) -> void:
+	if not is_instance_valid(feed) or not feed.is_inside_tree() or not Motion.live(&"raid_start_peel"):
+		return
+	var strip := feed.find_child("SpeedStrip", true, false) as Control
+	if strip == null:
+		return
+	var sticker := RaidSticker.new(START_DEFENSE, roundi(START_STICKER_PX * Settings.text_scale), RaidSticker.PINK).stamp_only()
+	sticker.name = "StartPeel"
+	add_child(sticker)
+	var box := strip.get_global_rect()
+	sticker.size = sticker.custom_minimum_size
+	sticker.global_position = Vector2(box.end.x - sticker.size.x, box.position.y - sticker.size.y * 0.85)
+	var lift := Motion.amplitude(&"raid_start_peel")
+	MotionSkip.register_passive(sticker)
+	sticker.set_meta(&"peel", true)
+	Motion.run(&"raid_start_peel", sticker, ^"position", sticker.position + Vector2(lift * 0.6, -lift))
+	Motion.run(&"raid_start_peel", sticker, ^"rotation", deg_to_rad(START_PEEL_TURN))
+	var tw := Motion.run(&"raid_start_peel", sticker, ^"modulate:a", 0.0)
+	if tw != null:
+		tw.finished.connect(sticker.queue_free)
+	else:
+		sticker.queue_free()
 
 
 ## ANIM-R6 C10: what the playout opens on (grid points; emptied once it has opened there).
@@ -3776,6 +3848,44 @@ func _after_playout() -> void:
 		show_raid_summary()
 
 
+## ART-6 3A (ART_BIBLE v2 §4.8 "Raid report"): the raid report is the raiding corp's own
+## AFTER-ACTION REPORT (corp paper, CLASSIFIED) with the Cell's pencil on it (circles, RIP,
+## ticks) and CELL HOLDS slapped on top when the Cell survived (GDD 7.2); the raid's one
+## verdict (RaidVerdict) still lands as its stamp on the table. Heat settles here.
+const REPORT_TITLE := "AFTER-ACTION REPORT" # TR
+const REPORT_OPERATION := "OPERATION: %s  //  TARGET: CELL NETWORK  //  OUTCOME: %s" # TR
+const REPORT_FAILED := "FAILED" # TR
+const REPORT_SUCCESS := "SUCCESS" # TR
+const REPORT_INTACT := "%d / %d INTACT" # TR
+const REPORT_DAMAGED := "%d / %d" # TR
+const REPORT_SCHEMATICS := "%d SCHEMATICS" # TR
+const REPORT_HEAT := "%d > %d" # TR
+const REPORT_NO_CHANGE := "%d > %d NO CHANGE" # TR
+const REPORT_BACK := "BACK TO THE GRID" # TR
+## The report's paper width (px at 1.0) and the CELL HOLDS sticker's lettering (px at 1.0).
+const REPORT_WIDTH := 400.0
+const HOLDS_STICKER_PX := 52
+## The Heat and the reward the last raid's feed told ([before, after], Schematics; -1 none).
+var _raid_heat: Array[int] = []
+var _raid_reward: int = -1
+
+
+## Notes the Heat change and the reward a raid's events tell (the report prints them).
+func _note_raid_outcome(events: Array[Dictionary]) -> void:
+	_raid_heat = []
+	_raid_reward = -1
+	for e in events:
+		match String(e.get("type", "")):
+			"heat":
+				if e.has("before") and e.has("after"):
+					if _raid_heat.is_empty():
+						_raid_heat = [int(e["before"]), int(e["after"])]
+					else:
+						_raid_heat[1] = int(e["after"])
+			"raid_won":
+				_raid_reward = int(e.get("schematics", 0))
+
+
 func show_raid_summary() -> void:
 	var c := RunManager.campaign
 	var r := c.last_raid
@@ -3798,52 +3908,125 @@ func show_raid_summary() -> void:
 	table.add_child(stamp)
 	outer.add_child(table)
 	MapLegend.pin_to(table, c.corporation_id)
-	var report := TerminalWindow.new(tr("RAID REPORT"), RaidVerdict.color_of(clean))
-	report.custom_minimum_size.x = 340
-	outer.add_child(report)
+	var skin := RaidSkin.of(c.corporation_id)
+	var raid := RunManager.lookup().get_content(StringName(String(r.get("raid_id", "")))) as RaidData
+	var raid_name := TextDb.t(raid, "display_name").to_upper() if raid != null else String(r.get("raid_id", "")).to_upper()
+	var held := not bool(r.get("campaign_lost", false))
+	var number := skin.order_number(StringName(String(r.get("raid_id", ""))), c.heat)
+	var report := RaidPaper.new(c.corporation_id, tr(REPORT_TITLE), RaidPaper.STAMP_CLASSIFIED, number)
+	report.name = "RaidReport"
+	report.stamp_at = Vector2(0.7, 0.9)
+	report.custom_minimum_size.x = REPORT_WIDTH * Settings.text_scale
+	report.set_sub(tr(REPORT_OPERATION) % [raid_name, tr(REPORT_FAILED) if held else tr(REPORT_SUCCESS)])
+	var side := VBoxContainer.new()
+	side.name = "ReportColumn"
+	side.add_theme_constant_override("separation", 10)
+	side.add_child(report)
+	outer.add_child(side)
 	var box := report.body
-	# The result as badges (H20): home, threats, then each node's outcome by name.
-	var facts := HFlowContainer.new()
+	# The result as the corp wrote it (H20: home, threats, then each node by name).
+	var facts := VBoxContainer.new()
 	facts.name = "RaidResult"
-	facts.add_theme_constant_override("h_separation", 10)
-	facts.add_theme_constant_override("v_separation", 4)
+	facts.add_theme_constant_override("separation", 0)
+	facts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_child(facts)
-	facts.add_child(Badge.new("%d → %d" % [int(r.get("home_before", 0)), int(r.get("home_after", 0))], RaidVerdict.color_of(int(r.get("home_after", 0)) >= int(r.get("home_before", 0))), GLYPH_HOME,
-		tr("Home integrity before and after the raid.")).with_meter(int(r.get("home_after", 0)), c.grid.home_max_integrity).with_icon(StatIcon.HOME))
-	facts.add_child(Badge.new(tr("%d destroyed") % int(r.get("threats_destroyed", 0)), Palette.CELL_ACID, GLYPH_THREAT, tr("Threats your network destroyed.")))
-	if int(r.get("threats_reached_home", 0)) > 0:
-		facts.add_child(Badge.new(tr("%d reached home") % int(r.get("threats_reached_home", 0)), Palette.CELL_PINK, GLYPH_THREAT, tr("Threats that hit the home server.")))
+	report.body = facts
+	var destroyed := int(r.get("threats_destroyed", 0))
+	var sent := destroyed + int(r.get("threats_reached_home", 0))
+	var units := report.add_row(tr("UNITS DEPLOYED / DESTROYED"), "%d / %d" % [maxi(sent, destroyed), destroyed], Palette.HARM_INK if destroyed > 0 else Palette.INK, "ReportUnits")
+	_tip_label(units, tr("Threats your network destroyed."))
+	if _raid_reward >= 0:
+		report.add_row(tr("EQUIPMENT LOST TO HOSTILES"), tr(REPORT_SCHEMATICS) % _raid_reward, Palette.HARM_INK, "ReportReward")
+	var taken: Array = r.get("taken", [])
+	var down_names := PackedStringArray()
+	for id in r.get("nodes", {}).keys():
+		if String(r["nodes"][id].get("outcome", "")) == "down":
+			down_names.append(site_name(StringName(String(id))))
+	var reclaimed := PackedStringArray()
+	for id in taken:
+		reclaimed.append(site_name(StringName(String(id))))
+	if not reclaimed.is_empty():
+		var rec := report.add_row(tr("SITES RECLAIMED"), "%d (%s)" % [reclaimed.size(), ", ".join(reclaimed).to_upper()], Palette.INK, "ReportReclaimed")
+		_tip_label(rec, tr("TAKEN: the corporation took the Site back."))
+	if not down_names.is_empty():
+		var dn := report.add_row(tr("HOSTILE NODES DISABLED"), ", ".join(down_names).to_upper(), Palette.INK, "ReportDown")
+		_tip_label(dn, tr("DOWN: repair the node on the Grid."))
+	var hb := int(r.get("home_before", 0))
+	var ha := int(r.get("home_after", 0))
+	var home := report.add_row(tr("HOSTILE HOME SERVER"), (tr(REPORT_INTACT) % [ha, c.grid.home_max_integrity]) if ha >= hb else (tr(REPORT_DAMAGED) % [ha, c.grid.home_max_integrity]),
+		Palette.HARM_INK if ha < hb else Palette.INK, "ReportHome")
+	_tip_label(home, tr("Home integrity before and after the raid."))
+	if not _raid_heat.is_empty():
+		var hv := report.add_row(tr("SUSPECT FILE (HEAT)"), (tr(REPORT_NO_CHANGE) if _raid_heat[0] == _raid_heat[1] else tr(REPORT_HEAT)) % [_raid_heat[0], _raid_heat[1]], Palette.INK, "ReportHeat")
+		_tip_label(hv, tr("Heat settles here: what the raid changed."))
+	report.body = box
+	# Each node of the raid, by name: its integrity before and after and its outcome.
 	var ids: Array = r.get("nodes", {}).keys()
 	ids.sort()
 	for id in ids:
 		var n: Dictionary = r["nodes"][id]
-		var holds := String(n["outcome"]) == "holds"
-		# ANIM-R5 P8: the name and its HP on one row, as home's (a long name wrapped the HP
-		# badge onto a line of its own: "Continuum Billing Farm"); the name wraps instead.
+		var outcome := String(n["outcome"])
+		# ANIM-R5 P8: the name and its HP on one row (the name wraps instead).
 		var node_row := HBoxContainer.new()
 		node_row.name = "ReportRow_%s" % String(id)
 		node_row.add_theme_constant_override("separation", 8)
-		var node_name := _para(site_name(StringName(String(id))))
+		var node_name := Label.new()
+		node_name.text = site_name(StringName(String(id))).to_upper()
+		node_name.add_theme_font_override("font", Palette.paper())
+		node_name.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+		node_name.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.3))
+		node_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		node_name.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		node_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		node_row.add_child(node_name)
-		node_row.add_child(Badge.new("%d → %d %s" % [int(n["before"]), int(n["after"]), outcome_word(String(n["outcome"]))], Palette.CELL_ACID if holds else Palette.CELL_PINK, GLYPH_NODE,
-			tr("Integrity before and after, and whether the node held.")))
+		var v := Label.new()
+		v.name = "Value"
+		v.text = "%d > %d %s" % [int(n["before"]), int(n["after"]), outcome_word(outcome)]
+		v.add_theme_font_override("font", Palette.display())
+		v.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+		v.add_theme_color_override("font_color", Palette.INK if outcome == "holds" else Palette.HARM_INK)
+		v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_tip_label(v, tr("Integrity before and after, and whether the node held."))
+		node_row.add_child(v)
 		box.add_child(node_row)
-	# ANIM-R5 P18: each fallen node once, by its outcome (a node DOWN and then TAKEN in
-	# the same raid is TAKEN, as the verdict, its row and its stamp say; it was listed twice).
-	for key in ["taken", "down"]:
-		for id in ids:
-			if String(r["nodes"][id].get("outcome", "")) != key:
-				continue
-			box.add_child(Badge.new("%s %s" % [site_name(StringName(String(id))), tr(key.to_upper())], Palette.RESIST_GOLD, GLYPH_RULE,
-				tr("TAKEN: the corporation took the Site back.") if key == "taken" else tr("DOWN: repair the node on the Grid.")))
-	box.add_child(_icon(_button(tr("Back to HQ"), show_hq), StatIcon.BACK))
+	var back := RaidSticker.new(REPORT_BACK, roundi(START_STICKER_PX * Settings.text_scale), RaidSticker.PINK)
+	back.name = "ReportBack"
+	back.pressed.connect(show_hq)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_add_tip(side, back, tr("Back to the HQ."))
 	_set_panel(outer, "raid_summary")
 	var g := raid_graph(r.get("nodes", {}), {})
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, Vector2(0.36, 0.55))
-	city_overlay.avoid_controls([report])
+	city_overlay.avoid_controls([side])
 	city_overlay.packets = false  # ANIM-R5 P7: a report, not a live network (no packets loop)
+	# The Cell's pencil on the corp's report, and CELL HOLDS slapped on top.
+	var pencil := RaidReportPencil.new(report, r, held, _raid_reward)
+	pencil.name = "ReportPencil"
+	report.add_child(pencil)
+	if held:
+		var holds := RaidSticker.new(RaidVerdict.CELL_HOLDS, roundi(HOLDS_STICKER_PX * Settings.text_scale), RaidSticker.YELLOW, -6.0).stamp_only()
+		holds.name = "CellHolds"
+		table.add_child(holds)
+		_slap_holds.call_deferred(holds, table, report)
 
+
+## ART-6 3A: CELL HOLDS slaps onto the report (`raid_holds_slap`: from amplitude x its size;
+## one press ends it; at rest at once when motion doesn't play), over the table's top right.
+func _slap_holds(holds: RaidSticker, table: Control, report: Control) -> void:
+	if not is_instance_valid(holds) or not is_instance_valid(table):
+		return
+	holds.size = holds.custom_minimum_size
+	holds.pivot_offset = holds.size * 0.5
+	# Slapped beside the report's top, over the table (clear of the verdict stamp at its left).
+	var at := report.global_position + Vector2(-holds.size.x - SLAP_MARGIN * Settings.text_scale, SLAP_MARGIN * 2.0 * Settings.text_scale) if is_instance_valid(report) else table.global_position
+	holds.global_position = at.max(table.global_position + Vector2(SLAP_MARGIN * 8.0, SLAP_MARGIN))
+	MotionSkip.register_passive(holds)
+	holds.scale = Vector2.ONE * Motion.amplitude(&"raid_holds_slap") if Motion.live(&"raid_holds_slap") else Vector2.ONE
+	Motion.run(&"raid_holds_slap", holds, ^"scale", Vector2.ONE)
+
+
+## Room round the CELL HOLDS sticker on the table (px at 1.0).
+const SLAP_MARGIN := 24.0
 
 ## ANIM-R5 P4: the campaign's end reads like the other city pages, not a debug page of
 ## terminal lines on a near-opaque panel: the city shows round terminal windows (the page is
@@ -4497,6 +4680,11 @@ func _build_ui() -> void:
 	drops = DropLayer.new()
 	_wire_drops(drops)
 	add_child(drops)
+	# ART-6 3A: the raid setup's drag in grease pencil (parked sticker, arrow, dock circle).
+	var pencil := RaidDragPencil.new(drops)
+	pencil.active = _raid_page_open
+	pencil.forecast = if_placed_lines
+	drops.add_child(pencil)
 
 
 ## ANIM-4: a drop layer's questions and intents come to this screen: whether a target

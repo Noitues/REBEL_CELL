@@ -47,7 +47,7 @@ var stamp_word: String = STAMP_INTERCEPTED
 ## The document's number on its footer and letterhead ("WO 50-HC-114").
 var number: String = ""
 ## Where the stamp sits, as a share of the page (its centre).
-var stamp_at: Vector2 = Vector2(0.72, 0.84)
+var stamp_at: Vector2 = Vector2(0.74, 0.91)
 var body: VBoxContainer
 var title_label: Label
 var sub_label: Label
@@ -82,7 +82,7 @@ func _init(p_corporation: StringName = &"halcyon", p_title: String = "", p_stamp
 	body.add_child(title_label)
 	sub_label = Label.new()
 	sub_label.name = "PaperSub"
-	sub_label.add_theme_font_override("font", RaidSkin.paper_font())
+	sub_label.add_theme_font_override("font", Palette.paper())
 	sub_label.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	sub_label.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.42))
 	sub_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -106,7 +106,7 @@ func add_row(label: String, value: String, value_col: Color = Palette.INK, value
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var l := Label.new()
 	l.text = label
-	l.add_theme_font_override("font", RaidSkin.paper_font())
+	l.add_theme_font_override("font", Palette.paper())
 	l.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
 	l.add_theme_color_override("font_color", Palette.INK.lerp(Palette.PAPER, 0.3))
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -119,7 +119,7 @@ func add_row(label: String, value: String, value_col: Color = Palette.INK, value
 		v.name = value_name
 	v.text = value
 	v.add_theme_font_override("font", Palette.display())
-	v.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.LABEL))
+	v.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
 	v.add_theme_color_override("font_color", value_col)
 	v.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -127,7 +127,7 @@ func add_row(label: String, value: String, value_col: Color = Palette.INK, value
 	body.add_child(row)
 	var rule := HSeparator.new()
 	rule.add_theme_stylebox_override("separator", _rule_box())
-	rule.add_theme_constant_override("separation", roundi(2 * _k))
+	rule.add_theme_constant_override("separation", 0)
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	body.add_child(rule)
 	return v
@@ -159,13 +159,10 @@ func _draw() -> void:
 	var head_px := UiTheme.font_px(UiTheme.LABEL)
 	var x := seal_c.x + (SEAL_R + 8.0) * k
 	draw_string(head_font, Vector2(x, seal_c.y - 1.0 * k), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - x - PAD * k, head_px, skin.paper_hue)
-	var meta_font := RaidSkin.paper_font()
+	var meta_font := Palette.paper()
 	var meta_px := UiTheme.font_px(UiTheme.CAPTION)
 	draw_string(meta_font, Vector2(x, seal_c.y + meta_px * 0.95), skin.division(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - x - PAD * k, meta_px,
 		Palette.INK.lerp(Palette.PAPER, 0.45))
-	if number != "":
-		draw_string(meta_font, Vector2(r.size.x - PAD * k, PAD * 0.6 * k + meta_px), number, HORIZONTAL_ALIGNMENT_RIGHT, -1, meta_px,
-			Palette.INK.lerp(Palette.PAPER, 0.45))
 	var rule_y := LETTERHEAD_H * k
 	draw_line(Vector2(PAD * k, rule_y), Vector2(r.size.x - PAD * k, rule_y), skin.paper_hue, 2.0 * k)
 	# The footer: redacted lines and the meta line.

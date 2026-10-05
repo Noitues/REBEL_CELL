@@ -1368,7 +1368,8 @@ func _node(n: Dictionary) -> void:
 				_c.draw_line(base, top, Color(col, col.a * 0.6), 1.5)
 			# A short stalk ties the floating icon to its roof.
 			_c.draw_line(top, at + Vector2(0, r), Color(col, col.a * 0.7), 1.5)
-	_mark(n, top, col)
+	if not n.has("socket"):
+		_mark(n, top, col)  # ART-6 3A: a socket carries its own status (no spray ring)
 	if _travel.is_empty():
 		if n.get("here", false):
 			_here(at, r)

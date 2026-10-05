@@ -28,6 +28,8 @@ const SHADOW_ALPHA := 0.55
 ## The hover lift (px) and the focus halo's width (x size).
 const HOVER_LIFT := 2.0
 const HALO := 0.07
+## Most copies an outline ring draws.
+const RING_STEPS := 24
 ## Room round the word for the die-cut (x size).
 const ROOM := 0.32
 
@@ -66,6 +68,23 @@ func stamp_only() -> RaidSticker:
 	return self
 
 
+## MotionSkip (ANIM-R6 D7): a sticker motion (peel, slap) runs on its position, turn, scale
+## or alpha.
+func motion_running() -> bool:
+	for p: NodePath in [^"position", ^"rotation", ^"scale", ^"modulate:a"]:
+		if Motion.held(self, p):
+			return true
+	return false
+
+
+## MotionSkip: the sticker at its motion's end (a peeled sticker is gone).
+func complete_motion() -> void:
+	for p: NodePath in [^"position", ^"rotation", ^"scale", ^"modulate:a"]:
+		Motion.settle(self, p)
+	if has_meta(&"peel"):
+		queue_free()
+
+
 ## The word as drawn (translated, as a Button shows it).
 func shown_text() -> String:
 	return tr(text).to_upper()
@@ -89,8 +108,8 @@ func _notification(what: int) -> void:
 ## The two tones of `fill` (top, bottom).
 static func tones(p_fill: StringName) -> Array[Color]:
 	if p_fill == YELLOW:
-		return [RaidSkin.token(&"STICKER_SAFE", Palette.NOTE_YELLOW.lerp(Palette.RESIST_GOLD, 0.3)),
-			RaidSkin.token(&"STICKER_SAFE_LOW", Palette.CRT_AMBER)]
+		return [Palette.STICKER_SAFE,
+			Palette.STICKER_SAFE_LOW]
 	return [Palette.CELL_PINK.lerp(Palette.STICKER_PINK, 0.3), Palette.CELL_PINK.darkened(0.12)]
 
 
@@ -115,17 +134,26 @@ func _draw() -> void:
 	var die := maxi(2, roundi(px * DIE_CUT))
 	var key := maxi(1, roundi(px * KEYLINE))
 	var ext := maxf(1.0, px * EXTRUDE)
-	draw_string_outline(f, at + SHADOW_OFF * px, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, die + 2, Color(ink, SHADOW_ALPHA))
+	# Outlines as rings of offset copies (an MSDF face caps how wide an outline can draw).
+	_ring(f, at + SHADOW_OFF * px, word, die + 2.0, Color(ink, SHADOW_ALPHA))
 	if has_focus() and not disabled:
-		draw_string_outline(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, die + roundi(px * HALO) * 2, Palette.FOCUS)
-	draw_string_outline(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, die, white)
+		_ring(f, at, word, die + px * HALO * 2.0, Palette.FOCUS)
+	_ring(f, at, word, die, white)
 	# The extrude: the keyline stepped down and right.
 	var steps := maxi(1, ceili(ext))
 	for s in range(steps, 0, -1):
 		var o := Vector2(1, 1) * ext * s / steps
-		draw_string_outline(f, at + o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, key, ink)
-		draw_string(f, at + o, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, ink)
-	draw_string_outline(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, key, ink)
+		_ring(f, at + o, word, key, ink)
+	_ring(f, at, word, key, ink)
 	draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, bottom)
 	draw_string(f, at - Vector2(0, px * TOP_LIFT), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color(top, 0.85))
 	draw_set_transform(Vector2.ZERO)
+
+
+## `word` drawn round `at` at radius `r` (filled in at half radius too): a solid outline.
+func _ring(f: Font, at: Vector2, word: String, r: float, col: Color) -> void:
+	draw_string(f, at, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	for ring: float in [r * 0.5, r]:
+		var n := clampi(ceili(ring * 1.6), 8, RING_STEPS)
+		for i in n:
+			draw_string(f, at + Vector2.from_angle(TAU * i / n) * ring, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)

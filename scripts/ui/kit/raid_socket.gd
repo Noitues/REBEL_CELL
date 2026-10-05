@@ -37,7 +37,7 @@ const GLYPH_OF := {
 }
 
 ## The socket's half width and half height (x the map icon radius: an isometric chip).
-const HALF := Vector2(1.7, 1.0)
+const HALF := Vector2(1.9, 1.1)
 ## The inner track's share of the frame, the frame and track widths (x radius).
 const INNER := 0.72
 const FRAME_W := 0.16
@@ -56,6 +56,9 @@ const GLYPH_SIZE := 0.62
 const GLYPH_LIFT := 0.25
 ## A dark keyline under the frame (x radius) and its alpha.
 const KEYLINE := 0.14
+## The frame's soft glow (x radius) and its alpha (light spill, §1.2).
+const GLOW_W := 0.55
+const GLOW_ALPHA := 0.22
 ## DOWN: the grey it fades to and the bolt's size (x radius) and width.
 const DOWN_GREY := 0.7
 const BOLT := 1.25
@@ -139,6 +142,7 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, spec: Dictionary) -> void
 	else:
 		_fill(ci, c, r, inner, col, health, alpha)
 	_pins(ci, outer, c, r, col, ink)
+	ci.draw_polyline(_closed(outer), Color(col, col.a * GLOW_ALPHA), r * GLOW_W, true)
 	ci.draw_polyline(_closed(outer), ink, r * (FRAME_W + KEYLINE), true)
 	ci.draw_polyline(_closed(outer), col, r * FRAME_W, true)
 	var track := col

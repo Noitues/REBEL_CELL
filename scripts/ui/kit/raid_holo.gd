@@ -35,6 +35,8 @@ const PAD := 12.0
 ## The DECRYPTED stamp: Anton size (px at 1.0) and tilt (degrees).
 const STAMP_PX := 22
 const STAMP_TILT := -10.0
+## The stamp's centre from the plate's right edge (px at 1.0).
+const STAMP_RIGHT := 62.0
 
 var skin: RaidSkin
 var title: String = ""
@@ -93,8 +95,9 @@ func _draw() -> void:
 	var k := _k
 	var tint := skin.holo
 	draw_rect(r.grow(SCRIM_OUT * k), Color(Palette.NIGHT_SKY, SCRIM_ALPHA))
-	draw_rect(r, Color(tint.darkened(0.7), 0.85))
-	draw_rect(r, Color(tint, PLATE_ALPHA))
+	# 1A's HoloPanel plate (the corp tint at HOLO_TINT over the night, its glowing edge).
+	draw_style_box(UiTheme.holo_box(tint), r)
+	draw_rect(r, Color(tint, PLATE_ALPHA * 0.5))
 	# Slow bands drifting down (still under reduce effects).
 	var period := maxf(0.001, Motion.seconds(BAND_MOTION)) if Motion.live(BAND_MOTION) else 0.0
 	for b in BANDS:
@@ -122,7 +125,7 @@ func _draw() -> void:
 	draw_string(mono, Vector2(x, line_y), skin.corp_name(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - x - PAD * k, meta_px, tint.lerp(Palette.TEXT_HI, 0.3))
 	if key != "":
 		draw_string(mono, Vector2(x, line_y + mono.get_height(meta_px)), tr(KEY_LINE) % key, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - x - PAD * k, meta_px, Palette.GAIN)
-	RaidPaper.draw_stamp(self, seal_c + Vector2(SEAL_R * 2.6, SEAL_R * 0.55) * k, tr(STAMP_DECRYPTED), roundi(STAMP_PX * k), Palette.GAIN, deg_to_rad(STAMP_TILT))
+	RaidPaper.draw_stamp(self, Vector2(r.size.x - STAMP_RIGHT * k, HEAD_H * 0.42 * k), tr(STAMP_DECRYPTED), roundi(STAMP_PX * k), Palette.GAIN, deg_to_rad(STAMP_TILT))
 
 
 ## The Cell's decryption key for raid `raid_id` ("7F-A2"; a hash, never an RNG).

@@ -53,7 +53,7 @@ static func type_of(t: ThreatData) -> String:
 ## The corp's ring colour (REBEL_CELL's red dashes paled toward white so they read, §2.4).
 static func ring_color(corporation_id: StringName) -> Color:
 	if corporation_id == &"rebel_cell":
-		return RaidSkin.token(&"CORP_REBEL_CELL_2", Palette.STICKER_PINK)
+		return Palette.CORP_REBEL_CELL_2
 	return Palette.corp_color(corporation_id)
 
 
