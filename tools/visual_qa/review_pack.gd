@@ -91,7 +91,7 @@ const SCREENS := [
 	["grid", "_s_grid", "City Grid, nothing selected."],
 	["grid_site_selected", "_s_grid_site_selected", "City Grid with an Exploit site selected."],
 	["grid_raid_pending", "_s_grid_raid_pending", "City Grid with a raid pending (RAID SETUP)."],
-	["grid_influence", "_s_grid_influence", "main: City Grid after a second claim, the influence spreading."],
+	["grid_influence", "_s_grid_influence", "main: City Grid after a second claim, its territory tint landed."],
 	["grid_drag_crew", "_s_grid_drag_crew", "main: an operative carried from the Grid's crew chips to JACK IN."],
 	["grid_meridian", "_s_grid_meridian", "City Grid against Meridian."],
 	["grid_halcyon", "_s_grid_halcyon", "City Grid against Halcyon."],
@@ -381,6 +381,17 @@ func _run_screen(method: String) -> void:
 
 
 func _reset() -> void:
+	# Bakes still building or queued land first (at most CITY_WAIT_S): a scene freed under a
+	# build that is submitting its chunks raised script errors in the cache's coroutine.
+	var since := Time.get_ticks_msec()
+	while CityBakeCache._building > 0 or not CityBakeCache._queue.is_empty():
+		if (Time.get_ticks_msec() - since) / 1000.0 > CITY_WAIT_S:
+			break
+		await get_tree().process_frame
+	# ...and their picture is read back (a build done on the GPU still reads its picture for
+	# READBACK_FRAMES drawn frames; its painter must outlive that).
+	for i in CityBakeCache.READBACK_FRAMES + 1:
+		await RenderingServer.frame_post_draw
 	_clear_scenes()
 	for i in 3:
 		await get_tree().process_frame
@@ -771,10 +782,12 @@ func _s_grid_influence() -> void:
 			CampaignRules.on_run_completed(c, corp, RunManager.config(), hq._demo_run(sd.id))
 			CampaignRules.claim(c, corp, RunManager.config(), RunManager.lookup(), sd.id, &"firewall_relay")
 			break
-	var city: NeonCity = hq._demo_city()
-	city.sync_influence()
-	if not await _until(func() -> bool: return is_instance_valid(city) and city.spreading(), "the influence to spread"):
-		_warnings.append("the spread never started (reduce effects shows its end)")
+	# Every visible city re-reads the influence; the picture waits for the new look to land
+	# (its tint spreads in from the claim, or shows at once under reduce effects).
+	for n in get_tree().root.find_children("*", "", true, false):
+		if n is NeonCity and (n as NeonCity).is_visible_in_tree():
+			(n as NeonCity).sync_influence()
+	await _settle(hq)
 
 
 ## Main (ANIM-4): an operative carried from the Grid's crew chips towards JACK IN, mid-path
