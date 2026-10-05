@@ -4,9 +4,10 @@ from PIL import Image
 H = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, H)
 os.environ["NET36"] = "net_scope.json"
-os.environ["LIGHT40"] = "1"
+VSUF = os.environ.get("VSUF", "_v2")              # _v2: LIGHT40 (superseded); _v3: SOLID40 (translucent views only)
+os.environ["LIGHT40" if VSUF == "_v2" else "SOLID40"] = "1"
 import screens21 as S
-WANT = {"02_drag_dock_preview.gif", "13_threat_moving.gif", "14_defence_fires.gif"}
+WANT = set(os.environ.get("VWANT", "02_drag_dock_preview.gif,13_threat_moving.gif,14_defence_fires.gif").split(","))
 TMP = os.path.join(H, "..", "..", "scratch", "idx")
 os.makedirs(TMP, exist_ok=True)
 
@@ -14,7 +15,7 @@ os.makedirs(TMP, exist_ok=True)
 def gif(name, n, fn, dur=90, size=None):
     if name in WANT:
         frames = [S.topil(fn(i / n, i)) for i in range(n)]
-        S.save_gif(frames, name.replace(".gif", "_v2.gif"), dur, size=size)
+        S.save_gif(frames, name.replace(".gif", VSUF + ".gif"), dur, size=size)
     else:
         frames = [Image.new("RGB", size or (640, 360))]
     S.GIF_FRAMES[name] = frames

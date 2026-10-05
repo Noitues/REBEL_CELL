@@ -273,6 +273,14 @@ if _LK > 0:
     MODE["grade"] = (0.94 + 0.04 * _LK, 0.92 + 0.04 * _LK, 1.04 + 0.02 * _LK)
 
 
+# round 40 v3 (designer correction: NOT a global lift): SOLID40=1 only touches the TRANSLUCENT views (raid, netrun).
+# The see-through buildings are more solid (opacity 0.42 -> 0.68), less darkened (x0.62 -> x0.86) and keep their colour
+# (chroma x1.35); the network's x-ray strength is computed from the old opacity, so it stays dominant. City zoom (opacity 1)
+# is untouched.
+_SK = float(os.environ.get("SOLID40", "0"))
+SOLID = dict(k=_SK, op=0.45 * _SK, dark_add=0.24 * _SK, sat=1 + 0.35 * _SK, win=0.15 * _SK)
+
+
 def opacity(lod):
     """Round 37: building opacity by zoom. City 1.0 (the real city); raid and transit 0.32 (translucent, darkened:
     you can tell they are there, the network is the critical layer)."""
@@ -302,6 +310,8 @@ def finish(tag, decorate=None, pools=(), out_size=(1920, 1080), seed=1, t=0.0, r
     ghost = (hatch * 0.55) * (1 - cityk) + 1.0 * cityk
     tk = (1 - op) / 0.58                                  # translucent buildings: the network shows through at full strength
     ghost = ghost * (1 - tk) + 0.92 * tk
+    if op < 0.999 and SOLID["k"] > 0:                    # round 40 v3: translucent buildings more solid (network x-ray kept)
+        op = op + (1 - op) * SOLID["op"]
     em = net.em * vis[..., None] + net.em * ((1 - vis) * ghost)[..., None]
     dk = 1 - (1 - net.dk) * vis
     # management zooms: the street's own lane glow steps back so the network reads (the city zoom keeps the real look)
@@ -318,9 +328,13 @@ def finish(tag, decorate=None, pools=(), out_size=(1920, 1080), seed=1, t=0.0, r
         gdk = (net.dk * lk)[..., None]                  # the hidden streets step back as much as the visible ones
         gb = P.gbeauty * gdk
         gg = P.gglow * gdk * 0.7 + net.em * 0.6
-        dark = 0.62 + LIGHT["dark_add"]
-        beauty = beauty * (1 - bld) + (gb * (1 - op) + P.beauty * op * dark) * bld
-        glow = glow * (1 - bld) + (gg * (1 - op) + P.glow * op * 0.45) * bld
+        dark = 0.62 + LIGHT["dark_add"] + SOLID["dark_add"]
+        pb = P.beauty
+        if SOLID["k"] > 0:                                # keep their colour: less grey (chroma up around the luminance)
+            lum = pb.mean(axis=2, keepdims=True)
+            pb = np.clip(lum + (pb - lum) * SOLID["sat"], 0, None)
+        beauty = beauty * (1 - bld) + (gb * (1 - op) + pb * op * dark) * bld
+        glow = glow * (1 - bld) + (gg * (1 - op) + P.glow * op * (0.45 + SOLID["win"])) * bld
     if LIGHT["k"] > 0:                                    # round 40 v2: the city lighter (buildings + ambient), the network unchanged
         bmask = (1 - vis)[..., None] if P.defmask is None else bld
         beauty = beauty * (1 + LIGHT["gain"] * (0.6 + 0.4 * bmask)) + np.array(LIGHT["amb"], np.float32) * (0.5 + 0.5 * bmask)

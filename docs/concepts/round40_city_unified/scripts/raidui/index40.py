@@ -77,6 +77,9 @@ def main():
     if v2:
         md += ["", "**v2, a lighter city** (`LIGHT40=1`, see `../NOTES.md`): " + ", ".join("[%s](%s)" % (n, n) for n in v2) +
                ". These are representative; every other gif would be regenerated with the same setting."]
+    if os.path.exists(os.path.join(GIFS, "13_threat_moving_v3.gif")):
+        md += ["", "**v3, translucent buildings more solid** (`SOLID40=1`, replaces v2): [13_threat_moving_v3.gif](13_threat_moving_v3.gif). "
+               "This one is representative; every other gif would be regenerated with the same setting. v2 (`LIGHT40`) is reverted."]
     md += ["", "Replaced (not shipped): 02 drag valid + 03 invalid -> 02 dock preview; 05 remove -> 05 remove to hand; "
            "06 move -> 06 swap in one motion; 21 node lost -> 21 node TAKEN.",
            "", "Rebuild: see `../NOTES.md` (Blender `scripts/run40.py`, then `scripts/raidui` builders through the compat layer)."]

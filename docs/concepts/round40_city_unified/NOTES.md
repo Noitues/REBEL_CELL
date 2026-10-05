@@ -9,7 +9,27 @@ The transit view is skipped this round (the netrun agent is redoing it).
 | `raid_gifs/` | Every raid interaction, re-run on the unified city model, using the latest locked version of each. Raid UI sources are rounds 21, 22 and 23. Raid world sources: round 23 slow and repair, round 22 unit health and icons v4, and the Heat spotlights. Each gif is 2 MB or less and uses a shared palette with dither, so saturation is kept. Contents are listed in `raid_gifs/index.md`, with a sheet at `raid_gifs/index.jpg`. |
 | `scripts/` | All the scripts. |
 
-## v2: lighter city (designer: "too dark now")
+## v3: translucent buildings more solid (designer correction; replaces v2)
+The ask was never a global lift: v2 (`LIGHT40`) is **reverted**, and its `_v2` files are kept only for the record.
+
+| File | What |
+|---|---|
+| `city_grid_v3.png` | Back to the round 39 level (mean brightness 94.9, the same as `round39_city_unified/city_grid.png`). The city zoom is untouched. |
+| `raid_view_v3.png`, `three_views_v3.png`, `raid_gifs/13_threat_moving_v3.gif` | The RAID and NETRUN translucent views with `SOLID40=1`. |
+
+**The setting** (`post40.SOLID`, env `SOLID40=1`) acts only where the buildings are see-through (opacity < 1):
+- The buildings are more solid: opacity goes from 0.42 to 0.68.
+- They are less darkened: ×0.86 instead of ×0.62.
+- They are less grey: chroma ×1.35 around their luminance, so they keep their colour.
+- Window glow is +15 %.
+
+The network's x-ray strength still comes from the old opacity, so the links and nodes stay dominant.
+
+**The rest:** every other raid gif (and the netrun views) would be regenerated with `SOLID40=1` and no `LIGHT40`.
+- Stills: `SUF40=_v3 SOLID40=1 python screens39.py city raid transit`, then `three`.
+- Gifs: `VSUF=_v3 VWANT=<names> python raidui/v2gifs40.py 21 22 23`.
+
+## v2: lighter city (designer: "too dark now") (REVERTED, superseded by v3)
 | File | What |
 |---|---|
 | `city_grid_v2.png`, `raid_view_v2.png`, `three_views_v2.png` | The same views with `LIGHT40=1`. |
