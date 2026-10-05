@@ -343,6 +343,8 @@ static func draw_pad(ci: CanvasItem, spec: Dictionary, at: Vector2, k: float = 1
 ## Everything of the marker but its disc (the vinyl sticker), round disc centre `c`: the
 ## ring, the pips, the corner badge, and the SEIZURE NOTICE slip in the disc's place.
 static func draw_under(ci: CanvasItem, spec: Dictionary, c: Vector2, k: float = 1.0) -> void:
+	if spec.get("kind") == KIND_BOSS:
+		return  # the boss is its HQ with the pencil TARGET (no disc, ring or pips)
 	var down: bool = spec.get("status") == ST_DOWN
 	if spec.get("status") == ST_TAKEN:
 		draw_slip(ci, spec, c, k)

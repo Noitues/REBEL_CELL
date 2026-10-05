@@ -2489,7 +2489,7 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 		note.theme_type_variation = UiTheme.BODY_TEXT
 		note.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
 		note.add_theme_color_override("font_color", Palette.TEXT_HI)
-		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(note)
 		note.custom_minimum_size.x = MIN_NOTE_WIDTH
 		card.body.add_child(note)
 		card.body.move_child(note, row.get_index())

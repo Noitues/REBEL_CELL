@@ -35,8 +35,11 @@ const MARKER_ROWS := [["next", "next"], ["notyet", "not yet"], ["cleared", "clea
 ## The line rows of the v4 key: [key, strip words].
 const MARKER_LINE_ROWS := [["locked", "locked link"], ["depowered", "no power"], ["threat", "threat route"]] # TR
 ## The cell that reveals the hidden Sites while pointed at.
+## Its words by device (UiTip.for_input picks the pad's when pad_active).
 const SHOW_ALL := "HOVER: SHOW ALL" # TR
+const SHOW_ALL_PAD := "OPEN KEY: SHOW ALL" # TR
 const SHOW_ALL_TIP := "Point here to show every Site; unselectable regular Sites are hidden to keep the map clear." # TR
+const SHOW_ALL_TIP_PAD := "Open the key to show every Site; unselectable regular Sites are hidden to keep the map clear." # TR
 ## A marker swatch's scale (of the map's marker) and its cell (x the icon swatch), at text
 ## scale 1.0.
 const MARKER_SWATCH_SCALE := 0.55
@@ -467,8 +470,9 @@ func _build_marker_rows(into: Container, fs: int) -> void:
 	show_all_cell = Label.new()
 	show_all_cell.name = "ShowAll"
 	show_all_cell.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	show_all_cell.text = CityMapOverlay.tr_word(SHOW_ALL)
-	show_all_cell.tooltip_text = UiTip.fold(CityMapOverlay.tr_word(SHOW_ALL_TIP))
+	show_all_cell.text = UiTip.for_input(CityMapOverlay.tr_word(SHOW_ALL), CityMapOverlay.tr_word(SHOW_ALL_PAD))
+	show_all_cell.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	show_all_cell.tooltip_text = UiTip.fold(UiTip.for_input(CityMapOverlay.tr_word(SHOW_ALL_TIP), CityMapOverlay.tr_word(SHOW_ALL_TIP_PAD)))
 	show_all_cell.mouse_filter = Control.MOUSE_FILTER_STOP
 	show_all_cell.add_theme_font_size_override("font_size", fs)
 	show_all_cell.add_theme_color_override("font_color", Palette.NET_CYAN)
@@ -492,6 +496,7 @@ func _marker_row(row_name: String, key: String, swatch: Control, words: String, 
 	row.name = row_name
 	row.set_meta(&"meaning", key)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # translated here, once
 	row.tooltip_text = UiTip.fold(SiteMarker.meaning(key) if SiteMarker.MEANINGS.has(key) else CityMapOverlay.tr_word("A raid's route toward your CORE."))
 	row.add_theme_constant_override("separation", roundi(ICON_SWATCH_GAP * Settings.text_scale * 0.5))
 	row.add_child(swatch)

@@ -1518,10 +1518,10 @@ func _node(n: Dictionary) -> void:
 
 ## The boss's red pencil TARGET circle (screen px: radius, its iso flattening, the wax
 ## width, the word's offset from the circle's left foot) and the chip's gap over it.
-const TARGET_RADIUS := 64.0
+const TARGET_RADIUS := 48.0
 const TARGET_FLAT := 0.62
 const TARGET_WIDTH := 8.0
-const TARGET_WORD_AT := Vector2(-0.9, 0.95)
+const TARGET_WORD_AT := Vector2(-2.0, 0.7)
 const TARGET_SEED := 351
 const BOSS_CHIP_GAP := 10.0
 ## Fight won (D17): the lit windows on a won Site's front walls: rows per wall, window step
@@ -1617,6 +1617,9 @@ func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
 	var box := Vector2(w, f.get_height(fs)) + Vector2(pad, pad) * 2.0
 	var circle := _icon_box(n, at)
 	var r := Rect2(Vector2(at.x - box.x * 0.5, circle.position.y - BOSS_CHIP_GAP * k - box.y), box)
+	# Kept on the map's open part (beside the column), still above the pencil.
+	var area := label_area()
+	r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
 	boss_chip_rect = r
 	_c.draw_rect(r, Color(Palette.NIGHT_SKY, 0.9))
 	_c.draw_rect(r, Palette.RESIST_GOLD, false, maxf(1.0, k))
@@ -1775,6 +1778,7 @@ func _sync_exploit_file() -> void:
 	var r := Rect2(Vector2(mark.end.x + EXPLOIT_FILE_GAP * k, mark.get_center().y - box.y * 0.5), box)
 	if r.end.x > area.end.x:
 		r.position.x = mark.position.x - EXPLOIT_FILE_GAP * k - box.x
+	r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
 	r.position.y = clampf(r.position.y, area.position.y, maxf(area.position.y, area.end.y - box.y))
 	exploit_file.position = r.position
 
@@ -1812,7 +1816,7 @@ func _make_exploit_file(id: StringName, tag: Dictionary) -> DecryptedHoloPanel:
 	eff.text = String(tag["effect"])
 	eff.theme_type_variation = UiTheme.BODY_TEXT
 	eff.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
-	eff.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	UiWrap.whole_words(eff)
 	eff.custom_minimum_size.x = EXPLOIT_FILE_W * Settings.text_scale
 	col.add_child(eff)
 	var site := Label.new()
@@ -1853,6 +1857,12 @@ func tier_pips_centre(n: Dictionary) -> Vector2:
 
 ## The rect node `n`'s tier pips cover (local px; zero size when it has none).
 func tier_pips_rect(n: Dictionary) -> Rect2:
+	if n.has("marker"):
+		# ART-5 5d: a v4 marker's square pips (none on claimed, DOWN, CORE or the boss).
+		var at := icon_pos(n)
+		if SiteMarker.pip_count(n["marker"]) <= 0 or at.x == INF:
+			return Rect2()
+		return SiteMarker.pips_rect(n["marker"], at, _k())
 	if tier_of(n) <= 0:
 		return Rect2()
 	var box := tier_pips_size(_pip_scale(n))

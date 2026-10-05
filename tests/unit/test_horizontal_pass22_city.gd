@@ -116,18 +116,28 @@ func test_the_overlay_covers_the_screen_and_reads_the_side_column() -> void:
 func test_a_focus_label_moves_inward_when_its_node_is_at_the_edge() -> void:
 	var hq: Control = await _hq_grid(&"solace")
 	var overlay: CityMapOverlay = hq.city_overlay
+	# ART-5 5d: the check runs on the plain graph (every node drawn), as it re-sets it below.
+	var g0 := CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, [])
+	overlay.set_graph(g0["nodes"], g0["edges"])
 	var area := overlay.label_area()
 	# Block everything but a strip at the left: every label that shows lies in the strip,
 	# and the selected one always shows. H23 #2 (on purpose): a node under the blocked part
 	# has no label at all now, so the selected node is the one nearest the strip's edge.
 	var strip := 260.0
+	# ART-5 5d: the v4 Grid hides unselectable Sites and frames the rest: the strip reaches
+	# at least past the leftmost node shown.
+	var leftmost := INF
+	for n in overlay.nodes:
+		if overlay.marker_shown(n):
+			leftmost = minf(leftmost, overlay.icon_pos(n).x)
+	strip = maxf(strip, leftmost - area.position.x + 30.0)
 	var col := overlay.get_global_transform_with_canvas() * Rect2(area.position.x + strip, area.position.y - 10.0, area.size.x, area.size.y + 20.0)
 	overlay.set_blocked_rects([col])
 	var id: StringName = &""
 	var best := -INF
 	for n in overlay.nodes:
 		var x: float = overlay.icon_pos(n).x
-		if x < area.position.x + strip and x > best:
+		if overlay.marker_shown(n) and x < area.position.x + strip and x > best:
 			best = x
 			id = n["id"]
 	assert_ne(id, &"", "a node in the strip")
@@ -244,6 +254,10 @@ func test_tier_pips_on_the_map_the_mini_map_and_the_legend() -> void:
 		var sd := CampaignRules.site_data(RunManager.corporation, n["id"])
 		if n["id"] == c.grid.home_site_id:
 			assert_false(overlay.drawn_tiers.has(n["id"]), "CORE has no difficulty")
+		elif not overlay.marker_shown(n) or SiteMarker.pip_count(n["marker"]) == 0:
+			# ART-5 5d (v4): a hidden Site draws nothing; the boss (TARGET) and claimed nodes
+			# carry no pips.
+			assert_false(overlay.drawn_tiers.has(n["id"]), "%s: no pips" % n["id"])
 		else:
 			assert_eq(int(overlay.drawn_tiers.get(n["id"], 0)), sd.tier, "%s shows its tier in pips" % n["id"])
 			var pips := overlay.tier_pips_rect(n)

@@ -21,4 +21,4 @@
 |---|---|
 | `tutorial_overlay.gd` (combat tutorial note) | Group 2, 2D HUD (combat chrome) |
 | Deck viewer (`deck_view.gd`) | Group 4, 4A (netrun screens beside the shop) |
-| The map legend / key on the Grid and route | Group 3 wave 2 (unified city), 3B for the route key now |
+| The map legend / key on the Grid and route | Group 3 wave 2 (unified city), 3B for the route key now. **Grid key done by 5d** (v4 marker key, plain words; DECISIONS "Art direction — ART-5 5d Grid markers and key") |
