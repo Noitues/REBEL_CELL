@@ -197,6 +197,23 @@ names follow the display words; no aliases, no migrations.
   their saves in the checkout's `saves/` between runs instead of a per-run APPDATA; delete the
   folder for a clean title screen.
 
+### 2026-10-05 — Designer ruling: groups in parallel, fast checks only, done within days
+The designer asked to start ART-2 (Group 2) in parallel with Group 1, to skip every non-fast test run and
+the audit until **all** art groups are done, and to finish M14 within a few days. From now:
+- **Checks during M14:** only the fast checks (`checks_fast.sh`) at hand-back and at every merge, plus each
+  agent's own test scripts. **No full-suite run per group.** One full-suite run (in isolation) and the one
+  audit loop happen after ART-12, before "M14 complete". Supersedes item 1 of "one full run, one audit at
+  the end" for the groups; its item 2 stands.
+- **Groups overlap:** a group starts before the previous one merges. Its agents build on main as it is and
+  `git merge main` whenever the orchestrator says a foundation landed (palette/theme 1A, material kit 1B,
+  glyphs 1C, city spike 1D); views switch to the new foundations as they arrive.
+- **Designer reviews are non-blocking:** each group's report goes to the designer when it lands; work on
+  the next group continues meanwhile; rulings are applied as they come.
+- **Agent cap raised** from 4–5 to about 9 at once; windowed captures limited to 1 window per agent while
+  more than 5 agents run.
+- **Pending presentation rulings** for Group 2 (plan §3.1 D15, D16, D17) are built on their plan defaults
+  and listed in the next designer report for confirmation.
+
 ### 2026-10-05 — Designer ruling: one full run, one audit at the end
 1. **One full-suite run** instead of three: each ART group (and ART-0) ends with one full run in isolation
    (`process/checks.sh`, `RUNS=3` only after a failure, to tell a flaky test from a real one; the runner
