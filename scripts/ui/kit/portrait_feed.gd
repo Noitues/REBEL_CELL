@@ -168,10 +168,9 @@ static func dispatch_red() -> Color:
 	return Palette.CORP_REBEL_CELL
 
 
-## The grease pencil's red for the flatlined X. Seam: Palette.HARM until Group 1 lands the
-## pencil tokens (ART_BIBLE §1.2: #FF1C2C).
+## The grease pencil's red for the flatlined X (ART_BIBLE §1.2: threat / loss).
 static func pencil_red() -> Color:
-	return Palette.HARM
+	return Palette.PENCIL_THREAT
 
 
 ## True when the feed shows a bust (a class with a bust set, not DISPATCH).

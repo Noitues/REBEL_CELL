@@ -730,9 +730,6 @@ func _style(speaker: int, corporation_id: StringName = &"", class_id: StringName
 const NAME_LIFT := 0.15
 ## DISPATCH's words: its red lifted toward white so the words read at body size.
 const DISPATCH_INK_LIFT := 0.55
-## Edge glow (px) and its alpha.
-const EDGE_GLOW := 6
-const EDGE_GLOW_ALPHA := 0.3
 
 
 ## The accent of a line's terminal: DISPATCH red, a corp's colour, else the Cell's cyan.
@@ -751,19 +748,20 @@ func line_ink(speaker: int) -> Color:
 	return Palette.TERMINAL_TEXT
 
 
-## The CRT terminal's panel in `accent` (seam: Group 1's TerminalPanel theme type and CRT
-## material replace this box when they land). `black`: DISPATCH's feed is on black glass.
+## The CRT terminal's panel in `accent`: 1A's TerminalPanel box (UiTheme.terminal_box: navy
+## glass, the chamfer, the edge glow) tinted the speaker's accent, its edge a little heavier
+## on the left. `black`: DISPATCH's feed is on black glass. (1B's CRT material: pending.)
 static func crt_style(accent: Color, black: bool = false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	var glass := Palette.TERMINAL_BG
-	style.bg_color = Color(glass.darkened(0.6) if black else glass, 0.97)
-	style.border_color = accent
-	style.set_border_width_all(1)
-	style.border_width_left = 3
-	style.set_corner_radius_all(2)
-	style.shadow_color = Color(accent, EDGE_GLOW_ALPHA)
-	style.shadow_size = EDGE_GLOW
+	var style := UiTheme.terminal_box(accent)
+	if black:
+		style.bg_color = Color(Palette.TERMINAL_BG.darkened(BLACK_GLASS), Palette.TERMINAL_BG.a)
+	style.border_width_left = LEFT_EDGE_PX
 	return style
+
+
+## DISPATCH's black glass (the terminal's navy darkened) and the bar's left edge (px).
+const BLACK_GLASS := 0.6
+const LEFT_EDGE_PX := 3
 
 
 ## The words' minimum width: the dock's width less the bar's margins (a narrow column dock

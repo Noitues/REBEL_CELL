@@ -259,6 +259,7 @@ func _contexts() -> void:
 	head.text = "MERIDIAN FREIGHT // LOSS PREVENTION\nPERSON OF INTEREST // FILE 0419-K"
 	head.position = Vector2(20, 12)
 	head.add_theme_color_override("font_color", Palette.CORP_MERIDIAN.darkened(0.3))
+	head.add_theme_font_override("font", Palette.paper_bold())
 	paper.add_child(head)
 	# Audit polaroids (print; KIA crossed out).
 	var x := 640.0
@@ -290,7 +291,7 @@ func _dialogue() -> void:
 	d.size = Vector2(270, 150)
 	_page_root.add_child(d)
 	Dialogue.dock_at(Rect2(380, 300, 600, 170), 4)
-	Dialogue.bark(&"breaker", "start_run", 3)
+	Dialogue.bark(&"breaker", "jack_in", 3)
 	if not Dialogue.is_showing():
 		Dialogue.say(RC.Voice.STREET_MERC, "Meridian moved the depot's Rack to the back lot. Logistics Director sits on it now. Two elite routers on the way in.", 30.0, &"", false, "", &"breaker")
 	Dialogue.say(RC.Voice.DISPATCH, "Cell, the depot's yours. Keep it quiet.", 30.0)
