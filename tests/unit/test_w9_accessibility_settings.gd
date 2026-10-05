@@ -239,10 +239,12 @@ func test_high_contrast_gives_buttons_and_focus_a_solid_thick_edge() -> void:
 		var n := t.get_stylebox(&"normal", kind) as StyleBoxFlat
 		assert_gte(n.border_width_left, HighContrast.HC_BUTTON_BORDER, "%s edge" % kind)
 		assert_eq(n.border_color.a, 1.0, "%s edge is solid" % kind)
-	var f := t.get_stylebox(&"focus", &"Button") as StyleBoxFlat
-	assert_eq(f.border_width_left, HighContrast.HC_FOCUS_BORDER, "a 4 px focus edge")
-	assert_eq(f.border_color, HighContrast.FOCUS)
-	assert_eq(f.shadow_size, 0, "no soft glow")
+	# ART-0 F: focus is the brackets (StyleBoxBrackets), thickened to 4 px, solid FOCUS.
+	var f := t.get_stylebox(&"focus", &"Button") as StyleBoxBrackets
+	assert_not_null(f, "focus is the brackets")
+	assert_eq(f.thickness, float(HighContrast.HC_FOCUS_BORDER), "a 4 px focus edge")
+	assert_eq(f.color, HighContrast.FOCUS)
+	assert_gt(f.thickness, StyleBoxBrackets.THICKNESS, "thicker than the 3 px brackets")
 	var grab := t.get_stylebox(&"grabber", &"VScrollBar") as StyleBoxFlat
 	assert_eq(grab.bg_color.a, 1.0, "a scroll grabber stays visible (its fill made opaque)")
 	assert_ne(grab.bg_color, HighContrast.BG)
