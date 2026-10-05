@@ -12,11 +12,11 @@
 [ext_resource type="Resource" path="res://content/slices/defrag_12.tres" id="s_def"]
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
 [ext_resource type="Resource" path="res://content/slices/overflow_24.tres" id="s_crit"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 [ext_resource type="Resource" path="res://content/enemies/collections_drone.tres" id="drone"]
 
 ; Renewal Engine, Solace final boss (GDD A.3, 2.11): 300 HP; Shim 14, Shim 14, Defrag 12,
-; Dose, Overflow 24, Miss. Hub Auto-Renew heals 10 per turn unless Hub-Breached
+; Dose, Overflow 24, Null. Hub Auto-Renew heals 10 per turn unless Hub-Breached
 ; (trigger 2 = ON_TURN_START, effect 14 = HEAL on SELF). 66%: Multiply to pointers
 ; 0 and 15 (behavior 1). 33%: pointers Orbit 3 per turn (behavior 3), 2 drones spawn and
 ; the wheel reconfigures (wheel_override): the second Shim 14 becomes an Overflow 24
@@ -56,21 +56,21 @@ slice = ExtResource("s_dose")
 script = ExtResource("3")
 slice = ExtResource("s_crit")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_atk"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_null")])
 hub = SubResource("hub_auto_renew")
 pointer_ticks = PackedInt32Array(0)
 
 [sub_resource type="Resource" id="wheel_emergency"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_crit"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_atk"), SubResource("slot_crit"), SubResource("slot_def"), SubResource("slot_dose"), SubResource("slot_crit"), SubResource("slot_null")])
 hub = SubResource("hub_auto_renew")
 pointer_ticks = PackedInt32Array(0)
 

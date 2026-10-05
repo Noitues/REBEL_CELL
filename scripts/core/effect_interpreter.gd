@@ -98,7 +98,7 @@ func apply_effect(state: CombatState, e: EffectData, ctx: Dictionary, rng: Rando
 		RC.EffectType.APPLY_STATUS:
 			for t in targets:
 				var slot := pick_slot(state, t, e.slice_pick, ctx, rng)
-				if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_MISS:
+				if slot >= 0 and apply_status(t, slot, e.status, events) and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
 					events[events.size() - 1]["random"] = true
 		RC.EffectType.CLEANSE:
 			for t in targets:
@@ -365,10 +365,10 @@ func pick_slot(state: CombatState, c: CombatantState, pick: int, ctx: Dictionary
 			# The target may have fewer pointers than the owner (Corrupt segment on a boss
 			# pointer 1 vs. a one-pointer operative): clamp to its last pointer.
 			return c.wheel.slice_at(clampi(int(ctx.get("pointer_index", 0)), 0, c.wheel.pointer_ticks.size() - 1))
-		RC.SlicePick.RANDOM_NON_MISS:
+		RC.SlicePick.RANDOM_NON_NULL:
 			var candidates: Array[int] = []
 			for i in c.wheel.slot_slice_ids.size():
-				if slice_of(c.wheel, i).slice_type != RC.SliceType.MISS and c.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
+				if slice_of(c.wheel, i).slice_type != RC.SliceType.NULL and c.wheel.slice_statuses[i] != RC.Status.CORRUPTED:
 					candidates.append(i)
 			if candidates.is_empty():
 				return -1

@@ -53,7 +53,7 @@ const DEMOS := {
 	&"jack_in": ["jack_in", "stage"], &"jack_out": ["jack_out", "stage"], &"jack_fade_reduced": ["jack_reduced", "stage"],
 	&"wheel_spin": ["view", "turn"], &"wheel_spin_blur": ["view", "turn"], &"wheel_nudge": ["view", "nudge"],
 	&"precision_perfect": ["scene", "perfect"], &"precision_good_ring": ["view", "good"],
-	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_miss_static": ["view", "miss"],
+	&"precision_weak": ["shake", "wheel"], &"precision_blink": ["blink", "wheel"], &"precision_null_static": ["view", "null"],
 	&"card_hover": ["view", "hover"], &"card_play": ["scene", "play"], &"card_draw": ["scene", "deal"], &"card_exhaust": ["scene", "exhaust"],
 	&"send_it_press": ["view", "press"], &"send_it_drips": ["view", "press"], &"resolve_pass": ["scene", "send_hit"], &"resolve_pulse": ["view", "pulse"],
 	&"number_float": ["scene", "numbers"], &"number_crit": ["scene", "numbers"], &"hp_lag": ["view", "hp"],
@@ -156,6 +156,10 @@ const DEMOS := {
 	&"sticker_hover": ["kit", "sticker_hover"], &"sticker_press": ["kit", "sticker_press"],
 	&"pencil_write_on": ["kit", "pencil_write_on"], &"pencil_wipe": ["kit", "pencil_wipe"], &"pencil_glint": ["kit", "pencil_glint"],
 	&"holo_bands": ["kit", "holo_bands"], &"light_spill_breathe": ["kit", "light_spill_breathe"], &"bits_flight": ["kit", "bits_flight"],
+	# ART-0 F (ported from art-pass W2 / W8a): kit behaviour on the real pieces (a native
+	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
+	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
+	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -807,6 +811,40 @@ func _play_screen(what: String) -> void:
 		"drop_land", "drop_buy", "drop_shred", "drop_refuse", "drop_carry", "market":
 			await _play_drop(what)
 			length = 1.5
+		"kit_focus":
+			# ART-0 F: a pad player's focus on a native button grows it about its centre
+			# (UiFocus, `focus_scale`); the pad is in use for this focus move only.
+			var b := Button.new()
+			b.text = "JACK IN"
+			b.position = Vector2(260, 300)
+			_screen_host.add_child(b)
+			UiFocus.install_on(b)
+			await get_tree().process_frame
+			if not is_instance_valid(b):
+				return
+			var pad_was := Settings.pad_active
+			Settings.pad_active = true
+			b.grab_focus()
+			Settings.pad_active = pad_was
+		"kit_refused":
+			# ART-0 F: a refused sticker (KitState: HARM outline flash, no-entry mark).
+			var s := StickerButton.new("RESPIN")
+			s.position = Vector2(260, 300)
+			_screen_host.add_child(s)
+			await get_tree().process_frame
+			if is_instance_valid(s):
+				s.refuse()
+			length = Motion.seconds(KitState.REFUSED_MOTION)
+		"modal_open", "modal_close":
+			# ART-0 F: a modal opens (fade and grow, `modal_in`), then closes (`modal_out`).
+			var m := ConfirmDialog.new(TYPE_TEXT)
+			m.position = Vector2(220, 240)
+			_screen_host.add_child(m)
+			PageTransition.open_modal(m)
+			if what == "modal_close":
+				await get_tree().create_timer(Motion.seconds(&"modal_in") + LOOP_GAP).timeout
+				if is_instance_valid(m):
+					PageTransition.close_modal(m)
 		"city":
 			var city := NeonCity.new()
 			city.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1052,8 +1090,8 @@ func _play_view(what: String) -> float:
 			_wheel.play_nudge(RC.RingScope.INNER, 1)
 		"good":
 			_wheel.play_good_ring()
-		"miss":
-			_wheel.play_miss_static(0)
+		"null":
+			_wheel.play_null_static(0)
 		"pulse":
 			_wheel.play_pulse(0)
 		"hp":
@@ -1221,7 +1259,7 @@ func _play_scene(what: String) -> void:
 				_scene._cancel_drag(i, CANCEL_AT)
 		"numbers":
 			# ANIM-R4 C6e: a real SEND IT (the ANIM-R2 demo played made-up beats over the live
-			# fight, so its tag read "MISS · half power" while a 14 flew). The operative's hits
+			# fight, so its tag read "NULL · half power" while a 14 flew). The operative's hits
 			# pierce (its ring), so the guarded hit is the enemy's: fights tried until the enemy
 			# hits the operative, who is given a block of a third of that hit (lab only), and the
 			# forecast refreshed, so the tag says what then happens: the raw hit rides, meets

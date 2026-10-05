@@ -51,6 +51,9 @@ const PLAYER_HIT_COLOR := Palette.CELL_ACID
 const ENEMY_HIT_COLOR := CHIP_LOSS
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
+## ART-1 1A: the most of the screen's height a hand card takes (the narrower Anton stickers
+## freed width, the cards grew with it and the wheels shrank under BIG_TEXT_RADIUS_KEEP).
+const HAND_HEIGHT_SHARE := 0.24
 
 @export var auto_start: bool = true
 
@@ -665,7 +668,7 @@ func inspect_at(global_point: Vector2) -> String:
 
 
 ## Odds a random effect shows instead of a result (GDD 2.10): the slice type mix of a
-## wheel, optionally leaving the Miss slice out (random non-Miss picks).
+## wheel, optionally leaving the NULL slice out (random non-NULL picks).
 ## The corporation whose words `c`'s wheel speaks (DECISIONS "names for M14" D3 / D4): an
 ## enemy's corporation, "" for the Cell's own wheels.
 func corp_of(c: CombatantState) -> StringName:
@@ -675,9 +678,9 @@ func corp_of(c: CombatantState) -> StringName:
 	return e.corporation_id if e != null else &""
 
 
-func odds_text(c: CombatantState, non_miss_only: bool = false) -> String:
+func odds_text(c: CombatantState, non_null_only: bool = false) -> String:
 	var parts := PackedStringArray()
-	for chip in _odds_chips(c, non_miss_only):
+	for chip in _odds_chips(c, non_null_only):
 		parts.append(String(chip["text"]))
 	return tr("odds: %s") % " / ".join(parts)
 
@@ -689,13 +692,13 @@ static func shown_tip(c: Control, text: String) -> void:
 	c.tooltip_auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 
 
-func _odds_chips(c: CombatantState, non_miss_only: bool = false) -> Array[Dictionary]:
+func _odds_chips(c: CombatantState, non_null_only: bool = false) -> Array[Dictionary]:
 	var counts := {}
 	var order: Array[String] = []
 	var total := 0
 	for id in c.wheel.slot_slice_ids:
 		var slice := engine.content(id) as SliceData
-		if slice == null or (non_miss_only and slice.slice_type == RC.SliceType.MISS):
+		if slice == null or (non_null_only and slice.slice_type == RC.SliceType.NULL):
 			continue
 		var key: String = "%s %s" % [Palette.SLICE_GLYPHS.get(slice.slice_type, "?"), tr(Palette.slice_word(slice.slice_type, corp_of(c)))]
 		if not counts.has(key):
@@ -1159,7 +1162,9 @@ func _show_aim_hint() -> void:
 	if Settings.pad_active:
 		_aim_hint.text = tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")]
 	else:
-		_aim_hint.text = tr("Drop or click on a glowing target  ·  right-click cancels")
+		# ART-0 F (ported from art-pass W9F, §6.8 / §12): input-aware words, one call.
+		_aim_hint.text = UiTip.for_input(tr("Drop or click on a glowing target  ·  right-click cancels"),
+			tr("%s / %s: choose a glowing target  ·  %s: play  ·  %s: cancel") % [Settings.key_text(&"ui_left"), Settings.key_text(&"ui_right"), Settings.key_text(&"ui_accept"), Settings.key_text(&"ui_cancel")])
 	# Over the enemy side, above both the hand and the RAM row, shrunk to the room to the
 	# screen's edge (H24: at 1.6 it ran over "RAM 6/12" and off the screen).
 	var hand := _hand_box.get_global_rect()
@@ -1359,7 +1364,7 @@ func _instant_playback() -> bool:
 
 ## Precision and action feedback (STYLE_GUIDE 5, GDD 10): Perfect = latch + wheel-local
 ## inversion + 2-frame freeze (+ a limited flash); Good = click; Weak = stutter shake;
-## Miss slice = static burst. Nudges tick, spins run down, flips clack. Telegraphed
+## NULL slice = static burst. Nudges tick, spins run down, flips clack. Telegraphed
 ## migrations flicker the boss pointers until they move.
 func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = false) -> void:
 	for e in events:
@@ -1375,12 +1380,12 @@ func _feedback(state: CombatState, events: Array[Dictionary], replayed: bool = f
 			"pointer":
 				if e.get("owner") != state.player.id:
 					continue
-				var is_miss: bool = _slice_type_of(state, e) == RC.SliceType.MISS
+				var is_null_slice: bool = _slice_type_of(state, e) == RC.SliceType.NULL
 				var tier := int(e.get("tier", RC.PrecisionTier.GOOD))
-				AudioDirector.play_precision(tier, is_miss)
-				if is_miss:
+				AudioDirector.play_precision(tier, is_null_slice)
+				if is_null_slice:
 					_flicker_view(_player_view)
-					_bark("miss", state)
+					_bark("null", state)
 				elif tier == RC.PrecisionTier.PERFECT:
 					_perfect_feedback(_player_view)
 					_bark("perfect", state)
@@ -2056,7 +2061,7 @@ signal shown_hp_changed
 func _sync_heat() -> void:
 	var heat := RunManager.campaign.heat if RunManager.campaign != null else 0
 	var heat_max := engine.resolver.config.heat_max
-	heat_poster.set_heat(heat, heat_max, engine.resolver.config.major_heat_levels())
+	heat_poster.set_heat(heat, heat_max, HeatRules.band_levels(RunManager.campaign, engine.resolver.config))
 	background.corp_creep = clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0)
 
 
@@ -2194,7 +2199,8 @@ func _build_hand(state: CombatState) -> void:
 		var c := _make_card(card, i, s)
 		c.disabled = state.is_over() or state.ram < card.ram_cost
 		var several := CardTargeting.options(engine.resolver, state, i).size() > 1
-		shown_tip(c, "%s\n%s" % [Codex.describe(card), tr("Drag it onto a glowing target, or click it and then the target.") if several else tr("Click to play.")])
+		shown_tip(c, "%s\n%s" % [Codex.describe(card), UiTip.for_input(tr("Drag it onto a glowing target, or click it and then the target."), tr("Press it, then pick a glowing target.")) if several
+			else UiTip.for_input(tr("Click to play."), tr("Press it to play."))])
 		var index := i
 		c.pressed.connect(_card_pressed.bind(index))
 		c.mouse_entered.connect(func() -> void:
@@ -2241,6 +2247,8 @@ func _card_scale_for(count: int) -> float:
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
 	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
+	var height := size.y if size.y > 0.0 else get_viewport_rect().size.y
+	fit = minf(fit, height * HAND_HEIGHT_SHARE / ZineCard.STICKER_SIZE.y)
 	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)
 
 
@@ -2381,14 +2389,14 @@ func _preview_result(action: CombatAction, state: CombatState, result: CombatRes
 		var host := (target.host_id if target.is_satellite else target.id) if target != null else &""
 		var v := _view_of(host)
 		if target != null and v != null:
-			var non_miss := false
+			var non_null := false
 			for e in card.effects:
-				if e != null and e.slice_pick == RC.SlicePick.RANDOM_NON_MISS:
-					non_miss = true
+				if e != null and e.slice_pick == RC.SlicePick.RANDOM_NON_NULL:
+					non_null = true
 			var chips: Array = [{"text": tr("RANDOM: ODDS"), "color": Palette.INK, "ink": Palette.PAPER}]
-			chips.append_array(_odds_chips(target, non_miss))
+			chips.append_array(_odds_chips(target, non_null))
 			v.intent = {"type": -1, "text": tr("%s rolls") % TextDb.t(card, "display_name"), "chips": chips,
-				"tooltip": tr("A random effect: the roll is hidden until you play it. %s") % odds_text(target, non_miss)}
+				"tooltip": tr("A random effect: the roll is hidden until you play it. %s") % odds_text(target, non_null)}
 			v.queue_redraw()
 		preview_note.append("[i]random effect: the roll is hidden until you play it[/i]")
 		return
@@ -2479,7 +2487,7 @@ func _show_end_turn_preview() -> void:
 		var t: String = e.get("type", "")
 		if t == "status" and e.get("random", false):
 			var owner := state.get_combatant(e["target"])
-			preview_note.append("%s gets %s on a random non-Miss slice (%s)." % [owner.display_name, RC.Status.keys()[e["status"]], odds_text(owner, true)])
+			preview_note.append("%s gets %s on a random non-NULL slice (%s)." % [owner.display_name, RC.Status.keys()[e["status"]], odds_text(owner, true)])
 		elif e.has("text") and t != "pass":
 			preview_note.append(String(e["text"]))
 	var after := result.state
@@ -3873,7 +3881,7 @@ func _guard_of(b: Dictionary) -> Dictionary:
 			return {"text": signed(amount), "icon": RC.SliceType.DEFRAG}
 		"shield":
 			if amount > 0:
-				return {"text": signed(amount), "icon": RC.SliceType.SHIELD}
+				return {"text": signed(amount), "icon": RC.SliceType.SANDBOX}
 		"evade":
 			return {"text": signed(amount), "icon": RC.SliceType.DETOUR}
 	return {}
@@ -4148,9 +4156,9 @@ func _phase_beat(b: Dictionary, after: CombatState) -> void:
 		_spawn_beat(StringName(String(sp.get("id", ""))), int(sp.get("hp", 0)), after)
 
 
-## A needle latches: its slice pulses in its colour (a MISS slice gets a big grey X,
+## A needle latches: its slice pulses in its colour (a NULL slice gets a big grey X,
 ## ANIM-R1 C5a); the player's landings show their precision (Perfect: inversion + freeze +
-## a limited flash; Good: a clean ring; Weak: a stutter; Miss: static over that slice
+## a limited flash; Good: a clean ring; Weak: a stutter; NULL: static over that slice
 ## only), with their sound and bark; every needle pulses.
 func _land(b: Dictionary, s: CombatState) -> void:
 	var owner := StringName(String(b["source"]))
@@ -4166,12 +4174,12 @@ func _land(b: Dictionary, s: CombatState) -> void:
 		return
 	var slot := int(b["slot"])
 	var slice := engine.content(s.player.wheel.slot_slice_ids[clampi(slot, 0, s.player.wheel.slot_slice_ids.size() - 1)]) as SliceData
-	var is_miss := slice != null and slice.slice_type == RC.SliceType.MISS
+	var is_null_slice := slice != null and slice.slice_type == RC.SliceType.NULL
 	var tier := int(b["tier"])
-	AudioDirector.play_precision(tier, is_miss)
-	if is_miss:
-		v.play_miss_static(slot)
-		_bark("miss", s)
+	AudioDirector.play_precision(tier, is_null_slice)
+	if is_null_slice:
+		v.play_null_static(slot)
+		_bark("null", s)
 	elif tier == RC.PrecisionTier.PERFECT:
 		_perfect_feedback(v)
 		_bark("perfect", s)

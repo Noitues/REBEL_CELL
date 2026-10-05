@@ -9,9 +9,6 @@ extends Control
 ## PROCESSED). Static: no motion. A view only.
 
 const SHADER := preload("res://shaders/kit/corp_paper.gdshader")
-## Courier Prime (ART_BIBLE §2.9; area 1A ships it under assets/fonts/); until then the
-## concept's copy is not in the game, so the mono face stands in.
-const FONT_COURIER := "res://assets/fonts/CourierPrime-Regular.ttf"
 const LETTERHEAD_H := 46.0
 const RULE_PX := 2.0
 const STAMP_TILT_DEG := -9.0
@@ -71,11 +68,9 @@ func _ready() -> void:
 	_layout()
 
 
-## The typewriter face (Courier Prime, or mono until it ships).
+## The typewriter face (Courier Prime, 1A's `Palette.paper()`).
 static func courier() -> Font:
-	if ResourceLoader.exists(FONT_COURIER):
-		return Palette.font(FONT_COURIER)
-	return Palette.mono()
+	return Palette.paper()
 
 
 ## Adds a `LABEL: value` field line in Courier Prime.

@@ -10,7 +10,7 @@ const HQ := "res://scenes/hq/hq_scene.tscn"
 const NETRUN := "res://scenes/netrun_map/netrun_scene.tscn"
 const TITLE := "res://scenes/menu/title_scene.tscn"
 const SLOT := "gut_screens_h20"
-const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the Miss slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
+const LONG_LINE := "Runner, the compliance office has flagged your cell for audit. Keep the needle off the NULL slice, bank the Rack before the auditors land, and do not let the Heat climb past the next threshold or the whole district locks down for a week."
 
 var _text_scale_before: float = 1.0
 var _legend_before: bool = true
@@ -438,30 +438,30 @@ func test_upgrade_a_slice_shows_the_picked_slots_own_price() -> void:
 	var scene := _shop_scene()
 	var s := RunManager.netrun
 	var op := s.run.operative
-	var miss := -1
+	var null_slot := -1
 	for i in op.slot_slice_ids.size():
 		var sd := s.lookup.get_content(op.slot_slice_ids[i]) as SliceData
-		if sd != null and sd.slice_type == RC.SliceType.MISS:
-			miss = i
-	assert_true(miss >= 0, "the starting spinner has a Miss slot")
-	var plain := 0 if miss != 0 else 1
+		if sd != null and sd.slice_type == RC.SliceType.NULL:
+			null_slot = i
+	assert_true(null_slot >= 0, "the starting spinner has a NULL slot")
+	var plain := 0 if null_slot != 0 else 1
 	scene.open_overwrite(0)
 	await _frames()
 	var view := scene.get_node("SpinnerView") as SpinnerView
 	assert_false(view.window.title.contains("CYCLES"), "no single price in the title")
-	view.select(miss)
-	assert_eq(view.price_label.text, "%d CYCLES" % s.slice_overwrite_price(miss), "the Miss slot's own price")
+	view.select(null_slot)
+	assert_eq(view.price_label.text, "%d CYCLES" % s.slice_overwrite_price(null_slot), "the NULL slot's own price")
 	view.select(plain)
 	assert_eq(view.price_label.text, "%d CYCLES" % s.slice_overwrite_price(plain))
-	assert_ne(s.slice_overwrite_price(miss), s.slice_overwrite_price(plain), "the Miss slot costs more (config)")
+	assert_ne(s.slice_overwrite_price(null_slot), s.slice_overwrite_price(plain), "the NULL slot costs more (config)")
 	view.close()
 	await _frames()
-	s.run.cycles = s.slice_overwrite_price(miss) - 1
+	s.run.cycles = s.slice_overwrite_price(null_slot) - 1
 	scene.open_overwrite(0)
 	await _frames()
 	view = scene.get_node("SpinnerView") as SpinnerView
 	watch_signals(view)
-	view.select(miss)
+	view.select(null_slot)
 	assert_eq(view.price_label.get_theme_color("font_color"), Palette.CELL_PINK, "unaffordable in pink")
 	assert_true(view._action_button.disabled, "UPGRADE is off")
 	view.confirm()
@@ -683,7 +683,7 @@ func test_tooltips_are_themed_and_on_the_screens_controls() -> void:
 	await _frames()
 	var style := hq.get_theme_stylebox(&"panel", &"TooltipPanel") as StyleBoxFlat
 	assert_not_null(style, "the tooltip panel has the terminal look")
-	assert_eq(style.border_color, Palette.CELL_PINK)
+	assert_eq(style.border_color, Palette.NET_CYAN, "v2: a terminal tooltip, cyan edge (ART-1 1A)")
 	assert_true(autofree(UiTip.make("A long line that wraps", "Title")) is Control, "custom tooltip body")  # ANIM-R6 D10: it was left an orphan
 	for line in UiTip.fold(LONG_LINE).split("\n"):
 		assert_true(line.length() <= UiTip.COLUMNS, "tooltip lines wrap")

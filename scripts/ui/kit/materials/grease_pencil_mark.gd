@@ -5,7 +5,7 @@ extends Node2D
 ## (a circle; an arrow's shaft and its two head flicks; a route). Each stroke is a `Line2D`
 ## with round caps, width 8-10, `shaders/kit/marker_stroke.gdshader` (opaque wax, alpha 0.96,
 ## bristles, dropouts, ragged edge, sheen line, the glint) over a duplicate under-shadow
-## offset SHADOW_OFFSET. Yellow `PENCIL_YELLOW` = our plan / valid; red `PENCIL_RED` = threat
+## offset SHADOW_OFFSET. Yellow `PENCIL_PLAN` = our plan / valid; red `PENCIL_THREAT` = threat
 ## / invalid / loss. Solid = what will happen; dashed = what-if.
 ##
 ## Writes on in writing order (`pencil_write_on`) and wipes off with a cloth wipe
@@ -97,7 +97,7 @@ func _ready() -> void:
 
 ## The colour of `ink`.
 static func ink_color(i: Ink) -> Color:
-	return Palette.PENCIL_RED if i == Ink.THREAT else Palette.PENCIL_YELLOW
+	return Palette.PENCIL_THREAT if i == Ink.THREAT else Palette.PENCIL_PLAN
 
 
 ## Adds a stroke (local points) after the others in writing order.

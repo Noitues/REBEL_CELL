@@ -319,7 +319,7 @@ func _text(text: String, fs: int) -> Label:
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_size_override("font_size", fs)
 	if not compact:
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiWrap.whole_words(l)  # ART-0 F (art pass W9F §4.3.3): whole words, never mid-word
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		l.custom_minimum_size.x = MIN_TEXT_WIDTH
 	return l

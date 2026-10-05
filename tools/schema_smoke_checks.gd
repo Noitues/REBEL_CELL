@@ -6,7 +6,7 @@ extends RefCounted
 
 ## Runs every check; returns the number that failed (each prints what it saw).
 func run() -> int:
-	return _batch1() + _batch2() + _batch3()
+	return _batch1() + _batch2() + _batch3() + _art1_glyphs()
 
 
 func _mk_effect(t, target, amount := 0, scope := RC.RingScope.OUTER, mult := 1.0) -> EffectData:
@@ -20,7 +20,7 @@ func _batch1() -> int:
 	var atk := SliceData.new(); atk.id = &"attack"; atk.slice_type = RC.SliceType.SHIM; atk.base_output = 6
 	var crit := SliceData.new(); crit.id = &"crit"; crit.slice_type = RC.SliceType.OVERFLOW; crit.base_output = 12
 	var def := SliceData.new(); def.id = &"defend"; def.slice_type = RC.SliceType.DEFRAG; def.target_rule = RC.TargetRule.SELF; def.base_output = 5
-	var miss := SliceData.new(); miss.id = &"miss"; miss.slice_type = RC.SliceType.MISS
+	var null_slice := SliceData.new(); null_slice.id = &"null"; null_slice.slice_type = RC.SliceType.NULL
 	# Mirror firmware
 	var mirror := FirmwareData.new(); mirror.id = &"mirror"; mirror.neighbor_rule = RC.NeighborRule.MIRROR
 	var leech := FirmwareData.new(); leech.id = &"leech"
@@ -35,7 +35,7 @@ func _batch1() -> int:
 	hub.perfect_hook = hook
 	# Wheel
 	var w := WheelData.new(); w.hub = hub
-	var layout = [crit, atk, atk, atk, def, miss]
+	var layout = [crit, atk, atk, atk, def, null_slice]
 	var slots: Array[WheelSlotData] = []
 	for s in layout:
 		var sl := WheelSlotData.new(); sl.slice = s; slots.append(sl)
@@ -103,7 +103,7 @@ func _batch2() -> int:
 	var fails := 0
 	var atk := _slice(&"atk", RC.SliceType.SHIM, 6)
 	var def := _slice(&"def", RC.SliceType.DEFRAG, 5, RC.TargetRule.SELF)
-	var miss := _slice(&"miss", RC.SliceType.MISS, 0)
+	var null_slice := _slice(&"null", RC.SliceType.NULL, 0)
 	var crit := _slice(&"crit", RC.SliceType.OVERFLOW, 12)
 
 	# Class
@@ -112,7 +112,7 @@ func _batch2() -> int:
 	var re := EffectData.new(); re.type = RC.EffectType.RETRIGGER; re.target = RC.EffectTarget.SELF
 	hook.effects = [re]; hub.perfect_hook = hook
 	var cls := ClassData.new(); cls.id = &"breaker"
-	cls.starting_wheel = _wheel([crit, atk, atk, atk, def, miss]); cls.starting_wheel.hub = hub
+	cls.starting_wheel = _wheel([crit, atk, atk, atk, def, null_slice]); cls.starting_wheel.hub = hub
 	var card := CardData.new(); card.id = &"spin"; cls.starting_deck = [card]
 	var r1 := RankRewardData.new(); r1.rank = 1
 	var r1b := RankRewardData.new(); r1b.rank = 1
@@ -126,7 +126,7 @@ func _batch2() -> int:
 	var p1 := BossPhaseData.new(); p1.hp_threshold_pct = 0.66; p1.pointer_behavior = RC.PointerBehavior.MULTIPLY; p1.pointer_ticks = PackedInt32Array([0, 15])
 	var p2 := BossPhaseData.new(); p2.hp_threshold_pct = 0.33; p2.pointer_behavior = RC.PointerBehavior.ORBIT; p2.orbit_ticks_per_turn = 2
 	var boss := EnemyData.new(); boss.id = &"renewal_engine"; boss.is_boss = true
-	boss.wheel = _wheel([atk, atk, def, def, crit, miss]); boss.spawns = [sp]; boss.phases = [p1, p2]
+	boss.wheel = _wheel([atk, atk, def, def, crit, null_slice]); boss.spawns = [sp]; boss.phases = [p1, p2]
 	var be := boss.validate(); print("Boss (expect 0): ", be)
 	if be.size() != 0: fails += 1
 	boss.phases = [p2, p1]
@@ -206,7 +206,7 @@ func _batch3() -> int:
 
 
 ## Vertical-slice fixes (2026-09-24): CardData.offered (Bug card), HubCoreData.drone
-## (DEPLOY template), RankRewardData.ring_segment_options, WheelState migrations.
+## (TROJAN template), RankRewardData.ring_segment_options, WheelState migrations.
 func _batch4() -> int:
 	var fails := 0
 	var bug := CardData.new(); bug.id = &"bug"; bug.offered = false; bug.exhaust = true
@@ -346,8 +346,8 @@ func _h2() -> int:
 	var loaded: CampaignConfigData = load("res://content/config/campaign_config.tres")
 	print("Major Heat levels: ", loaded.major_heat_levels())
 	if loaded.major_heat_levels().is_empty(): fails += 1
-	print("Mirror extras: ", cfg.mirror_resistance, " ", cfg.mirror_deploy_base, " ", cfg.mirror_threat_min_integrity, " ", cfg.mirror_threat_min_damage, " ", cfg.mirror_decoy_speed)
-	if cfg.mirror_resistance != 1 or cfg.mirror_deploy_base != 6 or cfg.mirror_threat_min_integrity != 10 or cfg.mirror_threat_min_damage != 4 or cfg.mirror_decoy_speed != 2: fails += 1
+	print("Mirror extras: ", cfg.mirror_resistance, " ", cfg.mirror_trojan_base, " ", cfg.mirror_threat_min_integrity, " ", cfg.mirror_threat_min_damage, " ", cfg.mirror_decoy_speed)
+	if cfg.mirror_resistance != 1 or cfg.mirror_trojan_base != 6 or cfg.mirror_threat_min_integrity != 10 or cfg.mirror_threat_min_damage != 4 or cfg.mirror_decoy_speed != 2: fails += 1
 	var c := CampaignState.new(); c.start_class_id = &"rigger"
 	if CampaignState.from_dict(c.to_dict()).start_class_id != &"rigger": fails += 1
 	return fails + _h11()
@@ -486,4 +486,40 @@ func _art0() -> int:
 	print("ART-0 S0: saves ", cfg.save_dir_source, " / ", cfg.save_dir_export, " replays ", cfg.replay_subdir, " on ", cfg.write_replays)
 	if cfg.save_dir_source != "res://saves" or cfg.save_dir_export != "user://saves" or cfg.replay_subdir != "replays" or not cfg.write_replays: fails += 1
 	if shipped == null or shipped.save_dir_source != cfg.save_dir_source or shipped.save_dir_export != cfg.save_dir_export or shipped.replay_subdir != cfg.replay_subdir or shipped.write_replays != cfg.write_replays: fails += 1
+	# ART-0 B3: the slice programs SANDBOX / TROJAN / NULL; the config fields follow the words.
+	print("ART-0 B3: null_slice_overwrite_price ", cfg.null_slice_overwrite_price, " shipped ", shipped.null_slice_overwrite_price if shipped != null else -1,
+		" mirror_trojan_base ", cfg.mirror_trojan_base, " slices ", RC.SliceType.keys())
+	if not names.has("null_slice_overwrite_price") or names.has("mi" + "ss_slice_overwrite_price") or cfg.null_slice_overwrite_price != 150: fails += 1
+	if not names.has("mirror_trojan_base") or names.has("mirror_" + "deploy_base") or cfg.mirror_trojan_base != 6: fails += 1
+	if shipped == null or shipped.null_slice_overwrite_price != 150: fails += 1
+	if RC.SliceType.keys() != ["SHIM", "OVERFLOW", "DEFRAG", "DETOUR", "SANDBOX", "TROJAN", "HOTFIX", "INFECT", "NULL"]: fails += 1
+	# ART-0 B3: five Heat bands on the existing thresholds (MAJOR 25 / 50 / 75 and PURGE 100).
+	print("ART-0 B3: heat_band_levels ", shipped.heat_band_levels() if shipped != null else [])
+	if shipped == null or shipped.heat_band_levels() != ([25, 50, 75, 100] as Array[int]): fails += 1
+	return fails
+
+
+## ART-1 1C: GlyphTableData (the glyph atlas and its id -> glyph table): an empty table reports
+## its missing atlas and stand-in; the shipped one validates; a save keeps the ids and geometry.
+func _art1_glyphs() -> int:
+	var fails := 0
+	var empty := GlyphTableData.new()
+	var ee := empty.validate()
+	print("ART-1 1C: empty glyph table errors (expect 2: no atlas, no stand-in): ", ee)
+	if ee.size() != 2: fails += 1
+	var shipped := GlyphTableData.shipped()
+	var se := shipped.validate() if shipped != null else PackedStringArray(["missing"])
+	print("ART-1 1C: shipped glyph table errors (expect 0): ", se, " glyphs ", shipped.glyph_names.size() if shipped != null else -1,
+		" ids ", shipped.ids.size() if shipped != null else -1)
+	if se.size() != 0: fails += 1
+	if shipped == null or shipped.glyph_for(GlyphTableData.key_for_slice_type(RC.SliceType.SHIM)) != &"slice_shim": fails += 1
+	var t := GlyphTableData.new()
+	t.glyph_names = PackedStringArray(["slice_shim", "pending"])
+	t.ids = {&"type_shim": &"slice_shim", &"effect_custom": &"pending"}
+	t.box_px = 90
+	var err := ResourceSaver.save(t, "user://smoke_glyph_table.tres")
+	var back: GlyphTableData = load("user://smoke_glyph_table.tres")
+	print("ART-1 1C: glyph table save=", err, " ids ", back.ids if back != null else {}, " box ", back.box_px if back != null else -1)
+	if err != OK or back == null or back.glyph_for(&"type_shim") != &"slice_shim" or not back.is_pending(&"effect_custom") or back.box_px != 90: fails += 1
+	if back == null or back.cell_region(&"pending") != Rect2(128, 0, 128, 128): fails += 1
 	return fails

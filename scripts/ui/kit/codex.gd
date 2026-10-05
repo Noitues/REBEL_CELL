@@ -7,12 +7,12 @@ const SLICE_TYPE_TEXT := {
 	RC.SliceType.SHIM: "SHIM: deals damage to whatever sits at each pointer of the target wheel.",
 	RC.SliceType.OVERFLOW: "OVERFLOW: deals high damage to whatever sits at each pointer of the target wheel.",
 	RC.SliceType.DEFRAG: "DEFRAG: gains block. Block expires at the start of your next turn.",
-	RC.SliceType.SHIELD: "SHIELD: gains shield. Shield persists across turns (cap 15).",
+	RC.SliceType.SANDBOX: "SANDBOX: gains shield. Shield persists across turns (cap 15).",
 	RC.SliceType.DETOUR: "DETOUR: cancels the next incoming SHIM or OVERFLOW this turn.",
-	RC.SliceType.DEPLOY: "DEPLOY: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
+	RC.SliceType.TROJAN: "TROJAN: docks a drone on your wheel. It resolves when its slice does and takes hits aimed there.",
 	RC.SliceType.HOTFIX: "HOTFIX: restores HP.",
 	RC.SliceType.INFECT: "INFECT: applies a status or a drain to your wheel (Dose corrupts, Priority drains RAM, Citation plants a Parasite, Solar Flare overclocks).",
-	RC.SliceType.MISS: "MISS: nothing happens, unless a Daemon says otherwise.",
+	RC.SliceType.NULL: "NULL: nothing happens, unless a Daemon says otherwise.",
 }
 const STATUS_TEXT := {
 	RC.Status.CORRUPTED: "CORRUPTED: when the slice resolves, 3 self-damage (+1 per MAJOR Heat threshold) and -1 RAM. Lasts until cleansed.",

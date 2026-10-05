@@ -3,7 +3,7 @@ extends GutTest
 
 var _cfg: CampaignConfigData
 var _atk6: SliceData
-var _miss: SliceData
+var _null: SliceData
 var _cls: ClassData
 var _dummy: EnemyData
 var _overdrive: CardData
@@ -13,12 +13,12 @@ var _encrypt: CardData
 func before_each() -> void:
 	_cfg = CombatFixture.config()
 	_atk6 = CombatFixture.slice(&"s_atk6", RC.SliceType.SHIM, 6)
-	_miss = CombatFixture.slice(&"s_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"s_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
 	_overdrive = CombatFixture.card(&"s_overdrive", [CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.OWN_WHEEL, 0, RC.RingScope.OUTER, 1.0, RC.Status.OVERCLOCKED)], 1, RC.WheelTarget.OWN)
 	_encrypt = CombatFixture.card(&"s_encrypt", [CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.OWN_WHEEL, 0, RC.RingScope.OUTER, 1.0, RC.Status.ENCRYPTED)], 1, RC.WheelTarget.OWN)
 	var deck: Array[CardData] = [_overdrive, _encrypt]
-	_cls = CombatFixture.operative_class(&"s_class", 60, CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _miss]), deck)
-	_dummy = CombatFixture.enemy(&"s_dummy", 200, CombatFixture.miss_wheel())
+	_cls = CombatFixture.operative_class(&"s_class", 60, CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _null]), deck)
+	_dummy = CombatFixture.enemy(&"s_dummy", 200, CombatFixture.null_wheel())
 
 
 func _session(enemy: EnemyData = null, heat_majors: int = 0) -> CombatSession:
@@ -94,7 +94,7 @@ func test_hardened_firmware_is_permanent_encryption() -> void:
 	var hardened := FirmwareData.new()
 	hardened.id = &"s_hardened"
 	hardened.permanent_status = RC.Status.ENCRYPTED
-	var w := CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _miss], null, [0], 0, null, [null, hardened])
+	var w := CombatFixture.wheel([_atk6, _atk6, _atk6, _atk6, _atk6, _null], null, [0], 0, null, [null, hardened])
 	var deck: Array[CardData] = [_overdrive, _overdrive]
 	var cls := CombatFixture.operative_class(&"s_hard_class", 60, w, deck)
 	var s := CombatSession.start(CombatFixture.resolver([cls, _dummy, hardened]), cls.id, [_dummy.id], 4)
@@ -105,14 +105,14 @@ func test_hardened_firmware_is_permanent_encryption() -> void:
 	assert_eq(s.state.player.wheel.slice_statuses[1], RC.Status.NONE)
 
 
-func test_dose_corrupts_a_random_non_miss_player_slice() -> void:
+func test_dose_corrupts_a_random_non_null_player_slice() -> void:
 	var s := CombatSession.start(CombatFixture.resolver([_cls]), _cls.id, [&"dosage_dispenser"], 9)
 	var dispenser := s.state.get_combatant(&"enemy_0")
 	CombatFixture.land(dispenser, 0)  # Dose
-	CombatFixture.land(s.state.player, 5)  # Miss: no attack, keeps the numbers clean
+	CombatFixture.land(s.state.player, 5)  # NULL: no attack, keeps the numbers clean
 	var r := s.apply(CombatAction.end_turn())
 	var statuses := CombatFixture.events_of(r, "status")
 	assert_eq(statuses.size(), 1)
 	assert_eq(statuses[0]["target"], &"player")
-	assert_ne(statuses[0]["slot"], 5, "never the Miss slice")
+	assert_ne(statuses[0]["slot"], 5, "never the NULL slice")
 	assert_eq(s.state.player.wheel.slice_statuses.count(RC.Status.CORRUPTED), 1)

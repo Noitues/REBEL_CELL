@@ -5,14 +5,14 @@ extends GutTest
 ## reserved keys and keys another action holds.
 
 var _atk: SliceData
-var _miss: SliceData
-var _deploy: SliceData
+var _null: SliceData
+var _trojan: SliceData
 
 
 func before_each() -> void:
 	_atk = CombatFixture.slice(&"h17_atk", RC.SliceType.SHIM, 6)
-	_miss = CombatFixture.slice(&"h17_miss", RC.SliceType.MISS, 0, RC.TargetRule.SELF)
-	_deploy = CombatFixture.slice(&"h17_deploy", RC.SliceType.DEPLOY, 1, RC.TargetRule.SELF)
+	_null = CombatFixture.slice(&"h17_null", RC.SliceType.NULL, 0, RC.TargetRule.SELF)
+	_trojan = CombatFixture.slice(&"h17_trojan", RC.SliceType.TROJAN, 1, RC.TargetRule.SELF)
 
 
 func _frames(n: int = 3) -> void:
@@ -23,7 +23,7 @@ func _frames(n: int = 3) -> void:
 func _session(slices: Array, daemons: Array = [], hub: HubCoreData = null, enemy_slices: Array = []) -> CombatSession:
 	var deck: Array[CardData] = [CombatFixture.card(&"h17_noop", [CombatFixture.effect(RC.EffectType.GAIN_RAM, RC.EffectTarget.SELF, 0)])]
 	var cls := CombatFixture.operative_class(&"h17_class", 60, CombatFixture.wheel(slices, hub), deck)
-	var enemy := CombatFixture.enemy(&"h17_dummy", 300, CombatFixture.miss_wheel() if enemy_slices.is_empty() else CombatFixture.wheel(enemy_slices))
+	var enemy := CombatFixture.enemy(&"h17_dummy", 300, CombatFixture.null_wheel() if enemy_slices.is_empty() else CombatFixture.wheel(enemy_slices))
 	var ids := []
 	for d in daemons:
 		ids.append(String(d))
@@ -47,7 +47,7 @@ func test_the_pause_menu_backdrop_covers_the_screen_and_eats_clicks() -> void:
 
 
 func test_a_shunt_onto_an_overclocked_slot_burns_it_out() -> void:
-	var s := _session([_atk, _atk, _atk, _atk, _atk, _miss])
+	var s := _session([_atk, _atk, _atk, _atk, _atk, _null])
 	s.state.player.wheel.slot_firmware_ids[0] = &"shunt"
 	s.state.player.wheel.slice_statuses[1] = RC.Status.OVERCLOCKED
 	_land_good(s, 0)
@@ -56,7 +56,7 @@ func test_a_shunt_onto_an_overclocked_slot_burns_it_out() -> void:
 
 
 func test_a_copy_does_not_take_the_neighbours_burner() -> void:
-	var s := _session([_atk, _atk, _atk, _atk, _atk, _miss])
+	var s := _session([_atk, _atk, _atk, _atk, _atk, _null])
 	s.state.player.wheel.slot_firmware_ids[0] = &"shunt"
 	s.state.player.wheel.slot_firmware_ids[1] = &"burner"
 	var r := s.resolver
@@ -66,16 +66,16 @@ func test_a_copy_does_not_take_the_neighbours_burner() -> void:
 	assert_eq(copy["permanent_status"], RC.Status.NONE, "no free permanent Overclock")
 
 
-func test_stolen_intent_fires_on_a_shunted_miss() -> void:
-	var s := _session([_atk, _atk, _atk, _atk, _atk, _miss], [&"stolen_intent"], null, [_atk, _atk, _atk, _atk, _atk, _atk])
+func test_stolen_intent_fires_on_a_shunted_null() -> void:
+	var s := _session([_atk, _atk, _atk, _atk, _atk, _null], [&"stolen_intent"], null, [_atk, _atk, _atk, _atk, _atk, _atk])
 	s.state.player.wheel.slot_firmware_ids[4] = &"shunt"
-	_land_good(s, 4)  # a Good towards slot 5: the Shunt resolves the Miss instead
+	_land_good(s, 4)  # a Good towards slot 5: the Shunt resolves the NULL instead
 	var res := s.apply(CombatAction.end_turn())
-	assert_true(CombatFixture.events_of(res, "stolen_intent").size() > 0, "Stolen Intent swapped the shunted Miss")
+	assert_true(CombatFixture.events_of(res, "stolen_intent").size() > 0, "Stolen Intent swapped the shunted NULL")
 
 
 func test_drones_follow_the_slot_a_shunt_resolves() -> void:
-	var s := _session([_atk, _atk, _atk, _atk, _atk, _miss])
+	var s := _session([_atk, _atk, _atk, _atk, _atk, _null])
 	var r := s.resolver
 	s.state.player.wheel.slot_firmware_ids[2] = &"shunt"
 	_land_good(s, 2)

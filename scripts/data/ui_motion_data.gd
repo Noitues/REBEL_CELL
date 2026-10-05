@@ -11,7 +11,7 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"jack_in", &"jack_out", &"jack_fade_reduced",  # 4.1
 	&"wheel_spin", &"wheel_spin_blur",  # 4.2
 	&"wheel_nudge",  # 4.3
-	&"precision_perfect", &"precision_good_ring", &"precision_weak", &"precision_blink", &"precision_miss_static",  # 4.4
+	&"precision_perfect", &"precision_good_ring", &"precision_weak", &"precision_blink", &"precision_null_static",  # 4.4
 	&"card_hover", &"card_play", &"card_draw", &"card_exhaust",  # 4.5
 	&"send_it_press", &"send_it_drips", &"resolve_pass", &"resolve_pulse",  # 4.6
 	&"number_float", &"number_crit", &"hp_lag",  # 4.7
@@ -102,6 +102,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"sticker_hover", &"sticker_press",
 	&"pencil_write_on", &"pencil_wipe", &"pencil_glint",
 	&"holo_bands", &"light_spill_breathe", &"bits_flight",
+	# ART-0 F (ported from art-pass W2 / W8a): the pad focus scale, the refused state, and a
+	# modal's open and close (PageTransition.open_modal / close_modal).
+	&"focus_scale", &"button_refused", &"modal_in", &"modal_out",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

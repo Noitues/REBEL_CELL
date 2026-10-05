@@ -42,6 +42,17 @@ func _init(p_text: String = "SEND IT", p_color: Color = Palette.CELL_PINK, p_hin
 	mouse_exited.connect(func() -> void: _hot = false; queue_redraw())
 	focus_entered.connect(func() -> void: _hot = true; queue_redraw())
 	focus_exited.connect(func() -> void: _hot = false; queue_redraw())
+	KitState.track(self)  # ART-0 F (art pass W2, §6): the six states
+
+
+## ART-0 F (§6): the state drawn now (KitState: idle, hover, focus, pressed, disabled, refused).
+func state() -> StringName:
+	return KitState.of(self)
+
+
+## ART-0 F (§6 Error / refused): flashes the refused state (HARM outline, no-entry mark).
+func refuse() -> void:
+	KitState.refuse(self)
 
 
 ## Animation pass ANIM-6 (4.13): the rings' scale; JACK IN breathes (`jack_ring_breathe`,
@@ -71,7 +82,9 @@ func display_only() -> ZineStamp:
 
 
 func _draw() -> void:
-	var c := size / 2.0
+	var st := state()
+	# ART-0 F (§6): hover lifts the stamp, a press drops it.
+	var c := size / 2.0 + Vector2(0, KitState.lift(st))
 	var r := minf(size.x, size.y) / 2.0 - 4
 	var col := stamp_color if not disabled else Color(stamp_color, 0.35)
 	draw_circle(c, r, Color(Palette.NIGHT_SKY, 0.85))
@@ -87,3 +100,6 @@ func _draw() -> void:
 	draw_string(Palette.display(), c + Vector2(-r + 12, 8 + drop), stamp_text, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, WORD_SIZE, col)
 	if hint != "":
 		draw_string(Palette.mono(), c + Vector2(-r + 12, 26), hint, HORIZONTAL_ALIGNMENT_CENTER, r * 2 - 24, roundi(HINT_SIZE * Settings.text_scale), col)
+	# ART-0 F (§6): the disabled lock and the refused mark; focus is the stamp's own lime
+	# halo (a sticker's focus, v2 §2.10), never brackets.
+	KitState.draw_frame(self, Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0), st, false)

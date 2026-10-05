@@ -6,9 +6,9 @@
 [ext_resource type="Resource" path="res://content/slices/dose.tres" id="s_dose"]
 [ext_resource type="Resource" path="res://content/slices/shim_6.tres" id="s_atk"]
 [ext_resource type="Resource" path="res://content/slices/defrag_5.tres" id="s_def"]
-[ext_resource type="Resource" path="res://content/slices/miss.tres" id="s_miss"]
+[ext_resource type="Resource" path="res://content/slices/null.tres" id="s_null"]
 
-; Dosage Dispenser (GDD A.3): 38 HP; Dose, Shim 6, Dose, Defrag 5, Shim 6, Miss.
+; Dosage Dispenser (GDD A.3): 38 HP; Dose, Shim 6, Dose, Defrag 5, Shim 6, Null.
 
 [sub_resource type="Resource" id="slot_dose"]
 script = ExtResource("3")
@@ -22,14 +22,14 @@ slice = ExtResource("s_atk")
 script = ExtResource("3")
 slice = ExtResource("s_def")
 
-[sub_resource type="Resource" id="slot_miss"]
+[sub_resource type="Resource" id="slot_null"]
 script = ExtResource("3")
-slice = ExtResource("s_miss")
+slice = ExtResource("s_null")
 
 [sub_resource type="Resource" id="wheel"]
 script = ExtResource("2")
 slice_count = 6
-slots = Array[ExtResource("3")]([SubResource("slot_dose"), SubResource("slot_atk"), SubResource("slot_dose"), SubResource("slot_def"), SubResource("slot_atk"), SubResource("slot_miss")])
+slots = Array[ExtResource("3")]([SubResource("slot_dose"), SubResource("slot_atk"), SubResource("slot_dose"), SubResource("slot_def"), SubResource("slot_atk"), SubResource("slot_null")])
 pointer_ticks = PackedInt32Array(0)
 
 [resource]

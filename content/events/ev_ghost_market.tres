@@ -17,7 +17,7 @@ reward = ExtResource("e1")
 [sub_resource type="Resource" id="c1"]
 script = ExtResource("e2")
 label = "Buy a blueprint (30 Cycles: Firmware Recycler)"
-result_text = "Your Miss slice is less of a waste now."
+result_text = "Your NULL slice is less of a waste now."
 cycle_cost = 30
 reward = ExtResource("e3")
 

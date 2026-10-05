@@ -1,10 +1,10 @@
 extends RefCounted
-## Zero Day (GDD 6.2): a Perfect on the Miss slice resolves as an `amount`x Crit against
+## Zero Day (GDD 6.2): a Perfect on the NULL slice resolves as an `amount`x Crit against
 ## the pointer target (that multiple of the wheel's best OVERFLOW output, else its best SHIM).
 
 
 func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Dictionary]:
-	if not (state is CombatState) or int(context.get("trigger", -1)) != RC.Trigger.ON_MISS_SLICE or int(context.get("tier", -1)) != RC.PrecisionTier.PERFECT:
+	if not (state is CombatState) or int(context.get("trigger", -1)) != RC.Trigger.ON_NULL_SLICE or int(context.get("tier", -1)) != RC.PrecisionTier.PERFECT:
 		return []
 	var fx: EffectInterpreter = context["fx"]
 	var owner: CombatantState = context["owner"]
@@ -22,7 +22,7 @@ func handle(context: Dictionary, state, _rng: RandomNumberGenerator) -> Array[Di
 	var d: DaemonData = context.get("daemon")
 	var mult := d.amount if d != null else 0
 	var amount := mult * (best_crit if best_crit > 0 else best_atk)
-	var events: Array[Dictionary] = [{"type": "zero_day", "amount": amount, "text": "Zero Day: the Perfect Miss becomes a %dx Crit for %d." % [mult, amount]}]
+	var events: Array[Dictionary] = [{"type": "zero_day", "amount": amount, "text": "Zero Day: the Perfect NULL becomes a %dx Crit for %d." % [mult, amount]}]
 	for q in target.wheel.pointer_ticks.size():
 		var victim: CombatantState = target
 		var guard: CombatantState = state.satellite_at(target.id, target.wheel.slice_at(q))

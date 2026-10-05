@@ -20,7 +20,7 @@ func _init(p_title: String = "", min_size: Vector2 = Vector2(240, 120)) -> void:
 	label.offset_top = 24 if p_title != "" else 8
 	label.offset_right = -10
 	label.offset_bottom = -8
-	label.add_theme_color_override("default_color", Palette.INK)
+	label.add_theme_color_override("default_color", PaperInk.text(Palette.INK))  # ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6)
 	label.add_theme_font_override("normal_font", Palette.mono())
 	add_child(label)
 
@@ -83,15 +83,19 @@ func _draw() -> void:
 		var y := size.y * (0.18 + k * 0.17)
 		draw_line(Vector2(4, y), Vector2(size.x - 4, y + 1), Color(Palette.INK, 0.035), 1.0)
 	draw_rect(Rect2(size.x * 0.62, 2, 2, size.y - 6), Color(Palette.INK, 0.05))
-	draw_polyline(pts, Color(Palette.INK, 0.35), 1.0)
+	draw_polyline(pts, PaperInk.edge(Color(Palette.INK, EDGE_ALPHA)), PaperInk.edge_width(1.0))
 	_tape(Vector2(14, -6), -0.12)
 	_tape(Vector2(size.x - 50, -5), 0.1)
 	if title != "":
-		draw_string(Palette.marker(), Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.INK)
+		draw_string(Palette.marker(), Vector2(10, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, PaperInk.text(Palette.INK))
 
 
 func _tape(at: Vector2, angle: float) -> void:
 	draw_set_transform(at, angle, Vector2.ONE)
-	draw_rect(Rect2(0, 0, 38, 12), Palette.NOTE_TAPE)
+	draw_rect(Rect2(0, 0, 38, 12), PaperInk.opaque(Palette.NOTE_TAPE, paper_color))
 	draw_rect(Rect2(0, 0, 38, 12), Color(Palette.INK, 0.08), false, 1.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## The torn edge's soft ink out of high contrast (ART-0 F (ported from art-pass WF b9af7e3, ART_BIBLE v2 §5.6): opaque INK, 2 px in it).
+const EDGE_ALPHA := 0.35

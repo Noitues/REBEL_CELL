@@ -95,9 +95,9 @@ var pulse_satellite: StringName = &""
 var pulse_scale: float = 1.0
 ## Good landing: a ring growing off the rim (progress 0..1; 0 = none).
 var ring_pulse: float = 0.0
-## Miss landing: static over one slice (strength 0..1; 0 = none).
-var miss_static: float = 0.0
-var miss_slot: int = -1
+## NULL landing: static over one slice (strength 0..1; 0 = none).
+var null_static: float = 0.0
+var null_slot: int = -1
 ## Slice blur while the wheel turns fast (0..1) and which way it turns.
 var blur: float = 0.0
 var _blur_dir: float = 1.0
@@ -118,7 +118,7 @@ var replaying: bool = false
 var last_turn_shown: float = 1.0
 # ANIM-R1 (the SEND IT replay's legibility): the landed slices, the break, satellite HP,
 # the THIS TURN caption, an enemy's entrance and the hit flash. Rest values as above.
-## Slices the needles landed on this replay: slot -> true when it is a MISS slice (drawn
+## Slices the needles landed on this replay: slot -> true when it is a NULL slice (drawn
 ## with a big grey X until the wheel turns on), and their pulse (0..1).
 var landed: Dictionary = {}
 var landing_pulse: float = 0.0
@@ -332,7 +332,7 @@ const SCRUB_STEPS := 5
 ## Slice blur: faint copies trail the slices this many ticks apart.
 const BLUR_COPIES := 2
 const BLUR_STEP := 0.6
-## Miss static: flecks drawn over the slice, and their length (px).
+## NULL static: flecks drawn over the slice, and their length (px).
 const STATIC_FLECKS := 26
 const STATIC_FLECK := 7.0
 ## Floating numbers keep inside this share of the inner disc's radius (clear of every
@@ -343,10 +343,10 @@ const NUMBER_ROOM := 0.62
 const NUMBER_HUB_SHARE := 0.9
 const NUMBER_GAP := 2.0
 const NUMBER_MIN_FONT := 10.0
-## A landed slice's rim (px); the MISS X's arm as a share of the slice band, its width.
+## A landed slice's rim (px); the NULL X's arm as a share of the slice band, its width.
 const LANDED_RIM := 4.0
-const MISS_X_SHARE := 0.32
-const MISS_X_WIDTH := 5.0
+const NULL_X_SHARE := 0.32
+const NULL_X_WIDTH := 5.0
 ## The DEFEATED stamp's lettering (px at text scale 1.0) and tilt (rad).
 const DEFEATED_FONT := 22
 const STAMP_TILT := -0.2
@@ -386,7 +386,7 @@ func _shown() -> CombatantState:
 
 
 ## True while any motion of this view still runs (its own tweens, queued nudges, and the
-## kit's helpers on it: the Weak stutter, the Miss blink).
+## kit's helpers on it: the Weak stutter, the NULL blink).
 func motion_busy() -> bool:
 	for k in _tweens:
 		var tw: Tween = _tweens[k]
@@ -440,8 +440,8 @@ func stop_motion(sync_tag: bool = true) -> void:
 	pulse_satellite = &""
 	pulse_scale = 1.0
 	ring_pulse = 0.0
-	miss_static = 0.0
-	miss_slot = -1
+	null_static = 0.0
+	null_slot = -1
 	blur = 0.0
 	trails = []
 	trail_alpha = 0.0
@@ -794,16 +794,16 @@ func play_good_ring() -> void:
 	tw.tween_callback(func() -> void: ring_pulse = 0.0; _end(&"ring"); queue_redraw())
 
 
-## Miss landing: static over slice `slot` only (`precision_miss_static`).
-func play_miss_static(slot: int) -> void:
-	if not Motion.live(&"precision_miss_static"):
+## NULL landing: static over slice `slot` only (`precision_null_static`).
+func play_null_static(slot: int) -> void:
+	if not Motion.live(&"precision_null_static"):
 		return
-	miss_slot = slot
-	miss_static = 1.0
-	var e := Motion.entry(&"precision_miss_static")
+	null_slot = slot
+	null_static = 1.0
+	var e := Motion.entry(&"precision_null_static")
 	var tw := _tw(&"static")
-	tw.tween_method(func(v: float) -> void: miss_static = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"precision_miss_static")).set_ease(e.ease).set_trans(e.trans)
-	tw.tween_callback(func() -> void: miss_static = 0.0; miss_slot = -1; _end(&"static"))
+	tw.tween_method(func(v: float) -> void: null_static = v; queue_redraw(), 1.0, 0.0, Motion.seconds(&"precision_null_static")).set_ease(e.ease).set_trans(e.trans)
+	tw.tween_callback(func() -> void: null_static = 0.0; null_slot = -1; _end(&"static"))
 
 
 ## Rewind: the rings and HP scrub back from `from_*` to the state (the checkpoint side)
@@ -870,17 +870,17 @@ func reveal_last_turn() -> void:
 # --- ANIM-R1: the SEND IT replay's legibility --------------------------------------------------
 
 ## A needle latched on slice `slot`: the slice pulses in its colour (`landing_pulse`: from
-## full to its amplitude, where it stays until the wheel turns on); a MISS slice gets a big
+## full to its amplitude, where it stays until the wheel turns on); a NULL slice gets a big
 ## grey X. Nothing plays when motion doesn't.
 func play_landing(slot: int) -> void:
 	if not Motion.live(&"landing_pulse"):
 		return
 	var c := _shown()
-	var is_miss := false
+	var is_null_slice := false
 	if c != null and lookup != null and slot >= 0 and slot < c.wheel.slot_slice_ids.size():
 		var slice := lookup.get_content(c.wheel.slot_slice_ids[slot]) as SliceData
-		is_miss = slice != null and slice.slice_type == RC.SliceType.MISS
-	landed[slot] = is_miss
+		is_null_slice = slice != null and slice.slice_type == RC.SliceType.NULL
+	landed[slot] = is_null_slice
 	var e := Motion.entry(&"landing_pulse")
 	var tw := _tw(&"landing")
 	tw.tween_method(func(v: float) -> void: landing_pulse = v; queue_redraw(), 1.0, Motion.amplitude(&"landing_pulse"), Motion.seconds(&"landing_pulse")).set_ease(e.ease).set_trans(e.trans)
@@ -1317,7 +1317,7 @@ func slice_pieces() -> Array:
 		var mid := _tick_angle(i * tps, rot)
 		var dir := Vector2(cos(mid), sin(mid))
 		var sc := Palette.slice_color(slice.slice_type) if slice != null else wheel_color
-		var miss := slice != null and slice.slice_type == RC.SliceType.MISS
+		var is_null_slice := slice != null and slice.slice_type == RC.SliceType.NULL
 		var art := {"rim": sc.lightened(0.35), "slice_col": sc, "value": "", "value_fs": _fs(VALUE_FONT_SIZE)}
 		if slice != null:
 			art["type"] = slice.slice_type
@@ -1326,7 +1326,7 @@ func slice_pieces() -> Array:
 			if slice.base_output > 0:
 				art["value"] = str(slice.base_output)
 				art["value_at"] = center + dir * (radius + VALUE_OUT)
-		out.append([_wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03), Color(sc, 0.18 if miss else 0.5), art])
+		out.append([_wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03), Color(sc, 0.18 if is_null_slice else 0.5), art])
 		var fan := PackedVector2Array([center])
 		for k in 11:
 			var a := lerpf(minf(a0, a1), maxf(a0, a1), k / 10.0)
@@ -1775,7 +1775,7 @@ func _draw_view() -> void:
 				var b1 := _tick_angle(i * tps + tps / 2.0 + back, rot)
 				draw_colored_polygon(_wedge(center, inner, radius, minf(b0, b1), maxf(b0, b1)), _col(Color(sc, 0.22 * blur / k)))
 		var wedge := _wedge(center, inner, radius, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03)
-		if slice.slice_type == RC.SliceType.MISS:
+		if slice.slice_type == RC.SliceType.NULL:
 			draw_colored_polygon(wedge, _col(Color(sc, 0.18)))
 			_draw_dashed_arc(center, radius - 1, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03, line, 1.5)
 			_draw_dashed_arc(center, inner + 1, minf(a0, a1) + 0.03, maxf(a0, a1) - 0.03, line, 1.5)
@@ -1788,7 +1788,7 @@ func _draw_view() -> void:
 		if _zone_is(valid_zones, {"kind": "slot", "slot": i}):
 			var hot := _zone_is([hover_zone], {"kind": "slot", "slot": i})
 			draw_polyline(wedge, _col(TARGET_COLOR if hot else Color(TARGET_COLOR, 0.55 * zone_pulse)), 3.0 if hot else 1.5, true)
-		if i == miss_slot and miss_static > 0.0:
+		if i == null_slot and null_static > 0.0:
 			_draw_static(center, inner, radius, minf(a0, a1), maxf(a0, a1))
 		var dir := Vector2(cos(mid), sin(mid))
 		SliceIcon.draw_on_slice(self, center + dir * (inner + band * 0.42), band * 0.36, slice.slice_type, sc)
@@ -1966,7 +1966,7 @@ func tag_flipping() -> bool:
 
 
 ## The slices the needles landed on (ANIM-R1): a thick rim in the slice's colour, bright
-## as they latch; a MISS slice gets a big grey X.
+## as they latch; a NULL slice gets a big grey X.
 func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot: float) -> void:
 	if landed.is_empty():
 		return
@@ -1984,15 +1984,15 @@ func _draw_landed(center: Vector2, radius: float, inner: float, tps: float, rot:
 		closed.append(wedge[0])
 		draw_polyline(closed, _col(Color(sc.lightened(0.4), maxf(0.6, landing_pulse))), LANDED_RIM, true)
 		if bool(landed[slot]):
-			# MISS: a big grey X across the slice.
+			# NULL: a big grey X across the slice.
 			var m := (a0 + a1) * 0.5
 			var mid := center + Vector2(cos(m), sin(m)) * (inner + radius) * 0.5
-			var arm := (radius - inner) * MISS_X_SHARE
-			var grey := _col(Palette.slice_color(RC.SliceType.MISS).lightened(0.3))
-			draw_line(mid + Vector2(-arm, -arm), mid + Vector2(arm, arm), Color(Palette.INK, 0.8), MISS_X_WIDTH + 3.0)
-			draw_line(mid + Vector2(-arm, arm), mid + Vector2(arm, -arm), Color(Palette.INK, 0.8), MISS_X_WIDTH + 3.0)
-			draw_line(mid + Vector2(-arm, -arm), mid + Vector2(arm, arm), grey, MISS_X_WIDTH)
-			draw_line(mid + Vector2(-arm, arm), mid + Vector2(arm, -arm), grey, MISS_X_WIDTH)
+			var arm := (radius - inner) * NULL_X_SHARE
+			var grey := _col(Palette.slice_color(RC.SliceType.NULL).lightened(0.3))
+			draw_line(mid + Vector2(-arm, -arm), mid + Vector2(arm, arm), Color(Palette.INK, 0.8), NULL_X_WIDTH + 3.0)
+			draw_line(mid + Vector2(-arm, arm), mid + Vector2(arm, -arm), Color(Palette.INK, 0.8), NULL_X_WIDTH + 3.0)
+			draw_line(mid + Vector2(-arm, -arm), mid + Vector2(arm, arm), grey, NULL_X_WIDTH)
+			draw_line(mid + Vector2(-arm, arm), mid + Vector2(arm, -arm), grey, NULL_X_WIDTH)
 
 
 ## A beaten enemy's empty spot: a dashed ring where the disc was, its name and DEFEATED.
@@ -2155,12 +2155,12 @@ func _draw_caption(text: String, shown: float) -> void:
 	draw_string(font, Vector2(r.position.x, r.position.y + h * 0.7), text, HORIZONTAL_ALIGNMENT_CENTER, w, fs, Color(Palette.PAPER, a))
 
 
-## Miss landing: static flecks over one slice only (hash scatter, a new pattern each frame).
+## NULL landing: static flecks over one slice only (hash scatter, a new pattern each frame).
 func _draw_static(center: Vector2, r0: float, r1: float, a0: float, a1: float) -> void:
 	var frame := Engine.get_process_frames()
-	var strength := miss_static * Motion.amplitude(&"precision_miss_static")
+	var strength := null_static * Motion.amplitude(&"precision_null_static")
 	for k in STATIC_FLECKS:
-		var h := hash(Vector3i(k, frame, miss_slot))
+		var h := hash(Vector3i(k, frame, null_slot))
 		var u := float(h & 0xFF) / 255.0
 		var v := float((h >> 8) & 0xFF) / 255.0
 		var a := lerpf(a0, a1, u)

@@ -218,20 +218,20 @@ func _build_sticker_objects() -> void:
 			stripes.draw_colored_polygon(PackedVector2Array([Vector2(x, 16), Vector2(x + 7, 16), Vector2(x + 15, 0), Vector2(x + 8, 0)]), Palette.VINYL_INK))
 	heat.content_root.add_child(stripes)
 	_content_label(heat, "HEAT", Vector2(8, 16), 22, Palette.RESIST_GOLD, Palette.display())
-	_content_label(heat, "62", Vector2(14, 40), 54, Palette.VINYL_WHITE, Palette.display())
+	_content_label(heat, "62", Vector2(14, 40), 54, Palette.STICKER_DIE_CUT, Palette.display())
 	var band := ColorRect.new()
 	band.color = Palette.HARM
 	band.position = Vector2(4, 120)
 	band.size = Vector2(104, 24)
 	heat.content_root.add_child(band)
-	_content_label(heat, "FLAGGED", Vector2(20, 120), 18, Palette.VINYL_WHITE, Palette.display())
+	_content_label(heat, "FLAGGED", Vector2(20, 120), 18, Palette.STICKER_DIE_CUT, Palette.display())
 	heat.refresh()
 	_label("crew ID / holo", Vector2(510, 372), 14, SUB, Palette.body_medium(), true, 160)
 	_label("Heat poster", Vector2(700, 372), 14, SUB, Palette.body_medium(), true, 160)
 	# kraft note card
 	var note := _object(VinylSticker.Shape.RECT, Vector2(206, 92), Vector2(530, 470), -3, VinylSticker.Stock.KRAFT)
 	note.rest_curl = 0.12
-	_content_label(note, "BACKDOOR FIRST\nTHEN BRUTE IT", Vector2(12, 14), 19, Palette.VINYL_INK, Palette.marker())
+	_content_label(note, "BACKDOOR FIRST\nTHEN BRUTE IT", Vector2(12, 14), 19, Palette.VINYL_INK, Palette.pencil())
 	_content_label(note, "CELL//NOTE", Vector2(130, 4), 10, Palette.KRAFT_FIBRE, Palette.mono())
 	note.refresh()
 	# price dot
@@ -253,7 +253,7 @@ func _build_pencil_column() -> void:
 		bg.draw_rect(glass, Color(0.085, 0.085, 0.10))
 		# printed reticle and range ring (print, not pencil)
 		var c := Vector2(1093, 246)
-		var red := Palette.PENCIL_RED
+		var red := Palette.PENCIL_THREAT
 		red.a = 0.8
 		# printed corner brackets round the target
 		for k in 4:
@@ -306,7 +306,7 @@ func _build_pencil_column() -> void:
 		route.add_stroke(s)
 	var wp := Control.new()
 	wp.draw.connect(func() -> void:
-		wp.draw_circle(Vector2(1000, 483), 13.0, Palette.PENCIL_YELLOW)
+		wp.draw_circle(Vector2(1000, 483), 13.0, Palette.PENCIL_PLAN)
 		wp.draw_arc(Vector2(1000, 483), 13.0, 0, TAU, 24, Palette.VINYL_INK, 2.0, true)
 		wp.draw_string(Palette.display(), Vector2(995, 491), "1", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Palette.VINYL_INK))
 	stage.add_child(wp)
@@ -384,9 +384,9 @@ func _build_spill_column() -> void:
 func _build_footer() -> void:
 	_rule(700, 24, 1576)
 	_label("PALETTE", Vector2(24, 712), 18, TXT, Palette.body_medium())
-	var chips := [[Palette.CELL_PINK, "PINK", "verb stickers"], [Palette.VINYL_WHITE, "WHITE", "die-cut border"],
-		[Palette.VINYL_INK, "BLACK", "keyline, ink"], [Palette.PENCIL_YELLOW, "YELLOW", "plan, route"],
-		[Palette.PENCIL_RED, "RED", "threat, target"], [Palette.KRAFT, "KRAFT", "note cards"], [Palette.NET_CYAN, "CYAN", "CRT terminal"]]
+	var chips := [[Palette.CELL_PINK, "PINK", "verb stickers"], [Palette.STICKER_DIE_CUT, "WHITE", "die-cut border"],
+		[Palette.VINYL_INK, "BLACK", "keyline, ink"], [Palette.PENCIL_PLAN, "YELLOW", "plan, route"],
+		[Palette.PENCIL_THREAT, "RED", "threat, target"], [Palette.KRAFT, "KRAFT", "note cards"], [Palette.NET_CYAN, "CYAN", "CRT terminal"]]
 	for i in chips.size():
 		var x := 24.0 + i * 160.0
 		var sw := ColorRect.new()
@@ -439,7 +439,7 @@ func _build_lifecycle() -> void:
 		panel.add_child(note)
 		note.tilt_deg = 3
 		note.place_center(Vector2(380, 180))
-		_content_label(note, "SLICE 6 CRACKED\nBACKDOOR FIRST\nTHEN BRUTE IT", Vector2(12, 8), 18, Palette.VINYL_INK, Palette.marker())
+		_content_label(note, "SLICE 6 CRACKED\nBACKDOOR FIRST\nTHEN BRUTE IT", Vector2(12, 8), 18, Palette.VINYL_INK, Palette.pencil())
 		note.refresh()
 		# EXECUTE + SEND IT
 		var sw := SystemWordSticker.new()

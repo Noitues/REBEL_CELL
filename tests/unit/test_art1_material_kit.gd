@@ -82,10 +82,10 @@ func _global_class(n: String) -> bool:
 
 
 func test_the_pencil_and_vinyl_tokens_are_the_bible_values() -> void:
-	assert_eq(Palette.PENCIL_YELLOW, Color("#FFE200"), "§1.2 yellow = plan / valid")
-	assert_eq(Palette.PENCIL_RED, Color("#FF1C2C"), "§1.2 red = threat / invalid / loss")
-	assert_eq(GreasePencilMark.ink_color(GreasePencilMark.Ink.PLAN), Palette.PENCIL_YELLOW)
-	assert_eq(GreasePencilMark.ink_color(GreasePencilMark.Ink.THREAT), Palette.PENCIL_RED)
+	assert_eq(Palette.PENCIL_PLAN, Color("#FFE200"), "§1.2 yellow = plan / valid")
+	assert_eq(Palette.PENCIL_THREAT, Color("#FF1C2C"), "§1.2 red = threat / invalid / loss")
+	assert_eq(GreasePencilMark.ink_color(GreasePencilMark.Ink.PLAN), Palette.PENCIL_PLAN)
+	assert_eq(GreasePencilMark.ink_color(GreasePencilMark.Ink.THREAT), Palette.PENCIL_THREAT)
 	assert_almost_eq(Palette.HOLO_SCRIM.a, 0.88, 0.001, "§1.2 the holo's scrim")
 
 

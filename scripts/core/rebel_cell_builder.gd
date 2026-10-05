@@ -27,7 +27,7 @@ static var _threat_integrity := MIRROR_THREAT_INTEGRITY
 static var _threat_damage := MIRROR_THREAT_DAMAGE_BONUS
 ## The rest of the Mirror numbers (config.mirror_*; these defaults serve tools and tests).
 static var _resistance := 1
-static var _deploy_base := 6
+static var _trojan_base := 6
 static var _min_integrity := 10
 static var _min_damage := 4
 static var _decoy_speed := 2
@@ -63,7 +63,7 @@ static func build(template: CorporationData, snap: Dictionary, lookup: ContentLo
 	_threat_integrity = config.mirror_threat_integrity if config != null else MIRROR_THREAT_INTEGRITY
 	_threat_damage = config.mirror_threat_damage_bonus if config != null else MIRROR_THREAT_DAMAGE_BONUS
 	_resistance = config.mirror_resistance if config != null else 1
-	_deploy_base = config.mirror_deploy_base if config != null else 6
+	_trojan_base = config.mirror_trojan_base if config != null else 6
 	_min_integrity = config.mirror_threat_min_integrity if config != null else 10
 	_min_damage = config.mirror_threat_min_damage if config != null else 4
 	_decoy_speed = config.mirror_decoy_speed if config != null else 2
@@ -117,12 +117,12 @@ static func _mirror_elite(cls: ClassData, base: EnemyData, hub: HubCoreData, loo
 
 
 ## The plain slice of the same type whose output is closest to MIRROR_OUTPUT_FACTOR x yours
-## and above it (ties: lower output, then id). Deploy slices become attacks (no drone).
+## and above it (ties: lower output, then id). Trojan slices become attacks (no drone).
 static func _stronger(slice: SliceData, lookup: ContentLookup) -> SliceData:
-	if slice == null or slice.slice_type == RC.SliceType.MISS:
+	if slice == null or slice.slice_type == RC.SliceType.NULL:
 		return slice
-	var want_type := RC.SliceType.SHIM if slice.slice_type == RC.SliceType.DEPLOY else slice.slice_type
-	var base := maxi(1, slice.base_output) if slice.slice_type != RC.SliceType.DEPLOY else _deploy_base
+	var want_type := RC.SliceType.SHIM if slice.slice_type == RC.SliceType.TROJAN else slice.slice_type
+	var base := maxi(1, slice.base_output) if slice.slice_type != RC.SliceType.TROJAN else _trojan_base
 	var want := base * _factor
 	var best: SliceData = null
 	for id in lookup.ids_of_class(&"SliceData"):
@@ -140,7 +140,7 @@ static func _stronger(slice: SliceData, lookup: ContentLookup) -> SliceData:
 
 
 ## A hub whose passive effects are the combat effects of your most-used data Daemons
-## (damage, healing, block, shield on combat start, turn start, Perfect or Miss).
+## (damage, healing, block, shield on combat start, turn start, Perfect or NULL).
 static func _daemon_hub(daemon_ids: Array, lookup: ContentLookup) -> HubCoreData:
 	var effects: Array[TriggeredEffectData] = []
 	var names := PackedStringArray()
@@ -149,7 +149,7 @@ static func _daemon_hub(daemon_ids: Array, lookup: ContentLookup) -> HubCoreData
 		if d == null:
 			continue
 		for te in d.triggered_effects:
-			if te == null or not te.trigger in [RC.Trigger.ON_COMBAT_START, RC.Trigger.ON_TURN_START, RC.Trigger.ON_PERFECT, RC.Trigger.ON_MISS_SLICE]:
+			if te == null or not te.trigger in [RC.Trigger.ON_COMBAT_START, RC.Trigger.ON_TURN_START, RC.Trigger.ON_PERFECT, RC.Trigger.ON_NULL_SLICE]:
 				continue
 			var ok := not te.effects.is_empty()
 			for e in te.effects:

@@ -82,7 +82,7 @@ func test_nested_resources_are_registered_by_id() -> void:
 	var wheel := WheelData.new()
 	wheel.hub = hub
 	var slots: Array[WheelSlotData] = []
-	for s in [_slice(&"crit"), _slice(&"atk"), _slice(&"atk2"), _slice(&"atk3"), _slice(&"def"), _slice(&"miss")]:
+	for s in [_slice(&"crit"), _slice(&"atk"), _slice(&"atk2"), _slice(&"atk3"), _slice(&"def"), _slice(&"null")]:
 		var slot := WheelSlotData.new()
 		slot.slice = s
 		slots.append(slot)
@@ -90,7 +90,7 @@ func test_nested_resources_are_registered_by_id() -> void:
 	assert_eq(_registry.register(wheel).size(), 0)
 	assert_same(_registry.get_content(&"breaker_core"), hub)
 	assert_true(_registry.has_content(&"crit"))
-	assert_true(_registry.has_content(&"miss"))
+	assert_true(_registry.has_content(&"null"))
 
 
 func test_nested_duplicate_across_parents_is_reported() -> void:

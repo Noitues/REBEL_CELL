@@ -132,7 +132,7 @@ func test_only_random_status_picks_are_marked_random() -> void:
 	var fx := CombatFixture.resolver().fx
 	var s := CombatSession.start(CombatFixture.resolver(), &"breaker", [&"triage_unit"], 5)
 	var events: Array[Dictionary] = []
-	var dose := CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.SELF, 0, RC.RingScope.OUTER, 1.0, RC.Status.CORRUPTED, RC.SlicePick.RANDOM_NON_MISS)
+	var dose := CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.SELF, 0, RC.RingScope.OUTER, 1.0, RC.Status.CORRUPTED, RC.SlicePick.RANDOM_NON_NULL)
 	fx.apply_effect(s.state, dose, {"owner": s.state.player, "target": s.state.player}, CombatFixture.rng(3), events)
 	var fixed := CombatFixture.effect(RC.EffectType.APPLY_STATUS, RC.EffectTarget.SELF, 0, RC.RingScope.OUTER, 1.0, RC.Status.OVERCLOCKED, RC.SlicePick.UNDER_POINTER)
 	fx.apply_effect(s.state, fixed, {"owner": s.state.player, "target": s.state.player, "pointer_index": 0}, CombatFixture.rng(3), events)

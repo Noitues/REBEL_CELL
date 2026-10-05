@@ -259,6 +259,23 @@ func place_center(p: Vector2) -> void:
 
 # --- Build -------------------------------------------------------------------------------
 
+static var _art_font: FontFile = null
+
+
+## The lettering face for the sticker's art: Anton rasterised (not MSDF). The die-cut border
+## and keyline are outlines far wider than an MSDF field's range (Palette.FONTS_MSDF_RANGE),
+## which an MSDF face clips to a thin fringe; the art is drawn once into its SubViewport at
+## its own size, so a plain raster face loses nothing.
+static func art_font() -> FontFile:
+	if _art_font == null:
+		var src := load(Palette.FONT_DISPLAY) as FontFile
+		_art_font = FontFile.new()
+		_art_font.data = src.data
+		_art_font.multichannel_signed_distance_field = false
+		_art_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	return _art_font
+
+
 func _holo() -> bool:
 	return (shape == Shape.WORD and fill == Fill.HOLO) or (shape != Shape.WORD and stock == Stock.HOLO)
 
@@ -266,7 +283,7 @@ func _holo() -> bool:
 func _rebuild() -> void:
 	if not _built:
 		return
-	_font = Palette.display()
+	_font = art_font()
 	_px = UiTheme.font_px(font_step)
 	var key := KEYLINE_PX
 	var reach := border_px + key
@@ -350,7 +367,7 @@ func _fill_colors() -> Array[Color]:
 		Fill.YELLOW:
 			return Palette.STICKER_FILL_YELLOW
 		Fill.WHITE:
-			return [Palette.VINYL_WHITE, Palette.VINYL_WHITE_LO]
+			return [Palette.STICKER_DIE_CUT, Palette.VINYL_WHITE_LO]
 		Fill.INK:
 			return [Palette.VINYL_INK, Palette.VINYL_EXTRUDE]
 	return Palette.STICKER_FILL_PINK
@@ -371,7 +388,7 @@ func _draw_base() -> void:
 		_draw_word_base()
 		return
 	var r := body_rect
-	var face := Palette.KRAFT if stock == Stock.KRAFT else Palette.VINYL_WHITE
+	var face := Palette.KRAFT if stock == Stock.KRAFT else Palette.STICKER_DIE_CUT
 	if shape == Shape.CIRCLE:
 		_base.draw_circle(r.get_center(), minf(r.size.x, r.size.y) * 0.5, face)
 	else:
@@ -414,7 +431,7 @@ func _draw_word_base() -> void:
 	# 1. the die-cut body: every glyph grown by the border and the keyline, plus a band
 	# through each line's middle that closes the notches between letters.
 	for g in _glyphs:
-		_glyph(_base, g, Vector2.ZERO, reach * OUTLINE_PER_REACH, Palette.VINYL_WHITE)
+		_glyph(_base, g, Vector2.ZERO, reach * OUTLINE_PER_REACH, Palette.STICKER_DIE_CUT)
 	_base.draw_set_transform(Vector2.ZERO, 0.0)
 	var cap := float(_px) * CAP_SHARE
 	for y in _lines_y:
@@ -422,7 +439,7 @@ func _draw_word_base() -> void:
 		var x1 := body_rect.end.x - reach * 0.6
 		var band := Rect2(x0, y - cap + reach * 0.35, x1 - x0, cap - reach * 0.7)
 		var sb := StyleBoxFlat.new()
-		sb.bg_color = Palette.VINYL_WHITE
+		sb.bg_color = Palette.STICKER_DIE_CUT
 		sb.set_corner_radius_all(int(reach))
 		sb.anti_aliasing = true
 		if band.size.y > 0.0:
@@ -445,10 +462,10 @@ func _draw_face() -> void:
 		return
 	var r := body_rect.grow(-border_px * 0.5)
 	if shape == Shape.CIRCLE:
-		_face.draw_circle(r.get_center(), minf(r.size.x, r.size.y) * 0.5, Palette.VINYL_WHITE)
+		_face.draw_circle(r.get_center(), minf(r.size.x, r.size.y) * 0.5, Palette.STICKER_DIE_CUT)
 	else:
 		var sb := StyleBoxFlat.new()
-		sb.bg_color = Palette.VINYL_WHITE
+		sb.bg_color = Palette.STICKER_DIE_CUT
 		sb.set_corner_radius_all(int(maxf(corner_radius - border_px * 0.5, 2.0)))
 		_face.draw_style_box(sb, r)
 
@@ -457,7 +474,7 @@ func _draw_fill() -> void:
 	if shape != Shape.WORD:
 		return
 	for g in _glyphs:
-		_glyph(_fill, g, Vector2.ZERO, 0.0, Palette.VINYL_WHITE)
+		_glyph(_fill, g, Vector2.ZERO, 0.0, Palette.STICKER_DIE_CUT)
 	_fill.draw_set_transform(Vector2.ZERO, 0.0)
 
 

@@ -80,7 +80,7 @@ func _redraw() -> void:
 
 ## The word's rect in global coordinates (with its shadow): no UI may cover it.
 func global_rect() -> Rect2:
-	var font := Palette.marker()
+	var font := Palette.pencil()
 	var px := UiTheme.font_px(text_step)
 	var sz := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
 	var r := Rect2(Vector2(0, -font.get_ascent(px)), sz).grow(2.0)
@@ -90,7 +90,7 @@ func global_rect() -> Rect2:
 
 func _draw_text(shadow: bool) -> void:
 	var node := _shadow if shadow else _wax
-	var font := Palette.marker()
+	var font := Palette.pencil()
 	var px := UiTheme.font_px(text_step)
 	var col := Palette.PENCIL_SHADOW if shadow else Color.WHITE
 	if shadow:

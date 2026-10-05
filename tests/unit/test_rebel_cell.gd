@@ -52,7 +52,7 @@ func test_build_mirrors_classes_daemons_nodes_and_assets() -> void:
 		var theirs := mirror.wheel.slots[i].slice
 		var ours := breaker.starting_wheel.slots[i].slice
 		assert_eq(theirs.slice_type, ours.slice_type)
-		if ours.slice_type != RC.SliceType.MISS:
+		if ours.slice_type != RC.SliceType.NULL:
 			assert_true(theirs.base_output > ours.base_output, "%s -> %s is stronger" % [ours.id, theirs.id])
 			assert_true(theirs.base_output <= ours.base_output * 2, "%s -> %s but not doubled" % [ours.id, theirs.id])
 	assert_not_null(mirror.wheel.hub, "Adrenal Loop is a data Daemon: the hub runs it")
