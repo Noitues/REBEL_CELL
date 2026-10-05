@@ -76,7 +76,20 @@ const NUMBER_HOLD_SHARE := 0.66
 signal home_hit_shown(damage: int, site: StringName)
 ## Alpha of a TAKEN node's corporate tint disc (its reach is CityInfluence.RADIUS lots).
 const TINT_ALPHA := 0.24
+## ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): each drawn effect's motion entry,
+## whose tier it keeps to. All are local (T2 on a node or a threat, T3 for a district's tint
+## and the result banner): nothing here is T4 and nothing covers the screen.
+const FX_MOTION := {"trace": &"turret_trace", "hit": &"raid_hit_effect", "lock": &"ice_lock_ring", "frost": &"ice_lock_ring",
+	"number": &"node_damage_number", "stamp": &"raid_flip", "outcome": &"raid_outcome_stagger", "banner": &"raid_result_banner",
+	"tint": &"influence_spread", "home": &"home_lag", "token": &"raid_move", "withdraw": &"raid_threat_withdraw"}
+## A raid hit's ring reaches at most this many of its rest radii (its threat's region, T2).
+const HIT_REGION := 2.0
 const TINT_RINGS := 24
+
+
+## The VFX tier of drawn effect `kind` (a FX_MOTION key; T2 when unknown).
+static func fx_tier(kind: String) -> int:
+	return VfxTier.of(FX_MOTION[kind]) if FX_MOTION.has(kind) else VfxTier.T2
 
 var overlay: CityMapOverlay
 ## The playout clock (seconds at 1x): advances by frame time x Motion.speed.
@@ -881,6 +894,8 @@ func _draw_hit(f: Dictionary, at: Dictionary, k: float) -> void:
 	if p.x == INF:
 		return
 	var r := HIT_RING * k * lerpf(1.0, Motion.amplitude(&"raid_hit_effect"), _eased(&"raid_hit_effect", u))
+	# ART-0 E: held to its tier's reach (the threat's own spot, never the map).
+	r = VfxTier.clamp_radius(fx_tier("hit"), r, HIT_RING * k, HIT_RING * k * HIT_REGION)
 	_ci.draw_arc(p, r, 0, TAU, 20, Color(Palette.PAPER, 1.0 - u), 2.5 * k)
 	for q in 4:
 		var d := Vector2.from_angle(PI * 0.25 + q * PI * 0.5)
@@ -983,7 +998,8 @@ func _draw_tints(_k: float) -> void:
 		if c.x == INF:
 			continue
 		var r := reach * _eased(&"influence_spread", beat_u(&"influence_spread", float(t["t0"]), float(t["dur"])))
-		var mid := Color(threat_color, TINT_ALPHA * fade)
+		# ART-0 E: a district's wash, held to its tier's alpha (T3, never full screen).
+		var mid := Color(threat_color, VfxTier.clamp_alpha(fx_tier("tint"), TINT_ALPHA * fade))
 		var edge := Color(threat_color, 0.0)
 		for q in TINT_RINGS:
 			var a0 := TAU * q / TINT_RINGS

@@ -242,6 +242,12 @@ only in `docs/art_reference/` (placeholder library), never in a shipped screen.
 
 ## 4. M14 — Art direction v2: batch breakdown
 
+> **Regrouped (DECISIONS 2026-10-05, "Designer ruling: M14 regrouped"):** the batches below keep their
+> contents, but run as ART-0, Group 1 Foundations (ART-1), Group 2 Combat (ART-2–4), Group 3 City
+> (ART-5–8), Group 4 Screens (ART-9–11) and the final ART-12. A group's batches are built in parallel,
+> with one audit loop, one full suite ×3 in isolation and one designer review per group (not per
+> batch). See MILESTONES M14.
+
 ### 4.1 Shape (the same loop as H20–H24 and ANIM-R1…R7)
 
 Each **ART-n** batch runs:

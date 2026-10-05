@@ -230,13 +230,14 @@ func test_fx_pieces_honour_their_switch() -> void:
 		Settings.set_reduce_effects(false)
 	var was := Fx.limiter.enabled
 	Fx.limiter.enabled = false
-	assert_true(Fx.flash(), "a flash with screen_flash's numbers")
+	# ART-0 E: a full-screen flash is T4 only (ART_BIBLE v2 5.3); the switch rules hold at T4.
+	assert_true(Fx.flash(Color.WHITE, -1.0, -1.0, VfxTier.T4), "a flash with screen_flash's numbers")
 	_table_with_off(&"screen_flash")
-	assert_false(Fx.flash(), "screen_flash off: no flash on its numbers")
-	assert_true(Fx.flash(Color.WHITE, 0.3, 0.1), "a caller's own numbers (its own entry gates it)")
+	assert_false(Fx.flash(Color.WHITE, -1.0, -1.0, VfxTier.T4), "screen_flash off: no flash on its numbers")
+	assert_true(Fx.flash(Color.WHITE, 0.3, 0.1, VfxTier.T4), "a caller's own numbers (its own entry gates it)")
 	Motion.use_config(null)
 	Settings.set_reduce_effects(true)
-	assert_false(Fx.flash(Color.WHITE, 0.3, 0.1), "reduce effects: never a flash (D8)")
+	assert_false(Fx.flash(Color.WHITE, 0.3, 0.1, VfxTier.T4), "reduce effects: never a flash (D8)")
 	Settings.set_reduce_effects(false)
 	Fx.limiter.enabled = was
 	Fx.flash_rect.color.a = 0.0

@@ -433,7 +433,35 @@ func _anim1() -> int:
 			missing += 1
 	print("ANIM-1: ui_motion.tres entries ", shipped.entries.size() if shipped != null else -1, " missing ", missing)
 	if shipped == null or missing != 0 or shipped.validate().size() != 0: fails += 1
+	fails += _art0_tier(shipped)
 	return fails + _art0()
+
+
+## ART-0 E (ported from art-pass W6): every motion entry carries a VFX tier (T0..T4, default
+## T1) that round-trips; an out-of-range tier is an error; every shipped entry names a valid one.
+func _art0_tier(shipped: UiMotionData) -> int:
+	var fails := 0
+	var te := UiMotionEntryData.new()
+	te.id = &"smoke_tier"
+	var tier_default := te.tier
+	te.tier = UiMotionEntryData.Tier.T3_MOMENT
+	var tier_table := UiMotionData.new()
+	tier_table.entries = [te]
+	var tier_err := ResourceSaver.save(tier_table, "user://smoke_motion_tier.tres")
+	var tier_back: UiMotionData = load("user://smoke_motion_tier.tres")
+	var tb := tier_back.find(&"smoke_tier") if tier_back != null else null
+	print("ART-0 E: tier default ", tier_default, " save=", tier_err, " reload ", tb.tier if tb != null else -1)
+	if tier_default != UiMotionEntryData.Tier.T1_FEEDBACK or tb == null or tb.tier != UiMotionEntryData.Tier.T3_MOMENT: fails += 1
+	te.set("tier", 7)
+	if te.validate().size() != 1: fails += 1  # tier out of range
+	var bad_tier := 0
+	if shipped != null:
+		for se in shipped.entries:
+			if se == null or se.validate().size() != 0:
+				bad_tier += 1
+	print("ART-0 E: ui_motion.tres entries with a bad tier ", bad_tier)
+	if bad_tier != 0: fails += 1
+	return fails
 
 
 ## ART-0 names pass (ruling 6.5): the shop node is the Mainframe, in the config field

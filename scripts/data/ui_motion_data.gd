@@ -92,6 +92,9 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"raid_threat_withdraw",
 	# ANIM-R6 combat: the tutorial's Next pulses while it waits for it.
 	&"tutorial_next_pulse",
+	# ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): the wheel-local T3 bursts that
+	# retire the full-screen Perfect and boss-phase flashes.
+	&"wheel_burst_perfect", &"wheel_burst_phase",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

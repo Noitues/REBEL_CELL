@@ -41,6 +41,18 @@ restore every Settings value you change. Port M13 tests that test behaviour; dro
 list each dropped test in your DECISIONS entry. Run selected scripts with docs/handoff/art_0/process/gt.sh
 (`-gtest=` alone still runs the whole suite).
 
+LONG JOBS AND SHARING THE MACHINE (added 2026-10-05 after interrupted waits)
+- Anything that can take over ~5 minutes (capture matrices, test runs) runs with the Bash tool's
+  run_in_background and is checked later by reading its log. Never block on it with a foreground
+  `until grep ...; do sleep` loop or `tail -f`: those die when the tool call is interrupted (an incoming
+  orchestrator message or a timeout) and the loop is left running as an orphan.
+- At most ONE waiter per job. Before starting a new wait, end your old one (by its PID). Before hand-back,
+  kill every leftover waiter and helper you started.
+- Windowed captures: at most 2 Godot windows at once while other agents are working (-j 2), so the
+  machine stays responsive for everyone's tests.
+- An interrupted tool call is not an error: re-read your log or output file to see where the job stands,
+  and carry on. Do not restart a job that is still running.
+
 MACHINE RULES
 - NEVER run `python -` (it hangs on stdin, even with an empty heredoc). Write scripts to files with the Write tool and
   run `python file.py`. Set PYTHONIOENCODING=utf-8 when printing non-ASCII.

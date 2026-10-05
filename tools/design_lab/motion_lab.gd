@@ -145,6 +145,9 @@ const DEMOS := {
 	&"raid_shot_stagger": ["hq", "raid"], &"heat_pulse_rise": ["heat", "stage"], &"raid_threat_withdraw": ["hq", "raid"],
 	# ANIM-R6 combat: the tutorial's Next (TutorialOverlay plays it with Motion.loop_pulse).
 	&"tutorial_next_pulse": ["pulse", "sticker"],
+	# ART-0 E (ported from art-pass W6): the wheel-local T3 bursts on the fight's wheels (the
+	# Perfect's on the operative's, a boss phase's on an enemy's in the corp hue).
+	&"wheel_burst_perfect": ["scene", "perfect"], &"wheel_burst_phase": ["scene", "phase_burst"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -519,10 +522,11 @@ func _play() -> void:
 			else:
 				_typed.visible_ratio = 1.0
 		"flash":
-			Fx.flash(Palette.CELL_PINK if _id == &"precision_perfect" else Color.WHITE, amp, Motion.seconds(_id))
+			# ART-0 E: a full-screen flash is T4 only (ART_BIBLE v2 5.3).
+			Fx.flash(Color.WHITE, amp, Motion.seconds(_id), VfxTier.T4)
 		"fx_flash":
-			# ANIM-R5: Fx's own flash (its strength and time from `screen_flash`).
-			Fx.flash(Color.WHITE)
+			# ANIM-R5: Fx's own flash (its strength and time from `screen_flash`; T4).
+			Fx.flash(Color.WHITE, -1.0, -1.0, VfxTier.T4)
 		"heat":
 			# ANIM-R2 R8 / ANIM-R3 B9: a Heat crossing distorts round the poster only.
 			Fx.heat_pulse_at(target.get_global_rect())
@@ -1240,6 +1244,10 @@ func _play_scene(what: String) -> void:
 			_scene._perfect_feedback(_scene._player_view)
 		"boss_phase":
 			_scene._boss_phase_feedback(_scene.engine.state())
+		"phase_burst":
+			# ART-0 E: the burst a boss's phase plays on its wheel (the demo fight has no boss
+			# in a later phase, so it plays on the enemy's wheel as _boss_phase_feedback does).
+			_scene.fx_layer.wheel_burst(ev.global_center(), ev.disc_radius(), CombatFxLayer.BURST_PHASE, Palette.CORP_SOLACE)
 		"play_fx":
 			var cap: Dictionary = _scene._card_copy(0)
 			_scene.fx_layer.play_card(cap["copy"], cap["rect"], float(cap["rot"]), ev.global_center(), false)

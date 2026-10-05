@@ -239,8 +239,22 @@ effects = end state, `ui_motion.tres` entries).
 **Acceptance (M14):** the look and most of the feel of the art pass are present by the end of the
 milestone (ruling 2), or M14 has failed.
 
-Every batch also meets the common acceptance (plan §4.1): 3 checks green (full suite, never only
-the fast tier); new tests in `tests/test_manifest.json`; layout tests at 1.0 / 1.6 / 2.0; reduce
+**Shape (designer, 2026-10-05, "Designer ruling: M14 regrouped"):** ART-0, then four groups, then the
+final sweep. Inside a group its batches are built **in parallel** (one agent area each, at most 4–5
+agents); the group gets **one** audit round (vertical / horizontal / naive) and its fix rounds until
+CLEAN, then **one** designer review. The next group's brief may be written while the previous group is
+in audit. Check cadence ("Designer ruling: check cadence for M14"): fast checks per hand-back and merge;
+the full suite ×3 once per group, in isolation, before its audit.
+- **Group 1 — Foundations:** ART-1 (everything else builds on its kit and the render spike).
+- **Group 2 — Combat:** ART-2 wheel stack, ART-3 cards and FX, ART-4 HUD.
+- **Group 3 — City:** ART-5 unified city, ART-6 raid, ART-7 netrun, ART-8 HQ runs (ART-5's city model
+  and render tech land first inside the group; 6–8 build on it).
+- **Group 4 — Screens:** ART-9 shop / rewards / events / dialogue / portraits, ART-10 menus / title /
+  settings, ART-11 campaign lost and dossier.
+- **Final:** ART-12 sweep, its audit to CLEAN, "M14 complete".
+
+Every batch also meets the common acceptance (plan §4.1): 3 checks green (full suite ×3 once per
+group, never only the fast tier); new tests in `tests/test_manifest.json`; layout tests at 1.0 / 1.6 / 2.0; reduce
 effects = end state; headless never waits; motion values in `ui_motion.tres` with a lab demo; no
 colour or size literals (tokens); the runtime lint clean; a GAP_ANALYSIS ART-n row; the perf
 budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orchestrator merges.
@@ -254,6 +268,9 @@ budget met in a windowed profile (plan §5.2). Boxes are ticked only as the orch
 - [ ] Timeline `17_art0` (the baseline before the new look) with a README row.
 - [ ] Audit round ART-R0 to CLEAN.
 
+### Group 1 — Foundations
+- [ ] Group 1 full suite ×3 in isolation; audit ART-R1 to CLEAN; designer review.
+
 **ART-1 — Foundations** (palette v2, faces incl. Courier Prime, theme, the material kit, glyph
 pipeline, the render spike)
 - [ ] Kit sheet capture vs `round3_overlay/combined_v2`, `round33_ui_chrome/ui_kit.png` and
@@ -263,6 +280,9 @@ pipeline, the render spike)
 - [ ] Render spike for the unified city, **fidelity first** (ruling 7): the technique that
       reproduces the reference images most faithfully is chosen, then an optimisation round brings
       it inside the plan §5.2 budget (the budget is a gate, not a reason to change the look).
+
+### Group 2 — Combat
+- [ ] Group 2 full suite ×3 in isolation; audit ART-R2 (one round for ART-2/3/4) to CLEAN; designer review.
 
 **ART-2 — Combat wheel stack**
 - [ ] The worst-case clutter fixture renders legibly at 1.0 and 1.6.
@@ -278,6 +298,9 @@ pipeline, the render spike)
 - [ ] GDD 2.10 holds: chip == resolve for all enemies × seeds (the H23/H24 sweeps re-used).
 - [ ] Pad reachability.
 - [ ] Fits at 2.0.
+
+### Group 3 — City
+- [ ] Group 3 full suite ×3 in isolation; audit ART-R3 (one round for ART-5/6/7/8) to CLEAN; designer review.
 
 **ART-5 — Unified city model and motion**
 - [ ] Each corporation's Grid capture vs the reference.
@@ -301,6 +324,9 @@ pipeline, the render spike)
 - [ ] Each corporation's HQ run is playable and captured; the boss backdrop matches the city
       model (D17).
 
+### Group 4 — Screens
+- [ ] Group 4 full suite ×3 in isolation; audit ART-R4 (one round for ART-9/10/11) to CLEAN; designer review.
+
 **ART-9 — Shop, rewards, events, dialogue, portraits**
 - [ ] The shop and event sweeps (affordability, outcome rows == deltas) still hold.
 
@@ -316,6 +342,8 @@ its items)
 - [ ] Campaign lost = A, ransomware lock; the campaign summary as a corporate dossier with the
       audit report; campaign won in the same language.
 - [ ] Run end (FLATLINED / JACKED OUT / HOME FELL) restyled.
+
+### Final
 
 **ART-12 — Final sweep**
 - [ ] The full QA matrix (all screens × 1.0 / 1.6 / 2.0 × mouse / pad × reduce effects × high

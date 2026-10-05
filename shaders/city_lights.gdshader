@@ -5,13 +5,15 @@
 // reduce-effects: every light holds its t = 0 state. Periods are seconds long, far under
 // the flash limiter's 3 per second.
 shader_type canvas_item;
+// Reduce effects (rc_common): the clock stops, so every light holds its t = 0 state.
+#include "res://shaders/lib/rc_common.gdshaderinc"
 
 uniform float duty : hint_range(0.0, 1.0) = 0.5;
 uniform float animate = 1.0;
 
 void fragment() {
 	float period = max(abs(UV.y), 0.001);
-	float lit = 1.0 - step(duty, fract(TIME * animate / period + UV.x));
+	float lit = 1.0 - step(duty, fract(rc_time(TIME) * animate / period + UV.x));
 	float shown = UV.y > 0.0 ? lit : 1.0 - lit;
 	COLOR.a *= shown;
 }
