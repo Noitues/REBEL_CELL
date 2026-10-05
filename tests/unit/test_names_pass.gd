@@ -338,11 +338,17 @@ func test_b3_the_poster_shows_purge_at_100() -> void:
 	holder.size = Vector2(1280, 720)
 	var p := HeatPoster.new(true)
 	holder.add_child(p)
+	# A poster another script showed for this campaign key would roll and banner from there.
+	HeatPoster._seen_heat.erase(HeatPoster.memory_key())
 	p.set_heat(cfg.heat_max, cfg.heat_max, HeatRules.band_levels(RunManager.campaign, cfg))
 	assert_eq(p.band, HeatPoster.BAND_WORDS.size() - 1, "the last band")
-	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "purge", "the band word")
+	# At rest (no crossing banner still playing).
+	p._banner_at = 0
+	p.shown_heat = cfg.heat_max
+	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "purge", "the band word at rest")
 	assert_string_contains(p.banner_text(), tr("purge").to_upper(), "the banner names PURGE")
 	p.set_heat(cfg.heat_max - 1, cfg.heat_max, HeatRules.band_levels(RunManager.campaign, cfg))
+	p.shown_heat = cfg.heat_max - 1
 	assert_eq(HeatPoster.BAND_WORDS[p.shown_band()], "hunted", "one below is HUNTED")
 
 
