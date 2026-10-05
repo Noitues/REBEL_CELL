@@ -274,6 +274,13 @@ are not ported (the brief: re-captured / re-seeded).
 - **Runtime lint type steps:** the "override is not a type step" half of the font rule reads
   the build's `UiTheme.STEPS` (exported by the harness); a build without them skips that half
   (main before ART-0 E); since E merged, the steps are read and checked.
+- **First matrix on main (with E merged), `--matrix -j 2`:** 58 screens x 12 combos, 696
+  captures + 696 grey, all ok, 23 min, 587 MB at 800x450 (deleted after reading). Settings
+  axes skipped (C not merged yet). Runtime lint totals (font / overlap / clipped / contrast):
+  1.0 mouse 63 / 0 / 5 / 22, 1.6 mouse 219 / 0 / 8 / 22, 2.0 mouse 203 / 3 / 11 / 17,
+  2.0 pad 196 / 3 / 11 / 11 (the font rule now checks E's type steps). Read by eye on the
+  HQ sheet: at 2.0 the top bar takes two rows and the crew dossier and Pirate Radio text are
+  cut at the bottom of their panels (area C's layout-at-2.0 work).
 - **Lint baseline re-taken after merging main with E** (tokens and type steps): unchanged,
   205 lines in 41 files (E moved no literal out of `scripts/ui/**` views; ART-1…12 do).
 - **Harness robustness on main:** main's views hold the bake they draw (ANIM-R6), so "no bake
