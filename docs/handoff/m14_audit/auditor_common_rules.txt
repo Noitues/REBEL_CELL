@@ -1,0 +1,52 @@
+COMMON RULES FOR M14 ROLLING AUDITORS (report only; fix nothing)
+
+WHAT A ROLLING AUDIT IS (designer, 2026-10-05, DECISIONS "rolling audits as groups merge")
+Each time an M14 group (ART-0, Group 1 Foundations, Group 2 Combat, Group 3 City, Group 4 Screens) is merged
+into main, three auditors review THAT group's changes on main while the other groups keep building. Findings
+go straight to fix agents by area. The final audit after ART-12 is still one loop over all of M14; rolling
+audits make it small. Your brief names your group, your kind (vertical / horizontal / naive) and main's sha.
+
+START
+- Your worktree must be at the sha in your brief: `git log -1`; if older, `git merge main`, then
+  `godot --headless --path . --import` (redirect output, wrap in `timeout`).
+- Read: CLAUDE.md; docs/ART_BIBLE.md (v2, "Rulings applied" list at the top); docs/art_reference/README.md;
+  the group's brief(s) in docs/handoff/art_<n>/; every DECISIONS entry "Art direction — ART-<n> ..." for
+  your group and the 2026-10-05 designer rulings near the top of docs/DECISIONS.md; docs/STYLE_GUIDE.md §5;
+  docs/ANIMATION_HANDOFF.md ground rules; docs/TEST_SUITE.md "Windowed checks"; docs/handoff/art_0/CARRY_OVER.md
+  (known items: confirm them, don't just repeat them).
+- Standing rulings: the art pass design is correct (judge against ART_BIBLE v2 and docs/art_reference/);
+  mechanics the rules lack (G1–G16) are NOT expected; D10, D13–D17 confirmed.
+
+KINDS
+- VERTICAL: play every flow the group touched end to end at text scale 1.0 / 1.3 / 1.6 / 2.0, mouse and pad,
+  reduce effects on and off; preview == result; save and resume mid-fight / mid-event / mid-shop / mid-raid
+  where the group touched those; compare each screen with its reference image side by side.
+- HORIZONTAL: codebase rules across all five corporations and eight classes for the group's files: Signal Up /
+  Call Down, views never change state, no game RNG in views (decoration from hashes), no magic numbers or
+  literal colours / sizes (tokens; D's static lint baseline), motion entries registered in ui_motion.tres +
+  REQUIRED_IDS + lab demo and switchable, reduce effects = end state, headless never waits, MotionSkip one
+  press, translate once (strings.csv), deterministic tie-breaks, schema changes smoke-checked and logged,
+  tests exist (and are in tests/test_manifest.json), perf (windowed frame time vs plan §5.2 budgets).
+- NAIVE: a beginner and a non-English reader, working ONLY from captures you take (one session) of the group's
+  screens; report understanding % per screen and what confused you.
+
+MACHINE RULES
+- Windowed Godot ONLY via `python tools/run_windowed.py --log <file> -- <godot args>` from your worktree; ONE
+  window; ONE launch per capture session walking every state (tools/visual_qa/review_pack.tscn --screens=...,
+  the storyboard, lab scenes). Redirect APPDATA to your own %TEMP%\<tag>\. mkdir the frame folder first. Grep
+  logs for ERROR. Headless has no RenderingDevice: judge visuals only from windowed frames you READ.
+- Tests: fast tier only, `python tools/run_tests.py --tier fast -j 2`, plus selected scripts in ONE gt.sh call.
+  No full suite.
+- NEVER run `python -` (write scripts to files). Never pipe Godot output (redirect, `timeout`). Kill only your
+  own PIDs. Long jobs in the background with one waiter; no foreground poll loops.
+- Disk: captures at 800x450 or crops; delete them once read; `df -h /c` before big captures.
+- No commits, no pushes, no edits to the repo. Throwaway tests live in your scratchpad, never the repo.
+- Do your own work: no sub-agents.
+
+REPORT (write it to docs/handoff/m14_audit/<group>_<kind>.md in your worktree's scratchpad AND return it in
+full in your hand-back; the orchestrator commits it)
+A prioritised list: P1 broken / crash / wrong info; P2 misleading / unreadable / inconsistent / rule breach /
+looks clearly unlike its reference; P3 polish. Each entry: file:line or flow step, evidence (frame name or
+test output), expected vs actual (cite the ART_BIBLE section or reference image), suggested fix. GROUP the
+findings by the owning area (the brief's area letters, e.g. 2A, 4C) so fix batches split straight from it.
+End with a verdict line "CLEAN" only if there is no P1 or P2.
