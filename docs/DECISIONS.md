@@ -114,6 +114,81 @@ files by hand; ANIM behaviour kept. No view restyled; values stay main's (ART-1 
   hover, shop) differ only in animated city content (rain, lights, traffic, the selection
   blink); text and layout match. The two bursts were read windowed in the motion lab.
 
+### 2026-10-05 — Art direction — ART-0 accessibility settings (salvage S1, area C)
+Ported by hand onto main's versions (main's ANIM behaviour kept) from art-pass d78e30b (text scale
+2.0), 44f14bb (colour-blind), ec07661 (high contrast), f0a80ba (reduce motion, resolve speed, pad
+glyph set, Steam Deck default), 35f3b34 (`city_quality`), eaa7a2c (tests) and the W9F sweep's
+"every layout test at 2.0" (M13 W9s / W9F entries under "M13 art pass").
+- **Settings** gains `colorblind_mode`, `high_contrast`, `reduce_motion`, `resolve_speed`,
+  `pad_glyph_set`, `city_quality` (additive settings.json keys; unknown values fall back to the
+  default; a file without them loads as before), `TEXT_SCALE_MAX` 2.0, the Steam Deck first-run
+  defaults (text 1.2, city tier 1) through an injectable `device_probe_override` (test runs never
+  probe the machine). Defaults equal main's behaviour.
+- **Calls made (project.godot is off limits in ART-0):** M13's `ColorblindFilter` autoload is folded
+  into Settings (the `ColorblindLayer` is Settings' own child, made only while a mode is on:
+  `Settings.colorblind_layer()`, `active_colorblind_mode()`); the `resolve_fast_forward` action
+  (Shift, right stick any direction) is added at runtime (`Settings.RUNTIME_ACTIONS`;
+  `reset_keybinds` falls back to it). Either can move to project.godot later with no behaviour
+  change. The correction layer and the last pad's device id are private session state; the
+  snapshot (suite guard) holds every other new field, `device_probe_override` included.
+- **High contrast** is `HighContrast.apply` at the end of `UiTheme.build` with area E's tokens
+  (TEXT_HI, TEXT_MID, FOCUS); W2's focus brackets are not on main yet (F ports them). Views that
+  draw or override their own colours are restyled with it in ART-1…12 (as M13 W9s said).
+- **Reduce motion** (separate from reduce effects): `Motion.camera_moves_allowed / parallax_allowed
+  / page_transition_style`; consumers on main: PageTransition cross-fades in place (no slide, no
+  CRT roll jump), the map camera rig cuts (no hold, no ease), the Grid's lean and the city's pan
+  drift stop, `Motion.shake` shakes nothing, the jack is the reduce-effects cross-fade.
+- **Resolve speed:** x1 / x2 / instant; the SEND IT replay runs on `Engine.time_scale` (1x schedule,
+  the clock faster) and gives the clock back on skip, end and exit; instant shows the end state at
+  once; holding fast-forward runs at 4x and is never a skip press (`MotionSkip.is_press`).
+- **Pad glyph set:** stored, detected (`effective_glyph_set`); the glyphs are drawn by PadGlyph,
+  which area F ports. **`city_quality`:** stored and set on a Deck; main's city has one quality
+  today, ART-1's renderer reads it.
+- **Options rows** on main's current panel (no restyle; ART-10 restyles it): Reduce motion, High
+  contrast, Colour-blind correction, Resolve speed (Accessibility), Pad button glyphs (Controls),
+  the fast-forward rebind. Words in strings.csv (re-exported, 18 keys).
+- **Tests:** `tests/unit/test_w9_accessibility_settings.gd` (fast tier; M13's W9 tests adapted:
+  the colour pairs use E's HARM / GAIN, the options are OptionButtons not TilePickers, the
+  correction layer is Settings'; plus round-trip through settings.json, defaults = main, page
+  cross-fade, no shake, the combat clock, fast-forward never skips). No M13 test dropped.
+
+**Text scale 2.0 (W9F's approach).** Main never had `LayoutScales`; its layout tests read
+`Settings.TEXT_SCALE_MAX`, and the tests that named the old ceiling (1.6) now read it too (27
+scripts), so every layout test runs at 1.0 (and 1.3 where it did) and 2.0. 1.6 was checked by
+running the same 50 layout scripts with the ceiling set back to 1.6 (hand-back report). Fixes per
+screen at 2.0 (unchanged at 1.6 and below unless said):
+- **Top bar (HudStats, every screen):** the full tags' floor is `fit_floor(s)` = min(s x 0.85, 1.3)
+  (was s x 0.85: two rows of 1.7x tags took 212 px and pushed every page down); one row's captions
+  are measured at the tags' scale. This lowers the floor at 1.6 from 1.36 to 1.3 too;
+  `test_stat_tags_keep_their_words_at_big_text` reads `HudStats.fit_floor`.
+- **HQ:** the Scrub Heat and Patch home lines wrap in the menu column (as RAID PENDING did);
+  compact dossiers widen again above 1.6 (`CrewCard.BIG_FROM` / `BIG_GROW`: 280 px at 2.0, two
+  side by side, the name on one line); above 1.6 the crew window comes above the City Grid
+  monitor (HP and Loadout on the first screen).
+- **Raid setup:** the empty-Armory line wraps; above 1.6 (`RAID_SIDE_LOADOUT_ABOVE`) the DEFENSE
+  LOADOUT heads the side column (its cards, then its steps) and the column scrolls on its own with
+  MORE BELOW (bar hidden, focus follows), so the raid map takes the page's height (under the map
+  the Armory left a 290 px map and a late campaign's nodes outside it; lowering the zoom floor was
+  tried and spread the labelled nodes further apart).
+- **Campaign end:** the story column's room takes the row's gap off (4 px past the screen).
+- **Combat:** `TUTORIAL_MIN_HEIGHT` 130 (was 140): a one-line subtitle dock left 138 px and the
+  tutorial jumped over the subtitles.
+- **Modem:** LEAVE THE MODEM moves under the REMOVE A CARD row's pieces it would cover (the
+  spinner grew into it); its exit icon follows (as at 1.6 it sits beside SHRED).
+- **Loadout spinner view:** above 1.6 the Rank 3 swaps column scrolls inside the wheel area (five
+  swaps took 564 px).
+- **Focus tips:** a last lettering step at half size; no step goes under `UiTheme.CAPTION` (the
+  type floor; 0.72 at 1.0 was 11 px). A big-text loot row left the tip no clear spot.
+- **PageTransition.settle** ends a buy sticker's flap (`note_flap`); at 2.0 a mid-flap sticker sat
+  more than a pixel from its end state (the tilt moves a wider sticker further).
+- Tests that pinned a 1.6 value now read the value at TEXT_SCALE_MAX: the mini-map label size, the
+  deck viewer's card scale (DeckView caps it where a row still holds four cards: 1.83 at 2.0) and
+  a folded tooltip's words. `test_anim_r4_city` (word cut) and `test_anim_r3_city` (SAVED off
+  titles) read what a scroll view shows (a control scrolled out of the raid side column is not
+  cut), as M13 W8c did for `test_horizontal_pass20_screens`.
+- Windowed check: the storyboard at `--scale=2.0` (15 screens, 1280x720), frames read: HQ,
+  raid setup, fight, Modem, event and loot fit with nothing cut; no ERROR in the log.
+
 ### 2026-10-05 — Designer ruling: DISPATCH text
 Default accepted for the ART-0a open question: DISPATCH text is always a clean CRT terminal feed (red
 accent, ART_BIBLE v2 §1.2), never a sticker or pencil. GDD 8.2's "never zine-styled" reworded to that.
