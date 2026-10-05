@@ -36,7 +36,7 @@ static func node_rects(overlay: CityMapOverlay, labels: bool = true, only: Array
 	var xf := overlay.get_global_transform()
 	var k := xf.get_scale().x
 	for n in overlay.nodes:
-		if not only.is_empty() and not only.has(n["id"]):
+		if (not only.is_empty() and not only.has(n["id"])) or not overlay.marker_shown(n):  # ART-5 5d: hidden Sites take no room
 			continue
 		var at := overlay.icon_pos(n)
 		if at.x == INF:
@@ -155,7 +155,7 @@ static func fit_into(overlay: CityMapOverlay, free: Rect2, max_zoom: float = 1.0
 	var centres := Rect2()
 	var first := true
 	for n in overlay.nodes:
-		if not only.is_empty() and not only.has(n["id"]):
+		if (not only.is_empty() and not only.has(n["id"])) or not overlay.marker_shown(n):  # ART-5 5d: hidden Sites take no room
 			continue
 		var at := overlay.icon_pos(n)
 		if at.x == INF:

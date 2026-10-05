@@ -1868,6 +1868,7 @@ func show_grid() -> void:
 	# H23 #3: the map key sits on the map (in the side column's foot it fell below the fold),
 	# a strip along the map's foot; the map is framed above it (`fit_grid_map`).
 	grid_legend = MapLegend.pin_to(spacer, c.corporation_id, true)
+	grid_legend.use_site_markers(not c.pending_raids.is_empty())  # ART-5 5d: the Grid's key is the v4 markers, in plain words
 	grid_view = GridMapView.new()
 	grid_view.visible = false
 	grid_view.show_grid(c, corp, _threat_paths())
@@ -2022,6 +2023,11 @@ func show_grid() -> void:
 	var g := grid_graph()
 	_mount_city_map(g["nodes"], g["edges"], CityMapOverlay.Look.ISOLATE, GRID_ANCHOR, GRID_ZOOM)
 	city_overlay.selected_id = selected_site
+	# ART-5 5d: the boss chip counts the Exploits; the key's SHOW ALL reveals hidden Sites.
+	city_overlay.boss_exploits = Vector2i(c.exploits.size(), cfg.min_exploits_for_breach)
+	grid_legend.show_all_changed.connect(func(on: bool) -> void:
+		if city_overlay != null and is_instance_valid(city_overlay):
+			city_overlay.show_all = on)
 	city_overlay.node_clicked.connect(func(id: StringName) -> void: grid_view.site_clicked.emit(id))
 	city_overlay.node_hovered.connect(light_run_row)
 	city_overlay.avoid_controls([column, grid_legend])  # map labels stay clear of the column and the key
@@ -2337,7 +2343,7 @@ func _clear_city_map() -> void:
 
 ## The campaign's Grid as a graph for the city overlay (CityLayout.grid_graph).
 func grid_graph() -> Dictionary:
-	return CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, _threat_paths(), selected_site)
+	return CityLayout.grid_graph(RunManager.campaign, RunManager.corporation, _threat_paths(), selected_site, true)
 
 
 ## Pending raids' routes, entry -> home, for the map's corporate arrows.
@@ -2478,6 +2484,20 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 	for l in launchable:
 		if l.id == site.id:
 			launchable_here = true
+	# ART-5 5d (Group 1 naive audit P2): a Site with no JACK IN says why, and what to do first.
+	var why := why_not_runnable(site, launchable_here, living)
+	if why != "":
+		var note := Label.new()
+		note.name = "WhyNot"
+		note.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED  # translated here, once
+		note.text = why
+		note.theme_type_variation = UiTheme.BODY_TEXT
+		note.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+		note.add_theme_color_override("font_color", Palette.TEXT_HI)
+		UiWrap.whole_words(note)
+		note.custom_minimum_size.x = MIN_NOTE_WIDTH
+		card.body.add_child(note)
+		card.body.move_child(note, row.get_index())
 	if launchable_here and not living.is_empty():
 		var op_pick := OptionButton.new()
 		op_pick.name = "OperativePick"
@@ -2537,6 +2557,34 @@ func _site_card(site: SiteData, launchable: Array[SiteData], living: Array[Opera
 			var sid4 := site.id
 			_add_tip(row, _button(tr("Upgrade (%d)") % cost, func() -> void: upgrade(sid4)), tr("Upgrade the node one level (level %d now).") % c.grid.upgrade_level_of(site.id))
 	return card
+
+
+## ART-5 5d: the "why not" note's narrowest width (px; it wraps inside the card).
+const MIN_NOTE_WIDTH := 120.0
+const WHY_CORE := "This is your CORE, your home server: you defend it in raids; you never run it." # TR
+const WHY_BREACH := "The Central Server's breach needs %d Exploits; you hold %d. Clear the Exploit Sites (gold keys) first." # TR
+const WHY_FROM := "Not reachable yet. Clear a Site linked to it first: %s. Then it opens (orange ring) and JACK IN shows here." # TR
+const WHY_FAR := "Not reachable yet. Clear the Sites between it and your network first; it opens when a linked Site is yours." # TR
+const WHY_CREW := "No operative can run it now. Recruit or rest your crew at the HQ, then come back." # TR
+
+
+## ART-5 5d (Group 1 naive audit P2): why Site `site` shows no JACK IN, in plain words, with
+## what to do first ("" when it can be run now).
+func why_not_runnable(site: SiteData, launchable_here: bool, living: Array[OperativeState]) -> String:
+	var c := RunManager.campaign
+	var corp := RunManager.corporation
+	if site.id == c.grid.home_site_id:
+		return tr(WHY_CORE)
+	if launchable_here:
+		return "" if not living.is_empty() else tr(WHY_CREW)
+	if CampaignRules.site_objective(c, site) == RC.SiteObjective.CENTRAL_SERVER and c.exploits.size() < RunManager.config().min_exploits_for_breach:
+		return tr(WHY_BREACH) % [RunManager.config().min_exploits_for_breach, c.exploits.size()]
+	var from := PackedStringArray()
+	for s in corp.city_grid.sites:
+		if s != null and (s.links.has(site.id) or (s.locked_links.has(site.id) and c.grid.is_link_open(s.id, site.id))):
+			from.append(site_name(s.id))
+	from.sort()
+	return tr(WHY_FROM) % ", ".join(from) if not from.is_empty() else tr(WHY_FAR)
 
 
 func show_raid() -> void:

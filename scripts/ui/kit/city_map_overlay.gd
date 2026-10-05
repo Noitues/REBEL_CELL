@@ -265,6 +265,7 @@ var hover_id: StringName = &"":
 		if _top != null:
 			_queue_tags()
 			_hi.queue_redraw()
+			_queue_top()  # ART-5 5d: a hidden Site lit from its row shows
 ## The node under the pointer (for `node_hovered`).
 var _pointer_id: StringName = &""
 ## Spotlight target (node id) for the SPOTLIGHT look.
@@ -304,6 +305,39 @@ var token_radius: float = 0.0
 var packets: bool = true
 var _blocked_rects: Array[Rect2] = []
 var _blocked_controls: Array[Control] = []
+## ART-5 5d: the Site markers' layer (node id -> SiteMarkerView), the glyph layer, the pencil
+## layer (the boss's TARGET circle and word) and the Exploit Site's hover file.
+var _marker_root: Control = null
+var _marker_views: Dictionary = {}
+var _glyph_layer: Control = null
+var _pencil_root: Node2D = null
+var _target_mark: GreasePencilMark = null
+var _target_word: GreasePencilWord = null
+var _target_key: Array = []
+var exploit_file: DecryptedHoloPanel = null
+## ART-5 5d (v4 hidden-nodes rule): regular Sites that are not selectable are hidden until
+## the key's SHOW ALL is pointed at (or the Site is selected or lit); pinned ones always show.
+var show_all: bool = false:
+	set(v):
+		if v == show_all:
+			return
+		show_all = v
+		_icon_key = ""
+		_on_show_all_changed(v)
+		_queue_top()
+		queue_redraw()
+
+
+## Hook for subclasses (ART-7 3B RouteOverlay animates its reveal): called when `show_all`
+## changes, before the redraw.
+func _on_show_all_changed(_v: bool) -> void:
+	pass
+## The chip over the boss: Exploits collected and needed (the screen sets them).
+var boss_exploits: Vector2i = Vector2i.ZERO
+## The rect the boss chip took in the last draw (local px; checks: clear of the pencil).
+var boss_chip_rect: Rect2 = Rect2()
+## Sites whose fight-won lights the last draw lit (D17; checks).
+var lit_sites: Array[StringName] = []
 
 
 func _init(p_city: NeonCity = null) -> void:
@@ -314,11 +348,24 @@ func _init(p_city: NeonCity = null) -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_anim = _layer("Flow", _draw_anim)
+	# ART-5 5d: the atlas glyphs on links (a locked link's padlock), through the glyph shader.
+	_glyph_layer = _layer("Glyphs", _draw_glyphs)
+	_glyph_layer.material = GlyphIcon.material_for(Palette.GLYPH_FILL, Palette.GLYPH_INK)
 	_top = _layer("Nodes", _draw_top)
+	# ART-5 5d: the Site markers v4 (SiteMarkerView: a vinyl node sticker each), over the
+	# nodes' roofs and pads, under the labels.
+	_marker_root = Control.new()
+	_marker_root.name = "Markers"
+	_marker_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_marker_root)
 	# ANIM-R2 R9: the labels are a layer of their own (a column sliding in moves them every
 	# frame; the nodes under them stay drawn).
 	_tags = _layer("Labels", _draw_tags)
 	_hi = _layer("Selection", _draw_hi)
+	# ART-5 5d: grease pencil (the boss's TARGET) is above all UI (bible §1.2, PencilLint).
+	_pencil_root = Node2D.new()
+	_pencil_root.name = "Pencil"
+	add_child(_pencil_root)
 	add_child(_mv)
 	_mv.changed.connect(_on_motion_value)
 	if city != null:
@@ -723,6 +770,7 @@ func _point_at(id: StringName) -> void:
 	if id != _pointer_id:
 		_pointer_id = id
 		node_hovered.emit(id)
+		_queue_sync()  # ART-5 5d: an Exploit Site's file shows while pointed at
 
 
 ## The node under local point `p` (its icon first, then its roof or base), or &"". Icons
@@ -733,6 +781,8 @@ func node_at(p: Vector2) -> StringName:
 	var best: StringName = &""
 	var best_d := INF
 	for n in nodes:
+		if not marker_shown(n):
+			continue  # ART-5 5d: a hidden Site is not on the map
 		var d := p.distance_to(icon_pos(n))
 		if d <= icon_radius(n) and d < best_d:
 			best_d = d
@@ -741,7 +791,7 @@ func node_at(p: Vector2) -> StringName:
 		return best
 	for n in nodes:
 		var rec := _roof(n["id"])
-		if rec.is_empty():
+		if rec.is_empty() or not marker_shown(n):
 			continue
 		if Geometry2D.is_point_in_polygon(p, rec["roof"]) or p.distance_to(rec["base"]) < ICON_RADIUS_BIG:
 			return n["id"]
@@ -842,6 +892,11 @@ func _k() -> float:
 
 ## Icon radius of node `n` (local px).
 func icon_radius(n: Dictionary) -> float:
+	if n.has("marker"):
+		# ART-5 5d: a Site marker v4 picks within its ring (the boss within its TARGET).
+		if n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
+			return TARGET_RADIUS * _k()
+		return SiteMarker.hit_radius(n["marker"], _k())
 	return (ICON_RADIUS_BIG if n.get("big", false) else ICON_RADIUS) * _k()
 
 
@@ -854,6 +909,14 @@ func icon_pos(n: Dictionary) -> Vector2:
 ## The box node `n`'s icon covers round centre `p` (local px): its silhouette and, for a
 ## Site, its tier pips under it (H24 K6: the pips of one icon sat on the icon below).
 func _icon_box(n: Dictionary, p: Vector2) -> Rect2:
+	if n.has("marker"):
+		if n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
+			var t := TARGET_RADIUS * _k()
+			var circle := Rect2(p - Vector2(t, t * TARGET_FLAT), Vector2(t, t * TARGET_FLAT) * 2.0)
+			# The chip over it is part of the boss: labels keep off it and the fit holds it.
+			var chip_h := Palette.mono().get_height(label_font_size()) + (TAG_PAD * 2.0 + BOSS_CHIP_GAP) * _k()
+			return circle.merge(Rect2(circle.position - Vector2(0, chip_h), Vector2(circle.size.x, chip_h)))
+		return SiteMarker.box(n["marker"], p, _k())
 	var r := icon_radius(n)
 	var shape := icon_shape(String(n.get("kind", "")), p, r)
 	var box := Rect2(p - Vector2(r, r), Vector2(r, r) * 2.0)
@@ -902,6 +965,13 @@ func _icon_positions() -> Dictionary:
 		var r := icon_radius(n)
 		var big: bool = n.get("big", false)
 		var base: Vector2 = o["top"] + Vector2(0, -((PILLAR_HEIGHT_BIG if big else PILLAR_HEIGHT) if look == Look.PILLARS else ICON_LIFT + r))
+		if n.has("marker"):
+			# ART-5 5d: the disc floats PAD_DROP over its pad on the roof (the boss's TARGET
+			# circles the roof itself). A hidden Site keeps its spot but pushes no marker aside.
+			base = o["top"] - Vector2(0, 0.0 if n["marker"].get("kind") == SiteMarker.KIND_CENTRAL_SERVER else SiteMarker.PAD_DROP * _k())
+			if not marker_shown(n):
+				out[n["id"]] = base
+				continue
 		var own := _icon_box(n, base).size + Vector2(gap, gap)
 		var p := base
 		var found := false
@@ -939,6 +1009,8 @@ func _draw() -> void:
 	_queue_top()
 	_anim.queue_redraw()
 	_hi.queue_redraw()
+	if _glyph_layer != null:
+		_glyph_layer.queue_redraw()
 	if city == null or nodes.is_empty():
 		return
 	_c = self
@@ -1029,8 +1101,11 @@ func _draw_top() -> void:
 		return
 	_c = _top
 	drawn_tiers.clear()
+	lit_sites.clear()
+	boss_chip_rect = Rect2()
 	for n in nodes:
 		_node(n)
+	_queue_sync()  # ART-5 5d: the markers' layer follows
 	# ANIM-R3 B8: before the route's first node the marker stands at the street, with its words.
 	if here_id() == &"" and here_at.x != INF and _travel.is_empty():
 		var p := here_point()
@@ -1247,6 +1322,20 @@ func _is_dashed(e: Dictionary) -> bool:
 func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 	if pts.size() < 2:
 		return
+	if bool(e.get("depowered", false)):
+		# ART-5 5d: no power to a TAKEN or DOWN node: a grey double trace, broken.
+		SiteMarker.draw_depowered(self, pts, _k())
+		return
+	if bool(e.get("locked", false)):
+		# ART-5 5d: a locked cross-link: grey dashes and a padlock disc at its midpoint.
+		var k := _k()
+		var total := PencilShapes.length_of(pts)
+		var d := 0.0
+		while d < total:
+			draw_polyline(PencilShapes.trim(pts, d, minf(total, d + DASH_ON * k)), Color(Palette.TEXT_LO, 0.85), maxf(1.0, 2.0 * k), true)
+			d += DASH_PERIOD * k
+		SiteMarker.draw_lock_disc(self, _halfway(pts), LOCK_DISC * k)
+		return
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
 	# Dark keyline under every path so it separates from the city's own ink.
@@ -1257,7 +1346,7 @@ func _edge_static(e: Dictionary, pts: PackedVector2Array) -> void:
 
 
 func _edge_flow(e: Dictionary, pts: PackedVector2Array) -> void:
-	if pts.size() < 2:
+	if pts.size() < 2 or bool(e.get("depowered", false)) or bool(e.get("locked", false)):
 		return
 	var col: Color = e.get("color", Palette.NET_CYAN)
 	var width: float = e.get("width", 3.0)
@@ -1332,6 +1421,9 @@ static func _centroid(pts: PackedVector2Array) -> Vector2:
 func _node(n: Dictionary) -> void:
 	var rec := _roof(n["id"])
 	if rec.is_empty():
+		return
+	if n.has("marker"):
+		_marker_node(n, rec)
 		return
 	var dim := is_dimmed(n["id"])
 	var col: Color = n.get("color", Palette.CELL_PINK)
@@ -1432,6 +1524,327 @@ func _node(n: Dictionary) -> void:
 			_c.draw_polyline(dia + PackedVector2Array([dia[0]]), Palette.PAPER, 1.2)
 
 
+# --- ART-5 5d: Site markers v4 on the Grid -----------------------------------------------
+
+## The boss's red pencil TARGET circle (screen px: radius, its iso flattening, the wax
+## width, the word's offset from the circle's left foot) and the chip's gap over it.
+const TARGET_RADIUS := 48.0
+const TARGET_FLAT := 0.62
+const TARGET_WIDTH := 8.0
+const TARGET_WORD_AT := Vector2(-2.0, 0.7)
+const TARGET_SEED := 351
+const BOSS_CHIP_GAP := 10.0
+## Fight won (D17): the lit windows on a won Site's front walls: rows per wall, window step
+## along a wall and dot radius (city px), and the share of the wall the rows span.
+const WON_ROWS := 3
+const WON_STEP := 4.0
+const WON_DOT := 1.1
+const WON_SPAN := 0.7
+## The Exploit Site's hover file (DecryptedHoloPanel): its width and the gap to its marker
+## (screen px at text scale 1.0).
+const EXPLOIT_FILE_W := 330.0
+const EXPLOIT_FILE_GAP := 12.0
+## The widest share of the map the file may take (its effect line wraps inside).
+const EXPLOIT_FILE_SHARE := 0.32
+## A locked link's padlock disc (screen px).
+const LOCK_DISC := 11.0
+
+
+## ART-5 5d: true when node `n` shows on the map now: every node but a hidden v4 Site (a
+## regular Site that is not selectable), which shows while SHOW ALL is pointed at, or while
+## it is selected or lit.
+func marker_shown(n: Dictionary) -> bool:
+	if not n.has("marker") or show_all or bool(n["marker"].get("pinned", true)):
+		return true
+	return n["id"] == selected_id or n["id"] == hover_id
+
+
+## A v4 Site on the node layer: its roof (the building), the fight-won lights, the pad on the
+## roof and the stalk up to the disc (the disc itself is a SiteMarkerView on the marker layer).
+func _marker_node(n: Dictionary, rec: Dictionary) -> void:
+	var spec: Dictionary = n["marker"]
+	if not marker_shown(n):
+		return
+	var k := _k()
+	var col: Color = n.get("color", Palette.CELL_PINK)
+	var roof: PackedVector2Array = rec["roof"]
+	var top := _centroid(roof)
+	var closed := roof.duplicate()
+	closed.append(roof[0])
+	if spec.get("status") == SiteMarker.ST_DOWN:
+		col = SiteMarker.greyed(col)
+	_c.draw_colored_polygon(roof, Color(col, 0.22))
+	_c.draw_polyline(closed, Color(Palette.GLYPH_INK, 0.85), 5.0, true)
+	_c.draw_polyline(closed, Color(col, 0.8), 1.8, true)
+	if bool(spec.get("won", false)):
+		_won_lights(n["id"], rec)
+	var at := icon_pos(n)
+	if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
+		SiteMarker.draw_pad(_c, spec, top, k * 1.4)
+		_draw_boss_chip(n, at)
+		return
+	SiteMarker.draw_pad(_c, spec, top, k)
+	var rc := SiteMarker.ring_color(spec)
+	_c.draw_line(top, at + Vector2(0, SiteMarker.ring_radius(spec, k)), Color(rc, 0.6), maxf(1.0, 1.5 * k))
+	if SiteMarker.pip_count(spec) > 0:
+		drawn_tiers[n["id"]] = int(spec.get("tier", 0))
+
+
+## D17 (fight won: the building's lights turn Cell colours): rows of lit windows in Cell
+## pink and lime on the Site building's front walls (the faces turned to the camera).
+func _won_lights(id: StringName, rec: Dictionary) -> void:
+	var roof: PackedVector2Array = rec["roof"]
+	var top := _centroid(roof)
+	var h := (rec["base"] as Vector2).y - top.y
+	if h <= WON_STEP or roof.size() < 3:
+		return
+	if not lit_sites.has(id):
+		lit_sites.append(id)
+	var i := 0
+	for e in roof.size():
+		var a := roof[e]
+		var b := roof[(e + 1) % roof.size()]
+		var mid := (a + b) * 0.5
+		if mid.y <= top.y:
+			continue  # a back wall
+		var along := a.distance_to(b)
+		var steps := maxi(1, floori(along / WON_STEP))
+		for r in WON_ROWS:
+			var drop := h * WON_SPAN * (float(r) + 1.0) / float(WON_ROWS + 1)
+			for s in steps:
+				var p := a.lerp(b, (float(s) + 0.5) / float(steps)) + Vector2(0, drop)
+				_c.draw_circle(p, WON_DOT, SiteMarker.won_light(id, i))
+				i += 1
+
+
+## The boss chip `CENTRAL SERVER // EXPLOITS n/3`, over the TARGET circle and clear of it
+## (no UI on grease pencil).
+func _draw_boss_chip(n: Dictionary, at: Vector2) -> void:
+	var k := _k()
+	var f := Palette.mono()
+	var fs := label_font_size()
+	var word := tr_word(SiteMarker.BOSS_CHIP) % [boss_exploits.x, boss_exploits.y]
+	var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pad := TAG_PAD * k
+	var box := Vector2(w, f.get_height(fs)) + Vector2(pad, pad) * 2.0
+	var circle := Rect2(at - Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * k, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT) * 2.0 * k)
+	var r := Rect2(Vector2(at.x - box.x * 0.5, circle.position.y - BOSS_CHIP_GAP * k - box.y), box)
+	# Kept on the map's open part (beside the column), still above the pencil.
+	var area := label_area()
+	r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
+	boss_chip_rect = r
+	_c.draw_rect(r, Color(Palette.NIGHT_SKY, 0.9))
+	_c.draw_rect(r, Palette.RESIST_GOLD, false, maxf(1.0, k))
+	_c.draw_string(f, r.position + Vector2(pad, pad + f.get_ascent(fs)), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Palette.RESIST_GOLD)
+
+
+## The markers' layer follows the node layer: one SiteMarkerView per shown v4 Site (made,
+## updated or freed), placed on its disc and sized for the zoom; the boss's pencil TARGET.
+func _sync_markers() -> void:
+	if _marker_root == null or not is_instance_valid(_marker_root):
+		return
+	var k := _k()
+	var live := {}
+	var boss := {}
+	for n in nodes:
+		if not n.has("marker") or not marker_shown(n) or _roof(n["id"]).is_empty():
+			continue
+		var spec: Dictionary = n["marker"]
+		if spec.get("kind") == SiteMarker.KIND_CENTRAL_SERVER:
+			boss = n
+			continue
+		var v: SiteMarkerView = _marker_views.get(n["id"])
+		if v == null or not is_instance_valid(v):
+			v = SiteMarkerView.new(spec)
+			v.name = "Marker_%s" % n["id"]
+			_marker_root.add_child(v)
+			_marker_views[n["id"]] = v
+		elif str(v.spec) != str(spec):
+			v.set_spec(spec)
+		v.position = icon_pos(n)
+		v.scale = Vector2(k, k)
+		v.modulate.a = DIM_ALPHA if is_dimmed(n["id"]) else 1.0
+		live[n["id"]] = true
+	for id in _marker_views.keys():
+		if not live.has(id):
+			var old: Node = _marker_views[id]
+			if is_instance_valid(old):
+				old.queue_free()
+			_marker_views.erase(id)
+	_sync_target(boss)
+
+
+## The marker view of Site `id` (null when it shows none).
+func marker_view(id: StringName) -> SiteMarkerView:
+	var v: Variant = _marker_views.get(id)
+	return v if v != null and is_instance_valid(v) else null
+
+
+## The boss's red pencil TARGET circle and word round its roof (bible §4.5), redrawn only
+## when the camera or the boss moved.
+func _sync_target(boss: Dictionary) -> void:
+	if boss.is_empty():
+		if _target_mark != null:
+			_target_mark.queue_free()
+			_target_word.queue_free()
+			_target_mark = null
+			_target_word = null
+		_target_key = []
+		return
+	var at := icon_pos(boss)
+	var k := _k()
+	var key := [at, k]
+	if key == _target_key and _target_mark != null:
+		return
+	_target_key = key
+	if _target_mark == null:
+		_target_mark = GreasePencilMark.new()
+		_target_mark.name = "Target"
+		_target_mark.ink = GreasePencilMark.Ink.THREAT
+		_target_mark.width = TARGET_WIDTH
+		_target_mark.seed = TARGET_SEED
+		_pencil_root.add_child(_target_mark)
+		_target_word = GreasePencilWord.new()
+		_target_word.name = "TargetWord"
+		_target_word.text = tr_word("TARGET")
+		_target_word.ink = GreasePencilMark.Ink.THREAT
+		_pencil_root.add_child(_target_word)
+	_target_mark.clear()
+	_target_mark.add_stroke(PencilShapes.hand_circle(Vector2.ZERO, Vector2(TARGET_RADIUS, TARGET_RADIUS * TARGET_FLAT), TARGET_SEED))
+	_target_mark.position = at
+	_target_mark.scale = Vector2(k, k)
+	_target_word.position = at + TARGET_WORD_AT * TARGET_RADIUS * k
+	_target_word.scale = Vector2(k, k)
+
+
+## The marker layer and the pencil sync once the node layer has drawn.
+var _sync_queued: bool = false
+
+
+func _queue_sync() -> void:
+	if _sync_queued:
+		return
+	_sync_queued = true
+	_run_sync.call_deferred()
+
+
+func _run_sync() -> void:
+	_sync_queued = false
+	if is_instance_valid(self):
+		_sync_markers()
+		_sync_exploit_file()
+
+
+## The atlas glyphs on the links: each locked link's padlock (`state_locked`).
+func _draw_glyphs() -> void:
+	if city == null or nodes.is_empty():
+		return
+	var t := GlyphIcon.table()
+	var region := t.cell_region(&"state_locked")
+	if region.size == Vector2.ZERO or t.atlas == null:
+		return
+	var k := _k()
+	for e in edges.size():
+		if not bool(edges[e].get("locked", false)):
+			continue
+		var pts := _route_px(e)
+		if pts.size() < 2:
+			continue
+		var mid := _halfway(pts)
+		var cell := GlyphIcon.cell_size_for(LOCK_DISC * 1.3 * k)
+		_glyph_layer.draw_texture_rect_region(t.atlas, Rect2(mid - cell * 0.5, cell), region, Palette.TEXT_HI)
+
+
+## The point halfway along polyline `pts`.
+static func _halfway(pts: PackedVector2Array) -> Vector2:
+	var total := PencilShapes.length_of(pts)
+	var half := PencilShapes.trim(pts, 0.0, total * 0.5)
+	return half[-1] if half.size() > 0 else pts[0]
+
+
+## The Exploit Site under the pointer (or lit from its run row) shows its decrypted file
+## (DecryptedHoloPanel): the full tag `CATEGORY // ITEM`, what it does at the breach, the
+## Site; nothing else covers the map (bible §4.9: only the badge, the tag on hover).
+func _sync_exploit_file() -> void:
+	var id := _pointer_id if _pointer_id != &"" else hover_id
+	var n := _node_dict(id)
+	var tag: Dictionary = n.get("exploit_tag", {}) if n.has("marker") and marker_shown(n) else {}
+	if tag.is_empty():
+		if exploit_file != null and is_instance_valid(exploit_file):
+			exploit_file.queue_free()
+		exploit_file = null
+		return
+	if exploit_file == null or not is_instance_valid(exploit_file) or exploit_file.get_meta(&"site", &"") != id:
+		if exploit_file != null and is_instance_valid(exploit_file):
+			exploit_file.queue_free()
+		exploit_file = _make_exploit_file(id, tag)
+		add_child(exploit_file)
+		move_child(exploit_file, _pencil_root.get_index())
+		exploit_file.custom_minimum_size = exploit_file.content.get_child(0).get_combined_minimum_size()
+	var k := _k()
+	exploit_file.scale = Vector2(k, k)
+	exploit_file.reset_size()
+	var box := exploit_file.get_combined_minimum_size() * k
+	var mark := icon_rect(n)
+	var area := label_area()
+	var r := Rect2(Vector2(mark.end.x + EXPLOIT_FILE_GAP * k, mark.get_center().y - box.y * 0.5), box)
+	if r.end.x > area.end.x:
+		r.position.x = mark.position.x - EXPLOIT_FILE_GAP * k - box.x
+	r.position.x = clampf(r.position.x, area.position.x, maxf(area.position.x, area.end.x - box.x))
+	r.position.y = clampf(r.position.y, area.position.y, maxf(area.position.y, area.end.y - box.y))
+	exploit_file.position = r.position
+
+
+## A decrypted file for the Exploit of Site `id` (`tag`: SiteMarker.exploit_tag).
+func _make_exploit_file(id: StringName, tag: Dictionary) -> DecryptedHoloPanel:
+	var p := DecryptedHoloPanel.new()
+	p.name = "ExploitFile"
+	p.scrim = false
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.set_meta(&"site", id)
+	p.corp_color = Palette.corp_color(StringName(_node_dict(id)["marker"].get("corp", &"")))
+	var box := MarginContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Clear of the DECRYPTED stamp (top right) and the cracked seal (bottom right).
+	box.add_theme_constant_override("margin_left", UiTheme.SP_M)
+	box.add_theme_constant_override("margin_bottom", UiTheme.SP_M)
+	box.add_theme_constant_override("margin_top", int(DecryptedHoloPanel.STAMP_SLOT.y) + UiTheme.SP_S)
+	box.add_theme_constant_override("margin_right", int(DecryptedHoloPanel.SEAL_R * 2.0) + UiTheme.SP_M * 2)
+	p.content.add_child(box)
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(col)
+	var head := Label.new()
+	head.name = "Tag"
+	head.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	head.text = "%s // %s" % [tag["category"], tag["name"]]
+	head.add_theme_font_override("font", Palette.display())
+	head.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.BODY))
+	head.add_theme_color_override("font_color", Palette.RESIST_GOLD)
+	UiWrap.whole_words(head)
+	col.add_child(head)
+	var eff := Label.new()
+	eff.name = "Effect"
+	eff.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	eff.text = String(tag["effect"])
+	eff.theme_type_variation = UiTheme.BODY_TEXT
+	eff.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	UiWrap.whole_words(eff)
+	# A hover file, never a wall over the map: at most EXPLOIT_FILE_SHARE of the map wide.
+	eff.custom_minimum_size.x = minf(EXPLOIT_FILE_W * Settings.text_scale, label_area().size.x * EXPLOIT_FILE_SHARE / _k())
+	col.add_child(eff)
+	var site := Label.new()
+	site.name = "Site"
+	site.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	site.text = String(tag.get("site", ""))
+	site.add_theme_font_override("font", Palette.mono())
+	site.add_theme_font_size_override("font_size", UiTheme.font_px(UiTheme.CAPTION))
+	site.add_theme_color_override("font_color", Palette.TEXT_MID)
+	col.add_child(site)
+	box.set_anchors_preset(Control.PRESET_FULL_RECT)
+	return p
+
+
 ## ANIM-R1 M4: where placed asset `k` of `count` on node `n` sits (local px): a row
 ## beside the icon, on its right, screen-sized.
 func asset_slot(n: Dictionary, k: int, count: int) -> Vector2:
@@ -1458,6 +1871,12 @@ func tier_pips_centre(n: Dictionary) -> Vector2:
 
 ## The rect node `n`'s tier pips cover (local px; zero size when it has none).
 func tier_pips_rect(n: Dictionary) -> Rect2:
+	if n.has("marker"):
+		# ART-5 5d: a v4 marker's square pips (none on claimed, DOWN, CORE or the boss).
+		var at := icon_pos(n)
+		if SiteMarker.pip_count(n["marker"]) <= 0 or at.x == INF:
+			return Rect2()
+		return SiteMarker.pips_rect(n["marker"], at, _k())
 	if tier_of(n) <= 0:
 		return Rect2()
 	var box := tier_pips_size(_pip_scale(n))

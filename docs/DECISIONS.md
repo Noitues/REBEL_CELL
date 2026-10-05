@@ -90,6 +90,79 @@ refs round 24 `motion_layers`, round 26 ambient v4, round 37 calm Heat B, round 
 - Tests: `tests/unit/test_city_motion.gd` (fast). Captures: `tools/city/city_motion_capture.tscn`
   (one launch walks 15 states; `--host=spike`; `--mperf`). Crops: `docs/art_review/ART-5/5c/`.
 
+### 2026-10-05 — Art direction — ART-5 5d Grid markers and key
+Agent 5d (Group 3 wave 2; bible §4.3, §4.5, §4.9, ruling 11, D17; refs `city/round42_site_markers/*`,
+`round39_landing_exploits/exploit_on_map_v3.jpg`, `exploits_v2.jpg`, `round39_city_unified/city_grid.jpg`;
+generator `art-concepts-r43:docs/concepts/round42_site_markers/scripts/markers42.py`).
+- **Site markers v4 (`SiteMarker`, pure; `SiteMarkerView`).** One marker, five layers ported from
+  `markers42.marker()` at its sizes (disc 30 px, Exploit 34, not-yet x0.85, ring gap 5 / width 4 (3),
+  pad 17 (14), pips 5 px squares, badge 9, sub-badge 0.31 of the disc). The state is a pure function
+  `SiteMarker.spec_for(campaign, corp, site, selectable)`. Per the coordinator, the disc is a 1B
+  `VinylSticker` (node stickers are vinyl): CIRCLE, gloss, a 1.5 px die-cut rim, art at 2x on a holder
+  (the sticker's own scale belongs to its motion). Cleared = grey vinyl (`grey` 1); DOWN = the
+  sticker's DISABLED state under the white bolt.
+- **Icons.** The Exploit type sub-badge is the glyph atlas (`GlyphIcon`, `exploit_<type>` keys). The
+  atlas has no map icons yet, so the corp crests (Meridian crane-A, Solace helix, Halcyon eye, Orbital
+  ringed planet, REBEL_CELL fist), the keyring, flame, tucked-thumb fist (`fist_mask` geometry), heart,
+  bolt and check are vector ports of the round 42 masks. The locked link's padlock is the atlas's
+  `state_locked`. Disc fills are night ink tinted by a token (no new Palette tokens).
+- **DOWN** = `SiteMarker.draw_bolt` (the v3 `bolt_mask`, white with a dark shadow, spanning the marker,
+  everything greyed). It is a static so 3A's raid view can draw the same bolt (ruling 11). **TAKEN** =
+  the SEIZURE NOTICE slip (pale paper, violet hatch and letterhead with the corp crest, red bar, tilted
+  -8 deg) with violet pips; orange ring while a Reclaim run is launchable. Links to a TAKEN or DOWN node
+  are de-powered (grey double trace, broken, no packets); locked cross-links show (grey dashes,
+  padlock disc). Both only on the Grid (`grid_graph(..., v4 = true)`); raid and netrun graphs keep
+  their own look (3A / 3B).
+- **Hidden-nodes rule (round 42 rules strip, bible §4.5 "Pinned").** Regular Sites that are not
+  selectable are hidden; Exploit, Heat objective, the boss, yours, cleared and TAKEN Sites, the
+  selected Site and a Site lit from its run row always show. The key's `HOVER: SHOW ALL` cell (pad:
+  `OPEN KEY: SHOW ALL`, the key button opens it) shows them all. A hidden Site is not picked on the map,
+  keeps no room in the fit or the icon stacking, and stays reachable by PREV / NEXT SITE (pad
+  reachability unchanged).
+- **Boss.** The red pencil TARGET is 1B's `GreasePencilMark` (hand circle, THREAT ink) plus
+  `GreasePencilWord` "TARGET", on a pencil layer above every UI layer of the overlay; the chip
+  `CENTRAL SERVER // EXPLOITS n/3` sits over the circle, clear of it.
+- **Exploit tag on hover (bible §4.9).** On the map an Exploit Site shows only its badge and gold pips.
+  Pointing at it (or lighting its run row) opens its decrypted file: a 1B `DecryptedHoloPanel` (corp
+  tint, no scrim) with `CATEGORY // ITEM` from the corp's ExploitData (`Breach: Customs Override Keys`
+  -> `BREACH // CUSTOMS OVERRIDE KEYS`), its effect at the breach and the Site. Its tooltip leads with
+  the same tag.
+- **Fight won (D17).** A cleared or claimed Site's building lights its windows in Cell pink with some
+  lime (`SiteMarker.won_light`, deterministic by Site id): on today's Grid host as window rows on the
+  roof's front walls; on 5a's 3D city as `SiteWonLights` (one MultiMesh of window quads for the `fx`
+  layer, placement pure and tested). Call: a DOWN node's lights are out (no power), so DOWN reads
+  apart from a won Site.
+- **The Grid map key, restyled (carry-over item).** The Grid's key is the v4 key
+  (`MapLegend.use_site_markers`). Each row draws the map's own marker (`SiteMarkerView`) or line, with
+  a word or two. Pointing at a row gives its meaning in plain words (`SiteMarker.MEANINGS`, written from
+  the rules as the v4 legend is). The strip keeps the reference's rows: next, cleared, yours, DOWN,
+  TAKEN, exploit, heat obj., locked link, a threat route when a raid is coming, and SHOW ALL. The
+  compact key holds every row (+ not yet, CORE, TARGET, no power). Fold, fit and live text size behave
+  as before (H23/H24, `legend_fold`).
+- **Group 1 naive audit P2s.** (1) The other maps' key: "cleared" had the corporate square; it is
+  now `◇`, and a test checks that every key entry differs in greyscale (glyphs for the old key,
+  `SiteMarker.grey_key` for v4). (2) A selected Site with no JACK IN says why in plain words and what
+  to do first (`why_not_runnable`: CORE, the breach's Exploits, the linked Sites to clear first, or no
+  operative).
+- **Projection seam.** `GridMarkerProjection` attaches to 5a's seam (54ee7d2): `from_view(CityView3D)`
+  (project, top_at; re-place on `camera_changed` / `band_changed`), `from_model(CityModel,
+  CityIsoCamera)` headless, `from_camera` with no model. `SiteMarkerLayout` (pure) places discs apart
+  and labels clear of markers, and picks. `SiteMarkerLayer` puts the markers on the 3D city. Today's
+  Grid page still runs on its NeonCity host (the overlay places markers on its roofs, the same layers
+  and rules). Moving the page onto CityView3D waits on 5a's Grid camera and fit. Proposed slice: when
+  5a's Grid host lands, mount `SiteMarkerLayer` with `from_view`, and keep the overlay for the routes.
+- **Tests changed (none dropped):** `test_horizontal_pass21_city` tooltips, `test_horizontal_pass22_city`
+  pips and focus strip, and `test_city_map_sweeps` icon, node and overlap checks now skip hidden v4
+  Sites. The boss and claimed nodes carry no pips (v4). New: `tests/unit/test_art5_grid_markers.gd`
+  (fast).
+
+- **Open questions (defaults built; also under "Open questions for the designer"):**
+  - **SHOW ALL setting.** The Grid reveals hidden Sites by the key's hover / open. D13's "Always show all
+    nodes" setting (3B, netrun) should drive the Grid too once it lands. Default: the key only.
+  - **VIRUS badge.** The bible says the INFECT glyph. 1C's table maps `exploit_virus` to
+    `status_corrupted` (the effect it causes). Default: the table.
+  - **DOWN lights.** A won Site whose node is DOWN goes dark (no power). Default: dark.
+
 ### 2026-10-05 — Art direction — ART-5 5a city model
 Bible §1.2 World, §4.1–4.3, §6.1; 1D's report (`docs/handoff/art_1/city_spike_report.md`, "What
 ART-5 needs"); 1B's material kit. Agent 5a (Group 3 wave 2, M14).
@@ -7213,6 +7286,13 @@ and annotated in the GDD where it changes a rule.
   Heat modifier to pick nodes (today it changes map generation), so it is not drawn; (2) the
   "available" ring stays the run orange for every corporation (Appendix C #22); (3) transit v3's
   bridge hops and crossing avoidance wait for the 3D city's cable router (wave 2).
+
+- **Grid Site markers v4 (2026-10-05, ART-5 5d; defaults built, see "Art direction — ART-5 5d Grid
+  markers and key"):**
+  1. Hidden Sites show only through the key's SHOW ALL, until D13's "Always show all nodes" setting
+     covers the Grid too.
+  2. The VIRUS badge follows 1C's table (`status_corrupted`), not the bible's INFECT glyph.
+  3. A DOWN node's fight-won lights go dark.
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
   HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single
