@@ -121,6 +121,87 @@ def gate_mask():
     return m
 
 
+def fist_mask(S=512):
+    """The round 34 Rebel Cell map fist (map34.Crest.zone): four fingers, the thumb folded across, the TUCKED thumb
+    line, the wrist. 255 = fist, 0 = outside and the dark detail lines (they read as cut lines)."""
+    m = Image.new("L", (S, S), 0)
+    px = m.load()
+    FING = [(-5.4, -2.75), (-2.75, -0.05), (-0.05, 2.75), (2.75, 5.6)]
+    LW, TU = 0.95, 0.4
+    k = S / 15.6
+    for j in range(S):
+        v = 14.6 - j / k
+        for i in range(S):
+            u = (i - S / 2) / k
+            if v < 0 or v > 14.2 or u < -5.4 or u > 5.6:
+                continue
+            if v < 5.2 and not (-3.6 <= u <= 3.6):
+                continue
+            if v > 13.3:
+                ok = False
+                for n, (a0, a1) in enumerate(FING):
+                    top = 13.6 + (0.6 if n in (1, 2) else 0.0)
+                    c, r = (a0 + a1) / 2, (a1 - a0) / 2
+                    if a0 <= u <= a1 and v <= top - (1 - math.sqrt(max(0.0, 1 - ((u - c) / r) ** 2))) * 0.9:
+                        ok = True
+                if not ok:
+                    continue
+            line = any(abs(u - (a1 + 0.12)) < LW / 2 and v > 8.3 for (a0, a1) in FING[:-1])
+            line = line or (abs(v - 8.25) < LW / 2 and -5.4 <= u <= 4.4)
+            line = line or (4.4 <= u <= 5.6 and abs(v - (8.25 - (u - 4.4) * 1.6)) < LW * 0.6)
+            line = line or (abs(v - 5.2) < LW / 2 and TU <= u <= 5.0) or (abs(u - TU) < LW / 2 and 5.2 - LW / 2 <= v <= 8.25)
+            if not line:
+                px[i, j] = 255
+    return m
+
+
+_FIST = {}
+
+
+def fist_cached():
+    if "m" not in _FIST:
+        _FIST["m"] = fist_mask()
+    return _FIST["m"]
+
+
+def hammer_mask():
+    """BREACH option A (picked): a SLEDGEHAMMER, heavy head at 45 deg: one blunt silhouette that reads from afar."""
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    head = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(head)
+    d.rounded_rectangle([110, 190, 402, 322], radius=22, fill=255)             # the head
+    d.rectangle([228, 300, 284, 500], fill=255)                                # the handle
+    d.rectangle([214, 470, 298, 506], fill=255)                                # grip end
+    return head.rotate(-40, Image.BICUBIC, center=(256, 256))
+
+
+def ram_mask():
+    """BREACH option B: a battering ram: a fat round-ended log with two straps."""
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(m)
+    d.rounded_rectangle([40, 196, 472, 316], radius=60, fill=255)
+    for x in (170, 330):
+        d.rectangle([x - 14, 160, x + 14, 352], fill=0)
+        d.rectangle([x - 8, 150, x + 8, 362], fill=255)
+    d.ellipse([400, 196, 500, 316], fill=255)
+    return m.rotate(28, Image.BICUBIC, center=(256, 256))
+
+
+def chain_mask():
+    """BREACH option C: a broken chain (two heavy links, split)."""
+    S = 512
+    m = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(m)
+    d.rounded_rectangle([40, 150, 240, 300], radius=70, outline=255, width=46)
+    d.rounded_rectangle([272, 212, 472, 362], radius=70, outline=255, width=46)
+    d.rectangle([200, 120, 300, 400], fill=0)                                   # the break
+    for a, b in (((200, 230), (172, 200)), ((300, 290), (330, 320))):
+        d.line([a, b], fill=255, width=24)
+    return m.rotate(-20, Image.BICUBIC, center=(256, 256))
+
+
 def tint(mask, col):
     im = Image.new("RGBA", mask.size, col + (255,))
     im.putalpha(mask)
@@ -150,7 +231,7 @@ def disc(kind, px, exploit=None, status="corporate"):
             d = ImageDraw.Draw(im)
             d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(18, 14, 4, 255), outline=GOLD + (255,), width=S)
             if exploit == "BREACH":
-                g2 = tint(g_mask(gate_mask, int(r * 1.6)), (255, 236, 170))
+                g2 = tint(g_mask(hammer_mask, int(r * 1.9)), (255, 236, 170))
             else:
                 g2 = RL.glyph(gname, int(r * 1.4), fill=(255, 236, 170), ow=0)
             im.alpha_composite(g2, (int(cx - g2.width / 2), int(cy - g2.height / 2)))
@@ -172,7 +253,7 @@ def cell_disc(kind, px, status="claimed"):
     im = Image.new("RGBA", (P, P), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     d.ellipse([S, S, P - S, P - S], fill=(16, 26, 4, 255), outline=(10, 9, 12, 255), width=2 * S)
-    ic = RC_.cell_icon(kind, int(P * 0.62), LIME)
+    ic = RC_.cell_icon(kind, int(P * 0.62), LIME) if kind == "home" else tint(fist_cached().resize((int(P * 0.8), int(P * 0.8)), Image.LANCZOS), LIME)
     im.alpha_composite(ic, ((P - ic.width) // 2, (P - ic.height) // 2))
     im = im.resize((px, px), Image.LANCZOS)
     if False:                                     # v3: disabled is the greyed marker + a white bolt (see marker())
@@ -225,6 +306,30 @@ def badge(img, x, y, status, r=10):
 AVAIL = {"next": MER, "notyet": WHITE, "yours": LIME}
 
 
+VIOLET = (170, 120, 255)
+
+
+def seizure_memo(px):
+    """The raid map's SEIZED look (round 22 node key: violet corp hatch + corp mark; round 23 'seized / taken'): an
+    intercepted corp SEIZURE NOTICE slip, slapped over the node. It replaces the Site disc entirely."""
+    S = 4
+    w, h = int(px * 0.86) * S, int(px * 1.05) * S
+    im = Image.new("RGBA", (w + 8 * S, h + 8 * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    o = 4 * S
+    d.rectangle([o, o, o + w, o + h], fill=(232, 226, 240, 255), outline=(20, 16, 30, 255), width=S * 2)
+    for yy in range(o, o + h, 3 * S):                                          # the violet corp hatch
+        d.line([(o, yy), (o + w, yy + w * 0.35)], fill=VIOLET + (90,), width=S)
+    d.rectangle([o, o, o + w, o + int(h * 0.24)], fill=(60, 34, 110, 255))     # the letterhead band
+    cxm, cym, rr = o + w / 2, o + h * 0.12, h * 0.08                           # the corp mark (Meridian crane-A)
+    d.line([(cxm - rr, cym + rr * 0.8), (cxm, cym - rr), (cxm + rr, cym + rr * 0.8)], fill=MER + (255,), width=S * 2)
+    for t in (0.42, 0.56, 0.70):                                               # typed lines
+        d.line([(o + w * 0.14, o + h * t), (o + w * 0.86, o + h * t)], fill=(70, 60, 90, 255), width=S * 2)
+    d.rectangle([o + w * 0.08, o + h * 0.78, o + w * 0.92, o + h * 0.94], fill=(196, 30, 40, 255))   # the red SEIZED bar
+    im = im.resize((im.width // S, im.height // S), Image.LANCZOS)
+    return RL.rotate_rgba(im, -8)
+
+
 def marker(img, x, y, kind, tier, status="corporate", avail="next", exploit=None, scale=1.0, label=None):
     """Draw one Site marker at street point (x, y). kind: site | exploit | heat | core | boss."""
     k = scale
@@ -240,6 +345,15 @@ def marker(img, x, y, kind, tier, status="corporate", avail="next", exploit=None
     if status in ("claimed", "disabled"):
         ic = cell_disc({"site": "relay", "exploit": "relay", "heat": "relay"}[kind], px, status)
         avail = "yours"
+    elif status == "seized":
+        cy = y - 15 * k
+        memo = seizure_memo(int(px * 1.25))
+        img.alpha_composite(memo, (int(x - memo.width / 2), int(cy - memo.height / 2)))
+        if tier:
+            img = pips(img, x, cy + memo.height / 2 + 4, tier, (200, 160, 255), s=int(5 * k), gap=int(3 * k))
+        if label:
+            img = U.chip(img, (x, y + 26 * k), label, (200, 160, 255), int(12 * k), fill_a=230)
+        return img
     else:
         ic = disc(kind, px, exploit, status)
     cy = y - 15 * k
@@ -323,7 +437,7 @@ LEGEND = [  # (draw fn, title, what it means in the game)
      "An Exploit Site (always T2). It holds one Exploit: you need 3 to breach the Central Server."),
     (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "INTEL", scale=0.9), "MAGNIFIER (INTEL)",
      "Intel Exploit: reveals the boss's moves and opens locked links on the Grid."),
-    (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "BREACH", scale=0.9), "BOOM GATE (BREACH)",
+    (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "BREACH", scale=0.9), "SLEDGEHAMMER (BREACH)",
      "Breach Exploit (customs override): the boss starts with one fewer pointer."),
     (lambda im, x, y: marker(im, x, y, "exploit", 2, "corporate", "next", "VIRUS", scale=0.9), "VIRUS",
      "Virus Exploit: the boss starts the fight with CORRUPTED slices."),
@@ -331,13 +445,13 @@ LEGEND = [  # (draw fn, title, what it means in the game)
      "A Heat objective Site: clearing it lowers campaign Heat (about -5 to -8) and never provokes a raid."),
     (lambda im, x, y: marker(im, x, y, "core", 0, scale=0.9), "HEART",
      "CORE, your home server. If its integrity reaches 0 you lose the campaign."),
-    (lambda im, x, y: marker(im, x, y, "site", 0, "claimed", scale=0.9), "RELAY (LIME)",
+    (lambda im, x, y: marker(im, x, y, "site", 0, "claimed", scale=0.9), "FIST (LIME)",
      "Your node: a claimed Site with a node installed. Raids attack these; runs start from them."),
     (lambda im, x, y: marker(im, x, y, "site", 1, "cleared", "yours", scale=0.9), "GREY + CHECK",
      "Cleared: already run and used up, not claimed. It can still be patrolled for loot, Heat and Rank."),
     (lambda im, x, y: marker(im, x, y, "site", 0, "disabled", scale=0.9), "WHITE BOLT",
      "Disabled: your node hit 0 integrity. No bonus and no power to its links until you repair it."),
-    (lambda im, x, y: marker(im, x, y, "site", 1, "seized", "next", scale=0.9), "RED X",
+    (lambda im, x, y: marker(im, x, y, "site", 1, "seized", "next", scale=0.9), "SEIZURE NOTICE",
      "Seized: the corp took the Site back. Run a Reclaim (one fight) to retake it; it is a raid entry point."),
     (None, "RINGS", "White = not yet reachable.  Orange = you can run it now.  Lime = yours or already visited."),
     (None, "PIPS", "Tier 1-3 of the Site (harder runs, better rewards). Gold pips = an Exploit Site."),
@@ -434,7 +548,7 @@ def key_sheet():
     c.text((16, 50), "Hidden by default: regular Sites that are not selectable. PINNED (always shown): Exploit, Heat objective, the boss, your", 15, (220, 232, 238))
     c.text((16, 74), "nodes. Seized Sites next to you are raid entry points (red pins). Pips: tier 1-3; the boss has the TARGET circle.", 15, (220, 232, 238))
     img = RL.paste(img, c.finish(scan=0.15), 22, H - 124)
-    RL.save(img, "site_markers_v3.png")
+    RL.save(img, "site_markers_v4.png")
 
 
 # ------------------------------------------------------------------ on the map
@@ -520,7 +634,7 @@ def on_map():
         xk += 34 + int(c.text((xk + 34, 15), lab, 15, (215, 225, 230))) + 18
     c.text((xk + 4, 15), "| locked link: grey dashes + padlock   | HOVER: SHOW ALL", 15, U.CYAN)
     img = RL.paste(img, c.finish(scan=0.15), 210, 1018)
-    RL.save(RL.bloom(img, 0.12, 0.82, 8), "site_markers_on_map_v3.png")
+    RL.save(RL.bloom(img, 0.12, 0.82, 8), "site_markers_on_map_v4.png")
     return dict(core=core, disabled=disabled, seized=seized, exploits=exploits)
 
 

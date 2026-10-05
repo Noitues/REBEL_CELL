@@ -122,3 +122,16 @@ The designer's review showed the real problem was meaning, not shape, so the v2 
 3. **The key now means only "Exploit Site".** In v1, BREACH's type badge was also a key. BREACH now has a new icon: a **raised customs boom gate** (the override lifts the barrier, matching Meridian's "Customs Override Keys").
 4. **De-powered links.** On the city map, every link to a seized or disabled node is drawn as a dim grey double trace with a **break in the middle** (two bent loose ends): no power flows. A disabled node gets its links back when repaired; a seized one when reclaimed.
 5. **Plain-language legend.** The key sheet (now 1920×1640) has a "WHAT EACH ICON MEANS IN THE GAME" section: one short line per icon, ring, pip, TARGET and padlock, written from the rules (GDD 3.2–3.3, 4.1, 9 Exploit effects).
+
+## v4 (`site_markers_v4.png`, `site_markers_on_map_v4.png`, `breach_icon_options_v4.png`)
+
+1. **SEIZED = the raid map's seized look.** The raid map's round 22 key draws a seized node with a violet corp hatch and the corp mark, and round 23 shows the "seized / taken" notice. Here a seized Site is an intercepted **corp SEIZURE NOTICE slip**: pale paper with a violet hatch, a violet letterhead with the Meridian crane-A mark, typed lines and a red SEIZED bar. Like DISABLED, the slip **replaces the whole node circle**: no disc, ring or badge. The tier pips stay under it, in violet. Its links are de-powered (v3 rule).
+2. **BREACH icon: a bold, heavy silhouette.** `breach_icon_options_v4.png` shows three options at close and grid zoom:
+   - **A, sledgehammer (picked):** one blunt shape that reads from afar ("force through the customs override").
+   - **B, battering ram:** turns into a thin bar at small size.
+   - **C, broken chain:** its two links blur together.
+
+   The Exploit type sub-badge is also larger (radius 0.25 → 0.31 of the disc), so the type reads at grid zoom.
+3. **YOURS = the rebel FIST with the thumb tucked.** It is rasterised from the round 34 Rebel Cell map crest (`map34.Crest.zone`): four fingers, the thumb folded across, the vertical tucked-thumb line, and the wrist. The detail lines are cut out. It is drawn in lime on every claimed node. CORE keeps the heart.
+
+The legend now names these as SEIZURE NOTICE, SLEDGEHAMMER (BREACH) and FIST (LIME). The key stays the only symbol for "Exploit Site".
