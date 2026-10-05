@@ -51,6 +51,9 @@ const PLAYER_HIT_COLOR := Palette.CELL_ACID
 const ENEMY_HIT_COLOR := CHIP_LOSS
 ## Smallest hand card scale when many cards must fit the row.
 const MIN_CARD_SCALE := 0.6
+## ART-1 1A: the most of the screen's height a hand card takes (the narrower Anton stickers
+## freed width, the cards grew with it and the wheels shrank under BIG_TEXT_RADIUS_KEEP).
+const HAND_HEIGHT_SHARE := 0.24
 
 @export var auto_start: bool = true
 
@@ -2244,6 +2247,8 @@ func _card_scale_for(count: int) -> float:
 	var width := size.x if size.x > 0.0 else get_viewport_rect().size.x
 	var room := width - _end_turn_button.get_combined_minimum_size().x - _sticker_box.get_combined_minimum_size().x - sep * 3.0
 	var fit := (room - sep * (n - 1)) / n / ZineCard.STICKER_SIZE.x
+	var height := size.y if size.y > 0.0 else get_viewport_rect().size.y
+	fit = minf(fit, height * HAND_HEIGHT_SHARE / ZineCard.STICKER_SIZE.y)
 	return clampf(minf(Settings.text_scale, fit), MIN_CARD_SCALE, Settings.TEXT_SCALE_MAX)
 
 

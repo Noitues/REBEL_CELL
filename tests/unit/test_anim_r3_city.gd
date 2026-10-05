@@ -373,7 +373,9 @@ func test_the_cells_territory_is_its_own_colour_and_the_claimed_card_says_so() -
 	for corp in CORPORATIONS:
 		var gap := absf(Palette.CELL_TURF.h - Palette.corp_color(corp).h)
 		gap = minf(gap, 1.0 - gap)
-		assert_gt(gap, 0.1, "apart from %s's colour (%.3f)" % [corp, gap])
+		# ART_BIBLE v2 §2.4 (LOCKED round 18): Solace's leaf green sits near the Cell's lime by design;
+		# its separation is the territory hatch and stamp word, and Solace never on a link or ring.
+		assert_gt(gap, 0.05 if corp == &"solace" else 0.1, "apart from %s's colour (%.3f)" % [corp, gap])
 	RunManager.new_campaign(1)
 	var hq := _scene(HQ)
 	await _frames(1)

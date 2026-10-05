@@ -152,12 +152,13 @@ func test_focus_brackets_are_3_px_at_7_px_on_every_focus_type() -> void:
 	var th := UiTheme.build(1.0)
 	for kind in UiTheme.BRACKET_FOCUS_TYPES:
 		assert_true(th.get_stylebox(&"focus", kind) is StyleBoxBrackets, "%s focus is the brackets" % kind)
-	# A variation without a focus box of its own (HotButton) takes Button's brackets.
+	# A sticker (HotButton) gets its lime die-cut halo, never brackets (v2 §2.10; ART-1 1A).
 	var h := _holder()
 	var hot := Button.new()
 	hot.theme_type_variation = &"HotButton"
 	h.add_child(hot)
-	assert_true(hot.get_theme_stylebox(&"focus") is StyleBoxBrackets, "HotButton focus is the brackets")
+	assert_false(hot.get_theme_stylebox(&"focus") is StyleBoxBrackets, "HotButton focus is the sticker halo")
+	assert_eq((hot.get_theme_stylebox(&"focus") as StyleBoxFlat).border_color, Palette.FOCUS, "a lime halo")
 
 
 func test_focus_brackets_draw_outside_and_never_change_min_size() -> void:

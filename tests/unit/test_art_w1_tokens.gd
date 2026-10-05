@@ -50,11 +50,11 @@ func test_corp_colours_are_named_constants_with_mains_values() -> void:
 	assert_eq(Palette.corp_color(&"halcyon"), Palette.CORP_HALCYON)
 	assert_eq(Palette.corp_color(&"orbital"), Palette.CORP_ORBITAL)
 	assert_eq(Palette.corp_color(&"rebel_cell"), Palette.CORP_REBEL_CELL)
-	# main's values until ART-1 moves them to the v2 kits (ART_BIBLE v2 §2.4 palette debt).
-	assert_eq(Palette.CORP_SOLACE, Color("#3DFF8B"))
+	# The v2 kits (ART_BIBLE v2 §2.4, round 18; ART-1 1A paid the palette debt).
+	assert_eq(Palette.CORP_SOLACE, Color("#96FF46"))
 	assert_eq(Palette.CORP_MERIDIAN, Color("#FF8C1A"))
-	assert_eq(Palette.CORP_HALCYON, Color("#8C7BFF"))
-	assert_eq(Palette.CORP_ORBITAL, Color("#DDE3FF"))
+	assert_eq(Palette.CORP_HALCYON, Color("#B06EFF"))
+	assert_eq(Palette.CORP_ORBITAL, Color("#CDF0FF"))
 	assert_eq(Palette.CORP_REBEL_CELL, Color("#E8141E"))
 	assert_eq(Palette.corp_color(&"nobody"), Palette.NET_CYAN, "unknown corp falls back to the net cyan")
 
@@ -266,9 +266,9 @@ func test_track_label_tracks_anton_and_mono_caps_only() -> void:
 	assert_eq(caps.get_theme_font(&"font"), Palette.mono(), "mixed-case mono: the tracking comes off")
 	var marker: Label = add_child_autofree(Label.new())
 	marker.text = "TAG"
-	marker.add_theme_font_override(&"font", Palette.marker())
+	marker.add_theme_font_override(&"font", Palette.pencil())
 	UiTheme.track_label(marker)
-	assert_eq(marker.get_theme_font(&"font"), Palette.marker(), "other faces are left alone")
+	assert_eq(marker.get_theme_font(&"font"), Palette.pencil(), "other faces are left alone")
 	UiTheme.track_label(null)
 
 
@@ -337,10 +337,10 @@ func test_body_text_variation_serves_label_and_rich_text() -> void:
 	assert_eq(rtl.get_theme_font_size(&"normal_font_size"), UiTheme.BODY)
 
 
-func test_the_shared_theme_is_unchanged_for_mains_screens() -> void:
-	# ART-0 E ports the mechanism only: the variations main's screens use keep their look.
+func test_the_shared_theme_keeps_mono_system_text() -> void:
+	# ART-1 1A restyled the theme (v2); system text stays Share Tech Mono.
 	var t := UiTheme.build(1.0)
 	assert_eq(t.default_font, Palette.mono(), "system text stays Share Tech Mono")
-	assert_eq(t.get_font_size(&"font_size", &"HotButton"), 22, "the Primary keeps its size")
-	assert_eq(t.get_font(&"font", &"HeaderLabel"), Palette.mono(), "the header is not tracked yet")
+	assert_eq(t.get_font_size(&"font_size", &"HotButton"), UiTheme.font_px_at(UiTheme.TITLE, 1.0), "the Primary at the title step")
+	assert_eq((t.get_font(&"font", &"HeaderLabel") as FontVariation).base_font, Palette.mono(), "the header is tracked mono CAPS")
 	assert_eq(t.get_color(&"font_color", &"Label"), Palette.TERMINAL_TEXT)

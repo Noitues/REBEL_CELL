@@ -22,7 +22,31 @@ of done). Section 10 lists what changed; Appendix C lists contradictions between
 the net and "Punk Zine (paper, tape, marker, spray paint)" for the Cell's voice, and GDD §9.4
 describes corporate wireframe creeping over the zine layer. The direction pass replaced both (spray,
 marker and wireframe are rejected). A `DECISIONS.md` entry and a GDD §9 update are needed before
-reintegration (see `GDD_ART_COVERAGE.md` §3).
+reintegration (see `GDD_ART_COVERAGE.md` §3). *Resolved: GDD §9.1 was rewritten around this bible (DECISIONS 2026-10-05, "Designer rulings: art reintegration, pause point 0", ruling 4).*
+
+---
+
+## Rulings applied (2026-10-05)
+
+Updated to follow the designer's rulings of 2026-10-05 (`docs/DECISIONS.md`; where this bible and a ruling
+differ, the ruling wins). Each item names the DECISIONS entry and the sections it changed.
+
+1. **Five Heat bands** COOL 0-24 / NOTICED 25-49 / FLAGGED 50-74 / HUNTED 75-99 / PURGE 100 ("Designer rulings:
+   SANDBOX / TROJAN / NULL and five Heat bands", ruling 2): 2.8, 3.15, 4.3. PURGE uses HUNTED's look until it is designed.
+2. **Slice programs** SHIM, OVERFLOW, DEFRAG, DETOUR, SANDBOX, TROJAN, HOTFIX, INFECT, NULL, with the short tags
+   SHIM, OVFL, DFRG, DTOR, SBOX, TRJN, HFIX, INFC, NULL (same entry, ruling 1; "Designer rulings: names for M14",
+   ruling 1): 2.6, 3.4. Corporation words WEIGHT, PRIORITY, GROWTH, AIRMAIL (names for M14, rulings 2-3).
+3. **Raid words** TAKEN / DOWN / CELL HOLDS / BREACHED ("Designer rulings: art reintegration, pause point 0", ruling 6.2): 4.5, 4.8.
+4. **Mainframe** is the shop node's name, sign MAINFRAME (pause point 0, ruling 6.5): 4.10.
+5. **Customs Seal** is the Manifest's hub, was Priority Routing (pause point 0, ruling 6.1): 3.3, Appendix B.
+6. **Central Server** replaces "Mainframe Gate" (names for M14, ruling 4): 4.9, Appendix B.
+7. **FIRMWARE** everywhere, "Microchip" retired (names for M14, ruling 5): 3.9.
+8. **WEAK** is the lowest precision tier (names for M14, ruling 6): 3.19.
+9. **RESPIN** is the respin control's word, never CHECKPOINT; the undo block shows on UNDO (names for M14, ruling 8): 3.20, Appendix C #16.
+10. **Status badges** (pause point 0, ruling 10): the overlay is the status; a small flat corner badge appears only to carry a xN stack tab or a x1.5 / x0.5 tag: 3.8, 3.21, Appendix C #1.
+11. **DOWN white bolt** (pause point 0, ruling 11): the raid view drops the amber dashed socket and uses the Site markers' white bolt over a greyed marker, so DOWN reads the same at every zoom: 4.5, 4.8, Appendix C #12.
+12. **DISPATCH text** is always a clean red CRT terminal feed, never a sticker or pencil ("Designer ruling: DISPATCH text"): 2.9, 4.11.
+13. **D15-D17 confirmed** ("Designer rulings: D15-D17 defaults; Sonnet for mechanical tasks"): D15 HUD v4 result chips replace the forecast tags and NEXT plates (3.1, Appendix C #17); D16 every card-caused effect stems from the card's slap and dissolve on the target wheel (3.17); D17 boss fight backdrop = the corp HQ, regular fights at the target Site, fight won turns the building's lights to Cell colours (3.14).
 
 ---
 
@@ -159,7 +183,7 @@ core glow, the station beacon and dossier stripes, never on UI roles.
 | Family | Colour | Fires |
 |---|---|---|
 | PERFECT | yellow | on a Perfect |
-| MISS | deep red #EC303A | on the Miss slice |
+| NULL | deep red #EC303A | on the NULL slice (was the MISS family; "Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands", ruling 1) |
 | TURN | cyan | combat/turn start, always-on |
 | ACTION | lavender #BA92FF | on your nudge or card |
 | RUN | lime | after a won fight / Server Rack capture |
@@ -172,8 +196,10 @@ Common = cool white LED / gunmetal, 1 pip. Uncommon = cyan, 2 pips. Rare = gold,
 firmware chips and Daemon tiles. Cards: rarity on the card is still undesigned (Appendix B).
 
 ### 2.8 Heat colours
-Band words are always printed (never colour alone). COOL 0–24, NOTICED 25+ `WARN`, FLAGGED 50+
-#FF7A1A, HUNTED 75+ `HARM`. Heat is never green. On maps the world Heat tint is `HEAT_B` #CE5412.
+Band words are always printed (never colour alone). **Five bands** (DECISIONS 2026-10-05, "Designer rulings:
+SANDBOX / TROJAN / NULL and five Heat bands", ruling 2): COOL 0–24, NOTICED 25–49 `WARN`, FLAGGED 50–74
+#FF7A1A, HUNTED 75–99 `HARM`, PURGE 100 (uses HUNTED's colour and look until it is designed, with its own word).
+Heat is never green. On maps the world Heat tint is `HEAT_B` #CE5412.
 
 ### 2.9 Typography
 
@@ -190,7 +216,7 @@ Band words are always printed (never colour alone). COOL 0–24, NOTICED 25+ `WA
 - Nothing the player reads is below the 720p caption floor (12 px), v1 §4.3 still applies.
 - Bits use Share Tech Mono (its 0 and 1 stay distinct when rotated). Consolas and Courier New are
   concept-only and MUST NOT ship.
-- DISPATCH text stays Share Tech Mono on clean surfaces.
+- DISPATCH text stays Share Tech Mono on clean surfaces: a red-accent CRT terminal feed, never a sticker or pencil (DECISIONS 2026-10-05, "Designer ruling: DISPATCH text").
 
 ### 2.10 Focus and state colours in chrome
 - **Focus:** lime #D4FF00 corner brackets, 3 px thick, 7 px outside the element
@@ -213,7 +239,7 @@ Reference: `round41_wheel_stack/combat_typical_v4.png`, `combat_worst_case_v4.pn
 - **Nudge buttons** sit **above** each wheel on one line (y ≈ 216): CCW on the left, CW on the
   right. Player keys [Q] / [E]; boss keys [A] / [D] (proposal, check bindings).
 - The **CELL-9 // CLASS** name sticker sits just above the RAM readout, bottom left.
-- **No forecast tags, no NEXT plates.** Beside each HP value sits this turn's result if SEND IT is
+- **No forecast tags, no NEXT plates** (D15 confirmed: DECISIONS 2026-10-05, "Designer rulings: D15–D17 defaults"; the chip is the preview, GDD 2.10 and 9.2 hold through it). Beside each HP value sits this turn's result if SEND IT is
   pressed now, in this order:
   `[final damage]` (red, boxed) `(N shield)` (blue, absorbed, no box) `+N shield` (green)
   `−N <icon>` (other losses, e.g. RAM) `<status icons ×N>`.
@@ -270,7 +296,7 @@ Reference: `round40_hub_inner_ring/hub_cores_v3.png`, `round39_hub_inner_ring/hu
 - **Mk2** (Rank 2 "Upgraded Hub Core"): same emblem + a second notched rim + an `MK2` tab on the
   bottom rim.
 - **Enemy hubs (LOCKED):** no inner ring; the hub fills the centre with a slow corp-colour chevron
-  sweep. Compliance Lock = rubber stamp; Priority Routing = express arrow overtaking two lanes;
+  sweep. Compliance Lock = rubber stamp; Customs Seal (was Priority Routing; pause point 0, ruling 6.1) = express arrow overtaking two lanes;
   Emergency Powers = siren dome; Station Keeping = satellite; Auto-Renew = renew loop round a plus;
   Root Access = terminal with `#_`.
 - **Hub Breach = LOCKDOWN (LOCKED, round 40):** a **waterline of encrypted bits** (cyan hex and
@@ -290,22 +316,23 @@ Reference: `round34_slice_names/slice_system_final_v3.png`, `glyph_set_v3.png`;
   (counter-rotated) at every angle. Corp animations are also composited upright (round 16).
 - **Program names (LOCKED, round 34):**
 
-  | Type | Program | Glyph | Screen |
+  | Was (GDD) | Program (tag) | Glyph | Screen |
   |---|---|---|---|
-  | ATTACK | **SHIM** | dagger | (EXPLOIT screen) |
-  | CRIT | **OVERFLOW** | 12-point burst | (ZERO-DAY screen) |
-  | DEFEND | **DEFRAG** | brick wall with flame tongues | shots fall radially inward from the outer rim onto a crenellated wall on the hub side |
-  | SHIELD | **SANDBOX** | sand pile with pail and shovel (option C) | |
-  | EVADE | **DETOUR** | double chevron | road-sign hard 90° turn, packet with afterimages, "road closed" barrier |
-  | HEAL | **HOTFIX** | crossed band-aids | |
-  | AFFLICT | **INFECT** | biohazard | ooze slides down from the rim and pools |
-  | DEPLOY | **TROJAN** | horse on a wheeled platform | |
-  | MISS | **NULL** | "1/0" | static |
+  | ATTACK | **SHIM** (SHIM) | dagger | (EXPLOIT screen) |
+  | CRIT | **OVERFLOW** (OVFL) | 12-point burst | (ZERO-DAY screen) |
+  | DEFEND | **DEFRAG** (DFRG) | brick wall with flame tongues | shots fall radially inward from the outer rim onto a crenellated wall on the hub side |
+  | SHIELD | **SANDBOX** (SBOX) | sand pile with pail and shovel (option C) | |
+  | EVADE | **DETOUR** (DTOR) | double chevron | road-sign hard 90° turn, packet with afterimages, "road closed" barrier |
+  | HEAL | **HOTFIX** (HFIX) | crossed band-aids | |
+  | AFFLICT | **INFECT** (INFC) | biohazard | ooze slides down from the rim and pools |
+  | DEPLOY | **TROJAN** (TRJN) | horse on a wheeled platform | |
+  | MISS | **NULL** (NULL) | "1/0" | static |
 
-  The renames are a game to-do (strings and content); until then the code keeps the GDD type
-  names. Corp specials: DOSE (capsule), CITATION (receipt), SOLAR FLARE (sun on the horizon line
+  The renames are done in code, content and strings (DECISIONS 2026-10-05, "Designer rulings: names for M14"
+  ruling 1 and "SANDBOX / TROJAN / NULL and five Heat bands" ruling 1): internal names follow the display names,
+  and the short tags are SHIM, OVFL, DFRG, DTOR, SBOX, TRJN, HFIX, INFC, NULL. Corp specials: DOSE (capsule), CITATION (receipt), SOLAR FLARE (sun on the horizon line
   only), WEIGHT (anvil, was INERTIA), PRIORITY (rotating alarm beacon, Meridian RAM drain, was
-  TARIFF / JUDGEMENT), GROWTH (Solace heal, true mitosis, pending rename), DRONE (quad-rotor).
+  TARIFF / JUDGEMENT; names for M14, ruling 2), GROWTH (Solace heal, true mitosis; ruling 3), AIRMAIL (Meridian OVERFLOW), DRONE (quad-rotor).
 - **Defend rule everywhere:** attacks come from the outer arc; the wall stands on the inner (hub)
   side of what it protects. Applies to card art, chips and hit FX.
 - Drain variants (`atk_7_drain`) keep their type glyph plus a "−n RAM" chip.
@@ -368,7 +395,8 @@ Reference: `round15_slice_system/states.png`, `states_fx.gif`; CORRUPTED port
 - **Stacks (LOCKED, round 40):** a ×N ink tab, shown only when stacks > 1, rides a small flat corner
   badge in the **outer clockwise corner**; the ×1.5 / ×0.5 multiplier tags sit just under that
   badge (round 34). Hide ×N tabs at r < 150; the count also shows in the HP result chips. See
-  Appendix C #1 for the conflict with round 23's "overlay only".
+  Appendix C #1 for the conflict with round 23's "overlay only", settled by ruling 10 of "Designer rulings: art
+  reintegration, pause point 0": the overlay is the status; the badge exists only to carry a ×N tab or a ×1.5 / ×0.5 tag.
 
 ### 3.9 Firmware socket (LOCKED, rounds 33–34)
 Reference: `round34_firmware_daemons/firmware_socket.png`, `firmware_set.png`, `firmware_trigger.gif`.
@@ -392,7 +420,7 @@ Reference: `round34_firmware_daemons/firmware_socket.png`, `firmware_set.png`, `
   (a pip to the RAM bar, "+1 HEAT" in Heat orange, a heal or chip). Mirror shows a cyan phosphor
   ghost of the neighbour's read block; Shunt a lime outline + ×1.5; Hardened is passive (dashed link
   to the ENCRYPTED overlay); once/twice-per-combat chips go dark when spent.
-- **Word:** "Firmware" everywhere (shop label too); "Microchip" is retired.
+- **Word:** "Firmware" everywhere (shop label too); "Microchip" is retired (DECISIONS 2026-10-05, "Designer rulings: names for M14", ruling 5).
 
 ### 3.10 Inner ring
 Reference: `round39_hub_inner_ring/inner_ring_v2.png`, `round40_hub_inner_ring/inner_ring_v3.png`.
@@ -469,6 +497,7 @@ Reference: `round34_firmware_daemons/daemon_set.png`, `daemon_row.png`, `daemon_
   Bus and the Mirror elite's "your Daemons" hub are not drawn yet (Appendix B).
 
 ### 3.14 Combat backdrop (LOCKED)
+D17 (confirmed, DECISIONS 2026-10-05, "Designer rulings: D15–D17 defaults"): boss fight backdrop = the corp HQ, regular fights at the target Site, fight won = the building's lights turn Cell colours.
 - **The backdrop is a close-up of the place being attacked,** authored in Blender with the Cv2 + E
   pipeline. Night is the reference; day is the **cool day** (round 11b grade) so orange targets
   separate from orange wheels.
@@ -498,9 +527,13 @@ Backdrop only, behind the wheels' darkened pools; never on the HUD or wheels.
 
 | Band | Shows |
 |---|---|
+| COOL 0–24 | Nothing |
 | NOTICED 25–49 | Three slowly turning red/amber alarm beacons on **side** buildings; nothing on the target |
 | FLAGGED 50–74 | Two rooftop searchlights at the screen sides sweeping the sky **away** from the target, plus two alarm beacons **on** the target |
-| HUNTED 75+ | Police light clusters (13) and two searchlights on the target. No helicopters, no siren wash |
+| HUNTED 75–99 | Police light clusters (13) and two searchlights on the target. No helicopters, no siren wash |
+| PURGE 100 | Not designed yet: uses the HUNTED look until a concept exists |
+
+Five bands per DECISIONS 2026-10-05, "Designer rulings: SANDBOX / TROJAN / NULL and five Heat bands", ruling 2.
 
 - The full-screen **heat glitch** shader is an **Options extra only** (Settings › Accessibility
   `HEAT GLITCH`, off by default), with a protect mask so wheel discs get ≤ 35 % and the HUD is
@@ -520,6 +553,7 @@ Backdrop only, behind the wheels' darkened pools; never on the HUD or wheels.
 - Not drawn yet: Migrate flicker and Orbit trail on D4 (GDD 9.2), enemy entering.
 
 ### 3.17 Card-play preview (LOCKED, animated, round 17)
+D16 (confirmed, DECISIONS 2026-10-05, "Designer rulings: D15–D17 defaults"): every card-caused effect stems from the card's slap and dissolve on the target wheel, never from the hand.
 Reference: `round17_corp_wheels/preview.gif`, `preview_storyboard.png`; in the sticker flow
 `round19_combat_fx/card_play_v2.gif`.
 - Shown only while a spin or nudge card is hovered or aimed (or a nudge button hovered).
@@ -560,7 +594,7 @@ Reference: `round17_corp_wheels/preview.gif`, `preview_storyboard.png`; in the s
 Reference: `round39_landing_exploits/landing_perfect.gif`, `landing_good.gif`, `landing_weak.gif`,
 `landing_storyboard.png`. Landings differ in **shape**, not only colour.
 
-| | PERFECT | GOOD | WEAK (GDD "Partial") |
+| | PERFECT | GOOD | WEAK (was "Partial"; DECISIONS 2026-10-05, names for M14, ruling 6) |
 |---|---|---|---|
 | Wheel | dead centre | 1° overshoot and back (clean click) | stutter +3.5 / −2.5 / +1.5 / −0.6° at 40 ms each |
 | Needle | latch: two jaws clamp the tip (80 ms) | one white tick ring at the tip | grey sparks off the tip |
@@ -687,12 +721,13 @@ and steam (night rain only) → Heat props → tilt-shift → UI (never blurred)
 
 ### 4.3 Heat on maps
 - **City Grid / netrun (LOCKED Heat B, calm, rounds 35–37):** the number lives on the operative
-  dossier stamp (`HEAT 52: HUNTED`); city-wide two slow searchlight sweeps; each node Heat has made
+  dossier stamp (`HEAT 52: FLAGGED`); city-wide two slow searchlight sweeps; each node Heat has made
   harder gets one soft circling red/blue light on a thin dark-orange (`HEAT_B`) ring plus its
   effect chip (`HEAT: +1 ELITE`, `HEAT: +1 RESISTANCE`). Only selectable nodes carry markers.
 - **Raid:** the band's rigs (choppers on circular orbits with wobbling spotlights, drones with mini
   spots, strobes) are set at raid start and **padlocked**; nothing escalates mid-raid. EXPOSED (a
   spotlit node takes extra damage) is a locked visual for a proposed rule.
+- The bands are the five of 2.8 (COOL / NOTICED / FLAGGED / HUNTED / PURGE); the PURGE band reuses the HUNTED look until designed (DECISIONS 2026-10-05, five Heat bands, ruling 2).
 - Round 24's map Heat (alarms → searchlights → police, choppers, drones) remains the language for
   the HUNTED city if the campaign map shows bands.
 
@@ -724,11 +759,11 @@ five layers:
 | Pips (1–3 squares) | tier | gold on Exploit Sites; the boss (T4) has none |
 | Corner badge | status | CLEARED grey check (PATROL on hover) |
 
-- **DISABLED:** a white lightning bolt across the whole marker, everything greyed.
-- **SEIZED:** an intercepted corp **SEIZURE NOTICE** slip (pale paper, violet hatch, violet
-  letterhead with the corp mark, red SEIZED bar) replaces the node circle; tier pips stay, in violet.
+- **DOWN** (was DISABLED): a white lightning bolt across the whole marker, everything greyed. The same look in the raid view (ruling 11, DECISIONS 2026-10-05 pause point 0).
+- **TAKEN** (was SEIZED; ruling 6.2): an intercepted corp **SEIZURE NOTICE** slip (pale paper, violet hatch, violet
+  letterhead with the corp mark, red TAKEN bar) replaces the node circle; tier pips stay, in violet.
   An orange ring shows while a Reclaim run is possible.
-- **De-powered links:** every link to a seized or disabled node is a dim grey double trace with a
+- **De-powered links:** every link to a TAKEN or DOWN node is a dim grey double trace with a
   break in the middle.
 - **Locked cross-link:** grey dashes + a padlock disc at the midpoint.
 - **Boss:** the HQ landmark with the red pencil **TARGET** circle and the
@@ -794,12 +829,12 @@ Reference: `round39_city_unified/raid_view.png`, `round40_city_unified/raid_view
   into the node's building and up the facade to a **B uplink pad** on the roof (the pad face is the
   socket's twin; a lime beacon mast at its corner).
 - **No node tags.** Type = socket glyph (Relay all-targets arrows, Firewall, Vault safe door,
-  Proxy fingerprint, Safehouse key, CORE pink hex; seized = the corp citation glyph). Status = frame
-  colour + pattern: holds solid green (owned sockets shift from map lime to "holds" green), disabled
-  dashed amber with dark pins, seized violet hatch, TAKEN burnt. Forecast = a dashed outer ring in
+  Proxy fingerprint, Safehouse key, CORE pink hex; TAKEN = the corp citation glyph). Status = frame
+  colour + pattern: holds solid green (owned sockets shift from map lime to "holds" green), DOWN
+  a white bolt over a greyed socket (ruling 11; no amber dashed socket), TAKEN violet hatch (burnt as the raid takes it). Forecast = a dashed outer ring in
   the projected outcome colour.
 - **Node health v2:** the outline and icon stay lit; only the inner lit fill drains **north to
-  south** with a faint hatch and a bright drain line; at 0 it switches to disabled amber dashed.
+  south** with a faint hatch and a bright drain line; at 0 the node is DOWN: the white bolt over a greyed socket (ruling 11).
   Numbers float above the north point on hover (or Options "Always show node health"): numeral +
   10-segment bar, lime/amber/red. Repair raises the fill south to north with a count-up and rising
   "+" sparks.
@@ -838,14 +873,15 @@ Reference: `round39_city_unified/raid_view.png`, `round40_city_unified/raid_view
   field drawn **under** the units (dashed rings drifting inward; levelled = ice crystals), Rigger
   repair; alternates are proposals.
 - **Raid report:** the raiding corp's own **after-action report** (paper, CLASSIFIED stamp) with
-  the Cell's pencil on it (circles, RIP, ticks) and CELL HOLDS slapped on top; Heat settles here.
-- **Campaign lost (option A, ransomware lock):** the winning corp's house style and verb
+  the Cell's pencil on it (circles, RIP, ticks) and CELL HOLDS slapped on top (a raid with losses lists them, e.g. 1 DOWN / 1 TAKEN); Heat settles here.
+- **BREACHED / campaign lost (option A, ransomware lock; BREACHED = the home server falls, ruling 6.2):** the winning corp's house style and verb
   (PROCESSED, RECLAIMED, TREATED, DE-ORBITED, OVERWRITTEN), every node padlocked, a countdown to the
   wipe; the Cell's stickers curl and drop off. **Campaign summary** = the corp's audit dossier
   (manila folder, typed AUDIT REPORT, CASE CLOSED, personnel sheet with DECEASED / AT LARGE,
   polaroids, auditor post-its in blue ballpoint); NEW CAMPAIGN / MAIN MENU are stickers.
 
 ### 4.9 Exploits and the Central Server breach
+Central Server replaces "Mainframe Gate" (DECISIONS 2026-10-05, names for M14, ruling 4); each corporation's own name for it is a content string (The Master Manifest, The Genome Core, The Panopticon, Launch Control).
 Reference: `round38_landing_exploits/exploit_items.png`, `central_server_gate.png`,
 `central_server_breach.gif`; `round39_landing_exploits/exploits_v2.png`, `exploit_on_map_v3.png`.
 - **Item = a vinyl keycard** (whole rounded rectangle, corp band across the top with a category chip,
@@ -864,6 +900,7 @@ Reference: `round38_landing_exploits/exploit_items.png`, `central_server_gate.pn
   T2 tab); the full tag is a hover tooltip; nothing covers pencil.
 
 ### 4.10 MAINFRAME shop
+Mainframe is the shop node's name everywhere (was "Modem"; DECISIONS 2026-10-05 pause point 0, ruling 6.5): the sign reads MAINFRAME, the top bar MAINFRAME SHOP, the exit LEAVE MAINFRAME. Image paths below keep their round names (`round12_modem_facade`).
 Reference: `round33_mainframe_sign/mainframe_blue_v4.png`, `mainframe_red_v4.png`,
 `mainframe_sequence_v4.gif`, `iamai_sequence_v4.gif`, `iamnoman_sequence_v4.gif`;
 `round12_modem_facade/f1b_*.png`; `round34_firmware_daemons/shop_v5.png`; `round33_shop/*`.
@@ -904,7 +941,8 @@ Reference: `round33_mainframe_sign/mainframe_blue_v4.png`, `mainframe_red_v4.png
   stamp. At most one pencil slogan. Full design pass later.
 - **Dialogue (LOCKED A):** a low-poly cel **bust on a CRT comm feed**; the speaker is live, the
   listener dimmed. **DISPATCH never gets a face:** a red voice trace on black, "VOICE ONLY // NO
-  FEED".
+  FEED". DISPATCH text is always a clean red CRT terminal feed, never a sticker or pencil (DECISIONS 2026-10-05,
+  "Designer ruling: DISPATCH text").
 
 ### 4.12 Portraits (LOCKED v2)
 Reference: `round39_portraits/portraits_classes_v2.png`, `round38_portraits/portrait_states.png`,
@@ -1185,9 +1223,10 @@ to-do" blocks under each round. These block or shape art reintegration:
 
 1. **GDD §9.1 / §9.4 baseline** replaced by this bible (DECISIONS entry + GDD update).
 2. **Renames:** slice programs (SHIM, OVERFLOW, DEFRAG, SANDBOX, DETOUR, HOTFIX, INFECT, TROJAN,
-   NULL); WEIGHT, PRIORITY (still collides with Priority Routing), GROWTH, AIRMAIL; "Mainframe Gate"
+   NULL); WEIGHT, PRIORITY (collision resolved: the Manifest's hub is **Customs Seal**), GROWTH, AIRMAIL; "Mainframe Gate"
    → **Central Server**; Microchip → **Firmware** (`strings.csv`); PARTIAL → **WEAK**; raid words
-   TAKEN / CELL HOLDS vs GDD Seized / Holds.
+   TAKEN / DOWN / CELL HOLDS / BREACHED. *All ruled and done in M14 ART-0 (DECISIONS 2026-10-05: pause point 0,
+   names for M14, SANDBOX / TROJAN / NULL and five Heat bands, names pass parts 1-3).*
 3. **New data:** SliceData tier I–III; placeholder slice types and states (PHISHING, SHIELD,
    ENCRYPT, RECON, BURN/TORCH/DISSOLVE, FROZEN/LOCKED/BURNING/EMPOWERED, KILL PROCESS); status stack
    counts; MOMENTUM runtime picto; card type band (WHEEL/HACK/SYSTEM) or drop it; card rarity look.
@@ -1232,7 +1271,7 @@ to-do" blocks under each round. These block or shape art reintegration:
 | 14 | Heat glitch "on by default" (round 18) vs "Options extra, off by default" (round 19 lock) | Off by default |
 | 15 | Focus brackets 2 px at 4 px offset (v1) vs 3 px at 7 px (round 31) | Round 31 |
 | 16 | Respin label CHECKPOINT (rounds 19–20) vs RESPIN (round 23) | RESPIN |
-| 17 | Forecast tags above wheels (v1, STYLE_GUIDE, rounds 10–31; GDD 9.2 "per-pointer intent labels") vs HP result chips, no forecast tags (round 43) | HP result chips; GDD 9.2 wording needs updating |
+| 17 | Forecast tags above wheels (v1, STYLE_GUIDE, rounds 10–31; GDD 9.2 "per-pointer intent labels") vs HP result chips, no forecast tags (round 43) | HP result chips; GDD 2.10 / 9.2 wording updated (D15 confirmed, DECISIONS 2026-10-05, "Designer rulings: D15–D17 defaults") |
 | 18 | Firmware socket at ρ 160 (round 34) vs "r = 168" / zone 142–194 in round 41's stack | ρ ≈ 160–168, config value |
 | 19 | Station beacon: R1 rooftop figure recommended (round 20) vs R3 class beacon (round 21 lock) | R3 |
 | 20 | Combat HUNTED: helicopters (round 19 H1) vs no helicopters (rounds 21–22) | No helicopters on combat; the city map keeps choppers at HUNTED (round 24) |
@@ -1248,7 +1287,7 @@ to-do" blocks under each round. These block or shape art reintegration:
 | Wheels | paper-stickered player bezel, gauge needle | D4 Lens & rail, C slices, V2 tiers, overlays, firmware, inner-ring textures, collapsed drones |
 | Cards | paper stock by rarity, risograph illustrations | vinyl sticker cards, peel/slap/dissolve A; illustration style undecided |
 | VFX | per-type hit shapes (slash, hex, smear…) | binary bits for all digital FX, temporary labels dissolve to bits; VfxTier table kept |
-| Heat | posters, glitch, searchlights, grade shift | H1 city reacts on combat, calm Heat B on maps; glitch is an option |
+| Heat | posters, glitch, searchlights, grade shift | H1 city reacts on combat, calm Heat B on maps; glitch is an option; five bands COOL / NOTICED / FLAGGED / HUNTED / PURGE |
 | Forecast | paper tags above wheels | HP result chips |
 | Corp and class colours | v1 table | 2.4 and 2.5 |
 | Fonts | Anton, Share Tech Mono, Permanent Marker, Plex | + Courier Prime for corp paper |
