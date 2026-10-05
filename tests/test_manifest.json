@@ -493,6 +493,10 @@
 			"seconds": 0.1,
 			"tier": "fast"
 		},
+		"res://tests/unit/test_art1_material_kit.gd": {
+			"seconds": 3.0,
+			"tier": "fast"
+		},
 		"res://tests/unit/test_art_w1_tokens.gd": {
 			"seconds": 2.0,
 			"tier": "fast"

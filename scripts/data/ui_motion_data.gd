@@ -95,6 +95,13 @@ const REQUIRED_IDS: Array[StringName] = [
 	# ART-0 E (ported from art-pass W6, ART_BIBLE v2 5.3): the wheel-local T3 bursts that
 	# retire the full-screen Perfect and boss-phase flashes.
 	&"wheel_burst_perfect", &"wheel_burst_phase",
+	# ART-1 1B material kit (ART_BIBLE v2 1.2, 6.3; round 3 combined_v2 lifecycle): the CRT
+	# terminal, the vinyl sticker, the grease pencil, the holo, the light spill and the bits.
+	&"crt_type_on", &"crt_caret_blink", &"crt_hex_scroll",
+	&"sticker_slap", &"sticker_peel", &"sticker_dissolve", &"sticker_gloss_sweep", &"sticker_corner_flutter",
+	&"sticker_hover", &"sticker_press",
+	&"pencil_write_on", &"pencil_wipe", &"pencil_glint",
+	&"holo_bands", &"light_spill_breathe", &"bits_flight",
 ]
 
 ## ANIM-R5: what switching an entry off (`enabled = false`) does, by kind of entry.

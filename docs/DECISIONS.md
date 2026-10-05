@@ -33,6 +33,115 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-1 1B material kit
+The reusable materials every later group applies (ART_BIBLE v2 §1.2, §1.3, §5.3–5.4, §6.3, §6.4),
+built new in Godot from the round 3 combined_v2 concept toolkit (`art-concepts-r43:docs/concepts/
+round3_overlay/combined_v2/scripts/` `sticker_lib.py`, `kit.py`, `s04_kit_sheet.py`, `s05_lifecycle.py`;
+the tactical-glass pencil `o_a_tactical_glass/scripts/tg_lib.py`; round 19/22 `sticker_lib19.py`
+gloss_k). No screen is restyled. Files: `shaders/kit/*` (10 shaders + the bits atlas),
+`scripts/ui/kit/materials/*` (one class per file), `tools/design_lab/kit_sheet.gd/.tscn`,
+`tools/design_lab/bits_atlas_bake.py`.
+- **Register.** `KitMaterials.ALL` lists each material, its component, shaders, VfxTier (of its
+  resting look; T0 for all but the bits, T2) and motion ids. Every kit shader includes `rc_common`
+  and reads the `reduce_effects` global; every TIME line goes through `rc_time` / `rc_live`.
+- **1B.1 CRT terminal** (`CrtTerminalPanel`, `crt_terminal.gdshader`) vs `04_kit_sheet.jpg`
+  (EXECUTE box) and §1.2: navy glass (Palette `CRT_GLASS_TOP/BOTTOM`), a 1.5 px accent edge with
+  an outer glow, the corner notch, 3 px scanlines at 10 % over the text, a hex dump at 6 % that
+  scrolls, Share Tech Mono text that types on behind `> ` (through `Typing`, so one press shows it
+  whole) and a blinking `_` caret. Accent per use: cyan Cell, lime firmware, gold Schematics, corp
+  colour, red DISPATCH. The glass is a separate shader from `shaders/crt_panel.gdshader` (UiTheme's
+  existing glass, 1A's TerminalPanel variation may adopt this one).
+- **1B.2 vinyl sticker** (`VinylSticker`, `vinyl_sticker.gdshader`, `sticker_fill.gdshader`) vs
+  `04_kit_sheet.jpg` columns C and `send_it_sticker.jpg`: the art (die-cut body = every glyph grown
+  by border + keyline with `draw_string_outline` plus a band that closes the notches between
+  letters; extrude stepped down-right; ink keyline; gradient or holo fill per glyph with ±4° jitter
+  from KitNoise) is drawn once into a SubViewport; the shader adds the rim light / shade and cut
+  line, the gloss (soft band + two sharp lines on a 28° diagonal, `gloss_k` 0.22 at rest as round
+  19's sticker_lib19, 1.0 while a sweep crosses), the peel (corner folded back with the adhesive
+  back shaded across the fold, a bright crease, the flap's cast shadow), the two-layer drop shadow
+  raised by `lift`, dissolve and disabled grey. Objects: `Shape.RECT/CIRCLE` on white, kraft or
+  holo stock with any content under `content_root`. One sweep on one sticker at a time:
+  `StickerSweepQueue` (join order, the entry's delay between sweeps). Word over a system word
+  (§1.3): `SystemWordSticker` (washed mono word + scanlines + hint line, the verb slapped at -5°
+  on the panel's bottom edge). Runtime sticker only (the per-locale baked atlas is ART-4/10's).
+- **1B.3 grease pencil** (`GreasePencilMark`, `GreasePencilWord`, `PencilShapes`,
+  `marker_stroke.gdshader`) vs the kit sheet's column A and round 11's pencil: Line2D strokes in
+  writing order, round caps, width 10, TILE UVs so the shader knows along / across; wax = an
+  opaque core, 9 bristle bands with dropouts toward the edge, a ragged grain edge, the round body
+  lit on one side with a sheen line, alpha 0.96, the glint every `pencil_glint` delay; a duplicate
+  under-shadow line offset (3, 4) and 3 px wider at 0.42; dashed = hand dashes cut in the shader
+  (what-if). Write-on and the cloth wipe trim points (never alpha); the wipe also drags the wax.
+  `PencilShapes.snap_to` moves a mark onto a real polyline. Words ("HIT IT", 1–2 a screen) use the
+  marker face with the wax grain (mode 2) and write / wipe letter by letter.
+  **Lint rule:** `PencilLint.violations` (cover: a drawing Control later in draw order whose rect
+  meets a stroke segment; layer: any drawing UI on a CanvasLayer above the pencil's, cursor layers
+  ≥ 128 excepted). Exported by `tools/visual_qa/review_pack.gd` (lint key `pencil`) and reported
+  by `lint_report.py` as rule **f pencil** (two small edits in D's runtime lint).
+- **1B.4 light spill** (`LightSpill`, `light_spill.gdshader`) vs the kit sheet's column D: a rect
+  round the source reads the screen texture and adds `base × colour × light × 1.9 + colour × light
+  × 0.28` through a tonemap shoulder (kit.py's light_spill); bright saturated pixels (the emitter)
+  are not re-lit; two falloffs; `gain` per screen (`GAIN_COMBAT` 1.15, `GAIN_CITY` 0.38,
+  `GAIN_SHOP` 1.2), `lit` follows the source. 3D: `LightSpill.uniforms_3d` packs up to 8 sources
+  for the toon shader.
+- **1B.5 decrypted holo** (`DecryptedHoloPanel`) and **corp paper** (`CorpPaperPanel`): holo =
+  corp tint at 78 % over the deep, 4 px scanlines, 3.5 slow bands, a ±2 px RGB split on the edge
+  only (0 under reduce effects), the 0.88 scrim (`Palette.HOLO_SCRIM`, a top-level full-screen
+  rect behind it), the seal cracked by a red fracture and a DECRYPTED stamp slot. Paper = stock
+  with cloud, tooth, fibres, toner speckle and handled edges (scales like a 9-patch), an IBM Plex
+  Sans Condensed Medium letterhead and rule in the corp colour, Courier Prime fields (falls back to
+  Share Tech Mono until 1A ships `assets/fonts/CourierPrime-Regular.ttf`), a stamp slot (CLASSIFIED).
+- **1B.6 binary bits** (`BinaryBits`, `BitsPath`, `binary_bits.gdshader`, `bits_atlas.png`):
+  pooled GPUParticles2D (4 kept), one-shot, additive, `particles_animation` over a 4-cell atlas
+  (0, 1, +, bit-rot; Share Tech Mono with a same-colour outline ~1/22, baked by
+  `bits_atlas_bake.py`); the process shader lerps each bit along its quadratic Bezier (control on
+  the rim-side bisector at 1.5 × R_out round a wheel; a bow of 0.25 of the length elsewhere),
+  white-hot for the entry's amplitude, flipping every 60 ms, tumbling, shrinking in. Every number
+  per bit (start, control, spawn delay ∝ x, flight ± 15 %, phase, spin) is computed by `BitsPath`
+  and handed in, so `burst` returns the arrival times before anything flies. **Call made:** the
+  CPU fallback draws the same plan from this node (≤ 44 bits) instead of a `CPUParticles2D`, which
+  cannot run a process shader and could not follow the Bezier.
+- **1B.7 cel / toon + ink** (`ToonInkMaterial`, `toon_ink.gdshader`, `toon_ink_hull.gdshader`):
+  3 hard bands in `light()` (0.55 / 0.12 → 1 / 0.62 / 0.32, shadow tinted violet), per-face tone
+  jitter (Cv2), world-space grime stronger low on a wall, banded spill from `spill_lights[8]` /
+  `spill_colors[8]` / `spill_count`, depth haze; ink = an inverted hull next pass grown 2.5 screen
+  px along its normals with a world-noise wobble. For 1D: the city may prefer a depth/normal
+  post-process for ink on large meshes (hull splits at hard box corners); the toon pass and the
+  spill uniforms are the same either way.
+- **Motion** (`ui_motion.tres` + REQUIRED_IDS + motion-lab demos kind `kit` through `KitDemo`):
+  `crt_type_on` 0.02 s/char T1, `crt_caret_blink` 0.5 s T0, `crt_hex_scroll` 14 px/s T0;
+  `sticker_slap` 0.45 s T2 (lifecycle APPEAR in `05_lifecycle.jpg`: from 1.24x, over-rotated 13°,
+  squash 1.13 / 0.84 for 90 ms, one overshoot (BACK), the shine sweep), `sticker_peel` 0.30 s T2
+  (EXIT: fold 0 → 0.6, lift, curl away down-left), `sticker_dissolve` 0.5 s T2 (cells left to right,
+  white-hot rim, bits from the sticker's rect), `sticker_gloss_sweep` 1.4 s + 4.0 s rest T0,
+  `sticker_corner_flutter` 2.4 s, 0.08 ↔ 0.20 T0 (IDLE), `sticker_hover` 0.12 s ×1.05 T1 and
+  `sticker_press` 0.08 s y 0.90 T1 (`send_it_sticker.jpg` HOVER / PRESSED); `pencil_write_on`
+  900 px/s capped 0.6 s T2 (lifecycle "draws in writing order"), `pencil_wipe` 0.30 s T2 (EXIT "a
+  palm drags the pencil"), `pencil_glint` 0.6 s every 3 s T0 (IDLE "a thin glint every ~3 s");
+  `holo_bands` 4 s T0; `light_spill_breathe` 3.2 s ±8 % T0; `bits_flight` 0.55 s, 0.12 s spread,
+  0.08 s white-hot T2. Every motion shows its end state at once under reduce effects, headless or
+  switched off (`Motion.live`), and the one-shot ones join MotionSkip (passive).
+- **Palette tokens added** (palette.gd, a block of its own for 1A to merge): `PENCIL_YELLOW`
+  #FFE200, `PENCIL_RED` #FF1C2C, `PENCIL_SHADOW`, `VINYL_WHITE/_LO`, `VINYL_BACKING`, `VINYL_INK`,
+  `VINYL_EXTRUDE`, `KRAFT`, `KRAFT_FIBRE`, `STICKER_FILL_PINK/RED/YELLOW`, `CRT_GLASS_TOP/BOTTOM`,
+  `PAPER_TYPE_INK`, `HOLO_SCRIM`, `TOON_INK`.
+- **Kit sheet, read windowed next to the references** (`docs/art_review/ART-1/1B/`):
+  `--page=kit` vs `04_kit_sheet.jpg`: sticker words and objects match the reference's build (thick
+  white die-cut, keyline, extrude, gloss, curl, shadow; holo SEND IT and crew card, kraft note);
+  the pencil column reads as wax on glass (yellow plan circle and dashed route with a waypoint, red
+  target circle, printed brackets and range ring, HIT IT + arrow); spill lights the facets round the
+  MODEM sign. Remaining gaps: the reference's letters carry a bevel highlight (not drawn), its pencil
+  words are hand-lettered strokes (ours: the marker face with wax grain), its neon sign is the
+  shop's own art. `--page=lifecycle` vs `05_lifecycle.jpg`: APPEAR (slap, the circle writing on),
+  IDLE (flutter, holo drift, sweep) and EXIT (peel with the backing and crease, the pencil wiped)
+  play as described. `--page=materials`: CRT (four accents), bits round a wheel rim (GPU and CPU
+  frames), holo over its scrim, paper with a stamp, the toon + ink 3D sample.
+- **Tests:** `tests/unit/test_art1_material_kit.gd` (fast): register (shaders, tiers, entries, lab
+  demos), tokens, sticker build / states / reduce-effects end states / one press / one sweep at a
+  time / word over system word, CRT accents and type-on, pencil write-on and wipe by trimming,
+  reduce-effects and headless end states, look uniforms, shapes and snap, the pencil lint rule,
+  bits round the rim / deterministic arrivals ∝ x / no flight under reduce effects / CPU cap, holo
+  split, paper fields, spill breathe and 3D packing, toon bands and uniforms. No test dropped.
+
 ### 2026-10-05 — Art direction — ART-0 names pass, part 2 (D2–D8, D11–D12)
 Applies "2026-10-05 — Designer rulings: names for M14" (ART-0 area B part 2). Internal names follow
 the display names; no aliases, no migrations. `tests/unit/test_names_pass.gd` (PART2 table) sweeps
@@ -5822,6 +5931,17 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **ART-1 1B: the bits' CPU fallback (2026-10-05):** ART_BIBLE §6.3 names a `CPUParticles2D`
+  fallback (<= 44); a CPUParticles2D can't run the Bezier process shader, so the fallback draws the
+  same precomputed plan from the emitter node (<= 44 bits, same look and arrival times). Default
+  applied; say if a real CPUParticles2D (straight-line flight) is wanted instead.
+- **ART-1 1B: "gloss 0.22" (2026-10-05):** read as round 19's `gloss_k` (the specular sheen's
+  strength at rest, 1.0 while the one sweep crosses), not the band's position. Default applied.
+- **ART-1 1B: the washed system word's alpha (2026-10-05):** round 22 says 30 %; the round 3 kit
+  sheet's EXECUTE reads stronger, so `SystemWordSticker.WORD_ALPHA` is 45 %. Say if 30 % is wanted.
+- **ART-1 1B: pencil words (2026-10-05):** the references' "HIT IT" is hand-lettered single strokes
+  (tg_lib's stroke font); ours is the marker face with the wax grain, written letter by letter.
+  A stroke font (true write-on per stroke) can follow if the designer wants it.
 - **D11 Heat bands: is a fifth band wanted? (2026-10-05, ART-0 B part 2):** the plan's "old FLAGGED →
   HUNTED, old NOTICED → FLAGGED, new NOTICED = a couple of alarms" comes from the concept rounds
   (DIRECTION_REVIEW round 21: the combat backdrop's intensity dialled down a band). ART_BIBLE v2 §2.8
