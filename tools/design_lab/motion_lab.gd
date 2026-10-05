@@ -152,6 +152,9 @@ const DEMOS := {
 	# button's pad focus, a refused sticker, a confirm opened and closed as a modal).
 	&"focus_scale": ["screen", "kit_focus"], &"button_refused": ["screen", "kit_refused"],
 	&"modal_in": ["screen", "modal_open"], &"modal_out": ["screen", "modal_close"],
+	# ART-9 4B: the portrait feeds (idle, talking, stationed) and DISPATCH's voice trace.
+	&"portrait_feed": ["screen", "feed"], &"portrait_blink": ["screen", "feed"], &"portrait_talk": ["screen", "feed"],
+	&"dispatch_trace": ["screen", "feed"],
 }
 
 ## Screen demos (ANIM-6): the top bar's values before and after a change, the text a
@@ -707,6 +710,16 @@ func _play_screen(what: String) -> void:
 			Dialogue.dock_at(Rect2(PANEL_W + 30, 90, 820, 60), 2)
 			Dialogue.say(RC.Voice.DISPATCH, SUBTITLE_TEXT)
 			length = SUBTITLE_TEXT.length() * Motion.seconds(&"dispatch_type")
+		"feed":
+			# ART-9 4B: a live feed, a talking one, a stationed one and DISPATCH's trace.
+			var modes := [PortraitFeed.Mode.IDLE, PortraitFeed.Mode.TALK, PortraitFeed.Mode.STATIONED, PortraitFeed.Mode.VOICE]
+			for i in modes.size():
+				var f := PortraitFeed.dispatch() if modes[i] == PortraitFeed.Mode.VOICE else PortraitFeed.new(&"rigger", &"op_1", "SPROCKET", modes[i])
+				f.site = "LANE 15 RELAY"
+				f.position = Vector2(30 + i * 210, 160)
+				f.size = Vector2(196, 218)
+				_screen_host.add_child(f)
+			length = maxf(Motion.amplitude(&"portrait_blink"), Motion.entry(&"portrait_feed").duration)
 		"drip", "halo":
 			DripButton.reset_growth()
 			var send := DripButton.new("SEND IT", "[Space]", DripButton.DRIP_PINK, 44, DripButton.SEND_IT_DRIPS)

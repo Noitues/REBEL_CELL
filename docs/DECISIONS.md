@@ -33,6 +33,65 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-9 4B dialogue and portraits
+ART_BIBLE v2 §4.11 (dialogue A), §4.12 (portraits v2), DECISIONS "Designer ruling: DISPATCH
+text"; references `round31_reward_event/dialogue.jpg`, `round38_portraits/*`,
+`round39_portraits/portraits_classes_v2.jpg`.
+- **Bust sets, pre-rendered.** `tools/art_gen/portraits/bust_rig.py` + `render_busts.py`
+  (ported from art-pass 9a62cec, round 39 rig with the r39 / r39b / r39c gear) render in
+  headless Blender 5.2: 8 classes x 4 rookie seeds x 4 frames (idle, blink = dead eyes,
+  talk, hurt = grimace + squint), 240x266 cells, one 256-colour atlas per class
+  (`assets/portraits/busts_<class>.png`, 31-47 KB) and the corp's photo print of each rookie
+  (`prints_<class>.jpg`, about 37 KB; desaturated, warmed, grained on a flat backdrop).
+  The rig now draws the same random numbers in every frame of one rookie (the mouth's tilt
+  and the brows are drawn whatever the frame; the mouth's jitter never shifts the shared
+  stream), so blink / talk / hurt are the same face; idle is unchanged from round 39.
+  Pre-rendered rather than a SubViewport per feed: no 3D cost per visible feed; the seed
+  pool is 4 per class (variants), a later pass can raise it by re-running the script.
+- **Which rookie.** `PortraitBust.variant_for(class, operative id)`: a hash of class and id
+  (an empty id, the class's own face / an unhired rookie, is variant 0). No game RNG, no
+  state change (no seed field added to OperativeState), the same face on every screen and in
+  every session. Operative ids repeat between campaigns (op_1...), so a campaign's first
+  Breaker wears the same rookie each time; storing a roster-RNG seed on the operative
+  (round 38 NOTES) is a schema change left for the portrait pass.
+- **One feed.** `PortraitFeed` (kit) + `shaders/portrait_feed.gdshader` with `mode` (idle,
+  talk, hurt, stationed, dead, recruit, print, voice), `tint`, `split`, `tear`, `noise`,
+  `fps_hold` (stationed), a feed clock; the chrome (label strip "● CLASS // CALLSIGN", LED
+  green / red / class / amber / off, HP chip, voice bars, ON <SITE> // 12 fps, NO SIGNAL +
+  red pencil X + FLATLINED, HIRE: 15 SCHEMATICS stamp, cracked glass) is drawn on top. The
+  chrome's words show only where they reach the 12 px floor (roster chips show the LED and
+  the marks). Hurt at HP ≤ 25 % (`set_hp`); the flatlined stay flatlined. Listener dim for
+  dialogue (`set_dimmed`). The print mode is the corp-paper context.
+- **Motion.** New entries `portrait_feed` (clock; rolling bar period 4 s; amplitude = the
+  stationed frame rate, 12 fps), `portrait_blink` (0.14 s every 5 s, phase per operative),
+  `portrait_talk` (0.11 s mouth / bar step), `dispatch_trace` (1.6 s sweep), all T0, in
+  REQUIRED_IDS and the motion lab (`["screen", "feed"]`). Off, under reduce effects or
+  headless the feed is a still in its end state (talking keeps the mouth-open frame,
+  flatlined the dead eyes); nothing waits.
+- **Paper views draw the print.** `PortraitArt.operative_subject` carries `class_id` and
+  `variant` and the class accent for a class with a bust set; `PortraitArt.draw` draws the
+  print (Polaroid, crew chip, WANTED poster, combat Polaroid) so an operative keeps one face
+  everywhere. Enemies, bosses, corp faces keep the M13 drawn styles (no v2 reference).
+  `Polaroid.kia` (campaign audit): the print dimmed and crossed out in pencil red.
+- **Dialogue.** Every subtitle line is on the Cell's CRT terminal (1A `UiTheme.terminal_box`
+  tinted: cyan for the Cell / operatives / narrator, the corp's colour for a corp speaker,
+  DISPATCH red on black glass with its words in a lifted red); the paper strip for
+  non-DISPATCH speakers is gone (ART_BIBLE §1.2: the dialogue feed is CRT). The speaker's
+  feed sits in the bar's left margin (a Node2D holds it so the container never lays it out;
+  the paging measures the words' room after it): an operative's bark shows its own class's
+  bust talking (`say(..., class_id)`; `bark` passes the class, not its base class, so a
+  Wrecker shows a Wrecker), DISPATCH a red voice trace (never a face). Narrator, corp and
+  observer lines have no feed. The feed follows the dock's height (22-120 px at the text
+  size, at most 22 % of the bar's width). Typing, paging, skip and the bar's slide-in are
+  unchanged. 1B's CRT material replaces the panel's look when it lands (seam:
+  `Dialogue.crt_style`).
+- There is no dialogue screen with choices in the game (dialogue.jpg's briefing layout):
+  the portrait lab's `dialogue` page composes it from the real pieces (speaker live,
+  listener dimmed, DISPATCH, the bar) for review; a briefing screen would be a new screen.
+- Lab: `tools/design_lab/portrait_lab.tscn` (one windowed launch, a PNG per page: classes,
+  states, matrix, contexts, dialogue, strip / column at 1.0 / 1.6 / 2.0).
+- Tests: `tests/unit/test_art9_portraits_dialogue.gd` (fast). No M13 test dropped.
+
 ### 2026-10-05 — Art direction — ART-1 1A palette, faces, theme
 ART_BIBLE v2 §2.1–2.10, §5.6, §6.4 applied through `Palette` and `UiTheme` only (no screen
 restyled; screens pick it up through the tokens and the theme).
