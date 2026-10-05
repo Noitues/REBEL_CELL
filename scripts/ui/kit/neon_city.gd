@@ -946,8 +946,10 @@ func _process(delta: float) -> void:
 		return
 	anim_t += delta
 	if pan:
-		# A slow Lissajous drift across the city (about 6 px/s at its fastest).
-		_pan_t += delta
+		# A slow Lissajous drift across the city (about 6 px/s at its fastest). ART-0 C (art
+		# pass W7, reduce motion, ART_BIBLE §12): no camera moves, the pan holds its framing.
+		if Motion.parallax_allowed():
+			_pan_t += delta
 		var dx := sin(_pan_t * 0.019) * PAN_MARGIN * 0.9
 		var dy := sin(_pan_t * 0.013 + 1.0) * PAN_MARGIN * 0.7
 		# Move, don't resize: four separate offsets made the size jitter every frame, and

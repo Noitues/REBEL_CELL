@@ -38,6 +38,9 @@ var _roll: Control = null
 var _roll_left: float = 0.0
 var _alpha: float = 1.0
 var _done: bool = false
+## ART-0 C (art pass W9, ART_BIBLE §12): under reduce motion the page cross-fades in place
+## (no slide, no drop, no CRT roll jump): Motion.page_transition_style() == PAGE_FADE.
+var fade_only: bool = false
 
 
 ## Plays `p_look`'s entrance on `p_page` and runs `on_done` when it ends (at once when the
@@ -58,6 +61,7 @@ static func enter(p_page: Control, p_look: int = Look.GLASS, on_done: Callable =
 	tr_node.direction = -1 if p_direction < 0 else 1
 	tr_node._on_done = on_done
 	tr_node._alpha = p_page.modulate.a
+	tr_node.fade_only = Motion.page_transition_style() == Motion.PAGE_FADE
 	# Clear until the first frame lays the page out (its rest position is known then).
 	p_page.modulate.a = 0.0
 	p_page.add_child(tr_node)
@@ -207,7 +211,7 @@ func _process(delta: float) -> void:
 		# The container has sorted the page by now: that is where it rests.
 		_started = true
 		_rest = page.position
-		if look == Look.GLASS:
+		if look == Look.GLASS and not fade_only:
 			_add_roll()
 			_roll_left = Motion.seconds(&"panel_crt_roll")
 	elif page.position != _last_set:
@@ -225,7 +229,7 @@ func _process(delta: float) -> void:
 	var eased := Tween.interpolate_value(0.0, 1.0, k, 1.0, e.trans, e.ease) as float
 	var amp := Motion.amplitude(id)
 	var from := Vector2(0.0, -amp) if look == Look.PAPER else Vector2(amp * direction, 0.0)
-	var offset := from * (1.0 - eased)
+	var offset := Vector2.ZERO if fade_only else from * (1.0 - eased)
 	# ANIM-R2 E8: the CRT roll comes once the glass is fully shown (the fade's end), not on the
 	# entrance's first frame: over the still-clear page the band read as a half-drawn screen.
 	if look == Look.GLASS and k >= FADE_SHARE and _roll_left > 0.0 and Motion.live(&"panel_crt_roll"):

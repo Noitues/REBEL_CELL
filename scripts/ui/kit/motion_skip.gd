@@ -165,6 +165,10 @@ static func is_press(event: InputEvent) -> bool:
 		return false
 	if jacking():
 		return false
+	# ART-0 C (art pass W9s, ART_BIBLE §10): holding fast-forward speeds the SEND IT resolve;
+	# it never completes a motion.
+	if InputMap.has_action(Motion.FAST_FORWARD_ACTION) and event.is_action(Motion.FAST_FORWARD_ACTION):
+		return false
 	if event is InputEventKey or event is InputEventJoypadButton:
 		return true
 	if event is InputEventMouseButton:

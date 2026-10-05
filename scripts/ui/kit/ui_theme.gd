@@ -37,6 +37,8 @@ static func build(text_scale: float = 1.0) -> Theme:
 	t.set_font(&"font", header, Palette.mono())
 	t.set_font_size(&"font_size", header, roundi(22 * text_scale))
 	t.set_color(&"font_color", header, Palette.PAPER)
+	if Settings.high_contrast:
+		HighContrast.apply(t)  # ART-0 C (art pass W9, ART_BIBLE §12): the high-contrast hook
 	return t
 
 

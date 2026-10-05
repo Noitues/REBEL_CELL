@@ -2065,7 +2065,9 @@ func fit_grid_map() -> void:
 ## ANIM-5 (4.14): the Grid map has settled into `free`: the camera leans toward the
 ## selected Site once (`grid_lean`), then the picture eases from the frame it held.
 func _grid_settled(free: Rect2) -> void:
-	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay):
+	# ART-0 C (art pass W8b, §12 reduce motion): no lean when camera moves are off (the
+	# fitted frame is the end).
+	if not _grid_leaned and panel_name == "grid" and city_overlay != null and is_instance_valid(city_overlay) and Motion.camera_moves_allowed():
 		_grid_leaned = true
 		var lean: Vector2 = wireframe.unrigged(func() -> Vector2: return grid_lean(free))
 		if lean.length() >= GRID_LEAN_MIN:

@@ -130,7 +130,9 @@ ARMORY %d/%d: %d assets waiting in the Armory (not counting those deployed on yo
 3. EXFIL","1. BREACH
 2. DISABLE
 3. EXFIL"
+1x (full replay),1x (full replay)
 2  Press a card,2  Press a card
+2x (twice as fast),2x (twice as fast)
 2x NUDGE,2x NUDGE
 2× NUDGE CARDS NEXT,2× NUDGE CARDS NEXT
 ": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next",": %d for most slots, %d for a pricier one such as the Miss slot; you pick the slot next"
@@ -167,6 +169,7 @@ Asset,Asset
 "Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)","Assist mode for new campaigns (%s free nudge a turn, %s%% HP; no ICE records or achievements)"
 At 0 HP you lose the fight.,At 0 HP you lose the fight.
 Audio,Audio
+Automatic (match the pad),Automatic (match the pad)
 BADGES,BADGES
 BANKED,BANKED
 BEST ICE,BEST ICE
@@ -439,6 +442,7 @@ Click a Site to open it on the City Grid.,Click a Site to open it on the City Gr
 Click to play.,Click to play.
 Close,Close
 Codex,Codex
+Colour-blind correction (patterns and glyphs stay the main cue),Colour-blind correction (patterns and glyphs stay the main cue)
 Common,Common
 Continue,Continue
 Continue the current run,Continue the current run
@@ -562,6 +566,7 @@ Delete the campaign in slot %s (asks first).,Delete the campaign in slot %s (ask
 Delete the campaign in slot %s? This cannot be undone.,Delete the campaign in slot %s? This cannot be undone.
 Deploy armory asset,Deploy armory asset
 Deploy run asset,Deploy run asset
+Deutan (green-weak),Deutan (green-weak)
 Disabled: repair the node on the Grid.,Disabled: repair the node on the Grid.
 Display,Display
 Drag a card here to shred it (or select it and press REMOVE).,Drag a card here to shred it (or select it and press REMOVE).
@@ -734,6 +739,7 @@ FREE NUDGE %s NEXT,FREE NUDGE %s NEXT
 FREE NUDGE x%d,FREE NUDGE x%d
 FREEZE,FREEZE
 FROZEN,FROZEN
+Fast-forward the resolve (hold),Fast-forward the resolve (hold)
 Fight,Fight
 Fight: win it for Cycles and loot,Fight: win it for Cycles and loot
 Fights won,Fights won
@@ -857,6 +863,7 @@ HeatThresholdData.heat_70.event_text,An extra elite patrols the next netrun.
 HeatThresholdData.heat_75.event_text,"A raid is queued. While Heat stays at 75 or more, raids are 25% stronger."
 HeatThresholdData.heat_80.event_text,The next netrun's Modem carries one item fewer.
 HeatThresholdData.heat_90.event_text,An extra elite patrols the next netrun.
+"High contrast (opaque panels, 7:1 text, thick edges)","High contrast (opaque panels, 7:1 text, thick edges)"
 Home integrity before and after the raid.,Home integrity before and after the raid.
 Home server,Home server
 Home server integrity. At 0 the campaign is lost.,Home server integrity. At 0 the campaign is lost.
@@ -934,6 +941,7 @@ INNER RING SEGMENT,INNER RING SEGMENT
 In force since a Heat threshold. Scrub Heat to fall back under it.,In force since a Heat threshold. Scrub Heat to fall back under it.
 In force: %s.,In force: %s.
 Inner ring segment %d: Rank 3 lets you swap it for another.,Inner ring segment %d: Rank 3 lets you swap it for another.
+Instant (results at once),Instant (results at once)
 "Integrity before and after, and whether the node held.","Integrity before and after, and whether the node held."
 Intel,Intel
 "It gets %d through, but only %d HP are left to take.","It gets %d through, but only %d HP are left to take."
@@ -1446,6 +1454,7 @@ OPERATIVE,OPERATIVE
 OPTIONS,OPTIONS
 OUTER,OUTER
 OVERCLOCKED,OVERCLOCKED
+Off (no correction),Off (no correction)
 "Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for.","Once cleared you can claim it (Schematics): it becomes a node of your network, which raids come for."
 Operative,Operative
 Options,Options
@@ -1477,6 +1486,7 @@ PROFILE,PROFILE
 PROFILE // RECORDS,PROFILE // RECORDS
 PUTS %s ON %s,PUTS %s ON %s
 PUTS %s ON YOU,PUTS %s ON YOU
+Pad button glyphs,Pad button glyphs
 Patch home %s (%d),Patch home %s (%d)
 Pause / options,Pause / options
 "Pause: options, codex, save and quit.","Pause: options, codex, save and quit."
@@ -1486,6 +1496,7 @@ Pick a card from your deck to remove.,Pick a card from your deck to remove.
 "Pick the target: click a node of yours on the map, or its button in YOUR NODES.","Pick the target: click a node of yours on the map, or its button in YOUR NODES."
 Pick up,Pick up
 Pick up the campaign saved most recently.,Pick up the campaign saved most recently.
+PlayStation,PlayStation
 Press,Press
 Press %s on,Press %s on
 Press an asset card: it deploys to the target (%s now).,Press an asset card: it deploys to the target (%s now).
@@ -1527,6 +1538,7 @@ ProfileUnlockData.unlock_vault_terminal.description,Unlocks the Vault Terminal n
 ProfileUnlockData.unlock_vault_terminal.display_name,Node: Vault Terminal
 ProfileUnlockData.unlock_wrecker.description,Recruit Wrecker operatives in every campaign.
 ProfileUnlockData.unlock_wrecker.display_name,Class: Wrecker
+Protan (red-weak),Protan (red-weak)
 Purge Threshold,Purge Threshold
 Quit,Quit
 Quit REBEL_CELL?,Quit REBEL_CELL?
@@ -1676,6 +1688,7 @@ Recall,Recall
 Recruit %s (%d),Recruit %s (%d)
 Recruit:,Recruit:
 "Reduce effects (no scanlines, flicker, chromatic, distortion)","Reduce effects (no scanlines, flicker, chromatic, distortion)"
+Reduce motion (no camera moves or parallax; pages cross-fade),Reduce motion (no camera moves or parallax; pages cross-fade)
 Remove a card from your deck: %d Cycles (you have %d).,Remove a card from your deck: %d Cycles (you have %d).
 Repair (%d),Repair (%d)
 Repair Cost,Repair Cost
@@ -1683,6 +1696,7 @@ Repair the home server to full integrity.,Repair the home server to full integri
 Reset to defaults,Reset to defaults
 Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.,Resistance %d: absorbs nudges and spins tick for tick; Flip and Respin are blocked.
 Resolution (windowed),Resolution (windowed)
+Resolve speed after SEND IT (hold Fast-forward to speed it up),Resolve speed after SEND IT (hold Fast-forward to speed it up)
 Respin,Respin
 Respin for %d RAM,Respin for %d RAM
 Respin your wheel for %d RAM: a random result (sets a checkpoint).,Respin your wheel for %d RAM: a random result (sets a checkpoint).
@@ -1988,6 +2002,7 @@ Starting Bug Card,Starting Bug Card
 Station on %s,Station on %s
 Stats & achievements,Stats & achievements
 Statuses & precision,Statuses & precision
+Steam Deck,Steam Deck
 Step %d,Step %d
 Story so far:,Story so far:
 StoryBeatData.blackout_weather_1.text,"The weather futures desk sells storm forecasts to the highest bidder, a day before anyone else gets them."
@@ -2412,6 +2427,7 @@ StoryPathData.sp_your_own_hands.premise,REBEL_CELL is built from the Cell's habi
 StoryPathData.sp_your_own_hands.title,Your Own Hands
 Subtitles type in (off: each line shows at once),Subtitles type in (off: each line shows at once)
 Subtitles with speaker names,Subtitles with speaker names
+Switch,Switch
 System log strip at the foot of the screen,System log strip at the foot of the screen
 T%d,T%d
 TARGET: %s,TARGET: %s
@@ -2746,6 +2762,7 @@ Threats here: %s.,Threats here: %s.
 Threats that hit the home server.,Threats that hit the home server.
 Threats your network destroyed.,Threats your network destroyed.
 Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.,Threats your nodes destroy: %d of the %d that come. The rest reach your nodes or the home server.
+Tritan (blue-weak),Tritan (blue-weak)
 Tutorial,Tutorial
 UNDO,UNDO
 UNDO %s,UNDO %s
@@ -2775,6 +2792,7 @@ Window mode,Window mode
 Windowed,Windowed
 Withdraw %s,Withdraw %s
 Won,Won
+Xbox,Xbox
 YOU,YOU
 YOU ARE HERE,YOU ARE HERE
 YOU GET %s,YOU GET %s

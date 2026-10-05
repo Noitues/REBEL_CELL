@@ -787,7 +787,9 @@ func _transition(on_switch: Callable, seconds: float, id: StringName) -> void:
 		on_switch.call()
 		return
 	_set_jacking(true)
-	if not effects_enabled():
+	# ART-0 C (art pass W9F, ART_BIBLE §12: reduce motion is cross-fades only, no camera
+	# move): the jack's zoom through the screen becomes the cross-fade reduce effects gets.
+	if not effects_enabled() or not Motion.camera_moves_allowed():
 		await _fade_switch(on_switch)
 		_set_jacking(false)
 		return
