@@ -311,7 +311,7 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 	s.fist_at = fist
 	s.tooltip_text = UiTip.fold(tip)
 	# Big text (MORE_RIGHT_FROM): the chip keeps its label; its line moves into the tooltip.
-	var chip := TerminalChip.new(tr(label), line if not big_text() else "")
+	var chip := MenuChip.new(tr(label), line if not big_text() else "")
 	chip.pre_translated = true
 	chip.name = label.replace(" ", "")
 	chip.focus_mode = Control.FOCUS_NONE

@@ -1,7 +1,7 @@
 class_name CrtTiles
 extends HFlowContainer
 ## ART-10 4C: a row of terminal tiles that picks one value (round 31 `settings_menu.jpg`
-## COLOUR-BLIND CORRECTION / RESOLVE SPEED tiles): each tile a TerminalChip with the
+## COLOUR-BLIND CORRECTION / RESOLVE SPEED tiles): each tile a MenuChip with the
 ## choice's word in CAPS and its gloss under it ("Deutan (green-weak)" -> DEUTAN /
 ## green-weak); the chosen one cyan-filled (§2.10, never lime). It fronts an OptionButton
 ## (`option`, kept hidden in the row): a tile press selects that item and emits its
@@ -11,7 +11,7 @@ extends HFlowContainer
 const GAP := 8
 
 var option: OptionButton
-var tiles: Array[TerminalChip] = []
+var tiles: Array[MenuChip] = []
 
 
 func _init(p_option: OptionButton) -> void:
@@ -23,7 +23,7 @@ func _init(p_option: OptionButton) -> void:
 	add_child(option)
 	for i in option.item_count:
 		var words := split(option.get_item_text(i))
-		var t := TerminalChip.new(words[0], words[1])
+		var t := MenuChip.new(words[0], words[1])
 		t.pre_translated = true
 		t.name = "Tile%d" % i
 		t.label_step = UiTheme.BODY

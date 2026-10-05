@@ -883,7 +883,7 @@ func test_the_continue_line_reads_as_a_line_of_icons() -> void:
 		await _frames(4)
 		# ART-10 4C (round 33): BREACH's terminal chip reads CONTINUE with the slot line under it
 		# ("slot // corp // run N // Heat H"); at big text the line moves into the tooltip.
-		var cont := title._panel.find_child("Continue", true, false) as TerminalChip
+		var cont := title._panel.find_child("Continue", true, false) as MenuChip
 		assert_not_null(cont, "Continue offers the slot")
 		assert_eq(cont.text, "Continue", "one word on its own line")
 		if scale <= 1.0:

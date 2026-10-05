@@ -1,4 +1,4 @@
-class_name TerminalChip
+class_name MenuChip
 extends Button
 ## ART-10 4C: a terminal button with a plain label and a line under it (ART_BIBLE v2 §4.13
 ## "terminal buttons (`>` caret on hover, no colour-only cue)"; round 33 `title_screen.jpg`

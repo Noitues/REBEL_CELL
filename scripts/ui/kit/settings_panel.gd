@@ -148,7 +148,7 @@ func _init() -> void:
 	_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_row.add_child(_tabs)
 	for name in SECTIONS:
-		var b := TerminalChip.new(tr(name))
+		var b := MenuChip.new(tr(name))
 		b.pre_translated = true
 		b.label_step = UiTheme.BODY
 		b.name = "Tab%s" % name
@@ -281,7 +281,7 @@ func show_section(name: String) -> void:
 	section = name
 	rebinding = &""
 	for s in _tab_buttons:
-		(_tab_buttons[s] as TerminalChip).selected = s == name
+		(_tab_buttons[s] as MenuChip).selected = s == name
 	# ANIM-R4 C3: the built widgets wait off the tree for their section; everything else a
 	# section made (its labels, the Controls grid, the note, Reset) goes (they leaked: 49
 	# Controls per Options opened). Queued: Reset calls this from its own press.
@@ -550,6 +550,7 @@ static func _grabber() -> Texture2D:
 ## A section heading: terminal CAPS, cyan, caption step (round 31 "EFFECTS & MOTION").
 func _heading(text: String) -> Label:
 	var l := Chrome.caps_label(text.to_upper(), UiTheme.CAPTION, Palette.NET_CYAN)
+	l.custom_minimum_size.x = 0.0  # a long heading wraps at its words (big text, the pause menu)
 	l.custom_minimum_size.y = Chrome.px(UiTheme.CAPTION) * HEADING_LINES
 	l.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_label_counter += 1

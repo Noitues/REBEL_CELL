@@ -43,6 +43,7 @@ func _init(p_text: String = "") -> void:
 	for s in [mouse_entered, mouse_exited, focus_exited]:
 		(s as Signal).connect(queue_redraw)
 	toggled.connect(func(_on: bool) -> void: queue_redraw())
+	resized.connect(_rewrap)
 	refit()
 
 
@@ -78,30 +79,62 @@ func _note_text() -> String:
 	return String(note.call()) if note.is_valid() else ""
 
 
+## The width changed: the line rewraps, the row takes its new height (only the height:
+## the width never follows its own size, so layout cannot loop).
+func _rewrap() -> void:
+	var h := measure(size.x).y
+	if not is_equal_approx(custom_minimum_size.y, h):
+		custom_minimum_size.y = h
+		queue_redraw()
+
+
 ## Sizes the row to its words (a Button's own minimum ignores a script's
 ## _get_minimum_size); called on build, on a Settings change and when its note may change.
 func refit() -> void:
-	custom_minimum_size = measure()
+	custom_minimum_size = measure(size.x)
 	queue_redraw()
 
 
-## The size the name, the line, the note chip and the switch need (px).
-func measure() -> Vector2:
+## The room the line wraps in at row width `width` (px).
+func _line_room(width: float) -> float:
+	var np := Chrome.px(NAME_STEP)
+	return maxf(1.0, width - (PAD.x + np * CARET_SHARE) - PAD.x * 2.0 - PILL.x * Settings.text_scale)
+
+
+## The size the name, the line (wrapped at `width`, whole words; 0 = unwrapped), the note
+## chip and the switch need (px). The least width is the name or the line's longest word.
+func measure(width: float = 0.0) -> Vector2:
 	var p := parts()
 	var nf := Chrome.caps_font(NAME_STEP)
 	var np := Chrome.px(NAME_STEP)
-	var w := nf.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, np).x + np * CARET_SHARE
-	var h := nf.get_height(np)
+	# The name wraps at its words too (a narrow host at big text: the pause menu at 2.0).
+	var w := _longest_word(nf, p[0], np) + np * CARET_SHARE
+	var name_full := nf.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, np).x
+	var h := nf.get_multiline_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(width) if width > 0.0 else name_full, np, -1, WRAP).y
 	if p[1] != "":
 		var lp := Chrome.px(LINE_STEP)
-		w = maxf(w, Chrome.body_font().get_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x + np * CARET_SHARE)
-		h += LINE_GAP + Chrome.body_font().get_height(lp)
+		var bf := Chrome.body_font()
+		w = maxf(w, _longest_word(bf, p[1], lp) + np * CARET_SHARE)
+		var full := bf.get_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, lp).x
+		var room := _line_room(width) if width > 0.0 else full
+		h += LINE_GAP + bf.get_multiline_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, room, lp, -1, TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND).y
 	var n := _note_text()
 	if n != "":
 		var cp := Chrome.px(NOTE_STEP)
 		h += LINE_GAP * 2.0 + Palette.mono().get_height(cp) + 4.0
 	var s := Settings.text_scale
 	return Vector2(ceilf(w + PAD.x * 3.0 + PILL.x * s), ceilf(h + PAD.y * 2.0))
+
+
+## Whole-word line breaks for the name and the line.
+const WRAP := TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND
+
+
+static func _longest_word(f: Font, t: String, px: int) -> float:
+	var longest := 0.0
+	for word in t.split(" ", false):
+		longest = maxf(longest, f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
+	return longest
 
 
 func _draw() -> void:
@@ -119,15 +152,19 @@ func _draw() -> void:
 	var dim := disabled
 	if hot and not dim:
 		draw_string(nf, Vector2(PAD.x, y), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, np, Palette.FOCUS if st == KitState.FOCUS else Palette.NET_CYAN)
-	draw_string(nf, Vector2(x, y), p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, np, Palette.TEXT_LO if dim else Palette.TEXT_HI)
+	var name_h := nf.get_multiline_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, WRAP).y
+	draw_multiline_string(nf, Vector2(x, y), p[0], HORIZONTAL_ALIGNMENT_LEFT, _line_room(size.x), np, -1, Palette.TEXT_LO if dim else Palette.TEXT_HI, WRAP)
 	var s := Settings.text_scale
 	var pill := Rect2(Vector2(r.end.x - PAD.x - PILL.x * s, PAD.y + (nf.get_height(np) - PILL.y * s) * 0.5), PILL * s)
-	var line_y := y + nf.get_descent(np)
+	var line_y := y + name_h - nf.get_ascent(np)
 	if p[1] != "":
 		var lp := Chrome.px(LINE_STEP)
 		line_y += LINE_GAP + Chrome.body_font().get_ascent(lp)
-		draw_string(Chrome.body_font(), Vector2(x, line_y), p[1], HORIZONTAL_ALIGNMENT_LEFT, pill.position.x - x, lp, Palette.TEXT_LO if dim else Palette.TEXT_MID)
-		line_y += Chrome.body_font().get_descent(lp)
+		var bf := Chrome.body_font()
+		var room := _line_room(size.x)
+		draw_multiline_string(bf, Vector2(x, line_y), p[1], HORIZONTAL_ALIGNMENT_LEFT, room, lp, -1, Palette.TEXT_LO if dim else Palette.TEXT_MID,
+			TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND)
+		line_y += bf.get_multiline_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, room, lp, -1, TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND).y - bf.get_ascent(lp)
 	var n := _note_text()
 	if n != "":
 		var cp := Chrome.px(NOTE_STEP)

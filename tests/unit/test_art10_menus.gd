@@ -73,11 +73,11 @@ func test_the_title_shows_breach_simulate_overthrow_with_their_chips() -> void:
 	assert_eq(t.verbs[1].fill, VerbSticker.Fill.GLITCH, "SIMULATE carries the CORRUPTED glitch")
 	assert_eq(t.verbs[2].fill, VerbSticker.Fill.BLUE, "OVERTHROW is blue")
 	assert_eq(t.verbs[2].fist_at, "OVERTHROW".length() - 2, "its last O is the rebel fist")
-	var cont := t._panel.find_child("Continue", true, false) as TerminalChip
+	var cont := t._panel.find_child("Continue", true, false) as MenuChip
 	assert_not_null(cont, "BREACH's chip reads CONTINUE")
 	assert_string_contains(cont.line, "Heat", "the chip carries the slot summary")
-	assert_not_null(t._panel.find_child("Tutorial", true, false) as TerminalChip)
-	assert_not_null(t._panel.find_child("Newcampaign", true, false) as TerminalChip)
+	assert_not_null(t._panel.find_child("Tutorial", true, false) as MenuChip)
+	assert_not_null(t._panel.find_child("Newcampaign", true, false) as MenuChip)
 
 
 func test_breach_is_the_default_focus_and_continues_the_saved_campaign() -> void:
@@ -167,10 +167,11 @@ func test_the_confirm_is_yellow_cancel_by_default_and_a_pink_verb() -> void:
 	t.confirm_delete("1")
 	await _frames(2)
 	var d: ConfirmDialog = t._confirm
-	assert_eq(d.no_button.fill, VerbSticker.Fill.YELLOW, "CANCEL is the yellow safe sticker")
-	assert_eq(d.yes_button.fill, VerbSticker.Fill.PINK, "the committing verb is pink")
-	assert_eq(d.yes_button.shown_text(), "DELETE")
-	assert_eq(d.window.tag_label.text, "CANNOT UNDO", "a delete says it cannot be undone")
+	# 2D's ConfirmDialog (the round 33 abandon dialog look): two vinyl stickers, the delete is
+	# destructive (CANNOT UNDO) and names its verb; CANCEL keeps the focus.
+	assert_true(d.no_button is SendItSticker and d.yes_button is SendItSticker, "two vinyl stickers")
+	assert_eq((d.yes_button as SendItSticker).tag_text, "DELETE", "the committing verb")
+	assert_true(d.panel.destructive, "a delete says it cannot be undone")
 	assert_eq(get_viewport().gui_get_focus_owner(), d.no_button, "CANCEL holds the default focus")
 	var esc := InputEventAction.new()
 	esc.action = &"ui_cancel"
