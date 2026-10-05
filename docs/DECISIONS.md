@@ -33,6 +33,69 @@ superseded instead.
 ## Implementation decisions
 _(Claude Code: add entries here as you make them.)_
 
+### 2026-10-05 — Art direction — ART-5 5b landmarks
+ART_BIBLE v2 §1.2 (World), §2.4, §4.1, §4.4, §6.1; ART_3_BATCH "Wave 2" 5b; references `city/round26_hq_targets/*`,
+`round27_hq_targets/*`, `round31_meridian_combat/*`, `round34_rebel_cell/*`, `foundations/round2/*`; 1D's pick
+(real-time Godot 3D); 8p's export convention (`rebel_cell.art_export/1`).
+- **Blender 5.2 headless from the concept generators.** `tools/art_pipeline/city/` (v1): `concept_r31/` holds the round
+  31 builders unchanged (target_corps + heroes24–31, ported from art-pass 097a6c0); `landmark_build_v1.py` is the port
+  of `hq_scene.py` (same seeds `2525 + job`, same reference cameras) that exports instead of compositing a city;
+  `landmark_crest_v1.py` / `landmark_district_v1.py` port the round 34 crest (`map34.Crest.zone`, the blackout ring,
+  the DISPATCH glitch bands; art-pass d14b8f6); `build_landmarks_v1.py blender|post|sheets|assemble` runs it all. Builds
+  are deterministic (same bytes on a rebuild).
+- **What is built, per bible 4.4:** Meridian container castle on texture A (round 29 t1), moat, gantry keep, rail yard
+  and the round 31 crane + train loop; Solace lit helix (down-lights, cones, spotlight, 12-frame chaser) + the SOLACE
+  GENERAL hospital Site; Halcyon seven-tier Civic Core with the scanning eye (own pivot, ±55°, searchlight) + Halcyon
+  Court with the Justice statue (the round 27 default Site); Orbital silo crescent with the doors 1.6 below the rim,
+  closed and open (rocket) as two state nodes + the OC-TV Site; REBEL_CELL district: a normal street grid whose window
+  lights draw the tucked-thumb fist (home 70 %, DISPATCH 90 % with the glitch rows), detail lines on windowless
+  buildings, the blackout ring and the reveal. Meridian's regular Site (the depot) is not one of the five landmarks
+  and is not exported; it is one more job in `landmark_spec_v1.JOBS` when the Sites need it.
+- **glTF is the primary and only export (coordinator, after 1D's pick); the 2× day/night layered sprites are dropped.**
+  They would need their own render, holdout passes and finish per corp, mode and animation frame and would only
+  serve the baked technique 1D did not pick. 5.9 MB in all (Meridian 1.27 MB, Solace 1.34, Halcyon 0.44, Orbital
+  0.63, REBEL_CELL 2.38), uncompressed (Godot imports no Draco or meshopt).
+- **On 8p's convention (`rebel_cell.art_export/1`):** no normals (the toon shader takes the facet normal from screen
+  derivatives; rendered with and without normals: no difference); COLOR_0 linear = face colour × tone (0.86–1.12);
+  alpha = a part value 0.55–1.0 written to ROUGHNESS (part edges ink as material edges; ≥ 0.5 marks a building for the
+  spike post) or, on windows, the window's own seeded value; materials named by role `lm_toon`, `lm_lit`, `lm_neon`,
+  `lm_win`, `lm_sign` (as 8p's `hq_*`) plus `lm_beam`, `lm_toon_lines`, `lm_win_ring`, `lm_win_lines`,
+  `lm_win_fist_home`, `lm_win_fist_dispatch`. Manifest per corp (`assets/city/landmarks/<corp>/manifest.json`):
+  source (scripts, commit, `scripts_sha256`), settings, origin and footprint (Godot frame) per landmark, the lot
+  rectangle and overhang, triangles per role, animation, reference camera, files with sizes and sha256.
+- **Origin convention for 5a:** glTF x = lot x, z = lot y (`CityIsoCamera.lot_to_world`), 1 unit = 1 BU, +Y up; an HQ's
+  origin is its plaza's ground centre, to sit on the centre of its 10 × 10 HQ lot rectangle; a Site's on the centre of
+  its 6 × 6 lot block; the district's at the palm. Some landmarks overhang their rectangle (`lot_rect.overhang_bu`:
+  Meridian's rail yard runs ±90 BU along x).
+- **Moving parts as glTF animation, written by `gltf_anim_v1.py`** (the exporter's action handling is not used):
+  Meridian `loop` (3.0 s: 17 crane poses as step flipbooks over one shared portal, the train once, slid along the
+  track, its new container from frame 9 to 14, motion streaks 11–14); Solace `chaser` (12 × 90 ms); Halcyon `eye_scan`
+  (12 × 110 ms, rotation about +Y). The rest pose is the concept's still (Meridian frame 6, chaser frame 0; the eye at
+  frame 0, its still angle 28° is in the manifest).
+- **Locked Site renders face lot +y:** the round 26–27 `build_at` meant to turn new Sites 45° but turned only their
+  sign objects, so the references show them unturned; the export matches the references (front +z), with a readable
+  sign (the references' was turned into the wall).
+- **Smaller than the concept, same picture:** signs at curve resolution 2 (the default 12 made a sign heavier than its
+  building); Orbital's sign once on the root (not per state); the district's walls 4 jittered triangles each (the
+  city's 1.7 BU facet grid is the CityModel shader's job) and mid-rise heights (7–27 BU, a few to 51) so the fist
+  reads; the fist's panes 1.3 × 1.2 BU and `LandmarkLook.fist_gain` 1.8 (map34 lights the crest denser and spills red).
+- **Godot side (no view changes):** `assets/city/landmarks/landmark_toon.gdshader` / `landmark_beam.gdshader` (the
+  spike's 3-band light() and ramp × the corp `TINT`; the reveal: ring windows off as q passes their value with a
+  ±0.12 flicker band, detail-line windows off, line buildings darken), `LandmarkLook` (`landmark_look.tres`: night and
+  cool-day ramps, gains, the concept's numbers; `lit_emission` 0.25 as 8p, since the spike post blooms every bright
+  pixel) and `LandmarkMaterials` (role → material, `set_reveal`, `show_dispatch`). The crest mask
+  (`rebel_cell_crest_mask.png`, R home / G DISPATCH zone, B ring weight, on the iso screen plane; mapping in the
+  manifest) is for the CityModel's window shader, so the fist can be drawn on the city's own buildings.
+- **Validator hook and test:** `tools/landmark_asset_checks.gd` from `validate_content.gd` (every corporation, schema,
+  files, sizes, sha256, stale pipeline); `tests/unit/test_art5_landmarks.gd` (fast): every glTF loads headless with
+  landmark roles only, loops with their lengths, Orbital's states, the district's reveal meshes, the mask imports.
+- **Renders read:** `tools/art_pipeline/city/landmark_review.tscn` (windowed, one launch, 26 shots) next to the Blender
+  concept finish and the references in `docs/art_review/ART-5/5b/` (`.gdignore` in `ART-5/`). Halcyon, Orbital and
+  Meridian match closely; Solace's strands read violet-grey in Godot where the concept's emission-pass bloom and the
+  stand-in city's lime lanes tint them lime (the spike post blooms only what passes its threshold, so dim seams do not
+  bloom); the fist reads in Blender and more faintly in Godot on the bare district, where it needs the lit city around
+  the blackout ring for contrast.
+
 ### 2026-10-05 — Art direction — ART-8 8p HQ compound prep
 ART_BIBLE v2 §1.2 (World), §4.7 (HQ runs: the compound), §6.1; ART_3_BATCH "Wave 2" 8p; references
 `hq/round43_hq_mechanics/hq_*_compound.jpg`, `hq/round35_netrun/hq_compound.jpg`; 1D's pick (real-time
@@ -6940,6 +7003,11 @@ and annotated in the GDD where it changes a rule.
 
 ## Open questions for the designer
 
+- **ART-5 5b: the REBEL_CELL fist on the real city (2026-10-05):** the landmark export carries a standalone district
+  patch and the crest as a mask texture; on the unified city the fist must be the city's own buildings' windows
+  (bible 4.4). Default: 5a's CityModel window shader samples `rebel_cell_crest_mask.png` at the palm of the Cell's
+  district and the district glTF stays a reference. Also: crest size 110 BU tall on the iso screen (map34's 880 px at
+  8 px/BU); say if the fist should scale with the zoom instead.
 - ~~**ART-8 8p: where is DISPATCH's HQ run, and does an HQ run become a map? (2026-10-05):**~~ resolved by the
   standing ruling "the art pass design is correct" (orchestrator, 2026-10-05): the latest lock wins, so DISPATCH's
   HQ run is set in the round 43 Tokyo canyon (built in ART-8 wave 2, static until G12); the HQ run stays a single
