@@ -532,6 +532,13 @@ func _art2c() -> int:
 	var bad := CampaignConfigData.new()
 	bad.heat_city_side_beacons = PackedInt32Array([1, 2])
 	if bad.validate().is_empty(): fails += 1
+	# ART-0 audit B1: the Heat glitch's per-band table (period, burst, tears, blocks).
+	print("ART-0 audit B1: heat_glitch period ", cfg.heat_glitch_period, " burst ", cfg.heat_glitch_burst, " tears ", cfg.heat_glitch_tears, " blocks ", cfg.heat_glitch_blocks)
+	if cfg.heat_glitch_period.size() != 5 or cfg.heat_glitch_burst.size() != 5 or cfg.heat_glitch_tears[3] != 18 or cfg.heat_glitch_blocks[2] != 48: fails += 1
+	if shipped == null or shipped.heat_glitch_period.size() != 5: fails += 1
+	var bad_glitch := CampaignConfigData.new()
+	bad_glitch.heat_glitch_burst = PackedFloat32Array([0.08, 0.16, 0.26, 2.0, 0.32])
+	if bad_glitch.validate().is_empty(): fails += 1
 	return fails
 
 

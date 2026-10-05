@@ -64,6 +64,8 @@ var portrait: Polaroid
 var heat_poster: HeatPoster
 ## ART-2 2C: Heat on the backdrop (ART_BIBLE v2 §3.15 H1).
 var heat_city: HeatCity
+## ART-0 audit B1: the Heat glitch Options extra (§5.5), over the backdrop, under the wheels.
+var heat_glitch: HeatGlitchLayer
 var ram_note: RamBar
 var daemon_row: DaemonRow
 var inspect_popup: InspectPopup
@@ -1559,6 +1561,11 @@ func _build_ui() -> void:
 	heat_city = HeatCity.new()
 	heat_city.name = "HeatCity"
 	add_child(heat_city)
+	# ART-0 audit B1 §5.5: the Heat glitch post pass reads the backdrop drawn so far (city +
+	# Heat lights); the wheels, FX and HUD draw above it, so no value is touched.
+	heat_glitch = HeatGlitchLayer.new()
+	heat_glitch.name = "HeatGlitch"
+	add_child(heat_glitch)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("separation", 4)
@@ -2074,6 +2081,19 @@ func _sync_heat() -> void:
 	background.corp_creep = clampf(float(heat) / maxf(1.0, heat_max), 0.0, 1.0)
 	var levels := HeatRules.band_levels(RunManager.campaign, engine.resolver.config)
 	heat_city.set_band(Palette.heat_band(heat, levels), _enemy_views_box.get_global_rect().get_center() if _enemy_views_box != null else Vector2.INF)
+	heat_glitch.set_band(Palette.heat_band(heat, levels), _hunting_corp_color())
+
+
+## ART-0 audit B1: the colour of the corporation the fight is against (the first enemy's),
+## for the Heat glitch's edge tint and blocks; Heat's map tint when no enemy names one.
+func _hunting_corp_color() -> Color:
+	if engine == null or engine.state() == null:
+		return Palette.HEAT_B
+	for e in engine.state().enemies:
+		var corp := corp_of(e)
+		if corp != &"":
+			return Palette.corp_color(corp)
+	return Palette.HEAT_B
 
 
 ## ANIM-R5 combat 1: the outcome lands (the replay's VICTORY / DEFEAT beat, a skip, the

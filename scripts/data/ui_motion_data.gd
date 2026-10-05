@@ -101,6 +101,8 @@ const REQUIRED_IDS: Array[StringName] = [
 	&"heal_inflow", &"evade_token", &"corrupt_apply", &"corrupt_tick", &"drone_deploy", &"drone_attack", &"drone_destroyed",
 	&"enemy_defeated_bits", &"phase_change_bits", &"respin_bits", &"nudge_resist_bits", &"ram_gain_bits", &"temp_label",
 	&"daemon_trigger", &"firmware_trigger", &"heat_city_beacon", &"heat_city_sweep",
+	# ART-0 audit B1: the Heat glitch Options extra (ART_BIBLE v2 5.5).
+	&"heat_glitch",
 
 	# ART-1 1B material kit (ART_BIBLE v2 1.2, 6.3; round 3 combined_v2 lifecycle): the CRT
 	# terminal, the vinyl sticker, the grease pencil, the holo, the light spill and the bits.
