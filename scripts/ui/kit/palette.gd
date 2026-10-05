@@ -188,6 +188,11 @@ const BOARD_BG := Color("#0A1512")
 const BOARD_TRACE := Color("#24493A")
 const BOARD_PAD := Color("#D0663C")
 const BOARD_FRAME := Color("#59606B")
+## The drawn stickers' fill markers (shaders/chrome/vinyl_sticker.gdshader paints them):
+## magenta = the gradient fill, green (blue = burst band / 8) = the CORRUPTED glitch fill.
+## Never shown as colours.
+const STICKER_FILL_MARKER := Color(1, 0, 1)
+const STICKER_GLITCH_MARKER := Color(0, 1, 0)
 
 ## §5.1 "never colour alone": what each meaningful colour token is paired with (a greyscale
 ## reader gets the same information). The token table test checks every entry is filled.

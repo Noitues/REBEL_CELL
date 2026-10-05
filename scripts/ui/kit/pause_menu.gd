@@ -181,8 +181,8 @@ func _add(text: String, on_pressed: Callable) -> Button:
 	# ART-10 4C: a terminal menu line (`> ITEM` on focus, lime brackets), CAPS.
 	b.theme_type_variation = &"MenuItem"
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	b.add_theme_font_override(&"font", Chrome.caps_font(UiTheme.LABEL))
-	b.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.LABEL))
+	b.add_theme_font_override(&"font", Chrome.caps_font(UiTheme.BODY))
+	b.add_theme_font_size_override(&"font_size", Chrome.px(UiTheme.BODY))
 	b.set_meta(UiFocus.META_NO_SCALE, true)
 	b.pressed.connect(on_pressed)
 	_menu.add_child(b)

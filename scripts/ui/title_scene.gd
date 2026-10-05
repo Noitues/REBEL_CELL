@@ -22,7 +22,7 @@ const TITLE_STICKER_TILT := -3.0
 ## The motto's tilt (degrees).
 const MOTTO_TILT := 3.0
 ## Margins of the page (px): sides, top, bottom (the ticker's room is added).
-const PAGE_MARGIN := Vector3(40, 22, 8)
+const PAGE_MARGIN := Vector3(40, 22, 0)
 ## Gaps (px): sign to the verbs, between verb rows, a sticker to its chip.
 const GAP_SIGN := 4
 const GAP_ROWS := 4
@@ -251,7 +251,7 @@ func show_main() -> void:
 	more.name = "More"
 	more.tag_label.text = "v%s" % ProjectSettings.get_setting("application/config/version", "dev")
 	more.tag_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	more.custom_minimum_size.x = MORE_W * maxf(1.0, Settings.text_scale * 0.7)
+	more.custom_minimum_size.x = MORE_W * maxf(1.0, Settings.text_scale * 0.65)
 	var box := more.body
 	box.name = "MoreList"
 	_item(box, tr("Campaign slots"), show_slots, StatIcon.SLOTS, tr("The three campaign slots: start, load or delete."), "C")
@@ -276,7 +276,7 @@ func show_main() -> void:
 		more.anchor_right = 1.0
 		more.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 		# Under the subtitles' band (H21 #11: no menu under it).
-		more.offset_top = SubtitleStrip.top_below(PAGE_MARGIN.y) - PAGE_MARGIN.y
+		more.offset_top = SubtitleStrip.top_below(PAGE_MARGIN.y)  # the main page starts at the top edge
 	else:
 		_place_bottom(more, false)
 		more.offset_bottom = -foot.get_combined_minimum_size().y - 6.0
@@ -320,6 +320,8 @@ func _verb(rows: Control, word: String, fill: int, fist: int, label: String, lin
 	chip.name = label.replace(" ", "")
 	chip.focus_mode = Control.FOCUS_NONE
 	chip.min_width = CHIP_MIN_W  # it grows with its label at big text
+	if big_text():
+		chip.label_step = UiTheme.BODY  # the right column is MORE: the chips stay narrower
 	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	chip.tooltip_text = s.tooltip_text
 	if on_pressed.is_valid():

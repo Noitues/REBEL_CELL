@@ -153,7 +153,7 @@ func test_the_title_fits_at_every_text_scale() -> void:
 			assert_true(SCREEN.encloses(r.grow(-1.0)), "%s on the screen at %.1f: %s" % [n, scale, r])
 		var more := (page.find_child("More", true, false) as Control).get_global_rect()
 		var verbs := (page.find_child("Verbs", true, false) as Control).get_global_rect()
-		assert_false(more.intersects(verbs.grow(-1.0)), "MORE clear of the verbs at %.1f" % scale)
+		assert_false(more.intersects(verbs.grow(-1.0)), "MORE %s clear of the verbs %s at %.1f" % [more, verbs, scale])
 		t.queue_free()
 		await _frames(1)
 

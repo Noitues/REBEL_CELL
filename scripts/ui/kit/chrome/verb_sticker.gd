@@ -437,11 +437,11 @@ func _draw() -> void:
 		var tail := word.substr(fist_at + 1)
 		var head_w := f.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 		var slot_w := f.get_string_size(word.substr(0, fist_at + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		draw_string(f, origin, head, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
-		draw_string(f, origin + Vector2(slot_w, 0), tail, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
+		draw_string(f, origin, head, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
+		draw_string(f, origin + Vector2(slot_w, 0), tail, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
 		_draw_fist(Rect2(Vector2(origin.x + head_w, top), Vector2(slot_w - head_w, cap)).grow(key * 0.8), key)
 	else:
-		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.MAGENTA)
+		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_FILL_MARKER)
 	KitState.draw_frame(self, Rect2(Vector2.ZERO, size), state(), false)
 
 
@@ -490,10 +490,10 @@ func _draw_glitch(f: Font, origin: Vector2, word: String, px: int) -> void:
 	draw_string(f, origin - Vector2(split, 0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.CELL_PINK)
 	draw_string(f, origin + Vector2(split, 0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.CORP_SOLACE)
 	if not bursting():
-		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Color.GREEN)
+		draw_string(f, origin, word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Palette.STICKER_GLITCH_MARKER)
 		return
 	for i in BURST_SHIFTS.size():
-		var marker := Color.GREEN
+		var marker := Palette.STICKER_GLITCH_MARKER
 		marker.b = float(i + 1) / 8.0
 		draw_string(f, origin + Vector2(BURST_SHIFTS[i] * px, 0), word, HORIZONTAL_ALIGNMENT_LEFT, -1, px, marker)
 
