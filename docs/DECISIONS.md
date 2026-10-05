@@ -143,6 +143,84 @@ Bible §1.2, §4.1–4.2, §6.1; plan §5.1–5.2; ruling 7 (fidelity first, the
   - seeded traffic.
 
   The render is verified windowed only. No shipped screen changed.
+
+### 2026-10-05 — Art direction — ART-2 2C cards and FX
+ART-3 in Group 2 (`docs/handoff/art_2/ART_2_BATCH.md` 2C.1–2C.5; ART_BIBLE v2 §3.15, §3.18, §3.20,
+§5.3–5.4, §6.3). Tests: `tests/unit/test_art2_cards_fx.gd` (fast tier).
+- **Seams until Group 1 lands.** Bits: `scripts/ui/fx/bits_seam.gd` (BitsSeam) draws a `BitPath`
+  as Share Tech Mono 0/1/+ glyphs (dark rim, 80–100 ms white-hot core, one 28 % trail copy): the
+  bible's CPU fallback; 1B's pooled emitter replaces this file only. Sticker material:
+  `scripts/ui/fx/sticker_seam.gd` (StickerSeam) puts `shaders/fx/card_sticker_fx.gdshader` (gloss
+  band, dissolve scan front; reads `reduce_effects` through rc_common) on the flying card; 1B's
+  vinyl sticker material replaces it there. Palette: tokens from `Palette` only (1A's v2 palette
+  follows through the tokens).
+- **Bits are pure numbers.** `BitPath` (RefCounted) gives each bit as a function of time and its
+  arrival time; the view schedules on the precomputed arrivals and never reads a particle back.
+  Scatter is hashed (no RNG). Shard Beziers take their control point on the rim-side bisector at
+  1.5 × R_out (round the wheel, never across its face).
+- **D16 (confirmed by the designer 2026-10-05):** `CardFx.origin`: a beat in the "act" phase (a
+  played card's effect) leaves from the card's slap point (`CombatFxLayer.slap_point`, set when the
+  card is played, also under reduce effects); slice, hub, turn-start and enemy beats keep their own
+  source. Tested on the scene's real `_play_beat` path.
+- **Effects, reference strip, motion id, tier, reduce-effects end state.** Under reduce effects
+  (and headless, and an entry switched off) none of these adds anything: HP, guards, statuses and
+  drones show their end state at once on the wheel (2A) and the existing static chips; nothing
+  waits.
+
+  | Effect | Reference | Motion id(s) | Tier |
+  |---|---|---|---|
+  | Card peel / flight tilt | `round19_combat_fx/card_play_v2` | `card_peel`, `card_play` | T2 |
+  | Card slap (squash 1.13/0.86, contact ring, gloss sweep) | card_play_v2 | `card_stamp`, `card_slap_ring` | T2 |
+  | Dissolve A, the bit stream (17 px cells, 19–25 px glyphs, clockwise into the hub) | `round19_combat_fx/dissolve_A_bitstream` | `effect_burst` (its duration) | T2 |
+  | Hit shards (count/size from config) | `binary_damage/01_hit`, `round18_combat_fx/damage_shards` | `hit_shards` | T2 |
+  | Crit (cracks, 7 `0110 1001` streaks) | `binary_damage/03_crit` | `hit_crit_streaks` | T3 |
+  | Blocked (wall pops, shards bounce, a share passes) | `binary_damage/04_blocked` | `hit_blocked_wall` | T2 |
+  | Block gain: DEFRAG bricks course by course facing the foe | `round19_combat_fx/fx_block_shield` | `block_wall` | T2 |
+  | Shield gain: SANDBOX hex plates with a ripple | fx_block_shield | `shield_hex` | T2 |
+  | Heal: green +/1/0 in from outside, segments relight | `round19_combat_fx/fx_heal`, `binary_damage/05_heal` | `heal_inflow` | T2 |
+  | Evade gain (token forms) / evaded (token flies up-left, the attack chases it) | `round23_combat_fx/fx_evade_v4` | `evade_token` | T2 |
+  | Apply CORRUPTED (pink bits in, glitch wipe L→R, doubled tears) | `round23_combat_fx/fx_corrupt_apply_v4` | `corrupt_apply` | T2 |
+  | CORRUPTED tick (flash, tear spike, pink/green bits round the rim to HP) | `round23_combat_fx/fx_corrupt_tick_v3` | `corrupt_tick` | T2 |
+  | Drone deploy (bits pack into the hex, sticker slaps) | `round19_combat_fx/fx_drone` | `drone_deploy` | T2 |
+  | Drone attack (lens charge) | fx_drone | `drone_attack` | T2 |
+  | Drone destroyed (hex cracks into bits, clamp springs) | `round22_combat_fx/fx_drone_destroyed_v3` | `drone_destroyed` | T2 |
+  | Enemy defeated (pieces fly apart and fall, shockwave, shed bits, DELETED) | `round23_combat_fx/fx_enemy_defeated_v2` | `enemy_break`, `enemy_defeated_bits` | T3 |
+  | Phase change (orange bits from the crossed pip under the arc; PHASE N, N NEEDLES) | `round23_combat_fx/fx_phase_change_v3` | `wheel_burst_phase`, `phase_change_bits` | T3 |
+  | Respin (spent RAM chips crack into cyan bits to the hub; RESPIN) | `round23_combat_fx/fx_respin_v3` | `respin_bits` | T2 |
+  | Nudge resisted (grey bits; RESIST) | `round20_combat_fx/fx_nudge_resist` | `nudge_resist_bits` | T1 |
+  | RAM gain (bits down the centre into the new chips, 4 per chip) | `round21_combat_fx/fx_ram_gain_origins` (B) | `ram_gain_bits` | T1 |
+  | Temporary labels (every effect word: pop, hold, dissolve L→R into rising bits) | §3.20 | `temp_label` (+ `result_stamp`) | T2 |
+  | Daemon / firmware trigger (source pulses, bits stream to where it acts) | §3.20 | `daemon_trigger`, `firmware_trigger` | T2 |
+  | Heat H1 on the backdrop (beacons, searchlights, police lights per band) | `round22_combat_fx/heat_city_v4_strip` | `heat_city_beacon`, `heat_city_sweep` | T0 |
+- **Small calls.** The shards burst where the hit meets the rim facing its attacker and curve round
+  into the drained HP segments (the hit line still ends on the HP ring). `effect_burst`'s duration is
+  now the dissolve (0.3 → 0.5 s) and `card_stamp` the slap (0.1 → 0.18 s): the card is gone before
+  its effect, as ANIM-R3 A6i had it. The old green word box became the vinyl word sticker (white
+  die-cut, colour fill, ink or paper lettering by contrast); every `word_stamp` dissolves into bits.
+  The sticker card: white die-cut 5 px at hand size, fill by what the card does first (spin gold,
+  harm pink, guards cyan, else violet, darkened 42 %), gloss band, yellow cost dot (grey + NEED n
+  when the RAM is short), peel curl at the foot that grows on hover, holo-striped edge for Rare and
+  Boss cards. HP arc geometry is mirrored from `WheelView.hp_ring_spot` and RAM chip spots from
+  RamBar's draw (both other areas' files): a public `hp_arc_spot(frac)` (2A) and `pip_spot(k)` (2D)
+  would replace the copies.
+- **Schema (minimal):** CampaignConfigData "Combat FX" group: `fx_shard_base/per_dmg/max`,
+  `fx_glyph_px_base/per_dmg/max` (round 18 NOTES numbers) and `heat_city_*` per-band counts (5
+  entries each, validated); `fx_shard_count` / `fx_glyph_px`. Smoke check `_art2c`.
+- **Carry-over:** combat `hit_shake` 3 → 2 px (T2's limit).
+- **Hooks in other areas' files (smallest):** `combat_scene.gd` (2D): one `CombatBeatFx.play` line
+  in `_play_beat`, `CombatBeatFx.spawn` on a spawn beat, RAM gain on the ram beat, the
+  `nudge_absorbed` case in `_animate_wheels`, respin bits in `respin()`, the hub point for the
+  dissolve (`cap["hub"]`), the drone destroyed / DELETED calls in `_death_beat`, the phase pip in
+  `_boss_phase_feedback`, `N NEEDLES` in `_phase_beat`, `short_ram` on hand cards, the HeatCity node
+  over the background and its band in `_sync_heat`. `motion_lab.gd`: 24 demos.
+- **Not built yet (proposed slices):** Daemon / firmware triggers have their effect and demo but no
+  game hook: the engine's `trigger` events make no replay beat (adding one to ResolveBeats moves the
+  replay's pacing; slice: a non-timed "trigger" beat, then one hook). Crit RGB split on the wheel
+  rect and the defeated pieces' pixelation (need the wheel as a texture: 2A). Hover scale 1.36 with
+  neighbours shifting and the RAM meter hatching the cost (hand layout and RamBar: 2D), card idle bob.
+  The standing walls / hexes / EVADE token after the effect (wheel overlays: 2A).
+- **Dropped tests:** none.
+
 ### 2026-10-05 — Art direction — ART-1 1A palette, faces, theme
 ART_BIBLE v2 §2.1–2.10, §5.6, §6.4 applied through `Palette` and `UiTheme` only (no screen
 restyled; screens pick it up through the tokens and the theme).
@@ -6325,6 +6403,11 @@ and annotated in the GDD where it changes a rule.
   - Also: the see-through band was moved to lod 1.50–1.595 so that the Grid is solid and the raid
     sits at 0.68. Say if the bible's 1.45–1.75 was meant literally.
   - Tier 1 still needs a measurement on a Steam Deck.
+
+- **ART-2 2C defaults from the round 18 notes (2026-10-05):** (D16, every card-caused effect from
+  the card's slap point, is confirmed by the designer and tested.) Defaults applied: an enemy's hit uses its own (attacker's) colour;
+  blocked shards that don't get through fall away (not into the guard's number); heal bits come in
+  from outside the wheel, not from the heal slice.
 - **ART-1 1A: the Daemon family MISS, the PURGE look, the gunmetal (2026-10-05):** ART_BIBLE v2
   §2.6 calls the family that fires on the Miss slice MISS; the slice is NULL since the
   2026-10-05 ruling, so the token and id follow it (`DAEMON_NULL`, `&"null"`). Say if the family
